@@ -1150,11 +1150,59 @@ History crece sin cota). El hazard #33 (token in-decodificable + purga activa �
 corpus con HLC fresco) es de COSTO, no de corrección (LWW-idempotente server-side), y v1 = dogfooding
 single-device del owner. **Gatillo movido al escalón de beta cerrada:** acotar el full-rescan antes de beta.
 
-**DIFERIDO NUEVO — `cloudModeEnabled` remote-config (kill-switch sin release, §j.1):** requisito ANTES del
-rollout público; v1-dogfooding lo sustituye `CloudBackendConfig.isConfigured` (prod DARK).
+**DIFERIDO #34 — `cloudModeEnabled` remote-config: ✅ CERRADO (2026-07-17)** — ver la sección
+"Remote-config `GET /config`" al final de este archivo.
 
 **Tests (P8).** `YalaTests/CloudSync/CloudMigrationI14Tests.swift` (gate P0 · boot decision P4 · UIState
 derive P2 · claim-store round-trip + gate de arranque P6) + `MigrationWorkExecutorTests` (runAdoptFlow orden
 persiste `.cloud`+armed+claim-store; performClaim estampa `proceedMigration` — contenido real, lección
 `d49d2e47`) + `PreferenceMergeLogicTests.taxonomy_36Keys`. l10n: 55 keys `storage.*` en los 16 locales
 (`LocalizationParityTests` verde).
+
+## Remote-config `GET /config` (DIFERIDOS #34 — kill-switch sin release, §j.1/§j.2)
+
+**Endpoint** (2026-07-17): `GET /config` en el Worker, PÚBLICO (sin auth/attest, sin bindings D1/KV —
+un kill-switch no puede caerse por dependencias). Shape v1:
+
+```json
+{"v":1,"flags":{"cloudModeRolloutPercent":0,"cloudOnboardingChoiceRolloutPercent":0,"groupsBackendRolloutPercent":0}}
+```
+
+Percents 0-100 por flag (decisión owner: escalón gradual §j.2 desde el día 1; 0=OFF, 100=ON).
+**Dónde viven los valores:** `gateway/wrangler.toml` `[vars]` (staging=100 los 3; QA no pierde
+superficie) y `[env.production.vars]` (prod=0 los 3, explícito) — patrón ENFORCE: **flip = editar la
+var + `npx wrangler deploy [--env production]`**, versionado en git, sin release del cliente. Parse
+server-side fail-closed (ausente/inválido → 0, clamp [0,100]). `Cache-Control: public, max-age=300`
+gobierna el URLCache del CLIENTE (CF no cachea edge sin Cache API; costo trivial a ≤1 req/6h/device).
+Verificación: `curl https://yala-gateway-{staging,production}.misty-surf-6866.workers.dev/config`.
+Tests: `gateway/test/config.test.ts` (unit, sin red).
+
+**Cliente iOS:** `CloudRemoteConfig.swift` (snapshot en `UserDefaults.standard` bajo
+`cloudSync.remoteConfig.*` — sobrevive sign-out por el carve-out `cloudSync.*`; extensiones no lo
+leen) + `RemoteFlagDecisionLogic` (pure: bucket FNV-1a estable por instalación [seed UUID persistido
+una vez — el golden de vectores fijos protege las cohortes], `bucket < percent`, percent nil →
+`absentDefault` [DEV=ON para QA/uitest sin fetch; prod=OFF fail-closed], refresh min-interval 6 h con
+futuro=stale). Fetch fire-and-forget en boot (14.56, gateado `isConfigured && !uiTestActive`) + los
+`.task` de WelcomeFlowContainer y StorageSettingsView (re-verificación en la puerta). Last-cached-wins
+SIN TTL de expiración: todo flujo gateado exige red al ejecutarse. Bajo unit/UI tests los getters
+IGNORAN `.standard` (determinismo); `-uitest-reset` limpia snapshot + toggle DEBUG.
+
+**Semántica de kill (ratificada por el owner 2026-07-17): OFF corta solo la ENTRADA.**
+
+| Flag en 0 | Corta | NO corta |
+|---|---|---|
+| `cloudModeRolloutPercent` | fila Almacenamiento (no-migrados), cards sign-in nube del Welcome (Apple/Google/born-cloud), entrada secundaria M1 | runtime/outbox/pull de un `.cloud` existente; su fila (engaged: `.cloud` persistido ∨ `uiState != .idle`) con resume y REVERSA; secundaria YA activa |
+| `cloudOnboardingChoiceRolloutPercent` | card born-cloud del Welcome (exige AMBOS flags) | — |
+| `groupsBackendRolloutPercent` | composición `compilado && remoto` de `CloudSyncFlags.groupsBackendEnabled` (hoy compilado=false ⇒ inerte) | — |
+
+Residual ratificado: un usuario nube que REINSTALA bajo el kill no ve la card de sign-in → no re-entra
+hasta re-encendido (propósito del kill; datos server-side intactos). ⚠️ **Nota para la sesión de
+ENCENDIDO de Grupos** (compilado → true): un kill remoto transitorio congela el canal (outbox
+retenido, sin pérdida) y desvía creaciones a CloudKit, pero también cambia el shape de los paths de
+teardown que leen el getter (sign-out push-all, borrado GDPR) — decidir entonces si esos paths leen el
+compilado directo. Ídem: los tests que quieran la composición REAL deben llamar
+`_testResetGroupsBackendEnabledOverride()` primero (el idiom `= true; defer { = false }` deja override).
+
+**QA:** panel DEBUG (CloudSyncDebugView → card "Remote cfg"): snapshot + bucket + efectivos + toggle
+"Simular remote OFF" (key `cloudSync.debug.remoteFlagsForceOff`, solo DEV) + botón "Fetch /config
+ahora" (force, salta min-interval y URLCache).

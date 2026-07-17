@@ -399,9 +399,23 @@
       ],
       "scenarioIDs": [],
       "classification": "manual",
-      "coverage": "unit:YalaTests/SyncIdentityServiceTests + unit:YalaTests/SyncContentAnchorTests + unit:YalaTests/CloudSyncSchemaParityTests — DARK (flag off), sin superficie UI hasta I12/I14 + unit:YalaTests/CloudSync/IdentityRemapEmissionTests (15, DIFERIDOS #29 `54ccf391`: regenerar Tag.id/Account.shortcutID/Subcategory.shortcutID emite en la MISMA transacción tombstone(old, reason .remap) + upsert FULL(new) + upserts FULL de TODAS las filas referenciantes — las columnas *_ref se derivan de la relación viva al emitir, sin re-emisión sintética la regen diverge Merkle perpetuo clase-FX; re-key del testigo preservando ck*; PREFLIGHT antes-de-mutar + gates migración/reversa; contenido REAL del outbox assertado, lección d49d2e47). Follow-up del commit cerrado 2026-07-11 (retenido por co-edición de 3 sesiones).",
+      "coverage": "unit:YalaTests/SyncIdentityServiceTests + unit:YalaTests/SyncContentAnchorTests + unit:YalaTests/CloudSyncSchemaParityTests — DARK (flag off), sin superficie UI hasta I12/I14 + unit:YalaTests/CloudSync/IdentityRemapEmissionTests (15, DIFERIDOS #29 `54ccf391`: regenerar Tag.id/Account.shortcutID/Subcategory.shortcutID emite en la MISMA transacción tombstone(old, reason .remap) + upsert FULL(new) + upserts FULL de TODAS las filas referenciantes — las columnas *_ref se derivan de la relación viva al emitir, sin re-emisión sintética la regen diverge Merkle perpetuo clase-FX; re-key del testigo preservando ck*; PREFLIGHT antes-de-mutar + gates migración/reversa; contenido REAL del outbox assertado, lección d49d2e47). Follow-up del commit cerrado 2026-07-11 (retenido por co-edición de 3 sesiones). + DIFERIDOS #34 (2026-07-17): CloudSyncFlags.groupsBackendEnabled pasa a getter compuesto compilado&&remoto (override de tests source-compatible) y secondarySessionEntryAvailable gana el AND del flag remoto — unit:YalaTests/CloudSync/CloudRemoteConfigTests.",
       "owner": "",
-      "lastVerified": "2026-07-11"
+      "lastVerified": "2026-07-17"
+    },
+    {
+      "area": "cloud-remote-config",
+      "codeGlobs": [
+        "Yala/Services/CloudSync/CloudRemoteConfig.swift",
+        "Yala/Services/CloudSync/RemoteFlagDecisionLogic.swift",
+        "Yala/App/Logic/StorageRowGateLogic.swift",
+        "gateway/src/config.ts"
+      ],
+      "scenarioIDs": [],
+      "classification": "manual",
+      "coverage": "unit:YalaTests/CloudSync/RemoteFlagDecisionLogicTests + unit:YalaTests/CloudSync/CloudRemoteConfigTests + unit:YalaTests/StorageRowGateLogicTests + gateway/test/config.test.ts (DIFERIDOS #34: GET /config percents 0-100 fail-closed + bucket FNV-1a estable por instalación + kill-switch entrada-only [decisión owner 2026-07-17: un `.cloud` engaged conserva fila/runtime/reversa] + composición compilado&&remoto de groupsBackendEnabled). DARK: prod isConfigured=false ⇒ cero fetch/superficie; DEV default-ausente ON + staging sirve 100. Verificación e2e = curl staging + panel DEBUG (card Remote cfg + toggle simular OFF).",
+      "owner": "",
+      "lastVerified": "2026-07-17"
     },
     {
       "area": "cloud-sync-runtime",
@@ -1649,7 +1663,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/ProfileSettingsUITests, YalaUITests/ProfileGroupInviteUITests — fila 'Cerrar sesion' (H4, siempre visible salvo group-invite; profile_security_signout) cubierta por unit CloudSignOutFlowLogicTests + device-qa; XCUITests existentes no asertan conteo de filas",
       "owner": "",
-      "lastVerified": "2026-07-13"
+      "lastVerified": "2026-07-17"
     },
     {
       "area": "settings-theme-visual",
@@ -2045,7 +2059,7 @@
       "classification": "agentic",
       "coverage": "device-qa + unit:YalaTests/WelcomeAccountChoiceLogicTests (sub-chooser 2 niveles + bypass), CloudWelcomeSignInFlowTests (ruteo exists + fase por uiState), CrossAccountEntryGuardLogicTests (guard F0-C). SIWA/adopt desde Welcome = device-only (SIWA no corre en sim); en prod DARK y bajo -uitest el sub-chooser hace bypass a restore (flujo actual intacto). Fix HALLAZGO 4 2026-07-14: cards del Welcome con colores FIJOS (WelcomeFlowStyle en WelcomeFlowLayout, valores del tema default liquidGlass) — con tema Claro persistido .thCard/solidCard resolvian casi-blanco bajo textos .white (texto invisible); verificado sim Hero/Chooser en tema Claro y Oscuro (pixel-identicos). + Google Sign-In sesion 2 (2026-07-16): tercera card Google en el 2o nivel (mismo gate configured&&!uitest) + WelcomeCloudSignInView parametrizada por provider (Apple BYTE-IDENTICO; Google boton custom GoogleSignInButton variant light + catch .cancelled silencioso + error real retryable) + guard R9 SUB-FIRST en la rama .accountMissing (H4: GoTrue linkea identidades mismo email al MISMO sub => la senal es el SUB, jamas el provider a secas; canario cloudSignInProviderMismatch + fase .providerMismatch) — unit:YalaTests/ProviderMismatchLogicTests (tabla 5 reglas + postClaim + displayName) + xcuitest:YalaUITests/WelcomeChooserUITests (hero→chooser→2o nivel 3 cards→intro Google→back, opt-in -uitest-cloud-chooser; sin el arg el bypass a restore queda byte-identico — verificado sim). Sign-in Google real = device-only (guion SIGNOUT-WELCOME apendice Google).",
       "owner": "",
-      "lastVerified": "2026-07-16"
+      "lastVerified": "2026-07-17"
     },
     {
       "area": "welcome-universal-link-icloud",

@@ -257,6 +257,16 @@ final class AppBootstrapper {
             SIWAExchangeSeam.installProductionHook()
         }
 
+        // 14.56 Remote-config del Modo Nube (DIFERIDOS #34): fetch fire-and-forget de GET /config
+        // (kill-switch de las ENTRADAS, §j.1/§j.2). Gateado por `isConfigured` (prod placeholder:
+        // CERO tráfico nuevo — byte-identidad de red) y `!uiTestActive` (hermeticidad: los XCUITests
+        // no tocan red, como los pasos hermanos; bajo uitest los getters ya devuelven el default).
+        // Coalescente con min-interval 6 h. Jamás bloquea el boot; el snapshot se lee en el
+        // siguiente render de las superficies gateadas.
+        if CloudBackendConfig.isConfigured && !uiTestActive {
+            Task { await RemoteConfigClient.shared.refreshIfDue() }
+        }
+
         // 14.6 Modo Nube — coordinator de migración (I14, P4). Dueño único del `MigrationRunner`. Gateado
         // por `CloudBackendConfig.isConfigured` (staging/DEV; prod placeholder = no-op). Retoma una
         // migración/reversa matada a medias (journal transicional o efectos pendientes) ANTES del 14.7 y,
@@ -524,6 +534,13 @@ final class AppBootstrapper {
             UserDefaults.standard.removeObject(forKey: AppPreferences.Keys.expensesOnlyMode)
             SessionState.shared.isExpensesOnlyMode = false
             UserDefaults.standard.removeObject(forKey: UITestHooks.seededGroupIDKey)
+            //  · Remote-config (DIFERIDOS #34): el snapshot/toggle de una corrida manual en el
+            //    mismo sim es estado pegajoso de la MISMA clase (los getters ya cortan bajo
+            //    uitest — esto es limpieza de cinturón para corridas manuales posteriores).
+            #if DEV_BUILD
+            UserDefaults.standard.removeObject(forKey: CloudRemoteFlags.debugForceOffKey)
+            #endif
+            UserDefaults.standard.removeObject(forKey: CloudRemoteConfigStore.snapshotKey)
         }
         // Estado Pro determinista según el launch arg, idempotente entre tests.
         // `devForceProTier` se persiste en UserDefaults (`dev.forceProTier`) y el wipe

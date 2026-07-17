@@ -52,10 +52,13 @@ struct WelcomeFlowContainer: View {
     private var visibleExistingOptions: [WelcomeAccountChoiceLogic.ExistingOption] {
         // `-uitest-cloud-chooser` (opt-in EXPLÍCITO, sesión 2): destapa las cards cloud bajo
         // uitest SOLO para el XCUITest del chooser — el resto de uitest queda byte-idéntico
-        // (bypass a restore intacto).
+        // (bypass a restore intacto). `remoteCloudEnabled` (DIFERIDOS #34): kill-switch de la
+        // ENTRADA; bajo uitest/DEV sin fetch el default es ON (byte-idéntico), y si el fetch
+        // aterriza con la vista abierta se lee en el siguiente render (sin live-update — asumido).
         WelcomeAccountChoiceLogic.visibleExistingOptions(
             isConfigured: CloudBackendConfig.isConfigured,
-            isUITest: SwiftDataConfiguration.isUITesting && !UITestHooks.forceCloudChooser)
+            isUITest: SwiftDataConfiguration.isUITesting && !UITestHooks.forceCloudChooser,
+            remoteCloudEnabled: CloudRemoteFlags.cloudModeEnabled)
     }
 
     var body: some View {
@@ -88,6 +91,13 @@ struct WelcomeFlowContainer: View {
                 )
                 .transition(.opacity)
             }
+        }
+        .task {
+            // DIFERIDOS #34: refresh del remote-config en la ENTRADA (fresh install pre-onboarding
+            // puede no tener cache del boot todavía). Min-interval 6 h; no-op con backend placeholder.
+            // Bajo uitest NO se toca red (hermeticidad — los getters ya devuelven el default).
+            guard !SwiftDataConfiguration.isUITesting else { return }
+            await RemoteConfigClient.shared.refreshIfDue()
         }
         .alert(
             L10n.Welcome.DetectedData.title,

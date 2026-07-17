@@ -680,7 +680,16 @@ struct ProfileView: View {
                 // Modo Nube (I14): fila "Almacenamiento" — solo si el backend está configurado
                 // (staging/DEV; prod placeholder no muestra nada). M1: oculta en sesión SECUNDARIA —
                 // la pantalla describe/opera la migración del DUEÑO (la invitada ni la ve).
-                if CloudBackendConfig.isConfigured && !SecondarySessionStore.isActive() {
+                // DIFERIDOS #34: el flag remoto gatea solo la ENTRADA — un usuario "engaged"
+                // (`.cloud` persistido o migración/reversa en vuelo/fallida) conserva la fila
+                // SIEMPRE (gestión + resume + REVERSA, el escape ante incidente).
+                if StorageRowGateLogic.isVisible(
+                    isConfigured: CloudBackendConfig.isConfigured,
+                    isSecondaryActive: SecondarySessionStore.isActive(),
+                    remoteEnabled: CloudRemoteFlags.cloudModeEnabled,
+                    isEngaged: StorageModePersistence.read() == .cloud
+                        || (CloudMigrationController.shared?.uiState ?? .idle) != .idle
+                ) {
                     if CloudSyncFlags.storageMode != .cloud { SubsectionDivider() }
                     profileRow(
                         icon: "externaldrive.badge.icloud",

@@ -549,12 +549,15 @@ struct CloudSyncDebugView: View {
     // viva (refrescada cada 1s) para mostrar en vivo la decisión del gate §i.9.
     @State private var selectedS7Phase: MigrationPhaseStore.SimulatedPhase?
     @State private var s7Quiescent = false
+    // DIFERIDOS #34: espejo del toggle de simulación del kill-switch (se hidrata en .task).
+    @State private var simulateRemoteOff = false
     @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Spacing.xl) {
                 stateCard
+                remoteConfigCard
                 actionsCard
                 pushCard
                 migrationCard
@@ -579,6 +582,7 @@ struct CloudSyncDebugView: View {
         .navigationTitle("Modo Nube · Auth")
         .navigationBarTitleDisplayMode(.inline)
         .task {
+            simulateRemoteOff = UserDefaults.standard.bool(forKey: CloudRemoteFlags.debugForceOffKey)
             await model.refreshAttest()
             await model.refreshCredential()
         }
@@ -827,6 +831,36 @@ struct CloudSyncDebugView: View {
             }
             if let claim = model.lastClaimState {
                 row("Last claim", claim)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(DS.Spacing.lg)
+        .background(.thCard)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
+        .padding(.horizontal, DS.Spacing.lg)
+    }
+
+    /// DIFERIDOS #34: snapshot del remote-config + simulación del kill-switch (QA del gate de
+    /// entradas sin tocar staging). El toggle escribe `cloudSync.debug.remoteFlagsForceOff`
+    /// (solo DEV_BUILD — producción la ignora).
+    private var remoteConfigCard: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            let snapshot = CloudRemoteConfigStore.readSnapshot()
+            row("Remote cfg", snapshot.map {
+                "cloud=\($0.cloudModeRolloutPercent.map(String.init) ?? "nil") · choice=\($0.cloudOnboardingChoiceRolloutPercent.map(String.init) ?? "nil") · groups=\($0.groupsBackendRolloutPercent.map(String.init) ?? "nil")"
+            } ?? "sin snapshot (default DEV=ON)")
+            row("Fetched", snapshot.map { $0.fetchedAt.formatted(date: .abbreviated, time: .standard) } ?? "—")
+            row("Bucket", "\(RemoteFlagDecisionLogic.stableBucket(seed: CloudRemoteConfigStore.bucketSeed()))")
+            row("Efectivos", "cloudMode=\(CloudRemoteFlags.cloudModeEnabled) · groups=\(CloudRemoteFlags.groupsBackendEnabled)")
+            // Regla del repo (no Binding(get:set:) en body): @State + onChange escribe la key.
+            Toggle("Simular remote OFF (kill-switch)", isOn: $simulateRemoteOff)
+                .font(DS.Typography.caption)
+                .onChange(of: simulateRemoteOff) { _, newValue in
+                    UserDefaults.standard.set(newValue, forKey: CloudRemoteFlags.debugForceOffKey)
+                }
+            actionButton("Fetch /config ahora", disabled: !model.isConfigured) {
+                await RemoteConfigClient.shared.refreshIfDue(force: true)
+                model.lastMessage = "Remote config: \(CloudRemoteConfigStore.readSnapshot().map { "cloud=\($0.cloudModeRolloutPercent ?? -1)" } ?? "fetch falló (ver Console)")"
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

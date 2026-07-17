@@ -203,9 +203,12 @@ nonisolated enum CloudSyncFlags {
     }
 
     /// Composición completa del gate de ENTRADA secundaria: el feature requiere backend
-    /// configurado (sin auth no hay sesión nube) y el wiring del motor encendido.
+    /// configurado (sin auth no hay sesión nube), el wiring del motor encendido y el flag
+    /// REMOTO vivo (DIFERIDOS #34 — es una ENTRADA: el kill-switch la corta; una secundaria
+    /// YA ACTIVA no se toca — mount/wipe honran el descriptor incondicionalmente).
     static var secondarySessionEntryAvailable: Bool {
         secondarySessionEnabled && syncRuntimeEnabled && CloudBackendConfig.isConfigured
+            && CloudRemoteFlags.cloudModeEnabled
     }
 
     /// Gate del canal de sync de GRUPOS → backend (incremento G2). Cuando `true` (JAMÁS en producción
@@ -213,9 +216,34 @@ nonisolated enum CloudSyncFlags {
     /// contra el gateway (`/groups/*`). HOY es SIEMPRE `false` — ningún path de producción lo activa: el
     /// canal de Grupos vive DARK detrás de este flag, sin comportamiento nuevo en runtime. El sync de
     /// Grupos vigente lo sigue haciendo CKSyncEngine (`SplitSyncManager`); este canal es la CLASE NUEVA
-    /// (backend propio) que lo reemplazará cuando el Modo Nube de Grupos encienda (G4+). `var` (no `let`)
-    /// solo para que los tests lo togglean con `defer { restore }`.
-    static var groupsBackendEnabled = false
+    /// (backend propio) que lo reemplazará cuando el Modo Nube de Grupos encienda (G4+).
+    ///
+    /// DIFERIDOS #34 (decisión owner 2026-07-17): getter COMPUESTO `compilado && remoto` — el flag
+    /// remote-config (`CloudRemoteFlags.groupsBackendEnabled`) solo puede MATAR, nunca encender solo
+    /// (kill-switch sin release para el encendido de Grupos). Con el compilado `false` la composición
+    /// corta igual que hoy (byte-idéntico; el remoto ni se consulta — short-circuit). ⚠️ Nota para la
+    /// sesión de ENCENDIDO (compilado → `true`): un kill remoto transitorio congela el canal (outbox
+    /// retenido, sin pérdida) Y desvía creaciones nuevas a CloudKit, pero también cambia el shape de
+    /// los paths de teardown que leen este getter (sign-out push-all, borrado GDPR) — revisar entonces
+    /// si esos paths deben leer el compilado directo (detalle en qa/cloud/README §GET /config).
+    /// Setter = override en memoria (source-compatible con el idiom de tests `= true; defer { = false }`).
+    static var groupsBackendEnabled: Bool {
+        get {
+            if let override = groupsBackendEnabledTestOverride { return override }
+            return groupsBackendCompiledDefault && CloudRemoteFlags.groupsBackendEnabled
+        }
+        set { groupsBackendEnabledTestOverride = newValue }
+    }
+
+    /// Encendido COMPILADO del canal de Grupos (la palanca de release; el remoto es el kill).
+    private static let groupsBackendCompiledDefault = false
+    nonisolated(unsafe) private static var groupsBackendEnabledTestOverride: Bool?
+
+    /// Solo tests: vuelve el getter a la composición real (mismo racional que
+    /// `_testResetStorageModeOverride` — aislamiento explícito > coincidencia).
+    static func _testResetGroupsBackendEnabledOverride() {
+        groupsBackendEnabledTestOverride = nil
+    }
 
     /// SUB-flag de la purga de SwiftData History tras un ciclo completo del runtime (sigue DOBLE-DARK:
     /// exige además `syncRuntimeEnabled`, hoy `false` → la purga NO corre en producción todavía).

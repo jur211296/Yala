@@ -30,21 +30,34 @@ nonisolated enum WelcomeAccountChoiceLogic {
         case googleSignIn
     }
 
+    /// `remoteCloudEnabled`/`remoteOnboardingChoiceEnabled` = flags remote-config (DIFERIDOS #34,
+    /// §j.1): la card born-cloud exige AMBOS (el sub-flag de elección es un escalón POSTERIOR del
+    /// rollout del flag padre). Kill-switch = corta la ENTRADA: sin flag remoto no hay alta nueva.
     static func visibleNewOptions(
         isConfigured: Bool,
         isUITest: Bool,
-        bornCloudEnabled: Bool
+        bornCloudEnabled: Bool,
+        remoteCloudEnabled: Bool,
+        remoteOnboardingChoiceEnabled: Bool
     ) -> [NewOption] {
         var options: [NewOption] = [.privateAccount]
-        if isConfigured && !isUITest && bornCloudEnabled {
+        if isConfigured && !isUITest && bornCloudEnabled
+            && remoteCloudEnabled && remoteOnboardingChoiceEnabled {
             options.append(.cloudAccount)
         }
         return options
     }
 
-    static func visibleExistingOptions(isConfigured: Bool, isUITest: Bool) -> [ExistingOption] {
+    /// `remoteCloudEnabled` (DIFERIDOS #34): con el kill-switch OFF las cards de sign-in nube se
+    /// ocultan (bypass a restore, = prod DARK de hoy). Residual ratificado por el owner: un usuario
+    /// nube que REINSTALA bajo el kill no ve la card → no re-entra hasta re-encendido.
+    static func visibleExistingOptions(
+        isConfigured: Bool,
+        isUITest: Bool,
+        remoteCloudEnabled: Bool
+    ) -> [ExistingOption] {
         var options: [ExistingOption] = [.restoreICloud]
-        if isConfigured && !isUITest {
+        if isConfigured && !isUITest && remoteCloudEnabled {
             options += [.cloudSignIn, .googleSignIn]
         }
         return options

@@ -17,6 +17,13 @@ export interface Env {
   SUPABASE_URL: string; // p.ej. https://fostjbbwstyuunmmefuk.supabase.co
   SUPABASE_ANON_KEY: string; // apikey de PostgREST; el JWT del USUARIO va en Authorization (RLS activa)
 
+  // --- Remote-config del cliente (GET /config, DIFERIDOS #34) — percents de rollout 0-100 (§j.1/§j.2).
+  // Kill-switch sin release del cliente: flip = editar la var + `wrangler deploy`. Ausente/inválido → 0
+  // (fail-closed). staging sirve 100 (QA/dogfooding no pierde superficie); prod arranca en 0.
+  CLOUD_MODE_ROLLOUT_PERCENT?: string;
+  CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT?: string;
+  GROUPS_BACKEND_ROLLOUT_PERCENT?: string;
+
   // --- APNs (spike G0 Grupos→backend) — ausentes hasta configurar; /v1/debug/push responde 503 ---
   APNS_KEY_ID?: string; // Var (wrangler.toml): Key ID de 10 chars. NO es secreto (viaja en el header kid del JWT).
   APNS_AUTH_KEY?: string; // Secret (wrangler secret put): contenido PEM del AuthKey_<KEYID>.p8.

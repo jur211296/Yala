@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import type { Env } from "./env";
+import { handleConfig } from "./config";
 import { jsonError } from "./errors";
 import { handleAssert, handleChallenge, handleDevToken, handleRegister } from "./attest/routes";
 import { handleAudioTranscriptions, handleChatCompletions } from "./proxy/openai";
@@ -34,6 +35,9 @@ const app = new Hono<{ Bindings: Env }>();
 app.get("/healthz", (c) =>
   c.json({ ok: true, environment: c.env.ENVIRONMENT ?? "unknown", enforce: c.env.ENFORCE ?? "observe" }),
 );
+
+// --- Remote-config del cliente (DIFERIDOS #34): flags de rollout §j.1/§j.2, pública, sin bindings ---
+app.get("/config", handleConfig);
 
 // --- App Attest (task #2) ---
 app.post("/v1/attest/challenge", handleChallenge);

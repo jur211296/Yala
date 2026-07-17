@@ -60,6 +60,13 @@ struct StorageSettingsView: View {
         .navigationTitle(L10n.Storage.title)
         .navigationBarTitleDisplayMode(.inline)
         .task {
+            // DIFERIDOS #34: refresh del remote-config en la ENTRADA de migración (min-interval 6 h;
+            // no-op con backend placeholder). El kill-switch se re-verifica en la puerta.
+            // Bajo uitest NO se toca red (hermeticidad — los getters ya devuelven el default).
+            guard !SwiftDataConfiguration.isUITesting else { return }
+            await RemoteConfigClient.shared.refreshIfDue()
+        }
+        .task {
             // Refresca el journal vivo cada 1s mientras la pantalla está abierta (molde del panel DEBUG).
             while !Task.isCancelled {
                 controller?.refresh()
