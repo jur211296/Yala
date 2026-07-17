@@ -235,6 +235,7 @@ struct ContentView: View {
             // Cancel: user queda en el Chooser (showWelcomeFlow sigue true) —
             // puede elegir Restore/Invite o re-tap "Soy nuevo".
             Button(L10n.Action.cancel, role: .cancel) {}
+                .tint(.primary)  // A11Y-DM: el indigo global se pierde sobre el alert del Welcome oscuro
         } message: {
             Text(L10n.Welcome.FreshStart.alertMessage)
         }

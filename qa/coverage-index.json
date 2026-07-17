@@ -2235,7 +2235,7 @@
       "classification": "agentic",
       "coverage": "unit:YalaTests/CloudSignOutFlowLogicTests (camino por modo + visibilidad + veredicto push-all) + unit:YalaTests/RelaunchNetLogicTests (verify loop de presentacion efectiva + exit-on-background; fix carrera de anchors 2026-07-14: dueno unico del cover terminal en root, ProfileView cede) + unit:YalaTests/DataWipeServiceTests (contrato de keys del reset de prefs con defaults aislado: barrido completo auditado 2026-07-14, par expensesOnlyMode+financialMindset del pre-fill de onboarding [HALLAZGO 3 device], exclusiones deliberadas preservadas) — orquestacion (CloudSessionSignOut) y boot-cleanup (SwiftDataConfiguration.performSignOutWipeIfArmed, guardado por !isRunningTests A PROPOSITO: un test jamas debe borrar stores reales) son device/sim-only: botones DEBUG 'Arm sign-out wipe' + 'Force awaitingRelaunch' en CloudSyncDebugView + guion device MODO-NUBE-SIGNOUT-WELCOME-GUION-DEVICE.md (re-verificacion device del race pendiente del owner). Camino privado (.icloud) verificable en sim (reset a Welcome sin wipe). XCUITest determinista del cover posible via el seam DEBUG — diferido hasta plan CI (runner roto en la Mac local, Lista Negra M1). + G5-B matriz ×4 con fila solo-grupos (DARK tras groupsBackendEnabled): unit:YalaTests/CloudSignOutFlowLogicTests (path 4 filas + precedencias + confirmMessage) + YalaTests/CloudSync/GroupsSignOutFlowTests (14: liveGroupsPendingCount, purgeGroupsSyncState, boot hook groups-only kill-safe, markers, wipe personal no toca Split*)",
       "owner": "",
-      "lastVerified": "2026-07-16"
+      "lastVerified": "2026-07-17"
     },
     {
       "area": "secondary-session",
