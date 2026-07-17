@@ -297,6 +297,7 @@
       "codeGlobs": [
         "Yala/Services/CloudSync/CloudAuthService.swift",
         "Yala/Services/CloudSync/CloudAuthKeychainStorage.swift",
+        "Yala/Services/CloudSync/GoogleUserPairStore.swift",
         "Yala/Services/CloudSync/CloudAccountClient.swift",
         "Yala/Services/CloudSync/LiveCloudSessionProvider.swift",
         "Yala/App/Services/CloudBackendConfig.swift",
@@ -304,7 +305,7 @@
       ],
       "scenarioIDs": [],
       "classification": "manual",
-      "coverage": "unit:YalaTests/CloudSync/CloudAuthServiceTests,CloudAccountClientTests (nonce SHA256/RAW, decoder claim 3-estados anclado al wire, storage Keychain AfterFirstUnlockThisDeviceOnly) + e2e:CloudAccountClaimE2EStagingTests (claim real contra Worker staging, gate YALA_CLOUD_E2E) + manual device (SIWA real via panel DEBUG DEV_BUILD — sim no puede) — I7c, DARK: prod isConfigured=false conserva NoopCloudSessionProvider. B1 (5.1.1(v)): capture del authorizationCode post-sign-in + siwaExchangeHook inyectado default nil (composicion unica AppBootstrapper 14.55) + CloudAccountClient.siwaExchange/siwaRevoke — unit:SIWATokenRevocationTests (capture/dispatch/seam)",
+      "coverage": "unit:YalaTests/CloudSync/CloudAuthServiceTests,CloudAccountClientTests (nonce SHA256/RAW, decoder claim 3-estados anclado al wire, storage Keychain AfterFirstUnlockThisDeviceOnly) + e2e:CloudAccountClaimE2EStagingTests (claim real contra Worker staging, gate YALA_CLOUD_E2E) + manual device (SIWA real via panel DEBUG DEV_BUILD — sim no puede) — I7c, DARK: prod isConfigured=false conserva NoopCloudSessionProvider. B1 (5.1.1(v)): capture del authorizationCode post-sign-in + siwaExchangeHook inyectado default nil (composicion unica AppBootstrapper 14.55) + CloudAccountClient.siwaExchange/siwaRevoke — unit:SIWATokenRevocationTests (capture/dispatch/seam) + Google Sign-In sesion 1 (signInWithGoogle nonce custom SDK 9.2.0, provider persistido cloudauth.provider, par GoogleUserPairStore clear-before-write): unit:CloudAuthServiceTests(providerKey_roundTrip)+GoogleUserPairStoreTests+CloudAccountClientTests(claim_providerGoogle)+MigrationWorkExecutorTests(claim_providerGoogle) — WIRE sign-in google contra staging owner-asistido pendiente",
       "owner": "",
       "lastVerified": "2026-07-16"
     },

@@ -11,6 +11,7 @@
 		96CFFFC52EC3D721002AC31C /* OpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = 96CFFFC72EC3D721002AC31C /* OpenAI */; };
 		AEB9EB328BE2E1077D2F522E /* TelemetryDeck in Frameworks */ = {isa = PBXBuildFile; productRef = B6B43726ABA640E1D7F2C50D /* TelemetryDeck */; };
 		C97DFC7FD1F24FEC879D5C20 /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = 11FC810D61C746FA9D59B55A /* Auth */; };
+		87FEE9CC79174C25A83CF00E /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 585462E33E8448A1A5A0C015 /* GoogleSignIn */; };
 		CFADC3C22F2A42810040D198 /* YalaShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CFADC3B82F2A42810040D198 /* YalaShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		CFB1B6AF2F30EC930083BC08 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CFB1B6AE2F30EC930083BC08 /* WidgetKit.framework */; };
 		CFB1B6B12F30EC930083BC08 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CFB1B6B02F30EC930083BC08 /* SwiftUI.framework */; };
@@ -170,6 +171,7 @@
 				96CFFFC52EC3D721002AC31C /* OpenAI in Frameworks */,
 				AEB9EB328BE2E1077D2F522E /* TelemetryDeck in Frameworks */,
 				C97DFC7FD1F24FEC879D5C20 /* Auth in Frameworks */,
+				87FEE9CC79174C25A83CF00E /* GoogleSignIn in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -268,6 +270,7 @@
 				96CFFFC72EC3D721002AC31C /* OpenAI */,
 				B6B43726ABA640E1D7F2C50D /* TelemetryDeck */,
 				11FC810D61C746FA9D59B55A /* Auth */,
+				585462E33E8448A1A5A0C015 /* GoogleSignIn */,
 			);
 			productName = Yala;
 			productReference = 96CFFF932EC3CF06002AC31C /* Yala.app */;
@@ -413,6 +416,7 @@
 				96CFFFC62EC3D721002AC31C /* XCRemoteSwiftPackageReference "OpenAI" */,
 				4E97FB9187BF6FE7F4D701D1 /* XCRemoteSwiftPackageReference "SwiftSDK" */,
 				34F31E7526F241AD90BE48C0 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				C2064AA48EB94CC391D77D75 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 96CFFF942EC3CF06002AC31C /* Products */;
@@ -543,6 +547,8 @@
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				GID_CLIENT_ID = "295312853864-7dt8d2buik9nacg71aurdpqu56r0l4h8.apps.googleusercontent.com";
+				GID_URL_SCHEME = "com.googleusercontent.apps.295312853864-7dt8d2buik9nacg71aurdpqu56r0l4h8";
 				INFOPLIST_FILE = Yala/Resources/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -589,6 +595,8 @@
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				GID_CLIENT_ID = "295312853864-7dt8d2buik9nacg71aurdpqu56r0l4h8.apps.googleusercontent.com";
+				GID_URL_SCHEME = "com.googleusercontent.apps.295312853864-7dt8d2buik9nacg71aurdpqu56r0l4h8";
 				INFOPLIST_FILE = Yala/Resources/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -847,6 +855,8 @@
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				GID_CLIENT_ID = "295312853864-uaglr0r69rr6dtsg0sbo3rqbqgi7hdj7.apps.googleusercontent.com";
+				GID_URL_SCHEME = "com.googleusercontent.apps.295312853864-uaglr0r69rr6dtsg0sbo3rqbqgi7hdj7";
 				INFOPLIST_FILE = Yala/Resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Yala Dev";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
@@ -892,6 +902,8 @@
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				GID_CLIENT_ID = "295312853864-uaglr0r69rr6dtsg0sbo3rqbqgi7hdj7.apps.googleusercontent.com";
+				GID_URL_SCHEME = "com.googleusercontent.apps.295312853864-uaglr0r69rr6dtsg0sbo3rqbqgi7hdj7";
 				INFOPLIST_FILE = Yala/Resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Yala Dev";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
@@ -1532,6 +1544,14 @@
 				minimumVersion = 2.0.0;
 			};
 		};
+		C2064AA48EB94CC391D77D75 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 9.2.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1554,6 +1574,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 34F31E7526F241AD90BE48C0 /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Auth;
+		};
+		585462E33E8448A1A5A0C015 /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C2064AA48EB94CC391D77D75 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

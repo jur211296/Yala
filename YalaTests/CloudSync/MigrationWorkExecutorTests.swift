@@ -180,7 +180,8 @@ struct MigrationWorkExecutorTests {
         heartbeatInterval: TimeInterval = 60,
         tombstoneSource: ReverseTombstoneSource? = nil,
         adoptQuiescenceSignal: @escaping () -> Bool = { true },
-        claimStore: CloudClaimActionStore? = nil
+        claimStore: CloudClaimActionStore? = nil,
+        provider: String = "apple"
     ) -> MigrationWorkExecutor {
         let token: () async -> String? = { "jwt" }
         let account = CloudAccountClient(baseURL: workerURL, urlSession: stub)
@@ -191,7 +192,7 @@ struct MigrationWorkExecutorTests {
             engine: engine, pushClient: push, pullClient: pull, merkleClient: merkle,
             accountClient: account, session: session, context: context,
             calendar: Calendar(identifier: .gregorian), now: now ?? { self.fixedNow },
-            deviceID: "device-1", beacon: CloudBeacon(store: beaconStore),
+            deviceID: "device-1", provider: provider, beacon: CloudBeacon(store: beaconStore),
             personalStoreURL: personalStoreURL,
             storageDefaults: storageDefaults ?? makeIsolatedDefaults(prefix: "mwe.storage"),
             snapshotPageSize: 200, heartbeatInterval: heartbeatInterval,
@@ -235,6 +236,20 @@ struct MigrationWorkExecutorTests {
         _ = await executor.performClaim()
         #expect(stub.lastClaimBody?["migration"] as? Bool == true,
                 "el claim de la MIGRACIÓN debe armar migration_in_progress en el INSERT atómico")
+    }
+
+    @Test("performClaim con provider 'google': el BODY del claim lleva provider=google (sesión 1 Google Sign-In)")
+    func claim_providerGoogle_sendsGoogleInBody() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    provider: "google")
+        _ = await executor.performClaim()
+        #expect(stub.lastClaimBody?["provider"] as? String == "google",
+                "el provider REAL de la sesión debe llegar al BODY del claim (lección d49d2e47)")
     }
 
     // MARK: - Beacon / efectos

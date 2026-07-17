@@ -500,6 +500,13 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncAuth siwaExchangeFailed reason=\(reason, privacy: .public)")
     }
 
+    /// Google Sign-In (sesión 1): el PAR (googleUserID, sub) NO se escribió tras un sign-in exitoso.
+    /// `reason` sin PII (`no-google-user-id` / `no-sub` / `keychain`) — AJUSTE #1 del plan: jamás un
+    /// par incompleto; sin par, el `disconnect()` de sesión 3 hace skip natural (población ~0).
+    static func googlePairCaptureSkipped(reason: String) {
+        logger.notice("CloudSyncAuth googlePairCaptureSkipped reason=\(reason, privacy: .public)")
+    }
+
     /// Revoke saltado: no hay par custodiado (sesión previa al capture — población cero — o canje fallido).
     static func siwaRevokeSkippedNoToken() {
         logger.notice("CloudSyncAuth siwaRevokeSkippedNoToken")

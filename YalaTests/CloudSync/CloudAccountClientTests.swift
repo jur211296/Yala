@@ -132,6 +132,17 @@ struct CloudAccountClientTests {
         #expect(body?["device_id"] as? String == "d")
     }
 
+    @Test func claim_providerGoogle_sendsProviderInBody() async {
+        // Google Sign-In (sesión 1): el provider REAL viaja en el BODY del claim (lección d49d2e47:
+        // assertar lo ENVIADO, no el param) — `claim_account` lo inserta verbatim en profiles.provider.
+        let stub = AccountStubHTTP(status: 200, body: Data(#"{"state":"created"}"#.utf8))
+        let client = CloudAccountClient(baseURL: base, urlSession: stub)
+        _ = await client.claim(jwt: "j", deviceID: "d", provider: "google")
+        let body = try? JSONSerialization.jsonObject(with: stub.lastRequest?.httpBody ?? Data()) as? [String: Any]
+        #expect(body?["provider"] as? String == "google")
+        #expect(body?["device_id"] as? String == "d")
+    }
+
     // MARK: - migrationProgress (cutover §g.4, I10-wiring w6)
 
     @Test func migrationProgress_okTrue_isOk() async {

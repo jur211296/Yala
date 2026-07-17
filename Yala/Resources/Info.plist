@@ -10,6 +10,7 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>$(URL_SCHEME)</string>
+				<string>$(GID_URL_SCHEME)</string>
 			</array>
 		</dict>
 	</array>
@@ -17,6 +18,8 @@
 	<string>$(APP_GROUP_IDENTIFIER)</string>
 	<key>URL_SCHEME</key>
 	<string>$(URL_SCHEME)</string>
+	<key>GIDClientID</key>
+	<string>$(GID_CLIENT_ID)</string>
 	<key>TELEMETRY_DECK_APP_ID</key>
 	<string>9D2922BB-2BCB-4B63-A0EB-B3AAD33CD6CA</string>
 	<key>NSMicrophoneUsageDescription</key>

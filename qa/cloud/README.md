@@ -892,6 +892,32 @@ Panel (D1 del review): `CloudSyncMigrationPanelModel.listRebinds()` — lista `e
 (corto, sin PII) de los testigos con `lastReboundAt != nil` (molde `scanOrphanMetadata`, `#Predicate`
 concreto, NO muta). Convierte la checklist en 1 tap.
 
+## Google Sign-In (sesión 1 — brief `docs/modo-nube/briefs/BRIEF-GOOGLE-SIGNIN-V1.md`, 2026-07-16)
+
+Decisión owner (revierte el diferimiento "Google = fase web/Android" del 2026-07-11): v1 lanza con
+Apple Y Google. Config vigente:
+
+- **Supabase Auth STAGING (`fostjbbwstyuunmmefuk`): provider Google ON** (owner vía dashboard
+  2026-07-16, verificado `GET /auth/v1/settings` → `google: true`). "Client IDs" = los 2 iOS client
+  IDs separados por coma (validan el `aud` del id_token), secret VACÍO (clients iOS no tienen),
+  **Skip Nonce Check OFF — restricción DURA**: el SDK ≥9.0.0 acepta nonce custom (patrón idéntico a
+  SIWA: raw a Supabase, SHA-256 hex al SDK); activar el skip degradaría TODOS los clientes futuros
+  del provider (es un toggle global) y haría re-jugable ~1h un id_token capturado.
+- **Client IDs de GCP** (proyecto `yala-502622`, app en estado Prueba — test user
+  jur211296@gmail.com): copia de referencia en **`~/Secrets/yala-google/client-ids.md`** (prod
+  `com.jurgenschmidt.yala` + dev `com.jurgenschmidt.yala.dev`; los mismos valores viajan como build
+  settings `GID_CLIENT_ID`/`GID_URL_SCHEME` del pbxproj — NO son secretos, van en el Info.plist del
+  binario). PENDIENTE encadenado al encendido: "Publicar app" en GCP (en Prueba solo los test users
+  pueden firmar).
+- **PROD (`kefvaiymtgytemwbltlz`): Google NO configurado aún** — se configura en el encendido
+  (Bloque C), misma config exacta (el mismo par de client IDs sirve: el `aud` es del client de
+  Google, no del proyecto Supabase).
+- **Gateway/Worker: cero cambios** (verifica JWTs por JWKS sin mirar provider; los goldens de
+  account ya ejercitan `provider: "google"`).
+- Cliente: `CloudAuthService.signInWithGoogle()` (SDK GoogleSignIn-iOS 9.2.0 SPM, solo target Yala)
+  + par `(googleUserID, sub)` en `GoogleUserPairStore` (molde `SIWARefreshTokenStore`; consumidor =
+  revoke de sesión 3) + `cloudauth.provider` como fuente del `provider` del claim.
+
 ## Proyecto Supabase de PRODUCCIÓN (DIFERIDOS #23 — creado 2026-07-11)
 
 Proyecto **`kefvaiymtgytemwbltlz`** (`yala-modo-nube-production`), organización dedicada
@@ -929,8 +955,10 @@ v2.192.0 (gotcha issuer SIWA ≥2.177.0 cubierto).
 **Auth de prod (decisiones owner 2026-07-11):** provider **Apple** ON (Client IDs
 `com.jurgenschmidt.yala,com.jurgenschmidt.yala.dev`, secret vacío — flujo nativo); provider
 **Email OFF** (solo se re-habilita temporalmente para correr el gate RLS, que usa password grant —
-gotcha: con Email OFF el login devuelve `email_provider_disabled`); Google = fase web/Android, NO
-configurado; **inactivity-timeout 720 h (30 días)** + **time-box 0 (never)** — la mitigación
+gotcha: con Email OFF el login devuelve `email_provider_disabled`); Google NO configurado aún en
+prod — la decisión "fase web/Android" fue REVERTIDA (2026-07-16, brief Google Sign-In): se
+configura en el encendido con la misma config de staging (ver §"Google Sign-In" arriba);
+**inactivity-timeout 720 h (30 días)** + **time-box 0 (never)** — la mitigación
 server-side de DIFERIDOS #23 (racional en el vault, `MODO-NUBE-DIFERIDOS.md` §23).
 
 **Gateway:** `gateway/wrangler.toml` `[env.production.vars]` apunta a este proyecto (URL + anon

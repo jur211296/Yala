@@ -8,6 +8,7 @@
 
 import CloudKit
 import CoreData
+import GoogleSignIn
 import OSLog
 import SwiftData
 import SwiftUI
@@ -1483,6 +1484,11 @@ final class AppBootstrapper {
 
     /// Procesa URLs entrantes (deep links y universal links)
     func handleIncomingURL(_ url: URL) {
+        // Google Sign-In (sesión 1): el SDK consume su callback (scheme = reversed client ID). Va
+        // PRIMERO — el guard de `urlScheme` de abajo descartaría ese scheme. No-op barato para URLs
+        // ajenas; sin orden-dependencia con invites (un invite link jamás es del scheme de Google).
+        if GIDSignIn.sharedInstance.handle(url) { return }
+
         // Universal link: https://yala-app.pe/invite?s=...
         if InviteLinkService.isInviteLink(url) {
             handleInviteLink(url)

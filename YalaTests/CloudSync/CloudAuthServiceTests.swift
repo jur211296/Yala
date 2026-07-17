@@ -143,4 +143,114 @@ struct CloudAuthServiceTests {
         let accessible = attrs?[kSecAttrAccessible as String] as? String
         #expect(accessible == (kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly as String))
     }
+
+    // MARK: - Provider persistido (Google Sign-In sesión 1)
+
+    @Test func providerKey_roundTrip_storeReadClear() throws {
+        // La key `cloudauth.provider` es credencial de SESIÓN (se escribe en ambos sign-ins, se borra
+        // en signOut). Round-trip con service aislado (molde keychainStorage_roundTrip).
+        let service = "test.cloudauth.\(UUID().uuidString)"
+        let storage = CloudAuthKeychainStorage(service: service)
+        let key = "cloudauth.provider"
+        defer { try? storage.remove(key: key) }
+
+        #expect(try storage.retrieve(key: key) == nil)
+        try storage.store(key: key, value: Data("google".utf8))
+        #expect(try storage.retrieve(key: key) == Data("google".utf8))
+        // Re-sign-in con el otro provider: el más fresco gana.
+        try storage.store(key: key, value: Data("apple".utf8))
+        #expect(try storage.retrieve(key: key) == Data("apple".utf8))
+        // signOut → clear.
+        try storage.remove(key: key)
+        #expect(try storage.retrieve(key: key) == nil)
+    }
+}
+
+// MARK: - Roundtrip Keychain del PAR Google (googleUserID, sub) — molde SIWARefreshTokenStoreTests
+
+@MainActor
+@Suite
+struct GoogleUserPairStoreTests {
+
+    /// Service único por test: aísla del Keychain real de la app y de otros tests (sin `.serialized`).
+    private func makeStore() -> (store: GoogleUserPairStore, raw: CloudAuthKeychainStorage) {
+        let storage = CloudAuthKeychainStorage(service: "test.googlepair.\(UUID().uuidString)")
+        return (GoogleUserPairStore(storage: storage), storage)
+    }
+
+    @Test func writeReadClear_roundtrip() throws {
+        let (store, _) = makeStore()
+        defer { store.clear() }
+        let pair = GoogleUserPairStore.Pair(googleUserID: "google-A", sub: "sub-a")
+
+        try store.write(pair)
+        #expect(store.read() == pair)
+
+        store.clear()
+        #expect(store.read() == nil)
+    }
+
+    @Test func rewrite_overwritesBothKeys() throws {
+        let (store, _) = makeStore()
+        defer { store.clear() }
+        try store.write(GoogleUserPairStore.Pair(googleUserID: "google-OLD", sub: "sub-old"))
+        try store.write(GoogleUserPairStore.Pair(googleUserID: "google-NEW", sub: "sub-new"))
+
+        // Re-sign-in: el par completo más fresco gana (write pisa AMBAS keys, jamás mezcla).
+        #expect(store.read() == GoogleUserPairStore.Pair(googleUserID: "google-NEW", sub: "sub-new"))
+    }
+
+    /// Invariante anti-cruce (heredada del SERIO #1 de B1): `write` hace CLEAR del par previo ANTES
+    /// de escribir → ningún estado intermedio (kill entre writes) produce un par CRUZADO
+    /// `(googleUserID nuevo, sub viejo)`: o nil, o el par del dueño intacto, o el par nuevo completo.
+    @Test func writeSequence_intermediateStates_neverYieldCrossedPair() throws {
+        let owner = GoogleUserPairStore.Pair(googleUserID: "google-OWNER", sub: "sub-owner")
+        let incoming = GoogleUserPairStore.Pair(googleUserID: "google-GUEST", sub: "sub-guest")
+        let crossed = GoogleUserPairStore.Pair(googleUserID: incoming.googleUserID, sub: owner.sub)
+
+        let steps: [(String, (GoogleUserPairStore, CloudAuthKeychainStorage) throws -> Void)] = [
+            ("kill tras clear", { store, _ in store.clear() }),
+            ("kill tras store(user)", { store, raw in
+                store.clear()
+                try raw.store(key: GoogleUserPairStore.userIDKey, value: Data(incoming.googleUserID.utf8))
+            }),
+            ("write completo", { store, _ in try store.write(incoming) }),
+        ]
+        for (label, run) in steps {
+            let (store, raw) = makeStore()
+            defer { store.clear() }
+            try store.write(owner)
+            try run(store, raw)
+            let result = store.read()
+            #expect(result != crossed, "estado '\(label)' produjo un par CRUZADO")
+            #expect(result == nil || result == owner || result == incoming,
+                    "estado '\(label)': \(String(describing: result))")
+        }
+    }
+
+    @Test func halfPair_userWithoutSub_readsNil() throws {
+        let (store, raw) = makeStore()
+        defer { store.clear() }
+        // Kill entre writes: solo el userID presente → el reader lo trata como AUSENCIA.
+        try raw.store(key: GoogleUserPairStore.userIDKey, value: Data("google-A".utf8))
+
+        #expect(store.read() == nil)
+    }
+
+    @Test func halfPair_subWithoutUser_readsNil() throws {
+        let (store, raw) = makeStore()
+        defer { store.clear() }
+        try raw.store(key: GoogleUserPairStore.subKey, value: Data("sub-a".utf8))
+
+        #expect(store.read() == nil)
+    }
+
+    @Test func emptyValues_readAsNil() throws {
+        let (store, raw) = makeStore()
+        defer { store.clear() }
+        try raw.store(key: GoogleUserPairStore.userIDKey, value: Data())
+        try raw.store(key: GoogleUserPairStore.subKey, value: Data("sub-a".utf8))
+
+        #expect(store.read() == nil)
+    }
 }

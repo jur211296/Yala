@@ -60,6 +60,17 @@ final class CloudSyncDebugModel {
         await refreshCredential()
     }
 
+    func signInGoogle() async {
+        isWorking = true; defer { isWorking = false }
+        do {
+            try await auth.signInWithGoogle()
+            lastMessage = "Sign in (Google) OK — \(sessionLabel)"
+        } catch {
+            lastMessage = "Google sign in failed: \(error.localizedDescription)"
+        }
+        await refreshCredential()
+    }
+
     func claim() async {
         isWorking = true; defer { isWorking = false }
         guard let jwt = await auth.accessToken() else {
@@ -67,7 +78,14 @@ final class CloudSyncDebugModel {
             return
         }
         let deviceID = UIDevice.current.identifierForVendor?.uuidString ?? "yala-debug-device"
-        let outcome = await accountClient.claim(jwt: jwt, deviceID: deviceID, provider: "apple")
+        // Provider REAL de la sesión. RESIDUAL (ajuste #5): el fallback `?? "apple"` solo aplica si
+        // la key se perdió (población ~0 — se escribe en el mismo sign-in); una sesión Google con
+        // key perdida claimearía "apple". Preferible a fallar el claim del panel. OJO (review
+        // adversarial #4): en rama `created` el fallback queda VERBATIM en `profiles.provider`
+        // server-side → la red post-claim de R9 (sesión 2: `existing_stable.profile.provider` vs
+        // provider real) daría falso mismatch PERPETUO para ese usuario. Pre-flags y población ~0.
+        let provider = auth.storedProvider() ?? "apple"
+        let outcome = await accountClient.claim(jwt: jwt, deviceID: deviceID, provider: provider)
         switch outcome {
         case .success(let state):
             lastClaimState = "\(state)"
@@ -822,6 +840,9 @@ struct CloudSyncDebugView: View {
         VStack(spacing: DS.Spacing.sm) {
             actionButton("Sign in with Apple", disabled: !model.isConfigured) {
                 await model.signIn()
+            }
+            actionButton("Sign in with Google", disabled: !model.isConfigured) {
+                await model.signInGoogle()
             }
             actionButton("Claim account", disabled: !model.isConfigured) {
                 await model.claim()

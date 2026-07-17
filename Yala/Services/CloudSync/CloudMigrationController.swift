@@ -193,9 +193,17 @@ final class CloudMigrationController {
         let push = SyncPushClient(tokenProvider: token, attestProvider: attest)
         let pull = SyncPullClient(tokenProvider: token, attestProvider: attest)
         let merkle = SyncMerkleClient(tokenProvider: token, attestProvider: attest)
+        // Provider REAL de la sesión hacia el claim/faro. RESIDUAL (ajuste #5): el fallback
+        // `?? "apple"` solo aplica con la key perdida (población ~0 — se escribe en el mismo
+        // sign-in); una sesión Google sin key claimearía "apple". El default `= "apple"` del init
+        // se CONSERVA como red para tests y callers legacy.
         return MigrationWorkExecutor(
             engine: engine, pushClient: push, pullClient: pull, merkleClient: merkle,
             accountClient: account, session: session, context: context, deviceID: deviceID,
+            // Fallback residual (review adversarial #4): key perdida ⇒ "apple" VERBATIM en
+            // `profiles.provider` si el claim crea la fila → falso mismatch perpetuo en la red R9
+            // post-claim de sesión 2. Población ~0 (la key se escribe en el propio sign-in).
+            provider: CloudAuthService.shared.storedProvider() ?? "apple",
             adoptQuiescenceSignal: { iCloudSyncService.shared.isImportQuiescent })
     }
 

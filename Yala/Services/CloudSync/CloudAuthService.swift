@@ -25,6 +25,7 @@ import Foundation
 import UIKit
 
 import Auth
+import GoogleSignIn
 
 /// Decisión PURA de captura del perfil de Apple (email/fullName) — extraída para testear SIN el SDK la
 /// regla anti-sangrado de PII entre cuentas (fix review R2 #1): si el Apple ID entrante DIFIERE del
@@ -127,6 +128,10 @@ final class CloudAuthService: NSObject {
     private var signInContinuation: CheckedContinuation<Void, Error>?
     private var authController: ASAuthorizationController?
 
+    /// Sign-in de GOOGLE en vuelo — guard COMPARTIDO con el de SIWA (`signInContinuation`): un
+    /// sign-in Apple y uno Google jamás conviven (los taps del panel son idempotentes por-flujo).
+    private var googleSignInInFlight = false
+
     private var didRegisterRevocationObserver = false
 
     /// Hook INYECTADO del canje SIWA (B1, AJUSTE #2 del review — layering): la composición de producción
@@ -140,6 +145,10 @@ final class CloudAuthService: NSObject {
     private static let keyCapturedEmail = "cloudauth.captured.email"
     private static let keyCapturedFullName = "cloudauth.captured.fullName"
     private static let keyAppleUserID = "cloudauth.appleUserID"
+    /// Provider del ÚLTIMO sign-in exitoso (`"apple"` | `"google"`) — credencial de SESIÓN (se borra
+    /// en `signOut()`, a diferencia de los pares por-provider que sobreviven). Fuente para el
+    /// `provider` del claim (`storedProvider()`).
+    private static let keyProvider = "cloudauth.provider"
 
     // MARK: - Init
 
@@ -214,6 +223,10 @@ final class CloudAuthService: NSObject {
     /// Nombre completo capturado en el primer sign-in (para I14).
     func capturedFullName() -> String? { readProfileString(Self.keyCapturedFullName) }
 
+    /// Provider del último sign-in exitoso (`"apple"` | `"google"`). `nil` = sin sesión firmada en
+    /// este device (o key perdida — los call-sites de claim caen a `?? "apple"` con residual anotado).
+    func storedProvider() -> String? { readProfileString(Self.keyProvider) }
+
     // MARK: - Sign in with Apple
 
     /// Lanza el flujo nativo de Sign in with Apple y, si tiene éxito, crea la sesión de Supabase vía
@@ -221,7 +234,13 @@ final class CloudAuthService: NSObject {
     /// (gotcha "Unacceptable audience" si se cruzan). Captura email/fullName SOLO en el primer sign-in.
     func signInWithApple() async throws {
         guard client != nil else { throw CloudAuthError.notConfigured }
-        guard signInContinuation == nil else { throw CloudAuthError.signInAlreadyInFlight }
+        // Guard in-flight BIDIRECCIONAL (fix review adversarial #1): sin `!googleSignInInFlight`, un
+        // SIWA arrancado durante el await del sheet de Google podía aterrizar su exchange entre el
+        // exchange de Google y su reanudación → par (googleUserID_G, sub_APPLE) CRUZADO por valores,
+        // que el clear-before-write del store no puede prevenir.
+        guard signInContinuation == nil, !googleSignInInFlight else {
+            throw CloudAuthError.signInAlreadyInFlight
+        }
 
         let rawNonce = Self.randomNonceString()
         currentNonce = rawNonce
@@ -241,6 +260,129 @@ final class CloudAuthService: NSObject {
         }
     }
 
+    // MARK: - Google Sign-In (sesión 1 del brief BRIEF-GOOGLE-SIGNIN-V1)
+
+    /// Lanza el flujo de Google Sign-In (SDK GoogleSignIn-iOS ≥9 con nonce CUSTOM — patrón idéntico a
+    /// SIWA: aleatorio seguro → SHA-256 HEX al SDK, RAW a Supabase; `skip_nonce_check` queda OFF en el
+    /// proyecto Supabase, restricción dura del brief) y, si tiene éxito, crea la sesión de Supabase
+    /// vía `signInWithIdToken(provider: .google)`. El `accessToken` de Google acompaña SIEMPRE
+    /// (GoTrue valida `at_hash` si viene en el id_token).
+    ///
+    /// Cancel del usuario (`GIDSignInError.canceled`) → rethrow limpio; el caller decide el copy
+    /// (D2 del plan: un case `.cancelled` dedicado llega con la UI real de la sesión 2).
+    func signInWithGoogle() async throws {
+        guard let client else { throw CloudAuthError.notConfigured }
+        // Guard in-flight COMPARTIDO con SIWA: un sign-in Apple y uno Google jamás conviven.
+        guard signInContinuation == nil, !googleSignInInFlight else {
+            throw CloudAuthError.signInAlreadyInFlight
+        }
+        googleSignInInFlight = true
+        defer { googleSignInInFlight = false }
+
+        let rawNonce = Self.randomNonceString()
+
+        // Un flujo de sign-in interactivo SIEMPRE corre con la app en foreground (hay un root VC) —
+        // misma premisa que el `presentationAnchor` de SIWA.
+        guard let presenter = Self.topPresentingViewController() else {
+            preconditionFailure("Google Sign-In requires a presenting view controller")
+        }
+
+        let result: GIDSignInResult
+        do {
+            // Firma verificada contra GIDSignIn.h 9.2.0:
+            // `signInWithPresentingViewController:hint:additionalScopes:nonce:completion:` →
+            // Swift async `signIn(withPresenting:hint:additionalScopes:nonce:)`.
+            result = try await GIDSignIn.sharedInstance.signIn(
+                withPresenting: presenter,
+                hint: nil,
+                additionalScopes: nil,
+                nonce: Self.sha256Hex(rawNonce)
+            )
+        } catch {
+            CloudSyncBreadcrumb.authSignInFailed(reason: "google-authorization")
+            throw error
+        }
+
+        guard let idToken = result.user.idToken?.tokenString else {
+            CloudSyncBreadcrumb.authSignInFailed(reason: "google-missing-idtoken")
+            throw CloudAuthError.missingIdentityToken
+        }
+
+        do {
+            _ = try await client.signInWithIdToken(
+                credentials: .init(
+                    provider: .google,
+                    idToken: idToken,
+                    accessToken: result.user.accessToken.tokenString,
+                    nonce: rawNonce
+                )
+            )
+        } catch {
+            CloudSyncBreadcrumb.authSignInFailed(reason: "idtoken-exchange")
+            throw error
+        }
+        CloudSyncBreadcrumb.authSignedIn()
+        writeProfileString("google", forKey: Self.keyProvider)
+
+        // Captura de perfil con la MISMA regla anti-sangrado que SIWA (helper compartido). La
+        // identidad Google almacenada es el `googleUserID` del PAR (leída ANTES de re-escribirlo).
+        // Corre TRAS el exchange exitoso (a diferencia de SIWA, que captura en el delegate): así un
+        // exchange fallido jamás deja perfil capturado SIN par — un perfil huérfano dejaría ciega la
+        // regla anti-sangrado del siguiente sign-in (identidad almacenada nil ⇒ "primer sign-in").
+        // Google re-entrega email/nombre en CADA sign-in, así que no se pierde nada.
+        // Cambio CROSS-provider (fix review adversarial #2): un perfil capturado de proveniencia
+        // APPLE es invisible a la decisión de abajo (compara contra el googleUserID del par) — sin
+        // este pre-clear, el email/nombre del humano SIWA anterior sobreviviría como perfil de esta
+        // sesión Google, y su `keyAppleUserID` residual dejaría la red de revocación de Apple
+        // (`refreshCredentialStateIfNeeded`) apuntando al humano equivocado: si ÉL revocara su
+        // autorización SIWA, cerraría ESTA sesión Google.
+        if storedAppleUserID() != nil {
+            clearCapturedProfile()
+        }
+        let googleUserID = result.user.userID
+        if let googleUserID {
+            let profile = result.user.profile
+            applyProfileCapture(
+                persistIncomingUserIDToKey: nil,  // la identidad Google se persiste como PAR (abajo)
+                storedUserID: GoogleUserPairStore(storage: profileStore).read()?.googleUserID,
+                incomingUserID: googleUserID,
+                email: profile.flatMap { $0.email.isEmpty ? nil : $0.email },
+                fullName: profile.flatMap { $0.name.isEmpty ? nil : $0.name }
+            )
+        }
+
+        // PAR (googleUserID, sub) — AJUSTE #1 del /review-plan: SOLO con AMBOS presentes
+        // (`GIDGoogleUser.userID` es `String?`); si falta cualquiera ⇒ skip con breadcrumb, jamás un
+        // par incompleto (el `disconnect()` de sesión 3 tiene skip natural sin par).
+        if let googleUserID, let sub = currentUserID {
+            do {
+                try GoogleUserPairStore(storage: profileStore)
+                    .write(.init(googleUserID: googleUserID, sub: sub))
+            } catch {
+                #if DEBUG
+                print("CloudAuthService.signInWithGoogle: pair write failed: \(error)")
+                #endif
+                CloudSyncBreadcrumb.googlePairCaptureSkipped(reason: "keychain")
+            }
+        } else {
+            CloudSyncBreadcrumb.googlePairCaptureSkipped(
+                reason: googleUserID == nil ? "no-google-user-id" : "no-sub")
+        }
+    }
+
+    /// Root/topmost view controller del key window — presentador del sheet web de Google (mismo
+    /// criterio de ventana que el `presentationAnchor` de SIWA, devolviendo UIViewController).
+    private static func topPresentingViewController() -> UIViewController? {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let window = scenes.flatMap(\.windows).first(where: \.isKeyWindow)
+            ?? scenes.flatMap(\.windows).first
+        guard var top = window?.rootViewController else { return nil }
+        while let presented = top.presentedViewController {
+            top = presented
+        }
+        return top
+    }
+
     /// Cierra la sesión LOCAL (no revoca refresh tokens en el server — es el sign-out del device) y
     /// BORRA el perfil capturado (email/fullName/appleUserID) del Keychain propio — fix review R2 #1:
     /// sin este borrado, un usuario B que firme después en el mismo device heredaría el email/nombre
@@ -248,6 +390,14 @@ final class CloudAuthService: NSObject {
     func signOut() async {
         guard let client else { return }
         clearCapturedProfile()
+        // `keyProvider` es credencial de SESIÓN (no del provider) → muere con el sign-out. Cubre de
+        // una vez los 6 paths de `CloudSessionSignOut` (todos llaman este `signOut()`).
+        clearStoredProvider()
+        // Higiene Google (H6 del brief): sign-out LOCAL del SDK — jamás `disconnect()` (eso revoca el
+        // grant OAuth entero; es el paso 4b del borrado de cuenta, sesión 3). Sin esto, la sesión del
+        // SDK de la cuenta A quedaría viva al entrar B. No-op si nunca hubo sign-in Google. El PAR
+        // Google NO se borra (paridad con el par SIWA: credencial del provider, no de la sesión).
+        GIDSignIn.sharedInstance.signOut()
         do {
             try await client.signOut(scope: .local)
             CloudSyncBreadcrumb.authSignedOut(reason: "user")
@@ -355,23 +505,67 @@ final class CloudAuthService: NSObject {
             let full = PersonNameComponentsFormatter().string(from: name)
             return full.isEmpty ? nil : full
         }
+        // Cambio CROSS-provider simétrico (fix review adversarial #2): perfil capturado de
+        // proveniencia GOOGLE (par presente, sin appleUserID) es invisible a `decide` → pre-clear.
+        // El PAR Google NO se borra (credencial del provider — el match por `sub` de sesión 3 hace
+        // el residuo inofensivo). Byte-idéntico para todo estado pre-Google (par imposible).
+        if readProfileString(Self.keyAppleUserID) == nil,
+           GoogleUserPairStore(storage: profileStore).read() != nil {
+            clearCapturedProfile()
+        }
+        applyProfileCapture(
+            persistIncomingUserIDToKey: Self.keyAppleUserID,
+            storedUserID: readProfileString(Self.keyAppleUserID),
+            incomingUserID: credential.user,
+            email: credential.email,
+            fullName: incomingFullName
+        )
+    }
+
+    /// Trozo COMPARTIDO de la captura de perfil (Apple + Google) — la regla anti-sangrado vive en
+    /// `CloudAuthProfileCapture.decide` (pura, testeada); esto solo la aplica sobre el Keychain.
+    /// `persistIncomingUserIDToKey`: Apple persiste su identidad aquí (`keyAppleUserID`, SIEMPRE —
+    /// para `getCredentialState`); Google pasa `nil` (su identidad se persiste como PAR en el
+    /// call-site, tras el exchange). Extraído con BYTE-IDENTIDAD del path SIWA (ajuste #2).
+    private func applyProfileCapture(
+        persistIncomingUserIDToKey userIDKey: String?,
+        storedUserID: String?,
+        incomingUserID: String,
+        email: String?,
+        fullName: String?
+    ) {
         let decision = CloudAuthProfileCapture.decide(
-            storedAppleUserID: readProfileString(Self.keyAppleUserID),
-            incomingAppleUserID: credential.user,
+            storedAppleUserID: storedUserID,
+            incomingAppleUserID: incomingUserID,
             hasStoredEmail: readProfileString(Self.keyCapturedEmail) != nil,
             hasStoredFullName: readProfileString(Self.keyCapturedFullName) != nil,
-            hasIncomingEmail: credential.email != nil,
-            hasIncomingFullName: incomingFullName != nil
+            hasIncomingEmail: email != nil,
+            hasIncomingFullName: fullName != nil
         )
         if decision.clearStoredProfile {
             clearCapturedProfile()
         }
-        writeProfileString(credential.user, forKey: Self.keyAppleUserID)
-        if decision.writeEmail, let email = credential.email {
+        if let userIDKey {
+            writeProfileString(incomingUserID, forKey: userIDKey)
+        }
+        if decision.writeEmail, let email {
             writeProfileString(email, forKey: Self.keyCapturedEmail)
         }
-        if decision.writeFullName, let full = incomingFullName {
-            writeProfileString(full, forKey: Self.keyCapturedFullName)
+        if decision.writeFullName, let fullName {
+            writeProfileString(fullName, forKey: Self.keyCapturedFullName)
+        }
+    }
+
+    /// Borra `keyProvider` (credencial de sesión) — separado de `clearCapturedProfile` porque el
+    /// clear del perfil también corre a MITAD de un sign-in (cambio de cuenta) donde el provider
+    /// aún no se re-escribió.
+    private func clearStoredProvider() {
+        do {
+            try profileStore.remove(key: Self.keyProvider)
+        } catch {
+            #if DEBUG
+            print("CloudAuthService.clearStoredProvider: \(error)")
+            #endif
         }
     }
 
@@ -455,6 +649,8 @@ extension CloudAuthService: ASAuthorizationControllerDelegate {
                         credentials: .init(provider: .apple, idToken: idToken, nonce: nonce)
                     )
                     CloudSyncBreadcrumb.authSignedIn()
+                    // Provider de la sesión (fuente del claim) — espejo del write en signInWithGoogle.
+                    self.writeProfileString("apple", forKey: Self.keyProvider)
                     // Tras el exchange EXITOSO (hay JWT de Supabase para el Worker). Jamás bloquea/retrasa.
                     SIWAExchangeCapture.dispatch(
                         hook: self.siwaExchangeHook, codeData: siwaCodeData, appleUserID: appleUserID
