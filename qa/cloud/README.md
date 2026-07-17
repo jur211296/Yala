@@ -716,6 +716,67 @@ del Bloque A** (el Worker de prod no existe hasta su primer deploy). Sin el secr
   (service único por test). `YalaTests/AccountDeletionServiceTests` conserva el ancla de orden
   `forget→teardown→delete→siwa→close` INTACTA.
 
+## Google revoke (sesión 3 Google Sign-In) — `disconnect()` del grant OAuth al borrar la cuenta
+
+**Requisito:** Guideline 5.1.1(v) formalmente solo exige el revoke de SIWA ("Sign in with Apple");
+Google entra por la frase "credentials or tokens off of the device" + simetría ante App Review (una
+cuenta Google borrada que deja el grant OAuth vivo es la misma clase de residuo que B1 cierra para
+Apple). Diseño espejo de B1 con una diferencia estructural: **no hay canje ni Worker** — el SDK
+GoogleSignIn custodia sus propios tokens y `GIDSignIn.disconnect()` revoca el grant COMPLETO (y firma
+out) en un solo paso. El par custodiado (`GoogleUserPairStore`, sesión 1) solo aporta el MATCH, no el
+token; ningún token de Google pasa por el gateway ni por reposo server-side.
+
+**Cliente Swift** (`Yala/Services/CloudSync/GoogleTokenRevocation.swift`, paso 4b del borrado —
+inmediatamente tras el 4a de SIWA, ANTES del 4c cierre local; orden congelado de
+`AccountDeletionService` intacto):
+
+- **MATCH DOBLE** (§0 del plan — endurece el molde B1, que matchea solo por appleUserID):
+  1. `pair.sub == CloudAuthService.currentUserID` — el par es de ESTA cuenta Supabase (la que se
+     borra). Cierra el hazard cross-cuenta M1: un par residual del DUEÑO bajo la secundaria jamás
+     revoca al dueño (mismo AJUSTE #1 de B1, con el sub como llave en vez del appleUserID).
+  2. `sdkUserID == pair.googleUserID` — la sesión del SDK es DEL MISMO humano que el par. Cierra el
+     hazard que el sub NO cubre: tras el sign-out de A, el `signIn` del SDK de B puede TRIUNFAR con
+     el exchange de Supabase FALLIDO (el catch re-lanza sin deshacer la sesión SDK) ⇒ sesión SDK =
+     B, par = A; si A borra su cuenta después, un match solo-por-sub revocaría el grant de B.
+  Cualquier mismatch ⇒ no-op SIN disconnect y SIN limpiar el par.
+- **Sesión SDK restaurable:** `disconnect()` opera sobre `currentUser`; si es nil y
+  `hasPreviousSignIn()`, `restorePreviousSignIn()` la restaura (refresca tokens si expiraron — VA A
+  RED, por eso corre DENTRO del tope). Carrera vs timeout 4s (molde exacto
+  `SIWATokenRevocation.revokeIfNeeded`). Si el disconnect falla tras un restore exitoso, la sesión
+  SDK restaurada de la cuenta ya borrada la barre el paso 4c (cierre local →
+  `CloudAuthService.signOut()` → `GIDSignIn.signOut()` local) — ajuste A3.
+- **Skip ≠ fallo (ajuste A2):** los 4 skips (`no-pair` / `stale-pair` / `no-sdk-session` /
+  `stale-sdk-session`) son estados legítimos — breadcrumb `googleRevokeSkipped(reason:)` SIN canario
+  y SIN limpiar el par. Solo `.failed` (disconnect rechazado o timeout, colapsados en reason
+  `disconnect` — paridad con el `revoke` de SIWA) dispara breadcrumb + canario TelemetryDeck
+  `googleRevokeFailed`. Éxito ⇒ `clearPair()` + `googleDisconnected()`. Contrato best-effort: JAMÁS
+  lanza ni bloquea el borrado.
+- **Ciclo de vida del par:** sobrevive el sign-out normal Y la frontera M1 — re-verificado con grep
+  2026-07-16 (sesión 3): ni los paths de `CloudSessionSignOut` ni
+  `SecondarySessionBoundaryPurge.purge()` referencian `GoogleUserPairStore`/`googleUserID`/
+  `com.yala.cloudauth` (su única vía a auth es `CloudAuthService.signOut()`, que hace `GIDSignIn.
+  signOut()` LOCAL y NO borra el par — comentario H6 en el propio `signOut()`). El match doble hace
+  el residuo inofensivo; re-sign-in lo sobreescribe (clear-before-write); el borrado exitoso lo
+  limpia (clearPair en `.disconnected`).
+
+**Residuales (con argumento):**
+- **Post-reinstalación sin sesión SDK** ⇒ skip `no-sdk-session`: el grant queda vivo en
+  myaccount.google.com pero el token es inerte (el refresh token murió con el Keychain-scope del
+  SDK). Fallback REST (`POST oauth2.googleapis.com/revoke`) DESCARTADO: exige el refresh token, que
+  vive en la misma sesión SDK — si no hay sesión restaurable tampoco hay token accesible.
+- **Sin red entrante:** no existe equivalente Google del `credentialRevokedNotification` de Apple —
+  revocar el grant en myaccount.google.com NO mata la sesión Supabase (estándar de industria: la
+  sesión ya emitida vive hasta expirar/sign-out).
+
+**Tests:** `YalaTests/CloudSync/GoogleTokenRevocationTests.swift` (deps inyectadas, molde
+`SIWATokenRevocationTests`: match doble happy, par nil, sub stale, sub nil, SDK sin sesión, SDK de
+OTRO humano [jamás disconnect], disconnect falla sin limpiar) + `AccountDeletionServiceTests` con el
+ancla de orden `forget→teardown→delete→siwa→google→close` + `MigrationWorkExecutorTests` (I4: el
+BODY del claim y el faro reflejan el provider VIGENTE al momento de uso, no el de la construcción —
+lección d49d2e47). Roundtrip Keychain del par en `CloudAuthServiceTests.GoogleUserPairStoreTests`.
+Verificación device (owner): paso 7 de la Fase G del guion SIGNOUT-WELCOME — eliminar cuenta con
+sesión Google → el grant de Yala DESAPARECE de myaccount.google.com.
+
 ## Sender e2e de I8e (`SyncPushClient` `/sync/push` contra staging)
 
 `push-e2e-test.sh` ejerce `POST /sync/push` con EL MISMO envelope JSON que arma `SyncPushClient`
@@ -916,7 +977,10 @@ Apple Y Google. Config vigente:
   account ya ejercitan `provider: "google"`).
 - Cliente: `CloudAuthService.signInWithGoogle()` (SDK GoogleSignIn-iOS 9.2.0 SPM, solo target Yala)
   + par `(googleUserID, sub)` en `GoogleUserPairStore` (molde `SIWARefreshTokenStore`; consumidor =
-  revoke de sesión 3) + `cloudauth.provider` como fuente del `provider` del claim.
+  el revoke de sesión 3, **HECHO** — `GoogleTokenRevocation`, ver §"Google revoke" arriba) +
+  `cloudauth.provider` como fuente del `provider` del claim — desde la sesión 3 el executor de
+  migración lo lee VIVO en cada uso (closure, residual I4 cerrado): un runner nacido antes del
+  sign-in ya no congela `"apple"` para una sesión Google (ni en el claim ni en el faro R9).
 
 ### Guard R9 SUB-FIRST (sesión 2 — UI + chooser, 2026-07-16)
 

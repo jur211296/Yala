@@ -12,8 +12,10 @@
 //    2. Teardowns (`CloudSyncRuntime.teardownGuestSession` + `GroupsSyncClient.teardownForSignOut`): paran
 //       los ciclos; sin esto un push en vuelo RE-SUBIRÍA filas al backend recién vaciado.
 //    3. `POST /account/delete` (attest). Falla ⇒ `.failed(.delete)`, reintentable (teardowns idempotentes).
-//    4. Éxito ⇒ SIWA revoke REAL (B1, 5.1.1(v) — `SIWATokenRevocation.revokeIfNeeded()`, best-effort:
-//       jamás bloquea el borrado) + cierre LOCAL por modo, reusando la red terminal de
+//    4. Éxito ⇒ 4a SIWA revoke REAL (B1, 5.1.1(v) — `SIWATokenRevocation.revokeIfNeeded()`) + 4b Google
+//       disconnect (sesión 3 Google Sign-In — `GoogleTokenRevocation.revokeIfNeeded()`, match doble;
+//       ambos best-effort: jamás bloquean el borrado, cada uno con skip natural — a lo sumo UNO tiene
+//       par cuyo sub/user matchea) + 4c cierre LOCAL por modo, reusando la red terminal de
 //       `CloudSessionSignOut` (fase viva `.awaitingRelaunch` ⇒ cero red duplicada). SIN push-all (los
 //       datos ya murieron server-side).
 //
@@ -70,6 +72,7 @@ final class AccountDeletionService {
         var teardown: @MainActor () -> Void
         var deletePersonalAccount: @MainActor () async -> DeleteOutcome
         var revokeSIWA: @MainActor () async -> Void
+        var revokeGoogle: @MainActor () async -> Void
         var closeLocalCloud: @MainActor () async -> Void
         var closeLocalGroupsOnly: @MainActor (ModelContext) async -> Bool
 
@@ -100,6 +103,7 @@ final class AccountDeletionService {
                 return await client.deleteAccount(jwt: jwt)
             },
             revokeSIWA: { await SIWATokenRevocation.revokeIfNeeded() },
+            revokeGoogle: { await GoogleTokenRevocation.revokeIfNeeded() },
             closeLocalCloud: { await CloudSessionSignOut.shared.closeLocalAfterAccountDeletionCloud() },
             closeLocalGroupsOnly: { await CloudSessionSignOut.shared.closeLocalAfterAccountDeletionGroupsOnly(context: $0) }
         )
@@ -164,7 +168,12 @@ final class AccountDeletionService {
         // el próximo sign-in lo sobreescribe; el retry solo existe si el flujo cae a `.failed(.localClose)`.
         await deps.revokeSIWA()
 
-        // 4b) Cierre LOCAL por modo, reusando la red terminal de CloudSessionSignOut.
+        // 4b) Google disconnect (sesión 3 — simetría 5.1.1(v)): mismo contrato best-effort que 4a, con
+        // MATCH DOBLE (par de ESTA cuenta + sesión SDK del MISMO humano — hazards §0 del plan). Cada
+        // revoke tiene skip natural: a lo sumo uno tiene par cuyo sub matchea la sesión que se borra.
+        await deps.revokeGoogle()
+
+        // 4c) Cierre LOCAL por modo, reusando la red terminal de CloudSessionSignOut.
         if deps.storageModeIsCloud() {
             await deps.closeLocalCloud()
             TelemetryService.accountDeletionCompleted(step: "cloud")

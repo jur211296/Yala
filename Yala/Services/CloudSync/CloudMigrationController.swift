@@ -193,17 +193,17 @@ final class CloudMigrationController {
         let push = SyncPushClient(tokenProvider: token, attestProvider: attest)
         let pull = SyncPullClient(tokenProvider: token, attestProvider: attest)
         let merkle = SyncMerkleClient(tokenProvider: token, attestProvider: attest)
-        // Provider REAL de la sesión hacia el claim/faro. RESIDUAL (ajuste #5): el fallback
-        // `?? "apple"` solo aplica con la key perdida (población ~0 — se escribe en el mismo
-        // sign-in); una sesión Google sin key claimearía "apple". El default `= "apple"` del init
-        // se CONSERVA como red para tests y callers legacy.
+        // Provider REAL de la sesión hacia el claim/faro, leído VIVO en cada uso (I4 CERRADO en la
+        // sesión 3 Google Sign-In, ajuste A1): el closure se evalúa EN el momento del claim/faro, no al
+        // construir el executor — un runner nacido antes del sign-in ya no congela "apple" para una
+        // sesión Google. RESIDUAL que PERSISTE (review adversarial #4 de sesión 1): el fallback
+        // `?? "apple"` solo aplica con la key `keyProvider` perdida (población ~0 — se escribe en el
+        // mismo sign-in); una sesión Google sin key claimearía "apple" → falso mismatch en la red R9.
+        // El default `= { "apple" }` del init se CONSERVA como red para tests y callers legacy.
         return MigrationWorkExecutor(
             engine: engine, pushClient: push, pullClient: pull, merkleClient: merkle,
             accountClient: account, session: session, context: context, deviceID: deviceID,
-            // Fallback residual (review adversarial #4): key perdida ⇒ "apple" VERBATIM en
-            // `profiles.provider` si el claim crea la fila → falso mismatch perpetuo en la red R9
-            // post-claim de sesión 2. Población ~0 (la key se escribe en el propio sign-in).
-            provider: CloudAuthService.shared.storedProvider() ?? "apple",
+            provider: { CloudAuthService.shared.storedProvider() ?? "apple" },
             adoptQuiescenceSignal: { iCloudSyncService.shared.isImportQuiescent })
     }
 

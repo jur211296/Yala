@@ -181,7 +181,7 @@ struct MigrationWorkExecutorTests {
         tombstoneSource: ReverseTombstoneSource? = nil,
         adoptQuiescenceSignal: @escaping () -> Bool = { true },
         claimStore: CloudClaimActionStore? = nil,
-        provider: String = "apple"
+        provider: @escaping @MainActor () -> String = { "apple" }
     ) -> MigrationWorkExecutor {
         let token: () async -> String? = { "jwt" }
         let account = CloudAccountClient(baseURL: workerURL, urlSession: stub)
@@ -246,10 +246,44 @@ struct MigrationWorkExecutorTests {
         let stub = RoutingStub()
         let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
-                                    provider: "google")
+                                    provider: { "google" })
         _ = await executor.performClaim()
         #expect(stub.lastClaimBody?["provider"] as? String == "google",
                 "el provider REAL de la sesión debe llegar al BODY del claim (lección d49d2e47)")
+    }
+
+    @Test("performClaim lee el provider VIVO al momento del claim, no el de la construcción (I4 sesión 3: runner nacido pre-sign-in)")
+    func claim_providerIsReadLive_notFrozenAtInit() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let stub = RoutingStub()
+        // El executor nace ANTES del sign-in (provider aún "apple" — el fallback de key perdida).
+        var currentProvider = "apple"
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    provider: { currentProvider })
+        // Sign-in con Google DESPUÉS de construir el executor (el caso real del residual I4).
+        currentProvider = "google"
+        _ = await executor.performClaim()
+        #expect(stub.lastClaimBody?["provider"] as? String == "google",
+                "el BODY del claim debe reflejar el provider VIGENTE al claimear, no el congelado en init")
+    }
+
+    @Test("execute(.writeBeacon) lee el provider VIVO (ajuste A1: el faro con provider stale rompería la red R9)")
+    func writeBeacon_providerIsReadLive_notFrozenAtInit() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let beaconStore = FakeBeaconStore()
+        var currentProvider = "apple"
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, beaconStore,
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    provider: { currentProvider })
+        currentProvider = "google"
+        try await executor.execute(.writeBeacon)
+        #expect(beaconStore.string(forKey: CloudBeacon.Keys.provider) == "google",
+                "el faro debe estampar el provider VIGENTE (un faro 'apple' para cuenta Google haría que R9 mostrara el método equivocado)")
     }
 
     // MARK: - Beacon / efectos

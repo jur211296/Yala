@@ -112,7 +112,13 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     private let calendar: Calendar
     private let now: () -> Date
     private let deviceID: String
-    private let provider: String
+    /// Provider de la sesión, leído VIVO en cada uso (I4 sesión 3 Google Sign-In, ajuste A1 del
+    /// /review-plan): el runner/executor puede nacer ANTES del sign-in (boot/intento previo) — un String
+    /// congelado en el init claimearía `"apple"` con sesión Google (`profiles.provider` mal estampado en
+    /// un `created`) Y estamparía el FARO con el provider equivocado (la red R9 de sesión 2 mostraría el
+    /// método de sign-in incorrecto). Lectores auditados: `performClaim` (body del claim) y
+    /// `execute(.writeBeacon)` (faro) — ambos invocan el closure en el momento de uso.
+    private let provider: @MainActor () -> String
     private let beacon: CloudBeacon
     private let personalStoreURL: URL
     private let uploader: MigrationSnapshotUploader
@@ -166,7 +172,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         calendar: Calendar = .current,
         now: @escaping () -> Date = { .now },
         deviceID: String? = nil,
-        provider: String = "apple",
+        provider: @escaping @MainActor () -> String = { "apple" },
         beacon: CloudBeacon? = nil,
         personalStoreURL: URL? = nil,
         storageDefaults: UserDefaults = .standard,
@@ -211,7 +217,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // `migration: true` ES OBLIGATORIO (bug device 2026-07-10): arma `migration_in_progress=true` en
         // el INSERT atómico → el guard de `migration_progress('cutover')` (exige mip) pasa. Sin él, el
         // claim crea la fila con mip=false y el cutover se clava en `not_in_progress` para siempre.
-        let outcome = await accountClient.claim(jwt: jwt, deviceID: deviceID, provider: provider, migration: true)
+        let outcome = await accountClient.claim(jwt: jwt, deviceID: deviceID, provider: provider(), migration: true)
         // P6: estampar el `AuthAction` resuelto en el claim-store (branch `.migration`) → el gate de
         // arranque del runtime (`LiveCloudSessionProvider.claimAction`) lo lee. El faro cloud + provider
         // no aplican a la rama migración (variante B es born-cloud/returning) → `false`/`true` neutros.
@@ -432,7 +438,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             if SecondarySessionStore.isActive() {
                 CloudSyncBreadcrumb.secondaryBeaconWriteSuppressed()
             } else {
-                beacon.writeCloudAccountLinked(provider: provider, accountSub: session.currentUserID, now: now())
+                beacon.writeCloudAccountLinked(provider: provider(), accountSub: session.currentUserID, now: now())
             }
 
         case .startParallelHistoryCapture:

@@ -42,6 +42,7 @@ struct AccountDeletionServiceTests {
             teardown: { c.events.append("teardown") },
             deletePersonalAccount: { c.events.append("delete"); return c.deleteOutcome },
             revokeSIWA: { c.events.append("siwa") },
+            revokeGoogle: { c.events.append("google") },
             closeLocalCloud: { c.events.append("closeCloud") },
             closeLocalGroupsOnly: { _ in c.events.append("closeGroupsOnly"); return c.closeGroupsResult }
         )
@@ -57,7 +58,7 @@ struct AccountDeletionServiceTests {
 
         await sut.deleteAccount(context: ctx)
 
-        #expect(c.events == ["forget", "teardown", "delete", "siwa", "closeCloud"])
+        #expect(c.events == ["forget", "teardown", "delete", "siwa", "google", "closeCloud"])
         #expect(sut.phase == .awaitingRelaunch)
     }
 
@@ -69,7 +70,7 @@ struct AccountDeletionServiceTests {
         await sut.deleteAccount(context: ctx)
 
         // groups_forget_user NO se llama (sin datos de grupos en el backend con el flag OFF).
-        #expect(c.events == ["teardown", "delete", "siwa", "closeCloud"])
+        #expect(c.events == ["teardown", "delete", "siwa", "google", "closeCloud"])
         #expect(sut.phase == .awaitingRelaunch)
     }
 
@@ -80,7 +81,7 @@ struct AccountDeletionServiceTests {
 
         await sut.deleteAccount(context: ctx)
 
-        #expect(c.events == ["forget", "teardown", "delete", "siwa", "closeGroupsOnly"])
+        #expect(c.events == ["forget", "teardown", "delete", "siwa", "google", "closeGroupsOnly"])
         #expect(sut.phase == .awaitingRelaunch)
     }
 
@@ -129,7 +130,7 @@ struct AccountDeletionServiceTests {
         await sut.deleteAccount(context: ctx)
 
         // El borrado server-side YA ocurrió; el cierre local no cerró la sesión → reintentable.
-        #expect(c.events == ["forget", "teardown", "delete", "siwa", "closeGroupsOnly"])
+        #expect(c.events == ["forget", "teardown", "delete", "siwa", "google", "closeGroupsOnly"])
         #expect(sut.phase == .failed(step: .localClose))
     }
 
@@ -159,7 +160,7 @@ struct AccountDeletionServiceTests {
         await sut.deleteAccount(context: ctx)
 
         #expect(sut.phase == .awaitingRelaunch)
-        #expect(c.events == ["forget", "forget", "teardown", "delete", "siwa", "closeCloud"])
+        #expect(c.events == ["forget", "forget", "teardown", "delete", "siwa", "google", "closeCloud"])
     }
 
     @Test func awaitingRelaunch_isTerminal_noReentry() async throws {

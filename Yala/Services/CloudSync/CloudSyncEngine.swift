@@ -536,6 +536,29 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncAuth siwaRevokeFailed reason=\(reason, privacy: .public)")
     }
 
+    // MARK: Google revoke (sesión 3 Google Sign-In — simetría 5.1.1(v); sin PII: JAMÁS googleUserID/sub
+    // en claro — solo motivos)
+
+    /// Revoke de Google saltado — estado LEGÍTIMO (sin canario, SIN limpiar el par). `reason`:
+    /// `no-pair` (sin par custodiado — cuenta que jamás firmó con Google, el caso masivo) /
+    /// `stale-pair` (par de OTRA cuenta Supabase — hazard cross-cuenta M1, match #1 del §0) /
+    /// `no-sdk-session` (sin sesión SDK restaurable, p.ej. post-reinstalación — grant vivo, token inerte) /
+    /// `stale-sdk-session` (la sesión del SDK es de OTRO humano que el par — match #2 del §0).
+    static func googleRevokeSkipped(reason: String) {
+        logger.notice("CloudSyncAuth googleRevokeSkipped reason=\(reason, privacy: .public)")
+    }
+
+    /// `disconnect()` completado (grant OAuth de Google revocado + SDK firmado out) + par limpiado.
+    static func googleDisconnected() {
+        logger.notice("CloudSyncAuth googleDisconnected")
+    }
+
+    /// El disconnect falló (`disconnect` [rechazo del SDK o timeout, colapsados]) — best-effort: el
+    /// borrado NO se bloquea; el par NO se limpia. Par del canario `googleRevokeFailed`.
+    static func googleRevokeFailed(reason: String) {
+        logger.notice("CloudSyncAuth googleRevokeFailed reason=\(reason, privacy: .public)")
+    }
+
     // MARK: Migración (I10-wiring) — journal + orquestador (sin PII: solo fases, motivos, contadores)
 
     /// Una transición se journaleó (fase + efectos pendientes). `phase` es el `MigrationPhase` (sin PII).
