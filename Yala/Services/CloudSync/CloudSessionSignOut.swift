@@ -32,13 +32,21 @@ final class CloudSessionSignOut {
         case idle
         /// Push-all + teardown en curso (spinner en el dialog/fila).
         case working
-        /// El push-all no logró vaciar el outbox → cierre ABORTADO. El usuario reintenta con red.
-        case blocked(pendingCount: Int)
+        /// El push-all no logró vaciar el outbox → cierre ABORTADO. `reason` distingue el
+        /// error transitorio (reintentable, "un momento más") del permanente (sesión/conexión,
+        /// H-2026-07-18-6). El usuario reintenta.
+        case blocked(pendingCount: Int, reason: CloudSignOutFlowLogic.BlockReason)
         /// Camino `.cloud`/solo-grupos completo — cover de relaunch bloqueante hasta que el usuario reabra.
         case awaitingRelaunch
     }
 
     private(set) var phase: Phase = .idle
+
+    /// `true` mientras el sign-out solo-grupos ESPERA a que se asienten writes pendientes
+    /// (quiescencia del import + retry interno con presupuesto, H-2026-07-18-6). La fila de
+    /// Ajustes muestra un caption honesto ("Guardando tus cambios pendientes…") — el bloqueo
+    /// típico es transitorio y antes obligaba al usuario a tocar "Cerrar sesión" 2-3 veces.
+    private(set) var waitingForPending: Bool = false
 
     /// Vuelve a `.idle` tras un `.blocked` (el usuario cerró el error).
     func acknowledgeBlocked() {
@@ -126,15 +134,17 @@ final class CloudSessionSignOut {
         // En `.cloud` el backend está configurado por definición (solo el cutover/adopt
         // escriben ese modo); si el controller faltara, solo es seguro cerrar sin pendientes.
         guard let controller = CloudMigrationController.shared else {
-            phase = .blocked(pendingCount: 0)
+            phase = .blocked(pendingCount: 0, reason: .permanent)
             CloudSyncBreadcrumb.signOutPushBlocked(pending: 0)
             return
         }
 
-        // 1) Push-all PERSONAL — bloquear si no drena (jamás descartar).
+        // 1) Push-all PERSONAL — bloquear si no drena (jamás descartar). El camino `.cloud`
+        // conserva su alert de siempre ("conexión"): `reason: .permanent` (byte-idéntico —
+        // H-2026-07-18-6 ajusta SOLO el path solo-grupos, no éste).
         switch await controller.pushAllPendingForSignOut() {
-        case .blocked(let pending):
-            phase = .blocked(pendingCount: pending)
+        case .blocked(let pending, _):
+            phase = .blocked(pendingCount: pending, reason: .permanent)
             CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
             return
         case .drained:
@@ -144,8 +154,8 @@ final class CloudSessionSignOut {
         // 2) Push-all GRUPOS (cierra LOW-3 de B2) — ANTES del teardown (la guardia de generación
         // abortaría el ciclo). Blocked ⇒ abort idéntico al personal.
         switch await pushAllPendingGroupsForSignOut(context: context) {
-        case .blocked(let pending):
-            phase = .blocked(pendingCount: pending)
+        case .blocked(let pending, _):
+            phase = .blocked(pendingCount: pending, reason: .permanent)
             CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
             return
         case .drained:
@@ -165,7 +175,7 @@ final class CloudSessionSignOut {
         let residualGroups = Self.liveGroupsPendingCount(context: context)
         let residual = residualPersonal + residualGroups
         guard residual == 0 else {
-            phase = .blocked(pendingCount: residual)
+            phase = .blocked(pendingCount: residual, reason: .permanent)
             CloudSyncBreadcrumb.signOutPushBlocked(pending: residual)
             return
         }
@@ -196,14 +206,15 @@ final class CloudSessionSignOut {
         CloudSyncBreadcrumb.signOutStarted(path: "secondary")
 
         guard let controller = CloudMigrationController.shared else {
-            phase = .blocked(pendingCount: 0)
+            phase = .blocked(pendingCount: 0, reason: .permanent)
             CloudSyncBreadcrumb.signOutPushBlocked(pending: 0)
             return
         }
 
+        // Secundaria (M1) conserva su alert de siempre: `reason: .permanent` (byte-idéntico).
         switch await controller.pushAllPendingForSignOut() {
-        case .blocked(let pending):
-            phase = .blocked(pendingCount: pending)
+        case .blocked(let pending, _):
+            phase = .blocked(pendingCount: pending, reason: .permanent)
             CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
         case .drained:
             CloudSyncRuntime.shared?.teardownGuestSession()
@@ -214,7 +225,7 @@ final class CloudSessionSignOut {
             // S2: re-verificar el outbox con la sesión AÚN viva (mismo racional que el camino .cloud).
             let residual = controller.livePendingUploadCount()
             guard residual == 0 else {
-                phase = .blocked(pendingCount: residual)
+                phase = .blocked(pendingCount: residual, reason: .permanent)
                 CloudSyncBreadcrumb.signOutPushBlocked(pending: residual)
                 return
             }
@@ -233,61 +244,104 @@ final class CloudSessionSignOut {
     /// History + semántica re-descargable limpia).
     private func performGroupsOnlySignOut(context: ModelContext) async {
         phase = .working
-        CloudSyncBreadcrumb.signOutStarted(path: "groups-only")
+        waitingForPending = false
+        CloudSyncBreadcrumb.signOutStarted(path: "icloud-groups-session")
+        // Salir por CUALQUIER camino apaga el caption de espera (regla del @Observable).
+        defer { waitingForPending = false }
 
-        // 1) GATE DE QUIESCENCIA (HIGH del review lente-personal): este path corre con el device en
-        // `.icloud` — el mirror personal de CloudKit está VIVO y el mainContext es COMPARTIDO por los
-        // 3 stores. TODO save de este flujo (drain del push-all, purga de outbox/cursores) flushearía
-        // también el grafo personal: con un import a medio asentar eso dispara el `_assertionFailure`
-        // de SwiftData (trap no atrapable — la regla del crash-loop de restore). Mismo invariante que
-        // `awaitPersonalImportForBootSave`; en operación normal retorna de inmediato. Timeout ⇒
-        // fail-closed como `.blocked` (reintentar luego), jamás proceder sobre un store no quieto.
-        guard await Self.awaitPersonalQuiescenceForGroupsSignOut() else {
-            let pending = Self.liveGroupsPendingCount(context: context)
-            phase = .blocked(pendingCount: pending)
-            CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
-            return
+        // RETRY INTERNO CON PRESUPUESTO GLOBAL (H-2026-07-18-6): el device-QA mostró que el bloqueo
+        // típico de este path es TRANSITORIO (writes INTERNOS del boot aún asentándose — no hay nada
+        // que el usuario pueda hacer salvo esperar) y el usuario terminaba tocando "Cerrar sesión"
+        // 2-3 veces hasta que "pegaba". Ahora reintentamos internamente los transitorios dentro de un
+        // presupuesto (segundos ADICIONALES tras el PRIMER bloqueo); los permanentes (sesión/cuenta)
+        // se muestran de inmediato. `retryClockStart` arranca en el primer bloqueo transitorio; en los
+        // reintentos el gate de quiescencia recibe un hardCap = lo que queda del presupuesto (jamás
+        // vuelve a bloquear 60s completos). La DECISIÓN es pura (`GroupsSignOutRetryDecision`); aquí
+        // solo se mide el tiempo real con `Date()` (orquestador de servicio, fuera del test target).
+        let budget = GroupsSignOutRetryDecision.budgetSeconds
+        var retryClockStart: Date?
+
+        while true {
+            let hardCap: TimeInterval = retryClockStart
+                .map { max(0, budget - Date().timeIntervalSince($0)) } ?? 60
+
+            switch await attemptGroupsOnlyClose(context: context, quiescenceHardCap: hardCap) {
+            case .drained:
+                // Reusa la red terminal existente (cover + RelaunchNetLogic + exit(0) en background):
+                // la matriz de blockers opera por la FASE VIVA (no por storageMode).
+                await finalizeGroupsOnlyClose(context: context)
+                return
+            case .blocked(let pending, let reason):
+                let elapsed = retryClockStart.map { Date().timeIntervalSince($0) } ?? 0
+                switch GroupsSignOutRetryDecision.decide(
+                    elapsedSeconds: elapsed, budgetSeconds: budget, reason: reason
+                ) {
+                case .surfacePermanent:
+                    phase = .blocked(pendingCount: pending, reason: .permanent)
+                    CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
+                    return
+                case .surfaceTransient:
+                    phase = .blocked(pendingCount: pending, reason: .transient)
+                    CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
+                    return
+                case .retryAfter(let seconds):
+                    if retryClockStart == nil { retryClockStart = Date() }
+                    waitingForPending = true
+                    do {
+                        try await Task.sleep(for: .seconds(seconds))
+                    } catch {
+                        // Cancelación del caller → fail-closed transitorio (reintentable).
+                        phase = .blocked(pendingCount: pending, reason: .transient)
+                        return
+                    }
+                    continue
+                }
+            }
         }
+    }
 
-        // 2) Push-all de grupos con la generación INTACTA (antes del teardown). Blocked ⇒ abort.
-        switch await pushAllPendingGroupsForSignOut(context: context) {
-        case .blocked(let pending):
-            phase = .blocked(pendingCount: pending)
-            CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
-            return
-        case .drained:
-            break
+    /// UN intento del cierre solo-grupos: gate de QUIESCENCIA (hardCap acotado en reintentos) +
+    /// push-all VERIFICADO del outbox de grupos. NO hace teardown ni toca credenciales — eso es
+    /// `finalizeGroupsOnlyClose`, que corre UNA sola vez tras `.drained` (reintentar tras el teardown
+    /// repoblaría el outbox/cursor). Gate de quiescencia (HIGH del review lente-personal): el path
+    /// corre en `.icloud` con el mirror personal VIVO y el mainContext COMPARTIDO por los 3 stores;
+    /// TODO save de este flujo (drain del push-all, purga) flushearía también el grafo personal → con
+    /// un import a medio asentar dispara el `_assertionFailure` de SwiftData (trap no atrapable, clase
+    /// del crash-loop de restore). Timeout ⇒ `.blocked(reason: .transient)` (store no quieto AÚN —
+    /// reintentable; jamás salvar sobre un import a medio asentar).
+    private func attemptGroupsOnlyClose(
+        context: ModelContext,
+        quiescenceHardCap: TimeInterval
+    ) async -> CloudSignOutFlowLogic.PushAllVerdict {
+        // El caption de espera cubre TAMBIÉN la quiescencia del PRIMER intento (en un restore puede
+        // bloquear hasta 60s — exactamente la ventana del hallazgo H-6; sin esto el spinner corre mudo).
+        waitingForPending = true
+        guard await Self.awaitPersonalQuiescenceForGroupsSignOut(hardCap: quiescenceHardCap) else {
+            return .blocked(
+                pendingCount: Self.liveGroupsPendingCount(context: context), reason: .transient)
         }
+        // Push-all de grupos con la generación INTACTA (antes del teardown).
+        return await pushAllPendingGroupsForSignOut(context: context)
+    }
 
-        // 3) Teardown del canal: stop loop + generation++ (aborta cualquier ciclo en vuelo) + purga espejo.
+    /// Cierre EFECTIVO del canal solo-grupos tras `.drained` (orden CONGELADO, CR-3): teardown del
+    /// canal (stop loop + generation++ aborta ciclos en vuelo + purga espejo) → purga IN-SESSION del
+    /// outbox/cursor de grupos (TODAS las filas, incl. dead-letters; sync-meta es `.none` ⇒ sin replay
+    /// de History hacia iCloud, y el `save()` va al mainContext compartido ⇒ cubierto por el gate de
+    /// quiescencia ya pasado) → limpieza del consent (CR-2: sin ello `applyRemoteValues()` del próximo
+    /// boot lo resucitaría) → signOut backend → marker ÚLTIMO write (kill-safe: el boot borra SOLO el
+    /// store de grupos; NO toca personal/sync-meta, onboarding, prefs personales ni storageMode — el
+    /// device sigue en `.icloud`). Residual documentado: kill entre signOut() y el arm deja las filas
+    /// Split* de la sesión muerta visibles transitoriamente hasta el próximo sign-in/out (outbox ya
+    /// purgado — sin leak de sync).
+    private func finalizeGroupsOnlyClose(context: ModelContext) async {
         GroupsSyncClient.shared.teardownForSignOut()
         await PushTokenSignOutSeam.clearForSignOut()  // G8-2: desregistro best-effort del push token
-
-        // 4) Purga IN-SESSION del outbox + cursor de grupos (TODAS las filas, incl. dead-letters). Razón
-        // congelada: el archivo YalaSyncMeta NO se borra en esta fila (es personal); filas huérfanas de la
-        // sesión muerta podrían drenarse bajo la SIGUIENTE cuenta (leak cross-cuenta). Dos riesgos DISTINTOS
-        // cubiertos: (a) sync-meta es `.none` ⇒ sin replay de History hacia iCloud; (b) el `save()` va al
-        // mainContext COMPARTIDO con el store personal ⇒ lo cubre el gate de quiescencia del paso 1 (sin
-        // él, un import personal en vuelo + este save = trap de SwiftData).
         Self.purgeGroupsSyncState(context: context)
-
-        // 6) Limpiar el consent de grupos (CR-2: sin limpiar el iKV, `applyRemoteValues()` del próximo boot
-        // resucitaría el consent).
         GroupsConsentState.clear()
-
-        // 7) Cerrar la sesión backend.
         await CloudAuthService.shared.signOut()
-
-        // 8) Marker ÚLTIMO write (kill-safe). El boot borra SOLO el store de grupos; NO toca personal/
-        // sync-meta, onboarding, prefs personales ni storageMode (el device sigue en `.icloud`).
-        // Residual documentado: kill entre signOut() y el arm deja las filas Split* de la sesión muerta
-        // visibles transitoriamente hasta el próximo sign-in/sign-out (outbox ya purgado — sin leak de sync).
         StorageModePersistence.armGroupsOnlyWipe()
         CloudSyncBreadcrumb.signOutGroupsOnlyWipeArmed()
-
-        // 9) Reusa la red terminal existente (cover + RelaunchNetLogic + exit(0) en background): la matriz
-        // de blockers opera por la FASE VIVA (no por storageMode); el copy del cover es genérico ("reinicia
-        // Yala"), aplicable sin cambios.
         phase = .awaitingRelaunch
     }
 
@@ -380,10 +434,9 @@ final class CloudSessionSignOut {
         if Self.liveGroupsPendingCount(context: context) == 0 { return .drained }
         for iteration in 1...maxIterations {
             let outcome = await GroupsSyncClient.shared.syncCycleOnceCoalesced(context: context)
-            let succeeded = outcome == .completed || outcome == .coalesced
             if let verdict = CloudSignOutFlowLogic.pushAllVerdict(
                 livePendingCount: Self.liveGroupsPendingCount(context: context),
-                cycleSucceeded: succeeded,
+                cycleOutcome: outcome,
                 iteration: iteration,
                 maxIterations: maxIterations
             ) {
@@ -397,7 +450,8 @@ final class CloudSessionSignOut {
                 break  // cancelación del caller
             }
         }
-        return .blocked(pendingCount: Self.liveGroupsPendingCount(context: context))
+        // Fuera del loop solo por cancelación (break): transitorio (reintentable).
+        return .blocked(pendingCount: Self.liveGroupsPendingCount(context: context), reason: .transient)
     }
 
     /// Gate de quiescencia del import PERSONAL para el sign-out solo-grupos (HIGH del review): el path

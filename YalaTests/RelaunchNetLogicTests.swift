@@ -73,7 +73,7 @@ struct RelaunchExitOnBackgroundTests {
 
     @Test
     func background_withoutRelaunchPending_neverExits() {
-        for phase: CloudSessionSignOut.Phase in [.idle, .working, .blocked(pendingCount: 3)] {
+        for phase: CloudSessionSignOut.Phase in [.idle, .working, .blocked(pendingCount: 3, reason: .transient)] {
             #expect(!RelaunchNetLogic.shouldExitOnBackground(
                 scenePhase: .background, signOutPhase: phase,
                 secondaryEntryArmedUnmounted: false

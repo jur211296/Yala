@@ -97,32 +97,102 @@ struct CloudSignOutPushAllVerdictTests {
     @Test
     func outboxEmpty_isDrained_regardlessOfCycleOutcome() {
         #expect(CloudSignOutFlowLogic.pushAllVerdict(
-            livePendingCount: 0, cycleSucceeded: true, iteration: 1, maxIterations: 10
+            livePendingCount: 0, cycleOutcome: .completed, iteration: 1, maxIterations: 10
         ) == .drained)
         // Ciclo con error pero outbox ya vacío → drained igual (el objetivo se cumplió).
         #expect(CloudSignOutFlowLogic.pushAllVerdict(
-            livePendingCount: 0, cycleSucceeded: false, iteration: 3, maxIterations: 10
+            livePendingCount: 0, cycleOutcome: .transient, iteration: 3, maxIterations: 10
         ) == .drained)
     }
 
     @Test
     func pendingWithSuccessfulCycle_keepsIterating() {
         #expect(CloudSignOutFlowLogic.pushAllVerdict(
-            livePendingCount: 12, cycleSucceeded: true, iteration: 2, maxIterations: 10
+            livePendingCount: 12, cycleOutcome: .completed, iteration: 2, maxIterations: 10
+        ) == nil)
+        // `.coalesced` (ciclo en vuelo, sin señal de fallo) también cuenta como éxito.
+        #expect(CloudSignOutFlowLogic.pushAllVerdict(
+            livePendingCount: 12, cycleOutcome: .coalesced, iteration: 2, maxIterations: 10
         ) == nil)
     }
 
     @Test
-    func pendingWithFailedCycle_blocks() {
+    func pendingWithFailedTransientCycle_blocksTransient() {
         #expect(CloudSignOutFlowLogic.pushAllVerdict(
-            livePendingCount: 5, cycleSucceeded: false, iteration: 1, maxIterations: 10
-        ) == .blocked(pendingCount: 5))
+            livePendingCount: 5, cycleOutcome: .transient, iteration: 1, maxIterations: 10
+        ) == .blocked(pendingCount: 5, reason: .transient))
     }
 
     @Test
-    func pendingAtMaxIterations_blocks_evenWithSuccessfulCycle() {
+    func pendingWithSessionOrAccountFailure_blocksPermanent() {
         #expect(CloudSignOutFlowLogic.pushAllVerdict(
-            livePendingCount: 3, cycleSucceeded: true, iteration: 10, maxIterations: 10
-        ) == .blocked(pendingCount: 3))
+            livePendingCount: 5, cycleOutcome: .sessionExpired, iteration: 1, maxIterations: 10
+        ) == .blocked(pendingCount: 5, reason: .permanent))
+        #expect(CloudSignOutFlowLogic.pushAllVerdict(
+            livePendingCount: 7, cycleOutcome: .accountUnavailable, iteration: 2, maxIterations: 10
+        ) == .blocked(pendingCount: 7, reason: .permanent))
+    }
+
+    @Test
+    func pendingAtMaxIterations_blocksTransient_evenWithSuccessfulCycle() {
+        // Tope alcanzado con ciclo sano pero pendientes → transitorio (aún drenando).
+        #expect(CloudSignOutFlowLogic.pushAllVerdict(
+            livePendingCount: 3, cycleOutcome: .completed, iteration: 10, maxIterations: 10
+        ) == .blocked(pendingCount: 3, reason: .transient))
+    }
+}
+
+@Suite("Cerrar sesión — clasificación transitorio/permanente (H-2026-07-18-6)")
+struct CloudSignOutClassifyTests {
+
+    @Test
+    func sessionOrAccountFailure_isPermanent() {
+        #expect(CloudSignOutFlowLogic.classify(.sessionExpired) == .permanent)
+        #expect(CloudSignOutFlowLogic.classify(.accountUnavailable) == .permanent)
+    }
+
+    @Test
+    func networkOrCoalescedOrCompleted_isTransient() {
+        #expect(CloudSignOutFlowLogic.classify(.transient) == .transient)
+        #expect(CloudSignOutFlowLogic.classify(.completed) == .transient)
+        #expect(CloudSignOutFlowLogic.classify(.coalesced) == .transient)
+    }
+}
+
+@Suite("Cerrar sesión solo-grupos — decisión de retry con presupuesto (H-2026-07-18-6)")
+struct GroupsSignOutRetryDecisionTests {
+
+    private let budget = GroupsSignOutRetryDecision.budgetSeconds  // 45
+
+    @Test
+    func permanent_surfacesImmediately_regardlessOfElapsed() {
+        #expect(GroupsSignOutRetryDecision.decide(
+            elapsedSeconds: 0, budgetSeconds: budget, reason: .permanent) == .surfacePermanent)
+        // Aunque quede presupuesto, un permanente jamás reintenta.
+        #expect(GroupsSignOutRetryDecision.decide(
+            elapsedSeconds: 100, budgetSeconds: budget, reason: .permanent) == .surfacePermanent)
+    }
+
+    @Test
+    func transient_withinBudget_retries() {
+        #expect(GroupsSignOutRetryDecision.decide(
+            elapsedSeconds: 0, budgetSeconds: budget, reason: .transient)
+            == .retryAfter(seconds: GroupsSignOutRetryDecision.retryIntervalSeconds))
+        #expect(GroupsSignOutRetryDecision.decide(
+            elapsedSeconds: 44, budgetSeconds: budget, reason: .transient)
+            == .retryAfter(seconds: GroupsSignOutRetryDecision.retryIntervalSeconds))
+    }
+
+    @Test
+    func transient_budgetExhausted_surfacesTransient() {
+        #expect(GroupsSignOutRetryDecision.decide(
+            elapsedSeconds: 46, budgetSeconds: budget, reason: .transient) == .surfaceTransient)
+    }
+
+    @Test
+    func transient_atExactBudgetBoundary_surfacesTransient() {
+        // elapsed == budget: el `<` es ESTRICTO → ya no reintenta (borde, no `retryAfter`).
+        #expect(GroupsSignOutRetryDecision.decide(
+            elapsedSeconds: budget, budgetSeconds: budget, reason: .transient) == .surfaceTransient)
     }
 }

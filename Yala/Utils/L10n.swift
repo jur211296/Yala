@@ -4038,6 +4038,10 @@ enum L10n {
         }
         static var signOutBlockedTitle: String { ls("settings.signOutBlockedTitle", comment: "") }
         static var signOutBlockedMessage: String { ls("settings.signOutBlockedMessage", comment: "") }
+        // H-2026-07-18-6 — espera/retry interno del sign-out solo-grupos
+        static var signOutWorking: String { ls("settings.signOutWorking", comment: "") }
+        static var signOutPendingTitle: String { ls("settings.signOutPendingTitle", comment: "") }
+        static var signOutPendingMessage: String { ls("settings.signOutPendingMessage", comment: "") }
         // Eliminar mi cuenta (G5-D1b — borrado GDPR, DARK)
         static var deleteAccount: String { ls("settings.deleteAccount", comment: "") }
         static var deleteAccountConfirmTitle: String { ls("settings.deleteAccountConfirmTitle", comment: "") }
@@ -6248,6 +6252,12 @@ enum L10n {
             /// basta ir al inicio — la app se cierra sola. `body` (compartido con la
             /// relaunchCard de migración/reversa, que NO auto-exita) queda intacto.
             static var bodyAutoExit: String { ls("storage.relaunch.bodyAutoExit", comment: "") }
+            /// H-2026-07-18-6 — variante del cover terminal para el cierre SOLO-GRUPOS:
+            /// los datos personales siguen en el device (device en `.icloud`); lo aclara
+            /// para no desorientar tras el relaunch.
+            static var bodyAutoExitGroupsOnly: String {
+                ls("storage.relaunch.bodyAutoExitGroupsOnly", comment: "")
+            }
         }
 
         enum Failed {

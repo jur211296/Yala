@@ -15,6 +15,12 @@ import SwiftUI
 
 struct SignOutRelaunchView: View {
 
+    /// H-2026-07-18-6: el cierre solo-grupos deja los datos personales EN el device (el device
+    /// sigue en `.icloud`); tras el relaunch la app reabre con la vida personal intacta. El copy
+    /// lo dice para no desorientar. La variante la decide el marker PERSISTIDO que arma ESE path
+    /// (`groupsOnlyWipeArmed`) — solo se enciende ahí; `.cloud`/secundaria conservan el copy actual.
+    private var isGroupsOnly: Bool { StorageModePersistence.isGroupsOnlyWipeArmed() }
+
     var body: some View {
         VStack(spacing: DS.Spacing.lg) {
             Spacer()
@@ -25,7 +31,9 @@ struct SignOutRelaunchView: View {
             Text(L10n.Storage.Relaunch.title)
                 .font(DS.Typography.title2)
                 .multilineTextAlignment(.center)
-            Text(L10n.Storage.Relaunch.bodyAutoExit)
+            Text(isGroupsOnly
+                 ? L10n.Storage.Relaunch.bodyAutoExitGroupsOnly
+                 : L10n.Storage.Relaunch.bodyAutoExit)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

@@ -294,14 +294,13 @@ final class CloudMigrationController {
         guard let runtime = CloudSyncRuntime.shared else {
             // Sin runtime en `.cloud` solo es seguro cerrar si no hay nada pendiente.
             let live = livePendingUploadCount()
-            return live == 0 ? .drained : .blocked(pendingCount: live)
+            return live == 0 ? .drained : .blocked(pendingCount: live, reason: .permanent)
         }
         for iteration in 1...maxIterations {
             let outcome = await runtime.syncCycle(context: context)
-            let succeeded = outcome == .completed || outcome == .coalesced
             if let verdict = CloudSignOutFlowLogic.pushAllVerdict(
                 livePendingCount: livePendingUploadCount(),
-                cycleSucceeded: succeeded,
+                cycleOutcome: outcome,
                 iteration: iteration,
                 maxIterations: maxIterations
             ) {
@@ -317,7 +316,9 @@ final class CloudMigrationController {
                 break  // cancelación del caller
             }
         }
-        return .blocked(pendingCount: livePendingUploadCount())
+        // Tope alcanzado con pendientes: transitorio (aún drenando; el consumidor `.cloud`/
+        // secundario lo re-mapea a su alert permanente al fijar la fase — byte-idéntico).
+        return .blocked(pendingCount: livePendingUploadCount(), reason: .transient)
     }
 
     /// Filas vivas del outbox (`rejectedReason == nil`) — mismo criterio que el banner S11.

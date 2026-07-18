@@ -5011,3 +5011,15 @@
 
 /* Empty state del tab Grupos tras cerrar sesión solo-grupos: CTA */
 "groups.empty.signedOut.action" = "Entrar";
+
+/* H-2026-07-18-6 — caption while the sign-out saves pending changes */
+"settings.signOutWorking" = "Salvando suas alterações pendentes…";
+
+/* H-2026-07-18-6 — transient sign-out block alert title */
+"settings.signOutPendingTitle" = "Só mais um momento";
+
+/* H-2026-07-18-6 — transient sign-out block alert message */
+"settings.signOutPendingMessage" = "Ainda estamos terminando de salvar algumas alterações. Espere alguns segundos e tente de novo.";
+
+/* H-2026-07-18-6 — groups-only terminal cover body (personal data intact) */
+"storage.relaunch.bodyAutoExitGroupsOnly" = "Encerramos sua sessão de grupos. Vá para a Tela de Início e abra o Yala novamente; seus dados pessoais continuam neste dispositivo.";

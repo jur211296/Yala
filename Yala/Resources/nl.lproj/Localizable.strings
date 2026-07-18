@@ -5023,3 +5023,15 @@
 
 /* Empty state del tab Grupos tras cerrar sesión solo-grupos: CTA */
 "groups.empty.signedOut.action" = "Aanmelden";
+
+/* H-2026-07-18-6 — caption while the sign-out saves pending changes */
+"settings.signOutWorking" = "Je openstaande wijzigingen worden opgeslagen…";
+
+/* H-2026-07-18-6 — transient sign-out block alert title */
+"settings.signOutPendingTitle" = "Nog even geduld";
+
+/* H-2026-07-18-6 — transient sign-out block alert message */
+"settings.signOutPendingMessage" = "We zijn nog bezig met het opslaan van enkele wijzigingen. Wacht een paar seconden en probeer het opnieuw.";
+
+/* H-2026-07-18-6 — groups-only terminal cover body (personal data intact) */
+"storage.relaunch.bodyAutoExitGroupsOnly" = "Je bent afgemeld bij groepen. Ga naar het beginscherm en open Yala opnieuw; je persoonlijke gegevens blijven op dit apparaat.";

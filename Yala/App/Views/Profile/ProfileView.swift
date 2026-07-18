@@ -78,10 +78,17 @@ struct ProfileView: View {
     private var signOutCoordinator: CloudSessionSignOut { CloudSessionSignOut.shared }
     @State private var showCloudSignOutConfirm = false
     @State private var showSignOutBlockedAlert = false
+    // H-2026-07-18-6: el bloqueo TRANSITORIO del sign-out solo-grupos usa un alert distinto
+    // ("un momento más") — el permanente conserva el alert de conexión de siempre.
+    @State private var showSignOutPendingAlert = false
 
     private func syncSignOutUI(from phase: CloudSessionSignOut.Phase) {
         switch phase {
-        case .blocked: showSignOutBlockedAlert = true
+        case .blocked(_, let reason):
+            switch reason {
+            case .transient: showSignOutPendingAlert = true
+            case .permanent: showSignOutBlockedAlert = true
+            }
         case .awaitingRelaunch: dismiss()
         case .idle, .working: break
         }
@@ -266,6 +273,16 @@ struct ProfileView: View {
                 }
             } message: {
                 Text(L10n.Settings.signOutBlockedMessage)
+            }
+            // H-2026-07-18-6: bloqueo TRANSITORIO (solo-grupos, tras agotar el retry interno) —
+            // copy que invita a esperar, no a revisar la conexión. Solo un bool se pone a la vez
+            // (rutas mutuamente excluyentes en `syncSignOutUI`).
+            .alert(L10n.Settings.signOutPendingTitle, isPresented: $showSignOutPendingAlert) {
+                Button(L10n.Common.ok, role: .cancel) {
+                    CloudSessionSignOut.shared.acknowledgeBlocked()
+                }
+            } message: {
+                Text(L10n.Settings.signOutPendingMessage)
             }
             .onChange(of: signOutCoordinator.phase) { _, newPhase in
                 syncSignOutUI(from: newPhase)
@@ -792,17 +809,33 @@ struct ProfileView: View {
                 // modo group-invite, como el resto de filas personales).
                 if CloudSignOutFlowLogic.shouldShowRow(isGroupInviteMode: isGroupInviteMode) {
                     SubsectionDivider()
-                    Button {
-                        showCloudSignOutConfirm = true
-                    } label: {
-                        settingsRowContent(
-                            icon: "rectangle.portrait.and.arrow.right",
-                            title: L10n.Settings.signOut,
-                            iconColor: .red)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Button {
+                            showCloudSignOutConfirm = true
+                        } label: {
+                            settingsRowContent(
+                                icon: "rectangle.portrait.and.arrow.right",
+                                title: L10n.Settings.signOut,
+                                iconColor: .red,
+                                showSpinner: signOutCoordinator.phase == .working)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(signOutCoordinator.phase == .working)
+                        .accessibilityIdentifier("profile_security_signout")
+
+                        // H-2026-07-18-6: caption honesto mientras el sign-out solo-grupos ESPERA a
+                        // que se asienten writes internos (retry interno) — el bloqueo típico es
+                        // transitorio y antes obligaba a tocar "Cerrar sesión" varias veces.
+                        if signOutCoordinator.phase == .working && signOutCoordinator.waitingForPending {
+                            Text(L10n.Settings.signOutWorking)
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, DS.Spacing.lg)
+                                .padding(.bottom, DS.FormRow.paddingV)
+                                .accessibilityIdentifier("profile_signout_working_caption")
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .disabled(signOutCoordinator.phase == .working)
-                    .accessibilityIdentifier("profile_security_signout")
                 }
                 // G5-D1b: eliminar cuenta — tras "Cerrar sesión", solo con sesión backend viva y fuera de
                 // secundaria (RESIDUAL v1) / group-invite. DARK hoy (hasSession imposible en prod).
@@ -1053,7 +1086,8 @@ struct ProfileView: View {
         icon: String,
         title: String,
         iconColor: Color = .gray,
-        textColor: Color = .primary
+        textColor: Color = .primary,
+        showSpinner: Bool = false
     ) -> some View {
         HStack(spacing: DS.Spacing.md) {
             // Conditionally show colored or plain icons based on setting
@@ -1083,10 +1117,17 @@ struct ProfileView: View {
 
             Spacer()
 
-            Image(systemName: "chevron.right")
-                .font(DS.Typography.labelSmall.weight(.medium))
-                .foregroundStyle(.tertiary)
-                .accessibilityHidden(true)
+            // H-2026-07-18-6: spinner inline en la fila mientras el cierre de sesión trabaja
+            // (reemplaza el chevron — el resto de filas conservan el chevron por default false).
+            if showSpinner {
+                ProgressView()
+                    .controlSize(.small)
+            } else {
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.labelSmall.weight(.medium))
+                    .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
+            }
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.FormRow.paddingV)

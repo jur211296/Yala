@@ -83,26 +83,89 @@ nonisolated enum CloudSignOutFlowLogic {
         !isGroupInviteMode
     }
 
+    /// Naturaleza del bloqueo del push-all (H-2026-07-18-6): distingue lo que se sana
+    /// SOLO esperando (red intermitente, ciclo coalescido, quiescencia del import aún no
+    /// asentada) de lo que NO se cura sin acción del usuario (sesión caída / cuenta no
+    /// disponible). El sign-out solo-grupos reintenta internamente los transitorios y solo
+    /// muestra un error cuando agota su presupuesto o el bloqueo es permanente.
+    enum BlockReason: Equatable {
+        /// Curable esperando: red/HTTP/decode/save intermitente, ciclo coalescido, o el
+        /// tope de iteraciones/quiescencia (aún drenando). Reintentable.
+        case transient
+        /// NO curable sin acción del usuario: 401 sesión caída, 403 cuenta no disponible.
+        case permanent
+    }
+
+    /// Clasifica el outcome crudo de un ciclo de cadencia como transitorio o permanente
+    /// (H-2026-07-18-6). Base del retry interno del sign-out solo-grupos.
+    static func classify(_ outcome: SyncCadencePolicy.CadenceOutcome) -> BlockReason {
+        switch outcome {
+        case .sessionExpired, .accountUnavailable: return .permanent
+        case .transient, .completed, .coalesced: return .transient
+        }
+    }
+
     /// Veredicto de una iteración del loop de push-all previo al cierre en `.cloud`.
     /// `nil` = seguir iterando.
     enum PushAllVerdict: Equatable {
         /// Outbox vivo == 0 verificado por fetch → seguro proceder al cierre.
         case drained
         /// Quedan filas vivas y el ciclo falló o se alcanzó el tope → ABORTAR el
-        /// cierre mostrando el error. Los pendientes JAMÁS se descartan.
-        case blocked(pendingCount: Int)
+        /// cierre. Los pendientes JAMÁS se descartan. `reason` distingue transitorio
+        /// (reintentable) de permanente (H-2026-07-18-6).
+        case blocked(pendingCount: Int, reason: BlockReason)
     }
 
+    /// `cycleOutcome` (H-2026-07-18-6): el outcome CRUDO del ciclo — no el Bool colapsado —
+    /// para que `.blocked` porte la naturaleza del bloqueo. "Éxito de ciclo" sigue siendo
+    /// `.completed`/`.coalesced` (sin señal de fallo); el resto no drena. El tope de iteraciones
+    /// con ciclo sano pero pendientes es un bloqueo TRANSITORIO (aún drenando, se agotó el margen).
     static func pushAllVerdict(
         livePendingCount: Int,
-        cycleSucceeded: Bool,
+        cycleOutcome: SyncCadencePolicy.CadenceOutcome,
         iteration: Int,
         maxIterations: Int
     ) -> PushAllVerdict? {
         if livePendingCount == 0 { return .drained }
+        let cycleSucceeded = cycleOutcome == .completed || cycleOutcome == .coalesced
         if !cycleSucceeded || iteration >= maxIterations {
-            return .blocked(pendingCount: livePendingCount)
+            return .blocked(pendingCount: livePendingCount, reason: classify(cycleOutcome))
         }
         return nil
+    }
+}
+
+/// Decisión PURA del retry interno del sign-out solo-grupos (H-2026-07-18-6): el device-QA
+/// mostró que el bloqueo típico es TRANSITORIO (writes internos del boot aún asentándose) y el
+/// usuario tenía que tocar "Cerrar sesión" 2-3 veces. Aquí decidimos, ante un bloqueo, si
+/// reintentar (dentro de un PRESUPUESTO GLOBAL de tiempo tras el primer bloqueo) o rendirse y
+/// mostrar el error. `elapsedSeconds` es el tiempo transcurrido desde el PRIMER bloqueo (el
+/// orquestador de servicio lo mide con `Date()`; la decisión lo recibe como número — regla del
+/// repo: nunca `Date()`/sleep crudos en lógica testeada).
+nonisolated enum GroupsSignOutRetryDecision {
+
+    /// Presupuesto de reintentos (segundos ADICIONALES tras el primer bloqueo transitorio).
+    static let budgetSeconds: Double = 45
+
+    /// Intervalo entre reintentos (segundos).
+    static let retryIntervalSeconds: Double = 2
+
+    enum Decision: Equatable {
+        /// Reintentar tras `seconds` (bloqueo transitorio, presupuesto NO agotado).
+        case retryAfter(seconds: Double)
+        /// Rendirse y mostrar el error transitorio ("un momento más") — presupuesto agotado.
+        case surfaceTransient
+        /// Rendirse y mostrar el error permanente (sesión/cuenta) — inmediato, sin reintentar.
+        case surfacePermanent
+    }
+
+    static func decide(
+        elapsedSeconds: Double,
+        budgetSeconds: Double,
+        reason: CloudSignOutFlowLogic.BlockReason
+    ) -> Decision {
+        if reason == .permanent { return .surfacePermanent }
+        if elapsedSeconds < budgetSeconds { return .retryAfter(seconds: retryIntervalSeconds) }
+        return .surfaceTransient
     }
 }
