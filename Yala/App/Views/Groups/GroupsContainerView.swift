@@ -51,16 +51,11 @@ struct GroupsContainerView: View {
                     ProgressView()
                         .accessibilityIdentifier("groups_loading_spinner")
                 } else if viewModel.activeGroups.isEmpty && viewModel.archivedGroups.isEmpty {
-                    YalaEmptyState.noGroups {
-                        requestCreateGroup()
-                    }
-                    .accessibilityIdentifier("groups_empty_state")
+                    emptyState(standardAccessibilityID: "groups_empty_state")
                 } else if viewModel.activeGroups.isEmpty {
                     // Only archived groups exist
                     VStack(spacing: DS.Spacing.xl) {
-                        YalaEmptyState.noGroups {
-                            requestCreateGroup()
-                        }
+                        emptyState(standardAccessibilityID: nil)
                         archivedGroupsSection
                             .padding(.horizontal, DS.Spacing.lg)
                     }
@@ -312,6 +307,30 @@ struct GroupsContainerView: View {
     }
 
     // MARK: - Helpers
+
+    /// Empty state del tab. Decide (pure-logic) entre el estándar ("aún no tienes grupos", CTA crear) y el
+    /// de re-entrada ("tus grupos están en tu cuenta", CTA iniciar sesión) tras cerrar sesión solo-grupos
+    /// (H-2026-07-18-7). Con `groupsBackendEnabled` OFF SIEMPRE `.standard` ⇒ byte-idéntico al camino actual.
+    /// `standardAccessibilityID` preserva la identidad de accesibilidad exacta por rama (total = `groups_empty_state`,
+    /// solo-archivados = ninguna); la variante sign-in siempre usa `groups_empty_state_signin`.
+    @ViewBuilder
+    private func emptyState(standardAccessibilityID: String?) -> some View {
+        switch GroupsEmptyStateLogic.decide(
+            flagOn: CloudSyncFlags.groupsBackendEnabled,
+            hasSession: CloudAuthService.shared.hasSession
+        ) {
+        case .standard:
+            let base = YalaEmptyState.noGroups { requestCreateGroup() }
+            if let standardAccessibilityID {
+                base.accessibilityIdentifier(standardAccessibilityID)
+            } else {
+                base
+            }
+        case .signInToView:
+            YalaEmptyState.groupsSignedOut { requestGroupsSignIn() }
+                .accessibilityIdentifier("groups_empty_state_signin")
+        }
+    }
 
     private func groupCardRow(group: SplitGroup) -> some View {
         GroupCardView(
@@ -582,6 +601,15 @@ struct GroupsContainerView: View {
         case .needsSignIn:
             RouterEntryGate.shared.submit(.presentGroupsSignIn(pendingJoin: ""))
         }
+    }
+
+    /// CTA del empty state de re-entrada (H-2026-07-18-7): cede el anchor a ContentView (dueño ÚNICO de
+    /// `GroupsBackendInviteModifier`) para presentar el sign-in solo-grupos. Sentinel "" ⇒ sin PendingJoin.
+    /// El arranque del canal post-sign-in ya está cableado (f1c79424: el closure de éxito de
+    /// `GroupsSignInView` dentro de `GroupsBackendInviteModifier` llama `startIfEligible`), así que esta
+    /// CTA solo presenta el sign-in y hereda ese arranque gratis.
+    private func requestGroupsSignIn() {
+        RouterEntryGate.shared.submit(.presentGroupsSignIn(pendingJoin: ""))
     }
 
     // MARK: - FAB

@@ -5014,3 +5014,12 @@
 
 /* Provider-binding note (R9) below the sign-in buttons */
 "storage.signin.note" = "你的 Yala 账户将与所选方式绑定——以后登录请始终使用该方式。";
+
+/* Empty state del tab Grupos tras cerrar sesión solo-grupos (H-2026-07-18-7): título */
+"groups.empty.signedOut.title" = "你的群组在你的账户中";
+
+/* Empty state del tab Grupos tras cerrar sesión solo-grupos: mensaje */
+"groups.empty.signedOut.message" = "登录后即可查看你共享的群组。";
+
+/* Empty state del tab Grupos tras cerrar sesión solo-grupos: CTA */
+"groups.empty.signedOut.action" = "登录";

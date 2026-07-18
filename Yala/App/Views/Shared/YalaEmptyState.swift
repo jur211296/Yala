@@ -12,6 +12,7 @@ struct YalaEmptyState: View {
     let message: String?
     let actionTitle: String?
     let action: (() -> Void)?
+    let actionAccessibilityIdentifier: String?
     let style: Style
 
     init(
@@ -20,6 +21,7 @@ struct YalaEmptyState: View {
         message: String? = nil,
         actionTitle: String? = nil,
         action: (() -> Void)? = nil,
+        actionAccessibilityIdentifier: String? = nil,
         style: Style = .standard
     ) {
         self.icon = icon
@@ -27,6 +29,7 @@ struct YalaEmptyState: View {
         self.message = message
         self.actionTitle = actionTitle
         self.action = action
+        self.actionAccessibilityIdentifier = actionAccessibilityIdentifier
         self.style = style
     }
 
@@ -52,12 +55,20 @@ struct YalaEmptyState: View {
             }
 
             if let actionTitle, let action {
-                Button(action: action) {
+                let actionButton = Button(action: action) {
                     Text(actionTitle)
                         .font(DS.Typography.label)
                         .foregroundStyle(.thAccent)
                 }
                 .padding(.top, DS.Spacing.sm)
+
+                // Byte-idéntico para los callers actuales: sin id ⇒ el botón queda EXACTAMENTE igual
+                // (ningún modifier extra); solo `groupsSignedOut` pasa un id para el CTA de re-entrada.
+                if let actionAccessibilityIdentifier {
+                    actionButton.accessibilityIdentifier(actionAccessibilityIdentifier)
+                } else {
+                    actionButton
+                }
             }
         }
         .padding(style == .widget ? DS.Spacing.lg : DS.Spacing.xxxl)
@@ -151,6 +162,19 @@ extension YalaEmptyState {
             message: L10n.Groups.Empty.message,
             actionTitle: action != nil ? L10n.Groups.Empty.action : nil,
             action: action
+        )
+    }
+
+    /// Empty state tras cerrar sesión solo-grupos (H-2026-07-18-7): la lista está vacía porque los grupos
+    /// viven en la cuenta backend y no hay sesión. CTA re-entra por el sign-in solo-grupos.
+    static func groupsSignedOut(action: (() -> Void)? = nil) -> YalaEmptyState {
+        YalaEmptyState(
+            icon: "person.crop.circle.badge.questionmark",
+            title: L10n.Groups.Empty.SignedOut.title,
+            message: L10n.Groups.Empty.SignedOut.message,
+            actionTitle: action != nil ? L10n.Groups.Empty.SignedOut.action : nil,
+            action: action,
+            actionAccessibilityIdentifier: action != nil ? "groups_empty_signin_cta" : nil
         )
     }
 

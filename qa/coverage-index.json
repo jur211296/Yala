@@ -889,9 +889,9 @@
         "F-S5-06"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests + unit:YalaTests/GroupDetailDismissDecisionTests (dismiss-first) + xcuitest:YalaUITests/GroupsEmptyStateUITests (empty state, no spinner atascado)",
+      "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests + unit:YalaTests/GroupDetailDismissDecisionTests (dismiss-first) + xcuitest:YalaUITests/GroupsEmptyStateUITests (empty state, no spinner atascado) + unit:YalaTests/GroupsEmptyStateLogicTests (empty state sign-in tras cerrar sesión solo-grupos, H-2026-07-18-7: flag ON + sin sesión → CTA re-entrada; flag OFF byte-idéntico)",
       "owner": "",
-      "lastVerified": "2026-06-25"
+      "lastVerified": "2026-07-18"
     },
     {
       "area": "groups-expense-form",

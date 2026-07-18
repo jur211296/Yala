@@ -5003,3 +5003,12 @@
 
 /* Provider-binding note (R9) below the sign-in buttons */
 "storage.signin.note" = "Ton compte Yala est lié à la méthode choisie : utilise-la à chaque nouvelle connexion.";
+
+/* Empty state del tab Grupos tras cerrar sesión solo-grupos (H-2026-07-18-7): título */
+"groups.empty.signedOut.title" = "Tes groupes sont dans ton compte";
+
+/* Empty state del tab Grupos tras cerrar sesión solo-grupos: mensaje */
+"groups.empty.signedOut.message" = "Connecte-toi pour voir les groupes que tu partages.";
+
+/* Empty state del tab Grupos tras cerrar sesión solo-grupos: CTA */
+"groups.empty.signedOut.action" = "Se connecter";

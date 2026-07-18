@@ -1738,6 +1738,13 @@ enum L10n {
             static var title: String { ls("groups.empty.title", comment: "") }
             static var message: String { ls("groups.empty.message", comment: "") }
             static var action: String { ls("groups.empty.action", comment: "") }
+
+            /// Empty state tras cerrar sesión solo-grupos (H-2026-07-18-7): los grupos viven en la cuenta.
+            enum SignedOut {
+                static var title: String { ls("groups.empty.signedOut.title", comment: "") }
+                static var message: String { ls("groups.empty.signedOut.message", comment: "") }
+                static var action: String { ls("groups.empty.signedOut.action", comment: "") }
+            }
         }
 
         enum Summary {
