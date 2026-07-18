@@ -1033,6 +1033,112 @@ struct GroupsSyncClientTests {
         #expect(row.rejectedReason == "upstream_400:yala_not_authorized")  // intacto
     }
 
+    // MARK: - Test 9b · Reset del cursor por-grupo al re-join (pendingApproval→active, H-2026-07-18-3)
+
+    /// Decodifica el cursor por-grupo REALMENTE persistido en `groupCursorsJSON` (assert del estado real,
+    /// no del mock — lección del repo).
+    private func decodedCursor(_ cursor: GroupSyncCursor, group: String) -> Int64? {
+        let map = try? JSONDecoder().decode([String: Int64].self, from: Data(cursor.groupCursorsJSON.utf8))
+        return map?[group]
+    }
+
+    /// El PROPIO user pasa de `pendingApproval` a `active`: mientras estuvo pendiente RLS ocultó el contenido
+    /// del grupo pero el cursor por-grupo AVANZÓ igual → al aprobarse, el cursor de ESE grupo se RESETEA a 0
+    /// para re-pull del hueco. El reset gana sobre el avance de `page.cursors` de la MISMA página.
+    @Test func apply_member_pendingApprovalToActive_currentUser_resetsGroupCursor() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        // Member local PENDIENTE (matchea el delta por el path directo `memberKey`).
+        let member = SplitMember(groupZoneID: "SplitGroup-A", displayName: "Alice", status: .pendingApproval)
+        member.memberKey = "member-rec-1"
+        context.insert(member)
+        try context.save()
+
+        let client = GroupsSyncClient(currentUserIDProvider: { "auth-uid-1" })
+        let cursor = try client.loadOrCreateCursor(context)
+        cursor.groupCursorsJSON = "{\"SplitGroup-A\":50}"   // el cursor YA había avanzado durante pending
+        try context.save()
+
+        // memberDelta() trae status "active" + user_id "auth-uid-1" (== currentUserID).
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [memberDelta()], cursors: ["SplitGroup-A": 60], memberships: ["SplitGroup-A"]),
+            cursor: cursor, context: context)
+
+        // Reseteado a 0 PESE al avance a 60 de esta página (el reset corre tras el merge de cursores).
+        #expect(decodedCursor(cursor, group: "SplitGroup-A") == 0)
+    }
+
+    /// Born-remote `nil`→active (member que aparece por primera vez ya activo): NO resetea — la primera bajada
+    /// del grupo trae su contenido de una vez, no hay hueco. `priorStatus` nil no matchea `pendingApproval`.
+    @Test func apply_member_bornRemoteActive_doesNotResetCursor() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let client = GroupsSyncClient(currentUserIDProvider: { "auth-uid-1" })
+        let cursor = try client.loadOrCreateCursor(context)
+
+        // Sin member previo → born-remote. El outer-if del re-drive SÍ dispara (uid == current) pero la rama
+        // estrecha del reset exige priorStatus == pendingApproval (aquí nil).
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [memberDelta()], cursors: ["SplitGroup-A": 7], memberships: ["SplitGroup-A"]),
+            cursor: cursor, context: context)
+
+        #expect(decodedCursor(cursor, group: "SplitGroup-A") == 7)   // avanzó normal, sin reset
+    }
+
+    /// La transición pendingApproval→active es de OTRO usuario (userID != currentUserID) → NO resetea (el
+    /// hueco de cursor es del PROPIO user; la aprobación de un compañero no lo abre).
+    @Test func apply_member_pendingApprovalToActive_otherUser_doesNotReset() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let member = SplitMember(groupZoneID: "SplitGroup-A", displayName: "Alice", status: .pendingApproval)
+        member.memberKey = "member-rec-1"
+        context.insert(member)
+        try context.save()
+
+        let client = GroupsSyncClient(currentUserIDProvider: { "someone-else" })
+        let cursor = try client.loadOrCreateCursor(context)
+        cursor.groupCursorsJSON = "{\"SplitGroup-A\":50}"
+        try context.save()
+
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [memberDelta()], cursors: ["SplitGroup-A": 60], memberships: ["SplitGroup-A"]),
+            cursor: cursor, context: context)
+
+        #expect(decodedCursor(cursor, group: "SplitGroup-A") == 60)   // avanzó normal, sin reset
+    }
+
+    /// No-loop: tras el reset, un segundo apply del MISMO member (ya `active` local) NO vuelve a resetear —
+    /// el cursor avanzado se conserva (el gate `priorStatus != "active"` ya no matchea).
+    @Test func apply_member_secondApply_doesNotResetAgain() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let member = SplitMember(groupZoneID: "SplitGroup-A", displayName: "Alice", status: .pendingApproval)
+        member.memberKey = "member-rec-1"
+        context.insert(member)
+        try context.save()
+
+        let client = GroupsSyncClient(currentUserIDProvider: { "auth-uid-1" })
+        let cursor = try client.loadOrCreateCursor(context)
+        cursor.groupCursorsJSON = "{\"SplitGroup-A\":50}"
+        try context.save()
+
+        // 1er apply: transición pending→active → reset a 0.
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [memberDelta()], cursors: ["SplitGroup-A": 60], memberships: ["SplitGroup-A"]),
+            cursor: cursor, context: context)
+        #expect(decodedCursor(cursor, group: "SplitGroup-A") == 0)
+
+        // 2º apply equivalente (member ya active local): NO resetea; el cursor avanza a 60 y se conserva.
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [memberDelta(serverSeq: 4)], cursors: ["SplitGroup-A": 60], memberships: ["SplitGroup-A"]),
+            cursor: cursor, context: context)
+        #expect(decodedCursor(cursor, group: "SplitGroup-A") == 60)   // avanzado, NO vuelve a 0
+    }
+
     // MARK: - Test 10 · Loop de cadencia (pieza 4b / A5 / A6) — sin sleeps reales
 
     @Test func loop_terminatesOnSessionExpired_noRealSleeps() async throws {

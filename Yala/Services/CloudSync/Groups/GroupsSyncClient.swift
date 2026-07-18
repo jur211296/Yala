@@ -1447,6 +1447,9 @@ final class GroupsSyncClient {
         var bridgeExpenseIDs: [UUID] = []
         var bridgeSettlementIDs: [UUID] = []
         var maxSeqByGroup = decodeCursors(cursor.groupCursorsJSON)
+        // H-2026-07-18-3: grupos cuyo cursor hay que RESETEAR a 0 tras esta página (re-join del propio user:
+        // pendingApproval→active). Lo llena `applyMember`; se aplica DESPUÉS del merge de `page.cursors`.
+        var cursorResetGroupIDs: Set<String> = []
 
         // Ciclo idle (60s): página SIN deltas Y sin cursor que avance → NO escribir (evita una transacción
         // de History no-op por vuelta, que re-drenaría groupCursorsJSON/clockLatestHLC idénticos). Si
@@ -1460,7 +1463,8 @@ final class GroupsSyncClient {
                 for delta in page.deltas {
                     try applyDelta(delta, context: context,
                                    bridgeExpenseIDs: &bridgeExpenseIDs,
-                                   bridgeSettlementIDs: &bridgeSettlementIDs)
+                                   bridgeSettlementIDs: &bridgeSettlementIDs,
+                                   cursorResetGroupIDs: &cursorResetGroupIDs)
                     // Avanzar el cursor del grupo al server_seq máximo aplicado.
                     let prev = maxSeqByGroup[delta.groupID] ?? 0
                     if delta.serverSeq > prev { maxSeqByGroup[delta.groupID] = delta.serverSeq }
@@ -1470,6 +1474,10 @@ final class GroupsSyncClient {
                     let prev = maxSeqByGroup[gid] ?? 0
                     if seq > prev { maxSeqByGroup[gid] = seq }
                 }
+                // H-2026-07-18-3: reset por re-join. DESPUÉS del merge de `page.cursors` → gana sobre
+                // cualquier avance de ESTA página; el próximo pull re-pide ese grupo desde 0 y re-visita el
+                // contenido que RLS ocultaba mientras el member estaba pendingApproval.
+                for gid in cursorResetGroupIDs { maxSeqByGroup[gid] = 0 }
                 cursor.groupCursorsJSON = encodeCursors(maxSeqByGroup)
                 cursor.clockLatestHLC = clock.latest?.description
             }
@@ -1480,6 +1488,10 @@ final class GroupsSyncClient {
             return false
         }
 
+        // H-2026-07-18-3: canario del reset por re-join (solo tras un save exitoso — el catch retornó arriba).
+        if !cursorResetGroupIDs.isEmpty {
+            GroupsSyncBreadcrumb.groupsRejoinCursorReset(groups: cursorResetGroupIDs.count)
+        }
         SessionState.shared.markRemoteChangePending()
         scheduleBridge(expenseIDs: bridgeExpenseIDs, settlementIDs: bridgeSettlementIDs)
         return true
@@ -1489,7 +1501,8 @@ final class GroupsSyncClient {
         _ delta: GroupPulledDelta,
         context: ModelContext,
         bridgeExpenseIDs: inout [UUID],
-        bridgeSettlementIDs: inout [UUID]
+        bridgeSettlementIDs: inout [UUID],
+        cursorResetGroupIDs: inout Set<String>
     ) throws {
         switch delta.entityType {
         case GroupEntityEmissionMap.splitExpense.table:
@@ -1510,7 +1523,7 @@ final class GroupsSyncClient {
         case GroupEntityEmissionMap.splitGroup.table:
             try applyGroupMeta(delta, context: context)
         case "group_members":
-            try applyMember(delta, context: context)
+            try applyMember(delta, context: context, cursorResetGroupIDs: &cursorResetGroupIDs)
         default:
             GroupsSyncBreadcrumb.groupsApplySkippedDelta(entity: delta.entityType)
             return  // entidad no cableada al apply
@@ -1633,7 +1646,9 @@ final class GroupsSyncClient {
         }
     }
 
-    private func applyMember(_ delta: GroupPulledDelta, context: ModelContext) throws {
+    private func applyMember(
+        _ delta: GroupPulledDelta, context: ModelContext, cursorResetGroupIDs: inout Set<String>
+    ) throws {
         // PULL-ONLY: identidad server-side = member_key (string, en el `sync_id` del wire; el
         // `cloudKitUserRecordID` es su ESPACIO paralelo solo para members preexistentes del mundo CloudKit).
         // El sentinel '__deleted_user__' NO se traduce aquí (l10n de UI, G4+).
@@ -1690,6 +1705,15 @@ final class GroupsSyncClient {
            let uid = model.userID, let current = currentUserIDProvider(),
            uid.lowercased() == current.lowercased() {
             reviveDeadLetteredNotAuthorized(groupID: delta.groupID, context: context)
+            // H-2026-07-18-3: re-join hueco de cursor. Mientras el PROPIO user estuvo `pendingApproval`, RLS
+            // ocultó el contenido del grupo PERO el cursor por-grupo avanzó igual → al pasar a `active` el
+            // pull incremental jamás re-visita ese hueco. Resetear el cursor de ESTE grupo a 0 (en
+            // `applyPulledPage`, tras el merge de cursores) fuerza un re-pull completo. Rama MÁS ESTRECHA que
+            // el re-drive: SOLO la transición pendingApproval→active — un born-remote `nil`→active trae el
+            // contenido de una vez (priorStatus nil NO matchea) y NO debe resetear.
+            if priorStatus == SplitMemberStatus.pendingApproval.rawValue {
+                cursorResetGroupIDs.insert(delta.groupID)
+            }
         }
     }
 

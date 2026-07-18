@@ -118,6 +118,16 @@ enum GroupsSyncBreadcrumb {
         logger.notice("GroupsSync merkleRemediated groups=\(groups, privacy: .public)")
     }
 
+    // MARK: - Re-join (hueco de cursor, H-2026-07-18-3)
+
+    /// El apply detectó la transición pendingApproval→active del PROPIO usuario en `groups` grupos y reseteó
+    /// su cursor por-grupo a 0 → el próximo pull re-visita el contenido que RLS ocultaba mientras estaba
+    /// pendiente (el cursor había avanzado sin bajar ese contenido). `> 0` esporádico = re-join sano;
+    /// sostenido = revisar aprobaciones. Sin PII (solo el count — JAMÁS el group_id).
+    static func groupsRejoinCursorReset(groups: Int) {
+        logger.notice("GroupsSync rejoinCursorReset groups=\(groups, privacy: .public) — re-join pendingApproval→active; cursor por-grupo reseteado para re-pull del hueco")
+    }
+
     // MARK: - Partición POR-GRUPO (G5-A)
 
     /// [C2] Un enqueue a CKSyncEngine se SALTÓ porque el grupo es del canal BACKEND (`isBackendGroup`) — sus
