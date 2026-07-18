@@ -236,7 +236,7 @@ nonisolated enum CloudSyncFlags {
     }
 
     /// Encendido COMPILADO del canal de Grupos (la palanca de release; el remoto es el kill).
-    private static let groupsBackendCompiledDefault = false
+    private static let groupsBackendCompiledDefault = true // QA Bloque 2 (G6+G8): ON para Fases A+ — LOCAL, JAMÁS COMMITEAR
     nonisolated(unsafe) private static var groupsBackendEnabledTestOverride: Bool?
 
     /// Solo tests: vuelve el getter a la composición real (mismo racional que
