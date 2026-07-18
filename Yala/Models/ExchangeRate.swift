@@ -46,9 +46,37 @@ final class ExchangeRate {
         self.init(dateKey: dateKey, base: base, rates: data, timestamp: timestamp)
     }
 
+    /// Decodifica el blob `rates` tolerando sus DOS caras válidas: doubles nativos (escrituras
+    /// locales/API) y STRINGS decimales escala-8 — una fila que hizo round-trip por el canal nube vuelve
+    /// con strings porque el canon c1 proyecta todo número anidado de un blob como STRING JSON
+    /// (`Canonc1Codec.canonicalizeBlobValue`) y el apply re-serializa el wire verbatim
+    /// (`EntityApplyMap.exchangeRate` → `WireValueDecoder.jsonData`). NUNCA volver al decode estricto
+    /// `[String: Double]` (pierde TODAS las tasas de la fecha, bug device 2026-07-18) ni "arreglarlo"
+    /// normalizando strings→Double en el apply: ambas caras proyectan la MISMA emisión canónica (los
+    /// strings pasan verbatim, los doubles se formatean a escala-8 — invariante pinneado en
+    /// `Canonc1CodecTests`), así que leer tolerante no toca el Merkle; re-escribir el blob en el apply
+    /// sí arriesga el roundtrip parse/format (divergencia clase-FX).
     func decodedRates() -> [String: Double] {
+        guard !rates.isEmpty else { return [:] }
         do {
-            return try JSONDecoder().decode([String: Double].self, from: rates)
+            guard let dict = try JSONSerialization.jsonObject(with: rates) as? [String: Any] else {
+                #if DEBUG
+                print("ExchangeRate: rates de \(dateKey) no es un objeto JSON")
+                #endif
+                return [:]
+            }
+            var result: [String: Double] = [:]
+            result.reserveCapacity(dict.count)
+            for (code, value) in dict {
+                if let number = value as? NSNumber, CFGetTypeID(number) != CFBooleanGetTypeID() {
+                    result[code] = number.doubleValue
+                } else if let string = value as? String, let parsed = Double(string), parsed.isFinite {
+                    result[code] = parsed
+                }
+                // Otro tipo (bool/null/anidado) → se omite SOLO esa key; el resto de tasas sobrevive
+                // (el decode estricto tumbaba la fecha entera al primer tropiezo).
+            }
+            return result
         } catch {
             #if DEBUG
             print("ExchangeRate: Error decoding rates for \(dateKey): \(error)")

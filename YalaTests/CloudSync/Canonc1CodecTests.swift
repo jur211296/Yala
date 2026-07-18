@@ -176,6 +176,17 @@ struct Canonc1CodecTests {
                 #"{"v":{"a":["1.00000000","2.50000000","x"],"b":{"y":null,"z":true}}}"#)
     }
 
+    @Test func blob_rateStringsPostPull_projectIdenticalToNativeDoubles() throws {
+        // INVARIANTE Merkle del blob `rates` (bug device 2026-07-18): la cara post-pull (strings
+        // escala-8 — el apply re-serializa el wire verbatim y el canon proyecta strings tal cual) debe
+        // proyectar EXACTAMENTE igual que la cara nativa (doubles → escala-8). Es lo que hace seguro
+        // leer tolerante en `ExchangeRate.decodedRates()` SIN normalizar el blob en el apply. Si este
+        // test rompe, una fila FX pulleada divergiría del server al re-emitir (clase-FX perpetua).
+        let native = Data(#"{"ILS":3.6123,"PEN":3.75,"VES":128.7301}"#.utf8)
+        let pulled = Data(#"{"ILS":"3.61230000","PEN":"3.75000000","VES":"128.73010000"}"#.utf8)
+        #expect(try encode("v", .dataJSON(native)) == (try encode("v", .dataJSON(pulled))))
+    }
+
     @Test func blob_empty_isEmptyObject() throws {
         #expect(try encode("v", .dataJSON(Data("{}".utf8))) == #"{"v":{}}"#)
     }
