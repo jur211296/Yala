@@ -131,6 +131,10 @@ struct GroupsSyncClientTests {
     /// closure escapante bajo Swift 6).
     final class SleeperCounter: @unchecked Sendable { var count = 0 }
 
+    /// Contador por referencia para el closure `onRemoteChangesApplied` inyectado (H-2026-07-18-5) —
+    /// mismo motivo que `SleeperCounter` (var local capturada en closure escapante bajo Swift 6).
+    final class CallCounter: @unchecked Sendable { var count = 0 }
+
     // MARK: - Helpers de página del pull
 
     private func pageJSON(shareID: UUID, group: String, serverSeq: Int64, cursor: Int64) -> Data {
@@ -853,6 +857,49 @@ struct GroupsSyncClientTests {
         let outcome = await client.pullUntilExhausted(context: context, limit: 1)
         #expect(outcome == .transient)
         #expect(stub.callCount == 20)  // tope duro
+    }
+
+    // MARK: - Test 7-bis · Refresh vivo de UI tras aplicar deltas (H-2026-07-18-5)
+
+    /// 2 páginas de deltas en el MISMO ciclo → el bump de refresh (`onRemoteChangesApplied`) se dispara
+    /// EXACTAMENTE 1 vez (POR-CICLO, no por-página): con la vista de detalle montada, un solo bump de
+    /// `dataVersion` la refresca; los VMs ya debouncan las ráfagas.
+    @Test func pullCycle_withDeltas_firesOnRemoteChangesApplied_once() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let refreshBumps = CallCounter()
+        let s1 = UUID(); let s2 = UUID()
+        let stub = SequenceStubHTTPSession([
+            .init(data: pageJSON(shareID: s1, group: "SplitGroup-A", serverSeq: 5, cursor: 5), status: 200),
+            .init(data: pageJSON(shareID: s2, group: "SplitGroup-A", serverSeq: 9, cursor: 9), status: 200),
+            .init(data: emptyPageJSON, status: 200),
+        ], fallback: .init(data: emptyPageJSON, status: 200))
+
+        let client = GroupsSyncClient(
+            tokenProvider: { "jwt" }, urlSession: stub,
+            onRemoteChangesApplied: { refreshBumps.count += 1 })
+        let outcome = await client.pullUntilExhausted(context: context, limit: 1)
+
+        #expect(outcome == .completed(pages: 2, deltasApplied: 2))
+        #expect(refreshBumps.count == 1)  // por-ciclo: 2 páginas de deltas → 1 solo bump
+    }
+
+    /// Pull que solo trae páginas vacías (nada que aplicar) → el bump de refresh NO se dispara (evita
+    /// reloads espurios en cada vuelta ociosa del loop de 60s).
+    @Test func pullCycle_emptyPages_doesNotFire() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let refreshBumps = CallCounter()
+        let stub = StubHTTPSession()  // default = página vacía (200, deltas:[])
+        let client = GroupsSyncClient(
+            tokenProvider: { "jwt" }, urlSession: stub,
+            onRemoteChangesApplied: { refreshBumps.count += 1 })
+        let outcome = await client.pullUntilExhausted(context: context, limit: 1)
+
+        #expect(outcome == .completed(pages: 0, deltasApplied: 0))
+        #expect(refreshBumps.count == 0)  // sin deltas aplicados → sin bump
     }
 
     // MARK: - Test 8 · Dead-letter para upstream_400 (pieza 2 / A2)

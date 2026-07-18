@@ -79,6 +79,17 @@ final class GroupsSyncClient {
     /// (`.shared`) inyecta el provider registrar-backed. El header solo se añade si non-nil.
     private let deviceTokenProvider: @MainActor () -> String?
     private let now: () -> Date
+    /// H-2026-07-18-5: bump VIVO del refresh de UI tras un ciclo de pull que aplicó deltas que CAMBIAN
+    /// contenido (`deltasApplied > 0`). Con la vista de DETALLE montada, `markRemoteChangePending` (por-
+    /// página) solo setea el flag diferido — nadie bumpea `dataVersion` en vivo, así que la lista/balance
+    /// no refrescaban hasta salir/entrar o pull-to-refresh. Este closure bumpea `dataVersion` POR-CICLO (no
+    /// por-página: un ciclo puede aplicar N páginas → un solo bump; los VMs de Grupos ya debouncan 150ms).
+    /// DEFAULT = `SessionState.shared.incrementDataVersion()`. El `markRemoteChangePending` por-página se
+    /// CONSERVA como red del caso background/vista-no-montada (redundancia aceptada: 1 reload extra en la
+    /// próxima navegación, coalescido por el debounce). Inyectable para tests (contar llamadas). `@MainActor`
+    /// (el cliente ya lo es → no cruza actor). NO se gatea por `applicationState`: el archivo no importa
+    /// UIKit y un reload en background es inofensivo (una vista no montada no recomputa su body).
+    private let onRemoteChangesApplied: @MainActor () -> Void
     /// Cliente del snapshot Merkle de Grupos (`GET /groups/merkle`) — endurecimiento B1. Inyectable para
     /// tests (stub HTTP). Solo se usa con el flag ON (la verificación se cablea en `syncCycleOnce`).
     private let merkleClient: GroupsMerkleClient
@@ -182,7 +193,8 @@ final class GroupsSyncClient {
         outboxMirror: GroupsOutboxMirror? = GroupsOutboxMirror(),
         deviceTokenProvider: @escaping @MainActor () -> String? = { nil },
         forceRefreshTokenProvider: @escaping @MainActor () async -> String? =
-            { await CloudAuthService.shared.forceRefreshAccessToken() }
+            { await CloudAuthService.shared.forceRefreshAccessToken() },
+        onRemoteChangesApplied: @escaping @MainActor () -> Void = { SessionState.shared.incrementDataVersion() }
     ) {
         self.baseURL = baseURL
         self.tokenProvider = tokenProvider
@@ -193,6 +205,7 @@ final class GroupsSyncClient {
         self.currentUserIDProvider = currentUserIDProvider
         self.deviceTokenProvider = deviceTokenProvider
         self.now = now
+        self.onRemoteChangesApplied = onRemoteChangesApplied
         self.clock = HLCClock(nodeID: nodeID)
         // Default: mismo baseURL + los providers de sesión del canal (el Merkle de Grupos NO manda
         // capability-set). Los tests inyectan uno con `StubHTTPSession`.
@@ -1424,7 +1437,13 @@ final class GroupsSyncClient {
             switch page {
             case .applied(let deltas, let saved):
                 guard saved else { return .transient }             // A1: cursor no avanzó → cortar
-                if deltas == 0 { return .completed(pages: pages, deltasApplied: totalDeltas) }
+                if deltas == 0 {
+                    // H-2026-07-18-5: bump VIVO de refresh POR-CICLO (no por-página) — solo si el ciclo
+                    // aplicó deltas que cambian contenido. `markRemoteChangePending` (por-página, en
+                    // `applyPulledPage`) se CONSERVA como red del caso background/vista-no-montada.
+                    if totalDeltas > 0 { onRemoteChangesApplied() }
+                    return .completed(pages: pages, deltasApplied: totalDeltas)
+                }
                 pages += 1
                 totalDeltas += deltas
             case .sessionExpired: return .sessionExpired
