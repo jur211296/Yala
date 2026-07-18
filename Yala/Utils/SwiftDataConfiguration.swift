@@ -279,6 +279,15 @@ enum SwiftDataConfiguration {
     /// test/uitest no lo capturan).
     nonisolated(unsafe) static private(set) var secondaryStoreMounted = false
 
+    /// Solo tests: fuerza el testigo del mount secundario. El host de tests JAMÁS monta el store
+    /// secundario (default `false`), así que los tests del guard D8 de mount-mismatch
+    /// (`GroupsLoopRestartLogic` / `startIfEligible` mid-session) necesitan ambas celdas: secundaria
+    /// OPERATIVA (montado, post-relaunch) y VENTANA DE ENTRADA (no montado). Restaurar en `defer`
+    /// bajo `@Suite(.serialized)` (molde `SecondarySessionStore._testSetActiveOverride`).
+    static func _testSetSecondaryStoreMounted(_ value: Bool) {
+        secondaryStoreMounted = value
+    }
+
     private static func capturePersonalStoreMountedModeOnce(_ mode: StorageMode, secondary: Bool = false) {
         guard !personalStoreMountedModeCaptured else { return }
         personalStoreMountedModeCaptured = true

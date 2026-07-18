@@ -176,4 +176,21 @@ enum GroupsSyncBreadcrumb {
     static func groupsMigrationMarkerReconciled(count: Int) {
         logger.notice("GroupsSync migrationMarkerReconciled count=\(count, privacy: .public)")
     }
+
+    // MARK: - Ciclo de vida del loop (H-2026-07-18-4)
+
+    /// El loop de cadencia del canal TERMINÓ (un `break loop` de `runLoop`). `reason` = slug sanitizado
+    /// (`session-check-failed` / `session-expired` / `account-unavailable` / `cancelled`). Par del
+    /// `groupsLoopRestarted`: un `session-expired` sin su `loopRestarted` posterior = canal muerto que
+    /// nadie re-arrancó (el bug H-2026-07-18-4). Sin PII.
+    static func groupsLoopStopped(reason: String) {
+        logger.notice("GroupsSync loopStopped reason=\(reason, privacy: .public)")
+    }
+
+    /// El loop de cadencia se RE-ARRANCÓ efectivamente (se creó un nuevo `loopTask`). `trigger` = slug
+    /// (`foreground` / `post-sign-in`). SOLO se emite cuando el re-arranque crea el loop — jamás en los
+    /// no-op (flag OFF, loop ya vivo, piggyback, stopUntilRelaunch). Sin PII.
+    static func groupsLoopRestarted(trigger: String) {
+        logger.notice("GroupsSync loopRestarted trigger=\(trigger, privacy: .public)")
+    }
 }

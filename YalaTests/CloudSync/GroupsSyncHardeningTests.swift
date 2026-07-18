@@ -130,7 +130,10 @@ struct GroupsSyncHardeningTests {
         GroupsSyncClient(
             tokenProvider: { "jwt" }, urlSession: session, sessionCheck: { true },
             currentUserIDProvider: { userID },
-            outboxMirror: mirrorDir.map { GroupsOutboxMirror(directoryURL: $0) })
+            outboxMirror: mirrorDir.map { GroupsOutboxMirror(directoryURL: $0) },
+            // Hermético: los tests con 401 NO deben tocar `CloudAuthService.shared` (default del retry-once
+            // H-2026-07-18-4). nil = sin refresh → sessionExpired, byte-idéntico al comportamiento previo.
+            forceRefreshTokenProvider: { nil })
     }
 
     @discardableResult
@@ -608,15 +611,24 @@ struct GroupsSyncHardeningTests {
         #expect(counter.count == 0)
     }
 
-    /// M1 / D8 (G5-C) — flag ON: la secundaria SÍ participa. El loop propio arranca (sessionCheck true,
-    /// canRunDomain false por mount-mismatch en test) Y el piggyback del paso 5.6 alcanza a la invitada.
+    /// M1 / D8 (G5-C) — flag ON: la secundaria OPERATIVA (store secundario MONTADO — post-relaunch) SÍ
+    /// participa. El loop propio arranca cuando el personal NO cadencia (`syncRuntimeEnabled` OFF en la
+    /// porción del loop — como la fase transicional) Y el piggyback del paso 5.6 alcanza a la invitada.
+    /// H-2026-07-18-4: antes este test dependía de `canRunDomain()==false` POR mount-mismatch para que el
+    /// loop propio arrancara — celda que el guard D8 de `startIfEligible` ahora bloquea ANTES (correcto:
+    /// la ventana de entrada jamás debe drenar; su celda vive en el test de mount-mismatch de abajo).
     @Test func secondarySession_flagOn_runsLoopAndPiggyback() async throws {
         let prevGroups = CloudSyncFlags.groupsBackendEnabled
+        let prevRuntime = CloudSyncFlags.syncRuntimeEnabled
         CloudSyncFlags.groupsBackendEnabled = true
+        CloudSyncFlags.syncRuntimeEnabled = false  // personal no cadencia → Grupos corre loop PROPIO
         SecondarySessionStore._testSetActiveOverride(true)
+        SwiftDataConfiguration._testSetSecondaryStoreMounted(true)  // secundaria OPERATIVA (D8 no bloquea)
         defer {
             CloudSyncFlags.groupsBackendEnabled = prevGroups
+            CloudSyncFlags.syncRuntimeEnabled = prevRuntime
             SecondarySessionStore._testSetActiveOverride(nil)
+            SwiftDataConfiguration._testSetSecondaryStoreMounted(false)
         }
 
         let dir = freshDir(); defer { cleanup(dir) }
@@ -631,7 +643,9 @@ struct GroupsSyncHardeningTests {
         await task?.value
         #expect(stub.callCount >= 1)          // y cicló de verdad
 
-        // Piggyback: el paso 5.6 SÍ invoca al runner en secundaria con flag ON.
+        // Piggyback: el paso 5.6 SÍ invoca al runner en secundaria con flag ON (runtime restaurado —
+        // el gate del 5.6 es solo el flag, pero se conserva el entorno del test original).
+        CloudSyncFlags.syncRuntimeEnabled = prevRuntime
         let counter = Counter()
         let runtime = makeRuntime(pullBody: emptyRuntimePullJSON)
         runtime.groupsSyncCycleRunner = { _ in counter.count += 1 }
@@ -639,6 +653,34 @@ struct GroupsSyncHardeningTests {
         defer { CloudSyncFlags._testResetStorageModeOverride() }
         _ = await runtime.syncCycle(context: context)
         #expect(counter.count == 1)
+    }
+
+    /// D8 (H-2026-07-18-4): VENTANA DE ENTRADA de la secundaria (descriptor activo, store del DUEÑO aún
+    /// montado — testigo secundario `false`) → el (re)arranque mid-session NO corre aunque todo lo demás
+    /// esté verde (flag ON, sesión viva, personal sin cadenciar — sin D8 el loop ARRANCARÍA, como prueba
+    /// el test de arriba). Pinnea el guard en el cliente real, no solo en la lógica pura.
+    @Test func secondarySession_flagOn_entryWindowMountMismatch_blocksOwnLoop() async throws {
+        let prevGroups = CloudSyncFlags.groupsBackendEnabled
+        let prevRuntime = CloudSyncFlags.syncRuntimeEnabled
+        CloudSyncFlags.groupsBackendEnabled = true
+        CloudSyncFlags.syncRuntimeEnabled = false  // sin piggyback → el ÚNICO blocker posible es D8
+        SecondarySessionStore._testSetActiveOverride(true)
+        SwiftDataConfiguration._testSetSecondaryStoreMounted(false)  // explícito: ventana de entrada
+        defer {
+            CloudSyncFlags.groupsBackendEnabled = prevGroups
+            CloudSyncFlags.syncRuntimeEnabled = prevRuntime
+            SecondarySessionStore._testSetActiveOverride(nil)
+            SwiftDataConfiguration._testSetSecondaryStoreMounted(false)
+        }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = StubSession(emptyPageJSON, status: 401)
+        let client = makeClient(session: stub, userID: nil)
+        client.startIfEligible(context: context, trigger: "foreground")
+
+        #expect(client._testLoopTask == nil)  // D8 bloqueó el (re)arranque mid-session
+        #expect(stub.callCount == 0)          // ni un request (el guard corta ANTES del rehydrate/ciclo)
     }
 
     /// Paso 5.6: con flag ON (y no-secundaria) el performCycle del runtime personal invoca el ciclo de

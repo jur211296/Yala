@@ -61,6 +61,11 @@ final class GroupsSyncClient {
     // Providers `@MainActor`: leen singletons main-actor-isolados (`CloudAuthService`). El cliente es
     // `@MainActor` → invocarlos no cruza actor.
     private let tokenProvider: @MainActor () async -> String?
+    /// H-2026-07-18-4: FUERZA el refresh del access token para el retry-once del 401 (el auto-refresh del
+    /// SDK solo dispara con <30s de margen → un `tokenProvider()` normal en la ventana de expiry devolvería
+    /// el MISMO token vencido). Inyectable (default = `CloudAuthService.shared.forceRefreshAccessToken`;
+    /// los tests inyectan uno hermético). `@MainActor` (el cliente ya lo es → no cruza actor).
+    private let forceRefreshTokenProvider: @MainActor () async -> String?
     private let attestProvider: @MainActor () async -> String?
     private let urlSession: SyncHTTPSession
     private let sessionCheck: @MainActor () -> Bool
@@ -175,10 +180,13 @@ final class GroupsSyncClient {
         nodeID: NodeID = NodeID.generate(),
         merkleClient: GroupsMerkleClient? = nil,
         outboxMirror: GroupsOutboxMirror? = GroupsOutboxMirror(),
-        deviceTokenProvider: @escaping @MainActor () -> String? = { nil }
+        deviceTokenProvider: @escaping @MainActor () -> String? = { nil },
+        forceRefreshTokenProvider: @escaping @MainActor () async -> String? =
+            { await CloudAuthService.shared.forceRefreshAccessToken() }
     ) {
         self.baseURL = baseURL
         self.tokenProvider = tokenProvider
+        self.forceRefreshTokenProvider = forceRefreshTokenProvider
         self.attestProvider = attestProvider
         self.urlSession = urlSession
         self.sessionCheck = sessionCheck
@@ -198,9 +206,23 @@ final class GroupsSyncClient {
 
     /// Arranca el LOOP de cadencia del canal de Grupos SOLO si `groupsBackendEnabled && hasSession`
     /// (SESIÓN VIVA, no storageMode — la persona solo-grupos). Con el flag `false` (SIEMPRE esta fase) es
-    /// un NO-OP TOTAL: retorna ANTES de tocar la red o crear modelos. Call-site DARK en `AppBootstrapper`.
-    /// Single-instance (no re-arranca si el loop vive); un 403 previo (`stoppedUntilRelaunch`) tampoco
-    /// re-arranca en este proceso (A5).
+    /// un NO-OP TOTAL: retorna ANTES de tocar la red o crear modelos. Call-sites DARK en `AppBootstrapper`
+    /// (cold boot `trigger: nil`; foreground resume `trigger: "foreground"`) y en el modifier de invite
+    /// backend (post-sign-in `trigger: "post-sign-in"`). Single-instance (no re-arranca si el loop vive);
+    /// un 403 previo (`stoppedUntilRelaunch`) tampoco re-arranca en este proceso (A5).
+    ///
+    /// **La decisión de (re)arranque del loop propio vive en `GroupsLoopRestartLogic.shouldStart`** (pura,
+    /// testeada) — SSOT de flag/sesión/stop/single-instance/D8, para no partir la verdad entre guards
+    /// dispersos. `trigger` NO-nil emite `groupsLoopRestarted` SOLO si el loop se crea de verdad.
+    ///
+    /// **D8 (H-2026-07-18-4): AHORA es SEGURO llamarlo MID-SESSION** (foreground / post-sign-in), a
+    /// diferencia de antes (que exigía SOLO cold boot): `shouldStart` incorpora el guard de mount-mismatch
+    /// (`secondaryActive && !secondaryMounted`, idéntico a `CloudSyncRuntime.canRunDomain`) — en la ventana
+    /// de entrada de la sesión secundaria (store del DUEÑO montado + descriptor secundario ya persistido)
+    /// bloquea ANTES del rehydrate, así ni el rehydrate ni el loop drenan la History del dueño a la cuenta
+    /// entrante. El re-arranque en foreground/post-sign-in resucita un loop que murió en silencio (401
+    /// transitorio en la ventana de expiry → `sessionExpired` → `break loop`; el retry-once del 401 de
+    /// abajo cubre el caso común, este re-arranque es la red del residual).
     ///
     /// **[R3] Coordinación anti-doble-loop (B2):** si el runtime PERSONAL va a cadenciar
     /// (`syncRuntimeEnabled && CloudSyncRuntime.canRunDomain()`), Grupos NO arranca loop propio — el
@@ -211,33 +233,41 @@ final class GroupsSyncClient {
     /// quedaría sin sync toda la migración. Residual documentado: las TRANSICIONES (sign-out, cambio
     /// de modo, fin de migración) las media el relaunch en v1 — el modo elegido aquí no se re-evalúa
     /// en caliente. El rehydrate del espejo (B2) corre en AMBOS modos (es red de boot, no de loop).
-    func startIfEligible(context: ModelContext) {
+    func startIfEligible(context: ModelContext, trigger: String? = nil) {
         guard CloudSyncFlags.groupsBackendEnabled, sessionCheck() else { return }
         // G8-2 (AJUSTE review #3): retener el context AQUÍ — DESPUÉS del guard flag+sesión, ANTES del
-        // return del piggyback (:209). Sin esto, en modo piggyback (personal cadencia) el context quedaría
+        // return del piggyback. Sin esto, en modo piggyback (personal cadencia) el context quedaría
         // sin fijar y `syncNowFromPush` devolvería siempre false.
         self.context = context
         // B2 (cinturón del call-site de AppBootstrapper G2) — M1/D8 (G5-C): con el flag ON la sesión
         // SECUNDARIA SÍ corre el canal de Grupos (loop + rehydrate) sobre SU store `YalaGroups-Secondary`
         // y su `sub`; el rehydrate del espejo App Group filtra DURO por `userID` (owner-scoping) → las
         // entries del dueño se ignoran. Con el flag OFF esta condición reproduce el guard de secundaria
-        // de antes (byte-idéntico: por 193 ya retornó, pero se conserva por simetría/documentación).
-        // INVARIANTE (D8): el loop propio NO tiene guard de mount-mismatch (a diferencia de
-        // `CloudSyncRuntime.canRunDomain`) — depende de que `startIfEligible` SOLO se invoque en cold
-        // boot (`AppBootstrapper`), donde el mount del store es coherente con `isActive()`. JAMÁS
-        // llamarlo mid-session en secundaria durante la ventana de entrada (proceso viejo con el store
-        // del dueño montado + descriptor secundario ya persistido).
+        // de antes (byte-idéntico: por el guard flag+sesión ya retornó, se conserva por simetría).
         guard CloudSyncFlags.groupsBackendEnabled || !SecondarySessionStore.isActive() else { return }
-        guard !stoppedUntilRelaunch else { return }   // A5: 403 → no re-arrancar en este proceso
+
+        // SSOT del (re)arranque del loop propio (incluye el guard D8 de mount-mismatch — hace seguro el
+        // call mid-session). El piggyback NO lo modela: `loopAlive==false` ⇒ shouldStart==true ⇒ el
+        // rehydrate corre y el early-return del piggyback decide después.
+        guard GroupsLoopRestartLogic.shouldStart(
+            flagOn: CloudSyncFlags.groupsBackendEnabled,
+            hasSession: sessionCheck(),
+            stoppedUntilRelaunch: stoppedUntilRelaunch,
+            loopAlive: loopTask != nil,
+            secondaryActive: SecondarySessionStore.isActive(),
+            secondaryMounted: SwiftDataConfiguration.secondaryStoreMounted
+        ) else { return }
+
         // B2: red de boot — re-insertar del espejo App Group lo que una lightweight migration se llevó.
         rehydrateOutboxFromMirror(context: context)
         // [R3] Personal cadencia ⇒ grupos piggyback (paso 5.6); si no ⇒ loop propio.
         if CloudSyncFlags.syncRuntimeEnabled && CloudSyncRuntime.canRunDomain() { return }
-        guard loopTask == nil else { return }          // single-instance
         // A7: canario de push fallando permanente (filas ya en dead-letter al arrancar el loop).
         let deadLettered = (try? deadLetteredCount(context)) ?? 0
         if deadLettered > 0 { GroupsSyncBreadcrumb.groupsDeadLetteredCount(deadLettered) }
         loopTask = Task { @MainActor in await self.runLoop(context: context) }
+        // Solo cuando el loop se creó de verdad (no en piggyback / no-op): breadcrumb de re-arranque.
+        if let trigger { GroupsSyncBreadcrumb.groupsLoopRestarted(trigger: trigger) }
     }
 
     /// El loop de cadencia: cada vuelta = `syncCycleOnce` → delay por `SyncCadencePolicy` → repetir.
@@ -247,7 +277,10 @@ final class GroupsSyncClient {
         defer { loopTask = nil }                        // A6: liberar el single-instance al salir
         loop: while true {
             // A6: cinturón contra store muerto en la ventana wipe→token-nil (sesión caída entre vueltas).
-            guard sessionCheck() else { break loop }
+            guard sessionCheck() else {
+                GroupsSyncBreadcrumb.groupsLoopStopped(reason: "session-check-failed")
+                break loop
+            }
 
             let outcome = await syncCycleOnceCoalesced(context: context)
             switch outcome {
@@ -263,14 +296,19 @@ final class GroupsSyncClient {
             case .scheduleNext(let t), .backoff(let t):
                 delay = t
             case .stopUntilSignIn:
+                GroupsSyncBreadcrumb.groupsLoopStopped(reason: "session-expired")
                 break loop                               // A5: re-arrancable por próximo startIfEligible
             case .stopUntilRelaunch:
                 stoppedUntilRelaunch = true              // A5: no re-arranca este proceso
+                GroupsSyncBreadcrumb.groupsLoopStopped(reason: "account-unavailable")
                 break loop
             }
 
             await sleeper(delay)
-            guard !Task.isCancelled else { break loop }  // A6: cancelado durante el sleep → salir
+            guard !Task.isCancelled else {               // A6: cancelado durante el sleep → salir
+                GroupsSyncBreadcrumb.groupsLoopStopped(reason: "cancelled")
+                break loop
+            }
         }
     }
 
@@ -1085,7 +1123,7 @@ final class GroupsSyncClient {
         }
         guard !rows.isEmpty else { return .completed([]) }
 
-        guard let token = await tokenProvider(), !token.isEmpty else {
+        guard var token = await tokenProvider(), !token.isEmpty else {
             return .sessionExpired(pending: rows.count)
         }
         // Attest UNA vez para todos los chunks (TTL de sesión ≫ duración del push, molde personal).
@@ -1096,7 +1134,9 @@ final class GroupsSyncClient {
         while index < rows.count {
             let upper = min(index + Self.pushChunkSize, rows.count)
             let chunk = Array(rows[index..<upper])
-            let outcome = await pushChunk(chunk, token: token, attest: attest,
+            // `token` es inout: si un chunk rescata un 401 con refresh forzado, el token FRESCO se
+            // propaga a los chunks siguientes (sin él, cada chunk posterior forzaría su propio refresh).
+            let outcome = await pushChunk(chunk, token: &token, attest: attest,
                                           totalPending: rows.count, context: context)
             switch outcome {
             case .completed(let results):
@@ -1112,9 +1152,11 @@ final class GroupsSyncClient {
     }
 
     /// UN request `POST /groups/push` con un chunk de filas. Mapeo de status EXACTAMENTE el previo al
-    /// chunking; al 200 aplica los resultados DEL CHUNK ([R8]) antes de devolver.
+    /// chunking; al 200 aplica los resultados DEL CHUNK ([R8]) antes de devolver. `token` es `inout`:
+    /// un 401 rescatado con refresh forzado ESCRIBE el token fresco de vuelta (los chunks siguientes de
+    /// `pushPending` lo reusan sin re-forzar el refresh por chunk).
     private func pushChunk(
-        _ chunk: [GroupSyncOutbox], token: String, attest: String?,
+        _ chunk: [GroupSyncOutbox], token: inout String, attest: String?,
         totalPending: Int, context: ModelContext
     ) async -> PushOutcome {
         let generation = teardownGeneration  // guardia MEDIA: no aplicar resultados post-teardown
@@ -1133,56 +1175,73 @@ final class GroupsSyncClient {
         }
 
         let body = wireBody(deltas)
-        var request = URLRequest(url: baseURL.appendingPathComponent("groups/push"))
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        if let attest, !attest.isEmpty {
-            request.setValue("Bearer \(attest)", forHTTPHeaderField: "X-Yala-Attest-Session")
-        }
-        // G8-3: el device token local (header opcional) → el server excluye SOLO este device del autor del
-        // fan-out. Solo se añade si el provider da un token non-nil/no-vacío (default `{ nil }` → header AUSENTE,
-        // byte-idéntico al pre-G8-3). Flag OFF: pushChunk solo corre con el canal activo — sin divergencia.
-        if let deviceToken = deviceTokenProvider(), !deviceToken.isEmpty {
-            request.setValue(deviceToken, forHTTPHeaderField: "X-Yala-Device-Token")
-        }
-        request.httpBody = body
 
-        let data: Data
-        let response: URLResponse
-        do {
-            (data, response) = try await urlSession.data(for: request)
-        } catch {
-            return .transient
-        }
-        guard let http = response as? HTTPURLResponse else { return .transient }
+        // Cierre interno con la request YA construida (body/attest/deviceToken idénticos): solo cambia el
+        // bearer, para poder RE-EMITIR el chunk con un token fresco tras un 401. Mapeo de status EXACTO.
+        func send(bearer: String) async -> PushOutcome {
+            var request = URLRequest(url: baseURL.appendingPathComponent("groups/push"))
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("Bearer \(bearer)", forHTTPHeaderField: "Authorization")
+            if let attest, !attest.isEmpty {
+                request.setValue("Bearer \(attest)", forHTTPHeaderField: "X-Yala-Attest-Session")
+            }
+            // G8-3: el device token local (header opcional) → el server excluye SOLO este device del autor del
+            // fan-out. Solo se añade si el provider da un token non-nil/no-vacío (default `{ nil }` → header AUSENTE,
+            // byte-idéntico al pre-G8-3). Flag OFF: pushChunk solo corre con el canal activo — sin divergencia.
+            if let deviceToken = deviceTokenProvider(), !deviceToken.isEmpty {
+                request.setValue(deviceToken, forHTTPHeaderField: "X-Yala-Device-Token")
+            }
+            request.httpBody = body
 
-        switch http.statusCode {
-        case 200:
-            // Guardia MEDIA: un teardown durante el request suspendido → NO aplicar resultados (ni purga
-            // ni dead-letter ni removals del espejo bajo una sesión que ya no existe). `.transient` es
-            // seguro: nada se confirmó localmente; el server deduplica por client_mutation_id.
-            guard generation == teardownGeneration else { return .transient }
+            let data: Data
+            let response: URLResponse
             do {
-                let decoded = try JSONDecoder().decode(GroupPushResponse.self, from: data)
-                // El `SyncDeltaResult` local descarta `outcome`; se decodifica APARTE para leer el código
-                // SANITIZADO (`outcome.message` = yala_*) del rechazo y el `reason` del noop group_not_found
-                // — SIN tocar el `SyncPushClient` del personal (A2).
-                let outcomeInfo = Self.decodeOutcomeInfo(data)
-                applyResults(decoded.results, outcomeInfo: outcomeInfo, rows: chunk, context: context)
-                return .completed(decoded.results)
+                (data, response) = try await urlSession.data(for: request)
             } catch {
                 return .transient
             }
-        case 401:
-            return .sessionExpired(pending: totalPending)
-        case 403:
-            return .accountUnavailable
-        case 409:
-            return GatewayErrorEnvelope.isAccountReverting(data) ? .accountUnavailable : .transient
-        default:
-            return .transient
+            guard let http = response as? HTTPURLResponse else { return .transient }
+
+            switch http.statusCode {
+            case 200:
+                // Guardia MEDIA: un teardown durante el request suspendido → NO aplicar resultados (ni purga
+                // ni dead-letter ni removals del espejo bajo una sesión que ya no existe). `.transient` es
+                // seguro: nada se confirmó localmente; el server deduplica por client_mutation_id.
+                guard generation == teardownGeneration else { return .transient }
+                do {
+                    let decoded = try JSONDecoder().decode(GroupPushResponse.self, from: data)
+                    // El `SyncDeltaResult` local descarta `outcome`; se decodifica APARTE para leer el código
+                    // SANITIZADO (`outcome.message` = yala_*) del rechazo y el `reason` del noop group_not_found
+                    // — SIN tocar el `SyncPushClient` del personal (A2).
+                    let outcomeInfo = Self.decodeOutcomeInfo(data)
+                    applyResults(decoded.results, outcomeInfo: outcomeInfo, rows: chunk, context: context)
+                    return .completed(decoded.results)
+                } catch {
+                    return .transient
+                }
+            case 401:
+                return .sessionExpired(pending: totalPending)
+            case 403:
+                return .accountUnavailable
+            case 409:
+                return GatewayErrorEnvelope.isAccountReverting(data) ? .accountUnavailable : .transient
+            default:
+                return .transient
+            }
         }
+
+        let outcome = await send(bearer: token)
+        // Retry-once del 401 (H-2026-07-18-4): fuerza el refresh del token y RE-EMITE el chunk UNA vez si el
+        // token nuevo DIFIERE del usado. nil o idéntico → sessionExpired como hoy (jamás recursión: solo un
+        // reintento). Solo el 401 se rescata — el resto de códigos suben tal cual. El token fresco se escribe
+        // de vuelta (inout) para que los chunks SIGUIENTES lo reusen.
+        if case .sessionExpired = outcome,
+           let fresh = await forceRefreshTokenProvider(), fresh != token {
+            token = fresh
+            return await send(bearer: fresh)
+        }
+        return outcome
     }
 
     /// Traduce UNA fila de outbox de Grupos a su `GroupSyncDelta` de wire. `entity_type` = tabla Postgres.
@@ -1389,39 +1448,54 @@ final class GroupsSyncClient {
         guard let url = buildPullURL(cursorsJSON: cursor.groupCursorsJSON, limit: limit) else {
             return .transient
         }
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        if let attest = await attestProvider(), !attest.isEmpty {
-            request.setValue("Bearer \(attest)", forHTTPHeaderField: "X-Yala-Attest-Session")
-        }
+        let attest = await attestProvider()
 
-        let data: Data
-        let response: URLResponse
-        do {
-            (data, response) = try await urlSession.data(for: request)
-        } catch {
-            return .transient
-        }
-        guard let http = response as? HTTPURLResponse else { return .transient }
+        // Cierre interno con la URL/attest ya resueltos: solo cambia el bearer, para RE-EMITIR la página
+        // con un token fresco tras un 401. Mapeo de status EXACTO al previo.
+        func send(bearer: String) async -> GroupsPullPageOutcome {
+            var request = URLRequest(url: url)
+            request.httpMethod = "GET"
+            request.setValue("Bearer \(bearer)", forHTTPHeaderField: "Authorization")
+            if let attest, !attest.isEmpty {
+                request.setValue("Bearer \(attest)", forHTTPHeaderField: "X-Yala-Attest-Session")
+            }
 
-        switch http.statusCode {
-        case 200:
-            // Guardia MEDIA: un teardown durante el request suspendido → NO aplicar la página (el apply
-            // escribe Split*/cursor y el re-drive haría `writeMirrorEntry` sobre el espejo recién
-            // purgado). `.transient` corta el pull sin avanzar cursor.
-            guard generation == teardownGeneration else { return .transient }
+            let data: Data
+            let response: URLResponse
             do {
-                let page = try Self.decodePage(data)
-                let saved = applyPulledPage(page, cursor: cursor, context: context)
-                return .applied(deltas: page.deltas.count, saved: saved)
+                (data, response) = try await urlSession.data(for: request)
             } catch {
                 return .transient
             }
-        case 401: return .sessionExpired
-        case 403: return .accountUnavailable
-        default: return .transient
+            guard let http = response as? HTTPURLResponse else { return .transient }
+
+            switch http.statusCode {
+            case 200:
+                // Guardia MEDIA: un teardown durante el request suspendido → NO aplicar la página (el apply
+                // escribe Split*/cursor y el re-drive haría `writeMirrorEntry` sobre el espejo recién
+                // purgado). `.transient` corta el pull sin avanzar cursor.
+                guard generation == teardownGeneration else { return .transient }
+                do {
+                    let page = try Self.decodePage(data)
+                    let saved = applyPulledPage(page, cursor: cursor, context: context)
+                    return .applied(deltas: page.deltas.count, saved: saved)
+                } catch {
+                    return .transient
+                }
+            case 401: return .sessionExpired
+            case 403: return .accountUnavailable
+            default: return .transient
+            }
         }
+
+        let outcome = await send(bearer: token)
+        // Retry-once del 401 (H-2026-07-18-4): fuerza el refresh y RE-EMITE la página UNA vez si el token
+        // nuevo DIFIERE del usado. nil o idéntico → sessionExpired como hoy (sin recursión).
+        if case .sessionExpired = outcome,
+           let fresh = await forceRefreshTokenProvider(), fresh != token {
+            return await send(bearer: fresh)
+        }
+        return outcome
     }
 
     /// Construye la URL del pull con `cursors` (JSON URL-encoded) + `limit`. `internal` para test #4.

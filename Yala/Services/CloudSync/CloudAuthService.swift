@@ -226,6 +226,22 @@ final class CloudAuthService: NSObject {
         }
     }
 
+    /// FUERZA el refresh del access token (`refreshSession()` canjea el refresh token AHORA) y devuelve el
+    /// JWT nuevo. A diferencia de `accessToken()` — que solo auto-refresca cuando quedan <30s de margen —
+    /// esto siempre rota: el retry-once del 401 del canal de Grupos (H-2026-07-18-4) lo necesita para
+    /// rescatar un 401 disparado en la ventana de expiry (un `accessToken()` normal ahí devolvería el
+    /// MISMO token vencido). `nil` sin config / sin sesión / fallo (do/catch, jamás `try?` silenciador).
+    func forceRefreshAccessToken() async -> String? {
+        guard let client else { return nil }
+        do {
+            let session = try await client.refreshSession()
+            return session.accessToken
+        } catch {
+            CloudSyncBreadcrumb.authAccessTokenUnavailable()
+            return nil
+        }
+    }
+
     /// appleUserID capturado del último sign-in (para el match del PAR SIWA — AJUSTE #1 del brief B1 —
     /// y `getCredentialState`). `nil` = nunca hubo sign-in en este device.
     func storedAppleUserID() -> String? { readProfileString(Self.keyAppleUserID) }

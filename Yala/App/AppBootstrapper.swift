@@ -1129,6 +1129,17 @@ final class AppBootstrapper {
             CloudSyncRuntime.shared?.handleBecameActive()
         }
 
+        // H-2026-07-18-4 (DARK): re-arranque del canal de Grupos → backend si su loop propio murió en
+        // silencio (401 transitorio en la ventana de expiry → sessionExpired → break loop; el startIfEligible
+        // solo corría en cold boot y NADA lo re-arrancaba hasta relaunch). Mismo gate que el call-site del
+        // cold boot (appLaunched paso G2). Idempotente por single-instance (loopTask != nil ⇒ no-op) y
+        // D8-safe por el guard de mount-mismatch de startIfEligible. Con el flag OFF es NO-OP TEMPRANO
+        // (startIfEligible retorna en su primer guard flag+sesión) → byte-idéntico a producción hoy.
+        if !UITestHooks.isActive
+            && (CloudSyncFlags.groupsBackendEnabled || !SecondarySessionStore.isActive()) {
+            GroupsSyncClient.shared.startIfEligible(context: context, trigger: "foreground")
+        }
+
         // Modo Nube auth (I7c, mitigación #23): re-chequea la credencial de Apple al foreground; si fue
         // revocada, cierra la sesión local. El guard `isConfigured` evita incluso instanciar `.shared`
         // en producción (placeholder); con staging configurado pero sin sign-in previo es un no-op

@@ -1150,15 +1150,19 @@ struct GroupsSyncClientTests {
         CloudSyncFlags.groupsBackendEnabled = true
 
         // 401 en cualquier request → el pull (outbox vacío ⇒ el push no manda) devuelve sessionExpired.
+        // `forceRefreshTokenProvider: { nil }` (hermético, sin tocar el singleton): el retry-once del 401
+        // NO consigue token nuevo → sessionExpired como antes del H-2026-07-18-4. El 401 SIN refresh
+        // exitoso DEBE seguir terminando el loop.
         let stub = StubHTTPSession(statusCode: 401)
         let sleeper = SleeperCounter()
-        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { true })
+        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { true },
+                                      forceRefreshTokenProvider: { nil })
         client.sleeper = { _ in sleeper.count += 1 }
 
         client.startIfEligible(context: context)
         await client._testLoopTask?.value
 
-        #expect(stub.callCount == 1)   // 1 pull → 401 → loop termina
+        #expect(stub.callCount == 1)   // 1 pull → 401 (sin refresh) → loop termina
         #expect(sleeper.count == 0)    // sessionExpired rompe ANTES del sleeper
     }
 
@@ -1199,13 +1203,206 @@ struct GroupsSyncClientTests {
         CloudSyncFlags.groupsBackendEnabled = true
 
         let stub = StubHTTPSession(statusCode: 401)
-        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { true })
+        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { true },
+                                      forceRefreshTokenProvider: { nil })
 
         client.startIfEligible(context: context)
         let task = client._testLoopTask
         client.startIfEligible(context: context)  // segundo arranque = no-op (loop vivo)
         await task?.value
         #expect(stub.callCount == 1)  // una sola vuelta corrió (no se duplicó el loop)
+    }
+
+    // MARK: - Test 10b · Retry-once del 401 con refresh forzado (H-2026-07-18-4)
+
+    /// 401 → refresh forzado devuelve un token DISTINTO → RE-EMITE la request UNA vez con el bearer nuevo
+    /// y COMPLETA. Asserta el header real de la 2ª request (el bearer nuevo) y que el outcome NO es
+    /// sessionExpired.
+    @Test func retry401_refreshesToken_reissuesOnce_thenCompletes() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let mid = UUID()
+        _ = try seedOutbox(context, mid: mid)
+
+        // 1ª respuesta 401; 2ª (tras el refresh) 200 applied → purga la fila.
+        let stub = SequenceStubHTTPSession([
+            .init(data: Data(), status: 401),
+            .init(data: pushResultJSON(mid: mid, status: "applied", reason: "", outcome: "null"), status: 200),
+        ], fallback: .init(data: Data(), status: 401))
+        let client = GroupsSyncClient(
+            tokenProvider: { "old-jwt" }, urlSession: stub,
+            forceRefreshTokenProvider: { "new-jwt" })
+
+        let outcome = await client.pushPending(context: context)
+
+        // Re-emitió UNA vez: 2 requests, la 1ª con el token viejo, la 2ª con el NUEVO (header real).
+        #expect(stub.callCount == 2)
+        #expect(stub.requests.first?.value(forHTTPHeaderField: "Authorization") == "Bearer old-jwt")
+        #expect(stub.requests.last?.value(forHTTPHeaderField: "Authorization") == "Bearer new-jwt")
+        // No es sessionExpired: completó.
+        if case .sessionExpired = outcome { Issue.record("no debe ser sessionExpired tras el retry exitoso") }
+        // La fila se purgó (applied en la re-emisión).
+        #expect(try groupOutbox(context).isEmpty)
+    }
+
+    /// El pull también rescata el 401: 401 → refresh distinto → re-emite y aplica la página (vacía).
+    @Test func retry401_pull_refreshesToken_reissuesOnce() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let stub = SequenceStubHTTPSession([
+            .init(data: Data(), status: 401),
+            .init(data: emptyPageJSON, status: 200),
+        ], fallback: .init(data: emptyPageJSON, status: 200))
+        let client = GroupsSyncClient(
+            tokenProvider: { "old-jwt" }, urlSession: stub,
+            forceRefreshTokenProvider: { "new-jwt" })
+
+        let outcome = await client.pullAndApplyOnce(context: context)
+
+        #expect(stub.callCount == 2)
+        #expect(stub.requests.last?.value(forHTTPHeaderField: "Authorization") == "Bearer new-jwt")
+        #expect(outcome == .applied(deltas: 0, saved: true))
+    }
+
+    /// 401 + refresh devuelve NIL → sin re-emisión → sessionExpired (comportamiento pre-fix).
+    @Test func retry401_refreshReturnsNil_yieldsSessionExpired() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let mid = UUID()
+        _ = try seedOutbox(context, mid: mid)
+
+        let stub = StubHTTPSession(statusCode: 401)
+        let client = GroupsSyncClient(
+            tokenProvider: { "old-jwt" }, urlSession: stub,
+            forceRefreshTokenProvider: { nil })
+
+        let outcome = await client.pushPending(context: context)
+
+        #expect(stub.callCount == 1)   // sin re-emisión
+        #expect(outcome == .sessionExpired(pending: 1))
+        #expect(try groupOutbox(context).first?.rejectedReason == nil)  // no dead-letter (401 no purga)
+    }
+
+    /// 401 + refresh devuelve el MISMO token → sin re-emisión (evita un round-trip inútil) → sessionExpired.
+    @Test func retry401_sameToken_yieldsSessionExpired_noReissue() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let mid = UUID()
+        _ = try seedOutbox(context, mid: mid)
+
+        let stub = StubHTTPSession(statusCode: 401)
+        let client = GroupsSyncClient(
+            tokenProvider: { "same-jwt" }, urlSession: stub,
+            forceRefreshTokenProvider: { "same-jwt" })
+
+        let outcome = await client.pushPending(context: context)
+
+        #expect(stub.callCount == 1)   // fresh == token → no re-emite
+        #expect(outcome == .sessionExpired(pending: 1))
+    }
+
+    /// Push MULTI-CHUNK con expiry a mitad: el chunk 1 rescata el 401 (refresh forzado UNA vez) y el
+    /// token FRESCO se propaga a los chunks siguientes (inout) — el chunk 2 NO fuerza su propio refresh
+    /// y ya sale con el bearer nuevo.
+    @Test func retry401_multiChunk_reusesFreshToken_singleRefresh() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        // 51 filas → 2 chunks (pushChunkSize = 50).
+        var mids: [UUID] = []
+        for _ in 0..<(GroupsSyncClient.pushChunkSize + 1) {
+            let mid = UUID()
+            mids.append(mid)
+            context.insert(GroupSyncOutbox(
+                syncID: UUID(), groupID: "SplitGroup-A", entityType: GroupSyncEntityType.splitExpense,
+                op: .upsert, hlc: "2026-07-15T00:00:00.000Z-0000-00000000000000aa",
+                clientMutationID: mid, fieldsJSON: "{\"amount\":\"1.0000\"}", author: ""))
+        }
+        try context.save()
+
+        // Respuesta 200 con TODOS los mids applied (applyResults solo matchea los del chunk; extras skip).
+        let items = mids.map {
+            "{\"sync_id\":\"s\",\"client_mutation_id\":\"\($0.uuidString.lowercased())\",\"status\":\"applied\"}"
+        }.joined(separator: ",")
+        let allApplied = Data("{\"results\":[\(items)]}".utf8)
+
+        // chunk1: 401 → retry 200; chunk2: 200 directo (SIN 401 previo — ya va con el token fresco).
+        let stub = SequenceStubHTTPSession([
+            .init(data: Data(), status: 401),
+            .init(data: allApplied, status: 200),
+            .init(data: allApplied, status: 200),
+        ], fallback: .init(data: allApplied, status: 200))
+        let refreshes = SleeperCounter()
+        let client = GroupsSyncClient(
+            tokenProvider: { "old-jwt" }, urlSession: stub,
+            forceRefreshTokenProvider: { refreshes.count += 1; return "new-jwt" })
+
+        let outcome = await client.pushPending(context: context)
+
+        #expect(refreshes.count == 1)  // UN solo refresh forzado para todo el push
+        #expect(stub.callCount == 3)   // chunk1 (401) + chunk1 retry + chunk2 directo
+        #expect(stub.requests[0].value(forHTTPHeaderField: "Authorization") == "Bearer old-jwt")
+        #expect(stub.requests[1].value(forHTTPHeaderField: "Authorization") == "Bearer new-jwt")
+        #expect(stub.requests[2].value(forHTTPHeaderField: "Authorization") == "Bearer new-jwt")
+        if case .sessionExpired = outcome { Issue.record("no debe ser sessionExpired tras el retry exitoso") }
+        #expect(try groupOutbox(context).isEmpty)  // los 51 se purgaron (applied)
+    }
+
+    // MARK: - Test 10c · Re-arranque del loop muerto (H-2026-07-18-4)
+
+    /// Tras un loop muerto por sessionExpired (401, `stoppedUntilRelaunch` NO armado), un `startIfEligible`
+    /// posterior RE-CREA el loopTask (la red del residual: el retry-once no rescató el 401).
+    @Test func restart_afterSessionExpiredStop_rearmsLoop_whenSessionAlive() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let prevFlag = CloudSyncFlags.groupsBackendEnabled
+        defer { CloudSyncFlags.groupsBackendEnabled = prevFlag }
+        CloudSyncFlags.groupsBackendEnabled = true
+
+        let stub = StubHTTPSession(statusCode: 401)
+        let sleeper = SleeperCounter()
+        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { true },
+                                      forceRefreshTokenProvider: { nil })
+        client.sleeper = { _ in sleeper.count += 1 }
+
+        client.startIfEligible(context: context)
+        await client._testLoopTask?.value
+        #expect(stub.callCount == 1)          // 1ª vuelta: pull 401 → sessionExpired → loop muere
+        #expect(client._testLoopTask == nil)  // loop liberado
+
+        // sessionExpired NO arma stoppedUntilRelaunch → re-arranca (foreground / post-sign-in).
+        client.startIfEligible(context: context, trigger: "foreground")
+        await client._testLoopTask?.value
+        #expect(stub.callCount == 2)          // el loop RE-ARRANCÓ y corrió otra vuelta
+    }
+
+    /// Regresión de `stoppedUntilRelaunch`: tras un 403, `startIfEligible` sigue siendo NO-OP aun con un
+    /// refresh disponible (el retry-401 NO interfiere con la semántica de 403 — nunca se dispara ahí).
+    @Test func restart_403_stillNoOp() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let prevFlag = CloudSyncFlags.groupsBackendEnabled
+        defer { CloudSyncFlags.groupsBackendEnabled = prevFlag }
+        CloudSyncFlags.groupsBackendEnabled = true
+
+        let stub = StubHTTPSession(statusCode: 403)
+        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { true },
+                                      forceRefreshTokenProvider: { "new-jwt" })
+
+        client.startIfEligible(context: context)
+        await client._testLoopTask?.value
+        #expect(stub.callCount == 1)          // pull 403 → accountUnavailable → stopUntilRelaunch
+
+        // Aun con refresh disponible, 403 armó stoppedUntilRelaunch → no re-arranca.
+        client.startIfEligible(context: context, trigger: "foreground")
+        #expect(client._testLoopTask == nil)
+        #expect(stub.callCount == 1)          // callCount estable
     }
 
     // MARK: - Test 11 · Mapeo de outcomes del canal → CadenceOutcome (A4, uso de SyncCadencePolicy)

@@ -16,9 +16,11 @@
 //  presentan nunca.
 //
 
+import SwiftData
 import SwiftUI
 
 struct GroupsBackendInviteModifier: ViewModifier {
+    @Environment(\.modelContext) private var modelContext
     @Binding var showGroupsConsent: Bool
     @Binding var showGroupsSignIn: Bool
     @Binding var pendingGroupsJoinZone: String?
@@ -38,6 +40,10 @@ struct GroupsBackendInviteModifier: ViewModifier {
                 GroupsSignInView {
                     signInAuthenticated = true
                     showGroupsSignIn = false
+                    // H-2026-07-18-4: un sign-in solo-grupos IN-SESSION no arrancaba el canal (startIfEligible
+                    // solo corría en cold boot) → arrancarlo aquí cubre crear-grupo / invite / futuro CTA del
+                    // empty state. D8-safe por el guard de mount-mismatch; no-op temprano con el flag OFF.
+                    GroupsSyncClient.shared.startIfEligible(context: modelContext, trigger: "post-sign-in")
                 }
                 .environment(SessionState.shared)
             }
