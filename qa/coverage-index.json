@@ -1514,8 +1514,7 @@
         "Yala/App/Views/Shared/MilestoneUpgradeSheet.swift",
         "Yala/App/Views/Shared/UpgradePromptSheet.swift",
         "Yala/App/Services/FeatureGateService.swift",
-        "Yala/App/Services/ProUpsellService.swift",
-        "Yala/Services/TelemetryService.swift"
+        "Yala/App/Services/ProUpsellService.swift"
       ],
       "scenarioIDs": [
         "F-PRO-01",
