@@ -20,28 +20,28 @@ struct GroupExpenseEligibilityLogicTests {
 
     @Test func activeMemberCanCreate() {
         #expect(GroupExpenseEligibilityLogic.canCreateExpense(
-            currentMemberStatus: .active, isArchived: false, isHiddenForAll: false
+            currentMemberStatus: .active, isArchived: false, isHiddenForAll: false, isMigratedFrozen: false
         ) == true)
     }
 
     @Test func pendingApprovalCannotCreate() {
         #expect(GroupExpenseEligibilityLogic.canCreateExpense(
-            currentMemberStatus: .pendingApproval, isArchived: false, isHiddenForAll: false
+            currentMemberStatus: .pendingApproval, isArchived: false, isHiddenForAll: false, isMigratedFrozen: false
         ) == false)
     }
 
     @Test func rejectedCannotCreate() {
         #expect(GroupExpenseEligibilityLogic.canCreateExpense(
-            currentMemberStatus: .rejected, isArchived: false, isHiddenForAll: false
+            currentMemberStatus: .rejected, isArchived: false, isHiddenForAll: false, isMigratedFrozen: false
         ) == false)
     }
 
     @Test func leftOrRemovedCannotCreate() {
         #expect(GroupExpenseEligibilityLogic.canCreateExpense(
-            currentMemberStatus: .left, isArchived: false, isHiddenForAll: false
+            currentMemberStatus: .left, isArchived: false, isHiddenForAll: false, isMigratedFrozen: false
         ) == false)
         #expect(GroupExpenseEligibilityLogic.canCreateExpense(
-            currentMemberStatus: .removed, isArchived: false, isHiddenForAll: false
+            currentMemberStatus: .removed, isArchived: false, isHiddenForAll: false, isMigratedFrozen: false
         ) == false)
     }
 
@@ -50,19 +50,39 @@ struct GroupExpenseEligibilityLogicTests {
     /// hasta que el member llegue por sync.
     @Test func nilStatusCannotCreate() {
         #expect(GroupExpenseEligibilityLogic.canCreateExpense(
-            currentMemberStatus: nil, isArchived: false, isHiddenForAll: false
+            currentMemberStatus: nil, isArchived: false, isHiddenForAll: false, isMigratedFrozen: false
         ) == false)
     }
 
     @Test func archivedNeverEligible() {
         #expect(GroupExpenseEligibilityLogic.canCreateExpense(
-            currentMemberStatus: .active, isArchived: true, isHiddenForAll: false
+            currentMemberStatus: .active, isArchived: true, isHiddenForAll: false, isMigratedFrozen: false
         ) == false)
     }
 
     @Test func hiddenForAllNeverEligible() {
         #expect(GroupExpenseEligibilityLogic.canCreateExpense(
-            currentMemberStatus: .active, isArchived: false, isHiddenForAll: true
+            currentMemberStatus: .active, isArchived: false, isHiddenForAll: true, isMigratedFrozen: false
+        ) == false)
+    }
+
+    /// H-2026-07-18-2: grupo congelado tras migrar al backend — el save lanzaría
+    /// `GroupExpenseServiceError.movedToBackend` SIEMPRE, así que no debe ofrecerse en el
+    /// picker de "Nuevo gasto" pese a que el current user sea miembro `.active`.
+    @Test func migratedFrozenNeverEligible() {
+        #expect(GroupExpenseEligibilityLogic.canCreateExpense(
+            currentMemberStatus: .active, isArchived: false, isHiddenForAll: false, isMigratedFrozen: true
+        ) == false)
+    }
+
+    /// El freeze gana aunque todo lo demás sea elegible; y no-frozen conserva el comportamiento
+    /// actual (miembro `.active` sin flags → elegible).
+    @Test func migratedFrozenGatesOverActiveMember() {
+        #expect(GroupExpenseEligibilityLogic.canCreateExpense(
+            currentMemberStatus: .active, isArchived: false, isHiddenForAll: false, isMigratedFrozen: false
+        ) == true)
+        #expect(GroupExpenseEligibilityLogic.canCreateExpense(
+            currentMemberStatus: .active, isArchived: false, isHiddenForAll: false, isMigratedFrozen: true
         ) == false)
     }
 }

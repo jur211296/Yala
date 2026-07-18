@@ -441,7 +441,8 @@ final class GroupsViewModel {
             GroupExpenseEligibilityLogic.canCreateExpense(
                 currentMemberStatus: currentMemberStatus(for: $0),
                 isArchived: $0.isArchived,
-                isHiddenForAll: $0.isHiddenForAll
+                isHiddenForAll: $0.isHiddenForAll,
+                isMigratedFrozen: $0.isMigratedFrozen
             )
         }
     }

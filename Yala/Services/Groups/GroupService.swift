@@ -1045,7 +1045,8 @@ final class GroupService {
             return GroupExpenseEligibilityLogic.canCreateExpense(
                 currentMemberStatus: status,
                 isArchived: group.isArchived,
-                isHiddenForAll: group.isHiddenForAll
+                isHiddenForAll: group.isHiddenForAll,
+                isMigratedFrozen: group.isMigratedFrozen
             )
         }
     }

@@ -12,6 +12,9 @@
 //  start/restore — `isOwner` true pero member ausente), el form quedaría imposible
 //  de guardar sin explicación. Excluirlo hasta que el member llegue es lo correcto.
 //  Pending/rejected/left/removed/ausente → no pueden. Archivado u oculto → tampoco.
+//  Congelado por migración a backend (`isMigratedFrozen`) → tampoco: el service
+//  lanza `GroupExpenseServiceError.movedToBackend` y el save fallaría SIEMPRE, así
+//  que el grupo no debe ofrecerse en el picker de "Nuevo gasto" del FAB.
 //  Extraído para tests pure-logic sin SwiftData/ModelContext (evita flake R8).
 //
 
@@ -23,12 +26,14 @@ enum GroupExpenseEligibilityLogic {
     /// - Parameters:
     ///   - currentMemberStatus: status del current user en el grupo (`nil` si aún no es member).
     ///   - isArchived / isHiddenForAll: un grupo archivado u oculto nunca acepta gastos nuevos.
+    ///   - isMigratedFrozen: grupo congelado tras migrar al backend — el save fallaría siempre.
     static func canCreateExpense(
         currentMemberStatus: SplitMemberStatus?,
         isArchived: Bool,
-        isHiddenForAll: Bool
+        isHiddenForAll: Bool,
+        isMigratedFrozen: Bool
     ) -> Bool {
-        guard !isArchived, !isHiddenForAll else { return false }
+        guard !isArchived, !isHiddenForAll, !isMigratedFrozen else { return false }
         return currentMemberStatus == .active
     }
 }

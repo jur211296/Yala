@@ -99,6 +99,10 @@ struct GroupExpenseFormView: View {
     // Borrado del gasto desde el toolbar (solo en modo edición).
     @State private var showDeleteConfirmation = false
 
+    // Red: presenta cualquier `viewModel.saveError` que hoy moriría mudo (grupo congelado
+    // por migración, carrera pull-congela-mientras-guardas, o cualquier otro throw del save).
+    @State private var showSaveErrorAlert = false
+
     // Amount scaling
     @ScaledMetric(relativeTo: .largeTitle) private var baseAmountSize: CGFloat = 64 // A11Y-DT: @ScaledMetric
 
@@ -175,6 +179,8 @@ struct GroupExpenseFormView: View {
                         bottomChips
                             .padding(.bottom, DS.Spacing.lg)
 
+                        migratedFrozenHint
+
                         registerButton
                             .padding(.horizontal, DS.Spacing.xl)
                             .padding(.bottom, DS.Spacing.xxl)
@@ -216,6 +222,17 @@ struct GroupExpenseFormView: View {
                 Button(L10n.Common.understood, role: .cancel) { }
             } message: {
                 Text(L10n.Groups.Expense.amountRequiredMessage)
+            }
+            .alert(L10n.Common.error, isPresented: $showSaveErrorAlert) {
+                Button(L10n.Common.ok, role: .cancel) { viewModel.saveError = nil }
+            } message: {
+                // NUNCA pipear `error.localizedDescription` a la UI (review H-2): varios casos de
+                // GroupExpenseServiceError alcanzables (.saveFailed/.inactiveMember) son dev-strings
+                // en inglés sin localizar. Mensaje SIEMPRE localizado: freeze → movedToBackend
+                // (la carrera pull-congela-mientras-guardas); resto → genérico.
+                Text(group.isMigratedFrozen
+                    ? L10n.Groups.Errors.movedToBackend
+                    : L10n.Groups.Errors.actionFailed)
             }
             .confirmationDialog(
                 L10n.Action.delete,
@@ -685,6 +702,13 @@ struct GroupExpenseFormView: View {
 
     // MARK: - Register Button
 
+    /// El botón Guardar está habilitado solo si el VM puede guardar Y el grupo NO está
+    /// congelado por migración. La lectura de `group.isMigratedFrozen` sobre el @Model vivo
+    /// es reactiva: un pull que congele el grupo con el composer abierto voltea el botón solo.
+    private var saveButtonEnabled: Bool {
+        viewModel.canSave && !group.isMigratedFrozen
+    }
+
     private var registerButton: some View {
         Button {
             handleSave()
@@ -703,17 +727,51 @@ struct GroupExpenseFormView: View {
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(.borderedProminent)
-        .tint(viewModel.canSave ? theme.accent : DS.Semantic.disabledForeground.opacity(0.4))
+        .tint(saveButtonEnabled ? theme.accent : DS.Semantic.disabledForeground.opacity(0.4))
         .controlSize(.large)
-        .disabled(!viewModel.canSave || viewModel.isSaving)
+        .disabled(!saveButtonEnabled || viewModel.isSaving)
         .accessibilityIdentifier("group_expense_save")
-        .dsAnimation(.easeInOut(duration: 0.2), value: viewModel.canSave, reduceMotion: reduceMotion)
+        .dsAnimation(.easeInOut(duration: 0.2), value: saveButtonEnabled, reduceMotion: reduceMotion)
+    }
+
+    // MARK: - Migrated Frozen Hint
+
+    /// Banner compacto (molde de `MigratedGroupBanner` del detalle) sobre el botón Guardar
+    /// cuando el grupo está congelado por migración: explica por qué no se puede guardar y
+    /// remite a volver a entrar. Reusa `Groups.Migrated.bannerBody` (0 keys nuevas).
+    @ViewBuilder
+    private var migratedFrozenHint: some View {
+        if group.isMigratedFrozen {
+            HStack(alignment: .center, spacing: DS.Spacing.sm) {
+                Image(systemName: "icloud.and.arrow.up")
+                    .font(DS.Typography.label)
+                    .foregroundStyle(DS.Semantic.warningForeground)
+                Text(L10n.Groups.Migrated.bannerBody)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                Spacer(minLength: DS.Spacing.none)
+            }
+            .padding(DS.Spacing.md)
+            .background(DS.Semantic.warningBackground, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+            .accessibilityElement(children: .combine)
+            .padding(.horizontal, DS.Spacing.xl)
+            .padding(.bottom, DS.Spacing.md)
+        }
     }
 
     // MARK: - Actions
 
     private func handleSave() {
-        guard viewModel.save() else { return }
+        guard viewModel.save() else {
+            // El save falló (throw atrapado en el VM). Presenta el error en vez de morir mudo:
+            // cubre el grupo congelado por migración, la carrera pull-congela-mientras-guardas
+            // y cualquier otro saveError. Sin esto el botón quedaba activo sin feedback alguno.
+            if viewModel.saveError != nil {
+                DS.Haptic.warning()
+                showSaveErrorAlert = true
+            }
+            return
+        }
         DS.Haptic.success()
 
         // F4: pago planificado de grupo — cierra el ciclo (marca pagado, avanza fecha, vincula
