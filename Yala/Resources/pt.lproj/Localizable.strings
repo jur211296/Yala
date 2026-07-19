@@ -497,7 +497,7 @@
 "settings.defaultCurrency" = "Moeda padrao";
 "settings.currentIcon" = "Icone atual";
 "settings.resetAllData" = "Apagar todos os seus dados";
-"settings.deleteAllData" = "Eliminar todos os seus dados";
+"settings.deleteAllData" = "Limpar meus dados";
 
 // MARK: - Common
 
@@ -1182,7 +1182,7 @@
 "settings.sunday" = "Domingo";
 "settings.monday" = "Segunda-feira";
 "settings.resetDataDescription" = "Esta operacao eliminara permanentemente suas contas, transacoes, orcamentos, taxas de cambio, categorias e quaisquer outros dados associados ao seu perfil do Yala. Apos a exclusao, o app voltara a um estado semelhante ao inicial.";
-"settings.deleteDataConfirmation" = "Eliminar todos os seus dados?";
+"settings.deleteDataConfirmation" = "Limpar seus dados?";
 "settings.deleteDataWarning" = "Esta acao e irreversivel. Todas as suas contas, transacoes, orcamentos, taxas de cambio e categorias serao eliminadas. Depois disso, o Yala sera reiniciado para um estado semelhante ao inicial e voce nao podera recuperar seus dados.";
 "settings.wipeICloudWarning" = "Isso também excluirá seus dados do iCloud. Outros dispositivos sincronizados perderão esses dados.";
 "settings.wipeGroupsExclusionNote" = "Isto não inclui os teus grupos. Para sair, vai a Grupos, salda o pendente e abandona-os um a um.";
@@ -1192,7 +1192,7 @@
 "settings.iconDark" = "Escuro";
 "settings.iconLight" = "Claro";
 "settings.iconNeon" = "Neon";
-"settings.deleteAllDataAction" = "Eliminar definitivamente";
+"settings.deleteAllDataAction" = "Limpar definitivamente";
 "settings.deletingData" = "Eliminando dados...";
 "settings.appIconTitle" = "Icone do aplicativo";
 "settings.iconNotSupported" = "Este dispositivo nao suporta icones alternativos.";
@@ -4710,7 +4710,7 @@
 "storage.consent.point3" = "Nossa equipe pode ler esses dados para dar suporte, recuperar sua conta e oferecer recursos inteligentes (categorização, leitura de recibos). Não é criptografia de ponta a ponta.";
 "storage.consent.point4" = "Quando você usa o chat, enviamos um resumo das suas finanças (até cerca de 13 meses) ao nosso provedor de inteligência artificial para poder responder você.";
 "storage.consent.point5" = "Seus dados ficam em servidores nos Estados Unidos.";
-"storage.consent.point6" = "Em troca, você acessa de qualquer dispositivo apenas com o seu login da Apple ou do Google, sem depender do iCloud. Enquanto mantiver esse login: não há recuperação por e-mail nem senha da Yala, então, se perder o acesso a essa conta, exporte seus dados antes (Ajustes → Exportar meus dados).";
+"storage.consent.point6" = "Em troca, você acessa de qualquer dispositivo apenas com o seu login da Apple ou do Google, sem depender do iCloud. Enquanto mantiver esse login: não há recuperação por e-mail nem senha da Yala, então, se perder o acesso a essa conta, exporte seus dados antes (Ajustes → Exportar dados).";
 "storage.consent.point7" = "Você pode voltar ao modo privado quando quiser, sem perder nada.";
 "storage.consent.accept" = "Entendo e quero ativar a nuvem";
 "storage.consent.privacyLink" = "Ver a política de privacidade";
@@ -5031,3 +5031,24 @@
 
 /* H-2026-07-18-6 — groups-only terminal cover body (personal data intact) */
 "storage.relaunch.bodyAutoExitGroupsOnly" = "Encerramos sua sessão de grupos. Vá para a Tela de Início e abra o Yala novamente; seus dados pessoais continuam neste dispositivo.";
+
+/* Fase 1 C2: variante Modo Nube de wipeICloudWarning (datos en la cuenta de Yala, no iCloud) */
+"settings.wipeICloudWarningCloud" = "Isso também excluirá seus dados da sua conta Yala. Outros dispositivos sincronizados perderão esses dados.";
+
+/* Fase 1 C3: titulo de la segunda confirmacion de Vaciar mis datos */
+"settings.wipeDataSecondConfirmTitle" = "Tem certeza? Isso é definitivo.";
+
+/* Fase 1: subtitulo de la fila Exportar datos */
+"settings.exportDataSubtitle" = "Salva uma cópia em CSV";
+
+/* Fase 1: subtitulo de la fila Vaciar mis datos */
+"settings.wipeDataSubtitle" = "Apaga seus dados. Sua conta e seus grupos são mantidos.";
+
+/* Fase 1: subtitulo de la fila Cerrar sesion */
+"settings.signOutSubtitle" = "Este dispositivo, não sua conta";
+
+/* Fase 1: subtitulo de la fila Eliminar mi cuenta */
+"settings.deleteAccountSubtitle" = "Exclui sua conta e seus dados na nuvem para sempre";
+
+/* Fase 1: desvio cruzado del dialogo de eliminar cuenta hacia Vaciar */
+"settings.deleteAccountCrossReferHint" = "Só quer apagar seus dados e manter sua conta? Use “Limpar meus dados”.";

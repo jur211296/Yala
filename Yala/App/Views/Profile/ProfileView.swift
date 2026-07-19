@@ -122,9 +122,11 @@ struct ProfileView: View {
     /// Copy del PRIMER diálogo — explica qué se borra y dónde según el modo (misma decisión que
     /// `AccountDeletionService`: `.cloud` vs solo-grupos).
     private var deleteAccountConfirmMessage: String {
-        CloudSyncFlags.storageMode == .cloud
+        let base = CloudSyncFlags.storageMode == .cloud
             ? L10n.Settings.deleteAccountConfirmMessageCloud
             : L10n.Settings.deleteAccountConfirmMessageGroupsOnly
+        // Fase 1 (§3.3.4): desvío cruzado hacia "Vaciar mis datos" — patrón anti-error de destino.
+        return base + "\n\n" + L10n.Settings.deleteAccountCrossReferHint
     }
 
     private func syncDeletionUI(from phase: AccountDeletionService.Phase) {
@@ -727,6 +729,7 @@ struct ProfileView: View {
                     } label: {
                         settingsRowContent(
                             icon: "square.and.arrow.up.fill", title: L10n.Settings.exportData,
+                            subtitle: L10n.Settings.exportDataSubtitle,
                             iconColor: .mint
                         )
                         .opacity(!viewModel.hasTransactions ? 0.5 : 1.0)
@@ -740,8 +743,12 @@ struct ProfileView: View {
                 SubsectionDivider()
 
                 NavigationLink(value: ProfileDestination.userDataReset) {
+                    // Fase 1 (§3.2): "arrow.counterclockwise" (volver al estado inicial);
+                    // "trash" queda reservado a "Eliminar mi cuenta". `.red` es color de
+                    // sistema (adapta a Dark Mode) → sin marcador A11Y-DM.
                     settingsRowContent(
-                        icon: "trash.fill", title: L10n.Settings.wipeData, iconColor: .red)
+                        icon: "arrow.counterclockwise", title: L10n.Settings.wipeData,
+                        subtitle: L10n.Settings.wipeDataSubtitle, iconColor: .red)
                 }
                 .buttonStyle(.plain)
             }
@@ -816,6 +823,7 @@ struct ProfileView: View {
                             settingsRowContent(
                                 icon: "rectangle.portrait.and.arrow.right",
                                 title: L10n.Settings.signOut,
+                                subtitle: L10n.Settings.signOutSubtitle,
                                 iconColor: .red,
                                 showSpinner: signOutCoordinator.phase == .working)
                         }
@@ -850,6 +858,7 @@ struct ProfileView: View {
                         settingsRowContent(
                             icon: "trash",
                             title: L10n.Settings.deleteAccount,
+                            subtitle: L10n.Settings.deleteAccountSubtitle,
                             iconColor: .red)
                     }
                     .buttonStyle(.plain)
@@ -1085,6 +1094,7 @@ struct ProfileView: View {
     private func settingsRowContent(
         icon: String,
         title: String,
+        subtitle: String? = nil,
         iconColor: Color = .gray,
         textColor: Color = .primary,
         showSpinner: Bool = false
@@ -1111,9 +1121,18 @@ struct ProfileView: View {
                     .accessibilityHidden(true)
             }
 
-            Text(title)
-                .font(DS.Typography.body)
-                .foregroundStyle(textColor)
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(title)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(textColor)
+
+                if let subtitle {
+                    Text(subtitle)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
 
             Spacer()
 

@@ -499,7 +499,7 @@
 "settings.defaultCurrency" = "Moneda predeterminada";
 "settings.currentIcon" = "Ícono actual";
 "settings.resetAllData" = "Vaciar todos tus datos";
-"settings.deleteAllData" = "Eliminar todos tus datos";
+"settings.deleteAllData" = "Vaciar mis datos";
 
 // MARK: - Common
 
@@ -1180,7 +1180,7 @@
 "settings.sunday" = "Domingo";
 "settings.monday" = "Lunes";
 "settings.resetDataDescription" = "Esta operación eliminará de forma permanente tus cuentas, transacciones, presupuestos, tipos de cambio, categorías y cualquier otro dato asociado a tu perfil de Yala. Después del borrado, la app volverá a un estado similar al inicial.";
-"settings.deleteDataConfirmation" = "¿Eliminar todos tus datos?";
+"settings.deleteDataConfirmation" = "¿Vaciar tus datos?";
 "settings.deleteDataWarning" = "Esta acción es irreversible. Se eliminarán todas tus cuentas, transacciones, presupuestos, tipos de cambio y categorías. Después de esto, Yala se reiniciará a un estado similar al inicial y no podrás recuperar tus datos.";
 "settings.wipeICloudWarning" = "Esto también eliminará tus datos de iCloud. Otros dispositivos sincronizados perderán estos datos.";
 "settings.wipeGroupsExclusionNote" = "Esto no incluye tus grupos. Para salir, ve a Grupos, salda lo pendiente y abandónalos.";
@@ -1190,7 +1190,7 @@
 "settings.iconDark" = "Oscuro";
 "settings.iconLight" = "Claro";
 "settings.iconNeon" = "Neón";
-"settings.deleteAllDataAction" = "Eliminar definitivamente";
+"settings.deleteAllDataAction" = "Vaciar definitivamente";
 "settings.deletingData" = "Eliminando datos...";
 "settings.appIconTitle" = "Icono de aplicación";
 "settings.iconNotSupported" = "Este dispositivo no soporta iconos alternativos.";
@@ -4731,7 +4731,7 @@
 "storage.consent.point3" = "Nuestro equipo podría leer esos datos para darte soporte, recuperar tu cuenta y ofrecerte funciones inteligentes (categorización, lectura de recibos). No es cifrado de extremo a extremo.";
 "storage.consent.point4" = "Cuando usas el chat, enviamos un resumen de tus finanzas (hasta unos 13 meses) a nuestro proveedor de inteligencia artificial para poder responderte.";
 "storage.consent.point5" = "Tus datos se guardan en servidores en Estados Unidos.";
-"storage.consent.point6" = "A cambio, accedes desde cualquier dispositivo con solo tu login de Apple o Google, sin depender de iCloud. Mientras conserves ese login: no hay recuperación por email ni contraseña de Yala, así que si pierdes el acceso a esa cuenta, exporta tus datos antes (Ajustes → Exportar mis datos).";
+"storage.consent.point6" = "A cambio, accedes desde cualquier dispositivo con solo tu login de Apple o Google, sin depender de iCloud. Mientras conserves ese login: no hay recuperación por email ni contraseña de Yala, así que si pierdes el acceso a esa cuenta, exporta tus datos antes (Ajustes → Exportar datos).";
 "storage.consent.point7" = "Puedes volver al modo privado cuando quieras, sin perder nada.";
 "storage.consent.accept" = "Entiendo y quiero activar la nube";
 "storage.consent.privacyLink" = "Ver la política de privacidad";
@@ -4988,7 +4988,7 @@
 "groups.migrated.deleteCopyConfirmTitle" = "¿Borrar la copia vieja?";
 
 /* G6-3: delete-copy confirmation body */
-"groups.migrated.deleteCopyConfirmBody" = "El grupo seguirá en la nube de Yala. Solo se borra la copia de iCloud de este device.";
+"groups.migrated.deleteCopyConfirmBody" = "El grupo seguirá en la nube de Yala. Solo se borra la copia de iCloud de este dispositivo.";
 
 /* G6-3: delete-copy confirmation button */
 "groups.migrated.deleteCopyConfirmButton" = "Borrar copia";
@@ -5052,3 +5052,24 @@
 
 /* H-2026-07-18-6 — groups-only terminal cover body (personal data intact) */
 "storage.relaunch.bodyAutoExitGroupsOnly" = "Cerramos tu sesión de grupos. Ve a la pantalla de inicio y vuelve a abrir Yala; tus datos personales siguen en este dispositivo.";
+
+/* Fase 1 C2: variante Modo Nube de wipeICloudWarning (datos en la cuenta de Yala, no iCloud) */
+"settings.wipeICloudWarningCloud" = "Esto también eliminará tus datos de tu cuenta de Yala. Otros dispositivos perderán estos datos al sincronizar.";
+
+/* Fase 1 C3: titulo de la segunda confirmacion de Vaciar mis datos */
+"settings.wipeDataSecondConfirmTitle" = "¿Seguro? Esto es definitivo.";
+
+/* Fase 1: subtitulo de la fila Exportar datos */
+"settings.exportDataSubtitle" = "Guarda una copia en CSV";
+
+/* Fase 1: subtitulo de la fila Vaciar mis datos */
+"settings.wipeDataSubtitle" = "Borra tus datos. Tu cuenta y tus grupos se conservan";
+
+/* Fase 1: subtitulo de la fila Cerrar sesion */
+"settings.signOutSubtitle" = "Este dispositivo, no tu cuenta";
+
+/* Fase 1: subtitulo de la fila Eliminar mi cuenta */
+"settings.deleteAccountSubtitle" = "Borra tu cuenta y tus datos de la nube para siempre";
+
+/* Fase 1: desvio cruzado del dialogo de eliminar cuenta hacia Vaciar */
+"settings.deleteAccountCrossReferHint" = "¿Solo quieres borrar tus datos y conservar tu cuenta? Usa «Vaciar mis datos».";

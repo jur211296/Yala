@@ -499,7 +499,7 @@
 "settings.defaultCurrency" = "Default Currency";
 "settings.currentIcon" = "Current Icon";
 "settings.resetAllData" = "Reset all your data";
-"settings.deleteAllData" = "Delete All Data";
+"settings.deleteAllData" = "Wipe my data";
 
 // MARK: - Common
 
@@ -1180,7 +1180,7 @@
 "settings.sunday" = "Sunday";
 "settings.monday" = "Monday";
 "settings.resetDataDescription" = "This operation will permanently delete your accounts, transactions, budgets, exchange rates, categories, and any other data associated with your Yala profile. After deletion, the app will return to a state similar to initial setup.";
-"settings.deleteDataConfirmation" = "Delete all your data?";
+"settings.deleteDataConfirmation" = "Wipe your data?";
 "settings.deleteDataWarning" = "This action is irreversible. All your accounts, transactions, budgets, exchange rates, and categories will be deleted. After this, Yala will reset to a state similar to initial setup and you cannot recover your data.";
 "settings.wipeICloudWarning" = "This will also delete your iCloud data. Other synced devices will lose this data.";
 "settings.wipeGroupsExclusionNote" = "This doesn't include your groups. To leave them, go to Groups, settle what's pending, and exit each one.";
@@ -1190,7 +1190,7 @@
 "settings.iconDark" = "Dark";
 "settings.iconLight" = "Light";
 "settings.iconNeon" = "Neon";
-"settings.deleteAllDataAction" = "Delete Definitely";
+"settings.deleteAllDataAction" = "Wipe permanently";
 "settings.deletingData" = "Deleting data...";
 "settings.appIconTitle" = "App Icon";
 "settings.iconNotSupported" = "This device does not support alternate icons.";
@@ -4708,7 +4708,7 @@
 "storage.consent.point3" = "Our team may read that data to give you support, recover your account and offer smart features (categorization, receipt reading). It isn’t end-to-end encrypted.";
 "storage.consent.point4" = "When you use the chat, we send a summary of your finances (up to about 13 months) to our AI provider so it can answer you.";
 "storage.consent.point5" = "Your data is stored on servers in the United States.";
-"storage.consent.point6" = "In exchange, you reach your data from any device with just your Apple or Google login, without depending on iCloud. As long as you keep that login: there’s no email or Yala-password recovery, so if you lose access to that account, export your data first (Settings → Export my data).";
+"storage.consent.point6" = "In exchange, you reach your data from any device with just your Apple or Google login, without depending on iCloud. As long as you keep that login: there’s no email or Yala-password recovery, so if you lose access to that account, export your data first (Settings → Export Data).";
 "storage.consent.point7" = "You can switch back to private mode whenever you want, without losing anything.";
 "storage.consent.accept" = "I understand and want to turn on the cloud";
 "storage.consent.privacyLink" = "View the privacy policy";
@@ -5029,3 +5029,24 @@
 
 /* H-2026-07-18-6 — groups-only terminal cover body (personal data intact) */
 "storage.relaunch.bodyAutoExitGroupsOnly" = "You've been signed out of groups. Go to your Home Screen, then open Yala again; your personal data stays on this device.";
+
+/* Fase 1 C2: variante Modo Nube de wipeICloudWarning (datos en la cuenta de Yala, no iCloud) */
+"settings.wipeICloudWarningCloud" = "This will also delete your data from your Yala account. Other synced devices will lose this data.";
+
+/* Fase 1 C3: titulo de la segunda confirmacion de Vaciar mis datos */
+"settings.wipeDataSecondConfirmTitle" = "Are you sure? This is final.";
+
+/* Fase 1: subtitulo de la fila Exportar datos */
+"settings.exportDataSubtitle" = "Save a copy as a CSV file";
+
+/* Fase 1: subtitulo de la fila Vaciar mis datos */
+"settings.wipeDataSubtitle" = "Erases your data. Your account and groups are kept.";
+
+/* Fase 1: subtitulo de la fila Cerrar sesion */
+"settings.signOutSubtitle" = "This device, not your account";
+
+/* Fase 1: subtitulo de la fila Eliminar mi cuenta */
+"settings.deleteAccountSubtitle" = "Permanently deletes your account and cloud data";
+
+/* Fase 1: desvio cruzado del dialogo de eliminar cuenta hacia Vaciar */
+"settings.deleteAccountCrossReferHint" = "Just want to erase your data and keep your account? Use “Wipe my data”.";

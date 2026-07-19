@@ -1676,9 +1676,9 @@
         "F-SET-03"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/ProfileSettingsUITests, YalaUITests/ProfileGroupInviteUITests — fila 'Cerrar sesion' (H4, siempre visible salvo group-invite; profile_security_signout) cubierta por unit CloudSignOutFlowLogicTests + device-qa; XCUITests existentes no asertan conteo de filas",
+      "coverage": "xcuitest:YalaUITests/ProfileSettingsUITests, YalaUITests/ProfileGroupInviteUITests — fila 'Cerrar sesion' (H4, siempre visible salvo group-invite; profile_security_signout) cubierta por unit CloudSignOutFlowLogicTests + device-qa; XCUITests existentes no asertan conteo de filas. Fase 1 gestion-datos UX (2026-07-19, solo copy/l10n): Vaciar renombrado (C1) + doble confirmacion (C3) + wipeICloudWarning por storageMode (C2) + subtitulos de filas + icono arrow.counterclockwise + C5/C6 + desvio cruzado en Eliminar cuenta; sin identifiers nuevos, ningun XCUITest recorre el flujo de Vaciar; gate = LocalizationParityTests (10/10) + build ambas schemes",
       "owner": "",
-      "lastVerified": "2026-07-17"
+      "lastVerified": "2026-07-19"
     },
     {
       "area": "settings-theme-visual",

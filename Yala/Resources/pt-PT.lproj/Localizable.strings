@@ -2680,9 +2680,9 @@
 "settings.defaultPeriod" = "Periodo padrao";
 "settings.defaultPeriodDescription" = "Este periodo sera aplicado por padrao cada vez que voce abrir o app. Voce pode altera-lo temporariamente no seletor de periodo a qualquer momento.";
 "settings.delete" = "Eliminar";
-"settings.deleteAllData" = "Eliminar todos os seus dados";
-"settings.deleteAllDataAction" = "Eliminar definitivamente";
-"settings.deleteDataConfirmation" = "Eliminar todos os seus dados?";
+"settings.deleteAllData" = "Limpar os meus dados";
+"settings.deleteAllDataAction" = "Limpar definitivamente";
+"settings.deleteDataConfirmation" = "Limpar os seus dados?";
 "settings.deleteDataError" = "Erro ao eliminar dados";
 "settings.deleteDataUnknownError" = "Ocorreu um erro desconhecido ao eliminar os dados.";
 "settings.deleteDataWarning" = "Esta acao e irreversivel. Todas as suas contas, transacoes, orcamentos, taxas de cambio e categorias serao eliminadas. Depois disso, o Yala sera reiniciado para um estado semelhante ao inicial e voce nao podera recuperar seus dados.";
@@ -3970,7 +3970,7 @@
 "storage.consent.point3" = "A nossa equipa pode ler esses dados para dar suporte, recuperar a sua conta e oferecer funcionalidades inteligentes (categorização, leitura de recibos). Não é encriptação de ponta a ponta.";
 "storage.consent.point4" = "Quando usa o chat, enviamos um resumo das suas finanças (até cerca de 13 meses) ao nosso fornecedor de inteligência artificial para poder responder-lhe.";
 "storage.consent.point5" = "Os seus dados ficam em servidores nos Estados Unidos.";
-"storage.consent.point6" = "Em troca, acede a partir de qualquer dispositivo apenas com o seu início de sessão Apple ou Google, sem depender do iCloud. Enquanto mantiver esse início de sessão: não há recuperação por email nem palavra-passe da Yala, por isso, se perder o acesso a essa conta, exporte os seus dados antes (Definições → Exportar os meus dados).";
+"storage.consent.point6" = "Em troca, acede a partir de qualquer dispositivo apenas com o seu início de sessão Apple ou Google, sem depender do iCloud. Enquanto mantiver esse início de sessão: não há recuperação por email nem palavra-passe da Yala, por isso, se perder o acesso a essa conta, exporte os seus dados antes (Definições → Exportar dados).";
 "storage.consent.point7" = "Pode voltar ao modo privado quando quiser, sem perder nada.";
 "storage.consent.accept" = "Compreendo e quero ativar a nuvem";
 "storage.consent.privacyLink" = "Ver a política de privacidade";
@@ -4291,3 +4291,24 @@
 
 /* H-2026-07-18-6 — groups-only terminal cover body (personal data intact) */
 "storage.relaunch.bodyAutoExitGroupsOnly" = "Terminámos a sua sessão de grupos. Vá para o ecrã principal e volte a abrir o Yala; os seus dados pessoais permanecem neste dispositivo.";
+
+/* Fase 1 C2: variante Modo Nube de wipeICloudWarning (datos en la cuenta de Yala, no iCloud) */
+"settings.wipeICloudWarningCloud" = "Isto também elimina os seus dados da sua conta Yala. Outros dispositivos sincronizados vão perder estes dados.";
+
+/* Fase 1 C3: titulo de la segunda confirmacion de Vaciar mis datos */
+"settings.wipeDataSecondConfirmTitle" = "De certeza? Isto é definitivo.";
+
+/* Fase 1: subtitulo de la fila Exportar datos */
+"settings.exportDataSubtitle" = "Guarda uma cópia em CSV";
+
+/* Fase 1: subtitulo de la fila Vaciar mis datos */
+"settings.wipeDataSubtitle" = "Apaga os seus dados. A sua conta e os seus grupos mantêm-se.";
+
+/* Fase 1: subtitulo de la fila Cerrar sesion */
+"settings.signOutSubtitle" = "Este dispositivo, não a sua conta";
+
+/* Fase 1: subtitulo de la fila Eliminar mi cuenta */
+"settings.deleteAccountSubtitle" = "Elimina a sua conta e os seus dados na nuvem para sempre";
+
+/* Fase 1: desvio cruzado del dialogo de eliminar cuenta hacia Vaciar */
+"settings.deleteAccountCrossReferHint" = "Só quer apagar os seus dados e manter a sua conta? Use «Limpar os meus dados».";

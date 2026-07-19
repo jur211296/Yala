@@ -4006,6 +4006,18 @@ enum L10n {
         static var wipeGroupsExclusionNote: String {
             ls("settings.wipeGroupsExclusionNote", comment: "")
         }
+        /// Fase 1 gestión de datos (C2): variante de `wipeICloudWarning` en Modo Nube (`.cloud`) —
+        /// los datos viven en la cuenta de Yala, no en iCloud.
+        static var wipeICloudWarningCloud: String {
+            ls("settings.wipeICloudWarningCloud", comment: "")
+        }
+        /// Fase 1 (C3): segunda confirmación corta de Vaciar.
+        static var wipeDataSecondConfirmTitle: String {
+            ls("settings.wipeDataSecondConfirmTitle", comment: "")
+        }
+        /// Fase 1 (§3.2): subtítulos de una línea de las filas de Ajustes.
+        static var exportDataSubtitle: String { ls("settings.exportDataSubtitle", comment: "") }
+        static var wipeDataSubtitle: String { ls("settings.wipeDataSubtitle", comment: "") }
         /// Descripción de "Borrar datos" en modo solo-grupos (sin finanzas personales).
         static var resetDataDescriptionGroupsOnly: String {
             ls("settings.resetDataDescriptionGroupsOnly", comment: "")
@@ -4016,6 +4028,8 @@ enum L10n {
         }
         // Cierre de sesión universal (H4 — privada y nube)
         static var signOut: String { ls("settings.signOut", comment: "") }
+        /// Fase 1 (§3.2): subtítulo de la fila "Cerrar sesión".
+        static var signOutSubtitle: String { ls("settings.signOutSubtitle", comment: "") }
         static var signOutConfirmTitle: String { ls("settings.signOutConfirmTitle", comment: "") }
         static var signOutConfirmAction: String { ls("settings.signOutConfirmAction", comment: "") }
         static var signOutConfirmMessageCloud: String {
@@ -4044,6 +4058,12 @@ enum L10n {
         static var signOutPendingMessage: String { ls("settings.signOutPendingMessage", comment: "") }
         // Eliminar mi cuenta (G5-D1b — borrado GDPR, DARK)
         static var deleteAccount: String { ls("settings.deleteAccount", comment: "") }
+        /// Fase 1 (§3.2): subtítulo de la fila "Eliminar mi cuenta".
+        static var deleteAccountSubtitle: String { ls("settings.deleteAccountSubtitle", comment: "") }
+        /// Fase 1 (§3.3.4): desvío cruzado del diálogo de eliminar cuenta hacia Vaciar.
+        static var deleteAccountCrossReferHint: String {
+            ls("settings.deleteAccountCrossReferHint", comment: "")
+        }
         static var deleteAccountConfirmTitle: String { ls("settings.deleteAccountConfirmTitle", comment: "") }
         static var deleteAccountConfirmMessageCloud: String {
             ls("settings.deleteAccountConfirmMessageCloud", comment: "")

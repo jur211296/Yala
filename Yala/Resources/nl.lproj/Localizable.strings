@@ -499,7 +499,7 @@
 "settings.defaultCurrency" = "Standaardvaluta";
 "settings.currentIcon" = "Huidig icoon";
 "settings.resetAllData" = "Reset al je gegevens";
-"settings.deleteAllData" = "Alle gegevens verwijderen";
+"settings.deleteAllData" = "Mijn gegevens wissen";
 
 // MARK: - Common
 
@@ -1180,7 +1180,7 @@
 "settings.sunday" = "Zondag";
 "settings.monday" = "Maandag";
 "settings.resetDataDescription" = "Met deze actie verwijder je permanent je rekeningen, transacties, budgetten, wisselkoersen, categorieën en alle andere gegevens van je Yala-profiel. Na het verwijderen keert de app terug naar de begininstelling.";
-"settings.deleteDataConfirmation" = "Al je gegevens verwijderen?";
+"settings.deleteDataConfirmation" = "Je gegevens wissen?";
 "settings.deleteDataWarning" = "Deze actie is onomkeerbaar. Al je rekeningen, transacties, budgetten, wisselkoersen en categorieën worden verwijderd. Daarna keert Yala terug naar de begininstelling en kun je je gegevens niet meer terughalen.";
 "settings.wipeICloudWarning" = "Hiermee verwijder je ook je iCloud-gegevens. Andere gesynchroniseerde apparaten verliezen deze gegevens.";
 "settings.wipeGroupsExclusionNote" = "Dit omvat niet je groepen. Om ze te verlaten: ga naar Groepen, vereffen openstaande saldi en verlaat elke groep.";
@@ -1190,7 +1190,7 @@
 "settings.iconDark" = "Donker";
 "settings.iconLight" = "Licht";
 "settings.iconNeon" = "Neon";
-"settings.deleteAllDataAction" = "Definitief verwijderen";
+"settings.deleteAllDataAction" = "Definitief wissen";
 "settings.deletingData" = "Gegevens worden verwijderd...";
 "settings.appIconTitle" = "App-icoon";
 "settings.iconNotSupported" = "Dit apparaat ondersteunt geen alternatieve iconen.";
@@ -4714,7 +4714,7 @@
 "storage.consent.point3" = "Ons team kan die gegevens lezen om je te helpen, je account te herstellen en slimme functies te bieden (categorisatie, bonnetjes lezen). Het is geen end-to-end-versleuteling.";
 "storage.consent.point4" = "Wanneer je de chat gebruikt, sturen we een samenvatting van je financiën (tot zo’n 13 maanden) naar onze AI-provider om je te kunnen antwoorden.";
 "storage.consent.point5" = "Je gegevens worden opgeslagen op servers in de Verenigde Staten.";
-"storage.consent.point6" = "In ruil daarvoor gebruik je je gegevens op elk apparaat met alleen je Apple- of Google-login, zonder afhankelijk te zijn van iCloud. Zolang je die login behoudt: er is geen herstel via e-mail of Yala-wachtwoord, dus als je de toegang tot dat account verliest, exporteer dan eerst je gegevens (Instellingen → Mijn gegevens exporteren).";
+"storage.consent.point6" = "In ruil daarvoor gebruik je je gegevens op elk apparaat met alleen je Apple- of Google-login, zonder afhankelijk te zijn van iCloud. Zolang je die login behoudt: er is geen herstel via e-mail of Yala-wachtwoord, dus als je de toegang tot dat account verliest, exporteer dan eerst je gegevens (Instellingen → Gegevens exporteren).";
 "storage.consent.point7" = "Je kunt op elk moment terug naar de privémodus, zonder iets te verliezen.";
 "storage.consent.accept" = "Ik begrijp het en wil de cloud inschakelen";
 "storage.consent.privacyLink" = "Bekijk het privacybeleid";
@@ -5035,3 +5035,24 @@
 
 /* H-2026-07-18-6 — groups-only terminal cover body (personal data intact) */
 "storage.relaunch.bodyAutoExitGroupsOnly" = "Je bent afgemeld bij groepen. Ga naar het beginscherm en open Yala opnieuw; je persoonlijke gegevens blijven op dit apparaat.";
+
+/* Fase 1 C2: variante Modo Nube de wipeICloudWarning (datos en la cuenta de Yala, no iCloud) */
+"settings.wipeICloudWarningCloud" = "Hiermee verwijder je ook je gegevens uit je Yala-account. Andere gesynchroniseerde apparaten verliezen deze gegevens.";
+
+/* Fase 1 C3: titulo de la segunda confirmacion de Vaciar mis datos */
+"settings.wipeDataSecondConfirmTitle" = "Zeker weten? Dit is definitief.";
+
+/* Fase 1: subtitulo de la fila Exportar datos */
+"settings.exportDataSubtitle" = "Slaat een kopie op als CSV";
+
+/* Fase 1: subtitulo de la fila Vaciar mis datos */
+"settings.wipeDataSubtitle" = "Wist je gegevens. Je account en je groepen blijven behouden.";
+
+/* Fase 1: subtitulo de la fila Cerrar sesion */
+"settings.signOutSubtitle" = "Dit apparaat, niet je account";
+
+/* Fase 1: subtitulo de la fila Eliminar mi cuenta */
+"settings.deleteAccountSubtitle" = "Verwijdert je account en je cloudgegevens voorgoed";
+
+/* Fase 1: desvio cruzado del dialogo de eliminar cuenta hacia Vaciar */
+"settings.deleteAccountCrossReferHint" = "Wil je alleen je gegevens wissen en je account houden? Gebruik ‘Mijn gegevens wissen’.";

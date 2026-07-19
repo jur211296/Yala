@@ -497,7 +497,7 @@
 "settings.defaultCurrency" = "Standardwährung";
 "settings.currentIcon" = "Aktuelles Symbol";
 "settings.resetAllData" = "Alle Daten löschen";
-"settings.deleteAllData" = "Alle meine Daten löschen";
+"settings.deleteAllData" = "Meine Daten löschen";
 
 // MARK: - Common
 
@@ -1182,7 +1182,7 @@
 "settings.sunday" = "Sonntag";
 "settings.monday" = "Montag";
 "settings.resetDataDescription" = "Dieser Vorgang löscht dauerhaft deine Konten, Transaktionen, Budgets, Wechselkurse, Kategorien und alle anderen mit deinem Yala-Profil verbundenen Daten. Nach dem Löschen kehrt die App in einen Anfangszustand zurück.";
-"settings.deleteDataConfirmation" = "Alle deine Daten löschen?";
+"settings.deleteDataConfirmation" = "Deine Daten löschen?";
 "settings.deleteDataWarning" = "Diese Aktion ist unwiderruflich. Alle deine Konten, Transaktionen, Budgets, Wechselkurse und Kategorien werden gelöscht. Danach wird Yala auf einen Anfangszustand zurückgesetzt und du kannst deine Daten nicht wiederherstellen.";
 "settings.wipeICloudWarning" = "Dies löscht auch deine iCloud-Daten. Andere synchronisierte Geräte verlieren diese Daten.";
 "settings.wipeGroupsExclusionNote" = "Ihre Gruppen sind nicht eingeschlossen. Um sie zu verlassen, gehen Sie zu Gruppen, begleichen Sie offene Posten und verlassen Sie jede.";
@@ -4702,7 +4702,7 @@
 "storage.consent.point3" = "Unser Team kann diese Daten lesen, um dir zu helfen, dein Konto wiederherzustellen und dir smarte Funktionen (Kategorisierung, Belegerkennung) anzubieten. Es ist keine Ende-zu-Ende-Verschlüsselung.";
 "storage.consent.point4" = "Wenn du den Chat nutzt, senden wir eine Zusammenfassung deiner Finanzen (bis zu etwa 13 Monate) an unseren KI-Anbieter, damit er dir antworten kann.";
 "storage.consent.point5" = "Deine Daten werden auf Servern in den USA gespeichert.";
-"storage.consent.point6" = "Im Gegenzug greifst du von jedem Gerät nur mit deinem Apple- oder Google-Login zu, ohne von iCloud abhängig zu sein. Solange du diesen Login behältst: Es gibt keine Wiederherstellung per E-Mail oder Yala-Passwort. Wenn du also den Zugang zu diesem Konto verlierst, exportiere vorher deine Daten (Einstellungen → Meine Daten exportieren).";
+"storage.consent.point6" = "Im Gegenzug greifst du von jedem Gerät nur mit deinem Apple- oder Google-Login zu, ohne von iCloud abhängig zu sein. Solange du diesen Login behältst: Es gibt keine Wiederherstellung per E-Mail oder Yala-Passwort. Wenn du also den Zugang zu diesem Konto verlierst, exportiere vorher deine Daten (Einstellungen → Daten exportieren).";
 "storage.consent.point7" = "Du kannst jederzeit in den privaten Modus zurückwechseln, ohne etwas zu verlieren.";
 "storage.consent.accept" = "Ich verstehe und möchte die Cloud aktivieren";
 "storage.consent.privacyLink" = "Datenschutzrichtlinie ansehen";
@@ -5023,3 +5023,24 @@
 
 /* H-2026-07-18-6 — groups-only terminal cover body (personal data intact) */
 "storage.relaunch.bodyAutoExitGroupsOnly" = "Du wurdest von den Gruppen abgemeldet. Wechsle zum Home-Bildschirm und öffne Yala erneut; deine persönlichen Daten bleiben auf diesem Gerät.";
+
+/* Fase 1 C2: variante Modo Nube de wipeICloudWarning (datos en la cuenta de Yala, no iCloud) */
+"settings.wipeICloudWarningCloud" = "Dies löscht auch deine Daten aus deinem Yala-Konto. Andere synchronisierte Geräte verlieren diese Daten.";
+
+/* Fase 1 C3: titulo de la segunda confirmacion de Vaciar mis datos */
+"settings.wipeDataSecondConfirmTitle" = "Sicher? Das ist endgültig.";
+
+/* Fase 1: subtitulo de la fila Exportar datos */
+"settings.exportDataSubtitle" = "Speichert eine Kopie als CSV";
+
+/* Fase 1: subtitulo de la fila Vaciar mis datos */
+"settings.wipeDataSubtitle" = "Löscht deine Daten. Dein Konto und deine Gruppen bleiben erhalten.";
+
+/* Fase 1: subtitulo de la fila Cerrar sesion */
+"settings.signOutSubtitle" = "Dieses Gerät, nicht dein Konto";
+
+/* Fase 1: subtitulo de la fila Eliminar mi cuenta */
+"settings.deleteAccountSubtitle" = "Löscht dein Konto und deine Cloud-Daten für immer";
+
+/* Fase 1: desvio cruzado del dialogo de eliminar cuenta hacia Vaciar */
+"settings.deleteAccountCrossReferHint" = "Möchtest du nur deine Daten löschen und dein Konto behalten? Nutze „Meine Daten löschen“.";
