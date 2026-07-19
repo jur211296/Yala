@@ -14,8 +14,11 @@ struct GroupRecordsView: View {
     let memberNameLookup: [String: String]
     let currencyCode: String
     /// Per-user bridge: expense.id.uuidString → TX1 con subcat manual asignada por current user.
-    /// Si la entrada no existe (auto-match falló o user es .groupInvite), fallback al splitTypeBadge.
+    /// Si la entrada no existe (auto-match falló o user es .groupInvite), fallback al nombre y luego al splitTypeBadge.
     let txBridgeMap: [String: TransactionItem]
+    /// `[nombre normalizado de subcategoría: (icono, colorHex)]` de las subcategorías locales.
+    /// Fallback self-contained cuando no hay bridge: casa `SplitExpense.subcategoryName` del creador.
+    let subcategoryNameLookup: [String: (iconName: String, colorHex: String)]
     /// Mi share por expense (nil si no participo → render "No participaste").
     let mySharesByExpense: [UUID: SplitShare]
     /// uuidString del current member (para detectar si yo soy el payer).
@@ -211,14 +214,23 @@ struct GroupRecordsView: View {
         .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.xl)
     }
 
-    /// Subcat icon+color del bridge personal, si la auto-match exitosa. Sino → splitTypeBadge.
+    /// Subcat icon+color: bridge personal (gana) → nombre del creador → splitTypeBadge (genérico).
+    /// El bridge se resuelve visualmente IDÉNTICO a antes; el nombre es el fallback nuevo que sana
+    /// el feed en device fresco / no-participante (H-2026-07-18-9).
     @ViewBuilder
     private func subcategoryBadge(for expense: SplitExpense) -> some View {
-        if let tx = txBridgeMap[expense.id.uuidString],
-           let sub = tx.subcategory,
-           !sub.isAnySystem {
-            let color = Color(hex: sub.safeCategory.colorHex)
-            Image(systemName: sub.iconName ?? "tag.fill")
+        let resolved = GroupExpenseIconResolver.resolve(
+            bridgeIcon: bridgeIcon(for: expense),
+            subcategoryName: expense.subcategoryName,
+            nameLookup: subcategoryNameLookup,
+            fallbackIconName: "tag.fill"
+        )
+        // Preguntar por `isGeneric` como los demás call-sites (review H-9 M1): hoy `colorHex != nil`
+        // ⟺ `!isGeneric` por construcción, pero la señal contractual del resolver es `isGeneric` —
+        // no depender del invariante estructural del tuple.
+        if !resolved.isGeneric, let colorHex = resolved.colorHex {
+            let color = Color(hex: colorHex)
+            Image(systemName: resolved.iconName)
                 .font(DS.Typography.label)
                 .foregroundStyle(color)
                 .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
@@ -226,6 +238,15 @@ struct GroupRecordsView: View {
         } else {
             splitTypeBadge(expense.splitType)
         }
+    }
+
+    /// Icono+color del bridge personal (TX1 con subcat manual no-sistema), o `nil` si no hay bridge.
+    /// El fallback de icono `?? "tag.fill"` reproduce el render previo del feed byte a byte.
+    private func bridgeIcon(for expense: SplitExpense) -> (iconName: String, colorHex: String)? {
+        guard let tx = txBridgeMap[expense.id.uuidString],
+              let sub = tx.subcategory,
+              !sub.isAnySystem else { return nil }
+        return (sub.iconName ?? "tag.fill", sub.safeCategory.colorHex)
     }
 
     // MARK: - Split Type Badge

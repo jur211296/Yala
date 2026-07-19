@@ -346,13 +346,20 @@ final class GroupStatsViewModel {
             .map { (name: $0.key, total: $0.value) }
             .sorted { $0.total > $1.total }
             .map { entry -> GroupCategoryBreakdown in
-                let resolved = lookup[entry.name]
+                // Stats no tiene bridge personal (icono per-user): resuelve por NOMBRE, con el mismo
+                // lookup/regla que el feed (`GroupExpenseIconResolver`). Genérico → paleta de fallback.
+                let resolved = GroupExpenseIconResolver.resolve(
+                    bridgeIcon: nil,
+                    subcategoryName: entry.name,
+                    nameLookup: lookup,
+                    fallbackIconName: "tag.fill"
+                )
                 return GroupCategoryBreakdown(
                     subcategoryName: entry.name,
                     amount: entry.total,
                     percentage: (entry.total / safeGrandTotal) * 100,
-                    iconName: resolved?.icon ?? "tag.fill",
-                    colorHex: resolved?.colorHex ?? fallbackColor(for: entry.name, assigned: &fallbackColors)
+                    iconName: resolved.iconName,
+                    colorHex: resolved.colorHex ?? fallbackColor(for: entry.name, assigned: &fallbackColors)
                 )
             }
         return (breakdown, wasConverted)
@@ -389,18 +396,14 @@ final class GroupStatsViewModel {
         }
     }
 
-    /// Lookup `[nombre de subcategoría: (icono, colorHex)]` desde las subcategorías locales,
-    /// para colorear el donut con los mismos iconos/colores que el resto de la app.
-    private func subcategoryLookup() -> [String: (icon: String, colorHex: String)] {
+    /// Lookup `[nombre normalizado de subcategoría: (icono, colorHex)]` desde las subcategorías
+    /// locales, para colorear el donut con los mismos iconos/colores que el resto de la app.
+    /// SSOT de la regla icono/color por nombre — compartida con el feed vía `GroupExpenseIconResolver`.
+    private func subcategoryLookup() -> [String: (iconName: String, colorHex: String)] {
         guard let ctx = modelContext else { return [:] }
         do {
             let subs = try ctx.fetch(FetchDescriptor<Subcategory>())
-            var dict: [String: (icon: String, colorHex: String)] = [:]
-            for sub in subs where dict[sub.name] == nil {
-                let icon = sub.iconName ?? sub.safeCategory.iconName ?? "tag.fill"
-                dict[sub.name] = (icon, sub.colorHex ?? sub.safeCategory.colorHex)
-            }
-            return dict
+            return GroupExpenseIconResolver.buildNameLookup(from: subs)
         } catch {
             #if DEBUG
             print("GroupStatsViewModel: error fetching subcategories: \(error)")

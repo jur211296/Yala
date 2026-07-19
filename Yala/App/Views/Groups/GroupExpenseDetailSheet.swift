@@ -32,6 +32,10 @@ struct GroupExpenseDetailSheet: View {
     let share: SplitShare?
     /// TX personal del bridge (si auto-match exitosa) — aporta subcategoría/categoría.
     let bridgeTransaction: TransactionItem?
+    /// `[nombre normalizado de subcategoría: (icono, colorHex)]` de las subcategorías locales.
+    /// Fallback self-contained del icono/categoría cuando no hay bridge (device fresco / no-participante):
+    /// casa `SplitExpense.subcategoryName` del creador. SSOT vía `GroupExpenseIconResolver`.
+    let subcategoryNameLookup: [String: (iconName: String, colorHex: String)]
     let memberNameLookup: [String: String]
     /// uuidString del current member (para detectar si yo soy el payer).
     let currentMemberID: String?
@@ -134,6 +138,29 @@ struct GroupExpenseDetailSheet: View {
         return sub
     }
 
+    /// Icono+color del bridge personal, o `nil`. Fallback de icono `?? splitTypeIcon` reproduce el
+    /// hero previo byte a byte para el caso bridge (el hero neutro usa el ícono del tipo de división).
+    private var bridgeIconTuple: (iconName: String, colorHex: String)? {
+        guard let sub = bridgeSubcategory else { return nil }
+        return (sub.iconName ?? splitTypeIcon, sub.safeCategory.colorHex)
+    }
+
+    /// Cadena bridge-first → nombre del creador → genérico (icono del tipo de división).
+    private var resolvedIcon: ResolvedIcon {
+        GroupExpenseIconResolver.resolve(
+            bridgeIcon: bridgeIconTuple,
+            subcategoryName: expense.subcategoryName,
+            nameLookup: subcategoryNameLookup,
+            fallbackIconName: splitTypeIcon
+        )
+    }
+
+    /// Nombre de subcategoría a mostrar en la fila de categoría: el del bridge (LOCAL) si existe,
+    /// sino el del creador que viaja en el gasto.
+    private var categoryDisplayName: String {
+        bridgeSubcategory?.name ?? expense.subcategoryName ?? ""
+    }
+
     // MARK: - Hero compacto (badge + monto total en línea, descripción · fecha debajo)
 
     private var compactHero: some View {
@@ -178,12 +205,12 @@ struct GroupExpenseDetailSheet: View {
         .truncationMode(.tail)
     }
 
-    /// Fill sólido (legible sobre el fondo transparent): color de la categoría del
-    /// bridge si existe, sino un fill neutro con el ícono del tipo de división.
+    /// Fill sólido (legible sobre el fondo transparent): color de la categoría resuelta (bridge o
+    /// nombre del creador), sino un fill neutro con el ícono del tipo de división.
     private var heroBadge: some View {
-        let subcat = bridgeSubcategory
-        let fillColor = subcat.map { Color(hex: $0.safeCategory.colorHex) } ?? Color(.secondaryLabel)
-        let iconName = subcat?.iconName ?? splitTypeIcon
+        let resolved = resolvedIcon
+        let fillColor = resolved.colorHex.map { Color(hex: $0) } ?? Color(.secondaryLabel)
+        let iconName = resolved.iconName
 
         return ZStack {
             Circle()
@@ -215,8 +242,10 @@ struct GroupExpenseDetailSheet: View {
                 value: splitTypeLabel
             )
 
-            if let subcat = bridgeSubcategory {
-                categoryRow(subcat)
+            // Categoría: bridge (nombre + categoría padre) o, sin bridge, el nombre del creador
+            // (una línea — no tenemos la categoría padre sin el bridge). Genérico → sin fila.
+            if !resolvedIcon.isGeneric {
+                categoryRow(name: categoryDisplayName, parentName: bridgeSubcategory?.safeCategory.name)
             }
 
             if let note = expense.note?.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -310,7 +339,7 @@ struct GroupExpenseDetailSheet: View {
         .padding(.vertical, DS.FormRow.paddingV)
     }
 
-    private func categoryRow(_ subcat: Subcategory) -> some View {
+    private func categoryRow(name: String, parentName: String?) -> some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "tag")
                 .font(DS.Typography.subheadline)
@@ -325,12 +354,14 @@ struct GroupExpenseDetailSheet: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
-                Text(subcat.name)
+                Text(name)
                     .font(DS.Typography.label)
                     .foregroundStyle(.primary)
-                Text(subcat.safeCategory.name)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
+                if let parentName {
+                    Text(parentName)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
         .padding(.horizontal, DS.Spacing.lg)

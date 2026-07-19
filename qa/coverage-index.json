@@ -879,6 +879,7 @@
         "Yala/Services/Groups/GroupBalanceService.swift",
         "Yala/Services/Groups/DebtSimplificationService.swift",
         "Yala/App/Logic/GroupBalanceRowGrouping.swift",
+        "Yala/App/Logic/GroupExpenseIconResolver.swift",
         "Yala/App/Views/Shared/ExpandableFAB.swift"
       ],
       "scenarioIDs": [
@@ -889,7 +890,7 @@
         "F-S5-06"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests + unit:YalaTests/GroupDetailDismissDecisionTests (dismiss-first) + xcuitest:YalaUITests/GroupsEmptyStateUITests (empty state, no spinner atascado) + unit:YalaTests/GroupsEmptyStateLogicTests (empty state sign-in tras cerrar sesión solo-grupos, H-2026-07-18-7: flag ON + sin sesión → CTA re-entrada; flag OFF byte-idéntico)",
+      "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests + unit:YalaTests/GroupDetailDismissDecisionTests (dismiss-first) + xcuitest:YalaUITests/GroupsEmptyStateUITests (empty state, no spinner atascado) + unit:YalaTests/GroupsEmptyStateLogicTests (empty state sign-in tras cerrar sesión solo-grupos, H-2026-07-18-7: flag ON + sin sesión → CTA re-entrada; flag OFF byte-idéntico) + unit:YalaTests/GroupExpenseIconResolverTests (H-2026-07-18-9: icono de gasto de grupo en device fresco/re-onboardeado — cadena bridge-first → nombre self-contained del creador [SplitExpense.subcategoryName, case-insensitive] → genérico; antes el feed dependía SOLO del TX bridge personal → tras el wipe el mapa quedaba vacío → iconos genéricos aunque Stats clasificaba bien. Resolver compartido feed/detalle/Stats)",
       "owner": "",
       "lastVerified": "2026-07-18"
     },
@@ -1051,16 +1052,17 @@
         "Yala/App/Views/Groups/GroupStatsView.swift",
         "Yala/App/ViewModels/GroupStatsViewModel.swift",
         "Yala/App/Views/Shared/DonutChartView.swift",
-        "Yala/App/Logic/GroupTrendChartAdapter.swift"
+        "Yala/App/Logic/GroupTrendChartAdapter.swift",
+        "Yala/App/Logic/GroupExpenseIconResolver.swift"
       ],
       "scenarioIDs": [
         "F-S5-07",
         "F-S5-08"
       ],
       "classification": "agentic",
-      "coverage": "device-qa",
+      "coverage": "device-qa + unit:YalaTests/GroupExpenseIconResolverTests (H-2026-07-18-9: el donut de categorías y el feed de gastos comparten ahora GroupExpenseIconResolver.buildNameLookup/resolve — misma regla de icono/color por nombre normalizado; el matching quedó case-insensitive)",
       "owner": "",
-      "lastVerified": "2026-06-25"
+      "lastVerified": "2026-07-18"
     },
     {
       "area": "icloud-sync-multi-device",

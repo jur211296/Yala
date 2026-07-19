@@ -278,6 +278,7 @@ struct GroupDetailView: View {
                 expense: expense,
                 share: viewModel.mySharesByExpense[expense.id],
                 bridgeTransaction: viewModel.txBridgeMap[expense.id.uuidString],
+                subcategoryNameLookup: viewModel.subcategoryNameLookup,
                 memberNameLookup: viewModel.memberNameLookup,
                 currentMemberID: viewModel.currentMemberID,
                 onEdit: { viewModel.requestEditFromDetail(expense) }
@@ -399,6 +400,7 @@ struct GroupDetailView: View {
                 memberNameLookup: viewModel.memberNameLookup,
                 currencyCode: group.currencyCode,
                 txBridgeMap: viewModel.txBridgeMap,
+                subcategoryNameLookup: viewModel.subcategoryNameLookup,
                 mySharesByExpense: viewModel.mySharesByExpense,
                 currentMemberID: viewModel.currentMemberID,
                 onTapExpense: viewModel.canCurrentUserParticipate ? { expense in

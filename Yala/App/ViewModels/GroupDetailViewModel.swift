@@ -54,6 +54,13 @@ final class GroupDetailViewModel {
     /// Permite renderizar icono+color de la subcat per-user en el feed.
     private(set) var txBridgeMap: [String: TransactionItem] = [:]
 
+    /// `[nombre normalizado de subcategoría: (icono, colorHex)]` de las subcategorías locales.
+    /// Fallback self-contained para el icono del feed cuando NO hay bridge personal (device fresco
+    /// / re-onboardeado, no-participante, `.groupInvite`): casa `SplitExpense.subcategoryName` —
+    /// el nombre localizado del creador que viaja en el record — contra las subcategorías locales.
+    /// SSOT compartida vía `GroupExpenseIconResolver.buildNameLookup`.
+    private(set) var subcategoryNameLookup: [String: (iconName: String, colorHex: String)] = [:]
+
     /// expense.id → mi share. Filtrado por currentMemberID en loadData (no soy miembro → vacío).
     private(set) var mySharesByExpense: [UUID: SplitShare] = [:]
 
@@ -279,6 +286,17 @@ final class GroupDetailViewModel {
             print("GroupDetailViewModel: fetch de TX bridgeadas falló: \(error)")
             #endif
             txBridgeMap = [:]
+        }
+
+        // Lookup nombre→icono/color: fallback self-contained del feed cuando no hay bridge.
+        do {
+            let subs = try context.fetch(FetchDescriptor<Subcategory>())
+            subcategoryNameLookup = GroupExpenseIconResolver.buildNameLookup(from: subs)
+        } catch {
+            #if DEBUG
+            print("GroupDetailViewModel: fetch de subcategorías falló: \(error)")
+            #endif
+            subcategoryNameLookup = [:]
         }
 
         // mySharesByExpense: filter shares to current user only.
