@@ -482,6 +482,14 @@ final class iCloudSyncService {
     /// - Parameter timeout: tope total (primer import + quietud).
     /// - Returns: `true` si quedó quiescente; `false` si se agotó el timeout
     ///   (el caller procede con los datos parciales que haya).
+    ///
+    /// - Note: **Este método comparte el mismo defecto de "store vacío" que resolvió H-2026-07-18-8 en
+    ///   `awaitPersonalImportForBootSave` — FUERA DE SCOPE de H-8.** Exige `hasCompletedFirstImport`
+    ///   (paso 1) antes de considerar la quiescencia; un store que NADA importa (fresh-start wipe cuyos
+    ///   datos ya están todos en el server) nunca dispara `.importEvent` → `forceFetchAndWait` agota el
+    ///   tope → devuelve `false`. Lo usa el flujo de restore (`RestoreProgressView`); si en el futuro lo
+    ///   consumen migraciones `.cloud`/empty-store, aplicar el escape empty-store de `BootSaveGateLogic`
+    ///   (gracia + `!hasObservedImportActivity` + quiescente) aquí también.
     func waitForImportQuiescence(timeout: TimeInterval = 90) async -> Bool {
         guard isAccountAvailable else { return false }
         let deadline = Date.now.addingTimeInterval(timeout)

@@ -48,6 +48,13 @@ enum MetricsCanary: String {
     case cloudkitGroupRecordSaveRejected
     case cloudkitGroupEnqueueDroppedNoEngine
     case groupsIdentityBootMismatch
+    /// El gate de boot-saves del store personal (`awaitPersonalImportForBootSave`) difirió ≥3 veces
+    /// CONSECUTIVAS sin que ningún save resolviera entremedio — señal SUAVE: los ~8 boot-tasks
+    /// concurrentes comparten el contador (resets intercalados), así que el umbral puede alcanzarse
+    /// dentro de UN solo boot. Firma de H-2026-07-18-8 (fresh-start wipe: el store ya está entero en
+    /// el server → NSPersistentCloudKit no importa nada → `hasCompletedFirstImport` jamás vuelve a
+    /// true → todos los boot-saves diferidos para siempre). `detail` desambigua el sub-modo.
+    case cloudBootSaveDeferredRepeatedly
 
     // Modo Nube (motor personal + cuenta + auth)
     case cloudSyncIdentityGapObserved

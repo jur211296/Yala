@@ -820,39 +820,118 @@ final class AppBootstrapper {
 
     // MARK: - One-Time Migrations
 
-    /// Gate for early-boot mainContext saves (retryPendingBridges, migrateShareGroupZoneIDs).
+    /// Key persistida (device-global) del contador de DEFERs CONSECUTIVOS del gate de boot-save.
+    /// Prefijo `cloudSync.*` → SOBREVIVE los sweeps de sign-out (`DataWipeService.removeUserPreferenceKeys`
+    /// es una lista EXPLÍCITA y no lo incluye) — intencional: mide una patología a nivel de DEVICE, no
+    /// data de usuario. OJO semántica: los ~8 boot-tasks concurrentes COMPARTEN este contador y sus
+    /// resoluciones/DEFERs se interlean (un resolve intercalado lo resetea) → el umbral ≥3 puede
+    /// alcanzarse DENTRO de un solo boot y es una señal SUAVE, no un conteo estricto "boot-tras-boot".
+    /// Aun así, en H-2026-07-18-8 (todos los boot-saves diferidos para siempre → device semi-funcional)
+    /// NINGÚN save resuelve → cero resets → el contador sube sostenido: la firma sigue siendo clara.
+    private static let bootSaveDeferCountKey = "cloudSync.quiescenceDeferredBootCount"
+
+    /// Gate for early-boot mainContext saves (retryPendingBridges, migrateShareGroupZoneIDs, y el resto
+    /// de los ~8 boot-tasks que pasan por aquí vía `awaitPersonalStoreReady`).
     /// Un `save()` del mainContext personal mientras el import de CloudKit está en curso puede disparar
-    /// el `_assertionFailure` interno de SwiftData. Devuelve true cuando es seguro: (1) espera el primer
-    /// import si está pendiente, y (2) ADEMÁS espera la **quiescencia** del store (sin import en curso +
-    /// ventana de quietud) — porque el primer importEvent es una señal PREMATURA en un restore
-    /// multi-lote (NSPersistentCloudKitContainer sigue importando después). Devuelve false si no se
-    /// asienta dentro del tope → el caller difiere (idempotente, reintenta al próximo arranque).
+    /// el `_assertionFailure` interno de SwiftData (trap NO atrapable → crash-loop de restore de iCloud).
+    /// Devuelve true cuando es seguro; false → el caller difiere (idempotente, reintenta al próximo
+    /// arranque). La decisión (por tick) la resuelve `BootSaveGateLogic.decide` (verdad única testeable)
+    /// por TRES caminos, TODOS protegiendo el invariante del restore:
+    ///  - sin cuenta → sin mirror CloudKit → no hay grafo a medio importar → seguro.
+    ///  - `hasCompletedFirstImport && isImportQuiescent` (fast-path INTACTO) → el import real ocurrió y
+    ///    quedó quieto → seguro. Protege el restore genuino: mientras baja (hasObservedImportActivity=true
+    ///    pero firstImport aún no), `isImportQuiescent` es false → sigue esperando.
+    ///  - EMPTY-STORE (H-8): pasó la gracia de 60s Y jamás se observó `.importEvent` Y está quiescente
+    ///    Y NO hay NINGUNA fase `.syncing` en vuelo (`status.isSyncing` — cubre `.setup`/`.exporting`,
+    ///    que `isImportQuiescent` no ve). Abre el gate para el store que NADA importa (el fresh-start
+    ///    wipe cuyos datos ya están todos en el server → `hasCompletedFirstImport` jamás vuelve a true);
+    ///    un store vacío está ocioso, así que el guard extra no reintroduce el hang de H-8. SUPUESTO
+    ///    (no garantía) + residual: ver doc de `BootSaveGateLogic.Decision.runEmptyStore` — un restore
+    ///    cuyo primer `.import` llega >60s con NADA activo en el tick abriría el gate PRE-import; ese
+    ///    save cae sobre el grafo local pre-import, que NO es la condición del crash (el crash es save
+    ///    DURANTE import activo sobre grafo a medio importar, device-confirmed 2026-06-22).
+    /// El hard-cap de `resolveWaitByQuiescence` se pasa SIEMPRE `false` (dentro de `BootSaveGateLogic`):
+    /// promover un ENGINE de grupos export-only al tope es inofensivo, pero forzar un SAVE con un import
+    /// genuinamente colgado (`isImporting` → no-quiescente) ES el crash. Por eso el tope total del poll
+    /// (120s) solo TERMINA LA ESPERA (→ DEFER), jamás fuerza el save. El `forceFetchAndWait(15s)` inicial
+    /// cuenta hacia la gracia de 60s (medida desde la entrada de la función).
     private func awaitPersonalImportForBootSave() async -> Bool {
-        // "Seguro para boot-save" = no hay cuenta (sin CloudKit), O el primer import YA ocurrió Y el
-        // store está quieto. Exigir `hasCompletedFirstImport` es clave: `isImportQuiescent` por sí solo
-        // es `true` ANTES de que el import arranque (`lastImportDate==nil`) → proceder ahí sería
-        // prematuro en un restore donde el import aún no empezó (mismo invariante que
-        // `resolveWaitByQuiescence`). Sin cuenta no hay grafo a medio importar → seguro de inmediato.
-        func safeToBootSave() -> Bool {
-            !iCloudSyncService.shared.isAccountAvailable
-                || (iCloudSyncService.shared.hasCompletedFirstImport && iCloudSyncService.shared.isImportQuiescent)
+        let start = Date()
+        let noImportGrace: TimeInterval = 60
+        let totalPollCap: TimeInterval = 120
+        let pollInterval: TimeInterval = 2
+
+        func gateDecision() -> BootSaveGateLogic.Decision {
+            BootSaveGateLogic.decide(
+                isAccountAvailable: iCloudSyncService.shared.isAccountAvailable,
+                hasCompletedFirstImport: iCloudSyncService.shared.hasCompletedFirstImport,
+                hasObservedImportActivity: iCloudSyncService.shared.hasObservedImportActivity,
+                isQuiescent: iCloudSyncService.shared.isImportQuiescent,
+                // El forceFetchAndWait(15s) inicial YA transcurrió cuando llegamos al poll → cuenta
+                // hacia la gracia porque medimos elapsed desde `start`.
+                noImportGraceElapsed: Date().timeIntervalSince(start) >= noImportGrace,
+                // `status.isSyncing` = CUALQUIER fase `.syncing` (setup/importing/exporting) —
+                // endurece el escape empty-store contra un `.setup` largo que `isImportQuiescent`
+                // no ve (solo chequea `.syncing(.importing)`).
+                isSyncingAnyPhase: iCloudSyncService.shared.status.isSyncing
+            )
         }
-        // 1) Esperar el primer import (restore lento).
+
+        // 1) Esperar el primer import (restore lento). Estos ≤15s cuentan hacia la gracia de 60s.
         if MigrationGateLogic.shouldWaitForCloudKit(
             isAccountAvailable: iCloudSyncService.shared.isAccountAvailable,
             hasCompletedFirstImport: iCloudSyncService.shared.hasCompletedFirstImport
         ) == .waitForHook {
             _ = await iCloudSyncService.shared.forceFetchAndWait(timeout: 15)
         }
-        // 2) Esperar la quiescencia (no por el primer evento — por el final del import multi-lote).
-        var waited: TimeInterval = 0
-        let pollInterval: TimeInterval = 2
-        let quiescenceHardCap: TimeInterval = 120
-        while !safeToBootSave() && waited < quiescenceHardCap {
+
+        // 2) Poll hasta que el gate resuelva .run o se agote el tope total (→ DEFER, jamás forzar).
+        //    Un import genuinamente colgado mantiene `isQuiescent=false` → nunca resuelve → DEFER al tope.
+        while gateDecision() == .wait && Date().timeIntervalSince(start) < totalPollCap {
             try? await Task.sleep(for: .seconds(pollInterval))
-            waited += pollInterval
         }
-        return safeToBootSave()
+
+        let decision = gateDecision()
+        recordBootSaveGateOutcome(decision)
+        return decision.isRun
+    }
+
+    /// Visibilidad de H-8 (dirección d del owner): contador persistido device-global de DEFERs
+    /// consecutivos + breadcrumb con snapshot para desambiguar en Console el sub-modo
+    /// (ningún-import vs import-colgado). Canario a los ≥3 (una vez por proceso vía `canaryOnce`).
+    /// El ≥3 es señal SUAVE: los ~8 call-sites concurrentes comparten el contador y puede alcanzarse
+    /// dentro de UN solo boot (ver doc de `bootSaveDeferCountKey`) — el canario dice "varios boot-saves
+    /// difirieron sin que nada resolviera entremedio", no "N boots consecutivos rotos".
+    /// Espeja el `cloudkitGroupSyncNoImportPromote` de grupos para la rama empty-store.
+    private func recordBootSaveGateOutcome(_ decision: BootSaveGateLogic.Decision) {
+        let defaults = UserDefaults.standard
+        let key = Self.bootSaveDeferCountKey
+
+        guard decision.isRun else {
+            // DEFER real (agotó el tope). Incrementa el contador consecutivo device-global.
+            let count = defaults.integer(forKey: key) + 1
+            defaults.set(count, forKey: key)
+            let observedActivity = iCloudSyncService.shared.hasObservedImportActivity
+            let isImporting = iCloudSyncService.shared.status.isImporting
+            logger.notice("boot-save gate DEFERRED (consecutive=\(count, privacy: .public)) hasObservedImportActivity=\(observedActivity, privacy: .public) isImporting=\(isImporting, privacy: .public)")
+            if count >= 3 {
+                MetricsService.canaryOnce(
+                    .cloudBootSaveDeferredRepeatedly,
+                    key: "boot",
+                    detail: "activity=\(observedActivity)|importing=\(isImporting)",
+                    value: Double(count)
+                )
+            }
+            return
+        }
+
+        // Resolvió → red sana: resetea el contador consecutivo.
+        if defaults.integer(forKey: key) != 0 { defaults.set(0, forKey: key) }
+        if decision == .runEmptyStore {
+            // Espejo del `cloudkitGroupSyncNoImportPromote` de grupos: el gate abrió porque NINGÚN import
+            // apareció dentro de la gracia (store vacío / fresh-start wipe), no porque el import se asentara.
+            logger.notice("boot-save gate resolved via empty-store escape (no personal import appeared within grace)")
+        }
     }
 
     /// Wrapper de "el store personal está listo para un boot-save", enrutado por `StorageMode` (I9, R2).
