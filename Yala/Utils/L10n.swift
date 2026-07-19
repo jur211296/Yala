@@ -2547,6 +2547,8 @@ enum L10n {
         static var skipSync: String { ls("accessibility.skipSync", comment: "") }
         static var tabLimitReached: String { ls("accessibility.tabLimitReached", comment: "") }
         static var noTransactionsToExport: String { ls("accessibility.noTransactionsToExport", comment: "") }
+        /// D6 (§3.3.6): "Exportar datos" deshabilitada en solo-grupos sin grupos activos.
+        static var noGroupsToExport: String { ls("accessibility.noGroupsToExport", comment: "") }
         static func accountCard(_ name: String, _ balance: String) -> String { String(format: ls("accessibility.accountCard %@ %@", comment: ""), name, balance) }
         static var editAccount: String { ls("accessibility.editAccount", comment: "") }
         static func pageIndicator(_ current: Int, _ total: Int) -> String { String(format: ls("accessibility.pageIndicator %d %d", comment: ""), current, total) }
@@ -3449,6 +3451,19 @@ enum L10n {
         static var exportData: String {
             ls("export.exportData", comment: "")
         }
+        // D6 (§3.3.6): export directo de grupos (solo-grupos legado, sin wizard personal).
+        static var groupsOnlyTitle: String {
+            ls("export.groupsOnlyTitle", comment: "")
+        }
+        static var groupsOnlyDescription: String {
+            ls("export.groupsOnlyDescription", comment: "")
+        }
+        static var groupsOnlyEmptyTitle: String {
+            ls("export.groupsOnlyEmptyTitle", comment: "")
+        }
+        static var groupsOnlyEmpty: String {
+            ls("export.groupsOnlyEmpty", comment: "")
+        }
         static var greaterThan: String {
             ls("export.greaterThan", comment: "")
         }
@@ -4056,6 +4071,13 @@ enum L10n {
         static var signOutWorking: String { ls("settings.signOutWorking", comment: "") }
         static var signOutPendingTitle: String { ls("settings.signOutPendingTitle", comment: "") }
         static var signOutPendingMessage: String { ls("settings.signOutPendingMessage", comment: "") }
+        // D6 (§3.3.6): "Salir de Yala en este dispositivo" — salida del solo-grupos legado 5a
+        // (group-invite SIN sesión backend). Invoca `.privateReset`: NO toca datos ni grupos.
+        static var exitYala: String { ls("settings.exitYala", comment: "") }
+        static var exitYalaSubtitle: String { ls("settings.exitYalaSubtitle", comment: "") }
+        static var exitYalaConfirmTitle: String { ls("settings.exitYalaConfirmTitle", comment: "") }
+        static var exitYalaConfirmAction: String { ls("settings.exitYalaConfirmAction", comment: "") }
+        static var exitYalaConfirmMessage: String { ls("settings.exitYalaConfirmMessage", comment: "") }
         // Eliminar mi cuenta (G5-D1b — borrado GDPR, DARK)
         static var deleteAccount: String { ls("settings.deleteAccount", comment: "") }
         /// Fase 1 (§3.2): subtítulo de la fila "Eliminar mi cuenta".

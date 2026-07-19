@@ -94,9 +94,30 @@ struct ProfileView: View {
         }
     }
 
+    /// D6 (§3.3.6): el confirmationDialog se comparte entre "Cerrar sesión" y "Salir de Yala
+    /// en este dispositivo"; este flag distingue el segundo (solo-grupos legado 5a) para
+    /// adaptar título/acción/mensaje. Coincide EXACTAMENTE con `shouldShowExitYalaRow`.
+    private var isExitYalaContext: Bool {
+        CloudSignOutFlowLogic.shouldShowExitYalaRow(
+            isGroupInviteMode: isGroupInviteMode,
+            hasLiveSession: CloudAuthService.shared.hasSession)
+    }
+
+    /// Título del confirmationDialog — "Salir de Yala" en el solo-grupos legado (D6).
+    private var signOutConfirmTitle: String {
+        isExitYalaContext ? L10n.Settings.exitYalaConfirmTitle : L10n.Settings.signOutConfirmTitle
+    }
+
+    /// Botón de acción destructiva del confirmationDialog (D6).
+    private var signOutConfirmActionLabel: String {
+        isExitYalaContext ? L10n.Settings.exitYalaConfirmAction : L10n.Settings.signOutConfirmAction
+    }
+
     /// Copy del confirmationDialog de cierre de sesión — misma precedencia que `path()`
-    /// (secundaria → nube → solo-grupos → privado), vía `CloudSignOutFlowLogic`.
+    /// (secundaria → nube → solo-grupos → privado), vía `CloudSignOutFlowLogic`; salvo el
+    /// solo-grupos legado 5a (D6), que muestra el copy de "Salir de Yala".
     private var signOutConfirmMessage: String {
+        if isExitYalaContext { return L10n.Settings.exitYalaConfirmMessage }
         let path = CloudSignOutFlowLogic.path(
             for: CloudSyncFlags.storageMode,
             secondarySessionActive: SecondarySessionStore.isActive(),
@@ -108,6 +129,18 @@ struct ProfileView: View {
         case .secondary: return L10n.Settings.signOutConfirmMessageSecondary
         case .groupsOnly: return L10n.Settings.signOutConfirmMessageGroupsOnly
         }
+    }
+
+    /// D6: gate de la fila "Exportar datos" — grupos en solo-grupos, transacciones en el resto.
+    private var isExportEnabled: Bool {
+        isGroupInviteMode ? viewModel.hasExportableGroups : viewModel.hasTransactions
+    }
+
+    /// Hint de accesibilidad cuando "Exportar datos" está deshabilitada (D6).
+    private var exportDisabledHint: String {
+        isGroupInviteMode
+            ? L10n.Accessibility.noGroupsToExport
+            : L10n.Accessibility.noTransactionsToExport
     }
 
     // G5-D1b: eliminar cuenta (DARK — fila visible solo con sesión backend viva). Doble confirmación:
@@ -172,6 +205,8 @@ struct ProfileView: View {
         case personalDetails
         case importIntro
         case exportWizard
+        /// D6 (§3.3.6): export directo de grupos para el solo-grupos legado (sin wizard personal).
+        case groupsExport
 
         var id: Int {
             hashValue
@@ -242,6 +277,8 @@ struct ProfileView: View {
                     )
                 case .exportWizard:
                     ExportFiltersStepView()
+                case .groupsExport:
+                    GroupsExportView(onFinish: { activeSheet = nil })
                 }
             }
             .alert(
@@ -255,12 +292,13 @@ struct ProfileView: View {
                 Text(result.message)
             }
             // H4: cierre de sesión — confirmación destructiva con copy honesto por modo.
+            // D6: título/acción/mensaje se adaptan al solo-grupos legado ("Salir de Yala").
             .confirmationDialog(
-                L10n.Settings.signOutConfirmTitle,
+                signOutConfirmTitle,
                 isPresented: $showCloudSignOutConfirm,
                 titleVisibility: .visible
             ) {
-                Button(L10n.Settings.signOutConfirmAction, role: .destructive) {
+                Button(signOutConfirmActionLabel, role: .destructive) {
                     Task { await CloudSessionSignOut.shared.signOut(context: modelContext) }
                 }
                 Button(L10n.Common.cancel, role: .cancel) {}
@@ -708,8 +746,8 @@ struct ProfileView: View {
                     .accessibilityIdentifier("storage_settings_row")
                 }
 
-                // Importar/exportar operan sobre transacciones personales: ocultos en
-                // solo-grupos (solo existen movimientos virtuales de grupo).
+                // Importar opera sobre transacciones personales: oculto en solo-grupos
+                // (solo existen movimientos virtuales de grupo).
                 if !isGroupInviteMode {
                     SubsectionDivider()
 
@@ -721,24 +759,27 @@ struct ProfileView: View {
                             iconColor: .blue)
                     }
                     .buttonStyle(.plain)
-
-                    SubsectionDivider()
-
-                    Button {
-                        activeSheet = .exportWizard
-                    } label: {
-                        settingsRowContent(
-                            icon: "square.and.arrow.up.fill", title: L10n.Settings.exportData,
-                            subtitle: L10n.Settings.exportDataSubtitle,
-                            iconColor: .mint
-                        )
-                        .opacity(!viewModel.hasTransactions ? 0.5 : 1.0)
-                    }
-                    .accessibilityHint(!viewModel.hasTransactions ? L10n.Accessibility.noTransactionsToExport : "")
-                    .disabled(!viewModel.hasTransactions)
-                    .buttonStyle(.plain)
-                    .coachMarkAnchor("proExportExtended")
                 }
+
+                // Exportar: personal (wizard con filtros) o SOLO-GRUPOS (D6 §3.3.6 — el builder
+                // de grupos vive; el solo-grupos legado exporta directamente sus grupos, sin el
+                // wizard de transacciones personales, que exigiría seleccionar una cuenta).
+                SubsectionDivider()
+
+                Button {
+                    activeSheet = isGroupInviteMode ? .groupsExport : .exportWizard
+                } label: {
+                    settingsRowContent(
+                        icon: "square.and.arrow.up.fill", title: L10n.Settings.exportData,
+                        subtitle: L10n.Settings.exportDataSubtitle,
+                        iconColor: .mint
+                    )
+                    .opacity(isExportEnabled ? 1.0 : 0.5)
+                }
+                .accessibilityHint(isExportEnabled ? "" : exportDisabledHint)
+                .disabled(!isExportEnabled)
+                .buttonStyle(.plain)
+                .coachMarkAnchor("proExportExtended")
 
                 SubsectionDivider()
 
@@ -813,8 +854,10 @@ struct ProfileView: View {
                 }
                 .buttonStyle(.plain)
                 // H4: cerrar sesión — SIEMPRE al final (privada y nube; oculta solo en
-                // modo group-invite, como el resto de filas personales).
-                if CloudSignOutFlowLogic.shouldShowRow(isGroupInviteMode: isGroupInviteMode) {
+                // group-invite SIN sesión backend, que ve "Salir de Yala" — D6, abajo).
+                if CloudSignOutFlowLogic.shouldShowRow(
+                    isGroupInviteMode: isGroupInviteMode,
+                    hasLiveSession: CloudAuthService.shared.hasSession) {
                     SubsectionDivider()
                     VStack(alignment: .leading, spacing: 0) {
                         Button {
@@ -844,6 +887,26 @@ struct ProfileView: View {
                                 .accessibilityIdentifier("profile_signout_working_caption")
                         }
                     }
+                } else if CloudSignOutFlowLogic.shouldShowExitYalaRow(
+                    isGroupInviteMode: isGroupInviteMode,
+                    hasLiveSession: CloudAuthService.shared.hasSession) {
+                    // D6 (§3.3.6): salida del solo-grupos legado 5a. `.privateReset` vuelve al
+                    // Welcome sin tocar datos ni grupos (que siguen en el iCloud del usuario).
+                    // Reusa el mismo confirmationDialog (copy adaptado por `isExitYalaContext`).
+                    SubsectionDivider()
+                    Button {
+                        showCloudSignOutConfirm = true
+                    } label: {
+                        settingsRowContent(
+                            icon: "rectangle.portrait.and.arrow.right",
+                            title: L10n.Settings.exitYala,
+                            subtitle: L10n.Settings.exitYalaSubtitle,
+                            iconColor: .red,
+                            showSpinner: signOutCoordinator.phase == .working)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(signOutCoordinator.phase == .working)
+                    .accessibilityIdentifier("profile_security_exit_yala")
                 }
                 // G5-D1b: eliminar cuenta — tras "Cerrar sesión", solo con sesión backend viva y fuera de
                 // secundaria (RESIDUAL v1) / group-invite. DARK hoy (hasSession imposible en prod).

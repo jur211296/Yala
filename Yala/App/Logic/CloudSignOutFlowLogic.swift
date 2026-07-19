@@ -77,10 +77,22 @@ nonisolated enum CloudSignOutFlowLogic {
     }
 
     /// Fila "Cerrar sesión" en Seguridad y cuenta: SIEMPRE visible (decisión owner —
-    /// aplica a privado y nube), excepto en modo group-invite (onboarding especial de
-    /// invitados, coherente con el resto de filas personales de ProfileView).
-    static func shouldShowRow(isGroupInviteMode: Bool) -> Bool {
-        !isGroupInviteMode
+    /// aplica a privado y nube), excepto en modo group-invite SIN sesión backend viva.
+    /// D6 (§3.3.6): un group-invite CON sesión backend viva [FLAG] necesita superficie
+    /// para `.groupsOnlySignOut` — de ahí `|| hasLiveSession`. El group-invite SIN sesión
+    /// (solo-grupos legado 5a, VIVO hoy) NO tiene "cuenta" que cerrar: su salida es la fila
+    /// "Salir de Yala en este dispositivo" (`shouldShowExitYalaRow`, `.privateReset`).
+    static func shouldShowRow(isGroupInviteMode: Bool, hasLiveSession: Bool) -> Bool {
+        !isGroupInviteMode || hasLiveSession
+    }
+
+    /// Fila "Salir de Yala en este dispositivo" (D6, §3.3.6): el solo-grupos legado 5a
+    /// (group-invite SIN sesión backend, VIVO hoy) no tenía ninguna salida — ni "Cerrar
+    /// sesión" ni "Exportar". Esta fila invoca `.privateReset` (vuelve al Welcome; NO toca
+    /// datos ni grupos, que siguen en su iCloud). Mutuamente excluyente con `shouldShowRow`:
+    /// el group-invite con sesión ve "Cerrar sesión" (`.groupsOnlySignOut`), no esta.
+    static func shouldShowExitYalaRow(isGroupInviteMode: Bool, hasLiveSession: Bool) -> Bool {
+        isGroupInviteMode && !hasLiveSession
     }
 
     /// Naturaleza del bloqueo del push-all (H-2026-07-18-6): distingue lo que se sana

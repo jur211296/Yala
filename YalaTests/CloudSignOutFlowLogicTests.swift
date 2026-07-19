@@ -84,10 +84,46 @@ struct CloudSignOutFlowLogicTests {
         #expect(CloudSignOutFlowLogic.confirmMessage(for: .groupsOnlySignOut) == .groupsOnly)
     }
 
+    // MARK: - Visibilidad de las filas de salida (H4 + D6 §3.3.6)
+
     @Test
-    func row_alwaysVisible_exceptGroupInviteMode() {
-        #expect(CloudSignOutFlowLogic.shouldShowRow(isGroupInviteMode: false) == true)
-        #expect(CloudSignOutFlowLogic.shouldShowRow(isGroupInviteMode: true) == false)
+    func signOutRow_visible_wheneverNotGroupInvite() {
+        // Privado / nube (no group-invite): SIEMPRE, con o sin sesión backend.
+        #expect(CloudSignOutFlowLogic.shouldShowRow(isGroupInviteMode: false, hasLiveSession: false) == true)
+        #expect(CloudSignOutFlowLogic.shouldShowRow(isGroupInviteMode: false, hasLiveSession: true) == true)
+    }
+
+    @Test
+    func signOutRow_inGroupInvite_onlyWithLiveSession() {
+        // D6: group-invite CON sesión backend viva [FLAG] necesita superficie para
+        // `.groupsOnlySignOut`; SIN sesión (5a puro, VIVO) NO ve "Cerrar sesión".
+        #expect(CloudSignOutFlowLogic.shouldShowRow(isGroupInviteMode: true, hasLiveSession: true) == true)
+        #expect(CloudSignOutFlowLogic.shouldShowRow(isGroupInviteMode: true, hasLiveSession: false) == false)
+    }
+
+    @Test
+    func exitYalaRow_onlyInGroupInviteWithoutSession() {
+        // D6: la fila "Salir de Yala en este dispositivo" es la salida del solo-grupos legado
+        // 5a (group-invite SIN sesión). Fuera de group-invite JAMÁS; con sesión tampoco (esa
+        // ve "Cerrar sesión de grupos").
+        #expect(CloudSignOutFlowLogic.shouldShowExitYalaRow(isGroupInviteMode: true, hasLiveSession: false) == true)
+        #expect(CloudSignOutFlowLogic.shouldShowExitYalaRow(isGroupInviteMode: true, hasLiveSession: true) == false)
+        #expect(CloudSignOutFlowLogic.shouldShowExitYalaRow(isGroupInviteMode: false, hasLiveSession: false) == false)
+        #expect(CloudSignOutFlowLogic.shouldShowExitYalaRow(isGroupInviteMode: false, hasLiveSession: true) == false)
+    }
+
+    @Test
+    func exitYala_and_signOutRow_areMutuallyExclusive() {
+        // Invariante D6: en ningún estado ambas filas se muestran a la vez.
+        for groupInvite in [false, true] {
+            for session in [false, true] {
+                let row = CloudSignOutFlowLogic.shouldShowRow(
+                    isGroupInviteMode: groupInvite, hasLiveSession: session)
+                let exit = CloudSignOutFlowLogic.shouldShowExitYalaRow(
+                    isGroupInviteMode: groupInvite, hasLiveSession: session)
+                #expect(!(row && exit), "Ambas filas visibles en groupInvite=\(groupInvite) session=\(session)")
+            }
+        }
     }
 }
 

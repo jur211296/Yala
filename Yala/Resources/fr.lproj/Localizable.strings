@@ -5045,3 +5045,33 @@
 
 /* Fase 1: desvio cruzado del dialogo de eliminar cuenta hacia Vaciar */
 "settings.deleteAccountCrossReferHint" = "Tu veux seulement effacer tes données et garder ton compte ? Utilise « Vider mes données ».";
+
+/* D6: row title, sign out of the group-only legacy mode (returns to Welcome, no data touched) */
+"settings.exitYala" = "Quitter Yala sur cet appareil";
+
+/* D6: row subtitle for 'Salir de Yala' */
+"settings.exitYalaSubtitle" = "Tu reviendras à l'écran de démarrage. Tes groupes restent dans ton iCloud.";
+
+/* D6: confirmation dialog title for 'Salir de Yala' */
+"settings.exitYalaConfirmTitle" = "Quitter Yala sur cet appareil ?";
+
+/* D6: destructive action button for 'Salir de Yala' */
+"settings.exitYalaConfirmAction" = "Quitter Yala";
+
+/* D6: confirmation dialog message for 'Salir de Yala' */
+"settings.exitYalaConfirmMessage" = "Tu reviendras à l'écran de démarrage. Tes groupes restent dans ton iCloud et tu pourras revenir quand tu veux.";
+
+/* D6: header title of the group-only export screen */
+"export.groupsOnlyTitle" = "Exporte tes groupes";
+
+/* D6: description under the group-only export header */
+"export.groupsOnlyDescription" = "Enregistre un fichier CSV avec les dépenses, les paiements et ton solde pour chaque groupe.";
+
+/* D6: alert title when there are no active groups to export */
+"export.groupsOnlyEmptyTitle" = "Aucun groupe à exporter";
+
+/* D6: alert message when there are no active groups to export */
+"export.groupsOnlyEmpty" = "Il n'y a aucun groupe actif à exporter pour le moment.";
+
+/* D6: a11y hint when Export row is disabled in group-only mode */
+"accessibility.noGroupsToExport" = "Aucun groupe à exporter";
