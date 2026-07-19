@@ -52,6 +52,49 @@ struct SplitSyncStartGateTests {
         #expect(decision == .deferUntilImport)
     }
 
+    // MARK: - decideStart — `.cloud` mirror confirmed OFF (H-2026-07-18, canary sweep)
+
+    @Test func cloudMirrorOff_startsImmediately() {
+        // `.cloud`: this process mounted the personal store with the mirror OFF → no
+        // NSPersistentCloudKitContainer importer → no half-imported graph, no crash window → start now
+        // WITHOUT waiting for a personal import that never comes. `hasCompletedFirstImport` stays false
+        // forever in `.cloud` (nothing imports), so pre-fix this deferred → ~60s-late group sync each boot
+        // + a spurious `cloudkitGroupSyncPromotedToAuto importSettled=false` canary.
+        let decision = SplitSyncStartGate.decideStart(
+            isAccountAvailable: true,
+            hasCompletedFirstImport: false,
+            personalMirrorConfirmedOff: true
+        )
+        #expect(decision == .startNow)
+    }
+
+    @Test func cloudMirrorOff_winsOverDeferUntilImport() {
+        // Precedence: the SAME inputs that defer without the flag (account available, import pending)
+        // must start immediately once the mirror is confirmed OFF — the new branch is evaluated FIRST.
+        let deferred = SplitSyncStartGate.decideStart(
+            isAccountAvailable: true, hasCompletedFirstImport: false, personalMirrorConfirmedOff: false
+        )
+        #expect(deferred == .deferUntilImport)
+        let promoted = SplitSyncStartGate.decideStart(
+            isAccountAvailable: true, hasCompletedFirstImport: false, personalMirrorConfirmedOff: true
+        )
+        #expect(promoted == .startNow)
+    }
+
+    @Test func mirrorNotConfirmedOff_matrixUnchanged() {
+        // Regression: with `personalMirrorConfirmedOff: false` (the default — every `.icloud` device
+        // today) the pre-fix decision matrix is byte-identical. The 2-arg calls above exercise the
+        // default; this pins all four cells with the flag passed explicitly `false`.
+        #expect(SplitSyncStartGate.decideStart(
+            isAccountAvailable: false, hasCompletedFirstImport: false, personalMirrorConfirmedOff: false) == .startNow)
+        #expect(SplitSyncStartGate.decideStart(
+            isAccountAvailable: false, hasCompletedFirstImport: true, personalMirrorConfirmedOff: false) == .startNow)
+        #expect(SplitSyncStartGate.decideStart(
+            isAccountAvailable: true, hasCompletedFirstImport: true, personalMirrorConfirmedOff: false) == .startNow)
+        #expect(SplitSyncStartGate.decideStart(
+            isAccountAvailable: true, hasCompletedFirstImport: false, personalMirrorConfirmedOff: false) == .deferUntilImport)
+    }
+
     // MARK: - resolveWaitByQuiescence (promote on QUIESCENCE + observed import activity)
 
     @Test func resolveByQuiescence_settledAndQuiet_starts() {

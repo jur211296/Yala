@@ -166,18 +166,39 @@ final class SplitSyncManager {
     func initialize() {
         setupContainerAndDelegate()
 
+        // Testigo de MONTAJE (qué modo montó ESTE proceso el store personal), NUNCA lo persistido:
+        // en el kill-window del cutover §g.4 la key persistida ya dice `.cloud` pero el mirror personal
+        // SIGUE montado hasta el relaunch armado (el par `.cloud && mirrorOffArmed`) → promover directo
+        // ahí sería la clase del crash de restore (un `save()` del delegate sobre un grafo personal a
+        // medio hidratar). En ese window el testigo queda `.icloud` → gate normal (defer). Mismo árbitro
+        // que `MigrationWorkExecutor.isMirrorConfirmedOff()`.
+        let mirrorConfirmedOff = SwiftDataConfiguration.personalStoreMountedMode == .cloud
+
         let decision = SplitSyncStartGate.decideStart(
             isAccountAvailable: iCloudSyncService.shared.isAccountAvailable,
-            hasCompletedFirstImport: iCloudSyncService.shared.hasCompletedFirstImport
+            hasCompletedFirstImport: iCloudSyncService.shared.hasCompletedFirstImport,
+            personalMirrorConfirmedOff: mirrorConfirmedOff
         )
         // Diagnóstico INTENCIONALMENTE fuera de `#if DEBUG`: este crash solo reproduce en
         // CloudKit Production (device restaurado de iCloud), verificable solo vía TestFlight
         // Release en Console.app. Sin PII — solo bools de estado, counts y "private"/"shared".
         // Eventos puntuales (1× por cold launch), no hot path.
-        logger.notice("SplitSync gate: decision=\(String(describing: decision), privacy: .public) account=\(iCloudSyncService.shared.isAccountAvailable, privacy: .public) firstImport=\(iCloudSyncService.shared.hasCompletedFirstImport, privacy: .public)")
+        logger.notice("SplitSync gate: decision=\(String(describing: decision), privacy: .public) account=\(iCloudSyncService.shared.isAccountAvailable, privacy: .public) firstImport=\(iCloudSyncService.shared.hasCompletedFirstImport, privacy: .public) mirrorConfirmedOff=\(mirrorConfirmedOff, privacy: .public)")
 
         switch decision {
         case .startNow:
+            // En `.cloud` (mirror confirmado OFF) los engines arrancan directo sin pasar NUNCA por el
+            // modo export-only, así que `enableAutoSync()` — y con él el canario
+            // `cloudkitGroupSyncPromotedToAuto detail=importSettled=false` — jamás corre. Emitimos el
+            // canario AQUÍ con un `detail` DISTINTO (`cloudModeDirect`) para conservar la señal "grupos
+            // promovió a auto" SIN contaminar el barrido del gate D9, que agrupa por `importSettled=<bool>`:
+            // estos devices producían ~14 promociones espurias `importSettled=false` vía el poll de
+            // quiescencia (esperando un import personal de iCloud que en `.cloud` NO existe). Solo cuando
+            // el mirror está OFF — el `.startNow` normal (offline / import asentado, `.icloud`) nunca
+            // emitió este canario y no debe empezar a hacerlo.
+            if mirrorConfirmedOff {
+                MetricsService.canary(.cloudkitGroupSyncPromotedToAuto, detail: "cloudModeDirect")
+            }
             startEngines(autoSync: true)
         case .deferUntilImport:
             // Create the engines in export-only mode (so create/invite/enqueue work) and observe

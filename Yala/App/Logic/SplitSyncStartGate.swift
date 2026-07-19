@@ -30,6 +30,16 @@ enum SplitSyncStartGate {
 
     /// Decides whether the group engines can start immediately.
     ///
+    /// - `personalMirrorConfirmedOff=true` → this process mounted the personal store in `.cloud` mode
+    ///   (mirror OFF, `cloudKitDatabase: .none`). There is NO NSPersistentCloudKitContainer importer at
+    ///   all, so no half-imported personal graph and no crash window to wait for → start now, skipping the
+    ///   entire export-only + quiescence-poll dance. Same racional as
+    ///   `SyncQuiescenceCoordinator.isQuiescentForEngineSaves`, which returns `true` UNCONDITIONALLY in
+    ///   `.cloud`: without the async mirror importer, the backend applier is per-page, sequential, on
+    ///   `@MainActor`, and its `save()` commits before the next op — nothing races the graph. Distinct
+    ///   from `resolveWaitByQuiescence`'s empty-store branch, which is for a `.icloud` groups-only user
+    ///   whose personal mirror is ON (that branch stays intact — the importer exists there). The witness
+    ///   is the MOUNT (`personalStoreMountedMode`), NEVER the persisted mode; see the call site.
     /// - `isAccountAvailable=false` → no CloudKit, no half-imported personal graph → start now.
     /// - `hasCompletedFirstImport=true` → personal import settled → start now.
     /// - `iCloud available && import pending` → defer until the first import completes.
@@ -40,8 +50,10 @@ enum SplitSyncStartGate {
     /// grace + quiescent) — NOT here, so the quiescence/no-activity guards stay live even at cold launch.
     static func decideStart(
         isAccountAvailable: Bool,
-        hasCompletedFirstImport: Bool
+        hasCompletedFirstImport: Bool,
+        personalMirrorConfirmedOff: Bool = false
     ) -> StartDecision {
+        if personalMirrorConfirmedOff { return .startNow }
         guard isAccountAvailable else { return .startNow }
         return hasCompletedFirstImport ? .startNow : .deferUntilImport
     }
