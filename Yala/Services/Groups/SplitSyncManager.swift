@@ -927,7 +927,8 @@ final class SplitSyncManager {
             return AccountDeletionGroupsSummary(
                 outstandingDebtGroupCount: AccountDeletionDebtLogic.groupsWithOutstandingBalance(
                     perGroupUserNetBalances: perGroupNets),
-                hasLegacyCloudKitFootprint: hasLegacy)
+                hasLegacyCloudKitFootprint: hasLegacy,
+                hasGroups: !groups.isEmpty)
         } catch {
             logger.error("accountDeletionGroupsSummary fetch failed: \(error.localizedDescription, privacy: .public)")
             return .empty

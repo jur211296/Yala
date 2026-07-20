@@ -5214,3 +5214,42 @@
 
 /* Vaciar v2: fila de grupos de la hoja de alcance cuando el usuario tiene saldos pendientes */
 "settings.wipeScopeGroupsDebt" = "Seus grupos são mantidos, mas você tem saldos pendentes. Você pode acertar as contas na aba Grupos.";
+
+/* D10 batch: secondary action label in the wipe scope sheet */
+"settings.wipeLeaveGroupsButton" = "Sair também dos meus grupos";
+
+/* D10 batch: dedicated flow title */
+"settings.batchLeaveTitle" = "Sair dos meus grupos";
+
+/* D10 batch: progress label */
+"settings.batchLeaveProgress" = "Saindo dos seus grupos…";
+
+/* D10 batch: result headline, all done */
+"settings.batchLeaveAllDone" = "Você saiu dos seus grupos.";
+
+/* D10 batch: result headline when some need decision */
+"settings.batchLeaveSomeNeedDecision" = "Você saiu de alguns grupos.";
+
+/* D10 batch: stat label for groups left/deleted */
+"settings.batchLeaveStatLeft" = "Saídos";
+
+/* D10 batch: stat label for groups whose ownership was transferred */
+"settings.batchLeaveStatTransferred" = "Transferidos";
+
+/* D10 batch: section header for groups needing manual attention */
+"settings.batchLeaveNeedsDecisionHeader" = "Precisam da sua decisão";
+
+/* D10 batch: explanation for groups needing manual attention */
+"settings.batchLeaveNeedsDecisionBody" = "Esses grupos precisam de atenção manual: não é possível sair deles automaticamente.";
+
+/* D10 batch: reason - owner with co-members, cannot auto-leave */
+"settings.batchLeaveReasonManual" = "Você é o administrador e há outros membros.";
+
+/* D10 batch: reason - outstanding debt */
+"settings.batchLeaveReasonDebt" = "Você tem saldos pendentes.";
+
+/* D10 batch: reason - operation failed */
+"settings.batchLeaveReasonFailed" = "Não foi possível concluir. Tente novamente.";
+
+/* D10 batch: acknowledge/done button */
+"settings.batchLeaveDone" = "Concluído";

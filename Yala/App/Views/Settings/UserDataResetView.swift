@@ -25,7 +25,9 @@ struct UserDataResetView: View {
     // v2 (§3.3.1): salidas SEGURAS de la hoja, ejecutadas en su `onDismiss` (hoja YA fuera, anti-carrera).
     @State private var pendingExport = false          // "Exportar antes" → wizard de export
     @State private var pendingViewGroups = false      // "Ver mis grupos" (con deuda) → tab Grupos + cierra Ajustes
+    @State private var pendingLeaveGroups = false     // D10: "También salir de mis grupos" (sin deuda) → flujo batch
     @State private var isShowingExportWizard = false
+    @State private var isShowingBatchLeave = false     // D10: flujo dedicado del batch (headless; sobrevive al cierre)
     // Fase 1 (C3): segunda confirmación (alert corto). Contenedor DISTINTO del paso 1 ⇒ sin carrera same-anchor.
     @State private var isShowingSecondConfirmationAlert = false
     @State private var isProcessing = false
@@ -49,6 +51,14 @@ struct UserDataResetView: View {
     /// scope (ver `wipeOperation`). La etiqueta ☁️ la resuelve `cloudLabel(storageMode)` (mata C2).
     private var scopeOperation: DestructiveScopeLogic.Operation {
         DestructiveScopeLogic.wipeOperation(isGroupInviteMode: sessionState.isGroupInviteMode)
+    }
+
+    /// D10: ofrecer el batch "También salir de mis grupos" solo con el canal backend ON (DARK), grupos vivos y
+    /// CERO deudas globales (el batch no se ofrece con deuda — la fila 👥 muestra "Ver mis grupos"). Solo en
+    /// `wipeDataFull` (el modelo lo restringe a esa operación).
+    private var canLeaveAllGroups: Bool {
+        if UITestHooks.groupsBatchDemo { return true }   // QA/XCUITest: fuerza la oferta (inerte en release)
+        return CloudSyncFlags.groupsBackendEnabled && groupsSummary.hasGroups && !groupsSummary.hasOutstandingDebt
     }
 
     var body: some View {
@@ -93,6 +103,7 @@ struct UserDataResetView: View {
                                 .padding(DS.Spacing.lg)
                             }
                             .disabled(isProcessing)
+                            .accessibilityIdentifier("wipe_data_start")
                             .accessibilityHint(isProcessing ? L10n.Accessibility.processing : "")
                         }
                     }
@@ -112,9 +123,11 @@ struct UserDataResetView: View {
             let goSecondConfirm = pendingSecondConfirm
             let goExport = pendingExport
             let goViewGroups = pendingViewGroups
+            let goLeaveGroups = pendingLeaveGroups
             pendingSecondConfirm = false
             pendingExport = false
             pendingViewGroups = false
+            pendingLeaveGroups = false
             if goSecondConfirm {
                 isShowingSecondConfirmationAlert = true
             } else if goExport {
@@ -125,16 +138,26 @@ struct UserDataResetView: View {
                 // solo haría *pop* a Profile dejando Ajustes tapando el tab — B1).
                 SessionState.shared.selectMainTab(.groups)
                 onRequestCloseSettings?()
+            } else if goLeaveGroups {
+                // D10: flujo dedicado del batch (paso separado, NO dispara el vaciado — decisión B1).
+                isShowingBatchLeave = true
             }
         }) {
             DestructiveScopeSheet(config: .make(
                 operation: scopeOperation,
                 cloudLabel: DestructiveScopeLogic.cloudLabel(storageMode: CloudSyncFlags.storageMode),
                 hasOutstandingDebt: groupsSummary.hasOutstandingDebt,
+                canLeaveAllGroups: canLeaveAllGroups,
                 onConfirm: { pendingSecondConfirm = true },
                 // "Ver mis grupos" solo aparece con deuda (lo decide `DestructiveScopeLogic.secondaryActions`).
                 onSecondary: { pendingViewGroups = true },
-                onExport: { pendingExport = true }))
+                onExport: { pendingExport = true },
+                onLeaveGroups: { pendingLeaveGroups = true }))
+        }
+        // D10: flujo dedicado del batch "salir de todos mis grupos". Headless — si se descarta o se cierra
+        // Ajustes a mitad, el orquestador sigue y el resultado se refleja en el tab Grupos (residual declarado).
+        .sheet(isPresented: $isShowingBatchLeave) {
+            GroupBatchLeaveView(onRequestCloseSettings: onRequestCloseSettings)
         }
         // v2 (§3.3.1): "Exportar antes" → wizard de export existente (autocontenido: NavigationStack/dismiss
         // propios; hereda `\.modelContext`/`\.yalaTheme`). Al cerrarlo, regresa a esta vista. Solo aplica a

@@ -208,15 +208,18 @@ extension DestructiveScopeSheet.Config {
         cloudLabel: DestructiveScopeLogic.CloudLabel,
         hasOutstandingDebt: Bool = false,
         hasLegacyCloudKitFootprint: Bool = false,
+        canLeaveAllGroups: Bool = false,
         onConfirm: @escaping () -> Void,
         onSecondary: (() -> Void)? = nil,
-        onExport: (() -> Void)? = nil
+        onExport: (() -> Void)? = nil,
+        onLeaveGroups: (() -> Void)? = nil
     ) -> Self {
         let model = DestructiveScopeLogic.model(
             operation: operation,
             cloudLabel: cloudLabel,
             hasOutstandingDebt: hasOutstandingDebt,
-            hasLegacyCloudKitFootprint: hasLegacyCloudKitFootprint)
+            hasLegacyCloudKitFootprint: hasLegacyCloudKitFootprint,
+            canLeaveAllGroups: canLeaveAllGroups)
 
         let rows = model.rows.map { spec in
             Row(icon: Self.icon(for: spec.location),
@@ -245,6 +248,13 @@ extension DestructiveScopeSheet.Config {
                     // En `.cloud` esta puede ser la única copia (§3.3.1).
                     caption: cloudLabel == .cloudAccount ? L10n.Settings.wipeExportBeforeCloudCaption : nil,
                     handler: onExport)
+            case .leaveAllGroups:
+                guard let onLeaveGroups else { return nil }
+                return SecondaryAction(
+                    label: L10n.Settings.wipeLeaveGroupsButton,
+                    identifier: "wipe_leave_groups",
+                    caption: nil,
+                    handler: onLeaveGroups)
             }
         }
 

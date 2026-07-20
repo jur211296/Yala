@@ -70,7 +70,9 @@ nonisolated enum DestructiveScopeLogic {
     /// la factory mapea cada kind a su label/id/handler/caption. `.viewGroups` = "Ver mis grupos" (→ tab
     /// Grupos; eliminar-cuenta o Vaciar con deuda); `.exportBefore` = "Exportar antes" (red de seguridad
     /// §m.4 — SOLO Vaciar completo, donde existe el wizard personal).
-    enum SecondaryKind: Equatable { case viewGroups, exportBefore }
+    /// `.leaveAllGroups` = "También salir de mis grupos" (batch D10 — SOLO Vaciar completo, sin deudas, con
+    /// grupos y flag ON).
+    enum SecondaryKind: Equatable { case viewGroups, exportBefore, leaveAllGroups }
 
     struct RowSpec: Equatable {
         let location: Location
@@ -114,7 +116,8 @@ nonisolated enum DestructiveScopeLogic {
         operation: Operation,
         cloudLabel: CloudLabel,
         hasOutstandingDebt: Bool = false,
-        hasLegacyCloudKitFootprint: Bool = false
+        hasLegacyCloudKitFootprint: Bool = false,
+        canLeaveAllGroups: Bool = false
     ) -> Model {
         switch operation {
         case .wipeDataFull:
@@ -128,8 +131,13 @@ nonisolated enum DestructiveScopeLogic {
                 // D9: en `.cloud` declarar el residual multi-device. VIVO `.icloud` → byte-idéntico (sin línea).
                 extraLines: cloudLabel == .cloudAccount ? [.multiDeviceResidual] : [],
                 // "Exportar antes" SIEMPRE (red de seguridad §m.4); con deuda, "Ver mis grupos" va PRIMERO
-                // (protege a terceros: saldar antes de destruir).
-                secondaryActions: hasOutstandingDebt ? [.viewGroups, .exportBefore] : [.exportBefore])
+                // (protege a terceros: saldar antes de destruir); sin deuda y con grupos+flag (D10),
+                // "También salir de mis grupos" va PRIMERO (el batch no se ofrece con deuda).
+                secondaryActions: {
+                    if hasOutstandingDebt { return [.viewGroups, .exportBefore] }
+                    if canLeaveAllGroups { return [.leaveAllGroups, .exportBefore] }
+                    return [.exportBefore]
+                }())
 
         case .wipeDataGroupsOnly:
             // 5a: solo perfil + preferencias (se restablecen; el iCloud KV de prefs también). Grupos intactos.

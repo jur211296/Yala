@@ -5226,3 +5226,42 @@
 
 /* Vaciar v2: fila de grupos de la hoja de alcance cuando el usuario tiene saldos pendientes */
 "settings.wipeScopeGroupsDebt" = "Je groepen blijven behouden, maar je hebt openstaande saldi. Je kunt ze vereffenen via het tabblad Groepen.";
+
+/* D10 batch: secondary action label in the wipe scope sheet */
+"settings.wipeLeaveGroupsButton" = "Ook mijn groepen verlaten";
+
+/* D10 batch: dedicated flow title */
+"settings.batchLeaveTitle" = "Mijn groepen verlaten";
+
+/* D10 batch: progress label */
+"settings.batchLeaveProgress" = "Je groepen worden verlaten…";
+
+/* D10 batch: result headline, all done */
+"settings.batchLeaveAllDone" = "Je hebt je groepen verlaten.";
+
+/* D10 batch: result headline when some need decision */
+"settings.batchLeaveSomeNeedDecision" = "Je hebt sommige groepen verlaten.";
+
+/* D10 batch: stat label for groups left/deleted */
+"settings.batchLeaveStatLeft" = "Verlaten";
+
+/* D10 batch: stat label for groups whose ownership was transferred */
+"settings.batchLeaveStatTransferred" = "Overgedragen";
+
+/* D10 batch: section header for groups needing manual attention */
+"settings.batchLeaveNeedsDecisionHeader" = "Jouw beslissing nodig";
+
+/* D10 batch: explanation for groups needing manual attention */
+"settings.batchLeaveNeedsDecisionBody" = "Deze groepen hebben je aandacht nodig: ze kunnen niet automatisch worden verlaten.";
+
+/* D10 batch: reason - owner with co-members, cannot auto-leave */
+"settings.batchLeaveReasonManual" = "Je bent de beheerder en er zijn andere leden.";
+
+/* D10 batch: reason - outstanding debt */
+"settings.batchLeaveReasonDebt" = "Je hebt openstaande saldi.";
+
+/* D10 batch: reason - operation failed */
+"settings.batchLeaveReasonFailed" = "Kan niet worden voltooid. Probeer het opnieuw.";
+
+/* D10 batch: acknowledge/done button */
+"settings.batchLeaveDone" = "Klaar";

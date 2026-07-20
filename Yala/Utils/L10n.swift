@@ -4107,6 +4107,20 @@ enum L10n {
         static var wipeScopeGroupsDebt: String { ls("settings.wipeScopeGroupsDebt", comment: "") }
         static var wipeExportBeforeButton: String { ls("settings.wipeExportBeforeButton", comment: "") }
         static var wipeExportBeforeCloudCaption: String { ls("settings.wipeExportBeforeCloudCaption", comment: "") }
+        // D10 — batch "salir de todos mis grupos"
+        static var wipeLeaveGroupsButton: String { ls("settings.wipeLeaveGroupsButton", comment: "") }
+        static var batchLeaveTitle: String { ls("settings.batchLeaveTitle", comment: "") }
+        static var batchLeaveProgress: String { ls("settings.batchLeaveProgress", comment: "") }
+        static var batchLeaveAllDone: String { ls("settings.batchLeaveAllDone", comment: "") }
+        static var batchLeaveSomeNeedDecision: String { ls("settings.batchLeaveSomeNeedDecision", comment: "") }
+        static var batchLeaveStatLeft: String { ls("settings.batchLeaveStatLeft", comment: "") }
+        static var batchLeaveStatTransferred: String { ls("settings.batchLeaveStatTransferred", comment: "") }
+        static var batchLeaveNeedsDecisionHeader: String { ls("settings.batchLeaveNeedsDecisionHeader", comment: "") }
+        static var batchLeaveNeedsDecisionBody: String { ls("settings.batchLeaveNeedsDecisionBody", comment: "") }
+        static var batchLeaveReasonManual: String { ls("settings.batchLeaveReasonManual", comment: "") }
+        static var batchLeaveReasonDebt: String { ls("settings.batchLeaveReasonDebt", comment: "") }
+        static var batchLeaveReasonFailed: String { ls("settings.batchLeaveReasonFailed", comment: "") }
+        static var batchLeaveDone: String { ls("settings.batchLeaveDone", comment: "") }
         static var deleteAccountScopeDeviceCloud: String { ls("settings.deleteAccountScopeDeviceCloud", comment: "") }
         static var deleteAccountScopeDeviceGroupsOnly: String { ls("settings.deleteAccountScopeDeviceGroupsOnly", comment: "") }
         static var deleteAccountScopeCloudCloud: String { ls("settings.deleteAccountScopeCloudCloud", comment: "") }

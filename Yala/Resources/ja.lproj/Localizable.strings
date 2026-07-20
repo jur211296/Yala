@@ -5226,3 +5226,42 @@
 
 /* Vaciar v2: fila de grupos de la hoja de alcance cuando el usuario tiene saldos pendientes */
 "settings.wipeScopeGroupsDebt" = "グループは残りますが、未精算の残高があります。グループタブから精算できます。";
+
+/* D10 batch: secondary action label in the wipe scope sheet */
+"settings.wipeLeaveGroupsButton" = "グループからも退出";
+
+/* D10 batch: dedicated flow title */
+"settings.batchLeaveTitle" = "グループを退出";
+
+/* D10 batch: progress label */
+"settings.batchLeaveProgress" = "グループから退出しています…";
+
+/* D10 batch: result headline, all done */
+"settings.batchLeaveAllDone" = "グループから退出しました。";
+
+/* D10 batch: result headline when some need decision */
+"settings.batchLeaveSomeNeedDecision" = "一部のグループから退出しました。";
+
+/* D10 batch: stat label for groups left/deleted */
+"settings.batchLeaveStatLeft" = "退出済み";
+
+/* D10 batch: stat label for groups whose ownership was transferred */
+"settings.batchLeaveStatTransferred" = "移譲済み";
+
+/* D10 batch: section header for groups needing manual attention */
+"settings.batchLeaveNeedsDecisionHeader" = "対応が必要";
+
+/* D10 batch: explanation for groups needing manual attention */
+"settings.batchLeaveNeedsDecisionBody" = "これらのグループは手動での対応が必要です。自動で退出できません。";
+
+/* D10 batch: reason - owner with co-members, cannot auto-leave */
+"settings.batchLeaveReasonManual" = "あなたが管理者で、他のメンバーがいます。";
+
+/* D10 batch: reason - outstanding debt */
+"settings.batchLeaveReasonDebt" = "未精算の残高があります。";
+
+/* D10 batch: reason - operation failed */
+"settings.batchLeaveReasonFailed" = "完了できませんでした。もう一度お試しください。";
+
+/* D10 batch: acknowledge/done button */
+"settings.batchLeaveDone" = "完了";

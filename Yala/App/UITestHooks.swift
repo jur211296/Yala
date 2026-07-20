@@ -70,6 +70,15 @@ final class UITestHooks {
     /// el usuario tenga saldos pendientes → aparece el aviso. Solo DEBUG (inerte en release vía `hasArg`).
     nonisolated static var fakeBackendSession: Bool { hasArg("-uitest-fake-backend-session") }
 
+    /// `-uitest-groups-batch-demo`: QA/XCUITest del batch "salir de todos mis grupos" (D10) SIN backend ni
+    /// iCloud (imposibles en sim — la ejecución real de leave/transfer es device/TestFlight). Fuerza que la
+    /// hoja de Vaciar OFREZCA «También salir de mis grupos» (input `canLeaveAllGroups` de `UserDataResetView`)
+    /// y hace que la vista del batch (`GroupBatchLeaveView`) muestre un RESULTADO determinista fabricado
+    /// (2 salidos + 1 transferido + 1 «necesita tu decisión») en vez de ejecutar el orquestador real. Solo
+    /// verifica el CABLEADO/UI; la lógica del orquestador va por unit tests (kill-sim). Inerte en release
+    /// vía `hasArg`; el seed demo del store está bajo `#if DEBUG`.
+    nonisolated static var groupsBatchDemo: Bool { hasArg("-uitest-groups-batch-demo") }
+
     /// `-uitest-inbox-alert`: tras el seed, encola `.showInboxAlert` con un payload de
     /// muestra para presentar el InboxAlertModal sin depender del sync de CloudKit.
     nonisolated static var showInboxAlert: Bool { hasArg("-uitest-inbox-alert") }

@@ -26,9 +26,18 @@ struct AccountDeletionGroupsSummary: Equatable {
     let outstandingDebtGroupCount: Int
     /// ¿Algún grupo con zona CloudKit viva (donde el nombre persiste tras el GDPR delete)?
     let hasLegacyCloudKitFootprint: Bool
+    /// ¿Tiene el usuario algún grupo activo (`!isHiddenForAll`)? Gate del batch "salir de todos mis grupos"
+    /// (D10): sin grupos, no se ofrece. Default `false` (back-compat con call-sites existentes).
+    let hasGroups: Bool
+
+    init(outstandingDebtGroupCount: Int, hasLegacyCloudKitFootprint: Bool, hasGroups: Bool = false) {
+        self.outstandingDebtGroupCount = outstandingDebtGroupCount
+        self.hasLegacyCloudKitFootprint = hasLegacyCloudKitFootprint
+        self.hasGroups = hasGroups
+    }
 
     static let empty = AccountDeletionGroupsSummary(
-        outstandingDebtGroupCount: 0, hasLegacyCloudKitFootprint: false)
+        outstandingDebtGroupCount: 0, hasLegacyCloudKitFootprint: false, hasGroups: false)
 
     var hasOutstandingDebt: Bool { outstandingDebtGroupCount > 0 }
 }

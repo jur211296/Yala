@@ -87,6 +87,21 @@ struct DestructiveScopeLogicTests {
         #expect(m.secondaryActions == [.viewGroups, .exportBefore])
     }
 
+    @Test func leaveAllGroups_firstWhenCanLeaveAndNoDebt_inWipeDataFull() {
+        // D10: sin deuda + canLeaveAllGroups → "También salir de mis grupos" PRIMERO, luego "Exportar antes".
+        let m = DestructiveScopeLogic.model(operation: .wipeDataFull, cloudLabel: .icloud,
+                                            hasOutstandingDebt: false, canLeaveAllGroups: true)
+        #expect(m.secondaryActions == [.leaveAllGroups, .exportBefore])
+        // Con deuda, el batch NO se ofrece aunque canLeaveAllGroups sea true (gana "Ver mis grupos").
+        let debt = DestructiveScopeLogic.model(operation: .wipeDataFull, cloudLabel: .icloud,
+                                               hasOutstandingDebt: true, canLeaveAllGroups: true)
+        #expect(debt.secondaryActions == [.viewGroups, .exportBefore])
+        // canLeaveAllGroups solo aplica a wipeDataFull (default false en el resto → byte-idéntico).
+        let go = DestructiveScopeLogic.model(operation: .wipeDataGroupsOnly, cloudLabel: .icloud,
+                                             canLeaveAllGroups: true)
+        #expect(!go.secondaryActions.contains(.leaveAllGroups))
+    }
+
     // MARK: - C4: operación de Vaciar según el modo
 
     @Test func wipeOperation_groupInvite_isGroupsOnly_elseFull() {

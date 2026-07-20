@@ -5226,3 +5226,42 @@
 
 /* Vaciar v2: fila de grupos de la hoja de alcance cuando el usuario tiene saldos pendientes */
 "settings.wipeScopeGroupsDebt" = "你的群组会保留，但你有未结清的余额。你可以在「群组」标签页结清。";
+
+/* D10 batch: secondary action label in the wipe scope sheet */
+"settings.wipeLeaveGroupsButton" = "同时离开我的群组";
+
+/* D10 batch: dedicated flow title */
+"settings.batchLeaveTitle" = "离开我的群组";
+
+/* D10 batch: progress label */
+"settings.batchLeaveProgress" = "正在离开你的群组…";
+
+/* D10 batch: result headline, all done */
+"settings.batchLeaveAllDone" = "已离开你的群组。";
+
+/* D10 batch: result headline when some need decision */
+"settings.batchLeaveSomeNeedDecision" = "已离开部分群组。";
+
+/* D10 batch: stat label for groups left/deleted */
+"settings.batchLeaveStatLeft" = "已离开";
+
+/* D10 batch: stat label for groups whose ownership was transferred */
+"settings.batchLeaveStatTransferred" = "已转让";
+
+/* D10 batch: section header for groups needing manual attention */
+"settings.batchLeaveNeedsDecisionHeader" = "需要你的决定";
+
+/* D10 batch: explanation for groups needing manual attention */
+"settings.batchLeaveNeedsDecisionBody" = "这些群组需要手动处理：无法自动离开。";
+
+/* D10 batch: reason - owner with co-members, cannot auto-leave */
+"settings.batchLeaveReasonManual" = "你是管理员，而且还有其他成员。";
+
+/* D10 batch: reason - outstanding debt */
+"settings.batchLeaveReasonDebt" = "你有未结清的余额。";
+
+/* D10 batch: reason - operation failed */
+"settings.batchLeaveReasonFailed" = "无法完成。请重试。";
+
+/* D10 batch: acknowledge/done button */
+"settings.batchLeaveDone" = "完成";

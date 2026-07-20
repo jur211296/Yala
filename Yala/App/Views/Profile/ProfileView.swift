@@ -863,6 +863,7 @@ struct ProfileView: View {
                         subtitle: L10n.Settings.wipeDataSubtitle, iconColor: .red)
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("profile_security_reset_data")
             }
         }
         .padding(.horizontal, DS.Spacing.lg)

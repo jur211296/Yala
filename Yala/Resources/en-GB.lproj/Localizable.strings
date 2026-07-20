@@ -4477,3 +4477,42 @@
 
 /* Vaciar v2: fila de grupos de la hoja de alcance cuando el usuario tiene saldos pendientes */
 "settings.wipeScopeGroupsDebt" = "Your groups are kept, but you have unsettled balances. You can settle them from the Groups tab.";
+
+/* D10 batch: secondary action label in the wipe scope sheet */
+"settings.wipeLeaveGroupsButton" = "Also leave my groups";
+
+/* D10 batch: dedicated flow title */
+"settings.batchLeaveTitle" = "Leave my groups";
+
+/* D10 batch: progress label */
+"settings.batchLeaveProgress" = "Leaving your groups…";
+
+/* D10 batch: result headline, all done */
+"settings.batchLeaveAllDone" = "You've left your groups.";
+
+/* D10 batch: result headline when some need decision */
+"settings.batchLeaveSomeNeedDecision" = "You've left some groups.";
+
+/* D10 batch: stat label for groups left/deleted */
+"settings.batchLeaveStatLeft" = "Left";
+
+/* D10 batch: stat label for groups whose ownership was transferred */
+"settings.batchLeaveStatTransferred" = "Transferred";
+
+/* D10 batch: section header for groups needing manual attention */
+"settings.batchLeaveNeedsDecisionHeader" = "Need your decision";
+
+/* D10 batch: explanation for groups needing manual attention */
+"settings.batchLeaveNeedsDecisionBody" = "These groups need manual attention: they can't be left automatically.";
+
+/* D10 batch: reason - owner with co-members, cannot auto-leave */
+"settings.batchLeaveReasonManual" = "You're the admin and there are other members.";
+
+/* D10 batch: reason - outstanding debt */
+"settings.batchLeaveReasonDebt" = "You have outstanding balances.";
+
+/* D10 batch: reason - operation failed */
+"settings.batchLeaveReasonFailed" = "Couldn't complete. Try again.";
+
+/* D10 batch: acknowledge/done button */
+"settings.batchLeaveDone" = "Done";
