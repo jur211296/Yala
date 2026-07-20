@@ -5103,3 +5103,18 @@
 
 /* D6: a11y hint when Export row is disabled in group-only mode */
 "accessibility.noGroupsToExport" = "No hay grupos para exportar";
+
+/* D2 (3.3.3): fila 'Cerrar sesion de grupos' del split privado+grupos con sesion backend */
+"settings.signOutGroups" = "Cerrar sesión de grupos";
+
+/* D2 (3.3.3): subtitulo de 'Cerrar sesion de grupos' */
+"settings.signOutGroupsSubtitle" = "Este dispositivo olvidará tus grupos; tus finanzas no se tocan";
+
+/* D2 (3.3.3): subtitulo de 'Salir de Yala' en el split solo-grupos backend */
+"settings.exitYalaGroupsSubtitle" = "Volver a la pantalla de inicio; tus datos no se borran";
+
+/* D2 (3.3.3): mensaje del dialogo de 'Salir de Yala' en el split solo-grupos backend */
+"settings.exitYalaGroupsConfirmMessage" = "Volverás a la pantalla de inicio y este dispositivo olvidará tus grupos (siguen en tu cuenta; vuelve a iniciar sesión para verlos). Tus datos personales no se borran.";
+
+/* D2 (3.3.3): banner one-shot de re-entrada sobre el empty state H-7 */
+"groups.empty.signedOut.reentryBanner" = "Cerraste tu sesión de grupos. Inicia sesión cuando quieras verlos de nuevo.";

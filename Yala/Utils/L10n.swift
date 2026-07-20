@@ -1744,6 +1744,8 @@ enum L10n {
                 static var title: String { ls("groups.empty.signedOut.title", comment: "") }
                 static var message: String { ls("groups.empty.signedOut.message", comment: "") }
                 static var action: String { ls("groups.empty.signedOut.action", comment: "") }
+                /// D2 (§3.3.3): banner one-shot sobre el empty state tras "Cerrar sesión de grupos".
+                static var reentryBanner: String { ls("groups.empty.signedOut.reentryBanner", comment: "") }
             }
         }
 
@@ -4078,6 +4080,16 @@ enum L10n {
         static var exitYalaConfirmTitle: String { ls("settings.exitYalaConfirmTitle", comment: "") }
         static var exitYalaConfirmAction: String { ls("settings.exitYalaConfirmAction", comment: "") }
         static var exitYalaConfirmMessage: String { ls("settings.exitYalaConfirmMessage", comment: "") }
+        // D2 (§3.3.3): división de "Cerrar sesión" en el escenario privado+grupos con sesión backend
+        // ([FLAG]) — fila "Cerrar sesión de grupos" (→ .groupsOnlySignOut) + fila "Salir de Yala en este
+        // dispositivo" (→ .privateReset forzado, con boot-wipe de grupos encadenado). El título/acción del
+        // diálogo de "Salir de Yala" reusan `exitYalaConfirm*`; el subtítulo y mensaje son variantes 5b.
+        static var signOutGroups: String { ls("settings.signOutGroups", comment: "") }
+        static var signOutGroupsSubtitle: String { ls("settings.signOutGroupsSubtitle", comment: "") }
+        static var exitYalaGroupsSubtitle: String { ls("settings.exitYalaGroupsSubtitle", comment: "") }
+        static var exitYalaGroupsConfirmMessage: String {
+            ls("settings.exitYalaGroupsConfirmMessage", comment: "")
+        }
         // Eliminar mi cuenta (G5-D1b — borrado GDPR, DARK)
         static var deleteAccount: String { ls("settings.deleteAccount", comment: "") }
         /// Fase 1 (§3.2): subtítulo de la fila "Eliminar mi cuenta".

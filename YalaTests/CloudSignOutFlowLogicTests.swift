@@ -127,6 +127,90 @@ struct CloudSignOutFlowLogicTests {
     }
 }
 
+@Suite("Cerrar sesión — layout de filas de salida (D2 §3.3.3)")
+struct CloudSignOutRowLayoutTests {
+
+    typealias Layout = CloudSignOutFlowLogic.RowLayout
+
+    // MARK: - Split solo-grupos backend: path .groupsOnlySignOut ⇒ DOS filas
+
+    @Test
+    func groupsOnlyPath_splitsIntoTwoRows_regardlessOfGroupInvite() {
+        // Privado completo + sesión backend (5b): fila única → split "Cerrar sesión de grupos" + "Salir de Yala".
+        #expect(CloudSignOutFlowLogic.rowLayout(
+            path: .groupsOnlySignOut, isGroupInviteMode: false, hasLiveSession: true)
+            == .groupsSignOutPlusExitYala)
+        // Group-invite CON sesión backend (5b group-invite): mismo split.
+        #expect(CloudSignOutFlowLogic.rowLayout(
+            path: .groupsOnlySignOut, isGroupInviteMode: true, hasLiveSession: true)
+            == .groupsSignOutPlusExitYala)
+    }
+
+    // MARK: - Resto de paths: byte-idéntico a shouldShowRow / shouldShowExitYalaRow
+
+    @Test
+    func privateAndCloudAndSecondary_arePlainSignOut_whenNotGroupInvite() {
+        for path in [CloudSignOutFlowLogic.Path.privateReset, .cloudSecureSignOut, .secondaryCloudSignOut] {
+            #expect(CloudSignOutFlowLogic.rowLayout(
+                path: path, isGroupInviteMode: false, hasLiveSession: false) == .plainSignOut)
+            #expect(CloudSignOutFlowLogic.rowLayout(
+                path: path, isGroupInviteMode: false, hasLiveSession: true) == .plainSignOut)
+        }
+    }
+
+    @Test
+    func groupInviteWithoutSession_isExitYalaOnly() {
+        // Solo-grupos legado 5a (VIVO): path resuelve a .privateReset (sin sesión) → fila única "Salir de Yala".
+        #expect(CloudSignOutFlowLogic.rowLayout(
+            path: .privateReset, isGroupInviteMode: true, hasLiveSession: false) == .exitYalaOnly)
+    }
+
+    @Test
+    func groupInviteWithSession_nonGroupsOnlyPath_isPlainSignOut() {
+        // Borde defensivo: group-invite con sesión pero un path que NO es groupsOnly (p.ej. `.cloud`)
+        // → shouldShowRow(true, true)=true → .plainSignOut (jamás .exitYalaOnly con sesión viva).
+        #expect(CloudSignOutFlowLogic.rowLayout(
+            path: .cloudSecureSignOut, isGroupInviteMode: true, hasLiveSession: true) == .plainSignOut)
+    }
+
+    @Test
+    func layout_isNeverNone_forAnyValidCombination() {
+        // `.none` es un default defensivo del switch (inalcanzable: shouldShowRow y shouldShowExitYalaRow
+        // son complementarias — exactamente una es true en cada estado). Barrido exhaustivo.
+        let paths: [CloudSignOutFlowLogic.Path] =
+            [.privateReset, .cloudSecureSignOut, .secondaryCloudSignOut, .groupsOnlySignOut]
+        for path in paths {
+            for gi in [false, true] {
+                for sess in [false, true] {
+                    #expect(CloudSignOutFlowLogic.rowLayout(
+                        path: path, isGroupInviteMode: gi, hasLiveSession: sess) != Layout.none,
+                        "Layout .none en path=\(path) groupInvite=\(gi) session=\(sess)")
+                }
+            }
+        }
+    }
+
+    @Test
+    func flagOffMatrix_isByteIdenticalToLegacyRowVisibility() {
+        // Con el flag OFF / sin sesión (TODO device prod hoy) `path` NUNCA es .groupsOnlySignOut, así que
+        // el layout debe reproducir EXACTO las ramas shouldShowRow/shouldShowExitYalaRow de antes.
+        let prodPaths: [CloudSignOutFlowLogic.Path] =
+            [.privateReset, .cloudSecureSignOut, .secondaryCloudSignOut]
+        for path in prodPaths {
+            for gi in [false, true] {
+                let layout = CloudSignOutFlowLogic.rowLayout(
+                    path: path, isGroupInviteMode: gi, hasLiveSession: false)
+                let expected: Layout = CloudSignOutFlowLogic.shouldShowRow(
+                    isGroupInviteMode: gi, hasLiveSession: false)
+                    ? .plainSignOut
+                    : (CloudSignOutFlowLogic.shouldShowExitYalaRow(
+                        isGroupInviteMode: gi, hasLiveSession: false) ? .exitYalaOnly : .none)
+                #expect(layout == expected, "Drift en path=\(path) groupInvite=\(gi)")
+            }
+        }
+    }
+}
+
 @Suite("Cerrar sesión — veredicto del push-all (.cloud)")
 struct CloudSignOutPushAllVerdictTests {
 

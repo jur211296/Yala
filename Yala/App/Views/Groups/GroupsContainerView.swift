@@ -29,6 +29,10 @@ struct GroupsContainerView: View {
     @State private var showPermissionDeniedAlert = false
     @State private var showNudgeBanner = false
     @State private var showGroupsOnboarding = false
+    // D2 (§3.3.3): banner one-shot de re-entrada tras "Cerrar sesión de grupos". Se arma con
+    // `GroupsSignOutBannerMarker` (in-session, sobrevive el relaunch), se lee en la primera aparición del
+    // tab (el `onAppear` no re-lee si ya está visible) y se quema en el `onAppear` del banner real.
+    @State private var showGroupsSignOutReentryBanner = false
     /// Drives el alert "¿Salir del grupo?" cuando un current user `.rejected`
     /// toca su card. Single-modal global vs N alerts montados por card.
     @State private var rejectedGroupPendingLeave: SplitGroup?
@@ -135,6 +139,7 @@ struct GroupsContainerView: View {
                 }
             }
             .safeAreaInset(edge: .top) { joinIntentBanner }
+            .safeAreaInset(edge: .top) { groupsSignOutReentryBanner }
             .yalaScreenBackground(.panel)
             .navigationTitle(L10n.Groups.title)
             .navigationBarTitleDisplayMode(.large)
@@ -193,6 +198,13 @@ struct GroupsContainerView: View {
                 viewModel.setContext(modelContext)
                 evaluateNudge()
                 evaluateGroupsOnboarding()
+                // D2 (§3.3.3): lee el marker en la primera aparición del tab. NO re-lee si el banner ya
+                // está visible — el `onAppear` re-dispara en cada re-selección y el marker ya se quemó, lo
+                // que pisaría un banner aún visible. El banner real quema el marker en su propio `onAppear`;
+                // solo surge sobre el empty state H-7 (signInToView).
+                if !showGroupsSignOutReentryBanner {
+                    showGroupsSignOutReentryBanner = GroupsSignOutBannerMarker.isPending()
+                }
                 // Traer cambios remotos de grupos al entrar al tab (el engine no auto-fetchea sin
                 // push; debounced + gateado por quiescencia dentro de syncNow), luego recarga.
                 Task { await viewModel.refreshFromCloud(force: false) }
@@ -576,6 +588,50 @@ struct GroupsContainerView: View {
         .accessibilityIdentifier(accessibilityID)
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.top, DS.Spacing.xs)
+    }
+
+    // MARK: - Re-entry banner (D2, §3.3.3)
+
+    /// Banner one-shot sobre el empty state H-7 tras "Cerrar sesión de grupos". Solo se pinta cuando el
+    /// empty state de re-entrada (signInToView) está activo — así NUNCA aparece sobre tarjetas de grupo.
+    /// Se quema (limpia el marker) en su propio `onAppear` (regla de one-shots del repo — jamás en el
+    /// productor ni en el drain); dismiss manual con la X. `@State showGroupsSignOutReentryBanner` da la
+    /// visibilidad estable en la sesión (leído una vez en el `onAppear` del contenedor).
+    @ViewBuilder
+    private var groupsSignOutReentryBanner: some View {
+        if showGroupsSignOutReentryBanner && isGroupsSignedOutEmptyState {
+            HStack(spacing: DS.Spacing.sm) {
+                Image(systemName: "person.crop.circle.badge.checkmark")
+                    .foregroundStyle(theme.accent)
+                Text(L10n.Groups.Empty.SignedOut.reentryBanner)
+                    .font(DS.Typography.caption)
+                Spacer(minLength: 0)
+                Button {
+                    showGroupsSignOutReentryBanner = false
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.caption)
+                        .accessibilityLabel(L10n.Action.cancel)
+                }
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.sm)
+            .glassEffect()
+            .accessibilityIdentifier("groups_signout_reentry_banner")
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.top, DS.Spacing.xs)
+            .onAppear { GroupsSignOutBannerMarker.clear() }
+        }
+    }
+
+    /// True cuando el tab muestra el empty state de re-entrada H-7 (signInToView): lista cargada y vacía,
+    /// flag ON y sin sesión backend. Gatea el banner D2 para que jamás aparezca sobre tarjetas de grupo.
+    private var isGroupsSignedOutEmptyState: Bool {
+        viewModel.hasLoadedOnce
+            && viewModel.activeGroups.isEmpty && viewModel.archivedGroups.isEmpty
+            && GroupsEmptyStateLogic.decide(
+                flagOn: CloudSyncFlags.groupsBackendEnabled,
+                hasSession: CloudAuthService.shared.hasSession) == .signInToView
     }
 
     // MARK: - Create-group routing (G5-A / C3)

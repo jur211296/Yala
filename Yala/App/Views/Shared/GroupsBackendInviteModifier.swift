@@ -40,6 +40,14 @@ struct GroupsBackendInviteModifier: ViewModifier {
                 GroupsSignInView {
                     signInAuthenticated = true
                     showGroupsSignIn = false
+                    // D2 (§3.3.3): re-firmar sesión de grupos DESARMA un boot-wipe de grupos colgado por un
+                    // "Salir de Yala" in-session previo (`exitYalaOnThisDevice`) — sin esto, un cold boot
+                    // posterior borraría los grupos recién re-sincronizados — y quema el banner de re-entrada
+                    // stale. Idempotente/no-op si nada estaba armado; el sign-out normal exit(0) antes de este
+                    // seam (jamás interfiere). Los otros armadores (`.groupsOnlySignOut`/borrado de cuenta)
+                    // hacen relaunch inmediato ⇒ el wipe ya corrió antes de cualquier re-sign-in.
+                    StorageModePersistence.clearGroupsOnlyWipeArm()
+                    GroupsSignOutBannerMarker.clear()
                     // H-2026-07-18-4: un sign-in solo-grupos IN-SESSION no arrancaba el canal (startIfEligible
                     // solo corría en cold boot) → arrancarlo aquí cubre crear-grupo / invite / futuro CTA del
                     // empty state. D8-safe por el guard de mount-mismatch; no-op temprano con el flag OFF.

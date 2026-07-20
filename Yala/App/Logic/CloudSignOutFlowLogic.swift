@@ -95,6 +95,39 @@ nonisolated enum CloudSignOutFlowLogic {
         isGroupInviteMode && !hasLiveSession
     }
 
+    /// Distribución de las filas de salida en "Seguridad y cuenta" (D2, §3.3.3). La PRECEDENCIA de
+    /// `path(...)` NO se toca: `rowLayout` solo decide cuántas filas pinta ProfileView.
+    ///
+    /// - `.groupsSignOutPlusExitYala`: escenario privado+grupos con sesión backend ([FLAG], path resuelto
+    ///   = `.groupsOnlySignOut`). La fila única "Cerrar sesión" no daba el "volver al Welcome" que el
+    ///   usuario espera → se DIVIDE en dos: "Cerrar sesión de grupos" (→ `.groupsOnlySignOut`, dispatch por
+    ///   precedencia) y "Salir de Yala en este dispositivo" (→ `.privateReset` FORZADO, `exitYalaOnThisDevice`).
+    /// - `.plainSignOut`: fila única "Cerrar sesión" (resto de escenarios visibles: privado/nube/secundaria).
+    /// - `.exitYalaOnly`: fila única "Salir de Yala" (solo-grupos legado 5a — group-invite SIN sesión, D6).
+    /// - `.none`: ninguna fila.
+    ///
+    /// Byte-idéntico con el flag OFF / sin sesión (TODO device prod hoy): `path` nunca es `.groupsOnlySignOut`
+    /// ⇒ cae a las ramas `shouldShowRow`/`shouldShowExitYalaRow` EXACTAS de antes.
+    enum RowLayout: Equatable {
+        case none
+        case plainSignOut
+        case exitYalaOnly
+        case groupsSignOutPlusExitYala
+    }
+
+    static func rowLayout(
+        path: Path, isGroupInviteMode: Bool, hasLiveSession: Bool
+    ) -> RowLayout {
+        if path == .groupsOnlySignOut { return .groupsSignOutPlusExitYala }
+        if shouldShowRow(isGroupInviteMode: isGroupInviteMode, hasLiveSession: hasLiveSession) {
+            return .plainSignOut
+        }
+        if shouldShowExitYalaRow(isGroupInviteMode: isGroupInviteMode, hasLiveSession: hasLiveSession) {
+            return .exitYalaOnly
+        }
+        return .none
+    }
+
     /// Naturaleza del bloqueo del push-all (H-2026-07-18-6): distingue lo que se sana
     /// SOLO esperando (red intermitente, ciclo coalescido, quiescencia del import aún no
     /// asentada) de lo que NO se cura sin acción del usuario (sesión caída / cuenta no

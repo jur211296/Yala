@@ -77,6 +77,10 @@ struct ProfileView: View {
     // solo se CIERRA; el root verifica presentación efectiva y reintenta.
     private var signOutCoordinator: CloudSessionSignOut { CloudSessionSignOut.shared }
     @State private var showCloudSignOutConfirm = false
+    // D2 (§3.3.3): confirm DEDICADO de "Salir de Yala en este dispositivo" en el split solo-grupos
+    // backend — invoca `.privateReset` FORZADO (contenedor distinto del de "Cerrar sesión de grupos"
+    // ⇒ sin carrera same-anchor; molde de la doble confirmación de eliminar-cuenta).
+    @State private var showExitYalaGroupsConfirm = false
     @State private var showSignOutBlockedAlert = false
     // H-2026-07-18-6: el bloqueo TRANSITORIO del sign-out solo-grupos usa un alert distinto
     // ("un momento más") — el permanente conserva el alert de conexión de siempre.
@@ -113,21 +117,51 @@ struct ProfileView: View {
         isExitYalaContext ? L10n.Settings.exitYalaConfirmAction : L10n.Settings.signOutConfirmAction
     }
 
+    /// Camino de sign-out resuelto por la precedencia CONGELADA (secundaria → nube → solo-grupos →
+    /// privado). SSOT de `signOutConfirmMessage` y `signOutRowLayout`.
+    private var signOutRowPath: CloudSignOutFlowLogic.Path {
+        CloudSignOutFlowLogic.path(
+            for: CloudSyncFlags.storageMode,
+            secondarySessionActive: SecondarySessionStore.isActive(),
+            hasLiveSession: CloudAuthService.shared.hasSession,
+            groupsBackendEnabled: CloudSyncFlags.groupsBackendEnabled)
+    }
+
+    /// D2 (§3.3.3): distribución de las filas de salida. Flag OFF / sin sesión (TODO device prod hoy)
+    /// ⇒ `.plainSignOut`/`.exitYalaOnly`/`.none` byte-idéntico (el path nunca es `.groupsOnlySignOut`).
+    private var signOutRowLayout: CloudSignOutFlowLogic.RowLayout {
+        CloudSignOutFlowLogic.rowLayout(
+            path: signOutRowPath,
+            isGroupInviteMode: isGroupInviteMode,
+            hasLiveSession: CloudAuthService.shared.hasSession)
+    }
+
     /// Copy del confirmationDialog de cierre de sesión — misma precedencia que `path()`
     /// (secundaria → nube → solo-grupos → privado), vía `CloudSignOutFlowLogic`; salvo el
     /// solo-grupos legado 5a (D6), que muestra el copy de "Salir de Yala".
     private var signOutConfirmMessage: String {
         if isExitYalaContext { return L10n.Settings.exitYalaConfirmMessage }
-        let path = CloudSignOutFlowLogic.path(
-            for: CloudSyncFlags.storageMode,
-            secondarySessionActive: SecondarySessionStore.isActive(),
-            hasLiveSession: CloudAuthService.shared.hasSession,
-            groupsBackendEnabled: CloudSyncFlags.groupsBackendEnabled)
-        switch CloudSignOutFlowLogic.confirmMessage(for: path) {
+        switch CloudSignOutFlowLogic.confirmMessage(for: signOutRowPath) {
         case .icloud: return L10n.Settings.signOutConfirmMessageICloud
         case .cloud: return L10n.Settings.signOutConfirmMessageCloud
         case .secondary: return L10n.Settings.signOutConfirmMessageSecondary
         case .groupsOnly: return L10n.Settings.signOutConfirmMessageGroupsOnly
+        }
+    }
+
+    /// H-2026-07-18-6: caption honesto mientras el sign-out solo-grupos ESPERA a que se asienten writes
+    /// internos (retry interno) — el bloqueo típico es transitorio y antes obligaba a tocar la fila varias
+    /// veces. Compartido por las filas "Cerrar sesión" y "Cerrar sesión de grupos" (D2).
+    @ViewBuilder
+    private var signOutWorkingCaption: some View {
+        if signOutCoordinator.phase == .working && signOutCoordinator.waitingForPending {
+            Text(L10n.Settings.signOutWorking)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.bottom, DS.FormRow.paddingV)
+                .accessibilityIdentifier("profile_signout_working_caption")
         }
     }
 
@@ -306,6 +340,22 @@ struct ProfileView: View {
                 // El copy honesto sigue la MISMA precedencia que `path()`: secundaria → nube →
                 // solo-grupos → privado (extraído a `CloudSignOutFlowLogic.confirmMessage`).
                 Text(signOutConfirmMessage)
+            }
+            // D2 (§3.3.3): confirm DEDICADO de "Salir de Yala en este dispositivo" (2ª fila del split
+            // solo-grupos backend) → `.privateReset` FORZADO con boot-wipe de grupos encadenado. Contenedor
+            // DISTINTO del de "Cerrar sesión de grupos" ⇒ el segundo presenta sin carrera same-anchor (los
+            // dos rows son taps mutuamente excluyentes; molde de la doble confirmación de eliminar-cuenta).
+            .confirmationDialog(
+                L10n.Settings.exitYalaConfirmTitle,
+                isPresented: $showExitYalaGroupsConfirm,
+                titleVisibility: .visible
+            ) {
+                Button(L10n.Settings.exitYalaConfirmAction, role: .destructive) {
+                    Task { await CloudSessionSignOut.shared.exitYalaOnThisDevice(context: modelContext) }
+                }
+                Button(L10n.Common.cancel, role: .cancel) {}
+            } message: {
+                Text(L10n.Settings.exitYalaGroupsConfirmMessage)
             }
             .alert(L10n.Settings.signOutBlockedTitle, isPresented: $showSignOutBlockedAlert) {
                 Button(L10n.Common.ok, role: .cancel) {
@@ -853,11 +903,13 @@ struct ProfileView: View {
                         iconColor: .yellow)
                 }
                 .buttonStyle(.plain)
-                // H4: cerrar sesión — SIEMPRE al final (privada y nube; oculta solo en
-                // group-invite SIN sesión backend, que ve "Salir de Yala" — D6, abajo).
-                if CloudSignOutFlowLogic.shouldShowRow(
-                    isGroupInviteMode: isGroupInviteMode,
-                    hasLiveSession: CloudAuthService.shared.hasSession) {
+                // H4: cerrar sesión — SIEMPRE al final (privada y nube; oculta solo en group-invite SIN
+                // sesión backend, que ve "Salir de Yala" — D6). D2 (§3.3.3): en el escenario privado+grupos
+                // con sesión backend ([FLAG], path = .groupsOnlySignOut) la fila se DIVIDE en dos ("Cerrar
+                // sesión de grupos" + "Salir de Yala en este dispositivo"). Con flag OFF / sin sesión (TODO
+                // device prod) `signOutRowLayout` cae a .plainSignOut/.exitYalaOnly/.none byte-idéntico.
+                switch signOutRowLayout {
+                case .plainSignOut:
                     SubsectionDivider()
                     VStack(alignment: .leading, spacing: 0) {
                         Button {
@@ -874,25 +926,51 @@ struct ProfileView: View {
                         .disabled(signOutCoordinator.phase == .working)
                         .accessibilityIdentifier("profile_security_signout")
 
-                        // H-2026-07-18-6: caption honesto mientras el sign-out solo-grupos ESPERA a
-                        // que se asienten writes internos (retry interno) — el bloqueo típico es
-                        // transitorio y antes obligaba a tocar "Cerrar sesión" varias veces.
-                        if signOutCoordinator.phase == .working && signOutCoordinator.waitingForPending {
-                            Text(L10n.Settings.signOutWorking)
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal, DS.Spacing.lg)
-                                .padding(.bottom, DS.FormRow.paddingV)
-                                .accessibilityIdentifier("profile_signout_working_caption")
-                        }
+                        signOutWorkingCaption
                     }
-                } else if CloudSignOutFlowLogic.shouldShowExitYalaRow(
-                    isGroupInviteMode: isGroupInviteMode,
-                    hasLiveSession: CloudAuthService.shared.hasSession) {
-                    // D6 (§3.3.6): salida del solo-grupos legado 5a. `.privateReset` vuelve al
-                    // Welcome sin tocar datos ni grupos (que siguen en el iCloud del usuario).
-                    // Reusa el mismo confirmationDialog (copy adaptado por `isExitYalaContext`).
+
+                case .groupsSignOutPlusExitYala:
+                    // Fila 1: "Cerrar sesión de grupos" → .groupsOnlySignOut (dispatch por precedencia; el
+                    // confirmationDialog compartido muestra el copy groupsOnly — isExitYalaContext es false).
+                    SubsectionDivider()
+                    VStack(alignment: .leading, spacing: 0) {
+                        Button {
+                            showCloudSignOutConfirm = true
+                        } label: {
+                            settingsRowContent(
+                                icon: "rectangle.portrait.and.arrow.right",
+                                title: L10n.Settings.signOutGroups,
+                                subtitle: L10n.Settings.signOutGroupsSubtitle,
+                                iconColor: .red,
+                                showSpinner: signOutCoordinator.phase == .working)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(signOutCoordinator.phase == .working)
+                        .accessibilityIdentifier("profile_security_signout")
+
+                        signOutWorkingCaption
+                    }
+                    // Fila 2: "Salir de Yala en este dispositivo" → .privateReset FORZADO (confirm dedicado,
+                    // con boot-wipe de grupos encadenado). Este es el "volver al Welcome" que el usuario espera.
+                    SubsectionDivider()
+                    Button {
+                        showExitYalaGroupsConfirm = true
+                    } label: {
+                        settingsRowContent(
+                            icon: "rectangle.portrait.and.arrow.right",
+                            title: L10n.Settings.exitYala,
+                            subtitle: L10n.Settings.exitYalaGroupsSubtitle,
+                            iconColor: .red,
+                            showSpinner: signOutCoordinator.phase == .working)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(signOutCoordinator.phase == .working)
+                    .accessibilityIdentifier("profile_security_exit_yala")
+
+                case .exitYalaOnly:
+                    // D6 (§3.3.6): salida del solo-grupos legado 5a. `.privateReset` vuelve al Welcome sin
+                    // tocar datos ni grupos (que siguen en el iCloud del usuario). Reusa el confirmationDialog
+                    // compartido (copy adaptado por `isExitYalaContext`).
                     SubsectionDivider()
                     Button {
                         showCloudSignOutConfirm = true
@@ -907,6 +985,9 @@ struct ProfileView: View {
                     .buttonStyle(.plain)
                     .disabled(signOutCoordinator.phase == .working)
                     .accessibilityIdentifier("profile_security_exit_yala")
+
+                case .none:
+                    EmptyView()
                 }
                 // G5-D1b: eliminar cuenta — tras "Cerrar sesión", solo con sesión backend viva y fuera de
                 // secundaria (RESIDUAL v1) / group-invite. DARK hoy (hasSession imposible en prod).

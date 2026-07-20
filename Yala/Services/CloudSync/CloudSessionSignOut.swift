@@ -86,9 +86,50 @@ final class CloudSessionSignOut {
 
     // MARK: - Camino privado (.icloud) — datos intactos
 
-    private func performPrivateReset() async {
+    /// D2 (§3.3.3): "Salir de Yala en este dispositivo" en el escenario privado+grupos con sesión
+    /// backend ([FLAG], path resuelto = `.groupsOnlySignOut`). FUERZA el `.privateReset` directo — la
+    /// precedencia NO se toca (daría `.groupsOnlySignOut`): vuelve al Welcome EN SESIÓN sin cover ni
+    /// relaunch, cerrando la sesión backend y el canal de grupos (vía `performPrivateReset`).
+    ///
+    /// Decisión owner (2026-07-19, "encadenar cierre de grupos"): `.privateReset` deja las filas locales
+    /// `Split*` del canal backend presentes (cierra la sesión pero no las purga). Para no dejarlas visibles
+    /// e inertes tras re-entrar, encadenamos el cierre de grupos: purga IN-SESSION del cursor/outbox de
+    /// grupos + `armGroupsOnlyWipe` (boot-wipe de los archivos `YalaGroups`), como UNIDAD.
+    ///
+    /// Por qué la purga del cursor/outbox es OBLIGATORIA junto al file-wipe (review adversarial D2): el
+    /// boot-wipe borra SOLO los archivos de `YalaGroups` (los `Split*`), NUNCA `YalaSyncMeta` — donde viven
+    /// `GroupSyncCursor`/`GroupSyncOutbox`. Un cursor por-grupo superviviente suprimiría el re-pull
+    /// INCREMENTAL tras el wipe (el server solo devuelve `seq > cursor` ⇒ nada) → grupos invisibles al
+    /// re-firmar + canario `groupMerkleDivergence` espurio (la señal que la puerta D9 lee como incidente);
+    /// un dead-letter superviviente dejaría ese grupo invisible PERMANENTE (los guards del Merkle lo saltan).
+    /// Espeja lo que `finalizeGroupsOnlyClose`/`closeLocalAfterAccountDeletionGroupsOnly` ya hacen — `exitYala`
+    /// era el único armador que no purgaba, rompiendo la garantía "re-descargable del backend".
+    ///
+    /// GATE DE QUIESCENCIA (invariante b): la purga es un `save()` sobre el mainContext COMPARTIDO. Timeout ⇒
+    /// NO purgamos NI armamos → las filas `Split*` quedan intactas (residual inerte CONSISTENTE: cursor válido
+    /// + filas presentes ⇒ re-sincroniza normal al re-firmar; jamás salvar sobre un import a medio asentar).
+    /// Purga+arm atómicos evitan la asimetría cursor-vs-wipe. Gateado por el flag (no-op con flag OFF; jamás
+    /// alcanzable ahí). Residual ratificado: re-entrada in-session ("Restaurar iCloud" sin cold boot) muestra
+    /// las filas hasta el próximo boot; un re-sign-in de grupos DESARMA un wipe aún colgado
+    /// (`GroupsBackendInviteModifier` → `clearGroupsOnlyWipeArm`).
+    func exitYalaOnThisDevice(context: ModelContext) async {
+        guard phase == .idle else { return }
+        if CloudSyncFlags.groupsBackendEnabled {
+            phase = .working
+            if await Self.awaitPersonalQuiescenceForGroupsSignOut() {
+                GroupsSyncClient.shared.teardownForSignOut()  // corta la generación antes de purgar (CR-3)
+                Self.purgeGroupsSyncState(context: context)
+                GroupsConsentState.clear()
+                StorageModePersistence.armGroupsOnlyWipe()
+                CloudSyncBreadcrumb.signOutGroupsOnlyWipeArmed()
+            }
+        }
+        await performPrivateReset(breadcrumbPath: "exit-yala-groups-session")
+    }
+
+    private func performPrivateReset(breadcrumbPath: String = "private-reset") async {
         phase = .working
-        CloudSyncBreadcrumb.signOutStarted(path: "private-reset")
+        CloudSyncBreadcrumb.signOutStarted(path: breadcrumbPath)
 
         // Teardown del runtime si existe (post-reversa / spikes): idempotente, purga espejo+prefs.
         CloudSyncRuntime.shared?.teardownGuestSession()
@@ -340,6 +381,11 @@ final class CloudSessionSignOut {
         Self.purgeGroupsSyncState(context: context)
         GroupsConsentState.clear()
         await CloudAuthService.shared.signOut()
+        // D2 (§3.3.3): arma el banner one-shot de re-entrada — al reabrir, el empty state H-7 del tab
+        // Grupos lo muestra ("Cerraste tu sesión de grupos…"). In-session ⇒ sobrevive el relaunch (vive
+        // en UserDefaults). SOLO en el sign-out de grupos, NO tras borrar cuenta (ahí no hay "vuelve a
+        // iniciar sesión"). Se quema en el `onAppear` del banner real.
+        GroupsSignOutBannerMarker.markPending()
         StorageModePersistence.armGroupsOnlyWipe()
         CloudSyncBreadcrumb.signOutGroupsOnlyWipeArmed()
         phase = .awaitingRelaunch
