@@ -19,20 +19,32 @@ enum DevSeedProfile: String {
     /// (saltando el accept de CKShare, imposible en sim) y deudor neto. Combinable con
     /// `-uitest-group-invite` para el modo solo-grupos. Ver `DevSeedGroups.createAsInvitee`.
     case gruposInvitado = "grupos-invitado"
+    /// SOLO-GRUPOS PURO (escenario 5a legado): siembra únicamente grupos, SIN nada de vida
+    /// personal (cuentas, transacciones, presupuestos, tags…). Representa fielmente al usuario
+    /// `.groupInvite` que sólo usa Grupos. Pensado para combinar con `-uitest-group-invite` en
+    /// device-QA (p.ej. verificar la salida "Salir de Yala" y el export de grupos de D6, que en
+    /// solo-grupos gatea por `hasExportableGroups`, no por transacciones). Usa el dataset owner
+    /// rico de `DevSeedGroups.create` (2 grupos multi-moneda); para la perspectiva invitado/deudor
+    /// combina `.gruposInvitado` con el flag.
+    case soloGrupos = "solo-grupos"
 
     /// Días de historial de transacciones a generar (escala el volumen).
-    /// `minimal`/`grupos`/`gruposInvitado` (~1 semana) son rápidos para XCUITests.
+    /// `minimal`/`grupos`/`gruposInvitado`/`soloGrupos` (~1 semana) son rápidos para XCUITests.
     /// `realista`/`pesado` para escenarios ricos / performance (arranque más lento, riesgo watchdog).
     var daysBack: Int {
         switch self {
-        case .minimal, .grupos, .gruposInvitado: return 7
+        case .minimal, .grupos, .gruposInvitado, .soloGrupos: return 7
         case .realista: return 730
         case .pesado: return 3650
         }
     }
 
     /// Si además siembra un grupo de gastos compartidos (DevSeedGroups).
-    var seedsGroups: Bool { self == .grupos || self == .gruposInvitado }
+    var seedsGroups: Bool { self == .grupos || self == .gruposInvitado || self == .soloGrupos }
+
+    /// Si siembra vida personal (cuentas, transacciones, presupuestos, tags, pagos, drafts).
+    /// `.soloGrupos` es el único que NO — sólo grupos, para el escenario 5a puro.
+    var seedsPersonalData: Bool { self != .soloGrupos }
 }
 
 @MainActor @Observable
@@ -72,77 +84,81 @@ final class DevSeedService {
             return
         }
 
-        // Step 2: Create accounts
-        updateStep(L10n.DevSeed.stepAccounts, progress: 0.05)
-        let accounts = DevSeedAccounts.create(in: context)
+        // Steps 2-9.5: vida personal (cuentas, tags, rates, presupuestos, pagos, transacciones,
+        // saldos iniciales, drafts). Se OMITEN en `.soloGrupos` (escenario 5a puro: sólo grupos).
+        if profile.seedsPersonalData {
+            // Step 2: Create accounts
+            updateStep(L10n.DevSeed.stepAccounts, progress: 0.05)
+            let accounts = DevSeedAccounts.create(in: context)
 
-        // Step 3: Create tags
-        updateStep(L10n.DevSeed.stepTags, progress: 0.08)
-        let tags = DevSeedTags.create(in: context)
+            // Step 3: Create tags
+            updateStep(L10n.DevSeed.stepTags, progress: 0.08)
+            let tags = DevSeedTags.create(in: context)
 
-        // Step 4: Create exchange rates
-        updateStep(L10n.DevSeed.stepExchangeRates, progress: 0.10)
-        DevSeedExchangeRates.create(
-            startDate: startDate, endDate: endDate, rng: &rng, in: context
-        )
+            // Step 4: Create exchange rates
+            updateStep(L10n.DevSeed.stepExchangeRates, progress: 0.10)
+            DevSeedExchangeRates.create(
+                startDate: startDate, endDate: endDate, rng: &rng, in: context
+            )
 
-        // Step 5: Create budgets
-        updateStep(L10n.DevSeed.stepBudgets, progress: 0.15)
-        DevSeedBudgets.create(
-            account: accounts.cuentaPrincipal,
-            subcategoryLookup: subcategoryLookup,
-            in: context
-        )
+            // Step 5: Create budgets
+            updateStep(L10n.DevSeed.stepBudgets, progress: 0.15)
+            DevSeedBudgets.create(
+                account: accounts.cuentaPrincipal,
+                subcategoryLookup: subcategoryLookup,
+                in: context
+            )
 
-        // Step 6: Create scheduled payments
-        updateStep(L10n.DevSeed.stepScheduledPayments, progress: 0.18)
-        let spResult = DevSeedScheduledPayments.create(
-            account: accounts.cuentaPrincipal,
-            subcategoryLookup: subcategoryLookup,
-            in: context
-        )
+            // Step 6: Create scheduled payments
+            updateStep(L10n.DevSeed.stepScheduledPayments, progress: 0.18)
+            let spResult = DevSeedScheduledPayments.create(
+                account: accounts.cuentaPrincipal,
+                subcategoryLookup: subcategoryLookup,
+                in: context
+            )
 
-        // Step 7: Flush before massive insert
-        updateStep(L10n.DevSeed.stepSavingBase, progress: 0.20)
-        do { try context.save() } catch {
-            print("DevSeedService: Pre-transaction save error: \(error)")
+            // Step 7: Flush before massive insert
+            updateStep(L10n.DevSeed.stepSavingBase, progress: 0.20)
+            do { try context.save() } catch {
+                print("DevSeedService: Pre-transaction save error: \(error)")
+            }
+
+            // Step 8: Create transactions
+            updateStep(L10n.DevSeed.stepTransactions, progress: 0.22)
+            await DevSeedTransactions.create(
+                startDate: startDate,
+                endDate: endDate,
+                accounts: accounts,
+                tags: tags,
+                scheduledPayments: spResult.payments,
+                subcategoryLookup: subcategoryLookup,
+                rng: &rng,
+                progressUpdate: { [weak self] txProgress in
+                    // Map transaction progress (0-1) to overall progress (0.22-0.95)
+                    let overall = 0.22 + txProgress * 0.73
+                    self?.progress = overall
+                },
+                in: context
+            )
+
+            // Step 9: Create initial balances
+            updateStep(L10n.DevSeed.stepInitialBalances, progress: 0.96)
+            DevSeedTransactions.createInitialBalances(
+                startDate: startDate,
+                accounts: accounts,
+                subcategoryLookup: subcategoryLookup,
+                in: context
+            )
+
+            // Step 9.5: Inbox drafts (2 pending completos) — Inbox nunca vacío en dev/uitest.
+            DevSeedDrafts.create(
+                account: accounts.cuentaPrincipal,
+                subcategoryLookup: subcategoryLookup,
+                in: context
+            )
         }
 
-        // Step 8: Create transactions
-        updateStep(L10n.DevSeed.stepTransactions, progress: 0.22)
-        await DevSeedTransactions.create(
-            startDate: startDate,
-            endDate: endDate,
-            accounts: accounts,
-            tags: tags,
-            scheduledPayments: spResult.payments,
-            subcategoryLookup: subcategoryLookup,
-            rng: &rng,
-            progressUpdate: { [weak self] txProgress in
-                // Map transaction progress (0-1) to overall progress (0.22-0.95)
-                let overall = 0.22 + txProgress * 0.73
-                self?.progress = overall
-            },
-            in: context
-        )
-
-        // Step 9: Create initial balances
-        updateStep(L10n.DevSeed.stepInitialBalances, progress: 0.96)
-        DevSeedTransactions.createInitialBalances(
-            startDate: startDate,
-            accounts: accounts,
-            subcategoryLookup: subcategoryLookup,
-            in: context
-        )
-
-        // Step 9.5: Inbox drafts (2 pending completos) — Inbox nunca vacío en dev/uitest.
-        DevSeedDrafts.create(
-            account: accounts.cuentaPrincipal,
-            subcategoryLookup: subcategoryLookup,
-            in: context
-        )
-
-        // Step 10: Grupos (perfiles .grupos / .gruposInvitado) — grupo local para QA del tab Grupos
+        // Step 10: Grupos (perfiles .grupos / .gruposInvitado / .soloGrupos) — grupo local para QA del tab Grupos
         if profile.seedsGroups {
             updateStep("Grupos de prueba", progress: 0.97)
             if profile == .gruposInvitado {
