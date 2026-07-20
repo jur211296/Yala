@@ -4521,3 +4521,24 @@
 
 /* D10 batch: acknowledge/done button */
 "settings.batchLeaveDone" = "Concluído";
+
+/* D1 retention success screen title (post-wipe with live groups) */
+"settings.retentionTitle" = "Limpaste os teus dados. Os teus grupos continuam aqui.";
+
+/* D1 retention screen question */
+"settings.retentionQuestion" = "Como queres continuar a usar o Yala?";
+
+/* D1 retention choice: keep only Groups tab */
+"settings.retentionGroupsOnly" = "Só os meus grupos";
+
+/* D1 subtitle for the Groups-only choice */
+"settings.retentionGroupsOnlySubtitle" = "O Yala simplifica-se: só o separador Grupos. Podes voltar ao Yala completo quando quiseres.";
+
+/* D1 retention choice: full app from scratch */
+"settings.retentionStartFresh" = "Começar do zero";
+
+/* D1 subtitle for the start-fresh choice */
+"settings.retentionStartFreshSubtitle" = "Todas as funcionalidades, desde o início.";
+
+/* D1 debt note shown when the user has outstanding group balances */
+"settings.retentionDebtNote" = "Tens saldos pendentes nos teus grupos. Se ficares, proteges os outros: ninguém te vê desaparecer a dever.";

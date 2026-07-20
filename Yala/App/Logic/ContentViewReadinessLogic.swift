@@ -19,6 +19,11 @@ struct ShellReadinessState: Equatable {
     let isSplashDismissed: Bool
     let isWipingData: Bool
 
+    /// D1: pantalla de retención «Seguir con mis grupos» pendiente tras vaciar con grupos vivos.
+    /// Tier alto (tras `wipingData`): mientras está pendiente, nada más presenta debajo y el
+    /// ruteo automático a Welcome del `onChange(hasCompletedOnboarding)` queda gateado.
+    let groupsRetentionPending: Bool
+
     // Onboarding/welcome covers (block readiness when active)
     let showOnboarding: Bool
     let showWelcomeFlow: Bool
@@ -82,6 +87,9 @@ enum ContentViewReadinessLogic {
     static func blocker(state: ShellReadinessState) -> String? {
         // Order = severity. Wipe trumps everything.
         if state.isWipingData { return "wipingData" }
+        // D1: retención pendiente tras el wipe — bloquea Welcome/router hasta que el usuario elige.
+        // Tras `wipingData` (el cover solo se presenta cuando `!isWipingData`).
+        if state.groupsRetentionPending { return "groupsRetention" }
         // H4: sesión cerrada + wipe de boot ARMADO — terminal, nada presenta debajo.
         if state.showSignOutRelaunch { return "signOutRelaunch" }
         // M1: entrada secundaria armada con el store del dueño aún montado — terminal.
@@ -158,6 +166,7 @@ extension ShellReadinessState {
         ShellReadinessState(
             isSplashDismissed: isSplashDismissed,
             isWipingData: isWipingData,
+            groupsRetentionPending: groupsRetentionPending,
             showOnboarding: showOnboarding,
             showWelcomeFlow: false,
             showLanguageSelection: false,

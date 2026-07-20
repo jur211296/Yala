@@ -210,6 +210,13 @@ struct UserDataResetView: View {
         sessionState.resetToDefaults()
         sessionState.isWipingData = true
 
+        // D1 (retención): con grupos vivos, arma la pantalla de retención ANTES del wipe (para que
+        // gatee el ruteo automático a Welcome del onChange(hasCompletedOnboarding) que dispara el wipe).
+        // DESPUÉS de `isWipingData = true` → el cover (`pending && !isWipingData`) no se presenta hasta
+        // que el wipe termina. Snapshot `groupsSummary` capturado al TAP; los grupos sobreviven el wipe.
+        sessionState.groupsRetentionPending = groupsSummary.hasGroups
+        sessionState.groupsRetentionHasDebt = groupsSummary.hasOutstandingDebt
+
         // 2. Dismiss all sheets first to reduce active observers
         onRequestCloseSettings?()
         dismiss()

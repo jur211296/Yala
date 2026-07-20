@@ -79,6 +79,12 @@ final class UITestHooks {
     /// vía `hasArg`; el seed demo del store está bajo `#if DEBUG`.
     nonisolated static var groupsBatchDemo: Bool { hasArg("-uitest-groups-batch-demo") }
 
+    /// `-uitest-retention-demo`: QA/XCUITest de la pantalla de retención D1 (§3.3.2). Arma
+    /// `groupsRetentionPending` (con deuda) al arrancar para presentar el cover de retención SIN
+    /// ejecutar el wipe destructivo real (ni depender del alert de 2ª confirmación localizado).
+    /// Inerte en release vía `hasArg`.
+    nonisolated static var retentionDemo: Bool { hasArg("-uitest-retention-demo") }
+
     /// `-uitest-inbox-alert`: tras el seed, encola `.showInboxAlert` con un payload de
     /// muestra para presentar el InboxAlertModal sin depender del sync de CloudKit.
     nonisolated static var showInboxAlert: Bool { hasArg("-uitest-inbox-alert") }

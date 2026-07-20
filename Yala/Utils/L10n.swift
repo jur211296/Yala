@@ -4121,6 +4121,14 @@ enum L10n {
         static var batchLeaveReasonDebt: String { ls("settings.batchLeaveReasonDebt", comment: "") }
         static var batchLeaveReasonFailed: String { ls("settings.batchLeaveReasonFailed", comment: "") }
         static var batchLeaveDone: String { ls("settings.batchLeaveDone", comment: "") }
+        // D1 — retención «Seguir con mis grupos» (pantalla de éxito post-vaciar con grupos vivos)
+        static var retentionTitle: String { ls("settings.retentionTitle", comment: "") }
+        static var retentionQuestion: String { ls("settings.retentionQuestion", comment: "") }
+        static var retentionGroupsOnly: String { ls("settings.retentionGroupsOnly", comment: "") }
+        static var retentionGroupsOnlySubtitle: String { ls("settings.retentionGroupsOnlySubtitle", comment: "") }
+        static var retentionStartFresh: String { ls("settings.retentionStartFresh", comment: "") }
+        static var retentionStartFreshSubtitle: String { ls("settings.retentionStartFreshSubtitle", comment: "") }
+        static var retentionDebtNote: String { ls("settings.retentionDebtNote", comment: "") }
         static var deleteAccountScopeDeviceCloud: String { ls("settings.deleteAccountScopeDeviceCloud", comment: "") }
         static var deleteAccountScopeDeviceGroupsOnly: String { ls("settings.deleteAccountScopeDeviceGroupsOnly", comment: "") }
         static var deleteAccountScopeCloudCloud: String { ls("settings.deleteAccountScopeCloudCloud", comment: "") }

@@ -15,6 +15,7 @@ struct ContentViewReadinessLogicTests {
     private func make(
         isSplashDismissed: Bool = true,
         isWipingData: Bool = false,
+        groupsRetentionPending: Bool = false,
         showOnboarding: Bool = false,
         showWelcomeFlow: Bool = false,
         showLanguageSelection: Bool = false,
@@ -42,6 +43,7 @@ struct ContentViewReadinessLogicTests {
     ) -> ShellReadinessState {
         ShellReadinessState(
             isSplashDismissed: isSplashDismissed, isWipingData: isWipingData,
+            groupsRetentionPending: groupsRetentionPending,
             showOnboarding: showOnboarding, showWelcomeFlow: showWelcomeFlow,
             showLanguageSelection: showLanguageSelection, showWelcomeRestore: showWelcomeRestore,
             showInviteRecovery: showInviteRecovery,
@@ -135,6 +137,32 @@ struct ContentViewReadinessLogicTests {
         // Gana incluso al splash (terminal: nada presenta debajo).
         #expect(ContentViewReadinessLogic.blocker(
             state: make(isSplashDismissed: false, showSignOutRelaunch: true)) == "signOutRelaunch")
+    }
+
+    // D1: la retención pendiente bloquea Welcome/router (tier alto, tras wipingData).
+
+    @Test func groupsRetention_blocks_afterWipe() {
+        #expect(ContentViewReadinessLogic.blocker(state: make(groupsRetentionPending: true)) == "groupsRetention")
+        #expect(!ContentViewReadinessLogic.isReady(state: make(groupsRetentionPending: true)))
+    }
+
+    @Test func groupsRetention_priority() {
+        // wipingData la supera (el cover solo se presenta cuando !isWipingData).
+        #expect(ContentViewReadinessLogic.blocker(
+            state: make(isWipingData: true, groupsRetentionPending: true)) == "wipingData")
+        // Gana al splash, a la cadena welcome y a los covers terminales de sign-out/secundaria.
+        #expect(ContentViewReadinessLogic.blocker(
+            state: make(isSplashDismissed: false, groupsRetentionPending: true)) == "groupsRetention")
+        #expect(ContentViewReadinessLogic.blocker(
+            state: make(groupsRetentionPending: true, showSignOutRelaunch: true)) == "groupsRetention")
+        #expect(ContentViewReadinessLogic.blocker(
+            state: make(groupsRetentionPending: true, showWelcomeFlow: true)) == "groupsRetention")
+    }
+
+    @Test func groupsRetention_isNotTearableWelcomeChain() {
+        // La retención sobrevive al clear de la cadena welcome → un intent superseding no la tumba.
+        #expect(!ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(
+            state: make(groupsRetentionPending: true, showWelcomeFlow: true)))
     }
 
     @Test func splashStillUp_notReady() {

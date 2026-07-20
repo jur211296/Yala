@@ -405,6 +405,17 @@ class SessionState {
     /// Conveniencia: `effectiveShellMode == .groupsFocused`.
     var isGroupsFocusedShell: Bool { effectiveShellMode == .groupsFocused }
 
+    /// D1: pendiente la pantalla de retención tras «Vaciar mis datos» CON grupos vivos.
+    /// Seteado por `UserDataResetView.handleWipeAllData` (después de `isWipingData = true`,
+    /// antes del wipe) → (a) gatea el ruteo automático a Welcome del `onChange(hasCompletedOnboarding)`,
+    /// (b) es blocker de la matriz de readiness, (c) presenta el cover cuando `!isWipingData`.
+    /// Lo apaga la elección del usuario (o el `onDismiss` del cover).
+    var groupsRetentionPending: Bool = false
+
+    /// D1: el usuario tenía saldos pendientes en sus grupos al vaciar. Con deudas, la pantalla de
+    /// retención destaca «Solo mis grupos» (protege a terceros de «desaparecer debiendo»).
+    var groupsRetentionHasDebt: Bool = false
+
     // MARK: - Subscription State
 
     /// Whether the user has an active Pro subscription (mirrors StoreKitManager)

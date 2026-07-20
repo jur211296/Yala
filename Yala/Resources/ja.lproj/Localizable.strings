@@ -5265,3 +5265,24 @@
 
 /* D10 batch: acknowledge/done button */
 "settings.batchLeaveDone" = "完了";
+
+/* D1 retention success screen title (post-wipe with live groups) */
+"settings.retentionTitle" = "データを削除しました。グループはそのまま残っています。";
+
+/* D1 retention screen question */
+"settings.retentionQuestion" = "これからYalaをどのように使い続けますか？";
+
+/* D1 retention choice: keep only Groups tab */
+"settings.retentionGroupsOnly" = "グループだけ";
+
+/* D1 subtitle for the Groups-only choice */
+"settings.retentionGroupsOnlySubtitle" = "Yalaがシンプルになります。「グループ」タブだけになります。いつでも全機能に戻せます。";
+
+/* D1 retention choice: full app from scratch */
+"settings.retentionStartFresh" = "ゼロから始める";
+
+/* D1 subtitle for the start-fresh choice */
+"settings.retentionStartFreshSubtitle" = "すべての機能を、最初から。";
+
+/* D1 debt note shown when the user has outstanding group balances */
+"settings.retentionDebtNote" = "グループに未精算の残高があります。残ることで、ほかのメンバーを守れます。借りを残したまま姿を消したように見えることはありません。";
