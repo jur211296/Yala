@@ -93,6 +93,13 @@ enum MetricsCanary: String {
     case groupJoinFailed
     case groupLegacyRebindFailed
 
+    // Batch "salir de todos mis grupos" (D10)
+    case groupBatchLeaveStarted
+    case groupBatchLeaveDeferred      // paso diferido por import no-quiescente (resume lo retoma)
+    case groupBatchLeaveExpired       // entry .pending vencida (TTL) sin procesar
+    case groupBatchLeaveNeedsDecision // grupo que cae a "necesitan tu decisión"
+    case groupBatchLeaveFailed        // transfer/leave falló permanente
+
     // Routing (F9)
     case routingIntentSuperseded
     case routingIntentDeferred

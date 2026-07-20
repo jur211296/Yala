@@ -498,6 +498,11 @@ struct ContentView: View {
                 Task { @MainActor in
                     await GroupJoinReconciler.reconcile(trigger: .foreground)
                 }
+                // Batch "salir de todos mis grupos" (D10): reanuda un batch a medio ejecutar al volver a
+                // foreground. No-op sin trabajo pendiente; el orquestador gatea por quiescencia por grupo.
+                Task { @MainActor in
+                    await GroupBatchLeaveOrchestrator.resume(trigger: .foreground)
+                }
             // El exit-on-background del relaunch terminal (decisión owner UX 2026-07-14)
             // vive en YalaApp, NO aquí: el `\.scenePhase` de ContentView es POR-ESCENA
             // (iPad multi-ventana: ocultar una ventana mataría el proceso con otra

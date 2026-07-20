@@ -650,6 +650,165 @@ final class GroupService {
         context.delete(group)
     }
 
+    // MARK: - Batch "salir de todos mis grupos" (D10)
+
+    /// Clasifica TODOS los grupos activos (`!isHiddenForAll` — INCLUYE archivados, mismo set que
+    /// `accountDeletionGroupsSummary`) en entries del batch. Los `.skipHasDebt` se EXCLUYEN (fuera del batch —
+    /// la fila 👥 los muestra). Los `.needsDecision` se arman YA terminales (no requieren ejecución). READ-ONLY
+    /// (sin saves — invariante de quiescencia (b)).
+    func batchClassifyAllGroups() throws -> [BatchLeaveEntry] {
+        let groups = try fetchAllGroups().filter { !$0.isHiddenForAll }
+        var entries: [BatchLeaveEntry] = []
+        for group in groups {
+            let facts = try batchFacts(group)
+            let action = GroupBatchLeaveLogic.classify(facts)
+            switch action {
+            case .skipHasDebt:
+                continue
+            case .needsDecision:
+                entries.append(BatchLeaveEntry(
+                    groupZoneID: group.cloudKitZoneID, groupName: group.name,
+                    phase: .needsDecision, plannedAction: .needsDecision,
+                    needsDecisionReason: GroupBatchLeaveLogic.needsDecisionReason(facts)))
+            default:
+                entries.append(BatchLeaveEntry(
+                    groupZoneID: group.cloudKitZoneID, groupName: group.name,
+                    phase: .pending, plannedAction: action))
+            }
+        }
+        return entries
+    }
+
+    /// Ejecuta UN paso del batch para un grupo. Idempotente (grupo ya borrado → `.done`; RPCs tolerantes a
+    /// "ya salí"). El caller (orquestador) hace el gate de quiescencia y el write-ahead de fase. Un
+    /// transitorio (red/sesión/sin contexto) → `.deferred` (el resume lo retoma); un fallo permanente →
+    /// `.failed`; la deuda sobrevenida → `.needsDecision(.debtAppeared)`.
+    func executeBatchStep(_ entry: BatchLeaveEntry) async -> GroupBatchLeaveLogic.StepResult {
+        guard let context = modelContext else { return .deferred }
+        let zoneID = entry.groupZoneID
+        let existing = try? context.fetch(
+            FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.cloudKitZoneID == zoneID }))
+        guard let group = existing?.first else {
+            return .done  // ya no existe local (salido/removido en otro device) → idempotente
+        }
+
+        let facts: GroupBatchLeaveLogic.GroupFacts
+        do { facts = try batchFacts(group) } catch { return .deferred }
+        // Re-chequeo de deuda JUSTO ANTES de mutar (carrera deuda-sobrevenida).
+        if facts.hasOutstandingDebt { return .needsDecision(.debtAppeared) }
+
+        // `.pending` re-clasifica con facts frescos; `.inProgress` re-ejecuta la acción CONGELADA.
+        let action = entry.phase == .pending ? GroupBatchLeaveLogic.classify(facts) : entry.plannedAction
+        switch action {
+        case .skipHasDebt:
+            return .needsDecision(.debtAppeared)
+        case .needsDecision:
+            return .needsDecision(GroupBatchLeaveLogic.needsDecisionReason(facts))
+        case .leave:
+            do { try await batchLeave(group); return .done }
+            catch let e as GroupsRPCError { return Self.isTransientRPC(e) ? .deferred : .failed("\(e)") }
+            catch { return .failed("\(error.localizedDescription)") }
+        case .deleteSolo:
+            do { try softDelete(group); return .done }
+            catch GroupServiceError.outstandingBalance { return .needsDecision(.debtAppeared) }
+            catch { return .failed("\(error.localizedDescription)") }
+        case .transferThenLeave:
+            do {
+                switch try await transferOwnershipThenLeave(group) {
+                case .left: return .done
+                case .needsDecision(let r): return .needsDecision(r)
+                }
+            }
+            catch let e as GroupsRPCError { return Self.isTransientRPC(e) ? .deferred : .failed("\(e)") }
+            catch { return .failed("\(error.localizedDescription)") }
+        }
+    }
+
+    /// Salir de un grupo para el batch, tolerante a `member_not_found` en el resume (RPC `leave_group` NO es
+    /// idempotente puro: 2º call → `yala_member_not_found`; tras un kill entre el RPC OK y el cleanup local, el
+    /// resume lo re-llama → se trata como ÉXITO → fuerza el cleanup local). El canal CloudKit reusa el
+    /// `leaveGroup` existente (ya resume-safe: member ya `.left` → salta el enqueue/save y va a leaveShare+cleanup).
+    func batchLeave(_ group: SplitGroup) async throws {
+        guard routesMembershipToBackend(group) else {
+            try await leaveGroup(group)   // CloudKit path (resume-safe)
+            return
+        }
+        let context = try requireContext()
+        do {
+            _ = try await backendMembershipFactory().leave(groupID: group.cloudKitZoneID)
+        } catch GroupsRPCError.memberNotFound {
+            // Ya salí server-side (resume tras parcial) → sigo al cleanup local.
+        }
+        try performLocalCleanupAndDelete(group: group, context: context)
+        do { try context.save() } catch { throw GroupServiceError.saveFailed(error) }
+        SessionState.shared.incrementDataVersion()
+    }
+
+    /// Transfiere el ownership al co-member elegible (server elige el heredero) y sale. El fix del hazard
+    /// transfer→leave: NO pasa por `leaveGroup` (cuyo guard `!isOwner` bloquearía porque el `isOwner` LOCAL no
+    /// se voltea hasta que llegue el pull) — hace el backend-leave inline. Idempotente: transfer → `already` en
+    /// resume; leave → `member_not_found` tolerado. `no_eligible_owner` (carrera: el heredero salió) →
+    /// `.needsDecision` (JAMÁS tombstonea — el server tampoco).
+    func transferOwnershipThenLeave(_ group: SplitGroup) async throws -> GroupBatchLeaveLogic.TransferLeaveOutcome {
+        let context = try requireContext()
+        let service = backendMembershipFactory()
+        let transfer = try await service.transferOwnership(groupID: group.cloudKitZoneID)
+        if transfer.reason == "no_eligible_owner" {
+            return .needsDecision(.backendNoEligibleHeir)
+        }
+        // transferred || already → server ya no me ve como owner → puedo salir.
+        do {
+            _ = try await service.leave(groupID: group.cloudKitZoneID)
+        } catch GroupsRPCError.memberNotFound {
+            // Ya salí (resume tras parcial) → sigo al cleanup local.
+        }
+        try performLocalCleanupAndDelete(group: group, context: context)
+        do { try context.save() } catch { throw GroupServiceError.saveFailed(error) }
+        SessionState.shared.incrementDataVersion()
+        return .left
+    }
+
+    /// Facts read-only del grupo (derivados EN MEMORIA — nunca `#Predicate` sobre `userID` opcional).
+    private func batchFacts(_ group: SplitGroup) throws -> GroupBatchLeaveLogic.GroupFacts {
+        let context = try requireContext()
+        let members = try fetchMembers(for: group, context: context)
+        let activeCoMembers = members.filter { $0.isActive && !$0.isCurrentUser }
+        let eligibleHeirs = activeCoMembers.filter { $0.userID != nil }
+        return GroupBatchLeaveLogic.GroupFacts(
+            isOwner: group.isOwner,
+            isBackendChannel: routesMembershipToBackend(group),
+            activeCoMemberCount: activeCoMembers.count,
+            eligibleHeirCount: eligibleHeirs.count,
+            hasOutstandingDebt: try batchHasOutstandingDebt(group, members: members, context: context))
+    }
+
+    /// `true` si el usuario tiene saldo pendiente (`abs(netBalance) > 0.01`) en el grupo. Molde
+    /// `accountDeletionGroupsSummary`/`recomputeOutstandingDebt`: early-exit sin gastos; member no resuelto →
+    /// `false` (sub-conteo, jamás sobre-aviso). READ-ONLY.
+    private func batchHasOutstandingDebt(_ group: SplitGroup, members: [SplitMember], context: ModelContext) throws -> Bool {
+        let zoneID = group.cloudKitZoneID
+        let expenseCount = try context.fetchCount(
+            FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.groupZoneID == zoneID }))
+        guard expenseCount > 0 else { return false }
+        guard let me = members.first(where: { $0.isCurrentUser }) else { return false }
+        let expenses = try GroupExpenseService.shared.fetchExpenses(for: group)
+        let shares = try GroupExpenseService.shared.fetchAllShares(for: group)
+        let settlements = try GroupExpenseService.shared.fetchSettlements(for: group)
+        let balances = GroupBalanceService.calculateBalances(
+            expenses: expenses, shares: shares, members: members, settlements: settlements)
+        let meID = me.id.uuidString
+        return balances.contains { $0.memberID == meID && abs($0.netBalance) > 0.01 }
+    }
+
+    /// Transitorio (reintentable por el resume) vs permanente. `member_not_found` NUNCA llega aquí (lo
+    /// atrapan `batchLeave`/`transferOwnershipThenLeave`).
+    private static func isTransientRPC(_ error: GroupsRPCError) -> Bool {
+        switch error {
+        case .transient, .sessionExpired: return true
+        default: return false
+        }
+    }
+
     // MARK: - Current User Identity / Membership
 
     /// Ensures there is a SplitMember for the current iCloud user in the given group.

@@ -430,6 +430,20 @@ final class AppBootstrapper {
             }
         }
 
+        // 16.8.6. Batch "salir de todos mis grupos" (D10): reanuda un batch a medio ejecutar (kill-safe). DARK
+        // (flag ON) y solo si quedó trabajo no-terminal en el intent persistido. DESPUÉS del uploader (16.8.5)
+        // para no chocar con la migración en vuelo; gateado por QUIESCENCIA (los pasos mutan el mainContext
+        // compartido — el orquestador re-gatea por grupo, pero esperamos el import como los demás Tasks de boot).
+        if CloudSyncFlags.groupsBackendEnabled && !uiTestActive && GroupBatchLeaveStore.hasUnfinishedWork() {
+            Task { @MainActor in
+                guard await awaitPersonalStoreReady() else {
+                    SaveBreadcrumb.deferred("AppBootstrapper.groupBatchLeaveResume", "import not quiescent")
+                    return
+                }
+                await GroupBatchLeaveOrchestrator.resume(trigger: .boot, context: context)
+            }
+        }
+
         // Seed current iCloud user identity for groups and refresh local membership flags.
         Task { @MainActor in
             _ = try? await GroupUserIdentityService.shared.currentUserRecordName()
