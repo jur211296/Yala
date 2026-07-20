@@ -191,6 +191,14 @@ struct ProfileView: View {
     /// "Ver mis grupos" del primer diálogo. Cero saves (invariante de quiescencia intacto).
     @State private var deleteAccountGroupsSummary: AccountDeletionGroupsSummary = .empty
 
+    /// Input `hasSession` de la visibilidad de la fila «Eliminar mi cuenta». En release es
+    /// exactamente `CloudAuthService.shared.hasSession` (byte-idéntico); `UITestHooks.fakeBackendSession`
+    /// es inerte fuera de DEBUG (`hasArg` → false) y solo lo fuerza a `true` para QA/XCUITest del diálogo
+    /// D5 en el simulador, donde no hay sign-in backend real (SIWA/Google no corren). NO crea sesión real.
+    private var deleteAccountRowHasSession: Bool {
+        UITestHooks.fakeBackendSession || CloudAuthService.shared.hasSession
+    }
+
     /// Copy del PRIMER diálogo — explica qué se borra y dónde según el modo (misma decisión que
     /// `AccountDeletionService`: `.cloud` vs solo-grupos). D5 (§3.3.4.1): la composición de líneas (aviso
     /// de deudas condicional, desvío cruzado, copia iCloud congelada, huella legacy) la decide la lógica
@@ -419,10 +427,12 @@ struct ProfileView: View {
                         SessionState.shared.selectMainTab(.groups)
                         dismiss()
                     }
+                    .accessibilityIdentifier("delete_account_view_groups")
                 }
                 Button(L10n.Settings.deleteAccountContinue, role: .destructive) {
                     showDeleteAccountFinal = true
                 }
+                .accessibilityIdentifier("delete_account_continue")
                 Button(L10n.Common.cancel, role: .cancel) {}
             } message: {
                 Text(deleteAccountConfirmMessage)
@@ -1022,7 +1032,7 @@ struct ProfileView: View {
                 // G5-D1b: eliminar cuenta — tras "Cerrar sesión", solo con sesión backend viva y fuera de
                 // secundaria (RESIDUAL v1) / group-invite. DARK hoy (hasSession imposible en prod).
                 if AccountDeletionRowLogic.shouldShow(
-                    hasSession: CloudAuthService.shared.hasSession,
+                    hasSession: deleteAccountRowHasSession,
                     secondaryActive: SecondarySessionStore.isActive(),
                     isGroupInviteMode: isGroupInviteMode) {
                     SubsectionDivider()

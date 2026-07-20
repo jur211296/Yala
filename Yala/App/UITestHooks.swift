@@ -62,6 +62,14 @@ final class UITestHooks {
     /// de boot no esperen un import de CloudKit que en sim nunca llega. Solo DEBUG.
     nonisolated static var fakeICloudAvailable: Bool { hasArg("-uitest-fake-icloud") }
 
+    /// `-uitest-fake-backend-session`: fuerza el input `hasSession` de la fila «Eliminar mi cuenta»
+    /// (ProfileView) a `true`, para QA/XCUITest del diálogo de D5 (aviso de deudas + «Ver mis grupos»)
+    /// SIN un sign-in backend real —SIWA/Google no corren en sim—. NO crea una sesión Supabase real
+    /// (`CloudAuthService.hasSession` global NO se toca): solo hace visible la fila + el diálogo; tocar
+    /// «Continuar → Eliminar» no completa (no hay backend). Combinar con `-uitest-seed grupos` para que
+    /// el usuario tenga saldos pendientes → aparece el aviso. Solo DEBUG (inerte en release vía `hasArg`).
+    nonisolated static var fakeBackendSession: Bool { hasArg("-uitest-fake-backend-session") }
+
     /// `-uitest-inbox-alert`: tras el seed, encola `.showInboxAlert` con un payload de
     /// muestra para presentar el InboxAlertModal sin depender del sync de CloudKit.
     nonisolated static var showInboxAlert: Bool { hasArg("-uitest-inbox-alert") }
