@@ -309,9 +309,10 @@ struct GroupsSyncHardeningTests {
         // secondary) + el cierre .cloud de ELIMINAR-CUENTA (G5-D1, belt idempotente — el service ya lo
         // derribó en su paso 2). El solo-grupos NO conoce el runtime personal.
         #expect(teardowns == 4)
-        // El canal de grupos se corta en los 4 paths de sign-out (privateReset/cloud/secondary/groupsOnly)
+        // El canal de grupos se corta en los 5 paths de sign-out (privateReset/cloud/secondary/groupsOnly
+        // + exitYala del split D2 `573c3b8e`, que corta el canal ANTES de purgar cursor+outbox de grupos)
         // + los 2 cierres de eliminar-cuenta (closeLocalAfterAccountDeletion Cloud/GroupsOnly — belts).
-        #expect(groupsTeardowns == 6)
+        #expect(groupsTeardowns == 7)
     }
 
     /// M1 / D8 (G5-C): la purga de frontera de la sesión secundaria incluye el espejo App Group de GRUPOS
