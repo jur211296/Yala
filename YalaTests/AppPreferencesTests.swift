@@ -180,6 +180,34 @@ struct AppPreferencesTests {
         #expect(defaults.string(forKey: AppPreferences.Keys.defaultPeriod) == "thisWeek")
     }
 
+    // MARK: - usageFocus (D1)
+
+    @Test func set_usageFocus_persistsRawValue() {
+        let defaults = Self.makeSuite()
+        let prefs = AppPreferences(defaults: defaults)
+
+        prefs.usageFocus = .groupsOnly
+
+        #expect(defaults.string(forKey: AppPreferences.Keys.usageFocus) == "groupsOnly")
+    }
+
+    @Test func init_usageFocus_present_loadsGroupsOnly() {
+        let defaults = Self.makeSuite()
+        defaults.set("groupsOnly", forKey: AppPreferences.Keys.usageFocus)
+
+        let prefs = AppPreferences(defaults: defaults)
+
+        #expect(prefs.usageFocus == .groupsOnly)
+    }
+
+    @Test func init_usageFocus_absent_defaultsFull() {
+        // Reset-on-absent: sin la key (p.ej. tras el wipe) → .full.
+        let defaults = Self.makeSuite()
+        let prefs = AppPreferences(defaults: defaults)
+
+        #expect(prefs.usageFocus == .full)
+    }
+
     // MARK: - Setters — round-trip for all booleans
 
     @Test func set_allBooleans_persistAndReload() {
@@ -357,6 +385,15 @@ struct AppPreferencesTests {
         #expect(prefs.insightsTone == .normal)             // fallback
         #expect(prefs.voiceLanguage == .system)            // fallback
         #expect(prefs.currencyDisplayFormat == .symbol)    // fallback al default
+    }
+
+    @Test func init_usageFocus_fallsBackOnInvalidRaw() {
+        let defaults = Self.makeSuite()
+        defaults.set("xxxInvalid", forKey: AppPreferences.Keys.usageFocus)
+
+        let prefs = AppPreferences(defaults: defaults)
+
+        #expect(prefs.usageFocus == .full)  // fallback (reset-on-absent/invalid)
     }
 
     // MARK: - Backwards compat — @AppStorage legacy writes are seen by AppPreferences

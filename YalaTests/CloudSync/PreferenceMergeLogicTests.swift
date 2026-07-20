@@ -228,8 +228,36 @@ struct PreferenceMergeLogicTests {
 
     // MARK: - Taxonomía completa (guardas de conteo/kind)
 
-    @Test func taxonomy_38Keys() {
-        #expect(PrefSyncKey.allCases.count == 38)
+    @Test func taxonomy_39Keys() {
+        // 38 hasta D1; +1 = usageFocus (retención «Seguir con mis grupos», familia .stringGuardNonEmpty).
+        #expect(PrefSyncKey.allCases.count == 39)
+    }
+
+    // MARK: - usageFocus (D1): LWW simple, NUNCA never-downgrade
+
+    @Test func usageFocus_family_isStringGuardNonEmpty() {
+        #expect(PrefSyncKey.usageFocus.family == .stringGuardNonEmpty)
+        #expect(PrefSyncKey.usageFocus.kind == .string)
+        #expect(PrefSyncKey.usageFocus.signal == nil)
+    }
+
+    @Test func usageFocus_remoteGroupsOnly_differs_sets() {
+        let d = PreferenceMergeLogic.decide(
+            key: .usageFocus, remote: .string("groupsOnly"), local: .string("full"))
+        #expect(d == Decision(write: .set(.string("groupsOnly")), signal: nil))
+    }
+
+    @Test func usageFocus_remoteEqual_skips() {
+        let d = PreferenceMergeLogic.decide(
+            key: .usageFocus, remote: .string("full"), local: .string("full"))
+        #expect(d == .skip)
+    }
+
+    @Test func usageFocus_remoteAbsent_skips() {
+        // LWW simple: sin remoto no aplica (no never-downgrade que fuerce nada).
+        let d = PreferenceMergeLogic.decide(
+            key: .usageFocus, remote: nil, local: .string("groupsOnly"))
+        #expect(d == .skip)
     }
 
     @Test func taxonomy_kindMatchesFamily() {

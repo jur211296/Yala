@@ -79,6 +79,9 @@ nonisolated enum PrefSyncKey: String, CaseIterable {
     case insightsTone
     case insightsFocus
     case financialMindset
+    // D1 (retención): foco de presentación de la shell (full|groupsOnly). LWW simple —
+    // NUNCA never-downgrade (es preferencia de presentación, no estado de ciclo de vida).
+    case usageFocus
     // Merge especial: never-downgrade por rank
     case onboardingMode
     // Merge especial: App Group suite + remove-on-empty + languageDidChange
@@ -122,7 +125,8 @@ nonisolated enum PrefSyncKey: String, CaseIterable {
         switch self {
         case .defaultCurrencyCode, .userName, .defaultPeriod, .secondaryCurrencies,
              .userProfileIcon, .currencyDisplayFormat, .voiceLanguage, .autoFocusField,
-             .accountsSortOrderNames, .insightsTone, .insightsFocus, .financialMindset:
+             .accountsSortOrderNames, .insightsTone, .insightsFocus, .financialMindset,
+             .usageFocus:
             return .stringGuardNonEmpty
         case .onboardingMode:
             return .onboardingModeNeverDowngrade

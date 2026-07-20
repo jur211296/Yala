@@ -361,6 +361,17 @@ final class AppPreferences {
 
     // MARK: - UI Feature Flags
 
+    /// D1 (retención «Seguir con mis grupos»): foco de presentación de la shell.
+    /// `.groupsOnly` reduce la app a la pestaña Grupos tras «Vaciar mis datos → Solo mis grupos».
+    /// NO toca `OnboardingMode` (un `.groupsOnly` sigue siendo `onboardingMode == .full`).
+    /// Sincronizado LWW simple (familia `.stringGuardNonEmpty` en PreferenceMergeLogic).
+    var usageFocus: UsageFocus = .full {
+        didSet {
+            guard oldValue != usageFocus else { return }
+            persistString(usageFocus.rawValue, forKey: Keys.usageFocus, synced: true)
+        }
+    }
+
     var showSiriTip: Bool = true {
         didSet {
             guard oldValue != showSiriTip else { return }
@@ -975,6 +986,10 @@ final class AppPreferences {
         }
 
         // UI Feature Flags
+        // D1: reset-on-absent — al vaciar se hace `removeObject(usageFocus)`; leerlo
+        // incondicionalmente (no con el guard `if let`) resetea en memoria a `.full` cuando
+        // la key está ausente, evitando que un `.groupsOnly` stale sobreviva al wipe.
+        usageFocus = UsageFocus(rawValue: defaults.string(forKey: Keys.usageFocus) ?? "") ?? .full
         if defaults.object(forKey: Keys.showSiriTip) != nil {
             showSiriTip = defaults.bool(forKey: Keys.showSiriTip)
         }
@@ -1166,6 +1181,9 @@ final class AppPreferences {
         static let subcatDedupRemoteHookDisabled = "subcatDedupRemoteHookDisabled"
 
         // UI Feature Flags
+        /// D1 (retención): foco de presentación de la shell (full|groupsOnly). Synced LWW.
+        /// SSOT del literal en `UsageFocus.userDefaultsKey`.
+        static let usageFocus = UsageFocus.userDefaultsKey
         static let showSiriTip = "showSiriTip"
         static let hasCompletedOnboarding = "hasCompletedOnboarding"
         static let hasShownWelcomeChooser = "hasShownWelcomeChooser"

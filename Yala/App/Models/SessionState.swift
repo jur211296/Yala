@@ -389,6 +389,22 @@ class SessionState {
     /// Convenience: true when user arrived via group invitation and hasn't activated full mode
     var isGroupInviteMode: Bool { onboardingMode == .groupInvite }
 
+    // MARK: - Shell Focus (D1 — retención «Seguir con mis grupos»)
+
+    /// Modo EFECTIVO de la shell (tab bar + visibilidad de secciones personales).
+    /// `.groupsFocused` si llegó por invitación O eligió «Solo mis grupos» (`usageFocus`).
+    ///
+    /// Point-read de `UsageFocus.current()` — para call-sites IMPERATIVOS (`selectMainTab`,
+    /// `resetToDefaults`). Las VISTAS reactivas NO deben usar este computed (no reacciona a
+    /// cambios de `usageFocus`): computan `ShellModeLogic.effective(onboardingMode:usageFocus:)`
+    /// leyendo `AppPreferences.usageFocus` del `@Environment`.
+    var effectiveShellMode: ShellMode {
+        ShellModeLogic.effective(onboardingMode: onboardingMode, usageFocus: UsageFocus.current())
+    }
+
+    /// Conveniencia: `effectiveShellMode == .groupsFocused`.
+    var isGroupsFocusedShell: Bool { effectiveShellMode == .groupsFocused }
+
     // MARK: - Subscription State
 
     /// Whether the user has an active Pro subscription (mirrors StoreKitManager)
