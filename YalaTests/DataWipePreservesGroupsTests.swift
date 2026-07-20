@@ -4,7 +4,7 @@
 //
 //  D1c (Gestión de datos §15): "Vaciar mis datos" (`DataWipeService.wipeAllUserData`) borra el corpus
 //  PERSONAL pero JAMÁS toca el dominio de Grupos — los 5 `Split*` viven en un store aparte y el copy
-//  "tus grupos no se tocan" (`settings.wipeGroupsExclusionNote`) lo promete al usuario. Este test FIJA esa
+//  "tus grupos no se tocan" (fila 👥 de la hoja de alcance D4, `settings.wipeScopeGroups`) lo promete al usuario. Este test FIJA esa
 //  exención A NIVEL DE MODELOS ejecutando la función REAL sobre un container in-memory.
 //
 //  Nota (M4 del review): `wipeAllUserData` también resetea `UserDefaults.standard` + varios singletons de
