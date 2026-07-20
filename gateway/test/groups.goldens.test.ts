@@ -911,3 +911,83 @@ describe("G7 goldens · pgcrypto encryption contra staging real", () => {
     expect(m1.channel2_root).toBe(m2.channel2_root);
   }, 90_000);
 });
+
+// ============================================================================
+// G10 goldens · transfer_group_ownership (D10 — batch "salir de todos mis grupos")
+// ============================================================================
+// ⚠️ ACTIVACIÓN POR EL LOOP: `describe.skip` deja la suite VERDE HOY (la función aún no existe en staging).
+// TRAS aplicar g10_01_transfer_group_ownership, cambiar `describe.skip(` → `describe(` en la línea de abajo y
+// re-correr `npm test` (deben quedar 3/3 verdes). Antes de aplicar → PGRST202 → 404 del gateway.
+//
+// LIMITACIÓN CONOCIDA (2 users A/B en staging): el tie-break "admin-first + más-antiguo entre 2 herederos
+// REALES" NO es E2E-testeable (no se pueden crear 2 co-members con user_id no-NULL además del owner:
+// migrate_group deja los no-owner en user_id NULL, y solo A/B tienen JWT). Mitigación: el ORDER BY es copia
+// byte-idéntica de groups_forget_user loop1 (g7_02:311-315, ya confiable). Con un 3er user, añadir un golden
+// de ordenamiento.
+describe("G10 goldens · transfer_group_ownership contra staging real (post-aplicación g10_01)", () => {
+  it("1. owner con co-member elegible → transfiere al heredero; heredero promovido a admin; owner intacto (el leave lo hace el cliente); retry-transient → already", async () => {
+    // setupGroup: A owner+admin, B joined+approved (active, user_id=subB, role=member, member_key=subB).
+    const { gid } = await setupGroup("transfer-heir");
+
+    const t = await rpcGw(jwtA, "transfer_group_ownership", { p_group_id: gid });
+    expect(t.status).toBe(200);
+    expect(t.body.transferred).toBe(true);
+    expect(t.body.already).toBe(false);
+    expect(t.body.reason).toBeNull();
+    expect(t.body.new_owner_member_key).toBe(subB);
+
+    // split_groups: owner ahora es B (owner_user_id=subB); grupo VIVO.
+    const grp = await readGroupRowDecrypted(jwtA, "split_groups", gid);
+    expect(grp?.owner_user_id).toBe(subB);
+    expect(grp?.deleted).toBe(false);
+
+    // B promovido a admin; A intacto (active — el leave lo ejecuta el orquestador batch DESPUÉS).
+    const bM = await readMember(jwtA, gid, subB);
+    expect(bM?.role).toBe("admin");
+    expect(bM?.status).toBe("active");
+    const aM = await readMember(jwtA, gid, subA);
+    expect(aM?.status).toBe("active");
+
+    // Retry-transient SEGURO: 2º call → ya no soy owner → already:true, sin re-transferir.
+    const retry = await rpcGw(jwtA, "transfer_group_ownership", { p_group_id: gid });
+    expect(retry.status).toBe(200);
+    expect(retry.body.transferred).toBe(false);
+    expect(retry.body.already).toBe(true);
+    const grp2 = await readGroupRowDecrypted(jwtA, "split_groups", gid);
+    expect(grp2?.owner_user_id).toBe(subB); // sin cambio
+  }, 120_000);
+
+  it("2. owner sin heredero elegible (co-member user_id NULL) → no_eligible_owner SIN tombstone; tercero intacto", async () => {
+    // setupGroupWithRebind: A owner (member_key legacy, user_id=A) + Pia placeholder (user_id NULL).
+    const { gid } = await setupGroupWithRebind("transfer-noheir", [LEGACY_PIA]);
+
+    const t = await rpcGw(jwtA, "transfer_group_ownership", { p_group_id: gid });
+    expect(t.status).toBe(200);
+    expect(t.body.transferred).toBe(false);
+    expect(t.body.already).toBe(false);
+    expect(t.body.reason).toBe("no_eligible_owner");
+    expect(t.body.new_owner_member_key).toBeNull();
+
+    // INVARIANTE D10: JAMÁS tombstonea; owner intacto; el placeholder tercero intacto.
+    const grp = await readGroupRowDecrypted(jwtA, "split_groups", gid);
+    expect(grp?.owner_user_id).toBe(subA);
+    expect(grp?.deleted).toBe(false);
+    const pia = await readMember(jwtA, gid, LEGACY_PIA);
+    expect(pia?.user_id).toBeNull();
+    expect(pia?.status).toBe("active");
+  }, 120_000);
+
+  it("3. caller no-owner (member activo) → already:true (no-op); owner intacto, sin auto-promoción", async () => {
+    const { gid } = await setupGroup("transfer-nonowner");
+
+    const t = await rpcGw(jwtB, "transfer_group_ownership", { p_group_id: gid });
+    expect(t.status).toBe(200);
+    expect(t.body.transferred).toBe(false);
+    expect(t.body.already).toBe(true);
+
+    const grp = await readGroupRowDecrypted(jwtA, "split_groups", gid);
+    expect(grp?.owner_user_id).toBe(subA); // sin cambio
+    const bM = await readMember(jwtA, gid, subB);
+    expect(bM?.role).toBe("member"); // sin auto-promoción
+  }, 120_000);
+});

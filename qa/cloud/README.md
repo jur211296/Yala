@@ -418,6 +418,39 @@ aplicación** (dejan la suite VERDE hoy). TRAS aplicar la migración: cambiar `d
 ese bloque y re-correr `npm test` (3/3 verdes). Usan solo los users A/B compartidos; sin cleanup (gid único
 por corrida, DELETE revocado — las filas se acumulan, se limpian por `group_id` en contexto service si hace falta).
 
+## transfer_group_ownership (G10 / D10) — batch "salir de todos mis grupos"
+
+Función NUEVA `qa/cloud/g10_01_transfer_group_ownership.sql` (`security definer`, `set search_path = public`
+— NO toca pgcrypto → NO va a `RPC_NEEDS_ENC_KEY`; guard `auth.uid()` NULL → `yala_not_authorized`; grants
+REVOKE public/anon + GRANT authenticated). Transfiere el ownership de UN grupo backend al co-member elegible
+más antiguo — **heredero VERBATIM de `groups_forget_user` loop1** (`(role='admin') desc, joined_at asc,
+member_key asc`, `user_id not null`, `status='active'`, `<> caller`) — y NADA MÁS. Diferencias vs
+`groups_forget_user`: opera sobre UN grupo (sin loop), NO anonimiza al caller (sin loop2), NO borra
+push_tokens, y **JAMÁS tombstonea** cuando no hay heredero (invariante D10: nunca destruir datos de terceros)
+→ `{transferred:false, reason:'no_eligible_owner'}`, el cliente lo manda a "necesitan tu decisión". El
+caller (orquestador batch) llama `leave_group` justo después (ya pasa el guard `yala_owner_cannot_leave`
+porque `owner_user_id` ya no es él). IDEMPOTENTE-SUAVE: grupo inexistente/deleted/owner distinto (ya
+transferido o nunca fui owner o huérfano NULL) → `{already:true}` sin tocar nada → **retry-transient SEGURO**
+(2º call tras 502 → ya no soy owner → already:true; NO está en `neverRetryTransient` del cliente).
+
+**Aplicación (loop principal, MCP, contexto service):** aplicada el `.sql` verbatim como migración
+`g10_01_transfer_group_ownership` (staging `fostjbbwstyuunmmefuk`, 2026-07-20). md5 real:
+
+```sql
+select md5(pg_get_functiondef('public.transfer_group_ownership(text)'::regprocedure));
+-- md5 esperado: dd3a049c793f6fe2479552ac0c7fba3f  (aplicada 2026-07-20, migración g10_01_transfer_group_ownership)
+```
+
+**Regla anti-drift:** prod (`kefvaiymtgytemwbltlz`) queda con DRIFT PENDIENTE — re-aplicar en el gate D9 (el
+canal de grupos entero es DARK; consistente con el resto de RPCs de grupos que se consolidan en D9).
+
+**Goldens (describe G10, `describe.skip` hasta aplicar):** 3 goldens — (1) owner con co-member elegible →
+transfiere al heredero (promovido a admin), owner intacto (el leave lo hace el cliente), retry → `already`;
+(2) owner sin heredero (co-member `user_id NULL`) → `no_eligible_owner` SIN tombstone, tercero intacto; (3)
+caller no-owner → `already`, sin auto-promoción. **Limitación conocida:** solo 2 users A/B → el tie-break
+admin-first+más-antiguo entre 2 herederos REALES no es E2E-testeable (mitigado: ORDER BY byte-idéntico a
+`groups_forget_user`). TRAS aplicar: `describe.skip(` → `describe(` y `npm test` (3/3 verdes).
+
 ## G7 — cifrado pgcrypto de columnas † de grupos (data-at-rest)
 
 Dos migraciones NUEVAS + un paso intermedio (la llave JAMÁS en schema_migrations — §6 del brief):

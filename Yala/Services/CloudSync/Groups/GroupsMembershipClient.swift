@@ -125,6 +125,24 @@ struct ForgetResult: Decodable, Equatable {
     }
 }
 
+/// D10 (batch "salir de todos mis grupos"): resultado de `transfer_group_ownership`. El jsonb SIEMPRE trae
+/// las claves con nulls (shape uniforme) → decode uniforme; el `new_owner_user_id` extra del wire lo ignora
+/// Decodable. `transferred=true` → se transfirió al `newOwnerMemberKey`; `alreadyTransferred=true` → ya no
+/// era owner (idempotente, seguro para resume); `reason=="no_eligible_owner"` → sin heredero elegible (el
+/// caller manda el grupo a "necesitan tu decisión", jamás se tombstonea).
+struct TransferOwnershipResult: Decodable, Equatable {
+    let transferred: Bool
+    let alreadyTransferred: Bool
+    let newOwnerMemberKey: String?
+    let reason: String?
+    enum CodingKeys: String, CodingKey {
+        case transferred
+        case alreadyTransferred = "already"
+        case newOwnerMemberKey = "new_owner_member_key"
+        case reason
+    }
+}
+
 // MARK: - Cliente
 
 @MainActor
@@ -182,6 +200,8 @@ final class GroupsMembershipClient {
     ///   revoke_invite                | SÍ               | ya revocado → no-op
     ///   update_member_display_name   | SÍ               | last-write del mismo valor
     ///   groups_forget_user           | SÍ               | destructivo pero convergente (re-aplicable)
+    ///   transfer_group_ownership     | SÍ               | idempotente-suave: 2º call tras 502 → ya no soy
+    ///                                |                  | owner → already:true (sin re-transferir a otro heredero)
     private static let neverRetryTransient: Set<String> = ["create_group", "create_group_invite"]
 
     /// Envuelve `call` con retry SOLO de `.transient` ([R5]): delays fijos `[1s, 3s]` (3 intentos máx).
@@ -289,7 +309,7 @@ final class GroupsMembershipClient {
         }
     }
 
-    // MARK: - Métodos tipados (9)
+    // MARK: - Métodos tipados (11)
 
     func createGroup(
         groupID: String,
@@ -393,5 +413,12 @@ final class GroupsMembershipClient {
     func forgetUser() async throws -> ForgetResult {
         let data = try await callWithRetry(fn: "groups_forget_user", args: [:])
         return try decode(ForgetResult.self, from: data)
+    }
+
+    /// D10: transfiere el ownership de UN grupo backend al co-member elegible más antiguo (server-side elige
+    /// el heredero). Idempotente-suave → seguro reintentar `.transient` (NO está en `neverRetryTransient`).
+    func transferOwnership(groupID: String) async throws -> TransferOwnershipResult {
+        let data = try await callWithRetry(fn: "transfer_group_ownership", args: ["p_group_id": groupID])
+        return try decode(TransferOwnershipResult.self, from: data)
     }
 }

@@ -169,6 +169,13 @@ final class GroupBackendMembershipService {
         return try await client.forgetUser()
     }
 
+    /// D10: RPC only (transfiere el ownership al co-member elegible más antiguo). El pull reconcilia el nuevo
+    /// owner/role local; el caller (orquestador batch) sale del grupo justo después.
+    func transferOwnership(groupID: String) async throws -> TransferOwnershipResult {
+        try ensureEligible()
+        return try await client.transferOwnership(groupID: groupID)
+    }
+
     // MARK: - Save helper
 
     /// Ejecuta `body` y hace `context.save()` bajo `GroupsSyncClient.outboxSaveAuthor`, restaurando el autor
