@@ -806,6 +806,25 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncReverse beaconCleared")
     }
 
+    /// D7 (§3.3.4.2): higiene post-borrado de cuenta — el faro iCloud-KV se limpió BEST-EFFORT tras el
+    /// GDPR delete (cierra el falso mismatch R9 de un sign-in posterior con otro provider). Sin PII.
+    static func accountDeletionBeaconCleared() {
+        logger.notice("CloudSyncAccountDeletion beaconCleared")
+    }
+
+    /// D7 (§3.3.4.2): higiene post-borrado — `count` `CloudMigrationMarker` locales borrados BEST-EFFORT.
+    /// En `.cloud` el mirror está OFF ⇒ NO se exporta a CloudKit (el file-wipe del boot borra el local; el
+    /// record CloudKit es residual documentado — R9 lee el FARO, ya limpiado arriba). Sin PII.
+    static func accountDeletionMarkerDeleted(count: Int) {
+        logger.notice("CloudSyncAccountDeletion markerDeleted count=\(count, privacy: .public)")
+    }
+
+    /// D7 (§3.3.4.2): la higiene del marcador lanzó — SWALLOWED (best-effort, jamás bloquea el cierre ni
+    /// el arm; invariante kill-safety (d)). El flujo sigue EXACTO como sin la higiene. Sin PII.
+    static func accountDeletionMarkerCleanupFailed() {
+        logger.error("CloudSyncAccountDeletion markerCleanupFailed — best-effort, flujo continúa")
+    }
+
     /// §h efecto de cierre: `storageMode=.icloud` + `mirrorOffArmed=false` persistidos JUNTOS (invariante SERIO 1).
     static func reverseModePersisted() {
         logger.notice("CloudSyncReverse modePersisted — storageMode=.icloud + mirrorOffArmed=false (par)")

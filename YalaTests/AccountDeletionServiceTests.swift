@@ -28,6 +28,7 @@ struct AccountDeletionServiceTests {
         var canDelete = true
         var groupsEnabled = false
         var isCloud = true
+        var deleteMarkerThrows = false
     }
 
     private func makeService(_ c: Ctrl) -> AccountDeletionService {
@@ -44,7 +45,12 @@ struct AccountDeletionServiceTests {
             revokeSIWA: { c.events.append("siwa") },
             revokeGoogle: { c.events.append("google") },
             closeLocalCloud: { c.events.append("closeCloud") },
-            closeLocalGroupsOnly: { _ in c.events.append("closeGroupsOnly"); return c.closeGroupsResult }
+            closeLocalGroupsOnly: { _ in c.events.append("closeGroupsOnly"); return c.closeGroupsResult },
+            clearCloudBeacon: { c.events.append("clearBeacon") },
+            deleteCloudKitMarker: { _ in
+                c.events.append("deleteMarker")
+                if c.deleteMarkerThrows { throw GroupsRPCError.transient(status: 500) }
+            }
         )
         return AccountDeletionService(deps: deps)
     }
@@ -58,7 +64,10 @@ struct AccountDeletionServiceTests {
 
         await sut.deleteAccount(context: ctx)
 
-        #expect(c.events == ["forget", "teardown", "delete", "siwa", "google", "closeCloud"])
+        // D7: higiene post-delete (clearBeacon → deleteMarker) entre el delete y los revokes.
+        #expect(c.events == [
+            "forget", "teardown", "delete", "clearBeacon", "deleteMarker", "siwa", "google", "closeCloud",
+        ])
         #expect(sut.phase == .awaitingRelaunch)
     }
 
@@ -70,7 +79,9 @@ struct AccountDeletionServiceTests {
         await sut.deleteAccount(context: ctx)
 
         // groups_forget_user NO se llama (sin datos de grupos en el backend con el flag OFF).
-        #expect(c.events == ["teardown", "delete", "siwa", "google", "closeCloud"])
+        #expect(c.events == [
+            "teardown", "delete", "clearBeacon", "deleteMarker", "siwa", "google", "closeCloud",
+        ])
         #expect(sut.phase == .awaitingRelaunch)
     }
 
@@ -81,7 +92,9 @@ struct AccountDeletionServiceTests {
 
         await sut.deleteAccount(context: ctx)
 
-        #expect(c.events == ["forget", "teardown", "delete", "siwa", "google", "closeGroupsOnly"])
+        #expect(c.events == [
+            "forget", "teardown", "delete", "clearBeacon", "deleteMarker", "siwa", "google", "closeGroupsOnly",
+        ])
         #expect(sut.phase == .awaitingRelaunch)
     }
 
@@ -130,7 +143,9 @@ struct AccountDeletionServiceTests {
         await sut.deleteAccount(context: ctx)
 
         // El borrado server-side YA ocurrió; el cierre local no cerró la sesión → reintentable.
-        #expect(c.events == ["forget", "teardown", "delete", "siwa", "google", "closeGroupsOnly"])
+        #expect(c.events == [
+            "forget", "teardown", "delete", "clearBeacon", "deleteMarker", "siwa", "google", "closeGroupsOnly",
+        ])
         #expect(sut.phase == .failed(step: .localClose))
     }
 
@@ -160,7 +175,9 @@ struct AccountDeletionServiceTests {
         await sut.deleteAccount(context: ctx)
 
         #expect(sut.phase == .awaitingRelaunch)
-        #expect(c.events == ["forget", "forget", "teardown", "delete", "siwa", "google", "closeCloud"])
+        #expect(c.events == [
+            "forget", "forget", "teardown", "delete", "clearBeacon", "deleteMarker", "siwa", "google", "closeCloud",
+        ])
     }
 
     @Test func awaitingRelaunch_isTerminal_noReentry() async throws {
@@ -187,6 +204,63 @@ struct AccountDeletionServiceTests {
 
         sut.acknowledgeFailure()
         #expect(sut.phase == .idle)
+    }
+
+    // MARK: - D7: higiene post-delete best-effort (faro/marcador)
+
+    /// Si la limpieza del marcador LANZA, el flujo NO se rompe: el borrado se completa igual
+    /// (`.awaitingRelaunch`). El faro ya se limpió (crítico para R9) y los revokes + cierre corren después.
+    @Test func hygieneMarkerThrows_doesNotBreakFlow() async throws {
+        let ctx = try makeTestContext()
+        let c = Ctrl(); c.groupsEnabled = false; c.isCloud = true; c.deleteMarkerThrows = true
+        let sut = makeService(c)
+
+        await sut.deleteAccount(context: ctx)
+
+        // El fallo del marcador se traga: clearBeacon + deleteMarker (intentado) + revokes + cierre corren.
+        #expect(c.events == [
+            "teardown", "delete", "clearBeacon", "deleteMarker", "siwa", "google", "closeCloud",
+        ])
+        #expect(sut.phase == .awaitingRelaunch)
+    }
+
+    /// La higiene NUNCA corre si el borrado server-side no fue exitoso (jamás limpiar el faro/marcador de
+    /// una cuenta que sigue viva).
+    @Test func hygiene_notRun_whenDeleteFails() async throws {
+        let ctx = try makeTestContext()
+        let c = Ctrl(); c.groupsEnabled = false; c.deleteOutcome = .transient(detail: "500")
+        let sut = makeService(c)
+
+        await sut.deleteAccount(context: ctx)
+
+        #expect(!c.events.contains("clearBeacon"))
+        #expect(!c.events.contains("deleteMarker"))
+        #expect(sut.phase == .failed(step: .delete))
+    }
+
+    // MARK: - D7: closure REAL de deleteCloudKitMarker (guard !isEmpty = red del invariante (b))
+
+    /// Store SIN marcador (caso solo-grupos 5b: el personal nunca migró): el `guard !markers.isEmpty`
+    /// retorna ANTES de cualquier `save()` — jamás toca el mainContext compartido con el mirror `.icloud`
+    /// vivo (invariante de quiescencia (b)). No lanza.
+    @Test func liveDeleteMarker_emptyStore_returnsWithoutSaveOrThrow() throws {
+        let ctx = try makeTestContext()
+        try AccountDeletionService.Dependencies.live.deleteCloudKitMarker(ctx)
+        // Sin marcadores antes y después; no hay throw (el guard corta antes del save).
+        let count = try ctx.fetchCount(FetchDescriptor<CloudMigrationMarker>())
+        #expect(count == 0)
+    }
+
+    /// Store CON marcador (caso `.cloud`): la closure lo borra y persiste.
+    @Test func liveDeleteMarker_presentMarker_deletesIt() throws {
+        let ctx = try makeTestContext()
+        ctx.insert(CloudMigrationMarker(accountHash: "abc", serverSeqCut: 42))
+        try ctx.save()
+        #expect(try ctx.fetchCount(FetchDescriptor<CloudMigrationMarker>()) == 1)
+
+        try AccountDeletionService.Dependencies.live.deleteCloudKitMarker(ctx)
+
+        #expect(try ctx.fetchCount(FetchDescriptor<CloudMigrationMarker>()) == 0)
     }
 }
 

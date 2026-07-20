@@ -76,6 +76,11 @@ final class AccountDeletionService {
         var closeLocalCloud: @MainActor () async -> Void
         var closeLocalGroupsOnly: @MainActor (ModelContext) async -> Bool
 
+        /// D7 (§3.3.4.2): higiene post-delete BEST-EFFORT. `clearCloudBeacon` no lanza (KV removeObject);
+        /// `deleteCloudKitMarker` sí (fetch/save) y el flujo lo TRAGA — jamás condición del cierre.
+        var clearCloudBeacon: @MainActor () -> Void
+        var deleteCloudKitMarker: @MainActor (ModelContext) throws -> Void
+
         /// Attest de producción para los dos clientes con attest (delete + groups RPC). `nonisolated` para
         /// poder referenciarlo desde el init nonisolated de `shared` (default-actor-isolation = MainActor);
         /// el closure `@MainActor` se FORMA aquí sin ejecutarse.
@@ -105,7 +110,25 @@ final class AccountDeletionService {
             revokeSIWA: { await SIWATokenRevocation.revokeIfNeeded() },
             revokeGoogle: { await GoogleTokenRevocation.revokeIfNeeded() },
             closeLocalCloud: { await CloudSessionSignOut.shared.closeLocalAfterAccountDeletionCloud() },
-            closeLocalGroupsOnly: { await CloudSessionSignOut.shared.closeLocalAfterAccountDeletionGroupsOnly(context: $0) }
+            closeLocalGroupsOnly: { await CloudSessionSignOut.shared.closeLocalAfterAccountDeletionGroupsOnly(context: $0) },
+            clearCloudBeacon: {
+                CloudBeacon().clearCloudAccountLinked()
+                CloudSyncBreadcrumb.accountDeletionBeaconCleared()
+            },
+            deleteCloudKitMarker: { context in
+                // Borra el marcador local BEST-EFFORT. `guard !isEmpty` ANTES de cualquier save: en solo-grupos
+                // (5b, mirror `.icloud` VIVO sobre el mainContext compartido) NO hay marcador → 0 filas → NO
+                // se llama a save() (jamás flushea el grafo personal a medio importar — invariante quiescencia
+                // (b)). En `.cloud` el marcador existe pero el mirror está OFF ⇒ el delete NO se exporta a
+                // CloudKit (el file-wipe del boot borra el local; el record CloudKit queda como residual
+                // documentado — R9 lee el FARO, no el marcador). El save() en `.cloud` es seguro: sin mirror
+                // que replaye y el motor ya fue teardowneado.
+                let markers = try context.fetch(FetchDescriptor<CloudMigrationMarker>())
+                guard !markers.isEmpty else { return }
+                for marker in markers { context.delete(marker) }
+                try context.save()
+                CloudSyncBreadcrumb.accountDeletionMarkerDeleted(count: markers.count)
+            }
         )
     }
 
@@ -156,6 +179,22 @@ final class AccountDeletionService {
             MetricsService.accountDeletionFailed(step: Step.delete.rawValue)
             phase = .failed(step: .delete)
             return
+        }
+
+        // 3.5) Higiene post-delete (D7, §3.3.4.2): limpiar el faro iCloud-KV + el marcador CloudKit locales,
+        // para que un sign-in POSTERIOR del mismo Apple ID con OTRO provider vea `.notFound` honesto en vez
+        // de un falso mismatch R9 (`ProviderMismatchLogic` lee SOLO el faro). BEST-EFFORT ABSOLUTO: jamás
+        // condición del cierre local ni del arm (invariante kill-safety (d)) — si algo falla, breadcrumb y
+        // el flujo sigue EXACTO como hoy (sin regresión posible). A diferencia del efecto homónimo de la
+        // Reversa (que RE-throwea para quedar journaled-pendiente y reintentar con el mirror vivo), aquí NO
+        // hay retry: la cuenta ya murió server-side y la higiene es cosmética. El faro (CRÍTICO para R9) se
+        // limpia PRIMERO e incondicionalmente; el marcador después, con su fallo tragado. Corre tras el
+        // teardown (paso 2) ⇒ sin push en vuelo que re-capture; jamás se alcanza si el delete falló (arriba).
+        deps.clearCloudBeacon()
+        do {
+            try deps.deleteCloudKitMarker(context)
+        } catch {
+            CloudSyncBreadcrumb.accountDeletionMarkerCleanupFailed()
         }
 
         // 4a) SIWA revoke REAL (B1, 5.1.1(v)) — best-effort: jamás lanza ni bloquea el cierre. El orden
