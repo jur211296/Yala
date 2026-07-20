@@ -5101,3 +5101,15 @@
 
 /* D2 (3.3.3): banner one-shot de re-entrada sobre el empty state H-7 */
 "groups.empty.signedOut.reentryBanner" = "你已退出群组登录。想再次查看时，随时登录即可。";
+
+/* D5: aviso condicional de saldos pendientes en el diálogo de eliminar cuenta (informa, no bloquea) */
+"settings.deleteAccountDebtWarning" = "你在群组中还有未结清的余额。对其他成员来说，这些余额会显示为“已删除的用户”的欠款。如果愿意，可以先在“群组”标签页中结清。";
+
+/* D5: botón del diálogo de eliminar cuenta que lleva a la pestaña Grupos para saldar deudas */
+"settings.deleteAccountViewGroups" = "查看我的群组";
+
+/* D5: aviso (.cloud) de que la copia iCloud congelada pre-migración sobrevive al borrado de cuenta */
+"settings.deleteAccountFrozenICloudNote" = "你以前的 iCloud 数据（云端账户之前的）不受影响：如果你重新打开 Yala，看到的就像重新安装了一样。";
+
+/* D5: aviso de huella legacy — el nombre persiste en zonas CloudKit tras el borrado de cuenta */
+"settings.deleteAccountLegacyFootprintNote" = "在旧群组（iCloud）中，你的名字可能仍然对其他成员可见。";

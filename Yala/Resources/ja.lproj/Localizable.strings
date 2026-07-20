@@ -5101,3 +5101,15 @@
 
 /* D2 (3.3.3): banner one-shot de re-entrada sobre el empty state H-7 */
 "groups.empty.signedOut.reentryBanner" = "グループからサインアウトしました。もう一度見たくなったら、いつでもサインインしてください。";
+
+/* D5: aviso condicional de saldos pendientes en el diálogo de eliminar cuenta (informa, no bloquea) */
+"settings.deleteAccountDebtWarning" = "グループに未精算の残高があります。他のメンバーには、「削除されたユーザー」からの未払いとして残ります。よろしければ、先に「グループ」タブから精算してください。";
+
+/* D5: botón del diálogo de eliminar cuenta que lleva a la pestaña Grupos para saldar deudas */
+"settings.deleteAccountViewGroups" = "グループを表示";
+
+/* D5: aviso (.cloud) de que la copia iCloud congelada pre-migración sobrevive al borrado de cuenta */
+"settings.deleteAccountFrozenICloudNote" = "iCloudの古いデータ（クラウド以前のもの）はそのまま残ります。Yalaを再び開くと、再インストールと同じ状態で表示されます。";
+
+/* D5: aviso de huella legacy — el nombre persiste en zonas CloudKit tras el borrado de cuenta */
+"settings.deleteAccountLegacyFootprintNote" = "以前の（iCloud）グループでは、あなたの名前がメンバーに引き続き表示される場合があります。";

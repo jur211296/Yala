@@ -4352,3 +4352,15 @@
 
 /* D2 (3.3.3): banner one-shot de re-entrada sobre el empty state H-7 */
 "groups.empty.signedOut.reentryBanner" = "Cerraste tu sesión de grupos. Iniciá sesión cuando quieras verlos de nuevo.";
+
+/* D5: aviso condicional de saldos pendientes en el diálogo de eliminar cuenta (informa, no bloquea) */
+"settings.deleteAccountDebtWarning" = "Tenés saldos pendientes en tus grupos. Para los demás miembros quedarán como deuda de «Usuario eliminado». Si preferís, saldá primero desde la pestaña Grupos.";
+
+/* D5: botón del diálogo de eliminar cuenta que lleva a la pestaña Grupos para saldar deudas */
+"settings.deleteAccountViewGroups" = "Ver mis grupos";
+
+/* D5: aviso (.cloud) de que la copia iCloud congelada pre-migración sobrevive al borrado de cuenta */
+"settings.deleteAccountFrozenICloudNote" = "Tu copia antigua de iCloud (de antes de la nube) no se toca: si volvés a abrir Yala, la vas a ver como una reinstalación.";
+
+/* D5: aviso de huella legacy — el nombre persiste en zonas CloudKit tras el borrado de cuenta */
+"settings.deleteAccountLegacyFootprintNote" = "En grupos antiguos (iCloud) tu nombre puede seguir visible para sus miembros.";

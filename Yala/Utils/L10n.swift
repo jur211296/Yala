@@ -4098,6 +4098,22 @@ enum L10n {
         static var deleteAccountCrossReferHint: String {
             ls("settings.deleteAccountCrossReferHint", comment: "")
         }
+        /// D5 (§3.3.4): aviso condicional de saldos pendientes en grupos (informa, no bloquea).
+        static var deleteAccountDebtWarning: String {
+            ls("settings.deleteAccountDebtWarning", comment: "")
+        }
+        /// D5 (§3.3.4): botón que lleva a la pestaña Grupos para saldar antes de borrar.
+        static var deleteAccountViewGroups: String {
+            ls("settings.deleteAccountViewGroups", comment: "")
+        }
+        /// D5 (§3.3.4): aviso (.cloud) de que la copia iCloud congelada pre-migración sobrevive.
+        static var deleteAccountFrozenICloudNote: String {
+            ls("settings.deleteAccountFrozenICloudNote", comment: "")
+        }
+        /// D5 (§3.3.4): huella legacy — el nombre persiste en zonas CloudKit tras el borrado.
+        static var deleteAccountLegacyFootprintNote: String {
+            ls("settings.deleteAccountLegacyFootprintNote", comment: "")
+        }
         static var deleteAccountConfirmTitle: String { ls("settings.deleteAccountConfirmTitle", comment: "") }
         static var deleteAccountConfirmMessageCloud: String {
             ls("settings.deleteAccountConfirmMessageCloud", comment: "")

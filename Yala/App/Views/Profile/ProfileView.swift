@@ -186,14 +186,33 @@ struct ProfileView: View {
     @State private var showDeleteAccountFinal = false
     @State private var showDeleteAccountError = false
 
+    /// D5 (§3.3.4): resumen READ-ONLY de grupos (nº con deuda del usuario + huella CloudKit legacy),
+    /// recomputado al tocar "Eliminar mi cuenta". Alimenta el aviso condicional de saldos y el botón
+    /// "Ver mis grupos" del primer diálogo. Cero saves (invariante de quiescencia intacto).
+    @State private var deleteAccountGroupsSummary: AccountDeletionGroupsSummary = .empty
+
     /// Copy del PRIMER diálogo — explica qué se borra y dónde según el modo (misma decisión que
-    /// `AccountDeletionService`: `.cloud` vs solo-grupos).
+    /// `AccountDeletionService`: `.cloud` vs solo-grupos). D5 (§3.3.4.1): la composición de líneas (aviso
+    /// de deudas condicional, desvío cruzado, copia iCloud congelada, huella legacy) la decide la lógica
+    /// pura `AccountDeletionMessageLogic`; aquí solo se mapea cada `Line` a su string localizado.
     private var deleteAccountConfirmMessage: String {
-        let base = CloudSyncFlags.storageMode == .cloud
-            ? L10n.Settings.deleteAccountConfirmMessageCloud
-            : L10n.Settings.deleteAccountConfirmMessageGroupsOnly
-        // Fase 1 (§3.3.4): desvío cruzado hacia "Vaciar mis datos" — patrón anti-error de destino.
-        return base + "\n\n" + L10n.Settings.deleteAccountCrossReferHint
+        let isCloud = CloudSyncFlags.storageMode == .cloud
+        let lines = AccountDeletionMessageLogic.lines(
+            isCloud: isCloud,
+            hasOutstandingDebt: deleteAccountGroupsSummary.hasOutstandingDebt,
+            hasLegacyCloudKitFootprint: deleteAccountGroupsSummary.hasLegacyCloudKitFootprint)
+        return lines.map { line in
+            switch line {
+            case .base:
+                return isCloud
+                    ? L10n.Settings.deleteAccountConfirmMessageCloud
+                    : L10n.Settings.deleteAccountConfirmMessageGroupsOnly
+            case .debtWarning:     return L10n.Settings.deleteAccountDebtWarning
+            case .crossRefer:      return L10n.Settings.deleteAccountCrossReferHint
+            case .frozenICloud:    return L10n.Settings.deleteAccountFrozenICloudNote
+            case .legacyFootprint: return L10n.Settings.deleteAccountLegacyFootprintNote
+            }
+        }.joined(separator: "\n\n")
     }
 
     private func syncDeletionUI(from phase: AccountDeletionService.Phase) {
@@ -390,6 +409,17 @@ struct ProfileView: View {
                 isPresented: $showDeleteAccountConfirm,
                 titleVisibility: .visible
             ) {
+                // D5 (§3.3.4): con saldos pendientes, se ofrece PRIMERO el desvío seguro a Grupos
+                // (anti-error de destino). INFORMA, jamás bloquea (línea roja GDPR) — "Continuar" sigue
+                // disponible. Cierra el sheet de Ajustes y salta al tab Grupos para saldar/ver.
+                if deleteAccountGroupsSummary.hasOutstandingDebt {
+                    Button(L10n.Settings.deleteAccountViewGroups) {
+                        // Selecciona el tab ANTES del dismiss (patrón de FullModeActivationView): el
+                        // estado del tab vive en el singleton SessionState y sobrevive al cierre del sheet.
+                        SessionState.shared.selectMainTab(.groups)
+                        dismiss()
+                    }
+                }
                 Button(L10n.Settings.deleteAccountContinue, role: .destructive) {
                     showDeleteAccountFinal = true
                 }
@@ -997,6 +1027,10 @@ struct ProfileView: View {
                     isGroupInviteMode: isGroupInviteMode) {
                     SubsectionDivider()
                     Button {
+                        // D5: recomputa READ-ONLY (fetches + cálculo puro, cero saves) el resumen de grupos
+                        // ANTES de mostrar el diálogo — fresco y barato (solo al tap).
+                        deleteAccountGroupsSummary =
+                            SplitSyncManager.shared.accountDeletionGroupsSummary()
                         showDeleteAccountConfirm = true
                     } label: {
                         settingsRowContent(
