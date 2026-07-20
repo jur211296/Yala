@@ -101,11 +101,15 @@ struct TabBarConfiguration: Codable, Equatable {
     /// M1 / D8: en sesión SECUNDARIA el tab Grupos se FILTRA SOLO con el canal grupos→backend APAGADO —
     /// ahí el CKSyncEngine de grupos está atado al Apple ID del OS (el DUEÑO) y la invitada vería SUS
     /// grupos y montos. Con el flag ON (`groupsBackendEnabled`) la invitada ve el tab con los grupos de
-    /// SU cuenta (canal backend, store `YalaGroups-Secondary`) ⇒ NO se filtra. Ambos params explícitos
-    /// (sin default) para que todo call-site decida conscientemente.
+    /// SU cuenta (canal backend, store `YalaGroups-Secondary`) ⇒ NO se filtra.
+    /// D1 (retención): `reduceToGroupsOnly` fuerza la config fija `.groupInvite` (solo `[.groups]`)
+    /// cuando el usuario eligió «Solo mis grupos» (`usageFocus == .groupsOnly`), SIN tocar `onboardingMode`.
+    /// El caller pasa `effectiveShellMode == .groupsFocused` (que ya incluye el caso group-invite, por eso
+    /// es idempotente ahí). Todos los params explícitos (sin default) para que cada call-site decida.
     static func forMode(
         _ mode: OnboardingMode, stored: TabBarConfiguration,
-        secondarySessionActive: Bool, groupsBackendEnabled: Bool
+        secondarySessionActive: Bool, groupsBackendEnabled: Bool,
+        reduceToGroupsOnly: Bool
     ) -> TabBarConfiguration {
         var config: TabBarConfiguration
         switch mode {
@@ -113,6 +117,11 @@ struct TabBarConfiguration: Codable, Equatable {
             config = .groupInvite
         case .full, .completed:
             config = stored
+        }
+        // D1: reduce a solo-Grupos igual que group-invite (usageFocus == .groupsOnly). Antes del filtro
+        // de secundaria para que la composición sea idéntica a la de un group-invite.
+        if reduceToGroupsOnly {
+            config = .groupInvite
         }
         if secondarySessionActive && !groupsBackendEnabled {
             config.activeTabs.removeAll { $0 == .groups }

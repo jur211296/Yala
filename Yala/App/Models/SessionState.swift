@@ -370,8 +370,8 @@ class SessionState {
         globalFilters.dateInterval = selectedPeriod.dateInterval()
 
         // Reset navigation to initial state (important after data wipe)
-        // Mode-aware: groupInvite users default to .groups tab
-        selectedMainTab = isGroupInviteMode ? .groups : .panel
+        // Mode-aware: shell reducida (group-invite O usageFocus == .groupsOnly) arranca en .groups
+        selectedMainTab = isGroupsFocusedShell ? .groups : .panel
         selectedDetailTab = .insights
         selectedPlanningTab = .budgets
     }
@@ -598,7 +598,9 @@ class SessionState {
     /// Honors GC-08 invariant: in `groupInvite` mode, only `.groups`, `.more`
     /// and `.search` are reachable; other tabs are silently rejected.
     func selectMainTab(_ tab: AppTab) {
-        if isGroupInviteMode {
+        // GC-08 + D1: en shell reducida (group-invite O usageFocus == .groupsOnly) solo
+        // `.groups`/`.more`/`.search` son alcanzables — consistente con `visibleTabs`.
+        if isGroupsFocusedShell {
             let allowed: Set<AppTab> = [.groups, .more, .search]
             guard allowed.contains(tab) else { return }
         }
@@ -607,7 +609,8 @@ class SessionState {
         let config = TabBarConfiguration.forMode(
             onboardingMode, stored: stored,
             secondarySessionActive: SecondarySessionStore.isActive(),
-            groupsBackendEnabled: CloudSyncFlags.groupsBackendEnabled)
+            groupsBackendEnabled: CloudSyncFlags.groupsBackendEnabled,
+            reduceToGroupsOnly: isGroupsFocusedShell)
         let decision = MainTabSelectionLogic.decide(requested: tab, config: config)
 
         pendingTabSelectionTask?.cancel()

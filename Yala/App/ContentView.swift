@@ -1521,6 +1521,8 @@ struct MainTabView: View {
     @Environment(\.requestReview) private var requestReview
     @Environment(\.yalaTheme) private var theme
     @Environment(\.modelContext) private var modelContext
+    /// D1: leído reactivamente para reducir la tab bar cuando el usuario elige «Solo mis grupos».
+    @Environment(AppPreferences.self) private var appPreferences
     @State private var searchText: String = ""
     @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
     /// Gate beta de Grupos (validación v2.0.1). @AppStorage directo: reacciona al
@@ -1547,9 +1549,16 @@ struct MainTabView: View {
     /// Tabs to show: mode-aware config + temporary tab (if set and not already active)
     private var visibleTabs: [ConfigurableTab] {
         let secondary = SecondarySessionStore.isActive()
+        // D1: reduce a solo-Grupos cuando el usuario eligió «Solo mis grupos» (usageFocus).
+        // Se lee `appPreferences.usageFocus` (reactivo) — NO `SessionState.effectiveShellMode`
+        // (point-read, no reaccionaría). Byte-idéntico con usageFocus=.full.
+        let reduceToGroupsOnly = ShellModeLogic.effective(
+            onboardingMode: sessionState.onboardingMode,
+            usageFocus: appPreferences.usageFocus) == .groupsFocused
         let modeConfig = TabBarConfiguration.forMode(
             sessionState.onboardingMode, stored: tabConfig, secondarySessionActive: secondary,
-            groupsBackendEnabled: CloudSyncFlags.groupsBackendEnabled)
+            groupsBackendEnabled: CloudSyncFlags.groupsBackendEnabled,
+            reduceToGroupsOnly: reduceToGroupsOnly)
         var tabs = modeConfig.activeTabs
         // M1 / D8: el temporaryTab tampoco puede colar `.groups` en secundaria con el canal backend
         // APAGADO (grupos = iCloud del dueño); con el flag ON la invitada ve sus propios grupos ⇒ se permite.

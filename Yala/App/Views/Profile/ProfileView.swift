@@ -223,6 +223,21 @@ struct ProfileView: View {
         SessionState.shared.isGroupInviteMode
     }
 
+    /// D1: shell reducida (group-invite O usageFocus == .groupsOnly). Oculta la sección
+    /// «Organización» (finanzas personales). Reactivo a `usageFocus` vía `appPreferences`.
+    /// NO afecta las filas de sesión/cuenta/export (esas siguen en `isGroupInviteMode`).
+    private var isGroupsFocusedShell: Bool {
+        ShellModeLogic.effective(
+            onboardingMode: SessionState.shared.onboardingMode,
+            usageFocus: appPreferences.usageFocus) == .groupsFocused
+    }
+
+    /// D1: `true` solo cuando el usuario eligió «Solo mis grupos» (no en group-invite legado,
+    /// que usa el CTA de «Más»). Gatea la fila «Activar Yala completo» de Ajustes.
+    private var showsActivateFullRow: Bool {
+        appPreferences.usageFocus == .groupsOnly
+    }
+
     /// En solo-grupos no se muestra cromo Pro (no hay venta de Pro en ese modo).
     private var showsProBadge: Bool {
         isProUser && !isGroupInviteMode
@@ -266,10 +281,16 @@ struct ProfileView: View {
                             // Header
                             profileHeader
 
+                            // D1 (retención): fila permanente «Activar Yala completo» cuando el usuario
+                            // eligió «Solo mis grupos» — la vuelta a la app completa (flujo guiado).
+                            if showsActivateFullRow {
+                                activateFullYalaSection
+                            }
+
                             // Sections
                             // Organización gestiona finanzas personales (cuentas, categorías,
-                            // presupuestos…): se omite por completo en modo solo-grupos.
-                            if !isGroupInviteMode {
+                            // presupuestos…): se omite en shell reducida (group-invite O usageFocus groupsOnly).
+                            if !isGroupsFocusedShell {
                                 organizacionSection
                             }
                             preferenciasSection
@@ -677,6 +698,50 @@ struct ProfileView: View {
     }
 
     // MARK: - Sections
+
+    /// D1 (retención): CTA «Activar Yala completo» para el usuario en «Solo mis grupos».
+    /// Abre el flujo guiado (FullModeActivationView vía router); el reset de `usageFocus`
+    /// a `.full` lo hace `completeFullActivation`. Molde de `MoreView.activateFullYalaButton`.
+    private var activateFullYalaSection: some View {
+        Button {
+            RouterEntryGate.shared.submit(.presentFullModeActivation)
+        } label: {
+            HStack(spacing: DS.FormRow.iconSpacing) {
+                Image(systemName: "sparkles")
+                    .font(DS.Typography.label)
+                    .foregroundStyle(.white)
+                    .frame(width: DS.FormRow.iconWidth, height: DS.FormRow.iconWidth)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(theme.accent)
+                    )
+
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(L10n.Groups.Activate.title)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.primary)
+
+                    Text(L10n.Groups.Activate.subtitle)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.chevron)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, DS.FormRow.paddingH)
+            .padding(.vertical, DS.FormRow.paddingV)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .solidCard(radius: DS.Radius.xl)
+        .dsSubtleShadow()
+        .padding(.horizontal, DS.Spacing.lg)
+        .accessibilityIdentifier("profile_activate_full_yala")
+    }
 
     private var organizacionSection: some View {
         SectionBox(title: L10n.Settings.organization) {

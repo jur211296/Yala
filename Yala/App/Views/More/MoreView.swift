@@ -57,8 +57,14 @@ struct MoreView: View {
     @State private var showBetaIntro = false
     @State private var showBetaCode = false
 
-    /// GC-08: en modo groupInvite solo Grupos es accesible; el dashboard se oculta.
-    private var isGroupInviteMode: Bool { SessionState.shared.isGroupInviteMode }
+    /// GC-08 + D1: en shell reducida (group-invite O usageFocus == .groupsOnly) solo Grupos es
+    /// accesible; el dashboard personal se oculta y se muestra el CTA «Activar Yala completo».
+    /// Reactivo a `usageFocus` vía `appPreferences` (NO el point-read de SessionState).
+    private var isGroupsFocusedShell: Bool {
+        ShellModeLogic.effective(
+            onboardingMode: SessionState.shared.onboardingMode,
+            usageFocus: appPreferences.usageFocus) == .groupsFocused
+    }
 
     private let gridColumns = [
         GridItem(.flexible(), spacing: DS.Spacing.md),
@@ -85,7 +91,7 @@ struct MoreView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: DS.Spacing.xl) {
-                        if isGroupInviteMode {
+                        if isGroupsFocusedShell {
                             activateFullYalaButton
                         } else {
                             dashboardContent
@@ -98,7 +104,7 @@ struct MoreView: View {
             .navigationBarTitleDisplayMode(.inline)
             .yalaScreenBackground(.panel)
             .toolbar {
-                if !isGroupInviteMode {
+                if !isGroupsFocusedShell {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
                             showEditor = true

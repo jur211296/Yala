@@ -16,6 +16,9 @@ struct FullModeActivationView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
+    /// D1: al activar Yala completo desde «Solo mis grupos» hay que resetear el foco de la shell
+    /// (si no, `usageFocus == .groupsOnly` residual mantendría la app reducida pese al onboarding).
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var prefilledSummary: ICloudAccountSummary?
 
@@ -89,6 +92,12 @@ struct FullModeActivationView: View {
         let sync = PreferenceSyncService.shared
         sync.set(string: OnboardingMode.completed.rawValue, forKey: OnboardingMode.userDefaultsKey)
         sessionState.onboardingMode = .completed
+
+        // D1: des-reducir la shell. DEBE ir ANTES de `selectMainTab(.panel)` — `effectiveShellMode`
+        // es `.groupsFocused` mientras `usageFocus == .groupsOnly` (independiente de onboardingMode),
+        // así que el guard GC-08 rechazaría `.panel` si el reset viniera después. No-op para
+        // group-invite (usageFocus ya `.full`, guard del didSet).
+        appPreferences.usageFocus = .full
 
         UserDefaults.standard.set(
             TabBarConfiguration.default.toJSON(),
