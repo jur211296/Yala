@@ -55,7 +55,10 @@ struct GroupSettingsView: View {
     @State private var isDeleting: Bool = false
 
     // G6-3 (C5): "Borrar mi copia congelada" (owner-only, grupo migrado). Confirmación DOBLE.
+    // D4: paso 1 = hoja de alcance (`.sheet`, `showDeleteCopyConfirm1`); "Borrar copia" fija
+    // `pendingDeleteCopyConfirm2` y cierra la hoja; su `onDismiss` presenta el paso 2 (dialog corto) sin carrera.
     @State private var showDeleteCopyConfirm1 = false
+    @State private var pendingDeleteCopyConfirm2 = false
     @State private var showDeleteCopyConfirm2 = false
     @State private var isDeletingCopy = false
 
@@ -178,18 +181,18 @@ struct GroupSettingsView: View {
             } message: {
                 Text(L10n.Groups.Settings.deleteGroupFinalConfirm)
             }
-            // G6-3 (C5): confirmación DOBLE para borrar la copia CloudKit congelada.
-            .confirmationDialog(
-                L10n.Groups.Migrated.deleteCopyConfirmTitle,
-                isPresented: $showDeleteCopyConfirm1,
-                titleVisibility: .visible
-            ) {
-                Button(L10n.Groups.Migrated.deleteCopyRow, role: .destructive) {
+            // G6-3 (C5) + D4: paso 1 = hoja de alcance (📱/☁️/👥). "Borrar copia" fija el flag y cierra la
+            // hoja; el `onDismiss` presenta el paso 2 (dialog corto EXISTENTE) sin carrera same-anchor.
+            .sheet(isPresented: $showDeleteCopyConfirm1, onDismiss: {
+                if pendingDeleteCopyConfirm2 {
+                    pendingDeleteCopyConfirm2 = false
                     showDeleteCopyConfirm2 = true
                 }
-                Button(L10n.Common.cancel, role: .cancel) {}
-            } message: {
-                Text(L10n.Groups.Migrated.deleteCopyConfirmBody)
+            }) {
+                DestructiveScopeSheet(config: .make(
+                    operation: .deleteFrozenCopy,
+                    cloudLabel: .icloud,  // la copia congelada es siempre la zona CloudKit vieja de iCloud
+                    onConfirm: { pendingDeleteCopyConfirm2 = true }))
             }
             .confirmationDialog(
                 L10n.Groups.Migrated.deleteCopyConfirmTitle,

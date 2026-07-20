@@ -74,15 +74,8 @@ struct CloudSignOutFlowLogicTests {
             hasLiveSession: true, groupsBackendEnabled: true) == .secondaryCloudSignOut)
     }
 
-    // MARK: - Copy honesto (mapeo path → mensaje)
-
-    @Test
-    func confirmMessage_mapsEachPath() {
-        #expect(CloudSignOutFlowLogic.confirmMessage(for: .privateReset) == .icloud)
-        #expect(CloudSignOutFlowLogic.confirmMessage(for: .cloudSecureSignOut) == .cloud)
-        #expect(CloudSignOutFlowLogic.confirmMessage(for: .secondaryCloudSignOut) == .secondary)
-        #expect(CloudSignOutFlowLogic.confirmMessage(for: .groupsOnlySignOut) == .groupsOnly)
-    }
+    // D4: `confirmMessage_mapsEachPath` ELIMINADO — `CloudSignOutFlowLogic.confirmMessage` se retiró
+    // (el copy por-path lo sustituyen las filas de la hoja; ver DestructiveScopeLogicTests).
 
     // MARK: - Visibilidad de las filas de salida (H4 + D6 §3.3.6)
 

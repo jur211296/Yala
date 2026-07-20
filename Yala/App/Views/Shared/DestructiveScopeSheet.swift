@@ -1,0 +1,415 @@
+//
+//  DestructiveScopeSheet.swift
+//  Yala
+//
+//  "Hoja de alcance" destructiva (D4, §3.1/§3.3 del estudio MODO-NUBE-GESTION-DATOS-UX, ratificada
+//  2026-07-19). Componente ÚNICO de confirmación para las operaciones destructivas: un sheet con 3 filas
+//  escaneables SIEMPRE iguales — 📱 En este dispositivo / ☁️ En iCloud|En tu cuenta de Yala (dinámica por
+//  `storageMode`) / 👥 En tus grupos — una nota de conservación, líneas condicionales, y botones
+//  [secundaria opcional][destructiva][Cancelar]. Regla de copy: qué se borra / qué se conserva / vuelta atrás.
+//
+//  Es SOLO capa de presentación (los servicios NO se tocan). La ESTRUCTURA la decide `DestructiveScopeLogic`
+//  (testeada por tabla); este componente es TONTO — renderiza un `Config`, que arma la factory
+//  `Config.make(...)` mapeando el modelo + `L10n`. Los callsites solo pasan callbacks.
+//
+//  Anti-carrera (regla toolbar-muerta): el botón confirmar/secundario invoca su callback (que fija un flag
+//  `pending<X>` en el callsite) y ACTO SEGUIDO hace `dismiss()` de la hoja; el `.sheet(onDismiss:)` del
+//  callsite dispara la acción/siguiente-paso YA con la hoja fuera. Cancelar/swipe → solo `dismiss()` (el
+//  callsite no fijó ningún flag → no-op). Nunca dos anchors ante el mismo observable.
+//
+
+import SwiftUI
+
+struct DestructiveScopeSheet: View {
+
+    let config: Config
+
+    @Environment(\.dismiss) private var dismiss
+
+    // MARK: - Config
+
+    struct Config {
+        let title: String
+        /// SIEMPRE 3, en orden device→cloud→groups.
+        let rows: [Row]
+        /// Nota de conservación ("qué se conserva / vuelta atrás"). `nil` = no se muestra.
+        let conservationNote: String?
+        /// Líneas condicionales bajo las filas (aviso de deudas, desvío cruzado, etc.).
+        let extraLines: [ExtraLineItem]
+        /// Acción secundaria SEGURA (p.ej. "Ver mis grupos"). Prominente para desviar de la destrucción.
+        let secondary: SecondaryAction?
+        let confirmLabel: String
+        let confirmIdentifier: String
+        let cancelLabel: String
+        /// Se invoca ANTES del `dismiss()` de la hoja — el callsite fija su `pending` aquí.
+        let onConfirm: () -> Void
+
+        struct Row {
+            let icon: String
+            let label: String
+            let detail: String
+            let tone: DestructiveScopeLogic.Tone
+        }
+
+        struct ExtraLineItem {
+            enum Style { case warning, info }
+            let text: String
+            let style: Style
+        }
+
+        struct SecondaryAction {
+            let label: String
+            let identifier: String
+            /// Se invoca ANTES del `dismiss()` de la hoja.
+            let handler: () -> Void
+        }
+    }
+
+    // MARK: - Body
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: DS.Spacing.xl) {
+                    Text(config.title)
+                        .font(DS.Typography.title)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+                        ForEach(config.rows.indices, id: \.self) { i in
+                            rowView(config.rows[i])
+                        }
+                    }
+
+                    if !config.extraLines.isEmpty {
+                        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                            ForEach(config.extraLines.indices, id: \.self) { i in
+                                extraLineView(config.extraLines[i])
+                            }
+                        }
+                    }
+
+                    if let note = config.conservationNote {
+                        Text(note)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                .padding(.horizontal, DS.Spacing.xl)
+                .padding(.top, DS.Spacing.xl)
+                .padding(.bottom, DS.Spacing.lg)
+            }
+
+            buttons
+        }
+        .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
+        .presentationDetents(DS.Adaptive.sheetDetents([.medium]))
+        .presentationDragIndicator(.visible)
+    }
+
+    // MARK: - Rows
+
+    private func toneColor(_ tone: DestructiveScopeLogic.Tone) -> Color {
+        switch tone {
+        case .destructive: return DS.Semantic.errorForeground
+        case .preserved:   return .secondary
+        case .neutral:     return .primary
+        }
+    }
+
+    private func rowView(_ row: Config.Row) -> some View {
+        HStack(alignment: .top, spacing: DS.Spacing.md) {
+            Image(systemName: row.icon)
+                .font(DS.Typography.body)
+                .foregroundStyle(toneColor(row.tone))
+                .frame(width: DS.Spacing.xxl)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(row.label)
+                    .font(DS.Typography.bodyBold)
+                    .foregroundStyle(.primary)
+                Text(row.detail)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(toneColor(row.tone))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private func extraLineView(_ line: Config.ExtraLineItem) -> some View {
+        Text(line.text)
+            .font(DS.Typography.subheadline)
+            .foregroundStyle(line.style == .warning ? DS.Semantic.warningForeground : .secondary)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: - Buttons (pinned)
+
+    private var buttons: some View {
+        VStack(spacing: DS.Spacing.md) {
+            if let secondary = config.secondary {
+                // Desvío SEGURO prominente (D5): steer away de la destrucción.
+                YalaPrimaryButton(secondary.label) {
+                    secondary.handler()
+                    dismiss()
+                }
+                .accessibilityIdentifier(secondary.identifier)
+            }
+
+            YalaSecondaryButton(config.confirmLabel, destructive: true) {
+                config.onConfirm()
+                dismiss()
+            }
+            .accessibilityIdentifier(config.confirmIdentifier)
+
+            Button(config.cancelLabel) { dismiss() }
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+                .padding(.top, DS.Spacing.xxs)
+                .accessibilityIdentifier("destructive_scope_cancel")
+        }
+        .padding(.horizontal, DS.Spacing.xl)
+        .padding(.top, DS.Spacing.md)
+        .padding(.bottom, DS.Spacing.xl)
+    }
+}
+
+// MARK: - Factory (modelo estructural → strings localizados, en UN solo sitio)
+
+extension DestructiveScopeSheet.Config {
+
+    /// Arma el `Config` desde `DestructiveScopeLogic.model` + `L10n`. `hasOutstandingDebt`/
+    /// `hasLegacyCloudKitFootprint` solo influyen en `deleteAccount*`; `onSecondary` solo se usa si el
+    /// modelo declara acción secundaria (eliminar-cuenta con deuda) y el callsite la provee.
+    static func make(
+        operation: DestructiveScopeLogic.Operation,
+        cloudLabel: DestructiveScopeLogic.CloudLabel,
+        hasOutstandingDebt: Bool = false,
+        hasLegacyCloudKitFootprint: Bool = false,
+        onConfirm: @escaping () -> Void,
+        onSecondary: (() -> Void)? = nil
+    ) -> Self {
+        let model = DestructiveScopeLogic.model(
+            operation: operation,
+            cloudLabel: cloudLabel,
+            hasOutstandingDebt: hasOutstandingDebt,
+            hasLegacyCloudKitFootprint: hasLegacyCloudKitFootprint)
+
+        let rows = model.rows.map { spec in
+            Row(icon: Self.icon(for: spec.location),
+                label: Self.label(for: spec.location, cloudLabel: model.cloudLabel),
+                detail: Self.detail(operation: operation, location: spec.location, cloudLabel: model.cloudLabel),
+                tone: spec.tone)
+        }
+
+        var secondary: SecondaryAction?
+        if model.hasSecondaryAction, let onSecondary {
+            secondary = SecondaryAction(label: L10n.Settings.deleteAccountViewGroups,
+                                        identifier: "delete_account_view_groups",
+                                        handler: onSecondary)
+        }
+
+        return Self(
+            title: Self.title(for: operation),
+            rows: rows,
+            conservationNote: model.hasConservationNote ? Self.conservation(for: operation) : nil,
+            extraLines: model.extraLines.map { Self.extraLine(for: $0) },
+            secondary: secondary,
+            confirmLabel: Self.confirmLabel(for: operation),
+            confirmIdentifier: Self.confirmIdentifier(for: operation),
+            cancelLabel: L10n.Common.cancel,
+            onConfirm: onConfirm)
+    }
+
+    // MARK: Mapeo token → string
+
+    private static func icon(for location: DestructiveScopeLogic.Location) -> String {
+        switch location {
+        case .device: return "iphone"
+        case .cloud:  return "icloud"
+        case .groups: return "person.2"
+        }
+    }
+
+    private static func label(
+        for location: DestructiveScopeLogic.Location,
+        cloudLabel: DestructiveScopeLogic.CloudLabel
+    ) -> String {
+        switch location {
+        case .device: return L10n.Settings.scopeDeviceLabel
+        case .cloud:  return cloudLabel == .cloudAccount
+            ? L10n.Settings.scopeCloudAccountLabel : L10n.Settings.scopeICloudLabel
+        case .groups: return L10n.Settings.scopeGroupsLabel
+        }
+    }
+
+    private static func detail(
+        operation: DestructiveScopeLogic.Operation,
+        location: DestructiveScopeLogic.Location,
+        cloudLabel: DestructiveScopeLogic.CloudLabel
+    ) -> String {
+        switch operation {
+        case .wipeDataFull:
+            switch location {
+            case .device: return L10n.Settings.wipeScopeDevice
+            case .cloud:  return cloudLabel == .cloudAccount
+                ? L10n.Settings.wipeScopeCloudAccount : L10n.Settings.wipeScopeCloudICloud
+            case .groups: return L10n.Settings.wipeScopeGroups
+            }
+        case .wipeDataGroupsOnly:
+            switch location {
+            case .device: return L10n.Settings.wipeScopeDeviceGroupsOnly
+            case .cloud:  return L10n.Settings.wipeScopeCloudICloud
+            case .groups: return L10n.Settings.wipeScopeGroups
+            }
+        case .deleteAccountCloud:
+            switch location {
+            case .device: return L10n.Settings.deleteAccountScopeDeviceCloud
+            case .cloud:  return L10n.Settings.deleteAccountScopeCloudCloud
+            case .groups: return L10n.Settings.deleteAccountScopeGroups
+            }
+        case .deleteAccountGroupsOnly:
+            switch location {
+            case .device: return L10n.Settings.deleteAccountScopeDeviceGroupsOnly
+            case .cloud:  return L10n.Settings.deleteAccountScopeCloudGroupsOnly
+            case .groups: return L10n.Settings.deleteAccountScopeGroups
+            }
+        case .signOutPrivate:
+            switch location {
+            case .device: return L10n.Settings.signOutScopeDevicePrivate
+            case .cloud:  return L10n.Settings.signOutScopeCloudPrivate
+            case .groups: return L10n.Settings.scopeUntouchedShort
+            }
+        case .signOutCloud:
+            switch location {
+            case .device: return L10n.Settings.signOutScopeDeviceCloud
+            case .cloud:  return L10n.Settings.signOutScopeCloudCloud
+            case .groups: return L10n.Settings.scopeUntouchedShort
+            }
+        case .signOutSecondary:
+            switch location {
+            case .device: return L10n.Settings.signOutScopeDeviceSecondary
+            case .cloud:  return L10n.Settings.signOutScopeCloudSecondary
+            case .groups: return L10n.Settings.scopeUntouchedShort
+            }
+        case .signOutGroupsOnly:
+            switch location {
+            case .device: return L10n.Settings.signOutScopeDeviceGroupsOnly
+            case .cloud:  return L10n.Settings.scopePersonalInICloud
+            case .groups: return L10n.Settings.scopeForgetGroups
+            }
+        case .exitYalaLegacy:
+            switch location {
+            case .device: return L10n.Settings.exitYalaScopeDeviceLegacy
+            case .cloud:  return L10n.Settings.exitYalaScopeCloudLegacy
+            case .groups: return L10n.Settings.exitYalaScopeGroupsLegacy
+            }
+        case .exitYalaGroups:
+            switch location {
+            case .device: return L10n.Settings.exitYalaScopeDeviceGroups
+            case .cloud:  return L10n.Settings.scopePersonalInICloud
+            case .groups: return L10n.Settings.scopeForgetGroups
+            }
+        case .deleteFrozenCopy:
+            switch location {
+            case .device: return L10n.Settings.deleteFrozenScopeDevice
+            case .cloud:  return L10n.Settings.deleteFrozenScopeCloud
+            case .groups: return L10n.Settings.deleteFrozenScopeGroups
+            }
+        }
+    }
+
+    private static func title(for operation: DestructiveScopeLogic.Operation) -> String {
+        switch operation {
+        case .wipeDataFull, .wipeDataGroupsOnly:
+            return L10n.Settings.deleteDataConfirmation
+        case .deleteAccountCloud, .deleteAccountGroupsOnly:
+            return L10n.Settings.deleteAccountConfirmTitle
+        case .signOutPrivate, .signOutCloud, .signOutSecondary, .signOutGroupsOnly:
+            return L10n.Settings.signOutConfirmTitle
+        case .exitYalaLegacy, .exitYalaGroups:
+            return L10n.Settings.exitYalaConfirmTitle
+        case .deleteFrozenCopy:
+            return L10n.Groups.Migrated.deleteCopyConfirmTitle
+        }
+    }
+
+    private static func confirmLabel(for operation: DestructiveScopeLogic.Operation) -> String {
+        switch operation {
+        case .wipeDataFull, .wipeDataGroupsOnly:
+            return L10n.Settings.deleteAllDataAction
+        case .deleteAccountCloud, .deleteAccountGroupsOnly:
+            return L10n.Settings.deleteAccountContinue
+        case .signOutPrivate, .signOutCloud, .signOutSecondary, .signOutGroupsOnly:
+            return L10n.Settings.signOutConfirmAction
+        case .exitYalaLegacy, .exitYalaGroups:
+            return L10n.Settings.exitYalaConfirmAction
+        case .deleteFrozenCopy:
+            return L10n.Groups.Migrated.deleteCopyConfirmButton
+        }
+    }
+
+    /// Preserva los identifiers que `DeleteAccountDialogUITests` asserta; el resto usa el genérico.
+    private static func confirmIdentifier(for operation: DestructiveScopeLogic.Operation) -> String {
+        switch operation {
+        case .deleteAccountCloud, .deleteAccountGroupsOnly: return "delete_account_continue"
+        default: return "destructive_scope_confirm"
+        }
+    }
+
+    private static func conservation(for operation: DestructiveScopeLogic.Operation) -> String {
+        switch operation {
+        case .wipeDataFull:       return L10n.Settings.wipeScopeConservation
+        case .signOutPrivate:     return L10n.Settings.signOutScopeConservationPrivate
+        case .signOutCloud:       return L10n.Settings.signOutScopeConservationCloud
+        case .signOutSecondary:   return L10n.Settings.signOutScopeConservationSecondary
+        case .signOutGroupsOnly, .exitYalaGroups:
+            return L10n.Settings.signOutScopeConservationGroups
+        case .exitYalaLegacy:     return L10n.Settings.exitYalaScopeConservationLegacy
+        case .deleteFrozenCopy:   return L10n.Settings.deleteFrozenScopeConservation
+        // Operaciones sin nota de conservación (`hasConservationNote == false`): nunca se llama.
+        case .wipeDataGroupsOnly, .deleteAccountCloud, .deleteAccountGroupsOnly:
+            return ""
+        }
+    }
+
+    private static func extraLine(for role: DestructiveScopeLogic.ExtraLine) -> ExtraLineItem {
+        switch role {
+        case .debtWarning:
+            return ExtraLineItem(text: L10n.Settings.deleteAccountDebtWarning, style: .warning)
+        case .crossRefer:
+            return ExtraLineItem(text: L10n.Settings.deleteAccountCrossReferHint, style: .info)
+        case .frozenICloud:
+            return ExtraLineItem(text: L10n.Settings.deleteAccountFrozenICloudNote, style: .info)
+        case .legacyFootprint:
+            return ExtraLineItem(text: L10n.Settings.deleteAccountLegacyFootprintNote, style: .info)
+        case .multiDeviceResidual:
+            return ExtraLineItem(text: L10n.Settings.wipeScopeMultiDeviceResidual, style: .info)
+        }
+    }
+}
+
+// MARK: - Preview
+
+#Preview("Hoja de alcance — variantes") {
+    struct PreviewHost: View {
+        @State private var op: DestructiveScopeLogic.Operation = .wipeDataFull
+        var body: some View {
+            Color.clear.sheet(isPresented: .constant(true)) {
+                DestructiveScopeSheet(config: .make(
+                    operation: op,
+                    cloudLabel: op == .deleteAccountCloud || op == .signOutCloud ? .cloudAccount : .icloud,
+                    hasOutstandingDebt: op == .deleteAccountCloud,
+                    hasLegacyCloudKitFootprint: op == .deleteAccountCloud,
+                    onConfirm: {},
+                    onSecondary: op == .deleteAccountCloud ? {} : nil))
+            }
+        }
+    }
+    return PreviewHost()
+}

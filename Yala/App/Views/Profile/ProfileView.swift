@@ -85,6 +85,10 @@ struct ProfileView: View {
     // H-2026-07-18-6: el bloqueo TRANSITORIO del sign-out solo-grupos usa un alert distinto
     // ("un momento más") — el permanente conserva el alert de conexión de siempre.
     @State private var showSignOutPendingAlert = false
+    // D4: flags del patrón anti-carrera de las hojas de alcance — la acción corre en el `onDismiss` del
+    // sheet (con la hoja YA fuera), no en el tap del botón (evita el race dismiss-hoja / transición-shell).
+    @State private var pendingSignOut = false
+    @State private var pendingExitYalaGroups = false
 
     private func syncSignOutUI(from phase: CloudSessionSignOut.Phase) {
         switch phase {
@@ -98,27 +102,31 @@ struct ProfileView: View {
         }
     }
 
-    /// D6 (§3.3.6): el confirmationDialog se comparte entre "Cerrar sesión" y "Salir de Yala
-    /// en este dispositivo"; este flag distingue el segundo (solo-grupos legado 5a) para
-    /// adaptar título/acción/mensaje. Coincide EXACTAMENTE con `shouldShowExitYalaRow`.
+    /// D6 (§3.3.6): la hoja de alcance de sign-out se comparte entre "Cerrar sesión" y "Salir de Yala
+    /// en este dispositivo"; este flag distingue el segundo (solo-grupos legado 5a) → `signOutScopeOperation`
+    /// resuelve `.exitYalaLegacy`. Coincide EXACTAMENTE con `shouldShowExitYalaRow`.
     private var isExitYalaContext: Bool {
         CloudSignOutFlowLogic.shouldShowExitYalaRow(
             isGroupInviteMode: isGroupInviteMode,
             hasLiveSession: CloudAuthService.shared.hasSession)
     }
 
-    /// Título del confirmationDialog — "Salir de Yala" en el solo-grupos legado (D6).
-    private var signOutConfirmTitle: String {
-        isExitYalaContext ? L10n.Settings.exitYalaConfirmTitle : L10n.Settings.signOutConfirmTitle
-    }
-
-    /// Botón de acción destructiva del confirmationDialog (D6).
-    private var signOutConfirmActionLabel: String {
-        isExitYalaContext ? L10n.Settings.exitYalaConfirmAction : L10n.Settings.signOutConfirmAction
+    /// D4: operación de la hoja de alcance de sign-out. `.exitYalaLegacy` para el solo-grupos legado 5a
+    /// (D6, `isExitYalaContext`); si no, mapea el path resuelto por la precedencia CONGELADA. La factory
+    /// (`DestructiveScopeSheet.Config.make`) deriva de aquí el título/botón/filas — reproduce el mapeo D6
+    /// (exitYala → título/acción "Salir de Yala"; resto → "Cerrar sesión").
+    private var signOutScopeOperation: DestructiveScopeLogic.Operation {
+        if isExitYalaContext { return .exitYalaLegacy }
+        switch signOutRowPath {
+        case .privateReset:         return .signOutPrivate
+        case .cloudSecureSignOut:   return .signOutCloud
+        case .secondaryCloudSignOut: return .signOutSecondary
+        case .groupsOnlySignOut:    return .signOutGroupsOnly
+        }
     }
 
     /// Camino de sign-out resuelto por la precedencia CONGELADA (secundaria → nube → solo-grupos →
-    /// privado). SSOT de `signOutConfirmMessage` y `signOutRowLayout`.
+    /// privado). SSOT de `signOutScopeOperation` y `signOutRowLayout`.
     private var signOutRowPath: CloudSignOutFlowLogic.Path {
         CloudSignOutFlowLogic.path(
             for: CloudSyncFlags.storageMode,
@@ -134,19 +142,6 @@ struct ProfileView: View {
             path: signOutRowPath,
             isGroupInviteMode: isGroupInviteMode,
             hasLiveSession: CloudAuthService.shared.hasSession)
-    }
-
-    /// Copy del confirmationDialog de cierre de sesión — misma precedencia que `path()`
-    /// (secundaria → nube → solo-grupos → privado), vía `CloudSignOutFlowLogic`; salvo el
-    /// solo-grupos legado 5a (D6), que muestra el copy de "Salir de Yala".
-    private var signOutConfirmMessage: String {
-        if isExitYalaContext { return L10n.Settings.exitYalaConfirmMessage }
-        switch CloudSignOutFlowLogic.confirmMessage(for: signOutRowPath) {
-        case .icloud: return L10n.Settings.signOutConfirmMessageICloud
-        case .cloud: return L10n.Settings.signOutConfirmMessageCloud
-        case .secondary: return L10n.Settings.signOutConfirmMessageSecondary
-        case .groupsOnly: return L10n.Settings.signOutConfirmMessageGroupsOnly
-        }
     }
 
     /// H-2026-07-18-6: caption honesto mientras el sign-out solo-grupos ESPERA a que se asienten writes
@@ -185,6 +180,9 @@ struct ProfileView: View {
     @State private var showDeleteAccountConfirm = false
     @State private var showDeleteAccountFinal = false
     @State private var showDeleteAccountError = false
+    // D4: patrón anti-carrera — el paso final / desvío a Grupos corre en el `onDismiss` de la hoja.
+    @State private var pendingDeleteAccountFinal = false
+    @State private var pendingViewGroups = false
 
     /// D5 (§3.3.4): resumen READ-ONLY de grupos (nº con deuda del usuario + huella CloudKit legacy),
     /// recomputado al tocar "Eliminar mi cuenta". Alimenta el aviso condicional de saldos y el botón
@@ -199,28 +197,12 @@ struct ProfileView: View {
         UITestHooks.fakeBackendSession || CloudAuthService.shared.hasSession
     }
 
-    /// Copy del PRIMER diálogo — explica qué se borra y dónde según el modo (misma decisión que
-    /// `AccountDeletionService`: `.cloud` vs solo-grupos). D5 (§3.3.4.1): la composición de líneas (aviso
-    /// de deudas condicional, desvío cruzado, copia iCloud congelada, huella legacy) la decide la lógica
-    /// pura `AccountDeletionMessageLogic`; aquí solo se mapea cada `Line` a su string localizado.
-    private var deleteAccountConfirmMessage: String {
-        let isCloud = CloudSyncFlags.storageMode == .cloud
-        let lines = AccountDeletionMessageLogic.lines(
-            isCloud: isCloud,
-            hasOutstandingDebt: deleteAccountGroupsSummary.hasOutstandingDebt,
-            hasLegacyCloudKitFootprint: deleteAccountGroupsSummary.hasLegacyCloudKitFootprint)
-        return lines.map { line in
-            switch line {
-            case .base:
-                return isCloud
-                    ? L10n.Settings.deleteAccountConfirmMessageCloud
-                    : L10n.Settings.deleteAccountConfirmMessageGroupsOnly
-            case .debtWarning:     return L10n.Settings.deleteAccountDebtWarning
-            case .crossRefer:      return L10n.Settings.deleteAccountCrossReferHint
-            case .frozenICloud:    return L10n.Settings.deleteAccountFrozenICloudNote
-            case .legacyFootprint: return L10n.Settings.deleteAccountLegacyFootprintNote
-            }
-        }.joined(separator: "\n\n")
+    /// D4: operación de la hoja de eliminar-cuenta según el modo (misma decisión que `AccountDeletionService`:
+    /// `.cloud` vs solo-grupos backend). La composición de líneas condicionales (deudas D5, desvío cruzado,
+    /// copia iCloud congelada, huella legacy) la sigue decidiendo `AccountDeletionMessageLogic`, reutilizada
+    /// por `DestructiveScopeLogic`; aquí solo se elige la operación (la etiqueta ☁️ es siempre la cuenta de Yala).
+    private var deleteAccountScopeOperation: DestructiveScopeLogic.Operation {
+        CloudSyncFlags.storageMode == .cloud ? .deleteAccountCloud : .deleteAccountGroupsOnly
     }
 
     private func syncDeletionUI(from phase: AccountDeletionService.Phase) {
@@ -352,37 +334,35 @@ struct ProfileView: View {
             } message: { result in
                 Text(result.message)
             }
-            // H4: cierre de sesión — confirmación destructiva con copy honesto por modo.
-            // D6: título/acción/mensaje se adaptan al solo-grupos legado ("Salir de Yala").
-            .confirmationDialog(
-                signOutConfirmTitle,
-                isPresented: $showCloudSignOutConfirm,
-                titleVisibility: .visible
-            ) {
-                Button(signOutConfirmActionLabel, role: .destructive) {
+            // H4 + D4: cierre de sesión — hoja de alcance (3 filas 📱/☁️/👥). La operación (privado/nube/
+            // secundaria/solo-grupos/salir-legado) la resuelve `signOutScopeOperation`; la factory deriva
+            // título/botón/filas (reproduce el mapeo D6 "Salir de Yala"). El botón fija `pendingSignOut` y
+            // cierra la hoja; el `onDismiss` ejecuta el sign-out YA con la hoja fuera (anti-carrera, crítico
+            // en `.privateReset` → Welcome in-session). El cover terminal lo dueña el root vía `.phase`.
+            .sheet(isPresented: $showCloudSignOutConfirm, onDismiss: {
+                if pendingSignOut {
+                    pendingSignOut = false
                     Task { await CloudSessionSignOut.shared.signOut(context: modelContext) }
                 }
-                Button(L10n.Common.cancel, role: .cancel) {}
-            } message: {
-                // El copy honesto sigue la MISMA precedencia que `path()`: secundaria → nube →
-                // solo-grupos → privado (extraído a `CloudSignOutFlowLogic.confirmMessage`).
-                Text(signOutConfirmMessage)
+            }) {
+                DestructiveScopeSheet(config: .make(
+                    operation: signOutScopeOperation,
+                    cloudLabel: DestructiveScopeLogic.cloudLabel(storageMode: CloudSyncFlags.storageMode),
+                    onConfirm: { pendingSignOut = true }))
             }
-            // D2 (§3.3.3): confirm DEDICADO de "Salir de Yala en este dispositivo" (2ª fila del split
+            // D2 (§3.3.3) + D4: hoja DEDICADA de "Salir de Yala en este dispositivo" (2ª fila del split
             // solo-grupos backend) → `.privateReset` FORZADO con boot-wipe de grupos encadenado. Contenedor
-            // DISTINTO del de "Cerrar sesión de grupos" ⇒ el segundo presenta sin carrera same-anchor (los
-            // dos rows son taps mutuamente excluyentes; molde de la doble confirmación de eliminar-cuenta).
-            .confirmationDialog(
-                L10n.Settings.exitYalaConfirmTitle,
-                isPresented: $showExitYalaGroupsConfirm,
-                titleVisibility: .visible
-            ) {
-                Button(L10n.Settings.exitYalaConfirmAction, role: .destructive) {
+            // DISTINTO del de "Cerrar sesión de grupos" ⇒ sin carrera same-anchor (taps mutuamente excluyentes).
+            .sheet(isPresented: $showExitYalaGroupsConfirm, onDismiss: {
+                if pendingExitYalaGroups {
+                    pendingExitYalaGroups = false
                     Task { await CloudSessionSignOut.shared.exitYalaOnThisDevice(context: modelContext) }
                 }
-                Button(L10n.Common.cancel, role: .cancel) {}
-            } message: {
-                Text(L10n.Settings.exitYalaGroupsConfirmMessage)
+            }) {
+                DestructiveScopeSheet(config: .make(
+                    operation: .exitYalaGroups,
+                    cloudLabel: DestructiveScopeLogic.cloudLabel(storageMode: CloudSyncFlags.storageMode),
+                    onConfirm: { pendingExitYalaGroups = true }))
             }
             .alert(L10n.Settings.signOutBlockedTitle, isPresented: $showSignOutBlockedAlert) {
                 Button(L10n.Common.ok, role: .cancel) {
@@ -409,33 +389,34 @@ struct ProfileView: View {
             // armado, solo informar); con `.awaitingRelaunch` el sheet se cierra solo para
             // despejar el anchor del cover terminal del root (dueño único).
             .onAppear { syncSignOutUI(from: signOutCoordinator.phase) }
-            // G5-D1b: eliminar cuenta — DOBLE confirmación. Diálogo 1 (matriz por modo) → alerta 2
-            // (irreversible) → borrado. Diálogo (step 1) y alerta (step 2) usan contenedores de
-            // presentación DISTINTOS ⇒ el segundo presenta tras cerrarse el primero sin carrera same-anchor.
-            .confirmationDialog(
-                L10n.Settings.deleteAccountConfirmTitle,
-                isPresented: $showDeleteAccountConfirm,
-                titleVisibility: .visible
-            ) {
-                // D5 (§3.3.4): con saldos pendientes, se ofrece PRIMERO el desvío seguro a Grupos
-                // (anti-error de destino). INFORMA, jamás bloquea (línea roja GDPR) — "Continuar" sigue
-                // disponible. Cierra el sheet de Ajustes y salta al tab Grupos para saldar/ver.
-                if deleteAccountGroupsSummary.hasOutstandingDebt {
-                    Button(L10n.Settings.deleteAccountViewGroups) {
-                        // Selecciona el tab ANTES del dismiss (patrón de FullModeActivationView): el
-                        // estado del tab vive en el singleton SessionState y sobrevive al cierre del sheet.
-                        SessionState.shared.selectMainTab(.groups)
-                        dismiss()
-                    }
-                    .accessibilityIdentifier("delete_account_view_groups")
-                }
-                Button(L10n.Settings.deleteAccountContinue, role: .destructive) {
+            // G5-D1b + D4: eliminar cuenta — DOBLE confirmación. Paso 1 = hoja de alcance (📱/☁️/👥 + líneas
+            // D5: deudas/desvío/copia congelada/huella legacy). "Continuar" fija `pendingDeleteAccountFinal`;
+            // el desvío SEGURO "Ver mis grupos" (D5, id preservado para `DeleteAccountDialogUITests`) fija
+            // `pendingViewGroups`. El `onDismiss` actúa YA con la hoja fuera: presenta el alert 2 (irreversible,
+            // contenedor DISTINTO → sin carrera) o salta al tab Grupos + cierra Ajustes. INFORMA, jamás bloquea.
+            .sheet(isPresented: $showDeleteAccountConfirm, onDismiss: {
+                // Defense-in-depth: captura el intent y resetea AMBOS flags ANTES de actuar (aunque sean
+                // mutuamente excluyentes por construcción, evita un flag stale en un dismiss posterior).
+                let goFinal = pendingDeleteAccountFinal
+                let goViewGroups = pendingViewGroups
+                pendingDeleteAccountFinal = false
+                pendingViewGroups = false
+                if goFinal {
                     showDeleteAccountFinal = true
+                } else if goViewGroups {
+                    // Selecciona el tab ANTES del dismiss (patrón de FullModeActivationView): el estado del
+                    // tab vive en el singleton SessionState y sobrevive al cierre del sheet de Ajustes.
+                    SessionState.shared.selectMainTab(.groups)
+                    dismiss()
                 }
-                .accessibilityIdentifier("delete_account_continue")
-                Button(L10n.Common.cancel, role: .cancel) {}
-            } message: {
-                Text(deleteAccountConfirmMessage)
+            }) {
+                DestructiveScopeSheet(config: .make(
+                    operation: deleteAccountScopeOperation,
+                    cloudLabel: .cloudAccount,  // eliminar-cuenta = SIEMPRE la cuenta de Yala (backend)
+                    hasOutstandingDebt: deleteAccountGroupsSummary.hasOutstandingDebt,
+                    hasLegacyCloudKitFootprint: deleteAccountGroupsSummary.hasLegacyCloudKitFootprint,
+                    onConfirm: { pendingDeleteAccountFinal = true },
+                    onSecondary: { pendingViewGroups = true }))
             }
             .alert(L10n.Settings.deleteAccountFinalTitle, isPresented: $showDeleteAccountFinal) {
                 Button(L10n.Settings.deleteAccountFinalAction, role: .destructive) {
@@ -970,8 +951,8 @@ struct ProfileView: View {
                     }
 
                 case .groupsSignOutPlusExitYala:
-                    // Fila 1: "Cerrar sesión de grupos" → .groupsOnlySignOut (dispatch por precedencia; el
-                    // confirmationDialog compartido muestra el copy groupsOnly — isExitYalaContext es false).
+                    // Fila 1: "Cerrar sesión de grupos" → .groupsOnlySignOut (dispatch por precedencia; la
+                    // hoja compartida muestra las filas de .signOutGroupsOnly — isExitYalaContext es false).
                     SubsectionDivider()
                     VStack(alignment: .leading, spacing: 0) {
                         Button {
@@ -1009,8 +990,8 @@ struct ProfileView: View {
 
                 case .exitYalaOnly:
                     // D6 (§3.3.6): salida del solo-grupos legado 5a. `.privateReset` vuelve al Welcome sin
-                    // tocar datos ni grupos (que siguen en el iCloud del usuario). Reusa el confirmationDialog
-                    // compartido (copy adaptado por `isExitYalaContext`).
+                    // tocar datos ni grupos (que siguen en el iCloud del usuario). Reusa la hoja de alcance
+                    // compartida (operación `.exitYalaLegacy` vía `isExitYalaContext`).
                     SubsectionDivider()
                     Button {
                         showCloudSignOutConfirm = true

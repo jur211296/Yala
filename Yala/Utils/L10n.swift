@@ -4013,21 +4013,8 @@ enum L10n {
         static var deleteDataConfirmation: String {
             ls("settings.deleteDataConfirmation", comment: "")
         }
-        static var deleteDataWarning: String {
-            ls("settings.deleteDataWarning", comment: "")
-        }
-        static var wipeICloudWarning: String {
-            ls("settings.wipeICloudWarning", comment: "")
-        }
-        /// Aclaración: el wipe NO toca grupos (separación A0-Bridge V2.0).
-        static var wipeGroupsExclusionNote: String {
-            ls("settings.wipeGroupsExclusionNote", comment: "")
-        }
-        /// Fase 1 gestión de datos (C2): variante de `wipeICloudWarning` en Modo Nube (`.cloud`) —
-        /// los datos viven en la cuenta de Yala, no en iCloud.
-        static var wipeICloudWarningCloud: String {
-            ls("settings.wipeICloudWarningCloud", comment: "")
-        }
+        // D4: `deleteDataWarning`/`wipeICloudWarning`/`wipeICloudWarningCloud`/`wipeGroupsExclusionNote`
+        // RETIRADAS — el mensaje concatenado de Vaciar lo sustituyen las filas de la hoja de alcance.
         /// Fase 1 (C3): segunda confirmación corta de Vaciar.
         static var wipeDataSecondConfirmTitle: String {
             ls("settings.wipeDataSecondConfirmTitle", comment: "")
@@ -4039,28 +4026,15 @@ enum L10n {
         static var resetDataDescriptionGroupsOnly: String {
             ls("settings.resetDataDescriptionGroupsOnly", comment: "")
         }
-        /// Advertencia de la alerta de borrado en modo solo-grupos.
-        static var deleteDataWarningGroupsOnly: String {
-            ls("settings.deleteDataWarningGroupsOnly", comment: "")
-        }
+        // D4: `deleteDataWarningGroupsOnly` RETIRADA — sustituida por las filas de la hoja (5a).
         // Cierre de sesión universal (H4 — privada y nube)
         static var signOut: String { ls("settings.signOut", comment: "") }
         /// Fase 1 (§3.2): subtítulo de la fila "Cerrar sesión".
         static var signOutSubtitle: String { ls("settings.signOutSubtitle", comment: "") }
         static var signOutConfirmTitle: String { ls("settings.signOutConfirmTitle", comment: "") }
         static var signOutConfirmAction: String { ls("settings.signOutConfirmAction", comment: "") }
-        static var signOutConfirmMessageCloud: String {
-            ls("settings.signOutConfirmMessageCloud", comment: "")
-        }
-        static var signOutConfirmMessageICloud: String {
-            ls("settings.signOutConfirmMessageICloud", comment: "")
-        }
-        static var signOutConfirmMessageSecondary: String {
-            ls("settings.signOutConfirmMessageSecondary", comment: "")
-        }
-        static var signOutConfirmMessageGroupsOnly: String {
-            ls("settings.signOutConfirmMessageGroupsOnly", comment: "")
-        }
+        // D4: `signOutConfirmMessage{Cloud,ICloud,Secondary,GroupsOnly}` RETIRADAS — el copy por-path
+        // lo sustituyen las filas de la hoja de alcance (operación resuelta por `signOutScopeOperation`).
         static var groupsAccountRowTitle: String {
             ls("settings.groupsAccountRowTitle", comment: "")
         }
@@ -4079,7 +4053,7 @@ enum L10n {
         static var exitYalaSubtitle: String { ls("settings.exitYalaSubtitle", comment: "") }
         static var exitYalaConfirmTitle: String { ls("settings.exitYalaConfirmTitle", comment: "") }
         static var exitYalaConfirmAction: String { ls("settings.exitYalaConfirmAction", comment: "") }
-        static var exitYalaConfirmMessage: String { ls("settings.exitYalaConfirmMessage", comment: "") }
+        // D4: `exitYalaConfirmMessage` RETIRADA — sustituida por las filas de la hoja (`exitYalaLegacy`).
         // D2 (§3.3.3): división de "Cerrar sesión" en el escenario privado+grupos con sesión backend
         // ([FLAG]) — fila "Cerrar sesión de grupos" (→ .groupsOnlySignOut) + fila "Salir de Yala en este
         // dispositivo" (→ .privateReset forzado, con boot-wipe de grupos encadenado). El título/acción del
@@ -4087,9 +4061,7 @@ enum L10n {
         static var signOutGroups: String { ls("settings.signOutGroups", comment: "") }
         static var signOutGroupsSubtitle: String { ls("settings.signOutGroupsSubtitle", comment: "") }
         static var exitYalaGroupsSubtitle: String { ls("settings.exitYalaGroupsSubtitle", comment: "") }
-        static var exitYalaGroupsConfirmMessage: String {
-            ls("settings.exitYalaGroupsConfirmMessage", comment: "")
-        }
+        // D4: `exitYalaGroupsConfirmMessage` RETIRADA — sustituida por las filas de la hoja (`exitYalaGroups`).
         // Eliminar mi cuenta (G5-D1b — borrado GDPR, DARK)
         static var deleteAccount: String { ls("settings.deleteAccount", comment: "") }
         /// Fase 1 (§3.2): subtítulo de la fila "Eliminar mi cuenta".
@@ -4114,13 +4086,53 @@ enum L10n {
         static var deleteAccountLegacyFootprintNote: String {
             ls("settings.deleteAccountLegacyFootprintNote", comment: "")
         }
+
+        // MARK: - D4 · Hoja de alcance destructiva (§3.1/§3.3)
+        // Etiquetas de fila compartidas + detalles por operación + notas de conservación. Las decide
+        // `DestructiveScopeLogic`; aquí solo el mapeo token→string. La fila ☁️ es dinámica por `storageMode`.
+        static var scopeDeviceLabel: String { ls("settings.scopeDeviceLabel", comment: "") }
+        static var scopeICloudLabel: String { ls("settings.scopeICloudLabel", comment: "") }
+        static var scopeCloudAccountLabel: String { ls("settings.scopeCloudAccountLabel", comment: "") }
+        static var scopeGroupsLabel: String { ls("settings.scopeGroupsLabel", comment: "") }
+        static var scopeUntouchedShort: String { ls("settings.scopeUntouchedShort", comment: "") }
+        static var scopeForgetGroups: String { ls("settings.scopeForgetGroups", comment: "") }
+        static var scopePersonalInICloud: String { ls("settings.scopePersonalInICloud", comment: "") }
+        static var wipeScopeDevice: String { ls("settings.wipeScopeDevice", comment: "") }
+        static var wipeScopeDeviceGroupsOnly: String { ls("settings.wipeScopeDeviceGroupsOnly", comment: "") }
+        static var wipeScopeCloudICloud: String { ls("settings.wipeScopeCloudICloud", comment: "") }
+        static var wipeScopeCloudAccount: String { ls("settings.wipeScopeCloudAccount", comment: "") }
+        static var wipeScopeGroups: String { ls("settings.wipeScopeGroups", comment: "") }
+        static var wipeScopeConservation: String { ls("settings.wipeScopeConservation", comment: "") }
+        static var wipeScopeMultiDeviceResidual: String { ls("settings.wipeScopeMultiDeviceResidual", comment: "") }
+        static var deleteAccountScopeDeviceCloud: String { ls("settings.deleteAccountScopeDeviceCloud", comment: "") }
+        static var deleteAccountScopeDeviceGroupsOnly: String { ls("settings.deleteAccountScopeDeviceGroupsOnly", comment: "") }
+        static var deleteAccountScopeCloudCloud: String { ls("settings.deleteAccountScopeCloudCloud", comment: "") }
+        static var deleteAccountScopeCloudGroupsOnly: String { ls("settings.deleteAccountScopeCloudGroupsOnly", comment: "") }
+        static var deleteAccountScopeGroups: String { ls("settings.deleteAccountScopeGroups", comment: "") }
+        static var signOutScopeDevicePrivate: String { ls("settings.signOutScopeDevicePrivate", comment: "") }
+        static var signOutScopeCloudPrivate: String { ls("settings.signOutScopeCloudPrivate", comment: "") }
+        static var signOutScopeDeviceCloud: String { ls("settings.signOutScopeDeviceCloud", comment: "") }
+        static var signOutScopeCloudCloud: String { ls("settings.signOutScopeCloudCloud", comment: "") }
+        static var signOutScopeDeviceSecondary: String { ls("settings.signOutScopeDeviceSecondary", comment: "") }
+        static var signOutScopeCloudSecondary: String { ls("settings.signOutScopeCloudSecondary", comment: "") }
+        static var signOutScopeDeviceGroupsOnly: String { ls("settings.signOutScopeDeviceGroupsOnly", comment: "") }
+        static var exitYalaScopeDeviceLegacy: String { ls("settings.exitYalaScopeDeviceLegacy", comment: "") }
+        static var exitYalaScopeCloudLegacy: String { ls("settings.exitYalaScopeCloudLegacy", comment: "") }
+        static var exitYalaScopeGroupsLegacy: String { ls("settings.exitYalaScopeGroupsLegacy", comment: "") }
+        static var exitYalaScopeDeviceGroups: String { ls("settings.exitYalaScopeDeviceGroups", comment: "") }
+        static var signOutScopeConservationPrivate: String { ls("settings.signOutScopeConservationPrivate", comment: "") }
+        static var signOutScopeConservationCloud: String { ls("settings.signOutScopeConservationCloud", comment: "") }
+        static var signOutScopeConservationSecondary: String { ls("settings.signOutScopeConservationSecondary", comment: "") }
+        static var signOutScopeConservationGroups: String { ls("settings.signOutScopeConservationGroups", comment: "") }
+        static var exitYalaScopeConservationLegacy: String { ls("settings.exitYalaScopeConservationLegacy", comment: "") }
+        static var deleteFrozenScopeDevice: String { ls("settings.deleteFrozenScopeDevice", comment: "") }
+        static var deleteFrozenScopeCloud: String { ls("settings.deleteFrozenScopeCloud", comment: "") }
+        static var deleteFrozenScopeGroups: String { ls("settings.deleteFrozenScopeGroups", comment: "") }
+        static var deleteFrozenScopeConservation: String { ls("settings.deleteFrozenScopeConservation", comment: "") }
+
         static var deleteAccountConfirmTitle: String { ls("settings.deleteAccountConfirmTitle", comment: "") }
-        static var deleteAccountConfirmMessageCloud: String {
-            ls("settings.deleteAccountConfirmMessageCloud", comment: "")
-        }
-        static var deleteAccountConfirmMessageGroupsOnly: String {
-            ls("settings.deleteAccountConfirmMessageGroupsOnly", comment: "")
-        }
+        // D4: `deleteAccountConfirmMessage{Cloud,GroupsOnly}` RETIRADAS — la línea `.base` se reparte en
+        // las 3 filas de la hoja; las condicionales (deudas/desvío/copia congelada/huella) se conservan.
         static var deleteAccountContinue: String { ls("settings.deleteAccountContinue", comment: "") }
         static var deleteAccountFinalTitle: String { ls("settings.deleteAccountFinalTitle", comment: "") }
         static var deleteAccountFinalMessage: String { ls("settings.deleteAccountFinalMessage", comment: "") }

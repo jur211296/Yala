@@ -17,10 +17,12 @@ struct UserDataResetView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(ThemeManager.self) private var themeManager
 
-    @State private var isShowingConfirmationAlert = false
-    // Fase 1 (C3): segunda confirmación. El paso 1 (confirmationDialog) y el paso 2 (alert) usan
-    // contenedores de presentación DISTINTOS ⇒ el segundo presenta tras cerrarse el primero sin
-    // carrera same-anchor (mismo patrón que "Eliminar mi cuenta", ProfileView).
+    // D4 (§3.3.1): paso 1 = hoja de alcance (`.sheet`, `DestructiveScopeSheet`). El botón destructivo fija
+    // `pendingSecondConfirm` y cierra la hoja; su `onDismiss` presenta el paso 2 (alert corto) YA con la hoja
+    // fuera (anti-carrera). La mecánica de `wipeAllUserData` NO cambia.
+    @State private var isShowingScopeSheet = false
+    @State private var pendingSecondConfirm = false
+    // Fase 1 (C3): segunda confirmación (alert corto). Contenedor DISTINTO del paso 1 ⇒ sin carrera same-anchor.
     @State private var isShowingSecondConfirmationAlert = false
     @State private var isProcessing = false
     @State private var errorMessage: String?
@@ -33,17 +35,10 @@ struct UserDataResetView: View {
         self.onUserDataWiped = onUserDataWiped
     }
 
-    /// Fase 1 (C2/C3): cuerpo del diálogo de alcance de Vaciar. La advertencia de sincronización
-    /// mira `storageMode` — en Modo Nube (`.cloud`) los datos viven en la cuenta de Yala, no en
-    /// iCloud. Extraído del ViewBuilder (el type-checker no resolvía la concatenación inline).
-    private var wipeScopeMessage: String {
-        let intro = sessionState.isGroupInviteMode
-            ? L10n.Settings.deleteDataWarningGroupsOnly
-            : L10n.Settings.deleteDataWarning
-        let syncWarning = CloudSyncFlags.storageMode == .cloud
-            ? L10n.Settings.wipeICloudWarningCloud
-            : L10n.Settings.wipeICloudWarning
-        return intro + "\n\n" + syncWarning + "\n\n" + L10n.Settings.wipeGroupsExclusionNote
+    /// D4 (§3.3.1): operación de la hoja según el escenario. `wipeDataGroupsOnly` en group-invite (5a),
+    /// `wipeDataFull` en el resto. La etiqueta ☁️ la resuelve `cloudLabel(storageMode)` (mata C2).
+    private var scopeOperation: DestructiveScopeLogic.Operation {
+        sessionState.isGroupInviteMode ? .wipeDataGroupsOnly : .wipeDataFull
     }
 
     var body: some View {
@@ -69,7 +64,7 @@ struct UserDataResetView: View {
                             SubsectionDivider()
 
                             Button(role: .destructive) {
-                                isShowingConfirmationAlert = true
+                                isShowingScopeSheet = true
                             } label: {
                                 HStack {
                                     if isProcessing {
@@ -96,24 +91,21 @@ struct UserDataResetView: View {
         .navigationTitle(L10n.Settings.resetData)
         .navigationBarTitleDisplayMode(.inline)
 
-        // Paso 1 — diálogo de alcance (qué se borra / qué se conserva). "Continuar" abre el paso 2.
-        .confirmationDialog(
-            L10n.Settings.deleteDataConfirmation,
-            isPresented: $isShowingConfirmationAlert,
-            titleVisibility: .visible
-        ) {
-            Button(L10n.Action.continueAction, role: .destructive) {
+        // Paso 1 — hoja de alcance (D4): 3 filas (📱/☁️/👥) + nota de conservación. "Vaciar definitivamente"
+        // fija `pendingSecondConfirm` y cierra la hoja; el `onDismiss` presenta el paso 2 sin carrera.
+        .sheet(isPresented: $isShowingScopeSheet, onDismiss: {
+            if pendingSecondConfirm {
+                pendingSecondConfirm = false
                 isShowingSecondConfirmationAlert = true
             }
-
-            Button(L10n.Settings.cancel, role: .cancel) {
-                // El usuario se arrepiente, no hacemos nada.
-            }
-        } message: {
-            Text(wipeScopeMessage)
+        }) {
+            DestructiveScopeSheet(config: .make(
+                operation: scopeOperation,
+                cloudLabel: DestructiveScopeLogic.cloudLabel(storageMode: CloudSyncFlags.storageMode),
+                onConfirm: { pendingSecondConfirm = true }))
         }
 
-        // Paso 2 — confirmación final corta (C3). Contenedor DISTINTO al paso 1 (alert vs dialog).
+        // Paso 2 — confirmación final corta (C3). Contenedor DISTINTO al paso 1 (alert vs sheet).
         .alert(
             L10n.Settings.wipeDataSecondConfirmTitle,
             isPresented: $isShowingSecondConfirmationAlert

@@ -1181,9 +1181,6 @@
 "settings.monday" = "月曜日";
 "settings.resetDataDescription" = "この操作はYalaのプロフィールに関連付けられた口座、取引、予算、為替レート、カテゴリーなどのデータを完全に削除します。削除後、アプリは初期設定に近い状態に戻ります。";
 "settings.deleteDataConfirmation" = "データを消去しますか？";
-"settings.deleteDataWarning" = "この操作は取り消せません。すべての口座、取引、予算、為替レート、カテゴリーが削除されます。Yalaは初期設定に近い状態にリセットされ、データは復元できません。";
-"settings.wipeICloudWarning" = "iCloudのデータも削除されます。同期している他のデバイスからもこのデータが消えます。";
-"settings.wipeGroupsExclusionNote" = "これにはグループは含まれません。グループから抜けるには、グループタブで保留中を清算してから退会してください。";
 "settings.delete" = "削除";
 "settings.cancel" = "キャンセル";
 "settings.iconOriginal" = "オリジナル";
@@ -4399,7 +4396,6 @@
 "settings.resetDataDescriptionGroupsOnly" = "この操作で、Yalaのプロフィールと設定が初期状態に戻ります。グループは削除されません。「グループ」タブで管理してください。";
 
 /* Delete-data confirmation warning — groups-only mode */
-"settings.deleteDataWarningGroupsOnly" = "この操作は取り消せません。Yalaのプロフィールと設定がリセットされます。";
 
 /* Apple Pay automation: failure notification title */
 "shortcut.notification.errorTitle" = "支払いを記録できませんでした";
@@ -4759,10 +4755,8 @@
 "settings.signOutConfirmAction" = "サインアウト";
 
 /* Sign out dialog message when in cloud storage mode */
-"settings.signOutConfirmMessageCloud" = "まず保留中の変更をクラウドにアップロードします。データはアカウントに安全に保存されたまま、このデバイスはインストール直後の状態で開始画面に戻ります。";
 
 /* Sign out dialog message when in private iCloud mode */
-"settings.signOutConfirmMessageICloud" = "データは削除されません。このデバイスとiCloudに残ります。開始画面に戻り、いつでもまたサインインできます。";
 
 /* Alert title when pending uploads block sign out */
 "settings.signOutBlockedTitle" = "サインアウトできませんでした";
@@ -4831,7 +4825,6 @@
 "welcome.cloud.continueToApp" = "アプリに進む";
 
 /* Sign-out confirm message for a secondary (guest) cloud session — guest data leaves the device, owner data untouched */
-"settings.signOutConfirmMessageSecondary" = "まず、保留中の変更をあなたのアカウントにアップロードします。あなたのデータはこのデバイスから削除されます（アカウント内には安全に保存されたままです）。デバイスの所有者のデータには影響しません。";
 
 /* Title of the secondary-session confirm step (guest entering own cloud account on someone else's device) */
 "welcome.cloud.secondaryConfirmTitle" = "自分のアカウントで入る";
@@ -4894,7 +4887,6 @@
 "groups.signin.error" = "アカウントを連携できませんでした。もう一度お試しください。";
 
 /* Confirm message for groups-only sign-out (G5-B) */
-"settings.signOutConfirmMessageGroupsOnly" = "サインアウトすると、このデバイスはあなたのグループを忘れます（グループはYalaのクラウドに残ります。もう一度サインインすれば表示されます）。個人データはそのままです。";
 
 /* Groups account informational row title (G5-B) */
 "settings.groupsAccountRowTitle" = "グループアカウント";
@@ -4909,9 +4901,7 @@
 /* G5-D1b: título del primer diálogo */
 "settings.deleteAccountConfirmTitle" = "Yalaアカウントを削除しますか？";
 /* G5-D1b: primer diálogo, modo nube */
-"settings.deleteAccountConfirmMessageCloud" = "Yalaのクラウドデータ（口座、支出、予算など）とこの端末のデータが完全に削除されます。共有しているグループでは「削除されたユーザー」と表示されます。この操作は取り消せません。";
 /* G5-D1b: primer diálogo, modo solo-grupos */
-"settings.deleteAccountConfirmMessageGroupsOnly" = "Yalaのクラウドアカウントが削除され、グループから退出します。「削除されたユーザー」と表示されるようになります。この端末の個人データはそのまま残ります。この操作は取り消せません。";
 /* G5-D1b: acción del primer diálogo */
 "settings.deleteAccountContinue" = "続ける";
 /* G5-D1b: título de la alerta irreversible */
@@ -5037,7 +5027,6 @@
 "storage.relaunch.bodyAutoExitGroupsOnly" = "グループからサインアウトしました。ホーム画面に戻り、もう一度 Yala を開いてください。個人データはこのデバイスに残ります。";
 
 /* Fase 1 C2: variante Modo Nube de wipeICloudWarning (datos en la cuenta de Yala, no iCloud) */
-"settings.wipeICloudWarningCloud" = "Yalaアカウントのデータも削除されます。同期している他のデバイスからもこのデータが消えます。";
 
 /* Fase 1 C3: titulo de la segunda confirmacion de Vaciar mis datos */
 "settings.wipeDataSecondConfirmTitle" = "本当によろしいですか？取り消せません。";
@@ -5070,7 +5059,6 @@
 "settings.exitYalaConfirmAction" = "Yalaから出る";
 
 /* D6: confirmation dialog message for 'Salir de Yala' */
-"settings.exitYalaConfirmMessage" = "開始画面に戻ります。グループはiCloudにそのまま残るので、いつでもまた入れます。";
 
 /* D6: header title of the group-only export screen */
 "export.groupsOnlyTitle" = "グループをエクスポート";
@@ -5097,7 +5085,6 @@
 "settings.exitYalaGroupsSubtitle" = "開始画面に戻ります。データは削除されません";
 
 /* D2 (3.3.3): mensaje del dialogo de 'Salir de Yala' en el split solo-grupos backend */
-"settings.exitYalaGroupsConfirmMessage" = "開始画面に戻り、このデバイスはあなたのグループを忘れます（グループはアカウントに残ります。もう一度サインインすれば表示されます）。個人データは削除されません。";
 
 /* D2 (3.3.3): banner one-shot de re-entrada sobre el empty state H-7 */
 "groups.empty.signedOut.reentryBanner" = "グループからサインアウトしました。もう一度見たくなったら、いつでもサインインしてください。";
@@ -5113,3 +5100,120 @@
 
 /* D5: aviso de huella legacy — el nombre persiste en zonas CloudKit tras el borrado de cuenta */
 "settings.deleteAccountLegacyFootprintNote" = "以前の（iCloud）グループでは、あなたの名前がメンバーに引き続き表示される場合があります。";
+
+/* D4 hoja de alcance: etiqueta fila dispositivo */
+"settings.scopeDeviceLabel" = "このデバイス";
+
+/* D4 hoja de alcance: etiqueta fila iCloud (modo privado) */
+"settings.scopeICloudLabel" = "iCloud";
+
+/* D4 hoja de alcance: etiqueta fila cuenta de Yala (modo nube) */
+"settings.scopeCloudAccountLabel" = "Yalaアカウント";
+
+/* D4 hoja de alcance: etiqueta fila grupos */
+"settings.scopeGroupsLabel" = "あなたのグループ";
+
+/* D4: detalle fila cuando algo no se ve afectado */
+"settings.scopeUntouchedShort" = "そのまま";
+
+/* D4: fila grupos al cerrar sesión de grupos */
+"settings.scopeForgetGroups" = "このデバイスはあなたのグループを忘れます（グループはアカウントに残ります）";
+
+/* D4: fila cuando lo personal en iCloud no se toca */
+"settings.scopePersonalInICloud" = "個人データはiCloudに残ります";
+
+/* D4 Vaciar: fila dispositivo */
+"settings.wipeScopeDevice" = "口座・記録・予算が削除されます";
+
+/* D4 Vaciar (solo grupos 5a): fila dispositivo */
+"settings.wipeScopeDeviceGroupsOnly" = "プロフィールと設定がリセットされます";
+
+/* D4 Vaciar: fila iCloud (modo privado) */
+"settings.wipeScopeCloudICloud" = "iCloudからも削除され、他のデバイスからも消えます";
+
+/* D4 Vaciar: fila cuenta de Yala (modo nube) */
+"settings.wipeScopeCloudAccount" = "アカウントからも削除され、同期時に他のデバイスからも消えます";
+
+/* D4 Vaciar: fila grupos */
+"settings.wipeScopeGroups" = "変更されません — そのままです";
+
+/* D4 Vaciar: nota de conservación */
+"settings.wipeScopeConservation" = "Proサブスクリプションは変わりません。";
+
+/* D4 Vaciar (modo nube): residual multi-dispositivo (D9) */
+"settings.wipeScopeMultiDeviceResidual" = "オフラインのデバイスがあると、同期時に最近の変更が戻ってくることがあります。";
+
+/* D4 Eliminar cuenta (nube): fila dispositivo */
+"settings.deleteAccountScopeDeviceCloud" = "このデバイスのデータが削除されます";
+
+/* D4 Eliminar cuenta (solo grupos backend): fila dispositivo */
+"settings.deleteAccountScopeDeviceGroupsOnly" = "このデバイスの個人データはそのままです";
+
+/* D4 Eliminar cuenta (nube): fila cuenta de Yala */
+"settings.deleteAccountScopeCloudCloud" = "アカウントとすべてのデータが完全に削除されます";
+
+/* D4 Eliminar cuenta (solo grupos backend): fila cuenta de Yala */
+"settings.deleteAccountScopeCloudGroupsOnly" = "アカウントが削除され、グループから退出します";
+
+/* D4 Eliminar cuenta: fila grupos */
+"settings.deleteAccountScopeGroups" = "「削除されたユーザー」と表示されたままになります";
+
+/* D4 Cerrar sesión (privado): fila dispositivo */
+"settings.signOutScopeDevicePrivate" = "何も削除されません。開始画面に戻ります";
+
+/* D4 Cerrar sesión (privado): fila iCloud */
+"settings.signOutScopeCloudPrivate" = "データはiCloudに残ります";
+
+/* D4 Cerrar sesión (nube): fila dispositivo */
+"settings.signOutScopeDeviceCloud" = "インストール直後の状態で開始画面に戻ります";
+
+/* D4 Cerrar sesión (nube): fila cuenta de Yala */
+"settings.signOutScopeCloudCloud" = "データは安全に保存されます。まず保留中の変更をアップロードします";
+
+/* D4 Cerrar sesión (sesión secundaria): fila dispositivo */
+"settings.signOutScopeDeviceSecondary" = "このデバイスからデータが削除されます（アカウントには残ります）";
+
+/* D4 Cerrar sesión (sesión secundaria): fila cuenta de Yala */
+"settings.signOutScopeCloudSecondary" = "データはアカウントに安全に残ります";
+
+/* D4 Cerrar sesión de grupos: fila dispositivo */
+"settings.signOutScopeDeviceGroupsOnly" = "個人データはそのままです";
+
+/* D4 Salir de Yala (solo grupos legado 5a): fila dispositivo */
+"settings.exitYalaScopeDeviceLegacy" = "開始画面に戻ります。データはそのままです";
+
+/* D4 Salir de Yala (5a): fila iCloud */
+"settings.exitYalaScopeCloudLegacy" = "グループはあなたのiCloudに残ります";
+
+/* D4 Salir de Yala (5a): fila grupos */
+"settings.exitYalaScopeGroupsLegacy" = "あなたのiCloudに残ります";
+
+/* D4 Salir de Yala (split D2): fila dispositivo */
+"settings.exitYalaScopeDeviceGroups" = "開始画面に戻ります。データは削除されません";
+
+/* D4 Cerrar sesión (privado): nota de conservación */
+"settings.signOutScopeConservationPrivate" = "いつでもまたサインインできます。データはここに残ります。";
+
+/* D4 Cerrar sesión (nube): nota de conservación */
+"settings.signOutScopeConservationCloud" = "いつでもまたサインインして、すべてを取り戻せます。";
+
+/* D4 Cerrar sesión (secundaria): nota de conservación */
+"settings.signOutScopeConservationSecondary" = "このデバイスの所有者のデータには影響しません。";
+
+/* D4 Cerrar sesión de grupos / Salir (D2): nota de conservación */
+"settings.signOutScopeConservationGroups" = "グループを見るには、いつでもまたサインインしてください。";
+
+/* D4 Salir de Yala (5a): nota de conservación */
+"settings.exitYalaScopeConservationLegacy" = "いつでもまた入れます。グループはあなたのiCloudに残ります。";
+
+/* D4 Borrar copia congelada: fila dispositivo */
+"settings.deleteFrozenScopeDevice" = "このデバイスからは何も失われません";
+
+/* D4 Borrar copia congelada: fila iCloud */
+"settings.deleteFrozenScopeCloud" = "このグループの古いiCloudのコピーが削除されます";
+
+/* D4 Borrar copia congelada: fila grupos */
+"settings.deleteFrozenScopeGroups" = "グループはYalaアカウントでそのまま残ります";
+
+/* D4 Borrar copia congelada: nota de conservación */
+"settings.deleteFrozenScopeConservation" = "何も失われません。グループの本当のデータはYalaアカウントにあります。";

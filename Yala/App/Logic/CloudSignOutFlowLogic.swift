@@ -58,23 +58,9 @@ nonisolated enum CloudSignOutFlowLogic {
         return .privateReset
     }
 
-    /// Copy honesto del confirmationDialog por camino (G5-B). Extraído para testear la precedencia
-    /// (idéntica a `path`); el mapeo enum → string localizado vive en `ProfileView`.
-    enum ConfirmMessage: Equatable {
-        case icloud
-        case cloud
-        case secondary
-        case groupsOnly
-    }
-
-    static func confirmMessage(for path: Path) -> ConfirmMessage {
-        switch path {
-        case .privateReset: return .icloud
-        case .cloudSecureSignOut: return .cloud
-        case .secondaryCloudSignOut: return .secondary
-        case .groupsOnlySignOut: return .groupsOnly
-        }
-    }
+    // D4: `ConfirmMessage`/`confirmMessage(for:)` ELIMINADOS — el copy por-path del sign-out ya no es un
+    // mensaje único; lo sustituyen las filas de la hoja de alcance (`DestructiveScopeLogic`, operación
+    // resuelta en ProfileView por `signOutScopeOperation`). Las keys `signOutConfirmMessage*` fueron retiradas.
 
     /// Fila "Cerrar sesión" en Seguridad y cuenta: SIEMPRE visible (decisión owner —
     /// aplica a privado y nube), excepto en modo group-invite SIN sesión backend viva.
