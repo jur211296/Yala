@@ -36,8 +36,9 @@ struct DestructiveScopeSheet: View {
         let conservationNote: String?
         /// Líneas condicionales bajo las filas (aviso de deudas, desvío cruzado, etc.).
         let extraLines: [ExtraLineItem]
-        /// Acción secundaria SEGURA (p.ej. "Ver mis grupos"). Prominente para desviar de la destrucción.
-        let secondary: SecondaryAction?
+        /// Acciones secundarias SEGURAS EN ORDEN (p.ej. "Ver mis grupos", "Exportar antes"). Prominentes
+        /// para desviar de la destrucción. Vacío = solo [destructiva][Cancelar].
+        let secondaries: [SecondaryAction]
         let confirmLabel: String
         let confirmIdentifier: String
         let cancelLabel: String
@@ -60,6 +61,8 @@ struct DestructiveScopeSheet: View {
         struct SecondaryAction {
             let label: String
             let identifier: String
+            /// Caption pequeño bajo el botón (p.ej. `.cloud` → "esta puede ser tu única copia"). `nil` = sin caption.
+            let caption: String?
             /// Se invoca ANTES del `dismiss()` de la hoja.
             let handler: () -> Void
         }
@@ -152,13 +155,9 @@ struct DestructiveScopeSheet: View {
 
     private var buttons: some View {
         VStack(spacing: DS.Spacing.md) {
-            if let secondary = config.secondary {
-                // Desvío SEGURO prominente (D5): steer away de la destrucción.
-                YalaPrimaryButton(secondary.label) {
-                    secondary.handler()
-                    dismiss()
-                }
-                .accessibilityIdentifier(secondary.identifier)
+            // Desvíos SEGUROS EN ORDEN (D5/§m.4): prominentes sobre la acción destructiva (steer-away).
+            ForEach(config.secondaries.indices, id: \.self) { i in
+                secondaryButton(config.secondaries[i])
             }
 
             YalaSecondaryButton(config.confirmLabel, destructive: true) {
@@ -177,6 +176,24 @@ struct DestructiveScopeSheet: View {
         .padding(.top, DS.Spacing.md)
         .padding(.bottom, DS.Spacing.xl)
     }
+
+    private func secondaryButton(_ action: Config.SecondaryAction) -> some View {
+        VStack(spacing: DS.Spacing.xxs) {
+            YalaPrimaryButton(action.label) {
+                action.handler()
+                dismiss()
+            }
+            .accessibilityIdentifier(action.identifier)
+
+            if let caption = action.caption {
+                Text(caption)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            }
+        }
+    }
 }
 
 // MARK: - Factory (modelo estructural → strings localizados, en UN solo sitio)
@@ -192,7 +209,8 @@ extension DestructiveScopeSheet.Config {
         hasOutstandingDebt: Bool = false,
         hasLegacyCloudKitFootprint: Bool = false,
         onConfirm: @escaping () -> Void,
-        onSecondary: (() -> Void)? = nil
+        onSecondary: (() -> Void)? = nil,
+        onExport: (() -> Void)? = nil
     ) -> Self {
         let model = DestructiveScopeLogic.model(
             operation: operation,
@@ -203,15 +221,31 @@ extension DestructiveScopeSheet.Config {
         let rows = model.rows.map { spec in
             Row(icon: Self.icon(for: spec.location),
                 label: Self.label(for: spec.location, cloudLabel: model.cloudLabel),
-                detail: Self.detail(operation: operation, location: spec.location, cloudLabel: model.cloudLabel),
+                detail: Self.detail(operation: operation, location: spec.location,
+                                    cloudLabel: model.cloudLabel, hasOutstandingDebt: hasOutstandingDebt),
                 tone: spec.tone)
         }
 
-        var secondary: SecondaryAction?
-        if model.hasSecondaryAction, let onSecondary {
-            secondary = SecondaryAction(label: L10n.Settings.deleteAccountViewGroups,
-                                        identifier: "delete_account_view_groups",
-                                        handler: onSecondary)
+        // La lógica pura (`model.secondaryActions`) decide el conjunto + ORDEN; la factory mapea cada kind a
+        // su label/id/handler/caption. Un kind cuyo closure sea nil se OMITE (defensivo).
+        let secondaries: [SecondaryAction] = model.secondaryActions.compactMap { kind in
+            switch kind {
+            case .viewGroups:
+                guard let onSecondary else { return nil }
+                return SecondaryAction(
+                    label: L10n.Settings.deleteAccountViewGroups,
+                    identifier: Self.viewGroupsIdentifier(for: operation),
+                    caption: nil,
+                    handler: onSecondary)
+            case .exportBefore:
+                guard let onExport else { return nil }
+                return SecondaryAction(
+                    label: L10n.Settings.wipeExportBeforeButton,
+                    identifier: "wipe_export_before",
+                    // En `.cloud` esta puede ser la única copia (§3.3.1).
+                    caption: cloudLabel == .cloudAccount ? L10n.Settings.wipeExportBeforeCloudCaption : nil,
+                    handler: onExport)
+            }
         }
 
         return Self(
@@ -219,11 +253,20 @@ extension DestructiveScopeSheet.Config {
             rows: rows,
             conservationNote: model.hasConservationNote ? Self.conservation(for: operation) : nil,
             extraLines: model.extraLines.map { Self.extraLine(for: $0) },
-            secondary: secondary,
+            secondaries: secondaries,
             confirmLabel: Self.confirmLabel(for: operation),
             confirmIdentifier: Self.confirmIdentifier(for: operation),
             cancelLabel: L10n.Common.cancel,
             onConfirm: onConfirm)
+    }
+
+    /// Preserva `delete_account_view_groups` (asertado por `DeleteAccountDialogUITests`) en eliminar-cuenta;
+    /// Vaciar usa `wipe_view_groups` (contexto distinto).
+    private static func viewGroupsIdentifier(for operation: DestructiveScopeLogic.Operation) -> String {
+        switch operation {
+        case .deleteAccountCloud, .deleteAccountGroupsOnly: return "delete_account_view_groups"
+        default: return "wipe_view_groups"
+        }
     }
 
     // MARK: Mapeo token → string
@@ -251,21 +294,25 @@ extension DestructiveScopeSheet.Config {
     private static func detail(
         operation: DestructiveScopeLogic.Operation,
         location: DestructiveScopeLogic.Location,
-        cloudLabel: DestructiveScopeLogic.CloudLabel
+        cloudLabel: DestructiveScopeLogic.CloudLabel,
+        hasOutstandingDebt: Bool
     ) -> String {
+        // Fila 👥 de Vaciar: con deuda invita a saldar (steer-away); sin deuda, "no se tocan".
+        let wipeGroupsDetail = hasOutstandingDebt
+            ? L10n.Settings.wipeScopeGroupsDebt : L10n.Settings.wipeScopeGroups
         switch operation {
         case .wipeDataFull:
             switch location {
             case .device: return L10n.Settings.wipeScopeDevice
             case .cloud:  return cloudLabel == .cloudAccount
                 ? L10n.Settings.wipeScopeCloudAccount : L10n.Settings.wipeScopeCloudICloud
-            case .groups: return L10n.Settings.wipeScopeGroups
+            case .groups: return wipeGroupsDetail
             }
         case .wipeDataGroupsOnly:
             switch location {
             case .device: return L10n.Settings.wipeScopeDeviceGroupsOnly
             case .cloud:  return L10n.Settings.wipeScopeCloudICloud
-            case .groups: return L10n.Settings.wipeScopeGroups
+            case .groups: return wipeGroupsDetail
             }
         case .deleteAccountCloud:
             switch location {
@@ -398,16 +445,22 @@ extension DestructiveScopeSheet.Config {
 
 #Preview("Hoja de alcance — variantes") {
     struct PreviewHost: View {
+        // D4: por defecto Vaciar en `.cloud` con deuda → dos steer-away (Ver mis grupos + Exportar antes),
+        // caption "única copia" y línea de residual multi-device (D9). Cambia `op` para ver otras variantes.
         @State private var op: DestructiveScopeLogic.Operation = .wipeDataFull
+        private var isCloud: Bool {
+            op == .wipeDataFull || op == .deleteAccountCloud || op == .signOutCloud
+        }
         var body: some View {
             Color.clear.sheet(isPresented: .constant(true)) {
                 DestructiveScopeSheet(config: .make(
                     operation: op,
-                    cloudLabel: op == .deleteAccountCloud || op == .signOutCloud ? .cloudAccount : .icloud,
-                    hasOutstandingDebt: op == .deleteAccountCloud,
+                    cloudLabel: isCloud ? .cloudAccount : .icloud,
+                    hasOutstandingDebt: op == .wipeDataFull || op == .deleteAccountCloud,
                     hasLegacyCloudKitFootprint: op == .deleteAccountCloud,
                     onConfirm: {},
-                    onSecondary: op == .deleteAccountCloud ? {} : nil))
+                    onSecondary: {},
+                    onExport: {}))
             }
         }
     }

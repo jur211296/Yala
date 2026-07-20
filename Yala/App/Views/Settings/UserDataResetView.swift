@@ -22,23 +22,33 @@ struct UserDataResetView: View {
     // fuera (anti-carrera). La mecánica de `wipeAllUserData` NO cambia.
     @State private var isShowingScopeSheet = false
     @State private var pendingSecondConfirm = false
+    // v2 (§3.3.1): salidas SEGURAS de la hoja, ejecutadas en su `onDismiss` (hoja YA fuera, anti-carrera).
+    @State private var pendingExport = false          // "Exportar antes" → wizard de export
+    @State private var pendingViewGroups = false      // "Ver mis grupos" (con deuda) → tab Grupos + cierra Ajustes
+    @State private var isShowingExportWizard = false
     // Fase 1 (C3): segunda confirmación (alert corto). Contenedor DISTINTO del paso 1 ⇒ sin carrera same-anchor.
     @State private var isShowingSecondConfirmationAlert = false
     @State private var isProcessing = false
     @State private var errorMessage: String?
+    /// v2 (§3.3.1): resumen READ-ONLY de grupos (deuda del usuario), recomputado al TAP de "Vaciar datos"
+    /// (molde D5 `ProfileView:1021-1025`: fresco y barato — cero saves, invariante de quiescencia (b) intacto).
+    @State private var groupsSummary: AccountDeletionGroupsSummary = .empty
 
-    /// Callback opcional para notificar que el borrado completo de datos
-    /// se ha realizado y permitir cerrar también la hoja de Ajustes.
-    let onUserDataWiped: (() -> Void)?
+    /// Callback opcional para cerrar la hoja de Ajustes ENTERA desde esta vista PUSHED (su
+    /// `@Environment(\.dismiss)` solo haría *pop* a Profile — B1). Lo usa la finalización del wipe y el
+    /// desvío "Ver mis grupos". ProfileView lo cablea a su propio `dismiss()`.
+    let onRequestCloseSettings: (() -> Void)?
 
-    init(onUserDataWiped: (() -> Void)? = nil) {
-        self.onUserDataWiped = onUserDataWiped
+    init(onRequestCloseSettings: (() -> Void)? = nil) {
+        self.onRequestCloseSettings = onRequestCloseSettings
     }
 
-    /// D4 (§3.3.1): operación de la hoja según el escenario. `wipeDataGroupsOnly` en group-invite (5a),
-    /// `wipeDataFull` en el resto. La etiqueta ☁️ la resuelve `cloudLabel(storageMode)` (mata C2).
+    /// D4 (§3.3.1) + C4: operación de la hoja. `wipeDataGroupsOnly` en group-invite legado 5a (sin vida
+    /// personal); `wipeDataFull` en el resto — incl. 5b (onboarding completed + sesión backend solo-grupos),
+    /// que ve el corpus personal completo con la fila 👥 reflejando sus grupos backend. La sesión NO baja el
+    /// scope (ver `wipeOperation`). La etiqueta ☁️ la resuelve `cloudLabel(storageMode)` (mata C2).
     private var scopeOperation: DestructiveScopeLogic.Operation {
-        sessionState.isGroupInviteMode ? .wipeDataGroupsOnly : .wipeDataFull
+        DestructiveScopeLogic.wipeOperation(isGroupInviteMode: sessionState.isGroupInviteMode)
     }
 
     var body: some View {
@@ -64,6 +74,9 @@ struct UserDataResetView: View {
                             SubsectionDivider()
 
                             Button(role: .destructive) {
+                                // v2: detección READ-ONLY al TAP (molde D5) — alimenta la fila 👥 y el desvío
+                                // "Ver mis grupos". Cero saves (invariante de quiescencia (b) intacto).
+                                groupsSummary = SplitSyncManager.shared.accountDeletionGroupsSummary()
                                 isShowingScopeSheet = true
                             } label: {
                                 HStack {
@@ -94,15 +107,41 @@ struct UserDataResetView: View {
         // Paso 1 — hoja de alcance (D4): 3 filas (📱/☁️/👥) + nota de conservación. "Vaciar definitivamente"
         // fija `pendingSecondConfirm` y cierra la hoja; el `onDismiss` presenta el paso 2 sin carrera.
         .sheet(isPresented: $isShowingScopeSheet, onDismiss: {
-            if pendingSecondConfirm {
-                pendingSecondConfirm = false
+            // Molde capture-all → reset-all → act (ProfileView:400-411): 3 salidas mutuamente excluyentes;
+            // se resetean TODOS los flags ANTES de actuar (evita un flag stale en un dismiss posterior).
+            let goSecondConfirm = pendingSecondConfirm
+            let goExport = pendingExport
+            let goViewGroups = pendingViewGroups
+            pendingSecondConfirm = false
+            pendingExport = false
+            pendingViewGroups = false
+            if goSecondConfirm {
                 isShowingSecondConfirmationAlert = true
+            } else if goExport {
+                isShowingExportWizard = true
+            } else if goViewGroups {
+                // Selecciona el tab ANTES de cerrar (el estado vive en el singleton SessionState y sobrevive
+                // al cierre). `onRequestCloseSettings` cierra la hoja de Ajustes ENTERA (NO `dismiss()`, que
+                // solo haría *pop* a Profile dejando Ajustes tapando el tab — B1).
+                SessionState.shared.selectMainTab(.groups)
+                onRequestCloseSettings?()
             }
         }) {
             DestructiveScopeSheet(config: .make(
                 operation: scopeOperation,
                 cloudLabel: DestructiveScopeLogic.cloudLabel(storageMode: CloudSyncFlags.storageMode),
-                onConfirm: { pendingSecondConfirm = true }))
+                hasOutstandingDebt: groupsSummary.hasOutstandingDebt,
+                onConfirm: { pendingSecondConfirm = true },
+                // "Ver mis grupos" solo aparece con deuda (lo decide `DestructiveScopeLogic.secondaryActions`).
+                onSecondary: { pendingViewGroups = true },
+                onExport: { pendingExport = true }))
+        }
+        // v2 (§3.3.1): "Exportar antes" → wizard de export existente (autocontenido: NavigationStack/dismiss
+        // propios; hereda `\.modelContext`/`\.yalaTheme`). Al cerrarlo, regresa a esta vista. Solo aplica a
+        // `wipeDataFull` (el wizard personal exige transacciones; el 5a exporta grupos desde la fila de Ajustes).
+        // SEAM D10: aquí encajará el batch "También salir de mis grupos" (caso sin deuda) — OTRO chip.
+        .sheet(isPresented: $isShowingExportWizard) {
+            ExportFiltersStepView()
         }
 
         // Paso 2 — confirmación final corta (C3). Contenedor DISTINTO al paso 1 (alert vs sheet).
@@ -149,7 +188,7 @@ struct UserDataResetView: View {
         sessionState.isWipingData = true
 
         // 2. Dismiss all sheets first to reduce active observers
-        onUserDataWiped?()
+        onRequestCloseSettings?()
         dismiss()
 
         // 3. Dev-only: reset subscription state BEFORE wipe so UI never sees stale Pro status

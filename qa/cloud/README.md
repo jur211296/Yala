@@ -1283,3 +1283,40 @@ Residuales documentados: evento retenido en el spool offline del cliente se esta
 (distorsión solo offline multi-día); sin rate-limit por IP (D2 — validación estricta + AE barato);
 alerting = consulta manual del dashboard (D5, paridad con lo que había). Tests:
 `gateway/test/metrics.test.ts` (unit, sin red). Cliente iOS: `Yala/Services/Metrics/`.
+
+## Vaciar (wipe masivo por filas) — caracterización del drain en `.cloud`
+
+**Contexto (Vaciar v2, §3.3.1 punto 6 / D2).** "Vaciar mis datos" (`DataWipeService.wipeAllUserData`) borra
+el corpus personal por FILAS con el store montado. Los dos modos difieren en cómo se propaga ese borrado, y
+son MECANISMOS DISTINTOS — no confundirlos:
+
+- **`.icloud` (VIVO hoy):** el mirror de `NSPersistentCloudKitContainer` está montado → el replay de la
+  History EXPORTA los deletes a iCloud (invariante (a), usado A FAVOR: el copy declara "también se borra de
+  iCloud"). No pasa por el outbox/drain del Modo Nube.
+- **`.cloud` ([FLAG]):** el mirror está OFF; el motor del Modo Nube captura los deletes de la History y los
+  drena al **outbox como TOMBSTONES** hacia el backend. **Este es el path que caracteriza el test** — el
+  substrato del residual multi-device (`multiDeviceResidual`, D9).
+
+**Resultado de la caracterización** (`YalaTests/CloudSync/WipeMassRowsCloudDrainTests.swift`, container
+ON-DISK 3 stores): el drain emite **exactamente 1 tombstone por fila personal sync-eligible** que existía al
+vaciar, cada uno con su `syncID` preservado. El volumen del outbox es, por tanto, **~1:1 con el tamaño del
+corpus** (un vaciado de N filas sync-eligibles ≈ N tombstones). No hay amplificación oculta: los clears de
+relaciones del wipe (`setTags`, `budget.setFilters`) emiten `upsert`, no tombstone; el conteo estricto se
+hace sobre `opRaw == tombstone`.
+
+**Load-bearing (no simplificar):** el test hace `seed → save → DRAIN → wipe → drain`. El `drainOnce`
+INTERMEDIO es obligatorio: sin él, los deletes salen SIN `syncID` asignado → *identity gap*, NO tombstone
+(ver `CloudSyncEngineTests` `drain_deleteWithoutSyncID_recordsIdentityGap_noRow`). En producción el device
+`.cloud` drena periódicamente, así que el syncID ya está asignado cuando se borra.
+
+**Caveats del test:** protege `UserDefaults.standard` con snapshot/restore del `persistentDomain` en `defer`
+(molde `DataWipePreservesGroupsTests`) porque `wipeAllUserData` resetea prefs + singletons
+(`AppRouter`/`ProTourManager`/`SetupChecklistManager`); ese snapshot cubre SOLO `.standard` (no App
+Group/TipKit/singletons) — tolerable en `.serialized`. Corre con `broadcastSignal: false` (no toca el iCloud KV).
+
+**Veredicto (gate de QA, NO bloqueante):** el volumen 1:1 es proporcional al corpus y pasa por el drain
+normal (coalescing/retry del motor) — **sin patología detectada** en la caracterización. Si en device real
+con un corpus grande (10k+ filas) el drain de tombstones resultara costoso (latencia/lease), es un **proyecto
+aparte** (dimensionar el drain masivo), no un fix de este chip — cruza con §5.2.2 del estudio
+`MODO-NUBE-GESTION-DATOS-UX.md` y con el residual D9. No caracterizado aún: interacción con el gate de
+quiescencia bajo un import concurrente.

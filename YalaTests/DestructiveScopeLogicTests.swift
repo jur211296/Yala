@@ -20,6 +20,7 @@ struct DestructiveScopeLogicTests {
     typealias Loc = DestructiveScopeLogic.Location
     typealias Tone = DestructiveScopeLogic.Tone
     typealias Line = DestructiveScopeLogic.ExtraLine
+    typealias Kind = DestructiveScopeLogic.SecondaryKind
 
     // MARK: - Etiqueta ☁️ (C2)
 
@@ -45,20 +46,54 @@ struct DestructiveScopeLogicTests {
         }
     }
 
-    // MARK: - Invariante: solo eliminar-cuenta con deuda tiene secundaria
+    // MARK: - Invariante: acciones secundarias (steer-away) por operación × deuda
 
-    @Test func secondaryAction_onlyForDeleteAccountWithDebt() {
-        for op in Op.allCases {
-            let noDebt = DestructiveScopeLogic.model(operation: op, cloudLabel: .cloudAccount,
-                                                     hasOutstandingDebt: false)
-            #expect(!noDebt.hasSecondaryAction, "\(op) sin deuda no debe tener secundaria")
-
-            let withDebt = DestructiveScopeLogic.model(operation: op, cloudLabel: .cloudAccount,
-                                                       hasOutstandingDebt: true)
-            let isDeleteAccount = (op == .deleteAccountCloud || op == .deleteAccountGroupsOnly)
-            #expect(withDebt.hasSecondaryAction == isDeleteAccount,
-                    "\(op): secundaria debe existir SOLO en eliminar-cuenta con deuda")
+    @Test func secondaryActions_perOperationAndDebt() {
+        func expected(_ op: Op, debt: Bool) -> [Kind] {
+            switch op {
+            case .wipeDataFull:       return debt ? [.viewGroups, .exportBefore] : [.exportBefore]
+            case .wipeDataGroupsOnly: return debt ? [.viewGroups] : []
+            case .deleteAccountCloud, .deleteAccountGroupsOnly:
+                                      return debt ? [.viewGroups] : []
+            default:                  return []
+            }
         }
+        for op in Op.allCases {
+            for debt in [false, true] {
+                let m = DestructiveScopeLogic.model(operation: op, cloudLabel: .cloudAccount,
+                                                    hasOutstandingDebt: debt)
+                #expect(m.secondaryActions == expected(op, debt: debt),
+                        "\(op) debt=\(debt): secondaryActions inesperadas")
+            }
+        }
+    }
+
+    @Test func exportBefore_onlyForWipeDataFull() {
+        // "Exportar antes" (red §m.4) SOLO en Vaciar completo — el wizard personal no aplica al 5a.
+        for op in Op.allCases {
+            for debt in [false, true] {
+                let m = DestructiveScopeLogic.model(operation: op, cloudLabel: .icloud,
+                                                    hasOutstandingDebt: debt)
+                #expect(m.secondaryActions.contains(.exportBefore) == (op == .wipeDataFull),
+                        "\(op): exportBefore solo en wipeDataFull")
+            }
+        }
+    }
+
+    @Test func viewGroups_firstWhenBothPresent_inWipeDataFull() {
+        // Con deuda, "Ver mis grupos" va PRIMERO (protege a terceros: saldar antes de destruir).
+        let m = DestructiveScopeLogic.model(operation: .wipeDataFull, cloudLabel: .icloud,
+                                            hasOutstandingDebt: true)
+        #expect(m.secondaryActions == [.viewGroups, .exportBefore])
+    }
+
+    // MARK: - C4: operación de Vaciar según el modo
+
+    @Test func wipeOperation_groupInvite_isGroupsOnly_elseFull() {
+        // 5a (group-invite, sin vida personal) → groupsOnly; resto (incl. 5b onboarding completed +
+        // sesión backend) → full. La sesión NO es input (no baja el scope).
+        #expect(DestructiveScopeLogic.wipeOperation(isGroupInviteMode: true) == .wipeDataGroupsOnly)
+        #expect(DestructiveScopeLogic.wipeOperation(isGroupInviteMode: false) == .wipeDataFull)
     }
 
     // MARK: - Vaciar
@@ -68,7 +103,7 @@ struct DestructiveScopeLogicTests {
         #expect(m.rows.map(\.tone) == [.destructive, .destructive, .preserved])
         #expect(m.hasConservationNote)
         #expect(m.extraLines.isEmpty, "VIVO `.icloud` no lleva línea de residual → byte-idéntico")
-        #expect(!m.hasSecondaryAction)
+        #expect(m.secondaryActions == [.exportBefore], "sin deuda: solo 'Exportar antes'")
     }
 
     @Test func wipeDataFull_cloud_addsMultiDeviceResidual() {
@@ -81,6 +116,7 @@ struct DestructiveScopeLogicTests {
         #expect(m.rows.map(\.tone) == [.destructive, .destructive, .preserved])
         #expect(m.extraLines.isEmpty)
         #expect(!m.hasConservationNote, "5a: sin cuenta/Pro que mencionar; la fila 👥 ya lo dice")
+        #expect(m.secondaryActions.isEmpty, "5a sin deuda: sin export (no hay wizard personal)")
     }
 
     // MARK: - Eliminar cuenta
@@ -126,7 +162,8 @@ struct DestructiveScopeLogicTests {
                     #expect(m.extraLines.contains(.legacyFootprint) == footprint)
                     #expect(m.extraLines.contains(.frozenICloud) == isCloud,
                             "la copia iCloud congelada SOLO en `.cloud`")
-                    #expect(m.hasSecondaryAction == debt)
+                    #expect(m.secondaryActions == (debt ? [.viewGroups] : []),
+                            "eliminar-cuenta: 'Ver mis grupos' SOLO con deuda, sin export")
                 }
             }
         }
@@ -174,6 +211,6 @@ struct DestructiveScopeLogicTests {
         #expect(m.rows.map(\.tone) == [.preserved, .destructive, .preserved])
         #expect(m.hasConservationNote)
         #expect(m.extraLines.isEmpty)
-        #expect(!m.hasSecondaryAction)
+        #expect(m.secondaryActions.isEmpty)
     }
 }

@@ -4104,6 +4104,9 @@ enum L10n {
         static var wipeScopeGroups: String { ls("settings.wipeScopeGroups", comment: "") }
         static var wipeScopeConservation: String { ls("settings.wipeScopeConservation", comment: "") }
         static var wipeScopeMultiDeviceResidual: String { ls("settings.wipeScopeMultiDeviceResidual", comment: "") }
+        static var wipeScopeGroupsDebt: String { ls("settings.wipeScopeGroupsDebt", comment: "") }
+        static var wipeExportBeforeButton: String { ls("settings.wipeExportBeforeButton", comment: "") }
+        static var wipeExportBeforeCloudCaption: String { ls("settings.wipeExportBeforeCloudCaption", comment: "") }
         static var deleteAccountScopeDeviceCloud: String { ls("settings.deleteAccountScopeDeviceCloud", comment: "") }
         static var deleteAccountScopeDeviceGroupsOnly: String { ls("settings.deleteAccountScopeDeviceGroupsOnly", comment: "") }
         static var deleteAccountScopeCloudCloud: String { ls("settings.deleteAccountScopeCloudCloud", comment: "") }

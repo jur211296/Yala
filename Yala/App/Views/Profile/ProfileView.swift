@@ -485,7 +485,7 @@ struct ProfileView: View {
                 case .planned:
                     ScheduledPaymentsSettingsView()
                 case .userDataReset:
-                    UserDataResetView(onUserDataWiped: {
+                    UserDataResetView(onRequestCloseSettings: {
                         dismiss()
                     })
                 case .iCloudSync:

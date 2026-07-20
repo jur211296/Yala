@@ -5217,3 +5217,12 @@
 
 /* D4 Borrar copia congelada: nota de conservación */
 "settings.deleteFrozenScopeConservation" = "Niczego nie tracisz: prawdziwa wersja Twojej grupy jest na Twoim koncie Yala.";
+
+/* Vaciar v2: botón para exportar los datos antes de vaciarlos (red de seguridad) */
+"settings.wipeExportBeforeButton" = "Najpierw eksportuj";
+
+/* Vaciar v2: caption bajo 'Exportar antes' cuando los datos viven en la cuenta de Yala (.cloud) */
+"settings.wipeExportBeforeCloudCaption" = "W trybie chmury to może być Twoja jedyna kopia";
+
+/* Vaciar v2: fila de grupos de la hoja de alcance cuando el usuario tiene saldos pendientes */
+"settings.wipeScopeGroupsDebt" = "Twoje grupy zostają zachowane, ale masz nierozliczone salda. Możesz je rozliczyć w zakładce Grupy.";
