@@ -418,7 +418,7 @@ aplicación** (dejan la suite VERDE hoy). TRAS aplicar la migración: cambiar `d
 ese bloque y re-correr `npm test` (3/3 verdes). Usan solo los users A/B compartidos; sin cleanup (gid único
 por corrida, DELETE revocado — las filas se acumulan, se limpian por `group_id` en contexto service si hace falta).
 
-## transfer_group_ownership (G10 / D10) — batch "salir de todos mis grupos"
+## transfer_group_ownership (G10 / D10) — batch "salir de todos mis grupos" — APLICADA EN AMBOS ENVS ✅
 
 Función NUEVA `qa/cloud/g10_01_transfer_group_ownership.sql` (`security definer`, `set search_path = public`
 — NO toca pgcrypto → NO va a `RPC_NEEDS_ENC_KEY`; guard `auth.uid()` NULL → `yala_not_authorized`; grants
@@ -433,23 +433,77 @@ porque `owner_user_id` ya no es él). IDEMPOTENTE-SUAVE: grupo inexistente/delet
 transferido o nunca fui owner o huérfano NULL) → `{already:true}` sin tocar nada → **retry-transient SEGURO**
 (2º call tras 502 → ya no soy owner → already:true; NO está en `neverRetryTransient` del cliente).
 
-**Aplicación (loop principal, MCP, contexto service):** aplicada el `.sql` verbatim como migración
-`g10_01_transfer_group_ownership` (staging `fostjbbwstyuunmmefuk`, 2026-07-20). md5 real:
+**Aplicación (loop principal, MCP, contexto service):** aplicada en AMBOS envs. md5 real:
 
 ```sql
 select md5(pg_get_functiondef('public.transfer_group_ownership(text)'::regprocedure));
--- md5 esperado: dd3a049c793f6fe2479552ac0c7fba3f  (aplicada 2026-07-20, migración g10_01_transfer_group_ownership)
+-- md5 esperado: dd3a049c793f6fe2479552ac0c7fba3f
+-- staging (fostjbbwstyuunmmefuk): ✅ APLICADA 2026-07-20, versión 20260720193200;
+--   md5 dd3a049c793f6fe2479552ac0c7fba3f.
+-- prod    (kefvaiymtgytemwbltlz): ✅ APLICADA 2026-07-21, versión 20260721212213;
+--   md5 dd3a049c793f6fe2479552ac0c7fba3f (== staging, paridad byte-exacta).
 ```
 
-**Regla anti-drift:** prod (`kefvaiymtgytemwbltlz`) queda con DRIFT PENDIENTE — re-aplicar en el gate D9 (el
-canal de grupos entero es DARK; consistente con el resto de RPCs de grupos que se consolidan en D9).
+**OJO — el `.sql` del repo NO es byte-idéntico a lo aplicado (y por diseño):** staging recibió el 2026-07-20
+una variante con los COMENTARIOS CONDENSADOS (2741 car. vs 5616 B del archivo), y a prod se promovió ese
+mismo texto byte-exacto extraído del historial de staging (método del gate §12: «SQL extraído BYTE-EXACTO
+del historial»), justo para que el md5 de `pg_get_functiondef` — que SÍ incluye los comentarios del cuerpo —
+cuadre en los dos envs. El CÓDIGO es idéntico al del archivo: normalizando ambos (quitar `--`, colapsar
+whitespace) dan `5ac870418e96cfdd80ba024ad35c8c18`. Si algún día se quiere que archivo == DB, el molde es
+`g6_01b_migrate_group_verbatim_comments` (re-crear con los comentarios del archivo en AMBOS envs a la vez),
+y entonces el md5 contractual de arriba cambia y hay que actualizarlo en sus 4 registros (este README,
+CLAUDE.md, `qa/coverage-index.json` areas `groups-backend-g2-sync-channel`, y el doc del vault).
 
-**Goldens (describe G10, `describe.skip` hasta aplicar):** 3 goldens — (1) owner con co-member elegible →
-transfiere al heredero (promovido a admin), owner intacto (el leave lo hace el cliente), retry → `already`;
-(2) owner sin heredero (co-member `user_id NULL`) → `no_eligible_owner` SIN tombstone, tercero intacto; (3)
-caller no-owner → `already`, sin auto-promoción. **Limitación conocida:** solo 2 users A/B → el tie-break
-admin-first+más-antiguo entre 2 herederos REALES no es E2E-testeable (mitigado: ORDER BY byte-idéntico a
-`groups_forget_user`). TRAS aplicar: `describe.skip(` → `describe(` y `npm test` (3/3 verdes).
+**Post-check de la promoción (endurecido — `md5(pg_get_functiondef)` NO basta):** la functiondef NO emite
+`proowner` ni `proacl`. Como la función es SECURITY DEFINER y las policies de `split_groups`/`group_members`
+están declaradas SOLO para el rol `authenticated`, un definer que no sea dueño de las tablas (ni
+`rolbypassrls`) NO encajaría en ninguna policy → default deny → el `select owner_user_id into v_owner` no
+devuelve fila → la RPC respondería **`{already:true}` EN SILENCIO**, con el md5 cuadrando perfectamente.
+Verificado en prod el 2026-07-21, las 6 en OK: md5 == staging · `proowner=postgres` · `prosecdef=true` +
+`proconfig={search_path=public}` · EXECUTE `anon`=false · EXECUTE `authenticated`=true · `proacl` =
+`{postgres,authenticated,service_role}` sin PUBLIC (== staging). Precheck previo (39/39 OK): las 18 columnas
+con tipo Y nullability, `server_hlc()`/`auth.uid()`/`stamp_group_seq()`, las 3 tablas, los 2 triggers stamp,
+los 2 FKs a `auth.users`, `leave_group`+`groups_forget_user`, los 3 roles, **`owner=postgres` y FORCE RLS
+apagado** en las 3 tablas, `rolbypassrls(postgres)=true`, event trigger `pgrst_ddl_watch` activo, y
+`transfer_group_ownership` AUSENTE (aplicación puramente aditiva). Advisors post-aplicación: sin hallazgos
+de clase nueva (el WARN `authenticated_security_definer_function_executable` es el by-design que comparte
+con sus 15 hermanas). Funciones en `public`: 33 → **34**.
+
+**Regla anti-drift (SQL):** SATISFECHA — aplicada en ambos envs (staging 2026-07-20, prod 2026-07-21; el
+conector MCP se re-conmutó staging→prod para la promoción, precedente de g12_02). **Tejida en
+`supabase-groups-staging.ddl` §7** (2026-07-21) con el texto APLICADO, no el del `.sql` — el molde offline
+debe reflejar el schema VIVO; el `create…end $$;` de la §7 es byte-idéntico al aplicado. La cabecera del
+`.ddl` deja anotado el lag conocido de `g12_02` (grants-only, no teje cuerpo de función). ⚠️ **PENDIENTE SEPARADO —
+el GATEWAY de prod:** el Worker `yala-gateway-production` se desplegó por última vez el 2026-07-16, ANTES
+del commit `a9ed3785` (2026-07-20) que añadió `transfer_group_ownership` a la `PARAM_ALLOWLIST`
+(`gateway/src/groups/rpc.ts`). ⇒ **la RPC existe en la DB de prod pero el gateway de prod la rechaza con 404
+`yala_bad_request: unknown rpc` ANTES de llegar a PostgREST.** Impacto HOY: CERO (doble-dark: el canal de
+grupos está tras `groupsBackendEnabled`, y prod sirve `cloudModeEnabled`/`groupsBackendEnabled` en 0%).
+Agravante a recordar cuando se encienda: ese 404 el cliente lo mapea a `.transient`
+(`GroupsMembershipClient`), o sea **reintento perpetuo sin TTL** si se enciende el flag con el Worker stale.
+⇒ **redeploy del gateway a prod OBLIGATORIO antes del encendido** (arrastra todo lo acumulado en `gateway/`
+desde el 2026-07-16, así que merece su propio review) — anotado en D9.
+
+**Goldens (describe G10 — ACTIVOS desde el 2026-07-20, commit `a9ed3785`; primera corrida VERDE registrada
+3/3 el 2026-07-21, `GROUPS_ENC_KEY=<staging.key> npx vitest run test/groups.goldens.test.ts -t "G10"`, 4.8s
+— acotar con `-t "G10"` y NO correr `npm test` entero evita el efecto colateral conocido de re-crear filas
+parciales de budgets que luego divergen en el e2e Swift):** 3 goldens — (1) owner con
+co-member elegible → transfiere al heredero (promovido a admin), owner intacto (el leave lo hace el
+cliente), retry → `already`; (2) owner sin heredero (co-member `user_id NULL`) → `no_eligible_owner` SIN
+tombstone, tercero intacto; (3) caller no-owner → `already`, sin auto-promoción. **Limitación conocida:**
+solo 2 users A/B → el tie-break admin-first+más-antiguo entre 2 herederos REALES no es E2E-testeable
+(mitigado: ORDER BY byte-idéntico a `groups_forget_user`). **Corren contra STAGING con URL hard-codeada y
+MUTAN datos** ⇒ `npm test` JAMÁS toca prod, y por tanto **no sirven como verificación de la promoción a
+prod** (esa la cubren el precheck/post-check de arriba). La aplicación a prod no exige ninguna acción sobre
+ellos.
+
+**Residuales conocidos de la RPC (no bloquean, anotados al promover):** (a) sin `for update` entre el select
+del heredero y el `update split_groups` — una salida concurrente del heredero en esa ventana de ms dejaría
+el grupo con un `owner_user_id` que ya no es miembro activo, y como el guard exige ser owner, no se auto-cura
+server-side; es NO destructivo y es EXACTAMENTE el patrón que ya corre en prod dentro de `groups_forget_user`
+loop1, así que la promoción no introduce clase de riesgo nueva (cerrarlo obligaría a tocar ambas por simetría
+y cambiaría el md5 contractual); (b) el cuerpo plpgsql no se resuelve al CREATE (`check_function_bodies` solo
+valida sintaxis) — cubierto por el precheck de dependencias.
 
 ## G7 — cifrado pgcrypto de columnas † de grupos (data-at-rest)
 
@@ -1147,6 +1201,14 @@ security advisors: hallazgos = los by-design (RPCs SECURITY DEFINER expuestos a 
 API; deny-all de group_seq_counters) + 1 WARN de higiene en `stamp_group_seq` (EXECUTE default
 PUBLIC — inofensivo: Postgres rechaza invocar trigger functions directamente; CERRADO por g12_02:
 aplicada en AMBOS envs 2026-07-16, ver §g12_02 arriba — proacl verificado en vivo contra staging).
+
+**ADDENDUM 2026-07-21 (el conteo de arriba es la foto del 2026-07-16, no la de hoy):** desde entonces
+entró UNA migración de grupos más, `g10_01_transfer_group_ownership` (aplicada a staging el 2026-07-20,
+promovida a prod el 2026-07-21 — versión prod `20260721212213`). ⇒ hoy la paridad es **34/34 funciones**,
+no 33/33. Ver §transfer_group_ownership arriba para su post-check (que además ENDURECE el método: el
+`md5(pg_get_functiondef)` de este bloque no cubre `proowner`/`proacl`, y en un SECURITY DEFINER cuyo dueño
+no fuese el de las tablas la RPC fallaría en silencio con el md5 cuadrando). ⚠️ El **gateway** de prod sigue
+en la versión del 2026-07-16 y NO conoce la RPC nueva → redeploy obligatorio antes del encendido (D9).
 
 **Paridad de funciones VERIFICADA byte-exacta (2026-07-11):** `md5(pg_get_functiondef)` idéntico
 staging↔prod en las 6 — apply_delta `7f8cb94d32f3976b6a9b0ade8f165b73`, apply_pref

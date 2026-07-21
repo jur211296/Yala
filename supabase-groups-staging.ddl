@@ -16,12 +16,21 @@
 --                                   (p_group_id, p_exclude_user_id, p_exclude_device_token) with NO body guard (grants-only),
 --                                   both RPCs REVOKED from authenticated and GRANTed only to yala_push. §6 shows the FINAL
 --                                   post-g8_02 state (the g8_01 enumeration threat is dead).
+--   §7 g10_01_transfer_group_ownership — the D10 batch "leave all my groups": hands ONE group's ownership to the
+--                                   eligible heir (heir criterion VERBATIM from groups_forget_user loop1) and nothing
+--                                   else. NEVER tombstones when there is no heir. No † columns ⇒ no p_key.
 -- Applied migrations (staging): g1_01, g1_02, g2_01, g6_01, and — 2026-07-16 —
 --   g7_01_encrypt_groups_columns + g7_02_encrypt_groups_cutover (the G7 cutover: the 8 † columns become bytea NULLABLE,
 --   and create_group / join_group / groups_forget_user / update_member_display_name / migrate_group / apply_group_delta
 --   gain a p_key text argument) + g8_01_push_fanout + g8_02_push_machine_role. The G7 changes are woven IN-PLACE into
 --   §1–§4 plus the new §5; g8_02 is woven IN-PLACE into §6 (the machine role + re-signed RPCs + machine-role grants).
--- Regenerate on any groups-schema change by concatenating the applied migrations. Staging-only until the flag gate.
+--   Then — 2026-07-20 — g10_01_transfer_group_ownership (§7).
+-- Regenerate on any groups-schema change by concatenating the applied migrations.
+-- NOT staging-only anymore: the whole groups stack was PROMOTED TO PRODUCTION on 2026-07-16 (gate §12 Bloque A,
+--   13 migrations) and g10_01 followed on 2026-07-21 — staging↔prod parity is verified by md5(pg_get_functiondef),
+--   34/34 functions (see qa/cloud/README). This file still mirrors STAGING by name, but today both envs match.
+-- KNOWN LAG (do not read as parity): g12_02_lock_down_stamp_group_seq (grants-only on stamp_group_seq, applied in
+--   BOTH envs 2026-07-16) is NOT woven here — it changes no function body, only its ACL.
 -- Vocabulary parity with the app (SplitMember.swift): status ∈ {active,pendingApproval,rejected,left,removed}; role ∈ {admin,member}.
 --
 -- SYNC NOTE (G2): the client PUSHES only split_groups (meta, update-only) + the 3 content tables via apply_group_delta
@@ -1621,3 +1630,89 @@ end $$;
 revoke all on function public.prune_push_token(uuid, text) from public, anon, authenticated;
 grant execute on function public.prune_push_token(uuid, text) to yala_push;
 
+
+
+-- ============================================================================
+-- §7 — g10_01_transfer_group_ownership (D10, batch "salir de todos mis grupos")
+-- ============================================================================
+-- Transfiere el ownership de UN grupo backend al co-member elegible más antiguo y NADA MÁS. El caller
+-- (orquestador batch) llama leave_group justo después — ya pasa el guard yala_owner_cannot_leave porque
+-- owner_user_id ya no es él. Diferencias vs groups_forget_user (§5): opera sobre UN grupo (sin loop), NO
+-- anonimiza al caller, NO borra push_tokens, y **JAMÁS tombstonea** cuando no hay heredero (invariante D10:
+-- nunca destruir datos de terceros) → {transferred:false, reason:'no_eligible_owner'} y el cliente lo manda
+-- a "necesitan tu decisión". IDEMPOTENTE-SUAVE: grupo inexistente/deleted/owner distinto → {already:true}
+-- sin tocar nada ⇒ retry-transient SEGURO. Heredero VERBATIM de groups_forget_user loop1: (role='admin')
+-- desc, joined_at asc, member_key asc; user_id not null (los placeholders NULL de un grupo legacy migrado
+-- sin reclamar NUNCA son herederos: no hay auth.user al que ceder), status='active', <> caller.
+-- NO escribe columnas † ⇒ search_path = public SIN extensions, y NO entra en RPC_NEEDS_ENC_KEY del gateway.
+--
+-- ⚠️ TEXTO VERBATIM DE LO APLICADO (no del .sql del repo): qa/cloud/g10_01_transfer_group_ownership.sql
+-- lleva los comentarios extendidos, y lo aplicado en AMBOS envs los tiene condensados. Como este archivo es
+-- el molde OFFLINE del schema VIVO y pg_get_functiondef SÍ incluye los comentarios del cuerpo, aquí va el
+-- texto aplicado — el que produce md5 dd3a049c793f6fe2479552ac0c7fba3f en staging Y en prod. El código es
+-- idéntico al del .sql (normalizados ambos: 5ac870418e96cfdd80ba024ad35c8c18).
+
+create or replace function public.transfer_group_ownership(p_group_id text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  v_uid   uuid := (select auth.uid());
+  v_hlc   text;
+  v_owner uuid;
+  v_found boolean;
+  v_cand  record;
+begin
+  if v_uid is null then
+    raise exception 'yala_not_authorized' using errcode = 'P0001';
+  end if;
+
+  if p_group_id is null or length(p_group_id) < 8 or length(p_group_id) > 120 then
+    raise exception 'yala_invalid_group_id' using errcode = 'P0001';
+  end if;
+
+  select owner_user_id into v_owner from split_groups
+    where group_id = p_group_id and deleted = false;
+  v_found := found;
+  if not v_found or v_owner is distinct from v_uid then
+    return jsonb_build_object('transferred', false, 'already', true,
+                              'new_owner_member_key', null, 'reason', null, 'group_id', p_group_id);
+  end if;
+
+  select * into v_cand from group_members
+    where group_id = p_group_id and deleted = false and status = 'active'
+      and user_id is not null and user_id <> v_uid
+    order by (coalesce(role, '') = 'admin') desc, joined_at asc, member_key asc
+    limit 1;
+
+  if v_cand.member_key is null then
+    return jsonb_build_object('transferred', false, 'already', false,
+                              'new_owner_member_key', null, 'reason', 'no_eligible_owner', 'group_id', p_group_id);
+  end if;
+
+  v_hlc := server_hlc();
+
+  if v_cand.role is distinct from 'admin' then
+    update group_members set
+      role       = 'admin',
+      hlc        = v_hlc,
+      updated_at = now(),
+      field_hlcs = jsonb_set(coalesce(field_hlcs, '{}'::jsonb), '{membership}', to_jsonb(v_hlc))
+      where group_id = p_group_id and member_key = v_cand.member_key;
+  end if;
+
+  update split_groups set
+    owner_user_id = v_cand.user_id,
+    hlc           = v_hlc,
+    updated_at    = now(),
+    field_hlcs    = jsonb_set(coalesce(field_hlcs, '{}'::jsonb), '{meta}', to_jsonb(v_hlc))
+    where group_id = p_group_id;
+
+  return jsonb_build_object('transferred', true, 'already', false,
+                            'new_owner_member_key', v_cand.member_key,
+                            'new_owner_user_id', v_cand.user_id,
+                            'reason', null, 'group_id', p_group_id);
+end $$;
+
+-- Grants: molde de grupos (REVOKE public/anon + GRANT authenticated). Resultado verificado en AMBOS envs:
+-- proacl {postgres=X/postgres, authenticated=X/postgres, service_role=X/postgres}.
+revoke all on function public.transfer_group_ownership(text) from public, anon;
+grant execute on function public.transfer_group_ownership(text) to authenticated;

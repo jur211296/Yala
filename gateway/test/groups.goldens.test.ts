@@ -915,9 +915,10 @@ describe("G7 goldens · pgcrypto encryption contra staging real", () => {
 // ============================================================================
 // G10 goldens · transfer_group_ownership (D10 — batch "salir de todos mis grupos")
 // ============================================================================
-// ⚠️ ACTIVACIÓN POR EL LOOP: `describe.skip` deja la suite VERDE HOY (la función aún no existe en staging).
-// TRAS aplicar g10_01_transfer_group_ownership, cambiar `describe.skip(` → `describe(` en la línea de abajo y
-// re-correr `npm test` (deben quedar 3/3 verdes). Antes de aplicar → PGRST202 → 404 del gateway.
+// ACTIVOS desde 2026-07-20 (commit a9ed3785), tras aplicar g10_01_transfer_group_ownership en staging.
+// Corren contra STAGING con URL hard-codeada y MUTAN datos ⇒ `npm test` JAMÁS toca prod, y por tanto estos
+// goldens NO verifican la promoción a prod (2026-07-21): esa se cubre con el precheck/post-check SQL
+// documentados en qa/cloud/README §transfer_group_ownership.
 //
 // LIMITACIÓN CONOCIDA (2 users A/B en staging): el tie-break "admin-first + más-antiguo entre 2 herederos
 // REALES" NO es E2E-testeable (no se pueden crear 2 co-members con user_id no-NULL además del owner:
