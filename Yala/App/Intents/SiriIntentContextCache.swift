@@ -72,6 +72,16 @@ enum SiriIntentContextCache {
         }
     }
 
+    /// Borra el snapshot. Lo invocan las purgas de FRONTERA de sesión
+    /// (`AppGroupInboundPurge.purgeInboundSurfaces`): el snapshot lleva los nombres de subcategoría
+    /// —que pueden ser propios del usuario— y su divisa, y el App Group es compartido entre cuentas.
+    /// Ausente ≠ incorrecto: `read()` devuelve `nil` y la app lo reconstruye en el próximo `refresh`.
+    nonisolated static func clear(
+        defaults: UserDefaults? = SiriIntentContextCache.appGroupDefaults
+    ) {
+        defaults?.removeObject(forKey: storageKey)
+    }
+
     /// Recalcula el snapshot desde el store y lo persiste. La llama la app (bootstrap / foreground);
     /// barato: dos fetches ligeros. `defaultCurrency` se pasa desde `appPreferences` para no acoplar
     /// la caché con `AppPreferences`.
