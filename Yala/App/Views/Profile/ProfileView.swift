@@ -197,6 +197,15 @@ struct ProfileView: View {
         UITestHooks.fakeBackendSession || CloudAuthService.shared.hasSession
     }
 
+    /// §3.3.5: la fila/pantalla "Tu cuenta de Yala" — con sesión backend viva, fuera de secundaria (M1,
+    /// que describe la cuenta del DUEÑO, no la de la invitada). Reemplaza el letrero mudo `groupsAccountRow`.
+    /// DARK hoy (`hasSession` imposible en prod); `UITestHooks.fakeBackendSession` la fuerza para QA
+    /// (seam D5, inerte en release). NO excluye group-invite: un group-invite CON sesión backend (D6,
+    /// [FLAG]) SÍ tiene cuenta que explicar (su desenlace de borrado lo gatea `YalaAccountLogic`).
+    private var showsYalaAccountRow: Bool {
+        deleteAccountRowHasSession && !SecondarySessionStore.isActive()
+    }
+
     /// D4: operación de la hoja de eliminar-cuenta según el modo (misma decisión que `AccountDeletionService`:
     /// `.cloud` vs solo-grupos backend). La composición de líneas condicionales (deudas D5, desvío cruzado,
     /// copia iCloud congelada, huella legacy) la sigue decidiendo `AccountDeletionMessageLogic`, reutilizada
@@ -517,6 +526,18 @@ struct ProfileView: View {
                     AIPrivacySettingsView()
                 case .storageMode:
                     StorageSettingsView()
+                case .yalaAccount:
+                    // §3.3.5: mapa/explainer del enlace privado ↔ nube. Los desenlaces disparan el @State
+                    // de ProfileView vía closures (dueño único de las hojas/observers/cover-root); "Volver a
+                    // iCloud" navega por su cuenta a `.storageMode`. Las closures envuelven EXACTAMENTE las
+                    // acciones de los botones de Seguridad (incluida la recomputación READ-ONLY del summary D5).
+                    YalaAccountView(
+                        onSignOut: { showCloudSignOutConfirm = true },
+                        onDeleteAccount: {
+                            deleteAccountGroupsSummary =
+                                SplitSyncManager.shared.accountDeletionGroupsSummary()
+                            showDeleteAccountConfirm = true
+                        })
                 }
             }
             .onAppear {
@@ -834,16 +855,19 @@ struct ProfileView: View {
     private var datosSection: some View {
         SectionBox(title: L10n.Settings.data) {
             VStack(spacing: DS.Spacing.none) {
-                // G5-B: fila informativa "Cuenta de grupos" — SOLO en sesión solo-grupos (backend viva,
-                // personal `.icloud`, flag ON, no secundaria). Reconoce que hay una sesión de grupos
-                // activa en el device. Texto genérico: `CloudAuthService` no expone email/nombre
-                // públicamente (no se añade accessor). NO mueve las filas existentes (va primero; su
-                // divisor la separa de la fila iCloud, que se muestra con la misma condición `!= .cloud`).
-                if CloudSyncFlags.groupsBackendEnabled
-                    && CloudAuthService.shared.hasSession
-                    && CloudSyncFlags.storageMode != .cloud
-                    && !SecondarySessionStore.isActive() {
-                    groupsAccountRow
+                // §3.3.5: "Tu cuenta de Yala" — mapa/explainer del enlace privado ↔ nube (reemplaza el
+                // letrero mudo "Cuenta de grupos / Sesión activa"). Con sesión backend viva, fuera de
+                // secundaria. DARK hoy. (Commit 2 la reubica a la subsección "Tu cuenta" de Seguridad.)
+                if showsYalaAccountRow {
+                    NavigationLink(value: ProfileDestination.yalaAccount) {
+                        settingsRowContent(
+                            icon: "person.crop.circle.badge.checkmark",
+                            title: L10n.Settings.yalaAccountRowTitle,
+                            subtitle: L10n.Settings.yalaAccountRowSubtitle,
+                            iconColor: .indigo)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("profile_yala_account")
                     SubsectionDivider()
                 }
 
@@ -1275,44 +1299,6 @@ struct ProfileView: View {
 
 
     // MARK: - Reference Builder
-
-    @ViewBuilder
-    /// G5-B: fila informativa (no navegable) que reconoce una sesión de grupos activa. Sin chevron
-    /// (no navega) y con subtítulo genérico — el coordinador de sign-out cierra esa sesión.
-    private var groupsAccountRow: some View {
-        HStack(spacing: DS.Spacing.md) {
-            if effectiveColorfulIcons {
-                Image(systemName: "person.crop.circle.badge.checkmark")
-                    .font(DS.Typography.subheadline).fontWeight(.medium)
-                    .foregroundStyle(.white)
-                    .frame(width: 28, height: 28)
-                    .background(RoundedRectangle(cornerRadius: 6).fill(Color.indigo))
-                    .accessibilityHidden(true)
-            } else {
-                Image(systemName: "person.crop.circle.badge.checkmark")
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.primary)
-                    .frame(width: 28)
-                    .accessibilityHidden(true)
-            }
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(L10n.Settings.groupsAccountRowTitle)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.primary)
-                Text(L10n.Settings.groupsAccountRowSubtitle)
-                    .font(DS.Typography.labelSmall)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-        }
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, DS.FormRow.paddingV)
-        .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("profile_groups_account_row")
-    }
 
     private func profileRow(
         icon: String,

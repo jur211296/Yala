@@ -33,4 +33,7 @@ enum ProfileDestination: Hashable {
     /// Modo Nube (I14): elección/gestión de almacenamiento (iCloud privado ↔ nube). Solo visible si
     /// `CloudBackendConfig.isConfigured` (staging/DEV; prod placeholder sin cambios).
     case storageMode
+    /// "Tu cuenta de Yala" (§3.3.5): mapa/explainer del enlace privado ↔ nube (método, dónde viven los
+    /// datos, desenlaces). Solo con sesión backend viva (DARK hoy).
+    case yalaAccount
 }

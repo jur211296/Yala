@@ -4035,12 +4035,21 @@ enum L10n {
         static var signOutConfirmAction: String { ls("settings.signOutConfirmAction", comment: "") }
         // D4: `signOutConfirmMessage{Cloud,ICloud,Secondary,GroupsOnly}` RETIRADAS — el copy por-path
         // lo sustituyen las filas de la hoja de alcance (operación resuelta por `signOutScopeOperation`).
-        static var groupsAccountRowTitle: String {
-            ls("settings.groupsAccountRowTitle", comment: "")
-        }
-        static var groupsAccountRowSubtitle: String {
-            ls("settings.groupsAccountRowSubtitle", comment: "")
-        }
+        // §3.3.5: pantalla "Tu cuenta de Yala" (mapa/explainer del enlace privado ↔ nube).
+        static var yalaAccountRowTitle: String { ls("settings.yalaAccountRowTitle", comment: "") }
+        static var yalaAccountRowSubtitle: String { ls("settings.yalaAccountRowSubtitle", comment: "") }
+        static var yalaAccountTitle: String { ls("settings.yalaAccountTitle", comment: "") }
+        static var yalaAccountMethodApple: String { ls("settings.yalaAccountMethodApple", comment: "") }
+        static var yalaAccountMethodGoogle: String { ls("settings.yalaAccountMethodGoogle", comment: "") }
+        static var yalaAccountMethodUnknown: String { ls("settings.yalaAccountMethodUnknown", comment: "") }
+        static var yalaAccountLinkingNote: String { ls("settings.yalaAccountLinkingNote", comment: "") }
+        static var yalaAccountDataLocationTitle: String { ls("settings.yalaAccountDataLocationTitle", comment: "") }
+        static var yalaAccountDataLocationCloud: String { ls("settings.yalaAccountDataLocationCloud", comment: "") }
+        static var yalaAccountDataLocationGroupsOnly: String { ls("settings.yalaAccountDataLocationGroupsOnly", comment: "") }
+        static var yalaAccountSignOutScope: String { ls("settings.yalaAccountSignOutScope", comment: "") }
+        static var yalaAccountReturnICloud: String { ls("settings.yalaAccountReturnICloud", comment: "") }
+        static var yalaAccountReturnICloudScope: String { ls("settings.yalaAccountReturnICloudScope", comment: "") }
+        static var yalaAccountDeleteScope: String { ls("settings.yalaAccountDeleteScope", comment: "") }
         static var signOutBlockedTitle: String { ls("settings.signOutBlockedTitle", comment: "") }
         static var signOutBlockedMessage: String { ls("settings.signOutBlockedMessage", comment: "") }
         // H-2026-07-18-6 — espera/retry interno del sign-out solo-grupos
@@ -6331,6 +6340,8 @@ enum L10n {
         enum Revert {
             static var title: String { ls("storage.revert.title", comment: "") }
             static var body: String { ls("storage.revert.body", comment: "") }
+            /// §3.3.5: frase de que la Reversa ES el desenlace funcional del enlace privado ↔ nube.
+            static var desenlaceNote: String { ls("storage.revert.desenlaceNote", comment: "") }
             static var button: String { ls("storage.revert.button", comment: "") }
             static var ineligible: String { ls("storage.revert.ineligible", comment: "") }
         }

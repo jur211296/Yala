@@ -4888,12 +4888,6 @@
 
 /* Confirm message for groups-only sign-out (G5-B) */
 
-/* Groups account informational row title (G5-B) */
-"settings.groupsAccountRowTitle" = "群组账户";
-
-/* Groups account informational row subtitle (G5-B) */
-"settings.groupsAccountRowSubtitle" = "当前会话";
-
 /* G5-D1b: member cuya cuenta fue eliminada (sentinel __deleted_user__) */
 "groups.member.deletedUser" = "已删除的用户";
 /* G5-D1b: fila destructiva de borrado de cuenta */
@@ -5286,3 +5280,48 @@
 
 /* D1 debt note shown when the user has outstanding group balances */
 "settings.retentionDebtNote" = "你在群组里还有未结清的余额。留下来能保护其他成员：不会有人看到你带着欠款突然消失。";
+
+/* Fila que abre la pantalla Tu cuenta de Yala (§3.3.5) */
+"settings.yalaAccountRowTitle" = "你的 Yala 账户";
+
+/* Subtítulo de la fila Tu cuenta de Yala */
+"settings.yalaAccountRowSubtitle" = "你的登录方式与账户选项";
+
+/* Título de la pantalla Tu cuenta de Yala */
+"settings.yalaAccountTitle" = "你的 Yala 账户";
+
+/* Método de entrada: Apple */
+"settings.yalaAccountMethodApple" = "你已通过 Apple 登录。";
+
+/* Método de entrada: Google */
+"settings.yalaAccountMethodGoogle" = "你已通过 Google 登录。";
+
+/* Método de entrada genérico (sin proveedor conocido) */
+"settings.yalaAccountMethodUnknown" = "你拥有一个 Yala 账户。";
+
+/* Nota de vínculo Apple/Google (H4) */
+"settings.yalaAccountLinkingNote" = "如果使用同一邮箱，Apple 和 Google 都会登录到同一个账户。";
+
+/* Título de la sección donde viven los datos */
+"settings.yalaAccountDataLocationTitle" = "你的数据存放在哪里";
+
+/* Datos en modo nube */
+"settings.yalaAccountDataLocationCloud" = "在你的 Yala 账户里，存于云端。";
+
+/* Datos en solo-grupos (5b) */
+"settings.yalaAccountDataLocationGroupsOnly" = "在此设备和你的私密 iCloud 中。你的账户仅用于群组。";
+
+/* Alcance del desenlace Cerrar sesión */
+"settings.yalaAccountSignOutScope" = "你的账户会保留；随时都能回来。";
+
+/* Desenlace Volver a iCloud (la Reversa) */
+"settings.yalaAccountReturnICloud" = "返回 iCloud";
+
+/* Alcance del desenlace Volver a iCloud */
+"settings.yalaAccountReturnICloudScope" = "你的数据会回到你的私密 iCloud；你的账户会暂停。";
+
+/* Alcance del desenlace Eliminar mi cuenta */
+"settings.yalaAccountDeleteScope" = "全部内容将被永久删除。";
+
+/* Frase de que la Reversa ES el desenlace funcional (§3.3.5) */
+"storage.revert.desenlaceNote" = "这是把你的账户与此设备解绑的方式：账户会暂停，留待你回来。";

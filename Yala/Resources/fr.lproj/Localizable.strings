@@ -4877,12 +4877,6 @@
 
 /* Confirm message for groups-only sign-out (G5-B) */
 
-/* Groups account informational row title (G5-B) */
-"settings.groupsAccountRowTitle" = "Compte de groupes";
-
-/* Groups account informational row subtitle (G5-B) */
-"settings.groupsAccountRowSubtitle" = "Session active";
-
 /* G5-D1b: member cuya cuenta fue eliminada (sentinel __deleted_user__) */
 "groups.member.deletedUser" = "Utilisateur supprimé";
 /* G5-D1b: fila destructiva de borrado de cuenta */
@@ -5275,3 +5269,48 @@
 
 /* D1 debt note shown when the user has outstanding group balances */
 "settings.retentionDebtNote" = "Vous avez des soldes en attente dans vos groupes. Rester protège les autres : personne ne vous verra disparaître en laissant une dette derrière vous.";
+
+/* Fila que abre la pantalla Tu cuenta de Yala (§3.3.5) */
+"settings.yalaAccountRowTitle" = "Ton compte Yala";
+
+/* Subtítulo de la fila Tu cuenta de Yala */
+"settings.yalaAccountRowSubtitle" = "Méthode de connexion et options de ton compte";
+
+/* Título de la pantalla Tu cuenta de Yala */
+"settings.yalaAccountTitle" = "Ton compte Yala";
+
+/* Método de entrada: Apple */
+"settings.yalaAccountMethodApple" = "Tu t’es connecté avec Apple.";
+
+/* Método de entrada: Google */
+"settings.yalaAccountMethodGoogle" = "Tu t’es connecté avec Google.";
+
+/* Método de entrada genérico (sin proveedor conocido) */
+"settings.yalaAccountMethodUnknown" = "Tu as un compte Yala.";
+
+/* Nota de vínculo Apple/Google (H4) */
+"settings.yalaAccountLinkingNote" = "Si tu utilises la même adresse e-mail, Apple et Google te connectent au même compte.";
+
+/* Título de la sección donde viven los datos */
+"settings.yalaAccountDataLocationTitle" = "Où vivent tes données";
+
+/* Datos en modo nube */
+"settings.yalaAccountDataLocationCloud" = "Dans ton compte Yala, dans le cloud.";
+
+/* Datos en solo-grupos (5b) */
+"settings.yalaAccountDataLocationGroupsOnly" = "Sur cet appareil et dans ton iCloud privé. Ton compte te sert uniquement pour les Groupes.";
+
+/* Alcance del desenlace Cerrar sesión */
+"settings.yalaAccountSignOutScope" = "Ton compte reste ; tu reviens quand tu veux.";
+
+/* Desenlace Volver a iCloud (la Reversa) */
+"settings.yalaAccountReturnICloud" = "Revenir à iCloud";
+
+/* Alcance del desenlace Volver a iCloud */
+"settings.yalaAccountReturnICloudScope" = "Tes données reviennent dans ton iCloud privé ; ton compte est mis en pause.";
+
+/* Alcance del desenlace Eliminar mi cuenta */
+"settings.yalaAccountDeleteScope" = "Tout est supprimé, pour toujours.";
+
+/* Frase de que la Reversa ES el desenlace funcional (§3.3.5) */
+"storage.revert.desenlaceNote" = "C’est la façon de dissocier ton compte de cet appareil : il est mis en pause au cas où tu reviendrais.";

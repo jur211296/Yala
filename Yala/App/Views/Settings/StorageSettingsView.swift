@@ -217,6 +217,10 @@ struct StorageSettingsView: View {
             Text(L10n.Storage.Revert.body)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
+            // §3.3.5: la Reversa ES el desenlace funcional del enlace privado ↔ nube.
+            Text(L10n.Storage.Revert.desenlaceNote)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
 
             if eligibility == .eligible {
                 Button {
