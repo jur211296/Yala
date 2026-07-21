@@ -34,7 +34,8 @@ struct SecondaryWipeHookTests {
         SwiftDataConfiguration.performSecondaryWipeIfArmed(
             defaults: defaults,
             deleteFiles: { _, _ in touched = true; return true },
-            purge: { touched = true })
+            purge: { touched = true },
+            cancelNotifications: { touched = true })
         #expect(touched == false)
         #expect(SecondarySessionStore.isActive(defaults))
     }
@@ -42,13 +43,17 @@ struct SecondaryWipeHookTests {
     @Test func baseDeleteFails_abortsPreservingArmAndDescriptor() {
         let defaults = armedDefaults(prefix: "swipe.abort")
         var purged = false
+        var cancels = 0
         SwiftDataConfiguration.performSecondaryWipeIfArmed(
             defaults: defaults,
             deleteFiles: { _, _ in false },   // kill-simulado: el BASE no se pudo borrar
-            purge: { purged = true })
+            purge: { purged = true },
+            cancelNotifications: { cancels += 1 })
         // NADA más se limpió: arm + descriptor persisten (el próximo boot reintenta),
         // los flags de onboarding siguen puestos y la purga no corrió.
         #expect(purged == false)
+        // El abort NO cancela: la sesión secundaria sigue montada y sus recordatorios vivos.
+        #expect(cancels == 0)
         #expect(SecondarySessionStore.isWipeArmed(defaults))
         #expect(SecondarySessionStore.isActive(defaults))
         #expect(defaults.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding))
@@ -64,12 +69,16 @@ struct SecondaryWipeHookTests {
         SwiftDataConfiguration.performSecondaryWipeIfArmed(
             defaults: defaults,
             deleteFiles: { name, _ in events.append("delete:\(name)"); return true },
-            purge: { events.append("purge") })
+            purge: { events.append("purge") },
+            cancelNotifications: { events.append("cancelNotifications") })
         #expect(events == [
             "delete:\(SwiftDataConfiguration.secondaryDatabaseName)",
             "delete:\(SwiftDataConfiguration.secondarySyncMetaDatabaseName)",
             "delete:\(SwiftDataConfiguration.secondaryGroupsDatabaseName)",  // M1/D8 (G5-C): grupos tras syncMeta
             "purge",
+            // §5.2.1: las notificaciones de la INVITADA no sobreviven a la vuelta del dueño. Dejar
+            // `pending == 0` es además lo que hace al reconciler de boot reprogramar las de él.
+            "cancelNotifications",
         ])
         #expect(SecondarySessionStore.isActive(defaults) == false)
         #expect(SecondarySessionStore.isEntryPurgeDone(defaults) == false)
@@ -116,11 +125,30 @@ struct SecondaryEntryTasksTests {
 
     @Test func inactive_isNoOp() {
         let defaults = makeIsolatedDefaults(prefix: "sentry.noop")
-        var ran = false
+        var purges = 0
+        var cancels = 0
         SwiftDataConfiguration.performSecondaryEntryTasksIfNeeded(
-            defaults: defaults, purge: { ran = true }, cancelNotifications: { ran = true })
-        #expect(ran == false)
+            defaults: defaults, purge: { purges += 1 }, cancelNotifications: { cancels += 1 })
+        #expect(purges == 0)
+        #expect(cancels == 0)
         #expect(SecondarySessionStore.isEntryPurgeDone(defaults) == false)
+    }
+
+    /// El invariante kill-safe (no el orden purge↔cancel, que son efectos independientes): la
+    /// cancelación corre ANTES de `markEntryPurgeDone`, de modo que un kill entre ambos la re-ejecuta
+    /// en el siguiente boot. Si el marker se pusiera primero, las notificaciones del dueño sobrevivirían
+    /// a la entrada de la invitada sin que nada lo reintentara.
+    @Test func cancelRunsBeforeEntryMarker() {
+        let defaults = makeIsolatedDefaults(prefix: "sentry.order")
+        SecondarySessionStore.activate(userID: "guest-1", defaults)
+        defaults.set(true, forKey: AppPreferences.Keys.hasCompletedOnboarding)
+        var markerWasSetAtCancel = true
+        SwiftDataConfiguration.performSecondaryEntryTasksIfNeeded(
+            defaults: defaults,
+            purge: {},
+            cancelNotifications: { markerWasSetAtCancel = SecondarySessionStore.isEntryPurgeDone(defaults) })
+        #expect(markerWasSetAtCancel == false)
+        #expect(SecondarySessionStore.isEntryPurgeDone(defaults))
     }
 
     @Test func active_runsOnce_marksAtEnd_andIsIdempotent() {

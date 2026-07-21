@@ -364,6 +364,15 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSignOut wipe executed at boot — device fresh")
     }
 
+    /// §5.2.1: notificaciones locales de la cuenta saliente retiradas (pendientes + entregadas) junto
+    /// al wipe. Sus `NotificationItem` mueren con el archivo del store y nadie las cancelaría después
+    /// —el reconciler de boot solo REPROGRAMA y exige `activeItems` no vacío—, así que los requests
+    /// repetitivos sonarían indefinidamente con datos de la cuenta anterior. Sin PII (no lleva conteo:
+    /// obtenerlo exigiría un fetch async del `UNUserNotificationCenter` pre-mount).
+    static func signOutNotificationsCleared() {
+        logger.notice("CloudSignOut local notifications cleared — pending + delivered")
+    }
+
     /// G5-B: cierre de sesión SOLO-GRUPOS — outbox de grupos drenado, canal en teardown, consent
     /// limpiado, sesión cerrada + wipe del store de grupos ARMADO → esperando relaunch.
     static func signOutGroupsOnlyWipeArmed() {

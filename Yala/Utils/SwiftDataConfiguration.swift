@@ -315,11 +315,33 @@ enum SwiftDataConfiguration {
     /// Orden IDEMPOTENTE ante kill a mitad (el arm se limpia AL FINAL; re-entrada re-ejecuta:
     /// archivos ya ausentes = no-op, escrituras de flags idempotentes):
     /// 1) archivos personal + sync-meta → 2) par storageMode/mirrorOffArmed a `.icloud` fresh
-    /// (invariante SERIO-1: juntos) → 3) prefs/caches/onboarding a estado recién instalada →
-    /// 4) desarmar.
+    /// (invariante SERIO-1: juntos) → 3) prefs/caches/onboarding a estado recién instalada +
+    /// notificaciones locales → 4) desarmar.
     static func performSignOutWipeIfArmed() {
         guard !isRunningTests, !isUITesting else { return }
-        guard StorageModePersistence.isSignOutWipeArmed() else { return }
+        performSignOutWipeIfArmed(
+            defaults: .standard,
+            deleteFiles: { deleteStoreFiles(named: $0, schema: $1) },
+            resetPrefs: { DataWipeService.resetForSignOutWipe() },
+            cancelNotifications: {
+                NotificationService.shared.cancelAllNotifications()
+                NotificationService.shared.clearDeliveredNotifications()
+            })
+    }
+
+    /// Variante inyectable (tests del ORDEN/idempotencia sin archivos reales, sin `UserDefaults.standard`
+    /// y sin `UNUserNotificationCenter`; el wrapper de producción mantiene los guards de test/uitest).
+    ///
+    /// `resetPrefs` es un seam OBLIGATORIO, no cosmético: `DataWipeService.resetForSignOutWipe()` toca
+    /// `ProfileImageStorage`/`AppRouter`/`ProTourManager`/`SetupChecklistManager`/`WidgetDataCache`/
+    /// `Tips` y barre `UserDefaults.standard` — ejecutarlo bajo el runner destrozaría el estado del host.
+    static func performSignOutWipeIfArmed(
+        defaults: UserDefaults,
+        deleteFiles: (String, Schema) -> Bool,
+        resetPrefs: () -> Void,
+        cancelNotifications: () -> Void
+    ) {
+        guard StorageModePersistence.isSignOutWipeArmed(defaults) else { return }
 
         // S3 del review: si el borrado del archivo BASE falla (≠ no-existe), ABORTAR sin
         // escribir `.icloud` ni desarmar — continuar remontaría el mirror SOBRE el archivo
@@ -327,8 +349,10 @@ enum SwiftDataConfiguration {
         // (exactamente el fallo que el borrado-por-archivos existe para impedir). El arm
         // persiste → el próximo boot reintenta; mientras tanto el par SERIO-1 sigue
         // consistente (`.cloud`+mirrorOffArmed → mount mirror-OFF, sin riesgo).
-        guard deleteStoreFiles(named: databaseName, schema: personalSchema),
-              deleteStoreFiles(named: syncMetaDatabaseName, schema: syncMetaSchema) else {
+        // La cancelación de notificaciones va DESPUÉS de este guard a propósito: si el store
+        // sobrevive, sus recordatorios siguen siendo válidos (y el reconciler los reprogramaría).
+        guard deleteFiles(databaseName, personalSchema),
+              deleteFiles(syncMetaDatabaseName, syncMetaSchema) else {
             CloudSyncBreadcrumb.signOutWipeAborted(reason: "store file deletion failed")
             return
         }
@@ -337,27 +361,43 @@ enum SwiftDataConfiguration {
         // trío de archivos del store de grupos. Un fallo aquí NO aborta el wipe personal (ya consumado);
         // el trío -wal/-shm huérfano es inerte y el store se recrea vacío al montar. El marker se limpia
         // JUNTO al arm (AL FINAL, orden kill-safe existente).
-        if StorageModePersistence.signOutWipeIncludesGroups() {
-            _ = deleteStoreFiles(named: groupsDatabaseName, schema: groupsSchema)
+        if StorageModePersistence.signOutWipeIncludesGroups(defaults) {
+            _ = deleteFiles(groupsDatabaseName, groupsSchema)
         }
 
-        StorageModePersistence.write(.icloud)
-        UserDefaults.standard.removeObject(forKey: StorageModePersistence.mirrorOffArmedKey)
+        StorageModePersistence.write(.icloud, defaults: defaults)
+        defaults.removeObject(forKey: StorageModePersistence.mirrorOffArmedKey)
 
-        DataWipeService.resetForSignOutWipe()
+        resetPrefs()
+
+        // §5.2.1: las notificaciones locales de la cuenta saliente quedan HUÉRFANAS al morir sus filas
+        // `NotificationItem` con el archivo del store — y nadie las mata después: el reconciler de boot
+        // (`AppBootstrapper.ensureNotificationsScheduled`) solo REPROGRAMA, y su guard exige
+        // `!activeItems.isEmpty`, que post-wipe es falso ⇒ los requests repetitivos sonarían PARA SIEMPRE
+        // con datos de la cuenta anterior.
+        //
+        // Barrido TOTAL (pending + delivered), no selectivo. Las PROGRAMADAS son todas de ámbito cuenta:
+        // el único emisor de la app es `NotificationService` y los únicos requests con vida larga derivan
+        // de filas `NotificationItem` del store personal que este wipe destruye (los de grupos son
+        // one-shots de 1 s). Las ENTREGADAS incluyen también banners del dominio Grupos, cuyo store
+        // SOBREVIVE mientras `signOutWipeIncludesGroups` sea falso — se retiran igualmente A PROPÓSITO:
+        // este camino devuelve el device a "recién instalado" (Welcome, prefs y onboarding reseteados
+        // arriba), y dejar banners con montos de grupos de la sesión cerrada contradiría esa semántica.
+        cancelNotifications()
+        CloudSyncBreadcrumb.signOutNotificationsCleared()
 
         // #37 (A3 del review): retirar los sentinels del drenaje iKV→outbox — `removeUserPreferenceKeys`
         // EXCLUYE `cloudSync.*` a propósito (los gestiona este boot-hook en el orden kill-safe). Sin
         // esto, un migrar → sign-out `.cloud` → borrado de cuenta → RE-migración como líder haría skip
         // del drenaje (la misma clase de H3/reversa). Idempotente; el arm se desarma DESPUÉS.
         for key in PrefsCutoverDrain.sentinelKeys(
-            in: Array(UserDefaults.standard.dictionaryRepresentation().keys)
+            in: Array(defaults.dictionaryRepresentation().keys)
         ) {
-            UserDefaults.standard.removeObject(forKey: key)
+            defaults.removeObject(forKey: key)
         }
 
-        StorageModePersistence.clearSignOutWipeIncludesGroups()
-        StorageModePersistence.clearSignOutWipeArm()
+        StorageModePersistence.clearSignOutWipeIncludesGroups(defaults)
+        StorageModePersistence.clearSignOutWipeArm(defaults)
         CloudSyncBreadcrumb.signOutWipeExecuted()
     }
 
@@ -372,18 +412,31 @@ enum SwiftDataConfiguration {
     /// Idempotente / kill-safe: el arm se limpia AL FINAL; una re-entrada tras kill re-ejecuta (archivos
     /// ya ausentes = no-op). Un fallo del borrado del archivo BASE conserva el arm → reintento en el
     /// próximo boot; el personal jamás corre riesgo (solo se tocan archivos de grupos).
+    ///
+    /// NOTIFICACIONES — asimetría DELIBERADA con `performSignOutWipeIfArmed`, NO "arreglar" por simetría:
+    /// aquí el store PERSONAL sobrevive y es el dueño de TODAS las notificaciones programadas
+    /// (`NotificationItem`), así que un `cancelAllNotifications()` borraría los recordatorios VIVOS del
+    /// usuario que no se fue — el bug inverso. Solo se retiran las ENTREGADAS del dominio grupos
+    /// (selectivas por deep link), que sí quedan apuntando a un store recién borrado. Las pendientes de
+    /// grupos no existen en la práctica: `GroupNotificationService` emite one-shots con trigger de 1 s.
     static func performGroupsOnlySignOutWipeIfArmed() {
         guard !isRunningTests, !isUITesting else { return }
         performGroupsOnlySignOutWipeIfArmed(
             defaults: .standard,
-            deleteFiles: { deleteStoreFiles(named: $0, schema: $1) })
+            deleteFiles: { deleteStoreFiles(named: $0, schema: $1) },
+            clearDeliveredGroupNotifications: {
+                // Best-effort y desacoplado: la lectura de entregadas es async y el boot no debe
+                // esperarla. No toca SwiftData — solo el centro de notificaciones del sistema.
+                Task { await NotificationService.shared.clearDeliveredGroupNotifications() }
+            })
     }
 
     /// Variante inyectable (tests del ORDEN/idempotencia sin archivos reales; el wrapper de producción
     /// mantiene los guards de test/uitest).
     static func performGroupsOnlySignOutWipeIfArmed(
         defaults: UserDefaults,
-        deleteFiles: (String, Schema) -> Bool
+        deleteFiles: (String, Schema) -> Bool,
+        clearDeliveredGroupNotifications: () -> Void = {}
     ) {
         guard StorageModePersistence.isGroupsOnlyWipeArmed(defaults) else { return }
 
@@ -391,6 +444,8 @@ enum SwiftDataConfiguration {
             CloudSyncBreadcrumb.signOutGroupsOnlyWipeAborted(reason: "groups store file deletion failed")
             return
         }
+
+        clearDeliveredGroupNotifications()
 
         StorageModePersistence.clearGroupsOnlyWipeArm(defaults)
         CloudSyncBreadcrumb.signOutGroupsOnlyWipeExecuted()
@@ -408,15 +463,27 @@ enum SwiftDataConfiguration {
     ///    con montos de la invitada; borrado INCONDICIONAL, no-op real si no existe [flag OFF] ⇒ byte-idéntico;
     ///    el guard abort-S3 cubre los 3: fallo en el BASE de CUALQUIERA aborta, el arm y el descriptor
     ///    persisten, el mount sigue siendo el secundario y el próximo boot reintenta) → 2) purga E2E-M1
-    ///    (incl. el espejo App Group de grupos) → 3) descriptor + marker de entrada → 3.5) los 3 flags de
+    ///    (incl. el espejo App Group de grupos) → 2.5) notificaciones de la INVITADA canceladas →
+    ///    3) descriptor + marker de entrada → 3.5) los 3 flags de
     ///    onboarding a `false` (EN EL BOOT y jamás in-session: con el proceso vivo montaría la cadena Welcome
     ///    DEBAJO del cover de relaunch — doble presentación mismo anchor, clase toolbar-muerta) → 4) desarmar.
+    ///
+    /// La cancelación del paso 2.5 es SIMÉTRICA a la de la ENTRADA (`performSecondaryEntryTasksIfNeeded`,
+    /// que cancela las del DUEÑO) y cierra un daño doble: sin ella los recordatorios de la invitada
+    /// sobreviven a la vuelta del dueño Y —peor— si dejó tantas como tenía él, la heurística de conteo
+    /// del reconciler (`AppBootstrapper.ensureNotificationsScheduled`: `pending.count < activeItems.count`)
+    /// resulta FALSA y las del dueño, canceladas al entrar la invitada, JAMÁS se restauran. Cancelar aquí
+    /// deja `pending == 0`, que es exactamente la condición que dispara la reprogramación en el mismo boot.
     static func performSecondaryWipeIfArmed() {
         guard !isRunningTests, !isUITesting else { return }
         performSecondaryWipeIfArmed(
             defaults: .standard,
             deleteFiles: { deleteStoreFiles(named: $0, schema: $1) },
-            purge: { SecondarySessionBoundaryPurge.purge() })
+            purge: { SecondarySessionBoundaryPurge.purge() },
+            cancelNotifications: {
+                NotificationService.shared.cancelAllNotifications()
+                NotificationService.shared.clearDeliveredNotifications()
+            })
     }
 
     /// Variante inyectable (tests del ORDEN sin archivos reales — el wrapper de producción
@@ -424,7 +491,8 @@ enum SwiftDataConfiguration {
     static func performSecondaryWipeIfArmed(
         defaults: UserDefaults,
         deleteFiles: (String, Schema) -> Bool,
-        purge: () -> Void
+        purge: () -> Void,
+        cancelNotifications: () -> Void = {}
     ) {
         guard SecondarySessionStore.isWipeArmed(defaults) else { return }
 
@@ -436,6 +504,7 @@ enum SwiftDataConfiguration {
         }
 
         purge()
+        cancelNotifications()
 
         SecondarySessionStore.clear(defaults)
         SecondarySessionStore.clearEntryPurgeMark(defaults)
@@ -450,7 +519,8 @@ enum SwiftDataConfiguration {
 
     /// Tareas de ENTRADA de la sesión secundaria (one-shot idempotente, pre-mount): purga las
     /// superficies App Group del dueño (sus colas Apple Pay/Siri/imágenes no deben materializarse
-    /// en el store de la invitada), cancela sus notificaciones locales pendientes (se reprograman
+    /// en el store de la invitada), cancela sus notificaciones locales —pendientes Y entregadas: los
+    /// banners del dueño llevan sus montos y no debe verlos la invitada— (se reprograman
     /// con sus boot-reconcilers cuando vuelva) y sana los flags de onboarding si un kill se comió
     /// la ventana descriptor→flags de la entrada (sin el healing, el boot mostraría el Welcome
     /// sobre el store secundario vacío y un re-sign-in caería en el adopt CLÁSICO, que escribe el
@@ -461,7 +531,10 @@ enum SwiftDataConfiguration {
         performSecondaryEntryTasksIfNeeded(
             defaults: .standard,
             purge: { SecondarySessionBoundaryPurge.purge() },
-            cancelNotifications: { NotificationService.shared.cancelAllNotifications() })
+            cancelNotifications: {
+                NotificationService.shared.cancelAllNotifications()
+                NotificationService.shared.clearDeliveredNotifications()
+            })
     }
 
     /// Variante inyectable (tests). El healing escribe DIRECTO el mínimo (no

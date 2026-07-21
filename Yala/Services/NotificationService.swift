@@ -129,6 +129,9 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
 
         // Check permission first
         guard await isAuthorized() else { return }
+        // §5.2.1 — choke point: con un wipe personal armado, este `item` pertenece a la cuenta saliente
+        // y su fila muere con el store. Reprogramarlo dejaría un repetitivo huérfano. Ver `isPersonalWipeArmed`.
+        guard !isPersonalWipeArmed else { return }
 
         // Cancel existing notifications for this item first
         await cancelNotification(for: item)
@@ -218,6 +221,9 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         print("NotifService[#16-debug]: sendNotification title=\"\(title)\" authStatus=\(settings.authorizationStatus.rawValue) authorized=\(authorized) alert=\(settings.alertSetting.rawValue) center=\(settings.notificationCenterSetting.rawValue) lockScreen=\(settings.lockScreenSetting.rawValue)")
         #endif
         guard authorized else { return }
+        // §5.2.1 — choke point: con un wipe personal armado, esta entrega llevaría montos y nombres de
+        // la cuenta que acaba de cerrar sesión. Ver `isPersonalWipeArmed`.
+        guard !isPersonalWipeArmed else { return }
 
         let content = UNMutableNotificationContent()
         content.title = title
@@ -254,9 +260,56 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         await sendNotification(title: title, body: body, deepLink: nil)
     }
 
+    /// ¿Hay un wipe del store PERSONAL armado (sign-out `.cloud` o salida de sesión secundaria M1)?
+    ///
+    /// Guard del CHOKE POINT (§5.2.1): cancelar las notificaciones al armar el wipe no basta por sí solo
+    /// —`AppBootstrapper.handleBecameActive` lanza un `Task` NO estructurado (`ensureNotificationsScheduled`
+    /// + `sendDueReports`) con decenas de puntos de suspensión, y su guard de arm se evalúa AL LANZARLO. Un
+    /// background→active durante el push-all (fase `.working`, todavía sin arm) deja esa tarea suspendida;
+    /// al reanudar, ya con el wipe armado, reprogramaría los recordatorios de la cuenta saliente y podría
+    /// ENTREGAR un banner con montos suyos sobre el cover de relanzamiento. Evaluarlo aquí, en el instante
+    /// del `add`, cierra la ventana para CUALQUIER productor —presente o futuro— sin rastrear tareas.
+    ///
+    /// NO incluye `groupsOnlyWipeArmed`: en ese camino el store personal sobrevive y sus recordatorios
+    /// siguen siendo válidos (misma asimetría deliberada que en los boot-hooks).
+    private var isPersonalWipeArmed: Bool {
+        StorageModePersistence.isSignOutWipeArmed() || SecondarySessionStore.isWipeArmed()
+    }
+
     /// Cancel all notifications
     func cancelAllNotifications() {
         notificationCenter.removeAllPendingNotificationRequests()
+    }
+
+    /// Retira las notificaciones YA ENTREGADAS del Centro de Notificaciones.
+    ///
+    /// SEPARADO de `cancelAllNotifications()` A PROPÓSITO — NO fusionar: aquel corre en
+    /// `rescheduleAllNotifications` (y por tanto en cada toggle de Ajustes y en cada
+    /// `ensureNotificationsScheduled` del foreground), donde borrar el historial entregado del
+    /// usuario sería una regresión visible. Este es exclusivo de las FRONTERAS DE CUENTA
+    /// (boot-cleanup del sign-out `.cloud`, salida/entrada de sesión secundaria M1): los banners
+    /// entregados llevan montos y nombres de comercios de la cuenta saliente y no deben sobrevivirle.
+    func clearDeliveredNotifications() {
+        notificationCenter.removeAllDeliveredNotifications()
+    }
+
+    /// Retira SOLO las notificaciones entregadas del dominio GRUPOS (deep link `groups/<uuid>`,
+    /// `GroupNotificationService`), dejando intactas las personales.
+    ///
+    /// Existe porque el cierre de sesión SOLO-GRUPOS borra el store `YalaGroups` pero CONSERVA el
+    /// personal: un barrido total ahí borraría el historial del usuario que NO se fue. Al tocar una
+    /// entregada huérfana, `GroupsContainerView.openPendingGroupIfAvailable` no encuentra el grupo y
+    /// retorna sin limpiar `pendingGroupID`, suprimiendo el onboarding del tab in-session.
+    ///
+    /// Best-effort: `getDeliveredNotifications` es async, así que el call-site del boot lo invoca
+    /// desde un `Task` desacoplado (no toca SwiftData ni bloquea el arranque).
+    func clearDeliveredGroupNotifications() async {
+        let delivered = await notificationCenter.deliveredNotifications()
+        let groupIDs = delivered
+            .filter { ($0.request.content.userInfo["deepLink"] as? String)?.hasPrefix("groups/") == true }
+            .map(\.request.identifier)
+        guard !groupIDs.isEmpty else { return }
+        notificationCenter.removeDeliveredNotifications(withIdentifiers: groupIDs)
     }
 
     /// Cancel any previously scheduled dynamic notifications (reports)

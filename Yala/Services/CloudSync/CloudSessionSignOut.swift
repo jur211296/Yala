@@ -151,6 +151,31 @@ final class CloudSessionSignOut {
         // alert de fresh-start existente; "Restaurar iCloud" regresa a donde estaba.
     }
 
+    /// §5.2.1 — capa IN-SESSION de la limpieza de notificaciones (defensa en profundidad; la red
+    /// kill-safe sigue siendo el boot-cleanup `SwiftDataConfiguration.performSignOutWipeIfArmed`).
+    ///
+    /// El boot-hook no cubre la ventana entre el arm y el relanzamiento: el usuario puede quedarse
+    /// minutos en el cover terminal y recibir ahí un recordatorio de la cuenta que acaba de cerrar.
+    /// Se invoca SIEMPRE DESPUÉS del arm, con el wipe ya comprometido y todos los guards pasados.
+    ///
+    /// Es BEST-EFFORT, no la garantía: el único camino en que estas notificaciones vuelven a ser válidas
+    /// es el abort S3 del boot-cleanup (si el archivo BASE no se pudo borrar, el store sobrevive y el
+    /// reconciler las reprograma — de hecho con `pending == 0` su heurística de conteo se cumple seguro).
+    /// El reintento del wipe en el boot siguiente las vuelve a cancelar: la red kill-safe es el boot-hook.
+    ///
+    /// Por sí sola tampoco bastaría: un `Task` no estructurado ya suspendido (p. ej. el de
+    /// `AppBootstrapper.handleBecameActive`) puede reprogramar o entregar DESPUÉS de este punto. Lo cierra
+    /// el guard del choke point en `NotificationService.isPersonalWipeArmed`, que se evalúa en el `add`.
+    ///
+    /// Exclusivo de los caminos que arman un wipe del store PERSONAL (`.cloud`, secundario M1 y el
+    /// cierre local post-borrado de cuenta). Los caminos SOLO-GRUPOS y `.privateReset` NO lo llaman:
+    /// ahí el store personal sobrevive y sus recordatorios siguen siendo legítimos.
+    private func clearLocalNotificationsForArmedWipe() {
+        NotificationService.shared.cancelAllNotifications()
+        NotificationService.shared.clearDeliveredNotifications()
+        CloudSyncBreadcrumb.signOutNotificationsCleared()
+    }
+
     /// Solo los 3 flags de onboarding — las prefs del usuario (tema, moneda, etc.) SOBREVIVEN
     /// (a diferencia del camino `.cloud`, donde el boot-cleanup resetea todo a recién instalada).
     private func resetOnboardingFlagsPreservingData() {
@@ -231,6 +256,7 @@ final class CloudSessionSignOut {
         }
         StorageModePersistence.armSignOutWipe()
         CloudSyncBreadcrumb.signOutWipeArmed()
+        clearLocalNotificationsForArmedWipe()
         phase = .awaitingRelaunch
     }
 
@@ -273,6 +299,7 @@ final class CloudSessionSignOut {
             await CloudAuthService.shared.signOut()
             SecondarySessionStore.armWipe()
             CloudSyncBreadcrumb.signOutWipeArmed()
+            clearLocalNotificationsForArmedWipe()
             phase = .awaitingRelaunch
         }
     }
@@ -386,6 +413,11 @@ final class CloudSessionSignOut {
         // en UserDefaults). SOLO en el sign-out de grupos, NO tras borrar cuenta (ahí no hay "vuelve a
         // iniciar sesión"). Se quema en el `onAppear` del banner real.
         GroupsSignOutBannerMarker.markPending()
+        // §5.2.1 — los banners de grupo YA ENTREGADOS apuntarán a un store que el boot borra. Se retiran
+        // AQUÍ (in-session, con `await` disponible) y no solo en el boot-hook: allí la lectura de entregadas
+        // es async y solo puede encolarse en un `Task` que el arm —ya limpiado— deja de respaldar. NUNCA las
+        // personales: en este camino los datos personales sobreviven intactos.
+        await NotificationService.shared.clearDeliveredGroupNotifications()
         StorageModePersistence.armGroupsOnlyWipe()
         CloudSyncBreadcrumb.signOutGroupsOnlyWipeArmed()
         phase = .awaitingRelaunch
@@ -421,6 +453,7 @@ final class CloudSessionSignOut {
         }
         StorageModePersistence.armSignOutWipe()
         CloudSyncBreadcrumb.signOutWipeArmed()
+        clearLocalNotificationsForArmedWipe()
         phase = .awaitingRelaunch
     }
 
