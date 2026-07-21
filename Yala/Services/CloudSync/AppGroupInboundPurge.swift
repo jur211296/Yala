@@ -28,9 +28,14 @@
 //  DEVICE (`isProUser` sigue a la suscripción del Apple ID, `pendingControlAction` es transient, el
 //  override de idioma es preferencia de device) y las del dominio GRUPOS — ver el doc-comment de
 //  `DataWipeService.removeUserPreferenceKeys` y el de `SecondarySessionBoundaryPurge.purge()`, que sí
-//  barre las de grupos porque en M1 la frontera cruza identidades y en el sign-out `.cloud` NO (con el
-//  flag OFF el store de grupos sobrevive: barrer un `PendingJoinStore` vivo ahí mataría un intent de
-//  join legítimo del mismo Apple ID). Y hay al menos una de ámbito CUENTA que esta purga NO cubre:
+//  las barre porque en M1 la frontera cruza identidades. Que este helper no las incluya NO significa
+//  que sobrevivan al sign-out `.cloud`: `PendingJoinStore`/`GroupJoinIntentTracker` mueren ahí dentro de
+//  `DataWipeService.resetForSignOutWipe` (vía `AppRouter.resetAll`) y el consent lo limpia el propio
+//  `performSignOutWipeIfArmed` tras escribir `.icloud`. (Corrección 2026-07-21: este comentario decía
+//  que el `.cloud` NO tocaba las de grupos «porque con el flag OFF el store de grupos sobrevive» —
+//  razonamiento stale por partida doble: con el flag ON ese mismo hook BORRA los archivos de
+//  `YalaGroups` vía `signOutWipeIncludesGroups`, y el `PendingJoinStore` que decía proteger ya moría
+//  allí de todos modos.) Y hay al menos una de ámbito CUENTA que esta purga NO cubre:
 //  `lastUsedAccountID` (el `shortcutID` que `ApplePayDraftService` usa para elegir cuenta) — en el
 //  sign-out `.cloud` lo barre `DataWipeService.resetAllUserPreferences`, pero en las fronteras M1 no lo
 //  barre nadie (residual conocido y benigno: el UUID no resuelve en el store de la invitada).

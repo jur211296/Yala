@@ -315,8 +315,8 @@ enum SwiftDataConfiguration {
     /// Orden IDEMPOTENTE ante kill a mitad (el arm se limpia AL FINAL; re-entrada re-ejecuta:
     /// archivos ya ausentes = no-op, escrituras de flags idempotentes):
     /// 1) archivos personal + sync-meta → 2) par storageMode/mirrorOffArmed a `.icloud` fresh
-    /// (invariante SERIO-1: juntos) → 3) prefs/caches/onboarding a estado recién instalada +
-    /// notificaciones locales + colas del App Group → 4) desarmar.
+    /// (invariante SERIO-1: juntos) → 3) consent de grupos + prefs/caches/onboarding a estado recién
+    /// instalada + notificaciones locales + colas del App Group → 4) desarmar.
     static func performSignOutWipeIfArmed() {
         guard !isRunningTests, !isUITesting else { return }
         performSignOutWipeIfArmed(
@@ -327,7 +327,8 @@ enum SwiftDataConfiguration {
                 NotificationService.shared.cancelAllNotifications()
                 NotificationService.shared.clearDeliveredNotifications()
             },
-            purgeInboundSurfaces: { AppGroupInboundPurge.purgeInboundSurfaces() })
+            purgeInboundSurfaces: { AppGroupInboundPurge.purgeInboundSurfaces() },
+            clearGroupsConsent: { GroupsConsentState.clear() })
     }
 
     /// Variante inyectable (tests del ORDEN/idempotencia sin archivos reales, sin `UserDefaults.standard`
@@ -336,12 +337,15 @@ enum SwiftDataConfiguration {
     /// `resetPrefs` es un seam OBLIGATORIO, no cosmético: `DataWipeService.resetForSignOutWipe()` toca
     /// `ProfileImageStorage`/`AppRouter`/`ProTourManager`/`SetupChecklistManager`/`WidgetDataCache`/
     /// `Tips` y barre `UserDefaults.standard` — ejecutarlo bajo el runner destrozaría el estado del host.
+    /// `clearGroupsConsent` lo es por lo mismo: `PreferenceSyncService` cablea `UserDefaults.standard` y
+    /// `NSUbiquitousKeyValueStore.default` e ignoraría el `defaults` inyectado.
     static func performSignOutWipeIfArmed(
         defaults: UserDefaults,
         deleteFiles: (String, Schema) -> Bool,
         resetPrefs: () -> Void,
         cancelNotifications: () -> Void,
-        purgeInboundSurfaces: () -> Void = {}
+        purgeInboundSurfaces: () -> Void = {},
+        clearGroupsConsent: () -> Void = {}
     ) {
         guard StorageModePersistence.isSignOutWipeArmed(defaults) else { return }
 
@@ -369,6 +373,47 @@ enum SwiftDataConfiguration {
 
         StorageModePersistence.write(.icloud, defaults: defaults)
         defaults.removeObject(forKey: StorageModePersistence.mirrorOffArmedKey)
+
+        // El consent de GRUPOS (§C5) es un registro de la CUENTA y `removeUserPreferenceKeys` no lo
+        // nombra (ni en su lista ni en sus exclusiones deliberadas): sin esto sobrevive al wipe y la
+        // cuenta SIGUIENTE en este device NO ve la pantalla de consent (`GroupBackendInviteEntryLogic
+        // .nextStep`, `GroupCreateRoutingLogic`, `GroupJoinReconciler`) — y el uploader de migración
+        // (`AppBootstrapper` → `GroupMigrationUploader`, gateado POR consent) subiría sus grupos,
+        // gastos y liquidaciones bajo un `user_id` que jamás consintió. Era el ÚNICO superviviente del
+        // trío de superficies de Grupos: `PendingJoinStore`/`GroupJoinIntentTracker` mueren en el
+        // `resetPrefs()` de abajo (vía `AppRouter.resetAll`).
+        //
+        // AQUÍ y no in-session en `CloudSessionSignOut`, por el reparto de `PreferenceSyncService.remove`:
+        // este punto corre DESPUÉS de `write(.icloud)` ⇒ `behavior == .icloudKeyValue` ⇒ borra local + iKV
+        // y NADA en el backend. En el coordinador el modo persistido aún es `.cloud` ⇒ `.cloudOutbox` ⇒
+        // encolaría `.int(0)` (≡ "no aceptado" para `intPresence`), y sin tombstone en el wire ese `0`
+        // pisaría por LWW el registro GDPR de una cuenta VIVA, propagándolo a sus otros devices. El device
+        // olvida, la cuenta recuerda: al re-entrar por adopt (el claim-store sobrevive) el pull de prefs
+        // del backend lo devuelve sin volver a preguntar. Limpiar el iKV es OBLIGATORIO (CR-2 de
+        // `GroupsConsentState.clear`): es la única capa que este wipe no toca en ningún paso, y el
+        // `applyRemoteValues()` del próximo bootstrap `.icloud` lo resucitaría. La posición entre
+        // `write(.icloud)` y `resetPrefs()` es lo ÚNICO que garantiza esa rama — `modeAtClear` en
+        // `SignOutWipeHookTests` la pinnea desde DENTRO de la closure (leer el modo tras el return no
+        // prueba nada sobre el instante del clear).
+        //
+        // ANTES de `resetPrefs()` y no después, aunque el consent sea una pref: el gate de abajo LEE la
+        // key que ese reset podría barrer. Hoy `removeUserPreferenceKeys` no la nombra, pero añadirla
+        // allí es el movimiento "natural" para quien quiera que el device olvide — y con el clear detrás
+        // el gate dejaría de dispararse en silencio, el iKV quedaría sucio y el gap volvería entero.
+        // Delante, ambas capas son correctas y el barrido posterior sería un no-op redundante.
+        //
+        // Gate por PRESENCIA de la key y no por `signOutWipeIncludesGroups`: con el flag OFF las keys
+        // nunca se escriben (darkness §C5) ⇒ la closure JAMÁS se invoca ⇒ byte-identidad literal; y cubre
+        // el hueco que deja el marker si `groupsBackendEnabled` se apaga en remoto entre el `register()`
+        // y el sign-out (marker ausente, consent presente). Residual: un consent que solo exista en el iKV
+        // (lo registró OTRO device del mismo Apple ID y este nunca lo aplicó) no pasa el gate — caso
+        // inofensivo y parte del residual iKV general, mucho más ancho que el consent.
+        //
+        // DESPUÉS del guard abort-S3 por el mismo racional que las notificaciones y las colas: si el
+        // store sobrevive, el consent de esa sesión sigue siendo legítimo.
+        if defaults.object(forKey: PrefSyncKey.groupsConsentAcceptedAt.rawValue) != nil {
+            clearGroupsConsent()
+        }
 
         resetPrefs()
 

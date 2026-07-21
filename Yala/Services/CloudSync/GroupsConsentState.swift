@@ -44,9 +44,26 @@ enum GroupsConsentState {
             forKey: PrefSyncKey.groupsConsentTextVersion.rawValue)
     }
 
-    /// Limpia el consent de grupos (G5-B — sign-out solo-grupos). Usa `PreferenceSyncService.remove`
-    /// para las 2 keys → cubre las 3 ramas de storageMode (CR-2: en `.icloud` DEBE limpiar el iKV o
-    /// `applyRemoteValues()` del próximo boot resucitaría el consent). Idempotente.
+    /// Limpia el consent de grupos. Usa `PreferenceSyncService.remove` para las 2 keys → cubre las 3
+    /// ramas de storageMode (CR-2: en `.icloud` DEBE limpiar el iKV o `applyRemoteValues()` del próximo
+    /// boot resucitaría el consent). Idempotente.
+    ///
+    /// EL MODO EN QUE SE INVOCA IMPORTA, y por eso los callers son los que son. Ninguno alcanza el
+    /// backend, pero por dos vías distintas:
+    /// - `.icloud` (`behavior == .icloudKeyValue`) → local + iKV, cero backend. Es el caso de los cierres
+    ///   solo-grupos (`finalizeGroupsOnlyClose`, `closeLocalAfterAccountDeletionGroupsOnly`,
+    ///   `exitYalaOnThisDevice`) y del boot-cleanup del wipe personal
+    ///   (`SwiftDataConfiguration.performSignOutWipeIfArmed`, que la invoca DESPUÉS de escribir `.icloud`
+    ///   justamente para caer en esta rama).
+    /// - Frontera M1 (`SecondarySessionBoundaryPurge`) → con el descriptor secundario activo el behavior
+    ///   es `.localOnly`: SOLO UserDefaults, ni iKV ni outbox. Es lo correcto ahí y no una carencia — el
+    ///   iKV presente es el del DUEÑO (decisión 7 del diseño M1), y limpiarlo le retiraría a él un consent
+    ///   que sigue siendo suyo.
+    /// - `.cloud` (`behavior == .cloudOutbox`) → encola `.int(0)`, que para la familia `intPresence`
+    ///   equivale a "no aceptado" y **borraría por LWW el registro GDPR de la cuenta en el backend**,
+    ///   propagándolo a sus otros devices. Un sign-out es "hasta luego", no una retirada de
+    ///   consentimiento: NO llamar a este helper desde un camino que corra con el modo `.cloud` vivo
+    ///   (pinneado por `SignOutNotificationWiringTests.inSessionConsentClears_neverOnCloudModePaths`).
     static func clear() {
         PreferenceSyncService.shared.remove(forKey: PrefSyncKey.groupsConsentAcceptedAt.rawValue)
         PreferenceSyncService.shared.remove(forKey: PrefSyncKey.groupsConsentTextVersion.rawValue)
