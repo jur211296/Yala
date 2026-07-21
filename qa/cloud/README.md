@@ -473,16 +473,22 @@ con sus 15 hermanas). Funciones en `public`: 33 → **34**.
 conector MCP se re-conmutó staging→prod para la promoción, precedente de g12_02). **Tejida en
 `supabase-groups-staging.ddl` §7** (2026-07-21) con el texto APLICADO, no el del `.sql` — el molde offline
 debe reflejar el schema VIVO; el `create…end $$;` de la §7 es byte-idéntico al aplicado. La cabecera del
-`.ddl` deja anotado el lag conocido de `g12_02` (grants-only, no teje cuerpo de función). ⚠️ **PENDIENTE SEPARADO —
-el GATEWAY de prod:** el Worker `yala-gateway-production` se desplegó por última vez el 2026-07-16, ANTES
-del commit `a9ed3785` (2026-07-20) que añadió `transfer_group_ownership` a la `PARAM_ALLOWLIST`
-(`gateway/src/groups/rpc.ts`). ⇒ **la RPC existe en la DB de prod pero el gateway de prod la rechaza con 404
-`yala_bad_request: unknown rpc` ANTES de llegar a PostgREST.** Impacto HOY: CERO (doble-dark: el canal de
-grupos está tras `groupsBackendEnabled`, y prod sirve `cloudModeEnabled`/`groupsBackendEnabled` en 0%).
-Agravante a recordar cuando se encienda: ese 404 el cliente lo mapea a `.transient`
-(`GroupsMembershipClient`), o sea **reintento perpetuo sin TTL** si se enciende el flag con el Worker stale.
-⇒ **redeploy del gateway a prod OBLIGATORIO antes del encendido** (arrastra todo lo acumulado en `gateway/`
-desde el 2026-07-16, así que merece su propio review) — anotado en D9.
+`.ddl` deja anotado el lag conocido de `g12_02` (grants-only, no teje cuerpo de función). **Regla anti-drift (GATEWAY):
+SATISFECHA — Worker de prod redesplegado el 2026-07-21**, Version ID `078bc707-768e-49b3-8a29-8eeb3c1a4d98`.
+Sin él, la RPC existiría en la DB pero el gateway la habría rechazado con 404 `yala_bad_request: unknown rpc`
+ANTES de llegar a PostgREST (`gateway/src/groups/rpc.ts` filtra por `PARAM_ALLOWLIST` — la entrada llegó en
+`a9ed3785`, 2026-07-20, posterior al deploy vivo). Agravante que lo hacía obligatorio antes del encendido y
+no después: ese 404 el cliente lo mapea a `.transient` (`GroupsMembershipClient`) ⇒ **reintento perpetuo sin
+TTL**. **Gate usado (molde para el próximo redeploy):** el diff pendiente se deriva del ÚLTIMO DEPLOY REAL
+(`wrangler deployments list --env production` → 2026-07-17T17:19Z), NUNCA de la fecha que digan los docs —
+aquí resultó ser **4 líneas aditivas en un solo archivo**, no «todo lo acumulado desde el 2026-07-16» como
+se había anotado por error (`/config` respondiendo 200 en prod ya delataba un deploy del 17-jul). Suite
+OFFLINE del gateway como gate (13 ficheros, 140/140) — los 4 goldens network-ON se EXCLUYEN a propósito:
+validan staging, no el artefacto que se despliega, y ensucian el corpus. Smoke post-deploy: `/config` 200
+con `0×3` · 401 sin JWT en `/groups/pull|merkle` (GET), `/groups/push`, `/sync/push`,
+`/groups/rpc/transfer_group_ownership` (POST) y `/account/exists` (**GET** — con POST da 404 y NO es
+regresión). Nota: el 401 de la ruta RPC no prueba la allowlist (el handler autentica antes de mirarla); lo
+que la garantiza es que el bundle se construyó desde el árbol con la entrada.
 
 **Goldens (describe G10 — ACTIVOS desde el 2026-07-20, commit `a9ed3785`; primera corrida VERDE registrada
 3/3 el 2026-07-21, `GROUPS_ENC_KEY=<staging.key> npx vitest run test/groups.goldens.test.ts -t "G10"`, 4.8s
@@ -1207,8 +1213,8 @@ entró UNA migración de grupos más, `g10_01_transfer_group_ownership` (aplicad
 promovida a prod el 2026-07-21 — versión prod `20260721212213`). ⇒ hoy la paridad es **34/34 funciones**,
 no 33/33. Ver §transfer_group_ownership arriba para su post-check (que además ENDURECE el método: el
 `md5(pg_get_functiondef)` de este bloque no cubre `proowner`/`proacl`, y en un SECURITY DEFINER cuyo dueño
-no fuese el de las tablas la RPC fallaría en silencio con el md5 cuadrando). ⚠️ El **gateway** de prod sigue
-en la versión del 2026-07-16 y NO conoce la RPC nueva → redeploy obligatorio antes del encendido (D9).
+no fuese el de las tablas la RPC fallaría en silencio con el md5 cuadrando). El **gateway** de prod quedó
+redesplegado el mismo día (Version ID `078bc707…`) ⇒ DB y Worker de prod al día, sin drift pendiente.
 
 **Paridad de funciones VERIFICADA byte-exacta (2026-07-11):** `md5(pg_get_functiondef)` idéntico
 staging↔prod en las 6 — apply_delta `7f8cb94d32f3976b6a9b0ade8f165b73`, apply_pref
