@@ -14,7 +14,11 @@ final class BudgetAlertTracker {
     static let shared = BudgetAlertTracker()
 
     private let defaults = UserDefaults.standard
-    private let keyPrefix = "budgetAlert_"
+
+    /// Prefijo de las keys de dedup en `UserDefaults`. Expuesto porque
+    /// `DataWipeService.removeUserPreferenceKeys` lo barre POR PREFIJO al resetear la
+    /// cuenta: las keys llevan UUID + período, así que su lista explícita no puede nombrarlas.
+    static let keyPrefix = "budgetAlert_"
 
     private static let periodDateFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -65,14 +69,14 @@ final class BudgetAlertTracker {
 
     /// Get already-notified thresholds for a budget/period
     func notifiedThresholds(budgetID: UUID, periodKey: String) -> Set<Int> {
-        let key = "\(keyPrefix)\(budgetID.uuidString)_\(periodKey)"
+        let key = "\(Self.keyPrefix)\(budgetID.uuidString)_\(periodKey)"
         let array = defaults.array(forKey: key) as? [Int] ?? []
         return Set(array)
     }
 
     /// Mark a threshold as notified
     func markNotified(budgetID: UUID, periodKey: String, threshold: Int) {
-        let key = "\(keyPrefix)\(budgetID.uuidString)_\(periodKey)"
+        let key = "\(Self.keyPrefix)\(budgetID.uuidString)_\(periodKey)"
         var current = defaults.array(forKey: key) as? [Int] ?? []
         if !current.contains(threshold) {
             current.append(threshold)
@@ -101,7 +105,7 @@ final class BudgetAlertTracker {
     /// Clean up old entries (> 3 months)
     func cleanupOldEntries() {
         let allKeys = defaults.dictionaryRepresentation().keys
-        let budgetKeys = allKeys.filter { $0.hasPrefix(keyPrefix) }
+        let budgetKeys = allKeys.filter { $0.hasPrefix(Self.keyPrefix) }
 
         let calendar = userConfiguredCalendar()
         let threeMonthsAgo = calendar.date(byAdding: .month, value: -3, to: Date.now) ?? Date.now
@@ -148,7 +152,7 @@ final class BudgetAlertTracker {
             // Unique: period key is "unique_YYYYMMDD_YYYYMMDD"
             // Extract full period by dropping prefix + UUID (36 chars) + "_"
             else {
-                let afterPrefix = String(key.dropFirst(keyPrefix.count))
+                let afterPrefix = String(key.dropFirst(Self.keyPrefix.count))
                 // UUID is always 36 chars (8-4-4-4-12), followed by "_periodKey"
                 if afterPrefix.count > 37 {
                     let periodPart = String(afterPrefix.dropFirst(37))

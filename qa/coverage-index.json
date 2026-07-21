@@ -172,9 +172,9 @@
         "F-BUD-04"
       ],
       "classification": "manual",
-      "coverage": "manual",
+      "coverage": "manual + higiene de dedup post-sign-out (2026-07-21): BudgetAlertTracker.keyPrefix pasa de `private let` de instancia a `static let` porque DataWipeService.removeUserPreferenceKeys lo barre POR PREFIJO (las keys `budgetAlert_<UUID>_<periodo>` llevan UUID + periodo, asi que la lista explicita de keys del reset no puede nombrarlas y sobrevivian al wipe Y al sign-out). Cambio de VISIBILIDAD unicamente — el formato de la key, el dedup y cleanupOldEntries(3 meses) son byte-identicos. Cobertura del barrido en unit:YalaTests/DataWipeServiceTests.removeUserPreferenceKeys_sweepsNotificationDedupPrefixes (mutante verificado). Estas keys llevan UUIDs de Budgets ya borrados => inertes tras el wipe; se barren igual para devolver el device a «recien instalado».",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-07-21"
     },
     {
       "area": "budgets",
@@ -1575,15 +1575,17 @@
         "Yala/Services/NotificationService.swift",
         "Yala/App/Services/PreferenceSyncService.swift",
         "Yala/App/Models/ScheduledPaymentModels.swift",
-        "Yala/Models/ScheduledPayment.swift"
+        "Yala/Models/ScheduledPayment.swift",
+        "Yala/Services/ScheduledPaymentNotificationService.swift",
+        "Yala/Services/ScheduledPaymentNotificationTracker.swift"
       ],
       "scenarioIDs": [
         "F-SCH-03"
       ],
       "classification": "manual",
-      "coverage": "manual",
+      "coverage": "manual + dedup de la notificacion de tarjeta re-llaveado por identidad (2026-07-21, preexistente destapado por el review adversarial de §5.2.1): la key `creditCardNotif_` se construia con `account.name` (ScheduledPaymentNotificationService, inline) => dos defectos INDEPENDIENTES del sign-out — (a) dos tarjetas HOMONIMAS con el mismo dia de pago compartian entrada y solo UNA notificaba, (b) renombrar la cuenta re-disparaba el aviso el mismo dia. Ahora se llavea por `Account.shortcutID` (UUID de identidad con .preserveValueOnDeletion, misma forma que el `paymentID` del tracker hermano) y la construccion vive en el TRACKER (hasNotifiedCreditCard/markNotifiedCreditCard), no inline en el servicio: SSOT con el prefijo que barre DataWipeService. Ademas cleanupOldEntries(30d) filtraba SOLO por `scheduledPaymentNotif_`, asi que las keys de tarjeta crecian SIN LIMITE en UserDefaults (una por cuenta y dia de pago avisado, para siempre); ahora cubre ambos prefijos, leyendo la fecha por el ULTIMO componente en el de tarjeta — eso caduca tambien el formato LEGACY `creditCardNotif_<nombre>_YYYYMMDD`, donde un nombre con «_» desplazaba los indices y habria dejado la key huerfana permanente. Residual asumido: la primera ejecucion tras actualizar puede repetir UNA notificacion, solo si el dia de pago cae exactamente ese dia y ya se habia avisado con la key vieja. unit:YalaTests/ScheduledPaymentNotificationTrackerTests (+5: mark/has por accountID, cuentas homonimas aisladas, fechas aisladas, cleanup del prefijo de tarjeta, cleanup del formato legacy incl. nombre con «_»; mutantes verificados). El envio real de la notificacion sigue manual/device.",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-07-21"
     },
     {
       "area": "scheduled-payment-skip-occurrences",

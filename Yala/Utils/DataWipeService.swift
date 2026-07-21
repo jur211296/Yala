@@ -279,6 +279,9 @@ final class DataWipeService {
     ///   tras este reset, #37 — no re-añadirlo aquí.)
     /// - `groupPrefs_*` y estado de Grupos — el dominio Grupos sobrevive el wipe por diseño
     ///   (store propio, CKSyncEngine); sus prefs se limpian en leaveGroup/deleteGroup.
+    ///   Incluye `GroupNotifications.lastNotified.*`: barrerla duplicaría una notificación
+    ///   de grupo legítima. Por eso el barrido de dedup de notificaciones de abajo enumera
+    ///   prefijos concretos y NO usa uno genérico tipo "todo lo que huela a notificación".
     /// - override de idioma (App Group de LanguageManager) — preferencia del DEVICE
     ///   compartida con widgets/extensiones, no de la cuenta.
     static func removeUserPreferenceKeys(from defaults: UserDefaults) {
@@ -430,6 +433,24 @@ final class DataWipeService {
         // Persistencia día calendario del chat + cache diario de sugerencias LLM
         for key in defaults.dictionaryRepresentation().keys
         where key.hasPrefix("chat_session_") || key.hasPrefix("chat_suggestions_") {
+            defaults.removeObject(forKey: key)
+        }
+
+        // --- Estado de deduplicación de notificaciones (keys con UUID + fecha) ---
+        // Barrido POR PREFIJO: la lista explícita de arriba no puede nombrarlas, así que
+        // sin esto sobreviven al wipe Y al sign-out. La crítica es `creditCardNotif_`
+        // ("ya avisé hoy del pago de esta tarjeta"): una entrada de la cuenta anterior
+        // SILENCIA el recordatorio de la entrante. Las otras dos llevan UUIDs de entidades
+        // ya borradas — inertes, pero se van igual (el device queda "recién instalado").
+        // Los prefijos de Grupos (`GroupNotifications.lastNotified.*`, `groupPrefs_*`) NO
+        // entran: ese dominio sobrevive el wipe por diseño — ver exclusiones de arriba.
+        let notificationDedupPrefixes = [
+            ScheduledPaymentNotificationTracker.creditCardKeyPrefix,
+            ScheduledPaymentNotificationTracker.keyPrefix,
+            BudgetAlertTracker.keyPrefix,
+        ]
+        for key in defaults.dictionaryRepresentation().keys
+        where notificationDedupPrefixes.contains(where: key.hasPrefix) {
             defaults.removeObject(forKey: key)
         }
 

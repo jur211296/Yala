@@ -234,8 +234,7 @@ final class ScheduledPaymentNotificationService {
         for account in accounts {
             guard account.creditCardPaymentDay == dayOfMonth else { continue }
 
-            let trackerKey = "creditCardNotif_\(account.name)_\(ScheduledPaymentNotificationTracker.dateKeyString(from: today))"
-            guard !UserDefaults.standard.bool(forKey: trackerKey) else { continue }
+            guard !tracker.hasNotifiedCreditCard(accountID: account.shortcutID, date: today) else { continue }
 
             let message = L10n.Account.CreditCard.paymentNotification(account.name)
             await NotificationService.shared.sendNotification(
@@ -244,7 +243,7 @@ final class ScheduledPaymentNotificationService {
                 deepLink: "accounts"
             )
 
-            UserDefaults.standard.set(true, forKey: trackerKey)
+            tracker.markNotifiedCreditCard(accountID: account.shortcutID, date: today)
         }
     }
 

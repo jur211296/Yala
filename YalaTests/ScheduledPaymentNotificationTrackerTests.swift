@@ -22,7 +22,9 @@ struct ScheduledPaymentNotificationTrackerTests {
     private func cleanupTrackerKeys() {
         let defaults = UserDefaults.standard
         let allKeys = defaults.dictionaryRepresentation().keys
-        for key in allKeys where key.hasPrefix("scheduledPaymentNotif_") {
+        for key in allKeys
+        where key.hasPrefix(ScheduledPaymentNotificationTracker.keyPrefix)
+            || key.hasPrefix(ScheduledPaymentNotificationTracker.creditCardKeyPrefix) {
             defaults.removeObject(forKey: key)
         }
     }
@@ -125,6 +127,50 @@ struct ScheduledPaymentNotificationTrackerTests {
         #expect(tracker.hasNotifiedForDate(paymentID: paymentID, date: today, type: .overdue) == true)
     }
 
+    // MARK: - Credit card dedup (llaveado por Account.shortcutID)
+
+    @Test func creditCard_markThenHasNotified() {
+        cleanupTrackerKeys()
+        let tracker = ScheduledPaymentNotificationTracker.shared
+        let accountID = UUID()
+        let today = Self.testNow
+
+        #expect(tracker.hasNotifiedCreditCard(accountID: accountID, date: today) == false)
+        tracker.markNotifiedCreditCard(accountID: accountID, date: today)
+        #expect(tracker.hasNotifiedCreditCard(accountID: accountID, date: today) == true)
+        cleanupTrackerKeys()
+    }
+
+    /// Regresión (2026-07-21): la key se llaveaba por `account.name`, así que dos tarjetas
+    /// homónimas con el mismo día de pago compartían entrada y solo UNA notificaba.
+    /// Con `shortcutID` cada cuenta lleva su propio marcador.
+    @Test func creditCard_sameNameDifferentAccounts_notCrossContaminated() {
+        cleanupTrackerKeys()
+        let tracker = ScheduledPaymentNotificationTracker.shared
+        let visaA = UUID()
+        let visaB = UUID()
+        let today = Self.testNow
+
+        tracker.markNotifiedCreditCard(accountID: visaA, date: today)
+
+        #expect(tracker.hasNotifiedCreditCard(accountID: visaA, date: today) == true)
+        #expect(tracker.hasNotifiedCreditCard(accountID: visaB, date: today) == false)
+        cleanupTrackerKeys()
+    }
+
+    @Test func creditCard_differentDate_notCrossContaminated() {
+        cleanupTrackerKeys()
+        let tracker = ScheduledPaymentNotificationTracker.shared
+        let accountID = UUID()
+        let today = Self.testNow
+        let nextMonth = calendar.date(byAdding: .month, value: 1, to: today)!
+
+        tracker.markNotifiedCreditCard(accountID: accountID, date: today)
+
+        #expect(tracker.hasNotifiedCreditCard(accountID: accountID, date: nextMonth) == false)
+        cleanupTrackerKeys()
+    }
+
     // MARK: - cleanupOldEntries
 
     /// Fecha fija para tests determinísticos: 2026-04-15 12:00 UTC.
@@ -192,6 +238,54 @@ struct ScheduledPaymentNotificationTrackerTests {
         cleanupTrackerKeys()
     }
 
+    /// Regresión (2026-07-21): el cleanup filtraba SOLO por `scheduledPaymentNotif_`, así
+    /// que las keys de tarjeta crecían sin límite en `UserDefaults` (una por cuenta y día
+    /// de pago avisado, para siempre).
+    @Test func cleanupOldEntries_creditCard_removesOldKeepsRecent() {
+        cleanupTrackerKeys()
+        let tracker = ScheduledPaymentNotificationTracker.shared
+        let staleAccount = UUID()
+        let recentAccount = UUID()
+        let oldDate = calendar.date(byAdding: .day, value: -45, to: Self.testNow)!
+        let recentDate = calendar.date(byAdding: .day, value: -5, to: Self.testNow)!
+
+        tracker.markNotifiedCreditCard(accountID: staleAccount, date: oldDate)
+        tracker.markNotifiedCreditCard(accountID: recentAccount, date: recentDate)
+
+        tracker.cleanupOldEntries(now: Self.testNow)
+
+        #expect(tracker.hasNotifiedCreditCard(accountID: staleAccount, date: oldDate) == false)
+        #expect(tracker.hasNotifiedCreditCard(accountID: recentAccount, date: recentDate) == true)
+        cleanupTrackerKeys()
+    }
+
+    /// Las keys del formato legacy (`creditCardNotif_<nombre>_YYYYMMDD`) también caducan:
+    /// la fecha se lee por el ÚLTIMO componente, así que un nombre con "_" —que desplazaba
+    /// los índices— ya no deja la key huérfana para siempre.
+    @Test func cleanupOldEntries_creditCard_removesLegacyNameKeyedEntries() {
+        cleanupTrackerKeys()
+        let defaults = UserDefaults.standard
+        let tracker = ScheduledPaymentNotificationTracker.shared
+        let oldDate = calendar.date(byAdding: .day, value: -45, to: Self.testNow)!
+        let recentDate = calendar.date(byAdding: .day, value: -5, to: Self.testNow)!
+        let oldStamp = ScheduledPaymentNotificationTracker.dateKeyString(from: oldDate)
+        let recentStamp = ScheduledPaymentNotificationTracker.dateKeyString(from: recentDate)
+
+        let staleSimpleName = "creditCardNotif_Visa_\(oldStamp)"
+        let staleNameWithUnderscore = "creditCardNotif_Mi_Visa_Oro_\(oldStamp)"
+        let recentLegacy = "creditCardNotif_Amex_\(recentStamp)"
+        for key in [staleSimpleName, staleNameWithUnderscore, recentLegacy] {
+            defaults.set(true, forKey: key)
+        }
+
+        tracker.cleanupOldEntries(now: Self.testNow)
+
+        #expect(defaults.object(forKey: staleSimpleName) == nil)
+        #expect(defaults.object(forKey: staleNameWithUnderscore) == nil)
+        #expect(defaults.object(forKey: recentLegacy) != nil)
+        cleanupTrackerKeys()
+    }
+
     // MARK: - NotificationType rawValues
 
     @Test func notificationType_rawValues_correct() {
@@ -216,6 +310,11 @@ Tests generated:
 11. test cleanupOldEntries_keepsRecentEntries - Cleanup preserves recent entries (5 days old)
 12. test cleanupOldEntries_keeps29DayOldEntry - Safely within 30-day window
 13. test cleanupOldEntries_removes31DayOldEntry - Just past the 30-day window
+15. test creditCard_markThenHasNotified - Dedup de la notif de tarjeta (por Account.shortcutID)
+16. test creditCard_sameNameDifferentAccounts_notCrossContaminated - Cuentas homónimas aisladas
+17. test creditCard_differentDate_notCrossContaminated - Fechas aisladas
+18. test cleanupOldEntries_creditCard_removesOldKeepsRecent - El cleanup 30d cubre el prefijo de tarjeta
+19. test cleanupOldEntries_creditCard_removesLegacyNameKeyedEntries - Y también el formato legacy por nombre
 14. test notificationType_rawValues_correct - Enum raw values match expected strings
 
 Cases NOT covered (require more context):

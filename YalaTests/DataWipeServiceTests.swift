@@ -115,6 +115,46 @@ struct DataWipeServiceTests {
         #expect(defaults.object(forKey: "guide.panel.dismissed") == nil)
     }
 
+    /// Regresión (2026-07-21): el estado de dedup de notificaciones se llavea con UUID +
+    /// fecha, así que `expectedResetKeys` no puede nombrarlo y sobrevivía al wipe Y al
+    /// sign-out. `creditCardNotif_` era la crítica — marca "ya avisé hoy del pago de esta
+    /// tarjeta", de modo que una entrada de la cuenta anterior silenciaba el recordatorio
+    /// de la entrante. Se barre por PREFIJO; los prefijos vecinos de Grupos / device-global
+    /// deben sobrevivir (exclusiones deliberadas del doc de `removeUserPreferenceKeys`).
+    @Test func removeUserPreferenceKeys_sweepsNotificationDedupPrefixes() {
+        let defaults = makeIsolatedDefaults()
+        let sweptKeys = [
+            "creditCardNotif_\(UUID().uuidString)_20260721",
+            "creditCardNotif_Visa_20260721",  // formato legacy (llaveado por nombre de cuenta)
+            "scheduledPaymentNotif_\(UUID().uuidString)_20260721_dueDate",
+            "budgetAlert_\(UUID().uuidString)_2026-07",
+        ]
+        let survivingKeys = [
+            "GroupNotifications.lastNotified.abc",             // dominio Grupos: sobrevive por diseño
+            "groupPrefs_zone1_settlementAccount_PEN",          // ídem
+            "metrics.cloudRegistered.user1",                   // device-global
+            "cloudSync.prefsCutoverDrained.user1",             // #37: lo purga el boot-hook, no este reset
+        ]
+        for key in sweptKeys + survivingKeys {
+            defaults.set(true, forKey: key)
+        }
+
+        DataWipeService.removeUserPreferenceKeys(from: defaults)
+
+        for key in sweptKeys {
+            #expect(
+                defaults.object(forKey: key) == nil,
+                "Key '\(key)' debería caer en el barrido por prefijo"
+            )
+        }
+        for key in survivingKeys {
+            #expect(
+                defaults.object(forKey: key) != nil,
+                "Key '\(key)' debe sobrevivir el reset (exclusión deliberada)"
+            )
+        }
+    }
+
     /// Regresión del hallazgo device 2026-07-14 (HALLAZGO 3, guion SIGNOUT-WELCOME):
     /// el pre-fill de OnboardingView exige `expensesOnlyMode` Y `financialMindset`
     /// presentes JUNTAS. El reset debe borrar AMBAS — dejar `expensesOnlyMode` viva
