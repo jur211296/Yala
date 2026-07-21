@@ -98,6 +98,46 @@ struct LocalizationParityTests {
         }
     }
 
+    // MARK: - aliases catch-all
+
+    /// Los aliases catch-all (`es`, `pt`) DEBEN ser copia IDÉNTICA en VALOR de su base
+    /// (`es-419`, `pt-BR`) — contrato declarado en `SupportedLocale.swift` ("Alias catch-all —
+    /// copia idéntica de …"), en L10N.md y en los commits del split (M7 `d868009d`, M9 `4fe8abcc`).
+    ///
+    /// Este test existe porque el contrato se rompió en silencio durante ~3 meses: ningún test
+    /// comparaba VALORES entre locales (solo presencia de keys, placeholders, vacíos y duplicados),
+    /// y `add-l10n-key.sh` daba a `pt` un `[NEEDS_TRANSLATION]` que alguien traducía a mano →
+    /// `pt` derivó a portugués EUROPEO en 272 de 3925 keys (2026-04-30 → 2026-07-21).
+    ///
+    /// Por qué importa: los aliases NO son un caso exótico. iOS entrega el idioma preferido CON
+    /// región, y CFBundle solo enruta a `pt-BR`/`pt-PT` cuando la región está en su cadena CLDR.
+    /// `pt.lproj` sirve a TODO portugués con región fuera del bloque lusófono — la diáspora
+    /// brasileña (US, JP, DE, PE…) —, y `es.lproj` a todo hispanohablante fuera de LatAm.
+    ///
+    /// Los aliases son ARTEFACTOS GENERADOS: `add-l10n-key.sh` los regenera por copia. Si este
+    /// test falla, NO edites el alias a mano — vuelve a correr el script (o copia la base).
+    @Test func aliases_haveIdenticalValues_toTheirBase() {
+        for (aliasCode, baseCode) in [("es", "es-419"), ("pt", "pt-BR")] {
+            let alias = StringsFileParser.parseStrings(forLocale: aliasCode)
+            let base = StringsFileParser.parseStrings(forLocale: baseCode)
+            #expect(!alias.isEmpty, "Alias '\(aliasCode)' has zero strings — bundle path issue")
+            #expect(!base.isEmpty, "Base '\(baseCode)' has zero strings — bundle path issue")
+
+            let divergent = alias.keys
+                .filter { base[$0] != nil && base[$0] != alias[$0] }
+                .sorted()
+            #expect(
+                divergent.isEmpty,
+                """
+                Alias '\(aliasCode)' diverge de su base '\(baseCode)' en \(divergent.count) valores. \
+                Los aliases son COPIA IDÉNTICA (contrato de SupportedLocale/L10N.md): no se traducen \
+                a mano. Regenera con qa/scripts/add-l10n-key.sh o copia \(baseCode).lproj → \
+                \(aliasCode).lproj. Divergentes: \(divergent.prefix(5))
+                """
+            )
+        }
+    }
+
     // MARK: - placeholders
 
     @Test func placeholders_matchAcrossLocales() {

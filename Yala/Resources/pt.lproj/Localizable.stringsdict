@@ -13,9 +13,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Tens %1$@ em 1 conta</string>
+			<string>Você tem %1$@ em 1 conta</string>
 			<key>other</key>
-			<string>Tens %1$@ em %2$d contas</string>
+			<string>Você tem %1$@ em %2$d contas</string>
 		</dict>
 	</dict>
 	<key>records.deleteConfirmTitle</key>

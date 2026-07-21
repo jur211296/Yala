@@ -739,6 +739,7 @@
 "panel.insightMenuHideHour" = "Esconder una hora";
 "panel.insightMenuHideToday" = "Esconder hoy";
 
+
 // Panel — Live Anchor Education (sheet "Tu saldo hoy")
 "panel.liveAnchorEducation.title" = "Tu saldo hoy";
 "panel.liveAnchorEducation.heroFormat" = "Hoy tienes %@";
@@ -752,7 +753,6 @@
 "panel.liveAnchorEducation.coachTitle" = "Tu saldo se mueve solo";
 "panel.liveAnchorEducation.coachMessage" = "Cuando tienes dinero en otras monedas, su valor cambia día a día. Tócame para entender qué pasa.";
 "panel.liveAnchorEducation.dotA11yLabel" = "Saldo de hoy al tipo de cambio actual. Toca para ver el detalle.";
-
 "widget.today" = "Hoy";
 
 // Widget Preferences
@@ -2815,74 +2815,6 @@
 "subcategory.accountTransfer" = "Transferencia entre cuentas";
 "subcategory.accountTransferOther" = "Transferencia entre cuentas";
 
-// MARK: - A0-Bridge Settings & Filters
-"settings.sectionGroups" = "Grupos";
-"settings.sectionGroupsHint" = "Configura cómo Yala mezcla tus cuentas y transacciones de grupos con tus datos personales.";
-"settings.includeGroupsInPanelTotal" = "Incluir grupos en saldo total";
-"settings.includeGroupTransactionsInStats" = "Incluir transacciones de grupos en estadísticas";
-"filters.sectionShared" = "Compartidos";
-"filters.includeGroupTransactions" = "Incluir transacciones de grupos";
-"filters.includeGroupTransactionsHint" = "Cuando está activo, los movimientos generados por gastos compartidos aparecen en tu lista.";
-
-// MARK: - A0-Bridge Bridge messages
-"groups.bridge.deleteExpenseBlocked" = "Este gasto tiene liquidaciones asociadas posteriores. Primero elimina o regulariza las liquidaciones para poder borrar el gasto.";
-"groups.bridge.editFromGroup" = "Esta transacción se sincroniza con un grupo. Edítala desde el gasto compartido.";
-"groups.bridge.assignFromInbox" = "Asigna subcategoría desde el Inbox para finalizarla.";
-"groups.bridge.editSettlementInGroup" = "Esta transacción proviene de una liquidación. Edita el settlement en el grupo.";
-"groups.bridge.editPartialBanner" = "Este gasto viene del grupo. Puedes editar la cuenta, la categoría y las etiquetas. El monto y la fecha se sincronizan con el grupo.";
-"groups.bridge.draftReasonRemoteCreate" = "%1$@ registró este gasto en %2$@. Elige cuenta para llevarlo a tus registros.";
-"groups.bridge.draftReasonCurrencyChanged" = "La moneda del gasto en %@ cambió. Elige cuenta para registrar tu parte.";
-"groups.bridge.activateTitle" = "Activar transacciones automáticas";
-"groups.bridge.activateBody" = "A partir de ahora, los gastos compartidos se reflejarán en tu cuenta de grupos. Tienes %d gastos previos en este grupo. ¿Qué hacemos con ellos?";
-"groups.bridge.activateOptionFromNow" = "Empezar desde ahora";
-"groups.bridge.activateOptionFromNowHint" = "Solo los gastos nuevos se reflejarán.";
-"groups.bridge.activateOptionImportAll" = "Importar todo el historial";
-"groups.bridge.activateOptionImportAllHint" = "Se crearán transacciones para los %d gastos previos y sus liquidaciones.";
-"groups.bridge.activateImportRegenerationNote" = "Las transacciones existentes se regenerarán según las reglas actuales.";
-"groups.bridge.deactivateTitle" = "Desactivar transacciones automáticas";
-"groups.bridge.deactivateBody" = "Tienes %d transacciones generadas por este grupo. Si las eliminas, tu saldo de grupos se ajustará.";
-"groups.bridge.deactivateOptionDelete" = "Eliminarlas";
-"groups.bridge.deactivateOptionKeep" = "Mantenerlas como histórico";
-"groups.bridge.importing" = "Importando %d gastos…";
-"groups.bridge.importError" = "Hubo un problema importando. Intenta de nuevo.";
-"groups.bridge.upsellGroupInviteSettlement" = "Activa Yala completo para reconciliar este pago con tu cuenta real.";
-
-// Bridge opt-out — alert post-save (F2c)
-"groups.bridge.optoutAlertTitle" = "¿Registrar también en tu Yala personal?";
-"groups.bridge.optoutAlertBody" = "Puedes crear un movimiento personal en tu cuenta para reflejar este gasto, o dejarlo solo dentro del grupo.";
-"groups.bridge.optoutAlertYes" = "Sí, registrar";
-"groups.bridge.optoutAlertNo" = "Solo en el grupo";
-
-// Bridge deactivation sheet (F5)
-"groups.bridge.deactivationSheetTitle" = "Desactivar integración personal";
-"groups.bridge.deactivationSheetBody" = "Ya tienes movimientos creados automáticamente en tus cuentas. Elige qué hacer con ellos.";
-"groups.bridge.deactivationOptionFreeze" = "Mantener como histórico";
-"groups.bridge.deactivationOptionDelete" = "Eliminar de mis cuentas";
-
-// Groups Global Settings sheet (F3a)
-"groups.globalSettings.title" = "Ajustes de Grupos";
-"groups.globalSettings.bridgeSectionTitle" = "Integración con tu Yala personal";
-"groups.globalSettings.bridgeToggleLabel" = "Registrar gastos de grupos en mis cuentas personales";
-"groups.globalSettings.bridgeCaption" = "Cuando está activo, cada gasto que pagas o liquidas se registra también en la cuenta personal que elijas. Tu saldo refleja la realidad.";
-"groups.globalSettings.visibilitySectionTitle" = "Visibilidad";
-"groups.globalSettings.visibilityCaption" = "Controla si los movimientos de grupos aparecen en tu panel, estadísticas y feed de registros.";
-"groups.globalSettings.includeGroupTransactionsInFeedLabel" = "Incluir movimientos de grupos en el feed de Registros";
-
-// MARK: - A0-Bridge System Categories & Subcategories (Grupos)
-"account.system.groups" = "Grupos %@";
-"account.system.badge" = "Sistema";
-"category.system.groups" = "Grupos";
-"category.system.groupCollections" = "Cobros de grupos";
-"subcategory.system.loanToGroups" = "Préstamo a grupos";
-"subcategory.system.loanCollection" = "Cobro de préstamo";
-"subcategory.system.settlementPayment" = "Pago de liquidación";
-"subcategory.system.settlementSent" = "Liquidación enviada";
-"subcategory.system.settlementReceived" = "Liquidación recibida";
-"inbox.sourceGroupExpense" = "Gasto compartido";
-"inbox.sourceGroupSettlement" = "Liquidación";
-"inbox.sourceManual" = "Manual";
-"inbox.groupDraftCannotDelete" = "Esta transacción se elimina solo desde el grupo origen.";
-
 // MARK: - Scheduled Payments UX (M1-M7)
 "scheduled.period.selector.title" = "Seleccionar mes";
 "scheduled.summary.paid" = "Pagado";
@@ -3162,12 +3094,6 @@
 "groups.settings.showArchived" = "Ver archivados";
 "groups.settings.showArchivedCount" = "Ver archivados (%d)";
 "groups.settings.hideArchived" = "Ocultar archivados";
-// Personal integration (Bridge override per-grupo, F4)
-"groups.settings.personalIntegrationSectionTitle" = "Integración personal";
-"groups.settings.personalIntegrationToggleLabel" = "Registrar gastos de este grupo en mis cuentas personales";
-"groups.settings.personalIntegrationHintInheritOn" = "Heredas tu ajuste general (Activado).";
-"groups.settings.personalIntegrationHintLocalOff" = "Solo en este grupo: desactivado.";
-"groups.settings.personalIntegrationHintBlockedByGlobal" = "Para activar esta opción aquí, primero actívala en Ajustes de Grupos.";
 "groups.settings.options" = "Opciones";
 "groups.settings.info" = "Información";
 "groups.settings.dangerZone" = "Zona de peligro";
@@ -3549,7 +3475,7 @@
 "groups.invite.ready" = "¡Todo listo!";
 "groups.invite.goToGroup" = "Ir al grupo";
 "groups.invite.linkInvalidTitle" = "Enlace no válido";
-"groups.invite.linkInvalidDetail" = "Este enlace ya no es válido o ha expirado. Pide al admin que regenere uno.";
+"groups.invite.linkInvalidDetail" = "Este enlace ya no es válido o expiró. Pídele al admin que regenere uno.";
 
 // Groups — Bridge / Sync errors
 "groups.bridge.alertTitle" = "Hubo un problema con el grupo";
@@ -3563,23 +3489,6 @@
 // Groups — Reconnect (GC-08)
 "groups.reconnect.title" = "Unirse a grupo";
 "groups.reconnect.subtitle" = "Te invitaron a un grupo compartido";
-"groups.reconnect.fallbackGroupName" = "este grupo";
-"groups.reconnect.archived.title" = "%@ fue archivado";
-"groups.reconnect.archived.body" = "Su admin lo archivó y ya no acepta cambios.";
-"groups.reconnect.archived.cta" = "Entendido";
-"groups.reconnect.alreadyMember.title" = "Ya perteneces a %@";
-"groups.reconnect.alreadyMember.body" = "Te llevamos al grupo.";
-"groups.reconnect.alreadyMember.cta" = "Ver grupo";
-"groups.reconnect.pendingDuplicate.title" = "Solicitud pendiente en %@";
-"groups.reconnect.pendingDuplicate.body" = "El admin aún no aprueba tu solicitud.";
-"groups.reconnect.pendingDuplicate.cta" = "Ver grupos";
-"groups.reconnect.rejectedRetry.title" = "Tu solicitud fue rechazada";
-"groups.reconnect.rejectedRetry.body" = "Pide entrar de nuevo y el admin verá tu nueva solicitud.";
-"groups.reconnect.leftRetry.title" = "Saliste de %@";
-"groups.reconnect.leftRetry.body" = "Pide entrar de nuevo si quieres volver.";
-"groups.reconnect.removedRetry.title" = "Te removieron de %@";
-"groups.reconnect.removedRetry.body" = "Pide entrar de nuevo si quieres volver.";
-"groups.reconnect.retryCta" = "Volver a pedir";
 "groups.reconnect.subtitleWithGroup" = "Te invitaron a %@";
 
 // Groups — Activate Full Mode (GC-08)
@@ -4066,6 +3975,56 @@
 "panel.widgetInfo.exchangeRate.balanceImpactQ" = "¿Cómo afecta el tipo de cambio a mi balance?";
 "panel.widgetInfo.exchangeRate.balanceImpactA" = "Yala calcula tu balance en la moneda preferida usando el tipo de cambio actual sobre el saldo de cada cuenta. Por eso, si el tipo de cambio cambia y no haces movimientos, tu balance puede subir o bajar.";
 
+// MARK: - A0-Bridge Settings & Filters
+"settings.sectionGroups" = "Grupos";
+"settings.sectionGroupsHint" = "Configura cómo Yala mezcla tus cuentas y transacciones de grupos con tus datos personales.";
+"settings.includeGroupsInPanelTotal" = "Incluir grupos en saldo total";
+"settings.includeGroupTransactionsInStats" = "Incluir transacciones de grupos en estadísticas";
+"filters.sectionShared" = "Compartidos";
+"filters.includeGroupTransactions" = "Incluir transacciones de grupos";
+"filters.includeGroupTransactionsHint" = "Cuando está activo, los movimientos generados por gastos compartidos aparecen en tu lista.";
+
+// MARK: - A0-Bridge Bridge messages
+"groups.bridge.deleteExpenseBlocked" = "Este gasto tiene liquidaciones asociadas posteriores. Primero elimina o regulariza las liquidaciones para poder borrar el gasto.";
+"groups.bridge.editFromGroup" = "Esta transacción se sincroniza con un grupo. Edítala desde el gasto compartido.";
+"groups.bridge.assignFromInbox" = "Asigna subcategoría desde el Inbox para finalizarla.";
+"groups.bridge.editSettlementInGroup" = "Esta transacción proviene de una liquidación. Edita el settlement en el grupo.";
+"groups.bridge.editPartialBanner" = "Este gasto viene del grupo. Puedes editar la cuenta, la categoría y las etiquetas. El monto y la fecha se sincronizan con el grupo.";
+"groups.bridge.draftReasonRemoteCreate" = "%1$@ registró este gasto en %2$@. Elige cuenta para llevarlo a tus registros.";
+"groups.bridge.draftReasonCurrencyChanged" = "La moneda del gasto en %@ cambió. Elige cuenta para registrar tu parte.";
+"groups.card.moreDebts" = "+%d más";
+"inbox.groupExpenseAccountDraft.title" = "Asignar cuenta";
+"inbox.groupExpenseAccountDraft.assignAccount" = "Cuenta de origen";
+"groups.bridge.activateTitle" = "Activar transacciones automáticas";
+"groups.bridge.activateBody" = "A partir de ahora, los gastos compartidos se reflejarán en tu cuenta de grupos. Tienes %d gastos previos en este grupo. ¿Qué hacemos con ellos?";
+"groups.bridge.activateOptionFromNow" = "Empezar desde ahora";
+"groups.bridge.activateOptionFromNowHint" = "Solo los gastos nuevos se reflejarán.";
+"groups.bridge.activateOptionImportAll" = "Importar todo el historial";
+"groups.bridge.activateOptionImportAllHint" = "Se crearán transacciones para los %d gastos previos y sus liquidaciones.";
+"groups.bridge.activateImportRegenerationNote" = "Las transacciones existentes se regenerarán según las reglas actuales.";
+"groups.bridge.deactivateTitle" = "Desactivar transacciones automáticas";
+"groups.bridge.deactivateBody" = "Tienes %d transacciones generadas por este grupo. Si las eliminas, tu saldo de grupos se ajustará.";
+"groups.bridge.deactivateOptionDelete" = "Eliminarlas";
+"groups.bridge.deactivateOptionKeep" = "Mantenerlas como histórico";
+"groups.bridge.importing" = "Importando %d gastos…";
+"groups.bridge.importError" = "Hubo un problema importando. Intenta de nuevo.";
+"groups.bridge.upsellGroupInviteSettlement" = "Activa Yala completo para reconciliar este pago con tu cuenta real.";
+
+// MARK: - A0-Bridge System Categories & Subcategories (Grupos)
+"account.system.groups" = "Grupos %@";
+"account.system.badge" = "Sistema";
+"category.system.groups" = "Grupos";
+"category.system.groupCollections" = "Cobros de grupos";
+"subcategory.system.loanToGroups" = "Préstamo a grupos";
+"subcategory.system.loanCollection" = "Cobro de préstamo";
+"subcategory.system.settlementPayment" = "Pago de liquidación";
+"subcategory.system.settlementSent" = "Liquidación enviada";
+"subcategory.system.settlementReceived" = "Liquidación recibida";
+"inbox.sourceGroupExpense" = "Gasto compartido";
+"inbox.sourceGroupSettlement" = "Liquidación";
+"inbox.sourceManual" = "Manual";
+"inbox.groupDraftCannotDelete" = "Esta transacción se elimina solo desde el grupo origen.";
+
 /* A0-Bridge V2.0 — P0+P1 sheets + read-only banner */
 "groups.settlement.fromAccount" = "¿De qué cuenta sale?";
 "groups.settlement.fromAccountNone" = "Ninguna — finalizar después";
@@ -4075,8 +4034,6 @@
 "inbox.groupExpenseDraft.assignSubcategory" = "Subcategoría";
 "inbox.groupSettlementDraft.title" = "Asigna cuenta";
 "inbox.groupSettlementDraft.assignAccount" = "Cuenta de destino";
-"inbox.groupExpenseAccountDraft.title" = "Asignar cuenta";
-"inbox.groupExpenseAccountDraft.assignAccount" = "Cuenta de origen";
 "inbox.groupDraft.finalize" = "Finalizar";
 "inbox.groupDraft.fromGroup" = "Grupo: %@";
 "action.continue" = "Continuar";
@@ -4108,7 +4065,6 @@
 "welcome.chooser.optionInvite.title" = "Me invitaron a un grupo";
 "welcome.chooser.optionInvite.body" = "Tengo un enlace de invitación y quiero unirme.";
 
-// Welcome Restore (rama B)
 "welcome.restore.searching" = "Buscando tus datos en iCloud…";
 "welcome.restore.searchingTip" = "Esto puede tardar unos segundos.";
 "welcome.restore.foundTitle" = "¡Hola %@! Qué bueno verte de vuelta.";
@@ -4139,7 +4095,6 @@
 "welcome.restore.wiped.title" = "Borraste tus datos";
 "welcome.restore.wiped.body" = "Eliminaste tus datos en este dispositivo. Empieza de nuevo cuando quieras.";
 
-// Welcome Invite Recovery (rama C)
 "welcome.invite.title" = "Pega tu enlace de invitación";
 "welcome.invite.body" = "Si te invitaron a un grupo en Yala, pega aquí el enlace que recibiste.";
 "welcome.invite.placeholder" = "https://yala-app.pe/invite?...";
@@ -4187,33 +4142,26 @@
 "welcome.freshStart.alertMessage" = "Detectamos datos previos en tu dispositivo. ¿Borrar todo para empezar como nuevo?";
 "welcome.freshStart.alertConfirm" = "Borrar todo y continuar";
 "groups.card.pendingApprovalChip" = "Esperando aprobación";
-"groups.card.moreDebts" = "+%d más";
 "groups.card.rejectedChip" = "Solicitud rechazada";
 "groups.card.leaveGroupAlertTitle" = "¿Salir del grupo?";
 "groups.card.leaveGroupAlertBody" = "Tu solicitud fue rechazada. Si sales del grupo, se eliminará de tu lista. Tus registros personales se mantienen.";
 
-// MARK: - Yala AI Onboarding (5-step tutorial first-use post-consent)
-
-// Common
+// MARK: - Yala AI Onboarding (4-step tutorial first-use post-consent)
 "yalaAI.onboarding.continue" = "Continuar";
 "yalaAI.onboarding.back" = "Volver";
 "yalaAI.onboarding.close" = "Cerrar";
 "yalaAI.onboarding.previewLabel" = "Vista previa";
 "yalaAI.onboarding.progressLabel" = "Paso %1$d de %2$d";
-
-// Step 1 — Hero with chat preview animation
 "yalaAI.onboarding.step1.title" = "Te presento a Yala AI";
 "yalaAI.onboarding.step1.subtitle" = "Tu mano derecha financiera.";
-"yalaAI.onboarding.step1.demoScenario1User" = "Gasté S/12 en almuerzo.";
-"yalaAI.onboarding.step1.demoScenario1Bot" = "¡Listo! Registré tu almuerzo de S/12.";
+"yalaAI.onboarding.step1.demoScenario1User" = "Gasté $12 en almuerzo.";
+"yalaAI.onboarding.step1.demoScenario1Bot" = "¡Listo! Registré tu almuerzo de $12.";
 "yalaAI.onboarding.step1.demoScenario2User" = "¿Cuánto gasté en café este mes?";
-"yalaAI.onboarding.step1.demoScenario2Bot" = "Llevas S/45 en café este mes ☕ — un 12% menos que en abril, pero S/8 sobre tu promedio habitual.";
+"yalaAI.onboarding.step1.demoScenario2Bot" = "Llevas $45 en café este mes ☕ — un 12% menos que en abril, pero $8 sobre tu promedio habitual.";
 "yalaAI.onboarding.step1.demoScenario3User" = "¿Algún consejo?";
-"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 Tus delivery subieron 20% vs el mes pasado. Volviendo a tu ritmo normal ahorras S/80 al mes — son casi S/1.000 al año.";
+"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 Tus delivery subieron 20% vs el mes pasado. Volviendo a tu ritmo normal ahorras $80 al mes — son casi $1.000 al año.";
 "yalaAI.onboarding.step1.demoAmountLabel" = "Almuerzo";
 "yalaAI.onboarding.step1.a11yLabel" = "Ejemplo de chat con Yala AI registrando un gasto";
-
-// Step 2 — What you can do (3 cards)
 "yalaAI.onboarding.step2.title" = "Esto es lo que puedes hacer";
 "yalaAI.onboarding.step2.subtitle" = "Tres formas de aprovechar a Yala AI.";
 "yalaAI.onboarding.step2.card1.badge" = "Nuevo";
@@ -4223,8 +4171,6 @@
 "yalaAI.onboarding.step2.card2.body" = "¿Cuánto gasté en café? ¿Mi mes más caro?";
 "yalaAI.onboarding.step2.card3.title" = "Recibe sugerencias";
 "yalaAI.onboarding.step2.card3.body" = "Patrones, anomalías, ideas para ahorrar.";
-
-// Step 3 — Tone (3 options + live preview quote)
 "yalaAI.onboarding.step3.title" = "Elige el tono de Yala";
 "yalaAI.onboarding.step3.subtitle" = "Es la forma en que te habla en cada respuesta.";
 "yalaAI.onboarding.step3.toneNormalDescription" = "Equilibrado y claro. Datos sin adornos.";
@@ -4233,21 +4179,17 @@
 "yalaAI.onboarding.step3.toneNormalQuote" = "Llevas 3 cafés esta semana. Vas bien con el presupuesto.";
 "yalaAI.onboarding.step3.toneConsiderateQuote" = "Tomarte un café te hace bien. Va dentro de tu presupuesto, todo en orden.";
 "yalaAI.onboarding.step3.toneSarcasticQuote" = "Tres cafés más y rompemos la marca. Aún caben en el presupuesto.";
-
-// Step 4 — Focus / style (3 options + live preview quote)
 "yalaAI.onboarding.step4.title" = "Elige el estilo de Yala";
 "yalaAI.onboarding.step4.subtitle" = "En qué pone el foco al ayudarte con tus finanzas.";
 "yalaAI.onboarding.step4.focusBalancedDescription" = "Mira tanto los gastos como los ingresos por igual.";
 "yalaAI.onboarding.step4.focusSaverDescription" = "Te ayuda a recortar y a guardar más cada mes.";
 "yalaAI.onboarding.step4.focusCautiousDescription" = "Te avisa ante cualquier desvío para que no te pase nada.";
 "yalaAI.onboarding.step4.focusBalancedQuote" = "Tus ingresos cubren los gastos del mes. Buen ritmo.";
-"yalaAI.onboarding.step4.focusSaverQuote" = "Si bajas un 10% en restaurantes, ahorras S/120 al mes.";
+"yalaAI.onboarding.step4.focusSaverQuote" = "Si bajas un 10% en restaurantes, ahorras $120 al mes.";
 "yalaAI.onboarding.step4.focusCautiousQuote" = "Atento: vas más rápido que el mes pasado en delivery.";
-
-// Step 5 — Done
 "yalaAI.onboarding.step5.title" = "¡Todo listo!";
 "yalaAI.onboarding.step5.subtitle" = "Cuando quieras, dile a Yala lo que necesitas.";
-"yalaAI.onboarding.step5.tip" = "💡 Prueba: \"Registra un café de 5 soles\" o \"¿Cuánto gasté hoy?\"";
+"yalaAI.onboarding.step5.tip" = "💡 Prueba: \"Registra un café de 5 pesos\" o \"¿Cuánto gasté hoy?\"";
 "yalaAI.onboarding.step5.cta" = "Empezar a chatear";
 
 // MARK: - Stats Records polish
@@ -4341,21 +4283,62 @@
 "groups.onboarding.step2.card2.body" = "Elige cómo se divide cada gasto. Yala calcula quién debe qué.";
 "groups.onboarding.step2.card3.title" = "Liquida deudas con un par de taps";
 "groups.onboarding.step2.card3.body" = "Salda pagos y deja todo en cero. Sin discusiones, sin Excel.";
-"groups.onboarding.step2.bridgeAwareness" = "Cuando pagues un gasto, también lo registramos en tu cuenta personal automáticamente — para que tu saldo siempre refleje la realidad.";
 "groups.onboarding.step3.title" = "Tu privacidad, primero";
 "groups.onboarding.step3.subtitle" = "Solo compartes lo necesario, nada más.";
 "groups.onboarding.step3.point1" = "Cada miembro necesita su cuenta de iCloud.";
 "groups.onboarding.step3.point2" = "Tu información personal no se sincroniza con el grupo, solo los gastos compartidos.";
 "groups.onboarding.step3.cta" = "Ir a Grupos";
-"groups.onboarding.step3.bridgeAwareness" = "Puedes cambiar este comportamiento en Ajustes de Grupos.";
 
 // MARK: FU-02-reconnect
 "groups.reconnect.deletedForAll.title" = "%@ fue eliminado";
 "groups.reconnect.deletedForAll.body" = "Este grupo fue eliminado por su creador.";
 "groups.reconnect.deletedForAll.cta" = "Entendido";
 
+// MARK: B-13 — groups.reconnect.* (added to fallback locale)
+"groups.reconnect.alreadyMember.body" = "Te llevamos al grupo.";
+"groups.reconnect.alreadyMember.cta" = "Ver grupo";
+"groups.reconnect.alreadyMember.title" = "Ya perteneces a %@";
+"groups.reconnect.archived.body" = "Su admin lo archivó y ya no acepta cambios.";
+"groups.reconnect.archived.cta" = "Entendido";
+"groups.reconnect.archived.title" = "%@ fue archivado";
+"groups.reconnect.fallbackGroupName" = "este grupo";
+"groups.reconnect.leftRetry.body" = "Pide entrar de nuevo si quieres volver.";
+"groups.reconnect.leftRetry.title" = "Saliste de %@";
+"groups.reconnect.pendingDuplicate.body" = "El admin aún no aprueba tu solicitud.";
+"groups.reconnect.pendingDuplicate.cta" = "Ver grupos";
+"groups.reconnect.pendingDuplicate.title" = "Solicitud pendiente en %@";
+"groups.reconnect.rejectedRetry.body" = "Pide entrar de nuevo y el admin verá tu nueva solicitud.";
+"groups.reconnect.rejectedRetry.title" = "Tu solicitud fue rechazada";
+"groups.reconnect.removedRetry.body" = "Pide entrar de nuevo si quieres volver.";
+"groups.reconnect.removedRetry.title" = "Te removieron de %@";
+"groups.reconnect.retryCta" = "Volver a pedir";
+
 // MARK: B-16 — groups.reconnect.backToStart
 "groups.reconnect.backToStart" = "Volver al inicio";
+
+// MARK: B-17 — groups.* fallback completion (auto-copied from baseline)
+"groups.bridge.deactivationOptionDelete" = "Eliminar de mis cuentas";
+"groups.bridge.deactivationOptionFreeze" = "Mantener como histórico";
+"groups.bridge.deactivationSheetBody" = "Ya tienes movimientos creados automáticamente en tus cuentas. Elige qué hacer con ellos.";
+"groups.bridge.deactivationSheetTitle" = "Desactivar integración personal";
+"groups.bridge.optoutAlertBody" = "Puedes crear un movimiento personal en tu cuenta para reflejar este gasto, o dejarlo solo dentro del grupo.";
+"groups.bridge.optoutAlertNo" = "Solo en el grupo";
+"groups.bridge.optoutAlertTitle" = "¿Registrar también en tu Yala personal?";
+"groups.bridge.optoutAlertYes" = "Sí, registrar";
+"groups.globalSettings.bridgeCaption" = "Cuando está activo, cada gasto que pagas o liquidas se registra también en la cuenta personal que elijas. Tu saldo refleja la realidad.";
+"groups.globalSettings.bridgeSectionTitle" = "Integración con tu Yala personal";
+"groups.globalSettings.bridgeToggleLabel" = "Registrar gastos de grupos en mis cuentas personales";
+"groups.globalSettings.includeGroupTransactionsInFeedLabel" = "Incluir movimientos de grupos en el feed de Registros";
+"groups.globalSettings.title" = "Ajustes de Grupos";
+"groups.globalSettings.visibilityCaption" = "Controla si los movimientos de grupos aparecen en tu panel, estadísticas y feed de registros.";
+"groups.globalSettings.visibilitySectionTitle" = "Visibilidad";
+"groups.onboarding.step2.bridgeAwareness" = "Cuando pagues un gasto, también lo registramos en tu cuenta personal automáticamente — para que tu saldo siempre refleje la realidad.";
+"groups.onboarding.step3.bridgeAwareness" = "Puedes cambiar este comportamiento en Ajustes de Grupos.";
+"groups.settings.personalIntegrationHintBlockedByGlobal" = "Para activar esta opción aquí, primero actívala en Ajustes de Grupos.";
+"groups.settings.personalIntegrationHintInheritOn" = "Heredas tu ajuste general (Activado).";
+"groups.settings.personalIntegrationHintLocalOff" = "Solo en este grupo: desactivado.";
+"groups.settings.personalIntegrationSectionTitle" = "Integración personal";
+"groups.settings.personalIntegrationToggleLabel" = "Registrar gastos de este grupo en mis cuentas personales";
 
 /* MARK: SplitChipDetail-keys (split-chip-detail refactor) */
 "split.totalLabel" = "Total";
@@ -4369,6 +4352,14 @@
 
 
 /* MARK: MoreDashboard-keys (more redesign) */
+/* (inherits from base locale via iOS fallback) */
+
+
+/* MARK: MoreEditor-keys (more redesign Fase 2) */
+/* (inherits from base locale via iOS fallback) */
+
+
+/* MARK: More keys explicit for variant locales (iOS no hace fallback es-419->es) */
 "more.subtitle.panel" = "Tu resumen del día a día";
 "more.subtitle.insights" = "Lo más importante de tu periodo";
 "more.subtitle.trends" = "Mira cómo evoluciona tu dinero";
@@ -4381,9 +4372,6 @@
 "more.subtitle.groups" = "Comparte gastos sin enredos";
 "more.subtitle.profile" = "Tu cuenta y preferencias";
 "more.toolsSection" = "Más herramientas";
-
-
-/* MARK: MoreEditor-keys (more redesign Fase 2) */
 "more.editor.title" = "Personalizar";
 "more.editor.sectionsHeader" = "Orden de las secciones";
 "more.editor.tabBarHint" = "Elige y ordena las pestañas del menú inferior";
