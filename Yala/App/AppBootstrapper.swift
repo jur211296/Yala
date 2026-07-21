@@ -1205,7 +1205,9 @@ final class AppBootstrapper {
         // relaunch) NADA debe escribir en el store — el boot siguiente lo BORRA y el
         // runtime ya está muerto (nadie pushearía lo escrito). Congela los drains de
         // intents App Group (Apple Pay/Siri), reconciles y demás side-effects de
-        // foreground. Las colas App Group NO se consumen (drenan tras el relaunch).
+        // foreground. Las colas App Group NO se consumen aquí: el boot-cleanup las PURGA
+        // (`AppGroupInboundPurge`, ver su header) para que no se materialicen en la cuenta
+        // siguiente — no las conserva para drenarlas tras el relanzamiento.
         guard !StorageModePersistence.isSignOutWipeArmed() else { return }
         // M1: mismo freeze para el wipe SECUNDARIO armado (store condenado) y para la
         // VENTANA DE ENTRADA (descriptor activo con el store del DUEÑO montado — los drains

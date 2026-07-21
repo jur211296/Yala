@@ -39,7 +39,8 @@ struct SignOutWipeHookTests {
             defaults: defaults,
             deleteFiles: { _, _ in touched = true; return true },
             resetPrefs: { touched = true },
-            cancelNotifications: { touched = true })
+            cancelNotifications: { touched = true },
+            purgeInboundSurfaces: { touched = true })
         #expect(touched == false)
         // El modo persistido NO se toca sin arm.
         #expect(StorageModePersistence.read(defaults) == .cloud)
@@ -53,13 +54,18 @@ struct SignOutWipeHookTests {
         let defaults = armedDefaults(prefix: "sowipe.abort")
         var resets = 0
         var cancels = 0
+        var purges = 0
         SwiftDataConfiguration.performSignOutWipeIfArmed(
             defaults: defaults,
             deleteFiles: { _, _ in false },   // kill-simulado: el BASE no se pudo borrar
             resetPrefs: { resets += 1 },
-            cancelNotifications: { cancels += 1 })
+            cancelNotifications: { cancels += 1 },
+            purgeInboundSurfaces: { purges += 1 })
         #expect(cancels == 0)
         #expect(resets == 0)
+        // Mismo racional: si el store sobrevive, sus colas de entrada siguen siendo SUYAS —
+        // vaciarlas aquí perdería un pago de Apple Pay / dictado de Siri legítimo, aún sin materializar.
+        #expect(purges == 0)
         // El arm persiste (el próximo boot reintenta) y el par SERIO-1 queda intacto.
         #expect(StorageModePersistence.isSignOutWipeArmed(defaults))
         #expect(StorageModePersistence.read(defaults) == .cloud)
@@ -75,7 +81,8 @@ struct SignOutWipeHookTests {
             defaults: defaults,
             deleteFiles: { name, _ in events.append("delete:\(name)"); return true },
             resetPrefs: { events.append("resetPrefs") },
-            cancelNotifications: { events.append("cancelNotifications") })
+            cancelNotifications: { events.append("cancelNotifications") },
+            purgeInboundSurfaces: { events.append("purgeInboundSurfaces") })
 
         #expect(events == [
             "delete:\(SwiftDataConfiguration.databaseName)",
@@ -83,6 +90,9 @@ struct SignOutWipeHookTests {
             "resetPrefs",
             // §5.2.1 — dentro del bloque post-guard, junto al reset de prefs/caches.
             "cancelNotifications",
+            // Colas del App Group: sobreviven al borrado de archivos y se drenarían contra el
+            // store de la cuenta SIGUIENTE. También post-guard, por el mismo racional.
+            "purgeInboundSurfaces",
         ])
         // Par SERIO-1 a `.icloud` fresh + desarme AL FINAL.
         #expect(StorageModePersistence.read(defaults) == .icloud)
@@ -93,27 +103,34 @@ struct SignOutWipeHookTests {
     @Test func retryAfterAbort_completesAndCancelsExactlyOnce() {
         let defaults = armedDefaults(prefix: "sowipe.retry")
         var cancels = 0
-        // 1ª pasada: abort (no cancela).
+        var purges = 0
+        // 1ª pasada: abort (no cancela ni purga).
         SwiftDataConfiguration.performSignOutWipeIfArmed(
             defaults: defaults,
             deleteFiles: { _, _ in false },
             resetPrefs: {},
-            cancelNotifications: { cancels += 1 })
+            cancelNotifications: { cancels += 1 },
+            purgeInboundSurfaces: { purges += 1 })
         #expect(cancels == 0)
+        #expect(purges == 0)
         // 2ª pasada (boot siguiente): completa.
         SwiftDataConfiguration.performSignOutWipeIfArmed(
             defaults: defaults,
             deleteFiles: { _, _ in true },
             resetPrefs: {},
-            cancelNotifications: { cancels += 1 })
+            cancelNotifications: { cancels += 1 },
+            purgeInboundSurfaces: { purges += 1 })
         #expect(cancels == 1)
+        #expect(purges == 1)
         // 3ª pasada: el arm ya no está → no-op (idempotencia).
         SwiftDataConfiguration.performSignOutWipeIfArmed(
             defaults: defaults,
             deleteFiles: { _, _ in true },
             resetPrefs: {},
-            cancelNotifications: { cancels += 1 })
+            cancelNotifications: { cancels += 1 },
+            purgeInboundSurfaces: { purges += 1 })
         #expect(cancels == 1)
+        #expect(purges == 1)
     }
 
     // MARK: - Byte-identidad del flag de grupos
@@ -220,10 +237,11 @@ struct GroupsOnlySignOutWipeHookTests {
     }
 }
 
-/// Source-scan del CABLEADO DE PRODUCCIÓN (§5.2.1). Los tests de arriba ejercen las variantes
-/// inyectables y observan seams: vaciar la closure `cancelNotifications:` de un wrapper reintroduce el
-/// bug ÍNTEGRO sin que ninguno se ponga rojo. Y los wrappers abren con `guard !isRunningTests`, así que
-/// son inejecutables en unit test POR CONSTRUCCIÓN — ningún test de comportamiento puede cubrirlos.
+/// Source-scan del CABLEADO DE PRODUCCIÓN (§5.2.1 + colas del App Group). Los tests de arriba ejercen
+/// las variantes inyectables y observan seams: vaciar la closure `cancelNotifications:` o
+/// `purgeInboundSurfaces:` de un wrapper reintroduce el bug ÍNTEGRO sin que ninguno se ponga rojo. Y los
+/// wrappers abren con `guard !isRunningTests`, así que son inejecutables en unit test POR CONSTRUCCIÓN
+/// — ningún test de comportamiento puede cubrirlos.
 /// Mismo patrón y misma razón que `GroupsSyncHardeningTests.signOut_allThreePaths_wireGroupsTeardown`.
 @Suite("SignOutWipeHook · cableado de producción (source-scan)")
 struct SignOutNotificationWiringTests {
@@ -254,7 +272,9 @@ struct SignOutNotificationWiringTests {
     @Test func groupsOnlyHook_neverWiresPersonalCleanup() throws {
         let src = try Self.source("Yala/Utils/SwiftDataConfiguration.swift")
         let marker = "static func performGroupsOnlySignOutWipeIfArmed()"
-        let nextMarker = "static func performSecondaryWipeIfArmed()"
+        // Corte en el MARK, no en la firma siguiente: el doc-comment de `performSecondaryWipeIfArmed`
+        // describe la purga M1 y nombrarla ahí pondría este test rojo sin bug alguno.
+        let nextMarker = "// MARK: - Sesión secundaria (M1)"
         guard let start = src.range(of: marker), let end = src.range(of: nextMarker) else {
             Issue.record("No se localizaron los marcadores del hook solo-grupos — ¿se renombró?")
             return
@@ -263,15 +283,52 @@ struct SignOutNotificationWiringTests {
         #expect(body.contains("clearDeliveredGroupNotifications"))
         #expect(!body.contains("cancelAllNotifications"))
         #expect(!body.contains("clearDeliveredNotifications()"))
+        // MISMA asimetría para las colas del App Group: aquí el store personal sobrevive, así que
+        // Apple Pay / Siri / imágenes pendientes son SUYAS y deben materializarse cuando abra.
+        #expect(!body.contains("purgeInboundSurfaces"))
+    }
+
+    /// Colas del App Group: cableadas SOLO donde el store personal muere o cambia de dueño.
+    /// Vaciar la closure `purgeInboundSurfaces:` del wrapper personal reintroduce el bug completo
+    /// (un pago de Apple Pay de la cuenta saliente se materializa como borrador en la entrante) con
+    /// todos los tests de comportamiento en verde — de ahí este scan.
+    @Test func bootHooks_wireAppGroupInboundPurge_onlyWherePersonalStoreDies() throws {
+        let src = try Self.source("Yala/Utils/SwiftDataConfiguration.swift")
+        // performSignOutWipeIfArmed cablea el helper compartido; los 2 hooks M1 lo obtienen dentro
+        // de `SecondarySessionBoundaryPurge.purge()` (su propio seam `purge:`, ya pinneado aparte).
+        #expect(src.contains("purgeInboundSurfaces: { AppGroupInboundPurge.purgeInboundSurfaces() }"))
+        #expect(src.components(separatedBy: "AppGroupInboundPurge.purgeInboundSurfaces()").count - 1 == 1)
+        #expect(src.components(separatedBy: "SecondarySessionBoundaryPurge.purge()").count - 1 == 2)
+
+        // El SSOT compartido: si alguien inlinea las colas en un caller, esta invariante lo delata.
+        let purge = try Self.source("Yala/Services/CloudSync/SecondarySessionBoundaryPurge.swift")
+        #expect(purge.contains("AppGroupInboundPurge.purgeInboundSurfaces()"))
+        #expect(!purge.contains("ApplePayPendingStore"))
+        #expect(!purge.contains("SiriPendingStore"))
+    }
+
+    /// El contenido de la purga compartida. Perder una de estas superficies es invisible para los
+    /// tests de arriba (todos observan la closure, no su cuerpo).
+    @Test func inboundPurge_coversEveryAppGroupEntrySurface() throws {
+        let src = try Self.source("Yala/Services/CloudSync/AppGroupInboundPurge.swift")
+        #expect(src.contains("ApplePayPendingStore.remove(keys:"))
+        #expect(src.contains("SiriPendingStore.remove(keys:"))
+        #expect(src.contains("SiriIntentContextCache.clear()"))
+        #expect(src.contains("SharedContainerService.removePendingImage(at:"))
     }
 
     /// La capa in-session es DIRECCIONAL y ninguna dirección estaba pinneada: quitarla de un camino
-    /// armado deja sonar la cuenta saliente durante el cover terminal; añadirla a `performPrivateReset`
-    /// o a un camino solo-grupos borraría recordatorios vivos de un store que sobrevive.
+    /// armado deja sonar la cuenta saliente —y deja el widget pintando sus saldos— durante el cover
+    /// terminal, que puede durar minutos o para siempre (el usuario puede no volver a abrir la app);
+    /// añadirla a `performPrivateReset` o a un camino solo-grupos borraría recordatorios vivos y
+    /// vaciaría el widget de un store que sobrevive.
     /// 4 ocurrencias = 1 definición + 3 call-sites (cloud / secundario / cierre post-borrado de cuenta).
     @Test func inSessionLayer_wiredOnlyOnArmedPersonalWipePaths() throws {
         let src = try Self.source("Yala/Services/CloudSync/CloudSessionSignOut.swift")
-        #expect(src.components(separatedBy: "clearLocalNotificationsForArmedWipe()").count - 1 == 4)
+        #expect(src.components(separatedBy: "clearLocalSurfacesForArmedWipe()").count - 1 == 4)
+        // El widget vive en el mismo helper A PROPÓSITO: es la otra superficie del SISTEMA que sigue
+        // mostrando la cuenta cerrada hasta el relanzamiento, y comparte los 3 call-sites exactos.
+        #expect(src.components(separatedBy: "WidgetDataCache.clearCache()").count - 1 == 1)
         // El clear selectivo de grupos vive en el cierre solo-grupos, donde hay `await` disponible
         // (el boot-hook solo puede encolarlo en un Task que el arm ya limpiado no respalda).
         #expect(src.contains("await NotificationService.shared.clearDeliveredGroupNotifications()"))

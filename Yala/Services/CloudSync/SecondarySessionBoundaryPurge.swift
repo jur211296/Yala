@@ -24,12 +24,11 @@ enum SecondarySessionBoundaryPurge {
     static func purge() {
         WidgetDataCache.clearCache()
 
-        ApplePayPendingStore.remove(keys: ApplePayPendingStore.peekAll().map(\.key))
-        SiriPendingStore.remove(keys: SiriPendingStore.peekAll().map(\.key))
-
-        for url in SharedContainerService.pendingImageURLs() {
-            SharedContainerService.removePendingImage(at: url)
-        }
+        // Colas de entrada + snapshot de contexto de Siri. SSOT compartido con el boot-cleanup del
+        // sign-out en `.cloud` (`SwiftDataConfiguration.performSignOutWipeIfArmed`), que sufría el
+        // MISMO daño por la misma razón: allí el store personal muere por borrado de archivos y una
+        // cola superviviente se materializa en la cuenta siguiente.
+        AppGroupInboundPurge.purgeInboundSurfaces()
 
         SyncOutboxMirror()?.purgeAll()
         PrefsOutbox()?.purgeAll()

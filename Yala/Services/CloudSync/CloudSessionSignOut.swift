@@ -151,28 +151,37 @@ final class CloudSessionSignOut {
         // alert de fresh-start existente; "Restaurar iCloud" regresa a donde estaba.
     }
 
-    /// §5.2.1 — capa IN-SESSION de la limpieza de notificaciones (defensa en profundidad; la red
+    /// §5.2.1 — capa IN-SESSION de la limpieza de las superficies del SISTEMA que muestran datos de la
+    /// cuenta saliente fuera de la app: notificaciones locales y widgets (defensa en profundidad; la red
     /// kill-safe sigue siendo el boot-cleanup `SwiftDataConfiguration.performSignOutWipeIfArmed`).
     ///
-    /// El boot-hook no cubre la ventana entre el arm y el relanzamiento: el usuario puede quedarse
-    /// minutos en el cover terminal y recibir ahí un recordatorio de la cuenta que acaba de cerrar.
-    /// Se invoca SIEMPRE DESPUÉS del arm, con el wipe ya comprometido y todos los guards pasados.
+    /// El boot-hook no cubre la ventana entre el arm y el relanzamiento — que puede ser LARGA: el usuario
+    /// se queda minutos en el cover terminal, o no vuelve a abrir la app nunca. Durante esa ventana un
+    /// recordatorio de la cuenta cerrada puede sonar, y el widget de pantalla de inicio/bloqueo sigue
+    /// pintando sus saldos y nombres de cuenta. Se invoca SIEMPRE DESPUÉS del arm, con el wipe ya
+    /// comprometido y todos los guards pasados.
     ///
-    /// Es BEST-EFFORT, no la garantía: el único camino en que estas notificaciones vuelven a ser válidas
-    /// es el abort S3 del boot-cleanup (si el archivo BASE no se pudo borrar, el store sobrevive y el
-    /// reconciler las reprograma — de hecho con `pending == 0` su heurística de conteo se cumple seguro).
-    /// El reintento del wipe en el boot siguiente las vuelve a cancelar: la red kill-safe es el boot-hook.
+    /// Es BEST-EFFORT, no la garantía: el único camino en que estos datos vuelven a ser válidos es el
+    /// abort S3 del boot-cleanup (si el archivo BASE no se pudo borrar, el store sobrevive; el reconciler
+    /// reprograma las notificaciones —de hecho con `pending == 0` su heurística de conteo se cumple
+    /// seguro— y el widget se repuebla en el próximo `WidgetDataCache` refresh). El reintento del wipe en
+    /// el boot siguiente las vuelve a limpiar: la red kill-safe es el boot-hook.
     ///
-    /// Por sí sola tampoco bastaría: un `Task` no estructurado ya suspendido (p. ej. el de
-    /// `AppBootstrapper.handleBecameActive`) puede reprogramar o entregar DESPUÉS de este punto. Lo cierra
-    /// el guard del choke point en `NotificationService.isPersonalWipeArmed`, que se evalúa en el `add`.
+    /// Por sí sola tampoco bastaría para las notificaciones: un `Task` no estructurado ya suspendido
+    /// (p. ej. el de `AppBootstrapper.handleBecameActive`) puede reprogramar o entregar DESPUÉS de este
+    /// punto. Lo cierra el guard del choke point en `NotificationService.isPersonalWipeArmed`, que se
+    /// evalúa en el `add`.
     ///
     /// Exclusivo de los caminos que arman un wipe del store PERSONAL (`.cloud`, secundario M1 y el
     /// cierre local post-borrado de cuenta). Los caminos SOLO-GRUPOS y `.privateReset` NO lo llaman:
-    /// ahí el store personal sobrevive y sus recordatorios siguen siendo legítimos.
-    private func clearLocalNotificationsForArmedWipe() {
+    /// ahí el store personal sobrevive, y tanto sus recordatorios como lo que pinta el widget siguen
+    /// siendo legítimos.
+    private func clearLocalSurfacesForArmedWipe() {
         NotificationService.shared.cancelAllNotifications()
         NotificationService.shared.clearDeliveredNotifications()
+        // `clearCache()` ya dispara `WidgetCenter.reloadAllTimelines()` ⇒ el widget se redibuja vacío
+        // sin esperar al relanzamiento. El boot-cleanup lo repite (vía `DataWipeService.resetForSignOutWipe`).
+        WidgetDataCache.clearCache()
         CloudSyncBreadcrumb.signOutNotificationsCleared()
     }
 
@@ -256,7 +265,7 @@ final class CloudSessionSignOut {
         }
         StorageModePersistence.armSignOutWipe()
         CloudSyncBreadcrumb.signOutWipeArmed()
-        clearLocalNotificationsForArmedWipe()
+        clearLocalSurfacesForArmedWipe()
         phase = .awaitingRelaunch
     }
 
@@ -299,7 +308,7 @@ final class CloudSessionSignOut {
             await CloudAuthService.shared.signOut()
             SecondarySessionStore.armWipe()
             CloudSyncBreadcrumb.signOutWipeArmed()
-            clearLocalNotificationsForArmedWipe()
+            clearLocalSurfacesForArmedWipe()
             phase = .awaitingRelaunch
         }
     }
@@ -453,7 +462,7 @@ final class CloudSessionSignOut {
         }
         StorageModePersistence.armSignOutWipe()
         CloudSyncBreadcrumb.signOutWipeArmed()
-        clearLocalNotificationsForArmedWipe()
+        clearLocalSurfacesForArmedWipe()
         phase = .awaitingRelaunch
     }
 

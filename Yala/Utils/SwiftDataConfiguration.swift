@@ -316,7 +316,7 @@ enum SwiftDataConfiguration {
     /// archivos ya ausentes = no-op, escrituras de flags idempotentes):
     /// 1) archivos personal + sync-meta → 2) par storageMode/mirrorOffArmed a `.icloud` fresh
     /// (invariante SERIO-1: juntos) → 3) prefs/caches/onboarding a estado recién instalada +
-    /// notificaciones locales → 4) desarmar.
+    /// notificaciones locales + colas del App Group → 4) desarmar.
     static func performSignOutWipeIfArmed() {
         guard !isRunningTests, !isUITesting else { return }
         performSignOutWipeIfArmed(
@@ -326,7 +326,8 @@ enum SwiftDataConfiguration {
             cancelNotifications: {
                 NotificationService.shared.cancelAllNotifications()
                 NotificationService.shared.clearDeliveredNotifications()
-            })
+            },
+            purgeInboundSurfaces: { AppGroupInboundPurge.purgeInboundSurfaces() })
     }
 
     /// Variante inyectable (tests del ORDEN/idempotencia sin archivos reales, sin `UserDefaults.standard`
@@ -339,7 +340,8 @@ enum SwiftDataConfiguration {
         defaults: UserDefaults,
         deleteFiles: (String, Schema) -> Bool,
         resetPrefs: () -> Void,
-        cancelNotifications: () -> Void
+        cancelNotifications: () -> Void,
+        purgeInboundSurfaces: () -> Void = {}
     ) {
         guard StorageModePersistence.isSignOutWipeArmed(defaults) else { return }
 
@@ -385,6 +387,19 @@ enum SwiftDataConfiguration {
         // arriba), y dejar banners con montos de grupos de la sesión cerrada contradiría esa semántica.
         cancelNotifications()
         CloudSyncBreadcrumb.signOutNotificationsCleared()
+
+        // Colas de ENTRADA del App Group (Apple Pay / Siri / imágenes compartidas) + el snapshot de
+        // contexto de Siri. El App Group NO muere con los archivos del store: sobrevive al wipe y la
+        // cuenta SIGUIENTE drenaría esas colas contra su store recién montado
+        // (`ApplePayDraftService`/`SiriDraftService` no distinguen owner) creando borradores con los
+        // montos y comercios de la cuenta que acaba de cerrar sesión. Corre PRE-MOUNT: nadie ha
+        // drenado nada todavía en este lanzamiento.
+        //
+        // DESPUÉS del guard abort-S3 por el mismo racional que la cancelación de notificaciones: si el
+        // archivo BASE no se pudo borrar, el store sobrevive y esas colas siguen siendo SUYAS.
+        // Simétrico con `performSecondaryWipeIfArmed`/`performSecondaryEntryTasksIfNeeded`, que ya
+        // purgan estas superficies en las fronteras M1 vía `SecondarySessionBoundaryPurge`.
+        purgeInboundSurfaces()
 
         // #37 (A3 del review): retirar los sentinels del drenaje iKV→outbox — `removeUserPreferenceKeys`
         // EXCLUYE `cloudSync.*` a propósito (los gestiona este boot-hook en el orden kill-safe). Sin
