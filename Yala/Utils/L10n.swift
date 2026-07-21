@@ -4134,6 +4134,11 @@ enum L10n {
         static var batchLeaveReasonDebt: String { ls("settings.batchLeaveReasonDebt", comment: "") }
         static var batchLeaveReasonFailed: String { ls("settings.batchLeaveReasonFailed", comment: "") }
         static var batchLeaveDone: String { ls("settings.batchLeaveDone", comment: "") }
+        // D3 — botón «Detener» del batch
+        static var batchLeaveStop: String { ls("settings.batchLeaveStop", comment: "") }
+        static var batchLeaveStopped: String { ls("settings.batchLeaveStopped", comment: "") }
+        static var batchLeaveStoppedBody: String { ls("settings.batchLeaveStoppedBody", comment: "") }
+        static var batchLeaveStatSkipped: String { ls("settings.batchLeaveStatSkipped", comment: "") }
         // D1 — retención «Seguir con mis grupos» (pantalla de éxito post-vaciar con grupos vivos)
         static var retentionTitle: String { ls("settings.retentionTitle", comment: "") }
         static var retentionQuestion: String { ls("settings.retentionQuestion", comment: "") }

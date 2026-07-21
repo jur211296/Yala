@@ -40,6 +40,12 @@ struct GroupBatchLeaveView: View {
         }
         .onAppear {
             #if DEBUG
+            if UITestHooks.groupsBatchRunning {
+                // QA/XCUITest: batch EN CURSO (para «Detener»). El tap sí recorre la mecánica real.
+                GroupBatchLeaveStore.seedDemoRunning()
+                tracker.refresh()
+                return
+            }
             if UITestHooks.groupsBatchDemo {
                 // QA/XCUITest: resultado determinista fabricado (sin backend/iCloud). Ver UITestHooks.
                 GroupBatchLeaveStore.seedDemoResult()
@@ -71,6 +77,15 @@ struct GroupBatchLeaveView: View {
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             }
+
+            // «Detener» (D3): cancelación cooperativa. El grupo en curso termina (server-first: o completa o no
+            // ocurre); ninguno nuevo se toma. Botón directo — sin diálogo de confirmación: añadir una
+            // presentación en este anchor es la clase de trampa de la regla toolbar-muerta.
+            YalaSecondaryButton(L10n.Settings.batchLeaveStop) {
+                GroupBatchLeaveOrchestrator.requestStop()
+            }
+            .accessibilityIdentifier("batch_leave_stop")
+            .padding(.top, DS.Spacing.lg)
         }
         .padding(.top, DS.Spacing.xxl)
     }
@@ -79,14 +94,21 @@ struct GroupBatchLeaveView: View {
 
     private var resultSection: some View {
         VStack(spacing: DS.Spacing.xxl) {
-            Text(tracker.needsDecision.isEmpty
-                 ? L10n.Settings.batchLeaveAllDone
-                 : L10n.Settings.batchLeaveSomeNeedDecision)
-                .font(DS.Typography.title)
-                .multilineTextAlignment(.center)
+            // Headline honesta: una parada NO es "saliste de tus grupos" — el usuario detuvo a mitad.
+            VStack(spacing: DS.Spacing.md) {
+                Text(headline)
+                    .font(DS.Typography.title)
+                    .multilineTextAlignment(.center)
+                if tracker.wasStopped {
+                    Text(L10n.Settings.batchLeaveStoppedBody)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+            }
 
             // Resumen (label + número, sin plurales).
-            if tracker.leftCount > 0 || tracker.transferredCount > 0 {
+            if tracker.leftCount > 0 || tracker.transferredCount > 0 || tracker.skippedCount > 0 {
                 VStack(spacing: DS.Spacing.none) {
                     if tracker.leftCount > 0 {
                         statRow(label: L10n.Settings.batchLeaveStatLeft, count: tracker.leftCount)
@@ -94,6 +116,10 @@ struct GroupBatchLeaveView: View {
                     if tracker.transferredCount > 0 {
                         if tracker.leftCount > 0 { SubsectionDivider() }
                         statRow(label: L10n.Settings.batchLeaveStatTransferred, count: tracker.transferredCount)
+                    }
+                    if tracker.skippedCount > 0 {
+                        if tracker.leftCount > 0 || tracker.transferredCount > 0 { SubsectionDivider() }
+                        statRow(label: L10n.Settings.batchLeaveStatSkipped, count: tracker.skippedCount)
                     }
                 }
                 .solidCard()
@@ -110,6 +136,15 @@ struct GroupBatchLeaveView: View {
             }
             .accessibilityIdentifier("batch_leave_done")
         }
+    }
+
+    /// Titular del resultado. La parada del usuario manda sobre las otras dos ramas: anunciar "saliste de tus
+    /// grupos" tras un «Detener» a mitad sería copy fabricado.
+    private var headline: String {
+        if tracker.wasStopped { return L10n.Settings.batchLeaveStopped }
+        return tracker.needsDecision.isEmpty
+            ? L10n.Settings.batchLeaveAllDone
+            : L10n.Settings.batchLeaveSomeNeedDecision
     }
 
     private func statRow(label: String, count: Int) -> some View {

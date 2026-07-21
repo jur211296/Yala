@@ -12,6 +12,11 @@
 //  Kill-safe: `GroupBatchLeaveOrchestrator` graba la transición de fase ANTES de la red que la avanza
 //  (write-ahead) y reanuda desde la fase grabada en boot/foreground.
 //
+//  PARADA DEL USUARIO (D3): `stopPending()` retira las entries `.pending` (nunca las `.inProgress`: su RPC pudo
+//  haber salido server-side y el resume DEBE completarlas) y graba el marcador de parada + el conteo retirado.
+//  El marcador es WRITE-AHEAD del propio botón: sin él, `resume(.boot/.foreground)` re-armaría lo que el usuario
+//  detuvo. Los marcadores viven en keys APARTE del blob de entries: un batch nuevo (`replaceAll`) los limpia.
+//
 
 import Foundation
 
@@ -56,6 +61,11 @@ struct BatchLeaveEntry: Codable, Equatable {
 @MainActor
 enum GroupBatchLeaveStore {
     static let userDefaultsKey = "yala.groups.pendingBatchLeave"
+    /// Marcador de parada del usuario (D3). Separado del blob de entries: sobrevive a la mutación de fases y lo
+    /// limpia solo `replaceAll` (batch nuevo) / `clearAll` / `acknowledge`.
+    static let stoppedKey = "yala.groups.pendingBatchLeave.stopped"
+    /// Grupos retirados por la parada (para el resultado honesto "M sin procesar").
+    static let skippedKey = "yala.groups.pendingBatchLeave.skipped"
 
     /// TTL por entry (7 días, mismo escenario que `PendingJoinStore`: la app se reabre días después). Fase-aware.
     static let ttl: TimeInterval = 7 * 24 * 60 * 60
@@ -66,9 +76,11 @@ enum GroupBatchLeaveStore {
     // MARK: - API
 
     /// Reemplaza TODO el batch (nueva corrida desde la UI): limpia lo previo y arma las entries frescas.
+    /// Retira los marcadores de parada: relanzar desde «Vaciar» es intención explícita del usuario.
     static func replaceAll(_ entries: [BatchLeaveEntry]) {
         var dict: [String: BatchLeaveEntry] = [:]
         for e in entries { dict[e.groupZoneID] = e }
+        clearStopMarkers()
         persist(dict)
     }
 
@@ -125,6 +137,50 @@ enum GroupBatchLeaveStore {
     /// Wipe total: al acabar/acknowledge del batch, sign-out / `AppRouter.resetAll()`.
     static func clearAll() {
         defaults.removeObject(forKey: userDefaultsKey)
+        clearStopMarkers()
+    }
+
+    // MARK: - Parada del usuario (D3)
+
+    /// `true` si el usuario detuvo el batch (marcador persistido — sobrevive al kill).
+    static var wasStopped: Bool { defaults.bool(forKey: stoppedKey) }
+
+    /// Grupos que quedaron sin procesar por la parada.
+    static var skippedCount: Int { defaults.integer(forKey: skippedKey) }
+
+    /// PARADA DEL USUARIO: retira las entries `.pending` y graba el marcador. Devuelve cuántas retiró.
+    ///
+    /// NUNCA toca las `.inProgress`: el write-ahead significa que su operación mutante PUDO haber salido
+    /// server-side, así que el resume debe completarlas aunque el usuario haya detenido el batch (por eso el
+    /// copy dice "no seguiremos con los que faltan", nunca "cancelado"). Idempotente: parar dos veces ACUMULA
+    /// el conteo (la 2ª pasada no encuentra `.pending` y suma 0).
+    @discardableResult
+    static func stopPending() -> Int {
+        var entries = load()
+        let pending = entries.values.filter { $0.phase == .pending }
+        for e in pending { entries.removeValue(forKey: e.groupZoneID) }
+        persist(entries)
+        defaults.set(true, forKey: stoppedKey)
+        defaults.set(skippedCount + pending.count, forKey: skippedKey)
+        return pending.count
+    }
+
+    /// Cierre del resultado (acknowledge): retira las entries TERMINALES y los marcadores, CONSERVANDO las
+    /// no-terminales. Con `wasStopped` la vista muestra el resultado aunque queden `.inProgress` en vuelo
+    /// (deferred por red) — borrarlas aquí perdería una operación cuyo RPC pudo haber salido. Sin parada es
+    /// byte-equivalente a `clearAll()`: `isComplete` ya exigía que no quedara trabajo.
+    static func clearFinished() {
+        var entries = load()
+        for e in entries.values where GroupBatchLeaveLogic.isTerminal(e.phase) {
+            entries.removeValue(forKey: e.groupZoneID)
+        }
+        persist(entries)
+        clearStopMarkers()
+    }
+
+    private static func clearStopMarkers() {
+        defaults.removeObject(forKey: stoppedKey)
+        defaults.removeObject(forKey: skippedKey)
     }
 
     #if DEBUG
@@ -142,6 +198,19 @@ enum GroupBatchLeaveStore {
             BatchLeaveEntry(groupZoneID: "demo-needs-1", groupName: "Amigos del gym",
                             phase: .needsDecision, plannedAction: .needsDecision,
                             needsDecisionReason: .cloudKitOwnerWithCoMembers),
+        ])
+    }
+
+    /// QA/XCUITest (`-uitest-groups-batch-running`): batch EN CURSO — 1 grupo ya salido + 3 `.pending`. La vista
+    /// muestra el progreso con «Detener»; el tap recorre la mecánica REAL (`stopPending` retira las 3 pendientes
+    /// y marca la parada) → resultado honesto «Salidos 1 · Sin procesar 3». Solo DEBUG.
+    static func seedDemoRunning() {
+        replaceAll([
+            BatchLeaveEntry(groupZoneID: "demo-run-done-1", groupName: "Viaje a Cusco",
+                            phase: .done, plannedAction: .leave),
+            BatchLeaveEntry(groupZoneID: "demo-run-2", groupName: "Gastos casa", plannedAction: .leave),
+            BatchLeaveEntry(groupZoneID: "demo-run-3", groupName: "Depa compartido", plannedAction: .leave),
+            BatchLeaveEntry(groupZoneID: "demo-run-4", groupName: "Amigos del gym", plannedAction: .leave),
         ])
     }
     #endif

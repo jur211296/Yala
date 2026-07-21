@@ -79,6 +79,13 @@ final class UITestHooks {
     /// vía `hasArg`; el seed demo del store está bajo `#if DEBUG`.
     nonisolated static var groupsBatchDemo: Bool { hasArg("-uitest-groups-batch-demo") }
 
+    /// `-uitest-groups-batch-running`: variante EN CURSO del seam anterior, para el botón «Detener» (D3).
+    /// Siembra el intent con entries `.pending` SIN ejecutar el orquestador real (imposible en sim), de modo
+    /// que la vista muestre el progreso con «Detener». El tap SÍ recorre la mecánica real
+    /// (`requestStop` → `stopPending` → marcador + resultado honesto): esto no fabrica el resultado, solo el
+    /// punto de partida. Inerte en release vía `hasArg`; el seed está bajo `#if DEBUG`.
+    nonisolated static var groupsBatchRunning: Bool { hasArg("-uitest-groups-batch-running") }
+
     /// `-uitest-retention-demo`: QA/XCUITest de la pantalla de retención D1 (§3.3.2). Arma
     /// `groupsRetentionPending` (con deuda) al arrancar para presentar el cover de retención SIN
     /// ejecutar el wipe destructivo real (ni depender del alert de 2ª confirmación localizado).

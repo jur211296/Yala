@@ -36,12 +36,20 @@ final class GroupBatchLeaveTracker {
     private(set) var transferredCount = 0
     private(set) var failedCount = 0
     private(set) var needsDecision: [NeedsDecisionItem] = []
+    /// El usuario pulsó «Detener» (D3): cambia la headline del resultado y habilita mostrarlo con trabajo vivo.
+    private(set) var wasStopped = false
+    /// Grupos que quedaron sin procesar por la parada ("M sin procesar" del resultado honesto).
+    private(set) var skippedCount = 0
 
     private init() {}
 
-    /// `true` cuando ya no queda trabajo no-terminal (la vista muestra el resultado).
+    /// `true` cuando la vista debe mostrar el resultado: no queda trabajo no-terminal, **o** el usuario detuvo.
+    ///
+    /// La rama `wasStopped` es necesaria porque una parada puede dejar entries `.inProgress` vivas (deferred por
+    /// red) que el resume completará en background: sin ella la vista quedaría clavada en el spinner justo
+    /// después de pulsar «Detener».
     var isComplete: Bool {
-        !isRunning && total > 0 && !GroupBatchLeaveStore.hasUnfinishedWork()
+        !isRunning && total > 0 && (!GroupBatchLeaveStore.hasUnfinishedWork() || wasStopped)
     }
 
     func setRunning(_ running: Bool) {
@@ -51,7 +59,11 @@ final class GroupBatchLeaveTracker {
     /// Recalcula los agregados desde el store (single source of truth).
     func refresh() {
         let entries = GroupBatchLeaveStore.all()
-        total = entries.count
+        wasStopped = GroupBatchLeaveStore.wasStopped
+        skippedCount = GroupBatchLeaveStore.skippedCount
+        // Con parada, las entries retiradas ya no están en el store: el total del batch es lo que queda + lo
+        // que se retiró (si no, "3 / 3" mentiría sobre un batch de 11 grupos).
+        total = entries.count + skippedCount
         var left = 0, transferred = 0, failed = 0
         var pending: [NeedsDecisionItem] = []
         for e in entries {
@@ -77,10 +89,14 @@ final class GroupBatchLeaveTracker {
         processedCount = left + transferred + failed + pending.count
     }
 
-    /// El usuario cerró el resultado: limpia el intent (los grupos `needsDecision` siguen visibles en el tab
+    /// El usuario cerró el resultado: limpia lo terminal (los grupos `needsDecision` siguen visibles en el tab
     /// Grupos — la verdad no depende de este store). Reset del estado observable.
+    ///
+    /// `clearFinished()` (no `clearAll()`) CONSERVA las entries no-terminales: tras una parada pueden quedar
+    /// `.inProgress` en vuelo cuyo RPC salió server-side y el resume debe completar. Sin parada es equivalente
+    /// (`isComplete` exigía que no quedara trabajo).
     func acknowledge() {
-        GroupBatchLeaveStore.clearAll()
+        GroupBatchLeaveStore.clearFinished()
         reset()
     }
 
@@ -92,5 +108,7 @@ final class GroupBatchLeaveTracker {
         transferredCount = 0
         failedCount = 0
         needsDecision = []
+        wasStopped = false
+        skippedCount = 0
     }
 }

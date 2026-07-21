@@ -123,4 +123,116 @@ struct GroupBatchLeaveOrchestratorTests {
         await GroupBatchLeaveOrchestrator.resume(trigger: .boot)
         #expect(GroupBatchLeaveStore.entry(groupZoneID: "A")?.phase == .done)
     }
+
+    // MARK: - Parada del usuario (D3)
+
+    @Test("stop: corta ENTRE grupos — el grupo en curso termina, los siguientes no se tocan")
+    func stopBreaksBetweenGroups() async {
+        let cleanup = makeEnvironment(); defer { cleanup() }
+        GroupBatchLeaveStore.replaceAll([
+            entry("A", .leave), entry("B", .leave), entry("C", .leave),
+        ])
+        let log = CallLog()
+        GroupBatchLeaveOrchestrator.quiescenceProvider = { true }
+        // El usuario pulsa «Detener» DURANTE la operación del primer grupo (dentro del `await perform`).
+        GroupBatchLeaveOrchestrator.performOverride = { e in
+            log.ids.append(e.groupZoneID)
+            if log.ids.count == 1 { GroupBatchLeaveOrchestrator.requestStop() }
+            return .done
+        }
+
+        await GroupBatchLeaveOrchestrator.resume(trigger: .userStart)
+
+        // El grupo en curso COMPLETÓ (jamás se corta a medias) y ninguno más se ejecutó.
+        #expect(log.ids.count == 1)
+        let processed = log.ids[0]
+        #expect(GroupBatchLeaveStore.entry(groupZoneID: processed)?.phase == .done)
+        // Los otros dos se retiraron del store (no quedan como trabajo pendiente).
+        #expect(GroupBatchLeaveStore.all().count == 1)
+        #expect(GroupBatchLeaveStore.wasStopped)
+        #expect(GroupBatchLeaveStore.skippedCount == 2)
+        // Resultado honesto: 1 salido, 2 sin procesar, total del batch preservado.
+        #expect(GroupBatchLeaveTracker.shared.leftCount == 1)
+        #expect(GroupBatchLeaveTracker.shared.skippedCount == 2)
+        #expect(GroupBatchLeaveTracker.shared.total == 3)
+        #expect(GroupBatchLeaveTracker.shared.wasStopped)
+    }
+
+    @Test("stop: lo detenido NO resume en boot/foreground")
+    func stoppedDoesNotResume() async {
+        let cleanup = makeEnvironment(); defer { cleanup() }
+        GroupBatchLeaveStore.replaceAll([entry("A", .leave), entry("B", .leave)])
+        GroupBatchLeaveOrchestrator.quiescenceProvider = { true }
+
+        // Parada con el batch ocioso (nada en curso): ambas entries `.pending` se retiran.
+        GroupBatchLeaveOrchestrator.requestStop()
+        #expect(!GroupBatchLeaveStore.hasUnfinishedWork())
+
+        let log = CallLog()
+        GroupBatchLeaveOrchestrator.performOverride = { e in log.ids.append(e.groupZoneID); return .done }
+        await GroupBatchLeaveOrchestrator.resume(trigger: .boot)
+        await GroupBatchLeaveOrchestrator.resume(trigger: .foreground)
+
+        #expect(log.ids.isEmpty)   // el resume NO re-arma lo que el usuario detuvo
+        #expect(GroupBatchLeaveStore.skippedCount == 2)
+    }
+
+    @Test("stop: una `.inProgress` SOBREVIVE a la parada y el resume la completa (write-ahead)")
+    func stopPreservesInProgress() async {
+        let cleanup = makeEnvironment(); defer { cleanup() }
+        // A quedó `.inProgress` (su RPC pudo haber salido server-side); B está `.pending`.
+        GroupBatchLeaveStore.replaceAll([entry("A", .leave, phase: .inProgress), entry("B", .leave)])
+
+        GroupBatchLeaveOrchestrator.requestStop()
+
+        #expect(GroupBatchLeaveStore.entry(groupZoneID: "A")?.phase == .inProgress)  // conservada
+        #expect(GroupBatchLeaveStore.entry(groupZoneID: "B") == nil)                 // retirada
+        #expect(GroupBatchLeaveStore.skippedCount == 1)
+        // La vista muestra el RESULTADO pese a quedar trabajo vivo: sin la rama `wasStopped` de `isComplete`,
+        // el spinner quedaría clavado justo después de pulsar «Detener».
+        #expect(GroupBatchLeaveStore.hasUnfinishedWork())
+        #expect(GroupBatchLeaveTracker.shared.wasStopped)
+        #expect(GroupBatchLeaveTracker.shared.isComplete)
+
+        // El resume SÍ completa la operación ambigua (invariante kill-safe).
+        let log = CallLog()
+        GroupBatchLeaveOrchestrator.quiescenceProvider = { true }
+        GroupBatchLeaveOrchestrator.performOverride = { e in log.ids.append(e.groupZoneID); return .done }
+        await GroupBatchLeaveOrchestrator.resume(trigger: .boot)
+
+        #expect(log.ids == ["A"])
+        #expect(GroupBatchLeaveStore.entry(groupZoneID: "A")?.phase == .done)
+    }
+
+    @Test("stop: relanzar desde la UI limpia los marcadores (batch nuevo, cifras frescas)")
+    func restartClearsStopMarkers() async {
+        let cleanup = makeEnvironment(); defer { cleanup() }
+        GroupBatchLeaveStore.replaceAll([entry("A", .leave), entry("B", .leave)])
+        GroupBatchLeaveOrchestrator.requestStop()
+        #expect(GroupBatchLeaveStore.wasStopped)
+
+        // Relanzar (molde de `start`: `replaceAll` con el plan fresco).
+        GroupBatchLeaveStore.replaceAll([entry("A", .leave), entry("B", .leave)])
+        #expect(!GroupBatchLeaveStore.wasStopped)
+        #expect(GroupBatchLeaveStore.skippedCount == 0)
+
+        let log = CallLog()
+        GroupBatchLeaveOrchestrator.quiescenceProvider = { true }
+        GroupBatchLeaveOrchestrator.performOverride = { e in log.ids.append(e.groupZoneID); return .done }
+        await GroupBatchLeaveOrchestrator.resume(trigger: .userStart)
+
+        #expect(Set(log.ids) == ["A", "B"])   // la parada previa no envenena la corrida nueva
+    }
+
+    @Test("acknowledge: retira lo terminal y CONSERVA las no-terminales en vuelo")
+    func acknowledgeKeepsInProgress() async {
+        let cleanup = makeEnvironment(); defer { cleanup() }
+        GroupBatchLeaveStore.replaceAll([entry("A", .leave, phase: .done), entry("B", .leave, phase: .inProgress)])
+
+        GroupBatchLeaveTracker.shared.acknowledge()
+
+        #expect(GroupBatchLeaveStore.entry(groupZoneID: "A") == nil)                 // terminal → fuera
+        #expect(GroupBatchLeaveStore.entry(groupZoneID: "B")?.phase == .inProgress)  // en vuelo → conservada
+        #expect(!GroupBatchLeaveStore.wasStopped)
+    }
 }

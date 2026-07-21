@@ -57,7 +57,8 @@ struct UserDataResetView: View {
     /// CERO deudas globales (el batch no se ofrece con deuda — la fila 👥 muestra "Ver mis grupos"). Solo en
     /// `wipeDataFull` (el modelo lo restringe a esa operación).
     private var canLeaveAllGroups: Bool {
-        if UITestHooks.groupsBatchDemo { return true }   // QA/XCUITest: fuerza la oferta (inerte en release)
+        // QA/XCUITest: fuerza la oferta (ambos seams inertes en release).
+        if UITestHooks.groupsBatchDemo || UITestHooks.groupsBatchRunning { return true }
         return CloudSyncFlags.groupsBackendEnabled && groupsSummary.hasGroups && !groupsSummary.hasOutstandingDebt
     }
 

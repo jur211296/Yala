@@ -9,6 +9,7 @@
 //  Contrato:
 //    - `start(context:)` — desde la UI: (re)clasifica todos los grupos, arma el intent y procesa.
 //    - `resume(trigger:context:)` — boot/foreground: procesa el intent persistido pendiente.
+//    - `requestStop()` — desde la UI (botón «Detener», D3): cancelación COOPERATIVA entre grupos.
 //  Ambos funnelan en `drive`. Idempotente por grupo. GATE DE QUIESCENCIA (invariante b): cada paso mutante
 //  verifica `isImportQuiescent` ANTES de tocar el mainContext compartido; si el import no está quiescente,
 //  BAIL del loop (deja las fases grabadas) → el resume lo retoma. WRITE-AHEAD: la fase `.inProgress` se graba
@@ -38,6 +39,10 @@ enum GroupBatchLeaveOrchestrator {
     /// Guard de re-entrancy: una sola pasada a la vez (los triggers pueden solaparse por los `await` de red).
     private static var isRunning = false
 
+    /// Bandera de cancelación COOPERATIVA (D3). La lee el loop ENTRE grupos; jamás interrumpe una operación en
+    /// vuelo. Se resetea al entrar a `drive` — la parada vive PERSISTIDA en el store, no en este Bool.
+    private static var stopRequested = false
+
     // MARK: - Seams inyectables (tests)
 
     /// Gate de quiescencia. Default: quiescencia del import personal. Los tests lo fuerzan.
@@ -64,6 +69,22 @@ enum GroupBatchLeaveOrchestrator {
         await drive(trigger: .userStart)
     }
 
+    /// El usuario pulsó «Detener» (D3). Cancelación COOPERATIVA: el grupo EN CURSO termina (`transfer`/`leave`
+    /// son server-first — o completan o no ocurren; cortar el `await` dejaría un ack perdido post-COMMIT), y el
+    /// loop no toma ninguno más. WRITE-AHEAD: la parada se PERSISTE aquí (retira las `.pending` + marcador) para
+    /// que `resume(.boot/.foreground)` no re-arme lo que el usuario detuvo.
+    ///
+    /// Las `.inProgress` SOBREVIVEN a propósito: su operación pudo haber salido server-side y el resume debe
+    /// completarla (residual honesto y declarado — tras detener, un grupo más puede terminar de salir).
+    /// Sin `context.save()`: solo `UserDefaults` ⇒ el gate de quiescencia queda intacto.
+    static func requestStop() {
+        stopRequested = true
+        let skipped = GroupBatchLeaveStore.stopPending()
+        MetricsService.canary(.groupBatchLeaveStopped, value: Double(skipped))
+        logger.notice("BatchLeave: stopped by user — \(skipped, privacy: .public) group(s) not processed")
+        GroupBatchLeaveTracker.shared.refresh()
+    }
+
     /// Resume en boot/foreground: procesa el intent persistido si queda trabajo no-terminal.
     static func resume(trigger: Trigger, context: ModelContext? = nil) async {
         guard !isRunning else { return }
@@ -79,6 +100,9 @@ enum GroupBatchLeaveOrchestrator {
     private static func drive(trigger: Trigger) async {
         guard !isRunning else { return }
         isRunning = true
+        // Una parada previa NO envenena esta pasada: lo que el usuario detuvo ya se retiró del store, y las
+        // `.inProgress` supervivientes DEBEN completarse.
+        stopRequested = false
         GroupBatchLeaveTracker.shared.setRunning(true)
         defer {
             isRunning = false
@@ -89,6 +113,11 @@ enum GroupBatchLeaveOrchestrator {
         let perform = performOverride ?? { entry in await GroupService.shared.executeBatchStep(entry) }
 
         for entry in GroupBatchLeaveStore.unfinished() {
+            // PARADA DEL USUARIO (D3): punto de sutura ENTRE grupos. El grupo previo ya terminó (o no empezó);
+            // ninguno nuevo se toma. `requestStop` ya retiró las `.pending` del store — este guard corta el
+            // snapshot que el loop capturó al entrar.
+            guard !stopRequested else { break }
+
             // GATE DE QUIESCENCIA por grupo (pre-llamada): si el import arrancó, BAIL — el resume retoma.
             guard quiescenceProvider() else {
                 logger.notice("BatchLeave[\(trigger.rawValue, privacy: .public)]: deferred — import not quiescent")

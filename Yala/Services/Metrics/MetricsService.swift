@@ -99,6 +99,7 @@ enum MetricsCanary: String {
     case groupBatchLeaveExpired       // entry .pending vencida (TTL) sin procesar
     case groupBatchLeaveNeedsDecision // grupo que cae a "necesitan tu decisión"
     case groupBatchLeaveFailed        // transfer/leave falló permanente
+    case groupBatchLeaveStopped       // el usuario pulsó «Detener» (value = grupos sin procesar)
 
     // Routing (F9)
     case routingIntentSuperseded

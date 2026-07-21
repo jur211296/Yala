@@ -5322,3 +5322,15 @@
 
 /* Subtitulo de Donde viven tus datos, modo nube */
 "settings.dataLocationSubtitleCloud" = "Dein Cloud-Konto";
+
+/* D10 batch: stop button (D3) */
+"settings.batchLeaveStop" = "Stoppen";
+
+/* D10 batch: result headline when user stopped (D3) */
+"settings.batchLeaveStopped" = "Du hast den Vorgang gestoppt.";
+
+/* D10 batch: stat label for groups not processed after stop (D3) */
+"settings.batchLeaveStatSkipped" = "Übersprungen";
+
+/* D10 batch: body explaining how to relaunch after stop (D3) */
+"settings.batchLeaveStoppedBody" = "Du kannst den Vorgang jederzeit unter „Meine Daten löschen“ fortsetzen.";

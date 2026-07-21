@@ -5334,3 +5334,15 @@
 
 /* Subtitulo de Donde viven tus datos, modo nube */
 "settings.dataLocationSubtitleCloud" = "クラウドアカウント";
+
+/* D10 batch: stop button (D3) */
+"settings.batchLeaveStop" = "中止";
+
+/* D10 batch: result headline when user stopped (D3) */
+"settings.batchLeaveStopped" = "退出を中止しました。";
+
+/* D10 batch: stat label for groups not processed after stop (D3) */
+"settings.batchLeaveStatSkipped" = "未処理";
+
+/* D10 batch: body explaining how to relaunch after stop (D3) */
+"settings.batchLeaveStoppedBody" = "「自分のデータを消去」からいつでも再開できます。";

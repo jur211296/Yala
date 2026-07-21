@@ -5334,3 +5334,15 @@
 
 /* Subtitulo de Donde viven tus datos, modo nube */
 "settings.dataLocationSubtitleCloud" = "你的云端账户";
+
+/* D10 batch: stop button (D3) */
+"settings.batchLeaveStop" = "停止";
+
+/* D10 batch: result headline when user stopped (D3) */
+"settings.batchLeaveStopped" = "已停止离开群组。";
+
+/* D10 batch: stat label for groups not processed after stop (D3) */
+"settings.batchLeaveStatSkipped" = "未处理";
+
+/* D10 batch: body explaining how to relaunch after stop (D3) */
+"settings.batchLeaveStoppedBody" = "你可以随时在「清空我的数据」中继续。";
