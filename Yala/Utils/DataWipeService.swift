@@ -394,7 +394,7 @@ final class DataWipeService {
         defaults.removeObject(forKey: "hasShownWelcomeChooser") // A4: tras wipe vuelve a mostrarse el chooser
         defaults.removeObject(forKey: "hasShownYalaAIOnboarding") // Tras wipe vuelve a mostrarse el onboarding del chat
         defaults.removeObject(forKey: "onboardingMode")         // Default: .full (normal onboarding)
-        defaults.removeObject(forKey: AppPreferences.Keys.usageFocus)  // D1: reset foco de shell a .full (el brazo de retención lo re-setea)
+        defaults.removeObject(forKey: AppPreferences.Keys.usageFocus)  // D1: reset foco de shell a .full — el reset-on-absent de AppPreferences.loadFromDefaults (vía didChangeNotification) revierte el valor EN MEMORIA a .full al remover la key, sin depender del brazo de retención
         defaults.removeObject(forKey: "sessionTimestamps")      // Default: [] (UserSegmentService sessions)
         defaults.removeObject(forKey: "secondaryCurrencies")    // Default: "" (no secondary currencies)
         defaults.removeObject(forKey: "needsPostOnboardingTrial") // One-shot del trial post-onboarding

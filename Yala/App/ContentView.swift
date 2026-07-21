@@ -482,7 +482,10 @@ struct ContentView: View {
                 prefilledOnboardingData = nil
                 presentNextOnboardingScreen()
             case nil:
-                break
+                // Teardown EXTERNO (UIKit tumbó el cover sin elección del usuario). Re-arma desde la
+                // condición viva: si la retención sigue pendiente, re-presenta en el próximo runloop
+                // (molde RelaunchNet) — evita el blocker `groupsRetention` colgado sin cover visible.
+                syncGroupsRetentionCover()
             }
         }) {
             GroupsRetentionView(
@@ -552,6 +555,9 @@ struct ContentView: View {
                 Task { @MainActor in
                     await GroupBatchLeaveOrchestrator.resume(trigger: .foreground)
                 }
+                // D1: recuperación warm-foreground del cover de retención (si un teardown externo lo
+                // tumbó con la retención aún pendiente). Idempotente; no-op sin retención pendiente.
+                syncGroupsRetentionCover()
             // El exit-on-background del relaunch terminal (decisión owner UX 2026-07-14)
             // vive en YalaApp, NO aquí: el `\.scenePhase` de ContentView es POR-ESCENA
             // (iPad multi-ventana: ocultar una ventana mataría el proceso con otra
