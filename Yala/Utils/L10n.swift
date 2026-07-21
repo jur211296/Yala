@@ -4050,6 +4050,10 @@ enum L10n {
         static var yalaAccountReturnICloud: String { ls("settings.yalaAccountReturnICloud", comment: "") }
         static var yalaAccountReturnICloudScope: String { ls("settings.yalaAccountReturnICloudScope", comment: "") }
         static var yalaAccountDeleteScope: String { ls("settings.yalaAccountDeleteScope", comment: "") }
+        // §3.2: reorganización de Ajustes (subsección "Tu cuenta" + subtítulo de "Dónde viven tus datos").
+        static var accountSubsectionTitle: String { ls("settings.accountSubsectionTitle", comment: "") }
+        static var dataLocationSubtitleICloud: String { ls("settings.dataLocationSubtitleICloud", comment: "") }
+        static var dataLocationSubtitleCloud: String { ls("settings.dataLocationSubtitleCloud", comment: "") }
         static var signOutBlockedTitle: String { ls("settings.signOutBlockedTitle", comment: "") }
         static var signOutBlockedMessage: String { ls("settings.signOutBlockedMessage", comment: "") }
         // H-2026-07-18-6 — espera/retry interno del sign-out solo-grupos

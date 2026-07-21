@@ -206,6 +206,13 @@ struct ProfileView: View {
         deleteAccountRowHasSession && !SecondarySessionStore.isActive()
     }
 
+    /// §3.2: subtítulo dinámico de la fila "Dónde viven tus datos" — refleja el modo real.
+    private var dataLocationSubtitle: String {
+        CloudSyncFlags.storageMode == .cloud
+            ? L10n.Settings.dataLocationSubtitleCloud
+            : L10n.Settings.dataLocationSubtitleICloud
+    }
+
     /// D4: operación de la hoja de eliminar-cuenta según el modo (misma decisión que `AccountDeletionService`:
     /// `.cloud` vs solo-grupos backend). La composición de líneas condicionales (deudas D5, desvío cruzado,
     /// copia iCloud congelada, huella legacy) la sigue decidiendo `AccountDeletionMessageLogic`, reutilizada
@@ -855,77 +862,11 @@ struct ProfileView: View {
     private var datosSection: some View {
         SectionBox(title: L10n.Settings.data) {
             VStack(spacing: DS.Spacing.none) {
-                // §3.3.5: "Tu cuenta de Yala" — mapa/explainer del enlace privado ↔ nube (reemplaza el
-                // letrero mudo "Cuenta de grupos / Sesión activa"). Con sesión backend viva, fuera de
-                // secundaria. DARK hoy. (Commit 2 la reubica a la subsección "Tu cuenta" de Seguridad.)
-                if showsYalaAccountRow {
-                    NavigationLink(value: ProfileDestination.yalaAccount) {
-                        settingsRowContent(
-                            icon: "person.crop.circle.badge.checkmark",
-                            title: L10n.Settings.yalaAccountRowTitle,
-                            subtitle: L10n.Settings.yalaAccountRowSubtitle,
-                            iconColor: .indigo)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("profile_yala_account")
-                    SubsectionDivider()
-                }
-
-                // La fila "iCloud" se oculta en Modo Nube (`.cloud`): `iCloudSyncSettingsView` mentiría
-                // (el store personal ya no lo espeja el mirror). La vista completa bifurcada por modo es
-                // I12; aquí basta ocultarla (R12 mínimo).
-                if CloudSyncFlags.storageMode != .cloud {
-                    profileRow(
-                        icon: "icloud.fill",
-                        title: L10n.iCloud.title,
-                        iconColor: .blue,
-                        destination: .iCloudSync
-                    )
-                }
-
-                // Modo Nube (I14): fila "Almacenamiento" — solo si el backend está configurado
-                // (staging/DEV; prod placeholder no muestra nada). M1: oculta en sesión SECUNDARIA —
-                // la pantalla describe/opera la migración del DUEÑO (la invitada ni la ve).
-                // DIFERIDOS #34: el flag remoto gatea solo la ENTRADA — un usuario "engaged"
-                // (`.cloud` persistido o migración/reversa en vuelo/fallida) conserva la fila
-                // SIEMPRE (gestión + resume + REVERSA, el escape ante incidente).
-                if StorageRowGateLogic.isVisible(
-                    isConfigured: CloudBackendConfig.isConfigured,
-                    isSecondaryActive: SecondarySessionStore.isActive(),
-                    remoteEnabled: CloudRemoteFlags.cloudModeEnabled,
-                    isEngaged: StorageModePersistence.read() == .cloud
-                        || (CloudMigrationController.shared?.uiState ?? .idle) != .idle
-                ) {
-                    if CloudSyncFlags.storageMode != .cloud { SubsectionDivider() }
-                    profileRow(
-                        icon: "externaldrive.badge.icloud",
-                        title: L10n.Storage.title,
-                        iconColor: .indigo,
-                        destination: .storageMode
-                    )
-                    .accessibilityIdentifier("storage_settings_row")
-                }
-
-                // Importar opera sobre transacciones personales: oculto en solo-grupos
-                // (solo existen movimientos virtuales de grupo).
-                if !isGroupInviteMode {
-                    SubsectionDivider()
-
-                    Button {
-                        activeSheet = .importIntro
-                    } label: {
-                        settingsRowContent(
-                            icon: "tray.and.arrow.down.fill", title: L10n.Settings.importData,
-                            iconColor: .blue)
-                    }
-                    .buttonStyle(.plain)
-                }
-
-                // Exportar: personal (wizard con filtros) o SOLO-GRUPOS (D6 §3.3.6 — el builder
-                // de grupos vive; el solo-grupos legado exporta directamente sus grupos, sin el
-                // wizard de transacciones personales, que exigiría seleccionar una cuenta).
-                SubsectionDivider()
-
+                // §3.2: orden de DATOS = Exportar → Importar → "Dónde viven tus datos" → Vaciar (escalera
+                // de gravedad). La fila "Tu cuenta de Yala" ya NO vive aquí (movida a la subsección "Tu
+                // cuenta" de Seguridad). Exportar: personal (wizard con filtros) o SOLO-GRUPOS (D6 §3.3.6 —
+                // el builder de grupos vive; el solo-grupos legado exporta directo, sin el wizard personal
+                // que exigiría seleccionar una cuenta). Primera fila ⇒ sin divisor arriba.
                 Button {
                     activeSheet = isGroupInviteMode ? .groupsExport : .exportWizard
                 } label: {
@@ -941,8 +882,57 @@ struct ProfileView: View {
                 .buttonStyle(.plain)
                 .coachMarkAnchor("proExportExtended")
 
-                SubsectionDivider()
+                // Importar opera sobre transacciones personales: oculto en solo-grupos.
+                if !isGroupInviteMode {
+                    SubsectionDivider()
+                    Button {
+                        activeSheet = .importIntro
+                    } label: {
+                        settingsRowContent(
+                            icon: "tray.and.arrow.down.fill", title: L10n.Settings.importData,
+                            iconColor: .blue)
+                    }
+                    .buttonStyle(.plain)
+                }
 
+                // La fila "iCloud" se oculta en Modo Nube (`.cloud`): `iCloudSyncSettingsView` mentiría
+                // (el store personal ya no lo espeja el mirror). Cada bloque condicional lleva su divisor
+                // arriba ⇒ nunca queda un divisor colgante si una fila anterior se oculta.
+                if CloudSyncFlags.storageMode != .cloud {
+                    SubsectionDivider()
+                    profileRow(
+                        icon: "icloud.fill",
+                        title: L10n.iCloud.title,
+                        iconColor: .blue,
+                        destination: .iCloudSync
+                    )
+                }
+
+                // §3.2: "Dónde viven tus datos" (antes "Almacenamiento"; key `storage.title` renombrada).
+                // Modo Nube (I14): solo si el backend está configurado (staging/DEV; prod placeholder no
+                // muestra nada). M1: oculta en sesión SECUNDARIA. DIFERIDOS #34: el flag remoto gatea solo
+                // la ENTRADA — un usuario "engaged" conserva la fila SIEMPRE. Gate StorageRowGateLogic intacto.
+                if StorageRowGateLogic.isVisible(
+                    isConfigured: CloudBackendConfig.isConfigured,
+                    isSecondaryActive: SecondarySessionStore.isActive(),
+                    remoteEnabled: CloudRemoteFlags.cloudModeEnabled,
+                    isEngaged: StorageModePersistence.read() == .cloud
+                        || (CloudMigrationController.shared?.uiState ?? .idle) != .idle
+                ) {
+                    SubsectionDivider()
+                    NavigationLink(value: ProfileDestination.storageMode) {
+                        settingsRowContent(
+                            icon: "externaldrive.badge.icloud",
+                            title: L10n.Storage.title,
+                            subtitle: dataLocationSubtitle,
+                            iconColor: .indigo)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("storage_settings_row")
+                }
+
+                // Vaciar mis datos — SIEMPRE al final (lo más irreversible de la sección).
+                SubsectionDivider()
                 NavigationLink(value: ProfileDestination.userDataReset) {
                     // Fase 1 (§3.2): "arrow.counterclockwise" (volver al estado inicial);
                     // "trash" queda reservado a "Eliminar mi cuenta". `.red` es color de
@@ -1014,6 +1004,30 @@ struct ProfileView: View {
                         iconColor: .yellow)
                 }
                 .buttonStyle(.plain)
+                // §3.2: subsección "Tu cuenta" — SOLO con sesión backend viva. Para VIVO sin sesión (TODO
+                // device prod) nada se inserta ⇒ las filas de salida de abajo quedan byte-idénticas. Agrupa
+                // "Tu cuenta de Yala →" (mapa/explainer, §3.3.5) + las filas de sign-out/eliminar-cuenta que
+                // siguen (que NO se mueven, preservando sus accessibilityIdentifiers y XCUITests — Q2).
+                if showsYalaAccountRow {
+                    SubsectionDivider()
+                    Text(L10n.Settings.accountSubsectionTitle)
+                        .font(DS.Typography.labelSmall)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.top, DS.Spacing.md)
+                        .padding(.bottom, DS.Spacing.xs)
+                        .accessibilityAddTraits(.isHeader)
+                    NavigationLink(value: ProfileDestination.yalaAccount) {
+                        settingsRowContent(
+                            icon: "person.crop.circle.badge.checkmark",
+                            title: L10n.Settings.yalaAccountRowTitle,
+                            subtitle: L10n.Settings.yalaAccountRowSubtitle,
+                            iconColor: .indigo)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("profile_yala_account")
+                }
                 // H4: cerrar sesión — SIEMPRE al final (privada y nube; oculta solo en group-invite SIN
                 // sesión backend, que ve "Salir de Yala" — D6). D2 (§3.3.3): en el escenario privado+grupos
                 // con sesión backend ([FLAG], path = .groupsOnlySignOut) la fila se DIVIDE en dos ("Cerrar

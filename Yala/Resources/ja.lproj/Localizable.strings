@@ -4659,7 +4659,7 @@
 "groups.expense.success.addAnother" = "別の支出を追加";
 
 /* MARK: Modo Nube (I14) — almacenamiento / migración / consentimiento */
-"storage.title" = "保存先";
+"storage.title" = "データの保存先";
 "storage.waitingForLeader" = "別のデバイスがこのアカウントのクラウドを有効化しています。完了までお待ちください。";
 "storage.status.icloudTitle" = "プライベート iCloud";
 "storage.status.icloudBody" = "データはデバイスに保存され、プライベートな iCloud で同期されます。私たちを含め、他の誰も読み取れません。";
@@ -5325,3 +5325,12 @@
 
 /* Frase de que la Reversa ES el desenlace funcional (§3.3.5) */
 "storage.revert.desenlaceNote" = "この端末からアカウントの連携を解除する方法です。戻ってきたときのために一時停止のまま残ります。";
+
+/* Header de la subseccion Tu cuenta en Seguridad (§3.2) */
+"settings.accountSubsectionTitle" = "アカウント";
+
+/* Subtitulo de Donde viven tus datos, modo iCloud */
+"settings.dataLocationSubtitleICloud" = "プライベート iCloud";
+
+/* Subtitulo de Donde viven tus datos, modo nube */
+"settings.dataLocationSubtitleCloud" = "クラウドアカウント";

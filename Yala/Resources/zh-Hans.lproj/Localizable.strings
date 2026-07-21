@@ -4659,7 +4659,7 @@
 "groups.expense.success.addAnother" = "再记一笔";
 
 /* MARK: Modo Nube (I14) — almacenamiento / migración / consentimiento */
-"storage.title" = "存储";
+"storage.title" = "你的数据存放在哪里";
 "storage.waitingForLeader" = "您的另一台设备正在为此账户启用云端。请等待其完成。";
 "storage.status.icloudTitle" = "私有 iCloud";
 "storage.status.icloudBody" = "您的数据保存在设备上，通过私有 iCloud 同步。其他人无法读取，包括我们。";
@@ -5325,3 +5325,12 @@
 
 /* Frase de que la Reversa ES el desenlace funcional (§3.3.5) */
 "storage.revert.desenlaceNote" = "这是把你的账户与此设备解绑的方式：账户会暂停，留待你回来。";
+
+/* Header de la subseccion Tu cuenta en Seguridad (§3.2) */
+"settings.accountSubsectionTitle" = "你的账户";
+
+/* Subtitulo de Donde viven tus datos, modo iCloud */
+"settings.dataLocationSubtitleICloud" = "你的私密 iCloud";
+
+/* Subtitulo de Donde viven tus datos, modo nube */
+"settings.dataLocationSubtitleCloud" = "你的云端账户";

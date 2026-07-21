@@ -4647,7 +4647,7 @@
 "groups.expense.success.addAnother" = "Adicionar outra";
 
 /* MARK: Modo Nube (I14) — almacenamiento / migración / consentimiento */
-"storage.title" = "Armazenamento";
+"storage.title" = "Onde ficam seus dados";
 "storage.waitingForLeader" = "Outro dos seus dispositivos está ativando a nuvem para esta conta. Aguarde ele terminar.";
 "storage.status.icloudTitle" = "iCloud privado";
 "storage.status.icloudBody" = "Seus dados ficam no seu dispositivo e sincronizam pelo seu iCloud privado. Ninguém mais pode lê-los, nem nós.";
@@ -5313,3 +5313,12 @@
 
 /* Frase de que la Reversa ES el desenlace funcional (§3.3.5) */
 "storage.revert.desenlaceNote" = "É a forma de desvincular sua conta deste dispositivo: ela fica pausada, caso você volte.";
+
+/* Header de la subseccion Tu cuenta en Seguridad (§3.2) */
+"settings.accountSubsectionTitle" = "Sua conta";
+
+/* Subtitulo de Donde viven tus datos, modo iCloud */
+"settings.dataLocationSubtitleICloud" = "iCloud privado";
+
+/* Subtitulo de Donde viven tus datos, modo nube */
+"settings.dataLocationSubtitleCloud" = "Sua conta na nuvem";
