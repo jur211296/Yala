@@ -26,6 +26,10 @@ struct DestructiveScopeSheet: View {
 
     @Environment(\.dismiss) private var dismiss
 
+    /// Alto del área de scroll (lo reporta `onGeometryChange`), para centrar verticalmente el contenido
+    /// cuando cabe y dejarlo scrollear cuando crece (Dynamic Type XL).
+    @State private var scrollViewportHeight: CGFloat = 0
+
     // MARK: - Config
 
     struct Config {
@@ -73,7 +77,14 @@ struct DestructiveScopeSheet: View {
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
-                VStack(alignment: .leading, spacing: DS.Spacing.xl) {
+                // A pantalla completa (`.large`) el bloque —título arriba, filas y nota debajo, con jerarquía
+                // generosa (espaciado `xxl`)— se centra verticalmente en el área de scroll (patrón de
+                // NotificationPrimerSheet). Así se lee como una PANTALLA DE DECISIÓN y no como un alert
+                // estirado con un vacío enorme en el medio, tanto en las variantes densas (Vaciar, 4 botones)
+                // como en las escasas (cerrar sesión, 2 botones). El `minHeight` = alto del viewport centra
+                // cuando cabe y deja scrollear cuando el contenido crece (Dynamic Type XL). `onGeometryChange`
+                // es el patrón seguro (evita el deadlock de `containerRelativeFrame` documentado en CLAUDE.md).
+                VStack(alignment: .leading, spacing: DS.Spacing.xxl) {
                     Text(config.title)
                         .font(DS.Typography.title)
                         .multilineTextAlignment(.leading)
@@ -101,14 +112,19 @@ struct DestructiveScopeSheet: View {
                     }
                 }
                 .padding(.horizontal, DS.Spacing.xl)
-                .padding(.top, DS.Spacing.xl)
-                .padding(.bottom, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.xl)
+                .frame(maxWidth: .infinity, minHeight: scrollViewportHeight, alignment: .center)
             }
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { scrollViewportHeight = $0 }
 
             buttons
         }
-        .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
-        .presentationDetents(DS.Adaptive.sheetDetents([.medium]))
+        // Una decisión destructiva merece foco completo: siempre `.large` (una pantalla de decisión,
+        // no un alert estirado). En `.large`, la regla SSOT de fondos exige `.subtle` (nunca
+        // `.transparent`, que era solo para detents parciales). El wrapper `DS.Adaptive` es innecesario:
+        // `[.large]` ya es `.large` en iPhone e iPad.
+        .yalaScreenBackground(.subtle)
+        .presentationDetents([.large])
         .presentationDragIndicator(.visible)
     }
 
