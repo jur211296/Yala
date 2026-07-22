@@ -929,7 +929,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests; xcuitest:YalaUITests/GroupExpenseSuccessUITests + unit:YalaTests/GroupExpenseSuccessBuildDataTests (datos de la pantalla de éxito) + unit:YalaTests/GroupExpenseEligibilityLogicTests (gate del composer, incl. freeze por migración H-2026-07-18-2: grupo congelado fuera del picker + botón Guardar disabled reactivo + banner + alert genérico de saveError) + unit:YalaTests/GroupExpenseViewModelEditAfterCreateTests (Editar post-registro actualiza, no duplica)",
       "owner": "",
-      "lastVerified": "2026-07-18"
+      "lastVerified": "2026-07-22"
     },
     {
       "area": "groups-form",
