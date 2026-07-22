@@ -318,6 +318,10 @@ final class GroupExpenseViewModel {
                     accountForCurrentUser: accountToPass
                 )
                 lastCreatedExpenseID = created.id.uuidString
+                // Vincular el VM al gasto recién creado: el "Editar" de la pantalla de éxito
+                // vuelve a este mismo form y el siguiente save debe actualizar, no crear otro
+                // (espejo de editingTransaction = tx en NewTransactionViewModel).
+                editingExpense = created
             }
             isSaving = false
             return true

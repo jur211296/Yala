@@ -41,6 +41,14 @@ final class GroupService {
         return context
     }
 
+    #if DEBUG
+    /// Resetea el contexto inyectado — tests que setean un contexto propio deben limpiarlo
+    /// al salir para no contaminar otras suites (mismo patrón que GroupExpenseService).
+    func _testResetContext() {
+        self.modelContext = nil
+    }
+    #endif
+
     // MARK: - Backend channel routing (G5-A / C5)
 
     /// `true` si esta op de membership debe ir por el canal BACKEND (RPC) en vez de CKSyncEngine:

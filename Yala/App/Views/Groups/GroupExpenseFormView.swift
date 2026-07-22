@@ -862,7 +862,10 @@ struct GroupExpenseFormView: View {
             splitType: viewModel.splitType,
             participants: participants,
             debt: debt,
-            isEditMode: viewModel.isEditMode
+            // `viewModel.isEditMode` ya es true aquí incluso tras CREAR (save() vincula
+            // editingExpense al gasto nuevo). El discriminante de ESTE save es
+            // lastCreatedExpenseID: non-nil solo en la rama de creación.
+            isEditMode: viewModel.lastCreatedExpenseID == nil
         )
     }
 
