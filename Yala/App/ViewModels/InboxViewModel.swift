@@ -53,6 +53,9 @@ final class InboxViewModel {
     func setContext(_ context: ModelContext) {
         let isNewContext = self.modelContext !== context
         self.modelContext = context
+        // Puente síncrono para que la capa de servicio pode filas antes de borrar (crash iOS 27,
+        // ver InboxRowPruneCoordinator). weak: se libera solo al cerrarse el Inbox.
+        InboxRowPruneCoordinator.shared.viewModel = self
         if isNewContext { loadData() }
     }
 
@@ -149,8 +152,15 @@ final class InboxViewModel {
     }
 
     func removeDraft(_ draft: InboxDraft) {
-        allDrafts.removeAll { $0.persistentModelID == draft.persistentModelID }
-        pendingDrafts.removeAll { $0.persistentModelID == draft.persistentModelID }
+        removeDraft(id: draft.persistentModelID)
+    }
+
+    /// Poda una fila del array cacheado por su id persistente. Usado por el
+    /// `InboxRowPruneCoordinator` desde la capa de servicio para desmontar la fila ANTES de que
+    /// `context.delete` invalide el @Model (evita el SIGTRAP de SwiftData en iOS 27). Idempotente.
+    func removeDraft(id: PersistentIdentifier) {
+        allDrafts.removeAll { $0.persistentModelID == id }
+        pendingDrafts.removeAll { $0.persistentModelID == id }
     }
 
     var hasPendingDrafts: Bool {

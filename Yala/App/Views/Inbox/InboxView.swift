@@ -123,6 +123,12 @@ struct InboxView: View {
     }
 
     private func finalizeGroupScheduledExpense(draft: InboxDraft, expenseID: String) {
+        // Poda la fila del Inbox ANTES de que el service borre el @Model (crash iOS 27, misma
+        // clase que la conversión; ver InboxRowPruneCoordinator). El service solo borra ESTE
+        // draft (sin hermanos) y aún lo lee (date/sourceScheduledPaymentID) antes del delete, así
+        // que podar el array ahora es seguro. Se poda aquí — no vía el coordinador en el service —
+        // porque este finalizer tiene el VM a mano y el service vive fuera del subsistema Inbox.
+        viewModel.removeDraft(draft)
         ScheduledPaymentDraftService.handleGroupScheduledExpenseApproved(
             draft: draft, expenseID: expenseID, context: modelContext
         )
@@ -204,6 +210,8 @@ struct InboxView: View {
     /// Cierra el ciclo tras crear el SplitExpense desde un draft personal: borra el draft.
     /// (No usa el expenseID — a diferencia del scheduled, no hay pago recurrente que vincular.)
     private func finalizeConvertedDraft(draft: InboxDraft) {
+        // El service poda la fila del Inbox antes de borrar el @Model (crash iOS 27, ver
+        // InboxRowPruneCoordinator).
         draftService.handleDraftConvertedToGroupExpense(draft, context: modelContext)
     }
 

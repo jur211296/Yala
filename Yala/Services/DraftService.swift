@@ -88,6 +88,20 @@ final class DraftService {
         try context.save()
     }
 
+    // MARK: - Inbox Row Pruning (crash iOS 27)
+
+    /// Borra un `InboxDraft` PODANDO PRIMERO su fila del `InboxViewModel` (si la bandeja está
+    /// montada). Obligatorio en TODO borrado de draft de los flujos de grupo (aprobar/finalizar/
+    /// convertir): `InboxDraftRowView` observa el @Model y re-renderiza al invalidarse aunque esté
+    /// cubierto por un sheet → SIGTRAP de SwiftData en iOS 27 si la fila sigue montada. El prune es
+    /// síncrono (mismo hilo MainActor) y no-op si el Inbox no está abierto. Ver
+    /// `InboxRowPruneCoordinator`. El path personal genérico (`status = .approved`, sin borrar) NO
+    /// lo necesita — su @Model nunca se invalida.
+    private func deleteInboxDraftPruningRow(_ draft: InboxDraft, in context: ModelContext) {
+        InboxRowPruneCoordinator.shared.pruneRow(draft.persistentModelID)
+        context.delete(draft)
+    }
+
     // MARK: - Convert to Group Expense
 
     /// Cierra el ciclo tras convertir un draft PERSONAL de gasto en un `SplitExpense` de grupo.
@@ -98,7 +112,7 @@ final class DraftService {
     /// `TransactionItem` personal — el gasto ya vive en el grupo).
     func handleDraftConvertedToGroupExpense(_ draft: InboxDraft, context: ModelContext) {
         do {
-            context.delete(draft)
+            deleteInboxDraftPruningRow(draft, in: context)
             try context.save()
             SessionState.shared.incrementDataVersion()
             WidgetDataCache.updateCache(context: context)
@@ -154,7 +168,7 @@ final class DraftService {
                 targetTx.subcategory = subcategory
                 targetTx.category = subcategory.safeCategory
                 cacheDisplayValues(draft)
-                context.delete(draft)
+                deleteInboxDraftPruningRow(draft, in: context)
                 try context.save()
                 SessionState.shared.incrementDataVersion()
                 return targetTx
@@ -174,7 +188,7 @@ final class DraftService {
             let candidateTxs = try context.fetch(anyTxDescriptor)
             let existingTx = candidateTxs.first { $0.account?.isSystemAccount == false } ?? candidateTxs.first
             cacheDisplayValues(draft)
-            context.delete(draft)
+            deleteInboxDraftPruningRow(draft, in: context)
             try context.save()
             SessionState.shared.incrementDataVersion()
 
@@ -234,7 +248,7 @@ final class DraftService {
 
             context.insert(tx)
             cacheDisplayValues(draft)
-            context.delete(draft)
+            deleteInboxDraftPruningRow(draft, in: context)
             try context.save()
 
             SessionState.shared.incrementDataVersion()
@@ -674,7 +688,7 @@ final class DraftService {
         )
         guard let expense = try context.fetch(expenseDescriptor).first else {
             // Expense origen ya no existe (sync race con remote delete) — limpia draft y aborta.
-            context.delete(draft)
+            deleteInboxDraftPruningRow(draft, in: context)
             try context.save()
             throw DraftServiceError.missingAccount
         }
@@ -760,13 +774,13 @@ final class DraftService {
                 && pointer.targetTransactionID == nil
                 && pointer.needsUserInput.contains(DraftInputRequirement.subcategory)
                 && !pointer.needsUserInput.contains(DraftInputRequirement.account) {
-                context.delete(pointer)
+                deleteInboxDraftPruningRow(pointer, in: context)
             }
         }
 
         // Cache + delete draft + save.
         cacheDisplayValues(draft)
-        context.delete(draft)
+        deleteInboxDraftPruningRow(draft, in: context)
         try context.save()
 
         SessionState.shared.incrementDataVersion()
@@ -819,7 +833,7 @@ final class DraftService {
                 && pointer.targetTransactionID == nil
                 && pointer.needsUserInput.contains(DraftInputRequirement.subcategory)
                 && !pointer.needsUserInput.contains(DraftInputRequirement.account) {
-                context.delete(pointer)
+                deleteInboxDraftPruningRow(pointer, in: context)
             }
         }
 
@@ -915,7 +929,7 @@ final class DraftService {
 
         context.insert(tx)
         cacheDisplayValues(draft)
-        context.delete(draft)
+        deleteInboxDraftPruningRow(draft, in: context)
         try context.save()
         SessionState.shared.incrementDataVersion()
         WidgetDataCache.updateCache(context: context)

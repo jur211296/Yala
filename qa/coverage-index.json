@@ -792,7 +792,7 @@
         "F-S3-04"
       ],
       "classification": "agentic",
-      "coverage": "unit:YalaTests/CloudSync/GroupBridgeCloudSyncIntegrationTests (e2e bridge→drain→outbox Caso A/B, columnas split_* con contenido real). 2026-07-13: gate de quiescencia del bridge remoto enrutado por StorageModeSignalRouter (.cloud → SyncQuiescenceCoordinator; .icloud byte-idéntico) — antes pasaba bajo .cloud por accidente (señal de CloudKit perpetuamente quieta)",
+      "coverage": "unit:YalaTests/CloudSync/GroupBridgeCloudSyncIntegrationTests (e2e bridge→drain→outbox Caso A/B, columnas split_* con contenido real). 2026-07-13: gate de quiescencia del bridge remoto enrutado por StorageModeSignalRouter (.cloud → SyncQuiescenceCoordinator; .icloud byte-idéntico) — antes pasaba bajo .cloud por accidente (señal de CloudKit perpetuamente quieta). 2026-07-22: los 4 sheets de finalización (GroupExpense*/GroupSettlementDraftFinalizationSheet) + los deletes de hermanos en DraftService podan la fila del Inbox antes de borrar (InboxRowPruneCoordinator, mismo mecanismo que la conversión) para cerrar el crash 2.0.5/iOS27 en TODA la clase — regresión determinista en unit:YalaTests/InboxRowPruneCoordinatorTests; el crash end-to-end de los sheets es device-only (iOS 27, pendiente TestFlight)",
       "owner": "",
       "lastVerified": "2026-07-13"
     },
@@ -1175,9 +1175,9 @@
         "F-INB-06"
       ],
       "classification": "manual",
-      "coverage": "unit:YalaTests/DraftConversionEligibilityLogicTests,YalaTests/DraftToGroupExpenseTemplateLogicTests + manual (e2e bridge/sync device/TestFlight) + unit:YalaTests/DraftServiceHandleConvertTests (borrado del draft al convertir)",
+      "coverage": "unit:YalaTests/DraftConversionEligibilityLogicTests,YalaTests/DraftToGroupExpenseTemplateLogicTests + manual (e2e bridge/sync device/TestFlight) + unit:YalaTests/DraftServiceHandleConvertTests (borrado del draft al convertir) + xcuitest:YalaUITests/InboxConvertToGroupUITests (regresión del crash 2.0.5/iOS27 — la app sobrevive al borrar el draft convertido)",
       "owner": "",
-      "lastVerified": ""
+      "lastVerified": "2026-07-22"
     },
     {
       "area": "inbox-crud",
@@ -1188,6 +1188,7 @@
         "Yala/App/Views/Inbox/InboxBulkActionsSheet.swift",
         "Yala/App/ViewModels/InboxViewModel.swift",
         "Yala/App/ViewModels/InboxDraftEditViewModel.swift",
+        "Yala/App/ViewModels/InboxRowPruneCoordinator.swift",
         "Yala/Models/InboxDraft.swift",
         "Yala/Models/InboxDraft+TagsCSVMirror.swift"
       ],
@@ -1198,9 +1199,9 @@
         "F-INB-04"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/InboxCrudUITests",
+      "coverage": "xcuitest:YalaUITests/InboxCrudUITests + unit:YalaTests/InboxRowPruneCoordinatorTests (poda de fila antes de borrar — regresión determinista del crash 2.0.5/iOS27, roja al revertir la poda en cualquier OS)",
       "owner": "",
-      "lastVerified": "2026-06-10"
+      "lastVerified": "2026-07-22"
     },
     {
       "area": "inbox-modal-apple-pay-automation-trigger",
