@@ -482,10 +482,15 @@ struct SignOutNotificationWiringTests {
     }
 
     /// El guard del choke point es lo que cierra la ventana de los `Task` no estructurados en vuelo.
-    /// Debe evaluarse en AMBOS emisores (programado e inmediato) y NO incluir el arm de solo-grupos.
+    /// Debe evaluarse en TODOS los emisores — programado (`scheduleNotification`), inmediato
+    /// (`sendNotification`, → Bool) y resumen agendado (`replaceScheduledPaymentSummaries`,
+    /// por-iteración) — y NO incluir el arm de solo-grupos. Cada emisor se pinnea con su forma
+    /// de salida exacta: si uno cambia de forma (o aparece otro), este conteo lo delata.
     @Test func chokePointGuard_coversBothEmitters_andExcludesGroupsOnlyArm() throws {
         let src = try Self.source("Yala/Services/NotificationService.swift")
-        #expect(src.components(separatedBy: "guard !isPersonalWipeArmed else { return }").count - 1 == 2)
+        #expect(src.components(separatedBy: "guard !isPersonalWipeArmed else { return }").count - 1 == 1)
+        #expect(src.components(separatedBy: "guard !isPersonalWipeArmed else { return false }").count - 1 == 1)
+        #expect(src.components(separatedBy: "guard !isPersonalWipeArmed else { break }").count - 1 == 1)
         #expect(src.contains("StorageModePersistence.isSignOutWipeArmed() || SecondarySessionStore.isWipeArmed()"))
         // El camino solo-grupos conserva los recordatorios personales: su arm JAMÁS entra al guard.
         #expect(!src.contains("isGroupsOnlyWipeArmed"))
