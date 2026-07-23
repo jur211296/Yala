@@ -69,6 +69,7 @@ struct NotificationsSettingsView: View {
                 viewModel.insertNotification(newNotification)
                 Task {
                     await NotificationService.shared.scheduleNotification(for: newNotification)
+                    replanPaymentSummariesIfNeeded(for: newNotification)
                 }
             }
         }
@@ -77,6 +78,9 @@ struct NotificationsSettingsView: View {
                 viewModel.saveContext()
                 Task {
                     await NotificationService.shared.scheduleNotification(for: notification)
+                    // Cambiar la HORA del item mueve el disparo de las summaries agendadas —
+                    // sin re-plan quedarían clavadas a la hora vieja.
+                    replanPaymentSummariesIfNeeded(for: notification)
                 }
             }
         }
@@ -120,6 +124,13 @@ struct NotificationsSettingsView: View {
                 await NotificationService.shared.rescheduleAllNotifications(items: viewModel.notifications)
             }
         }
+    }
+
+    /// Re-plan de las summaries diarias agendadas cuando el item tocado es el de pagos
+    /// planificados (toggle u hora). Idempotente; no aplica a los demás tipos.
+    private func replanPaymentSummariesIfNeeded(for notification: NotificationItem) {
+        guard notification.notificationType == .scheduledPayments else { return }
+        ScheduledPaymentNotificationService.shared.requestSummaryReplan()
     }
 
     // MARK: - Empty State
@@ -190,6 +201,10 @@ struct NotificationsSettingsView: View {
                     } else {
                         await NotificationService.shared.cancelNotification(for: notification)
                     }
+                    // Toggle honesto del item de pagos: ON agenda las summaries diarias,
+                    // OFF las cancela (scheduleNotification es no-op para tipos dinámicos —
+                    // el re-plan es el efecto real de este toggle).
+                    replanPaymentSummariesIfNeeded(for: notification)
                 }
             },
             onTap: notification.notificationType.isEditable ? {

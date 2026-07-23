@@ -1353,9 +1353,9 @@
         "F-NOT-02"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/NotificationsSettingsUITests",
+      "coverage": "xcuitest:YalaUITests/NotificationsSettingsUITests + 2026-07-22: el toggle del item scheduledPayments pasa a ser HONESTO (OFF = silencio real de notifs de pagos; ON agenda las summaries diarias — el efecto real del toggle es replanSummaries, scheduleNotification sigue no-op para dinamicos); el default de fabrica del item pasa a ON con flip one-shot para usuarios existentes.",
       "owner": "",
-      "lastVerified": "2026-06-08"
+      "lastVerified": "2026-07-22"
     },
     {
       "area": "onboarding-flow",
@@ -1578,15 +1578,17 @@
         "Yala/App/Models/ScheduledPaymentModels.swift",
         "Yala/Models/ScheduledPayment.swift",
         "Yala/Services/ScheduledPaymentNotificationService.swift",
-        "Yala/Services/ScheduledPaymentNotificationTracker.swift"
+        "Yala/Services/ScheduledPaymentNotificationTracker.swift",
+        "Yala/App/Logic/ScheduledPaymentNotificationGateLogic.swift",
+        "Yala/App/Logic/ScheduledPaymentSummaryPlanner.swift"
       ],
       "scenarioIDs": [
         "F-SCH-03"
       ],
       "classification": "manual",
-      "coverage": "manual + dedup de la notificacion de tarjeta re-llaveado por identidad (2026-07-21, preexistente destapado por el review adversarial de §5.2.1): la key `creditCardNotif_` se construia con `account.name` (ScheduledPaymentNotificationService, inline) => dos defectos INDEPENDIENTES del sign-out — (a) dos tarjetas HOMONIMAS con el mismo dia de pago compartian entrada y solo UNA notificaba, (b) renombrar la cuenta re-disparaba el aviso el mismo dia. Ahora se llavea por `Account.shortcutID` (UUID de identidad con .preserveValueOnDeletion, misma forma que el `paymentID` del tracker hermano) y la construccion vive en el TRACKER (hasNotifiedCreditCard/markNotifiedCreditCard), no inline en el servicio: SSOT con el prefijo que barre DataWipeService. Ademas cleanupOldEntries(30d) filtraba SOLO por `scheduledPaymentNotif_`, asi que las keys de tarjeta crecian SIN LIMITE en UserDefaults (una por cuenta y dia de pago avisado, para siempre); ahora cubre ambos prefijos, leyendo la fecha por el ULTIMO componente en el de tarjeta — eso caduca tambien el formato LEGACY `creditCardNotif_<nombre>_YYYYMMDD`, donde un nombre con «_» desplazaba los indices y habria dejado la key huerfana permanente. Residual asumido: la primera ejecucion tras actualizar puede repetir UNA notificacion, solo si el dia de pago cae exactamente ese dia y ya se habia avisado con la key vieja. unit:YalaTests/ScheduledPaymentNotificationTrackerTests (+5: mark/has por accountID, cuentas homonimas aisladas, fechas aisladas, cleanup del prefijo de tarjeta, cleanup del formato legacy incl. nombre con «_»; mutantes verificados). El envio real de la notificacion sigue manual/device.",
+      "coverage": "manual + fix 2026-07-22 (ticket pagos-planificados-notifs-incoherentes-y-dedup-sin-entrega): (1) dedup SOLO con entrega confirmada — sendNotification pasa a @discardableResult -> Bool y las ramas de pagos+tarjeta marcan el tracker unicamente con add exitoso (antes un fallo silencioso quemaba la supresion del dia sin banner); (2) gate horario HONESTO y fail-closed (ScheduledPaymentNotificationGateLogic: inactive/absent=silencio, fetchError=diferir sin marcar) + flip one-shot del item a usuarios existentes (sentinel scheduledPaymentsMasterToggleFlipped, quiescencia antes de marcar) + seed default isActive:true; la tarjeta comparte la ventana horaria con item activo pero conserva su opt-in per-account con toggle OFF (asimetria documentada); (3) quiescencia compartida con processDuePayments y dueToday re-sourceada desde los InboxDraft materializados (coherencia bandeja-notifs); (4) canal AGENDADO hibrido D1: summaries diarias reales spDailySummary_<yyyyMMdd> (UNCalendarNotificationTrigger one-shot CON year, ventana 14 dias multi-mes, replan idempotente en boot/foreground + 6 hooks de mutacion) con marcas summary_ bajo el prefijo del tracker (add-OK only; reconcile jamas toca hoy/pasado — anti doble-banner) y supresion de la dueToday oportunista. unit:YalaTests/ScheduledPaymentNotificationGateLogicTests (7) + ScheduledPaymentNotificationServiceTests (14, seams sendOverride/isQuiescentOverride/tracker aislado) + ScheduledPaymentSummaryPlannerTests (12) + ScheduledPaymentNotificationTrackerTests (+4 summary marks) — 6 mutantes verificados (2026-07-22). El envio/entrega real sigue manual/device (guion en el ticket del vault).",
       "owner": "",
-      "lastVerified": "2026-07-21"
+      "lastVerified": "2026-07-22"
     },
     {
       "area": "scheduled-payment-skip-occurrences",

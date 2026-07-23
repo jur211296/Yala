@@ -195,6 +195,7 @@ final class ScheduledPaymentEditorViewModel {
             try context.save()
             WidgetDataCache.updateCache(context: context)
             SessionState.shared.incrementDataVersion()
+            ScheduledPaymentNotificationService.shared.requestSummaryReplan()
 
             return paymentID
         } catch {

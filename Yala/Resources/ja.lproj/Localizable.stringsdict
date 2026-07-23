@@ -384,5 +384,19 @@
 			<string>%d人のメンバー</string>
 		</dict>
 	</dict>
+	<key>notifications.scheduledPayments.summaryBody</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>今日は%d件の予定支払いがあります 📅</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

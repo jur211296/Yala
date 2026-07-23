@@ -693,6 +693,9 @@ struct PersonalizationSettingsView: View {
                 selectedLanguage: LanguageManager.overrideLanguage ?? "en",
                 onSelect: { code in
                     LanguageManager.overrideLanguage = code
+                    // Las summaries diarias de pagos se agendan con el body YA localizado
+                    // (contenido congelado): sin re-plan quedarían en el idioma viejo.
+                    ScheduledPaymentNotificationService.shared.requestSummaryReplan()
                     showingLanguagePicker = false
                 }
             )

@@ -1952,6 +1952,7 @@
 "notifications.scheduledPayment.overdue" = "Ya pasó la fecha de %1$@ por %2$@ — ¿ya lo cubriste? 👀";
 "notifications.scheduledPayment.overdue.income" = "Esperabas %1$@ de %2$@ — ¿ya llegó? 👀";
 "notifications.scheduledPayments.hint" = "Te avisaremos cuando tengas pagos próximos";
+"notifications.scheduledPayments.summaryBody" = "Pagos planificados para hoy: %d 📅";
 "notifications.scheduledPayments.name" = "Pagos planificados";
 "notifications.section.custom" = "Personalizados";
 "notifications.section.reminders" = "Recordatorios";

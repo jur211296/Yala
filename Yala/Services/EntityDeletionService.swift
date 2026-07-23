@@ -211,7 +211,7 @@ final class EntityDeletionService {
 
         // 1. Clean tracker entries (UserDefaults keys: scheduledPaymentNotif_UUID_*)
         let allKeys = UserDefaults.standard.dictionaryRepresentation().keys
-        let trackerKeys = allKeys.filter { $0.hasPrefix("scheduledPaymentNotif_\(paymentID)") }
+        let trackerKeys = allKeys.filter { $0.hasPrefix(ScheduledPaymentNotificationTracker.keyPrefix + paymentID) }
         for key in trackerKeys {
             UserDefaults.standard.removeObject(forKey: key)
         }
@@ -257,6 +257,9 @@ final class EntityDeletionService {
 
         // 4. Delete payment
         try delete(payment)
+
+        // 5. Re-plan de las summaries diarias agendadas (el conteo del día cambió).
+        ScheduledPaymentNotificationService.shared.requestSummaryReplan()
     }
 
     // MARK: - Transaction Count Check

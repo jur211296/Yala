@@ -185,6 +185,38 @@ struct ScheduledPaymentNotificationServiceTests {
         #expect(log.count == 0, "notifyOnDueDate=false debe respetarse aunque exista draft")
     }
 
+    // MARK: - Supresión contra el canal agendado (híbrido D1)
+
+    @Test func summaryMarkedToday_suppressesOpportunisticDueToday() async throws {
+        let context = try makeTestContext()
+        let (service, log) = try makeService(context: context)
+        try seedDueTodayPaymentWithDraft(context: context)
+
+        service.tracker.markSummaryScheduled(
+            dayKey: ScheduledPaymentSummaryPlanner.dayKey(from: .now)
+        )
+
+        await service.checkAllPaymentNotifications()
+        #expect(log.count == 0, "con summary agendada hoy, la oportunista dueToday es redundante")
+    }
+
+    @Test func paymentCreatedAfterTodaysSummary_stillNotifies() async throws {
+        // La supresión es POR PAGO, no día completo (review adversarial): un pago creado
+        // DESPUÉS de agendarse la summary de hoy no estuvo en su conteo — debe avisar.
+        let context = try makeTestContext()
+        let (service, log) = try makeService(context: context)
+
+        // Summary de hoy agendada AYER; el pago (createdAt = ahora) nace después.
+        service.tracker.markSummaryScheduled(
+            dayKey: ScheduledPaymentSummaryPlanner.dayKey(from: .now),
+            at: Date.now.addingTimeInterval(-86_400)
+        )
+        try seedDueTodayPaymentWithDraft(context: context)
+
+        await service.checkAllPaymentNotifications()
+        #expect(log.count == 1, "el pago nuevo no está cubierto por la summary vieja del día")
+    }
+
     // MARK: - Gate honesto en el service
 
     @Test func masterToggleOff_silencesPaymentLoop_butNotCreditCard() async throws {
@@ -245,7 +277,7 @@ struct ScheduledPaymentNotificationServiceTests {
         try context.save()
 
         ScheduledPaymentNotificationService.flipMasterToggleIfNeeded(
-            context: context, defaults: defaults, isQuiescent: { true }
+            context: context, defaults: defaults, ubiquitous: nil, isQuiescent: { true }
         )
 
         #expect(item.isActive, "el one-shot activa el item de usuarios existentes")
@@ -263,7 +295,7 @@ struct ScheduledPaymentNotificationServiceTests {
         try context.save()
 
         ScheduledPaymentNotificationService.flipMasterToggleIfNeeded(
-            context: context, defaults: defaults, isQuiescent: { true }
+            context: context, defaults: defaults, ubiquitous: nil, isQuiescent: { true }
         )
 
         #expect(!item.isActive, "un OFF posterior al flip es decisión del usuario — intocable")
@@ -279,7 +311,7 @@ struct ScheduledPaymentNotificationServiceTests {
         try context.save()
 
         ScheduledPaymentNotificationService.flipMasterToggleIfNeeded(
-            context: context, defaults: defaults, isQuiescent: { false }
+            context: context, defaults: defaults, ubiquitous: nil, isQuiescent: { false }
         )
 
         #expect(!item.isActive)
@@ -287,16 +319,16 @@ struct ScheduledPaymentNotificationServiceTests {
                 "diferir por quiescencia NO quema el sentinel — debe reintentar")
     }
 
-    @Test func flip_absentItem_marksSentinel() throws {
+    @Test func flip_absentItem_leavesOneShotOpen() throws {
         let context = try makeTestContext()
         let defaults = makeIsolatedDefaults()
 
         ScheduledPaymentNotificationService.flipMasterToggleIfNeeded(
-            context: context, defaults: defaults, isQuiescent: { true }
+            context: context, defaults: defaults, ubiquitous: nil, isQuiescent: { true }
         )
 
-        #expect(defaults.bool(forKey: ScheduledPaymentNotificationService.masterToggleFlipKey),
-                "ausente también cierra el one-shot: el seed nuevo nace activo")
+        #expect(!defaults.bool(forKey: ScheduledPaymentNotificationService.masterToggleFlipKey),
+                "con CERO items el one-shot queda ABIERTO (pre-onboarding/pre-seed) — quemarlo aquí dejaba al usuario nuevo silenciado si el seed sembraba OFF")
     }
 
     // MARK: - Default del seed

@@ -1955,6 +1955,7 @@
 "notifications.scheduledPayment.overdue" = "%1$@ de %2$@ venceu — já cobriu? 👀";
 "notifications.scheduledPayment.overdue.income" = "Você esperava %1$@ de %2$@ — já chegou? 👀";
 "notifications.scheduledPayments.hint" = "Te avisamos quando você tiver pagamentos próximos";
+"notifications.scheduledPayments.summaryBody" = "Pagamentos agendados para hoje: %d 📅";
 "notifications.scheduledPayments.name" = "Pagamentos agendados";
 "notifications.section.custom" = "Personalizados";
 "notifications.section.reminders" = "Lembretes";

@@ -1990,6 +1990,7 @@
 "notifications.scheduledPayment.overdue" = "%1$@ for %2$@ was due — did you cover it? 👀";
 "notifications.scheduledPayment.overdue.income" = "You expected %1$@ from %2$@ — has it arrived? 👀";
 "notifications.scheduledPayments.hint" = "We'll let you know when you have upcoming payments";
+"notifications.scheduledPayments.summaryBody" = "Scheduled payments due today: %d 📅";
 "notifications.scheduledPayments.name" = "Scheduled payments";
 "notifications.section.custom" = "Custom";
 "notifications.section.reminders" = "Reminders";

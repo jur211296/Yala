@@ -20,6 +20,10 @@ final class ScheduledPaymentNotificationTracker {
     /// cuenta: llevan UUID + fecha, así que su lista explícita de keys no puede nombrarlas.
     static let keyPrefix = "scheduledPaymentNotif_"
     static let creditCardKeyPrefix = "creditCardNotif_"
+    /// Prefijo de las marcas de summary diaria (`scheduledPaymentNotif_summary_<yyyyMMdd>`).
+    /// Derivado de `keyPrefix` para heredar el barrido del wipe; único punto de verdad
+    /// del literal `summary_` (lección L1 del repo: literales duplicados se desincronizan).
+    static let summaryKeyPrefix = keyPrefix + "summary_"
 
     private static let dateKeyFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -65,6 +69,70 @@ final class ScheduledPaymentNotificationTracker {
         defaults.set(true, forKey: key)
     }
 
+    // MARK: - Daily Summary Tracking (canal agendado)
+
+    /// Marca "hay summary agendada para el día X" — key `scheduledPaymentNotif_summary_<yyyyMMdd>`
+    /// (bajo el prefijo EXISTENTE: hereda gratis el barrido por prefijo del wipe y el cleanup).
+    /// Guarda el INSTANTE de agendado (no un bool): la rama dueToday oportunista suprime solo
+    /// los pagos que ya existían a esa hora — un pago creado DESPUÉS de la summary del día no
+    /// estuvo en su conteo y debe poder avisar. Se pone SOLO con el request verificado en
+    /// pending (contrato de entrega confirmada).
+    func markSummaryScheduled(dayKey: String, at date: Date = .now) {
+        defaults.set(date, forKey: summaryKey(dayKey: dayKey))
+    }
+
+    func hasSummaryScheduled(dayKey: String) -> Bool {
+        summaryScheduledDate(dayKey: dayKey) != nil
+    }
+
+    /// Instante en que se agendó la summary del día (nil = sin marca).
+    func summaryScheduledDate(dayKey: String) -> Date? {
+        defaults.object(forKey: summaryKey(dayKey: dayKey)) as? Date
+    }
+
+    /// Reconciliación post-replan:
+    /// - marca los días agendados con éxito (verificados en pending);
+    /// - desmarca los INTENTADOS cuyo add falló o iOS no retuvo (marca huérfana = supresión
+    ///   de la oportunista sin summary — la clase exacta del bug de dedup-sin-entrega);
+    /// - desmarca HOY si su pending fue RETIRADO sin disparar y no se re-agendó (toggle OFF
+    ///   antes de la hora, hora movida hacia atrás cruzando el now…): esa marca miente y
+    ///   silenciaría el día entero;
+    /// - limpia marcas FUTURAS (`dayKey > todayKey`) que salieron del plan.
+    ///   Fuera de esos casos, HOY/pasado no se tocan: a media mañana "hoy" sale del plan
+    ///   porque la hora ya pasó, y limpiar su marca re-abriría la oportunista → doble banner.
+    func reconcileSummaryMarks(
+        scheduledDayKeys: [String],
+        attemptedDayKeys: [String],
+        removedPendingDayKeys: [String],
+        todayKey: String,
+        now: Date = .now
+    ) {
+        let scheduled = Set(scheduledDayKeys)
+        let attempted = Set(attemptedDayKeys)
+
+        for dayKey in scheduled {
+            markSummaryScheduled(dayKey: dayKey, at: now)
+        }
+        for dayKey in attempted.subtracting(scheduled) {
+            defaults.removeObject(forKey: summaryKey(dayKey: dayKey))
+        }
+        if removedPendingDayKeys.contains(todayKey) && !scheduled.contains(todayKey) {
+            defaults.removeObject(forKey: summaryKey(dayKey: todayKey))
+        }
+
+        for key in defaults.dictionaryRepresentation().keys where key.hasPrefix(Self.summaryKeyPrefix) {
+            let dayKey = String(key.dropFirst(Self.summaryKeyPrefix.count))
+            // yyyyMMdd compara bien lexicográficamente.
+            if dayKey > todayKey && !attempted.contains(dayKey) {
+                defaults.removeObject(forKey: key)
+            }
+        }
+    }
+
+    private func summaryKey(dayKey: String) -> String {
+        Self.summaryKeyPrefix + dayKey
+    }
+
     // MARK: - Credit Card Tracking
 
     /// Check if the credit card payment reminder was already sent for this account/date.
@@ -95,10 +163,12 @@ final class ScheduledPaymentNotificationTracker {
         for key in allKeys {
             let dateString: String
             if key.hasPrefix(Self.keyPrefix) {
-                // Key format: scheduledPaymentNotif_UUID_YYYYMMDD_type
+                // Formatos: scheduledPaymentNotif_UUID_YYYYMMDD_type (4 componentes)
+                // y scheduledPaymentNotif_summary_YYYYMMDD (3 componentes, canal agendado).
+                // En AMBOS la fecha es components[2] — el guard histórico `>= 4` habría
+                // saltado las summary para siempre (acumulación sin límite).
                 let components = key.split(separator: "_")
-                guard components.count >= 4 else { continue }
-                // Date is the third component (index 2, after prefix split)
+                guard components.count >= 3 else { continue }
                 dateString = String(components[2])
             } else if key.hasPrefix(Self.creditCardKeyPrefix) {
                 // Key format: creditCardNotif_UUID_YYYYMMDD — la fecha es el ÚLTIMO

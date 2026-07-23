@@ -1950,7 +1950,13 @@ struct OnboardingView: View {
 
         for notification in allDefaults {
             guard !existingTypes.contains(notification.typeRaw) else { continue }
-            notification.isActive = false
+            // Recordatorios/reportes nacen apagados (opt-in), pero el item de PAGOS conserva
+            // su default ACTIVO (toggle honesto D2 2026-07-22): forzarlo a false aquí dejaba
+            // al usuario nuevo sin ningún recordatorio de pagos hasta tocar Ajustes — y el
+            // flip one-shot no lo cubre (su sentinel protege el OFF post-flip).
+            if notification.notificationType != .scheduledPayments {
+                notification.isActive = false
+            }
             modelContext.insert(notification)
             inserted += 1
         }

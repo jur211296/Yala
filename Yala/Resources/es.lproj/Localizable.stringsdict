@@ -434,5 +434,21 @@
 			<string>%d miembros</string>
 		</dict>
 	</dict>
+	<key>notifications.scheduledPayments.summaryBody</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Tienes %d pago planificado para hoy 📅</string>
+			<key>other</key>
+			<string>Tienes %d pagos planificados para hoy 📅</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

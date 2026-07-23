@@ -286,6 +286,116 @@ struct ScheduledPaymentNotificationTrackerTests {
         cleanupTrackerKeys()
     }
 
+    // MARK: - Summary marks (canal agendado D1)
+
+    @Test func summaryMark_roundTrip() {
+        let tracker = ScheduledPaymentNotificationTracker(defaults: makeIsolatedDefaults())
+        #expect(!tracker.hasSummaryScheduled(dayKey: "20260722"))
+        tracker.markSummaryScheduled(dayKey: "20260722")
+        #expect(tracker.hasSummaryScheduled(dayKey: "20260722"))
+        #expect(!tracker.hasSummaryScheduled(dayKey: "20260723"), "las marcas son por día")
+    }
+
+    @Test func reconcile_marksScheduled_clearsFailed_clearsFutureOutOfPlan_preservesTodayAndPast() {
+        let tracker = ScheduledPaymentNotificationTracker(defaults: makeIsolatedDefaults())
+        let today = "20260722"
+
+        // Estado previo: marca de hoy (summary ya disparada — su pending NO fue retirado),
+        // de ayer, y una futura.
+        tracker.markSummaryScheduled(dayKey: "20260721")
+        tracker.markSummaryScheduled(dayKey: today)
+        tracker.markSummaryScheduled(dayKey: "20260725")
+
+        // Nuevo plan intentado: 23 (agendado OK), 24 (add FALLÓ); el 25 salió del plan.
+        tracker.reconcileSummaryMarks(
+            scheduledDayKeys: ["20260723"],
+            attemptedDayKeys: ["20260723", "20260724"],
+            removedPendingDayKeys: ["20260725"],
+            todayKey: today
+        )
+
+        #expect(tracker.hasSummaryScheduled(dayKey: "20260723"), "agendado OK se marca")
+        #expect(!tracker.hasSummaryScheduled(dayKey: "20260724"),
+                "intentado con add fallido queda SIN marca — marca huérfana = supresión sin summary")
+        #expect(!tracker.hasSummaryScheduled(dayKey: "20260725"), "futura fuera del plan se limpia")
+        #expect(tracker.hasSummaryScheduled(dayKey: today),
+                "la marca de HOY con summary ya disparada se conserva — limpiarla duplicaría el banner")
+        #expect(tracker.hasSummaryScheduled(dayKey: "20260721"), "el pasado no se toca (lo caduca cleanup)")
+    }
+
+    @Test func reconcile_failedToday_clearsTodayMark() {
+        // Excepción deliberada a "hoy no se toca": si HOY estaba en el plan y su add falló,
+        // la marca debe caer para que la oportunista cubra el día.
+        let tracker = ScheduledPaymentNotificationTracker(defaults: makeIsolatedDefaults())
+        let today = "20260722"
+        tracker.markSummaryScheduled(dayKey: today)
+
+        tracker.reconcileSummaryMarks(
+            scheduledDayKeys: [], attemptedDayKeys: [today], removedPendingDayKeys: [], todayKey: today
+        )
+
+        #expect(!tracker.hasSummaryScheduled(dayKey: today))
+    }
+
+    @Test func reconcile_todayPendingRemovedWithoutFiring_clearsTodayMark() {
+        // Segunda excepción (review adversarial): el pending de HOY se retiró SIN disparar
+        // (toggle OFF antes de la hora, hora movida hacia atrás) y no se re-agendó — la
+        // marca miente ("hubo summary") y silenciaría el día entero.
+        let tracker = ScheduledPaymentNotificationTracker(defaults: makeIsolatedDefaults())
+        let today = "20260722"
+        tracker.markSummaryScheduled(dayKey: today)
+
+        tracker.reconcileSummaryMarks(
+            scheduledDayKeys: [], attemptedDayKeys: [], removedPendingDayKeys: [today], todayKey: today
+        )
+
+        #expect(!tracker.hasSummaryScheduled(dayKey: today),
+                "cancelada sin disparar y sin re-agendar: el fallback oportunista recupera el día")
+    }
+
+    @Test func reconcile_todayPendingRemovedButRescheduled_keepsTodayMark() {
+        // Cambio de hora ANTES del disparo: el pending viejo se retira pero hoy se re-agenda
+        // a la hora nueva — la marca debe quedar (refrescada), sin doble banner.
+        let tracker = ScheduledPaymentNotificationTracker(defaults: makeIsolatedDefaults())
+        let today = "20260722"
+        tracker.markSummaryScheduled(dayKey: today)
+
+        tracker.reconcileSummaryMarks(
+            scheduledDayKeys: [today], attemptedDayKeys: [today], removedPendingDayKeys: [today], todayKey: today
+        )
+
+        #expect(tracker.hasSummaryScheduled(dayKey: today))
+    }
+
+    @Test func summaryMark_storesSchedulingInstant() {
+        // La marca guarda el INSTANTE de agendado: la oportunista solo suprime pagos que
+        // existían entonces (uno creado después no estuvo en el conteo de la summary).
+        let tracker = ScheduledPaymentNotificationTracker(defaults: makeIsolatedDefaults())
+        let instant = Date(timeIntervalSince1970: 1_784_000_000)
+        tracker.markSummaryScheduled(dayKey: "20260722", at: instant)
+        #expect(tracker.summaryScheduledDate(dayKey: "20260722") == instant)
+        #expect(tracker.summaryScheduledDate(dayKey: "20260723") == nil)
+    }
+
+    @Test func cleanupOldEntries_expiresSummaryKeys_keepsRecent() {
+        let tracker = ScheduledPaymentNotificationTracker(defaults: makeIsolatedDefaults())
+        // testNow de la suite: las keys viejas (>30d) caducan, las recientes no.
+        let staleKey = ScheduledPaymentNotificationTracker.dateKeyString(
+            from: calendar.date(byAdding: .day, value: -45, to: Self.testNow)!
+        )
+        let recentKey = ScheduledPaymentNotificationTracker.dateKeyString(
+            from: calendar.date(byAdding: .day, value: -5, to: Self.testNow)!
+        )
+        tracker.markSummaryScheduled(dayKey: staleKey)
+        tracker.markSummaryScheduled(dayKey: recentKey)
+
+        tracker.cleanupOldEntries(now: Self.testNow)
+
+        #expect(!tracker.hasSummaryScheduled(dayKey: staleKey),
+                "el guard histórico >=4 componentes habría dejado las summary acumulándose para siempre")
+        #expect(tracker.hasSummaryScheduled(dayKey: recentKey))
+    }
+
     // MARK: - NotificationType rawValues
 
     @Test func notificationType_rawValues_correct() {

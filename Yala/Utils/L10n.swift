@@ -6073,6 +6073,18 @@ enum L10n {
         // System notifications
         static var scheduledPaymentsName: String { ls("notifications.scheduledPayments.name", comment: "") }
         static var scheduledPaymentsHint: String { ls("notifications.scheduledPayments.hint", comment: "") }
+        /// "Tienes %d pagos planificados para hoy 📅" — plural en .stringsdict (body de la
+        /// summary diaria agendada del canal híbrido D1).
+        /// `locale:` explícito: con override in-app, la .lproj se carga por path y Foundation
+        /// pierde la procedencia — sin locale, la CATEGORÍA plural se elegiría con el idioma
+        /// del SISTEMA (verificado empíricamente en el review adversarial 2026-07-22).
+        static func scheduledPaymentsSummaryBody(_ count: Int) -> String {
+            String(
+                format: ls("notifications.scheduledPayments.summaryBody", comment: ""),
+                locale: LanguageManager.resolved.locale,
+                count
+            )
+        }
 
         // Groups
         static var groupsName: String { ls("notifications.groups.name", comment: "") }

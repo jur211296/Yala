@@ -267,6 +267,121 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         await sendNotification(title: title, body: body, deepLink: nil)
     }
 
+    // MARK: - Scheduled Payment Daily Summaries (canal AGENDADO del modelo híbrido)
+
+    /// Prefijo de los identifiers de las summaries diarias (`spDailySummary_<yyyyMMdd>`).
+    /// Los wipes de frontera de cuenta no necesitan conocerlo: todos pasan por
+    /// `cancelAllNotifications()`/`deleteAllNotifications` (removeAll pending).
+    static let summaryIdentifierPrefix = "spDailySummary_"
+
+    /// Resultado del replace de summaries — el caller reconcilia sus marcas SOLO con esto.
+    struct SummaryReplaceOutcome {
+        /// dayKeys VERIFICADOS presentes en pending tras los adds (no basta "add no lanzó":
+        /// iOS descarta en silencio sobre el límite de 64 — marcar un día jamás retenido
+        /// suprimiría el fallback oportunista, la clase exacta del bug dedup-sin-entrega).
+        let scheduledDayKeys: [String]
+        /// dayKeys que este replace INTENTÓ agendar (plan efectivo tras el drop de "hoy ya
+        /// disparó") — la base correcta para "planificado-pero-fallido" del reconcile.
+        let attemptedDayKeys: [String]
+        /// dayKeys cuyo pending fue RETIRADO por este replace (estaban vivos ⇒ NO habían
+        /// disparado). Si hoy está aquí y no se re-agendó, su marca miente y debe caer.
+        let removedPendingDayKeys: [String]
+    }
+
+    /// Reemplaza TODAS las summaries agendadas por el plan dado (one-shot por día, a la
+    /// hora configurada).
+    /// - Parameters:
+    ///   - todayKey: dayKey de hoy (`yyyyMMdd`).
+    ///   - todayAlreadyMarked: si el tracker tiene marca de summary para hoy — con marca
+    ///     puesta y SIN pending vivo, la summary de hoy YA DISPARÓ: re-agendar hoy (cambio
+    ///     de hora a más tarde) sería el segundo banner del día.
+    func replaceScheduledPaymentSummaries(
+        _ plans: [ScheduledPaymentSummaryPlanner.DayPlan],
+        todayKey: String,
+        todayAlreadyMarked: Bool
+    ) async -> SummaryReplaceOutcome {
+        let prefix = Self.summaryIdentifierPrefix
+        // Siempre retirar las pendientes del prefijo (también con plan vacío: toggle OFF
+        // o pagos eliminados deben LIMPIAR lo agendado).
+        let removedDayKeys = await pendingSummaryDayKeys()
+        let stale = removedDayKeys.map { prefix + $0 }
+
+        // Anti doble-banner: marca de hoy + ningún pending de hoy vivo ⇒ ya disparó.
+        var effectivePlans = plans
+        if todayAlreadyMarked && !removedDayKeys.contains(todayKey) {
+            effectivePlans.removeAll { $0.dayKey == todayKey }
+        }
+        let attempted = effectivePlans.map(\.dayKey)
+
+        if !stale.isEmpty {
+            notificationCenter.removePendingNotificationRequests(withIdentifiers: stale)
+        }
+
+        guard !effectivePlans.isEmpty else {
+            return SummaryReplaceOutcome(scheduledDayKeys: [], attemptedDayKeys: attempted, removedPendingDayKeys: removedDayKeys)
+        }
+        guard await isAuthorized() else {
+            return SummaryReplaceOutcome(scheduledDayKeys: [], attemptedDayKeys: attempted, removedPendingDayKeys: removedDayKeys)
+        }
+
+        var addedKeys: [String] = []
+        for plan in effectivePlans {
+            // §5.2.1 — mismo choke point que sendNotification, evaluado POR ITERACIÓN (el
+            // invariante de `isPersonalWipeArmed`: "en el instante del add"): un arm que
+            // aterrice a mitad del loop corta las iteraciones restantes.
+            guard !isPersonalWipeArmed else { break }
+            // El `now` del planner envejece durante los round-trips al center: un trigger
+            // con fecha ya pasada es aceptado por add() pero JAMÁS dispara — no agendarlo
+            // (la oportunista dueToday cubre el día como fallback, que es el diseño).
+            guard plan.fireDate > Date.now else { continue }
+
+            let content = UNMutableNotificationContent()
+            content.title = L10n.Notifications.scheduledPaymentsName
+            content.body = L10n.Notifications.scheduledPaymentsSummaryBody(plan.count)
+            content.sound = .default
+            content.userInfo = ["deepLink": "scheduledPayments"]
+
+            // Componentes CON year: one-shot inequívoco — sin year, un trigger repeats:false
+            // podría re-matchear el mismo día/mes de otro año si sobreviviera.
+            let components = Calendar.current.dateComponents(
+                [.year, .month, .day, .hour, .minute], from: plan.fireDate
+            )
+            let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+            let request = UNNotificationRequest(
+                identifier: prefix + plan.dayKey,
+                content: content,
+                trigger: trigger
+            )
+
+            do {
+                try await notificationCenter.add(request)
+                addedKeys.append(plan.dayKey)
+            } catch {
+                #if DEBUG
+                print("NotifService: Error scheduling payment summary \(plan.dayKey): \(error)")
+                #endif
+            }
+        }
+
+        // Verificación post-add contra el center (límite 64 silencioso).
+        let retained = Set(await pendingSummaryDayKeys())
+        let scheduledKeys = addedKeys.filter { retained.contains($0) }
+
+        #if DEBUG
+        print("NotifService: payment summaries replaced — removed=\(stale.count) scheduled=\(scheduledKeys.count)/\(effectivePlans.count)")
+        #endif
+        return SummaryReplaceOutcome(scheduledDayKeys: scheduledKeys, attemptedDayKeys: attempted, removedPendingDayKeys: removedDayKeys)
+    }
+
+    /// dayKeys de las summaries actualmente pendientes en el center (identifier = prefijo
+    /// + dayKey, biyectivo por construcción).
+    private func pendingSummaryDayKeys() async -> [String] {
+        let pending = await notificationCenter.pendingNotificationRequests()
+        return pending.map(\.identifier)
+            .filter { $0.hasPrefix(Self.summaryIdentifierPrefix) }
+            .map { String($0.dropFirst(Self.summaryIdentifierPrefix.count)) }
+    }
+
     /// ¿Hay un wipe del store PERSONAL armado (sign-out `.cloud` o salida de sesión secundaria M1)?
     ///
     /// Guard del CHOKE POINT (§5.2.1): cancelar las notificaciones al armar el wipe no basta por sí solo
@@ -351,9 +466,19 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     }
 
     /// Reschedule all active notifications
+    ///
+    /// Cancela SOLO lo que NO es summary de pagos (`spDailySummary_*`): este método corre en
+    /// cada toggle de Ajustes de notificaciones y en el reconciler de foreground — un
+    /// `removeAllPendingNotificationRequests` aquí barría el canal agendado de pagos SIN
+    /// re-plan, dejando las marcas del tracker mintiendo ("hay summary") y el día en silencio
+    /// (hallazgo del review adversarial 2026-07-22). `cancelAllNotifications()` queda para las
+    /// FRONTERAS DE CUENTA, que sí deben barrer todo.
     func rescheduleAllNotifications(items: [NotificationItem]) async {
-        // Cancel all existing
-        cancelAllNotifications()
+        let pending = await notificationCenter.pendingNotificationRequests()
+        let nonSummaryIDs = pending.map(\.identifier).filter { !$0.hasPrefix(Self.summaryIdentifierPrefix) }
+        if !nonSummaryIDs.isEmpty {
+            notificationCenter.removePendingNotificationRequests(withIdentifiers: nonSummaryIDs)
+        }
 
         // Schedule active ones
         for item in items where item.isActive {

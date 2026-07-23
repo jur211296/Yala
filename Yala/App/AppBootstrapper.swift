@@ -2252,6 +2252,10 @@ final class AppBootstrapper {
         // Check credit card payment reminders
         await ScheduledPaymentNotificationService.shared.checkAndNotifyCreditCardPayments()
 
+        // Re-plan de las summaries diarias AGENDADAS (canal híbrido D1): convergencia
+        // idempotente en cada boot/foreground — también absorbe cambios remotos de CloudSync.
+        await ScheduledPaymentNotificationService.shared.replanSummaries()
+
         // Cleanup old tracker entries
         ScheduledPaymentNotificationTracker.shared.cleanupOldEntries()
 

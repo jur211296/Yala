@@ -450,6 +450,10 @@ struct ScheduledPaymentDraftService {
 
         // Advance to next due date
         advanceToNextDueDate(payment: payment)
+
+        // Re-plan de las summaries agendadas (la aprobación cambia el conteo de hoy y
+        // la próxima ocurrencia).
+        ScheduledPaymentNotificationService.shared.requestSummaryReplan()
     }
 
     /// Cierra el ciclo tras crear el SplitExpense desde un draft `.groupScheduledExpense`
@@ -496,5 +500,8 @@ struct ScheduledPaymentDraftService {
             print("ScheduledPaymentDraftService: error saving after group scheduled approval: \(error)")
             #endif
         }
+
+        // Re-plan de las summaries agendadas (misma razón que handleDraftApproved).
+        ScheduledPaymentNotificationService.shared.requestSummaryReplan()
     }
 }
