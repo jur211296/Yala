@@ -237,14 +237,20 @@ struct MoreView: View {
                 },
             ]
         case .reports:
-            return [
+            var reports: [NavItem] = [
                 NavItem(id: "comparativa", icon: ReportTab.comparativa.icon, title: ReportTab.comparativa.title, subtitle: L10n.More.Subtitle.comparative, iconColor: iconColor(.brown)) {
                     SessionState.shared.navigateToReport(.comparativa)
                 },
-                NavItem(id: "flujoDeCaja", icon: ReportTab.flujoDeCaja.icon, title: ReportTab.flujoDeCaja.title, subtitle: L10n.More.Subtitle.cashFlow, iconColor: iconColor(.cyan)) {
-                    SessionState.shared.navigateToReport(.flujoDeCaja)
-                },
             ]
+            // En Solo Gastos, Flujo de Caja se oculta (SSOT compartido con el chip de Reportes).
+            if ReportTab.visibleTabs(expensesOnly: SessionState.shared.isExpensesOnlyMode).contains(.flujoDeCaja) {
+                reports.append(
+                    NavItem(id: "flujoDeCaja", icon: ReportTab.flujoDeCaja.icon, title: ReportTab.flujoDeCaja.title, subtitle: L10n.More.Subtitle.cashFlow, iconColor: iconColor(.cyan)) {
+                        SessionState.shared.navigateToReport(.flujoDeCaja)
+                    }
+                )
+            }
+            return reports
         case .tools:
             return [
                 NavItem(id: "records", icon: ConfigurableTab.records.iconName, title: ConfigurableTab.records.displayName, subtitle: L10n.More.Subtitle.records, iconColor: iconColor(.yellow)) {

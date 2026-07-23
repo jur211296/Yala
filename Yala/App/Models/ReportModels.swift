@@ -32,6 +32,23 @@ enum ReportTab: String, CaseIterable, Identifiable {
     }
 }
 
+extension ReportTab {
+    /// Pestañas visibles según el modo. En Solo Gastos, Flujo de Caja se oculta:
+    /// la proyección de flujo depende de ingresos (`CashFlowProjectionCalculator`),
+    /// inexistentes en este modo. Solo lógica → testeable sin vista.
+    static func visibleTabs(expensesOnly: Bool) -> [ReportTab] {
+        expensesOnly ? [.comparativa] : ReportTab.allCases
+    }
+
+    /// Coacciona una pestaña seleccionada que ya no es visible (ej. `.flujoDeCaja`
+    /// tras activar Solo Gastos) a la primera visible, para que la pantalla nunca
+    /// quede en blanco. Red de seguridad ante cualquier setter de `selectedReportTab`.
+    static func effectiveTab(selected: ReportTab, expensesOnly: Bool) -> ReportTab {
+        let visible = visibleTabs(expensesOnly: expensesOnly)
+        return visible.contains(selected) ? selected : (visible.first ?? .comparativa)
+    }
+}
+
 // MARK: - Grouping Dimension
 
 /// Dimensions available for grouping transactions in the financial report

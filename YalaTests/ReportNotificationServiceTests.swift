@@ -421,6 +421,76 @@ struct ReportNotificationServiceTests {
         return report
     }
 
+    // MARK: - Solo Gastos — coacción income/balance → expenses en el send path
+    // (un NotificationItem income/balance guardado antes de activar Solo Gastos conserva
+    // su dataType; el send path lo coacciona en runtime — sin mutar el config persistido).
+
+    @Test @MainActor func effectiveDataType_expensesOnly_coercesIncomeAndBalance() {
+        #expect(ReportNotificationService.effectiveDataType(.income, expensesOnly: true) == .expenses)
+        #expect(ReportNotificationService.effectiveDataType(.balance, expensesOnly: true) == .expenses)
+    }
+
+    @Test @MainActor func effectiveDataType_expensesOnly_keepsExpensesAndTopCategory() {
+        #expect(ReportNotificationService.effectiveDataType(.expenses, expensesOnly: true) == .expenses)
+        #expect(ReportNotificationService.effectiveDataType(.topCategory, expensesOnly: true) == .topCategory)
+    }
+
+    @Test @MainActor func effectiveDataType_normalMode_passthrough() {
+        #expect(ReportNotificationService.effectiveDataType(.income, expensesOnly: false) == .income)
+        #expect(ReportNotificationService.effectiveDataType(.balance, expensesOnly: false) == .balance)
+        #expect(ReportNotificationService.effectiveDataType(.topCategory, expensesOnly: false) == .topCategory)
+    }
+
+    /// Wiring: un reporte de INGRESOS en Solo Gastos se coacciona a gastos en el envío.
+    /// Sin TX en el contexto ⇒ distingue por rama de copy vacío (sin depender del formatter):
+    /// coaccionado a `.expenses` ⇒ `emptyExpensesDaily`, NUNCA `emptyIncome`.
+    @Test @MainActor func sendDueReports_expensesOnly_coercesIncomeReportToExpenses() async throws {
+        let context = try makeTestContext()
+        let report = makeReport(
+            type: .dailyReport, hour: 0, minute: 0,
+            config: ReportConfig(dataType: .income, dayPreference: .monday)
+        )
+        report.lastNotifiedDate = nil
+        context.insert(report)
+        try context.save()
+
+        var capturedBody: String?
+        let service = ReportNotificationService.makeForTesting()
+        service.isAuthorizedOverride = { true }
+        service.isQuiescentOverride = { true }
+        service.expensesOnlyOverride = { true }
+        service.sendOverride = { _, body, _ in capturedBody = body; return true }
+
+        await service.sendDueReports(context: context)
+
+        // Mutante: revertir la coacción ⇒ dataType queda .income ⇒ emptyIncome ⇒ este test rojo.
+        #expect(capturedBody == L10n.Notifications.emptyExpensesDaily)
+        #expect(capturedBody != L10n.Notifications.emptyIncome)
+    }
+
+    /// Control: en modo normal el reporte de ingresos se mantiene (copy de ingresos).
+    @Test @MainActor func sendDueReports_normalMode_keepsIncomeReport() async throws {
+        let context = try makeTestContext()
+        let report = makeReport(
+            type: .dailyReport, hour: 0, minute: 0,
+            config: ReportConfig(dataType: .income, dayPreference: .monday)
+        )
+        report.lastNotifiedDate = nil
+        context.insert(report)
+        try context.save()
+
+        var capturedBody: String?
+        let service = ReportNotificationService.makeForTesting()
+        service.isAuthorizedOverride = { true }
+        service.isQuiescentOverride = { true }
+        service.expensesOnlyOverride = { false }
+        service.sendOverride = { _, body, _ in capturedBody = body; return true }
+
+        await service.sendDueReports(context: context)
+
+        #expect(capturedBody == L10n.Notifications.emptyIncome)
+    }
+
     // MARK: - Helpers
 
     @MainActor

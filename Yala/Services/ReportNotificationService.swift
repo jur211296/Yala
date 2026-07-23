@@ -51,6 +51,8 @@ final class ReportNotificationService {
     var isAuthorizedOverride: (() async -> Bool)?
     /// Sustituye la lectura de quiescencia del import en tests.
     var isQuiescentOverride: (() -> Bool)?
+    /// Sustituye la lectura del modo Solo Gastos en tests.
+    var expensesOnlyOverride: (() -> Bool)?
 
     #if DEBUG
     /// Instancia aislada para tests (evita contaminar el singleton `.shared`). Jamás en producción.
@@ -69,6 +71,25 @@ final class ReportNotificationService {
 
     private func isImportQuiescent() -> Bool {
         isQuiescentOverride?() ?? iCloudSyncService.shared.isImportQuiescent
+    }
+
+    /// Modo Solo Gastos. Lee `UserDefaults` directo (no `SessionState.shared`): el valor
+    /// está respaldado 1:1 por esa key (`SessionState`/`AppPreferences`) y así la capa
+    /// Service no depende del singleton de UI ni de su inicialización.
+    private func isExpensesOnly() -> Bool {
+        expensesOnlyOverride?() ?? UserDefaults.standard.bool(forKey: AppPreferences.Keys.expensesOnlyMode)
+    }
+
+    /// En Solo Gastos, los tipos de dato income/balance quedan huérfanos de config
+    /// (el editor los oculta/coacciona, pero un `NotificationItem` guardado antes de
+    /// activar el modo conserva su `dataType`). Coacciona income/balance → expenses en
+    /// el send path (paridad con `NotificationEditorSheet.availableDataTypes`). Solo lógica.
+    static func effectiveDataType(_ dataType: ReportDataType, expensesOnly: Bool) -> ReportDataType {
+        guard expensesOnly else { return dataType }
+        switch dataType {
+        case .income, .balance: return .expenses
+        case .expenses, .topCategory: return dataType
+        }
     }
 
     // MARK: - Public Methods
@@ -90,14 +111,21 @@ final class ReportNotificationService {
         let reports = fetchActiveReportNotifications(context: context)
         var sentCount = 0
 
+        let expensesOnly = isExpensesOnly()
+
         for report in reports {
             guard Self.shouldSendNow(report) else { continue }
 
-            let data = calculateReportData(config: report.reportConfig, type: report.notificationType, context: context)
+            // Coacción de solo-display en runtime (Solo Gastos): income/balance → expenses.
+            // No muta el config persistido → sin `save()` extra ni riesgo de quiescencia.
+            var effectiveConfig = report.reportConfig
+            effectiveConfig.dataType = Self.effectiveDataType(report.reportConfig.dataType, expensesOnly: expensesOnly)
+
+            let data = calculateReportData(config: effectiveConfig, type: report.notificationType, context: context)
 
             let delivered = await send(
                 title: report.localizedName,
-                body: Self.formatReportBody(report.reportConfig, reportType: report.notificationType, data: data),
+                body: Self.formatReportBody(effectiveConfig, reportType: report.notificationType, data: data),
                 deepLink: "statistics"
             )
 

@@ -47,6 +47,19 @@ struct FinancialReportView: View {
     private var preferredCurrencyCode: String { appPreferences.defaultCurrencyCode.rawValue }
     private var showVariations: Bool { appPreferences.showVariations }
 
+    // MARK: - Tab Visibility
+
+    /// Pestañas visibles: en Solo Gastos, Flujo de Caja se oculta (proyección income-dependiente).
+    private var visibleReportTabs: [ReportTab] {
+        ReportTab.visibleTabs(expensesOnly: sessionState.isExpensesOnlyMode)
+    }
+
+    /// Pestaña efectiva a renderizar: coacciona una selección oculta (`.flujoDeCaja` tras
+    /// activar Solo Gastos) a la primera visible → la pantalla nunca queda en blanco.
+    private var effectiveReportTab: ReportTab {
+        ReportTab.effectiveTab(selected: sessionState.selectedReportTab, expensesOnly: sessionState.isExpensesOnlyMode)
+    }
+
     // MARK: - Body
 
     var body: some View {
@@ -60,7 +73,6 @@ struct FinancialReportView: View {
             .yalaScreenBackground()
             .safeAreaInset(edge: .top) {
                 navigationChipsBar
-                    .padding(.vertical, DS.Spacing.sm)
             }
             .navigationTitle(L10n.Report.title)
             .navigationBarTitleDisplayMode(.large)
@@ -135,25 +147,31 @@ struct FinancialReportView: View {
 
     // MARK: - Navigation Chips
 
+    /// Con una sola pestaña visible (Solo Gastos) la barra de chips sobra → se omite
+    /// (sin reservar espacio). El condicional vive aquí, no en el `body`, para no
+    /// cargar el presupuesto del type-checker del `body`.
+    @ViewBuilder
     private var navigationChipsBar: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: DS.Spacing.sm) {
-                    ForEach(ReportTab.allCases) { tab in
-                        navigationChipButton(for: tab)
+        if visibleReportTabs.count > 1 {
+            VStack(spacing: DS.Spacing.sm) {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: DS.Spacing.sm) {
+                        ForEach(visibleReportTabs) { tab in
+                            navigationChipButton(for: tab)
+                        }
                     }
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .scrollTargetLayout()
                 }
-                .padding(.horizontal, DS.Spacing.lg)
-                .scrollTargetLayout()
+                .scrollTargetBehavior(.viewAligned)
             }
-            .scrollTargetBehavior(.viewAligned)
-
+            .padding(.vertical, DS.Spacing.sm)
         }
     }
 
     @ViewBuilder
     private func navigationChipButton(for tab: ReportTab) -> some View {
-        let isSelected = sessionState.selectedReportTab == tab
+        let isSelected = effectiveReportTab == tab
 
         Button {
             var transaction = Transaction()
@@ -185,7 +203,7 @@ struct FinancialReportView: View {
 
     @ViewBuilder
     private var reportGuide: some View {
-        switch sessionState.selectedReportTab {
+        switch effectiveReportTab {
         case .comparativa:
             ContextualGuideBanner.comparative()
         case .flujoDeCaja:
@@ -197,7 +215,7 @@ struct FinancialReportView: View {
 
     @ViewBuilder
     private var tabContent: some View {
-        switch sessionState.selectedReportTab {
+        switch effectiveReportTab {
         case .comparativa:
             comparativaContent
         case .flujoDeCaja:
@@ -216,12 +234,16 @@ struct FinancialReportView: View {
                 if viewModel.hasData {
                     pivotTable
 
-                    NetFlowSummaryView(
-                        currentAmount: viewModel.netFlowCurrent,
-                        previousAmount: viewModel.netFlowPrevious,
-                        variation: viewModel.netFlowVariation,
-                        currencyCode: preferredCurrencyCode
-                    )
+                    // "Flujo neto" (= neto con signo) no aplica en Solo Gastos (sin ingresos);
+                    // el comparativo de gasto ya está en la fila raíz "Gastos" del pivot.
+                    if !sessionState.isExpensesOnlyMode {
+                        NetFlowSummaryView(
+                            currentAmount: viewModel.netFlowCurrent,
+                            previousAmount: viewModel.netFlowPrevious,
+                            variation: viewModel.netFlowVariation,
+                            currencyCode: preferredCurrencyCode
+                        )
+                    }
                 } else {
                     emptyState
                         .padding(.top, DS.Spacing.xxl)
@@ -285,7 +307,7 @@ struct FinancialReportView: View {
     private var reportToolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
             Group {
-                if sessionState.selectedReportTab == .flujoDeCaja && cashFlowViewModel.hasPlan {
+                if effectiveReportTab == .flujoDeCaja && cashFlowViewModel.hasPlan {
                     HStack(spacing: DS.Spacing.md) {
                         Button {
                             cashFlowViewModel.showChartsSheet = true
@@ -314,7 +336,7 @@ struct FinancialReportView: View {
                                 .foregroundStyle(.thToolbarIcon)
                         }
                     }
-                } else if sessionState.selectedReportTab == .comparativa {
+                } else if effectiveReportTab == .comparativa {
                     Button {
                         viewModel.showFiltersSheet = true
                     } label: {

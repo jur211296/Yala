@@ -117,6 +117,15 @@ final class FinancialReportViewModel: Filterable {
 
     // MARK: - Data Calculation
 
+    /// Filtro de tipo de transacción del pivot según el modo. En Solo Gastos fuerza
+    /// `.expense` (paridad con `RecordsViewModel`): en arranque en frío
+    /// `SessionState.selectedTransactionNatures` es `[]` (el `didSet` de
+    /// `isExpensesOnlyMode` no corre en `init`), así que sin esto el pivot mostraría
+    /// ingresos. Solo lógica → testeable.
+    static func transactionTypeFilter(expensesOnly: Bool) -> TransactionTypeFilter {
+        expensesOnly ? .expense : .all
+    }
+
     func calculateReport(
         transactions: [TransactionItem],
         accounts: [Account],
@@ -131,6 +140,7 @@ final class FinancialReportViewModel: Filterable {
         let adjustment = GroupBridgeStatsAdjustment.build(from: transactions)
         let interval = panelDateInterval
         let comparisonMode = SessionState.shared.comparisonMode
+        let expensesOnly = SessionState.shared.isExpensesOnlyMode
         let previousInterval = PreviousPeriodHelper.previousInterval(
             for: detailPeriod,
             mode: comparisonMode,
@@ -148,7 +158,7 @@ final class FinancialReportViewModel: Filterable {
                 selectedTransactionNatures: selectedTransactionNatures,
                 selectedCurrencies: selectedCurrencies,
                 isExcludeMode: isExcludeMode,
-                transactionTypeFilter: .all,
+                transactionTypeFilter: Self.transactionTypeFilter(expensesOnly: expensesOnly),
                 amountCondition: amountCondition,
                 searchText: searchText,
                 dateInterval: dateInterval
