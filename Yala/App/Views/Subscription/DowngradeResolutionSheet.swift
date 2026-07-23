@@ -26,7 +26,7 @@ struct DowngradeResolutionSheet: View {
     // MARK: - Computed
 
     private var activeAccounts: [Account] {
-        accounts.filter { !$0.isArchived }
+        accounts.billableUserAccounts
     }
 
     private var activeBudgets: [Budget] {

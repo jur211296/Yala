@@ -14,7 +14,7 @@ struct PanelAccountsSection: View {
     @Binding var showUpgradeForAccounts: Bool
 
     private var isAccountsLimitReached: Bool {
-        let activeCount = viewModel.accounts.count(where: { !$0.isArchived })
+        let activeCount = viewModel.accounts.billableUserAccounts.count
         return !FeatureGateService.shared.canCreate(.accounts, currentCount: activeCount)
     }
 

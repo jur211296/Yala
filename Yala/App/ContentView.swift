@@ -1815,8 +1815,9 @@ struct MainTabView: View {
                 let budgets = try modelContext.fetch(
                     FetchDescriptor<Budget>(predicate: #Predicate { $0.isActive })
                 )
-                let activeAccounts = accounts.filter { !$0.isArchived }
-                if activeAccounts.count > 2 || budgets.count > 3 {
+                let billableAccounts = accounts.billableUserAccounts
+                if billableAccounts.count > (ProFeature.accounts.freeLimit ?? Int.max)
+                    || budgets.count > (ProFeature.budgets.freeLimit ?? Int.max) {
                     downgradeAccounts = accounts
                     downgradeBudgets = budgets
                     showDowngradeResolution = true

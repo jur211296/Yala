@@ -84,3 +84,19 @@ final class Account {
         self.isSystemAccount = isSystemAccount
     }
 }
+
+// MARK: - Free-limit billing
+
+extension Account {
+    /// Cuenta de USUARIO que consume el límite Free de cuentas.
+    /// Las cuentas de sistema del bridge de grupos (`isSystemAccount`) NO cuentan:
+    /// el usuario no las creó y no puede eliminarlas. Las archivadas tampoco.
+    /// SSOT del predicado — el bug 2026-07-22 (3 call-sites divergidos) es la prueba
+    /// de que repetirlo a mano diverge. NUNCA re-implementar el filtro inline.
+    var isBillableUserAccount: Bool { !isArchived && !isSystemAccount }
+}
+
+extension Array where Element == Account {
+    /// Cuentas que consumen el límite Free (ver `isBillableUserAccount`).
+    var billableUserAccounts: [Account] { filter(\.isBillableUserAccount) }
+}

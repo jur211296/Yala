@@ -1534,9 +1534,9 @@
         "F-PRO-04"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/ProConversionUpsellsUITests + unit:YalaTests/ProUpsellServiceOneShotTests (semántica one-shot: consultar no quema, solo mark* quema — invariante del burn-en-presentación-real)",
+      "coverage": "xcuitest:YalaUITests/ProConversionUpsellsUITests + unit:YalaTests/ProUpsellServiceOneShotTests (semántica one-shot: consultar no quema, solo mark* quema — invariante del burn-en-presentación-real) + unit:YalaTests/AccountBillableCountTests (SSOT Account.isBillableUserAccount: las cuentas de sistema de grupos NO consumen el límite Free — 4 call-sites centralizados)",
       "owner": "",
-      "lastVerified": "2026-07-11"
+      "lastVerified": "2026-07-22"
     },
     {
       "area": "records-duplicate-detection",
