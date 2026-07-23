@@ -22,6 +22,13 @@ final class SplitSettlement {
     var note: String?
     var date: Date = Date.now
     var isConfirmed: Bool = false
+    // Miembro que REGISTRÓ la liquidación = SplitMember.id.uuidString. Lo escribe el path LOCAL
+    // (GroupExpenseService.createSettlement); los applies remotos lo copian del record. Usado por
+    // GroupNotificationService para autoexcluir el eco Caso D ("registro que X me pagó" → no me llega
+    // "X te pagó" por algo que registré yo). La atribución "X te pagó" sigue siendo fromMemberID (correcta).
+    // nil = liquidación pre-campo o registrada por app vieja ⇒ fallback al comportamiento legado.
+    // TODO(wire backend): CloudKit-only, igual que SplitExpense.lastEditedByMemberID.
+    var recordedByMemberID: String?
     var ckSystemFieldsData: Data?            // CKRecord system fields for conflict-free uploads
 
     init(

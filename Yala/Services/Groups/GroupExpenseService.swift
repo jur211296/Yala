@@ -93,6 +93,8 @@ final class GroupExpenseService {
             subcategoryName: subcategoryName,
             isOpeningBalance: isOpeningBalance
         )
+        // Autor del cambio = el usuario actual (para atribución + autoexclusión del eco de notifs).
+        expense.lastEditedByMemberID = currentUserMemberID(in: group)
         context.insert(expense)
 
         // Create shares
@@ -177,6 +179,8 @@ final class GroupExpenseService {
         expense.paidByMemberID = paidByMemberID
         expense.splitType = splitType
         expense.subcategoryName = subcategoryName
+        // Autor de esta edición = el usuario actual (atribución "X actualizó" + autoexclusión del eco).
+        expense.lastEditedByMemberID = currentUserMemberID(in: group)
 
         // Create new shares
         for share in shares {
@@ -410,6 +414,9 @@ final class GroupExpenseService {
             note: note,
             date: date
         )
+        // Quien registra la liquidación = el usuario actual (autoexclusión del eco Caso D: registro
+        // "X me pagó" y no me llega "X te pagó"). La atribución "X te pagó" sigue siendo fromMemberID.
+        settlement.recordedByMemberID = currentUserMemberID(in: group)
         context.insert(settlement)
 
         do {
@@ -571,6 +578,56 @@ final class GroupExpenseService {
     /// El trío opening-balance es owner-only ⇒ el freeze es inerte para él (defensa en profundidad).
     func validateGroupIsWritable(_ group: SplitGroup) throws {
         if group.isMigratedFrozen { throw GroupExpenseServiceError.movedToBackend }
+    }
+
+    /// `SplitMember.id.uuidString` del usuario actual en el grupo (para atribuir "quién hizo el cambio"
+    /// en las notificaciones y autoexcluir el eco). Resuelto en el contexto del propio servicio
+    /// (`GroupService.fetchMembers`, igual que `validateCurrentUserCanWrite`).
+    ///
+    /// DEBE resolver el MISMO id que el consumidor `GroupNotificationService.currentMemberID(inZone:)`
+    /// (resolución CANÓNICA: entre los members `isCurrentUser`, el de `joinedAt` más antiguo — mismo
+    /// criterio que su `FetchDescriptor` sortBy joinedAt + fetchLimit 1, y que `SplitSyncManager
+    /// .currentUserMember`). Un tie-break distinto (p.ej. `first(where:)` sobre el orden de `fetchMembers`
+    /// por displayName) elegiría OTRO id bajo members `isCurrentUser` DUPLICADOS → el write-side y el
+    /// clasificador guardarían/compararían ids distintos y el eco NO se autoexcluiría.
+    ///
+    /// Fallback (ventana temprana: 2º device / restore de iCloud, `isCurrentUser` aún no marcado porque es
+    /// device-local y `refreshCurrentUserFlags` no ha corrido): resolver por identidad iCloud
+    /// (`cloudKitUserRecordID == cachedRecordName`), la MISMA fuente que `refreshCurrentUserFlags` usa para
+    /// marcar `isCurrentUser`. Así el eco se autoexcluye aunque el flag llegue tarde (sin esto, el owner en
+    /// esa ventana guardaba nil y recibía "otro actualizó" por su propia edición — el bug reportado).
+    /// nil solo si tampoco hay identidad iCloud cacheada (primer arranque sin resolver) ⇒ ahí el consumidor
+    /// tampoco resuelve currentMemberID ⇒ `expenseDecision` skipea (sin notif).
+    private func currentUserMemberID(in group: SplitGroup) -> String? {
+        let members: [SplitMember]
+        do {
+            members = try GroupService.shared.fetchMembers(for: group)
+        } catch {
+            #if DEBUG
+            print("GroupExpenseService: Error resolviendo el miembro actual para atribución: \(error)")
+            #endif
+            return nil
+        }
+        return Self.selectCurrentUserMemberID(
+            from: members,
+            cachedRecordName: GroupUserIdentityService.shared.cachedRecordName
+        )
+    }
+
+    /// Selección pura del `SplitMember.id.uuidString` del usuario actual (extraída para test sin contexto).
+    /// Resolución CANÓNICA — DEBE espejar `GroupNotificationService.currentMemberID(inZone:)` (isCurrentUser
+    /// con `joinedAt` más antiguo). Fallback por identidad iCloud para la ventana temprana (isCurrentUser
+    /// aún no marcado en 2º device / restore). Ver el doc de `currentUserMemberID(in:)` para el porqué.
+    static func selectCurrentUserMemberID(from members: [SplitMember], cachedRecordName: String?) -> String? {
+        if let current = members.filter({ $0.isCurrentUser }).min(by: { $0.joinedAt < $1.joinedAt }) {
+            return current.id.uuidString
+        }
+        if let recordName = cachedRecordName, !recordName.isEmpty,
+           let byIdentity = members.filter({ $0.cloudKitUserRecordID == recordName })
+                                   .min(by: { $0.joinedAt < $1.joinedAt }) {
+            return byIdentity.id.uuidString
+        }
+        return nil
     }
 
     private func validateCurrentUserCanWrite(in group: SplitGroup) throws {

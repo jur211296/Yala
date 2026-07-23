@@ -188,6 +188,7 @@ final class GroupNotificationService {
             switch GroupNotificationRecipientLogic.expenseDecision(
                 currentMemberID: cmid,
                 paidByMemberID: expense.paidByMemberID,
+                lastEditedByMemberID: expense.lastEditedByMemberID,
                 myShareAmount: myShare
             ) {
             case .notify(let share): return (expense, share)
@@ -209,7 +210,9 @@ final class GroupNotificationService {
             guard let settlement = try modelContext.fetch(descriptor).first else { return nil }
             let cmid = currentMemberID(inZone: settlement.groupZoneID, cache: &memberIDCache)
             return GroupNotificationRecipientLogic.shouldNotifySettlement(
-                currentMemberID: cmid, toMemberID: settlement.toMemberID
+                currentMemberID: cmid,
+                toMemberID: settlement.toMemberID,
+                recordedByMemberID: settlement.recordedByMemberID
             ) ? settlement : nil
         } catch {
             #if DEBUG
@@ -294,7 +297,10 @@ final class GroupNotificationService {
     /// Builds the expense notification from the already-fetched expense (no re-fetch).
     /// `myShare` is the current user's portion — shown instead of the total.
     private func buildExpenseNotification(expense: SplitExpense, groupName: String, isNew: Bool, myShare: Double) -> (String, String)? {
-        let memberName = resolveMemberName(memberID: expense.paidByMemberID)
+        // Atribuir al EDITOR real (crear/editar), no al pagador. Proxy legado (pagador) si el campo es nil.
+        let memberName = resolveMemberName(memberID: GroupNotificationRecipientLogic.expenseAttributionMemberID(
+            lastEditedByMemberID: expense.lastEditedByMemberID,
+            paidByMemberID: expense.paidByMemberID))
         // Formato canónico off-MainActor: respeta decimalPlaces / formato de moneda del usuario
         // (evita drift visual entre la notificación y el resto de la app).
         let formattedShare = YalaFormatterStatic.currency(value: myShare, currencyCode: expense.currencyCode)

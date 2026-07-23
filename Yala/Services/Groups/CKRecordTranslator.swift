@@ -185,6 +185,9 @@ enum CKRecordTranslator {
         if let sub = expense.subcategoryName {
             record[F.subcategoryName] = sub as CKRecordValue
         }
+        if let editor = expense.lastEditedByMemberID {
+            record[F.lastEditedByMemberID] = editor as CKRecordValue
+        }
         record[F.createdAt] = expense.createdAt as CKRecordValue
     }
 
@@ -204,6 +207,7 @@ enum CKRecordTranslator {
         expense.isOpeningBalance = readBool(record, key: F.isOpeningBalance, default: false)
         expense.currencyCode = record[F.currencyCode] as? String ?? "USD"
         expense.subcategoryName = record[F.subcategoryName] as? String
+        expense.lastEditedByMemberID = record[F.lastEditedByMemberID] as? String
         expense.createdAt = record[F.createdAt] as? Date ?? Date.now
         expense.ckSystemFieldsData = encodeSystemFields(of: record)
         return expense
@@ -221,6 +225,7 @@ enum CKRecordTranslator {
         expense.isOpeningBalance = readBool(record, key: F.isOpeningBalance)
         expense.currencyCode = record[F.currencyCode] as? String ?? expense.currencyCode
         expense.subcategoryName = record[F.subcategoryName] as? String
+        expense.lastEditedByMemberID = record[F.lastEditedByMemberID] as? String
         expense.createdAt = record[F.createdAt] as? Date ?? expense.createdAt
         expense.ckSystemFieldsData = encodeSystemFields(of: record)
     }
@@ -365,6 +370,9 @@ enum CKRecordTranslator {
         record[F.date] = settlement.date as CKRecordValue
         record[F.isConfirmed] = ckBool(settlement.isConfirmed)
         record[F.currencyCode] = settlement.currencyCode as CKRecordValue
+        if let recorder = settlement.recordedByMemberID {
+            record[F.recordedByMemberID] = recorder as CKRecordValue
+        }
     }
 
     static func settlement(from record: CKRecord) -> SplitSettlement? {
@@ -380,6 +388,7 @@ enum CKRecordTranslator {
         settlement.date = record[F.date] as? Date ?? Date.now
         settlement.isConfirmed = readBool(record, key: F.isConfirmed)
         settlement.currencyCode = record[F.currencyCode] as? String ?? "USD"
+        settlement.recordedByMemberID = record[F.recordedByMemberID] as? String
         settlement.ckSystemFieldsData = encodeSystemFields(of: record)
         return settlement
     }
@@ -393,6 +402,7 @@ enum CKRecordTranslator {
         settlement.date = record[F.date] as? Date ?? settlement.date
         settlement.isConfirmed = readBool(record, key: F.isConfirmed)
         settlement.currencyCode = record[F.currencyCode] as? String ?? settlement.currencyCode
+        settlement.recordedByMemberID = record[F.recordedByMemberID] as? String
         settlement.ckSystemFieldsData = encodeSystemFields(of: record)
     }
 }

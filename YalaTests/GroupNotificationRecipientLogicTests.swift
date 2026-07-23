@@ -16,8 +16,9 @@ struct GroupNotificationRecipientLogicTests {
 
     private let me = "AAAAAAAA-0000-0000-0000-000000000001"
     private let other = "BBBBBBBB-0000-0000-0000-000000000002"
+    private let third = "CCCCCCCC-0000-0000-0000-000000000003"
 
-    // MARK: - expenseDecision
+    // MARK: - expenseDecision (legado — sin lastEditedByMemberID)
 
     @Test func expense_iAmPayer_skips() {
         // No me notifico de un gasto que yo mismo pagué (incluye 2º device mismo iCloud).
@@ -48,6 +49,51 @@ struct GroupNotificationRecipientLogicTests {
             currentMemberID: me, paidByMemberID: other, myShareAmount: 0) == .skip)
     }
 
+    // MARK: - expenseDecision (autoexclusión del eco por AUTOR — lastEditedByMemberID)
+
+    @Test func expense_iEditedGastoPaidByOther_skips() {
+        // EL BUG REPORTADO: edito un gasto pagado por otro. El eco vuelve; como YO soy el autor,
+        // no debe notificarme (antes: paidBy=other≠me → notificaba "other actualizó").
+        #expect(GroupNotificationRecipientLogic.expenseDecision(
+            currentMemberID: me, paidByMemberID: other,
+            lastEditedByMemberID: me, myShareAmount: 25) == .skip)
+    }
+
+    @Test func expense_iCreatedGastoPaidByOther_skips() {
+        // Registro "other pagó" (soy el creador, other el pagador). Autor=yo → no me llega el eco.
+        #expect(GroupNotificationRecipientLogic.expenseDecision(
+            currentMemberID: me, paidByMemberID: other,
+            lastEditedByMemberID: me, myShareAmount: 25) == .skip)
+    }
+
+    @Test func expense_thirdEditedGastoPaidByOther_notifies() {
+        // Un tercero editó un gasto pagado por otro; yo participo → notify (autor≠yo, pagador≠yo).
+        // La atribución "third actualizó" la resuelve expenseAttributionMemberID, no esta decisión.
+        #expect(GroupNotificationRecipientLogic.expenseDecision(
+            currentMemberID: me, paidByMemberID: other,
+            lastEditedByMemberID: third, myShareAmount: 25) == .notify(share: 25))
+    }
+
+    @Test func expense_otherEditedGastoPaidByMe_skips() {
+        // Alguien editó un gasto que pagué yo → SILENCIO (comportamiento legado preservado; el 2º guard
+        // `paidByMemberID == me` gana). Fuera de scope cambiarlo a notificar.
+        #expect(GroupNotificationRecipientLogic.expenseDecision(
+            currentMemberID: me, paidByMemberID: me,
+            lastEditedByMemberID: other, myShareAmount: 25) == .skip)
+    }
+
+    // MARK: - expenseAttributionMemberID
+
+    @Test func attribution_usesEditorWhenPresent() {
+        #expect(GroupNotificationRecipientLogic.expenseAttributionMemberID(
+            lastEditedByMemberID: other, paidByMemberID: me) == other)
+    }
+
+    @Test func attribution_fallsBackToPayerWhenNil() {
+        #expect(GroupNotificationRecipientLogic.expenseAttributionMemberID(
+            lastEditedByMemberID: nil, paidByMemberID: me) == me)
+    }
+
     // MARK: - shouldNotifySettlement
 
     @Test func settlement_iAmReceiver_notifies() {
@@ -64,5 +110,25 @@ struct GroupNotificationRecipientLogicTests {
     @Test func settlement_unknownIdentity_skips() {
         #expect(GroupNotificationRecipientLogic.shouldNotifySettlement(
             currentMemberID: nil, toMemberID: me) == false)
+    }
+
+    // MARK: - shouldNotifySettlement (autoexclusión del eco Caso D — recordedByMemberID)
+
+    @Test func settlement_iRecordedIt_skips() {
+        // Registro "other me pagó" (soy el receptor Y quien lo registró). El eco no debe notificarme.
+        #expect(GroupNotificationRecipientLogic.shouldNotifySettlement(
+            currentMemberID: me, toMemberID: me, recordedByMemberID: me) == false)
+    }
+
+    @Test func settlement_otherRecorded_iAmReceiver_notifies() {
+        // other registró "other me pagó" (Caso C desde su lado): yo (receptor) SÍ debo enterarme.
+        #expect(GroupNotificationRecipientLogic.shouldNotifySettlement(
+            currentMemberID: me, toMemberID: me, recordedByMemberID: other) == true)
+    }
+
+    @Test func settlement_legacyNilRecorder_iAmReceiver_notifies() {
+        // Liquidación pre-campo (recorder nil) → solo el filtro por receptor (comportamiento legado).
+        #expect(GroupNotificationRecipientLogic.shouldNotifySettlement(
+            currentMemberID: me, toMemberID: me, recordedByMemberID: nil) == true)
     }
 }

@@ -139,4 +139,38 @@ struct GroupNotificationServiceTests {
             Issue.record("Expected .navigate(.groupDetail) intent")
         }
     }
+
+    // MARK: - Cableado del fix de atribución/eco (source-scan)
+    //
+    // Los métodos de participación de GroupNotificationService son privados y requieren un ModelContext
+    // (makeTestContext flakea, regla R8). La LÓGICA pura (autor/eco/atribución) la cubren por mutantes los
+    // GroupNotificationRecipientLogicTests; este source-scan fija el CABLEADO — que el servicio REALMENTE
+    // pasa los campos nuevos a la lógica pura y atribuye vía el helper — para que un revert silencioso
+    // (p.ej. volver a `resolveMemberName(memberID: expense.paidByMemberID)`, que compila con los params
+    // `= nil`) rompa el build de tests en vez de reintroducir el bug en silencio.
+
+    private static var serviceSource: String {
+        let url = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()  // YalaTests/
+            .deletingLastPathComponent()  // repo root
+            .appendingPathComponent("Yala/Services/Groups/GroupNotificationService.swift")
+        return (try? String(contentsOf: url, encoding: .utf8)) ?? ""
+    }
+
+    @Test func wiring_expenseDecision_receivesLastEditedByMemberID() {
+        let src = Self.serviceSource
+        #expect(!src.isEmpty, "No se pudo leer GroupNotificationService.swift por #filePath")
+        #expect(src.contains("lastEditedByMemberID: expense.lastEditedByMemberID"),
+                "participatingExpense DEBE pasar el autor a expenseDecision — sin esto el eco no se autoexcluye")
+    }
+
+    @Test func wiring_settlement_receivesRecordedByMemberID() {
+        #expect(Self.serviceSource.contains("recordedByMemberID: settlement.recordedByMemberID"),
+                "participatingSettlement DEBE pasar el registrador a shouldNotifySettlement — sin esto el eco Caso D no se autoexcluye")
+    }
+
+    @Test func wiring_attribution_usesEditorHelper() {
+        #expect(Self.serviceSource.contains("expenseAttributionMemberID("),
+                "buildExpenseNotification DEBE atribuir vía expenseAttributionMemberID (editor∨proxy), no por el pagador crudo")
+    }
 }

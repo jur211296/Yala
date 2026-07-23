@@ -66,6 +66,9 @@ enum CKConstants {
         static let currencyCode = "currencyCode"
         static let subcategoryName = "subcategoryName"
         static let createdAt = "createdAt"
+        // Autor del último cambio (atribución + autoexclusión del eco). Field key nuevo ⇒ requiere
+        // deploy del schema a Production del container de grupos (CloudKitGroupsSchemaParityTests).
+        static let lastEditedByMemberID = "lastEditedByMemberID"
     }
 
     // MARK: - SplitMember Fields
@@ -107,6 +110,9 @@ enum CKConstants {
         static let date = "date"
         static let isConfirmed = "isConfirmed"
         static let currencyCode = "currencyCode"
+        // Miembro que registró la liquidación (autoexclusión del eco Caso D). Field key nuevo ⇒ requiere
+        // deploy del schema a Production del container de grupos (CloudKitGroupsSchemaParityTests).
+        static let recordedByMemberID = "recordedByMemberID"
     }
 
     // MARK: - Zone ID Helpers

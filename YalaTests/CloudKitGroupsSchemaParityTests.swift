@@ -8,10 +8,10 @@
 //  autocrea NI en Development; en Production el server RECHAZA todo save del record type y
 //  CKSyncEngine descarta el record de su cola en silencio (incidente `isOpeningBalance`,
 //  27-jun→1-jul: sync de grupos muerto bidireccional 4 días). Este test convierte la regla de
-//  proceso ("campo nuevo ⇒ deploy del schema + actualizar Cloudkit Schemas/yala_groups-production.ckdb en el
+//  proceso ("campo nuevo ⇒ deploy del schema + actualizar Cloudkit Schemas/groups-production.ckdb en el
 //  mismo PR") en un gate ejecutable: parsea los field keys REALES del código fuente
 //  (CloudKitConstants.swift, vía #filePath — mismo patrón que LocalizationParityTests) y los
-//  cruza contra el snapshot del schema desplegado (`Cloudkit Schemas/yala_groups-production.ckdb`).
+//  cruza contra el snapshot del schema desplegado (`Cloudkit Schemas/groups-production.ckdb`).
 //
 //  El .ckdb es un CONTRATO: solo se actualiza cuando el schema real se despliega a Production.
 //
@@ -46,7 +46,9 @@ struct CloudKitGroupsSchemaParityTests {
     private static var schemaURL: URL {
         // 2026-07-10: los snapshots-contrato viven en `Cloudkit Schemas/` (carpeta del owner con la
         // última versión desplegada de CADA container/entorno; reemplazó a los .ckdb sueltos de la raíz).
-        repoRoot.appendingPathComponent("Cloudkit Schemas/yala_groups-production.ckdb")
+        // 2026-07-23: renombrados a la convención por sufijo de container — `groups-*.ckdb` (`.groups`,
+        // prod) y `groups_dev-*.ckdb` (`.groups.dev`). Este contrato es el del container PROD (`.groups`).
+        repoRoot.appendingPathComponent("Cloudkit Schemas/groups-production.ckdb")
     }
 
     // MARK: - Parsers

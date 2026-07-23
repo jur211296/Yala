@@ -1,0 +1,134 @@
+DEFINE SCHEMA
+
+    RECORD TYPE GroupMeta (
+        "___createTime"           TIMESTAMP,
+        "___createdBy"            REFERENCE,
+        "___etag"                 STRING,
+        "___modTime"              TIMESTAMP,
+        "___modifiedBy"           REFERENCE,
+        "___recordID"             REFERENCE,
+        backendReInviteToken      ENCRYPTED STRING,
+        colorHex                  STRING QUERYABLE SEARCHABLE SORTABLE,
+        createdAt                 TIMESTAMP QUERYABLE SORTABLE,
+        currencyCode              STRING QUERYABLE SEARCHABLE SORTABLE,
+        defaultSplitType          STRING QUERYABLE SEARCHABLE SORTABLE,
+        iconName                  STRING QUERYABLE SEARCHABLE SORTABLE,
+        isArchived                INT64 QUERYABLE SORTABLE,
+        isHiddenForAll            INT64 QUERYABLE SORTABLE,
+        membersCanInvite          INT64 QUERYABLE SORTABLE,
+        movedToBackendAt          TIMESTAMP QUERYABLE SORTABLE,
+        name                      ENCRYPTED STRING,
+        showDebtsInSingleCurrency INT64 QUERYABLE SORTABLE,
+        simplifyDebts             INT64 QUERYABLE SORTABLE,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE SplitExpense (
+        "___createTime"      TIMESTAMP,
+        "___createdBy"       REFERENCE,
+        "___etag"            STRING,
+        "___modTime"         TIMESTAMP,
+        "___modifiedBy"      REFERENCE,
+        "___recordID"        REFERENCE,
+        amount               ENCRYPTED DOUBLE,
+        createdAt            TIMESTAMP QUERYABLE SORTABLE,
+        currencyCode         STRING QUERYABLE SEARCHABLE SORTABLE,
+        date                 TIMESTAMP QUERYABLE SORTABLE,
+        description          ENCRYPTED STRING,
+        isOpeningBalance     INT64 QUERYABLE SORTABLE,
+        isSettled            INT64 QUERYABLE SORTABLE,
+        lastEditedByMemberID STRING QUERYABLE SEARCHABLE SORTABLE,
+        note                 ENCRYPTED STRING,
+        paidByMemberID       STRING QUERYABLE SEARCHABLE SORTABLE,
+        splitType            STRING QUERYABLE SEARCHABLE SORTABLE,
+        subcategoryName      STRING QUERYABLE SEARCHABLE SORTABLE,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE SplitMember (
+        "___createTime" TIMESTAMP,
+        "___createdBy"  REFERENCE,
+        "___etag"       STRING,
+        "___modTime"    TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID"   REFERENCE,
+        displayName     ENCRYPTED STRING,
+        isCurrentUser   INT64 QUERYABLE SORTABLE,
+        isGroupOwner    INT64 QUERYABLE SORTABLE,
+        joinedAt        TIMESTAMP QUERYABLE SORTABLE,
+        memberID        STRING QUERYABLE SEARCHABLE SORTABLE,
+        role            STRING QUERYABLE SEARCHABLE SORTABLE,
+        status          STRING QUERYABLE SEARCHABLE SORTABLE,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE SplitSettlement (
+        "___createTime"    TIMESTAMP,
+        "___createdBy"     REFERENCE,
+        "___etag"          STRING,
+        "___modTime"       TIMESTAMP,
+        "___modifiedBy"    REFERENCE,
+        "___recordID"      REFERENCE,
+        amount             ENCRYPTED DOUBLE,
+        currencyCode       STRING QUERYABLE SEARCHABLE SORTABLE,
+        date               TIMESTAMP QUERYABLE SORTABLE,
+        fromMemberID       STRING QUERYABLE SEARCHABLE SORTABLE,
+        isConfirmed        INT64 QUERYABLE SORTABLE,
+        note               ENCRYPTED STRING,
+        recordedByMemberID STRING QUERYABLE SEARCHABLE SORTABLE,
+        toMemberID         STRING QUERYABLE SEARCHABLE SORTABLE,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE SplitShare (
+        "___createTime"   TIMESTAMP,
+        "___createdBy"    REFERENCE,
+        "___etag"         STRING,
+        "___modTime"      TIMESTAMP,
+        "___modifiedBy"   REFERENCE,
+        "___recordID"     REFERENCE,
+        amount            ENCRYPTED DOUBLE,
+        expenseRecordName STRING QUERYABLE SEARCHABLE SORTABLE,
+        isPaid            INT64 QUERYABLE SORTABLE,
+        memberID          STRING QUERYABLE SEARCHABLE SORTABLE,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE Users (
+        "___createTime" TIMESTAMP,
+        "___createdBy"  REFERENCE,
+        "___etag"       STRING,
+        "___modTime"    TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID"   REFERENCE,
+        roles           LIST<INT64>,
+        GRANT WRITE TO "_creator",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE "cloudkit.share" (
+        "___createTime"               TIMESTAMP,
+        "___createdBy"                REFERENCE,
+        "___etag"                     STRING,
+        "___modTime"                  TIMESTAMP,
+        "___modifiedBy"               REFERENCE,
+        "___recordID"                 REFERENCE,
+        "cloudkit.thumbnailImageData" BYTES,
+        "cloudkit.title"              STRING,
+        "cloudkit.type"               STRING,
+        isArchived                    INT64 QUERYABLE SORTABLE,
+        isHiddenForAll                INT64 QUERYABLE SORTABLE,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
