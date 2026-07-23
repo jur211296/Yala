@@ -67,7 +67,8 @@ final class InsightsViewModel {
         criteria: FilterCriteria,
         currencyCode: String,
         customRange: DateInterval?,
-        comparisonMode: ComparisonMode = .month
+        comparisonMode: ComparisonMode = .month,
+        adjustment: GroupBridgeStatsAdjustment = .none
     ) {
         // El toggle "incluir transacciones de grupos en estadísticas" filtra las TX
         // bridgeadas y por tanto es un input del cálculo — debe entrar en la firma
@@ -104,7 +105,8 @@ final class InsightsViewModel {
             comparisonMode: comparisonMode,
             tone: currentTone,
             focus: currentFocus,
-            includeBridgedGroupTx: includeBridgedGroupTx
+            includeBridgedGroupTx: includeBridgedGroupTx,
+            adjustment: adjustment
         )
     }
 
@@ -120,7 +122,8 @@ final class InsightsViewModel {
         paidAmounts: [String: [PaidOccurrenceInfo]],
         period: DetailPeriod,
         customRange: DateInterval?,
-        preferredCurrencyCode: String
+        preferredCurrencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none
     ) {
         let includeBridgedGroupTx = (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
         let newScore = FinancialScoreCalculator.calculate(
@@ -132,7 +135,8 @@ final class InsightsViewModel {
             period: period,
             customRange: customRange,
             preferredCurrencyCode: preferredCurrencyCode,
-            includeBridgedGroupTx: includeBridgedGroupTx
+            includeBridgedGroupTx: includeBridgedGroupTx,
+            adjustment: adjustment
         )
         if newScore != financialScore { financialScore = newScore }
     }

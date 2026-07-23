@@ -115,9 +115,14 @@ final class CashFlowPlanViewModel {
                 && $0.subcategory?.isAnySystem != true
         }
         let resolvedCurrency = currencyCode.isEmpty ? "USD" : currencyCode
+        // Netea los gastos de grupo bridgeados a "mi parte". Se construye del set AMPLIO
+        // (`transactions`, con AMBAS hermanas) aunque el index se arme del subset filtrado.
+        let adjustment: GroupBridgeStatsAdjustment = modelContext
+            .map { GroupBridgeStatsAdjustment.build(from: transactions, context: $0) }
+            ?? .build(from: transactions)
         let index = TransactionIndex(
             transactions: validTransactions, currencyCode: resolvedCurrency,
-            converter: CurrencyConverter.shared, calendar: calendar
+            adjustment: adjustment, converter: CurrencyConverter.shared, calendar: calendar
         )
         cachedIndex = index
         cachedReferenceDate = currentMonthStart
@@ -490,6 +495,12 @@ final class CashFlowPlanViewModel {
             monthsBack = 0 // Free: only current month
         }
 
+        // Netea los gastos de grupo bridgeados a "mi parte" en la proyección. Set AMPLIO
+        // (`transactions`, con AMBAS hermanas); sin context cae al `build(from:)` puro.
+        let adjustment: GroupBridgeStatsAdjustment = modelContext
+            .map { GroupBridgeStatsAdjustment.build(from: transactions, context: $0) }
+            ?? .build(from: transactions)
+
         projection = CashFlowProjectionCalculator.calculate(
             plan: plan,
             lines: lines,
@@ -500,6 +511,7 @@ final class CashFlowPlanViewModel {
             monthsBack: monthsBack,
             monthsAhead: monthsAhead,
             currencyCode: currencyCode,
+            adjustment: adjustment,
             converter: converter
         )
     }

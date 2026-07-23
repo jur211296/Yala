@@ -1294,10 +1294,14 @@ struct TrendsTabView: View {
             criteria: criteria
         )
 
+        // Proyección "mi parte" (neto) desde el set AMPLIO (con AMBAS hermanas del bridge).
+        let adjustment = GroupBridgeStatsAdjustment.build(from: allTransactions, context: modelContext)
+
         let result = WeekdaySpendingCalculator.calculate(
             transactions: filtered,
             interval: effectiveInterval,
-            currencyCode: defaultCurrencyCode
+            currencyCode: defaultCurrencyCode,
+            adjustment: adjustment
         )
         if result != weekdaySpending { weekdaySpending = result }
     }
@@ -1397,6 +1401,8 @@ struct TrendsTabView: View {
 
         // For All Time, calculate effective interval based on actual transactions
         let fetchedTransactions = allTransactions
+        // Proyección "mi parte" (neto) desde el set AMPLIO (con AMBAS hermanas del bridge).
+        let adjustment = GroupBridgeStatsAdjustment.build(from: fetchedTransactions, context: modelContext)
         let effectiveInterval: DateInterval
         if trendsViewModel.detailPeriod == .allTime {
             let dates = fetchedTransactions.map(\.date)
@@ -1444,7 +1450,7 @@ struct TrendsTabView: View {
             interval: interval,
             grouping: cashFlowGrouping,
             currencyCode: defaultCurrencyCode,
-
+            adjustment: adjustment
         )
         if newCashFlow != cashFlowSummary { cashFlowSummary = newCashFlow }
 
@@ -1458,7 +1464,7 @@ struct TrendsTabView: View {
                 interval: interval,
                 grouping: cashFlowGrouping,
                 currencyCode: account.currencyCode,
-    
+                adjustment: adjustment
             )
             byAccount[account.persistentModelID] = summary
         }
@@ -1473,7 +1479,7 @@ struct TrendsTabView: View {
                 interval: interval,
                 grouping: cashFlowGrouping,
                 currencyCode: currencyCode,
-    
+                adjustment: adjustment
             )
             byCurrency[currencyCode] = summary
         }
@@ -1492,6 +1498,9 @@ struct TrendsTabView: View {
             previousCashFlowByCurrency = [:]
             return
         }
+
+        // Proyección "mi parte" (neto) desde el set AMPLIO (con AMBAS hermanas del bridge).
+        let adjustment = GroupBridgeStatsAdjustment.build(from: fetchedTransactions, context: modelContext)
 
         let previousInterval = PreviousPeriodHelper.previousInterval(
             for: trendsViewModel.detailPeriod,
@@ -1530,7 +1539,7 @@ struct TrendsTabView: View {
             interval: previousInterval,
             grouping: cashFlowGrouping,
             currencyCode: defaultCurrencyCode,
-
+            adjustment: adjustment
         )
 
         // 2. Calculate previous period cash flow BY ACCOUNT (single-pass grouping)
@@ -1543,7 +1552,7 @@ struct TrendsTabView: View {
                 interval: previousInterval,
                 grouping: cashFlowGrouping,
                 currencyCode: account.currencyCode,
-    
+                adjustment: adjustment
             )
             byAccount[account.persistentModelID] = summary
         }
@@ -1558,7 +1567,7 @@ struct TrendsTabView: View {
                 interval: previousInterval,
                 grouping: cashFlowGrouping,
                 currencyCode: currencyCode,
-    
+                adjustment: adjustment
             )
             byCurrency[currencyCode] = summary
         }
@@ -1622,6 +1631,10 @@ struct TrendsTabView: View {
             criteria: baseCriteria
         )
 
+        // Proyección "mi parte" (neto) desde el set AMPLIO (con AMBAS hermanas del bridge).
+        // NO afecta al metric `.balance` (TrendDataProcessor solo ajusta income/expense).
+        let adjustment = GroupBridgeStatsAdjustment.build(from: allTransactions, context: modelContext)
+
         // Override solo en current; previous siempre histórico.
         let trendType = mapMetricToTrendType(trendsViewModel.selectedMetric)
         let liveBalanceOverride = LiveBalanceCalculator.liveBalanceOverride(
@@ -1641,6 +1654,7 @@ struct TrendsTabView: View {
             grouping: .day,
             interval: currentInterval,
             currencyCode: defaultCurrencyCode,
+            adjustment: adjustment,
             liveBalanceOverride: liveBalanceOverride
         )
 
@@ -1682,7 +1696,8 @@ struct TrendsTabView: View {
             period: trendsViewModel.detailPeriod,
             grouping: .day,
             interval: previousInterval,
-            currencyCode: defaultCurrencyCode
+            currencyCode: defaultCurrencyCode,
+            adjustment: adjustment
         )
 
         // Update state with equality guards

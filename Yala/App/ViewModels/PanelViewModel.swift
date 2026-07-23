@@ -238,6 +238,14 @@ final class PanelViewModel {
     private(set) var scheduledPayments: [ScheduledPayment] = []
     private(set) var pendingDrafts: [InboxDraft] = []
 
+    /// Proyección de "mi parte" (neto) de los gastos de grupo BRIDGEADOS para la capa de
+    /// stats. Se reconstruye en `loadData()` desde `transactions` — el set MÁS AMPLIO (con
+    /// AMBAS hermanas del bridge) y único punto donde `transactions` cambia — así queda en
+    /// sync para TODOS los paths de cálculo (contexto de widgets y Hero, que leen ese mismo
+    /// set). `.none` = identidad (comportamiento previo). Lo consumen las calculadoras de
+    /// gasto/ingreso vía su parámetro `adjustment:`.
+    private(set) var statsAdjustment: GroupBridgeStatsAdjustment = .none
+
     // MARK: - State
 
     /// True after first loadData() completes. PanelView shows skeleton placeholder while false.
@@ -404,6 +412,11 @@ final class PanelViewModel {
             print("PanelViewModel: Error loading transactions: \(error)")
             #endif
         }
+
+        // Reconstruir la proyección de netos de grupo desde el set MÁS AMPLIO (`transactions`,
+        // con AMBAS hermanas del bridge). `transactions` solo cambia aquí → `statsAdjustment`
+        // queda siempre fresco ANTES de cualquier cálculo de widget (contexto y Hero).
+        statsAdjustment = GroupBridgeStatsAdjustment.build(from: transactions, context: context)
 
         var budgetsDesc = FetchDescriptor<Budget>(
             predicate: #Predicate<Budget> { $0.isActive },
@@ -1169,6 +1182,7 @@ final class PanelViewModel {
                 grouping: calcContext.trendGrouping,
                 interval: calcContext.effectiveInterval,
                 currencyCode: calcContext.defaultCurrencyCode,
+                adjustment: statsAdjustment,
                 liveBalanceOverride: liveBalanceOverride
             )
             newTrendPoints = (result.points, result.rawPoints, result.yDomain)
@@ -1345,12 +1359,21 @@ final class PanelViewModel {
         eligibleAccountIDs: Set<PersistentIdentifier>,
         effectiveInterval: DateInterval
     ) -> [TransactionItem] {
+        // Toggle "incluir gastos de grupo en stats" (default ON) — cuando está OFF, los pies de
+        // categoría/subcategoría excluyen las TX bridgeadas de grupo (pata real + virtual).
+        let includeGroupTxs = (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
         let calendar = Calendar.current
         return transactions.filter { transaction in
             guard let account = transaction.account else { return false }
             if !eligibleAccountIDs.contains(account.persistentModelID) { return false }
             if !effectiveInterval.contains(transaction.date) { return false }
             guard transaction.balanceAdjustmentType == nil else { return false }
+
+            guard BridgedTransactionFilter.shouldInclude(
+                splitExpenseID: transaction.splitExpenseID,
+                splitSettlementID: transaction.splitSettlementID,
+                includeGroupsToggle: includeGroupTxs
+            ) else { return false }
 
             // Focused Date Filter
             if let focus = focusedDate {
@@ -1496,6 +1519,12 @@ final class PanelViewModel {
     ) -> PanelCalculationContext {
         let calendar = Calendar.current
 
+        // Toggle "incluir gastos de grupo en stats" (default ON). OFF excluye las TX bridgeadas
+        // de los sets de GASTO/INGRESO (`filtered` → cashflow/trend/weekday/tags/need/records;
+        // `transactionsWithoutDateFilter` → comparación de período). NO se aplica a
+        // `balanceTransactions` (el saldo refleja montos reales).
+        let includeGroupTxs = (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
+
         let (newTrendGrouping, newCashFlowGrouping, newNeedGrouping) = determineGroupings()
         let (eligibleAccounts, eligibleAccountIDs) = computeEligibleAccounts(from: accounts)
 
@@ -1510,6 +1539,12 @@ final class PanelViewModel {
                 if !calendar.isDate(transaction.date, inSameDayAs: focus) { return false }
             }
 
+            guard BridgedTransactionFilter.shouldInclude(
+                splitExpenseID: transaction.splitExpenseID,
+                splitSettlementID: transaction.splitSettlementID,
+                includeGroupsToggle: includeGroupTxs
+            ) else { return false }
+
             return FilterService.matchesCriteria(transaction, criteria: fullCriteria)
         }
 
@@ -1520,6 +1555,11 @@ final class PanelViewModel {
             guard transaction.balanceAdjustmentType == nil else { return false }
             guard let account = transaction.account else { return false }
             if !eligibleAccountIDs.contains(account.persistentModelID) { return false }
+            guard BridgedTransactionFilter.shouldInclude(
+                splitExpenseID: transaction.splitExpenseID,
+                splitSettlementID: transaction.splitSettlementID,
+                includeGroupsToggle: includeGroupTxs
+            ) else { return false }
             return FilterService.matchesCriteria(transaction, criteria: comparisonCriteria)
         }
 
@@ -1685,6 +1725,7 @@ final class PanelViewModel {
             interval: context.effectiveInterval,
             currencyCode: context.defaultCurrencyCode,
             transactionNatures: naturesFilter,
+            adjustment: statsAdjustment,
             converter: context.converter
         )
 
@@ -1714,6 +1755,7 @@ final class PanelViewModel {
             interval: previousInterval,
             currencyCode: context.defaultCurrencyCode,
             transactionNatures: naturesFilter,
+            adjustment: statsAdjustment,
             converter: context.converter
         )
 
@@ -1758,6 +1800,7 @@ final class PanelViewModel {
             currencyCode: context.defaultCurrencyCode,
             categoryFilter: effectiveCategoryFilter,
             transactionNatures: naturesFilter,
+            adjustment: statsAdjustment,
             converter: context.converter
         )
 
@@ -1788,6 +1831,7 @@ final class PanelViewModel {
             currencyCode: context.defaultCurrencyCode,
             categoryFilter: effectiveCategoryFilter,
             transactionNatures: naturesFilter,
+            adjustment: statsAdjustment,
             converter: context.converter
         )
 
@@ -1819,6 +1863,7 @@ final class PanelViewModel {
             interval: context.effectiveInterval,
             grouping: context.cashFlowGrouping,
             currencyCode: context.defaultCurrencyCode,
+            adjustment: statsAdjustment,
             converter: context.converter
         )
 
@@ -1845,6 +1890,7 @@ final class PanelViewModel {
             interval: previousInterval,
             grouping: context.cashFlowGrouping,
             currencyCode: context.defaultCurrencyCode,
+            adjustment: statsAdjustment,
             converter: context.converter
         )
         let previousNet: Double? = (previousSummary.totalIncome == 0 && previousSummary.totalExpense == 0)
@@ -1888,6 +1934,7 @@ final class PanelViewModel {
             grouping: context.needGrouping,
             interval: context.effectiveInterval,
             preferredCurrency: preferredCurrency,
+            adjustment: statsAdjustment,
             converter: context.converter
         )
 
@@ -1917,6 +1964,7 @@ final class PanelViewModel {
             grouping: context.needGrouping,
             interval: previousInterval,
             preferredCurrency: preferredCurrency,
+            adjustment: statsAdjustment,
             converter: context.converter
         )
 
@@ -2506,6 +2554,7 @@ final class PanelViewModel {
             transactions: context.filteredTransactions,
             interval: context.effectiveInterval,
             currencyCode: context.defaultCurrencyCode,
+            adjustment: statsAdjustment,
             converter: currencyConverter
         )
         let newData = PanelWeekdayData(weekdaySpending: spending)
@@ -2524,7 +2573,8 @@ final class PanelViewModel {
             transactions: context.filteredTransactions,
             interval: context.effectiveInterval,
             currencyCode: context.defaultCurrencyCode,
-            allTags: allTags
+            allTags: allTags,
+            adjustment: statsAdjustment
         )
 
         guard context.period != .allTime else {
@@ -2551,7 +2601,8 @@ final class PanelViewModel {
             transactions: previousTransactions,
             interval: previousInterval,
             currencyCode: context.defaultCurrencyCode,
-            allTags: allTags
+            allTags: allTags,
+            adjustment: statsAdjustment
         )
 
         let previousTotal = previousData.reduce(0) { $0 + $1.amount }
@@ -2622,6 +2673,7 @@ final class PanelViewModel {
             grouping: .day,
             interval: context.effectiveInterval,
             currencyCode: context.defaultCurrencyCode,
+            adjustment: statsAdjustment,
             liveBalanceOverride: liveBalanceOverride
         )
 
@@ -2632,7 +2684,8 @@ final class PanelViewModel {
             period: context.period,
             grouping: .day,
             interval: previousInterval,
-            currencyCode: context.defaultCurrencyCode
+            currencyCode: context.defaultCurrencyCode,
+            adjustment: statsAdjustment
         )
 
         let allValues = currentResult.points.map(\.value) + previousResult.points.map(\.value)
@@ -2688,7 +2741,8 @@ final class PanelViewModel {
             period: selectedPeriod,
             customRange: customDateRange,
             preferredCurrencyCode: defaultCurrencyCode,
-            includeBridgedGroupTx: includeBridgedGroupTx
+            includeBridgedGroupTx: includeBridgedGroupTx,
+            adjustment: statsAdjustment
         )
         let newData = PanelHealthData(score: newScore)
         if newData != healthWidget { healthWidget = newData }
@@ -2735,13 +2789,26 @@ final class PanelViewModel {
             customRange: customDateRange
         )
 
+        // El Hero se alimenta de `transactions` directo (no del contexto de widgets), así que
+        // honra el toggle "incluir gastos de grupo en stats" aquí: los buckets del Hero son
+        // ingreso/gasto (NO saldo). Toggle ON (default) = identidad; OFF = excluye bridgeados.
+        let includeGroupTxs = (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
+        let heroTransactions = transactions.filter { tx in
+            BridgedTransactionFilter.shouldInclude(
+                splitExpenseID: tx.splitExpenseID,
+                splitSettlementID: tx.splitSettlementID,
+                includeGroupsToggle: includeGroupTxs
+            )
+        }
+
         let buckets = HeroBucketsCalculator.calculate(
-            transactions: transactions,
+            transactions: heroTransactions,
             monthInterval: monthInterval,
             prevInterval: prevInterval,
             periodInterval: periodInterval,
             periodPrevInterval: periodPrevInterval,
-            eligibleAccountIDs: eligibleAccountIDs
+            eligibleAccountIDs: eligibleAccountIDs,
+            adjustment: statsAdjustment
         )
 
         var newPeriod = PanelHeroPeriodData(income: buckets.periodIncome, expense: buckets.periodExpense)

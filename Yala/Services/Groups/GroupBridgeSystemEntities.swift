@@ -343,6 +343,21 @@ enum GroupBridgeSystemEntities {
         return sub
     }
 
+    /// Read-only: ids de la(s) subcategoría(s) "Préstamo a grupos" (rol `.loanToGroups`) presentes
+    /// en el store. Para `GroupBridgeStatsAdjustment` — desambiguar una pata de préstamo SUELTA
+    /// (ingreso fantasma de un pagador con parte 0 / Caso A remoto sin aprobar) de un "saldo
+    /// inicial: me deben" (que se PRESERVA). NO crea ni persiste. Vacío ⇒ las patas sueltas se
+    /// conservan (conservador). Devuelve TODAS las coincidencias (duplicados cross-device).
+    static func loanToGroupsSubcategoryIDs(context: ModelContext) -> Set<PersistentIdentifier> {
+        let names = Set(localizedNames(forKey: SystemSubcategoryRole.loanToGroups.localizationKey)
+            .map { $0.lowercased() })
+        guard !names.isEmpty,
+              let subs = try? context.fetch(FetchDescriptor<Subcategory>(
+                  predicate: #Predicate { $0.isSystem || $0.isDefaultSeed }
+              )) else { return [] }
+        return Set(subs.filter { names.contains($0.name.lowercased()) }.map { $0.persistentModelID })
+    }
+
     /// Find multi-idioma de la subcategoría de sistema del rol. Self-heal `isSystem` si la
     /// encuentra con el flag en false (CloudKit no hidratado). No persiste (el caller guarda).
     private static func findSystemSubcategory(

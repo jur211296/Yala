@@ -27,7 +27,12 @@ struct DailySpendingCalculator {
     }
 
     /// - Parameter groups: los grupos ya agrupados por día (`groupedRecords`).
-    static func compute(groups: [(date: Date, records: [TransactionItem])]) -> Result {
+    /// - Parameter adjustment: proyecta un gasto de grupo Caso A a "mi parte" (neto) y excluye
+    ///   las patas de préstamo derivadas — así el calendario cuadra con el chip del hero neteado.
+    static func compute(
+        groups: [(date: Date, records: [TransactionItem])],
+        adjustment: GroupBridgeStatsAdjustment = .none
+    ) -> Result {
         var spendingByDay: [Date: Double] = [:]
 
         for group in groups {
@@ -35,8 +40,9 @@ struct DailySpendingCalculator {
             for record in group.records {
                 guard let account = record.account, !account.excludeFromStatistics else { continue }
                 if record.balanceAdjustmentType != nil { continue }  // excluye ajustes y transferencias
+                guard !adjustment.isSuppressed(record) else { continue }
 
-                let amount = record.amountInPreferredCurrency
+                let amount = adjustment.amountInPreferredCurrency(record)
                 if amount < 0 {
                     dayExpense += abs(amount)
                 }

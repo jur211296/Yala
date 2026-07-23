@@ -22,6 +22,7 @@ struct TopSpendingCategoriesCalculator {
         interval: DateInterval,
         currencyCode: String,
         transactionNatures: Set<TransactionNature>? = nil,
+        adjustment: GroupBridgeStatsAdjustment = .none,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> [CategorySpendingSummary] {
 
@@ -33,7 +34,9 @@ struct TopSpendingCategoriesCalculator {
         // - Has a category
         // - Matches requested transaction natures
         // - Excludes balance adjustments and transfers
+        // - Excludes bridge-derived loan legs (préstamo a grupos): no son gasto/ingreso propio.
         let filteredTransactions = transactions.filter { transaction in
+            guard !adjustment.isSuppressed(transaction) else { return false }
             guard let category = transaction.category else { return false }
             // Exclude balance adjustments and transfers
             guard transaction.balanceAdjustmentType == nil else { return false }
@@ -54,14 +57,15 @@ struct TopSpendingCategoriesCalculator {
         for transaction in filteredTransactions {
             guard let category = transaction.category else { continue }
 
-            // Use absolute value for expense
-            let absAmount = abs(transaction.amount)
+            // Use absolute value for expense. `adjustment` proyecta un gasto de grupo Caso A a
+            // "mi parte" (neto) en vez del total que pagué.
+            let absAmount = abs(adjustment.amount(transaction))
             let decimalAmount = Decimal(absAmount)
 
             // Convert using the transaction's date for accurate historical rate
             let doubleAmount: Double
             if transaction.preferredCurrencyCode == currencyCode {
-                doubleAmount = transaction.amountInPreferredCurrency
+                doubleAmount = adjustment.amountInPreferredCurrency(transaction)
             } else {
                 let convertedAmount = converter.convert(
                     decimalAmount,
@@ -101,8 +105,9 @@ struct TopSpendingCategoriesCalculator {
                 // So `doubleAmount` must be negative.
 
                 let magnitude = NSDecimalNumber(decimal: convertedAmount).doubleValue
-                // Restore sign from original amount
-                doubleAmount = (transaction.amount < 0) ? -magnitude : magnitude
+                // Restore sign from the ADJUSTED amount (no `transaction.amount`) — así el signo
+                // acompaña a la magnitud neteada aunque difieran (paridad con la rama preferida).
+                doubleAmount = (adjustment.amount(transaction) < 0) ? -magnitude : magnitude
             }
 
             let categoryID = category.persistentModelID

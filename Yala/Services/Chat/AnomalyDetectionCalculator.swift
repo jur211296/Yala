@@ -41,6 +41,8 @@ enum AnomalyDetectionCalculator {
     ///     to expenses).
     ///   - interval: the period being evaluated.
     ///   - currencyCode: preferred currency for amounts.
+    ///   - adjustment: proyección de gastos de grupo bridgeados → "mi parte" (neto). Netea la pata
+    ///     REAL Caso A a `myShare` y suprime las patas de préstamo derivadas. `.none` = sin cambios.
     ///   - converter: currency converter to normalize TX into preferred currency.
     ///   - thresholdMultiplier: amount must exceed `avg * thresholdMultiplier`
     ///     to be flagged. Default 2.0.
@@ -50,6 +52,7 @@ enum AnomalyDetectionCalculator {
         periodTransactions: [TransactionItem],
         interval: DateInterval,
         currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none,
         converter: CurrencyConverting,
         thresholdMultiplier: Double = 2.0,
         limit: Int = 10
@@ -63,8 +66,9 @@ enum AnomalyDetectionCalculator {
 
         var catTotals: [String: (total: Double, count: Int)] = [:]
         for tx in baselineTx {
+            if adjustment.isSuppressed(tx) { continue }
             let catName = tx.category?.name ?? "Other"
-            let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter)
+            let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter, adjustment: adjustment)
             guard amount.isFinite else { continue }
             let existing = catTotals[catName] ?? (total: 0, count: 0)
             catTotals[catName] = (total: existing.total + amount, count: existing.count + 1)
@@ -83,8 +87,9 @@ enum AnomalyDetectionCalculator {
 
         var anomalies: [Hit] = []
         for tx in periodTransactions {
+            if adjustment.isSuppressed(tx) { continue }
             let catName = tx.category?.name ?? "Other"
-            let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter)
+            let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter, adjustment: adjustment)
             guard amount.isFinite, let avg = catAvg[catName], avg > 0 else { continue }
             let deviation = (amount - avg) / avg * 100
             if amount > avg * thresholdMultiplier {
@@ -117,9 +122,16 @@ enum AnomalyDetectionCalculator {
     private static func convertAmount(
         _ tx: TransactionItem,
         currencyCode: String,
-        converter: CurrencyConverting
+        converter: CurrencyConverting,
+        adjustment: GroupBridgeStatsAdjustment
     ) -> Double {
-        tx.chatAmount(in: currencyCode, converter: converter)
+        // Pata REAL Caso A: el neto proyectado (`-myShare`, moneda preferida) difiere del monto
+        // crudo → usar esa magnitud. Resto: `chatAmount` con conversión de moneda intacta.
+        let adjusted = adjustment.amountInPreferredCurrency(tx)
+        if adjusted != tx.amountInPreferredCurrency {
+            return abs(adjusted)
+        }
+        return tx.chatAmount(in: currencyCode, converter: converter)
     }
 
     private static func safeMerchant(_ tx: TransactionItem) -> String? {

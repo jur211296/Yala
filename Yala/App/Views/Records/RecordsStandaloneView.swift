@@ -343,7 +343,8 @@ struct RecordsStandaloneView: View {
             transactions: dataViewModel.allTransactions,
             accounts: dataViewModel.accounts,
             categories: dataViewModel.categories,
-            tags: dataViewModel.tags
+            tags: dataViewModel.tags,
+            context: modelContext
         )
     }
 

@@ -65,6 +65,7 @@ struct TrendDataProcessor {
         grouping: TrendGrouping,
         interval: DateInterval,
         currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none,
         liveBalanceOverride: LiveBalanceCalculator.LiveAnchorInfo? = nil
     ) -> TrendProcessingResult {
         let calendar = Calendar.current
@@ -79,7 +80,11 @@ struct TrendDataProcessor {
         var maxDate: Date?
 
         for transaction in intervalTransactions {
-            let amount = transaction.amountInPreferredCurrency
+            // Excluir patas de préstamo derivadas del bridge de los totales income/expense
+            // (la pata real, misma fecha, conserva el rango de la curva).
+            guard !adjustment.isSuppressed(transaction) else { continue }
+            // `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto).
+            let amount = adjustment.amountInPreferredCurrency(transaction)
 
             // Exclude balance adjustments from income/expense totals
             // (they should only affect balance, not income/expense stats)
@@ -178,10 +183,11 @@ struct TrendDataProcessor {
                 &buckets,
                 transactions: transactions.filter {
                     TransactionClassificationLogic.isIncome($0) && $0.balanceAdjustmentType == nil
+                        && !adjustment.isSuppressed($0)
                 },
                 grouping: grouping,
                 calendar: calendar,
-                valueTransform: { $0.amountInPreferredCurrency }
+                valueTransform: { adjustment.amountInPreferredCurrency($0) }
             )
 
         case .expense:
@@ -191,10 +197,11 @@ struct TrendDataProcessor {
                 &buckets,
                 transactions: transactions.filter {
                     !TransactionClassificationLogic.isIncome($0) && $0.balanceAdjustmentType == nil
+                        && !adjustment.isSuppressed($0)
                 },
                 grouping: grouping,
                 calendar: calendar,
-                valueTransform: { -$0.amountInPreferredCurrency }
+                valueTransform: { -adjustment.amountInPreferredCurrency($0) }
             )
         }
 

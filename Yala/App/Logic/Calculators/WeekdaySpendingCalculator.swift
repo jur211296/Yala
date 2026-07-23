@@ -50,6 +50,7 @@ struct WeekdaySpendingCalculator {
         transactions: [TransactionItem],
         interval: DateInterval,
         currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> [WeekdaySpending] {
         let calendar = Calendar.current
@@ -57,17 +58,19 @@ struct WeekdaySpendingCalculator {
         var counts: [Int: Int] = [:]
 
         for tx in transactions {
+            guard !adjustment.isSuppressed(tx) else { continue }
             guard let category = tx.category, !category.isIncome else { continue }
             guard tx.balanceAdjustmentType == nil else { continue }
 
             let weekday = calendar.component(.weekday, from: tx.date)
 
+            // `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto).
             let amount: Double
             if tx.preferredCurrencyCode == currencyCode {
-                amount = abs(tx.amountInPreferredCurrency)
+                amount = abs(adjustment.amountInPreferredCurrency(tx))
             } else {
                 let converted = converter.convert(
-                    Decimal(abs(tx.amount)),
+                    Decimal(abs(adjustment.amount(tx))),
                     from: tx.currencyCode,
                     to: currencyCode,
                     on: tx.date

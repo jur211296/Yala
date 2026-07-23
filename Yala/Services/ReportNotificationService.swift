@@ -201,6 +201,10 @@ final class ReportNotificationService {
             preferredCurrencyCode: currencyCode
         )
 
+        // Netea los gastos de grupo bridgeados a "mi parte". El fetch por rango
+        // (`transactions`) trae AMBAS hermanas del bridge (comparten fecha).
+        let adjustment = GroupBridgeStatsAdjustment.build(from: transactions, context: context)
+
         // Income/expense: clasificación por categoría + acumulación signed vía
         // helper puro (testeable sin ModelContext). Excluye balance adjustments y
         // cuentas no elegibles dentro del helper.
@@ -208,14 +212,16 @@ final class ReportNotificationService {
         let totals = Self.accumulateReportTotals(
             transactions: transactions,
             eligibleAccountIDs: eligibleAccountIDs,
-            currencyCode: currencyCode
+            currencyCode: currencyCode,
+            adjustment: adjustment
         )
 
         // Get top category using TopSpendingCategoriesCalculator
         let topCategories = TopSpendingCategoriesCalculator.calculateTopSpending(
             transactions: transactions,
             interval: interval,
-            currencyCode: currencyCode
+            currencyCode: currencyCode,
+            adjustment: adjustment
         )
 
         return ReportData(
@@ -238,6 +244,7 @@ final class ReportNotificationService {
         transactions: [TransactionItem],
         eligibleAccountIDs: Set<PersistentIdentifier>,
         currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> ReportTotals {
         var totalIncome: Decimal = 0
@@ -251,17 +258,19 @@ final class ReportNotificationService {
             // Filter by eligible accounts (consistent with BalanceHelper)
             guard let account = tx.account,
                   eligibleAccountIDs.contains(account.persistentModelID) else { continue }
+            // Suprime la pata de préstamo derivada (bridge): mata el ingreso fantasma +lent.
+            guard !adjustment.isSuppressed(tx) else { continue }
 
             let amount: Decimal
-            // Check currency and convert if needed (BalanceHelper pattern); el
-            // signo se preserva desde `tx.amount`.
+            // Check currency and convert if needed (BalanceHelper pattern); el signo
+            // se preserva desde el monto ajustado (Caso A ⇒ `-myShare`).
             if tx.preferredCurrencyCode == currencyCode {
-                amount = Decimal(tx.amountInPreferredCurrency)
+                amount = Decimal(adjustment.amountInPreferredCurrency(tx))
             } else {
                 let sourceCurrency = CurrencyCode(rawValue: normalizeCurrencyCode(tx.currencyCode))
                     ?? (CurrencyCode(rawValue: currencyCode) ?? .usd)
                 amount = converter.convert(
-                    Decimal(tx.amount),
+                    Decimal(adjustment.amount(tx)),
                     from: sourceCurrency.rawValue,
                     to: currencyCode,
                     on: tx.date

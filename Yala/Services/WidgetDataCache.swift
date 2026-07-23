@@ -283,6 +283,11 @@ enum WidgetDataCache {
         let eligibleTransactions = allTransactions.filter(isEligible)
         let eligibleRecentTransactions = recentTransactions.filter(isEligible)
 
+        // Netea los gastos de grupo bridgeados a "mi parte" en las superficies de stats.
+        // Se construye del set MÁS AMPLIO (`allTransactions`, antes del filtro de elegibilidad)
+        // para garantizar AMBAS hermanas del bridge; el consumo usa el subset elegible.
+        let adjustment = GroupBridgeStatsAdjustment.build(from: allTransactions, context: context)
+
         // Get preferred currency from user settings (single source of truth)
         let preferredCurrency = UserDefaults.standard.string(forKey: CurrencyDefaults.preferredCurrencyKey) ?? "USD"
 
@@ -323,7 +328,7 @@ enum WidgetDataCache {
             } else {
                 transactionsForBudget = recentTransactions
             }
-            let spent = calculateBudgetSpent(budget: budget, transactions: transactionsForBudget)
+            let spent = calculateBudgetSpent(budget: budget, transactions: transactionsForBudget, adjustment: adjustment)
             let percentUsed = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100 : 0
             // CSV mirror SSOT con fallback M2M para legacy budgets pre-deploy.
             let (icon, color) = Budget.computeDisplayProperties(for: budget, in: context)
@@ -402,7 +407,8 @@ enum WidgetDataCache {
                 periodStart: interval.start,
                 periodEnd: interval.end,
                 currencyCode: preferredCurrency,
-                allTransactionsForBalance: eligibleTransactions
+                allTransactionsForBalance: eligibleTransactions,
+                adjustment: adjustment
             )
             periodSummaries[period.rawValue] = summary
         }
@@ -412,14 +418,16 @@ enum WidgetDataCache {
             transactions: eligibleRecentTransactions,
             periodStart: Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: Date.now)) ?? Date.now,
             periodEnd: Date.now,
-            currencyCode: preferredCurrency
+            currencyCode: preferredCurrency,
+            adjustment: adjustment
         )
 
         let allTimeSummary = periodSummaries[DetailPeriod.allTime.rawValue] ?? buildPeriodSummary(
             transactions: eligibleTransactions,
             periodStart: Date.distantPast,
             periodEnd: Date.now,
-            currencyCode: preferredCurrency
+            currencyCode: preferredCurrency,
+            adjustment: adjustment
         )
 
         return WidgetDataSnapshot(
@@ -439,7 +447,11 @@ enum WidgetDataCache {
     }
 
     /// Spent del budget vía SSOT `BudgetsViewModel.calculateSpending`.
-    static func calculateBudgetSpent(budget: Budget, transactions: [TransactionItem]) -> Double {
+    static func calculateBudgetSpent(
+        budget: Budget,
+        transactions: [TransactionItem],
+        adjustment: GroupBridgeStatsAdjustment = .none
+    ) -> Double {
         let calendar = Calendar.current
         let now = Date.now
         let interval: DateInterval
@@ -462,7 +474,8 @@ enum WidgetDataCache {
         return BudgetsViewModel.calculateSpending(
             budget: budget,
             transactions: transactions,
-            interval: interval
+            interval: interval,
+            adjustment: adjustment
         )
     }
 
@@ -481,6 +494,14 @@ enum WidgetDataCache {
     /// aún no se ha calculado (`amountInPreferredCurrency == 0`).
     static func preferredAmount(_ tx: TransactionItem) -> Double {
         tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount
+    }
+
+    /// Igual que `preferredAmount(_:)` pero proyectando el gasto de grupo bridgeado a
+    /// "mi parte" (neto). Con `adjustment == .none` es byte-idéntico al de arriba.
+    /// SOLO para superficies de gasto/ingreso — NUNCA para saldos/tendencia.
+    static func preferredAmount(_ tx: TransactionItem, adjustment: GroupBridgeStatsAdjustment) -> Double {
+        let preferred = adjustment.amountInPreferredCurrency(tx)
+        return preferred != 0 ? preferred : adjustment.amount(tx)
     }
 
     /// Extracts display properties (icon, color) from a budget based on its subcategories
@@ -662,20 +683,23 @@ enum WidgetDataCache {
         periodStart: Date,
         periodEnd: Date,
         currencyCode: String,
-        allTransactionsForBalance: [TransactionItem]? = nil
+        allTransactionsForBalance: [TransactionItem]? = nil,
+        adjustment: GroupBridgeStatsAdjustment = .none
     ) -> WidgetPeriodSummary {
         // Filter transactions for the period, excluding balance adjustments
         let periodTransactions = transactions.filter { tx in
             tx.date >= periodStart && tx.date <= periodEnd && tx.balanceAdjustmentType == nil
         }
 
-        // Calculate totals
+        // Calculate totals (income-aware): suprime la pata de préstamo derivada y
+        // proyecta el gasto de grupo Caso A a "mi parte".
         var totalIncome: Double = 0
         var totalExpense: Double = 0
 
         for tx in periodTransactions {
             guard tx.category != nil else { continue }
-            let amount = preferredAmount(tx)
+            if adjustment.isSuppressed(tx) { continue }
+            let amount = preferredAmount(tx, adjustment: adjustment)
             if isIncomeTx(tx) {
                 totalIncome += abs(amount)
             } else {
@@ -699,21 +723,24 @@ enum WidgetDataCache {
         let topCategories = buildTopCategories(
             transactions: periodTransactions,
             totalExpense: totalExpense,
-            limit: 20
+            limit: 20,
+            adjustment: adjustment
         )
 
         // Build top subcategories (expenses only, top 20 for Large widgets)
         let topSubcategories = buildTopSubcategories(
             transactions: periodTransactions,
             totalExpense: totalExpense,
-            limit: 20
+            limit: 20,
+            adjustment: adjustment
         )
 
         // Build cash flow by day
         let cashFlowPoints = buildCashFlowByDay(
             transactions: periodTransactions,
             periodStart: periodStart,
-            periodEnd: periodEnd
+            periodEnd: periodEnd,
+            adjustment: adjustment
         )
 
         return WidgetPeriodSummary(
@@ -730,7 +757,8 @@ enum WidgetDataCache {
     static func buildTopCategories(
         transactions: [TransactionItem],
         totalExpense: Double,
-        limit: Int
+        limit: Int,
+        adjustment: GroupBridgeStatsAdjustment = .none
     ) -> [WidgetCategory] {
         // Group expenses by category
         var categoryTotals: [String: (category: Category, amount: Double)] = [:]
@@ -738,11 +766,12 @@ enum WidgetDataCache {
         for tx in transactions {
             // Skip balance adjustments
             guard tx.balanceAdjustmentType == nil else { continue }
-            // Skip income (clasificación por categoría, no por signo)
+            // Skip la pata de préstamo derivada (bridge) e income (clasif. por categoría)
+            guard !adjustment.isSuppressed(tx) else { continue }
             guard !isIncomeTx(tx) else { continue }
             guard let category = tx.category else { continue }
 
-            let amount = abs(preferredAmount(tx))
+            let amount = abs(preferredAmount(tx, adjustment: adjustment))
             let key = category.name
 
             if var existing = categoryTotals[key] {
@@ -773,7 +802,8 @@ enum WidgetDataCache {
     static func buildTopSubcategories(
         transactions: [TransactionItem],
         totalExpense: Double,
-        limit: Int
+        limit: Int,
+        adjustment: GroupBridgeStatsAdjustment = .none
     ) -> [WidgetSubcategory] {
         // Group expenses by subcategory
         var subcategoryTotals: [String: (subcategory: Subcategory, category: Category, amount: Double)] = [:]
@@ -781,12 +811,13 @@ enum WidgetDataCache {
         for tx in transactions {
             // Skip balance adjustments
             guard tx.balanceAdjustmentType == nil else { continue }
-            // Skip income (clasificación por categoría, no por signo)
+            // Skip la pata de préstamo derivada (bridge) e income (clasif. por categoría)
+            guard !adjustment.isSuppressed(tx) else { continue }
             guard !isIncomeTx(tx) else { continue }
             guard let subcategory = tx.subcategory,
                   let category = tx.category else { continue }
 
-            let amount = abs(preferredAmount(tx))
+            let amount = abs(preferredAmount(tx, adjustment: adjustment))
             let key = "\(category.name)_\(subcategory.name)"
 
             if var existing = subcategoryTotals[key] {
@@ -818,7 +849,8 @@ enum WidgetDataCache {
     static func buildCashFlowByDay(
         transactions: [TransactionItem],
         periodStart: Date,
-        periodEnd: Date
+        periodEnd: Date,
+        adjustment: GroupBridgeStatsAdjustment = .none
     ) -> [WidgetCashFlowPoint] {
         let calendar = Calendar.current
 
@@ -829,9 +861,11 @@ enum WidgetDataCache {
             // Skip balance adjustments
             guard tx.balanceAdjustmentType == nil else { continue }
             guard tx.category != nil else { continue }
+            // Suprime la pata de préstamo derivada (bridge): mata el ingreso fantasma +lent.
+            if adjustment.isSuppressed(tx) { continue }
 
             let day = calendar.startOfDay(for: tx.date)
-            let rawAmount = preferredAmount(tx)
+            let rawAmount = preferredAmount(tx, adjustment: adjustment)
 
             var existing = dailyData[day] ?? (income: 0, expense: 0)
             if isIncomeTx(tx) {

@@ -46,6 +46,8 @@ struct RecordsCalendarView: View {
     let period: DetailPeriod
     let customDateRange: DateInterval?
     let currencyCode: String
+    /// Proyección "mi parte" (neto) de gastos de grupo bridgeados — cuadra el calendario con el chip.
+    var adjustment: GroupBridgeStatsAdjustment = .none
     @Binding var selectedDay: Date?
     @Binding var calendarMonth: Date
 
@@ -56,7 +58,7 @@ struct RecordsCalendarView: View {
     }
 
     var body: some View {
-        let spending = DailySpendingCalculator.compute(groups: groups)
+        let spending = DailySpendingCalculator.compute(groups: groups, adjustment: adjustment)
         let range = effectiveRange
         let layout = RecordsCalendarLayout.resolve(
             range: range, firstWeekday: appPreferences.firstWeekday.rawValue, calendar: calendar)

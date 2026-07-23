@@ -46,7 +46,8 @@ struct SankeyFlowCalculator {
         maxPerColumn: Int = 12,
         plannedPending: [PlannedOccurrence] = [],
         plannedSplit: PlannedSplit = .unified,
-        propagatePlannedToCategories: Bool = false
+        propagatePlannedToCategories: Bool = false,
+        adjustment: GroupBridgeStatsAdjustment = .none
     ) -> SankeyData {
 
         // Income aggregations — by subcategory, plus orphan-per-parent-category for tx without subcat.
@@ -66,8 +67,11 @@ struct SankeyFlowCalculator {
             guard tx.balanceAdjustmentType == nil else { continue }
             guard let category = tx.category else { continue }
             guard interval.contains(tx.date) else { continue }
+            // Excluir patas de préstamo derivadas del bridge (préstamo a grupos).
+            guard !adjustment.isSuppressed(tx) else { continue }
 
-            let amount = abs(tx.amountInPreferredCurrency)
+            // `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto).
+            let amount = abs(adjustment.amountInPreferredCurrency(tx))
             guard amount > 0 else { continue }
 
             let catID = category.persistentModelID

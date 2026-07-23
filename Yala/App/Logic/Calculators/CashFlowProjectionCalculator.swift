@@ -75,19 +75,22 @@ struct TransactionIndex {
     /// Totals by subcategory persistentModelID → monthKey → magnitude sum
     let bySubcategoryMonth: [PersistentIdentifier: [String: Double]]
 
-    init(transactions: [TransactionItem], currencyCode: String, converter: CurrencyConverting, calendar: Calendar) {
+    init(transactions: [TransactionItem], currencyCode: String, adjustment: GroupBridgeStatsAdjustment = .none, converter: CurrencyConverting, calendar: Calendar) {
         var catMonth: [PersistentIdentifier: [String: Double]] = [:]
         var subMonth: [PersistentIdentifier: [String: Double]] = [:]
 
         for tx in transactions {
             guard let catID = tx.category?.persistentModelID else { continue }
+            // Suprime la pata de préstamo derivada (bridge): no es gasto/ingreso propio.
+            if adjustment.isSuppressed(tx) { continue }
             let key = CashFlowProjectionCalculator.monthKey(for: tx.date, calendar: calendar)
 
+            // `adjustment` proyecta el gasto de grupo Caso A a "mi parte" (neto).
             let magnitude: Double
             if tx.preferredCurrencyCode == currencyCode {
-                magnitude = abs(tx.amountInPreferredCurrency)
+                magnitude = abs(adjustment.amountInPreferredCurrency(tx))
             } else {
-                let decimalAmt = Decimal(abs(tx.amount))
+                let decimalAmt = Decimal(abs(adjustment.amount(tx)))
                 let converted = converter.convert(decimalAmt, from: tx.currencyCode, to: currencyCode, on: tx.date)
                 magnitude = NSDecimalNumber(decimal: converted).doubleValue
             }
@@ -136,6 +139,7 @@ struct CashFlowProjectionCalculator {
         monthsBack: Int,
         monthsAhead: Int,
         currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> CashFlowProjection {
         let calendar = Calendar.current
@@ -157,7 +161,7 @@ struct CashFlowProjectionCalculator {
         }
         let index = TransactionIndex(
             transactions: validTransactions, currencyCode: currencyCode,
-            converter: converter, calendar: calendar
+            adjustment: adjustment, converter: converter, calendar: calendar
         )
 
         // Assigned IDs for "other" calculations — subcategory-level tracking

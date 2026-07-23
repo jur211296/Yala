@@ -634,7 +634,8 @@ struct CategoriesTabView: View {
             accounts: accounts,
             scheduledPayments: scheduledPayments,
             allTags: allTags,
-            defaultCurrencyCode: defaultCurrencyCode
+            defaultCurrencyCode: defaultCurrencyCode,
+            adjustment: GroupBridgeStatsAdjustment.build(from: allTransactions, context: modelContext)
         )
     }
 
@@ -1190,6 +1191,10 @@ struct CategoriesTabView: View {
     private func calculateData() {
         let interval = viewModel.panelDateInterval
 
+        // Proyección "mi parte" (neto) de gastos de grupo bridgeados, desde el set AMPLIO
+        // (`allTransactions`, con AMBAS hermanas) — cierra el edge account-filter.
+        let adjustment = GroupBridgeStatsAdjustment.build(from: allTransactions, context: modelContext)
+
         // Build filter criteria for pie charts
         // Include mode: show all categories/subcategories with dim (no filter)
         // Exclude mode: actually exclude selected categories/subcategories from data
@@ -1255,7 +1260,7 @@ struct CategoriesTabView: View {
             interval: interval,
             currencyCode: defaultCurrencyCode,
             transactionNatures: naturesFilter,
-
+            adjustment: adjustment
         )
         if newCategorySpending != categorySpending { categorySpending = newCategorySpending }
         let newTotal = newCategorySpending.reduce(0) { $0 + $1.amount }
@@ -1279,7 +1284,7 @@ struct CategoriesTabView: View {
             currencyCode: defaultCurrencyCode,
             categoryFilter: nil,
             transactionNatures: naturesFilter,
-
+            adjustment: adjustment
         )
         if newSubcategorySpending != subcategorySpending { subcategorySpending = newSubcategorySpending }
 
@@ -1307,7 +1312,8 @@ struct CategoriesTabView: View {
             interval: interval,
             currencyCode: defaultCurrencyCode,
             transactionNatures: naturesFilter,
-            allTags: allTags
+            allTags: allTags,
+            adjustment: adjustment
         )
         if newTagSpending != tagSpending { tagSpending = newTagSpending }
 
@@ -1319,7 +1325,7 @@ struct CategoriesTabView: View {
             grouping: needGrouping,
             interval: interval,
             preferredCurrency: preferredCurrency,
-
+            adjustment: adjustment
         )
         if newNeedTrendPoints != needTrendPoints { needTrendPoints = newNeedTrendPoints }
 
@@ -1333,6 +1339,9 @@ struct CategoriesTabView: View {
     // MARK: - Previous Period Calculation
 
     private func calculatePreviousPeriodTotals() {
+        // Proyección "mi parte" (neto) desde el set AMPLIO (con AMBAS hermanas del bridge).
+        let adjustment = GroupBridgeStatsAdjustment.build(from: allTransactions, context: modelContext)
+
         // Skip previous period calculation for "All Time" (no meaningful comparison)
         guard viewModel.detailPeriod != .allTime else {
             previousCategoryTotal = nil
@@ -1389,7 +1398,7 @@ struct CategoriesTabView: View {
             interval: previousInterval,
             currencyCode: defaultCurrencyCode,
             transactionNatures: naturesFilter,
-
+            adjustment: adjustment
         )
         previousCategoryTotal = previousCategorySpending.reduce(0) { $0 + $1.amount }
 
@@ -1418,7 +1427,7 @@ struct CategoriesTabView: View {
             currencyCode: defaultCurrencyCode,
             categoryFilter: nil,
             transactionNatures: naturesFilter,
-
+            adjustment: adjustment
         )
         previousSubcategoryTotal = previousSubcategorySpending.reduce(0) { $0 + $1.amount }
 
@@ -1457,7 +1466,8 @@ struct CategoriesTabView: View {
             interval: previousInterval,
             currencyCode: defaultCurrencyCode,
             transactionNatures: naturesFilter,
-            allTags: allTags
+            allTags: allTags,
+            adjustment: adjustment
         )
         previousTagTotal = previousTagSpending.reduce(0) { $0 + $1.amount }
 
@@ -1500,7 +1510,7 @@ struct CategoriesTabView: View {
             grouping: needGrouping,
             interval: previousInterval,
             preferredCurrency: preferredCurrency,
-
+            adjustment: adjustment
         )
 
         // Calculate totals by nature for previous period

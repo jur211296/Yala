@@ -27,6 +27,7 @@ struct NeedTrendHelper {
         grouping: TrendGrouping,
         interval: DateInterval,
         preferredCurrency: CurrencyCode,
+        adjustment: GroupBridgeStatsAdjustment = .none,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> [NeedTrendPoint] {
         // Group transactions by Date bucket
@@ -38,6 +39,8 @@ struct NeedTrendHelper {
             // 1. Exclude balance adjustments and transfers
             // 2. Must have a category
             // 3. Category must NOT be income (Excludes Incomes)
+            // 4. Excluir patas de préstamo derivadas del bridge (préstamo a grupos).
+            guard !adjustment.isSuppressed(tx) else { continue }
             guard tx.balanceAdjustmentType == nil else { continue }
             guard let category = tx.category, !category.isIncome else { continue }
 
@@ -59,23 +62,24 @@ struct NeedTrendHelper {
                 let currencyCode = preferredCurrency.rawValue
                 let doubleAmount: Double
 
+                // `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto).
                 if tx.preferredCurrencyCode == currencyCode {
                     // Use signed amount
-                    doubleAmount = tx.amountInPreferredCurrency
+                    doubleAmount = adjustment.amountInPreferredCurrency(tx)
                 } else {
                     let sourceCurrency =
                         CurrencyCode(rawValue: normalizeCurrencyCode(tx.currencyCode))
                         ?? preferredCurrency
 
                     let convertedDecimal = converter.convert(
-                        Decimal(abs(tx.amount)),
+                        Decimal(abs(adjustment.amount(tx))),
                         from: sourceCurrency.rawValue,
                         to: currencyCode,
                         on: tx.date
                     )
-                    // Restore sign
+                    // Restore sign from the ADJUSTED amount
                     let magnitude = (convertedDecimal as NSDecimalNumber).doubleValue
-                    doubleAmount = (tx.amount < 0) ? -magnitude : magnitude
+                    doubleAmount = (adjustment.amount(tx) < 0) ? -magnitude : magnitude
                 }
 
                 // Accumulate signed amount (Expenses usually negative, Refunds positive)

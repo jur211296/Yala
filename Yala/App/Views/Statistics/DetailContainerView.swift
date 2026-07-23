@@ -561,17 +561,23 @@ struct DetailContainerView: View {
 
     /// Runs all calculations from cached ViewModel data (no SwiftData fetch).
     private func performCalculation() {
+        // Proyección "mi parte" (neto) desde el set AMPLIO (con AMBAS hermanas del bridge) —
+        // compartida por todas las superficies de stats de esta pantalla.
+        let adjustment = GroupBridgeStatsAdjustment.build(
+            from: dataViewModel.allTransactions, context: modelContext)
         recordsViewModel.applyFilters(
             transactions: dataViewModel.allTransactions,
             accounts: dataViewModel.accounts,
             categories: dataViewModel.categories,
-            tags: dataViewModel.tags
+            tags: dataViewModel.tags,
+            context: modelContext
         )
         trendsViewModel.calculateTrendData(
             accounts: dataViewModel.accounts,
             transactions: dataViewModel.allTransactions,
             allTags: dataViewModel.tags,
-            defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
+            defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
+            adjustment: adjustment
         )
         // Distribution Insight Card también requiere insightData.periodSummary
         // para el gate >=5 tx — calcular cuando estamos en cualquiera de las 2 tabs.
@@ -582,6 +588,10 @@ struct DetailContainerView: View {
 
     private func calculateInsightsData() {
         guard selectedTab == .insights || selectedTab == .categories else { return }
+        // Proyección "mi parte" (neto) del set AMPLIO (ambas hermanas del bridge), compartida por
+        // insightData y el Financial Score.
+        let adjustment = GroupBridgeStatsAdjustment.build(
+            from: dataViewModel.allTransactions, context: modelContext)
         insightsViewModel.calculateInsightsData(
             transactions: dataViewModel.allTransactions,
             accounts: dataViewModel.accounts,
@@ -592,7 +602,8 @@ struct DetailContainerView: View {
             criteria: trendsViewModel.filterCriteria(withTagCatalog: dataViewModel.tags),
             currencyCode: appPreferences.defaultCurrencyCode.rawValue,
             customRange: sessionState.customDateRange,
-            comparisonMode: sessionState.comparisonMode
+            comparisonMode: sessionState.comparisonMode,
+            adjustment: adjustment
         )
 
         // Salud Financiera period-aware. El score depende de dataVersion +
@@ -628,7 +639,8 @@ struct DetailContainerView: View {
                 paidAmounts: paidAmounts,
                 period: trendsViewModel.detailPeriod,
                 customRange: trendsViewModel.customDateRange,
-                preferredCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
+                preferredCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
+                adjustment: adjustment
             )
         }
 

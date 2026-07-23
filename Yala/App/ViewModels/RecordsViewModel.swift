@@ -141,6 +141,10 @@ final class RecordsViewModel: Filterable {
     /// Grouped records by date (pre-computed for performance)
     var groupedRecords: [(date: Date, records: [TransactionItem])] = []
 
+    /// Proyección "mi parte" (neto) de los gastos de grupo bridgeados, construida en `applyFilters`
+    /// desde el set AMPLIO. La consumen el chip de resumen y el calendario (DailySpendingCalculator).
+    private(set) var statsAdjustment: GroupBridgeStatsAdjustment = .none
+
     /// Cached summary (balance, income, expense) - updated when groupedRecords changes
     var recordsSummary: (balance: Double, income: Double, expense: Double) = (0, 0, 0)
 
@@ -201,8 +205,12 @@ final class RecordsViewModel: Filterable {
         transactions: [TransactionItem],
         accounts: [Account],
         categories: [Category],
-        tags: [Tag]
+        tags: [Tag],
+        context: ModelContext
     ) {
+        // Proyección "mi parte" desde el set AMPLIO (con AMBAS hermanas del bridge, antes de
+        // cualquier filtro por cuenta/tag) — cierra el edge account-filter.
+        statsAdjustment = GroupBridgeStatsAdjustment.build(from: transactions, context: context)
         // In expenses-only mode, force expense transaction nature filter
         let effectiveTransactionNatures: Set<TransactionNature> =
             SessionState.shared.isExpensesOnlyMode ? [.expense] : selectedTransactionNatures
@@ -294,6 +302,8 @@ final class RecordsViewModel: Filterable {
             for record in group.records {
                 guard let account = record.account else { continue }
                 if account.excludeFromStatistics { continue }
+                // Excluir patas de préstamo derivadas del bridge (préstamo a grupos).
+                if statsAdjustment.isSuppressed(record) { continue }
 
                 // Exclude balance adjustments and transfers from summary
                 let isBalanceAdjustment = record.balanceAdjustmentType != nil
@@ -301,7 +311,8 @@ final class RecordsViewModel: Filterable {
                     // La categoría decide el bucket; acumulación signed (paridad
                     // con CashFlowCalculator): un monto de signo contrario a su
                     // categoría reduce el bucket (reembolso), no suma magnitud.
-                    let amount = record.amountInPreferredCurrency
+                    // `statsAdjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto).
+                    let amount = statsAdjustment.amountInPreferredCurrency(record)
                     if TransactionClassificationLogic.isIncome(record) {
                         income += amount
                     } else {

@@ -123,6 +123,12 @@ final class FinancialReportViewModel: Filterable {
         preferredCurrency: String,
         allTags: [Tag] = []
     ) {
+        // Proyección "mi parte" (neto) desde el set AMPLIO (`transactions` completo, con AMBAS
+        // hermanas del bridge, antes de cualquier filtro por cuenta/etiqueta).
+        // Sin `context` aquí (evita tocar la firma de FinancialReportView, cuyo body está al
+        // límite del type-checker): `build(from:)` cubre los casos comunes; residual conocido —
+        // la rara pata de préstamo SUELTA (payer con parte 0) no se suprime en el informe.
+        let adjustment = GroupBridgeStatsAdjustment.build(from: transactions)
         let interval = panelDateInterval
         let comparisonMode = SessionState.shared.comparisonMode
         let previousInterval = PreviousPeriodHelper.previousInterval(
@@ -176,15 +182,19 @@ final class FinancialReportViewModel: Filterable {
             previousTransactions: previousTxns,
             hierarchy: hierarchy,
             preferredCurrency: preferredCurrency,
-            allTags: allTags
+            allTags: allTags,
+            adjustment: adjustment
         )
 
         // Flatten for rendering
         flattenedRows = PivotTableCalculator.flatten(nodes: rootNodes)
 
-        // Calculate net flow from filtered transactions (always in preferred currency)
-        netFlowCurrent = currentTxns.reduce(0) { $0 + $1.amountInPreferredCurrency }
-        netFlowPrevious = previousTxns.isEmpty ? nil : previousTxns.reduce(0) { $0 + $1.amountInPreferredCurrency }
+        // Calculate net flow from filtered transactions (always in preferred currency).
+        // Income-aware: suprime las patas de préstamo derivadas y netea la pata real a `-myShare`.
+        netFlowCurrent = currentTxns.reduce(0.0) { $0 + (adjustment.incomeAwarePreferred($1) ?? 0) }
+        netFlowPrevious = previousTxns.isEmpty
+            ? nil
+            : previousTxns.reduce(0.0) { $0 + (adjustment.incomeAwarePreferred($1) ?? 0) }
         netFlowVariation = netFlowPrevious.flatMap {
             PreviousPeriodHelper.calculateVariation(currentAmount: netFlowCurrent, previousAmount: $0)
         }

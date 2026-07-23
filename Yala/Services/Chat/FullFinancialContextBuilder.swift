@@ -50,8 +50,12 @@ final class FullFinancialContextBuilder {
     ) -> FullFinancialContext {
         let calendar = Calendar.current
         let fetchStart = calendar.date(byAdding: .month, value: -13, to: now) ?? now
+        let transactions = fetchTransactions(modelContext, from: fetchStart, to: now)
+        // Proyección de gastos de grupo bridgeados → "mi parte" (neto). Se construye del set MÁS
+        // AMPLIO (raw fetch, con AMBAS hermanas del bridge antes de filtros por cuenta/tag/eligibilidad).
+        let adjustment = GroupBridgeStatsAdjustment.build(from: transactions, context: modelContext)
         return buildFromArrays(
-            transactions: fetchTransactions(modelContext, from: fetchStart, to: now),
+            transactions: transactions,
             budgets: fetchBudgets(modelContext),
             accounts: fetchAccounts(modelContext),
             tags: fetchTags(modelContext),
@@ -62,6 +66,7 @@ final class FullFinancialContextBuilder {
             language: language,
             country: country,
             includeAnomalies: includeAnomalies,
+            adjustment: adjustment,
             now: now
         )
     }
@@ -82,6 +87,7 @@ final class FullFinancialContextBuilder {
         language: String,
         country: String,
         includeAnomalies: Bool,
+        adjustment: GroupBridgeStatsAdjustment = .none,
         now: Date = .now
     ) -> FullFinancialContext {
         if let entry = cache,
@@ -138,27 +144,31 @@ final class FullFinancialContextBuilder {
             currencyCode: currencyCode,
             converter: converter,
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            adjustment: adjustment
         )
 
         let categories = buildCategories(
             tx: eligibleTx,
             intervals: intervals,
             currencyCode: currencyCode,
-            converter: converter
+            converter: converter,
+            adjustment: adjustment
         )
 
         let uncategorized = buildUncategorized(
             tx: currentMonthExpenseTx,
             converter: converter,
-            currencyCode: currencyCode
+            currencyCode: currencyCode,
+            adjustment: adjustment
         )
 
         let merchantsTop20 = buildMerchantsTop20(
             tx: eligibleTx,
             intervals: intervals,
             currencyCode: currencyCode,
-            converter: converter
+            converter: converter,
+            adjustment: adjustment
         )
 
         let budgets = buildBudgets(
@@ -166,7 +176,8 @@ final class FullFinancialContextBuilder {
             allTx: eligibleTx,
             converter: converter,
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            adjustment: adjustment
         )
 
         let recurring = buildRecurring(
@@ -183,7 +194,8 @@ final class FullFinancialContextBuilder {
             currencyCode: currencyCode,
             converter: converter,
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            adjustment: adjustment
         )
 
         let tagsTop10 = buildTagsTop10(
@@ -191,13 +203,15 @@ final class FullFinancialContextBuilder {
             allTags: allTags,
             currencyCode: currencyCode,
             converter: converter,
-            currentMonthInterval: intervals.currentMonth
+            currentMonthInterval: intervals.currentMonth,
+            adjustment: adjustment
         )
 
         let topTxBySubcategory = buildTopTxBySubcategory(
             tx: currentMonthExpenseTx,
             currencyCode: currencyCode,
-            converter: converter
+            converter: converter,
+            adjustment: adjustment
         )
 
         let anomalies: [AnomalyEntry]? = includeAnomalies
@@ -206,6 +220,7 @@ final class FullFinancialContextBuilder {
                 periodTransactions: currentMonthExpenseTx,
                 interval: intervals.currentMonth,
                 currencyCode: currencyCode,
+                adjustment: adjustment,
                 converter: converter
             )
             : nil
@@ -362,7 +377,8 @@ final class FullFinancialContextBuilder {
         currencyCode: String,
         converter: CurrencyConverting,
         now: Date,
-        calendar: Calendar
+        calendar: Calendar,
+        adjustment: GroupBridgeStatsAdjustment
     ) -> FullFinancialContext.PeriodsSection {
         func summarize(_ interval: DateInterval) -> FullFinancialContext.PeriodSummary {
             let periodTx = tx.filter { interval.contains($0.date) }
@@ -371,6 +387,7 @@ final class FullFinancialContextBuilder {
                 interval: interval,
                 grouping: .day,
                 currencyCode: currencyCode,
+                adjustment: adjustment,
                 converter: converter
             )
             let days = max(1, calendar.dateComponents([.day], from: interval.start, to: min(interval.end, now)).day ?? 1)
@@ -395,6 +412,7 @@ final class FullFinancialContextBuilder {
                 interval: interval,
                 grouping: .day,
                 currencyCode: currencyCode,
+                adjustment: adjustment,
                 converter: converter
             )
             return FullFinancialContext.WeekSummary(
@@ -421,7 +439,8 @@ final class FullFinancialContextBuilder {
         tx: [TransactionItem],
         intervals: Intervals,
         currencyCode: String,
-        converter: CurrencyConverting
+        converter: CurrencyConverting,
+        adjustment: GroupBridgeStatsAdjustment
     ) -> [FullFinancialContext.CategoryEntry] {
         let currentTx = tx.filter { intervals.currentMonth.contains($0.date) && $0.category?.isIncome == false }
         let lastMonthTx = tx.filter { intervals.lastMonth.contains($0.date) && $0.category?.isIncome == false }
@@ -435,8 +454,9 @@ final class FullFinancialContextBuilder {
         var subAgg: [String: [String: (current: Double, last: Double, twoBack: Double, count: Int)]] = [:]
 
         for tx in currentTx {
+            if adjustment.isSuppressed(tx) { continue }
             let cat = tx.category?.name ?? "Other"
-            let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter)
+            let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter, adjustment: adjustment)
             let entry = current[cat] ?? (total: 0, count: 0)
             current[cat] = (total: entry.total + amount, count: entry.count + 1)
             if let sub = tx.subcategory?.name {
@@ -447,8 +467,9 @@ final class FullFinancialContextBuilder {
             }
         }
         for tx in lastMonthTx {
+            if adjustment.isSuppressed(tx) { continue }
             let cat = tx.category?.name ?? "Other"
-            let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter)
+            let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter, adjustment: adjustment)
             last[cat, default: 0] += amount
             if let sub = tx.subcategory?.name {
                 var subDict = subAgg[cat] ?? [:]
@@ -458,8 +479,9 @@ final class FullFinancialContextBuilder {
             }
         }
         for tx in twoMonthsAgoTx {
+            if adjustment.isSuppressed(tx) { continue }
             let cat = tx.category?.name ?? "Other"
-            let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter)
+            let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter, adjustment: adjustment)
             twoBack[cat, default: 0] += amount
             if let sub = tx.subcategory?.name {
                 var subDict = subAgg[cat] ?? [:]
@@ -515,10 +537,12 @@ final class FullFinancialContextBuilder {
     private func buildUncategorized(
         tx: [TransactionItem],
         converter: CurrencyConverting,
-        currencyCode: String
+        currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment
     ) -> FullFinancialContext.UncategorizedBucket {
-        let unc = tx.filter { $0.category == nil }
-        let total = unc.reduce(0.0) { $0 + convertAmount($1, currencyCode: currencyCode, converter: converter) }
+        // Skip patas de préstamo suprimidas (pueden colarse como category==nil en ventana lazy).
+        let unc = tx.filter { $0.category == nil && !adjustment.isSuppressed($0) }
+        let total = unc.reduce(0.0) { $0 + convertAmount($1, currencyCode: currencyCode, converter: converter, adjustment: adjustment) }
         return FullFinancialContext.UncategorizedBucket(
             totalCurrentMonth: safeDouble(total),
             txCountCurrentMonth: unc.count
@@ -529,7 +553,8 @@ final class FullFinancialContextBuilder {
         tx: [TransactionItem],
         intervals: Intervals,
         currencyCode: String,
-        converter: CurrencyConverting
+        converter: CurrencyConverting,
+        adjustment: GroupBridgeStatsAdjustment
     ) -> [FullFinancialContext.MerchantEntry] {
         let currentTx = tx.filter { intervals.currentMonth.contains($0.date) && $0.category?.isIncome == false }
         let lastTx = tx.filter { intervals.lastMonth.contains($0.date) && $0.category?.isIncome == false }
@@ -538,14 +563,16 @@ final class FullFinancialContextBuilder {
         var last: [String: Double] = [:]
 
         for tx in currentTx {
+            if adjustment.isSuppressed(tx) { continue }
             guard let merchant = canonicalMerchant(tx) else { continue }
-            let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter)
+            let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter, adjustment: adjustment)
             let entry = current[merchant] ?? (total: 0, count: 0)
             current[merchant] = (total: entry.total + amount, count: entry.count + 1)
         }
         for tx in lastTx {
+            if adjustment.isSuppressed(tx) { continue }
             guard let merchant = canonicalMerchant(tx) else { continue }
-            let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter)
+            let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter, adjustment: adjustment)
             last[merchant, default: 0] += amount
         }
 
@@ -570,7 +597,8 @@ final class FullFinancialContextBuilder {
         allTx: [TransactionItem],
         converter: CurrencyConverting,
         now: Date,
-        calendar: Calendar
+        calendar: Calendar,
+        adjustment: GroupBridgeStatsAdjustment
     ) -> [FullFinancialContext.BudgetEntry] {
         let active = allBudgets.filter { $0.isActive }
         return active.map { budget in
@@ -584,6 +612,7 @@ final class FullFinancialContextBuilder {
                     budget: budget,
                     transactions: allTx,
                     interval: interval,
+                    adjustment: adjustment,
                     converter: converter
                 )
             )
@@ -742,7 +771,8 @@ final class FullFinancialContextBuilder {
         currencyCode: String,
         converter: CurrencyConverting,
         now: Date,
-        calendar: Calendar
+        calendar: Calendar,
+        adjustment: GroupBridgeStatsAdjustment
     ) -> FullFinancialContext.PatternsSection {
         let last30Start = calendar.date(byAdding: .day, value: -30, to: now) ?? now
         let last30Interval = DateInterval(start: last30Start, end: now)
@@ -752,6 +782,7 @@ final class FullFinancialContextBuilder {
             transactions: last30Tx,
             interval: last30Interval,
             currencyCode: currencyCode,
+            adjustment: adjustment,
             converter: converter
         )
         let weekdaySymbols = calendar.weekdaySymbols
@@ -771,7 +802,8 @@ final class FullFinancialContextBuilder {
         let currentMonthTx = tx.filter { $0.date >= monthStart && $0.date <= now && $0.category?.isIncome == false }
         var essential = 0.0, priority = 0.0, optional = 0.0, unclassified = 0.0
         for tx in currentMonthTx {
-            let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter)
+            if adjustment.isSuppressed(tx) { continue }
+            let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter, adjustment: adjustment)
             switch tx.effectiveNeed {
             case .essential: essential += amount
             case .priority: priority += amount
@@ -798,13 +830,15 @@ final class FullFinancialContextBuilder {
         allTags: [Tag],
         currencyCode: String,
         converter: CurrencyConverting,
-        currentMonthInterval: DateInterval
+        currentMonthInterval: DateInterval,
+        adjustment: GroupBridgeStatsAdjustment
     ) -> [FullFinancialContext.TagEntry] {
         // CSV-mirror SSOT via resolver + catalog construido del allTags inyectado.
         let tagCatalog = Tag.byIDLookup(allTags)
         var tagTotals: [String: (total: Double, count: Int)] = [:]
         for tx in tx {
-            let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter)
+            if adjustment.isSuppressed(tx) { continue }
+            let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter, adjustment: adjustment)
             let txTagIDs = tx.resolvedTagIDs(scheduleBackfill: true) ?? []
             for uuid in txTagIDs {
                 guard let tag = tagCatalog[uuid] else { continue }
@@ -827,11 +861,13 @@ final class FullFinancialContextBuilder {
     private func buildTopTxBySubcategory(
         tx: [TransactionItem],
         currencyCode: String,
-        converter: CurrencyConverting
+        converter: CurrencyConverting,
+        adjustment: GroupBridgeStatsAdjustment
     ) -> [FullFinancialContext.SubcategoryTxEntry] {
         // Group tx by subcategory
         var grouped: [String: (categoryName: String, txs: [TransactionItem])] = [:]
         for tx in tx {
+            if adjustment.isSuppressed(tx) { continue }
             guard let subName = tx.subcategory?.name else { continue }
             let catName = tx.category?.name ?? "Other"
             var entry = grouped[subName] ?? (categoryName: catName, txs: [])
@@ -841,18 +877,18 @@ final class FullFinancialContextBuilder {
 
         // Compute total per subcat to rank top 10
         let ranked = grouped
-            .map { (name: $0.key, total: $0.value.txs.reduce(0.0) { $0 + convertAmount($1, currencyCode: currencyCode, converter: converter) }, categoryName: $0.value.categoryName, txs: $0.value.txs) }
+            .map { (name: $0.key, total: $0.value.txs.reduce(0.0) { $0 + convertAmount($1, currencyCode: currencyCode, converter: converter, adjustment: adjustment) }, categoryName: $0.value.categoryName, txs: $0.value.txs) }
             .sorted { $0.total > $1.total }
             .prefix(10)
 
         return ranked.map { item in
             let topTxs = item.txs
-                .sorted { abs($0.amount) > abs($1.amount) }
+                .sorted { abs(adjustment.amount($0)) > abs(adjustment.amount($1)) }
                 .prefix(10)
                 .map { tx -> FullFinancialContext.TxLite in
                     FullFinancialContext.TxLite(
                         date: Self.isoDateFormatter.string(from: tx.date),
-                        amount: safeDouble(convertAmount(tx, currencyCode: currencyCode, converter: converter)),
+                        amount: safeDouble(convertAmount(tx, currencyCode: currencyCode, converter: converter, adjustment: adjustment)),
                         merchant: canonicalMerchant(tx),
                         account: tx.account?.name
                     )
@@ -928,8 +964,14 @@ final class FullFinancialContextBuilder {
 
     // MARK: - Helpers
 
-    private func convertAmount(_ tx: TransactionItem, currencyCode: String, converter: CurrencyConverting) -> Double {
-        tx.chatAmount(in: currencyCode, converter: converter)
+    private func convertAmount(_ tx: TransactionItem, currencyCode: String, converter: CurrencyConverting, adjustment: GroupBridgeStatsAdjustment) -> Double {
+        // Pata REAL Caso A: el neto proyectado (`-myShare`, moneda preferida) difiere del monto
+        // crudo → usar esa magnitud. Resto: `chatAmount` con conversión de moneda intacta.
+        let adjusted = adjustment.amountInPreferredCurrency(tx)
+        if adjusted != tx.amountInPreferredCurrency {
+            return abs(adjusted)
+        }
+        return tx.chatAmount(in: currencyCode, converter: converter)
     }
 
     private func canonicalMerchant(_ tx: TransactionItem) -> String? {

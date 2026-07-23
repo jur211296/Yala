@@ -86,14 +86,16 @@ final class BudgetAlertService {
         }
 
         // 3. Check each budget
+        // Neteo del bridge de grupos construido UNA vez del set amplio recién fetcheado.
+        let adjustment = GroupBridgeStatsAdjustment.build(from: transactions, context: context)
         for budget in budgets {
-            await checkBudget(budget, transactions: transactions)
+            await checkBudget(budget, transactions: transactions, adjustment: adjustment)
         }
     }
 
     // MARK: - Budget Check
 
-    private func checkBudget(_ budget: Budget, transactions: [TransactionItem]) async {
+    private func checkBudget(_ budget: Budget, transactions: [TransactionItem], adjustment: GroupBridgeStatsAdjustment = .none) async {
         // Parse configured thresholds
         guard let thresholdsString = budget.alertThresholds else { return }
         let configuredThresholds = Set(
@@ -112,7 +114,7 @@ final class BudgetAlertService {
 
         // Calculate spending
         let interval = getCurrentPeriodInterval(for: budget)
-        let spending = calculateSpending(budget: budget, transactions: transactions, interval: interval)
+        let spending = calculateSpending(budget: budget, transactions: transactions, interval: interval, adjustment: adjustment)
 
         guard budget.limitAmount > 0 else { return }
         let percentage = (spending / budget.limitAmount) * 100.0
@@ -224,9 +226,10 @@ final class BudgetAlertService {
     private func calculateSpending(
         budget: Budget,
         transactions: [TransactionItem],
-        interval: DateInterval
+        interval: DateInterval,
+        adjustment: GroupBridgeStatsAdjustment = .none
     ) -> Double {
-        BudgetsViewModel.calculateSpending(budget: budget, transactions: transactions, interval: interval)
+        BudgetsViewModel.calculateSpending(budget: budget, transactions: transactions, interval: interval, adjustment: adjustment)
     }
 
     // MARK: - Notifications

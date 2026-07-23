@@ -51,7 +51,8 @@ enum HeroBucketsCalculator {
         prevInterval: DateInterval,
         periodInterval: DateInterval,
         periodPrevInterval: DateInterval? = nil,
-        eligibleAccountIDs: Set<PersistentIdentifier>
+        eligibleAccountIDs: Set<PersistentIdentifier>,
+        adjustment: GroupBridgeStatsAdjustment = .none
     ) -> Buckets {
         var monthIncome: Double = 0
         var monthExpense: Double = 0
@@ -65,8 +66,11 @@ enum HeroBucketsCalculator {
             guard let account = tx.account,
                   eligibleAccountIDs.contains(account.persistentModelID)
             else { continue }
+            // Excluir patas de préstamo derivadas del bridge (préstamo a grupos).
+            guard !adjustment.isSuppressed(tx) else { continue }
 
-            let amount = abs(tx.amountInPreferredCurrency)
+            // `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto).
+            let amount = abs(adjustment.amountInPreferredCurrency(tx))
             let isIncome = tx.category?.isIncome == true
 
             if monthInterval.contains(tx.date) {

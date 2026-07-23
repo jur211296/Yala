@@ -24,6 +24,7 @@ struct TopSubcategoriesCalculator {
         currencyCode: String,
         categoryFilter: PersistentIdentifier? = nil,
         transactionNatures: Set<TransactionNature>? = nil,
+        adjustment: GroupBridgeStatsAdjustment = .none,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> [SubcategorySpendingSummary] {
 
@@ -39,6 +40,8 @@ struct TopSubcategoriesCalculator {
         // Filter by interval, nature, and balance adjustment — WITHOUT categoryFilter
         // so totalExpenseAll reflects the global total across all categories
         let validTransactions = transactions.filter { transaction in
+            // Excluir patas de préstamo derivadas del bridge (préstamo a grupos).
+            guard !adjustment.isSuppressed(transaction) else { return false }
             // Basic validity - must have category
             guard let category = transaction.category else { return false }
 
@@ -76,20 +79,21 @@ struct TopSubcategoriesCalculator {
             guard let category = transaction.category else { continue }
 
             // Convert using the transaction's date for accurate historical rate
+            // `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto).
             let doubleVal: Double
             if transaction.preferredCurrencyCode == currencyCode {
-                doubleVal = transaction.amountInPreferredCurrency
+                doubleVal = adjustment.amountInPreferredCurrency(transaction)
             } else {
-                let decimalAmount = Decimal(abs(transaction.amount))
+                let decimalAmount = Decimal(abs(adjustment.amount(transaction)))
                 let convertedAmount = converter.convert(
                     decimalAmount,
                     from: transaction.currencyCode,
                     to: currencyCode,
                     on: transaction.date
                 )
-                // Restore sign from original amount for correct refund handling
+                // Restore sign from the ADJUSTED amount for correct refund/neteo handling
                 let magnitude = NSDecimalNumber(decimal: convertedAmount).doubleValue
-                doubleVal = (transaction.amount < 0) ? -magnitude : magnitude
+                doubleVal = (adjustment.amount(transaction) < 0) ? -magnitude : magnitude
             }
 
             // Always accumulate global total (across all categories)

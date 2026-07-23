@@ -61,6 +61,7 @@ struct RecordsTabView: View {
                             period: viewModel.period,
                             customDateRange: sessionState.customDateRange,
                             currencyCode: defaultCurrencyCode,
+                            adjustment: viewModel.statsAdjustment,
                             selectedDay: $selectedCalendarDay,
                             calendarMonth: $calendarMonth
                         )

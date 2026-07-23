@@ -194,6 +194,7 @@ struct InsightsCalculator {
         splitGroups: [SplitGroup] = [],
         currentUserMemberIDs: Set<String> = [],
         includeBridgedGroupTx: Bool = true,
+        adjustment: GroupBridgeStatsAdjustment = .none,
         now: Date = .now
     ) -> InsightData {
         // Filter transactions using FilterService
@@ -233,6 +234,7 @@ struct InsightsCalculator {
             interval: interval,
             grouping: .day,
             currencyCode: currencyCode,
+            adjustment: adjustment,
             converter: converter
         )
         let prevCashFlow = CashFlowCalculator.calculateCashFlow(
@@ -240,6 +242,7 @@ struct InsightsCalculator {
             interval: alignedPrevInterval,
             grouping: .day,
             currencyCode: currencyCode,
+            adjustment: adjustment,
             converter: converter
         )
 
@@ -298,6 +301,7 @@ struct InsightsCalculator {
             transactions: periodTxns,
             interval: interval,
             currencyCode: currencyCode,
+            adjustment: adjustment,
             converter: converter
         )
 
@@ -314,16 +318,18 @@ struct InsightsCalculator {
             transactions: periodTxns,
             interval: interval,
             currencyCode: currencyCode,
+            adjustment: adjustment,
             converter: converter
         )
         let topSubcategories = TopSubcategoriesCalculator.calculateTopSubcategories(
             transactions: periodTxns,
             interval: interval,
             currencyCode: currencyCode,
+            adjustment: adjustment,
             converter: converter
         )
 
-        let highestExpense = findHighestExpense(periodTxns, currencyCode: currencyCode, converter: converter)
+        let highestExpense = findHighestExpense(periodTxns, currencyCode: currencyCode, adjustment: adjustment, converter: converter)
         let subscriptionsTotal = calculateSubscriptionsTotal(scheduledPayments, currencyCode: currencyCode, converter: converter)
 
         let quickStats = QuickStats(
@@ -343,11 +349,12 @@ struct InsightsCalculator {
             allTransactions: transactions,
             interval: interval,
             currencyCode: currencyCode,
+            adjustment: adjustment,
             converter: converter
         )
 
         // Need Distribution
-        let needDistribution = calculateNeedDistribution(periodTxns, currencyCode: currencyCode, converter: converter)
+        let needDistribution = calculateNeedDistribution(periodTxns, currencyCode: currencyCode, adjustment: adjustment, converter: converter)
 
         // Year-over-Year
         let yearOverYear = calculateYearOverYear(
@@ -356,6 +363,7 @@ struct InsightsCalculator {
             period: period,
             currencyCode: currencyCode,
             customRange: customRange,
+            adjustment: adjustment,
             converter: converter
         )
 
@@ -375,15 +383,18 @@ struct InsightsCalculator {
 
         // Build group insights context if user has group transactions
         var groupContext: GroupInsightsContext?
-        let sharedTxns = periodTxns.filter { $0.splitExpenseID != nil }
+        // Excluir las patas de préstamo derivadas (préstamo a grupos) — sin esto `totalShared`
+        // doble-contaba AMBAS hermanas del Caso A (real -total + lent +lent) y `totalPersonal`
+        // colapsaba a 0. Con el filtro + monto ajustado, `totalShared` = Σ mi parte.
+        let sharedTxns = periodTxns.filter { $0.splitExpenseID != nil && !adjustment.isSuppressed($0) }
         if !sharedTxns.isEmpty {
             // Precompute converted amounts once per transaction (avoid repeated currency conversion)
-            let sharedAmounts = sharedTxns.map { abs(txAmount($0, currencyCode: currencyCode, converter: converter)) }
+            let sharedAmounts = sharedTxns.map { abs(txAmount($0, currencyCode: currencyCode, adjustment: adjustment, converter: converter)) }
             let totalShared = sharedAmounts.reduce(0.0, +)
             let totalPersonal = cashFlow.totalExpense - totalShared
 
-            let prevSharedTxns = prevTxns.filter { $0.splitExpenseID != nil }
-            let prevShared: Double? = prevSharedTxns.isEmpty ? nil : prevSharedTxns.reduce(0.0) { $0 + abs(txAmount($1, currencyCode: currencyCode, converter: converter)) }
+            let prevSharedTxns = prevTxns.filter { $0.splitExpenseID != nil && !adjustment.isSuppressed($0) }
+            let prevShared: Double? = prevSharedTxns.isEmpty ? nil : prevSharedTxns.reduce(0.0) { $0 + abs(txAmount($1, currencyCode: currencyCode, adjustment: adjustment, converter: converter)) }
 
             let groupNameLookup = Dictionary(splitGroups.map { ($0.cloudKitZoneID, $0.name) }, uniquingKeysWith: { a, _ in a })
             let indexed = zip(sharedTxns, sharedAmounts)
@@ -461,13 +472,14 @@ struct InsightsCalculator {
     }
 
     /// Convenience for TransactionItem → target currency
-    private static func txAmount(_ tx: TransactionItem, currencyCode: String, converter: CurrencyConverting) -> Double {
+    /// `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto) antes de convertir.
+    private static func txAmount(_ tx: TransactionItem, currencyCode: String, adjustment: GroupBridgeStatsAdjustment, converter: CurrencyConverting) -> Double {
         convertedAmount(
-            tx.amount,
+            adjustment.amount(tx),
             from: tx.currencyCode,
             to: currencyCode,
             preferredCode: tx.preferredCurrencyCode,
-            preferredAmount: tx.amountInPreferredCurrency,
+            preferredAmount: adjustment.amountInPreferredCurrency(tx),
             on: tx.date,
             converter: converter
         )
@@ -478,15 +490,17 @@ struct InsightsCalculator {
     private static func findHighestExpense(
         _ transactions: [TransactionItem],
         currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment,
         converter: CurrencyConverting
     ) -> HighestExpenseInfo? {
         var highest: (amount: Double, note: String)? = nil
 
         for tx in transactions {
+            guard !adjustment.isSuppressed(tx) else { continue }
             guard let category = tx.category, !category.isIncome else { continue }
             guard tx.balanceAdjustmentType == nil else { continue }
 
-            let amount = txAmount(tx, currencyCode: currencyCode, converter: converter)
+            let amount = txAmount(tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter)
 
             if highest.map({ amount > $0.amount }) ?? true {
                 let note = tx.note ?? tx.subcategory?.name ?? category.name
@@ -559,6 +573,7 @@ struct InsightsCalculator {
         allTransactions: [TransactionItem],
         interval: DateInterval,
         currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment,
         converter: CurrencyConverting
     ) -> Commitments {
         let now = Date.now
@@ -612,9 +627,11 @@ struct InsightsCalculator {
                 continue
             }
 
-            // Sum expenses in budget currency
+            // Sum expenses in budget currency (proyectadas a "mi parte" en gastos de grupo).
             let spent = budgetTxns.reduce(0.0) { sum, tx in
-                sum + txAmount(tx, currencyCode: budget.currencyCode, converter: converter)
+                adjustment.isSuppressed(tx)
+                    ? sum
+                    : sum + txAmount(tx, currencyCode: budget.currencyCode, adjustment: adjustment, converter: converter)
             }
 
             let usage = (spent / budget.limitAmount) * 100
@@ -648,6 +665,7 @@ struct InsightsCalculator {
     private static func calculateNeedDistribution(
         _ transactions: [TransactionItem],
         currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment,
         converter: CurrencyConverting
     ) -> NeedDistribution {
         var essential: Double = 0
@@ -655,10 +673,11 @@ struct InsightsCalculator {
         var optional: Double = 0
 
         for tx in transactions {
+            guard !adjustment.isSuppressed(tx) else { continue }
             guard let category = tx.category, !category.isIncome else { continue }
             guard tx.balanceAdjustmentType == nil else { continue }
 
-            let amount = txAmount(tx, currencyCode: currencyCode, converter: converter)
+            let amount = txAmount(tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter)
 
             let need = tx.subcategory?.need
             switch need {
@@ -688,6 +707,7 @@ struct InsightsCalculator {
         period: DetailPeriod,
         currencyCode: String,
         customRange: DateInterval?,
+        adjustment: GroupBridgeStatsAdjustment,
         converter: CurrencyConverting
     ) -> YearComparison? {
         let prevYearInterval = PreviousPeriodHelper.previousInterval(for: period, mode: .year, customRange: customRange)
@@ -700,6 +720,7 @@ struct InsightsCalculator {
             interval: prevYearInterval,
             grouping: .day,
             currencyCode: currencyCode,
+            adjustment: adjustment,
             converter: converter
         )
 

@@ -289,12 +289,17 @@ final class BudgetsViewModel {
         defaultCurrencyCode: String
     ) {
         // Use budgets as-is (already filtered by BudgetsListView)
+        // Neteo del bridge de grupos construido UNA vez del set amplio recibido.
+        let adjustment = modelContext.map {
+            GroupBridgeStatsAdjustment.build(from: transactions, context: $0)
+        } ?? .none
         // Calculate summary for each budget
         let summaries = budgets.compactMap { budget -> BudgetSummary? in
             let spent = getBudgetSpending(
                 budget: budget,
                 transactions: transactions,
-                defaultCurrencyCode: defaultCurrencyCode
+                defaultCurrencyCode: defaultCurrencyCode,
+                adjustment: adjustment
             )
             let percentage = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100.0 : 0.0
             let daysRemaining = getDaysRemaining(budget: budget)
@@ -335,10 +340,14 @@ final class BudgetsViewModel {
 
     /// Build a fresh BudgetSummary for a single budget (used by BudgetDetailView).
     func buildSummary(for budget: Budget, defaultCurrencyCode: String) -> BudgetSummary {
+        let adjustment = modelContext.map {
+            GroupBridgeStatsAdjustment.build(from: allTransactions, context: $0)
+        } ?? .none
         let spent = getBudgetSpending(
             budget: budget,
             transactions: allTransactions,
-            defaultCurrencyCode: defaultCurrencyCode
+            defaultCurrencyCode: defaultCurrencyCode,
+            adjustment: adjustment
         )
         let percentage = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100.0 : 0.0
         let daysRemaining = getDaysRemaining(budget: budget)
@@ -373,6 +382,9 @@ final class BudgetsViewModel {
 
         let calendar = userConfiguredCalendar()
         var results: [(label: String, spent: Double, limit: Double)] = []
+        let adjustment = modelContext.map {
+            GroupBridgeStatsAdjustment.build(from: allTransactions, context: $0)
+        } ?? .none
 
         for offset in (1 - periods)...0 {
             let interval: DateInterval
@@ -402,7 +414,7 @@ final class BudgetsViewModel {
                 continue
             }
 
-            let spent = Self.calculateSpending(budget: budget, transactions: allTransactions, interval: interval)
+            let spent = Self.calculateSpending(budget: budget, transactions: allTransactions, interval: interval, adjustment: adjustment)
             results.append((label: label, spent: spent, limit: budget.limitAmount))
         }
 
@@ -422,14 +434,17 @@ final class BudgetsViewModel {
 
         guard interval.start <= endDate else { return [] }
 
-        let filtered = Self.filterTransactions(allTransactions, forBudget: budget, in: interval)
+        let adjustment = modelContext.map {
+            GroupBridgeStatsAdjustment.build(from: allTransactions, context: $0)
+        } ?? .none
+        let filtered = Self.filterTransactions(allTransactions, forBudget: budget, in: interval, adjustment: adjustment)
         guard !filtered.isEmpty else { return [] }
 
         // Group by day
         var dailyAmounts: [Date: Double] = [:]
         for tx in filtered {
             let day = calendar.startOfDay(for: tx.date)
-            let amount = Self.budgetAmount(of: tx, in: budget.currencyCode)
+            let amount = Self.budgetAmount(of: tx, in: budget.currencyCode, adjustment: adjustment)
             dailyAmounts[day, default: 0] += abs(amount)
         }
 
@@ -462,7 +477,10 @@ final class BudgetsViewModel {
         subcategories: [(name: String, icon: String, color: String, amount: Double, parentCategoryName: String)],
         parentCategories: [(name: String, icon: String, color: String, amount: Double)]
     ) {
-        let filtered = Self.filterTransactions(allTransactions, forBudget: budget, in: interval)
+        let adjustment = modelContext.map {
+            GroupBridgeStatsAdjustment.build(from: allTransactions, context: $0)
+        } ?? .none
+        let filtered = Self.filterTransactions(allTransactions, forBudget: budget, in: interval, adjustment: adjustment)
         guard !filtered.isEmpty else { return ([], []) }
 
         var subBreakdown: [PersistentIdentifier: (name: String, icon: String, color: String, amount: Double, parentCategoryName: String)] = [:]
@@ -470,7 +488,7 @@ final class BudgetsViewModel {
 
         for tx in filtered {
             guard let sub = tx.subcategory else { continue }
-            let absAmount = abs(Self.budgetAmount(of: tx, in: budget.currencyCode))
+            let absAmount = abs(Self.budgetAmount(of: tx, in: budget.currencyCode, adjustment: adjustment))
             let cat = sub.safeCategory
 
             // Subcategory grouping
@@ -507,10 +525,11 @@ final class BudgetsViewModel {
     func getBudgetSpending(
         budget: Budget,
         transactions: [TransactionItem],
-        defaultCurrencyCode: String
+        defaultCurrencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none
     ) -> Double {
         let interval = getBudgetDateInterval(budget: budget)
-        return Self.calculateSpending(budget: budget, transactions: transactions, interval: interval)
+        return Self.calculateSpending(budget: budget, transactions: transactions, interval: interval, adjustment: adjustment)
     }
 
     /// Filters transactions by budget criteria (accounts, subcategories, tags, natures, expenses only).
@@ -521,9 +540,14 @@ final class BudgetsViewModel {
     static func filterTransactions(
         _ transactions: [TransactionItem],
         forBudget budget: Budget,
-        in interval: DateInterval
+        in interval: DateInterval,
+        adjustment: GroupBridgeStatsAdjustment = .none
     ) -> [TransactionItem] {
         var filtered = transactions.filter { interval.contains($0.date) }
+
+        // Excluir patas de préstamo derivadas del bridge de grupos (ingreso fantasma):
+        // el neto de mi parte lo porta la pata REAL vía `budgetAmount` + adjustment.
+        filtered = filtered.filter { !adjustment.isSuppressed($0) }
 
         // Telemetry: si el budget "luce sin filtros" pero NO es default (tiene name + limitAmount),
         // dispara una vez por sesión para detectar budgets con filtros aparentemente vacíos.
@@ -592,12 +616,13 @@ final class BudgetsViewModel {
         budget: Budget,
         transactions: [TransactionItem],
         interval: DateInterval,
+        adjustment: GroupBridgeStatsAdjustment = .none,
         converter: CurrencyConverting? = nil
     ) -> Double {
-        let filtered = filterTransactions(transactions, forBudget: budget, in: interval)
+        let filtered = filterTransactions(transactions, forBudget: budget, in: interval, adjustment: adjustment)
 
         return filtered.reduce(0.0) { sum, tx in
-            sum + abs(budgetAmount(of: tx, in: budget.currencyCode, converter: converter))
+            sum + abs(budgetAmount(of: tx, in: budget.currencyCode, adjustment: adjustment, converter: converter))
         }
     }
 
@@ -612,14 +637,17 @@ final class BudgetsViewModel {
     static func budgetAmount(
         of tx: TransactionItem,
         in budgetCurrencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none,
         converter: CurrencyConverting? = nil
     ) -> Double {
+        // Monto nativo YA neteado a `-myShare` para la pata real Caso A (identidad en el resto).
+        let native = adjustment.amount(tx)
         if tx.currencyCode == budgetCurrencyCode {
-            return tx.amount
+            return native
         }
         let resolvedConverter = converter ?? CurrencyConverter.shared
         let converted = resolvedConverter.convertWithLatestRate(
-            Decimal(tx.amount),
+            Decimal(native),
             from: tx.currencyCode,
             to: budgetCurrencyCode
         )

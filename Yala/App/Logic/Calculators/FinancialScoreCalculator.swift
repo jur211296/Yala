@@ -83,7 +83,8 @@ enum FinancialScoreCalculator {
         converter: CurrencyConverting = CurrencyConverter.shared,
         now: Date = .now,
         calendar: Calendar = .current,
-        includeBridgedGroupTx: Bool = true
+        includeBridgedGroupTx: Bool = true,
+        adjustment: GroupBridgeStatsAdjustment = .none
     ) -> FinancialScore {
         let interval = period.dateInterval(customRange: customRange, now: now)
         let intervalTransactions = transactions.filter {
@@ -99,7 +100,8 @@ enum FinancialScoreCalculator {
             transactions: transactions,
             interval: interval,
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            adjustment: adjustment
         )
         let rhythm = calculateRhythm(
             transactions: intervalTransactions,
@@ -117,7 +119,8 @@ enum FinancialScoreCalculator {
             preferredCurrencyCode: preferredCurrencyCode,
             converter: converter,
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            adjustment: adjustment
         )
         let total = computeTotal(budget: budget, rhythm: rhythm, commitments: commitments)
         return FinancialScore(total: total, budget: budget, activity: rhythm, bills: commitments)
@@ -155,7 +158,8 @@ enum FinancialScoreCalculator {
         transactions: [TransactionItem],
         interval: DateInterval,
         now: Date,
-        calendar: Calendar
+        calendar: Calendar,
+        adjustment: GroupBridgeStatsAdjustment
     ) -> Int? {
         guard !budgets.isEmpty else { return nil }
 
@@ -167,7 +171,7 @@ enum FinancialScoreCalculator {
             for bucket in buckets {
                 guard bucketIsValid(bucket, for: budget, calendar: calendar) else { continue }
                 let spending = BudgetsViewModel.calculateSpending(
-                    budget: budget, transactions: transactions, interval: bucket
+                    budget: budget, transactions: transactions, interval: bucket, adjustment: adjustment
                 )
                 let score = scoreForBucket(
                     spending: spending,
@@ -348,7 +352,8 @@ enum FinancialScoreCalculator {
         preferredCurrencyCode: String,
         converter: CurrencyConverting,
         now: Date,
-        calendar: Calendar
+        calendar: Calendar,
+        adjustment: GroupBridgeStatsAdjustment
     ) -> Int? {
         if isShortPeriod(period) { return nil }
 
@@ -385,7 +390,7 @@ enum FinancialScoreCalculator {
         )
 
         // 2. Carga
-        let income = sumIncomeTransactions(transactions, interval: cmtInterval)
+        let income = sumIncomeTransactions(transactions, interval: cmtInterval, adjustment: adjustment)
         let loadScore = computeLoadScore(
             commitmentsTotal: pendingTotal, income: income
         )
@@ -482,17 +487,20 @@ enum FinancialScoreCalculator {
         return total
     }
 
-    /// Suma ingresos del período (excluye balance adjustments).
+    /// Suma ingresos del período (excluye balance adjustments). Income-aware: suprime las patas
+    /// de préstamo derivadas del bridge de grupos (ingreso fantasma +lent) y netea la pata real.
     private static func sumIncomeTransactions(
-        _ transactions: [TransactionItem], interval: DateInterval
+        _ transactions: [TransactionItem], interval: DateInterval,
+        adjustment: GroupBridgeStatsAdjustment
     ) -> Double {
         transactions
             .filter {
                 interval.contains($0.date)
                     && $0.balanceAdjustmentType == nil
                     && ($0.category?.isIncome ?? false)
+                    && !adjustment.isSuppressed($0)
             }
-            .reduce(0) { $0 + abs($1.amountInPreferredCurrency) }
+            .reduce(0) { $0 + abs(adjustment.amountInPreferredCurrency($1)) }
     }
 
     /// Itera occurrences mes por mes dentro del intervalo, filtrando al rango exacto.

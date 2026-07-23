@@ -23,7 +23,8 @@ struct TagSpendingCalculator {
         interval: DateInterval,
         currencyCode: String,
         transactionNatures: Set<TransactionNature>? = nil,
-        allTags: [Tag]
+        allTags: [Tag],
+        adjustment: GroupBridgeStatsAdjustment = .none
     ) -> [TagSpendingSummary] {
         // Determine which natures to include (default: expense only)
         let naturesToInclude = transactionNatures ?? [.expense]
@@ -31,7 +32,9 @@ struct TagSpendingCalculator {
         let tagsByID = Tag.byIDLookup(allTags)
 
         // 1. Filter Transactions (within interval, has category, matching natures, has tags).
+        //    Patas de préstamo derivadas del bridge se excluyen (no son gasto ni ingreso propio).
         let filteredTransactions = transactions.filter { transaction in
+            guard !adjustment.isSuppressed(transaction) else { return false }
             guard let category = transaction.category else { return false }
             guard transaction.balanceAdjustmentType == nil else { return false }
             let nature: TransactionNature = category.isIncome ? .income : .expense
@@ -41,12 +44,13 @@ struct TagSpendingCalculator {
             return interval.contains(transaction.date)
         }
 
-        // 2. Group by Tag UUID and Sum Amounts.
+        // 2. Group by Tag UUID and Sum Amounts. `adjustment` proyecta un gasto de grupo Caso A
+        //    a "mi parte" (neto), en vez del total que pagué.
         var tagTotals: [UUID: Double] = [:]
         var tagMap: [UUID: Tag] = [:]
 
         for transaction in filteredTransactions {
-            let absAmount = abs(transaction.amountInPreferredCurrency)
+            let absAmount = abs(adjustment.amountInPreferredCurrency(transaction))
             let txTagUUIDs = transaction.resolvedTagIDs(scheduleBackfill: true) ?? []
             for tagID in txTagUUIDs {
                 tagTotals[tagID, default: 0] += absAmount

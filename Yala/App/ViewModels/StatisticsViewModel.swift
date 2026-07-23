@@ -335,7 +335,8 @@ final class StatisticsViewModel: Filterable {
         accounts: [Account],
         transactions: [TransactionItem],
         allTags: [Tag],
-        defaultCurrencyCode: String
+        defaultCurrencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none
     ) {
         // Enforce metric lock based on filters
         enforceMetricLock()
@@ -363,7 +364,8 @@ final class StatisticsViewModel: Filterable {
             filtered: filtered,
             eligibleAccounts: eligibleAccounts,
             allTransactions: transactions,
-            defaultCurrencyCode: defaultCurrencyCode
+            defaultCurrencyCode: defaultCurrencyCode,
+            adjustment: adjustment
         )
 
         // Calculate trend points based on metric using unified TrendDataProcessor
@@ -384,6 +386,7 @@ final class StatisticsViewModel: Filterable {
                 grouping: trendGrouping,
                 interval: interval,
                 currencyCode: defaultCurrencyCode,
+                adjustment: adjustment,
                 liveBalanceOverride: liveBalanceOverride
             )
             if result.points != trendPoints { trendPoints = result.points }
@@ -399,7 +402,8 @@ final class StatisticsViewModel: Filterable {
                 transactions: filtered,
                 accounts: eligibleAccounts,
                 interval: interval,
-                defaultCurrencyCode: defaultCurrencyCode
+                defaultCurrencyCode: defaultCurrencyCode,
+                adjustment: adjustment
             )
         }
 
@@ -424,7 +428,8 @@ final class StatisticsViewModel: Filterable {
         accounts: [Account],
         scheduledPayments: [ScheduledPayment],
         allTags: [Tag],
-        defaultCurrencyCode: String
+        defaultCurrencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none
     ) {
         let interval = panelDateInterval
         let criteria = buildSankeyFilterCriteria(interval: interval, allTags: allTags)
@@ -455,7 +460,8 @@ final class StatisticsViewModel: Filterable {
             maxPerColumn: 15,
             plannedPending: plannedPending,
             plannedSplit: .byKind,
-            propagatePlannedToCategories: true
+            propagatePlannedToCategories: true,
+            adjustment: adjustment
         )
         if newData != sankeyData { sankeyData = newData }
     }
@@ -525,20 +531,25 @@ final class StatisticsViewModel: Filterable {
         filtered: [TransactionItem],
         eligibleAccounts: [Account],
         allTransactions: [TransactionItem],
-        defaultCurrencyCode: String
+        defaultCurrencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment
     ) {
         // La categoría decide el bucket; acumulación signed (paridad con
         // TrendDataProcessor/CashFlowCalculator): un reembolso reduce el bucket.
+        // `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto) y excluye las
+        // patas de préstamo derivadas (préstamo a grupos).
         let newIncome =
             filtered
-            .filter { $0.balanceAdjustmentType == nil && TransactionClassificationLogic.isIncome($0) }
-            .reduce(0) { $0 + $1.amountInPreferredCurrency }
+            .filter { $0.balanceAdjustmentType == nil && !adjustment.isSuppressed($0)
+                && TransactionClassificationLogic.isIncome($0) }
+            .reduce(0) { $0 + adjustment.amountInPreferredCurrency($1) }
         if newIncome != totalIncome { totalIncome = newIncome }
 
         let newExpense =
             filtered
-            .filter { $0.balanceAdjustmentType == nil && !TransactionClassificationLogic.isIncome($0) }
-            .reduce(0) { $0 - $1.amountInPreferredCurrency }
+            .filter { $0.balanceAdjustmentType == nil && !adjustment.isSuppressed($0)
+                && !TransactionClassificationLogic.isIncome($0) }
+            .reduce(0) { $0 - adjustment.amountInPreferredCurrency($1) }
         if newExpense != totalExpense { totalExpense = newExpense }
 
         // KPI Saldo Actual: usa LiveBalanceCalculator (TC actual sobre saldo
@@ -589,7 +600,8 @@ final class StatisticsViewModel: Filterable {
         transactions: [TransactionItem],
         accounts: [Account],
         interval: DateInterval,
-        defaultCurrencyCode: String
+        defaultCurrencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none
     ) {
         let calendar = Calendar.current
         var allSeries: [AccountTrendSeries] = []
@@ -652,18 +664,21 @@ final class StatisticsViewModel: Filterable {
 
             case .income:
                 // Clasificación por categoría; signed (paridad con TrendDataProcessor).
+                // `adjustment` proyecta el Caso A a "mi parte" y excluye patas de préstamo.
                 for txn in accountTransactions
-                where txn.balanceAdjustmentType == nil && TransactionClassificationLogic.isIncome(txn) {
+                where txn.balanceAdjustmentType == nil && !adjustment.isSuppressed(txn)
+                    && TransactionClassificationLogic.isIncome(txn) {
                     let bucketDate = trendGrouping.dateKey(for: txn.date, calendar: calendar)
-                    buckets[bucketDate, default: 0] += txn.amountInPreferredCurrency
+                    buckets[bucketDate, default: 0] += adjustment.amountInPreferredCurrency(txn)
                 }
 
             case .expense:
                 // Signed: gasto (monto negativo) sube la curva; reembolso la baja.
                 for txn in accountTransactions
-                where txn.balanceAdjustmentType == nil && !TransactionClassificationLogic.isIncome(txn) {
+                where txn.balanceAdjustmentType == nil && !adjustment.isSuppressed(txn)
+                    && !TransactionClassificationLogic.isIncome(txn) {
                     let bucketDate = trendGrouping.dateKey(for: txn.date, calendar: calendar)
-                    buckets[bucketDate, default: 0] -= txn.amountInPreferredCurrency
+                    buckets[bucketDate, default: 0] -= adjustment.amountInPreferredCurrency(txn)
                 }
             }
 

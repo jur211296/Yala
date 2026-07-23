@@ -37,6 +37,7 @@ struct CashFlowCalculator {
         interval: DateInterval,
         grouping: TrendGrouping,
         currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> CashFlowSummary {
 
@@ -53,14 +54,19 @@ struct CashFlowCalculator {
             // Skip balance adjustments (they affect balance, not cash flow)
             guard let category = tx.category else { continue }
             guard tx.balanceAdjustmentType == nil else { continue }
+            // Excluir patas de préstamo derivadas del bridge: son un préstamo, no ingreso/gasto
+            // propio — así se mata el "ingreso fantasma" +lent y el neto queda en -myShare.
+            guard !adjustment.isSuppressed(tx) else { continue }
 
-            let decimalAmt = Decimal(abs(tx.amount))
+            // `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto).
+            let adjustedNative = adjustment.amount(tx)
+            let decimalAmt = Decimal(abs(adjustedNative))
 
             // Convert using the transaction's date for accurate historical rate
             let val: Double
             if tx.preferredCurrencyCode == currencyCode {
                 // Use signed amount
-                val = tx.amountInPreferredCurrency
+                val = adjustment.amountInPreferredCurrency(tx)
             } else {
                 let converted = converter.convert(
                     decimalAmt,
@@ -68,9 +74,9 @@ struct CashFlowCalculator {
                     to: currencyCode,
                     on: tx.date
                 )
-                // Restore sign from original amount
+                // Restore sign from the ADJUSTED amount (paridad con la rama preferida).
                 let magnitude = NSDecimalNumber(decimal: converted).doubleValue
-                val = (tx.amount < 0) ? -magnitude : magnitude
+                val = (adjustedNative < 0) ? -magnitude : magnitude
             }
 
             let isIncome = category.isIncome
