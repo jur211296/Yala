@@ -13,7 +13,7 @@ import Foundation
 final class ScheduledPaymentNotificationTracker {
     static let shared = ScheduledPaymentNotificationTracker()
 
-    private let defaults = UserDefaults.standard
+    private let defaults: UserDefaults
 
     /// Prefijos de las keys de dedup en `UserDefaults`. Expuestos porque
     /// `DataWipeService.removeUserPreferenceKeys` los barre POR PREFIJO al resetear la
@@ -29,7 +29,14 @@ final class ScheduledPaymentNotificationTracker {
         return f
     }()
 
-    private init() {}
+    private init() {
+        self.defaults = .standard
+    }
+
+    /// Init de test — UserDefaults aislado (`makeIsolatedDefaults()`); jamás en producción.
+    init(defaults: UserDefaults) {
+        self.defaults = defaults
+    }
 
     /// Public accessor for date key formatting (formato `YYYYMMDD` de todas las keys)
     static func dateKeyString(from date: Date) -> String {

@@ -214,16 +214,21 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     ///   - title: Notification title
     ///   - body: Notification body text
     ///   - deepLink: Optional deep link destination (e.g., "statistics", "planning", "budgets")
-    func sendNotification(title: String, body: String, deepLink: String? = nil) async {
+    /// - Returns: `true` SOLO si iOS aceptó el request (`notificationCenter.add` sin error).
+    ///   Todo caller que deduplique por "ya notifiqué" DEBE marcar su dedup únicamente con `true`:
+    ///   marcar tras un `false` quema la supresión del día sin banner entregado (bug del ticket
+    ///   pagos-planificados-notifs-incoherentes-y-dedup-sin-entrega).
+    @discardableResult
+    func sendNotification(title: String, body: String, deepLink: String? = nil) async -> Bool {
         let settings = await notificationCenter.notificationSettings()
         let authorized = settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional
         #if DEBUG
         print("NotifService[#16-debug]: sendNotification title=\"\(title)\" authStatus=\(settings.authorizationStatus.rawValue) authorized=\(authorized) alert=\(settings.alertSetting.rawValue) center=\(settings.notificationCenterSetting.rawValue) lockScreen=\(settings.lockScreenSetting.rawValue)")
         #endif
-        guard authorized else { return }
+        guard authorized else { return false }
         // §5.2.1 — choke point: con un wipe personal armado, esta entrega llevaría montos y nombres de
         // la cuenta que acaba de cerrar sesión. Ver `isPersonalWipeArmed`.
-        guard !isPersonalWipeArmed else { return }
+        guard !isPersonalWipeArmed else { return false }
 
         let content = UNMutableNotificationContent()
         content.title = title
@@ -248,10 +253,12 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
             #if DEBUG
             print("NotifService[#16-debug]: notificationCenter.add OK identifier=\(request.identifier)")
             #endif
+            return true
         } catch {
             #if DEBUG
             print("NotifService[#16-debug]: Error sending notification: \(error)")
             #endif
+            return false
         }
     }
 

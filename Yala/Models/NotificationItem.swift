@@ -452,13 +452,16 @@ final class NotificationItem {
                 reportConfig: ReportConfig(dataType: .expenses, dayPreference: .firstDay)
             ),
             // Sistema
+            // isActive: true — el gate horario es HONESTO (inactive = silencio real, ver
+            // ScheduledPaymentNotificationGateLogic); con el default histórico en false los
+            // usuarios nuevos no recibirían ningún recordatorio de pagos hasta tocar Ajustes.
             NotificationItem(
                 name: L10n.Notifications.scheduledPaymentsName,
                 text: "", // Generated dynamically based on payment
                 hour: NotificationType.scheduledPayments.defaultTime.hour,
                 minute: NotificationType.scheduledPayments.defaultTime.minute,
                 type: .scheduledPayments,
-                isActive: false,
+                isActive: true,
                 sortOrder: 5
             ),
             // Grupos

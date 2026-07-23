@@ -166,6 +166,11 @@ final class AppBootstrapper {
         // These use background tasks now, not iOS scheduling
         await NotificationService.shared.cancelDynamicNotifications(context: context)
 
+        // 6.55. One-shot: toggle maestro de pagos honesto (decisión owner D2 2026-07-22).
+        // DEBE correr ANTES de ensureNotificationsScheduled — con el gate ya honesto, un item
+        // inactivo silenciaría este primer pass y el usuario perdería el día.
+        ScheduledPaymentNotificationService.flipMasterToggleIfNeeded(context: context)
+
         // 6.6. Ensure static notifications are scheduled (handles reinstall/update case)
         await ensureNotificationsScheduled(context: context)
 
@@ -1328,6 +1333,9 @@ final class AppBootstrapper {
 
         if shouldCheckNotifications {
             Task {
+                // Reintento del flip one-shot si el boot lo difirió por quiescencia del import
+                // (restore de iCloud): sin este pass, esperaría hasta el próximo cold launch.
+                ScheduledPaymentNotificationService.flipMasterToggleIfNeeded(context: context)
                 await ensureNotificationsScheduled(context: context)
                 await ReportNotificationService.shared.sendDueReports(context: context)
             }
