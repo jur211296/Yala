@@ -5356,6 +5356,9 @@
 /* Bridge Caso B: banner de edición parcial (subcat/tags sí, cuenta no) */
 "groups.bridge.editPartialBannerCaseB" = "Deze uitgave komt uit de groep. Je kunt categorie en tags bewerken. De rest synchroniseert met de groep.";
 
+/* Panel Health — explicación del sub-score Compromisos en modo Solo Gastos (sin mención a ingresos) */
+"panel.health.bills.sheet.explanation.expensesOnly" = "Laat zien of je saldo de openstaande betalingen voor deze periode dekt.";
+
 /* Force-update (min-version) blocking screen */
 "appUpdate.force.title" = "Werk bij om door te gaan";
 "appUpdate.force.message" = "Deze versie van Yala wordt niet meer ondersteund. Werk bij om de app te blijven gebruiken.";

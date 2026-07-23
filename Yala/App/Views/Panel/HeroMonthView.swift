@@ -84,19 +84,46 @@ struct HeroMonthView: View {
         let hasNatureFilter = isIncomeFiltered || isExpenseFiltered
 
         return VStack(alignment: .center, spacing: DS.Spacing.sm) {
-            Text("\(L10n.Panel.Hero.availableLabel) · \(selectedPeriod.displayName)")
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
+            if sessionState.isExpensesOnlyMode {
+                // Solo Gastos: el "Disponible" (income - expense) siempre es 0
+                // sin ingresos → se muestra el GASTO del período como KPI, con un
+                // comparativo "vs período anterior" (MTD-alineado) que le da lectura.
+                // Sin pills: la naturaleza está forzada a gasto y el número YA es el gasto.
+                Text("\(L10n.Panel.spent) · \(selectedPeriod.displayName)")
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
 
-            AmountText(
-                value: periodSummary.available,
-                currencyCode: currencyCode,
-                font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary
-            )
+                AmountText(
+                    value: periodSummary.expense,
+                    currencyCode: currencyCode,
+                    font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary
+                )
 
-            HStack(spacing: DS.Spacing.md) {
-                // Income — oculto en expenses-only mode (mismo gating que RecordsTabView).
-                if !sessionState.isExpensesOnlyMode {
+                // Gateado también por `showVariations`: `VariationChip` se
+                // auto-oculta con la preferencia off, así que sin este guard el
+                // caption "vs período anterior" quedaría huérfano sin chip.
+                if appPreferences.showVariations, let variation = periodSummary.spentVariation {
+                    HStack(spacing: DS.Spacing.xs) {
+                        VariationChip(variation: variation, size: .small, isExpenseContext: true)
+                        Text(L10n.Statistics.vsPreviousPeriod)
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            } else {
+                Text("\(L10n.Panel.Hero.availableLabel) · \(selectedPeriod.displayName)")
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+
+                AmountText(
+                    value: periodSummary.available,
+                    currencyCode: currencyCode,
+                    font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary
+                )
+
+                HStack(spacing: DS.Spacing.md) {
+                    // Income — pill de filtro por naturaleza (income está oculto en
+                    // expenses-only, rama que ya no entra aquí).
                     Button {
                         DS.Haptic.selection()
                         dsWithAnimation(reduceMotion) {
@@ -122,37 +149,34 @@ struct HeroMonthView: View {
                         .opacity(hasNatureFilter && !isIncomeFiltered ? 0.3 : 1.0)
                     }
                     .buttonStyle(.plain)
-                }
 
-                // Expense — siempre visible.
-                Button {
-                    DS.Haptic.selection()
-                    dsWithAnimation(reduceMotion) {
-                        if isExpenseFiltered {
-                            // En expenses-only mode no se permite quitar el filtro.
-                            if !sessionState.isExpensesOnlyMode {
+                    // Expense pill.
+                    Button {
+                        DS.Haptic.selection()
+                        dsWithAnimation(reduceMotion) {
+                            if isExpenseFiltered {
                                 sessionState.selectedTransactionNatures.removeAll()
+                            } else {
+                                sessionState.selectedTransactionNatures = [.expense]
                             }
-                        } else {
-                            sessionState.selectedTransactionNatures = [.expense]
                         }
+                    } label: {
+                        HStack(spacing: DS.Spacing.xs) {
+                            Image(systemName: "arrow.down.right")
+                                .font(DS.Typography.labelSmall)
+                                .foregroundStyle(Color.expenseGraph)
+                                .accessibilityHidden(true)
+                            AmountText(
+                                value: periodSummary.expense,
+                                currencyCode: currencyCode,
+                                font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
+                                tint: .secondary
+                            )
+                        }
+                        .opacity(hasNatureFilter && !isExpenseFiltered ? 0.3 : 1.0)
                     }
-                } label: {
-                    HStack(spacing: DS.Spacing.xs) {
-                        Image(systemName: "arrow.down.right")
-                            .font(DS.Typography.labelSmall)
-                            .foregroundStyle(Color.expenseGraph)
-                            .accessibilityHidden(true)
-                        AmountText(
-                            value: periodSummary.expense,
-                            currencyCode: currencyCode,
-                            font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
-                            tint: .secondary
-                        )
-                    }
-                    .opacity(hasNatureFilter && !isExpenseFiltered ? 0.3 : 1.0)
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
         }
         .frame(maxWidth: .infinity)
@@ -168,10 +192,11 @@ struct HeroMonthView: View {
         L10n.Panel.Hero.chipDefault(userName: appPreferences.userName)
     }
 
-    /// SSOT del KPI motivacional: LLM cuando disponible, fallback rule-based
-    /// con cifras concretas (income, spent, available, days). Static para
-    /// poder reusarse desde otras secciones del Panel (subtítulo de "Tus
-    /// finanzas") sin duplicar la lógica.
+    /// SSOT del KPI motivacional: LLM cuando disponible, si no un fallback
+    /// rule-based por estado (frase motivacional genérica; los montos income/
+    /// spent/available se pasan por compatibilidad de firma pero los strings
+    /// actuales no los interpolan). Static para reusarse desde otras secciones
+    /// del Panel (subtítulo de "Tus finanzas") sin duplicar la lógica.
     static func kpiText(
         data: HeroMonthData,
         aiSubtitle: String?,
@@ -247,4 +272,43 @@ struct HeroMonthView: View {
     .padding(.vertical)
     .environment(AppPreferences(defaults: .standard))
     .environment(SessionState.shared)
+}
+
+#Preview("Hero — Solo Gastos") {
+    // Instancia propia (no `.shared`) para no contaminar el SessionState de otros
+    // previews. El didSet de `isExpensesOnlyMode` sí escribe a UserDefaults/App
+    // Group, pero es inofensivo en el proceso efímero del preview (DEBUG-only).
+    let session = SessionState()
+    session.isExpensesOnlyMode = true
+    return VStack(alignment: .leading, spacing: DS.Spacing.xl) {
+        // Con comparativo (gastó menos que el período anterior → chip índigo).
+        HeroMonthView(
+            data: HeroMonthData(
+                state: .neutral, income: 0, expense: 1250,
+                daysRemaining: 12, daysElapsed: 18
+            ),
+            currencyCode: "PEN",
+            selectedPeriod: .thisMonth,
+            customDateRange: nil,
+            onSelectPeriod: { _ in },
+            onCustomPeriodTapped: {},
+            periodSummary: PanelHeroPeriodData(income: 0, expense: 1250, periodPrevExpense: 1420)
+        )
+        // Sin previo comparable (usuario nuevo) → sin chip.
+        HeroMonthView(
+            data: HeroMonthData(
+                state: .monthStart, income: 0, expense: 320,
+                daysRemaining: 25, daysElapsed: 5
+            ),
+            currencyCode: "PEN",
+            selectedPeriod: .thisMonth,
+            customDateRange: nil,
+            onSelectPeriod: { _ in },
+            onCustomPeriodTapped: {},
+            periodSummary: PanelHeroPeriodData(income: 0, expense: 320, periodPrevExpense: nil)
+        )
+    }
+    .padding(.vertical)
+    .environment(AppPreferences(defaults: .standard))
+    .environment(session)
 }

@@ -41,6 +41,7 @@ struct FinancialScoreDetailSheet: View {
     var onPrimaryCTA: (() -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(SessionState.self) private var sessionState
 
     @State private var selectedDetent: PresentationDetent = .medium
 
@@ -189,7 +190,12 @@ struct FinancialScoreDetailSheet: View {
         case .total:    return L10n.Panel.Health.totalSheetExplanation
         case .budget:   return L10n.Panel.Health.budgetSheetExplanation
         case .activity: return L10n.Panel.Health.activitySheetExplanation
-        case .bills:    return L10n.Panel.Health.billsSheetExplanation
+        case .bills:
+            // En Solo Gastos no hay ingresos: la explicación normal promete
+            // "% de tus ingresos" (no medible). Variante de solo-cobertura.
+            return sessionState.isExpensesOnlyMode
+                ? L10n.Panel.Health.billsSheetExplanationExpensesOnly
+                : L10n.Panel.Health.billsSheetExplanation
         }
     }
 
@@ -247,18 +253,21 @@ struct FinancialScoreDetailSheet: View {
     Color.clear
         .sheet(isPresented: .constant(true)) {
             FinancialScoreDetailSheet(kind: .budget, score: 92, onPrimaryCTA: {})
+                .environment(SessionState.shared)
         }
 }
 #Preview("Activity — empty") {
     Color.clear
         .sheet(isPresented: .constant(true)) {
             FinancialScoreDetailSheet(kind: .activity, score: nil, onPrimaryCTA: {})
+                .environment(SessionState.shared)
         }
 }
 #Preview("Total — mid") {
     Color.clear
         .sheet(isPresented: .constant(true)) {
             FinancialScoreDetailSheet(kind: .total, score: 78)
+                .environment(SessionState.shared)
         }
 }
 #endif

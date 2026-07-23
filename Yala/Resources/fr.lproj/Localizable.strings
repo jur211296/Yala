@@ -5345,6 +5345,9 @@
 /* Bridge Caso B: banner de edición parcial (subcat/tags sí, cuenta no) */
 "groups.bridge.editPartialBannerCaseB" = "Cette dépense vient du groupe. Vous pouvez modifier la catégorie et les étiquettes. Le reste est synchronisé avec le groupe.";
 
+/* Panel Health — explicación del sub-score Compromisos en modo Solo Gastos (sin mención a ingresos) */
+"panel.health.bills.sheet.explanation.expensesOnly" = "Indique si ton solde couvre les paiements en attente de la période.";
+
 /* Force-update (min-version) blocking screen */
 "appUpdate.force.title" = "Mettez à jour pour continuer";
 "appUpdate.force.message" = "Cette version de Yala n'est plus prise en charge. Mettez à jour pour continuer à utiliser l'application.";

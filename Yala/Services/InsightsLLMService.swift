@@ -902,6 +902,12 @@ final class InsightsLLMService {
         case .overBudget: stateMood = "Pasó el presupuesto — tono motivacional, mañana es otro día."
         }
 
+        // Solo Gastos: el usuario no registra ingresos. Evita que el modelo
+        // hable de ingresos/ahorro/disponible (que no existen en este modo).
+        let expensesOnlyClause = ctx.expensesOnly
+            ? "\nCONTEXTO — SOLO GASTOS: El usuario solo registra gastos, no ingresos. NO infieras su situación por ingresos ni por dinero disponible (no existen en su app); enfócate en su gasto y su ritmo del mes.\n"
+            : ""
+
         return """
         Eres Yala. Escribes UNA frase motivacional cortísima para el "Hero del mes" del panel del usuario. Tono cercano y humano, como una compañera financiera observadora — natural, NO un reporte.
 
@@ -919,7 +925,7 @@ final class InsightsLLMService {
 
         ESTADO DEL MES: \(stateMood)
         Días que quedan en el mes: \(ctx.daysRemaining). (Disponible para mencionar si aporta — opcional.)
-
+        \(expensesOnlyClause)
         \(contextBlock)
 
         FORMATO:
@@ -956,10 +962,15 @@ final class InsightsLLMService {
             "daysElapsed": ctx.daysElapsed,
             "monthProgress": Int((ctx.monthProgress * 100).rounded()),
             "locale": ctx.locale,
-            "income": ctx.formattedIncome,
             "expense": ctx.formattedExpense,
-            "available": ctx.formattedAvailable,
         ]
+        // Solo Gastos: el usuario no registra ingresos (income/available son 0).
+        // Omitirlos evita que el modelo perciba "sin ingresos / disponible 0" y
+        // sesgue el tono; en modo normal se incluyen como antes.
+        if !ctx.expensesOnly {
+            payload["income"] = ctx.formattedIncome
+            payload["available"] = ctx.formattedAvailable
+        }
         if let score = ctx.financialScore { payload["financialScore"] = score }
         if let percent = ctx.percentBudgetUsed { payload["percentBudgetUsed"] = Int((percent * 100).rounded()) }
         if let trend = ctx.spendingTrend { payload["spendingTrend"] = trend.rawValue }

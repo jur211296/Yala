@@ -5356,6 +5356,9 @@
 /* Bridge Caso B: banner de edición parcial (subcat/tags sí, cuenta no) */
 "groups.bridge.editPartialBannerCaseB" = "この支出はグループからのものです。カテゴリーとタグを編集できます。残りはグループと同期します。";
 
+/* Panel Health — explicación del sub-score Compromisos en modo Solo Gastos (sin mención a ingresos) */
+"panel.health.bills.sheet.explanation.expensesOnly" = "残高が期間内の保留中の支払いをカバーするかを見ています。";
+
 /* Force-update (min-version) blocking screen */
 "appUpdate.force.title" = "続けるにはアップデートが必要です";
 "appUpdate.force.message" = "このバージョンのYalaはサポートを終了しました。引き続きご利用いただくには、アップデートしてください。";

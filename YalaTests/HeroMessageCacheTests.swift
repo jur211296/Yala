@@ -49,7 +49,8 @@ struct HeroMessageCacheTests {
         topCategoryDeltaPercent: Double? = nil,
         topWeekday: String? = nil,
         formattedTopWeekdayAmount: String? = nil,
-        monthProgress: Double = 0.5
+        monthProgress: Double = 0.5,
+        expensesOnly: Bool = false
     ) -> HeroContext {
         HeroContext(
             state: state,
@@ -76,7 +77,8 @@ struct HeroMessageCacheTests {
             topCategoryDeltaPercent: topCategoryDeltaPercent,
             topWeekday: topWeekday,
             formattedTopWeekdayAmount: formattedTopWeekdayAmount,
-            monthProgress: monthProgress
+            monthProgress: monthProgress,
+            expensesOnly: expensesOnly
         )
     }
 
@@ -206,6 +208,15 @@ struct HeroMessageCacheTests {
         let a = HeroMessageCache.contextHash(makeContext(topWeekday: "Lunes"))
         let b = HeroMessageCache.contextHash(makeContext(topWeekday: "Viernes"))
         #expect(a != b)
+    }
+
+    /// Cambiar de/hacia Solo Gastos invalida el cache: un mensaje generado en
+    /// modo normal (que pudo citar ingresos/disponible) no debe servirse tras
+    /// activar Solo Gastos. Contextos que SOLO difieren en `expensesOnly` → hash distinto.
+    @Test func contextHash_differs_onExpensesOnlyChange() {
+        let normal = HeroMessageCache.contextHash(makeContext(expensesOnly: false))
+        let expensesOnly = HeroMessageCache.contextHash(makeContext(expensesOnly: true))
+        #expect(normal != expensesOnly)
     }
 
     // MARK: - clear()

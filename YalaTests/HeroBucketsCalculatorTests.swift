@@ -90,6 +90,7 @@ struct HeroBucketsCalculatorTests {
         #expect(result.prevHasAnyTx == false)
         #expect(result.periodIncome == 0)
         #expect(result.periodExpense == 0)
+        #expect(result.periodPrevExpense == 0)
     }
 
     // MARK: - Filtro de cuenta — núcleo del bug p20-12
@@ -300,5 +301,134 @@ struct HeroBucketsCalculatorTests {
 
         #expect(result.prevExpense == 0)
         #expect(result.prevHasAnyTx == true)
+    }
+
+    // MARK: - Solo Gastos: gasto del período anterior comparable
+
+    /// Ventana previa del período (`.lastWeek`-1): suma SOLO gasto, mismo scope
+    /// que `periodExpense` (cuenta elegible, sin income, sin balance adjustment).
+    @Test func calculate_periodPrevExpense_sumsOnlyExpenseInPrevWindow() {
+        let kept = makeAccount(name: "Kept")
+        let excluded = makeAccount(name: "Excluded")
+        let salary = makeCategory(name: "Salary", isIncome: true)
+        let food = makeCategory(name: "Food")
+
+        // Período actual = última semana de abril (23-30).
+        // Ventana previa = la semana anterior (16-23).
+        let prevWeek = DateInterval(start: date(2026, 4, 16), end: date(2026, 4, 23))
+
+        let txs = [
+            // En la ventana previa: gasto 80 (kept) cuenta; income y balance-adj no.
+            makeTransaction(amount: -80, date: date(2026, 4, 18), account: kept, category: food),
+            makeTransaction(amount: 500, date: date(2026, 4, 19), account: kept, category: salary),
+            makeTransaction(amount: -999, date: date(2026, 4, 18), account: excluded, category: food),
+            makeTransaction(amount: -111, date: date(2026, 4, 18), account: kept, category: food, balanceAdjustmentType: "manual"),
+            // En el período actual (25): gasto 30 → periodExpense, NO periodPrev.
+            makeTransaction(amount: -30, date: date(2026, 4, 25), account: kept, category: food),
+        ]
+
+        let result = HeroBucketsCalculator.calculate(
+            transactions: txs,
+            monthInterval: aprilInterval,
+            prevInterval: marchInterval,
+            periodInterval: lastWeekInterval,
+            periodPrevInterval: prevWeek,
+            eligibleAccountIDs: [kept.persistentModelID]
+        )
+
+        #expect(result.periodExpense == 30)
+        #expect(result.periodPrevExpense == 80)
+    }
+
+    /// Sin ventana previa pedida (`nil`) → `periodPrevExpense == 0` aunque haya
+    /// gasto en fechas pasadas.
+    @Test func calculate_periodPrevInterval_nil_periodPrevExpenseZero() {
+        let account = makeAccount()
+        let food = makeCategory(name: "Food")
+
+        let txs = [
+            makeTransaction(amount: -80, date: date(2026, 4, 18), account: account, category: food),
+        ]
+
+        let result = HeroBucketsCalculator.calculate(
+            transactions: txs,
+            monthInterval: aprilInterval,
+            prevInterval: marchInterval,
+            periodInterval: lastWeekInterval,
+            periodPrevInterval: nil,
+            eligibleAccountIDs: [account.persistentModelID]
+        )
+
+        #expect(result.periodPrevExpense == 0)
+    }
+
+    /// Borde compartido: `DateInterval` es CERRADO en ambos extremos. Si la
+    /// ventana previa cierra EXACTAMENTE en `periodInterval.start` (el caso de
+    /// `.thisMonth`, cuya ventana previa alineada no resta 1s), una TX fechada a
+    /// medianoche de ese instante NO debe doble-contarse: cuenta solo en el
+    /// período actual, nunca en el previo. (Mutante: sin el guard
+    /// `!periodInterval.contains`, `periodPrevExpense` sería 500.)
+    @Test func calculate_periodPrevExpense_excludesSharedBoundaryTx() {
+        let account = makeAccount()
+        let food = makeCategory(name: "Food")
+
+        // marchInterval.end == aprilInterval.start == 1 abr 00:00 (instante compartido).
+        let boundaryTx = makeTransaction(amount: -500, date: date(2026, 4, 1), account: account, category: food)
+
+        let result = HeroBucketsCalculator.calculate(
+            transactions: [boundaryTx],
+            monthInterval: aprilInterval,
+            prevInterval: marchInterval,
+            periodInterval: aprilInterval,      // [1 abr, 1 may]
+            periodPrevInterval: marchInterval,  // [1 mar, 1 abr] — end == periodInterval.start
+            eligibleAccountIDs: [account.persistentModelID]
+        )
+
+        #expect(result.periodExpense == 500)
+        #expect(result.periodPrevExpense == 0)
+    }
+
+    // MARK: - periodPreviousInterval (glue MTD-alineada)
+
+    /// `.allTime` no tiene previo acotado → `nil` (sin comparación).
+    @Test func periodPreviousInterval_allTime_returnsNil() {
+        let now = date(2026, 4, 15)
+        let current = DetailPeriod.allTime.dateInterval(now: now)
+        let result = HeroBucketsCalculator.periodPreviousInterval(
+            period: .allTime, currentInterval: current, now: now
+        )
+        #expect(result == nil)
+    }
+
+    /// `.thisMonth` es el único caso asimétrico parcial-vs-completo: el previo
+    /// (mes anterior COMPLETO) se trunca al día equivalente (MTD). Verifica que
+    /// arranca en el inicio del mes previo pero TERMINA antes del fin del mes
+    /// previo completo.
+    @Test func periodPreviousInterval_thisMonth_truncatesToEquivalentDay() {
+        let now = date(2026, 4, 15)
+        let current = DetailPeriod.thisMonth.dateInterval(now: now)
+        let fullPrev = PreviousPeriodHelper.previousInterval(for: .thisMonth, mode: .month, now: now)
+
+        let result = HeroBucketsCalculator.periodPreviousInterval(
+            period: .thisMonth, currentInterval: current, now: now
+        )
+
+        #expect(result != nil)
+        #expect(result?.start == fullPrev.start)   // inicio del mes previo
+        #expect((result?.end ?? .distantFuture) < fullPrev.end)  // truncado (MTD)
+    }
+
+    /// `.thisWeek` ya es simétrico (ventana trailing de igual duración): la
+    /// alineación es no-op → devuelve la ventana previa completa sin truncar.
+    @Test func periodPreviousInterval_thisWeek_returnsFullTrailingWindow() {
+        let now = date(2026, 4, 15)
+        let current = DetailPeriod.thisWeek.dateInterval(now: now)
+        let fullPrev = PreviousPeriodHelper.previousInterval(for: .thisWeek, mode: .month, now: now)
+
+        let result = HeroBucketsCalculator.periodPreviousInterval(
+            period: .thisWeek, currentInterval: current, now: now
+        )
+
+        #expect(result == fullPrev)
     }
 }

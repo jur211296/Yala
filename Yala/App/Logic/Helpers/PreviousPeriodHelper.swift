@@ -68,10 +68,11 @@ enum PreviousPeriodHelper {
     static func previousInterval(
         for period: DetailPeriod,
         mode: ComparisonMode,
-        customRange: DateInterval? = nil
+        customRange: DateInterval? = nil,
+        now: Date = .now
     ) -> DateInterval {
         let calendar = Calendar.current
-        let currentInterval = period.dateInterval(customRange: customRange)
+        let currentInterval = period.dateInterval(customRange: customRange, now: now)
 
         switch mode {
         case .month:

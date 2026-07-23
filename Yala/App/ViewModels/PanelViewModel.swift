@@ -152,6 +152,19 @@ struct PanelHeroPeriodData: Equatable {
     var income: Double = 0
     var expense: Double = 0
     var available: Double { max(0, income - expense) }
+    /// Gasto del período anterior COMPARABLE (MTD-alineado), mismo scope que
+    /// `expense`. Alimenta el chip "vs período anterior" del hero en modo Solo
+    /// Gastos. `nil` cuando no hay previo acotado (`.allTime`) — el chip se
+    /// oculta. Modo normal no lo muestra (la rama de vista lo ignora).
+    var periodPrevExpense: Double? = nil
+    /// Variación % del gasto del período vs el período anterior comparable.
+    /// `nil` si no hay previo (`periodPrevExpense` nil) o el previo es 0
+    /// (`calculateVariation` devuelve nil) → el chip no se renderiza.
+    var spentVariation: Double? {
+        periodPrevExpense.flatMap {
+            PreviousPeriodHelper.calculateVariation(currentAmount: expense, previousAmount: $0)
+        }
+    }
 }
 
 @MainActor
@@ -2712,15 +2725,27 @@ final class PanelViewModel {
         // finos (categoría, subcategoría, need, focused date) NO aplican al
         // Hero por decisión de producto. El estado del calculator y la IA
         // reaccionan naturalmente a estos inputs — su lógica no se modifica.
+        // Ventana previa comparable (MTD-alineada) para el chip "vs período
+        // anterior" del hero en Solo Gastos. Se computa siempre (barato) para
+        // que el chip esté listo al instante si el usuario togglea el modo; la
+        // rama de vista es la que gatea el display. `nil` en `.allTime`.
+        let periodPrevInterval = HeroBucketsCalculator.periodPreviousInterval(
+            period: selectedPeriod,
+            currentInterval: periodInterval,
+            customRange: customDateRange
+        )
+
         let buckets = HeroBucketsCalculator.calculate(
             transactions: transactions,
             monthInterval: monthInterval,
             prevInterval: prevInterval,
             periodInterval: periodInterval,
+            periodPrevInterval: periodPrevInterval,
             eligibleAccountIDs: eligibleAccountIDs
         )
 
-        let newPeriod = PanelHeroPeriodData(income: buckets.periodIncome, expense: buckets.periodExpense)
+        var newPeriod = PanelHeroPeriodData(income: buckets.periodIncome, expense: buckets.periodExpense)
+        newPeriod.periodPrevExpense = periodPrevInterval == nil ? nil : buckets.periodPrevExpense
         if newPeriod != heroPeriodWidget { heroPeriodWidget = newPeriod }
 
         let totalMonthlyBudget = budgets
@@ -2890,7 +2915,8 @@ final class PanelViewModel {
             topCategoryDeltaPercent: topCategoryDeltaPercent,
             topWeekday: topWeekday,
             formattedTopWeekdayAmount: formattedTopWeekdayAmount,
-            monthProgress: monthProgress
+            monthProgress: monthProgress,
+            expensesOnly: SessionState.shared.isExpensesOnlyMode
         )
     }
 

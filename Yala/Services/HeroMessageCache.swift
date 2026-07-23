@@ -81,6 +81,12 @@ struct HeroContext: Equatable {
     /// al LLM calcular "% del mes transcurrido" sin pedirle aritmética de
     /// fechas.
     let monthProgress: Double
+
+    /// Modo Solo Gastos: el usuario no registra ingresos (`income`/`available`
+    /// son siempre 0). El prompt omite esas cifras y evita inferir su situación
+    /// por ingresos. Incluido en `contextHash` para invalidar un mensaje cacheado
+    /// que citaba ingresos si el usuario cambia de modo.
+    let expensesOnly: Bool
 }
 
 // MARK: - Entry
@@ -137,6 +143,10 @@ enum HeroMessageCache {
         let topCategoryDeltaBucket = ctx.topCategoryDeltaPercent
             .map { String(Int(($0 / 5.0).rounded()) * 5) } ?? "na"
         let topWeekdayToken = ctx.topWeekday ?? "na"
+        // Invalida el cache al cambiar de/hacia Solo Gastos: un mensaje generado
+        // en modo normal (que pudo citar ingresos/disponible) no debe servirse
+        // tras activar Solo Gastos, y viceversa.
+        let expensesOnlyToken = ctx.expensesOnly ? "eo" : "_"
 
         return [
             ctx.state.rawValue,
@@ -153,6 +163,7 @@ enum HeroMessageCache {
             topCategoryToken,
             topCategoryDeltaBucket,
             topWeekdayToken,
+            expensesOnlyToken,
         ].joined(separator: "_")
     }
 
