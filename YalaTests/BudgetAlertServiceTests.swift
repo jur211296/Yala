@@ -83,4 +83,71 @@ struct BudgetAlertServiceTests {
         let day = Calendar.current.component(.day, from: interval.start)
         #expect(day == 1)
     }
+
+    // MARK: - notifyCrossedThresholds — dedup del threshold ENVIADO solo con entrega confirmada
+    // (ticket pagos-planificados-notifs-incoherentes-y-dedup-sin-entrega, D3: superficie hermana).
+    // Instancia aislada (`init(tracker:)`) + tracker con UserDefaults propio ⇒ el singleton
+    // `.shared` no se toca y no hay dependencia de `ModelContext`/`Date.now`.
+
+    private static let notifyPeriodKey = "2026-04"
+
+    @MainActor @Test func notify_sendFails_maxThresholdNotMarked_othersMarked() async {
+        let tracker = BudgetAlertTracker(defaults: makeIsolatedDefaults())
+        let service = BudgetAlertService(tracker: tracker)
+        service.sendOverride = { _, _, _, _, _ in false }   // iOS rechaza el request
+
+        let id = UUID()
+        await service.notifyCrossedThresholds(
+            budgetID: id, budgetName: "Comida", periodKey: Self.notifyPeriodKey,
+            newThresholds: [50, 75, 90], spent: 90, limit: 100, currencyCode: "USD"
+        )
+
+        // 90 = el ENVIADO (falló) ⇒ NO marcado (se reintenta); 50/75 = supresión intencional.
+        #expect(tracker.notifiedThresholds(budgetID: id, periodKey: Self.notifyPeriodKey) == [50, 75])
+    }
+
+    @MainActor @Test func notify_sendSucceeds_allThresholdsMarked() async {
+        let tracker = BudgetAlertTracker(defaults: makeIsolatedDefaults())
+        let service = BudgetAlertService(tracker: tracker)
+        service.sendOverride = { _, _, _, _, _ in true }
+
+        let id = UUID()
+        await service.notifyCrossedThresholds(
+            budgetID: id, budgetName: "Comida", periodKey: Self.notifyPeriodKey,
+            newThresholds: [50, 75, 90], spent: 90, limit: 100, currencyCode: "USD"
+        )
+
+        #expect(tracker.notifiedThresholds(budgetID: id, periodKey: Self.notifyPeriodKey) == [50, 75, 90])
+    }
+
+    @MainActor @Test func notify_singleThreshold_sendFails_notMarked() async {
+        let tracker = BudgetAlertTracker(defaults: makeIsolatedDefaults())
+        let service = BudgetAlertService(tracker: tracker)
+        service.sendOverride = { _, _, _, _, _ in false }
+
+        let id = UUID()
+        await service.notifyCrossedThresholds(
+            budgetID: id, budgetName: "Comida", periodKey: Self.notifyPeriodKey,
+            newThresholds: [50], spent: 55, limit: 100, currencyCode: "USD"
+        )
+
+        // Único threshold cruzado y no entregado ⇒ nada marcado (retry en el próximo check).
+        #expect(tracker.notifiedThresholds(budgetID: id, periodKey: Self.notifyPeriodKey).isEmpty)
+    }
+
+    @MainActor @Test func notify_emptyThresholds_noSendNoMark() async {
+        let tracker = BudgetAlertTracker(defaults: makeIsolatedDefaults())
+        let service = BudgetAlertService(tracker: tracker)
+        service.sendOverride = { _, _, _, _, _ in true }
+
+        let id = UUID()
+        await service.notifyCrossedThresholds(
+            budgetID: id, budgetName: "Comida", periodKey: Self.notifyPeriodKey,
+            newThresholds: [], spent: 0, limit: 100, currencyCode: "USD"
+        )
+
+        // Sin thresholds cruzados: el guard `max()` sale temprano ⇒ nada enviado ni marcado.
+        // (Caza un mutante que sustituya el guard por `?? 0`: enviaría/marcaría un 0 espurio.)
+        #expect(tracker.notifiedThresholds(budgetID: id, periodKey: Self.notifyPeriodKey).isEmpty)
+    }
 }

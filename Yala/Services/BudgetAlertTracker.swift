@@ -13,7 +13,7 @@ import Foundation
 final class BudgetAlertTracker {
     static let shared = BudgetAlertTracker()
 
-    private let defaults = UserDefaults.standard
+    private let defaults: UserDefaults
 
     /// Prefijo de las keys de dedup en `UserDefaults`. Expuesto porque
     /// `DataWipeService.removeUserPreferenceKeys` lo barre POR PREFIJO al resetear la
@@ -36,7 +36,14 @@ final class BudgetAlertTracker {
         return f
     }()
 
-    private init() {}
+    private init() {
+        self.defaults = .standard
+    }
+
+    /// Init de test — UserDefaults aislado (`makeIsolatedDefaults()`); jamás en producción.
+    init(defaults: UserDefaults) {
+        self.defaults = defaults
+    }
 
     // MARK: - Period Key Generation
 

@@ -41,6 +41,36 @@ final class ReportNotificationService {
     /// Guard flag to prevent concurrent sendDueReports calls (race between bootstrap and becameActive)
     private var isSendingReports = false
 
+    // MARK: - Test seams (nil/default en producción; patrón de closures inyectables del repo,
+    // espejo de `ScheduledPaymentNotificationService`). El singleton `.shared` no se toca en tests.
+
+    /// Sustituye el envío real (`NotificationService.sendNotification`) en tests.
+    /// Mismo contrato: `true` = iOS aceptó el request.
+    var sendOverride: ((_ title: String, _ body: String, _ deepLink: String?) async -> Bool)?
+    /// Sustituye el check de permisos del sistema en tests.
+    var isAuthorizedOverride: (() async -> Bool)?
+    /// Sustituye la lectura de quiescencia del import en tests.
+    var isQuiescentOverride: (() -> Bool)?
+
+    #if DEBUG
+    /// Instancia aislada para tests (evita contaminar el singleton `.shared`). Jamás en producción.
+    static func makeForTesting() -> ReportNotificationService { ReportNotificationService() }
+    #endif
+
+    private func send(title: String, body: String, deepLink: String?) async -> Bool {
+        if let override = sendOverride { return await override(title, body, deepLink) }
+        return await NotificationService.shared.sendNotification(title: title, body: body, deepLink: deepLink)
+    }
+
+    private func isAuthorized() async -> Bool {
+        if let override = isAuthorizedOverride { return await override() }
+        return await NotificationService.shared.isAuthorized()
+    }
+
+    private func isImportQuiescent() -> Bool {
+        isQuiescentOverride?() ?? iCloudSyncService.shared.isImportQuiescent
+    }
+
     // MARK: - Public Methods
 
     /// Sends report notifications that are due based on their configuration
@@ -48,11 +78,11 @@ final class ReportNotificationService {
         guard !isSendingReports else { return }
         isSendingReports = true
         defer { isSendingReports = false }
-        guard await NotificationService.shared.isAuthorized() else { return }
+        guard await isAuthorized() else { return }
 
         // Gate de quiescencia: persiste `NotificationItem.lastNotifiedDate` (store personal); diferir
         // durante el import del restore (idempotente: se reevalúa al asentar / próximo arranque).
-        guard iCloudSyncService.shared.isImportQuiescent else {
+        guard isImportQuiescent() else {
             SaveBreadcrumb.deferred("ReportNotificationService.sendDueReports", "import not quiescent")
             return
         }
@@ -65,13 +95,17 @@ final class ReportNotificationService {
 
             let data = calculateReportData(config: report.reportConfig, type: report.notificationType, context: context)
 
-            await NotificationService.shared.sendNotification(
+            let delivered = await send(
                 title: report.localizedName,
                 body: Self.formatReportBody(report.reportConfig, reportType: report.notificationType, data: data),
                 deepLink: "statistics"
             )
 
-            // Mark as notified to prevent duplicate sends
+            // Marca de dedup SOLO con entrega confirmada por iOS (paridad con
+            // `ScheduledPaymentNotificationService`): un fallo silencioso — permisos revocados,
+            // wipe personal armado, throttle de iOS — no debe suprimir el reporte hasta el próximo
+            // período. Si no se entregó, el próximo pass lo reintenta.
+            guard delivered else { continue }
             report.lastNotifiedDate = Date.now
             sentCount += 1
         }

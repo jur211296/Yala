@@ -12,6 +12,9 @@ import Testing
 
 @testable import Yala
 
+// ≥1 `makeTestContext()` en la suite ⇒ `@Suite(.serialized)` (regla del repo, evita la
+// acumulación de containers in-memory que crashea el proceso).
+@Suite(.serialized)
 struct ReportNotificationServiceTests {
 
     // MARK: - shouldSendNow — Already notified today
@@ -334,6 +337,88 @@ struct ReportNotificationServiceTests {
         // convert(−100, rate 2.0) = −200 ; expense -= (−200) = 200
         #expect(totals.totalExpense == 200)
         #expect(totals.hasExpenseActivity == true)
+    }
+
+    // MARK: - sendDueReports — marca de dedup SOLO con entrega confirmada
+    // (ticket pagos-planificados-notifs-incoherentes-y-dedup-sin-entrega, D3: superficie
+    // hermana de ScheduledPaymentNotificationService — un fallo silencioso no debe suprimir
+    // el reporte hasta el próximo período).
+
+    @Test @MainActor func sendDueReports_sendFails_doesNotMarkNotified() async throws {
+        let context = try makeTestContext()
+        let report = makeDueDailyReport()
+        context.insert(report)
+        try context.save()
+
+        let service = ReportNotificationService.makeForTesting()
+        service.isAuthorizedOverride = { true }
+        service.isQuiescentOverride = { true }
+        service.sendOverride = { _, _, _ in false }   // iOS rechaza el request
+
+        await service.sendDueReports(context: context)
+
+        // Sin entrega ⇒ marca NO puesta: el próximo pass reintenta (no se suprime el reporte).
+        #expect(report.lastNotifiedDate == nil)
+    }
+
+    @Test @MainActor func sendDueReports_sendSucceeds_marksNotified() async throws {
+        let context = try makeTestContext()
+        let report = makeDueDailyReport()
+        context.insert(report)
+        try context.save()
+
+        let service = ReportNotificationService.makeForTesting()
+        service.isAuthorizedOverride = { true }
+        service.isQuiescentOverride = { true }
+        service.sendOverride = { _, _, _ in true }
+
+        await service.sendDueReports(context: context)
+
+        #expect(report.lastNotifiedDate != nil)
+    }
+
+    @Test @MainActor func sendDueReports_notQuiescent_defersWithoutMarking() async throws {
+        let context = try makeTestContext()
+        let report = makeDueDailyReport()
+        context.insert(report)
+        try context.save()
+
+        let service = ReportNotificationService.makeForTesting()
+        service.isAuthorizedOverride = { true }
+        service.isQuiescentOverride = { false }        // import en curso ⇒ diferir
+        service.sendOverride = { _, _, _ in true }     // aunque "entregara", no debe llegar al envío
+
+        await service.sendDueReports(context: context)
+
+        // Gate de quiescencia load-bearing (evita el crash-loop del `save()` durante el restore):
+        // sin quiescencia no se envía ni se marca. Si el guard se cae, enviaría (true) y marcaría.
+        #expect(report.lastNotifiedDate == nil)
+    }
+
+    @Test @MainActor func sendDueReports_notAuthorized_defersWithoutMarking() async throws {
+        let context = try makeTestContext()
+        let report = makeDueDailyReport()
+        context.insert(report)
+        try context.save()
+
+        let service = ReportNotificationService.makeForTesting()
+        service.isAuthorizedOverride = { false }       // permisos denegados ⇒ no enviar ni marcar
+        service.isQuiescentOverride = { true }
+        service.sendOverride = { _, _, _ in true }
+
+        await service.sendDueReports(context: context)
+
+        #expect(report.lastNotifiedDate == nil)
+    }
+
+    /// Reporte diario activo, ventana siempre abierta (00:00, sin restricción de días),
+    /// nunca notificado ⇒ `shouldSendNow == true` en cualquier momento del día (sin flakiness
+    /// de medianoche: `now >= inicio-de-hoy` siempre se cumple).
+    @MainActor
+    private func makeDueDailyReport() -> NotificationItem {
+        let report = makeReport(type: .dailyReport, hour: 0, minute: 0, config: .default)
+        report.lastNotifiedDate = nil
+        return report
     }
 
     // MARK: - Helpers

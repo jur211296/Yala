@@ -16,9 +16,20 @@ final class BudgetAlertService {
 
     private var modelContext: ModelContext?
     private var isChecking = false
-    private let tracker = BudgetAlertTracker.shared
+    private let tracker: BudgetAlertTracker
 
-    private init() {}
+    /// Sustituye el envío real (`NotificationService.sendNotification`) en tests.
+    /// Mismo contrato: `true` = iOS aceptó el request.
+    var sendOverride: ((_ budgetName: String, _ threshold: Int, _ spent: Double, _ limit: Double, _ currencyCode: String) async -> Bool)?
+
+    private init() {
+        self.tracker = .shared
+    }
+
+    /// Init de test — tracker aislado (`BudgetAlertTracker(defaults:)`). No usar en producción.
+    init(tracker: BudgetAlertTracker) {
+        self.tracker = tracker
+    }
 
     func setContext(_ context: ModelContext) {
         self.modelContext = context
@@ -118,20 +129,56 @@ final class BudgetAlertService {
         // Get currency for notification
         let currencyCode = budget.currencyCode
 
-        // Mark ALL crossed thresholds as notified (prevents future spam)
-        for threshold in newThresholds {
-            tracker.markNotified(budgetID: budget.id, periodKey: periodKey, threshold: threshold)
+        await notifyCrossedThresholds(
+            budgetID: budget.id,
+            budgetName: budget.name,
+            periodKey: periodKey,
+            newThresholds: newThresholds,
+            spent: spending,
+            limit: budget.limitAmount,
+            currencyCode: currencyCode
+        )
+    }
+
+    /// Marca los thresholds cruzados y envía UNA notificación (la del más alto cruzado).
+    ///
+    /// Asimetría DELIBERADA del marcado:
+    /// - Los thresholds cruzados PERO NO enviados (todos menos el más alto) se marcan
+    ///   INCONDICIONALMENTE: su supresión es la intención anti-spam — no queremos avisos
+    ///   separados 50/75/90 del mismo período cuando un salto los cruzó todos de golpe.
+    /// - El threshold efectivamente ENVIADO (el más alto) se marca SOLO con entrega confirmada
+    ///   por iOS (`sendNotification -> Bool`, paridad con `ScheduledPaymentNotificationService`):
+    ///   un fallo silencioso — permisos revocados, wipe personal armado, throttle de iOS — no
+    ///   debe suprimir el alerta del período; el próximo check lo reintenta.
+    ///
+    /// Extraído de `checkBudget` como seam de test (el marcado del enviado queda gateado por
+    /// la entrega, verificable sin `ModelContext` ni `Date.now`).
+    func notifyCrossedThresholds(
+        budgetID: UUID,
+        budgetName: String,
+        periodKey: String,
+        newThresholds: [Int],
+        spent: Double,
+        limit: Double,
+        currencyCode: String
+    ) async {
+        guard let maxThreshold = newThresholds.max() else { return }
+
+        // Cruzados-pero-no-enviados: supresión intencional (solo se avisa del más alto).
+        for threshold in newThresholds where threshold != maxThreshold {
+            tracker.markNotified(budgetID: budgetID, periodKey: periodKey, threshold: threshold)
         }
 
-        // Send notification only for the highest threshold
-        if let maxThreshold = newThresholds.max() {
-            await sendNotification(
-                budgetName: budget.name,
-                threshold: maxThreshold,
-                spent: spending,
-                limit: budget.limitAmount,
-                currencyCode: currencyCode
-            )
+        // El enviado (el más alto): marca solo tras entrega confirmada.
+        let delivered = await sendNotification(
+            budgetName: budgetName,
+            threshold: maxThreshold,
+            spent: spent,
+            limit: limit,
+            currencyCode: currencyCode
+        )
+        if delivered {
+            tracker.markNotified(budgetID: budgetID, periodKey: periodKey, threshold: maxThreshold)
         }
     }
 
@@ -184,13 +231,19 @@ final class BudgetAlertService {
 
     // MARK: - Notifications
 
+    /// Envía la notificación del threshold. Retorna `true` si iOS aceptó el request
+    /// (`NotificationService.sendNotification -> Bool`) — el llamador gatea el dedup con ese valor.
     private func sendNotification(
         budgetName: String,
         threshold: Int,
         spent: Double,
         limit: Double,
         currencyCode: String
-    ) async {
+    ) async -> Bool {
+        if let override = sendOverride {
+            return await override(budgetName, threshold, spent, limit, currencyCode)
+        }
+
         let symbol = CurrencyUtils.symbol(for: currencyCode)
         let spentStr = "\(symbol)\(spent.formatted(.number.precision(.fractionLength(0...2))))"
         let limitStr = "\(symbol)\(limit.formatted(.number.precision(.fractionLength(0...2))))"
@@ -204,7 +257,7 @@ final class BudgetAlertService {
         default: message = "\(budgetName): \(threshold)%"
         }
 
-        await NotificationService.shared.sendNotification(
+        return await NotificationService.shared.sendNotification(
             title: budgetName,
             body: message,
             deepLink: "budgets"
