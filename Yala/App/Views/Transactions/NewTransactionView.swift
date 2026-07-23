@@ -91,6 +91,38 @@ struct NewTransactionView: View {
         return true
     }
 
+    /// Forma de la TX en edición para `BridgedEditPolicy` (qué campos son editables + banner).
+    private var bridgedPolicyShape: BridgedEditPolicy.TxShape {
+        let tx = transactionToEdit
+        return BridgedEditPolicy.TxShape(
+            hasSplitExpenseID: tx?.splitExpenseID != nil,
+            hasSplitSettlementID: tx?.splitSettlementID != nil,
+            accountIsNil: tx != nil && tx?.account == nil,
+            accountIsSystem: tx?.account?.isSystemAccount == true,
+            subcategoryIsSystem: tx?.subcategory?.isAnySystem == true,
+            hasPendingPointerDraft: cachedPendingGroupDraft != nil
+        )
+    }
+
+    private var bridgedClassification: BridgedEditPolicy.Classification {
+        BridgedEditPolicy.classify(bridgedPolicyShape)
+    }
+
+    /// Cuenta editable (no bridgeada o Caso A real). Caso B usa cuenta de sistema → bloqueada.
+    private var canEditBridgedAccount: Bool {
+        BridgedEditPolicy.canEditAccount(bridgedClassification)
+    }
+
+    /// Subcategoría y tags editables (no bridgeada, Caso A real, o Caso B clasificable).
+    private var canEditBridgedSubcategoryAndTags: Bool {
+        BridgedEditPolicy.canEditSubcategoryAndTags(bridgedClassification)
+    }
+
+    /// Botón guardar habilitado (algún campo personal es editable).
+    private var canSaveBridged: Bool {
+        BridgedEditPolicy.canSave(bridgedClassification)
+    }
+
     /// Hidrata `cachedPendingGroupDraft` una vez al aparecer (evita fetch en hot path del body).
     private func loadPendingGroupDraftIfNeeded() {
         guard isBridgedReadOnly,
@@ -111,21 +143,22 @@ struct NewTransactionView: View {
 
     @ViewBuilder
     private var bridgedTxReadOnlyBanner: some View {
-        if let tx = transactionToEdit, isBridgedReadOnly {
-            let pendingDraft = cachedPendingGroupDraft
+        if isBridgedReadOnly {
+            // Mensaje y CTA salen del MISMO `banner` de la policy — una sola fuente de verdad
+            // (si su precedencia cambia, no se desincronizan).
+            let banner = BridgedEditPolicy.banner(bridgedPolicyShape)
             let message: String = {
-                if pendingDraft != nil {
-                    return L10n.Groups.Bridge.assignFromInbox
-                } else if tx.splitSettlementID != nil {
-                    return L10n.Groups.Bridge.editSettlementInGroup
-                } else if isBridgedCasoA {
-                    // M6: Caso A — edit parcial habilitado para campos personales.
-                    return L10n.Groups.Bridge.editPartialBanner
-                } else {
-                    return L10n.Groups.Bridge.editFromGroup
+                switch banner {
+                case .assignFromInbox: return L10n.Groups.Bridge.assignFromInbox
+                case .editSettlementInGroup: return L10n.Groups.Bridge.editSettlementInGroup
+                case .editPartial: return L10n.Groups.Bridge.editPartialBanner
+                case .editPartialCaseB: return L10n.Groups.Bridge.editPartialBannerCaseB
+                // .none inalcanzable (solo se renderiza bajo isBridgedReadOnly); fallback inofensivo.
+                case .editFromGroup, .none: return L10n.Groups.Bridge.editFromGroup
                 }
             }()
-            let ctaLabel: String = pendingDraft != nil
+            let hasPendingDraft = banner == .assignFromInbox
+            let ctaLabel: String = hasPendingDraft
                 ? L10n.Inbox.openInbox
                 : L10n.Groups.Detail.openGroup
 
@@ -140,7 +173,7 @@ struct NewTransactionView: View {
                         .multilineTextAlignment(.leading)
                 }
                 Button {
-                    handleBridgedCTA(hasPendingDraft: pendingDraft != nil)
+                    handleBridgedCTA(hasPendingDraft: hasPendingDraft)
                 } label: {
                     Text(ctaLabel)
                         .font(DS.Typography.body)
@@ -253,18 +286,19 @@ struct NewTransactionView: View {
 
                         Spacer()
 
-                        // Bottom selection chips: campos personales (cuenta/subcat/tags) —
-                        // M6 Caso A los habilita. M5 puro (Caso B/settlements) sigue disabled.
+                        // Bottom selection chips: el disabled es GRANULAR por chip según
+                        // `BridgedEditPolicy` (dentro de `bottomChips`): cuenta editable solo en
+                        // Caso A real; subcat/tags también en Caso B clasificable; nada en
+                        // derivadas/settlements. Sin `.disabled` de contenedor aquí.
                         bottomChips
-                            .disabled(isBridgedReadOnly && !isBridgedCasoA)
-                            .opacity(isBridgedReadOnly && !isBridgedCasoA ? 0.5 : 1.0)
                             .padding(.bottom, DS.Spacing.lg)
 
-                        // Register button: M6 Caso A puede guardar cambios personales (solo
-                        // toca campos personales en SwiftData, no invoca service del grupo).
+                        // Register button: habilitado si algún campo personal es editable
+                        // (Caso A y Caso B clasificable). Solo toca campos personales en
+                        // SwiftData, no invoca service del grupo.
                         registerButton
-                            .disabled(isBridgedReadOnly && !isBridgedCasoA)
-                            .opacity(isBridgedReadOnly && !isBridgedCasoA ? 0.5 : 1.0)
+                            .disabled(!canSaveBridged)
+                            .opacity(canSaveBridged ? 1.0 : 0.5)
                             .padding(.horizontal, DS.Spacing.xl)
                             .padding(.bottom, DS.Spacing.xxl)
                     }
@@ -946,50 +980,56 @@ struct NewTransactionView: View {
     private var bottomChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: DS.Spacing.sm) {
-                // Account chip (or source/dest for transfers)
-                if viewModel.isTransfer {
-                    // Source account chip - pink
-                    SelectionChip(
-                        icon: "arrow.up.circle",
-                        text: viewModel.sourceAccount?.name ?? L10n.Transaction.origin,
-                        isSelected: viewModel.sourceAccount != nil,
-                        color: viewModel.sourceAccount != nil ? Color.hotPink : nil
-                    ) {
-                        dismissKeyboard()
-                        viewModel.showSourceAccountSelector = true
-                    }
+                // Account chip (or source/dest for transfers). En Caso B/derivadas/settlement la
+                // cuenta es de sistema por diseño → bloqueada; transfers no son bridgeadas.
+                Group {
+                    if viewModel.isTransfer {
+                        // Source account chip - pink
+                        SelectionChip(
+                            icon: "arrow.up.circle",
+                            text: viewModel.sourceAccount?.name ?? L10n.Transaction.origin,
+                            isSelected: viewModel.sourceAccount != nil,
+                            color: viewModel.sourceAccount != nil ? Color.hotPink : nil
+                        ) {
+                            dismissKeyboard()
+                            viewModel.showSourceAccountSelector = true
+                        }
 
-                    // Destination account chip - purple
-                    SelectionChip(
-                        icon: "arrow.down.circle",
-                        text: viewModel.destinationAccount?.name ?? L10n.Transaction.destination,
-                        isSelected: viewModel.destinationAccount != nil,
-                        color: viewModel.destinationAccount != nil ? Color.electricIndigo : nil
-                    ) {
-                        dismissKeyboard()
-                        viewModel.showDestinationAccountSelector = true
-                    }
+                        // Destination account chip - purple
+                        SelectionChip(
+                            icon: "arrow.down.circle",
+                            text: viewModel.destinationAccount?.name ?? L10n.Transaction.destination,
+                            isSelected: viewModel.destinationAccount != nil,
+                            color: viewModel.destinationAccount != nil ? Color.electricIndigo : nil
+                        ) {
+                            dismissKeyboard()
+                            viewModel.showDestinationAccountSelector = true
+                        }
 
-                    // Transfer accounts validation message
-                    if case .invalid(let message) = viewModel.accountValidation {
-                        Text(message)
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(DS.Semantic.errorForeground)
+                        // Transfer accounts validation message
+                        if case .invalid(let message) = viewModel.accountValidation {
+                            Text(message)
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(DS.Semantic.errorForeground)
+                        }
+                    } else {
+                        SelectionChip(
+                            icon: "creditcard",
+                            text: viewModel.selectedAccount?.name ?? L10n.Transaction.account,
+                            isSelected: viewModel.selectedAccount != nil,
+                            color: viewModel.selectedAccount.map { Color(hex: $0.colorHex) }
+                        ) {
+                            dismissKeyboard()
+                            viewModel.showAccountSelector = true
+                        }
+                        .accessibilityIdentifier("new_transaction_account_chip")
                     }
-                } else {
-                    SelectionChip(
-                        icon: "creditcard",
-                        text: viewModel.selectedAccount?.name ?? L10n.Transaction.account,
-                        isSelected: viewModel.selectedAccount != nil,
-                        color: viewModel.selectedAccount.map { Color(hex: $0.colorHex) }
-                    ) {
-                        dismissKeyboard()
-                        viewModel.showAccountSelector = true
-                    }
-                    .accessibilityIdentifier("new_transaction_account_chip")
                 }
+                .disabled(!canEditBridgedAccount)
+                .opacity(canEditBridgedAccount ? 1.0 : 0.5)
 
-                // Subcategory chip (not for transfers) - uses category color when selected
+                // Subcategory chip (not for transfers) - uses category color when selected.
+                // Editable en Caso A real y Caso B clasificable; bloqueada en derivadas/settlement.
                 if !viewModel.isTransfer {
                     SelectionChip(
                         icon: "tag",
@@ -1001,10 +1041,14 @@ struct NewTransactionView: View {
                         viewModel.showSubcategorySelector = true
                     }
                     .accessibilityIdentifier("new_transaction_subcategory_chip")
+                    .disabled(!canEditBridgedSubcategoryAndTags)
+                    .opacity(canEditBridgedSubcategoryAndTags ? 1.0 : 0.5)
                 }
 
-                // Tags - individual chip per tag or default chip (not for transfers)
+                // Tags - individual chip per tag or default chip (not for transfers).
+                // Mismo permiso que subcategoría.
                 if !viewModel.isTransfer {
+                    Group {
                     if viewModel.selectedTags.isEmpty {
                         // Default chip when no tags selected
                         SelectionChip(
@@ -1060,6 +1104,9 @@ struct NewTransactionView: View {
                             )
                         }
                     }
+                    }
+                    .disabled(!canEditBridgedSubcategoryAndTags)
+                    .opacity(canEditBridgedSubcategoryAndTags ? 1.0 : 0.5)
                 }
             }
             .padding(.horizontal, DS.Spacing.xl)

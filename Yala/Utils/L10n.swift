@@ -1837,6 +1837,8 @@ enum L10n {
             static var editSettlementInGroup: String { ls("groups.bridge.editSettlementInGroup", comment: "") }
             // M6: Caso A edit parcial banner + draft hint reasons
             static var editPartialBanner: String { ls("groups.bridge.editPartialBanner", comment: "") }
+            // Caso B clasificable: subcat/tags editables, cuenta no.
+            static var editPartialBannerCaseB: String { ls("groups.bridge.editPartialBannerCaseB", comment: "") }
             static var draftReasonRemoteCreate: String { ls("groups.bridge.draftReasonRemoteCreate", comment: "") }
             static var draftReasonCurrencyChanged: String { ls("groups.bridge.draftReasonCurrencyChanged", comment: "") }
             // Activation/deactivation modals (F12)

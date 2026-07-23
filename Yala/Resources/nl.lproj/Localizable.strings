@@ -5352,3 +5352,6 @@
 
 /* Feed row subtitle: payer paid receiver (settlement) */
 "groups.settlement.feedRow" = "%1$@ heeft %2$@ betaald";
+
+/* Bridge Caso B: banner de edición parcial (subcat/tags sí, cuenta no) */
+"groups.bridge.editPartialBannerCaseB" = "Deze uitgave komt uit de groep. Je kunt categorie en tags bewerken. De rest synchroniseert met de groep.";

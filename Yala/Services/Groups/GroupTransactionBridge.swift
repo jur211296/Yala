@@ -179,8 +179,26 @@ final class GroupTransactionBridge {
             $0.optInPersonalOnly && $0.needsUserInput.contains(DraftInputRequirement.subcategory)
         }
 
-        // Cleanup: TX virtuales son derivadas, siempre delete+recreate.
-        for tx in existingVirtualTxs { context.delete(tx) }
+        // Cleanup: las TX virtuales derivadas (lent, opening balance — subcat de sistema)
+        // son delete+recreate; la ÚNICA virtual clasificable (la `-myShare` del Caso B, con
+        // subcat nil o de usuario) se PRESERVA para no perder subcat manual / tags entre
+        // re-bridges (paridad con el preserve+update del Caso A real). La partición es
+        // determinista ante duplicadas históricas (gana la que porte metadatos, empate → la
+        // más antigua). El path terminal (Caso B / groupInvite / Caso A) la consume o la borra.
+        let partition = BridgeBranchLogic.partitionVirtualTxs(existingVirtualTxs.map { tx in
+            let sub = tx.subcategory
+            let hasUserSubcat = sub != nil && sub?.isAnySystem != true
+            let hasTags = !(tx.resolvedTagIDs()?.isEmpty ?? true)
+            return BridgeBranchLogic.VirtualTxShape(
+                subcategoryIsNil: sub == nil,
+                subcategoryIsSystem: sub?.isAnySystem == true,
+                hasUserMetadata: hasUserSubcat || hasTags || tx.needOverride != nil,
+                date: tx.date,
+                createdAt: tx.createdAt
+            )
+        })
+        let preservedClassifiable: TransactionItem? = partition.preservedIndex.map { existingVirtualTxs[$0] }
+        for idx in partition.deletedIndices { context.delete(existingVirtualTxs[idx]) }
         // Drafts pendientes: cleanup salvo si DraftService los está procesando (race).
         // Opt-in drafts (`optInPersonalOnly==true`) NUNCA se borran aquí — representan
         // intent del user pendiente de aprobación que sobrevive cualquier re-bridge.
@@ -211,6 +229,7 @@ final class GroupTransactionBridge {
             try bridgeVirtualOnly(
                 expense: expense,
                 existingRealTx: existingRealTx,
+                preservedVirtual: preservedClassifiable,
                 deleteStaleReal: effectiveBridgeEnabled,
                 myShareAmount: mySharedAmount,
                 lentAmount: lentAmount,
@@ -230,6 +249,7 @@ final class GroupTransactionBridge {
             if let stale = existingRealTx { context.delete(stale) }
             createGroupInviteCaseAVirtualPair(
                 expense: expense,
+                preservedVirtual: preservedClassifiable,
                 myShareAmount: mySharedAmount,
                 lentAmount: lentAmount,
                 totalAmount: totalAmount,
@@ -252,6 +272,7 @@ final class GroupTransactionBridge {
             try bridgeVirtualOnly(
                 expense: expense,
                 existingRealTx: existingRealTx,
+                preservedVirtual: preservedClassifiable,
                 deleteStaleReal: false,
                 myShareAmount: mySharedAmount,
                 lentAmount: lentAmount,
@@ -264,6 +285,11 @@ final class GroupTransactionBridge {
             try saveIfNeeded(shouldSave: shouldSave, context: context)
             return
         }
+
+        // Path Caso A modo .full/.completed: la virtual clasificable superviviente (p.ej. de
+        // cuando yo era NO-pagador, Caso B) ya no aplica — aquí mi costo lo lleva la TX real
+        // `-total` + la virtual lent derivada. Borrarla evita una virtual `-myShare` huérfana.
+        if let stale = preservedClassifiable { context.delete(stale) }
 
         // Path Caso A modo .full/.completed: gestionar TX cuenta real con preserve+update.
         if let realTx = existingRealTx {
@@ -392,9 +418,14 @@ final class GroupTransactionBridge {
     /// Resuelve el doble conteo B6-25 (virtual `-myShare` + real `-total`, mismo signo).
     /// - Parameter deleteStaleReal: `true` solo en Caso B bridge-ON (la TX real solo tiene
     ///   sentido cuando yo soy payer; un cambio de payer con bridge ON la vuelve obsoleta).
+    /// - Parameter preservedVirtual: la TX virtual clasificable `-myShare` superviviente del
+    ///   cleanup (con subcat manual / tags del usuario). En la rama `.myShareCost` se hace
+    ///   upsert (preserva su identidad y metadatos); en `.lendingToCompensateReal`/`.noVirtual`
+    ///   se BORRA (el usuario tiene TX real → la virtual `-myShare` sobra).
     private func bridgeVirtualOnly(
         expense: SplitExpense,
         existingRealTx: TransactionItem?,
+        preservedVirtual: TransactionItem?,
         deleteStaleReal: Bool,
         myShareAmount: Double,
         lentAmount: Double,
@@ -437,6 +468,7 @@ final class GroupTransactionBridge {
         case .myShareCost:
             createCaseBVirtualMyShare(
                 expense: expense,
+                existing: preservedVirtual,
                 myShareAmount: myShareAmount,
                 realSubcat: realSubcat,
                 optInCoversSubcategory: optInCoversSubcategory,
@@ -444,6 +476,8 @@ final class GroupTransactionBridge {
                 context: context
             )
         case .lendingToCompensateReal:
+            // El usuario tiene TX real -total → la virtual `-myShare` clasificable sobra.
+            if let preservedVirtual { context.delete(preservedVirtual) }
             try createVirtualLent(
                 expense: expense,
                 lentAmount: lentAmount,
@@ -452,7 +486,8 @@ final class GroupTransactionBridge {
                 context: context
             )
         case .noVirtual:
-            break  // real -total ya es mi costo total (yo solo en el split).
+            // real -total ya es mi costo total (yo solo en el split) → sin virtual.
+            if let preservedVirtual { context.delete(preservedVirtual) }
         }
     }
 
@@ -544,38 +579,92 @@ final class GroupTransactionBridge {
     }
 
     /// Caso B (otro pagó): TX virtual -myShare con subcat manual o draft TX-puntero.
-    /// No-op si `myShareAmount <= 0` (no participo en la división → sin costo personal que
-    /// registrar; evita una TX de monto 0). Simétrico con `createVirtualLent` (`lent > 0`).
+    /// **Upsert** con preserve+update: si `existing != nil` se preserva su identidad (y su
+    /// subcat manual / tags / needOverride / cuenta), actualizando SOLO los campos derivados
+    /// del grupo (monto/fecha/nota/split*). A diferencia del Caso A real, la NOTA aquí SÍ se
+    /// deriva de `expenseDescription` — no es editable en la UI (vive en `centralContent`,
+    /// bloqueada) y es el título visible del gasto.
+    /// No-op de CREACIÓN si `myShareAmount <= 0` (no participo en la división → sin costo
+    /// personal); en ese caso, si había una `existing`, se BORRA (evita una TX huérfana con
+    /// monto stale). Simétrico con `createVirtualLent` (`lent > 0`).
     private func createCaseBVirtualMyShare(
         expense: SplitExpense,
+        existing: TransactionItem?,
         myShareAmount: Double,
         realSubcat: Subcategory?,
         optInCoversSubcategory: Bool,
         virtualAccount: Account,
         context: ModelContext
     ) {
-        guard myShareAmount > 0 else { return }
         let expenseIDStr = expense.id.uuidString
-        let tx = TransactionItem(
-            date: expense.date,
-            amount: -myShareAmount,
-            currencyCode: expense.currencyCode,
-            note: expense.expenseDescription.isEmpty ? nil : expense.expenseDescription,
-            category: realSubcat?.safeCategory,
-            subcategory: realSubcat,
-            account: virtualAccount
-        )
-        tx.splitExpenseID = expenseIDStr
-        tx.splitGroupZoneID = expense.groupZoneID
-        tx.splitTotalAmount = expense.amount
-        tx.splitType = expense.splitType
-        context.insert(tx)
-        tx.recalculatePreferredCurrency(context: context)
+        let derivedNote = expense.expenseDescription.isEmpty ? nil : expense.expenseDescription
 
-        // Draft TX-puntero para asignar subcat si auto-match falló (path heredado M5).
+        guard myShareAmount > 0 else {
+            // Con preserve, dejar la TX existente la volvería huérfana (monto stale) → borrar.
+            if let existing { context.delete(existing) }
+            return
+        }
+
+        let tx: TransactionItem
+        if let existing, existing.currencyCode == expense.currencyCode {
+            // UPDATE preserve: SOLO campos del grupo (jamás cuenta/tags/subcat ya puesta/
+            // needOverride). Nota derivada del gasto (no editable en Caso B).
+            existing.amount = -myShareAmount
+            existing.date = expense.date
+            existing.note = derivedNote
+            existing.splitTotalAmount = expense.amount
+            existing.splitType = expense.splitType
+            // Rellenar subcat+category SOLO si la TX nunca tuvo una y el gasto resuelve una.
+            // Residual documentado: `subcategory` es to-one CloudKit-lazy
+            // SIN mirror CSV — en la ventana de hidratación multi-device puede leerse nil y
+            // este fill pisar una subcat manual aún no hidratada con el auto-match. NO es
+            // regresión (el delete+recreate previo la pisaba SIEMPRE); el cierre real exige
+            // un mirror de subcat en TransactionItem (cambio de schema, fuera de este fix).
+            if GroupDraftFinalizationLogic.shouldFillPreservedSubcategory(
+                currentSubcatIsNil: existing.subcategory == nil,
+                resolvedSubcatAvailable: realSubcat != nil
+            ), let realSubcat {
+                existing.subcategory = realSubcat
+                existing.category = realSubcat.safeCategory
+            }
+            existing.recalculatePreferredCurrency(context: context)
+            tx = existing
+        } else if let existing {
+            // Currency INCOMPATIBLE (el gasto cambió de moneda): delete + recreate CON
+            // trasplante de los metadatos del usuario (independientes de la moneda).
+            let carriedSubcat = existing.subcategory
+            // Tags CSV-first (regla CSV mirror): la relación M2M puede venir nil en ventana
+            // lazy con sync activo — leerla directo perdería las etiquetas del usuario.
+            let carriedTags = TagResolver.fetchOrEmpty(
+                ids: existing.resolvedTagIDs() ?? [],
+                in: context,
+                errorContext: "GroupTransactionBridge/currencyTransplant"
+            )
+            let carriedNeedOverride = existing.needOverride
+            context.delete(existing)
+            let newTx = insertVirtualMyShareTx(
+                expense: expense, myShareAmount: myShareAmount, note: derivedNote,
+                subcategory: carriedSubcat ?? realSubcat, virtualAccount: virtualAccount,
+                context: context
+            )
+            newTx.needOverride = carriedNeedOverride
+            newTx.setTags(from: carriedTags)
+            tx = newTx
+        } else {
+            // CREATE (primera vez): sin `existing`, no hay metadatos que preservar.
+            tx = insertVirtualMyShareTx(
+                expense: expense, myShareAmount: myShareAmount, note: derivedNote,
+                subcategory: realSubcat, virtualAccount: virtualAccount,
+                context: context
+            )
+        }
+
+        // Draft TX-puntero para asignar subcat si la TX quedó sin clasificar (path heredado
+        // M5). Se decide por el estado FINAL de la TX (`tx.subcategory == nil`) — no por el
+        // auto-match — para no recrear el puntero sobre una TX ya clasificada manualmente.
         // Skip si un draft opt-in pendiente ya pide la subcategoría (B6-26 parte 2).
         if GroupDraftFinalizationLogic.shouldCreateVirtualSubcategoryPointer(
-            autoMatchFailed: realSubcat == nil,
+            autoMatchFailed: tx.subcategory == nil,
             optInDraftCoversSubcategory: optInCoversSubcategory
         ) {
             let draft = InboxDraft(
@@ -599,9 +688,40 @@ final class GroupTransactionBridge {
         }
     }
 
+    /// Construye e inserta la TX virtual `-myShare` con los campos derivados del gasto.
+    /// Compartido por las ramas recreate-con-trasplante y create del upsert de Caso B —
+    /// un campo `split*` nuevo se añade en UN solo sitio.
+    private func insertVirtualMyShareTx(
+        expense: SplitExpense,
+        myShareAmount: Double,
+        note: String?,
+        subcategory: Subcategory?,
+        virtualAccount: Account,
+        context: ModelContext
+    ) -> TransactionItem {
+        let newTx = TransactionItem(
+            date: expense.date,
+            amount: -myShareAmount,
+            currencyCode: expense.currencyCode,
+            note: note,
+            category: subcategory?.safeCategory,
+            subcategory: subcategory,
+            account: virtualAccount
+        )
+        newTx.splitExpenseID = expense.id.uuidString
+        newTx.splitGroupZoneID = expense.groupZoneID
+        newTx.splitTotalAmount = expense.amount
+        newTx.splitType = expense.splitType
+        context.insert(newTx)
+        newTx.recalculatePreferredCurrency(context: context)
+        return newTx
+    }
+
     /// Caso A modo .groupInvite: M5 puro (TX1 virtual -myShare + TX2 virtual +totalAmount sistema).
+    /// TX1 reusa el upsert de Caso B → preserva la subcat manual / tags entre re-bridges.
     private func createGroupInviteCaseAVirtualPair(
         expense: SplitExpense,
+        preservedVirtual: TransactionItem?,
         myShareAmount: Double,
         lentAmount: Double,
         totalAmount: Double,
@@ -611,11 +731,12 @@ final class GroupTransactionBridge {
         context: ModelContext
     ) {
         let expenseIDStr = expense.id.uuidString
-        // TX1 virtual -myShare (idéntica a Caso B): reusa el helper de Caso B en vez de duplicar
-        // la TX + su draft puntero. El propio helper es no-op si myShare==0 (pagador sin parte:
-        // prestó el total → solo se crea la TX2 +total de abajo).
+        // TX1 virtual -myShare (idéntica a Caso B): reusa el helper de Caso B (upsert) en vez de
+        // duplicar la TX + su draft puntero. El propio helper borra `preservedVirtual` si
+        // myShare==0 (pagador sin parte: prestó el total → solo se crea la TX2 +total de abajo).
         createCaseBVirtualMyShare(
             expense: expense,
+            existing: preservedVirtual,
             myShareAmount: myShareAmount,
             realSubcat: realSubcat,
             optInCoversSubcategory: optInCoversSubcategory,

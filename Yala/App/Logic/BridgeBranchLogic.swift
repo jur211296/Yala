@@ -62,4 +62,75 @@ enum BridgeBranchLogic {
         guard hasRealTx else { return .myShareCost }
         return lentAmount > 0 ? .lendingToCompensateReal : .noVirtual
     }
+
+    // MARK: - Partición del cleanup de TX virtuales (Caso B preserve+update)
+
+    /// Forma de una TX virtual existente (cuenta sistema, mismo `splitExpenseID`) para
+    /// clasificarla en el cleanup del bridge. Valores planos → testeable sin `ModelContext`.
+    struct VirtualTxShape: Equatable {
+        /// La TX no tiene subcategoría (nunca clasificada).
+        let subcategoryIsNil: Bool
+        /// Su subcategoría es de sistema (solo relevante si `!subcategoryIsNil`).
+        let subcategoryIsSystem: Bool
+        /// Porta metadatos del usuario: subcat de usuario, tags, o `needOverride`.
+        let hasUserMetadata: Bool
+        /// Fecha del gasto (para desempate por antigüedad).
+        let date: Date
+        /// Timestamp de creación (desempate estable secundario).
+        let createdAt: Date
+    }
+
+    /// Resultado de particionar las TX virtuales: el índice de la ÚNICA clasificable a
+    /// preservar (portadora de metadatos del Caso B `-myShare`), y los índices a borrar
+    /// (derivadas: lent/opening-balance con subcat de sistema + clasificables duplicadas
+    /// perdedoras).
+    struct VirtualTxPartition: Equatable {
+        /// Índice de la TX clasificable a preservar (nil si ninguna es clasificable).
+        let preservedIndex: Int?
+        /// Índices a borrar (orden estable ascendente).
+        let deletedIndices: [Int]
+    }
+
+    /// Particiona las TX virtuales de un gasto entre la clasificable a preservar y las
+    /// derivadas/duplicadas a borrar.
+    ///
+    /// **Clasificable** = `subcategoryIsNil || !subcategoryIsSystem`. Es la única virtual
+    /// que puede portar metadatos del usuario (la `-myShare` del Caso B, cuya subcat es nil
+    /// o de usuario). Las derivadas (lent `loanToGroups`, opening balance) nacen SIEMPRE con
+    /// subcat de sistema → nunca clasificables.
+    ///
+    /// **Duplicadas clasificables** (bug histórico de delete+recreate con UUIDs distintos):
+    /// gana la que tenga metadatos del usuario; empate → la más antigua por `date`, luego
+    /// `createdAt`, luego índice (determinista). Las perdedoras se borran.
+    ///
+    /// Residual documentado: el determinismo es por-INPUT — dos devices
+    /// con duplicadas aún no sincronizadas pueden elegir winners DISTINTOS y borrarse
+    /// mutuamente (ventana transitoria sin `-myShare`, misma clase que el hazard I11-4 de
+    /// CLAUDE.md). Auto-sana: el siguiente re-bridge recrea la virtual; en estado sincronizado
+    /// ambos devices convergen al mismo winner.
+    static func partitionVirtualTxs(_ shapes: [VirtualTxShape]) -> VirtualTxPartition {
+        var classifiable: [Int] = []
+        var derived: [Int] = []
+        for (i, s) in shapes.enumerated() {
+            if s.subcategoryIsNil || !s.subcategoryIsSystem {
+                classifiable.append(i)
+            } else {
+                derived.append(i)
+            }
+        }
+        guard !classifiable.isEmpty else {
+            return VirtualTxPartition(preservedIndex: nil, deletedIndices: derived.sorted())
+        }
+        let winner = classifiable.min { a, b in
+            let sa = shapes[a], sb = shapes[b]
+            // Prioridad: con metadatos de usuario primero.
+            if sa.hasUserMetadata != sb.hasUserMetadata { return sa.hasUserMetadata }
+            // Empate → más antigua (date, luego createdAt, luego índice).
+            if sa.date != sb.date { return sa.date < sb.date }
+            if sa.createdAt != sb.createdAt { return sa.createdAt < sb.createdAt }
+            return a < b
+        }!
+        let deleted = (derived + classifiable.filter { $0 != winner }).sorted()
+        return VirtualTxPartition(preservedIndex: winner, deletedIndices: deleted)
+    }
 }

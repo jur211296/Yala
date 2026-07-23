@@ -38,6 +38,16 @@ final class BridgeModeResolver {
         self.appPreferences = prefs
     }
 
+    #if DEBUG
+    /// Test-only: vuelve al estado pre-bootstrap (`appPreferences == nil` ⇒ bridge ON default)
+    /// y vacía el cache. Los tests que inyecten prefs vía `setAppPreferences` DEBEN restaurar
+    /// con esto en un `defer` (singleton compartido — regla CLAUDE.md).
+    func _testReset() {
+        appPreferences = nil
+        cache.removeAll()
+    }
+    #endif
+
     // MARK: - Read
 
     /// Resuelve si el bridge debe crear TX real para `group` en el current user.

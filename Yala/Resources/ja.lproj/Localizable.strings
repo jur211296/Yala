@@ -5352,3 +5352,6 @@
 
 /* Feed row subtitle: payer paid receiver (settlement) */
 "groups.settlement.feedRow" = "%1$@さんは%2$@さんに支払いました";
+
+/* Bridge Caso B: banner de edición parcial (subcat/tags sí, cuenta no) */
+"groups.bridge.editPartialBannerCaseB" = "この支出はグループからのものです。カテゴリーとタグを編集できます。残りはグループと同期します。";
