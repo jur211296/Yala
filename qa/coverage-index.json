@@ -2008,16 +2008,20 @@
       "area": "update-available-banner",
       "codeGlobs": [
         "Yala/App/Services/AppUpdateService.swift",
+        "Yala/App/Logic/AppUpdateDecisionLogic.swift",
+        "Yala/App/Logic/ForceUpdateDecisionLogic.swift",
+        "Yala/App/Services/ForceUpdateGate.swift",
         "Yala/App/Views/Shared/UpdateAvailableBanner.swift",
+        "Yala/App/Views/Shared/ForceUpdateView.swift",
         "Yala/App/Views/Panel/PanelView.swift"
       ],
       "scenarioIDs": [
         "F-PRO-04"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/UpdateAvailableBannerUITests",
+      "coverage": "xcuitest:YalaUITests/UpdateAvailableBannerUITests + unit:YalaTests/AppUpdateDecisionLogicTests (compare, isUpdateAvailable fail-closed, shouldCheckNetwork, makeLookupURL storefront) + AppUpdateServiceTests (cache-gate skip, trackId rehidrata appStoreURL, region en URL, defaults/session/now inyectables). Banner UX+robustez (2026-07-23): re-chequeo en foreground (ContentView .active, gate hasCompletedOnboarding, no-op por cache 24h); storefront del device (Locale.current.region.lowercased, ya no country=us); comparador+cache+URL extraidos a AppUpdateDecisionLogic (puro); breadcrumb AppUpdateBreadcrumb (os.Logger com.yala/AppUpdate, fuera de #if DEBUG, sin PII); fail-closed (version desconocida -> no banner, gap #5); trackId persistido (appUpdate.trackId, appStoreURL sobrevive cold-launch; anadido a DataWipeService). FORZADO DE ACTUALIZACION DARK (min-version): campo forceUpdate.minSupportedBuild en GET /config (gateway config.ts/env.ts/wrangler.toml + test/config.test.ts, sin deploy) -> RemoteFlagsSnapshot.minSupportedBuild (CloudRemoteConfig) -> ForceUpdateDecisionLogic (fail-open) -> ForceUpdateGate (@Observable, recompute boot/foreground) -> ForceUpdateView (cover terminal sin dismiss) presentado por ForceUpdateNetModifier (molde SignOutRelaunchNetModifier) + blocker 'forceUpdate' PRIMERO en ContentViewReadinessLogic. unit:ForceUpdateDecisionLogicTests + ForceUpdateGateTests + ContentViewReadinessLogicTests (forceUpdate_blocks + priority_winsOverWipe) + CloudRemoteConfigTests (wireDecode_forceUpdate + snapshot roundtrip). DARK en prod: el fetch de /config no corre (CloudBackendConfig.isConfigured==false) -> ForceUpdateGate siempre false. Seam DEBUG -uitest-force-required (+ _forceRequiredForUITest, inerte en release). Mutantes verificados (fail-closed removido + <=min = rojos). appUpdate.dismissButton huerfano NO retirado (co-edicion l10n con sesion paralela; D2 diferido, benigno). PENDIENTE owner: deploy gateway + encender fetch en prod (D9) + device-QA del cover terminal + App Store ID numerico hardcodeado como fallback del boton antes del turn-on.",
       "owner": "",
-      "lastVerified": "2026-06-02"
+      "lastVerified": "2026-07-23"
     },
     {
       "area": "voice-input-currency-examples",

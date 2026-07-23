@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import app from "../src/index";
-import { parseRolloutPercent } from "../src/config";
+import { parseRolloutPercent, parseMinBuild } from "../src/config";
 
 /**
  * GET /config (DIFERIDOS #34) — remote-config pública de flags de rollout (§j.1/§j.2).
@@ -14,6 +14,9 @@ interface ConfigBody {
     cloudOnboardingChoiceRolloutPercent: number;
     groupsBackendRolloutPercent: number;
   };
+  forceUpdate: {
+    minSupportedBuild: number;
+  };
 }
 
 function getConfig(env: Record<string, string>): Response | Promise<Response> {
@@ -21,11 +24,12 @@ function getConfig(env: Record<string, string>): Response | Promise<Response> {
 }
 
 describe("GET /config — shape y semántica fail-closed", () => {
-  it("golden del shape: v=1 + los 3 percents, con valores parseados del env", async () => {
+  it("golden del shape: v=1 + los 3 percents + forceUpdate, con valores parseados del env", async () => {
     const res = await getConfig({
       CLOUD_MODE_ROLLOUT_PERCENT: "25",
       CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT: "0",
       GROUPS_BACKEND_ROLLOUT_PERCENT: "100",
+      MIN_SUPPORTED_BUILD: "137",
     });
     expect(res.status).toBe(200);
     const body = (await res.json()) as ConfigBody;
@@ -36,14 +40,25 @@ describe("GET /config — shape y semántica fail-closed", () => {
         cloudOnboardingChoiceRolloutPercent: 0,
         groupsBackendRolloutPercent: 100,
       },
+      forceUpdate: {
+        minSupportedBuild: 137,
+      },
     });
   });
 
-  it("vars AUSENTES → 0 en los 3 (fail-closed: un env sin configurar jamás enciende nada)", async () => {
+  it("vars AUSENTES → 0 en los 3 percents + minSupportedBuild (fail-closed: nada enciende)", async () => {
     const body = (await (await getConfig({})).json()) as ConfigBody;
     expect(body.flags.cloudModeRolloutPercent).toBe(0);
     expect(body.flags.cloudOnboardingChoiceRolloutPercent).toBe(0);
     expect(body.flags.groupsBackendRolloutPercent).toBe(0);
+    expect(body.forceUpdate.minSupportedBuild).toBe(0);
+  });
+
+  it("MIN_SUPPORTED_BUILD inválido → 0; número grande se PRESERVA (sin clamp, ≠ percents)", async () => {
+    const invalid = (await (await getConfig({ MIN_SUPPORTED_BUILD: "garbage" })).json()) as ConfigBody;
+    expect(invalid.forceUpdate.minSupportedBuild).toBe(0);
+    const large = (await (await getConfig({ MIN_SUPPORTED_BUILD: "999999" })).json()) as ConfigBody;
+    expect(large.forceUpdate.minSupportedBuild).toBe(999999);
   });
 
   it("var INVÁLIDA → 0 (no NaN, no crash)", async () => {
@@ -83,5 +98,19 @@ describe("parseRolloutPercent — tabla fail-closed", () => {
     expect(parseRolloutPercent("-1")).toBe(0);
     expect(parseRolloutPercent("garbage")).toBe(0);
     expect(parseRolloutPercent("50.9")).toBe(50); // parseInt trunca — entero siempre
+  });
+});
+
+describe("parseMinBuild — piso 0, sin techo (fail-closed)", () => {
+  it("casos borde", () => {
+    expect(parseMinBuild(undefined)).toBe(0);
+    expect(parseMinBuild("")).toBe(0);
+    expect(parseMinBuild("garbage")).toBe(0);
+    expect(parseMinBuild("-5")).toBe(0); // piso 0
+    expect(parseMinBuild("0")).toBe(0);
+    expect(parseMinBuild("1")).toBe(1);
+    expect(parseMinBuild("137")).toBe(137);
+    expect(parseMinBuild("999999")).toBe(999999); // SIN clamp superior
+    expect(parseMinBuild("137.9")).toBe(137); // parseInt trunca
   });
 });

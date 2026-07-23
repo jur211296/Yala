@@ -13,6 +13,7 @@ struct ContentViewReadinessLogicTests {
 
     /// Builder con defaults limpios — varía solo las flags relevantes por test.
     private func make(
+        forceUpdateRequired: Bool = false,
         isSplashDismissed: Bool = true,
         isWipingData: Bool = false,
         groupsRetentionPending: Bool = false,
@@ -42,6 +43,7 @@ struct ContentViewReadinessLogicTests {
         isMainTabModalVisible: Bool = false
     ) -> ShellReadinessState {
         ShellReadinessState(
+            forceUpdateRequired: forceUpdateRequired,
             isSplashDismissed: isSplashDismissed, isWipingData: isWipingData,
             groupsRetentionPending: groupsRetentionPending,
             showOnboarding: showOnboarding, showWelcomeFlow: showWelcomeFlow,
@@ -259,6 +261,18 @@ struct ContentViewReadinessLogicTests {
     }
 
     // MARK: - Prioridad (orden documentado de severidad)
+
+    @Test func forceUpdate_blocks_andIsNotReady() {
+        let s = make(forceUpdateRequired: true)
+        #expect(ContentViewReadinessLogic.blocker(state: s) == "forceUpdate")
+        #expect(!ContentViewReadinessLogic.isReady(state: s))
+    }
+
+    @Test func forceUpdate_priorityWinsOverWipe() {
+        // El forzado es el estado más terminal: trumpea incluso el wipe en curso.
+        let s = make(forceUpdateRequired: true, isSplashDismissed: false, isWipingData: true)
+        #expect(ContentViewReadinessLogic.blocker(state: s) == "forceUpdate")
+    }
 
     @Test func wipingData_priorityWinsOverEverything() {
         let s = make(

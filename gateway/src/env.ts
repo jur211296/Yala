@@ -26,6 +26,9 @@ export interface Env {
   CLOUD_MODE_ROLLOUT_PERCENT?: string;
   CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT?: string;
   GROUPS_BACKEND_ROLLOUT_PERCENT?: string;
+  // Forzado de actualización (min-version): build de CFBundleVersion por debajo del cual el cliente
+  // muestra la pantalla bloqueante. Ausente/inválido → 0 (desactivado). Flip = editar var + deploy.
+  MIN_SUPPORTED_BUILD?: string;
 
   // --- APNs (spike G0 Grupos→backend) — ausentes hasta configurar; /v1/debug/push responde 503 ---
   APNS_KEY_ID?: string; // Var (wrangler.toml): Key ID de 10 chars. NO es secreto (viaja en el header kid del JWT).

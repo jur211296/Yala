@@ -741,6 +741,9 @@ enum L10n {
             static var billsSheetExplanation: String {
                 ls("panel.health.bills.sheet.explanation", comment: "Bills explanation — how it is calculated")
             }
+            static var billsSheetExplanationExpensesOnly: String {
+                ls("panel.health.bills.sheet.explanation.expensesOnly", comment: "Bills explanation in expenses-only mode — coverage only, no income mention")
+            }
             static var billsHeadlineHigh: String {
                 ls("panel.health.bills.headline.high", comment: "Encouraging headline for bills sub-score ≥ 90")
             }
@@ -6262,6 +6265,13 @@ enum L10n {
         }
         static var updateButton: String { ls("appUpdate.updateButton", comment: "") }
         static var dismissButton: String { ls("appUpdate.dismissButton", comment: "") }
+
+        /// Pantalla BLOQUEANTE de forzado (min-version). DARK hasta encender el fetch de /config.
+        enum Force {
+            static var title: String { ls("appUpdate.force.title", comment: "") }
+            static var message: String { ls("appUpdate.force.message", comment: "") }
+            static var updateButton: String { ls("appUpdate.force.updateButton", comment: "") }
+        }
     }
 
     // MARK: - Weekday

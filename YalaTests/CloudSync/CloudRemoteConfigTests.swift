@@ -49,6 +49,27 @@ struct CloudRemoteConfigTests {
         let wire = try JSONDecoder().decode(RemoteConfigWireResponse.self, from: json)
         #expect(wire.flags?.cloudModeRolloutPercent == 50)
         #expect(wire.flags?.groupsBackendRolloutPercent == nil)
+        // forceUpdate ausente → nil (fail-open); snapshots viejos no rompen.
+        #expect(wire.forceUpdate?.minSupportedBuild == nil)
+    }
+
+    @Test func wireDecode_forceUpdate() throws {
+        let json = Data(#"{"v":1,"flags":{},"forceUpdate":{"minSupportedBuild":137}}"#.utf8)
+        let wire = try JSONDecoder().decode(RemoteConfigWireResponse.self, from: json)
+        #expect(wire.forceUpdate?.minSupportedBuild == 137)
+    }
+
+    @Test func snapshot_roundTrip_withMinSupportedBuild() {
+        let defaults = makeIsolatedDefaults()
+        let snapshot = RemoteFlagsSnapshot(
+            cloudModeRolloutPercent: nil,
+            cloudOnboardingChoiceRolloutPercent: nil,
+            groupsBackendRolloutPercent: nil,
+            minSupportedBuild: 200,
+            fetchedAt: Date(timeIntervalSince1970: 1_800_000_000)
+        )
+        CloudRemoteConfigStore.writeSnapshot(snapshot, defaults: defaults)
+        #expect(CloudRemoteConfigStore.readSnapshot(defaults)?.minSupportedBuild == 200)
     }
 
     // MARK: - Flags efectivos (overrides; bajo tests el snapshot persistido se IGNORA)

@@ -10,6 +10,7 @@
 import SwiftUI
 
 private struct ReadinessGateObserversModifier: ViewModifier {
+    let forceUpdateRequired: Bool
     let showOnboarding: Bool
     let showWelcomeFlow: Bool
     let showLanguageSelection: Bool
@@ -63,6 +64,7 @@ private struct ReadinessGateObserversModifier: ViewModifier {
 
     private func alertObservers(_ content: some View) -> some View {
         content
+            .onChange(of: forceUpdateRequired) { _, _ in recompute() }
             .onChange(of: showFreshStartWipeAlert) { _, _ in recompute() }
             .onChange(of: showRemoteWipeAlert) { _, _ in recompute() }
             .onChange(of: showICloudRestartAlert) { _, _ in recompute() }
@@ -75,6 +77,7 @@ private struct ReadinessGateObserversModifier: ViewModifier {
 
 extension View {
     func readinessGateObservers(
+        forceUpdateRequired: Bool,
         showOnboarding: Bool,
         showWelcomeFlow: Bool,
         showLanguageSelection: Bool,
@@ -101,6 +104,7 @@ extension View {
         recompute: @escaping () -> Void
     ) -> some View {
         modifier(ReadinessGateObserversModifier(
+            forceUpdateRequired: forceUpdateRequired,
             showOnboarding: showOnboarding,
             showWelcomeFlow: showWelcomeFlow,
             showLanguageSelection: showLanguageSelection,

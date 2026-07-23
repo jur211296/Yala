@@ -4607,3 +4607,8 @@
 
 /* Bridge Caso B: banner de edición parcial (subcat/tags sí, cuenta no) */
 "groups.bridge.editPartialBannerCaseB" = "Este gasto viene del grupo. Podés editar la categoría y las etiquetas. El resto se sincroniza con el grupo.";
+
+/* Force-update (min-version) blocking screen */
+"appUpdate.force.title" = "Actualizá para continuar";
+"appUpdate.force.message" = "Esta versión de Yala ya no es compatible. Actualizá para seguir usando la app.";
+"appUpdate.force.updateButton" = "Actualizá ahora";

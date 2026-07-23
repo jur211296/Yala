@@ -31,6 +31,10 @@ nonisolated struct RemoteFlagsSnapshot: Codable, Equatable {
     var cloudModeRolloutPercent: Int?
     var cloudOnboardingChoiceRolloutPercent: Int?
     var groupsBackendRolloutPercent: Int?
+    /// Forzado de actualización (min-version): build por debajo del cual el cliente bloquea.
+    /// Optional con default ⇒ snapshots viejos cacheados (sin este campo) decodifican a nil y los
+    /// call-sites previos no rompen. Ausente/0 = desactivado (`ForceUpdateDecisionLogic` fail-open).
+    var minSupportedBuild: Int? = nil
     var fetchedAt: Date
 }
 
@@ -42,8 +46,13 @@ nonisolated struct RemoteConfigWireResponse: Codable {
         var groupsBackendRolloutPercent: Int?
     }
 
+    struct ForceUpdate: Codable {
+        var minSupportedBuild: Int?
+    }
+
     var v: Int?
     var flags: Flags?
+    var forceUpdate: ForceUpdate?
 }
 
 // MARK: - Store (UserDefaults.standard, prefijo `cloudSync.`)
@@ -245,6 +254,7 @@ final class RemoteConfigClient {
                 cloudModeRolloutPercent: wire.flags?.cloudModeRolloutPercent,
                 cloudOnboardingChoiceRolloutPercent: wire.flags?.cloudOnboardingChoiceRolloutPercent,
                 groupsBackendRolloutPercent: wire.flags?.groupsBackendRolloutPercent,
+                minSupportedBuild: wire.forceUpdate?.minSupportedBuild,
                 fetchedAt: now
             )
             CloudRemoteConfigStore.writeSnapshot(snapshot, defaults: defaults)
@@ -268,8 +278,9 @@ nonisolated enum RemoteConfigBreadcrumb {
         let cloud = snapshot.cloudModeRolloutPercent.map(String.init) ?? "nil"
         let groups = snapshot.groupsBackendRolloutPercent.map(String.init) ?? "nil"
         let choice = snapshot.cloudOnboardingChoiceRolloutPercent.map(String.init) ?? "nil"
+        let minBuild = snapshot.minSupportedBuild.map(String.init) ?? "nil"
         logger.notice(
-            "CloudSync remoteConfig fetched cloud=\(cloud, privacy: .public) choice=\(choice, privacy: .public) groups=\(groups, privacy: .public)"
+            "CloudSync remoteConfig fetched cloud=\(cloud, privacy: .public) choice=\(choice, privacy: .public) groups=\(groups, privacy: .public) minBuild=\(minBuild, privacy: .public)"
         )
     }
 

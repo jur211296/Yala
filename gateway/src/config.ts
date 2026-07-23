@@ -28,6 +28,18 @@ export function parseRolloutPercent(raw: string | undefined): number {
   return Math.min(100, Math.max(0, n));
 }
 
+/**
+ * Parse fail-closed del umbral de forzado (min-version): número de BUILD (CFBundleVersion) por
+ * debajo del cual el cliente muestra la pantalla bloqueante. Piso 0 = desactivado (ningún build < 0).
+ * Ausente/inválido → 0. SIN clamp superior: los builds crecen sin techo (≠ percents).
+ */
+export function parseMinBuild(raw: string | undefined): number {
+  if (raw === undefined) return 0;
+  const n = Number.parseInt(raw, 10);
+  if (Number.isNaN(n)) return 0;
+  return Math.max(0, n);
+}
+
 export function handleConfig(c: Ctx): Response {
   const body = {
     v: 1,
@@ -35,6 +47,11 @@ export function handleConfig(c: Ctx): Response {
       cloudModeRolloutPercent: parseRolloutPercent(c.env.CLOUD_MODE_ROLLOUT_PERCENT),
       cloudOnboardingChoiceRolloutPercent: parseRolloutPercent(c.env.CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT),
       groupsBackendRolloutPercent: parseRolloutPercent(c.env.GROUPS_BACKEND_ROLLOUT_PERCENT),
+    },
+    // Forzado de actualización (min-version). DARK en prod: el cliente prod no fetchea /config
+    // (CloudBackendConfig.isConfigured == false) → inerte hasta el encendido (D9). 0 = desactivado.
+    forceUpdate: {
+      minSupportedBuild: parseMinBuild(c.env.MIN_SUPPORTED_BUILD),
     },
   };
   return new Response(JSON.stringify(body), {

@@ -66,7 +66,7 @@ struct DataWipeServiceTests {
         "onboardingMode", "sessionTimestamps", "secondaryCurrencies", "needsPostOnboardingTrial",
         "lastKnownOnboardingTimestamp",
         // What's New / App Update
-        "lastSeenAppVersion", "appUpdate.latestVersion", "appUpdate.lastChecked",
+        "lastSeenAppVersion", "appUpdate.latestVersion", "appUpdate.lastChecked", "appUpdate.trackId",
         // Tours / one-shots
         "hasSeenSettingsTour", "hasSeenCashFlowSetupTour", "hasSeenCashFlowTableTour",
         "hasSeenChatContextHint", "hasSeenTodayFXCoachMark", "showSiriTip",

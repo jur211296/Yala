@@ -106,6 +106,10 @@ final class UITestHooks {
     /// (sin red) para testear el UpdateAvailableBanner del Panel.
     nonisolated static var forceUpdateBanner: Bool { hasArg("-uitest-force-update") }
 
+    /// `-uitest-force-required`: fuerza la pantalla BLOQUEANTE de forzado (min-version) sin red ni
+    /// snapshot, para QA/XCUITest del cover terminal. Inerte en release (hasArg + seam DEBUG).
+    nonisolated static var forceUpdateRequired: Bool { hasArg("-uitest-force-required") }
+
     /// `-uitest-ai-consent`: marca el consentimiento de datos IA aceptado, para poder
     /// abrir entradas IA Pro (voz/imagen) sin el alert de consentimiento. No graba ni
     /// transcribe — solo destraba la navegación a la vista.

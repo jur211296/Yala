@@ -16,6 +16,10 @@ import Foundation
 /// Built by ContentView from its @State flags + SessionState before calling
 /// `ContentViewReadinessLogic.isReady`.
 struct ShellReadinessState: Equatable {
+    /// Forzado de actualización (min-version): la app está por debajo del build mínimo soportado.
+    /// Estado más terminal que existe — la app es inutilizable hasta actualizar → trumpea TODO
+    /// (incl. wipe/relaunch). DARK en prod (el fetch de `/config` no corre → siempre false).
+    let forceUpdateRequired: Bool
     let isSplashDismissed: Bool
     let isWipingData: Bool
 
@@ -85,7 +89,10 @@ enum ContentViewReadinessLogic {
     /// Returns the highest-priority blocker name (for debug logs / telemetry).
     /// Nil when the consumer can drain.
     static func blocker(state: ShellReadinessState) -> String? {
-        // Order = severity. Wipe trumps everything.
+        // Order = severity. Forzado de actualización trumpea TODO: por debajo del build mínimo la
+        // app es inutilizable, nada más debe drenar/presentar debajo. DARK en prod.
+        if state.forceUpdateRequired { return "forceUpdate" }
+        // Wipe trumps everything else.
         if state.isWipingData { return "wipingData" }
         // D1: retención pendiente tras el wipe — bloquea Welcome/router hasta que el usuario elige.
         // Tras `wipingData` (el cover solo se presenta cuando `!isWipingData`).
@@ -164,6 +171,7 @@ extension ShellReadinessState {
     /// superseding. Método (no campo nuevo) para no romper el init memberwise.
     func withWelcomeChainCleared() -> ShellReadinessState {
         ShellReadinessState(
+            forceUpdateRequired: forceUpdateRequired,
             isSplashDismissed: isSplashDismissed,
             isWipingData: isWipingData,
             groupsRetentionPending: groupsRetentionPending,

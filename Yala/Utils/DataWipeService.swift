@@ -412,6 +412,7 @@ final class DataWipeService {
         // --- App Update ---
         defaults.removeObject(forKey: "appUpdate.latestVersion")  // Clear cached App Store version
         defaults.removeObject(forKey: "appUpdate.lastChecked")    // Force re-check after wipe
+        defaults.removeObject(forKey: "appUpdate.trackId")        // Clear cached App Store trackId (rehidrata appStoreURL)
 
         // --- Coach mark tours ---
         defaults.removeObject(forKey: "hasSeenSettingsTour")      // Re-show settings tour

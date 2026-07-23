@@ -5355,3 +5355,8 @@
 
 /* Bridge Caso B: banner de edición parcial (subcat/tags sí, cuenta no) */
 "groups.bridge.editPartialBannerCaseB" = "这笔支出来自群组。你可以编辑分类和标签。其余内容与群组同步。";
+
+/* Force-update (min-version) blocking screen */
+"appUpdate.force.title" = "请更新以继续";
+"appUpdate.force.message" = "当前 Yala 版本已不再受支持。请更新以继续使用。";
+"appUpdate.force.updateButton" = "立即更新";

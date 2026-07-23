@@ -33,6 +33,10 @@ struct ContentView: View {
     /// DUEÑO montado, relaunch pendiente). El cover primario es la fase `.relaunchSecondary`
     /// del welcome; si ese cover muere, este re-presenta (regla toolbar-muerta).
     @State private var showSecondaryEntryRelaunchCover: Bool = false
+    /// Forzado de actualización (min-version): red visual del cover terminal. La CONDICIÓN VIVA es
+    /// `ForceUpdateGate.shared.isUpdateRequired` (blocker de la matriz); este @State es la red de
+    /// presentación (molde showSignOutRelaunchCover). DARK en prod.
+    @State private var showForceUpdateCover: Bool = false
     @State private var showInviteRecovery: Bool = false
     /// Prefilled summary from iCloud restore (rama B). Pasado a OnboardingView
     /// como `prefilledData`. Reseteado tras data wipe para evitar values stale.
@@ -167,6 +171,10 @@ struct ContentView: View {
         }
         .task {
             await checkInitialSyncState()
+            // Forzado de actualización (min-version): recomputa desde el snapshot de remote-config
+            // + build local. DARK en prod (sin snapshot → false). El fetch de /config lo dispara
+            // AppBootstrapper; aquí solo se lee el último snapshot conocido.
+            ForceUpdateGate.shared.recompute()
         }
         .onReceive(NotificationCenter.default.publisher(for: .languageDidChange)) { _ in
             languageVersion &+= 1
@@ -401,6 +409,9 @@ struct ContentView: View {
             showRelaunchCover: $showSecondaryEntryRelaunchCover,
             welcomeCloudCoverVisible: showWelcomeCloudSignIn
         ))
+        .modifier(ForceUpdateNetModifier(
+            showCover: $showForceUpdateCover
+        ))
         .modifier(GroupsBackendInviteModifier(
             showGroupsConsent: $showGroupsConsent,
             showGroupsSignIn: $showGroupsSignIn,
@@ -558,6 +569,16 @@ struct ContentView: View {
                 // D1: recuperación warm-foreground del cover de retención (si un teardown externo lo
                 // tumbó con la retención aún pendiente). Idempotente; no-op sin retención pendiente.
                 syncGroupsRetentionCover()
+                // Re-chequeo de actualización al volver a foreground (una app que no se mata en días
+                // no veía el banner). Barato: el cache de 24h de checkForUpdate hace no-op dentro de
+                // la ventana. Solo returning-users (paridad con el boot, runReturningUserPostChecks);
+                // un dismiss en sesión sobrevive (checkForUpdate no resetea dismissedInSession).
+                if hasCompletedOnboarding {
+                    Task { await AppUpdateService.shared.checkForUpdate() }
+                }
+                // Forzado de actualización: re-evalúa contra el último snapshot (que un fetch de
+                // foreground pudo refrescar). DARK en prod.
+                ForceUpdateGate.shared.recompute()
             // El exit-on-background del relaunch terminal (decisión owner UX 2026-07-14)
             // vive en YalaApp, NO aquí: el `\.scenePhase` de ContentView es POR-ESCENA
             // (iPad multi-ventana: ocultar una ventana mataría el proceso con otra
@@ -587,6 +608,7 @@ struct ContentView: View {
         // ContentViewReadinessLogic. Encapsulated in a ViewModifier to keep
         // ContentView's body within the type-checker's budget.
         .readinessGateObservers(
+            forceUpdateRequired: ForceUpdateGate.shared.isUpdateRequired,
             showOnboarding: showOnboarding,
             showWelcomeFlow: showWelcomeFlow,
             showLanguageSelection: showLanguageSelection,
@@ -665,6 +687,8 @@ struct ContentView: View {
     @MainActor
     private func currentShellReadinessState() -> ShellReadinessState {
         ShellReadinessState(
+            // Condición VIVA = el gate; el @State del cover (showForceUpdateCover) es la red visual.
+            forceUpdateRequired: ForceUpdateGate.shared.isUpdateRequired || showForceUpdateCover,
             isSplashDismissed: SessionState.shared.isSplashDismissed,
             isWipingData: SessionState.shared.isWipingData,
             groupsRetentionPending: SessionState.shared.groupsRetentionPending,
@@ -1374,7 +1398,71 @@ private struct SecondaryEntryRelaunchNetModifier: ViewModifier {
     }
 }
 
-/// Verify loop COMPARTIDO de las dos redes de relaunch terminal (un solo punto de verdad
+// MARK: - Force-update net (min-version, molde SignOutRelaunchNetModifier)
+
+/// DUEÑO ÚNICO del cover TERMINAL del forzado de actualización (min-version). Presenta
+/// `ForceUpdateView` mientras `ForceUpdateGate.shared.isUpdateRequired`; si UIKit lo tumbara con el
+/// forzado aún vigente, re-presenta (regla toolbar-muerta) vía el verify loop compartido.
+/// `forceUpdate` es además el blocker de MÁXIMA severidad de la matriz por CONDICIÓN VIVA (el gate,
+/// no este @State).
+///
+/// Coexistencia con los otros 2 net-modifiers terminales (signout/secondary): son PRÁCTICAMENTE
+/// DISJUNTOS — el forzado se determina en boot/foreground ANTES de que exista flujo de sign-out (la
+/// UI ya está bloqueada) y es el blocker más alto. No se añade guard cruzado (mismo precedente que
+/// signout+secondary, que ya coexisten sin él porque no co-arman). DARK en prod (el gate es false).
+private struct ForceUpdateNetModifier: ViewModifier {
+    @Binding var showCover: Bool
+
+    @State private var coverDidAppear = false
+    @State private var verifyTask: Task<Void, Never>?
+    @Environment(\.scenePhase) private var scenePhase
+
+    private var isRequired: Bool { ForceUpdateGate.shared.isUpdateRequired }
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear {
+                if isRequired { arm() }
+            }
+            .onChange(of: isRequired) { _, required in
+                if required { arm() }
+            }
+            // Ciclo FRESCO al volver a foreground con el forzado vigente y sin cover (cap por-ciclo).
+            .onChange(of: scenePhase) { _, newScene in
+                if newScene == .active && isRequired && !coverDidAppear { arm() }
+            }
+            .fullScreenCover(
+                isPresented: $showCover,
+                onDismiss: {
+                    // Terminal: si UIKit lo tumbara con el forzado aún vigente, re-presentar.
+                    coverDidAppear = false
+                    if ForceUpdateGate.shared.isUpdateRequired { arm() }
+                }
+            ) {
+                ForceUpdateView()
+                    .onAppear {
+                        // Presentación REAL confirmada (idempotente). Jamás togglar un cover vivo.
+                        coverDidAppear = true
+                        verifyTask?.cancel()
+                        verifyTask = nil
+                    }
+            }
+    }
+
+    private func arm() {
+        showCover = true
+        // Cancel-before-start: un solo verify loop vivo.
+        verifyTask?.cancel()
+        verifyTask = runRelaunchNetVerifyLoop(
+            net: "forceUpdate",
+            armed: { ForceUpdateGate.shared.isUpdateRequired },
+            coverDidAppear: { coverDidAppear },
+            setCover: { showCover = $0 }
+        )
+    }
+}
+
+/// Verify loop COMPARTIDO de las redes de relaunch/forzado terminal (un solo punto de verdad
 /// del reintento — la decisión pura vive en `RelaunchNetLogic`, los triggers en cada
 /// modifier). El closure `coverDidAppear` lee el `@State` del modifier en el momento de
 /// cada chequeo; `setCover` escribe su binding.

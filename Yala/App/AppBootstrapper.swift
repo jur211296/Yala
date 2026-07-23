@@ -686,6 +686,10 @@ final class AppBootstrapper {
         if UITestHooks.forceUpdateBanner {
             AppUpdateService.shared.forceUpdateAvailableForUITest()
         }
+        // Pantalla de forzado (min-version) simulada en uitest: fuerza el cover terminal sin red.
+        if UITestHooks.forceUpdateRequired {
+            ForceUpdateGate.shared._forceRequiredForUITest()
+        }
         // Consentimiento IA en uitest: destraba la navegación a voz/imagen Pro sin el
         // alert de consentimiento (no graba/transcribe; solo abre la vista).
         if UITestHooks.aiConsent {

@@ -51,6 +51,10 @@ SIWA_KEY_ID = "PQ53RQ5D3G"
 CLOUD_MODE_ROLLOUT_PERCENT = "100"
 CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT = "100"
 GROUPS_BACKEND_ROLLOUT_PERCENT = "100"
+# Forzado de actualización (min-version): build por debajo del cual el cliente bloquea. 0 = desactivado.
+# STAGING también en 0 a propósito: un valor > 0 BLOQUEARÍA la app de dogfooding/QA (≠ percents, que
+# encienden superficie). Se sube conscientemente al probar el flujo end-to-end.
+MIN_SUPPORTED_BUILD = "0"
 
 [[d1_databases]]
 binding = "DB"
@@ -104,6 +108,9 @@ SIWA_KEY_ID = "PQ53RQ5D3G"
 CLOUD_MODE_ROLLOUT_PERCENT = "0"
 CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT = "0"
 GROUPS_BACKEND_ROLLOUT_PERCENT = "0"
+# Forzado de actualización (min-version): 0 = desactivado. Se sube al build mínimo soportado cuando
+# haya que forzar una versión crítica (requiere que /config esté vivo en prod — D9/Modo Nube).
+MIN_SUPPORTED_BUILD = "0"
 
 [[env.production.d1_databases]]
 binding = "DB"
