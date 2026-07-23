@@ -219,9 +219,19 @@ struct GroupBalancesView: View {
                         .font(DS.Typography.body)
                 }
 
-                Text(settlement.isConfirmed ? L10n.Groups.Balance.confirmed : L10n.Groups.Balance.pending)
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(settlement.isConfirmed ? DS.Semantic.successForeground : .secondary)
+                HStack(spacing: DS.Spacing.xxs) {
+                    Text(settlement.isConfirmed ? L10n.Groups.Balance.confirmed : L10n.Groups.Balance.pending)
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(settlement.isConfirmed ? DS.Semantic.successForeground : .secondary)
+
+                    Text("·")
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.secondary)
+
+                    Text(Self.dateFormatter.string(from: settlement.date))
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Spacer()
@@ -262,6 +272,13 @@ struct GroupBalancesView: View {
     }
 
     // MARK: - Helpers
+
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateStyle = .medium
+        f.timeStyle = .none
+        return f
+    }()
 
     private func balanceColor(_ net: Double) -> Color {
         Color.groupBalance(net)

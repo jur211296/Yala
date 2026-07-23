@@ -4598,3 +4598,9 @@
 
 /* D10 batch: body explaining how to relaunch after stop (D3) */
 "settings.batchLeaveStoppedBody" = "You can pick it up again any time from “Wipe my data”.";
+
+/* Feed row title for a confirmed settlement in group records */
+"groups.settlement.entryDescription" = "Settlement";
+
+/* Feed row subtitle: payer paid receiver (settlement) */
+"groups.settlement.feedRow" = "%1$@ paid %2$@";

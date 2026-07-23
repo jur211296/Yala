@@ -403,6 +403,7 @@ struct GroupDetailView: View {
                 subcategoryNameLookup: viewModel.subcategoryNameLookup,
                 mySharesByExpense: viewModel.mySharesByExpense,
                 currentMemberID: viewModel.currentMemberID,
+                settlements: viewModel.settlements,
                 onTapExpense: viewModel.canCurrentUserParticipate ? { expense in
                     viewModel.activeSheet = expense.isOpeningBalance ? .openingBalanceDetail(expense) : .expenseDetail(expense)
                 } : nil,

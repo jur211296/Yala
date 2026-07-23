@@ -23,6 +23,9 @@ struct GroupRecordsView: View {
     let mySharesByExpense: [UUID: SplitShare]
     /// uuidString del current member (para detectar si yo soy el payer).
     let currentMemberID: String?
+    /// Liquidaciones del grupo; el feed muestra SOLO las confirmadas (filtro en `GroupFeedItem.feedItems`).
+    /// Default vacío → firma retro-compatible.
+    var settlements: [SplitSettlement] = []
 
     // Callbacks (optional for backwards compatibility)
     var onTapExpense: ((SplitExpense) -> Void)?
@@ -44,7 +47,7 @@ struct GroupRecordsView: View {
     @State private var expenseToDelete: SplitExpense?
 
     var body: some View {
-        if expenses.isEmpty {
+        if feedItems.isEmpty {
             YalaEmptyState(
                 icon: "receipt",
                 title: L10n.Groups.Expense.noExpenses,
@@ -62,44 +65,49 @@ struct GroupRecordsView: View {
                             onTap: onTapBalance
                         )
                     }
-                    ForEach(groupedByDate, id: \.key) { dateString, dayExpenses in
+                    ForEach(groupedByDate, id: \.key) { dateString, dayItems in
                         Section {
-                            ForEach(dayExpenses, id: \.id) { expense in
-                                if onTapExpense == nil {
-                                    expenseRow(expense)
-                                } else if expense.isOpeningBalance {
-                                    // Saldo inicial: tap → detalle (owner edita desde ahí).
-                                    // Sin context menu (edit/delete owner-only vive en el detalle).
-                                    Button {
-                                        onTapExpense?(expense)
-                                    } label: {
+                            ForEach(dayItems, id: \.id) { item in
+                                switch item {
+                                case .expense(let expense):
+                                    if onTapExpense == nil {
                                         expenseRow(expense)
-                                    }
-                                    .buttonStyle(.plain)
-                                    .contentShape(Rectangle())
-                                    .accessibilityIdentifier("group_opening_balance_row_\(expense.id)")
-                                } else {
-                                    Button {
-                                        onTapExpense?(expense)
-                                    } label: {
-                                        expenseRow(expense)
-                                    }
-                                    .buttonStyle(.plain)
-                                    .contentShape(Rectangle())
-                                    .accessibilityIdentifier("group_expense_row_\(expense.expenseDescription)")
-                                    .contextMenu {
+                                    } else if expense.isOpeningBalance {
+                                        // Saldo inicial: tap → detalle (owner edita desde ahí).
+                                        // Sin context menu (edit/delete owner-only vive en el detalle).
                                         Button {
-                                            onEditExpense?(expense)
+                                            onTapExpense?(expense)
                                         } label: {
-                                            Label(L10n.Action.edit, systemImage: "pencil")
+                                            expenseRow(expense)
                                         }
-
-                                        Button(role: .destructive) {
-                                            expenseToDelete = expense
+                                        .buttonStyle(.plain)
+                                        .contentShape(Rectangle())
+                                        .accessibilityIdentifier("group_opening_balance_row_\(expense.id)")
+                                    } else {
+                                        Button {
+                                            onTapExpense?(expense)
                                         } label: {
-                                            Label(L10n.Action.delete, systemImage: "trash")
+                                            expenseRow(expense)
+                                        }
+                                        .buttonStyle(.plain)
+                                        .contentShape(Rectangle())
+                                        .accessibilityIdentifier("group_expense_row_\(expense.expenseDescription)")
+                                        .contextMenu {
+                                            Button {
+                                                onEditExpense?(expense)
+                                            } label: {
+                                                Label(L10n.Action.edit, systemImage: "pencil")
+                                            }
+
+                                            Button(role: .destructive) {
+                                                expenseToDelete = expense
+                                            } label: {
+                                                Label(L10n.Action.delete, systemImage: "trash")
+                                            }
                                         }
                                     }
+                                case .settlement(let settlement):
+                                    settlementRow(settlement)
                                 }
                             }
                         } header: {
@@ -175,6 +183,44 @@ struct GroupRecordsView: View {
                 .lineLimit(1)
         }
         .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.xl)
+    }
+
+    /// Fila descriptiva de una liquidación confirmada ("Liquidación · X le pagó a Y" + monto neutro).
+    /// Estática (sin tap ni context menu — no existe pantalla de detalle de settlement).
+    /// Espejo del layout de `openingBalanceRow`; icono `checkmark.circle` para no confundir familias.
+    private func settlementRow(_ settlement: SplitSettlement) -> some View {
+        let fromName = memberNameLookup[settlement.fromMemberID] ?? "?"
+        let toName = memberNameLookup[settlement.toMemberID] ?? "?"
+        let amountStr = appPreferences.currency(settlement.amount, currencyCode: settlement.currencyCode)
+
+        return HStack(spacing: DS.Spacing.md) {
+            Image(systemName: "checkmark.circle")
+                .font(DS.Typography.label)
+                .foregroundStyle(.secondary)
+                .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
+                .background(Circle().fill(Color(.secondarySystemFill)))
+
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(L10n.Groups.Settlement.entryDescription)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                Text(L10n.Groups.Settlement.feedRow(fromName, toName))
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            Spacer()
+
+            Text(amountStr)
+                .font(DS.Typography.body)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+        .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.xl)
+        .accessibilityIdentifier("group_settlement_row_\(settlement.id)")
     }
 
     private func normalExpenseRow(_ expense: SplitExpense) -> some View {
@@ -289,16 +335,21 @@ struct GroupRecordsView: View {
         return f
     }()
 
-    private var groupedByDate: [(key: String, value: [SplitExpense])] {
-        let grouped = Dictionary(grouping: expenses) { expense in
-            Self.dateFormatter.string(from: expense.date)
+    /// Feed mixto: gastos + liquidaciones confirmadas (filtro en `GroupFeedItem.feedItems`).
+    private var feedItems: [GroupFeedItem] {
+        GroupFeedItem.feedItems(expenses: expenses, settlements: settlements)
+    }
+
+    private var groupedByDate: [(key: String, value: [GroupFeedItem])] {
+        let grouped = Dictionary(grouping: feedItems) { item in
+            Self.dateFormatter.string(from: item.date)
         }
 
         // Días en orden descendente; dentro de cada día el más reciente arriba y
-        // el más antiguo abajo (createdAt desc), igual que Records
+        // el más antiguo abajo (sortTimestamp desc), igual que Records
         // (FilterService.groupByDate).
         return grouped
-            .map { (key: $0.key, value: $0.value.sorted { $0.createdAt > $1.createdAt }) }
+            .map { (key: $0.key, value: $0.value.sorted { $0.sortTimestamp > $1.sortTimestamp }) }
             .sorted { lhs, rhs in
                 guard let lDate = lhs.value.first?.date, let rDate = rhs.value.first?.date else { return false }
                 return lDate > rDate

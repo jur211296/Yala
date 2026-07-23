@@ -2144,6 +2144,12 @@ enum L10n {
         }
 
         enum Settlement {
+            /// Título de la fila de una liquidación confirmada en el feed del grupo.
+            static var entryDescription: String { ls("groups.settlement.entryDescription", comment: "") }
+            /// Subtítulo del feed: "%1$@ le pagó a %2$@".
+            static func feedRow(_ from: String, _ to: String) -> String {
+                String(format: ls("groups.settlement.feedRow", comment: ""), from, to)
+            }
             static var title: String { ls("groups.settlement.title", comment: "") }
             static var payTo: String { ls("groups.settlement.payTo", comment: "") }
             static var registerPayment: String { ls("groups.settlement.registerPayment", comment: "") }

@@ -4603,3 +4603,9 @@
 
 /* D10 batch: body explaining how to relaunch after stop (D3) */
 "settings.batchLeaveStoppedBody" = "Podes retomar quando quiseres em «Limpar os meus dados».";
+
+/* Feed row title for a confirmed settlement in group records */
+"groups.settlement.entryDescription" = "Liquidação";
+
+/* Feed row subtitle: payer paid receiver (settlement) */
+"groups.settlement.feedRow" = "%1$@ pagou a %2$@";

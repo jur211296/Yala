@@ -5346,3 +5346,9 @@
 
 /* D10 batch: body explaining how to relaunch after stop (D3) */
 "settings.batchLeaveStoppedBody" = "你可以随时在「清空我的数据」中继续。";
+
+/* Feed row title for a confirmed settlement in group records */
+"groups.settlement.entryDescription" = "结算";
+
+/* Feed row subtitle: payer paid receiver (settlement) */
+"groups.settlement.feedRow" = "%1$@ 付给了 %2$@";

@@ -5346,3 +5346,9 @@
 
 /* D10 batch: body explaining how to relaunch after stop (D3) */
 "settings.batchLeaveStoppedBody" = "「自分のデータを消去」からいつでも再開できます。";
+
+/* Feed row title for a confirmed settlement in group records */
+"groups.settlement.entryDescription" = "精算";
+
+/* Feed row subtitle: payer paid receiver (settlement) */
+"groups.settlement.feedRow" = "%1$@さんは%2$@さんに支払いました";

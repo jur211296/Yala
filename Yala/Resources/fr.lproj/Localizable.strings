@@ -5335,3 +5335,9 @@
 
 /* D10 batch: body explaining how to relaunch after stop (D3) */
 "settings.batchLeaveStoppedBody" = "Tu peux reprendre quand tu veux depuis « Vider mes données ».";
+
+/* Feed row title for a confirmed settlement in group records */
+"groups.settlement.entryDescription" = "Règlement";
+
+/* Feed row subtitle: payer paid receiver (settlement) */
+"groups.settlement.feedRow" = "%1$@ a payé %2$@";

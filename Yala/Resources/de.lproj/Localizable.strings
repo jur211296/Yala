@@ -5334,3 +5334,9 @@
 
 /* D10 batch: body explaining how to relaunch after stop (D3) */
 "settings.batchLeaveStoppedBody" = "Du kannst den Vorgang jederzeit unter „Meine Daten löschen“ fortsetzen.";
+
+/* Feed row title for a confirmed settlement in group records */
+"groups.settlement.entryDescription" = "Abrechnung";
+
+/* Feed row subtitle: payer paid receiver (settlement) */
+"groups.settlement.feedRow" = "%1$@ hat %2$@ bezahlt";
