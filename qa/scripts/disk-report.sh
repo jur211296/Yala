@@ -67,6 +67,17 @@ echo "Simuladores arrancados: ${BOOTED:-0}"
 WT=$(git worktree list 2>/dev/null | grep -c "detached HEAD" || true)
 echo "Worktrees en detached HEAD: ${WT:-0}   (los limpia /cerrar)"
 
+# Los snapshots locales de Time Machine retienen los bloques de lo que borras: puedes
+# eliminar 30 GB y ver el espacio libre casi igual. Es LA razón por la que una limpieza
+# parece no servir de nada. macOS los purga solo bajo presión, pero puedes forzarlo:
+#   tmutil thinlocalsnapshots / <bytes> 4
+SNAP=$(tmutil listlocalsnapshots / 2>/dev/null | grep -c "com.apple.TimeMachine" || true)
+echo "Snapshots locales de Time Machine: ${SNAP:-0}"
+if [ "${SNAP:-0}" -gt 0 ]; then
+    echo "   ↳ retienen el espacio de lo ya borrado. Si acabas de limpiar y el disco"
+    echo "     no bajó, es esto: 'tmutil thinlocalsnapshots / 40000000000 4'"
+fi
+
 echo
 echo "### Simuladores más pesados"
 for d in "$HOME"/Library/Developer/CoreSimulator/Devices/*/; do
