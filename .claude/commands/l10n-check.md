@@ -1,114 +1,53 @@
 ---
-description: Auditoría de localización — keys faltantes, strings vacíos, placeholders inconsistentes
-allowed-tools: Grep, Glob, Read, Bash(wc:*), Bash(diff:*), Bash(sort:*), Bash(comm:*)
-argument-hint: "[idioma específico o vacío para todos]"
+description: Auditoría de localización — corre la batería de paridad y busca strings sin localizar en el código
+allowed-tools: Bash(xcodebuild:*), Bash(bash qa/scripts/add-l10n-key.sh:*), Grep, Glob, Read
+argument-hint: "[locale concreto, o vacío para todo]"
 ---
 
-Auditoría completa de localización en los 6 idiomas del proyecto.
+La verdad sobre la localización de Yala es **ejecutable**: vive en `YalaTests/LocalizationParityTests.swift` (15 tests) y en `YalaTests/WidgetLocalizationParityTests.swift`. Este comando los corre e interpreta; no reimplementa sus comprobaciones a mano.
 
-## IDIOMAS
+## 1 · Batería de paridad
 
-| Código | Idioma |
-|--------|--------|
-| es | Español (base) |
-| en | English |
-| fr | Français |
-| pt-BR | Português |
-| de | Deutsch |
-| it | Italiano |
-
-## PASO 1: ENCONTRAR ARCHIVOS DE LOCALIZACIÓN
-
-```
-Glob: **/*.strings
-Glob: **/Localizable.strings
-Glob: **/InfoPlist.strings
+```bash
+xcodebuild -scheme "Yala Dev" -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+  -quiet test -only-testing:YalaTests/LocalizationParityTests \
+  -only-testing:YalaTests/WidgetLocalizationParityTests 2>&1 \
+  | grep -E "(Test Case|Executed|passed|failed|error:)"
 ```
 
-Identificar todos los archivos .strings por idioma.
+Qué cubre cada fallo, para que sepas leerlo:
 
-## PASO 2: KEYS FALTANTES ENTRE IDIOMAS
+| Test | Qué significa que falle |
+|---|---|
+| `everyBaseLocale_hasAllKeys_fromReference` | Falta una key en un locale base |
+| `variants_haveAllKeys_fromParent` | Una variante (`es-ES`/`es-AR`/`en-GB`/`pt-PT`) quedó sparse — **iOS NO hace fallback per-key con idioma de sistema**, así que ahí se ve la key cruda |
+| `aliases_haveIdenticalValues_toTheirBase` | `es` o `pt` divergieron de `es-419`/`pt-BR`. Son **artefactos generados**: se regeneran por copia, no se editan |
+| `noDuplicateKeys_inAnyLocale` | Key repetida en un `.strings`: gana la última, en silencio |
+| `placeholders_matchAcrossLocales` | Riesgo de crash en runtime |
+| `noNeedsTranslationMarker_anywhere` | Quedó un `[NEEDS_TRANSLATION]` del script sin traducir |
+| `noEmptyValues_anywhere` | La UI mostraría vacío |
 
-Para cada par de idiomas (base es vs otros):
+## 2 · Strings sin localizar en el código
 
-1. Extraer keys de cada archivo:
-   ```
-   Grep: ^"[^"]*" en cada Localizable.strings
-   ```
-
-2. Comparar keys del español (base) con cada idioma:
-   - Keys en es que NO están en en → FALTANTE en inglés
-   - Keys en en que NO están en es → KEY HUÉRFANA en inglés
-   - Repetir para fr, pt-BR, de, it
-
-## PASO 3: STRINGS VACÍOS
+Esto es lo único que los tests **no** ven, y por tanto lo único que aporta este comando:
 
 ```
-Grep: = "";$ en cada archivo .strings
-Grep: = " ";$ (solo espacios)
+Grep: Text\("[A-ZÁÉÍÓÚÑ] en Yala/ --include=*.swift
 ```
 
-Listar strings vacíos por idioma — probablemente no traducidos.
+Descarta: SF Symbols, `.accessibilityIdentifier`, texto de debug bajo `#if DEBUG`, formatos numéricos, y `Yala/Widgets/` (tiene sus propias strings). Reporta `archivo:línea` con el literal.
 
-## PASO 4: PLACEHOLDERS INCONSISTENTES
+## 3 · Si hay que añadir keys
 
-Para cada key que existe en todos los idiomas:
-- Contar %@ , %d, %lld, %f en cada traducción
-- Si el count difiere entre idiomas → INCONSISTENTE (crash potencial)
-- Verificar que el orden de placeholders numerados (%1$@, %2$@) sea consistente
+`bash qa/scripts/add-l10n-key.sh "mi.key" "Texto en es-419" "Comment"` — materializa la key en los 10 locales base **y regenera los alias `es`/`pt`**. No edites los `.strings` a mano para añadir: el script existe justamente porque hacerlo a mano fue lo que rompió el invariante de los alias durante tres meses.
 
-## PASO 5: STRINGS SIN LOCALIZAR EN CÓDIGO
+Después de añadir, traduce cada locale y vuelve al paso 1.
 
-```
-Grep: Text\("[A-Z] en archivos .swift de Yala/ (excluir Tests/)
-```
+## Reporte
 
-Detectar Text() con strings literales que deberían usar L10n.
-- IGNORAR: SF Symbols, formatos numéricos, debug text
-- IGNORAR: Archivos en Widgets/ (usan sus propios strings)
+Veredicto (`LIMPIO` o `N ISSUES`), los tests en rojo con su lectura de la tabla, y la lista de literales sin localizar. Nada más.
 
-## PASO 6: LONGITUD EXCESIVA
+## Reglas
 
-Para cada key, comparar longitud entre idiomas.
-Si una traducción es >2x la longitud del español → puede truncarse en UI.
-Idiomas que típicamente son más largos: alemán, francés.
-
-## REPORTE
-
-```
-## L10n Check — [N] keys, 6 idiomas
-
-### Resumen
-| Idioma | Keys | Vacíos | Faltantes | Huérfanas |
-|--------|------|--------|-----------|-----------|
-| es | N | 0 | — | N |
-| en | N | N | N | N |
-| fr | N | N | N | N |
-| pt-BR | N | N | N | N |
-| de | N | N | N | N |
-| it | N | N | N | N |
-
-### Keys faltantes (por idioma)
-[Lista de keys que faltan en cada idioma]
-
-### Placeholders inconsistentes
-| Key | es | en | fr | ... | Problema |
-|-----|----|----|----| ... |----------|
-| key.name | %@ %d | %@ | %@ %d | ... | en: falta %d |
-
-### Strings sin L10n en código
-- [archivo:línea] Text("literal")
-
-### Longitud excesiva (>2x base)
-| Key | es (len) | Idioma | Traducción (len) |
-|-----|----------|--------|------------------|
-
-### Veredicto: LIMPIO | N ISSUES
-```
-
-## REGLAS
-- El español (es) es el idioma BASE de referencia
-- Keys faltantes en cualquier idioma son BLOQUEANTES para release
-- Strings vacíos son BLOQUEANTES (UI mostrará vacío)
-- Placeholders inconsistentes son CRÍTICOS (crash en runtime)
-- Strings sin L10n en código son WARNING (no bloquean pero acumulan deuda)
+- **No cuentes locales a mano ni asumas cuántos hay**: los tests leen `SupportedLocale` y el bundle real. Si tu recuento y el suyo difieren, el equivocado eres tú.
+- Un test de paridad en rojo es **bloqueante para release**. Un literal sin localizar es deuda, no bloqueo.
