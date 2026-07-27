@@ -241,6 +241,12 @@ struct ContentView: View {
                         in: modelContext,
                         broadcastSignal: false
                     )
+                    // Handover: «empiezo de cero» es la frontera de OTRO usuario en este
+                    // dispositivo, no un vaciado del mismo. El dominio Grupos, que sobrevive al
+                    // wipe por diseño, se purga LOCALMENTE aquí — si no, el usuario nuevo hereda
+                    // los grupos del anterior (mismo Apple ID ⇒ ninguna señal de identidad los
+                    // distingue) y el bridge le mete sus gastos en Panel, Inbox y presupuestos.
+                    try DataWipeService.wipeLocalGroupsDomain(in: modelContext)
                     hasExistingData = false
                 } catch {
                     #if DEBUG
@@ -271,6 +277,13 @@ struct ContentView: View {
                 showRestoreOffer = false
                 do {
                     try DataWipeService.wipeAllUserData(in: modelContext)
+                    // Misma frontera de usuario que el alert de arriba (ver su nota): esto también
+                    // es «empiezo de cero», no un vaciado del mismo usuario. Residual conocido de
+                    // ESTE camino: la invitación abre el dominio Grupos (`groupsBetaUnlocked`) en
+                    // cuanto se acepta el enlace, así que el gate del bridge queda abierto y un
+                    // re-fetch de las zonas del Apple ID puede devolver los grupos del usuario
+                    // anterior. Cerrarlo exige el sello de corpus (diferido en el ticket).
+                    try DataWipeService.wipeLocalGroupsDomain(in: modelContext)
                     hasExistingData = false
                 } catch {
                     #if DEBUG
@@ -872,6 +885,21 @@ struct ContentView: View {
     /// Excluye entidades system (A0-Bridge crea cuenta virtual `Grupos [moneda]` y categorías
     /// `Grupos`/`Cobros de grupos` en bootstrap antes del onboarding). Contarlas reportaría
     /// "has data" en fresh installs sin data real del usuario.
+    ///
+    /// **Los grupos y lo bridgeado SÍ cuentan** (handover de dispositivo, hallazgo `NEW-E2-03`):
+    /// excluir *todo* lo de sistema dejaba fuera exactamente lo que el bridge crea, así que un
+    /// usuario anterior que venía de «Solo Grupos» (sin cuentas ni categorías propias) daba
+    /// `false` ⇒ el alert de confirmación no se mostraba y «Soy nuevo» **no corría wipe alguno**:
+    /// el usuario nuevo aterrizaba con las transacciones y los borradores del anterior intactos.
+    /// En un fresh install de verdad los tres conteos son 0, así que el racional original se
+    /// mantiene: nada de esto existe sin un grupo detrás.
+    ///
+    /// **Falla CERRADO** (hallazgo `E1-N4` de la auditoría, corregido con el mismo fix): el
+    /// `try?` + `?? 0` anterior convertía cualquier fetch fallido en «no hay datos», que es
+    /// exactamente el modo de fallo que este detector existe para impedir — «Soy nuevo» se saltaba
+    /// el alert y no corría el wipe. Ante un error, asumir que SÍ hay datos solo cuesta una
+    /// confirmación de más, que el usuario puede cancelar; asumir que no los hay se los lleva por
+    /// delante o, peor, se los deja al usuario siguiente.
     private func checkHasExistingData() -> Bool {
         let accountDescriptor = FetchDescriptor<Account>(
             predicate: #Predicate<Account> { !$0.isSystemAccount }
@@ -879,9 +907,22 @@ struct ContentView: View {
         let categoryDescriptor = FetchDescriptor<Category>(
             predicate: #Predicate<Category> { !$0.isSystem }
         )
-        let accountCount = (try? modelContext.fetchCount(accountDescriptor)) ?? 0
-        let categoryCount = (try? modelContext.fetchCount(categoryDescriptor)) ?? 0
-        return accountCount > 0 || categoryCount > 0
+        let groupDescriptor = FetchDescriptor<SplitGroup>()
+        let bridgedDescriptor = FetchDescriptor<TransactionItem>(
+            predicate: #Predicate<TransactionItem> { $0.splitExpenseID != nil }
+        )
+        do {
+            let accountCount = try modelContext.fetchCount(accountDescriptor)
+            let categoryCount = try modelContext.fetchCount(categoryDescriptor)
+            let groupCount = try modelContext.fetchCount(groupDescriptor)
+            let bridgedCount = try modelContext.fetchCount(bridgedDescriptor)
+            return accountCount > 0 || categoryCount > 0 || groupCount > 0 || bridgedCount > 0
+        } catch {
+            #if DEBUG
+            print("ContentView: checkHasExistingData failed — assuming data exists: \(error)")
+            #endif
+            return true
+        }
     }
 
     /// Show a positive confirmation toast for ~3s. Used for remote onboarding

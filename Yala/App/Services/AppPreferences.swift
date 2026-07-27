@@ -1195,6 +1195,20 @@ final class AppPreferences {
         /// directo en las views del gate; escrito vía UserDefaults desde el código
         /// correcto o desde `CKShareEntryHandler` (invitados). Remover al estabilizar.
         static let groupsBetaUnlocked = "groupsBetaUnlocked"
+        /// SELLO del handover de dispositivo: lo escribe `DataWipeService.wipeLocalGroupsDomain`
+        /// cuando alguien elige «empiezo de cero» en el Welcome. Marca que el dominio Grupos que
+        /// este dispositivo pueda volver a descargar de iCloud (mismo Apple ID, otro humano) NO es
+        /// del usuario actual mientras él no lo adopte con un acto deliberado.
+        ///
+        /// Es un sello y no un gate general A PROPÓSITO (`GroupsBetaGateLogic.isBridgeAllowed`):
+        /// bloquear el bridge por AUSENCIA de `groupsBetaUnlocked` habría afectado a todo usuario
+        /// que nunca abrió Grupos, con un falso negativo silencioso. Con el sello, el único
+        /// dispositivo cuyo comportamiento cambia es el que declaró el relevo.
+        ///
+        /// No se borra nunca: el predicado lo NEUTRALIZA en cuanto el usuario abre Grupos (código
+        /// beta, invitación aceptada u onboarding «Solo Grupos»), así que no hace falta cablear su
+        /// limpieza en los 5 sitios que desbloquean el tab. Excluido del barrido del wipe normal.
+        static let groupsDomainSealedForFreshStart = "groupsDomainSealedForFreshStart"
         static let lastSeenAppVersion = "lastSeenAppVersion"
         nonisolated static let expensesOnlyMode = "expensesOnlyMode"  // accedida cross-process desde intents
         static let financialMindset = "financialMindset"

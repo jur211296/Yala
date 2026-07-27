@@ -1047,6 +1047,16 @@ final class AppBootstrapper {
             logger.notice("retryPendingBridges deferred — personal import not quiescent")
             return
         }
+        // Gate de dominio (handover): con Grupos cerrado en este dispositivo la cola NO se toca —
+        // ni se bridgea ni se consumen `bridgeAttempts`. Los flags `bridgePending` quedan intactos
+        // y la cola se drena entera el día que el usuario abra Grupos (idempotente, mismo
+        // contrato que el diferido por quiescencia de arriba). El corte duro vive en
+        // `GroupTransactionBridge.bridgeExpense`; esto solo evita quemar los 3 intentos contra
+        // una puerta cerrada.
+        guard GroupTransactionBridge.isDomainOpenForBridge() else {
+            logger.notice("retryPendingBridges skipped — groups domain sealed for a new user on this device")
+            return
+        }
         let descriptor = FetchDescriptor<SplitExpense>(
             predicate: #Predicate { $0.bridgePending == true }
         )

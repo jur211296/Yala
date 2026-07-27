@@ -56,6 +56,42 @@ final class GroupTransactionBridge {
         return context
     }
 
+    // MARK: - Gate de dominio (handover de dispositivo)
+
+    /// Adaptador runtime de `GroupsBetaGateLogic.isBridgeAllowed`. En un dispositivo normal
+    /// devuelve SIEMPRE `true` (byte-idéntico al comportamiento anterior al fix); solo cambia en el
+    /// que pasó por «empiezo de cero» en el Welcome, donde la puerta de Grupos —la MISMA que decide
+    /// si el tab se ve (`ContentView.viewForTab(.groups)`)— decide también si el bridge escribe.
+    ///
+    /// Con el sello puesto y la puerta cerrada, el bridge no materializa NADA en el corpus
+    /// personal: es lo que impide que los gastos de grupo del usuario ANTERIOR de este dispositivo
+    /// (mismo Apple ID, corpus personal ya vaciado) reaparezcan en Panel, Inbox, presupuestos,
+    /// reportes y widgets cuando el motor re-descarga las zonas. Ver el doc-comment de
+    /// `isBridgeAllowed` para por qué la identidad de CloudKit NO sirve aquí.
+    ///
+    /// SOLO gatea la CREACIÓN. Los caminos que BORRAN o limpian lo bridgeado siguen abiertos:
+    /// cerrar la puerta jamás debe dejar filas huérfanas que nadie pueda recoger.
+    ///
+    /// **El sello no aplica bajo el runner de unit tests** (`isRunningTests`, mismo seam que abre
+    /// `SwiftDataConfiguration.performSignOutWipeIfArmed`). Razón concreta, no cosmética: el host de
+    /// los tests es la propia app, así que su `UserDefaults.standard` es el del simulador — y
+    /// verificar el handover A MANO en ese simulador deja el sello escrito, cerrando el bridge para
+    /// las 14 pruebas de comportamiento del bridge que sí lo necesitan abierto. Sin este guard, QA
+    /// manual y suite unitaria se pisan. Los tests del gate NO pierden cobertura: ejercitan
+    /// `GroupsBetaGateLogic.isBridgeAllowed` directamente y este adaptador con `defaults` inyectado.
+    ///
+    /// `defaults` inyectable por la misma razón en la otra dirección: un test que escriba estas keys
+    /// en `UserDefaults.standard` afectaría a las suites que se interleavan con él.
+    static func isDomainOpenForBridge(defaults: UserDefaults = .standard) -> Bool {
+        let sealed = !SwiftDataConfiguration.isRunningTests
+            && defaults.bool(forKey: AppPreferences.Keys.groupsDomainSealedForFreshStart)
+        return GroupsBetaGateLogic.isBridgeAllowed(
+            sealedForFreshStart: sealed,
+            isUnlocked: defaults.bool(forKey: AppPreferences.Keys.groupsBetaUnlocked),
+            isGroupInviteMode: SessionState.shared.isGroupInviteMode
+        )
+    }
+
     // MARK: - Bridge Operations
 
     /// M6: Bridge SplitExpense ↔ TransactionItem con preserve+update Caso A.
@@ -100,6 +136,20 @@ final class GroupTransactionBridge {
         shouldSave: Bool = true
     ) throws {
         let context = try requireContext()
+
+        // Gate de dominio (handover): con Grupos cerrado en este dispositivo, ningún gasto de
+        // grupo entra al corpus personal. Único punto de corte del path de CREACIÓN — todos los
+        // callers (user-action, sync remoto, retry de boot, import del activation sheet) pasan
+        // por aquí. Sin `bridgePending`: no es un fallo a reintentar, es una puerta cerrada.
+        //
+        // El log va FUERA de `#if DEBUG` a propósito (misma excepción consciente que el resto del
+        // logging de Grupos): esta rama es la explicación de un síntoma que el usuario reportaría
+        // como «no veo mis gastos de grupo», y en release no hay otra forma de distinguirla de un
+        // bug del bridge. Mensaje fijo, sin PII.
+        guard Self.isDomainOpenForBridge() else {
+            Self.logger.info("bridgeExpense: skip — groups domain sealed for a new user on this device")
+            return
+        }
 
         // Defensa-en-profundidad: si el grupo está hidden (soft-deleted), no bridgear
         // expenses — el cleanup observer ya corrió o correrá. Previene bridging en el
@@ -918,6 +968,13 @@ final class GroupTransactionBridge {
         shouldSave: Bool = true
     ) throws {
         let context = try requireContext()
+
+        // Gate de dominio (handover) — gemelo del de `bridgeExpense`, mismo racional (incluido el
+        // del log fuera de `#if DEBUG`).
+        guard Self.isDomainOpenForBridge() else {
+            Self.logger.info("bridgeSettlement: skip — groups domain sealed for a new user on this device")
+            return
+        }
 
         // Solo bridge si confirmed.
         guard settlement.isConfirmed else { return }

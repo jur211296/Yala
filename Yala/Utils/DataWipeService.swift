@@ -214,6 +214,122 @@ final class DataWipeService {
         }
     }
 
+    // MARK: - Purga del dominio Grupos en «empiezo de cero» (handover de dispositivo)
+
+    /// Purga la copia LOCAL del dominio Grupos. **NO** es parte de `wipeAllUserData`: ese wipe
+    /// («Vaciar datos» de Ajustes, wipe remoto) conserva Grupos POR DISEÑO y su copy lo promete
+    /// («Esto no incluye tus grupos»). Esta función es del otro camino, el que declara que aquí
+    /// empieza OTRO usuario: «Soy nuevo» del Welcome y «Empezar de cero» de la oferta de restore.
+    ///
+    /// **El problema que resuelve** (auditoría Modo Nube §4/1, hallazgos `E2-04`/`NEW-E2-01`/
+    /// `NEW-E2-03`; reproducido en simulador): el usuario A cierra sesión (`.privateReset`, no borra
+    /// nada) y B elige «Soy nuevo» en el MISMO dispositivo con el MISMO Apple ID. `wipeAllUserData`
+    /// vacía el corpus personal, pero los grupos de A siguen ahí, `groupsBetaUnlocked` sobrevive
+    /// (B entra a Grupos sin el código) y el bridge, que no comprueba identidad, vuelve a
+    /// materializar los gastos de A como `TransactionItem`/`InboxDraft` en el Panel, el Inbox, los
+    /// presupuestos y los reportes de B.
+    ///
+    /// **Es borrado LOCAL, jamás remoto.** Los grupos siguen intactos en CloudKit: el store de
+    /// grupos monta `cloudKitDatabase: .none` (`SwiftDataConfiguration.groupsConfiguration`) ⇒
+    /// SwiftData no puede exportar nada, y el único camino de export es el enqueue EXPLÍCITO
+    /// (`SplitSyncManager.markPendingDeletion`, solo desde acciones de usuario en
+    /// `GroupExpenseService`). Por eso el invariante «borrar filas con el mirror montado exporta los
+    /// deletes a iCloud» NO aplica aquí — habla del store PERSONAL, que sí lleva mirror.
+    /// Corolario CRÍTICO: esta función JAMÁS debe usar `GroupService.leaveGroup` /
+    /// `performLocalCleanupAndDelete` como primitiva — esos llaman `leaveShare`, que sacaría al
+    /// usuario del grupo de otro owner DE VERDAD.
+    ///
+    /// **Por qué el reset del estado del motor es obligatorio y no opcional** (`resetSyncState`):
+    /// borrar las filas dejando `private.json`/`shared.json` intactos deja los change tokens
+    /// diciendo «estás al día» ⇒ CloudKit no reenvía JAMÁS esos records ⇒ el mismo humano que
+    /// vuelve pierde sus grupos de forma permanente con los datos vivos en la nube. El precedente
+    /// correcto empareja las dos cosas (`SplitSyncManager.performAccountSwitchCleanup`). Que el
+    /// corpus se re-descargue es DELIBERADO: quien lo mantiene fuera de la vida personal de B es el
+    /// gate de dominio del bridge (`GroupTransactionBridge.isDomainOpenForBridge`), no la ausencia
+    /// de filas.
+    ///
+    /// Residual documentado: los grupos viven en el iCloud del Apple ID, así que un B que teclee el
+    /// código beta verá lo que ese Apple ID tenga (semántica de plataforma, como Fotos). Y lo que no
+    /// vive en CloudKit no vuelve: `groupPrefs_*` (cuenta de liquidación) y los overrides del bridge.
+    ///
+    /// - Parameters:
+    ///   - context: contexto con los stores personal + grupos montados (el `mainContext` de la app).
+    ///   - defaults: dominio de preferencias. Los tests DEBEN inyectar uno aislado: el host de los
+    ///     unit tests es la propia app, así que su `UserDefaults.standard` es el del simulador y el
+    ///     sello escrito ahí sobrevive a la corrida — cerrando el bridge para las suites de
+    ///     comportamiento del bridge (por eso `isDomainOpenForBridge` exceptúa además el runner).
+    ///   - resetSyncState: seam del estado del motor + identidad cacheada. Default = producción; los
+    ///     tests lo inyectan para no tocar `SplitSyncManager.shared` ni el disco. `@MainActor` en el
+    ///     TIPO del parámetro y no solo en la función: los valores por defecto se evalúan en el
+    ///     contexto del CALLER, así que sin la anotación el default no puede llamar al singleton.
+    static func wipeLocalGroupsDomain(
+        in context: ModelContext,
+        defaults: UserDefaults = .standard,
+        resetSyncState: @MainActor () -> Void = { SplitSyncManager.shared.resetLocalGroupsSyncState() }
+    ) throws {
+        // Los 5 `Split*` se vinculan por IDs planos (`groupZoneID`/`expenseID`/`memberID`), NO por
+        // `@Relationship` ⇒ sin orden de dependencias que respetar y sin cascadas que disparar.
+        for group in try context.fetch(FetchDescriptor<SplitGroup>()) { context.delete(group) }
+        for member in try context.fetch(FetchDescriptor<SplitMember>()) { context.delete(member) }
+        for expense in try context.fetch(FetchDescriptor<SplitExpense>()) { context.delete(expense) }
+        for share in try context.fetch(FetchDescriptor<SplitShare>()) { context.delete(share) }
+        for settlement in try context.fetch(FetchDescriptor<SplitSettlement>()) { context.delete(settlement) }
+
+        // `GroupBridgePreference` vive en el `personalSchema` pero `wipeAllUserData` no la nombra
+        // (junto con `CloudMigrationMarker`, los 2 modelos personales que no borra). Es el override
+        // por-grupo del bridge: dejarla haría que el bridge del usuario nuevo heredara las
+        // decisiones «TX real sí/no» del anterior.
+        for pref in try context.fetch(FetchDescriptor<GroupBridgePreference>()) { context.delete(pref) }
+
+        try context.save()
+
+        removeGroupsDomainPreferenceKeys(from: defaults)
+        resetSyncState()
+
+        // SELLO: el borrado de arriba es local, y el reset de los tokens hace que el motor
+        // re-descargue el corpus de grupos del Apple ID (deliberado — ver arriba). Quien lo mantiene
+        // fuera de la vida personal del usuario nuevo es este sello, que `GroupsBetaGateLogic
+        // .isBridgeAllowed` traduce en «el bridge no escribe hasta que ADOPTES Grupos». Va AL FINAL:
+        // el barrido de prefs de arriba no lo nombra, pero el orden lo deja explícito ante un
+        // futuro añadido a esa lista.
+        defaults.set(true, forKey: AppPreferences.Keys.groupsDomainSealedForFreshStart)
+    }
+
+    /// Barrido de las preferencias del dominio Grupos. Separado de `wipeLocalGroupsDomain` para
+    /// testearse con un `UserDefaults` aislado, igual que `removeUserPreferenceKeys`.
+    ///
+    /// `groupsBetaUnlocked` se borra AQUÍ y no en `removeUserPreferenceKeys`: allí sigue siendo una
+    /// exclusión deliberada (gate per-device del wipe de «Vaciar datos», con test que lo pinnea) —
+    /// un dispositivo recuerda su desbloqueo, pero un dispositivo que declara «aquí empieza un
+    /// usuario nuevo» no debe recordar el del anterior. Es además la pieza que cierra la puerta:
+    /// sin ella, B entra a Grupos sin código y reabre el bridge.
+    ///
+    /// `groups_currentUserRecordName` NO se toca aquí a propósito: la borra `clearCache()` del
+    /// `resetSyncState`, que además tira el valor EN MEMORIA del singleton (borrar solo la key
+    /// dejaría al proceso vivo operando con la identidad cacheada del usuario anterior).
+    static func removeGroupsDomainPreferenceKeys(from defaults: UserDefaults) {
+        defaults.removeObject(forKey: AppPreferences.Keys.groupsBetaUnlocked)
+
+        // Toggles personales de visibilidad/bridge y one-shots de Grupos: `removeUserPreferenceKeys`
+        // ya los barre en todo wipe, pero este camino también corre sin él en algún futuro caller —
+        // repetirlos es idempotente y deja la purga completa por sí sola.
+        defaults.removeObject(forKey: AppPreferences.Keys.hasShownGroupsOnboarding)
+        defaults.removeObject(forKey: AppPreferences.Keys.hasSeenGroupsNotificationPrompt)
+
+        // Prefijos: preferencias por-grupo (cuenta de liquidación por moneda) y dedup de
+        // notificaciones de grupo. Ambos llevan el zoneID del grupo de la sesión anterior en la
+        // key, así que la lista explícita no puede nombrarlos. `GroupNotifications.lastNotified.*`
+        // está excluida del wipe normal (barrerla duplicaría una notificación legítima); aquí SÍ se
+        // va: no hay ninguna notificación legítima que proteger, el dominio entero se va con ella.
+        let prefixes = ["groupPrefs_", "GroupNotifications.lastNotified."]
+        for key in defaults.dictionaryRepresentation().keys
+        where prefixes.contains(where: key.hasPrefix) {
+            defaults.removeObject(forKey: key)
+        }
+
+        defaults.synchronize()
+    }
+
     // MARK: - Reset del boot-cleanup de cierre de sesión (H4)
 
     /// Reset a "recién instalada" SIN ModelContext — para el boot-cleanup del sign-out en `.cloud`
@@ -277,6 +393,11 @@ final class DataWipeService {
     ///   las gestiona StorageModePersistence en el orden kill-safe del boot. JAMÁS aquí.
     ///   (El sentinel `cloudSync.prefsCutoverDrained.*` lo purga `performSignOutWipeIfArmed`
     ///   tras este reset, #37 — no re-añadirlo aquí.)
+    /// - `groupsDomainSealedForFreshStart` — SELLO del handover, no preferencia: lo escribe
+    ///   `wipeLocalGroupsDomain` y borrarlo aquí REABRIRÍA el bridge en un dispositivo que declaró
+    ///   el relevo, devolviendo los gastos del usuario anterior al Panel del nuevo. Su vida útil la
+    ///   termina el propio predicado (`GroupsBetaGateLogic.isBridgeAllowed`) cuando el usuario adopta
+    ///   Grupos, no un barrido.
     /// - `groupPrefs_*` y estado de Grupos — el dominio Grupos sobrevive el wipe por diseño
     ///   (store propio, CKSyncEngine); sus prefs se limpian en leaveGroup/deleteGroup.
     ///   Incluye `GroupNotifications.lastNotified.*`: barrerla duplicaría una notificación

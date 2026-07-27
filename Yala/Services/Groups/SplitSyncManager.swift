@@ -1451,6 +1451,22 @@ final class SplitSyncManager {
     /// stateSerialization en memoria — el re-fetch bajo la identidad nueva lo regenera).
     private func performAccountSwitchCleanup() {
         clearAllLocalGroupData()
+        resetLocalGroupsSyncState()
+    }
+
+    /// Mitad NO-SwiftData de la limpieza de arriba: estado persistido de los engines + identidad
+    /// cacheada. Extraída para que la purga del dominio Grupos en «empiezo de cero»
+    /// (`DataWipeService.wipeLocalGroupsDomain`, handover de dispositivo) la reuse SIN pasar por
+    /// `clearAllLocalGroupData`, que borra las filas vía el delegate y por tanto se auto-difiere en
+    /// la ventana export-only (`deferMainContextWork`) — en un camino de usuario en primer plano
+    /// diferir significaría no borrar nada.
+    ///
+    /// Va SIEMPRE emparejada con el borrado de las filas, en ambas direcciones: borrar filas sin
+    /// resetear los tokens deja a CloudKit convencido de que este dispositivo está al día y esos
+    /// records no se reenvían nunca (pérdida local permanente); resetear los tokens sin borrar las
+    /// filas provoca un re-fetch completo sobre datos que ya están. La rama `.signOut` de
+    /// `handleAccountChange` es el anti-patrón a NO copiar: borra filas y no toca el estado.
+    func resetLocalGroupsSyncState() {
         clearState(name: "private")
         clearState(name: "shared")
         GroupUserIdentityService.shared.clearCache()
