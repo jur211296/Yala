@@ -42,7 +42,15 @@ final class PaywallInboxAlertRoutingUITests: XCTestCase {
         //    retenido presenta AHORA (antes se descartaba en silencio).
         alertDismiss.tap()
         let paywallDismiss = app.buttons["trial_offer_dismiss"]
-        XCTAssertTrue(paywallDismiss.waitForExistence(timeout: 10), "El paywall retenido no se presentó al cerrar el alert (intent perdido).")
+        // 45 s y no 10 s: este paso es el único del test que espera detrás del DESMONTAJE del cover
+        // anterior (alert y paywall comparten anchor — UIKit no monta el segundo hasta que el
+        // primero se ha ido), así que hereda la latencia de desmontaje del runtime, que la app no
+        // controla. Matriz 2×2 del 2026-07-28: el caso completo mide 12,9 s clavados en iOS 26.4.1
+        // y 19-39 s en iOS 27.0, y los fallos de esta suite se concentraron aquí, en 27.0, con
+        // umbrales de 10 s y de 25 s; con margen holgado pasó 5/5. Lo que se afirma —que el intent
+        // retenido presenta y no se pierde en silencio— no cambia; el umbral solo se consume en el
+        // caso malo.
+        XCTAssertTrue(paywallDismiss.waitForExistence(timeout: 45), "El paywall retenido no se presentó al cerrar el alert (intent perdido).")
 
         // 3. Cerrar el paywall no deja capa fantasma: la toolbar del Panel
         //    responde y la Bandeja abre con los drafts del seed.

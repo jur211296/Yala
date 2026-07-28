@@ -36,32 +36,63 @@ final class InboxNewItemsModalUITests: XCTestCase {
         )
     }
 
-    /// Descartar el modal lo cierra y descubre el Panel debajo.
+    /// Descartar el modal deja el Panel INTERACTUABLE (no solo visible).
     func test_inboxAlertModalDismisses() {
         let app = XCUIApplication()
         app.launchForUITest(inboxAlert: true)
+
+        // Esperar a que bootstrap+seed terminen ANTES de descartar. El cover tapa el root
+        // VISUALMENTE, pero la jerarquía de accesibilidad sigue expuesta (comprobado: con el cover
+        // presente, `fab_new_transaction` ya se resuelve), así que `uitest_ready` sí se puede
+        // esperar aquí. Importa porque descartar mientras el arranque sigue en curso es lo que deja
+        // el cover pegado.
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
         let dismiss = app.buttons["inbox_alert_dismiss"]
         XCTAssertTrue(dismiss.waitForExistence(timeout: 30), "No apareció inbox_alert_dismiss.")
         dismiss.tap()
 
-        // Tras descartar, el modal desaparece y el Panel queda accesible.
+        // Tras descartar, el Panel debe quedar INTERACTUABLE.
         //
-        // Timeout 20 s y no 5 s (Lista Negra 2026-07-28, cerrada): lo que se afirma aquí es que el
-        // cover NO queda pegado PARA SIEMPRE —el bug «toolbar muerta» de TestFlight 2.0.5—, no
-        // cuánto tarda en irse. Medido con os_log sobre el mismo binario: la app pide el
-        // desmontaje siempre a los 284 ms del tap (invariante en verdes y rojas), pero el
-        // dismissal efectivo del `fullScreenCover` lo completa SwiftUI/UIKit entre 554 ms y más de
-        // 7 s según la carga del arranque. Con 5 s el test caía ~1 de cada 2 sin que nada
-        // estuviera roto. El timeout solo se consume en el caso malo: cuando pasa, resuelve al
-        // primer check (~0,8 s).
+        // Lo que este test protege es el bug «toolbar muerta» de TestFlight 2.0.5: que el cover no
+        // deje una capa fantasma que se coma los taps y vuelva la app inservible. Antes se afirmaba
+        // eso indirectamente, esperando a que `inbox_alert_view` dejara de existir — es decir,
+        // cronometrando el DESMONTAJE del `fullScreenCover`. Eso medía lo que no importa y lo hacía
+        // en el reloj de SwiftUI/UIKit, que la app no controla: matriz 2×2 del 2026-07-28
+        // (n=5/celda, 20 corridas, 0 descartadas por infraestructura) → iOS 26.4.1 0 % de fallo con
+        // el caso en 8,6 s clavados, iOS 27.0 30 % con el mismo caso en 17-51 s. El propio
+        // `test_inboxAlertModalPresentsOnLaunch`, que NO descarta nada, pasa de 6,4 s a 12,3 s en
+        // 27.0: la lentitud es del runtime, no de este flujo.
+        //
+        // Así que se afirma la propiedad de verdad: el Panel vuelve a responder. Si el cover queda
+        // pegado, ningún reintento consigue nada y esto es rojo — que es exactamente el bug 2.0.5.
+        let fab = app.buttons["fab_new_transaction"]
         XCTAssertTrue(
-            app.buttons["inbox_alert_view"].waitForNonExistence(timeout: 20),
-            "El InboxAlertModal no se cerró al descartar."
-        )
-        XCTAssertTrue(
-            app.buttons["fab_new_transaction"].waitForExistence(timeout: 5),
+            fab.waitForExistence(timeout: 30),
             "No se descubrió el Panel tras cerrar el modal."
+        )
+        // El tap se REINTENTA, y esa es la parte que importa: `allowsHitTesting(false)` impide que
+        // el backdrop capture el tap para sí, pero NO hace que el tap atraviese hasta el Panel —
+        // mientras el cover sigue montado él es la vista presentada y se lo come. Así que un único
+        // tap inmediato se PIERDE (medido: `fab_new_transaction` ya existe 1,9 s tras el dismiss,
+        // pero el menú no abre; con el tap único el caso falla incluso esperando 120 s, porque no
+        // hay nada que esperar). Reintentar hasta que responda afirma la propiedad de verdad —el
+        // Panel vuelve a estar vivo— sin cronometrar el desmontaje.
+        let manual = app.buttons["fab_manual"]
+        var responded = false
+        for _ in 0..<10 {
+            if manual.exists { responded = true; break }
+            fab.tap()
+            if manual.waitForExistence(timeout: 4) { responded = true; break }
+        }
+        XCTAssertTrue(
+            responded,
+            "El Panel no responde a NINGÚN tap tras cerrar el modal (cover pegado — bug 2.0.5)."
+        )
+        manual.tap()
+        XCTAssertTrue(
+            app.textFields["new_transaction_amount"].waitForExistence(timeout: 15),
+            "La cadena de presentación quedó muerta tras cerrar el modal: el formulario no se montó."
         )
     }
 }
