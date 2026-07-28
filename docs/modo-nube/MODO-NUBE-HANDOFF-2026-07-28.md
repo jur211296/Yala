@@ -64,6 +64,23 @@ Mide si el fallo de desmontaje del `fullScreenCover` depende de la **versión de
 
 **Si el veredicto es que el runtime es la variable**, deja de ser higiene de tests: es un `fullScreenCover` que tarda >1 min en desmontarse en el iOS más nuevo, con 2.1 saliendo con todo encendido. Pasa a la mesa de producto.
 
+## 3.3 · Fase 1 — **YA VALIDADA (2026-07-28)**. Resultado y lo que deja
+
+Aterrizó en `21dcd465` (gateway) + `5010db6a` (cliente) — los mismos dos commits que la sesión nombró `168de862`/`23382980`, rebasados al pushear. **Balance `+85 / −4.418`**: fase sustractiva de verdad.
+
+**Validación independiente: los 12 criterios del §7 del brief se verificaron corriendo los greps aquí, no leyendo su informe, y coinciden uno a uno.** La TRAMPA 1 está bien resuelta —el guard de PULL de C-2 quedó en su forma reducida, el gemelo de `deletions` intacto y `pendingFreezeZoneIDs` con inserts y drenaje—, que era el riesgo principal porque no falla al compilar ni lo caza ningún test.
+
+**Tres errores del BRIEF (no de la implementación), anotados para no repetirlos:**
+1. **El UPDATE que el brief especificaba no es ejecutable.** `supabase-groups-staging.ddl:867` revoca `update on public.group_members` a `authenticated` y los goldens solo manejan JWTs de usuario. La sesión lo sustituyó por un co-member en `pendingApproval` vía el flujo real de invitación: misma rama `no_eligible_owner`, y **describe un escenario que sobrevive a 2.1** mientras el placeholder `user_id NULL` era artefacto de la migración que se borra. **Mejor que la especificación.**
+2. **`awaitPersonalStoreReady` esperado 11, real 10.** Los DOS bloques borrados (beacon y uploader) llevaban su llamada; el brief solo contó la del beacon. La afirmación de fondo se sostiene: solo uno de los dos era alcanzable en producción, así que el cambio de comportamiento declarado sigue siendo exactamente uno.
+3. **Tres off-by-one** en coordenadas del brief: `:690` no `:691` · `:1458` no `:1457` · `:2617` no `:2616`. Si se reutilizan sus coordenadas en otra fase, re-comprobar siempre.
+
+**Refutaron el argumento de la secuencia, y tenían razón.** El brief justificaba «cerrar el gateway primero» diciendo que evita un retry-loop. Es media verdad: `GroupsMembershipClient.swift:268` mapea el 404 a `.transient` y `neverRetryTransient` (`:190`) solo exime a `create_group`/`create_group_invite`, así que un build viejo evitaría PostgREST pero **sí reintentaría 3 veces por llamada**. Impacto hoy: cero. El orden sigue siendo correcto; el argumento, no.
+
+**El hueco de cobertura es MAYOR de lo previsto.** `GroupMigrationStateTests.swift` llevaba **dos** suites, así que quedan **tres** piezas vivas sin cobertura unitaria: `GroupFreezeLogic.isFrozen`, `GroupFreezeLogic.migrationState` y `GroupBackendCapability.resolve`. Declarado en el commit y en el índice con la condición explícita: **aceptable SOLO porque las tres mueren en la Fase 4, que va antes de 2.1. Si la Fase 4 se retrasa, deja de serlo y hay que reabrirlo.**
+
+**Runbook de despliegue escrito y NO ejecutado** (confirmado): `deploy:staging` → `deploy:production` → verificar que `POST /groups/rpc/migrate_group` con JWT válido da **404 `yala_bad_request` esperando ≥30 s** (hay ~15 s de 404-con-envelope por propagación de Cloudflare: un 404 inmediato no prueba nada). `public.migrate_group` **se queda en la base**, inerte. Y el deploy de `clientCapability`/`clientCapabilityAt` a CloudKit Production queda **CANCELADO, no aplazado**.
+
 ## 4 · Abierto, por orden de urgencia
 
 | # | Qué | Estado |
@@ -74,7 +91,10 @@ Mide si el fallo de desmontaje del `fullScreenCover` depende de la **versión de
 | 4 | **Bloqueante #1 de 2.1**: cablear URL + anon key de producción en `CloudBackendConfig` (vía `Secrets.xcconfig`, nunca hardcodeadas) y verificar schema desplegado y PITR. **Es código, no infraestructura** | pendiente |
 | 5 | La allowlist `PRO_PRODUCT_IDS` del gateway está en el camino de pago de todos los usuarios **sin un solo test**. Verificado que los IDs coinciden con `StoreKitManager` ⇒ no hay bug vivo; el hueco es cobertura de drift (~35 líneas). El owner NO autorizó escribirlas | sin decidir |
 | 6 | **`_meta.counts` de `qa/coverage-index.json` no lo valida nadie.** Higiene, Fase 1 y quizá la matriz tocan ese fichero: al integrar el segundo y el tercero hay que revisarlo a mano | vigilar al mergear |
-| 7 | 11 de los 17 estados huérfanos de la auditoría §4 siguen sin decisión, y el frente de **cablear `CKIdentityCapture`** fuera de la migración (invariante «¿está el container privado en uso?») | sin decidir |
+| 7 | **Prosa FALSA en código, dejada por la Fase 1 al respetar su allowlist**: `CloudSyncFlags.swift:269` cita `GroupCapability.current` y `CloudSyncEngine.swift:2388` cita `liveGroupOutboxCount` — tipos que ya no existen. Y `SplitSyncManager.swift:1806` sigue explicando que «el rescate NO se consulta aquí». Tocar `.swift` dispara el gate con build de las dos schemes ⇒ hacerlo cuando la máquina esté libre, o colgarlo del siguiente commit que pase por ahí | pendiente, trivial |
+| 8 | **2 tests rojos de `YalaTests`** registrados en la Lista Negra: `config_isConfigured_inTestScheme` y `secondaryEntry_killedByRemoteOff`. Preexistentes según la reproducción de la Fase 1 en worktree limpio; **NO re-verificados aquí**. Pista fuerte: el primero mira `CloudBackendConfig.isConfigured`, el mismo gate cuyo comentario de `:22` está obsoleto ⇒ puede estar pinneando la premisa vieja | ABIERTA, deadline 2026-08-04 |
+| 9 | **4 keys de l10n huérfanas** (`groups.migrated.{migratingBanner,waitingBanner,waitingSectionTitle,waitingHint}` en `L10n.swift:1955/:1971/:1973/:1975` + sus 16 `.lproj`) y **2 vars write-only** (`zonesWithFailedFetchThisSession`, `enginesWithCompletedFetchCycle`). Son de la familia de la **Fase 4**; la Fase 1 hizo bien en no tocarlas | diferido a Fase 4 |
+| 10 | 11 de los 17 estados huérfanos de la auditoría §4 siguen sin decisión, y el frente de **cablear `CKIdentityCapture`** fuera de la migración (invariante «¿está el container privado en uso?») | sin decidir |
 
 ## 5 · La lección de método, que es lo que más va a servir
 
