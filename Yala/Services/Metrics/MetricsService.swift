@@ -86,6 +86,14 @@ enum MetricsCanary: String {
     case groupPushTokenRegisterFailed
     case groupMigrationCompleted
     case groupMigrationFailed
+    /// [C-4] La pasada de migración se DIFIRIÓ al próximo boot porque el fetch de GRUPOS no estaba
+    /// asentado (o un apply falló con el token ya avanzado). NO es un fallo: nada se perdió y todos los
+    /// pasos son idempotentes. Serie PROPIA a propósito — `groupMigrationFailed` significa «un paso de
+    /// la migración falló» (detail migrate/invite/freeze/seed/push/marker) y se lee para decidir el
+    /// encendido; meter aquí un diferimiento benigno envenenaría ese gate. `detail` = slug de
+    /// `GroupFetchQuiescenceGate.deferReason` (exportOnly/buffered/zoneFetchFailed/inFlight/noCycle/
+    /// applyFailed/cancelled). Emitido con `canaryOnce` ⇒ como mucho uno por proceso y por clave.
+    case groupMigrationDeferred
     case groupJoinIntentPersisted
     case groupJoinIntentReconciled
     case groupJoinIntentDeferred

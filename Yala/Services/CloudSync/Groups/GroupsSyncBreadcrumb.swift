@@ -171,6 +171,22 @@ enum GroupsSyncBreadcrumb {
         logger.notice("GroupsSync migrationFailed step=\(step, privacy: .public)")
     }
 
+    /// [C-4] La pasada de migración se DIFIRIÓ porque el fetch de GRUPOS no se asentó dentro del tope.
+    /// NO es un fallo: nada se perdió y los 7 pasos son idempotentes. `waited` = segundos esperados,
+    /// `reason` = slug de `GroupFetchQuiescenceGate.deferReason` (o `cancelled`). Sin PII.
+    static func groupsMigrationFetchGateDeferred(waited: Int, reason: String) {
+        logger.notice("GroupsSync migrationFetchGateDeferred waited=\(waited, privacy: .public)s reason=\(reason, privacy: .public) — fetch de grupos no asentado; reintenta el próximo boot")
+    }
+
+    /// [C-4] Un batch de records fetcheados NO llegó a persistir (save fallido / handler sin contexto)
+    /// con el token del engine YA avanzado: CloudKit no lo re-entrega. Invalida el testigo del ciclo ⇒
+    /// la migración a backend NO arranca en esta sesión. `reason` = `save-failed` | `no-context`.
+    /// Sin PII. Fuera de `#if DEBUG` como todo `SplitSync*`/`GroupsSync*` (excepción consciente: el
+    /// comportamiento solo se valida del todo en CloudKit Production vía Console.app).
+    static func groupsCkFetchApplyFailed(reason: String) {
+        logger.notice("GroupsSync ckFetchApplyFailed reason=\(reason, privacy: .public) — token avanzado sin apply; migración diferida")
+    }
+
     /// [G6-3 C2] El boot-reconciler re-encoló el marcador de `count` grupos `movedToBackendAt != nil &&
     /// !markerEnqueuedFlag` (kill entre el save del marcador y el flag). Vacío en estado estable.
     static func groupsMigrationMarkerReconciled(count: Int) {
@@ -192,5 +208,29 @@ enum GroupsSyncBreadcrumb {
     /// no-op (flag OFF, loop ya vivo, piggyback, stopUntilRelaunch). Sin PII.
     static func groupsLoopRestarted(trigger: String) {
         logger.notice("GroupsSync loopRestarted trigger=\(trigger, privacy: .public)")
+    }
+
+    // MARK: - Cambio de identidad de iCloud (C-3)
+
+    /// [C-3] Un cambio de identidad de iCloud (sign-out o switch de Apple ID) CONSERVÓ zonas del canal
+    /// backend porque había SESIÓN de nube viva (D4). Counts POR ZONA (un duplicado de fila no infla el
+    /// rastro) y SEPARADOS a propósito: `owned` = zonas con alguna fila `isBackendGroup` (dueño backend),
+    /// `frozen` = copias CONGELADAS de miembro. En un device de miembro backend NATIVO
+    /// `credentialsRevoked` es 0 SIEMPRE (el token solo lo estampa el paso 6 del uploader del OWNER), así
+    /// que un canario sobre el total se dispararía siempre y nadie lo miraría. El accionable es
+    /// `frozen > 0 && credentialsRevoked == 0`: el token viaja con `movedToBackendAt`, así que una copia
+    /// congelada sin credencial que revocar delata un GroupMeta incompleto. Sin PII — jamás group_ids ni
+    /// el token.
+    static func groupsIdentityChangeRetained(
+        owned: Int, frozen: Int, credentialsRevoked: Int, markersReQueued: Int, pendingJoinsRevoked: Int
+    ) {
+        logger.notice("GroupsSync identityChangeRetained owned=\(owned, privacy: .public) frozen=\(frozen, privacy: .public) credentialsRevoked=\(credentialsRevoked, privacy: .public) markersReQueued=\(markersReQueued, privacy: .public) pendingJoinsRevoked=\(pendingJoinsRevoked, privacy: .public)")
+    }
+
+    /// [C-3] El barrido de identidad no pudo borrar los hijos de `zones` zonas del canal CloudKit (fetch
+    /// fallido). Borrado PARCIAL: sus `SplitGroup` sí se borraron (van primero, paridad `deleteGroupCache`)
+    /// ⇒ el usuario anterior no queda visible, pero quedan huérfanos por zona. `> 0` en prod = investigar.
+    static func groupsIdentityChangePurgeFailed(zones: Int) {
+        logger.notice("GroupsSync identityChangePurgeFailed zones=\(zones, privacy: .public)")
     }
 }

@@ -149,7 +149,14 @@ enum CKRecordTranslator {
         // G6-3: campos del marcador — fallback al valor LOCAL si el record no los trae (race-tolerant, molde
         // `isArchived`): un member que YA supo que el grupo se congeló no lo des-congela por un record stale.
         group.movedToBackendAt = record[F.movedToBackendAt] as? Date ?? group.movedToBackendAt
-        group.backendReInviteToken = record.encryptedValues[F.backendReInviteToken] as? String ?? group.backendReInviteToken
+        // C-3: un grupo cuya identidad de nube fue REVOCADA en este device (cambio/cierre del Apple ID con
+        // sus filas backend RETENIDAS, D1) NO re-hidrata su token de re-invite. Sin este guard el strip es
+        // local y efímero: el token vive ENCRYPTED en el GroupMeta del owner, así que el siguiente fetch de
+        // la zona lo devuelve — y D2 (reset de los change tokens en `.signOut`) GARANTIZA ese fetch.
+        // `rejoinRevokedAt` es LOCAL-only: no viaja, así que la revocación es de ESTE device.
+        if group.rejoinRevokedAt == nil {
+            group.backendReInviteToken = record.encryptedValues[F.backendReInviteToken] as? String ?? group.backendReInviteToken
+        }
         group.ckSystemFieldsData = encodeSystemFields(of: record)
     }
 

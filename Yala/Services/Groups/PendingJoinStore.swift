@@ -164,6 +164,22 @@ enum PendingJoinStore {
         defaults.removeObject(forKey: userDefaultsKey)
     }
 
+    /// C-3: revoca la credencial CloudKit-era de RE-JOIN (`legacyMemberKey`) del intent de una zona SIN
+    /// tocar el `inviteToken`. Se llama al retener las filas del canal backend en un cambio de identidad
+    /// de iCloud (D1): ese `legacyMemberKey` es el recordName del Apple ID que se FUE y el RPC `join_group`
+    /// lo usa para rebindear la membresía CloudKit-era. Conservar el token es deliberado — un join en
+    /// vuelo se completa igual, entrando como member NUEVO en vez de heredar la membresía anterior.
+    /// Devuelve 1 si había algo que revocar (para el breadcrumb), 0 si no. Idempotente.
+    @discardableResult
+    static func revokeLegacyMemberKey(zoneName: String) -> Int {
+        var entries = load()
+        guard var entry = entries[zoneName], entry.legacyMemberKey != nil else { return 0 }
+        entry.legacyMemberKey = nil
+        entries[zoneName] = entry
+        persist(entries)
+        return 1
+    }
+
     // MARK: - Persistencia
 
     private static func load() -> [String: PendingJoinEntry] {

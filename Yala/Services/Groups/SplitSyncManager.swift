@@ -63,6 +63,10 @@ final class SplitSyncManager {
     // `save()` never lands on a half-imported personal graph in the shared mainContext.
     // See `SplitSyncStartGate`.
     private var enginesStarted = false
+
+    /// C-3: guard de re-entrada de `performAccountSwitchCleanup` — el evento de cuenta llega una vez por
+    /// engine y la recreación puede re-emitirlo.
+    private var identityCleanupInFlight = false
     /// `true` once the engines run with `automaticallySync = true` (personal import settled, or
     /// no iCloud, or hard cap). While `false` the engines are in "export-only" mode: they exist
     /// (so create/invite/enqueue work) but never fetch automatically, and the delegate defers
@@ -128,6 +132,57 @@ final class SplitSyncManager {
 
     // Records that failed due to quota exceeded — retried on foreground
     private var quotaFailedRecordIDs: Set<CKRecord.ID> = []
+
+    // MARK: - Testigo PASIVO del ciclo de fetch (C-4)
+    // El uploader de la migración a backend necesita saber si el FETCH DE GRUPOS está quieto ANTES de
+    // congelar un grupo (paso 3), porque a partir del flip el guard simétrico de pull descarta todo lo
+    // de esa zona. La señal se OBSERVA, jamás se fuerza: un `fetchChanges()` provocado fetchea la base
+    // privada ENTERA y descartaría, con avance de token, lo de las zonas ya congeladas en esa misma
+    // pasada. `@ObservationIgnored`: son contadores de alta frecuencia, no estado de UI.
+
+    /// Ciclos de fetch EN VUELO por engine (`willFetchChanges` ++ / `didFetchChanges` --).
+    @ObservationIgnored private var fetchCyclesInFlight: [String: Int] = [:]
+
+    /// Engines que cerraron ≥1 ciclo de fetch ENTERO en esta sesión. Se CONSERVA al promover a auto-sync
+    /// porque los eventos que aquellos ciclos dejaron bufferados SÍ se aplican en
+    /// `drainDeferredFetchEvents()`; en el arranque export-only el set está vacío de todos modos (no hay
+    /// auto-fetch), así que la conservación solo importa si alguna vez se fuerza un fetch antes de
+    /// promover. SÍ se limpia en `resetLocalGroupsSyncState()`: ahí los change tokens se invalidan y
+    /// «ya completó un ciclo» deja de decir nada sobre el corpus que viene.
+    @ObservationIgnored private var enginesWithCompletedFetchCycle: Set<String> = []
+
+    /// Zonas cuyo `didFetchRecordZoneChanges` llegó CON error y aún no han vuelto a cerrar limpio: su
+    /// contenido no bajó. Se auto-sana (un ciclo limpio posterior de la misma zona la retira), así que
+    /// un transitorio no deja el gate clavado. Testigo NEGATIVO a propósito: exigir presencia en un set
+    /// de «zonas fetcheadas limpiamente» deadlockearía, porque una zona sin cambios no produce el evento.
+    /// Se alimenta de AMBOS engines (el evento no trae `engineName`). Inofensivo para el gate: los
+    /// candidatos son `isOwner` ⇒ sus zonas solo llegan por el engine privado.
+    @ObservationIgnored private var zonesWithFailedFetchThisSession: Set<String> = []
+
+    /// Un apply de records fetcheados NO llegó a persistir en esta sesión (save fallido o handler sin
+    /// `modelContext`). El token YA avanzó ⇒ el ciclo «completo» no prueba que el store lo esté, y
+    /// esperar no lo arregla: CloudKit no re-entrega.
+    @ObservationIgnored private var fetchApplyFailedThisSession = false
+
+    /// Instantánea PASIVA para el gate del uploader, acotada a las zonas que la pasada va a congelar.
+    /// SOLO LEE: no dispara `fetchChanges()` ni evalúa la promoción (`evaluateQuiescentPromotion` puede
+    /// llamar a `enableAutoSync()`, que lanza un `Task { fetchChanges() }` que NADIE awaitea → el batch
+    /// llegaría DESPUÉS del flip). Las derivaciones viven en `GroupFetchQuiescenceGate.signal` para que
+    /// tengan test propio; aquí solo se eligen los campos.
+    func privateFetchGateSignal(candidateZoneNames: Set<String>) -> GroupFetchQuiescenceGate.Signal {
+        GroupFetchQuiescenceGate.signal(
+            accountAvailable: iCloudSyncService.shared.isAccountAvailable,
+            privateEngineMounted: privateEngine != nil,
+            autoSyncActive: autoSyncActive,
+            privateCyclesInFlight: fetchCyclesInFlight["private"] ?? 0,
+            privateCompletedCycle: enginesWithCompletedFetchCycle.contains("private"),
+            deferredRecordZoneEventCount: deferredFetchedRecordZoneEvents.count,
+            deferredDatabaseEventCount: deferredFetchedDatabaseEvents.count,
+            deferredClearAllRequested: deferredClearAllRequested,
+            applyFailedThisSession: fetchApplyFailedThisSession,
+            candidateZoneNames: candidateZoneNames,
+            zonesWithFailedFetch: zonesWithFailedFetchThisSession)
+    }
 
     // MARK: - State Persistence
 
@@ -351,6 +406,13 @@ final class SplitSyncManager {
         _sharedEngineRef = newShared
         privateEngine = newPrivate
         sharedEngine = newShared
+        // C-4: la promoción SUSTITUYE ambos engines y el delegate descarta los eventos de los viejos
+        // (`isCurrentEngine`), así que un `didFetchChanges` en vuelo del viejo NUNCA llegaría a
+        // decrementar: sin este reset el contador quedaría clavado > 0 y el gate diferiría para siempre.
+        // Solo el contador en vuelo — `enginesWithCompletedFetchCycle` se CONSERVA a propósito: los
+        // eventos que aquellos ciclos bufferaron se aplican en `drainDeferredFetchEvents()` unas líneas
+        // más abajo, así que el testigo sigue siendo cierto.
+        fetchCyclesInFlight.removeAll()
 
         // Re-enqueue the captured pending changes onto the new engines (idempotent — duplicates of
         // changes already in the loaded state are coalesced). Now safe to send (auto-sync on).
@@ -411,7 +473,14 @@ final class SplitSyncManager {
             toRecover = try modelContext.fetch(descriptor).filter {
                 // C2: un grupo backend sin zona CloudKit es LEGÍTIMO (nace vía RPC), no "grupo roto" — sin
                 // este guard el recovery re-encolaría su zona + records a CKSyncEngine (createZone directo).
-                guard !$0.isBackendGroup else {
+                // C-3: se amplía al grupo CONGELADO porque este recovery llama `createZone` DIRECTO (no pasa
+                // por el guard de `enqueueSave`) y, con la fila retenida tras un cambio de Apple ID,
+                // RE-CREARÍA la zona en el iCloud del ID NUEVO. Cambia UN caso, a propósito: un owner con
+                // `movedToBackendAt != nil`, `!isBackendGroup` y SIN `ckSystemFieldsData` cumple a la vez el
+                // freeze y `needsZoneRecovery` — hoy se le re-crea la zona; con el guard se salta, que es lo
+                // correcto porque su verdad ya vive en el backend. La mitigación #9 no lo cubre (exige
+                // `ckSystemFieldsData != nil`).
+                guard !($0.isBackendGroup || $0.isMigratedFrozen) else {
                     GroupsSyncBreadcrumb.groupsCkEnqueueSkippedBackendGroup(site: "zoneRecovery")
                     return false
                 }
@@ -490,7 +559,12 @@ final class SplitSyncManager {
             // C2: los records de un grupo backend SIEMPRE tienen `ckSystemFieldsData == nil` (jamás hicieron
             // round-trip CloudKit — viven en el backend) → sin este skip, `needsRecordRecovery` los re-encolaría
             // TODOS a CKSyncEngine al boot. Excluir el grupo entero (más barato que filtrar cada record).
-            if group.isBackendGroup {
+            // C-3: se amplía al grupo CONGELADO (primitiva `GroupFreezeLogic`, NO `movedToBackendAt != nil`
+            // a secas): sus writes a CloudKit se perderían igual porque la verdad se mudó al backend, y con
+            // la fila retenida tras un cambio de Apple ID irían a la private DB del ID NUEVO. Usar la
+            // primitiva de freeze PRESERVA la mitigación #9 (owner tras reinstall), cuyos records local-only
+            // siguen teniendo aquí su último camino de subida — con el predicado crudo lo perderían.
+            if group.isBackendGroup || group.isMigratedFrozen {
                 GroupsSyncBreadcrumb.groupsCkEnqueueSkippedBackendGroup(site: "recordRecovery")
                 continue
             }
@@ -1152,7 +1226,14 @@ final class SplitSyncManager {
         // C2 choke point: un grupo del canal BACKEND no sincroniza por CKSyncEngine — sus records viven en el
         // backend (sync vía GroupsSyncClient). Este guard cubre de un golpe los ~30 call-sites de
         // GroupService/GroupExpenseService/GroupJoinReconciler/backfills que enrutan por esta variante `group:`.
-        guard !group.isBackendGroup else {
+        // C-3: el predicado se amplía al grupo CONGELADO, no solo al backend. Tras un cambio de Apple ID
+        // SOBREVIVEN copias congeladas (D1) y este es el choke point por el que
+        // `GroupService.refreshCurrentUserFlags` (backfill de `cloudKitUserRecordID` al boot) las subiría a
+        // la private DB del Apple ID NUEVO. Se usa la primitiva de freeze de `GroupFreezeLogic` y NO
+        // `movedToBackendAt != nil` a secas: su mitigación #9 (owner tras reinstall, con
+        // `ckSystemFieldsData`) está NO congelada a propósito y el predicado crudo le quitaría su último
+        // camino de subida.
+        guard !(group.isBackendGroup || group.isMigratedFrozen) else {
             GroupsSyncBreadcrumb.groupsCkEnqueueSkippedBackendGroup(site: "enqueueSave")
             return
         }
@@ -1173,7 +1254,9 @@ final class SplitSyncManager {
     /// Enqueue a deletion, auto-routing to the correct engine based on group ownership.
     func enqueueDeletion(modelID: UUID, group: SplitGroup) {
         // C2 choke point (par de enqueueSave): grupo backend → jamás a CKSyncEngine.
-        guard !group.isBackendGroup else {
+        // C-3: mismo ensanche que su par — un grupo CONGELADO retenido tras un cambio de Apple ID tampoco
+        // puede emitir deletions a la private DB del ID nuevo.
+        guard !(group.isBackendGroup || group.isMigratedFrozen) else {
             GroupsSyncBreadcrumb.groupsCkEnqueueSkippedBackendGroup(site: "enqueueDeletion")
             return
         }
@@ -1226,9 +1309,16 @@ final class SplitSyncManager {
 
         case .willFetchChanges:
             syncStatus = .syncing
+            // Señal PASIVA del gate C-4: un ciclo de fetch acaba de abrirse en este engine.
+            fetchCyclesInFlight[name, default: 0] += 1
 
         case .didFetchChanges:
             syncStatus = .idle
+            // El ciclo cerró: decrementa con clamp (un `will` puede haberse perdido si su engine fue
+            // recreado — el delegate descarta los eventos del viejo vía `isCurrentEngine`) y deja el
+            // testigo de «este engine ya completó un ciclo entero en esta sesión».
+            fetchCyclesInFlight[name] = max(0, (fetchCyclesInFlight[name] ?? 0) - 1)
+            enginesWithCompletedFetchCycle.insert(name)
 
         case .willFetchRecordZoneChanges:
             break
@@ -1316,8 +1406,17 @@ final class SplitSyncManager {
     /// (el save tocaría el mainContext compartido) y se drena tras los record
     /// events en `drainDeferredFetchEvents`.
     private func handleDidFetchRecordZoneChanges(_ event: CKSyncEngine.Event.DidFetchRecordZoneChanges) {
-        guard event.error == nil else { return }
         let zoneName = event.zoneID.zoneName
+        guard event.error == nil else {
+            // C-4: el fetch de ESTA zona falló, su contenido no bajó. La migración no puede congelar un
+            // grupo cuya zona no se ha podido leer en esta sesión. Se AUTO-SANA: el ciclo limpio
+            // siguiente de la misma zona la retira del set (un `changeTokenExpired` u otro transitorio
+            // no deja el gate clavado). Testigo NEGATIVO a propósito — exigir presencia en un set de
+            // «zonas fetcheadas limpiamente» deadlockearía: una zona SIN cambios no produce el evento.
+            zonesWithFailedFetchThisSession.insert(zoneName)
+            return
+        }
+        zonesWithFailedFetchThisSession.remove(zoneName)
         if deferMainContextWork("didFetchRecordZoneChanges") {
             deferredZoneFetchCompletions.append(zoneName)
             return
@@ -1425,10 +1524,19 @@ final class SplitSyncManager {
 
         case .signOut:
             syncStatus = .noAccount
-            clearAllLocalGroupData()
-            GroupUserIdentityService.shared.clearCache()
+            // D2 (C-3): el sign-out del Apple ID resetea TAMBIÉN el estado de CKSyncEngine. Borrar filas
+            // dejando los change tokens intactos deja a CloudKit convencido de que este device está al día
+            // ⇒ esos records no se re-entregan JAMÁS y el mismo humano que vuelve a firmar pierde sus
+            // grupos con los datos vivos en la nube — el anti-patrón que nombra la doc de
+            // `resetLocalGroupsSyncState` y la trampa (1) de `.claude/rules/swiftdata-cloudkit.md`.
+            // `performAccountSwitchCleanup()` es EXACTAMENTE lo que hacía esta rama
+            // (el borrado de filas + `GroupUserIdentityService.clearCache()`, que va DENTRO de
+            // `resetLocalGroupsSyncState`) MÁS el reset del estado de los engines.
+            // CAMBIO DE COMPORTAMIENTO EN PRODUCCIÓN, aceptado conscientemente por el owner: el siguiente
+            // sign-in hace un re-fetch COMPLETO de las zonas de grupos en vez de incremental.
+            performAccountSwitchCleanup()
             #if DEBUG
-            logger.info("iCloud account signed out — cleared local group data")
+            logger.info("iCloud account signed out — cleared local group data + engine state")
             #endif
 
         case .switchAccounts:
@@ -1450,8 +1558,55 @@ final class SplitSyncManager {
     /// mismo precedente que el switch reactivo (los engines ya cargaron su
     /// stateSerialization en memoria — el re-fetch bajo la identidad nueva lo regenera).
     private func performAccountSwitchCleanup() {
+        // C-3: `handleAccountChange` corre UNA VEZ POR ENGINE (private + shared) y la recreación de abajo
+        // puede hacer que un engine recién creado vuelva a emitir su propio `.accountChange`. Sin este
+        // guard el par borrar-todo → save → recrear → borrar-todo se realimenta.
+        guard !identityCleanupInFlight else { return }
+        identityCleanupInFlight = true
+        defer { identityCleanupInFlight = false }
+
         clearAllLocalGroupData()
         resetLocalGroupsSyncState()
+        recreateEnginesAfterIdentityChange()
+    }
+
+    /// C-3 (D2): reset EFECTIVO del estado de CKSyncEngine tras un cambio de identidad de iCloud.
+    ///
+    /// `clearState(name:)` solo borra el fichero `<name>.json`: los engines siguen VIVOS con su
+    /// `stateSerialization` (change tokens + pending changes) en MEMORIA, y el delegate la re-escribe tal
+    /// cual en el siguiente `.stateUpdate`. Sin esto, «resetear los tokens» es no-determinista — en la
+    /// práctica el reset solo llegaba en el próximo cold start, y a veces ni eso.
+    ///
+    /// Molde EXACTO de `enableAutoSync()`: refs de identidad primero (el delegate descarta callbacks de
+    /// engines viejos vía `isCurrentEngine`, y un `.stateUpdate` tardío del viejo se guardaría con el
+    /// nombre equivocado), luego las propiedades. DIFERENCIA deliberada con la promoción: se construyen
+    /// con `state: nil` y NO se transfieren los `pendingRecordZoneChanges` — esos pendientes son del Apple
+    /// ID que se fue y enviarlos bajo el nuevo es la fuga. Ese drop es justamente lo que obliga a
+    /// re-armar `markerEnqueuedFlag` en el gate (el marcador de migración vivía ahí).
+    ///
+    /// Se llama SOLO desde `performAccountSwitchCleanup`, que a su vez tiene TRES entradas:
+    /// `handleAccountChange(.signOut)` (D2), `handleAccountChange(.switchAccounts)` y
+    /// `runIdentityBootGuard()` (proactivo del boot, VIVO hoy con el flag OFF). NO se llama desde
+    /// `resetLocalGroupsSyncState`: el camino de handover «empiezo de cero»
+    /// (`DataWipeService.wipeLocalGroupsDomain`) reusa ese segundo y debe quedar byte-idéntico.
+    private func recreateEnginesAfterIdentityChange() {
+        guard enginesStarted, let container, let delegate else { return }
+
+        let newPrivate = makeEngine(
+            database: container.privateCloudDatabase, state: nil, autoSync: autoSyncActive, delegate: delegate)
+        let newShared = makeEngine(
+            database: container.sharedCloudDatabase, state: nil, autoSync: autoSyncActive, delegate: delegate)
+        _privateEngineRef = newPrivate
+        _sharedEngineRef = newShared
+        privateEngine = newPrivate
+        sharedEngine = newShared
+
+        // Espejos en memoria de las colas que se acaban de tirar: `quotaFailedRecordIDs` los RE-ENCOLA en
+        // `retryQuotaFailedRecords()` (foreground) y apuntan a zonas del Apple ID anterior.
+        pendingRecordSaves.removeAll()
+        quotaFailedRecordIDs.removeAll()
+
+        logger.notice("SplitSync engines recreated after identity change — state dropped (autoSync=\(self.autoSyncActive, privacy: .public))")
     }
 
     /// Mitad NO-SwiftData de la limpieza de arriba: estado persistido de los engines + identidad
@@ -1465,11 +1620,19 @@ final class SplitSyncManager {
     /// resetear los tokens deja a CloudKit convencido de que este dispositivo está al día y esos
     /// records no se reenvían nunca (pérdida local permanente); resetear los tokens sin borrar las
     /// filas provoca un re-fetch completo sobre datos que ya están. La rama `.signOut` de
-    /// `handleAccountChange` es el anti-patrón a NO copiar: borra filas y no toca el estado.
+    /// `handleAccountChange` era el anti-patrón a NO copiar (borraba filas sin tocar el estado); C-3/D2 la
+    /// arregló: ahora enruta por `performAccountSwitchCleanup`, igual que `.switchAccounts`.
     func resetLocalGroupsSyncState() {
         clearState(name: "private")
         clearState(name: "shared")
         GroupUserIdentityService.shared.clearCache()
+        // C-4: los tokens se invalidan ⇒ el canal vuelve a estar «sin leer» y los testigos del ciclo de
+        // fetch hablan de un corpus que ya no es el que viene. Sin este reset el gate leería como asentado
+        // un canal que va a re-fetchear la base entera.
+        fetchCyclesInFlight.removeAll()
+        enginesWithCompletedFetchCycle.removeAll()
+        zonesWithFailedFetchThisSession.removeAll()
+        fetchApplyFailedThisSession = false
     }
 
     /// Delete all local group data (used on sign-out and account switch for privacy).
@@ -1485,14 +1648,31 @@ final class SplitSyncManager {
         guard let modelContext else { return }
 
         do {
-            let groups = try modelContext.fetch(FetchDescriptor<SplitGroup>())
-            for group in groups {
-                deleteGroupCache(groupID: group.id, context: modelContext)
-            }
+            // C-3 (D1 + D4): las zonas del canal BACKEND se CONSERVAN mientras haya sesión de nube viva —
+            // su identidad es el `sub` de la cuenta Yala, no el Apple ID del OS — y pierden TODA credencial
+            // de re-join. Sin sesión de nube se borra todo, como hoy. Las zonas del canal CloudKit se van
+            // enteras (privacidad, commit 31dded30). Se decide por ZONA y no por fila: existen `SplitGroup`
+            // duplicados con el MISMO `cloudKitZoneID` (`SplitGroupDeduplicationService`) y el flip de canal
+            // solo marca uno — borrar el duplicado «por zona» vaciaría el grupo backend recién retenido.
+            // El cursor del pull backend (`GroupSyncCursor.groupCursorsJSON`) NO se toca: filas retenidas +
+            // cursor vivo es el par COHERENTE; era «filas borradas + cursor vivo» lo que perdía los datos
+            // para siempre (el server solo manda `server_seq > cursor`).
+            let result = try GroupsIdentityPurgeGate.apply(in: modelContext)
             SaveBreadcrumb.willSave("SplitSync.clearAllLocalGroupData")
             try modelContext.save()
             SaveBreadcrumb.didSave("SplitSync.clearAllLocalGroupData")
             SessionState.shared.markRemoteChangePending()
+            if result.retainedOwnedZones + result.retainedFrozenZones > 0 {
+                GroupsSyncBreadcrumb.groupsIdentityChangeRetained(
+                    owned: result.retainedOwnedZones,
+                    frozen: result.retainedFrozenZones,
+                    credentialsRevoked: result.credentialsRevoked,
+                    markersReQueued: result.markersReQueued,
+                    pendingJoinsRevoked: result.pendingJoinsRevoked)
+            }
+            if result.failedZones > 0 {
+                GroupsSyncBreadcrumb.groupsIdentityChangePurgeFailed(zones: result.failedZones)
+            }
         } catch {
             #if DEBUG
             logger.error("clearAllLocalGroupData: Failed: \(error)")
@@ -1527,7 +1707,14 @@ final class SplitSyncManager {
             deferredFetchedRecordZoneEvents.append((fetched, engineName))
             return
         }
-        guard let modelContext else { return }
+        guard let modelContext else {
+            // C-4: el token del engine YA avanzó sobre este batch y no hay dónde aplicarlo — el store no
+            // quedó completo y CloudKit no lo re-entrega. Invalida el testigo del ciclo: la migración a
+            // backend NO arranca en esta sesión (congelar aquí sembraría de un store mutilado).
+            fetchApplyFailedThisSession = true
+            GroupsSyncBreadcrumb.groupsCkFetchApplyFailed(reason: "no-context")
+            return
+        }
 
         var changeSet = RemoteChangeSet()
 
@@ -1656,6 +1843,13 @@ final class SplitSyncManager {
             try modelContext.save()
             SaveBreadcrumb.didSave("SplitSync.fetchedRecordZoneChanges")
         } catch {
+            // C-4: el token YA avanzó, lo de este batch no vuelve. Invalida el testigo del ciclo (el
+            // gate difiere la migración al próximo boot) y deja breadcrumb FUERA de `#if DEBUG` —
+            // excepción consciente del subsistema `SplitSync*`/`GroupsSync*`, sin PII. Diferir NO
+            // recupera lo perdido; lo que evita es COMPOUND: congelar un grupo cuyo store se sabe
+            // incompleto y sembrar el backend desde él.
+            fetchApplyFailedThisSession = true
+            GroupsSyncBreadcrumb.groupsCkFetchApplyFailed(reason: "save-failed")
             #if DEBUG
             logger.error("[\(engineName)] Failed to save after remote changes: \(error)")
             #endif

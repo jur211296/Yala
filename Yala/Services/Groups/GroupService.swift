@@ -1028,6 +1028,11 @@ final class GroupService {
             let localDisplayName = currentUserDisplayName()
             for group in allGroups {
                 guard let zoneMembers = membersByZone[group.cloudKitZoneID] else { continue }
+                // C-3: la fila del canal backend RETENIDA tras un cambio de Apple ID (D1) no se re-ancla al
+                // recordName NUEVO — su identidad la resuelve el `sub` de la cuenta Yala. Sin esto, el
+                // backfill estampa el recordName del humano nuevo sobre un member ajeno del grupo anterior.
+                guard !GroupsIdentityPurgeGate.belongsToBackendChannel(
+                    isBackendGroup: group.isBackendGroup, movedToBackendAt: group.movedToBackendAt) else { continue }
                 guard !zoneMembers.contains(where: { $0.cloudKitUserRecordID == recordName }) else { continue }
 
                 // A1 (G3): EXCLUIR los members del canal Grupos → backend (born-backend tienen
@@ -1061,6 +1066,16 @@ final class GroupService {
             }
 
             for member in members {
+                // C-3: par del guard de arriba. Un member de un grupo del canal backend RETENIDO lleva el
+                // `cloudKitUserRecordID` del Apple ID que se FUE, así que el match por record-name daría
+                // `false` y APAGARÍA su `isCurrentUser` — dejando el grupo retenido sin «quién soy»
+                // (balances, participación) justo en el grupo que este fix existe para conservar.
+                if let memberGroup = groupsByZone[member.groupZoneID],
+                   GroupsIdentityPurgeGate.belongsToBackendChannel(
+                    isBackendGroup: memberGroup.isBackendGroup, movedToBackendAt: memberGroup.movedToBackendAt) {
+                    continue
+                }
+
                 // Backfill legacy "current user" members that were created without a CloudKit identity.
                 // A1 (G3): EXCLUIR los members del canal backend (`memberKey`/`userID` seteados) — su
                 // `cloudKitUserRecordID == ""` es intencional; backfillearlo + encolarlo sería fuga cross-canal.

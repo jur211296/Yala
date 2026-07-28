@@ -104,6 +104,13 @@ enum GroupBackendInviteEntryHandler {
     /// `GroupUserIdentityService.cachedRecordName`. Device fresco sin ninguno → `nil` (entra como member
     /// nuevo — residual §9.3b documentado). `#Predicate` CONCRETO por tipo (regla inviolable).
     static func legacyMemberKeyForRejoin(group: SplitGroup, context: ModelContext) -> String? {
+        // C-3 (D1): si este device revocó las credenciales de re-join del grupo (cambio/cierre del Apple ID
+        // con la fila RETENIDA), no hay legacy key que ofrecer. Corta las DOS fuentes de un golpe: el
+        // `SplitMember` con `isCurrentUser` —hijo de un grupo retenido, o sea que SOBREVIVE, y cuyo
+        // `cloudKitUserRecordID` es el recordName del Apple ID que se fue— y el fallback del cache. El
+        // re-join entra entonces como member NUEVO (residual §9.3b, ya documentado) en vez de rebindear
+        // server-side la membresía CloudKit-era del humano anterior.
+        guard group.rejoinRevokedAt == nil else { return nil }
         let zoneID = group.cloudKitZoneID
         var descriptor = FetchDescriptor<SplitMember>(
             predicate: #Predicate { $0.groupZoneID == zoneID && $0.isCurrentUser == true })

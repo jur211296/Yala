@@ -51,10 +51,35 @@ final class GroupMigrationUploader {
     private let context: ModelContext
     private let now: () -> Date
 
+    // MARK: - Gate C-4 (fetch de GRUPOS asentado)
+
+    /// Tope de espera del gate y cadencia del sondeo. Espejan `AppBootstrapper.awaitPersonalImportForBootSave`
+    /// (`totalPollCap = 120`, `pollInterval = 2`) porque el presupuesto es el mismo: un Task de boot que
+    /// DIFIERE al vencer, jamás fuerza. Con 60s la cohorte cuya promoción a auto-sync llega tarde
+    /// diferiría en cada boot y no migraría nunca.
+    /// `nonisolated`: se usan como valor por DEFECTO de parámetros del `init`, y esos se evalúan en el
+    /// contexto del CALLER — con el tipo aislado al MainActor sería un error en el modo Swift 6.
+    nonisolated static let fetchGateCapSecondsDefault: TimeInterval = 120
+    nonisolated static let fetchGatePollSecondsDefault: TimeInterval = 2
+
+    /// Señal PASIVA del canal de fetch, acotada a las zonas que se van a congelar. Inyectable como el
+    /// resto de boundary ops. El default LEE el singleton (un default inerte convertiría un olvido de
+    /// cableado en un gate silenciosamente desactivado); los tests inyectan una señal determinista.
+    private let fetchGateSignal: @MainActor (Set<String>) -> GroupFetchQuiescenceGate.Signal
+    /// Sondeo del gate. `false` = cancelado ⇒ abortar la pasada. Inyectable para que los tests no
+    /// duerman (regla: nunca `Task.sleep` largo en tests).
+    private let gatePoll: (TimeInterval) async -> Bool
+    private let fetchGateCapSeconds: TimeInterval
+    private let fetchGatePollSeconds: TimeInterval
+
     init(
         context: ModelContext,
         now: @escaping () -> Date = { .now },
         sessionCheck: @escaping @MainActor () -> Bool = { CloudAuthService.shared.hasSession },
+        fetchGateSignal: (@MainActor (Set<String>) -> GroupFetchQuiescenceGate.Signal)? = nil,
+        gatePoll: ((TimeInterval) async -> Bool)? = nil,
+        fetchGateCapSeconds: TimeInterval = GroupMigrationUploader.fetchGateCapSecondsDefault,
+        fetchGatePollSeconds: TimeInterval = GroupMigrationUploader.fetchGatePollSecondsDefault,
         migrate: ((String, [String: Any], [[String: Any]]) async throws -> MigrateGroupResult)? = nil,
         createInvite: ((String) async throws -> String)? = nil,
         seedSnapshot: ((SplitGroup) throws -> Void)? = nil,
@@ -66,6 +91,21 @@ final class GroupMigrationUploader {
         self.context = context
         self.now = now
         self.sessionCheck = sessionCheck
+        // Señal PASIVA: SOLO LEE los contadores del delegate. JAMÁS fuerza un fetch de CloudKit (no es
+        // por zona: fetchearía la base privada entera y descartaría, con avance de token, lo de los
+        // grupos ya congelados en ESTA misma pasada) ni evalúa la promoción (que dispararía un fetch
+        // en un Task que nadie awaitea).
+        self.fetchGateSignal = fetchGateSignal ?? { zones in
+            SplitSyncManager.shared.privateFetchGateSignal(candidateZoneNames: zones)
+        }
+        self.gatePoll = gatePoll ?? { seconds in
+            // Molde de `AppBootstrapper.awaitPersonalStoreReady`: un Task cancelado devuelve el valor
+            // conservador (el caller difiere) en vez de busy-spinear. No es un `try?` que silencia.
+            do { try await Task.sleep(for: .seconds(seconds)); return true }
+            catch { return false }
+        }
+        self.fetchGateCapSeconds = fetchGateCapSeconds
+        self.fetchGatePollSeconds = fetchGatePollSeconds
         self.migrate = migrate ?? { gid, meta, members in
             try await GroupBackendMembershipService(client: GroupsMembershipClient())
                 .migrateGroup(groupID: gid, meta: meta, members: members)
@@ -92,9 +132,32 @@ final class GroupMigrationUploader {
     /// Corre la pasada de migración de TODOS los candidatos. GATE del caller (`AppBootstrapper`): quiescencia
     /// del import + flag + sesión + consent. Idempotente: un candidato que falla reintenta en el próximo boot.
     func run() async {
-        // GATE COMPLETO (CRÍTICO 2): flag + sesión + consent. La QUIESCENCIA la garantiza el caller
-        // (`AppBootstrapper` con `awaitPersonalStoreReady()` antes de invocar).
+        // GATE COMPLETO (CRÍTICO 2): flag + sesión + consent. La QUIESCENCIA del import PERSONAL la
+        // garantiza el caller (`AppBootstrapper` con `awaitPersonalStoreReady()`, que enruta por
+        // `StorageModeSignalRouter`). Primero porque es barato: con el canal apagado no se espera nada.
         guard CloudSyncFlags.groupsBackendEnabled, sessionCheck(), GroupsConsentState.isAccepted else { return }
+
+        // GATE C-4 (fetch de GRUPOS). Va aquí, de PASADA y ANTES de `fetchCandidates()`, por tres razones
+        // concretas:
+        //  1. El paso 1 (`buildPayload`) fotografía el roster de `SplitMember` al ARRANCAR `migrateOne`,
+        //     y ese payload es la ÚNICA vía de los members al backend (`SplitMember` es PULL-ONLY y
+        //     `enqueueSnapshotRows` no lo siembra). Un gate colocado más abajo no lo cubriría.
+        //  2. No invalida el array de candidatos (aquí todavía no existe).
+        //  3. Se espera UNA vez por boot, no N.
+        // LO QUE NO CUBRE, dicho en voz alta: para los grupos 2..N el `buildPayload` ocurre minutos
+        // después del gate (median k-1 migraciones con RPCs). Eso lo acota el re-chequeo de `migrateOne`;
+        // lo que NADIE puede acotar es «existe un record en CloudKit que aún no hemos fetcheado» — ése es
+        // el RESCATE, y va en su propio ticket.
+        //
+        // Las zonas se calculan ANTES del gate porque el gate las necesita (testigo por zona) y porque
+        // así se evita esperar en balde cuando no hay nada que migrar. Se mapean a `String` y los
+        // `@Model` se sueltan en el acto: nada que una espera pueda invalidar.
+        let gateZones = candidateZoneNames()
+        guard !gateZones.isEmpty else {
+            GroupMigrationProgress.shared.finish()
+            return
+        }
+        guard await awaitGroupFetchSettled(candidateZoneNames: gateZones) else { return }
 
         let candidates = fetchCandidates()
         guard !candidates.isEmpty else {
@@ -133,12 +196,87 @@ final class GroupMigrationUploader {
         }
     }
 
+    /// Zonas de los candidatos, como `String` planos: alimenta el testigo POR ZONA del gate y sirve de
+    /// conteo previo. No retiene ningún `@Model` (los suelta al mapear) ⇒ no hay nada que una espera
+    /// pueda invalidar. `#Predicate` CONCRETO por tipo, igual que `fetchCandidates`.
+    private func candidateZoneNames() -> Set<String> {
+        let descriptor = FetchDescriptor<SplitGroup>(
+            predicate: #Predicate { $0.isOwner == true && $0.movedToBackendAt == nil && $0.ckSystemFieldsData != nil })
+        do {
+            return Set(try context.fetch(descriptor).map(\.cloudKitZoneID))
+        } catch {
+            #if DEBUG
+            logger.error("GroupsMigration: candidateZoneNames falló: \(error)")
+            #endif
+            return []
+        }
+    }
+
+    /// Espera PASIVA a que el fetch de grupos se asiente. `false` ⇒ diferir la pasada al próximo boot
+    /// (los 7 pasos son idempotentes: diferir jamás pierde trabajo).
+    private func awaitGroupFetchSettled(
+        candidateZoneNames: Set<String>, capSeconds: TimeInterval? = nil, isPass: Bool = true
+    ) async -> Bool {
+        let cap = capSeconds ?? fetchGateCapSeconds
+        var waited: TimeInterval = 0
+        while true {
+            let signal = fetchGateSignal(candidateZoneNames)
+            switch GroupFetchQuiescenceGate.decide(
+                signal: signal,
+                waitedSeconds: waited,
+                capSeconds: cap,
+                canWait: true
+            ) {
+            case .proceed:
+                return true
+            case .deferToNextBoot:
+                noteFetchGateDeferral(
+                    waited: waited,
+                    reason: GroupFetchQuiescenceGate.deferReason(signal: signal),
+                    isPass: isPass)
+                return false
+            case .wait:
+                guard await gatePoll(fetchGatePollSeconds) else {
+                    noteFetchGateDeferral(waited: waited, reason: "cancelled", isPass: isPass)
+                    return false
+                }
+                waited += fetchGatePollSeconds
+            }
+        }
+    }
+
+    /// Rastro + telemetría del diferimiento. `canaryOnce`: como mucho UNA emisión por proceso y clave —
+    /// un canario por boot envenenaría el gate de encendido «canarios en cero» del dashboard. Serie
+    /// PROPIA (`groupMigrationDeferred`), NUNCA `groupMigrationFailed`: aquí no ha fallado nada. Las dos
+    /// claves están SEPARADAS a propósito: con una sola, el diferimiento de PASADA (que gana casi
+    /// siempre) silenciaría para todo el proceso al de GRUPO, que es la señal más accionable — significa
+    /// que la migración arrancó y un grupo concreto se saltó.
+    private func noteFetchGateDeferral(waited: TimeInterval, reason: String, isPass: Bool) {
+        GroupsSyncBreadcrumb.groupsMigrationFetchGateDeferred(waited: Int(waited), reason: reason)
+        MetricsService.canaryOnce(
+            .groupMigrationDeferred, key: isPass ? "fetchGate" : "fetchGatePerGroup", detail: reason)
+        if isPass { GroupMigrationProgress.shared.finish() }
+    }
+
     enum StepOutcome: Equatable { case completed, transient }
 
     // MARK: - Pipeline por grupo
 
     private func migrateOne(_ group: SplitGroup) async -> StepOutcome {
         let groupID = group.cloudKitZoneID
+
+        // Re-chequeo C-4 por grupo: el gate de pasada corrió ANTES de los grupos #1..#k-1, así que para el
+        // #k pueden haber pasado minutos. Si mientras tanto se abrió un ciclo de fetch, llegaron batches al
+        // búfer o el fetch de ESTA zona falló, se ESPERA (cap corto — la pasada ya gastó su presupuesto) en
+        // vez de saltar el grupo: un ciclo de auto-sync en vuelo es un estado normal y frecuente a mitad de
+        // pasada, y tratarlo como «diferir» repartiría una migración de N grupos entre N arranques.
+        guard await awaitGroupFetchSettled(
+            candidateZoneNames: [groupID], capSeconds: fetchGateCapSeconds / 4, isPass: false
+        ) else { return .transient }
+        // La espera abre ventana a los eventos del delegate, que pueden BORRAR este `@Model`
+        // (`applyRemoteDeletion`, `deleteGroupCache`, `clearAllLocalGroupData`) o migrarlo por otra vía.
+        // Re-validar antes de escribir sobre él: `context.save()` sobre un modelo borrado es corrupción.
+        guard !group.isDeleted, group.movedToBackendAt == nil else { return .transient }
 
         // Paso 1: migrate_group (meta histórica + members). already:true sigue. Payload inválido → abortar
         // este boot y RE-EVALUAR en el próximo (H3 review: se retorna .transient a propósito — el caso real
@@ -278,8 +416,14 @@ final class GroupMigrationUploader {
     /// necesita el estado del uploader.
     @MainActor
     static func reconcileMarkers(context: ModelContext) {
+        // C-3: acotado al OWNER. El marcador es del owner que migró (paso 6) y solo él puede subirlo a su
+        // propia zona; una copia congelada de MIEMBRO casa el resto del predicado por construcción
+        // (`markerEnqueuedFlag` es LOCAL-only y nace `false`) y hoy hace que el device del miembro encole un
+        // GroupMeta contra una zona inexistente de su propia private DB. Con las filas RETENIDAS tras un
+        // cambio de Apple ID (D1) eso pasaría a subir el GroupMeta del grupo bajo la identidad NUEVA.
+        // `#Predicate` CONCRETO por tipo (regla inviolable).
         let descriptor = FetchDescriptor<SplitGroup>(
-            predicate: #Predicate { $0.movedToBackendAt != nil && $0.markerEnqueuedFlag == false })
+            predicate: #Predicate { $0.isOwner == true && $0.movedToBackendAt != nil && $0.markerEnqueuedFlag == false })
         let pending: [SplitGroup]
         do {
             pending = try context.fetch(descriptor)

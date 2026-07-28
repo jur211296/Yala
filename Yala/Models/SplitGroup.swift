@@ -73,6 +73,19 @@ final class SplitGroup {
     /// `CKRecordTranslator`/`CKConstants` (store `.none`, sin deploy). CloudKit-safe: opcional-por-default.
     var markerEnqueuedFlag: Bool = false
 
+    /// C-3: instante en que ESTE DEVICE revocó las credenciales CloudKit-era de RE-JOIN del grupo, porque
+    /// la identidad de iCloud cambió (sign-out / switch de Apple ID) y la fila se RETUVO por pertenecer al
+    /// canal backend (D1). `nil` = sin revocar (todo device normal). Dos consumidores:
+    /// (1) `CKRecordTranslator.update` NO re-hidrata `backendReInviteToken` desde el GroupMeta — sin esta
+    ///     marca el strip local dura hasta el siguiente fetch de la zona, y D2 (reset de los change tokens)
+    ///     GARANTIZA ese fetch; (2) `GroupBackendInviteEntryHandler.legacyMemberKeyForRejoin` devuelve `nil`
+    ///     — corta la OTRA credencial (el `cloudKitUserRecordID` del `SplitMember` con `isCurrentUser`, que
+    ///     es hijo de un grupo retenido y por tanto sobrevive, y su fallback `cachedRecordName`).
+    /// LOCAL-ONLY: JAMÁS en `CKRecordTranslator`/`CKConstants` (store `.none`, sin deploy CloudKit) ni en
+    /// `GroupEntityEmissionMap`/`GroupMerkleProjection` (listas explícitas de columnas, no reflexión) —
+    /// molde EXACTO de `isBackendGroup`/`markerEnqueuedFlag`. CloudKit-safe: opcional, sin `.unique`.
+    var rejoinRevokedAt: Date?
+
     init(
         name: String = "",
         iconName: String = "person.2.fill",

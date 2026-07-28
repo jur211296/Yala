@@ -78,11 +78,38 @@ struct GroupMigrationUploaderTests {
         }
     }
 
-    private func makeUploader(context: ModelContext, mocks: Mocks) -> GroupMigrationUploader {
+    /// Señal «sin canal» ⇒ el gate C-4 devuelve `.proceed` en seco. Es la señal por defecto de TODOS los
+    /// tests que no ejercitan el gate: sin ella caerían al default de producción, que lee
+    /// `SplitSyncManager.shared` — y el host de los unit tests ES la app, con `AppBootstrapper` corriendo
+    /// (`SplitSyncManager.shared.initialize()` ⇒ `privateEngine != nil`) y con `iCloudSyncServiceTests`
+    /// dejando `_testForceAccountAvailable = true` fugado al proceso. Es decir: el escape «sin canal» NO
+    /// se dispararía, la decisión sería `.wait` hasta el tope y estos tests pasarían a rojo quemando
+    /// sleeps reales.
+    nonisolated static let noChannelSignal = GroupFetchQuiescenceGate.signal(
+        accountAvailable: false, privateEngineMounted: false, autoSyncActive: false,
+        privateCyclesInFlight: 0, privateCompletedCycle: false,
+        deferredRecordZoneEventCount: 0, deferredDatabaseEventCount: 0,
+        deferredClearAllRequested: false, applyFailedThisSession: false,
+        candidateZoneNames: [], zonesWithFailedFetch: [])
+
+    private func makeUploader(
+        context: ModelContext,
+        mocks: Mocks,
+        signal: (@MainActor (Set<String>) -> GroupFetchQuiescenceGate.Signal)? = nil,
+        gatePoll: ((TimeInterval) async -> Bool)? = nil,
+        capSeconds: TimeInterval = 4,
+        pollSeconds: TimeInterval = 1
+    ) -> GroupMigrationUploader {
         GroupMigrationUploader(
             context: context,
             now: { Date(timeIntervalSince1970: 1_800_000_000) },
             sessionCheck: { true },
+            fetchGateSignal: signal ?? { _ in Self.noChannelSignal },
+            // Sondeo INSTANTÁNEO: el paso del tiempo lo simula el contador del gate, no el reloj
+            // (regla de tests: nada de `Task.sleep` largo).
+            gatePoll: gatePoll ?? { _ in true },
+            fetchGateCapSeconds: capSeconds,
+            fetchGatePollSeconds: pollSeconds,
             migrate: { _, _, _ in mocks.order.append("migrate"); mocks.migrateCalls += 1; return mocks.migrateResult },
             createInvite: { _ in mocks.order.append("invite"); mocks.inviteCalls += 1; return "tok_\(mocks.inviteCalls)" },
             seedSnapshot: { _ in mocks.order.append("seed"); mocks.seedCalls += 1 },
@@ -264,6 +291,166 @@ struct GroupMigrationUploaderTests {
         // Dedupe (re-corrida): re-sembrar no duplica (match por syncID).
         try client.enqueueSnapshotRows(for: g, context: context)
         #expect(try outbox(context).count == 4)
+    }
+
+    // MARK: - Gate C-4 (fetch de grupos asentado)
+
+    /// Señal con un ciclo de fetch EN VUELO: canal vivo, auto-sync activo, pero CloudKit está a mitad de
+    /// entregar. Congelar aquí es exactamente el bug (el guard simétrico de pull descartaría lo que
+    /// llegue después del flip).
+    nonisolated static func inFlightSignal(zones: Set<String>) -> GroupFetchQuiescenceGate.Signal {
+        GroupFetchQuiescenceGate.signal(
+            accountAvailable: true, privateEngineMounted: true, autoSyncActive: true,
+            privateCyclesInFlight: 1, privateCompletedCycle: false,
+            deferredRecordZoneEventCount: 0, deferredDatabaseEventCount: 0,
+            deferredClearAllRequested: false, applyFailedThisSession: false,
+            candidateZoneNames: zones, zonesWithFailedFetch: [])
+    }
+
+    /// Señal ASENTADA con canal vivo (no el escape «sin canal»): el gate debe dejar pasar.
+    nonisolated static func settledSignal(zones: Set<String>) -> GroupFetchQuiescenceGate.Signal {
+        GroupFetchQuiescenceGate.signal(
+            accountAvailable: true, privateEngineMounted: true, autoSyncActive: true,
+            privateCyclesInFlight: 0, privateCompletedCycle: true,
+            deferredRecordZoneEventCount: 0, deferredDatabaseEventCount: 0,
+            deferredClearAllRequested: false, applyFailedThisSession: false,
+            candidateZoneNames: zones, zonesWithFailedFetch: [])
+    }
+
+    /// EL test del ticket: «el uploader NO arranca con el fetch de grupos en vuelo». Corre el `run()`
+    /// REAL contra un store REAL; lo único inyectado es la señal (y el sondeo, para no dormir).
+    @Test func run_doesNotStart_whileGroupFetchInFlight() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let group = makeCandidateGroup(context: context)
+        let mocks = Mocks()
+
+        let uploader = makeUploader(
+            context: context, mocks: mocks,
+            signal: { zones in Self.inFlightSignal(zones: zones) })
+
+        await withFlagAndConsent { await uploader.run() }
+
+        // Ninguna boundary op corrió: la pasada ni siquiera llegó a `fetchCandidates()`.
+        #expect(mocks.migrateCalls == 0)
+        #expect(mocks.inviteCalls == 0)
+        #expect(mocks.seedCalls == 0)
+        #expect(mocks.order.isEmpty)
+        // Y sobre todo: el grupo NO quedó congelado (el paso 3 es el punto de no retorno).
+        #expect(group.isBackendGroup == false)
+        #expect(group.movedToBackendAt == nil)
+    }
+
+    /// El diferimiento cierra el banner de progreso: si una pasada previa lo dejó abierto,
+    /// `GroupsContainerView` mostraría «moviendo tus grupos…» para siempre.
+    @Test func run_deferredByFetchGate_closesProgressBanner() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        makeCandidateGroup(context: context)
+        let mocks = Mocks()
+        GroupMigrationProgress.shared.begin(total: 3)   // pasada previa abortada
+        defer { GroupMigrationProgress.shared.finish() }
+
+        await withFlagAndConsent {
+            await makeUploader(context: context, mocks: mocks,
+                               signal: { zones in Self.inFlightSignal(zones: zones) }).run()
+        }
+
+        #expect(GroupMigrationProgress.shared.isMigrating == false)
+        #expect(mocks.migrateCalls == 0)
+    }
+
+    /// Re-chequeo por grupo: el gate de pasada pasa (el conjunto de candidatos está asentado), pero
+    /// cuando le toca al grupo B su zona ya no lo está. A migra; B espera su cap corto, no se asienta y
+    /// se salta — intacto y candidato para el próximo boot.
+    @Test func run_perGroupRecheck_skipsOnlyTheGroupWhoseZoneIsUnsettled() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let a = makeCandidateGroup(zoneID: "SplitGroup-A", context: context)
+        let b = makeCandidateGroup(zoneID: "SplitGroup-B", context: context)
+        let mocks = Mocks()
+        mocks.migrateResult = MigrateGroupResult(already: false, groupID: "SplitGroup-A",
+                                                 ownerUserID: "uid", serverSeq: nil)
+
+        let uploader = makeUploader(
+            context: context, mocks: mocks,
+            signal: { zones in
+                // El gate de PASADA recibe las dos zonas → asentado. El re-chequeo por grupo recibe una
+                // sola: la de B está en vuelo.
+                zones == ["SplitGroup-B"] ? Self.inFlightSignal(zones: zones) : Self.settledSignal(zones: zones)
+            })
+
+        await withFlagAndConsent { await uploader.run() }
+
+        #expect(mocks.migrateCalls == 1)
+        #expect(a.isBackendGroup == true)
+        #expect(a.movedToBackendAt != nil)
+        // B intacto: ni congelado ni migrado. Sigue siendo candidato para el próximo boot.
+        #expect(b.isBackendGroup == false)
+        #expect(b.movedToBackendAt == nil)
+    }
+
+    /// Sin cuenta iCloud (o sin engine) NADIE puede entregar nada y hoy estos devices migran
+    /// perfectamente — es la cohorte de Modo Nube. El gate debe pasar EN SECO: el `gatePoll` hace fallar
+    /// el test si llega a llamarse, así que un escape evaluado tarde (después de esperar) también muere.
+    @Test func run_withoutICloudAccount_migratesAnyway_evenWithFetchNeverSettled() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let group = makeCandidateGroup(context: context)
+        let mocks = Mocks()
+
+        let neverSettledNoAccount = GroupFetchQuiescenceGate.signal(
+            accountAvailable: false, privateEngineMounted: false, autoSyncActive: false,
+            privateCyclesInFlight: 99, privateCompletedCycle: false,
+            deferredRecordZoneEventCount: 5, deferredDatabaseEventCount: 5,
+            deferredClearAllRequested: true, applyFailedThisSession: true,
+            candidateZoneNames: ["SplitGroup-mig"], zonesWithFailedFetch: ["SplitGroup-mig"])
+
+        let uploader = makeUploader(
+            context: context, mocks: mocks,
+            signal: { _ in neverSettledNoAccount },
+            gatePoll: { _ in
+                Issue.record("el gate esperó en un device sin canal: bloquearía la migración para siempre")
+                return false
+            })
+
+        await withFlagAndConsent { await uploader.run() }
+
+        #expect(mocks.migrateCalls == 1)
+        #expect(group.isBackendGroup == true)
+        #expect(group.movedToBackendAt != nil)
+    }
+
+    /// En la ventana export-only el engine EXISTE pero no puede fetchear — `engineMounted` a secas
+    /// mentiría. Primera pasada → difiere sin efectos; segunda (ya promovido) → completa. Diferir nunca
+    /// pierde trabajo: los pasos son idempotentes.
+    @Test func run_exportOnlyThenSettled_defersFirstBootAndCompletesOnSecond() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let group = makeCandidateGroup(context: context)
+        let mocks = Mocks()
+
+        let exportOnly = GroupFetchQuiescenceGate.signal(
+            accountAvailable: true, privateEngineMounted: true, autoSyncActive: false,
+            privateCyclesInFlight: 0, privateCompletedCycle: true,   // ciclo cerrado: engineMounted mentiría
+            deferredRecordZoneEventCount: 0, deferredDatabaseEventCount: 0,
+            deferredClearAllRequested: false, applyFailedThisSession: false,
+            candidateZoneNames: ["SplitGroup-mig"], zonesWithFailedFetch: [])
+
+        await withFlagAndConsent {
+            await makeUploader(context: context, mocks: mocks, signal: { _ in exportOnly }).run()
+        }
+        #expect(mocks.migrateCalls == 0)
+        #expect(group.isBackendGroup == false)
+
+        await withFlagAndConsent {
+            await makeUploader(context: context, mocks: mocks,
+                               signal: { zones in Self.settledSignal(zones: zones) }).run()
+        }
+        #expect(mocks.migrateCalls == 1)
+        #expect(group.isBackendGroup == true)
+        #expect(group.movedToBackendAt != nil)
+        #expect(group.markerEnqueuedFlag == true)
     }
 
     private func outbox(_ context: ModelContext) throws -> [GroupSyncOutbox] {
