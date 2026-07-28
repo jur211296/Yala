@@ -700,6 +700,8 @@ una, **ninguna resultó falsa**; solo dos derivas de ±1 línea. La calidad de c
 
 ## Apéndice B · Informes de trabajo
 
+> **Actualizado 2026-07-28:** los 35 informes de trabajo ya NO viven en el scratchpad temporal (se purga). Están guardados en `$VAULT/Backlog/modo-nube/evidencia-2026-07-28/` — mapas, escenarios, refutaciones, críticos e inventarios. Las rutas `/private/tmp/...` que se citen más abajo son históricas.
+
 Todos en `/private/tmp/claude-501/-Users-jur-Yala/8c51544b-8a11-4e85-b046-514bd8c97a4d/scratchpad/`
 (directorio de sesión, efímero).
 
