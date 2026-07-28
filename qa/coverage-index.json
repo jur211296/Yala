@@ -1249,9 +1249,9 @@
         "F-INB-05"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/InboxNewItemsModalUITests + xcuitest:YalaUITests/PaywallInboxAlertRoutingUITests (serialización alert↔paywall mismo anchor + toolbar viva post-dismiss — regresión del bug TestFlight 2.0.5)",
+      "coverage": "xcuitest:YalaUITests/InboxNewItemsModalUITests + xcuitest:YalaUITests/PaywallInboxAlertRoutingUITests (serialización alert↔paywall mismo anchor + toolbar viva post-dismiss — regresión del bug TestFlight 2.0.5). OJO: PaywallInboxAlertRoutingUITests está EN INVESTIGACIÓN — rojo 3/3 en la Mac de los gates el 2026-07-28 y verde en otra máquina con el mismo commit; hipótesis viva = runtime del simulador (chip task_ef4df999, entrada REABIERTA en la Lista Negra de TESTING-STRATEGY.md). Por eso lastVerified NO avanza al 2026-07-28.",
       "owner": "",
-      "lastVerified": "2026-07-28"
+      "lastVerified": "2026-07-12"
     },
     {
       "area": "inbox-success-screens",
