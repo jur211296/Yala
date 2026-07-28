@@ -164,6 +164,37 @@ final class SplitSyncManager {
     /// esperar no lo arregla: CloudKit no re-entrega.
     @ObservationIgnored private var fetchApplyFailedThisSession = false
 
+    /// [C-4 PIEZA 2] Algún engine arrancó SIN estado persistido en esta sesión (o fue reconstruido con
+    /// `state: nil`) ⇒ CloudKit está RE-ENTREGANDO EL CORPUS ENTERO, y el RESCATE de pull queda
+    /// suspendido mientras dure la sesión.
+    ///
+    /// POR QUÉ, y por qué de SESIÓN. Sin token, toda fila que el backend BORRÓ después de migrar vuelve
+    /// por CloudKit como «nunca vista» (localmente ya no está: el tombstone del pull la borró) → el
+    /// rescate la adoptaría → el drain la empujaría → `apply_group_delta` la reinstauraría para TODO el
+    /// grupo. Resurrección en masa. La avalancha llega repartida en muchos ciclos de fetch a lo largo de
+    /// la sesión, así que suspender solo hasta el primer ciclo cerrado dejaría el rescate abierto justo
+    /// cuando llega el grueso. NUNCA se apaga dentro de la sesión: el proceso siguiente ya arranca con
+    /// token y el rescate vuelve solo.
+    ///
+    /// Contrapartida aceptada: en una instalación fresca (o tras un reset) no se rescata nada, así que
+    /// un gasto de invitado rezagado que caiga en esa sesión se pierde. Es la dirección segura — ahí la
+    /// verdad es el backend y la copia CloudKit es justo lo que G6-3 C2 manda descartar.
+    @ObservationIgnored private var replayingFullCorpus = false
+
+    /// [C-4 PIEZA 2] Un batch adoptó filas por rescate y hay que drenarlas al outbox del canal backend.
+    /// Lo consume `processPendingRemoteChanges` (50 ms después, fuera del handler del engine).
+    @ObservationIgnored private var pendingRescueDrain = false
+
+    /// [C-4 PIEZA 2] Seam del estado del canal backend para el gate del rescate. El default de
+    /// PRODUCCIÓN lee el canal real; los tests lo sustituyen. Un default inerte (constante `false`)
+    /// dejaría los tests en verde con el rescate MUERTO en producción — por eso lo pinnea el
+    /// source-scan de `GroupPullRescueWiringTests`.
+    @ObservationIgnored
+    var backendPullSignalProvider: (String, ModelContext) -> (completed: Bool, hasCursor: Bool) = {
+        zoneName, context in
+        GroupsSyncClient.shared.backendPullSignal(groupID: zoneName, context: context)
+    }
+
     /// Instantánea PASIVA para el gate del uploader, acotada a las zonas que la pasada va a congelar.
     /// SOLO LEE: no dispara `fetchChanges()` ni evalúa la promoción (`evaluateQuiescentPromotion` puede
     /// llamar a `enableAutoSync()`, que lanza un `Task { fetchChanges() }` que NADIE awaitea → el batch
@@ -357,6 +388,12 @@ final class SplitSyncManager {
         let sharedState = loadState(name: "shared")
         sharedEngine = makeEngine(database: container.sharedCloudDatabase, state: sharedState, autoSync: autoSync, delegate: delegate)
         _sharedEngineRef = sharedEngine
+
+        // C-4 (PIEZA 2): sin estado persistido, CloudKit re-entrega el corpus ENTERO en esta sesión ⇒
+        // el rescate de pull se suspende (si no, toda fila borrada en el backend post-migración volvería
+        // como «nunca vista» y se reinstauraría para todo el grupo). Basta con que UNO de los dos venga
+        // fresco: la re-entrega de esa base ya trae la avalancha.
+        if privateState == nil || sharedState == nil { replayingFullCorpus = true }
 
         // Export-only window: surface `.syncing` so the indicator doesn't read as "up to date"
         // while the engines are still waiting to fetch.
@@ -1488,12 +1525,15 @@ final class SplitSyncManager {
                 deleteGroupCache(groupID: groupID, context: modelContext)
                 purgePendingChanges(for: deletion.zoneID, engine: engine)
                 clearState(name: engineName)
+                // C-4 (PIEZA 2): tirar el estado ⇒ re-entrega completa en el próximo arranque.
+                replayingFullCorpus = true
 
             case .encryptedDataReset:
                 #if DEBUG
                 logger.info("[\(engineName)] Encrypted data reset: \(zoneName) — clearing system fields + re-uploading")
                 #endif
                 clearState(name: engineName)
+                replayingFullCorpus = true
                 reuploadGroupRecords(groupID: groupID, zoneID: deletion.zoneID, engine: engine, context: modelContext)
 
             @unknown default:
@@ -1601,6 +1641,12 @@ final class SplitSyncManager {
         privateEngine = newPrivate
         sharedEngine = newShared
 
+        // C-4 (PIEZA 2): estos engines nacen con `state: nil` ⇒ re-entrega COMPLETA en esta misma
+        // sesión, sin esperar al próximo arranque. `resetLocalGroupsSyncState` ya lo enciende en el
+        // único camino que llega hasta aquí; se repite porque es DONDE se produce la condición (el
+        // `state: nil` de arriba), y así ninguna reordenación futura lo pierde.
+        replayingFullCorpus = true
+
         // Espejos en memoria de las colas que se acaban de tirar: `quotaFailedRecordIDs` los RE-ENCOLA en
         // `retryQuotaFailedRecords()` (foreground) y apuntan a zonas del Apple ID anterior.
         pendingRecordSaves.removeAll()
@@ -1633,6 +1679,11 @@ final class SplitSyncManager {
         enginesWithCompletedFetchCycle.removeAll()
         zonesWithFailedFetchThisSession.removeAll()
         fetchApplyFailedThisSession = false
+        // C-4 (PIEZA 2): invalidar los tokens ES la condición de re-entrega completa. Se enciende aquí —
+        // y no solo en `startEngines` — porque este segundo lo reusa el handover «empiezo de cero»
+        // (`DataWipeService.wipeLocalGroupsDomain`) SIN recrear engines: ahí la re-entrega llega en el
+        // próximo arranque, pero encenderlo ya deja la sesión en curso del lado seguro.
+        replayingFullCorpus = true
     }
 
     /// Delete all local group data (used on sign-out and account switch for privacy).
@@ -1731,6 +1782,12 @@ final class SplitSyncManager {
         var existingExpenseIDs: Set<UUID> = []
         var existingSettlementIDs: Set<UUID> = []
         var existingMemberIDs: Set<UUID> = []
+        // C-4 (PIEZA 2): este pre-fetch es BEST-EFFORT — su `catch` deja los sets VACÍOS y sigue, porque
+        // clasificar notificaciones de más es inocuo. Para el RESCATE no lo es: sin esta bandera, un
+        // fetch fallido haría que TODO el batch pareciera «nunca visto». No es el candado del invariante
+        // «solo inserta» (ése vive en `applyRemoteRecordIfAbsent`, re-chequeando por id), es el cinturón:
+        // un store que no se ha podido leer no es base para adoptar nada.
+        var prefetchFailed = false
         do {
             for zoneName in batchZoneNames {
                 let zName = zoneName
@@ -1742,10 +1799,25 @@ final class SplitSyncManager {
                 existingMemberIDs.formUnion(try modelContext.fetch(memDesc).map(\.id))
             }
         } catch {
+            prefetchFailed = true
             #if DEBUG
             logger.error("[\(engineName)] Pre-fetch for change classification failed: \(error)")
             #endif
         }
+
+        // C-4 (PIEZA 2): estado del canal backend por ZONA, cacheado dentro del batch — molde de
+        // `adminCache`/`baselineCache`. Se consulta SOLO para zonas backend (la rama del guard de abajo),
+        // así que con el flag apagado —todo device de producción hoy— `backendZoneNames` viene vacío y
+        // esto no añade ni una query al camino caliente del pull.
+        let rescueFlagOn = CloudSyncFlags.groupsBackendEnabled
+        var backendPullCache: [String: (completed: Bool, hasCursor: Bool)] = [:]
+        func backendPullSignal(_ zoneName: String) -> (completed: Bool, hasCursor: Bool) {
+            if let cached = backendPullCache[zoneName] { return cached }
+            let signal = backendPullSignalProvider(zoneName, modelContext)
+            backendPullCache[zoneName] = signal
+            return signal
+        }
+        var rescuedThisBatch = 0
 
         // cache `isCurrentUserAdmin` por zoneID dentro del batch — evita fetch repetido.
         var adminCache: [String: Bool] = [:]
@@ -1770,8 +1842,37 @@ final class SplitSyncManager {
 
             // G6-3 (C2): grupo migrado → red de solo-lectura. Saltar TODO (incl. clasificación de notifs y
             // bridge — un miembro adoptado ya no necesita nada de CloudKit).
+            //
+            // C-4 (PIEZA 2, RESCATE): con UNA excepción — el record NUNCA VISTO. El guard es correcto
+            // para el eco stale, pero descartarlo TODO por igual pierde dinero en silencio: el token del
+            // engine ya avanzó y CloudKit no re-entrega. Aquí se separan los dos casos. La adopción es
+            // INSERT-ONLY y solo bajo los cuatro gates de `GroupPullRescueGate` (ver su cabecera: son
+            // los que impiden pisar el backend y la resurrección en masa).
             if backendZoneNames.contains(record.recordID.zoneID.zoneName) {
-                GroupsSyncBreadcrumb.groupsCkPullSkippedBackendGroup(site: "applyRemote")
+                let pull = backendPullSignal(record.recordID.zoneID.zoneName)
+                let signal = GroupPullRescueGate.Signal(
+                    flagOn: rescueFlagOn,
+                    replayingFullCorpus: replayingFullCorpus,
+                    prefetchFailed: prefetchFailed,
+                    backendPullCompletedThisSession: pull.completed,
+                    groupHasBackendCursor: pull.hasCursor,
+                    isRescuableType: GroupPullRescueGate.entityName(forRecordType: record.recordType) != nil,
+                    // El Set del pre-fetch NO decide: solo cubre 3 de los 5 tipos y su catch lo deja
+                    // vacío. La existencia se pregunta por id con el helper concreto — el MISMO que
+                    // vuelve a preguntar dentro de `applyRemoteRecordIfAbsent` (candado del invariante
+                    // «el rescate jamás actualiza»).
+                    existsLocally: recordExistsLocally(record, context: modelContext))
+                guard GroupPullRescueGate.decide(signal) == .rescue else {
+                    GroupsSyncBreadcrumb.groupsCkPullSkippedBackendGroup(
+                        site: "applyRemote", reason: GroupPullRescueGate.skipReason(signal))
+                    continue
+                }
+                if applyRemoteRecordIfAbsent(record, context: modelContext, engineName: engineName) {
+                    rescuedThisBatch += 1
+                }
+                // NO se clasifica para notificaciones ni se bridgea: el grupo vive en el backend y su
+                // pull es quien alimenta esas dos superficies. Rescatar es re-inyectar al servidor, no
+                // re-abrir el camino CloudKit.
                 continue
             }
 
@@ -1829,8 +1930,11 @@ final class SplitSyncManager {
 
         for deletion in fetched.deletions {
             // G6-3 (C2): grupo migrado → no aplicar borrados CloudKit (la verdad vive en el backend).
+            // C-4 (PIEZA 2), INVARIANTE 2: el rescate NO se consulta aquí y no debe hacerlo nunca. Una
+            // deletion de una zona backend es EXACTAMENTE lo que el guard tiene que descartar: la verdad
+            // de las bajas vive en el backend, y aplicarla borraría local lo que el servidor conserva.
             if backendZoneNames.contains(deletion.recordID.zoneID.zoneName) {
-                GroupsSyncBreadcrumb.groupsCkPullSkippedBackendGroup(site: "applyRemote")
+                GroupsSyncBreadcrumb.groupsCkPullSkippedBackendGroup(site: "applyRemote", reason: "deletion")
                 continue
             }
             applyRemoteDeletion(recordID: deletion.recordID, recordType: deletion.recordType, context: modelContext)
@@ -1842,6 +1946,13 @@ final class SplitSyncManager {
             SaveBreadcrumb.willSave("SplitSync.fetchedRecordZoneChanges")
             try modelContext.save()
             SaveBreadcrumb.didSave("SplitSync.fetchedRecordZoneChanges")
+            // C-4 (PIEZA 2): el canario va DESPUÉS del save y solo si persistió — un rescate que no
+            // llega al store no rescató nada. Una emisión por BATCH (`value` = filas adoptadas), no por
+            // fila: el breadcrumb de Console.app ya da el detalle por record.
+            if rescuedThisBatch > 0 {
+                MetricsService.canary(.groupCkPullRescued, value: Double(rescuedThisBatch))
+                pendingRescueDrain = true
+            }
         } catch {
             // C-4: el token YA avanzó, lo de este batch no vuelve. Invalida el testigo del ciclo (el
             // gate difiere la migración al próximo boot) y deja breadcrumb FUERA de `#if DEBUG` —
@@ -1907,6 +2018,18 @@ final class SplitSyncManager {
     /// quiescent the bridge is deferred (pending IDs kept) and retried after the quiet window.
     private func processPendingRemoteChanges() async {
         guard let modelContext else { return }
+
+        // C-4 (PIEZA 2): drenar EN CALIENTE lo que el rescate acaba de insertar. Es una ACELERACIÓN, no
+        // la garantía: la garantía de que la transacción de History sobreviva hasta que el drain la
+        // consuma es el suelo del corte de `CloudSyncEngine.deleteHistorySafeCut`, que ya incluye el
+        // canal de Grupos. Aquí, 50 ms después del batch y fuera del handler del engine, es donde el
+        // subsistema ya hace sus saves; llamarlo dentro del handler sí sería jugar con fuego.
+        if pendingRescueDrain {
+            pendingRescueDrain = false
+            if CloudSyncFlags.groupsBackendEnabled {
+                GroupsSyncClient.shared.drainOnce(context: modelContext)
+            }
+        }
 
         // Membership flags + notifications: group store / no personal save → always safe; process & clear.
         await GroupService.shared.refreshCurrentUserFlags(context: modelContext)
@@ -2394,6 +2517,83 @@ final class SplitSyncManager {
         default:
             break
         }
+    }
+
+    // MARK: - Rescate de pull (C-4 PIEZA 2)
+
+    /// ¿Existe ya una fila local para este record? Pregunta por ID con el helper CONCRETO por tipo
+    /// (regla inviolable: `#Predicate` concreto, nunca genérico-protocolo).
+    ///
+    /// Deliberadamente NO consulta los Sets del pre-fetch del batch: cubren 3 de los 5 tipos y su
+    /// `catch` los deja vacíos. Un tipo desconocido cuenta como EXISTENTE — la dirección segura, porque
+    /// «no sé» nunca debe traducirse en «adóptalo».
+    func recordExistsLocally(_ record: CKRecord, context: ModelContext) -> Bool {
+        guard let modelID = CKConstants.modelID(from: record.recordID) else { return true }
+        switch record.recordType {
+        case CKConstants.RecordType.groupMeta: return splitGroup(byID: modelID, in: context) != nil
+        case CKConstants.RecordType.splitExpense: return splitExpense(byID: modelID, in: context) != nil
+        case CKConstants.RecordType.splitMember: return splitMember(byID: modelID, in: context) != nil
+        case CKConstants.RecordType.splitShare: return splitShare(byID: modelID, in: context) != nil
+        case CKConstants.RecordType.splitSettlement: return splitSettlement(byID: modelID, in: context) != nil
+        default: return true
+        }
+    }
+
+    /// Adopta un record de una zona YA MIGRADA **solo si la fila no existe**. Es el candado del
+    /// invariante 1 de `GroupPullRescueGate`: «el rescate JAMÁS actualiza».
+    ///
+    /// Por qué no reusa `applyRemoteRecord`: aquél despacha a `applyExpense`/`applyShare`/
+    /// `applySettlement`, y los tres hacen `CKRecordTranslator.update(existing, from:)` cuando la fila
+    /// existe. Bastaría un Set del pre-fetch desactualizado —o su `catch` vacío— para que ese camino
+    /// pisara una edición backend post-migración, que es EXACTAMENTE el agujero que G6-3 (C2) cerró.
+    /// Aquí la existencia se vuelve a preguntar contra el store, en el mismo instante de la mutación, y
+    /// la rama de update sencillamente no se escribe.
+    ///
+    /// Los tipos son los de `GroupPullRescueGate.rescuableTypes` y nada más: `GroupMeta` y `SplitMember`
+    /// caen al `default` (invariante 3). El `default` es silencioso a propósito — el caller ya emitió el
+    /// breadcrumb con el motivo (`notRescuable`) antes de llegar aquí.
+    ///
+    /// - Returns: `true` si insertó (y por tanto hay algo que drenar al backend).
+    @discardableResult
+    func applyRemoteRecordIfAbsent(_ record: CKRecord, context: ModelContext, engineName: String) -> Bool {
+        guard let modelID = CKConstants.modelID(from: record.recordID),
+              let entity = GroupPullRescueGate.entityName(forRecordType: record.recordType),
+              !recordExistsLocally(record, context: context)
+        else { return false }
+
+        let inserted: Bool
+        switch record.recordType {
+        case CKConstants.RecordType.splitExpense:
+            if let model = CKRecordTranslator.expense(from: record) {
+                context.insert(model)
+                inserted = true
+            } else { inserted = false }
+        case CKConstants.RecordType.splitShare:
+            if let model = CKRecordTranslator.share(from: record) {
+                context.insert(model)
+                inserted = true
+            } else { inserted = false }
+        case CKConstants.RecordType.splitSettlement:
+            if let model = CKRecordTranslator.settlement(from: record) {
+                context.insert(model)
+                inserted = true
+            } else { inserted = false }
+        default:
+            inserted = false
+        }
+
+        guard inserted else {
+            // El translator rechazó el record (campos obligatorios ausentes/corruptos). No es un rescate
+            // y NO se cuenta como tal; se nombra para que no se lea como un descarte del guard.
+            GroupsSyncBreadcrumb.groupsCkPullSkippedBackendGroup(site: "applyRemote", reason: "translatorRejected")
+            return false
+        }
+
+        #if DEBUG
+        logger.info("[\(engineName)] C-4 rescate: adoptado \(entity) \(modelID) de zona migrada")
+        #endif
+        GroupsSyncBreadcrumb.groupsCkPullRescued(entity: entity)
+        return true
     }
 
     private func applyGroupMeta(_ record: CKRecord, modelID: UUID, context: ModelContext, engineName: String) {

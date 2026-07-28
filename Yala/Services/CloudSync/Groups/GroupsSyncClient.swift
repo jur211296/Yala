@@ -1423,6 +1423,40 @@ final class GroupsSyncClient {
 
     // MARK: - Pull (GET /groups/pull) + apply
 
+    /// [C-4 PIEZA 2] Estado del canal backend para este `group_id`, tal como lo consume el gate del
+    /// RESCATE de pull de `SplitSyncManager`. Sin este gate, «ausente localmente» NO significa «el
+    /// backend no lo tiene», y adoptar-y-empujar pisaría con HLC fresco las ediciones post-migración de
+    /// todo el grupo.
+    ///
+    /// Las DOS señales van SEPARADAS —en vez de un solo `Bool` compuesto— porque distinguen dos
+    /// diagnósticos distintos en el breadcrumb del descarte (`noBackendPull` vs `noCursor`), y el gate
+    /// puro las evalúa con precedencia propia:
+    ///  - `completed`: `pullUntilExhausted` devolvió `.completed` en esta sesión, es decir una página
+    ///    llegó con 0 deltas ⇒ la cola del server está agotada hasta su `server_seq`.
+    ///  - `hasCursor`: el `group_id` está en `groupCursorsJSON` ⇒ el server ya REPORTÓ ese grupo, así que
+    ///    el pull de arriba habla también de él. Un grupo recién flipeado por el paso 3 del uploader,
+    ///    cuyo primer pull aún no lo ha listado, NO pasa — se auto-sana en el ciclo siguiente (60 s).
+    ///
+    /// LECTURA PURA a propósito: NO usa `loadOrCreateCursor` (que INSERTA la fila y hace `save()`) — esto
+    /// corre dentro del delegate de CKSyncEngine, en el camino caliente del pull de CloudKit, donde un
+    /// save espurio sobre el `mainContext` compartido es justo lo que el subsistema evita. Sin fila de
+    /// cursor todavía ⇒ `hasCursor == false` (conservador: nadie ha pulleado nada aún).
+    func backendPullSignal(groupID: String, context: ModelContext) -> (completed: Bool, hasCursor: Bool) {
+        var descriptor = FetchDescriptor<GroupSyncCursor>()
+        descriptor.fetchLimit = 1
+        do {
+            guard let cursor = try context.fetch(descriptor).first else {
+                return (lastPullCycleCompleted, false)
+            }
+            return (lastPullCycleCompleted, decodeCursors(cursor.groupCursorsJSON)[groupID] != nil)
+        } catch {
+            #if DEBUG
+            print("GroupsSyncClient: backendPullSignal fetch falló: \(error)")
+            #endif
+            return (lastPullCycleCompleted, false)
+        }
+    }
+
     /// Itera `pullAndApplyOnce` hasta AGOTAR la cola. TERMINA cuando la página aplicada trae 0 deltas (única
     /// señal válida — el `limit` del gateway es POR GRUPO, así que el atajo `deltas.count < limit → done`
     /// del canal personal NO aplica). Cap duro de `pullMaxIterations` (server que no converge) → breadcrumb

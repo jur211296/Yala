@@ -156,8 +156,25 @@ enum GroupsSyncBreadcrumb {
     /// `isBackendGroup=true` (ya migrado) — la zona CloudKit queda como red de SOLO-LECTURA: un miembro
     /// rezagado o el eco del propio marcador NO pisa las ediciones backend post-migración. `site` =
     /// `applyRemote`/`conflict`/`bridge`. Sin PII.
-    static func groupsCkPullSkippedBackendGroup(site: String) {
-        logger.notice("GroupsSync ckPullSkippedBackendGroup site=\(site, privacy: .public)")
+    ///
+    /// [C-4 PIEZA 2] `reason` = slug de `GroupPullRescueGate.skipReason` en el sitio de las
+    /// MODIFICACIONES; `"backendZone"` (el default) en los sitios donde el descarte es incondicional por
+    /// invariante — deletions, conflictos, zona inexistente y borrado de zona. Antes del rescate TODOS
+    /// los descartes eran indistinguibles entre sí: el eco stale legítimo y el record nunca visto (=
+    /// dinero perdido) emitían la MISMA línea. Éste es el campo que los separa en Console.app.
+    static func groupsCkPullSkippedBackendGroup(site: String, reason: String = "backendZone") {
+        logger.notice("GroupsSync ckPullSkippedBackendGroup site=\(site, privacy: .public) reason=\(reason, privacy: .public)")
+    }
+
+    /// [C-4 PIEZA 2] El RESCATE adoptó un record CloudKit NUNCA VISTO de un grupo ya migrado: la fila se
+    /// INSERTA (jamás se actualiza) y el drain del canal backend la empujará al servidor. Es la única
+    /// forma de que ese dato sobreviva — el token de CKSyncEngine ya avanzó y CloudKit no lo re-entrega.
+    /// `entity` = nombre de clase `@Model` (sin PII: jamás el group_id, el id de la fila ni el importe).
+    ///
+    /// Se espera CERO en estado estable. Un goteo sostenido significa que hay miembros escribiendo a
+    /// CloudKit después del flip — señal accionable para el rollout, no un fallo.
+    static func groupsCkPullRescued(entity: String) {
+        logger.notice("GroupsSync ckPullRescued entity=\(entity, privacy: .public) — record nunca visto de zona migrada, ADOPTADO (insert-only) y encolado al backend")
     }
 
     /// [G6-3 C3] El `GroupMigrationUploader` completó la migración de `count` grupos vivos al backend.

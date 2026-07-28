@@ -2346,19 +2346,51 @@ final class CloudSyncEngine {
     /// vieja)`; `nil` = ni fila sin-confirmar ni boundary → sin restricción. En I8d NO hay un
     /// `deleteHistory` real todavía (I8e/I9 lo cablean): esto EXPRESA el invariante testeable —
     /// `confirmUploaded` purga la fila, y solo entonces el corte avanza sobre ella.
+    ///
+    /// [C-4 PIEZA 2] El suelo incluye TAMBIÉN el canal de GRUPOS, y es obligatorio: el History es
+    /// POR-CONTAINER (personal + grupos + sync-meta en un solo `ModelContainer`), pero este corte solo
+    /// miraba el outbox PERSONAL. Con el rescate de pull cableado eso pasa a poder BORRAR la transacción
+    /// de una fila recién adoptada antes de que el drain de Grupos —que lee el mismo History con su
+    /// propia ancla— llegue a verla: la fila quedaría local y jamás subiría al backend, que es la misma
+    /// pérdida silenciosa que el rescate viene a cerrar. Las dos anclas nuevas:
+    ///  - `GroupSyncCursor.lastDrainedTxAt`: hasta dónde consumió el drain de Grupos (por debajo de eso
+    ///    ya está capturado; por delante, no).
+    ///  - la fila viva más vieja de `GroupSyncOutbox`: espejo exacto del invariante del outbox personal
+    ///    (su transacción de History es el backup del delta hasta el 2xx).
     func deleteHistorySafeCut(drainedBoundary: Date?, context: ModelContext) throws -> Date? {
-        let oldestUnconfirmed = try oldestUnconfirmedOutboxDate(context)
-        switch (drainedBoundary, oldestUnconfirmed) {
-        case (nil, nil): return nil
-        case (let d?, nil): return d
-        case (nil, let o?): return o
-        case (let d?, let o?): return min(d, o)
-        }
+        let floors: [Date] = try [
+            drainedBoundary,
+            oldestUnconfirmedOutboxDate(context),
+            groupDrainedBoundary(context),
+            oldestLiveGroupOutboxDate(context),
+        ].compactMap { $0 }
+        return floors.min()
     }
 
     /// `createdAt` de la fila de outbox presente (= sin-2xx) más vieja, o `nil` si el outbox está vacío.
     private func oldestUnconfirmedOutboxDate(_ context: ModelContext) throws -> Date? {
         var descriptor = FetchDescriptor<SyncOutbox>(sortBy: [SortDescriptor(\.createdAt, order: .forward)])
+        descriptor.fetchLimit = 1
+        return try context.fetch(descriptor).first?.createdAt
+    }
+
+    /// [C-4 PIEZA 2] Ancla temporal del drain del canal de GRUPOS (`GroupSyncCursor.lastDrainedTxAt`).
+    /// `nil` = sin fila de cursor o cursor pre-consumo ⇒ ninguna restricción por ese lado (el drain de
+    /// Grupos aún no ha avanzado sobre nada, así que no hay nada suyo que proteger).
+    private func groupDrainedBoundary(_ context: ModelContext) throws -> Date? {
+        var descriptor = FetchDescriptor<GroupSyncCursor>()
+        descriptor.fetchLimit = 1
+        return try context.fetch(descriptor).first?.lastDrainedTxAt
+    }
+
+    /// [C-4 PIEZA 2] `createdAt` de la fila VIVA más vieja del outbox de Grupos. «Viva» = sin
+    /// `rejectedReason`: una fila en dead-letter no va a subir nunca, así que retener su History por
+    /// ella dejaría el corte clavado para siempre — mismo criterio que `liveGroupOutboxCount`, del que
+    /// depende el paso 5 del uploader de la migración.
+    private func oldestLiveGroupOutboxDate(_ context: ModelContext) throws -> Date? {
+        var descriptor = FetchDescriptor<GroupSyncOutbox>(
+            predicate: #Predicate { $0.rejectedReason == nil },
+            sortBy: [SortDescriptor(\.createdAt, order: .forward)])
         descriptor.fetchLimit = 1
         return try context.fetch(descriptor).first?.createdAt
     }

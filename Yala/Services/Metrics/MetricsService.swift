@@ -100,6 +100,12 @@ enum MetricsCanary: String {
     /// `GroupFetchQuiescenceGate.deferReason` (exportOnly/buffered/zoneFetchFailed/inFlight/noCycle/
     /// applyFailed/cancelled). Emitido con `canaryOnce` ⇒ como mucho uno por proceso y por clave.
     case groupMigrationDeferred
+    /// [C-4 PIEZA 2] El RESCATE de pull adoptó un record CloudKit nunca visto de un grupo ya migrado
+    /// (insert-only) y lo encoló al backend. `detail` = nombre de clase `@Model`. Serie PROPIA, y NO un
+    /// `*Failed`: rescatar es el comportamiento correcto, no un incidente — meterlo en una serie de
+    /// fallo envenenaría el gate «canarios en cero» del encendido. Se espera cero en estado estable;
+    /// un goteo = miembros escribiendo a CloudKit después del flip.
+    case groupCkPullRescued
     case groupJoinIntentPersisted
     case groupJoinIntentReconciled
     case groupJoinIntentDeferred
