@@ -46,8 +46,17 @@ final class InboxNewItemsModalUITests: XCTestCase {
         dismiss.tap()
 
         // Tras descartar, el modal desaparece y el Panel queda accesible.
+        //
+        // Timeout 20 s y no 5 s (Lista Negra 2026-07-28, cerrada): lo que se afirma aquí es que el
+        // cover NO queda pegado PARA SIEMPRE —el bug «toolbar muerta» de TestFlight 2.0.5—, no
+        // cuánto tarda en irse. Medido con os_log sobre el mismo binario: la app pide el
+        // desmontaje siempre a los 284 ms del tap (invariante en verdes y rojas), pero el
+        // dismissal efectivo del `fullScreenCover` lo completa SwiftUI/UIKit entre 554 ms y más de
+        // 7 s según la carga del arranque. Con 5 s el test caía ~1 de cada 2 sin que nada
+        // estuviera roto. El timeout solo se consume en el caso malo: cuando pasa, resuelve al
+        // primer check (~0,8 s).
         XCTAssertTrue(
-            app.buttons["inbox_alert_view"].waitForNonExistence(timeout: 5),
+            app.buttons["inbox_alert_view"].waitForNonExistence(timeout: 20),
             "El InboxAlertModal no se cerró al descartar."
         )
         XCTAssertTrue(

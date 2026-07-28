@@ -152,16 +152,26 @@ struct InboxAlertModal: View {
     }
 
     private func dismissWithAnimation(_ completion: (() -> Void)? = nil) {
-        dsWithAnimation(reduceMotion) {
-            isVisible = false
-        }
         if reduceMotion {
             // Sin animación no hay salida que esperar — reset inmediato.
+            isVisible = false
             onDismiss()
             completion?()
         } else {
-            Task {
-                try? await Task.sleep(for: .seconds(0.2))
+            // El reset no cuelga de un `Task { sleep }` sino de la completion de la animación,
+            // atada al ciclo de render (regla 1 de presentaciones en `.claude/rules/swiftui-ds.md`:
+            // el reset del flag jamás debe depender de un temporizador interno de la vista
+            // presentada). `isVisible = false` solo OCULTA; es `onDismiss` quien vacía
+            // `activeInboxNotification` y con ello pide el desmontaje del cover.
+            //
+            // OJO, esto NO arregla el flaky de `test_inboxAlertModalDismisses` (Lista Negra
+            // 2026-07-28) y no hay que leerlo como tal: instrumentado con os_log, el tramo
+            // tap→onDismiss mide 284 ms IDÉNTICOS en corridas verdes y rojas. Lo que varía es el
+            // tramo siguiente —onDismiss→desmontaje efectivo del `fullScreenCover`— que va de
+            // 554 ms a más de 7 s, y ese lo decide SwiftUI/UIKit, no este código.
+            withAnimation(.easeInOut(duration: DS.Animation.normal)) {
+                isVisible = false
+            } completion: {
                 onDismiss()
                 completion?()
             }

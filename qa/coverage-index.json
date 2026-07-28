@@ -1251,7 +1251,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/InboxNewItemsModalUITests + xcuitest:YalaUITests/PaywallInboxAlertRoutingUITests (serialización alert↔paywall mismo anchor + toolbar viva post-dismiss — regresión del bug TestFlight 2.0.5)",
       "owner": "",
-      "lastVerified": "2026-07-12"
+      "lastVerified": "2026-07-28"
     },
     {
       "area": "inbox-success-screens",
