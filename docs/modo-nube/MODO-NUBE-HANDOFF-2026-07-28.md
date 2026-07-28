@@ -54,6 +54,20 @@ Mide si el fallo de desmontaje del `fullScreenCover` depende de la **versión de
 
 **Punto de partida real, y es una señal DÉBIL:** 2 fallos de test verificados en iOS 27.0 (ambos `InboxNewItemsModalUITests.swift:58`, con el umbral de 20 s ya puesto) contra **1 pase real en iOS 26.4 en 10,96 s**. La otra máquina midió 18/18 verde con el mismo commit.
 
+> **Corrección con datos de la propia matriz (2026-07-28 15:30), y va CONTRA la hipótesis.** Revisando los logs de sus corridas piloto: **iOS 26.4 también falla.** El fichero `pilot-264.log` corrió en `2F491E72…` —verificado contra `simctl list` que es el `iPhone 17 Pro` de **iOS 26.4**, no su nombre de fichero— con el mismo `.xctestrun` (`iphonesimulator27.0-arm64`) que el pase de 10,96 s, y **falló en la misma aserción**. Mismo device, mismo binario, mismo runtime: **1 pase y 1 fallo.** Así que el «pase real en 26.4» no era un runtime limpio, era la mitad buena de un test flaky.
+>
+> **Normalizando la carga con un control interno**, el cuadro es aún menos favorable. Cada corrida ejecuta dos casos sobre el mismo binario: `test_inboxAlertModalPresentsOnLaunch` (control: arranca y espera el modal) y `test_inboxAlertModalDismisses` (sujeto: lo mismo **más** el desmontaje). El cociente sujeto/control divide fuera la carga de la máquina. Resultado con los datos de hoy: **27.0 → 2,66 · 2,99 · 3,05 · 3,26 (n=4, 4 fallos)** contra **26.4 → 1,50 (pase) y 3,39 (fallo)**. **El peor cociente de todo el conjunto es un fallo de 26.4**, fuera y por encima del rango entero de 27.0 ⇒ el cociente **no separa** los runtimes.
+>
+> Con 4/4 en 27.0 y 1/2 en 26.4, una tasa real del 50 % en ambos da 4/4 con p = 0,0625: **los datos son compatibles con «no hay efecto de runtime» y un flake bimodal (~1,5 rápido / ~3 hasta agotar el timeout) en los dos**. Lo que queda vivo es una diferencia de **tasa**, no de naturaleza — y n=5 por celda probablemente no tiene potencia para resolverla.
+>
+> **Caveat del método, que hay que decir porque acota el instrumento:** el cociente **no es del todo inmune a la carga**. El sujeto está topado por un timeout fijo de 20 s, así que bajo carga alta el cociente se **comprime** contra ese techo en vez de crecer. Sirve para refutar (como aquí), no para medir la latencia real del desmontaje.
+>
+> **El instrumento que sí lo zanjaría** ya está probado y es barato: el `os_log` sobre el mismo binario que cita el comentario de `InboxNewItemsModalUITests.swift:50-57` (la app pide el desmontaje siempre a los 284 ms; UIKit lo completa entre 554 ms y >7 s). Repetirlo en 27.0 vs 26.4 mide **el desmontaje**, sin la capa de accesibilidad de XCUITest y sin techo de timeout.
+>
+> **Y un bug en el análisis del chip, verificado, no deducido:** el regex de `latencies.py` (`Test Case '-\[(\w+)[. ]+(\w+)\]'`) **no matchea nada** — el nombre entre corchetes trae TRES partes (`Target.Suite test_nombre`) y ese patrón solo consume dos. Su análisis de latencia continua, que es de donde saca la potencia estadística, saldría **«sin datos» en todas las celdas**. Los logs están completos en disco, así que es recuperable a posteriori: hay un script corregido con la normalización por control en `scratchpad/ratio.py` de la sesión de soporte (patrón bueno: `'-\[[\w.]+ (\w+)\]'`).
+>
+> **Restricción mientras corre:** la matriz mide latencias en una máquina de **10 núcleos** cuyo load average de 1 min osciló entre 2,4 y **944** durante la propia sesión (ver su `load.csv`). **No lanzar builds ni tests desde otra sesión hasta que termine** — eso incluye el punto 7 de la tabla de abajo, que dispara build de las dos schemes.
+
 **Criterios de validación:**
 
 1. **Celdas completas y bien clasificadas.** n≥5 útiles por celda, y cuántas corridas descartó por infraestructura. Sin eso la conclusión no se sostiene en ninguna dirección.
