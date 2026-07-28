@@ -56,6 +56,8 @@ DEFINE SCHEMA
         "___modTime"    TIMESTAMP,
         "___modifiedBy" REFERENCE,
         "___recordID"   REFERENCE,
+        clientCapability   STRING QUERYABLE SEARCHABLE SORTABLE,
+        clientCapabilityAt TIMESTAMP QUERYABLE SORTABLE,
         displayName     ENCRYPTED STRING,
         isCurrentUser   INT64 QUERYABLE SORTABLE,
         isGroupOwner    INT64 QUERYABLE SORTABLE,

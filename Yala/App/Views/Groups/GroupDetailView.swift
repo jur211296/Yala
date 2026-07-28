@@ -95,10 +95,18 @@ struct GroupDetailView: View {
                 }
 
                 // banner pending/rejected/migrado. Refresh ya cubierto por onChange(dataVersion) abajo.
-                if group.isMigratedFrozen {
+                // C-10: los tres estados congelados muestran banner. Un grupo congelado JAMÁS queda mudo.
+                if group.migrationState == .frozenRejoinable {
                     // G6-3: grupo congelado por migración → banner "se movió" + CTA re-join (la RED es el guard
                     // service-level; esto es la UX primaria — los botones de escritura se ocultan abajo).
-                    MigratedGroupBanner(onRejoin: { handleMigratedRejoin() })
+                    MigratedGroupBanner(mode: .rejoin, onAction: { handleMigratedRejoin() })
+                } else if group.migrationState == .frozenNeedsUpdate {
+                    // C-10: este build no puede volver a entrar nunca → la salida real es el App Store.
+                    MigratedGroupBanner(mode: .needsUpdate, onAction: { openAppStoreForRejoin() })
+                } else if group.migrationState == .frozenPaused {
+                    // C-10: kill remoto del canal. Sin CTA: no hay nada que el usuario pueda hacer, y
+                    // decirle que actualice sería falso (su app está perfecta).
+                    MigratedGroupBanner(mode: .paused, onAction: nil)
                 } else if viewModel.currentUserMember?.isPendingApproval == true {
                     PendingApprovalBanner(state: .pending, onLeave: nil)
                 } else if viewModel.currentUserMember?.isRejected == true {
@@ -466,9 +474,21 @@ struct GroupDetailView: View {
         }
     }
 
+    /// C-10: salida del estado `.frozenNeedsUpdate`. Es la ÚNICA acción que un build incapaz puede
+    /// ofrecer con honestidad; sin ella el usuario quedaba mirando un grupo congelado sin nada que hacer.
+    private func openAppStoreForRejoin() {
+        guard let url = AppUpdateService.shared.appStoreURL else { return }
+        UIApplication.shared.open(url)
+    }
+
     /// G6-3 (C4, CTA re-join desde el detalle): dispara el flujo de re-entrada por el seam de G6-2 (token del
     /// marcador). Token nil → alert genérico vía el viewModel.
+    ///
+    /// C-10: el guard de capacidad va PRIMERO, como red. La UI ya no ofrece este CTA salvo en
+    /// `.frozenRejoinable`, pero esta era la cadena que, con el canal apagado, escribía `groupsBetaUnlocked`
+    /// de forma permanente y dejaba un join intent huérfano caducando a los 7 días.
     private func handleMigratedRejoin() {
+        guard GroupBackendCapability.current == .canRejoin else { return }
         guard let token = group.backendReInviteToken, !token.isEmpty else {
             DS.Haptic.warning()
             viewModel.actionErrorMessage = L10n.Groups.Errors.actionFailed
@@ -512,34 +532,91 @@ struct GroupDetailView: View {
 
 // MARK: - A3: Pending Approval Banner
 
-/// G6-3: banner del grupo CONGELADO por migración a backend. Título + copy "se movió" + CTA "vuelve a entrar".
+/// G6-3: banner del grupo CONGELADO por migración a backend.
+///
+/// C-10: habla por los TRES estados congelados, porque el detalle ahora es alcanzable en todos. La regla
+/// que gobierna el diseño: **nunca un botón que este build no pueda cumplir**. En `.paused` no hay CTA a
+/// propósito — ofrecer uno sería mentir dos veces (ni vuelve a entrar, ni actualizar arregla nada).
 private struct MigratedGroupBanner: View {
-    let onRejoin: () -> Void
+    enum Mode {
+        /// Este build puede volver a entrar → CTA "Volver a entrar" (comportamiento de G6-3, intacto).
+        case rejoin
+        /// C-10: build incapaz (canal no compilado / backend sin configurar) → CTA al App Store.
+        case needsUpdate
+        /// C-10: canal en pausa por kill remoto → sin CTA, solo explicación.
+        case paused
+    }
+
+    var mode: Mode = .rejoin
+    /// `nil` en `.paused` — el único modo sin acción posible.
+    var onAction: (() -> Void)?
+
+    private var iconName: String {
+        mode == .needsUpdate ? "arrow.down.circle" : "icloud.and.arrow.up"
+    }
+
+    private var bodyText: String {
+        switch mode {
+        case .rejoin:      return L10n.Groups.Migrated.bannerBody
+        case .needsUpdate: return L10n.Groups.Migrated.updateBody
+        case .paused:      return L10n.Groups.Migrated.pausedBody
+        }
+    }
+
+    private var ctaTitle: String? {
+        switch mode {
+        case .rejoin:      return L10n.Groups.Migrated.rejoinCTA
+        case .needsUpdate: return L10n.AppUpdate.updateButton
+        case .paused:      return nil
+        }
+    }
+
+    /// En `.needsUpdate` el botón depende de que el lookup del App Store haya poblado la URL. Si no la
+    /// hay, se deshabilita en vez de fallar en silencio — el valor del banner es el TEXTO, que ya explica
+    /// qué pasa aunque no haya red.
+    private var isActionEnabled: Bool {
+        guard mode == .needsUpdate else { return true }
+        return AppUpdateService.shared.appStoreURL != nil
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: DS.Spacing.sm) {
-            Image(systemName: "icloud.and.arrow.up")
+            Image(systemName: iconName)
                 .font(DS.Typography.title2)
                 .foregroundStyle(DS.Semantic.warningForeground)
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(L10n.Groups.Migrated.bannerTitle)
                     .font(DS.Typography.subheadlineEmphasized)
-                Text(L10n.Groups.Migrated.bannerBody)
+                Text(bodyText)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                // C-10: honestidad sobre datos stale. Lo que se ve es la foto de CloudKit del instante
+                // del freeze; la verdad ya vive en el backend y se separa cada día.
+                Text(L10n.Groups.Migrated.readOnlyNote)
                     .font(DS.Typography.captionSmall)
                     .foregroundStyle(.secondary)
             }
 
             Spacer()
 
-            Button(L10n.Groups.Migrated.rejoinCTA, action: onRejoin)
-                .font(DS.Typography.label)
-                .foregroundStyle(DS.Semantic.warningForeground)
+            if let ctaTitle, let onAction {
+                Button(ctaTitle, action: onAction)
+                    .font(DS.Typography.label)
+                    .foregroundStyle(DS.Semantic.warningForeground)
+                    .disabled(!isActionEnabled)
+            }
         }
         .padding(DS.Spacing.md)
         .background(DS.Semantic.warningBackground, in: RoundedRectangle(cornerRadius: DS.Radius.md))
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.top, DS.Spacing.sm)
+        .task {
+            // Molde de `ForceUpdateView`: si el lookup nunca corrió, dispararlo para que el botón
+            // "Actualizar" funcione. Idempotente (cache de 24 h).
+            guard mode == .needsUpdate, AppUpdateService.shared.appStoreURL == nil else { return }
+            await AppUpdateService.shared.checkForUpdate()
+        }
     }
 }
 

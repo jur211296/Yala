@@ -4644,3 +4644,29 @@
 
 /* Caption on the storage progress card while the cutover waits for iCloud to confirm the export */
 "storage.progress.waitingICloudExport" = "A aguardar a confirmação do iCloud…";
+/* C-10: card chip when the frozen group cannot be rejoined by this build */
+"groups.card.movedUpdateChip" = "Atualizar a app";
+
+/* C-10: card chip when the groups backend channel is paused */
+"groups.card.movedPausedChip" = "Em pausa";
+
+/* C-10: detail banner body when this build cannot rejoin */
+"groups.migrated.updateBody" = "Atualiza a app Yala para voltares a entrar. Entretanto podes ver as despesas, mas não editá-las.";
+
+/* C-10: detail banner body when the channel is paused */
+"groups.migrated.pausedBody" = "Estamos a acabar de mover este grupo para a nuvem da Yala. Tenta novamente daqui a pouco; não perdes nada.";
+
+/* C-10: read-only staleness note under the migrated banner */
+"groups.migrated.readOnlyNote" = "O que vês é a cópia de quando o grupo foi movido, por isso pode não estar atualizada.";
+
+/* C-10: owner banner while migration waits for members to update */
+"groups.migrated.waitingBanner" = "Vamos mover o teu grupo para a nuvem da Yala quando todos atualizarem a app";
+
+/* C-10: owner settings section listing members blocking the migration */
+"groups.migrated.waitingSectionTitle" = "Ainda por atualizar";
+
+/* C-10: hint explaining the owner's only way forward */
+"groups.migrated.waitingHint" = "Quando toda a gente tiver a última versão, movemos o grupo automaticamente. Se alguém já não participa, podes remover essa pessoa do grupo para continuar.";
+
+/* C-10: non-terminal sign-in failure message */
+"groups.signin.retryLater" = "Hmm, não conseguimos ligar a tua conta agora. O teu grupo continua aqui e não perdes nada — tenta mais tarde.";

@@ -44,18 +44,56 @@ struct GroupCardDisplayLogicTests {
     // MARK: - G6-3: migratedFrozen
 
     @Test func displayMode_returnsMigratedFrozen_whenFrozen() {
-        #expect(GroupCardDisplayLogic.displayMode(memberStatus: .active, isMigratedFrozen: true) == .migratedFrozen)
+        #expect(GroupCardDisplayLogic.displayMode(
+            memberStatus: .active, migrationState: .frozenRejoinable) == .migratedFrozen)
     }
 
     @Test func displayMode_migratedFrozen_hasPriorityOverStatus() {
         // El freeze gana sobre pending/rejected (un grupo migrado ya no acepta la interacción normal).
-        #expect(GroupCardDisplayLogic.displayMode(memberStatus: .pendingApproval, isMigratedFrozen: true) == .migratedFrozen)
-        #expect(GroupCardDisplayLogic.displayMode(memberStatus: .rejected, isMigratedFrozen: true) == .migratedFrozen)
+        #expect(GroupCardDisplayLogic.displayMode(
+            memberStatus: .pendingApproval, migrationState: .frozenRejoinable) == .migratedFrozen)
+        #expect(GroupCardDisplayLogic.displayMode(
+            memberStatus: .rejected, migrationState: .frozenRejoinable) == .migratedFrozen)
     }
 
     @Test func displayMode_notFrozen_fallsThroughToStatus() {
-        #expect(GroupCardDisplayLogic.displayMode(memberStatus: .active, isMigratedFrozen: false) == .active)
-        #expect(GroupCardDisplayLogic.displayMode(memberStatus: .pendingApproval, isMigratedFrozen: false) == .pendingApproval)
+        #expect(GroupCardDisplayLogic.displayMode(memberStatus: .active, migrationState: .normal) == .active)
+        #expect(GroupCardDisplayLogic.displayMode(
+            memberStatus: .pendingApproval, migrationState: .normal) == .pendingApproval)
+    }
+
+    // MARK: - C-10: los tres estados congelados
+
+    @Test func displayMode_needsUpdate_hasPriorityOverStatus() {
+        // C-10: el estado "hay que actualizar" también gana sobre el status — si no, un member pending
+        // en un build incapaz vería el chip de "esperando aprobación" y ni se enteraría del traslado.
+        #expect(GroupCardDisplayLogic.displayMode(
+            memberStatus: .active, migrationState: .frozenNeedsUpdate) == .migratedNeedsUpdate)
+        #expect(GroupCardDisplayLogic.displayMode(
+            memberStatus: .pendingApproval, migrationState: .frozenNeedsUpdate) == .migratedNeedsUpdate)
+        #expect(GroupCardDisplayLogic.displayMode(
+            memberStatus: .rejected, migrationState: .frozenNeedsUpdate) == .migratedNeedsUpdate)
+    }
+
+    @Test func displayMode_paused_hasPriorityOverStatus() {
+        #expect(GroupCardDisplayLogic.displayMode(
+            memberStatus: .active, migrationState: .frozenPaused) == .migratedPaused)
+        #expect(GroupCardDisplayLogic.displayMode(
+            memberStatus: .pendingApproval, migrationState: .frozenPaused) == .migratedPaused)
+        #expect(GroupCardDisplayLogic.displayMode(
+            memberStatus: .rejected, migrationState: .frozenPaused) == .migratedPaused)
+    }
+
+    @Test func displayMode_everyFrozenState_showsAChip_neverPlainActive() {
+        // EL invariante de C-10 a nivel de card: pase lo que pase, un grupo congelado NUNCA se pinta como
+        // un grupo normal. Si alguien añade un `GroupMigrationState` nuevo y olvida su rama, esto lo caza.
+        let frozen: [GroupMigrationState] = [.frozenRejoinable, .frozenNeedsUpdate, .frozenPaused]
+        for state in frozen {
+            for status: SplitMemberStatus? in [.active, .pendingApproval, .rejected, .left, .removed, nil] {
+                #expect(GroupCardDisplayLogic.displayMode(
+                    memberStatus: status, migrationState: state) != .active)
+            }
+        }
     }
 }
 

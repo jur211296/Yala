@@ -1961,6 +1961,18 @@ enum L10n {
             static var deleteCopyConfirmTitle: String { ls("groups.migrated.deleteCopyConfirmTitle", comment: "") }
             static var deleteCopyConfirmBody: String { ls("groups.migrated.deleteCopyConfirmBody", comment: "") }
             static var deleteCopyConfirmButton: String { ls("groups.migrated.deleteCopyConfirmButton", comment: "") }
+            /// C-10: cuerpo del banner cuando ESTE build no puede volver a entrar (hay que actualizar).
+            static var updateBody: String { ls("groups.migrated.updateBody", comment: "") }
+            /// C-10: cuerpo del banner cuando el canal está en pausa (kill remoto). Sin CTA.
+            static var pausedBody: String { ls("groups.migrated.pausedBody", comment: "") }
+            /// C-10: nota de solo lectura bajo el banner, en los TRES estados congelados.
+            static var readOnlyNote: String { ls("groups.migrated.readOnlyNote", comment: "") }
+            /// C-10: banner del owner mientras la migración espera a que los miembros actualicen.
+            static var waitingBanner: String { ls("groups.migrated.waitingBanner", comment: "") }
+            /// C-10: sección de ajustes (owner) con los miembros que bloquean la migración.
+            static var waitingSectionTitle: String { ls("groups.migrated.waitingSectionTitle", comment: "") }
+            /// C-10: explica la ÚNICA salida del owner — quitar a quien ya no participa.
+            static var waitingHint: String { ls("groups.migrated.waitingHint", comment: "") }
         }
 
         /// G4-invites (A2, §8): consentimiento informado de grupos (molde Storage.Consent).
@@ -1980,6 +1992,8 @@ enum L10n {
             /// Invariante R9: esta será LA cuenta si algún día migra lo personal.
             static var accountNote: String { ls("groups.signin.accountNote", comment: "") }
             static var error: String { ls("groups.signin.error", comment: "") }
+            /// C-10: fallo de sign-in NO terminal — dice que no se pierde nada y que el grupo sigue ahí.
+            static var retryLater: String { ls("groups.signin.retryLater", comment: "") }
         }
 
         /// #26: chips mostrados en GroupCardView cuando el current user está
@@ -1989,6 +2003,10 @@ enum L10n {
             static var rejectedChip: String { ls("groups.card.rejectedChip", comment: "") }
             /// G6-3: chip "se movió" en la card de un grupo migrado y congelado.
             static var movedChip: String { ls("groups.card.movedChip", comment: "") }
+            /// C-10: chip cuando el grupo se movió y ESTE build no puede volver a entrar.
+            static var movedUpdateChip: String { ls("groups.card.movedUpdateChip", comment: "") }
+            /// C-10: chip cuando el canal de grupos está en pausa (kill remoto).
+            static var movedPausedChip: String { ls("groups.card.movedPausedChip", comment: "") }
             static var leaveGroupAlertTitle: String { ls("groups.card.leaveGroupAlertTitle", comment: "") }
             static var leaveGroupAlertBody: String { ls("groups.card.leaveGroupAlertBody", comment: "") }
             // M6 D3: chip overflow cuando hay más de 3 deudas en la card.

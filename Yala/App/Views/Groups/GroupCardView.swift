@@ -23,8 +23,9 @@ struct GroupCardView: View {
     /// Disparado cuando current user `.rejected` toca la card. El padre
     /// presenta el alert "¿Salir del grupo?" (un solo modal global).
     var onRejectedTap: (() -> Void)?
-    /// G6-3: disparado cuando un grupo `.migratedFrozen` se toca — el padre dispara el CTA "vuelve a entrar".
-    var onMigratedTap: (() -> Void)?
+    // C-10: `onMigratedTap` se ELIMINÓ. Un grupo congelado ya no dispara el CTA desde la card: abre el
+    // detalle (vía `action`), que es donde el banner explica el estado y ofrece la salida que este build
+    // pueda cumplir de verdad.
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
@@ -36,8 +37,7 @@ struct GroupCardView: View {
         debts: [GroupsViewModel.DebtRow],
         displayMode: GroupCardDisplayMode = .active,
         action: @escaping () -> Void,
-        onRejectedTap: (() -> Void)? = nil,
-        onMigratedTap: (() -> Void)? = nil
+        onRejectedTap: (() -> Void)? = nil
     ) {
         self.group = group
         self.memberCount = memberCount
@@ -46,7 +46,6 @@ struct GroupCardView: View {
         self.displayMode = displayMode
         self.action = action
         self.onRejectedTap = onRejectedTap
-        self.onMigratedTap = onMigratedTap
     }
 
     var body: some View {
@@ -114,6 +113,22 @@ struct GroupCardView: View {
             StatusChip(
                 icon: "icloud.and.arrow.up",
                 text: L10n.Groups.Card.movedChip,
+                foregroundColor: DS.Semantic.warningForeground,
+                backgroundColor: DS.Semantic.warningBackground
+            )
+        case .migratedNeedsUpdate:
+            // C-10: el chip NOMBRA la acción real. "Se movió" a secas invita a tocar esperando volver a
+            // entrar, y en un build incapaz eso no lleva a ninguna parte.
+            StatusChip(
+                icon: "arrow.down.circle",
+                text: L10n.Groups.Card.movedUpdateChip,
+                foregroundColor: DS.Semantic.warningForeground,
+                backgroundColor: DS.Semantic.warningBackground
+            )
+        case .migratedPaused:
+            StatusChip(
+                icon: "icloud.and.arrow.up",
+                text: L10n.Groups.Card.movedPausedChip,
                 foregroundColor: DS.Semantic.warningForeground,
                 backgroundColor: DS.Semantic.warningBackground
             )
@@ -219,8 +234,12 @@ struct GroupCardView: View {
             break
         case .rejected:
             onRejectedTap?()
-        case .migratedFrozen:
-            onMigratedTap?()
+        case .migratedFrozen, .migratedNeedsUpdate, .migratedPaused:
+            // C-10: un grupo congelado SIEMPRE se abre, en los tres estados. Antes el tap disparaba el
+            // CTA de re-join directamente y el grupo era un muro; en un build incapaz, además, un muro
+            // mudo. El detalle es donde hay sitio para explicar y para ofrecer la salida que toque.
+            // Sigue sin poder escribirse: eso lo gobierna `isMigratedFrozen`, que no cambió.
+            action()
         case .active:
             action()
         }
@@ -236,6 +255,10 @@ struct GroupCardView: View {
             parts.append(L10n.Groups.Card.rejectedChip)
         case .migratedFrozen:
             parts.append(L10n.Groups.Card.movedChip)
+        case .migratedNeedsUpdate:
+            parts.append(L10n.Groups.Card.movedUpdateChip)
+        case .migratedPaused:
+            parts.append(L10n.Groups.Card.movedPausedChip)
         case .active:
             let grouped = GroupsViewModel.groupDebtsByDirection(debts)
             if !grouped.owedToMe.isEmpty {

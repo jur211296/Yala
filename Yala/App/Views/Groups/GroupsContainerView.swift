@@ -85,6 +85,23 @@ struct GroupsContainerView: View {
                                 .solidCard(radius: DS.Radius.md)
                             }
 
+                            // C-10: la pasada terminó y algún grupo quedó SIN migrar porque falta gente por
+                            // actualizar. Sin esto, el owner vería su grupo igual que siempre y no sabría
+                            // que hay algo esperándole — una migración bloqueada sería indistinguible de
+                            // una que nunca arrancó.
+                            if migrationProgress.groupsWaitingForMembers > 0 && !migrationProgress.isMigrating {
+                                HStack(spacing: DS.Spacing.sm) {
+                                    Image(systemName: "icloud.and.arrow.up")
+                                        .foregroundStyle(DS.Semantic.warningForeground)
+                                    Text(L10n.Groups.Migrated.waitingBanner)
+                                        .font(DS.Typography.caption)
+                                        .foregroundStyle(.secondary)
+                                    Spacer()
+                                }
+                                .padding(DS.Spacing.md)
+                                .solidCard(radius: DS.Radius.md)
+                            }
+
                             // Nudge banner
                             if let nudge = NudgeService.shared.currentNudge, showNudgeBanner {
                                 GroupNudgeBanner(
@@ -352,31 +369,22 @@ struct GroupsContainerView: View {
             debts: viewModel.currentUserDebts(for: group),
             displayMode: GroupCardDisplayLogic.displayMode(
                 memberStatus: viewModel.currentMemberStatus(for: group),
-                isMigratedFrozen: group.isMigratedFrozen
+                migrationState: group.migrationState
             ),
             action: { viewModel.openDetail(for: group) },
-            onRejectedTap: { rejectedGroupPendingLeave = group },
-            onMigratedTap: { handleMigratedRejoin(group) }
+            onRejectedTap: { rejectedGroupPendingLeave = group }
         )
         .accessibilityIdentifier("group_card")
     }
 
-    /// G6-3 (C4, CTA re-join): un grupo congelado se toca → dispara el flujo de re-entrada por el seam de G6-2.
-    /// `GroupBackendInviteEntryHandler.handle` persiste el intent (capturando el `legacyMemberKey` del member
-    /// local del grupo migrado → rebind server-side) y dispara la cadena consent/sign-in/join (source
-    /// `.userAction` — nunca re-presenta onboarding). Token nil (no debería: viaja con `movedToBackendAt`) →
-    /// alert genérico.
-    private func handleMigratedRejoin(_ group: SplitGroup) {
-        guard let token = group.backendReInviteToken, !token.isEmpty else {
-            DS.Haptic.warning()
-            leaveErrorMessage = L10n.Groups.Errors.actionFailed
-            return
-        }
-        Task { @MainActor in
-            await GroupBackendInviteEntryHandler.handle(
-                groupID: group.cloudKitZoneID, token: token, source: .userAction)
-        }
-    }
+    // C-10: `handleMigratedRejoin(_:)` vivía aquí y se ELIMINÓ. Era la SEGUNDA entrada a la cadena de
+    // re-entrada al backend (la buena es `GroupDetailView.handleMigratedRejoin`, que ahora gatea por
+    // capacidad) y la ÚNICA de todo el flujo que no comprobaba el flag, a diferencia de sus vecinas de
+    // este mismo archivo (`groupsEmptyState`, `requestCreateGroup`). Con el canal apagado disparaba
+    // `GroupBackendInviteEntryHandler.handle`, que sin ningún guard escribía `groupsBetaUnlocked` de
+    // forma PERMANENTE, persistía un join intent que caducaba a los 7 días disparando su canario de
+    // expiración, emitía un canario falso de intent persistido, y acababa presentando un sign-in que
+    // fallaba siempre en `CloudAuthError.notConfigured`. El tap de la card ahora abre el detalle.
 
     private func evaluateNudge() {
         NudgeService.shared.evaluate()

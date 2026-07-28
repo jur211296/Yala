@@ -24,22 +24,38 @@ enum GroupCardDisplayMode: Equatable {
     /// Member en estado `.rejected`: chip "Solicitud rechazada" + tap dispara
     /// alert "¿Salir del grupo?" en lugar de abrir el detalle.
     case rejected
-    /// G6-3: grupo migrado y CONGELADO en este device (member no re-joineado):
-    /// chip "se movió" + tap dispara el CTA "vuelve a entrar".
+    /// G6-3: grupo migrado y CONGELADO en este device (member no re-joineado), y este build PUEDE volver
+    /// a entrar: chip "Se movió" + tap abre el detalle, donde vive el CTA "Volver a entrar".
     case migratedFrozen
+    /// C-10: congelado y este build NO puede volver a entrar (canal no compilado / backend sin
+    /// configurar): chip "Actualiza la app" + tap abre el detalle, donde vive el CTA al App Store.
+    case migratedNeedsUpdate
+    /// C-10: congelado y el canal está en pausa (kill remoto): chip "En pausa" + tap abre el detalle,
+    /// que explica y NO ofrece ningún botón que no pueda terminar.
+    case migratedPaused
 }
 
 enum GroupCardDisplayLogic {
-    /// Decide el modo de display según el status del current member en el grupo y si el grupo está congelado
-    /// por migración a backend. El freeze tiene PRIORIDAD sobre el status (un grupo migrado ya no acepta la
-    /// interacción normal). `.left` y `.removed` se tratan como `.active` (caso edge: el grupo igual debe ser
-    /// navegable por si tiene historial; el filtro upstream debe evitar que aparezcan, pero la card NO bloquea
-    /// por defensa-en-profundidad).
+    /// Decide el modo de display según el status del current member en el grupo y el estado de migración
+    /// presentable. El freeze tiene PRIORIDAD sobre el status en los TRES estados congelados (un grupo
+    /// migrado ya no acepta la interacción normal). `.left` y `.removed` se tratan como `.active` (caso
+    /// edge: el grupo igual debe ser navegable por si tiene historial; el filtro upstream debe evitar que
+    /// aparezcan, pero la card NO bloquea por defensa-en-profundidad).
+    ///
+    /// C-10: el parámetro era un `Bool` (`isMigratedFrozen`) que cargaba tres consecuencias distintas —
+    /// no escribas / no abras / toca para volver a entrar. Esa fusión ERA el bug: en un build incapaz,
+    /// "toca para volver a entrar" no llevaba a ninguna parte. Ahora el estado dice cuál de las tres
+    /// salidas existe de verdad.
     static func displayMode(
         memberStatus: SplitMemberStatus?,
-        isMigratedFrozen: Bool = false
+        migrationState: GroupMigrationState = .normal
     ) -> GroupCardDisplayMode {
-        if isMigratedFrozen { return .migratedFrozen }
+        switch migrationState {
+        case .frozenRejoinable:  return .migratedFrozen
+        case .frozenNeedsUpdate: return .migratedNeedsUpdate
+        case .frozenPaused:      return .migratedPaused
+        case .normal:            break
+        }
         switch memberStatus {
         case .pendingApproval: return .pendingApproval
         case .rejected: return .rejected

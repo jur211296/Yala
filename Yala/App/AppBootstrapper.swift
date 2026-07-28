@@ -414,6 +414,22 @@ final class AppBootstrapper {
             await GroupJoinReconciler.reconcile(trigger: .boot, context: context)
         }
 
+        // 16.8.4-bis. C-10: beacon de capacidad (member→owner). NO va dentro del `if groupsBackendEnabled`
+        // de abajo A PROPÓSITO: si el beacon esperara al flag del canal, el día del encendido el owner se
+        // encontraría con CERO beacons publicados y su gate de emisión bloquearía el 100 % de las
+        // migraciones. El rendezvous tiene que estar tibio ANTES. `publishIfNeeded` se auto-anula si este
+        // build no es capaz (`GroupCapability.current == nil`), que es el caso de TODA la producción hoy →
+        // no-op byte-idéntico. Gateado por QUIESCENCIA porque escribe el mainContext compartido.
+        if !uiTestActive {
+            Task { @MainActor in
+                guard await awaitPersonalStoreReady() else {
+                    SaveBreadcrumb.deferred("AppBootstrapper.groupCapabilityBeacon", "import not quiescent")
+                    return
+                }
+                GroupCapabilityBeacon.publishIfNeeded(context: context)
+            }
+        }
+
         // 16.8.5. Grupos→backend G6-3: migración de los grupos vivos CloudKit del OWNER al backend + boot-
         // reconciler del marcador. DARK: no-op salvo con `groupsBackendEnabled` ON. GATE CRÍTICO 2: gateado por
         // QUIESCENCIA del import (el uploader/reconciler salvan el mainContext compartido → sin el gate

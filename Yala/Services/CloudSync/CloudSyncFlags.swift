@@ -264,6 +264,23 @@ nonisolated enum CloudSyncFlags {
 
     /// Encendido COMPILADO del canal de Grupos (la palanca de release; el remoto es el kill).
     private static let groupsBackendCompiledDefault = false
+
+    /// C-10: capacidad COMPILADA del canal de Grupos, SIN el kill remoto. La consumen el beacon
+    /// (`GroupCapability.current`) y la presentación del congelado (`GroupBackendCapability.current`).
+    ///
+    /// Deliberadamente NO compuesta con `CloudRemoteFlags.groupsBackendEnabled`: un kill remoto apaga el
+    /// CANAL, no la capacidad del BINARIO. Confundirlos tendría dos consecuencias malas: (a) un kill
+    /// transitorio le diría al usuario "actualiza la app" teniendo la app perfecta, y (b) los beacons de
+    /// capacidad dejarían de publicarse justo cuando el owner los necesita para decidir si puede migrar.
+    ///
+    /// Override de tests: reusa `groupsBackendEnabledTestOverride` a propósito — un test que enciende el
+    /// canal enciende también la capacidad (no existe un build capaz-pero-sin-canal que valga la pena
+    /// simular; para el kill remoto se togglea `CloudRemoteFlags.groupsBackendEnabled`).
+    static var groupsBackendCompiledCapability: Bool {
+        if let override = groupsBackendEnabledTestOverride { return override }
+        return groupsBackendCompiledDefault
+    }
+
     nonisolated(unsafe) private static var groupsBackendEnabledTestOverride: Bool?
 
     /// Solo tests: vuelve el getter a la composición real (mismo racional que

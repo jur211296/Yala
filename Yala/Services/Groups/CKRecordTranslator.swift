@@ -261,6 +261,17 @@ enum CKRecordTranslator {
         record[F.status] = member.status as CKRecordValue
         record[F.isGroupOwner] = ckBool(member.isGroupOwner)
         record[F.joinedAt] = member.joinedAt as CKRecordValue
+        // C-10 (beacon): DIRECCIONAL — un device solo declara SU PROPIA capacidad. Escribir el beacon de
+        // otro member sería afirmar algo que no se puede saber, y con LWW podría "capacitar" a un device
+        // incapaz y desbloquear una migración que lo va a congelar.
+        if member.isCurrentUser {
+            if let capability = member.clientCapability {
+                record[F.clientCapability] = capability as CKRecordValue
+            }
+            if let capabilityAt = member.clientCapabilityAt {
+                record[F.clientCapabilityAt] = capabilityAt as CKRecordValue
+            }
+        }
     }
 
     static func member(from record: CKRecord) -> SplitMember? {
@@ -279,6 +290,10 @@ enum CKRecordTranslator {
             member.role = "admin"
         }
         member.joinedAt = record[F.joinedAt] as? Date ?? Date.now
+        // C-10: nil-safe. Un record de un build viejo no trae estos campos → `nil` → ese member cuenta
+        // como incapaz, que es exactamente la lectura correcta.
+        member.clientCapability = record[F.clientCapability] as? String
+        member.clientCapabilityAt = record[F.clientCapabilityAt] as? Date
         member.ckSystemFieldsData = encodeSystemFields(of: record)
         return member
     }
@@ -295,6 +310,13 @@ enum CKRecordTranslator {
             member.role = "admin"
         }
         member.joinedAt = record[F.joinedAt] as? Date ?? member.joinedAt
+        // C-10 (beacon): en la fila PROPIA gana SIEMPRE el valor local — este device es la SSOT de su
+        // propia capacidad y un record stale del server no puede bajársela (molde race-tolerant de
+        // `isArchived`). En las filas de los DEMÁS se acepta lo que llega, que es todo lo que sabemos.
+        if !member.isCurrentUser {
+            member.clientCapability = record[F.clientCapability] as? String
+            member.clientCapabilityAt = record[F.clientCapabilityAt] as? Date
+        }
         member.ckSystemFieldsData = encodeSystemFields(of: record)
     }
 

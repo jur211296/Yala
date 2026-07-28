@@ -204,6 +204,19 @@ enum GroupsSyncBreadcrumb {
         logger.notice("GroupsSync ckFetchApplyFailed reason=\(reason, privacy: .public) — token avanzado sin apply; migración diferida")
     }
 
+    /// [C-10] La migración de un grupo NO se emitió porque `pending` miembros aún no publicaron un beacon
+    /// de capacidad. Sostenido en el dashboard = rollout atascado (alguien no actualiza). `pending == -1`
+    /// = la lectura de members falló y el gate cerró por precaución. Sin PII (solo un conteo).
+    static func groupsMigrationWaitingForMembers(pending: Int) {
+        logger.notice("GroupsSync migrationWaitingForMembers pending=\(pending, privacy: .public)")
+    }
+
+    /// [C-10] Este device publicó/refrescó su beacon de capacidad en `count` grupos. Creciendo = la
+    /// población se está calentando; es el indicador que dice cuándo es seguro encender el canal.
+    static func groupsCapabilityBeaconPublished(count: Int) {
+        logger.notice("GroupsSync capabilityBeaconPublished count=\(count, privacy: .public)")
+    }
+
     /// [G6-3 C2] El boot-reconciler re-encoló el marcador de `count` grupos `movedToBackendAt != nil &&
     /// !markerEnqueuedFlag` (kill entre el save del marcador y el flag). Vacío en estado estable.
     static func groupsMigrationMarkerReconciled(count: Int) {

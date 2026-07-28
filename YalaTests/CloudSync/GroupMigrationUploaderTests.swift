@@ -453,6 +453,164 @@ struct GroupMigrationUploaderTests {
         #expect(group.markerEnqueuedFlag == true)
     }
 
+    // MARK: - C-10: gate de emisión (no congelar a quien no puede volver a entrar)
+
+    /// Miembro no-owner del grupo candidato, con el beacon de capacidad que se le pase.
+    @discardableResult
+    private func addMember(
+        to zoneID: String,
+        recordID: String,
+        capability: String?,
+        capabilityAt: Date?,
+        status: SplitMemberStatus = .active,
+        context: ModelContext
+    ) -> SplitMember {
+        let m = SplitMember(groupZoneID: zoneID, displayName: "Pia",
+                            cloudKitUserRecordID: recordID, role: "member",
+                            status: status, isGroupOwner: false, isCurrentUser: false)
+        m.clientCapability = capability
+        m.clientCapabilityAt = capabilityAt
+        context.insert(m)
+        try? context.save()
+        return m
+    }
+
+    @Test func run_doesNotCallMigrate_whenAMemberLacksBeacon() async throws {
+        // El corazón de C-10: un miembro sin beacon (= todo binario ya publicado, que no conoce el campo)
+        // BLOQUEA la migración. El gate corre ANTES de `migrate_group`: si `migrate` llega a invocarse,
+        // el grupo ya estaría medio migrado y el marcador acabaría congelando a ese miembro sin salida.
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let group = makeCandidateGroup(context: context)
+        addMember(to: group.cloudKitZoneID, recordID: "_pia", capability: nil, capabilityAt: nil, context: context)
+        let mocks = Mocks()
+
+        await withFlagAndConsent {
+            await makeUploader(context: context, mocks: mocks).run()
+        }
+
+        #expect(mocks.migrateCalls == 0)
+        #expect(mocks.markerCalls == 0)
+        #expect(group.movedToBackendAt == nil)     // el marcador que congela JAMÁS salió
+        #expect(group.isBackendGroup == false)
+        #expect(GroupMigrationProgress.shared.groupsWaitingForMembers >= 1)
+    }
+
+    @Test func run_doesNotMigrate_whenMemberFetchThrows() async throws {
+        // FAIL-CLOSED: si no podemos leer los beacons, NO migramos. Un fail-open aquí congelaría gente
+        // apoyándose en una lectura que falló.
+        struct Boom: Error {}
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let group = makeCandidateGroup(context: context)
+        let mocks = Mocks()
+
+        let uploader = GroupMigrationUploader(
+            context: context,
+            now: { Date(timeIntervalSince1970: 1_800_000_000) },
+            sessionCheck: { true },
+            fetchGateSignal: { _ in Self.noChannelSignal },
+            gatePoll: { _ in true },
+            migrate: { _, _, _ in mocks.migrateCalls += 1; return mocks.migrateResult },
+            createInvite: { _ in "tok" },
+            seedSnapshot: { _ in },
+            drain: {},
+            push: { .completed([]) },
+            liveOutboxCount: { _ in 0 },
+            enqueueMarker: { _ in mocks.markerCalls += 1 },
+            memberSnapshots: { _ in throw Boom() })
+
+        await withFlagAndConsent { await uploader.run() }
+
+        #expect(mocks.migrateCalls == 0)
+        #expect(mocks.markerCalls == 0)
+        #expect(group.movedToBackendAt == nil)
+    }
+
+    @Test func run_completesResume_whenAlreadyAdoptedEvenIfMemberLacksBeacon() async throws {
+        // EL bug que cazó la revisión adversarial: el gate es un LATCH DE ARRANQUE, no una condición que
+        // se re-evalúe en el resume. Un grupo que ya cruzó el paso 3 (`isBackendGroup = true`) pasó el
+        // punto de no retorno: sus escrituras ya van al backend y el pull de su zona CloudKit se ignora.
+        // Si el gate lo bloqueara ahí, quedaría en DOBLE VERDAD permanente (owner en el backend, miembros
+        // en CloudKit, sin marcador que avise y sin nada que lo recupere) — pérdida de datos silenciosa,
+        // estrictamente peor que el C-10 que este gate cierra.
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let group = makeCandidateGroup(context: context)
+        group.isBackendGroup = true          // paso 3 ya ejecutado en un boot anterior…
+        #expect(group.movedToBackendAt == nil)  // …pero el paso 6 no llegó (push transitorio / kill)
+        try? context.save()
+        addMember(to: group.cloudKitZoneID, recordID: "_sinBeacon",
+                  capability: nil, capabilityAt: nil, context: context)
+        let mocks = Mocks()
+
+        await withFlagAndConsent {
+            await makeUploader(context: context, mocks: mocks).run()
+        }
+
+        // El resume DEBE completar pese al miembro sin beacon.
+        #expect(mocks.migrateCalls == 1)
+        #expect(mocks.markerCalls == 1)
+        #expect(group.movedToBackendAt != nil)
+    }
+
+    @Test func run_doesNotMigrate_whenMemberBeaconIsPaused() async throws {
+        // Un miembro capaz pero con el canal apagado (bucket del rollout aún sin encender) NO acredita:
+        // migrarlo lo congelaría durante semanas con un banner que le dice "vuelve en un rato".
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let group = makeCandidateGroup(context: context)
+        addMember(to: group.cloudKitZoneID, recordID: "_pausado",
+                  capability: GroupCapability.rejoinV1Paused,
+                  capabilityAt: Date(timeIntervalSince1970: 1_800_000_000 - 86_400),
+                  context: context)
+        let mocks = Mocks()
+
+        await withFlagAndConsent {
+            await makeUploader(context: context, mocks: mocks).run()
+        }
+
+        #expect(mocks.migrateCalls == 0)
+        #expect(group.movedToBackendAt == nil)
+    }
+
+    @Test func run_migrates_whenAllMembersCapable() async throws {
+        // Camino feliz del gate: con todos los miembros beaconeando fresco, el pipeline corre entero.
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let group = makeCandidateGroup(context: context)
+        addMember(to: group.cloudKitZoneID, recordID: "_pia",
+                  capability: GroupCapability.rejoinV1,
+                  capabilityAt: Date(timeIntervalSince1970: 1_800_000_000 - 86_400),
+                  context: context)
+        let mocks = Mocks()
+
+        await withFlagAndConsent {
+            await makeUploader(context: context, mocks: mocks).run()
+        }
+
+        #expect(mocks.migrateCalls == 1)
+        #expect(mocks.markerCalls == 1)
+        #expect(group.movedToBackendAt != nil)
+    }
+
+    @Test func run_migrates_whenLaggardAlreadyLeftTheGroup() async throws {
+        // La salida del owner: quitar a quien ya no participa desbloquea la migración sin override.
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let group = makeCandidateGroup(context: context)
+        addMember(to: group.cloudKitZoneID, recordID: "_ex", capability: nil, capabilityAt: nil,
+                  status: .removed, context: context)
+        let mocks = Mocks()
+
+        await withFlagAndConsent {
+            await makeUploader(context: context, mocks: mocks).run()
+        }
+
+        #expect(mocks.migrateCalls == 1)
+        #expect(group.movedToBackendAt != nil)
+    }
+
     private func outbox(_ context: ModelContext) throws -> [GroupSyncOutbox] {
         try context.fetch(FetchDescriptor<GroupSyncOutbox>())
     }

@@ -56,7 +56,10 @@ struct GroupsSignInView: View {
                     }
 
                     if signInFailed {
-                        Text(L10n.Groups.SignIn.error)
+                        // C-10: el texto anterior ("no pudimos conectar tu cuenta, inténtalo de nuevo")
+                        // era terminal — reintentar daba siempre lo mismo y no decía qué pasaba con el
+                        // grupo. Ahora dice que no se pierde nada y que el grupo sigue accesible detrás.
+                        Text(L10n.Groups.SignIn.retryLater)
                             .font(DS.Typography.caption)
                             .foregroundStyle(DS.Semantic.errorForeground)
                             .multilineTextAlignment(.center)

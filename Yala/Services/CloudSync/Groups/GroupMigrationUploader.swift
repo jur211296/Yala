@@ -48,6 +48,9 @@ final class GroupMigrationUploader {
     private let liveOutboxCount: (String) throws -> Int
     private let enqueueMarker: (SplitGroup) -> Void
     private let sessionCheck: @MainActor () -> Bool
+    /// C-10: lee los beacons de capacidad de los members del grupo. Inyectable para que los tests del
+    /// gate no necesiten SwiftData. Lanza → FAIL-CLOSED (el grupo espera; jamás se migra a ciegas).
+    private let memberSnapshots: (String) throws -> [MemberCapabilitySnapshot]
     private let context: ModelContext
     private let now: () -> Date
 
@@ -86,7 +89,8 @@ final class GroupMigrationUploader {
         drain: (() -> Void)? = nil,
         push: (() async -> PushOutcome)? = nil,
         liveOutboxCount: ((String) throws -> Int)? = nil,
-        enqueueMarker: ((SplitGroup) -> Void)? = nil
+        enqueueMarker: ((SplitGroup) -> Void)? = nil,
+        memberSnapshots: ((String) throws -> [MemberCapabilitySnapshot])? = nil
     ) {
         self.context = context
         self.now = now
@@ -106,6 +110,20 @@ final class GroupMigrationUploader {
         }
         self.fetchGateCapSeconds = fetchGateCapSeconds
         self.fetchGatePollSeconds = fetchGatePollSeconds
+        self.memberSnapshots = memberSnapshots ?? { zoneID in
+            try context.fetch(FetchDescriptor<SplitMember>(
+                predicate: #Predicate { $0.groupZoneID == zoneID }))
+                .map { member in
+                    MemberCapabilitySnapshot(
+                        memberKey: member.id.uuidString,
+                        isGroupOwner: member.isGroupOwner,
+                        status: member.memberStatus,
+                        hasRecordName: !member.cloudKitUserRecordID.isEmpty,
+                        capability: member.clientCapability,
+                        capabilityAt: member.clientCapabilityAt
+                    )
+                }
+        }
         self.migrate = migrate ?? { gid, meta, members in
             try await GroupBackendMembershipService(client: GroupsMembershipClient())
                 .migrateGroup(groupID: gid, meta: meta, members: members)
@@ -258,13 +276,22 @@ final class GroupMigrationUploader {
         if isPass { GroupMigrationProgress.shared.finish() }
     }
 
-    enum StepOutcome: Equatable { case completed, transient }
+    enum StepOutcome: Equatable {
+        case completed
+        case transient
+        /// C-10: algún miembro todavía no puede volver a entrar por el backend. NO se migra.
+        case blockedByMembers
+    }
 
     // MARK: - Pipeline por grupo
 
     private func migrateOne(_ group: SplitGroup) async -> StepOutcome {
         let groupID = group.cloudKitZoneID
 
+        // ORDEN (C-4 antes que C-10, deliberado): el gate de fetch va PRIMERO para que la readiness de
+        // C-10 lea los beacons sobre una vista de members YA ASENTADA. Al revés, una lista local
+        // incompleta podría no ver a un miembro y dar `.ready` de más — fail-OPEN, justo lo contrario de
+        // lo que este gate existe para evitar.
         // Re-chequeo C-4 por grupo: el gate de pasada corrió ANTES de los grupos #1..#k-1, así que para el
         // #k pueden haber pasado minutos. Si mientras tanto se abrió un ciclo de fetch, llegaron batches al
         // búfer o el fetch de ESTA zona falló, se ESPERA (cap corto — la pasada ya gastó su presupuesto) en
@@ -277,6 +304,31 @@ final class GroupMigrationUploader {
         // (`applyRemoteDeletion`, `deleteGroupCache`, `clearAllLocalGroupData`) o migrarlo por otra vía.
         // Re-validar antes de escribir sobre él: `context.save()` sobre un modelo borrado es corrupción.
         guard !group.isDeleted, group.movedToBackendAt == nil else { return .transient }
+
+        // PASO 0 (C-10): GATE DE EMISIÓN. Va ANTES de `migrate_group`, no después: migrar y luego no
+        // poder estampar el marcador dejaría la verdad en el backend con los miembros escribiendo a
+        // CloudKit sin enterarse — peor que no migrar. Y el marcador es lo que congela, así que la regla
+        // es "no lo emitas antes de que puedan volver a entrar".
+        //
+        // ⚠️ SOLO ANTES DE ADOPTAR (`!isBackendGroup`). El gate es un LATCH de arranque, no una condición
+        // que se re-evalúe en cada pasada. Un grupo que ya cruzó el paso 3 pasó el PUNTO DE NO RETORNO:
+        // sus escrituras ya no van a CloudKit (`enqueueSave` las tira) y sí drenan al backend, y el pull
+        // de esa zona ya se ignora. Bloquear ese resume lo dejaría en DOBLE VERDAD permanente — owner en
+        // el backend, miembros en CloudKit y sin marcador que avise a nadie — porque nada vuelve a poner
+        // `isBackendGroup = false` ni a estampar el marcador. Eso es pérdida de datos silenciosa, que es
+        // peor que el bug que este gate cierra. Bloquear ANTES del paso 1 es inocuo: nada local cambió
+        // todavía y nadie se congela.
+        if !group.isBackendGroup {
+            switch readiness(for: groupID) {
+            case .waiting(let pending):
+                GroupMigrationProgress.shared.noteBlockedByMembers()
+                logger.info("GroupsMigration: grupo en espera — \(pending, privacy: .public) miembro(s) sin capacidad")
+                noteWaiting(pending: pending)
+                return .blockedByMembers
+            case .ready:
+                break
+            }
+        }
 
         // Paso 1: migrate_group (meta histórica + members). already:true sigue. Payload inválido → abortar
         // este boot y RE-EVALUAR en el próximo (H3 review: se retorna .transient a propósito — el caso real
@@ -374,6 +426,30 @@ final class GroupMigrationUploader {
     }
 
     // MARK: - Payload
+
+    // MARK: - C-10: gate de emisión
+
+    /// ¿Se puede estampar el marcador sin congelar a nadie sin salida? FAIL-CLOSED de forma absoluta:
+    /// cualquier error leyendo los members devuelve `.waiting`, jamás `.ready`. Un fail-open aquí
+    /// congelaría a gente basándose en una lectura que falló.
+    private func readiness(for groupID: String) -> GroupMigrationReadinessLogic.Decision {
+        do {
+            let snapshots = try memberSnapshots(groupID)
+            return GroupMigrationReadinessLogic.decide(members: snapshots, now: now())
+        } catch {
+            logger.error("GroupsMigration: readiness falló (fail-closed): \(error.localizedDescription, privacy: .public)")
+            return .waiting(pending: -1)  // -1 = desconocido; el grupo espera igual
+        }
+    }
+
+    /// Un evento por grupo BLOQUEADO y por pasada del uploader (una pasada por boot, y cada grupo se
+    /// procesa una sola vez en ella). NO se dedupea entre boots a propósito: la señal que interesa en el
+    /// dashboard es justamente la PERSISTENCIA — un grupo que reaparece bloqueado boot tras boot es un
+    /// rollout atascado, y silenciarlo tras el primer aviso lo escondería. Se mide por install+grupo.
+    private func noteWaiting(pending: Int) {
+        GroupsSyncBreadcrumb.groupsMigrationWaitingForMembers(pending: pending)
+        MetricsService.canary(.groupMigrationWaitingForMembers)
+    }
 
     private func buildPayload(for group: SplitGroup) -> (meta: [String: Any], members: [[String: Any]])? {
         let meta = GroupMigrationMetaSnapshot(

@@ -2341,6 +2341,26 @@ final class SplitSyncManager {
             }
         }
 
+        // C-10: mismo molde de race-fix, para el BEACON de capacidad de la fila propia. `update(_:from:)`
+        // conserva el valor LOCAL en la fila `isCurrentUser` (este device es la SSOT de su capacidad),
+        // pero sin re-encolar, el server se queda con la versión vieja y el owner nunca ve el beacon —
+        // y como `GroupCapabilityBeacon.needsRefresh` ya lo dio por publicado, no se reintentaría hasta
+        // el refresco de 7 días. Un grupo bloqueado una semana por un conflicto es evitable.
+        if serverRecord.recordType == CKConstants.RecordType.splitMember,
+           let modelID = CKConstants.modelID(from: serverRecord.recordID),
+           let member = splitMember(byID: modelID, in: modelContext),
+           member.isCurrentUser,
+           let localAt = member.clientCapabilityAt {
+            let serverAt = serverRecord[CKConstants.MemberField.clientCapabilityAt] as? Date
+            if serverAt == nil || serverAt! < localAt,
+               let group = self.group(for: member.groupZoneID) {
+                enqueueSave(modelID: member.id, group: group)
+                #if DEBUG
+                logger.info("[\(engineName)] C-10: beacon de capacidad re-encolado tras conflicto")
+                #endif
+            }
+        }
+
         // Remove from pending — server version is now authoritative
         pendingRecordSaves.remove(failure.record.recordID)
 

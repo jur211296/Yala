@@ -413,6 +413,9 @@ final class GroupService {
     /// que la rama backend de C5 lo reuse tras el RPC (el `enqueueSave` queda no-op por el guard C2).
     private func removeMemberLocal(_ member: SplitMember, from group: SplitGroup) throws {
         let context = try requireContext()
+        // C-10: red service-level. El detalle de un grupo congelado pasó a ser alcanzable, y estas
+        // escrituras irían a una zona CloudKit muerta: se perderían en silencio.
+        try validateGroupIsWritable(group)
         try requireCurrentUserAdmin(in: group, context: context)
 
         guard member.groupZoneID == group.cloudKitZoneID else { throw GroupServiceError.memberNotInGroup }
@@ -475,6 +478,9 @@ final class GroupService {
         in group: SplitGroup
     ) throws {
         let context = try requireContext()
+        // C-10: red service-level. El detalle de un grupo congelado pasó a ser alcanzable, y estas
+        // escrituras irían a una zona CloudKit muerta: se perderían en silencio.
+        try validateGroupIsWritable(group)
         try requireCurrentUserAdmin(in: group, context: context)
 
         guard member.groupZoneID == group.cloudKitZoneID else { throw GroupServiceError.memberNotInGroup }
@@ -497,6 +503,9 @@ final class GroupService {
         // Guard defensivo (review G5-A): no existe RPC de cambio de rol — evitar falso éxito local.
         guard !routesMembershipToBackend(group) else { throw GroupServiceError.backendActionUnavailable }
         let context = try requireContext()
+        // C-10: red service-level. El detalle de un grupo congelado pasó a ser alcanzable, y estas
+        // escrituras irían a una zona CloudKit muerta: se perderían en silencio.
+        try validateGroupIsWritable(group)
         try requireCurrentUserAdmin(in: group, context: context)
 
         guard member.groupZoneID == group.cloudKitZoneID else { throw GroupServiceError.memberNotInGroup }

@@ -168,6 +168,13 @@ struct GroupMembersView: View {
 
     // MARK: - Members Section
 
+    /// C-10: en un grupo CONGELADO las acciones de admin (quitar, aprobar/rechazar, cambiar rol, invitar)
+    /// se ocultan. El detalle pasó a ser alcanzable en congelado — antes el tap de la card no lo abría —
+    /// y estas escrituras irían a una zona CloudKit muerta: se perderían en silencio. La UX primaria es
+    /// ocultarlas (mismo criterio que `canCurrentUserParticipate` con el resto de escrituras); la RED es
+    /// el guard service-level en `GroupService`.
+    private var canActAsAdmin: Bool { viewModel.isCurrentUserAdmin && !group.isMigratedFrozen }
+
     private var membersSection: some View {
         SectionBox(title: L10n.Groups.Settings.members) {
             VStack(spacing: DS.Spacing.none) {
@@ -175,17 +182,17 @@ struct GroupMembersView: View {
                     GroupMemberRow(
                         member: member,
                         groupColorHex: group.colorHex,
-                        isCurrentUserAdmin: viewModel.isCurrentUserAdmin,
+                        isCurrentUserAdmin: canActAsAdmin,
                         onChangeRole: { changeRole(member) },
                         onRemove: {
                             memberToRemove = member
                             showRemoveMemberConfirm = true
                         },
-                        onApprove: viewModel.isCurrentUserAdmin && member.isPendingApproval ? {
+                        onApprove: canActAsAdmin && member.isPendingApproval ? {
                             pendingActionMember = member
                             showApproveConfirm = true
                         } : nil,
-                        onReject: viewModel.isCurrentUserAdmin && member.isPendingApproval ? {
+                        onReject: canActAsAdmin && member.isPendingApproval ? {
                             pendingActionMember = member
                             showRejectConfirm = true
                         } : nil
@@ -198,7 +205,7 @@ struct GroupMembersView: View {
                 }
 
                 // Invite by link
-                if group.isOwner && viewModel.isCurrentUserAdmin {
+                if group.isOwner && canActAsAdmin {
                     Divider()
                     Button {
                         DS.Haptic.light()

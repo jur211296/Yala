@@ -5387,3 +5387,29 @@
 
 /* Caption on the storage progress card while the cutover waits for iCloud to confirm the export */
 "storage.progress.waitingICloudExport" = "正在等待 iCloud 确认…";
+/* C-10: card chip when the frozen group cannot be rejoined by this build */
+"groups.card.movedUpdateChip" = "更新应用";
+
+/* C-10: card chip when the groups backend channel is paused */
+"groups.card.movedPausedChip" = "已暂停";
+
+/* C-10: detail banner body when this build cannot rejoin */
+"groups.migrated.updateBody" = "更新 Yala 后就能重新登录。在那之前，你可以查看支出，但无法编辑。";
+
+/* C-10: detail banner body when the channel is paused */
+"groups.migrated.pausedBody" = "我们正在把这个群组迁移到 Yala 云端，就快好了。过一会儿再试试，不会丢失任何内容。";
+
+/* C-10: read-only staleness note under the migrated banner */
+"groups.migrated.readOnlyNote" = "你看到的是群组迁移时的副本，所以可能不是最新的。";
+
+/* C-10: owner banner while migration waits for members to update */
+"groups.migrated.waitingBanner" = "等大家都更新应用，我们就把你的群组迁移到 Yala 云端";
+
+/* C-10: owner settings section listing members blocking the migration */
+"groups.migrated.waitingSectionTitle" = "待更新的成员";
+
+/* C-10: hint explaining the owner's only way forward */
+"groups.migrated.waitingHint" = "等所有人都用上最新版本，我们会自动迁移群组。如果有人已经不参与了，把他移出群组就能继续。";
+
+/* C-10: non-terminal sign-in failure message */
+"groups.signin.retryLater" = "嗯，我们暂时没能关联你的账户。你的群组还在，不会丢失任何内容，稍后再试试吧。";

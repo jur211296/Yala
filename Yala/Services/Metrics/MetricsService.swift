@@ -112,6 +112,11 @@ enum MetricsCanary: String {
     case groupJoinIntentExpired
     case groupJoinFailed
     case groupLegacyRebindFailed
+    /// C-10: una migración quedó esperando a que sus miembros publiquen capacidad. Sostenido = rollout
+    /// atascado. Es el canario que hay que mirar antes de dar por buena una tanda de encendido.
+    case groupMigrationWaitingForMembers
+    /// C-10: este device publicó su beacon de capacidad. Creciendo = la población se calienta.
+    case groupCapabilityBeaconPublished
 
     // Batch "salir de todos mis grupos" (D10)
     case groupBatchLeaveStarted
