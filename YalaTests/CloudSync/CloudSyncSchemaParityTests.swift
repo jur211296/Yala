@@ -186,6 +186,8 @@ struct CloudSyncSchemaParityTests {
             "leaderDeviceID",
             "serverSeqCut",
             "reverseOriginRaw",
+            "markerWrittenSince",
+            "cutoverICloudVerdictRaw",
             "startedAt",
             "updatedAt",
             "schemaVersion",
@@ -193,9 +195,11 @@ struct CloudSyncSchemaParityTests {
         #expect(propertyNames(MigrationState.self) == expected)
     }
 
-    @Test func migrationState_schemaVersion_isTwo() {
-        // Subió a 2 en I11-2 al añadir el campo aditivo `reverseOriginRaw`.
-        #expect(CloudSyncSchemaVersions.migrationState == 2)
+    @Test func migrationState_schemaVersion_isThree() {
+        // Subió a 2 en I11-2 al añadir el campo aditivo `reverseOriginRaw`; a 3 en C-1 con
+        // `markerWrittenSince` (reloj del tope del paso 4) + `cutoverICloudVerdictRaw` (veredicto del canal
+        // iCloud), ambos ADITIVOS y opcionales → una fila escrita por un build v2 sigue abriéndose.
+        #expect(CloudSyncSchemaVersions.migrationState == 3)
     }
 
     // MARK: - (b·G2) GroupSyncOutbox / GroupSyncCursor (canal de Grupos → backend)

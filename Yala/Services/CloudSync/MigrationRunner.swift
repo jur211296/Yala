@@ -137,6 +137,15 @@ protocol MigrationWorkExecuting: AnyObject {
     /// THROTTLE (a lo sumo una vez por ventana) y NUNCA lanza ni altera el outcome del paso. Default no-op
     /// en la extension de abajo → los fakes/ejecutores que no laten heredan sin cambios.
     func sendLeaseHeartbeatIfDue() async
+
+    // MARK: Canal iCloud (C-1)
+
+    /// Veredicto del canal por el que el marcador del cutover tiene que viajar. Read-only y SIN red (cuenta
+    /// iCloud + huella CloudKit local + último `CKError` observado). El runner lo consulta en la ENTRADA del
+    /// cutover (para no empezar lo que no puede cerrar) y en el paso 4 (para clasificar el atasco y elegir el
+    /// presupuesto del tope). Default `.healthy` en la extension de abajo → los fakes que no guionan el canal
+    /// se comportan EXACTAMENTE como antes de C-1.
+    func probeICloudChannel() async -> ICloudChannelVerdict
 }
 
 extension MigrationWorkExecuting {
@@ -144,6 +153,11 @@ extension MigrationWorkExecuting {
     /// lo asertan, ejecutores futuros verify-only) no está obligado a implementarlo. El ejecutor real lo
     /// override con el tick throttled best-effort.
     func sendLeaseHeartbeatIfDue() async {}
+
+    /// Default C-1: canal SANO. Mismo molde que el heartbeat — un conformador que no modela el canal iCloud
+    /// (los fakes de las suites existentes) mantiene el camino feliz byte-idéntico: `.healthy` no bloquea la
+    /// entrada y clasifica el atasco como `.unknown` (presupuesto largo).
+    func probeICloudChannel() async -> ICloudChannelVerdict { .healthy }
 }
 
 // MARK: - Runner
@@ -274,6 +288,13 @@ final class MigrationRunner {
             default:
                 return                                     // no-op fuera de los dos estados de rollback
             }
+            // C-1: DRENAR antes de limpiar. El abort del paso 4 deja pendiente `.persistICloudMode` (la que
+            // devuelve el device a `.icloud` + desarma el mirror-off). Si el usuario toca "Reintentar" antes
+            // de que ese pendiente drene, el `setPendingEffects([])` de abajo lo TIRARÍA y quedaría
+            // `notStarted` + `.cloud` = fase ESTABLE con el mirror vivo ⇒ exactamente la doble escritura que
+            // este arreglo mata. Si el drenaje lanza, `runGuarded` aborta el reset y el journal queda intacto:
+            // el tap se convierte en un reintento del abort, que es la semántica correcta.
+            try await self.drainPendingEffects(isResume: true)
             state.setPhase(target)
             state.setPendingEffects([])
             state.leaderDeviceID = nil
@@ -281,6 +302,8 @@ final class MigrationRunner {
             state.verifyNetworkRetries = 0
             state.snapshotCursorJSON = nil
             state.reverseOriginRaw = nil
+            state.markerWrittenSince = nil
+            state.cutoverICloudVerdictRaw = nil
             if target == .notStarted { state.startedAt = nil }
             state.updatedAt = self.now()
             try self.context.save()
@@ -341,6 +364,10 @@ final class MigrationRunner {
                 state.verifyMismatchRetries = 0
                 state.verifyNetworkRetries = 0
                 state.snapshotCursorJSON = nil
+                // C-1: los campos del cutover de la IDA no tienen sentido en la reversa (el reloj del paso 4
+                // y el veredicto del canal iCloud son de un intento ya cerrado).
+                state.markerWrittenSince = nil
+                state.cutoverICloudVerdictRaw = nil
             }
             // S2 (review adversarial): al llegar a un estado de CIERRE de intento, limpiar los campos
             // SCOPED a la migración en el MISMO save — un `leaderDeviceID`/contador/cursor stale que
@@ -356,6 +383,13 @@ final class MigrationRunner {
                 state.verifyNetworkRetries = 0
                 state.snapshotCursorJSON = nil
                 state.reverseOriginRaw = nil
+                // C-1: el reloj del paso 4 es SCOPED al intento — un `markerWrittenSince` stale haría que el
+                // siguiente cutover naciera con el presupuesto ya vencido (abort inmediato).
+                state.markerWrittenSince = nil
+                // El VEREDICTO en cambio SOBREVIVE a `failedRollback` a propósito: es lo que le permite al
+                // `failedCard` decir la verdad ("iCloud se quedó sin espacio" vs. "no hay iCloud activo") en
+                // vez del genérico. Se limpia en los cierres donde ya no hay nada que explicar.
+                if next != .failedRollback { state.cutoverICloudVerdictRaw = nil }
                 if next == .notStarted { state.startedAt = nil }
             }
             mutate(state, next)
@@ -545,6 +579,11 @@ final class MigrationRunner {
         let probe = await executor.verify()
         switch probe {
         case .match:
+            // C-1: precondición del canal iCloud ANTES de journalear `cutover(.pending)`. Aquí no hay claim
+            // del cutover, ni `migrated_at`, ni `.cloud` persistido, ni marcador: si el canal por el que el
+            // marcador tiene que viajar está sabido-roto, abortamos SIN haber tocado nada durable. Es la
+            // diferencia entre "no empezamos" y "empezamos y no podemos terminar".
+            if try await abortCutoverEntryIfChannelBroken() { return true }
             try await handle(.verifyOutcome(.match))
             return true
         case .newDeltaDetected:
@@ -571,10 +610,32 @@ final class MigrationRunner {
         }
     }
 
+    /// C-1: consulta el canal iCloud y, si está sabido-roto, journalea el abort de ENTRADA. Devuelve `true`
+    /// si abortó (el caller debe devolver `true` para que `drive()` re-lea la fase y salga por el terminal).
+    ///
+    /// Se consulta en los DOS puntos de entrada posibles (`verifying` rama `.match` y `cutover(.pending)`)
+    /// porque un kill entre ambos deja el journal en `pending` y el resume entraría por el segundo sin pasar
+    /// por el primero. Del sub-estado `.serverConfirmed` en adelante ya NO se consulta: ahí el server estampó
+    /// `migrated_at` y quien manda es el tope del paso 4 — un abort de entrada tardío sería una regresión de
+    /// la regla "el cutover jamás hace rollback".
+    private func abortCutoverEntryIfChannelBroken() async throws -> Bool {
+        let verdict = await executor.probeICloudChannel()
+        guard verdict.blocksCutoverEntry else { return false }
+        CloudSyncBreadcrumb.migrationICloudPreconditionFailed(reason: verdict.rawValue)
+        MetricsService.cloudCutoverICloudBlocked(verdict: verdict.rawValue)
+        try await handle(.icloudCutoverPreconditionFailed) { state, _ in
+            state.cutoverICloudVerdictRaw = verdict.rawValue
+        }
+        return true
+    }
+
     /// Cutover, un sub-estado por vuelta (§g.4). Devuelve `false` para cortar retomable.
     private func driveCutover(_ sub: CutoverSubstate) async throws -> Bool {
         switch sub {
         case .pending:
+            // C-1: segunda puerta de la precondición — cubre el resume que entra directo aquí tras un kill
+            // entre el verify y el cutover. Nada durable ha cambiado todavía en este sub-estado.
+            if try await abortCutoverEntryIfChannelBroken() { return true }
             guard await executor.confirmCutoverServer() else { return false }
             try await handle(.serverConfirmedAck)
             return true
@@ -583,18 +644,64 @@ final class MigrationRunner {
             try await handle(.localModePersisted)          // efecto: startParallelHistoryCapture
             return true
         case .localModeSet:
-            try await handle(.markerWritten)               // efecto: writeCloudKitMarker
+            try await handle(.markerWritten) { state, next in
+                // C-1: sello ÚNICO del reloj del tope, en el MISMO save que journalea el sub-estado. NO se
+                // re-escribe: si cada resume lo re-sellara, el presupuesto nunca vencería y el limbo seguiría
+                // siendo eterno — que es exactamente el bug.
+                if next == .cutover(.markerWritten), state.markerWrittenSince == nil {
+                    state.markerWrittenSince = self.now()
+                }
+            }                                              // efecto: writeCloudKitMarker
             return true
         case .markerWritten:
             // Gate de EXPORT del marcador (§g.4 ajuste de /review-plan): solo apagar el mirror cuando el
             // marcador LLEGÓ a CloudKit. El save del marcador exporta ASYNC — apagarlo antes lo perdería
             // para siempre (los 2º devices jamás se auto-bloquearían = divergencia silenciosa, el punto
-            // entero del paso 3). Si aún no exportó → corta retomable (el próximo resume re-verifica).
-            guard executor.isMarkerExported() else {
-                CloudSyncBreadcrumb.migrationMarkerExportPending()
+            // entero del paso 3).
+            if executor.isMarkerExported() {
+                try await handle(.mirrorDisabled)          // efecto: disableMirrorAndRelaunch (persiste flag; NO mata el proceso)
+                return true
+            }
+            // C-1: el gate no se satisface. Antes de esperar, preguntar POR QUÉ — porque hay un caso en el que
+            // esperar es esperar para siempre y degradar sería aún peor.
+            let verdict = await executor.probeICloudChannel()
+            if verdict == .noChannelNoFootprint {
+                // WAIVER: sin cuenta iCloud Y sin huella CloudKit no existe copia del corpus en CloudKit, así
+                // que el marcador es indeliverable Y prescindible (no hay nadie a quien avisar ni copia de la
+                // que divergir). Degradar aquí sería PEOR que el bug: la condición es PERMANENTE, así que
+                // "Reintentar" fallaría siempre y el modo nube quedaría vetado para quien no usa iCloud.
+                // Se relaja el gate de EXPORT, nunca la cadena de fases.
+                CloudSyncBreadcrumb.migrationMarkerExportWaived()
+                MetricsService.cloudCutoverMarkerWaived()
+                try await handle(.mirrorDisabled) { state, _ in
+                    state.cutoverICloudVerdictRaw = verdict.rawValue
+                }
+                return true
+            }
+            CloudSyncBreadcrumb.migrationMarkerExportPending()
+            guard let since = try loadState().markerWrittenSince else {
+                // Journal escrito por un build ANTERIOR a C-1 (devices de dev): sellar el reloj ahora y cortar
+                // retomable. El presupuesto empieza a contar desde esta primera observación, no retroactivo.
+                try await handle(.markerExportStalled(elapsedSeconds: 0, cause: verdict.stallCause)) { st, _ in
+                    st.markerWrittenSince = self.now()
+                }
                 return false
             }
-            try await handle(.mirrorDisabled)              // efecto: disableMirrorAndRelaunch (persiste flag; NO mata el proceso)
+            let elapsed = now().timeIntervalSince(since)
+            CloudSyncBreadcrumb.migrationMarkerExportStalled(
+                elapsedSeconds: elapsed, reason: verdict.rawValue)
+            // El canario se emite en CADA observación, no solo al agotar: un atasco SISTÉMICO (p.ej. el record
+            // type del marcador sin desplegar a CloudKit Production) se ve así en el dashboard mucho antes de
+            // que ningún device llegue a degradar.
+            MetricsService.cloudCutoverMarkerStalled(verdict: verdict.rawValue)
+            try await handle(.markerExportStalled(elapsedSeconds: elapsed, cause: verdict.stallCause)) { st, next in
+                if next != .cutover(.markerWritten) { st.cutoverICloudVerdictRaw = verdict.rawValue }
+            }
+            // Bajo presupuesto la máquina holdea en el mismo sub-estado → cortar retomable (sin tight-loop,
+            // molde del `networkTimeout` del verify). Si degradó, seguir para que `drive()` salga por el terminal.
+            guard try loadState().readPhase().phase != .cutover(.markerWritten) else { return false }
+            CloudSyncBreadcrumb.migrationCutoverAbortedToICloud()
+            MetricsService.cloudCutoverAborted(verdict: verdict.rawValue)
             return true
         case .mirrorOff:
             // Resuelto SIEMPRE por observación (forward tras ejecutar el efecto, o resume post-relaunch).
@@ -755,6 +862,8 @@ final class MigrationRunner {
         state.verifyMismatchRetries = 0
         state.verifyNetworkRetries = 0
         state.snapshotCursorJSON = nil
+        state.markerWrittenSince = nil
+        state.cutoverICloudVerdictRaw = nil
         state.startedAt = nil
         state.updatedAt = now()
         try context.save()

@@ -725,6 +725,36 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncMigration markerExportPending — marcador sin exportar aún, mirror NO se apaga (retomable)")
     }
 
+    // MARK: C-1 — canal iCloud del cutover
+
+    /// C-1: la precondición del canal iCloud abortó la ENTRADA al cutover (nada durable se tocó).
+    static func migrationICloudPreconditionFailed(reason: String) {
+        logger.error("CloudSyncMigration icloudPreconditionFailed reason=\(reason, privacy: .public) — cutover NO iniciado, device intacto")
+    }
+
+    /// C-1: waiver del gate de export — sin cuenta iCloud y sin huella CloudKit el marcador es
+    /// indeliverable Y prescindible, así que el paso 4 avanza sin exigir el export.
+    static func migrationMarkerExportWaived() {
+        logger.notice("CloudSyncMigration markerExportWaived — sin canal iCloud y sin huella CloudKit: marcador prescindible, cutover continúa")
+    }
+
+    /// C-1: observación del atasco del paso 4, con el reloj del tope. Se emite en CADA vuelta (no solo al
+    /// agotar el presupuesto) para que un atasco SISTÉMICO se vea en el dashboard antes de que nadie degrade.
+    static func migrationMarkerExportStalled(elapsedSeconds: Double, reason: String) {
+        logger.error("CloudSyncMigration markerExportStalled elapsed=\(Int(elapsedSeconds), privacy: .public)s reason=\(reason, privacy: .public)")
+    }
+
+    /// C-1: el presupuesto del paso 4 se agotó → abort LOCAL, el device vuelve a `.icloud`.
+    static func migrationCutoverAbortedToICloud() {
+        logger.error("CloudSyncMigration cutoverAborted — presupuesto del paso 4 agotado: device devuelto a .icloud, marcador borrado")
+    }
+
+    /// C-1: el par de storage está incompleto (`.cloud` + mirror-off sin armar) en una fase ESTABLE — el
+    /// motor NO arranca. Origen: escritura parcial del par o cierre de reversa a medias.
+    static func storageModePairViolation(phase: String) {
+        logger.error("CloudSyncRuntime storageModePairViolation phase=\(phase, privacy: .public) — .cloud con mirror ON en fase estable: motor BLOQUEADO")
+    }
+
     /// w6 paso 4: flag `relaunchRequested` persistido. iOS no se auto-relanza — el relanzamiento asistido
     /// con UI es I14; en DEBUG el panel indica MATAR Y RELANZAR. El proceso NO se mata solo.
     static func migrationRelaunchRequested() {

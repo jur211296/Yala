@@ -25,7 +25,9 @@ import SwiftData
 extension CloudSyncSchemaVersions {
     /// Versión de schema de `MigrationState` (testigo A1 en la fila). Subió a 2 en I11-2 al añadir el campo
     /// aditivo `reverseOriginRaw` (origin de la reversa journaleado en la transición reverseConfirm→claim).
-    static let migrationState = 2
+    /// Subió a 3 en C-1 con los campos aditivos `markerWrittenSince` (reloj del tope del paso 4) y
+    /// `cutoverICloudVerdictRaw` (veredicto del canal iCloud, para el copy del fallo).
+    static let migrationState = 3
 }
 
 /// Journal single-row de la migración. Debe existir a lo sumo UNA fila (el runner la crea
@@ -70,6 +72,18 @@ final class MigrationState {
     /// (notStarted/failedRollback/icloudActive) y tras el reset. `nil` = sin reversa en curso.
     var reverseOriginRaw: String?
 
+    /// C-1: instante de la PRIMERA entrada a `cutover(.markerWritten)`, con el `now` INYECTADO. Es el reloj
+    /// del tope del paso 4. Se sella UNA sola vez y NO se re-escribe en los resumes: si se re-sellase en cada
+    /// vuelta, el presupuesto nunca vencería y el limbo seguiría siendo eterno (= el bug intacto). `nil` = el
+    /// paso 4 no se ha alcanzado, o el journal se escribió con un build anterior a C-1 (el runner lo sella
+    /// perezosamente en la primera observación).
+    var markerWrittenSince: Date?
+
+    /// C-1: último `ICloudChannelVerdict.rawValue` journaleado. Alimenta el copy honesto del fallo (cuota
+    /// agotada vs. sin cuenta iCloud vs. sin confirmación) y deja rastro del waiver `noChannelNoFootprint`.
+    /// `nil` = sin veredicto registrado.
+    var cutoverICloudVerdictRaw: String?
+
     /// Cuándo empezó la migración (el runner lo estampa con el `now` INYECTADO al arrancar). `nil` = no
     /// iniciada.
     var startedAt: Date?
@@ -90,6 +104,8 @@ final class MigrationState {
         leaderDeviceID: String? = nil,
         serverSeqCut: Int64 = 0,
         reverseOriginRaw: String? = nil,
+        markerWrittenSince: Date? = nil,
+        cutoverICloudVerdictRaw: String? = nil,
         startedAt: Date? = nil,
         updatedAt: Date = Date.now,
         schemaVersion: Int = CloudSyncSchemaVersions.migrationState
@@ -102,6 +118,8 @@ final class MigrationState {
         self.leaderDeviceID = leaderDeviceID
         self.serverSeqCut = serverSeqCut
         self.reverseOriginRaw = reverseOriginRaw
+        self.markerWrittenSince = markerWrittenSince
+        self.cutoverICloudVerdictRaw = cutoverICloudVerdictRaw
         self.startedAt = startedAt
         self.updatedAt = updatedAt
         self.schemaVersion = schemaVersion

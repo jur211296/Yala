@@ -36,6 +36,68 @@ struct StorageModePersistenceTests {
         #expect(StorageModePersistence.read(defaults) == .icloud)
     }
 
+    // MARK: - C-1: el par (.cloud + mirror-off ARMADO) — escritor único e INVARIANTE
+
+    @Test func writeCloudArmed_writesBothKeys_inASingleCall() {
+        let defaults = makeIsolatedDefaults(prefix: "sm.armed")
+        // Punto de partida = device virgen: ninguna de las dos keys existe.
+        #expect(StorageModePersistence.read(defaults) == .icloud)
+        #expect(!StorageModePersistence.isMirrorOffArmed(defaults))
+
+        StorageModePersistence.writeCloudArmed(defaults: defaults)
+
+        // Pinnea que el escritor ÚNICO deja el par COMPLETO con UNA llamada. Antes de C-1 el adopt escribía
+        // las dos keys por separado, así que un olvido en un camino nuevo (o un refactor que moviera una
+        // sola) dejaba `.cloud` con el mirror vivo — el estado de doble escritura.
+        #expect(StorageModePersistence.read(defaults) == .cloud)
+        #expect(StorageModePersistence.isMirrorOffArmed(defaults))
+        // Y por tanto el invariante queda SANO tras la llamada (no hay ventana observable de par a medias).
+        #expect(!StorageModePersistence.isCloudWithMirrorOn(defaults))
+    }
+
+    @Test func isCloudWithMirrorOn_icloudMode_isFalse_regardlessOfArmedFlag() {
+        // NO-REGRESIÓN del vector C: con el modo persistido `.icloud` —el estado de TODO device de 2.x— el
+        // invariante es `false` con el flag de armado en `true` Y en `false`. Es la prueba de que el gate
+        // nuevo del motor (`MigrationRuntimeGate.canRun`) JAMÁS puede dispararse en un device 2.x: su
+        // segundo término nace `false` por construcción, así que el gate es INERTE y el comportamiento de
+        // los usuarios actuales no cambia. Si alguien reescribe `isCloudWithMirrorOn` mirando solo el flag
+        // de armado (residuo de un intento previo de migración), este test es el que lo caza.
+        for armed in [true, false] {
+            let defaults = makeIsolatedDefaults(prefix: "sm.inv.icloud")
+            StorageModePersistence.write(.icloud, defaults: defaults)
+            defaults.set(armed, forKey: StorageModePersistence.mirrorOffArmedKey)
+            #expect(!StorageModePersistence.isCloudWithMirrorOn(defaults), "armado=\(armed)")
+        }
+        // Device virgen (ninguna key escrita ⇒ `.icloud` por ausencia): también `false`.
+        #expect(!StorageModePersistence.isCloudWithMirrorOn(makeIsolatedDefaults(prefix: "sm.inv.virgin")))
+    }
+
+    @Test func isCloudWithMirrorOn_onlyTrueForCloudAndNotArmed() {
+        // Tabla completa (modo × armado). El ÚNICO `true` es `.cloud` + NO armado = "el mirror de CloudKit
+        // sigue vivo en modo nube": legítimo y transitorio durante la ventana de export del cutover (pasos
+        // 2→4) y toda la reversa post-mount, PROHIBIDO en fase estable. "No armado" se modela como key
+        // AUSENTE porque así es en producción (el desarme real es `removeObject`, nadie escribe `false`).
+        for mode in [StorageMode.icloud, .cloud] {
+            for armed in [true, false] {
+                let defaults = makeIsolatedDefaults(prefix: "sm.inv.table")
+                StorageModePersistence.write(mode, defaults: defaults)
+                if armed {
+                    defaults.set(true, forKey: StorageModePersistence.mirrorOffArmedKey)
+                } else {
+                    defaults.removeObject(forKey: StorageModePersistence.mirrorOffArmedKey)
+                }
+                #expect(StorageModePersistence.isCloudWithMirrorOn(defaults) == (mode == .cloud && !armed),
+                        "modo=\(mode.rawValue) armado=\(armed)")
+            }
+        }
+        // Un `false` EXPLÍCITO en la key equivale a la ausencia (`bool(forKey:)` colapsa ambos) — por si un
+        // camino futuro desarma escribiendo `false` en vez de borrando.
+        let explicitFalse = makeIsolatedDefaults(prefix: "sm.inv.explicitFalse")
+        StorageModePersistence.write(.cloud, defaults: explicitFalse)
+        explicitFalse.set(false, forKey: StorageModePersistence.mirrorOffArmedKey)
+        #expect(StorageModePersistence.isCloudWithMirrorOn(explicitFalse))
+    }
+
     // MARK: - personalStoreDecision (rama pura, R9 + SERIO 1)
 
     @Test func decision_cloudArmed_winsBeforeICloudCheck() {

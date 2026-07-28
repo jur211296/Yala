@@ -5375,3 +5375,15 @@
 
 /* Generic fallback of storage.adopt.otherAccountNote when the sign-in method is unknown */
 "storage.adopt.otherAccountNoteGeneric" = "这份云端副本属于另一个 Yala 账户。请退出登录，并使用该账户登录后继续。";
+
+/* Cloud cutover failed because iCloud storage is full — data stays intact on this device */
+"storage.failed.migrationICloudFull" = "无法完成云端启用：iCloud 存储空间已满。您的数据仍完整保存在这台设备上。请在 iCloud 中释放空间后重试。";
+
+/* Cloud cutover failed because iCloud is not enabled on this device */
+"storage.failed.migrationICloudOff" = "无法完成云端启用：这台设备未开启 iCloud。您的数据仍完整保存在本机。请在设置中开启 iCloud 后重试。";
+
+/* Cloud cutover failed because iCloud never confirmed the last export step */
+"storage.failed.migrationICloudStalled" = "无法完成云端启用：iCloud 未确认最后一步。您的数据仍完整保存在这台设备上，请在网络状况良好时重试。";
+
+/* Caption on the storage progress card while the cutover waits for iCloud to confirm the export */
+"storage.progress.waitingICloudExport" = "正在等待 iCloud 确认…";

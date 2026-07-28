@@ -31,6 +31,21 @@ nonisolated enum MigrationRuntimeGate {
     /// `notStarted` (device ADOPTADO, #30 — su journal queda `notStarted` tras `adoptBackendAccount`).
     /// Cualquier otra fase (cutover/reversa/adopt en vuelo, o un terminal de fallo que ya es `.icloud`)
     /// deja el runtime `.idle`: en `.cloud` con fase transicional quien conduce es el `MigrationRunner`.
+    /// C-1: ¿puede arrancar el motor del dominio nube? Exige fase ESTABLE **y** que el par de storage no
+    /// declare "el mirror de CloudKit sigue vivo" (`StorageModePersistence.isCloudWithMirrorOn`).
+    ///
+    /// Por qué hace falta el segundo término: `notStarted` es fase estable (device ADOPTADO, #30), así que un
+    /// par a medio escribir —`.cloud` persistido pero mirror-off SIN armar, p.ej. por un kill entre las dos
+    /// keys del adopt, o por un cierre de reversa a medias— dejaba pasar este gate con el mirror MONTADO ⇒
+    /// motor y mirror escribiendo el mismo store a la vez, sin ningún gate de fase que lo notara. `UserDefaults`
+    /// no tiene transacción, así que el invariante no se puede garantizar en el escritor: se enforcea aquí.
+    ///
+    /// `isDomainStablePhase` queda INTACTO (lo consumen otros sitios) y en `.icloud` el término nuevo es
+    /// `false` por construcción ⇒ inerte para 2.x.
+    static func canRun(phase: MigrationPhase, cloudWithMirrorOn: Bool) -> Bool {
+        !cloudWithMirrorOn && isDomainStablePhase(phase)
+    }
+
     static func isDomainStablePhase(_ phase: MigrationPhase) -> Bool {
         switch phase {
         case .done, .notStarted:

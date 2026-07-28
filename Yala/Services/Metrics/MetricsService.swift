@@ -73,6 +73,12 @@ enum MetricsCanary: String {
     case cloudAccountUnavailable
     case cloudAccountReverting
     case cloudSecondaryMountMismatchBlocked
+    // C-1 — canal iCloud del cutover
+    case cloudCutoverICloudBlocked
+    case cloudCutoverMarkerWaived
+    case cloudCutoverMarkerStalled
+    case cloudCutoverAborted
+    case cloudStorageModePairViolation
     case accountDeletionCompleted
     case accountDeletionFailed
     case siwaExchangeFailed
@@ -302,6 +308,35 @@ extension MetricsService {
 
     static func cloudSecondaryMountMismatchBlocked() {
         canary(.cloudSecondaryMountMismatchBlocked)
+    }
+
+    // MARK: C-1 — canal iCloud del cutover
+
+    /// La precondición del canal iCloud impidió entrar al cutover. `detail` = `ICloudChannelVerdict.rawValue`.
+    static func cloudCutoverICloudBlocked(verdict: String) {
+        canary(.cloudCutoverICloudBlocked, detail: verdict)
+    }
+
+    /// Waiver del gate de export del marcador (sin cuenta iCloud y sin huella CloudKit).
+    static func cloudCutoverMarkerWaived() {
+        canary(.cloudCutoverMarkerWaived)
+    }
+
+    /// El marcador del cutover sigue sin exportar. Se emite en CADA observación: un valor sostenido y alto
+    /// aquí es la señal de un atasco SISTÉMICO (p.ej. el record type sin desplegar a CloudKit Production),
+    /// visible mucho antes de que ningún device agote su presupuesto.
+    static func cloudCutoverMarkerStalled(verdict: String) {
+        canary(.cloudCutoverMarkerStalled, detail: verdict)
+    }
+
+    /// El presupuesto del paso 4 se agotó → el cutover abortó y el device volvió a `.icloud`.
+    static func cloudCutoverAborted(verdict: String) {
+        canary(.cloudCutoverAborted, detail: verdict)
+    }
+
+    /// Par de storage incompleto (`.cloud` + mirror ON) en fase estable ⇒ motor del dominio bloqueado.
+    static func cloudStorageModePairViolation() {
+        canary(.cloudStorageModePairViolation)
     }
 
     static func routingReadinessBlocked(blocker: String) {

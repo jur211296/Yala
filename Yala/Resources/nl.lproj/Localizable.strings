@@ -5375,3 +5375,15 @@
 
 /* Generic fallback of storage.adopt.otherAccountNote when the sign-in method is unknown */
 "storage.adopt.otherAccountNoteGeneric" = "Deze cloudkopie hoort bij een ander Yala-account. Log uit en log in met dat account om verder te gaan.";
+
+/* Cloud cutover failed because iCloud storage is full — data stays intact on this device */
+"storage.failed.migrationICloudFull" = "We konden het inschakelen van de cloud niet afronden: iCloud heeft geen ruimte meer. Je gegevens staan volledig op dit apparaat. Maak ruimte vrij in iCloud en probeer het opnieuw.";
+
+/* Cloud cutover failed because iCloud is not enabled on this device */
+"storage.failed.migrationICloudOff" = "We konden het inschakelen van de cloud niet afronden: iCloud is niet ingeschakeld op dit apparaat. Je gegevens blijven hier volledig staan. Schakel iCloud in via Instellingen en probeer het opnieuw.";
+
+/* Cloud cutover failed because iCloud never confirmed the last export step */
+"storage.failed.migrationICloudStalled" = "We konden het inschakelen van de cloud niet afronden: iCloud heeft de laatste stap niet bevestigd. Je gegevens staan volledig op dit apparaat — probeer het opnieuw zodra je een goede verbinding hebt.";
+
+/* Caption on the storage progress card while the cutover waits for iCloud to confirm the export */
+"storage.progress.waitingICloudExport" = "Wachten op bevestiging van iCloud…";

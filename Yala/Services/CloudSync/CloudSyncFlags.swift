@@ -66,6 +66,33 @@ nonisolated enum StorageModePersistence {
         defaults.bool(forKey: mirrorOffArmedKey)
     }
 
+    /// Escritor ÚNICO del par completo (`.cloud` + mirror-off ARMADO) para los caminos que YA cruzaron el
+    /// gate del marcador — hoy solo el ADOPT (`runAdoptFlow`), donde el marcador lo exportó el LÍDER. C-1
+    /// colapsa aquí las dos escrituras sueltas para que no puedan divergir por descuido.
+    ///
+    /// **`UserDefaults` NO tiene transacción**, así que esto NO da atomicidad: un kill entre las dos keys
+    /// sigue siendo posible. E **invertir el orden tampoco arregla nada**: la mitad `armado + .icloud` hace
+    /// que `CloudMigrationUIStateDeriver.derive` pinte `needsRelaunch(.toCloud)` — mira `mirrorOffArmed` sin
+    /// mirar el modo — y tras el relanzamiento el modo seguiría `.icloud`, así que la tarjeta "cierra y vuelve
+    /// a abrir" saldría en bucle sin salida. Por eso el orden se queda como siempre (modo → armado) y el
+    /// invariante se enforcea en el CONSUMIDOR: `MigrationRuntimeGate.canRun` apaga el motor mientras el par
+    /// esté incompleto en una fase estable.
+    static func writeCloudArmed(defaults: UserDefaults = .standard) {
+        write(.cloud, defaults: defaults)
+        defaults.set(true, forKey: mirrorOffArmedKey)
+    }
+
+    /// INVARIANTE C-1, como aserción comprobable sin leer el journal: `.cloud` persistido con el mirror-off
+    /// SIN armar significa "el mirror de CloudKit sigue VIVO en modo nube".
+    ///
+    /// Ese estado es **legítimo y transitorio** durante la ventana de export del cutover (pasos 2→4) y durante
+    /// toda la reversa post-mount; es el estado **PROHIBIDO** en cualquier fase estable (`done`/`notStarted`),
+    /// donde significaría motor + mirror escribiendo a la vez. En `.icloud` es SIEMPRE `false` por
+    /// construcción ⇒ el gate que lo consume es inerte para el 99 % de usuarios de 2.x.
+    static func isCloudWithMirrorOn(_ defaults: UserDefaults = .standard) -> Bool {
+        read(defaults) == .cloud && !isMirrorOffArmed(defaults)
+    }
+
     /// Flag "wipe de cierre de sesión ARMADO" (H4 — "Cerrar sesión" en `.cloud`). Lo escribe el
     /// coordinador de sign-out DESPUÉS de subir todo el outbox y cerrar la sesión; el BOOT siguiente
     /// (pre-mount, `SwiftDataConfiguration.performSignOutWipeIfArmed`) borra los ARCHIVOS de los

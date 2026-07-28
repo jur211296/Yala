@@ -4627,3 +4627,15 @@
 
 /* Generic fallback of storage.adopt.otherAccountNote when the sign-in method is unknown */
 "storage.adopt.otherAccountNoteGeneric" = "This cloud copy belongs to a different Yala account. Sign out and sign in with that account to continue.";
+
+/* Cloud cutover failed because iCloud storage is full — data stays intact on this device */
+"storage.failed.migrationICloudFull" = "We couldn’t finish turning on the cloud: iCloud ran out of space. Your data is fully intact on this device. Free up space in iCloud and try again.";
+
+/* Cloud cutover failed because iCloud is not enabled on this device */
+"storage.failed.migrationICloudOff" = "We couldn’t finish turning on the cloud: iCloud isn’t enabled on this device. Your data is fully intact right here. Turn on iCloud in Settings and try again.";
+
+/* Cloud cutover failed because iCloud never confirmed the last export step */
+"storage.failed.migrationICloudStalled" = "We couldn’t finish turning on the cloud: iCloud didn’t confirm the last step. Your data is fully intact on this device — try again when you have a good connection.";
+
+/* Caption on the storage progress card while the cutover waits for iCloud to confirm the export */
+"storage.progress.waitingICloudExport" = "Waiting for iCloud to confirm…";

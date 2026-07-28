@@ -219,13 +219,31 @@ final class CloudSyncRuntime {
             }
             return false
         }
-        return CloudSyncFlags.storageMode == .cloud
-            && MigrationRuntimeGate.isDomainStablePhase(MigrationPhaseStore.shared.currentPhase)
+        guard CloudSyncFlags.storageMode == .cloud else { return false }
+        let phase = MigrationPhaseStore.shared.currentPhase
+        // C-1: `.cloud` + mirror-off SIN armar = el mirror de CloudKit sigue montado. Es legítimo mientras el
+        // cutover o la reversa están en vuelo (fases NO estables, ya bloqueadas por el término de fase), y es
+        // el estado PROHIBIDO en una fase estable: ahí significaría motor + mirror sobre el mismo store.
+        // Único origen conocido: escritura parcial del par (kill entre las dos keys del adopt) o un cierre de
+        // reversa a medias. No lo curamos aquí — el journal lo auto-cura por su efecto pendiente; aquí solo
+        // NO arrancamos, y dejamos rastro para saber que ocurrió.
+        let cloudWithMirrorOn = StorageModePersistence.isCloudWithMirrorOn()
+        if cloudWithMirrorOn, MigrationRuntimeGate.isDomainStablePhase(phase) {
+            CloudSyncBreadcrumb.storageModePairViolation(phase: "\(phase)")
+            if !pairViolationCanaryFired {
+                pairViolationCanaryFired = true
+                MetricsService.cloudStorageModePairViolation()
+            }
+        }
+        return MigrationRuntimeGate.canRun(phase: phase, cloudWithMirrorOn: cloudWithMirrorOn)
     }
 
     /// Canario D3 una-vez-por-proceso (el guard se consulta en cada becameActive — sin dedup
     /// spamearía; el breadcrumb local sí suena cada vez, es barato y secuencia el diagnóstico).
     nonisolated(unsafe) private static var mountMismatchCanaryFired = false
+    /// C-1: dedup del canario del par de storage — `canRunDomain()` se consulta en cada `becameActive`, así
+    /// que sin esto spamearía. El breadcrumb local sí suena cada vez (es barato y secuencia el diagnóstico).
+    nonisolated(unsafe) private static var pairViolationCanaryFired = false
 
     // MARK: - Wiring de producción (DARK)
 

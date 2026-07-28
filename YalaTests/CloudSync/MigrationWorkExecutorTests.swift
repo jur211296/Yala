@@ -10,7 +10,12 @@
 //
 //  Toca `CloudSyncFlags.identityCaptureEnabled` → `.serialized` + `defer { restore }`.
 //
+//  C-1 (última sección): las 3 señales REALES que alimentan `probeICloudChannel()` (cuenta iCloud, huella
+//  CloudKit del corpus, último `CKError` del mirror) y el par (`storageMode`, mirror-off armado) visto con
+//  `isCloudWithMirrorOn` en los 3 caminos que lo escriben.
+//
 
+import CloudKit
 import Foundation
 import SwiftData
 import Testing
@@ -181,7 +186,9 @@ struct MigrationWorkExecutorTests {
         tombstoneSource: ReverseTombstoneSource? = nil,
         adoptQuiescenceSignal: @escaping () -> Bool = { true },
         claimStore: CloudClaimActionStore? = nil,
-        provider: @escaping @MainActor () -> String = { "apple" }
+        provider: @escaping @MainActor () -> String = { "apple" },
+        icloudAccountPresent: (@MainActor () -> Bool)? = nil,
+        icloudLastExportErrorCode: (@MainActor () -> CKError.Code?)? = nil
     ) -> MigrationWorkExecutor {
         let token: () async -> String? = { "jwt" }
         let account = CloudAccountClient(baseURL: workerURL, urlSession: stub)
@@ -198,7 +205,9 @@ struct MigrationWorkExecutorTests {
             snapshotPageSize: 200, heartbeatInterval: heartbeatInterval,
             reverseTombstoneSource: tombstoneSource,
             adoptQuiescenceSignal: adoptQuiescenceSignal,
-            claimStore: claimStore)
+            claimStore: claimStore,
+            icloudAccountPresent: icloudAccountPresent,
+            icloudLastExportErrorCode: icloudLastExportErrorCode)
     }
 
     // MARK: - Claim
@@ -1354,5 +1363,182 @@ struct MigrationWorkExecutorTests {
         #expect(await executor.performClaim() == .success(.created))
         #expect(claimStore.action(forUserID: "sub-claim") == .proceedMigration,
                 "created + branch migración → proceedMigration persistido (contenido real, lección d49d2e47)")
+    }
+
+    // MARK: - Canal iCloud · probeICloudChannel (C-1)
+    //
+    // La decisión es pura y se pinnea celda a celda en `ICloudCutoverGateLogicTests`. Lo que se pinnea AQUÍ
+    // es el CABLEADO: que el executor recoja las tres señales de las fuentes correctas y las pase en el orden
+    // correcto. Si alguien invierte `accountPresent`, lee la huella con el predicado equivocado (p.ej. contando
+    // testigos SIN `ckRecordName`) o se salta el error code, la lógica pura seguiría verde y el bug C-1
+    // volvería: un veredicto `.healthy` falso deja al paso 4 esperando un marcador que jamás exporta.
+    //
+    // Las 2 closures se inyectan SIEMPRE (también donde el veredicto no dependería del error code): los
+    // argumentos de `decide` se evalúan de forma eager, y el default de producción es
+    // `iCloudSyncService.shared` — un singleton que los tests no deben tocar.
+
+    @Test("probeICloudChannel: sin cuenta iCloud y sin huella CloudKit → noChannelNoFootprint (el waiver del gate del marcador)")
+    func probeICloudChannel_noAccountNoFootprint() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+
+        // Testigo SIN `ckRecordName`: existe la fila pero NUNCA hizo round-trip a CloudKit. La huella es
+        // "hay copia en CloudKit", no "hay testigos" — contarlo como huella vetaría el modo nube para siempre
+        // al usuario que no usa iCloud ("necesitas iCloud para dejar de usar iCloud").
+        context.insert(SyncIdentity(syncID: UUID(), entityType: SyncEntityType.category, localAnchor: "anchor"))
+        try context.save()
+
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    icloudAccountPresent: { false },
+                                    icloudLastExportErrorCode: { nil })
+        #expect(await executor.probeICloudChannel() == .noChannelNoFootprint)
+    }
+
+    @Test("probeICloudChannel: sin cuenta iCloud pero CON huella (≥1 ckRecordName) → noAccountWithFootprint (bloquea la entrada)")
+    func probeICloudChannel_noAccountWithFootprint() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+
+        // Huella DURABLE: el corpus ya tiene copia viva en CloudKit (sobrevive a que el usuario cierre iCloud).
+        // Hay a quién avisar del cutover y no podemos → nada durable ha cambiado aún, así que se aborta la
+        // entrada en vez de quedar en `.cloud` con el mirror vivo.
+        context.insert(SyncIdentity(syncID: UUID(), entityType: SyncEntityType.category,
+                                    localAnchor: "anchor", ckRecordName: "CKR-1",
+                                    ckZoneName: "com.apple.coredata.cloudkit.zone", ckOwnerName: "__defaultOwner__"))
+        try context.save()
+
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    icloudAccountPresent: { false },
+                                    icloudLastExportErrorCode: { nil })
+        #expect(await executor.probeICloudChannel() == .noAccountWithFootprint)
+    }
+
+    @Test("probeICloudChannel: cuenta presente + quotaExceeded → quotaExceeded (iCloud lleno = el write NO entra)")
+    func probeICloudChannel_quotaExceeded() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        // Con cuenta presente la huella es irrelevante: manda el dictamen post-hoc de CloudKit. Es la ÚNICA
+        // señal real de "lleno" que iOS expone (no hay API de espacio disponible).
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    icloudAccountPresent: { true },
+                                    icloudLastExportErrorCode: { .quotaExceeded })
+        #expect(await executor.probeICloudChannel() == .quotaExceeded)
+    }
+
+    @Test("probeICloudChannel: cuenta presente + error RETRIABLE (networkUnavailable) → healthy (fail-open)")
+    func probeICloudChannel_retriableError_failsOpen() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        // FAIL-OPEN: un túnel o un rate-limit NO son un canal roto. Abortar por ellos cancelaría migraciones
+        // sanas; el atasco de verdad lo caza el TOPE POR TIEMPO del paso 4, no este probe.
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    icloudAccountPresent: { true },
+                                    icloudLastExportErrorCode: { .networkUnavailable })
+        #expect(await executor.probeICloudChannel() == .healthy)
+    }
+
+    @Test("probeICloudChannel: cuenta presente + sin error observado (nil) → healthy (el caso del 99 % de 2.x)")
+    func probeICloudChannel_noError_healthy() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        // `nil` es también el estado tras un boot fresco (el error vive EN MEMORIA) — de ahí que este probe
+        // sea un acelerador y no la autoridad.
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    icloudAccountPresent: { true },
+                                    icloudLastExportErrorCode: { nil })
+        #expect(await executor.probeICloudChannel() == .healthy)
+    }
+
+    // MARK: - El par (storageMode, mirror-off armado) visto con isCloudWithMirrorOn (C-1)
+    //
+    // `isCloudWithMirrorOn == true` significa "modo nube con el mirror de CloudKit VIVO" = doble escritura.
+    // Es LEGÍTIMO y transitorio dentro de la ventana del cutover, y PROHIBIDO en cualquier fase estable. Los
+    // 3 tests de abajo pinnean el valor del invariante en los 3 caminos que escriben el par, para que la
+    // ventana sea un estado DECLARADO (y por tanto gateable por `MigrationRuntimeGate.canRun`) y no un
+    // accidente que nadie note hasta que el motor y el mirror escriban a la vez.
+
+    @Test("persistLocalMode: ABRE la ventana declarada — isCloudWithMirrorOn true (.cloud persistido, mirror aún VIVO)")
+    func persistLocalMode_declaresCloudWithMirrorOn() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let storageDefaults = makeIsolatedDefaults(prefix: "mwe.pair.open")
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: storageDefaults)
+        // Antes: en `.icloud` el invariante es false por construcción (el gate es inerte para 2.x).
+        #expect(StorageModePersistence.isCloudWithMirrorOn(storageDefaults) == false)
+
+        #expect(await executor.persistLocalMode() == true)
+
+        // El paso 2 persiste `.cloud` SIN armar el mirror-off a propósito (el marcador todavía tiene que
+        // exportar por el mirror vivo, pasos 3-4). Ese estado debe ser LEGIBLE, no inferido.
+        #expect(StorageModePersistence.isCloudWithMirrorOn(storageDefaults) == true,
+                "la ventana del cutover es un estado DECLARADO — el gate del motor la reconoce por aquí")
+    }
+
+    @Test("execute(.persistICloudMode): CIERRA la ventana — isCloudWithMirrorOn false (vuelta a .icloud)")
+    func execute_persistICloudMode_closesCloudWithMirrorOnWindow() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let defaults = makeIsolatedDefaults(prefix: "mwe.pair.close")
+        // Estado de partida: la ventana ABIERTA (lo que deja el paso 2 antes del rollback de C-1).
+        StorageModePersistence.write(.cloud, defaults: defaults)
+        #expect(StorageModePersistence.isCloudWithMirrorOn(defaults) == true)
+
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: defaults)
+        try await executor.execute(.persistICloudMode)
+        // El rollback del atasco del marcador devuelve el device a `.icloud`: el mirror sigue vivo, pero ya
+        // NO en modo nube ⇒ no hay doble escritura que gatear.
+        #expect(StorageModePersistence.isCloudWithMirrorOn(defaults) == false)
+    }
+
+    @Test("runAdoptFlow (camino feliz): el par queda COMPLETO por el escritor único → isCloudWithMirrorOn false")
+    func adoptFlow_happy_pairIsCompleteNotHalfWritten() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-adopt-pair")
+        let stub = RoutingStub()
+        stub.merkleBody = try makeMerkleBody([:])   // enumeración vacía coherente (0 vivas) → reconcile completa
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [], maxServerSeq: 0)]
+
+        let storageDefaults = makeIsolatedDefaults(prefix: "mwe.pair.adopt")
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.pair.adopt.claim"))
+        // Mismo aislamiento que el test hermano del adopt feliz: `.cloud` override + userID nil rutea
+        // `PreferenceSyncService.set` por el outbox sin enqueue; las 2 keys de consent van a standard.
+        CloudSyncFlags.storageMode = .cloud
+        defer {
+            CloudSyncFlags._testResetStorageModeOverride()
+            UserDefaults.standard.removeObject(forKey: PrefSyncKey.cloudConsentAcceptedAt.rawValue)
+            UserDefaults.standard.removeObject(forKey: PrefSyncKey.cloudConsentTextVersion.rawValue)
+        }
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: storageDefaults, tombstoneSource: source,
+                                    claimStore: claimStore)
+
+        try await executor.runAdoptFlow()
+
+        // El adopt cruza el gate del marcador por definición (lo exportó el LÍDER) ⇒ escribe las DOS mitades
+        // de una vez con `writeCloudArmed`. Media escritura dejaría al secundario en modo nube con el mirror
+        // vivo hasta el relanzamiento: exactamente el estado que C-1 persigue.
+        #expect(StorageModePersistence.read(storageDefaults) == .cloud)
+        #expect(StorageModePersistence.isMirrorOffArmed(storageDefaults) == true)
+        #expect(StorageModePersistence.isCloudWithMirrorOn(storageDefaults) == false,
+                "el par completo NO abre ventana de doble escritura (escritor único, no dos `set` sueltos)")
     }
 }

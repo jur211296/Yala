@@ -10,7 +10,10 @@
 //   (b) Round-trip fase + efectos vía el codec de `MigrationState` (`setPhase`/`readPhase`,
 //       `setPendingEffects`/`readPendingEffects`).
 //   (c) `readPhase()` puro: nil ⇒ `.notStarted` sin fallo; blob corrupto ⇒ `.notStarted` + `decodeFailed`.
-//   (d) Single-row `loadOrCreate` idempotente + durabilidad de los campos tras save + re-fetch.
+//   (d) Single-row `loadOrCreate` idempotente + durabilidad de los campos tras save + re-fetch, incluidos
+//       los 2 aditivos de C-1 (`markerWrittenSince` / `cutoverICloudVerdictRaw`, schema v3): el reloj del
+//       tope del paso 4 y el veredicto del canal iCloud solo sirven si sobreviven al kill Y si limpiarlos
+//       llega al disco.
 //
 //  Container ON-DISK temp con los 3 stores (patrón CloudSyncRuntimeTests). `.serialized` (usa container).
 //
@@ -100,6 +103,24 @@ struct MigrationStateJournalTests {
         // ×2 origins + claimLeader/drainAll/verify/freezeBackend/mountMirror + reconcile ×4 subs + upload +
         // icloudActive + reverseFailedRollback) = 30.
         #expect(Self.wireFixtures.count == 30)
+    }
+
+    @Test func wireFixtures_coverEverySubstate_declaredByTheEnums() {
+        // C-1 (cutover a prueba de iCloud lleno/ausente) NO añadió NINGUNA fase: solo 2 eventos —que no se
+        // journalean— y 3 aristas. `wireFixtures_coverEveryPhase` pinnea el conteo de la LISTA literal, así
+        // que no vería un sub-estado nuevo al que nadie le escribió fixture (la lista seguiría en 30 y el
+        // case nuevo viajaría sin golden). Esto cierra el hueco por el lado del enum: todo `CutoverSubstate`
+        // y todo `ReverseReconcileSubstate` DECLARADO tiene su literal congelado arriba.
+        var cutoverSubs: Set<Sub> = []
+        var reconcileSubs: Set<ReverseReconcileSubstate> = []
+        for fixture in Self.wireFixtures {
+            if case .cutover(let sub) = fixture.phase { cutoverSubs.insert(sub) }
+            if case .reverseReconcile(let sub) = fixture.phase { reconcileSubs.insert(sub) }
+        }
+        #expect(cutoverSubs == Set(Sub.allCases),
+                "cada CutoverSubstate necesita fixture wire — C-1 no añadió ninguno")
+        #expect(reconcileSubs == Set(ReverseReconcileSubstate.allCases),
+                "cada ReverseReconcileSubstate necesita fixture wire")
     }
 
     @Test func frozenWireLiteral_decodesToExpectedPhase() throws {
@@ -225,5 +246,49 @@ struct MigrationStateJournalTests {
         #expect(reloaded.leaderDeviceID == "device-ABC")
         #expect(reloaded.serverSeqCut == 4242)
         #expect(reloaded.startedAt == now)
+    }
+
+    // MARK: - (d·C-1) Durabilidad de los 2 campos del cutover a prueba de iCloud
+
+    @Test func c1CutoverFields_roundTripAcrossSaveAndRefetch_includingNil() throws {
+        // `markerWrittenSince` es el RELOJ del tope del paso 4 y `cutoverICloudVerdictRaw` el veredicto que
+        // elige el copy del fallo: los dos tienen que sobrevivir al kill, o el limbo vuelve a ser eterno
+        // (un `markerWrittenSince` que no persiste = elapsed 0 en cada arranque = presupuesto que nunca
+        // vence). Se pinnean las TRES lecturas: default nil, valor tras save+re-fetch, y vuelta a nil
+        // (limpiarlos en el rollback tiene que llegar al disco, no solo al objeto en memoria — un valor
+        // stale re-usaría el reloj de un intento anterior y vencería el tope antes de empezar).
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let markerSince = Date(timeIntervalSince1970: 1_700_000_500)
+        let state = try MigrationState.loadOrCreate(in: context)
+        #expect(state.markerWrittenSince == nil, "la fila recién creada no ha alcanzado el paso 4")
+        #expect(state.cutoverICloudVerdictRaw == nil, "sin veredicto registrado todavía")
+
+        state.setPhase(.cutover(.markerWritten))
+        state.markerWrittenSince = markerSince
+        state.cutoverICloudVerdictRaw = ICloudChannelVerdict.quotaExceeded.rawValue
+        try context.save()
+
+        // Re-fetch en un contexto FRESCO del mismo store (simula re-arranque tras kill).
+        var descriptor = FetchDescriptor<MigrationState>()
+        descriptor.fetchLimit = 1
+        let context2 = ModelContext(context.container)
+        let reloaded = try #require(try context2.fetch(descriptor).first)
+        #expect(reloaded.readPhase().phase == .cutover(.markerWritten))
+        #expect(reloaded.markerWrittenSince == markerSince)
+        // El rawValue journaleado debe RECONSTRUIR el veredicto: si alguien renombra un case del enum, el
+        // journal en vuelo se vuelve ilegible y el fallo perdería su copy honesto (cuota vs. sin cuenta).
+        #expect(ICloudChannelVerdict(rawValue: reloaded.cutoverICloudVerdictRaw ?? "") == .quotaExceeded)
+
+        // Limpieza (lo que hace el rollback) → nil DURABLE, no el valor viejo pegado.
+        reloaded.markerWrittenSince = nil
+        reloaded.cutoverICloudVerdictRaw = nil
+        try context2.save()
+
+        let context3 = ModelContext(context.container)
+        let recleared = try #require(try context3.fetch(descriptor).first)
+        #expect(recleared.markerWrittenSince == nil)
+        #expect(recleared.cutoverICloudVerdictRaw == nil)
     }
 }

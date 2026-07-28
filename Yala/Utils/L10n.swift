@@ -6417,6 +6417,7 @@ enum L10n {
             static var resume: String { ls("storage.progress.resume", comment: "") }
             static var retry: String { ls("storage.progress.retry", comment: "") }
             static var waitingImport: String { ls("storage.progress.waitingImport", comment: "") }
+            static var waitingICloudExport: String { ls("storage.progress.waitingICloudExport", comment: "") }
         }
 
         enum Relaunch {
@@ -6437,6 +6438,9 @@ enum L10n {
         enum Failed {
             static var migration: String { ls("storage.failed.migration", comment: "") }
             static var reverse: String { ls("storage.failed.reverse", comment: "") }
+            static var migrationICloudFull: String { ls("storage.failed.migrationICloudFull", comment: "") }
+            static var migrationICloudOff: String { ls("storage.failed.migrationICloudOff", comment: "") }
+            static var migrationICloudStalled: String { ls("storage.failed.migrationICloudStalled", comment: "") }
         }
 
         enum Confirm {

@@ -9,6 +9,10 @@
 //  consume), par inválido, gate de quiescencia, efecto que lanza → journaled → resume lo re-ejecuta,
 //  el contrato especial `.disableMirrorAndRelaunch` (ambas ramas), y claim no-success (los 3 outcomes).
 //
+//  C-1 (sección 9c): precondición de ENTRADA del canal iCloud en sus dos puertas, tope por TIEMPO del paso 4
+//  (iCloud lleno / sin cuenta → abort a `.icloud` sin apagar el mirror), waiver `noChannelNoFootprint`, sello
+//  ÚNICO del reloj del tope, y el drenaje de `resetAfterRollback` (ambas mitades del contrato).
+//
 
 import Foundation
 import SwiftData
@@ -41,6 +45,16 @@ private final class FakeExecutor: MigrationWorkExecuting {
 
     var confirmCutoverResult = true
     var persistLocalModeResult = true
+    /// C-1: los pasos 1 y 2 del cutover son los ÚNICOS que dejan huella durable antes del marcador
+    /// (`migrated_at` en el backend y `storageMode = .cloud` en el device). Contarlos es lo que prueba que la
+    /// precondición de entrada aborta ANTES de tocarlos — es decir, que el bug ya no puede ni empezar.
+    var confirmCutoverCallCount = 0
+    var persistLocalModeCallCount = 0
+
+    /// C-1: veredicto guionizado del canal iCloud. `.healthy` es el default de la extension del protocolo, así
+    /// que un fake que no lo toca se comporta EXACTAMENTE como antes de C-1.
+    var icloudVerdict: ICloudChannelVerdict = .healthy
+    var icloudProbeCallCount = 0
 
     // Reversa (§h, I11-2).
     var reverseClaimOutcomes: [ReverseClaimOutcome] = [.accepted]
@@ -102,8 +116,8 @@ private final class FakeExecutor: MigrationWorkExecuting {
         return probe
     }
 
-    func confirmCutoverServer() async -> Bool { confirmCutoverResult }
-    func persistLocalMode() async -> Bool { persistLocalModeResult }
+    func confirmCutoverServer() async -> Bool { confirmCutoverCallCount += 1; return confirmCutoverResult }
+    func persistLocalMode() async -> Bool { persistLocalModeCallCount += 1; return persistLocalModeResult }
 
     func execute(_ effect: MigrationEffect) async throws {
         if let error = effectErrors[effect] { throw error }   // NO se marca ejecutado si lanza
@@ -115,6 +129,12 @@ private final class FakeExecutor: MigrationWorkExecuting {
 
     func isMirrorConfirmedOff() -> Bool { mirrorOff }
     func isMarkerExported() -> Bool { markerExported }
+
+    // MARK: Canal iCloud (C-1)
+    func probeICloudChannel() async -> ICloudChannelVerdict {
+        icloudProbeCallCount += 1
+        return icloudVerdict
+    }
 
     // MARK: Reversa (§h)
     func performReverseClaim() async -> ReverseClaimOutcome {
@@ -147,6 +167,15 @@ private final class FakeExecutor: MigrationWorkExecuting {
 }
 
 private struct FakeError: Error {}
+
+/// Reloj MUTABLE (molde de `MigrationWorkExecutorTests`): permite AVANZAR el tiempo entre resumes sin recrear
+/// nada. Es lo único con lo que se puede vencer el presupuesto por TIEMPO del paso 4 (C-1) de forma
+/// determinista — el `fixedNow` de los demás tests deja el `elapsed` clavado en 0 para siempre.
+@MainActor
+private final class MutableClock {
+    var value: Date
+    init(_ start: Date) { value = start }
+}
 
 // MARK: - Suite
 
@@ -192,11 +221,14 @@ struct MigrationRunnerTests {
         quiescence: @escaping () -> Bool = { true },
         policy: MigrationPolicy = .default,
         timeout: Double = 120,
-        tick: Double = 0.5
+        tick: Double = 0.5,
+        // C-1: reloj inyectable (default = `fixedNow`, idéntico a antes). Solo los tests del tope del paso 4
+        // pasan un `MutableClock` para poder avanzar el tiempo.
+        now: (() -> Date)? = nil
     ) -> MigrationRunner {
         MigrationRunner(
             context: context, executor: executor, deviceID: deviceID, policy: policy,
-            quiescenceSignal: quiescence, now: { self.fixedNow }, sleeper: { _ in },
+            quiescenceSignal: quiescence, now: now ?? { self.fixedNow }, sleeper: { _ in },
             quiescenceTimeoutSeconds: timeout, quiescenceTickSeconds: tick)
     }
 
@@ -204,7 +236,9 @@ struct MigrationRunnerTests {
     private func seedJournal(
         _ context: ModelContext, phase: Phase, pending: [Effect] = [],
         leaderDeviceID: String? = nil, mismatchRetries: Int = 0, networkRetries: Int = 0,
-        snapshotCursor: String? = nil, reverseOriginRaw: String? = nil
+        snapshotCursor: String? = nil, reverseOriginRaw: String? = nil,
+        // C-1: los 2 campos aditivos del journal (reloj del tope del paso 4 + veredicto del canal iCloud).
+        markerWrittenSince: Date? = nil, cutoverICloudVerdictRaw: String? = nil
     ) throws -> MigrationState {
         let state = MigrationState()
         state.setPhase(phase)
@@ -214,6 +248,8 @@ struct MigrationRunnerTests {
         state.verifyNetworkRetries = networkRetries
         state.snapshotCursorJSON = snapshotCursor
         state.reverseOriginRaw = reverseOriginRaw
+        state.markerWrittenSince = markerWrittenSince
+        state.cutoverICloudVerdictRaw = cutoverICloudVerdictRaw
         state.startedAt = fixedNow
         state.updatedAt = fixedNow
         context.insert(state)
@@ -637,6 +673,286 @@ struct MigrationRunnerTests {
         #expect(fake.count(.writeCloudKitMarker) == 1, "el marcador NO se re-escribe")
         #expect(fake.count(.disableMirrorAndRelaunch) == 1)
         #expect(try journal(context).readPhase().phase == .done)
+    }
+
+    // MARK: - 9c. C-1 · canal iCloud del cutover (precondición de entrada + tope por TIEMPO del paso 4)
+
+    /// iCloud LLENO en el paso 4. El marcador no exporta y CloudKit ya dictó que el write no entra
+    /// (`quotaExceeded` ⇒ presupuesto `.definitive` de 15 min): pasado el presupuesto el cutover ABORTA en
+    /// local y el device vuelve a iCloud. Pinnea las 4 cosas que impiden la doble escritura indefinida:
+    /// el terminal, el ORDEN de la tripleta (el `.persistICloudMode` PRIMERO es lo que deshace la mitad
+    /// peligrosa —`.cloud` + mirror-off desarmado— antes de que nada más pueda fallar), que el mirror NUNCA se
+    /// apagó, y que el veredicto SOBREVIVE al terminal (sin él la UI del fallo solo podría decir un genérico
+    /// en vez de "iCloud se quedó sin espacio").
+    @Test func markerBudget_quotaExceeded_abortsToICloud_withoutTurningMirrorOff() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.markerExported = false                  // el marcador se escribió pero jamás llega a CloudKit
+        fake.icloudVerdict = .quotaExceeded
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .cutover(.markerWritten), leaderDeviceID: deviceID,
+                        markerWrittenSince: fixedNow)
+
+        clock.value = fixedNow.addingTimeInterval(901)          // presupuesto `.definitive` (900 s) agotado
+        await makeRunner(context, fake, now: { clock.value }).resume()
+
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback)
+        #expect(fake.executedEffects == [.persistICloudMode, .deleteCloudKitMarker, .rollback],
+                "orden OBLIGATORIO: devolver el device a .icloud, borrar el marcador que ya miente, y rollback")
+        #expect(fake.count(.disableMirrorAndRelaunch) == 0,
+                "el mirror JAMÁS se apagó — el abort deja el device igual que estaba en iCloud")
+        #expect(j.readPendingEffects().isEmpty, "la tripleta drenó completa")
+        #expect(j.cutoverICloudVerdictRaw == "quotaExceeded",
+                "el veredicto sobrevive a failedRollback: es lo único que le permite al fallo decir la verdad")
+        #expect(j.markerWrittenSince == nil, "el reloj es SCOPED al intento y se limpia al cerrarlo")
+    }
+
+    /// SIN cuenta iCloud pero CON huella CloudKit en el paso 4 (`noAccountWithFootprint`): hay una copia viva
+    /// del corpus a la que no podemos avisar del cutover y el canal para avisarle no existe ⇒ mismo abort
+    /// definitivo. Se pinnea aparte del caso de cuota porque es el otro veredicto que el copy del fallo tiene
+    /// que distinguir, y porque aquí la precondición de ENTRADA ya no se consulta: en el paso 4 quien manda es
+    /// el tope por tiempo (del sub-estado `.serverConfirmed` en adelante el cutover no vuelve atrás por
+    /// precondición).
+    @Test func markerBudget_noAccountWithFootprint_abortsToICloud_sameOrderedTriple() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.markerExported = false
+        fake.icloudVerdict = .noAccountWithFootprint
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .cutover(.markerWritten), leaderDeviceID: deviceID,
+                        markerWrittenSince: fixedNow)
+
+        clock.value = fixedNow.addingTimeInterval(901)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback)
+        #expect(fake.executedEffects == [.persistICloudMode, .deleteCloudKitMarker, .rollback])
+        #expect(fake.count(.disableMirrorAndRelaunch) == 0, "el mirror nunca se apagó")
+        #expect(j.cutoverICloudVerdictRaw == "noAccountWithFootprint")
+    }
+
+    /// EL test del bug: la precondición de ENTRADA impide que el cutover EMPIECE cuando el canal está
+    /// sabido-roto. `persistLocalMode` es quien escribía `storageMode = .cloud` y `confirmCutoverServer` quien
+    /// estampaba `migrated_at`: CERO llamadas a ambos ⇒ no hay nada durable que deshacer y el limbo
+    /// «`.cloud` persistido + mirror vivo» no puede nacer.
+    @Test func cutoverEntry_channelBroken_neverPersistsCloudMode_norStampsServer() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.verifyProbes = [.match]                 // el verify converge: el cutover iba a arrancar
+        fake.icloudVerdict = .noAccountWithFootprint
+        try seedJournal(context, phase: .verifying, leaderDeviceID: deviceID)
+
+        await makeRunner(context, fake).resume()
+
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback)
+        #expect(fake.persistLocalModeCallCount == 0, "NUNCA se persiste storageMode = .cloud")
+        #expect(fake.confirmCutoverCallCount == 0, "NUNCA se estampa migrated_at en el backend")
+        #expect(fake.executedEffects == [.rollback],
+                "abort de entrada = rollback pelado: no hay marcador ni modo que revertir")
+        #expect(fake.count(.writeCloudKitMarker) == 0)
+        #expect(j.markerWrittenSince == nil, "el paso 4 no se alcanzó: no hay reloj que sellar")
+        #expect(j.cutoverICloudVerdictRaw == "noAccountWithFootprint")
+    }
+
+    /// La SEGUNDA puerta de la precondición: un kill entre el verify y el cutover deja el journal en
+    /// `cutover(.pending)` y el resume entraría por ahí SIN pasar por la rama `.match` del verify. Sin esta
+    /// puerta ese resume seguiría adelante y escribiría `.cloud`.
+    @Test func cutoverEntry_secondDoorAtPending_afterKill_stillAborts() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.icloudVerdict = .quotaExceeded
+        try seedJournal(context, phase: .cutover(.pending), leaderDeviceID: deviceID)
+
+        await makeRunner(context, fake).resume()
+
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback)
+        #expect(fake.confirmCutoverCallCount == 0, "aborta ANTES del ack del server")
+        #expect(fake.persistLocalModeCallCount == 0)
+        #expect(fake.executedEffects == [.rollback])
+        #expect(j.cutoverICloudVerdictRaw == "quotaExceeded")
+    }
+
+    /// WAIVER `noChannelNoFootprint` (sin cuenta iCloud Y sin huella CloudKit): no existe copia del corpus en
+    /// CloudKit, así que el marcador es *indeliverable* Y *prescindible* ⇒ el cutover CONTINÚA. Es el caso que
+    /// NO se puede degradar: la condición es PERMANENTE, así que abortar vetaría el modo nube para siempre a
+    /// quien no usa iCloud ("necesitas iCloud para dejar de usar iCloud") y ningún reintento lo arreglaría.
+    /// Se corre desde `verifying` a propósito: prueba a la vez que este veredicto NO bloquea la ENTRADA
+    /// (fail-open) y que relaja el gate de EXPORT sin saltarse ninguna fase de la cadena.
+    @Test func markerExportWaiver_noChannelNoFootprint_cutoverCompletesToDone() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.verifyProbes = [.match]
+        fake.setMarkerExportedOnWrite = false        // el marcador se escribe y NUNCA exporta
+        fake.icloudVerdict = .noChannelNoFootprint
+        try seedJournal(context, phase: .verifying, leaderDeviceID: deviceID)
+
+        await makeRunner(context, fake).resume()
+
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .done, "el waiver no bloquea la entrada ni acorta la cadena de fases")
+        #expect(fake.confirmCutoverCallCount == 1)
+        #expect(fake.persistLocalModeCallCount == 1)
+        #expect(fake.count(.disableMirrorAndRelaunch) == 1,
+                "el mirror se apaga UNA vez pese a que el marcador nunca exportó")
+        #expect(fake.executedEffects == [
+            .startParallelHistoryCapture, .writeCloudKitMarker,
+            .disableMirrorAndRelaunch, .runLeaderReconcileFromFrozenCloudKit,
+        ], "misma secuencia del §g.4 desde el cutover, sin efectos extra")
+        #expect(j.cutoverICloudVerdictRaw == "noChannelNoFootprint", "queda rastro del waiver en el journal")
+    }
+
+    /// BAJO presupuesto el paso 4 HOLDEA retomable (molde del `networkTimeout` del verify: cortar sin
+    /// tight-loop y volver a observar en el próximo resume). Dos casos porque el presupuesto lo elige la CAUSA:
+    /// `quotaExceeded` es `.definitive` (15 min) y a los 60 s aún espera; un atasco de causa DESCONOCIDA
+    /// (`healthy` ⇒ `.unknown`, 72 h) a los 1000 s TAMBIÉN espera, aunque ya habría vencido el presupuesto
+    /// corto — un snapshot subido y verificado no se tira por un túnel largo.
+    @Test func markerBudget_underBudget_holdsResumable_perCause() async throws {
+        for (verdict, elapsed): (ICloudChannelVerdict, Double) in [(.quotaExceeded, 60), (.healthy, 1000)] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            fake.markerExported = false
+            fake.icloudVerdict = verdict
+            let clock = MutableClock(fixedNow)
+            try seedJournal(context, phase: .cutover(.markerWritten), leaderDeviceID: deviceID,
+                            markerWrittenSince: fixedNow)
+
+            clock.value = fixedNow.addingTimeInterval(elapsed)
+            await makeRunner(context, fake, now: { clock.value }).resume()
+
+            let j = try journal(context)
+            #expect(j.readPhase().phase == .cutover(.markerWritten),
+                    "\(verdict.rawValue) a los \(elapsed)s sigue esperando (retomable)")
+            #expect(fake.executedEffects.isEmpty, "holdear no ejecuta NADA: ni mirror-off ni rollback")
+            #expect(j.markerWrittenSince == fixedNow, "observar no re-sella el reloj")
+        }
+    }
+
+    /// TEST CRÍTICO del arreglo: el reloj del tope se sella UNA sola vez. Tres resumes consecutivos NO
+    /// re-escriben `markerWrittenSince` — si lo re-sellaran, el `elapsed` volvería a 0 en cada vuelta, el
+    /// presupuesto no vencería nunca y el limbo seguiría siendo eterno (= el bug intacto). La prueba de que el
+    /// sello manda: con el reloj pasado el presupuesto, el resume siguiente SÍ aborta.
+    @Test func markerBudget_clockSealedOnce_acrossResumes_thenExpires() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.setMarkerExportedOnWrite = false        // se escribe el marcador y nunca exporta
+        fake.icloudVerdict = .quotaExceeded
+        let clock = MutableClock(fixedNow)
+        try seedJournal(context, phase: .cutover(.localModeSet), leaderDeviceID: deviceID)
+
+        // Resume 1: escribe el marcador y SELLA el reloj al entrar al paso 4.
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        #expect(try journal(context).markerWrittenSince == fixedNow, "sello en la PRIMERA entrada al paso 4")
+        #expect(try journal(context).readPhase().phase == .cutover(.markerWritten))
+
+        // Resumes 2 y 3 con el reloj avanzando, siempre bajo el presupuesto de 900 s.
+        for offset in [100.0, 200.0] {
+            clock.value = fixedNow.addingTimeInterval(offset)
+            await makeRunner(context, fake, now: { clock.value }).resume()
+            let j = try journal(context)
+            #expect(j.markerWrittenSince == fixedNow, "el resume a +\(offset)s NO re-sella el reloj")
+            #expect(j.readPhase().phase == .cutover(.markerWritten))
+        }
+        #expect(fake.count(.writeCloudKitMarker) == 1, "el marcador no se re-escribe en los resumes")
+
+        // Y el presupuesto SÍ vence — exactamente lo que un re-sello habría hecho imposible.
+        clock.value = fixedNow.addingTimeInterval(901)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        #expect(try journal(context).readPhase().phase == .failedRollback)
+        #expect(fake.count(.disableMirrorAndRelaunch) == 0)
+    }
+
+    /// Journal escrito por un build ANTERIOR a C-1 (devices de dev): en el paso 4 sin `markerWrittenSince` el
+    /// runner sella el reloj PEREZOSAMENTE en la primera observación y corta retomable. El presupuesto cuenta
+    /// desde ese instante, NUNCA retroactivo — un sello retroactivo abortaría de golpe un cutover sano cuyo
+    /// journal simplemente venía de la versión vieja.
+    @Test func markerBudget_legacyJournalWithoutClock_sealsLazily_neverRetroactive() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.markerExported = false
+        fake.icloudVerdict = .quotaExceeded
+        let clock = MutableClock(fixedNow.addingTimeInterval(5_000))   // "tarde", pero sin desde-cuándo medir
+        try seedJournal(context, phase: .cutover(.markerWritten), leaderDeviceID: deviceID)  // sin reloj
+
+        await makeRunner(context, fake, now: { clock.value }).resume()
+
+        var j = try journal(context)
+        #expect(j.readPhase().phase == .cutover(.markerWritten), "la observación que sella NO degrada")
+        #expect(j.markerWrittenSince == fixedNow.addingTimeInterval(5_000),
+                "el reloj arranca AHORA, no retroactivo")
+        #expect(fake.executedEffects.isEmpty)
+
+        clock.value = clock.value.addingTimeInterval(901)
+        await makeRunner(context, fake, now: { clock.value }).resume()
+        j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback, "desde el sello perezoso el presupuesto sí corre")
+        #expect(fake.executedEffects == [.persistICloudMode, .deleteCloudKitMarker, .rollback])
+    }
+
+    /// C-1 en `resetAfterRollback`: el "Reintentar" de la UI DRENA los efectos pendientes ANTES de limpiar el
+    /// journal. Si tirara el `.persistICloudMode` que dejó pendiente el abort, quedaría `notStarted` (fase
+    /// ESTABLE, que pasa el gate del dominio) + `.cloud` persistido con el mirror vivo = exactamente la doble
+    /// escritura que este arreglo mata.
+    @Test func resetAfterRollback_drainsPendingEffects_beforeClearingJournal() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(context, phase: .failedRollback, pending: [.persistICloudMode, .rollback],
+                        leaderDeviceID: deviceID, markerWrittenSince: fixedNow,
+                        cutoverICloudVerdictRaw: "quotaExceeded")
+
+        await makeRunner(context, fake).resetAfterRollback()
+
+        let j = try journal(context)
+        #expect(fake.executedEffects == [.persistICloudMode, .rollback],
+                "los pendientes se EJECUTAN en orden, no se tiran")
+        #expect(j.readPhase().phase == .notStarted)
+        #expect(j.readPendingEffects().isEmpty)
+        #expect(j.markerWrittenSince == nil, "el reset limpia el reloj del paso 4")
+        #expect(j.cutoverICloudVerdictRaw == nil, "y el veredicto: tras el reset ya no hay nada que explicar")
+    }
+
+    /// La mitad dura del contrato anterior: si el drenaje LANZA, el journal queda INTACTO (fase, pendientes y
+    /// campos sin tocar) y el tap se convierte en un REINTENTO del abort. Un reset que limpiara "de todas
+    /// formas" perdería el `.persistICloudMode` para siempre y dejaría el device en `.cloud`.
+    @Test func resetAfterRollback_drainThrows_leavesJournalIntact_tapRetriesTheAbort() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.effectErrors[.persistICloudMode] = FakeError()
+        try seedJournal(context, phase: .failedRollback, pending: [.persistICloudMode, .rollback],
+                        leaderDeviceID: deviceID, cutoverICloudVerdictRaw: "quotaExceeded")
+
+        await makeRunner(context, fake).resetAfterRollback()
+
+        var j = try journal(context)
+        #expect(j.readPhase().phase == .failedRollback, "el reset NO avanzó: sigue en el terminal del abort")
+        #expect(j.readPendingEffects() == [.persistICloudMode, .rollback], "los pendientes siguen enteros")
+        #expect(j.leaderDeviceID == deviceID, "nada del journal se limpió")
+        #expect(j.cutoverICloudVerdictRaw == "quotaExceeded")
+        #expect(fake.count(.persistICloudMode) == 0)
+        #expect(fake.count(.rollback) == 0, "el drenaje corta en el primero: el orden se respeta")
+
+        // El siguiente tap, ya sin el fallo, completa el abort y ENTONCES sí limpia.
+        fake.effectErrors.removeValue(forKey: .persistICloudMode)
+        await makeRunner(context, fake).resetAfterRollback()
+
+        j = try journal(context)
+        #expect(fake.executedEffects == [.persistICloudMode, .rollback])
+        #expect(j.readPhase().phase == .notStarted)
+        #expect(j.readPendingEffects().isEmpty)
+        #expect(j.cutoverICloudVerdictRaw == nil)
     }
 
     // MARK: - 10. Claim no-success (los 3 outcomes) → journal intacto, sin evento, sin rollback

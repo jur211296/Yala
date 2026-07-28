@@ -790,4 +790,174 @@ struct MigrationStateMachineTests {
                 == .invalid(from: .reverseReconcile(.deletingZombies), event: .reverseOtherLeader(returnTo: .notStarted))
         )
     }
+
+    // MARK: - C1. Precondición de entrada del cutover (bug C-1)
+
+    /// Presupuestos INYECTADOS y pequeños para los tests del tope: pinnean la MECÁNICA (comparar elapsed
+    /// contra el presupuesto que elige la causa) sin depender de los números de producto, que se pinnean
+    /// aparte en `markerExportBudgets_defaultsArePinnedProductDecision`.
+    private static let stallPolicy = MigrationPolicy(
+        markerExportDefinitiveBudgetSeconds: 60,
+        markerExportUnknownBudgetSeconds: 600
+    )
+
+    /// Canal iCloud sabido-roto detectado en `verifying` (rama `.match`): abortar AQUÍ es gratis — no hay
+    /// `migrated_at`, ni `.cloud` persistido, ni marcador ⇒ el device queda idéntico a como empezó.
+    @Test func icloudPreconditionFailed_fromVerifying_rollsBackClean() {
+        let r = step(.verifying, .icloudCutoverPreconditionFailed)
+        #expect(r.next == .failedRollback)
+        #expect(r.effects == [.rollback])
+    }
+
+    /// Segunda oportunidad de abortar: el journal ya dice `cutover(.pending)` (p.ej. tras un kill entre el
+    /// verify y el paso 1), pero `pending` significa literalmente "a punto de escribir `migrated_at`" —
+    /// nada externo ha cambiado todavía, así que el rollback sigue siendo limpio.
+    @Test func icloudPreconditionFailed_fromCutoverPending_rollsBackClean() {
+        let r = step(.cutover(.pending), .icloudCutoverPreconditionFailed)
+        #expect(r.next == .failedRollback)
+        #expect(r.effects == [.rollback])
+    }
+
+    /// PIN ANTI-REGRESIÓN CRÍTICO. Solo la ENTRADA del cutover puede abortar. Desde `serverConfirmed` en
+    /// adelante existe ya algo durable (`migrated_at` estampado, `.cloud` persistido, el marcador escrito),
+    /// y la regla §g.4 "el cutover jamás hace rollback" protege exactamente esos sub-estados: la migración
+    /// es REAL y la recuperación es retomar por sub-estado, no deshacer. Si alguien "generalizase" este
+    /// evento a todo el cutover, un fallo de canal en el paso 4 dispararía un rollback con el marcador ya
+    /// vivo en CloudKit ⇒ el resto del parque congelando escrituras contra un backend que este device
+    /// abandonó. El tope del paso 4 (abajo) es el ÚNICO camino de degradación pasado `pending`.
+    @Test func icloudPreconditionFailed_pastCutoverEntry_isInvalid_cutoverNeverRollsBack() {
+        // Sanity: 5 sub-estados (cero sub-estados nuevos en C-1) — 1 de entrada + 4 protegidos.
+        #expect(Sub.allCases.count == 5)
+        for sub in Sub.allCases where sub > .pending { // serverConfirmed, localModeSet, markerWritten, mirrorOff
+            #expect(
+                MigrationStateMachine.transition(from: .cutover(sub), event: .icloudCutoverPreconditionFailed)
+                    == .invalid(from: .cutover(sub), event: .icloudCutoverPreconditionFailed),
+                "cutover(\(sub)) + icloudCutoverPreconditionFailed debe ser inválido (el marcador ya existe)"
+            )
+        }
+    }
+
+    // MARK: - C2. Tope por tiempo del paso 4 (bug C-1)
+
+    /// Bajo presupuesto el paso 4 HOLDEA (molde de `newDeltaDetected`): el runner corta retomable y el
+    /// próximo resume vuelve a observar. Dos cosas que el `effects.isEmpty` protege: NO se re-emite
+    /// `.writeCloudKitMarker` (doble escritura del marcador en cada observación) y NO se cuela
+    /// `.disableMirrorAndRelaunch` (apagar el mirror antes de que el marcador exporte lo pierde para
+    /// siempre — el gate de export es precisamente lo que estamos esperando).
+    @Test func markerExportStalled_belowBudget_holdsMarkerWritten_noEffects() {
+        let policy = Self.stallPolicy
+        // 59 = presupuesto definitivo - 1: por debajo de AMBOS presupuestos, así que vale para las 2 causas.
+        let belowBoth: [Double] = [0, 1, policy.markerExportDefinitiveBudgetSeconds - 1]
+        for cause in [MarkerExportStall.definitive, .unknown] {
+            for elapsed in belowBoth {
+                let r = step(
+                    .cutover(.markerWritten),
+                    .markerExportStalled(elapsedSeconds: elapsed, cause: cause),
+                    policy: policy
+                )
+                #expect(r.next == .cutover(.markerWritten), "elapsed \(elapsed) (\(cause)) debe holdear")
+                #expect(r.effects.isEmpty)
+                // Negativos: ni degrada antes de tiempo ni avanza el cutover por su cuenta.
+                #expect(r.next != .failedRollback)
+                #expect(r.next != .cutover(.mirrorOff))
+            }
+        }
+    }
+
+    /// Al agotar el presupuesto (`>=`, no `>`), abort LOCAL sin red. El ORDEN de los 3 efectos es el
+    /// contrato, no un detalle: `.persistICloudMode` va PRIMERO porque escribe `.icloud` + desarma el
+    /// mirror-off JUNTOS y es el único de los tres que NO puede lanzar (`UserDefaults` puro) ⇒ la mitad
+    /// peligrosa (el `.cloud` persistido que monta el mirror en modo nube = doble escritura) se deshace
+    /// antes de que nada más pueda fallar. Un `failedRollback` "pelado", sin ese efecto, sería PEOR que el
+    /// bug original: el "Reintentar" de la UI lleva a `notStarted` (fase ESTABLE) y ahí ya no hay gate.
+    /// Se asserta el array COMPLETO a propósito — un `contains` dejaría pasar cualquier reordenación.
+    @Test func markerExportStalled_definitiveAtOrPastBudget_abortsLocallyInExactEffectOrder() {
+        let policy = Self.stallPolicy
+        let budget = policy.markerExportDefinitiveBudgetSeconds
+        for elapsed in [budget, budget + 1, budget * 100] {
+            let r = step(
+                .cutover(.markerWritten),
+                .markerExportStalled(elapsedSeconds: elapsed, cause: .definitive),
+                policy: policy
+            )
+            #expect(r.next == .failedRollback, "elapsed \(elapsed) >= \(budget) debe degradar")
+            #expect(r.effects == [.persistICloudMode, .deleteCloudKitMarker, .rollback])
+            #expect(r.effects.first == .persistICloudMode)
+        }
+    }
+
+    /// La causa elige el presupuesto: el MISMO elapsed que aborta con `.definitive` (CloudKit ya dictó que
+    /// el write no entra ⇒ esperar no cambia nada) sigue holdeando con `.unknown` (offline, export lento:
+    /// un snapshot ya subido Y verificado no se tira por una mala racha de red). Si alguien colapsase los
+    /// dos presupuestos en uno, este test lo caza por el lado que importa — el falso positivo.
+    @Test func markerExportStalled_unknownUsesTheLongBudget_sameElapsedStillHolds() {
+        let policy = Self.stallPolicy
+        let definitiveBudget = policy.markerExportDefinitiveBudgetSeconds
+        #expect(
+            step(.cutover(.markerWritten),
+                 .markerExportStalled(elapsedSeconds: definitiveBudget, cause: .definitive),
+                 policy: policy).next == .failedRollback
+        )
+        let held = step(
+            .cutover(.markerWritten),
+            .markerExportStalled(elapsedSeconds: definitiveBudget, cause: .unknown),
+            policy: policy
+        )
+        #expect(held.next == .cutover(.markerWritten))
+        #expect(held.effects.isEmpty)
+        // Pero `.unknown` NO es infinito: al alcanzar SU presupuesto degrada con los mismos 3 efectos.
+        let capped = step(
+            .cutover(.markerWritten),
+            .markerExportStalled(elapsedSeconds: policy.markerExportUnknownBudgetSeconds, cause: .unknown),
+            policy: policy
+        )
+        #expect(capped.next == .failedRollback)
+        #expect(capped.effects == [.persistICloudMode, .deleteCloudKitMarker, .rollback])
+    }
+
+    /// El tope pertenece SOLO al paso 4. En cualquier otro sub-estado del cutover el marcador no está
+    /// escrito (o el mirror ya está apagado y la espera terminó), y fuera del cutover el evento no tiene
+    /// sentido: `.invalid` con el par (from, event) para el breadcrumb, nunca una degradación silenciosa.
+    @Test func markerExportStalled_outsideMarkerWritten_isInvalid() {
+        // Elapsed absurdamente alto: si alguna de estas aristas existiera, degradaría — el test la caza.
+        let event = MigrationEvent.markerExportStalled(elapsedSeconds: 10_000_000, cause: .definitive)
+        for sub in Sub.allCases where sub != .markerWritten {
+            #expect(
+                MigrationStateMachine.transition(from: .cutover(sub), event: event, policy: Self.stallPolicy)
+                    == .invalid(from: .cutover(sub), event: event),
+                "cutover(\(sub)) + markerExportStalled debe ser inválido"
+            )
+        }
+        let nonCutover = Self.allPhases.filter { phase in
+            if case .cutover = phase { return false }
+            return true
+        }
+        for phase in nonCutover {
+            #expect(
+                MigrationStateMachine.transition(from: phase, event: event, policy: Self.stallPolicy)
+                    == .invalid(from: phase, event: event),
+                "\(phase) + markerExportStalled debe ser inválido"
+            )
+        }
+    }
+
+    /// Los presupuestos por defecto son decisión de PRODUCTO ratificada por el owner: 15 min cuando el
+    /// fallo es definitivo (cada minuto extra es un minuto de doble escritura potencial) y 72 h cuando aún
+    /// no se sabe por qué no exporta (el canario `cloudCutoverMarkerStalled` se emite en cada observación,
+    /// así que un atasco sistémico se ve en el dashboard mucho antes de que ningún device degrade). Este
+    /// test es el que obliga a que cambiarlos sea deliberado, no un descuido.
+    @Test func markerExportBudgets_defaultsArePinnedProductDecision() {
+        #expect(MigrationPolicy.default.markerExportDefinitiveBudgetSeconds == 900)      // 15 min
+        #expect(MigrationPolicy.default.markerExportUnknownBudgetSeconds == 259_200)     // 72 h
+        // Y la relación entre ambos (lo que hace útil la clasificación) también queda fijada.
+        #expect(
+            MigrationPolicy.default.markerExportUnknownBudgetSeconds
+                > MigrationPolicy.default.markerExportDefinitiveBudgetSeconds
+        )
+        // Con los defaults: a los 900 s, `.definitive` aborta y `.unknown` sigue esperando.
+        #expect(step(.cutover(.markerWritten), .markerExportStalled(elapsedSeconds: 900, cause: .definitive)).next
+            == .failedRollback)
+        #expect(step(.cutover(.markerWritten), .markerExportStalled(elapsedSeconds: 900, cause: .unknown)).next
+            == .cutover(.markerWritten))
+    }
 }

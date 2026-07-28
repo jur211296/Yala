@@ -19,6 +19,7 @@
 //  `@MainActor`: manipula red/identidad/ModelContext (regla inviolable del repo).
 //
 
+import CloudKit
 import Foundation
 import SwiftData
 #if canImport(UIKit)
@@ -136,6 +137,15 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// `runAdoptOrphanReconcile`). Default `{ true }` (fakes/tests que no lo ejercitan); producción inyecta
     /// `{ iCloudSyncService.shared.isImportQuiescent }`.
     private let adoptQuiescenceSignal: () -> Bool
+    /// C-1: ¿hay cuenta iCloud? El MISMO predicado que gobierna el montaje del store
+    /// (`SwiftDataConfiguration.isICloudAvailable()`), a propósito — introducir aquí
+    /// `CKContainer.accountStatus()` (0 usos en el repo) crearía una segunda verdad que podría discrepar del
+    /// predicado que de verdad decide si existe un mirror por el que exportar. Inyectable para tests.
+    private let icloudAccountPresent: @MainActor () -> Bool
+    /// C-1: último `CKError.Code` observado por el mirror (`iCloudSyncService.lastExportError`). Post-hoc y en
+    /// memoria: `nil` tras un boot fresco, por eso el tope por tiempo del paso 4 es la red de seguridad y esto
+    /// solo un acelerador. Inyectable para tests (nunca el singleton en el cuerpo — regla del repo).
+    private let icloudLastExportErrorCode: @MainActor () -> CKError.Code?
     /// Persistencia del `AuthAction` resuelto (P6). El `performClaim`/`runAdoptFlow` lo estampan → el gate
     /// de arranque del runtime (`LiveCloudSessionProvider.claimAction`) lo lee. Inyectable para tests.
     private let claimStore: CloudClaimActionStore
@@ -180,7 +190,9 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         heartbeatInterval: TimeInterval = 60,
         reverseTombstoneSource: ReverseTombstoneSource? = nil,
         adoptQuiescenceSignal: @escaping () -> Bool = { true },
-        claimStore: CloudClaimActionStore? = nil
+        claimStore: CloudClaimActionStore? = nil,
+        icloudAccountPresent: (@MainActor () -> Bool)? = nil,
+        icloudLastExportErrorCode: (@MainActor () -> CKError.Code?)? = nil
     ) {
         self.engine = engine
         self.pushClient = pushClient
@@ -200,6 +212,11 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         self.heartbeatInterval = heartbeatInterval
         self.adoptQuiescenceSignal = adoptQuiescenceSignal
         self.claimStore = claimStore ?? .shared
+        // C-1: defaults MainActor-aislados resueltos en el CUERPO (los default args son nonisolated, mismo
+        // motivo que `deviceID`/`personalStoreURL`/`claimStore`).
+        self.icloudAccountPresent = icloudAccountPresent ?? { SwiftDataConfiguration.isICloudAvailable() }
+        self.icloudLastExportErrorCode = icloudLastExportErrorCode
+            ?? { iCloudSyncService.shared.lastExportError?.code }
         self.uploader = MigrationSnapshotUploader(
             engine: engine, pushClient: pushClient, context: context,
             calendar: calendar, now: now, pageSize: snapshotPageSize)
@@ -679,6 +696,35 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         return report.captured >= 1
     }
 
+    /// C-1: veredicto del canal iCloud por el que el marcador TIENE que viajar. Read-only, SIN red — combina
+    /// la presencia de cuenta iCloud, la huella CloudKit local del corpus y el último `CKError` que el mirror
+    /// haya reportado. Decisión en `ICloudCutoverGateLogic` (pura y testeada aparte); aquí solo se recogen las
+    /// tres señales.
+    ///
+    /// La huella se lee de `SyncIdentity.ckRecordName != nil` (mismo predicado que ya usa el panel de debug):
+    /// es DURABLE — vive en el SQLite local y sobrevive a que el usuario cierre iCloud —, así que distingue
+    /// "nunca hubo copia en CloudKit" de "hay copia y ahora no puedo alcanzarla", que es justo la diferencia
+    /// entre poder waivear el gate del marcador y no poder.
+    func probeICloudChannel() async -> ICloudChannelVerdict {
+        let footprint: Bool
+        do {
+            let descriptor = FetchDescriptor<SyncIdentity>(
+                predicate: #Predicate<SyncIdentity> { $0.ckRecordName != nil })
+            footprint = try context.fetchCount(descriptor) > 0
+        } catch {
+            #if DEBUG
+            print("MigrationWorkExecutor: Error: huella CloudKit no legible: \(error)")
+            #endif
+            // CONSERVADOR: asumir que SÍ hay copia en CloudKit. Un falso `false` waivearía el gate del
+            // marcador a ciegas y dejaría al parque sin aviso; un falso `true` solo bloquea la entrada.
+            footprint = true
+        }
+        return ICloudCutoverGateLogic.decide(
+            accountPresent: icloudAccountPresent(),
+            hasCloudKitFootprint: footprint,
+            lastExportErrorCode: icloudLastExportErrorCode())
+    }
+
     /// `SyncCursor.serverSeqCursor` actual (corte del marcador). Sin fila aún → 0. Lectura pura (no crea).
     private func currentServerSeqCut() -> Int64 {
         do {
@@ -1123,8 +1169,10 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         //    exportado por el LÍDER → la razón del par en la IDA (el gate de export) no aplica igual aquí,
         //    pero se conserva el par para que `personalStoreDecision` monte mirror-OFF al relanzar. Estampa
         //    el claim-store (`routeReturningUser`) → el gate de arranque del runtime deja arrancar el sync.
-        StorageModePersistence.write(.cloud, defaults: storageDefaults)
-        storageDefaults.set(true, forKey: Self.relaunchRequestedKey)
+        // C-1: un solo escritor del par (`StorageModePersistence.writeCloudArmed`) en vez de dos `set`
+        // sueltos. No da atomicidad —`UserDefaults` no la tiene— pero elimina la posibilidad de que un
+        // camino futuro escriba solo una mitad por descuido; el kill-window lo cubre el gate del motor.
+        StorageModePersistence.writeCloudArmed(defaults: storageDefaults)
         if let userID = session.currentUserID {
             claimStore.record(.routeReturningUser, forUserID: userID)
         } else {

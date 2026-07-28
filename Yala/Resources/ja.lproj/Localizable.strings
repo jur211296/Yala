@@ -5375,3 +5375,15 @@
 
 /* Generic fallback of storage.adopt.otherAccountNote when the sign-in method is unknown */
 "storage.adopt.otherAccountNoteGeneric" = "このクラウドのコピーは別の Yala アカウントのものです。サインアウトして、そのアカウントでサインインしてください。";
+
+/* Cloud cutover failed because iCloud storage is full — data stays intact on this device */
+"storage.failed.migrationICloudFull" = "クラウドの有効化を完了できませんでした。iCloudの容量がいっぱいです。データはこのデバイスにすべて残っています。iCloudの空き容量を増やしてから、もう一度お試しください。";
+
+/* Cloud cutover failed because iCloud is not enabled on this device */
+"storage.failed.migrationICloudOff" = "クラウドの有効化を完了できませんでした。このデバイスではiCloudがオンになっていません。データはこのデバイスにすべて残っています。設定でiCloudをオンにしてから、もう一度お試しください。";
+
+/* Cloud cutover failed because iCloud never confirmed the last export step */
+"storage.failed.migrationICloudStalled" = "クラウドの有効化を完了できませんでした。iCloudから最後の処理の確認が返ってきていません。データはこのデバイスにすべて残っています。通信状態のよいところで、もう一度お試しください。";
+
+/* Caption on the storage progress card while the cutover waits for iCloud to confirm the export */
+"storage.progress.waitingICloudExport" = "iCloudの確認を待っています…";

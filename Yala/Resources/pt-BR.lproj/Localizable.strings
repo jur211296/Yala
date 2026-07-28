@@ -5363,3 +5363,15 @@
 
 /* Generic fallback of storage.adopt.otherAccountNote when the sign-in method is unknown */
 "storage.adopt.otherAccountNoteGeneric" = "Esta cópia na nuvem pertence a outra conta Yala. Saia e entre com essa conta para continuar.";
+
+/* Cloud cutover failed because iCloud storage is full — data stays intact on this device */
+"storage.failed.migrationICloudFull" = "Não conseguimos concluir a ativação da nuvem: o iCloud ficou sem espaço. Seus dados estão intactos neste dispositivo. Libere espaço no iCloud e tente de novo.";
+
+/* Cloud cutover failed because iCloud is not enabled on this device */
+"storage.failed.migrationICloudOff" = "Não conseguimos concluir a ativação da nuvem: este dispositivo não está com o iCloud ativo. Seus dados estão intactos aqui. Ative o iCloud em Ajustes e tente de novo.";
+
+/* Cloud cutover failed because iCloud never confirmed the last export step */
+"storage.failed.migrationICloudStalled" = "Não conseguimos concluir a ativação da nuvem: o iCloud não confirmou a última etapa. Seus dados estão intactos neste dispositivo; tente de novo quando estiver com uma boa conexão.";
+
+/* Caption on the storage progress card while the cutover waits for iCloud to confirm the export */
+"storage.progress.waitingICloudExport" = "Aguardando a confirmação do iCloud…";

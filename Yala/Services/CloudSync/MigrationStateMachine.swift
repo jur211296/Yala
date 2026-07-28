@@ -164,6 +164,15 @@ nonisolated enum VerifyOutcome: Equatable {
     case newDeltaDetected
 }
 
+/// C-1: por qué el marcador del cutover no exporta, y por tanto qué presupuesto de tiempo merece el
+/// paso 4. `.definitive` = CloudKit YA dictó que el write no entra (cuota agotada, cuenta inutilizable) ⇒
+/// esperar no cambia nada. `.unknown` = aún no sabemos (offline, mirror encolado, export lento) ⇒
+/// presupuesto largo: un snapshot completo ya subido y verificado no se tira por una mala racha de red.
+nonisolated enum MarkerExportStall: Equatable, Sendable {
+    case unknown
+    case definitive
+}
+
 /// Inputs to the machine. Past-tense names are runtime completions (acks). `Equatable` so `.invalid`
 /// can carry the offending event. NOT `Codable` — events are not journaled, only phases are.
 nonisolated enum MigrationEvent: Equatable {
@@ -200,6 +209,20 @@ nonisolated enum MigrationEvent: Equatable {
     case leaderVanished
     /// A non-recoverable failure BEFORE cutover.
     case fatalError
+
+    // MARK: C-1 — el canal iCloud no puede cerrar el cutover (§g.4)
+
+    /// El canal iCloud está sabido-roto (cuota agotada, cuenta ausente con copia viva en CloudKit, CloudKit
+    /// inutilizable). Emitido SOLO en la ENTRADA (`verifying` rama `.match`, y `cutover(.pending)`), donde
+    /// nada durable ha cambiado todavía ⇒ rollback limpio. El runner obtiene el veredicto de
+    /// `MigrationWorkExecuting.probeICloudChannel()`; la máquina no hace I/O.
+    case icloudCutoverPreconditionFailed
+    /// Observación del atasco del paso 4: el marcador sigue sin exportar. `elapsedSeconds` lo mide el
+    /// RUNNER (`now()` menos `MigrationState.markerWrittenSince`) — la máquina es pura y solo aplica el
+    /// presupuesto de `MigrationPolicy`, idéntico idiom al `retriesSoFar` de `VerifyOutcome`. El tope es por
+    /// TIEMPO y no por intentos porque la cadencia real del runner es boot + cada foreground + tap: un
+    /// contador castigaría a quien abre la app muchas veces y premiaría a quien no la abre.
+    case markerExportStalled(elapsedSeconds: Double, cause: MarkerExportStall)
 
     // MARK: Reverse events (§h) — command-vs-ack like the cutover events. DARK in I11-1.
     /// User asked to go back to iCloud (the wiring gates by `storageMode == .cloud`). Legal from `done`
@@ -315,11 +338,29 @@ nonisolated struct MigrationPolicy: Equatable {
     var maxMismatchRetries: Int = 3
     var maxNetworkRetries: Int = 8
 
+    /// C-1: presupuesto del paso 4 cuando CloudKit YA dictó que el write no entra (cuota agotada, cuenta
+    /// inutilizable). 15 min: esperar más no cambia el resultado, y cada minuto extra es un minuto de
+    /// doble escritura potencial.
+    var markerExportDefinitiveBudgetSeconds: Double = 900
+    /// C-1: presupuesto del paso 4 cuando aún no sabemos por qué el marcador no exporta. 72 h, generoso a
+    /// propósito: en este punto el snapshot ya está subido Y verificado, así que un falso positivo por 24 h
+    /// sin cobertura costaría más que la espera. El canario `cloudCutoverMarkerStalled` se emite en CADA
+    /// observación (no solo al agotar), así que un atasco sistémico —p.ej. el record type sin desplegar a
+    /// CloudKit Production— se ve en el dashboard mucho antes de que ningún device degrade.
+    var markerExportUnknownBudgetSeconds: Double = 259_200
+
     static let `default` = MigrationPolicy()
 
-    init(maxMismatchRetries: Int = 3, maxNetworkRetries: Int = 8) {
+    init(
+        maxMismatchRetries: Int = 3,
+        maxNetworkRetries: Int = 8,
+        markerExportDefinitiveBudgetSeconds: Double = 900,
+        markerExportUnknownBudgetSeconds: Double = 259_200
+    ) {
         self.maxMismatchRetries = maxMismatchRetries
         self.maxNetworkRetries = maxNetworkRetries
+        self.markerExportDefinitiveBudgetSeconds = markerExportDefinitiveBudgetSeconds
+        self.markerExportUnknownBudgetSeconds = markerExportUnknownBudgetSeconds
     }
 }
 
@@ -392,6 +433,43 @@ nonisolated enum MigrationStateMachine {
             return .transition(next: .cutover(.mirrorOff), effects: [.disableMirrorAndRelaunch])
         case (.cutover(.mirrorOff), .mirrorRelaunchCompleted):
             return .transition(next: .done, effects: [.runLeaderReconcileFromFrozenCloudKit])
+
+        // C-1 · PRECONDICIÓN DE ENTRADA. Legal SOLO desde `verifying` y `cutover(.pending)`: ahí no existe
+        // `migrated_at`, ni `.cloud` persistido, ni marcador ⇒ el rollback deja el device idéntico a como
+        // empezó. NO viola "el cutover jamás hace rollback": esa regla protege los sub-estados POSTERIORES,
+        // donde el marcador ya existe y la migración es real. Desde `serverConfirmed` en adelante este
+        // evento es `.invalid` a propósito (pinneado por test) — ahí manda el tope del paso 4.
+        case (.verifying, .icloudCutoverPreconditionFailed),
+             (.cutover(.pending), .icloudCutoverPreconditionFailed):
+            return .transition(next: .failedRollback, effects: [.rollback])
+
+        // C-1 · TOPE del paso 4. Bajo presupuesto HOLDEA sin efectos (molde de `newDeltaDetected`): el
+        // runner corta retomable y el próximo resume vuelve a observar. Al agotarlo, ABORT LOCAL sin red —
+        // el orden de los efectos es OBLIGATORIO:
+        //   1. `.persistICloudMode` PRIMERO: escribe `.icloud` + desarma el mirror-off JUNTOS y es el único
+        //      efecto que NO puede lanzar (`UserDefaults` puro) ⇒ la mitad peligrosa se deshace antes que
+        //      nada más pueda fallar. Sin él, `failedRollback` "pelado" sería PEOR que el bug: dejaría
+        //      `.cloud` persistido y el "Reintentar" de la UI (`resetAfterRollback` → `notStarted`, fase
+        //      ESTABLE) haría pasar `canRunDomain()` ⇒ motor Y mirror escribiendo a la vez, ya sin gate.
+        //   2. `.deleteCloudKitMarker`: el marcador significa "la migración COMPLETÓ y la nube es
+        //      autoritativa", y eso pasa a ser FALSO tras el abort. Un marcador sin exportar que exportase
+        //      días más tarde le mentiría al parque entero (congelaría escrituras y rutearía a adopt contra
+        //      un backend estancado). De regalo, sin fila de marcador `markerReconciliation` ve
+        //      `markerFound == false` y no auto-etiqueta este device como secundario.
+        //   3. `.rollback`: desarme defensivo + breadcrumb.
+        // Espeja el cierre LOCAL de la reversa (§h.4) menos la llamada al server — el mundo queda con la
+        // MISMA forma que una reversa completada, que el diseño ya razonó y aceptó. `migrated_at` sigue
+        // estampado (no existe RPC de abort de la ida): un reintento entrará por adopt, residual documentado.
+        case let (.cutover(.markerWritten), .markerExportStalled(elapsed, cause)):
+            let budget = cause == .definitive
+                ? policy.markerExportDefinitiveBudgetSeconds
+                : policy.markerExportUnknownBudgetSeconds
+            guard elapsed >= budget else {
+                return .transition(next: .cutover(.markerWritten), effects: [])
+            }
+            return .transition(
+                next: .failedRollback,
+                effects: [.persistICloudMode, .deleteCloudKitMarker, .rollback])
 
         // fatalError INSIDE cutover → hold the state (idempotent resume covers recovery), NEVER rollback
         // (§g.4: a kill/failure inside cutover retakes by sub-state; the marker means the migration is real).

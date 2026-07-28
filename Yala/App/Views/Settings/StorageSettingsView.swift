@@ -81,9 +81,16 @@ struct StorageSettingsView: View {
         }
         .task {
             // Refresca el journal vivo cada 1s mientras la pantalla está abierta (molde del panel DEBUG).
+            var tick = 0
             while !Task.isCancelled {
                 controller?.refresh()
                 refreshTick.toggle()
+                // C-1 (watchdog): el poll de 1 s solo LEE, y la cadencia del runner es boot/foreground/tap —
+                // así que el usuario que se queda mirando la barra en el paso 4 tendría que salir y volver
+                // para que el tope llegue a evaluarse. Un empujón cada 30 s lo resuelve sin loop: el gate puro
+                // `MigrationForegroundRekick.shouldRekick` ya descarta fases estables y trabajo en vuelo.
+                tick += 1
+                if tick % 30 == 0 { await controller?.rekickIfParked() }
                 do { try await Task.sleep(for: .seconds(1)) } catch { break }
             }
         }
@@ -325,6 +332,14 @@ struct StorageSettingsView: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .accessibilityIdentifier("storage_waiting_import_caption")
+            } else if controller.isWaitingICloudExport {
+                // C-1: el paso 4 espera la confirmación de iCloud. Antes esto era una barra clavada al 89 %
+                // sin una palabra — el usuario no podía saber si seguía trabajando o estaba colgada.
+                Text(L10n.Storage.Progress.waitingICloudExport)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .accessibilityIdentifier("storage_waiting_icloud_export_caption")
             }
             Button {
                 Task { await controller.resume() }
@@ -384,9 +399,10 @@ struct StorageSettingsView: View {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(DS.Semantic.warningForeground)
-                Text(kind == .migration ? L10n.Storage.Failed.migration : L10n.Storage.Failed.reverse)
+                Text(failureMessage(controller, kind: kind))
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.primary)
+                    .accessibilityIdentifier("storage_failed_message")
             }
             YalaPrimaryButton(L10n.Storage.Progress.retry, icon: "arrow.clockwise",
                               isDisabled: controller.isWorking) {
@@ -396,6 +412,27 @@ struct StorageSettingsView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .storageCardStyle()
+    }
+
+    /// C-1: copy del fallo por MOTIVO. El veredicto del canal iCloud sobrevive en el journal a `failedRollback`
+    /// justo para esto: "no pudimos" sin decir por qué deja al usuario sin ninguna acción posible, y con
+    /// "iCloud lleno" la acción (liberar espacio) es concreta. Sin veredicto → el copy genérico de siempre,
+    /// intacto. La reversa no cambia.
+    private func failureMessage(
+        _ controller: CloudMigrationController, kind: CloudMigrationUIState.FailureKind
+    ) -> String {
+        guard kind == .migration else { return L10n.Storage.Failed.reverse }
+        switch controller.cutoverBlocker {
+        case .quotaExceeded:
+            return L10n.Storage.Failed.migrationICloudFull
+        case .noAccountWithFootprint, .accountUnusable:
+            return L10n.Storage.Failed.migrationICloudOff
+        case .healthy, .noChannelNoFootprint:
+            // El canal se veía sano y aun así el marcador no llegó: es el atasco sin causa conocida.
+            return L10n.Storage.Failed.migrationICloudStalled
+        case nil:
+            return L10n.Storage.Failed.migration
+        }
     }
 
     // MARK: - Panel DEBUG (DEV_BUILD only)

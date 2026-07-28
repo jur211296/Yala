@@ -170,6 +170,15 @@ final class CloudMigrationController {
     /// honesto mientras sea `true`; lo limpia cualquier camino de éxito de la pre-espera.
     private(set) var resumeWaitingForImport = false
 
+    /// C-1: último veredicto del canal iCloud journaleado (`ICloudChannelVerdict`). La card de fallo elige
+    /// con esto el copy HONESTO ("iCloud se quedó sin espacio" / "no tienes iCloud activo" / "no confirmó el
+    /// último paso") en vez del genérico; `nil` = sin veredicto ⇒ copy genérico de siempre.
+    private(set) var cutoverBlocker: ICloudChannelVerdict?
+
+    /// C-1: el cutover está en el paso 4 esperando que iCloud confirme el marcador. Es el estado que antes
+    /// se mostraba como un 89 % mudo, sin decir a qué se esperaba.
+    var isWaitingICloudExport: Bool { journaledPhase == .cutover(.markerWritten) }
+
     /// Banner S11 (D5): el runtime del dominio se detuvo por sesión expirada con cambios pendientes.
     private(set) var syncNeedsSignIn = false
     private(set) var pendingUploadCount = 0
@@ -596,12 +605,19 @@ final class CloudMigrationController {
         var descriptor = FetchDescriptor<MigrationState>()
         descriptor.fetchLimit = 1
         do {
-            guard let state = try context.fetch(descriptor).first else { return (.notStarted, 0) }
+            guard let state = try context.fetch(descriptor).first else {
+                cutoverBlocker = nil
+                return (.notStarted, 0)
+            }
+            // C-1: el veredicto del canal iCloud viaja con el journal (sobrevive a `failedRollback` justo para
+            // esto) → la card de fallo puede nombrar la causa real.
+            cutoverBlocker = state.cutoverICloudVerdictRaw.flatMap(ICloudChannelVerdict.init(rawValue:))
             return (state.readPhase().phase, state.readPendingEffects().count)
         } catch {
             #if DEBUG
             print("CloudMigrationController.readJournalSnapshot: fetch(MigrationState) falló: \(error)")
             #endif
+            cutoverBlocker = nil
             return (.notStarted, 0)
         }
     }

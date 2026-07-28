@@ -39,6 +39,88 @@ struct MigrationRuntimeGateTests {
         #expect(!MigrationRuntimeGate.isDomainStablePhase(.reverseFailedRollback))
         #expect(!MigrationRuntimeGate.isDomainStablePhase(.icloudActive))
     }
+
+    // MARK: - C-1: canRun = fase ESTABLE **y** par de storage coherente
+
+    @Test("notStarted + par a medio escribir → el motor NO arranca (el agujero que cierra C-1)")
+    func canRun_notStarted_cloudWithMirrorOn_blocks() {
+        // ESTE es el agujero real. `notStarted` es fase ESTABLE (device ADOPTADO, #30: su journal queda
+        // `notStarted` tras `adoptBackendAccount`), así que con SOLO el término de fase un par a medio
+        // escribir —`.cloud` persistido pero mirror-off SIN armar, p.ej. por un kill entre las dos keys del
+        // adopt o por un cierre de reversa a medias— dejaba pasar el gate con el mirror de CloudKit MONTADO:
+        // motor del dominio y mirror escribiendo el MISMO store, y ninguna fase que lo delatara. `UserDefaults`
+        // no tiene transacción ⇒ el invariante no se puede garantizar en el escritor y se enforcea aquí.
+        #expect(!MigrationRuntimeGate.canRun(phase: .notStarted, cloudWithMirrorOn: true))
+    }
+
+    @Test("notStarted + par coherente → arranca (device adoptado normal, byte-idéntico a antes)")
+    func canRun_notStarted_pairCoherent_allows() {
+        // La otra mitad del par de tests: el fix NO puede apagar el motor del adoptado sano. Si alguien
+        // invierte el término nuevo, este test cae y no el de arriba.
+        #expect(MigrationRuntimeGate.canRun(phase: .notStarted, cloudWithMirrorOn: false))
+    }
+
+    @Test("done: bloqueado con el par roto, permitido con el par coherente")
+    func canRun_done_bothPairValues() {
+        // `done` es la otra fase estable (el LÍDER que migró) — mismo razonamiento que `notStarted`.
+        #expect(!MigrationRuntimeGate.canRun(phase: .done, cloudWithMirrorOn: true))
+        #expect(MigrationRuntimeGate.canRun(phase: .done, cloudWithMirrorOn: false))
+    }
+
+    @Test("fase transicional: bloqueada con AMBOS valores del par (el término nuevo no la desbloquea)")
+    func canRun_transitional_blockedRegardlessOfPair() {
+        // `cutover(.markerWritten)` es justo la fase donde `.cloud` + mirror ON es LEGÍTIMO (el marcador aún
+        // tiene que exportar por el mirror). Ahí manda el término de FASE: conduce el `MigrationRunner`, no el
+        // motor. Pinnea que el término nuevo es una conjunción, no una disyunción — un `||` por descuido
+        // arrancaría el motor a mitad del cutover.
+        for cloudWithMirrorOn in [true, false] {
+            #expect(!MigrationRuntimeGate.canRun(phase: .cutover(.markerWritten),
+                                                 cloudWithMirrorOn: cloudWithMirrorOn),
+                    "par roto=\(cloudWithMirrorOn)")
+        }
+    }
+
+    @Test("con el par coherente, canRun == isDomainStablePhase para TODAS las fases (C-1 no movió la tabla)")
+    func canRun_pairCoherent_matchesStablePhaseTable_allPhases() {
+        // Doble pin en un solo recorrido de las 22 fases del journal:
+        //  1. `isDomainStablePhase` conserva su verdad de siempre — C-1 añadió un término al gate, NO tocó la
+        //     clasificación de fases (los 3 tests de arriba la cubren en muestra; aquí es exhaustiva).
+        //  2. Con el par coherente (`cloudWithMirrorOn: false`) `canRun` es EXACTAMENTE la tabla de fases ⇒ el
+        //     término nuevo es inerte en operación normal, incluido todo device `.icloud` de 2.x.
+        // El `switch` de `expectedStable` es EXHAUSTIVO a propósito: añadir una fase al enum rompe la
+        // compilación de este test y obliga a clasificarla a mano en vez de heredar el default de nadie.
+        func expectedStable(_ phase: MigrationPhase) -> Bool {
+            switch phase {
+            case .done, .notStarted:
+                return true
+            case .dryRun, .consent, .authenticating, .waitingForLeader, .claimingMigration,
+                 .assigningIdentity, .uploadingSnapshot, .verifying, .cutover, .failedRollback,
+                 .reverseConfirm, .reverseClaimLeader, .reverseDrainAll, .reverseVerify,
+                 .reverseFreezeBackend, .reverseMountMirror, .reverseReconcile, .reverseUpload,
+                 .icloudActive, .reverseFailedRollback:
+                return false
+            }
+        }
+
+        // Los sub-estados salen de `CaseIterable` para que uno nuevo entre en el recorrido solo.
+        let allPhases: [MigrationPhase] =
+            [.notStarted, .dryRun, .consent, .authenticating, .waitingForLeader, .claimingMigration,
+             .assigningIdentity, .uploadingSnapshot, .verifying, .done, .failedRollback,
+             .reverseClaimLeader, .reverseDrainAll, .reverseVerify, .reverseFreezeBackend,
+             .reverseMountMirror, .reverseUpload, .icloudActive, .reverseFailedRollback,
+             .reverseConfirm(.done), .reverseConfirm(.notStarted)]
+            + CutoverSubstate.allCases.map(MigrationPhase.cutover)
+            + ReverseReconcileSubstate.allCases.map(MigrationPhase.reverseReconcile)
+
+        for phase in allPhases {
+            let expected = expectedStable(phase)
+            #expect(MigrationRuntimeGate.isDomainStablePhase(phase) == expected, "fase \(phase)")
+            #expect(MigrationRuntimeGate.canRun(phase: phase, cloudWithMirrorOn: false) == expected,
+                    "fase \(phase) con par coherente")
+            // Y con el par ROTO ninguna fase arranca — ni las estables (el agujero de C-1) ni las demás.
+            #expect(!MigrationRuntimeGate.canRun(phase: phase, cloudWithMirrorOn: true), "fase \(phase) con par roto")
+        }
+    }
 }
 
 // MARK: - P4: decisión de boot

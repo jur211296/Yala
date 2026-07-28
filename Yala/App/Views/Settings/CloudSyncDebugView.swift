@@ -177,6 +177,10 @@ final class CloudSyncMigrationPanelModel {
     var countersLabel = "—"
     var cursorLabel = "—"
     var startedAtLabel = "—"
+    /// C-1: reloj del tope del paso 4 (elapsed desde el sello) y veredicto del canal iCloud journaleado —
+    /// para que el device-QA vea POR QUÉ el cutover espera y cuánto lleva esperando.
+    var markerClockLabel = "—"
+    var icloudVerdictLabel = "—"
     var outboxDiagLabel = "—"
     var quiescent = false
     var mountedModeLabel = "—"
@@ -524,6 +528,7 @@ final class CloudSyncMigrationPanelModel {
         guard let state = try? context.fetch(descriptor).first else {
             phaseLabel = "notStarted (sin journal)"
             pendingEffectsLabel = "—"; countersLabel = "—"; cursorLabel = "—"; startedAtLabel = "—"
+            markerClockLabel = "—"; icloudVerdictLabel = "—"
             return
         }
         phaseLabel = "\(state.readPhase().phase)"
@@ -532,6 +537,10 @@ final class CloudSyncMigrationPanelModel {
         countersLabel = "mismatch \(state.verifyMismatchRetries) · red \(state.verifyNetworkRetries) · leader \(state.leaderDeviceID ?? "—") · seqCut \(state.serverSeqCut)"
         cursorLabel = state.snapshotCursorJSON ?? "—"
         startedAtLabel = state.startedAt.map { $0.formatted(date: .omitted, time: .standard) } ?? "—"
+        markerClockLabel = state.markerWrittenSince.map {
+            "\(Int(Date.now.timeIntervalSince($0)))s (desde \($0.formatted(date: .omitted, time: .standard)))"
+        } ?? "—"
+        icloudVerdictLabel = state.cutoverICloudVerdictRaw ?? "—"
     }
 }
 
@@ -687,6 +696,8 @@ struct CloudSyncDebugView: View {
                     row("Mount (proc)", migration.mountedModeLabel)
                     row("Mode persist", migration.persistedModeLabel)
                     row("Relaunch req", migration.relaunchRequested ? "SÍ" : "NO")
+                    row("Marker clock", migration.markerClockLabel)
+                    row("iCloud verdict", migration.icloudVerdictLabel)
                     if let dry = migration.dryRunSummary { row("Dry-run", dry) }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
