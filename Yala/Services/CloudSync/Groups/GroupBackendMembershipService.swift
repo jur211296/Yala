@@ -147,13 +147,6 @@ final class GroupBackendMembershipService {
         return try await client.createInvite(groupID: groupID, ttlSeconds: ttlSeconds, maxUses: maxUses)
     }
 
-    /// G6-3: RPC only. Crea el grupo migrado server-side (meta histórica + members placeholder). El
-    /// `GroupMigrationUploader` materializa el resto (freeze + seed del historial + push + marcador).
-    func migrateGroup(groupID: String, meta: [String: Any], members: [[String: Any]]) async throws -> MigrateGroupResult {
-        try ensureEligible()
-        return try await client.migrateGroup(groupID: groupID, meta: meta, members: members)
-    }
-
     func revokeInvite(token: String) async throws {
         try ensureEligible()
         try await client.revokeInvite(token: token)

@@ -99,21 +99,6 @@ struct UpdateDisplayNameResult: Decodable, Equatable {
     }
 }
 
-/// G6-1/G6-3: resultado de `migrate_group`. `already=true` (grupo ya existía con ESTE owner, sanity del
-/// resume del uploader) trae además `server_seq`; `already=false` (recién creado) no.
-struct MigrateGroupResult: Decodable, Equatable {
-    let already: Bool
-    let groupID: String
-    let ownerUserID: String
-    let serverSeq: Int?
-    enum CodingKeys: String, CodingKey {
-        case already
-        case groupID = "group_id"
-        case ownerUserID = "owner_user_id"
-        case serverSeq = "server_seq"
-    }
-}
-
 struct ForgetResult: Decodable, Equatable {
     let groupsTransferred: Int
     let groupsTombstoned: Int
@@ -348,24 +333,6 @@ final class GroupsMembershipClient {
         if let maxUses { args["p_max_uses"] = maxUses }
         let data = try await callWithRetry(fn: "create_group_invite", args: args)
         return try decode(String.self, from: data)
-    }
-
-    /// G6-3: `migrate_group` (G6-1) — crea ATÓMICO el grupo con META HISTÓRICA (`created_at`/`joined_at` del
-    /// payload) + N `group_members` placeholder (member_key legacy, `user_id NULL` reclamables por el rebind de
-    /// `join_group`). IDEMPOTENTE-SUAVE: reintento tras timeout con el MISMO owner → `{already:true}` (por eso
-    /// NO está en `neverRetryTransient` — un `.transient` reintentado es seguro). `p_meta`/`p_members` viajan
-    /// verbatim como jsonb (allowlist del gateway). El caller (uploader) construye los dicts.
-    func migrateGroup(
-        groupID: String,
-        meta: [String: Any],
-        members: [[String: Any]]
-    ) async throws -> MigrateGroupResult {
-        let data = try await callWithRetry(fn: "migrate_group", args: [
-            "p_group_id": groupID,
-            "p_meta": meta,
-            "p_members": members,
-        ])
-        return try decode(MigrateGroupResult.self, from: data)
     }
 
     func joinGroup(token: String, displayName: String, legacyMemberKey: String?) async throws -> JoinGroupResult {

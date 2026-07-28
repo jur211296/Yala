@@ -90,33 +90,12 @@ enum MetricsCanary: String {
     case groupMerkleDivergence
     case groupPushRejected
     case groupPushTokenRegisterFailed
-    case groupMigrationCompleted
-    case groupMigrationFailed
-    /// [C-4] La pasada de migración se DIFIRIÓ al próximo boot porque el fetch de GRUPOS no estaba
-    /// asentado (o un apply falló con el token ya avanzado). NO es un fallo: nada se perdió y todos los
-    /// pasos son idempotentes. Serie PROPIA a propósito — `groupMigrationFailed` significa «un paso de
-    /// la migración falló» (detail migrate/invite/freeze/seed/push/marker) y se lee para decidir el
-    /// encendido; meter aquí un diferimiento benigno envenenaría ese gate. `detail` = slug de
-    /// `GroupFetchQuiescenceGate.deferReason` (exportOnly/buffered/zoneFetchFailed/inFlight/noCycle/
-    /// applyFailed/cancelled). Emitido con `canaryOnce` ⇒ como mucho uno por proceso y por clave.
-    case groupMigrationDeferred
-    /// [C-4 PIEZA 2] El RESCATE de pull adoptó un record CloudKit nunca visto de un grupo ya migrado
-    /// (insert-only) y lo encoló al backend. `detail` = nombre de clase `@Model`. Serie PROPIA, y NO un
-    /// `*Failed`: rescatar es el comportamiento correcto, no un incidente — meterlo en una serie de
-    /// fallo envenenaría el gate «canarios en cero» del encendido. Se espera cero en estado estable;
-    /// un goteo = miembros escribiendo a CloudKit después del flip.
-    case groupCkPullRescued
     case groupJoinIntentPersisted
     case groupJoinIntentReconciled
     case groupJoinIntentDeferred
     case groupJoinIntentExpired
     case groupJoinFailed
     case groupLegacyRebindFailed
-    /// C-10: una migración quedó esperando a que sus miembros publiquen capacidad. Sostenido = rollout
-    /// atascado. Es el canario que hay que mirar antes de dar por buena una tanda de encendido.
-    case groupMigrationWaitingForMembers
-    /// C-10: este device publicó su beacon de capacidad. Creciendo = la población se calienta.
-    case groupCapabilityBeaconPublished
 
     // Batch "salir de todos mis grupos" (D10)
     case groupBatchLeaveStarted

@@ -128,9 +128,8 @@ enum GroupFreezeLogic {
     /// escalonado eso dejaba a un miembro con un build viejo mirando un grupo congelado, mudo y sin
     /// ninguna salida. Ahora ese caso es `.frozenNeedsUpdate`: se explica y lleva al App Store.
     ///
-    /// INVARIANTE (pineado por `isFrozen_unchanged_byCapability`): `migrationState != .normal` ⟺
-    /// `isFrozen == true`, para las TRES capacidades. La capacidad JAMÁS desbloquea ni bloquea
-    /// escrituras — si alguien la usa para eso, ese test se pone rojo.
+    /// INVARIANTE (sin cobertura desde la Fase 1 — ver la nota de `isFrozen`): `migrationState != .normal`
+    /// ⟺ `isFrozen == true`, para las TRES capacidades. La capacidad JAMÁS desbloquea ni bloquea escrituras.
     static func migrationState(
         movedToBackendAt: Date?,
         isBackendGroup: Bool,

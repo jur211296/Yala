@@ -414,49 +414,10 @@ final class AppBootstrapper {
             await GroupJoinReconciler.reconcile(trigger: .boot, context: context)
         }
 
-        // 16.8.4-bis. C-10: beacon de capacidad (member→owner). NO va dentro del `if groupsBackendEnabled`
-        // de abajo A PROPÓSITO: si el beacon esperara al flag del canal, el día del encendido el owner se
-        // encontraría con CERO beacons publicados y su gate de emisión bloquearía el 100 % de las
-        // migraciones. El rendezvous tiene que estar tibio ANTES. `publishIfNeeded` se auto-anula si este
-        // build no es capaz (`GroupCapability.current == nil`), que es el caso de TODA la producción hoy →
-        // no-op byte-idéntico. Gateado por QUIESCENCIA porque escribe el mainContext compartido.
-        if !uiTestActive {
-            Task { @MainActor in
-                guard await awaitPersonalStoreReady() else {
-                    SaveBreadcrumb.deferred("AppBootstrapper.groupCapabilityBeacon", "import not quiescent")
-                    return
-                }
-                GroupCapabilityBeacon.publishIfNeeded(context: context)
-            }
-        }
-
-        // 16.8.5. Grupos→backend G6-3: migración de los grupos vivos CloudKit del OWNER al backend + boot-
-        // reconciler del marcador. DARK: no-op salvo con `groupsBackendEnabled` ON. GATE CRÍTICO 2: gateado por
-        // QUIESCENCIA del import (el uploader/reconciler salvan el mainContext compartido → sin el gate
-        // reintroducen el crash-loop de restore) + flag/sesión/consent (dentro de `run`). Idempotente: un
-        // grupo que no completa reintenta en el próximo boot; el reconciler re-encola solo los marcadores a
-        // medio armar. No bloquea la app (Task del boot; el uploader es secuencial por grupo).
-        if CloudSyncFlags.groupsBackendEnabled && !uiTestActive {
-            Task { @MainActor in
-                guard await awaitPersonalStoreReady() else {
-                    SaveBreadcrumb.deferred("AppBootstrapper.groupMigrationUploader", "import not quiescent")
-                    return
-                }
-                // H4 review: el reconciler comparte el gate de consent con el uploader (consistencia con el
-                // gate CRÍTICO 2 — re-encolar marcadores también es actividad del canal; sin consent, difiere).
-                guard GroupsConsentState.isAccepted else {
-                    SaveBreadcrumb.deferred("AppBootstrapper.groupMigrationUploader", "no groups consent")
-                    return
-                }
-                GroupMigrationUploader.reconcileMarkers(context: context)
-                await GroupMigrationUploader(context: context).run()
-            }
-        }
-
         // 16.8.6. Batch "salir de todos mis grupos" (D10): reanuda un batch a medio ejecutar (kill-safe). DARK
-        // (flag ON) y solo si quedó trabajo no-terminal en el intent persistido. DESPUÉS del uploader (16.8.5)
-        // para no chocar con la migración en vuelo; gateado por QUIESCENCIA (los pasos mutan el mainContext
-        // compartido — el orquestador re-gatea por grupo, pero esperamos el import como los demás Tasks de boot).
+        // (flag ON) y solo si quedó trabajo no-terminal en el intent persistido. Gateado por QUIESCENCIA (los
+        // pasos mutan el mainContext compartido — el orquestador re-gatea por grupo, pero esperamos el import
+        // como los demás Tasks de boot).
         if CloudSyncFlags.groupsBackendEnabled && !uiTestActive && GroupBatchLeaveStore.hasUnfinishedWork() {
             Task { @MainActor in
                 guard await awaitPersonalStoreReady() else {

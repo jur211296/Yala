@@ -424,12 +424,5 @@ struct GroupsIdentityPurgeWiringTests {
         #expect(src.contains("hasCloudSession: @MainActor () -> Bool = { CloudAuthService.shared.hasSession }"))
         #expect(src.contains("PendingJoinStore.revokeLegacyMemberKey(zoneName: $0)"))
     }
-
-    /// El boot-reconciler del marcador es del OWNER: hoy re-encola también las copias congeladas de
-    /// MIEMBRO contra una zona fantasma de su propia private DB.
-    @Test func markerReconciler_isScopedToOwnerRows() throws {
-        let src = try Self.source("Yala/Services/CloudSync/Groups/GroupMigrationUploader.swift")
-        #expect(src.contains("$0.isOwner == true && $0.movedToBackendAt != nil && $0.markerEnqueuedFlag == false"))
-    }
 }
 

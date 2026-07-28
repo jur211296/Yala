@@ -63,8 +63,8 @@ final class SplitMember {
     var clientCapability: String?
 
     /// C-10: instante del último beacon. La FRESCURA importa: un beacon de hace medio año no prueba que
-    /// ese device siga capaz (pudo haberse hecho downgrade, o la fila quedó huérfana). TTL en
-    /// `GroupMigrationReadinessLogic.beaconTTL`. CloudKit-safe: opcional, default `nil`, sin `.unique`.
+    /// ese device siga capaz (pudo haberse hecho downgrade, o la fila quedó huérfana).
+    /// CloudKit-safe: opcional, default `nil`, sin `.unique`.
     var clientCapabilityAt: Date?
 
     var memberStatus: SplitMemberStatus {

@@ -29,7 +29,7 @@
 //  D4 — la retención se ATA A LA SESIÓN DE NUBE. Retener solo tiene sentido si sigue viva la identidad
 //  Yala que ancla esas filas: sin sesión no hay `sub` que las reclame, ni refresco, ni camino de vuelta
 //  ⇒ el device borra como hoy. El seam es inyectable (`hasCloudSession`), molde
-//  `GroupMigrationUploader.swift:57` / `GroupBackendMembershipService.swift:35`.
+//  `GroupBackendMembershipService.swift:35`.
 //
 //  D4 · RESIDUAL RATIFICADO POR EL OWNER, dicho sin adornos: `hasSession` prueba que hay una sesión Yala
 //  ALMACENADA, no que siga siendo el mismo humano — vive en el Keychain propio y sobrevive a un cambio

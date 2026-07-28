@@ -52,9 +52,9 @@ final class SplitGroup {
     var isBackendGroup: Bool = false
 
     /// G6-3 (marcador CloudKit): timestamp del CONGELAMIENTO del grupo tras la migración a backend
-    /// (informativo — "cuándo se movió"; truthy-por-presencia). Lo escribe el owner en el paso 6 del
-    /// `GroupMigrationUploader` y viaja por CloudKit (GroupMeta) para que los DEVICES DE LOS MIEMBROS lo
-    /// reciban vía el pull normal de CKSyncEngine → derivan el estado CONGELADO (freeze + tarjeta "se movió").
+    /// (informativo — "cuándo se movió"; truthy-por-presencia). Viaja por CloudKit (GroupMeta) para que los
+    /// DEVICES DE LOS MIEMBROS lo reciban vía el pull normal de CKSyncEngine → derivan el estado CONGELADO
+    /// (freeze + tarjeta "se movió").
     /// CloudKit-mapeado en `CKRecordTranslator` (viaja) — a diferencia de `isBackendGroup` (LOCAL-only).
     /// Freeze del MIEMBRO = `movedToBackendAt != nil && !isBackendGroup`; en el OWNER (`isBackendGroup=true`)
     /// NO congela (sus writes van al backend). CloudKit-safe: opcional.

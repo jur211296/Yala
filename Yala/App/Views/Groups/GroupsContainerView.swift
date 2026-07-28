@@ -37,7 +37,6 @@ struct GroupsContainerView: View {
     /// toca su card. Single-modal global vs N alerts montados por card.
     @State private var rejectedGroupPendingLeave: SplitGroup?
     /// G6-3 (C3): estado observable del uploader de migración (banner de progreso).
-    @State private var migrationProgress = GroupMigrationProgress.shared
     @State private var leaveErrorMessage: String?
     /// Payload del composer "Nuevo gasto": captura los grupos elegibles AL MOMENTO del tap.
     /// Evita que un `loadData()` remoto entre el tap y la presentación deje el sheet en blanco.
@@ -69,37 +68,6 @@ struct GroupsContainerView: View {
                             // Global summary
                             if let summary = viewModel.globalSummary {
                                 GroupSummaryHeader(summary: summary)
-                            }
-
-                            // G6-3 (C3): progreso simple mientras el uploader migra los grupos del owner al
-                            // backend (DARK: solo puede ser true con `groupsBackendEnabled` ON). No bloquea.
-                            if migrationProgress.isMigrating {
-                                HStack(spacing: DS.Spacing.sm) {
-                                    ProgressView()
-                                    Text(L10n.Groups.Migrated.migratingBanner)
-                                        .font(DS.Typography.caption)
-                                        .foregroundStyle(.secondary)
-                                    Spacer()
-                                }
-                                .padding(DS.Spacing.md)
-                                .solidCard(radius: DS.Radius.md)
-                            }
-
-                            // C-10: la pasada terminó y algún grupo quedó SIN migrar porque falta gente por
-                            // actualizar. Sin esto, el owner vería su grupo igual que siempre y no sabría
-                            // que hay algo esperándole — una migración bloqueada sería indistinguible de
-                            // una que nunca arrancó.
-                            if migrationProgress.groupsWaitingForMembers > 0 && !migrationProgress.isMigrating {
-                                HStack(spacing: DS.Spacing.sm) {
-                                    Image(systemName: "icloud.and.arrow.up")
-                                        .foregroundStyle(DS.Semantic.warningForeground)
-                                    Text(L10n.Groups.Migrated.waitingBanner)
-                                        .font(DS.Typography.caption)
-                                        .foregroundStyle(.secondary)
-                                    Spacer()
-                                }
-                                .padding(DS.Spacing.md)
-                                .solidCard(radius: DS.Radius.md)
                             }
 
                             // Nudge banner

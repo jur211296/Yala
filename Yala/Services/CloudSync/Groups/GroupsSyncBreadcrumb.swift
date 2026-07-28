@@ -155,44 +155,10 @@ enum GroupsSyncBreadcrumb {
     /// [G6-3 C2] El GUARD SIMÉTRICO de PULL saltó aplicar un record CloudKit fetcheado cuyo grupo local es
     /// `isBackendGroup=true` (ya migrado) — la zona CloudKit queda como red de SOLO-LECTURA: un miembro
     /// rezagado o el eco del propio marcador NO pisa las ediciones backend post-migración. `site` =
-    /// `applyRemote`/`conflict`/`bridge`. Sin PII.
-    ///
-    /// [C-4 PIEZA 2] `reason` = slug de `GroupPullRescueGate.skipReason` en el sitio de las
-    /// MODIFICACIONES; `"backendZone"` (el default) en los sitios donde el descarte es incondicional por
-    /// invariante — deletions, conflictos, zona inexistente y borrado de zona. Antes del rescate TODOS
-    /// los descartes eran indistinguibles entre sí: el eco stale legítimo y el record nunca visto (=
-    /// dinero perdido) emitían la MISMA línea. Éste es el campo que los separa en Console.app.
+    /// `applyRemote`/`conflict`/`bridge`. `reason` distingue en Console.app qué invariante disparó el
+    /// descarte (`backendGroup`/`deletion`/`backendZone`). Sin PII.
     static func groupsCkPullSkippedBackendGroup(site: String, reason: String = "backendZone") {
         logger.notice("GroupsSync ckPullSkippedBackendGroup site=\(site, privacy: .public) reason=\(reason, privacy: .public)")
-    }
-
-    /// [C-4 PIEZA 2] El RESCATE adoptó un record CloudKit NUNCA VISTO de un grupo ya migrado: la fila se
-    /// INSERTA (jamás se actualiza) y el drain del canal backend la empujará al servidor. Es la única
-    /// forma de que ese dato sobreviva — el token de CKSyncEngine ya avanzó y CloudKit no lo re-entrega.
-    /// `entity` = nombre de clase `@Model` (sin PII: jamás el group_id, el id de la fila ni el importe).
-    ///
-    /// Se espera CERO en estado estable. Un goteo sostenido significa que hay miembros escribiendo a
-    /// CloudKit después del flip — señal accionable para el rollout, no un fallo.
-    static func groupsCkPullRescued(entity: String) {
-        logger.notice("GroupsSync ckPullRescued entity=\(entity, privacy: .public) — record nunca visto de zona migrada, ADOPTADO (insert-only) y encolado al backend")
-    }
-
-    /// [G6-3 C3] El `GroupMigrationUploader` completó la migración de `count` grupos vivos al backend.
-    static func groupsMigrationCompleted(count: Int) {
-        logger.notice("GroupsSync migrationCompleted count=\(count, privacy: .public)")
-    }
-
-    /// [G6-3 C3] Un paso del `GroupMigrationUploader` falló (reintenta en el próximo boot). `step` = slug del
-    /// paso (`migrate`/`invite`/`freeze`/`seed`/`push`/`marker`). Sin PII.
-    static func groupsMigrationFailed(step: String) {
-        logger.notice("GroupsSync migrationFailed step=\(step, privacy: .public)")
-    }
-
-    /// [C-4] La pasada de migración se DIFIRIÓ porque el fetch de GRUPOS no se asentó dentro del tope.
-    /// NO es un fallo: nada se perdió y los 7 pasos son idempotentes. `waited` = segundos esperados,
-    /// `reason` = slug de `GroupFetchQuiescenceGate.deferReason` (o `cancelled`). Sin PII.
-    static func groupsMigrationFetchGateDeferred(waited: Int, reason: String) {
-        logger.notice("GroupsSync migrationFetchGateDeferred waited=\(waited, privacy: .public)s reason=\(reason, privacy: .public) — fetch de grupos no asentado; reintenta el próximo boot")
     }
 
     /// [C-4] Un batch de records fetcheados NO llegó a persistir (save fallido / handler sin contexto)
@@ -202,25 +168,6 @@ enum GroupsSyncBreadcrumb {
     /// comportamiento solo se valida del todo en CloudKit Production vía Console.app).
     static func groupsCkFetchApplyFailed(reason: String) {
         logger.notice("GroupsSync ckFetchApplyFailed reason=\(reason, privacy: .public) — token avanzado sin apply; migración diferida")
-    }
-
-    /// [C-10] La migración de un grupo NO se emitió porque `pending` miembros aún no publicaron un beacon
-    /// de capacidad. Sostenido en el dashboard = rollout atascado (alguien no actualiza). `pending == -1`
-    /// = la lectura de members falló y el gate cerró por precaución. Sin PII (solo un conteo).
-    static func groupsMigrationWaitingForMembers(pending: Int) {
-        logger.notice("GroupsSync migrationWaitingForMembers pending=\(pending, privacy: .public)")
-    }
-
-    /// [C-10] Este device publicó/refrescó su beacon de capacidad en `count` grupos. Creciendo = la
-    /// población se está calentando; es el indicador que dice cuándo es seguro encender el canal.
-    static func groupsCapabilityBeaconPublished(count: Int) {
-        logger.notice("GroupsSync capabilityBeaconPublished count=\(count, privacy: .public)")
-    }
-
-    /// [G6-3 C2] El boot-reconciler re-encoló el marcador de `count` grupos `movedToBackendAt != nil &&
-    /// !markerEnqueuedFlag` (kill entre el save del marcador y el flag). Vacío en estado estable.
-    static func groupsMigrationMarkerReconciled(count: Int) {
-        logger.notice("GroupsSync migrationMarkerReconciled count=\(count, privacy: .public)")
     }
 
     // MARK: - Ciclo de vida del loop (H-2026-07-18-4)

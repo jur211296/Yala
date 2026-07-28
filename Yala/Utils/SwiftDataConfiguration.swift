@@ -377,9 +377,9 @@ enum SwiftDataConfiguration {
         // El consent de GRUPOS (§C5) es un registro de la CUENTA y `removeUserPreferenceKeys` no lo
         // nombra (ni en su lista ni en sus exclusiones deliberadas): sin esto sobrevive al wipe y la
         // cuenta SIGUIENTE en este device NO ve la pantalla de consent (`GroupBackendInviteEntryLogic
-        // .nextStep`, `GroupCreateRoutingLogic`, `GroupJoinReconciler`) — y el uploader de migración
-        // (`AppBootstrapper` → `GroupMigrationUploader`, gateado POR consent) subiría sus grupos,
-        // gastos y liquidaciones bajo un `user_id` que jamás consintió. Era el ÚNICO superviviente del
+        // .nextStep`, `GroupCreateRoutingLogic`, `GroupJoinReconciler`) — y el canal de Grupos, gateado
+        // POR consent, subiría sus grupos, gastos y liquidaciones bajo un `user_id` que jamás
+        // consintió. Era el ÚNICO superviviente del
         // trío de superficies de Grupos: `PendingJoinStore`/`GroupJoinIntentTracker` mueren en el
         // `resetPrefs()` de abajo (vía `AppRouter.resetAll`).
         //

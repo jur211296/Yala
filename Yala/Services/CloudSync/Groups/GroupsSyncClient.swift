@@ -748,109 +748,6 @@ final class GroupsSyncClient {
         ))
     }
 
-    // MARK: - Snapshot seed del historial (G6-3, gemelo de I10-w4)
-
-    /// Siembra el outbox del canal con el HISTORIAL FILA-COMPLETA de un grupo migrado (`GroupMigrationUploader`
-    /// paso 4). El drain es History-driven y las filas migradas YA existen en el store → jamás se drenarían
-    /// solas; este seam las emite explícitamente. FILA-COMPLETA (`changedColumns = emission.columns`) vía
-    /// `GroupEntityEmissionMap`, HLC fresco por `clock.send`, ops `.upsert`, SIN tocar los `@Model` `Split*`
-    /// (cero History del store de grupos, cero eco). `split_groups` es UPDATE-only ⇒ el upsert de meta aplica
-    /// como UPDATE server-side (el grupo YA existe: paso 1 `migrate_group`).
-    ///
-    /// **LECTURA VIVA (CRÍTICO 4):** emite desde el estado ACTUAL de cada fila al momento de emitir, JAMÁS un
-    /// snapshot pre-tomado — con lectura viva + monotonía del HLC, una edición concurrente que drena DESPUÉS
-    /// obtiene HLC mayor y GANA por LWW (molde I10-w4); un snapshot stale con HLC fresco PISARÍA la edición.
-    ///
-    /// **Dedupe (re-corrida tras kill):** si `(syncID,hlc,op)` ya está en el outbox no se duplica (match por
-    /// `existingOutboxKeys`). Persiste el reloj (sin avanzar el token de History — el seed no consume History).
-    /// Un drift/overflow de `clock.send` LANZA (el uploader lo trata como transitorio y reintenta).
-    func enqueueSnapshotRows(for group: SplitGroup, context: ModelContext) throws {
-        let cursor = try loadOrCreateCursor(context)
-        loadClock(from: cursor)
-        let groupID = group.cloudKitZoneID
-
-        // Dedupe por (syncID, entity, op=upsert): en una re-corrida el HLC es fresco (no matchearía por
-        // (syncID,hlc)), así que la dedupe es por IDENTIDAD — si ya hay una fila upsert de esa syncID en el
-        // outbox del grupo, no re-sembrar (evita duplicados pendientes; la re-emisión sería inofensiva por
-        // LWW pero desperdicia un delta).
-        var seen = try existingSnapshotSyncIDs(groupID: groupID, context: context)
-        var rows: [PendingGroupRow] = []
-
-        // Meta del grupo (split_groups UPDATE-only) — LECTURA VIVA del `SplitGroup`.
-        try appendSnapshotUpsert(model: group, emission: GroupEntityEmissionMap.splitGroup,
-                                 syncID: group.id, groupID: groupID,
-                                 entityType: GroupSyncEntityType.splitGroup, rows: &rows, seen: &seen)
-
-        // Contenido del grupo — LECTURA VIVA (fetch al momento de emitir). `#Predicate` CONCRETO por tipo.
-        let expenses = try context.fetch(FetchDescriptor<SplitExpense>(
-            predicate: #Predicate { $0.groupZoneID == groupID }, sortBy: [SortDescriptor(\.id)]))
-        for e in expenses {
-            try appendSnapshotUpsert(model: e, emission: GroupEntityEmissionMap.splitExpense,
-                                     syncID: e.id, groupID: e.groupZoneID,
-                                     entityType: GroupSyncEntityType.splitExpense, rows: &rows, seen: &seen)
-        }
-        let shares = try context.fetch(FetchDescriptor<SplitShare>(
-            predicate: #Predicate { $0.groupZoneID == groupID }, sortBy: [SortDescriptor(\.id)]))
-        for s in shares {
-            try appendSnapshotUpsert(model: s, emission: GroupEntityEmissionMap.splitShare,
-                                     syncID: s.id, groupID: s.groupZoneID,
-                                     entityType: GroupSyncEntityType.splitShare, rows: &rows, seen: &seen)
-        }
-        let settlements = try context.fetch(FetchDescriptor<SplitSettlement>(
-            predicate: #Predicate { $0.groupZoneID == groupID }, sortBy: [SortDescriptor(\.id)]))
-        for st in settlements {
-            try appendSnapshotUpsert(model: st, emission: GroupEntityEmissionMap.splitSettlement,
-                                     syncID: st.id, groupID: st.groupZoneID,
-                                     entityType: GroupSyncEntityType.splitSettlement, rows: &rows, seen: &seen)
-        }
-
-        guard !rows.isEmpty else { return }
-        writeMirror(rows: rows)
-        try saveWithAuthor(context) {
-            for row in rows { context.insert(row.makeModel()) }
-            cursor.clockLatestHLC = clock.latest?.description
-        }
-    }
-
-    /// Emite UNA fila full-row del snapshot (op `.upsert`, HLC fresco `clock.send(now:)`), con dedupe por
-    /// `(syncID,hlc,op)`. Espejo síncrono de `appendUpsert` del drain pero con `now()` en vez de `tx.timestamp`
-    /// y author = `outboxSaveAuthor` (la fila NO nace de una transacción de History). Poison del codec c1 →
-    /// canario + skip de esa fila (no aborta el seed).
-    /// syncIDs de las filas upsert VIVAS Y dead-letter del outbox de un grupo (dedupe del seed por identidad).
-    private func existingSnapshotSyncIDs(groupID gid: String, context: ModelContext) throws -> Set<UUID> {
-        let rows = try context.fetch(FetchDescriptor<GroupSyncOutbox>(
-            predicate: #Predicate { $0.groupID == gid }))
-        var ids: Set<UUID> = []
-        for row in rows where row.opRaw == SyncOutboxOp.upsert.rawValue { ids.insert(row.syncID) }
-        return ids
-    }
-
-    private func appendSnapshotUpsert<T: AnyObject>(
-        model: T, emission: EntityEmission<T>, syncID: UUID, groupID: String,
-        entityType: String, rows: inout [PendingGroupRow], seen: inout Set<UUID>
-    ) throws {
-        guard !seen.contains(syncID) else { return }
-        seen.insert(syncID)
-        let hlc = try clock.send(now: now()).description
-        let result = DeltaEmitter.emit(model: model, emission: emission,
-                                       changedColumns: emission.columns, hlc: hlc)
-        let fieldsJSON: String
-        do {
-            fieldsJSON = try Canonc1Codec.encode(result.fields,
-                                                 groupedColumns: Set(emission.groupByColumn.keys))
-        } catch {
-            #if DEBUG
-            logger.error("GroupsSync: snapshot codec c1 rechazó \(entityType, privacy: .public): \(error)")
-            #endif
-            GroupsSyncBreadcrumb.groupsMigrationFailed(step: "seed:codec")
-            return
-        }
-        rows.append(PendingGroupRow(
-            syncID: syncID, groupID: groupID, entityType: entityType, op: .upsert, hlc: hlc,
-            clientMutationID: UUID(), fieldsJSON: fieldsJSON,
-            fieldHlcsJSON: encodeFieldHlcs(result.fieldHlcs), author: Self.outboxSaveAuthor, createdAt: now()))
-    }
-
     // MARK: - Lookups
 
     private func buildLookups(_ context: ModelContext) throws -> Lookups {
@@ -1423,40 +1320,6 @@ final class GroupsSyncClient {
 
     // MARK: - Pull (GET /groups/pull) + apply
 
-    /// [C-4 PIEZA 2] Estado del canal backend para este `group_id`, tal como lo consume el gate del
-    /// RESCATE de pull de `SplitSyncManager`. Sin este gate, «ausente localmente» NO significa «el
-    /// backend no lo tiene», y adoptar-y-empujar pisaría con HLC fresco las ediciones post-migración de
-    /// todo el grupo.
-    ///
-    /// Las DOS señales van SEPARADAS —en vez de un solo `Bool` compuesto— porque distinguen dos
-    /// diagnósticos distintos en el breadcrumb del descarte (`noBackendPull` vs `noCursor`), y el gate
-    /// puro las evalúa con precedencia propia:
-    ///  - `completed`: `pullUntilExhausted` devolvió `.completed` en esta sesión, es decir una página
-    ///    llegó con 0 deltas ⇒ la cola del server está agotada hasta su `server_seq`.
-    ///  - `hasCursor`: el `group_id` está en `groupCursorsJSON` ⇒ el server ya REPORTÓ ese grupo, así que
-    ///    el pull de arriba habla también de él. Un grupo recién flipeado por el paso 3 del uploader,
-    ///    cuyo primer pull aún no lo ha listado, NO pasa — se auto-sana en el ciclo siguiente (60 s).
-    ///
-    /// LECTURA PURA a propósito: NO usa `loadOrCreateCursor` (que INSERTA la fila y hace `save()`) — esto
-    /// corre dentro del delegate de CKSyncEngine, en el camino caliente del pull de CloudKit, donde un
-    /// save espurio sobre el `mainContext` compartido es justo lo que el subsistema evita. Sin fila de
-    /// cursor todavía ⇒ `hasCursor == false` (conservador: nadie ha pulleado nada aún).
-    func backendPullSignal(groupID: String, context: ModelContext) -> (completed: Bool, hasCursor: Bool) {
-        var descriptor = FetchDescriptor<GroupSyncCursor>()
-        descriptor.fetchLimit = 1
-        do {
-            guard let cursor = try context.fetch(descriptor).first else {
-                return (lastPullCycleCompleted, false)
-            }
-            return (lastPullCycleCompleted, decodeCursors(cursor.groupCursorsJSON)[groupID] != nil)
-        } catch {
-            #if DEBUG
-            print("GroupsSyncClient: backendPullSignal fetch falló: \(error)")
-            #endif
-            return (lastPullCycleCompleted, false)
-        }
-    }
-
     /// Itera `pullAndApplyOnce` hasta AGOTAR la cola. TERMINA cuando la página aplicada trae 0 deltas (única
     /// señal válida — el `limit` del gateway es POR GRUPO, así que el atajo `deltas.count < limit → done`
     /// del canal personal NO aplica). Cap duro de `pullMaxIterations` (server que no converge) → breadcrumb
@@ -1757,19 +1620,7 @@ final class GroupsSyncClient {
             // interruptor que congela CloudKit (choke-points de G5-A) y activa el drain backend en UN commit;
             // sin atomicidad habría una ventana de doble-verdad. Un grupo born-backend (`isBackendGroup` ya
             // `true`) permanece intacto (guard `!isBackendGroup` → sin write espurio).
-            //
-            // FORWARD-COMPAT G6-3 (ajuste #4 del review): este flip puede correr ANTES del paso-3 del uploader
-            // del owner si el pull de membership discovery llega primero (post-`migrate_group`) → el
-            // resume-predicado del uploader NO puede depender de `!isBackendGroup` a secas (por eso el candidato
-            // es `movedToBackendAt == nil`, no `!isBackendGroup`). DEFENSA EXTRA G6-3 (CRÍTICO 3): NO flipear un
-            // grupo del OWNER con la migración EN CURSO (candidato del uploader: `isOwner && movedToBackendAt ==
-            // nil && ckSystemFieldsData != nil`) — el uploader es el dueño del flip (su paso 3), y dejarlo
-            // flipear aquí podría activar el drain backend antes del seed del historial (paso 4). Un member
-            // (isOwner=false) o un owner ya-marcado (movedToBackendAt != nil) SÍ adoptan normalmente.
-            let migrationInFlight = model.isOwner && model.movedToBackendAt == nil && model.ckSystemFieldsData != nil
-            if !migrationInFlight {
-                model.isBackendGroup = true
-            }
+            model.isBackendGroup = true
         }
     }
 
@@ -2146,12 +1997,6 @@ extension GroupsSyncClient {
     private func liveOutboxCount(groupID gid: String, context: ModelContext) throws -> Int {
         try context.fetchCount(FetchDescriptor<GroupSyncOutbox>(
             predicate: #Predicate { $0.groupID == gid && $0.rejectedReason == nil }))
-    }
-
-    /// G6-3: filas VIVAS (no dead-letter) de un grupo — el `GroupMigrationUploader` verifica el push del
-    /// paso 5 con esto (drenado = 0). Wrapper público de `liveOutboxCount`.
-    func liveGroupOutboxCount(groupID gid: String, context: ModelContext) throws -> Int {
-        try liveOutboxCount(groupID: gid, context: context)
     }
 
     /// Filas de outbox en DEAD-LETTER de un grupo ([R7]). Cero → sin rechazo permanente pendiente.

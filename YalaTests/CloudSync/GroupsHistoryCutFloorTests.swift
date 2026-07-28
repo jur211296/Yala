@@ -1,12 +1,14 @@
 //
-//  GroupPullRescueChannelTests.swift
+//  GroupsHistoryCutFloorTests.swift
 //  YalaTests / CloudSync
 //
-//  C-4 (PIEZA 2): las dos piezas del rescate que viven en el CANAL y no en el delegate de CloudKit —
-//  la señal «¿está asentado el backend para este grupo?» y el suelo del corte del History.
+//  El suelo del corte del History del canal de Grupos: `CloudSyncEngine.deleteHistorySafeCut` tiene que
+//  respetar las anclas de Grupos (`GroupSyncCursor.lastDrainedTxAt` y la fila VIVA más vieja de
+//  `GroupSyncOutbox`), no solo el outbox personal. El History es por-CONTAINER y con 2.1 el backend es el
+//  ÚNICO canal de Grupos: sin este suelo, el pruning personal puede comerse la transacción de una fila del
+//  outbox de Grupos antes de que suba.
 //
-//  Infra al molde de `GroupsSyncClientTests`: container ON-DISK temp con los 3 stores (el History es
-//  por-CONTAINER, que es justo el punto del segundo bloque).
+//  Infra al molde de `GroupsSyncClientTests`: container ON-DISK temp con los 3 stores.
 //
 
 import Foundation
@@ -15,9 +17,9 @@ import Testing
 
 @testable import Yala
 
-@Suite("C-4 PIEZA 2 · señal del canal backend y suelo del History", .serialized)
+@Suite("Suelo del corte del History del canal de Grupos", .serialized)
 @MainActor
-struct GroupPullRescueChannelTests {
+struct GroupsHistoryCutFloorTests {
 
     // MARK: - Infra
 
@@ -55,79 +57,11 @@ struct GroupPullRescueChannelTests {
             createdAt: createdAt, rejectedReason: rejectedReason)
     }
 
-    // MARK: - backendPullSignal
-
-    /// Sin fila de cursor todavía: nadie ha pulleado nada ⇒ ninguna de las dos señales abre el rescate.
-    /// Y —lo que importa para un método que corre en el camino caliente del delegate— la lectura NO crea
-    /// la fila: `loadOrCreateCursor` la insertaría y haría `save()` sobre el `mainContext` compartido.
-    @Test func withoutACursorRowTheSignalIsClosedAndNothingIsCreated() throws {
-        let dir = freshDir(); defer { cleanup(dir) }
-        let context = try makeContext(dir)
-        let client = GroupsSyncClient()
-
-        let signal = client.backendPullSignal(groupID: "SplitGroup-A", context: context)
-        #expect(!signal.completed)
-        #expect(!signal.hasCursor)
-        #expect(try context.fetch(FetchDescriptor<GroupSyncCursor>()).isEmpty,
-                "backendPullSignal debe ser una LECTURA pura: crear la fila aquí metería un save en el pull de CloudKit")
-    }
-
-    /// El cursor por grupo es lo que ata la señal al grupo CONCRETO: un pull completo que listó a A no
-    /// dice nada de B.
-    @Test func theCursorIsPerGroup() throws {
-        let dir = freshDir(); defer { cleanup(dir) }
-        let context = try makeContext(dir)
-        context.insert(GroupSyncCursor(groupCursorsJSON: #"{"SplitGroup-A":42}"#))
-        try context.save()
-
-        let client = GroupsSyncClient()
-        client._testMarkPullCompleted()
-
-        let a = client.backendPullSignal(groupID: "SplitGroup-A", context: context)
-        #expect(a.completed)
-        #expect(a.hasCursor)
-
-        let b = client.backendPullSignal(groupID: "SplitGroup-B", context: context)
-        #expect(b.completed)
-        #expect(!b.hasCursor, "un grupo que el server aún no ha listado no puede abrir el rescate")
-    }
-
-    /// Con cursor pero sin un pull COMPLETO en esta sesión (arranque, ciclo transitorio, 401) la señal
-    /// sigue cerrada: la cola del server podría tener deltas sin aplicar.
-    @Test func aCursorWithoutACompletedPullIsNotEnough() throws {
-        let dir = freshDir(); defer { cleanup(dir) }
-        let context = try makeContext(dir)
-        context.insert(GroupSyncCursor(groupCursorsJSON: #"{"SplitGroup-A":7}"#))
-        try context.save()
-
-        let signal = GroupsSyncClient().backendPullSignal(groupID: "SplitGroup-A", context: context)
-        #expect(!signal.completed)
-        #expect(signal.hasCursor)
-        // Y el gate, con esa señal, descarta.
-        #expect(GroupPullRescueGate.decide(GroupPullRescueGate.Signal(
-            flagOn: true, replayingFullCorpus: false, prefetchFailed: false,
-            backendPullCompletedThisSession: signal.completed,
-            groupHasBackendCursor: signal.hasCursor,
-            isRescuableType: true, existsLocally: false)) == .discard)
-    }
-
-    /// Un `groupCursorsJSON` corrupto no puede abrir el rescate por accidente.
-    @Test func corruptCursorJSONClosesTheSignal() throws {
-        let dir = freshDir(); defer { cleanup(dir) }
-        let context = try makeContext(dir)
-        context.insert(GroupSyncCursor(groupCursorsJSON: "no-soy-json"))
-        try context.save()
-
-        let client = GroupsSyncClient()
-        client._testMarkPullCompleted()
-        #expect(!client.backendPullSignal(groupID: "SplitGroup-A", context: context).hasCursor)
-    }
-
     // MARK: - Suelo del corte del History (el History es por CONTAINER)
 
-    /// EL BUG QUE CIERRA: el corte solo miraba el outbox PERSONAL. Con el rescate cableado, eso podía
-    /// borrar la transacción de History de una fila recién adoptada antes de que el drain de Grupos —que
-    /// lee el MISMO History con su propia ancla— llegara a verla: la fila se quedaba local y jamás subía.
+    /// EL BUG QUE CIERRA: el corte solo miraba el outbox PERSONAL, así que podía borrar la transacción de
+    /// History de una fila de Grupos antes de que el drain de Grupos —que lee el MISMO History con su
+    /// propia ancla— llegara a verla: la fila se quedaba local y jamás subía.
     @Test func theCutNeverOvertakesTheGroupsDrainAnchor() throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
@@ -157,8 +91,7 @@ struct GroupPullRescueChannelTests {
     }
 
     /// Una fila en DEAD-LETTER no retiene nada: no va a subir nunca, y retener su History por ella
-    /// dejaría el corte clavado para siempre. Mismo criterio que `liveGroupOutboxCount`, del que ya
-    /// depende el paso 5 del uploader de la migración.
+    /// dejaría el corte clavado para siempre.
     @Test func aDeadLetteredGroupRowDoesNotHoldTheCut() throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)

@@ -102,20 +102,6 @@ struct GroupSettingsView: View {
                     if group.isOwner && group.movedToBackendAt != nil && group.ckSystemFieldsData != nil {
                         migratedDeleteCopySection
                     }
-
-                    // C-10: gate INVERSO al de arriba — el grupo AÚN no se movió, y no se moverá mientras
-                    // alguien no pueda seguirle. Nombrar a los rezagados convierte un bloqueo silencioso
-                    // en algo sobre lo que el owner puede actuar.
-                    //
-                    // Espeja el gate del uploader (`GroupMigrationUploader.run` + candidatos) A PROPÓSITO:
-                    // sin sesión, sin consent o sin zona CloudKit, quien bloquea la migración es el PROPIO
-                    // owner, y nombrar entonces a los miembros sería culpar a quien no tiene la culpa.
-                    if group.isOwner && group.movedToBackendAt == nil && group.ckSystemFieldsData != nil
-                        && CloudSyncFlags.groupsBackendEnabled
-                        && CloudAuthService.shared.hasSession && GroupsConsentState.isAccepted
-                        && !migrationLaggards.isEmpty {
-                        migrationWaitingSection
-                    }
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xl)
@@ -653,60 +639,6 @@ struct GroupSettingsView: View {
             .disabled(isDeletingCopy)
 
             Text(L10n.Groups.Migrated.deleteCopyHint)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, DS.FormRow.paddingH)
-                .padding(.bottom, DS.FormRow.paddingV)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .solidCard(radius: DS.Radius.card)
-    }
-
-    // MARK: - C-10: espera de capacidad de los miembros
-
-    /// Miembros que hoy BLOQUEAN la migración de este grupo (sin beacon de capacidad, con beacon caducado
-    /// o sin `cloudKitUserRecordID`). Vacío ⇒ la sección no se muestra.
-    private var migrationLaggards: [SplitMember] {
-        let snapshots = viewModel.members.map { member in
-            MemberCapabilitySnapshot(
-                memberKey: member.id.uuidString,
-                isGroupOwner: member.isGroupOwner,
-                status: member.memberStatus,
-                hasRecordName: !member.cloudKitUserRecordID.isEmpty,
-                capability: member.clientCapability,
-                capabilityAt: member.clientCapabilityAt
-            )
-        }
-        let blockingKeys = Set(
-            GroupMigrationReadinessLogic.laggards(members: snapshots, now: .now).map(\.memberKey)
-        )
-        return viewModel.members.filter { blockingKeys.contains($0.id.uuidString) }
-    }
-
-    /// C-10: sección owner-only que nombra a quien falta y explica la ÚNICA salida (quitar a quien ya no
-    /// participa). No hay botón "Mover de todos modos" a propósito: forzar la migración dejaría al
-    /// rezagado exactamente en el estado que este trabajo cierra.
-    private var migrationWaitingSection: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-            HStack(spacing: DS.Spacing.xs) {
-                Image(systemName: "icloud.and.arrow.up")
-                    .foregroundStyle(DS.Semantic.warningForeground)
-                Text(L10n.Groups.Migrated.waitingSectionTitle)
-                    .font(DS.Typography.subheadlineEmphasized)
-                Spacer()
-            }
-            .padding(.horizontal, DS.FormRow.paddingH)
-            .padding(.top, DS.FormRow.paddingV)
-
-            ForEach(migrationLaggards, id: \.id) { member in
-                Text(member.resolvedDisplayName)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, DS.FormRow.paddingH)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-
-            Text(L10n.Groups.Migrated.waitingHint)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, DS.FormRow.paddingH)
