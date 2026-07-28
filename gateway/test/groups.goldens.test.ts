@@ -85,7 +85,6 @@ const RPC_NEEDS_ENC_KEY = new Set([
   "create_group",
   "join_group",
   "update_member_display_name",
-  "migrate_group",
   "groups_forget_user",
 ]);
 
@@ -638,216 +637,6 @@ describe("G3 goldens · /groups/rpc/* contra staging real", () => {
 });
 
 // ============================================================================
-// G6-1 goldens · migrate_group (migración de grupos VIVOS de CloudKit al backend)
-// ============================================================================
-// IMPORTANTE: estos goldens asumen la función `migrate_group` YA APLICADA en staging (migración
-// g6_01_migrate_group). Se escriben VERDES contra la función viva; el loop principal los CORRE
-// POST-APLICACIÓN (opción del brief — sin sonda 502 coarse). Antes de aplicar, migrate_group →
-// PGRST202 "no function matches" → 404 del gateway.
-//
-// ⚠️ ACTIVACIÓN POR EL LOOP: el describe está marcado `describe.skip` para dejar la suite VERDE HOY
-// (la función aún no existe en staging). TRAS aplicar la migración g6_01_migrate_group, cambiar
-// `describe.skip(` → `describe(` en la línea de abajo y re-correr `npm test` (deben quedar 3/3 verdes).
-
-// gid único por corrida con prefijo propio (trazabilidad); member_keys legacy constantes (el gid fresco
-// hace disjunto el PK (group_id, member_key) entre corridas). El owner migra con su member_key LEGACY
-// (recordName CloudKit-era), NUNCA su sub — su historial apunta a la id derivada del recordName.
-function freshMigrateGid(): string {
-  return `g6-migrate-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-const LEGACY_OWNER = "_legacyOwnerRec";
-const LEGACY_PIA = "_legacyPia";
-const LEGACY_BOB = "_legacyBob";
-const HISTORIC_CREATED = "2024-01-15T10:00:00.000Z"; // fecha HISTÓRICA (≠ now()) — debe preservarse.
-const HISTORIC_JOINED = "2024-02-20T09:30:00.000Z";
-
-/** Lectura DESCIFRADA de una fila group_members vía el RPC lector (display_name es † post-G7 → un select=*
- *  directo vería bytea). Filtra por member_key en JS (el reader pagina por group_id + server_seq). */
-async function readMember(jwt: string, gid: string, memberKey: string): Promise<Record<string, unknown> | null> {
-  const r = await rpc(jwt, "groups_pull_rows_group_members", { p_group_id: gid, p_after_seq: 0, p_limit: 1000, p_key: ENC_KEY });
-  if (r.status !== 200 || !Array.isArray(r.body)) return null;
-  return (r.body as Record<string, unknown>[]).find((x) => x.member_key === memberKey) ?? null;
-}
-
-/** Migra un grupo vía migrate_group (owner=A con member_key LEGACY + N placeholders user_id NULL). */
-async function setupGroupWithRebind(
-  nameSuffix: string,
-  placeholders: string[],
-): Promise<{ gid: string }> {
-  const gid = freshMigrateGid();
-  const members = [
-    { member_key: LEGACY_OWNER, display_name: "Alice", role: "admin", status: "active", joined_at: HISTORIC_JOINED, is_owner: true },
-    ...placeholders.map((k) => ({ member_key: k, display_name: `Legacy ${k}`, role: "member", status: "active", joined_at: HISTORIC_JOINED, is_owner: false })),
-  ];
-  const mig = await rpcGw(jwtA, "migrate_group", {
-    p_group_id: gid,
-    p_meta: {
-      name: `G6 ${nameSuffix}`, currency_code: "PEN", icon_name: "star", color_hex: "#112233",
-      default_split_type: "equal", created_at: HISTORIC_CREATED, members_can_invite: false,
-    },
-    p_members: members,
-  });
-  expect(mig.status).toBe(200);
-  expect(mig.body.already).toBe(false);
-  return { gid };
-}
-
-describe("G6 goldens · migrate_group contra staging real (post-aplicación g6_01)", () => {
-  it("1. migrate_group atómico: owner (member_key legacy, user_id=A) + 2 placeholders user_id NULL; filas exactas; re-intento already:true; otro caller yala_group_exists", async () => {
-    const gid = freshMigrateGid();
-    const members = [
-      { member_key: LEGACY_OWNER, display_name: "Alice", role: "admin", status: "active", joined_at: HISTORIC_JOINED, is_owner: true },
-      { member_key: LEGACY_PIA, display_name: "Pia", role: "member", status: "active", joined_at: HISTORIC_JOINED, is_owner: false },
-      { member_key: LEGACY_BOB, display_name: "Bob", role: "member", status: "active", joined_at: HISTORIC_JOINED, is_owner: false },
-    ];
-    const mig = await rpcGw(jwtA, "migrate_group", {
-      p_group_id: gid,
-      p_meta: {
-        name: "G6 atomic", currency_code: "PEN", icon_name: "star", color_hex: "#112233",
-        default_split_type: "equal", created_at: HISTORIC_CREATED,
-        simplify_debts: true, show_debts_in_single_currency: false, members_can_invite: false,
-      },
-      p_members: members,
-    });
-    expect(mig.status).toBe(200);
-    expect(mig.body.already).toBe(false);
-    expect(mig.body.group_id).toBe(gid);
-    expect(mig.body.owner_user_id).toBe(subA);
-
-    // split_groups: META HISTÓRICA preservada (created_at ≠ now()), owner=A, field_hlcs por unidad, server_seq estampado.
-    // G7: name es † → leer descifrado.
-    const grp = await readGroupRowDecrypted(jwtA, "split_groups", gid);
-    expect(grp?.group_id).toBe(gid);
-    expect(grp?.name).toBe("G6 atomic");
-    expect(grp?.owner_user_id).toBe(subA);
-    expect(grp?.simplify_debts).toBe(true);
-    expect(new Date(grp?.created_at as string).getTime()).toBe(new Date(HISTORIC_CREATED).getTime());
-    expect((grp?.field_hlcs as Record<string, string>).meta).toBeTruthy();
-    expect(Number(grp?.server_seq)).toBeGreaterThan(0);
-
-    // owner member: user_id=A, admin/active, joined_at histórico, field_hlcs profile+membership.
-    const owner = await readMember(jwtA, gid, LEGACY_OWNER);
-    expect(owner?.user_id).toBe(subA);
-    expect(owner?.role).toBe("admin");
-    expect(owner?.status).toBe("active");
-    expect(new Date(owner?.joined_at as string).getTime()).toBe(new Date(HISTORIC_JOINED).getTime());
-    expect((owner?.field_hlcs as Record<string, string>).profile).toBeTruthy();
-    expect((owner?.field_hlcs as Record<string, string>).membership).toBeTruthy();
-
-    // placeholders: user_id NULL (reclamables por rebind legacy), status/display migrados tal cual.
-    const pia = await readMember(jwtA, gid, LEGACY_PIA);
-    expect(pia?.user_id).toBeNull();
-    expect(pia?.status).toBe("active");
-    expect(pia?.display_name).toBe("Pia");
-    const bob = await readMember(jwtA, gid, LEGACY_BOB);
-    expect(bob?.user_id).toBeNull();
-
-    // RE-INTENTO (uploader one-shot): mismo A, mismo payload → already:true SIN tocar nada (+ sanity fields).
-    const retry = await rpcGw(jwtA, "migrate_group", {
-      p_group_id: gid,
-      p_meta: { name: "G6 atomic", currency_code: "PEN", default_split_type: "equal", created_at: HISTORIC_CREATED },
-      p_members: members,
-    });
-    expect(retry.status).toBe(200);
-    expect(retry.body.already).toBe(true);
-    expect(retry.body.group_id).toBe(gid);
-    expect(retry.body.owner_user_id).toBe(subA);
-    expect(Number(retry.body.server_seq)).toBeGreaterThan(0);
-
-    // OTRO caller (B) sobre el MISMO gid → yala_group_exists (distinto de la rama already del mismo owner).
-    const other = await rpcGw(jwtB, "migrate_group", {
-      p_group_id: gid,
-      p_meta: { name: "G6 atomic", currency_code: "PEN", default_split_type: "equal", created_at: HISTORIC_CREATED },
-      p_members: [{ member_key: "_bOwner", display_name: "Bob", role: "admin", status: "active", is_owner: true }],
-    });
-    expect(other.status).toBe(400);
-    expect(other.body.error.code).toBe("yala_group_exists");
-  }, 120_000);
-
-  it("2. E2E migración (R10 server-side): A migra + pushea historial con FKs legacy (*_member_key = uuidStrings CloudKit-era); B (join+approve) pull ve las FKs byte-idénticas", async () => {
-    const { gid } = await setupGroupWithRebind("r10-e2e", [LEGACY_PIA]);
-
-    // FKs legacy: los *_member_key transportan SplitMember.id.uuidString (CloudKit-era), NO member_keys crudos.
-    const legacyPayer = uuid();
-    const legacyShareMember = uuid();
-    const legacyFrom = uuid();
-    const legacyTo = uuid();
-    const expId = uuid();
-    const shId = uuid();
-    const stId = uuid();
-    const h = hlc(T0 + 900);
-
-    // A (owner active writer) pushea el historial con las FKs legacy.
-    const r = await push(jwtA, [
-      {
-        entity_type: "split_expenses", group_id: gid, sync_id: expId, op: "upsert",
-        fields: { ...gmoney(80), expense_description: "Legacy dinner", date: "2024-03-01T12:00:00.000Z", paid_by_member_key: legacyPayer, split_type: "equal" },
-        field_hlcs: { gmoney: h, expense_description: h, date: h, paid_by_member_key: h, split_type: h }, hlc: h, client_mutation_id: uuid(),
-      },
-      {
-        entity_type: "split_shares", group_id: gid, sync_id: shId, op: "upsert",
-        fields: { expense_id: expId, member_key: legacyShareMember, amount: 40 }, field_hlcs: { gshare: h }, hlc: h, client_mutation_id: uuid(),
-      },
-      {
-        entity_type: "split_settlements", group_id: gid, sync_id: stId, op: "upsert",
-        // La unidad de coherencia de settlements es `smoney` (gmoney es la del EXPENSE — manifest).
-        fields: { from_member_key: legacyFrom, to_member_key: legacyTo, ...gmoney(40), date: "2024-03-02T12:00:00.000Z" },
-        field_hlcs: { smoney: h, from_member_key: h, to_member_key: h, date: h }, hlc: h, client_mutation_id: uuid(),
-      },
-    ]);
-    expect(r.status).toBe(200);
-    expect(r.body.results.map((x) => x.status)).toEqual(["applied", "applied", "applied"]);
-
-    // B se une FRESH (member nuevo) + A aprueba → B active writer → puede leer el contenido (SELECT is_group_writer).
-    const inv = await rpcGw(jwtA, "create_group_invite", { p_group_id: gid, p_ttl_seconds: 3600, p_max_uses: null });
-    expect(inv.status).toBe(200);
-    const joined = await rpcGw(jwtB, "join_group", { p_token: inv.body as string, p_display_name: "Bob", p_legacy_member_key: null });
-    expect(joined.status).toBe(200);
-    const ap = await rpcGw(jwtA, "approve_member", { p_group_id: gid, p_member_key: joined.body.member_key as string });
-    expect(ap.status).toBe(200);
-    expect(ap.body.status).toBe("active");
-
-    // B pull: las FKs legacy sobreviven byte-idénticas (cierre R10 server-side).
-    const p = await pull(jwtB, {});
-    expect(p.memberships).toContain(gid);
-    const forGid = p.deltas.filter((d) => d.group_id === gid);
-    const exp = forGid.find((d) => d.entity_type === "split_expenses" && d.sync_id === expId);
-    expect(exp?.fields.paid_by_member_key).toBe(legacyPayer);
-    const sh = forGid.find((d) => d.entity_type === "split_shares" && d.sync_id === shId);
-    expect(sh?.fields.member_key).toBe(legacyShareMember);
-    expect(sh?.fields.expense_id).toBe(expId);
-    const st = forGid.find((d) => d.entity_type === "split_settlements" && d.sync_id === stId);
-    expect(st?.fields.from_member_key).toBe(legacyFrom);
-    expect(st?.fields.to_member_key).toBe(legacyTo);
-  }, 150_000);
-
-  it("3. rebind vía gateway: join_group(legacy_member_key=_legacyPia) de B → rebound:true pendingApproval; re-join de la fila YA reclamada → rebound:false (no re-bindea, idempotente)", async () => {
-    const { gid } = await setupGroupWithRebind("rebind", [LEGACY_PIA]);
-    const inv = await rpcGw(jwtA, "create_group_invite", { p_group_id: gid, p_ttl_seconds: 3600, p_max_uses: null });
-    expect(inv.status).toBe(200);
-    const token = inv.body as string;
-
-    // B se une reclamando la fila placeholder legacy → rebound:true, member_key preservado, pendingApproval.
-    const rb = await rpcGw(jwtB, "join_group", { p_token: token, p_display_name: "Bob", p_legacy_member_key: LEGACY_PIA });
-    expect(rb.status).toBe(200);
-    expect(rb.body.rebound).toBe(true);
-    expect(rb.body.member_key).toBe(LEGACY_PIA);
-    expect(rb.body.status).toBe("pendingApproval");
-    // La fila legacy quedó reclamada por B (user_id = subB), member_key LEGACY intacto (historial preservado).
-    const claimed = await readMember(jwtA, gid, LEGACY_PIA);
-    expect(claimed?.user_id).toBe(subB);
-
-    // RE-JOIN con la fila YA reclamada (user_id NO NULL) → join_group SALTA el rebind (requiere user_id IS NULL)
-    // y cae al branch ya-member por user_id → idempotente rebound:false, MISMO member_key legacy (no re-bindea,
-    // no inserta una fila nueva). Sin este guard, un member_key legacy enumerable sería re-secuestrable.
-    const again = await rpcGw(jwtB, "join_group", { p_token: token, p_display_name: "Bob", p_legacy_member_key: LEGACY_PIA });
-    expect(again.status).toBe(200);
-    expect(again.body.rebound).toBe(false);
-    expect(again.body.member_key).toBe(LEGACY_PIA);
-  }, 120_000);
-});
-
-// ============================================================================
 // G7 goldens · cifrado pgcrypto de columnas de grupos (post-aplicación g7_01 + recrypt + g7_02)
 // ============================================================================
 describe("G7 goldens · pgcrypto encryption contra staging real", () => {
@@ -912,6 +701,14 @@ describe("G7 goldens · pgcrypto encryption contra staging real", () => {
   }, 90_000);
 });
 
+/** Lectura DESCIFRADA de una fila group_members vía el RPC lector (display_name es † post-G7 → un select=*
+ *  directo vería bytea). Filtra por member_key en JS (el reader pagina por group_id + server_seq). */
+async function readMember(jwt: string, gid: string, memberKey: string): Promise<Record<string, unknown> | null> {
+  const r = await rpc(jwt, "groups_pull_rows_group_members", { p_group_id: gid, p_after_seq: 0, p_limit: 1000, p_key: ENC_KEY });
+  if (r.status !== 200 || !Array.isArray(r.body)) return null;
+  return (r.body as Record<string, unknown>[]).find((x) => x.member_key === memberKey) ?? null;
+}
+
 // ============================================================================
 // G10 goldens · transfer_group_ownership (D10 — batch "salir de todos mis grupos")
 // ============================================================================
@@ -921,8 +718,8 @@ describe("G7 goldens · pgcrypto encryption contra staging real", () => {
 // documentados en qa/cloud/README §transfer_group_ownership.
 //
 // LIMITACIÓN CONOCIDA (2 users A/B en staging): el tie-break "admin-first + más-antiguo entre 2 herederos
-// REALES" NO es E2E-testeable (no se pueden crear 2 co-members con user_id no-NULL además del owner:
-// migrate_group deja los no-owner en user_id NULL, y solo A/B tienen JWT). Mitigación: el ORDER BY es copia
+// REALES" NO es E2E-testeable (solo A/B tienen JWT ⇒ como máximo UN co-member con user_id real además del
+// owner, y group_members no admite UPDATE directo). Mitigación: el ORDER BY es copia
 // byte-idéntica de groups_forget_user loop1 (g7_02:311-315, ya confiable). Con un 3er user, añadir un golden
 // de ordenamiento.
 describe("G10 goldens · transfer_group_ownership contra staging real (post-aplicación g10_01)", () => {
@@ -958,9 +755,23 @@ describe("G10 goldens · transfer_group_ownership contra staging real (post-apli
     expect(grp2?.owner_user_id).toBe(subB); // sin cambio
   }, 120_000);
 
-  it("2. owner sin heredero elegible (co-member user_id NULL) → no_eligible_owner SIN tombstone; tercero intacto", async () => {
-    // setupGroupWithRebind: A owner (member_key legacy, user_id=A) + Pia placeholder (user_id NULL).
-    const { gid } = await setupGroupWithRebind("transfer-noheir", [LEGACY_PIA]);
+  it("2. owner sin heredero elegible (co-member sin aprobar) → no_eligible_owner SIN tombstone; tercero intacto", async () => {
+    // Fixture RE-SEMBRADO con RPCs vivos (la Fase 1 retiró del gateway el RPC de migración que fabricaba el
+    // placeholder user_id NULL — ver qa/cloud/README §addendum 2026-07-28). El candidato exige
+    // status='active' AND user_id IS NOT NULL, así que se ataca la OTRA rama inelegible del mismo predicado:
+    // un co-member en pendingApproval. Sin atajo por UPDATE directo — group_members tiene el UPDATE revocado
+    // para authenticated (g7_02, "FREEZE TOTAL de la unidad membership").
+    const gid = freshGid();
+    const cg = await rpcGw(jwtA, "create_group", {
+      p_group_id: gid, p_name: "G10 noheir", p_currency_code: "PEN", p_icon_name: "star",
+      p_color_hex: "#112233", p_display_name: "Alice", p_default_split_type: "equal",
+    });
+    expect(cg.status).toBe(200);
+    const inv = await rpcGw(jwtA, "create_group_invite", { p_group_id: gid, p_ttl_seconds: 3600, p_max_uses: null });
+    expect(inv.status).toBe(200);
+    const joined = await rpcGw(jwtB, "join_group", { p_token: inv.body as string, p_display_name: "Bob", p_legacy_member_key: null });
+    expect(joined.status).toBe(200);
+    expect(joined.body.status).toBe("pendingApproval"); // NO se aprueba: sin 'active' no hay heredero elegible
 
     const t = await rpcGw(jwtA, "transfer_group_ownership", { p_group_id: gid });
     expect(t.status).toBe(200);
@@ -969,13 +780,13 @@ describe("G10 goldens · transfer_group_ownership contra staging real (post-apli
     expect(t.body.reason).toBe("no_eligible_owner");
     expect(t.body.new_owner_member_key).toBeNull();
 
-    // INVARIANTE D10: JAMÁS tombstonea; owner intacto; el placeholder tercero intacto.
+    // INVARIANTE D10: JAMÁS tombstonea; owner intacto; el tercero (no elegible) intacto.
     const grp = await readGroupRowDecrypted(jwtA, "split_groups", gid);
     expect(grp?.owner_user_id).toBe(subA);
     expect(grp?.deleted).toBe(false);
-    const pia = await readMember(jwtA, gid, LEGACY_PIA);
-    expect(pia?.user_id).toBeNull();
-    expect(pia?.status).toBe("active");
+    const pending = await readMember(jwtA, gid, subB);
+    expect(pending?.status).toBe("pendingApproval");
+    expect(pending?.user_id).toBe(subB);
   }, 120_000);
 
   it("3. caller no-owner (member activo) → already:true (no-op); owner intacto, sin auto-promoción", async () => {

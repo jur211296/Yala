@@ -1421,3 +1421,11 @@ con un corpus grande (10k+ filas) el drain de tombstones resultara costoso (late
 aparte** (dimensionar el drain masivo), no un fix de este chip — cruza con §5.2.2 del estudio
 `MODO-NUBE-GESTION-DATOS-UX.md` y con el residual D9. No caracterizado aún: interacción con el gate de
 quiescencia bajo un import concurrente.
+
+## Addendum 2026-07-28 — `migrate_group` queda INERTE (Fase 1 de simplificación de Grupos)
+
+`POST /groups/rpc/migrate_group` pasa a devolver **404 por diseño** — retirado de `PARAM_ALLOWLIST` en
+`gateway/src/groups/rpc.ts`, el gateway corta antes de tocar PostgREST — **efectivo al desplegar** el Worker
+(pendiente del owner: `deploy:staging` → `deploy:production`). La función `public.migrate_group` **sigue
+existiendo a propósito** en ambos envs: NO se dropea, y el §4 del DDL, los «33/33» y los md5 de arriba siguen
+siendo verdad. Sus goldens G6 se retiraron con la Fase 1; el fixture de G10 nº2 se re-sembró sin ella.

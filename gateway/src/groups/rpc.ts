@@ -3,7 +3,7 @@
  * sync (`/groups/push|pull|merkle`); convive con `/sync/*` y `/account/*` sin tocarlos.
  *
  * Invariantes de seguridad (espejo del canal de sync de grupos):
- * - `fn` DEBE estar en la ALLOWLIST estática (11 RPCs de membresía) — cualquier otra ruta (p.ej.
+ * - `fn` DEBE estar en la ALLOWLIST estática (10 RPCs de membresía) — cualquier otra ruta (p.ej.
  *   apply_group_delta, que solo va por /groups/push) → 404. Evita que el gateway sea un proxy RPC
  *   genérico contra PostgREST.
  * - ALLOWLIST DE PARAMS por fn: los params desconocidos del body se DESCARTAN silenciosamente. Motivo
@@ -48,9 +48,6 @@ const PARAM_ALLOWLIST: Record<string, Set<string>> = {
   revoke_invite: new Set(["p_token"]),
   update_member_display_name: new Set(["p_group_id", "p_display_name"]),
   groups_forget_user: new Set<string>(),
-  // G6-1: migración de un grupo VIVO de CloudKit al backend. p_meta/p_members viajan como jsonb intactos
-  // (la allowlist filtra por NOMBRE y copia el valor verbatim vía JSON.stringify — objetos/arrays inclusive).
-  migrate_group: new Set(["p_group_id", "p_meta", "p_members"]),
   // D10 (batch "salir de todos mis grupos"): transfiere el ownership de UN grupo backend al co-member
   // elegible más antiguo. NO escribe columnas † → NO va a RPC_NEEDS_ENC_KEY (sin p_key).
   transfer_group_ownership: new Set(["p_group_id"]),
@@ -63,7 +60,6 @@ const RPC_NEEDS_ENC_KEY = new Set([
   "create_group",
   "join_group",
   "update_member_display_name",
-  "migrate_group",
   "groups_forget_user",
 ]);
 
