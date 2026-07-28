@@ -4,8 +4,17 @@ La SSOT de estos documentos es el vault de Obsidian (`$VAULT/Backlog/modo-nube/`
 sincroniza a otras máquinas vía git**. Estas copias existen para que una sesión que corre en otra Mac
 pueda LEER el diseño y las decisiones sin acceso al vault.
 
-**Si estás en una máquina que no es la principal: lee estas copias, no `$VAULT`.** Si una tarea te
-manda a `$VAULT/Backlog/modo-nube/<X>.md` y no existe, busca `docs/modo-nube/<X>.md`.
+**Orden de lectura, en cualquier máquina** (corrección del owner 2026-07-28: la Mac mini **sí** tiene el
+vault, así que la guía anterior de «lee las copias, no el vault» estaba mal):
+
+1. **Opción A — el vault.** `$VAULT/Backlog/modo-nube/<X>.md`, con
+   `$VAULT = ~/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki/`. Es la SSOT: si el fichero
+   existe allí y su `updated:` es igual o posterior al de la copia, **gana el vault**.
+2. **Fallback — este espejo.** `docs/modo-nube/<X>.md`. Úsalo cuando el vault no esté montado (sesión
+   headless, cron, worktree limpio, iCloud que aún no ha sincronizado) o cuando el fichero no aparezca allí.
+
+No des por supuesta ninguna de las dos rutas: comprueba cuál existe antes de leer. Y si el vault está
+disponible, **escribe en el vault** — el espejo se refresca desde él, nunca al revés.
 
 ## Refrescado 2026-07-27 — auditoría de escenarios y sus decisiones
 
