@@ -1390,7 +1390,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/OnboardingFlowUITests + xcuitest:YalaUITests/WelcomeChooserUITests (2026-07-16: navegacion hero→chooser con identifiers welcome_hero_cta/welcome_chooser_* aditivos + opt-in -uitest-cloud-chooser del container — sin el arg, bypass byte-identico verificado en sim). + handover de dispositivo (2026-07-27, auditoría Modo Nube §4/1 — E2-04/NEW-E2-01/NEW-E2-03, el único ALTA que estaba ACTIVO en producción): `checkHasExistingData` (ContentView) cuenta ahora también SplitGroup y las TX con `splitExpenseID != nil`: excluir todo lo de sistema dejaba fuera exactamente lo que crea el bridge, así que un usuario anterior que venía de «Solo Grupos» (sin cuentas ni categorías propias) daba `false` ⇒ el alert de confirmación no se mostraba y «Soy nuevo» NO corría wipe alguno: el usuario nuevo aterrizaba con las transacciones y los borradores del anterior intactos. En un fresh install real los tres conteos son 0. unit:YalaTests/HandoverGroupsWiringTests.existingDataCheck_countsGroupsAndBridgedRows.",
       "owner": "",
-      "lastVerified": "2026-07-27"
+      "lastVerified": "2026-07-28"
     },
     {
       "area": "onboarding-groups-only",

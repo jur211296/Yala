@@ -103,6 +103,16 @@ struct ContentView: View {
     /// synchronous SwiftData fetches during iOS snapshot capture — 0x8BADF00D fix).
     @State private var hasExistingData: Bool = false
 
+    /// Señal **solo del store personal** para el detector de wipe remoto (`onChange` abajo).
+    /// NO es `hasExistingData`: ese se ensanchó con grupos y bridgeadas para el handover de
+    /// dispositivo, y ensancharlo creó un true→false que antes no existía — un usuario de Solo
+    /// Grupos (sin cuentas ni categorías propias) pasaba a dar `true`, así que al salir de su
+    /// ÚLTIMO grupo veía el alert de «tus datos se borraron en otro dispositivo» y, al confirmar,
+    /// `hasCompletedOnboarding = false` lo devolvía al onboarding. El wipe remoto que este detector
+    /// existe para ver es el del ESPEJO de CloudKit del store personal; los grupos viven en otro
+    /// store, los sincroniza CKSyncEngine, y salir de un grupo es una acción local legítima.
+    @State private var hasPersonalData: Bool = false
+
     /// Increments cuando el idioma cambia (local o sync iCloud). Usado como `.id()`
     /// del root para forzar re-render de strings y formatters localizados.
     @State private var languageVersion: Int = 0
@@ -182,9 +192,10 @@ struct ContentView: View {
         .onChange(of: SessionState.shared.dataVersion) { _, _ in
             // Replaces @Query-based observation. dataVersion increments on CRUD, CloudKit sync,
             // and sheet dismissals — covers all cases where data may have arrived or changed.
-            // A4 v3.1: el `wipeGraceTask` (onChange hasExistingData abajo) sigue usando este flag
-            // para detectar data desaparecida. El gate isWaitingForSync se eliminó con el rediseño.
+            // A4 v3.1: el `wipeGraceTask` (onChange abajo) detecta data desaparecida — pero mira
+            // `hasPersonalData`, no este flag. El gate isWaitingForSync se eliminó con el rediseño.
             hasExistingData = checkHasExistingData()
+            hasPersonalData = checkHasPersonalData()
         }
         .onChange(of: hasCompletedOnboarding) { _, newValue in
             // Data wipe path: invalida summary stale + respeta el flag del chooser.
@@ -199,7 +210,7 @@ struct ContentView: View {
                 presentNextOnboardingScreen()
             }
         }
-        .onChange(of: hasExistingData) { oldValue, newValue in
+        .onChange(of: hasPersonalData) { oldValue, newValue in
             if oldValue && !newValue && hasCompletedOnboarding {
                 // Data disappeared — debounce 5s before acting (transient CloudKit gap)
                 wipeGraceTask?.cancel()
@@ -248,6 +259,12 @@ struct ContentView: View {
                     // distingue) y el bridge le mete sus gastos en Panel, Inbox y presupuestos.
                     try DataWipeService.wipeLocalGroupsDomain(in: modelContext)
                     hasExistingData = false
+                    // El wipe es DELIBERADO: cancelar la gracia antes de bajar la señal, para que
+                    // el true→false no se lea como wipe remoto y se apile un alert sobre el
+                    // onboarding que este mismo camino está abriendo.
+                    wipeGraceTask?.cancel()
+                    wipeGraceTask = nil
+                    hasPersonalData = false
                 } catch {
                     #if DEBUG
                     print("ContentView: fresh-start wipe failed: \(error)")
@@ -285,6 +302,11 @@ struct ContentView: View {
                     // anterior. Cerrarlo exige el sello de corpus (diferido en el ticket).
                     try DataWipeService.wipeLocalGroupsDomain(in: modelContext)
                     hasExistingData = false
+                    // Mismo racional que el fresh-start de arriba: wipe deliberado ⇒ cancelar la
+                    // gracia antes de bajar la señal personal.
+                    wipeGraceTask?.cancel()
+                    wipeGraceTask = nil
+                    hasPersonalData = false
                 } catch {
                     #if DEBUG
                     print("ContentView: offer-restore fresh-start wipe failed: \(error)")
@@ -925,6 +947,29 @@ struct ContentView: View {
         }
     }
 
+    /// Igual que `checkHasExistingData` pero **sin grupos ni bridgeadas**: solo lo que vive en el
+    /// store personal espejado por CloudKit. Es la entrada del detector de wipe remoto (ver
+    /// `hasPersonalData`). Misma exclusión de entidades de sistema y **misma falla CERRADA** por el
+    /// mismo racional: un fetch fallido no debe leerse como «me borraron los datos».
+    private func checkHasPersonalData() -> Bool {
+        let accountDescriptor = FetchDescriptor<Account>(
+            predicate: #Predicate<Account> { !$0.isSystemAccount }
+        )
+        let categoryDescriptor = FetchDescriptor<Category>(
+            predicate: #Predicate<Category> { !$0.isSystem }
+        )
+        do {
+            let accountCount = try modelContext.fetchCount(accountDescriptor)
+            let categoryCount = try modelContext.fetchCount(categoryDescriptor)
+            return accountCount > 0 || categoryCount > 0
+        } catch {
+            #if DEBUG
+            print("ContentView: checkHasPersonalData failed — assuming data exists: \(error)")
+            #endif
+            return true
+        }
+    }
+
     /// Show a positive confirmation toast for ~3s. Used for remote onboarding
     /// completed and remote restore completed — the only events where a brief
     /// "your data is here" reassurance is worth interrupting the silent sync rule.
@@ -1061,6 +1106,7 @@ struct ContentView: View {
         }
 
         hasExistingData = checkHasExistingData()
+        hasPersonalData = checkHasPersonalData()
         IntentSignalBreadcrumb.initialSyncChecked(hasExistingData: hasExistingData)
 
         if hasCompletedOnboarding {

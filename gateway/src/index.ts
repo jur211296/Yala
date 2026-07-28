@@ -103,5 +103,15 @@ app.post("/groups/rpc/:fn", handleGroupsRpc);
 
 app.notFound(() => jsonError("yala_bad_request", "Not found", 404));
 
+// Un throw sin capturar (D1 caída, binding ausente) salía como 500 en TEXTO PLANO: el SDK de
+// OpenAI del cliente no lo sabe decodificar, y el webhook de App Store Server Notifications —que
+// no controla el shape de lo que recibe— dejaba a Apple reintentando sobre un cuerpo opaco.
+// El 5xx se CONSERVA a propósito: es lo que hace que Apple reintente una revocación de reembolso
+// que no pudimos escribir. Lo que se arregla es el shape, no el status.
+app.onError((err, c) => {
+  console.log(`[unhandled] ${c.req.method} ${new URL(c.req.url).pathname}: ${err.message}`);
+  return jsonError("yala_unavailable", "Internal error", 500);
+});
+
 export default app;
 export { RateLimiter } from "./rate_limiter";
