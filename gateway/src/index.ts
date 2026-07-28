@@ -16,6 +16,7 @@ import {
   handleSyncPush,
 } from "./sync/routes";
 import { handleAccountClaim, handleAccountDelete, handleAccountExists, handleAccountMigration } from "./sync/account";
+import { handleEntitlementBind, handleEntitlementGet } from "./sync/entitlement";
 import { handleSiwaExchange, handleSiwaRevoke } from "./sync/siwa";
 import { handleGroupsMerkle, handleGroupsPull, handleGroupsPush } from "./groups/routes";
 import { handleGroupsRpc } from "./groups/rpc";
@@ -80,6 +81,11 @@ app.post("/account/claim", handleAccountClaim); // reserva atómica; estado de 3
 app.get("/account/exists", handleAccountExists); // hint de encaminamiento (no la garantía anti-doble-siembra)
 app.post("/account/migration", handleAccountMigration); // cutover/complete §g.4 + reverse_* §h + heartbeat I14-pre (guard líder)
 app.post("/account/delete", handleAccountDelete); // G5-D1: borrado GDPR del corpus personal (requireUserAndAttest — asimetría documentada)
+
+// --- Entitlement por CUENTA (C-8): el derecho Pro deja de vivir solo en el Apple ID del device.
+// El JWS firmado por Apple otorga el derecho; el JWT dice a qué cuenta se vincula (appAccountToken manda).
+app.post("/account/entitlement", handleEntitlementBind);
+app.get("/account/entitlement", handleEntitlementGet);
 
 // --- SIWA revoke 5.1.1(v) (B1, gate §12): canje del authorization_code EN el sign-in (requireUser — precede
 // al bind) + revoke del refresh_token al borrar la cuenta (requireUserAndAttest, molde /account/delete).

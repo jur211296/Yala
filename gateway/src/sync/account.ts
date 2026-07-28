@@ -15,6 +15,7 @@ import { errorBody, jsonError } from "../errors";
 import { gateRequest } from "../ratelimit";
 import { verifySessionToken, type SessionClaims } from "../attest/session";
 import { bearerToken, callRpc, getRows, verifyUserToken } from "./userauth";
+import { deleteAccountEntitlement } from "../db";
 
 type Ctx = Context<{ Bindings: Env }>;
 
@@ -229,6 +230,18 @@ export async function handleAccountDelete(c: Ctx): Promise<Response> {
     console.log(`[account-delete] delete_personal_account upstream ${status}`);
     return jsonError("yala_unavailable", `delete upstream ${status}`, 502);
   }
+
+  // C-8: el entitlement por cuenta vive en D1 (Cloudflare), no en Supabase — el RPC que borra las
+  // 16 tablas de dominio, las prefs y hasta la fila `auth.users` no lo alcanza. Sin esto, el
+  // borrado GDPR dejaría atrás una fila con el `sub` del usuario y su `original_transaction_id`.
+  // Va DESPUÉS del RPC (si el borrado falla, el derecho debe seguir intacto) y no puede tumbar la
+  // respuesta: la cuenta ya está borrada, y la fila huérfana la reclamaría el siguiente bind.
+  try {
+    await deleteAccountEntitlement(c.env, auth.sub);
+  } catch (e) {
+    console.log(`[account-delete] entitlement cleanup falló: ${e instanceof Error ? e.message : "unknown"}`);
+  }
+
   return c.json((out ?? {}) as Record<string, unknown>);
 }
 

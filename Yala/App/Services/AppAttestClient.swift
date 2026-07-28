@@ -100,6 +100,7 @@ final class AppAttestClient {
                 "attestation": attestation.base64EncodedString(),
                 "challenge": challenge,
                 "storeKitJWS": storeKitJWS,
+                "userJWT": await Self.cloudUserJWT(),
             ],
         )
         KeychainService.setString(keyId, forKey: Self.keyIdKeychainKey)
@@ -118,9 +119,22 @@ final class AppAttestClient {
                 "assertion": assertion.base64EncodedString(),
                 "challenge": challenge,
                 "storeKitJWS": storeKitJWS,
+                "userJWT": await Self.cloudUserJWT(),
             ],
         )
         return cache(resp)
+    }
+
+    /// C-8: el JWT de la cuenta de nube, para que el gateway resuelva el tier también por CUENTA y
+    /// no solo por la suscripción del Apple ID de este device.
+    ///
+    /// Sin esto, el device donde C-8 devuelve Pro (otro Apple ID, misma cuenta de Yala) tendría la
+    /// UI de chat e insights desbloqueada y el proxy respondiéndole 403 `yala_pro_required`: la
+    /// incoherencia más visible posible. `nil` sin sesión — el contrato del gateway lo trata como
+    /// «solo device», byte-idéntico a antes.
+    private static func cloudUserJWT() async -> String? {
+        guard CloudBackendConfig.isConfigured, CloudAuthService.shared.hasSession else { return nil }
+        return await CloudAuthService.shared.accessToken()
     }
 
     private func devTokenOrThrow() async throws -> String {

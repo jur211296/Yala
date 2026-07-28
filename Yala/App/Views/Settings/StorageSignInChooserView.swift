@@ -8,19 +8,30 @@
 //  → chooser; adopt = consent → chooser.
 //
 //  Sheet de SELECCIÓN PURA: no corre auth ni muta nada — `onSelect` solo comunica el provider elegido
-//  y el caller (StorageSettingsView) cierra el sheet y conduce `startMigration(consentPath:provider:)`
+//  y el caller (StorageSettingsView) cierra el sheet y conduce `startMigration(consentPath:signIn:)`
 //  desde su `onDismiss` (la máquina conserva `consent → authenticating → …` intacta, y Google resuelve
 //  su presenter con el anchor YA estable — jamás sobre un VC a medio dismissal).
 //
 //  Botones con prominencia EQUIVALENTE (guideline 4.8) — patrón apilado de GroupsSignInView §16d.
+//
+//  C-7 (2026-07-27): la pantalla solo se presenta SIN sesión de nube. El productor
+//  (`StorageSettingsView.proceedToSignInStep`) ya lo decide con `StorageMigrationSignInLogic`, y aquí
+//  vive el BELT —molde `GroupsSignInView` §16d—: con sesión viva la vista se cierra sin ofrecer nada.
+//  Ofrecer la elección con una cuenta ya dentro sería mentir: el controller la reusaría igual, así que
+//  el usuario habría "elegido" un método que no se usa.
 //
 
 import AuthenticationServices
 import SwiftUI
 
 struct StorageSignInChooserView: View {
+    /// Decisión YA evaluada por el caller (inyectada, no leída del singleton: la vista sigue siendo
+    /// pura y el belt queda explícito en el call-site).
+    let decision: StorageMigrationSignInLogic.Decision
     /// Se invoca con el provider ELEGIDO. El caller baja el sheet y arranca la migración en `onDismiss`.
     var onSelect: (CloudSignInProvider) -> Void
+    /// Belt: hay sesión viva ⇒ el caller baja el sheet y arranca con `.reuseLiveSession`.
+    var onReuseLiveSession: () -> Void
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
@@ -87,6 +98,17 @@ struct StorageSignInChooserView: View {
             }
         }
         .accessibilityIdentifier("storage_signin_chooser")
+        .onAppear {
+            // Belt del productor (C-7): con sesión viva esta vista nunca debió presentarse.
+            // `.reuseLiveSession` → cerrar y continuar con la cuenta que ya está dentro.
+            // `.blockedOtherAccount` → cerrar sin arrancar nada: la card explica por qué (firmar
+            // aquí no ayudaría — el belt de la máquina reusaría la sesión viva igualmente).
+            switch decision {
+            case .reuseLiveSession:     onReuseLiveSession()
+            case .blockedOtherAccount:  dismiss()
+            case .askProvider:          break
+            }
+        }
     }
 }
 

@@ -5363,3 +5363,15 @@
 "appUpdate.force.title" = "请更新以继续";
 "appUpdate.force.message" = "当前 Yala 版本已不再受支持。请更新以继续使用。";
 "appUpdate.force.updateButton" = "立即更新";
+
+/* Note in the Storage migrate card: the live cloud session is reused, provider named (%@ = Apple|Google) */
+"storage.migrate.accountReuseNote" = "将继续使用你当前的 Yala 账户（%@），这样你的数据和群组都在同一个账户里。";
+
+/* Generic fallback of storage.migrate.accountReuseNote when the sign-in method is unknown */
+"storage.migrate.accountReuseNoteGeneric" = "将继续使用你当前的 Yala 账户，这样你的数据和群组都在同一个账户里。";
+
+/* Storage adopt card: the live session is a different Yala account than the one that migrated (%@ = Apple|Google) */
+"storage.adopt.otherAccountNote" = "这份云端副本属于另一个 Yala 账户（%@）。请退出登录，并使用该账户登录后继续。";
+
+/* Generic fallback of storage.adopt.otherAccountNote when the sign-in method is unknown */
+"storage.adopt.otherAccountNoteGeneric" = "这份云端副本属于另一个 Yala 账户。请退出登录，并使用该账户登录后继续。";

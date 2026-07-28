@@ -168,7 +168,8 @@ final class StoreKitManager {
         defer { isPurchasing = false }
 
         do {
-            let result = try await product.purchase()
+            let result = try await product.purchase(
+                options: Self.purchaseOptions(cloudUserID: CloudAuthService.shared.currentUserID))
 
             switch result {
             case .success(let verification):
@@ -182,6 +183,12 @@ final class StoreKitManager {
                 #endif
                 await updateSubscriptionStatus()
                 didJustSubscribe = true
+                // C-8: la compra acaba de nacer con su `appAccountToken`; vincularla a la cuenta
+                // cuanto antes (y no en el próximo foreground) pone el derecho en la cuenta desde el
+                // primer segundo. En BACKGROUND a propósito: esperarlo aquí retendría `isPurchasing`
+                // y retrasaría la celebración detrás de la red del gateway — con red mala, la compra
+                // parecería colgada justo después de que Apple la confirmó.
+                Task { @MainActor in await AccountEntitlementService.shared.sync(force: true) }
                 return true
 
             case .userCancelled:
@@ -197,6 +204,25 @@ final class StoreKitManager {
             errorMessage = error.localizedDescription
             return false
         }
+    }
+
+    // MARK: - Purchase options (C-8)
+
+    /// Opciones de compra. Emite `appAccountToken` = el `sub` de la cuenta de Yala cuando hay sesión
+    /// de nube viva, para que el derecho pueda VIAJAR con la cuenta y no solo con el Apple ID: Apple
+    /// firma ese UUID dentro de la transacción, así que el gateway puede atribuir la suscripción a su
+    /// dueño sin confiar en el cliente (`gateway/src/sync/entitlement.ts`).
+    ///
+    /// Sin sesión de nube NO se emite ningún token: inventar un UUID local crearía una identidad de
+    /// compra que no corresponde a ninguna cuenta y que después habría que reconciliar. Esas compras
+    /// se vinculan más tarde por JWT, en el primer `sync()` con sesión.
+    ///
+    /// Estático para poder testear la decisión sin tocar el estado del manager. `cloudUserID` se pasa
+    /// explícito (un default que leyera el singleton `@MainActor` se evaluaría en contexto
+    /// `nonisolated` — error en Swift 6).
+    static func purchaseOptions(cloudUserID: String?) -> Set<Product.PurchaseOption> {
+        guard let cloudUserID, let uuid = UUID(uuidString: cloudUserID) else { return [] }
+        return [.appAccountToken(uuid)]
     }
 
     // MARK: - Restore
@@ -230,8 +256,20 @@ final class StoreKitManager {
             return
         }
         // Dev build: default to Free — Configuration.storekit provides sandbox
-        // entitlements that would otherwise always grant Pro
+        // entitlements that would otherwise always grant Pro.
+        // C-8: si la QA de device encendió la resolución por cuenta, el derecho de la CUENTA sí
+        // cuenta aquí — sin esta rama, `debugAccountEntitlementEnabledKey` sería inalcanzable
+        // (Yala Dev es la ÚNICA build donde esa key se lee, y este early-return la cortocircuitaba).
         if Bundle.main.bundleIdentifier?.hasSuffix(".dev") == true {
+            if CloudSyncFlags.accountEntitlementEnabled {
+                isProUser = ProEntitlementLogic.isPro(
+                    localActive: false,
+                    snapshot: AccountEntitlementService.shared.cachedSnapshot,
+                    sessionUserID: CloudAuthService.shared.currentUserID,
+                    resolutionEnabled: true)
+                syncToAppGroup()
+                return
+            }
             isProUser = false
             syncToAppGroup()
             return
@@ -254,9 +292,17 @@ final class StoreKitManager {
         }
 
         activeSubscription = foundActive
-        let nowProUser = foundActive != nil
+        // C-8: el derecho puede venir del Apple ID de este device (`foundActive`) O de la cuenta de
+        // Yala. La combinación vive en `ProEntitlementLogic` — DARK mientras
+        // `accountEntitlementEnabled` sea false, donde esto es idénticamente `foundActive != nil`.
+        let nowProUser = ProEntitlementLogic.isPro(
+            localActive: foundActive != nil,
+            snapshot: AccountEntitlementService.shared.cachedSnapshot,
+            sessionUserID: CloudAuthService.shared.currentUserID,
+            resolutionEnabled: CloudSyncFlags.accountEntitlementEnabled)
 
-        // Detect trial via offer type
+        // Trial y fecha de expiración siguen siendo del entitlement LOCAL: son datos de la
+        // suscripción de este Apple ID. Un Pro heredado de la cuenta no está "en trial" aquí.
         if let transaction = foundActive {
             isInTrial = transaction.offer?.type == .introductory
             trialEndDate = isInTrial ? transaction.expirationDate : nil

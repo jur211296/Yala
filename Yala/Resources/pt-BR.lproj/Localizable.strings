@@ -5351,3 +5351,15 @@
 "appUpdate.force.title" = "Atualize para continuar";
 "appUpdate.force.message" = "Esta versão do Yala não é mais compatível. Atualize para continuar usando o app.";
 "appUpdate.force.updateButton" = "Atualizar agora";
+
+/* Note in the Storage migrate card: the live cloud session is reused, provider named (%@ = Apple|Google) */
+"storage.migrate.accountReuseNote" = "Você vai usar sua conta Yala atual (%@): assim seus dados e seus grupos ficam na mesma conta.";
+
+/* Generic fallback of storage.migrate.accountReuseNote when the sign-in method is unknown */
+"storage.migrate.accountReuseNoteGeneric" = "Você vai usar sua conta Yala atual: assim seus dados e seus grupos ficam na mesma conta.";
+
+/* Storage adopt card: the live session is a different Yala account than the one that migrated (%@ = Apple|Google) */
+"storage.adopt.otherAccountNote" = "Esta cópia na nuvem pertence a outra conta Yala, a de %@. Saia e entre com essa conta para continuar.";
+
+/* Generic fallback of storage.adopt.otherAccountNote when the sign-in method is unknown */
+"storage.adopt.otherAccountNoteGeneric" = "Esta cópia na nuvem pertence a outra conta Yala. Saia e entre com essa conta para continuar.";

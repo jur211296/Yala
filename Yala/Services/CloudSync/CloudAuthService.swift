@@ -295,6 +295,11 @@ final class CloudAuthService: NSObject {
         case .apple: try await signInWithApple()
         case .google: try await signInWithGoogle()
         }
+        // C-8: el derecho Pro de la cuenta entrante debe estar disponible YA. Sin esto, quien entra
+        // con su cuenta de Yala en un device con otro Apple ID — el caso central del bug — sigue
+        // viendo Free hasta el siguiente ciclo background→foreground. En segundo plano: el sign-in
+        // no puede quedarse esperando a la red del gateway.
+        Task { @MainActor in await AccountEntitlementService.shared.handleSignIn() }
     }
 
     // MARK: - Google Sign-In (sesión 1 del brief BRIEF-GOOGLE-SIGNIN-V1)
@@ -449,6 +454,13 @@ final class CloudAuthService: NSObject {
         // SDK de la cuenta A quedaría viva al entrar B. No-op si nunca hubo sign-in Google. El PAR
         // Google NO se borra (paridad con el par SIWA: credencial del provider, no de la sesión).
         GIDSignIn.sharedInstance.signOut()
+        // C-8: la caché del entitlement de CUENTA muere con la sesión — es estado de la cuenta que
+        // sale, igual que el perfil capturado. Puramente local (jamás toca el backend, a diferencia
+        // de las prefs: aquí no hay LWW que pueda pisar un registro server-side de una cuenta viva).
+        // Vía el servicio (no el store) porque además re-deriva `isProUser`: en los caminos de
+        // cierre que NO relanzan el proceso, el Pro heredado de la cuenta seguiría abierto en la UI
+        // y en el App Group que lee el intent de Siri.
+        await AccountEntitlementService.shared.handleSignOut()
         do {
             try await client.signOut(scope: .local)
             CloudSyncBreadcrumb.authSignedOut(reason: "user")

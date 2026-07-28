@@ -90,6 +90,20 @@ enum MigrationProgressOutcome: Equatable {
     case transient(detail: String)
 }
 
+/// Resultado ESTRUCTURADO de `GET`/`POST /account/entitlement` (C-8 — el derecho Pro por CUENTA).
+/// NUNCA lanza. Ojo con la semántica de los no-éxitos: `transient` significa «no se pudo saber»,
+/// NO «no tiene Pro» — degradar a Free ante un fallo de red le quitaría Pro a un pagador offline.
+enum EntitlementOutcome: Equatable {
+    /// 200: estado de la cuenta. `expiresAt == nil` (o pasado) = sin derecho vigente.
+    case success(product: String?, expiresAt: Date?)
+    /// 401: JWT ausente/inválido/expirado → re-firmar.
+    case sessionExpired(detail: String)
+    /// 409: la suscripción declaró OTRA cuenta de Yala (`appAccountToken`). TERMINAL — no reintentar.
+    case ownerMismatch(detail: String)
+    /// 5xx / red caída / respuesta no decodificable / status inesperado → reintentar más tarde.
+    case transient(detail: String)
+}
+
 @MainActor
 final class CloudAccountClient {
 
@@ -409,6 +423,70 @@ final class CloudAccountClient {
         default:
             return .transient(detail: "HTTP \(http.statusCode): \(Self.bodyString(data))")
         }
+    }
+
+    // MARK: - /account/entitlement (C-8: el derecho Pro por CUENTA)
+
+    /// Consulta el entitlement vinculado a la cuenta. Sin attest (asimetría de `/account/*`).
+    /// NUNCA lanza. Un `.transient` JAMÁS debe interpretarse como "sin Pro": el caller conserva el
+    /// snapshot cacheado, que sigue siendo válido hasta su `expiresAt` firmado por Apple.
+    func entitlement(jwt: String) async -> EntitlementOutcome {
+        var request = URLRequest(url: baseURL.appendingPathComponent("account/entitlement"))
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
+        return await performEntitlement(request)
+    }
+
+    /// Vincula la suscripción de este device a la cuenta. `storeKitJWS` es la transacción firmada por
+    /// Apple (`StoreKitManager.fetchActiveTransactionJWS`) — el gateway la verifica offline contra el
+    /// Root CA G3, así que el cliente no puede fabricar un derecho. El 409 (`ownerMismatch`) significa
+    /// que la compra declaró OTRA cuenta de Yala: es terminal, no se reintenta.
+    func bindEntitlement(jwt: String, storeKitJWS: String) async -> EntitlementOutcome {
+        var request = URLRequest(url: baseURL.appendingPathComponent("account/entitlement"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: ["storekit_jws": storeKitJWS])
+        } catch {
+            return .transient(detail: "encode failed")
+        }
+        return await performEntitlement(request)
+    }
+
+    /// Ejecución + mapeo compartido por las dos rutas de entitlement.
+    private func performEntitlement(_ request: URLRequest) async -> EntitlementOutcome {
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await urlSession.data(for: request)
+        } catch {
+            return .transient(detail: "network: \(error.localizedDescription)")
+        }
+        guard let http = response as? HTTPURLResponse else {
+            return .transient(detail: "non-HTTP response")
+        }
+        switch http.statusCode {
+        case 200:
+            guard let decoded = try? JSONDecoder().decode(EntitlementResponse.self, from: data) else {
+                return .transient(detail: "HTTP 200 undecodable")
+            }
+            return .success(product: decoded.product,
+                            expiresAt: decoded.expires_at_ms.map { Date(timeIntervalSince1970: $0 / 1000) })
+        case 401:
+            return .sessionExpired(detail: "HTTP 401: \(Self.bodyString(data))")
+        case 409:
+            return .ownerMismatch(detail: "HTTP 409: \(Self.bodyString(data))")
+        default:
+            return .transient(detail: "HTTP \(http.statusCode): \(Self.bodyString(data))")
+        }
+    }
+
+    private struct EntitlementResponse: Decodable {
+        let pro: Bool
+        let product: String?
+        /// Epoch ms (el wire habla en ms; el cliente trabaja con `Date`).
+        let expires_at_ms: Double?
     }
 
     // MARK: - Helpers

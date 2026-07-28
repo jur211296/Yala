@@ -54,6 +54,8 @@ final class AppBootstrapper {
     /// poder reintentar. El invite pendiente vive en `PendingInviteStore` (persistente).
     private var isProcessingInvite = false
     private var subscriptionCheckTask: Task<Void, Never>?
+    /// C-8: sync del entitlement de CUENTA, fuera del camino crítico del boot (hace red).
+    private var accountEntitlementTask: Task<Void, Never>?
     private var remoteChangeTask: Task<Void, Never>?
     private var remoteChangeLeadingFired = false
     private var lastNotificationCheckDate = Date.distantPast
@@ -2027,6 +2029,13 @@ final class AppBootstrapper {
         let store = StoreKitManager.shared
         await store.updateSubscriptionStatus()
 
+        // C-8: el derecho de la CUENTA se sincroniza FUERA de este camino — `refreshSubscriptionStatus`
+        // se espera secuencialmente en el paso 3 del bootstrap, y `sync()` hace RED: dejarlo aquí ataría
+        // el cold launch a la latencia del gateway. El resultado llega por el mismo método (una sola
+        // reentrada: tras un sync exitoso el throttle de `shouldRefresh` devuelve false, así que la
+        // segunda pasada no vuelve a lanzarlo).
+        scheduleAccountEntitlementSync()
+
         if sessionState.isProUser != store.isProUser {
             sessionState.isProUser = store.isProUser
         }
@@ -2045,6 +2054,18 @@ final class AppBootstrapper {
         // en baseline quedaban en cola sin drenar y los tests pasaban de suerte.
         if ProUpsellService.shared.shouldShowTrialExpiredSheet(), !UITestHooks.isActive {
             RouterEntryGate.shared.submit(.presentTrialExpired)
+        }
+    }
+
+    /// C-8: vincula/refresca el derecho de la cuenta en background y, SOLO si cambió, vuelve a
+    /// derivar el estado de suscripción (que re-espeja `SessionState`, re-evalúa el downgrade y el
+    /// sheet de trial). En producción es un no-op inmediato: `sync()` corta en `isConfigured == false`
+    /// sin tocar la red. Task único cancelable — boot y foreground pueden coincidir.
+    private func scheduleAccountEntitlementSync() {
+        accountEntitlementTask?.cancel()
+        accountEntitlementTask = Task { @MainActor in
+            guard await AccountEntitlementService.shared.sync(), !Task.isCancelled else { return }
+            await refreshSubscriptionStatus()
         }
     }
 

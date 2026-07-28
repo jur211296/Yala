@@ -20,7 +20,10 @@ export type YalaErrorType =
   | "yala_bad_input"
   | "yala_account_reverting"
   | "yala_rpc_error"
-  | "yala_siwa_not_configured";
+  | "yala_siwa_not_configured"
+  /// C-8: el JWS declara (`appAccountToken`) una cuenta de Yala distinta a la del JWT — la
+  /// suscripción ya tiene dueño y el bind no la reasigna.
+  | "yala_entitlement_owner_mismatch";
 
 interface OpenAIErrorBody {
   error: {

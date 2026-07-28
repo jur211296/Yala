@@ -6368,12 +6368,29 @@ enum L10n {
             static func previewResult(_ tx: Int, _ cat: Int, _ acc: Int, _ budgets: Int) -> String {
                 String(format: ls("storage.migrate.previewResult", comment: ""), tx, cat, acc, budgets)
             }
+            /// C-7: con sesión de nube viva la migración REUSA esa cuenta y no pregunta el método.
+            /// `%@` = nombre visible del proveedor (`ProviderMismatchLogic.displayName`, jamás el
+            /// rawValue del wire); método desconocido → `accountReuseNoteGeneric`.
+            static func accountReuseNote(_ providerName: String) -> String {
+                String(format: ls("storage.migrate.accountReuseNote", comment: ""), providerName)
+            }
+            static var accountReuseNoteGeneric: String {
+                ls("storage.migrate.accountReuseNoteGeneric", comment: "")
+            }
         }
 
         enum Adopt {
             static var title: String { ls("storage.adopt.title", comment: "") }
             static var body: String { ls("storage.adopt.body", comment: "") }
             static var button: String { ls("storage.adopt.button", comment: "") }
+            /// C-7: la sesión viva NO es la cuenta que migró este corpus (el faro del device nombra
+            /// otra). `%@` = método visible de la sesión actual; desconocido → variante genérica.
+            static func otherAccountNote(_ providerName: String) -> String {
+                String(format: ls("storage.adopt.otherAccountNote", comment: ""), providerName)
+            }
+            static var otherAccountNoteGeneric: String {
+                ls("storage.adopt.otherAccountNoteGeneric", comment: "")
+            }
         }
 
         enum Revert {

@@ -230,21 +230,64 @@ final class CloudMigrationController {
     /// Ruta del consent (para la telemetría §j.4).
     enum ConsentPath: String { case migration, adopt }
 
+    /// CÓMO se autentica la migración/adopt (C-7, 2026-07-27): `StorageMigrationSignInLogic.Plan`,
+    /// explícito y sin default — un `.apple` implícito era el hardcode del hallazgo original, y un
+    /// `provider` a secas no sabía expresar «ya hay sesión, no firmes». Lo resuelve la Logic en el
+    /// productor; el belt de `startMigration` lo re-afirma para cualquier otra entrada.
+    typealias SignInPlan = StorageMigrationSignInLogic.Plan
+
     /// Migrar a la nube (o ADOPTAR una cuenta ya poblada, #30 — el mismo flujo: consent → sign-in → claim).
     /// El consent + su registro/telemetría ya ocurrieron en `CloudConsentView` y el MÉTODO (Apple|Google)
-    /// lo eligió el usuario en `StorageSignInChooserView` (último paso antes de la auth — Bloque C
-    /// 2026-07-17: la entrada forzaba SIWA); aquí se conduce la máquina: `notStarted → consent →
-    /// authenticating` (auth real del provider elegido) `→ claimingMigration` y drive autónomo.
-    /// `provider` SIN default a propósito: un `.apple` implícito es exactamente el hardcode del hallazgo.
+    /// lo eligió el usuario en `StorageSignInChooserView` SOLO cuando no había sesión (Bloque C
+    /// 2026-07-17: la entrada forzaba SIWA; C-7 2026-07-27: con sesión viva ya no se pregunta); aquí se
+    /// conduce la máquina: `notStarted → consent → authenticating` (auth real, o reuso de la sesión)
+    /// `→ claimingMigration` y drive autónomo.
     /// El sign-in exitoso escribe `keyProvider` ANTES de `.signInSucceeded` ⇒ el claim/faro (que leen
     /// `storedProvider()` VIVO, I4) estampan el método real.
-    func startMigration(consentPath: ConsentPath, provider: CloudSignInProvider) async {
+    ///
+    /// GUARD R9 (C-7): con `hasSession` la rama de auth NO se ejecuta, **llegue el plan que llegue**.
+    /// Es defensa en profundidad, no redundancia: `signIn(with:)` sobrescribe la sesión en silencio
+    /// (nuevo `sub`, nuevo `keyProvider`) y el canal de Grupos —que lee `currentUserID` vivo— pasaría a
+    /// operar bajo la cuenta entrante sin un solo evento. Los datos personales y los grupos acabarían
+    /// en cuentas distintas, contra `groups.signin.accountNote`. La decisión de producto vive en
+    /// `StorageMigrationSignInLogic`; esto es el belt de la máquina.
+    func startMigration(consentPath: ConsentPath, signIn plan: SignInPlan) async {
         isWorking = true
         defer { isWorking = false }
         lastError = nil
         let r = runner
         await r.startMigration(dryRun: false)   // notStarted → consent
         await r.submit(.consentAccepted)         // consent → authenticating
+
+        // Belt R9. `sessionIsUsable` NO es `hasSession`: pide un access token de verdad, porque una
+        // sesión con el refresh token revocado (el usuario quitó «Iniciar sesión con Apple» en
+        // Ajustes de iOS, o cerró sesión desde otro device) sigue figurando en el Keychain y
+        // avanzaría la máquina hasta un claim que no puede autenticarse.
+        let sessionIsUsable: Bool
+        if CloudAuthService.shared.hasSession {
+            sessionIsUsable = await CloudAuthService.shared.accessToken() != nil
+        } else {
+            sessionIsUsable = false
+        }
+
+        let provider: CloudSignInProvider
+        switch StorageMigrationSignInLogic.execution(for: plan, sessionIsUsable: sessionIsUsable) {
+        case .useLiveSession:
+            await r.submit(.signInSucceeded)     // authenticating → claimingMigration → drive
+            refresh()
+            return
+        case .failNoUsableSession:
+            #if DEBUG
+            print("CloudMigrationController.startMigration: plan .reuseLiveSession sin sesión usable")
+            #endif
+            lastError = L10n.Storage.Errors.signIn
+            await r.submit(.signInFailed)        // authenticating → notStarted
+            refresh()
+            return
+        case .authenticate(let chosen):
+            provider = chosen
+        }
+
         do {
             try await CloudAuthService.shared.signIn(with: provider)
             await r.submit(.signInSucceeded)     // authenticating → claimingMigration → drive
@@ -518,6 +561,14 @@ final class CloudMigrationController {
     func signInToResumeSync() async {
         isWorking = true
         defer { isWorking = false }
+        // Belt R9 (C-7, hermano del de `startMigration`): si la sesión revivió por otra entrada
+        // mientras el banner seguía en pantalla, re-firmar aquí podría cambiar de cuenta con el
+        // outbox del dueño anterior pendiente. Con sesión usable basta con despertar la cadencia.
+        if CloudAuthService.shared.hasSession, await CloudAuthService.shared.accessToken() != nil {
+            CloudSyncRuntime.shared?.handleBecameActive()
+            refresh()
+            return
+        }
         let provider = CloudSignInProvider(
             rawValue: CloudAuthService.shared.storedProvider() ?? "") ?? .apple
         do {

@@ -245,6 +245,39 @@ nonisolated enum CloudSyncFlags {
         groupsBackendEnabledTestOverride = nil
     }
 
+    /// Gate de la RESOLUCIÓN del derecho Pro por CUENTA (C-8, 2026-07-27). DARK: hoy `false` en
+    /// producción, así que `isProUser` sale EXACTAMENTE de donde salía antes del fix
+    /// (`Transaction.currentEntitlements` = el Apple ID del device) y monetización no cambia.
+    ///
+    /// Lo que NO gatea, a propósito: la EMISIÓN del `appAccountToken` en la compra y el `bind` del
+    /// entitlement. Esos corren siempre que haya sesión de nube — son los que van poblando el vínculo
+    /// cuenta ↔ suscripción para que el día del encendido el derecho ya esté donde tiene que estar.
+    /// Encenderlo antes de desplegar el gateway es inocuo (el `GET` falla → snapshot ausente → se
+    /// resuelve en local), pero se enciende DESPUÉS del deploy por higiene.
+    ///
+    /// En builds DEV la key `debugAccountEntitlementEnabledKey` (panel DEBUG) lo activa sin
+    /// recompilar, para QA en device; producción IGNORA la key. Setter = override en memoria (tests).
+    static var accountEntitlementEnabled: Bool {
+        get {
+            if let override = accountEntitlementEnabledTestOverride { return override }
+            #if DEV_BUILD
+            if UserDefaults.standard.bool(forKey: debugAccountEntitlementEnabledKey) { return true }
+            #endif
+            return accountEntitlementCompiledDefault
+        }
+        set { accountEntitlementEnabledTestOverride = newValue }
+    }
+
+    /// Encendido COMPILADO de la resolución por cuenta (la palanca de release del owner).
+    private static let accountEntitlementCompiledDefault = false
+    static let debugAccountEntitlementEnabledKey = "cloudSync.debug.accountEntitlementEnabled"
+    nonisolated(unsafe) private static var accountEntitlementEnabledTestOverride: Bool?
+
+    /// Solo tests: vuelve el getter a la lectura real (mismo racional que los otros `_testReset*`).
+    static func _testResetAccountEntitlementEnabledOverride() {
+        accountEntitlementEnabledTestOverride = nil
+    }
+
     /// SUB-flag de la purga de SwiftData History tras un ciclo completo del runtime (sigue DOBLE-DARK:
     /// exige además `syncRuntimeEnabled`, hoy `false` → la purga NO corre en producción todavía).
     /// `true` desde el veredicto del spike device S2 (owner, 2026-07-08, iPhone real con datos +

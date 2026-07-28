@@ -46,4 +46,25 @@ struct L10nFormatAccessorsTests {
         #expect(!result.contains("accessibility.removeTab"))
         #expect(result.contains("Panel"))
     }
+
+    /// C-7: la nota de «usarás tu cuenta actual» nombra el método. Si la key se pierde, la card de
+    /// migración mostraría `storage.migrate.accountReuseNote` en crudo justo antes de mover los datos.
+    @Test func storageAccountReuseNote_embedsProvider_neverRawKey() {
+        let result = L10n.Storage.Migrate.accountReuseNote("Google")
+
+        #expect(!result.contains("storage.migrate.accountReuseNote"))
+        #expect(result.contains("Google"))
+        // La variante genérica (método desconocido) no interpola nada, pero tampoco puede ser la key.
+        #expect(!L10n.Storage.Migrate.accountReuseNoteGeneric.contains("storage.migrate"))
+    }
+
+    /// C-7: el aviso de «esta copia es de otra cuenta» es lo único que separa al usuario de adoptar
+    /// bajo la identidad equivocada. Si sale la key cruda, el aviso no comunica nada.
+    @Test func storageOtherAccountNote_embedsProvider_neverRawKey() {
+        let result = L10n.Storage.Adopt.otherAccountNote("Apple")
+
+        #expect(!result.contains("storage.adopt.otherAccountNote"))
+        #expect(result.contains("Apple"))
+        #expect(!L10n.Storage.Adopt.otherAccountNoteGeneric.contains("storage.adopt"))
+    }
 }

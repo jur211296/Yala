@@ -32,6 +32,9 @@ struct StorageSettingsView: View {
     /// Provider elegido en el chooser; lo consume el `onDismiss` del sheet del chooser (con el
     /// anchor YA estable — Google resuelve su presenter por topmost VC). Cancel = queda `nil` → no-op.
     @State private var chosenProvider: CloudSignInProvider?
+    /// One-shot del belt del chooser (C-7): el sheet se presentó con sesión viva y se cerró solo;
+    /// el `onDismiss` arranca con `.reuseLiveSession`. Cancel/drag-dismiss no lo quema → no-op.
+    @State private var reuseLiveSession = false
     @State private var confirmMigrate1 = false
     @State private var confirmMigrate2 = false
     @State private var confirmRevert1 = false
@@ -91,15 +94,21 @@ struct StorageSettingsView: View {
             }
         }
         .sheet(isPresented: $showSignInChooser, onDismiss: onChooserDismissed) {
-            StorageSignInChooserView { provider in
-                chosenProvider = provider
-                showSignInChooser = false
-            }
+            StorageSignInChooserView(
+                decision: signInDecision(isAdopt: consentPath == .adopt),
+                onSelect: { provider in
+                    chosenProvider = provider
+                    showSignInChooser = false
+                },
+                onReuseLiveSession: {
+                    reuseLiveSession = true
+                    showSignInChooser = false
+                })
         }
         .modifier(StorageConfirmations(
             confirmMigrate1: $confirmMigrate1, confirmMigrate2: $confirmMigrate2,
             confirmRevert1: $confirmRevert1, confirmRevert2: $confirmRevert2,
-            onMigrate: { showSignInChooser = true },
+            onMigrate: proceedToSignInStep,
             onRevert: { Task { await controller?.startReverse() } }))
         .alert(L10n.Storage.Errors.title, isPresented: $showError, presenting: controller?.lastError) { _ in
             Button(L10n.Common.ok, role: .cancel) { controller?.lastError = nil }
@@ -163,6 +172,7 @@ struct StorageSettingsView: View {
     private func migrateCard(_ controller: CloudMigrationController) -> some View {
         // El marcador de un líder en el mirror → copy de ADOPT (evita el falso "migrar" sobre cuenta poblada).
         let isAdopt = (controller.markerDecision() == .secondaryDeviceCloudLogin)
+        let decision = signInDecision(isAdopt: isAdopt)
         return VStack(alignment: .leading, spacing: DS.Spacing.md) {
             Text(isAdopt ? L10n.Storage.Adopt.title : L10n.Storage.Migrate.title)
                 .font(DS.Typography.headline)
@@ -170,6 +180,25 @@ struct StorageSettingsView: View {
             Text(isAdopt ? L10n.Storage.Adopt.body : L10n.Storage.Migrate.body)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
+
+            switch decision {
+            case .reuseLiveSession(let provider):
+                // C-7: con sesión viva no se pregunta el método — decirlo ANTES, para que saltarse
+                // el chooser no sea una sorpresa. Cumple la promesa de `groups.signin.accountNote`.
+                Text(accountReuseNote(provider))
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("storage_account_reuse_note")
+            case .blockedOtherAccount(let provider):
+                // Esta copia pertenece a otra cuenta de Yala: adoptarla desde la sesión actual
+                // mezclaría dos identidades. Se explica y se deshabilita el botón.
+                Text(accountMismatchNote(provider))
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(DS.Semantic.warningForeground)
+                    .accessibilityIdentifier("storage_account_mismatch_note")
+            case .askProvider:
+                EmptyView()
+            }
 
             if !isAdopt {
                 Button {
@@ -194,7 +223,7 @@ struct StorageSettingsView: View {
             YalaPrimaryButton(
                 isAdopt ? L10n.Storage.Adopt.button : L10n.Storage.Migrate.button,
                 icon: "arrow.up.to.line",
-                isDisabled: controller.isWorking
+                isDisabled: controller.isWorking || isBlockedOtherAccount(decision)
             ) {
                 consentPath = isAdopt ? .adopt : .migration
                 showConsent = true
@@ -412,22 +441,88 @@ struct StorageSettingsView: View {
         consentAccepted = false
         switch consentPath {
         case .adopt:
-            // Adopt: NO doble confirmación destructiva (no mueve datos) — directo al chooser.
-            showSignInChooser = true
+            // Adopt: NO doble confirmación destructiva (no mueve datos) — directo al paso de auth.
+            proceedToSignInStep()
         case .migration:
             // Migración: doble confirmación sobre la ACCIÓN antes de mover datos.
             confirmMigrate1 = true
         }
     }
 
+    /// Paso de auth (C-7): con sesión de nube viva NO se pregunta el método — se reusa la cuenta
+    /// que ya está dentro (la de Grupos, típicamente), que es justo lo que promete
+    /// `groups.signin.accountNote`. Sin sesión, el chooser se comporta como siempre.
+    private func proceedToSignInStep() {
+        let path = consentPath
+        switch signInDecision(isAdopt: path == .adopt) {
+        case .reuseLiveSession:
+            Task { await controller?.startMigration(consentPath: path, signIn: .reuseLiveSession) }
+        case .askProvider:
+            showSignInChooser = true
+        case .blockedOtherAccount:
+            // La card ya deshabilita el botón y explica por qué; si se llegara aquí por una
+            // carrera (la sesión cambió entre el consent y su dismiss), no arrancar nada.
+            break
+        }
+    }
+
+    /// Copy de la nota de cuenta. Con método conocido lo NOMBRA (`ProviderMismatchLogic.displayName`
+    /// es el molde: jamás interpolar el rawValue del wire); desconocido → línea genérica.
+    private func accountReuseNote(_ provider: CloudSignInProvider?) -> String {
+        guard let name = ProviderMismatchLogic.displayName(forProvider: provider?.rawValue) else {
+            return L10n.Storage.Migrate.accountReuseNoteGeneric
+        }
+        return L10n.Storage.Migrate.accountReuseNote(name)
+    }
+
+    /// Copy del bloqueo por cuenta ajena (adopt en un segundo device).
+    private func accountMismatchNote(_ provider: CloudSignInProvider?) -> String {
+        guard let name = ProviderMismatchLogic.displayName(forProvider: provider?.rawValue) else {
+            return L10n.Storage.Adopt.otherAccountNoteGeneric
+        }
+        return L10n.Storage.Adopt.otherAccountNote(name)
+    }
+
+    private func isBlockedOtherAccount(_ decision: StorageMigrationSignInLogic.Decision) -> Bool {
+        if case .blockedOtherAccount = decision { return true }
+        return false
+    }
+
+    /// Decisión viva del paso de auth. Se re-evalúa en cada lectura (la sesión puede aparecer o
+    /// morir mientras la pantalla está abierta) — jamás se cachea en `@State`.
+    ///
+    /// `storedProvider()` lee el Keychain, y esta pantalla re-renderiza ~1×/s por el tick del journal:
+    /// sin sesión no se consulta (el caso de TODO device de producción hoy), con sesión es una lectura
+    /// por render de una pantalla que se abre puntualmente.
+    ///
+    /// `isAdopt` habilita la comprobación contra el faro: en un adopt la cuenta esperada la nombra el
+    /// device (migró desde otro con el mismo Apple ID), y la sesión viva puede no ser esa.
+    private func signInDecision(isAdopt: Bool = false) -> StorageMigrationSignInLogic.Decision {
+        let hasSession = CloudAuthService.shared.hasSession
+        guard hasSession else { return .askProvider }
+        return StorageMigrationSignInLogic.decide(
+            hasSession: true,
+            storedProvider: CloudAuthService.shared.storedProvider(),
+            isAdopt: isAdopt,
+            beaconAccountHash: isAdopt ? CloudBeacon().accountHash : nil,
+            sessionAccountHash: isAdopt
+                ? CloudAuthService.shared.currentUserID.map(CloudBeacon.hash) : nil)
+    }
+
     /// `onDismiss` del chooser: arranca la migración/adopt con el provider elegido, con el sheet YA
     /// abajo (Google resuelve su presenter vía topmost VC — sobre un VC a medio dismissal el sheet
     /// se perdería). Cancel del chooser = `chosenProvider` nil → no-op limpio.
     private func onChooserDismissed() {
+        let path = consentPath
+        if reuseLiveSession {
+            reuseLiveSession = false
+            chosenProvider = nil          // el belt gana: jamás arrastrar una elección previa
+            Task { await controller?.startMigration(consentPath: path, signIn: .reuseLiveSession) }
+            return
+        }
         guard let provider = chosenProvider else { return }
         chosenProvider = nil
-        let path = consentPath
-        Task { await controller?.startMigration(consentPath: path, provider: provider) }
+        Task { await controller?.startMigration(consentPath: path, signIn: .authenticateWith(provider)) }
     }
 }
 
