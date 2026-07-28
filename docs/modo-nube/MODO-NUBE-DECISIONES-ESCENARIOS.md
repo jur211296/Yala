@@ -105,9 +105,9 @@ Modo de trabajo acordado: cada frente va a **su propia sesión** vía chip task;
 
 Ninguno depende de las 7 decisiones. Todos están **dormidos hoy** y se estrenan el día del encendido. Referencias completas en [[MODO-NUBE-AUDITORIA-ESCENARIOS]] §4 y §7.
 
-| # | Bug | Evidencia | Por qué muerde al encender |
-|---|---|---|---|
-| C-1 | **Limbo `.cloud` con `mirrorOffArmed = false`**: modo nube con el mirror encendido = doble escritura indefinida, UI clavada al 89 %, sin tope ni degradación | `MigrationRunner.swift:582-596`; `MigrationWorkExecutor.swift:425`, `:661-679`; `SwiftDataConfiguration.swift:241-242` | **Determinista**, no accidente: pasa si iCloud está lleno o ausente al cerrar el cutover |
+| # | Bug | Evidencia | Por qué muerde al encender | Estado |
+|---|---|---|---|---|
+| C-1 | **Limbo `.cloud` con `mirrorOffArmed = false`**: modo nube con el mirror encendido = doble escritura indefinida, UI clavada al 89 %, sin tope ni degradación | `MigrationRunner.swift:582-596`; `MigrationWorkExecutor.swift:425`, `:661-679`; `SwiftDataConfiguration.swift:241-242` | **Determinista**, no accidente: pasa si iCloud está lleno o ausente al cerrar el cutover | ✅ **ARREGLADO** 2026-07-27 · `246a6939` |
 | C-2 | **Los ~10 gates de quiescencia quedan inertes**: sin mirror no hay `importEvent` ⇒ `isImportQuiescent` devuelve `true` siempre | `SyncQuiescenceCoordinator.swift:6-24`; `iCloudSyncService.swift:94-101`; `SubcategoryDedupGate.swift:41-46`; `NotificationService.swift:531`; `ApplePayDraftService.swift:44` | Notificaciones canceladas contra grafos a medio aplicar, drafts sobre datos incompletos, dedup colapsando entidades sin su pareja |
 | C-3 | **Cambio/cierre de Apple ID borra los grupos backend y no vuelven**: se borran las filas pero **no** el cursor ⇒ el pull incremental no re-entrega el historial | `SplitSyncManager.swift:1425-1439`, `:1460-1485`, `:2059-2088`; `CloudSessionSignOut.swift:595-596` | Pérdida permanente de todos los grupos migrados |
 | C-4 | **Gasto del invitado perdido durante la migración de su grupo**: el uploader se gatea por la quiescencia del import **personal**, no del fetch de grupos | `AppBootstrapper.swift:421`; `GroupMigrationUploader.swift:170`, `:181`; `SplitSyncManager.swift:1518` | Pérdida silenciosa de un gasto, justo en la operación que más confianza necesita |
@@ -122,13 +122,25 @@ Ninguno depende de las 7 decisiones. Todos están **dormidos hoy** y se estrenan
 
 | Chip | Cubre | Estado |
 |---|---|---|
-| `task_5b9e6b8b` — cutover a prueba de iCloud lleno o ausente | C-1 | creado |
+| `task_5b9e6b8b` — cutover a prueba de iCloud lleno o ausente | C-1 | **ARREGLADO** 2026-07-27 (`246a6939`) |
 | `task_57c6661a` — la quiescencia queda inerte en modo nube | C-2 | creado |
 | `task_47089b29` — pérdida de grupos y de gastos en el canal nube | C-3 + C-4 | creado |
 | `task_d82c8eb7` — una cuenta, una identidad (proveedor y Pro) | C-7 + C-8 | creado |
 | `task_e9786629` — copy «sin servidores nuestros» | C-9 | creado |
 | `task_dd7b9cc2` — grupo congelado sin salida en el rollout | C-10 | creado |
 | — | **C-5 + C-6** (re-entrada tras el cutover: faro sin lector al reinstalar, y sign-out post-migración que ofrece restaurar la copia obsoleta) | **EN ESPERA de D-A3**: con la zona borrada ya no hay copia congelada que restaurar, así que el arreglo cambia de forma. Hacerlos DESPUÉS de implementar D-A3, en la misma sesión o justo detrás |
+
+**C-1 CERRADO 2026-07-27** (chip `task_5b9e6b8b`, commit `246a6939`, 39 archivos). Precondición del canal iCloud en las **dos** entradas del cutover (`verifying` rama `.match` y `cutover(.pending)` — la segunda cubre el resume tras un kill), veredicto puro en `ICloudCutoverGateLogic` con **fail-open** (la ambigüedad nunca aborta una migración). Tope del paso 4 **por tiempo journaleado** (`markerWrittenSince`, sellado una sola vez), no por intentos: la cadencia real es boot + foreground + tap, así que un contador castigaría a quien abre la app muchas veces. Dos presupuestos: **900 s** cuando CloudKit ya dictó que el write no entra, **259 200 s** cuando aún no se sabe. Al agotarlo, abort **local sin red** con orden obligatorio `.persistICloudMode` → `.deleteCloudKitMarker` → `.rollback` (el primero es el único que no puede lanzar).
+
+Tres hallazgos del arreglo que el informe del chip no anticipaba:
+
+1. **El invariante del punto (3) no se puede cumplir como estaba escrito.** Invertir el orden (armar antes de persistir `.cloud`) deja la mitad `armado + .icloud`, y `CloudMigrationUIStateDeriver.derive` la lee como `needsRelaunch(.toCloud)` **sin mirar `storageMode`** ⇒ tarjeta «cierra y vuelve a abrir» en **bucle sin salida**; y `UserDefaults` no tiene transacción, así que tampoco hay atomicidad. Se enforcea en el **consumidor**: `MigrationRuntimeGate.canRun(phase:cloudWithMirrorOn:)`.
+2. **El agujero con dientes era otro y seguía abierto:** `notStarted` **es** fase estable (device adoptado, #30), así que un par a medio escribir dejaba pasar `canRunDomain()` con el mirror montado ⇒ motor **y** espejo sobre el mismo store, sin ningún gate de fase que lo notara. Ese era el daño real, no el 89 % de la barra.
+3. **`failedRollback` «pelado» habría sido PEOR que el bug:** deja `.cloud` persistido, y `resetAfterRollback` (el botón «Reintentar») pone `notStarted` — fase estable — tirando además los efectos pendientes con `setPendingEffects([])`. Por eso el abort escribe `.icloud` como **primer** efecto y `resetAfterRollback` ahora **drena antes de limpiar**.
+
+**Residual:** no existe RPC de abort de la ida (solo `reverse_abort`, §h), así que tras el abort el backend sigue con `migrated_at` estampado y un reintento entra por el flujo de **adopt** con `fastForwardHistoryBaseline`. Misma forma que deja una reversa completada (§h.4). El fix robusto sería una acción `migration_abort` en el RPC `migration_progress` — toca gateway + staging, **fuera del alcance de este chip**.
+
+**Precondición dura del encendido que este arreglo hace visible:** el record type `CD_CloudMigrationMarker` tiene que estar desplegado en CloudKit **Production** antes de encender el flag. Sin él el export falla para el 100 % de los devices y toda migración degradaría al vencer el presupuesto largo. El instrumento es el canario `cloudCutoverMarkerStalled`, que se emite en **cada** observación del atasco (no solo al agotar), así que un atasco sistémico se ve en el dashboard mucho antes de que nadie degrade.
 
 **Riesgo aparte, ACTIVO hoy y ajeno a la épica:** handover de dispositivo — el store de Grupos sobrevive el wipe por diseño y el bridge no comprueba identidad, así que tras «cerrar sesión» + «Soy nuevo» el usuario B ve los grupos de A y sus gastos en Panel, Inbox, presupuestos y reportes (`DataWipeService.swift:280-284`; `GroupTransactionBridge.swift:150`). **ARREGLADO 2026-07-27** (chip `task_20585d3b`) → [[qa_handover-dispositivo-grupos-fuga]]: reproducido en simulador y cerrado con la purga local del dominio Grupos en los dos caminos de «empiezo de cero» + un SELLO per-device que mantiene el bridge cerrado hasta que el usuario nuevo adopte Grupos. El alcance de `wipeAllUserData` NO cambió («Vaciar datos» de Ajustes sigue conservando Grupos, con sus tests intactos). Hallazgo añadido durante el arreglo: `checkHasExistingData` (`ContentView.swift:875`) no contaba lo bridgeado, así que un A que venía de «Solo Grupos» hacía que «Soy nuevo» **no corriera wipe alguno** (`NEW-E2-03`). Residual que este fix no cierra y sí cierra la épica: adoptar Grupos adopta el dominio del Apple ID — el aislamiento real exige identidad por CUENTA (o el sello de corpus descrito en el ticket).
 
