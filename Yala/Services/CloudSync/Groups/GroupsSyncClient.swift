@@ -1453,6 +1453,7 @@ final class GroupsSyncClient {
         var bridgeExpenseIDs: [UUID] = []
         var bridgeSettlementIDs: [UUID] = []
         var notify = PendingNotificationChanges()
+        var freezeZones: Set<String> = []
         var maxSeqByGroup = decodeCursors(cursor.groupCursorsJSON)
         // H-2026-07-18-3: grupos cuyo cursor hay que RESETEAR a 0 tras esta página (re-join del propio user:
         // pendingApproval→active). Lo llena `applyMember`; se aplica DESPUÉS del merge de `page.cursors`.
@@ -1472,7 +1473,7 @@ final class GroupsSyncClient {
                                    bridgeExpenseIDs: &bridgeExpenseIDs,
                                    bridgeSettlementIDs: &bridgeSettlementIDs,
                                    cursorResetGroupIDs: &cursorResetGroupIDs,
-                                   notify: &notify)
+                                   notify: &notify, freezeZones: &freezeZones)
                     // Avanzar el cursor del grupo al server_seq máximo aplicado.
                     let prev = maxSeqByGroup[delta.groupID] ?? 0
                     if delta.serverSeq > prev { maxSeqByGroup[delta.groupID] = delta.serverSeq }
@@ -1506,8 +1507,35 @@ final class GroupsSyncClient {
         // que el usuario no tenga en el store.
         let changes = resolveNotificationChanges(notify, context: context)
         if !changes.isEmpty { onRemoteChanges(changes) }
+        drainSoftDeleteFreeze(freezeZones, context: context)
         scheduleBridge(expenseIDs: bridgeExpenseIDs, settlementIDs: bridgeSettlementIDs)
         return true
+    }
+
+    /// 2.3: congela el bridge personal de las zonas que acaban de pasar a soft-delete. Post-save, como en el
+    /// canal CloudKit (que lo drenaba tras persistir el batch del fetch), e idempotente: `freezeForSoftDelete`
+    /// es no-op si ya no queda nada colgando de la zona.
+    private func drainSoftDeleteFreeze(_ zones: Set<String>, context: ModelContext) {
+        guard !zones.isEmpty else { return }
+        for zone in zones {
+            let group: SplitGroup?
+            do {
+                group = try fetchSplitGroup(zoneID: zone, context: context)
+            } catch {
+                #if DEBUG
+                logger.error("GroupsSync: freeze fetch falló para \(zone): \(error)")
+                #endif
+                continue
+            }
+            guard let group else { continue }
+            do {
+                try GroupTransactionBridge.shared.freezeForSoftDelete(group: group)
+            } catch {
+                #if DEBUG
+                logger.error("GroupsSync: freezeForSoftDelete falló para \(zone): \(error)")
+                #endif
+            }
+        }
     }
 
     /// Acumulador por-página de lo que puede notificar (2.1). Guarda el `group_id` del wire (==
@@ -1667,7 +1695,8 @@ final class GroupsSyncClient {
         bridgeExpenseIDs: inout [UUID],
         bridgeSettlementIDs: inout [UUID],
         cursorResetGroupIDs: inout Set<String>,
-        notify: inout PendingNotificationChanges
+        notify: inout PendingNotificationChanges,
+        freezeZones: inout Set<String>
     ) throws {
         switch delta.entityType {
         case GroupEntityEmissionMap.splitExpense.table:
@@ -1688,7 +1717,7 @@ final class GroupsSyncClient {
             try applySettlement(delta, id: id, context: context, bridgeSettlementIDs: &bridgeSettlementIDs,
                                 notify: &notify)
         case GroupEntityEmissionMap.splitGroup.table:
-            try applyGroupMeta(delta, context: context)
+            try applyGroupMeta(delta, context: context, freezeZones: &freezeZones)
         case "group_members":
             try applyMember(delta, context: context, cursorResetGroupIDs: &cursorResetGroupIDs,
                             notify: &notify)
@@ -1778,7 +1807,9 @@ final class GroupsSyncClient {
         bridgeSettlementIDs.append(id)
     }
 
-    private func applyGroupMeta(_ delta: GroupPulledDelta, context: ModelContext) throws {
+    private func applyGroupMeta(
+        _ delta: GroupPulledDelta, context: ModelContext, freezeZones: inout Set<String>
+    ) throws {
         // Identidad = group_id (cloudKitZoneID). UPDATE-only en push; en apply se crea si falta (el grupo
         // nace vía RPC/CKSyncEngine, pero el pull es autoritativo para un member — idempotente).
         let existing = try fetchSplitGroup(zoneID: delta.groupID, context: context)
@@ -1786,6 +1817,9 @@ final class GroupsSyncClient {
             if let existing { context.delete(existing) }
             return
         }
+        // 2.3: estado ANTES del update, para detectar el flip a soft-delete. Un grupo que nace ya oculto
+        // (invitado con fresh-install POSTERIOR al soft-delete) cuenta como flip: `false` es el valor previo.
+        let wasHidden = existing?.isHiddenForAll ?? false
         let model = existing ?? SplitGroup()
         model.cloudKitZoneID = delta.groupID
         let f = delta.fields
@@ -1819,6 +1853,10 @@ final class GroupsSyncClient {
             // `true`) permanece intacto (guard `!isBackendGroup` → sin write espurio).
             model.isBackendGroup = true
         }
+        // 2.3: soft-delete remoto (`is_hidden_for_all` de false a true) → hay que soltar las transacciones
+        // y los borradores personales que colgaban de esa zona. El drenaje va fuera del `saveWithAuthor`,
+        // porque `freezeForSoftDelete` escribe en el store PERSONAL y hace su propio save.
+        if !wasHidden, model.isHiddenForAll { freezeZones.insert(delta.groupID) }
     }
 
     private func applyMember(

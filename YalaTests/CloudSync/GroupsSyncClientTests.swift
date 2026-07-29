@@ -1781,4 +1781,89 @@ struct GroupsSyncClientTests {
 
         #expect(group.initialMemberImportStartedAt == stamp)
     }
+
+    // MARK: - Fase 2 · 2.3 Freeze del bridge personal por soft-delete remoto
+
+    private func hiddenGroupMetaDelta(
+        group: String = "SplitGroup-A", hidden: Bool, serverSeq: Int64 = 5
+    ) -> GroupPulledDelta {
+        GroupPulledDelta(
+            entityType: GroupEntityEmissionMap.splitGroup.table, groupID: group,
+            rawSyncID: nil, syncID: nil, op: .upsert,
+            fields: ["name": .string("Viaje"), "is_hidden_for_all": .bool(hidden)],
+            fieldHlcs: [:], hlc: "2026-07-15T00:00:00.000Z-0000-0000000000000010",
+            serverSeq: serverSeq, schemaVersion: 1)
+    }
+
+    /// Siembra una TX de cuenta REAL bridgeada a la zona (la que el freeze debe soltar).
+    @discardableResult
+    private func makeBridgedTx(zone: String, context: ModelContext) -> TransactionItem {
+        let account = Account(name: "Efectivo", currencyCode: "PEN", colorHex: "#111111",
+                              iconName: "banknote", type: "cash", isSystemAccount: false)
+        context.insert(account)
+        let tx = TransactionItem(date: Date(timeIntervalSince1970: 1_700_000_000), amount: -40,
+                                 currencyCode: "PEN", account: account)
+        tx.splitExpenseID = UUID().uuidString
+        tx.splitGroupZoneID = zone
+        context.insert(tx)
+        return tx
+    }
+
+    /// El grupo pasa a oculto-para-todos en el pull → la TX personal bridgeada queda LIBERADA (conserva
+    /// monto, fecha y cuenta; solo se sueltan los punteros al grupo).
+    @Test func applyGroupMeta_flipsToHidden_freezesPersonalBridge() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        makeBackendGroup(zoneID: "SplitGroup-A", context: context)
+        let tx = makeBridgedTx(zone: "SplitGroup-A", context: context)
+        try context.save()
+        GroupTransactionBridge.shared.setContext(context)
+
+        let client = GroupsSyncClient()
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [hiddenGroupMetaDelta(hidden: true)], cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+
+        #expect(tx.splitGroupZoneID == nil)
+        #expect(tx.splitExpenseID == nil)
+        #expect(tx.amount == -40)  // el freeze libera punteros, no destruye la transacción
+    }
+
+    /// Un grupo que YA estaba oculto y vuelve a llegar no re-dispara el freeze; y uno visible tampoco.
+    @Test func applyGroupMeta_noFlip_leavesBridgeAlone() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let group = makeBackendGroup(zoneID: "SplitGroup-A", context: context)
+        group.isHiddenForAll = true
+        let tx = makeBridgedTx(zone: "SplitGroup-A", context: context)
+        try context.save()
+        GroupTransactionBridge.shared.setContext(context)
+
+        let client = GroupsSyncClient()
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [hiddenGroupMetaDelta(hidden: true)], cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+
+        #expect(tx.splitGroupZoneID == "SplitGroup-A")  // sin flip → sin freeze
+    }
+
+    /// Invitado con fresh-install POSTERIOR al soft-delete: el grupo NACE oculto y el freeze igual corre
+    /// (el valor previo de un born-remote es `false`).
+    @Test func applyGroupMeta_bornHidden_freezesPersonalBridge() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let tx = makeBridgedTx(zone: "SplitGroup-A", context: context)
+        try context.save()
+        GroupTransactionBridge.shared.setContext(context)
+
+        let client = GroupsSyncClient()
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [hiddenGroupMetaDelta(hidden: true)], cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+
+        #expect(tx.splitGroupZoneID == nil)
+    }
 }
