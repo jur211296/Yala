@@ -128,6 +128,41 @@ Aterrizó en `21dcd465` (gateway) + `5010db6a` (cliente) — los mismos dos comm
 | **11** | **El cierre de `migrate_group` de la Fase 1 es SOLO del gateway — la función sigue invocable en PostgREST.** El linter de seguridad de producción la lista como ejecutable por `authenticated` vía `/rest/v1/rpc/migrate_group`. Verificado que el cliente habla únicamente con el Worker (`POST /groups/rpc/{fn}`, `GroupsMembershipClient.swift:228`), así que el 404 **sí** cierra la puerta de la app — pero PostgREST es público y cualquier usuario con sesión tiene un JWT válido. El «queda inerte tras un 404» es cierto para la app, **no para la API**. Cierre limpio: `revoke execute on public.migrate_group from authenticated` — no toca datos, no dropea nada, y hace literal la afirmación. Riesgo hoy ~cero (Grupos sin usuarios, feature en borrado), pero conviene cerrarlo antes de 2.1 con todo encendido. **Nota de contexto: los otros 17 WARN del linter son POR DISEÑO** (RLS cierra las tablas y todo escribe por RPCs `SECURITY DEFINER` que autorizan por dentro) y el INFO de `group_seq_counters` es el lockdown que aplicó `g12_02`; `migrate_group` es el único cuyo cliente se borró, y por eso es el único grant colgando. **CERRADO 2026-07-28, en los DOS entornos** con la migración nombrada `g6_02_revoke_migrate_group_execute` (registrada en el historial de ambos proyectos, que es el único registro de schema que existe en Supabase — las migraciones no viven como ficheros en el repo, a diferencia del gateway). Verificado con `has_function_privilege`, que es más autoritativo que el linter: `false` en producción y en staging, con la función **todavía existiendo** y **todavía `SECURITY DEFINER`** ⇒ la decisión de la Fase 1 de no dropearla se respeta y el golden del 404 no se toca. Contraste independiente: quedan **16** funciones `SECURITY DEFINER` expuestas a `authenticated`, eran 17 ⇒ solo cambió la que debía. Se aplicó a los dos a propósito: cerrar solo producción habría dejado staging más permisivo y armado la trampa del «pasa en staging, falla en producción». Snapshot `supabase-groups-staging.ddl` actualizado (el `grant execute … to authenticated` pasa a incluir ese rol en el `revoke`) | **CERRADO** |
 | 10 | 11 de los 17 estados huérfanos de la auditoría §4 siguen sin decisión, y el frente de **cablear `CKIdentityCapture`** fuera de la migración (invariante «¿está el container privado en uso?») | sin decidir |
 
+## 4b · Providers de auth: la ÚNICA divergencia staging/producción que es deliberada
+
+**Decisión 2026-07-28. En producción: Apple ✅ · Google ✅ · Email ❌. En staging: los tres.** La
+asimetría es a propósito y hay que dejarla escrita, porque todo lo demás de esta sesión argumenta lo
+contrario —el script de migraciones de D1, el `revoke` aplicado a los dos entornos— y sin esta nota
+ese razonamiento se convierte en el argumento para romperla: alguien verá la diferencia, pensará «hay
+que igualar los entornos» y encenderá email en producción.
+
+**Por qué staging LO NECESITA.** Todo el harness de goldens autentica con un password grant —
+`login("i5-user-a@test.yala", "I5-Passw0rd-A!")` en `gateway/test/groups.goldens.test.ts:180`,
+`push.fanout.test.ts:103`, `sync.goldens.test.ts:99`, `account.goldens.test.ts:158`, y
+`YalaTests/CloudSync/PrefsSyncE2EStagingTests.swift:43`. Los flujos nativos de Apple y Google no se
+automatizan headless, así que email+password es la única vía a un JWT real en tests. **Apagarlo en
+staging rompe la suite entera de goldens.**
+
+**Por qué producción NO debe tenerlo.**
+1. **La app no tiene camino de email**: `CloudSignInProvider` (`CloudAuthService.swift:121`) son
+   exactamente `apple` y `google`; cero hits de `signUp(`, `signIn(email`, `magicLink`,
+   `signInWithOTP`, `resetPasswordForEmail`, `verifyOTP` en `Yala/`. Nada legítimo lo usaría.
+2. **La anon key es pública por diseño** (commiteada, embebida en cada cliente). Con email
+   habilitado, cualquiera hace `POST /auth/v1/signup` con esa key y crea cuentas sin instalar la app.
+   Esas cuentas obtienen el rol `authenticated`, y eso da acceso a las **16 funciones
+   `SECURITY DEFINER`** expuestas a propósito (`create_group`, `create_group_invite`, `join_group`…).
+   ⇒ **hoy llegar a `authenticated` exige un sign-in real de Apple o Google; con email se llega con
+   un curl.** Convierte los proveedores de auth de una puerta en una formalidad.
+3. Los signups basura cuentan como **MAU** del plan.
+
+Es la misma clase de hallazgo que el `revoke` de `migrate_group` (#11): una puerta que nada usa pero
+que está abierta.
+
+**Residual honesto, por si algún día se replantea:** un usuario que entra con Apple y pierde el
+acceso a ese Apple ID pierde su cuenta de nube, y el email sería un camino de recuperación. Eso es
+una decisión de PRODUCTO con UI propia, no un provider que se enciende «por si acaso»: encenderlo sin
+interfaz no ayuda a nadie y sí abre el canal del punto 2.
+
 ## 5 · La lección de método, que es lo que más va a servir
 
 **Hubo cuatro diagnósticos falsos en un día, tres míos.** El patrón es siempre el mismo: **leer señal en muestras de n=1 o 2, y confundir un fallo del entorno con un fallo del sujeto.**
