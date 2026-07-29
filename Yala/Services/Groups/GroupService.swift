@@ -991,19 +991,31 @@ final class GroupService {
     /// el contexto.
     func refreshCurrentUserFlags(context providedContext: ModelContext? = nil) async {
         guard let context = providedContext ?? modelContext else { return }
-        let recordName: String
+
+        // 2.6: la identidad del canal Grupos → backend es el `sub` de la cuenta Yala, así que se resuelve
+        // ANTES que la de CloudKit y sin depender de ella. Con el flag OFF (SIEMPRE en producción hoy)
+        // `currentUserID` es nil, `backendCanResolve` es false y todo lo de abajo es BYTE-IDÉNTICO al
+        // camino de siempre — incluido el `return` temprano cuando iCloud no resuelve.
+        let backendEnabled = CloudSyncFlags.groupsBackendEnabled
+        let currentUserID: String? = backendEnabled ? CloudAuthService.shared.currentUserID : nil
+        let backendCanResolve = !(currentUserID ?? "").isEmpty
+
+        // El recordName de CloudKit pasa a ser BEST-EFFORT: sin él el path CloudKit queda inerte por sí
+        // solo (`cloudKitMatch` ya exige no-vacío) pero el canal backend sigue sabiendo quién soy. Antes
+        // un iCloud no resoluble abortaba la función ENTERA, así que en un device del canal nuevo sin
+        // iCloud disponible ningún `SplitMember` recibía `isCurrentUser` — o sea, el usuario se quedaba
+        // sin su propio balance en sus propios grupos.
+        var recordName = ""
         if let cached = GroupUserIdentityService.shared.cachedRecordName, !cached.isEmpty {
             recordName = cached
         } else {
             do {
-                let fetched = try await GroupUserIdentityService.shared.currentUserRecordName()
-                guard !fetched.isEmpty else { return }
-                recordName = fetched
+                recordName = try await GroupUserIdentityService.shared.currentUserRecordName()
             } catch {
                 logger.error("refreshCurrentUserFlags: currentUserRecordName failed: \(error.localizedDescription, privacy: .public)")
-                return
             }
         }
+        guard !recordName.isEmpty || backendCanResolve else { return }
 
         do {
             let allGroups = try context.fetch(FetchDescriptor<SplitGroup>())
@@ -1026,16 +1038,16 @@ final class GroupService {
             var changed = false
 
             // Canal Grupos → backend (G3, DARK): con el flag ON, la identidad AUTORITATIVA de "soy yo" es
-            // el auth `uid` (`SplitMember.userID` vs `CloudAuthService.currentUserID`). Con el flag OFF
-            // (SIEMPRE en producción hoy) `backendEnabled` es `false` → NUNCA se lee `currentUserID` y la
-            // rama de decisión de `isCurrentUser` es BYTE-IDÉNTICA al path CloudKit por record-name de abajo.
-            let backendEnabled = CloudSyncFlags.groupsBackendEnabled
-            let currentUserID: String? = backendEnabled ? CloudAuthService.shared.currentUserID : nil
+            // el auth `uid` (`SplitMember.userID` vs `CloudAuthService.currentUserID`). Resuelto arriba,
+            // antes que el recordName de CloudKit (2.6).
 
             // Migration: older builds could create current-user members without `cloudKitUserRecordID`.
             // Try to infer and backfill once per group, so other devices can identify the same user.
             let localDisplayName = currentUserDisplayName()
-            for group in allGroups {
+            // 2.6: el backfill es del path CloudKit — sin recordName resuelto no hay identidad que
+            // estampar, y con el canal backend resolviendo por `sub` este bloque no aporta nada.
+            let backfillCandidates: [SplitGroup] = recordName.isEmpty ? [] : allGroups
+            for group in backfillCandidates {
                 guard let zoneMembers = membersByZone[group.cloudKitZoneID] else { continue }
                 // C-3: la fila del canal backend RETENIDA tras un cambio de Apple ID (D1) no se re-ancla al
                 // recordName NUEVO — su identidad la resuelve el `sub` de la cuenta Yala. Sin esto, el
@@ -1075,20 +1087,36 @@ final class GroupService {
             }
 
             for member in members {
+                let memberIsInBackendChannel = groupsByZone[member.groupZoneID].map {
+                    GroupBackendIdentityLogic.belongsToBackendChannel(
+                        isBackendGroup: $0.isBackendGroup, movedToBackendAt: $0.movedToBackendAt)
+                } ?? false
+
                 // C-3: par del guard de arriba. Un member de un grupo del canal backend RETENIDO lleva el
                 // `cloudKitUserRecordID` del Apple ID que se FUE, así que el match por record-name daría
                 // `false` y APAGARÍA su `isCurrentUser` — dejando el grupo retenido sin «quién soy»
                 // (balances, participación) justo en el grupo que este fix existe para conservar.
-                if let memberGroup = groupsByZone[member.groupZoneID],
-                   GroupBackendIdentityLogic.belongsToBackendChannel(
-                    isBackendGroup: memberGroup.isBackendGroup, movedToBackendAt: memberGroup.movedToBackendAt) {
-                    continue
-                }
+                //
+                // 2.6: el salto pasa a ser CONDICIONAL. Su motivo era que la única señal disponible —el
+                // record-name— es la equivocada para estos grupos; con la sesión Yala viva hay una señal
+                // AUTORITATIVA, el `sub`, y saltarse el member deja abierto el hueco contrario, que es el
+                // que 2.6 cierra: `GroupsSyncClient.applyMember` NUNCA setea `isCurrentUser` y
+                // `GroupBackendMembershipService` solo lo pone en el member del CREADOR, así que quien se
+                // UNE a un grupo —y cualquiera en un 2º device o tras un reinstall— recibe su propio
+                // member por el PULL sin el flag, y sin él la UI no le da balance propio, ni FAB, ni
+                // liquidar (`GroupDetailViewModel.currentUserMember` lee SOLO ese flag). Sin `sub` que
+                // consultar (flag OFF, o sin sesión) se conserva el salto exacto de antes.
+                if memberIsInBackendChannel, !backendCanResolve { continue }
 
                 // Backfill legacy "current user" members that were created without a CloudKit identity.
                 // A1 (G3): EXCLUIR los members del canal backend (`memberKey`/`userID` seteados) — su
                 // `cloudKitUserRecordID == ""` es intencional; backfillearlo + encolarlo sería fuga cross-canal.
-                if member.isCurrentUser && member.cloudKitUserRecordID.isEmpty
+                // 2.6: y tampoco en una ZONA del canal backend (ahora alcanzable al condicionar el salto de
+                // arriba) ni sin recordName resuelto — es el estampado del humano nuevo sobre un member
+                // ajeno que C-3 documenta, y escribir "" sobre "" marcaría `changed` y encolaría un save
+                // a CKSyncEngine sin haber cambiado nada.
+                if !recordName.isEmpty && !memberIsInBackendChannel
+                    && member.isCurrentUser && member.cloudKitUserRecordID.isEmpty
                     && member.memberKey == nil && member.userID == nil {
                     member.cloudKitUserRecordID = recordName
                     if let group = groupsByZone[member.groupZoneID] {
@@ -1104,6 +1132,16 @@ final class GroupService {
                     // Canal backend: identidad autoritativa = auth uid del member vs sesión actual.
                     shouldBeCurrent = GroupBackendIdentityLogic.isCurrentUser(
                         memberUserID: uid, currentUserID: currentUserID)
+                } else if memberIsInBackendChannel || recordName.isEmpty {
+                    // 2.6, los dos casos en que el record-name NO es señal y el member se DEJA COMO ESTÁ:
+                    //  · zona del canal backend con un member SIN identidad backend (legacy CloudKit de un
+                    //    grupo migrado): es exactamente el match que C-3 documenta como falso tras un cambio
+                    //    de Apple ID, y apagarlo dejaría el grupo retenido sin «quién soy».
+                    //  · sin recordName resuelto no hay nada que afirmar de NINGÚN member del canal viejo.
+                    //    Antes era inalcanzable —la función abortaba entera—; ahora que sigue viva para el
+                    //    canal backend, caer a `cloudKitMatch` (false para todos) apagaría el `isCurrentUser`
+                    //    de todos los grupos CloudKit del device por una ausencia transitoria de iCloud.
+                    shouldBeCurrent = member.isCurrentUser
                 } else {
                     // Sin `userID` backend (legacy/mixto) o flag OFF → path CloudKit. Con flag OFF, ESTA es
                     // la única rama y `shouldBeCurrent == cloudKitMatch` (comportamiento sin cambios).
@@ -1114,7 +1152,12 @@ final class GroupService {
                     changed = true
                 }
 
+                // 2.6: fuera del canal backend. Ahí el rol lo dicta el server vía `applyMember` y esta
+                // inferencia local (soy dueño del grupo ⇒ mi member es admin) solo podría pisarlo hasta el
+                // próximo delta; además el `enqueueSave` ya no tiene a dónde subirlo. Con flag OFF el
+                // `continue` de arriba hace este guard inalcanzable ⇒ comportamiento sin cambios.
                 if shouldBeCurrent,
+                   !memberIsInBackendChannel,
                    let group = groupsByZone[member.groupZoneID],
                    group.isOwner,
                    !member.isGroupOwner

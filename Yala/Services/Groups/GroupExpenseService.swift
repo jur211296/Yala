@@ -591,13 +591,14 @@ final class GroupExpenseService {
     /// por displayName) elegiría OTRO id bajo members `isCurrentUser` DUPLICADOS → el write-side y el
     /// clasificador guardarían/compararían ids distintos y el eco NO se autoexcluiría.
     ///
-    /// Fallback (ventana temprana: 2º device / restore de iCloud, `isCurrentUser` aún no marcado porque es
-    /// device-local y `refreshCurrentUserFlags` no ha corrido): resolver por identidad iCloud
-    /// (`cloudKitUserRecordID == cachedRecordName`), la MISMA fuente que `refreshCurrentUserFlags` usa para
-    /// marcar `isCurrentUser`. Así el eco se autoexcluye aunque el flag llegue tarde (sin esto, el owner en
-    /// esa ventana guardaba nil y recibía "otro actualizó" por su propia edición — el bug reportado).
-    /// nil solo si tampoco hay identidad iCloud cacheada (primer arranque sin resolver) ⇒ ahí el consumidor
-    /// tampoco resuelve currentMemberID ⇒ `expenseDecision` skipea (sin notif).
+    /// Fallbacks (ventana temprana: 2º device / restore de iCloud, `isCurrentUser` aún no marcado porque es
+    /// device-local y `refreshCurrentUserFlags` no ha corrido): por identidad del canal BACKEND
+    /// (`userID`/`memberKey == sub`) y por identidad iCloud (`cloudKitUserRecordID == cachedRecordName`),
+    /// las MISMAS dos fuentes que `refreshCurrentUserFlags` usa para marcar `isCurrentUser`. Así el eco se
+    /// autoexcluye aunque el flag llegue tarde (sin esto, el owner en esa ventana guardaba nil y recibía
+    /// "otro actualizó" por su propia edición — el bug reportado).
+    /// nil solo si tampoco hay ninguna de las dos identidades (primer arranque sin resolver) ⇒ ahí el
+    /// consumidor tampoco resuelve currentMemberID ⇒ `expenseDecision` skipea (sin notif).
     private func currentUserMemberID(in group: SplitGroup) -> String? {
         let members: [SplitMember]
         do {
@@ -610,17 +611,42 @@ final class GroupExpenseService {
         }
         return Self.selectCurrentUserMemberID(
             from: members,
-            cachedRecordName: GroupUserIdentityService.shared.cachedRecordName
+            cachedRecordName: GroupUserIdentityService.shared.cachedRecordName,
+            currentUserID: CloudSyncFlags.groupsBackendEnabled ? CloudAuthService.shared.currentUserID : nil
         )
     }
 
     /// Selección pura del `SplitMember.id.uuidString` del usuario actual (extraída para test sin contexto).
     /// Resolución CANÓNICA — DEBE espejar `GroupNotificationService.currentMemberID(inZone:)` (isCurrentUser
-    /// con `joinedAt` más antiguo). Fallback por identidad iCloud para la ventana temprana (isCurrentUser
-    /// aún no marcado en 2º device / restore). Ver el doc de `currentUserMemberID(in:)` para el porqué.
-    static func selectCurrentUserMemberID(from members: [SplitMember], cachedRecordName: String?) -> String? {
+    /// con `joinedAt` más antiguo). Dos fallbacks para la ventana temprana, en este orden:
+    ///
+    ///  1. **Canal backend** (2.6): `userID`/`memberKey == sub` de la sesión Yala. `GroupsSyncClient
+    ///     .applyMember` NUNCA setea `isCurrentUser` (lo dice `GroupJoinReconciler:115`/`:156`), así que en
+    ///     el canal nuevo el flag solo lo enciende `refreshCurrentUserFlags` DESPUÉS — hasta entonces esta
+    ///     función devolvía nil y el eco de la propia edición no se autoexcluía. Va ANTES que el fallback
+    ///     iCloud porque en un grupo del canal nuevo la identidad autoritativa es el `sub`.
+    ///  2. **Identidad iCloud** (`cloudKitUserRecordID == cachedRecordName`), la MISMA fuente que
+    ///     `refreshCurrentUserFlags` usa para marcar `isCurrentUser` en el canal CloudKit.
+    ///
+    /// `isCurrentUser` conserva la PRIMERA posición a propósito: es lo que mantiene la simetría con
+    /// `currentMemberID(inZone:)`, que resuelve solo por ese flag. Adelantar el match backend divergiría
+    /// de él en una zona con el member legacy Y el backend del mismo humano.
+    ///
+    /// `currentUserID` nil (flag `groupsBackendEnabled` OFF, o sin sesión) ⇒ el paso 1 no matchea NADA y la
+    /// función es byte-idéntica a la de antes. Ver el doc de `currentUserMemberID(in:)` para el resto.
+    static func selectCurrentUserMemberID(
+        from members: [SplitMember],
+        cachedRecordName: String?,
+        currentUserID: String? = nil
+    ) -> String? {
         if let current = members.filter({ $0.isCurrentUser }).min(by: { $0.joinedAt < $1.joinedAt }) {
             return current.id.uuidString
+        }
+        if let byBackendIdentity = members.filter({
+            GroupJoinReconcileLogic.backendMemberMatchesCurrentUser(
+                memberUserID: $0.userID, memberKey: $0.memberKey, currentUserID: currentUserID)
+        }).min(by: { $0.joinedAt < $1.joinedAt }) {
+            return byBackendIdentity.id.uuidString
         }
         if let recordName = cachedRecordName, !recordName.isEmpty,
            let byIdentity = members.filter({ $0.cloudKitUserRecordID == recordName })

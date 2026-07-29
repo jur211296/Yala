@@ -272,23 +272,37 @@ enum GroupJoinReconciler {
         logger.notice("JoinReconcile: currency re-applied from group for zone \(entry.zoneName, privacy: .public)")
     }
 
-    /// `true` si ya existe un SplitMember del current user para la zona (por
-    /// `cachedRecordName` o flag `isCurrentUser`). Identidad no resuelta → false
-    /// (el ensure la resuelve y matchea; el guard del displayName queda laxo,
+    /// `true` si ya existe un SplitMember del current user para la zona: por el flag `isCurrentUser`, por
+    /// `cachedRecordName` (identidad iCloud) o por identidad del canal BACKEND (`userID`/`memberKey == sub`).
+    /// Identidad no resuelta → false (el ensure la resuelve y matchea; el guard del displayName queda laxo,
     /// aceptable: member "recién creado" solo relaja el anti-pisado).
+    ///
+    /// 2.6 — el tercer criterio y la unificación del contexto van juntos, y por el mismo motivo. Este
+    /// pre-check alimenta `memberWasCreated`, y un falso `false` hace que `applyIntentDisplayNameIfNeeded`
+    /// PISE el displayName de un member que ya existía. En una zona MIGRADA al backend (entry CloudKit,
+    /// grupo ya del canal nuevo) el member del usuario tiene `userID` seteado, `cloudKitUserRecordID` vacío
+    /// y `isCurrentUser` apagado —`applyMember` NUNCA lo setea— así que los dos criterios viejos fallaban
+    /// los dos. El contexto se resuelve como en `backendCurrentUserMember` (inyectado o el del `SplitGroup`
+    /// local) porque la rama sin contexto delegaba en `GroupService.currentUserMember(zoneID:)`, que mira
+    /// SOLO `isCurrentUser`: dos de los cuatro triggers de producción (`.foreground` y el `.acceptShare` de
+    /// la UI) entran por ahí, y sin unificar el re-cableo no los alcanzaría.
     private static func currentUserMemberExists(zoneName: String, context providedContext: ModelContext?) -> Bool {
-        guard let context = providedContext else {
-            // Producción: helper del manager sobre su propio contexto.
-            return GroupService.shared.currentUserMember(zoneID: zoneName) != nil
-        }
+        guard let context = providedContext
+            ?? GroupService.shared.group(for: zoneName)?.modelContext
+        else { return false }
         let recordName = GroupUserIdentityService.shared.cachedRecordName ?? ""
+        // Flag OFF ⇒ nil ⇒ el criterio backend no matchea nada y el predicado es el de siempre.
+        let currentUserID = CloudSyncFlags.groupsBackendEnabled ? backendUserIDProvider() : nil
         let descriptor = FetchDescriptor<SplitMember>(
             predicate: #Predicate { $0.groupZoneID == zoneName }
         )
         do {
             let members = try context.fetch(descriptor)
             return members.contains {
-                $0.isCurrentUser || (!recordName.isEmpty && $0.cloudKitUserRecordID == recordName)
+                $0.isCurrentUser
+                    || (!recordName.isEmpty && $0.cloudKitUserRecordID == recordName)
+                    || GroupJoinReconcileLogic.backendMemberMatchesCurrentUser(
+                        memberUserID: $0.userID, memberKey: $0.memberKey, currentUserID: currentUserID)
             }
         } catch {
             #if DEBUG

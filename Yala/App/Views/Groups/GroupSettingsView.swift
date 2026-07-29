@@ -693,15 +693,18 @@ struct GroupSettingsView: View {
             .contains { abs($0.netBalance) > 0.01 }
     }
 
+    /// 2.6 — una sola resolución de identidad, la canónica del write-side. La versión anterior probaba
+    /// PRIMERO el `cachedRecordName` de iCloud y, si no casaba ningún member, devolvía nil SIN caer al
+    /// fallback: en un grupo del canal backend eso da siempre nil (`cloudKitUserRecordID` está vacío por
+    /// diseño, pero el recordName de iCloud SÍ existe) ⇒ el usuario aparecía sin deuda aunque debiera
+    /// dinero, y esta propiedad es la que decide si se le deja archivar o salir del grupo.
     private var hasOutstandingBalance: Bool {
-        let current: SplitMember? = {
-            if let recordName = GroupUserIdentityService.shared.cachedRecordName, !recordName.isEmpty {
-                return viewModel.members.first(where: { $0.cloudKitUserRecordID == recordName })
-            }
-            return viewModel.currentUserMember
-        }()
-        guard let current else { return false }
-        return hasNonZeroBalance(for: current.id.uuidString)
+        guard let memberID = GroupExpenseService.selectCurrentUserMemberID(
+            from: viewModel.members,
+            cachedRecordName: GroupUserIdentityService.shared.cachedRecordName,
+            currentUserID: CloudSyncFlags.groupsBackendEnabled ? CloudAuthService.shared.currentUserID : nil
+        ) else { return false }
+        return hasNonZeroBalance(for: memberID)
     }
 
     /// Alcance global: cualquier miembro con balance pendiente. Cubre cross-currency
