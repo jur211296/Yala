@@ -255,7 +255,22 @@ duplicada temporalmente — estado estable.
 
 ---
 
-### Fase 3 · El bloque grande — 2 commits
+### Fase 3 · El bloque grande — **BLOQUEADA. Y son 3 commits, no 2.**
+
+> 🔴 **Medida el 2026-07-29 → [[MODO-NUBE-FASE3-BRIEF]]. Leer ESO antes que lo de abajo.** Las cifras de
+> esta sección son de la versión anterior a la Fase 1 y **6 de sus 13 rutas apuntan a la carpeta
+> equivocada**; las 5 coordenadas de `propagateBoolCustomKey` están mal, incluidas 3 marcadas ✅.
+>
+> **El bloqueo:** `groupsBackendCompiledDefault` es `false` (`CloudSyncFlags.swift:266`) y el flag remoto
+> solo puede MATAR ⇒ hoy el transporte CloudKit es el **único** canal vivo de Grupos. Esta sección no
+> nombra ese flag ni una vez. Borrar con el flag OFF deja la app sin ningún canal de sync. Prerrequisito
+> real: **bloqueante #4 + el flip del compilado**, como lote propio y antes de cualquier borrado.
+>
+> **Y 3 de los 13 «ficheros enteros» no son borrados de fichero entero** — el peor,
+> `SplitSyncStartGate.swift`, esconde `BootSaveGateLogic`, el gate que evita el crash-loop SIGTRAP del
+> restore de iCloud; borrarlo entero lo reintroduce sin un solo test rojo. Más 6 apagones silenciosos
+> (4 nuevos) y el colapso de `cachedRecordName`, que se queda sin escritor y cuyos tests lo TAPAN.
+
 
 **Objetivo:** borrar el transporte CloudKit de Grupos.
 
