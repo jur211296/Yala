@@ -418,9 +418,22 @@ significa que la app se queda sin ninguna vía de sync de grupos.
 | **Alcance de la vuelta** | inmediata y por device | ~40 ficheros + 4 `.ckdb` + re-deploy de schema a CloudKit Production + change tokens ya descartados |
 | **¿Sirve de hotfix?** | sí | **no** |
 
-**Acción concreta, y es requisito de entrada de la Fase 3:** dejar escrito en el ticket, antes de tocar el
-bloque grande, que el rollback pasa a ser «revertir el build» **y qué commits exactos hay que revertir**. Sin
-eso, la primera vez que algo se rompa en producción alguien buscará un kill-switch que ya no existe.
+**Acción concreta, y es requisito de entrada de la Fase 3: HECHA (2026-07-29)** → **[[MODO-NUBE-ROLLBACK]]**,
+runbook propio con los commits exactos de las Fases 1 y 2, en orden de revert. Vive fuera de este plan a
+propósito: se consulta en pánico, y un §6 dentro de un documento de 38 KB no se encuentra en una emergencia.
+Su §5 obliga a anotar los 2 commits de la Fase 3 **en el mismo commit que los crea**.
+
+**Lo que la escritura del runbook destapó, y este §6 no contemplaba:** «revertir el build» **no** es
+suficiente, porque tres de los efectos vivos de la Fase 1 **no viven en git** — el 404 de `migrate_group` está
+activo por un **deploy** del Worker, el revoke por **SQL ejecutado a mano** en los dos entornos, y la migración
+de D1 no tiene `down`. Revertir `21dcd465` y `45c32a41` deja el código como estaba y la puerta igual de
+cerrada: hace falta re-desplegar y volver a otorgar el `EXECUTE`. ⇒ **revertir la Fase 1 en git NO reabre la
+migración de grupos.**
+
+**Y el riesgo que domina el rollback desde 2.1:** un grupo **born-backend nunca tuvo zona CloudKit**, así que
+un build sin canal backend no puede verlo por ninguna vía. No es pérdida de datos —siguen en Supabase— sino
+de ACCESO, hasta que vuelva a haber un build con el canal. Hoy no afecta a nadie porque
+`groupsBackendCompiledDefault` es `false`; pasa a ser el coste real del rollback el día que se encienda.
 
 **Matiz que hay que respetar:** el flag remoto **sigue siendo útil** después de la Fase 3, pero para otra cosa —
 apagar el canal backend a sabiendas de que Grupos queda inoperativo, no para volver a CloudKit. Documentarlo así
