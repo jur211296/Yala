@@ -1324,8 +1324,15 @@ exception
     raise exception 'yala_bad_input' using errcode = 'P0001';
 end $$;
 
-revoke all on function public.migrate_group(text, jsonb, jsonb, text) from public, anon;
-grant execute on function public.migrate_group(text, jsonb, jsonb, text) to authenticated;
+-- g6_02_revoke_migrate_group_execute (2026-07-28): `authenticated` YA NO puede ejecutarla, y por eso
+-- este bloque incluye ahora ese rol en el revoke en vez de otorgarle EXECUTE (idiom de
+-- `get_group_push_tokens` más abajo). La Fase 1 de la simplificación de Grupos borró el cliente de
+-- migración y cerró la ruta del gateway (`POST /groups/rpc/migrate_group` → 404), decidiendo NO
+-- dropear la función. Pero el 404 solo cierra la puerta de la APP —el cliente habla únicamente con el
+-- Worker— y PostgREST es público: con un JWT de usuario la función seguía invocable vía
+-- `/rest/v1/rpc/migrate_group`. Aplicado a los DOS entornos el mismo día, para que no divergieran en
+-- grants. La función sigue en la base, inerte de verdad; el golden que afirma el 404 no cambia.
+revoke all on function public.migrate_group(text, jsonb, jsonb, text) from public, anon, authenticated;
 
 
 -- ============================================================================
