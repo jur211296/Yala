@@ -1878,9 +1878,9 @@
         "F-TX-08"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/SplitCalculatorUITests",
+      "coverage": "xcuitest:YalaUITests/SplitCalculatorUITests + 2026-07-29: RecordRowView deja de pintar su propio fondo/clip/sombra y consume el modifier canónico `.listRowCard()` (ViewModifiers.swift), que codifica el estilo de fila densa que RecordRowView era el único en tener. Verificado por DIFF DE PÍXELES: 0 píxeles distintos en claro y en oscuro (sim iPhone 17 Pro iOS 27.0) → cambio visual nulo. Identifier record_row intacto; RecordsDetailSheetUITests y BulkEditUITests verdes.",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-07-29"
     },
     {
       "area": "statistics",

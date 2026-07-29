@@ -479,6 +479,13 @@ enum DS {
 
         /// Corner radius (uses Radius.card)
         static let radius: CGFloat = 14
+
+        /// Radio de la sombra de la fila (`.listRowCard()`). Más ajustada que
+        /// `DS.Shadow.*`: una lista larga con sombras difusas se ensucia.
+        static let shadowRadius: CGFloat = 6
+
+        /// Desplazamiento vertical de la sombra de la fila (`.listRowCard()`).
+        static let shadowY: CGFloat = 3
     }
 
     // MARK: - Typography

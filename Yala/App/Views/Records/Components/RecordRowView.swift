@@ -111,16 +111,7 @@ struct RecordRowView: View {
                     }
                 }
             }
-            .padding(.vertical, DS.ListRow.paddingV)
-            .padding(.horizontal, DS.ListRow.paddingH)
-            .background(cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
-            .shadow(
-                color: Color.black.opacity(theme.shadowOpacity),
-                radius: 6,
-                x: 0,
-                y: 3
-            )
+            .listRowCard()
         }
         .buttonStyle(.plain)
         .accessibilityLabel(accessibilityDescription)
@@ -136,13 +127,6 @@ struct RecordRowView: View {
         let category = record.subcategory?.name ?? record.category?.name ?? ""
         let account = record.account?.name ?? ""
         return "\(note), \(amount), \(category), \(account)"
-    }
-
-    // MARK: - Card Background
-
-    private var cardBackground: some View {
-        RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
-            .fill(.thCard)
     }
 
     // MARK: - Selection Circle

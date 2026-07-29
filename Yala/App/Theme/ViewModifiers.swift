@@ -103,6 +103,13 @@ extension View {
         modifier(SolidCardModifier(padding: padding, radius: radius))
     }
 
+    /// Aplica el estilo canónico de **fila de lista densa** (Registros, feed de
+    /// Grupos): hermana de `solidCard` con el padding y el radio de `DS.ListRow`
+    /// y SIN borde. Ver `ListRowCardModifier` para el porqué del borde ausente.
+    func listRowCard(radius: CGFloat = DS.Radius.card) -> some View {
+        modifier(ListRowCardModifier(radius: radius))
+    }
+
     /// Aplica el estilo canónico de widget del Panel (padding+radius reducidos
     /// respecto a `solidCard` para mantener el home más calmo).
     func panelCard(small: Bool = false) -> some View {
@@ -147,6 +154,41 @@ struct SolidCardModifier: ViewModifier {
             .overlay(
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
                     .stroke(theme.cardBorder, lineWidth: 1)
+            )
+    }
+}
+
+// MARK: - List Row Card Modifier (dense list rows)
+
+/// Variante canónica de card para **filas de lista densa** — Registros y el feed
+/// de un grupo. Mismo fondo `.thCard` y mismas esquinas `.continuous` que
+/// `SolidCardModifier`, con tres diferencias deliberadas:
+///
+/// 1. **Sin stroke.** `theme.cardBorder` sobre veinte filas seguidas dibuja una
+///    reja; en una card suelta delimita, en una lista engorda.
+/// 2. **Padding y radio de `DS.ListRow`** (14/12, radio 14) en vez de los de
+///    `DS.Card` — la fila es densa por definición, no un contenedor con aire.
+/// 3. **Sombra propia** (theme-aware, `DS.ListRow.shadowRadius`/`shadowY`), que
+///    es lo que despega la fila del fondo ahora que no hay borde. `solidCard` no
+///    trae sombra porque sus consumidores la eligen aparte.
+///
+/// Regla de reparto: contenedor / widget / card suelta → `.solidCard()`;
+/// fila de lista densa → `.listRowCard()`.
+struct ListRowCardModifier: ViewModifier {
+    @Environment(\.yalaTheme) private var theme
+    var radius: CGFloat = DS.Radius.card
+
+    func body(content: Content) -> some View {
+        content
+            .padding(.vertical, DS.ListRow.paddingV)
+            .padding(.horizontal, DS.ListRow.paddingH)
+            .background(.thCard)
+            .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .shadow(
+                color: .black.opacity(theme.shadowOpacity),
+                radius: DS.ListRow.shadowRadius,
+                x: 0,
+                y: DS.ListRow.shadowY
             )
     }
 }
