@@ -1,10 +1,89 @@
 ---
 created: 2026-07-28
-updated: 2026-07-28
+updated: 2026-07-29
 tags: [modo-nube, grupos, fase2, brief]
+status: in-progress
 ---
 
 # Fase 2 — brief ejecutable, con las coordenadas re-medidas contra HEAD
+
+## ESTADO — 2.1 a 2.5 HECHOS (2026-07-29)
+
+Cinco commits en `2.0.5`, subidos. Cada uno deja el árbol compilando, sus tests verdes y
+`qa/coverage-index.json` actualizado en el MISMO commit; `/gate` corrido antes de cada uno.
+
+| Pieza | Commit |
+|---|---|
+| 2.1 · notificaciones de grupo | `bed60a92` |
+| 2.2 · notificaciones de miembro | `ba95f62a` |
+| 2.3 · freeze en soft-delete | `4a51d9c0` |
+| 2.4 · consultas SwiftData → `GroupService` | `632c951f` |
+| 2.5 · `syncNow` → drain del backend | `c3aee764` |
+
+| 2.6 · identidad del miembro | `8e666074` (helper) + `08298365` (fix) |
+
+**PENDIENTE: solo 2.7** (seam del handover).
+
+**2.6 validado en las DOS Macs (2026-07-29).** Escrito con SDK 26.5, verificado además con **SDK 27.0**:
+build `Yala` + `Yala Dev` SUCCEEDED sin warnings en los ficheros tocados, 68 tests de identidad/balance
+verdes y `GroupsSmokeUITests` **8/8 en iOS 27.0** (172 s, ocho casos ejecutados). Las dos reglas de
+identidad de `.claude/rules/swiftdata-cloudkit.md` se preservan; el hallazgo real de la pieza fue que la
+rama por `sub` de `refreshCurrentUserFlags` era **inalcanzable** porque el guard C-3 saltaba los grupos
+backend enteros.
+
+**Dos precisiones sobre lo reportado**, para que no se hereden como ciertas:
+- La tabla de `belongsToBackendChannel` no se «mudó» de suite: `GroupsIdentityPurgeGateTests` nunca la
+  llamaba directamente (la ejercitaba vía `decideForZone`) ⇒ se **añadió** cobertura que no existía y el
+  gate no perdió nada.
+- «Flag OFF ⇒ byte-idéntico» es exacto en `refreshCurrentUserFlags` y `selectCurrentUserMemberID`, pero
+  **no** en los otros dos: `GroupJoinReconciler.currentUserMemberExists` añade el criterio del record-name
+  en los triggers que iban por la rama sin contexto, y `GroupSettingsView.hasOutstandingBalance` cambia a
+  la resolución canónica con `min(by: joinedAt)`. Ambas desviaciones son intencionales, están en sus
+  docblocks y van al lado conservador (pisar menos displayNames · bloquear un borrado antes que permitirlo),
+  pero son cambio de comportamiento en producción HOY, no inercia.
+
+**El gap del test unitario está CERRADO** (2026-07-29, misma tanda). Se declaró creyendo que hacía falta
+un seam en `CloudAuthService`; no hacía falta: `GroupService.backendUserIDProvider` copia el molde de
+`GroupJoinReconciler.backendUserIDProvider`, que ya existía por la misma razón, y el record-name ya tenía
+`_testSetCachedRecordName`. `YalaTests/GroupServiceCurrentUserFlagsTests` cubre las 4 decisiones con su
+contra-caso + 3 casos de inercia con flag OFF, y está **verificado por mutación** (3 mutantes: el salto
+C-3 incondicional tumba 4 tests; quitar cada guard tumba exactamente su test, exit 65). Hueco restante
+consciente: el 3er guard (sin record-name resuelto NO apagar `isCurrentUser` en los grupos CloudKit) exige
+que el fetch a CKContainer falle, lo que ataría el unit test a la red.
+
+**Suite unitaria completa: 5.198 tests en 481 suites, verde** (scheme `Yala Dev`). 18 tests nuevos:
+16 en `GroupsSyncClientTests` y 2 en `GroupsSyncClientPushTests`. 2.5 verificado además en el
+simulador (pull-to-refresh en lista y detalle).
+
+### Lo único que la re-medición encontró mal, y sirve para 2.6
+
+- **2.4, bloque de consultas: `837–1000`**, no `900–1063`.
+- **2.4, segundo rango `2809-2860` YA NO EXISTÍA** — el fichero se quedó en 2.658 líneas tras la
+  Fase 1. Lo que el plan describía son los helpers by-ID, hoy en `2562–2598`. No se movieron: son
+  `private`, solo los usa `buildRecord` y mueren con el fichero. Tampoco se movió
+  `backendGroupZoneNames` (solo el guard de pull del transporte).
+- **El «8» son 8 FICHEROS de producción, no 8 consumidores.** Los callsites reales del bloque son
+  13, más 8 internos y 1 de test. Enumerar por bloque, como avisaba el §2b, era lo correcto.
+- **Las coordenadas de 2.1, 2.2, 2.3 y 2.5 estaban exactas al número.** La heurística del §0 se
+  cumplió: solo derivaron las de `SplitSyncManager.swift`. **Aviso para 2.6: ese fichero volvió a
+  moverse (2.658 → 2.521), así que sus coordenadas hay que re-medirlas otra vez.**
+
+### Diferencia consciente con el canal CloudKit (2.2)
+
+El baseline de primer import lo arma `applyGroupMeta` born-remote y lo CIERRA `pullUntilExhausted`
+al agotarse con deltas, que es el gemelo de `didFetchRecordZoneChanges`. El grupo que crea el
+propio usuario no pasa por ahí (lo materializa `GroupBackendMembershipService` server-first), así
+que el creador no sufre la supresión.
+
+### Tres cosas reportadas, no arregladas (chips abiertos)
+
+1. **`SplitSyncManager.groupName(for:)` está muerto** — cero consumidores en todo el repo.
+2. **Dos tests rojos SOLO con el scheme `Yala`** (`config_isConfigured_inTestScheme`,
+   `secondaryEntry_killedByRemoteOff`): config de backend ausente. Preexistente, verificado con
+   `git stash`.
+3. **Dos XCUITest flaky al encadenar suites** (`GroupsRetention`, `GroupsSmoke`): verdes aisladas,
+   rojas en cadena. La de retención, preexistente demostrada. Durante esa corrida el disco estaba
+   en 22 GB, bajo el umbral de 25 — la causa que CLAUDE.md manda descartar antes que el código.
 
 > **Para qué existe.** El plan ([[MODO-NUBE-PLAN-SIMPLIFICACION-GRUPOS]] §3) marca las coordenadas de las Fases 2–5 como **NO VERIFICADAS** y obliga a re-medirlas al abrir la fase. Aquí están medidas contra HEAD el 2026-07-28, **después** de que la Fase 1 borrara 4.418 líneas. Sin esto se trabaja sobre números que ya no existen: en la Fase 1, tres coordenadas del brief estaban desplazadas y costaron búsquedas a mano.
 

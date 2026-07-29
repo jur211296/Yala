@@ -24,6 +24,16 @@ final class GroupService {
     private var modelContext: ModelContext?
     private let logger = Logger(subsystem: "com.yala", category: "GroupService")
 
+    /// `sub` de la sesión Yala para la resolución de identidad del canal backend en
+    /// `refreshCurrentUserFlags`. Inyectable para tests — mismo molde que
+    /// `GroupJoinReconciler.backendUserIDProvider`, que ya existía por la misma razón.
+    ///
+    /// Sin este seam la pieza más delicada de 2.6 no es testeable: su rama por `sub` decide quién ve qué
+    /// balance y sus tres guards (no estampar el record-name en zona backend, no apagar `isCurrentUser`
+    /// sin iCloud, no inferir `isGroupOwner` en el canal nuevo) no tienen otra vía de alcanzarse desde
+    /// una suite. NO hace falta tocar `CloudAuthService`: el default lee de él y los tests lo sustituyen.
+    static var backendUserIDProvider: @MainActor () -> String? = { CloudAuthService.shared.currentUserID }
+
     // MARK: - Init
 
     private init() {}
@@ -997,7 +1007,7 @@ final class GroupService {
         // `currentUserID` es nil, `backendCanResolve` es false y todo lo de abajo es BYTE-IDÉNTICO al
         // camino de siempre — incluido el `return` temprano cuando iCloud no resuelve.
         let backendEnabled = CloudSyncFlags.groupsBackendEnabled
-        let currentUserID: String? = backendEnabled ? CloudAuthService.shared.currentUserID : nil
+        let currentUserID: String? = backendEnabled ? Self.backendUserIDProvider() : nil
         let backendCanResolve = !(currentUserID ?? "").isEmpty
 
         // El recordName de CloudKit pasa a ser BEST-EFFORT: sin él el path CloudKit queda inerte por sí
