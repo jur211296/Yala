@@ -2182,6 +2182,11 @@ enum L10n {
             static var settleHint: String { ls("groups.settlement.settleHint", comment: "") }
             static var confirmQuestion: String { ls("groups.settlement.confirmQuestion", comment: "") }
             static var rejectQuestion: String { ls("groups.settlement.rejectQuestion", comment: "") }
+            /// Eliminar una liquidación CONFIRMADA (menú de la fila en Balances + su diálogo).
+            static var deleteAction: String { ls("groups.settlement.deleteAction", comment: "") }
+            static var deleteTitle: String { ls("groups.settlement.deleteTitle", comment: "") }
+            static var deleteMessage: String { ls("groups.settlement.deleteMessage", comment: "") }
+            static var deleteFailed: String { ls("groups.settlement.deleteFailed", comment: "") }
             // A0-Bridge Caso C proactivo
             static var fromAccount: String { ls("groups.settlement.fromAccount", comment: "") }
             static var fromAccountNone: String { ls("groups.settlement.fromAccountNone", comment: "") }

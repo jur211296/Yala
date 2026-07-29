@@ -5402,3 +5402,15 @@
 
 /* C-10: non-terminal sign-in failure message */
 "groups.signin.retryLater" = "Hmm, nous n'avons pas pu connecter ton compte pour l'instant. Ton groupe est toujours là et tu ne perds rien — réessaie plus tard.";
+
+/* Groups > Balances: menu item on a confirmed settlement row (destructive) */
+"groups.settlement.deleteAction" = "Supprimer le règlement";
+
+/* Groups > Balances: title of the delete-settlement confirmation dialog */
+"groups.settlement.deleteTitle" = "Supprimer ce règlement ?";
+
+/* Groups > Balances: body of the delete-settlement dialog — names both consequences (balances reopen, bridged transaction removed) */
+"groups.settlement.deleteMessage" = "Les soldes qu'il a clôturés redeviendront en attente. Et s'il a créé un mouvement dans tes comptes, celui-ci est supprimé aussi.";
+
+/* Groups > Balances: error alert when deleting a confirmed settlement fails */
+"groups.settlement.deleteFailed" = "Impossible de supprimer le règlement. Réessaie.";

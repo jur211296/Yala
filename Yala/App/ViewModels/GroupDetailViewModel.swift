@@ -403,6 +403,26 @@ final class GroupDetailViewModel {
         }
     }
 
+    /// Elimina una liquidación YA CONFIRMADA. Hermano deliberado de `rejectSettlement`: hoy comparten
+    /// mecánica (`deleteSettlement` no tiene guard sobre `isConfirmed`), pero «rechazar» niega una
+    /// pendiente y «eliminar» deshace un hecho consumado. Si mañana una notifica y la otra no, la
+    /// separación ya está hecha — por eso no delega.
+    ///
+    /// El servicio ya limpia lo que cuelga de la liquidación: `unbridgeSettlement` borra el movimiento
+    /// personal bridgeado y `enqueueDeletion` propaga la baja a los otros devices.
+    func deleteConfirmedSettlement(_ settlement: SplitSettlement) {
+        do {
+            try GroupExpenseService.shared.deleteSettlement(settlement, in: group)
+            DS.Haptic.warning()
+            loadData()
+        } catch {
+            #if DEBUG
+            print("GroupDetailViewModel: Error deleting confirmed settlement: \(error)")
+            #endif
+            surfaceActionError(L10n.Groups.Settlement.deleteFailed)
+        }
+    }
+
     func sharesForExpense(_ expense: SplitExpense) -> [SplitShare] {
         shares.filter { $0.expenseID == expense.id }
     }

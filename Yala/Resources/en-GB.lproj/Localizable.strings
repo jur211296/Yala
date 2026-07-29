@@ -4665,3 +4665,15 @@
 
 /* C-10: non-terminal sign-in failure message */
 "groups.signin.retryLater" = "Hmm, we couldn't connect your account right now. Your group is still here and nothing is lost — try again later.";
+
+/* Groups > Balances: menu item on a confirmed settlement row (destructive) */
+"groups.settlement.deleteAction" = "Delete settlement";
+
+/* Groups > Balances: title of the delete-settlement confirmation dialog */
+"groups.settlement.deleteTitle" = "Delete this settlement?";
+
+/* Groups > Balances: body of the delete-settlement dialog — names both consequences (balances reopen, bridged transaction removed) */
+"groups.settlement.deleteMessage" = "The balances it cleared will be pending again. And if it created a transaction in your accounts, that one goes too.";
+
+/* Groups > Balances: error alert when deleting a confirmed settlement fails */
+"groups.settlement.deleteFailed" = "We couldn't delete the settlement. Please try again.";

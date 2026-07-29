@@ -5413,3 +5413,15 @@
 
 /* C-10: non-terminal sign-in failure message */
 "groups.signin.retryLater" = "Hmm, we konden je account nu niet verbinden. Je groep staat er nog en je verliest niets — probeer het later opnieuw.";
+
+/* Groups > Balances: menu item on a confirmed settlement row (destructive) */
+"groups.settlement.deleteAction" = "Afrekening verwijderen";
+
+/* Groups > Balances: title of the delete-settlement confirmation dialog */
+"groups.settlement.deleteTitle" = "Deze afrekening verwijderen?";
+
+/* Groups > Balances: body of the delete-settlement dialog — names both consequences (balances reopen, bridged transaction removed) */
+"groups.settlement.deleteMessage" = "De saldi die hiermee vereffend zijn, staan weer open. En als er een transactie op je rekeningen is aangemaakt, wordt die ook verwijderd.";
+
+/* Groups > Balances: error alert when deleting a confirmed settlement fails */
+"groups.settlement.deleteFailed" = "De afrekening kon niet worden verwijderd. Probeer het opnieuw.";

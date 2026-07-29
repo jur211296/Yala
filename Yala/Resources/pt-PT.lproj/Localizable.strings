@@ -4670,3 +4670,15 @@
 
 /* C-10: non-terminal sign-in failure message */
 "groups.signin.retryLater" = "Hmm, não conseguimos ligar a tua conta agora. O teu grupo continua aqui e não perdes nada — tenta mais tarde.";
+
+/* Groups > Balances: menu item on a confirmed settlement row (destructive) */
+"groups.settlement.deleteAction" = "Eliminar liquidação";
+
+/* Groups > Balances: title of the delete-settlement confirmation dialog */
+"groups.settlement.deleteTitle" = "Eliminar esta liquidação?";
+
+/* Groups > Balances: body of the delete-settlement dialog — names both consequences (balances reopen, bridged transaction removed) */
+"groups.settlement.deleteMessage" = "Os saldos que ela fechou voltam a ficar pendentes. E se ela criou um movimento nas suas contas, ele também é eliminado.";
+
+/* Groups > Balances: error alert when deleting a confirmed settlement fails */
+"groups.settlement.deleteFailed" = "Não foi possível eliminar a liquidação. Tente de novo.";

@@ -23,9 +23,16 @@ struct GroupBalancesView: View {
     var onSettleDebt: ((Debt) -> Void)?
     var onConfirmSettlement: ((SplitSettlement) -> Void)?
     var onRejectSettlement: ((SplitSettlement) -> Void)?
+    /// Eliminar una liquidación YA CONFIRMADA. Las pendientes se rechazan (`onRejectSettlement`),
+    /// no se eliminan: son dos gestos distintos sobre estados distintos.
+    var onDeleteSettlement: ((SplitSettlement) -> Void)?
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+
+    /// Liquidación elegida en el menú de la fila, a la espera del diálogo de confirmación.
+    @State private var settlementToDelete: SplitSettlement?
+    @State private var showDeleteSettlementConfirm = false
 
     var body: some View {
         if balances.isEmpty && debts.isEmpty {
@@ -55,6 +62,21 @@ struct GroupBalancesView: View {
                 .padding(.bottom, DS.Spacing.safeBottom)
             }
             .scrollViewGlassEdges()
+            .confirmationDialog(
+                L10n.Groups.Settlement.deleteTitle,
+                isPresented: $showDeleteSettlementConfirm,
+                titleVisibility: .visible
+            ) {
+                Button(L10n.Action.delete, role: .destructive) {
+                    if let settlement = settlementToDelete {
+                        onDeleteSettlement?(settlement)
+                    }
+                    settlementToDelete = nil
+                }
+                Button(L10n.Common.cancel, role: .cancel) { settlementToDelete = nil }
+            } message: {
+                Text(L10n.Groups.Settlement.deleteMessage)
+            }
         }
     }
 
@@ -204,7 +226,31 @@ struct GroupBalancesView: View {
         }
     }
 
+    /// Press SIMPLE sobre una liquidación CONFIRMADA abre su menú de acciones (la sección no es una
+    /// `List`, así que swipe-to-delete no existe aquí). Las pendientes NO se envuelven: el `Menu` se
+    /// tragaría los taps de sus botones de confirmar/rechazar.
+    @ViewBuilder
     private func settlementRow(_ settlement: SplitSettlement) -> some View {
+        if settlement.isConfirmed, onDeleteSettlement != nil {
+            Menu {
+                Button(role: .destructive) {
+                    settlementToDelete = settlement
+                    showDeleteSettlementConfirm = true
+                } label: {
+                    Label(L10n.Groups.Settlement.deleteAction, systemImage: "trash")
+                }
+            } label: {
+                settlementRowContent(settlement)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("group_settlement_menu_\(settlement.id.uuidString)")
+        } else {
+            settlementRowContent(settlement)
+        }
+    }
+
+    private func settlementRowContent(_ settlement: SplitSettlement) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 HStack(spacing: DS.Spacing.xs) {

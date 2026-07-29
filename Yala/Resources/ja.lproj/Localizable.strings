@@ -5413,3 +5413,15 @@
 
 /* C-10: non-terminal sign-in failure message */
 "groups.signin.retryLater" = "今はアカウントを連携できませんでした。グループはそのまま残っているので、何も失われません。少ししてから、もう一度お試しください。";
+
+/* Groups > Balances: menu item on a confirmed settlement row (destructive) */
+"groups.settlement.deleteAction" = "精算を削除";
+
+/* Groups > Balances: title of the delete-settlement confirmation dialog */
+"groups.settlement.deleteTitle" = "この精算を削除しますか？";
+
+/* Groups > Balances: body of the delete-settlement dialog — names both consequences (balances reopen, bridged transaction removed) */
+"groups.settlement.deleteMessage" = "これで清算された残高は再び未精算に戻ります。口座に取引が作成されていた場合、その取引も削除されます。";
+
+/* Groups > Balances: error alert when deleting a confirmed settlement fails */
+"groups.settlement.deleteFailed" = "精算を削除できませんでした。もう一度お試しください。";
