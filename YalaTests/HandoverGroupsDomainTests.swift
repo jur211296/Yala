@@ -251,6 +251,53 @@ struct HandoverGroupsDomainTests {
         #expect(SwiftDataConfiguration.isRunningTests == true)
         #expect(GroupTransactionBridge.isDomainOpenForBridge(defaults: defaults) == true)
     }
+
+    // MARK: - 2.7 · El seam del handover: el outbox MUERE, el cursor SOBREVIVE
+
+    private func makeOutboxRow(group: String, in context: ModelContext) {
+        context.insert(GroupSyncOutbox(
+            syncID: UUID(), groupID: group, entityType: "SplitExpense",
+            op: .upsert, hlc: "hlc", fieldsJSON: "{\"amount\":300}", author: "a",
+            rejectedReason: nil))
+    }
+
+    /// El corazón de 2.7, y la razón de que NO sea «repuntar el default a `purgeGroupsSyncState`»: los
+    /// dos objetos de `syncMetaSchema` tienen signos OPUESTOS en una frontera de usuario.
+    ///
+    /// El outbox son escrituras PENDIENTES del humano anterior, y el JWT de la sesión Nube sobrevive al
+    /// relevo (Keychain propio) ⇒ se subirían firmadas como suyas. El cursor, en cambio, es la BARRERA
+    /// que impide que el corpus del anterior BAJE a este device con ese mismo JWT (bug `31dded30`).
+    /// Un fix que borre los dos cierra una fuga y abre la otra.
+    @Test func wipeLocalGroupsDomain_killsTheOutbox_butKEEPSTheCursor() throws {
+        let context = try makeTestContext()
+        try seedGroupsDomain(in: context)
+        makeOutboxRow(group: "g1", in: context)
+        makeOutboxRow(group: "g2", in: context)
+        context.insert(GroupSyncCursor(groupCursorsJSON: "{\"g1\":5}"))
+        try context.save()
+
+        try DataWipeService.wipeLocalGroupsDomain(
+            in: context, defaults: makeIsolatedDefaults(), resetSyncState: {})
+
+        #expect(try context.fetchCount(FetchDescriptor<GroupSyncOutbox>()) == 0,
+                "Las escrituras pendientes del humano anterior se subirían con su JWT, que sobrevive.")
+        #expect(try context.fetchCount(FetchDescriptor<GroupSyncCursor>()) == 1,
+                "REGRESIÓN `31dded30`: sin cursor, el corpus del anterior baja al device del nuevo.")
+    }
+
+    /// El cursor no solo sobrevive como FILA: conserva su CONTENIDO. Un fix que lo vaciara «para
+    /// limpiar» sería indistinguible de borrarlo — un cursor vacío no suprime ningún re-pull.
+    @Test func wipeLocalGroupsDomain_cursorKeepsItsContent_notJustItsRow() throws {
+        let context = try makeTestContext()
+        context.insert(GroupSyncCursor(groupCursorsJSON: "{\"g1\":5}"))
+        try context.save()
+
+        try DataWipeService.wipeLocalGroupsDomain(
+            in: context, defaults: makeIsolatedDefaults(), resetSyncState: {})
+
+        let cursors = try context.fetch(FetchDescriptor<GroupSyncCursor>())
+        #expect(cursors.first?.groupCursorsJSON == "{\"g1\":5}")
+    }
 }
 
 /// Cableado de producción (source-scan). El pipeline completo del bridge está en la Lista Negra R8
@@ -327,5 +374,25 @@ struct HandoverGroupsWiringTests {
         let body = src[start.upperBound...].prefix(1_200)
         #expect(body.contains("FetchDescriptor<SplitGroup>()"))
         #expect(body.contains("$0.splitExpenseID != nil"))
+    }
+
+    /// Las dos mitades que un contexto in-memory no puede ver, y que son justo donde se rompería:
+    ///
+    ///  1. **El espejo del App Group.** Borrar las filas sin purgarlo es COSMÉTICO:
+    ///     `GroupsSyncClient.rehydrateOutboxFromMirror` las re-inserta al próximo boot. Su filtro por
+    ///     `userID` no protege aquí — este camino NO cierra la sesión, así que la identidad casa.
+    ///  2. **No reusar `purgeGroupsSyncState`.** Es la regresión que haría quien lea el plan de la Fase 2
+    ///     (§2.7 decía «repuntar el default a `CloudSessionSignOut.purgeGroupsSyncState`»): esa función
+    ///     borra outbox **y** cursor, y su propio docblock acota su uso a «tras el teardown (generación
+    ///     cortada)», precondición que este camino no cumple.
+    @Test func wipeSeam_purgesTheAppGroupMirror_andNeverReusesTheSignOutPurge() throws {
+        let src = try Self.source("Yala/Utils/DataWipeService.swift")
+        #expect(src.contains("GroupsOutboxMirror()?.purgeAll()"),
+                "Sin purgar el espejo, el rehydrate del boot repuebla el outbox del humano anterior.")
+        // El `(` es deliberado: ata la aserción a la LLAMADA, no a la mención. El fichero NOMBRA esa
+        // función en el comentario que explica por qué no la usa, y una aserción sobre el nombre pelado
+        // se pondría roja por su propia documentación.
+        #expect(!src.contains("purgeGroupsSyncState("),
+                "Borra también el cursor ⇒ reabre `31dded30`. El par correcto es outbox muerto + cursor vivo.")
     }
 }

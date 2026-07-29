@@ -22,7 +22,9 @@ Cinco commits en `2.0.5`, subidos. Cada uno deja el árbol compilando, sus tests
 
 | 2.6 · identidad del miembro | `8e666074` (helper) + `08298365` (fix) |
 
-**PENDIENTE: solo 2.7** (seam del handover).
+| 2.7 · seam del handover | ver la ⚠️ de su sección: el plan prescribía lo contrario |
+
+**FASE 2 COMPLETA.** Las 7 piezas re-cableadas, cada una con el árbol compilando y sus tests verdes.
 
 **2.6 validado en las DOS Macs (2026-07-29).** Escrito con SDK 26.5, verificado además con **SDK 27.0**:
 build `Yala` + `Yala Dev` SUCCEEDED sin warnings en los ficheros tocados, 68 tests de identidad/balance
@@ -159,8 +161,36 @@ Bloque `900-1063` (incl. `accountDeletionGroupsSummary` en `:936`) y `2809-2860`
 **Cuidado de la regla de área:** el dominio Grupos pertenece al Apple ID, **excepto** en el canal backend, donde la identidad es el `sub` de la cuenta Yala. `GroupsIdentityPurgeGate` existe justo por eso. Y `applyMember` **nunca** setea `isCurrentUser`, así que ninguna resolución de identidad puede depender de ese flag en el canal nuevo (`GroupJoinReconciler.swift:115` y `:156` lo dicen explícitamente).
 **Verificación:** `GroupBalanceServiceTests` + `GroupExpenseServiceCurrentMemberTests` + **QA en sim de quién ve qué balance**.
 
-### 2.7 · Seam del handover
-Repuntar el default de `resetSyncState` en `DataWipeService.swift:268` a `CloudSessionSignOut.purgeGroupsSyncState` (`:591`). 1 línea + docblock + 1 test.
+### 2.7 · Seam del handover — **HECHO, y NO como lo prescribía el plan**
+
+> ⚠️ **La prescripción original era incorrecta y habría abierto una fuga entre usuarios.** Decía:
+> «repuntar el default de `resetSyncState` en `DataWipeService.swift:268` a
+> `CloudSessionSignOut.purgeGroupsSyncState` (`:591`). 1 línea + docblock + 1 test». Esa función borra
+> `GroupSyncOutbox` **y** `GroupSyncCursor`, y en esta frontera los dos tienen **signos opuestos**.
+
+**Lo que de verdad hacía falta.** Los dos objetos viven en `syncMetaSchema`, el store que el wipe no
+toca, así que el «empiezo de cero» los deja vivos a ambos — pero:
+
+- **El outbox debe MORIR**: son escrituras pendientes del humano anterior y el JWT de la sesión Nube
+  vive en su propio Keychain ⇒ **sobrevive al relevo** ⇒ se subirían firmadas como suyas.
+- **El cursor debe SOBREVIVIR**: es la BARRERA que impide que el corpus del anterior BAJE a este device
+  con ese mismo JWT (el bug de `31dded30`). Purgarlo lo reabre.
+
+Verificado contra el código, no contra el plan: los dos call-sites (`ContentView.swift:260` y `:303`)
+son el Welcome y **ninguno cierra la sesión Nube**, así que el JWT sigue vivo. Y el docblock de
+`purgeGroupsSyncState` acota su uso al camino solo-grupos «tras el teardown (generación cortada)»,
+precondición que este camino no cumple.
+
+**La mitad que casi se escapa:** borrar las filas sin purgar el espejo del App Group es **cosmético** —
+`GroupsSyncClient.rehydrateOutboxFromMirror` las re-inserta al próximo boot, y su filtro por `userID` no
+protege aquí precisamente porque la sesión sigue viva y la identidad casa. Por eso el borrado de filas va
+en el cuerpo (usa el `context`, testeable) y `GroupsOutboxMirror()?.purgeAll()` en el seam `resetSyncState`
+(es disco, y los tests lo sustituyen por `{}`).
+
+**Alcance real:** 1 línea de borrado + 1 línea de purga del espejo + docblocks, y **3 tests** que pinnean
+los dos sentidos: `outbox == 0` **y** `cursor == 1` con su contenido intacto, más un source-scan de que el
+espejo se purga y de que la función de sign-out **no** se llama. La regla durable quedó en
+`.claude/rules/swiftdata-cloudkit.md`.
 **Por qué al final y por qué importa:** `GroupSyncCursor` y `GroupSyncOutbox` viven en `syncMetaSchema`, un store que el wipe no toca, así que un «empiezo de cero» dejaría vivos el cursor y el outbox del usuario anterior. Y el cursor superviviente es la **barrera** que impide que el corpus del usuario anterior baje al device del nuevo (el bug de `31dded30`) ⇒ tocar esto sin entender esa regla reabre una fuga entre usuarios.
 **Verificación:** `HandoverGroupsDomainTests`.
 

@@ -258,14 +258,22 @@ final class DataWipeService {
     ///     unit tests es la propia app, así que su `UserDefaults.standard` es el del simulador y el
     ///     sello escrito ahí sobrevive a la corrida — cerrando el bridge para las suites de
     ///     comportamiento del bridge (por eso `isDomainOpenForBridge` exceptúa además el runner).
-    ///   - resetSyncState: seam del estado del motor + identidad cacheada. Default = producción; los
-    ///     tests lo inyectan para no tocar `SplitSyncManager.shared` ni el disco. `@MainActor` en el
-    ///     TIPO del parámetro y no solo en la función: los valores por defecto se evalúan en el
-    ///     contexto del CALLER, así que sin la anotación el default no puede llamar al singleton.
+    ///   - resetSyncState: seam del estado del motor + identidad cacheada + espejo del outbox de Grupos
+    ///     en el App Group. Default = producción; los tests lo inyectan para no tocar
+    ///     `SplitSyncManager.shared` ni el disco. `@MainActor` en el TIPO del parámetro y no solo en la
+    ///     función: los valores por defecto se evalúan en el contexto del CALLER, así que sin la
+    ///     anotación el default no puede llamar al singleton.
     static func wipeLocalGroupsDomain(
         in context: ModelContext,
         defaults: UserDefaults = .standard,
-        resetSyncState: @MainActor () -> Void = { SplitSyncManager.shared.resetLocalGroupsSyncState() }
+        resetSyncState: @MainActor () -> Void = {
+            SplitSyncManager.shared.resetLocalGroupsSyncState()
+            // 2.7: sin esto, borrar las filas del outbox (abajo) es COSMÉTICO —
+            // `GroupsSyncClient.rehydrateOutboxFromMirror` las re-inserta en el próximo boot desde el
+            // App Group. Su filtro por `userID` NO protege en esta frontera: este camino no cierra la
+            // sesión Nube, así que la identidad de las entries del humano anterior sigue casando.
+            GroupsOutboxMirror()?.purgeAll()
+        }
     ) throws {
         // Los 5 `Split*` se vinculan por IDs planos (`groupZoneID`/`expenseID`/`memberID`), NO por
         // `@Relationship` ⇒ sin orden de dependencias que respetar y sin cascadas que disparar.
@@ -280,6 +288,19 @@ final class DataWipeService {
         // por-grupo del bridge: dejarla haría que el bridge del usuario nuevo heredara las
         // decisiones «TX real sí/no» del anterior.
         for pref in try context.fetch(FetchDescriptor<GroupBridgePreference>()) { context.delete(pref) }
+
+        // 2.7 · El outbox de GRUPOS muere aquí; el CURSOR sobrevive A PROPÓSITO. Los dos viven en
+        // `syncMetaSchema` —el store que `wipeAllUserData` no toca— pero tienen signos OPUESTOS en una
+        // frontera de USUARIO:
+        //  · las filas del outbox son escrituras PENDIENTES del humano anterior, y el JWT de la sesión
+        //    Nube vive en su propio Keychain ⇒ SOBREVIVE al relevo ⇒ se subirían firmadas como suyas.
+        //  · el cursor es la BARRERA que impide que el corpus del anterior BAJE al device del nuevo con
+        //    ese mismo JWT (el bug de `31dded30`) ⇒ purgarlo aquí la REABRIRÍA.
+        // Por eso NO se reusa `CloudSessionSignOut.purgeGroupsSyncState`, que borra AMBOS: su docblock
+        // acota su uso al camino solo-grupos «tras el teardown (generación cortada)», y este camino no
+        // corta ninguna generación. La otra mitad —el espejo del App Group— va en `resetSyncState`,
+        // porque es disco y los tests lo sustituyen.
+        for row in try context.fetch(FetchDescriptor<GroupSyncOutbox>()) { context.delete(row) }
 
         try context.save()
 
