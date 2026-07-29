@@ -511,6 +511,23 @@ class SessionState {
     /// Whether the splash screen has been dismissed (gate for router readiness).
     var isSplashDismissed: Bool = false
 
+    // MARK: - Bootstrap State
+
+    /// `true` cuando `AppBootstrapper.bootstrap(container:)` ha RETORNADO — el arranque
+    /// asentó. Blocker de la matriz de readiness (`bootstrapPending`), hermano de
+    /// `isSplashDismissed`: el splash se va por su propio reloj (duración mínima +
+    /// `isInitialCheckDone`), que NO espera al bootstrap, así que sin esto queda una
+    /// ventana en la que el shell drena intents y monta covers con el arranque en curso.
+    /// Un `fullScreenCover` montado en esa ventana se queda PEGADO: el usuario lo descarta,
+    /// UIKit no completa el desmontaje y la app deja de responder a los taps (la «toolbar
+    /// muerta» de TestFlight 2.0.5; medido en iOS 27.0 el 2026-07-28 — ~1 de cada 3
+    /// arranques, 10 taps ignorados a lo largo de ~40 s).
+    ///
+    /// Lo libera un `defer` de `bootstrap()`, no una asignación al final: así un `return`
+    /// temprano futuro (o una cancelación) no deja el shell bloqueado para siempre.
+    /// El host de unit tests, que se salta el bootstrap, lo libera en `YalaApp`.
+    var isBootstrapSettled: Bool = false
+
     /// Pending group ID for deep link navigation to specific group.
     /// Set by AppRouter.navigate(.groupDetail) handler, read by GroupsContainerView.
     var pendingGroupID: String?

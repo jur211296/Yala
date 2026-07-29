@@ -86,6 +86,13 @@ final class AppBootstrapper {
         IntentSignalBreadcrumb.bootstrapEntered(alreadyInitialized: isInitialized)
         guard !isInitialized else { return }
 
+        // El shell no drena intents (ni monta covers) hasta que el arranque asienta: un
+        // `fullScreenCover` montado con el bootstrap en curso se queda pegado y la app deja
+        // de responder a los taps (blocker `bootstrapPending` de la matriz de readiness —
+        // ver `SessionState.isBootstrapSettled`). `defer` y no una asignación al final:
+        // ningún camino de salida puede dejar el shell bloqueado para siempre.
+        defer { SessionState.shared.isBootstrapSettled = true }
+
         let context = container.mainContext
 
         let uiTestActive = UITestHooks.isActive

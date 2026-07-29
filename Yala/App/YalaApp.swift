@@ -119,7 +119,12 @@ struct YalaApp: App {
                     // iCloud (CI) el CKSyncEngine de grupos genera errores ruidosos. Los
                     // tests usan contextos aislados. UI tests (isUITesting) NO entran al
                     // guard: corren el ciclo normal con su seed.
-                    guard !SwiftDataConfiguration.isRunningTests else { return }
+                    guard !SwiftDataConfiguration.isRunningTests else {
+                        // Sin bootstrap nadie libera el blocker `bootstrapPending` y el shell
+                        // del host quedaría sin drenar un solo intent en toda la corrida.
+                        SessionState.shared.isBootstrapSettled = true
+                        return
+                    }
                     if !UITestHooks.isActive {
                         try? Tips.configure([
                             .displayFrequency(.immediate)

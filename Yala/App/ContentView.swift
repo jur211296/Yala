@@ -626,6 +626,21 @@ struct ContentView: View {
             updateContentViewReadiness()
             syncGroupsRetentionCover()  // el cover se presenta cuando el wipe termina (!isWipingData)
         }
+        // El arranque asentó → se abre el gate `bootstrapPending` y la cola retenida drena
+        // por prioridad (aviso de bandeja antes que paywall). Con el shell libre, `markReady`
+        // bumpea revision y el `.onChange(revision)` de abajo hace el drain — NO llamarlo
+        // también aquí: dos drains en el mismo tick montarían el paywall encima del aviso.
+        .onChange(of: SessionState.shared.isBootstrapSettled) { _, settled in
+            guard settled else { return }
+            updateContentViewReadiness()
+            // Si el shell sigue tapado NO hubo bump (markUnready no bumpea) y un intent que
+            // supersede la cadena welcome esperaría un bump que no llega — el mismo re-peek
+            // explícito que hace `dismissSplash` por el deadlock B4-04, aquí para el invite
+            // que llega mientras el arranque aún corría.
+            if ContentViewReadinessLogic.blocker(state: currentShellReadinessState()) != nil {
+                drainContentViewIntents()
+            }
+        }
         // D1: la retención es blocker de la matriz + condición viva de la red visual del cover.
         .onChange(of: SessionState.shared.groupsRetentionPending) { _, _ in
             updateContentViewReadiness()
@@ -725,6 +740,7 @@ struct ContentView: View {
             // Condición VIVA = el gate; el @State del cover (showForceUpdateCover) es la red visual.
             forceUpdateRequired: ForceUpdateGate.shared.isUpdateRequired || showForceUpdateCover,
             isSplashDismissed: SessionState.shared.isSplashDismissed,
+            isBootstrapSettled: SessionState.shared.isBootstrapSettled,
             isWipingData: SessionState.shared.isWipingData,
             groupsRetentionPending: SessionState.shared.groupsRetentionPending,
             showOnboarding: showOnboarding,

@@ -15,6 +15,7 @@ struct ContentViewReadinessLogicTests {
     private func make(
         forceUpdateRequired: Bool = false,
         isSplashDismissed: Bool = true,
+        isBootstrapSettled: Bool = true,
         isWipingData: Bool = false,
         groupsRetentionPending: Bool = false,
         showOnboarding: Bool = false,
@@ -44,7 +45,9 @@ struct ContentViewReadinessLogicTests {
     ) -> ShellReadinessState {
         ShellReadinessState(
             forceUpdateRequired: forceUpdateRequired,
-            isSplashDismissed: isSplashDismissed, isWipingData: isWipingData,
+            isSplashDismissed: isSplashDismissed,
+            isBootstrapSettled: isBootstrapSettled,
+            isWipingData: isWipingData,
             groupsRetentionPending: groupsRetentionPending,
             showOnboarding: showOnboarding, showWelcomeFlow: showWelcomeFlow,
             showLanguageSelection: showLanguageSelection, showWelcomeRestore: showWelcomeRestore,
@@ -171,6 +174,42 @@ struct ContentViewReadinessLogicTests {
         let s = make(isSplashDismissed: false)
         #expect(!ContentViewReadinessLogic.isReady(state: s))
         #expect(ContentViewReadinessLogic.blocker(state: s) == "splash")
+    }
+
+    // Cover pegado (2026-07-28): con el anchor LIBRE pero el arranque en curso, presentar
+    // deja el cover montado para siempre y la app deja de responder a los taps.
+
+    @Test func bootstrapNotSettled_blocks_evenWithAnchorFree() {
+        // Todo limpio salvo el arranque: el anchor está libre y aun así NO se drena.
+        let s = make(isBootstrapSettled: false)
+        #expect(!ContentViewReadinessLogic.isReady(state: s))
+        #expect(ContentViewReadinessLogic.blocker(state: s) == "bootstrapPending")
+    }
+
+    @Test func bootstrapNotSettled_isNotRedundantWithSplash() {
+        // El splash se va por su propio reloj sin esperar al bootstrap — la ventana entre
+        // ambos es justo donde el cover se quedaba pegado.
+        #expect(ContentViewReadinessLogic.blocker(
+            state: make(isSplashDismissed: false, isBootstrapSettled: false)) == "splash")
+        #expect(ContentViewReadinessLogic.blocker(
+            state: make(isSplashDismissed: true, isBootstrapSettled: false)) == "bootstrapPending")
+        // Y cede ante todo lo terminal (mismo tier que el splash).
+        #expect(ContentViewReadinessLogic.blocker(
+            state: make(isBootstrapSettled: false, isWipingData: true)) == "wipingData")
+        #expect(ContentViewReadinessLogic.blocker(
+            state: make(isBootstrapSettled: false, showSignOutRelaunch: true)) == "signOutRelaunch")
+    }
+
+    @Test func bootstrapNotSettled_isNotTearableWelcomeChain() {
+        // Un intent superseding NO puede tumbar la cadena welcome mientras el arranque sigue:
+        // cerrarla solo adelantaría la presentación a la ventana que este blocker protege.
+        #expect(!ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(
+            state: make(isBootstrapSettled: false, showWelcomeFlow: true)))
+    }
+
+    @Test func bootstrapSettled_releasesTheQueue() {
+        // Liberado el arranque, la matriz vuelve a depender solo del anchor.
+        #expect(ContentViewReadinessLogic.isReady(state: make(isBootstrapSettled: true)))
     }
 
     @Test func remoteWipeAlert_blocks() {

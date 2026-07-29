@@ -21,6 +21,11 @@ struct ShellReadinessState: Equatable {
     /// (incl. wipe/relaunch). DARK en prod (el fetch de `/config` no corre → siempre false).
     let forceUpdateRequired: Bool
     let isSplashDismissed: Bool
+    /// El arranque ASENTÓ (`AppBootstrapper.bootstrap` retornó). Hermano de
+    /// `isSplashDismissed` y NO redundante con él: el splash se va por su propio reloj
+    /// (duración mínima + `isInitialCheckDone`), que no espera al bootstrap. Presentar en
+    /// esa ventana es lo que deja el cover PEGADO — ver el blocker `bootstrapPending`.
+    let isBootstrapSettled: Bool
     let isWipingData: Bool
 
     /// D1: pantalla de retención «Seguir con mis grupos» pendiente tras vaciar con grupos vivos.
@@ -102,6 +107,13 @@ enum ContentViewReadinessLogic {
         // M1: entrada secundaria armada con el store del dueño aún montado — terminal.
         if state.secondaryEntryRelaunch { return "secondaryEntryRelaunch" }
         if !state.isSplashDismissed { return "splash" }
+        // Arranque en curso: el anchor puede estar LIBRE y aun así ser mal momento para
+        // presentar. Un cover montado mientras el bootstrap sigue corriendo se queda pegado
+        // — el usuario lo descarta, UIKit no completa el desmontaje y la app deja de
+        // responder (la «toolbar muerta» del 2.0.5; medido en iOS 27.0 el 2026-07-28).
+        // Retener la cola entera —y no solo el aviso de bandeja— es lo que preserva el orden
+        // aviso → paywall: ambos esperan y drenan por prioridad al abrirse el gate.
+        if !state.isBootstrapSettled { return "bootstrapPending" }
 
         // System alerts: must clear before the next router intent presents.
         if state.showRemoteWipeAlert { return "remoteWipeAlert" }
@@ -173,6 +185,7 @@ extension ShellReadinessState {
         ShellReadinessState(
             forceUpdateRequired: forceUpdateRequired,
             isSplashDismissed: isSplashDismissed,
+            isBootstrapSettled: isBootstrapSettled,
             isWipingData: isWipingData,
             groupsRetentionPending: groupsRetentionPending,
             showOnboarding: showOnboarding,

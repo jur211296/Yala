@@ -1243,13 +1243,14 @@
         "Yala/App/Views/Shared/InboxAlertModal.swift",
         "Yala/App/Models/RouterEntryGate.swift",
         "Yala/App/ContentView.swift",
+        "Yala/App/Logic/ContentViewReadinessLogic.swift",
         "Yala/App/ViewModels/InboxViewModel.swift"
       ],
       "scenarioIDs": [
         "F-INB-05"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/InboxNewItemsModalUITests + xcuitest:YalaUITests/PaywallInboxAlertRoutingUITests (serialización alert↔paywall mismo anchor + toolbar viva post-dismiss — regresión del bug TestFlight 2.0.5). OJO: CAUSA IDENTIFICADA 2026-07-28, NO cerrada. Matriz 2×2 de runtime (n=5/celda, 0 descartes por infra): iOS 26.4.1 0% de fallo vs iOS 27.0 30%; el estado del device no influye. Debajo hay un modo de fallo REAL: el fullScreenCover queda pegado y el Panel no responde a NINGÚN tap durante ~40 s (= la «toolbar muerta» del 2.0.5). El caso de dismiss se reescribió para afirmar INTERACTIVIDAD (tap reintentado) en vez de cronometrar el desmontaje, pero eso NO cierra el flaky: en iOS 27.0 sigue cayendo 3/9. En iOS 26.4.1 queda 9/9 verde. Cerrarlo requiere el fix de producto pendiente: gatear el drenaje de .showInboxAlert por «arranque completado», no solo por «anchor libre». Por eso lastVerified NO avanza. Detalle en la Lista Negra de TESTING-STRATEGY.md.",
+      "coverage": "xcuitest:YalaUITests/InboxNewItemsModalUITests + xcuitest:YalaUITests/PaywallInboxAlertRoutingUITests (serialización alert↔paywall mismo anchor + toolbar viva post-dismiss — regresión del bug TestFlight 2.0.5). FIX DE PRODUCTO APLICADO 2026-07-28: el drenaje del shell está gateado por «arranque completado» (blocker `bootstrapPending` de ContentViewReadinessLogic, alimentado por SessionState.isBootstrapSettled, que libera un `defer` de AppBootstrapper.bootstrap). Gatea la MATRIZ, no el intent — retener la cola entera preserva el orden aviso→paywall. Verificado en iOS 26.5 (iPhone 17 Pro 9D0F6D32, Xcode 26.6): 11/11 corridas verdes incluida la fría, 33 casos, 0 fallos, y el Panel responde al PRIMER tap en las 11 (los 10 reintentos del test no se consumen nunca; antes fallaban los 10 durante ~40 s). VERIFICACIÓN PENDIENTE EN iOS 27.0 — esta Mac ya no puede: Xcode-beta fue borrado y solo queda Xcode 26.6 (SDK iPhoneSimulator26.5, runtimes 26.2/26.4/26.4.1/26.5). Correrlo en la otra Mac tras el push; hasta entonces lastVerified NO avanza (el bug solo se manifestaba en 27.0, así que 26.5 prueba no-regresión, no el cierre). Instrucciones exactas de cierre en la Lista Negra de TESTING-STRATEGY.md.",
       "owner": "",
       "lastVerified": "2026-07-12"
     },
