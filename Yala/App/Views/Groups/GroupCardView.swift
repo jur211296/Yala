@@ -50,14 +50,14 @@ struct GroupCardView: View {
 
     var body: some View {
         Button(action: handleTap) {
-            HStack(spacing: DS.Spacing.md) {
+            HStack(spacing: DS.ListRow.spacing) {
                 // Icon
                 groupIcon
 
                 // Name + member count
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(group.name)
-                        .font(DS.Typography.headline)
+                        .font(DS.Typography.label)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
@@ -83,8 +83,7 @@ struct GroupCardView: View {
 
                 trailingArea
             }
-            .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.xl)
-            .dsSubtleShadow()
+            .listRowCard()
         }
         .buttonStyle(.plain)
         .contentShape(Rectangle())
@@ -92,8 +91,48 @@ struct GroupCardView: View {
         .accessibilityLabel(accessibilityText)
     }
 
-    @ViewBuilder
+    /// Área derecha con el alto del caso PEOR ya reservado (ver `trailingHeightReserve`),
+    /// para que todas las filas de la lista midan igual.
     private var trailingArea: some View {
+        ZStack(alignment: .trailing) {
+            trailingHeightReserve
+            trailingContent
+        }
+    }
+
+    /// Reserva el alto del caso peor —los DOS sentidos de deuda a la vez, cuatro
+    /// líneas— porque sin ella una fila con «te deben» y «debes» mide el doble que
+    /// una con un solo sentido, y la lista queda dispareja (decisión owner: parejas,
+    /// aunque sea al alto del caso peor).
+    ///
+    /// Es un espejo OCULTO de dos `directionBlock`, NO una medida. El máximo es
+    /// conocido y constante: el número de monedas nunca cambia el alto (se unen en
+    /// una sola línea con " + " y overflow «+N más»), sólo lo cambia tener uno o dos
+    /// sentidos. Por eso no hace falta `GeometryReader`/`onGeometryChange` — nada de
+    /// ciclo de layout ni saltos al filtrar la lista. Frente a un `minHeight` en
+    /// puntos gana en que ESCALA con Dynamic Type igual que el contenido real.
+    private var trailingHeightReserve: some View {
+        VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
+            reserveBlock
+            reserveBlock
+        }
+        .hidden()
+        .accessibilityHidden(true)
+    }
+
+    /// Un `directionBlock` en hueco: mismas dos líneas y mismas fuentes (label +
+    /// monto), con un glifo cualquiera para que cada línea mida su alto real.
+    private var reserveBlock: some View {
+        VStack(alignment: .trailing, spacing: DS.Spacing.none) {
+            Text(verbatim: "0")
+                .font(DS.Typography.captionSmall)
+            Text(verbatim: "0")
+                .font(DS.Typography.subheadlineEmphasized)
+        }
+    }
+
+    @ViewBuilder
+    private var trailingContent: some View {
         switch displayMode {
         case .pendingApproval:
             StatusChip(

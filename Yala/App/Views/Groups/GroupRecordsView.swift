@@ -156,21 +156,21 @@ struct GroupRecordsView: View {
         let creditorName = memberNameLookup[expense.paidByMemberID] ?? "?"
         let amountStr = appPreferences.currency(expense.amount, currencyCode: expense.currencyCode)
 
-        return HStack(spacing: DS.Spacing.md) {
+        return HStack(spacing: DS.ListRow.spacing) {
             Image(systemName: "arrow.left.arrow.right")
                 .font(DS.Typography.label)
                 .foregroundStyle(.secondary)
-                .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
+                .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
                 .background(Circle().fill(Color(.secondarySystemFill)))
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(L10n.Groups.OpeningBalance.entryDescription)
-                    .font(DS.Typography.body)
+                    .font(DS.Typography.label)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
                 Text(L10n.Groups.OpeningBalance.feedRow(debtorName, creditorName))
-                    .font(DS.Typography.captionSmall)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -178,11 +178,11 @@ struct GroupRecordsView: View {
             Spacer()
 
             Text(amountStr)
-                .font(DS.Typography.body)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
         }
-        .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.xl)
+        .listRowCard()
     }
 
     /// Fila descriptiva de una liquidación confirmada ("Liquidación · X le pagó a Y" + monto neutro).
@@ -193,21 +193,21 @@ struct GroupRecordsView: View {
         let toName = memberNameLookup[settlement.toMemberID] ?? "?"
         let amountStr = appPreferences.currency(settlement.amount, currencyCode: settlement.currencyCode)
 
-        return HStack(spacing: DS.Spacing.md) {
+        return HStack(spacing: DS.ListRow.spacing) {
             Image(systemName: "checkmark.circle")
                 .font(DS.Typography.label)
                 .foregroundStyle(.secondary)
-                .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
+                .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
                 .background(Circle().fill(Color(.secondarySystemFill)))
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(L10n.Groups.Settlement.entryDescription)
-                    .font(DS.Typography.body)
+                    .font(DS.Typography.label)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
                 Text(L10n.Groups.Settlement.feedRow(fromName, toName))
-                    .font(DS.Typography.captionSmall)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -215,11 +215,11 @@ struct GroupRecordsView: View {
             Spacer()
 
             Text(amountStr)
-                .font(DS.Typography.body)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
         }
-        .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.xl)
+        .listRowCard()
         .accessibilityIdentifier("group_settlement_row_\(settlement.id)")
     }
 
@@ -237,18 +237,18 @@ struct GroupRecordsView: View {
             currentMemberID: currentMemberID ?? ""
         )
 
-        return HStack(spacing: DS.Spacing.md) {
+        return HStack(spacing: DS.ListRow.spacing) {
             subcategoryBadge(for: expense)
 
             // Description + payer
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(expense.expenseDescription.isEmpty ? "—" : expense.expenseDescription)
-                    .font(DS.Typography.body)
+                    .font(DS.Typography.label)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
                 Text(payerLabel)
-                    .font(DS.Typography.captionSmall)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -257,7 +257,7 @@ struct GroupRecordsView: View {
 
             GroupExpenseAmountView(status: status, currencyCode: expense.currencyCode)
         }
-        .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.xl)
+        .listRowCard()
     }
 
     /// Subcat icon+color: bridge personal (gana) → nombre del creador → splitTypeBadge (genérico).
@@ -279,7 +279,7 @@ struct GroupRecordsView: View {
             Image(systemName: resolved.iconName)
                 .font(DS.Typography.label)
                 .foregroundStyle(color)
-                .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
+                .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
                 .background(Circle().fill(color.opacity(0.12)))
         } else {
             splitTypeBadge(expense.splitType)
@@ -309,7 +309,7 @@ struct GroupRecordsView: View {
         return Image(systemName: icon)
             .font(DS.Typography.label)
             .foregroundStyle(.thAccent)
-            .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
+            .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
             .background(Circle().fill(.thAccent.opacity(0.12)))
     }
 
