@@ -848,9 +848,6 @@ final class SplitSyncManager {
         }
     }
 
-    /// Fetch the local SplitGroup for a given zone ID (resolved after sync).
-    /// Sorted by `createdAt asc` so the canonical (oldest) group wins consistently
-    /// if a CloudKit sync race produced duplicates sharing the same `cloudKitZoneID`.
     /// G6-3 (C2): zone names de los grupos LOCALES `isBackendGroup=true` (ya migrados al backend). El guard
     /// simétrico de PULL salta todo record/deletion CloudKit de estas zonas. `#Predicate` CONCRETO por tipo.
     func backendGroupZoneNames(context: ModelContext) -> Set<String> {
@@ -862,140 +859,6 @@ final class SplitSyncManager {
             logger.error("backendGroupZoneNames fetch failed: \(error.localizedDescription, privacy: .public)")
             #endif
             return []
-        }
-    }
-
-    func group(for zoneID: String) -> SplitGroup? {
-        guard let context = modelContext else { return nil }
-        let descriptor = FetchDescriptor<SplitGroup>(
-            predicate: #Predicate { $0.cloudKitZoneID == zoneID },
-            sortBy: [SortDescriptor(\.createdAt, order: .forward)]
-        )
-        let results: [SplitGroup]
-        do {
-            results = try context.fetch(descriptor)
-        } catch {
-            logger.error("group(for:) fetch failed for zone \(zoneID, privacy: .public): \(error.localizedDescription, privacy: .public)")
-            return nil
-        }
-        if results.count > 1 {
-            #if DEBUG
-            logger.error("SplitSyncManager.group(for:): \(results.count) duplicate SplitGroups for zone \(zoneID)")
-            #endif
-            MetricsService.cloudkitDuplicateDetected(
-                model: "SplitGroup",
-                count: results.count,
-                context: .runtimeFetch,
-                keySuffix: zoneID
-            )
-        }
-        return results.first
-    }
-
-    /// Current user's `SplitMember` en una zone (canonical: oldest `joinedAt` si hubiera duplicados).
-    /// Reusado por `currentMemberStatus(zoneName:)` y por callsites del bridge.
-    func currentUserMember(zoneID: String) -> SplitMember? {
-        guard let context = modelContext else { return nil }
-        var descriptor = FetchDescriptor<SplitMember>(
-            predicate: #Predicate { $0.groupZoneID == zoneID && $0.isCurrentUser == true },
-            sortBy: [SortDescriptor(\.joinedAt, order: .forward)]
-        )
-        descriptor.fetchLimit = 1
-        do {
-            return try context.fetch(descriptor).first
-        } catch {
-            logger.error("currentUserMember(zoneID:) fetch failed for \(zoneID, privacy: .public): \(error.localizedDescription, privacy: .public)")
-            return nil
-        }
-    }
-
-    /// Estado local del current user en una zone. Nil si no soy miembro local.
-    /// Usado para detectar `.alreadyMember` / `.pendingDuplicate` / `.rejectedRetry` /
-    /// `.leftRetry` / `.removedRetry` antes de aceptar el share.
-    func currentMemberStatus(zoneName: String) -> SplitMemberStatus? {
-        currentUserMember(zoneID: zoneName)?.memberStatus
-    }
-
-    /// D5 (§3.3.4, aviso de "Eliminar mi cuenta"): resumen READ-ONLY de los grupos del usuario. Recorre los
-    /// grupos NO soft-deleted (`isHiddenForAll == false`) y devuelve, sin escribir NADA (fetches + cálculo
-    /// puro — invariante de quiescencia (b) intacto):
-    ///  - `outstandingDebtGroupCount`: cuántos tienen un saldo pendiente para el usuario actual
-    ///    (`|net| > 0.01` en alguna moneda; molde `GroupSettingsView.recomputeOutstandingDebt`, agregado y
-    ///    filtrado al member del usuario). Un grupo cuyo `isCurrentUser` aún no resolvió se SALTA → posible
-    ///    sub-conteo, JAMÁS sobre-aviso (dirección segura: el aviso solo informa, nunca bloquea).
-    ///  - `hasLegacyCloudKitFootprint`: si algún grupo tiene zona CloudKit viva (`ckSystemFieldsData != nil`),
-    ///    donde el nombre persiste tras el GDPR delete (`groups_forget_user` anonimiza SOLO el backend). Se
-    ///    evalúa en memoria (evita el gotcha de `#Predicate` sobre opcionales).
-    /// Degrada a `.empty` si el contexto no está montado o un fetch lanza. La composición del copy vive en
-    /// `AccountDeletionMessageLogic`; el conteo se delega a `AccountDeletionDebtLogic` (ambos puros/testeados).
-    ///
-    /// `context` inyectable (default `nil` → `self.modelContext`, producción intacta): permite testear la
-    /// glue SwiftData→resumen sin mutar el singleton `.shared`. La resolución del member del usuario se hace
-    /// INLINE contra ese `context` (mismo predicado que `currentUserMember(zoneID:)`) — así el método es
-    /// determinista respecto al contexto pasado y no lee estado del singleton.
-    func accountDeletionGroupsSummary(context: ModelContext? = nil) -> AccountDeletionGroupsSummary {
-        guard let context = context ?? modelContext else { return .empty }
-        do {
-            let groups = try context.fetch(FetchDescriptor<SplitGroup>(
-                predicate: #Predicate { $0.isHiddenForAll == false }))
-            let hasLegacy = groups.contains { $0.ckSystemFieldsData != nil }
-
-            var perGroupNets: [[Double]] = []
-            for group in groups {
-                let zoneID = group.cloudKitZoneID
-
-                // Member del usuario actual en esta zona (canonical: oldest joinedAt), INLINE contra el
-                // `context` pasado. No resuelto (isCurrentUser aún sin asentar) ⇒ salta → sub-conteo, jamás
-                // sobre-aviso.
-                var meDesc = FetchDescriptor<SplitMember>(
-                    predicate: #Predicate { $0.groupZoneID == zoneID && $0.isCurrentUser == true },
-                    sortBy: [SortDescriptor(\.joinedAt, order: .forward)])
-                meDesc.fetchLimit = 1
-                guard let me = try context.fetch(meDesc).first else { continue }
-                let myMemberID = me.id.uuidString
-
-                // Early exit O(1): grupo sin gastos ⇒ sin deuda posible (delega a SQL COUNT).
-                let expensesCount = try context.fetchCount(FetchDescriptor<SplitExpense>(
-                    predicate: #Predicate { $0.groupZoneID == zoneID }))
-                guard expensesCount > 0 else { continue }
-
-                let expenses = try context.fetch(FetchDescriptor<SplitExpense>(
-                    predicate: #Predicate { $0.groupZoneID == zoneID }))
-                let shares = try context.fetch(FetchDescriptor<SplitShare>(
-                    predicate: #Predicate { $0.groupZoneID == zoneID }))
-                let settlements = try context.fetch(FetchDescriptor<SplitSettlement>(
-                    predicate: #Predicate { $0.groupZoneID == zoneID }))
-                let members = try context.fetch(FetchDescriptor<SplitMember>(
-                    predicate: #Predicate { $0.groupZoneID == zoneID }))
-
-                let balances = GroupBalanceService.calculateBalances(
-                    expenses: expenses, shares: shares, members: members, settlements: settlements)
-                perGroupNets.append(balances.filter { $0.memberID == myMemberID }.map(\.netBalance))
-            }
-
-            return AccountDeletionGroupsSummary(
-                outstandingDebtGroupCount: AccountDeletionDebtLogic.groupsWithOutstandingBalance(
-                    perGroupUserNetBalances: perGroupNets),
-                hasLegacyCloudKitFootprint: hasLegacy,
-                hasGroups: !groups.isEmpty)
-        } catch {
-            logger.error("accountDeletionGroupsSummary fetch failed: \(error.localizedDescription, privacy: .public)")
-            return .empty
-        }
-    }
-
-    /// Find the most recently synced group (useful after accepting a share).
-    func mostRecentGroup() -> SplitGroup? {
-        guard let context = modelContext else { return nil }
-        var descriptor = FetchDescriptor<SplitGroup>(
-            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
-        )
-        descriptor.fetchLimit = 1
-        do {
-            return try context.fetch(descriptor).first
-        } catch {
-            logger.error("mostRecentGroup() fetch failed: \(error.localizedDescription, privacy: .public)")
-            return nil
         }
     }
 
@@ -1404,7 +1267,7 @@ final class SplitSyncManager {
     /// en cada ciclo de fetch).
     private func completeInitialMemberImport(zoneName: String) {
         guard let context = modelContext,
-              let group = group(for: zoneName),
+              let group = GroupService.shared.group(for: zoneName),
               group.initialMemberImportStartedAt != nil
         else { return }
         group.initialMemberImportStartedAt = nil
@@ -1441,7 +1304,7 @@ final class SplitSyncManager {
             //     movedToBackendAt != nil): su copia congelada porta el TOKEN del CTA de re-join — borrarla
             //     lo dejaría fuera sin camino de vuelta (el path del member queda FUERA de v1 en C5).
             // Solo se purgan los pending changes del engine (no debería haber).
-            if let localGroup = group(for: zoneName),
+            if let localGroup = GroupService.shared.group(for: zoneName),
                localGroup.isBackendGroup || localGroup.movedToBackendAt != nil {
                 GroupsSyncBreadcrumb.groupsCkPullSkippedBackendGroup(site: "zoneDeletion")
                 purgePendingChanges(for: deletion.zoneID, engine: engine)
@@ -1729,7 +1592,7 @@ final class SplitSyncManager {
         var baselineCache: [String: MemberChangeNotificationLogic.ZoneBaseline] = [:]
         func zoneBaseline(for zoneName: String) -> MemberChangeNotificationLogic.ZoneBaseline {
             if let cached = baselineCache[zoneName] { return cached }
-            let localGroup = group(for: zoneName)
+            let localGroup = GroupService.shared.group(for: zoneName)
             let baseline = MemberChangeNotificationLogic.zoneBaseline(
                 groupExistsLocally: localGroup != nil,
                 importStartedAt: localGroup?.initialMemberImportStartedAt,
@@ -1836,7 +1699,7 @@ final class SplitSyncManager {
         pendingRemovedSelfZoneNames.removeAll()
 
         for zoneID in freezeZones {
-            guard let group = self.group(for: zoneID) else { continue }
+            guard let group = GroupService.shared.group(for: zoneID) else { continue }
             do {
                 try GroupTransactionBridge.shared.freezeForSoftDelete(group: group)
             } catch {
@@ -1900,7 +1763,7 @@ final class SplitSyncManager {
         // la aprobación del admin sin depender de dataVersion.
         if GroupJoinIntentTracker.shared.phase == .pendingApproval,
            let trackedZone = GroupJoinIntentTracker.shared.zoneName,
-           let status = currentMemberStatus(zoneName: trackedZone)
+           let status = GroupService.shared.currentMemberStatus(zoneName: trackedZone)
         {
             GroupJoinIntentTracker.shared.noteMemberResolved(zoneName: trackedZone, status: status)
         }
@@ -2101,7 +1964,7 @@ final class SplitSyncManager {
         // locales, incluido el marcador → el próximo send gana).
         if backendGroupZoneNames(context: modelContext).contains(serverRecord.recordID.zoneID.zoneName) {
             if serverRecord.recordType == CKConstants.RecordType.groupMeta,
-               let group = group(for: serverRecord.recordID.zoneID.zoneName),
+               let group = GroupService.shared.group(for: serverRecord.recordID.zoneID.zoneName),
                group.movedToBackendAt != nil,
                CKConstants.modelID(from: serverRecord.recordID) == group.id {
                 group.ckSystemFieldsData = CKRecordTranslator.encodeSystemFields(of: serverRecord)
@@ -2161,7 +2024,7 @@ final class SplitSyncManager {
 
         // Re-aplicar transición si server stale revirtió flag local.
         if let zoneID = splitGroupZoneID,
-           let group = self.group(for: zoneID) {
+           let group = GroupService.shared.group(for: zoneID) {
             var needsReSave = false
             if preIsHiddenForAll && !group.isHiddenForAll {
                 group.isHiddenForAll = true
@@ -2212,7 +2075,7 @@ final class SplitSyncManager {
 
         // G6-3 (C5): un save pendiente que racea con el borrado de la zona de un grupo MIGRADO (owner que
         // borró su copia congelada) NO debe destruir los datos locales — la verdad vive en el backend.
-        if let localGroup = group(for: zoneName),
+        if let localGroup = GroupService.shared.group(for: zoneName),
            localGroup.isBackendGroup || localGroup.movedToBackendAt != nil {
             GroupsSyncBreadcrumb.groupsCkPullSkippedBackendGroup(site: "zoneNotFound")
             pendingRecordSaves.remove(recordID)

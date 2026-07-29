@@ -2,7 +2,7 @@
 //  AccountDeletionGroupsSummaryTests.swift
 //  YalaTests
 //
-//  D5 (§3.3.4): la GLUE SwiftData→resumen de `SplitSyncManager.accountDeletionGroupsSummary(context:)`
+//  D5 (§3.3.4): la GLUE SwiftData→resumen de `GroupService.accountDeletionGroupsSummary(context:)`
 //  — el filtro `isHiddenForAll`, la resolución del member del usuario (`isCurrentUser`), el matching
 //  `balances.memberID == me.id.uuidString`, la detección de huella CloudKit (`ckSystemFieldsData != nil`)
 //  y el skip cuando no hay member del usuario. Read-only (cero saves; el aviso solo informa). Se inyecta
@@ -21,7 +21,7 @@ import Testing
 struct AccountDeletionGroupsSummaryTests {
 
     private func summary(_ ctx: ModelContext) -> AccountDeletionGroupsSummary {
-        SplitSyncManager.shared.accountDeletionGroupsSummary(context: ctx)
+        GroupService.shared.accountDeletionGroupsSummary(context: ctx)
     }
 
     /// Siembra un grupo. Con `currentUserNet != 0`, el member del usuario actual queda con ese neto

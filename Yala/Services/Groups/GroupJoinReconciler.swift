@@ -65,7 +65,7 @@ enum GroupJoinReconciler {
                 continue
             }
 
-            let group = groupLookup?(entry.zoneName) ?? SplitSyncManager.shared.group(for: entry.zoneName)
+            let group = groupLookup?(entry.zoneName) ?? GroupService.shared.group(for: entry.zoneName)
             let engineIsReady: Bool = {
                 guard let group else { return false }
                 return engineReady?(group) ?? SplitSyncManager.shared.hasEngine(forOwned: group.isOwner)
@@ -131,7 +131,7 @@ enum GroupJoinReconciler {
             await GroupBackendInviteEntryHandler.correctDisplayNameIfNeeded(
                 groupID: groupID, intentName: entry.displayName,
                 currentMemberDisplayName: backendMember?.displayName ?? "")
-            if let group = SplitSyncManager.shared.group(for: entry.zoneName) {
+            if let group = GroupService.shared.group(for: entry.zoneName) {
                 applyGroupCurrencyIfNeeded(entry: entry, group: group)
             }
             if GroupJoinReconcileLogic.shouldClearBackendIntent(memberLocallyPresent: true) {
@@ -161,7 +161,7 @@ enum GroupJoinReconciler {
         context providedContext: ModelContext?
     ) -> SplitMember? {
         guard let context = providedContext
-            ?? SplitSyncManager.shared.group(for: zoneName)?.modelContext
+            ?? GroupService.shared.group(for: zoneName)?.modelContext
         else { return nil }
         let descriptor = FetchDescriptor<SplitMember>(
             predicate: #Predicate { $0.groupZoneID == zoneName }
@@ -279,7 +279,7 @@ enum GroupJoinReconciler {
     private static func currentUserMemberExists(zoneName: String, context providedContext: ModelContext?) -> Bool {
         guard let context = providedContext else {
             // Producción: helper del manager sobre su propio contexto.
-            return SplitSyncManager.shared.currentUserMember(zoneID: zoneName) != nil
+            return GroupService.shared.currentUserMember(zoneID: zoneName) != nil
         }
         let recordName = GroupUserIdentityService.shared.cachedRecordName ?? ""
         let descriptor = FetchDescriptor<SplitMember>(

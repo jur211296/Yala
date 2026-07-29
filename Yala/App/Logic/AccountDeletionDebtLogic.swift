@@ -12,14 +12,14 @@
 //  sigue viva, nada se pierde — ensuciaría el modelo sesión≠datos).
 //
 //  Ambos enums son `nonisolated` y sin dependencias de UI/SwiftData: la detección recibe los saldos YA
-//  calculados (el fetch read-only vive en `SplitSyncManager.accountDeletionGroupsSummary`, invariante de
+//  calculados (el fetch read-only vive en `GroupService.accountDeletionGroupsSummary`, invariante de
 //  quiescencia (b) intacto — cero saves) y la composición recibe flags. Testeables por tabla.
 //
 
 import Foundation
 
 /// Resumen read-only de grupos para el aviso de eliminar-cuenta. Lo produce
-/// `SplitSyncManager.accountDeletionGroupsSummary()` (fetches + cálculo puro, cero saves) y lo consume la
+/// `GroupService.accountDeletionGroupsSummary()` (fetches + cálculo puro, cero saves) y lo consume la
 /// UI + la lógica pura de este archivo.
 struct AccountDeletionGroupsSummary: Equatable {
     /// Nº de grupos con un saldo pendiente para el usuario actual.

@@ -542,7 +542,7 @@ struct ProfileView: View {
                         onSignOut: { showCloudSignOutConfirm = true },
                         onDeleteAccount: {
                             deleteAccountGroupsSummary =
-                                SplitSyncManager.shared.accountDeletionGroupsSummary()
+                                GroupService.shared.accountDeletionGroupsSummary()
                             showDeleteAccountConfirm = true
                         })
                 }
@@ -1125,7 +1125,7 @@ struct ProfileView: View {
                         // D5: recomputa READ-ONLY (fetches + cálculo puro, cero saves) el resumen de grupos
                         // ANTES de mostrar el diálogo — fresco y barato (solo al tap).
                         deleteAccountGroupsSummary =
-                            SplitSyncManager.shared.accountDeletionGroupsSummary()
+                            GroupService.shared.accountDeletionGroupsSummary()
                         showDeleteAccountConfirm = true
                     } label: {
                         settingsRowContent(

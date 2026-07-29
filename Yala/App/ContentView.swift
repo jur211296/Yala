@@ -1658,7 +1658,7 @@ private struct GroupInviteModifier: ViewModifier {
             return
 
         case .alreadyMember:
-            if let group = SplitSyncManager.shared.group(for: zoneName) {
+            if let group = GroupService.shared.group(for: zoneName) {
                 RouterEntryGate.shared.submit(.navigate(.groupDetail(groupID: group.id.uuidString)))
             } else {
                 RouterEntryGate.shared.submit(.navigate(.groups))
@@ -1671,7 +1671,7 @@ private struct GroupInviteModifier: ViewModifier {
             await acceptAndSettle(metadata: metadata)
             // `group(for:)` y `ensureCurrentUserMemberExists` operan ambos sobre el mainContext
             // compartido (el sync ya no usa un contexto dedicado) → mismo contexto, sin riesgo cross-context.
-            if let group = SplitSyncManager.shared.group(for: zoneName) {
+            if let group = GroupService.shared.group(for: zoneName) {
                 do {
                     _ = try await GroupService.shared.ensureCurrentUserMemberExists(in: group, reactivateInactive: true)
                 } catch {

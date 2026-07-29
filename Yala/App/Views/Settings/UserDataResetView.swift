@@ -87,7 +87,7 @@ struct UserDataResetView: View {
                             Button(role: .destructive) {
                                 // v2: detección READ-ONLY al TAP (molde D5) — alimenta la fila 👥 y el desvío
                                 // "Ver mis grupos". Cero saves (invariante de quiescencia (b) intacto).
-                                groupsSummary = SplitSyncManager.shared.accountDeletionGroupsSummary()
+                                groupsSummary = GroupService.shared.accountDeletionGroupsSummary()
                                 isShowingScopeSheet = true
                             } label: {
                                 HStack {

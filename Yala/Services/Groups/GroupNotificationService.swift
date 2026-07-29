@@ -224,7 +224,7 @@ final class GroupNotificationService {
 
     /// Resolves the current user's SplitMember id (uuidString) for a zone, cached per zone.
     /// `isCurrentUser` is refreshed by `refreshCurrentUserFlags` (awaited) right before this runs.
-    /// Canonical resolution (oldest `joinedAt`, limit 1) mirrors `SplitSyncManager.currentUserMember`
+    /// Canonical resolution (oldest `joinedAt`, limit 1) mirrors `GroupService.currentUserMember`
     /// — deterministic if sync ever delivered duplicate `isCurrentUser` members for a zone.
     private func currentMemberID(inZone zoneName: String, cache: inout [String: String?]) -> String? {
         if let cached = cache[zoneName] { return cached }

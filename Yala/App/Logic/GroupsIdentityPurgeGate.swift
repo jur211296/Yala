@@ -17,7 +17,7 @@
 //
 //  DECIDE POR ZONA, NO POR FILA (crítico). Existen `SplitGroup` DISTINTOS con el MISMO `cloudKitZoneID`
 //  — fenómeno documentado con servicio de limpieza en boot (`SplitGroupDeduplicationService`, invocado
-//  en AppBootstrapper.swift:334) y canario en runtime (`SplitSyncManager.group(for:)`). El flip de canal
+//  en AppBootstrapper.swift:334) y canario en runtime (`GroupService.group(for:)`). El flip de canal
 //  solo marca UNA fila de la zona (`GroupsSyncClient.fetchSplitGroup` usa `fetchLimit = 1`; el marcador
 //  aterriza por `id == modelID`), así que un par MIXTO (una fila backend + su duplicado sin marcar) es
 //  alcanzable. Los hijos se vinculan por `groupZoneID` (no `@Relationship`), de modo que borrar el

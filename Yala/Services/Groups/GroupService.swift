@@ -1258,6 +1258,147 @@ final class GroupService {
         case .rejected: 4
         }
     }
+
+    // MARK: - Consultas del store de Grupos (Fase 2 · 2.4)
+    //
+    // Vienen de `SplitSyncManager`, que la Fase 3 borra entero. Son lecturas del store de Grupos, no del
+    // transporte: nada aquí sabe de CloudKit. Los `#Predicate` son CONCRETOS por tipo y deben seguir
+    // siéndolo — uno genérico-protocolo compila y CRASHEA al ejecutar el fetch (fix `c74349fc`, regla de
+    // `.claude/rules/swiftdata-cloudkit.md`).
+
+    /// El `SplitGroup` local de una zona. Ordenado por `createdAt asc` para que gane siempre el canónico
+    /// (el más antiguo) si una carrera de sync dejó duplicados con el mismo `cloudKitZoneID`.
+    func group(for zoneID: String) -> SplitGroup? {
+        guard let context = modelContext else { return nil }
+        let descriptor = FetchDescriptor<SplitGroup>(
+            predicate: #Predicate { $0.cloudKitZoneID == zoneID },
+            sortBy: [SortDescriptor(\.createdAt, order: .forward)]
+        )
+        let results: [SplitGroup]
+        do {
+            results = try context.fetch(descriptor)
+        } catch {
+            logger.error("group(for:) fetch failed for zone \(zoneID, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
+        if results.count > 1 {
+            #if DEBUG
+            logger.error("GroupService.group(for:): \(results.count) duplicate SplitGroups for zone \(zoneID)")
+            #endif
+            MetricsService.cloudkitDuplicateDetected(
+                model: "SplitGroup",
+                count: results.count,
+                context: .runtimeFetch,
+                keySuffix: zoneID
+            )
+        }
+        return results.first
+    }
+
+    /// `SplitMember` del usuario actual en una zona (canónico: el de `joinedAt` más antiguo si hubiera
+    /// duplicados). Reusado por `currentMemberStatus(zoneName:)` y por callsites del bridge.
+    func currentUserMember(zoneID: String) -> SplitMember? {
+        guard let context = modelContext else { return nil }
+        var descriptor = FetchDescriptor<SplitMember>(
+            predicate: #Predicate { $0.groupZoneID == zoneID && $0.isCurrentUser == true },
+            sortBy: [SortDescriptor(\.joinedAt, order: .forward)]
+        )
+        descriptor.fetchLimit = 1
+        do {
+            return try context.fetch(descriptor).first
+        } catch {
+            logger.error("currentUserMember(zoneID:) fetch failed for \(zoneID, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
+    }
+
+    /// Estado local del usuario actual en una zona. Nil si no es miembro local.
+    func currentMemberStatus(zoneName: String) -> SplitMemberStatus? {
+        currentUserMember(zoneID: zoneName)?.memberStatus
+    }
+
+    /// D5 (§3.3.4, aviso de «Eliminar mi cuenta»): resumen READ-ONLY de los grupos del usuario. Recorre los
+    /// grupos NO soft-deleted (`isHiddenForAll == false`) y devuelve, sin escribir NADA (fetches + cálculo
+    /// puro — invariante de quiescencia (b) intacto):
+    ///  - `outstandingDebtGroupCount`: cuántos tienen un saldo pendiente para el usuario actual
+    ///    (`|net| > 0.01` en alguna moneda; molde `GroupSettingsView.recomputeOutstandingDebt`, agregado y
+    ///    filtrado al member del usuario). Un grupo cuyo `isCurrentUser` aún no resolvió se SALTA → posible
+    ///    sub-conteo, JAMÁS sobre-aviso (dirección segura: el aviso solo informa, nunca bloquea).
+    ///  - `hasLegacyCloudKitFootprint`: si algún grupo tiene zona CloudKit viva (`ckSystemFieldsData != nil`),
+    ///    donde el nombre persiste tras el GDPR delete (`groups_forget_user` anonimiza SOLO el backend). Se
+    ///    evalúa en memoria (evita el gotcha de `#Predicate` sobre opcionales).
+    /// Degrada a `.empty` si el contexto no está montado o un fetch lanza. La composición del copy vive en
+    /// `AccountDeletionMessageLogic`; el conteo se delega a `AccountDeletionDebtLogic` (ambos puros/testeados).
+    ///
+    /// `context` inyectable (default `nil` → `self.modelContext`, producción intacta): permite testear la
+    /// glue SwiftData→resumen sin mutar el singleton `.shared`. La resolución del member del usuario se hace
+    /// INLINE contra ese `context` (mismo predicado que `currentUserMember(zoneID:)`) — así el método es
+    /// determinista respecto al contexto pasado y no lee estado del singleton.
+    func accountDeletionGroupsSummary(context: ModelContext? = nil) -> AccountDeletionGroupsSummary {
+        guard let context = context ?? modelContext else { return .empty }
+        do {
+            let groups = try context.fetch(FetchDescriptor<SplitGroup>(
+                predicate: #Predicate { $0.isHiddenForAll == false }))
+            let hasLegacy = groups.contains { $0.ckSystemFieldsData != nil }
+
+            var perGroupNets: [[Double]] = []
+            for group in groups {
+                let zoneID = group.cloudKitZoneID
+
+                // Member del usuario actual en esta zona (canonical: oldest joinedAt), INLINE contra el
+                // `context` pasado. No resuelto (isCurrentUser aún sin asentar) ⇒ salta → sub-conteo, jamás
+                // sobre-aviso.
+                var meDesc = FetchDescriptor<SplitMember>(
+                    predicate: #Predicate { $0.groupZoneID == zoneID && $0.isCurrentUser == true },
+                    sortBy: [SortDescriptor(\.joinedAt, order: .forward)])
+                meDesc.fetchLimit = 1
+                guard let me = try context.fetch(meDesc).first else { continue }
+                let myMemberID = me.id.uuidString
+
+                // Early exit O(1): grupo sin gastos ⇒ sin deuda posible (delega a SQL COUNT).
+                let expensesCount = try context.fetchCount(FetchDescriptor<SplitExpense>(
+                    predicate: #Predicate { $0.groupZoneID == zoneID }))
+                guard expensesCount > 0 else { continue }
+
+                let expenses = try context.fetch(FetchDescriptor<SplitExpense>(
+                    predicate: #Predicate { $0.groupZoneID == zoneID }))
+                let shares = try context.fetch(FetchDescriptor<SplitShare>(
+                    predicate: #Predicate { $0.groupZoneID == zoneID }))
+                let settlements = try context.fetch(FetchDescriptor<SplitSettlement>(
+                    predicate: #Predicate { $0.groupZoneID == zoneID }))
+                let members = try context.fetch(FetchDescriptor<SplitMember>(
+                    predicate: #Predicate { $0.groupZoneID == zoneID }))
+
+                let balances = GroupBalanceService.calculateBalances(
+                    expenses: expenses, shares: shares, members: members, settlements: settlements)
+                perGroupNets.append(balances.filter { $0.memberID == myMemberID }.map(\.netBalance))
+            }
+
+            return AccountDeletionGroupsSummary(
+                outstandingDebtGroupCount: AccountDeletionDebtLogic.groupsWithOutstandingBalance(
+                    perGroupUserNetBalances: perGroupNets),
+                hasLegacyCloudKitFootprint: hasLegacy,
+                hasGroups: !groups.isEmpty)
+        } catch {
+            logger.error("accountDeletionGroupsSummary fetch failed: \(error.localizedDescription, privacy: .public)")
+            return .empty
+        }
+    }
+
+    /// El grupo sincronizado más recientemente (útil tras aceptar un share).
+    func mostRecentGroup() -> SplitGroup? {
+        guard let context = modelContext else { return nil }
+        var descriptor = FetchDescriptor<SplitGroup>(
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+        )
+        descriptor.fetchLimit = 1
+        do {
+            return try context.fetch(descriptor).first
+        } catch {
+            logger.error("mostRecentGroup() fetch failed: \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
+    }
 }
 
 // MARK: - Errors

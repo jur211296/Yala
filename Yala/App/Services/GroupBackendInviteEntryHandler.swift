@@ -84,7 +84,7 @@ enum GroupBackendInviteEntryHandler {
     static func persistIntent(groupID: String, token: String) {
         let existing = PendingJoinStore.entry(zoneName: groupID)
         var legacyMemberKey: String?
-        if let group = SplitSyncManager.shared.group(for: groupID),
+        if let group = GroupService.shared.group(for: groupID),
            let context = group.modelContext {
             legacyMemberKey = legacyMemberKeyForRejoin(group: group, context: context)
         }

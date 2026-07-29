@@ -51,7 +51,7 @@ struct FullModeActivationView: View {
         }
         return FullModeActivationLogic.buildSummary(
             userName: UserDefaults.standard.string(forKey: AppPreferences.Keys.userName),
-            groupCurrency: SplitSyncManager.shared.mostRecentGroup()?.currencyCode,
+            groupCurrency: GroupService.shared.mostRecentGroup()?.currencyCode,
             defaultCurrency: UserDefaults.standard.string(forKey: AppPreferences.Keys.defaultCurrencyCode),
             userCategoriesCount: categoriesCount
         )

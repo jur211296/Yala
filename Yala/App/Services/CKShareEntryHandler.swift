@@ -58,7 +58,7 @@ enum CKShareEntryHandler {
         let isHiddenForAll = (metadata.share[CKShareCustomKey.isHiddenForAll] as? Int) == 1
         let isArchived = (metadata.share[CKShareCustomKey.isArchived] as? Int) == 1
         let zoneName = metadata.share.recordID.zoneID.zoneName
-        let currentMemberStatus = SplitSyncManager.shared.currentMemberStatus(zoneName: zoneName)
+        let currentMemberStatus = GroupService.shared.currentMemberStatus(zoneName: zoneName)
 
         // Parte F: solo evaluamos la señal de returning user (KV, con espera corta)
         // cuando aplica — fresh-install sin modo grupo, grupo no archivado/oculto.

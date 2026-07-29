@@ -432,7 +432,7 @@ struct GroupInviteOnboardingView: View {
     }
 
     private func detectCurrencyFromGroup() -> CurrencyCode? {
-        guard let group = SplitSyncManager.shared.mostRecentGroup(),
+        guard let group = GroupService.shared.mostRecentGroup(),
               let code = CurrencyCode(rawValue: group.currencyCode) else { return nil }
         return code
     }
