@@ -47,6 +47,23 @@ nonisolated enum GroupBackendIdentityLogic {
         return memberUserID.lowercased() == currentUserID.lowercased()
     }
 
+    /// Pertenencia de un GRUPO al canal BACKEND en sentido AMPLIO: `isBackendGroup` (dueño backend,
+    /// born-remote o adoptado) **o** `movedToBackendAt != nil` (copia CONGELADA — el marcador viajó por
+    /// CloudKit y el miembro aún no re-joineó). D1 nombra AMBAS formas.
+    ///
+    /// Vivía en `GroupsIdentityPurgeGate` (su primer consumidor). Se mudó aquí porque la Fase 3 borra ese
+    /// fichero entero con el transporte CloudKit y el predicado es del canal NUEVO: lo consultan tanto la
+    /// purga por cambio de identidad como la resolución de identidad de `refreshCurrentUserFlags`.
+    ///
+    /// OJO: este predicado es el de RETENCIÓN/PERTENENCIA. NO es el predicado correcto para decidir si un
+    /// grupo puede escribir a CKSyncEngine: ahí hay que usar `isBackendGroup || isMigratedFrozen`
+    /// (`GroupFreezeLogic.isFrozen`), porque su mitigación #9 trata a propósito como NO congelado al owner
+    /// tras un reinstall (`movedToBackendAt != nil && ckSystemFieldsData != nil`) y ampliar el predicado
+    /// crudo le quitaría su último camino de subida.
+    static func belongsToBackendChannel(isBackendGroup: Bool, movedToBackendAt: Date?) -> Bool {
+        isBackendGroup || movedToBackendAt != nil
+    }
+
     /// R10 (G6-2): ¿este `member_key` es de un member LEGACY del mundo CloudKit (grupo migrado) en vez de un
     /// `sub` nacido del backend? El `sub` del auth SIEMPRE parsea como UUID (`v_uid::text`, lowercase-hyphenated);
     /// un recordName de CloudKit (`"_…"`) JAMÁS parsea. El discriminador decide en qué NAMESPACE derivar el id

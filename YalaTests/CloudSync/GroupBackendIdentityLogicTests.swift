@@ -87,4 +87,15 @@ struct GroupBackendIdentityLogicTests {
         #expect(!GroupBackendIdentityLogic.isLegacyMemberKey(""))
         #expect(!GroupBackendIdentityLogic.isLegacyMemberKey(SplitMember.deletedUserSentinel))
     }
+
+    // MARK: - belongsToBackendChannel (D1) — pertenencia del GRUPO al canal
+
+    /// Tabla de las DOS formas que D1 nombra. Cobertura DURABLE del predicado: hasta ahora solo lo
+    /// ejercitaba `GroupsIdentityPurgeGateTests`, y ese fichero se va con el transporte CloudKit.
+    @Test func belongsToBackendChannel_bothShapes() {
+        #expect(GroupBackendIdentityLogic.belongsToBackendChannel(isBackendGroup: true, movedToBackendAt: nil))
+        #expect(GroupBackendIdentityLogic.belongsToBackendChannel(isBackendGroup: false, movedToBackendAt: .now))
+        #expect(GroupBackendIdentityLogic.belongsToBackendChannel(isBackendGroup: true, movedToBackendAt: .now))
+        #expect(!GroupBackendIdentityLogic.belongsToBackendChannel(isBackendGroup: false, movedToBackendAt: nil))
+    }
 }

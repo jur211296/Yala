@@ -1040,7 +1040,7 @@ final class GroupService {
                 // C-3: la fila del canal backend RETENIDA tras un cambio de Apple ID (D1) no se re-ancla al
                 // recordName NUEVO — su identidad la resuelve el `sub` de la cuenta Yala. Sin esto, el
                 // backfill estampa el recordName del humano nuevo sobre un member ajeno del grupo anterior.
-                guard !GroupsIdentityPurgeGate.belongsToBackendChannel(
+                guard !GroupBackendIdentityLogic.belongsToBackendChannel(
                     isBackendGroup: group.isBackendGroup, movedToBackendAt: group.movedToBackendAt) else { continue }
                 guard !zoneMembers.contains(where: { $0.cloudKitUserRecordID == recordName }) else { continue }
 
@@ -1080,7 +1080,7 @@ final class GroupService {
                 // `false` y APAGARÍA su `isCurrentUser` — dejando el grupo retenido sin «quién soy»
                 // (balances, participación) justo en el grupo que este fix existe para conservar.
                 if let memberGroup = groupsByZone[member.groupZoneID],
-                   GroupsIdentityPurgeGate.belongsToBackendChannel(
+                   GroupBackendIdentityLogic.belongsToBackendChannel(
                     isBackendGroup: memberGroup.isBackendGroup, movedToBackendAt: memberGroup.movedToBackendAt) {
                     continue
                 }

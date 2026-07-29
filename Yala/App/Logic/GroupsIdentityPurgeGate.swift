@@ -101,21 +101,10 @@ enum GroupsIdentityPurgeGate {
         case retainRevokingRejoinCredentials
     }
 
-    /// Pertenencia al canal BACKEND en sentido AMPLIO: `isBackendGroup` (dueño backend, born-remote o
-    /// adoptado) **o** `movedToBackendAt != nil` (copia CONGELADA — el marcador viajó por CloudKit y el
-    /// miembro aún no re-joineó). D1 nombra AMBAS formas.
-    ///
-    /// OJO: este predicado es el de RETENCIÓN. NO es el predicado correcto para decidir si un grupo
-    /// puede escribir a CKSyncEngine: ahí hay que usar `isBackendGroup || isMigratedFrozen`
-    /// (`GroupFreezeLogic.isFrozen`), porque su mitigación #9 trata a propósito como NO congelado al
-    /// owner tras un reinstall (`movedToBackendAt != nil && ckSystemFieldsData != nil`) y ampliar el
-    /// predicado crudo le quitaría su último camino de subida.
-    static func belongsToBackendChannel(isBackendGroup: Bool, movedToBackendAt: Date?) -> Bool {
-        isBackendGroup || movedToBackendAt != nil
-    }
-
     /// Decisión de una ZONA (la unidad real: los hijos se vinculan por `groupZoneID`). Una zona con
-    /// duplicados pertenece al canal backend si CUALQUIERA de sus filas lo hace.
+    /// duplicados pertenece al canal backend si CUALQUIERA de sus filas lo hace. El predicado de
+    /// pertenencia vive en `GroupBackendIdentityLogic.belongsToBackendChannel` (es del canal NUEVO y
+    /// sobrevive a este fichero, que se va con el transporte CloudKit).
     static func decideForZone(
         rowsInZone: [(isBackendGroup: Bool, movedToBackendAt: Date?)],
         hasCloudSession: Bool
@@ -123,7 +112,8 @@ enum GroupsIdentityPurgeGate {
         // D4: sin identidad Yala viva no hay nada que ancle la retención ⇒ se borra como hoy.
         guard hasCloudSession else { return .deleteLocalRows }
         let anyBackendRow = rowsInZone.contains {
-            belongsToBackendChannel(isBackendGroup: $0.isBackendGroup, movedToBackendAt: $0.movedToBackendAt)
+            GroupBackendIdentityLogic.belongsToBackendChannel(
+                isBackendGroup: $0.isBackendGroup, movedToBackendAt: $0.movedToBackendAt)
         }
         return anyBackendRow ? .retainRevokingRejoinCredentials : .deleteLocalRows
     }
