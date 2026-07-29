@@ -1446,4 +1446,163 @@ struct GroupsSyncClientTests {
         #expect(SyncCadencePolicy.nextAction(outcome: .accountUnavailable, consecutiveTransients: 0)
                 == .stopUntilRelaunch)
     }
+
+    // MARK: - Fase 2 · 2.1 Notificaciones de grupo desde el apply del backend
+
+    /// Colector del `RemoteChangeSet` emitido por el apply (mismo motivo que `CallCounter`: var local
+    /// capturada en closure escapante bajo Swift 6).
+    final class ChangeSetCollector: @unchecked Sendable { var sets: [RemoteChangeSet] = [] }
+
+    private func expenseDelta(
+        id: UUID, group: String = "SplitGroup-A", op: SyncOutboxOp = .upsert, serverSeq: Int64 = 3,
+        amount: String = "25.0000"
+    ) -> GroupPulledDelta {
+        GroupPulledDelta(
+            entityType: GroupEntityEmissionMap.splitExpense.table, groupID: group,
+            rawSyncID: id.uuidString.lowercased(), syncID: id, op: op,
+            fields: ["expense_description": .string("Cena"), "amount": .string(amount),
+                     "currency_code": .string("PEN"), "paid_by_member_key": .string("m1")],
+            fieldHlcs: [:], hlc: "2026-07-15T00:00:00.000Z-0000-000000000000000d",
+            serverSeq: serverSeq, schemaVersion: 1)
+    }
+
+    private func settlementDelta(
+        id: UUID, group: String = "SplitGroup-A", serverSeq: Int64 = 3
+    ) -> GroupPulledDelta {
+        GroupPulledDelta(
+            entityType: GroupEntityEmissionMap.splitSettlement.table, groupID: group,
+            rawSyncID: id.uuidString.lowercased(), syncID: id, op: .upsert,
+            fields: ["from_member_key": .string("m1"), "to_member_key": .string("m2"),
+                     "amount": .string("10.0000"), "currency_code": .string("PEN")],
+            fieldHlcs: [:], hlc: "2026-07-15T00:00:00.000Z-0000-000000000000000e",
+            serverSeq: serverSeq, schemaVersion: 1)
+    }
+
+    /// Un gasto que este device no tenía → `newExpenses`, indexado por el `SplitGroup.id` LOCAL (no por el
+    /// `group_id` del wire, que es el `cloudKitZoneID`): es lo que el consumidor usa para el nombre del
+    /// grupo, el rate-limit y el deep-link.
+    @Test func applyPulledPage_newExpense_emitsNewExpenseKeyedByLocalGroupID() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let group = makeBackendGroup(zoneID: "SplitGroup-A", context: context)
+        try context.save()
+
+        let collector = ChangeSetCollector()
+        let client = GroupsSyncClient(onRemoteChanges: { collector.sets.append($0) })
+        let cursor = try client.loadOrCreateCursor(context)
+        let expenseID = UUID()
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [expenseDelta(id: expenseID)], cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+
+        #expect(collector.sets.count == 1)
+        let set = try #require(collector.sets.first)
+        #expect(set.newExpenses.count == 1)
+        #expect(set.newExpenses.first?.id == expenseID)
+        #expect(set.newExpenses.first?.groupID == group.id)
+        #expect(set.modifiedExpenses.isEmpty)
+    }
+
+    /// Segunda entrega del MISMO gasto (edición ajena o eco) → `modifiedExpenses`, no `newExpenses`.
+    @Test func applyPulledPage_knownExpense_emitsModified() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        makeBackendGroup(zoneID: "SplitGroup-A", context: context)
+        try context.save()
+
+        let collector = ChangeSetCollector()
+        let client = GroupsSyncClient(onRemoteChanges: { collector.sets.append($0) })
+        let cursor = try client.loadOrCreateCursor(context)
+        let expenseID = UUID()
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [expenseDelta(id: expenseID)], cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [expenseDelta(id: expenseID, serverSeq: 4, amount: "30.0000")],
+                            cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+
+        #expect(collector.sets.count == 2)
+        #expect(collector.sets.last?.newExpenses.isEmpty == true)
+        #expect(collector.sets.last?.modifiedExpenses.first?.id == expenseID)
+    }
+
+    /// Una liquidación nueva notifica; su modificación NO (paridad con la clasificación del fetch CloudKit).
+    @Test func applyPulledPage_settlement_notifiesOnlyOnInsert() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        makeBackendGroup(zoneID: "SplitGroup-A", context: context)
+        try context.save()
+
+        let collector = ChangeSetCollector()
+        let client = GroupsSyncClient(onRemoteChanges: { collector.sets.append($0) })
+        let cursor = try client.loadOrCreateCursor(context)
+        let settlementID = UUID()
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [settlementDelta(id: settlementID)], cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [settlementDelta(id: settlementID, serverSeq: 4)],
+                            cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+
+        #expect(collector.sets.first?.newSettlements.first?.id == settlementID)
+        #expect(collector.sets.count == 1)  // la 2ª página no tuvo NADA que notificar
+    }
+
+    /// Un tombstone no notifica (el consumidor no podría resolver la fila borrada).
+    @Test func applyPulledPage_tombstone_doesNotNotify() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        makeBackendGroup(zoneID: "SplitGroup-A", context: context)
+        try context.save()
+
+        let collector = ChangeSetCollector()
+        let client = GroupsSyncClient(onRemoteChanges: { collector.sets.append($0) })
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [expenseDelta(id: UUID(), op: .tombstone)], cursors: [:],
+                            memberships: []),
+            cursor: cursor, context: context)
+
+        #expect(collector.sets.isEmpty)
+    }
+
+    /// Zona sin `SplitGroup` local: se descarta en la traducción (sin grupo no hay nombre ni deep-link).
+    /// El delta SÍ se aplica — solo se calla la notificación.
+    @Test func applyPulledPage_unknownZone_appliesButDoesNotNotify() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let collector = ChangeSetCollector()
+        let client = GroupsSyncClient(onRemoteChanges: { collector.sets.append($0) })
+        let cursor = try client.loadOrCreateCursor(context)
+        let expenseID = UUID()
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [expenseDelta(id: expenseID, group: "SplitGroup-Huerfana")],
+                            cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+
+        #expect(collector.sets.isEmpty)
+        #expect(try context.fetch(FetchDescriptor<SplitExpense>()).count == 1)
+    }
+
+    /// El `GroupMeta` de la MISMA página basta para resolver el grupo: la traducción corre al cierre, con
+    /// todos los inserts de la página ya en el contexto (un grupo recién descubierto también notifica).
+    @Test func applyPulledPage_groupMetaInSamePage_resolvesGroupID() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let collector = ChangeSetCollector()
+        let client = GroupsSyncClient(onRemoteChanges: { collector.sets.append($0) })
+        let cursor = try client.loadOrCreateCursor(context)
+        let expenseID = UUID()
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [expenseDelta(id: expenseID), groupMetaDelta(serverSeq: 5)],
+                            cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+
+        let group = try #require(try context.fetch(FetchDescriptor<SplitGroup>()).first)
+        #expect(collector.sets.first?.newExpenses.first?.groupID == group.id)
+    }
 }

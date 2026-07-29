@@ -90,6 +90,13 @@ final class GroupsSyncClient {
     /// (el cliente ya lo es → no cruza actor). NO se gatea por `applicationState`: el archivo no importa
     /// UIKit y un reload en background es inofensivo (una vista no montada no recomputa su body).
     private let onRemoteChangesApplied: @MainActor () -> Void
+    /// Fase 2 (2.1): consumidor de las notificaciones locales de grupo. El canal CloudKit clasificaba los
+    /// records del fetch en un `RemoteChangeSet` y se lo pasaba a `GroupNotificationService` desde
+    /// `SplitSyncManager.processPendingRemoteChanges`; con el transporte camino de la Fase 3, el apply del
+    /// canal backend es quien tiene que emitirlo. DEFAULT = `GroupNotificationService.shared`. Inyectable
+    /// para tests (capturar el set sin montar el singleton ni `NotificationService`). `@MainActor` (el
+    /// cliente ya lo es → no cruza actor).
+    private let onRemoteChanges: @MainActor (RemoteChangeSet) -> Void
     /// Cliente del snapshot Merkle de Grupos (`GET /groups/merkle`) — endurecimiento B1. Inyectable para
     /// tests (stub HTTP). Solo se usa con el flag ON (la verificación se cablea en `syncCycleOnce`).
     private let merkleClient: GroupsMerkleClient
@@ -194,7 +201,9 @@ final class GroupsSyncClient {
         deviceTokenProvider: @escaping @MainActor () -> String? = { nil },
         forceRefreshTokenProvider: @escaping @MainActor () async -> String? =
             { await CloudAuthService.shared.forceRefreshAccessToken() },
-        onRemoteChangesApplied: @escaping @MainActor () -> Void = { SessionState.shared.incrementDataVersion() }
+        onRemoteChangesApplied: @escaping @MainActor () -> Void = { SessionState.shared.incrementDataVersion() },
+        onRemoteChanges: @escaping @MainActor (RemoteChangeSet) -> Void =
+            { GroupNotificationService.shared.processRemoteChanges($0) }
     ) {
         self.baseURL = baseURL
         self.tokenProvider = tokenProvider
@@ -206,6 +215,7 @@ final class GroupsSyncClient {
         self.deviceTokenProvider = deviceTokenProvider
         self.now = now
         self.onRemoteChangesApplied = onRemoteChangesApplied
+        self.onRemoteChanges = onRemoteChanges
         self.clock = HLCClock(nodeID: nodeID)
         // Default: mismo baseURL + los providers de sesión del canal (el Merkle de Grupos NO manda
         // capability-set). Los tests inyectan uno con `StubHTTPSession`.
@@ -1436,6 +1446,7 @@ final class GroupsSyncClient {
     func applyPulledPage(_ page: GroupPulledPage, cursor: GroupSyncCursor, context: ModelContext) -> Bool {
         var bridgeExpenseIDs: [UUID] = []
         var bridgeSettlementIDs: [UUID] = []
+        var notify = PendingNotificationChanges()
         var maxSeqByGroup = decodeCursors(cursor.groupCursorsJSON)
         // H-2026-07-18-3: grupos cuyo cursor hay que RESETEAR a 0 tras esta página (re-join del propio user:
         // pendingApproval→active). Lo llena `applyMember`; se aplica DESPUÉS del merge de `page.cursors`.
@@ -1454,7 +1465,8 @@ final class GroupsSyncClient {
                     try applyDelta(delta, context: context,
                                    bridgeExpenseIDs: &bridgeExpenseIDs,
                                    bridgeSettlementIDs: &bridgeSettlementIDs,
-                                   cursorResetGroupIDs: &cursorResetGroupIDs)
+                                   cursorResetGroupIDs: &cursorResetGroupIDs,
+                                   notify: &notify)
                     // Avanzar el cursor del grupo al server_seq máximo aplicado.
                     let prev = maxSeqByGroup[delta.groupID] ?? 0
                     if delta.serverSeq > prev { maxSeqByGroup[delta.groupID] = delta.serverSeq }
@@ -1483,8 +1495,57 @@ final class GroupsSyncClient {
             GroupsSyncBreadcrumb.groupsRejoinCursorReset(groups: cursorResetGroupIDs.count)
         }
         SessionState.shared.markRemoteChangePending()
+        // 2.1: notificaciones locales de grupo. Post-save (como el canal CloudKit, que las procesaba en
+        // `processPendingRemoteChanges` tras persistir): un save fallido retornó arriba y no notifica nada
+        // que el usuario no tenga en el store.
+        let changes = resolveNotificationChanges(notify, context: context)
+        if !changes.isEmpty { onRemoteChanges(changes) }
         scheduleBridge(expenseIDs: bridgeExpenseIDs, settlementIDs: bridgeSettlementIDs)
         return true
+    }
+
+    /// Acumulador por-página de lo que puede notificar (2.1). Guarda el `group_id` del wire (==
+    /// `cloudKitZoneID`); la traducción a `SplitGroup.id` —que es por lo que indexa `RemoteChangeSet`— se
+    /// hace al CIERRE de la página, cuando todo `GroupMeta` de ESTA página ya está insertado.
+    private struct PendingNotificationChanges {
+        var newExpenses: [(id: UUID, zone: String)] = []
+        var modifiedExpenses: [(id: UUID, zone: String)] = []
+        var newSettlements: [(id: UUID, zone: String)] = []
+        var newMembers: [(id: UUID, zone: String)] = []
+        var newPendingMembers: [(id: UUID, zone: String)] = []
+    }
+
+    /// Traduce el acumulador por-zona al `RemoteChangeSet` que consume `GroupNotificationService`. Una zona
+    /// sin `SplitGroup` local se DESCARTA: sin grupo no hay nombre ni deep-link que ofrecer, y el filtro de
+    /// participación del consumidor tampoco podría resolver al miembro.
+    private func resolveNotificationChanges(
+        _ pending: PendingNotificationChanges, context: ModelContext
+    ) -> RemoteChangeSet {
+        var cache: [String: UUID?] = [:]
+        func groupID(_ zone: String) -> UUID? {
+            if let cached = cache[zone] { return cached }
+            do {
+                let resolved = try fetchSplitGroup(zoneID: zone, context: context)?.id
+                cache[zone] = resolved   // cachea solo el resultado de un fetch EXITOSO (incl. nil legítimo)
+                return resolved
+            } catch {
+                // Fetch fallido: no se cachea (envenenaría toda la zona en esta página) y no se notifica.
+                #if DEBUG
+                logger.error("GroupsSync: resolveNotificationChanges fetch falló para \(zone): \(error)")
+                #endif
+                return nil
+            }
+        }
+        func mapped(_ entries: [(id: UUID, zone: String)]) -> [(id: UUID, groupID: UUID)] {
+            entries.compactMap { entry in groupID(entry.zone).map { (id: entry.id, groupID: $0) } }
+        }
+        var set = RemoteChangeSet()
+        set.newExpenses = mapped(pending.newExpenses)
+        set.modifiedExpenses = mapped(pending.modifiedExpenses)
+        set.newSettlements = mapped(pending.newSettlements)
+        set.newMembers = mapped(pending.newMembers)
+        set.newPendingMembers = mapped(pending.newPendingMembers)
+        return set
     }
 
     private func applyDelta(
@@ -1492,14 +1553,16 @@ final class GroupsSyncClient {
         context: ModelContext,
         bridgeExpenseIDs: inout [UUID],
         bridgeSettlementIDs: inout [UUID],
-        cursorResetGroupIDs: inout Set<String>
+        cursorResetGroupIDs: inout Set<String>,
+        notify: inout PendingNotificationChanges
     ) throws {
         switch delta.entityType {
         case GroupEntityEmissionMap.splitExpense.table:
             guard let id = delta.syncID else {
                 GroupsSyncBreadcrumb.groupsApplySkippedDelta(entity: delta.entityType); return
             }
-            try applyExpense(delta, id: id, context: context, bridgeExpenseIDs: &bridgeExpenseIDs)
+            try applyExpense(delta, id: id, context: context, bridgeExpenseIDs: &bridgeExpenseIDs,
+                             notify: &notify)
         case GroupEntityEmissionMap.splitShare.table:
             guard let id = delta.syncID else {
                 GroupsSyncBreadcrumb.groupsApplySkippedDelta(entity: delta.entityType); return
@@ -1509,7 +1572,8 @@ final class GroupsSyncClient {
             guard let id = delta.syncID else {
                 GroupsSyncBreadcrumb.groupsApplySkippedDelta(entity: delta.entityType); return
             }
-            try applySettlement(delta, id: id, context: context, bridgeSettlementIDs: &bridgeSettlementIDs)
+            try applySettlement(delta, id: id, context: context, bridgeSettlementIDs: &bridgeSettlementIDs,
+                                notify: &notify)
         case GroupEntityEmissionMap.splitGroup.table:
             try applyGroupMeta(delta, context: context)
         case "group_members":
@@ -1521,12 +1585,21 @@ final class GroupsSyncClient {
     }
 
     private func applyExpense(
-        _ delta: GroupPulledDelta, id: UUID, context: ModelContext, bridgeExpenseIDs: inout [UUID]
+        _ delta: GroupPulledDelta, id: UUID, context: ModelContext, bridgeExpenseIDs: inout [UUID],
+        notify: inout PendingNotificationChanges
     ) throws {
         let existing = try fetchSplitExpense(id: id, context: context)
         if delta.op == .tombstone {
             if let existing { context.delete(existing) }
             return
+        }
+        // 2.1: nuevo vs modificado, igual que la clasificación del fetch CloudKit (que lo decidía con el
+        // pre-fetch de IDs del batch). El filtro de participación —y la exclusión de los opening balances
+        // y de lo que escribió el propio usuario— vive en el consumidor, que también alimenta al bridge.
+        if existing == nil {
+            notify.newExpenses.append((id: id, zone: delta.groupID))
+        } else {
+            notify.modifiedExpenses.append((id: id, zone: delta.groupID))
         }
         let model = existing ?? SplitExpense()
         model.id = id
@@ -1565,13 +1638,17 @@ final class GroupsSyncClient {
     }
 
     private func applySettlement(
-        _ delta: GroupPulledDelta, id: UUID, context: ModelContext, bridgeSettlementIDs: inout [UUID]
+        _ delta: GroupPulledDelta, id: UUID, context: ModelContext, bridgeSettlementIDs: inout [UUID],
+        notify: inout PendingNotificationChanges
     ) throws {
         let existing = try fetchSplitSettlement(id: id, context: context)
         if delta.op == .tombstone {
             if let existing { context.delete(existing) }
             return
         }
+        // 2.1: solo las liquidaciones NUEVAS notifican (el canal CloudKit tampoco clasificaba las
+        // modificaciones de settlement).
+        if existing == nil { notify.newSettlements.append((id: id, zone: delta.groupID)) }
         let model = existing ?? SplitSettlement()
         model.id = id
         model.groupZoneID = delta.groupID
