@@ -1605,4 +1605,180 @@ struct GroupsSyncClientTests {
         let group = try #require(try context.fetch(FetchDescriptor<SplitGroup>()).first)
         #expect(collector.sets.first?.newExpenses.first?.groupID == group.id)
     }
+
+    // MARK: - Fase 2 · 2.2 Notificaciones de miembro desde el apply del backend
+
+    private func memberDelta(
+        memberKey: String, status: SplitMemberStatus, userID: String?, role: String = "member",
+        group: String = "SplitGroup-A", serverSeq: Int64 = 3
+    ) -> GroupPulledDelta {
+        var fields: [String: WireValue] = [
+            "display_name": .string("Alice"),
+            "role": .string(role),
+            "status": .string(status.rawValue),
+            "joined_at": .string("2026-07-15T00:00:00.000Z"),
+        ]
+        if let userID { fields["user_id"] = .string(userID) }
+        return GroupPulledDelta(
+            entityType: "group_members", groupID: group, rawSyncID: memberKey, syncID: nil,
+            op: .upsert, fields: fields, fieldHlcs: [:],
+            hlc: "2026-07-15T00:00:00.000Z-0000-000000000000000f",
+            serverSeq: serverSeq, schemaVersion: 1)
+    }
+
+    /// Miembro activo ajeno en una zona ASENTADA → «se unió al grupo».
+    @Test func applyMember_newActive_inEstablishedZone_emitsJoined() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        makeBackendGroup(zoneID: "SplitGroup-A", context: context)
+        try context.save()
+
+        let collector = ChangeSetCollector()
+        let client = GroupsSyncClient(currentUserIDProvider: { "auth-uid-me" },
+                                      onRemoteChanges: { collector.sets.append($0) })
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            GroupPulledPage(
+                deltas: [memberDelta(memberKey: "11111111-1111-1111-1111-111111111111",
+                                     status: .active, userID: "auth-uid-otro")],
+                cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+
+        #expect(collector.sets.first?.newMembers.count == 1)
+        #expect(collector.sets.first?.newPendingMembers.isEmpty == true)
+    }
+
+    /// AUTOEXCLUSIÓN por identidad: el miembro del PROPIO usuario jamás notifica. En este canal la
+    /// identidad es el `sub` (`user_id` del wire), no el record name de CloudKit. Case-insensitive.
+    @Test func applyMember_ownMember_neverNotifies() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        makeBackendGroup(zoneID: "SplitGroup-A", context: context)
+        try context.save()
+
+        let collector = ChangeSetCollector()
+        let client = GroupsSyncClient(currentUserIDProvider: { "AUTH-UID-ME" },
+                                      onRemoteChanges: { collector.sets.append($0) })
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            GroupPulledPage(
+                deltas: [memberDelta(memberKey: "11111111-1111-1111-1111-111111111111",
+                                     status: .active, userID: "auth-uid-me")],
+                cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+
+        #expect(collector.sets.isEmpty)
+    }
+
+    /// BASELINE: durante el primer import de la zona se suprime TODO (joined y pending) — los miembros
+    /// preexistentes del grupo al que uno acaba de unirse no son altas nuevas.
+    @Test func applyMember_duringInitialImport_suppressesJoinedAndPending() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let group = makeBackendGroup(zoneID: "SplitGroup-A", context: context)
+        group.initialMemberImportStartedAt = Date(timeIntervalSince1970: 1_700_000_000)
+        // Admin del propio usuario: sin el baseline, el pending SÍ notificaría.
+        let me = SplitMember(groupZoneID: "SplitGroup-A", displayName: "Yo", role: "admin")
+        me.userID = "auth-uid-me"
+        context.insert(me)
+        try context.save()
+
+        let collector = ChangeSetCollector()
+        let client = GroupsSyncClient(
+            currentUserIDProvider: { "auth-uid-me" },
+            now: { Date(timeIntervalSince1970: 1_700_000_060) },  // 1 min dentro de la ventana de 15
+            onRemoteChanges: { collector.sets.append($0) })
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            GroupPulledPage(
+                deltas: [memberDelta(memberKey: "11111111-1111-1111-1111-111111111111",
+                                     status: .active, userID: "auth-uid-otro"),
+                         memberDelta(memberKey: "22222222-2222-2222-2222-222222222222",
+                                     status: .pendingApproval, userID: "auth-uid-tercero", serverSeq: 4)],
+                cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+
+        #expect(collector.sets.isEmpty)
+    }
+
+    /// Una solicitud pendiente solo notifica al ADMIN. El admin se resuelve por el `sub`, no por
+    /// `isCurrentUser` (que el apply del backend jamás setea).
+    @Test func applyMember_pendingApproval_notifiesAdminOnly() throws {
+        for (role, expected) in [("admin", 1), ("member", 0)] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            makeBackendGroup(zoneID: "SplitGroup-A", context: context)
+            let me = SplitMember(groupZoneID: "SplitGroup-A", displayName: "Yo", role: role)
+            me.userID = "auth-uid-me"
+            context.insert(me)
+            try context.save()
+
+            let collector = ChangeSetCollector()
+            let client = GroupsSyncClient(currentUserIDProvider: { "auth-uid-me" },
+                                          onRemoteChanges: { collector.sets.append($0) })
+            let cursor = try client.loadOrCreateCursor(context)
+            client.applyPulledPage(
+                GroupPulledPage(
+                    deltas: [memberDelta(memberKey: "11111111-1111-1111-1111-111111111111",
+                                         status: .pendingApproval, userID: "auth-uid-otro")],
+                    cursors: [:], memberships: []),
+                cursor: cursor, context: context)
+
+            #expect(collector.sets.first?.newPendingMembers.count ?? 0 == expected,
+                    "role=\(role) debía producir \(expected) solicitudes notificadas")
+            #expect(collector.sets.first?.newMembers.isEmpty ?? true)
+        }
+    }
+
+    /// Un grupo que NACE del pull arma el baseline: sus miembros preexistentes vienen detrás.
+    @Test func applyGroupMeta_bornRemote_armsInitialImportBaseline() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let stamp = Date(timeIntervalSince1970: 1_700_000_000)
+        let client = GroupsSyncClient(now: { stamp })
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [groupMetaDelta()], cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+
+        let group = try #require(try context.fetch(FetchDescriptor<SplitGroup>()).first)
+        #expect(group.initialMemberImportStartedAt == stamp)
+        #expect(group.isBackendGroup)
+    }
+
+    /// Agotar el pull cierra el baseline (gemelo de `didFetchRecordZoneChanges`): las notificaciones de
+    /// membership se reanudan sin esperar a que venza la ventana de 15 min.
+    @Test func pullUntilExhausted_withDeltas_clearsInitialImportBaseline() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let group = makeBackendGroup(zoneID: "SplitGroup-A", context: context)
+        group.initialMemberImportStartedAt = Date(timeIntervalSince1970: 1_700_000_000)
+        try context.save()
+
+        let stub = SequenceStubHTTPSession([
+            .init(data: pageJSON(shareID: UUID(), group: "SplitGroup-A", serverSeq: 5, cursor: 5), status: 200),
+            .init(data: emptyPageJSON, status: 200),
+        ], fallback: .init(data: emptyPageJSON, status: 200))
+        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub)
+        let outcome = await client.pullUntilExhausted(context: context, limit: 1)
+
+        #expect(outcome == .completed(pages: 1, deltasApplied: 1))
+        #expect(group.initialMemberImportStartedAt == nil)
+    }
+
+    /// Un ciclo OCIOSO (sin deltas) no toca el baseline — el import inicial sigue abierto y no paga fetch.
+    @Test func pullUntilExhausted_idleCycle_leavesBaselineIntact() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let group = makeBackendGroup(zoneID: "SplitGroup-A", context: context)
+        let stamp = Date(timeIntervalSince1970: 1_700_000_000)
+        group.initialMemberImportStartedAt = stamp
+        try context.save()
+
+        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: StubHTTPSession())
+        _ = await client.pullUntilExhausted(context: context, limit: 1)
+
+        #expect(group.initialMemberImportStartedAt == stamp)
+    }
 }

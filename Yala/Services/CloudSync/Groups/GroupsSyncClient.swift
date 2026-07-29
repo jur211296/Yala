@@ -1348,7 +1348,13 @@ final class GroupsSyncClient {
                     // H-2026-07-18-5: bump VIVO de refresh POR-CICLO (no por-página) — solo si el ciclo
                     // aplicó deltas que cambian contenido. `markRemoteChangePending` (por-página, en
                     // `applyPulledPage`) se CONSERVA como red del caso background/vista-no-montada.
-                    if totalDeltas > 0 { onRemoteChangesApplied() }
+                    if totalDeltas > 0 {
+                        // 2.2: el pull se AGOTÓ ⇒ el contenido de las zonas recién descubiertas ya bajó, así
+                        // que las notificaciones de membership pueden reanudarse sin esperar los 15 min.
+                        // Mismo gate que el bump de refresh: un ciclo ocioso no paga el fetch.
+                        completeInitialMemberImport(context: context)
+                        onRemoteChangesApplied()
+                    }
                     return .completed(pages: pages, deltasApplied: totalDeltas)
                 }
                 pages += 1
@@ -1513,6 +1519,113 @@ final class GroupsSyncClient {
         var newSettlements: [(id: UUID, zone: String)] = []
         var newMembers: [(id: UUID, zone: String)] = []
         var newPendingMembers: [(id: UUID, zone: String)] = []
+        /// Caches por-página de la clasificación de membership (2.2) — evitan re-fetchear por cada miembro
+        /// del mismo grupo. Seguros por página: el baseline solo puede moverse HACIA `initialImport` (un
+        /// `GroupMeta` insertado a media página), nunca al revés.
+        var baselines: [String: MemberChangeNotificationLogic.ZoneBaseline] = [:]
+        var isAdminByZone: [String: Bool] = [:]
+    }
+
+    /// 2.2: clasifica un `SplitMember` que el pull acaba de insertar. Preserva las DOS condiciones que la
+    /// regla de área exige (bug «Jür se unió al grupo»): baseline de primer import de la zona **y**
+    /// autoexclusión por identidad. Sin la segunda, el invitado recibe «X se unió al grupo» por el miembro
+    /// del owner en cuanto baja la zona. La identidad de ESTE canal es el `sub` de la cuenta Yala
+    /// (`SplitMember.userID`), nunca `isCurrentUser` — `applyMember` jamás setea ese flag.
+    private func classifyNewMemberForNotification(
+        _ model: SplitMember, zone: String, context: ModelContext,
+        notify: inout PendingNotificationChanges
+    ) {
+        // `isCurrentUserAdmin` solo decide el caso pending → no se paga su fetch para los demás.
+        let isPending = model.memberStatus == .pendingApproval
+        let isAdmin = isPending && isCurrentUserAdminOfZone(zone, context: context,
+                                                           cache: &notify.isAdminByZone)
+        switch MemberChangeNotificationLogic.classifyNewMember(
+            rawStatus: model.status,
+            isCurrentUserAdmin: isAdmin,
+            // La comparación de la lógica pura es exacta; el canal backend normaliza el `sub` en TODAS sus
+            // comparaciones de identidad (`GroupBackendIdentityLogic.isCurrentUser`), así que se pasan ya
+            // normalizados: una diferencia de caso no puede convertirse en un «se unió» sobre uno mismo.
+            memberUserRecordID: model.userID?.lowercased(),
+            currentUserRecordID: currentUserIDProvider()?.lowercased(),
+            zoneBaseline: zoneBaseline(zone, context: context, cache: &notify.baselines)
+        ) {
+        case .pendingRequestForAdmin:
+            notify.newPendingMembers.append((id: model.id, zone: zone))
+        case .joined:
+            notify.newMembers.append((id: model.id, zone: zone))
+        case .ignore:
+            break
+        }
+    }
+
+    /// Baseline de primer import de la zona. Un fetch fallido devuelve `.initialImport` (dirección segura:
+    /// callar, jamás notificar de más) y NO se cachea.
+    private func zoneBaseline(
+        _ zone: String, context: ModelContext,
+        cache: inout [String: MemberChangeNotificationLogic.ZoneBaseline]
+    ) -> MemberChangeNotificationLogic.ZoneBaseline {
+        if let cached = cache[zone] { return cached }
+        let group: SplitGroup?
+        do {
+            group = try fetchSplitGroup(zoneID: zone, context: context)
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: zoneBaseline fetch falló para \(zone): \(error)")
+            #endif
+            return .initialImport
+        }
+        let baseline = MemberChangeNotificationLogic.zoneBaseline(
+            groupExistsLocally: group != nil,
+            importStartedAt: group?.initialMemberImportStartedAt,
+            now: now())
+        cache[zone] = baseline
+        return baseline
+    }
+
+    /// ¿El usuario de la sesión es admin de esta zona? Resuelto por el `sub` (`SplitMember.userID`), que es
+    /// la identidad del canal backend. Un fetch fallido devuelve `false` (una solicitud pendiente no
+    /// notificada es mejor que notificarla a quien no la puede aprobar) y NO se cachea.
+    private func isCurrentUserAdminOfZone(
+        _ zone: String, context: ModelContext, cache: inout [String: Bool]
+    ) -> Bool {
+        if let cached = cache[zone] { return cached }
+        guard let uid = currentUserIDProvider(), !uid.isEmpty else { return false }
+        let members: [SplitMember]
+        do {
+            members = try context.fetch(FetchDescriptor<SplitMember>(
+                predicate: #Predicate { $0.groupZoneID == zone }))
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: isCurrentUserAdminOfZone fetch falló para \(zone): \(error)")
+            #endif
+            return false
+        }
+        let result = members.contains {
+            $0.isAdmin && GroupBackendIdentityLogic.isCurrentUser(memberUserID: $0.userID, currentUserID: uid)
+        }
+        cache[zone] = result
+        return result
+    }
+
+    /// Cierra el baseline de primer import de las zonas que lo tuvieran abierto — gemelo de
+    /// `completeInitialMemberImport` del canal CloudKit, que lo hacía por zona al cerrar su ciclo de fetch.
+    /// Aquí el pull es global, así que agotarlo las cierra todas. El filtro va EN MEMORIA a propósito (un
+    /// `#Predicate` sobre un opcional es el gotcha documentado) y la escritura bajo el autor del outbox: es
+    /// una marca LOCAL que no debe re-emitirse.
+    private func completeInitialMemberImport(context: ModelContext) {
+        do {
+            let backendGroups = try context.fetch(FetchDescriptor<SplitGroup>(
+                predicate: #Predicate { $0.isBackendGroup == true }))
+            let pending = backendGroups.filter { $0.initialMemberImportStartedAt != nil }
+            guard !pending.isEmpty else { return }
+            try saveWithAuthor(context) {
+                for group in pending { group.initialMemberImportStartedAt = nil }
+            }
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: completeInitialMemberImport falló: \(error)")
+            #endif
+        }
     }
 
     /// Traduce el acumulador por-zona al `RemoteChangeSet` que consume `GroupNotificationService`. Una zona
@@ -1577,7 +1690,8 @@ final class GroupsSyncClient {
         case GroupEntityEmissionMap.splitGroup.table:
             try applyGroupMeta(delta, context: context)
         case "group_members":
-            try applyMember(delta, context: context, cursorResetGroupIDs: &cursorResetGroupIDs)
+            try applyMember(delta, context: context, cursorResetGroupIDs: &cursorResetGroupIDs,
+                            notify: &notify)
         default:
             GroupsSyncBreadcrumb.groupsApplySkippedDelta(entity: delta.entityType)
             return  // entidad no cableada al apply
@@ -1689,6 +1803,12 @@ final class GroupsSyncClient {
         if existing == nil {
             // C1 write-site (2): born-remote del pull backend → marca el grupo como del canal backend.
             model.isBackendGroup = true
+            // 2.2 (baseline de primer import, bug «Jür se unió al grupo»): un SplitGroup que NACE del pull
+            // implica que sus miembros preexistentes vienen detrás — suprimir sus notificaciones de
+            // membership hasta que el pull se agote (`completeInitialMemberImport`) o venza la ventana de
+            // 15 min, que auto-sana. El grupo que crea el propio usuario no pasa por aquí (lo materializa
+            // `GroupBackendMembershipService` server-first) ⇒ el creador no sufre la supresión.
+            model.initialMemberImportStartedAt = now()
             context.insert(model)
         } else if !model.isBackendGroup {
             // C3 (G6-2) ADOPCIÓN ATÓMICA: un SplitGroup CloudKit PREEXISTENTE que aparece en el pull backend
@@ -1702,7 +1822,8 @@ final class GroupsSyncClient {
     }
 
     private func applyMember(
-        _ delta: GroupPulledDelta, context: ModelContext, cursorResetGroupIDs: inout Set<String>
+        _ delta: GroupPulledDelta, context: ModelContext, cursorResetGroupIDs: inout Set<String>,
+        notify: inout PendingNotificationChanges
     ) throws {
         // PULL-ONLY: identidad server-side = member_key (string, en el `sync_id` del wire; el
         // `cloudKitUserRecordID` es su ESPACIO paralelo solo para members preexistentes del mundo CloudKit).
@@ -1748,7 +1869,10 @@ final class GroupsSyncClient {
         // Presente-y-null (anonimización del server) NULLea el campo (`wireString(.null) == nil`), igual que
         // `note`; ausente = no tocar (PATCH parcial). Cierra el residual documentado del commit G2.
         if let v = f["user_id"] { model.userID = wireString(v) }
-        if existing == nil { context.insert(model) }
+        if existing == nil {
+            context.insert(model)
+            classifyNewMemberForNotification(model, zone: delta.groupID, context: context, notify: &notify)
+        }
 
         // A2 RE-DRIVE: si el member aplicado es el PROPIO usuario (userID == auth uid) y su status
         // TRANSICIONA a "active", revivir las filas dead-lettered por "upstream_400:yala_not_authorized"
