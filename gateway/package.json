@@ -7,6 +7,8 @@
   "scripts": {
     "sync:manifest": "cp ../capability_manifest.json ./capability_manifest.json && cp ../group_capability_manifest.json ./group_capability_manifest.json",
     "dev": "wrangler dev",
+    "migrate:staging": "wrangler d1 migrations apply yala-gateway-staging --remote",
+    "migrate:production": "wrangler d1 migrations apply yala-gateway-production --env production --remote",
     "predeploy:staging": "npm run sync:manifest",
     "deploy:staging": "wrangler deploy",
     "predeploy:production": "npm run sync:manifest",
