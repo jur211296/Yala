@@ -110,6 +110,46 @@ Aterrizó en `21dcd465` (gateway) + `5010db6a` (cliente) — los mismos dos comm
 
 **Runbook de despliegue escrito y NO ejecutado** (confirmado): `deploy:staging` → `deploy:production` → verificar que `POST /groups/rpc/migrate_group` con JWT válido da **404 `yala_bad_request` esperando ≥30 s** (hay ~15 s de 404-con-envelope por propagación de Cloudflare: un 404 inmediato no prueba nada). `public.migrate_group` **se queda en la base**, inerte. Y el deploy de `clientCapability`/`clientCapabilityAt` a CloudKit Production queda **CANCELADO, no aplazado**.
 
+## 3.4 · Día 2 (2026-07-29) — qué se cerró, qué queda y qué NO hay que repetir
+
+**Todo lo de abajo está ya en su sitio durable** (Lista Negra de `planning/TESTING-STRATEGY.md`,
+`.claude/rules/`, `qa/coverage-index.json`, [[MODO-NUBE-FASE2-BRIEF]]). Esta sección es el índice, no
+la fuente.
+
+### Cerrado
+
+| Qué | Cómo quedó |
+|---|---|
+| **Fase 1 CERRADA de verdad** | Desplegada. Staging `38c67069`, producción **`09bfa839`** (verificado por ID de versión, no por una respuesta sana: la versión vieja también servía un `/config` correcto) |
+| **Bloqueante #0** (cover pegado) | Fix `66960f7d` + verificado aquí **9/9 en iOS 27.0** con el test sin modificar, `Tap fab_new_transaction` 1 vez en las nueve |
+| **Bloqueante #2** (staging roto) | Migración D1 aplicada + `migrate:staging`/`migrate:production` en `gateway/package.json`, que era la causa raíz |
+| **#11** (`migrate_group`) | `EXECUTE` revocado a `authenticated` en los DOS entornos, función viva, snapshot `.ddl` actualizado |
+| **PITR** | Decisión consciente de NO contratarlo + D-A3 retrasa el borrado **2 días** (ver su REVISIÓN en [[MODO-NUBE-DECISIONES-ESCENARIOS]]) |
+| **Fase 2, 2.1–2.5** | Cinco commits validados. `GroupsSmokeUITests` 8/8 en 26.4 **y** 27.0 tras cambiar el aterrizaje a `-uitest-deeplink` |
+| **Guard del forzado de versión** | `gateway/test/wrangler.forceupdate.test.ts`, verificado por mutación |
+
+### Abierto, y el orden importa
+
+1. **2.6** (identidad del miembro) — chip lanzado en la otra Mac. Coordenadas medidas y **sin cambios** tras la Fase 2: `GroupService:992`, callsites `:1043`/`:1083`, `GroupExpenseService:621`, `GroupJoinReconciler:284`, `GroupSettingsView:698`, helper en `GroupsIdentityPurgeGate:113`.
+2. **2.7** (seam del handover) — chip aparte, después de 2.6.
+3. **Fase 3** — exige el plan de rollback reescrito (§6 del plan) **y** el borrado manual de los gastos de grupo del owner (§1.1). Ese borrado es lo único que depende del owner y puede solaparse con 2.6/2.7.
+4. **Fase 4** — la única irreversible, y está **comprometida antes de 2.1**: la validación de la Fase 1 aceptó un hueco de tres piezas sin cobertura «SOLO porque mueren en la Fase 4».
+5. **Bloqueante #4** — dos líneas en `CloudBackendConfig`. **Es el pase de validación, no el último ítem de una lista**: es lo que hace verificable todo lo que hoy se configuró a ciegas (Google, Authorized Client IDs, anon key, schema, el `revoke`).
+
+### Tres cosas que hay que saber ANTES de tocar el #4
+
+- **El pase tiene que hacerse en la Mac con SDK 27.0.** Las dos Macs tienen Xcode distinto — ésta Xcode-beta/SDK 27.0, la otra Xcode 26.6/SDK 26.5, sin runtime 27.x instalable. ⇒ **ninguna receta con un runtime hardcodeado es portable**; comprobar con `xcodebuild -showBuildSettings | grep SDK_NAME`. Ya costó un chip mal escrito.
+- **`config_isConfigured_inTestScheme` cambia de expectativa en ese MISMO commit.** Hoy es rojo-conocido con el scheme `Yala` porque pinnea «producción no configurada»; al cablear las dos líneas pasa a rojo-NUEVO si no se actualiza a la vez.
+- **La verificación del 404 de `migrate_group` exige JWT válido** — el handler autentica primero a propósito, para no ser un oráculo de enumeración. Sin sign-in real no se puede comprobar, y hoy la puerta la cierra el `revoke`, no el gateway.
+
+### Lo que NO hay que repetir (errores de este día, con su lección)
+
+- **Un control solo sirve si el tratamiento no lo toca.** Normalicé el flaky del inbox contra un test de control que era ~1,9× más lento en 27.0 por el mismo motivo que medía ⇒ dividí el efecto por sí mismo y concluí «no hay efecto». El instrumento correcto era el reloj absoluto, más simple.
+- **No escribir la regla antes de verificar el fix.** Documenté «el problema es el contador fijo de gestos, scrollea hasta la condición» → se probó y **falla**. La causa real: en iOS 27.0 ningún swipe sintético materializa una celda de `LazyVGrid`. Una regla con receta equivocada es peor que ninguna.
+- **Antes de escribir «flaky», correr aislado y en los DOS runtimes.** El mismo fallo se atribuyó a orden de suites (falso: falla aislado), a disco (falso: 22 GB en una máquina y 66 GB en la otra, igual) y a flakiness (falso: los fallos se agrupaban en 0,3 s ⇒ determinista).
+- **Un techo de alcance mal escrito culpa a quien lo cumple.** Puse «≈0 líneas de producción nuevas» a una fase que el plan define como DUPLICADORA. El techo correcto era «≈0 neto tras la Fase 3».
+- **Leer el output en el orden en que se ejecuta.** Reporté que un commit no había salido leyendo el `git status` impreso al principio de la misma cadena. Y dos sondeos de staging parecieron un deploy roto por un `POST` a una ruta `GET` y un pipe que truncaba el JSON.
+
 ## 4 · Abierto, por orden de urgencia
 
 | # | Qué | Estado |
