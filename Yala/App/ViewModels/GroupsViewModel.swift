@@ -195,10 +195,13 @@ final class GroupsViewModel {
         if newSummary != globalSummary { globalSummary = newSummary }
     }
 
-    /// Fuerza un fetch de CloudKit y recarga la lista (refresh acotado a Grupos, no un bump global de
+    /// Fuerza un fetch remoto y recarga la lista (refresh acotado a Grupos, no un bump global de
     /// dataVersion). Usado por pull-to-refresh (`force: true`) y entrada al tab (`force: false`).
+    /// Fase 2 · 2.5: pide el ciclo a los DOS canales. El del backend está self-gateado (no-op sin red con
+    /// el flag OFF); la línea de CloudKit se va con el transporte en la Fase 3.
     func refreshFromCloud(force: Bool) async {
         await SplitSyncManager.shared.syncNow(force: force)
+        await GroupsSyncClient.shared.syncNowFromUI()
         loadData()
     }
 

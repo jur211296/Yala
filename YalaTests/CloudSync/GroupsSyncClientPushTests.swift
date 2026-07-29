@@ -93,4 +93,34 @@ struct GroupsSyncClientPushTests {
         let result = await client.syncNowFromPush(timeout: .milliseconds(80))
         #expect(result == false)
     }
+
+    /// Fase 2 · 2.5: el pull-to-refresh de la UI de Grupos entra por los MISMOS gates. Con el canal DARK
+    /// (flag OFF, el estado de producción de esta fase) un tirón hacia abajo no toca la red — lo que
+    /// protege este test es que nadie cablee la UI a un camino sin gatear.
+    @Test func syncNowFromUI_flagOff_returnsFalse_noNetwork() async {
+        let stub = CountingStub()
+        let client = GroupsSyncClient(
+            tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { true }, outboxMirror: nil)
+
+        let result = await client.syncNowFromUI()
+        #expect(result == false)
+        #expect(stub.callCount == 0)
+    }
+
+    /// Con el canal ENCENDIDO el tirón sí cicla (y su tope no lo mata: el stub responde al instante).
+    @Test func syncNowFromUI_flagOn_runsCycle() async throws {
+        CloudSyncFlags.groupsBackendEnabled = true
+        defer { CloudSyncFlags.groupsBackendEnabled = false }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let stub = CountingStub()
+        let client = GroupsSyncClient(
+            tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { true }, outboxMirror: nil)
+        client._testSetContext(context)
+
+        let result = await client.syncNowFromUI()
+        #expect(result)
+        #expect(stub.callCount > 0)
+    }
 }

@@ -412,6 +412,18 @@ final class GroupsSyncClient {
         }
     }
 
+    /// Fase 2 · 2.5: pull-to-refresh de la UI de Grupos (lista y detalle). Reusa `syncNowFromPush` TAL CUAL
+    /// —mismos gates (flag, sesión, `stoppedUntilRelaunch`, canal arrancado en este proceso), mismo
+    /// coalescing anti-solape y mismo `context` retenido— porque lo que necesita un tirón hacia abajo es
+    /// exactamente lo que necesita un silent push: un ciclo, ya. El tope existe para que el spinner no se
+    /// quede colgado de una red lenta; pasado el tope el ciclo sigue en background y lo que baje entra por
+    /// el refresh normal. Con el flag OFF es un no-op sin red, así que convive con el `syncNow` del
+    /// transporte hasta que la Fase 3 se lo lleve.
+    @discardableResult
+    func syncNowFromUI(timeout: Duration = .seconds(15)) async -> Bool {
+        await syncNowFromPush(timeout: timeout)
+    }
+
     /// UNA vuelta del ciclo: captura local → push → pull-hasta-agotar → apply. Devuelve el
     /// `CadenceOutcome` NORMALIZADO que consume el loop. DARK (solo corre con el flag ON).
     @discardableResult

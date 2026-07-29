@@ -126,11 +126,14 @@ final class GroupDetailViewModel {
         loadData()
     }
 
-    /// Fuerza un fetch de CloudKit y recarga (refresh acotado, no bump global de dataVersion).
+    /// Fuerza un fetch remoto y recarga (refresh acotado, no bump global de dataVersion).
     /// Usado por pull-to-refresh (`force: true`) y entrada al detalle (`force: false`) — así los
     /// gastos de otros miembros aún no sincronizados aparecen al abrir el grupo.
+    /// Fase 2 · 2.5: pide el ciclo a los DOS canales. El del backend está self-gateado (no-op sin red con
+    /// el flag OFF); la línea de CloudKit se va con el transporte en la Fase 3.
     func refreshFromCloud(force: Bool) async {
         await SplitSyncManager.shared.syncNow(force: force)
+        await GroupsSyncClient.shared.syncNowFromUI()
         loadData()
     }
 
