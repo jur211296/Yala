@@ -26,27 +26,6 @@ final class GroupsSmokeUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    /// Navega al tab Grupos (oculto en "Más"): tab "Más" (4º del tab bar, tras
-    /// panel/statistics/planning) → card Grupos del dashboard de "Más".
-    private func openGroups(_ app: XCUIApplication) {
-        let moreTab = app.tabBars.buttons.element(boundBy: 3)
-        XCTAssertTrue(moreTab.waitForExistence(timeout: 10), "No apareció el tab Más.")
-        moreTab.tap()
-
-        // La card Grupos vive en la sección "Más herramientas" (la última del
-        // dashboard de "Más", tras Estadísticas/Planificación/Reportes), dentro
-        // de un LazyVGrid: no se instancia hasta scrollearla a la vista. Bajamos
-        // hasta que aparezca antes de tapearla.
-        let groupsRow = app.buttons["more_card_groups"]
-        var scrollAttempts = 0
-        while !groupsRow.exists && scrollAttempts < 8 {
-            app.swipeUp()
-            scrollAttempts += 1
-        }
-        XCTAssertTrue(groupsRow.waitForExistence(timeout: 5), "No apareció la card Grupos en Más.")
-        groupsRow.tap()
-    }
-
     private func launch() -> XCUIApplication {
         let app = XCUIApplication()
         app.launchForUITest(pro: true, seed: "grupos")
@@ -54,10 +33,37 @@ final class GroupsSmokeUITests: XCTestCase {
         return app
     }
 
+    /// Aterriza DIRECTO en el tab Grupos vía `-uitest-deeplink groups`, sin pasar por el dashboard
+    /// de "Más".
+    ///
+    /// Antes se navegaba por UI: tab "Más" → scroll → card `more_card_groups`. Eso **no es
+    /// alcanzable de forma determinista en iOS 27.0** y costó media tarde de diagnóstico: la card
+    /// vive en un `LazyVGrid` que no materializa la celda hasta scrollearla, y en 27.0 ningún swipe
+    /// sintético la revela. Medido el 2026-07-29 con el mismo binario: **8/8 verde en iOS 26.4 con
+    /// UN solo swipe · 1/8 en 27.0**, con 93 swipes sobre el elemento Aplicación y 81 sobre el
+    /// `scrollView` —las dos vías— sin que la celda aparezca nunca. No es flake (los fallos se
+    /// agrupaban entre 27,7 y 28,0 s), no es el orden de las suites (falla igual aislada) ni el
+    /// disco (mismo patrón con 22 GB y con 66 GB libres). Detalle en la Lista Negra de
+    /// TESTING-STRATEGY.md.
+    ///
+    /// Estos tests verifican las PANTALLAS de Grupos, no cómo se llega a ellas, así que el deeplink
+    /// prueba exactamente lo suyo y deja de depender de un scroll que el runtime no honra. La
+    /// navegación "Más → Grupos" queda como cobertura NO determinista, declarada en
+    /// `qa/coverage-index.json` — el mismo trato que ya reciben `groups-bridge-personal` y
+    /// `groups-pending-approval-reconnect` (ver la cabecera de este fichero).
+    ///
+    /// El tab Grupos sí monta bien en 27.0: `test_groupExpenseFromPanelFAB`, que llega por el FAB
+    /// del Panel, es el único de los ocho que pasaba antes de este cambio.
+    private func launchOnGroups() -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchForUITest(pro: true, seed: "grupos", deeplink: "groups")
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        return app
+    }
+
     /// groups-crud-balances-settlements: la lista de grupos monta con el grupo del seed.
     func test_groupsContainerMountsWithSeededGroup() {
-        let app = launch()
-        openGroups(app)
+        let app = launchOnGroups()
 
         XCTAssertTrue(
             app.descendants(matching: .any).matching(identifier: "group_card").firstMatch.waitForExistence(timeout: 10),
@@ -68,8 +74,7 @@ final class GroupsSmokeUITests: XCTestCase {
     /// groups-form: el FAB despliega el menú y "Nuevo grupo" abre el formulario de crear grupo.
     /// (Con ≥1 grupo elegible el FAB es expandible; el seed `grupos` cumple esa condición.)
     func test_groupFormOpens() {
-        let app = launch()
-        openGroups(app)
+        let app = launchOnGroups()
 
         let fab = app.buttons["groups_fab_new"]
         XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció el FAB de Grupos.")
@@ -88,8 +93,7 @@ final class GroupsSmokeUITests: XCTestCase {
     /// groups-expense-form: desde el tab, FAB → "Nuevo gasto" abre el composer con el chip de
     /// grupo editable (2 grupos en el seed) y el cambio de grupo desde el selector.
     func test_groupExpenseFromTabFAB() {
-        let app = launch()
-        openGroups(app)
+        let app = launchOnGroups()
 
         let fab = app.buttons["groups_fab_new"]
         XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció el FAB de Grupos.")
@@ -160,8 +164,7 @@ final class GroupsSmokeUITests: XCTestCase {
 
     /// groups-expense-form: grupo → detalle → FAB nuevo gasto → formulario de gasto.
     func test_groupExpenseFormOpens() {
-        let app = launch()
-        openGroups(app)
+        let app = launchOnGroups()
 
         let card = app.descendants(matching: .any).matching(identifier: "group_card").firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 10), "No apareció la tarjeta del grupo.")
@@ -181,8 +184,7 @@ final class GroupsSmokeUITests: XCTestCase {
     /// read-only (detent medium) — NO el editor; el botón Editar lo reemplaza por
     /// el editor en large. Cubre el flujo de dos fases (commit 233544fa).
     func test_groupExpenseDetailThenEdit() {
-        let app = launch()
-        openGroups(app)
+        let app = launchOnGroups()
 
         let card = app.descendants(matching: .any).matching(identifier: "group_card").firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 10), "No apareció la tarjeta del grupo.")
@@ -217,8 +219,7 @@ final class GroupsSmokeUITests: XCTestCase {
     /// "Mercado" es un gasto de ESTE mes (sección superior, visible sin scroll) y su
     /// descripción es única en el seed → identifier de fila estable.
     func test_groupExpenseDeleteFromFormToolbar() {
-        let app = launch()
-        openGroups(app)
+        let app = launchOnGroups()
 
         let card = app.descendants(matching: .any).matching(identifier: "group_card").firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 10), "No apareció la tarjeta del grupo.")
@@ -258,8 +259,7 @@ final class GroupsSmokeUITests: XCTestCase {
     /// groups-bridge-settings-optout: el botón de ajustes globales abre la vista
     /// con el toggle del bridge.
     func test_groupsGlobalSettingsOpens() {
-        let app = launch()
-        openGroups(app)
+        let app = launchOnGroups()
 
         let gear = app.buttons["groups_global_settings_button"]
         XCTAssertTrue(gear.waitForExistence(timeout: 10), "No apareció el botón de ajustes globales de grupos.")
