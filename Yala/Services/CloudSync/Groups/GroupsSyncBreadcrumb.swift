@@ -225,4 +225,19 @@ enum GroupsSyncBreadcrumb {
     static func groupsIdentityPurgeResumed(pendingHours: Int) {
         logger.notice("GroupsSync identityPurgeResumed pendingHours=\(pendingHours, privacy: .public)")
     }
+
+    /// El retome del boot encontró bridges remotos pendientes (`GroupsPendingBridgeIntent`) y va a
+    /// ejecutarlos. Counts y horas, sin PII. Ver esto con `pendingHours` alto = el bridge lleva arranques
+    /// sin poder cumplirse (import que no asienta, dominio sellado): el gasto de grupo existe en Grupos
+    /// pero todavía no en Panel/Inbox/presupuestos.
+    static func groupsPendingBridgeResumed(expenses: Int, settlements: Int, pendingHours: Int) {
+        logger.notice("GroupsSync pendingBridgeResumed expenses=\(expenses, privacy: .public) settlements=\(settlements, privacy: .public) pendingHours=\(pendingHours, privacy: .public)")
+    }
+
+    /// Un bridge pendiente agotó sus 3 intentos y se descartó. **Es pérdida de datos aceptada**, el mismo
+    /// terminal que `bridgeAttempts` en el Caso A: el gasto se queda sin su transacción personal. >0 aquí
+    /// = hay algo sistemáticamente roto en el bridge, no un transitorio.
+    static func groupsPendingBridgeDropped(expenses: Int, settlements: Int) {
+        logger.error("GroupsSync pendingBridgeDropped expenses=\(expenses, privacy: .public) settlements=\(settlements, privacy: .public)")
+    }
 }

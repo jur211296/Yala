@@ -374,24 +374,30 @@ el commit 0) **+ las 8 celdas de `resolveWaitByQuiescence` que hay que RESCATAR 
 
 ---
 
-## Reportado y SIN dueño — dos intenciones más que se pierden al morir el proceso
+## Reportado y SIN dueño — lo que se pierde al morir el proceso
 
 Salieron de clasificar los diez diferidos de `SplitSyncManager` al arreglar la grieta de la purga
 (`7c7fb7f6`). **Ninguno depende del flag ni de la Fase 3: fallan hoy.** No estaban escritos en ningún
 sitio hasta el 2026-07-30.
 
-- **El bridge remoto de Grupos se pierde para siempre, y la regla decía lo contrario.**
-  `pendingBridgeExpenseIDs`/`pendingBridgeSettlementIDs` se acumulan en `SplitSyncManager.swift:1815`
-  **después** de aplicar el changeSet ⇒ al retornar el handler el change token ya avanzó y CloudKit no
-  reenvía el record. Si la app muere en esa ventana, el gasto de grupo **nunca** obtiene su
-  `TransactionItem`: no aparece en Panel, Inbox ni presupuestos. `.claude/rules/swiftdata-cloudkit.md`
-  afirmaba «CKSyncEngine re-entrega después» — corregido el 2026-07-30. El fix natural es el mismo
-  contrato que `GroupsIdentityPurgeIntent`: intención ⇒ diferido durable. Ojo: el Caso A (user-action) SÍ
-  está cubierto por el `bridgePending` persistido; lo que no lo está es el camino remoto.
+- ~~**El bridge remoto de Grupos se pierde para siempre.**~~ **ARREGLADO el 2026-07-30.**
+  `GroupsPendingBridgeIntent` (UserDefaults, sin TTL, tope de 3 intentos por ID) se arma donde se acumulan
+  los IDs y lo retoma `resumePendingRemoteBridgeIfNeeded(context:)` dentro de
+  `AppBootstrapper.retryPendingBridges`, detrás de sus dos gates. Al medirlo apareció una segunda mitad que
+  el reporte no tenía: el drenaje limpiaba los Sets **antes** de llamar al bridge, así que las cuatro
+  superficies de throw de `bridgeRemoteExpenses` —y su `catch` por gasto— perdían el lote **con la app
+  viva**; por eso `bridgeRemote*` devuelven ahora los IDs realmente puenteados y el desarme es por ID
+  cumplido. Contrato en `.claude/rules/swiftdata-cloudkit.md`.
 - **`quotaFailedRecordIDs` es una intención sin drenador.** `retryQuotaFailedRecords()`
   (`SplitSyncManager.swift:1616`) **no tiene ni un call-site en la app** — su única otra mención es el
   comentario de `:1480`, que afirma que corre en foreground. Verificado con grep el 2026-07-30. Si la cuota
   de CloudKit falla, esos records no se reintentan jamás y nadie se entera.
+- **La ventana export-only pierde el EVENTO ENTERO, no solo su bridge** (medido el 2026-07-30 al arreglar
+  el anterior; no estaba reportado). `handleFetchedRecordZoneChanges` hace early-return y bufferea el evento
+  en `deferredFetchedRecordZoneEvents` (`:1636`), pero el token del engine avanza igual cuando el handler
+  retorna ⇒ morir antes de `drainDeferredFetchEvents()` pierde **la fila**, no solo su transacción personal.
+  Hoy es defensa en profundidad —en export-only `automaticallySync=false` y `syncNow` está gateado, así que
+  casi nunca hay fetch— y cubrirlo exige persistir CKRecords serializados, no UUIDs: es otra pieza.
 
 ## Dos cosas ya muertas hoy (limpieza gratis, sin relación con la Fase 3)
 

@@ -1069,6 +1069,16 @@ final class AppBootstrapper {
             logger.notice("retryPendingBridges skipped — groups domain sealed for a new user on this device")
             return
         }
+
+        // Caso REMOTO, antes de la cola del Caso A: gastos y liquidaciones que bajaron por sync y cuyo
+        // bridge no llegó a ocurrir (el proceso murió en la ventana del import, o el bridge lanzó). Su
+        // intención NO puede vivir en una fila —marcarla exige el `save()` que esa ventana prohíbe— así que
+        // vive en `GroupsPendingBridgeIntent` y se retoma aquí, DENTRO de esta función y no en un Task
+        // hermano: los Tasks de boot resuelven su gate cada uno por su cuenta, y uno que llegara después
+        // del fetch de abajo retrasaría el bridge un arranque entero. Hereda los dos gates de arriba, que
+        // es justo lo que necesita (el bridge salva el mainContext compartido).
+        SplitSyncManager.shared.resumePendingRemoteBridgeIfNeeded(context: context)
+
         let descriptor = FetchDescriptor<SplitExpense>(
             predicate: #Predicate { $0.bridgePending == true }
         )

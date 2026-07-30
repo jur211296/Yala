@@ -337,6 +337,13 @@ final class DataWipeService {
         defaults.removeObject(forKey: AppPreferences.Keys.hasShownGroupsOnboarding)
         defaults.removeObject(forKey: AppPreferences.Keys.hasSeenGroupsNotificationPrompt)
 
+        // La intención de puentear gastos remotos que quedó a medias. Es del humano ANTERIOR y apunta a
+        // filas que este camino acaba de borrar; conservarla importa porque el reset de tokens re-descarga
+        // el corpus del Apple ID con los MISMOS UUID (el `recordName` ES el modelID), así que un intent
+        // superviviente podría puentear al store personal del usuario nuevo gastos que no son suyos en
+        // cuanto adopte Grupos y el sello deje de cortar.
+        defaults.removeObject(forKey: GroupsPendingBridgeIntent.userDefaultsKey)
+
         // Prefijos: preferencias por-grupo (cuenta de liquidación por moneda) y dedup de
         // notificaciones de grupo. Ambos llevan el zoneID del grupo de la sesión anterior en la
         // key, así que la lista explícita no puede nombrarlos. `GroupNotifications.lastNotified.*`

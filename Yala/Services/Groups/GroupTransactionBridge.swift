@@ -33,6 +33,9 @@ final class GroupTransactionBridge {
 
     /// Ejecuta `body` con `skipDraftCleanup=true` y resetea garantizado vía `defer`,
     /// incluso si `body` lanza. Único path autorizado para mutar el flag.
+    /// `@discardableResult` porque el `T` puede venir de una función que ya lo es (`bridgeExpense` devuelve
+    /// si atendió el gasto): sin esto, envolverla aquí resucita el warning que su propio atributo silencia.
+    @discardableResult
     func withSkippedDraftCleanup<T>(_ body: () throws -> T) rethrows -> T {
         skipDraftCleanup = true
         defer { skipDraftCleanup = false }
@@ -127,6 +130,17 @@ final class GroupTransactionBridge {
     ///   - isRemoteSync: `true` cuando se invoca desde `bridgeRemoteExpenses` (sync de grupos).
     ///     Distingue path local vs sync para guard defensivo.
     ///   - shouldSave: Whether to save the context (false when called from sync batch).
+    ///
+    /// Devuelve si el gasto quedó **ATENDIDO**: o se puenteó, o esta función decidió CONSCIENTEMENTE que no
+    /// hay nada que crear (grupo oculto, gasto de terceros en el que no participo). `false` significa
+    /// «todavía no se puede decidir» — un estado INCOMPLETO que puede resolverse más tarde: el `SplitMember`
+    /// propio aún sin marcar (`isCurrentUser` es local-only y `refreshCurrentUserFlags` puede tardar o
+    /// fallar), o las `SplitShare` del gasto todavía sin bajar. La distinción existe para
+    /// `GroupsPendingBridgeIntent`: sin ella, un early-return silencioso de esos dos casos contaba como
+    /// puenteado y DESARMABA la intención de un gasto que nunca obtuvo su transacción personal — la misma
+    /// pérdida permanente que el intent existe para cerrar, y por un camino que ni siquiera necesita que el
+    /// proceso muera. Los callers que no persisten intención pueden ignorarlo.
+    @discardableResult
     func bridgeExpense(
         _ expense: SplitExpense,
         in group: SplitGroup,
@@ -134,7 +148,7 @@ final class GroupTransactionBridge {
         isRemoteSync: Bool = false,
         isBulkImport: Bool = false,
         shouldSave: Bool = true
-    ) throws {
+    ) throws -> Bool {
         let context = try requireContext()
 
         // Gate de dominio (handover): con Grupos cerrado en este dispositivo, ningún gasto de
@@ -148,7 +162,7 @@ final class GroupTransactionBridge {
         // bug del bridge. Mensaje fijo, sin PII.
         guard Self.isDomainOpenForBridge() else {
             Self.logger.info("bridgeExpense: skip — groups domain sealed for a new user on this device")
-            return
+            return false
         }
 
         // Defensa-en-profundidad: si el grupo está hidden (soft-deleted), no bridgear
@@ -158,7 +172,7 @@ final class GroupTransactionBridge {
             #if DEBUG
             Self.logger.info("bridgeExpense: skip hidden group \(group.cloudKitZoneID, privacy: .public)")
             #endif
-            return
+            return true  // decidido y permanente: un grupo oculto no vuelve a puentear.
         }
 
         // Find current user's member in this group.
@@ -167,8 +181,12 @@ final class GroupTransactionBridge {
         let memberDescriptor = FetchDescriptor<SplitMember>(
             predicate: #Predicate { $0.groupZoneID == zoneID && $0.isCurrentUser == true }
         )
+        // NO atendido: `isCurrentUser` es device-local (`CKRecordTranslator` nunca lo escribe) y lo marca
+        // `refreshCurrentUserFlags`, que en una reinstalación o un 2º device puede tardar —o fallar si el
+        // fetch de identidad a CKContainer no resuelve—. Un `pendingApproval` que el admin acepta después
+        // cae aquí igual. En los dos casos el gasto SÍ tendrá que puentearse cuando el estado se resuelva.
         guard let currentMember = try context.fetch(memberDescriptor).first,
-              currentMember.isActive else { return }
+              currentMember.isActive else { return false }
         let currentMemberID = currentMember.id.uuidString
 
         // Saldo inicial (deuda de apertura): bridge virtual-only, independiente del modo
@@ -178,7 +196,7 @@ final class GroupTransactionBridge {
         if expense.isOpeningBalance {
             try bridgeOpeningBalance(expense, in: group, currentMemberID: currentMemberID, context: context)
             try saveIfNeeded(shouldSave: shouldSave, context: context)
-            return
+            return true
         }
 
         // Find current user's share in this expense.
@@ -194,7 +212,16 @@ final class GroupTransactionBridge {
         // El pagador SIEMPRE participa (modelo Splitwise): pagar algo cuya parte propia es 0
         // (otro lo devuelve todo) = prestar el total, y ese préstamo DEBE reflejarse en la cuenta
         // virtual "Grupos". Solo un NO-pagador sin share queda fuera del gasto → nada que bridgear.
-        guard isCaseA || myShareRecord != nil else { return }
+        //
+        // Atendido SOLO si las shares del gasto YA bajaron: sin ninguna en el store, «no participo» es
+        // indistinguible de «las `SplitShare` viajan en un batch posterior», y darlo por decidido dejaría
+        // el gasto sin puentear para siempre (aplicar una share remota no re-clasifica su gasto). Con
+        // shares presentes y ninguna mía, la decisión sí es firme y permanente.
+        guard isCaseA || myShareRecord != nil else {
+            let anySharesArrived = try context.fetchCount(FetchDescriptor<SplitShare>(
+                predicate: #Predicate { $0.expenseID == expenseID })) > 0
+            return anySharesArrived
+        }
 
         let expenseIDStr = expense.id.uuidString
         let isGroupInvite = SessionState.shared.onboardingMode == .groupInvite
@@ -291,7 +318,7 @@ final class GroupTransactionBridge {
             )
             try saveIfNeeded(shouldSave: shouldSave, context: context)
             Self.logger.info("caseB saved expense=\(expenseIDStr, privacy: .public) shouldSave=\(shouldSave, privacy: .public)")
-            return
+            return true
         }
 
         // Path Caso A modo .groupInvite: fallback M5 puro (TX1 virtual -myShare + TX2 virtual +totalAmount).
@@ -309,7 +336,7 @@ final class GroupTransactionBridge {
                 context: context
             )
             try saveIfNeeded(shouldSave: shouldSave, context: context)
-            return
+            return true
         }
 
         // Path Caso A bridge effective OFF: virtual-only. Sin opt-in (no hay TX real) el
@@ -333,7 +360,7 @@ final class GroupTransactionBridge {
                 context: context
             )
             try saveIfNeeded(shouldSave: shouldSave, context: context)
-            return
+            return true
         }
 
         // Path Caso A modo .full/.completed: la virtual clasificable superviviente (p.ej. de
@@ -455,6 +482,7 @@ final class GroupTransactionBridge {
         }
 
         try saveIfNeeded(shouldSave: shouldSave, context: context)
+        return true
     }
 
     // MARK: - Helpers (M6)
@@ -912,14 +940,24 @@ final class GroupTransactionBridge {
     /// Bridge remote expenses received in a sync batch. Called after context.save().
     /// `ids`: re-fetch en ESTE context (mainContext) en lugar de pasar objetos `SplitExpense` —
     /// el sync persiste los expenses y luego invoca esto con sus IDs; re-fetchear evita objetos stale.
-    func bridgeRemoteExpenses(ids: [UUID]) throws {
+    ///
+    /// Devuelve los IDs ATENDIDOS DE VERDAD: fila encontrada, grupo resuelto y `bridgeExpense` devolviendo
+    /// `true`. Quedan fuera los que este método salta (fila que ya no existe, grupo que aún no ha bajado),
+    /// los que su `catch` por gasto se traga y —la parte que no se ve— los que `bridgeExpense` deja en
+    /// estado INCOMPLETO sin lanzar: el member propio todavía sin marcar, las shares que no han bajado. Es
+    /// lo que permite a `GroupsPendingBridgeIntent` desarmarse POR ID en vez de por lote: sin esta
+    /// distinción, un gasto que nunca obtuvo su transacción personal desaparecía en silencio junto a los
+    /// que sí. **Precondición del llamador:** haber comprobado `isDomainOpenForBridge()`.
+    @discardableResult
+    func bridgeRemoteExpenses(ids: [UUID]) throws -> Set<UUID> {
         let context = try requireContext()
-        guard !ids.isEmpty else { return }
+        guard !ids.isEmpty else { return [] }
         let idSet = Set(ids)
         let expenses = try context.fetch(FetchDescriptor<SplitExpense>()).filter { idSet.contains($0.id) }
         // DIAG: re-bridge por sync remoto (distingue del edit local). Quitar tras QA.
         Self.logger.info("bridgeRemoteExpenses count=\(expenses.count, privacy: .public)")
 
+        var bridged: Set<UUID> = []
         for expense in expenses {
             // Find the group for this expense
             let zoneID = expense.groupZoneID
@@ -931,7 +969,9 @@ final class GroupTransactionBridge {
             do {
                 // M6: isRemoteSync=true marca path remoto. Sin accountForCurrentUser local
                 // → bridge crea draft pendiente con hint si Caso A y no existe TX real.
-                try bridgeExpense(expense, in: group, accountForCurrentUser: nil, isRemoteSync: true, shouldSave: false)
+                if try bridgeExpense(expense, in: group, accountForCurrentUser: nil, isRemoteSync: true, shouldSave: false) {
+                    bridged.insert(expense.id)
+                }
             } catch {
                 #if DEBUG
                 print("GroupTransactionBridge: Failed to bridge expense \(expense.id): \(error)")
@@ -939,8 +979,11 @@ final class GroupTransactionBridge {
             }
         }
 
+        // El `save()` va ANTES del return a propósito: si lanza, el llamador no recibe ningún ID y la
+        // intención sigue armada entera — lo puenteado en memoria no llegó a disco.
         try context.save()
         // UI refresh handled by SplitSyncManager's deferred markRemoteChangePending()
+        return bridged
     }
 
     // MARK: - Settlement Bridge (A0-Bridge: Caso C + D)
@@ -961,23 +1004,31 @@ final class GroupTransactionBridge {
     /// Si `.groupInvite`: solo TX1 virtual; NO draft.
     ///
     /// Idempotency: delete + recreate (mismo patrón que bridgeExpense).
+    ///
+    /// Devuelve si la liquidación quedó **ATENDIDA**, con el mismo contrato que `bridgeExpense`: `false`
+    /// solo para los estados INCOMPLETOS que pueden resolverse después (todavía sin confirmar, o el
+    /// `SplitMember` propio aún sin marcar). Una liquidación entre terceros SÍ está atendida — es una
+    /// decisión firme, no un estado a medias.
+    @discardableResult
     func bridgeSettlement(
         _ settlement: SplitSettlement,
         in group: SplitGroup,
         accountForCurrentUser: Account? = nil,
         shouldSave: Bool = true
-    ) throws {
+    ) throws -> Bool {
         let context = try requireContext()
 
         // Gate de dominio (handover) — gemelo del de `bridgeExpense`, mismo racional (incluido el
         // del log fuera de `#if DEBUG`).
         guard Self.isDomainOpenForBridge() else {
             Self.logger.info("bridgeSettlement: skip — groups domain sealed for a new user on this device")
-            return
+            return false
         }
 
-        // Solo bridge si confirmed.
-        guard settlement.isConfirmed else { return }
+        // Solo bridge si confirmed. NO atendida: confirmarla es una edición REMOTA de una fila que este
+        // device ya tiene, y esas no se re-clasifican en `newSettlements` ⇒ darla por decidida aquí la
+        // dejaría sin puentear cuando la confirmen.
+        guard settlement.isConfirmed else { return false }
 
         // Find current user.
         // pending/rejected members no triguean bridge.
@@ -986,13 +1037,13 @@ final class GroupTransactionBridge {
             predicate: #Predicate { $0.groupZoneID == zoneID && $0.isCurrentUser == true }
         )
         guard let currentMember = try context.fetch(memberDescriptor).first,
-              currentMember.isActive else { return }
+              currentMember.isActive else { return false }
         let currentMemberID = currentMember.id.uuidString
 
         // Determinar caso C/D. Skip si user no es from ni to (settlement entre otros).
         let isCaseC = settlement.fromMemberID == currentMemberID
         let isCaseD = settlement.toMemberID == currentMemberID
-        guard isCaseC || isCaseD else { return }
+        guard isCaseC || isCaseD else { return true }
 
         // Idempotency: delete previous TX/Drafts.
         let settlementIDStr = settlement.id.uuidString
@@ -1146,17 +1197,24 @@ final class GroupTransactionBridge {
             SessionState.shared.incrementDataVersion()
             WidgetDataCache.updateCache(context: context)
         }
+        return true
     }
 
     /// Bridge remote settlements received via sync. Llamado desde SplitSyncManager.
     /// Solo procesa settlements confirmed (skipea unconfirmed).
     /// `ids`: re-fetch en ESTE context (mainContext) — ver `bridgeRemoteExpenses(ids:)`.
-    func bridgeRemoteSettlements(ids: [UUID]) throws {
+    ///
+    /// Devuelve los IDs atendidos, con el mismo contrato que su gemelo de gastos: una liquidación entre
+    /// terceros cuenta como atendida (decisión firme), pero una todavía sin confirmar o con el member
+    /// propio sin resolver NO — esos estados se resuelven después y su bridge no puede darse por hecho.
+    @discardableResult
+    func bridgeRemoteSettlements(ids: [UUID]) throws -> Set<UUID> {
         let context = try requireContext()
-        guard !ids.isEmpty else { return }
+        guard !ids.isEmpty else { return [] }
         let idSet = Set(ids)
         let settlements = try context.fetch(FetchDescriptor<SplitSettlement>()).filter { idSet.contains($0.id) }
 
+        var bridged: Set<UUID> = []
         for settlement in settlements {
             let zoneID = settlement.groupZoneID
             let groupDescriptor = FetchDescriptor<SplitGroup>(
@@ -1165,7 +1223,9 @@ final class GroupTransactionBridge {
             guard let group = try context.fetch(groupDescriptor).first else { continue }
 
             do {
-                try bridgeSettlement(settlement, in: group, accountForCurrentUser: nil, shouldSave: false)
+                if try bridgeSettlement(settlement, in: group, accountForCurrentUser: nil, shouldSave: false) {
+                    bridged.insert(settlement.id)
+                }
             } catch {
                 #if DEBUG
                 print("GroupTransactionBridge: Failed to bridge settlement \(settlement.id): \(error)")
@@ -1174,6 +1234,7 @@ final class GroupTransactionBridge {
         }
 
         try context.save()
+        return bridged
     }
 
     /// Remove all bridged TransactionItems and InboxDrafts vinculadas a un settlement.

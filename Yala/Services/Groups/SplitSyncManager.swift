@@ -122,6 +122,12 @@ final class SplitSyncManager {
 
     // Coalescing task for deferred bridge/notifications after remote changes
     private var deferredBridgeTask: Task<Void, Never>?
+    /// CAMINO RÁPIDO EN ESTE PROCESO, NO la red de seguridad — igual que `deferredClearAllRequested`, y por
+    /// la misma razón: esto no bufferea un evento de CloudKit (que el servidor re-entregaría), sino una
+    /// INTENCIÓN derivada de uno que ya se aplicó. Cuando el handler retorna, el record está local y el
+    /// change token YA AVANZÓ ⇒ CloudKit no lo manda otra vez. Lo durable vive en
+    /// `GroupsPendingBridgeIntent` (UserDefaults, sin TTL, tope de 3 intentos por ID), armado en
+    /// `notePendingBridge` y retomado al boot por `resumePendingRemoteBridgeIfNeeded(context:)`.
     private var pendingBridgeExpenseIDs: Set<UUID> = []
     /// Settlement IDs pending bridge. Tracked separately from `pendingBridgeChangeSet` so the bridge
     /// (which writes personal models) can be deferred by import quiescence WITHOUT re-sending the
@@ -1580,6 +1586,13 @@ final class SplitSyncManager {
             // `resetLocalGroupsSyncState`. Ver el `clearingIdentityCache:` de esa función.
             GroupUserIdentityService.shared.clearCache()
             GroupsIdentityPurgeIntent.disarm()
+            // El intent del bridge NO se toca aquí, y no es un olvido. La purga BORRA las zonas del canal
+            // CloudKit pero RETIENE las migradas al backend, y en esas puede haber un bridge legítimamente
+            // pendiente: el guard G6-3 solo filtra `isBackendGroup == true`, así que un grupo congelado
+            // (`movedToBackendAt != nil` sin haber adoptado el canal nuevo) sí llega a armar. Un `clearAll()`
+            // se lo llevaría por delante y ese gasto no se puentearía jamás. Lo de las zonas borradas se
+            // limpia solo: el retome clasifica como ABANDONADO todo ID cuya fila ya no existe y lo retira
+            // sin consumir intentos ni emitir el canario de descarte.
 
             SessionState.shared.markRemoteChangePending()
             if result.retainedOwnedZones + result.retainedFrozenZones > 0 {
@@ -1608,6 +1621,24 @@ final class SplitSyncManager {
     /// lo único que puede recuperar la purga es lo que sobrevive a un reinicio.
     func _testForgetInMemoryDeferredPurge() {
         deferredClearAllRequested = false
+    }
+
+    /// Test-only: entra por el MISMO seam que el handler del fetch remoto. Existe porque
+    /// `CKSyncEngine.Event.FetchedRecordZoneChanges` no tiene init público — no hay forma de fabricar el
+    /// evento— así que la alternativa sería no cubrir el cableado. Que ambos caminos pasen por
+    /// `notePendingBridge` lo pinnea un source-scan en `GroupsPendingBridgeWiringTests`.
+    func _testNotePendingBridge(expenseIDs: Set<UUID>, settlementIDs: Set<UUID>) {
+        notePendingBridge(expenseIDs: expenseIDs, settlementIDs: settlementIDs)
+    }
+
+    /// Test-only: «el proceso murió». Olvida los IDs en memoria y CANCELA el Task coalescido —sin lo
+    /// segundo, el bridge de la sesión seguiría vivo y contaminaría al test siguiente de la suite. No toca
+    /// el intent durable: tras esto, lo único que puede recuperar el bridge es lo que sobrevive al reinicio.
+    func _testForgetInMemoryPendingBridge() {
+        deferredBridgeTask?.cancel()
+        deferredBridgeTask = nil
+        pendingBridgeExpenseIDs.removeAll()
+        pendingBridgeSettlementIDs.removeAll()
     }
     #endif
 
@@ -1812,8 +1843,10 @@ final class SplitSyncManager {
 
         // Accumulate IDs and changeSets, then coalesce into a single deferred Task.
         // Avoids spawning N independent Tasks if N fetch events arrive in rapid succession.
-        pendingBridgeExpenseIDs.formUnion(changeSet.newExpenses.map(\.id) + changeSet.modifiedExpenses.map(\.id))
-        pendingBridgeSettlementIDs.formUnion(changeSet.newSettlements.map(\.id))
+        notePendingBridge(
+            expenseIDs: Set(changeSet.newExpenses.map(\.id) + changeSet.modifiedExpenses.map(\.id)),
+            settlementIDs: Set(changeSet.newSettlements.map(\.id))
+        )
         pendingBridgeChangeSet.newExpenses.append(contentsOf: changeSet.newExpenses)
         pendingBridgeChangeSet.modifiedExpenses.append(contentsOf: changeSet.modifiedExpenses)
         pendingBridgeChangeSet.newSettlements.append(contentsOf: changeSet.newSettlements)
@@ -1828,6 +1861,31 @@ final class SplitSyncManager {
             guard !Task.isCancelled, let self else { return }
             await self.processPendingRemoteChanges()
         }
+    }
+
+    /// Anota que estos gastos y liquidaciones remotos necesitan bridge: en memoria (camino rápido de este
+    /// proceso) y en el intent DURABLE, en ese orden y SIEMPRE, aunque el bridge vaya a correr acto seguido.
+    ///
+    /// **Arm-then-attempt-then-disarm**, molde `GroupsIdentityPurgeIntent`. Armar solo en la rama del
+    /// diferido dejaría fuera los dos huecos que no dependen de la quiescencia: los 50 ms de sleep del
+    /// `deferredBridgeTask` de abajo, y —el que muerde con la app VIVA— las cuatro superficies de throw de
+    /// `bridgeRemoteExpenses` más su `catch` por gasto. Coste: una escritura de `UserDefaults` por batch de
+    /// fetch que traiga gastos o liquidaciones (una sola key agregada, no una por ID), y ninguna cuando el
+    /// batch no trae ninguno de los dos — el `arm` hace early-return con ambos conjuntos vacíos.
+    /// **Con el dominio SELLADO no se arma nada, y esto no es una optimización.** Tras un «empiezo de cero»
+    /// el `resetSyncState` re-descarga a propósito el corpus del humano ANTERIOR con los MISMOS UUID, y
+    /// como las filas locales se borraron, el handler clasifica cada gasto suyo como NUEVO. Armar ahí
+    /// convertiría el intent en una cola con el histórico ajeno completo —que ni se puentea ni se consume,
+    /// porque el retome también corta antes— y el día que el usuario nuevo adopte Grupos y el sello deje de
+    /// cortar, se materializaría entero en su Panel, su Inbox y sus presupuestos. Sería además una
+    /// REGRESIÓN: sin intent, esos IDs morían con el proceso y el corpus quedaba inerte para la vida
+    /// personal, que es justo lo que el sello promete. El barrido de la key en `DataWipeService` no basta
+    /// porque ocurre ANTES del reset que dispara la re-descarga.
+    private func notePendingBridge(expenseIDs: Set<UUID>, settlementIDs: Set<UUID>) {
+        pendingBridgeExpenseIDs.formUnion(expenseIDs)
+        pendingBridgeSettlementIDs.formUnion(settlementIDs)
+        guard GroupTransactionBridge.isDomainOpenForBridge() else { return }
+        GroupsPendingBridgeIntent.arm(expenseIDs: expenseIDs, settlementIDs: settlementIDs)
     }
 
     /// Runs the coalesced post-fetch work: refresh membership flags (group store — always safe),
@@ -1896,8 +1954,9 @@ final class SplitSyncManager {
                 // persist `bridgePending` here: that `save()` would flush the half-imported personal graph
                 // on the shared mainContext and trip SwiftData's `_assertionFailure`. (The dedicated group
                 // context that once made it safe was removed — its `#Predicate` keypaths crashed record
-                // export.) Accepted residual: killing the app during the rare incremental-import window
-                // before the retry loses in-session recovery; CKSyncEngine re-delivers the change later.
+                // export.) La red para «el proceso muere en esta ventana» NO es CKSyncEngine —el token ya
+                // avanzó y no re-entrega nada— sino `GroupsPendingBridgeIntent`, armado en
+                // `notePendingBridge` y retomado al boot.
                 let retryAfter: TimeInterval
                 if case .waitQuiescence(let t) = decision { retryAfter = max(t, 1) } else { retryAfter = 8 }
                 logger.notice("SplitSync bridge deferred (import not quiescent: \(String(describing: decision), privacy: .public)) — retry in \(Int(retryAfter), privacy: .public)s")
@@ -1906,10 +1965,16 @@ final class SplitSyncManager {
             }
         }
 
-        pendingBridgeExpenseIDs.removeAll()
-        pendingBridgeSettlementIDs.removeAll()
+        // Gate de dominio ANTES de intentar nada: con Grupos sellado para un usuario nuevo del dispositivo
+        // el bridge hace early-return SIN lanzar, así que los IDs contarían como puenteados y la intención
+        // se perdería. Conservarlos (memoria + intent) es lo mismo que hace `retryPendingBridges`: la cola
+        // se drena entera el día que el usuario abra Grupos.
+        guard GroupTransactionBridge.isDomainOpenForBridge() else { return }
+
+        var bridgedExpenses: Set<UUID> = []
+        var bridgedSettlements: Set<UUID> = []
         if !expenseIDs.isEmpty {
-            do { try GroupTransactionBridge.shared.bridgeRemoteExpenses(ids: Array(expenseIDs)) }
+            do { bridgedExpenses = try GroupTransactionBridge.shared.bridgeRemoteExpenses(ids: Array(expenseIDs)) }
             catch {
                 #if DEBUG
                 logger.error("Failed to bridge remote expenses: \(error)")
@@ -1917,13 +1982,22 @@ final class SplitSyncManager {
             }
         }
         if !settlementIDs.isEmpty {
-            do { try GroupTransactionBridge.shared.bridgeRemoteSettlements(ids: Array(settlementIDs)) }
+            do { bridgedSettlements = try GroupTransactionBridge.shared.bridgeRemoteSettlements(ids: Array(settlementIDs)) }
             catch {
                 #if DEBUG
                 logger.error("Failed to bridge remote settlements: \(error)")
                 #endif
             }
         }
+
+        // Disarm DESPUÉS del intento y SOLO por lo cumplido. Antes era al revés —los `removeAll()`
+        // precedían a las llamadas—, así que un throw del bridge, o su `catch` por fila, borraba la
+        // intención de algo que nunca llegó a puentearse, con la app viva y sin un log en release. Lo que
+        // no se cumplió se queda: lo reintenta el próximo batch de esta sesión, y si el proceso muere, el
+        // retome del boot.
+        pendingBridgeExpenseIDs.subtract(bridgedExpenses)
+        pendingBridgeSettlementIDs.subtract(bridgedSettlements)
+        GroupsPendingBridgeIntent.confirm(expenseIDs: bridgedExpenses, settlementIDs: bridgedSettlements)
     }
 
     /// Re-runs the deferred bridge after the import quiet window (reuses `deferredBridgeTask` so a
@@ -1935,6 +2009,133 @@ final class SplitSyncManager {
             guard !Task.isCancelled, let self else { return }
             await self.processPendingRemoteChanges()
         }
+    }
+
+    /// Retome del intent DURABLE del bridge remoto (`GroupsPendingBridgeIntent`), llamado desde
+    /// `AppBootstrapper.retryPendingBridges` en cada arranque. No-op si no hay nada pendiente — el caso del
+    /// 99,9 % de los boots.
+    ///
+    /// **El caller DEBE haber probado la quiescencia del store personal** (`awaitPersonalStoreReady()`) y el
+    /// gate de dominio: los dos `bridgeRemote*` terminan en un `save()` incondicional del `mainContext`
+    /// compartido. Por eso este camino NO vuelve a pasar por `deferMainContextWork` — mismo razonamiento
+    /// que el retome de la purga de identidad: `autoSyncActive` es un PROXY que puede encenderse por
+    /// hard-cap, mientras `BootSaveGateLogic.decide` es la prueba directa y nunca fuerza.
+    ///
+    /// Vive DENTRO de `retryPendingBridges` y no en un `Task` propio del bootstrapper a propósito: los
+    /// ~11 Tasks de boot se encolan en orden pero todos suspenden en el mismo gate y cada uno resuelve por
+    /// su cuenta, así que un Task hermano podría correr DESPUÉS del drenaje del Caso A y retrasar el bridge
+    /// un arranque entero. Dentro de la función el orden es orden de programa.
+    func resumePendingRemoteBridgeIfNeeded(context: ModelContext) {
+        let pending = GroupsPendingBridgeIntent.pending
+        guard !pending.isEmpty else { return }
+        // Sin contexto en el bridge no se puede intentar nada, y un intento imposible no puede consumir
+        // presupuesto: se deja la intención intacta para el próximo arranque.
+        guard GroupTransactionBridge.shared.isReady else { return }
+
+        let pendingHours = GroupsPendingBridgeIntent.armedAt
+            .map { Int(Date.now.timeIntervalSince($0) / 3600) } ?? 0
+        GroupsSyncBreadcrumb.groupsPendingBridgeResumed(
+            expenses: pending.expenseIDs.count,
+            settlements: pending.settlementIDs.count,
+            pendingHours: max(0, pendingHours))
+
+        // Clasificación previa, en tres cubos. La hace el retome y no el camino en sesión porque el retome
+        // CRUZA ARRANQUES: entre armar y llegar aquí, el mundo pudo cambiar de tres formas distintas.
+        //  · ABANDONADO — la fila ya no existe (una purga se la llevó), o su grupo volteó al canal backend
+        //    (`applyGroupMeta` / `GroupBackendMembershipService`). El guard G6-3 filtró por zona en el
+        //    instante del fetch; aquí hay que volver a preguntarlo, porque puentear filas de origen CloudKit
+        //    de un grupo cuya verdad ya vive en el backend es lo que ese guard existe para impedir. Ninguno
+        //    de los dos es reintentable ⇒ se retiran del intent SIN consumir presupuesto ni emitir el
+        //    canario de descarte: no son un fallo del bridge.
+        //  · ESPERANDO — la fila está pero su `SplitGroup` todavía no ha bajado (el GroupMeta viaja en otro
+        //    batch). El Caso A trata este caso igual: `retryPendingBridges` hace `continue` ANTES de
+        //    incrementar `bridgeAttempts`. Cobrarlo aquí descartaría a los 3 arranques un gasto que solo
+        //    esperaba a su grupo.
+        //  · INTENTABLE — el resto.
+        var expenses = Buckets()
+        var settlements = Buckets()
+        do {
+            let backendZones = backendGroupZoneNames(context: context)
+            let knownZones = Set(try context.fetch(FetchDescriptor<SplitGroup>()).map(\.cloudKitZoneID))
+            let expenseZones = Dictionary(
+                try context.fetch(FetchDescriptor<SplitExpense>())
+                    .filter { pending.expenseIDs.contains($0.id) }
+                    .map { ($0.id, $0.groupZoneID) },
+                uniquingKeysWith: { first, _ in first })
+            let settlementZones = Dictionary(
+                try context.fetch(FetchDescriptor<SplitSettlement>())
+                    .filter { pending.settlementIDs.contains($0.id) }
+                    .map { ($0.id, $0.groupZoneID) },
+                uniquingKeysWith: { first, _ in first })
+            expenses = classifyPendingBridge(
+                pending.expenseIDs, zones: expenseZones, backendZones: backendZones, knownZones: knownZones)
+            settlements = classifyPendingBridge(
+                pending.settlementIDs, zones: settlementZones, backendZones: backendZones, knownZones: knownZones)
+        } catch {
+            // Sin clasificación no se intenta nada: cobrar intentos a ciegas descartaría trabajo válido.
+            logger.error("resumePendingRemoteBridge: classification failed: \(error.localizedDescription, privacy: .public)")
+            return
+        }
+
+        var bridgedExpenses: Set<UUID> = []
+        var bridgedSettlements: Set<UUID> = []
+        if !expenses.attemptable.isEmpty {
+            do { bridgedExpenses = try GroupTransactionBridge.shared.bridgeRemoteExpenses(ids: Array(expenses.attemptable)) }
+            catch {
+                logger.error("resumePendingRemoteBridge: expenses failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+        if !settlements.attemptable.isEmpty {
+            do { bridgedSettlements = try GroupTransactionBridge.shared.bridgeRemoteSettlements(ids: Array(settlements.attemptable)) }
+            catch {
+                logger.error("resumePendingRemoteBridge: settlements failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+
+        GroupsPendingBridgeIntent.confirm(
+            expenseIDs: bridgedExpenses.union(expenses.abandoned),
+            settlementIDs: bridgedSettlements.union(settlements.abandoned))
+
+        // Solo lo que se INTENTÓ y no se cumplió consume presupuesto. Sin tope, un ID envenenado —un bridge
+        // que falla siempre— haría trabajo y un `save()` en cada arranque para siempre; con él converge en
+        // tres, el mismo criterio que `bridgeAttempts` en el Caso A.
+        let dropped = GroupsPendingBridgeIntent.noteFailedAttempt(
+            expenseIDs: expenses.attemptable.subtracting(bridgedExpenses),
+            settlementIDs: settlements.attemptable.subtracting(bridgedSettlements))
+        if dropped.expenses + dropped.settlements > 0 {
+            GroupsSyncBreadcrumb.groupsPendingBridgeDropped(
+                expenses: dropped.expenses, settlements: dropped.settlements)
+        }
+
+        // El camino rápido de esta sesión no tiene que repetir lo que el retome ya puenteó.
+        pendingBridgeExpenseIDs.subtract(bridgedExpenses)
+        pendingBridgeSettlementIDs.subtract(bridgedSettlements)
+        if !bridgedExpenses.isEmpty || !bridgedSettlements.isEmpty {
+            SessionState.shared.markRemoteChangePending()
+        }
+    }
+
+    /// Los tres destinos de un ID pendiente en el retome. `waiting` no aparece en ninguna operación sobre el
+    /// intent a propósito: ni se cumple ni se cobra — se queda tal cual para el arranque siguiente.
+    private struct Buckets {
+        var abandoned: Set<UUID> = []
+        var waiting: Set<UUID> = []
+        var attemptable: Set<UUID> = []
+    }
+
+    /// `zones` mapea ID → zona SOLO para las filas que existen; un ID ausente del mapa es una fila que ya
+    /// no está y por tanto no hay nada que puentear.
+    private func classifyPendingBridge(
+        _ ids: Set<UUID>, zones: [UUID: String], backendZones: Set<String>, knownZones: Set<String>
+    ) -> Buckets {
+        var buckets = Buckets()
+        for id in ids {
+            guard let zone = zones[id] else { buckets.abandoned.insert(id); continue }
+            if backendZones.contains(zone) { buckets.abandoned.insert(id) }
+            else if !knownZones.contains(zone) { buckets.waiting.insert(id) }
+            else { buckets.attemptable.insert(id) }
+        }
+        return buckets
     }
 
     /// ¿el current user es admin del grupo (o owner) en la zona? Cacheado por batch
