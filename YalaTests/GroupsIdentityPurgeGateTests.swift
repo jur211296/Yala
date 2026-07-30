@@ -217,19 +217,19 @@ struct GroupsIdentityPurgeGateTests {
         #expect(revokedZones.isEmpty)
     }
 
-    /// Contrato del barrido: borra por la zona REAL de la fila. La derivación `zoneName(for: id)` solo
+    /// Contrato del barrido: borra por la zona REAL de la fila. La derivación `SplitGroupZone.zoneName(for: id)` solo
     /// vale para los grupos nacidos en CloudKit; un born-remote del pull backend nace con id nuevo y la
     /// zona del server encima (`applyGroupMeta`). Depender de la invariante es lo que dejaba huérfanos.
     @Test func apply_deletesChildrenByTheRowsRealZone_notByTheIDDerivation() throws {
         let context = try makeContext()
         let group = SplitGroup(name: "Zona ajena")
-        group.cloudKitZoneID = "\(CKConstants.zonePrefix)\(UUID().uuidString)"  // molde applyGroupMeta
+        group.cloudKitZoneID = "\(SplitGroupZone.zonePrefix)\(UUID().uuidString)"  // molde applyGroupMeta
         context.insert(group)
         let zone = group.cloudKitZoneID
         context.insert(SplitMember(groupZoneID: zone, displayName: "Ana"))
         context.insert(SplitExpense(groupZoneID: zone, amount: 10, expenseDescription: "Café"))
         try context.save()
-        #expect(zone != CKConstants.zoneName(for: group.id), "fixture inválido: la zona debe diferir")
+        #expect(zone != SplitGroupZone.zoneName(for: group.id), "fixture inválido: la zona debe diferir")
 
         let result = try runGate(context)
         try context.save()

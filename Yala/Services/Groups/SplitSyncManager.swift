@@ -627,7 +627,7 @@ final class SplitSyncManager {
         let firstImport = iCloudSyncService.shared.hasCompletedFirstImport
         let observedImport = iCloudSyncService.shared.hasObservedImportActivity
         let isQuiescent = iCloudSyncService.shared.isImportQuiescent
-        let resolution = SplitSyncStartGate.resolveWaitByQuiescence(
+        let resolution = BootSaveGateLogic.resolveWaitByQuiescence(
             hasCompletedFirstImport: firstImport,
             hasObservedImportActivity: observedImport,
             isQuiescent: isQuiescent,
@@ -2103,7 +2103,7 @@ final class SplitSyncManager {
 
     /// Remove all local models for a group (zone deleted or participant removed).
     private func deleteGroupCache(groupID: UUID, context: ModelContext) {
-        let zoneName = CKConstants.zoneName(for: groupID)
+        let zoneName = SplitGroupZone.zoneName(for: groupID)
 
         do {
             // Delete group
@@ -2162,7 +2162,7 @@ final class SplitSyncManager {
 
     /// Clear system fields and re-enqueue all records for a group (used after encryptedDataReset).
     private func reuploadGroupRecords(groupID: UUID, zoneID: CKRecordZone.ID, engine: CKSyncEngine, context: ModelContext) {
-        let zoneName = CKConstants.zoneName(for: groupID)
+        let zoneName = SplitGroupZone.zoneName(for: groupID)
 
         do {
             // Clear system fields and re-enqueue each model type

@@ -122,19 +122,18 @@ enum CKConstants {
 
     // MARK: - Zone ID Helpers
 
-    static let zonePrefix = "SplitGroup-"
-
-    static func zoneName(for groupID: UUID) -> String {
-        "\(zonePrefix)\(groupID.uuidString)"
-    }
+    // `zonePrefix` y `zoneName(for:)` viven en `SplitGroupZone` (`Models/SplitGroupZone.swift`): el
+    // literal es el `group_id` server-side del canal backend, no una constante de CloudKit, y su
+    // consumidor de producción (`SplitGroup.init`) sobrevive a este fichero. Los dos helpers de abajo sí
+    // son del transporte — uno devuelve `CKRecordZone.ID` y al otro solo lo llama el transporte.
 
     static func zoneID(for groupID: UUID) -> CKRecordZone.ID {
-        CKRecordZone.ID(zoneName: zoneName(for: groupID))
+        CKRecordZone.ID(zoneName: SplitGroupZone.zoneName(for: groupID))
     }
 
     static func groupID(from zoneName: String) -> UUID? {
-        guard zoneName.hasPrefix(zonePrefix) else { return nil }
-        let uuidString = String(zoneName.dropFirst(zonePrefix.count))
+        guard zoneName.hasPrefix(SplitGroupZone.zonePrefix) else { return nil }
+        let uuidString = String(zoneName.dropFirst(SplitGroupZone.zonePrefix.count))
         return UUID(uuidString: uuidString)
     }
 

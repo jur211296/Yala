@@ -210,7 +210,7 @@ enum GroupsIdentityPurgeGate {
     }
 
     /// Borra las filas de la zona y sus 4 tipos hijos. La zona sale de `cloudKitZoneID` (el valor REAL de
-    /// la fila), NO de `CKConstants.zoneName(for: group.id)`: esa derivación solo vale para los grupos
+    /// la fila), NO de `SplitGroupZone.zoneName(for: group.id)`: esa derivación solo vale para los grupos
     /// nacidos en CloudKit — un born-remote del pull backend se inserta con `SplitGroup()` (id nuevo) y se
     /// le PISA el `cloudKitZoneID` con el `group_id` del server (`GroupsSyncClient.applyGroupMeta`), así
     /// que derivar dejaría huérfanos a todos sus hijos (el bug colateral de hoy).

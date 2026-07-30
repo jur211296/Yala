@@ -81,7 +81,7 @@ final class iCloudSyncService {
     /// Distingue "hay un import en marcha/ocurrido → SÍ hay data remota" de "store vacío → ningún import
     /// llega nunca". El gate del sync de grupos lo usa para promover con seguridad un store vacío tras una
     /// ventana de gracia, sin arriesgar un `save()` sobre un grafo a medio importar (ver
-    /// `SplitSyncStartGate.resolveWaitByQuiescence`). Un store vacío nunca dispara `.importEvent`, así que
+    /// `BootSaveGateLogic.resolveWaitByQuiescence`). Un store vacío nunca dispara `.importEvent`, así que
     /// este flag se queda `false` para él; un restore con datos lo pone `true` apenas arranca el import.
     private(set) var hasObservedImportActivity: Bool = false
 
@@ -478,7 +478,7 @@ final class iCloudSyncService {
     /// (`hasCompletedFirstImport`), luego la ventana de quiescencia
     /// (`isImportQuiescent`). NO basta la quiescencia sola — es `true` ANTES del
     /// primer import y devolvería datos vacíos. Espejo de
-    /// `SplitSyncStartGate.resolveWaitByQuiescence`.
+    /// `BootSaveGateLogic.resolveWaitByQuiescence`.
     /// - Parameter timeout: tope total (primer import + quietud).
     /// - Returns: `true` si quedó quiescente; `false` si se agotó el timeout
     ///   (el caller procede con los datos parciales que haya).

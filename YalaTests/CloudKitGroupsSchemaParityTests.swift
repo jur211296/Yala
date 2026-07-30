@@ -70,8 +70,8 @@ struct CloudKitGroupsSchemaParityTests {
                 continue
             }
             guard let enumName = currentEnum else { continue }
-            // hasPrefix, no ==: un `} // comentario` dejaría el enum abierto y atribuiría los
-            // `static let` siguientes (p.ej. zonePrefix) al enum equivocado.
+            // hasPrefix, no ==: un `} // comentario` dejaría el enum abierto y atribuiría al enum
+            // equivocado cualquier `static let x = "literal"` posterior del fichero.
             if line.trimmingCharacters(in: .whitespaces).hasPrefix("}") {
                 currentEnum = nil
                 continue

@@ -99,7 +99,7 @@ final class SplitGroup {
         membersCanInvite: Bool = false
     ) {
         self.id = UUID()
-        self.cloudKitZoneID = "\(CKConstants.zonePrefix)\(self.id.uuidString)"
+        self.cloudKitZoneID = "\(SplitGroupZone.zonePrefix)\(self.id.uuidString)"
         self.name = name
         self.iconName = iconName
         self.colorHex = colorHex

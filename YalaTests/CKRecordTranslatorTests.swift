@@ -17,7 +17,7 @@ struct CKConstantsTests {
 
     @Test func zoneNameFromGroupID() {
         let id = UUID()
-        let name = CKConstants.zoneName(for: id)
+        let name = SplitGroupZone.zoneName(for: id)
         #expect(name == "SplitGroup-\(id.uuidString)")
     }
 

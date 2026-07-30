@@ -18,7 +18,7 @@ struct SplitSyncZoneHelperTests {
 
     @Test func zoneNameRoundTrip() {
         let groupID = UUID()
-        let zoneName = CKConstants.zoneName(for: groupID)
+        let zoneName = SplitGroupZone.zoneName(for: groupID)
         let recovered = CKConstants.groupID(from: zoneName)
         #expect(recovered == groupID)
     }
@@ -124,7 +124,7 @@ struct ZoneCleanupTests {
 
     @Test func groupIDFromZoneNameParsesCorrectly() {
         let uuid = UUID()
-        let zoneName = CKConstants.zoneName(for: uuid)
+        let zoneName = SplitGroupZone.zoneName(for: uuid)
         #expect(CKConstants.groupID(from: zoneName) == uuid)
     }
 
