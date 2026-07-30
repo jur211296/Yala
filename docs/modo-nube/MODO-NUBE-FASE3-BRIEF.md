@@ -181,10 +181,15 @@ destruye, y contra eso el test que sirve es el que pinnea el **cableado**, no el
 
 #### Dos huérfanos nuevos que la Fase 3 crea aquí, y quedan REPORTADOS (fuera de ámbito)
 
-- **`clearCache()` pierde su único caller** (`SplitSyncManager.swift:1466`) ⇒ tras la Fase 3 nadie puede
+- **`clearCache()` pierde sus callers** ⇒ tras la Fase 3 nadie puede
   olvidar la identidad de un Apple ID que se fue: la key se queda congelada con el recordName anterior.
   Va de la mano de que el boot-guard entero (`GroupsIdentityBootGuardLogic`) también muere, así que el
   cambio de Apple ID deja de detectarse — decidir junto, no por separado.
+  **Actualizado 2026-07-30:** ya no es un caller sino DOS, y no son intercambiables —
+  `SplitSyncManager.applyIdentityPurge` (junto a las filas purgadas, el par C-3) y
+  `resetLocalGroupsSyncState(clearingIdentityCache: true)` (el handover «empiezo de cero», que borra el
+  dominio entero en el acto). Al borrar el transporte hay que preguntarse por cada uno por separado: el del
+  handover **no** depende de CloudKit y no puede irse con él.
 - **`fetchFreshRecordName()` queda sin callers** (su único uso es `SplitSyncManager.swift:270`, el
   boot-guard) ⇒ borrable con él.
 - Y uno que no es de la Fase 3 sino de **2.6**: `legacyMemberKeyForRejoin` es el **sexto resolvedor de
@@ -267,12 +272,16 @@ desde esta app. Lo que ya está vivo es la **fabricación silenciosa de la diver
 Es el ⚠️ H2 de `SplitSyncManager.swift:259-263` con un agravante nuevo: el daño no lo causa el encendido
 del flag, lo causa un estado que el encendido **encuentra ya escrito**.
 
-#### Dos cosas que quedan REPORTADAS, fuera de ámbito
+#### Una cosa que queda REPORTADA, fuera de ámbito
 
-- **La grieta del diferido es un defecto por sí misma, y no vive en esta función.** `clearAllLocalGroupData`
-  puede saltarse la purga mientras `resetLocalGroupsSyncState` borra la identidad igual, y la marca del
-  diferido no es durable. Arreglarlo es o bien persistir `deferredClearAllRequested`, o bien mover el
-  `clearCache()` dentro de la mitad que se difiere. Toca `SplitSyncManager`, no el handler de invitaciones.
+> La grieta del diferido, que estaba aquí, se **CERRÓ el 2026-07-30** fuera de la Fase 3: era un bug de
+> privacidad vivo en producción con el flag apagado. Se hicieron **las dos** cosas que este brief planteaba
+> como alternativas, porque no eran alternativas sino mitades: el intent es durable
+> (`GroupsIdentityPurgeIntent`, UserDefaults sin TTL, retomado en `AppBootstrapper` 16.4.4 tras la
+> quiescencia) **y** el `clearCache()` se movió a la mitad que se difiere
+> (`resetLocalGroupsSyncState(clearingIdentityCache:)`). El contrato quedó en
+> `.claude/rules/swiftdata-cloudkit.md` y las celdas en `GroupsIdentityPurgeDurabilityTests`.
+
 - **El `fetchLimit = 1` sin `sortBy` sobre un predicado que casa varias filas** era una moneda al aire
   (una zona migrada puede tener DOS filas marcadas del mismo humano: la legacy y la born-backend de un
   re-join que no rebindeó). Aquí queda cerrado; el patrón puede estar en otros fetches de members.
@@ -364,6 +373,25 @@ el commit 0) **+ las 8 celdas de `resolveWaitByQuiescence` que hay que RESCATAR 
   listas del plan.
 
 ---
+
+## Reportado y SIN dueño — dos intenciones más que se pierden al morir el proceso
+
+Salieron de clasificar los diez diferidos de `SplitSyncManager` al arreglar la grieta de la purga
+(`7c7fb7f6`). **Ninguno depende del flag ni de la Fase 3: fallan hoy.** No estaban escritos en ningún
+sitio hasta el 2026-07-30.
+
+- **El bridge remoto de Grupos se pierde para siempre, y la regla decía lo contrario.**
+  `pendingBridgeExpenseIDs`/`pendingBridgeSettlementIDs` se acumulan en `SplitSyncManager.swift:1815`
+  **después** de aplicar el changeSet ⇒ al retornar el handler el change token ya avanzó y CloudKit no
+  reenvía el record. Si la app muere en esa ventana, el gasto de grupo **nunca** obtiene su
+  `TransactionItem`: no aparece en Panel, Inbox ni presupuestos. `.claude/rules/swiftdata-cloudkit.md`
+  afirmaba «CKSyncEngine re-entrega después» — corregido el 2026-07-30. El fix natural es el mismo
+  contrato que `GroupsIdentityPurgeIntent`: intención ⇒ diferido durable. Ojo: el Caso A (user-action) SÍ
+  está cubierto por el `bridgePending` persistido; lo que no lo está es el camino remoto.
+- **`quotaFailedRecordIDs` es una intención sin drenador.** `retryQuotaFailedRecords()`
+  (`SplitSyncManager.swift:1616`) **no tiene ni un call-site en la app** — su única otra mención es el
+  comentario de `:1480`, que afirma que corre en foreground. Verificado con grep el 2026-07-30. Si la cuota
+  de CloudKit falla, esos records no se reintentan jamás y nadie se entera.
 
 ## Dos cosas ya muertas hoy (limpieza gratis, sin relación con la Fase 3)
 
