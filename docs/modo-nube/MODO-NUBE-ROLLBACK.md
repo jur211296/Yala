@@ -90,7 +90,7 @@ configurado no hay sesión de nube y con ella se caen todas las superficies del 
 
 | Pieza | Commit | ¿Revert de git lo deshace? |
 |---|---|---|
-| `groupsBackendCompiledDefault` → `true` + los 8 sitios de teardown que pasan a leer el compilado | `PENDIENTE` (ver nota) | **Sí**, limpio — no toca servidor ni gateway; devuelve el binario al estado del paso 1 |
+| `groupsBackendCompiledDefault` → `true` + los 8 sitios de teardown que pasan a leer el compilado | `5490544d` | **Sí**, limpio — no toca servidor ni gateway; devuelve el binario al estado del paso 1 |
 
 **Revertir esto es seguro HOY y deja de serlo en cuanto el percent suba**, por el motivo del §2 «lo que no
 se recupera de ninguna manera»: un grupo born-backend nunca tuvo zona CloudKit. Mientras
@@ -108,9 +108,9 @@ Qué entra en este commit, además del flip:
   RPC falla y el borrado queda bloqueado hasta que se levante. Es retraso-de-borrado frente a
   retención-permanente-de-PII, y la dirección está elegida a conciencia (§D-R1).
 
-> **Nota de proceso (§5): este commit no puede contener su propio hash.** El commit inmediatamente
-> posterior lo sustituye aquí. Si lees `PENDIENTE` en una emergencia, el hash es el del commit de docs que
-> sigue a éste en `git log`.
+> **Nota de proceso (§5):** el commit del flip no podía contener su propio hash, así que lo anotó el commit
+> de docs inmediatamente posterior. Es la tercera vez que pasa en esta épica (el commit 0 de la Fase 3 y el
+> paso 1 se anotaron tarde) y la primera en que la ventana es de un commit y no de días.
 
 ### Fase 1 — cierre del servidor y muerte de la migración
 
