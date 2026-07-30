@@ -436,8 +436,13 @@ final class AppBootstrapper {
         }
 
         // Seed current iCloud user identity for groups and refresh local membership flags.
+        // Fase 2 bis: entra por `GroupICloudIdentitySeed` (canal nuevo), NO por la fachada del transporte.
+        // Este Task es el ÚNICO camino que puebla la identidad en CADA arranque —el resto la lee— así que
+        // atarlo a un símbolo que la Fase 3 borra dejaba la key sin escritor en instalación fresca.
         Task { @MainActor in
-            _ = try? await GroupUserIdentityService.shared.currentUserRecordName()
+            // Best-effort a propósito (era un `try?`, ahora con log dentro del seam): sin iCloud el canal
+            // backend sigue resolviendo la identidad por el `sub` de la cuenta Yala.
+            await GroupICloudIdentitySeed.seedIfNeededBestEffort()
             guard await awaitPersonalStoreReady() else {
                 SaveBreadcrumb.deferred("AppBootstrapper.refreshCurrentUserFlags", "import not quiescent")
                 return

@@ -5,6 +5,12 @@
 //  Fetches the current iCloud user record name for the Groups CloudKit container
 //  and provides deterministic IDs for per-user records (e.g., SplitMember).
 //
+//  Fase 2 bis: el ESCRITOR de `cachedRecordName` ya NO vive aquí. Vive en
+//  `GroupICloudIdentitySeed` (`Yala/Services/CloudSync/Groups/`), con la key y el fetch, porque este
+//  fichero se vacía de CloudKit en la Fase 3 y la propiedad se conserva: dejar el `UserDefaults.set`
+//  dentro de `currentUserRecordName()` era dejar la key sin nadie que la escribiera en cuanto el método
+//  muriera. Lo que queda aquí es el CACHE (in-memory, dueño de la propiedad) y `deterministicUUID`.
+//
 
 import CloudKit
 import CryptoKit
@@ -15,38 +21,29 @@ final class GroupUserIdentityService {
 
     static let shared = GroupUserIdentityService()
 
-    private let defaultsKey = "groups_currentUserRecordName"
-    private var inflightFetch: Task<String, Error>?
-
     private(set) var cachedRecordName: String?
 
     private init() {
-        cachedRecordName = UserDefaults.standard.string(forKey: defaultsKey)
+        cachedRecordName = GroupICloudIdentitySeed.persistedRecordName
     }
 
+    /// Fachada histórica del seed, conservada mientras el transporte CloudKit siga vivo (`createGroup`,
+    /// `ensureCurrentUserMemberExists`, `refreshCurrentUserFlags`). Delega en el escritor del canal nuevo:
+    /// mismo coalescing, misma persistencia, mismo error propagado. La Fase 3 puede borrar ESTE método sin
+    /// dejar la identidad sin escritor — el seed de boot ya entra por `GroupICloudIdentitySeed`.
     func currentUserRecordName() async throws -> String {
-        if let cachedRecordName, !cachedRecordName.isEmpty { return cachedRecordName }
-        if let inflightFetch { return try await inflightFetch.value }
+        try await GroupICloudIdentitySeed.seedIfNeeded()
+    }
 
-        let task = Task { () throws -> String in
-            let id = try await CKContainer(identifier: CKConstants.containerID).userRecordID()
-            return id.recordName
-        }
-
-        inflightFetch = task
-        defer { inflightFetch = nil }
-
-        let name = try await task.value
-        cachedRecordName = name
-        UserDefaults.standard.set(name, forKey: defaultsKey)
-        return name
+    /// Escritura del cache in-memory. La llama SOLO `GroupICloudIdentitySeed.adopt(_:)`, que es quien
+    /// persiste — separar el par (cache, `UserDefaults`) en dos dueños los desincronizaría.
+    func applySeededRecordName(_ recordName: String) {
+        cachedRecordName = recordName
     }
 
     func clearCache() {
         cachedRecordName = nil
-        inflightFetch?.cancel()
-        inflightFetch = nil
-        UserDefaults.standard.removeObject(forKey: defaultsKey)
+        GroupICloudIdentitySeed.forgetPersisted()
     }
 
     /// Boot-guard GAP 1: fetch DIRECTO a CKContainer que NO lee ni escribe el cache.
