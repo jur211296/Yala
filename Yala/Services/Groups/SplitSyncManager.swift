@@ -112,6 +112,12 @@ final class SplitSyncManager {
     private var deferredZoneFetchCompletions: [String] = []
     /// Sign-out/switch during the export-only window: run `clearAllLocalGroupData` after promotion
     /// (clearing supersedes any buffered fetched data — buffers are discarded).
+    ///
+    /// CAMINO RÁPIDO EN ESTE PROCESO, NO la red de seguridad. Los demás `deferred*` de aquí bufferean
+    /// EVENTOS de CloudKit; este es una INTENCIÓN derivada de un evento del OS que llega UNA sola vez y
+    /// que nadie re-entrega, así que morir antes de la promoción la perdía PARA SIEMPRE. Lo durable vive
+    /// ahora en `GroupsIdentityPurgeIntent` (UserDefaults, sin TTL), retomado al boot por
+    /// `resumeDeferredIdentityPurgeIfNeeded()`.
     private var deferredClearAllRequested = false
 
     // Coalescing task for deferred bridge/notifications after remote changes
@@ -1392,10 +1398,20 @@ final class SplitSyncManager {
     /// Limpieza de "cambió el Apple ID" — reusada por `handleAccountChange(.switchAccounts)`
     /// (reactivo, evento del engine) y por `runIdentityBootGuard()` (proactivo, GAP 1).
     /// `clearAllLocalGroupData` auto-difiere en la ventana export-only
-    /// (`deferredClearAllRequested`); borrar los state files con engines vivos tiene el
+    /// (`deferredClearAllRequested` + el intent DURABLE); borrar los state files con engines vivos tiene el
     /// mismo precedente que el switch reactivo (los engines ya cargaron su
     /// stateSerialization en memoria — el re-fetch bajo la identidad nueva lo regenera).
-    private func performAccountSwitchCleanup() {
+    ///
+    /// **Las tres mitades NO tienen el mismo gate, y eso es a propósito** (fix 2026-07-30). La primera se
+    /// difiere porque toca el `mainContext` compartido; las otras dos corren siempre porque NO lo tocan y
+    /// diferirlas sería peor: unos engines vivos con los change tokens y los pending changes del Apple ID
+    /// que se fue pueden exportar a la private DB del NUEVO. Lo que sí tuvo que mudarse de mitad es el
+    /// olvido de la identidad cacheada — ver `resetLocalGroupsSyncState(clearingIdentityCache:)`.
+    ///
+    /// `internal` (no `private`) para que `GroupsIdentityPurgeDurabilityTests` ejercite la secuencia REAL:
+    /// sin `initialize()` el manager no tiene container ni engines (`recreateEngines…` hace early-return)
+    /// y `autoSyncActive` es `false`, o sea la ventana export-only sin CloudKit por medio.
+    func performAccountSwitchCleanup() {
         // C-3: `handleAccountChange` corre UNA VEZ POR ENGINE (private + shared) y la recreación de abajo
         // puede hacer que un engine recién creado vuelva a emitir su propio `.accountChange`. Sin este
         // guard el par borrar-todo → save → recrear → borrar-todo se realimenta.
@@ -1404,8 +1420,29 @@ final class SplitSyncManager {
         defer { identityCleanupInFlight = false }
 
         clearAllLocalGroupData()
-        resetLocalGroupsSyncState()
+        resetLocalGroupsSyncState(clearingIdentityCache: false)
         recreateEnginesAfterIdentityChange()
+    }
+
+    /// Retome del intent DURABLE de purga (`GroupsIdentityPurgeIntent`), llamado desde el paso 16.4.4 de
+    /// `AppBootstrapper` en cada arranque. No-op si no hay nada armado — el caso del 99,99 % de los boots.
+    ///
+    /// **El caller DEBE haber probado la quiescencia del store personal** (`awaitPersonalStoreReady()`), y
+    /// por eso este camino NO vuelve a pasar por `deferMainContextWork`: ese gate mira `autoSyncActive`,
+    /// que es un PROXY de la quiescencia y puede encenderse por hard-cap (`SplitSyncManager.hardCapSeconds`,
+    /// promoción forzada con el import aún activo). `BootSaveGateLogic.decide` es la prueba directa y
+    /// además NUNCA fuerza (`reachedHardCap` hardcodeado a `false`), así que es estrictamente más fuerte.
+    /// Es el mismo invariante bajo el que salvan los otros ocho boot-Tasks del bootstrapper.
+    ///
+    /// Si en cambio se re-gateara por `autoSyncActive`, el retome llegaría casi siempre antes que la
+    /// promoción (el poll del boot-save es de 2 s; el del engine, de 15 s) y solo volvería a diferir:
+    /// un usuario que mate la app en esa ventana repetiría el bucle en cada arranque sin purgar nunca.
+    func resumeDeferredIdentityPurgeIfNeeded() {
+        guard GroupsIdentityPurgeIntent.isArmed else { return }
+        let pendingHours = GroupsIdentityPurgeIntent.armedAt
+            .map { Int(Date.now.timeIntervalSince($0) / 3600) } ?? 0
+        GroupsSyncBreadcrumb.groupsIdentityPurgeResumed(pendingHours: max(0, pendingHours))
+        applyIdentityPurge()
     }
 
     /// C-3 (D2): reset EFECTIVO del estado de CKSyncEngine tras un cambio de identidad de iCloud.
@@ -1460,10 +1497,25 @@ final class SplitSyncManager {
     /// filas provoca un re-fetch completo sobre datos que ya están. La rama `.signOut` de
     /// `handleAccountChange` era el anti-patrón a NO copiar (borraba filas sin tocar el estado); C-3/D2 la
     /// arregló: ahora enruta por `performAccountSwitchCleanup`, igual que `.switchAccounts`.
-    func resetLocalGroupsSyncState() {
+    ///
+    /// - Parameter clearingIdentityCache: default `true` ⇒ el camino de handover «empiezo de cero»
+    ///   (`DataWipeService.wipeLocalGroupsDomain`) queda BYTE-IDÉNTICO; ahí el relevo es declarado, el
+    ///   dominio se borra entero en el acto y no hay ninguna purga diferida con la que emparejarse.
+    ///   `performAccountSwitchCleanup` pasa `false` y se lleva el olvido a `applyIdentityPurge()`, junto a
+    ///   las filas. **Por qué esa mitad y no otra:** el cache es la ÚNICA evidencia del cambio de Apple ID
+    ///   que tiene el dispositivo (no existe token de «dueño del corpus»: `grep corpusID|installID` = 0), y
+    ///   `runIdentityBootGuard` lo compara contra el recordName fresco. Borrarlo mientras las filas siguen
+    ///   vivas cegaba el boot-guard de los arranques siguientes por partida doble: con el cache vacío hace
+    ///   early-return («nada que comparar»), y si el seed de boot ya lo re-sembró
+    ///   (`GroupICloudIdentitySeed.seedIfNeededBestEffort`, `AppBootstrapper:445`) entonces `cached == fresh`
+    ///   ⇒ `.none`. Conservándolo, `seedIfNeeded` cortocircuita con el cache poblado y NO lo pisa, así que el
+    ///   boot-guard vuelve a ver el mismatch y RE-DISPARA la purga: una segunda red, independiente del intent
+    ///   persistente. (No universal — el boot-guard se retira con `groupsBackendEnabled` ON —, por eso la red
+    ///   principal sigue siendo `GroupsIdentityPurgeIntent`.)
+    func resetLocalGroupsSyncState(clearingIdentityCache: Bool = true) {
         clearState(name: "private")
         clearState(name: "shared")
-        GroupUserIdentityService.shared.clearCache()
+        if clearingIdentityCache { GroupUserIdentityService.shared.clearCache() }
         // C-4: los tokens se invalidan ⇒ el canal vuelve a estar «sin leer» y los testigos del ciclo de
         // fetch hablan de un corpus que ya no es el que viene. Sin este reset el gate leería como asentado
         // un canal que va a re-fetchear la base entera.
@@ -1473,16 +1525,41 @@ final class SplitSyncManager {
     }
 
     /// Delete all local group data (used on sign-out and account switch for privacy).
+    ///
+    /// **Arm-then-attempt-then-disarm.** El intent durable se arma ANTES de intentar nada, y solo se
+    /// desarma cuando la purga se completó de verdad (`applyIdentityPurge`). Así los CUATRO puntos en los
+    /// que esto podía perderse en silencio quedan cubiertos por el mismo mecanismo: el diferido de la
+    /// ventana export-only, la ausencia de `modelContext`, un `save()` que lanza, y un kill del proceso en
+    /// cualquier instante entre medias. Coste: dos escrituras de `UserDefaults` en un evento que ocurre
+    /// como mucho una vez por cambio de Apple ID.
     private func clearAllLocalGroupData() {
+        GroupsIdentityPurgeIntent.arm()
+
         // Edge case only: a sign-out/switch during the initial restore window (the user just signed
         // in) is near-impossible. Defer the save to stay crash-safe (flagged — runs after promotion,
         // superseding any buffered fetched data); a normal sign-out (after the import settled,
         // autoSyncActive == true) clears immediately.
         if deferMainContextWork("clearAllLocalGroupData") {
             deferredClearAllRequested = true
+            GroupsSyncBreadcrumb.groupsIdentityPurgeDeferred(reason: "exportOnly")
             return
         }
-        guard let modelContext else { return }
+        applyIdentityPurge()
+    }
+
+    /// La purga en sí, SIN gate: sus dos callers ya probaron que salvar el `mainContext` es seguro ahora
+    /// — `clearAllLocalGroupData` por `deferMainContextWork`, y `resumeDeferredIdentityPurgeIfNeeded` por
+    /// la quiescencia del import que verificó el bootstrapper.
+    ///
+    /// Las filas y la identidad cacheada se tocan JUNTAS y en este orden (par C-3): mientras las filas del
+    /// Apple ID anterior sigan vivas, su identidad cacheada tiene que seguir viva también — es lo que
+    /// permite volver a detectar el mismatch. El `clearCache()` va DESPUÉS del `save()`: si el save lanza,
+    /// ni se olvida la identidad ni se desarma el intent, y el próximo arranque reintenta el par entero.
+    private func applyIdentityPurge() {
+        guard let modelContext else {
+            GroupsSyncBreadcrumb.groupsIdentityPurgeDeferred(reason: "noContext")
+            return
+        }
 
         do {
             // C-3 (D1 + D4): las zonas del canal BACKEND se CONSERVAN mientras haya sesión de nube viva —
@@ -1498,6 +1575,12 @@ final class SplitSyncManager {
             SaveBreadcrumb.willSave("SplitSync.clearAllLocalGroupData")
             try modelContext.save()
             SaveBreadcrumb.didSave("SplitSync.clearAllLocalGroupData")
+
+            // La otra mitad del par: la identidad del Apple ID que se fue se olvida AQUÍ, no en
+            // `resetLocalGroupsSyncState`. Ver el `clearingIdentityCache:` de esa función.
+            GroupUserIdentityService.shared.clearCache()
+            GroupsIdentityPurgeIntent.disarm()
+
             SessionState.shared.markRemoteChangePending()
             if result.retainedOwnedZones + result.retainedFrozenZones > 0 {
                 GroupsSyncBreadcrumb.groupsIdentityChangeRetained(
@@ -1511,11 +1594,22 @@ final class SplitSyncManager {
                 GroupsSyncBreadcrumb.groupsIdentityChangePurgeFailed(zones: result.failedZones)
             }
         } catch {
+            // El intent queda ARMADO a propósito: el próximo arranque reintenta el par entero.
+            GroupsSyncBreadcrumb.groupsIdentityPurgeDeferred(reason: "saveFailed")
             #if DEBUG
             logger.error("clearAllLocalGroupData: Failed: \(error)")
             #endif
         }
     }
+
+    #if DEBUG
+    /// Test-only: olvida el camino rápido EN MEMORIA del diferido, sin tocar el intent durable. Es lo que
+    /// convierte a `GroupsIdentityPurgeDurabilityTests` en una prueba honesta de «proceso nuevo»: tras esto,
+    /// lo único que puede recuperar la purga es lo que sobrevive a un reinicio.
+    func _testForgetInMemoryDeferredPurge() {
+        deferredClearAllRequested = false
+    }
+    #endif
 
     /// Retry records that previously failed due to iCloud quota exceeded.
     /// Call from sceneDidBecomeActive or when quota status may have changed.

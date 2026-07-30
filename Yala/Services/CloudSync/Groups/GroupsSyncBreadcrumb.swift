@@ -210,4 +210,19 @@ enum GroupsSyncBreadcrumb {
     static func groupsIdentityChangePurgeFailed(zones: Int) {
         logger.notice("GroupsSync identityChangePurgeFailed zones=\(zones, privacy: .public)")
     }
+
+    /// La purga de identidad NO pudo correr ahora y quedó anotada en el intent DURABLE
+    /// (`GroupsIdentityPurgeIntent`). `reason` = slug del motivo (`exportOnly` = ventana export-only del
+    /// gate de quiescencia · `noContext` = el manager aún no tiene `mainContext` · `saveFailed`). Sin PII.
+    /// Ver ≥1 de estos SIN su `identityPurgeResumed` en el mismo device = purga arrastrándose entre
+    /// arranques: es exactamente el estado que el intent existe para no perder.
+    static func groupsIdentityPurgeDeferred(reason: String) {
+        logger.notice("GroupsSync identityPurgeDeferred reason=\(reason, privacy: .public)")
+    }
+
+    /// El retome del boot encontró el intent armado y va a ejecutar la purga. `pendingHours` = horas desde
+    /// que se armó, redondeadas (diagnóstico de cuántos arranques tardó; jamás caduca por él). Sin PII.
+    static func groupsIdentityPurgeResumed(pendingHours: Int) {
+        logger.notice("GroupsSync identityPurgeResumed pendingHours=\(pendingHours, privacy: .public)")
+    }
 }

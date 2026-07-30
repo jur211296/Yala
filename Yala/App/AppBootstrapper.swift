@@ -365,6 +365,24 @@ final class AppBootstrapper {
             }
         }
 
+        // 16.4.4. Purga del dominio Grupos por CAMBIO DE APPLE ID que quedó pendiente (privacidad entre
+        // humanos que comparten dispositivo). El evento de cuenta del OS llega UNA vez y nadie lo
+        // re-entrega; si al llegar el import personal seguía en curso, la purga se difiere y solo vive en
+        // `GroupsIdentityPurgeIntent` (UserDefaults, sin TTL). Aquí se retoma, gateada por QUIESCENCIA como
+        // los demás boot-saves: borra filas del mainContext compartido. Idempotente y convergente — si no
+        // asienta, el intent sobrevive y reintenta en el próximo arranque.
+        //
+        // El `isArmed` se comprueba DENTRO (en el manager), no aquí: `SplitSyncManager.initialize()` (:317)
+        // lanza `runIdentityBootGuard`, cuyo fetch de red puede ARMAR el intent SEGUNDOS DESPUÉS de que
+        // este Task se creara — un snapshot en un `if` externo lo perdería hasta el arranque siguiente.
+        Task { @MainActor in
+            guard await awaitPersonalStoreReady() else {
+                SaveBreadcrumb.deferred("AppBootstrapper.groupsIdentityPurgeResume", "import not quiescent")
+                return
+            }
+            SplitSyncManager.shared.resumeDeferredIdentityPurgeIfNeeded()
+        }
+
         // 16.4.5. Safety net: hidden groups + removed-self cleanup que el observer pudo perder.
         // Corre ANTES de retryPendingBridges para que el bridge guard `isHiddenForAll` aplique.
         Task { @MainActor in
