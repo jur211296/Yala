@@ -2,7 +2,7 @@
 created: 2026-07-29
 updated: 2026-07-29
 tags: [modo-nube, grupos, fase3, brief]
-status: blocked
+status: blocked  # commit 0 HECHO (bc486c92); los commits 1 y 2 siguen bloqueados por el flag
 ---
 
 # Fase 3 — brief, con las coordenadas medidas y el bloqueo que el plan no nombra
@@ -48,11 +48,11 @@ compilado**, como su propio lote, ANTES de cualquier borrado.
 
 | Bloque | Plan | Medido | Nota |
 |---|---|---|---|
-| Ficheros «enteros» (13) | 4.892 | **4.498** | −384 son solo `SplitSyncManager`: **2.521**, no 2.905 |
+| Ficheros «enteros» (13) | 4.892 | **4.498** → **4.355** tras `bc486c92` | −384 son solo `SplitSyncManager`: **2.521**, no 2.905. El commit 0 se llevó 143 de `SplitSyncStartGate` (292→149) |
 | Recortes en ficheros vivos | no cuantificado | **~460** (139 exactas, ~321 estimadas) | `GroupService` 1.534 → ~1.075 |
-| Tests | «10 ficheros, ~2.042» | **1.855 en 15 ficheros** | 9 mueren enteros (1.504) + 6 con recorte (351) |
+| Tests | «10 ficheros, ~2.042» | **1.855 en 15 ficheros** → **1.723** tras `bc486c92` | 9 mueren enteros (1.504) + 6 con recorte (351). El commit 0 sacó 132 de `SplitSyncStartGateTests` (395→263) |
 | Canarios y breadcrumbs | no cuantificado | **~74** | `MetricsService` 451→~433 · `GroupsSyncBreadcrumb` 213→~157 |
-| **Total** | ~6.934 | **~5.974** | |
+| **Total** | ~6.934 | **~5.974** → **~5.699** tras `bc486c92` | |
 
 **6 de 13 rutas del plan están mal**: apuntan a `Yala/Services/CloudSync/` cuando el transporte vive en
 `Yala/Services/Groups/`. Y `Services/CloudSync/Groups/` **sí existe**, con 14 ficheros de nombre casi
@@ -69,9 +69,9 @@ función está en `:246` (no `:236`) y los callsites en `GroupService:238`/`:318
 
 | Fichero | Qué esconde | Si se borra entero |
 |---|---|---|
-| `Yala/App/Logic/SplitSyncStartGate.swift` (292) | `BootSaveGateLogic` (`:198-292`) + `WaitResolution` (`:61`) + `resolveWaitByQuiescence` (`:97-108`) — el gate de los `save()` del store **PERSONAL**, usado por `AppBootstrapper.swift:881` | **reintroduce el crash-loop SIGTRAP del restore de iCloud** (H-2026-07-18-8) sin un solo test rojo: los 9 tests que lo pinnean viven en `SplitSyncStartGateTests.swift`, que el mismo commit borra |
+| ~~`Yala/App/Logic/SplitSyncStartGate.swift` (292)~~ → **149, RESUELTO en `bc486c92`** | ~~`BootSaveGateLogic` (`:198-292`) + `WaitResolution` (`:61`) + `resolveWaitByQuiescence` (`:97-108`)~~ — ya viven en `BootSaveGateLogic.swift` | ~~reintroduce el crash-loop SIGTRAP del restore de iCloud~~ (H-2026-07-18-8) — el commit 1 ya puede borrar el fichero entero |
 | `Yala/Services/Groups/GroupUserIdentityService.swift` (88) | `deterministicUUID` (`:75-87`), usado por `GroupBackendIdentityLogic.swift:38` y `GroupsSyncClient.swift:1901` — **el 63 % del fichero sobrevive** | rompe la derivación de ids del canal backend |
-| `CKConstants` (en `CloudKitConstants.swift`) | `zonePrefix`, usado en el `init` de `SplitGroup.swift:102` para construir `cloudKitZoneID` | **`cloudKitZoneID` ES el `group_id` server-side del canal backend** ⇒ se rompe la identidad de los grupos en el backend |
+| ~~`CKConstants` (en `CloudKitConstants.swift`)~~ → **RESUELTO en `bc486c92`** | ~~`zonePrefix`~~ (+ `zoneName(for:)`) ya vive en `SplitGroupZone` (`Yala/Models/`); el `init` de `SplitGroup.swift:102` apunta ahí | ~~se rompe la identidad de los grupos en el backend~~ — literal `"SplitGroup-"` conservado byte a byte |
 
 ---
 
@@ -118,11 +118,40 @@ del canal backend (`GroupBackendInviteEntryHandler:127`, `GroupExpenseService:61
 El ciclo duro `SplitSyncManager` ↔ `SplitZoneManager` y las ~30 llamadas a `enqueueSave`/`enqueueDeletion`
 en 3 ficheros supervivientes **prohíben subdividir el commit de producción**.
 
-**Commit 0 — movimientos (aislado, sin riesgo, se puede hacer YA y no depende del flag).**
-Mover `BootSaveGateLogic` + `WaitResolution` + `resolveWaitByQuiescence` a fichero propio y su suite a
-`YalaTests/BootSaveGateLogicTests.swift`; mover `zonePrefix` (con su literal) fuera de
-`CloudKitConstants.swift`. Compila y pasa tests por sí solo, y saca 2 acoplamientos del commit grande sin
-abrir ninguna ventana de riesgo.
+**Commit 0 — movimientos. ✅ HECHO: `bc486c92` (2026-07-29).**
+`BootSaveGateLogic` + `WaitResolution` + `resolveWaitByQuiescence` → `Yala/App/Logic/BootSaveGateLogic.swift`
+(169); su suite (9 celdas) → `YalaTests/BootSaveGateLogicTests.swift` (147); `zonePrefix` + `zoneName(for:)`
+→ `enum SplitGroupZone` en `Yala/Models/SplitGroupZone.swift` (32), con el literal `"SplitGroup-"` intacto.
+Build `Yala` + `Yala Dev` verdes sin warnings nuevos; **5.221 tests / 483 suites en verde**;
+`validate-coverage.sh` → `RESULT: OK`. Cero cambios de comportamiento.
+
+**Lo que cambió respecto a lo que decía este brief, medido al ejecutarlo:**
+
+- **`SplitSyncStartGate.swift` adelgaza 292 → 149, no 292 → ~197.** Salen las tres piezas juntas (147
+  líneas), porque `WaitResolution` y `resolveWaitByQuiescence` se llevan sus docblocks completos. El commit 1
+  borra 149, no 292 ⇒ **el total de «ficheros enteros» baja de 4.498 a 4.355**.
+- **`resolveWaitByQuiescence` tenía DOS callers de producción, no uno.** Además de `BootSaveGateLogic.decide`
+  lo llama `SplitSyncManager.evaluateQuiescentPromotion` (`:630`), que muere en la Fase 3. Como el dueño
+  tiene que ser el que sobrevive, la función quedó **dentro de `BootSaveGateLogic`** y ese callsite ahora
+  dice `BootSaveGateLogic.resolveWaitByQuiescence` — se va con el fichero, sin trabajo extra para el commit 1.
+- **`zoneName(for:)` SÍ tiene caller superviviente, pero es un TEST**, no producción:
+  `GroupsIdentityPurgeGateTests` lo usa como control negativo de la derivación (`zona real ≠ derivada`).
+  Se movió con `zonePrefix`. El **parser inverso `groupID(from:)` tiene 0 callers supervivientes** (todos en
+  `SplitZoneManager`/`SplitSyncManager` y sus tests) ⇒ **se queda en `CKConstants`**, igual que
+  `zoneID(for:)`, los dos apuntando ya al nuevo dueño. `CloudKitConstants.swift`: 150 → 149.
+- **`CloudKitGroupsSchemaParityTests` NO se rompe con el movimiento.** Lee el fichero por ruta pero parsea
+  solo los 5 enums de campos, y `zonePrefix` nunca fue uno de ellos. Lo único que quedó obsoleto es el
+  comentario de `:74`, que usaba `zonePrefix` como ejemplo del fallo de parseo; corregido a una formulación
+  genérica. El adelanto de este test al commit 2 sigue en pie: el fichero que lee muere ahí.
+- ⚠️ **DEUDA para el commit 2, nueva:** las **8 celdas de `resolveWaitByQuiescence`** se quedaron en
+  `SplitSyncStartGateTests.swift`, que el commit 2 borra, **aunque cubren código que sobrevive** (la función
+  vive ahora en `BootSaveGateLogic`). Fuera del alcance del commit 0 —que movía la suite nombrada, no esa—
+  pero si el commit 2 borra el fichero sin moverlas, `resolveWaitByQuiescence` se queda sin un solo test.
+  Muévelas a `BootSaveGateLogicTests.swift`. El fichero mide hoy 263 líneas (395 − 132 del commit 0).
+- **Índice de cobertura:** `Yala/Models/SplitGroupZone.swift` entra en `groups-cross-device-sync` (18 globs)
+  y `Yala/App/Logic/BootSaveGateLogic.swift` en **`icloud-sync-multi-device`** (7 globs) — el gate de
+  boot-saves pertenece al área que sobrevive, no a la del transporte. Los dos `lastVerified` a `2026-07-29`
+  por drift de glob, no por re-verificación de sync.
 
 **Commit 1 — producción, atómico e indivisible.** Los 13 ficheros ya vaciados de lo movido + los trims de
 `GroupService`, `GroupExpenseService`, `GroupJoinReconciler`, `GroupJoinReconcileLogic`,
@@ -130,22 +159,23 @@ abrir ninguna ventana de riesgo.
 `GroupMembersView`, `GroupSettingsView`, `GroupsViewModel`, `GroupJoinIntentTracker`, `iCloudSyncService`,
 `InviteLinkService`, `RouterIntent`, `SplitGroup` y **`DataWipeService`**.
 
-**Commit 2 — tests y coverage.** Los 8 ficheros de test del transporte (1.681 menos las ~130 movidas en
-el commit 0) + **`CloudKitGroupsSchemaParityTests.swift` (157), adelantado de la Fase 4** porque lee
+**Commit 2 — tests y coverage.** Los 8 ficheros de test del transporte (1.681 menos las **132** movidas en
+el commit 0) **+ las 8 celdas de `resolveWaitByQuiescence` que hay que RESCATAR de
+`SplitSyncStartGateTests.swift` antes de borrarlo** (ver la deuda del commit 0) + **`CloudKitGroupsSchemaParityTests.swift` (157), adelantado de la Fase 4** porque lee
 `CloudKitConstants.swift` por RUTA y el fichero muere aquí + las **5 áreas** de `qa/coverage-index.json`
 + `_meta.counts`.
 
 ### Trampas del índice de cobertura
 
 - La Fase 1 **no** redujo el área del transporte: redujo `groups-backend-g6-migration` (26→8 globs).
-  `groups-cross-device-sync` (JSON `833-880`, `manual`) sigue con **17 globs**, 8 de los cuales
-  sobreviven.
+  `groups-cross-device-sync` (`manual`) tiene **18 globs** tras `bc486c92` (entró `SplitGroupZone.swift`),
+  9 de los cuales sobreviven.
 - **`groups-icloud-availability-gate` (JSON `965-976`) pierde sus 2 únicos globs, y `codeGlobs` vacío es
   error DURO** (`validate-coverage.py:61`) ⇒ hay que **borrar el área** y bajar `_meta.counts` a
   `total 133 / manual 57`. Los globs sin match son solo WARN, y **`counts` no lo valida nadie**.
-- El índice cita `unit:YalaTests/BootSaveGateLogicTests`. Esa suite **existe** —es el nombre del tipo en
-  `SplitSyncStartGateTests.swift:271`— pero el commit 2 borra el fichero que la esconde. El commit 0 la
-  saca a un fichero propio y la cita pasa a ser literal.
+- ~~El índice cita `unit:YalaTests/BootSaveGateLogicTests` escondida en `SplitSyncStartGateTests.swift`~~ —
+  **RESUELTO en `bc486c92`**: la suite tiene su fichero y la cita es literal. La cita vive en DOS áreas
+  (`groups-cross-device-sync` y `icloud-sync-multi-device`); la segunda es la dueña del gate y sobrevive.
 - El criterio de salida `grep -r "import CloudKit"` del plan **no escanea `App/Logic/`**, donde
   sobreviven `GroupJoinReconcileLogic.swift:15` y `GroupAcceptShareErrorLogic.swift:23` — ninguno en las
   listas del plan.
