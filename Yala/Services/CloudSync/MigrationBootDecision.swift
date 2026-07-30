@@ -15,8 +15,9 @@
 //     `notStarted`) fuerza `.resume` aunque la fase sea estable (AJUSTE review #3). Los terminales de
 //     FALLO NO auto-resumen (es una decisión del usuario vía la UI).
 //
-//  DARK hasta que `CloudBackendConfig.isConfigured` (staging/DEV): en producción placeholder el boot
-//  coordinator (`CloudMigrationController`) ni se instancia.
+//  Desde D-R1 paso 1 el boot coordinator (`CloudMigrationController`) SÍ se instancia en producción
+//  (`CloudBackendConfig.isConfigured` vale `true` en los dos schemes). Lo que lo deja sin trabajo es la
+//  fase journaleada: `notStarted` y sin efectos pendientes ⇒ `.none`.
 //
 
 import Foundation

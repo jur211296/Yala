@@ -909,8 +909,9 @@ struct ProfileView: View {
                 }
 
                 // §3.2: "Dónde viven tus datos" (antes "Almacenamiento"; key `storage.title` renombrada).
-                // Modo Nube (I14): solo si el backend está configurado (staging/DEV; prod placeholder no
-                // muestra nada). M1: oculta en sesión SECUNDARIA. DIFERIDOS #34: el flag remoto gatea solo
+                // Modo Nube (I14): exige backend configurado, abierto en los dos schemes desde D-R1 paso 1
+                // ⇒ hoy en producción lo que mantiene la fila oculta es el flag remoto (percent 0), no
+                // `isConfigured`. M1: oculta en sesión SECUNDARIA. DIFERIDOS #34: el flag remoto gatea solo
                 // la ENTRADA — un usuario "engaged" conserva la fila SIEMPRE. Gate StorageRowGateLogic intacto.
                 if StorageRowGateLogic.isVisible(
                     isConfigured: CloudBackendConfig.isConfigured,

@@ -7,9 +7,10 @@
 //  (JWT de Supabase + identidad) y el token de App Attest (`AppAttestClient.shared`, REUSO — ya produce
 //  el token de sesión del Worker) al `CloudSyncRuntime`.
 //
-//  DARK: el runtime sigue apagado tras `CloudSyncFlags.syncRuntimeEnabled == false`. Aunque se encendiera,
-//  sin sign-in `currentUserID == nil` → el runtime cae en `idleSignedOut` (ya probado en I9). El sign-in
-//  real (via el panel DEBUG o I14) lo despierta.
+//  `CloudSyncFlags.syncRuntimeEnabled` está ENCENDIDO desde I14 (P1), y desde D-R1 paso 1 producción
+//  compone este provider en vez del Noop. Lo que mantiene el runtime quieto es el guard de `storageMode`
+//  (`.icloud` en todo el parque de 2.x) y, sin sign-in, `currentUserID == nil` → `idleSignedOut` (ya
+//  probado en I9). El sign-in real (via el panel DEBUG o I14) lo despierta.
 //
 
 import Foundation

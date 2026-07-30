@@ -4,17 +4,17 @@
  * POR QUÉ EXISTE, y no es hipotético. `config.test.ts` prueba el PARSER (`"137"` → 137, ausente → 0,
  * basura → 0) pero nadie vigilaba el VALOR real de `wrangler.toml`, que es lo que se despliega.
  *
- * Hoy el mecanismo de forzado está inerte en producción por TRES capas: el valor es 0
- * (`parseMinBuild` es fail-closed: ningún build < 0) · el cliente de producción **no fetchea
- * `/config`** en absoluto (`CloudRemoteConfig.refreshIfDue` abre con
- * `guard CloudBackendConfig.isConfigured`) · y sin fetch no hay snapshot, así que `ForceUpdateGate`
- * lee `nil`.
+ * El mecanismo se apoyaba en TRES capas: el valor es 0 (`parseMinBuild` es fail-closed: ningún
+ * build < 0) · el cliente de producción no fetcheaba `/config` en absoluto
+ * (`CloudRemoteConfig.refreshIfDue` abre con `guard CloudBackendConfig.isConfigured`) · y sin fetch no
+ * había snapshot, así que `ForceUpdateGate` leía `nil`.
  *
- * La capa del medio ES el gate maestro del Modo Nube, y desaparece en cuanto se cablee la URL + anon
- * key de producción en `CloudBackendConfig`. Desde ese instante **todos** los clientes de producción
- * fetchean `/config` y lo único entre el usuario y una pantalla BLOQUEANTE es la cadena `"0"` de este
- * fichero. Un typo, un merge, o alguien probando el flujo en staging que se equivoca de bloque, y se
- * brica cada instalación: el fallo es total, instantáneo, y solo se arregla con otro deploy.
+ * **La capa del medio YA CAYÓ.** Era el gate maestro del Modo Nube, y D-R1 paso 1 (2026-07-30) cableó
+ * la URL + anon key de producción en `CloudBackendConfig`. Desde ese commit **todos** los clientes de
+ * producción fetchean `/config`, y lo único entre el usuario y una pantalla BLOQUEANTE es la cadena
+ * `"0"` de este fichero. Un typo, un merge, o alguien probando el flujo en staging que se equivoca de
+ * bloque, y se brica cada instalación: el fallo es total, instantáneo, y solo se arregla con otro
+ * deploy. Este test dejó de ser una red preventiva y pasó a ser la única que queda.
  *
  * Así que subirlo tiene que ser un acto DELIBERADO que rompe un test, no un descuido. Mismo patrón
  * que el ratchet de `coverage-index` y la paridad de schema de CloudKit: convertir «acuérdate» en

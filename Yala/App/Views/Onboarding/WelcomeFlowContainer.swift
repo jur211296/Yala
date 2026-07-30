@@ -94,7 +94,7 @@ struct WelcomeFlowContainer: View {
         }
         .task {
             // DIFERIDOS #34: refresh del remote-config en la ENTRADA (fresh install pre-onboarding
-            // puede no tener cache del boot todavía). Min-interval 6 h; no-op con backend placeholder.
+            // puede no tener cache del boot todavía). Min-interval 6 h.
             // Bajo uitest NO se toca red (hermeticidad — los getters ya devuelven el default).
             guard !SwiftDataConfiguration.isUITesting else { return }
             await RemoteConfigClient.shared.refreshIfDue()

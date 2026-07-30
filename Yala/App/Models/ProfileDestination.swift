@@ -30,8 +30,9 @@ enum ProfileDestination: Hashable {
     case iCloudSync
     case siriShortcuts
     case aiPrivacy
-    /// Modo Nube (I14): elección/gestión de almacenamiento (iCloud privado ↔ nube). Solo visible si
-    /// `CloudBackendConfig.isConfigured` (staging/DEV; prod placeholder sin cambios).
+    /// Modo Nube (I14): elección/gestión de almacenamiento (iCloud privado ↔ nube). Su fila la gobierna
+    /// `StorageRowGateLogic`; en producción sigue oculta por el flag remoto (percent 0), no por
+    /// `CloudBackendConfig.isConfigured`, que está abierto desde D-R1 paso 1.
     case storageMode
     /// "Tu cuenta de Yala" (§3.3.5): mapa/explainer del enlace privado ↔ nube (método, dónde viven los
     /// datos, desenlaces). Solo con sesión backend viva (DARK hoy).

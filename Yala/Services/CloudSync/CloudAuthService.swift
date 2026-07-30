@@ -12,8 +12,9 @@
 //  uno invalidaría el del otro (AJUSTE review).
 //
 //  GUARD DE CONSTRUCCIÓN (AJUSTE review): sin `CloudBackendConfig.isConfigured` NADA se instancia
-//  (`client == nil`, sin observer de revocación) → en producción HOY (placeholder) toda la superficie
-//  queda inerte y el runtime conserva el Noop de I9. Cero cambio de comportamiento (DARK).
+//  (`client == nil`, sin observer de revocación). Desde D-R1 paso 1 producción SÍ construye el
+//  subsistema; lo que lo mantiene quieto ya no es la ausencia de cliente, sino que no hay sesión ni
+//  superficie de sign-in visible (el gateway sirve los percents de entrada en 0).
 //
 //  Cero silencios: errores tipados + breadcrumb `CloudSyncBreadcrumb` (fuera de `#if DEBUG`, sin PII —
 //  JAMÁS se loguea el token, el email ni el `sub` completo).
@@ -102,7 +103,7 @@ enum SIWAExchangeCapture {
 
 /// Errores tipados del flujo de auth (sin PII).
 enum CloudAuthError: Error, Equatable {
-    /// El subsistema no está configurado (producción placeholder) → no hay `AuthClient`.
+    /// El subsistema no está configurado → no hay `AuthClient`.
     case notConfigured
     /// Apple no devolvió un `identityToken` utilizable.
     case missingIdentityToken
@@ -129,7 +130,7 @@ final class CloudAuthService: NSObject {
     /// Instancia ÚNICA (lazy). Compartida por el panel DEBUG y `LiveCloudSessionProvider`.
     static let shared = CloudAuthService()
 
-    /// `nil` cuando `CloudBackendConfig.isConfigured == false` (producción placeholder) → todo no-op.
+    /// `nil` cuando `CloudBackendConfig.isConfigured == false` → todo no-op.
     private let client: AuthClient?
 
     /// Keychain propio para el perfil capturado (email/fullName) del PRIMER sign-in + el appleUserID

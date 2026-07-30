@@ -48,8 +48,10 @@ export function handleConfig(c: Ctx): Response {
       cloudOnboardingChoiceRolloutPercent: parseRolloutPercent(c.env.CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT),
       groupsBackendRolloutPercent: parseRolloutPercent(c.env.GROUPS_BACKEND_ROLLOUT_PERCENT),
     },
-    // Forzado de actualización (min-version). DARK en prod: el cliente prod no fetchea /config
-    // (CloudBackendConfig.isConfigured == false) → inerte hasta el encendido (D9). 0 = desactivado.
+    // Forzado de actualización (min-version). YA NO es DARK: desde D-R1 paso 1 el cliente de producción
+    // fetchea /config (CloudBackendConfig.isConfigured pasó a true), así que lo único que separa al
+    // usuario de una pantalla bloqueante es este valor. 0 = desactivado; lo vigila
+    // test/wrangler.forceupdate.test.ts.
     forceUpdate: {
       minSupportedBuild: parseMinBuild(c.env.MIN_SUPPORTED_BUILD),
     },

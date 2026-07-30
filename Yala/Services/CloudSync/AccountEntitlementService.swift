@@ -36,8 +36,9 @@ final class AccountEntitlementService {
     private let userIDProvider: @MainActor () -> String?
     /// JWS de la suscripción activa del device (`nil` = usuario Free en este Apple ID).
     private let storeKitJWSProvider: @MainActor () async -> String?
-    /// ¿Hay backend al que preguntar? En producción hoy es `false` (placeholder) y `sync` sale sin
-    /// tocar la red. Inyectable: un test que provee su propio cliente HTTP ya decidió que sí lo hay.
+    /// ¿Hay backend al que preguntar? Desde D-R1 paso 1 es `true` también en producción; lo que hace que
+    /// `sync` salga sin tocar la red es el guard SIGUIENTE (sin `userID` no hay cuenta que consultar).
+    /// Inyectable: un test que provee su propio cliente HTTP ya decidió que sí lo hay.
     private let isConfiguredProvider: @MainActor () -> Bool
 
     /// Guard de reentrada: foreground + boot + post-compra pueden coincidir; una sola en vuelo.

@@ -170,8 +170,9 @@ nonisolated enum CloudSyncFlags {
 
     /// Gate del wiring runtime del motor (I9). ENCENDIDO en I14 (P1). Seguridad demostrable de que
     /// encenderlo NO cambia el comportamiento de los usuarios actuales (todos `.icloud`):
-    ///  (a) scheme de PRODUCCIÓN → `CloudBackendConfig.isConfigured == false` → `NoopCloudSessionProvider`
-    ///      → `start()` cae en `idleSignedOut` sin tocar nada;
+    ///  (a) sin sesión de nube → `currentUserID == nil` → `start()` cae en `idleSignedOut` sin tocar nada.
+    ///      (Antes de D-R1 paso 1 este punto era más fuerte: producción ni siquiera componía el provider
+    ///      vivo, porque `CloudBackendConfig.isConfigured` era `false`. Ya no — hoy lo compone.);
     ///  (b) TODOS los devices en producción son `.icloud` → el guard de `storageMode` de `start()` (P0)
     ///      corta ANTES de cualquier red/mutación;
     ///  (c) staging/DEV: el runtime solo corre en `.cloud` con sesión + un claim que pasa

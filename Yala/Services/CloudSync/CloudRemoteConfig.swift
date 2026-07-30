@@ -15,9 +15,11 @@
 //    re-fetchean en su `onAppear` (min-interval 6 h) — offline prolongado conserva el último
 //    valor conocido, jamás degrada a un estado distinto del último que el server declaró.
 //
-//  DARK: en prod `CloudBackendConfig.isConfigured == false` ⇒ el fetch jamás corre (cero tráfico
-//  nuevo) y las superficies ya estaban ocultas ANTES del AND remoto. En DEV el default ante cache
-//  AUSENTE es ON (staging sirve 100 ⇒ mismo valor tras el fetch) → QA/uitest byte-idénticos.
+//  En producción el fetch YA CORRE (D-R1 paso 1 abrió `CloudBackendConfig.isConfigured`) y el server
+//  sirve los tres percents en 0 ⇒ las superficies de entrada siguen ocultas, pero AHORA por el AND
+//  remoto y no por la ausencia de configuración. La ventana previa al primer fetch tampoco destapa
+//  nada: en prod `absentDefault` es `false` (fail-closed). En DEV el default ante cache AUSENTE es ON
+//  (staging sirve 100 ⇒ mismo valor tras el fetch) → QA/uitest byte-idénticos.
 //
 
 import Foundation
@@ -228,7 +230,7 @@ final class RemoteConfigClient {
     /// (un fetch en vuelo hace no-op del siguiente kick). `force` salta el min-interval
     /// (panel DEBUG); `now` inyectado se usa para el gate Y como `fetchedAt` del snapshot.
     func refreshIfDue(force: Bool = false, now: Date = .now) async {
-        guard CloudBackendConfig.isConfigured else { return } // prod placeholder: cero tráfico
+        guard CloudBackendConfig.isConfigured else { return } // sin backend no hay a quién preguntar
         guard !inFlight else { return }
         let last = CloudRemoteConfigStore.readSnapshot(defaults)?.fetchedAt
         guard force || RemoteFlagDecisionLogic.shouldRefresh(lastFetchedAt: last, now: now) else { return }

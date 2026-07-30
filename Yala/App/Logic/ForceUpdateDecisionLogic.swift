@@ -7,9 +7,11 @@
 //  número de build local (`CFBundleVersion`). Separada de `RemoteFlagDecisionLogic` (que es
 //  percent-bucket de rollout) — aquí la decisión es determinista, no un bucket.
 //
-//  DARK: en prod el fetch de `/config` no corre (`CloudBackendConfig.isConfigured == false`), así
-//  que el snapshot nunca trae `minSupportedBuild` → `isUpdateRequired` = false (fail-open: usuario
-//  jamás bloqueado sin una señal explícita del server). Se activará al encender el fetch (D9).
+//  VIVO en producción desde D-R1 paso 1: el fetch de `/config` YA corre y el snapshot sí trae
+//  `minSupportedBuild`. Hoy el server declara `0` (`MIN_SUPPORTED_BUILD = "0"` en
+//  `[env.production.vars]`, vigilado por `gateway/test/wrangler.forceupdate.test.ts`) ⇒
+//  `isUpdateRequired` es `false` para todo el mundo. Lo que protege al usuario ya NO es la ausencia de
+//  fetch —esa red desapareció—, sino ese valor desplegado y el fail-open de abajo.
 //
 
 import Foundation

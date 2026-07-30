@@ -14,8 +14,9 @@
 //  de boot (`resumeIfNeeded`, P4) que retoma una migración matada a medias y re-arranca el runtime al
 //  quedar la fase estable.
 //
-//  Solo se instancia si `CloudBackendConfig.isConfigured` (staging/DEV) — en producción placeholder el
-//  accessor `shared` queda `nil` y la fila "Almacenamiento" de Ajustes no aparece.
+//  Solo se instancia si `CloudBackendConfig.isConfigured` — desde D-R1 paso 1 eso incluye producción, así
+//  que `shared` ya NO es `nil` ahí. La fila "Almacenamiento" de Ajustes sigue sin aparecer, pero por el
+//  flag remoto (percent 0), no por este accessor.
 //
 //  `@MainActor @Observable`: muta `ModelContext`/`@Model` y coordina la UI (regla inviolable).
 //
@@ -147,7 +148,7 @@ final class CloudMigrationController {
     static private(set) var shared: CloudMigrationController?
 
     /// Crea la instancia `shared` con el `mainContext` (idempotente). No-op si no está configurado el
-    /// backend (producción placeholder). Lo llama `AppBootstrapper` en el paso 14.6.
+    /// backend. Lo llama `AppBootstrapper` en el paso 14.6.
     static func configureShared(context: ModelContext) {
         guard CloudBackendConfig.isConfigured else { return }
         if shared == nil { shared = CloudMigrationController(context: context) }

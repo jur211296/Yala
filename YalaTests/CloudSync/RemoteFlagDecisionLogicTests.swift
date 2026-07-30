@@ -90,7 +90,8 @@ struct StorageRowGateLogicTests {
     @Test func table() {
         typealias Row = (configured: Bool, secondary: Bool, remote: Bool, engaged: Bool, visible: Bool)
         let rows: [Row] = [
-            // Sin backend configurado: JAMÁS visible (prod placeholder de hoy), da igual el resto.
+            // Sin backend configurado: JAMÁS visible, da igual el resto. Ya NO es el estado de producción
+            // (D-R1 paso 1 la configuró), pero la rama del gate sigue existiendo y hay que pinnearla.
             (false, false, true, true, false),
             (false, false, false, false, false),
             // Secundaria activa: oculta SIEMPRE (M1 — la fila es del DUEÑO).

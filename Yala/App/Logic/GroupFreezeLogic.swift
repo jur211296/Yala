@@ -53,9 +53,13 @@ nonisolated enum GroupBackendCapability: Equatable, Sendable {
     /// Este binario NUNCA podrá re-entrar: canal no compilado o backend sin configurar. ESTE es C-10.
     case incapableBuild
 
-    /// Derivación PURA. Existe separada de `current` porque bajo el scheme de tests
-    /// `CloudBackendConfig.isConfigured` es siempre `false` (los literales de producción son placeholder)
-    /// y `current` solo podría ejercitar una de las tres ramas.
+    /// Derivación PURA. Existe separada de `current` porque `current` no puede ejercitar las tres ramas
+    /// en un test: `groupsBackendCompiledCapability` es `false` mientras el canal no se encienda (paso 2
+    /// de D-R1), y ese término corta primero ⇒ `current` siempre da `.incapableBuild`.
+    ///
+    /// (La versión previa de este comentario culpaba a `CloudBackendConfig.isConfigured`. Era falso ya
+    /// entonces —bajo `Yala Dev` valía `true`— y hoy lo es en los dos schemes: el término que fija la
+    /// rama es el COMPILADO, no la configuración del backend.)
     ///
     /// NO recibe la sesión a propósito — ver el doc del tipo.
     static func resolve(

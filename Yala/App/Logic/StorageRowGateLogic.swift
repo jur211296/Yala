@@ -7,7 +7,9 @@
 //  Decisión owner (2026-07-17): el kill-switch remoto `cloudModeEnabled=OFF` corta solo la
 //  ENTRADA — un usuario "engaged" (ya `.cloud`, o con migración/reversa en vuelo o fallida)
 //  CONSERVA la fila SIEMPRE: es su panel de gestión, resume y REVERSA (el escape ante incidente).
-//  OFF + no-engaged ⇒ oculta (= prod de hoy con backend placeholder).
+//  OFF + no-engaged ⇒ oculta. Sigue siendo el estado de producción HOY, pero por otra razón que antes:
+//  el backend ya está configurado (D-R1 paso 1) y lo que apaga la fila es el flag remoto, porque el
+//  gateway sirve `CLOUD_MODE_ROLLOUT_PERCENT = "0"`.
 //
 
 import Foundation

@@ -34,7 +34,7 @@ final class CloudSyncDebugModel {
 
     var isConfigured: Bool { CloudBackendConfig.isConfigured }
     var configLabel: String {
-        guard let url = CloudBackendConfig.supabaseURL else { return "unconfigured (prod placeholder)" }
+        guard let url = CloudBackendConfig.supabaseURL else { return "unconfigured" }
         return "staging · \(url.host ?? url.absoluteString)"
     }
     var sessionLabel: String {
@@ -213,7 +213,8 @@ final class CloudSyncMigrationPanelModel {
 
     /// El runner de producción (I14 P2): consume el runner ÚNICO de `CloudMigrationController` — evita DOS
     /// runners vivos sobre el mismo journal single-row (doble ejecución de efectos). Fallback local solo si
-    /// el controller no está configurado (backend placeholder — improbable en DEV_BUILD staging).
+    /// el controller aún no se configuró — improbable en DEV_BUILD: `isConfigured` es `true` ahí, así que
+    /// solo pasaría si el paso 14.6 del bootstrap no hubiera corrido todavía.
     private func makeRunner() -> MigrationRunner {
         if let shared = CloudMigrationController.shared { return shared.runner }
         if let runner { return runner }

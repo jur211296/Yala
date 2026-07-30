@@ -122,7 +122,8 @@ struct CloudRemoteConfigTests {
             CloudRemoteFlags._testResetOverrides()
         }
         // Control POSITIVO primero (fix del review: sin él, cualquier otro conjunct en false
-        // haría pasar el negativo sin probar el AND remoto). Host DEV ⇒ isConfigured=true.
+        // haría pasar el negativo sin probar el AND remoto). `isConfigured` es `true` en los DOS
+        // schemes desde D-R1 paso 1 — antes, con el scheme `Yala`, este control positivo fallaba.
         CloudRemoteFlags._testSetOverrides(cloudMode: true)
         #expect(CloudSyncFlags.secondarySessionEntryAvailable)
         CloudRemoteFlags._testSetOverrides(cloudMode: false)

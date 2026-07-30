@@ -266,16 +266,18 @@ final class AppBootstrapper {
 
         // 14.55 B1 (SIWA revoke 5.1.1(v)): composición de PRODUCCIÓN del hook de canje — el ÚNICO punto
         // que instala el closure real (AJUSTE #2 del brief: CloudAuthService no depende de
-        // CloudAccountClient; el default nil = no-op). Gateado como 14.6: con prod placeholder
-        // (isConfigured=false) no existe sign-in → sin hook, byte-idéntico. ContentView espera este
-        // bootstrap antes de mostrar UI → el hook está instalado antes de cualquier sign-in interactivo.
+        // CloudAccountClient; el default nil = no-op). Gateado como 14.6: desde D-R1 paso 1 el gate está
+        // ABIERTO también en producción, así que el hook se instala ahí — pero sin sign-in no se dispara
+        // nunca. ContentView espera este bootstrap antes de mostrar UI → el hook está instalado antes de
+        // cualquier sign-in interactivo.
         if CloudBackendConfig.isConfigured {
             SIWAExchangeSeam.installProductionHook()
         }
 
         // 14.56 Remote-config del Modo Nube (DIFERIDOS #34): fetch fire-and-forget de GET /config
-        // (kill-switch de las ENTRADAS, §j.1/§j.2). Gateado por `isConfigured` (prod placeholder:
-        // CERO tráfico nuevo — byte-identidad de red) y `!uiTestActive` (hermeticidad: los XCUITests
+        // (kill-switch de las ENTRADAS, §j.1/§j.2). Gateado por `isConfigured` —ABIERTO en producción
+        // desde D-R1 paso 1: ÉSTE es el único tráfico nuevo que trajo aquel commit, y es deseado, porque
+        // aquí viaja el aviso de versión obligatoria— y por `!uiTestActive` (hermeticidad: los XCUITests
         // no tocan red, como los pasos hermanos; bajo uitest los getters ya devuelven el default).
         // Coalescente con min-interval 6 h. Jamás bloquea el boot; el snapshot se lee en el
         // siguiente render de las superficies gateadas.
@@ -284,7 +286,8 @@ final class AppBootstrapper {
         }
 
         // 14.6 Modo Nube — coordinator de migración (I14, P4). Dueño único del `MigrationRunner`. Gateado
-        // por `CloudBackendConfig.isConfigured` (staging/DEV; prod placeholder = no-op). Retoma una
+        // por `CloudBackendConfig.isConfigured` (abierto en los dos schemes desde D-R1 paso 1: en
+        // producción SÍ se instancia, y con fase `notStarted` sin efectos pendientes decide `.none`). Retoma una
         // migración/reversa matada a medias (journal transicional o efectos pendientes) ANTES del 14.7 y,
         // al quedar la fase estable, re-arranca el runtime del dominio (que P0 pudo cortar por fase
         // transicional). `startShared` del 14.7 es idempotente (no re-arranca si ya corre).
@@ -1272,9 +1275,9 @@ final class AppBootstrapper {
         }
 
         // Modo Nube auth (I7c, mitigación #23): re-chequea la credencial de Apple al foreground; si fue
-        // revocada, cierra la sesión local. El guard `isConfigured` evita incluso instanciar `.shared`
-        // en producción (placeholder); con staging configurado pero sin sign-in previo es un no-op
-        // (sin appleUserID capturado). Sin side-effects fuera de eso.
+        // revocada, cierra la sesión local. Desde D-R1 paso 1 el guard `isConfigured` pasa también en
+        // producción, así que `.shared` se instancia; sin sign-in previo es un no-op (no hay appleUserID
+        // capturado). Sin side-effects fuera de eso.
         if CloudBackendConfig.isConfigured {
             Task { await CloudAuthService.shared.refreshCredentialStateIfNeeded() }
         }
@@ -1283,7 +1286,8 @@ final class AppBootstrapper {
         // one-shot (quiescencia vencida o push transient a mitad de página → aparcada EN SILENCIO
         // hasta tocar "Retomar"). Corre DESPUÉS de los freeze-guards de la cabecera (sign-out wipe /
         // wipe secundario / ventana de entrada M1) y decide por pure-logic (`MigrationForegroundRekick`,
-        // no-op puro con fase estable). En prod placeholder `shared == nil` → no-op.
+        // no-op puro con fase estable). En producción `shared` ya existe (D-R1 paso 1), pero la fase de
+        // todo el parque de 2.x es `notStarted` ⇒ sigue siendo no-op.
         if CloudBackendConfig.isConfigured {
             Task { await CloudMigrationController.shared?.rekickIfParked() }
         }
@@ -2066,8 +2070,9 @@ final class AppBootstrapper {
 
     /// C-8: vincula/refresca el derecho de la cuenta en background y, SOLO si cambió, vuelve a
     /// derivar el estado de suscripción (que re-espeja `SessionState`, re-evalúa el downgrade y el
-    /// sheet de trial). En producción es un no-op inmediato: `sync()` corta en `isConfigured == false`
-    /// sin tocar la red. Task único cancelable — boot y foreground pueden coincidir.
+    /// sheet de trial). En producción sigue siendo un no-op inmediato sin tocar la red, pero desde D-R1
+    /// paso 1 corta un guard más abajo: `isConfigured` ya pasa, y lo que devuelve `false` es la ausencia
+    /// de `userID` (no hay sesión de nube). Task único cancelable — boot y foreground pueden coincidir.
     private func scheduleAccountEntitlementSync() {
         accountEntitlementTask?.cancel()
         accountEntitlementTask = Task { @MainActor in
