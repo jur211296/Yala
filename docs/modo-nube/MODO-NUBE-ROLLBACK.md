@@ -55,7 +55,8 @@ fases, y quien recorriera la tabla de arriba hacia abajo los habría revertido c
 
 | Pieza | Commit | Por qué NO |
 |---|---|---|
-| gemelo del bridge en el canal backend + `rollback()` del apply | `f0a723e1` (+ el commit del `rollback()`) | el `rollback()` corre en el canal backend, pero el resto del intent **arma también en CloudKit** |
+| `rollback()` del apply de una página | `b422565e` | cierra el laundering: sin él, un save fallido acaba re-empujando al servidor el grafo remoto a medias |
+| gemelo del bridge en el canal backend | `f0a723e1` | el arm es del canal nuevo, pero el mismo commit mudó el retome que drena **los dos** |
 | bridge remoto durable (canal CloudKit) | `ad937148` | cierra pérdida PERMANENTE del `TransactionItem` de un gasto de grupo, **con el flag OFF** |
 | purga de identidad durable (cambio de Apple ID) | `7c7fb7f6` | sin él, matar la app deja al humano nuevo los grupos del anterior con sus 4 credenciales de re-join |
 | la llave del re-join sale de la ficha, no de quién eres hoy | `62eeb8f0` + `40a4e417` | corrige el sexto resolvedor de identidad; alcanzable hoy |
