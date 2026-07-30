@@ -4,7 +4,8 @@
 //
 //  Lógica pura del subsistema de auth I7c que se puede testear sin red ni device:
 //   - nonce: charset URL-safe, longitud, raw≠hashed, SHA-256 hex correcto (vector conocido).
-//   - CloudBackendConfig: `isConfigured` en el scheme de tests (DEV_BUILD → staging configurado).
+//   - CloudBackendConfig: `isConfigured` en el scheme de tests (staging bajo DEV_BUILD, producción
+//     en el scheme `Yala` — desde D-R1 paso 1 los dos están cableados).
 //   - CloudAuthKeychainStorage: round-trip + el atributo de accesibilidad es
 //     `AfterFirstUnlockThisDeviceOnly` (crítico para el auto-refresh en background).
 //
@@ -49,7 +50,9 @@ struct CloudAuthServiceTests {
     // MARK: - Config
 
     @Test func config_isConfigured_inTestScheme() {
-        // Los tests corren bajo Yala Dev (DEV_BUILD) → staging configurado.
+        // Cierto en LOS DOS schemes desde D-R1 paso 1: `Yala Dev` (DEV_BUILD) resuelve a staging y
+        // `Yala` a producción. Antes de cablear las ramas `#else` este test fallaba con `Yala`,
+        // porque producción devolvía `nil`/`""`.
         #expect(CloudBackendConfig.isConfigured)
         #expect(CloudBackendConfig.supabaseURL != nil)
         #expect(!CloudBackendConfig.anonKey.isEmpty)
