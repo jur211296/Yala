@@ -52,3 +52,41 @@ tags: [modo-nube, decision, release, 2.1]
 - Todo el andamiaje pensado para **escalonar el encendido**: rampas por porcentaje, gates de rollout parcial, y los hazards que solo existen cuando dos poblaciones corren builds distintos con el mismo backend.
 - **Corrección (misma fecha, error de este documento):** la versión original decía que **C-10** («grupo congelado sin salida durante el rollout») estaba «ya descartado». **No lo estaba: estaba commiteado.** El chip se descartó en la sesión de auditoría creyéndolo sin sentido por el giro de Grupos, pero el trabajo ya había aterrizado — `90ebabea` (06:54, +1.405) y `ed38c1ea` (07:20, +1.845), **3.250 líneas**, once minutos antes de que se escribiera esta línea. No es trabajo cancelado: es trabajo **pagado que se tira**. Lo que sí se cancela es su cola (device-QA, 26 keys × 16 locales, la UI de espera y el deploy pendiente de dos field keys a CloudKit Production). Queda como el ejemplo más caro de por qué las decisiones de alcance tienen que llegar a los chips ANTES de que corran, no después.
 - La cláusula «diferir a post-v1» de [[MODO-NUBE-DIFERIDOS]]: los items cuyo gatillo era «cuando se encienda» pasan a tener gatillo **«antes de 2.1»**. Revisar el registro entero con esa lente.
+
+---
+
+## D-R1 · Cómo se enciende el canal de Grupos — DECIDIDO por el owner el 2026-07-30
+
+**En DOS pasos separados, y el encendido después de cerrar el bridge.**
+
+**Paso 1 — la configuración, ya.** Solo el bloqueante #4: las dos ramas `#else` de `CloudBackendConfig`
+(`supabaseURL` y `anonKey`), en su propio build a TestFlight. NO mueve ningún dato de Grupos —
+`groupsBackendCompiledDefault` sigue en `false`. Lo que hace es volver **verificable** lo que hasta hoy se
+configuró a ciegas en el proyecto de producción: el sign-in real con Apple y con Google, los Authorized
+Client IDs, el schema, el `revoke` de `migrate_group` y el aviso de versión obligatoria (que hoy no emite
+tráfico porque `CloudRemoteConfig.refreshIfDue` gatea por `isConfigured`).
+
+**Paso 2 — el encendido, después del fix del bridge remoto.** El flip de
+`groupsBackendCompiledDefault` a `true`, en un segundo build. Ahí los dos canales quedan vivos a la vez y
+**el kill-switch remoto todavía funciona** (el flag remoto solo puede MATAR): es la única ventana para
+probar el recorrido completo con un segundo humano en dos devices y poder apagarlo en segundos.
+
+### Por qué separados, y no en un build
+
+Son dos clases de fallo distintas: el paso 1 prueba INFRAESTRUCTURA, el paso 2 mueve DATOS reales.
+Juntándolos, un fallo no diría cuál de los dos lo causó.
+
+### Por qué el flip espera al bridge, y los 4 apagones NO lo bloquean
+
+S2/S3/S4/S6 son consecuencias del **borrado** (Fase 3), no del encendido ⇒ no bloquean. El fix del bridge
+remoto sí va antes, porque el flip mueve datos: **medido el 2026-07-30, ese defecto existe en los DOS
+canales** — `GroupsSyncClient.scheduleBridge` (`:2009`) usa el mismo reintento en-sesión sin respaldo
+persistente que `SplitSyncManager`. Encender antes de arreglarlo no lo empeora, pero pone datos nuevos
+encima de un agujero conocido. **Corolario para el chip del bridge: su fix tiene que cubrir los dos
+canales, no solo el viejo.**
+
+### Descartado
+
+- **Todo en un build**: más rápido, pero mezcla las dos clases de fallo.
+- **Parar en la Fase 2** (que el plan admite como estado final válido): dejaría Grupos exigiendo iCloud a
+  todos los miembros, que es exactamente lo que este épico existe para quitar.
