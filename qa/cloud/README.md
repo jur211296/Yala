@@ -1301,8 +1301,12 @@ un kill-switch no puede caerse por dependencias). Shape v1:
 
 Percents 0-100 por flag (decisión owner: escalón gradual §j.2 desde el día 1; 0=OFF, 100=ON).
 **Dónde viven los valores:** `gateway/wrangler.toml` `[vars]` (staging=100 los 3; QA no pierde
-superficie) y `[env.production.vars]` (prod=0 los 3, explícito) — patrón ENFORCE: **flip = editar la
-var + `npx wrangler deploy [--env production]`**, versionado en git, sin release del cliente. Parse
+superficie) y `[env.production.vars]`. **Producción, desde el 2026-07-30 (`0b1283fe`, desplegado):
+`cloudModeRolloutPercent` = 100, los otros dos en 0.** El de Modo Nube NO es un valor de prueba: es
+lo que exige la decisión de migración opt-in silencioso de 2.1. Patrón ENFORCE: **flip = editar la
+var + `npm run deploy:production`** (el script de npm, no `wrangler` a pelo: su `predeploy` sincroniza
+el manifest), versionado en git, sin release del cliente. ⚠️ El valor commiteado **no está en
+producción hasta que corre el deploy** — git puede decir 100 mientras el Worker sirve 0. Parse
 server-side fail-closed (ausente/inválido → 0, clamp [0,100]). `Cache-Control: public, max-age=300`
 gobierna el URLCache del CLIENTE (CF no cachea edge sin Cache API; costo trivial a ≤1 req/6h/device).
 Verificación: `curl https://yala-gateway-{staging,production}.misty-surf-6866.workers.dev/config`.
