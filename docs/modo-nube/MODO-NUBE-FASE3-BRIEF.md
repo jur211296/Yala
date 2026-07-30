@@ -1,8 +1,8 @@
 ---
 created: 2026-07-29
-updated: 2026-07-29
+updated: 2026-07-30
 tags: [modo-nube, grupos, fase3, brief]
-status: blocked  # commit 0 HECHO (bc486c92); los commits 1 y 2 siguen bloqueados por el flag
+status: blocked  # commit 0 HECHO (bc486c92) + Fase 2 bis del escritor de identidad (40a4e417); los commits 1 y 2 siguen bloqueados por el flag
 ---
 
 # Fase 3 — brief, con las coordenadas medidas y el bloqueo que el plan no nombra
@@ -70,7 +70,7 @@ función está en `:246` (no `:236`) y los callsites en `GroupService:238`/`:318
 | Fichero | Qué esconde | Si se borra entero |
 |---|---|---|
 | ~~`Yala/App/Logic/SplitSyncStartGate.swift` (292)~~ → **149, RESUELTO en `bc486c92`** | ~~`BootSaveGateLogic` (`:198-292`) + `WaitResolution` (`:61`) + `resolveWaitByQuiescence` (`:97-108`)~~ — ya viven en `BootSaveGateLogic.swift` | ~~reintroduce el crash-loop SIGTRAP del restore de iCloud~~ (H-2026-07-18-8) — el commit 1 ya puede borrar el fichero entero |
-| `Yala/Services/Groups/GroupUserIdentityService.swift` (88) | `deterministicUUID` (`:75-87`), usado por `GroupBackendIdentityLogic.swift:38` y `GroupsSyncClient.swift:1901` — **el 63 % del fichero sobrevive** | rompe la derivación de ids del canal backend |
+| `Yala/Services/Groups/GroupUserIdentityService.swift` (~~88~~ → **85 tras `40a4e417`**) | `deterministicUUID` (`:74-84`), usado por `GroupBackendIdentityLogic.swift:38` y `GroupsSyncClient.swift:1901`, **+ el cache `cachedRecordName` (`:24-28`, `:40-47`)** — el ESCRITOR ya salió a `Services/CloudSync/Groups/` (Fase 2 bis) | rompe la derivación de ids del canal backend **y** deja el cache sin dueño |
 | ~~`CKConstants` (en `CloudKitConstants.swift`)~~ → **RESUELTO en `bc486c92`** | ~~`zonePrefix`~~ (+ `zoneName(for:)`) ya vive en `SplitGroupZone` (`Yala/Models/`); el `init` de `SplitGroup.swift:102` apunta ahí | ~~se rompe la identidad de los grupos en el backend~~ — literal `"SplitGroup-"` conservado byte a byte |
 
 ---
@@ -88,17 +88,111 @@ Cuatro son **nuevos**: no están en el plan.
 | S5 | Pull-to-refresh, «invitar» y «crear grupo» pasan a **no-op con spinner** | `GroupsViewModel:202` · `GroupDetailViewModel:435` · `GroupMembersView:455` |
 | **S6** | `SoftDeleteObserverLogic.swift` (31) queda huérfano total — **no está en ninguna lista del plan** | su único consumidor de producción es `SplitSyncManager` |
 
-### Y el peor de todos, que no es un apagón sino un colapso
+### Y el peor de todos, que no es un apagón sino un colapso — ✅ RESUELTO (Fase 2 bis, `40a4e417`)
 
 **`cachedRecordName` se queda sin escritor.** Su único escritor en todo el repo es el
 `UserDefaults.set` de `GroupUserIdentityService.swift:41`, **dentro del `currentUserRecordName()` que el
-plan borra**. En instalación fresca queda `nil` para siempre ⇒ mueren en silencio los 4 fallbacks vivos
-del canal backend (`GroupBackendInviteEntryHandler:127`, `GroupExpenseService:614`,
-`GroupSettingsView:704`, `GroupJoinReconciler:293`).
+plan borra**. En instalación fresca queda `nil` para siempre ⇒ mueren en silencio sus consumidores vivos,
+que son **CINCO, no cuatro** (verificado con `grep -rn "shared.cachedRecordName" Yala/`; los dos de
+`SplitSyncManager` —`:265` y `:1649`— no cuentan porque mueren con el fichero):
+
+| Consumidor | Coordenada |
+|---|---|
+| `GroupService.refreshCurrentUserFlags` | `GroupService.swift:1019` |
+| `GroupExpenseService.currentUserMemberID` | `GroupExpenseService.swift:614` |
+| `GroupJoinReconciler.currentUserMemberExists` | `GroupJoinReconciler.swift:293` |
+| `GroupSettingsView.hasOutstandingBalance` | `GroupSettingsView.swift:704` |
+| `GroupBackendInviteEntryHandler.legacyMemberKeyForRejoin` | `GroupBackendInviteEntryHandler.swift:127` |
 
 **Y los tests lo TAPAN**: las 3 suites que los prueban inyectan la identidad con
 `_testSetCachedRecordName`, así que compila, pasa y falla solo en un device real. «Conservar
 `cachedRecordName`», como dice el plan, es insuficiente: hay que conservar **quién lo escribe**.
+
+#### La decisión, medida: se conserva el escritor (opción 1). Las otras dos se descartaron con datos
+
+**Lo elegido.** El escritor —key, fetch y persistencia— se muda a
+`Yala/Services/CloudSync/Groups/GroupICloudIdentitySeed.swift`: donde vive el canal nuevo y donde el
+criterio de salida de la Fase 3 (`grep -r "import CloudKit" Yala/Services/Groups/ Yala/App/Views/Groups/`
+→ 0) **no mira**. Solo necesita `CKContainer(identifier:).userRecordID()` y
+`SwiftDataConfiguration.groupsCloudKitContainerIdentifier`, no `CKConstants` ⇒ no arrastra transporte. El
+seed de boot de `AppBootstrapper` entra por ahí y `currentUserRecordName()` queda como fachada que delega,
+así que **el commit 1 puede borrar el método sin dejar la identidad sin escritor**.
+`GroupUserIdentityService` conserva el cache (`cachedRecordName`) y `deterministicUUID`.
+
+**Opción 2 (derivarlo del canal backend) — DESCARTADA, y es la que parecía mejor.** No se sostiene, por
+una circularidad del servidor: `migrate_group` sube los members no-owner como **placeholders `user_id
+NULL`** (`qa/cloud/g6_01_migrate_group.sql:158`) y su reclamación **solo** ocurre vía
+`join_group(token, p_legacy_member_key)`, que es quien estampa `user_id = v_uid`
+(`g7_02_encrypt_groups_cutover.sql:223-241`). La RLS entrega el grupo únicamente a quien ya está
+reclamado por `user_id` ⇒ **el `member_key` legacy no puede BAJAR antes del rebind que lo necesita**. Y el
+server no puede decírnoslo por otra vía: no conoce el recordName de iCloud del usuario hasta que el
+device se lo manda. `isLegacyMemberKey` sirve para elegir el namespace del id local, no para reconocer al
+usuario sin identidad previa.
+
+**Opción 3 (aceptar el nil) — DESCARTADA, pero se midió y 4 de los 5 no pierden nada.** En una
+instalación fresca el fallback iCloud es **estructuralmente inerte** en los cuatro primeros: comparan
+`cloudKitUserRecordID == cachedRecordName`, y toda fila born-remote tiene `cloudKitUserRecordID == ""` por
+diseño (`GroupsSyncClient.applyMember` lo dice explícito). Ahí quien resuelve es el `sub`
+(`refreshCurrentUserFlags` sigue viva por `backendCanResolve`, y `selectCurrentUserMemberID` tiene el
+fallback backend ANTES del de iCloud). **El que sí pierde es el quinto**, y lo que pierde es dinero
+atribuido: sin `legacyMemberKey` el re-join de un grupo migrado entra como member NUEVO y el historial
+CloudKit-era del usuario queda colgando de una fila fantasma. Hoy eso es el residual §9.3b —acotado a
+otro Apple ID o a un device sin iCloud— y **tras la Fase 3 pasaría a ser el caso general**. Un residual
+que se convierte en el caso normal no es un residual.
+
+**Fecha de caducidad, anotada:** el commit 2 de la Fase 4 retira el entitlement del container de Grupos ⇒
+desde ahí el fetch falla siempre y el rebind legacy muere con él, esta vez por decisión de release y no
+por un descuido. Las filas placeholder seguirán en el servidor: si hay que hacer algo con ellas, se decide
+allí.
+
+**El test tuvo que ser ESTRUCTURAL, y esa es la lección de método.** Rojo antes (exit 65) y verde después
+(exit 0), en `YalaTests/GroupICloudIdentitySeedTests.swift` (7 celdas). Las dos rojas miden *dónde vive el
+escritor* y *si el seed de boot depende del símbolo que muere*. No hay test de COMPORTAMIENTO que pueda
+estar rojo antes del fix: el estado post-Fase 3 es «cache nil **y** identidad de iCloud disponible», y
+reproducirlo exige un fetcher inyectable que el fix es quien introduce — inyectar el cache reproduce el
+bug tapado, que es exactamente lo que hacen las 3 suites que no lo cazaron. Las otras cinco celdas sí son
+de comportamiento y ejercitan la instalación fresca con el cache **vacío** y el **fetcher** inyectado.
+
+⇒ **El hueco declarado en el docblock de `GroupServiceCurrentUserFlagsTests` sigue abierto y no lo cierra
+esta pieza**: ese hueco es «el 3er guard exige que el fetch a CKContainer falle», y el fetcher inyectable
+vive ahora en el seam, no en el camino que `refreshCurrentUserFlags` recorre (lee el cache o llama a la
+fachada). Cerrarlo pide inyectar el proveedor de identidad *en `GroupService`*, que es re-cableo de otro
+consumidor. Docblock no tocado a propósito.
+
+#### ¿Comparten mecanismo los otros cinco apagones? Solo en la firma, no en la causa
+
+Medido antes de escribirlo, porque el molde «mueve el escritor» invita a aplicarse a todo:
+
+- **S2 (`movedToBackendAt`) — NO.** Sus dos únicos escritores (`CKRecordTranslator.swift:127`, `:151`)
+  hacen `group.movedToBackendAt = record[F.movedToBackendAt] as? Date`: **leen de un `CKRecord`**. El dato
+  no está en el device esperando a que alguien lo escriba — llega por CloudKit. Post-Fase 3 no llega de
+  ningún sitio, así que mover el escritor no arregla nada: el marcador tiene que viajar por el canal
+  backend o el freeze no existe. Es un apagón de **FUENTE**.
+- **S3 y S4** — igual que S2: lo que muere es el **evento** (el fetch de CloudKit que desatasca «esperando
+  aprobación» / detecta «me sacaron»). Se resuelven espejando el trigger en el pull del canal nuevo, no
+  moviendo código.
+- **S6 (`SoftDeleteObserverLogic`)** — el inverso: un **consumidor huérfano**, no un escritor perdido. O
+  se re-cablea a un emisor del canal nuevo o se borra; mover no aplica.
+
+⇒ **Esta pieza es la única de las seis cuyo problema era de ESCRITOR** (el dato ya vive en el device y
+solo faltaba quién lo persistiera). Lo que sí es transferible a las otras cuatro es el **método**: la
+firma «compila, pasa en verde, falla en device» viene de suites que inyectan el estado que el apagón
+destruye, y contra eso el test que sirve es el que pinnea el **cableado**, no el comportamiento.
+
+#### Dos huérfanos nuevos que la Fase 3 crea aquí, y quedan REPORTADOS (fuera de ámbito)
+
+- **`clearCache()` pierde su único caller** (`SplitSyncManager.swift:1466`) ⇒ tras la Fase 3 nadie puede
+  olvidar la identidad de un Apple ID que se fue: la key se queda congelada con el recordName anterior.
+  Va de la mano de que el boot-guard entero (`GroupsIdentityBootGuardLogic`) también muere, así que el
+  cambio de Apple ID deja de detectarse — decidir junto, no por separado.
+- **`fetchFreshRecordName()` queda sin callers** (su único uso es `SplitSyncManager.swift:270`, el
+  boot-guard) ⇒ borrable con él.
+- Y uno que no es de la Fase 3 sino de **2.6**: `legacyMemberKeyForRejoin` es el **sexto resolvedor de
+  identidad** y no recibió el re-cableo de 2.6 — resuelve por `isCurrentUser == true` crudo, sin el
+  fallback por `sub`. Como `isCurrentUser` es device-local y **no viaja en el CKRecord**
+  (`CloudKitConstants.swift:90`), en un 2º device la fila legacy llega con el flag apagado y su
+  `cloudKitUserRecordID` poblado: la llave está en esa misma fila y la función no la ve. Hoy lo tapa el
+  cache (que el fix mantiene vivo); el molde correcto es `GroupExpenseService.selectCurrentUserMemberID`.
 
 ---
 
