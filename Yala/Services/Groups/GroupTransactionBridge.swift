@@ -52,6 +52,16 @@ final class GroupTransactionBridge {
         self.modelContext = context
     }
 
+    #if DEBUG
+    /// Devuelve el bridge al estado «todavía sin contexto» del arranque, que es el ÚNICO en el que
+    /// `isReady` es `false`. Lo necesita la celda del gemelo: ese `false` hace que `scheduleBridge` retorne
+    /// ANTES de cualquier acumulación, y el intent tiene que quedar armado igual o esos IDs se pierden sin
+    /// dejar rastro. Producción nunca lo llama (`AppBootstrapper` inyecta el contexto y no lo retira).
+    func _testClearContext() {
+        self.modelContext = nil
+    }
+    #endif
+
     private func requireContext() throws -> ModelContext {
         guard let context = modelContext else {
             throw GroupTransactionBridgeError.noContext

@@ -109,6 +109,23 @@ persistente que `SplitSyncManager`. Encender antes de arreglarlo no lo empeora, 
 encima de un agujero conocido. **Corolario para el chip del bridge: su fix tiene que cubrir los dos
 canales, no solo el viejo.**
 
+> **✅ CONDICIÓN CUMPLIDA (2026-07-30). El paso 2 queda DESBLOQUEADO.** El gemelo está cerrado:
+> `GroupsSyncClient.scheduleBridge` arma `GroupsPendingBridgeIntent` (canal `.backend`) **antes de su
+> `guard`** —no «donde se acumula»: ese `guard` tira los IDs por dos caminos, `isReady == false` y la
+> quiescencia diferida a un `Task` en memoria que además se cancela cuando entra otro lote— y `runBridge`
+> confirma **por ID cumplido**, capturando el retorno de `bridgeRemote*` que antes descartaba. Al cablearlo
+> apareció un segundo defecto que ningún reporte tenía: el retome clasificaba como *abandonado* todo ID de
+> zona `isBackendGroup`, y **todos** los grupos del canal nuevo lo son ⇒ habría descartado entero lo que el
+> flip enciende. El intent persiste ahora el canal de cada ID. Y el retome se mudó a
+> `Yala/Services/Groups/GroupsPendingBridgeResume.swift` porque vivía en un fichero que la Fase 3 borra.
+> Verificado por mutación (exit 65 con el `arm` neutralizado, 0 sano) y con las 17 suites del área en verde.
+> Detalle en [[MODO-NUBE-FASE3-BRIEF]] §«Reportado y SIN dueño».
+>
+> **Lo que el flip sigue necesitando** es su propio build y su QA en TestFlight con un segundo humano en dos
+> devices, con el kill-switch remoto a mano. `groupsBackendCompiledDefault` **no se ha tocado** aquí: sigue
+> en `false` (`CloudSyncFlags.swift:267` — la coordenada `:239` que este documento citaba arriba está
+> desfasada, verificado el 2026-07-30), porque el flip es una decisión de release, no de este fix.
+
 ### Descartado
 
 - **Todo en un build**: más rápido, pero mezcla las dos clases de fallo.

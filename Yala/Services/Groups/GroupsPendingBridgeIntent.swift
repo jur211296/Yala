@@ -51,6 +51,11 @@ private struct StoredPendingBridge: Codable {
     var settlements: [String: Int]
     /// DIAGNÓSTICO (breadcrumb: cuántas horas se arrastró la intención), jamás un criterio de caducidad.
     var armedAt: Date
+    /// Subconjunto de las claves de arriba que armó el canal BACKEND. **Opcional en el decode a propósito**:
+    /// un payload escrito por un build donde el canal nuevo todavía no armaba se lee como «todo CloudKit»,
+    /// que es exactamente lo que era.
+    var backendExpenses: Set<String>?
+    var backendSettlements: Set<String>?
 
     var isEmpty: Bool { expenses.isEmpty && settlements.isEmpty }
 }
@@ -70,9 +75,30 @@ enum GroupsPendingBridgeIntent {
     /// sobreviviría a la corrida.
     nonisolated(unsafe) static var defaults: UserDefaults = .standard
 
+    /// Qué canal armó un ID. Decide UNA sola cosa, y solo en el retome: si una zona que HOY pertenece al
+    /// backend significa «abandonado» —la fila la trajo CloudKit y su verdad ya se mudó, que es lo que el
+    /// guard G6-3 impide en el instante del fetch— o «normal» —la trajo el propio canal backend, donde
+    /// TODAS las zonas son suyas por definición—.
+    ///
+    /// Sin esta marca el retome descartaría cada ID del canal nuevo nada más leerlo, sin puentear ninguno:
+    /// `GroupsSyncClient.applyGroupMeta` enciende `isBackendGroup` en todo grupo que baja por el pull
+    /// (`GroupsSyncClient.swift:1851`), así que `backendGroupZoneNames` los contiene a TODOS y
+    /// `classifyPendingBridge` los mandaría enteros al cubo *abandonado*. Sería un intent que se arma y
+    /// nunca se cumple — peor que no tenerlo, porque además silencia.
+    enum Channel: String, Codable, Sendable {
+        /// Transporte CKSyncEngine (`SplitSyncManager`).
+        case cloudKit
+        /// Backend propio (`GroupsSyncClient`).
+        case backend
+    }
+
     struct Pending: Equatable {
         var expenseIDs: Set<UUID> = []
         var settlementIDs: Set<UUID> = []
+        /// Subconjunto de `expenseIDs` armado por el canal backend.
+        var backendExpenseIDs: Set<UUID> = []
+        /// Subconjunto de `settlementIDs` armado por el canal backend.
+        var backendSettlementIDs: Set<UUID> = []
 
         var isEmpty: Bool { expenseIDs.isEmpty && settlementIDs.isEmpty }
     }
@@ -82,7 +108,12 @@ enum GroupsPendingBridgeIntent {
     /// Anota que estos IDs necesitan bridge. Idempotente y acumulativo: re-armar sobre un intent vivo
     /// AÑADE los nuevos, CONSERVA los intentos ya consumidos por los viejos y CONSERVA el `armedAt`
     /// original — el dato accionable es desde cuándo se arrastra la intención más vieja.
-    static func arm(expenseIDs: Set<UUID>, settlementIDs: Set<UUID>, at now: Date = .now) {
+    ///
+    /// `channel` es explícito y sin default: es lo que decide, arranques después, si el ID se puentea o se
+    /// descarta (ver `Channel`). Un default lo convertiría en la clase de decisión que se toma sola.
+    static func arm(
+        expenseIDs: Set<UUID>, settlementIDs: Set<UUID>, channel: Channel, at now: Date = .now
+    ) {
         guard !expenseIDs.isEmpty || !settlementIDs.isEmpty else { return }
         var stored = load() ?? StoredPendingBridge(expenses: [:], settlements: [:], armedAt: now)
         for id in expenseIDs where stored.expenses[id.uuidString] == nil {
@@ -91,14 +122,26 @@ enum GroupsPendingBridgeIntent {
         for id in settlementIDs where stored.settlements[id.uuidString] == nil {
             stored.settlements[id.uuidString] = 0
         }
+        if channel == .backend {
+            stored.backendExpenses = (stored.backendExpenses ?? []).union(expenseIDs.map(\.uuidString))
+            stored.backendSettlements = (stored.backendSettlements ?? []).union(settlementIDs.map(\.uuidString))
+        }
         persist(stored)
     }
 
     static var pending: Pending {
         guard let stored = load() else { return Pending() }
+        let expenses = Set(stored.expenses.keys.compactMap(UUID.init(uuidString:)))
+        let settlements = Set(stored.settlements.keys.compactMap(UUID.init(uuidString:)))
         return Pending(
-            expenseIDs: Set(stored.expenses.keys.compactMap(UUID.init(uuidString:))),
-            settlementIDs: Set(stored.settlements.keys.compactMap(UUID.init(uuidString:)))
+            expenseIDs: expenses,
+            settlementIDs: settlements,
+            // Intersección y no lectura cruda: un ID cuyo cubo de intentos ya se vació no sigue pendiente
+            // por aparecer en la marca de canal.
+            backendExpenseIDs: Set((stored.backendExpenses ?? []).compactMap(UUID.init(uuidString:)))
+                .intersection(expenses),
+            backendSettlementIDs: Set((stored.backendSettlements ?? []).compactMap(UUID.init(uuidString:)))
+                .intersection(settlements)
         )
     }
 
@@ -116,6 +159,7 @@ enum GroupsPendingBridgeIntent {
         guard var stored = load() else { return }
         for id in expenseIDs { stored.expenses.removeValue(forKey: id.uuidString) }
         for id in settlementIDs { stored.settlements.removeValue(forKey: id.uuidString) }
+        forgetChannelMarks(&stored, expenseIDs: expenseIDs, settlementIDs: settlementIDs)
         persist(stored)
     }
 
@@ -127,15 +171,15 @@ enum GroupsPendingBridgeIntent {
     @discardableResult
     static func noteFailedAttempt(expenseIDs: Set<UUID>, settlementIDs: Set<UUID>) -> (expenses: Int, settlements: Int) {
         guard var stored = load() else { return (0, 0) }
-        var droppedExpenses = 0
-        var droppedSettlements = 0
+        var droppedExpenses: Set<UUID> = []
+        var droppedSettlements: Set<UUID> = []
 
         for id in expenseIDs {
             let key = id.uuidString
             guard let attempts = stored.expenses[key] else { continue }
             if attempts + 1 >= maxAttempts {
                 stored.expenses.removeValue(forKey: key)
-                droppedExpenses += 1
+                droppedExpenses.insert(id)
             } else {
                 stored.expenses[key] = attempts + 1
             }
@@ -145,19 +189,46 @@ enum GroupsPendingBridgeIntent {
             guard let attempts = stored.settlements[key] else { continue }
             if attempts + 1 >= maxAttempts {
                 stored.settlements.removeValue(forKey: key)
-                droppedSettlements += 1
+                droppedSettlements.insert(id)
             } else {
                 stored.settlements[key] = attempts + 1
             }
         }
 
+        forgetChannelMarks(&stored, expenseIDs: droppedExpenses, settlementIDs: droppedSettlements)
         persist(stored)
-        return (droppedExpenses, droppedSettlements)
+        return (droppedExpenses.count, droppedSettlements.count)
     }
 
-    /// Wipe total. Dos caminos, los dos de FRONTERA: la purga por cambio de Apple ID (las filas a las que
-    /// apuntaba se van con ella) y el «empiezo de cero» del Welcome (arrastrar la intención del humano
-    /// anterior al dispositivo del nuevo no tiene ningún sentido). Nunca en un camino normal.
+    /// La marca de canal viaja con el cubo de intentos: un ID que deja de estar pendiente —cumplido o
+    /// descartado— tiene que soltarla, o la key acumularía strings de gastos ya resueltos para siempre.
+    private static func forgetChannelMarks(
+        _ stored: inout StoredPendingBridge, expenseIDs: Set<UUID>, settlementIDs: Set<UUID>
+    ) {
+        if var backend = stored.backendExpenses {
+            backend.subtract(expenseIDs.map(\.uuidString))
+            stored.backendExpenses = backend.isEmpty ? nil : backend
+        }
+        if var backend = stored.backendSettlements {
+            backend.subtract(settlementIDs.map(\.uuidString))
+            stored.backendSettlements = backend.isEmpty ? nil : backend
+        }
+    }
+
+    /// Wipe total, **hoy sin ningún call-site, y eso es deliberado en los dos caminos que parecerían suyos**
+    /// (verificado con grep el 2026-07-30; el docblock anterior los describía como si la llamaran, y era
+    /// falso):
+    ///
+    ///  · **La purga por cambio de Apple ID la EVITA a propósito.** `applyIdentityPurge` RETIENE las zonas
+    ///    ya migradas al backend, así que un wipe total se llevaría por delante un bridge legítimamente
+    ///    pendiente de una de ellas. Lo de las zonas que sí se borran lo limpia solo el cubo *abandonado*
+    ///    del retome. Está razonado en `SplitSyncManager.applyIdentityPurge`.
+    ///  · **El «empiezo de cero» del Welcome** borra la key directamente sobre su `defaults` inyectado, en
+    ///    `DataWipeService.removeGroupsDomainPreferenceKeys` — junto al resto de las preferencias del
+    ///    dominio, que es donde se decide esa frontera.
+    ///
+    /// Se conserva porque es la primitiva correcta si aparece una frontera nueva que sí necesite el wipe
+    /// entero; quien la llame debe justificar por qué su caso no es ninguno de los dos de arriba.
     static func clearAll() {
         defaults.removeObject(forKey: userDefaultsKey)
     }

@@ -586,6 +586,15 @@ final class iCloudSyncService {
         hasCompletedFirstImport = true
     }
 
+    /// Sitúa el último import exitoso en un instante concreto. Lo necesita el gate de quiescencia
+    /// (`SubcategoryDedupGate.decide`, que devuelve `waitQuiescence` mientras no hayan pasado 8 s desde el
+    /// último import): sin este seam no hay forma determinista de ejercitar la rama en la que el bridge se
+    /// DIFIERE — y esa rama es justo donde el intent durable tiene que quedar armado, porque el reintento
+    /// vive en un `Task` con `sleep` en memoria que un kill de la app se lleva.
+    func _testSetLastSuccessfulImportDate(_ date: Date?) {
+        lastSuccessfulImportDate = date
+    }
+
     /// Reset state between tests. Not exposed in release.
     func _testReset() {
         pendingFailedTransition?.cancel()

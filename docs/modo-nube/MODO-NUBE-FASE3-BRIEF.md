@@ -380,40 +380,107 @@ Salieron de clasificar los diez diferidos de `SplitSyncManager` al arreglar la g
 (`7c7fb7f6`). **Ninguno depende del flag ni de la Fase 3: fallan hoy.** No estaban escritos en ningún
 sitio hasta el 2026-07-30.
 
-- ~~**El bridge remoto de Grupos se pierde para siempre.**~~ **ARREGLADO el 2026-07-30.**
-  `GroupsPendingBridgeIntent` (UserDefaults, sin TTL, tope de 3 intentos por ID) se arma donde se acumulan
-  los IDs y lo retoma `resumePendingRemoteBridgeIfNeeded(context:)` dentro de
+- ~~**El bridge remoto de Grupos se pierde para siempre.**~~ **ARREGLADO el 2026-07-30, en los DOS canales.**
+  `GroupsPendingBridgeIntent` (UserDefaults, sin TTL, tope de 3 intentos por ID) lo arman el transporte
+  CloudKit (`SplitSyncManager.notePendingBridge`) y el canal backend (`GroupsSyncClient.scheduleBridge`), y
+  lo retoma `GroupsPendingBridgeResume.resumeIfNeeded(context:)` dentro de
   `AppBootstrapper.retryPendingBridges`, detrás de sus dos gates. Al medirlo apareció una segunda mitad que
   el reporte no tenía: el drenaje limpiaba los Sets **antes** de llamar al bridge, así que las cuatro
   superficies de throw de `bridgeRemoteExpenses` —y su `catch` por gasto— perdían el lote **con la app
   viva**; por eso `bridgeRemote*` devuelven ahora los IDs realmente puenteados y el desarme es por ID
   cumplido. Contrato en `.claude/rules/swiftdata-cloudkit.md`.
-- **El gemelo del bridge en el canal BACKEND — chip lanzado el 2026-07-30, y son DOS caminos de pérdida,
-  no uno.** `GroupsSyncClient` tiene cero referencias a `GroupsPendingBridgeIntent`. Dos análisis
-  independientes lo midieron el mismo día y **cada uno vio una mitad**:
-  **(a)** `scheduleBridgeRetry` es `Task` + `Task.sleep` en memoria (`:2057-2060`) ⇒ matar la app en esa
-  ventana pierde el bridge, igual que el defecto que el intent vino a arreglar.
-  **(b)** `:2010` abre con `guard … GroupTransactionBridge.shared.isReady else { return }`, y ese `return`
-  es **ANTERIOR** a cualquier acumulación ⇒ con `isReady == false` los IDs se tiran en silencio y sin
-  rastro. **Corolario que invalida la formulación fácil: «armar en el sitio de la acumulación» NO basta**;
-  hay que armar antes de ese guard, o el camino (b) sigue perdiendo.
-  Y un tercer punto que ninguno de los dos análisis tenía: **el retome del intent vive en
-  `SplitSyncManager.swift:2014-2102`, que el commit 1 de la Fase 3 borra ENTERO** ⇒ sin moverlo, tras la
-  Fase 3 el intent se arma y nadie lo drena (el patrón de `quotaFailedRecordIDs`, y peor que hoy porque
-  habría IDs acumulándose sin salida).
-  **Bloquea el paso 2 de [[MODO-NUBE-DECISION-RELEASE-2.1]] §D-R1**, cuyo corolario exige cubrir los dos
-  canales.
 
+  ~~**Y su gemelo en el canal backend, que el fix del 2026-07-30 dejó fuera de ámbito.**~~ **CERRADO el
+  mismo día**, que es lo que D-R1 ponía como condición del flip («su fix tiene que cubrir los dos canales,
+  no solo el viejo»). Dos cosas que el reporte del gemelo no tenía y que solo aparecen al cablearlo:
+  **(a) «armar donde se acumula» NO basta aquí.** `GroupsSyncClient.scheduleBridge` abre con
+  `guard !expenseIDs.isEmpty || !settlementIDs.isEmpty, GroupTransactionBridge.shared.isReady else { return }`,
+  y ese `return` es anterior a toda acumulación: con el bridge aún sin `ModelContext` los IDs se tiraban ahí
+  mismo, sin rastro. El `arm` va **antes del guard**. El otro camino, el que sí espeja al canal viejo, es la
+  quiescencia: difiere a `scheduleBridgeRetry`, un `Task` con `sleep` en memoria que además **se cancela en
+  cuanto otro lote entra en la ventana** (el canal viejo no lo sufre porque sus IDs viven en Sets
+  acumulativos; aquí viajan capturados en el closure). Y perder ahí es igual de permanente que en CloudKit:
+  `applyPulledPage` persiste `groupCursorsJSON` en el MISMO `saveWithAuthor` que inserta las filas, así que
+  el servidor no re-emite el delta.
+  **(b) El retome habría descartado ENTERO lo que arma el canal nuevo.** Clasificaba como *abandonado* todo
+  ID cuya zona fuese de un grupo `isBackendGroup` —correcto para lo que armó CloudKit—, y
+  `GroupsSyncClient.applyGroupMeta` enciende ese flag en **todos** sus grupos. Por eso el intent persiste
+  ahora el `Channel` de cada ID (campos opcionales en el decode ⇒ un payload viejo se lee como «todo
+  CloudKit»). Verificado por mutación: neutralizar el `arm` del canal nuevo ⇒ exit 65 con 4 celdas rojas;
+  sano, exit 0.
+
+- **El retome del intent YA NO vive en `SplitSyncManager.swift`, y eso cambia lo que el commit 1 puede
+  borrar.** Estaba en `:2014-2139` — dentro de uno de los 13 ficheros que el commit 1 borra ENTEROS—, así
+  que tras la Fase 3 el intent se habría seguido armando (el canal backend le sobrevive) sin nadie que lo
+  drenara: el patrón exacto de `quotaFailedRecordIDs`, y **peor que no tener intent**, porque habría IDs
+  acumulándose en `UserDefaults` sin salida. Mudado a **`Yala/Services/Groups/GroupsPendingBridgeResume.swift`**
+  (mismo trabajo y misma razón que el commit 0, `bc486c92`), sin `import CloudKit` ⇒ respeta el criterio de
+  salida. Lo que queda en el transporte es `SplitSyncManager.forgetBridged(expenseIDs:settlementIDs:)`, el
+  olvido del camino rápido en memoria: **al commit 1 le basta con borrar el argumento `onBridged` del
+  call-site de `AppBootstrapper.retryPendingBridges` — una línea— y el retome sigue en pie.**
+- **`applyPulledPage` no hace `context.rollback()` cuando su save falla, y su mirror declarado SÍ**
+  (destapado el 2026-07-30 al refutar el hallazgo del `catch`; no estaba reportado). `GroupsSyncClient.
+  applyPulledPage` se declara «mirror de `SyncApplyEngine.applyPage`, A1» (`GroupsSyncClient.swift:1461`),
+  y aquélla hace `context.rollback()` en el `catch` análogo con un comentario que lo llama **obligatorio**:
+  «el contexto tiene el grafo remoto a medias (born-remotes, deletes, cursor mutado); dejarlo dirty =
+  laundering vía el próximo autosave/save ajeno» (`SyncApplyEngine.swift:276-279`). El mirror de Grupos
+  copió el `return false` y se dejó el `rollback()` — verificado: **0 ocurrencias** de `rollback()` en
+  `GroupsSyncClient.swift`. Consecuencia: si un save ajeno flushea esas filas bajo el autor por defecto, el
+  drain las captura (filtra por `tx.author != Self.outboxSaveAuthor`) y las **re-empuja al servidor como
+  ediciones locales con HLC fresco**. Armar el intent —que es lo que se hizo aquí— cierra la pérdida del
+  BRIDGE, no el laundering: son dos cosas distintas y esta sigue abierta. **DARK**: con
+  `groupsBackendEnabled` OFF nada de esto corre, pero el paso 2 lo enciende.
 - **`quotaFailedRecordIDs` es una intención sin drenador.** `retryQuotaFailedRecords()`
   (`SplitSyncManager.swift:1616`) **no tiene ni un call-site en la app** — su única otra mención es el
   comentario de `:1480`, que afirma que corre en foreground. Verificado con grep el 2026-07-30. Si la cuota
   de CloudKit falla, esos records no se reintentan jamás y nadie se entera.
-- **La ventana export-only pierde el EVENTO ENTERO, no solo su bridge** (medido el 2026-07-30 al arreglar
-  el anterior; no estaba reportado). `handleFetchedRecordZoneChanges` hace early-return y bufferea el evento
-  en `deferredFetchedRecordZoneEvents` (`:1636`), pero el token del engine avanza igual cuando el handler
-  retorna ⇒ morir antes de `drainDeferredFetchEvents()` pierde **la fila**, no solo su transacción personal.
-  Hoy es defensa en profundidad —en export-only `automaticallySync=false` y `syncNow` está gateado, así que
-  casi nunca hay fetch— y cubrirlo exige persistir CKRecords serializados, no UUIDs: es otra pieza.
+- **La ventana export-only y el EVENTO ENTERO — VEREDICTO MEDIDO (2026-07-30), y resuelve la discrepancia
+  entre dos sesiones.** Dos informes se contradecían: el de la purga decía «inalcanzables hoy, no hay
+  auto-fetch en export-only»; el del bridge los dejaba como pendientes con el agravante de que se pierde la
+  FILA, no solo su bridge. **Los dos aciertan en una mitad y fallan en la otra, y por eso parecían
+  incompatibles.**
+
+  **Alcanzabilidad HOY: NO.** Los dos `append` solo corren dentro de `handleFetchedDatabaseChanges`
+  (`SplitSyncManager.swift:1303-1305`) y `handleFetchedRecordZoneChanges` (`:1669-1671`), a los que solo
+  llega un evento `fetched*` nacido de una operación de fetch del engine. En todo `Yala/` hay **cuatro**
+  llamadas a `fetchChanges()`, en tres sitios, y las tres están gateadas por `autoSyncActive`: las dos de
+  `enableAutoSync` (`:437`/`:439`) corren DESPUÉS de `autoSyncActive = true` (`:374`, síncrono en el mismo
+  actor ⇒ no hay ventana intermedia); la de `acceptShare` (`:813`) está dentro de `if autoSyncActive, let
+  sharedEngine` —la pista del owner se confirma **sin excepciones**: no hay otra llamada a fetch en esa
+  función ni en su `catch`, y `container.accept(metadata)` es una operación de contenedor, no del engine—;
+  y la de `fetchEngineChanges` (`:1002`) solo la alcanza `syncNow`, cuyas DOS ramas gatean
+  (`awaitReadyForForcedFetch` espera a la promoción y devuelve `false` al expirar, `:983-997`; la rama
+  no-forzada hace `guard autoSyncActive else { return }`, `:950-953`). Los `sendChanges` manuales que sí
+  ocurren en export-only (`createShare`, `SplitZoneManager.swift:161`) no tienen camino a un evento
+  `fetched*`: el SDK separa la vía de envío (eventos `sent*`) de la de fetch. Y los push de CloudKit van al
+  canal interno del engine (`YalaAppDelegate.swift:60-64`), que con `automaticallySync = false` no programa
+  sync.
+
+  **Gravedad SI alguien lo alcanza: la que decía el segundo informe, y peor de lo que suena.** El
+  `.stateUpdate` se persiste en el delegate **sin pasar por ningún gate**, y Apple documenta que ese estado
+  se guarda junto a los cambios fetcheados antes de recibirlo ⇒ el token avanza aunque el handler haya
+  diferido, y el record **nunca se aplicó**. Morir antes de `drainDeferredFetchEvents()` pierde **la fila**:
+  el gasto no aparecería ni dentro de Grupos. Cubrirlo exige persistir CKRecords serializados, no UUIDs —
+  es otra pieza, y no hay un solo test que impida que alguien abra el camino.
+
+  **¿Cambia con el flip? NO.** El mecanismo que llena los buffers es byte-idéntico con el flag ON:
+  `SplitSyncManager.initialize()` no lo lee (`AppBootstrapper.swift:320` gatea solo por `uiTestActive` y la
+  sesión secundaria), `SplitSyncStartGate.decideStart` decide con tres señales de iCloud y ninguna es el
+  flag, y `shouldDeferDelegateSave(autoSyncActive:)` sigue siendo `!autoSyncActive`. No aparece ningún
+  camino nuevo de fetch: el canal backend nunca llama al manager, el link de invitación backend DESVÍA en
+  vez de añadir, y la migración G6 ya no existe en el cliente (0 llamadas a `migrate_group` en `Yala/`, la
+  mató la Fase 1). **La población afectada tampoco se encoge**: con el flag ON el canal CloudKit sigue
+  siendo el único que trae las filas de los grupos NO migrados (el guard G6-3 solo filtra
+  `isBackendGroup == true`), así que un evento perdido ahí seguiría perdiendo la fila igual que hoy.
+  Dos efectos de segundo orden, ambos en el DRAIN y no en el llenado, quedan anotados por si alguien
+  reabre esto: (a) con el flag ON `backendGroupZoneNames` deja de ser siempre-vacío, así que un evento
+  bufferado de una zona que voltee a backend durante la ventana se descartaría al drenar con el token ya
+  avanzado —y el rescate C-4 PIEZA 2 **no existe en esta rama** (verificado: 0 referencias a
+  `GroupPullRescueGate`, lo borró la Fase 1)—; (b) el boot-guard de identidad se retira con el flag ON
+  (`:278`), lo que hace MENOS alcanzable el `deferredClearAllRequested` que nuquea los buffers en el drain.
+
+  ⇒ **No bloquea el paso 2.** Sigue sin dueño, con la clasificación corregida: *inalcanzable hoy y tras el
+  flip, catastrófico si alguien lo alcanza, sin ningún test que lo impida.*
 
 ## Dos cosas ya muertas hoy (limpieza gratis, sin relación con la Fase 3)
 

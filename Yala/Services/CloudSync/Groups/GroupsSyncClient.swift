@@ -111,6 +111,13 @@ final class GroupsSyncClient {
     private var isDraining = false
     private var pendingDrain = false
     private var bridgeRetryTask: Task<Void, Never>?
+    /// Camino rápido del reintento en sesión: lo que espera a que la quiescencia deje correr el bridge.
+    /// ACUMULATIVO a propósito —el `Task` de `scheduleBridgeRetry` se cancela con cada lote nuevo, así que
+    /// capturar los IDs en su closure perdía todas las páginas menos la última—. No es la red: la red es
+    /// `GroupsPendingBridgeIntent`; esto solo evita que el bridge de una cola de páginas tenga que esperar
+    /// al próximo arranque.
+    private var retryBridgeExpenseIDs: Set<UUID> = []
+    private var retryBridgeSettlementIDs: Set<UUID> = []
 
     /// G8-2 (AJUSTE review #3): el `mainContext` compartido retenido en `startIfEligible` para que
     /// `syncNowFromPush` (invocado desde el AppDelegate SIN un `ModelContext` del caller) pueda ciclar el
@@ -1506,8 +1513,28 @@ final class GroupsSyncClient {
             #if DEBUG
             logger.error("GroupsSync: applyPulledPage save falló: \(error)")
             #endif
+            // Los IDs ya acumulados NO se tiran aquí, aunque el save haya fallado. SwiftData **no revierte
+            // el contexto** cuando un `save()` lanza: los `context.insert` de esta página —y la mutación de
+            // `cursor.groupCursorsJSON`— siguen vivos en el `mainContext` COMPARTIDO, así que el próximo
+            // save de cualquier otro (y hay muchos) puede persistirlos igual, con el cursor ya avanzado.
+            // Salir por aquí sin armar era el único camino de este canal donde la fila llegaba a disco y su
+            // intención no.
+            //
+            // Nota para quien cierre el residual del `rollback()` (este `catch` no lo hace, a diferencia de
+            // su mirror declarado `SyncApplyEngine.applyPage:277-279`, cuyo comentario lo llama
+            // OBLIGATORIO): **este `arm` se queda igual**. Con rollback las filas no existen, el retome las
+            // clasifica en el cubo *abandonado* y las retira sin gastar presupuesto ni emitir canario —
+            // cuesta dos fetch en un arranque. Armar de más es barato; no armar es permanente.
+            armBridgeIntent(expenseIDs: bridgeExpenseIDs, settlementIDs: bridgeSettlementIDs)
             return false
         }
+
+        // Armar va INMEDIATAMENTE después del save y antes de todo lo demás. Lo que sigue —notificaciones,
+        // y sobre todo `drainSoftDeleteFreeze`, que hace su propio `save()` del store PERSONAL sin gate de
+        // quiescencia (`GroupTransactionBridge.freezeForSoftDelete`)— puede lanzar o morir, y a partir de
+        // esta línea las filas YA están en disco con el cursor avanzado: cualquier hueco entre ambas cosas
+        // es una ventana donde el gasto existe y su intención no.
+        armBridgeIntent(expenseIDs: bridgeExpenseIDs, settlementIDs: bridgeSettlementIDs)
 
         // H-2026-07-18-3: canario del reset por re-join (solo tras un save exitoso — el catch retornó arriba).
         if !cursorResetGroupIDs.isEmpty {
@@ -2006,6 +2033,35 @@ final class GroupsSyncClient {
 
     // MARK: - Gate 5/5 del bridge remoto (molde SplitSyncManager.processPendingRemoteChanges)
 
+    /// Anota en el intent DURABLE que estos IDs necesitan bridge. Lo llama `applyPulledPage` en sus DOS
+    /// salidas, **pegado al save y antes de cualquier otro trabajo**, porque a partir de ahí las filas ya
+    /// están (o pueden estar) en disco con el cursor avanzado, y todo lo que venga después es una ventana
+    /// donde el gasto existe y su intención no. Los caminos que perdían, y que el sitio «natural»
+    /// —`scheduleBridge`, donde se decide el bridge— NO cubría:
+    ///
+    ///  1. **El `catch` del save de página** (`:1505`). SwiftData no revierte el contexto al fallar un
+    ///     `save()`, así que los `insert` de la página siguen vivos en el `mainContext` compartido.
+    ///  2. **`drainSoftDeleteFreeze`** (`:1535`), que hace su propio `save()` del store personal sin gate
+    ///     de quiescencia y corre ENTRE el save de la página y el bridge.
+    ///  3. **`isReady == false`** — el `guard` de `scheduleBridge` retorna sin dejar rastro cuando el
+    ///     bridge todavía no tiene `ModelContext`, y ese return es anterior a toda acumulación.
+    ///  4. **La quiescencia no cumplida** — difiere a `scheduleBridgeRetry`, un `Task` con `Task.sleep` en
+    ///     MEMORIA.
+    ///
+    /// Perder por cualquiera de ellos es definitivo, por la misma razón que en el canal CloudKit con otro
+    /// mecanismo: `applyPulledPage` persiste `groupCursorsJSON` en el MISMO `saveWithAuthor` que insertó las
+    /// filas (`:1502`), así que el servidor no vuelve a emitir esos deltas jamás. El gasto se queda sin su
+    /// `TransactionItem` y sin su `InboxDraft`: invisible en Panel, Inbox y presupuestos.
+    ///
+    /// Con el dominio SELLADO no se arma nada, mismo racional (y mismo orden guard-antes-de-`arm`) que
+    /// `SplitSyncManager.notePendingBridge`: una intención que la puerta cerrada no puede cumplir solo
+    /// acumularía la cola del humano anterior, que es una REGRESIÓN respecto a no tener intent.
+    private func armBridgeIntent(expenseIDs: [UUID], settlementIDs: [UUID]) {
+        guard GroupTransactionBridge.isDomainOpenForBridge() else { return }
+        GroupsPendingBridgeIntent.arm(
+            expenseIDs: Set(expenseIDs), settlementIDs: Set(settlementIDs), channel: .backend)
+    }
+
     private func scheduleBridge(expenseIDs: [UUID], settlementIDs: [UUID]) {
         guard !expenseIDs.isEmpty || !settlementIDs.isEmpty, GroupTransactionBridge.shared.isReady else { return }
 
@@ -2035,8 +2091,17 @@ final class GroupsSyncClient {
     }
 
     private func runBridge(expenseIDs: [UUID], settlementIDs: [UUID]) {
+        // Gate de dominio ANTES de intentar nada (molde `SplitSyncManager.processPendingRemoteChanges`,
+        // `:1975`): con Grupos sellado para un usuario nuevo del dispositivo `bridgeExpense` hace
+        // early-return devolviendo «no atendido», así que intentar aquí solo gastaría los tres intentos
+        // del ID contra una puerta cerrada. La intención se conserva entera y se drena el día que el
+        // usuario abra Grupos.
+        guard GroupTransactionBridge.isDomainOpenForBridge() else { return }
+
+        var bridgedExpenses: Set<UUID> = []
+        var bridgedSettlements: Set<UUID> = []
         if !expenseIDs.isEmpty {
-            do { try GroupTransactionBridge.shared.bridgeRemoteExpenses(ids: expenseIDs) }
+            do { bridgedExpenses = try GroupTransactionBridge.shared.bridgeRemoteExpenses(ids: expenseIDs) }
             catch {
                 #if DEBUG
                 logger.error("GroupsSync: bridgeRemoteExpenses falló: \(error)")
@@ -2044,20 +2109,43 @@ final class GroupsSyncClient {
             }
         }
         if !settlementIDs.isEmpty {
-            do { try GroupTransactionBridge.shared.bridgeRemoteSettlements(ids: settlementIDs) }
+            do { bridgedSettlements = try GroupTransactionBridge.shared.bridgeRemoteSettlements(ids: settlementIDs) }
             catch {
                 #if DEBUG
                 logger.error("GroupsSync: bridgeRemoteSettlements falló: \(error)")
                 #endif
             }
         }
+
+        // Desarme DESPUÉS del intento y SOLO por ID CUMPLIDO. El valor de retorno de `bridgeRemote*` se
+        // descartaba aquí: confirmar el lote entero desarmaría la intención de los gastos que el `catch`
+        // por fila se traga y de los que el bridge deja en estado INCOMPLETO sin lanzar —el `SplitMember`
+        // propio aún sin marcar, las `SplitShare` que no han bajado—, que es exactamente la pérdida que el
+        // intent existe para cerrar y la que la review adversarial cazó en el fix del canal viejo.
+        GroupsPendingBridgeIntent.confirm(expenseIDs: bridgedExpenses, settlementIDs: bridgedSettlements)
     }
 
+    /// Reintento en sesión. Los IDs se ACUMULAN en propiedades y no viajan capturados en el closure: este
+    /// método abre cancelando el `Task` anterior, y `pullUntilExhausted` encadena páginas sin pausa, así que
+    /// una cola de N páginas durante una ventana no-quiescente producía N llamadas en milisegundos y las
+    /// N−1 primeras se cancelaban entre sí — solo la última se reintentaba. Con el intent eso ya no PIERDE
+    /// nada (el retome del arranque lo drena), pero dejaba el bridge de casi toda la cola esperando al
+    /// próximo cold launch en el escenario donde más pasa: el primer sync tras instalar o restaurar, que es
+    /// justo cuando el import personal no está quieto. Es el papel que en el canal CloudKit hacen los Sets
+    /// acumulativos `pendingBridge*IDs`.
     private func scheduleBridgeRetry(expenseIDs: [UUID], settlementIDs: [UUID], after seconds: TimeInterval) {
+        retryBridgeExpenseIDs.formUnion(expenseIDs)
+        retryBridgeSettlementIDs.formUnion(settlementIDs)
         bridgeRetryTask?.cancel()
         bridgeRetryTask = Task { @MainActor [weak self] in
             try? await Task.sleep(for: .seconds(seconds))
             guard !Task.isCancelled, let self else { return }
+            // Se vacían ANTES de reintentar: si `scheduleBridge` vuelve a diferir, re-acumula por este mismo
+            // camino. Vaciar después re-encolaría lo ya reintentado en cada vuelta.
+            let expenseIDs = Array(self.retryBridgeExpenseIDs)
+            let settlementIDs = Array(self.retryBridgeSettlementIDs)
+            self.retryBridgeExpenseIDs.removeAll()
+            self.retryBridgeSettlementIDs.removeAll()
             self.scheduleBridge(expenseIDs: expenseIDs, settlementIDs: settlementIDs)
         }
     }

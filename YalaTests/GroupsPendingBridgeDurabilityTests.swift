@@ -180,7 +180,7 @@ struct GroupsPendingBridgeDurabilityTests {
 
         // 3. El arranque siguiente, tras la quiescencia del import personal y el gate de dominio (lo que
         //    prueba `retryPendingBridges` antes de llamar aquí).
-        SplitSyncManager.shared.resumePendingRemoteBridgeIfNeeded(context: context)
+        GroupsPendingBridgeResume.resumeIfNeeded(context: context)
 
         let after = try bridgedRows(context, expenseID: expense.id)
         #expect(after.txs + after.drafts > 0,
@@ -208,7 +208,7 @@ struct GroupsPendingBridgeDurabilityTests {
         SplitSyncManager.shared._testNotePendingBridge(
             expenseIDs: [huerfano.id, normal.id], settlementIDs: [])
         SplitSyncManager.shared._testForgetInMemoryPendingBridge()
-        SplitSyncManager.shared.resumePendingRemoteBridgeIfNeeded(context: context)
+        GroupsPendingBridgeResume.resumeIfNeeded(context: context)
 
         #expect(GroupsPendingBridgeIntent.pending.expenseIDs == [huerfano.id],
                 // (aquí el huérfano cae en el cubo ESPERANDO: su grupo no ha bajado)
@@ -229,7 +229,7 @@ struct GroupsPendingBridgeDurabilityTests {
         let fantasma = UUID()  // ninguna fila con este id: no hay nada que puentear, y no lo habrá
 
         SplitSyncManager.shared._testNotePendingBridge(expenseIDs: [fantasma], settlementIDs: [])
-        SplitSyncManager.shared.resumePendingRemoteBridgeIfNeeded(context: context)
+        GroupsPendingBridgeResume.resumeIfNeeded(context: context)
 
         #expect(!GroupsPendingBridgeIntent.isArmed,
                 """
@@ -262,7 +262,7 @@ struct GroupsPendingBridgeDurabilityTests {
         SplitSyncManager.shared._testForgetInMemoryPendingBridge()
 
         for arranque in 1...(GroupsPendingBridgeIntent.maxAttempts - 1) {
-            SplitSyncManager.shared.resumePendingRemoteBridgeIfNeeded(context: context)
+            GroupsPendingBridgeResume.resumeIfNeeded(context: context)
             #expect(GroupsPendingBridgeIntent.pending.expenseIDs == [expense.id],
                     """
                     Arranque \(arranque): el gasto sigue sin poder puentearse, pero la intención tiene que \
@@ -271,7 +271,7 @@ struct GroupsPendingBridgeDurabilityTests {
                     """)
         }
 
-        SplitSyncManager.shared.resumePendingRemoteBridgeIfNeeded(context: context)
+        GroupsPendingBridgeResume.resumeIfNeeded(context: context)
         #expect(!GroupsPendingBridgeIntent.isArmed,
                 """
                 Sin tope, un ID que nunca se puede atender haría trabajo y un `save()` en CADA arranque para \
@@ -292,7 +292,7 @@ struct GroupsPendingBridgeDurabilityTests {
         SplitSyncManager.shared._testForgetInMemoryPendingBridge()
 
         for arranque in 1...(GroupsPendingBridgeIntent.maxAttempts + 2) {
-            SplitSyncManager.shared.resumePendingRemoteBridgeIfNeeded(context: context)
+            GroupsPendingBridgeResume.resumeIfNeeded(context: context)
             #expect(GroupsPendingBridgeIntent.pending.expenseIDs == [huerfano.id],
                     """
                     Arranque \(arranque): se descartó un gasto que solo esperaba a que bajara su grupo. El \
@@ -318,7 +318,7 @@ struct GroupsPendingBridgeDurabilityTests {
         f.group.isBackendGroup = true
         try context.save()
 
-        SplitSyncManager.shared.resumePendingRemoteBridgeIfNeeded(context: context)
+        GroupsPendingBridgeResume.resumeIfNeeded(context: context)
 
         let rows = try bridgedRows(context, expenseID: expense.id)
         #expect(rows.txs + rows.drafts == 0,
@@ -329,6 +329,169 @@ struct GroupsPendingBridgeDurabilityTests {
                 """)
         #expect(!GroupsPendingBridgeIntent.isArmed,
                 "No es reintentable: el canal nuevo trae y puentea lo suyo, así que la intención se abandona.")
+    }
+
+    // MARK: - El GEMELO: el canal BACKEND arma el MISMO intent
+
+    /// Grupo del canal BACKEND —`isBackendGroup = true`, como lo deja `GroupsSyncClient.applyGroupMeta`—
+    /// con el current user y quien paga.
+    private func makeBackendFixture(_ context: ModelContext, zoneID: String = "SplitGroup-B") throws -> Fixture {
+        let group = SplitGroup(name: "Piso")
+        group.cloudKitZoneID = zoneID
+        group.isBackendGroup = true
+        context.insert(group)
+        let me = SplitMember(groupZoneID: zoneID, displayName: "Yo", isCurrentUser: true)
+        context.insert(me)
+        let ana = SplitMember(groupZoneID: zoneID, displayName: "Ana")
+        context.insert(ana)
+        try context.save()
+        return Fixture(group: group, me: me, ana: ana)
+    }
+
+    /// Página del pull con UN gasto pagado por Ana. La `SplitShare` del current user se siembra aparte (el
+    /// bridge la necesita para saber que participo; sin NINGUNA share el gasto no está «atendido»).
+    private func expensePage(id: UUID, zoneID: String, paidBy: SplitMember) -> GroupPulledPage {
+        let delta = GroupPulledDelta(
+            entityType: GroupEntityEmissionMap.splitExpense.table, groupID: zoneID,
+            rawSyncID: id.uuidString.lowercased(), syncID: id, op: .upsert,
+            fields: ["expense_description": .string("Cena"), "amount": .string("90.0000"),
+                     "currency_code": .string("USD"),
+                     "paid_by_member_key": .string(paidBy.id.uuidString)],
+            fieldHlcs: [:], hlc: "2026-07-30T00:00:00.000Z-0000-000000000000000d",
+            serverSeq: 5, schemaVersion: 1)
+        return GroupPulledPage(deltas: [delta], cursors: [zoneID: 5], memberships: [zoneID])
+    }
+
+    @Test("El canal BACKEND arma el intent aunque el bridge todavía no tenga contexto")
+    func backendChannel_armsTheIntent_whenTheBridgeIsNotReady() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let cleanup = makeIsolatedWorld(context); defer { cleanup() }
+        let f = try makeBackendFixture(context)
+        let expenseID = UUID()
+
+        // El bridge todavía no recibió su contexto: `isReady == false`. Ese `guard` es lo PRIMERO que hace
+        // `scheduleBridge`, antes de acumular nada — el camino que un «armar donde se acumula» no cubre.
+        GroupTransactionBridge.shared._testClearContext()
+        defer { GroupTransactionBridge.shared.setContext(context) }
+
+        let client = GroupsSyncClient()
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            expensePage(id: expenseID, zoneID: f.group.cloudKitZoneID, paidBy: f.ana),
+            cursor: cursor, context: context)
+
+        #expect(GroupsPendingBridgeIntent.pending.expenseIDs == [expenseID],
+                """
+                El gasto bajó por el canal backend y su bridge se tiró en el `guard` de `isReady`, sin \
+                acumularse en ninguna parte y sin un log. El pull ya avanzó su cursor en el mismo `save` \
+                que insertó la fila, así que el servidor no vuelve a mandar ese delta jamás: el gasto se \
+                queda sin transacción personal para siempre.
+                """)
+    }
+
+    @Test("El canal BACKEND arma el intent cuando la quiescencia difiere el bridge a un Task en memoria")
+    func backendChannel_armsTheIntent_whenQuiescenceDefersTheBridge() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let cleanup = makeIsolatedWorld(context); defer { cleanup() }
+        let f = try makeBackendFixture(context)
+        let expenseID = UUID()
+
+        // Import personal recién terminado ⇒ `SubcategoryDedupGate` devuelve `waitQuiescence` ⇒ el bridge
+        // se difiere a `scheduleBridgeRetry`, que es un `Task` + `sleep` EN MEMORIA. Matar la app en esa
+        // ventana —o que otro lote entre y cancele el Task— se lo lleva entero.
+        let previousImport = iCloudSyncService.shared.lastSuccessfulImportDate
+        iCloudSyncService.shared._testSetLastSuccessfulImportDate(.now)
+        defer { iCloudSyncService.shared._testSetLastSuccessfulImportDate(previousImport) }
+
+        let client = GroupsSyncClient()
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            expensePage(id: expenseID, zoneID: f.group.cloudKitZoneID, paidBy: f.ana),
+            cursor: cursor, context: context)
+
+        let rows = try bridgedRows(context, expenseID: expenseID)
+        #expect(rows.txs + rows.drafts == 0, "Precondición: la quiescencia difirió el bridge de verdad.")
+        #expect(GroupsPendingBridgeIntent.pending.expenseIDs == [expenseID],
+                """
+                El bridge diferido del canal backend vive SOLO en un `Task` con `sleep`: sin intent durable, \
+                un kill de la app en esa ventana deja el gasto sin su transacción personal, y el pull no lo \
+                re-entrega porque su cursor ya avanzó.
+                """)
+    }
+
+    @Test("El retome PUENTEA lo que armó el canal backend, en vez de abandonarlo por ser zona backend")
+    func backendResume_bridgesInsteadOfAbandoning() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let cleanup = makeIsolatedWorld(context); defer { cleanup() }
+        let f = try makeBackendFixture(context)
+        let expenseID = UUID()
+
+        // Sesión 1: baja el gasto y el bridge no llega a correr (sin contexto). La restauración va por
+        // `defer` y no como sentencia suelta: entre medias hay un `try`, y si lanzara dejaría el singleton
+        // sin contexto para el RESTO del proceso — con la suite `.serialized`, eso tumba a las siguientes
+        // por una causa que no es la suya.
+        GroupTransactionBridge.shared._testClearContext()
+        defer { GroupTransactionBridge.shared.setContext(context) }
+        let client = GroupsSyncClient()
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            expensePage(id: expenseID, zoneID: f.group.cloudKitZoneID, paidBy: f.ana),
+            cursor: cursor, context: context)
+        GroupTransactionBridge.shared.setContext(context)
+
+        // Mi parte del gasto llega en otra página, como llega en producción.
+        let share = SplitShare(expenseID: expenseID, memberID: f.me.id.uuidString,
+                               amount: 30, groupZoneID: f.group.cloudKitZoneID)
+        context.insert(share)
+        try context.save()
+
+        // Arranque siguiente.
+        GroupsPendingBridgeResume.resumeIfNeeded(context: context)
+
+        let rows = try bridgedRows(context, expenseID: expenseID)
+        #expect(rows.txs + rows.drafts > 0,
+                """
+                El retome descartó el gasto por estar en una zona del backend. Para lo que armó el canal \
+                CloudKit eso es correcto —su verdad se mudó—, pero para lo que armó el PROPIO canal backend \
+                es su estado NORMAL: `applyGroupMeta` enciende `isBackendGroup` en todos sus grupos, así que \
+                sin la marca de canal el retome abandonaría TODO lo del canal que el paso 2 enciende, y el \
+                intent se armaría para no cumplirse nunca.
+                """)
+        #expect(!GroupsPendingBridgeIntent.isArmed, "Cumplido el bridge, la intención se desarma.")
+    }
+
+    @Test("El canal BACKEND confirma por ID cumplido, no por lote: lo no atendido sigue pendiente")
+    func backendChannel_confirmsOnlyWhatWasAttended() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let cleanup = makeIsolatedWorld(context); defer { cleanup() }
+        // Grupo backend SIN member propio marcado: `bridgeExpense` hace early-return devolviendo «no
+        // atendido», sin lanzar. Es el estado del device recién reinstalado o del 2º device.
+        let group = SplitGroup(name: "Viaje")
+        group.cloudKitZoneID = "SplitGroup-C"
+        group.isBackendGroup = true
+        context.insert(group)
+        let ana = SplitMember(groupZoneID: group.cloudKitZoneID, displayName: "Ana")
+        context.insert(ana)
+        try context.save()
+        let expenseID = UUID()
+
+        let client = GroupsSyncClient()
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            expensePage(id: expenseID, zoneID: group.cloudKitZoneID, paidBy: ana),
+            cursor: cursor, context: context)
+
+        #expect(GroupsPendingBridgeIntent.pending.expenseIDs == [expenseID],
+                """
+                El canal backend descartaba el valor de retorno de `bridgeRemoteExpenses` y confirmaba el \
+                lote entero. Un gasto que el bridge deja en estado INCOMPLETO sin lanzar —el `SplitMember` \
+                propio aún sin marcar— quedaba así desarmado sin haber obtenido nunca su transacción \
+                personal: la pérdida silenciosa que el desarme por ID cumplido existe para cerrar.
+                """)
     }
 
     // MARK: - El intent en sí
@@ -343,9 +506,10 @@ struct GroupsPendingBridgeDurabilityTests {
         let primero = UUID(), segundo = UUID(), liquidacion = UUID()
         let armado = Date(timeIntervalSince1970: 1_700_000_000)
 
-        GroupsPendingBridgeIntent.arm(expenseIDs: [primero], settlementIDs: [], at: armado)
         GroupsPendingBridgeIntent.arm(
-            expenseIDs: [segundo], settlementIDs: [liquidacion],
+            expenseIDs: [primero], settlementIDs: [], channel: .cloudKit, at: armado)
+        GroupsPendingBridgeIntent.arm(
+            expenseIDs: [segundo], settlementIDs: [liquidacion], channel: .cloudKit,
             at: armado.addingTimeInterval(86_400 * 30))
 
         #expect(GroupsPendingBridgeIntent.pending.expenseIDs == [primero, segundo])
@@ -362,6 +526,33 @@ struct GroupsPendingBridgeDurabilityTests {
         #expect(GroupsPendingBridgeIntent.armedAt == nil)
     }
 
+    @Test("Un intent escrito ANTES de que existiera el canal se sigue leyendo, como «todo CloudKit»")
+    func storedPayloadWithoutChannel_stillDecodes() {
+        let previous = GroupsPendingBridgeIntent.defaults
+        let defaults = makeIsolatedDefaults(prefix: "pendingbridge.legacy")
+        GroupsPendingBridgeIntent.defaults = defaults
+        defer { GroupsPendingBridgeIntent.defaults = previous }
+
+        // Formato exacto del payload anterior a la marca de canal: sin `backendExpenses` ni
+        // `backendSettlements`. Un usuario que actualiza con una intención viva pasa por aquí.
+        let viejo = UUID()
+        let json = """
+        {"expenses":{"\(viejo.uuidString)":1},"settlements":{},"armedAt":"2026-07-29T10:00:00Z"}
+        """
+        defaults.set(Data(json.utf8), forKey: GroupsPendingBridgeIntent.userDefaultsKey)
+
+        let pending = GroupsPendingBridgeIntent.pending
+        #expect(pending.expenseIDs == [viejo],
+                """
+                Añadir los campos del canal invalidó el payload anterior: el `catch` del decode borra la key, \
+                así que un usuario que actualiza con un bridge pendiente perdería el gasto justo en la \
+                actualización que venía a protegerlo. Los campos son OPCIONALES por esto.
+                """)
+        #expect(pending.backendExpenseIDs.isEmpty,
+                "Sin marca de canal, lo de antes es del canal CloudKit — que es lo que era.")
+        #expect(GroupsPendingBridgeIntent.armedAt != nil, "El sello original sobrevive a la lectura.")
+    }
+
     @Test("Los intentos se cuentan por ID: uno envenenado no arrastra a los demás")
     func failedAttempts_areCountedPerID() {
         let previous = GroupsPendingBridgeIntent.defaults
@@ -369,7 +560,7 @@ struct GroupsPendingBridgeDurabilityTests {
         defer { GroupsPendingBridgeIntent.defaults = previous }
 
         let malo = UUID(), bueno = UUID()
-        GroupsPendingBridgeIntent.arm(expenseIDs: [malo, bueno], settlementIDs: [])
+        GroupsPendingBridgeIntent.arm(expenseIDs: [malo, bueno], settlementIDs: [], channel: .cloudKit)
 
         for _ in 1...(GroupsPendingBridgeIntent.maxAttempts - 1) {
             let dropped = GroupsPendingBridgeIntent.noteFailedAttempt(expenseIDs: [malo], settlementIDs: [])
@@ -409,7 +600,7 @@ struct GroupsPendingBridgeWiringTests {
     @Test func theFetchHandler_armsThroughTheSameSeam() throws {
         let src = try Self.source("Yala/Services/Groups/SplitSyncManager.swift")
         #expect(src.contains("private func notePendingBridge(expenseIDs: Set<UUID>, settlementIDs: Set<UUID>)"))
-        #expect(src.contains("GroupsPendingBridgeIntent.arm(expenseIDs: expenseIDs, settlementIDs: settlementIDs)"))
+        #expect(src.contains("expenseIDs: expenseIDs, settlementIDs: settlementIDs, channel: .cloudKit)"))
 
         let handler = try #require(
             src.components(separatedBy: "private func handleFetchedRecordZoneChanges").dropFirst().first,
@@ -451,6 +642,56 @@ struct GroupsPendingBridgeWiringTests {
         #expect(gate.lowerBound < attempt.lowerBound)
     }
 
+    /// Gemelo del anterior para el canal BACKEND, y por la misma razón: el sello es inalcanzable bajo el
+    /// runner, así que sin este scan los dos gates del canal que el paso 2 del encendido ENCIENDE no los
+    /// pinnea nada — y el scan de arriba lee un fichero que la Fase 3 borra entero, así que tampoco heredaría
+    /// su cobertura.
+    @Test func backendChannel_domainGates_areInPlaceAndOrdered() throws {
+        let src = try Self.source("Yala/Services/CloudSync/Groups/GroupsSyncClient.swift")
+
+        // 1) Armar: el guard de dominio precede al `arm`, igual que en `notePendingBridge`.
+        let arm = try #require(
+            src.components(separatedBy: "private func armBridgeIntent").dropFirst().first)
+        let armBody = arm.components(separatedBy: "\n    private func ").first ?? arm
+        let guardAt = try #require(armBody.range(of: "guard GroupTransactionBridge.isDomainOpenForBridge() else"))
+        let armAt = try #require(armBody.range(of: "GroupsPendingBridgeIntent.arm("))
+        #expect(guardAt.lowerBound < armAt.lowerBound,
+                "Con el dominio sellado el canal backend no puede persistir intención: sería la cola del humano anterior.")
+
+        // 2) Intentar: el guard de dominio precede al bridge, para no quemar los 3 intentos del ID contra
+        //    una puerta cerrada.
+        let run = try #require(
+            src.components(separatedBy: "private func runBridge").dropFirst().first)
+        let runBody = run.components(separatedBy: "\n    private func ").first ?? run
+        let gate = try #require(runBody.range(of: "guard GroupTransactionBridge.isDomainOpenForBridge() else"))
+        let attempt = try #require(runBody.range(of: "bridgeRemoteExpenses(ids:"))
+        #expect(gate.lowerBound < attempt.lowerBound)
+    }
+
+    /// El `arm` del canal backend vive en `applyPulledPage` y en sus DOS salidas, no en `scheduleBridge`.
+    /// Scan de ORDEN y de presencia en ambas ramas, porque las tres versiones —la rota, la intermedia y la
+    /// buena— «contienen» las mismas llamadas: lo que las distingue es dónde.
+    @Test func theBackendArm_coversBothExitsOfApply() throws {
+        let src = try Self.source("Yala/Services/CloudSync/Groups/GroupsSyncClient.swift")
+        let apply = try #require(
+            src.components(separatedBy: "func applyPulledPage").dropFirst().first)
+        let body = apply.components(separatedBy: "\n    /// ").first ?? apply
+
+        let armCalls = body.components(separatedBy: "armBridgeIntent(expenseIDs:").count - 1
+        #expect(armCalls >= 2,
+                """
+                El `arm` dejó de cubrir las dos salidas de `applyPulledPage`. El `catch` del save importa \
+                tanto como el camino de éxito: SwiftData no revierte el contexto al fallar, así que las filas \
+                insertadas siguen vivas en el `mainContext` compartido y el próximo save de cualquiera las \
+                persiste — con el cursor ya avanzado y sin nadie que recuerde puentearlas.
+                """)
+
+        // Y va ANTES del freeze del soft-delete, que hace su propio `save()` del store personal sin gate.
+        let armAt = try #require(body.range(of: "armBridgeIntent(expenseIDs: bridgeExpenseIDs"))
+        let freezeAt = try #require(body.range(of: "drainSoftDeleteFreeze("))
+        #expect(armAt.lowerBound < freezeAt.lowerBound)
+    }
+
     /// El veredicto de atención: `bridgeExpense`/`bridgeSettlement` distinguen «decidido» de «todavía no se
     /// puede», y los `bridgeRemote*` solo confirman lo primero. Un `bridged.insert` incondicional volvería a
     /// desarmar la intención de gastos que nunca obtuvieron su transacción personal.
@@ -480,7 +721,7 @@ struct GroupsPendingBridgeWiringTests {
     @Test func theBootResume_isWiredBehindBothGates() throws {
         let src = try Self.source("Yala/App/AppBootstrapper.swift")
         let dominio = try #require(src.range(of: "guard GroupTransactionBridge.isDomainOpenForBridge() else"))
-        let retome = try #require(src.range(of: "resumePendingRemoteBridgeIfNeeded(context: context)"))
+        let retome = try #require(src.range(of: "GroupsPendingBridgeResume.resumeIfNeeded(context: context)"))
         #expect(dominio.lowerBound < retome.lowerBound)
         let quiescencia = try #require(src.range(of: "logger.notice(\"retryPendingBridges deferred"))
         #expect(quiescencia.lowerBound < retome.lowerBound)

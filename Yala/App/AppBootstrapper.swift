@@ -1070,14 +1070,20 @@ final class AppBootstrapper {
             return
         }
 
-        // Caso REMOTO, antes de la cola del Caso A: gastos y liquidaciones que bajaron por sync y cuyo
-        // bridge no llegó a ocurrir (el proceso murió en la ventana del import, o el bridge lanzó). Su
-        // intención NO puede vivir en una fila —marcarla exige el `save()` que esa ventana prohíbe— así que
-        // vive en `GroupsPendingBridgeIntent` y se retoma aquí, DENTRO de esta función y no en un Task
-        // hermano: los Tasks de boot resuelven su gate cada uno por su cuenta, y uno que llegara después
-        // del fetch de abajo retrasaría el bridge un arranque entero. Hereda los dos gates de arriba, que
-        // es justo lo que necesita (el bridge salva el mainContext compartido).
-        SplitSyncManager.shared.resumePendingRemoteBridgeIfNeeded(context: context)
+        // Caso REMOTO, antes de la cola del Caso A: gastos y liquidaciones que bajaron por sync —por
+        // CUALQUIERA de los dos canales, CloudKit y backend— y cuyo bridge no llegó a ocurrir (el proceso
+        // murió en la ventana del import, o el bridge lanzó). Su intención NO puede vivir en una fila
+        // —marcarla exige el `save()` que esa ventana prohíbe— así que vive en `GroupsPendingBridgeIntent`
+        // y se retoma aquí, DENTRO de esta función y no en un Task hermano: los Tasks de boot resuelven su
+        // gate cada uno por su cuenta, y uno que llegara después del fetch de abajo retrasaría el bridge un
+        // arranque entero. Hereda los dos gates de arriba, que es justo lo que necesita (el bridge salva el
+        // mainContext compartido).
+        //
+        // El `onBridged` solo pone al día el camino rápido en memoria del transporte CloudKit: cuando la
+        // Fase 3 se lleve `SplitSyncManager`, se borra ESTE argumento y el retome sigue en pie.
+        GroupsPendingBridgeResume.resumeIfNeeded(context: context) { expenseIDs, settlementIDs in
+            SplitSyncManager.shared.forgetBridged(expenseIDs: expenseIDs, settlementIDs: settlementIDs)
+        }
 
         let descriptor = FetchDescriptor<SplitExpense>(
             predicate: #Predicate { $0.bridgePending == true }
