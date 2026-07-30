@@ -388,6 +388,22 @@ sitio hasta el 2026-07-30.
   superficies de throw de `bridgeRemoteExpenses` —y su `catch` por gasto— perdían el lote **con la app
   viva**; por eso `bridgeRemote*` devuelven ahora los IDs realmente puenteados y el desarme es por ID
   cumplido. Contrato en `.claude/rules/swiftdata-cloudkit.md`.
+- **El gemelo del bridge en el canal BACKEND — chip lanzado el 2026-07-30, y son DOS caminos de pérdida,
+  no uno.** `GroupsSyncClient` tiene cero referencias a `GroupsPendingBridgeIntent`. Dos análisis
+  independientes lo midieron el mismo día y **cada uno vio una mitad**:
+  **(a)** `scheduleBridgeRetry` es `Task` + `Task.sleep` en memoria (`:2057-2060`) ⇒ matar la app en esa
+  ventana pierde el bridge, igual que el defecto que el intent vino a arreglar.
+  **(b)** `:2010` abre con `guard … GroupTransactionBridge.shared.isReady else { return }`, y ese `return`
+  es **ANTERIOR** a cualquier acumulación ⇒ con `isReady == false` los IDs se tiran en silencio y sin
+  rastro. **Corolario que invalida la formulación fácil: «armar en el sitio de la acumulación» NO basta**;
+  hay que armar antes de ese guard, o el camino (b) sigue perdiendo.
+  Y un tercer punto que ninguno de los dos análisis tenía: **el retome del intent vive en
+  `SplitSyncManager.swift:2014-2102`, que el commit 1 de la Fase 3 borra ENTERO** ⇒ sin moverlo, tras la
+  Fase 3 el intent se arma y nadie lo drena (el patrón de `quotaFailedRecordIDs`, y peor que hoy porque
+  habría IDs acumulándose sin salida).
+  **Bloquea el paso 2 de [[MODO-NUBE-DECISION-RELEASE-2.1]] §D-R1**, cuyo corolario exige cubrir los dos
+  canales.
+
 - **`quotaFailedRecordIDs` es una intención sin drenador.** `retryQuotaFailedRecords()`
   (`SplitSyncManager.swift:1616`) **no tiene ni un call-site en la app** — su única otra mención es el
   comentario de `:1480`, que afirma que corre en foreground. Verificado con grep el 2026-07-30. Si la cuota

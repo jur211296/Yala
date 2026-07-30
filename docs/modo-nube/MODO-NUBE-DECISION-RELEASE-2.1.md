@@ -71,6 +71,30 @@ tráfico porque `CloudRemoteConfig.refreshIfDue` gatea por `isConfigured`).
 **el kill-switch remoto todavía funciona** (el flag remoto solo puede MATAR): es la única ventana para
 probar el recorrido completo con un segundo humano en dos devices y poder apagarlo en segundos.
 
+### Paso 1 · QUÉ PROBAR EN TESTFLIGHT — lo único que el build no puede demostrar solo
+
+Está escrito en el mensaje de `3c49278c`, pero se busca aquí, así que va aquí. **Paso 1 ejecutado:
+`3c49278c` (config) + `e32d2db6` (docs), 2026-07-30.**
+
+1. **Sign-in con Apple contra producción, desde cero.** Completar el flujo y **volver a abrir la app**:
+   la sesión debe sobrevivir (vive en Keychain `AfterFirstUnlockThisDeviceOnly`).
+2. **Sign-in con Google contra producción.** Si responde `invalid client` o equivalente, el iOS client ID
+   de producción **no** está en los Authorized Client IDs de Supabase. Es
+   `295312853864-7dt8d2buik9nacg71aurdpqu56r0l4h8.apps.googleusercontent.com` (bundle
+   `com.jurgenschmidt.yala`) — **OJO: distinto del de `Yala Dev`**. Es la única forma de comprobarlo; no
+   se puede saber desde el código.
+3. **Que tras el primer boot NO aparezca ninguna pantalla de «actualiza la app».** Confirma que `/config`
+   responde y que el umbral desplegado sigue en `0`.
+4. **Que Ajustes NO muestre «Dónde viven tus datos» y el Welcome NO muestre cards de nube.** Si aparecen,
+   el gateway no está sirviendo los percents en 0.
+5. **Que nada de Grupos cambie**: el canal sigue siendo CloudKit hasta el paso 2.
+
+Verificado en el commit: los dos builds limpios, 169 tests en 18 suites con AMBOS schemes (18 pedidas =
+18 reportadas), `validate-coverage` OK. Y confirmado aquí de forma independiente: los dos JWT decodificados
+llevan cada uno su `ref` (`fostjbbwstyuunmmefuk` en `#if DEV_BUILD`, `kefvaiymtgytemwbltlz` en `#else`), sin
+cruce, y `groupsBackendCompiledDefault` sigue en `false`. Los dos rojos ambientales del scheme `Yala`
+desaparecieron, que era la señal esperada.
+
 ### Por qué separados, y no en un build
 
 Son dos clases de fallo distintas: el paso 1 prueba INFRAESTRUCTURA, el paso 2 mueve DATOS reales.
