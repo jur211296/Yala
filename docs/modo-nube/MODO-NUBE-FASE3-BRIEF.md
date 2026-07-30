@@ -143,7 +143,13 @@ Build `Yala` + `Yala Dev` verdes sin warnings nuevos; **5.221 tests / 483 suites
   solo los 5 enums de campos, y `zonePrefix` nunca fue uno de ellos. Lo único que quedó obsoleto es el
   comentario de `:74`, que usaba `zonePrefix` como ejemplo del fallo de parseo; corregido a una formulación
   genérica. El adelanto de este test al commit 2 sigue en pie: el fichero que lee muere ahí.
-- ⚠️ **DEUDA para el commit 2, nueva:** las **8 celdas de `resolveWaitByQuiescence`** se quedaron en
+- ⚠️ **DEUDA para el commit 2, nueva. Y son 9 celdas, no 8** (verificado en la otra Mac el 2026-07-29):
+  a las ocho `resolveByQuiescence_*` hay que sumar **`mirrorNotConfirmedOff_matrixUnchanged`**, cuyo nombre
+  habla de la matriz del mirror pero que ejercita la función igual. Quien mueva «las 8» dejará ese caso
+  atrás. En el fichero nuevo la función solo tiene HOY **una** llamada indirecta
+  (`BootSaveGateLogicTests.swift:141`, comparando el gate de grupos contra el de boot-save), así que sin el
+  rescate se queda prácticamente sin cobertura propia. Las **8 celdas de `resolveWaitByQuiescence`** más esa
+  novena se quedaron en
   `SplitSyncStartGateTests.swift`, que el commit 2 borra, **aunque cubren código que sobrevive** (la función
   vive ahora en `BootSaveGateLogic`). Fuera del alcance del commit 0 —que movía la suite nombrada, no esa—
   pero si el commit 2 borra el fichero sin moverlas, `resolveWaitByQuiescence` se queda sin un solo test.
