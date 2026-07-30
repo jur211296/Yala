@@ -103,11 +103,14 @@ después, al validar el gemelo del bridge.
 
 ## 2 · Lo que un `git revert` NO recupera
 
-**Esta sección es la razón de ser del documento.** Tres de los efectos vivos en producción **no viven en
-git**, así que un revert da una falsa sensación de haber vuelto atrás:
+**Esta sección es la razón de ser del documento.** Varios de los efectos vivos en producción **no viven en
+git**, así que un revert da una falsa sensación de haber vuelto atrás. Y la simétrica muerde igual: un
+valor commiteado en `wrangler.toml` **no está en producción hasta que alguien despliega** — git puede decir
+100 mientras el Worker sirve 0.
 
 | Qué | Cómo se activó | Cómo se deshace de verdad |
 |---|---|---|
+| **`CLOUD_MODE_ROLLOUT_PERCENT` a 100** en producción (2026-07-30) — destapa la fila «Dónde viven tus datos» de Ajustes y las cards de sign-in nube del Welcome; **es el estado que exige la decisión de migración de 2.1**, no un valor de tránsito | el valor en `[env.production.vars]` **y un deploy** del Worker (`npm run deploy:production`) | volver a `"0"` **y re-desplegar**. Revertir solo el `.toml` no apaga nada. ⚠️ **Verificar que el deploy corrió**: si el valor está commiteado pero el Worker no se ha desplegado, git miente sobre el estado de producción |
 | **404 de `migrate_group`** en el gateway | un **deploy** del Worker (producción, deployment `09bfa839`) | revertir el código **y volver a desplegar**: `npm run deploy:production` (= `wrangler deploy --env production`; su `predeploy` sincroniza el manifest, así que usar el script de npm y no `wrangler` a pelo) |
 | **`REVOKE EXECUTE` de `migrate_group`** en Supabase | **SQL ejecutado a mano** en los DOS entornos | un `GRANT EXECUTE ... TO authenticated` explícito, entorno por entorno. Requiere OK del owner y re-enlazar el conector al entorno correcto |
 | **Migración de D1 aplicada** | `npm run migrate:production` | a mano: `gateway/migrations/` solo tiene `0001_init.sql` y `0002_account_entitlements.sql`, **ninguna trae `down`** |
