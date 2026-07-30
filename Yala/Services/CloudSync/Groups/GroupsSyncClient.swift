@@ -192,6 +192,11 @@ final class GroupsSyncClient {
     /// `syncNowFromPush` aislado). SOLO tests.
     func _testSetContext(_ ctx: ModelContext) { self.context = ctx }
 
+    /// Cuando `true`, el `saveWithAuthor` de `applyPulledPage` LANZA justo antes del commit. SOLO tests:
+    /// es la única forma de ejercitar el `catch` —y por tanto su `rollback()`— sin un fallo real de
+    /// SwiftData. Molde de `CloudSyncEngine._testThrowOnApplySave`, el mirror declarado de esa función.
+    var _testThrowOnApplySave = false
+
     // MARK: Init
 
     init(
@@ -1508,23 +1513,30 @@ final class GroupsSyncClient {
                 for gid in cursorResetGroupIDs { maxSeqByGroup[gid] = 0 }
                 cursor.groupCursorsJSON = encodeCursors(maxSeqByGroup)
                 cursor.clockLatestHLC = clock.latest?.description
+                // Seam de test: crash ANTES del commit → se ejercita el `catch` de abajo con el grafo
+                // remoto a medias, que es el único estado donde el `rollback()` significa algo.
+                if _testThrowOnApplySave { throw GroupsApplyTestCrash.suppressed }
             }
         } catch {
             #if DEBUG
             logger.error("GroupsSync: applyPulledPage save falló: \(error)")
             #endif
-            // Los IDs ya acumulados NO se tiran aquí, aunque el save haya fallado. SwiftData **no revierte
-            // el contexto** cuando un `save()` lanza: los `context.insert` de esta página —y la mutación de
-            // `cursor.groupCursorsJSON`— siguen vivos en el `mainContext` COMPARTIDO, así que el próximo
-            // save de cualquier otro (y hay muchos) puede persistirlos igual, con el cursor ya avanzado.
-            // Salir por aquí sin armar era el único camino de este canal donde la fila llegaba a disco y su
-            // intención no.
-            //
-            // Nota para quien cierre el residual del `rollback()` (este `catch` no lo hace, a diferencia de
-            // su mirror declarado `SyncApplyEngine.applyPage:277-279`, cuyo comentario lo llama
-            // OBLIGATORIO): **este `arm` se queda igual**. Con rollback las filas no existen, el retome las
-            // clasifica en el cubo *abandonado* y las retira sin gastar presupuesto ni emitir canario —
-            // cuesta dos fetch en un arranque. Armar de más es barato; no armar es permanente.
+            // Rollback OBLIGATORIO, como en el mirror declarado (`SyncApplyEngine.applyPage`, cuyo
+            // comentario usa esa misma palabra). SwiftData **no revierte el contexto** cuando un `save()`
+            // lanza: sin esto los `context.insert` de esta página —y la mutación de `groupCursorsJSON`—
+            // seguirían vivos en el `mainContext` COMPARTIDO y el próximo save de cualquier otro (y hay
+            // muchos) los persistiría. Y el daño no se queda en local: el drain filtra por
+            // `tx.author != Self.outboxSaveAuthor`, así que capturaría esas filas colándose bajo el autor
+            // por defecto y las RE-EMPUJARÍA al servidor como ediciones locales con HLC fresco —laundering
+            // del grafo remoto a medias—. Con el rollback el cursor tampoco avanza ⇒ el próximo pull
+            // re-pide la página entera, que es idempotente.
+            context.rollback()
+            // El `arm` se queda, y ahora es red REDUNDANTE en vez de la principal: revertidas las filas, el
+            // retome las clasifica en el cubo *abandonado* y las retira sin gastar presupuesto ni emitir
+            // canario (cuesta dos fetch en un arranque), y el re-pull las volverá a armar de verdad. Se
+            // conserva porque cubre el residual que el rollback no puede prometer —un save que dejara algo
+            // escrito antes de lanzar— y porque no armar sería permanente si eso pasara. No toca el
+            // contexto (escribe en `UserDefaults`), así que su orden respecto al rollback es indiferente.
             armBridgeIntent(expenseIDs: bridgeExpenseIDs, settlementIDs: bridgeSettlementIDs)
             return false
         }
@@ -2368,6 +2380,10 @@ extension GroupsSyncClient {
         didRemediateGroupMerkleThisSession = false
     }
 }
+
+/// Error del seam `_testThrowOnApplySave` (simula un crash antes del commit de una página).
+/// Gemelo de `ApplyTestCrash` del canal personal, que es `private` a su propio fichero.
+private enum GroupsApplyTestCrash: Error { case suppressed }
 
 // MARK: - PendingGroupRow
 

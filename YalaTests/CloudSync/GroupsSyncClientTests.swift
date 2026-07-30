@@ -301,6 +301,55 @@ struct GroupsSyncClientTests {
         #expect(try context.fetch(FetchDescriptor<SplitShare>()).count == 1)
     }
 
+    /// El `catch` del save de página deja el contexto LIMPIO — mismo contrato F-3 que el mirror declarado
+    /// `SyncApplyEngine.applyPage`, que corre sobre ESTE MISMO `mainContext` compartido (los dos canales
+    /// reciben el mismo `context` en `AppBootstrapper`). Sin el `rollback()`, las filas insertadas por la
+    /// página y la mutación de `groupCursorsJSON` se quedan dirty: el próximo `save()` de cualquier otro las
+    /// persiste bajo el autor por defecto, el drain las captura (filtra por `author != outboxSaveAuthor`) y
+    /// las RE-EMPUJA al servidor como ediciones locales con HLC fresco.
+    @Test("Un save de página que falla no deja el grafo remoto a medias en el contexto compartido")
+    func apply_saveFails_rollsBack_andCursorDoesNotAdvance() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let client = GroupsSyncClient()
+        let cursor = try client.loadOrCreateCursor(context)
+
+        let shareID = UUID()
+        let delta = GroupPulledDelta(
+            entityType: "split_shares", groupID: "SplitGroup-A",
+            rawSyncID: shareID.uuidString, syncID: shareID, op: .upsert,
+            fields: [
+                "expense_id": .string(UUID().uuidString),
+                "member_key": .string("member-1"),
+                "amount": .string("10.0000"),
+                "is_paid": .bool(false),
+            ],
+            fieldHlcs: [:], hlc: "2026-07-15T00:00:00.000Z-0000-00000000000000aa",
+            serverSeq: 7, schemaVersion: 1
+        )
+        let page = GroupPulledPage(deltas: [delta], cursors: ["SplitGroup-A": 7], memberships: ["SplitGroup-A"])
+
+        client._testThrowOnApplySave = true
+        let ok = client.applyPulledPage(page, cursor: cursor, context: context)
+
+        #expect(ok == false)
+        #expect(context.hasChanges == false, """
+            El apply fallido dejó el contexto DIRTY. Esas filas las persiste el próximo save ajeno bajo el \
+            autor por defecto, y desde ahí el drain las re-empuja al servidor como ediciones locales: \
+            laundering del grafo remoto a medias.
+            """)
+
+        // El cursor NO avanzó ⇒ el próximo pull re-pide la página entera (idempotente).
+        let map = try JSONDecoder().decode(
+            [String: Int64].self, from: Data(cursor.groupCursorsJSON.utf8))
+        #expect(map["SplitGroup-A"] == nil)
+
+        // Y la fila remota no llegó al store por ninguna vía.
+        let fresh = ModelContext(context.container)
+        #expect(try fresh.fetch(FetchDescriptor<SplitShare>()).isEmpty)
+    }
+
     @Test func pull_buildsExpectedQuery_withCursorsAndLimit() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)

@@ -48,6 +48,31 @@ aparecen aquí (Fase 3 antes que Fase 2 antes que Fase 1).
 | 2.2 · notificaciones de miembro | `ba95f62a` |
 | 2.1 · notificaciones de grupo | `bed60a92` |
 
+### Fase 2 bis — los arreglos que salieron de medir la Fase 2 · **NO REVERTIR**
+
+Esta subsección existe porque su ausencia era una trampa: son commits de la épica, están entre los de las
+fases, y quien recorriera la tabla de arriba hacia abajo los habría revertido con todo lo demás.
+
+| Pieza | Commit | Por qué NO |
+|---|---|---|
+| gemelo del bridge en el canal backend + `rollback()` del apply | `f0a723e1` (+ el commit del `rollback()`) | el `rollback()` corre en el canal backend, pero el resto del intent **arma también en CloudKit** |
+| bridge remoto durable (canal CloudKit) | `ad937148` | cierra pérdida PERMANENTE del `TransactionItem` de un gasto de grupo, **con el flag OFF** |
+| purga de identidad durable (cambio de Apple ID) | `7c7fb7f6` | sin él, matar la app deja al humano nuevo los grupos del anterior con sus 4 credenciales de re-join |
+| la llave del re-join sale de la ficha, no de quién eres hoy | `62eeb8f0` + `40a4e417` | corrige el sexto resolvedor de identidad; alcanzable hoy |
+
+**El criterio, para lo que venga después:** un commit de esta épica se revierte si su efecto SOLO existe con
+el canal backend encendido. Si arregla algo que falla **hoy, con `groupsBackendEnabled` OFF**, revertirlo
+reabre un bug de producción — va aquí, no en las tablas de fases.
+
+### Paso 1 del encendido (D-R1) — configuración de producción
+
+| Pieza | Commit | ¿Revert de git lo deshace? |
+|---|---|---|
+| `CloudBackendConfig`: URL + anon key de producción en `#else` | `3c49278c` | **Sí**, limpio — vuelve a `isConfigured == false` y toda la superficie de nube queda inerte |
+
+Revertirlo NO toca Grupos (`groupsBackendCompiledDefault` sigue en `false`) y NO deshace nada del servidor:
+el schema desplegado, el `revoke` y los percents del gateway viven fuera de git (§2).
+
 ### Fase 1 — cierre del servidor y muerte de la migración
 
 | Paso | Commit | ¿Revert de git lo deshace? |
@@ -58,10 +83,16 @@ aparecen aquí (Fase 3 antes que Fase 2 antes que Fase 1).
 | scripts de migración de D1 | `03ee208d` | irrelevante (solo `package.json`) |
 | guard del umbral de forzado de versión | `69092b24` | irrelevante (solo un test) |
 
-### Fase 3 — cuando exista
+### Fase 3 — en curso (commit 0 hecho)
 
-Sus 2 commits van AQUÍ, arriba de todo, y hay que **anotarlos en esta tabla en el mismo commit que los
-crea**. Sin eso este runbook queda desactualizado el día que más falta hace.
+| Paso | Commit | ¿Revert de git lo deshace? |
+|---|---|---|
+| commit 0 · lo que NO muere sale de los ficheros condenados | `bc486c92` | **Sí**, limpio — es un movimiento de código, sin cambio de comportamiento |
+
+Los commits 1 y 2 van AQUÍ, arriba de todo, y hay que **anotarlos en esta tabla en el mismo commit que los
+crea**. Sin eso este runbook queda desactualizado el día que más falta hace. Ese fallo ya ocurrió una vez:
+el commit 0 (`bc486c92`) y el paso 1 del encendido (`3c49278c`) aterrizaron sin anotarse y se añadieron
+después, al validar el gemelo del bridge.
 
 > **NO revertir** los commits ajenos intercalados: `66960f7d` (cover de la bandeja), `bd9435b8` (salir
 > del último grupo), `5c84df88` (deeplink del smoke), `b1a5033f`, ni ningún `docs(...)`. No son de las

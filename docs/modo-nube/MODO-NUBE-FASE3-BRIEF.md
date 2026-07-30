@@ -382,7 +382,8 @@ sitio hasta el 2026-07-30.
 
 - ~~**El bridge remoto de Grupos se pierde para siempre.**~~ **ARREGLADO el 2026-07-30, en los DOS canales.**
   `GroupsPendingBridgeIntent` (UserDefaults, sin TTL, tope de 3 intentos por ID) lo arman el transporte
-  CloudKit (`SplitSyncManager.notePendingBridge`) y el canal backend (`GroupsSyncClient.scheduleBridge`), y
+  CloudKit (`SplitSyncManager.notePendingBridge`) y el canal backend
+  (`GroupsSyncClient.applyPulledPage` → `armBridgeIntent`, **no** `scheduleBridge`), y
   lo retoma `GroupsPendingBridgeResume.resumeIfNeeded(context:)` dentro de
   `AppBootstrapper.retryPendingBridges`, detrás de sus dos gates. Al medirlo apareció una segunda mitad que
   el reporte no tenía: el drenaje limpiaba los Sets **antes** de llamar al bridge, así que las cuatro
@@ -396,7 +397,11 @@ sitio hasta el 2026-07-30.
   **(a) «armar donde se acumula» NO basta aquí.** `GroupsSyncClient.scheduleBridge` abre con
   `guard !expenseIDs.isEmpty || !settlementIDs.isEmpty, GroupTransactionBridge.shared.isReady else { return }`,
   y ese `return` es anterior a toda acumulación: con el bridge aún sin `ModelContext` los IDs se tiraban ahí
-  mismo, sin rastro. El `arm` va **antes del guard**. El otro camino, el que sí espeja al canal viejo, es la
+  mismo, sin rastro. **El `arm` acabó en `applyPulledPage` y no «antes del guard»**, que es lo que pedía la
+  formulación fácil: desde ahí cubre CUATRO caminos en vez de uno —el `guard` de `isReady`, la quiescencia
+  diferida, el `catch` del save de la página y la ventana de `drainSoftDeleteFreeze`, que hace su propio
+  `save()` del store personal sin gate—. Quien lo busque en `scheduleBridge` no lo va a encontrar. El otro
+  camino, el que sí espeja al canal viejo, es la
   quiescencia: difiere a `scheduleBridgeRetry`, un `Task` con `sleep` en memoria que además **se cancela en
   cuanto otro lote entra en la ventana** (el canal viejo no lo sufre porque sus IDs viven en Sets
   acumulativos; aquí viajan capturados en el closure). Y perder ahí es igual de permanente que en CloudKit:
@@ -418,18 +423,22 @@ sitio hasta el 2026-07-30.
   salida. Lo que queda en el transporte es `SplitSyncManager.forgetBridged(expenseIDs:settlementIDs:)`, el
   olvido del camino rápido en memoria: **al commit 1 le basta con borrar el argumento `onBridged` del
   call-site de `AppBootstrapper.retryPendingBridges` — una línea— y el retome sigue en pie.**
-- **`applyPulledPage` no hace `context.rollback()` cuando su save falla, y su mirror declarado SÍ**
-  (destapado el 2026-07-30 al refutar el hallazgo del `catch`; no estaba reportado). `GroupsSyncClient.
-  applyPulledPage` se declara «mirror de `SyncApplyEngine.applyPage`, A1» (`GroupsSyncClient.swift:1461`),
-  y aquélla hace `context.rollback()` en el `catch` análogo con un comentario que lo llama **obligatorio**:
-  «el contexto tiene el grafo remoto a medias (born-remotes, deletes, cursor mutado); dejarlo dirty =
-  laundering vía el próximo autosave/save ajeno» (`SyncApplyEngine.swift:276-279`). El mirror de Grupos
-  copió el `return false` y se dejó el `rollback()` — verificado: **0 ocurrencias** de `rollback()` en
-  `GroupsSyncClient.swift`. Consecuencia: si un save ajeno flushea esas filas bajo el autor por defecto, el
-  drain las captura (filtra por `tx.author != Self.outboxSaveAuthor`) y las **re-empuja al servidor como
-  ediciones locales con HLC fresco**. Armar el intent —que es lo que se hizo aquí— cierra la pérdida del
-  BRIDGE, no el laundering: son dos cosas distintas y esta sigue abierta. **DARK**: con
-  `groupsBackendEnabled` OFF nada de esto corre, pero el paso 2 lo enciende.
+- ~~**`applyPulledPage` no hace `context.rollback()` cuando su save falla, y su mirror declarado SÍ.**~~
+  **ARREGLADO el 2026-07-30**, antes del flip y por la misma razón que el bridge: el paso 2 es lo que
+  enciende este camino, y encenderlo dejaba datos nuevos encima de un agujero conocido. `GroupsSyncClient.
+  applyPulledPage` se declara «mirror de `SyncApplyEngine.applyPage`, A1» pero copió el `return false` sin el
+  `context.rollback()` que el comentario de la original llama **obligatorio** — y **los dos corren sobre el
+  MISMO `mainContext` compartido**, así que no había ninguna diferencia de contexto que lo justificara:
+  `AppBootstrapper` pasa el mismo `context` a `CloudSyncRuntime.startShared` (`:311`) y a
+  `GroupsSyncClient.startIfEligible` (`:329`). El daño no era perder el bridge: si un save ajeno flusheaba
+  esas filas bajo el autor por defecto, el drain las capturaba (filtra por
+  `tx.author != Self.outboxSaveAuthor`) y las **re-empujaba al servidor como ediciones locales con HLC
+  fresco** — laundering del grafo remoto a medias. Con el rollback el cursor tampoco avanza ⇒ el próximo pull
+  re-pide la página, idempotente. El `arm` del `catch` se conserva como red REDUNDANTE (revertidas las filas,
+  el retome las clasifica *abandonado* y las retira sin gastar presupuesto). Pinneado por
+  `GroupsSyncClientTests.apply_saveFails_rollsBack_andCursorDoesNotAdvance` con el seam
+  `_testThrowOnApplySave` (molde del canal personal); mutación verificada: quitar el `rollback()` deja DOS
+  aserciones rojas — contexto sucio Y cursor avanzado.
 - **`quotaFailedRecordIDs` es una intención sin drenador.** `retryQuotaFailedRecords()`
   (`SplitSyncManager.swift:1616`) **no tiene ni un call-site en la app** — su única otra mención es el
   comentario de `:1480`, que afirma que corre en foreground. Verificado con grep el 2026-07-30. Si la cuota
