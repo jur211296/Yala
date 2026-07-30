@@ -99,8 +99,12 @@ SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 # (decisión owner — las Auth Keys de APNs sirven sandbox y prod; Apple limita 2 por team). La .p8 vive en
 # ~/Secrets/yala-apns/ y está subida como secret APNS_AUTH_KEY en AMBOS envs.
 APNS_KEY_ID = "7H6BUZWKKS"
-# SIWA (B1): la Key ID es la MISMA que staging (una sola .p8 de SIWA por team). INERTE hasta subir el secret
-# `wrangler secret put SIWA_AUTH_KEY --env production` (encadenado al runbook del Bloque A); sin él → 503.
+# SIWA (B1): la Key ID es la MISMA que staging (una sola .p8 de SIWA por team). El secret `SIWA_AUTH_KEY`
+# YA está subido a producción (verificado 2026-07-30 con `wrangler secret list --env production`: los 7
+# secrets de staging menos `DEV_SHARED_SECRET`, que es staging-only por diseño) ⇒ el canje y el revoke de
+# SIWA están VIVOS. Si alguna vez faltara, `handleSiwaExchange`/`handleSiwaRevoke` devuelven 503
+# `yala_siwa_not_configured` y se pierde la revocación de 5.1.1(v) al borrar cuenta — no el sign-in, que
+# no depende del canje (`SIWAExchangeCapture.dispatch` es best-effort con tope de 4 s).
 SIWA_KEY_ID = "PQ53RQ5D3G"
 # Remote-config del cliente (GET /config, DIFERIDOS #34): PROD arranca en 0 EXPLÍCITO (todo OFF —
 # el encendido D9 sube estos percents por escalones §j.2 con el gate de costo del observe mode).
