@@ -3,7 +3,8 @@
 //  YalaTests / CloudSync
 //
 //  `GroupsSyncClient.syncNowFromPush(timeout:)` (G8-2): el disparo del ciclo desde un silent push.
-//  `.serialized` (muta el flag global, restaurado con defer). Cubre: flag OFF → false SIN red; el timeout
+//  `.serialized` (muta el flag global, restaurado con `_testResetGroupsBackendEnabledOverride()`).
+//  Cubre: canal apagado → false SIN red (con contexto sembrado, para que el flag sea el único gate); el timeout
 //  dispara (stub lento ≤0.5s por la regla de sleeps) → false.
 //
 
@@ -67,11 +68,21 @@ struct GroupsSyncClientPushTests {
 
     // MARK: - Tests
 
-    @Test func flagOff_returnsFalse_noNetwork() async {
-        // flag OFF (default de la fase) → guard corta antes de tocar red / context.
+    /// El gate del CANAL corta el ciclo del silent push. Dos cosas cambiaron aquí en D-R1 paso 2 y las
+    /// dos importan: (1) antes leía el default, que tras el flip es `true` bajo `Yala Dev`; (2) aun así
+    /// el test seguía verde ahí, pero por el gate `context != nil` —nunca se sembraba contexto—, o sea
+    /// que no probaba lo que su nombre dice. Ahora el override fija el canal apagado y el contexto está
+    /// sembrado, así que el flag es el ÚNICO gate que puede cortar.
+    @Test func flagOff_returnsFalse_noNetwork() async throws {
+        CloudSyncFlags.groupsBackendEnabled = false
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
         let stub = CountingStub()
         let client = GroupsSyncClient(
             tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { true }, outboxMirror: nil)
+        client._testSetContext(context)
 
         let result = await client.syncNowFromPush(timeout: .seconds(20))
         #expect(result == false)
@@ -80,7 +91,7 @@ struct GroupsSyncClientPushTests {
 
     @Test func timeout_returnsFalse() async throws {
         CloudSyncFlags.groupsBackendEnabled = true
-        defer { CloudSyncFlags.groupsBackendEnabled = false }
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
 
@@ -94,13 +105,20 @@ struct GroupsSyncClientPushTests {
         #expect(result == false)
     }
 
-    /// Fase 2 · 2.5: el pull-to-refresh de la UI de Grupos entra por los MISMOS gates. Con el canal DARK
-    /// (flag OFF, el estado de producción de esta fase) un tirón hacia abajo no toca la red — lo que
-    /// protege este test es que nadie cablee la UI a un camino sin gatear.
-    @Test func syncNowFromUI_flagOff_returnsFalse_noNetwork() async {
+    /// Fase 2 · 2.5: el pull-to-refresh de la UI de Grupos entra por los MISMOS gates. Con el canal
+    /// APAGADO (kill remoto, o binario sin canal) un tirón hacia abajo no toca la red — lo que protege
+    /// este test es que nadie cablee la UI a un camino sin gatear. Mismo anclaje que el de arriba:
+    /// override explícito + contexto sembrado, para que el flag sea el único gate en juego.
+    @Test func syncNowFromUI_flagOff_returnsFalse_noNetwork() async throws {
+        CloudSyncFlags.groupsBackendEnabled = false
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
         let stub = CountingStub()
         let client = GroupsSyncClient(
             tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { true }, outboxMirror: nil)
+        client._testSetContext(context)
 
         let result = await client.syncNowFromUI()
         #expect(result == false)
@@ -110,7 +128,7 @@ struct GroupsSyncClientPushTests {
     /// Con el canal ENCENDIDO el tirón sí cicla (y su tope no lo mata: el stub responde al instante).
     @Test func syncNowFromUI_flagOn_runsCycle() async throws {
         CloudSyncFlags.groupsBackendEnabled = true
-        defer { CloudSyncFlags.groupsBackendEnabled = false }
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
 

@@ -95,10 +95,9 @@ struct GroupChannelRoutingTests {
         GroupService.shared.setContext(context)
 
         let prevFactory = GroupService.shared.backendMembershipFactory
-        let prevFlag = CloudSyncFlags.groupsBackendEnabled
         defer {
             GroupService.shared.backendMembershipFactory = prevFactory
-            CloudSyncFlags.groupsBackendEnabled = prevFlag
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
         }
         CloudSyncFlags.groupsBackendEnabled = true
 
@@ -132,10 +131,9 @@ struct GroupChannelRoutingTests {
         GroupService.shared.setContext(context)
 
         let prevFactory = GroupService.shared.backendMembershipFactory
-        let prevFlag = CloudSyncFlags.groupsBackendEnabled
         defer {
             GroupService.shared.backendMembershipFactory = prevFactory
-            CloudSyncFlags.groupsBackendEnabled = prevFlag
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
         }
         CloudSyncFlags.groupsBackendEnabled = false   // OFF
 
@@ -166,10 +164,9 @@ struct GroupChannelRoutingTests {
         GroupService.shared.setContext(context)
 
         let prevFactory = GroupService.shared.backendMembershipFactory
-        let prevFlag = CloudSyncFlags.groupsBackendEnabled
         defer {
             GroupService.shared.backendMembershipFactory = prevFactory
-            CloudSyncFlags.groupsBackendEnabled = prevFlag
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
         }
         CloudSyncFlags.groupsBackendEnabled = true
 
@@ -202,10 +199,9 @@ struct GroupChannelRoutingTests {
         GroupService.shared.setContext(context)
 
         let prevFactory = GroupService.shared.backendMembershipFactory
-        let prevFlag = CloudSyncFlags.groupsBackendEnabled
         defer {
             GroupService.shared.backendMembershipFactory = prevFactory
-            CloudSyncFlags.groupsBackendEnabled = prevFlag
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
         }
         CloudSyncFlags.groupsBackendEnabled = true
 
@@ -232,10 +228,9 @@ struct GroupChannelRoutingTests {
         GroupService.shared.setContext(context)
 
         let prevFactory = GroupService.shared.backendMembershipFactory
-        let prevFlag = CloudSyncFlags.groupsBackendEnabled
         defer {
             GroupService.shared.backendMembershipFactory = prevFactory
-            CloudSyncFlags.groupsBackendEnabled = prevFlag
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
         }
         CloudSyncFlags.groupsBackendEnabled = true
 

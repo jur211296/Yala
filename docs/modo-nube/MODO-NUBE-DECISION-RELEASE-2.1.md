@@ -1,6 +1,6 @@
 ---
 created: 2026-07-28
-updated: 2026-07-28
+updated: 2026-07-30
 tags: [modo-nube, decision, release, 2.1]
 ---
 
@@ -25,7 +25,7 @@ tags: [modo-nube, decision, release, 2.1]
 1. **Cablear el cliente contra el Supabase de PRODUCCIÓN es el bloqueante #1 de 2.1** — y es **código, no infraestructura**. Hoy `CloudBackendConfig.supabaseURL` y `anonKey` devuelven `nil`/`""` fuera de `DEV_BUILD` (`Yala/App/Services/CloudBackendConfig.swift:23-44`) ⇒ `isConfigured == false` ⇒ toda la superficie de nube y auth está inerte en un build de producción. **Lo que falta es meter la URL y la anon key de producción** en la rama `#else` de ese mismo fichero — **dos líneas**. **Corrección 2026-07-28: NO van por `Secrets.xcconfig`**, como decía la versión anterior de esta línea. La cabecera de `CloudBackendConfig.swift` documenta a propósito el patrón contrario («commiteada, per-scheme, SIN secretos… la `anonKey` es PÚBLICA por diseño… NUNCA la `service_role`»): es una JWT de rol `anon` gobernada por RLS, una clave *publicable*, y la de staging ya viaja commiteada en `:34`. La regla de CLAUDE.md sobre no hardcodear apunta a **secretos**, y ésta no lo es. Inspeccionado el 2026-07-28: el schema de producción está desplegado (18 migraciones, hasta `g10`); **queda por verificar PITR**, que el conector MCP no expone.
 
    > **Corrección del owner, 2026-07-28: el proyecto Supabase de producción SÍ EXISTE.** La versión inicial de este documento decía que no, y era falso. El error vino de tomar como hecho un **comentario obsoleto dentro del código**: `CloudBackendConfig.swift:22` afirma literalmente «producción PLACEHOLDER vacío (el proyecto de producción no existe aún)». **Ese comentario hay que corregirlo** — es drift dentro del fichero que gobierna el gate maestro de toda la épica, y ya indujo a error una vez. Nota de método: el MCP de Supabase solo ve **una Org a la vez**, así que para inspeccionar el proyecto de producción hay que reconmutar el conector; no dar por inexistente lo que el conector no está mirando.
-2. **`groupsBackendCompiledDefault` tiene que ir a `true`** (`Yala/Services/CloudSync/CloudSyncFlags.swift:239`, hoy `false` sin `#if`). El flag remoto se queda **solo como kill-switch**, no como palanca de rollout.
+2. ~~**`groupsBackendCompiledDefault` tiene que ir a `true`**~~ — **HECHO el 2026-07-30** (paso 2 de D-R1, `CloudSyncFlags.swift:285`; la coordenada `:239` que citaba esta línea llevaba desfasada desde antes). El flag remoto se queda **solo como kill-switch**, no como palanca de rollout — y, desde el mismo commit, **tampoco gatea los paths de teardown**: ver la tabla sitio-por-sitio del §D-R1.
 3. **El owner y Pia tienen que estar en el MISMO build.** Con Grupos migrando de CloudKit al backend, un usuario en 2.0.x y otro en 2.1 no se ven entre sí. Si el plan de simplificación borra el transporte CloudKit, los grupos compartidos entre ellos **solo funcionan cuando ambos estén en 2.1**.
 4. **Todos los hallazgos DARK de [[MODO-NUBE-AUDITORIA-ESCENARIOS]] se reclasifican a bloqueantes de release.** Los 10 bugs del encendido de [[MODO-NUBE-DECISIONES-ESCENARIOS]] §9 dejan de ser «trabajo antes de encender» y pasan a ser «trabajo antes de subir a TestFlight».
 5. **D-A2 queda resuelta y cerrada**: no hay flag propio para escalonar el muro de Grupos, porque no hay escalonado. Todo se activa junto.
@@ -171,8 +171,85 @@ canales, no solo el viejo.**
 >
 > **Lo que el flip sigue necesitando** es su propio build y su QA en TestFlight con un segundo humano en dos
 > devices, con el kill-switch remoto a mano. `groupsBackendCompiledDefault` **no se ha tocado** aquí: sigue
-> en `false` (`CloudSyncFlags.swift:267` — la coordenada `:239` que este documento citaba arriba está
-> desfasada, verificado el 2026-07-30), porque el flip es una decisión de release, no de este fix.
+> en `false`, porque el flip es una decisión de release, no de este fix. *(Párrafo histórico: lo escribió el
+> commit del bridge y sigue describiéndolo bien. El flip llegó DESPUÉS, ese mismo día — ver la sección de
+> abajo; y la coordenada, hoy, es `CloudSyncFlags.swift:285`.)*
+
+### Paso 2 · EJECUTADO el 2026-07-30 — el flip y los 8 sitios de teardown
+
+`groupsBackendCompiledDefault = true` (`CloudSyncFlags.swift:285`). Anotado en el §1 de
+[[MODO-NUBE-ROLLBACK]] con su commit. **Sigue sin encender nada**: el getter compuesto exige el remoto y
+`GROUPS_BACKEND_ROLLOUT_PERCENT` continúa en `0` hasta el paso 3, que hace el owner después de instalar
+este build en los dos devices.
+
+#### La pregunta abierta que dejó el docblock, resuelta
+
+`CloudSyncFlags.groupsBackendEnabled` avisaba: «un kill remoto transitorio (…) cambia el shape de los
+paths de teardown que leen este getter — revisar entonces si esos paths deben leer el compilado directo».
+**Sí deben.** El criterio y su porqué:
+
+> Un kill remoto apaga el **canal**, no borra lo que ya subió al servidor ni retira la copia local. Un
+> teardown que se salta la limpieza porque el flag está muerto deja datos del usuario en el device tras un
+> sign-out, y filas suyas en Supabase tras un borrado GDPR.
+
+Y hay un segundo motivo, que resultó más fuerte que el primero al mirar el código: **el término remoto ni
+siquiera es testigo de ese corpus.** `CloudRemoteFlags.decide` devuelve `absentDefault` (en producción
+`false`) cuando no hay snapshot **o cuando el snapshot está corrupto**, y por debajo hay un bucket de
+rollout. Un device con todo su corpus de grupos en el backend puede leer el flag `false` por razones que
+no tienen nada que ver con él. Condicionar una limpieza irreversible a esa señal es condicionarla al azar.
+
+Decisión por sitio (todos → `groupsBackendCompiledCapability`):
+
+| Sitio | Qué gatea | Qué pasaba con el compuesto bajo kill |
+|---|---|---|
+| `CloudSessionSignOut:74` — dispatch de `CloudSignOutFlowLogic.path` | `.groupsOnlySignOut` vs `.privateReset` | `.privateReset` cierra la sesión y **no toca nada más**: sobreviven las filas de `GroupSyncOutbox` (que no tienen dueño — `pushPending` las sube con el bearer de la sesión que esté viva), el consent (⇒ la cuenta siguiente no ve la pantalla y el canal subiría bajo un `user_id` que jamás consintió) y las filas `Split*` del que se fue |
+| `CloudSessionSignOut:117` — `exitYalaOnThisDevice` | purga in-session + consent + `armGroupsOnlyWipe` | es el **único** limpiador de esas tres superficies en este camino: aquí no se arma el wipe personal, así que el boot-hook que limpia el consent no corre, y el hook solo-grupos no lo limpia a propósito |
+| `CloudSessionSignOut:263` — marker `includesGroups` en `.cloud` | que el boot borre el store de grupos | el boot ya mata `YalaSyncMeta` **incondicionalmente**, donde viven outbox y cursor ⇒ quedaba el par incoherente «filas RETENIDAS + cursor DESTRUIDO». Y `SplitGroup` no tiene scoping por usuario: en un device que ese hook deja «recién instalado», la cuenta siguiente vería grupos, miembros y montos de la anterior, sin nada que los retire después |
+| `CloudSessionSignOut:460` — mismo marker tras borrar cuenta | ídem, post-GDPR | agravante: la sesión ya murió y las filas del servidor ya no existen ⇒ **nada refresca ni retira ese residuo nunca** |
+| `CloudSessionSignOut:519` — `drainOnce` del push-all | capturar la History antes de cerrar | aquí el motivo NO es «limpiar aunque esté apagado»: es que **el término remoto nunca protegió nada**. El transporte no consulta el flag, así que con una sola fila viva el ciclo drena y empuja igual; el gate solo compraba un no-op cuando el outbox ya estaba vacío. Y no drenar no difiere nada: los dos boot-wipes destruyen los archivos donde vive esa History |
+| `ProfileView:135` — `signOutRowPath` | la hoja de alcance y qué filas se pintan | **no estaba en la lista original y es pareja obligatoria de `:74`**: si divergen, la hoja resuelve `.signOutPrivate` (promete los grupos preservados) mientras el dispatch arma su borrado, y encima desaparece la fila de escape «Salir de Yala en este dispositivo» |
+| `AccountDeletionService:93` → `:161` | ejecutar `groups_forget_user` | el `display_name` REAL del usuario queda vivo en `group_members` de otra gente, sin `status='removed'` y sin bump de HLC (⇒ los devices de los co-members ni convergen por LWW), y sus grupos con `owner_user_id = NULL`, que `transfer_group_ownership` clasifica como huérfano y no auto-cura. El header de la migración `g12_01` ya lo decía: la cascada de `auth.users` es una belt **incompleta** que «NO sustituye a `groups_forget_user`» |
+| `GroupBackendMembershipService.forgetUser` — gate propio `ensureEligibleForTeardown` | el RPC anterior | **sin esto, cambiar `:93` solo habría empeorado las cosas**: `ensureEligible` es compuesto y `forgetUser` lanzaría `sessionExpired` ⇒ el borrado pasa de retención silenciosa a **bloqueo duro** durante todo el kill. Las dos mitades son inseparables |
+
+**Lo que se queda COMPUESTO, y no por descuido:** todas las ENTRADAS — `startIfEligible`, crear grupo,
+unirse, invitar, revocar, aprobar, expulsar, salir, renombrarse, la superficie de invitación, el tab de
+la sesión secundaria y el batch D10 de `AppBootstrapper:449` + `UserDataResetView:62`. Eso es literalmente
+lo que el kill-switch existe para cortar. `groups_forget_user` subsume lo que hace el batch, así que
+congelarlo bajo kill es coherente.
+
+**Trade-off aceptado, por escrito antes del incidente y no durante:** el motivo más probable de un kill
+remoto es que `/groups/*` esté roto, y ahora el paso 1 del borrado de cuenta es obligatorio ⇒ el RPC falla
+⇒ el usuario **no puede eliminar su cuenta mientras dure**. Es retraso-de-borrado frente a
+retención-permanente-de-PII, y se elige lo segundo.
+
+**Lo que NO se arregló, con permiso explícito del owner:** el residual de los change tokens de CKSyncEngine
+en los dos boot-wipes de Grupos. Está en el §2 de [[MODO-NUBE-ROLLBACK]] con su gatillo (antes de la sesión
+de QA del paso 3) y anotado también en el docblock de `performSignOutWipeIfArmed`. Resumen: borrar los
+archivos del store sin resetear los tokens deja los grupos del canal CloudKit inalcanzables para siempre,
+y el fix obvio no es neutro porque re-hidrataría las zonas congeladas de los grupos ya migrados —lo que
+tras un borrado GDPR resucitaría parte del corpus desde el iCloud del propio Apple ID.
+
+#### Verificado
+
+Los dos builds limpios en `iPhone 17 Pro` (iOS 26.5, Xcode 26.6 — **esta** Mac, la que hará el archive),
+cero warnings nuevos (los 3 de `ContentView`/`AccountEntitlementService` son la línea base). **28 suites
+pedidas = 28 reportadas, 305 tests, con AMBOS schemes.** `EdgeCasesUITests` 2/2 (el XCUITest del área
+determinista que casa por `codeGlobs`). `validate-coverage` OK.
+
+**Mutación, con exit codes:** revertido el flip a `false` y recompilado, caen **dos** suites
+independientes — `CloudRemoteConfigTests` exit 65 (2 issues:
+`groupsBackend_remoteKillSwitch_cutsChannel_withCompiledOn` pierde su control positivo y la capacidad) y
+`GroupBackendMembershipServiceTests` exit 65 (`forgetUser_survivesRemoteKill_whileEntriesStayClosed` caza
+`.sessionExpired`). Restaurado desde backup explícito, no desde un trap.
+
+**Un rojo PREEXISTENTE, ajeno a este trabajo:**
+`GroupsSyncClientTests` › «Un save de página que falla no deja el grafo remoto a medias en el contexto
+compartido» (`:346`) falla en `iPhone 17 Pro` / iOS 26.5. Verificado en **worktree limpio desde `3c091b7b`**
+(exit 65, 65 tests, mismo fallo) y con el flip revertido ⇒ **no lo causa nada de este commit**. El síntoma
+es que `context.rollback()` no revierte la mutación de `groupCursorsJSON` en el objeto en memoria
+(`context.hasChanges == false` sí pasa), así que el cursor queda avanzado. `b422565e` se validó en iOS 27.0,
+en la otra Mac: es un **cambio de comportamiento de SwiftData entre runtimes**, y tiene consecuencia real
+—en iOS 26.x el `rollback()` no cierra del todo el laundering que ese commit quería cerrar—. Ticket aparte.
 
 ### Descartado
 

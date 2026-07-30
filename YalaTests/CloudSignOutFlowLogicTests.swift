@@ -11,7 +11,7 @@ import Testing
 @Suite("Cerrar sesión — camino por modo y visibilidad (H4 + G5-B)")
 struct CloudSignOutFlowLogicTests {
 
-    // Helper: la matriz de HOY (flag OFF, sin sesión backend = TODO device prod) debe ser byte-idéntica.
+    // Helper: la matriz sin canal ni sesión backend debe ser byte-idéntica a la de antes de Grupos→backend.
     private func path(_ mode: StorageMode, secondary: Bool) -> CloudSignOutFlowLogic.Path {
         CloudSignOutFlowLogic.path(
             for: mode, secondarySessionActive: secondary,
@@ -52,7 +52,7 @@ struct CloudSignOutFlowLogicTests {
         #expect(CloudSignOutFlowLogic.path(
             for: .icloud, secondarySessionActive: false,
             hasLiveSession: false, groupsBackendEnabled: true) == .privateReset)
-        // Sesión viva pero flag OFF (TODO device prod) → privado byte-idéntico.
+        // Sesión viva pero canal apagado → privado byte-idéntico.
         #expect(CloudSignOutFlowLogic.path(
             for: .icloud, secondarySessionActive: false,
             hasLiveSession: true, groupsBackendEnabled: false) == .privateReset)
@@ -185,7 +185,7 @@ struct CloudSignOutRowLayoutTests {
 
     @Test
     func flagOffMatrix_isByteIdenticalToLegacyRowVisibility() {
-        // Con el flag OFF / sin sesión (TODO device prod hoy) `path` NUNCA es .groupsOnlySignOut, así que
+        // Sin canal / sin sesión `path` NUNCA es .groupsOnlySignOut, así que
         // el layout debe reproducir EXACTO las ramas shouldShowRow/shouldShowExitYalaRow de antes.
         let prodPaths: [CloudSignOutFlowLogic.Path] =
             [.privateReset, .cloudSecureSignOut, .secondaryCloudSignOut]

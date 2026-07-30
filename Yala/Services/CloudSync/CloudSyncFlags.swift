@@ -118,8 +118,15 @@ nonisolated enum StorageModePersistence {
     /// Marker "el wipe de sign-out en `.cloud` DEBE incluir el store de GRUPOS" (G5-B, camino `.cloud`
     /// ampliado). Lo escribe el coordinador ANTES de `armSignOutWipe` (CR-4: el arm es el disparador y
     /// va ÚLTIMO — kill entre marker y arm = no-op re-armable; kill entre arm y marker habría dejado un
-    /// wipe personal SIN grupos). SOLO se escribe con `groupsBackendEnabled == true` ⇒ con el flag OFF
-    /// (TODO device prod) el marker jamás existe y `performSignOutWipeIfArmed` es byte-idéntico.
+    /// wipe personal SIN grupos).
+    ///
+    /// **D-R1 paso 2 (2026-07-30): se escribe con la capacidad COMPILADA, no con el getter compuesto.**
+    /// Antes decía "SOLO con `groupsBackendEnabled == true` ⇒ con el flag OFF el marker jamás existe y
+    /// `performSignOutWipeIfArmed` es byte-idéntico", y esa frase describía la fase DARK, en la que el
+    /// compilado cortaba por construcción. Con el compilado en `true` el término que quedaría vivo es el
+    /// REMOTO, y un kill remoto no borra lo que ya subió al servidor ni exime de olvidar la copia local:
+    /// condicionar el marker a él dejaba el store de grupos del usuario saliente en un device que este
+    /// mismo hook devuelve a "recién instalado". Ver `groupsBackendCompiledCapability`.
     /// Lo lee y limpia el boot hook `performSignOutWipeIfArmed` JUNTO al arm (orden kill-safe existente).
     static let signOutWipeIncludesGroupsKey = "cloudSync.signOutWipeIncludesGroups"
 
@@ -239,21 +246,29 @@ nonisolated enum CloudSyncFlags {
             && CloudRemoteFlags.cloudModeEnabled
     }
 
-    /// Gate del canal de sync de GRUPOS → backend (incremento G2). Cuando `true` (JAMÁS en producción
-    /// esta fase), `GroupsSyncClient.startIfEligible()` arranca el drain/push/pull del store de Grupos
-    /// contra el gateway (`/groups/*`). HOY es SIEMPRE `false` — ningún path de producción lo activa: el
-    /// canal de Grupos vive DARK detrás de este flag, sin comportamiento nuevo en runtime. El sync de
-    /// Grupos vigente lo sigue haciendo CKSyncEngine (`SplitSyncManager`); este canal es la CLASE NUEVA
-    /// (backend propio) que lo reemplazará cuando el Modo Nube de Grupos encienda (G4+).
+    /// Gate del canal de sync de GRUPOS → backend (incremento G2). Cuando `true`,
+    /// `GroupsSyncClient.startIfEligible()` arranca el drain/push/pull del store de Grupos contra el
+    /// gateway (`/groups/*`). El sync de Grupos anterior lo hacía CKSyncEngine (`SplitSyncManager`);
+    /// este canal es la clase nueva (backend propio) que lo reemplaza.
     ///
     /// DIFERIDOS #34 (decisión owner 2026-07-17): getter COMPUESTO `compilado && remoto` — el flag
     /// remote-config (`CloudRemoteFlags.groupsBackendEnabled`) solo puede MATAR, nunca encender solo
-    /// (kill-switch sin release para el encendido de Grupos). Con el compilado `false` la composición
-    /// corta igual que hoy (byte-idéntico; el remoto ni se consulta — short-circuit). ⚠️ Nota para la
-    /// sesión de ENCENDIDO (compilado → `true`): un kill remoto transitorio congela el canal (outbox
-    /// retenido, sin pérdida) Y desvía creaciones nuevas a CloudKit, pero también cambia el shape de
-    /// los paths de teardown que leen este getter (sign-out push-all, borrado GDPR) — revisar entonces
-    /// si esos paths deben leer el compilado directo (detalle en qa/cloud/README §GET /config).
+    /// (kill-switch sin release para el encendido de Grupos).
+    ///
+    /// **QUÉ LEE CADA CLASE DE CALL-SITE, resuelto en D-R1 paso 2 (2026-07-30).** La nota que este
+    /// docblock difería a la sesión de encendido («revisar entonces si los paths de teardown deben leer
+    /// el compilado directo») queda cerrada así:
+    ///  - **ENTRADAS** (arranque del loop, crear grupo, unirse, invitar, aprobar/expulsar/salir, la
+    ///    superficie de invitación, el batch D10): este getter COMPUESTO. Es lo que el kill-switch
+    ///    existe para cortar.
+    ///  - **TEARDOWNS** (sign-out en sus cuatro caminos y el cierre local tras un borrado de cuenta):
+    ///    `groupsBackendCompiledCapability`. Un kill remoto apaga el CANAL; no borra lo que ya subió al
+    ///    servidor ni retira la copia local. Un teardown que se saltara la limpieza porque el flag está
+    ///    muerto dejaría datos del usuario en el device tras cerrar sesión, y filas suyas en Supabase
+    ///    tras un borrado GDPR. Además, el término remoto ni siquiera es un testigo de ese corpus: es
+    ///    fail-closed ante snapshot ausente o corrupto y depende del bucket de rollout, así que un
+    ///    device con todo su corpus en el backend puede leerlo `false` por razones ajenas a él.
+    ///
     /// Setter = override en memoria (source-compatible con el idiom de tests `= true; defer { = false }`).
     static var groupsBackendEnabled: Bool {
         get {
@@ -264,15 +279,22 @@ nonisolated enum CloudSyncFlags {
     }
 
     /// Encendido COMPILADO del canal de Grupos (la palanca de release; el remoto es el kill).
-    private static let groupsBackendCompiledDefault = false
+    /// `true` desde D-R1 paso 2 (2026-07-30). Encenderlo aquí NO enciende el canal por sí solo: el
+    /// getter compuesto sigue exigiendo el remoto, y `GROUPS_BACKEND_ROLLOUT_PERCENT` lo sube el owner
+    /// en el gateway DESPUÉS de tener este build instalado en los dos devices de la sesión de QA.
+    private static let groupsBackendCompiledDefault = true
 
     /// C-10: capacidad COMPILADA del canal de Grupos, SIN el kill remoto. La consumen el beacon
-    /// (`GroupCapability.current`) y la presentación del congelado (`GroupBackendCapability.current`).
+    /// (`GroupCapability.current`), la presentación del congelado (`GroupBackendCapability.current`) y
+    /// —desde D-R1 paso 2— **todos los paths de TEARDOWN** (`CloudSessionSignOut` en sus cuatro caminos,
+    /// `AccountDeletionService` y el gate de `GroupBackendMembershipService.forgetUser`).
     ///
     /// Deliberadamente NO compuesta con `CloudRemoteFlags.groupsBackendEnabled`: un kill remoto apaga el
-    /// CANAL, no la capacidad del BINARIO. Confundirlos tendría dos consecuencias malas: (a) un kill
-    /// transitorio le diría al usuario "actualiza la app" teniendo la app perfecta, y (b) los beacons de
-    /// capacidad dejarían de publicarse justo cuando el owner los necesita para decidir si puede migrar.
+    /// CANAL, no la capacidad del BINARIO. Confundirlos tendría tres consecuencias malas: (a) un kill
+    /// transitorio le diría al usuario "actualiza la app" teniendo la app perfecta, (b) los beacons de
+    /// capacidad dejarían de publicarse justo cuando el owner los necesita para decidir si puede migrar,
+    /// y (c) —la que abrió D-R1 paso 2— un cierre de sesión o un borrado de cuenta se saltaría la
+    /// limpieza de lo que el canal YA subió, que sigue existiendo con el canal apagado.
     ///
     /// Override de tests: reusa `groupsBackendEnabledTestOverride` a propósito — un test que enciende el
     /// canal enciende también la capacidad (no existe un build capaz-pero-sin-canal que valga la pena

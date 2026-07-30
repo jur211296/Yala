@@ -481,6 +481,41 @@ struct SignOutNotificationWiringTests {
         #expect(purge.contains("GroupsConsentState.clear()"))
     }
 
+    /// **D-R1 paso 2: los paths de TEARDOWN leen la capacidad COMPILADA, nunca el getter compuesto.**
+    /// El compuesto añade el kill remoto, y un kill apaga el CANAL sin borrar lo que ya subió al
+    /// servidor ni retirar la copia local: un teardown gateado por él deja datos del usuario saliente en
+    /// el device tras cerrar sesión y filas suyas en Supabase tras un borrado de cuenta. Peor aún, el
+    /// término remoto ni siquiera es testigo de ese corpus — es fail-closed ante snapshot ausente o
+    /// corrupto y depende del bucket de rollout.
+    ///
+    /// Es un source-scan y no un test de comportamiento a propósito: la decisión vive en QUÉ getter se
+    /// lee, y los tests funcionales de estos caminos inyectan seams o fijan overrides, así que
+    /// re-componer cualquiera de estas lecturas los dejaría a todos en verde.
+    @Test func teardownPaths_readCompiledCapability_neverTheComposedGetter() throws {
+        let signOut = try Self.source("Yala/Services/CloudSync/CloudSessionSignOut.swift")
+        // Los 5: dispatch del path, exitYala, marker en `.cloud`, marker post-borrado, pre-drain.
+        #expect(signOut.components(separatedBy: "CloudSyncFlags.groupsBackendCompiledCapability").count - 1 == 5)
+        #expect(!signOut.contains("CloudSyncFlags.groupsBackendEnabled"))
+
+        // La UI que ofrece las filas tiene que resolver el path con la MISMA fuente que el dispatch, o
+        // la hoja de alcance promete lo contrario de lo que va a pasar y desaparece la fila de escape.
+        let profile = try Self.source("Yala/App/Views/Profile/ProfileView.swift")
+        #expect(profile.contains("groupsBackendEnabled: CloudSyncFlags.groupsBackendCompiledCapability"))
+
+        // Borrado de cuenta: el paso `groups_forget_user` es el que cumple la obligación GDPR.
+        let deletion = try Self.source("Yala/Services/CloudSync/AccountDeletionService.swift")
+        #expect(deletion.contains("groupsBackendEnabled: { CloudSyncFlags.groupsBackendCompiledCapability }"))
+        #expect(!deletion.contains("{ CloudSyncFlags.groupsBackendEnabled }"))
+
+        // Y su gate en el service: `forgetUser` por capacidad, TODO lo demás (las ENTRADAS) compuesto.
+        let membership = try Self.source(
+            "Yala/Services/CloudSync/Groups/GroupBackendMembershipService.swift")
+        // UN solo call-site: `forgetUser`. Si aparece un segundo, alguien abrió otra ruta al kill.
+        #expect(membership.components(separatedBy: "try ensureEligibleForTeardown()").count - 1 == 1)
+        #expect(membership.contains("guard CloudSyncFlags.groupsBackendCompiledCapability, sessionCheck()"))
+        #expect(membership.contains("guard CloudSyncFlags.groupsBackendEnabled, sessionCheck()"))
+    }
+
     /// El guard del choke point es lo que cierra la ventana de los `Task` no estructurados en vuelo.
     /// Debe evaluarse en TODOS los emisores — programado (`scheduleNotification`), inmediato
     /// (`sendNotification`, → Bool) y resumen agendado (`replaceScheduledPaymentSummaries`,

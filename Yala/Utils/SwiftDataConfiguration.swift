@@ -306,11 +306,27 @@ enum SwiftDataConfiguration {
     ///
     /// Precondiciones: el coordinador de sign-out ya subió TODO el outbox (verificado), cerró la
     /// sesión y armó `signOutWipeArmed`. El store de GRUPOS legacy (CKSyncEngine, atado al iCloud del
-    /// OS) NO se toca por defecto; SOLO si el sign-out marcó `signOutWipeIncludesGroups` (G5-B — flag
-    /// `groupsBackendEnabled` ON, canal de grupos→backend: el store de grupos es re-descargable desde
-    /// el backend y debe olvidarse junto a la sesión). Con el flag OFF (TODO device prod) el marker
-    /// jamás existe ⇒ este hook es byte-idéntico. El claim-store (UserDefaults keyed por userID)
-    /// sobrevive → la misma cuenta re-entra por adopt sin migración.
+    /// OS) NO se toca por defecto; SOLO si el sign-out marcó `signOutWipeIncludesGroups` (G5-B: el store
+    /// de grupos es re-descargable desde el backend y debe olvidarse junto a la sesión). El claim-store
+    /// (UserDefaults keyed por userID) sobrevive → la misma cuenta re-entra por adopt sin migración.
+    ///
+    /// **D-R1 paso 2 (2026-07-30): quién escribe ese marker cambió, y con él las garantías de este hook.**
+    /// Antes lo escribía el getter compuesto y este docblock podía afirmar «con el flag OFF el marker
+    /// jamás existe ⇒ este hook es byte-idéntico»; hoy lo escribe la capacidad COMPILADA
+    /// (`CloudSessionSignOut`), que es constante en el binario, así que el marker existe siempre que el
+    /// sign-out venga de un device con sesión de grupos. Dos consecuencias que hay que tener presentes:
+    ///  - Un device `.cloud` que NUNCA adoptó el canal backend pierde igualmente su store de grupos. El
+    ///    predicado correcto sería de PRESENCIA (¿hubo alguna vez estado del canal en este device?) o una
+    ///    purga POR FILAS del subconjunto backend, no un marker todo-o-nada por archivo.
+    ///  - **RESIDUAL CONOCIDO, anotado en `MODO-NUBE-ROLLBACK` §2 y a decidir antes del TestFlight de dos
+    ///    dispositivos:** borrar los archivos del store NO resetea los change tokens de CKSyncEngine, que
+    ///    viven fuera (`Application Support/SplitSync/{private,shared}.json`). Por el invariante de
+    ///    `SplitSyncManager.resetLocalGroupsSyncState` («borrar filas sin resetear los tokens deja a
+    ///    CloudKit convencido de que este dispositivo está al día»), los grupos del canal CloudKit que
+    ///    convivan en ese store NO vuelven nunca. El flip vuelve ese camino alcanzable por primera vez.
+    ///    El emparejamiento no es gratis: resetear los tokens re-hidrataría también las zonas CloudKit
+    ///    congeladas de los grupos ya migrados, lo que tras un borrado GDPR resucitaría parte del corpus
+    ///    desde el iCloud del propio Apple ID. Por eso está diferido a decisión del owner, no aplicado.
     ///
     /// Orden IDEMPOTENTE ante kill a mitad (el arm se limpia AL FINAL; re-entrada re-ejecuta:
     /// archivos ya ausentes = no-op, escrituras de flags idempotentes):
@@ -402,10 +418,12 @@ enum SwiftDataConfiguration {
         // el gate dejaría de dispararse en silencio, el iKV quedaría sucio y el gap volvería entero.
         // Delante, ambas capas son correctas y el barrido posterior sería un no-op redundante.
         //
-        // Gate por PRESENCIA de la key y no por `signOutWipeIncludesGroups`: con el flag OFF las keys
-        // nunca se escriben (darkness §C5) ⇒ la closure JAMÁS se invoca ⇒ byte-identidad literal; y cubre
-        // el hueco que deja el marker si `groupsBackendEnabled` se apaga en remoto entre el `register()`
-        // y el sign-out (marker ausente, consent presente). Residual: un consent que solo exista en el iKV
+        // Gate por PRESENCIA de la key y no por `signOutWipeIncludesGroups`: sin canal las keys nunca se
+        // escriben ⇒ la closure JAMÁS se invoca ⇒ byte-identidad literal. Este gate se eligió además para
+        // cubrir «el hueco que deja el marker si `groupsBackendEnabled` se apaga en remoto entre el
+        // `register()` y el sign-out (marker ausente, consent presente)»; desde D-R1 paso 2 ese hueco ya
+        // no existe en la fuente —el marker lo escribe la capacidad COMPILADA, inmune al kill—, así que
+        // hoy este gate es la red redundante y no la única. Residual: un consent que solo exista en el iKV
         // (lo registró OTRO device del mismo Apple ID y este nunca lo aplicó) no pasa el gate — caso
         // inofensivo y parte del residual iKV general, mucho más ancho que el consent.
         //

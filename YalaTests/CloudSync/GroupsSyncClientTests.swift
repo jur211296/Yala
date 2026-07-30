@@ -388,9 +388,7 @@ struct GroupsSyncClientTests {
     @Test func startIfEligible_isNoOp_whenFlagDisabled() throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
-
-        let prevFlag = CloudSyncFlags.groupsBackendEnabled
-        defer { CloudSyncFlags.groupsBackendEnabled = prevFlag }
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
         CloudSyncFlags.groupsBackendEnabled = false
 
         // Sesión "viva" y una red que FALLARÍA el test si se tocara.
@@ -602,7 +600,7 @@ struct GroupsSyncClientTests {
 
     // MARK: - Test 5c · refreshCurrentUserFlags con flag OFF = byte-idéntico (path CloudKit, ignora userID)
 
-    /// Con `groupsBackendEnabled == false` (SIEMPRE en producción hoy), `refreshCurrentUserFlags` deriva
+    /// Con `groupsBackendEnabled == false` (kill remoto / binario sin canal), `refreshCurrentUserFlags` deriva
     /// `isCurrentUser` EXCLUSIVAMENTE por el path CloudKit (`cloudKitUserRecordID == recordName`) e IGNORA
     /// `SplitMember.userID`. Toca los singletons `GroupService.shared`/`GroupUserIdentityService.shared`
     /// → suite `.serialized` + restore. No dispara `enqueueSave` (members con record-id no vacío, grupo
@@ -610,11 +608,9 @@ struct GroupsSyncClientTests {
     @Test func refreshCurrentUserFlags_flagOff_usesCloudKitPath_ignoresUserID() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
-
-        let prevFlag = CloudSyncFlags.groupsBackendEnabled
         let prevCache = GroupUserIdentityService.shared.cachedRecordName
         defer {
-            CloudSyncFlags.groupsBackendEnabled = prevFlag
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
             GroupUserIdentityService.shared._testSetCachedRecordName(prevCache)
         }
         CloudSyncFlags.groupsBackendEnabled = false
@@ -655,11 +651,9 @@ struct GroupsSyncClientTests {
     @Test func refreshCurrentUserFlags_doesNotBackfillBackendMember() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
-
-        let prevFlag = CloudSyncFlags.groupsBackendEnabled
         let prevCache = GroupUserIdentityService.shared.cachedRecordName
         defer {
-            CloudSyncFlags.groupsBackendEnabled = prevFlag
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
             GroupUserIdentityService.shared._testSetCachedRecordName(prevCache)
         }
         CloudSyncFlags.groupsBackendEnabled = false
@@ -697,11 +691,9 @@ struct GroupsSyncClientTests {
     @Test func refreshCurrentUserFlags_ownerBranch_doesNotBackfillBackendAdmin() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
-
-        let prevFlag = CloudSyncFlags.groupsBackendEnabled
         let prevCache = GroupUserIdentityService.shared.cachedRecordName
         defer {
-            CloudSyncFlags.groupsBackendEnabled = prevFlag
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
             GroupUserIdentityService.shared._testSetCachedRecordName(prevCache)
         }
         CloudSyncFlags.groupsBackendEnabled = false
@@ -1204,9 +1196,7 @@ struct GroupsSyncClientTests {
     @Test func loop_terminatesOnSessionExpired_noRealSleeps() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
-
-        let prevFlag = CloudSyncFlags.groupsBackendEnabled
-        defer { CloudSyncFlags.groupsBackendEnabled = prevFlag }
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
         CloudSyncFlags.groupsBackendEnabled = true
 
         // 401 en cualquier request → el pull (outbox vacío ⇒ el push no manda) devuelve sessionExpired.
@@ -1231,9 +1221,7 @@ struct GroupsSyncClientTests {
     @Test func loop_403_armsStopUntilRelaunch_subsequentStartIsNoOp() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
-
-        let prevFlag = CloudSyncFlags.groupsBackendEnabled
-        defer { CloudSyncFlags.groupsBackendEnabled = prevFlag }
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
         CloudSyncFlags.groupsBackendEnabled = true
 
         // 403 en el pull (outbox vacío ⇒ el push no manda) → accountUnavailable → stopUntilRelaunch.
@@ -1257,9 +1245,7 @@ struct GroupsSyncClientTests {
     @Test func loop_singleInstance_secondStartIsNoOpWhileAlive() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
-
-        let prevFlag = CloudSyncFlags.groupsBackendEnabled
-        defer { CloudSyncFlags.groupsBackendEnabled = prevFlag }
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
         CloudSyncFlags.groupsBackendEnabled = true
 
         let stub = StubHTTPSession(statusCode: 401)
@@ -1419,9 +1405,7 @@ struct GroupsSyncClientTests {
     @Test func restart_afterSessionExpiredStop_rearmsLoop_whenSessionAlive() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
-
-        let prevFlag = CloudSyncFlags.groupsBackendEnabled
-        defer { CloudSyncFlags.groupsBackendEnabled = prevFlag }
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
         CloudSyncFlags.groupsBackendEnabled = true
 
         let stub = StubHTTPSession(statusCode: 401)
@@ -1446,9 +1430,7 @@ struct GroupsSyncClientTests {
     @Test func restart_403_stillNoOp() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
-
-        let prevFlag = CloudSyncFlags.groupsBackendEnabled
-        defer { CloudSyncFlags.groupsBackendEnabled = prevFlag }
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
         CloudSyncFlags.groupsBackendEnabled = true
 
         let stub = StubHTTPSession(statusCode: 403)

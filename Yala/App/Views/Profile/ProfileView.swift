@@ -127,12 +127,18 @@ struct ProfileView: View {
 
     /// Camino de sign-out resuelto por la precedencia CONGELADA (secundaria → nube → solo-grupos →
     /// privado). SSOT de `signOutScopeOperation` y `signOutRowLayout`.
+    ///
+    /// **Lee la capacidad COMPILADA, igual que `CloudSessionSignOut.signOut` (D-R1 paso 2), y las dos
+    /// lecturas tienen que moverse juntas.** Si esta se quedara compuesta y la del coordinador no, bajo
+    /// un kill remoto la hoja de alcance resolvería `.signOutPrivate` —que pinta los grupos como
+    /// preservados— mientras el dispatch resuelve `.groupsOnlySignOut` y arma el borrado del store de
+    /// grupos: la hoja mentiría, y encima desaparecería la fila «Salir de Yala en este dispositivo».
     private var signOutRowPath: CloudSignOutFlowLogic.Path {
         CloudSignOutFlowLogic.path(
             for: CloudSyncFlags.storageMode,
             secondarySessionActive: SecondarySessionStore.isActive(),
             hasLiveSession: CloudAuthService.shared.hasSession,
-            groupsBackendEnabled: CloudSyncFlags.groupsBackendEnabled)
+            groupsBackendEnabled: CloudSyncFlags.groupsBackendCompiledCapability)
     }
 
     /// D2 (§3.3.3): distribución de las filas de salida. Flag OFF / sin sesión (TODO device prod hoy)

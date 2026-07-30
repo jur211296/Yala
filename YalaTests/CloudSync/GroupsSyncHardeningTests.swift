@@ -537,14 +537,13 @@ struct GroupsSyncHardeningTests {
     /// Personal cadenciando (`syncRuntimeEnabled && canRunDomain()`) → `startIfEligible` se ABSTIENE del
     /// loop propio (el ciclo corre como paso 5.6 del runtime).
     @Test func startIfEligible_personalWillCadence_abstainsFromOwnLoop() async throws {
-        let prevGroups = CloudSyncFlags.groupsBackendEnabled
         let prevRuntime = CloudSyncFlags.syncRuntimeEnabled
         CloudSyncFlags.groupsBackendEnabled = true
         CloudSyncFlags.syncRuntimeEnabled = true
         CloudSyncFlags.storageMode = .cloud
         SecondarySessionStore._testSetActiveOverride(false)
         defer {
-            CloudSyncFlags.groupsBackendEnabled = prevGroups
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
             CloudSyncFlags.syncRuntimeEnabled = prevRuntime
             CloudSyncFlags._testResetStorageModeOverride()
             SecondarySessionStore._testSetActiveOverride(nil)
@@ -560,14 +559,13 @@ struct GroupsSyncHardeningTests {
     /// `canRunDomain() == false` (.icloud — solo-grupos; misma línea de guard que la fase transicional de
     /// migración, cuya matriz exhaustiva vive en CloudMigrationI14Tests) → Grupos SÍ arranca loop propio.
     @Test func startIfEligible_personalNotCadencing_startsOwnLoop() async throws {
-        let prevGroups = CloudSyncFlags.groupsBackendEnabled
         let prevRuntime = CloudSyncFlags.syncRuntimeEnabled
         CloudSyncFlags.groupsBackendEnabled = true
         CloudSyncFlags.syncRuntimeEnabled = true
         // storageMode default `.icloud` → canRunDomain() == false.
         SecondarySessionStore._testSetActiveOverride(false)
         defer {
-            CloudSyncFlags.groupsBackendEnabled = prevGroups
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
             CloudSyncFlags.syncRuntimeEnabled = prevRuntime
             SecondarySessionStore._testSetActiveOverride(nil)
         }
@@ -588,11 +586,10 @@ struct GroupsSyncHardeningTests {
     /// M1 / D8 (G5-C) — flag OFF: secundaria NI loop propio (guard del cliente) NI piggyback (guard del
     /// paso 5.6). Byte-idéntico al mundo M1 pre-G5-C.
     @Test func secondarySession_flagOff_neitherLoopNorPiggyback() async throws {
-        let prevGroups = CloudSyncFlags.groupsBackendEnabled
         CloudSyncFlags.groupsBackendEnabled = false
         SecondarySessionStore._testSetActiveOverride(true)
         defer {
-            CloudSyncFlags.groupsBackendEnabled = prevGroups
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
             SecondarySessionStore._testSetActiveOverride(nil)
         }
 
@@ -619,14 +616,13 @@ struct GroupsSyncHardeningTests {
     /// loop propio arrancara — celda que el guard D8 de `startIfEligible` ahora bloquea ANTES (correcto:
     /// la ventana de entrada jamás debe drenar; su celda vive en el test de mount-mismatch de abajo).
     @Test func secondarySession_flagOn_runsLoopAndPiggyback() async throws {
-        let prevGroups = CloudSyncFlags.groupsBackendEnabled
         let prevRuntime = CloudSyncFlags.syncRuntimeEnabled
         CloudSyncFlags.groupsBackendEnabled = true
         CloudSyncFlags.syncRuntimeEnabled = false  // personal no cadencia → Grupos corre loop PROPIO
         SecondarySessionStore._testSetActiveOverride(true)
         SwiftDataConfiguration._testSetSecondaryStoreMounted(true)  // secundaria OPERATIVA (D8 no bloquea)
         defer {
-            CloudSyncFlags.groupsBackendEnabled = prevGroups
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
             CloudSyncFlags.syncRuntimeEnabled = prevRuntime
             SecondarySessionStore._testSetActiveOverride(nil)
             SwiftDataConfiguration._testSetSecondaryStoreMounted(false)
@@ -661,14 +657,13 @@ struct GroupsSyncHardeningTests {
     /// esté verde (flag ON, sesión viva, personal sin cadenciar — sin D8 el loop ARRANCARÍA, como prueba
     /// el test de arriba). Pinnea el guard en el cliente real, no solo en la lógica pura.
     @Test func secondarySession_flagOn_entryWindowMountMismatch_blocksOwnLoop() async throws {
-        let prevGroups = CloudSyncFlags.groupsBackendEnabled
         let prevRuntime = CloudSyncFlags.syncRuntimeEnabled
         CloudSyncFlags.groupsBackendEnabled = true
         CloudSyncFlags.syncRuntimeEnabled = false  // sin piggyback → el ÚNICO blocker posible es D8
         SecondarySessionStore._testSetActiveOverride(true)
         SwiftDataConfiguration._testSetSecondaryStoreMounted(false)  // explícito: ventana de entrada
         defer {
-            CloudSyncFlags.groupsBackendEnabled = prevGroups
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
             CloudSyncFlags.syncRuntimeEnabled = prevRuntime
             SecondarySessionStore._testSetActiveOverride(nil)
             SwiftDataConfiguration._testSetSecondaryStoreMounted(false)
@@ -687,13 +682,12 @@ struct GroupsSyncHardeningTests {
     /// Paso 5.6: con flag ON (y no-secundaria) el performCycle del runtime personal invoca el ciclo de
     /// Grupos; con flag OFF NO lo invoca (byte-idéntico).
     @Test func runtimeCycle_invokesGroupsRunner_flagOnOnly() async throws {
-        let prevGroups = CloudSyncFlags.groupsBackendEnabled
         let prevRuntime = CloudSyncFlags.syncRuntimeEnabled
         CloudSyncFlags.syncRuntimeEnabled = true
         CloudSyncFlags.storageMode = .cloud
         SecondarySessionStore._testSetActiveOverride(false)
         defer {
-            CloudSyncFlags.groupsBackendEnabled = prevGroups
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
             CloudSyncFlags.syncRuntimeEnabled = prevRuntime
             CloudSyncFlags._testResetStorageModeOverride()
             SecondarySessionStore._testSetActiveOverride(nil)

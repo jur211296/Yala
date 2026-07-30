@@ -1,6 +1,6 @@
 ---
 created: 2026-07-29
-updated: 2026-07-29
+updated: 2026-07-30
 tags: [modo-nube, grupos, rollback, runbook]
 status: active
 ---
@@ -17,15 +17,25 @@ Requisito de entrada de la Fase 3 ([[MODO-NUBE-PLAN-SIMPLIFICACION-GRUPOS]] §6)
 
 ---
 
-## 0 · Lo primero: hoy esto está FRÍO
+## 0 · Este runbook ya está CALIENTE (desde el 2026-07-30)
 
-`CloudSyncFlags.groupsBackendCompiledDefault = false` (`CloudSyncFlags.swift`). El canal backend está
-apagado **en compilación**, y el flag remoto solo puede MATAR, nunca encender. ⇒ **en producción hoy
-Grupos funciona por CloudKit y todo lo del canal nuevo está inerte.**
+El §0 anterior decía que todo esto estaba frío porque `groupsBackendCompiledDefault = false`. **Ese
+enunciado murió con el paso 2 de D-R1**: el compilado está en `true`, así que el canal backend existe en
+el binario y lo único que lo separa de estar vivo es el percent remoto. El §5 exigía borrar aquel §0 el
+día del encendido, y esto es lo que ocupa su sitio.
 
-Consecuencia práctica: **revertir las Fases 1 y 2 hoy es casi un no-evento para el usuario final.** Este
-runbook se vuelve caliente el día que se encienda el compilado (release **2.1**). Antes de esa fecha, un
-rollback cuesta un revert y una release; después, cuesta lo que dice el §3.
+**Lo que sigue siendo cierto y conviene no confundir:** el flip no encendió el canal por sí solo. El
+getter compuesto exige además `CloudRemoteFlags.groupsBackendEnabled`, y
+`GROUPS_BACKEND_ROLLOUT_PERCENT` sigue en `0` en producción hasta que el owner lo suba y despliegue
+(paso 3). Mientras tanto Grupos sigue funcionando por CloudKit para todo el mundo.
+
+**Lo que SÍ cambió el mismo día que el flip, y es lo que vuelve caliente este documento:** los paths de
+**teardown** dejaron de leer el getter compuesto y leen la capacidad COMPILADA
+(`CloudSyncFlags.groupsBackendCompiledCapability`) — o sea que **ya no están gateados por el percent**.
+Un cierre de sesión o un borrado de cuenta en un device con sesión de nube ejecuta hoy la limpieza del
+canal de Grupos aunque el percent esté en 0. Es deliberado: un kill remoto apaga el canal, no borra lo
+que ya subió al servidor ni exime de olvidar la copia local. Detalle sitio por sitio en el §D-R1 de
+[[MODO-NUBE-DECISION-RELEASE-2.1]].
 
 ---
 
@@ -71,8 +81,36 @@ reabre un bug de producción — va aquí, no en las tablas de fases.
 |---|---|---|
 | `CloudBackendConfig`: URL + anon key de producción en `#else` | `3c49278c` | **Sí**, limpio — vuelve a `isConfigured == false` y toda la superficie de nube queda inerte |
 
-Revertirlo NO toca Grupos (`groupsBackendCompiledDefault` sigue en `false`) y NO deshace nada del servidor:
-el schema desplegado, el `revoke` y los percents del gateway viven fuera de git (§2).
+Revertirlo NO deshace nada del servidor: el schema desplegado, el `revoke` y los percents del gateway
+viven fuera de git (§2). Cuando se escribió esta fila tampoco tocaba Grupos, porque
+`groupsBackendCompiledDefault` seguía en `false`; **desde el paso 2 sí lo toca**, porque sin backend
+configurado no hay sesión de nube y con ella se caen todas las superficies del canal.
+
+### Paso 2 del encendido (D-R1) — el flip COMPILADO del canal de Grupos
+
+| Pieza | Commit | ¿Revert de git lo deshace? |
+|---|---|---|
+| `groupsBackendCompiledDefault` → `true` + los 8 sitios de teardown que pasan a leer el compilado | `PENDIENTE` (ver nota) | **Sí**, limpio — no toca servidor ni gateway; devuelve el binario al estado del paso 1 |
+
+**Revertir esto es seguro HOY y deja de serlo en cuanto el percent suba**, por el motivo del §2 «lo que no
+se recupera de ninguna manera»: un grupo born-backend nunca tuvo zona CloudKit. Mientras
+`GROUPS_BACKEND_ROLLOUT_PERCENT` siga en `0` no puede existir ninguno, así que el revert no quita acceso a
+nada. Después del paso 3, sí.
+
+Qué entra en este commit, además del flip:
+- **`CloudSessionSignOut`** (5 lecturas), **`ProfileView.signOutRowPath`**,
+  **`AccountDeletionService.Dependencies.live`** y el gate propio
+  **`GroupBackendMembershipService.ensureEligibleForTeardown`** pasan del getter compuesto a
+  `CloudSyncFlags.groupsBackendCompiledCapability`. Las ENTRADAS (arranque del loop, crear, unirse,
+  invitar, aprobar, expulsar, salir, el batch D10) se quedan COMPUESTAS: eso es lo que el kill corta.
+- **Consecuencia operativa que hay que tener presente en un incidente:** con el kill activo, un borrado de
+  cuenta ejecuta igualmente `groups_forget_user`. Si el kill se activó porque `/groups/*` está roto, ese
+  RPC falla y el borrado queda bloqueado hasta que se levante. Es retraso-de-borrado frente a
+  retención-permanente-de-PII, y la dirección está elegida a conciencia (§D-R1).
+
+> **Nota de proceso (§5): este commit no puede contener su propio hash.** El commit inmediatamente
+> posterior lo sustituye aquí. Si lees `PENDIENTE` en una emergencia, el hash es el del commit de docs que
+> sigue a éste en `git log`.
 
 ### Fase 1 — cierre del servidor y muerte de la migración
 
@@ -122,10 +160,45 @@ migrar un grupo vivo a la nube, el revert es el primer paso de tres, no el únic
 
 - **Los grupos born-backend.** Un grupo creado en el canal nuevo **nunca tuvo zona CloudKit**, así que un
   build sin canal backend no puede verlo por ninguna vía. No es pérdida de datos (siguen en Supabase),
-  es **pérdida de acceso** hasta que vuelva a haber un build con el canal. Hoy no afecta a nadie —el
-  compilado está en `false`— y pasa a ser el riesgo principal del rollback **desde 2.1**.
+  es **pérdida de acceso** hasta que vuelva a haber un build con el canal. Mientras el percent siga en 0
+  no existe ninguno; pasa a ser el riesgo principal del rollback **en cuanto corra el paso 3**.
 - **Los change tokens de CKSyncEngine** ya descartados en un device: CloudKit no reenvía lo que cree
   entregado. Lo cura `resetLocalGroupsSyncState()`, no el revert.
+
+### ⚠️ RESIDUAL ABIERTO del paso 2 — el boot-wipe de Grupos no resetea los tokens de CKSyncEngine
+
+**Decisión del owner (2026-07-30): queda documentado, NO se arregla en el commit del flip.** Va aquí, en
+el §2, porque es exactamente lo que este apartado existe para recoger: un efecto que ningún `git revert`
+deshace y que se activa por primera vez con este paso.
+
+**Qué pasa.** Los dos boot-wipes que borran el store `YalaGroups`
+—`SwiftDataConfiguration.performSignOutWipeIfArmed` cuando el marker `signOutWipeIncludesGroups` está
+puesto, y `performGroupsOnlySignOutWipeIfArmed`— borran **solo los archivos del store**. Los change tokens
+de CKSyncEngine viven fuera, en `Application Support/SplitSync/{private,shared}.json`, y ningún hook los
+toca. Por el invariante que el propio repo escribe en `SplitSyncManager.resetLocalGroupsSyncState`
+(«borrar filas sin resetear los tokens deja a CloudKit convencido de que este dispositivo está al día y
+esos records no se reenvían nunca»), **los grupos del canal CloudKit que convivan en ese store no vuelven
+al device jamás**. No es pérdida de datos —siguen en el iCloud del Apple ID— es pérdida de acceso
+permanente.
+
+**Por qué es del paso 2 aunque el código sea viejo.** Hasta ahora nada escribía esos markers: el path
+`.groupsOnlySignOut` era inalcanzable y el marker `includesGroups` se gateaba por un flag que en
+producción siempre era `false`. El flip vuelve alcanzable ese camino **por primera vez**, y la lectura por
+capacidad compilada lo extiende además a los devices fuera del rollout, que son justo los que siguen
+teniendo CloudKit como canal vivo de Grupos.
+
+**Por qué no se cerró aquí.** El fix obvio —borrar los dos `.json` junto al store— **no es neutro**:
+resetear los tokens provoca un re-fetch completo que re-hidrata también las zonas CloudKit **congeladas**
+de los grupos ya migrados, con lo que tras un borrado GDPR parte del corpus de grupos reaparecería desde
+el iCloud del propio Apple ID. Eso necesita una decisión de producto, no un apaño dentro del commit del
+flip. Alternativas a evaluar cuando se retome: un predicado de **presencia** (¿hubo alguna vez estado del
+canal backend en este device?) en lugar del marker todo-o-nada, o una purga **por filas** del subconjunto
+backend (`isBackendGroup || movedToBackendAt != nil`, el mismo predicado de `GroupsIdentityPurgeGate`),
+viable porque el store de grupos monta `cloudKitDatabase: .none` y borrar filas ahí no exporta nada.
+
+**Gatillo: antes de la sesión de QA de dos dispositivos del paso 3**, que es cuando alguien va a cerrar
+sesión de verdad. Anotado también en el docblock de `performSignOutWipeIfArmed`, para que se lea desde el
+código y no solo desde aquí.
 
 ---
 
@@ -158,5 +231,8 @@ final útil según el plan.
 - Los commits de la **Fase 3** se anotan en el §1 **en el mismo commit que los crea**.
 - Si aparece una acción de infraestructura nueva (deploy, SQL a mano, migración), va al **§2** en el
   turno en que se ejecuta. Ese es el apartado que se queda obsoleto en silencio.
-- Cuando se encienda `groupsBackendCompiledDefault` en 2.1, **borrar el §0**: dejará de ser cierto y es
-  lo primero que alguien leerá en una emergencia.
+- ~~Cuando se encienda `groupsBackendCompiledDefault` en 2.1, **borrar el §0**~~ — **HECHO el 2026-07-30**
+  con el paso 2 de D-R1. El §0 dice ahora lo contrario de lo que decía, que es justo el punto.
+- **Cuando corra el paso 3** (subir `GROUPS_BACKEND_ROLLOUT_PERCENT` y desplegar el Worker), anotarlo en el
+  **§2** — es una acción de infraestructura que git no refleja — y revisar el §3, porque a partir de ahí
+  el flag remoto sí es un rollback de verdad hasta que la Fase 3 borre el transporte CloudKit.

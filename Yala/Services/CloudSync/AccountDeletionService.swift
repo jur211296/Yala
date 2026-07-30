@@ -7,8 +7,8 @@
 //  corpus-zombie (C1 del review): los teardowns paran los loops de sync ANTES del borrado personal —
 //  SIN matar la auth, que se necesita VIVA para los RPCs.
 //
-//    1. `groups_forget_user` (SOLO si el canal de grupos está activo — ver la decisión abajo). Falla ⇒
-//       `.failed(.groups)`, NADA local tocado, reintentable.
+//    1. `groups_forget_user` (SOLO si este binario es CAPAZ del canal de grupos — ver la decisión abajo).
+//       Falla ⇒ `.failed(.groups)`, NADA local tocado, reintentable.
 //    2. Teardowns (`CloudSyncRuntime.teardownGuestSession` + `GroupsSyncClient.teardownForSignOut`): paran
 //       los ciclos; sin esto un push en vuelo RE-SUBIRÍA filas al backend recién vaciado.
 //    3. `POST /account/delete` (attest). Falla ⇒ `.failed(.delete)`, reintentable (teardowns idempotentes).
@@ -19,11 +19,31 @@
 //       `CloudSessionSignOut` (fase viva `.awaitingRelaunch` ⇒ cero red duplicada). SIN push-all (los
 //       datos ya murieron server-side).
 //
-//  DECISIÓN de sesión (documentada): el paso 1 es CONDICIONAL a `groupsBackendEnabled`. Con el flag OFF el
-//  usuario no tiene datos de grupos en el backend ⇒ no hay nada que anonimizar/transferir; además
-//  `GroupBackendMembershipService.forgetUser()` lanza `sessionExpired` por su gate `ensureEligible` con el
-//  flag OFF (un falso fallo que bloquearía el borrado). Saltarlo es correcto en AMBOS modos (en solo-grupos
-//  el flag está ON por construcción).
+//  DECISIÓN, REVISADA EN D-R1 PASO 2 (2026-07-30): el paso 1 es condicional a
+//  `groupsBackendCompiledCapability`, NO al getter compuesto.
+//
+//  La versión anterior lo condicionaba a `groupsBackendEnabled` con dos razones. (a) «Con el flag OFF el
+//  usuario no tiene datos de grupos en el backend»: era cierto SOLO porque el compilado cortaba por
+//  construcción. Con el compilado en `true` el término que queda es el remoto, que es un percent de
+//  `GET /config` y no borra absolutamente nada del servidor — un usuario puede tener todo su corpus de
+//  grupos en Supabase y leer el flag `false` por un kill, por un snapshot corrupto o por caer fuera del
+//  bucket. Saltarse el paso ahí deja su `display_name` REAL vivo en `group_members` de OTRA gente, sin
+//  `status='removed'` y sin bump de HLC (así que los devices de los co-members ni siquiera convergen por
+//  LWW), y sus grupos con `owner_user_id = NULL`, que `transfer_group_ownership` clasifica como huérfano
+//  y no auto-cura jamás. Eso es PII sobreviviendo a un borrado GDPR. El propio header de la migración
+//  `g12_01` ya lo dejaba escrito: la cascada de `auth.users` es una belt INCOMPLETA que «NO sustituye a
+//  groups_forget_user». (b) «`forgetUser()` lanza `sessionExpired` por su gate `ensureEligible`»: era y
+//  sigue siendo real, y por eso las dos mitades son inseparables — cambiar solo esta lectura convertiría
+//  una retención silenciosa en un BLOQUEO del borrado durante toda la ventana de kill. Lo resuelve el
+//  gate propio de `forgetUser` (capacidad compilada + sesión), que deja `ensureEligible` COMPUESTO para
+//  todo lo demás: las ENTRADAS (crear, unirse, invitar, aprobar, expulsar, salir) sí las corta el kill.
+//
+//  TRADE-OFF ACEPTADO, que conviene saber antes del incidente y no durante: el motivo más probable de un
+//  kill remoto es que `/groups/*` esté roto, y con esta decisión el paso 1 pasa a ser obligatorio ⇒ el
+//  RPC falla ⇒ el usuario no puede eliminar su cuenta mientras dure. Es retraso-de-borrado frente a
+//  retención-permanente-de-PII, y la dirección elegida es la segunda. El RPC es no-op cuando no hay
+//  filas, retry-safe y RPC-only (no toca el ModelContext), así que abrir su gate tiene radio de
+//  explosión local cero.
 //
 
 import Foundation
@@ -90,7 +110,9 @@ final class AccountDeletionService {
 
         nonisolated static let live = Dependencies(
             canDelete: { CloudAuthService.shared.hasSession && !SecondarySessionStore.isActive() },
-            groupsBackendEnabled: { CloudSyncFlags.groupsBackendEnabled },
+            // Capacidad COMPILADA (ver la DECISIÓN del header): el kill remoto apaga el canal, no borra
+            // lo que el usuario ya subió al backend ni le quita el derecho de supresión.
+            groupsBackendEnabled: { CloudSyncFlags.groupsBackendCompiledCapability },
             storageModeIsCloud: { CloudSyncFlags.storageMode == .cloud },
             forgetGroupsUser: {
                 let client = GroupsMembershipClient(attestProvider: Dependencies.liveAttest)
@@ -157,7 +179,8 @@ final class AccountDeletionService {
 
         phase = .working
 
-        // 1) Anonimizar/transferir grupos server-side — SOLO con el canal activo (ver la decisión del header).
+        // 1) Anonimizar/transferir grupos server-side — con el binario CAPAZ, aunque el canal esté
+        // apagado en remoto (ver la DECISIÓN del header).
         if deps.groupsBackendEnabled() {
             do {
                 try await deps.forgetGroupsUser()

@@ -123,7 +123,7 @@ struct GroupExpenseServiceCurrentMemberTests {
             from: members, cachedRecordName: nil, currentUserID: Self.sub) == mine.uuidString)
     }
 
-    /// Flag `groupsBackendEnabled` OFF (producción hoy) ⇒ el callsite pasa `currentUserID: nil` ⇒ el
+    /// Canal apagado (kill remoto) o sin sesión de nube ⇒ el callsite pasa `currentUserID: nil` ⇒ el
     /// criterio backend no matchea NADA y la función es byte-idéntica a la de antes de 2.6.
     @Test @MainActor func backendIdentity_nilCurrentUserID_matchesNothing() {
         let members = [member(id: UUID(), current: false, joined: .now, userID: Self.sub, memberKey: Self.sub)]

@@ -64,9 +64,7 @@ struct GroupBackendMembershipServiceTests {
     @Test func createGroup_happy_materializesOwner_savesUnderOutboxAuthor() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
-
-        let prevFlag = CloudSyncFlags.groupsBackendEnabled
-        defer { CloudSyncFlags.groupsBackendEnabled = prevFlag }
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
         CloudSyncFlags.groupsBackendEnabled = true
 
         let session = stub(#"{"group_id":"ignored-echo","member_key":"sub-99"}"#)
@@ -132,9 +130,7 @@ struct GroupBackendMembershipServiceTests {
     @Test func createGroup_rpcError_leavesContextUntouched() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
-
-        let prevFlag = CloudSyncFlags.groupsBackendEnabled
-        defer { CloudSyncFlags.groupsBackendEnabled = prevFlag }
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
         CloudSyncFlags.groupsBackendEnabled = true
 
         let session = stub(#"{"error":{"code":"yala_invalid_group_id"}}"#, status: 400)
@@ -154,9 +150,7 @@ struct GroupBackendMembershipServiceTests {
     @Test func createGroup_flagOff_throwsWithoutRequest() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
-
-        let prevFlag = CloudSyncFlags.groupsBackendEnabled
-        defer { CloudSyncFlags.groupsBackendEnabled = prevFlag }
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
         CloudSyncFlags.groupsBackendEnabled = false
 
         let session = stub(#"{"group_id":"g","member_key":"m"}"#)
@@ -176,9 +170,7 @@ struct GroupBackendMembershipServiceTests {
     @Test func join_rpcOnly_insertsNothingLocally() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
-
-        let prevFlag = CloudSyncFlags.groupsBackendEnabled
-        defer { CloudSyncFlags.groupsBackendEnabled = prevFlag }
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
         CloudSyncFlags.groupsBackendEnabled = true
 
         let session = stub(#"{"group_id":"g-1","member_key":"sub-3","status":"pendingApproval","rebound":false}"#)
@@ -192,5 +184,52 @@ struct GroupBackendMembershipServiceTests {
         // El pull reconcilia grupo+members; join NO materializa nada local.
         #expect(try context.fetch(FetchDescriptor<SplitGroup>()).isEmpty)
         #expect(try context.fetch(FetchDescriptor<SplitMember>()).isEmpty)
+    }
+
+    // MARK: - D-R1 paso 2: la asimetría del gate de `forgetUser` (teardown vs entradas)
+
+    /// `forgetUser` es el ÚNICO método del service que NO se apaga con el kill remoto: lo invoca el
+    /// borrado de cuenta para anonimizar/transferir lo que el usuario YA subió, y un kill no borra eso.
+    /// El escenario se monta togglando **`CloudRemoteFlags`**, no `CloudSyncFlags`: el override de
+    /// `CloudSyncFlags.groupsBackendEnabled` lo comparte `groupsBackendCompiledCapability`, así que
+    /// apagarlo por ahí apagaría también la capacidad y el test dejaría de probar lo que dice.
+    ///
+    /// **Cae si el flip se revierte**: con `groupsBackendCompiledDefault == false` la capacidad es
+    /// `false` y `ensureEligibleForTeardown` lanza `sessionExpired` sin request.
+    @Test func forgetUser_survivesRemoteKill_whileEntriesStayClosed() async throws {
+        CloudSyncFlags._testResetGroupsBackendEnabledOverride()   // composición REAL, sin override
+        CloudRemoteFlags._testSetOverrides(groupsBackend: false)  // kill remoto activo
+        defer { CloudRemoteFlags._testResetOverrides() }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        // El teardown pasa: el binario es capaz y hay sesión.
+        let forgetSession = stub(#"{"groups_transferred":0,"groups_tombstoned":0,"memberships_anonymized":2}"#)
+        _ = try await makeService(forgetSession).forgetUser()
+        #expect(forgetSession.callCount == 1)
+        #expect(forgetSession.lastRequest?.url?.absoluteString
+            == "https://gw.test/groups/rpc/groups_forget_user")
+
+        // Y las ENTRADAS siguen cerradas por el mismo kill: es lo que el kill-switch existe para hacer.
+        let createSession = stub(#"{"group_id":"g","member_key":"m"}"#)
+        await #expect(throws: GroupsRPCError.sessionExpired) {
+            _ = try await makeService(createSession).createGroup(
+                name: "Trip", currencyCode: "USD", displayName: "Alice", context: context)
+        }
+        #expect(createSession.callCount == 0)
+    }
+
+    /// La otra mitad del gate del teardown: sin SESIÓN no hay red ni contexto, aunque el binario sea
+    /// capaz. `ensureEligibleForTeardown` conserva el `sessionCheck()` justamente por esto — sin él la
+    /// llamada entraría a la red para morir en el guard del `tokenProvider`.
+    @Test func forgetUser_noSession_throwsWithoutRequest() async throws {
+        CloudSyncFlags._testResetGroupsBackendEnabledOverride()
+        let session = stub(#"{"groups_transferred":0,"groups_tombstoned":0,"memberships_anonymized":0}"#)
+
+        await #expect(throws: GroupsRPCError.sessionExpired) {
+            _ = try await makeService(session, session: false).forgetUser()
+        }
+        #expect(session.callCount == 0)
     }
 }

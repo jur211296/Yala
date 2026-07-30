@@ -18,7 +18,7 @@
 //    3. regla C-3     — grupo RETENIDO con member legacy ⇒ NO se apaga (`.claude/rules/swiftdata-cloudkit.md`)
 //    4. los 3 guards  — no estampar record-name en zona backend · no apagar sin iCloud · no inferir
 //                       `isGroupOwner` donde el rol lo dicta el server
-//  y la INERCIA con el flag OFF, que es el estado de producción hoy.
+//  y la INERCIA con el canal APAGADO (kill remoto, o binario sin canal compilado).
 //
 
 import Foundation
@@ -58,8 +58,11 @@ struct GroupServiceCurrentUserFlagsTests {
         GroupUserIdentityService.shared._testSetCachedRecordName(cachedRecordName)
         CloudSyncFlags.groupsBackendEnabled = backendEnabled
         defer {
-            // Idiom documentado en CloudSyncFlags: el compilado es `false`, así que restaurar es `= false`.
-            CloudSyncFlags.groupsBackendEnabled = false
+            // El restore es el RESET del override, no `= false`. La versión anterior se apoyaba en que
+            // «el compilado es `false`, así que restaurar es `= false`», premisa que el flip de D-R1
+            // paso 2 destruyó: bajo `Yala Dev` el default pasa a `true`, así que ese `= false` dejaba un
+            // override pegajoso divergente para todo test posterior del proceso.
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
             GroupService.backendUserIDProvider = previousProvider
             GroupUserIdentityService.shared._testSetCachedRecordName(previousRecordName)
         }
@@ -195,7 +198,7 @@ struct GroupServiceCurrentUserFlagsTests {
         #expect(seeded.member.role == "member")
     }
 
-    // MARK: - 5 · Inercia con el flag OFF (producción hoy)
+    // MARK: - 5 · Inercia con el canal apagado (kill remoto / binario sin canal)
 
     @Test("Flag OFF: el member de un grupo backend queda INTACTO (el salto de siempre)")
     func flagOff_backendGroupMemberUntouched() async throws {

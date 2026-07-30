@@ -93,13 +93,44 @@ struct CloudRemoteConfigTests {
 
     // MARK: - Composición groupsBackend (compilado && remoto)
 
-    @Test func groupsBackend_compiledFalse_staysOff_evenWithRemoteOn() {
-        // El remoto solo puede MATAR, nunca encender solo: con el compilado `false` (HOY,
-        // producción) la composición corta aunque el remoto diga 100%.
-        CloudSyncFlags._testResetGroupsBackendEnabledOverride()
-        CloudRemoteFlags._testSetOverrides(groupsBackend: true)
+    /// Contrato del kill-switch DESPUÉS del flip de D-R1 paso 2 (`groupsBackendCompiledDefault = true`).
+    /// Antes este test afirmaba lo contrario —que la composición cortaba por el compilado aunque el
+    /// remoto dijera 100%—, y con el flip pasó a rojo en los DOS schemes: correcto, era el test que
+    /// pinneaba el estado pre-flip.
+    ///
+    /// Las dos mitades importan. La (b) es el CONTROL POSITIVO y es lo que ata este test al flip: sin
+    /// ella, un compilado que volviera a `false` pasaría inadvertido. Nada de esto depende de
+    /// `absentDefault`: el término remoto está fijado por override en las dos mitades, así que la
+    /// aserción es idéntica bajo `Yala` y bajo `Yala Dev`.
+    @Test func groupsBackend_remoteKillSwitch_cutsChannel_withCompiledOn() {
+        CloudSyncFlags._testResetGroupsBackendEnabledOverride()  // composición REAL, sin override
         defer { CloudRemoteFlags._testResetOverrides() }
+
+        // (a) El remoto solo puede MATAR: con el compilado ON, un kill apaga el canal.
+        CloudRemoteFlags._testSetOverrides(groupsBackend: false)
         #expect(!CloudSyncFlags.groupsBackendEnabled)
+
+        // (b) Compilado ON + remoto ON = canal ON. Esta es la mitad que cae si el flip se revierte.
+        CloudRemoteFlags._testSetOverrides(groupsBackend: true)
+        #expect(CloudSyncFlags.groupsBackendEnabled)
+
+        // Y la capacidad del BINARIO no la toca el kill: es lo que leen los paths de teardown.
+        CloudRemoteFlags._testSetOverrides(groupsBackend: false)
+        #expect(CloudSyncFlags.groupsBackendCompiledCapability)
+    }
+
+    /// `absentDefault` es, desde el flip, lo ÚNICO que separa `CloudSyncFlags.groupsBackendEnabled`
+    /// entre los dos schemes en el host de tests (`decide()` cortocircuita en `isRunningTests`). El test
+    /// de arriba lo neutraliza con overrides a propósito; este lo pinnea de frente, porque un cambio en
+    /// `absentDefault` movería en silencio el default de media suite.
+    @Test func groupsBackend_defaultUnderTests_followsAbsentDefaultPerScheme() {
+        CloudSyncFlags._testResetGroupsBackendEnabledOverride()
+        CloudRemoteFlags._testResetOverrides()
+        #if DEV_BUILD
+        #expect(CloudSyncFlags.groupsBackendEnabled)   // Yala Dev: absentDefault ON
+        #else
+        #expect(!CloudSyncFlags.groupsBackendEnabled)  // Yala: absentDefault fail-closed
+        #endif
     }
 
     @Test func groupsBackend_testSetter_isSourceCompatibleOverride() {

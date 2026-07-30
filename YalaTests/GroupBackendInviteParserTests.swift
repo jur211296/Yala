@@ -12,7 +12,10 @@ import Testing
 
 @testable import Yala
 
+/// `.serialized`: desde D-R1 paso 2 el fichero togglea el override estático de
+/// `CloudSyncFlags.groupsBackendEnabled` (antes leía el default en crudo).
 @MainActor
+@Suite(.serialized)
 struct GroupBackendInviteParserTests {
 
     private static func b64u(_ s: String) -> String {
@@ -95,16 +98,34 @@ struct GroupBackendInviteParserTests {
         #expect(items.first { $0.name == "n" }?.value == "Viaje")
     }
 
-    // MARK: - C2 gate: con el flag OFF (DARK hoy) la rama backend NO se toma
+    // MARK: - C2 gate: el enrutado al canal backend exige link parseable Y canal encendido
 
-    @Test func flagOffToday_backendLinkParsesButDoesNotRoute() {
+    /// Antes leía el default en crudo y afirmaba `groupsBackendEnabled == false`. Tras el flip de D-R1
+    /// paso 2 eso divergía por scheme (rojo bajo `Yala Dev`, verde bajo `Yala` por el fail-closed remoto,
+    /// o sea verde por una razón distinta de la que el test decía probar). Lo que el test quiere afirmar
+    /// es el GATE, no el valor del default: ahora lo fija con override explícito. El caso sigue vivo
+    /// después del flip — es lo que ocurre con el kill remoto activo.
+    @Test func flagOff_backendLinkParsesButDoesNotRoute() {
+        CloudSyncFlags.groupsBackendEnabled = false
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
         let url = URL(string: "https://yala-app.pe/invite?g=SplitGroup-A&t=tok01")!
         let parsed = InviteLinkService.extractBackendInvite(from: url) != nil
         #expect(parsed)  // el link ES un invite backend parseable…
-        // …pero con `groupsBackendEnabled` OFF (SIEMPRE hoy) la rama C2 no se evalúa → handler NO invocado.
-        #expect(CloudSyncFlags.groupsBackendEnabled == false)
+        // …pero con el canal apagado la rama C2 no se evalúa → handler NO invocado.
         #expect(GroupBackendInviteEntryLogic.routesToBackend(
             flagEnabled: CloudSyncFlags.groupsBackendEnabled, backendInviteParsed: parsed) == false)
+    }
+
+    /// Control POSITIVO de la rama que el encendido vuelve alcanzable y que hasta ahora no tenía test:
+    /// sin él, el gate solo estaba probado por su lado negativo.
+    @Test func flagOn_backendLinkRoutesToBackend() {
+        CloudSyncFlags.groupsBackendEnabled = true
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
+        let url = URL(string: "https://yala-app.pe/invite?g=SplitGroup-A&t=tok01")!
+        let parsed = InviteLinkService.extractBackendInvite(from: url) != nil
+        #expect(parsed)
+        #expect(GroupBackendInviteEntryLogic.routesToBackend(
+            flagEnabled: CloudSyncFlags.groupsBackendEnabled, backendInviteParsed: parsed))
     }
 
     @Test func roundTrip_viaSonly_preservesGT() {

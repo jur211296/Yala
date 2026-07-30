@@ -65,13 +65,29 @@ final class CloudSessionSignOut {
     /// `context` (CR-1 del review): el coordinador NO tiene ModelContext propio; `ProfileView` (que ya
     /// tiene `@Environment(\.modelContext)`) lo pasa. Se usa para el push-all/purga del canal de Grupos
     /// (su outbox/cursor viven en el store sync-meta, alcanzable por el mainContext compartido).
+    /// **D-R1 paso 2: la precedencia se resuelve con la capacidad COMPILADA, no con el getter compuesto**
+    /// (y `ProfileView.signOutRowPath` lee lo mismo — si divergieran, la UI ofrecería filas que este
+    /// dispatch no honra y la hoja de alcance prometería lo contrario de lo que va a pasar).
+    ///
+    /// Con el compuesto, un kill remoto sobre un device `.icloud` con sesión de grupos VIVA lo manda a
+    /// `.privateReset`, que cierra la sesión y no toca nada más. Eso deja tres cosas cruzando la frontera
+    /// de humano: las filas de `GroupSyncOutbox` (que no tienen dueño — `pushPending` las sube con el
+    /// bearer de la sesión que esté viva en ese momento), el consent de grupos (sin él, la cuenta
+    /// siguiente no ve la pantalla y el canal subiría bajo un `user_id` que jamás consintió) y las filas
+    /// `Split*` visibles del que se fue. El camino `.groupsOnlySignOut` es el único que limpia las tres.
+    ///
+    /// No hay riesgo de dejar al usuario encerrado: el transporte NO consulta el flag
+    /// (`syncCycleOnce`/`pushPending` solo miran outbox y token), así que el push-all drena con el kill
+    /// activo; y si aun así bloqueara, este mismo path es el que hace pintar la fila de escape
+    /// «Salir de Yala en este dispositivo» (`rowLayout` → `.groupsSignOutPlusExitYala`), que no hace
+    /// push-all y siempre completa. Con el compuesto bajo kill esa fila ni siquiera existe.
     func signOut(context: ModelContext) async {
         guard phase == .idle else { return }
         switch CloudSignOutFlowLogic.path(
             for: CloudSyncFlags.storageMode,
             secondarySessionActive: SecondarySessionStore.isActive(),
             hasLiveSession: CloudAuthService.shared.hasSession,
-            groupsBackendEnabled: CloudSyncFlags.groupsBackendEnabled
+            groupsBackendEnabled: CloudSyncFlags.groupsBackendCompiledCapability
         ) {
         case .privateReset:
             await performPrivateReset()
@@ -108,13 +124,21 @@ final class CloudSessionSignOut {
     /// GATE DE QUIESCENCIA (invariante b): la purga es un `save()` sobre el mainContext COMPARTIDO. Timeout ⇒
     /// NO purgamos NI armamos → las filas `Split*` quedan intactas (residual inerte CONSISTENTE: cursor válido
     /// + filas presentes ⇒ re-sincroniza normal al re-firmar; jamás salvar sobre un import a medio asentar).
-    /// Purga+arm atómicos evitan la asimetría cursor-vs-wipe. Gateado por el flag (no-op con flag OFF; jamás
-    /// alcanzable ahí). Residual ratificado: re-entrada in-session ("Restaurar iCloud" sin cold boot) muestra
-    /// las filas hasta el próximo boot; un re-sign-in de grupos DESARMA un wipe aún colgado
-    /// (`GroupsBackendInviteModifier` → `clearGroupsOnlyWipeArm`).
+    /// Purga+arm atómicos evitan la asimetría cursor-vs-wipe. Residual ratificado: re-entrada in-session
+    /// ("Restaurar iCloud" sin cold boot) muestra las filas hasta el próximo boot; un re-sign-in de grupos
+    /// DESARMA un wipe aún colgado (`GroupsBackendInviteModifier` → `clearGroupsOnlyWipeArm`).
+    ///
+    /// **D-R1 paso 2: capacidad COMPILADA.** El docblock anterior decía «gateado por el flag (no-op con
+    /// flag OFF; jamás alcanzable ahí)», y con el compilado en `true` eso deja de ser un gate: el bloque
+    /// corre siempre que alguien invoque la función. Es lo correcto, porque es el ÚNICO limpiador de tres
+    /// superficies que nadie más toca en este camino — el consent (aquí no se arma el wipe personal, así
+    /// que el hook de boot que lo limpia no corre, y el hook solo-grupos no lo limpia a propósito), el
+    /// outbox sin dueño y el arm del olvido del store. Bajo un kill remoto, además, es MÁS seguro que
+    /// antes: ningún ciclo puede repoblar cursor+filas entre la purga y el `signOut`, porque
+    /// `startIfEligible`/`syncNowFromPush` sí leen el compuesto y retornan.
     func exitYalaOnThisDevice(context: ModelContext) async {
         guard phase == .idle else { return }
-        if CloudSyncFlags.groupsBackendEnabled {
+        if CloudSyncFlags.groupsBackendCompiledCapability {
             phase = .working
             if await Self.awaitPersonalQuiescenceForGroupsSignOut() {
                 GroupsSyncClient.shared.teardownForSignOut()  // corta la generación antes de purgar (CR-3)
@@ -258,9 +282,18 @@ final class CloudSessionSignOut {
         await CloudAuthService.shared.signOut()
 
         // 5) CR-4: marker ANTES del arm (el arm es el DISPARADOR, va ÚLTIMO). Kill entre marker y arm =
-        // no-op re-armable; kill entre arm y marker habría dejado un wipe personal SIN grupos. El marker
-        // SOLO con el flag ON ⇒ con flag OFF el boot hook es byte-idéntico (jamás borra el store de grupos).
-        if CloudSyncFlags.groupsBackendEnabled {
+        // no-op re-armable; kill entre arm y marker habría dejado un wipe personal SIN grupos.
+        //
+        // D-R1 paso 2: capacidad COMPILADA. El boot-hook ya borra INCONDICIONALMENTE la otra mitad del
+        // canal backend — `YalaSyncMeta` muere en el guard S3, y ahí viven `GroupSyncOutbox` y
+        // `GroupSyncCursor` —, así que con el compuesto y un kill activo el estado resultante sería el par
+        // incoherente «filas de grupos RETENIDAS + cursor DESTRUIDO». Y `SplitGroup` no tiene ningún campo
+        // de scoping por usuario: en un device que este mismo hook devuelve a "recién instalado", la cuenta
+        // SIGUIENTE vería los grupos, miembros y montos de la anterior, sin nada que los retire después (el
+        // pull del backend solo trae SU corpus y no emite tombstones de filas ajenas). El hermano de este
+        // marker —el clear del consent en el boot-hook— ya eligió esta misma inmunidad al kill, y su
+        // comentario nombra literalmente el hueco que quedaba aquí.
+        if CloudSyncFlags.groupsBackendCompiledCapability {
             StorageModePersistence.markSignOutWipeIncludesGroups()
         }
         StorageModePersistence.armSignOutWipe()
@@ -456,8 +489,14 @@ final class CloudSessionSignOut {
 
         await CloudAuthService.shared.signOut()
 
-        // Marker ANTES del arm (kill-safe). Solo con el flag ON ⇒ boot byte-idéntico con flag OFF.
-        if CloudSyncFlags.groupsBackendEnabled {
+        // Marker ANTES del arm (kill-safe), con la capacidad COMPILADA — mismo getter y mismo racional
+        // que su gemelo de `performCloudSecureSignOut`, y aquí con un agravante: la sesión ya está muerta
+        // y las filas del servidor ya no existen, así que un residuo local no lo refresca ni lo retira
+        // NADA nunca. Condicionarlo al término remoto sería condicionar una limpieza irreversible a una
+        // señal que no es testigo del corpus (fail-closed sin snapshot, snapshot corrupto, bucket de
+        // rollout). Ojo con el alcance: lo que cumple la obligación GDPR es `groups_forget_user` +
+        // `POST /account/delete`, ya ejecutados al llegar aquí; este marker decide sobre la copia LOCAL.
+        if CloudSyncFlags.groupsBackendCompiledCapability {
             StorageModePersistence.markSignOutWipeIncludesGroups()
         }
         StorageModePersistence.armSignOutWipe()
@@ -513,10 +552,20 @@ final class CloudSessionSignOut {
         // SEV-2 del review lente-grupos: outbox vacío ≠ History drenada. En el path solo-grupos este
         // helper es lo PRIMERO que corre (sin ciclo previo que drene) — una mutación hecha segundos
         // antes del sign-out aún vive SOLO en History; el pre-check sin drenar la perdería para siempre
-        // (teardown + wipe del store). Drenar primero hace honesto el conteo. Gateado por flag: con
-        // flag OFF (path `.cloud` sin backend de grupos) queda solo el fetchCount read-only de siempre
-        // (performDrain crearía cursor/save — no-op estricto preservado).
-        if CloudSyncFlags.groupsBackendEnabled {
+        // (teardown + wipe del store). Drenar primero hace honesto el conteo.
+        //
+        // D-R1 paso 2: capacidad COMPILADA, y aquí el motivo NO es "limpiar aunque el canal esté
+        // apagado" sino que el término remoto nunca protegió nada. El gate compuesto solo compraba un
+        // no-op cuando el outbox YA estaba vacío: con una sola fila viva el pre-check de abajo no corta,
+        // el loop entra y `syncCycleOnce` drena + empuja igual, porque el transporte no consulta el flag.
+        // Honraba el kill exactamente cuando no había nada en juego. Lo que este gate sí protege —"un
+        // build sin canal compilado no toca nada"— lo da EXACTAMENTE el término compilado; su propio
+        // comentario anterior lo delataba al describir el caso como «flag OFF (path .cloud sin backend
+        // de grupos)», que es la definición del compilado, no la del kill. Y no drenar aquí no difiere
+        // nada: los dos boot-wipes borran los archivos donde vive la History del canal, así que lo no
+        // drenado se destruye. La partición del drain sigue siendo por `isBackendGroup`, así que en un
+        // device sin grupos backend esto produce cero filas.
+        if CloudSyncFlags.groupsBackendCompiledCapability {
             GroupsSyncClient.shared.drainOnce(context: context)
         }
         if Self.liveGroupsPendingCount(context: context) == 0 { return .drained }

@@ -7,8 +7,17 @@
 //  es PARALELO al camino CloudKit vigente (`GroupService`/`InviteLinkService` + CKSyncEngine) y NO añade
 //  call-sites de UI — el cableado a la UI real llega en G4+, tras encender `groupsBackendEnabled`.
 //
-//  Gate en CADA método público: `groupsBackendEnabled && hasSession`. Con el flag OFF (SIEMPRE hoy) todo
-//  método lanza `sessionExpired` ANTES de tocar la red o el contexto (no-op verificable en tests).
+//  Gate en cada método público: `groupsBackendEnabled && hasSession` — sin canal o sin sesión, el método
+//  lanza `sessionExpired` ANTES de tocar la red o el contexto (no-op verificable en tests).
+//
+//  **UNA EXCEPCIÓN, deliberada y asimétrica (D-R1 paso 2): `forgetUser()`.** Todos los demás métodos son
+//  ENTRADAS —crear, unirse, invitar, revocar, aprobar, expulsar, salir, renombrarse— y el kill remoto
+//  existe justo para cerrarlas. `forgetUser` es un TEARDOWN: lo invoca el borrado de cuenta para
+//  anonimizar y transferir lo que el usuario YA subió, y eso sigue existiendo con el canal apagado. Si
+//  compartiera el gate compuesto, un kill remoto no retendría datos «hasta que se levante»: haría fallar
+//  el paso 1 del borrado y dejaría al usuario sin poder ejercer su derecho de supresión mientras durase.
+//  Por eso lleva `ensureEligibleForTeardown()`. NO uniformar los dos gates sin leer esto: «restaurar» el
+//  gate único aquí reintroduce la retención de PII en silencio.
 //
 //  DECISIÓN DE DISEÑO — `createGroup` es SERVER-FIRST: el RPC `create_group` crea el grupo Y su fila owner
 //  server-side; SOLO a éxito se materializa el `SplitGroup` + `SplitMember` locales. Garantiza que el grupo
@@ -38,9 +47,19 @@ final class GroupBackendMembershipService {
         self.sessionCheck = sessionCheck
     }
 
-    /// Gate DARK compartido: sin el flag O sin sesión → `sessionExpired` sin request ni mutación.
+    /// Gate compartido de las ENTRADAS: sin canal O sin sesión → `sessionExpired` sin request ni
+    /// mutación. Lee el getter COMPUESTO a propósito — es lo que el kill-switch remoto debe cortar.
     private func ensureEligible() throws {
         guard CloudSyncFlags.groupsBackendEnabled, sessionCheck() else {
+            throw GroupsRPCError.sessionExpired
+        }
+    }
+
+    /// Gate del TEARDOWN (`forgetUser`, ver la excepción del header): capacidad COMPILADA + sesión.
+    /// El `sessionCheck()` NO es opcional aquí — sin él se perdería el invariante «ni red ni contexto
+    /// antes del gate» y la llamada entraría a la red para morir en el guard del `tokenProvider`.
+    private func ensureEligibleForTeardown() throws {
+        guard CloudSyncFlags.groupsBackendCompiledCapability, sessionCheck() else {
             throw GroupsRPCError.sessionExpired
         }
     }
@@ -157,8 +176,11 @@ final class GroupBackendMembershipService {
         return try await client.updateMemberDisplayName(groupID: groupID, displayName: displayName)
     }
 
+    /// TEARDOWN del borrado de cuenta (GDPR): anonimiza al caller en los grupos donde es miembro y
+    /// transfiere o tombstonea los que posee. Gate por capacidad COMPILADA — es el único método de este
+    /// service que NO se apaga con el kill remoto, y el header explica por qué.
     func forgetUser() async throws -> ForgetResult {
-        try ensureEligible()
+        try ensureEligibleForTeardown()
         return try await client.forgetUser()
     }
 

@@ -4,8 +4,9 @@
 //
 //  Coordinador del registro del device token (G8-2). Instancia FRESCA (`makeIsolatedDefaults()` + stub),
 //  jamás muta `.shared`. `.serialized` porque el gate lee `CloudSyncFlags.groupsBackendEnabled` (flag
-//  global, restaurado con defer). Cubre: capture persiste + dispara; attemptUpload gateado por flag OFF y
-//  por sesión ausente (cero red); platform correcto por build.
+//  global, restaurado con `_testResetGroupsBackendEnabledOverride()` — nunca `= false`, que dejaría un
+//  override pegajoso divergente del default). Cubre: capture persiste + dispara; attemptUpload gateado
+//  por canal apagado y por sesión ausente (cero red); platform correcto por build.
 //
 
 import Foundation
@@ -47,7 +48,12 @@ struct PushTokenRegistrarTests {
     }
 
     @Test func attemptUpload_flagOff_noNetwork() async {
-        // flag OFF (default de la fase)
+        // Antes leía el default («flag OFF, default de la fase»). Tras el flip de D-R1 paso 2 ese default
+        // es `true` bajo `Yala Dev` y este test quedaba ROJO ahí, o —peor— verde por un override pegajoso
+        // que otro test hubiera dejado. El caso que quiere probar sigue vivo (canal apagado por kill
+        // remoto), así que se ancla con override explícito.
+        CloudSyncFlags.groupsBackendEnabled = false
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
         let defaults = makeIsolatedDefaults()
         defaults.set("tok", forKey: PushTokenRegistrar.tokenKey)
         let stub = StubHTTPSession()
@@ -60,7 +66,7 @@ struct PushTokenRegistrarTests {
 
     @Test func attemptUpload_noSession_noNetwork() async {
         CloudSyncFlags.groupsBackendEnabled = true
-        defer { CloudSyncFlags.groupsBackendEnabled = false }
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
         let defaults = makeIsolatedDefaults()
         defaults.set("tok", forKey: PushTokenRegistrar.tokenKey)
         let stub = StubHTTPSession()
@@ -73,7 +79,7 @@ struct PushTokenRegistrarTests {
 
     @Test func attemptUpload_flagOnSession_uploads_correctBodyAndPlatform() async throws {
         CloudSyncFlags.groupsBackendEnabled = true
-        defer { CloudSyncFlags.groupsBackendEnabled = false }
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
         let defaults = makeIsolatedDefaults()
         let stub = StubHTTPSession(status: 200)
         let sut = PushTokenRegistrar(defaults: defaults, client: makeRegistrarClient(stub), hasSession: { true })

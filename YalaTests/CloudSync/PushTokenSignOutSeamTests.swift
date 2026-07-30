@@ -43,12 +43,13 @@ struct PushTokenSignOutSeamTests {
         let savedClient = PushTokenSignOutSeam.client
         let savedHasSession = PushTokenSignOutSeam.hasSession
         let savedToken = PushTokenSignOutSeam.storedToken
-        let savedFlag = CloudSyncFlags.groupsBackendEnabled
         defer {
             PushTokenSignOutSeam.client = savedClient
             PushTokenSignOutSeam.hasSession = savedHasSession
             PushTokenSignOutSeam.storedToken = savedToken
-            CloudSyncFlags.groupsBackendEnabled = savedFlag
+            // RESET del override, no restauración por valor: leer el getter y re-asignarlo deja override
+            // no-nil (y propaga el que hubiera dejado otro test). Ver CloudSyncFlags._testReset*.
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
         }
         CloudSyncFlags.groupsBackendEnabled = flag
         PushTokenSignOutSeam.client = PushTokenRegistrationClient(
