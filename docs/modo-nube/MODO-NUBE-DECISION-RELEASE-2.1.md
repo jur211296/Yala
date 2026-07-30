@@ -71,6 +71,18 @@ tráfico porque `CloudRemoteConfig.refreshIfDue` gatea por `isConfigured`).
 **el kill-switch remoto todavía funciona** (el flag remoto solo puede MATAR): es la única ventana para
 probar el recorrido completo con un segundo humano en dos devices y poder apagarlo en segundos.
 
+> ⚠️ **El flip son DOS cambios, no uno. Con solo el compilado es un NO-OP.**
+> `CloudSyncFlags.groupsBackendEnabled` es `groupsBackendCompiledDefault && CloudRemoteFlags
+> .groupsBackendEnabled`, y `GROUPS_BACKEND_ROLLOUT_PERCENT` está en **0** en producción ⇒ el flag remoto
+> lo mata igual. Hay que **subir ese percent y desplegar el Worker** además de flipar el compilado, o el
+> build sale, la sesión de QA de dos dispositivos se monta, y nada cambia. Encontrado el 2026-07-30 al
+> auditar los gates; queda también como comentario en la línea de `gateway/wrangler.toml`.
+>
+> Condición de entrada ya cumplida: el gemelo del bridge (`f0a723e1`) y el `rollback()` del apply
+> (`b422565e`) están cerrados. Y el orden importa: el percent remoto se sube **después** de tener el build
+> con el compilado en `true` instalado en los dos devices — al revés no enciende nada y solo mueve la
+> ventana del kill-switch.
+
 ### Paso 1 · QUÉ PROBAR EN TESTFLIGHT — lo único que el build no puede demostrar solo
 
 Está escrito en el mensaje de `3c49278c`, pero se busca aquí, así que va aquí. **Paso 1 ejecutado:
@@ -85,8 +97,10 @@ Está escrito en el mensaje de `3c49278c`, pero se busca aquí, así que va aqu�
    se puede saber desde el código.
 3. **Que tras el primer boot NO aparezca ninguna pantalla de «actualiza la app».** Confirma que `/config`
    responde y que el umbral desplegado sigue en `0`.
-4. **Que Ajustes NO muestre «Dónde viven tus datos» y el Welcome NO muestre cards de nube.** Si aparecen,
-   el gateway no está sirviendo los percents en 0.
+4. ~~**Que Ajustes NO muestre «Dónde viven tus datos» y el Welcome NO muestre cards de nube.**~~
+   **INVERTIDO el 2026-07-30**: con `CLOUD_MODE_ROLLOUT_PERCENT` en 100 (ver abajo) la fila **debe
+   aparecer**. La redacción original era una comprobación NEGATIVA que pasaba igual si el gateway estaba
+   caído —sin snapshot, `absentDefault` es `false` fail-closed en producción— así que no demostraba nada.
 5. **Que nada de Grupos cambie**: el canal sigue siendo CloudKit hasta el paso 2.
 
 Verificado en el commit: los dos builds limpios, 169 tests en 18 suites con AMBOS schemes (18 pedidas =
@@ -94,6 +108,40 @@ Verificado en el commit: los dos builds limpios, 169 tests en 18 suites con AMBO
 llevan cada uno su `ref` (`fostjbbwstyuunmmefuk` en `#if DEV_BUILD`, `kefvaiymtgytemwbltlz` en `#else`), sin
 cruce, y `groupsBackendCompiledDefault` sigue en `false`. Los dos rojos ambientales del scheme `Yala`
 desaparecieron, que era la señal esperada.
+
+### Paso 1 · RESULTADO de la verificación en device (2026-07-30)
+
+**La infraestructura alrededor de `3c49278c` está probada; el contenido del propio commit, NO.** Esa
+distinción es el motivo de esta tabla: sin ella, «paso 1 ejecutado y verificado» se lee como si las
+credenciales de producción estuvieran comprobadas, y no lo están.
+
+| Qué | Estado | Con qué evidencia |
+|---|---|---|
+| `/config` alcanzable desde un build de producción, percents servidos, snapshot persistido | **VERIFICADO** | A/B: con el percent en 0 la fila de Ajustes no aparecía; tras subirlo a 100 y desplegar, aparece. La visibilidad sigue al valor servido |
+| `GET /config` de producción sirve lo que dice `wrangler.toml` | **VERIFICADO** | consulta directa: `{cloudModeRolloutPercent:100, cloudOnboardingChoiceRolloutPercent:0, groupsBackendRolloutPercent:0, minSupportedBuild:0}`, `environment: production`, `enforce: enforce` |
+| Umbral de forzado en 0 · sin pantalla de «actualiza la app» | **VERIFICADO** | primer boot del build limpio |
+| Grupos sin cambios · el bridge del canal CloudKit sigue puenteando | **VERIFICADO** | gasto de grupo creado → aparece en el grupo Y su transacción personal en el Panel |
+| **URL + anon key de Supabase de PRODUCCIÓN** | **SIN VERIFICAR** | nada las ejercita sin tráfico de auth. `/config` lo sirve el Worker de Cloudflare y **no toca Supabase** |
+| **Google iOS client ID en los Authorized Client IDs** | **SIN VERIFICAR** | solo un sign-in real lo dice; no es consultable desde el código ni desde el conector MCP |
+
+**Por qué los puntos 1 y 2 no se pudieron ejecutar, y no es un fallo del build:** la lista se escribió sin
+comprobar que las tres entradas de nube dependen del **flag remoto**, no solo de `isConfigured`
+(`StorageRowGateLogic.isVisible` exige `remoteEnabled || isEngaged`; `WelcomeAccountChoiceLogic
+.visibleExistingOptions` exige `remoteCloudEnabled`; el sheet de invitación está DARK con
+`groupsBackendEnabled` OFF). Con los percents en 0 **no existía ningún camino al sign-in**. Y con el percent
+en 100 sí existe, pero **el sign-in es el cuarto paso DENTRO del flujo de migración** —consent → doble
+confirmación → chooser Apple|Google → auth → progreso → relaunch—, así que alcanzarlo implica migrar datos
+de verdad, que es justo lo que el paso 1 declara no hacer. ⇒ **se pliegan a la sesión del paso 2**, donde la
+migración es parte del guion.
+
+**Nota operativa que costará tiempo si no se sabe:** `RemoteFlagDecisionLogic.refreshMinInterval` son **6
+horas**. Un device que ya arrancó con el percent viejo NO ve el cambio hasta que expire; para forzarlo hay
+que **borrar y reinstalar la app** (el snapshot vive en `UserDefaults`, se va con el contenedor). Sin eso,
+un flip de percent parece no haber funcionado.
+
+**`CLOUD_MODE_ROLLOUT_PERCENT` queda en 100 de forma permanente**, no como valor de prueba: es lo que exige
+la decisión de migración opt-in silencioso de este mismo documento («la migración vive en Ajustes y la usa
+quien la busque»). Desplegado en `0b1283fe`; anotado en el §2 de [[MODO-NUBE-ROLLBACK]].
 
 ### Por qué separados, y no en un build
 
