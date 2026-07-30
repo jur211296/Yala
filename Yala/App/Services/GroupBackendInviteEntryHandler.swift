@@ -99,35 +99,76 @@ enum GroupBackendInviteEntryHandler {
         ))
     }
 
-    /// FUENTE del legacy recordName de CloudKit para un RE-JOIN de grupo migrado (G6-2): (1º) el `SplitMember`
-    /// local del grupo con `isCurrentUser == true` → su `cloudKitUserRecordID` si no está vacío; (2º fallback)
-    /// `GroupUserIdentityService.cachedRecordName`. Device fresco sin ninguno → `nil` (entra como member
-    /// nuevo — residual §9.3b documentado). `#Predicate` CONCRETO por tipo (regla inviolable).
+    /// FUENTE del legacy recordName de CloudKit para un RE-JOIN de grupo migrado (G6-2). La llave sale
+    /// SIEMPRE de una FILA de la zona; el `cachedRecordName` no es una fuente, es un SELECTOR.
+    ///
+    /// **Por qué NO es el molde literal de 2.6.** Los otros cinco resolvedores de identidad preguntan
+    /// «¿quién soy?» y por eso llevan el fallback por `sub`. Este pregunta «¿cuál era MI FICHA legacy?», que
+    /// es otra cosa: en una zona migrada el `sub` resuelve al member born-backend, cuyo
+    /// `cloudKitUserRecordID` está VACÍO por diseño (`GroupsSyncClient.applyMember` nunca lo escribe) ⇒
+    /// añadir ese criterio al predicado devolvería vacío o basura. La cascada, en orden:
+    ///
+    ///  1. **`isCurrentUser` con recordName no vacío**, desempate por `joinedAt` más antiguo (criterio
+    ///     CANÓNICO, el mismo de `GroupExpenseService.selectCurrentUserMemberID` y de
+    ///     `GroupNotificationService.currentMemberID`). El `fetchLimit = 1` sin `sortBy` de antes era una
+    ///     moneda al aire: una zona migrada puede tener DOS filas marcadas del mismo humano —la legacy y la
+    ///     born-backend de un re-join que no rebindeó— y si ganaba la born-backend (recordName vacío) se
+    ///     perdía la única llave del device.
+    ///  2. **Identidad iCloud**: la fila cuyo `cloudKitUserRecordID == cachedRecordName`. Es el peldaño que
+    ///     mantiene vivo el caso común (2º device / reinstalación / restore con el mismo Apple ID), donde el
+    ///     flag llega apagado y NADIE lo enciende: `refreshCurrentUserFlags` deja el flag como está en una
+    ///     zona del canal backend (`GroupService:1119` y `:1145-1154`), así que la fuente 1 no es «tardía»
+    ///     ahí, es permanentemente ciega.
+    ///  3. **Cache a pelo, SOLO si la zona no tiene censo de la era CloudKit** (ninguna fila con
+    ///     `cloudKitUserRecordID`). Con censo y sin match se devuelve `nil`: `migrate_group` construye los
+    ///     placeholders desde ese mismo censo, así que una llave que ninguna fila respalda no puede ser MI
+    ///     placeholder — y si casa alguno es el de OTRO humano, al que `join_group` le entregaría el
+    ///     historial (rebindea por `member_key = X and user_id is null`, sin preguntar de quién es). Ese es
+    ///     el daño que la revocación C-3 existe para impedir. `nil` = entrar como member NUEVO, el residual
+    ///     §9.3b ya documentado.
+    ///
+    /// `#Predicate` CONCRETO por tipo (regla inviolable); el filtrado fino va en memoria — molde
+    /// `GroupJoinReconciler.currentUserMemberExists`, y los members de una zona son pocos.
     static func legacyMemberKeyForRejoin(group: SplitGroup, context: ModelContext) -> String? {
         // C-3 (D1): si este device revocó las credenciales de re-join del grupo (cambio/cierre del Apple ID
-        // con la fila RETENIDA), no hay legacy key que ofrecer. Corta las DOS fuentes de un golpe: el
-        // `SplitMember` con `isCurrentUser` —hijo de un grupo retenido, o sea que SOBREVIVE, y cuyo
-        // `cloudKitUserRecordID` es el recordName del Apple ID que se fue— y el fallback del cache. El
-        // re-join entra entonces como member NUEVO (residual §9.3b, ya documentado) en vez de rebindear
-        // server-side la membresía CloudKit-era del humano anterior.
+        // con la fila RETENIDA), no hay legacy key que ofrecer. Corta las TRES vías de un golpe: las filas
+        // `SplitMember` —hijas de un grupo retenido, o sea que SOBREVIVEN, y cuyo `cloudKitUserRecordID` es
+        // el recordName del Apple ID que se fue— y el fallback del cache. El re-join entra entonces como
+        // member NUEVO (residual §9.3b, ya documentado) en vez de rebindear server-side la membresía
+        // CloudKit-era del humano anterior.
         guard group.rejoinRevokedAt == nil else { return nil }
         let zoneID = group.cloudKitZoneID
-        var descriptor = FetchDescriptor<SplitMember>(
-            predicate: #Predicate { $0.groupZoneID == zoneID && $0.isCurrentUser == true })
-        descriptor.fetchLimit = 1
+        let cached = GroupUserIdentityService.shared.cachedRecordName ?? ""
+        let members: [SplitMember]
         do {
-            if let member = try context.fetch(descriptor).first,
-               !member.cloudKitUserRecordID.isEmpty {
-                return member.cloudKitUserRecordID
-            }
+            members = try context.fetch(FetchDescriptor<SplitMember>(
+                predicate: #Predicate { $0.groupZoneID == zoneID }))
         } catch {
-            // Cero silencios: la fila del current user no fue legible → cae al fallback del cache.
+            // Cero silencios. Sin censo legible no hay nada que pueda contradecir al cache, así que se
+            // conserva el fallback de siempre en vez de convertir un fallo de lectura en pérdida del rebind.
             logger.error("BackendInvite: legacyMemberKeyForRejoin fetch failed for \(zoneID, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            return cached.isEmpty ? nil : cached
         }
-        if let cached = GroupUserIdentityService.shared.cachedRecordName, !cached.isEmpty {
-            return cached
+        // Solo las filas de la era CloudKit pueden aportar una llave legacy: las born-backend llevan el
+        // `member_key` en `memberKey` y el campo CloudKit vacío (separación de canales, G3).
+        let cloudKitEra = members.filter { !$0.cloudKitUserRecordID.isEmpty }
+        if let flagged = cloudKitEra.filter({ $0.isCurrentUser }).min(by: { $0.joinedAt < $1.joinedAt }) {
+            return flagged.cloudKitUserRecordID
         }
-        return nil
+        if !cached.isEmpty,
+           let byIdentity = cloudKitEra.filter({ $0.cloudKitUserRecordID == cached })
+                                       .min(by: { $0.joinedAt < $1.joinedAt }) {
+            return byIdentity.cloudKitUserRecordID
+        }
+        guard cloudKitEra.isEmpty, !cached.isEmpty else {
+            if !cloudKitEra.isEmpty {
+                // Sin PII (jamás el recordName): el rastro de campo es que la zona tenía censo y lo
+                // contradijo. Sustituye al canario que sí se emite cuando la llave se manda y no matchea.
+                logger.notice("BackendInvite: legacy key withheld for \(zoneID, privacy: .public) — cached identity backed by none of \(cloudKitEra.count, privacy: .public) CloudKit-era members")
+            }
+            return nil
+        }
+        return cached
     }
 
     // MARK: - Driver compartido (handler + reconciler)
