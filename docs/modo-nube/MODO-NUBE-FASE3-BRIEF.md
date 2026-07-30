@@ -2,7 +2,7 @@
 created: 2026-07-29
 updated: 2026-07-30
 tags: [modo-nube, grupos, fase3, brief]
-status: blocked  # commit 0 HECHO (bc486c92) + Fase 2 bis del escritor de identidad (40a4e417); los commits 1 y 2 siguen bloqueados por el flag
+status: blocked  # commit 0 HECHO (bc486c92) + Fase 2 bis: escritor de identidad (40a4e417) y sexto resolvedor; los commits 1 y 2 siguen bloqueados por el flag
 ---
 
 # Fase 3 — brief, con las coordenadas medidas y el bloqueo que el plan no nombra
@@ -188,11 +188,94 @@ destruye, y contra eso el test que sirve es el que pinnea el **cableado**, no el
 - **`fetchFreshRecordName()` queda sin callers** (su único uso es `SplitSyncManager.swift:270`, el
   boot-guard) ⇒ borrable con él.
 - Y uno que no es de la Fase 3 sino de **2.6**: `legacyMemberKeyForRejoin` es el **sexto resolvedor de
-  identidad** y no recibió el re-cableo de 2.6 — resuelve por `isCurrentUser == true` crudo, sin el
-  fallback por `sub`. Como `isCurrentUser` es device-local y **no viaja en el CKRecord**
-  (`CloudKitConstants.swift:90`), en un 2º device la fila legacy llega con el flag apagado y su
-  `cloudKitUserRecordID` poblado: la llave está en esa misma fila y la función no la ve. Hoy lo tapa el
-  cache (que el fix mantiene vivo); el molde correcto es `GroupExpenseService.selectCurrentUserMemberID`.
+  identidad** y no recibió el re-cableo de 2.6. — ✅ **RESUELTO (Fase 2 bis, 2ª pieza).** Ver la sección
+  siguiente: el molde de 2.6 no se podía copiar tal cual, y (A) resultó ALCANZABLE.
+
+### El sexto resolvedor de identidad — ✅ RESUELTO (Fase 2 bis, 2ª pieza)
+
+La lista de 2.6 nombraba cinco. Son **seis**:
+
+| # | Resolvedor | Coordenada | Estado |
+|---|---|---|---|
+| 1 | `GroupService.refreshCurrentUserFlags` | `GroupService.swift:1010` | 2.6 (`08298365`) |
+| 2 | `GroupExpenseService.selectCurrentUserMemberID` | `GroupExpenseService.swift:637` | 2.6 (`08298365`) |
+| 3 | `GroupJoinReconciler.currentUserMemberExists` | `GroupJoinReconciler.swift:289` | 2.6 (`08298365`) |
+| 4 | `GroupSettingsView.hasOutstandingBalance` | `GroupSettingsView.swift:701` | 2.6 (`08298365`) |
+| 5 | `GroupNotificationService.currentMemberID(inZone:)` | `GroupNotificationService.swift:229` | 2.6 lo dejó INTACTO a propósito |
+| 6 | `GroupBackendInviteEntryHandler.legacyMemberKeyForRejoin` | `GroupBackendInviteEntryHandler.swift:106` | **Fase 2 bis, 2ª pieza** |
+
+El commit de 2.6 re-cableó **cuatro** (1-4). El quinto es el que los demás tienen que **espejar**: resuelve
+solo por `isCurrentUser`, con `sortBy joinedAt` + `fetchLimit 1`, y por eso `selectCurrentUserMemberID`
+conserva el flag en primera posición. El sexto quedó fuera de la enumeración entera.
+
+**El molde de 2.6 no se podía copiar, y ese es el hallazgo.** Los cinco primeros preguntan «¿quién soy?»
+y por eso llevan el fallback por `sub`. El sexto pregunta «¿cuál era **mi ficha legacy**?», que es otra
+cosa: en una zona migrada el `sub` resuelve al member **born-backend**, cuyo `cloudKitUserRecordID` está
+**vacío por diseño** (`GroupsSyncClient.applyMember` nunca lo escribe) ⇒ añadir ese criterio al predicado
+habría devuelto vacío o basura, y el fix habría sido peor que el bug. El criterio elegido identifica la
+FILA, no al usuario: la llave sale **siempre de una fila de la zona** y el `cachedRecordName` deja de ser
+una FUENTE para pasar a ser un **SELECTOR**. Cascada: (1) `isCurrentUser` con recordName no vacío,
+desempate por `joinedAt` más antiguo — el criterio canónico, el mismo de `selectCurrentUserMemberID` y de
+`currentMemberID`; (2) la fila cuyo `cloudKitUserRecordID == cachedRecordName`; (3) el cache a pelo **solo
+si la zona no tiene censo de la era CloudKit**. Con censo y sin match, `nil`.
+
+**Y el defecto era peor de lo que decía el bullet anterior.** No es que el flag llegue apagado «hasta que
+corra `refreshCurrentUserFlags`»: en una zona del canal backend esa función **no lo enciende nunca**
+(`GroupService.swift:1119` salta el member entero sin `sub`, y `:1145-1154` lo deja como está). En un 2º
+device / reinstalación / restore la fuente 1 está **muerta de forma permanente**, no tarde.
+
+#### ¿(A) resultó alcanzable? **SÍ.** Y el camino no es el que parecía
+
+(A) = el `cloudKitUserRecordID` de mi fila legacy diverge del `cachedRecordName`, con `rejoinRevokedAt`
+todavía `nil` ⇒ la fuente 2 devuelve una llave plausible pero equivocada.
+
+La hipótesis razonable —«el cache y la fila mueren juntos, así que (A) no existe»— es **falsa**, y se cae
+en dos líneas consecutivas. `performAccountSwitchCleanup` (`SplitSyncManager.swift:1398-1409`) llama:
+
+1. `clearAllLocalGroupData()` (`:1406`), que **se auto-difiere** en la ventana export-only
+   (`:1481-1484`, `deferMainContextWork` = `!autoSyncActive`) y retorna **antes** del único call-site de
+   `GroupsIdentityPurgeGate.apply` (`:1497`) ⇒ **ni `rejoinRevokedAt` ni borrado de filas**;
+2. `resetLocalGroupsSyncState()` (`:1407`), que **no tiene gate** y ejecuta
+   `GroupUserIdentityService.clearCache()` (`:1466`) ⇒ identidad borrada en memoria **y** en `UserDefaults`.
+
+El diferido es un `private var` **en memoria** (`:115`) drenado solo por `enableAutoSync()` (`:406`): si el
+proceso muere antes de la promoción, la purga **no ocurre jamás** y no queda rastro. El arranque siguiente
+re-siembra el cache con el Apple ID NUEVO (`AppBootstrapper.swift:442-445` → `seedIfNeeded`), y
+`refreshCurrentUserFlags` **apaga** el `isCurrentUser` de la fila mientras el grupo aún no está marcado
+como migrado (`:1155-1158`, `cloudKitMatch == false`); en cuanto el marcador aterriza, `:1145-1154`
+congela ese `false` para siempre. Nadie lo corrige después: el boot-guard se **retira** con el flag ON
+(`:264`) y con el flag OFF ya no tiene `cached` contra el que comparar (`:265-267`).
+
+**Por qué la llave equivocada es peor que `nil`, dicho sin adornos.** No es solo que no matchee: el
+`cachedRecordName` es el recordName del Apple ID que está **en este device ahora**, y `join_group`
+rebindea por `member_key = X and user_id is null` sin preguntar de quién es esa fila. Si ese humano es
+miembro del mismo grupo y aún no reclamó su placeholder —el handover de device dentro de un grupo—, el
+re-join le entrega **su historial y permiso de editarlo**. Es exactamente lo que la revocación C-3 (D1)
+existe para impedir, reabierto por el diferido. Por eso la rama 3 devuelve `nil` (residual §9.3b,
+declarado) en vez de una llave que el censo de la zona no respalda.
+
+**Medido con 5 lentes independientes + refutación por hallazgo (2026-07-30).** Tres refutadores no
+pudieron tumbar este camino y verificaron las 36 citas una a una; los que sí refutaron alguna variante lo
+hicieron por no recorrer la cadena entera (daban el cache por vacío, sin ver el re-seed del boot
+siguiente). Refutados con datos: los caminos por el backfill heurístico + LWW de `CKRecordTranslator:304`
+(mueren en `migrate_group`, que rechaza `member_key` duplicado y ≠1 owner) y los de las fronteras de wipe
+(ahí las filas se borran **antes** del reset, el par está bien acoplado).
+
+**Caveat de calendario, honesto:** hoy no existe cliente Swift de `migrate_group` (`5010db6a` borró el
+uploader), así que ningún grupo puede llegar al estado servidor «migrado con placeholders `user_id NULL`»
+desde esta app. Lo que ya está vivo es la **fabricación silenciosa de la divergencia** (los pasos locales).
+Es el ⚠️ H2 de `SplitSyncManager.swift:259-263` con un agravante nuevo: el daño no lo causa el encendido
+del flag, lo causa un estado que el encendido **encuentra ya escrito**.
+
+#### Dos cosas que quedan REPORTADAS, fuera de ámbito
+
+- **La grieta del diferido es un defecto por sí misma, y no vive en esta función.** `clearAllLocalGroupData`
+  puede saltarse la purga mientras `resetLocalGroupsSyncState` borra la identidad igual, y la marca del
+  diferido no es durable. Arreglarlo es o bien persistir `deferredClearAllRequested`, o bien mover el
+  `clearCache()` dentro de la mitad que se difiere. Toca `SplitSyncManager`, no el handler de invitaciones.
+- **El `fetchLimit = 1` sin `sortBy` sobre un predicado que casa varias filas** era una moneda al aire
+  (una zona migrada puede tener DOS filas marcadas del mismo humano: la legacy y la born-backend de un
+  re-join que no rebindeó). Aquí queda cerrado; el patrón puede estar en otros fetches de members.
 
 ---
 
