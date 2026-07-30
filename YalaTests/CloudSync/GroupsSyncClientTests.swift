@@ -340,13 +340,39 @@ struct GroupsSyncClientTests {
             laundering del grafo remoto a medias.
             """)
 
-        // El cursor NO avanzó ⇒ el próximo pull re-pide la página entera (idempotente).
-        let map = try JSONDecoder().decode(
-            [String: Int64].self, from: Data(cursor.groupCursorsJSON.utf8))
-        #expect(map["SplitGroup-A"] == nil)
+        // El cursor no avanzó **en el STORE**, que es el invariante que de verdad importa: el próximo pull
+        // re-pide la página entera y el apply es idempotente.
+        //
+        // ⚠️ Se lee del store y del re-fetch, JAMÁS de `cursor.groupCursorsJSON` directo. El valor en
+        // memoria de un `@Model` YA PERSISTIDO, leído en la ventana entre el `rollback()` y el siguiente
+        // fetch, es **dependiente del runtime**: iOS 27.0 re-hidrata el snapshot del objeto, iOS 26.5 no
+        // (medido el 2026-07-30 en los dos, con sondas). La versión anterior de este test aserjaba ese
+        // valor y convirtió esa diferencia en un rojo que se leyó como pérdida de datos en producción — y
+        // no lo era: el store estaba limpio en ambos.
+        let fresh = ModelContext(context.container)
+        let storedCursor = try #require(try fresh.fetch(FetchDescriptor<GroupSyncCursor>()).first)
+        let storedMap = try JSONDecoder().decode(
+            [String: Int64].self, from: Data(storedCursor.groupCursorsJSON.utf8))
+        #expect(storedMap["SplitGroup-A"] == nil, """
+            El cursor avanzó EN DISCO pese al save fallido. El servidor no re-emite esos deltas, así que la \
+            página se pierde para siempre.
+            """)
+
+        // Y lo que verá el CICLO SIGUIENTE: `pullAndApplyOnce` re-hace `loadOrCreateCursor` sobre este mismo
+        // contexto, y ese fetch tiene que devolver el valor del store.
+        //
+        // **Esta es la aserción que caza la ausencia del `rollback()`**, y es portable entre runtimes: sin
+        // rollback el objeto sigue SUCIO, y un fetch NO descarta cambios pendientes ⇒ el ciclo siguiente
+        // arrancaría desde un cursor que no está en disco y no re-pediría la página.
+        let reloaded = try client.loadOrCreateCursor(context)
+        let reloadedMap = try JSONDecoder().decode(
+            [String: Int64].self, from: Data(reloaded.groupCursorsJSON.utf8))
+        #expect(reloadedMap["SplitGroup-A"] == nil, """
+            El ciclo siguiente arrancaría desde un cursor avanzado que no está en el store: no re-pediría \
+            la página y sus filas faltarían hasta el próximo arranque en frío.
+            """)
 
         // Y la fila remota no llegó al store por ninguna vía.
-        let fresh = ModelContext(context.container)
         #expect(try fresh.fetch(FetchDescriptor<SplitShare>()).isEmpty)
     }
 

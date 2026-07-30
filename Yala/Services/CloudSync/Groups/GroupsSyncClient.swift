@@ -1528,8 +1528,19 @@ final class GroupsSyncClient {
             // muchos) los persistiría. Y el daño no se queda en local: el drain filtra por
             // `tx.author != Self.outboxSaveAuthor`, así que capturaría esas filas colándose bajo el autor
             // por defecto y las RE-EMPUJARÍA al servidor como ediciones locales con HLC fresco —laundering
-            // del grafo remoto a medias—. Con el rollback el cursor tampoco avanza ⇒ el próximo pull
-            // re-pide la página entera, que es idempotente.
+            // del grafo remoto a medias—. Con el rollback el cursor tampoco avanza **en el store** ⇒ el
+            // próximo pull re-pide la página entera, que es idempotente.
+            //
+            // Precisión medida el 2026-07-30 en iOS 26.5 **y** 27.0, porque su ausencia costó un chip
+            // entero persiguiendo un agujero que no existe: `rollback()` deja el STORE limpio en los dos
+            // runtimes (verificado con sonda: el cursor en disco sigue en `{}` y las filas de la página no
+            // están), pero el valor EN MEMORIA del objeto `cursor` —un `@Model` ya persistido— solo se
+            // re-hidrata en 27.0; en 26.5 sigue devolviendo el valor mutado. Eso **no es una pérdida**: el
+            // objeto no queda sucio (`hasChanges == false`), así que ningún save ajeno lo persiste, y el
+            // `fetch` de `loadOrCreateCursor` con el que arranca el ciclo siguiente lo refresca al valor
+            // del store. La ventana existe solo entre este `rollback()` y ese fetch, y en producción nadie
+            // lee ahí: `pullUntilExhausted` corta el bucle en cuanto esta función devuelve `false`.
+            // ⇒ No aserjar `cursor.groupCursorsJSON` directo en un test; aserjar el store o el re-fetch.
             context.rollback()
             // El `arm` se queda, y ahora es red REDUNDANTE en vez de la principal: revertidas las filas, el
             // retome las clasifica en el cubo *abandonado* y las retira sin gastar presupuesto ni emitir
