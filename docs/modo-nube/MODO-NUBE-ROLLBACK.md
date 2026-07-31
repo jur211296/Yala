@@ -155,7 +155,23 @@ son la razón de que exista.
 | scripts de migración de D1 | `03ee208d` | irrelevante (solo `package.json`) |
 | guard del umbral de forzado de versión | `69092b24` | irrelevante (solo un test) |
 
-### Fase 3 — en curso (commit 0 hecho)
+### Fase 3 — BLOQUEADA desde el 2026-07-31 (commit 0 hecho)
+
+> 🛑 **NO abras los commits 1 y 2 todavía.** Medido en producción el 2026-07-31 con dos iPhones reales:
+> **el canal backend NO sube filas de datos.** `POST /groups/push` no ha ocurrido NI UNA VEZ — ni al crear un
+> gasto, ni al crear un segundo con el tail abierto, ni tras pull-to-refresh. Un gasto de grupo se queda en
+> el teléfono que lo crea y el otro miembro no lo ve jamás.
+>
+> La Fase 3 **borra el transporte CloudKit**, y hoy ese transporte es lo ÚNICO que mueve datos de grupo
+> entre dispositivos. Abrirla ahora convertiría un bug en pérdida de datos sin camino de vuelta.
+>
+> Lo que sí está verificado del canal nuevo: atestación, `create_group`, `create_group_invite`,
+> `join_group`, `approve_member` y `GET /groups/pull`. **Todo eso son operaciones de MEMBRESÍA, que van por
+> RPC.** Las filas de datos van por el outbox y ese camino no ha subido nada nunca.
+>
+> Puerta para reabrir la fase: un gasto creado en un teléfono aparece en el otro, con su transacción
+> puenteada en los dos Paneles. Diagnóstico y las seis hipótesis ya refutadas, en el §«lo que NO está
+> verificado» de [[MODO-NUBE-DECISION-RELEASE-2.1]] §D-R1.
 
 | Paso | Commit | ¿Revert de git lo deshace? |
 |---|---|---|

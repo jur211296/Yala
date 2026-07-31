@@ -341,6 +341,42 @@ exige el de producción, así que un build de Xcode siempre recibe `401 yala_att
 no aparecía nada ES la prueba de que el lado local se arregló), nunca para validar. Está en
 `.claude/rules/gateway-attest.md` con las cuatro hipótesis que se refutaron por el camino.
 
+### Lo que el paso 3 NO deja verificado — el canal no sincroniza DATOS
+
+**Leer esto antes de concluir «el canal funciona».** Lo verificado el 2026-07-31 con dos iPhones reales es
+que el 401 desapareció y que las operaciones de MEMBRESÍA funcionan: atestación (`register` y `assert`),
+`create_group`, `create_group_invite`, `join_group`, `approve_member`, `GET /groups/pull` con su cursor
+avanzando tras la aprobación, `/push/register` y `/rates/live`. **Todas ellas van por RPC o por el pull.**
+
+**Lo que NO funciona: subir filas de datos.** `POST /groups/push` **no aparece ni una vez en ningún tail de
+producción de ese día** — ni al crear un gasto compartido, ni al crear un segundo con el tail ya abierto, ni
+tras pull-to-refresh en la lista de grupos y dentro del grupo. En el teléfono que lo crea todo parece bien
+(el gasto está en el grupo y su transacción puenteada está en el Panel, con el importe de SU parte); en el
+otro no llega nunca, y el cursor del pull se queda clavado. Deducción: `syncNowFromUI` sí se ejecuta (los
+pulls lo demuestran), el drenaje corre y produce **cero filas**, el outbox queda vacío y por eso el push no
+manda nada.
+
+**SEIS hipótesis refutadas leyendo el código ese mismo día — no las vuelvas a recorrer:** (1) el grupo sin
+`isBackendGroup` y el muro C2-bis (falso: `GroupBackendMembershipService.swift:100` lo pone, y
+`backendGroupZoneIDs` es un fetch simple de ese flag); (2) el autor del contexto pegado en
+`outboxSaveAuthor` (falso: los tres escritores lo restauran con `defer`); (3) el gasto guardado bajo ese
+autor (falso: `GroupExpenseService` no lo menciona); (4) `drainOnce` sin call-sites, que ese día ya había
+tenido dos precedentes (falso: `GroupsSyncClient:457` dentro de `syncNowFromUI`, más `syncNowFromPush` y el
+loop de `startIfEligible`); (5) `SplitExpense` fuera del muro `groupEntityNames` (falso: `translate` tiene
+rama explícita); (6) el mapa de emisión declarándolo no-emisible (falso: `GroupEntityEmissionMap.splitExpense`
+está completo y en `emittableGroupEntityNames`).
+
+⇒ **La respuesta no está en la lectura estática: hay que instrumentar.** Y hay un dato que apunta a dónde:
+existe un test que afirma lo contrario de lo que hace producción — en
+`YalaTests/CloudSync/GroupsSyncClientTests.swift` se crea un `SplitExpense`, se drena y se afirma que llega
+al `GroupSyncOutbox`, y está VERDE. **La diferencia entre ese test y producción es el diagnóstico.**
+
+**Consecuencias para el release, explícitas:** la **Fase 3 queda BLOQUEADA** (borra el transporte CloudKit,
+que hoy es lo único que mueve datos de grupo entre dispositivos — ver el §1 del runbook); la matriz de dos
+dispositivos queda a medias; y el drill del kill-switch se aplaza, porque con el canal incapaz de sincronizar
+datos no prueba lo que se quiere y costaría hasta 6 h de canal apagado en los devices de prueba por la caché
+de `refreshMinInterval`.
+
 ### Descartado
 
 - **Todo en un build**: más rápido, pero mezcla las dos clases de fallo.
