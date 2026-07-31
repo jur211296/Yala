@@ -303,10 +303,43 @@ CUENTAS es la explicación más probable de que seis sitios no lo encontraran.
 |---|---|---|
 | El cableado existe en las 9 construcciones y no puede nacer una décima sin él | **VERIFICADO** | `AttestWiringTests` (source-scan con conteo esperado por cliente) + 2 mutantes en exit 65: sin `attestProvider` y con `{ nil }` explícito, cada uno cazado por su propio test |
 | El header viaja cuando el proveedor es no-nil, y no viaja cuando es nil | **VERIFICADO** | `AttestHeaderTransportTests`, los 3 clients, par completo por cada uno |
-| **El 401 desaparece en device contra producción** | **SIN VERIFICAR — lo hace el owner** | requiere un build nuevo en TestFlight. No hay forma de ejercitarlo desde el repo: staging no exige attest y a producción no se puede llamar desde un test |
+| **El 401 desaparece en device contra producción** | **VERIFICADO el 2026-07-31 (build 8)** — pero hicieron falta DOS builds, ver abajo | tail de producción con `/v1/attest/register`, `/push/register`, `/groups/pull`, `create_group` y `/rates/live` **todos en Ok y sin una sola línea `[gw-err]`**; `create_group` funciona en device y Yala IA vuelve en el segundo teléfono |
 
 ⚠️ **No se tocó `ENFORCE`.** Bajarlo a `"observe"` habría hecho «pasar» la prueba apagando App Attest para
 todo el tráfico del gateway, incluido el proxy de IA cuyas API keys son la razón de esta épica.
+
+### El SEGUNDO bloqueante del paso 3 — y NO lo introdujo el Modo Nube
+
+**Que quede escrito, porque dentro de dos meses parecerá que esta épica rompió el attest y no es verdad.**
+Con el cableado del header ya dentro (`c267db5d`, build 7) crear un grupo **seguía** dando 401. La causa era
+otra, anterior, y de alcance mayor:
+
+> **La key de App Attest muere con la INSTALACIÓN de la app** (vive en el Secure Enclave, atada a la
+> instancia) **mientras el string del keyId SOBREVIVE en el Keychain.** Tras reinstalar, el keyId designa una
+> key inexistente y `generateAssertion` falla con `DCErrorInvalidInput` teniendo todos los inputs bien
+> formados (medido en device: `keyIdLen=44 challengeLen=76 hashLen=32`).
+
+Y no se curaba nunca, por cuatro cosas que se sumaban: el fallo era un `DCError` **local**; el `catch` solo
+cubría `AppAttestError.unknownKey`, que se lanza EXCLUSIVAMENTE al leer una respuesta del gateway ⇒ no
+re-registraba; nada borraba el keyId ⇒ cada intento releía el mismo; y el `try?` de `AttestSessionProvider`
+con logs bajo `#if DEBUG` no dejaba rastro en producción.
+
+**Alcance real, que es lo que importa para 2.1:** cualquier usuario que hubiera reinstalado Yala se quedaba
+sin Grupos, **sin Yala IA y sin proxy de tipos de cambio**, de forma permanente, viendo solo «Inténtalo en
+unos minutos». Llevaba vivo desde que existe App Attest. El encendido de Grupos únicamente le dio una
+superficie que alguien miró.
+
+**Fix: `bca6f775`.** Descarte del keyId **acotado a `.invalidInput` y `.invalidKey`** — `DCError.h` manda
+reintentar `serverUnavailable` con la MISMA key para preservar la risk metric del device, así que un `catch`
+genérico quemaría una key en cada fallo de red. Decide `AttestKeyRecoveryLogic` (función pura), pinneado por
+`YalaTests/AttestKeyRecoveryLogicTests.swift` con mutación en exit 65.
+
+**Lección operativa que costó un desvío entero:** un build firmado en desarrollo **no puede validar attest
+contra producción**. `verifyAttestation.ts:79` compara el AAGUID byte a byte y con `ATTEST_ENV = "production"`
+exige el de producción, así que un build de Xcode siempre recibe `401 yala_attest_invalid`. Sirve para
+**diagnosticar** (los logs de `#if DEBUG` viven ahí, y que aparezca un `POST /v1/attest/register` donde antes
+no aparecía nada ES la prueba de que el lado local se arregló), nunca para validar. Está en
+`.claude/rules/gateway-attest.md` con las cuatro hipótesis que se refutaron por el camino.
 
 ### Descartado
 

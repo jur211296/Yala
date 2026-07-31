@@ -1,6 +1,6 @@
 ---
 created: 2026-07-29
-updated: 2026-07-30
+updated: 2026-07-31
 tags: [modo-nube, grupos, rollback, runbook]
 status: active
 ---
@@ -112,13 +112,22 @@ Qué entra en este commit, además del flip:
 > de docs inmediatamente posterior. Es la tercera vez que pasa en esta épica (el commit 0 de la Fase 3 y el
 > paso 1 se anotaron tarde) y la primera en que la ventana es de un commit y no de días.
 
-#### Corrección posterior al paso 3 — el header de App Attest que faltaba en el canal de Grupos
+#### Correcciones posteriores al paso 3 — DOS bloqueantes, no uno
 
 | Pieza | Commit | ¿Revert de git lo deshace? |
 |---|---|---|
-| `attestProvider` cableado en las 9 construcciones de producción cuyas rutas exigen App Attest + `AttestSessionProvider` | `fix(nube): el canal de Grupos ya manda el token de App Attest` (hash en el commit de docs siguiente — §5) | **Sí**, limpio — solo cliente, no toca gateway ni servidor |
+| `attestProvider` cableado en las 9 construcciones de producción cuyas rutas exigen App Attest + `AttestSessionProvider` | `c267db5d` | **Sí**, limpio — solo cliente, no toca gateway ni servidor |
+| Descarte del keyId huérfano del Keychain + `AttestKeyRecoveryLogic` (recuperación ante fallo LOCAL del assert, no solo ante el `unknownKey` del gateway) | `bca6f775` | **Sí**, limpio — solo cliente. Pero revertirlo deja sin attest a todo device que haya reinstalado la app, y eso NO es un problema del Modo Nube |
 
-**Este commit NO es parte del encendido: es lo que el encendido destapó.** Con el percent en 100 y
+**Cerrado y verificado en device el 2026-07-31 (build 8):** el tail de producción muestra
+`/v1/attest/register`, `/push/register`, `/groups/pull`, `create_group` y `/rates/live` **todos en Ok y sin
+una sola línea `[gw-err]`**. Los `ratelimiter/check` confirman que `enforce` está activo de verdad.
+
+**Ninguno de los dos commits es parte del encendido: son lo que el encendido destapó.** Y el segundo **ya
+estaba vivo en producción desde que existe App Attest** — el canal de Grupos solo le dio superficie visible.
+Detalle completo en `.claude/rules/gateway-attest.md` §«El SEGUNDO fallo del mismo día».
+
+Del primero: con el percent en 100 y
 `ENFORCE = "enforce"`, crear un grupo devolvía 401 `yala_attest_required` — el device registraba App Attest
 bien, pero el header `X-Yala-Attest-Session` no viajaba en `/groups/*`. Nueve construcciones de clients se
 habían quedado con el default `{ nil }` de su init.
