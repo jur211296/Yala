@@ -1217,6 +1217,193 @@ struct GroupsSyncClientTests {
         #expect(decodedCursor(cursor, group: "SplitGroup-A") == 60)   // avanzado, NO vuelve a 0
     }
 
+    // MARK: - Test 9c · La fase del join intent se retira al aprobar (bug device 2026-07-31)
+
+    /// Deja el tracker en «esperando aprobación» por el camino de producción (`handleJoinSuccess` hace
+    /// exactamente esto: `rehydrate` + `noteMemberResolved`). El caller es responsable del `clear()`.
+    private func trackPendingJoin(zone: String) {
+        GroupJoinIntentTracker.shared.clear()
+        GroupJoinIntentTracker.shared.rehydrate(zoneName: zone)
+        GroupJoinIntentTracker.shared.noteMemberResolved(zoneName: zone, status: .pendingApproval)
+        #expect(GroupJoinIntentTracker.shared.phase == .pendingApproval)
+    }
+
+    /// EL BUG: el owner aprueba (`approve_member - Ok`), el pull baja el member propio `active` —el banner de
+    /// dentro del grupo desaparece porque lo pinta el status local— y el banner de tab
+    /// `groups.invite.waitingApproval.banner` se quedaba puesto PARA SIEMPRE: este canal no tenía quién
+    /// observase el member tras el pull (no llama al reconciliador) y el intent ya estaba limpio, así que sus
+    /// cuatro triggers salían por `guard !entries.isEmpty`.
+    @Test func apply_member_ownApproval_retiresPendingApprovalPhase() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        defer { GroupJoinIntentTracker.shared.clear() }
+
+        // Member propio PENDIENTE. `isCurrentUser` queda APAGADO a propósito: es lo que recibe quien se une
+        // por el canal backend (`applyMember` nunca lo setea) y por eso la identidad va por `sub`.
+        let mine = SplitMember(groupZoneID: "SplitGroup-A", displayName: "Alice", status: .pendingApproval)
+        mine.memberKey = "member-rec-1"
+        mine.userID = "auth-uid-1"
+        context.insert(mine)
+        try context.save()
+        #expect(mine.isCurrentUser == false)
+
+        trackPendingJoin(zone: "SplitGroup-A")
+
+        // memberDelta() trae status "active" + user_id "auth-uid-1" (== currentUserID) para member-rec-1.
+        let client = GroupsSyncClient(currentUserIDProvider: { "auth-uid-1" })
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [memberDelta()], cursors: ["SplitGroup-A": 4], memberships: ["SplitGroup-A"]),
+            cursor: cursor, context: context)
+
+        #expect(GroupJoinIntentTracker.shared.phase == .active, """
+            El member propio quedó `active` en el store y la fase siguió en `.pendingApproval`: el banner \
+            «esperando aprobación» se queda puesto para siempre, con la aprobación ya aplicada.
+            """)
+    }
+
+    /// El rechazo era el gemelo silencioso del mismo bug: sin observador, un member `rejected` dejaba el
+    /// banner «esperando aprobación» igual de pegado. `noteMemberResolved` lo lleva a terminal (`clear()`) y
+    /// la pantalla del grupo pinta su propio banner de rechazo.
+    @Test func apply_member_ownRejection_retiresPendingApprovalPhase() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        defer { GroupJoinIntentTracker.shared.clear() }
+
+        let mine = SplitMember(groupZoneID: "SplitGroup-A", displayName: "Alice", status: .pendingApproval)
+        mine.memberKey = "member-rec-1"
+        mine.userID = "auth-uid-1"
+        context.insert(mine)
+        try context.save()
+
+        trackPendingJoin(zone: "SplitGroup-A")
+
+        let client = GroupsSyncClient(currentUserIDProvider: { "auth-uid-1" })
+        let cursor = try client.loadOrCreateCursor(context)
+        let rejected = GroupPulledDelta(
+            entityType: "group_members", groupID: "SplitGroup-A", rawSyncID: "member-rec-1", syncID: nil,
+            op: .upsert,
+            fields: [
+                "display_name": .string("Alice"), "role": .string("member"),
+                "status": .string(SplitMemberStatus.rejected.rawValue),
+                "user_id": .string("auth-uid-1"),
+            ],
+            fieldHlcs: [:], hlc: "2026-07-15T00:00:00.000Z-0000-000000000000000c",
+            serverSeq: 4, schemaVersion: 1)
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [rejected], cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+
+        #expect(GroupJoinIntentTracker.shared.phase == .idle)
+        #expect(GroupJoinIntentTracker.shared.zoneName == nil)
+    }
+
+    /// Lo que se publica es el status del member PROPIO leído del store, NUNCA el del delta: en el mismo pull
+    /// baja la aprobación de un compañero, y retirar el banner con ella mentiría al invitado (sigue pendiente).
+    @Test func apply_member_otherUserApproved_keepsPendingApprovalPhase() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        defer { GroupJoinIntentTracker.shared.clear() }
+
+        // Yo sigo PENDIENTE, con otro member_key que el del delta que baja aprobado.
+        let mine = SplitMember(groupZoneID: "SplitGroup-A", displayName: "Alice", status: .pendingApproval)
+        mine.memberKey = "11111111-1111-1111-1111-111111111111"
+        mine.userID = "auth-uid-1"
+        context.insert(mine)
+        try context.save()
+
+        trackPendingJoin(zone: "SplitGroup-A")
+
+        // El delta aprobado es de OTRO usuario (user_id distinto del currentUserID).
+        let client = GroupsSyncClient(currentUserIDProvider: { "auth-uid-1" })
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [memberDelta(userID: .string("someone-else"))],
+                            cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+
+        #expect(GroupJoinIntentTracker.shared.phase == .pendingApproval, """
+            La fase se movió por el member de OTRO: el invitado vería «¡Todo listo!» sin estar aprobado.
+            """)
+    }
+
+    /// Members de OTRA zona no tocan la fase del join en curso (el pull entrega los de todos los grupos).
+    @Test func apply_member_otherZone_doesNotTouchTrackedPhase() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        defer { GroupJoinIntentTracker.shared.clear() }
+
+        // En la zona B mi member está ACTIVO; en la trackeada (A) sigo pendiente.
+        let inB = SplitMember(groupZoneID: "zone-B", displayName: "Alice", status: .active)
+        inB.memberKey = "member-rec-1"
+        inB.userID = "auth-uid-1"
+        context.insert(inB)
+        let inA = SplitMember(groupZoneID: "SplitGroup-A", displayName: "Alice", status: .pendingApproval)
+        inA.memberKey = "22222222-2222-2222-2222-222222222222"
+        inA.userID = "auth-uid-1"
+        context.insert(inA)
+        try context.save()
+
+        trackPendingJoin(zone: "SplitGroup-A")
+
+        let client = GroupsSyncClient(currentUserIDProvider: { "auth-uid-1" })
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [memberDelta(group: "zone-B")], cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+
+        #expect(GroupJoinIntentTracker.shared.phase == .pendingApproval)
+    }
+
+    /// La publicación es POST-SAVE: con el save de la página fallido el `rollback()` revierte el member, así
+    /// que retirar el banner ahí sería anunciar una aprobación que no está en disco.
+    @Test func apply_saveFails_doesNotPublishJoinPhase() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        defer { GroupJoinIntentTracker.shared.clear() }
+
+        // El member propio pendiente TIENE que existir: dentro de la transacción el fetch ve los cambios sin
+        // commitear, así que una publicación mal colocada leería `.active` y retiraría el banner. Sin esta
+        // fila el test pasaría igual con el bug.
+        let mine = SplitMember(groupZoneID: "SplitGroup-A", displayName: "Alice", status: .pendingApproval)
+        mine.memberKey = "member-rec-1"
+        mine.userID = "auth-uid-1"
+        context.insert(mine)
+        try context.save()
+
+        trackPendingJoin(zone: "SplitGroup-A")
+
+        let client = GroupsSyncClient(currentUserIDProvider: { "auth-uid-1" })
+        let cursor = try client.loadOrCreateCursor(context)
+        client._testThrowOnApplySave = true
+        let ok = client.applyPulledPage(
+            GroupPulledPage(deltas: [memberDelta()], cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+
+        #expect(ok == false)
+        #expect(GroupJoinIntentTracker.shared.phase == .pendingApproval, """
+            Se publicó la fase con el save revertido: el banner se retira por un member que no llegó al store.
+            """)
+    }
+
+    /// Sin join trackeado (`.idle`, el caso de casi todos los pulls) el apply NO resucita ningún banner.
+    @Test func apply_member_noTrackedJoin_staysIdle() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        defer { GroupJoinIntentTracker.shared.clear() }
+
+        GroupJoinIntentTracker.shared.clear()
+
+        let client = GroupsSyncClient(currentUserIDProvider: { "auth-uid-1" })
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [memberDelta()], cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+
+        #expect(GroupJoinIntentTracker.shared.phase == .idle)
+        #expect(GroupJoinIntentTracker.shared.zoneName == nil)
+    }
+
     // MARK: - Test 10 · Loop de cadencia (pieza 4b / A5 / A6) — sin sleeps reales
 
     @Test func loop_terminatesOnSessionExpired_noRealSleeps() async throws {

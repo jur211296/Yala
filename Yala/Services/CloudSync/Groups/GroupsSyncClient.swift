@@ -1575,6 +1575,13 @@ final class GroupsSyncClient {
             GroupsSyncBreadcrumb.groupsRejoinCursorReset(groups: cursorResetGroupIDs.count)
         }
         SessionState.shared.markRemoteChangePending()
+        // Fase del join intent: la aprobación (o el rechazo) del admin llega por ESTE pull y es lo único que
+        // puede retirar el banner «esperando aprobación». Va aquí, lo ANTES posible tras el save y antes de
+        // notificaciones/freeze/bridge, porque todo lo que sigue puede morir y a partir de esta línea el
+        // member ya está en disco: un hueco entre ambas cosas deja al usuario con el banner puesto sobre un
+        // member que YA está aprobado. Post-save y no dentro del `saveWithAuthor` por lo simétrico: con el
+        // `catch` de arriba habríamos publicado una fase de un member revertido por el `rollback()`.
+        publishTrackedJoinPhaseIfNeeded(page, context: context)
         // 2.1: notificaciones locales de grupo. Post-save (como el canal CloudKit, que las procesaba en
         // `processPendingRemoteChanges` tras persistir): un save fallido retornó arriba y no notifica nada
         // que el usuario no tenga en el store.
@@ -1608,6 +1615,61 @@ final class GroupsSyncClient {
                 logger.error("GroupsSync: freezeForSoftDelete falló para \(zone): \(error)")
                 #endif
             }
+        }
+    }
+
+    /// Retira (o mueve) la fase del join intent cuando esta página trajo members de la zona trackeada.
+    /// Cierra el bug device 2026-07-31: el banner «esperando aprobación» no tenía en este canal quién lo
+    /// retirase tras la aprobación del admin — el porqué completo y las fases que cuentan viven en
+    /// `GroupInviteOnboardingLogic.shouldRepublishPhase`.
+    ///
+    /// Lo que se publica es SIEMPRE el status del member PROPIO leído del store, nunca el del delta: en el
+    /// mismo pull puede venir la aprobación de un compañero, y el status del wire no dice de quién es sin
+    /// resolver identidad. `noteMemberResolved` hace el resto (mapa status→fase, monotonía, y `clear()` para
+    /// los terminales rejected/left/removed — el rechazo dejaba el banner igual de pegado que la aprobación).
+    private func publishTrackedJoinPhaseIfNeeded(_ page: GroupPulledPage, context: ModelContext) {
+        let tracker = GroupJoinIntentTracker.shared
+        // Guard barato primero: sin join trackeado no se escanea la página (el caso de casi todos los pulls).
+        guard tracker.zoneName != nil else { return }
+        let memberZones = Set(page.deltas.lazy.filter { $0.entityType == "group_members" }.map(\.groupID))
+        for zone in memberZones where GroupInviteOnboardingLogic.shouldRepublishPhase(
+            trackedPhase: tracker.phase, trackedZone: tracker.zoneName, appliedZone: zone)
+        {
+            guard let status = ownMemberStatus(zone: zone, context: context) else { continue }
+            let before = tracker.phase
+            tracker.noteMemberResolved(zoneName: zone, status: status)
+            // Canario solo cuando la fase SE MUEVE (una página con members de otro compañero re-publica el
+            // mismo status y no es un evento). Mismo evento y misma forma de `detail` que el reconciliador.
+            if tracker.phase != before {
+                MetricsService.canary(.groupJoinIntentReconciled, detail: "backendPull|\(status.rawValue)")
+            }
+        }
+    }
+
+    /// Status del `SplitMember` PROPIO de una zona según ESTE canal: match por `userID`/`memberKey == sub`
+    /// (`GroupJoinReconcileLogic.backendMemberMatchesCurrentUser`, la misma primitiva que el reconciliador),
+    /// NUNCA por `isCurrentUser` — `applyMember` jamás lo setea, así que filtrar por él daría `nil` para
+    /// siempre justo en el caso que importa: quien se UNE recibe su member por el pull sin el flag.
+    ///
+    /// Devuelve `nil` si el status no parsea, en vez del `.active` con el que degrada `memberStatus`: aquí un
+    /// falso `.active` RETIRARÍA el banner sin evidencia, y la dirección segura es dejarlo puesto.
+    /// `#Predicate` concreto por tipo, con el filtro de identidad en memoria (igualdad sobre opcionales —
+    /// nada de coalesce ni `contains`, regla `#Predicate`).
+    private func ownMemberStatus(zone: String, context: ModelContext) -> SplitMemberStatus? {
+        guard let currentID = currentUserIDProvider(), !currentID.isEmpty else { return nil }
+        let descriptor = FetchDescriptor<SplitMember>(predicate: #Predicate { $0.groupZoneID == zone })
+        do {
+            let mine = try context.fetch(descriptor).first {
+                GroupJoinReconcileLogic.backendMemberMatchesCurrentUser(
+                    memberUserID: $0.userID, memberKey: $0.memberKey, currentUserID: currentID)
+            }
+            guard let mine else { return nil }
+            return SplitMemberStatus(rawValue: mine.status)
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: fetch del member propio falló para \(zone): \(error)")
+            #endif
+            return nil
         }
     }
 
