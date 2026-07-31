@@ -240,6 +240,10 @@ struct CloudSyncSchemaParityTests {
     @Test func groupSyncCursor_hasExactPropertySet() {
         let expected: Set<String> = [
             "historyTokenData",
+            // Procedencia del ancla: el token de History es POR-STORE y anclarlo en el store personal
+            // dejaba al canal ciego al suyo (ver `GroupsDrainHistoryStoreAnchorTests`). `nil` en las filas
+            // de un build anterior ⇒ el drain descarta ese ancla y re-escanea.
+            "historyTokenStoreID",
             "lastDrainedTxAt",
             "clockLatestHLC",
             "groupCursorsJSON",

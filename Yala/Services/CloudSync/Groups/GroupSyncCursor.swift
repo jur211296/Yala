@@ -33,6 +33,14 @@ final class GroupSyncCursor {
     /// `nil` = aún no se ha procesado nada (primer drain → escaneo completo del History).
     var historyTokenData: Data?
 
+    /// `storeIdentifier` del store al que pertenece `historyTokenData`. Un `DefaultHistoryToken` es
+    /// POR-STORE: `fetchHistory(predicate: $0.token > token)` devuelve lo posterior DEL STORE de ese
+    /// token y OCULTA por completo los demás stores del container, así que un token anclado en el store
+    /// PERSONAL deja al canal de Grupos ciego a su propio store para siempre. Este campo es la PROCEDENCIA
+    /// del ancla: `nil` = desconocida (fila escrita por un build anterior a este fix, o ancla aún no
+    /// establecida) ⇒ `historyTokenData` NO es utilizable y el drain re-escanea para re-anclar.
+    var historyTokenStoreID: String?
+
     /// TIMESTAMP de la última transacción de History consumida por el drain — se persiste en el MISMO
     /// `save()` que avanza `historyTokenData`. Ancla COMPARABLE CROSS-MOUNT del guard de validación del
     /// token (molde `SyncCursor.lastDrainedTxAt` / HALLAZGO 2): el `DefaultHistoryToken` no es comparable
@@ -54,12 +62,14 @@ final class GroupSyncCursor {
 
     init(
         historyTokenData: Data? = nil,
+        historyTokenStoreID: String? = nil,
         lastDrainedTxAt: Date? = nil,
         clockLatestHLC: String? = nil,
         groupCursorsJSON: String = "{}",
         schemaVersion: Int = CloudSyncSchemaVersions.groupSyncCursor
     ) {
         self.historyTokenData = historyTokenData
+        self.historyTokenStoreID = historyTokenStoreID
         self.lastDrainedTxAt = lastDrainedTxAt
         self.clockLatestHLC = clockLatestHLC
         self.groupCursorsJSON = groupCursorsJSON

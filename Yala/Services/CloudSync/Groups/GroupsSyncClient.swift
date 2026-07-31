@@ -509,11 +509,27 @@ final class GroupsSyncClient {
         } while pendingDrain
     }
 
+    /// ¿Pertenece la transacción al store de GRUPOS? Toda transacción de ese store cambia al menos una de
+    /// sus 5 entidades y NINGUNA transacción de otro store lo hace — `groupEntityNames` es exactamente el
+    /// conjunto de entidades del `groupsSchema` (invariante pinneado por
+    /// `partition_groupEntityNames_matchGroupsSchema_disjointFromPersonal`).
+    private func isGroupsStoreTransaction(_ tx: DefaultHistoryTransaction) -> Bool {
+        tx.changes.contains { Self.groupEntityNames.contains($0.changedPersistentIdentifier.entityName) }
+    }
+
+    /// El token del cursor SOLO si consta que se ancló en el store de Grupos. Ver `historyTokenStoreID`:
+    /// un ancla de procedencia desconocida (fila de un build anterior a este fix, que anclaba en el store
+    /// de la última transacción procesada —casi siempre el PERSONAL—) es INUTILIZABLE y se descarta.
+    private func anchoredHistoryToken(_ cursor: GroupSyncCursor) -> DefaultHistoryToken? {
+        guard cursor.historyTokenStoreID != nil else { return nil }
+        return decodeToken(cursor.historyTokenData)
+    }
+
     private func performDrain(context: ModelContext) {
         do {
             let cursor = try loadOrCreateCursor(context)
             loadClock(from: cursor)
-            let token = decodeToken(cursor.historyTokenData)
+            let token = anchoredHistoryToken(cursor)
 
             let lookups = try buildLookups(context)
             // C2-bis (CRÍTICO #1): partición POR-GRUPO simétrica del push. Solo los grupos del canal BACKEND
@@ -522,7 +538,7 @@ final class GroupsSyncClient {
             // doble-sync CKSyncEngine∥backend). El PULL ya está scoped por cursores/memberships; la asimetría
             // era solo del push.
             let backendZoneIDs = try backendGroupZoneIDs(context)
-            let tokenTxns = try fetchHistory(after: token, context: context)
+            let tokenTxns = try fetchHistory(after: token, cursor: cursor, context: context)
 
             let tokenGuard = recoverIfHistoryTokenIncomparable(
                 cursor: cursor, tokenTxns: tokenTxns, context: context)
@@ -534,7 +550,15 @@ final class GroupsSyncClient {
             var rows: [PendingGroupRow] = []
             var advancedToken: DefaultHistoryToken?
             var advancedTxAt: Date?
+            var advancedStoreID: String?
+            // Barrido: el timestamp MÁXIMO visto en esta vuelta (de CUALQUIER store) y si se vio alguna
+            // transacción del store de Grupos. Solo se usan cuando NO hay ninguna: ver `advanceScanFloor`.
+            var maxScannedTxAt: Date?
+            var sawGroupsStoreTx = false
             for tx in txns {
+                if let seen = maxScannedTxAt { maxScannedTxAt = max(seen, tx.timestamp) }
+                else { maxScannedTxAt = tx.timestamp }
+                if isGroupsStoreTransaction(tx) { sawGroupsStoreTx = true }
                 // Anti-auto-captura (echo suppression): descartar los writes del propio canal SIN avanzar
                 // el high-water (si avanzaran, cada avance escribiría el cursor → loop).
                 if tx.author == Self.outboxSaveAuthor { continue }
@@ -553,8 +577,17 @@ final class GroupsSyncClient {
                     #endif
                     break
                 }
+                // CRÍTICO: el high-water del token SOLO se mueve con transacciones del store de GRUPOS.
+                // `DefaultHistoryToken` es POR-STORE — anclarlo en una transacción del store PERSONAL (que
+                // en producción domina el tráfico) hace que `fetchHistory($0.token > token)` deje de
+                // devolver NADA del store de Grupos, y como sin verlo el canal tampoco puede re-anclar en
+                // él, el estado es un PUNTO FIJO: ningún gasto vuelve a salir del device. Medido en
+                // producción el 2026-07-31 (`POST /groups/push` jamás emitido) y pinneado por
+                // `GroupsDrainHistoryStoreAnchorTests`.
+                guard isGroupsStoreTransaction(tx) else { continue }
                 advancedToken = tx.token
                 advancedTxAt = tx.timestamp
+                advancedStoreID = tx.storeIdentifier
             }
 
             if !rows.isEmpty {
@@ -570,6 +603,7 @@ final class GroupsSyncClient {
                 if let reanchor = tokenGuard.reanchor {
                     try saveWithAuthor(context) {
                         cursor.historyTokenData = try encodeToken(reanchor.token)
+                        cursor.historyTokenStoreID = reanchor.storeID
                         cursor.lastDrainedTxAt = reanchor.txAt
                         cursor.clockLatestHLC = clock.latest?.description
                     }
@@ -579,10 +613,24 @@ final class GroupsSyncClient {
                 } else if let advancedToken {
                     try saveWithAuthor(context) {
                         cursor.historyTokenData = try encodeToken(advancedToken)
+                        cursor.historyTokenStoreID = advancedStoreID
                         cursor.lastDrainedTxAt = advancedTxAt
                         cursor.clockLatestHLC = clock.latest?.description
                     }
                     historyTokenValidated = true
+                } else if !sawGroupsStoreTx, let floor = maxScannedTxAt,
+                          cursor.historyTokenStoreID == nil {
+                    // SUELO DEL BARRIDO. Sin ancla de Grupos el fetch cae al predicado por TIMESTAMP, y sin
+                    // este avance ese fetch re-lee todo el History en CADA drain (el coste que el ancla
+                    // por-token ahorraba antes de este fix, a costa de anclar en el store equivocado).
+                    // Solo es seguro porque acabamos de comprobar que en la ventana barrida NO había ni
+                    // una transacción del store de Grupos: nada quedó sin drenar por debajo del suelo. En
+                    // cuanto aparezca la primera, manda el token y este camino no se vuelve a tomar.
+                    try saveWithAuthor(context) {
+                        cursor.historyTokenData = nil
+                        cursor.lastDrainedTxAt = floor
+                        cursor.clockLatestHLC = clock.latest?.description
+                    }
                 }
             }
         } catch {
@@ -859,11 +907,25 @@ final class GroupsSyncClient {
         try JSONEncoder().encode(token)
     }
 
+    /// Sin ancla de Grupos (`token == nil`: cursor nuevo, o procedencia descartada por `anchoredHistoryToken`)
+    /// el fetch cae al SUELO POR TIMESTAMP de `lastDrainedTxAt` — comparable cross-store, al revés que el
+    /// token — con el mismo `historyTokenSlack` que el guard, para absorber el desorden entre stores (los
+    /// timestamps de dos stores no vienen intercalados: `fetchHistory` los agrupa por store).
     private func fetchHistory(
-        after token: DefaultHistoryToken?, context: ModelContext
+        after token: DefaultHistoryToken?, cursor: GroupSyncCursor, context: ModelContext
     ) throws -> [DefaultHistoryTransaction] {
         guard let token else {
-            return try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>())
+            guard let floor = cursor.lastDrainedTxAt else {
+                return try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>())
+            }
+            let cutoff = floor.addingTimeInterval(-Self.historyTokenSlack)
+            do {
+                return try context.fetchHistory(
+                    HistoryDescriptor<DefaultHistoryTransaction>(
+                        predicate: #Predicate { $0.timestamp > cutoff }))
+            } catch {
+                return try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>())
+            }
         }
         do {
             return try context.fetchHistory(
@@ -989,7 +1051,7 @@ final class GroupsSyncClient {
     private struct TokenGuardResult {
         var txns: [DefaultHistoryTransaction]
         var validatedByCompare = false
-        var reanchor: (token: DefaultHistoryToken, txAt: Date)?
+        var reanchor: (token: DefaultHistoryToken, txAt: Date, storeID: String)?
     }
 
     /// Detecta y recupera un token que dejó de surfacear transacciones nuevas del mount ACTUAL usando los
@@ -1042,10 +1104,16 @@ final class GroupsSyncClient {
                     : a.offset < b.offset
             }
             .map(\.element)
-        guard let last = orderedUnion.last else {
+        // El re-ancla tiene que caer en el store de GRUPOS, igual que el avance normal: `orderedUnion.last`
+        // pelado es la última por TIMESTAMP, que en producción es casi siempre una transacción del store
+        // PERSONAL (el bridge escribe su `TransactionItem` justo después del gasto) — y anclar ahí
+        // reintroduce exactamente el punto fijo que este guard tiene que deshacer.
+        guard let last = orderedUnion.last(where: { isGroupsStoreTransaction($0) }) else {
             return TokenGuardResult(txns: orderedUnion)
         }
-        return TokenGuardResult(txns: orderedUnion, reanchor: (token: last.token, txAt: last.timestamp))
+        return TokenGuardResult(
+            txns: orderedUnion,
+            reanchor: (token: last.token, txAt: last.timestamp, storeID: last.storeIdentifier))
     }
 
     // MARK: - Push (POST /groups/push)
