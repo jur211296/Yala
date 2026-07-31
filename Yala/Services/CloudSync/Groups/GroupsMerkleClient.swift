@@ -65,6 +65,10 @@ final class GroupsMerkleClient {
     private let attestProvider: @MainActor () async -> String?
     private let urlSession: SyncHTTPSession
 
+    /// El default `{ nil }` de `attestProvider` es **SOLO PARA TESTS**: `GET /groups/merkle` pasa por
+    /// `requireUserAndAttest` (`gateway/src/groups/routes.ts:67-73`). En producción este cliente NO se
+    /// construye suelto — lo construye el init de `GroupsSyncClient` REENVIANDO su propio `attestProvider`,
+    /// así que hereda el de `GroupsSyncClient.shared`. Pinneado por `AttestWiringTests`.
     init(
         baseURL: URL = ProxyConfig.baseURL,
         tokenProvider: @escaping @MainActor () async -> String? = { await CloudAuthService.shared.accessToken() },

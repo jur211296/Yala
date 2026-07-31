@@ -25,7 +25,16 @@ enum PushTokenSignOutSeam {
 
     // MARK: - Seams inyectables (defecto = cableado de producción; los override los usan los tests)
 
-    static var client: PushTokenRegistrationClient = PushTokenRegistrationClient()
+    /// `attestProvider` OBLIGATORIO: `POST /push/unregister` va por `requireUserAndAttest`
+    /// (`gateway/src/push/register.ts:64`). El token de App Attest es del DEVICE, no de la cuenta, así que
+    /// sigue disponible durante el sign-out — lo que se pierde en ese camino es el JWT de usuario, y este
+    /// seam ya corre ANTES de soltarlo (guard `hasSession()`).
+    ///
+    /// El fetch del token comparte el presupuesto de `unregisterTimeout` (4 s), pero el saldo es a favor:
+    /// normalmente sale del cache de `AppAttestClient` (la app acaba de hacer otras llamadas atestadas) y
+    /// sin él el request se comía el timeout igual — con un 401 garantizado al otro lado.
+    static var client: PushTokenRegistrationClient =
+        PushTokenRegistrationClient(attestProvider: AttestSessionProvider.live)
     static var hasSession: @MainActor () -> Bool = { CloudAuthService.shared.hasSession }
     /// El token capturado sobrevive al sign-out (sirve para re-registro con la próxima cuenta) — NO se borra.
     static var storedToken: @MainActor () -> String? = { PushTokenRegistrar.shared.storedToken }

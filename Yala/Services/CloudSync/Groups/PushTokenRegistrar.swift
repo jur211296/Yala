@@ -43,7 +43,9 @@ final class PushTokenRegistrar {
         hasSession: @escaping @MainActor () -> Bool = { CloudAuthService.shared.hasSession }
     ) {
         self.defaults = defaults
-        self.client = client ?? PushTokenRegistrationClient()
+        // `attestProvider` OBLIGATORIO: `POST /push/register` va por `requireUserAndAttest`
+        // (`gateway/src/push/register.ts:24`, que REUSA la guard de `groups/routes.ts`).
+        self.client = client ?? PushTokenRegistrationClient(attestProvider: AttestSessionProvider.live)
         self.hasSession = hasSession
     }
 

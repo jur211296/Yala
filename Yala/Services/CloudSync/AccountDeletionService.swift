@@ -101,13 +101,6 @@ final class AccountDeletionService {
         var clearCloudBeacon: @MainActor () -> Void
         var deleteCloudKitMarker: @MainActor (ModelContext) throws -> Void
 
-        /// Attest de producción para los dos clientes con attest (delete + groups RPC). `nonisolated` para
-        /// poder referenciarlo desde el init nonisolated de `shared` (default-actor-isolation = MainActor);
-        /// el closure `@MainActor` se FORMA aquí sin ejecutarse.
-        nonisolated static let liveAttest: @MainActor () async -> String? = {
-            try? await AppAttestClient.shared.currentSessionToken()
-        }
-
         nonisolated static let live = Dependencies(
             canDelete: { CloudAuthService.shared.hasSession && !SecondarySessionStore.isActive() },
             // Capacidad COMPILADA (ver la DECISIÓN del header): el kill remoto apaga el canal, no borra
@@ -115,7 +108,7 @@ final class AccountDeletionService {
             groupsBackendEnabled: { CloudSyncFlags.groupsBackendCompiledCapability },
             storageModeIsCloud: { CloudSyncFlags.storageMode == .cloud },
             forgetGroupsUser: {
-                let client = GroupsMembershipClient(attestProvider: Dependencies.liveAttest)
+                let client = GroupsMembershipClient(attestProvider: AttestSessionProvider.live)
                 _ = try await GroupBackendMembershipService(client: client).forgetUser()
             },
             teardown: {
@@ -126,7 +119,7 @@ final class AccountDeletionService {
                 guard let jwt = await CloudAuthService.shared.accessToken(), !jwt.isEmpty else {
                     return .sessionExpired(detail: "no jwt")
                 }
-                let client = CloudAccountClient(attestProvider: Dependencies.liveAttest)
+                let client = CloudAccountClient(attestProvider: AttestSessionProvider.live)
                 return await client.deleteAccount(jwt: jwt)
             },
             revokeSIWA: { await SIWATokenRevocation.revokeIfNeeded() },

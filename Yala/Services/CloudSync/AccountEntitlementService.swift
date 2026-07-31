@@ -60,6 +60,8 @@ final class AccountEntitlementService {
         isConfiguredProvider: (@MainActor () -> Bool)? = nil
     ) {
         self.store = store ?? .shared
+        // SIN `attestProvider` a propósito: `GET`/`POST /account/entitlement` van por `requireUser`
+        // (`gateway/src/sync/entitlement.ts:54,123`) y NO exigen App Attest.
         self.client = client ?? CloudAccountClient()
         self.jwtProvider = jwtProvider ?? { await CloudAuthService.shared.accessToken() }
         self.userIDProvider = userIDProvider ?? { CloudAuthService.shared.currentUserID }

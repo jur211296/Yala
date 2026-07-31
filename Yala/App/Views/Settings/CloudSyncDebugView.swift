@@ -30,6 +30,8 @@ final class CloudSyncDebugModel {
     var credentialStatus: String?
 
     private let auth = CloudAuthService.shared
+    /// SIN `attestProvider` a propósito: el único método que usa es `claim` → `POST /account/claim`, que
+    /// va por `requireUser` (`gateway/src/sync/account.ts:68`) y NO exige App Attest.
     private let accountClient = CloudAccountClient()
 
     var isConfigured: Bool { CloudBackendConfig.isConfigured }

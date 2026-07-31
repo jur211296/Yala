@@ -290,7 +290,8 @@ struct GroupFormView: View {
                     // → yala_bad_input permanente si vacío).
                     let profile = UserDefaults.standard.string(forKey: "userName") ?? ""
                     let displayName = profile.isEmpty ? L10n.Profile.defaultName : profile
-                    _ = try await GroupBackendMembershipService(client: GroupsMembershipClient())
+                    _ = try await GroupBackendMembershipService(
+                        client: GroupsMembershipClient(attestProvider: AttestSessionProvider.live))
                         .createGroup(
                             name: trimmedName,
                             iconName: iconName,

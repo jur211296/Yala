@@ -119,6 +119,9 @@ enum SIWAExchangeSeam {
         nonisolated static let live = Dependencies(
             accessToken: { await CloudAuthService.shared.accessToken() },
             exchange: { jwt, code in
+                // SIN `attestProvider` a propósito: `POST /account/siwa/exchange` va por `requireUser`
+                // (`gateway/src/sync/siwa.ts:100`) — es adyacente al sign-in, anterior al `/attest/bind`.
+                // Su hermano `siwaRevoke` SÍ lo lleva (`requireUserAndAttest`, `siwa.ts:167`).
                 let outcome = await CloudAccountClient().siwaExchange(jwt: jwt, authorizationCode: code)
                 switch outcome {
                 case .success(let refreshToken):
@@ -227,7 +230,7 @@ enum SIWATokenRevocation {
             currentAppleUserID: { CloudAuthService.shared.storedAppleUserID() },
             accessToken: { await CloudAuthService.shared.accessToken() },
             revoke: { jwt, refreshToken in
-                let client = CloudAccountClient(attestProvider: AccountDeletionService.Dependencies.liveAttest)
+                let client = CloudAccountClient(attestProvider: AttestSessionProvider.live)
                 return await client.siwaRevoke(jwt: jwt, refreshToken: refreshToken) == .success
             },
             clearPair: { SIWARefreshTokenStore().clear() }

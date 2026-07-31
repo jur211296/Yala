@@ -49,13 +49,15 @@ enum GroupBackendInviteEntryHandler {
     /// `join_group` RPC. Default = servicio real (gate `groupsBackendEnabled && hasSession`).
     static var joinProvider: @MainActor (_ token: String, _ displayName: String, _ legacyMemberKey: String?) async throws -> JoinGroupResult = {
         token, displayName, legacyMemberKey in
-        try await GroupBackendMembershipService(client: GroupsMembershipClient())
+        try await GroupBackendMembershipService(
+            client: GroupsMembershipClient(attestProvider: AttestSessionProvider.live))
             .join(token: token, displayName: displayName, legacyMemberKey: legacyMemberKey)
     }
     /// `update_member_display_name` RPC (corrección R1). Default = servicio real.
     static var updateDisplayNameProvider: @MainActor (_ groupID: String, _ displayName: String) async throws -> UpdateDisplayNameResult = {
         groupID, displayName in
-        try await GroupBackendMembershipService(client: GroupsMembershipClient())
+        try await GroupBackendMembershipService(
+            client: GroupsMembershipClient(attestProvider: AttestSessionProvider.live))
             .updateDisplayName(groupID: groupID, displayName: displayName)
     }
 

@@ -145,6 +145,12 @@ final class GroupsMembershipClient {
         try? await Task.sleep(for: .seconds(seconds))
     }
 
+    /// El default `{ nil }` de `attestProvider` es **SOLO PARA TESTS**: TODA ruta de este cliente es
+    /// `POST /groups/rpc/{fn}`, que exige App Attest bajo `enforce` (`gateway/src/groups/rpc.ts:81-83`).
+    /// Producción DEBE pasar `AttestSessionProvider.live` — sin él, 401 `yala_attest_required`. No se
+    /// invierte el default porque ~20 construcciones de la suite lo usan y llamarían al App Attest REAL
+    /// (red) en un unit test. Lo que impide que nazca un call-site de producción sin él es
+    /// `AttestWiringTests`, no el compilador.
     init(
         baseURL: URL = ProxyConfig.baseURL,
         tokenProvider: @escaping @MainActor () async -> String? = { await CloudAuthService.shared.accessToken() },

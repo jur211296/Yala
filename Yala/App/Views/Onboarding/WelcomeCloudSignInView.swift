@@ -395,6 +395,9 @@ struct WelcomeCloudSignInView: View {
             return
         }
 
+        // `CloudAccountClient` SIN `attestProvider` a propósito: `GET /account/exists` va por `requireUser`
+        // (`gateway/src/sync/account.ts:256`). Es PRE-SESIÓN de nube por definición — cablear attest aquí
+        // es justo lo que puede romper el alta.
         switch CloudWelcomeSignInFlow.route(await CloudAccountClient().exists(jwt: jwt)) {
         case .accountMissing:
             // Guard R9 SUB-FIRST (sesión 2, H4): antes del `.notFound` engañoso, consultar el

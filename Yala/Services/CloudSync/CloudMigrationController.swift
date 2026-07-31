@@ -202,6 +202,10 @@ final class CloudMigrationController {
     /// (dry-run de huérfanas) sin duplicar la construcción — evita DOS runners vivos.
     static func makeExecutor(context: ModelContext, deviceID: String) -> MigrationWorkExecutor {
         let session = LiveCloudSessionProvider()
+        // SIN `attestProvider` a propósito: `MigrationWorkExecutor` solo le pide `claim` y
+        // `migrationProgress` → `POST /account/claim` y `POST /account/migration`, ambos por `requireUser`
+        // (`gateway/src/sync/account.ts:68,132`). Los clients de sync que SÍ lo exigen (`push`/`pull`/
+        // `merkle`) reciben `attest` tres líneas más abajo.
         let account = CloudAccountClient()
         let engine = CloudSyncEngine()
         let token: () async -> String? = { await CloudAuthService.shared.accessToken() }

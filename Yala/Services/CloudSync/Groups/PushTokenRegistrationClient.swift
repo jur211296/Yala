@@ -40,6 +40,10 @@ final class PushTokenRegistrationClient {
     private let urlSession: SyncHTTPSession
     private let logger = Logger(subsystem: "com.yala.app", category: "PushRegister")
 
+    /// El default `{ nil }` de `attestProvider` es **SOLO PARA TESTS**: sus dos rutas (`/push/register`,
+    /// `/push/unregister`) pasan por `requireUserAndAttest` (`gateway/src/push/register.ts:24,64`, que
+    /// REUSA la guard de `groups/routes.ts`). Producción DEBE pasar `AttestSessionProvider.live`.
+    /// Pinneado por `AttestWiringTests` — el compilador no lo comprueba.
     init(
         baseURL: URL = ProxyConfig.baseURL,
         tokenProvider: @escaping @MainActor () async -> String? = { await CloudAuthService.shared.accessToken() },

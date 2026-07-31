@@ -112,6 +112,30 @@ Qué entra en este commit, además del flip:
 > de docs inmediatamente posterior. Es la tercera vez que pasa en esta épica (el commit 0 de la Fase 3 y el
 > paso 1 se anotaron tarde) y la primera en que la ventana es de un commit y no de días.
 
+#### Corrección posterior al paso 3 — el header de App Attest que faltaba en el canal de Grupos
+
+| Pieza | Commit | ¿Revert de git lo deshace? |
+|---|---|---|
+| `attestProvider` cableado en las 9 construcciones de producción cuyas rutas exigen App Attest + `AttestSessionProvider` | `fix(nube): el canal de Grupos ya manda el token de App Attest` (hash en el commit de docs siguiente — §5) | **Sí**, limpio — solo cliente, no toca gateway ni servidor |
+
+**Este commit NO es parte del encendido: es lo que el encendido destapó.** Con el percent en 100 y
+`ENFORCE = "enforce"`, crear un grupo devolvía 401 `yala_attest_required` — el device registraba App Attest
+bien, pero el header `X-Yala-Attest-Session` no viajaba en `/groups/*`. Nueve construcciones de clients se
+habían quedado con el default `{ nil }` de su init.
+
+**Revertirlo devuelve el 401 y deja Grupos inoperativo con el percent en 100.** Si hiciera falta echar atrás
+por otro motivo, el orden correcto es bajar primero el kill-switch (`GROUPS_BACKEND_ROLLOUT_PERCENT` → `0` +
+`npm run deploy:production`) y solo después revertir el cliente: al revés se queda un canal encendido que no
+sabe atestar.
+
+**Por qué no lo cazó nadie, y qué implica para el runbook:** staging corre `ENFORCE = "observe"`
+(`gateway/wrangler.toml`, `[vars]`) — ahí el token ausente se cuenta pero **no bloquea**, así que todo el
+incremento G2 se construyó y se validó contra un gateway que no lo exigía. La regla durable está en
+`.claude/rules/gateway-attest.md`; el invariante lo sostiene `YalaTests/CloudSync/AttestWiringTests.swift`
+(source-scan, con conteo esperado por cliente). **En un incidente, NO bajes `ENFORCE` a `"observe"` para
+diagnosticar**: apagaría App Attest para todo el tráfico del gateway, incluido el proxy de IA cuyas API keys
+son la razón de que exista.
+
 ### Fase 1 — cierre del servidor y muerte de la migración
 
 | Paso | Commit | ¿Revert de git lo deshace? |

@@ -114,11 +114,21 @@ final class CloudAccountClient {
     /// - Parameters:
     ///   - baseURL: gateway (default `ProxyConfig.baseURL`, per-scheme).
     ///   - urlSession: inyectable para tests (reusa `SyncHTTPSession` del push client).
-    ///   - attestProvider: token de sesión de App Attest. Default `{ nil }` ⇒ claim/exists/migration/
-    ///     siwaExchange NO envían attest (asimetría deliberada — el gate de cuenta y el sign-in preceden
-    ///     al `/attest/bind`). Lo adjuntan `deleteAccount` (G5-D1) y `siwaRevoke` (B1) — ambos pasos del
-    ///     mismo flujo destructivo (`requireUserAndAttest`, molde `/groups/rpc`); en producción se
-    ///     inyecta `{ try? await AppAttestClient.shared.currentSessionToken() }`.
+    ///   - attestProvider: token de sesión de App Attest. **Este cliente es el ÚNICO cuyo default
+    ///     `{ nil }` es correcto en producción**, porque es el único que habla con rutas de las DOS
+    ///     clases; el criterio es la guard del handler en el gateway, no el cliente:
+    ///
+    ///       · `requireUser` (NO exige attest) → `claim` · `exists` · `migrationProgress` ·
+    ///         `siwaExchange` · `entitlement`/`bindEntitlement`. Son flujos PRE-SESIÓN o adyacentes al
+    ///         sign-in, anteriores al `/attest/bind`: cablear attest ahí puede romper el alta.
+    ///         Handlers: `sync/account.ts:68,132,256`, `sync/siwa.ts:100`, `sync/entitlement.ts:54,123`.
+    ///       · `requireUserAndAttest` (SÍ exige, 401 bajo `enforce`) → `deleteAccount` (G5-D1,
+    ///         `sync/account.ts:213`) y `siwaRevoke` (B1, `sync/siwa.ts:167`): mismo flujo destructivo,
+    ///         molde `/groups/rpc`. Sus DOS call-sites inyectan `AttestSessionProvider.live`.
+    ///
+    ///     ⚠️ Al añadir un método nuevo a esta clase, mira la guard de SU handler antes de decidir. Los
+    ///     clientes de Grupos/push no tienen esta ambigüedad: TODAS sus rutas exigen attest, y su default
+    ///     `{ nil }` es solo para tests (lo pinnea `AttestWiringTests`).
     init(
         baseURL: URL = ProxyConfig.baseURL,
         urlSession: SyncHTTPSession = URLSession.shared,

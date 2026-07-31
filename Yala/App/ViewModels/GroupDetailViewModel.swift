@@ -459,7 +459,8 @@ final class GroupDetailViewModel {
                 // en la misma sesión de la vista (tokens múltiples son válidos igual). Nota A1: no emitir links
                 // backend hasta que la base instalada tenga el parser — el flag lo cubre por construcción.
                 shareURL = try await GroupBackendInviteService(
-                    membership: GroupBackendMembershipService(client: GroupsMembershipClient())
+                    membership: GroupBackendMembershipService(
+                        client: GroupsMembershipClient(attestProvider: AttestSessionProvider.live))
                 ).createInviteLink(for: group, inviterName: currentInviterName, members: activeMembers)
             } else {
                 // Grupo CloudKit (flag OFF o grupo no-backend) → CKShare byte-idéntico.

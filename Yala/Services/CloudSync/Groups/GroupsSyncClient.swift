@@ -41,7 +41,13 @@ final class GroupsSyncClient {
     // COMPOSICIÓN de producción (AJUSTE review #7): inyecta el provider registrar-backed del device token para
     // el header `X-Yala-Device-Token` del push (G8-3). El init designado tiene default `{ nil }` (los tests no
     // se acoplan al singleton); solo aquí, en el `.shared`, se ata a `PushTokenRegistrar.shared.storedToken`.
+    //
+    // `attestProvider` es OBLIGATORIO aquí, y su ausencia fue el 401 del 2026-07-31: `POST /groups/push` y
+    // `GET /groups/pull` pasan por `requireUserAndAttest` (`gateway/src/groups/routes.ts:67-73`), que bajo
+    // `ENFORCE = "enforce"` responde `yala_attest_required` sin el header. Cablearlo aquí cablea TAMBIÉN el
+    // `GroupsMerkleClient` de `GET /groups/merkle`: el init lo construye reenviando ESTE provider (:234).
     static let shared = GroupsSyncClient(
+        attestProvider: AttestSessionProvider.live,
         deviceTokenProvider: { PushTokenRegistrar.shared.storedToken })
 
     // MARK: Constantes
@@ -199,6 +205,11 @@ final class GroupsSyncClient {
 
     // MARK: Init
 
+    /// El default `{ nil }` de `attestProvider` es **SOLO PARA TESTS**: `POST /groups/push` y
+    /// `GET /groups/pull` pasan por `requireUserAndAttest` (`gateway/src/groups/routes.ts:67-73`).
+    /// Producción DEBE pasar `AttestSessionProvider.live` — y lo hace en un único sitio, el `.shared` de
+    /// arriba. No se invierte el default porque ~20 construcciones de la suite lo usan y llamarían al App
+    /// Attest REAL (red) en un unit test. Pinneado por `AttestWiringTests`.
     init(
         baseURL: URL = ProxyConfig.baseURL,
         tokenProvider: @escaping @MainActor () async -> String? = { await CloudAuthService.shared.accessToken() },

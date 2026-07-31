@@ -458,7 +458,8 @@ struct GroupMembersView: View {
                 let name = UserDefaults.standard.string(forKey: "userName") ?? ""
                 let inviterName = name.isEmpty ? L10n.Profile.defaultName : name
                 shareURL = try await GroupBackendInviteService(
-                    membership: GroupBackendMembershipService(client: GroupsMembershipClient())
+                    membership: GroupBackendMembershipService(
+                        client: GroupsMembershipClient(attestProvider: AttestSessionProvider.live))
                 ).createInviteLink(for: group, inviterName: inviterName, members: viewModel.activeMembers)
             } else {
                 // Grupo CloudKit (flag OFF o grupo no-backend) → CKShare byte-idéntico.
