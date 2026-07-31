@@ -27,9 +27,15 @@ final class OnboardingGroupsOnlyGuardUITests: XCTestCase {
     /// Avanza del step de nombre al paso Propósito y devuelve la app ya en ese paso.
     /// `fakeICloud` fuerza `isAccountAvailable=true` (para el happy-path que necesita
     /// pasar el guard de iCloud, imposible en sim sin este hook).
-    private func launchAtPurposeStep(fakeICloud: Bool = false) -> XCUIApplication {
+    ///
+    /// `cloudSession` finge la sesión de NUBE, que es otro gate distinto: `-uitest-fake-icloud` habla
+    /// de la cuenta de iCloud del OS y no crea sesión backend. Lo necesita el happy-path porque
+    /// aterriza en el tab Grupos vacío, y con `groupsBackendEnabled` ON —todo XCUITest bajo Yala Dev—
+    /// ese landing sin sesión es el empty state de RE-ENTRADA, no el estándar que este test asserta.
+    private func launchAtPurposeStep(fakeICloud: Bool = false, cloudSession: Bool = false) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchForUITest(skipOnboarding: false, seed: nil, onboarding: true, fakeICloud: fakeICloud)
+        app.launchForUITest(skipOnboarding: false, seed: nil, onboarding: true,
+                            fakeICloud: fakeICloud, cloudSession: cloudSession)
 
         let nameField = app.textFields["onboarding_name_field"]
         XCTAssertTrue(nameField.waitForExistence(timeout: 30), "No apareció onboarding_name_field.")
@@ -75,8 +81,11 @@ final class OnboardingGroupsOnlyGuardUITests: XCTestCase {
     /// grupos" avanza al paso de moneda (sin guard), donde el botón "Continuar" está
     /// HABILITADO aunque el campo de nombre de cuenta esté oculto — regresión del bug
     /// del "botón Continuar muerto" (fix 2.0.5). Completa y aterriza en el tab Grupos.
+    /// La sesión de nube va fingida porque la aserción final espera el empty state ESTÁNDAR
+    /// del tab (ver el docblock de `launchAtPurposeStep`); lo que este caso prueba es el
+    /// onboarding, no la rama de re-entrada, que tiene su propio test en GroupsEmptyStateUITests.
     func test_groupsOnly_withICloud_currencyStepEnablesContinueAndCompletes() {
-        let app = launchAtPurposeStep(fakeICloud: true)
+        let app = launchAtPurposeStep(fakeICloud: true, cloudSession: true)
 
         let groupsCard = app.buttons["onboarding_purpose_groups"]
         XCTAssertTrue(groupsCard.waitForExistence(timeout: 10), "No apareció la card de solo-grupos.")

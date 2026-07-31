@@ -71,10 +71,26 @@ final class GroupsSmokeUITests: XCTestCase {
         )
     }
 
+    /// Variante de `launchOnGroups()` con sesión de nube FINGIDA y consent de Grupos ya aceptado.
+    ///
+    /// Con `groupsBackendEnabled` ON —lo que ocurre en TODO XCUITest bajo `Yala Dev`— abrir el form de
+    /// crear grupo exige AMBAS cosas: `GroupCreateRoutingLogic.route` rutea a sign-in sin sesión, y al
+    /// consent con sesión pero sin consent. En los dos casos el form no llega a montarse, que es lo que
+    /// puso este test en rojo tras el flip `5490544d`. Ninguno de los dos args crea backend real: el
+    /// guardado seguiría muriendo en el guard del JWT, y este test no guarda — solo abre el formulario.
+    /// El helper es aparte para que los otros siete casos conserven sus launch args byte-idénticos.
+    private func launchOnGroupsWithSession() -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchForUITest(pro: true, seed: "grupos", deeplink: "groups",
+                            cloudSession: true, groupsConsent: true)
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        return app
+    }
+
     /// groups-form: el FAB despliega el menú y "Nuevo grupo" abre el formulario de crear grupo.
     /// (Con ≥1 grupo elegible el FAB es expandible; el seed `grupos` cumple esa condición.)
     func test_groupFormOpens() {
-        let app = launchOnGroups()
+        let app = launchOnGroupsWithSession()
 
         let fab = app.buttons["groups_fab_new"]
         XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció el FAB de Grupos.")

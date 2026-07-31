@@ -202,7 +202,20 @@ final class CloudAuthService: NSObject {
     }
 
     /// ¿Hay una sesión almacenada (con refresh token)?
-    var hasSession: Bool { client?.currentSession != nil }
+    ///
+    /// Seam DEBUG-only (`-uitest-fake-cloud-session`): en release el `#if` no existe y el cuerpo es
+    /// byte-idéntico. El override llega SOLO hasta aquí y NO se propaga a `currentUserID` (:200),
+    /// `canRenewSession`, `sessionExpiry` ni `accessToken()` — a propósito: fingir el `sub` volvería
+    /// alcanzables los resolvedores de identidad del canal backend con una identidad que no existe, y
+    /// fabricar un JWT mandaría credenciales basura a un backend real. Con el token todavía `nil`, cada
+    /// cliente del canal lanza en su propio guard antes de tocar la red ⇒ un XCUITest que finge sesión
+    /// sigue haciendo CERO tráfico. Ver `UITestHooks.fakeCloudSession` para el porqué del seam.
+    var hasSession: Bool {
+        #if DEBUG
+        if UITestHooks.fakeCloudSession { return true }
+        #endif
+        return client?.currentSession != nil
+    }
 
     /// Contrato I7c (preflight de I9): `true` siempre que HAY sesión almacenada — tener sesión implica
     /// tener refresh token. Cuando el refresh falla terminal, el SDK limpia el storage → `currentSession`

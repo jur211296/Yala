@@ -581,6 +581,12 @@ final class AppBootstrapper {
             //    pegajosas de `.standard` (misma clase que el snapshot de remote-config). El
             //    servicio NO arranca bajo uitest, pero una corrida manual previa las deja.
             MetricsService.resetLocalState()
+            //  · Consent de Grupos (`-uitest-groups-consent`): sus 2 keys son UserDefaults de la
+            //    MISMA clase pegajosa. Sin esto, una corrida CON el arg dejaría el consent aceptado
+            //    para la siguiente, y un test que espera ver el gate de consent pasaría en verde sin
+            //    haberlo ejercitado nunca. Se limpian aquí y se re-siembran abajo si el arg viene.
+            UserDefaults.standard.removeObject(forKey: PrefSyncKey.groupsConsentAcceptedAt.rawValue)
+            UserDefaults.standard.removeObject(forKey: PrefSyncKey.groupsConsentTextVersion.rawValue)
         }
         // Estado Pro determinista según el launch arg, idempotente entre tests.
         // `devForceProTier` se persiste en UserDefaults (`dev.forceProTier`) y el wipe
@@ -602,6 +608,17 @@ final class AppBootstrapper {
             OnboardingMode.setCurrent(.groupInvite)
             SessionState.shared.onboardingMode = .groupInvite
             SessionState.shared.selectedMainTab = .groups
+        }
+        // `-uitest-groups-consent`: consent de Grupos por sembrado DIRECTO de sus dos keys (el
+        // `rawValue` de `PrefSyncKey` ES la key de UserDefaults, declarado en PreferenceMergeLogic).
+        // NO se usa `GroupsConsentState.register()` a propósito: ese camino va por
+        // `PreferenceSyncService` (iKV en `.icloud` / outbox en `.cloud`) y un XCUITest no debe encolar
+        // preferencias. Va DESPUÉS del bloque de reset, que borra estas mismas keys.
+        if UITestHooks.groupsConsentAccepted {
+            UserDefaults.standard.set(Int(Date().timeIntervalSince1970),
+                                      forKey: PrefSyncKey.groupsConsentAcceptedAt.rawValue)
+            UserDefaults.standard.set(GroupsConsentState.textVersion,
+                                      forKey: PrefSyncKey.groupsConsentTextVersion.rawValue)
         }
         // El What's New de la versión corriente se marca visto en todo arranque
         // uitest: con contenido publicado para la versión (WhatsNewConfig), el sheet

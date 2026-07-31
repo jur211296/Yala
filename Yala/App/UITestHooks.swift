@@ -68,7 +68,36 @@ final class UITestHooks {
     /// (`CloudAuthService.hasSession` global NO se toca): solo hace visible la fila + el diálogo; tocar
     /// «Continuar → Eliminar» no completa (no hay backend). Combinar con `-uitest-seed grupos` para que
     /// el usuario tenga saldos pendientes → aparece el aviso. Solo DEBUG (inerte en release vía `hasArg`).
+    ///
+    /// NO CONFUNDIR con `-uitest-fake-cloud-session` (abajo), su vecino tipográfico: aquel fuerza el
+    /// predicado GLOBAL de sesión y este solo el input de DOS filas de Perfil. Fusionarlos rompería
+    /// `YalaAccountUITests` y `DeleteAccountDialogUITests`, que dependen de que con este arg el path de
+    /// cierre siga siendo `.privateReset` y el layout de Perfil no gane la fila solo-grupos.
     nonisolated static var fakeBackendSession: Bool { hasArg("-uitest-fake-backend-session") }
+
+    /// `-uitest-fake-cloud-session`: fuerza el predicado GLOBAL `CloudAuthService.hasSession` a `true`
+    /// (el `#if DEBUG` vive en `CloudAuthService.swift`). Existe porque con `groupsBackendEnabled` ON
+    /// —lo que ocurre en TODO XCUITest bajo `Yala Dev`, donde el default-ausente de remote-config es ON—
+    /// Grupos exige sesión POR DISEÑO: sin ella el tab pinta el empty state de re-entrada
+    /// (`GroupsEmptyStateLogic.decide` → `.signInToView`) y «Nuevo grupo» rutea al sign-in
+    /// (`GroupCreateRoutingLogic.route` → `.needsSignIn`), así que los XCUI escritos para el canal
+    /// CloudKit no llegan ni al empty state estándar ni al formulario.
+    ///
+    /// NO crea una sesión Supabase real, y eso es deliberado: `currentUserID`, `sessionExpiry`,
+    /// `canRenewSession` y `accessToken()` quedan intactos (`nil`/`false`). Es justo lo que mantiene el
+    /// tráfico HTTP en CERO —cada cliente del canal tiene un SEGUNDO guard sobre el JWT y lanza antes de
+    /// tocar `URLSession`— y lo que deja byte-idéntica la resolución de identidad por `sub`. Fabricar un
+    /// JWT mandaría credenciales basura a un backend real. Solo DEBUG (inerte en release vía `hasArg`).
+    nonisolated static var fakeCloudSession: Bool { hasArg("-uitest-fake-cloud-session") }
+
+    /// `-uitest-groups-consent`: da por aceptado el consent de Grupos (§C5) sembrando sus dos keys de
+    /// `UserDefaults` desde `AppBootstrapper`, SIN pasar por `GroupsConsentState.register()` —ese camino
+    /// escribe por `PreferenceSyncService` (iKV en `.icloud`, outbox en `.cloud`) y un XCUITest no debe
+    /// encolar preferencias—. Es ORTOGONAL a `-uitest-fake-cloud-session` porque el gate de crear grupo
+    /// tiene dos escalones: sin sesión rutea a sign-in, y CON sesión pero sin consent rutea al consent
+    /// (`GroupCreateRoutingLogic.route`). Separados, mañana se puede cubrir ese segundo escalón sin tocar
+    /// el seam. Solo DEBUG (inerte en release vía `hasArg`).
+    nonisolated static var groupsConsentAccepted: Bool { hasArg("-uitest-groups-consent") }
 
     /// `-uitest-groups-batch-demo`: QA/XCUITest del batch "salir de todos mis grupos" (D10) SIN backend ni
     /// iCloud (imposibles en sim — la ejecución real de leave/transfer es device/TestFlight). Fuerza que la

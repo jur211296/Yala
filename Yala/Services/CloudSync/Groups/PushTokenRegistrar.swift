@@ -81,6 +81,14 @@ final class PushTokenRegistrar {
     /// Sube el token al backend si `groupsBackendEnabled && hasSession` y hay token. NO-OP total con el flag
     /// OFF (SIEMPRE esta fase) o sin sesión: retorna ANTES de tocar la red. Idempotente (upsert server-side).
     func attemptUpload() {
+        // Bajo XCUITest la sesión puede venir FINGIDA (`-uitest-fake-cloud-session`), y este es el único
+        // camino de subida cuyo último gate propio es `hasSession`: el del boot ya lo tapa
+        // `AppBootstrapper` (`if !uiTestActive`), pero el del AppDelegate (`capture(token:)` cuando APNs
+        // entrega el token) no pasaba por ningún guard de uitest. Hoy la petición muere igualmente en el
+        // guard del JWT de `PushTokenRegistrationClient.post`, así que esto no arregla un fallo: fija que
+        // un XCUITest ni siquiera arranque la Task de subida. Molde de `MetricsService`; inerte en
+        // release, donde `isActive` es siempre `false`.
+        guard !UITestHooks.isActive else { return }
         guard CloudSyncFlags.groupsBackendEnabled, hasSession(),
               let token = storedToken, !token.isEmpty else { return }
         uploadTask = Task { @MainActor [weak self] in

@@ -28,6 +28,8 @@ extension XCUIApplication {
         aiConsent: Bool = false,
         groupInvite: Bool = false,
         fakeICloud: Bool = false,
+        cloudSession: Bool = false,
+        groupsConsent: Bool = false,
         inviteOnboarding: Bool = false,
         joinPhase: String? = nil,
         joinSoftTimeout: String? = nil,
@@ -57,6 +59,12 @@ extension XCUIApplication {
         if aiConsent { args.append("-uitest-ai-consent") }
         if groupInvite { args.append("-uitest-group-invite") }
         if fakeICloud { args.append("-uitest-fake-icloud") }
+        // Sesión de nube fingida + consent de Grupos aceptado. Son parámetros nombrados y no
+        // `extraArguments:` crudo a propósito: `-uitest-fake-cloud-session` es vecino tipográfico de
+        // `-uitest-fake-backend-session` (otro hook, otro significado) y un typo en un string suelto
+        // daría un rojo MUDO — el arg desconocido se ignora en silencio.
+        if cloudSession { args.append("-uitest-fake-cloud-session") }
+        if groupsConsent { args.append("-uitest-groups-consent") }
         if inviteOnboarding { args.append("-uitest-invite-onboarding") }
         if let joinPhase {
             args.append("-uitest-join-phase")
