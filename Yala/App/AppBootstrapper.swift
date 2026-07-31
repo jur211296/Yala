@@ -1760,36 +1760,107 @@ final class AppBootstrapper {
     /// Procesa un universal link de invitación de grupo.
     /// Acceso internal para que YalaAppDelegate pueda llamarlo.
     func handleInviteLink(_ url: URL) {
-        // C2 (G4-invites, DARK): con `groupsBackendEnabled` ON, un link BACKEND (`g`+`t`) se enruta al
-        // handler nuevo ANTES del camino CKShare. Con el flag OFF ni se evalúa el parser → byte-idéntico.
-        if CloudSyncFlags.groupsBackendEnabled,
-           let backendInvite = InviteLinkService.extractBackendInvite(from: url) {
-            if !isInitialized {
-                // R4: persistir el intent backend y RETORNAR — el trigger boot del reconciler lo completa
-                // (el link backend JAMÁS cae al deferral CKShare de abajo). M1: alineado con el warm
-                // handle() — desbloquea beta + canario, o el invitado cold-launch quedaría detrás del
-                // beta gate sin ver su grupo.
-                UserDefaults.standard.set(true, forKey: AppPreferences.Keys.groupsBetaUnlocked)
-                GroupBackendInviteEntryHandler.persistIntent(
-                    groupID: backendInvite.groupID, token: backendInvite.token)
-                MetricsService.canary(.groupJoinIntentPersisted)
-                #if DEBUG
-                print("AppBootstrapper: Deferring BACKEND invite (persisted) — not yet initialized")
-                #endif
-                return
-            }
-            let branded = InviteLinkService.extractMetadata(from: url)
+        handleInviteLink(url, didRefreshFlags: false)
+    }
+
+    /// Enrutado por CANAL. **El parser backend se evalúa SIN gatear por el flag y ANTES del camino
+    /// CKShare**, y ese orden es el invariante — ver `GroupInviteChannelRoutingLogic`, que lleva el
+    /// porqué completo. Resumen de lo que costó (device, 2026-07-31): el gate `if
+    /// CloudSyncFlags.groupsBackendEnabled` prometía «con el flag OFF, byte-idéntico al camino
+    /// CKShare», pero un link backend NO cae al `guard let shareURL else` de abajo —
+    /// `extractShareURL` LO ACEPTA, porque su `s` decodifica a `…/invite?g=..&t=..`, una URL válida,
+    /// y el guard host/path valida el URL EXTERIOR. ⇒ el invite backend se colaba al canal CKShare
+    /// disfrazado y moría sin una sola línea de UI.
+    ///
+    /// `didRefreshFlags` solo lo pone a `true` la continuación de `.refreshFlagsThenRetry`.
+    private func handleInviteLink(_ url: URL, didRefreshFlags: Bool) {
+        let backendInvite = InviteLinkService.extractBackendInvite(from: url)
+
+        switch GroupInviteChannelRoutingLogic.route(
+            isBackendLink: backendInvite != nil,
+            flagEnabled: CloudSyncFlags.groupsBackendEnabled,
+            didRefreshFlags: didRefreshFlags
+        ) {
+        case .ckShare:
+            processCKShareInviteLink(url)
+
+        case .backend:
+            // `route` devuelve `.backend` solo con `isBackendLink == true` ⇒ el guard no es
+            // alcanzable; está por no forzar el unwrap (regla inviolable del repo).
+            guard let backendInvite else { return }
+            enterBackendInvite(groupID: backendInvite.groupID, token: backendInvite.token, url: url)
+
+        case .refreshFlagsThenRetry:
+            guard let backendInvite else { return }
+            // El intent va ANTES del await: si el refresh no vuelve (red muerta, kill del proceso),
+            // la intención del usuario ya está en disco y el reconciler la retoma en el siguiente
+            // boot/foreground con el flag ya encendido. `force: true` NO es cosmético — sin él
+            // `refreshIfDue` es un no-op en el caso EXACTO del bug («fetcheé hace menos de 6 h»);
+            // y es acción de usuario con intención explícita, no un poll, así que no toca
+            // `refreshMinInterval` para nadie más. El spam queda acotado por el guard `inFlight`
+            // del cliente y porque esta rama exige link backend Y flag OFF.
+            persistBackendInviteIntent(groupID: backendInvite.groupID, token: backendInvite.token)
+            logger.notice("Invite: backend link with flag OFF → forcing remote-config refresh")
             Task { @MainActor in
-                await GroupBackendInviteEntryHandler.handle(
-                    groupID: backendInvite.groupID,
-                    token: backendInvite.token,
-                    branded: branded,
-                    source: .universalLink
-                )
+                await RemoteConfigClient.shared.refreshIfDue(force: true)
+                self.handleInviteLink(url, didRefreshFlags: true)
             }
+
+        case .backendUnavailable:
+            guard let backendInvite else { return }
+            // Idempotente (upsert que preserva displayName/currency): cubre el caso de que esta rama
+            // se alcance sin haber pasado por la anterior.
+            persistBackendInviteIntent(groupID: backendInvite.groupID, token: backendInvite.token)
+            logger.error("Invite: backend link but channel still OFF after refresh — intent kept, informing user")
+            MetricsService.canary(.groupJoinIntentDeferred, detail: "backendChannelOff")
+            // `.showGroupSyncError` y NO `.showInviteError`: el título de ese último está hardcodeado
+            // a `groups.invite.linkInvalidTitle` («Enlace no válido»), que aquí sería FALSO — el
+            // enlace es perfecto, lo que está apagado es el canal — y mandaría al invitado a pedir
+            // uno nuevo que tampoco funcionaría. Mismo criterio que `handleJoinError`, que reserva
+            // `showInviteError` para el `invalidInvite` de verdad.
+            RouterEntryGate.shared.submit(.showGroupSyncError(
+                String(localized: "groups.invite.channelUnavailable")
+            ))
+        }
+    }
+
+    /// Beta unlock + intent DURABLE + canario. Es el par exacto que ya hacían el cold path y
+    /// `GroupBackendInviteEntryHandler.handle`; extraído porque ahora hay un tercer llamador (flag
+    /// OFF). El beta unlock va aquí y no solo en `handle` porque el reconciler completa el join vía
+    /// `drive`, que no lo toca: sin esto el invitado entraría al grupo y seguiría detrás del gate.
+    private func persistBackendInviteIntent(groupID: String, token: String) {
+        UserDefaults.standard.set(true, forKey: AppPreferences.Keys.groupsBetaUnlocked)
+        GroupBackendInviteEntryHandler.persistIntent(groupID: groupID, token: token)
+        MetricsService.canary(.groupJoinIntentPersisted)
+    }
+
+    /// Canal backend con el flag ON (comportamiento previo de la rama C2, sin cambios).
+    private func enterBackendInvite(groupID: String, token: String, url: URL) {
+        if !isInitialized {
+            // R4: persistir el intent backend y RETORNAR — el trigger boot del reconciler lo completa
+            // (el link backend JAMÁS cae al deferral CKShare del camino CKShare). M1: alineado con el
+            // warm handle() — desbloquea beta, o el invitado cold-launch quedaría detrás del beta gate
+            // sin ver su grupo.
+            persistBackendInviteIntent(groupID: groupID, token: token)
+            #if DEBUG
+            print("AppBootstrapper: Deferring BACKEND invite (persisted) — not yet initialized")
+            #endif
             return
         }
+        let branded = InviteLinkService.extractMetadata(from: url)
+        Task { @MainActor in
+            await GroupBackendInviteEntryHandler.handle(
+                groupID: groupID,
+                token: token,
+                branded: branded,
+                source: .universalLink
+            )
+        }
+    }
 
+    /// Canal CKShare de siempre. Solo lo alcanza un link que NO parsea como backend, con el flag
+    /// como esté — es lo que mantiene intacto el camino de los grupos que no migraron.
+    private func processCKShareInviteLink(_ url: URL) {
         guard let shareURL = InviteLinkService.extractShareURL(from: url) else {
             logger.error("Invalid invite link: \(url.absoluteString, privacy: .public)")
             RouterEntryGate.shared.submit(.showInviteError(

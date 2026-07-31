@@ -5425,3 +5425,6 @@
 
 /* Groups > Balances: error alert when deleting a confirmed settlement fails */
 "groups.settlement.deleteFailed" = "De afrekening kon niet worden verwijderd. Probeer het opnieuw.";
+
+/* Backend invite link arrived but the groups backend channel is off (remote flag/kill-switch). The link is valid; the intent stays persisted. */
+"groups.invite.channelUnavailable" = "We konden deze uitnodiging nu niet openen. We hebben je verzoek opgeslagen — probeer het over een moment opnieuw.";

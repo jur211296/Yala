@@ -5414,3 +5414,6 @@
 
 /* Groups > Balances: error alert when deleting a confirmed settlement fails */
 "groups.settlement.deleteFailed" = "Impossible de supprimer le règlement. Réessaie.";
+
+/* Backend invite link arrived but the groups backend channel is off (remote flag/kill-switch). The link is valid; the intent stays persisted. */
+"groups.invite.channelUnavailable" = "Nous n'avons pas pu ouvrir cette invitation pour le moment. Ta demande est enregistrée : réessaie dans un instant.";

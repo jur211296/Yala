@@ -5423,3 +5423,6 @@
 
 /* Groups > Balances: error alert when deleting a confirmed settlement fails */
 "groups.settlement.deleteFailed" = "Non è stato possibile eliminare la liquidazione. Riprova.";
+
+/* Backend invite link arrived but the groups backend channel is off (remote flag/kill-switch). The link is valid; the intent stays persisted. */
+"groups.invite.channelUnavailable" = "Non abbiamo potuto aprire questo invito adesso. Abbiamo salvato la tua richiesta: riprova tra un momento.";

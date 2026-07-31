@@ -46,6 +46,15 @@ nonisolated enum GroupBackendInviteEntryLogic {
 
     /// C2/R4: la rama backend del entry point solo se toma con el flag ENCENDIDO Y un link backend
     /// parseable. Flag OFF → nunca (byte-idéntico al camino CKShare actual).
+    ///
+    /// ⚠️ **YA NO ES LA SSOT DEL ENRUTADO, y su docblock describe una premisa REFUTADA en device el
+    /// 2026-07-31.** No tiene —ni tuvo nunca— un call-site de producción: solo tests. Y la promesa
+    /// «flag OFF → byte-idéntico al camino CKShare» es FALSA, porque `InviteLinkService.extractShareURL`
+    /// **acepta** un link backend (su `s` decodifica a una URL válida y el guard valida el URL
+    /// exterior) ⇒ con el flag OFF el invite se colaba al canal CKShare y moría sin UI. El enrutado
+    /// vive ahora en `GroupInviteChannelRoutingLogic.route`, que enruta por la FORMA DEL LINK y usa
+    /// el flag para decidir QUÉ hacer (incluido forzar un refresh del remote-config y reintentar).
+    /// Se conserva solo para no tocar sus tests en el commit del fix.
     static func routesToBackend(flagEnabled: Bool, backendInviteParsed: Bool) -> Bool {
         flagEnabled && backendInviteParsed
     }

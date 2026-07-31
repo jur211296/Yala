@@ -5425,3 +5425,6 @@
 
 /* Groups > Balances: error alert when deleting a confirmed settlement fails */
 "groups.settlement.deleteFailed" = "精算を削除できませんでした。もう一度お試しください。";
+
+/* Backend invite link arrived but the groups backend channel is off (remote flag/kill-switch). The link is valid; the intent stays persisted. */
+"groups.invite.channelUnavailable" = "この招待を今は開けませんでした。リクエストは保存したので、少し経ってからもう一度お試しください。";
