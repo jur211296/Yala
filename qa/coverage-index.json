@@ -284,13 +284,14 @@
       "codeGlobs": [
         "Yala/Services/CloudSync/AccountClaimDecision.swift",
         "Yala/Services/CloudSync/AttestSyncGate.swift",
-        "Yala/Services/CloudSync/SessionExpiryPolicy.swift"
+        "Yala/Services/CloudSync/SessionExpiryPolicy.swift",
+        "Yala/App/Logic/AttestKeyRecoveryLogic.swift"
       ],
       "scenarioIDs": [],
       "classification": "manual",
-      "coverage": "unit:YalaTests/CloudSync/AccountClaimDecisionTests,AttestSyncGateTests,SessionExpiryPolicyTests (máquinas de decisión pure-logic I7b, DARK — consumidor I7c) + goldens gateway/test/account.goldens.test.ts (claim atómico vs staging)",
+      "coverage": "unit:YalaTests/CloudSync/AccountClaimDecisionTests,AttestSyncGateTests,SessionExpiryPolicyTests (máquinas de decisión pure-logic I7b, DARK — consumidor I7c) + unit:YalaTests/AttestKeyRecoveryLogicTests (descartar el keyId de App Attest solo cuando el error dice que la key NO SIRVE; serverUnavailable propaga — medido en device 2026-07-31) + goldens gateway/test/account.goldens.test.ts (claim atómico vs staging)",
       "owner": "",
-      "lastVerified": "2026-07-08"
+      "lastVerified": "2026-07-31"
     },
     {
       "area": "cloud-auth-session",

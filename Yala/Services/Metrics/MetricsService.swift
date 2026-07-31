@@ -61,6 +61,9 @@ enum MetricsCanary: String {
     case cloudSyncCoherenceGroupPartial
     case cloudSignInProviderMismatch
     case cloudSyncBlockedByAttestUnavailable
+    /// El keyId guardado ya no designaba una key usable y se descartó para re-registrar. >0 sostenido =
+    /// algo invalida keys en masa; un pico tras un release = usuarios reinstalando (esperado, se auto-cura).
+    case attestKeyDiscardedAfterAssertFailure
     case cloudSyncBlockedByExpiredSession
     case cloudSyncOutboxMirrorRehydrated
     case cloudSyncOutboxMirrorDivergence

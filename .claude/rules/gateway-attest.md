@@ -73,3 +73,72 @@ inyectan el proveedor — no el cliente entero.
    `{ nil }` explícito también. Si solo cae uno de los dos, el test comprueba la forma y no el fondo.
 3. **El e2e en device contra producción lo hace el owner con un build nuevo.** Quien escribe el fix NO
    tiene forma de ejercitarlo y no debe declararlo verificado.
+
+## El SEGUNDO fallo del mismo día: el header estaba cableado y el token no se podía acuñar
+
+El e2e del punto 3 se hizo, y destapó una causa distinta con el MISMO síntoma en pantalla. Precisión sobre
+el §1: «el device atestaba bien» era cierto para el primer bloqueante, **no en general**. Con el cableado ya
+dentro (`c267db5d`, build 7) crear un grupo seguía dando 401, porque el token no llegaba a existir.
+
+**Medido con una sonda en device** (build Debug del scheme `Yala` — que apunta a PRODUCCIÓN, porque
+`ProxyConfig.baseURL` conmuta por `DEV_BUILD`, no por Debug/Release):
+
+    camino=ASSERT keyIdLen=44 vacio=false
+    pre-generateAssertion keyIdLen=44 challengeLen=76 hashLen=32
+    falló | Domain=com.apple.devicecheck.error Code=2
+
+Todos los inputs BIEN formados y aun así `DCErrorInvalidInput`. La causa:
+
+> **La key de App Attest muere con la INSTALACIÓN de la app (vive en el Secure Enclave, atada a la
+> instancia). El string del keyId SOBREVIVE en el Keychain.** Tras reinstalar, el keyId designa una key que
+> ya no existe.
+
+Y el fallo era **permanente y silencioso** por cuatro cosas que se sumaban: `generateAssertion` fallaba con
+un `DCError` **local**; el `catch` solo cubría `AppAttestError.unknownKey`, que se lanza EXCLUSIVAMENTE al
+leer una respuesta del gateway ⇒ nunca re-registraba; nada borraba el keyId ⇒ cada intento releía el mismo;
+y el `try?` de `AttestSessionProvider` con los logs bajo `#if DEBUG` no dejaba rastro en producción.
+**Alcance: cualquier usuario que hubiera reinstalado la app se quedaba sin Grupos, sin Yala IA y sin proxy
+de tipos de cambio, para siempre, viendo «Inténtalo en unos minutos».** No lo introdujo el Modo Nube: el
+encendido de Grupos solo le dio una superficie visible.
+
+### Reglas que salen de aquí
+
+- **Una recuperación que solo escucha al SERVIDOR no se dispara nunca en local.** `unknownKey` es una señal
+  de respuesta HTTP; un `DCError` no pasa por ahí. Quien escriba «recuperación: si la key no sirve, re-registra»
+  tiene que cubrir las DOS procedencias. Decide `AttestKeyRecoveryLogic` (`Yala/App/Logic/`), que es el ÚNICO
+  punto de decisión a propósito — separarlo en dos `catch` es justo lo que dejó el camino local descubierto.
+- **El descarte va ACOTADO a `.invalidInput` y `.invalidKey`.** `DCError.h` es explícito con
+  `serverUnavailable`: «try the attestation again later using the SAME key and the same value for the
+  clientDataHash — retrying with the same inputs helps to preserve the risk metric for a given device». Un
+  `catch` genérico quemaría una key nueva en cada fallo de red. Pinneado por
+  `YalaTests/AttestKeyRecoveryLogicTests.swift`; `serverUnavailable_propaga` es la aserción que carga el peso.
+- **`KeychainService.getString` devuelve `""` y NO `nil` para un ítem de cero bytes** (`String(data:encoding:)`),
+  así que un `if let` pelado deja pasar un keyId vacío — que también es `InvalidInput`. Va con `!isEmpty`.
+- **El canario `attestKeyDiscardedAfterAssertFailure` es la superficie de observación** de este subsistema, y
+  está FUERA de `#if DEBUG` a propósito. Ojo: `AppAttestClient.ensureRegistered()` **no tiene call-sites**
+  (verificado 2026-07-31) pese a que su docblock promete calentar el token al launch — no lo uses como punto
+  de observación creyendo que corre.
+
+### Un build de Xcode NO puede validar un fix de attest contra producción
+
+`verifyAttestation.ts:79` compara el AAGUID byte a byte: con `ATTEST_ENV = "production"` exige
+`"appattest"+7×0x00`, y un build firmado en desarrollo manda `"appattestdevelop"` ⇒ **401
+`yala_attest_invalid: AAGUID no corresponde al entorno 'production'`**, siempre, por diseño. El scheme `Yala`
+en Debug tiene el bundle de producción y habla con producción, así que jamás obtendrá sesión.
+
+⇒ **el build de Xcode es una herramienta de DIAGNÓSTICO, no de validación.** Sirve para ver el error (los
+logs de `#if DEBUG` viven ahí) y para distinguir «murió antes de postear» de «llegó al servidor»: que aparezca
+un `POST /v1/attest/register` donde antes no aparecía nada ES la prueba de que el lado local se arregló. Para
+validar de verdad hace falta un build de distribución. Y si lo que quieres es ejercitar Grupos end-to-end sin
+esperar al archive, `Yala Dev` sí completa la atestación —va a staging, que es `ATTEST_ENV = "development"` con
+el bundle `.dev` y sirve los tres percents al 100—, pero es otro mundo de datos y corre en `observe`.
+
+### Método, que costó cuatro viajes
+
+Refutadas por el camino, todas plausibles y todas falsas: (1) «reinstalar cura la key rancia» —el Keychain
+sobrevive al borrado, así que reinstalar CAUSA el estado; (2) el entitlement —ningún `.entitlements` declara
+App Attest, y esa es la configuración normal y la que funcionaba; (3) la tormenta de peticiones —el segundo
+device no tenía sesión de nube, sus gates de Grupos estaban OFF y no podía tormentar, y fallaba igual; (4)
+caída de Apple —su status page daba App Attest operativo. **Una sonda de tres `print` dio la respuesta en una
+corrida.** Cuando el error es invisible por diseño, instrumentar es más barato que razonar: es la misma
+lección que la fila del `rollback()` en la Lista Negra.

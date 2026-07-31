@@ -8,7 +8,10 @@
 //
 //  - actor: serializa el refresh (single-flight) → una sola assertion en vuelo (el counter de App
 //    Attest debe crecer monotónicamente; varias en paralelo se rechazarían).
-//  - Recuperación: si el server no conoce la key (reinstall / reset), re-registra y reintenta.
+//  - Recuperación: si la key guardada ya no sirve, se descarta y se re-registra. Cubre las DOS formas,
+//    que no son la misma (medido en device el 2026-07-31): el gateway no la reconoce (`unknownKey`) O
+//    `generateAssertion` la rechaza LOCALMENTE porque la key murió con la instalación anterior mientras
+//    su keyId sobrevivía en el Keychain. Quién decide: `AttestKeyRecoveryLogic`.
 //  - Simulador / DEBUG: App Attest no corre en simulador → usa el bypass de dev (staging) si está
 //    configurado el secret; si no, la IA queda deshabilitada (degradación, sin crash).
 //
@@ -77,11 +80,29 @@ final class AppAttestClient {
         guard service.isSupported else {
             return try await devTokenOrThrow()
         }
-        if let keyId = KeychainService.getString(forKey: Self.keyIdKeychainKey) {
+        // `!isEmpty`: `KeychainService.getString` devuelve `String(data:encoding:)`, que para un ítem de
+        // cero bytes da "" y NO nil ⇒ un `if let` pelado dejaría pasar un keyId vacío al assert.
+        if let keyId = KeychainService.getString(forKey: Self.keyIdKeychainKey), !keyId.isEmpty {
             do {
                 return try await runAssert(service: service, keyId: keyId)
-            } catch AppAttestError.unknownKey {
-                return try await runRegister(service: service)
+            } catch {
+                // UN solo punto de decisión, en `AttestKeyRecoveryLogic`: el fallo del assert puede venir
+                // del gateway (`unknownKey`) o ser un `DCError` LOCAL de que el keyId ya no designa una
+                // key de esta instalación (reinstall). Antes solo se cubría el primero y el segundo dejaba
+                // el device sin attest PARA SIEMPRE — ver el docblock de esa lógica.
+                switch AttestKeyRecoveryLogic.decide(assertError: error) {
+                case .propagate:
+                    throw error
+                case .discardKeyAndRegister:
+                    KeychainService.delete(forKey: Self.keyIdKeychainKey)
+                    // Canario FUERA de `#if DEBUG` a propósito: este fallo era invisible en producción
+                    // (el `try?` de `AttestSessionProvider` más logs solo en Debug). Sin PII: el detalle
+                    // es el código de error, no el keyId.
+                    MetricsService.canary(
+                        .attestKeyDiscardedAfterAssertFailure,
+                        detail: "\((error as NSError).domain)#\((error as NSError).code)")
+                    return try await runRegister(service: service)
+                }
             }
         }
         return try await runRegister(service: service)
