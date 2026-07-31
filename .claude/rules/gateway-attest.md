@@ -115,9 +115,21 @@ encendido de Grupos solo le dio una superficie visible.
 - **`KeychainService.getString` devuelve `""` y NO `nil` para un ítem de cero bytes** (`String(data:encoding:)`),
   así que un `if let` pelado deja pasar un keyId vacío — que también es `InvalidInput`. Va con `!isEmpty`.
 - **El canario `attestKeyDiscardedAfterAssertFailure` es la superficie de observación** de este subsistema, y
-  está FUERA de `#if DEBUG` a propósito. Ojo: `AppAttestClient.ensureRegistered()` **no tiene call-sites**
-  (verificado 2026-07-31) pese a que su docblock promete calentar el token al launch — no lo uses como punto
-  de observación creyendo que corre.
+  está FUERA de `#if DEBUG` a propósito. La otra es el botón «refresh attest» de `CloudSyncDebugView`, que
+  pasa `ignoringBackoff: true` para que el panel no reporte un error viejo como si fuera del intento actual.
+  **No hay ningún calentador del token al launch.** Hubo uno en la firma, `AppAttestClient.ensureRegistered()`,
+  cuyo docblock prometía calentarlo «tras el consent de IA / al launch si ya hay Pro»: **nunca tuvo un solo
+  call-site**, así que la promesa era falsa y la consola salió muda a quien lo usó como punto de observación
+  para diagnosticar el 401 del 2026-07-31 — costó una vuelta entera de diagnóstico. Borrado ese mismo día en
+  vez de cablearlo, porque cablearlo no habría ahorrado latencia: `AppBootstrapper.loadExchangeRates` (paso 2
+  del bootstrap, con `await` en el camino crítico) ya pide token en el primer arranque de cada día UTC ⇒ el
+  caso dominante llega al primer uso de IA con el token en `cached`, y un warm-up concurrente se colgaría de
+  su single-flight. Con `SESSION_TTL_SECONDS = 15 * 60`, lo único que quedaba era «relanzar el mismo día y
+  tocar IA dentro de esos 15 min», y eso no paga el coste de gastar la escalera de `AttestRefreshBackoffLogic`
+  en un llamador que no atiende a nadie: un warm-up que falla sube la racha y el toque REAL que llega después
+  se encuentra la ventana ya consumida y recibe el error SIN intentarlo. ⇒ **si alguien vuelve a proponer un
+  warm-up, la carga de la prueba es una medición, y §«Un build de Xcode NO puede validar…» dice por qué no se
+  puede hacer con un build de Xcode.**
 
 ### Un build de Xcode NO puede validar un fix de attest contra producción
 

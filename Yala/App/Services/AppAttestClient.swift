@@ -17,6 +17,19 @@
 //    su keyId sobrevivía en el Keychain. Quién decide: `AttestKeyRecoveryLogic`.
 //  - Simulador / DEBUG: App Attest no corre en simulador → usa el bypass de dev (staging) si está
 //    configurado el secret; si no, la IA queda deshabilitada (degradación, sin crash).
+//  - Observación en producción: el canario `attestKeyDiscardedAfterAssertFailure` (en `performRefresh`,
+//    FUERA de `#if DEBUG` a propósito) y el botón «refresh attest» de `CloudSyncDebugView`. **Aquí NO hay
+//    un calentador al launch, y no es un olvido.** Lo hubo en la firma —`ensureRegistered()`, sin un solo
+//    call-site desde que nació, borrada el 2026-07-31— y su docblock prometía un calentamiento que no
+//    ocurría, así que la consola salió muda a quien la usó como punto de observación para diagnosticar el
+//    401 de ese día. No se cableó porque no habría ahorrado latencia: `AppBootstrapper.loadExchangeRates`
+//    (paso 2 del bootstrap, con `await`) ya pide token en el primer arranque de cada día UTC, así que el
+//    caso dominante llega al primer uso con el token en `cached`; y con `SESSION_TTL_SECONDS = 15 * 60` en
+//    el gateway, lo que quedaba —relanzar el mismo día y tocar IA dentro de esos 15 min— no compensa
+//    gastar la escalera de `AttestRefreshBackoffLogic` en un llamador que no atiende a ningún usuario: un
+//    warm-up que falla sube la racha y el toque REAL que llega después se encuentra la ventana ya
+//    consumida. Si algún día hace falta de verdad, mídelo primero — y ojo, no se puede medir con un build
+//    de Xcode: el AAGUID de desarrollo da 401 contra producción SIEMPRE (ver `.claude/rules/gateway-attest.md`).
 //
 
 import CryptoKit
@@ -99,18 +112,6 @@ final class AppAttestClient {
             refreshTask = nil
             lastFailure = (error, AttestRefreshBackoffLogic.record(previous: previousFailure, now: .now))
             throw error
-        }
-    }
-
-    /// Calienta el token en background (tras el consent de IA / al launch si ya hay Pro), para que
-    /// el primer uso no pague la latencia de attestación. Errores se tragan (best-effort).
-    func ensureRegistered() async {
-        do {
-            _ = try await currentSessionToken()
-        } catch {
-            #if DEBUG
-            print("AppAttestClient: ensureRegistered falló: \(error)")
-            #endif
         }
     }
 
