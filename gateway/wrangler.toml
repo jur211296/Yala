@@ -118,10 +118,19 @@ SIWA_KEY_ID = "PQ53RQ5D3G"
 CLOUD_MODE_ROLLOUT_PERCENT = "100"
 # Sigue en 0: es la card born-cloud del onboarding (D-A7), un escalón POSTERIOR y una decisión aparte.
 CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT = "0"
-# Sigue en 0. OJO para el paso 2 de D-R1: `CloudSyncFlags.groupsBackendEnabled` es
-# `groupsBackendCompiledDefault && CloudRemoteFlags.groupsBackendEnabled`, así que con esto en 0 el
-# flip del compilado sería un NO-OP. El flip necesita ESTE percent arriba también.
-GROUPS_BACKEND_ROLLOUT_PERCENT = "0"
+# EN 100 desde el 2026-07-31: es el paso 3 de D-R1, la segunda mitad del encendido de Grupos.
+# `CloudSyncFlags.groupsBackendEnabled` es `groupsBackendCompiledDefault && CloudRemoteFlags
+# .groupsBackendEnabled`, así que el flip compilado de `5490544d` era un NO-OP hasta esta línea.
+#
+# **ESTE es el kill-switch de Grupos, y es el único rollback rápido que queda.** Volver a "0" +
+# `npm run deploy:production` apaga el canal en segundos y devuelve las creaciones nuevas a CloudKit,
+# sin release. Tras la Fase 3 (que borra el transporte CloudKit) apagarlo dejará Grupos INOPERATIVO:
+# desde entonces es contención, no vuelta atrás — ver §3 de MODO-NUBE-ROLLBACK.
+#
+# Alcance real hoy: solo lo ven builds con `5490544d` (el compilado en `true`), y con sesión de nube
+# viva — sin sesión, `startIfEligible` retorna en su primer guard. Es decir, los dos teléfonos del
+# owner en TestFlight.
+GROUPS_BACKEND_ROLLOUT_PERCENT = "100"
 # Forzado de actualización (min-version): 0 = desactivado. Se sube al build mínimo soportado cuando
 # haya que forzar una versión crítica (requiere que /config esté vivo en prod — D9/Modo Nube).
 MIN_SUPPORTED_BUILD = "0"
