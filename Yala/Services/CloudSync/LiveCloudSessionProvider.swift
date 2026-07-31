@@ -45,6 +45,13 @@ final class LiveCloudSessionProvider: CloudSyncSessionProviding {
 
     /// Token de sesión de App Attest (REUSO `AppAttestClient`). Lanza `AppAttestError` — el runtime lo
     /// clasifica transient/terminal con `AttestSyncGate`.
+    ///
+    /// Sí, `AttestSessionProvider.live` llama a este MISMO método del mismo cliente, y no, no sobra
+    /// ninguno de los dos: aquel es `() async -> String?` con `try?` porque su consumidor son los clients
+    /// del gateway, que ponen el header o no lo ponen y no tienen dónde meter un error; este PROPAGA
+    /// porque el suyo es el runtime de sync, que necesita el `AppAttestError` tipado para decidir entre
+    /// reintentar y declarar el device incapaz de sincronizar. El razonamiento completo, con los
+    /// call-sites que lo demuestran, vive en el docblock de `AttestSessionProvider.swift`.
     func attestToken() async throws -> String? {
         try await AppAttestClient.shared.currentSessionToken()
     }

@@ -13,6 +13,23 @@
 //  2026-07-31, con `ENFORCE = "enforce"`, crear un grupo devolvía 401 `yala_attest_required`. La
 //  lección durable está en `.claude/rules/gateway-attest.md`; esta es su mitad de código.
 //
+//  POR QUÉ CONVIVE CON `LiveCloudSessionProvider.attestToken()` (`Yala/Services/CloudSync/`), que llama
+//  al MISMO `AppAttestClient.shared.currentSessionToken()`, y por qué NO se consolidan: **no son la
+//  misma cosa, y unificarlos rompería a uno de los dos.** Lo que difiere no es de dónde sale el token
+//  —se acuña en un solo sitio— sino el CONTRATO DE ERROR, y cada uno tiene el contrario:
+//
+//   · Aquí: «header o nada». Los clients del gateway añaden `X-Yala-Attest-Session` solo cuando el
+//     provider devuelve non-nil, así que la firma NO PUEDE lanzar: es `() async -> String?`. Un
+//     `throws` haría que un attest caído abortase flujos que el gateway sigue aceptando.
+//   · Allí: el error VIAJA, y está escrito en el contrato del protocolo (`CloudSyncRuntime.swift:46`):
+//     `attestToken()` propaga el `AppAttestError` para que el runtime lo clasifique transient/terminal
+//     con `AttestSyncGate` — de ahí salen el banner de «este device no puede sincronizar» y el canario
+//     `cloudSyncBlockedByAttestUnavailable`. Un `try?` allí borraría esa clasificación entera.
+//
+//  Que la diferencia es real y no cosmética se ve en el consumidor: `CloudSyncRuntime.swift:274` y
+//  `CloudMigrationController.swift:212` degradan a mano (`{ try? await session.attestToken() }`)
+//  justo donde necesitan ESTA forma, mientras `CloudSyncRuntime.swift:737` usa la que lanza.
+//
 
 import Foundation
 

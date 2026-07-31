@@ -112,7 +112,11 @@ final class CloudSyncDebugModel {
     func refreshAttest() async {
         isWorking = true; defer { isWorking = false }
         do {
-            _ = try await AppAttestClient.shared.currentSessionToken()
+            // `ignoringBackoff`: el trabajo de este botón es intentarlo AHORA. Con la caché negativa
+            // por defecto, un fallo de hace 40 s se re-lanzaría sin tocar la red y el panel reportaría
+            // un error viejo como si fuera de este intento — la respuesta falsa más cara posible en el
+            // único sitio desde el que se diagnostica attest en device.
+            _ = try await AppAttestClient.shared.currentSessionToken(ignoringBackoff: true)
             attestStatus = "token OK"
         } catch {
             attestStatus = "token failed: \(error)"
