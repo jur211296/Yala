@@ -1,6 +1,6 @@
 ---
 created: 2026-07-28
-updated: 2026-07-30
+updated: 2026-07-31
 tags: [modo-nube, decision, release, 2.1]
 ---
 
@@ -45,6 +45,14 @@ tags: [modo-nube, decision, release, 2.1]
 - La app queda **bimodal de forma indefinida**: iCloud y nube conviven, y toda la complejidad de dos modos se mantiene para siempre (los ~10 gates de quiescencia, las dos rutas de wipe, los dos caminos de sign-out, el doble copy).
 - En la práctica **casi nadie migrará**, así que la nube arranca con una población mínima. Eso hace que el valor inmediato del modo nube para usuarios existentes sea casi nulo — y es coherente, porque **la motivación de la épica nunca fue mover a los actuales**: fue habilitar web, IA server-side y multiplataforma (decisiones de Fase 0). El modo nube es una capacidad, no una campaña.
 - **De dónde vendrá la población de nube, entonces: de los usuarios NUEVOS.** Por eso **D-A7 (born-cloud en v1) deja de ser opcional y se vuelve la pieza central del valor de 2.1** — es el único camino por el que la nube crece. Un born-cloud sin construir + opt-in silencioso = nube vacía.
+
+  > **Al construir D-A7, abrir [[MODO-NUBE-ONBOARDING-GRUPOS-POST-CLOUDKIT]] primero.** Anclado aquí a
+  > petición del owner (2026-07-31) porque son cabos que solo se vuelven visibles cuando la nube es el
+  > único camino, y la fecha en que eso pasa es ésta. **Uno de los tres bloquea a la población de la que
+  > depende esta línea**: el muro «Grupos necesita iCloud» (`GroupsICloudAvailabilityGateLogic`) es
+  > incondicional sobre `isAccountAvailable` y NO consulta el canal ⇒ con el canal encendido, un usuario
+  > born-cloud SIN iCloud sigue sin poder abrir Grupos. Los otros dos son limpieza de la Fase 3 (dos flags
+  > que quedan muertos al borrar el transporte) y el cierre del onboarding educativo de Grupos.
 - La regla de no-regresión sube de importancia: como la inmensa mayoría se queda en `.icloud`, **cualquier regresión en esa rama afecta a todos los usuarios reales** y el modo nube no compensa nada.
 
 ## Trabajo que esta decisión cancela
@@ -250,6 +258,55 @@ es que `context.rollback()` no revierte la mutación de `groupCursorsJSON` en el
 (`context.hasChanges == false` sí pasa), así que el cursor queda avanzado. `b422565e` se validó en iOS 27.0,
 en la otra Mac: es un **cambio de comportamiento de SwiftData entre runtimes**, y tiene consecuencia real
 —en iOS 26.x el `rollback()` no cierra del todo el laundering que ese commit quería cerrar—. Ticket aparte.
+
+### Paso 3 · EJECUTADO el 2026-07-31 — y el bloqueante que destapó en device
+
+`GROUPS_BACKEND_ROLLOUT_PERCENT` de `"0"` a `"100"` en `[env.production.vars]` (`98d6415d`), desplegado.
+Con eso el canal quedó encendido de verdad por primera vez… y **no funcionó**.
+
+**Síntoma medido en producción:** crear un grupo en un iPhone con TestFlight falla con «Error de
+Yala.GroupsRPCError 2». `npx wrangler tail --env production` da la causa literal:
+
+```
+POST /v1/attest/register - Ok
+GET  /groups/pull?cursors=%7B%7D&limit=500 - Ok
+  (log) [gw-err] 401 yala_attest_required: Falta el token de sesión de App Attest.
+```
+
+El device **registra App Attest bien**. Lo que no viaja es el header `X-Yala-Attest-Session` en las llamadas
+a `/groups/*`.
+
+**Causa raíz:** los inits de los clients declaran `attestProvider: … = { nil }` y **nueve construcciones de
+producción se quedaron con el default** — las 6 de `GroupsMembershipClient` que faltaban, el `.shared` de
+`GroupsSyncClient` (que arrastra su `GroupsMerkleClient`) y las 2 de `PushTokenRegistrationClient`. `{ nil }`
+es un valor legal ⇒ el compilador no dice nada.
+
+**Por qué ninguna verificación previa lo vio, que es lo importante:** **staging corre `ENFORCE = "observe"`**
+(`gateway/wrangler.toml`, `[vars]`) frente al `"enforce"` de producción. En `observe` el token ausente se
+**cuenta pero no bloquea**. Todo el incremento G2 se construyó y se validó contra un gateway que no exigía
+lo que producción sí exige, así que la suite, el dogfooding y cualquier e2e contra staging estaban verdes con
+el canal roto. **Es una clase entera de fallo invisible en QA por construcción**, no un descuido puntual —
+por eso la lección se guardó como regla durable (`.claude/rules/gateway-attest.md`) y no solo como fix.
+
+**Fix:** `attestProvider: AttestSessionProvider.live` en las 9 construcciones cuyas rutas pasan por
+`requireUserAndAttest`, decidido **ruta por ruta leyendo la guard de cada handler** del gateway. Sobreviven
+cinco `{ nil }`, todos de `CloudAccountClient` y todos correctos: `/account/claim`, `/account/exists`,
+`/account/migration`, `/account/siwa/exchange` y `/account/entitlement` van por `requireUser` y son flujos
+PRE-SESIÓN — cablear attest ahí es justo lo que puede romper el alta. Cada uno lleva su porqué en el código,
+citando el handler. El proveedor se mudó de `AccountDeletionService.Dependencies.liveAttest` a
+`AttestSessionProvider`: que el proveedor de attest de Grupos viviera dentro del servicio de BORRADO DE
+CUENTAS es la explicación más probable de que seis sitios no lo encontraran.
+
+**Estado de verificación, explícito porque la asimetría lo exige:**
+
+| Qué | Estado | Con qué evidencia |
+|---|---|---|
+| El cableado existe en las 9 construcciones y no puede nacer una décima sin él | **VERIFICADO** | `AttestWiringTests` (source-scan con conteo esperado por cliente) + 2 mutantes en exit 65: sin `attestProvider` y con `{ nil }` explícito, cada uno cazado por su propio test |
+| El header viaja cuando el proveedor es no-nil, y no viaja cuando es nil | **VERIFICADO** | `AttestHeaderTransportTests`, los 3 clients, par completo por cada uno |
+| **El 401 desaparece en device contra producción** | **SIN VERIFICAR — lo hace el owner** | requiere un build nuevo en TestFlight. No hay forma de ejercitarlo desde el repo: staging no exige attest y a producción no se puede llamar desde un test |
+
+⚠️ **No se tocó `ENFORCE`.** Bajarlo a `"observe"` habría hecho «pasar» la prueba apagando App Attest para
+todo el tráfico del gateway, incluido el proxy de IA cuyas API keys son la razón de esta épica.
 
 ### Descartado
 
