@@ -35,9 +35,11 @@ Proxy seguro de Yala a **OpenAI** y al proveedor de **tasas de cambio**. Las API
    # PUSH_ROLE_JWT (G8-3): credencial de máquina `yala_push` del fan-out de silent push. NO se teclea a mano:
    node scripts/mint-push-role-jwt.mjs <path-al-legacy-jwt-secret> | npx wrangler secret put PUSH_ROLE_JWT
    # repetir con --env production donde aplique (sin DEV_SHARED_SECRET en prod)
-   # GROUPS_ENC_KEY: staging y PROD llevan llaves DISTINTAS. Sin ella, /groups/pull responde 503 (jamás
-   # sirve ciphertext). La de prod la genera el owner; el gateway de prod devuelve 503 en pull de grupos
-   # hasta configurarla (irrelevante hoy — flag de grupos→backend OFF).
+   # GROUPS_ENC_KEY: staging y PROD llevan llaves DISTINTAS. Sin ella, los CUATRO caminos de grupos que la
+   # inyectan responden 503 con un error que la nombra: /groups/pull y /groups/merkle (jamás sirven
+   # ciphertext), /groups/push y los /groups/rpc/:fn que escriben columnas † (create_group, join_group,
+   # update_member_display_name, groups_forget_user). Los otros 6 RPCs de membresía siguen funcionando.
+   # La de prod la genera el owner; sin ella el gateway de prod deja los grupos inservibles.
    # PUSH_ROLE_JWT: JWT HS256 firmado con el legacy secret del proyecto (claim role=yala_push) → SET ROLE
    # yala_push, el único rol con EXECUTE sobre get_group_push_tokens/prune_push_token (revocados de
    # authenticated en g8_02). exp 10 años. Ausente → fan-out no-op silencioso. mint-push-role-jwt.mjs lee el

@@ -46,7 +46,8 @@ export interface Env {
   DEV_SHARED_SECRET: string; // bypass de dev/test; solo honrado en staging
   APP_STORE_API_KEY?: string; // App Store Server API / webhook
   // Grupos→backend G7 (pgcrypto): llave simétrica del cifrado at-rest de columnas † de grupos. Viaja como
-  // ARGUMENTO de request a los RPCs de grupos (p_key) — JAMÁS a URL/query. Ausente → /groups/pull responde 503.
+  // ARGUMENTO de request a los RPCs de grupos (p_key) — JAMÁS a URL/query. Ausente → 503 tipado en los CUATRO
+  // caminos que la inyectan (pull, merkle, push y los RPCs de RPC_NEEDS_ENC_KEY); guard único en groups/encKey.ts.
   // staging y PROD llevan llaves DISTINTAS; la de prod la genera el owner. `.dev.vars` (gitignored) para dev local.
   GROUPS_ENC_KEY?: string;
   // Grupos→backend G8-3 (credencial de máquina `yala_push`): JWT HS256 firmado con el LEGACY secret del

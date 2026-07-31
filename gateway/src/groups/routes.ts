@@ -28,6 +28,7 @@ import {
   validateUpsertShape,
 } from "./manifest";
 import { canonRowC1Group, merkleColumnsGroup } from "./canon";
+import { requireEncKey } from "./encKey";
 import { CanonError } from "../sync/canon";
 import { entityHash, hex, leafChannel1, leafChannel2, merkleRoot } from "../sync/merkle";
 import type {
@@ -88,6 +89,12 @@ export async function handleGroupsPush(c: Ctx): Promise<Response> {
   const auth = await requireUserAndAttest(c);
   if (auth instanceof Response) return auth;
 
+  // G7: sin la llave no se pueden cifrar las columnas † → 503 ANTES de tocar ningún delta (nada aplicado a
+  // medias). Mismo error tipado y mismo mensaje que pull/merkle. La llave se THREADEA hacia abajo en vez de
+  // releer `c.env` dentro de `callApplyGroupDelta`: así es imposible inyectar una llave sin validar.
+  const encKey = requireEncKey(c.env);
+  if (encKey instanceof Response) return encKey;
+
   let body: GroupPushRequest;
   try {
     body = await c.req.json<GroupPushRequest>();
@@ -100,7 +107,7 @@ export async function handleGroupsPush(c: Ctx): Promise<Response> {
 
   const results: SyncDeltaResult[] = [];
   for (const delta of body.deltas) {
-    results.push(await applyOneGroupDelta(c, auth, delta));
+    results.push(await applyOneGroupDelta(c, auth, delta, encKey));
   }
 
   // Fan-out de silent push (G8): por cada delta APPLIED, su group_id. SyncDeltaResult NO porta group_id →
@@ -227,7 +234,13 @@ function apnsReason(body: string | undefined): string | undefined {
   }
 }
 
-async function applyOneGroupDelta(c: Ctx, auth: AuthedUser, delta: GroupSyncDelta): Promise<SyncDeltaResult> {
+/** `encKey` llega YA validada desde el handler (`requireEncKey`) — nunca se relee de `c.env` aquí. */
+async function applyOneGroupDelta(
+  c: Ctx,
+  auth: AuthedUser,
+  delta: GroupSyncDelta,
+  encKey: string,
+): Promise<SyncDeltaResult> {
   const syncId = typeof delta?.sync_id === "string" ? delta.sync_id : undefined;
   const base: SyncDeltaResult = { sync_id: syncId ?? "", client_mutation_id: delta?.client_mutation_id, status: "rejected" };
 
@@ -258,7 +271,7 @@ async function applyOneGroupDelta(c: Ctx, auth: AuthedUser, delta: GroupSyncDelt
     if (typeof rowHlc !== "string" || rowHlc.length === 0) {
       return { ...base, reason: "tombstone_sin_hlc" };
     }
-    return callApplyGroupDelta(c, auth, delta, gid, syncId ?? null, {}, {}, rowHlc, schemaVersion, base);
+    return callApplyGroupDelta(c, auth, delta, gid, syncId ?? null, {}, {}, rowHlc, schemaVersion, base, encKey);
   }
 
   // op === "upsert"
@@ -280,7 +293,7 @@ async function applyOneGroupDelta(c: Ctx, auth: AuthedUser, delta: GroupSyncDelt
   }
 
   const nested = nestFieldsByUnit(delta.entity_type, rawFields);
-  return callApplyGroupDelta(c, auth, delta, gid, syncId ?? null, nested, fieldHlcs, delta.hlc, schemaVersion, base);
+  return callApplyGroupDelta(c, auth, delta, gid, syncId ?? null, nested, fieldHlcs, delta.hlc, schemaVersion, base, encKey);
 }
 
 async function callApplyGroupDelta(
@@ -294,6 +307,7 @@ async function callApplyGroupDelta(
   rowHlc: string,
   schemaVersion: number,
   base: SyncDeltaResult,
+  encKey: string,
 ): Promise<SyncDeltaResult> {
   const { ok, status, body } = await callRpc(c.env, auth.userJWT, "apply_group_delta", {
     p_entity: delta.entity_type,
@@ -302,7 +316,7 @@ async function callApplyGroupDelta(
     p_op: delta.op,
     p_fields: nestedFields,
     p_field_hlcs: fieldHlcs,
-    p_key: c.env.GROUPS_ENC_KEY, // G7: la llave cifra las columnas † server-side (jamás en URL/query)
+    p_key: encKey, // G7: la llave cifra las columnas † server-side (jamás en URL/query); validada en el handler
     p_row_hlc: rowHlc,
     p_schema_version: schemaVersion,
   });
@@ -337,8 +351,8 @@ export async function handleGroupsPull(c: Ctx): Promise<Response> {
   if (auth instanceof Response) return auth;
 
   // G7: sin la llave de cifrado no se puede descifrar el contenido † → 503 (JAMÁS servir ciphertext).
-  const encKey = c.env.GROUPS_ENC_KEY;
-  if (!encKey) return jsonError("yala_unavailable", "enc key no configurada", 503);
+  const encKey = requireEncKey(c.env);
+  if (encKey instanceof Response) return encKey;
 
   const limit = clamp(parseIntOr(c.req.query("limit"), 500), 1, 1000);
   let cursors: Record<string, number> = {};
@@ -466,8 +480,8 @@ export async function handleGroupsMerkle(c: Ctx): Promise<Response> {
   if (auth instanceof Response) return auth;
 
   // G7: sin la llave no se puede descifrar el contenido † para re-serializar el canon → 503.
-  const encKey = c.env.GROUPS_ENC_KEY;
-  if (!encKey) return jsonError("yala_unavailable", "enc key no configurada", 503);
+  const encKey = requireEncKey(c.env);
+  if (encKey instanceof Response) return encKey;
 
   const gid = c.req.query("group_id");
   if (!gid || gid.length < 8 || gid.length > 120) {

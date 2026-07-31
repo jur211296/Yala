@@ -22,6 +22,7 @@ import { errorBody, jsonError } from "../errors";
 import { verifySessionToken, type SessionClaims } from "../attest/session";
 import { gateRequest } from "../ratelimit";
 import { bearerToken, callRpc, verifyUserToken } from "../sync/userauth";
+import { requireEncKey } from "./encKey";
 
 type Ctx = Context<{ Bindings: Env }>;
 
@@ -104,6 +105,14 @@ export async function handleGroupsRpc(c: Ctx): Promise<Response> {
     return jsonError("yala_bad_request", `unknown rpc: ${fn}`, 404);
   }
 
+  // G7: la llave se comprueba ANTES de leer el body y de construir los args — sin ella `p_key` viajaría
+  // `undefined` y PostgREST respondería con un error de firma de función que no nombra el secreto. Mismo
+  // 503 tipado y MISMO mensaje que /groups/pull y /groups/merkle (constante compartida en encKey.ts).
+  // Solo la exigen los RPCs que escriben columnas † : los otros 6 de la allowlist siguen funcionando sin
+  // llave, así que un secreto ausente no tumba `leave_group`/`approve_member`/… de más.
+  const encKey = RPC_NEEDS_ENC_KEY.has(fn) ? requireEncKey(c.env) : null;
+  if (encKey instanceof Response) return encKey;
+
   // groups_forget_user no lleva body → un body ausente/no-JSON se trata como {}.
   let raw: unknown = {};
   try {
@@ -121,8 +130,9 @@ export async function handleGroupsRpc(c: Ctx): Promise<Response> {
 
   // G7: los RPCs que escriben columnas † reciben la llave de cifrado como argumento — INYECTADA aquí (jamás por
   // el cliente; NO está en PARAM_ALLOWLIST). Fuera de la allowlist a propósito: la llave nunca viaja en el body.
-  if (RPC_NEEDS_ENC_KEY.has(fn)) {
-    args.p_key = c.env.GROUPS_ENC_KEY;
+  // `encKey` es no-null exactamente para los fn de RPC_NEEDS_ENC_KEY y YA está validada arriba (nunca `undefined`).
+  if (encKey !== null) {
+    args.p_key = encKey;
   }
 
   const { ok, status, body: out } = await callRpc(c.env, auth.userJWT, fn, args);
