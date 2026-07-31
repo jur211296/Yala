@@ -259,7 +259,7 @@ es que `context.rollback()` no revierte la mutación de `groupCursorsJSON` en el
 en la otra Mac: es un **cambio de comportamiento de SwiftData entre runtimes**, y tiene consecuencia real
 —en iOS 26.x el `rollback()` no cierra del todo el laundering que ese commit quería cerrar—. Ticket aparte.
 
-### Paso 3 · EJECUTADO el 2026-07-31 — y el bloqueante que destapó en device
+### Paso 3 · EJECUTADO el 2026-07-31 — y los TRES bloqueantes que destapó en device
 
 `GROUPS_BACKEND_ROLLOUT_PERCENT` de `"0"` a `"100"` en `[env.production.vars]` (`98d6415d`), desplegado.
 Con eso el canal quedó encendido de verdad por primera vez… y **no funcionó**.
@@ -341,7 +341,7 @@ exige el de producción, así que un build de Xcode siempre recibe `401 yala_att
 no aparecía nada ES la prueba de que el lado local se arregló), nunca para validar. Está en
 `.claude/rules/gateway-attest.md` con las cuatro hipótesis que se refutaron por el camino.
 
-### Lo que el paso 3 NO deja verificado — el canal no sincroniza DATOS
+### El TERCER bloqueante del paso 3 — el canal no sincronizaba DATOS (RESUELTO el mismo día)
 
 **Leer esto antes de concluir «el canal funciona».** Lo verificado el 2026-07-31 con dos iPhones reales es
 que el 401 desapareció y que las operaciones de MEMBRESÍA funcionan: atestación (`register` y `assert`),
@@ -366,16 +366,57 @@ loop de `startIfEligible`); (5) `SplitExpense` fuera del muro `groupEntityNames`
 rama explícita); (6) el mapa de emisión declarándolo no-emisible (falso: `GroupEntityEmissionMap.splitExpense`
 está completo y en `emittableGroupEntityNames`).
 
-⇒ **La respuesta no está en la lectura estática: hay que instrumentar.** Y hay un dato que apunta a dónde:
-existe un test que afirma lo contrario de lo que hace producción — en
+⇒ **La respuesta no estaba en la lectura estática: había que instrumentar.** Y había un dato que apuntaba a
+dónde: existe un test que afirma lo contrario de lo que hace producción — en
 `YalaTests/CloudSync/GroupsSyncClientTests.swift` se crea un `SplitExpense`, se drena y se afirma que llega
-al `GroupSyncOutbox`, y está VERDE. **La diferencia entre ese test y producción es el diagnóstico.**
+al `GroupSyncOutbox`, y estaba VERDE. **La diferencia entre ese test y producción era el diagnóstico**, y una
+sonda sobre `fetchHistory` lo cerró en una corrida. La causa, abajo.
 
-**Consecuencias para el release, explícitas:** la **Fase 3 queda BLOQUEADA** (borra el transporte CloudKit,
-que hoy es lo único que mueve datos de grupo entre dispositivos — ver el §1 del runbook); la matriz de dos
-dispositivos queda a medias; y el drill del kill-switch se aplaza, porque con el canal incapaz de sincronizar
-datos no prueba lo que se quiere y costaría hasta 6 h de canal apagado en los devices de prueba por la caché
-de `refreshMinInterval`.
+#### La causa, y el fix
+
+> **`DefaultHistoryToken` es POR-STORE.** `fetchHistory(predicate: $0.token > token)` devuelve lo posterior
+> **del store de ese token** y **oculta por completo los demás stores del container** — ni siquiera surfacea
+> una transacción de otro store posterior en el tiempo. El drain de Grupos anclaba su high-water con la
+> última transacción procesada **fuera cual fuera su store**, y en producción el tráfico del store PERSONAL
+> domina y llega antes ⇒ el cursor se anclaba ahí ⇒ el canal dejaba de ver su propio store. Y como sin verlo
+> tampoco puede volver a anclar en él, es un **PUNTO FIJO**: cinco gastos seguidos, cero filas.
+
+**El canal personal no lo sufre, y eso es suerte estructural, no diseño**: sus filas emisibles son
+personales, así que su punto fijo natural cae en el store correcto. Comparte el mismo patrón.
+
+**Lo que lo hacía permanente**, y es la parte que no se ve leyendo: `GroupExpenseService.createExpense`
+puentea a `TransactionItem` justo después de guardar el gasto ⇒ esa transacción **personal** es posterior,
+adelantaba `lastDrainedTxAt` por encima del gasto, y el guard del token —que compara
+`tx.timestamp > lastDrainedTxAt`— lo daba por validado al relanzar. Pérdida definitiva, ni con dos
+relanzamientos (medido: `incomparable=0 recovered=0`).
+
+**Fix: `5a17ad5c`.** El fetch no se puede acotar por store (`storeIdentifier` **no** es keypath soportado en
+el `#Predicate` de un `HistoryDescriptor`, medido), así que va por el ancla, en tres piezas: el avance solo
+se mueve con transacciones del store de Grupos; `GroupSyncCursor.historyTokenStoreID` guarda la procedencia
+del ancla y `nil` (build anterior) la descarta —**esto es lo que migra los cursores ya envenenados de todo
+device con build 8, y no es opcional: el guard existente no los rescata**—; y el re-ancla de ese guard
+también filtra por store. Pinneado por `YalaTests/CloudSync/GroupsDrainHistoryStoreAnchorTests.swift`
+(9 tests), con las tres mutaciones en exit 65.
+
+**Lección de método, que es la misma del segundo bloqueante:** `GroupsSyncClientTests` afirmaba lo contrario
+que producción y estaba **verde**, porque su escenario limpio nunca drena después de una transacción
+personal. La diferencia entre el test y producción ERA el diagnóstico, y **una sonda de tres `print` sobre
+`fetchHistory` lo cerró en una corrida**, después de cinco hipótesis plausibles y falsas. Al escribir un test
+de drain, mete tráfico del otro store entre medias o no estás probando producción. Está en
+`.claude/rules/swiftdata-cloudkit.md`.
+
+**Pendiente de verificar en device:** los tests prueban el mecanismo, no el teléfono. Los gastos ya perdidos
+deberían recuperarse solos al primer drain del build nuevo (sus transacciones siguen en el History: los dos
+call-sites de `purgeHistoryOnce` son el ciclo del canal personal —dormido en modo `.icloud`— y un launch arg
+de DEBUG). Si alguno no aparece, editarlo genera una transacción nueva y lo re-emite.
+
+**Consecuencias para el release, actualizadas:** la **Fase 3 sigue BLOQUEADA hasta el e2e en device** — borra
+el transporte CloudKit, que hoy es lo único que ha demostrado mover datos de grupo entre dispositivos (§1 del
+runbook), y el canal backend todavía no lo ha demostrado en producción, solo en tests. Lo que la desbloquea
+es un `POST /groups/push` en el tail y el gasto apareciendo en el segundo teléfono. Igual que con el attest:
+**quien escribe el fix no puede declararlo verificado.** La matriz de dos dispositivos y el drill del
+kill-switch esperan a esa misma señal (el drill costaría hasta 6 h de canal apagado por la caché de
+`refreshMinInterval`, y no vale la pena gastarlas antes de saber que el canal sincroniza).
 
 ### Descartado
 
