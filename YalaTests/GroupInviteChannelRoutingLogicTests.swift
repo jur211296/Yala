@@ -155,6 +155,13 @@ struct GroupInviteChannelRoutingWiringTests {
             encoding: .utf8)
     }
 
+    private static func inviteHandlerSource() throws -> String {
+        try String(
+            contentsOf: repoRoot.appendingPathComponent(
+                "Yala/App/Services/GroupBackendInviteEntryHandler.swift"),
+            encoding: .utf8)
+    }
+
     /// Cuerpo de la función de enrutado, delimitado por la declaración siguiente. Se acota a la
     /// FUNCIÓN y no al fichero a propósito: un scan de orden textual global daría rojo espurio si
     /// alguien reordena los helpers privados sin cambiar nada de la semántica.
@@ -187,6 +194,64 @@ struct GroupInviteChannelRoutingWiringTests {
             junto al enrutado manda los invites del canal nuevo al canal CKShare sin una sola línea \
             de UI. Es el bug del 2026-07-31 exactamente. Déjalo en `processCKShareInviteLink`.
             """)
+    }
+
+    /// **La mitad del fix que hace que el enlace FUNCIONE, y que no estaba pinneada por nada.**
+    ///
+    /// Enrutar bien no sirve si nadie reintenta: la rama `.refreshFlagsThenRetry` solo arregla el bug si
+    /// (a) el refresh se FUERZA —sin `force: true`, `refreshIfDue` es un no-op en el caso exacto del bug,
+    /// «fetcheé hace menos de 6 h», que es toda la población afectada— y (b) se vuelve a entrar con
+    /// `didRefreshFlags: true`. Sin lo segundo el tap muere ahí: `refreshIfDue` solo escribe el snapshot,
+    /// no postea nada ni despierta al reconciler, cuyos triggers vivos son boot y foreground.
+    ///
+    /// Comprobado el 2026-07-31 en una validación adversarial: **borrar la re-entrada dejaba los 12 tests
+    /// de este fichero en verde y reproducía el síntoma medido** (la app se abre y no pasa nada). Este test
+    /// es la red que faltaba.
+    @Test func theRefreshBranchForcesTheFetchAndRetriesTheRouting() throws {
+        let source = try Self.bootstrapperSource()
+        guard let body = Self.routingFunctionBody(in: source) else {
+            Issue.record("No se encontró `handleInviteLink(_:didRefreshFlags:)` en AppBootstrapper.")
+            return
+        }
+        #expect(body.contains("refreshIfDue(force: true)"), """
+            El refresh de la rama `.refreshFlagsThenRetry` dejó de ser FORZADO. Sin `force: true`, \
+            `refreshIfDue` sale por su guard de min-interval (6 h) justo cuando el snapshot es reciente \
+            pero viejo — que es la definición de la cohorte del bug — y el enlace vuelve a no hacer nada.
+            """)
+        #expect(body.contains("didRefreshFlags: true"), """
+            Desapareció la RE-ENTRADA tras el refresh. Refrescar la config sin volver a enrutar solo \
+            escribe el snapshot: no postea ningún intent ni despierta al reconciler (sus triggers son \
+            boot y foreground), así que el tap del usuario muere en silencio y la app se abre sin hacer \
+            nada. Es el bug del 2026-07-31 tal cual.
+            """)
+    }
+
+    /// **Un tap, un evento.** La rama del flag OFF persiste el intent y DESPUÉS re-entra en el enrutado,
+    /// así que los DOS emisores de `groupJoinIntentPersisted` corren por una sola intención del usuario:
+    /// `AppBootstrapper.persistBackendInviteIntent` y `GroupBackendInviteEntryHandler.handle`. Con
+    /// `canary` a secas eso son dos eventos, y el doble conteo cae justo en la cohorte del rollout
+    /// (snapshot remoto vencido) que es la que uno querría medir — medido el 2026-07-31.
+    ///
+    /// El dedup es `canaryOnce` con clave `groupID`: por sesión de proceso, así que una invitación a otro
+    /// grupo sí cuenta y un reintento tras relanzar también, que es correcto. **Los dos emisores tienen
+    /// que usar la MISMA clave**: arreglar uno solo reabre el doble conteo, y por eso el scan mira los dos
+    /// ficheros y no uno.
+    @Test func bothJoinIntentEmittersDedupeByGroupID() throws {
+        for (label, source) in [
+            ("AppBootstrapper", try Self.bootstrapperSource()),
+            ("GroupBackendInviteEntryHandler", try Self.inviteHandlerSource()),
+        ] {
+            #expect(!source.contains("canary(.groupJoinIntentPersisted"), """
+                \(label) emite `groupJoinIntentPersisted` con `canary` a secas. El camino del flag OFF \
+                pasa por los DOS emisores en un solo tap, así que sin dedup la métrica de intents de \
+                join se dobla. Usa `canaryOnce(.groupJoinIntentPersisted, key: groupID)`.
+                """)
+            #expect(source.contains("canaryOnce(.groupJoinIntentPersisted, key: groupID)"), """
+                \(label) dejó de dedupear `groupJoinIntentPersisted` por `groupID`. Si cambias la clave \
+                aquí, cámbiala en el otro emisor: claves distintas no dedupean entre sí y el doble \
+                conteo vuelve en silencio.
+                """)
+        }
     }
 
     /// La otra mitad: preguntar primero no sirve si se pregunta DETRÁS del flag. Era la forma literal

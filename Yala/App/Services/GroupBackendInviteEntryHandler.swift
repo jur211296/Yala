@@ -74,7 +74,10 @@ enum GroupBackendInviteEntryHandler {
         UserDefaults.standard.set(true, forKey: AppPreferences.Keys.groupsBetaUnlocked)
         // 2. Persiste el intent ANTES de cualquier await.
         persistIntent(groupID: groupID, token: token)
-        MetricsService.canary(.groupJoinIntentPersisted)
+        // `canaryOnce` con la MISMA clave que `AppBootstrapper.persistBackendInviteIntent`: el camino
+        // del flag OFF persiste el intent allí y re-entra aquí, y con `canary` a secas un solo tap
+        // emitía dos eventos. Las dos claves tienen que seguir siendo el `groupID`.
+        MetricsService.canaryOnce(.groupJoinIntentPersisted, key: groupID)
         // 3-4. Decide y ejecuta.
         await drive(groupID: groupID, token: token, source: source)
     }

@@ -1831,7 +1831,14 @@ final class AppBootstrapper {
     private func persistBackendInviteIntent(groupID: String, token: String) {
         UserDefaults.standard.set(true, forKey: AppPreferences.Keys.groupsBetaUnlocked)
         GroupBackendInviteEntryHandler.persistIntent(groupID: groupID, token: token)
-        MetricsService.canary(.groupJoinIntentPersisted)
+        // `canaryOnce` y NO `canary`: el camino `.refreshFlagsThenRetry` persiste el intent y DESPUÉS
+        // re-entra en `handleInviteLink`, así que un solo tap pasaba por aquí y luego por el emisor de
+        // `GroupBackendInviteEntryHandler.handle` — DOS eventos por una sola intención, y justo en la
+        // cohorte del rollout (flag remoto stale) que es la que uno querría medir. La clave es el
+        // `groupID` para que una invitación a OTRO grupo sí cuente; el dedup es por sesión de proceso,
+        // así que un reintento tras relanzar también cuenta, que es correcto: es otro intento.
+        // El otro emisor usa esta MISMA clave a propósito — cambiar una sin la otra reabre el doble conteo.
+        MetricsService.canaryOnce(.groupJoinIntentPersisted, key: groupID)
     }
 
     /// Canal backend con el flag ON (comportamiento previo de la rama C2, sin cambios).
