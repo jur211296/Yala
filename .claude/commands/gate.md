@@ -35,10 +35,12 @@ Build en rojo → para aquí. Lo demás no informa de nada.
 Mapea cada `.swift` modificado (excluyendo `Views/` y `Tests/`) a sus suites: por convención `<Clase>Tests.swift` y por `grep -rl "<Clase>" YalaTests/`. Un nivel de transitividad, no más.
 
 ```bash
-xcodebuild -scheme Yala -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -quiet \
+xcodebuild -scheme Yala -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
   test -only-testing:YalaTests/<Suite> [-only-testing:...] 2>&1 \
-  | grep -E "(Test Suite|Test Case|Executed|passed|failed|error:)"
+  | grep -E "(Test run with|Test Suite|Test Case|Executed|passed|failed|error:)"
 ```
+
+**Sin `-quiet`, y no es cosmético: `-quiet` SUPRIME la línea `Test run with N tests in M suites`** (medido el 2026-08-02: aparece 1 vez sin el flag, 0 con él). Esa línea es justo la que `.claude/rules/testing.md` obliga a verificar contra el número de suites pedidas, porque el modo de fallo «cero casos» de Swift Testing sale con **exit 0 y `TEST SUCCEEDED`** — un array de filtros mal expandido, o un nombre de suite inexistente, dan una corrida verde que no ejecutó nada. Con `-quiet` esa comprobación es imposible y el gate se convierte en un sello de goma. Los marcadores `Test Suite`/`Test Case` del grep son de XCTest y este repo es Swift Testing entero: sin `Test run with` no queda nada que contar.
 
 Si un archivo no tiene ninguna suite, **regístralo como gap** en el informe. No lo tapes.
 
@@ -49,9 +51,9 @@ Esto es nuevo y es el punto del gate: la fase de UI ya no espera a CI.
 Cruza los archivos modificados contra `codeGlobs` de `qa/coverage-index.json`; para las áreas que casen y tengan `coverage: "xcuitest:<File>#<test>"`, corre esas suites:
 
 ```bash
-xcodebuild -scheme "Yala Dev" -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -quiet \
+xcodebuild -scheme "Yala Dev" -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
   test -only-testing:YalaUITests/<Suite> 2>&1 \
-  | grep -E "(Test Case|Executed|passed|failed|\*\* TEST)"
+  | grep -E "(Test run with|Test Case|Executed|passed|failed|\*\* TEST)"
 ```
 
 **No hace falta pasar `-parallel-testing-enabled NO`**: desde el 2026-07-24 ambas schemes llevan `parallelizable = "NO"` en sus `TestableReference`. Si alguna vez vuelves a ver `Simulator device failed to launch … xctrunner` con `RequestDenied`, no es el test: es que se está clonando el simulador y el disco está lleno. Corre `bash qa/scripts/disk-report.sh`.
