@@ -339,6 +339,169 @@ struct GroupsDrainHistoryStoreAnchorTests {
         #expect(try expenseRows(context).count == 1)
     }
 
+    // MARK: - Device que solo RECIBE (el invitado de un grupo)
+
+    //  La otra mitad del ancla, y la que no se ve mirando al device que ESCRIBE: en un miembro que solo
+    //  recibe —la población más común de un grupo— las ÚNICAS transacciones del store de Grupos son las
+    //  que escribe su propio pull (`applyPulledPage` persiste los `Split*` bajo `outboxSaveAuthor`).
+    //  Descartarlas por ECO tanto para traducir como para ANCLAR dejaba el cursor sin escribirse nunca:
+    //  `sawGroupsStoreTx` bloqueaba el suelo del barrido y `advancedToken` se quedaba nil, así que el
+    //  fetch por timestamp re-barría una ventana que crecía en cada drain, indefinidamente y en silencio.
+
+    private func historyCount(_ context: ModelContext) throws -> Int {
+        try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>()).count
+    }
+
+    /// Delta mínimo de `split_shares` (molde de `GroupsSyncClientTests.apply_advancesGroupCursors_perGroup`):
+    /// materializa una fila del store de GRUPOS, que es lo único que hace falta aquí. Se usa `split_shares`
+    /// y no `split_expenses` a propósito: no arma intent de bridge, así que el test no toca `UserDefaults`.
+    private func shareDelta(seq: Int64, group: String = "SplitGroup-A") -> GroupPulledDelta {
+        let shareID = UUID()
+        return GroupPulledDelta(
+            entityType: "split_shares", groupID: group,
+            rawSyncID: shareID.uuidString, syncID: shareID, op: .upsert,
+            fields: [
+                "expense_id": .string(UUID().uuidString),
+                "member_key": .string("member-1"),
+                "amount": .string("10.0000"),
+                "is_paid": .bool(false),
+            ],
+            fieldHlcs: [:], hlc: "2026-07-15T00:00:00.000Z-0000-\(String(format: "%016x", seq))",
+            serverSeq: seq, schemaVersion: 1)
+    }
+
+    private func pulledPage(seq: Int64, group: String = "SplitGroup-A") -> GroupPulledPage {
+        GroupPulledPage(deltas: [shareDelta(seq: seq, group: group)],
+                        cursors: [group: seq], memberships: [group])
+    }
+
+    /// CONTRATO MEDIDO, y es lo que hace SEGURO mover el high-water con el eco: lo que escribe un PULL es
+    /// una transacción del store de GRUPOS bajo `outboxSaveAuthor` (⇒ hay dónde anclar), mientras que lo
+    /// que escribe el propio DRAIN —`GroupSyncCursor`, `GroupSyncOutbox`— vive en `syncMetaSchema` y NO es
+    /// del store de Grupos (⇒ anclar no genera una transacción nueva de ese store ⇒ no hay bucle).
+    /// Si SwiftData dejara de partir por store un `save()` que toca ambos, este test avisa.
+    @Test func pullWritesAreGroupsStoreEchoes_whileDrainWritesAreNot() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let client = GroupsSyncClient()
+
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(pulledPage(seq: 7), cursor: cursor, context: context)
+
+        let all = try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>())
+        func transaction(touching entity: String) throws -> DefaultHistoryTransaction {
+            try #require(all.last { tx in
+                tx.changes.contains { $0.changedPersistentIdentifier.entityName == entity }
+            })
+        }
+        let shareTx = try transaction(touching: "SplitShare")
+        let cursorTx = try transaction(touching: "GroupSyncCursor")
+
+        #expect(shareTx.author == GroupsSyncClient.outboxSaveAuthor,
+                "el apply de un pull escribe bajo el autor del canal: es ECO por definición")
+        #expect(shareTx.storeIdentifier != cursorTx.storeIdentifier,
+                "el cursor vive en syncMeta, no en el store de Grupos: es lo que impide el bucle")
+        #expect(!shareTx.changes.contains { $0.changedPersistentIdentifier.entityName == "GroupSyncCursor" },
+                "un save que toca dos stores tiene que producir DOS transacciones, una por store")
+    }
+
+    /// EL DEFECTO: tras un pull, el drain de un device que solo recibe tiene que anclar en el store de
+    /// GRUPOS usando su propio eco. Sin eso no escribe el cursor NUNCA y la ventana del fetch crece.
+    @Test func drain_receiveOnlyDevice_anchorsOnItsOwnPullWrites() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let client = GroupsSyncClient()
+
+        client.drainOnce(context: context)                 // arranque del canal (crea el cursor)
+        let cursor = try client.loadOrCreateCursor(context)
+        let floorAtStart = try #require(cursor.lastDrainedTxAt)
+
+        client.applyPulledPage(pulledPage(seq: 7), cursor: cursor, context: context)
+        client.drainOnce(context: context)
+
+        #expect(cursor.historyTokenStoreID != nil,
+                "el eco del propio pull es del store de Grupos: el ancla tiene que caer ahí")
+        #expect(try #require(cursor.lastDrainedTxAt) > floorAtStart,
+                "sin avanzar el suelo, el fetch por timestamp re-barre la misma ventana cada vuelta")
+    }
+
+    /// LA CONSECUENCIA MEDIDA: vuelta tras vuelta de «llega una página, drena», el suelo del barrido tiene
+    /// que avanzar SIEMPRE. Con el defecto puesto se queda clavado en el valor del arranque y cada drain
+    /// re-escanea todo lo acumulado desde entonces — coste de CPU y memoria creciendo sin tope.
+    @Test func drain_receiveOnlyDevice_scanWindowDoesNotGrow() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let client = GroupsSyncClient()
+
+        client.drainOnce(context: context)
+        let cursor = try client.loadOrCreateCursor(context)
+        var previous = try #require(cursor.lastDrainedTxAt)
+
+        for seq in Int64(1)...4 {
+            client.applyPulledPage(pulledPage(seq: seq), cursor: cursor, context: context)
+            client.drainOnce(context: context)
+            let floor = try #require(cursor.lastDrainedTxAt)
+            #expect(floor > previous, "vuelta \(seq): el suelo no avanzó → la ventana del barrido crece")
+            previous = floor
+        }
+    }
+
+    /// LA RAZÓN QUE DABA EL CÓDIGO VIEJO para no avanzar con el eco («cada avance escribiría el cursor →
+    /// loop») era real cuando el ancla no estaba acotada al store. Esta es la prueba de que hoy no lo es:
+    /// una vez anclado, un drain SIN novedades no escribe nada — ni una transacción de History por vuelta.
+    @Test func drain_afterAnchoringOnEcho_idleTurnsWriteNothing() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let client = GroupsSyncClient()
+
+        client.drainOnce(context: context)
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(pulledPage(seq: 7), cursor: cursor, context: context)
+        client.drainOnce(context: context)                 // ← aquí ancla en el eco
+
+        let afterAnchor = try historyCount(context)
+        client.drainOnce(context: context)
+        client.drainOnce(context: context)
+        #expect(try historyCount(context) == afterAnchor,
+                "un drain ocioso escribió el cursor: eso es exactamente el bucle que se temía")
+    }
+
+    /// NO-REGRESIÓN del eco, que es lo que este fix podía romper: mover el high-water con las filas del
+    /// pull NO puede hacer que se re-emitan al servidor como ediciones locales.
+    @Test func drain_receiveOnlyDevice_neverReEmitsPulledRows() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let client = GroupsSyncClient()
+
+        client.drainOnce(context: context)
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(pulledPage(seq: 7), cursor: cursor, context: context)
+        client.drainOnce(context: context)
+        client.drainOnce(context: context)
+
+        #expect(try outbox(context).isEmpty, "el apply de un pull no se re-empuja al servidor")
+    }
+
+    /// Y el invitado que DESPUÉS escribe: con el ancla ya puesta en el eco de su propio pull, su primer
+    /// gasto local tiene que salir igual (mismo store ⇒ el token lo surfacea).
+    @Test func drain_receiveOnlyThenLocalExpense_stillCapturesIt() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let client = GroupsSyncClient()
+
+        client.drainOnce(context: context)
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(pulledPage(seq: 7), cursor: cursor, context: context)
+        client.drainOnce(context: context)
+        try addPersonalTx(context, at: 100)                // tráfico personal entre medias (producción)
+
+        let group = try makeBackendGroup(context)
+        try addExpense(context, zone: group.cloudKitZoneID)
+        client.drainOnce(context: context)
+
+        #expect(try expenseRows(context).count == 1)
+    }
+
     // MARK: - No-regresión del canal PERSONAL
 
     /// El canal personal no sufría el bug (su punto fijo natural es el store correcto), pero comparte el

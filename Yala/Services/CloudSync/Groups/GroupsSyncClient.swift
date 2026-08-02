@@ -558,24 +558,27 @@ final class GroupsSyncClient {
             for tx in txns {
                 if let seen = maxScannedTxAt { maxScannedTxAt = max(seen, tx.timestamp) }
                 else { maxScannedTxAt = tx.timestamp }
-                if isGroupsStoreTransaction(tx) { sawGroupsStoreTx = true }
-                // Anti-auto-captura (echo suppression): descartar los writes del propio canal SIN avanzar
-                // el high-water (si avanzaran, cada avance escribiría el cursor → loop).
-                if tx.author == Self.outboxSaveAuthor { continue }
-                do {
-                    for change in tx.changes {
-                        let entityName = change.changedPersistentIdentifier.entityName
-                        // Muro anti-fuga: solo entidades del store de Grupos (personal lo captura el otro canal).
-                        guard Self.groupEntityNames.contains(entityName) else { continue }
-                        try translate(change, entityName: entityName, tx: tx, lookups: lookups,
-                                      backendZoneIDs: backendZoneIDs, rows: &rows, seen: &seen)
+                let isGroupsTx = isGroupsStoreTransaction(tx)
+                if isGroupsTx { sawGroupsStoreTx = true }
+                // Anti-auto-captura (echo suppression): los writes del propio canal NO se TRADUCEN — el
+                // apply de un pull no se re-emite al servidor como si fuera una edición local. Ojo: esto
+                // decide QUÉ SE EMITE, no dónde se ancla el high-water (bloque de abajo).
+                if tx.author != Self.outboxSaveAuthor {
+                    do {
+                        for change in tx.changes {
+                            let entityName = change.changedPersistentIdentifier.entityName
+                            // Muro anti-fuga: solo entidades del store de Grupos (personal lo captura el otro canal).
+                            guard Self.groupEntityNames.contains(entityName) else { continue }
+                            try translate(change, entityName: entityName, tx: tx, lookups: lookups,
+                                          backendZoneIDs: backendZoneIDs, rows: &rows, seen: &seen)
+                        }
+                    } catch {
+                        // `clock.send` lanzó (drift/overflow): abortar en la FRONTERA de esta transacción.
+                        #if DEBUG
+                        logger.error("GroupsSync: clock drift/overflow al traducir tx: \(error)")
+                        #endif
+                        break
                     }
-                } catch {
-                    // `clock.send` lanzó (drift/overflow): abortar en la FRONTERA de esta transacción.
-                    #if DEBUG
-                    logger.error("GroupsSync: clock drift/overflow al traducir tx: \(error)")
-                    #endif
-                    break
                 }
                 // CRÍTICO: el high-water del token SOLO se mueve con transacciones del store de GRUPOS.
                 // `DefaultHistoryToken` es POR-STORE — anclarlo en una transacción del store PERSONAL (que
@@ -584,7 +587,25 @@ final class GroupsSyncClient {
                 // él, el estado es un PUNTO FIJO: ningún gasto vuelve a salir del device. Medido en
                 // producción el 2026-07-31 (`POST /groups/push` jamás emitido) y pinneado por
                 // `GroupsDrainHistoryStoreAnchorTests`.
-                guard isGroupsStoreTransaction(tx) else { continue }
+                //
+                // Y SÍ se mueve con el ECO. Son dos razones DISTINTAS para no avanzar y confundirlas costó
+                // el segundo defecto: «es mía, no la re-emitas» habla de TRADUCIR; «no es de mi store»
+                // habla de ANCLAR. El eco de este canal sí es del store de Grupos —`applyPulledPage`
+                // inserta los `Split*` bajo `outboxSaveAuthor` (:1550)— así que descartarlo también aquí
+                // dejaba sin nada donde anclar al device que solo RECIBE (el invitado de un grupo, que
+                // nunca crea gastos: las ÚNICAS transacciones de su store de Grupos son las que escribe su
+                // propio pull). `sawGroupsStoreTx` bloqueaba el suelo del barrido y `advancedToken` se
+                // quedaba nil ⇒ NINGUNA de las tres ramas de abajo escribía el cursor ⇒ el fetch por
+                // timestamp re-barría una ventana que CRECÍA en cada drain, indefinidamente y en silencio.
+                //
+                // El bucle que temía el comentario original («cada avance escribiría el cursor → loop»)
+                // era real cuando el ancla no estaba acotada al store, y HOY no existe: los únicos writes
+                // del propio drain —`GroupSyncOutbox` y `GroupSyncCursor`— viven en `syncMetaSchema`, NO
+                // en `groupsSchema` ⇒ avanzar aquí no genera ninguna transacción del store de Grupos ⇒ el
+                // drain siguiente no encuentra nada nuevo que anclar y no re-escribe el cursor. Las dos
+                // mitades (avanza con el eco / no entra en bucle) están pinneadas en
+                // `GroupsDrainHistoryStoreAnchorTests`, sección «Device que solo RECIBE».
+                guard isGroupsTx else { continue }
                 advancedToken = tx.token
                 advancedTxAt = tx.timestamp
                 advancedStoreID = tx.storeIdentifier
