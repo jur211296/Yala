@@ -533,10 +533,22 @@ struct CloudSyncRuntimeTests {
         #expect(history >= historyBefore)  // NADA purgado con el flag off
     }
 
+    /// Con el canal de Grupos APAGADO no queda ningún suelo que retenga el corte ⇒ la purga llega hasta
+    /// `now` y la History queda vacía.
+    ///
+    /// El apagado explícito NO es cosmético: es la precondición de `history == 0`, y sin fijarla el
+    /// resultado lo decidía el SCHEME. `Yala Dev` define `DEV_BUILD` ⇒ el default-ausente de remote-config
+    /// es ON ⇒ el paso 5.6 corre el piggyback de Grupos ⇒ su `GroupSyncCursor.lastDrainedTxAt` entra como
+    /// suelo en `deleteHistorySafeCut` (que devuelve `floors.min()`) ⇒ la purga no puede bajar a cero y la
+    /// aserción era falsa BAJO ESE SCHEME (exit 65, medido el 2026-07-31 en el mismo commit que pasaba con
+    /// `-scheme Yala`). Lo que ocurre con el canal ENCENDIDO —el caso de producción con el rollout al
+    /// 100 %— lo afirma `syncCycle_bothFlagsOn_neverPurgesPastTheGroupsFloor`.
     @Test func syncCycle_bothFlagsOn_purgesHistoryAfterCompletedCycle() async throws {
         let prev = CloudSyncFlags.historyPurgeEnabled
         CloudSyncFlags.historyPurgeEnabled = true
         defer { CloudSyncFlags.historyPurgeEnabled = prev }
+        CloudSyncFlags.groupsBackendEnabled = false
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
 
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
@@ -551,6 +563,52 @@ struct CloudSyncRuntimeTests {
         #expect(outcome == .completed)
         let history = try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>()).count
         #expect(history == 0)
+    }
+
+    /// La otra mitad, y la que describe producción: con el canal de Grupos ENCENDIDO el paso 5.6 deja un
+    /// `GroupSyncCursor.lastDrainedTxAt`, y ese es un suelo más del corte. La purga tiene que llegar
+    /// EXACTAMENTE hasta él —ni menos (no purgar sería el bug que la purga existe para evitar) ni más
+    /// (pasarse borra la History de una fila del outbox de Grupos antes de que su drain la vea, y esa fila
+    /// se queda local para siempre: el bug que cierra `GroupsHistoryCutFloorTests`)—.
+    ///
+    /// El piggyback se inyecta con un `GroupsSyncClient` PROPIO en vez del singleton: `shared` arrastraría
+    /// su estado (`historyTokenValidated`, reloj, cursor de ciclo) entre tests y no tiene `_testReset()`.
+    @Test func syncCycle_bothFlagsOn_neverPurgesPastTheGroupsFloor() async throws {
+        let prev = CloudSyncFlags.historyPurgeEnabled
+        CloudSyncFlags.historyPurgeEnabled = true
+        defer { CloudSyncFlags.historyPurgeEnabled = prev }
+        CloudSyncFlags.groupsBackendEnabled = true
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        try seedHistoryWithEmptyOutbox(engine: engine, context: context)
+        let before = try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>()).count
+        #expect(before > 0)
+
+        let groupsClient = GroupsSyncClient()
+        let runtime = makeRuntime(engine: engine, pull: StubSession(body: emptyPageJSON()),
+                                  session: StubCloudSession(userID: "u1"))
+        runtime.groupsSyncCycleRunner = { ctx in groupsClient.drainOnce(context: ctx) }
+
+        let outcome = await runtime.syncCycle(context: context)
+        #expect(outcome == .completed)
+
+        // El suelo que dejó el piggyback (el mismo valor que leyó `deleteHistorySafeCut`: nada más drena
+        // después de él en este ciclo).
+        let floor = try #require(
+            try context.fetch(FetchDescriptor<GroupSyncCursor>()).first?.lastDrainedTxAt,
+            "el piggyback tiene que dejar su ancla: sin ella este test no prueba nada")
+
+        let below = try context.fetchHistory(
+            HistoryDescriptor<DefaultHistoryTransaction>(predicate: #Predicate { $0.timestamp < floor })
+        ).count
+        #expect(below == 0, "la purga se quedó corta: todo lo anterior al corte tenía que irse")
+
+        let after = try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>()).count
+        #expect(after > 0, "la purga se pasó del suelo del canal de Grupos")
+        #expect(after < before, "no se purgó nada: el ciclo no llegó a la purga")
     }
 }
 
