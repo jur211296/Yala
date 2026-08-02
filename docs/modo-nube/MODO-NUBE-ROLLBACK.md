@@ -155,23 +155,50 @@ son la razón de que exista.
 | scripts de migración de D1 | `03ee208d` | irrelevante (solo `package.json`) |
 | guard del umbral de forzado de versión | `69092b24` | irrelevante (solo un test) |
 
-### Fase 3 — BLOQUEADA desde el 2026-07-31 (commit 0 hecho)
+### Fase 3 — DESBLOQUEADA el 2026-08-02 (commit 0 hecho; 1 y 2 siguen sin abrir)
 
-> 🛑 **NO abras los commits 1 y 2 todavía.** Medido en producción el 2026-07-31 con dos iPhones reales:
-> **el canal backend NO sube filas de datos.** `POST /groups/push` no ha ocurrido NI UNA VEZ — ni al crear un
-> gasto, ni al crear un segundo con el tail abierto, ni tras pull-to-refresh. Un gasto de grupo se queda en
-> el teléfono que lo crea y el otro miembro no lo ve jamás.
+> ✅ **La puerta que bloqueaba la fase está cumplida.** El 2026-07-31 este bloque decía que el canal backend
+> no subía filas de datos y que `POST /groups/push` no había ocurrido ni una vez. **Eso dejó de ser cierto
+> el 2026-08-02**, con build 9 (2.0.5) y dos iPhones reales contra producción.
 >
-> La Fase 3 **borra el transporte CloudKit**, y hoy ese transporte es lo ÚNICO que mueve datos de grupo
-> entre dispositivos. Abrirla ahora convertiría un bug en pérdida de datos sin camino de vuelta.
+> Verificado en device, sin intervención manual en ninguno de los pasos:
 >
-> Lo que sí está verificado del canal nuevo: atestación, `create_group`, `create_group_invite`,
-> `join_group`, `approve_member` y `GET /groups/pull`. **Todo eso son operaciones de MEMBRESÍA, que van por
-> RPC.** Las filas de datos van por el outbox y ese camino no ha subido nada nunca.
+> | | |
+> |---|---|
+> | `POST /groups/push` | ocurre; cursor del pull avanzando (7 → 13) y **ambos** devices convergiendo |
+> | Datos A → B y B → A | un gasto creado en cualquiera de los dos aparece en el otro |
+> | Bridge en el receptor | su transacción en el Panel, en los dos sentidos |
+> | Liquidación | se propaga, y su borrado también |
+> | Borrados a nivel de grupo | propagan bien en ambas direcciones |
 >
-> Puerta para reabrir la fase: un gasto creado en un teléfono aparece en el otro, con su transacción
-> puenteada en los dos Paneles. Diagnóstico y las seis hipótesis ya refutadas, en el §«lo que NO está
-> verificado» de [[MODO-NUBE-DECISION-RELEASE-2.1]] §D-R1.
+> El reverso NO era redundante: el dueño del grupo y el que se unió van por caminos distintos —el segundo
+> depende de que su `SplitMember` resuelva por `user_id`, cosa que no ocurre al unirse sino después—, y ese
+> camino quedó ejercitado.
+>
+> **Y lo llevó el canal nuevo, no CloudKit.** El log del device lo prueba: `GroupsSync
+> ckEnqueueSkippedBackendGroup site=enqueueSave` — el canal viejo vio el guardado y se apartó por ser grupo
+> de backend. Sin esa línea, el experimento no habría distinguido entre los dos transportes.
+>
+> Los tres bloqueantes arreglados a ciegas quedan confirmados en device: `c267db5d` (header de App Attest),
+> `bca6f775` (keyId huérfano tras reinstalar) y `dbda8378` (ancla por-store del cursor del drain).
+>
+> **Lo que esto NO significa.** Desbloquear no es «adelante»: la Fase 3 borra el transporte CloudKit y sigue
+> siendo irreversible. Lo que se levanta es la condición concreta que la frenaba. Abrir los commits 1 y 2
+> sigue siendo una decisión deliberada con sus propias comprobaciones.
+>
+> **Dos cosas abiertas que conviene tener delante al decidir** — ninguna bloquea, pero constan:
+>
+> 1. **El puente al Panel no se deshace en el que RECIBE un borrado.** El tombstone borra la entidad del
+>    grupo bien, pero deja huérfana la `TransactionItem` puenteada, y el candado de solo-lectura
+>    (`splitExpenseID != nil || splitSettlementID != nil`, sin comprobar que resuelva) la deja **imposible de
+>    borrar a mano**. Afecta a gastos y liquidaciones, en las dos direcciones. **No lo introdujo el Modo
+>    Nube**: `SplitSyncManager.applyRemoteDeletion` tiene el hueco idéntico y le está pasando hoy a usuarios
+>    en producción por CloudKit. Por eso no bloquea la fase — borrar CloudKit no lo empeora. Chip
+>    `task_736f2831` con las cuatro instancias y las tres piezas del arreglo.
+> 2. **El emisor en segundo plano no sube nada** hasta que se vuelve a abrir la app. Es comportamiento
+>    correcto de iOS (no hay BGTask ni despertar del emisor), pero es un hueco de producto sin ticket.
+>    Costó siete minutos de diagnóstico el 2026-08-02 antes de entenderlo; si vuelve a aparecer un silencio
+>    del canal, mirar esto ANTES que el código.
 
 | Paso | Commit | ¿Revert de git lo deshace? |
 |---|---|---|

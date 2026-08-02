@@ -390,7 +390,7 @@ adelantaba `lastDrainedTxAt` por encima del gasto, y el guard del token —que c
 `tx.timestamp > lastDrainedTxAt`— lo daba por validado al relanzar. Pérdida definitiva, ni con dos
 relanzamientos (medido: `incomparable=0 recovered=0`).
 
-**Fix: `5a17ad5c`.** El fetch no se puede acotar por store (`storeIdentifier` **no** es keypath soportado en
+**Fix: `dbda8378`.** El fetch no se puede acotar por store (`storeIdentifier` **no** es keypath soportado en
 el `#Predicate` de un `HistoryDescriptor`, medido), así que va por el ancla, en tres piezas: el avance solo
 se mueve con transacciones del store de Grupos; `GroupSyncCursor.historyTokenStoreID` guarda la procedencia
 del ancla y `nil` (build anterior) la descarta —**esto es lo que migra los cursores ya envenenados de todo
@@ -405,18 +405,55 @@ personal. La diferencia entre el test y producción ERA el diagnóstico, y **una
 de drain, mete tráfico del otro store entre medias o no estás probando producción. Está en
 `.claude/rules/swiftdata-cloudkit.md`.
 
-**Pendiente de verificar en device:** los tests prueban el mecanismo, no el teléfono. Los gastos ya perdidos
-deberían recuperarse solos al primer drain del build nuevo (sus transacciones siguen en el History: los dos
-call-sites de `purgeHistoryOnce` son el ciclo del canal personal —dormido en modo `.icloud`— y un launch arg
-de DEBUG). Si alguno no aparece, editarlo genera una transacción nueva y lo re-emite.
+#### VERIFICADO EN DEVICE el 2026-08-02 (build 9) — la matriz de dos dispositivos, cerrada
 
-**Consecuencias para el release, actualizadas:** la **Fase 3 sigue BLOQUEADA hasta el e2e en device** — borra
-el transporte CloudKit, que hoy es lo único que ha demostrado mover datos de grupo entre dispositivos (§1 del
-runbook), y el canal backend todavía no lo ha demostrado en producción, solo en tests. Lo que la desbloquea
-es un `POST /groups/push` en el tail y el gasto apareciendo en el segundo teléfono. Igual que con el attest:
-**quien escribe el fix no puede declararlo verificado.** La matriz de dos dispositivos y el drill del
-kill-switch esperan a esa misma señal (el drill costaría hasta 6 h de canal apagado por la caché de
-`refreshMinInterval`, y no vale la pena gastarlas antes de saber que el canal sincroniza).
+Este bloque se escribió el 2026-07-31 diciendo «pendiente de verificar en device». Ya no lo está. Con build
+9 (2.0.5) y dos iPhones reales contra producción, y **sin intervención manual en ningún paso**:
+
+| Comprobación | Evidencia |
+|---|---|
+| `POST /groups/push` ocurre | primera vez en la historia del proyecto; cursor del pull 7 → 13 y los DOS devices convergiendo |
+| Un gasto cruza A → B | aparece en el grupo del receptor y su transacción en su Panel |
+| Un gasto cruza B → A | el reverso, que NO es simétrico: el que se unió depende de que su `SplitMember` resuelva por `user_id`, y ese camino quedó ejercitado |
+| Liquidación | se propaga, y su borrado también |
+| Borrados a nivel de grupo | propagan bien en ambas direcciones |
+| **Lo llevó el backend, no CloudKit** | `GroupsSync ckEnqueueSkippedBackendGroup site=enqueueSave` en el log del device: el canal viejo vio el guardado y se apartó por ser grupo de backend |
+
+Esa última fila es la que hace concluyente al experimento. Los dos transportes conviven —`SplitSyncManager`
+arranca sin gate— y sin esa línea no se podría distinguir cuál movió el gasto.
+
+Los gastos que se habían quedado varados con build 8 **no** se recuperaron, como estaba previsto: el fix
+migra el ANCLA del cursor pero no el SUELO (`lastDrainedTxAt`, ya contaminado por el bridge), así que el
+re-escaneo arranca por encima de ellos. El owner descartó rescatarlos. Al juzgar un fix de esta familia,
+**crear un gasto nuevo**: juzgar con uno varado tiraría un arreglo que funciona.
+
+**Consecuencias para el release, actualizadas:** la **Fase 3 queda DESBLOQUEADA** — la condición que la
+frenaba era exactamente esta señal y está cumplida (§1 del runbook, con la tabla completa). Desbloquear no
+es «adelante»: la fase borra el transporte CloudKit y sigue siendo irreversible, así que abrir los commits
+1 y 2 es una decisión aparte. El **drill del kill-switch** también queda liberado, pero va **al final** de
+cualquier tanda de pruebas: bajar el percent apaga en segundos del lado del servidor y los devices tardan
+hasta 6 h en enterarse de que volvió a subir (caché de `refreshMinInterval`).
+
+**Dos cosas abiertas, ninguna bloqueante:**
+
+1. **El puente al Panel no se deshace en el que RECIBE un borrado** — el tombstone borra la entidad del
+   grupo bien y deja huérfana la `TransactionItem` puenteada; el candado de solo-lectura
+   (`splitExpenseID != nil || splitSettlementID != nil`, sin comprobar que resuelva) la deja imposible de
+   borrar a mano. Gastos y liquidaciones, en las dos direcciones. **No lo introdujo el Modo Nube**:
+   `SplitSyncManager.applyRemoteDeletion` tiene el hueco idéntico y afecta hoy a usuarios en producción por
+   CloudKit. Chip `task_736f2831`, con las cuatro instancias y tres piezas (arreglo hacia delante,
+   reparación de las huérfanas existentes y quitar el candado cuando el puntero no resuelve).
+2. **El emisor en segundo plano no sube nada** hasta que se reabre la app — no hay BGTask ni despertar del
+   emisor. Comportamiento correcto de iOS, hueco de producto sin ticket. Costó siete minutos de silencio
+   mal interpretados el 2026-08-02: **ante un silencio del canal, descartar el segundo plano ANTES que el
+   código.**
+
+**Lo que hizo falta para medirlo, y no era el tail.** El `wrangler tail` no atribuye peticiones a un
+dispositivo, así que con dos teléfonos no puede decidir cuál calló. Lo que cerró el caso fue **Console.app
+sobre el iPhone conectado, filtrando por `GroupsSync`**: los breadcrumbs de este subsistema son
+`logger.notice` **fuera de `#if DEBUG` a propósito**, así que emiten en TestFlight. Su docblock nombra la
+firma útil: «un `session-expired` sin su `loopRestarted` posterior = canal muerto que nadie re-arrancó».
+Ojo, el comando `log stream --device` **ya no existe** en macOS 26+; hay que usar Console.app.
 
 ### Descartado
 
