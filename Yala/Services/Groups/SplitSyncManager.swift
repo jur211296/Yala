@@ -1642,6 +1642,22 @@ final class SplitSyncManager {
         pendingBridgeExpenseIDs.removeAll()
         pendingBridgeSettlementIDs.removeAll()
     }
+
+    /// Test-only: entra por el MISMO seam que el bucle de deletions del handler del fetch, por la misma
+    /// razón que `_testNotePendingBridge` (el evento de CKSyncEngine no se puede fabricar). Devuelve lo
+    /// acumulado para des-puentear, que en producción se drena post-save. Que el handler REAL alimente
+    /// `unbridgeDeletedRemotely` con esto lo pinnea un source-scan — sin él, revertir el hunk de producción
+    /// dejaría esta prueba verde con el bug de vuelta.
+    func _testApplyRemoteDeletion(
+        recordID: CKRecord.ID, recordType: CKRecord.RecordType, context: ModelContext
+    ) -> (expenseIDs: Set<UUID>, settlementIDs: Set<UUID>) {
+        var expenseIDs: Set<UUID> = []
+        var settlementIDs: Set<UUID> = []
+        applyRemoteDeletion(
+            recordID: recordID, recordType: recordType, context: context,
+            unbridgeExpenseIDs: &expenseIDs, unbridgeSettlementIDs: &settlementIDs)
+        return (expenseIDs, settlementIDs)
+    }
     #endif
 
     /// Retry records that previously failed due to iCloud quota exceeded.
@@ -1791,6 +1807,11 @@ final class SplitSyncManager {
             applyRemoteRecord(record, context: modelContext, engineName: engineName)
         }
 
+        // Tombstones de gasto/liquidación: hay que DESHACER su puente personal además de borrar la fila
+        // del grupo. Se acumulan aquí y se drenan POST-SAVE (ver `applyRemoteDeletion`).
+        var unbridgeExpenseIDs: Set<UUID> = []
+        var unbridgeSettlementIDs: Set<UUID> = []
+
         for deletion in fetched.deletions {
             // G6-3 (C2): grupo migrado → no aplicar borrados CloudKit (la verdad vive en el backend).
             // C-4 (PIEZA 2), INVARIANTE 2: el rescate NO se consulta aquí y no debe hacerlo nunca. Una
@@ -1800,15 +1821,19 @@ final class SplitSyncManager {
                 GroupsSyncBreadcrumb.groupsCkPullSkippedBackendGroup(site: "applyRemote", reason: "deletion")
                 continue
             }
-            applyRemoteDeletion(recordID: deletion.recordID, recordType: deletion.recordType, context: modelContext)
+            applyRemoteDeletion(
+                recordID: deletion.recordID, recordType: deletion.recordType, context: modelContext,
+                unbridgeExpenseIDs: &unbridgeExpenseIDs, unbridgeSettlementIDs: &unbridgeSettlementIDs)
         }
 
+        var didPersistBatch = false
         do {
             // Persist remote records before deferred bridge. Auto-sync overhead is
             // mitigated by state persistence limiting CKSyncEngine to incremental fetches.
             SaveBreadcrumb.willSave("SplitSync.fetchedRecordZoneChanges")
             try modelContext.save()
             SaveBreadcrumb.didSave("SplitSync.fetchedRecordZoneChanges")
+            didPersistBatch = true
         } catch {
             // C-4: el token YA avanzó, lo de este batch no vuelve. Deja breadcrumb FUERA de `#if DEBUG` —
             // excepción consciente del subsistema `SplitSync*`/`GroupsSync*`, sin PII.
@@ -1826,12 +1851,46 @@ final class SplitSyncManager {
         pendingRemovedSelfZoneNames.removeAll()
 
         for zoneID in freezeZones {
-            guard let group = GroupService.shared.group(for: zoneID) else { continue }
             do {
-                try GroupTransactionBridge.shared.freezeForSoftDelete(group: group)
+                // Por ZONA, no por objeto: el `SplitGroup` sigue vivo cuando la zona entra aquí por un flip
+                // a `isHiddenForAll`, pero NO cuando entra por el borrado remoto del grupo entero — el
+                // apply acaba de borrarlo, así que resolverlo devolvía `nil` y se saltaba la limpieza justo
+                // cuando más falta hace.
+                try GroupTransactionBridge.shared.freezeForSoftDelete(zoneID: zoneID)
             } catch {
                 #if DEBUG
                 logger.error("[\(engineName)] freezeForSoftDelete failed for \(zoneID): \(error.localizedDescription, privacy: .public)")
+                #endif
+            }
+        }
+
+        // Deshacer el puente personal de los gastos/liquidaciones que este batch borró. Dentro del bucle de
+        // deletions pondría un `save()` del `mainContext` COMPARTIDO por cada fila borrada.
+        //
+        // **DESPUÉS del congelado, no antes**: un mismo batch puede traer el borrado del GRUPO y los de sus
+        // gastos, y los dos criterios chocan sobre las mismas filas — el grupo dice «congela, esos gastos
+        // ocurrieron» y el gasto dice «destruye, este gasto no ocurrió». Con el congelado delante gana el
+        // correcto sin coordinación extra: deja la transacción de cuenta real con los punteros en `nil`, así
+        // que el des-puenteo —que busca por `splitExpenseID`— no la encuentra y la PRESERVA; la virtual de
+        // sistema sí se borra, que es lo que toca cuando su gasto Y su grupo han desaparecido.
+        //
+        // **Y solo si el save del batch tuvo ÉXITO**, que tampoco es cautela genérica:
+        // `unbridgeDeletedRemotely` cierra con `context.save()` sobre el mismo contexto compartido, así que
+        // con el batch sin persistir arrastraría las filas `Split*` que siguen dirty y las comitearía bajo
+        // el autor POR DEFECTO — justo lo que el drain de Grupos captura (filtra `author != outboxSaveAuthor`)
+        // y re-empuja al servidor con HLC fresco. Es el laundering que documenta el `catch` de
+        // `GroupsSyncClient.applyPulledPage`, y aquí no hay `rollback()` que lo contenga. Con el save
+        // fallido la limpieza la recoge el barrido del arranque (`OrphanedBridgedTxSweeper`), su red por diseño.
+        //
+        // Sin gate del sello de dominio: ese gate corta la CREACIÓN del bridge, y cerrar la puerta jamás
+        // debe impedir LIMPIAR lo que ya está dentro.
+        if didPersistBatch, !unbridgeExpenseIDs.isEmpty || !unbridgeSettlementIDs.isEmpty {
+            do {
+                try GroupTransactionBridge.shared.unbridgeDeletedRemotely(
+                    expenseIDs: unbridgeExpenseIDs, settlementIDs: unbridgeSettlementIDs)
+            } catch {
+                #if DEBUG
+                logger.error("[\(engineName)] unbridgeDeletedRemotely failed: \(error.localizedDescription, privacy: .public)")
                 #endif
             }
         }
@@ -2521,20 +2580,45 @@ final class SplitSyncManager {
 
     // MARK: - Remote Deletion
 
-    private func applyRemoteDeletion(recordID: CKRecord.ID, recordType: CKRecord.RecordType, context: ModelContext) {
+    /// Aplica un borrado remoto. Los IDs de gasto/liquidación se ACUMULAN para des-puentear al cerrar el
+    /// batch: `unbridgeDeletedRemotely` escribe en el store PERSONAL con su propio `save()`, y esto corre
+    /// dentro de un bucle por deletion.
+    ///
+    /// Borrar solo la fila del grupo dejaba viva la `TransactionItem` puenteada del OTRO miembro, apuntando
+    /// a un gasto inexistente: dinero fantasma en Panel/presupuestos/reportes y una TX que el usuario no
+    /// puede editar ni borrar (su puntero la manda al grupo, donde ya no está). El borrado LOCAL sí lo hace
+    /// bien (`GroupExpenseService.performExpenseDeletion` → `unbridgeExpense`); la asimetría entre quien
+    /// borra y quien recibe ERA el bug. Este canal lo arrastraba desde antes del Modo Nube: el canal
+    /// backend copió fielmente el defecto.
+    ///
+    /// Se acumula SIN mirar si la fila local existía — un tombstone re-emitido de un gasto que este device
+    /// ya no tiene es la única señal capaz de recoger una TX que quedó suelta en una versión anterior.
+    private func applyRemoteDeletion(
+        recordID: CKRecord.ID, recordType: CKRecord.RecordType, context: ModelContext,
+        unbridgeExpenseIDs: inout Set<UUID>, unbridgeSettlementIDs: inout Set<UUID>
+    ) {
         guard let modelID = CKConstants.modelID(from: recordID) else { return }
 
         switch recordType {
         case CKConstants.RecordType.groupMeta:
             if let model = splitGroup(byID: modelID, in: context) { context.delete(model) }
+            // El grupo desaparece entero → soltar sus TX/borradores personales, o quedan colgando de una
+            // zona inexistente. Aquí manda `freezeForSoftDelete` y NO el unbridge, al revés que en un gasto
+            // suelto: un grupo que desaparece no niega los gastos que ocurrieron (el dinero salió de una
+            // cuenta real y ese rastro es verdad), mientras que un gasto borrado no ocurrió. Mismo criterio
+            // que el camino local (`GroupService.performLocalCleanupAndDelete`). Se drena POST-SAVE, por
+            // zona, junto a los flips de soft-delete.
+            pendingFreezeZoneIDs.insert(recordID.zoneID.zoneName)
         case CKConstants.RecordType.splitExpense:
             if let model = splitExpense(byID: modelID, in: context) { context.delete(model) }
+            unbridgeExpenseIDs.insert(modelID)
         case CKConstants.RecordType.splitMember:
             if let model = splitMember(byID: modelID, in: context) { context.delete(model) }
         case CKConstants.RecordType.splitShare:
             if let model = splitShare(byID: modelID, in: context) { context.delete(model) }
         case CKConstants.RecordType.splitSettlement:
             if let model = splitSettlement(byID: modelID, in: context) { context.delete(model) }
+            unbridgeSettlementIDs.insert(modelID)
         default:
             break
         }

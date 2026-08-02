@@ -1555,6 +1555,12 @@ final class GroupsSyncClient {
     func applyPulledPage(_ page: GroupPulledPage, cursor: GroupSyncCursor, context: ModelContext) -> Bool {
         var bridgeExpenseIDs: [UUID] = []
         var bridgeSettlementIDs: [UUID] = []
+        // Tombstones de gasto/liquidación: hay que DESHACER su puente personal, no solo borrar la fila
+        // del grupo. Se acumulan y se drenan al cerrar la página (un `save()` para todas) por lo mismo
+        // que el bridge de alta — `unbridgeDeletedRemotely` escribe en el store PERSONAL y el apply corre
+        // en un bucle por delta.
+        var unbridgeExpenseIDs: Set<UUID> = []
+        var unbridgeSettlementIDs: Set<UUID> = []
         var notify = PendingNotificationChanges()
         var freezeZones: Set<String> = []
         var maxSeqByGroup = decodeCursors(cursor.groupCursorsJSON)
@@ -1575,6 +1581,8 @@ final class GroupsSyncClient {
                     try applyDelta(delta, context: context,
                                    bridgeExpenseIDs: &bridgeExpenseIDs,
                                    bridgeSettlementIDs: &bridgeSettlementIDs,
+                                   unbridgeExpenseIDs: &unbridgeExpenseIDs,
+                                   unbridgeSettlementIDs: &unbridgeSettlementIDs,
                                    cursorResetGroupIDs: &cursorResetGroupIDs,
                                    notify: &notify, freezeZones: &freezeZones)
                     // Avanzar el cursor del grupo al server_seq máximo aplicado.
@@ -1655,9 +1663,45 @@ final class GroupsSyncClient {
         // que el usuario no tenga en el store.
         let changes = resolveNotificationChanges(notify, context: context)
         if !changes.isEmpty { onRemoteChanges(changes) }
+        // ORDEN: el CONGELADO va PRIMERO, el des-puenteo después. Una misma página puede traer el tombstone
+        // del GRUPO y los de sus gastos (el servidor cascadea), y los dos criterios chocan sobre las mismas
+        // filas: el grupo dice «congela, esos gastos ocurrieron» y el gasto dice «destruye, este gasto no
+        // ocurrió». Con el congelado delante gana el criterio correcto sin ninguna coordinación extra: deja
+        // la transacción de cuenta real con los punteros ya en `nil`, así que el des-puenteo —que busca por
+        // `splitExpenseID`— no la encuentra y la PRESERVA; la virtual de sistema, que el congelado deja
+        // intacta, sí se borra, que es lo que toca cuando su gasto Y su grupo han desaparecido: preservarla
+        // ahí sería justo el fantasma que este código existe para matar. Invertirlos destruye la de cuenta
+        // real, que es dinero que salió de verdad.
         drainSoftDeleteFreeze(freezeZones, context: context)
+        drainUnbridge(expenseIDs: unbridgeExpenseIDs, settlementIDs: unbridgeSettlementIDs)
         scheduleBridge(expenseIDs: bridgeExpenseIDs, settlementIDs: bridgeSettlementIDs)
         return true
+    }
+
+    /// Deshace el puente personal de los gastos y liquidaciones que esta página borró por tombstone.
+    ///
+    /// **POST-SAVE, nunca antes ni dentro**: si el `saveWithAuthor` de la página lanza, su `catch` hace
+    /// `context.rollback()` y las filas `Split*` vuelven a existir — un unbridge ejecutado antes ya se
+    /// habría llevado la `TransactionItem` de un gasto que sigue vivo, y eso NO lo revierte el rollback
+    /// (`unbridgeDeletedRemotely` cierra con su propio `save()`). Al ir después del `return false` del
+    /// `catch`, el borrado personal solo ocurre cuando el borrado del grupo está en disco.
+    ///
+    /// **Sin gate del sello de dominio** (`isDomainOpenForBridge`), a diferencia de `armBridgeIntent`:
+    /// ese gate corta la CREACIÓN, y cerrar la puerta jamás debe impedir LIMPIAR lo que ya está dentro.
+    ///
+    /// Si el bridge todavía no tiene contexto esto lanza y se pierde la limpieza de ESTA página; lo
+    /// recoge el barrido de huérfanas del arranque (`OrphanedBridgedTxSweeper`), que es la red que
+    /// cubre a los usuarios que ya tienen fantasmas de builds anteriores.
+    private func drainUnbridge(expenseIDs: Set<UUID>, settlementIDs: Set<UUID>) {
+        guard !expenseIDs.isEmpty || !settlementIDs.isEmpty else { return }
+        do {
+            try GroupTransactionBridge.shared.unbridgeDeletedRemotely(
+                expenseIDs: expenseIDs, settlementIDs: settlementIDs)
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: unbridgeDeletedRemotely falló: \(error)")
+            #endif
+        }
     }
 
     /// 2.3: congela el bridge personal de las zonas que acaban de pasar a soft-delete. Post-save, como en el
@@ -1666,18 +1710,12 @@ final class GroupsSyncClient {
     private func drainSoftDeleteFreeze(_ zones: Set<String>, context: ModelContext) {
         guard !zones.isEmpty else { return }
         for zone in zones {
-            let group: SplitGroup?
             do {
-                group = try fetchSplitGroup(zoneID: zone, context: context)
-            } catch {
-                #if DEBUG
-                logger.error("GroupsSync: freeze fetch falló para \(zone): \(error)")
-                #endif
-                continue
-            }
-            guard let group else { continue }
-            do {
-                try GroupTransactionBridge.shared.freezeForSoftDelete(group: group)
+                // Por ZONA, no por objeto: el `SplitGroup` sigue existiendo cuando la zona entra aquí por
+                // un flip a `isHiddenForAll`, pero NO cuando entra por un tombstone del grupo — el apply
+                // acaba de borrarlo. El fetch previo devolvía `nil` en ese segundo caso y se saltaba la
+                // limpieza justo cuando más falta hace. `freezeForSoftDelete` solo necesitaba el zoneID.
+                try GroupTransactionBridge.shared.freezeForSoftDelete(zoneID: zone)
             } catch {
                 #if DEBUG
                 logger.error("GroupsSync: freezeForSoftDelete falló para \(zone): \(error)")
@@ -1897,6 +1935,8 @@ final class GroupsSyncClient {
         context: ModelContext,
         bridgeExpenseIDs: inout [UUID],
         bridgeSettlementIDs: inout [UUID],
+        unbridgeExpenseIDs: inout Set<UUID>,
+        unbridgeSettlementIDs: inout Set<UUID>,
         cursorResetGroupIDs: inout Set<String>,
         notify: inout PendingNotificationChanges,
         freezeZones: inout Set<String>
@@ -1907,7 +1947,7 @@ final class GroupsSyncClient {
                 GroupsSyncBreadcrumb.groupsApplySkippedDelta(entity: delta.entityType); return
             }
             try applyExpense(delta, id: id, context: context, bridgeExpenseIDs: &bridgeExpenseIDs,
-                             notify: &notify)
+                             unbridgeExpenseIDs: &unbridgeExpenseIDs, notify: &notify)
         case GroupEntityEmissionMap.splitShare.table:
             guard let id = delta.syncID else {
                 GroupsSyncBreadcrumb.groupsApplySkippedDelta(entity: delta.entityType); return
@@ -1918,7 +1958,7 @@ final class GroupsSyncClient {
                 GroupsSyncBreadcrumb.groupsApplySkippedDelta(entity: delta.entityType); return
             }
             try applySettlement(delta, id: id, context: context, bridgeSettlementIDs: &bridgeSettlementIDs,
-                                notify: &notify)
+                                unbridgeSettlementIDs: &unbridgeSettlementIDs, notify: &notify)
         case GroupEntityEmissionMap.splitGroup.table:
             try applyGroupMeta(delta, context: context, freezeZones: &freezeZones)
         case "group_members":
@@ -1932,13 +1972,26 @@ final class GroupsSyncClient {
 
     private func applyExpense(
         _ delta: GroupPulledDelta, id: UUID, context: ModelContext, bridgeExpenseIDs: inout [UUID],
-        notify: inout PendingNotificationChanges
+        unbridgeExpenseIDs: inout Set<UUID>, notify: inout PendingNotificationChanges
     ) throws {
         let existing = try fetchSplitExpense(id: id, context: context)
         if delta.op == .tombstone {
             if let existing { context.delete(existing) }
+            // Borrar SOLO la fila del grupo dejaba la `TransactionItem` puenteada VIVA en el Panel del
+            // otro miembro, apuntando a un gasto que ya no existe: dinero fantasma en Panel, presupuestos
+            // y reportes, y además ATRAPADO (la TX no se puede editar ni borrar porque su puntero la manda
+            // al grupo, donde ya no está). El borrado LOCAL sí lo hacía bien desde siempre
+            // (`GroupExpenseService.performExpenseDeletion` → `unbridgeExpense`); esa asimetría entre quien
+            // borra y quien recibe ERA el bug (device, producción, 2026-08-02).
+            unbridgeExpenseIDs.insert(id)
+            // Se acumula SIN mirar `existing`: un tombstone re-emitido de un gasto que este device ya no
+            // tiene es la única señal capaz de recoger una TX que quedó suelta en una versión anterior.
+            // Y si el mismo id llegó como upsert antes en ESTA página, el tombstone gana — puentear un
+            // gasto borrado solo armaría una intención que el retome tendría que descartar.
+            bridgeExpenseIDs.removeAll { $0 == id }
             return
         }
+        unbridgeExpenseIDs.remove(id)
         // 2.1: nuevo vs modificado, igual que la clasificación del fetch CloudKit (que lo decidía con el
         // pre-fetch de IDs del batch). El filtro de participación —y la exclusión de los opening balances
         // y de lo que escribió el propio usuario— vive en el consumidor, que también alimenta al bridge.
@@ -1985,13 +2038,19 @@ final class GroupsSyncClient {
 
     private func applySettlement(
         _ delta: GroupPulledDelta, id: UUID, context: ModelContext, bridgeSettlementIDs: inout [UUID],
-        notify: inout PendingNotificationChanges
+        unbridgeSettlementIDs: inout Set<UUID>, notify: inout PendingNotificationChanges
     ) throws {
         let existing = try fetchSplitSettlement(id: id, context: context)
         if delta.op == .tombstone {
             if let existing { context.delete(existing) }
+            // Gemelo exacto del tombstone de gasto (ver `applyExpense`): el borrado LOCAL de una
+            // liquidación llama `unbridgeSettlement` (`GroupExpenseService.deleteSettlement`), así que el
+            // receptor del tombstone tiene que hacer lo mismo o su movimiento personal queda huérfano.
+            unbridgeSettlementIDs.insert(id)
+            bridgeSettlementIDs.removeAll { $0 == id }
             return
         }
+        unbridgeSettlementIDs.remove(id)
         // 2.1: solo las liquidaciones NUEVAS notifican (el canal CloudKit tampoco clasificaba las
         // modificaciones de settlement).
         if existing == nil { notify.newSettlements.append((id: id, zone: delta.groupID)) }
@@ -2018,6 +2077,14 @@ final class GroupsSyncClient {
         let existing = try fetchSplitGroup(zoneID: delta.groupID, context: context)
         if delta.op == .tombstone {
             if let existing { context.delete(existing) }
+            // El grupo desaparece entero → hay que SOLTAR sus transacciones y borradores personales, o
+            // quedan colgando de una zona que ya no existe. Aquí manda `freezeForSoftDelete` y NO el
+            // unbridge, al revés que en el tombstone de un gasto suelto: un grupo que desaparece no niega
+            // los gastos que ocurrieron —el rastro «lo pagué yo» sigue siendo verdad y el dinero salió de
+            // una cuenta real—, mientras que un gasto que alguien borró no ocurrió. Es el mismo criterio
+            // del camino local (`GroupService.performLocalCleanupAndDelete`, que también congela).
+            // El drenaje va POST-SAVE (`drainSoftDeleteFreeze`), por zona: la fila ya no está.
+            freezeZones.insert(delta.groupID)
             return
         }
         // 2.3: estado ANTES del update, para detectar el flip a soft-delete. Un grupo que nace ya oculto

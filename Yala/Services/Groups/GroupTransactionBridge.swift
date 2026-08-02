@@ -1287,6 +1287,87 @@ final class GroupTransactionBridge {
         WidgetDataCache.updateCache(context: context)
     }
 
+    // MARK: - Unbridge por borrado REMOTO (tombstone de un canal de sync)
+
+    /// Des-puentea EN LOTE los gastos y liquidaciones que un canal de sync acaba de borrar por
+    /// tombstone remoto, con UN SOLO `save()` para toda la página/batch.
+    ///
+    /// **Por qué existe además de `unbridgeExpense`/`unbridgeSettlement`:** esos cierran con su propio
+    /// `save()` + `incrementDataVersion()` + `updateCache()` por llamada, y los dos canales aplican los
+    /// tombstones DENTRO de un bucle por delta. Llamarlos ahí dentro pone un `save()` del `mainContext`
+    /// COMPARTIDO por fila borrada. Este acumula y cierra una sola vez, simétrico al bridge de alta
+    /// (`bridgeExpenseIDs`, que también se drena al terminar la página).
+    ///
+    /// **Por qué unbridge y NO `freezeForSoftDelete`:** el freeze es para cuando desaparece el GRUPO
+    /// ENTERO (salir, expulsión, soft-delete) y existe para preservar el rastro de gastos que SÍ
+    /// ocurrieron. Un gasto SUELTO que el pagador borró no ocurrió, y aquí manda la simetría con el
+    /// borrado LOCAL (`GroupExpenseService.performExpenseDeletion` → `unbridgeExpense`, y
+    /// `deleteSettlement` → `unbridgeSettlement`): si el device que borra DESTRUYE su `TransactionItem`
+    /// y el que recibe el tombstone la CONGELA, los dos Panel nunca convergen — se cambiaría una
+    /// divergencia por otra, y la congelada además queda sin dueño (el gasto ya no existe en el grupo).
+    ///
+    /// Un ID cuyo gasto ya no tiene nada colgando no produce escritura: idempotente y sin `save()`
+    /// espurio, que es lo que permite pasarle TODOS los tombstones de la página sin mirar si la fila
+    /// local existía — un tombstone re-emitido de un gasto que este device ya no tiene sigue siendo la
+    /// única señal capaz de limpiar una `TransactionItem` que quedó suelta.
+    ///
+    /// - Returns: cuántas `TransactionItem` y cuántos `InboxDraft` se borraron.
+    @discardableResult
+    func unbridgeDeletedRemotely(
+        expenseIDs: Set<UUID>, settlementIDs: Set<UUID>
+    ) throws -> (transactions: Int, drafts: Int) {
+        guard !expenseIDs.isEmpty || !settlementIDs.isEmpty else { return (0, 0) }
+        let context = try requireContext()
+
+        var deletedTxs = 0
+        var deletedDrafts = 0
+
+        // Un fetch por ID con igualdad EXACTA sobre el opcional (el mismo `#Predicate` concreto que ya
+        // usan `unbridgeExpense`/`unbridgeSettlement`, y el único patrón probado en device sobre estos
+        // campos), en vez de un fetch amplio + filtro en memoria: los IDs de una página son pocos y el
+        // corpus de TX bridgeadas puede ser de miles.
+        for id in expenseIDs {
+            let key = id.uuidString
+            for tx in try context.fetch(FetchDescriptor<TransactionItem>(
+                predicate: #Predicate { $0.splitExpenseID == key }
+            )) {
+                context.delete(tx); deletedTxs += 1
+            }
+            for draft in try context.fetch(FetchDescriptor<InboxDraft>(
+                predicate: #Predicate { $0.splitExpenseID == key }
+            )) {
+                context.delete(draft); deletedDrafts += 1
+            }
+        }
+
+        for id in settlementIDs {
+            let key = id.uuidString
+            for tx in try context.fetch(FetchDescriptor<TransactionItem>(
+                predicate: #Predicate { $0.splitSettlementID == key }
+            )) {
+                context.delete(tx); deletedTxs += 1
+            }
+            for draft in try context.fetch(FetchDescriptor<InboxDraft>(
+                predicate: #Predicate { $0.splitSettlementID == key }
+            )) {
+                context.delete(draft); deletedDrafts += 1
+            }
+        }
+
+        guard deletedTxs > 0 || deletedDrafts > 0 else { return (0, 0) }
+
+        SaveBreadcrumb.willSave("GroupTransactionBridge.unbridgeDeletedRemotely")
+        try context.save()
+        SaveBreadcrumb.didSave("GroupTransactionBridge.unbridgeDeletedRemotely")
+        SessionState.shared.incrementDataVersion()
+        WidgetDataCache.updateCache(context: context)
+
+        #if DEBUG
+        Self.logger.info("unbridgeDeletedRemotely txs=\(deletedTxs, privacy: .public) drafts=\(deletedDrafts, privacy: .public)")
+        #endif
+        return (deletedTxs, deletedDrafts)
+    }
+
     // MARK: - Freeze on Soft-delete / Leave / Remove
 
     /// Clasificación pure-logic por tipo de TX bridgeada al limpiar tras soft-delete/leave/remove.
@@ -1355,8 +1436,16 @@ final class GroupTransactionBridge {
     /// Reemplaza el destructive `unbridgeExpenses` eliminado — preserva el rastro financiero.
     /// Idempotente: TX/drafts ya limpios se excluyen del plan.
     func freezeForSoftDelete(group: SplitGroup) throws {
+        try freezeForSoftDelete(zoneID: group.cloudKitZoneID)
+    }
+
+    /// Igual que `freezeForSoftDelete(group:)` pero por zona, para los caminos donde el `SplitGroup` YA no
+    /// existe cuando toca soltar el puente: el tombstone remoto del grupo entero borra la fila dentro de la
+    /// transacción del apply, y el drenaje corre después. Refetchear el grupo ahí devuelve `nil` y la
+    /// limpieza se saltaba entera — el `SplitGroup` es solo el portador del `cloudKitZoneID`, que es lo
+    /// único que esta función necesita.
+    func freezeForSoftDelete(zoneID: String) throws {
         let context = try requireContext()
-        let zoneID = group.cloudKitZoneID
 
         let txDescriptor = FetchDescriptor<TransactionItem>(
             predicate: #Predicate { $0.splitGroupZoneID == zoneID }

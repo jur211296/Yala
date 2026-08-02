@@ -40,6 +40,13 @@ struct NewTransactionView: View {
     // A0-Bridge V2.0: cached fetch del draft pendiente (evita re-fetch en hot path).
     @State private var cachedPendingGroupDraft: InboxDraft?
 
+    /// ¿El puntero de grupo de la TX en edición apunta a un gasto/liquidación que EXISTE?
+    ///
+    /// Arranca en `true` —la dirección segura— y lo corrige el fetch del `onAppear`: abrir un frame
+    /// como de-grupo y liberarlo es inocuo; lo contrario permitiría editar el monto de un gasto
+    /// compartido vivo durante ese frame.
+    @State private var bridgedPointerResolves = true
+
     // Quick action states
     @State private var showSavedToast = false
     @State private var savedToastMessage = ""
@@ -74,16 +81,27 @@ struct NewTransactionView: View {
     // MARK: - A0-Bridge V2.0 Read-Only Mode (P1-3)
 
     /// True si la TX en edición viene del bridge de grupos (no editable manualmente).
+    ///
+    /// **Exige que el puntero RESUELVA, no solo que exista.** Mirar solo `!= nil` es lo que convertía
+    /// una TX huérfana —su gasto de grupo fue borrado y el des-puenteo no llegó— en algo atrapado para
+    /// siempre: ni editable (manda el grupo) ni borrable (ver `isBridgedCasoA`), con un banner que
+    /// ofrece abrir un grupo donde ya no hay nada. Si mañana se abre otro hueco, el usuario puede
+    /// arreglarlo él en vez de quedarse sin salida.
     private var isBridgedReadOnly: Bool {
-        guard let tx = transactionToEdit else { return false }
+        guard let tx = transactionToEdit, bridgedPointerResolves else { return false }
         return tx.splitExpenseID != nil || tx.splitSettlementID != nil
     }
 
     /// M6: True si la TX bridgeada es Caso A (cuenta personal real, no virtual).
     /// En este caso el form permite **edit parcial** — campos personales editables
     /// (cuenta/note/subcat/tags), campos del grupo read-only (monto/fecha/moneda/tipo).
+    ///
+    /// Gobierna además los botones **Duplicar y Borrar** (`.disabled(isBridgedCasoA)`), y ese Borrar es
+    /// el atrapamiento: su motivo declarado —«reaparece como draft vía el próximo sync»— deja de ser
+    /// cierto justo cuando el `SplitExpense` ya no existe. De ahí el mismo guard del puntero.
     private var isBridgedCasoA: Bool {
         guard let tx = transactionToEdit,
+              bridgedPointerResolves,
               tx.splitExpenseID != nil,
               let account = tx.account,
               !account.isSystemAccount
@@ -100,7 +118,8 @@ struct NewTransactionView: View {
             accountIsNil: tx != nil && tx?.account == nil,
             accountIsSystem: tx?.account?.isSystemAccount == true,
             subcategoryIsSystem: tx?.subcategory?.isAnySystem == true,
-            hasPendingPointerDraft: cachedPendingGroupDraft != nil
+            hasPendingPointerDraft: cachedPendingGroupDraft != nil,
+            pointerResolves: bridgedPointerResolves
         )
     }
 
@@ -121,6 +140,32 @@ struct NewTransactionView: View {
     /// Botón guardar habilitado (algún campo personal es editable).
     private var canSaveBridged: Bool {
         BridgedEditPolicy.canSave(bridgedClassification)
+    }
+
+    /// Comprueba UNA vez al aparecer si el puntero de grupo de la TX en edición resuelve a una fila que
+    /// existe. Un fetch por apertura del editor, y solo cuando hay puntero que comprobar.
+    ///
+    /// Ante un fetch fallido se queda en `true` (sigue tratándose como de grupo): un error del store no
+    /// debe abrir la edición del monto de un gasto compartido que sí está vivo.
+    private func resolveBridgedPointer() {
+        guard let tx = transactionToEdit else { return }
+        do {
+            if let raw = tx.splitExpenseID, let id = UUID(uuidString: raw) {
+                // `#Predicate` CONCRETO por tipo (nunca genérico-protocolo: crashea al ejecutar el fetch).
+                bridgedPointerResolves = try !modelContext.fetch(
+                    FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.id == id })
+                ).isEmpty
+            } else if let raw = tx.splitSettlementID, let id = UUID(uuidString: raw) {
+                bridgedPointerResolves = try !modelContext.fetch(
+                    FetchDescriptor<SplitSettlement>(predicate: #Predicate { $0.id == id })
+                ).isEmpty
+            }
+        } catch {
+            #if DEBUG
+            print("NewTransactionView: resolución del puntero de grupo falló: \(error)")
+            #endif
+            bridgedPointerResolves = true
+        }
     }
 
     /// Hidrata `cachedPendingGroupDraft` una vez al aparecer (evita fetch en hot path del body).
@@ -500,6 +545,9 @@ struct NewTransactionView: View {
         .onAppear {
             viewModel.setContext(modelContext)
             prefillFromContext()
+            // ANTES del draft: `loadPendingGroupDraftIfNeeded` abre con `guard isBridgedReadOnly`, que ya
+            // depende de esta resolución.
+            resolveBridgedPointer()
             loadPendingGroupDraftIfNeeded()
             // Force expense type in expenses-only mode
             if sessionState.isExpensesOnlyMode {

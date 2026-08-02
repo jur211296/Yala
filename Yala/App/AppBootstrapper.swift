@@ -413,6 +413,20 @@ final class AppBootstrapper {
             await retryPendingBridges(context: context)
         }
 
+        // 16.5.5. Barrido de transacciones/borradores puenteados cuyo gasto o liquidación de grupo ya no
+        // existe. DESPUÉS de `retryPendingBridges` en la lista, pero los dos son Tasks independientes y no
+        // hay orden garantizado entre ellos — no lo necesitan: el retry CREA puentes que le faltan a un
+        // gasto vivo y el barrido solo toca punteros que no resuelven, así que no compiten por ninguna
+        // fila. Gateado por quiescencia como el resto de boot-saves del store personal, e idempotente sin
+        // sentinel: es también la red que recoge lo que un des-puenteo del sync no llegara a hacer.
+        Task { @MainActor in
+            guard await awaitPersonalStoreReady() else {
+                SaveBreadcrumb.deferred("AppBootstrapper.orphanedBridgedTxSweep", "import not quiescent")
+                return
+            }
+            OrphanedBridgedTxSweeper.sweep(context: context)
+        }
+
         // 16.6. A13: Reconcile current user's displayName across groups.
         // Covers kill-app between acceptShare and performSilentSetup (SplitMember
         // would otherwise stay with the "Usuario" default forever). Idempotent.

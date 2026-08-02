@@ -39,6 +39,12 @@ enum MetricsCanary: String {
     case appEntityShortcutIDsRegenerated
     case tagCatalogRebuilt
     case bridgeVirtualLentTxFailed
+    /// El barrido del arranque encontró transacciones puenteadas cuyo gasto/liquidación de grupo ya no
+    /// existe y las reparó. Un pico tras un release = la cola de fantasmas que dejó el borrado remoto sin
+    /// des-puentear (bug device 2026-08-02), esperada y de una sola vez por usuario. **Sostenido en >0
+    /// arranque tras arranque = hay OTRO camino abriendo huérfanas** y el barrido lo está tapando.
+    /// `detail` separa liberadas (cuenta real) de borradas (virtuales de sistema).
+    case bridgedTxOrphansRepaired
     case iCloudRestoreOutcome
     case cloudkitGroupSyncGateHardCap
     case cloudkitGroupSyncPromotedToAuto

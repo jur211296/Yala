@@ -36,6 +36,18 @@ enum BridgedEditPolicy {
         /// La subcategoría existe Y es de sistema (`isAnySystem`). `false` si nil o de usuario.
         let subcategoryIsSystem: Bool
         let hasPendingPointerDraft: Bool
+        /// El `splitExpenseID`/`splitSettlementID` apunta a un `SplitExpense`/`SplitSettlement` que EXISTE.
+        ///
+        /// Sin esto la policy trataba «tiene puntero» como «es de grupo», y una TX cuyo gasto ya se borró
+        /// quedaba en solo-lectura para siempre: no editable (el grupo manda) y no borrable (el editor
+        /// bloquea Borrar en Caso A), con un banner que ofrece «abrir el grupo» donde ya no hay nada. El
+        /// usuario se quedaba con dinero incorrecto en Panel, presupuestos y reportes SIN NINGUNA SALIDA.
+        ///
+        /// **Default `true` a propósito**: es el comportamiento anterior, y quien no puede resolver el
+        /// puntero (todos los tests de forma pura, y cualquier caller que solo tenga la TX a mano) debe
+        /// seguir viendo la policy de siempre. El único que puede afirmar lo contrario es quien tiene
+        /// `ModelContext` para preguntárselo al store.
+        var pointerResolves: Bool = true
     }
 
     /// Clasificación de la TX en edición.
@@ -68,6 +80,11 @@ enum BridgedEditPolicy {
     }
 
     static func classify(_ s: TxShape) -> Classification {
+        // HUÉRFANA: el puntero existe pero no apunta a nada. Es una TX personal y nada más — devolver
+        // cualquier otra clasificación la dejaría atrapada, porque toda restricción de esta policy se
+        // justifica en «el grupo es la fuente de verdad» y aquí no hay grupo que mande. La dirección
+        // segura ante un puntero muerto es DEVOLVERLE el control al usuario, nunca quitárselo.
+        guard s.pointerResolves else { return .notBridged }
         // Settlement manda: su TX puede tener también cuenta de sistema, pero se distingue por
         // `splitSettlementID` y se gestiona íntegra desde el grupo.
         if s.hasSplitSettlementID { return .settlement }
@@ -105,6 +122,9 @@ enum BridgedEditPolicy {
     /// manda sobre el resto: invita a clasificar desde el Inbox. Una shape `.notBridged` nunca
     /// tiene `splitExpenseID` ⇒ el guard del puntero no puede disparar para ella.
     static func banner(_ s: TxShape) -> Banner {
+        // Antes del draft-puntero: con el gasto borrado, «clasifícalo desde el Inbox» manda al usuario a
+        // un borrador que tampoco se puede aprobar. Sin grupo detrás no hay banner que ofrecer.
+        guard s.pointerResolves else { return .none }
         if s.hasPendingPointerDraft && s.hasSplitExpenseID { return .assignFromInbox }
         switch classify(s) {
         case .notBridged: return .none
