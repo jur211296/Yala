@@ -183,7 +183,6 @@ struct ProfileView: View {
     // presentación que el cierre de sesión (bindings reales + onChange; el cover terminal lo dueña el root
     // vía CloudSessionSignOut.phase — el cierre local del borrado entra en esa misma fase viva).
     private var deletionService: AccountDeletionService { AccountDeletionService.shared }
-    @State private var showDeleteAccountConfirm = false
     @State private var showDeleteAccountFinal = false
     @State private var showDeleteAccountError = false
     // D4: patrón anti-carrera — el paso final / desvío a Grupos corre en el `onDismiss` de la hoja.
@@ -193,7 +192,17 @@ struct ProfileView: View {
     /// D5 (§3.3.4): resumen READ-ONLY de grupos (nº con deuda del usuario + huella CloudKit legacy),
     /// recomputado al tocar "Eliminar mi cuenta". Alimenta el aviso condicional de saldos y el botón
     /// "Ver mis grupos" del primer diálogo. Cero saves (invariante de quiescencia intacto).
-    @State private var deleteAccountGroupsSummary: AccountDeletionGroupsSummary = .empty
+    ///
+    /// Viaja COMO ITEM de la presentación, no como `@State` leído dentro del closure del `.sheet`:
+    /// medido 2026-08-03, calcular el resumen y encender `isPresented` en el MISMO tap hace que SwiftUI
+    /// arme el contenido con el valor ANTERIOR (`.empty`) y NO lo re-evalúe después ⇒ la rama D5 de
+    /// deudas no se presentaba NUNCA (ni el aviso ni «Ver mis grupos»), con la deuda bien calculada.
+    /// Con `.sheet(item:)` el dato es la identidad de la presentación y no puede llegar tarde.
+    private struct DeleteAccountScope: Identifiable {
+        let id = UUID()
+        let summary: AccountDeletionGroupsSummary
+    }
+    @State private var deleteAccountScope: DeleteAccountScope?
 
     /// Input `hasSession` de la visibilidad de la fila «Eliminar mi cuenta». En release es
     /// exactamente `CloudAuthService.shared.hasSession` (byte-idéntico); `UITestHooks.fakeBackendSession`
@@ -437,7 +446,7 @@ struct ProfileView: View {
             // el desvío SEGURO "Ver mis grupos" (D5, id preservado para `DeleteAccountDialogUITests`) fija
             // `pendingViewGroups`. El `onDismiss` actúa YA con la hoja fuera: presenta el alert 2 (irreversible,
             // contenedor DISTINTO → sin carrera) o salta al tab Grupos + cierra Ajustes. INFORMA, jamás bloquea.
-            .sheet(isPresented: $showDeleteAccountConfirm, onDismiss: {
+            .sheet(item: $deleteAccountScope, onDismiss: {
                 // Defense-in-depth: captura el intent y resetea AMBOS flags ANTES de actuar (aunque sean
                 // mutuamente excluyentes por construcción, evita un flag stale en un dismiss posterior).
                 let goFinal = pendingDeleteAccountFinal
@@ -452,12 +461,12 @@ struct ProfileView: View {
                     SessionState.shared.selectMainTab(.groups)
                     dismiss()
                 }
-            }) {
+            }) { scope in
                 DestructiveScopeSheet(config: .make(
                     operation: deleteAccountScopeOperation,
                     cloudLabel: .cloudAccount,  // eliminar-cuenta = SIEMPRE la cuenta de Yala (backend)
-                    hasOutstandingDebt: deleteAccountGroupsSummary.hasOutstandingDebt,
-                    hasLegacyCloudKitFootprint: deleteAccountGroupsSummary.hasLegacyCloudKitFootprint,
+                    hasOutstandingDebt: scope.summary.hasOutstandingDebt,
+                    hasLegacyCloudKitFootprint: scope.summary.hasLegacyCloudKitFootprint,
                     onConfirm: { pendingDeleteAccountFinal = true },
                     onSecondary: { pendingViewGroups = true }))
             }
@@ -547,9 +556,8 @@ struct ProfileView: View {
                     YalaAccountView(
                         onSignOut: { showCloudSignOutConfirm = true },
                         onDeleteAccount: {
-                            deleteAccountGroupsSummary =
-                                GroupService.shared.accountDeletionGroupsSummary()
-                            showDeleteAccountConfirm = true
+                            deleteAccountScope = DeleteAccountScope(
+                                summary: GroupService.shared.accountDeletionGroupsSummary())
                         })
                 }
             }
@@ -1131,9 +1139,8 @@ struct ProfileView: View {
                     Button {
                         // D5: recomputa READ-ONLY (fetches + cálculo puro, cero saves) el resumen de grupos
                         // ANTES de mostrar el diálogo — fresco y barato (solo al tap).
-                        deleteAccountGroupsSummary =
-                            GroupService.shared.accountDeletionGroupsSummary()
-                        showDeleteAccountConfirm = true
+                        deleteAccountScope = DeleteAccountScope(
+                            summary: GroupService.shared.accountDeletionGroupsSummary())
                     } label: {
                         settingsRowContent(
                             icon: "trash",

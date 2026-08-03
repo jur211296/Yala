@@ -20,7 +20,16 @@ struct UserDataResetView: View {
     // D4 (§3.3.1): paso 1 = hoja de alcance (`.sheet`, `DestructiveScopeSheet`). El botón destructivo fija
     // `pendingSecondConfirm` y cierra la hoja; su `onDismiss` presenta el paso 2 (alert corto) YA con la hoja
     // fuera (anti-carrera). La mecánica de `wipeAllUserData` NO cambia.
-    @State private var isShowingScopeSheet = false
+    ///
+    /// El resumen viaja COMO ITEM de la presentación, no por `@State` leído dentro del closure: medido
+    /// 2026-08-03 en el gemelo D5 de `ProfileView`, calcular el resumen y encender `isPresented` en el
+    /// MISMO tap hace que SwiftUI arme el contenido con el valor ANTERIOR (`.empty`) y no lo re-evalúe
+    /// ⇒ ni «Ver mis grupos» (con deuda) ni el batch D10 (sin deuda) llegaban a ofrecerse nunca.
+    private struct WipeScope: Identifiable {
+        let id = UUID()
+        let summary: AccountDeletionGroupsSummary
+    }
+    @State private var wipeScope: WipeScope?
     @State private var pendingSecondConfirm = false
     // v2 (§3.3.1): salidas SEGURAS de la hoja, ejecutadas en su `onDismiss` (hoja YA fuera, anti-carrera).
     @State private var pendingExport = false          // "Exportar antes" → wizard de export
@@ -56,10 +65,10 @@ struct UserDataResetView: View {
     /// D10: ofrecer el batch "También salir de mis grupos" solo con el canal backend ON (DARK), grupos vivos y
     /// CERO deudas globales (el batch no se ofrece con deuda — la fila 👥 muestra "Ver mis grupos"). Solo en
     /// `wipeDataFull` (el modelo lo restringe a esa operación).
-    private var canLeaveAllGroups: Bool {
+    private func canLeaveAllGroups(_ summary: AccountDeletionGroupsSummary) -> Bool {
         // QA/XCUITest: fuerza la oferta (ambos seams inertes en release).
         if UITestHooks.groupsBatchDemo || UITestHooks.groupsBatchRunning { return true }
-        return CloudSyncFlags.groupsBackendEnabled && groupsSummary.hasGroups && !groupsSummary.hasOutstandingDebt
+        return CloudSyncFlags.groupsBackendEnabled && summary.hasGroups && !summary.hasOutstandingDebt
     }
 
     var body: some View {
@@ -87,8 +96,9 @@ struct UserDataResetView: View {
                             Button(role: .destructive) {
                                 // v2: detección READ-ONLY al TAP (molde D5) — alimenta la fila 👥 y el desvío
                                 // "Ver mis grupos". Cero saves (invariante de quiescencia (b) intacto).
-                                groupsSummary = GroupService.shared.accountDeletionGroupsSummary()
-                                isShowingScopeSheet = true
+                                let summary = GroupService.shared.accountDeletionGroupsSummary()
+                                groupsSummary = summary   // lo consume `performWipe` (retención de grupos)
+                                wipeScope = WipeScope(summary: summary)
                             } label: {
                                 HStack {
                                     if isProcessing {
@@ -118,7 +128,7 @@ struct UserDataResetView: View {
 
         // Paso 1 — hoja de alcance (D4): 3 filas (📱/☁️/👥) + nota de conservación. "Vaciar definitivamente"
         // fija `pendingSecondConfirm` y cierra la hoja; el `onDismiss` presenta el paso 2 sin carrera.
-        .sheet(isPresented: $isShowingScopeSheet, onDismiss: {
+        .sheet(item: $wipeScope, onDismiss: {
             // Molde capture-all → reset-all → act (ProfileView:400-411): 3 salidas mutuamente excluyentes;
             // se resetean TODOS los flags ANTES de actuar (evita un flag stale en un dismiss posterior).
             let goSecondConfirm = pendingSecondConfirm
@@ -143,12 +153,12 @@ struct UserDataResetView: View {
                 // D10: flujo dedicado del batch (paso separado, NO dispara el vaciado — decisión B1).
                 isShowingBatchLeave = true
             }
-        }) {
+        }) { scope in
             DestructiveScopeSheet(config: .make(
                 operation: scopeOperation,
                 cloudLabel: DestructiveScopeLogic.cloudLabel(storageMode: CloudSyncFlags.storageMode),
-                hasOutstandingDebt: groupsSummary.hasOutstandingDebt,
-                canLeaveAllGroups: canLeaveAllGroups,
+                hasOutstandingDebt: scope.summary.hasOutstandingDebt,
+                canLeaveAllGroups: canLeaveAllGroups(scope.summary),
                 onConfirm: { pendingSecondConfirm = true },
                 // "Ver mis grupos" solo aparece con deuda (lo decide `DestructiveScopeLogic.secondaryActions`).
                 onSecondary: { pendingViewGroups = true },
