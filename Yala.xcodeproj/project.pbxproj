@@ -7,10 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		87FEE9CC79174C25A83CF00E /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 585462E33E8448A1A5A0C015 /* GoogleSignIn */; };
 		96CFFFC42EC3D721002AC31C /* CoreXLSX in Frameworks */ = {isa = PBXBuildFile; productRef = 96CFFFC32EC3D721002AC31C /* CoreXLSX */; };
 		96CFFFC52EC3D721002AC31C /* OpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = 96CFFFC72EC3D721002AC31C /* OpenAI */; };
 		C97DFC7FD1F24FEC879D5C20 /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = 11FC810D61C746FA9D59B55A /* Auth */; };
-		87FEE9CC79174C25A83CF00E /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 585462E33E8448A1A5A0C015 /* GoogleSignIn */; };
 		CFADC3C22F2A42810040D198 /* YalaShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CFADC3B82F2A42810040D198 /* YalaShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		CFB1B6AF2F30EC930083BC08 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CFB1B6AE2F30EC930083BC08 /* WidgetKit.framework */; };
 		CFB1B6B12F30EC930083BC08 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CFB1B6B02F30EC930083BC08 /* SwiftUI.framework */; };
@@ -1508,6 +1508,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		34F31E7526F241AD90BE48C0 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
 		96CFFFC22EC3D721002AC31C /* XCRemoteSwiftPackageReference "CoreXLSX" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/CoreOffice/CoreXLSX";
@@ -1524,14 +1532,6 @@
 				minimumVersion = 0.3.0;
 			};
 		};
-		34F31E7526F241AD90BE48C0 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/supabase/supabase-swift";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.0.0;
-			};
-		};
 		C2064AA48EB94CC391D77D75 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
@@ -1543,16 +1543,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		96CFFFC32EC3D721002AC31C /* CoreXLSX */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 96CFFFC22EC3D721002AC31C /* XCRemoteSwiftPackageReference "CoreXLSX" */;
-			productName = CoreXLSX;
-		};
-		96CFFFC72EC3D721002AC31C /* OpenAI */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 96CFFFC62EC3D721002AC31C /* XCRemoteSwiftPackageReference "OpenAI" */;
-			productName = OpenAI;
-		};
 		11FC810D61C746FA9D59B55A /* Auth */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 34F31E7526F241AD90BE48C0 /* XCRemoteSwiftPackageReference "supabase-swift" */;
@@ -1562,6 +1552,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = C2064AA48EB94CC391D77D75 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
 			productName = GoogleSignIn;
+		};
+		96CFFFC32EC3D721002AC31C /* CoreXLSX */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 96CFFFC22EC3D721002AC31C /* XCRemoteSwiftPackageReference "CoreXLSX" */;
+			productName = CoreXLSX;
+		};
+		96CFFFC72EC3D721002AC31C /* OpenAI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 96CFFFC62EC3D721002AC31C /* XCRemoteSwiftPackageReference "OpenAI" */;
+			productName = OpenAI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
