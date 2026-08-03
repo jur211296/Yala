@@ -567,6 +567,18 @@ final class CloudSessionSignOut {
         // device sin grupos backend esto produce cero filas.
         if CloudSyncFlags.groupsBackendCompiledCapability {
             GroupsSyncClient.shared.drainOnce(context: context)
+            // SEGUNDO call-site del barrido de tombstones de `split_groups` encolados, y NO es redundante
+            // con el de `GroupsSyncClient.startIfEligible`: aquel vive detrás del flag COMPUESTO y éste
+            // detrás del COMPILADO, que es justo la asimetría que el comentario de arriba describe. Con el
+            // kill remoto puesto —o con el snapshot de remote-config ausente/fuera de bucket, que es
+            // fail-closed— `startIfEligible` retorna en su primer guard ⇒ el barrido nunca corre, mientras
+            // este push-all SÍ empuja porque el transporte no consulta el flag. Y bajar
+            // `GROUPS_BACKEND_ROLLOUT_PERCENT` es exactamente la respuesta operativa a ESE incidente, así
+            // que sin esta línea el barrido estaría apagado precisamente en la cohorte donde el veneno
+            // sobrevive. Va DESPUÉS del drain (que con el guard `!updateOnly` ya no puede producir uno,
+            // pero si algún día lo produjera esto lo recogería) y ANTES del pre-check: si la única fila
+            // viva era la venenosa, el conteo cae a 0 y el cierre sale `.drained` sin un solo request.
+            GroupsSyncClient.shared.purgeQueuedSplitGroupTombstones(context: context)
         }
         if Self.liveGroupsPendingCount(context: context) == 0 { return .drained }
         for iteration in 1...maxIterations {

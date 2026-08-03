@@ -105,6 +105,12 @@ enum MetricsCanary: String {
     case groupJoinIntentExpired
     case groupJoinFailed
     case groupLegacyRebindFailed
+    /// El barrido del arranque retiró del outbox/espejo tombstones de `split_groups` que un build anterior
+    /// al guard del 2026-08-02 dejó ENCOLADOS. Empujar uno borra el grupo para TODOS sus miembros
+    /// (server-side la identidad de `split_groups` es la ZONA, no la fila). Un pico tras el release = la
+    /// cola real de aquel bug, esperada y de UNA sola vez por device. **Sostenido en >0 = el camino de
+    /// emisión volvió a abrirse** y el barrido lo está tapando. `detail` separa filas de archivos del espejo.
+    case groupsOutboxGroupTombstonePurged
 
     // Batch "salir de todos mis grupos" (D10)
     case groupBatchLeaveStarted

@@ -71,6 +71,17 @@ enum GroupsSyncBreadcrumb {
         logger.notice("GroupsSync mirrorRehydrated count=\(count, privacy: .public) — filas re-insertadas desde el espejo App Group")
     }
 
+    /// El barrido retiró tombstones de `split_groups` ENCOLADOS por un build anterior al guard del
+    /// 2026-08-02: `rows` filas del `GroupSyncOutbox` y `mirror` entries venenosas realmente VISTAS en el
+    /// espejo App Group (incluye las huérfanas sin fila; NO cuenta las dead-letter, que por diseño B2
+    /// nunca tuvieron gemela). Empujar UNO borra el grupo para TODOS sus
+    /// miembros (server-side la identidad de `split_groups` es la ZONA), así que `> 0` mide el radio real
+    /// de aquel bug y debe caer a cero tras la primera vuelta de cada device. Sostenido en `> 0` = el
+    /// camino de emisión volvió a abrirse. Sin PII (solo counts).
+    static func groupsGroupTombstonesPurged(rows: Int, mirror: Int) {
+        logger.notice("GroupsSync groupTombstonesPurged rows=\(rows, privacy: .public) mirror=\(mirror, privacy: .public) — tombstones de split_groups encolados por un build previo al guard; retirados antes del push")
+    }
+
     // MARK: - Merkle (endurecimiento B1)
 
     /// El fetch de `/groups/merkle` falló (transporte / respuesta no-HTTP / decode / HTTP 5xx). `reason` =

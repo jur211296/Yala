@@ -304,6 +304,11 @@ final class GroupsSyncClient {
             secondaryMounted: SwiftDataConfiguration.secondaryStoreMounted
         ) else { return }
 
+        // Barrido del veneno YA ENCOLADO: un tombstone de `split_groups` de un build anterior al guard del
+        // 2026-08-02 borra el grupo para TODOS sus miembros en cuanto se empuje. Va aquí —y no entre los
+        // retomes de `AppBootstrapper`— porque tiene que ser anterior al primer push del proceso; el
+        // porqué completo, en el doc del método.
+        purgeQueuedSplitGroupTombstones(context: context)
         // B2: red de boot — re-insertar del espejo App Group lo que una lightweight migration se llevó.
         rehydrateOutboxFromMirror(context: context)
         // [R3] Personal cadencia ⇒ grupos piggyback (paso 5.6); si no ⇒ loop propio.
@@ -1038,6 +1043,131 @@ final class GroupsSyncClient {
         }
     }
 
+    /// Barrido IDEMPOTENTE de los tombstones de `split_groups` que quedaron ENCOLADOS antes del guard del
+    /// 2026-08-02 (`translateChange`, `case .delete` → `guard !updateOnly`).
+    ///
+    /// **Por qué hace falta además del guard: el guard es hacia delante.** Un teléfono que ya tenga una
+    /// fila de `GroupSyncOutbox` con `entityType == GroupSyncEntityType.splitGroup` (el nombre de CLASE —
+    /// la tabla Postgres solo aparece en `buildDelta`) y `op == .tombstone` la seguirá empujando en el
+    /// próximo push. Server-side la identidad de `split_groups` es la ZONA, no la fila: `apply_group_delta`
+    /// hace `update split_groups set deleted = true` con un simple `is_group_admin` —que el device del
+    /// owner cumple— y aguas abajo no lo frena NADA (`pushModeOf` del manifest no tiene call-site en
+    /// `gateway/src`, el validador del push solo rechaza `pull_only`). ⇒ una tarea de higiene puramente
+    /// LOCAL (`SplitGroupDeduplicationService`, `AppBootstrapper` 16.4) borra el grupo para TODOS sus
+    /// miembros.
+    ///
+    /// **Dónde vive, y por qué NO entre los retomes de `AppBootstrapper`:** aquellos son `Task` gateados
+    /// por `awaitPersonalStoreReady()` (poll de 2 s), mientras que `startIfEligible` se llama SÍNCRONO en
+    /// el paso 15 del bootstrap y crea el loop en la misma vuelta. Un barrido diferido perdería la carrera
+    /// contra el primer `syncCycleOnce` — que es exactamente el push que hay que impedir. Desde
+    /// `startIfEligible` es anterior al loop propio (nace unas líneas más abajo), al piggyback
+    /// (`CloudSyncRuntime.performCycle` paso 5.6, `Task` posterior al paso 15) y a `syncNowFromPush` (que
+    /// comparte su guard de flag y exige el `context` que se fija ahí).
+    ///
+    /// **Pero UN call-site NO basta, y la razón es una asimetría de flags que engaña** (hallazgo de la
+    /// review adversarial del 2026-08-03, refutado dos veces y superviviente): `startIfEligible` gatea por
+    /// el flag COMPUESTO (`groupsBackendEnabled` = compilado && kill remoto) mientras que
+    /// `CloudSessionSignOut.pushAllPendingGroupsForSignOut` gatea por el COMPILADO
+    /// (`groupsBackendCompiledCapability`) y `pushPending` no consulta flag alguno. ⇒ con el kill remoto
+    /// puesto —o con el snapshot de remote-config ausente/corrupto/fuera de bucket, que es fail-closed—
+    /// existe un camino de push REAL en el estado exacto en el que este barrido sería inerte, y encima es
+    /// el estado que produce bajar `GROUPS_BACKEND_ROLLOUT_PERCENT`, o sea la contención de ESTE mismo
+    /// incidente. Por eso hay un SEGUNDO call-site en el push-all del sign-out, bajo su propio gate. Al
+    /// añadir un camino nuevo que llame a `pushPending`, pregúntate por qué gate pasa: si no es el
+    /// compuesto, necesita su propia llamada aquí. Lo pinnea
+    /// `GroupsSyncHardeningTests.signOutPushAll_wiresPurge_beforePendingPreCheck`.
+    ///
+    /// Los otros dos gates de `startIfEligible` sí implican «sin push»: sin sesión `pushPending` devuelve
+    /// `.sessionExpired` antes de emitir nada, y en la ventana de mount-mismatch de la sesión secundaria
+    /// tocar el outbox del DUEÑO desde la sesión invitada sería el bug, no la cura.
+    ///
+    /// **Incluye las DEAD-LETTER a propósito** (sin filtro por `rejectedReason`, al revés que
+    /// `pushPending`): el re-drive de `upstream_400:yala_not_authorized` revive una fila rechazada y la
+    /// vuelve a hacer pendiente, así que dejarlas sería dejar el veneno con un temporizador.
+    ///
+    /// **Sin sentinel**, mismo criterio que `OrphanedBridgedTxSweeper`: idempotente por construcción (la
+    /// segunda pasada no encuentra nada) y es además la red de cualquier camino futuro que reabra el
+    /// hueco. Un one-shot en `UserDefaults` se desincronizaría del espejo del App Group, que los caminos
+    /// de wipe no tocan igual. Coste en el caso dominante: un fetch con predicado sobre una tabla
+    /// normalmente vacía, y ni eso cuando el loop ya vive (`shouldStart` corta antes).
+    ///
+    /// **Orden filas→espejo** (molde de `applyResults`/`confirmUploaded`): si el borrado de archivos falla,
+    /// la fila YA no existe —el riesgo de push está cerrado— y el filtro de `rehydrateOutboxFromMirror`
+    /// impide que el archivo superviviente la resucite. Si es el `save()` el que lanza, se sale SIN tocar
+    /// el espejo, pero conviene ser exacto y no repetir la fórmula del molde: los `delete` quedan DIRTY en
+    /// el `mainContext` compartido y el próximo `save()` de cualquiera los persistirá bajo el autor por
+    /// DEFECTO. Aquí eso es inocuo y hasta deseable —el muro del drain (`groupEntityNames`) no contiene
+    /// `GroupSyncOutbox`, así que no se traduce a nada, y borrar esas filas es justo el objetivo—, de modo
+    /// que NO se hace `rollback()`: sobre un contexto compartido tiraría también el estado dirty personal
+    /// de otras partes de la app. Lo que sí puede quedar es el par «fila borrada + archivo del espejo
+    /// vivo», y de ese se encarga el cinturón del rehydrate.
+    ///
+    /// El `save()` va bajo `outboxSaveAuthor` como el resto del canal. Es doble cinturón: el muro del
+    /// drain (`groupEntityNames`) tampoco emite `GroupSyncOutbox`, que vive en `syncMetaSchema` y por eso
+    /// no mueve el ancla de History del store de Grupos.
+    func purgeQueuedSplitGroupTombstones(context: ModelContext) {
+        let entityName = GroupSyncEntityType.splitGroup
+        let tombstoneRaw = SyncOutboxOp.tombstone.rawValue
+
+        let rows: [GroupSyncOutbox]
+        do {
+            rows = try context.fetch(FetchDescriptor<GroupSyncOutbox>(
+                predicate: #Predicate { $0.entityType == entityName && $0.opRaw == tombstoneRaw }))
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: fetch del barrido de tombstones de grupo falló: \(error)")
+            #endif
+            return
+        }
+
+        // Pares `(syncID, hlc)` a retirar del espejo, DEDUPLICADOS por su clave de archivo. Se recogen los
+        // de las filas Y los de las entries venenosas que ya no tienen fila: una lightweight migration pudo
+        // recrear la tabla vacía dejando solo el archivo, que es exactamente el caso para el que existe
+        // `rehydrateOutboxFromMirror` — sin este segundo barrido, el espejo re-inyectaría el tombstone.
+        var mirrorPairs: [String: (syncID: UUID, hlc: String)] = [:]
+        for row in rows {
+            mirrorPairs[GroupsOutboxMirror.fileName(syncID: row.syncID, hlc: row.hlc)] = (row.syncID, row.hlc)
+        }
+        // Entries venenosas REALMENTE vistas en el espejo. Se cuenta aparte de `mirrorPairs` a propósito:
+        // ese diccionario son pares a INTENTAR borrar e incluye los de filas que nunca tuvieron gemela
+        // (las dead-letter se excluyen del espejo por diseño B2), así que usarlo como métrica inflaría el
+        // canario — y este canario existe precisamente para medir el radio del bug, no para dar un número.
+        var mirrorHits = 0
+        if let mirror = outboxMirror, let userID = currentUserIDProvider() {
+            // Owner-scoped (M1): las entries de otra identidad NI se leen NI se borran. Cuando esa persona
+            // arranque su sesión, este mismo barrido correrá con SU `sub` antes de su rehydrate.
+            for entry in mirror.entriesForUser(userID)
+            where entry.entityType == entityName && entry.op == tombstoneRaw {
+                mirrorHits += 1
+                mirrorPairs[GroupsOutboxMirror.fileName(syncID: entry.syncID, hlc: entry.hlc)] =
+                    (entry.syncID, entry.hlc)
+            }
+        }
+        guard !mirrorPairs.isEmpty else { return }
+
+        if !rows.isEmpty {
+            do {
+                try saveWithAuthor(context) {
+                    for row in rows { context.delete(row) }
+                }
+            } catch {
+                #if DEBUG
+                logger.error("GroupsSync: save del barrido de tombstones de grupo falló: \(error)")
+                #endif
+                return  // espejo intacto ⇒ consistente con el store; el próximo arranque reintenta
+            }
+        }
+
+        if let mirror = outboxMirror {
+            for pair in mirrorPairs.values { mirror.remove(syncID: pair.syncID, hlc: pair.hlc) }
+        }
+
+        GroupsSyncBreadcrumb.groupsGroupTombstonesPurged(rows: rows.count, mirror: mirrorHits)
+        MetricsService.canary(
+            .groupsOutboxGroupTombstonePurged,
+            detail: "rows=\(rows.count)|mirror=\(mirrorHits)")
+    }
+
     /// Re-hidrata el `GroupSyncOutbox` desde el espejo App Group tras una lightweight migration que
     /// recreó la tabla (B2, molde `CloudSyncEngine.rehydrateOutboxFromMirror`). DIFF INCONDICIONAL con
     /// owner-scoping DURO: solo procesa `entriesForUser(sub actual)` (las de otra identidad se IGNORAN);
@@ -1061,6 +1191,14 @@ final class GroupsSyncClient {
         var missing: [GroupsOutboxMirrorEntry] = []
         for entry in entries {
             guard let op = SyncOutboxOp(rawValue: entry.op) else { continue }
+            // CINTURÓN de `purgeQueuedSplitGroupTombstones`: `split_groups` ni nace ni muere por el push
+            // (nace por el RPC `create_group`, muere por `groups_forget_user`), así que un tombstone de
+            // grupo en el espejo solo puede ser veneno de un build anterior al guard del 2026-08-02 y
+            // JAMÁS debe volver al outbox — empujarlo borra el grupo para todos sus miembros. El barrido
+            // corre unas líneas antes que este rehydrate y ya se llevó el archivo; esto cubre la ventana
+            // en la que el borrado de archivos no llegó a completarse (y cualquier orden futuro entre los
+            // dos). Se SALTA, no se borra: este es el camino de LECTURA; quien muta es el barrido.
+            if entry.entityType == GroupSyncEntityType.splitGroup, op == .tombstone { continue }
             if !liveKeys.contains(dedupKey(syncID: entry.syncID, hlc: entry.hlc, op: op)) {
                 missing.append(entry)
             }

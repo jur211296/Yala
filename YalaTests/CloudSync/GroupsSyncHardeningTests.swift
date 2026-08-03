@@ -14,7 +14,10 @@
 //   (5) piggyback [R3]: personal cadenciando → startIfEligible se abstiene / performCycle 5.6 invoca
 //       grupos con flag ON, NO con flag OFF, NO en secundaria; canRunDomain()==false → loop propio;
 //   (6) backoff RPC [R5]: transient×2→éxito / permanente→0 retries / agotamiento→transient /
-//       create_group con transporte -1 → 0 retries.
+//       create_group con transporte -1 → 0 retries;
+//   (8) barrido de los tombstones de `split_groups` YA ENCOLADOS antes del guard del 2026-08-02 (fila +
+//       gemela del espejo + dead-letter + entry huérfana sin fila), su idempotencia sin sentinel, el
+//       cinturón del rehydrate y el ORDEN del cableado (barrido → rehydrate → loop).
 //  Container ON-DISK temp (3 stores `.none`), `.serialized`, sin sleeps reales (sleeper inyectado).
 //
 
@@ -324,6 +327,252 @@ struct GroupsSyncHardeningTests {
             .appendingPathComponent("Yala/Services/CloudSync/SecondarySessionBoundaryPurge.swift"),
             encoding: .utf8)
         #expect(source.contains("GroupsOutboxMirror()?.purgeAll()"))
+    }
+
+    // MARK: - (8) Barrido de tombstones de `split_groups` YA ENCOLADOS (mitad hacia atrás del 2026-08-02)
+    //
+    // El `guard !updateOnly` del `case .delete` de `translateChange` es hacia DELANTE: un teléfono que ya
+    // tuviera la fila encolada la seguiría empujando, y server-side la identidad de `split_groups` es la
+    // ZONA ⇒ borra el grupo para TODOS sus miembros. Estos tests fijan el barrido y su cinturón.
+
+    /// Fila de outbox + su gemela en el espejo App Group (el par que hay que retirar entero).
+    @discardableResult
+    private func seedRowWithMirrorTwin(
+        _ context: ModelContext, mirror: GroupsOutboxMirror?, userID: String = "sub-a",
+        entityType: String, op: SyncOutboxOp, group: String = "SplitGroup-A", hlc: String,
+        rejectedReason: String? = nil
+    ) throws -> GroupSyncOutbox {
+        let row = GroupSyncOutbox(
+            syncID: UUID(), groupID: group, entityType: entityType, op: op, hlc: hlc,
+            fieldsJSON: op == .tombstone ? "{}" : "{\"name\":\"G\"}", author: "",
+            tombstoneReason: op == .tombstone ? "user" : nil, rejectedReason: rejectedReason)
+        context.insert(row)
+        try context.save()
+        if let mirror {
+            try mirror.write(GroupsOutboxMirrorEntry(
+                userID: userID, syncID: row.syncID, groupID: row.groupID, entityType: row.entityType,
+                op: row.opRaw, hlc: row.hlc, clientMutationID: row.clientMutationID,
+                fieldsJSON: row.fieldsJSON, fieldHlcsJSON: nil, tombstoneReason: row.tombstoneReason,
+                author: GroupsOutboxMirror.author, createdAt: row.createdAt))
+        }
+        return row
+    }
+
+    private func mirrorFileExists(_ dir: URL, syncID: UUID, hlc: String) -> Bool {
+        FileManager.default.fileExists(
+            atPath: dir.appendingPathComponent(GroupsOutboxMirror.fileName(syncID: syncID, hlc: hlc)).path)
+    }
+
+    /// El barrido retira la fila venenosa Y su archivo del espejo, y NO toca nada más. Las dos vecinas
+    /// importan: el UPSERT de `SplitGroup` es emisión legítima (la meta del grupo SÍ se edita por el push —
+    /// `update_only` es update-only, no push-nothing) y el tombstone de `SplitExpense` es el borrado de un
+    /// gasto, que debe viajar. Un barrido por entidad a secas, o por `op` a secas, mataría una de las dos.
+    ///
+    /// MUTACIÓN: quitar la llamada a `purgeQueuedSplitGroupTombstones` (o su borrado de filas) deja las
+    /// dos primeras aserciones en rojo.
+    @Test func purge_removesQueuedGroupTombstone_rowAndMirrorTwin() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let mirrorDir = freshDir(); defer { cleanup(mirrorDir) }
+        let context = try makeContext(dir)
+        let mirror = GroupsOutboxMirror(directoryURL: mirrorDir)
+        let client = makeClient(session: StubSession(emptyPageJSON), mirrorDir: mirrorDir)
+
+        let poison = try seedRowWithMirrorTwin(
+            context, mirror: mirror, entityType: GroupSyncEntityType.splitGroup, op: .tombstone,
+            hlc: "2026-08-02T00:00:00.000Z-0001-00000000000000aa")
+        let groupMetaEdit = try seedRowWithMirrorTwin(
+            context, mirror: mirror, entityType: GroupSyncEntityType.splitGroup, op: .upsert,
+            hlc: "2026-08-02T00:00:00.000Z-0002-00000000000000aa")
+        let expenseTombstone = try seedRowWithMirrorTwin(
+            context, mirror: mirror, entityType: GroupSyncEntityType.splitExpense, op: .tombstone,
+            hlc: "2026-08-02T00:00:00.000Z-0003-00000000000000aa")
+        let poisonSyncID = poison.syncID
+        let poisonHLC = poison.hlc
+
+        client.purgeQueuedSplitGroupTombstones(context: context)
+
+        let rows = try context.fetch(FetchDescriptor<GroupSyncOutbox>())
+        #expect(!rows.contains { $0.syncID == poisonSyncID },
+                "un tombstone de split_groups encolado borra el grupo para TODOS sus miembros al empujarse")
+        #expect(!mirrorFileExists(mirrorDir, syncID: poisonSyncID, hlc: poisonHLC),
+                "sin la gemela del espejo, el rehydrate del próximo boot la re-inserta")
+        // Lo que NO se toca.
+        #expect(rows.contains { $0.syncID == groupMetaEdit.syncID })
+        #expect(rows.contains { $0.syncID == expenseTombstone.syncID })
+        #expect(rows.count == 2)
+        #expect(mirrorFileExists(mirrorDir, syncID: groupMetaEdit.syncID, hlc: groupMetaEdit.hlc))
+        #expect(mirrorFileExists(mirrorDir, syncID: expenseTombstone.syncID, hlc: expenseTombstone.hlc))
+    }
+
+    /// Las DEAD-LETTER también, sin filtro por `rejectedReason` (al revés que `pushPending`): el re-drive
+    /// de `upstream_400:yala_not_authorized` revive una fila rechazada y la vuelve a hacer pendiente, así
+    /// que dejarla sería dejar el veneno con un temporizador.
+    ///
+    /// MUTACIÓN: añadir `&& $0.rejectedReason == nil` al predicado del barrido → esta aserción en rojo.
+    @Test func purge_includesDeadLetteredGroupTombstone() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let mirrorDir = freshDir(); defer { cleanup(mirrorDir) }
+        let context = try makeContext(dir)
+        let client = makeClient(session: StubSession(emptyPageJSON), mirrorDir: mirrorDir)
+
+        // Las dead-letter se EXCLUYEN del espejo por diseño (B2) → sin gemela, solo fila.
+        try seedRowWithMirrorTwin(
+            context, mirror: nil, entityType: GroupSyncEntityType.splitGroup, op: .tombstone,
+            hlc: "2026-08-02T00:00:00.000Z-0004-00000000000000aa",
+            rejectedReason: "upstream_400:yala_not_authorized")
+
+        client.purgeQueuedSplitGroupTombstones(context: context)
+
+        #expect(try context.fetchCount(FetchDescriptor<GroupSyncOutbox>()) == 0,
+                "una dead-letter revivible es el mismo veneno con retraso")
+    }
+
+    /// El caso que el barrido por-filas NO ve: la tabla la recreó VACÍA una lightweight migration y solo
+    /// queda el archivo del espejo. Es exactamente el estado para el que existe `rehydrateOutboxFromMirror`
+    /// ⇒ sin barrer el espejo, el rehydrate re-inyecta el tombstone.
+    ///
+    /// MUTACIÓN: quitar el bloque que escanea `mirror.entriesForUser` deja la primera aserción en rojo.
+    @Test func purge_removesOrphanMirrorEntry_withNoLiveRow() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let mirrorDir = freshDir(); defer { cleanup(mirrorDir) }
+        let context = try makeContext(dir)
+        let mirror = GroupsOutboxMirror(directoryURL: mirrorDir)
+        let client = makeClient(session: StubSession(emptyPageJSON), mirrorDir: mirrorDir)
+
+        let orphanSyncID = UUID()
+        let orphanHLC = "2026-08-02T00:00:00.000Z-0005-00000000000000aa"
+        try mirror.write(GroupsOutboxMirrorEntry(
+            userID: "sub-a", syncID: orphanSyncID, groupID: "SplitGroup-A",
+            entityType: GroupSyncEntityType.splitGroup, op: SyncOutboxOp.tombstone.rawValue,
+            hlc: orphanHLC, clientMutationID: UUID(), fieldsJSON: "{}", fieldHlcsJSON: nil,
+            tombstoneReason: "user", author: GroupsOutboxMirror.author, createdAt: .now))
+
+        client.purgeQueuedSplitGroupTombstones(context: context)
+
+        #expect(!mirrorFileExists(mirrorDir, syncID: orphanSyncID, hlc: orphanHLC))
+        // Y el rehydrate ya no tiene de dónde resucitarlo.
+        client.rehydrateOutboxFromMirror(context: context)
+        #expect(try context.fetchCount(FetchDescriptor<GroupSyncOutbox>()) == 0)
+    }
+
+    /// Idempotente por construcción y SIN sentinel (molde `OrphanedBridgedTxSweeper`): la segunda pasada no
+    /// encuentra nada, y sobre un outbox limpio no toca ni una fila. Es lo que permite dejarlo corriendo en
+    /// CADA arranque como red de cualquier camino futuro que reabra el hueco.
+    @Test func purge_isIdempotent_andNoOpOnCleanOutbox() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let mirrorDir = freshDir(); defer { cleanup(mirrorDir) }
+        let context = try makeContext(dir)
+        let mirror = GroupsOutboxMirror(directoryURL: mirrorDir)
+        let client = makeClient(session: StubSession(emptyPageJSON), mirrorDir: mirrorDir)
+
+        // Outbox limpio: no-op total.
+        client.purgeQueuedSplitGroupTombstones(context: context)
+        #expect(try context.fetchCount(FetchDescriptor<GroupSyncOutbox>()) == 0)
+
+        let survivor = try seedRowWithMirrorTwin(
+            context, mirror: mirror, entityType: GroupSyncEntityType.splitExpense, op: .upsert,
+            hlc: "2026-08-02T00:00:00.000Z-0006-00000000000000aa")
+        try seedRowWithMirrorTwin(
+            context, mirror: mirror, entityType: GroupSyncEntityType.splitGroup, op: .tombstone,
+            hlc: "2026-08-02T00:00:00.000Z-0007-00000000000000aa")
+
+        client.purgeQueuedSplitGroupTombstones(context: context)
+        let afterFirst = try context.fetch(FetchDescriptor<GroupSyncOutbox>())
+        #expect(afterFirst.count == 1)
+        #expect(afterFirst.first?.syncID == survivor.syncID)
+
+        client.purgeQueuedSplitGroupTombstones(context: context)
+        let afterSecond = try context.fetch(FetchDescriptor<GroupSyncOutbox>())
+        #expect(afterSecond.count == 1)
+        #expect(afterSecond.first?.syncID == survivor.syncID)
+        #expect(mirrorFileExists(mirrorDir, syncID: survivor.syncID, hlc: survivor.hlc))
+    }
+
+    /// CINTURÓN: aunque un archivo del espejo sobreviva al barrido (borrado de archivos a medias, o un
+    /// orden futuro distinto entre los dos), el rehydrate JAMÁS devuelve un tombstone de `split_groups` al
+    /// outbox — y sí sigue re-insertando lo legítimo de la misma pasada.
+    ///
+    /// MUTACIÓN: quitar el `continue` del filtro en `rehydrateOutboxFromMirror` deja `count == 1` en rojo.
+    @Test func rehydrate_neverResurrectsGroupTombstone() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let mirrorDir = freshDir(); defer { cleanup(mirrorDir) }
+        let context = try makeContext(dir)
+        let mirror = GroupsOutboxMirror(directoryURL: mirrorDir)
+        let client = makeClient(session: StubSession(emptyPageJSON), mirrorDir: mirrorDir)
+
+        try mirror.write(GroupsOutboxMirrorEntry(
+            userID: "sub-a", syncID: UUID(), groupID: "SplitGroup-A",
+            entityType: GroupSyncEntityType.splitGroup, op: SyncOutboxOp.tombstone.rawValue,
+            hlc: "2026-08-02T00:00:00.000Z-0008-00000000000000aa", clientMutationID: UUID(),
+            fieldsJSON: "{}", fieldHlcsJSON: nil, tombstoneReason: "user",
+            author: GroupsOutboxMirror.author, createdAt: .now))
+        let legitSyncID = UUID()
+        try mirror.write(GroupsOutboxMirrorEntry(
+            userID: "sub-a", syncID: legitSyncID, groupID: "SplitGroup-A",
+            entityType: GroupSyncEntityType.splitExpense, op: SyncOutboxOp.tombstone.rawValue,
+            hlc: "2026-08-02T00:00:00.000Z-0009-00000000000000aa", clientMutationID: UUID(),
+            fieldsJSON: "{}", fieldHlcsJSON: nil, tombstoneReason: "user",
+            author: GroupsOutboxMirror.author, createdAt: .now))
+
+        client.rehydrateOutboxFromMirror(context: context)
+
+        let rows = try context.fetch(FetchDescriptor<GroupSyncOutbox>())
+        #expect(rows.count == 1, "el tombstone de split_groups no puede volver al outbox por ninguna vía")
+        #expect(rows.first?.syncID == legitSyncID)
+    }
+
+    /// Y el test que carga el peso del DÓNDE, porque ninguno de los de arriba lo prueba: el barrido tiene
+    /// que correr ANTES del rehydrate y ANTES de que nazca el loop. `AppBootstrapper` llama
+    /// `startIfEligible` SÍNCRONO en el paso 15, mientras que sus retomes son `Task` gateados por
+    /// `awaitPersonalStoreReady()` (poll de 2 s) — mover el barrido «con los otros retomes» le haría perder
+    /// la carrera contra el primer `syncCycleOnce`, que es justo el push que hay que impedir, y los tests
+    /// de comportamiento seguirían todos en verde. Source-scan (molde `AttestWiringTests`).
+    @Test func startIfEligible_wiresPurge_beforeRehydrateAndBeforeLoop() throws {
+        let source = try String(contentsOf: Self.repoRoot
+            .appendingPathComponent("Yala/Services/CloudSync/Groups/GroupsSyncClient.swift"),
+            encoding: .utf8)
+        let start = try #require(source.range(of: "func startIfEligible("))
+        let end = try #require(source.range(of: "private func runLoop("))
+        let body = String(source[start.lowerBound..<end.lowerBound])
+
+        let purge = try #require(body.range(of: "purgeQueuedSplitGroupTombstones(context: context)"),
+                                 "el barrido no está cableado en startIfEligible")
+        let rehydrate = try #require(body.range(of: "rehydrateOutboxFromMirror(context: context)"))
+        let loop = try #require(body.range(of: "loopTask = Task"))
+        #expect(purge.lowerBound < rehydrate.lowerBound,
+                "el rehydrate re-inyectaría del espejo lo que el barrido acaba de quitar")
+        #expect(purge.lowerBound < loop.lowerBound,
+                "el loop empuja: el barrido tiene que ser anterior a su creación")
+    }
+
+    /// El SEGUNDO call-site, y el que destapó la review adversarial: `startIfEligible` gatea por el flag
+    /// COMPUESTO (`groupsBackendEnabled` = compilado && kill remoto) mientras que
+    /// `CloudSessionSignOut.pushAllPendingGroupsForSignOut` gatea por el COMPILADO
+    /// (`groupsBackendCompiledCapability`) y `pushPending` no consulta flag alguno. Con el kill remoto
+    /// puesto —o con el snapshot de remote-config ausente, que es fail-closed— el barrido del arranque es
+    /// INERTE y este push-all empuja igual: el propio comentario de `pushAllPendingGroupsForSignOut` lo
+    /// dice («el transporte no consulta el flag»). Y bajar `GROUPS_BACKEND_ROLLOUT_PERCENT` es la
+    /// contención natural de ESTE incidente ⇒ sin esta llamada, el barrido estaría apagado justo en la
+    /// cohorte donde el veneno sobrevive.
+    ///
+    /// El ORDEN también importa: va antes del pre-check de pendientes, para que un outbox cuya única fila
+    /// viva era la venenosa salga `.drained` sin emitir un solo request.
+    ///
+    /// MUTACIÓN: quitar la llamada, o moverla por debajo del pre-check, deja este test en rojo — y los
+    /// otros seis de la sección en verde, que es exactamente por qué hace falta.
+    @Test func signOutPushAll_wiresPurge_beforePendingPreCheck() throws {
+        let source = try String(contentsOf: Self.repoRoot
+            .appendingPathComponent("Yala/Services/CloudSync/CloudSessionSignOut.swift"), encoding: .utf8)
+        let start = try #require(source.range(of: "private func pushAllPendingGroupsForSignOut("))
+        let body = String(source[start.lowerBound...])
+
+        let purge = try #require(
+            body.range(of: "GroupsSyncClient.shared.purgeQueuedSplitGroupTombstones(context: context)"),
+            "el push-all del sign-out empuja el outbox sin pasar por startIfEligible")
+        let preCheck = try #require(body.range(of: "if Self.liveGroupsPendingCount(context: context) == 0"))
+        let gate = try #require(body.range(of: "if CloudSyncFlags.groupsBackendCompiledCapability {"))
+        #expect(gate.lowerBound < purge.lowerBound && purge.lowerBound < preCheck.lowerBound,
+                "el barrido va DENTRO del gate compilado y ANTES del pre-check de pendientes")
     }
 
     // MARK: - (7) M1 / D8 (G5-C): aislamiento del store de grupos por sesión
