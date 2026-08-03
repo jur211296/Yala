@@ -19,6 +19,12 @@ enum DevSeedProfile: String {
     /// (saltando el accept de CKShare, imposible en sim) y deudor neto. Combinable con
     /// `-uitest-group-invite` para el modo solo-grupos. Ver `DevSeedGroups.createAsInvitee`.
     case gruposInvitado = "grupos-invitado"
+    /// Como `.grupos` (mismo dataset, yo owner) pero con las liquidaciones confirmadas que dejan al
+    /// usuario en CERO en todos sus grupos y monedas: grupos VIVOS y SIN deuda. Es el único perfil que
+    /// ejercita el batch D10 "También salir de mis grupos" de la hoja de Vaciar por su condición REAL
+    /// (`hasGroups && !hasOutstandingDebt`), sin los seams `-uitest-groups-batch-*` que la cortocircuitan.
+    /// Ver `DevSeedGroups.createSettled`.
+    case gruposSaldado = "grupos-saldado"
     /// SOLO-GRUPOS PURO (escenario 5a legado): siembra únicamente grupos, SIN nada de vida
     /// personal (cuentas, transacciones, presupuestos, tags…). Representa fielmente al usuario
     /// `.groupInvite` que sólo usa Grupos. Pensado para combinar con `-uitest-group-invite` en
@@ -29,18 +35,20 @@ enum DevSeedProfile: String {
     case soloGrupos = "solo-grupos"
 
     /// Días de historial de transacciones a generar (escala el volumen).
-    /// `minimal`/`grupos`/`gruposInvitado`/`soloGrupos` (~1 semana) son rápidos para XCUITests.
+    /// `minimal`/`grupos`/`gruposInvitado`/`gruposSaldado`/`soloGrupos` (~1 semana) son rápidos para XCUITests.
     /// `realista`/`pesado` para escenarios ricos / performance (arranque más lento, riesgo watchdog).
     var daysBack: Int {
         switch self {
-        case .minimal, .grupos, .gruposInvitado, .soloGrupos: return 7
+        case .minimal, .grupos, .gruposInvitado, .gruposSaldado, .soloGrupos: return 7
         case .realista: return 730
         case .pesado: return 3650
         }
     }
 
     /// Si además siembra un grupo de gastos compartidos (DevSeedGroups).
-    var seedsGroups: Bool { self == .grupos || self == .gruposInvitado || self == .soloGrupos }
+    var seedsGroups: Bool {
+        self == .grupos || self == .gruposInvitado || self == .gruposSaldado || self == .soloGrupos
+    }
 
     /// Si siembra vida personal (cuentas, transacciones, presupuestos, tags, pagos, drafts).
     /// `.soloGrupos` es el único que NO — sólo grupos, para el escenario 5a puro.
@@ -158,13 +166,14 @@ final class DevSeedService {
             )
         }
 
-        // Step 10: Grupos (perfiles .grupos / .gruposInvitado / .soloGrupos) — grupo local para QA del tab Grupos
+        // Step 10: Grupos (perfiles .grupos / .gruposInvitado / .gruposSaldado / .soloGrupos) — grupo local
+        // para QA del tab Grupos
         if profile.seedsGroups {
             updateStep("Grupos de prueba", progress: 0.97)
-            if profile == .gruposInvitado {
-                DevSeedGroups.createAsInvitee(in: context)
-            } else {
-                DevSeedGroups.create(in: context)
+            switch profile {
+            case .gruposInvitado: DevSeedGroups.createAsInvitee(in: context)
+            case .gruposSaldado:  DevSeedGroups.createSettled(in: context)
+            default:              DevSeedGroups.create(in: context)
             }
         }
 

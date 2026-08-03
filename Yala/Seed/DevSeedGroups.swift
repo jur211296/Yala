@@ -2,7 +2,8 @@
 //  DevSeedGroups.swift
 //  Yala
 //
-//  Seed dev de un grupo de gastos compartidos (perfiles `.grupos` / `.gruposInvitado`). Datos LOCALES
+//  Seed dev de un grupo de gastos compartidos (perfiles `.grupos` / `.gruposInvitado` /
+//  `.gruposSaldado`). Datos LOCALES
 //  (sin CKShare ni zona real): los modelos Split* se enlazan por IDs string
 //  (groupZoneID / memberID / expenseID), así que el tab Grupos los muestra desde
 //  SwiftData directo. El sync (SplitSyncManager) está gateado en modo uitest, por
@@ -148,6 +149,118 @@ enum DevSeedGroups {
         } catch {
             print("DevSeedGroups: save error: \(error)")
         }
+    }
+
+    /// Variante SALDADA (perfil `.gruposSaldado`): el MISMO dataset de `create` (2 grupos, multi-moneda,
+    /// yo owner) MÁS las liquidaciones CONFIRMADAS que dejan el neto del usuario actual en CERO en todos
+    /// sus grupos y monedas. Es el único perfil con grupos VIVOS y SIN deuda, que es el estado que ofrece
+    /// el batch D10 "También salir de mis grupos" de la hoja de Vaciar (`canLeaveAllGroups` exige
+    /// `hasGroups && !hasOutstandingDebt`): `create` deja al usuario acreedor por construcción (+190 PEN y
+    /// +46,66 USD en Cusco, +140 PEN en Lima) y `createAsInvitee` lo deja deudor, así que ninguno de los
+    /// dos ejercita esa rama.
+    ///
+    /// Los montos NO están hardcodeados: se derivan de los balances REALES de `GroupBalanceService`, así
+    /// que editar la lista de gastos de `create` no rompe el invariante "neto del usuario = 0". El usuario
+    /// se liquida PRIMERO (cero exacto garantizado); con lo que queda se cuadra al resto entre sí, donde sí
+    /// puede quedar un residuo de céntimos del redondeo de las shares (`600/3` cuadra, `50/3` no).
+    /// Igual que `create`: datos LOCALES sin CKShare/zona (el sync uitest está gateado).
+    static func createSettled(in context: ModelContext) {
+        create(in: context)
+        do {
+            for group in try context.fetch(FetchDescriptor<SplitGroup>()) {
+                let zoneID = group.cloudKitZoneID
+                let members = try context.fetch(FetchDescriptor<SplitMember>(
+                    predicate: #Predicate { $0.groupZoneID == zoneID }))
+                let expenses = try context.fetch(FetchDescriptor<SplitExpense>(
+                    predicate: #Predicate { $0.groupZoneID == zoneID }))
+                let shares = try context.fetch(FetchDescriptor<SplitShare>(
+                    predicate: #Predicate { $0.groupZoneID == zoneID }))
+                let settlements = try context.fetch(FetchDescriptor<SplitSettlement>(
+                    predicate: #Predicate { $0.groupZoneID == zoneID }))
+                // Sin member propio no hay neto que liquidar (ni resumen de deuda que producir).
+                guard let me = members.first(where: { $0.isCurrentUser }) else { continue }
+
+                let balances = GroupBalanceService.calculateBalances(
+                    expenses: expenses, shares: shares, members: members, settlements: settlements)
+                // Un grupo cross-currency aporta un neto POR moneda y la deuda se detecta si CUALQUIERA
+                // pasa de epsilon (`AccountDeletionDebtLogic`) ⇒ hay que saldar todas.
+                for (currency, perCurrency) in Dictionary(grouping: balances, by: \.currencyCode) {
+                    settleToZero(
+                        nets: Dictionary(perCurrency.map { ($0.memberID, $0.netBalance) },
+                                        uniquingKeysWith: { first, _ in first }),
+                        myMemberID: me.id.uuidString,
+                        currencyCode: currency,
+                        zoneID: zoneID,
+                        in: context)
+                }
+            }
+            try context.save()
+        } catch {
+            print("DevSeedGroups: createSettled error: \(error)")
+        }
+    }
+
+    /// Mismo umbral que `GroupBalanceService` / `AccountDeletionDebtLogic`.
+    private static let settleEpsilon: Double = 0.01
+
+    /// Emite las liquidaciones confirmadas de UNA moneda de UN grupo. Primero la del usuario (su neto
+    /// ENTERO contra el neto opuesto más grande → cero exacto, sin depender de que el resto cuadre);
+    /// después un greedy mayor-deudor ↔ mayor-acreedor con lo que queda.
+    private static func settleToZero(
+        nets: [String: Double],
+        myMemberID: String,
+        currencyCode: String,
+        zoneID: String,
+        in context: ModelContext
+    ) {
+        var nets = nets
+        let myNet = nets[myMemberID] ?? 0
+        if abs(myNet) > settleEpsilon {
+            let others = nets.filter { $0.key != myMemberID }
+            // Neto > 0 = me deben ⇒ me paga el que más debe. Neto < 0 = debo ⇒ le pago al que más se le debe.
+            let counterparty = myNet > 0
+                ? others.min(by: { $0.value < $1.value })?.key
+                : others.max(by: { $0.value < $1.value })?.key
+            if let counterparty {
+                insertSettlement(
+                    from: myNet > 0 ? counterparty : myMemberID,
+                    to: myNet > 0 ? myMemberID : counterparty,
+                    amount: abs(myNet), currencyCode: currencyCode, zoneID: zoneID, in: context)
+                nets[myMemberID] = 0
+                // La liquidación traslada el neto del usuario ENTERO a la contraparte (en los dos sentidos:
+                // el `from` suma al `paid` y el `to` al `owes`, así que el delta es `myNet` con su signo).
+                nets[counterparty, default: 0] += myNet
+            }
+        }
+
+        // Resto: empareja al mayor deudor con el mayor acreedor. Cada vuelta deja a uno de los dos en cero
+        // ⇒ el tope de iteraciones es holgado y garantiza terminación pase lo que pase con el redondeo.
+        for _ in 0..<nets.count {
+            guard let creditor = nets.max(by: { $0.value < $1.value }), creditor.value > settleEpsilon,
+                  let debtor = nets.min(by: { $0.value < $1.value }), debtor.value < -settleEpsilon
+            else { break }
+            let amount = (min(creditor.value, -debtor.value) * 100).rounded() / 100
+            insertSettlement(from: debtor.key, to: creditor.key, amount: amount,
+                             currencyCode: currencyCode, zoneID: zoneID, in: context)
+            nets[creditor.key] = creditor.value - amount
+            nets[debtor.key] = debtor.value + amount
+        }
+    }
+
+    private static func insertSettlement(
+        from: String,
+        to: String,
+        amount: Double,
+        currencyCode: String,
+        zoneID: String,
+        in context: ModelContext
+    ) {
+        let settlement = SplitSettlement(
+            groupZoneID: zoneID, fromMemberID: from, toMemberID: to,
+            amount: amount, currencyCode: currencyCode)
+        // `calculateBalances` solo aplica las CONFIRMADAS — sin esto el neto no se movería.
+        settlement.isConfirmed = true
+        context.insert(settlement)
     }
 
     /// Variante invitado (perfil `.gruposInvitado`): el MISMO grupo "Viaje a Cusco" pero
