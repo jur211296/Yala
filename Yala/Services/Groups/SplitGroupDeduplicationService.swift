@@ -17,6 +17,13 @@
 //  Cascade-delete CloudKit is accepted: the duplicate's record is removed from CK
 //  via SwiftData CKSyncEngine; other devices observe the delete and converge.
 //
+//  ⚠️ Esa última frase se escribió cuando CloudKit era el único canal, y para el BACKEND es falsa y
+//  destructiva: allí la identidad de `split_groups` es la ZONA —o sea, la fila SUPERVIVIENTE— así que
+//  propagar el borrado del duplicado no «converge», borra el grupo para TODOS los miembros. Y el
+//  `context.save()` de abajo va con el autor por DEFECTO, que es justo el que captura el drain de Grupos.
+//  Lo que lo impide hoy es el `guard !updateOnly` del `case .delete` de `GroupsSyncClient.translateChange`:
+//  esta limpieza es LOCAL y tiene que seguir siéndolo. No la conviertas en una escritura remota.
+//
 
 import Foundation
 import SwiftData

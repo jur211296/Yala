@@ -2601,6 +2601,17 @@ final class SplitSyncManager {
 
         switch recordType {
         case CKConstants.RecordType.groupMeta:
+            // SIN EMISOR, y por eso no lleva la cascada de hijas que sí lleva su gemelo del canal backend
+            // (`GroupsSyncClient.applyGroupMeta`): ninguna de las cuatro llamadas a `enqueueDeletion` del
+            // repo encola el `GroupMeta` —son share, gasto y liquidación (`GroupExpenseService`)— y ninguna
+            // versión de la historia lo hizo. En CloudKit un grupo se borra borrando su ZONA
+            // (`SplitZoneManager.deleteZone` → `.deleteZone` de base de datos), y eso aterriza en
+            // `handleFetchedDatabaseChanges` → `deleteGroupCache`, que SÍ cascadea. Añadir aquí un barrido
+            // sería código sin call-site prometiendo una garantía que nadie ejercita. Si algún día aparece
+            // un emisor (un borrado a mano desde la consola de CloudKit), la cascada iría por
+            // `groupZoneID == recordID.zoneID.zoneName` y es segura: el bucle que alimenta este case ya
+            // descartó las zonas backend, así que el `save()` con autor por defecto del handler no se
+            // traduce a tombstones.
             if let model = splitGroup(byID: modelID, in: context) { context.delete(model) }
             // El grupo desaparece entero → soltar sus TX/borradores personales, o quedan colgando de una
             // zona inexistente. Aquí manda `freezeForSoftDelete` y NO el unbridge, al revés que en un gasto

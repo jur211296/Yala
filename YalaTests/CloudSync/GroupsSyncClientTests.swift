@@ -267,6 +267,120 @@ struct GroupsSyncClientTests {
         #expect(!rows.contains { $0.opRaw == SyncOutboxOp.tombstone.rawValue })
     }
 
+    /// El caso que el test de arriba NO cubre y que era el único camino VIVO hacia un tombstone de grupo:
+    /// una zona con `SplitGroup` DUPLICADO. Ahí «la zona sale del set backend al borrar el SplitGroup» es
+    /// falso —la ganadora la mantiene dentro—, así que el guard por zona no frena nada y el dedup del
+    /// arranque (`SplitGroupDeduplicationService`, `context.save()` con autor por DEFECTO) emitía el
+    /// tombstone de la perdedora. Server-side la identidad de `split_groups` es la ZONA ⇒ eso borra el
+    /// grupo para TODOS los miembros. Lo para el `guard !updateOnly` del `case .delete`.
+    ///
+    /// MUTACIÓN: quitar ese guard deja la primera aserción en rojo.
+    @Test func drain_deletingDuplicateSplitGroup_neverEmitsGroupTombstone() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        // Dos filas, MISMA zona: el estado que documenta `SplitGroupDeduplicationService`.
+        let keeper = makeBackendGroup(zoneID: "SplitGroup-Dup", context: context)
+        let loser = makeBackendGroup(zoneID: "SplitGroup-Dup", context: context)
+        try context.save()
+
+        let client = GroupsSyncClient()
+        client.drainOnce(context: context)          // consume el History previo (los inserts no se emiten)
+        let before = try groupOutbox(context).count
+
+        // El dedup borra la perdedora; la ganadora sigue viva con la MISMA zona.
+        context.delete(loser)
+        try context.save()
+        client.drainOnce(context: context)
+
+        let rows = try groupOutbox(context)
+        // `GroupSyncOutbox.entityType` guarda el nombre de CLASE — la tabla Postgres solo aparece en el
+        // wire, vía `buildDelta`. Comparar contra `.table` aquí haría pasar la aserción en vacío.
+        #expect(!rows.contains {
+            $0.entityType == GroupSyncEntityType.splitGroup
+                && $0.opRaw == SyncOutboxOp.tombstone.rawValue
+        }, "un borrado LOCAL de una fila duplicada jamás debe tombstonear el grupo en el servidor")
+        #expect(rows.count == before)
+        #expect(keeper.cloudKitZoneID == "SplitGroup-Dup")
+    }
+
+    /// La otra mitad del guard nuevo: sigue sin emitirse el INSERT de `split_groups` (nace vía
+    /// `create_group`) y los tombstones de las entidades de CONTENIDO sí viajan — el guard es por entidad,
+    /// no un apagón del `case .delete`.
+    @Test func drain_expenseTombstone_stillEmitted_afterGroupTombstoneGuard() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        makeBackendGroup(zoneID: "SplitGroup-Live", context: context)
+        let expense = makeExpense(group: "SplitGroup-Live", desc: "Taxi", context: context)
+        try context.save()
+
+        let client = GroupsSyncClient()
+        client.drainOnce(context: context)
+
+        context.delete(expense)
+        try context.save()
+        client.drainOnce(context: context)
+
+        let rows = try groupOutbox(context)
+        #expect(rows.contains {
+            $0.entityType == GroupSyncEntityType.splitExpense
+                && $0.opRaw == SyncOutboxOp.tombstone.rawValue
+        }, "el grupo sigue vivo: el borrado del gasto SÍ es una edición local que debe viajar")
+    }
+
+    /// TRANSACCIONALIDAD de la cascada del tombstone de grupo: corre DENTRO del `saveWithAuthor` del apply,
+    /// así que sus borrados llevan `outboxSaveAuthor` y el drain no los traduce. Sacarla de ahí —a
+    /// `drainSoftDeleteFreeze`, o a un `save()` propio— los dejaría bajo el autor por DEFECTO y el drain
+    /// emitiría tombstones de `split_expenses`/`split_shares`/`split_settlements` con HLC fresco, que el
+    /// servidor SÍ aplica (y con `is_group_writer`, más laxo que el `is_group_admin` de la meta): los
+    /// gastos desaparecerían para TODOS los miembros. Eso es peor que las huérfanas que la cascada arregla.
+    ///
+    /// La zona lleva un `SplitGroup` DUPLICADO a propósito: `fetchSplitGroup` tiene `fetchLimit = 1`, así
+    /// que el apply borra UNA fila y la otra mantiene la zona dentro de `backendZoneIDs`. Sin eso el guard
+    /// por zona taparía la fuga y la aserción no probaría nada del autor.
+    ///
+    /// MUTACIÓN: mover la cascada fuera del `saveWithAuthor` deja la primera aserción en rojo.
+    @Test func apply_groupTombstoneCascade_runsUnderOutboxAuthor_soDrainEmitsNothing() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        makeBackendGroup(zoneID: "SplitGroup-Dup", context: context)
+        makeBackendGroup(zoneID: "SplitGroup-Dup", context: context)
+        let expense = makeExpense(group: "SplitGroup-Dup", desc: "Hotel", context: context)
+        context.insert(SplitShare(
+            expenseID: expense.id, memberID: "member-1", amount: 6, groupZoneID: "SplitGroup-Dup"))
+        context.insert(SplitSettlement(
+            groupZoneID: "SplitGroup-Dup", fromMemberID: "member-1", toMemberID: "member-2", amount: 3))
+        try context.save()
+
+        let client = GroupsSyncClient()
+        client.drainOnce(context: context)                 // consume el History de la siembra
+        let before = try groupOutbox(context).count
+
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            GroupPulledPage(
+                deltas: [GroupPulledDelta(
+                    entityType: GroupEntityEmissionMap.splitGroup.table, groupID: "SplitGroup-Dup",
+                    rawSyncID: "SplitGroup-Dup", syncID: nil, op: .tombstone, fields: [:], fieldHlcs: [:],
+                    hlc: "2026-08-02T00:00:00.000Z-0000-00000000000000f9", serverSeq: 9, schemaVersion: 1)],
+                cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+
+        // La zona SIGUE en el set backend (la fila duplicada sobrevivió) ⇒ si la cascada hubiera corrido
+        // bajo el autor por defecto, estos tombstones estarían aquí.
+        client.drainOnce(context: context)
+        let rows = try groupOutbox(context)
+        #expect(!rows.contains { $0.opRaw == SyncOutboxOp.tombstone.rawValue },
+                "la cascada del apply se filtró al outbox: corrió fuera del `saveWithAuthor`")
+        #expect(rows.count == before)
+        // Y la cascada sí ocurrió en local.
+        #expect(try context.fetchCount(FetchDescriptor<SplitExpense>()) == 0)
+        #expect(try context.fetchCount(FetchDescriptor<SplitShare>()) == 0)
+        #expect(try context.fetchCount(FetchDescriptor<SplitSettlement>()) == 0)
+    }
+
     // MARK: - Test 4 · Cursores por grupo + URL del pull (assert del request generado, lección d49d2e47)
 
     @Test func apply_advancesGroupCursors_perGroup() throws {

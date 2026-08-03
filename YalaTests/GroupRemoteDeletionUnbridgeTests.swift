@@ -311,6 +311,101 @@ struct RemoteTombstoneUnbridgeBackendTests {
         #expect(virtual.splitExpenseID != nil)
     }
 
+    /// El grupo desaparece y sus HIJAS se van con él. Cuelgan del string plano `groupZoneID` —sin
+    /// `@Relationship`— así que SwiftData no cascadea nada solo, y el camino remoto solo borraba la fila del
+    /// grupo: `SplitMember`/`SplitShare`/`SplitExpense`/`SplitSettlement` quedaban vivos apuntando a una
+    /// zona que ya no existe. El camino LOCAL sí lo hace desde siempre (`cascadeDeleteGroupData`).
+    ///
+    /// MUTACIÓN: quitar la llamada a `cascadeDeleteGroupRows` deja las cuatro primeras aserciones en rojo.
+    @Test func groupTombstone_cascadeDeletesChildRows() throws {
+        let dir = UnbridgeHarness.freshDir(); defer { UnbridgeHarness.cleanup(dir) }
+        let context = try UnbridgeHarness.makeContext(dir)
+        UnbridgeHarness.makeGroup(zoneID: "SplitGroup-A", context: context)
+        // Zona VECINA: el barrido va por zona y no debe pasarse de largo.
+        UnbridgeHarness.makeGroup(zoneID: "SplitGroup-B", context: context)
+
+        for zone in ["SplitGroup-A", "SplitGroup-B"] {
+            context.insert(SplitMember(groupZoneID: zone, displayName: "Jür"))
+            let expense = SplitExpense(
+                groupZoneID: zone, amount: 20, currencyCode: "USD",
+                expenseDescription: "Cena", paidByMemberID: "member-1")
+            context.insert(expense)
+            context.insert(SplitShare(
+                expenseID: expense.id, memberID: "member-1", amount: 10, groupZoneID: zone))
+            context.insert(SplitSettlement(
+                groupZoneID: zone, fromMemberID: "member-1", toMemberID: "member-2", amount: 5))
+        }
+        try context.save()
+
+        try UnbridgeHarness.withBridge(context) {
+            let client = GroupsSyncClient()
+            let cursor = try client.loadOrCreateCursor(context)
+            client.applyPulledPage(
+                GroupPulledPage(
+                    deltas: [GroupPulledDelta(
+                        entityType: GroupEntityEmissionMap.splitGroup.table, groupID: "SplitGroup-A",
+                        rawSyncID: "SplitGroup-A", syncID: nil, op: .tombstone, fields: [:], fieldHlcs: [:],
+                        hlc: "2026-08-02T00:00:00.000Z-0000-00000000000000fb", serverSeq: 6,
+                        schemaVersion: 1)],
+                    cursors: [:], memberships: []),
+                cursor: cursor, context: context)
+        }
+
+        func countInZone<T: PersistentModel>(_ type: T.Type, _ predicate: Predicate<T>) throws -> Int {
+            try context.fetchCount(FetchDescriptor<T>(predicate: predicate))
+        }
+        #expect(try countInZone(SplitMember.self, #Predicate { $0.groupZoneID == "SplitGroup-A" }) == 0)
+        #expect(try countInZone(SplitShare.self, #Predicate { $0.groupZoneID == "SplitGroup-A" }) == 0)
+        #expect(try countInZone(SplitExpense.self, #Predicate { $0.groupZoneID == "SplitGroup-A" }) == 0)
+        #expect(try countInZone(SplitSettlement.self, #Predicate { $0.groupZoneID == "SplitGroup-A" }) == 0)
+
+        // La zona vecina, intacta — grupo incluido.
+        #expect(try context.fetchCount(FetchDescriptor<SplitGroup>()) == 1)
+        #expect(try countInZone(SplitMember.self, #Predicate { $0.groupZoneID == "SplitGroup-B" }) == 1)
+        #expect(try countInZone(SplitShare.self, #Predicate { $0.groupZoneID == "SplitGroup-B" }) == 1)
+        #expect(try countInZone(SplitExpense.self, #Predicate { $0.groupZoneID == "SplitGroup-B" }) == 1)
+        #expect(try countInZone(SplitSettlement.self, #Predicate { $0.groupZoneID == "SplitGroup-B" }) == 1)
+    }
+
+    /// La cascada NO cambia el criterio del grupo, que es CONGELAR y no destruir: las transacciones
+    /// personales siguen su camino (`freezeZones` → `drainSoftDeleteFreeze`), que trabaja por zona sobre el
+    /// store PERSONAL y no lee ninguna fila `Split*`. Si alguien mete los gastos cascadeados en el
+    /// des-puenteo, la de cuenta real —dinero que salió de verdad— desaparece.
+    @Test func groupTombstone_cascade_stillFreezesInsteadOfUnbridging() throws {
+        let dir = UnbridgeHarness.freshDir(); defer { UnbridgeHarness.cleanup(dir) }
+        let context = try UnbridgeHarness.makeContext(dir)
+        UnbridgeHarness.makeGroup(zoneID: "SplitGroup-A", context: context)
+
+        let expenseID = UUID()
+        let expense = SplitExpense(
+            groupZoneID: "SplitGroup-A", amount: 40, currencyCode: "USD",
+            expenseDescription: "Hotel", paidByMemberID: "member-1")
+        expense.id = expenseID
+        context.insert(expense)
+        let real = UnbridgeHarness.makeBridgedTx(
+            expenseID: expenseID, zone: "SplitGroup-A", amount: 40, accountIsSystem: false, context: context)
+        try context.save()
+
+        try UnbridgeHarness.withBridge(context) {
+            let client = GroupsSyncClient()
+            let cursor = try client.loadOrCreateCursor(context)
+            client.applyPulledPage(
+                GroupPulledPage(
+                    deltas: [GroupPulledDelta(
+                        entityType: GroupEntityEmissionMap.splitGroup.table, groupID: "SplitGroup-A",
+                        rawSyncID: "SplitGroup-A", syncID: nil, op: .tombstone, fields: [:], fieldHlcs: [:],
+                        hlc: "2026-08-02T00:00:00.000Z-0000-00000000000000fa", serverSeq: 7,
+                        schemaVersion: 1)],
+                    cursors: [:], memberships: []),
+                cursor: cursor, context: context)
+        }
+
+        #expect(try context.fetchCount(FetchDescriptor<SplitExpense>()) == 0, "la hija se fue con el grupo")
+        #expect(try UnbridgeHarness.txCount(context) == 1, "pero el dinero de la cuenta real se preserva")
+        #expect(real.splitExpenseID == nil, "liberado, no borrado")
+        #expect(real.amount == 40)
+    }
+
     /// EL CHOQUE DE CRITERIOS: el servidor cascadea, así que una misma página puede traer el tombstone del
     /// GRUPO y los de sus gastos. El grupo dice «congela» y el gasto dice «destruye», sobre las mismas
     /// filas. Gana el congelado para la de cuenta real —dinero que salió de verdad— y el des-puenteo se

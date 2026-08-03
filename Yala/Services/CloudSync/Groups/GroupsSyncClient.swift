@@ -779,6 +779,24 @@ final class GroupsSyncClient {
                              changedColumns: changedColumns, tx: tx, rows: &rows, seen: &seen)
 
         case .delete(let delete):
+            // `split_groups` no nace NI MUERE por el push: nace por el RPC `create_group` y muere por
+            // `groups_forget_user`. El `case .insert` lleva este mismo guard desde el principio; que aquí
+            // faltara no era simetría cosmética, era el único camino VIVO por el que un tombstone de grupo
+            // llega a existir — y el que hace alcanzable la cascada de arriba.
+            //
+            // Por qué el otro guard no basta: `backendZoneIDs` se calcula sobre las filas VIVAS (`:675`)
+            // DESPUÉS del borrado, así que solo protege cuando la fila borrada es la ÚNICA de su zona. Con
+            // un `SplitGroup` DUPLICADO en la misma zona —estado documentado, `SplitGroupDeduplicationService`—
+            // la ganadora mantiene la zona dentro del set, y el dedup del arranque (`AppBootstrapper` 16.4,
+            // `context.save()` pelado ⇒ autor por defecto) emitía el tombstone de la perdedora. Aguas abajo
+            // no lo frena NADA: `pushModeOf` del manifest no tiene call-site en el gateway (el `update_only`
+            // no se enforza), el validador del push solo rechaza `pull_only`, y `apply_group_delta` hace
+            // `update split_groups set deleted = true` con un simple `is_group_admin` — que el device del
+            // owner cumple. Resultado: una tarea de HIGIENE LOCAL borraba el grupo para todos los miembros.
+            //
+            // ⇒ El gate por ZONA sobre filas vivas es la herramienta equivocada para un tombstone por FILA.
+            // Éste va por ENTIDAD y es el que carga el peso.
+            guard !updateOnly else { return }
             guard let typed = delete as? DefaultHistoryDelete<T> else { return }
             guard let syncID = tombstoneSyncID(typed), let groupID = tombstoneGroupID(typed) else {
                 #if DEBUG
@@ -792,6 +810,9 @@ final class GroupsSyncClient {
             // H3 (review): el mismo skip también salta UPSERTS previos aún no drenados de ese grupo
             // (crear→gastar→salir antes del primer drain) — correcto igual: tras el leave, RLS rechazaría
             // esas filas (`not_authorized`), solo se ahorra el round-trip al dead-letter.
+            // PRECISIÓN: «su zona salió del set» solo vale con UNA fila por zona. Con un `SplitGroup`
+            // duplicado la zona sigue dentro y este guard NO frena nada — por eso el de `updateOnly` de
+            // arriba va por entidad y no se apoya en éste.
             guard backendZoneIDs.contains(groupID) else {
                 GroupsSyncBreadcrumb.groupsDrainSkippedNonBackendGroup(entity: entityType)
                 return
@@ -2097,6 +2118,12 @@ final class GroupsSyncClient {
         // nace vía RPC/CKSyncEngine, pero el pull es autoritativo para un member — idempotente).
         let existing = try fetchSplitGroup(zoneID: delta.groupID, context: context)
         if delta.op == .tombstone {
+            // Las hijas cuelgan del string plano `groupZoneID`, SIN `@Relationship` ⇒ SwiftData NO cascadea
+            // y borrar solo el `SplitGroup` las dejaba HUÉRFANAS. Va ANTES del `delete` del grupo por
+            // legibilidad; el orden es indiferente (nadie las resuelve a través de la fila del grupo).
+            // Corre aunque `existing` sea `nil`: el grupo pudo borrarse en una vuelta anterior que no llegó
+            // a limpiar, y el barrido es idempotente.
+            try cascadeDeleteGroupRows(zoneID: delta.groupID, context: context)
             if let existing { context.delete(existing) }
             // El grupo desaparece entero → hay que SOLTAR sus transacciones y borradores personales, o
             // quedan colgando de una zona que ya no existe. Aquí manda `freezeForSoftDelete` y NO el
@@ -2148,6 +2175,47 @@ final class GroupsSyncClient {
         // y los borradores personales que colgaban de esa zona. El drenaje va fuera del `saveWithAuthor`,
         // porque `freezeForSoftDelete` escribe en el store PERSONAL y hace su propio save.
         if !wasHidden, model.isHiddenForAll { freezeZones.insert(delta.groupID) }
+    }
+
+    /// Borra las filas hijas de una zona cuyo grupo desaparece. Es la mitad que el camino REMOTO no había
+    /// copiado del LOCAL (`GroupService.cascadeDeleteGroupData`, el mismo barrido por `groupZoneID` que
+    /// hacen `deleteGroup` y `performLocalCleanupAndDelete`): sin `@Relationship` entre `SplitGroup` y sus
+    /// hijas —van por el string plano— SwiftData no cascadea nada solo.
+    ///
+    /// **Va DENTRO del `saveWithAuthor` de `applyPulledPage` y NO hace `save()` propio.** Esa es la
+    /// condición que separa esto de una destrucción de datos AJENOS, y no es cautela genérica: bajo el autor
+    /// por DEFECTO el drain captura la transacción (filtra `author != outboxSaveAuthor`, `:566`) y traduciría
+    /// estos borrados a tombstones de `split_expenses`/`split_shares`/`split_settlements` con HLC fresco —
+    /// que el servidor SÍ aplica, y con `is_group_writer`, más laxo que el `is_group_admin` que protege la
+    /// meta ⇒ los gastos desaparecerían para TODOS los miembros. Ir dentro le da además el `rollback()` del
+    /// `catch` de la página: si el save de la página falla, la cascada se revierte con ella.
+    ///
+    /// **NO alimenta `unbridgeExpenseIDs`/`unbridgeSettlementIDs`, a propósito.** El criterio de un grupo
+    /// que desaparece es CONGELAR y no destruir (esos gastos ocurrieron y el dinero salió de una cuenta
+    /// real); el des-puenteo se llevaría por delante la `TransactionItem` de cuenta real. Ese lado lo cierra
+    /// `freezeZones` → `drainSoftDeleteFreeze`, que trabaja por ZONA sobre el store personal y no lee ni una
+    /// de estas filas ⇒ borrarlas aquí no le quita nada de lo que necesita.
+    private func cascadeDeleteGroupRows(zoneID: String, context: ModelContext) throws {
+        // `#Predicate` CONCRETO por tipo: uno genérico-protocolo compila y crashea al EJECUTAR el fetch.
+        // La clave es `delta.groupID` y no el `cloudKitZoneID` de la fila (que puede no existir) ni la zona
+        // derivada del `id` local — en un grupo born-backend el `id` es un UUID fresco sin relación con la
+        // zona, que es justo el defecto que arrastra `SplitSyncManager.deleteGroupCache`.
+        for member in try context.fetch(
+            FetchDescriptor<SplitMember>(predicate: #Predicate { $0.groupZoneID == zoneID })) {
+            context.delete(member)
+        }
+        for share in try context.fetch(
+            FetchDescriptor<SplitShare>(predicate: #Predicate { $0.groupZoneID == zoneID })) {
+            context.delete(share)
+        }
+        for expense in try context.fetch(
+            FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.groupZoneID == zoneID })) {
+            context.delete(expense)
+        }
+        for settlement in try context.fetch(
+            FetchDescriptor<SplitSettlement>(predicate: #Predicate { $0.groupZoneID == zoneID })) {
+            context.delete(settlement)
+        }
     }
 
     private func applyMember(
