@@ -427,7 +427,7 @@ final class DataWipeService {
     ///   termina el propio predicado (`GroupsBetaGateLogic.isBridgeAllowed`) cuando el usuario adopta
     ///   Grupos, no un barrido.
     /// - `groupPrefs_*` y estado de Grupos — el dominio Grupos sobrevive el wipe por diseño
-    ///   (store propio, CKSyncEngine); sus prefs se limpian en leaveGroup/deleteGroup.
+    ///   (store propio, CKSyncEngine); sus prefs se limpian en leaveGroup.
     ///   Incluye `GroupNotifications.lastNotified.*`: barrerla duplicaría una notificación
     ///   de grupo legítima. Por eso el barrido de dedup de notificaciones de abajo enumera
     ///   prefijos concretos y NO usa uno genérico tipo "todo lo que huela a notificación".

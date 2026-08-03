@@ -333,46 +333,6 @@ final class GroupService {
         }
     }
 
-    /// Delete a group permanently (owner only).
-    /// Cascades: deletes zone, all local models, and unbridges personal records.
-    func deleteGroup(_ group: SplitGroup, allowDestructiveDelete: Bool = false) throws {
-        #if !DEBUG
-        throw GroupServiceError.deleteDisabled
-        #else
-        let context = try requireContext()
-
-        guard allowDestructiveDelete else { throw GroupServiceError.deleteDisabled }
-        guard group.isOwner else { throw GroupServiceError.notOwner }
-
-        // Delete CK zone (cascade deletes all remote records)
-        SplitZoneManager(syncManager: .shared).deleteZone(for: group)
-
-        // Libera TX cuenta real (preserva rastro) + convierte drafts a manual.
-        if GroupTransactionBridge.shared.isReady {
-            do {
-                try GroupTransactionBridge.shared.freezeForSoftDelete(group: group)
-            } catch {
-                logger.error("Failed to freeze for soft-delete: \(error)")
-            }
-        }
-
-        try cascadeDeleteGroupData(zoneName: group.cloudKitZoneID, context: context)
-        GroupPersonalPreferences.removeAll(for: group.cloudKitZoneID)
-        // Un join intent vivo para una zona que deja de existir localmente es
-        // obsoleto (reconciliarlo re-crearía el member recién borrado).
-        PendingJoinStore.clear(zoneName: group.cloudKitZoneID)
-        context.delete(group)
-
-        do {
-            try context.save()
-        } catch {
-            throw GroupServiceError.saveFailed(error)
-        }
-
-        SessionState.shared.incrementDataVersion()
-        #endif
-    }
-
     // MARK: - Member Management
 
     /// Add a member to a group.
@@ -1518,7 +1478,6 @@ enum GroupServiceError: LocalizedError {
     case cannotRemoveSelf
     case ownerMemberImmutable
     case currentUserMemberNotFound
-    case deleteDisabled
     case notPendingApproval
     case currentUserPendingApproval
     case outstandingBalance
@@ -1556,8 +1515,6 @@ enum GroupServiceError: LocalizedError {
             return "GroupService: The group owner cannot be removed or demoted"
         case .currentUserMemberNotFound:
             return "GroupService: Current user member was not found in this group"
-        case .deleteDisabled:
-            return "GroupService: Permanent group deletion is disabled; archive groups instead"
         case .notPendingApproval:
             return "GroupService: Member is not awaiting approval"
         case .currentUserPendingApproval:

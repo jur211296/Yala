@@ -2320,7 +2320,7 @@ final class GroupsSyncClient {
 
     /// Borra las filas hijas de una zona cuyo grupo desaparece. Es la mitad que el camino REMOTO no había
     /// copiado del LOCAL (`GroupService.cascadeDeleteGroupData`, el mismo barrido por `groupZoneID` que
-    /// hacen `deleteGroup` y `performLocalCleanupAndDelete`): sin `@Relationship` entre `SplitGroup` y sus
+    /// hace `performLocalCleanupAndDelete`): sin `@Relationship` entre `SplitGroup` y sus
     /// hijas —van por el string plano— SwiftData no cascadea nada solo.
     ///
     /// **Va DENTRO del `saveWithAuthor` de `applyPulledPage` y NO hace `save()` propio.** Esa es la

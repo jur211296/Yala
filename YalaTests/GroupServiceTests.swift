@@ -62,12 +62,6 @@ struct GroupServiceTests {
         #expect(error.errorDescription!.contains("last admin"))
     }
 
-    @Test func error_deleteDisabled_hasDescription() {
-        let error = GroupServiceError.deleteDisabled
-        #expect(error.errorDescription != nil)
-        #expect(error.errorDescription!.contains("archive"))
-    }
-
     @Test func error_saveFailed_includesUnderlyingError() {
         let underlying = NSError(domain: "test", code: 42)
         let error = GroupServiceError.saveFailed(underlying)
