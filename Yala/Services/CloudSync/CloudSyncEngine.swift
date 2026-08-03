@@ -2514,19 +2514,42 @@ final class CloudSyncEngine {
         do {
             let cursor = try loadOrCreateCursor(context)
             let txns = try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>())
-            // Anclar el baseline al último token de una transacción NO-motor (autor ≠ outboxSaveAuthor).
-            // Lo que este filtro garantiza (ajuste del review adversarial — la versión previa del comentario
-            // sobre-vendía "dominio/store personal"): excluye las transacciones RECIÉN escritas por el
-            // propio motor (creación del cursor / este mismo save), cuyo token bajo carga resultó
-            // intermitentemente NO-comparable con writes futuros del store personal (bug real cazado por
-            // test: `token > baseline` cross-store fallaba ~50% → el drain se saltaba writes concurrentes
-            // post-baseline = pérdida silenciosa). La tx anclada PUEDE seguir siendo del store sync-meta
-            // (p.ej. el save de captura de SyncIdentity, autor default) — eso es SEGURO por la misma
-            // monotonía global de tokens en la que el drain ya se apoya a diario (avanza su cursor con
-            // tokens de SyncIdentity de forma rutinaria, device-probado); lo que NO era seguro es anclar a
-            // la tx del PROPIO save del motor. Sin tx no-motor todavía (born-cloud), no hay ventana que
-            // cerrar → return (token queda como estaba).
-            guard let lastTx = txns.last(where: { $0.author != Self.outboxSaveAuthor }) else { return }
+            // Anclar el baseline al último token de una transacción del STORE PERSONAL y NO-motor. Los dos
+            // filtros están por razones distintas y ninguno sustituye al otro:
+            //
+            //  • `author != outboxSaveAuthor` excluye las transacciones RECIÉN escritas por el propio motor
+            //    (creación del cursor / este mismo save). Anclar ahí resultó intermitentemente NO-comparable
+            //    con writes futuros del store personal (bug real cazado por test: `token > baseline` fallaba
+            //    ~50% → el drain se saltaba writes concurrentes post-baseline = pérdida silenciosa).
+            //
+            //  • `isPersonalStoreTransaction` es el que faltaba, y su ausencia estaba AUTORIZADA POR ESCRITO
+            //    por la versión previa de este comentario, que afirmaba que anclar en `syncMeta` (citando el
+            //    save de captura de `SyncIdentity`) era «SEGURO por la misma monotonía global de tokens […]
+            //    device-probado». **Eso está REFUTADO por medición (2026-08-03).** No hay monotonía global:
+            //    `DefaultHistoryToken` es POR-STORE y `fetchHistory($0.token > token)` OCULTA por completo
+            //    los demás stores del container (`historyToken_isPerStore_andHidesOtherStores`). Sondeados
+            //    los dos casos alcanzables aquí —la última no-motor siendo `GroupSyncCursor` (autor
+            //    `GroupsSyncOutbox`, que para este canal es EXTERNO, y con el rollout de Grupos al 100 % su
+            //    loop de cadencia lo escribe periódicamente ⇒ caso DOMINANTE) y siendo `SyncIdentity`, el
+            //    ejemplo que el comentario daba por bueno— el ancla caía en `syncMeta` y el write personal
+            //    posterior al baseline **no surfaceaba**: el baseline dejaba de cerrar la ventana. Y el daño
+            //    no se quedaba en «un write invisible»: lo rescataba `recoverIfHistoryTokenIncomparable`
+            //    re-procesando la UNIÓN, o sea RE-EMITIENDO filas PRE-baseline (2 en la sonda donde toca 1)
+            //    — exactamente lo que este método existe para evitar— más un canario
+            //    `historyTokenIncomparable` FALSO. En el call-site del adopt es peor por escala: el corpus
+            //    importado de CloudKit acaba de asentarse, así que buena parte cae dentro de la ventana de
+            //    slack del guard y se re-emite, que es el contrato (ii) de `runAdoptFlow` incumplido.
+            //    Nota: hasta el fix del ancla del drain (mismo día) esto se auto-curaba a medias, porque el
+            //    avance normal aceptaba cualquier transacción externa y re-anclaba en la vuelta siguiente;
+            //    acotado el drain a su store, ese rescate accidental desapareció y solo queda el guard.
+            //
+            // Sin transacción personal no-motor no hay ventana PERSONAL que cerrar → return (token queda
+            // como estaba). Es la misma semántica de antes para el caso born-cloud, y sigue siendo correcta:
+            // el corpus que este baseline suprime son writes del store personal, así que su ausencia en la
+            // History implica que no hay nada que suprimir.
+            guard let lastTx = txns.last(where: {
+                Self.isPersonalStoreTransaction($0) && $0.author != Self.outboxSaveAuthor
+            }) else { return }
             try saveWithAuthor(context, Self.outboxSaveAuthor) {
                 cursor.historyTokenData = try encodeToken(lastTx.token)
                 // Estampar el ancla temporal JUNTO al token (S1 del review adversarial): un fast-forward
