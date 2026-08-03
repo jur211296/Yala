@@ -18,36 +18,41 @@ final class GroupExpenseSuccessUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    private func launch() -> XCUIApplication {
+    /// Aterriza DIRECTO en el tab Grupos vía `-uitest-deeplink groups`, sin pasar por el dashboard
+    /// de "Más" — mismo patrón que `GroupsSmokeUITests.launchOnGroups()`, adoptado aquí por la
+    /// misma causa.
+    ///
+    /// Antes se navegaba por UI: tab "Más" (4º) → scroll → card `more_card_groups`. Eso **no es
+    /// alcanzable de forma determinista en iOS 27.0**: la card vive en un `LazyVGrid` que no
+    /// materializa la celda hasta scrollearla, y en 27.0 ningún swipe sintético la revela (medido
+    /// el 2026-07-29 con el smoke de Grupos: 8/8 verde en iOS 26.4 con UN swipe · 1/8 en 27.0, con
+    /// 93 swipes sobre el elemento Aplicación y 81 sobre el `scrollView`). Este test se escribió el
+    /// 2026-07-06, cuando 26.x lo absorbía, y quedó fuera de la migración a deeplink del smoke
+    /// (`5c84df88`) — de ahí su rojo en `openGroups`, no una regresión de producto. **Ya se probó y
+    /// NO funciona** ni subir el contador de swipes ni scrollear-hasta-la-condición en vez de un
+    /// `for` fijo: 30 s de scroll con asentamiento entre gestos siguen dando 1/8. Detalle en
+    /// `.claude/rules/testing.md` y en la Lista Negra de TESTING-STRATEGY.md.
+    ///
+    /// Lo que este test verifica es la PANTALLA DE ÉXITO del gasto, no cómo se llega al tab, así
+    /// que el deeplink prueba exactamente lo suyo. NO hace falta fingir sesión de nube
+    /// (`-uitest-fake-cloud-session`): con grupos sembrados el contenedor pinta las cards sin
+    /// sesión, y `GroupExpenseViewModel.save()` es una escritura SwiftData local — ningún gate de
+    /// `hasSession` en `canSave` ni en el camino a `GroupExpenseSuccessView`. Los args de sesión y
+    /// consent solo los necesita CREAR GRUPO (ver la sección de dos gates en la regla durable).
+    private func launchOnGroups() -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchForUITest(pro: true, seed: "grupos")
+        app.launchForUITest(pro: true, seed: "grupos", deeplink: "groups")
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
         return app
-    }
-
-    /// Navega al tab Grupos (oculto en "Más"): tab "Más" (4º) → card Grupos del dashboard.
-    private func openGroups(_ app: XCUIApplication) {
-        let moreTab = app.tabBars.buttons.element(boundBy: 3)
-        XCTAssertTrue(moreTab.waitForExistence(timeout: 10), "No apareció el tab Más.")
-        moreTab.tap()
-
-        let groupsRow = app.buttons["more_card_groups"]
-        var attempts = 0
-        while !groupsRow.exists && attempts < 8 {
-            app.swipeUp()
-            attempts += 1
-        }
-        XCTAssertTrue(groupsRow.waitForExistence(timeout: 5), "No apareció la card Grupos en Más.")
-        groupsRow.tap()
     }
 
     /// groups-expense-form: detalle del grupo → FAB nuevo gasto → llenar → guardar →
     /// aparece GroupExpenseSuccessView.
     func test_createGroupExpenseShowsSuccessScreen() {
-        let app = launch()
-        openGroups(app)
+        let app = launchOnGroups()
 
-        // Detalle del grupo sembrado.
+        // Detalle del grupo sembrado ("Viaje a Cusco" ordena primero y tiene 3 miembros →
+        // flujo de chips, no la pre-pantalla de 2 personas).
         let card = app.descendants(matching: .any).matching(identifier: "group_card").firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 10), "No apareció la tarjeta del grupo.")
         card.tap()
