@@ -64,6 +64,31 @@ nonisolated enum GroupBackendIdentityLogic {
         isBackendGroup || movedToBackendAt != nil
     }
 
+    /// ¿Una op de MEMBRESÍA de esta ZONA va por el canal BACKEND (RPC) en vez de CKSyncEngine?
+    ///
+    /// **La unidad es la ZONA y no la fila**, por la misma razón que en `GroupZoneCacheGate` y
+    /// `GroupsIdentityPurgeGate`: existen `SplitGroup` distintos con el mismo `cloudKitZoneID`
+    /// (`SplitGroupDeduplicationService`) y el duplicado puede ser MIXTO —la adopción de
+    /// `GroupsSyncClient.fetchSplitGroup` voltea una fila arbitraria, `fetchLimit = 1` SIN `sortBy`—, así que
+    /// decidir por fila enruta el MISMO grupo por un canal u otro según cuál se tenga en la mano. Criterio
+    /// ANY-row: si alguna fila de la zona es del canal backend, la zona lo es.
+    ///
+    /// `inHandIsBackendGroup` va SEPARADO de `rowsInZone` y cuenta SIEMPRE, a propósito: es lo que hace que el
+    /// caller degrade al comportamiento ANTERIOR —la fila en mano— cuando no pudo enumerar la zona (el fetch
+    /// lanzó, o el objeto aún no está persistido). Nunca peor que decidir por fila; con una sola fila,
+    /// byte-idéntico.
+    ///
+    /// **El predicado por fila es `isBackendGroup` a secas y NO `belongsToBackendChannel`**, que es el de
+    /// RETENCIÓN. Una copia CONGELADA (`movedToBackendAt != nil`, `isBackendGroup == false`) es un grupo cuyo
+    /// miembro **aún no re-joineó** ⇒ no tiene membresía server-side ⇒ `leave_group` respondería
+    /// `member_not_found`, que `GroupService.batchLeave` trata como ÉXITO y salta el `leaveShare` de CloudKit:
+    /// ampliar el predicado dejaría al usuario dentro del CKShare del que creía haber salido.
+    static func membershipRoutesToBackend(
+        flagEnabled: Bool, inHandIsBackendGroup: Bool, rowsInZone: [Bool]
+    ) -> Bool {
+        flagEnabled && (inHandIsBackendGroup || rowsInZone.contains(true))
+    }
+
     /// R10 (G6-2): ¿este `member_key` es de un member LEGACY del mundo CloudKit (grupo migrado) en vez de un
     /// `sub` nacido del backend? El `sub` del auth SIEMPRE parsea como UUID (`v_uid::text`, lowercase-hyphenated);
     /// un recordName de CloudKit (`"_…"`) JAMÁS parsea. El discriminador decide en qué NAMESPACE derivar el id

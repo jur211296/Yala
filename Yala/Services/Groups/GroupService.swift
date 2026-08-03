@@ -62,10 +62,51 @@ final class GroupService {
     // MARK: - Backend channel routing (G5-A / C5)
 
     /// `true` si esta op de membership debe ir por el canal BACKEND (RPC) en vez de CKSyncEngine:
-    /// flag `groupsBackendEnabled` ON Y el grupo es del canal backend. Con el flag OFF SIEMPRE `false`
+    /// flag `groupsBackendEnabled` ON Y la ZONA es del canal backend. Con el flag OFF SIEMPRE `false`
     /// → camino CloudKit byte-idéntico.
+    ///
+    /// **La unidad es la ZONA, no la fila del parámetro** (`GroupBackendIdentityLogic.membershipRoutesToBackend`,
+    /// criterio ANY-row — mismo molde que `GroupZoneCacheGate.belongsToBackendChannel`). Decidía
+    /// `flag && group.isBackendGroup`, y con un `SplitGroup` DUPLICADO **mixto** en la zona el MISMO grupo se
+    /// enrutaba por un canal u otro según qué fila tuviera el caller en la mano: los siete call-sites de esta
+    /// función eligen entre «RPC server-first» y «CloudKit», y equivocarse hacia CloudKit produce un ÉXITO
+    /// LOCAL FALSO —`leaveGroup` no llama a `leave_group`, `approveMember`/`removeMember` no llaman a su RPC,
+    /// los dos guards defensivos de `rejectMember`/`changeRole` dejan de lanzar— con el usuario intacto
+    /// server-side (y, en el caso del leave, todavía `is_group_writer`).
+    ///
+    /// El fetch degrada a la fila en mano si no hay contexto o si lanza: nunca peor que el criterio anterior.
+    ///
+    /// **Asimetría que sobrevive y hay que conocer antes de leer los docblocks de aguas abajo:** el
+    /// choke-point C2 (`SplitSyncManager.enqueueSave(modelID:group:)`, `guard !(group.isBackendGroup ||
+    /// group.isMigratedFrozen)`) sigue decidiendo POR FILA, así que en una zona MIXTA no frena con la gemela
+    /// sin marcar. `removeMember`, `removeMemberLocal` y `approveMember` prometen por escrito que su
+    /// `enqueueSave` «queda no-op por C2»: eso es cierto por fila y falso en zona mixta — y lo era YA antes
+    /// de que el canal pasara a decidirse por zona, porque ese enqueue nunca dependió de esta función.
     private func routesMembershipToBackend(_ group: SplitGroup) -> Bool {
-        CloudSyncFlags.groupsBackendEnabled && group.isBackendGroup
+        let flagEnabled = CloudSyncFlags.groupsBackendEnabled
+        // Con el flag OFF no se enumera la zona: el resultado ya es `false` y el camino CloudKit tiene que
+        // quedar byte-idéntico —también en trabajo— para la cohorte que no tiene el canal encendido.
+        let rowsInZone = flagEnabled ? backendFlagsInZone(group.cloudKitZoneID) : []
+        return GroupBackendIdentityLogic.membershipRoutesToBackend(
+            flagEnabled: flagEnabled,
+            inHandIsBackendGroup: group.isBackendGroup,
+            rowsInZone: rowsInZone)
+    }
+
+    /// `isBackendGroup` de TODAS las filas de la zona. Devuelve **vacío** sin contexto o si el fetch lanza —
+    /// el caller cae entonces a la fila en mano, que es exactamente el comportamiento anterior a este fix.
+    private func backendFlagsInZone(_ zoneID: String) -> [Bool] {
+        guard let context = modelContext else { return [] }
+        do {
+            return try context
+                .fetch(FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.cloudKitZoneID == zoneID }))
+                .map(\.isBackendGroup)
+        } catch {
+            #if DEBUG
+            logger.error("routesMembershipToBackend: fetch de la zona \(zoneID, privacy: .public) falló: \(error.localizedDescription, privacy: .public)")
+            #endif
+            return []
+        }
     }
 
     /// Servicio de membership del canal backend (RPC tipado). Inyectable para tests (`.shared` es singleton).
@@ -510,13 +551,24 @@ final class GroupService {
 
         guard !group.isOwner else { throw GroupServiceError.ownerCannotLeave }
 
-        // C5: grupo backend + flag ON → RPC `leave_group` (server-first, deja la fila `status='left'`) +
-        // limpieza local existente. SIN `leaveShare`/`PendingLeaveShareTracker` (no hay CKShare) y SIN
+        // C5: zona backend + flag ON → RPC `leave_group` (server-first, deja la fila `status='left'`) +
+        // limpieza local existente. SIN `leaveShare`/`PendingLeaveShareTracker` y SIN
         // `ensureCurrentUserMemberExists` (PROHIBIDO para backend — regla A1: encolaría a CKSyncEngine). Los
         // tombstones del cascade de `performLocalCleanupAndDelete` NO se emiten (C2-bis: la zona sale del set
         // backend al borrar el SplitGroup — y sale SIEMPRE desde 2026-08-03, porque la primitiva barre TODAS
         // las filas de la zona; con una sola, un duplicado dejaba la zona dentro del set y esta frase era
         // falsa). RPC falla → throw ANTES de tocar el contexto → local INTACTO.
+        //
+        // **RESIDUAL DECLARADO, del mismo estado que motivó el criterio por zona.** «No hay CKShare» es
+        // cierto por FILA (`SplitZoneManager.createZone`/`createShare` guardan por `!isBackendGroup`) y
+        // FALSO en una zona MIXTA: ahí la gemela CloudKit sí pudo mintear uno, y desde que el canal se
+        // decide por ZONA esta rama se toma SIEMPRE ⇒ el usuario sale del grupo server-side pero se queda
+        // dentro del share. Antes pasaba lo mismo en la mitad de los casos —cuando la fila en mano era la
+        // backend—, así que el fix lo vuelve determinista, no lo introduce, y a cambio retira el fallo
+        // grave (no salir del grupo). **NO se cierra encolando en `PendingLeaveShareTracker`**: ese retry
+        // (`AppBootstrapper.retryPendingLeaveShares`) no clasifica el fallo permanente y CONSERVA la entry
+        // para siempre ⇒ una zona sin share se llevaría un request a CloudKit en cada boot, eternamente.
+        // Cerrarlo bien pide antes darle TTL/clasificación a ese tracker — ticket aparte.
         if routesMembershipToBackend(group) {
             _ = try await backendMembershipFactory().leave(groupID: group.cloudKitZoneID)
             try performLocalCleanupAndDelete(group: group, context: context)
@@ -575,18 +627,29 @@ final class GroupService {
     /// user), no-op.
     func performRemovedSelfCleanup(zoneName: String, context providedContext: ModelContext? = nil) async {
         guard let context = providedContext ?? modelContext else { return }
-        let descriptor = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.cloudKitZoneID == zoneName })
-        let group: SplitGroup
+        // `createdAt` ASC = la fila CANÓNICA de la zona, mismo criterio que `group(for:)`. El barrido ya es
+        // por zona desde 2026-08-03, así que la elegida no cambia QUÉ se borra — pero sí alimenta el
+        // `ownerName` de abajo, y sin `sortBy` la elegía SQLite.
+        let descriptor = FetchDescriptor<SplitGroup>(
+            predicate: #Predicate { $0.cloudKitZoneID == zoneName },
+            sortBy: [SortDescriptor(\.createdAt, order: .forward)])
+        let rows: [SplitGroup]
         do {
-            guard let fetched = try context.fetch(descriptor).first else { return }  // already deleted — idempotent
-            group = fetched
+            rows = try context.fetch(descriptor)
         } catch {
             logger.error("performRemovedSelfCleanup: fetch failed for \(zoneName, privacy: .public): \(error.localizedDescription, privacy: .public)")
             return
         }
+        guard let group = rows.first else { return }  // already deleted — idempotent
 
         let leaveShareZoneName = group.cloudKitZoneID
-        let leaveShareOwnerName = SplitZoneManager(syncManager: .shared).ownerName(for: group)
+        // `ownerName(for:)` es lo ÚNICO aquí que de verdad depende de la FILA: lee `cloudKitZoneOwnerName` y
+        // `ckSystemFieldsData`, que una fila born-backend no tiene ⇒ devolvería `CKCurrentUserDefaultName` y
+        // `leaveShareByZone` saldría del share equivocado (o de ninguno). Con un duplicado MIXTO la canónica
+        // por `createdAt` puede ser precisamente esa, así que el owner se resuelve sobre la fila de la zona
+        // que SÍ tenga identidad CloudKit.
+        let shareRow = rows.first { !$0.cloudKitZoneOwnerName.isEmpty || $0.ckSystemFieldsData != nil } ?? group
+        let leaveShareOwnerName = SplitZoneManager(syncManager: .shared).ownerName(for: shareRow)
 
         do {
             try performLocalCleanupAndDelete(group: group, context: context)
@@ -716,15 +779,34 @@ final class GroupService {
 
     /// Ejecuta UN paso del batch para un grupo. Idempotente (grupo ya borrado → `.done`; RPCs tolerantes a
     /// "ya salí"). El caller (orquestador) hace el gate de quiescencia y el write-ahead de fase. Un
-    /// transitorio (red/sesión/sin contexto) → `.deferred` (el resume lo retoma); un fallo permanente →
-    /// `.failed`; la deuda sobrevenida → `.needsDecision(.debtAppeared)`.
+    /// transitorio (red/sesión/sin contexto/**fetch que lanza**) → `.deferred` (el resume lo retoma); un fallo
+    /// permanente → `.failed`; la deuda sobrevenida → `.needsDecision(.debtAppeared)`.
+    ///
+    /// La fila que se toma es la CANÓNICA de la zona (`createdAt` ASC, igual que `group(for:)`) y ya no una
+    /// arbitraria: de ella salen `isOwner` y la deuda, y el CANAL lo decide `routesMembershipToBackend`, que
+    /// mira la zona ENTERA.
     func executeBatchStep(_ entry: BatchLeaveEntry) async -> GroupBatchLeaveLogic.StepResult {
         guard let context = modelContext else { return .deferred }
         let zoneID = entry.groupZoneID
-        let existing = try? context.fetch(
-            FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.cloudKitZoneID == zoneID }))
-        guard let group = existing?.first else {
+        let rows: [SplitGroup]
+        do {
+            rows = try context.fetch(FetchDescriptor<SplitGroup>(
+                predicate: #Predicate { $0.cloudKitZoneID == zoneID },
+                sortBy: [SortDescriptor(\.createdAt, order: .forward)]))
+        } catch {
+            // Un fallo de LECTURA no es «ya no existe local»: `.done` es TERMINAL para el orquestador
+            // (`GroupBatchLeaveLogic.isTerminal`) ⇒ marcaría el grupo como salido y no lo reintentaría
+            // JAMÁS. `.deferred` deja la entry `.inProgress` y el resume la retoma — el mismo trato que la
+            // ausencia de contexto, dos líneas arriba.
+            logger.error("executeBatchStep: fetch de la zona \(zoneID, privacy: .public) falló: \(error.localizedDescription, privacy: .public)")
+            return .deferred
+        }
+        guard let group = rows.first else {
             return .done  // ya no existe local (salido/removido en otro device) → idempotente
+        }
+        if rows.count > 1 {
+            MetricsService.cloudkitDuplicateDetected(
+                model: "SplitGroup", count: rows.count, context: .runtimeFetch, keySuffix: zoneID)
         }
 
         let facts: GroupBatchLeaveLogic.GroupFacts
