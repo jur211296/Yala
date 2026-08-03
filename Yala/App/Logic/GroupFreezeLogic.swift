@@ -123,6 +123,33 @@ enum GroupFreezeLogic {
         return true
     }
 
+    /// ¿La ZONA bloquea las escrituras a CKSyncEngine? Es el choke-point C2 (`SplitSyncManager.enqueueSave` /
+    /// `enqueueDeletion` / `zoneRecovery` / `recordRecovery`) elevado de FILA a ZONA.
+    ///
+    /// Decidían con `group.isBackendGroup || group.isMigratedFrozen` sobre la fila que trae el caller, y
+    /// existen `SplitGroup` distintos con el mismo `cloudKitZoneID` (`SplitGroupDeduplicationService`): con un
+    /// duplicado MIXTO, el mismo grupo pasaba o no pasaba el guard según qué fila estuviera en la mano ⇒ se
+    /// encolaba a CKSyncEngine un record de un grupo cuya verdad vive en el backend, que es exactamente lo
+    /// que el guard existe para impedir. Criterio ANY-row, molde de
+    /// `GroupBackendIdentityLogic.membershipRoutesToBackend` y `GroupZoneCacheGate.belongsToBackendChannel`.
+    ///
+    /// `inHandBlocks` va SEPARADO y cuenta SIEMPRE: es lo que degrada al comportamiento anterior —la fila en
+    /// mano— cuando el caller no pudo enumerar la zona (sin contexto, o fetch que lanza). Nunca peor que
+    /// antes; con una sola fila, byte-idéntico.
+    ///
+    /// **Lo que este cambio le hace a la mitigación #9, y por qué es correcto.** La #9 trata como NO congelado
+    /// al `isOwner && hasCKSystemFields && movedToBackendAt != nil` porque `isBackendGroup` es LOCAL-only y se
+    /// PIERDE en un reinstall: sin ella, el owner quedaría congelado por una evidencia que solo falta porque
+    /// el disco se borró. Con ANY-row esa fila queda bloqueada **si alguna gemela de su zona sí lleva la
+    /// marca** — y ahí la premisa de la #9 es falsa: la evidencia no se perdió, está en la gemela, así que el
+    /// device SABE que el grupo se fue al backend y subir por CloudKit escribe a un canal que ya no es
+    /// autoridad. El sesgo, además, es el seguro: bloquear de más deja records locales sin subir (recuperable
+    /// por el canal backend); bloquear de menos sube records a una zona muerta y, en el caso C-3 (Apple ID
+    /// nuevo), a la private DB de OTRA cuenta.
+    static func zoneBlocksCloudKitWrites(inHandBlocks: Bool, rowsInZone: [Bool]) -> Bool {
+        inHandBlocks || rowsInZone.contains(true)
+    }
+
     /// C-10: el freeze CONTADO al usuario. `isFrozen` decide si el grupo se congela; esto decide qué se
     /// le explica y a dónde lleva la acción.
     ///

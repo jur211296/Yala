@@ -329,19 +329,24 @@ struct GroupsSyncClientTests {
         }, "el grupo sigue vivo: el borrado del gasto SÍ es una edición local que debe viajar")
     }
 
-    /// TRANSACCIONALIDAD de la cascada del tombstone de grupo: corre DENTRO del `saveWithAuthor` del apply,
-    /// así que sus borrados llevan `outboxSaveAuthor` y el drain no los traduce. Sacarla de ahí —a
-    /// `drainSoftDeleteFreeze`, o a un `save()` propio— los dejaría bajo el autor por DEFECTO y el drain
-    /// emitiría tombstones de `split_expenses`/`split_shares`/`split_settlements` con HLC fresco, que el
-    /// servidor SÍ aplica (y con `is_group_writer`, más laxo que el `is_group_admin` de la meta): los
-    /// gastos desaparecerían para TODOS los miembros. Eso es peor que las huérfanas que la cascada arregla.
+    /// El tombstone del grupo barre TODA la zona —las DOS filas del duplicado y sus cuatro clases de
+    /// hijas— y el drain no emite nada por ello.
     ///
-    /// La zona lleva un `SplitGroup` DUPLICADO a propósito: `fetchSplitGroup` tiene `fetchLimit = 1`, así
-    /// que el apply borra UNA fila y la otra mantiene la zona dentro de `backendZoneIDs`. Sin eso el guard
-    /// por zona taparía la fuga y la aserción no probaría nada del autor.
+    /// **Este test CAMBIÓ DE SUJETO el 2026-08-03 y el porqué es la lección.** Probaba la
+    /// TRANSACCIONALIDAD: la cascada corre dentro del `saveWithAuthor` del apply, así que sus borrados
+    /// llevan `outboxSaveAuthor` y el drain no los traduce; sacarla de ahí los dejaría bajo el autor por
+    /// DEFECTO y el servidor aplicaría esos tombstones con `is_group_writer`, borrando los gastos para
+    /// TODOS los miembros. Para que esa fuga fuera OBSERVABLE, el fixture montaba un duplicado a propósito:
+    /// `fetchSplitGroup` borraba UNA fila y la superviviente mantenía la zona dentro de `backendZoneIDs`.
     ///
-    /// MUTACIÓN: mover la cascada fuera del `saveWithAuthor` deja la primera aserción en rojo.
-    @Test func apply_groupTombstoneCascade_runsUnderOutboxAuthor_soDrainEmitsNothing() throws {
+    /// Al pasar el tombstone a barrer TODAS las filas, la zona sale del set SIEMPRE ⇒ **esa fuga dejó de
+    /// ser alcanzable y este test dejó de probar el autor: MEDIDO** — con la cascada movida al autor por
+    /// defecto y un `save()` propio, pasaba VERDE. El invariante del autor se trasladó a
+    /// `GroupsSyncApplyZoneTests.sourceScan_cascadeStaysUnderTheOutboxAuthor`, que sí puede afirmarlo.
+    /// Lo que este test prueba ahora es el barrido por zona y su consecuencia: outbox intacto.
+    ///
+    /// MUTACIÓN: volver a borrar una sola fila (`if let first = rows.first`) deja la última aserción en rojo.
+    @Test func apply_groupTombstone_sweepsWholeZone_soDrainEmitsNothing() throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
 
@@ -368,17 +373,18 @@ struct GroupsSyncClientTests {
                 cursors: [:], memberships: []),
             cursor: cursor, context: context)
 
-        // La zona SIGUE en el set backend (la fila duplicada sobrevivió) ⇒ si la cascada hubiera corrido
-        // bajo el autor por defecto, estos tombstones estarían aquí.
         client.drainOnce(context: context)
         let rows = try groupOutbox(context)
         #expect(!rows.contains { $0.opRaw == SyncOutboxOp.tombstone.rawValue },
-                "la cascada del apply se filtró al outbox: corrió fuera del `saveWithAuthor`")
+                "el tombstone del grupo se filtró al outbox")
         #expect(rows.count == before)
         // Y la cascada sí ocurrió en local.
         #expect(try context.fetchCount(FetchDescriptor<SplitExpense>()) == 0)
         #expect(try context.fetchCount(FetchDescriptor<SplitShare>()) == 0)
         #expect(try context.fetchCount(FetchDescriptor<SplitSettlement>()) == 0)
+        // Lo que ahora carga el peso: las DOS filas del duplicado se fueron. Con una sola borrada, la
+        // superviviente quedaba como CASCARÓN —visible y escribible— y mantenía la zona en `backendZoneIDs`.
+        #expect(try context.fetchCount(FetchDescriptor<SplitGroup>()) == 0)
     }
 
     // MARK: - Test 4 · Cursores por grupo + URL del pull (assert del request generado, lección d49d2e47)

@@ -76,12 +76,13 @@ final class GroupService {
     ///
     /// El fetch degrada a la fila en mano si no hay contexto o si lanza: nunca peor que el criterio anterior.
     ///
-    /// **Asimetría que sobrevive y hay que conocer antes de leer los docblocks de aguas abajo:** el
-    /// choke-point C2 (`SplitSyncManager.enqueueSave(modelID:group:)`, `guard !(group.isBackendGroup ||
-    /// group.isMigratedFrozen)`) sigue decidiendo POR FILA, así que en una zona MIXTA no frena con la gemela
-    /// sin marcar. `removeMember`, `removeMemberLocal` y `approveMember` prometen por escrito que su
-    /// `enqueueSave` «queda no-op por C2»: eso es cierto por fila y falso en zona mixta — y lo era YA antes
-    /// de que el canal pasara a decidirse por zona, porque ese enqueue nunca dependió de esta función.
+    /// El choke-point C2 de aguas abajo (`SplitSyncManager.enqueueSave(modelID:group:)`) decide con el MISMO
+    /// cuantificador desde 2026-08-03 (`GroupFreezeLogic.zoneBlocksCloudKitWrites`, ANY-row por zona), así que
+    /// las promesas de `removeMember`, `removeMemberLocal` y `approveMember` —«su `enqueueSave` queda no-op
+    /// por C2»— vuelven a ser ciertas también en una zona MIXTA. Su predicado por fila sigue siendo el ANCHO
+    /// (`isBackendGroup || isMigratedFrozen`) y el de aquí el ESTRECHO (`isBackendGroup`): son preguntas
+    /// distintas —«¿puede escribir a CloudKit?» vs «¿esta op de membresía va por RPC?»— y el docblock de
+    /// `GroupBackendIdentityLogic.belongsToBackendChannel` explica por qué no se deben confundir.
     private func routesMembershipToBackend(_ group: SplitGroup) -> Bool {
         let flagEnabled = CloudSyncFlags.groupsBackendEnabled
         // Con el flag OFF no se enumera la zona: el resultado ya es `false` y el camino CloudKit tiene que

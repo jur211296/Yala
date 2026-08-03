@@ -469,7 +469,7 @@ final class SplitSyncManager {
                 // freeze y `needsZoneRecovery` — hoy se le re-crea la zona; con el guard se salta, que es lo
                 // correcto porque su verdad ya vive en el backend. La mitigación #9 no lo cubre (exige
                 // `ckSystemFieldsData != nil`).
-                guard !($0.isBackendGroup || $0.isMigratedFrozen) else {
+                guard !zoneBlocksCloudKitWrites($0) else {
                     GroupsSyncBreadcrumb.groupsCkEnqueueSkippedBackendGroup(site: "zoneRecovery")
                     return false
                 }
@@ -553,7 +553,7 @@ final class SplitSyncManager {
             // la fila retenida tras un cambio de Apple ID irían a la private DB del ID NUEVO. Usar la
             // primitiva de freeze PRESERVA la mitigación #9 (owner tras reinstall), cuyos records local-only
             // siguen teniendo aquí su último camino de subida — con el predicado crudo lo perderían.
-            if group.isBackendGroup || group.isMigratedFrozen {
+            if zoneBlocksCloudKitWrites(group) {
                 GroupsSyncBreadcrumb.groupsCkEnqueueSkippedBackendGroup(site: "recordRecovery")
                 continue
             }
@@ -1073,6 +1073,34 @@ final class SplitSyncManager {
         markPendingDeletion(for: recordID, in: sharedEngine)
     }
 
+    /// El choke-point C2 evaluado sobre la ZONA y no sobre la fila del parámetro
+    /// (`GroupFreezeLogic.zoneBlocksCloudKitWrites`, criterio ANY-row). Lo consumen los CUATRO guards que
+    /// deciden si algo puede salir hacia CKSyncEngine: `enqueueSave(modelID:group:)`,
+    /// `enqueueDeletion(modelID:group:)`, `recoverOwnedGroupZonesIfNeeded` y `recoverRecordsIfNeeded`.
+    ///
+    /// Corta SIN fetch cuando la fila en mano ya bloquea —el caso frecuente en un device con grupos
+    /// migrados— y degrada a esa misma fila si no hay contexto o el fetch lanza: nunca peor que el criterio
+    /// anterior. El predicado por fila sigue siendo `isBackendGroup || isMigratedFrozen`
+    /// (`GroupFreezeLogic.isFrozen`) y NO `movedToBackendAt != nil` crudo — lo que cambia es el
+    /// cuantificador, no el predicado.
+    private func zoneBlocksCloudKitWrites(_ group: SplitGroup) -> Bool {
+        let inHandBlocks = group.isBackendGroup || group.isMigratedFrozen
+        if inHandBlocks { return true }
+        guard let modelContext else { return inHandBlocks }
+        let zoneID = group.cloudKitZoneID
+        let rows: [SplitGroup]
+        do {
+            rows = try modelContext.fetch(
+                FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.cloudKitZoneID == zoneID }))
+        } catch {
+            logger.error("SplitSync C2: fetch de la zona \(zoneID, privacy: .public) falló: \(error.localizedDescription, privacy: .public)")
+            return inHandBlocks
+        }
+        return GroupFreezeLogic.zoneBlocksCloudKitWrites(
+            inHandBlocks: inHandBlocks,
+            rowsInZone: rows.map { $0.isBackendGroup || $0.isMigratedFrozen })
+    }
+
     /// Enqueue a save, auto-routing to the correct engine based on group ownership.
     func enqueueSave(modelID: UUID, group: SplitGroup) {
         // C2 choke point: un grupo del canal BACKEND no sincroniza por CKSyncEngine — sus records viven en el
@@ -1085,7 +1113,7 @@ final class SplitSyncManager {
         // `movedToBackendAt != nil` a secas: su mitigación #9 (owner tras reinstall, con
         // `ckSystemFieldsData`) está NO congelada a propósito y el predicado crudo le quitaría su último
         // camino de subida.
-        guard !(group.isBackendGroup || group.isMigratedFrozen) else {
+        guard !zoneBlocksCloudKitWrites(group) else {
             GroupsSyncBreadcrumb.groupsCkEnqueueSkippedBackendGroup(site: "enqueueSave")
             return
         }
@@ -1108,7 +1136,7 @@ final class SplitSyncManager {
         // C2 choke point (par de enqueueSave): grupo backend → jamás a CKSyncEngine.
         // C-3: mismo ensanche que su par — un grupo CONGELADO retenido tras un cambio de Apple ID tampoco
         // puede emitir deletions a la private DB del ID nuevo.
-        guard !(group.isBackendGroup || group.isMigratedFrozen) else {
+        guard !zoneBlocksCloudKitWrites(group) else {
             GroupsSyncBreadcrumb.groupsCkEnqueueSkippedBackendGroup(site: "enqueueDeletion")
             return
         }
@@ -2462,10 +2490,55 @@ final class SplitSyncManager {
         }
     }
 
+    /// Aplica un `GroupMeta` fetcheado de CloudKit.
+    ///
+    /// **La fila se resuelve por ZONA y no por `id` local.** Resolvía con `#Predicate { $0.id == modelID }`,
+    /// y la identidad de un grupo es la ZONA: una fila born-remote del pull backend nace con un UUID FRESCO y
+    /// su `cloudKitZoneID` PISADO con el `group_id` del server (`GroupsSyncClient.applyGroupMeta`), así que
+    /// era INVISIBLE a ese fetch ⇒ este camino insertaba una GEMELA vía `CKRecordTranslator.group(from:)`,
+    /// que nunca setea `isBackendGroup` ⇒ el duplicado nacía ya MIXTO. Los otros cuatro `apply*` de este
+    /// fichero siguen resolviendo por `id` con razón: la identidad de un gasto, un share, una liquidación o
+    /// un member SÍ es su `id`.
+    ///
+    /// **ALCANZABILIDAD, medida y no inferida — esto es ENDURECIMIENTO, no un bug vivo.** Se documentó como
+    /// «el PRODUCTOR de la familia», y esa etiqueta no aguanta la medición: el escenario exige que llegue un
+    /// record CloudKit de una zona que YA tiene fila born-backend, y esa misma precondición activa el guard
+    /// G6-3 (`:1785`) — la fila born-remote lleva `isBackendGroup = true` y su `cloudKitZoneID` ES el nombre
+    /// de zona, así que la zona está en `backendZoneNames` y el record se descarta ANTES de llegar aquí.
+    /// `applyRemoteRecord` solo tiene dos call-sites y los dos van detrás de ese guard (`:1839` y el de
+    /// `handleConflict`). **La única vía que quedaba es el FAIL-ABIERTO de `backendGroupZoneNames`** (su
+    /// `catch` devuelve `[]` ⇒ pasa TODO), y es exactamente lo que el salto por canal de aquí abajo cierra.
+    ///
+    /// El match por `id` se conserva como **FALLBACK** para la fila local cuya zona todavía no cuadra (el
+    /// `update` se la escribe desde el record y converge).
+    ///
+    /// **Solo se actualiza la fila CANÓNICA, no todas las de la zona** — y ésta es la asimetría con
+    /// `GroupsSyncClient.applyGroupMeta`, que sí escribe en todas. Allí la meta es del servidor y las filas no
+    /// tienen identidad propia; aquí `CKRecordTranslator.update` escribe `ckSystemFieldsData`, que ES la
+    /// identidad del record CloudKit: dárselo a dos filas las dejaría creyendo ambas ser el mismo record y
+    /// compitiendo al subir. El duplicado se resuelve colapsándolo (`SplitGroupDeduplicationService`), no
+    /// duplicando la escritura.
     private func applyGroupMeta(_ record: CKRecord, modelID: UUID, context: ModelContext, engineName: String) {
+        let zoneName = record.recordID.zoneID.zoneName
         do {
-            let descriptor = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.id == modelID })
-            if let existing = try context.fetch(descriptor).first {
+            let rowsInZone = try context.fetch(FetchDescriptor<SplitGroup>(
+                predicate: #Predicate { $0.cloudKitZoneID == zoneName },
+                sortBy: [SortDescriptor(\.createdAt, order: .forward)]))
+            let byID = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.id == modelID })
+            // El fallback por `id` solo se consulta si la zona no resolvió — la tabla lo ordena así.
+            let rowMatchingID = rowsInZone.isEmpty ? try context.fetch(byID).first : nil
+
+            let resolution = CloudKitGroupMetaApplyLogic.resolve(
+                zoneRowsAreBackend: rowsInZone.map(\.isBackendGroup),
+                hasRowMatchingID: rowMatchingID != nil)
+
+            if resolution == .skipBackendZone {
+                GroupsSyncBreadcrumb.groupsCkPullSkippedBackendGroup(
+                    site: "applyGroupMeta", reason: "backendZone")
+                return
+            }
+
+            if let existing = rowsInZone.first ?? rowMatchingID {
                 // Capturar previo antes del update para detectar flip a hidden.
                 let wasHidden = existing.isHiddenForAll
                 CKRecordTranslator.update(existing, from: record)

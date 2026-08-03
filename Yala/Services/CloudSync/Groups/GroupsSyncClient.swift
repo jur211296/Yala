@@ -2017,18 +2017,23 @@ final class GroupsSyncClient {
         cache: inout [String: MemberChangeNotificationLogic.ZoneBaseline]
     ) -> MemberChangeNotificationLogic.ZoneBaseline {
         if let cached = cache[zone] { return cached }
-        let group: SplitGroup?
+        let rows: [SplitGroup]
         do {
-            group = try fetchSplitGroup(zoneID: zone, context: context)
+            rows = try fetchSplitGroupRows(zoneID: zone, context: context)
         } catch {
             #if DEBUG
             logger.error("GroupsSync: zoneBaseline fetch falló para \(zone): \(error)")
             #endif
             return .initialImport
         }
+        // Por ZONA y con el MISMO sesgo que el `catch` de arriba: callar, jamás notificar de más. Se toma el
+        // `initialMemberImportStartedAt` MÁS RECIENTE de la zona, que es el que más probablemente cae dentro
+        // de la ventana ⇒ `.initialImport`. Con una fila arbitraria bastaba con que la elegida fuera la que
+        // no lleva la marca para que el import de la gemela notificara «Jür se unió al grupo» miembro a
+        // miembro, que es el bug que la marca existe para evitar.
         let baseline = MemberChangeNotificationLogic.zoneBaseline(
-            groupExistsLocally: group != nil,
-            importStartedAt: group?.initialMemberImportStartedAt,
+            groupExistsLocally: !rows.isEmpty,
+            importStartedAt: rows.compactMap(\.initialMemberImportStartedAt).max(),
             now: now())
         cache[zone] = baseline
         return baseline
@@ -2090,7 +2095,10 @@ final class GroupsSyncClient {
         func groupID(_ zone: String) -> UUID? {
             if let cached = cache[zone] { return cached }
             do {
-                let resolved = try fetchSplitGroup(zoneID: zone, context: context)?.id
+                // La CANÓNICA de la zona (`createdAt` ASC). Este `id` va al deep-link de la notificación, y
+                // `GroupService.group(for:)` —lo que la UI resuelve al abrirla— usa ese mismo criterio: con
+                // una fila arbitraria, el toque podía aterrizar en una fila distinta de la que se muestra.
+                let resolved = try fetchSplitGroupRows(zoneID: zone, context: context).first?.id
                 cache[zone] = resolved   // cachea solo el resultado de un fetch EXITOSO (incl. nil legítimo)
                 return resolved
             } catch {
@@ -2255,17 +2263,38 @@ final class GroupsSyncClient {
     private func applyGroupMeta(
         _ delta: GroupPulledDelta, context: ModelContext, freezeZones: inout Set<String>
     ) throws {
-        // Identidad = group_id (cloudKitZoneID). UPDATE-only en push; en apply se crea si falta (el grupo
-        // nace vía RPC/CKSyncEngine, pero el pull es autoritativo para un member — idempotente).
-        let existing = try fetchSplitGroup(zoneID: delta.groupID, context: context)
+        // Identidad = group_id (cloudKitZoneID) y la unidad es la ZONA: server-side `split_groups` se
+        // identifica por ella, así que TODAS las filas locales con ese `cloudKitZoneID` son el MISMO grupo.
+        // UPDATE-only en push; en apply se crea si falta (el grupo nace vía RPC/CKSyncEngine, pero el pull es
+        // autoritativo para un member — idempotente).
+        let rows = try fetchSplitGroupRows(zoneID: delta.groupID, context: context)
+        if rows.count > 1 {
+            MetricsService.cloudkitDuplicateDetected(
+                model: "SplitGroup", count: rows.count, context: .syncApply, keySuffix: delta.groupID)
+        }
         if delta.op == .tombstone {
             // Las hijas cuelgan del string plano `groupZoneID`, SIN `@Relationship` ⇒ SwiftData NO cascadea
-            // y borrar solo el `SplitGroup` las dejaba HUÉRFANAS. Va ANTES del `delete` del grupo por
-            // legibilidad; el orden es indiferente (nadie las resuelve a través de la fila del grupo).
-            // Corre aunque `existing` sea `nil`: el grupo pudo borrarse en una vuelta anterior que no llegó
-            // a limpiar, y el barrido es idempotente.
+            // y borrar solo el `SplitGroup` las dejaba HUÉRFANAS. Corre aunque la zona esté VACÍA de filas
+            // de grupo: pudo borrarse en una vuelta anterior que no llegó a limpiar, y el barrido es
+            // idempotente.
+            //
+            // **TODAS las filas de la zona, y ANTES de las hijas** (molde de `GroupZoneCacheGate.deleteCache`
+            // y `GroupService.performLocalCleanupAndDelete`). Borraba UNA —la que devolviera el fetch— y con
+            // un duplicado la gemela SOBREVIVÍA con todas sus hijas muertas: un CASCARÓN, no huérfanas.
+            //
+            // Lo que el cascarón hace, MEDIDO y no inferido: es VISIBLE (`fetchAllGroups` no lleva predicado
+            // ⇒ `GroupsViewModel.groups`/`activeGroups` ⇒ tarjeta en el tab con 0 miembros y 0 gastos), pero
+            // NO es escribible por el camino obvio — la cascada se llevó los `SplitMember`, así que
+            // `eligibleGroupsForExpense` lo excluye (`currentMemberStatus == nil`) y `createExpense` lanza.
+            // La escritura que SÍ es alcanzable es `GroupService.softDelete`, gateado SOLO por `isOwner`: su
+            // guard de balances pasa en vacío y escribe `isHiddenForAll` con el autor por DEFECTO ⇒ el drain
+            // lo emite como upsert de `split_groups` contra un grupo que el servidor ya tombstoneó.
+            //
+            // El orden grupo→hijas es indiferente HOY (todo esto va dentro del `saveWithAuthor` de
+            // `applyPulledPage`, cuyo `catch` hace `rollback()`, así que no hay commit intermedio que
+            // observar), y va primero para no depender de eso.
+            for row in rows { context.delete(row) }
             try cascadeDeleteGroupRows(zoneID: delta.groupID, context: context)
-            if let existing { context.delete(existing) }
             // El grupo desaparece entero → hay que SOLTAR sus transacciones y borradores personales, o
             // quedan colgando de una zona que ya no existe. Aquí manda `freezeForSoftDelete` y NO el
             // unbridge, al revés que en el tombstone de un gasto suelto: un grupo que desaparece no niega
@@ -2278,22 +2307,35 @@ final class GroupsSyncClient {
         }
         // 2.3: estado ANTES del update, para detectar el flip a soft-delete. Un grupo que nace ya oculto
         // (invitado con fresh-install POSTERIOR al soft-delete) cuenta como flip: `false` es el valor previo.
-        let wasHidden = existing?.isHiddenForAll ?? false
-        let model = existing ?? SplitGroup()
-        model.cloudKitZoneID = delta.groupID
+        //
+        // Por ZONA y con sesgo a DISPARAR el freeze: `wasHidden` solo es cierto si TODAS las filas ya estaban
+        // ocultas. Con la fila arbitraria, elegir la gemela ya oculta se comía el flip y dejaba las TX y los
+        // borradores personales colgando de una zona invisible; un freeze de más es idempotente y no cuesta
+        // nada. Zona vacía ⇒ `false`, igual que antes.
+        let wasHidden = !rows.isEmpty && rows.allSatisfy(\.isHiddenForAll)
+        // La meta del wire se aplica a TODAS las filas de la zona: son el mismo grupo y su autoridad es el
+        // servidor. Escribir en una sola las hacía DIVERGIR (nombre, icono, archivado…) y la UI mostraba una
+        // u otra según qué fetch usara. Solo se escriben campos del wire + `cloudKitZoneID`: la identidad
+        // local (`id`), `initialMemberImportStartedAt`, `ckSystemFieldsData`, `rejoinRevokedAt`,
+        // `movedToBackendAt` y `isOwner` NO se tocan y siguen siendo por fila.
+        let isBorn = rows.isEmpty
+        let models = isBorn ? [SplitGroup()] : rows
         let f = delta.fields
-        if let v = wireString(f["name"]) { model.name = v }
-        if let v = wireString(f["icon_name"]) { model.iconName = v }
-        if let v = wireString(f["color_hex"]) { model.colorHex = v }
-        if let v = wireString(f["currency_code"]) { model.currencyCode = v }
-        if let v = wireBool(f["simplify_debts"]) { model.simplifyDebts = v }
-        if let v = wireBool(f["show_debts_in_single_currency"]) { model.showDebtsInSingleCurrency = v }
-        if let v = wireBool(f["members_can_invite"]) { model.membersCanInvite = v }
-        if let v = wireString(f["default_split_type"]) { model.defaultSplitType = v }
-        if let v = wireBool(f["is_archived"]) { model.isArchived = v }
-        if let v = wireBool(f["is_hidden_for_all"]) { model.isHiddenForAll = v }
-        if let v = wireDate(f["created_at"]) { model.createdAt = v }
-        if existing == nil {
+        for model in models {
+            model.cloudKitZoneID = delta.groupID
+            if let v = wireString(f["name"]) { model.name = v }
+            if let v = wireString(f["icon_name"]) { model.iconName = v }
+            if let v = wireString(f["color_hex"]) { model.colorHex = v }
+            if let v = wireString(f["currency_code"]) { model.currencyCode = v }
+            if let v = wireBool(f["simplify_debts"]) { model.simplifyDebts = v }
+            if let v = wireBool(f["show_debts_in_single_currency"]) { model.showDebtsInSingleCurrency = v }
+            if let v = wireBool(f["members_can_invite"]) { model.membersCanInvite = v }
+            if let v = wireString(f["default_split_type"]) { model.defaultSplitType = v }
+            if let v = wireBool(f["is_archived"]) { model.isArchived = v }
+            if let v = wireBool(f["is_hidden_for_all"]) { model.isHiddenForAll = v }
+            if let v = wireDate(f["created_at"]) { model.createdAt = v }
+        }
+        if isBorn, let model = models.first {
             // C1 write-site (2): born-remote del pull backend → marca el grupo como del canal backend.
             model.isBackendGroup = true
             // 2.2 (baseline de primer import, bug «Jür se unió al grupo»): un SplitGroup que NACE del pull
@@ -2303,19 +2345,28 @@ final class GroupsSyncClient {
             // `GroupBackendMembershipService` server-first) ⇒ el creador no sufre la supresión.
             model.initialMemberImportStartedAt = now()
             context.insert(model)
-        } else if !model.isBackendGroup {
+        } else {
             // C3 (G6-2) ADOPCIÓN ATÓMICA: un SplitGroup CloudKit PREEXISTENTE que aparece en el pull backend
             // (mismo `group_id`) = grupo MIGRADO cuyo member local re-entró por el backend. Flipear a backend
             // DENTRO del mismo `saveWithAuthor` del apply (sin save extra, molde del re-drive A2) es el
             // interruptor que congela CloudKit (choke-points de G5-A) y activa el drain backend en UN commit;
-            // sin atomicidad habría una ventana de doble-verdad. Un grupo born-backend (`isBackendGroup` ya
-            // `true`) permanece intacto (guard `!isBackendGroup` → sin write espurio).
-            model.isBackendGroup = true
+            // sin atomicidad habría una ventana de doble-verdad.
+            //
+            // **A TODAS las filas de la zona.** Precisión que costó medirla: este flip **no PRODUCE** el
+            // duplicado MIXTO —`applyGroupMeta` resuelve por ZONA y solo inserta si está vacía, así que no
+            // puede crear la segunda fila—, sino que era el único punto capaz de CURARLO y marcaba una sola,
+            // dejando la zona mixta indefinidamente. Quien crea la segunda fila es el canal CloudKit:
+            // `SplitSyncManager.applyGroupMeta` resuelve con `#Predicate { $0.id == modelID }`, y una fila
+            // born-remote del pull backend (UUID fresco, `cloudKitZoneID` pisado con el `group_id` del
+            // server) es invisible a ese fetch ⇒ inserta una gemela vía `CKRecordTranslator.group(from:)`,
+            // que nunca setea `isBackendGroup` ⇒ **el duplicado nace ya MIXTO**. El guard `!isBackendGroup`
+            // se conserva por fila para no escribir de más en las ya marcadas.
+            for model in models where !model.isBackendGroup { model.isBackendGroup = true }
         }
         // 2.3: soft-delete remoto (`is_hidden_for_all` de false a true) → hay que soltar las transacciones
         // y los borradores personales que colgaban de esa zona. El drenaje va fuera del `saveWithAuthor`,
         // porque `freezeForSoftDelete` escribe en el store PERSONAL y hace su propio save.
-        if !wasHidden, model.isHiddenForAll { freezeZones.insert(delta.groupID) }
+        if !wasHidden, models.contains(where: \.isHiddenForAll) { freezeZones.insert(delta.groupID) }
     }
 
     /// Borra las filas hijas de una zona cuyo grupo desaparece. Es la mitad que el camino REMOTO no había
@@ -2470,9 +2521,18 @@ final class GroupsSyncClient {
         var d = FetchDescriptor<SplitSettlement>(predicate: #Predicate { $0.id == id }); d.fetchLimit = 1
         return try context.fetch(d).first
     }
-    private func fetchSplitGroup(zoneID: String, context: ModelContext) throws -> SplitGroup? {
-        var d = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.cloudKitZoneID == zoneID }); d.fetchLimit = 1
-        return try context.fetch(d).first
+    /// **TODAS** las filas `SplitGroup` de la zona, ordenadas por `createdAt` ASC (la primera es la CANÓNICA,
+    /// mismo criterio que `GroupService.group(for:)` — de ahí sale el grupo que resuelve la UI, y los dos
+    /// tienen que elegir la misma o un deep-link abre una fila distinta de la que se muestra).
+    ///
+    /// Sustituye al `fetchSplitGroup` que devolvía UNA fila con `fetchLimit = 1` y **sin `sortBy`**: existen
+    /// `SplitGroup` distintos con el mismo `cloudKitZoneID` (`SplitGroupDeduplicationService`), así que ese
+    /// fetch entregaba una fila arbitraria y de ella salían la meta del wire, el flip de canal de la adopción
+    /// C3 y el borrado del tombstone. Sus tres call-sites deciden ahora por ZONA, cada uno con su criterio.
+    private func fetchSplitGroupRows(zoneID: String, context: ModelContext) throws -> [SplitGroup] {
+        try context.fetch(FetchDescriptor<SplitGroup>(
+            predicate: #Predicate { $0.cloudKitZoneID == zoneID },
+            sortBy: [SortDescriptor(\.createdAt, order: .forward)]))
     }
     /// Dual-match del `member_key` (G3): PRIMERO por el campo directo `SplitMember.memberKey` (members del
     /// canal backend — born-remote y ya-adoptados); si no matchea, FALLBACK por `cloudKitUserRecordID` para

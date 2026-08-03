@@ -418,14 +418,26 @@ struct GroupsIdentityPurgeWiringTests {
 
     /// Los 4 sitios que la RETENCIÓN vuelve alcanzables ya no miran `isBackendGroup` a secas: una copia
     /// CONGELADA retenida no puede re-encolarse a la private DB del Apple ID NUEVO.
+    ///
+    /// **El 2026-08-03 el predicado se mudó de sitio y este test se actualizó con él.** Los cuatro guards
+    /// pasaron a preguntar por la ZONA (`zoneBlocksCloudKitWrites`, ANY-row) porque con un `SplitGroup`
+    /// duplicado MIXTO el mismo grupo pasaba o no según qué fila trajera el caller. **El predicado por FILA
+    /// no cambió** —sigue siendo la disyunción del freeze, que es lo que este test defiende— pero ahora vive
+    /// UNA sola vez, dentro del helper, en vez de repetido en los cuatro guards. Las anclas siguen siendo de
+    /// CÓDIGO y el conteo nombra al sitio exacto que alguien quite.
     @Test func theFourCloudKitWriteSites_useTheFreezePredicate() throws {
         let src = try Self.source("Yala/Services/Groups/SplitSyncManager.swift")
-        // Anclas de CÓDIGO, no un conteo total: el conteo se rompería en cuanto un comentario nombrara el
-        // símbolo, y además así el fallo nombra al sitio exacto que alguien quitó.
-        #expect(src.components(separatedBy: "guard !(group.isBackendGroup || group.isMigratedFrozen) else {")
-            .count - 1 == 2)                                                    // enqueueSave + enqueueDeletion
-        #expect(src.contains("guard !($0.isBackendGroup || $0.isMigratedFrozen) else {"))  // zoneRecovery
-        #expect(src.contains("if group.isBackendGroup || group.isMigratedFrozen {"))       // recordRecovery
+        // Los 4 guards, cada uno con su forma: enqueueSave / enqueueDeletion (guard), zoneRecovery (guard
+        // sobre `$0` dentro del filtro) y recordRecovery (`if … continue`).
+        #expect(src.components(separatedBy: "guard !zoneBlocksCloudKitWrites(group) else {")
+            .count - 1 == 2)                                                  // enqueueSave + enqueueDeletion
+        #expect(src.contains("guard !zoneBlocksCloudKitWrites($0) else {"))    // zoneRecovery
+        #expect(src.contains("if zoneBlocksCloudKitWrites(group) {"))          // recordRecovery
+        // Y el predicado por fila que este test defiende sigue siendo el ANCHO, no `isBackendGroup` a secas.
+        #expect(src.contains("group.isBackendGroup || group.isMigratedFrozen"),
+                "el helper de zona dejó de usar la disyunción del freeze")
+        #expect(src.contains("$0.isBackendGroup || $0.isMigratedFrozen"),
+                "el mapeo de las filas de la zona dejó de usar la disyunción del freeze")
     }
 
     /// D4: la retención se ata a la SESIÓN DE NUBE REAL y al store de intents REAL, no a un seam de test.

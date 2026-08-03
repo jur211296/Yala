@@ -36,30 +36,73 @@ enum SplitGroupDeduplicationService {
         let toKeepIDs: [UUID]
         let toDeleteIDs: [UUID]
         let duplicateZoneCounts: [DuplicateZone]
+        /// Evidencia que el keeper tiene que ADOPTAR de las filas descartadas ANTES de que desaparezcan.
+        /// Solo se emite para las zonas donde de verdad cambia algo.
+        let channelMerges: [ChannelMerge]
 
         struct DuplicateZone: Equatable {
             let zoneID: String
             let count: Int
         }
+
+        /// Lo que el keeper hereda de sus gemelas. **Solo evidencia que RESTRINGE, nunca una credencial que
+        /// habilite** — ver el porqué en `computeDedupPlan`.
+        struct ChannelMerge: Equatable {
+            let keeperID: UUID
+            let isBackendGroup: Bool
+            let movedToBackendAt: Date?
+            let rejoinRevokedAt: Date?
+        }
     }
 
     /// Computes which SplitGroups to keep / delete given an array. Pure function.
+    ///
+    /// **El keeper sigue siendo el más antiguo, y eso es deliberado**: `createdAt` ASC es el criterio
+    /// CANÓNICO del repo para elegir la fila de una zona (`GroupService.group(for:)`,
+    /// `GroupsSyncClient.fetchSplitGroupRows`, `executeBatchStep`, `performRemovedSelfCleanup`), y hacer que
+    /// aquí ganara otra crearía una quinta regla distinta para la misma pregunta.
+    ///
+    /// Lo que se arregla es que el plan era **CIEGO AL CANAL**: si el keeper resultaba ser la fila NO-backend,
+    /// al borrar la gemela marcada la zona salía de `GroupsSyncClient.backendGroupZoneIDs` —un fetch de
+    /// `isBackendGroup == true` sobre filas VIVAS— y con ella la pertenencia al canal nuevo, que es local-only
+    /// y no se puede re-derivar de nada local. Ahora el keeper ADOPTA esa evidencia antes de que se borre.
+    ///
+    /// **Qué se fusiona y qué NO, que es la parte delicada.** Se fusiona lo que RESTRINGE: `isBackendGroup`
+    /// (OR), `movedToBackendAt` (el más antiguo — es cuándo se migró) y `rejoinRevokedAt` (la revocación más
+    /// reciente; perderla dejaría re-entrar con una credencial ya retirada). **NO se fusiona
+    /// `backendReInviteToken`**: es la CREDENCIAL de re-invitación, y heredarla RESUCITARÍA en el keeper un
+    /// acceso que la revocación de la gemela retiró — exactamente el fallo que la regla C-3 de
+    /// `.claude/rules/swiftdata-cloudkit.md` describe («con una sola viva, el humano nuevo entra COMO el
+    /// anterior»). Tampoco `markerEnqueuedFlag`: su OR se saltaría un encolado necesario y su AND lo
+    /// duplicaría, así que no hay fusión correcta y se deja por fila.
     static func computeDedupPlan(groups: [SplitGroup]) -> DedupPlan {
         let byZone = Dictionary(grouping: groups, by: \.cloudKitZoneID)
         var toKeep: [UUID] = []
         var toDelete: [UUID] = []
         var dupZones: [DedupPlan.DuplicateZone] = []
+        var merges: [DedupPlan.ChannelMerge] = []
 
         for (zoneID, dups) in byZone {
             let sorted = dups.sorted { $0.createdAt < $1.createdAt }
             guard let keeper = sorted.first else { continue }
             toKeep.append(keeper.id)
-            if dups.count > 1 {
-                toDelete.append(contentsOf: sorted.dropFirst().map(\.id))
-                dupZones.append(.init(zoneID: zoneID, count: dups.count))
+            guard dups.count > 1 else { continue }
+            toDelete.append(contentsOf: sorted.dropFirst().map(\.id))
+            dupZones.append(.init(zoneID: zoneID, count: dups.count))
+
+            let mergedBackend = dups.contains(where: \.isBackendGroup)
+            let mergedMoved = dups.compactMap(\.movedToBackendAt).min()
+            let mergedRevoked = dups.compactMap(\.rejoinRevokedAt).max()
+            // Solo si el keeper GANA algo: un merge no-op ensuciaría el plan y sus tests.
+            if mergedBackend != keeper.isBackendGroup
+                || mergedMoved != keeper.movedToBackendAt
+                || mergedRevoked != keeper.rejoinRevokedAt {
+                merges.append(.init(keeperID: keeper.id, isBackendGroup: mergedBackend,
+                                    movedToBackendAt: mergedMoved, rejoinRevokedAt: mergedRevoked))
             }
         }
-        return DedupPlan(toKeepIDs: toKeep, toDeleteIDs: toDelete, duplicateZoneCounts: dupZones)
+        return DedupPlan(toKeepIDs: toKeep, toDeleteIDs: toDelete,
+                         duplicateZoneCounts: dupZones, channelMerges: merges)
     }
 
     /// Boot-time cleanup. Idempotent — no-op when no duplicates.
@@ -85,6 +128,16 @@ enum SplitGroupDeduplicationService {
 
         let plan = computeDedupPlan(groups: groups)
         guard !plan.toDeleteIDs.isEmpty else { return 0 }
+
+        // La fusión va ANTES del borrado: la evidencia de canal vive SOLO en las filas que están a punto de
+        // desaparecer y no se puede re-derivar de nada local. Un solo `save()` abajo las comitea juntas.
+        let mergesByKeeper = Dictionary(plan.channelMerges.map { ($0.keeperID, $0) }, uniquingKeysWith: { a, _ in a })
+        for group in groups {
+            guard let merge = mergesByKeeper[group.id] else { continue }
+            group.isBackendGroup = merge.isBackendGroup
+            group.movedToBackendAt = merge.movedToBackendAt
+            group.rejoinRevokedAt = merge.rejoinRevokedAt
+        }
 
         let toDeleteSet = Set(plan.toDeleteIDs)
         for group in groups where toDeleteSet.contains(group.id) {
