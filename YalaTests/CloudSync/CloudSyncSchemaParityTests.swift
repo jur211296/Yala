@@ -323,6 +323,24 @@ struct CloudSyncSchemaParityTests {
         #expect(CloudSyncEngine.personalEntityNames == personalSynced)
     }
 
+    /// El conjunto que decide la PROCEDENCIA DE STORE del ancla del high-water es OTRO, y tiene que ser el
+    /// `personalSchema` COMPLETO — `CloudMigrationMarker` incluido. La distinción no es cosmética: un
+    /// detector de store construido sobre `personalEntityNames` dejaría sin ancla una transacción que SÍ es
+    /// del store bueno (la del marcador del cutover), y el drain caería al full-rescan sin necesidad. Y la
+    /// DISYUNCIÓN con los otros dos stores es lo que hace correcto `isPersonalStoreTransaction`: si algún día
+    /// un entity name viviera en dos schemas, el detector devolvería `true` para una transacción ajena y el
+    /// ancla volvería a caer en el store equivocado (el punto fijo de `PersonalDrainHistoryStoreAnchorTests`).
+    @Test func engine_personalStoreEntityNames_matchPersonalSchema_disjointFromOthers() {
+        let personal = entityNames(SwiftDataConfiguration.personalSchema)
+        #expect(CloudSyncEngine.personalStoreEntityNames == personal)
+        #expect(CloudSyncEngine.personalStoreEntityNames.contains("CloudMigrationMarker"))
+        #expect(CloudSyncEngine.personalEntityNames.isSubset(of: CloudSyncEngine.personalStoreEntityNames))
+        #expect(CloudSyncEngine.personalStoreEntityNames
+            .isDisjoint(with: entityNames(SwiftDataConfiguration.groupsSchema)))
+        #expect(CloudSyncEngine.personalStoreEntityNames
+            .isDisjoint(with: entityNames(SwiftDataConfiguration.syncMetaSchema)))
+    }
+
     // MARK: - (d) Identidad de sync por entidad
 
     /// Las 6 originales llevan el `syncID` sintético.

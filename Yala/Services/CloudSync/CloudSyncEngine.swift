@@ -1011,6 +1011,19 @@ final class CloudSyncEngine {
         "GroupBridgePreference",
     ]
 
+    /// Los 17 entity names del STORE personal — `personalEntityNames` + `CloudMigrationMarker`. Sirve para
+    /// UNA cosa distinta de aquél: decidir si una transacción de History PERTENECE al store personal, que es
+    /// dónde puede anclarse el high-water del token. No es lo mismo que "se traduce a outbox": el marcador de
+    /// migración vive en el store personal (lo espeja CloudKit) pero NO se sincroniza al backend, así que
+    /// `personalEntityNames` lo excluye a propósito (`engine_personalEntityNames_matchPersonalSchema`) — y
+    /// usar ese conjunto como detector de store dejaría sin ancla una transacción que SÍ es del store bueno.
+    ///
+    /// Toda transacción del store personal cambia al menos una de estas 17 y ninguna de otro store lo hace
+    /// (es exactamente el `personalSchema`) — invariante pinneado por
+    /// `engine_personalStoreEntityNames_matchPersonalSchema_disjointFromOthers`.
+    static let personalStoreEntityNames: Set<String> =
+        personalEntityNames.union(["CloudMigrationMarker"])
+
     // MARK: Clasificación del reason de tombstone (§c.1) — 100% DRAIN-SIDE
 
     /// Entity names PADRE de una cascada MANUAL cuyos hijos syncables se borran en el MISMO `save()`
@@ -1241,14 +1254,17 @@ final class CloudSyncEngine {
             //    filas persistidas en un drain previo cuyo token no llegó a avanzar).
             var seen = try existingOutboxKeys(context)
 
-            // 5) Traducción, transacción a transacción y en orden. `advancedToken` = high-water de la
-            //    history EXTERNA consumida (nil = no se consumió nada externo esta vuelta). Las
-            //    transacciones que escribió el propio motor (`author == outboxSaveAuthor`: outbox +
-            //    cursor) se DESCARTAN y NO avanzan el high-water → convergencia: un drain ocioso re-lee
-            //    solo sus propios writes (0 filas) y no vuelve a mover/escribir el cursor. Criterio de
-            //    drift: si `clock.send` lanza, NO se consume esa transacción (el high-water se queda
-            //    antes de ella) → se reintenta al próximo drain. `advancedTxAt` = timestamp de esa última
-            //    tx externa (HALLAZGO 2: ancla comparable cross-mount, persistida junto al token en 7).
+            // 5) Traducción, transacción a transacción y en orden. `advancedToken` = high-water del STORE
+            //    PERSONAL consumido (nil = no se consumió nada de ese store esta vuelta). Dos criterios
+            //    INDEPENDIENTES, y el bucle de abajo explica por qué: las transacciones que escribió el
+            //    propio motor (`author == outboxSaveAuthor`: outbox + cursor + el apply del pull) no se
+            //    TRADUCEN —anti-auto-captura— pero sí avanzan el high-water si son del store personal; las
+            //    de OTRO store no avanzan nada (el token es POR-STORE). Convergencia: un drain ocioso re-lee
+            //    solo sus propios writes (0 filas) y, como el cursor vive en `syncMetaSchema`, escribirlo no
+            //    produce ninguna transacción del store personal → no hay nada nuevo que anclar la vuelta
+            //    siguiente. Criterio de drift: si `clock.send` lanza, NO se consume esa transacción (el
+            //    high-water se queda antes de ella) → se reintenta al próximo drain. `advancedTxAt` =
+            //    timestamp de esa última tx (HALLAZGO 2: ancla comparable cross-mount, persistida en 7).
             var rows: [PendingOutboxRow] = []
             var advancedToken: DefaultHistoryToken?
             var advancedTxAt: Date?
@@ -1258,34 +1274,62 @@ final class CloudSyncEngine {
             // = última tx consumida, el punto de retry seguro del invariante de drift).
             var translationAborted = false
             for tx in txns {
-                // Anti-auto-captura (echo suppression): descartar los writes del propio motor. NO
-                // avanzan el high-water (si lo hicieran, cada avance escribiría el cursor → loop).
-                if tx.author == Self.outboxSaveAuthor { continue }
-                // Clasificación del reason de tombstone: UNA vez por transacción (el reason depende del
-                // CONJUNTO de deletes de la transacción, no del change individual). §c.1.
-                let tombstoneReason = Self.classifyTombstoneReason(tx)
-                var txRows: [PendingOutboxRow] = []
-                do {
-                    for change in tx.changes {
-                        let entityName = change.changedPersistentIdentifier.entityName
-                        // Anti-fuga de Grupos: solo entidades del store personal.
-                        guard Self.personalEntityNames.contains(entityName) else { continue }
-                        try translate(change, entityName: entityName, tx: tx,
-                                      tombstoneReason: tombstoneReason,
-                                      lookups: lookups, rows: &txRows, seen: &seen)
+                // Anti-auto-captura (echo suppression): los writes del propio motor NO se TRADUCEN — el
+                // apply de un pull no se re-emite al backend como si fuera una edición local. Ojo: esto
+                // decide QUÉ SE EMITE, no dónde se ancla el high-water (bloque de abajo).
+                if tx.author != Self.outboxSaveAuthor {
+                    // Clasificación del reason de tombstone: UNA vez por transacción (el reason depende del
+                    // CONJUNTO de deletes de la transacción, no del change individual). §c.1.
+                    let tombstoneReason = Self.classifyTombstoneReason(tx)
+                    var txRows: [PendingOutboxRow] = []
+                    do {
+                        for change in tx.changes {
+                            let entityName = change.changedPersistentIdentifier.entityName
+                            // Anti-fuga de Grupos: solo entidades del store personal.
+                            guard Self.personalEntityNames.contains(entityName) else { continue }
+                            try translate(change, entityName: entityName, tx: tx,
+                                          tombstoneReason: tombstoneReason,
+                                          lookups: lookups, rows: &txRows, seen: &seen)
+                        }
+                    } catch {
+                        // `clock.send` lanzó (drift/overflow): abortar en la FRONTERA de esta transacción.
+                        // No consumimos `tx` (advancedToken se queda antes de ella) ni sus filas parciales.
+                        #if DEBUG
+                        print("CloudSyncEngine: clock drift/overflow al traducir tx \(tx.token): \(error)")
+                        #endif
+                        translationAborted = true
+                        break
                     }
-                } catch {
-                    // `clock.send` lanzó (drift/overflow): abortar en la FRONTERA de esta transacción.
-                    // No consumimos `tx` (advancedToken se queda antes de ella) ni sus filas parciales.
-                    #if DEBUG
-                    print("CloudSyncEngine: clock drift/overflow al traducir tx \(tx.token): \(error)")
-                    #endif
-                    translationAborted = true
-                    break
+                    rows.append(contentsOf: txRows)
                 }
-                rows.append(contentsOf: txRows)
-                // Transacción externa consumida (produzca filas o no — p.ej. anti-fuga, syncID-only,
-                // o un gap): avanza el high-water para no re-procesarla (evita recontar gaps).
+                // El high-water SOLO se mueve con transacciones del STORE PERSONAL, y SÍ se mueve con el
+                // ECO. Son dos razones DISTINTAS para no avanzar y confundirlas en una sola línea costó el
+                // defecto: «es mía, no la re-emitas» habla de TRADUCIR; «no es de mi store» habla de ANCLAR.
+                //
+                // Por qué avanzar con el eco: en un device que solo RECIBE, lo ÚNICO que escribe en su store
+                // personal es `SyncApplyEngine.applyPage`, que persiste bajo `outboxSaveAuthor` (:249) ⇒ con
+                // el eco descartado también aquí, `advancedToken` se quedaba nil, NINGUNA de las tres ramas
+                // de abajo escribía el cursor y el fetch re-barría una ventana que CRECÍA una transacción
+                // por página aplicada, indefinidamente y en silencio (medido 2026-08-02: `avanzo=false` en
+                // las 4 vueltas, token nunca escrito). En producción muerde menos que en Grupos porque casi
+                // cualquier actividad personal —y las escrituras del canal de Grupos, que para el personal
+                // son EXTERNAS— cortan la racha; no porque el defecto no esté.
+                //
+                // Por qué el guard de store es OBLIGATORIO aquí y no bastaba copiar el fix de Grupos: el
+                // bucle que temía el comentario original («cada avance escribiría el cursor → loop») en este
+                // canal EXISTE, medido el 2026-08-02. `DefaultHistoryToken` es POR-STORE, el cursor vive en
+                // `syncMetaSchema`, y sin acotar el ancla la ventana cross-store del bootstrap (full-rescan)
+                // deja como última transacción la del propio cursor ⇒ el ancla cae en `syncMeta` ⇒ escribir
+                // el cursor genera ahí una transacción NUEVA que el drain siguiente vuelve a ver ⇒ avanza ⇒
+                // escribe, sin fin (sonda de 5 vueltas, ventana de 1 tx en todas; el test pinea 3). Y el daño
+                // mayor no es el bucle: anclado en `syncMeta` el store PERSONAL queda OCULTO ⇒ punto fijo, el
+                // canal ciego a su propio store. Acotado al store personal el bucle desaparece por el mismo
+                // mecanismo que en Grupos: el cursor y el outbox viven en OTRO store, así que avanzar no
+                // produce ninguna transacción del store personal y la vuelta siguiente no tiene qué anclar.
+                // Las dos mitades están pinneadas en `PersonalDrainHistoryStoreAnchorTests`.
+                guard Self.isPersonalStoreTransaction(tx) else { continue }
+                // Transacción del store personal consumida (produzca filas o no — p.ej. anti-fuga,
+                // syncID-only, o un gap): avanza el high-water para no re-procesarla (evita recontar gaps).
                 advancedToken = tx.token
                 advancedTxAt = tx.timestamp
             }
@@ -1326,11 +1370,13 @@ final class CloudSyncEngine {
             //    próximo drain reintenta entero.
             if !_testSuppressTokenAdvance {
                 if let reanchor = tokenGuard.reanchor, !translationAborted {
-                    // RECOVERY: el token era no-comparable cross-mount → re-anclar SIEMPRE a la última tx de
-                    //    la UNIÓN, AUNQUE sea del motor (`author == outboxSaveAuthor`). Difiere del invariante
-                    //    normal —que solo avanza con history EXTERNA— a propósito: para re-anclar basta un
-                    //    token del mount ACTUAL (el filtro de emisión, que sí descarta el motor, es
-                    //    independiente del avance del cursor). Sin esto el token quedaría en el mount viejo.
+                    // RECOVERY: el token era no-comparable cross-mount → re-anclar a la última tx de la
+                    //    UNIÓN **del store personal**, AUNQUE sea del motor (`author == outboxSaveAuthor`):
+                    //    para re-anclar basta un token del mount ACTUAL, y el filtro de emisión —que sí
+                    //    descarta el motor— es independiente del avance del cursor. Sin esto el token quedaría
+                    //    en el mount viejo. Lo que NO es independiente es el STORE: el ancla la acota
+                    //    `recoverIfHistoryTokenIncomparable` (el token es por-store; anclar en `syncMeta`
+                    //    reintroduce el punto fijo que este guard deshace) ⇒ mismo criterio que el paso 5.
                     try saveWithAuthor(context, Self.outboxSaveAuthor) {
                         cursor.historyTokenData = try encodeToken(reanchor.token)
                         cursor.lastDrainedTxAt = reanchor.txAt
@@ -1340,13 +1386,14 @@ final class CloudSyncEngine {
                     historyTokenRecoveredCount += 1
                     CloudSyncBreadcrumb.historyTokenRecovered()
                 } else if let reanchor = fetchOutcome.brokenReanchor, !translationAborted {
-                    // DIFERIDOS #33: el token estaba ROTO y la rama acotada trajo ventana no vacía →
-                    //    re-anclar a la ÚLTIMA tx de la ventana (motor incluido — misma justificación
-                    //    que el reanchor del guard: para sanar basta un token del mount actual; el
-                    //    filtro de emisión del paso 5 es independiente). Precede a `advancedToken` a
-                    //    propósito: el avance normal solo apunta a la última tx EXTERNA — anclar más
-                    //    atrás dejaría txs del motor por delante que cada drain re-leería. Atomicidad
-                    //    token+ancla+reloj idéntica a las otras dos ramas.
+                    // DIFERIDOS #33: el token estaba ROTO y la rama acotada trajo ventana con ≥1 tx del
+                    //    store personal → re-anclar a la ÚLTIMA de ellas (motor incluido — misma
+                    //    justificación que el reanchor del guard: para sanar basta un token del mount
+                    //    actual; el filtro de emisión del paso 5 es independiente, el de STORE no —lo
+                    //    acota `executeBrokenTokenBranch`, porque ese fetch es por TIMESTAMP y por tanto
+                    //    cross-store). Precede a `advancedToken` a propósito: anclar más atrás dejaría
+                    //    transacciones por delante que cada drain re-leería. Atomicidad token+ancla+reloj
+                    //    idéntica a las otras dos ramas.
                     try saveWithAuthor(context, Self.outboxSaveAuthor) {
                         cursor.historyTokenData = try encodeToken(reanchor.token)
                         cursor.lastDrainedTxAt = reanchor.txAt
@@ -1356,8 +1403,10 @@ final class CloudSyncEngine {
                     historyTokenBrokenReanchoredCount += 1
                     CloudSyncBreadcrumb.historyTokenBrokenReanchored()
                 } else if let advancedToken {
-                    //    Avance normal: SOLO si se consumió history externa. Bundling seguro: todo `clock.send`
-                    //    de esta vuelta ocurrió al traducir una tx externa que también fijó `advancedToken`.
+                    //    Avance normal: SOLO si se consumió ≥1 transacción del STORE PERSONAL (eco incluido —
+                    //    ver el bloque del paso 5). Bundling seguro: todo `clock.send` de esta vuelta ocurrió
+                    //    al traducir una tx externa, y toda tx traducida es de ese store (muro anti-fuga
+                    //    `personalEntityNames` ⊂ `personalStoreEntityNames`) ⇒ también fijó `advancedToken`.
                     try saveWithAuthor(context, Self.outboxSaveAuthor) {
                         cursor.historyTokenData = try encodeToken(advancedToken)
                         cursor.lastDrainedTxAt = advancedTxAt
@@ -1385,6 +1434,18 @@ final class CloudSyncEngine {
             print("CloudSyncEngine: drain error: \(error)")
             #endif
         }
+    }
+
+    // MARK: - Procedencia de store de una transacción de History
+
+    /// ¿Pertenece la transacción al store PERSONAL? Toda transacción de ese store cambia al menos una de sus
+    /// 17 entidades y NINGUNA transacción de otro store lo hace — `personalStoreEntityNames` es exactamente
+    /// el conjunto del `personalSchema`. Es la única forma de acotar el ancla: `storeIdentifier` NO es un
+    /// keypath soportado en el `#Predicate` de un `HistoryDescriptor` (medido en
+    /// `GroupsDrainHistoryStoreAnchorTests.storeIdentifier_isNotASupportedPredicateKeyPath`), así que el
+    /// fetch no se puede filtrar por store — sí se lee como propiedad al recorrer las transacciones.
+    static func isPersonalStoreTransaction(_ tx: DefaultHistoryTransaction) -> Bool {
+        tx.changes.contains { personalStoreEntityNames.contains($0.changedPersistentIdentifier.entityName) }
     }
 
     // MARK: - Guard de validación del token de History (HALLAZGO 2, corrida device reversa 2026-07-11)
@@ -1510,8 +1571,14 @@ final class CloudSyncEngine {
                     : a.offset < b.offset
             }
             .map(\.element)
-        guard let last = orderedUnion.last else {
-            // Inalcanzable (missing no vacío ⇒ unión no vacía), defensivo.
+        // El re-ancla tiene que caer en el store PERSONAL, igual que el avance normal: `orderedUnion.last`
+        // pelado es la última por TIMESTAMP fuera cual fuera su store, y anclar en `syncMeta` (el cursor del
+        // propio motor, o el del canal de Grupos, que para éste es EXTERNO) reintroduce exactamente el punto
+        // fijo que este guard existe para deshacer — con el agravante de que aquí SÍ se re-ancla al motor a
+        // propósito, así que la última de la unión es a menudo una escritura de `syncMeta`. Sin transacción
+        // personal en la unión no se re-ancla: se cae al avance normal y el token roto persiste (residual (a)
+        // de `fetchHistoryResolvingToken`), que es la dirección SEGURA — coste de re-lectura, no pérdida.
+        guard let last = orderedUnion.last(where: { Self.isPersonalStoreTransaction($0) }) else {
             return TokenGuardResult(txns: orderedUnion)
         }
         return TokenGuardResult(txns: orderedUnion, reanchor: (token: last.token, txAt: last.timestamp))
@@ -2140,7 +2207,14 @@ final class CloudSyncEngine {
                         predicate: #Predicate { $0.timestamp > cutoff }))
                 historyTokenBrokenBoundedCount += 1
                 CloudSyncBreadcrumb.historyTokenBrokenBoundedRescan(window: txns.count)
-                let reanchor = txns.last.map { (token: $0.token, txAt: $0.timestamp) }
+                // El re-ancla se acota al store PERSONAL por la misma razón que el del guard y que el avance
+                // normal: el fetch por TIMESTAMP es cross-store, así que su última transacción puede ser de
+                // `syncMeta` (el propio cursor) o del store de Grupos, y anclar ahí deja al canal ciego a su
+                // store PARA SIEMPRE — el token por-store no surfacea nada del personal desde un ancla ajena
+                // y sin verlo tampoco puede re-anclar en él. Ventana sin transacción personal ⇒ sin reanchor:
+                // el token roto persiste y este fallback se repite (barato) hasta que entre un write personal.
+                let reanchor = txns.last(where: { Self.isPersonalStoreTransaction($0) })
+                    .map { (token: $0.token, txAt: $0.timestamp) }
                 return HistoryFetchOutcome(
                     txns: txns, tokenWasBroken: true, brokenReanchor: reanchor)
             } catch {
