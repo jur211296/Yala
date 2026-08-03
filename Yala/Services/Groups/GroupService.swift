@@ -554,7 +554,9 @@ final class GroupService {
         // limpieza local existente. SIN `leaveShare`/`PendingLeaveShareTracker` (no hay CKShare) y SIN
         // `ensureCurrentUserMemberExists` (PROHIBIDO para backend — regla A1: encolaría a CKSyncEngine). Los
         // tombstones del cascade de `performLocalCleanupAndDelete` NO se emiten (C2-bis: la zona sale del set
-        // backend al borrar el SplitGroup). RPC falla → throw ANTES de tocar el contexto → local INTACTO.
+        // backend al borrar el SplitGroup — y sale SIEMPRE desde 2026-08-03, porque la primitiva barre TODAS
+        // las filas de la zona; con una sola, un duplicado dejaba la zona dentro del set y esta frase era
+        // falsa). RPC falla → throw ANTES de tocar el contexto → local INTACTO.
         if routesMembershipToBackend(group) {
             _ = try await backendMembershipFactory().leave(groupID: group.cloudKitZoneID)
             try performLocalCleanupAndDelete(group: group, context: context)
@@ -653,31 +655,74 @@ final class GroupService {
 
     /// Bloque común de cleanup local al salir o ser removido de un grupo: libera TX cuenta
     /// real (preserva rastro financiero), convierte drafts a manual, borra expenses/shares/
-    /// settlements/members de la zone, limpia prefs personales del grupo y elimina el
-    /// SplitGroup local. NO hace save() — caller controla cuándo flushear.
+    /// settlements/members de la zone, limpia prefs personales del grupo y elimina los
+    /// SplitGroup locales. NO hace save() — caller controla cuándo flushear.
+    ///
+    /// **La unidad es la ZONA y el `group` solo es su portador.** Las cinco limpiezas de abajo ya iban por
+    /// `cloudKitZoneID`; la única que iba por FILA era el `context.delete(group)` final, y esa asimetría es
+    /// la que rompía la seguridad que el comentario de `leaveGroup` (:553) declara por escrito: con un
+    /// `SplitGroup` DUPLICADO en la zona —estado documentado, con servicio propio
+    /// (`SplitGroupDeduplicationService`)— la fila superviviente mantiene la zona dentro de
+    /// `GroupsSyncClient.backendGroupZoneIDs`, que es un fetch de filas VIVAS, ⇒ el `save()` del caller (con
+    /// el autor por DEFECTO, el que captura el drain) traducía el cascade a tombstones de
+    /// `split_expenses`/`split_shares`/`split_settlements` con HLC fresco. El `guard !updateOnly` de
+    /// `translateChange` NO cubre esto y no puede: el tombstone de un gasto SÍ tiene que viajar. Hermano
+    /// exacto del defecto que `GroupZoneCacheGate` cerró en el transporte (2026-08-03).
+    ///
+    /// **Y el borrado del grupo va PRIMERO**, molde de `GroupZoneCacheGate.deleteCache` y
+    /// `GroupsIdentityPurgeGate.deleteRows`. No es orden estético: `BridgeModeResolver.clearOverride` hace
+    /// su propio `context.save()` (`BridgeModeResolver.swift:170`) ⇒ con el grupo al final se COMITEA un
+    /// estado intermedio de «hijas muertas + fila del grupo viva», que es exactamente lo que el drain
+    /// traduce. Hoy no lo alcanza (todo esto es `@MainActor` síncrono y no hay `await` entre la primitiva y
+    /// el `save()` del caller, así que ningún drain se cuela en medio), pero sí queda PERSISTIDO si el
+    /// `save()` final lanza —ningún call-site hace `rollback()`— y ahí el drain de la vuelta siguiente lo ve.
+    /// Con el grupo primero, cualquier commit parcial deja huérfanas invisibles, jamás un emisor vivo.
+    ///
+    /// **Sin guard de canal, a propósito.** El de `GroupZoneCacheGate` es fail-CLOSED («zona backend ⇒
+    /// intocable») y aquí bloquearía el 100 % del camino: la rama backend de `leaveGroup` se toma justo
+    /// cuando `isBackendGroup == true`. Y el usuario ya salió server-side —`leave_group` no es idempotente
+    /// puro (lo dice el docblock de `batchLeave`) y el pull deja de listar el grupo— así que negarse a
+    /// limpiar deja un fantasma
+    /// IMBORRABLE. La protección correcta aquí es que la zona salga del set backend SIEMPRE, que es lo que
+    /// hace el barrido por zona.
     private func performLocalCleanupAndDelete(group: SplitGroup, context: ModelContext) throws {
+        let zoneID = group.cloudKitZoneID
         if GroupTransactionBridge.shared.isReady {
             do {
-                try GroupTransactionBridge.shared.freezeForSoftDelete(group: group)
+                // Por ZONA: la fila del grupo se va justo debajo y este freeze solo necesita el zoneID.
+                try GroupTransactionBridge.shared.freezeForSoftDelete(zoneID: zoneID)
             } catch {
                 #if DEBUG
                 logger.error("freezeForSoftDelete failed: \(error.localizedDescription, privacy: .public)")
                 #endif
             }
         }
-        try cascadeDeleteGroupData(zoneName: group.cloudKitZoneID, context: context)
-        GroupPersonalPreferences.removeAll(for: group.cloudKitZoneID)
+        // TODAS las filas de la zona, no solo la del parámetro. `#Predicate` CONCRETO por tipo.
+        let rows: [SplitGroup]
+        do {
+            rows = try context.fetch(
+                FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.cloudKitZoneID == zoneID }))
+        } catch {
+            // Degradar al comportamiento anterior (la fila en mano) y NO abortar: el usuario ya salió
+            // server-side y bloquear aquí le deja el grupo fantasma. Nunca es peor que antes de este fix.
+            #if DEBUG
+            logger.error("performLocalCleanupAndDelete: fetch de la zona falló: \(error.localizedDescription, privacy: .public)")
+            #endif
+            rows = [group]
+        }
+        for row in rows { context.delete(row) }
+        try cascadeDeleteGroupData(zoneName: zoneID, context: context)
+        GroupPersonalPreferences.removeAll(for: zoneID)
         // Un join intent vivo para una zona que deja de existir localmente es
         // obsoleto (reconciliarlo re-crearía el member recién borrado).
-        PendingJoinStore.clear(zoneName: group.cloudKitZoneID)
+        PendingJoinStore.clear(zoneName: zoneID)
         do {
-            try BridgeModeResolver.shared.clearOverride(forZoneID: group.cloudKitZoneID, in: context)
+            try BridgeModeResolver.shared.clearOverride(forZoneID: zoneID, in: context)
         } catch {
             #if DEBUG
             logger.error("clearOverride failed: \(error.localizedDescription, privacy: .public)")
             #endif
         }
-        context.delete(group)
     }
 
     // MARK: - Batch "salir de todos mis grupos" (D10)

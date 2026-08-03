@@ -817,7 +817,10 @@ final class GroupsSyncClient {
             // esas filas (`not_authorized`), solo se ahorra el round-trip al dead-letter.
             // PRECISIÓN: «su zona salió del set» solo vale con UNA fila por zona. Con un `SplitGroup`
             // duplicado la zona sigue dentro y este guard NO frena nada — por eso el de `updateOnly` de
-            // arriba va por entidad y no se apoya en éste.
+            // arriba va por entidad y no se apoya en éste. Para el cascade del leave la premisa se cerró
+            // en el EMISOR el 2026-08-03: `performLocalCleanupAndDelete` barre TODAS las filas de la zona
+            // (`GroupLocalCleanupZoneTests`), así que la zona sale del set siempre. Este guard sigue sin
+            // ser la defensa de nada que dependa del recuento de filas.
             guard backendZoneIDs.contains(groupID) else {
                 GroupsSyncBreadcrumb.groupsDrainSkippedNonBackendGroup(entity: entityType)
                 return
