@@ -380,7 +380,19 @@ struct GroupsIdentityPurgeWiringTests {
     @Test func clearAllLocalGroupData_goesThroughTheGate() throws {
         let src = try Self.source("Yala/Services/Groups/SplitSyncManager.swift")
         #expect(src.contains("GroupsIdentityPurgeGate.apply(in: modelContext)"))
-        #expect(!src.contains("deleteGroupCache(groupID: group.id, context: modelContext)"))
+        // La negativa ancla en el PRIMITIVO, no en una forma de llamada concreta. La versión anterior
+        // escaneaba `deleteGroupCache(groupID: group.id, context: modelContext)`, una firma que NUNCA
+        // existió (los call-sites siempre pasaron `groupID: groupID`) ⇒ estaba verde midiendo el vacío, la
+        // familia de `AppAttestClient.ensureRegistered()`. Con el `#require` de abajo, si alguien renombra
+        // el primitivo esta prueba se cae en vez de dejar de medir en silencio.
+        try #require(src.contains("private func deleteGroupCache(zoneName: String, context: ModelContext)"),
+                     "el primitivo cambió de nombre o de firma: este scan dejó de medir nada")
+        let afterPurge = try #require(src.components(separatedBy: "private func applyIdentityPurge() {").last)
+        let purgeBody = afterPurge.components(separatedBy: "\n    #if DEBUG").first ?? afterPurge
+        #expect(!purgeBody.contains("deleteGroupCache("),
+                Comment(rawValue: "la purga por identidad tiene su propio barrido (RETIENE las zonas "
+                        + "backend); reusar el primitivo del transporte, que borra la zona entera, se "
+                        + "llevaría por delante justo lo que el gate acaba de conservar"))
     }
 
     /// D2: la rama `.signOut` resetea el estado del engine, no solo borra filas. Es la trampa (1) de

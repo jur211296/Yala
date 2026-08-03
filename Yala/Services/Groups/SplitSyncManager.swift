@@ -1309,7 +1309,7 @@ final class SplitSyncManager {
 
         for deletion in fetched.deletions {
             let zoneName = deletion.zoneID.zoneName
-            guard let groupID = CKConstants.groupID(from: zoneName) else { continue }
+            guard CKConstants.groupID(from: zoneName) != nil else { continue }
 
             // G6-3 (C2/C5): la zona de un grupo MIGRADO puede borrarse legítimamente (C5 "borrar mi copia
             // congelada" del owner) — el borrado de la zona CloudKit NO debe destruir los datos locales:
@@ -1318,8 +1318,12 @@ final class SplitSyncManager {
             //     movedToBackendAt != nil): su copia congelada porta el TOKEN del CTA de re-join — borrarla
             //     lo dejaría fuera sin camino de vuelta (el path del member queda FUERA de v1 en C5).
             // Solo se purgan los pending changes del engine (no debería haber).
-            if let localGroup = GroupService.shared.group(for: zoneName),
-               localGroup.isBackendGroup || localGroup.movedToBackendAt != nil {
+            //
+            // La decisión es POR ZONA y sobre TODAS sus filas (`GroupZoneCacheGate`), no
+            // `GroupService.group(for:)`: ése devuelve `results.first` por `createdAt` ASC, así que un
+            // `SplitGroup` DUPLICADO mixto podía cegarlo, y además fallaba ABIERTO (`nil` con el fetch en
+            // `catch` ⇒ el `if let` no dispara ⇒ borrado). Ver la cabecera del gate.
+            guard GroupZoneCacheGate.classify(zoneName: zoneName, context: modelContext) == .cloudKitZone else {
                 GroupsSyncBreadcrumb.groupsCkPullSkippedBackendGroup(site: "zoneDeletion")
                 purgePendingChanges(for: deletion.zoneID, engine: engine)
                 continue
@@ -1330,14 +1334,14 @@ final class SplitSyncManager {
                 #if DEBUG
                 logger.info("[\(engineName)] Zone deleted: \(zoneName) — cleaning up local data")
                 #endif
-                deleteGroupCache(groupID: groupID, context: modelContext)
+                deleteGroupCache(zoneName: zoneName, context: modelContext)
                 purgePendingChanges(for: deletion.zoneID, engine: engine)
 
             case .purged:
                 #if DEBUG
                 logger.info("[\(engineName)] Zone purged: \(zoneName) — clearing data + state")
                 #endif
-                deleteGroupCache(groupID: groupID, context: modelContext)
+                deleteGroupCache(zoneName: zoneName, context: modelContext)
                 purgePendingChanges(for: deletion.zoneID, engine: engine)
                 clearState(name: engineName)
 
@@ -1346,10 +1350,10 @@ final class SplitSyncManager {
                 logger.info("[\(engineName)] Encrypted data reset: \(zoneName) — clearing system fields + re-uploading")
                 #endif
                 clearState(name: engineName)
-                reuploadGroupRecords(groupID: groupID, zoneID: deletion.zoneID, engine: engine, context: modelContext)
+                reuploadGroupRecords(zoneName: zoneName, zoneID: deletion.zoneID, engine: engine, context: modelContext)
 
             @unknown default:
-                deleteGroupCache(groupID: groupID, context: modelContext)
+                deleteGroupCache(zoneName: zoneName, context: modelContext)
                 purgePendingChanges(for: deletion.zoneID, engine: engine)
             }
         }
@@ -2309,26 +2313,27 @@ final class SplitSyncManager {
         guard let modelContext else { return }
 
         let zoneName = recordID.zoneID.zoneName
-        guard let groupID = CKConstants.groupID(from: zoneName) else { return }
+        guard CKConstants.groupID(from: zoneName) != nil else { return }
 
         // G6-3 (C5): un save pendiente que racea con el borrado de la zona de un grupo MIGRADO (owner que
         // borró su copia congelada) NO debe destruir los datos locales — la verdad vive en el backend.
-        if let localGroup = GroupService.shared.group(for: zoneName),
-           localGroup.isBackendGroup || localGroup.movedToBackendAt != nil {
+        // Mismo gate POR ZONA que el bucle de deletions, y por las mismas dos razones (duplicado mixto +
+        // fail-open del fetch).
+        guard GroupZoneCacheGate.classify(zoneName: zoneName, context: modelContext) == .cloudKitZone else {
             GroupsSyncBreadcrumb.groupsCkPullSkippedBackendGroup(site: "zoneNotFound")
             pendingRecordSaves.remove(recordID)
             return
         }
 
         // Delete all local data for this group
-        deleteGroupCache(groupID: groupID, context: modelContext)
+        deleteGroupCache(zoneName: zoneName, context: modelContext)
         do {
             SaveBreadcrumb.willSave("SplitSync.zoneNotFound")
             try modelContext.save()
             SaveBreadcrumb.didSave("SplitSync.zoneNotFound")
         } catch {
             #if DEBUG
-            logger.error("[\(engineName)] Failed to clean up group \(groupID) after zone not found: \(error)")
+            logger.error("[\(engineName)] Failed to clean up zone \(zoneName) after zone not found: \(error)")
             #endif
         }
 
@@ -2340,35 +2345,19 @@ final class SplitSyncManager {
     }
 
     /// Remove all local models for a group (zone deleted or participant removed).
-    private func deleteGroupCache(groupID: UUID, context: ModelContext) {
-        let zoneName = SplitGroupZone.zoneName(for: groupID)
-
-        do {
-            // Delete group
-            let groupDesc = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.id == groupID })
-            if let group = try context.fetch(groupDesc).first {
-                context.delete(group)
-            }
-
-            // Delete members by zone
-            let memberDesc = FetchDescriptor<SplitMember>(predicate: #Predicate { $0.groupZoneID == zoneName })
-            for member in try context.fetch(memberDesc) { context.delete(member) }
-
-            let shareDesc = FetchDescriptor<SplitShare>(predicate: #Predicate { $0.groupZoneID == zoneName })
-            for share in try context.fetch(shareDesc) { context.delete(share) }
-
-            // Delete expenses by zone
-            let expenseDesc = FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.groupZoneID == zoneName })
-            for expense in try context.fetch(expenseDesc) { context.delete(expense) }
-
-            // Delete settlements by zone
-            let settlementDesc = FetchDescriptor<SplitSettlement>(predicate: #Predicate { $0.groupZoneID == zoneName })
-            for settlement in try context.fetch(settlementDesc) { context.delete(settlement) }
-        } catch {
-            #if DEBUG
-            logger.error("deleteGroupCache: Failed for group \(groupID): \(error)")
-            #endif
+    ///
+    /// El barrido entero va por la ZONA DEL EVENTO — incluidas las filas `SplitGroup`, que antes se
+    /// buscaban por `id == UUID(zona)` y con un `.first` — y la decisión de si la zona es tocable la toma
+    /// `GroupZoneCacheGate` sobre TODAS sus filas. Los dos porqués están en la cabecera de ese fichero; el
+    /// corto es que `id` y zona divergen en una fila born-remote y que una zona con duplicado tenía dos
+    /// filas donde este código veía una.
+    private func deleteGroupCache(zoneName: String, context: ModelContext) {
+        let result = GroupZoneCacheGate.deleteCache(zoneName: zoneName, context: context)
+        #if DEBUG
+        if result.partial {
+            logger.error("deleteGroupCache: borrado PARCIAL en \(zoneName, privacy: .public)")
         }
+        #endif
     }
 
     // MARK: - Pending Changes Purge
@@ -2399,12 +2388,15 @@ final class SplitSyncManager {
     }
 
     /// Clear system fields and re-enqueue all records for a group (used after encryptedDataReset).
-    private func reuploadGroupRecords(groupID: UUID, zoneID: CKRecordZone.ID, engine: CKSyncEngine, context: ModelContext) {
-        let zoneName = SplitGroupZone.zoneName(for: groupID)
-
+    ///
+    /// Hermano de `deleteGroupCache` en la misma familia de derivación: también arrancaba de
+    /// `SplitGroupZone.zoneName(for: groupID)` y fetcheaba el grupo por `id == groupID`. Va por la ZONA DEL
+    /// EVENTO por la misma razón, y con la misma consecuencia si no se hace: sobre una zona con duplicado
+    /// limpiaba el `ckSystemFieldsData` de UNA fila y dejaba la otra sin re-encolar.
+    private func reuploadGroupRecords(zoneName: String, zoneID: CKRecordZone.ID, engine: CKSyncEngine, context: ModelContext) {
         do {
             // Clear system fields and re-enqueue each model type
-            let groups = try context.fetch(FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.id == groupID }))
+            let groups = try context.fetch(FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.cloudKitZoneID == zoneName }))
             for group in groups {
                 group.ckSystemFieldsData = nil
                 let recordID = CKConstants.recordID(for: group.id, in: zoneID)
@@ -2444,7 +2436,7 @@ final class SplitSyncManager {
             SaveBreadcrumb.didSave("SplitSync.reuploadGroupRecords")
         } catch {
             #if DEBUG
-            logger.error("reuploadGroupRecords: Failed for group \(groupID): \(error)")
+            logger.error("reuploadGroupRecords: Failed for zone \(zoneName, privacy: .public): \(error)")
             #endif
         }
     }

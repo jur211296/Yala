@@ -23,9 +23,19 @@ enum SplitGroupZone {
     /// Deriva el nombre de zona desde el `id` del grupo. OJO: la derivación **solo vale para grupos
     /// nacidos en CloudKit** — un born-remote del pull backend se inserta con `SplitGroup()` (id nuevo) y
     /// se le PISA el `cloudKitZoneID` con el `group_id` del server (`GroupsSyncClient.applyGroupMeta`),
-    /// así que quien necesite la zona REAL de una fila debe leer `cloudKitZoneID` (ver el docblock de
-    /// `GroupsIdentityPurgeGate.deleteZone`). Hoy su único caller superviviente es el fixture de
-    /// `GroupsIdentityPurgeGateTests` que usa justamente esa asimetría como control negativo.
+    /// así que quien necesite la zona REAL de una fila debe leer `cloudKitZoneID` (ver los docblocks de
+    /// `GroupsIdentityPurgeGate.deleteRows` y `GroupZoneCacheGate`).
+    ///
+    /// **Su único caller de producción es `CKConstants.zoneID(for:)`** (`Services/Groups/`), que traduce el
+    /// `id` de un grupo a la `CKRecordZone.ID` de SU zona — legítimo porque todo grupo que llega a tener
+    /// zona CloudKit nació en CloudKit (`SplitZoneManager.createZone` guarda por `!isBackendGroup`). En
+    /// tests lo usa el fixture de `GroupsIdentityPurgeGateTests` y el de `GroupZoneCacheGateTests`, los dos
+    /// usando esa asimetría como control negativo.
+    ///
+    /// Este docblock decía «hoy su único caller superviviente es el fixture de …» y era FALSO: la usaban
+    /// además `SplitSyncManager.deleteGroupCache` y `reuploadGroupRecords`, que es exactamente lo que había
+    /// que arreglar (2026-08-03). Quien lea aquí «está muerta en producción» subestima el radio: antes de
+    /// darlo por bueno, `grep -rn "SplitGroupZone.zoneName" --include="*.swift" Yala`.
     static func zoneName(for groupID: UUID) -> String {
         "\(zonePrefix)\(groupID.uuidString)"
     }
