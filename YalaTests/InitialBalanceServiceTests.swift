@@ -189,7 +189,15 @@ struct InitialBalanceServiceMultiCurrencyTests {
             Account.self, TransactionItem.self, Subcategory.self, YalaCategory.self,
             ExchangeRate.self, Tag.self, Budget.self, ScheduledPayment.self, InboxDraft.self,
         ])
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        // `cloudKitDatabase: .none` NO es cosmético: con el default `.automatic`, y con un schema
+        // que tiene relaciones, SwiftData adjunta `NSPersistentCloudKitContainer` incluso a un store
+        // in-memory (`file:///dev/null`). En el simulador, que no tiene cuenta iCloud, su setup falla
+        // con `CKAccountStatusNoAccount` (134400), `recoverFromError:` tampoco puede, y la conexión
+        // SQL queda desmontada ⇒ el `save()` siguiente muere con la excepción ObjC
+        // `NSInternalInconsistencyException "No eligible connection available"`, que el `do/catch`
+        // de Swift NO atrapa: SIGABRT y runner reiniciado. Mismo motivo (y mismo comentario) que en
+        // `TestHelpers.testContainer(for:)`.
+        let config = ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [config])
         return ModelContext(container)
     }

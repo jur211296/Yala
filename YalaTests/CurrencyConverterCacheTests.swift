@@ -22,7 +22,11 @@ struct CurrencyConverterCacheTests {
     /// suficiente para que `convertWithLatestRate` encuentre rates.
     private func makeContextWithTodayRate() throws -> ModelContext {
         let schema = Schema([ExchangeRate.self])
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        // `.none` explícito: hoy este schema no tiene relaciones, así que SwiftData no adjunta
+        // el mirror de CloudKit y el default `.automatic` es inofensivo. En cuanto una relación
+        // entre por aquí, `.automatic` en un sim sin cuenta iCloud mata el proceso en el `save()`
+        // (ver el comentario de `InitialBalanceServiceMultiCurrencyTests.makeIsolatedContext()`).
+        let config = ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, configurations: [config])
         let context = ModelContext(container)
 
