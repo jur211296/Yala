@@ -5402,15 +5402,6 @@
 /* C-10: read-only staleness note under the migrated banner */
 "groups.migrated.readOnlyNote" = "你看到的是群组迁移时的副本，所以可能不是最新的。";
 
-/* C-10: owner banner while migration waits for members to update */
-"groups.migrated.waitingBanner" = "等大家都更新应用，我们就把你的群组迁移到 Yala 云端";
-
-/* C-10: owner settings section listing members blocking the migration */
-"groups.migrated.waitingSectionTitle" = "待更新的成员";
-
-/* C-10: hint explaining the owner's only way forward */
-"groups.migrated.waitingHint" = "等所有人都用上最新版本，我们会自动迁移群组。如果有人已经不参与了，把他移出群组就能继续。";
-
 /* C-10: non-terminal sign-in failure message */
 "groups.signin.retryLater" = "嗯，我们暂时没能关联你的账户。你的群组还在，不会丢失任何内容，稍后再试试吧。";
 

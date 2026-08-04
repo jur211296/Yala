@@ -51,22 +51,6 @@ final class SplitMember {
     /// CloudKit-safe: opcional, default `nil`, sin `.unique`.
     var memberKey: String?
 
-    /// C-10 (beacon de capacidad, member→owner): token que declara qué puede hacer el DEVICE de este
-    /// member respecto al canal de Grupos del backend. `nil` = ese device NO puede volver a entrar por el
-    /// backend ⇒ el owner NO migra el grupo todavía.
-    ///
-    /// **La AUSENCIA es la protección.** Un build viejo no conoce este campo y por tanto nunca lo publica;
-    /// el gate de emisión lo lee como "incapaz" y no le estampa el marcador que congela. Así es como se
-    /// protege a binarios ya publicados, que no pueden cooperar porque el código no existe en ellos.
-    /// VIAJA por CloudKit (mapeado en `CKRecordTranslator`), pero SOLO lo escribe el device dueño de la
-    /// fila (`isCurrentUser`). CloudKit-safe: opcional, default `nil`, sin `.unique`.
-    var clientCapability: String?
-
-    /// C-10: instante del último beacon. La FRESCURA importa: un beacon de hace medio año no prueba que
-    /// ese device siga capaz (pudo haberse hecho downgrade, o la fila quedó huérfana).
-    /// CloudKit-safe: opcional, default `nil`, sin `.unique`.
-    var clientCapabilityAt: Date?
-
     var memberStatus: SplitMemberStatus {
         get { SplitMemberStatus(rawValue: status) ?? .active }
         set { status = newValue.rawValue }

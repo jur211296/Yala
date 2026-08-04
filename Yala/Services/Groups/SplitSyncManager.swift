@@ -1894,10 +1894,8 @@ final class SplitSyncManager {
         var unbridgeSettlementIDs: Set<UUID> = []
 
         for deletion in fetched.deletions {
-            // G6-3 (C2): grupo migrado → no aplicar borrados CloudKit (la verdad vive en el backend).
-            // C-4 (PIEZA 2), INVARIANTE 2: el rescate NO se consulta aquí y no debe hacerlo nunca. Una
-            // deletion de una zona backend es EXACTAMENTE lo que el guard tiene que descartar: la verdad
-            // de las bajas vive en el backend, y aplicarla borraría local lo que el servidor conserva.
+            // G6-3 (C2): grupo migrado → no aplicar borrados CloudKit. La verdad de las bajas vive en el
+            // backend, y aplicar una deletion de una zona suya borraría local lo que el servidor conserva.
             if backendZoneNames.contains(deletion.recordID.zoneID.zoneName) {
                 GroupsSyncBreadcrumb.groupsCkPullSkippedBackendGroup(site: "applyRemote", reason: "deletion")
                 continue

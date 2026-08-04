@@ -82,11 +82,6 @@ enum CKConstants {
         static let status = "status"
         static let isGroupOwner = "isGroupOwner"
         static let joinedAt = "joinedAt"
-        /// C-10: beacon de capacidad del device de ESTE member (member→owner). PLAIN, sin PII: es un
-        /// token de versión de capacidad, no un dato de la persona.
-        static let clientCapability = "clientCapability"
-        /// C-10: frescura del beacon. PLAIN.
-        static let clientCapabilityAt = "clientCapabilityAt"
         // NOTE: `isCurrentUser` no se persiste en CKRecord — es device-local,
         // reseteado por `GroupService.refreshCurrentUserFlags` basándose en
         // `cloudKitUserRecordID` matching del current iCloud user.

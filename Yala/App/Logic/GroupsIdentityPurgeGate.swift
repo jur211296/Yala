@@ -74,9 +74,12 @@
 //  borrable un corpus ya migrado. Y NO es cierto que «con el flag OFF esto sea no-op»:
 //  `movedToBackendAt` viaja por CloudKit y `CKRecordTranslator` (:127 y :151) lo aplica SIN consultar
 //  el flag, así que en cuanto un solo owner migre, devices con el flag OFF tendrán copias congeladas.
-//  Lo que lo hace inocuo HOY es otra cosa: `groupsBackendCompiledDefault = false` (CloudSyncFlags
-//  .swift:239) en TODO device ⇒ nadie puede mintar el marcador. Con D4, el enunciado correcto es:
-//  «sin sesión de nube el device se comporta como hoy».
+//  Lo que lo hace inocuo HOY es que NO QUEDA QUIEN ACUÑE el marcador: `GroupMigrationUploader` se borró
+//  en `5010db6a` (2026-07-28) y `movedToBackendAt` no tiene ni un escritor local — los dos de
+//  `CKRecordTranslator` copian de un CKRecord ya fetcheado ⇒ punto fijo en `nil`. (Hasta el 2026-07-30
+//  la razón que figuraba aquí era `groupsBackendCompiledDefault = false`; ese flag es `true` desde
+//  `5490544d`, así que esa justificación CADUCÓ y la conclusión se sostiene por el motivo de arriba.)
+//  Con D4, el enunciado correcto es: «sin sesión de nube el device se comporta como hoy».
 //
 
 import Foundation

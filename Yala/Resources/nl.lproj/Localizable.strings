@@ -5402,15 +5402,6 @@
 /* C-10: read-only staleness note under the migrated banner */
 "groups.migrated.readOnlyNote" = "Je ziet de kopie van het moment waarop de groep werd verplaatst, dus die is misschien niet meer helemaal actueel.";
 
-/* C-10: owner banner while migration waits for members to update */
-"groups.migrated.waitingBanner" = "We verplaatsen je groep naar de Yala-cloud zodra iedereen de app bijwerkt";
-
-/* C-10: owner settings section listing members blocking the migration */
-"groups.migrated.waitingSectionTitle" = "Moeten nog bijwerken";
-
-/* C-10: hint explaining the owner's only way forward */
-"groups.migrated.waitingHint" = "Zodra iedereen de nieuwste versie heeft, verplaatsen we de groep vanzelf. Doet er iemand niet meer mee? Verwijder die persoon uit de groep om verder te gaan.";
-
 /* C-10: non-terminal sign-in failure message */
 "groups.signin.retryLater" = "Hmm, we konden je account nu niet verbinden. Je groep staat er nog en je verliest niets — probeer het later opnieuw.";
 

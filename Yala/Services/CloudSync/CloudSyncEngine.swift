@@ -2421,12 +2421,17 @@ final class CloudSyncEngine {
     /// `deleteHistory` real todavía (I8e/I9 lo cablean): esto EXPRESA el invariante testeable —
     /// `confirmUploaded` purga la fila, y solo entonces el corte avanza sobre ella.
     ///
-    /// [C-4 PIEZA 2] El suelo incluye TAMBIÉN el canal de GRUPOS, y es obligatorio: el History es
-    /// POR-CONTAINER (personal + grupos + sync-meta en un solo `ModelContainer`), pero este corte solo
-    /// miraba el outbox PERSONAL. Con el rescate de pull cableado eso pasa a poder BORRAR la transacción
-    /// de una fila recién adoptada antes de que el drain de Grupos —que lee el mismo History con su
-    /// propia ancla— llegue a verla: la fila quedaría local y jamás subiría al backend, que es la misma
-    /// pérdida silenciosa que el rescate viene a cerrar. Las dos anclas nuevas:
+    /// El suelo incluye TAMBIÉN el canal de GRUPOS, y es obligatorio: el History es POR-CONTAINER
+    /// (personal + grupos + sync-meta en un solo `ModelContainer`), pero este corte solo miraba el outbox
+    /// PERSONAL ⇒ podía BORRAR la transacción de una fila de Grupos antes de que el drain de ese canal
+    /// —que lee el mismo History con su PROPIA ancla, siempre por detrás— llegara a verla: la fila
+    /// quedaría local y jamás subiría al backend, una pérdida silenciosa.
+    ///
+    /// (Nació con el rescate de pull de C-4, borrado en `5010db6a` junto al uploader; el suelo NO se fue
+    /// con él porque no dependía del rescate — es correctness del canal de Grupos, que sobrevive, y vale
+    /// para CUALQUIER fila suya. Sus tests viven en `GroupsHistoryCutFloorTests`.)
+    ///
+    /// Las dos anclas del canal de Grupos:
     ///  - `GroupSyncCursor.lastDrainedTxAt`: hasta dónde consumió el drain de Grupos (por debajo de eso
     ///    ya está capturado; por delante, no).
     ///  - la fila viva más vieja de `GroupSyncOutbox`: espejo exacto del invariante del outbox personal

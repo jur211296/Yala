@@ -5402,15 +5402,6 @@
 /* C-10: read-only staleness note under the migrated banner */
 "groups.migrated.readOnlyNote" = "表示しているのはグループが移動した時点のコピーなので、最新ではない場合があります。";
 
-/* C-10: owner banner while migration waits for members to update */
-"groups.migrated.waitingBanner" = "全員がアプリをアップデートしたら、グループをYalaのクラウドに移動します";
-
-/* C-10: owner settings section listing members blocking the migration */
-"groups.migrated.waitingSectionTitle" = "アップデート待ちのメンバー";
-
-/* C-10: hint explaining the owner's only way forward */
-"groups.migrated.waitingHint" = "全員が最新バージョンになったら、グループは自動で移動します。もう参加していない人がいれば、グループから外すと先に進められます。";
-
 /* C-10: non-terminal sign-in failure message */
 "groups.signin.retryLater" = "今はアカウントを連携できませんでした。グループはそのまま残っているので、何も失われません。少ししてから、もう一度お試しください。";
 

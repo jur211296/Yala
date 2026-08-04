@@ -284,17 +284,17 @@ nonisolated enum CloudSyncFlags {
     /// en el gateway DESPUÉS de tener este build instalado en los dos devices de la sesión de QA.
     private static let groupsBackendCompiledDefault = true
 
-    /// C-10: capacidad COMPILADA del canal de Grupos, SIN el kill remoto. La consumen el beacon
-    /// (`GroupCapability.current`), la presentación del congelado (`GroupBackendCapability.current`) y
-    /// —desde D-R1 paso 2— **todos los paths de TEARDOWN** (`CloudSessionSignOut` en sus cuatro caminos,
-    /// `AccountDeletionService` y el gate de `GroupBackendMembershipService.forgetUser`).
+    /// C-10: capacidad COMPILADA del canal de Grupos, SIN el kill remoto. La consumen la presentación del
+    /// congelado (`GroupBackendCapability.current`) y —desde D-R1 paso 2— **todos los paths de TEARDOWN**
+    /// (`CloudSessionSignOut` en sus cuatro caminos, `AccountDeletionService` y el gate de
+    /// `GroupBackendMembershipService.forgetUser`). El tercer consumidor original, el beacon de capacidad
+    /// (`GroupCapabilityBeacon`), se fue con el uploader en `5010db6a`.
     ///
     /// Deliberadamente NO compuesta con `CloudRemoteFlags.groupsBackendEnabled`: un kill remoto apaga el
-    /// CANAL, no la capacidad del BINARIO. Confundirlos tendría tres consecuencias malas: (a) un kill
-    /// transitorio le diría al usuario "actualiza la app" teniendo la app perfecta, (b) los beacons de
-    /// capacidad dejarían de publicarse justo cuando el owner los necesita para decidir si puede migrar,
-    /// y (c) —la que abrió D-R1 paso 2— un cierre de sesión o un borrado de cuenta se saltaría la
-    /// limpieza de lo que el canal YA subió, que sigue existiendo con el canal apagado.
+    /// CANAL, no la capacidad del BINARIO. Confundirlos tendría dos consecuencias malas: (a) un kill
+    /// transitorio le diría al usuario "actualiza la app" teniendo la app perfecta, y (b) —la que abrió
+    /// D-R1 paso 2— un cierre de sesión o un borrado de cuenta se saltaría la limpieza de lo que el canal
+    /// YA subió, que sigue existiendo con el canal apagado.
     ///
     /// Override de tests: reusa `groupsBackendEnabledTestOverride` a propósito — un test que enciende el
     /// canal enciende también la capacidad (no existe un build capaz-pero-sin-canal que valga la pena

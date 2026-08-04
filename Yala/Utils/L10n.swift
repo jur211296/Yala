@@ -1967,12 +1967,6 @@ enum L10n {
             static var pausedBody: String { ls("groups.migrated.pausedBody", comment: "") }
             /// C-10: nota de solo lectura bajo el banner, en los TRES estados congelados.
             static var readOnlyNote: String { ls("groups.migrated.readOnlyNote", comment: "") }
-            /// C-10: banner del owner mientras la migración espera a que los miembros actualicen.
-            static var waitingBanner: String { ls("groups.migrated.waitingBanner", comment: "") }
-            /// C-10: sección de ajustes (owner) con los miembros que bloquean la migración.
-            static var waitingSectionTitle: String { ls("groups.migrated.waitingSectionTitle", comment: "") }
-            /// C-10: explica la ÚNICA salida del owner — quitar a quien ya no participa.
-            static var waitingHint: String { ls("groups.migrated.waitingHint", comment: "") }
         }
 
         /// G4-invites (A2, §8): consentimiento informado de grupos (molde Storage.Consent).
