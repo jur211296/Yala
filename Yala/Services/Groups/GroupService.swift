@@ -1134,6 +1134,26 @@ final class GroupService {
                 )
             }
 
+            // El predicado de CANAL va por ZONA con TODAS sus filas (ANY-row), NO por la fila que gane el
+            // uniquing de arriba. `groupsByZone` se queda como está a propósito: sus otros dos usos —el
+            // `group` que se pasa a `enqueueSave` y el `group.isOwner` de la inferencia de rol— no son
+            // preguntas sobre el canal, y `isOwner` es una credencial que HABILITA, que el criterio del
+            // punto 11 de `.claude/rules/swiftdata-cloudkit.md` dice NO fusionar.
+            //
+            // Lo que arreglaba decidir esto con una fila arbitraria (`fetch` sin `sortBy` + `uniquingKeysWith:
+            // { first, _ in first }`): en una zona con duplicado MIXTO podía resolver `false` y entonces las
+            // CUATRO decisiones de abajo se tomaban como si el grupo fuera de CloudKit — encendiendo o
+            // apagando `isCurrentUser` donde el diseño dice CONSERVARLO. Último miembro de la familia
+            // «decidir sobre una ZONA mirando UNA sola fila»; molde de `GroupFreezeLogic.zoneBlocksCloudKitWrites`
+            // y `GroupService.backendFlagsInZone`.
+            let backendZones: Set<String> = Set(
+                Dictionary(grouping: allGroups, by: \.cloudKitZoneID)
+                    .filter { _, rows in
+                        GroupZoneCacheGate.belongsToBackendChannel(
+                            rowsInZone: rows.map { ($0.isBackendGroup, $0.movedToBackendAt) })
+                    }
+                    .keys)
+
             let members = try context.fetch(FetchDescriptor<SplitMember>())
             let membersByZone = Dictionary(grouping: members, by: \.groupZoneID)
             var changed = false
@@ -1153,8 +1173,12 @@ final class GroupService {
                 // C-3: la fila del canal backend RETENIDA tras un cambio de Apple ID (D1) no se re-ancla al
                 // recordName NUEVO — su identidad la resuelve el `sub` de la cuenta Yala. Sin esto, el
                 // backfill estampa el recordName del humano nuevo sobre un member ajeno del grupo anterior.
-                guard !GroupBackendIdentityLogic.belongsToBackendChannel(
-                    isBackendGroup: group.isBackendGroup, movedToBackendAt: group.movedToBackendAt) else { continue }
+                //
+                // Por ZONA, no por la fila del iterador: `backfillCandidates` son TODAS las filas, así que
+                // con un duplicado MIXTO este bucle visitaba las dos y la gemela NO-backend pasaba el guard
+                // ⇒ el estampado ocurría igual. Preguntándolo por fila, el guard **no protegía nunca** en una
+                // zona mixta — no «la mitad de las veces», que es lo que sugiere la forma del código.
+                guard !backendZones.contains(group.cloudKitZoneID) else { continue }
                 guard !zoneMembers.contains(where: { $0.cloudKitUserRecordID == recordName }) else { continue }
 
                 // A1 (G3): EXCLUIR los members del canal Grupos → backend (born-backend tienen
@@ -1188,10 +1212,12 @@ final class GroupService {
             }
 
             for member in members {
-                let memberIsInBackendChannel = groupsByZone[member.groupZoneID].map {
-                    GroupBackendIdentityLogic.belongsToBackendChannel(
-                        isBackendGroup: $0.isBackendGroup, movedToBackendAt: $0.movedToBackendAt)
-                } ?? false
+                // ANY-row por ZONA (ver `backendZones`). El nombre conserva «member» porque es la zona DE
+                // ESE member; lo que cambió es el CUANTIFICADOR, no el predicado — la distinción entre los
+                // tres predicados de la familia (`isBackendGroup` estrecho para membresía,
+                // `isBackendGroup || isMigratedFrozen` ancho para escribir a CloudKit, `belongsToBackendChannel`
+                // para retención e identidad) se conserva intacta.
+                let memberIsInBackendChannel = backendZones.contains(member.groupZoneID)
 
                 // C-3: par del guard de arriba. Un member de un grupo del canal backend RETENIDO lleva el
                 // `cloudKitUserRecordID` del Apple ID que se FUE, así que el match por record-name daría
