@@ -111,7 +111,7 @@ SIWA_KEY_ID = "PQ53RQ5D3G"
 # npm y no `wrangler` a pelo: su `predeploy` sincroniza el manifest.
 #
 # ⚠️ LOS TRES NO SON IGUALES DE RÁPIDOS, y esto se lee en mitad de un incidente:
-#   · GROUPS_BACKEND → INMEDIATO. Desde el 2026-08-03 las cuatro rutas de `/groups/*` consultan el
+#   · GROUPS_BACKEND → INMEDIATO. Desde el 2026-08-04 las cuatro rutas de `/groups/*` consultan el
 #     percent y rechazan con 403 `yala_groups_disabled` (`src/groups/killSwitch.ts`), así que el deploy
 #     corta el canal para todo el mundo al instante.
 #   · CLOUD_MODE y CLOUD_ONBOARDING_CHOICE → hasta 6 HORAS. Nadie los enforza server-side: solo cambian
@@ -136,7 +136,7 @@ CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT = "0"
 # Tras la Fase 3 (que borra el transporte CloudKit) apagarlo dejará Grupos INOPERATIVO: desde entonces es
 # contención, no vuelta atrás — ver §3 de MODO-NUBE-ROLLBACK.
 #
-# **«En segundos» era FALSO hasta el 2026-08-03, y ahora es verdad por una razón concreta.** Este percent
+# **«En segundos» era FALSO hasta el 2026-08-04, y ahora es verdad por una razón concreta.** Este percent
 # lo leían SOLO `config.ts` y `env.ts`: las rutas de grupos no lo consultaban jamás, así que el deploy
 # cambiaba `GET /config` al instante pero un device con el 100 cacheado SEGUÍA usando el canal hasta 6 h
 # (`RemoteFlagDecisionLogic.refreshMinInterval`) y el gateway se lo aceptaba. Medido también al revés el
