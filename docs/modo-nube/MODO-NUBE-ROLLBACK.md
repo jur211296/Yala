@@ -242,6 +242,7 @@ valor commiteado en `wrangler.toml` **no está en producción hasta que alguien 
 | **404 de `migrate_group`** en el gateway | un **deploy** del Worker (producción, deployment `09bfa839`) | revertir el código **y volver a desplegar**: `npm run deploy:production` (= `wrangler deploy --env production`; su `predeploy` sincroniza el manifest, así que usar el script de npm y no `wrangler` a pelo) |
 | **`REVOKE EXECUTE` de `migrate_group`** en Supabase | **SQL ejecutado a mano** en los DOS entornos | un `GRANT EXECUTE ... TO authenticated` explícito, entorno por entorno. Requiere OK del owner y re-enlazar el conector al entorno correcto |
 | **Migración de D1 aplicada** | `npm run migrate:production` | a mano: `gateway/migrations/` solo tiene `0001_init.sql` y `0002_account_entitlements.sql`, **ninguna trae `down`** |
+| **El kill-switch de Grupos ES server-side desde el 2026-08-04** — las cuatro rutas de `/groups/*` consultan el percent y rechazan con 403 `yala_groups_disabled` (§6). Antes de este deploy el percent no cortaba nada para los devices, aunque el §3 dijera «segundos» | el código de `eb377123` **y un deploy** del Worker (`npm run deploy:production`, corrido por el owner) | revertir `eb377123` **y re-desplegar**. Revertir solo el código deja el gateway cortando: el Worker sigue con el guard hasta que alguien despliegue |
 
 ⇒ **revertir la Fase 1 en git NO reabre la migración de grupos.** Si algún día hiciera falta volver a
 migrar un grupo vivo a la nube, el revert es el primer paso de tres, no el único.
