@@ -952,6 +952,29 @@ final class GroupsSyncClient {
         return cursor
     }
 
+    /// Los `group_id` que el cursor del pull lista HOY. **Read-only a propósito**: no usa
+    /// `loadOrCreateCursor`, que INSERTA la fila y hace un `saveWithAuthor` — quien pregunta por el alcance
+    /// del canal (el barrido de huérfanas, el editor) no debe materializar estado del canal, y menos desde
+    /// un camino que puede correr con el canal apagado.
+    ///
+    /// El `group_id` **es** el `cloudKitZoneID` de la fila (`applyGroupMeta` lo pisa con `delta.groupID`, y
+    /// `GroupBackendMembershipService.createGroup` manda ese mismo string al servidor), así que el conjunto
+    /// se indexa por zona sin derivar nada. Cursor ausente o JSON corrupto ⇒ conjunto VACÍO, que en el gate
+    /// de frescura niega la evidencia: fail-closed.
+    func pulledGroupIDs(context: ModelContext) -> Set<String> {
+        var descriptor = FetchDescriptor<GroupSyncCursor>()
+        descriptor.fetchLimit = 1
+        do {
+            guard let cursor = try context.fetch(descriptor).first else { return [] }
+            return Set(decodeCursors(cursor.groupCursorsJSON).keys)
+        } catch {
+            #if DEBUG
+            print("GroupsSyncClient: fetch del cursor del pull falló: \(error)")
+            #endif
+            return []
+        }
+    }
+
     private func loadClock(from cursor: GroupSyncCursor) {
         guard let raw = cursor.clockLatestHLC else { return }
         do {

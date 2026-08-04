@@ -145,21 +145,34 @@ struct NewTransactionView: View {
     /// Comprueba UNA vez al aparecer si el puntero de grupo de la TX en edición resuelve a una fila que
     /// existe. Un fetch por apertura del editor, y solo cuando hay puntero que comprobar.
     ///
+    /// **Un fetch VACÍO no es «no existe»: puede ser «el canal de Grupos todavía no lo ha traído».** Los dos
+    /// stores bajan por canales INDEPENDIENTES, y en un device recién reinstalado el de Grupos arranca
+    /// literalmente vacío (`cloudKitDatabase: .none`, se repuebla por el pull) mientras el espejo personal ya
+    /// entregó las transacciones. Tomar el vacío por «no existe» habilitaba Borrar y Duplicar sobre un gasto
+    /// de grupo VIVO — y ese borrado se exporta por el espejo personal a los demás devices. Por eso el vacío
+    /// solo cuenta con evidencia de que el canal de esa zona agotó su entrega: el MISMO criterio, y la misma
+    /// primitiva, que usa `OrphanedBridgedTxSweeper` para decidir si una transacción es huérfana.
+    ///
     /// Ante un fetch fallido se queda en `true` (sigue tratándose como de grupo): un error del store no
     /// debe abrir la edición del monto de un gasto compartido que sí está vivo.
     private func resolveBridgedPointer() {
         guard let tx = transactionToEdit else { return }
         do {
+            let found: Bool
             if let raw = tx.splitExpenseID, let id = UUID(uuidString: raw) {
                 // `#Predicate` CONCRETO por tipo (nunca genérico-protocolo: crashea al ejecutar el fetch).
-                bridgedPointerResolves = try !modelContext.fetch(
+                found = try !modelContext.fetch(
                     FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.id == id })
                 ).isEmpty
             } else if let raw = tx.splitSettlementID, let id = UUID(uuidString: raw) {
-                bridgedPointerResolves = try !modelContext.fetch(
+                found = try !modelContext.fetch(
                     FetchDescriptor<SplitSettlement>(predicate: #Predicate { $0.id == id })
                 ).isEmpty
+            } else {
+                return  // sin puntero que comprobar: se queda como estaba (`true`, inocuo).
             }
+            bridgedPointerResolves = found
+                || !GroupChannelFreshness.isFresh(zone: tx.splitGroupZoneID, context: modelContext)
         } catch {
             #if DEBUG
             print("NewTransactionView: resolución del puntero de grupo falló: \(error)")

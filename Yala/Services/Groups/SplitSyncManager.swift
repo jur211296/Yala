@@ -173,6 +173,55 @@ final class SplitSyncManager {
     /// candidatos son `isOwner` ⇒ sus zonas solo llegan por el engine privado.
     @ObservationIgnored private var zonesWithFailedFetchThisSession: Set<String> = []
 
+    /// Los DOS engines del canal CloudKit. El nombre es la clave de `enginesWithCompletedFetchCycle` y de
+    /// `loadState`/`clearState`, y se asigna en `startEngines`/`enableAutoSync`.
+    private static let engineNames: Set<String> = ["private", "shared"]
+
+    /// ¿Han cerrado **AMBOS** engines ≥1 ciclo de fetch ENTERO en esta sesión?
+    ///
+    /// Es la evidencia que `GroupChannelFreshnessGate` exige para afirmar que un gasto de un grupo CloudKit
+    /// NO EXISTE (y no que su zona todavía no ha bajado): un ciclo entero enumera todas las zonas de su base
+    /// de datos, igual que un pull agotado enumera todos los grupos del alcance en el canal backend.
+    ///
+    /// **Los dos, y no el que sirve a la zona**, porque lo que distingue la base privada de la compartida es
+    /// `SplitGroup.isOwner` —un predicado POR FILA— y con un `SplitGroup` duplicado leer la fila equivocada
+    /// concedería evidencia FALSA, que es la dirección que destruye datos. Exigir los dos no puede
+    /// equivocarse; su coste (no barrer si uno no cierra ciclo) es reversible y lo delata el canario
+    /// `bridgedTxOrphanSweepDeferred`.
+    ///
+    /// En la ventana export-only el set está vacío por construcción (no hay auto-fetch) ⇒ `false`, que es la
+    /// respuesta correcta: ahí no ha bajado nada.
+    var hasCompletedFetchCycleOnAllEngines: Bool {
+        Self.engineNames.isSubset(of: enginesWithCompletedFetchCycle)
+    }
+
+    /// ¿El último `didFetchRecordZoneChanges` de esta zona llegó CON error? Testigo NEGATIVO y auto-sanable
+    /// (ver la declaración de `zonesWithFailedFetchThisSession`): un transitorio no deja el gate clavado.
+    func zoneFetchFailedThisSession(_ zoneName: String) -> Bool {
+        zonesWithFailedFetchThisSession.contains(zoneName)
+    }
+
+    #if DEBUG
+    /// Marca engines como «ciclo cerrado» sin CKSyncEngine (que exige `CKContainer` con iCloud: device-only).
+    /// SOLO tests.
+    func _testMarkFetchCycleCompleted(engines: Set<String>? = nil) {
+        enginesWithCompletedFetchCycle.formUnion(engines ?? Self.engineNames)
+    }
+
+    /// Marca/desmarca una zona con fetch fallido. SOLO tests.
+    func _testSetZoneFetchFailed(_ zoneName: String, failed: Bool) {
+        if failed { zonesWithFailedFetchThisSession.insert(zoneName) }
+        else { zonesWithFailedFetchThisSession.remove(zoneName) }
+    }
+
+    /// Devuelve los dos testigos del ciclo de fetch al estado de arranque. SOLO tests — el manager es
+    /// singleton y su estado de sesión se filtraría de un test al siguiente.
+    func _testResetFetchCycleWitnesses() {
+        enginesWithCompletedFetchCycle.removeAll()
+        zonesWithFailedFetchThisSession.removeAll()
+    }
+    #endif
+
     // MARK: - State Persistence
 
     // nonisolated-safe: file I/O only, no model access

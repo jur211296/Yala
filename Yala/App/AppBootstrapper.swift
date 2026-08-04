@@ -419,9 +419,19 @@ final class AppBootstrapper {
         // gasto vivo y el barrido solo toca punteros que no resuelven, así que no compiten por ninguna
         // fila. Gateado por quiescencia como el resto de boot-saves del store personal, e idempotente sin
         // sentinel: es también la red que recoge lo que un des-puenteo del sync no llegara a hacer.
+        //
+        // DOS gates y son de cosas DISTINTAS, por eso van los dos: `awaitPersonalStoreReady` dice que es
+        // seguro SALVAR el store personal; `awaitGroupsChannelEvidence` dice que el canal de Grupos ya
+        // entregó, que es lo único que convierte «el gasto no está en el store» en «el gasto no existe».
+        // Sin el segundo, el barrido corre siempre ANTES del primer pull —`startIfEligible` es síncrono en
+        // el paso G2 y su ciclo tarda un viaje de red— y decidiría con el store de Grupos a medio poblar.
         Task { @MainActor in
             guard await awaitPersonalStoreReady() else {
                 SaveBreadcrumb.deferred("AppBootstrapper.orphanedBridgedTxSweep", "import not quiescent")
+                return
+            }
+            guard await awaitGroupsChannelEvidence(context: context) else {
+                SaveBreadcrumb.deferred("AppBootstrapper.orphanedBridgedTxSweep", "groups channel not fresh")
                 return
             }
             OrphanedBridgedTxSweeper.sweep(context: context)
@@ -1038,6 +1048,61 @@ final class AppBootstrapper {
             }
             return safe()
         }
+    }
+
+    /// Espera acotada a que el canal de Grupos dé EVIDENCIA de haber entregado, antes de dejar barrer
+    /// huérfanas. Molde de `CloudSessionSignOut.awaitPersonalQuiescenceForGroupsSignOut` (poll 2 s,
+    /// hard-cap, fail-CERRADO en cancelación).
+    ///
+    /// **Por qué hace falta esperar y no basta con preguntar.** El gate de frescura
+    /// (`GroupChannelFreshnessGate`) exige que el canal haya agotado su entrega, y en el arranque eso aún no
+    /// ha pasado: `GroupsSyncClient.startIfEligible` corre SÍNCRONO en el paso G2 pero su primer
+    /// `syncCycleOnce` incluye un viaje de red, y los engines de CloudKit arrancan export-only hasta que el
+    /// import personal se asienta. Preguntar sin esperar daría «no fresco» en TODOS los arranques y el
+    /// barrido no repararía nunca nada — que es la forma de romperlo sin que ningún test se ponga rojo.
+    ///
+    /// **Sale en cuanto ALGUNA zona es fresca**, no cuando lo son todas: el barrido decide por zona, así que
+    /// una zona rezagada no debe retener la limpieza de las demás — se queda para el próximo arranque.
+    ///
+    /// Agotar el tope devuelve `false` y NO barre: perder una limpieza es reversible, destruir una
+    /// transacción no. Con el canal apagado (kill-switch, sesión caducada, snapshot de remote-config
+    /// ausente) esto es lo que ocurre en cada arranque, y es el comportamiento correcto; el canario
+    /// `bridgedTxOrphanSweepDeferred` lo hace visible cuando además había candidatas.
+    private func awaitGroupsChannelEvidence(context: ModelContext) async -> Bool {
+        let pollInterval: TimeInterval = 2
+        let hardCap: TimeInterval = 60
+
+        // Sin nada puenteado no hay nada que esperar: el barrido sale en su primer guard. Se mide UNA vez
+        // (el bridge no crea filas mientras esperamos sin que el canal haya entregado, que es justo la
+        // condición que estamos esperando).
+        do {
+            let txs = try context.fetchCount(FetchDescriptor<TransactionItem>(
+                predicate: #Predicate { $0.splitExpenseID != nil || $0.splitSettlementID != nil }))
+            let drafts = try context.fetchCount(FetchDescriptor<InboxDraft>(
+                predicate: #Predicate { $0.splitExpenseID != nil || $0.splitSettlementID != nil }))
+            if txs == 0 && drafts == 0 { return true }
+        } catch {
+            #if DEBUG
+            print("AppBootstrapper: conteo de filas puenteadas falló: \(error)")
+            #endif
+            // El barrido hace sus propios fetches y aborta si fallan — dejarle decidir a él.
+            return true
+        }
+
+        func anyZoneIsFresh() -> Bool {
+            GroupChannelFreshness.verdictsByZone(context: context).values.contains { $0.isFresh }
+        }
+
+        var waited: TimeInterval = 0
+        while !anyZoneIsFresh() && waited < hardCap {
+            do {
+                try await Task.sleep(for: .seconds(pollInterval))
+            } catch {
+                return false  // Task cancelado → conservador (regla "nunca try? que silencia").
+            }
+            waited += pollInterval
+        }
+        return anyZoneIsFresh()
     }
 
     private func migrateShareGroupZoneIDs(context: ModelContext) {

@@ -45,6 +45,14 @@ enum MetricsCanary: String {
     /// arranque tras arranque = hay OTRO camino abriendo huérfanas** y el barrido lo está tapando.
     /// `detail` separa liberadas (cuenta real) de borradas (virtuales de sistema).
     case bridgedTxOrphansRepaired
+    /// El barrido encontró candidatas —punteros de grupo que no resuelven— pero NO las tocó porque el canal
+    /// de su zona no había agotado su entrega (`GroupChannelFreshnessGate`). `detail` lleva el motivo y el
+    /// recuento por veredicto, sin PII. **Es la superficie de observación de un gate CLAVADO**: sin él, un
+    /// canal apagado durante semanas, un cursor que no lista la zona o un engine de CloudKit que nunca
+    /// cierra su ciclo se leerían igual que «no había huérfanas» (`bridgedTxOrphansRepaired` en cero).
+    /// Un pico aislado es normal (el barrido corre antes de que el pull termine); SOSTENIDO arranque tras
+    /// arranque con el mismo veredicto = el canal de esa cohorte no está entregando.
+    case bridgedTxOrphanSweepDeferred
     case iCloudRestoreOutcome
     case cloudkitGroupSyncGateHardCap
     case cloudkitGroupSyncPromotedToAuto

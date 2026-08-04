@@ -124,6 +124,44 @@ private enum UnbridgeHarness {
         defer { GroupTransactionBridge.shared._testClearContext() }
         try body()
     }
+
+    // MARK: - Frescura del canal (gate del barrido)
+
+    /// Señales de SESIÓN de los dos canales. El default es el estado que hace posible barrer en el canal
+    /// backend —pull AGOTADO—, que es donde viven los grupos de `makeGroup`; se pasa explícito para que el
+    /// estado de los singletons no decida el resultado de un test.
+    static func signals(
+        backendPullCompleted: Bool = true,
+        cloudKitAllEngines: Bool = false,
+        failedZones: Set<String> = []
+    ) -> GroupChannelFreshness.ChannelSignals {
+        GroupChannelFreshness.ChannelSignals(
+            backendPullCompleted: backendPullCompleted,
+            cloudKitAllEnginesCompletedFetchCycle: cloudKitAllEngines,
+            cloudKitZoneFetchFailed: { failedZones.contains($0) })
+    }
+
+    /// Deja el cursor del pull listando estas zonas — es lo que el servidor devuelve para todo grupo del
+    /// alcance del usuario tras un pull agotado, HAYA o no deltas. Sin esto, una zona backend nunca es
+    /// fresca por más que el pull haya completado.
+    static func markZonesPulled(_ zones: [String], context: ModelContext) throws {
+        var descriptor = FetchDescriptor<GroupSyncCursor>()
+        descriptor.fetchLimit = 1
+        let cursor = try context.fetch(descriptor).first ?? {
+            let fresh = GroupSyncCursor()
+            context.insert(fresh)
+            return fresh
+        }()
+        let pairs = zones.map { "\"\($0)\":1" }.joined(separator: ",")
+        cursor.groupCursorsJSON = "{\(pairs)}"
+        try context.save()
+    }
+
+    /// El estado completo de «el canal backend entregó esta zona»: cursor + señal de pull agotado.
+    static func makeSettledBackendZone(_ zoneID: String, context: ModelContext) throws {
+        makeGroup(zoneID: zoneID, context: context)
+        try markZonesPulled([zoneID], context: context)
+    }
 }
 
 // MARK: - Pieza 1 · canal BACKEND (`GroupsSyncClient.applyPulledPage`)
@@ -609,21 +647,21 @@ struct OrphanedBridgedTxSweeperTests {
     @Test func realAccountOrphan_isReleasedNotDeleted() {
         let action = OrphanedBridgedTxSweeper.decide(.init(
             expensePointerIsOrphan: true, settlementPointerIsOrphan: false,
-            accountIsSystem: false, zoneIsSettled: true))
+            accountIsSystem: false, zoneEvidenceIsFresh: true))
         #expect(action == .releasePointers)
     }
 
     @Test func virtualOrphan_isDeleted() {
         let action = OrphanedBridgedTxSweeper.decide(.init(
             expensePointerIsOrphan: true, settlementPointerIsOrphan: false,
-            accountIsSystem: true, zoneIsSettled: true))
+            accountIsSystem: true, zoneEvidenceIsFresh: true))
         #expect(action == .deleteVirtual)
     }
 
     @Test func resolvedPointer_isUntouched() {
         let action = OrphanedBridgedTxSweeper.decide(.init(
             expensePointerIsOrphan: false, settlementPointerIsOrphan: false,
-            accountIsSystem: true, zoneIsSettled: true))
+            accountIsSystem: true, zoneEvidenceIsFresh: true))
         #expect(action == nil)
     }
 
@@ -632,7 +670,7 @@ struct OrphanedBridgedTxSweeperTests {
     @Test func unsettledZone_isNeverTouched() {
         let action = OrphanedBridgedTxSweeper.decide(.init(
             expensePointerIsOrphan: true, settlementPointerIsOrphan: false,
-            accountIsSystem: true, zoneIsSettled: false))
+            accountIsSystem: true, zoneEvidenceIsFresh: false))
         #expect(action == nil)
     }
 
@@ -641,7 +679,7 @@ struct OrphanedBridgedTxSweeperTests {
     @Test func sweep_deletesVirtualOrphan_andReleasesRealOne() throws {
         let dir = UnbridgeHarness.freshDir(); defer { UnbridgeHarness.cleanup(dir) }
         let context = try UnbridgeHarness.makeContext(dir)
-        UnbridgeHarness.makeGroup(zoneID: "SplitGroup-A", context: context)
+        try UnbridgeHarness.makeSettledBackendZone("SplitGroup-A", context: context)
 
         // Huérfanas: sus gastos nunca se insertan.
         let virtual = UnbridgeHarness.makeBridgedTx(
@@ -659,7 +697,7 @@ struct OrphanedBridgedTxSweeperTests {
         try context.save()
 
         let virtualIsGone = virtual.isDeleted
-        let outcome = OrphanedBridgedTxSweeper.sweep(context: context)
+        let outcome = OrphanedBridgedTxSweeper.sweep(context: context, signals: UnbridgeHarness.signals())
 
         #expect(outcome.deleted == 1)
         #expect(outcome.released == 1)
@@ -679,7 +717,7 @@ struct OrphanedBridgedTxSweeperTests {
     @Test func sweep_handlesOrphanSettlements() throws {
         let dir = UnbridgeHarness.freshDir(); defer { UnbridgeHarness.cleanup(dir) }
         let context = try UnbridgeHarness.makeContext(dir)
-        UnbridgeHarness.makeGroup(zoneID: "SplitGroup-A", context: context)
+        try UnbridgeHarness.makeSettledBackendZone("SplitGroup-A", context: context)
 
         UnbridgeHarness.makeBridgedTx(
             settlementID: UUID(), zone: "SplitGroup-A", amount: 25, accountIsSystem: true, context: context)
@@ -696,7 +734,7 @@ struct OrphanedBridgedTxSweeperTests {
             settlementID: liveID, zone: "SplitGroup-A", amount: 15, context: context)
         try context.save()
 
-        let outcome = OrphanedBridgedTxSweeper.sweep(context: context)
+        let outcome = OrphanedBridgedTxSweeper.sweep(context: context, signals: UnbridgeHarness.signals())
         #expect(outcome.deleted == 1)
         #expect(outcome.released == 1)
         #expect(real.splitSettlementID == nil)
@@ -709,13 +747,13 @@ struct OrphanedBridgedTxSweeperTests {
     @Test func sweep_convertsOrphanDraftToManual() throws {
         let dir = UnbridgeHarness.freshDir(); defer { UnbridgeHarness.cleanup(dir) }
         let context = try UnbridgeHarness.makeContext(dir)
-        UnbridgeHarness.makeGroup(zoneID: "SplitGroup-A", context: context)
+        try UnbridgeHarness.makeSettledBackendZone("SplitGroup-A", context: context)
 
         let draft = UnbridgeHarness.makeBridgedDraft(
             expenseID: UUID(), zone: "SplitGroup-A", context: context)
         try context.save()
 
-        let outcome = OrphanedBridgedTxSweeper.sweep(context: context)
+        let outcome = OrphanedBridgedTxSweeper.sweep(context: context, signals: UnbridgeHarness.signals())
         #expect(outcome.draftsConverted == 1)
         #expect(draft.sourceTypeRaw == DraftSourceType.manual.rawValue)
         #expect(draft.splitExpenseID == nil)
@@ -731,7 +769,7 @@ struct OrphanedBridgedTxSweeperTests {
     @Test func sweep_deletesRedundantPointerDraft_notConvertsIt() throws {
         let dir = UnbridgeHarness.freshDir(); defer { UnbridgeHarness.cleanup(dir) }
         let context = try UnbridgeHarness.makeContext(dir)
-        UnbridgeHarness.makeGroup(zoneID: "SplitGroup-A", context: context)
+        try UnbridgeHarness.makeSettledBackendZone("SplitGroup-A", context: context)
 
         // Caso A: transacción de cuenta REAL + su draft-puntero (solo pide subcategoría), ambos huérfanos.
         let expenseID = UUID()
@@ -744,7 +782,7 @@ struct OrphanedBridgedTxSweeperTests {
         context.insert(pointerDraft)
         try context.save()
 
-        let outcome = OrphanedBridgedTxSweeper.sweep(context: context)
+        let outcome = OrphanedBridgedTxSweeper.sweep(context: context, signals: UnbridgeHarness.signals())
 
         #expect(outcome.draftsDeleted == 1,
                 "el puntero redundante debía BORRARSE; convertido a manual duplicaría la transacción")
@@ -760,7 +798,7 @@ struct OrphanedBridgedTxSweeperTests {
     @Test func sweep_leavesLiveDraftAlone() throws {
         let dir = UnbridgeHarness.freshDir(); defer { UnbridgeHarness.cleanup(dir) }
         let context = try UnbridgeHarness.makeContext(dir)
-        UnbridgeHarness.makeGroup(zoneID: "SplitGroup-A", context: context)
+        try UnbridgeHarness.makeSettledBackendZone("SplitGroup-A", context: context)
 
         let liveID = UUID()
         let live = SplitExpense(
@@ -772,7 +810,7 @@ struct OrphanedBridgedTxSweeperTests {
             expenseID: liveID, zone: "SplitGroup-A", context: context)
         try context.save()
 
-        #expect(OrphanedBridgedTxSweeper.sweep(context: context).isEmpty)
+        #expect(OrphanedBridgedTxSweeper.sweep(context: context, signals: UnbridgeHarness.signals()).isEmpty)
         #expect(draft.sourceTypeRaw == DraftSourceType.groupExpense.rawValue)
         #expect(draft.splitExpenseID == liveID.uuidString)
     }
@@ -781,44 +819,171 @@ struct OrphanedBridgedTxSweeperTests {
     @Test func sweep_isIdempotent() throws {
         let dir = UnbridgeHarness.freshDir(); defer { UnbridgeHarness.cleanup(dir) }
         let context = try UnbridgeHarness.makeContext(dir)
-        UnbridgeHarness.makeGroup(zoneID: "SplitGroup-A", context: context)
+        try UnbridgeHarness.makeSettledBackendZone("SplitGroup-A", context: context)
         UnbridgeHarness.makeBridgedTx(
             expenseID: UUID(), zone: "SplitGroup-A", accountIsSystem: true, context: context)
         UnbridgeHarness.makeBridgedTx(
             expenseID: UUID(), zone: "SplitGroup-A", accountIsSystem: false, context: context)
         try context.save()
 
-        let first = OrphanedBridgedTxSweeper.sweep(context: context)
+        let first = OrphanedBridgedTxSweeper.sweep(context: context, signals: UnbridgeHarness.signals())
         #expect(first.isEmpty == false)
 
-        let second = OrphanedBridgedTxSweeper.sweep(context: context)
+        let second = OrphanedBridgedTxSweeper.sweep(context: context, signals: UnbridgeHarness.signals())
         #expect(second.isEmpty, "el segundo barrido volvió a tocar filas: no es idempotente")
     }
 
     /// El guard de zona, medido sobre el store: mismo estado, pero el grupo aún poblándose.
+    ///
+    /// El canal se le da FRESCO a propósito (pull agotado + cursor listando la zona): así lo único que
+    /// puede bloquear es `initialMemberImportStartedAt`, que es lo que este test existe para fijar. Sin esa
+    /// precisión pasaría en verde por el motivo equivocado.
     @Test func sweep_skipsZoneStillImporting() throws {
         let dir = UnbridgeHarness.freshDir(); defer { UnbridgeHarness.cleanup(dir) }
         let context = try UnbridgeHarness.makeContext(dir)
-        let group = UnbridgeHarness.makeGroup(zoneID: "SplitGroup-A", context: context)
+        try UnbridgeHarness.makeSettledBackendZone("SplitGroup-A", context: context)
+        let group = try #require(
+            try context.fetch(FetchDescriptor<SplitGroup>()).first, "el grupo del harness no se insertó")
         group.initialMemberImportStartedAt = .now  // el pull todavía trae su contenido
         UnbridgeHarness.makeBridgedTx(
             expenseID: UUID(), zone: "SplitGroup-A", accountIsSystem: true, context: context)
         try context.save()
 
-        let outcome = OrphanedBridgedTxSweeper.sweep(context: context)
+        let outcome = OrphanedBridgedTxSweeper.sweep(context: context, signals: UnbridgeHarness.signals())
         #expect(outcome.isEmpty)
         #expect(try UnbridgeHarness.txCount(context) == 1)
     }
 
     /// Una zona sin `SplitGroup` local tampoco es evidencia: el grupo puede no haber bajado todavía.
+    /// Igual que el anterior, con el canal fresco (el cursor SÍ lista la zona) para que lo que falte sea
+    /// exactamente el grupo local.
     @Test func sweep_skipsUnknownZone() throws {
         let dir = UnbridgeHarness.freshDir(); defer { UnbridgeHarness.cleanup(dir) }
         let context = try UnbridgeHarness.makeContext(dir)
+        try UnbridgeHarness.markZonesPulled(["SplitGroup-Desconocida"], context: context)
         UnbridgeHarness.makeBridgedTx(
             expenseID: UUID(), zone: "SplitGroup-Desconocida", accountIsSystem: true, context: context)
         try context.save()
 
-        #expect(OrphanedBridgedTxSweeper.sweep(context: context).isEmpty)
+        #expect(OrphanedBridgedTxSweeper.sweep(context: context, signals: UnbridgeHarness.signals()).isEmpty)
+        #expect(try UnbridgeHarness.txCount(context) == 1)
+    }
+
+    // MARK: - El gate de FRESCURA del canal (lo que el guard viejo no veía)
+
+    /// **EL escenario del bug, y el que no existía.** Zona asentada desde hace semanas —el marcador de
+    /// primer import está limpio y nada lo re-arma— con el canal de Grupos PARADO (kill-switch remoto,
+    /// sesión Yala caducada o snapshot de remote-config ausente) y un gasto EN VUELO: su
+    /// `TransactionItem` ya llegó por el espejo personal, su `SplitExpense` no ha llegado por ningún lado.
+    ///
+    /// El guard viejo (`zoneIsSettled`) decía «huérfana» y destruía: borraba la virtual, soltaba la de
+    /// cuenta real, y las dos mutaciones se exportan por el espejo personal ⇒ el device que SÍ tiene el
+    /// gasto pierde su transacción. Al bajar el gasto, `bridgeExpense` ya no encuentra `existingRealTx` y
+    /// crea un draft Caso A: aprobarlo DUPLICA el gasto.
+    @Test func sweep_settledZoneButChannelStopped_touchesNothing() throws {
+        let dir = UnbridgeHarness.freshDir(); defer { UnbridgeHarness.cleanup(dir) }
+        let context = try UnbridgeHarness.makeContext(dir)
+        // Zona conocida desde hace semanas: grupo asentado y su `group_id` en el cursor del pull.
+        try UnbridgeHarness.makeSettledBackendZone("SplitGroup-A", context: context)
+
+        let virtual = UnbridgeHarness.makeBridgedTx(
+            expenseID: UUID(), zone: "SplitGroup-A", amount: 10, accountIsSystem: true, context: context)
+        let real = UnbridgeHarness.makeBridgedTx(
+            expenseID: UUID(), zone: "SplitGroup-A", amount: 40, accountIsSystem: false, context: context)
+        UnbridgeHarness.makeBridgedDraft(expenseID: UUID(), zone: "SplitGroup-A", context: context)
+        try context.save()
+
+        // Canal PARADO: ningún pull agotó su entrega en esta sesión.
+        let outcome = OrphanedBridgedTxSweeper.sweep(
+            context: context, signals: UnbridgeHarness.signals(backendPullCompleted: false))
+
+        #expect(outcome.isEmpty, "el barrido tocó filas sin evidencia de que el canal hubiera entregado")
+        #expect(try UnbridgeHarness.txCount(context) == 2)
+        #expect(try UnbridgeHarness.draftCount(context) == 1)
+        #expect(virtual.isDeleted == false)
+        #expect(real.splitExpenseID != nil, "la de cuenta real perdió su puntero: el device A pierde su TX")
+        #expect(real.splitGroupZoneID == "SplitGroup-A")
+    }
+
+    /// El pull agotó su entrega, pero el cursor NO lista esta zona ⇒ el servidor no la enumera para este
+    /// usuario y este canal no habla de ella. No es evidencia de que sus gastos no existan.
+    @Test func sweep_backendPullCompletedButZoneNotInCursor_touchesNothing() throws {
+        let dir = UnbridgeHarness.freshDir(); defer { UnbridgeHarness.cleanup(dir) }
+        let context = try UnbridgeHarness.makeContext(dir)
+        UnbridgeHarness.makeGroup(zoneID: "SplitGroup-A", context: context)
+        try UnbridgeHarness.markZonesPulled(["SplitGroup-OTRA"], context: context)
+        UnbridgeHarness.makeBridgedTx(
+            expenseID: UUID(), zone: "SplitGroup-A", accountIsSystem: true, context: context)
+        try context.save()
+
+        let outcome = OrphanedBridgedTxSweeper.sweep(context: context, signals: UnbridgeHarness.signals())
+        #expect(outcome.isEmpty)
+        #expect(try UnbridgeHarness.txCount(context) == 1)
+    }
+
+    /// Un grupo de CloudKit (`isBackendGroup == false`) no tiene entrada en el cursor del pull JAMÁS, así
+    /// que su evidencia es la del otro canal: **ambos** engines con ≥1 ciclo de fetch entero. Con el canal
+    /// CloudKit quieto no se toca nada aunque el backend haya completado su pull.
+    @Test func sweep_cloudKitZone_needsBothEnginesFetchCycle() throws {
+        let dir = UnbridgeHarness.freshDir(); defer { UnbridgeHarness.cleanup(dir) }
+        let context = try UnbridgeHarness.makeContext(dir)
+        let group = UnbridgeHarness.makeGroup(zoneID: "SplitGroup-CK", context: context)
+        group.isBackendGroup = false
+        UnbridgeHarness.makeBridgedTx(
+            expenseID: UUID(), zone: "SplitGroup-CK", accountIsSystem: true, context: context)
+        try context.save()
+
+        // El pull backend completó, pero esta zona no es suya: irrelevante.
+        #expect(OrphanedBridgedTxSweeper.sweep(
+            context: context,
+            signals: UnbridgeHarness.signals(cloudKitAllEngines: false)).isEmpty)
+        #expect(try UnbridgeHarness.txCount(context) == 1)
+
+        // Con los dos engines cerrados, la misma huérfana SÍ se repara.
+        let outcome = OrphanedBridgedTxSweeper.sweep(
+            context: context,
+            signals: UnbridgeHarness.signals(backendPullCompleted: false, cloudKitAllEngines: true))
+        #expect(outcome.deleted == 1)
+        #expect(try UnbridgeHarness.txCount(context) == 0)
+    }
+
+    /// El testigo NEGATIVO por zona: el último `didFetchRecordZoneChanges` de esta zona llegó con error, así
+    /// que su contenido no bajó — aunque los dos engines hayan cerrado su ciclo.
+    @Test func sweep_cloudKitZone_withFailedZoneFetch_touchesNothing() throws {
+        let dir = UnbridgeHarness.freshDir(); defer { UnbridgeHarness.cleanup(dir) }
+        let context = try UnbridgeHarness.makeContext(dir)
+        let group = UnbridgeHarness.makeGroup(zoneID: "SplitGroup-CK", context: context)
+        group.isBackendGroup = false
+        UnbridgeHarness.makeBridgedTx(
+            expenseID: UUID(), zone: "SplitGroup-CK", accountIsSystem: true, context: context)
+        try context.save()
+
+        let outcome = OrphanedBridgedTxSweeper.sweep(
+            context: context,
+            signals: UnbridgeHarness.signals(
+                cloudKitAllEngines: true, failedZones: ["SplitGroup-CK"]))
+        #expect(outcome.isEmpty)
+        #expect(try UnbridgeHarness.txCount(context) == 1)
+    }
+
+    /// Una zona rezagada NO retiene la limpieza de las demás: el barrido decide por zona.
+    @Test func sweep_repairsFreshZone_whileSparingStaleOne() throws {
+        let dir = UnbridgeHarness.freshDir(); defer { UnbridgeHarness.cleanup(dir) }
+        let context = try UnbridgeHarness.makeContext(dir)
+        UnbridgeHarness.makeGroup(zoneID: "SplitGroup-FRESCA", context: context)
+        UnbridgeHarness.makeGroup(zoneID: "SplitGroup-REZAGADA", context: context)
+        // El servidor solo enumera la primera.
+        try UnbridgeHarness.markZonesPulled(["SplitGroup-FRESCA"], context: context)
+
+        UnbridgeHarness.makeBridgedTx(
+            expenseID: UUID(), zone: "SplitGroup-FRESCA", accountIsSystem: true, context: context)
+        let rezagada = UnbridgeHarness.makeBridgedTx(
+            expenseID: UUID(), zone: "SplitGroup-REZAGADA", accountIsSystem: true, context: context)
+        try context.save()
+
+        let outcome = OrphanedBridgedTxSweeper.sweep(context: context, signals: UnbridgeHarness.signals())
+        #expect(outcome.deleted == 1)
+        #expect(rezagada.isDeleted == false)
         #expect(try UnbridgeHarness.txCount(context) == 1)
     }
 }
@@ -958,6 +1123,61 @@ struct RemoteUnbridgeWiringTests {
                 "El barrido dejó de estar gateado por la quiescencia del import personal.")
     }
 
+    /// **El barrido espera a que el canal de Grupos entregue, y en ESTE orden.** Es lo que la lógica pura
+    /// no puede probar: `GroupChannelFreshnessGate` puede ser perfecta y sus tests verdes mientras el
+    /// barrido corre en cada arranque ANTES del primer pull —`startIfEligible` es síncrono en el paso G2,
+    /// su ciclo tarda un viaje de red— y entonces el gate solo consigue que no se repare NUNCA nada, sin
+    /// un solo rojo. Mutación: quitar el `guard await awaitGroupsChannelEvidence(...)` deja este test en
+    /// rojo y TODOS los de comportamiento en verde, que es exactamente por qué hace falta.
+    @Test func sweeper_waitsForChannelEvidence_afterPersonalStore() throws {
+        let src = try Self.source("Yala/App/AppBootstrapper.swift")
+        let task = try #require(
+            src.components(separatedBy: "SaveBreadcrumb.deferred(\"AppBootstrapper.orphanedBridgedTxSweep\", \"import not quiescent\")")
+                .dropFirst().first,
+            "El Task del barrido cambió de forma; este scan dejó de medir nada.")
+        let body = task.components(separatedBy: "\n        // 16.6").first ?? ""
+        let evidence = try #require(
+            body.range(of: "await awaitGroupsChannelEvidence(context: context)"),
+            """
+            El barrido dejó de esperar evidencia del canal de Grupos. Vuelve a decidir «este gasto no \
+            existe» con el store de Grupos a medio poblar, que es el bug entero.
+            """)
+        let sweep = try #require(body.range(of: "OrphanedBridgedTxSweeper.sweep(context: context)"))
+        #expect(evidence.lowerBound < sweep.lowerBound,
+                "La espera del canal se movió por DEBAJO del barrido: no gatea nada.")
+        #expect(body.contains("\"groups channel not fresh\""),
+                "El diferido por canal no fresco dejó de dejar rastro en el breadcrumb.")
+    }
+
+    /// El gate vive en UNA primitiva y la consumen los DOS sitios que hacen la misma pregunta. El conteo
+    /// esperado es el anti-falso-verde (molde `AttestWiringTests`): sin él, borrar un call-site o
+    /// renombrar el tipo pasaría en verde con el escáner comprobando nada.
+    @Test func freshnessGate_hasExactlyItsThreeProductionCallSites() throws {
+        // Se cuentan LLAMADAS, no menciones del tipo: `ChannelSignals` aparece además como tipo del
+        // parámetro inyectable del barrido, y contar el prefijo suelto convertiría una firma en cobertura.
+        let sites: [(path: String, call: String, expected: Int)] = [
+            // El barrido: veredicto por zona de todas a la vez.
+            ("Yala/Services/Groups/OrphanedBridgedTxSweeper.swift",
+             "GroupChannelFreshness.verdictsByZone(", 1),
+            // El editor: veredicto de la zona de la transacción abierta.
+            ("Yala/App/Views/Transactions/NewTransactionView.swift",
+             "GroupChannelFreshness.isFresh(", 1),
+            // El arranque: la espera acotada antes de barrer.
+            ("Yala/App/AppBootstrapper.swift",
+             "GroupChannelFreshness.verdictsByZone(", 1),
+        ]
+        for site in sites {
+            let src = try Self.source(site.path)
+            // Sin líneas que sean comentario entero: los docblocks nombran el tipo constantemente.
+            let code = src.split(separator: "\n", omittingEmptySubsequences: false)
+                .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+                .joined(separator: "\n")
+            let calls = code.components(separatedBy: site.call).count - 1
+            #expect(calls == site.expected,
+                    "\(site.path) tiene \(calls) llamadas a `\(site.call)` y se esperaban \(site.expected).")
+        }
+    }
+
     /// La vista resuelve el puntero de verdad y se lo pasa a la policy.
     ///
     /// El ancla del CALL-SITE va dentro del `onAppear`, no sobre el nombre suelto: `resolveBridgedPointer()`
@@ -983,5 +1203,28 @@ struct RemoteUnbridgeWiringTests {
         // huérfana de cuenta real sigue sin poder eliminarse aunque el resto del form se desbloquee.
         #expect(src.contains("              bridgedPointerResolves,"),
                 "`isBridgedCasoA` volvió al criterio «puntero no nulo» y Borrar se queda desactivado.")
+    }
+
+    /// **Un fetch VACÍO no es «no existe» en el editor tampoco.** El mismo criterio y la misma primitiva
+    /// que el barrido: en un device recién reinstalado el store de Grupos arranca vacío (`.none`,
+    /// local-only) mientras el espejo personal ya entregó las transacciones, y tomar el vacío por «no
+    /// existe» habilita Borrar y Duplicar sobre un gasto de grupo VIVO — borrado que además se exporta.
+    ///
+    /// Mutación: devolver el resultado del fetch pelado (quitar el `|| !GroupChannelFreshness.isFresh`)
+    /// deja este test en rojo.
+    @Test func editorTreatsEmptyFetchAsUnresolvedOnlyWithChannelEvidence() throws {
+        let src = try Self.source("Yala/App/Views/Transactions/NewTransactionView.swift")
+        let fn = try #require(
+            src.components(separatedBy: "private func resolveBridgedPointer() {").dropFirst().first,
+            "`resolveBridgedPointer` cambió de nombre; este scan dejó de medir nada.")
+        let body = fn.components(separatedBy: "\n    /// ").first ?? ""
+        #expect(body.contains("bridgedPointerResolves = found\n                || !GroupChannelFreshness.isFresh(zone: tx.splitGroupZoneID, context: modelContext)"),
+                """
+                El editor volvió a tomar un fetch VACÍO por «el gasto no existe». Con el store de Grupos \
+                todavía sin poblar, Borrar y Duplicar se habilitan sobre un gasto de grupo VIVO.
+                """)
+        // El `catch` NO cambia: un error del store sigue cayendo a `true`. Ése nunca fue el bug.
+        #expect(body.contains("bridgedPointerResolves = true"),
+                "El `catch` del editor dejó de caer a `true`: un fallo de lectura abriría la edición.")
     }
 }

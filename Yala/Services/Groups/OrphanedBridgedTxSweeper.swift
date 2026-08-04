@@ -11,6 +11,22 @@
 //  el camino nuevo no las toca, y el usuario no puede tocarlas él (el puntero las manda al grupo, donde el
 //  gasto ya no está). Este barrido es lo único que las saca.
 //
+//  ── Lo que lo separa de una pérdida masiva de datos: el gate de FRESCURA del canal ─────────────────────
+//  Decidir «huérfana» es decidir que un gasto NO EXISTE mirando un store que otro canal puebla. Ese guard
+//  lo lleva `GroupChannelFreshnessGate` (`Yala/App/Logic/`) y consiste en exigir que el canal de la zona
+//  haya AGOTADO su entrega con la zona en su alcance — pull backend `.completed` + `group_id` en el cursor,
+//  o ambos engines de CloudKit con ≥1 ciclo de fetch entero y sin fallo en esa zona.
+//
+//  La versión anterior exigía solo `zoneIsSettled` (`SplitGroup` local con `initialMemberImportStartedAt ==
+//  nil`) y **eso no prueba frescura**: nada re-arma ese marcador sobre una fila viva, así que una zona
+//  conocida desde hace semanas quedaba «asentada» para siempre. Con dos teléfonos del mismo usuario y el
+//  canal de Grupos parado en uno de ellos (kill-switch remoto, sesión Yala caducada, snapshot de
+//  remote-config ausente), la `TransactionItem` de un gasto nuevo SÍ llega por el espejo personal mientras
+//  el `SplitExpense` no llega por ningún lado ⇒ el barrido la borraba o la soltaba, y esas mutaciones se
+//  exportaban de vuelta, llevándose la transacción del device que sí tenía el gasto. El gate viejo sigue
+//  dentro del nuevo como su primer escalón, así que el caso que SÍ cubría —device recién instalado cuyo
+//  import personal se asienta antes del pull— sigue cubierto.
+//
 
 import Foundation
 import SwiftData
@@ -51,27 +67,33 @@ enum OrphanedBridgedTxSweeper {
         let expensePointerIsOrphan: Bool
         let settlementPointerIsOrphan: Bool
         let accountIsSystem: Bool
-        /// La zona del puente tiene un `SplitGroup` local **asentado**: existe y no está en su primer
-        /// import (`initialMemberImportStartedAt == nil`).
+        /// El canal de la zona del puente **agotó su entrega** y esta zona estaba en su alcance
+        /// (`GroupChannelFreshnessGate.evaluate(...) == .fresh`).
         ///
         /// **Es el guard que impide destruir datos buenos**, y sin él el barrido es peor que el bug. Los
         /// dos stores bajan por canales INDEPENDIENTES: las `TransactionItem` llegan con el import personal
-        /// (mirror de CloudKit o motor del Modo Nube) y los `SplitExpense` por el pull de Grupos. En un
-        /// device recién instalado el personal puede asentarse ANTES, y entonces cada transacción puenteada
-        /// parece huérfana sin serlo — borrarlas o soltarlas ahí destruiría el vínculo de todo el corpus, y
-        /// al llegar el gasto el bridge crearía una transacción DUPLICADA junto a la que se acaba de
-        /// soltar. Por eso «huérfana» exige evidencia de que el grupo ya está en este device y terminó de
-        /// poblarse; sin ella no se toca nada y se reintenta en el próximo arranque.
-        let zoneIsSettled: Bool
+        /// (mirror de CloudKit o motor del Modo Nube) y los `SplitExpense` por el pull de Grupos. Sin
+        /// evidencia de que el canal de Grupos habló, cada transacción puenteada cuyo gasto no ha bajado
+        /// TODAVÍA parece huérfana sin serlo — borrarlas o soltarlas ahí destruye el vínculo, y esas
+        /// mutaciones se exportan por el espejo personal, así que el daño llega al device que SÍ tiene el
+        /// gasto; al bajar por fin, el bridge crea un draft Caso A y aprobarlo DUPLICA el gasto.
+        ///
+        /// Antes esto era `zoneIsSettled` —`SplitGroup` local con `initialMemberImportStartedAt == nil`— y
+        /// **eso es un marcador de PRIMER import, no una prueba de frescura**: nada lo re-arma sobre una
+        /// fila viva, así que una zona conocida desde hace semanas quedaba «asentada» para siempre, con el
+        /// canal apagado (kill-switch, sesión caducada, snapshot de remote-config ausente) o rezagado. El
+        /// criterio nuevo lo CONTIENE (`zoneHasSettledGroup` sigue siendo el primer guard) y le añade la
+        /// frescura del canal. Ver `GroupChannelFreshnessGate`.
+        let zoneEvidenceIsFresh: Bool
 
         init(
             expensePointerIsOrphan: Bool, settlementPointerIsOrphan: Bool, accountIsSystem: Bool,
-            zoneIsSettled: Bool
+            zoneEvidenceIsFresh: Bool
         ) {
             self.expensePointerIsOrphan = expensePointerIsOrphan
             self.settlementPointerIsOrphan = settlementPointerIsOrphan
             self.accountIsSystem = accountIsSystem
-            self.zoneIsSettled = zoneIsSettled
+            self.zoneEvidenceIsFresh = zoneEvidenceIsFresh
         }
     }
 
@@ -80,7 +102,7 @@ enum OrphanedBridgedTxSweeper {
     /// Una transacción sin cuenta (`accountIsSystem` no computable) se trata como REAL: ante la duda, la
     /// dirección segura es preservar el rastro, nunca borrar.
     static func decide(_ shape: TxShape) -> Action? {
-        guard shape.zoneIsSettled else { return nil }
+        guard shape.zoneEvidenceIsFresh else { return nil }
         guard shape.expensePointerIsOrphan || shape.settlementPointerIsOrphan else { return nil }
         switch GroupTransactionBridge.classifyForSoftDelete(
             transactionAccountIsSystem: shape.accountIsSystem
@@ -111,8 +133,15 @@ enum OrphanedBridgedTxSweeper {
     ///
     /// Sin gate del sello de dominio (`isDomainOpenForBridge`): ese gate corta la CREACIÓN del bridge, y
     /// cerrar la puerta jamás debe impedir LIMPIAR lo que ya está dentro.
+    ///
+    /// `signals` existe para los tests: el estado de sesión de los dos canales vive en singletons y se
+    /// filtraría de un test al siguiente. Producción usa `.live` y no pasa el parámetro.
     @discardableResult
-    static func sweep(context: ModelContext) -> Outcome {
+    static func sweep(
+        context: ModelContext,
+        signals: GroupChannelFreshness.ChannelSignals? = nil
+    ) -> Outcome {
+        let signals = signals ?? .live()
         var outcome = Outcome()
 
         let bridgedTxs: [TransactionItem]
@@ -144,13 +173,9 @@ enum OrphanedBridgedTxSweeper {
         // Un solo fetch de cada tipo → Set para lookup O(1), en vez de un fetch por puntero.
         let liveExpenseIDs: Set<String>
         let liveSettlementIDs: Set<String>
-        let settledZones: Set<String>
         do {
             liveExpenseIDs = Set(try context.fetch(FetchDescriptor<SplitExpense>()).map(\.id.uuidString))
             liveSettlementIDs = Set(try context.fetch(FetchDescriptor<SplitSettlement>()).map(\.id.uuidString))
-            settledZones = Set(try context.fetch(FetchDescriptor<SplitGroup>())
-                .filter { $0.initialMemberImportStartedAt == nil }
-                .map(\.cloudKitZoneID))
         } catch {
             // CRÍTICO: sin la lista de filas vivas TODO puntero parecería huérfano y el barrido borraría el
             // corpus de grupos entero. Un fetch fallido aborta; el próximo arranque reintenta.
@@ -160,6 +185,15 @@ enum OrphanedBridgedTxSweeper {
             return outcome
         }
 
+        // Veredicto POR ZONA de los dos canales, en el instante de decidir. Un solo fetch de grupos y uno
+        // del cursor del pull. Una zona ausente del mapa (sin `SplitGroup` local) NO es fresca.
+        let verdicts = GroupChannelFreshness.verdictsByZone(context: context, signals: signals)
+        // Motivos por los que se dejó una candidata sin tocar. Solo se cuentan las que el guard viejo
+        // habría barrido, para que el canario signifique «el gate está frenando algo» y no «hoy no había
+        // huérfanas»: sin esa distinción, un gate clavado —un engine que no cierra ciclo, un canal apagado
+        // durante semanas— sería indistinguible del caso sano y silencioso.
+        var deferredByVerdict: [GroupChannelFreshnessGate.Verdict: Int] = [:]
+
         func isOrphan(_ pointer: String?, in live: Set<String>) -> Bool {
             guard let pointer, !pointer.isEmpty else { return false }
             return !live.contains(pointer)
@@ -168,9 +202,13 @@ enum OrphanedBridgedTxSweeper {
         /// Sin `splitGroupZoneID` no hay forma de saber de qué grupo colgaba, así que no hay evidencia y
         /// no se toca. El bridge escribe siempre los dos punteros juntos, de modo que esto solo cubre
         /// filas de una versión anterior o a medio escribir — y en la duda no se destruye nada.
-        func zoneIsSettled(_ zone: String?) -> Bool {
-            guard let zone, !zone.isEmpty else { return false }
-            return settledZones.contains(zone)
+        func zoneEvidenceIsFresh(_ zone: String?, pointerIsOrphan: Bool) -> Bool {
+            let verdict: GroupChannelFreshnessGate.Verdict = {
+                guard let zone, !zone.isEmpty else { return .noSettledGroup }
+                return verdicts[zone] ?? .noSettledGroup
+            }()
+            if pointerIsOrphan, !verdict.isFresh { deferredByVerdict[verdict, default: 0] += 1 }
+            return verdict.isFresh
         }
 
         // ══ FASE 1 · CLASIFICAR, SIN MUTAR NADA ══
@@ -187,21 +225,25 @@ enum OrphanedBridgedTxSweeper {
         var orphanTxs: [TransactionItem] = []
         var actions: [(tx: TransactionItem, action: Action)] = []
         for tx in bridgedTxs {
+            let expenseIsOrphan = isOrphan(tx.splitExpenseID, in: liveExpenseIDs)
+            let settlementIsOrphan = isOrphan(tx.splitSettlementID, in: liveSettlementIDs)
             let shape = TxShape(
-                expensePointerIsOrphan: isOrphan(tx.splitExpenseID, in: liveExpenseIDs),
-                settlementPointerIsOrphan: isOrphan(tx.splitSettlementID, in: liveSettlementIDs),
+                expensePointerIsOrphan: expenseIsOrphan,
+                settlementPointerIsOrphan: settlementIsOrphan,
                 accountIsSystem: tx.account?.isSystemAccount == true,
-                zoneIsSettled: zoneIsSettled(tx.splitGroupZoneID)
+                zoneEvidenceIsFresh: zoneEvidenceIsFresh(
+                    tx.splitGroupZoneID, pointerIsOrphan: expenseIsOrphan || settlementIsOrphan)
             )
             guard let action = decide(shape) else { continue }
             orphanTxs.append(tx)
             actions.append((tx, action))
         }
 
-        let orphanDrafts = bridgedDrafts.filter {
-            zoneIsSettled($0.splitGroupZoneID)
-                && (isOrphan($0.splitExpenseID, in: liveExpenseIDs)
-                    || isOrphan($0.splitSettlementID, in: liveSettlementIDs))
+        let orphanDrafts = bridgedDrafts.filter { draft in
+            let pointerIsOrphan = isOrphan(draft.splitExpenseID, in: liveExpenseIDs)
+                || isOrphan(draft.splitSettlementID, in: liveSettlementIDs)
+            return zoneEvidenceIsFresh(draft.splitGroupZoneID, pointerIsOrphan: pointerIsOrphan)
+                && pointerIsOrphan
         }
         // Con los punteros TODAVÍA intactos. Mismo plan que el freeze de soft-delete: los punteros de
         // clasificación redundantes se borran y el resto pasa a `.manual` preservando lo que el usuario
@@ -238,6 +280,22 @@ enum OrphanedBridgedTxSweeper {
                 context.delete(draft)
                 outcome.draftsDeleted += 1
             }
+        }
+
+        // ANTES del early-return: el caso que hay que poder ver en el dashboard es justo aquel en que el
+        // barrido no hizo NADA porque el gate lo frenó. Sin esta emisión, un canal apagado durante semanas
+        // —o un engine de CloudKit que nunca cierre su ciclo, que es el coste asumido de exigir los dos—
+        // se lee igual que «no había huérfanas»: `bridgedTxOrphansRepaired` en cero, y ni una señal de que
+        // hay candidatas esperando. Sin PII: recuentos y el motivo del veredicto.
+        if !deferredByVerdict.isEmpty {
+            let detail = deferredByVerdict
+                .map { "\($0.key)=\($0.value)" }
+                .sorted()
+                .joined(separator: "|")
+            MetricsService.canary(.bridgedTxOrphanSweepDeferred, detail: detail)
+            #if DEBUG
+            print("OrphanedBridgedTxSweeper: candidatas sin evidencia del canal — \(detail)")
+            #endif
         }
 
         guard !outcome.isEmpty else { return outcome }
