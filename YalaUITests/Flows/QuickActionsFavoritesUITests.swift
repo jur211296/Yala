@@ -105,10 +105,14 @@ final class QuickActionsFavoritesUITests: XCTestCase {
         XCTAssertTrue(saveTransaction.isEnabled, "new_transaction_save deshabilitado (monto/cuenta/subcategoría).")
         saveTransaction.tap()
 
-        XCTAssertTrue(
-            app.buttons["fab_new_transaction"].waitForExistence(timeout: 10),
-            "Tras guardar no se volvió al Panel."
-        )
+        // Guardar deja la pantalla de éxito DENTRO del mismo sheet — hay que cerrarla
+        // para volver al Panel de verdad. Sin esto el Panel «existe» en el árbol pero
+        // está tapado, y el tap del avatar de Perfil se pierde en `{-1, -1}`.
+        app.dismissTransactionSuccess()
+
+        let fab = app.buttons["fab_new_transaction"]
+        XCTAssertTrue(fab.waitForExistence(timeout: 10), "Tras guardar no se volvió al Panel.")
+        XCTAssertTrue(fab.waitForHittable(timeout: 5), "El Panel sigue tapado — el sheet de la transacción no se desmontó.")
 
         // Verificar persistencia del favorito en Perfil → Favoritos.
         app.openProfile()

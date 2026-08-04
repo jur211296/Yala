@@ -619,9 +619,9 @@
         "F-EDG-02"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/EdgeCasesUITests",
+      "coverage": "xcuitest:YalaUITests/EdgeCasesUITests — 2026-08-04: test_extremeMinimumAmountSaves tenia el mismo falso verde que transactions-core-crud (afirmaba el regreso al Panel con el sheet de la TX aun puesto). Ahora cierra la pantalla de exito y exige el FAB hittable.",
       "owner": "",
-      "lastVerified": "2026-08-03"
+      "lastVerified": "2026-08-04"
     },
     {
       "area": "expenses-only-mode",
@@ -2002,9 +2002,9 @@
         "F-TX-02"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/TransactionsCrudUITests 2026-07-23: edicion de TX bridgeada Caso B habilitada (chips subcat/tags granulares por BridgedEditPolicy; cuenta bloqueada; banner editPartialBannerCaseB) — presentacion sobre el preserve+update del bridge (area groups-bridge-personal).",
+      "coverage": "xcuitest:YalaUITests/TransactionsCrudUITests 2026-07-23: edicion de TX bridgeada Caso B habilitada (chips subcat/tags granulares por BridgedEditPolicy; cuenta bloqueada; banner editPartialBannerCaseB) — presentacion sobre el preserve+update del bridge (area groups-bridge-personal). + 2026-08-04: test_createTransaction era un FALSO VERDE — afirmaba el regreso al Panel con el sheet de la TX todavia puesto (el Panel de fondo sigue en el arbol, asi que fab_new_transaction 'existe' igual). Ahora cierra la pantalla de exito (dismissTransactionSuccess) y exige que el FAB sea HITTABLE; verificado por mutacion: quitar el cierre lo pone rojo en esa asercion y no en la de existencia. TransactionSuccessView.swift gana el id transaction_success_accept (sin cambio visual).",
       "owner": "",
-      "lastVerified": "2026-07-23"
+      "lastVerified": "2026-08-04"
     },
     {
       "area": "transactions-import-transfers",
@@ -2032,9 +2032,9 @@
         "F-TX-03"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/QuickActionsFavoritesUITests",
+      "coverage": "xcuitest:YalaUITests/QuickActionsFavoritesUITests — 2026-08-04: el area vuelve a estar VERDE (2/2). El rojo de test_saveAsFavoriteFromTransactionAppearsInList no era del area: guardar una TX no cierra el sheet de NewTransactionView (su body conmuta a TransactionSuccessView, que solo se descarta con Aceptar), y con el sheet puesto el Panel de fondo sigue en el arbol de accesibilidad SIN punto de impacto, asi que el tap del avatar de Perfil se sintetizaba en {-1,-1} y se perdia. El test ahora cierra la pantalla de exito con el helper dismissTransactionSuccess() (id nuevo transaction_success_accept, espejo de inbox_success_accept y group_expense_success_accept).",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-08-04"
     },
     {
       "area": "trend-previous-period-alignment",

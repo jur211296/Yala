@@ -80,12 +80,21 @@ final class TransactionsCrudUITests: XCTestCase {
         XCTAssertTrue(saveButton.isEnabled, "El botón guardar está deshabilitado (canSave=false: monto/cuenta/subcategoría).")
         saveButton.tap()
 
-        // Tras guardar, el flujo confirma con el success screen y vuelve al Panel.
-        // (El success screen es transitorio en uitest por el Task diferido de
-        // showTransactionSuccess; la señal determinista es el regreso al Panel.)
+        // Tras guardar, el flujo confirma con la pantalla de éxito. NO es transitoria:
+        // vive dentro del mismo sheet y solo se cierra con «Aceptar». Cerrarla es parte
+        // del flujo que este test cubre, y además lo que hace REAL la aserción de abajo:
+        // con el sheet puesto, el Panel de fondo sigue en el árbol y `fab_new_transaction`
+        // existe igual ⇒ afirmarlo a secas pasaba en verde sin probar el regreso.
+        app.dismissTransactionSuccess()
+
+        let fab = app.buttons["fab_new_transaction"]
         XCTAssertTrue(
-            app.buttons["fab_new_transaction"].waitForExistence(timeout: 10),
+            fab.waitForExistence(timeout: 10),
             "Tras guardar no se volvió al Panel — el flujo de creación de transacción no completó."
+        )
+        XCTAssertTrue(
+            fab.waitForHittable(timeout: 5),
+            "El Panel existe pero sigue tapado — el sheet de la transacción no se desmontó."
         )
         XCTAssertFalse(
             app.textFields["new_transaction_amount"].exists,

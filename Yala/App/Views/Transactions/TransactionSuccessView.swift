@@ -191,6 +191,7 @@ struct TransactionSuccessView: View {
                 VStack(spacing: DS.Spacing.md) {
                     // Primary: Accept
                     YalaPrimaryButton(L10n.Common.accept, action: onAccept)
+                        .accessibilityIdentifier("transaction_success_accept")
 
                     // Secondary: Create another
                     Button(action: onCreateAnother) {

@@ -67,9 +67,19 @@ final class EdgeCasesUITests: XCTestCase {
         saveButton.tap()
 
         // El monto mínimo se guarda y el flujo vuelve al Panel sin romperse.
+        // La pantalla de éxito vive dentro del mismo sheet y solo se cierra con
+        // «Aceptar»: sin cerrarla, el Panel de fondo sigue en el árbol y la aserción
+        // de abajo pasaría en verde con el sheet aún puesto.
+        app.dismissTransactionSuccess()
+
+        let fab = app.buttons["fab_new_transaction"]
         XCTAssertTrue(
-            app.buttons["fab_new_transaction"].waitForExistence(timeout: 10),
+            fab.waitForExistence(timeout: 10),
             "Tras guardar 0.01 no se volvió al Panel — el monto extremo rompió el guardado."
+        )
+        XCTAssertTrue(
+            fab.waitForHittable(timeout: 5),
+            "El Panel existe pero sigue tapado — el sheet de la transacción no se desmontó."
         )
     }
 }

@@ -94,11 +94,25 @@ extension XCUIApplication {
     // MARK: - Navegación reutilizable
 
     /// Abre el sheet de Perfil desde el avatar del toolbar del Panel.
-    /// Falla el test si el avatar no aparece (la app no llegó al Panel).
+    /// Falla el test si el avatar no aparece (la app no llegó al Panel) o si
+    /// aparece pero no es alcanzable (algo lo tapa y el tap se perdería).
     @discardableResult
     func openProfile(timeout: TimeInterval = 10) -> XCUIApplication {
         let avatar = buttons["profile_avatar"]
         XCTAssertTrue(avatar.waitForExistence(timeout: timeout), "No apareció el avatar de Perfil (profile_avatar) en el Panel.")
+        // `exists` NO implica alcanzable, y la diferencia es justo la que produce un
+        // rojo MUDO: con un sheet presentado encima, el Panel sigue ENTERO en el árbol
+        // de accesibilidad —`profile_avatar` y `fab_new_transaction` «existen»— pero sin
+        // punto de impacto. XCUITest computa entonces el hit point en `{-1, -1}`,
+        // sintetiza el tap ahí y no pasa nada: sin error, sin excepción, sin traza. El
+        // test sigue como si el Perfil se hubiera abierto y muere mucho después, en la
+        // pantalla que nunca llegó a montarse. Así se leyó durante dos días el rojo de
+        // `profile_favorites` (Lista Negra, 2026-08-02) como «la fila no aparece»
+        // cuando el Perfil ni siquiera se había abierto.
+        XCTAssertTrue(
+            avatar.waitForHittable(timeout: timeout),
+            "El avatar de Perfil existe pero NO es alcanzable — algo lo tapa (¿un sheet sin cerrar?) y el tap se perdería."
+        )
         avatar.tap()
         return self
     }
@@ -110,6 +124,35 @@ extension XCUIApplication {
         let row = buttons[rowID]
         XCTAssertTrue(row.waitForExistence(timeout: timeout), "No apareció la fila de ajustes '\(rowID)'.")
         row.tap()
+    }
+
+    // MARK: - Transacciones
+
+    /// Cierra la pantalla de éxito que queda tras guardar una transacción y espera
+    /// a que se desmonte de verdad.
+    ///
+    /// **Guardar NO cierra el sheet de `NewTransactionView`**: su `body` conmuta a
+    /// `TransactionSuccessView` (`NewTransactionView.swift:252`), que solo se descarta
+    /// con «Aceptar» o «Registrar otro». Mientras siga montada, el Panel de fondo
+    /// permanece en el árbol de accesibilidad ⇒ **afirmar que `fab_new_transaction`
+    /// existe NO prueba que se volvió al Panel** (se cumple igual con el sheet puesto),
+    /// y cualquier tap sobre el Panel se pierde en `{-1, -1}`. La señal determinista es
+    /// que la pantalla de éxito desapareció; a partir de ahí el Panel vuelve a ser
+    /// alcanzable. Todo test que guarde una transacción y siga interactuando con la app
+    /// tiene que pasar por aquí.
+    @discardableResult
+    func dismissTransactionSuccess(timeout: TimeInterval = 10) -> XCUIApplication {
+        let accept = buttons["transaction_success_accept"]
+        XCTAssertTrue(
+            accept.waitForExistence(timeout: timeout),
+            "No apareció la pantalla de éxito de la transacción (transaction_success_accept) — el guardado no completó."
+        )
+        accept.tap()
+        XCTAssertTrue(
+            accept.waitForNonExistence(timeout: timeout),
+            "La pantalla de éxito no se cerró tras tocar «Aceptar» — el sheet sigue tapando el Panel."
+        )
+        return self
     }
 
     // MARK: - Menú (···) de Registros
@@ -139,5 +182,23 @@ extension XCUIApplication {
         let select = buttons["records_select_button"]
         XCTAssertTrue(select.waitForExistence(timeout: timeout), "El menú (···) no ofreció 'Seleccionar'.")
         select.tap()
+    }
+}
+
+extension XCUIElement {
+    /// Espera (sin sleeps) a que el elemento sea REALMENTE alcanzable por un tap.
+    /// `exists` solo dice que está en el árbol de accesibilidad; `isHittable` añade
+    /// que tiene un punto de impacto válido — la diferencia entre un tap que actúa y
+    /// uno que se sintetiza en `{-1, -1}` y se pierde sin error. El predicate
+    /// re-consulta, así que absorbe la animación de cierre de un sheet.
+    ///
+    /// Consultar `isHittable` de un elemento que NO existe lanza, así que llamar a
+    /// esto siempre DESPUÉS de `waitForExistence`.
+    func waitForHittable(timeout: TimeInterval) -> Bool {
+        let expectation = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "isHittable == true"),
+            object: self
+        )
+        return XCTWaiter().wait(for: [expectation], timeout: timeout) == .completed
     }
 }
