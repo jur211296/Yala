@@ -1,5 +1,28 @@
 # Fase 3 · Bloque «CONSERVAR» — medición contra HEAD `ca06cfd5` (branch 2.0.5)
 
+> ## 🟠 SUPERADO — medición del 2026-07-29 contra `ca06cfd5`
+>
+> **Desde este HEAD han entrado 84 commits.** Las coordenadas de `SplitSyncManager.swift` derivan hasta
+> **+317 líneas** (el fichero pasó de 2.521 a **2.907**) y `SplitSyncStartGate.swift` adelgazó de 292 a
+> **149** con el commit 0. La re-medición completa contra `dbb0bab3` (2026-08-04) está en
+> **[`fase3-REMEDICION-2026-08-04.md`](fase3-REMEDICION-2026-08-04.md)** — **úsala a ella para escribir
+> el commit 1.**
+>
+> Este informe se conserva como registro de lo que se midió y por qué; **lo que midió era correcto para
+> su HEAD** (verificado: 10 de 10 tamaños exactos contra `ca06cfd5`). Lo que lo supera es lo escrito
+> después. Deltas propios de este informe:
+>
+> - `GroupUserIdentityService` conserva **cinco** miembros con consumidor vivo, no los dos que dice el
+>   plan: se suman `currentUserRecordName()`, `applySeededRecordName()` y `clearCache()`.
+> - `SplitGroupZone.swift` mide **42** líneas, no 32; y su `zoneName(for:)` **pierde su único caller**.
+> - `InviteLinkService`: lo forzado por el compilador son **18 líneas** (`fetchShareMetadata` `:231-247`
+>   + el `import`); `buildInviteURL` y `extractShareURL` **no usan ni un tipo de CloudKit**.
+>
+> **Y el hueco que comparten los ocho:** la heurística «solo derivan las coordenadas del fichero que se
+> editó» es válida para la DERIVA y **ciega para las ALTAS**. Hay **15 ficheros de producción nuevos**
+> desde `ca06cfd5`, **11 de ellos tocan este subsistema**, y ninguno puede estar aquí.
+
+
 Todas las cifras salen de `wc -l` / `grep -n` sobre HEAD. Donde el plan
 (`$VAULT/Backlog/modo-nube/MODO-NUBE-PLAN-SIMPLIFICACION-GRUPOS.md:265-276`) da un número, se
 contrasta explícitamente.

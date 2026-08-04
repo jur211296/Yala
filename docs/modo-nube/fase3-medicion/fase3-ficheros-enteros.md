@@ -1,5 +1,29 @@
 # Fase 3 — Bloque «ficheros-enteros»: medición contra HEAD
 
+> ## 🟠 SUPERADO — medición del 2026-07-29 contra `ca06cfd5`
+>
+> **Desde este HEAD han entrado 84 commits.** Las coordenadas de `SplitSyncManager.swift` derivan hasta
+> **+317 líneas** (el fichero pasó de 2.521 a **2.907**) y `SplitSyncStartGate.swift` adelgazó de 292 a
+> **149** con el commit 0. La re-medición completa contra `dbb0bab3` (2026-08-04) está en
+> **[`fase3-REMEDICION-2026-08-04.md`](fase3-REMEDICION-2026-08-04.md)** — **úsala a ella para escribir
+> el commit 1.**
+>
+> Este informe se conserva como registro de lo que se midió y por qué; **lo que midió era correcto para
+> su HEAD** (verificado: 10 de 10 tamaños exactos contra `ca06cfd5`). Lo que lo supera es lo escrito
+> después. Deltas propios de este informe:
+>
+> - **Son 14 ficheros y 4.744 líneas**, no 13 y 4.498. El 14.º es `SoftDeleteObserverLogic.swift` (31),
+>   que no está en la tabla maestra de este informe.
+> - Tamaños de hoy: `SplitSyncManager` **2.907** · `CKRecordTranslator` **415** · `SplitSyncStartGate`
+>   **149** · `GroupsIdentityPurgeGate` **256** · `CloudKitConstants` **144** · `GroupUserIdentityService` **85**.
+> - `GroupUserIdentityService` conserva **cinco** miembros con consumidor vivo, no dos: solo mueren
+>   `fetchFreshRecordName` y `deterministicMemberID`.
+>
+> **Y el hueco que comparten los ocho:** la heurística «solo derivan las coordenadas del fichero que se
+> editó» es válida para la DERIVA y **ciega para las ALTAS**. Hay **15 ficheros de producción nuevos**
+> desde `ca06cfd5`, **11 de ellos tocan este subsistema**, y ninguno puede estar aquí.
+
+
 **HEAD medido:** `ca06cfd5` (branch `2.0.5`). Árbol sucio solo en `screenshots-appstore/` (PNG), nada
 bajo `Yala/`. Todas las cifras salen de `wc -l` / `grep -n` contra este HEAD, no del plan.
 

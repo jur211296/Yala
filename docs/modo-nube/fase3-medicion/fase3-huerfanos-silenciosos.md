@@ -1,5 +1,30 @@
 # Fase 3 · lente «huérfanos silenciosos» — medición contra HEAD `ca06cfd5` (branch 2.0.5)
 
+> ## 🟠 SUPERADO — medición del 2026-07-29 contra `ca06cfd5`
+>
+> **Desde este HEAD han entrado 84 commits.** Las coordenadas de `SplitSyncManager.swift` derivan hasta
+> **+317 líneas** (el fichero pasó de 2.521 a **2.907**) y `SplitSyncStartGate.swift` adelgazó de 292 a
+> **149** con el commit 0. La re-medición completa contra `dbb0bab3` (2026-08-04) está en
+> **[`fase3-REMEDICION-2026-08-04.md`](fase3-REMEDICION-2026-08-04.md)** — **úsala a ella para escribir
+> el commit 1.**
+>
+> Este informe se conserva como registro de lo que se midió y por qué; **lo que midió era correcto para
+> su HEAD** (verificado: 10 de 10 tamaños exactos contra `ca06cfd5`). Lo que lo supera es lo escrito
+> después. Deltas propios de este informe:
+>
+> - **S2 se invierte**: la pérdida ya está consumada y su coste de usuario es **cero**.
+> - **S3a está CERRADO** por `479e8e81`: el canal nuevo ya desatasca «esperando aprobación».
+> - **S4 tiene espejo barato**: la señal ya llega al cliente en `page.memberships` y **nadie la lee**.
+> - Faltan cuatro huérfanos de la misma familia que S6: `CloudKitGroupMetaApplyLogic`,
+>   `GroupZoneCacheGate.classify`/`.deleteCache`, `GroupFreezeLogic.zoneBlocksCloudKitWrites` y el
+>   parámetro `reachedHardCap`. Y falta **G3**: `GroupsIdentityPurgeIntent` pierde armador y drenador.
+> - `markerEnqueuedFlag` está hoy en `:194-196` (aquí `:191-193`), y **se va con el commit 1**.
+>
+> **Y el hueco que comparten los ocho:** la heurística «solo derivan las coordenadas del fichero que se
+> editó» es válida para la DERIVA y **ciega para las ALTAS**. Hay **15 ficheros de producción nuevos**
+> desde `ca06cfd5`, **11 de ellos tocan este subsistema**, y ninguno puede estar aquí.
+
+
 Objetivo: lo que queda **roto sin ruido** tras borrar el transporte. No errores de compilación —
 comportamiento que se apaga y nadie se entera. Todo con `file:línea` medido contra HEAD; nada del plan.
 No se editó ningún fichero del repo.

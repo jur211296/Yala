@@ -1,8 +1,8 @@
 ---
 created: 2026-07-29
-updated: 2026-07-30
+updated: 2026-08-04
 tags: [modo-nube, grupos, fase3, brief]
-status: blocked  # commit 0 HECHO (bc486c92) + Fase 2 bis: escritor de identidad (40a4e417) y sexto resolvedor; los commits 1 y 2 siguen bloqueados por el flag
+status: superseded-coordinates  # commit 0 HECHO (bc486c92) + Fase 2 bis; el BLOQUEO está LEVANTADO (flag compilado = true) y las coordenadas están RE-MEDIDAS en fase3-medicion/fase3-REMEDICION-2026-08-04.md
 ---
 
 # Fase 3 — brief, con las coordenadas medidas y el bloqueo que el plan no nombra
@@ -11,9 +11,38 @@ Medición del 2026-07-29 contra HEAD `ca06cfd5`, con 8 agentes en paralelo (6 mi
 refutando). Detalle completo en `docs/modo-nube/fase3-medicion/*.md` — 2.465 líneas de informe.
 El plan ([[MODO-NUBE-PLAN-SIMPLIFICACION-GRUPOS]] §3, Fase 3) marcaba sus cifras como NO VERIFICADAS.
 
+> # 🟠 COORDENADAS SUPERADAS — leer antes que nada
+>
+> **Este brief se midió contra `ca06cfd5` (2026-07-29). Desde entonces han entrado 84 commits**, y sus
+> coordenadas de `SplitSyncManager.swift` derivan hasta **+317 líneas** porque el fichero creció de 2.521
+> a **2.907**. La re-medición completa contra `dbb0bab3` (2026-08-04), con los 8 apartados y las
+> correcciones aplicadas, está en:
+>
+> ### → **[`fase3-medicion/fase3-REMEDICION-2026-08-04.md`](fase3-medicion/fase3-REMEDICION-2026-08-04.md)**
+>
+> **Úsala a ella para escribir el commit 1.** Este brief conserva el razonamiento y las decisiones
+> (que siguen siendo válidos); lo que ha caducado son los **números y las coordenadas**. Las correcciones
+> puntuales están marcadas en su sitio a lo largo del documento con **⚠️ CORREGIDO 2026-08-04**.
+>
+> **Lo que la re-medición añade y aquí no está en absoluto:** el gate de frescura
+> (`GroupChannelFreshness` + `GroupChannelFreshnessGate`, dos ficheros nuevos con 0 menciones aquí), los
+> huecos **G1/G2/G3** del des-puenteo del tombstone, los huérfanos `CloudKitGroupMetaApplyLogic` y
+> `GroupZoneCacheGate`, los **9 ficheros de test híbridos** nacidos después del 29/07 y las **16 anclas
+> de ruta literal** que fallan en runtime y no al compilar.
+
 ---
 
-## 🔴 BLOQUEO · La Fase 3 no se puede ejecutar todavía
+## ~~🔴 BLOQUEO~~ · ✅ LEVANTADO el 2026-07-30 — se conserva por su razonamiento
+
+> **⚠️ CORREGIDO 2026-08-04.** `groupsBackendCompiledDefault` es **`true`** desde `5490544d` (2026-07-30) y
+> vive en **`CloudSyncFlags.swift:285`**, no en `:266`. El canal backend está ENCENDIDO en producción
+> (`GROUPS_BACKEND_ROLLOUT_PERCENT = 100` desde `98d6415d`, 2026-07-31). **El bloqueo de esta sección ya
+> no aplica.**
+>
+> Pero su razonamiento sí, con una vuelta de tuerca: el getter sigue siendo `compilado && remoto`
+> (`:273-279`), así que **un kill remoto durante o después de la Fase 3 devuelve exactamente el escenario
+> que esta sección describe, ya sin rama a la que caer.** Eso no es un residuo teórico: es la definición
+> operativa del kill-switch.
 
 `CloudSyncFlags.swift:266` → `private static let groupsBackendCompiledDefault = false`, y
 `groupsBackendEnabled` compone `compilado && remoto`, así que el remoto **solo puede matar**.
@@ -46,13 +75,17 @@ compilado**, como su propio lote, ANTES de cualquier borrado.
 
 ## Los números medidos (y cuánto se desvían del plan)
 
-| Bloque | Plan | Medido | Nota |
+| Bloque | Plan | Medido 29/07 | **⚠️ RE-MEDIDO 2026-08-04** |
 |---|---|---|---|
-| Ficheros «enteros» (13) | 4.892 | **4.498** → **4.355** tras `bc486c92` | −384 son solo `SplitSyncManager`: **2.521**, no 2.905. El commit 0 se llevó 143 de `SplitSyncStartGate` (292→149) |
-| Recortes en ficheros vivos | no cuantificado | **~460** (139 exactas, ~321 estimadas) | `GroupService` 1.534 → ~1.075 |
-| Tests | «10 ficheros, ~2.042» | **1.855 en 15 ficheros** → **1.723** tras `bc486c92` | 9 mueren enteros (1.504) + 6 con recorte (351). El commit 0 sacó 132 de `SplitSyncStartGateTests` (395→263) |
-| Canarios y breadcrumbs | no cuantificado | **~74** | `MetricsService` 451→~433 · `GroupsSyncBreadcrumb` 213→~157 |
-| **Total** | ~6.934 | **~5.974** → **~5.699** tras `bc486c92` | |
+| Ficheros «enteros» | 4.892 (13) | **4.498** → **4.355** tras `bc486c92` | **4.744 en 14 ficheros.** El 14.º es `SoftDeleteObserverLogic.swift` (31), que este brief detecta como S6 pero no mete en la cuenta |
+| Recortes en ficheros vivos | no cuantificado | **~460** (139 exactas, ~321 estimadas) | **≥220 exactas** (89 en `GroupService`, ≥131 fuera). Los ~321 estimados de C.2 **siguen sin re-medir** |
+| Tests | «10 ficheros, ~2.042» | **1.855 en 15 ficheros** → **1.723** | **1.730 en 9 ficheros que mueren enteros**, + **9 ficheros híbridos nuevos** (3.611 líneas) que no están en esta cuenta |
+| Canarios y breadcrumbs | no cuantificado | **~74** | **8 breadcrumbs** huérfanos (eran 6) + **8 canarios** de `MetricsService` sin emisor |
+| **Total** | ~6.934 | **~5.974** → **~5.699** | **no cerrado**: depende de dónde se ponga la frontera «forzado por el compilador» vs «muerte de feature» — ver §2.5 de la re-medición |
+
+**⚠️ Los seis tamaños individuales de este brief han derivado.** Hoy: `SplitSyncManager` **2.907** (era
+2.521) · `CKRecordTranslator` **415** (437) · `SplitSyncStartGate` **149** (292) · `GroupsIdentityPurgeGate`
+**256** (253) · `CloudKitConstants` **144** (150) · `GroupUserIdentityService` **85** (88).
 
 **6 de 13 rutas del plan están mal**: apuntan a `Yala/Services/CloudSync/` cuando el transporte vive en
 `Yala/Services/Groups/`. Y `Services/CloudSync/Groups/` **sí existe**, con 14 ficheros de nombre casi
@@ -71,6 +104,16 @@ función está en `:246` (no `:236`) y los callsites en `GroupService:238`/`:318
 |---|---|---|
 | ~~`Yala/App/Logic/SplitSyncStartGate.swift` (292)~~ → **149, RESUELTO en `bc486c92`** | ~~`BootSaveGateLogic` (`:198-292`) + `WaitResolution` (`:61`) + `resolveWaitByQuiescence` (`:97-108`)~~ — ya viven en `BootSaveGateLogic.swift` | ~~reintroduce el crash-loop SIGTRAP del restore de iCloud~~ (H-2026-07-18-8) — el commit 1 ya puede borrar el fichero entero |
 | `Yala/Services/Groups/GroupUserIdentityService.swift` (~~88~~ → **85 tras `40a4e417`**) | `deterministicUUID` (`:74-84`), usado por `GroupBackendIdentityLogic.swift:38` y `GroupsSyncClient.swift:1901`, **+ el cache `cachedRecordName` (`:24-28`, `:40-47`)** — el ESCRITOR ya salió a `Services/CloudSync/Groups/` (Fase 2 bis) | rompe la derivación de ids del canal backend **y** deja el cache sin dueño |
+
+> **⚠️ CORREGIDO 2026-08-04 — «conserva `deterministicUUID` + `cachedRecordName`» se queda corto: son
+> CINCO los miembros con consumidor superviviente, no dos.** Medido miembro a miembro sobre las 85 líneas:
+> se conservan `shared` (`:22`), `cachedRecordName` (`:24`), **`currentUserRecordName()` (`:34`** — ya es
+> fachada que delega en el seed, con 3 call-sites vivos en `GroupService:140`, `:947`, `:1125`),
+> **`applySeededRecordName()` (`:40`** — lo llama el canal NUEVO, `GroupICloudIdentitySeed.swift:106`),
+> **`clearCache()` (`:44`)** y `deterministicUUID` (`:74`), más el seam `_testSetCachedRecordName` (`:62`)
+> que necesitan 6 suites. **Lo único que muere son dos miembros:** `fetchFreshRecordName()` (`:54`, cuyo
+> único caller es `SplitSyncManager:333` y que además usa `CKConstants.containerID` ⇒ muere forzado) y
+> `deterministicMemberID` (`:67`, ya con **cero** call-sites reales hoy). Detalle en §1.2 de la re-medición.
 | ~~`CKConstants` (en `CloudKitConstants.swift`)~~ → **RESUELTO en `bc486c92`** | ~~`zonePrefix`~~ (+ `zoneName(for:)`) ya vive en `SplitGroupZone` (`Yala/Models/`); el `init` de `SplitGroup.swift:102` apunta ahí | ~~se rompe la identidad de los grupos en el backend~~ — literal `"SplitGroup-"` conservado byte a byte |
 
 ---
@@ -79,14 +122,21 @@ función está en `:246` (no `:236`) y los callsites en `GroupService:238`/`:318
 
 Cuatro son **nuevos**: no están en el plan.
 
-| # | Qué se apaga | Coordenada raíz |
-|---|---|---|
-| S1 | ~20 routers `flag ? backend : transporte` se quedan eligiendo una rama que ya no existe | `CloudSyncFlags.swift:266` |
-| **S2** | `movedToBackendAt` pierde su ÚNICO escritor ⇒ el freeze del miembro y el CTA «vuelve a entrar» **nunca se activan** | `CKRecordTranslator.swift:127`, `:151` |
-| **S3** | Muere el desatasco de «esperando aprobación» y el trigger `.remoteInsert` del reconciler — sin espejo backend | `SplitSyncManager.swift:1758-1769` |
-| **S4** | «Me sacaron del grupo» deja de detectarse en vivo; queda solo la red del cold boot | `SplitSyncManager.swift:2293-2298` → `:1697-1715` |
-| S5 | Pull-to-refresh, «invitar» y «crear grupo» pasan a **no-op con spinner** | `GroupsViewModel:202` · `GroupDetailViewModel:435` · `GroupMembersView:455` |
-| **S6** | `SoftDeleteObserverLogic.swift` (31) queda huérfano total — **no está en ninguna lista del plan** | su único consumidor de producción es `SplitSyncManager` |
+| # | Qué se apaga | Coordenada raíz | **⚠️ Estado 2026-08-04** |
+|---|---|---|---|
+| S1 | ~20 routers `flag ? backend : transporte` se quedan eligiendo una rama que ya no existe | ~~`CloudSyncFlags.swift:266`~~ → **`:285`** | **6 routers mueren con su rama**, 25 eligen entre dos vivas. El único que se apaga **sin ruido** es `GroupFormView.swift:273` |
+| **S2** | `movedToBackendAt` pierde su ÚNICO escritor ⇒ el freeze del miembro y el CTA «vuelve a entrar» **nunca se activan** | `CKRecordTranslator.swift:127`, `:151` | **SE INVIERTE: la pérdida YA está consumada y su coste de usuario es CERO.** Hay un tercer escritor (`SplitGroupDeduplicationService:138`), pero es propagador, no fuente |
+| **S3** | Muere el desatasco de «esperando aprobación» y el trigger `.remoteInsert` del reconciler — sin espejo backend | ~~`SplitSyncManager.swift:1758-1769`~~ → **`:2053`** | **Partido en tres, y S3a está CERRADO** por `479e8e81`: el cover de aprobación ya tiene espejo backend en `GroupsSyncClient:1978-1994`. S3b sigue abierto, pero **su beneficio medido es nulo** |
+| **S4** | «Me sacaron del grupo» deja de detectarse en vivo; queda solo la red del cold boot | ~~`:2293-2298` → `:1697-1715`~~ → **`:2643-2647` → `:1928-1980`** | **La señal YA LLEGA al cliente y nadie la lee** (`page.memberships`: 1 escritura, 0 lecturas) ⇒ espejarlo cuesta 15–30 líneas y **0 servidor** |
+| S5 | Pull-to-refresh, «invitar» y «crear grupo» pasan a **no-op con spinner** | ~~`GroupsViewModel:202` · `GroupDetailViewModel:435` · `GroupMembersView:455`~~ → **`:203` · `:135`/`:455` · `:466`** | Abierto. La Fase 2 no lo cerró: lo **duplicó** |
+| **S6** | `SoftDeleteObserverLogic.swift` (31) queda huérfano total — **no está en ninguna lista del plan** | su único consumidor de producción es `SplitSyncManager` (**`:2643`**) | **CONFIRMADO exacto** — el único hallazgo de esta tabla que sobrevive sin una sola corrección |
+
+> **⚠️ 2026-08-04 — faltan cuatro huérfanos de la misma familia que S6, y no están en ninguna lista:**
+> `CloudKitGroupMetaApplyLogic` (único call-site de producción `SplitSyncManager:2578`),
+> `GroupZoneCacheGate.classify` / `.deleteCache` (sus 3 únicos call-sites mueren),
+> `GroupFreezeLogic.zoneBlocksCloudKitWrites` (sus 6 consumidores mueren) y el parámetro
+> `reachedHardCap` de `BootSaveGateLogic.resolveWaitByQuiescence`, que queda **inalcanzable en
+> producción**. Ver §3.3 y §6.3 de la re-medición.
 
 ### Y el peor de todos, que no es un apagón sino un colapso — ✅ RESUELTO (Fase 2 bis, `40a4e417`)
 
@@ -290,12 +340,33 @@ del flag, lo causa un estado que el encendido **encuentra ya escrito**.
 
 ## Otros dos que exigen decisión, no ejecución
 
-- **Borrar `GroupsIdentityPurgeGate` se lleva `.deleteLocalRows`** (`:201-252`), la mitad que BORRA ⇒
+- **Borrar `GroupsIdentityPurgeGate` se lleva ~~`.deleteLocalRows` (`:201-252`)~~**, la mitad que BORRA ⇒
   tras la Fase 3 no queda purga automática ante cambio de Apple ID: regresión de `31dded30` para las
   filas CloudKit-era.
-- **`isInviteLink` (`InviteLinkService:1637`) es el guard verdadero**, no el `:1733` que dice el plan; y
+
+  > **⚠️ CORREGIDO 2026-08-04 — el símbolo está mal, aquí y en el documento de control.**
+  > `deleteLocalRows` **no es una función**: es un **`case` del enum `Outcome`** (`:101`). Quien EJECUTA
+  > es **`apply(...)` (`:156`)** y el privado **`deleteRows(...)` (`:225`)**; `:204` es el
+  > `case .deleteLocalRows:` dentro de su `switch`. El rango `:201-252` no corresponde a ningún símbolo.
+  > **La sustancia se sostiene**, pero la decisión es sobre `apply`/`deleteRows`, no sobre el `case`.
+  >
+  > **Y falta la mitad que muerde: `GroupsIdentityPurgeIntent` pierde ARMADOR y DRENADOR a la vez**
+  > (hueco G3). Sus **cuatro** call-sites (`:1530`, `:1531`, `:1625`, `:1671`) están dentro de
+  > `SplitSyncManager.swift`, igual que el retome `resumeDeferredIdentityPurgeIfNeeded` (`:1529-1535`).
+  > Un usuario que actualice con el intent YA ARMADO en disco **nunca ejecuta la purga**, en silencio y
+  > para siempre — y es una purga de **privacidad** (C-3). Es exactamente la trampa que se evitó a
+  > propósito con `GroupsPendingBridgeResume`. **Ningún grep lo delata**: el símbolo sigue dando 20 hits.
+
+- ~~**`isInviteLink` (`InviteLinkService:1637`) es el guard verdadero**, no el `:1733` que dice el plan; y
   si se conserva la condición `groupsBackendEnabled` de `:1705`, con el flag OFF `handleInviteLink` queda
-  **mudo**.
+  **mudo**.~~
+
+  > **⚠️ CADUCADO 2026-08-04, y sus coordenadas nunca existieron.** `InviteLinkService.swift` tiene **270
+  > líneas** y `isInviteLink` está en **`:222`**; los `:1637`/`:1705`/`:1733` son de `AppBootstrapper.swift`.
+  > **El fondo tampoco aplica ya:** el enrutado se rehizo con `GroupInviteChannelRoutingLogic`
+  > (`AppBootstrapper.swift:1855-1900`) y existe una rama **`.backendUnavailable` explícita** que persiste
+  > el intent, emite el canario `groupJoinIntentDeferred` y muestra `.showGroupSyncError` con copy correcto
+  > ⇒ **con un kill remoto `handleInviteLink` ya no queda mudo.** No re-litigar.
 
 ---
 
@@ -329,7 +400,23 @@ Build `Yala` + `Yala Dev` verdes sin warnings nuevos; **5.221 tests / 483 suites
   solo los 5 enums de campos, y `zonePrefix` nunca fue uno de ellos. Lo único que quedó obsoleto es el
   comentario de `:74`, que usaba `zonePrefix` como ejemplo del fallo de parseo; corregido a una formulación
   genérica. El adelanto de este test al commit 2 sigue en pie: el fichero que lee muere ahí.
-- ⚠️ **DEUDA para el commit 2, nueva. Y son 9 celdas, no 8** (verificado en la otra Mac el 2026-07-29):
+- ⚠️ **DEUDA para el commit 2, nueva.** ~~**Y son 9 celdas, no 8**~~ (verificado en la otra Mac el 2026-07-29):
+
+  > **⚠️ CORREGIDO 2026-08-04 — son 8, y este brief se contradice a sí mismo.** Esta viñeta dice «9
+  > celdas»; el párrafo operativo de **Commit 2** dice «las 8 celdas». **El correcto es 8:**
+  > `mirrorNotConfirmedOff_matrixUnchanged` habla de la matriz del mirror y no pertenece al rescate.
+  > Quien construya el commit leyendo el párrafo operativo hace lo correcto.
+  >
+  > **Y la justificación de abajo es la equivocada.** «Sin el rescate se queda prácticamente sin cobertura»
+  > es falso: `resolveWaitByQuiescence` conserva 9 llamadas indirectas vía `decide` **más** una directa en
+  > `BootSaveGateLogicTests.swift:141-146` que **ya ejercita `reachedHardCap: true → .start`**, la misma
+  > aserción que `resolveByQuiescence_hardCap_startsRegardless`. **Lo que sí queda descubierto es la matriz
+  > de la rama empty-store** (celdas `:147`, `:157`, `:168`) **y las celdas `.keepWaiting`** (`:108`,
+  > `:118`, `:137`). Cambia la justificación, no la recomendación: se rescatan igual.
+  >
+  > **Consecuencia nueva:** tras el commit 1 el único llamador que pasa `reachedHardCap: true`
+  > (`SplitSyncManager:693`, era `:630`) desaparece ⇒ **el parámetro queda inalcanzable en producción.**
+
   a las ocho `resolveByQuiescence_*` hay que sumar **`mirrorNotConfirmedOff_matrixUnchanged`**, cuyo nombre
   habla de la matriz del mirror pero que ejercita la función igual. Quien mueva «las 8» dejará ese caso
   atrás. En el fichero nuevo la función solo tiene HOY **una** llamada indirecta
@@ -351,11 +438,26 @@ Build `Yala` + `Yala Dev` verdes sin warnings nuevos; **5.221 tests / 483 suites
 `GroupMembersView`, `GroupSettingsView`, `GroupsViewModel`, `GroupJoinIntentTracker`, `iCloudSyncService`,
 `InviteLinkService`, `RouterIntent`, `SplitGroup` y **`DataWipeService`**.
 
-**Commit 2 — tests y coverage.** Los 8 ficheros de test del transporte (1.681 menos las **132** movidas en
-el commit 0) **+ las 8 celdas de `resolveWaitByQuiescence` que hay que RESCATAR de
-`SplitSyncStartGateTests.swift` antes de borrarlo** (ver la deuda del commit 0) + **`CloudKitGroupsSchemaParityTests.swift` (157), adelantado de la Fase 4** porque lee
-`CloudKitConstants.swift` por RUTA y el fichero muere aquí + las **5 áreas** de `qa/coverage-index.json`
-+ `_meta.counts`.
+**Commit 2 — tests y coverage.** ~~Los 8 ficheros de test~~ **los 9 ficheros de test** del transporte
+(**1.730 líneas**, `CloudKitGroupsSchemaParityTests.swift` incluido — adelantado de la Fase 4 porque lee
+`CloudKitConstants.swift` por RUTA, confirmado en `:43`) **+ las 8 celdas de `resolveWaitByQuiescence` que
+hay que RESCATAR de `SplitSyncStartGateTests.swift` antes de borrarlo** (ver la deuda del commit 0) + las
+~~5~~ **9 áreas** de `qa/coverage-index.json` + `_meta.counts`.
+
+> **⚠️ CORREGIDO 2026-08-04 — cuatro cosas de este párrafo.**
+> **(1) Son 9 ficheros, 1.730 líneas:** `GroupsIdentityPurgeGateTests` 452 · `CKRecordTranslatorTests` 429
+> · `SplitSyncStartGateTests` 263 · `CloudKitGroupsSchemaParityTests` 157 · `SplitSyncManagerTests` 136 ·
+> `PendingInviteStoreTests` 125 · `CKRecordTranslatorSanitizeTests` 76 · `GroupsIdentityBootGuardLogicTests`
+> 52 · `GroupsICloudAvailabilityGateLogicTests` 40.
+> **(2) Son 9 áreas del índice, no 5.** Las 5 lo son por `codeGlobs`; las **citas a suites borradas**
+> tocan 7 áreas, de las que 4 no están en esa lista: `groups-notifications-deeplinks`,
+> `icloud-sync-multi-device`, `groups-backend-g2-sync-channel`, `groups-backend-g4-invites`.
+> **(3) Faltan los HÍBRIDOS.** Este brief solo contempla ficheros que mueren enteros; hay **9 ficheros de
+> test nuevos** (3.611 líneas) acoplados al transporte y **16 anclas de ruta literal** sobre ficheros
+> condenados. Un source-scan sobre un fichero borrado **lanza en RUNTIME, no rompe la compilación** ⇒ un
+> build verde no dice nada de ellos.
+> **(4) `Yala.xcodeproj/project.pbxproj` NO necesita edición** (usa `PBXFileSystemSynchronizedRootGroup`):
+> `git rm` basta. Detalle en §6 de la re-medición.
 
 ### Trampas del índice de cobertura
 
@@ -371,6 +473,22 @@ el commit 0) **+ las 8 celdas de `resolveWaitByQuiescence` que hay que RESCATAR 
 - El criterio de salida `grep -r "import CloudKit"` del plan **no escanea `App/Logic/`**, donde
   sobreviven `GroupJoinReconcileLogic.swift:15` y `GroupAcceptShareErrorLogic.swift:23` — ninguno en las
   listas del plan.
+
+  > **⚠️ AMPLIADO 2026-08-04 — el problema es mayor: el criterio no puede dar 0 ni arreglando el punto
+  > ciego.** El grep del plan da **8 ficheros** hoy, y **cuatro de ellos SOBREVIVEN al commit 1**, dentro
+  > de las carpetas que sí escanea: `GroupService.swift`, `GroupUserIdentityService.swift`,
+  > `InviteLinkService.swift` y `GroupInviteOnboardingView.swift`. ⇒ **el criterio tiene que ser una lista
+  > NOMINAL de supervivientes esperados, no un cero.**
+  >
+  > Y hay una consecuencia que no es documental: **el criterio falso está CODIFICADO en un test vivo** —
+  > `YalaTests/GroupICloudIdentitySeedTests.swift:59-65` define `transportDirectories` citando literalmente
+  > ese grep. Tocar el criterio toca ese test.
+  >
+  > **Además, el commit 1 NO saca CloudKit del subsistema de Grupos**, y es deliberado:
+  > `Yala/Services/CloudSync/Groups/GroupICloudIdentitySeed.swift` (130 líneas, la pieza de la Fase 2 bis)
+  > tiene `import CloudKit` en `:32` y un fetch **vivo** a `CKContainer(...).userRecordID()` en `:51-53`.
+  > El canal backend superviviente depende de una identidad que solo ese fetch puede sembrar.
+  > Ver §8 de la re-medición, con el grep-freno propuesto.
 
 ---
 

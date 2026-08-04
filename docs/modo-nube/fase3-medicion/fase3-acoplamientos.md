@@ -1,5 +1,29 @@
 # Fase 3 · Bloque ACOPLAMIENTOS — medición contra HEAD `ca06cfd5`
 
+> ## 🟠 SUPERADO — medición del 2026-07-29 contra `ca06cfd5`
+>
+> **Desde este HEAD han entrado 84 commits.** Las coordenadas de `SplitSyncManager.swift` derivan hasta
+> **+317 líneas** (el fichero pasó de 2.521 a **2.907**) y `SplitSyncStartGate.swift` adelgazó de 292 a
+> **149** con el commit 0. La re-medición completa contra `dbb0bab3` (2026-08-04) está en
+> **[`fase3-REMEDICION-2026-08-04.md`](fase3-REMEDICION-2026-08-04.md)** — **úsala a ella para escribir
+> el commit 1.**
+>
+> Este informe se conserva como registro de lo que se midió y por qué; **lo que midió era correcto para
+> su HEAD** (verificado: 10 de 10 tamaños exactos contra `ca06cfd5`). Lo que lo supera es lo escrito
+> después. Deltas propios de este informe:
+>
+> - `GroupService.swift:249` es hoy **`:294`**.
+> - La superficie externa de `SplitSyncManager` creció en **4 símbolos**: `resumeDeferredIdentityPurgeIfNeeded`,
+>   `forgetBridged`, `hasCompletedFetchCycleOnAllEngines` y `zoneFetchFailedThisSession`.
+> - **45 líneas de call-site** en 14 ficheros supervivientes (eran 41).
+> - Falta el gate de frescura entero (`GroupChannelFreshness` + `GroupChannelFreshnessGate`), que no
+>   existía el 29/07 y es el acoplamiento más delicado que ha aparecido.
+>
+> **Y el hueco que comparten los ocho:** la heurística «solo derivan las coordenadas del fichero que se
+> editó» es válida para la DERIVA y **ciega para las ALTAS**. Hay **15 ficheros de producción nuevos**
+> desde `ca06cfd5`, **11 de ellos tocan este subsistema**, y ninguno puede estar aquí.
+
+
 Todas las cifras y coordenadas de este documento salen de medición directa contra el árbol de trabajo en
 `ca06cfd5`. Donde el plan (`$VAULT/Backlog/modo-nube/MODO-NUBE-PLAN-SIMPLIFICACION-GRUPOS.md`, §Fase 3,
 líneas 258-289) da un número o una línea, se compara. **No se editó ningún fichero del repo.**

@@ -1,5 +1,29 @@
 # Fase 3 · lente `usa-el-backend` — medición contra HEAD `ca06cfd5` (branch 2.0.5)
 
+> ## 🟠 SUPERADO — medición del 2026-07-29 contra `ca06cfd5`
+>
+> **Desde este HEAD han entrado 84 commits.** Las coordenadas de `SplitSyncManager.swift` derivan hasta
+> **+317 líneas** (el fichero pasó de 2.521 a **2.907**) y `SplitSyncStartGate.swift` adelgazó de 292 a
+> **149** con el commit 0. La re-medición completa contra `dbb0bab3` (2026-08-04) está en
+> **[`fase3-REMEDICION-2026-08-04.md`](fase3-REMEDICION-2026-08-04.md)** — **úsala a ella para escribir
+> el commit 1.**
+>
+> Este informe se conserva como registro de lo que se midió y por qué; **lo que midió era correcto para
+> su HEAD** (verificado: 10 de 10 tamaños exactos contra `ca06cfd5`). Lo que lo supera es lo escrito
+> después. Deltas propios de este informe:
+>
+> - **El commit 1 NO saca CloudKit del subsistema de Grupos**, y es deliberado:
+>   `GroupICloudIdentitySeed.swift` (130 líneas, superviviente) tiene `import CloudKit` (`:32`) y un
+>   fetch vivo a `CKContainer(...).userRecordID()` (`:51-53`). El canal backend depende de esa identidad.
+> - La mitad backend del des-puenteo es **más fuerte** que la CloudKit en tres invariantes, pero **no la
+>   cubre**: los dos guards son complementarios por construcción (hueco **G1**).
+> - El criterio de salida del plan **no puede dar 0**: cuatro de sus 8 hits actuales sobreviven.
+>
+> **Y el hueco que comparten los ocho:** la heurística «solo derivan las coordenadas del fichero que se
+> editó» es válida para la DERIVA y **ciega para las ALTAS**. Hay **15 ficheros de producción nuevos**
+> desde `ca06cfd5`, **11 de ellos tocan este subsistema**, y ninguno puede estar aquí.
+
+
 **Pregunta única:** ¿qué código marcado para MORIR en la Fase 3 usa TODAVÍA el canal BACKEND?
 Todas las coordenadas salen de medición propia (`grep -n`, `wc -l`, `sed -n`) sobre HEAD. Ningún fichero
 del repo fue editado. Árbol sucio solo en `screenshots-appstore/` (PNG).

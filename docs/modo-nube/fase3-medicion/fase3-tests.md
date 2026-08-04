@@ -1,5 +1,30 @@
 # Fase 3 · Commit 2 (tests) — medición contra HEAD `ca06cfd5`
 
+> ## 🟠 SUPERADO — medición del 2026-07-29 contra `ca06cfd5`
+>
+> **Desde este HEAD han entrado 84 commits.** Las coordenadas de `SplitSyncManager.swift` derivan hasta
+> **+317 líneas** (el fichero pasó de 2.521 a **2.907**) y `SplitSyncStartGate.swift` adelgazó de 292 a
+> **149** con el commit 0. La re-medición completa contra `dbb0bab3` (2026-08-04) está en
+> **[`fase3-REMEDICION-2026-08-04.md`](fase3-REMEDICION-2026-08-04.md)** — **úsala a ella para escribir
+> el commit 1.**
+>
+> Este informe se conserva como registro de lo que se midió y por qué; **lo que midió era correcto para
+> su HEAD** (verificado: 10 de 10 tamaños exactos contra `ca06cfd5`). Lo que lo supera es lo escrito
+> después. Deltas propios de este informe:
+>
+> - Los que mueren enteros son **9 ficheros / 1.730 líneas** (medido hoy).
+> - **Faltan 9 ficheros de test NUEVOS** posteriores al 29/07 con acoplamiento al transporte,
+>   **3.611 líneas**: el corpus acoplado casi se ha triplicado desde esta medición.
+> - **Faltan las 16 anclas de ruta literal** sobre ficheros condenados. Un source-scan sobre un fichero
+>   borrado **lanza en RUNTIME, no rompe la compilación** ⇒ un build verde no dice nada de ellas.
+> - Son **8** celdas de `resolveWaitByQuiescence` a rescatar, y la justificación correcta es la matriz
+>   **empty-store**, no el hard cap (que ya está cubierto en `BootSaveGateLogicTests:141-146`).
+>
+> **Y el hueco que comparten los ocho:** la heurística «solo derivan las coordenadas del fichero que se
+> editó» es válida para la DERIVA y **ciega para las ALTAS**. Hay **15 ficheros de producción nuevos**
+> desde `ca06cfd5`, **11 de ellos tocan este subsistema**, y ninguno puede estar aquí.
+
+
 Todas las cifras salen de `wc -l` / `grep -n` contra el árbol de trabajo en `/Users/jur/Yala`.
 Nada viene del plan. Rutas absolutas: prefija `/Users/jur/Yala/`.
 
