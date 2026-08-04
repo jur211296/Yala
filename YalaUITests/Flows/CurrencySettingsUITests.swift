@@ -55,6 +55,14 @@ final class CurrencySettingsUITests: XCTestCase {
         // Cerrar el picker (la selección ya se aplicó al togglear).
         app.buttons["secondary_currency_done"].tap()
 
+        // El picker se DESMONTA: `secondaryButton` es del fondo y sigue en el árbol
+        // mientras el sheet esté puesto, así que afirmar su existencia no probaría el
+        // regreso (medido 2026-08-04). La señal es que el picker desapareció.
+        XCTAssertTrue(
+            app.buttons["secondary_currency_done"].waitForNonExistence(timeout: 5),
+            "El picker de divisa secundaria no se cerró tras «Listo»."
+        )
+
         // El display de divisas secundarias debe reflejar EUR.
         XCTAssertTrue(secondaryButton.waitForExistence(timeout: 5), "No volvió a CurrencySettingsView.")
         let showsEUR = secondaryButton.label.contains("EUR") || secondaryButton.staticTexts["EUR"].exists

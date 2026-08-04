@@ -59,7 +59,13 @@ final class SecondaryCurrencyPromptUITests: XCTestCase {
         editAccount(app, named: "Cuenta Principal")
         app.buttons["toolbar_save_button"].tap()
 
-        // Sin prompt: el editor se cierra y volvemos a la lista (accounts_add_button visible).
+        // Sin prompt: el editor se CIERRA. Hay que afirmar su desmontaje, no la lista: con el
+        // editor abierto `accounts_add_button` sigue en el árbol de fondo, así que este test
+        // pasaba incluso sin guardar — justo el caso que debía cazar (medido 2026-08-04).
+        XCTAssertTrue(
+            app.buttons["toolbar_save_button"].waitForNonExistence(timeout: 5),
+            "El editor no se cerró tras guardar — ¿apareció el prompt de divisa secundaria?"
+        )
         XCTAssertTrue(
             app.buttons["accounts_add_button"].waitForExistence(timeout: 5),
             "El editor no se cerró tras guardar la cuenta con la divisa preferida (¿prompt inesperado?)."

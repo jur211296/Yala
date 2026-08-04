@@ -66,7 +66,13 @@ final class ProfileSettingsUITests: XCTestCase {
         XCTAssertTrue(save.waitForExistence(timeout: 5), "No apareció tabconfig_save.")
         save.tap()
 
-        // El sheet de configuración cierra y volvemos al editor de "Más".
+        // El sheet de configuración cierra y volvemos al editor de "Más". El desmontaje va
+        // PRIMERO: `more_editor_tabbar_button` es del fondo y sigue en el árbol con el sheet
+        // puesto, así que por sí sola su existencia no prueba el regreso (medido 2026-08-04).
+        XCTAssertTrue(
+            app.buttons["tabconfig_save"].waitForNonExistence(timeout: 5),
+            "El sheet de configuración de tabs no se cerró tras guardar."
+        )
         XCTAssertTrue(
             app.buttons["more_editor_tabbar_button"].waitForExistence(timeout: 5),
             "Tras guardar la configuración no se volvió al editor de Más."
