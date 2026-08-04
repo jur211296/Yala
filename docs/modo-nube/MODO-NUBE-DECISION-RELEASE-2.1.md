@@ -455,6 +455,87 @@ sobre el iPhone conectado, filtrando por `GroupsSync`**: los breadcrumbs de este
 firma útil: «un `session-expired` sin su `loopRestarted` posterior = canal muerto que nadie re-arrancó».
 Ojo, el comando `log stream --device` **ya no existe** en macOS 26+; hay que usar Console.app.
 
+#### Los DOS defectos que dejó la validación adversarial de `dbda8378`, cerrados el 2026-08-02
+
+Ninguno de los dos es de migración: recuperar los cursores envenenados y los gastos varados lo **descartó el
+owner** (población real: sus dos teléfonos, dos gastos de prueba). Estos afectan a usuarios FUTUROS.
+
+**1 · En el teléfono que solo RECIBE, el barrido crecía sin tope en cada vuelta** — `eb353901`
+
+Qué le pasaba al usuario: en el móvil de alguien que solo recibe gastos de un grupo —el caso más común, la
+mayoría de los miembros lee más de lo que escribe— cada ciclo de sincronización volvía a repasar TODO lo
+acumulado desde el arranque, y ese repaso se encarecía sin techo. No se perdía nada; se gastaba CPU y memoria
+en el camino del sync, en silencio.
+
+La causa es una línea que decidía dos cosas a la vez. El drain descartaba el ECO (`tx.author ==
+outboxSaveAuthor`) con un `continue` colocado **antes** del avance del high-water. En un device que solo
+recibe, las ÚNICAS transacciones de su store de Grupos son las que escribe su propio pull (`applyPulledPage`
+persiste los `Split*` bajo ese autor) ⇒ `sawGroupsStoreTx` se encendía —bloqueando el suelo del barrido— y
+`advancedToken` se quedaba `nil` —porque el `continue` llegaba antes— ⇒ **ninguna de las tres ramas escribía
+el cursor**, jamás.
+
+**La decisión, y es lo que no se ve leyendo:** «es mía, no la re-emitas» y «no es de mi store» son razones
+DISTINTAS y estaban confundidas. La primera decide **qué se traduce**; la segunda, **dónde se ancla**. El fix
+las separa: el eco sigue sin emitirse nunca, pero sí mueve el ancla si es del store de Grupos.
+
+**Y el bucle que el comentario original daba como motivo para no avanzar («cada avance escribiría el cursor →
+loop») ya no existe**, y por eso se pudo tocar: era real cuando el ancla no estaba acotada al store, pero hoy
+los únicos writes del propio drain —`GroupSyncOutbox` y `GroupSyncCursor`— viven en `syncMetaSchema` y NO en
+`groupsSchema`, así que avanzar no genera ninguna transacción del store de Grupos y la vuelta siguiente no
+tiene nada nuevo que anclar. Eso no se dejó como argumento: lo mide
+`drain_afterAnchoringOnEcho_idleTurnsWriteNothing`, que cae si alguien quita el guard de store.
+
+Archivos: `Yala/Services/CloudSync/Groups/GroupsSyncClient.swift` (el bucle del drain, `performDrain`) ·
+`YalaTests/CloudSync/GroupsDrainHistoryStoreAnchorTests.swift` (+6 tests, §«Device que solo RECIBE», uno de
+ellos un contrato MEDIDO de plataforma: un `save()` que toca dos stores produce DOS transacciones, una por
+store — que es la premisa de todo lo anterior) · `.claude/rules/swiftdata-cloudkit.md` (la regla durable) ·
+`qa/coverage-index.json`. **2 mutaciones, exit 65 las dos**: reponer el `continue` del eco antes del avance
+(2 rojos: el ancla y el suelo) y quitar el guard de store (7 rojos, incluido el del drain ocioso — el que
+prueba que no hay bucle).
+
+**2 · El test de la purga de History lo decidía el SCHEME** — `e80781a1`
+
+`CloudSyncRuntimeTests › syncCycle_bothFlagsOn_purgesHistoryAfterCompletedCycle` pasaba con `-scheme Yala` y
+daba exit 65 con `-scheme "Yala Dev"`, mismo commit y misma máquina. `Yala Dev` define `DEV_BUILD` ⇒ corre el
+piggyback de Grupos ⇒ existe el `GroupSyncCursor` con su `lastDrainedTxAt` ⇒ ese valor entra como suelo en
+`deleteHistorySafeCut` (que devuelve `floors.min()`) ⇒ la purga no puede bajar a 0.
+
+**El arreglo fue del TEST y la aserción NO se relajó** (sigue siendo `== 0`): lo que cambia es que la
+precondición pasa a estar **fijada dentro del test** (`groupsBackendEnabled = false` +
+`defer { _testResetGroupsBackendEnabledOverride() }`) en vez de heredada del scheme. Y el caso que el scheme
+ejercitaba por accidente —que es **el de producción** con el rollout al 100 %— gana test propio:
+`syncCycle_bothFlagsOn_neverPurgesPastTheGroupsFloor` afirma que la purga llega EXACTAMENTE hasta el suelo
+(nada por debajo del corte sobrevive, algo se purgó, y queda History por encima). El piggyback se inyecta por
+`runtime.groupsSyncCycleRunner` con un `GroupsSyncClient` PROPIO, no el singleton, que arrastraría estado
+entre tests y no tiene `_testReset()`.
+
+**2 mutaciones, exit 65 las dos**: quitar la precondición devuelve el rojo ORIGINAL literal —exit 65 con
+`Yala Dev`, exit 0 con `Yala`, o sea que reproduce el bug reportado con scheme y todo— y quitar
+`groupDrainedBoundary` de `deleteHistorySafeCut` tumba el test nuevo por `after > 0`. Ficha de la Lista Negra
+de `TESTING-STRATEGY.md` cerrada.
+
+**Gate**: build ✓ en los dos schemes (solo los 3 warnings de línea base). Suite completa `Yala Dev`
+**5380 tests / 502 suites, exit 0, 0 restarts**; `Yala` **5377 / 501, exit 0** saltando la suite de abajo.
+`qa/validate-coverage.sh` → `RESULT: OK`. Conteos tomados DESPUÉS del rebase sobre `83051688` (el fix del
+des-puenteo), que entró en el remoto mientras esta tanda estaba sin publicar y aporta su propia suite. Los
+dos cambios se cruzan en tres ficheros y **ninguno choca de fondo**: `83051688` no toca el drain ni el ancla
+(`advancedToken`, `sawGroupsStoreTx`, `outboxSaveAuthor`, `performDrain`, `isGroupsStoreTransaction`: cero
+coincidencias) ni añade ningún `save()` fuera de `saveWithAuthor`, así que la premisa de este fix —el pull
+escribe los `Split*` bajo el autor del canal— queda intacta. `GroupsSyncClient.swift` auto-mergeó; los
+conflictos fueron de la regla y del índice, los dos «ambos añadimos», resueltos conservando las dos partes.
+
+**Un rojo PREEXISTENTE que destapó el gate, y NO es de esta tanda.**
+`InitialBalanceServiceMultiCurrencyTests` (3 tests) **crashea el proceso** —`SIGABRT`, no falla una
+aserción— bajo `-scheme Yala`. Exonerado por medición: se reproduce idéntico en el árbol LIMPIO desde
+`278fd608` con los ficheros del cambio revertidos por `git checkout --`. Frame del crash:
+`persistRate(context:)` → SwiftData → `NSManagedObjectContext.performAndWait` → `objc_exception_rethrow`,
+o sea una excepción de CoreData dentro del `save()`, de las que el `do/catch` de Swift no atrapa. Dos
+hipótesis DESCARTADAS con medición, no con razonamiento: **no es el contenedor sucio del host** (desinstalados
+`com.jurgenschmidt.yala` y `.dev`, sigue) y **no es flaky** — es determinista y depende del CONJUNTO: aislada
+crashea en los dos schemes, y dentro de la suite completa crashea con `Yala` y **pasa** con `Yala Dev`.
+Primera hipótesis a medir: su `ModelContainer` in-memory monta un `Schema` escrito a mano con 9 modelos en
+vez de `SwiftDataConfiguration.personalSchema`. Registrado en la Lista Negra como ABIERTA.
+
 ### Descartado
 
 - **Todo en un build**: más rápido, pero mezcla las dos clases de fallo.
