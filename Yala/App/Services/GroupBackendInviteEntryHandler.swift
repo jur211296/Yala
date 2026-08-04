@@ -121,9 +121,34 @@ enum GroupBackendInviteEntryHandler {
     ///     perdía la única llave del device.
     ///  2. **Identidad iCloud**: la fila cuyo `cloudKitUserRecordID == cachedRecordName`. Es el peldaño que
     ///     mantiene vivo el caso común (2º device / reinstalación / restore con el mismo Apple ID), donde el
-    ///     flag llega apagado y NADIE lo enciende: `refreshCurrentUserFlags` deja el flag como está en una
-    ///     zona del canal backend (`GroupService:1119` y `:1145-1154`), así que la fuente 1 no es «tardía»
-    ///     ahí, es permanentemente ciega.
+    ///     flag llega apagado —`isCurrentUser` es device-local y no viaja: ni `CKRecordTranslator` ni
+    ///     `GroupsSyncClient.applyMember` lo escriben nunca— y **ningún camino PASIVO lo enciende** mientras
+    ///     la zona sea del canal backend. `refreshCurrentUserFlags` la deja fuera por DOS caminos, no uno:
+    ///     sin sesión Yala su guard `memberIsInBackendChannel && !backendCanResolve` salta el member ENTERO,
+    ///     y CON sesión la rama que resuelve por `sub` exige `SplitMember.userID`, que esta fila no tiene
+    ///     —la llave CloudKit y la identidad backend viven en filas distintas por diseño: la born-remote deja
+    ///     `cloudKitUserRecordID` vacío—, así que cae en la rama que CONSERVA el valor previo. ⇒ la fuente 1
+    ///     no es «tardía» aquí: está ciega hasta que el re-join tenga éxito y el pull ADOPTE esta misma fila
+    ///     (`GroupsSyncClient.fetchSplitMember` la casa por su fallback `cloudKitUserRecordID == member_key`
+    ///     y le escribe `userID`), o sea justo DESPUÉS de que la llave hiciera falta.
+    ///
+    ///     Tres precisiones MEDIDAS el 2026-08-03, al auditar si esto seguía siendo cierto (lo es, y por
+    ///     poco): (i) «nadie» es **nadie pasivo** — `GroupService.ensureCurrentUserMemberExists` sí enciende
+    ///     el flag por record-name y NO lleva guard de canal propio; lo que lo mantiene lejos son sus
+    ///     call-sites, los tres del camino CloudKit (`GroupJoinReconciler` lo prohíbe explícitamente en la
+    ///     rama backend). (ii) La ceguera vale **módulo una fila por zona**: el `memberIsInBackendChannel`
+    ///     del refresh sale de un `Dictionary(uniquingKeysWith: { first, _ in first })` sobre un fetch SIN
+    ///     `sortBy`, así que en una zona con duplicado MIXTO puede resolver `false` y entonces el flag sí se
+    ///     enciende — es el último «decide mirando UNA fila» de la familia del punto 11 de
+    ///     `.claude/rules/swiftdata-cloudkit.md`. (iii) Que `refreshCurrentUserFlags` ganara una rama que
+    ///     resuelve por `sub` **no alcanza a este peldaño**, y es el error fácil de cometer al leerlo: esa
+    ///     rama solo cubre members born-backend o ya adoptados, y el filtro de la era CloudKit de esta
+    ///     cascada (`!cloudKitUserRecordID.isEmpty`) los excluye por construcción.
+    ///
+    ///     **Sin números de línea a propósito.** Los que había (`GroupService:1119` y `:1145-1154`) eran
+    ///     EXACTOS al escribirse y hoy el mismo código está +91 líneas más abajo; peor que morir, esas dos
+    ///     posiciones aterrizan ahora en otro guard que también retorna temprano y en el comentario del
+    ///     backfill, así que seguían PARECIENDO correctas y nada delataba la deriva. Cita símbolos.
     ///  3. **Cache a pelo, SOLO si la zona no tiene censo de la era CloudKit** (ninguna fila con
     ///     `cloudKitUserRecordID`). Con censo y sin match se devuelve `nil`: `migrate_group` construye los
     ///     placeholders desde ese mismo censo, así que una llave que ninguna fila respalda no puede ser MI
