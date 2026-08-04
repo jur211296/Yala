@@ -33,6 +33,9 @@ const env = {
   SUPABASE_URL: URL,
   SUPABASE_ANON_KEY: ANON,
   GROUPS_ENC_KEY: ENC_KEY,
+  // OBLIGATORIO desde el kill-switch server-side: fail-closed (ausente → percent 0 → 403 en `/groups/push`,
+  // que es lo que dispara el fan-out de este fichero). Ver src/groups/killSwitch.ts.
+  GROUPS_BACKEND_ROLLOUT_PERCENT: "100",
 } as unknown as Env;
 
 let jwtA = "";

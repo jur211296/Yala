@@ -422,6 +422,15 @@ coverage-index; `core.hooksPath` está vacío). Lo comprueba un hook `PreToolUse
 **Hoy:** apagar `groupsBackendEnabled` en remoto devuelve Grupos al canal CloudKit. Es un kill-switch real, de
 segundos, sin build nuevo.
 
+> **Precisión del 2026-08-03 — «de segundos» y «por device» eran falsos cuando se escribió esto, y ahora son
+> ciertos por un cambio concreto.** Hasta ese día el percent solo cambiaba lo que publicaba `GET /config`: las
+> rutas de `/groups/*` no lo consultaban, así que un device con el valor viejo cacheado seguía usando el canal
+> 6 h o más (y sin techo real: no hay refresh en foreground). Lo que lo vuelve inmediato es
+> `gateway/src/groups/killSwitch.ts`, que rechaza con 403 `yala_groups_disabled`. Dos correcciones al cuadro
+> de abajo: el alcance de la vuelta es **GLOBAL, no «por device»** —lo aplica el gateway, no el cliente— y el
+> percent es un KILL, no un rollout: cualquier valor > 0 no frena a nadie server-side. Detalle completo y las
+> dos cosas que el kill NO apaga: **[[MODO-NUBE-ROLLBACK]] §6**.
+
 **Tras la Fase 3:** apagarlo deja Grupos **sin ningún canal**. El flag remoto solo puede MATAR, nunca encender
 (`CloudSyncFlags.swift:257-262` compone «compilado && remoto»), así que apagarlo con el transporte ya borrado
 significa que la app se queda sin ninguna vía de sync de grupos.
@@ -429,8 +438,8 @@ significa que la app se queda sin ninguna vía de sync de grupos.
 | | Antes de la Fase 3 | Después de la Fase 3 |
 |---|---|---|
 | **Mecanismo** | flag remoto `groupsBackendEnabled` → OFF | **revertir el build** (revert de los commits + release nueva por TestFlight) |
-| **Tiempo** | segundos | horas o días |
-| **Alcance de la vuelta** | inmediata y por device | ~40 ficheros + 4 `.ckdb` + re-deploy de schema a CloudKit Production + change tokens ya descartados |
+| **Tiempo** | segundos (desde el 2026-08-03; ver la nota de arriba) | horas o días |
+| **Alcance de la vuelta** | inmediata y **GLOBAL** (la aplica el gateway) | ~40 ficheros + 4 `.ckdb` + re-deploy de schema a CloudKit Production + change tokens ya descartados |
 | **¿Sirve de hotfix?** | sí | **no** |
 
 **Acción concreta, y es requisito de entrada de la Fase 3: HECHA (2026-07-29)** → **[[MODO-NUBE-ROLLBACK]]**,

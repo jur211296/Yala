@@ -1,6 +1,6 @@
 ---
 created: 2026-07-29
-updated: 2026-07-31
+updated: 2026-08-03
 tags: [modo-nube, grupos, rollback, runbook]
 status: active
 ---
@@ -8,10 +8,15 @@ status: active
 # ROLLBACK de Grupos — runbook
 
 **Para qué existe.** Hasta ahora, si Grupos se rompía en producción había un botón: apagar
-`groupsBackendEnabled` en remoto y el canal volvía a CloudKit en segundos, sin build nuevo. **La Fase 3
+`groupsBackendEnabled` en remoto y el canal volvía a CloudKit, sin build nuevo. **La Fase 3
 borra el transporte CloudKit**, así que ese botón deja de devolver nada: apagarlo dejaría Grupos sin
 ningún canal. Desde entonces el único rollback es **revertir el build**, y eso hay que tenerlo escrito
 ANTES de necesitarlo — cuando algo se rompa, nadie va a reconstruir esta lista.
+
+> **Corrección del 2026-08-03 — este documento decía «en segundos» y era FALSO.** Lo dijo en dos sitios
+> (aquí y en el §3) durante todo el encendido, y es una frase que se lee en mitad de un incidente. Hasta
+> ese día el percent no cortaba nada para los devices; ahora sí, y el §6 nuevo explica el mecanismo, su
+> límite y las dos cosas que el kill NO apaga.
 
 Requisito de entrada de la Fase 3 ([[MODO-NUBE-PLAN-SIMPLIFICACION-GRUPOS]] §6).
 
@@ -25,9 +30,14 @@ el binario y lo único que lo separa de estar vivo es el percent remoto. El §5 
 día del encendido, y esto es lo que ocupa su sitio.
 
 **Lo que sigue siendo cierto y conviene no confundir:** el flip no encendió el canal por sí solo. El
-getter compuesto exige además `CloudRemoteFlags.groupsBackendEnabled`, y
-`GROUPS_BACKEND_ROLLOUT_PERCENT` sigue en `0` en producción hasta que el owner lo suba y despliegue
-(paso 3). Mientras tanto Grupos sigue funcionando por CloudKit para todo el mundo.
+getter compuesto exige además `CloudRemoteFlags.groupsBackendEnabled`, o sea el percent remoto.
+
+~~`GROUPS_BACKEND_ROLLOUT_PERCENT` sigue en `0` en producción hasta que el owner lo suba y despliegue
+(paso 3). Mientras tanto Grupos sigue funcionando por CloudKit para todo el mundo.~~ **FALSO desde el
+2026-07-31**, cuando corrió el paso 3: el percent está en **100** (`gateway/wrangler.toml`,
+`[env.production.vars]`, verificado con `curl .../config`) y el canal backend es el vivo para todo device
+con `5490544d` y sesión de nube. Esta frase sobrevivió tres días diciendo lo contrario del estado real —y
+es la primera que se lee al abrir el runbook—; corregida el 2026-08-03 al cablear el kill server-side.
 
 **Lo que SÍ cambió el mismo día que el flip, y es lo que vuelve caliente este documento:** los paths de
 **teardown** dejaron de leer el getter compuesto y leen la capacidad COMPILADA
@@ -107,6 +117,10 @@ Qué entra en este commit, además del flip:
   cuenta ejecuta igualmente `groups_forget_user`. Si el kill se activó porque `/groups/*` está roto, ese
   RPC falla y el borrado queda bloqueado hasta que se levante. Es retraso-de-borrado frente a
   retención-permanente-de-PII, y la dirección está elegida a conciencia (§D-R1).
+  **Precisión del 2026-08-03, que es la que importa aquí:** «roto» y «apagado» dejaron de ser lo mismo. El
+  kill server-side EXCEPTÚA `groups_forget_user` (§6), así que un apagado deliberado **no** bloquea el
+  borrado — solo lo bloquea que el canal esté de verdad caído. Lo que el apagado sí bloquea es **cerrar
+  sesión**, que exige drenar el outbox por `/groups/push`.
 
 > **Nota de proceso (§5):** el commit del flip no podía contener su propio hash, así que lo anotó el commit
 > de docs inmediatamente posterior. Es la tercera vez que pasa en esta épica (el commit 0 de la Fase 3 y el
@@ -282,9 +296,9 @@ código y no solo desde aquí.
 
 | | Antes de la Fase 3 | Después |
 |---|---|---|
-| **Mecanismo** | flag remoto `groupsBackendEnabled` → OFF | revertir el build + release por TestFlight |
-| **Tiempo** | segundos | horas o días (incluye revisión de App Store si es release pública) |
-| **Alcance** | inmediato, por device | ~40 ficheros + 4 `.ckdb` + re-deploy de schema a CloudKit Production |
+| **Mecanismo** | `GROUPS_BACKEND_ROLLOUT_PERCENT` → `"0"` + deploy del Worker | revertir el build + release por TestFlight |
+| **Tiempo** | segundos — **y esto es cierto solo desde el 2026-08-03**, ver §6 | horas o días (incluye revisión de App Store si es release pública) |
+| **Alcance** | inmediato y GLOBAL (lo aplica el gateway, no el device) | ~40 ficheros + 4 `.ckdb` + re-deploy de schema a CloudKit Production |
 | **¿Sirve de hotfix?** | sí | **no** |
 
 **El flag remoto sigue existiendo después de la Fase 3, pero deja de ser un rollback.** Su único uso
@@ -312,3 +326,82 @@ final útil según el plan.
 - **Cuando corra el paso 3** (subir `GROUPS_BACKEND_ROLLOUT_PERCENT` y desplegar el Worker), anotarlo en el
   **§2** — es una acción de infraestructura que git no refleja — y revisar el §3, porque a partir de ahí
   el flag remoto sí es un rollback de verdad hasta que la Fase 3 borre el transporte CloudKit.
+- **Si se añade una ruta nueva bajo `/groups/*` o un RPC nuevo a `PARAM_ALLOWLIST`, clasificarlo en el §6**
+  y en `gateway/src/groups/killSwitch.ts`: ¿es una ENTRADA (gate compuesto en el cliente → el kill la
+  corta) o un TEARDOWN (gate compilado → exenta)? Sin esa decisión, una ruta nueva nace **sin kill** y el
+  §6 vuelve a describir un botón que no apaga todo lo que dice. El conteo de exentos lo vigila
+  `gateway/test/groups.killswitch.test.ts`.
+- **Una afirmación de LATENCIA de este documento no se escribe sin medirla.** El «en segundos» del §3 y de
+  la cabecera sobrevivió a todo el encendido siendo falso, y las frases de este runbook se leen justo
+  cuando nadie tiene tiempo de verificarlas. Hoy hay dos latencias distintas conviviendo (el kill de
+  Grupos, inmediato y server-side; los otros dos percents, hasta 6 h y solo cliente): al tocar cualquiera
+  de las dos, decir CUÁL.
+
+---
+
+## 6 · El kill-switch de Grupos: qué apaga, en cuánto, y las DOS cosas que no apaga
+
+**Hasta el 2026-08-03 este runbook mentía sobre su propio botón.** `GROUPS_BACKEND_ROLLOUT_PERCENT` lo
+leían solo `gateway/src/config.ts` (para publicarlo en `GET /config`) y `gateway/src/env.ts` (para
+declararlo). Las rutas de grupos —`/groups/push`, `/groups/pull`, `/groups/merkle`, `/groups/rpc/:fn`— no
+lo consultaban **jamás**. Consecuencia medida: bajarlo a `"0"` y desplegar cambiaba la respuesta de
+`/config` en segundos, pero **un device que ya tenía el 100 cacheado seguía usando el canal 6 horas o más**,
+y el gateway se lo aceptaba. Medido también en la dirección contraria el mismo día: un iPhone real se quedó
+con `groupsBackendEnabled == false` durante horas DESPUÉS de subir el percent a 100 — el invitado abría el
+enlace de invitación y la app no hacía nada. Mismo mecanismo, mismo retraso, síntoma distinto.
+
+**Y «6 horas» es el PISO, no el techo** (medido al cablear el kill): `refreshMinInterval` es el intervalo
+MÍNIMO entre dos fetches de `/config`, y los únicos disparadores son el boot, el `onAppear` de Ajustes →
+Almacenamiento y el del onboarding — **no hay refresh en foreground ni por timer**. Para un device que no
+relance la app ni pase por esas pantallas, un flip del percent puede tardar **indefinidamente**. Es la razón
+de fondo de que el corte tenga que vivir en el servidor.
+
+**Qué lo arregla.** `gateway/src/groups/killSwitch.ts`: las cuatro rutas consultan el percent y, con 0,
+responden **403 `yala_groups_disabled`** antes de tocar PostgREST. El pin es
+`gateway/test/groups.killswitch.test.ts` (offline: staging sirve los tres percents al 100 y corre
+`ENFORCE = "observe"`, así que ahí esta familia de fallos es invisible — y a producción no se puede
+llamar desde un test).
+
+### Lo que el kill NO es: un rollout
+
+`0` ⇒ rechaza. **Cualquier valor > 0 ⇒ NO rechaza**, y decide el cliente con su bucket. No puede ser de
+otra forma: el bucket sale de `RemoteFlagDecisionLogic.stableBucket(seed:)` sobre un seed de
+**instalación** que jamás sale del device (al gateway solo llega un SHA-256 truncado, y solo en el payload
+de `/metrics`). Calcularlo server-side desde otra cosa —el `sub`, el keyId, la IP— produciría una
+partición DISTINTA de la del cliente: devices ON por un lado y OFF por el otro, split-brain que no se ve
+hasta que alguien pone un valor intermedio.
+
+⇒ **poner `"50"` no frena a nadie en el gateway.** Para un escalón gradual sigue mandando el cliente, con
+su ventana de 6 h. Lo inmediato es solo el 0.
+
+### Lo que el kill NO apaga, y por qué
+
+| | Qué pasa con el kill activo | Por qué |
+|---|---|---|
+| **Borrar la cuenta** | **Funciona.** `groups_forget_user` está EXENTO | El cliente ya lo exceptúa: `GroupBackendMembershipService.forgetUser()` usa `ensureEligibleForTeardown()` (capacidad COMPILADA) porque el kill «no debe dejar al usuario sin poder ejercer su derecho de supresión mientras durase». Un servidor que corte más que el cliente reintroduce esa retención de PII por el otro lado |
+| **Cerrar sesión** | **BLOQUEADO** mientras el kill esté activo, pero **con vía de escape** | El sign-out exige drenar el outbox de grupos por `/groups/push` y **jamás descarta filas** (`CloudSessionSignOut`, los dos caminos que empujan grupos). Con el push rechazado queda `.blocked` con el alert de conexión de siempre — reintentable, outbox intacto. Es el precio de que el kill pare las ESCRITURAS, que es la mitad peligrosa. Ratificado por el owner el 2026-08-03. **Si alguien queda atascado en un incidente, la salida existe y no hay que improvisarla:** la fila «Salir de Yala en este dispositivo» (`rowLayout` → `.groupsSignOutPlusExitYala`) NO hace push-all y siempre completa |
+
+Los otros 9 RPCs de la allowlist (crear, invitar, revocar, unirse, aprobar, expulsar, salir, renombrarse,
+transferir ownership) son ENTRADAS, todos con gate COMPUESTO en el cliente, y el kill los corta.
+
+### Qué ve la app, y qué hace con ello
+
+El 403 no es cosmético: es lo que hace el rechazo distinguible de un transitorio **sin bucle de
+reintentos**. `GroupsSyncClient` (push y pull) y `GroupsMerkleClient` ya mapeaban 403 →
+`.accountUnavailable` → `SyncCadencePolicy.stopUntilRelaunch`; lo que se añadió es el breadcrumb que
+distingue el apagado deliberado de una cuenta suspendida (con un 503 habrían caído en `.transient` →
+backoff exponencial para siempre contra un veredicto definitivo, que es la clase de bug del 2026-07-31).
+Y en los RPCs, `GroupsRPCError.channelDisabled`: no entra en el retry, **conserva** el intent de join y le
+dice al invitado `groups.invite.channelUnavailable` («el enlace es bueno, el canal está apagado») con el
+canario `groupJoinIntentDeferred|backendChannelOff` — la MISMA copy y el MISMO canario que el camino en
+que el flag local ya estaba OFF, porque es el mismo estado del mundo visto por el otro lado.
+
+### El poder que se le está dando, dicho aquí a propósito
+
+**Un percent mal puesto tumba el canal para todo el mundo al instante.** Antes un error de tecleo se
+notaba despacio y a medias; ahora se aplica. Eso es exactamente lo que se pidió —parada inmediata— y por
+eso hay que escribirlo donde se lee antes de tocarlo: es una palanca global, no un escalón.
+
+**Y lo que NO cambia:** tras la Fase 3 (que borra el transporte CloudKit) un percent a 0 dejará Grupos
+**inoperativo**, no «vuelto a CloudKit». Eso ya está en el §3 y este cambio no lo altera: solo hace el
+apagado inmediato, lo que lo vuelve **más** peligroso, no menos.

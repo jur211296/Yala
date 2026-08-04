@@ -15,8 +15,20 @@ type Ctx = Context<{ Bindings: Env }>;
  * bucket estable por instalación y queda dentro si bucket < percent (escalón gradual §j.2 desde
  * el día 1). Ausente/inválido → 0 (fail-closed server-side). Cache pública corta: gobierna el
  * cache CLIENT-side (URLCache del device — Cloudflare NO cachea en el edge respuestas generadas
- * por Workers sin Cache API, y a ≤1 req/instalación/6h el costo de invocación es trivial); un
- * flip tarda ≤ CONFIG_CACHE_MAX_AGE en propagar (aceptado: el kill corta ENTRADAS, no runtime).
+ * por Workers sin Cache API, y a ≤1 req/instalación/6h el costo de invocación es trivial).
+ *
+ * ⚠️ **Un flip NO tarda `CONFIG_CACHE_MAX_AGE` en propagar a los devices, y las «6 h» son un PISO, no un
+ * techo.** La frase original decía que un flip tardaba ≤ 300 s: engañoso — los 300 s son el techo del cache
+ * HTTP, pero el cliente no vuelve a PEDIR este endpoint hasta que su propia ventana vence
+ * (`RemoteFlagDecisionLogic.refreshMinInterval = 6 * 60 * 60`). Y ese intervalo es solo el MÍNIMO entre dos
+ * fetches: los únicos disparadores son el boot (`AppBootstrapper`), el `onAppear` de Ajustes →
+ * Almacenamiento y el del onboarding — **no hay refresh en foreground ni por timer**. ⇒ para un device que
+ * no relance la app ni entre en esas pantallas, un flip puede tardar **indefinidamente**. Medido en device
+ * en las dos direcciones el 2026-07-31 (6 h fue lo observado, no el límite).
+ *
+ * Bajar `refreshMinInterval` NO es el arreglo (habría ventana igual, y más tráfico): el arreglo es que el
+ * SERVIDOR corte, y eso solo existe hoy para el canal de Grupos (`groups/killSwitch.ts`). Los otros dos
+ * percents siguen con esta latencia sin techo.
  */
 const CONFIG_CACHE_MAX_AGE = 300;
 

@@ -918,11 +918,22 @@ final class GroupService {
         return balances.contains { $0.memberID == meID && abs($0.netBalance) > 0.01 }
     }
 
-    /// Transitorio (reintentable por el resume) vs permanente. `member_not_found` NUNCA llega aquí (lo
-    /// atrapan `batchLeave`/`transferOwnershipThenLeave`).
+    /// REINTENTABLE por el resume (`.deferred`) vs permanente (`.failed`, estado TERMINAL del batch).
+    /// `member_not_found` NUNCA llega aquí (lo atrapan `batchLeave`/`transferOwnershipThenLeave`).
+    ///
+    /// `.channelDisabled` (403 del kill-switch server-side de Grupos) va en la rama reintentable, y es
+    /// EXPLÍCITO y no por el `default` a propósito: antes de que ese caso existiera, el 403 llegaba aquí
+    /// como `.transient(status: 403)` ⇒ `.deferred`, y dejarlo caer en el `default: false` habría
+    /// convertido en FALLO TERMINAL —para cada grupo del batch— lo que antes era un diferido que el resume
+    /// recogía. El canal se levanta con un deploy y sin que el usuario haga nada, así que marcar `.failed`
+    /// le obligaría a rehacer a mano un batch que iba a funcionar solo. Es la misma decisión que
+    /// `GroupBackendAcceptErrorLogic.isPermanent(.channelDisabled) == false`.
+    ///
+    /// ⚠️ Este `default` es el único catch-all sobre `GroupsRPCError` en todo `Yala/`: al añadir un caso al
+    /// enum, clasifícalo AQUÍ a mano — el compilador no avisa, y el silencio cae del lado de `.failed`.
     private static func isTransientRPC(_ error: GroupsRPCError) -> Bool {
         switch error {
-        case .transient, .sessionExpired: return true
+        case .transient, .sessionExpired, .channelDisabled: return true
         default: return false
         }
     }

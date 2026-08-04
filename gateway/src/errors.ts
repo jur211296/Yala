@@ -16,6 +16,9 @@ export type YalaErrorType =
   | "yala_quota_daily"
   | "yala_quota_burst"
   | "yala_unavailable"
+  /// Kill-switch de Grupos: `GROUPS_BACKEND_ROLLOUT_PERCENT = 0` ⇒ 403 en las 4 rutas de `/groups/*`.
+  /// Apagado DELIBERADO, jamás transitorio — el cliente NO debe reintentarlo (ver `groups/killSwitch.ts`).
+  | "yala_groups_disabled"
   | "yala_bad_request"
   | "yala_bad_input"
   | "yala_account_reverting"

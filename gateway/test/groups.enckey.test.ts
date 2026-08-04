@@ -63,6 +63,10 @@ function makeEnv(overrides: Partial<Env> = {}): Env {
     ENFORCE: "observe",
     SUPABASE_URL: SUPA,
     SUPABASE_ANON_KEY: "anon-key-unit",
+    // OBLIGATORIO desde el kill-switch server-side: `parseRolloutPercent` es fail-closed (ausente → 0)
+    // y con 0 las 4 rutas de `/groups/*` cortan con 403 ANTES del guard de la llave, así que sin esta
+    // línea todo este fichero probaría el kill en vez de `GROUPS_ENC_KEY`. Ver src/groups/killSwitch.ts.
+    GROUPS_BACKEND_ROLLOUT_PERCENT: "100",
     ...overrides,
   } as unknown as Env;
 }

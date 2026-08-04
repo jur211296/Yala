@@ -78,15 +78,32 @@ struct GatewayErrorEnvelope: Decodable {
     struct Inner: Decodable { let type: String? }
     let error: Inner?
 
+    /// Código del 403 del kill-switch server-side de Grupos (`gateway/src/groups/killSwitch.ts`): el
+    /// canal está apagado A PROPÓSITO porque `GROUPS_BACKEND_ROLLOUT_PERCENT` está en 0. UN solo literal
+    /// en todo el cliente — el gateway tiene el suyo y son las dos mitades del mismo contrato de wire.
+    static let groupsDisabledType = "yala_groups_disabled"
+
+    /// `true` si el body es el 403 del kill-switch de Grupos. Existe para que el canal apagado no se
+    /// confunda con «cuenta suspendida» (el otro 403 que estas rutas pueden devolver) ni con un fallo
+    /// transitorio: sin distinguirlo, la app dice «inténtalo en unos minutos» sobre un veredicto que
+    /// ningún reintento cambia, y nadie sabe que es un apagado deliberado — la clase de bug que costó el
+    /// 2026-07-31. Molde de `isAccountReverting`.
+    static func isGroupsChannelDisabled(_ data: Data) -> Bool {
+        decodedType(data) == groupsDisabledType
+    }
+
     /// `true` si el body es el 409 del freeze de la reversa (§h.1).
     static func isAccountReverting(_ data: Data) -> Bool {
-        let decoded: GatewayErrorEnvelope?
+        decodedType(data) == "yala_account_reverting"
+    }
+
+    /// El `error.type` del envelope, o `nil` si el body no es uno del gateway (body ajeno → el caller decide).
+    private static func decodedType(_ data: Data) -> String? {
         do {
-            decoded = try JSONDecoder().decode(GatewayErrorEnvelope.self, from: data)
+            return try JSONDecoder().decode(GatewayErrorEnvelope.self, from: data).error?.type
         } catch {
-            decoded = nil // body ajeno sin envelope del gateway → no es el freeze (el caller decide).
+            return nil
         }
-        return decoded?.error?.type == "yala_account_reverting"
     }
 }
 

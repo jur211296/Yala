@@ -76,11 +76,18 @@ final class CloudSessionSignOut {
     /// siguiente no ve la pantalla y el canal subiría bajo un `user_id` que jamás consintió) y las filas
     /// `Split*` visibles del que se fue. El camino `.groupsOnlySignOut` es el único que limpia las tres.
     ///
-    /// No hay riesgo de dejar al usuario encerrado: el transporte NO consulta el flag
+    /// No hay riesgo de dejar al usuario encerrado, y desde el 2026-08-03 la razón es SOLO la segunda mitad
+    /// de esta frase: este mismo path es el que hace pintar la fila de escape «Salir de Yala en este
+    /// dispositivo» (`rowLayout` → `.groupsSignOutPlusExitYala`), que no hace push-all y siempre completa.
+    /// Con el compuesto bajo kill esa fila ni siquiera existe.
+    ///
+    /// ⚠️ **CORRECCIÓN**: la primera mitad decía que «el transporte NO consulta el flag
     /// (`syncCycleOnce`/`pushPending` solo miran outbox y token), así que el push-all drena con el kill
-    /// activo; y si aun así bloqueara, este mismo path es el que hace pintar la fila de escape
-    /// «Salir de Yala en este dispositivo» (`rowLayout` → `.groupsSignOutPlusExitYala`), que no hace
-    /// push-all y siempre completa. Con el compuesto bajo kill esa fila ni siquiera existe.
+    /// activo». Lo del transporte sigue siendo cierto —no consulta ningún flag— pero la CONCLUSIÓN ya no lo
+    /// es: el kill se aplica ahora en el SERVIDOR (`gateway/src/groups/killSwitch.ts`), que responde 403
+    /// `yala_groups_disabled` a `/groups/push`. ⇒ con el kill activo el push-all **NO drena** y el cierre
+    /// queda `.blocked` (reintentable, outbox intacto). Está asumido y ratificado por el owner: el kill
+    /// existe para parar las escrituras. Lo que salva al usuario es la fila de escape, no que el push pase.
     func signOut(context: ModelContext) async {
         guard phase == .idle else { return }
         switch CloudSignOutFlowLogic.path(

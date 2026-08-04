@@ -235,4 +235,43 @@ struct GroupBatchLeaveOrchestratorTests {
         #expect(GroupBatchLeaveStore.entry(groupZoneID: "B")?.phase == .inProgress)  // en vuelo → conservada
         #expect(!GroupBatchLeaveStore.wasStopped)
     }
+
+    // MARK: - Clasificación de errores del RPC (source-scan del ÚNICO catch-all sobre GroupsRPCError)
+
+    /// `GroupService.isTransientRPC` es `private static` y decide entre `.deferred` (el resume lo recoge) y
+    /// `.failed` (fase TERMINAL: el grupo queda marcado como fallo permanente y el usuario tiene que rehacer
+    /// el batch a mano). Su `default: return false` es el ÚNICO catch-all sobre `GroupsRPCError` en todo
+    /// `Yala/`, así que **el compilador no avisa** al añadir un caso al enum y el silencio cae del lado
+    /// destructivo.
+    ///
+    /// El pin es un source-scan porque la función es privada y su consumidor —`resumeOne`— también: un test
+    /// conductual exigiría exponer dos seams nuevos para fijar una tabla de clasificación de 13 casos. Molde
+    /// de los source-scan de `GroupsSyncHardeningTests` §(8) y `AttestWiringTests`.
+    ///
+    /// Lo que fija: `.channelDisabled` (403 del kill-switch server-side) está en la rama REINTENTABLE. Antes
+    /// de que ese caso existiera el 403 llegaba aquí como `.transient(status: 403)` ⇒ `.deferred`; dejarlo
+    /// caer en el `default` convertía en fallo terminal —para CADA grupo del batch— lo que antes era un
+    /// diferido que el resume recogía solo, y el canal se levanta con un deploy sin que el usuario haga nada.
+    @Test("isTransientRPC clasifica channelDisabled como REINTENTABLE, no en el default destructivo")
+    func isTransientRPC_classifiesChannelDisabledAsRetryable() throws {
+        let src = try String(
+            contentsOf: Self.repoRoot.appendingPathComponent("Yala/Services/Groups/GroupService.swift"),
+            encoding: .utf8)
+        let start = try #require(src.range(of: "private static func isTransientRPC("))
+        let body = String(src[start.upperBound...].prefix(400))
+        let trueBranch = try #require(body.range(of: "return true"))
+        let branch = String(body[..<trueBranch.upperBound])
+
+        #expect(branch.contains(".channelDisabled"),
+                "channelDisabled cayó al `default: return false` → el batch lo marcaría .failed TERMINAL")
+        // Y los dos que ya estaban, para que el fix no se cuele quitando otro de la rama.
+        #expect(branch.contains(".transient"))
+        #expect(branch.contains(".sessionExpired"))
+    }
+
+    private static var repoRoot: URL {
+        URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()  // YalaTests/
+            .deletingLastPathComponent()  // repo root
+    }
 }

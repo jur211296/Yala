@@ -107,8 +107,17 @@ APNS_KEY_ID = "7H6BUZWKKS"
 # no depende del canje (`SIWAExchangeCapture.dispatch` es best-effort con tope de 4 s).
 SIWA_KEY_ID = "PQ53RQ5D3G"
 # Remote-config del cliente (GET /config, DIFERIDOS #34).
-# Kill-switch de cualquiera de los tres: volver a "0" + `npm run deploy:production` (corta ENTRADAS,
-# no runtime). Usar el script de npm y no `wrangler` a pelo: su `predeploy` sincroniza el manifest.
+# Kill-switch de cualquiera de los tres: volver a "0" + `npm run deploy:production`. Usar el script de
+# npm y no `wrangler` a pelo: su `predeploy` sincroniza el manifest.
+#
+# ⚠️ LOS TRES NO SON IGUALES DE RÁPIDOS, y esto se lee en mitad de un incidente:
+#   · GROUPS_BACKEND → INMEDIATO. Desde el 2026-08-03 las cuatro rutas de `/groups/*` consultan el
+#     percent y rechazan con 403 `yala_groups_disabled` (`src/groups/killSwitch.ts`), así que el deploy
+#     corta el canal para todo el mundo al instante.
+#   · CLOUD_MODE y CLOUD_ONBOARDING_CHOICE → hasta 6 HORAS. Nadie los enforza server-side: solo cambian
+#     lo que publica `GET /config`, y un device que ya tenga el valor viejo cacheado sigue con él hasta
+#     que refresque (`RemoteFlagDecisionLogic.refreshMinInterval = 6 * 60 * 60`). Estos dos siguen
+#     cortando solo ENTRADAS, y con retraso. No los leas por analogía con el de Grupos.
 #
 # CLOUD_MODE en 100 desde el 2026-07-30, y NO es un valor de tránsito: es el estado que exige la
 # decisión de migración de 2.1 —«la migración vive en Ajustes y la usa quien la busque, sin prompt,
@@ -123,9 +132,30 @@ CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT = "0"
 # .groupsBackendEnabled`, así que el flip compilado de `5490544d` era un NO-OP hasta esta línea.
 #
 # **ESTE es el kill-switch de Grupos, y es el único rollback rápido que queda.** Volver a "0" +
-# `npm run deploy:production` apaga el canal en segundos y devuelve las creaciones nuevas a CloudKit,
-# sin release. Tras la Fase 3 (que borra el transporte CloudKit) apagarlo dejará Grupos INOPERATIVO:
-# desde entonces es contención, no vuelta atrás — ver §3 de MODO-NUBE-ROLLBACK.
+# `npm run deploy:production` apaga el canal y devuelve las creaciones nuevas a CloudKit, sin release.
+# Tras la Fase 3 (que borra el transporte CloudKit) apagarlo dejará Grupos INOPERATIVO: desde entonces es
+# contención, no vuelta atrás — ver §3 de MODO-NUBE-ROLLBACK.
+#
+# **«En segundos» era FALSO hasta el 2026-08-03, y ahora es verdad por una razón concreta.** Este percent
+# lo leían SOLO `config.ts` y `env.ts`: las rutas de grupos no lo consultaban jamás, así que el deploy
+# cambiaba `GET /config` al instante pero un device con el 100 cacheado SEGUÍA usando el canal hasta 6 h
+# (`RemoteFlagDecisionLogic.refreshMinInterval`) y el gateway se lo aceptaba. Medido también al revés el
+# 2026-07-31: un iPhone real siguió con el canal OFF durante horas después de subir el percent a 100, y
+# el invitado abría el enlace y la app no hacía nada. Lo que lo vuelve inmediato es
+# `src/groups/killSwitch.ts`, que rechaza con 403 en `/groups/push|pull|merkle|rpc/:fn`.
+#
+# **El servidor aplica el KILL, no el ROLLOUT:** `0` ⇒ rechaza; CUALQUIER valor > 0 ⇒ no rechaza y decide
+# el cliente con su bucket. No puede ser de otra forma — el seed del bucket es de instalación y jamás
+# sale del device, así que un percent intermedio calculado server-side partiría la cohorte de otra manera
+# que el cliente (split-brain). ⇒ **poner 50 aquí NO frena a nadie en el gateway.**
+#
+# **Y el poder que esto da, dicho donde se ve: un percent mal puesto tumba el canal para TODO el mundo al
+# instante.** Eso es deliberado (es lo que se pedía), pero antes un error de tecleo se notaba despacio y
+# ahora no se nota: se aplica. Dos consecuencias operativas que hay que conocer ANTES de bajarlo:
+#   · CERRAR SESIÓN queda bloqueado mientras el kill esté activo (el sign-out exige drenar el outbox de
+#     grupos por `/groups/push` y jamás descarta filas). Es reintentable y el outbox queda intacto.
+#   · BORRAR LA CUENTA sigue funcionando: `groups_forget_user` está EXENTO del kill a propósito (el
+#     derecho de supresión no se suspende por una decisión de configuración). Ver killSwitch.ts.
 #
 # Alcance real hoy: solo lo ven builds con `5490544d` (el compilado en `true`), y con sesión de nube
 # viva — sin sesión, `startIfEligible` retorna en su primer guard. Es decir, los dos teléfonos del

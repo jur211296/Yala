@@ -29,6 +29,7 @@ import {
 } from "./manifest";
 import { canonRowC1Group, merkleColumnsGroup } from "./canon";
 import { requireEncKey } from "./encKey";
+import { groupsChannelKilled } from "./killSwitch";
 import { CanonError } from "../sync/canon";
 import { entityHash, hex, leafChannel1, leafChannel2, merkleRoot } from "../sync/merkle";
 import type {
@@ -86,6 +87,15 @@ export async function requireUserAndAttest(c: Ctx): Promise<AuthedUser | Respons
 // -------------------------------------------------------------------------------------- /groups/push
 
 export async function handleGroupsPush(c: Ctx): Promise<Response> {
+  // Kill-switch PRIMERO, antes de la auth. Tres razones, y la segunda es la que importa en un incidente:
+  // (1) un kill-switch no puede caerse por una dependencia (misma doctrina que `handleConfig`, que se
+  // sirve sin auth ni bindings); (2) DETERMINISMO del mensaje — con el canal apagado el cliente ve
+  // SIEMPRE el apagado deliberado, y nunca un 401 o un 429 intermitente que lo mandaría a re-firmar o a
+  // un backoff sobre un veredicto que ningún reintento cambia; (3) no hay oráculo que proteger: el
+  // percent es PÚBLICO en `GET /config`, sin auth.
+  const killed = groupsChannelKilled(c.env);
+  if (killed) return killed;
+
   const auth = await requireUserAndAttest(c);
   if (auth instanceof Response) return auth;
 
@@ -347,6 +357,10 @@ function redactGroupUpstream(body: unknown): unknown {
 const PULL_GROUP_CONCURRENCY = 6;
 
 export async function handleGroupsPull(c: Ctx): Promise<Response> {
+  // Kill-switch PRIMERO (racional completo en `handleGroupsPush`).
+  const killed = groupsChannelKilled(c.env);
+  if (killed) return killed;
+
   const auth = await requireUserAndAttest(c);
   if (auth instanceof Response) return auth;
 
@@ -476,6 +490,10 @@ export async function handleGroupsPull(c: Ctx): Promise<Response> {
  * user no es member, todas las tablas vienen vacías por RLS → root de corpus vacío (sin oráculo).
  */
 export async function handleGroupsMerkle(c: Ctx): Promise<Response> {
+  // Kill-switch PRIMERO (racional completo en `handleGroupsPush`).
+  const killed = groupsChannelKilled(c.env);
+  if (killed) return killed;
+
   const auth = await requireUserAndAttest(c);
   if (auth instanceof Response) return auth;
 

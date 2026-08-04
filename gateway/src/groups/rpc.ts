@@ -23,12 +23,16 @@ import { verifySessionToken, type SessionClaims } from "../attest/session";
 import { gateRequest } from "../ratelimit";
 import { bearerToken, callRpc, verifyUserToken } from "../sync/userauth";
 import { requireEncKey } from "./encKey";
+import { KILL_EXEMPT_RPCS, groupsChannelKilled } from "./killSwitch";
 
 type Ctx = Context<{ Bindings: Env }>;
 
 // ALLOWLIST de RPCs + de sus params (del DDL supabase-groups-staging.ddl). create_group tiene 10 params
 // tras g3_01_create_group_full_meta (los 3 nuevos con DEFAULT). groups_forget_user no lleva params.
-const PARAM_ALLOWLIST: Record<string, Set<string>> = {
+// Exportada para que `test/groups.killswitch.test.ts` derive de AQUÍ la lista de RPCs a clasificar (kill vs
+// exento) en vez de copiarla a mano: con un espejo manual, un RPC nuevo nacería sin clasificar y ningún test
+// lo notaría. Solo se lee en tests — el handler la usa directamente.
+export const PARAM_ALLOWLIST: Record<string, Set<string>> = {
   create_group: new Set([
     "p_group_id",
     "p_name",
@@ -94,11 +98,24 @@ async function requireUserAndAttest(c: Ctx): Promise<AuthedUser | Response> {
 // ---------------------------------------------------------------------------------- /groups/rpc/:fn
 
 export async function handleGroupsRpc(c: Ctx): Promise<Response> {
-  // Auth PRIMERO: no revelar la allowlist de RPCs a un caller anónimo (sin oráculo de fn existentes).
+  const fn = c.req.param("fn") ?? "";
+
+  // Kill-switch ANTES de la auth (racional en `groups/routes.ts::handleGroupsPush`), con la EXCEPCIÓN del
+  // teardown: `groups_forget_user` pasa siempre, porque el cliente ya lo exceptúa por capacidad compilada
+  // y bloquearlo aquí le quitaría al usuario su derecho de supresión mientras durase el kill (detalle en
+  // `killSwitch.ts`). Leer `fn` antes del guard NO rompe el invariante de la línea siguiente: con el kill
+  // activo, un `fn` inexistente y uno de la allowlist reciben el MISMO 403, así que sigue sin haber
+  // oráculo de qué RPCs existen. Lo único distinguible es `groups_forget_user`, cuyo nombre ya es público
+  // en el DDL y en el runbook.
+  if (!KILL_EXEMPT_RPCS.has(fn)) {
+    const killed = groupsChannelKilled(c.env);
+    if (killed) return killed;
+  }
+
+  // Auth ANTES de la allowlist: no revelar la allowlist de RPCs a un caller anónimo.
   const auth = await requireUserAndAttest(c);
   if (auth instanceof Response) return auth;
 
-  const fn = c.req.param("fn") ?? "";
   const allowedParams = PARAM_ALLOWLIST[fn];
   if (!allowedParams) {
     // fn fuera de la allowlist (fake_fn, apply_group_delta, …): 404 sin llamar a PostgREST.

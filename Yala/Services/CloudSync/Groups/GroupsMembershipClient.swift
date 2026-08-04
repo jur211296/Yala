@@ -32,6 +32,13 @@ enum GroupsRPCError: Error, Equatable {
     case ownerCannotLeave        // yala_owner_cannot_leave
     /// HTTP 400 con un `yala_*` fuera de los 8 conocidos (A5) — rechazo PERMANENTE, jamás reintentable.
     case permanentRejected(code: String)
+    /// 403 `yala_groups_disabled` — el KILL-SWITCH server-side del canal está puesto
+    /// (`GROUPS_BACKEND_ROLLOUT_PERCENT = 0`). Apagado DELIBERADO, no un fallo de red: `callWithRetry`
+    /// NO lo reintenta (solo reintenta `.transient`), y el caller debe tratarlo como «vuelve más tarde»
+    /// CONSERVANDO la intención del usuario — el canal se levantará sin que él haga nada. Este caso
+    /// existe porque el device puede tener el percent viejo cacheado hasta 6 h
+    /// (`RemoteFlagDecisionLogic.refreshMinInterval`): el cliente cree ON y el servidor ya dice OFF.
+    case channelDisabled
     /// 5xx / no-yala / transporte / respuesta no-HTTP. `status == -1` = error de transporte/no-HTTP.
     case transient(status: Int)
     /// 200 pero el body no decodifica al struct esperado.
@@ -196,8 +203,9 @@ final class GroupsMembershipClient {
     private static let neverRetryTransient: Set<String> = ["create_group", "create_group_invite"]
 
     /// Envuelve `call` con retry SOLO de `.transient` ([R5]): delays fijos `[1s, 3s]` (3 intentos máx).
-    /// JAMÁS reintenta `sessionExpired`/`permanentRejected`/los `yala_*` mapeados/`decoding` (reintentar
-    /// un rechazo permanente sería loop). Los RPCs de `neverRetryTransient` (one-shots creadores) NO
+    /// JAMÁS reintenta `sessionExpired`/`permanentRejected`/`channelDisabled`/los `yala_*` mapeados/
+    /// `decoding` (reintentar un rechazo permanente sería loop; el kill-switch del canal no se levanta en
+    /// 3 s, y girar sobre él solo gastaría batería y llenaría el log del gateway). Los RPCs de `neverRetryTransient` (one-shots creadores) NO
     /// reintentan NINGÚN `.transient` — ni transporte -1 ni 5xx/502 con respuesta (ambigüedad
     /// ack-perdido-post-COMMIT en ambos saltos; ver la tabla). Un `.transient` que agota el presupuesto
     /// SUBE al call-site tal cual — el caller NO debe loopearlo (los reintentos de nivel superior son
@@ -263,6 +271,19 @@ final class GroupsMembershipClient {
             return data
         case 401:
             throw GroupsRPCError.sessionExpired
+        case 403 where GatewayErrorEnvelope.isGroupsChannelDisabled(data):
+            // Kill-switch del canal (`gateway/src/groups/killSwitch.ts`). Se discrimina por el CÓDIGO del
+            // envelope y no por el status a secas, y el porqué NO es «también llega `yala_pro_required`»:
+            // eso sería falso — `limitsFor` da límites de `sync` a los DOS tiers (`gateway/src/policy.ts`:
+            // «Modo Nube es GRATIS»), así que `gateRequest` nunca devuelve null-limits en estas rutas. La
+            // razón es que un 403 puede venir de algo que NO es el kill (un proxy o WAF por delante del
+            // Worker, un guard futuro), y ese caso tiene que conservar su comportamiento de HOY —
+            // `.transient`, con retry—: un `case 403:` pelado lo habría cambiado de paso, sin que nadie lo
+            // pidiera, y habría convertido un fallo de infraestructura en un «canal apagado» permanente.
+            #if DEBUG
+            logger.notice("GroupsRPC: \(fn, privacy: .public) → canal apagado por kill-switch remoto (403)")
+            #endif
+            throw GroupsRPCError.channelDisabled
         case 400:
             // Envelope de error del gateway: `error.code` (fallback `error.message`) lleva el `yala_*` (A4).
             if let code = Self.decodeYalaCode(data) {

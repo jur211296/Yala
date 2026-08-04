@@ -296,6 +296,20 @@ enum GroupBackendInviteEntryHandler {
         case .transient:
             // Sin alerta; conserva intent (el reconciler reintenta).
             logger.notice("BackendInvite[\(source.rawValue, privacy: .public)]: transient join error for \(groupID, privacy: .public) → retry later")
+        case .channelDisabled:
+            // El kill-switch server-side apagó el canal (el device tenía el percent viejo cacheado: hasta
+            // 6 h de `RemoteFlagDecisionLogic.refreshMinInterval`). Es el MISMO estado del mundo que la
+            // rama `.backendUnavailable` de `AppBootstrapper.handleInviteLink`, solo que descubierto por
+            // el servidor en vez de por el snapshot local ⇒ MISMO canario con el MISMO detail (una serie,
+            // no dos que hay que sumar en el dashboard) y MISMA copy. Intent CONSERVADO: el join se
+            // completa solo cuando el canal vuelva. Y `.showGroupSyncError`, NUNCA `.showInviteError`,
+            // cuyo título está hardcodeado a «Enlace no válido» y aquí sería FALSO — el enlace es
+            // perfecto, lo que está apagado es el canal.
+            MetricsService.canary(.groupJoinIntentDeferred, detail: "backendChannelOff")
+            RouterEntryGate.shared.submit(.showGroupSyncError(
+                String(localized: "groups.invite.channelUnavailable")
+            ))
+            logger.error("BackendInvite[\(source.rawValue, privacy: .public)]: channel killed server-side for \(groupID, privacy: .public) → intent kept, informing user")
         case .invalidInvite, .notAuthorized, .generic:
             // PERMANENTE: canario + limpiar intent + alerta localizada (cero silencios).
             MetricsService.canary(.groupJoinFailed, detail: GroupBackendAcceptErrorLogic.slug(for: error))

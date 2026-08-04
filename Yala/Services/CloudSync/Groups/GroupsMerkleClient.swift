@@ -126,7 +126,10 @@ final class GroupsMerkleClient {
             GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: "http-401")
             return .sessionExpired
         case 403:
-            GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: "http-403")
+            // Se distingue el kill-switch del canal de la cuenta suspendida (el otro 403 posible): la acción
+            // es la misma, pero en un incidente el log tiene que decir CUÁL de las dos. Ver killSwitch.ts.
+            let reason = GatewayErrorEnvelope.isGroupsChannelDisabled(data) ? "channel-disabled" : "http-403"
+            GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: reason)
             return .accountUnavailable
         default:
             GroupsSyncBreadcrumb.groupsMerkleFetchFailed(reason: "http-\(http.statusCode)")

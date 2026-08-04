@@ -783,6 +783,75 @@ struct GroupsSyncHardeningTests {
 
     // MARK: - (5) Piggyback [R3]
 
+    // MARK: (9) Kill-switch server-side del canal — la parada es inmediata pero NO se sella
+
+    /// El envelope del 403 del kill (`gateway/src/groups/killSwitch.ts`). Un 403 SIN este código es «cuenta
+    /// suspendida», que sí sella el loop.
+    private static let killEnvelopeJSON =
+        #"{"error":{"message":"Canal de Grupos apagado","type":"yala_groups_disabled","code":"yala_groups_disabled"}}"#
+
+    /// LA aserción del fix: el kill para el loop en la vuelta actual y **no arma `stoppedUntilRelaunch`**.
+    /// Si lo armara, apagar el canal sería inmediato pero ENCENDERLO exigiría que cada usuario matara y
+    /// reabriera la app —`GroupsLoopRestartLogic.shouldStart` y `syncNowFromPush` leen ese flag— o sea la
+    /// simétrica exacta del bug que el kill vino a cerrar (el 2026-07-31 un iPhone real se quedó con el
+    /// canal OFF durante horas DESPUÉS de subir el percent a 100).
+    @Test func killSwitch403_stopsLoop_butDoesNotSealIt() async throws {
+        let prevRuntime = CloudSyncFlags.syncRuntimeEnabled
+        CloudSyncFlags.groupsBackendEnabled = true
+        CloudSyncFlags.syncRuntimeEnabled = true   // storageMode `.icloud` ⇒ canRunDomain() false ⇒ loop propio
+        SecondarySessionStore._testSetActiveOverride(false)
+        defer {
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
+            CloudSyncFlags.syncRuntimeEnabled = prevRuntime
+            SecondarySessionStore._testSetActiveOverride(nil)
+        }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = StubSession(Self.killEnvelopeJSON, status: 403)
+        let client = makeClient(session: stub, userID: nil)
+        client.sleeper = { _ in }
+        client.startIfEligible(context: context)
+        let task = client._testLoopTask
+        #expect(task != nil)
+        await task?.value
+
+        #expect(stub.callCount >= 1)                       // llegó a hablar con el gateway
+        #expect(client._testLoopTask == nil)               // el loop TERMINÓ (parada inmediata)
+        #expect(client._testStoppedUntilRelaunch == false) // pero NO quedó sellado
+        // Y la prueba de que la parada es re-arrancable de verdad: el próximo startIfEligible crea loop.
+        client.startIfEligible(context: context, trigger: "foreground")
+        let again = client._testLoopTask
+        #expect(again != nil, "un kill levantado exigiría relanzar la app si el loop no re-arranca")
+        await again?.value
+    }
+
+    /// Contraprueba: un 403 que NO es el kill (cuenta suspendida) SÍ sella el loop, como antes del cambio.
+    /// Sin este test, «no sellar» podría haberse implementado borrando el sellado para los dos 403.
+    @Test func accountUnavailable403_withoutKillCode_stillSealsLoop() async throws {
+        let prevRuntime = CloudSyncFlags.syncRuntimeEnabled
+        CloudSyncFlags.groupsBackendEnabled = true
+        CloudSyncFlags.syncRuntimeEnabled = true
+        SecondarySessionStore._testSetActiveOverride(false)
+        defer {
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
+            CloudSyncFlags.syncRuntimeEnabled = prevRuntime
+            SecondarySessionStore._testSetActiveOverride(nil)
+        }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = StubSession(#"{"error":{"type":"yala_forbidden"}}"#, status: 403)
+        let client = makeClient(session: stub, userID: nil)
+        client.sleeper = { _ in }
+        client.startIfEligible(context: context)
+        await client._testLoopTask?.value
+
+        #expect(client._testStoppedUntilRelaunch == true)  // veredicto sobre la CUENTA → sellado
+        client.startIfEligible(context: context, trigger: "foreground")
+        #expect(client._testLoopTask == nil, "un 403 de cuenta no debe re-arrancar en el mismo proceso")
+    }
+
     /// Personal cadenciando (`syncRuntimeEnabled && canRunDomain()`) → `startIfEligible` se ABSTIENE del
     /// loop propio (el ciclo corre como paso 5.6 del runtime).
     @Test func startIfEligible_personalWillCadence_abstainsFromOwnLoop() async throws {

@@ -220,6 +220,70 @@ struct GroupsMembershipClientTests {
         }
     }
 
+    // MARK: - Kill-switch del canal (403 yala_groups_disabled)
+
+    /// El caso que motiva todo: el device tiene el percent viejo cacheado (hasta 6 h de
+    /// `RemoteFlagDecisionLogic.refreshMinInterval`), así que CREE que el canal está encendido y el
+    /// servidor ya dice que no. Tiene que salir un error TIPADO, no un transitorio.
+    @Test func error_403_groupsDisabled_isChannelDisabled() async throws {
+        let session = stub(
+            #"{"error":{"message":"Canal de Grupos apagado por configuración","type":"yala_groups_disabled","code":"yala_groups_disabled"}}"#,
+            status: 403)
+        await #expect(throws: GroupsRPCError.channelDisabled) {
+            _ = try await self.client(session).joinGroup(token: "t", displayName: "X", legacyMemberKey: nil)
+        }
+    }
+
+    /// La aserción que carga el peso del requisito «no reintentable»: `join_group` SÍ reintenta
+    /// transitorios (no está en `neverRetryTransient`), así que un `callCount == 1` solo puede venir de
+    /// que `channelDisabled` NO entra en el retry. Si alguien lo mapeara a `.transient`, esto daría 3.
+    @Test func channelDisabled_isNotRetried_singleRequest() async throws {
+        let session = stub(#"{"error":{"type":"yala_groups_disabled"}}"#, status: 403)
+        await #expect(throws: GroupsRPCError.channelDisabled) {
+            _ = try await self.client(session).approveMember(groupID: "g", memberKey: "m")
+        }
+        #expect(session.callCount == 1)
+    }
+
+    /// Contraprueba del mapeo: se discrimina por el CÓDIGO del envelope, no por el status 403 a secas, y un
+    /// 403 de OTRA procedencia conserva su comportamiento de hoy — transitorio, CON retry (3 intentos).
+    /// El caso usa `yala_pro_required` porque es el otro 403 que el gateway sabe emitir, **aunque en estas
+    /// rutas no sea alcanzable** (`limitsFor` da límites de `sync` a los dos tiers: «Modo Nube es GRATIS»,
+    /// `gateway/src/policy.ts`). Lo que el test fija es el contrato defensivo: si mañana algo por delante
+    /// del Worker —un proxy, un WAF, un guard nuevo— devuelve 403, no se convierte en «canal apagado»
+    /// permanente. Un `case 403:` pelado en el cliente sí lo habría convertido.
+    @Test func error_403_otherCode_staysTransient_andRetries() async throws {
+        let session = stub(#"{"error":{"message":"Esta función requiere Yala Pro.","type":"yala_pro_required"}}"#,
+                           status: 403)
+        await #expect(throws: GroupsRPCError.transient(status: 403)) {
+            _ = try await self.client(session).approveMember(groupID: "g", memberKey: "m")
+        }
+        #expect(session.callCount == 3)   // 1 + los 2 reintentos de `retryDelays`
+    }
+
+    /// 403 con un body que no es un envelope del gateway (proxy, WAF, HTML) → transitorio, como antes:
+    /// no se puede afirmar que sea el kill, y equivocarse hacia «transitorio» solo cuesta un reintento.
+    @Test func error_403_nonGatewayBody_staysTransient() async throws {
+        let session = stub("<html>403 Forbidden</html>", status: 403)
+        await #expect(throws: GroupsRPCError.transient(status: 403)) {
+            _ = try await self.client(session).leaveGroup(groupID: "g")
+        }
+    }
+
+    /// El literal del wire vive en UN solo sitio del cliente y tiene que ser EXACTAMENTE el que emite el
+    /// gateway: el `"yala_groups_disabled"` que `groupsChannelKilled` pasa a `jsonError`
+    /// (`gateway/src/groups/killSwitch.ts`) y que `YalaErrorType` declara en `gateway/src/errors.ts`. Un
+    /// typo en cualquiera de las dos mitades convierte el kill en un transitorio silencioso, que es el bug
+    /// que esto cierra. No hay forma de compartir el literal entre TS y Swift: el pin es este test.
+    @Test func groupsDisabledType_matchesGatewayWireContract() {
+        #expect(GatewayErrorEnvelope.groupsDisabledType == "yala_groups_disabled")
+        #expect(GatewayErrorEnvelope.isGroupsChannelDisabled(
+            Data(#"{"error":{"type":"yala_groups_disabled"}}"#.utf8)))
+        #expect(!GatewayErrorEnvelope.isGroupsChannelDisabled(
+            Data(#"{"error":{"type":"yala_account_reverting"}}"#.utf8)))
+        #expect(!GatewayErrorEnvelope.isGroupsChannelDisabled(Data("no soy json".utf8)))
+    }
+
     @Test func nilToken_isSessionExpired_withoutRequest() async throws {
         let session = stub(#"{}"#)
         await #expect(throws: GroupsRPCError.sessionExpired) {
