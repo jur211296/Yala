@@ -1382,7 +1382,45 @@ FROM yala_metrics WHERE blob1 = 'register' GROUP BY day, kind ORDER BY day DESC;
 -- Canarios (GATE DE ENCENDIDO: cero filas = verde). blob4 = versión de app que lo emitió:
 SELECT blob2 AS canary, blob3 AS detail, blob4 AS app, sum(_sample_interval) AS n
 FROM yala_metrics WHERE blob1 = 'canary' GROUP BY canary, detail, app ORDER BY n DESC;
+
+-- Tamaño REAL de la flota. `install` es por INSTALACIÓN, así que en dogfooding sobreestima
+-- muchísimo (reinstalar cuenta como device nuevo): calibra con `register`, no con installs.
+SELECT blob1 AS event, count(DISTINCT blob5) AS devices, sum(_sample_interval) AS n,
+       min(timestamp) AS primero, max(timestamp) AS ultimo
+FROM yala_metrics GROUP BY event ORDER BY n DESC;
+
+-- Barredor de huérfanas puenteadas (A2 de la Fase 3). El detail de `Deferred` desglosa por
+-- veredicto: solo `cloudKitChannelIdle` y `cloudKitZoneFetchFailed` son del brazo CloudKit.
+SELECT blob2 AS canary, blob3 AS detail, count(DISTINCT blob5) AS devices,
+       sum(_sample_interval) AS n, max(timestamp) AS ultimo
+FROM yala_metrics
+WHERE blob1 = 'canary'
+  AND (blob2 = 'bridgedTxOrphanSweepDeferred' OR blob2 = 'bridgedTxOrphansRepaired')
+GROUP BY canary, detail ORDER BY n DESC;
 ```
+
+**Sin navegador:** el dashboard exige loguearse con **`admin@yala-app.pe`** — la cuenta personal
+`Jur211296@gmail.com` da «Unauthorized to access requested resource», que engaña porque parece un permiso
+que falta y es OTRA cuenta (`npx wrangler whoami` lo resuelve en un comando). Para consultar por API hay un
+token de solo-lectura (scope único *Account Analytics Read*, caduca 2027-08-05) en
+`~/Secrets/yala-cloudflare/analytics-read.token`:
+
+```bash
+T=$(cat ~/Secrets/yala-cloudflare/analytics-read.token)
+curl -s -X POST "https://api.cloudflare.com/client/v4/accounts/86c270a7776be98639700bd5959b303b/analytics_engine/sql" \
+  -H "Authorization: Bearer $T" --data-binary "<SQL> FORMAT JSON"
+```
+
+⚠️ **El punto ciego del barredor, medido el 2026-08-04: «el gate lo frenó» y «no había candidatas» son
+INDISTINGUIBLES aquí, los dos son silencio.** `OrphanedBridgedTxSweeper.sweep` está detrás de dos gates
+asíncronos (`awaitPersonalStoreReady` y `awaitGroupsChannelEvidence`, `AppBootstrapper.swift:428-438`) y si
+el segundo se rinde a los 60 s el barredor **no llega a correr** ⇒ no emite nada: su único rastro es un
+`SaveBreadcrumb`, que va a Console.app y **no** a Analytics Engine. Y el canario positivo
+(`bridgedTxOrphansRepaired`) sale detrás de un `guard !outcome.isEmpty` ⇒ un barrido que corre y encuentra
+todo limpio también calla. ⇒ **el silencio NUNCA cierra una pregunta sobre este subsistema; solo la señal
+positiva decide.** Y el sesgo es adverso: para emitir, un device necesita al menos una zona FRESCA además de
+las paradas, así que el perfil más afectado —solo grupos CloudKit legacy con el canal quieto— es justo el que
+no reporta.
 
 Residuales documentados: evento retenido en el spool offline del cliente se estampa el día del ENVÍO
 (distorsión solo offline multi-día); sin rate-limit por IP (D2 — validación estricta + AE barato);

@@ -1,6 +1,6 @@
 ---
 created: 2026-07-28
-updated: 2026-07-31
+updated: 2026-08-04
 tags: [modo-nube, decision, release, 2.1]
 ---
 
@@ -541,3 +541,80 @@ vez de `SwiftDataConfiguration.personalSchema`. Registrado en la Lista Negra com
 - **Todo en un build**: más rápido, pero mezcla las dos clases de fallo.
 - **Parar en la Fase 2** (que el plan admite como estado final válido): dejaría Grupos exigiendo iCloud a
   todos los miembros, que es exactamente lo que este épico existe para quitar.
+
+---
+
+## D-R2 · Las dos decisiones de la Fase 3 — DECIDIDAS por el owner el 2026-08-04
+
+Salen del chip A1 (re-medición completa, commit `06926d43`), que las dejó inventariadas **sin veredicto** con
+sus direcciones y su coste. El commit 1 de la Fase 3 sigue **CERRADO**; el orden acordado es
+A1 mide → A2/A3 deciden → **A4 (vaciado manual, del owner)** → commit 1.
+
+### A2 · Qué evidencia se concede al gate de frescura cuando desaparezca su brazo CloudKit
+
+**DECIDIDO: dirección (iii) — sacar las zonas legacy del conjunto de CANDIDATAS del barredor**, en vez de
+pedirle un veredicto a un brazo que se queda sin fuente. Toca `OrphanedBridgedTxSweeper` y **no** el gate puro,
+así que el invariante «una sola primitiva para los dos consumidores» (`GroupChannelFreshness.swift:8-12`)
+sobrevive y el editor (`NewTransactionView.resolveBridgedPointer`) sigue consumiéndolo.
+
+**Por qué no «fallar cerrado» (dirección i), que parecía la conservadora:** sustituir el brazo por constantes
+`false` hace que **`bridgedTxOrphanSweepDeferred` se emita en todos los arranques con candidatas** ⇒ el canario
+deja de significar «el gate está frenando algo» y **se pierde la única superficie de observación del
+subsistema**. Las dos direcciones dejan las mismas huérfanas legacy sin reparar; (iii) no quema el canario.
+
+**El precio, declarado y no oculto:** las huérfanas de zonas legacy quedan sin reparar **en silencio**, y se
+pierde la señal de cuántas hay en la flota. Se acepta porque la dirección que las repararía —(ii), conceder
+evidencia— es **la que destruye**: un device recién reinstalado monta el store de Grupos vacío mientras el
+espejo personal ya entregó las `TransactionItem`, y esas mutaciones **se exportan a los demás devices**.
+La dirección (v) —dar a las zonas legacy un camino al backend— elimina la clase entera de huecos pero es un
+épico, no un commit: hoy no hay uploader ni RPC (borrados y revocados el 28/07).
+
+**El dato de flota que esta decisión pedía, consultado el 2026-08-04** en `yala_metrics` (producción; receta y
+token en `qa/cloud/README.md` § «Telemetría propia»):
+
+| | |
+|---|---|
+| `bridgedTxOrphanSweepDeferred` | **0 filas** — el barredor no está frenando ninguna candidata |
+| `bridgedTxOrphansRepaired` | **2** — `deleted=3\|drafts=1` (20:43) y `released=1\|deleted=2\|drafts=1` (20:44), un device cada uno |
+
+⚠️ **Esto NO es «medido en la flota», y la distinción es la mitad del valor del dato.** Hay **2 `register` en
+todo el histórico** y los ~20 installs distintos son reinstalaciones de los dos teléfonos del owner (`install`
+es por INSTALACIÓN). Los dos `repaired` son de la sesión de QA de ese mismo día, limpiando las huérfanas de la
+matriz del 02/08. Lo que el dato **sí** aporta: el sweeper **corre de verdad en producción y supera sus dos
+gates** —nunca se había comprobado— y en el único parque con historia CloudKit real no queda nada atrapado.
+Lo que **no** aporta: nada sobre la flota de 2.1, que no existe todavía. **No reformular como evidencia de
+ausencia de daño.**
+
+**Y el punto ciego que hay que conocer antes de volver a leer este canario:** «el gate frenó al barredor» y
+«no había candidatas» son **indistinguibles** en Analytics Engine —los dos son silencio— porque `sweep()` está
+detrás de dos gates asíncronos y su rastro al rendirse es un `SaveBreadcrumb` (Console.app, no AE), mientras el
+canario positivo sale detrás de un `guard !outcome.isEmpty`. ⇒ **en este subsistema solo la señal positiva
+decide.** Documentado en `qa/cloud/README.md`.
+
+### A3 · Los apagones S2 / S3b / S4
+
+**DECIDIDO: declarar por escrito la pérdida de S2 y S3b; espejar S4.**
+
+| | Decisión | Por qué |
+|---|---|---|
+| **S2** `movedToBackendAt` | **declarar la pérdida** | Coste de usuario **cero**: el campo es `nil` en todo el parque y no tiene un solo escritor que lo origine (los dos de `CKRecordTranslator` copian de un CKRecord). La pérdida ya está consumada, así que el freeze del miembro y el CTA «vuelve a entrar» nunca se activaron. Espejarlo sería reconstruir una épica borrada: columna + grant + RPC + ~537 líneas, tocando servidor y base |
+| **S3b** `.remoteInsert` | **declarar la pérdida** | Barato de espejar, pero el repo ya midió que **el beneficio es nulo**: el reconciler no arreglaba el caso |
+| **S4** «me sacaron del grupo» | **ESPEJAR** | **15–30 líneas, 1 fichero, 0 servidor**, más la cirugía obligatoria de `performRemovedSelfCleanup`. Es **el único de los tres con pérdida de datos real**: grupo fantasma editable hasta el cold boot, y se pierde lo escrito en esa ventana. La señal **ya llega al device** en `page.memberships` (`GroupsSyncClient.swift:2755`) — una escritura, cero lecturas |
+
+**El brief tenía estos dos al revés**, y es la corrección que más cambia el trabajo: marcaba S2 como el
+hallazgo caro y no vio que S4 tuviera espejo posible.
+
+**S4 cierra además un bug vivo, y por eso no espera al commit 1.** Es el **B-1** del §10 de la re-medición:
+`GroupsSyncClient.swift:2896` y `GroupsSyncBreadcrumb.swift:103` dicen por escrito «la limpieza llega por
+memberships del pull» y **lo usan para justificar hacer `skip` sin canario ni remediación** cuando el Merkle
+detecta corpus remoto vacío con local no vacío — la firma exacta de una remoción de membresía. Se apoyan en una
+implementación que no existe. Misma familia que el `AppAttestClient.ensureRegistered()` de
+`.claude/rules/gateway-attest.md`. **Al espejar S4 los dos comentarios pasan a ser verdad; si S4 se hubiera
+declarado, habría habido que corregirlos.**
+
+**S6** (`SoftDeleteObserverLogic`) no es de esta familia: es un huérfano total —su único consumidor de
+producción es `SplitSyncManager.swift:2643`, que muere con el fichero— y se re-cablea o se borra dentro del
+commit 1.
+
+Los dos chips (**A3-S4** y **A2-impl**) están redactados en
+`$VAULT/Backlog/modo-nube/MODO-NUBE-CHIPS-FASE3.md`.
