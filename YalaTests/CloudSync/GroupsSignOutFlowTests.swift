@@ -19,7 +19,13 @@ import Testing
 
 @testable import Yala
 
-@Suite("G5-B · sesión solo-grupos + wipe .cloud ampliado", .serialized)
+// `.wipeAppGroupMirrorIsolated`: `personalWipe_doesNotTouchGroups` ejecuta `wipeAllUserData` de
+// VERDAD, y su PASO 2 (`DataWipeService.swift:195`, incondicional) llama a
+// `resetAllUserPreferences`, que barre TRES claves del App Group REAL. El snapshot/restore del
+// `persistentDomain` que hace esta suite cubre solo `UserDefaults.standard`: el App Group quedaba
+// fuera. Medido por sonda KVO el 2026-08-05 — el stack del borrado sale de
+// `DataWipeService.resetAllUserPreferences` con esta suite en el frame de llamada.
+@Suite("G5-B · sesión solo-grupos + wipe .cloud ampliado", .serialized, .wipeAppGroupMirrorIsolated)
 @MainActor
 struct GroupsSignOutFlowTests {
 

@@ -217,10 +217,14 @@ struct SharedStateIsolationTests {
             ("AppLanguageSyncTests.swift", ".appLanguageStateIsolated"),
             ("LocaleResolutionTests.swift", ".appLanguageStateIsolated"),
             ("ApplePayDraftServiceTests.swift", ".lastUsedAccountIsolated"),
-            // Los dos que ejecutan `wipeAllUserData` de verdad: su paso 2 barre tres claves del
-            // App Group y su snapshot/restore solo cubre `.standard`.
+            // Los TRES que ejecutan `wipeAllUserData` de verdad: su paso 2 barre tres claves del
+            // App Group y su snapshot/restore solo cubre `.standard`. Eran dos hasta el 2026-08-05;
+            // al tercero lo cazó una sonda KVO sobre las claves del espejo, no esta lista. ⇒ el
+            // criterio para entrar aquí es EJECUTAR el wipe, no aparecer en la lista — y quien lo
+            // hace cumplir es `todaSuiteQueEjecutaElWipeLlevaSuTrait`, de abajo.
             ("DataWipePreservesGroupsTests.swift", ".wipeAppGroupMirrorIsolated"),
             ("CloudSync/WipeMassRowsCloudDrainTests.swift", ".wipeAppGroupMirrorIsolated"),
+            ("CloudSync/GroupsSignOutFlowTests.swift", ".wipeAppGroupMirrorIsolated"),
         ]
         for (file, trait) in cableado {
             let applied = try code(of: file).components(separatedBy: trait).count - 1
@@ -244,6 +248,62 @@ struct SharedStateIsolationTests {
         #expect(
             mecanismo[firma.lowerBound...].contains("withSharedStateIsolated("),
             "`provideScope` ya no delega en el scope: el trait quedaría decorativo."
+        )
+    }
+
+    /// El pin de arriba enumera y por eso ENVEJECE: se escribió con dos suites de wipe y para el
+    /// 2026-08-05 eran tres — a la tercera la cazó una sonda KVO, no la lista, y llevaba meses
+    /// barriendo el App Group real sin que nada lo dijera. Este escáner fija el CRITERIO en vez de
+    /// la enumeración: quien ejecute el wipe lleva el trait, lo hayan añadido a la lista o no.
+    ///
+    /// **Es la mitad que carga el peso, y se midió**: un fichero NUEVO que ejecute el wipe sin
+    /// trait deja la lista de arriba en VERDE —no lo enumera nadie— y solo cae aquí.
+    ///
+    /// El conteo mínimo no es decoración: sin él, renombrar el método dejaría al escáner sin
+    /// encontrar nada y la suite pasaría en verde sin comprobar absolutamente nada.
+    @Test func todaSuiteQueEjecutaElWipeLlevaSuTrait() throws {
+        let selfFile = URL(fileURLWithPath: #filePath)
+        let testsDir = selfFile.deletingLastPathComponent()
+        let files = (FileManager.default.enumerator(at: testsDir, includingPropertiesForKeys: nil)?
+            .compactMap { $0 as? URL }
+            .filter { $0.pathExtension == "swift" } ?? [])
+
+        var ejecutanElWipe: [String] = []
+        var sinTrait: [String] = []
+        for url in files {
+            // Este fichero se excluye: el literal que busca el escáner está en SU PROPIO código
+            // (la línea de abajo), así que sin esto se cuenta a sí mismo e infla el mínimo.
+            guard url.lastPathComponent != selfFile.lastPathComponent else { continue }
+            // Las líneas de comentario van fuera: varios ficheros NOMBRAN el método al explicar el
+            // invariante, y contar prosa haría que documentarlo lo rompiera. `HandoverGroupsDomainTests`
+            // es el caso exacto — lo menciona seis veces y no lo invoca ni una.
+            let code = try String(contentsOf: url, encoding: .utf8)
+                .split(separator: "\n", omittingEmptySubsequences: false)
+                .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+                .joined(separator: "\n")
+            guard code.contains("wipeAllUserData(") else { continue }
+            ejecutanElWipe.append(url.lastPathComponent)
+            if !code.contains(".wipeAppGroupMirrorIsolated") { sinTrait.append(url.lastPathComponent) }
+        }
+
+        #expect(
+            ejecutanElWipe.count >= 3,
+            """
+            El escáner solo encontró \(ejecutanElWipe.count) ficheros que ejecutan el wipe y \
+            esperaba al menos 3. O se renombró el método, o se movieron los ficheros: en los dos \
+            casos este test dejó de comprobar nada.
+            """
+        )
+        #expect(
+            sinTrait.isEmpty,
+            """
+            \(sinTrait.joined(separator: ", ")) ejecuta(n) el wipe sin `.wipeAppGroupMirrorIsolated`. \
+            Su PASO 2 barre tres claves del App Group REAL —`expensesOnlyMode`, `firstWeekday`, \
+            `lastUsedAccountID`— que sobreviven al proceso y comparten los dos hosts del scheme \
+            `Yala Dev`. El snapshot/restore del `persistentDomain` que suelen llevar estas suites \
+            cubre solo `UserDefaults.standard`, así que el App Group queda fuera y la pérdida \
+            aparece en la corrida SIGUIENTE y en otro target.
+            """
         )
     }
 
