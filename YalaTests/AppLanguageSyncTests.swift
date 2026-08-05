@@ -14,7 +14,14 @@ import Testing
 // `.serialized`: los tests `async` mutan el singleton global `LanguageManager.overrideLanguage`
 // y esperan `.languageDidChange`; el setter NO postea si el valor no cambia
 // (`guard newValue != current`) → en paralelo, un test deja "fr" y otro no recibe notif.
-@Suite(.serialized)
+//
+// `.appLanguageStateIsolated`: estos tests escriben en almacenes COMPARTIDOS que sobreviven al
+// proceso —el App Group real, `.standard` y iCloud KV—, porque el SUT resuelve `sharedDefaults`
+// por dentro y no acepta almacén inyectado. El trait captura, limpia y restaura esas claves
+// alrededor de CADA test, así que ni los de aquí ni los que se añadan mañana pueden dejar la app
+// en alemán para el siguiente XCUITest. Por qué un trait y no un `defer` por test, en
+// `AppLanguageStateIsolation.swift`. **Ningún test de este fichero necesita restaurar nada.**
+@Suite(.serialized, .appLanguageStateIsolated)
 @MainActor
 struct AppLanguageSyncTests {
 
@@ -35,14 +42,7 @@ struct AppLanguageSyncTests {
     // MARK: - storage roundtrip
 
     @Test func setOverride_writesToSharedDefaults_andReadsBack() {
-        cleanStandard()
-        // El sharedDefaults real (App Group) — los tests escriben/leen ahí.
-        // Limpieza al final.
-        let original = LanguageManager.overrideLanguage
-        defer {
-            LanguageManager.overrideLanguage = original
-        }
-
+        // Escribe en el sharedDefaults REAL (App Group). Lo restaura el trait de la suite.
         LanguageManager.overrideLanguage = "es"
         #expect(LanguageManager.overrideLanguage == "es")
 
@@ -51,9 +51,9 @@ struct AppLanguageSyncTests {
     }
 
     @Test func setOverride_postsLanguageDidChange() async {
-        let original = LanguageManager.overrideLanguage
-        defer { LanguageManager.overrideLanguage = original }
-
+        // El trait entra con el override LIMPIO, así que "fr" siempre es un cambio real y el
+        // setter postea. Sin esa normalización, un simulador que ya viniera con "fr" haría que
+        // el `guard newValue != current` se comiera la notificación y el rojo sería del entorno.
         let expectation = NotificationExpectation(name: .languageDidChange)
         LanguageManager.overrideLanguage = "fr"
         let received = await expectation.waitForNotification(timeout: 1.0)
@@ -61,9 +61,6 @@ struct AppLanguageSyncTests {
     }
 
     @Test func setOverride_nilAlsoPostsLanguageDidChange() async {
-        let original = LanguageManager.overrideLanguage
-        defer { LanguageManager.overrideLanguage = original }
-
         LanguageManager.overrideLanguage = "fr"
         // Drain notif del set previo
         try? await Task.sleep(for: .milliseconds(50))
@@ -143,8 +140,6 @@ struct AppLanguageSyncTests {
         #expect(suite.string(forKey: LanguageManager.overrideKey) == "de")
         // Standard NO se borró porque la migración Step 1 ya había corrido
         #expect(UserDefaults.standard.string(forKey: LanguageManager.overrideKey) == "legacy_value_should_be_ignored")
-
-        UserDefaults.standard.removeObject(forKey: LanguageManager.overrideKey)
     }
 
     // MARK: - notification name
