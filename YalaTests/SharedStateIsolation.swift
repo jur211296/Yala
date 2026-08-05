@@ -92,6 +92,12 @@ enum SharedStateScope: Sendable {
     /// la cola de Apple Pay.
     case lastUsedAccount
 
+    /// El espejo del App Group que barre `DataWipeService.resetAllUserPreferences()`
+    /// (`DataWipeService.swift:401-404`) — TRES claves, no una. Le llega cualquier test que ejecute
+    /// `wipeAllUserData` de verdad (`:195`, PASO 2, incondicional), y esos tests protegían solo
+    /// `UserDefaults.standard` con snapshot/restore del dominio: el App Group quedaba fuera.
+    case wipeAppGroupMirror
+
     @MainActor
     var cells: [SharedStateCell] {
         switch self {
@@ -108,6 +114,17 @@ enum SharedStateScope: Sendable {
         case .lastUsedAccount:
             guard let appGroup = UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier) else { return [] }
             return [SharedStateCell(appGroup, AppPreferences.Keys.lastUsedAccountID, "App Group")]
+
+        case .wipeAppGroupMirror:
+            // `SharedContainerService`, que es por donde lo resuelve `DataWipeService`. Hoy coincide
+            // con `WidgetURLHelper` —lo pinnea `StoreKitManagerAppGroupTests.appGroupResolvers_coinciden`—
+            // y si algún día divergen, cada celda seguirá protegiendo el sitio que de verdad se ensucia.
+            guard let appGroup = UserDefaults(suiteName: SharedContainerService.appGroupIdentifier) else { return [] }
+            return [
+                SharedStateCell(appGroup, AppPreferences.Keys.expensesOnlyMode, "App Group"),
+                SharedStateCell(appGroup, "firstWeekday", "App Group"),
+                SharedStateCell(appGroup, AppPreferences.Keys.lastUsedAccountID, "App Group"),
+            ]
         }
     }
 
@@ -268,4 +285,6 @@ extension Trait where Self == SharedStateIsolation {
     static var appLanguageStateIsolated: Self { Self(scope: .appLanguage) }
     /// Aísla `lastUsedAccountID` del App Group.
     static var lastUsedAccountIsolated: Self { Self(scope: .lastUsedAccount) }
+    /// Aísla las tres claves del App Group que barre un `wipeAllUserData` real.
+    static var wipeAppGroupMirrorIsolated: Self { Self(scope: .wipeAppGroupMirror) }
 }

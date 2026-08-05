@@ -15,6 +15,8 @@
 //  Molde: container ON-DISK con los 3 stores (History es por-CONTAINER, no fiable in-memory —
 //  `CloudSyncEngineTests`) + snapshot/restore del `persistentDomain` de `.standard` en `defer` porque
 //  `wipeAllUserData` resetea prefs/singletons (`DataWipePreservesGroupsTests`). `.serialized`.
+//  Ese snapshot cubre `.standard` y NO el App Group, que el paso 2 barre igual (tres claves,
+//  `DataWipeService.swift:401-404`) y que sobrevive al proceso → `.wipeAppGroupMirrorIsolated`.
 //
 //  LOAD-BEARING: el `drainOnce` INTERMEDIO (seed → save → DRAIN → wipe → drain) es obligatorio. Sin él, los
 //  deletes salen SIN syncID asignado → *identity gap*, NO tombstone (`CloudSyncEngineTests:223-240`). El
@@ -27,7 +29,7 @@ import Testing
 
 @testable import Yala
 
-@Suite("Vaciar · wipe masivo por filas → tombstones al outbox (caracterización)", .serialized)
+@Suite("Vaciar · wipe masivo por filas → tombstones al outbox (caracterización)", .serialized, .wipeAppGroupMirrorIsolated)
 @MainActor
 struct WipeMassRowsCloudDrainTests {
 

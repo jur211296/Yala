@@ -19,7 +19,11 @@ import Testing
 
 @testable import Yala
 
-@Suite("Aislamiento de estado compartido", .serialized, .appLanguageStateIsolated, .lastUsedAccountIsolated)
+// Los tres scopes, porque esta suite planta valores en las celdas de los tres ANTES de abrir su
+// scope interno: sin ellos el propio pin sería una fuga. Anidar el mismo scope dos veces es seguro
+// (el turno global es reentrante y cada capa restaura lo que capturó).
+@Suite("Aislamiento de estado compartido", .serialized,
+       .appLanguageStateIsolated, .lastUsedAccountIsolated, .wipeAppGroupMirrorIsolated)
 @MainActor
 struct SharedStateIsolationTests {
 
@@ -170,6 +174,29 @@ struct SharedStateIsolationTests {
         #expect(vistoDentro == nil, "El test habría visto la última cuenta de la corrida anterior.")
     }
 
+    /// Las TRES claves que barre `DataWipeService.resetAllUserPreferences()` en el App Group. Se
+    /// ejercita la función REAL, que es la que ejecutan los tests de wipe.
+    @Test func scopeWipeMirror_restauraLasTresClaves() async throws {
+        let appGroup = try #require(UserDefaults(suiteName: SharedContainerService.appGroupIdentifier))
+        let previos: [(String, Any)] = [
+            (AppPreferences.Keys.expensesOnlyMode, true),
+            ("firstWeekday", 5),
+            (AppPreferences.Keys.lastUsedAccountID, "CUENTA-DEL-USUARIO"),
+        ]
+        for (key, value) in previos { appGroup.set(value, forKey: key) }
+
+        try await withSharedStateIsolated(.wipeAppGroupMirror) {
+            for (key, _) in previos { appGroup.removeObject(forKey: key) }
+        }
+
+        #expect(appGroup.object(forKey: AppPreferences.Keys.expensesOnlyMode) as? Bool == true)
+        #expect(appGroup.object(forKey: "firstWeekday") as? Int == 5)
+        #expect(
+            appGroup.string(forKey: AppPreferences.Keys.lastUsedAccountID) == "CUENTA-DEL-USUARIO",
+            "Un `wipeAllUserData` de un test se llevó por delante el espejo del App Group del simulador."
+        )
+    }
+
     // MARK: - Cableado (source-scan)
 
     /// Los conteos esperados no son decoración: sin ellos, un fichero movido o un símbolo renombrado
@@ -190,6 +217,10 @@ struct SharedStateIsolationTests {
             ("AppLanguageSyncTests.swift", ".appLanguageStateIsolated"),
             ("LocaleResolutionTests.swift", ".appLanguageStateIsolated"),
             ("ApplePayDraftServiceTests.swift", ".lastUsedAccountIsolated"),
+            // Los dos que ejecutan `wipeAllUserData` de verdad: su paso 2 barre tres claves del
+            // App Group y su snapshot/restore solo cubre `.standard`.
+            ("DataWipePreservesGroupsTests.swift", ".wipeAppGroupMirrorIsolated"),
+            ("CloudSync/WipeMassRowsCloudDrainTests.swift", ".wipeAppGroupMirrorIsolated"),
         ]
         for (file, trait) in cableado {
             let applied = try code(of: file).components(separatedBy: trait).count - 1
