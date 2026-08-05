@@ -100,10 +100,23 @@ enum GroupsSyncBreadcrumb {
 
     /// [R4] El root remoto de un grupo es el de un corpus VACÍO (todas las entities count 0) mientras el
     /// local NO lo está → firma de REMOCIÓN de membership vía RLS (el server responde tablas vacías al
-    /// no-member). NO es divergencia: skip SIN canario ni remediación (la limpieza llega por memberships del
-    /// pull). Sin PII.
+    /// no-member). NO es divergencia: skip SIN canario ni remediación porque la limpieza la hace
+    /// `GroupsSyncClient.reconcileLostMemberships` leyendo el `memberships` del pull. **Esa afirmación fue
+    /// FALSA hasta el 2026-08-04** (bug B-1: el campo se decodificaba y no lo leía nadie) — si el lector
+    /// desaparece, este skip vuelve a ser un descarte silencioso. Sin PII.
     static func groupsMerkleEmptyRemote() {
         logger.notice("GroupsSync merkleEmptyRemote — root remoto vacío + local no-vacío; remoción de membership (no divergencia)")
+    }
+
+    // MARK: - Remoción de membresía (S4)
+
+    /// El pull dejó de listar `zones` zonas del canal BACKEND que este device sí tiene localmente: el admin
+    /// sacó al usuario del grupo (o rechazó su solicitud). Se dispara `performRemovedSelfCleanup` por zona.
+    /// Es la ÚNICA forma que tiene el canal de enterarse —`remove_member` deja la fila en `removed` y la RLS
+    /// deja de entregarla, así que no baja ni un delta— y borra datos locales, así que conviene poder verlo:
+    /// `> 0` sostenido en un mismo device = el gateway está dejando de listar grupos vivos. Sin PII (count).
+    static func groupsMembershipLost(zones: Int) {
+        logger.notice("GroupsSync membershipLost zones=\(zones, privacy: .public) — el pull ya no lista estas zonas backend; limpieza removed-self")
     }
 
     /// [R6] Una fila `group_members` local NO pudo keyear su leaf Merkle (member_key nil/vacío — CloudKit

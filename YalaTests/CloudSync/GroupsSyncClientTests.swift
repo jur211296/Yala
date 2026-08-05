@@ -143,8 +143,14 @@ struct GroupsSyncClientTests {
         """.utf8)
     }
 
+    /// Página TERMINAL del pull: cero deltas, cero cursores. **Lleva `memberships` con la zona en juego a
+    /// propósito**: desde que `reconcileLostMemberships` lee ese campo (S4, 2026-08-04), un `[]` significa
+    /// «me sacaron de TODOS los grupos», y este fixture cierra los cuatro pulls multi-página cuyo sujeto es
+    /// un grupo que sigue VIVO. Con `[]` la página terminal encolaría la limpieza de `SplitGroup-A` — no
+    /// rompe sus aserciones (el `Task` es posterior y el actor las serializa) pero es un fixture que MIENTE
+    /// sobre el wire: el gateway manda `memberships` en todas las páginas, también en la que agota la cola.
     private var emptyPageJSON: Data {
-        Data("{\"deltas\":[],\"cursors\":{},\"memberships\":[]}".utf8)
+        Data("{\"deltas\":[],\"cursors\":{},\"memberships\":[\"SplitGroup-A\"]}".utf8)
     }
 
     // MARK: - Test 1 · Partición del muro
@@ -2229,5 +2235,298 @@ struct GroupsSyncClientTests {
             cursor: cursor, context: context)
 
         #expect(tx.splitGroupZoneID == nil)
+    }
+
+    // MARK: - Test 12 · «Me sacaron del grupo»: la remoción llega en NEGATIVO por `memberships` (S4)
+
+    // `remove_member` deja la fila del miembro en `removed` y a partir de ahí la RLS no la entrega ⇒ el pull
+    // NO trae ni un delta. Lo único que cambia es que el grupo desaparece de `memberships`, un campo que este
+    // cliente decodificaba y no leía nadie (bug B-1 de la re-medición del 2026-08-04). Sin lector, el usuario
+    // se queda un grupo FANTASMA editable: lo que apunte ahí se guarda local y no viaja.
+
+    /// Grupo backend + una hija de cada clase, para poder afirmar que la limpieza barre la ZONA entera y no
+    /// solo la fila del grupo.
+    private func seedBackendZone(_ zone: String, context: ModelContext) {
+        makeBackendGroup(zoneID: zone, context: context)
+        context.insert(SplitMember(groupZoneID: zone, displayName: "Ana"))
+        let expense = SplitExpense(groupZoneID: zone, amount: 40, currencyCode: "USD",
+                                   expenseDescription: "Cena", paidByMemberID: "member-1")
+        context.insert(expense)
+        context.insert(SplitShare(expenseID: expense.id, memberID: "member-1", amount: 20, groupZoneID: zone))
+        context.insert(SplitSettlement(groupZoneID: zone, fromMemberID: "member-1",
+                                       toMemberID: "member-2", amount: 20))
+    }
+
+    private func zoneCounts(
+        _ context: ModelContext, zone: String
+    ) throws -> (groups: Int, members: Int, expenses: Int, shares: Int, settlements: Int) {
+        (
+            try context.fetchCount(FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.cloudKitZoneID == zone })),
+            try context.fetchCount(FetchDescriptor<SplitMember>(predicate: #Predicate { $0.groupZoneID == zone })),
+            try context.fetchCount(FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.groupZoneID == zone })),
+            try context.fetchCount(FetchDescriptor<SplitShare>(predicate: #Predicate { $0.groupZoneID == zone })),
+            try context.fetchCount(FetchDescriptor<SplitSettlement>(predicate: #Predicate { $0.groupZoneID == zone }))
+        )
+    }
+
+    /// Deja las zonas registradas en `groupCursorsJSON` — la evidencia de que el backend YA las enumeró para
+    /// este device. Es el tercer gate de `reconcileLostMemberships`, el que distingue una remoción real de un
+    /// grupo recién creado que todavía no ha pasado por ningún pull.
+    private func markZonesEnumerated(
+        _ zones: [String: Int64], cursor: GroupSyncCursor, context: ModelContext
+    ) throws {
+        cursor.groupCursorsJSON = String(decoding: try JSONEncoder().encode(zones), as: UTF8.self)
+        try context.save()
+    }
+
+    /// Cede el hilo hasta que la condición se cumpla. La limpieza corre en un `Task { @MainActor }` (el
+    /// cleanup es `async`, molde del canal viejo), así que no está en disco al volver de `applyPulledPage`.
+    /// Sin sleeps (regla de testing): cesiones deterministas.
+    private func settle(until condition: () -> Bool, yields: Int = 200) async {
+        for _ in 0..<yields {
+            if condition() { return }
+            await Task.yield()
+        }
+    }
+
+    /// Da margen a cualquier `Task` espurio antes de afirmar que NO pasó nada. Sin esto, un test negativo
+    /// pasaría en verde simplemente por llegar antes que el borrado.
+    private func drainPendingTasks(yields: Int = 40) async {
+        for _ in 0..<yields { await Task.yield() }
+    }
+
+    private func groupsInZone(_ context: ModelContext, _ zone: String) -> Int {
+        (try? context.fetchCount(
+            FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.cloudKitZoneID == zone }))) ?? -1
+    }
+
+    /// **La aserción que carga el peso.** Página del ciclo IDLE —cero deltas, cero cursores, que es la forma
+    /// EXACTA que toma una remoción— cuyo `memberships` ya no lista mi zona: se dispara
+    /// `performRemovedSelfCleanup` y la zona desaparece entera, mientras la vecina que SÍ sigue listada queda
+    /// intacta (sin ese segundo grupo, un barrido global pasaría igual de verde).
+    ///
+    /// MUTACIÓN: quitar la llamada a `reconcileLostMemberships` de la salida idle, o hacerla `return` antes de
+    /// leer `page.memberships`, deja este test en rojo (exit 65).
+    @Test func pull_membershipsWithoutMyZone_cleansTheZone_andResetsItsCursor() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        seedBackendZone("SplitGroup-Gone", context: context)
+        seedBackendZone("SplitGroup-Stays", context: context)
+        try context.save()
+
+        let client = GroupsSyncClient()
+        let cursor = try client.loadOrCreateCursor(context)
+        try markZonesEnumerated(["SplitGroup-Gone": 12, "SplitGroup-Stays": 7],
+                                cursor: cursor, context: context)
+
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [], cursors: [:], memberships: ["SplitGroup-Stays"]),
+            cursor: cursor, context: context)
+        await settle { self.groupsInZone(context, "SplitGroup-Gone") == 0 }
+
+        #expect(try zoneCounts(context, zone: "SplitGroup-Gone") == (0, 0, 0, 0, 0))
+        #expect(try zoneCounts(context, zone: "SplitGroup-Stays") == (1, 1, 1, 1, 1))
+        // El cursor de la zona perdida vuelve a 0: sin eso, un re-join posterior no re-baja ni el
+        // `split_groups` ni su contenido (todo tiene `server_seq` por debajo de la marca alta) y el
+        // re-admitido se queda sin grupo.
+        #expect(decodedCursor(cursor, group: "SplitGroup-Gone") == 0)
+        #expect(decodedCursor(cursor, group: "SplitGroup-Stays") == 7)
+    }
+
+    /// Simétrico: la zona SIGUE en `memberships` ⇒ no se toca nada. Es lo que separa «leer la señal» de
+    /// «borrar cada vez que pasa un pull».
+    @Test func pull_membershipsWithMyZone_doesNotClean() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        seedBackendZone("SplitGroup-A", context: context)
+        try context.save()
+
+        let client = GroupsSyncClient()
+        let cursor = try client.loadOrCreateCursor(context)
+        try markZonesEnumerated(["SplitGroup-A": 12], cursor: cursor, context: context)
+
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [], cursors: [:], memberships: ["SplitGroup-A"]),
+            cursor: cursor, context: context)
+        await drainPendingTasks()
+
+        #expect(try zoneCounts(context, zone: "SplitGroup-A") == (1, 1, 1, 1, 1))
+        #expect(decodedCursor(cursor, group: "SplitGroup-A") == 12)
+    }
+
+    /// **Carrera del ALTA.** `GroupBackendMembershipService.createGroup`/`joinGroup` son server-first pero
+    /// materializan la fila local DESPUÉS del `await` del RPC, así que un pull cuya petición salió ANTES vuelve
+    /// —legítimamente— con un `memberships` sin el grupo recién creado. La zona no está en `groupCursorsJSON`
+    /// (nadie se la ha enumerado todavía) ⇒ no es candidata.
+    ///
+    /// MUTACIÓN: quitar el gate `enumeratedByServer.contains(zone)` deja este test en rojo.
+    @Test func pull_zoneNeverEnumeratedByServer_isNotACandidate() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        seedBackendZone("SplitGroup-JustCreated", context: context)
+        try context.save()
+
+        let client = GroupsSyncClient()
+        let cursor = try client.loadOrCreateCursor(context)  // cursor VACÍO: ningún pull la ha listado
+
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [], cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+        await drainPendingTasks()
+
+        #expect(try zoneCounts(context, zone: "SplitGroup-JustCreated") == (1, 1, 1, 1, 1))
+    }
+
+    /// **No-regresión de la rama `.icloud`, que es la regla más importante de este release.** `memberships`
+    /// es autoritativo para las zonas cuya verdad vive en el backend y no dice NADA de las de CloudKit: un
+    /// grupo con `isBackendGroup == false` no se toca aunque no aparezca en la lista.
+    ///
+    /// MUTACIÓN: quitar el filtro `belongsToBackendChannel` deja este test en rojo.
+    @Test func pull_cloudKitZone_isNeverTouchedByMemberships() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let ck = SplitGroup(name: "CK")
+        ck.cloudKitZoneID = "SplitGroup-CloudKit"      // isBackendGroup == false (default)
+        context.insert(ck)
+        context.insert(SplitMember(groupZoneID: "SplitGroup-CloudKit", displayName: "Ana"))
+        try context.save()
+
+        let client = GroupsSyncClient()
+        let cursor = try client.loadOrCreateCursor(context)
+        try markZonesEnumerated(["SplitGroup-CloudKit": 3], cursor: cursor, context: context)
+
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [], cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+        await drainPendingTasks()
+
+        #expect(groupsInZone(context, "SplitGroup-CloudKit") == 1)
+        #expect(decodedCursor(cursor, group: "SplitGroup-CloudKit") == 3)
+    }
+
+    /// **Invariante del wire.** El gateway construye `deltas` y `cursors` recorriendo `memberGroupIds`
+    /// (`routes.ts:455`), así que un grupo presente en la página ES un grupo del que soy miembro: la unión
+    /// gana sobre un `memberships` que lo contradiga.
+    @Test func pull_zoneInThisPagesDeltas_survivesEvenIfMembershipsOmitsIt() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        seedBackendZone("SplitGroup-A", context: context)
+        try context.save()
+
+        let client = GroupsSyncClient()
+        let cursor = try client.loadOrCreateCursor(context)
+        try markZonesEnumerated(["SplitGroup-A": 3], cursor: cursor, context: context)
+
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [memberDelta()], cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+        await drainPendingTasks()
+
+        #expect(groupsInZone(context, "SplitGroup-A") == 1)
+    }
+
+    /// **`nil` no es `[]`.** El gateway manda el campo SIEMPRE; su ausencia es una respuesta que no conoce el
+    /// contrato, y leerla como «no eres miembro de nada» borraría grupos vivos. Fail-closed.
+    ///
+    /// MUTACIÓN: devolver el `?? []` a `decodePage`, o el `guard let` a un `?? []`, deja este test en rojo.
+    @Test func pull_absentMembershipsField_isNotAnEmptyMembership() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        seedBackendZone("SplitGroup-A", context: context)
+        try context.save()
+
+        let client = GroupsSyncClient()
+        let cursor = try client.loadOrCreateCursor(context)
+        try markZonesEnumerated(["SplitGroup-A": 3], cursor: cursor, context: context)
+
+        // Envelope SIN el campo — exactamente lo que decodifica `decodePage`.
+        let page = try GroupsSyncClient.decodePage(Data(#"{"deltas":[],"cursors":{}}"#.utf8))
+        #expect(page.memberships == nil)
+        client.applyPulledPage(page, cursor: cursor, context: context)
+        await drainPendingTasks()
+
+        #expect(groupsInZone(context, "SplitGroup-A") == 1)
+    }
+
+    /// Una página CON deltas (que sí persiste) también reconcilia: el segundo call-site, el de después del
+    /// save. La zona perdida no puede estar en esa página por construcción del gateway, así que el sujeto es
+    /// una zona vecina.
+    @Test func pull_pageWithDeltas_alsoReconcilesTheZonesItDidNotBring() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        seedBackendZone("SplitGroup-A", context: context)
+        seedBackendZone("SplitGroup-Gone", context: context)
+        try context.save()
+
+        let client = GroupsSyncClient()
+        let cursor = try client.loadOrCreateCursor(context)
+        try markZonesEnumerated(["SplitGroup-A": 3, "SplitGroup-Gone": 9], cursor: cursor, context: context)
+
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [memberDelta()], cursors: ["SplitGroup-A": 4],
+                            memberships: ["SplitGroup-A"]),
+            cursor: cursor, context: context)
+        await settle { self.groupsInZone(context, "SplitGroup-Gone") == 0 }
+
+        #expect(try zoneCounts(context, zone: "SplitGroup-Gone") == (0, 0, 0, 0, 0))
+        #expect(groupsInZone(context, "SplitGroup-A") == 1)
+    }
+
+    // MARK: - Test 12b · Source-scan del cableado (los DOS call-sites y su orden)
+
+    private static var repoRoot: URL {
+        URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()  // YalaTests/CloudSync/
+            .deletingLastPathComponent()  // YalaTests/
+            .deletingLastPathComponent()  // repo root
+    }
+
+    private static func groupsSyncClientSource() throws -> String {
+        try String(
+            contentsOf: repoRoot.appendingPathComponent(
+                "Yala/Services/CloudSync/Groups/GroupsSyncClient.swift"),
+            encoding: .utf8)
+    }
+
+    /// Cuerpo de `applyPulledPage`, de su firma a la declaración siguiente. `nil` si cambiaron, y el test lo
+    /// convierte en rojo con `#require`: un escáner que pierde su sujeto NO debe pasar en verde.
+    private static func applyPulledPageBody(_ source: String) -> String? {
+        let signature =
+            "func applyPulledPage(_ page: GroupPulledPage, cursor: GroupSyncCursor, context: ModelContext) -> Bool {"
+        guard let start = source.range(of: signature) else { return nil }
+        let rest = source[start.upperBound...]
+        guard let end = rest.range(of: "\n    /// Espeja «me sacaron del grupo»") else { return nil }
+        return String(rest[..<end.lowerBound])
+    }
+
+    /// **Lo que decide aquí es QUIÉN llama y en qué ORDEN, así que la red tiene que ser un source-scan** —
+    /// molde `AttestWiringTests` / `GroupsSyncHardeningTests`. La salida IDLE es la que cubre el caso
+    /// dominante (una remoción no produce deltas ⇒ su página no persiste nada y sale por ahí), y moverla por
+    /// debajo del `saveWithAuthor` dejaría los tests de comportamiento de arriba en VERDE.
+    ///
+    /// MUTACIÓN: borrar cualquiera de los dos call-sites deja este test en rojo (el conteo, o el orden).
+    @Test func sourceScan_reconcileHasBothCallSites_andTheIdleOneComesFirst() throws {
+        // ACOTADO al cuerpo de `applyPulledPage`: `saveWithAuthor` aparece también en `loadOrCreateCursor`,
+        // muy por encima en el fichero, y un escáner global comparaba posiciones de funciones distintas.
+        let body = try #require(Self.applyPulledPageBody(try Self.groupsSyncClientSource()),
+                                "cambió la firma o el cierre de applyPulledPage: el escáner no tiene sujeto")
+        let call = "reconcileLostMemberships(page, cursor: cursor, context: context)"
+        // Conteo esperado: sin él, un renombrado o un escáner roto pasan en verde sin comprobar nada.
+        #expect(body.components(separatedBy: call).count - 1 == 2,
+                "los call-sites de la reconciliación de membresías cambiaron")
+
+        let idle = try #require(body.range(of: "if page.deltas.isEmpty, !cursorsAdvance {"),
+                                "cambió la salida idle: el escáner no tiene sujeto")
+        let save = try #require(body.range(of: "try saveWithAuthor(context) {"))
+        let first = try #require(body.range(of: call))
+        #expect(idle.upperBound < first.lowerBound && first.upperBound < save.lowerBound,
+                "el call-site de la salida IDLE desapareció: una remoción no trae deltas y su página sale por ahí")
+    }
+
+    /// El `?? []` del decode es el defecto que convierte «no sé» en «no eres miembro de nada».
+    @Test func sourceScan_decodePageNeverCollapsesAbsentMembershipsToEmpty() throws {
+        let source = try Self.groupsSyncClientSource()
+        #expect(!source.contains("memberships: decoded.memberships ?? []"),
+                "el decode volvió a colapsar la ausencia del campo a un array vacío")
     }
 }

@@ -1815,7 +1815,14 @@ final class GroupsSyncClient {
         // `page.cursors` trae un avance (grupo nuevo descubierto por memberships con cursor pero sin deltas
         // en esta página) SÍ hay que persistir → no cortar.
         let cursorsAdvance = page.cursors.contains { gid, seq in seq > (maxSeqByGroup[gid] ?? 0) }
-        if page.deltas.isEmpty, !cursorsAdvance { return true }
+        if page.deltas.isEmpty, !cursorsAdvance {
+            // Este `return` es el PRIMERO que no deja rastro, y `memberships` viaja en TODAS las páginas —
+            // también en ésta. Una remoción de membresía NO produce ni un delta (la RLS deja de entregar la
+            // zona en cuanto el status pasa a `removed`), así que su página típica es EXACTAMENTE la del
+            // ciclo idle: salir aquí sin mirarla es lo que hacía que la señal no llegara nunca a aplicarse.
+            reconcileLostMemberships(page, cursor: cursor, context: context)
+            return true
+        }
 
         do {
             try saveWithAuthor(context) {
@@ -1917,7 +1924,103 @@ final class GroupsSyncClient {
         drainSoftDeleteFreeze(freezeZones, context: context)
         drainUnbridge(expenseIDs: unbridgeExpenseIDs, settlementIDs: unbridgeSettlementIDs)
         scheduleBridge(expenseIDs: bridgeExpenseIDs, settlementIDs: bridgeSettlementIDs)
+        // «Me sacaron del grupo». Va AL FINAL y no compite con nada de arriba: lo de arriba trabaja sobre las
+        // zonas que ESTA página trajo y esto sobre las que NO trajo. Segundo call-site — el otro está en la
+        // salida idle, que es la que cubre el caso dominante.
+        reconcileLostMemberships(page, cursor: cursor, context: context)
         return true
+    }
+
+    /// Espeja «me sacaron del grupo», que el pull dice EN NEGATIVO y hasta hoy no leía nadie.
+    ///
+    /// `remove_member` no borra la fila del miembro: la pone en `removed`, y en ese instante la RLS y el
+    /// gateway dejan de entregar la zona ⇒ **no baja tombstone ni upsert de nada**. La única señal es la
+    /// AUSENCIA del grupo en `memberships` (las filas `group_members` del `sub` con `deleted = false` y
+    /// `status in (active, pendingApproval)` — `gateway/src/groups/routes.ts:388`), que viaja en todas las
+    /// páginas y que este cliente decodificaba (`decodePage`) sin leer en ningún sitio. El destino es el
+    /// mismo del canal CloudKit: `GroupService.performRemovedSelfCleanup`.
+    ///
+    /// **Es una señal de NIVEL, no de flanco**: el estado completo de mis membresías, no un evento. Por eso
+    /// NO necesita intent durable, al revés que `armBridgeIntent` — si esta vuelta se pierde, la siguiente la
+    /// vuelve a traer entera. Lo que sí es irrepetible es el cursor, y de ahí el orden de abajo.
+    ///
+    /// **Tres gates, y cada uno cierra una forma distinta de borrar de más:**
+    ///
+    ///  1. **`memberships == nil` ⇒ no tocar nada.** «No sé» no es «no eres miembro de nada» (docblock de
+    ///     `GroupPulledPage`).
+    ///  2. **Unión con los `group_id` de los deltas y de los cursores de ESTA página.** No es cautela, es un
+    ///     invariante del wire: el gateway construye `deltas` y `cursors` recorriendo `memberGroupIds`
+    ///     (`routes.ts:455`), así que un grupo presente en la página ES un grupo del que soy miembro. Cubre
+    ///     cualquier página en la que las dos mitades del envelope se contradigan.
+    ///  3. **La zona tiene que estar YA en `groupCursorsJSON`** — evidencia de que el backend la enumeró para
+    ///     este device al menos una vez. Cierra la carrera del ALTA: `GroupBackendMembershipService`
+    ///     `createGroup`/`joinGroup` son server-first pero materializan la fila local DESPUÉS del `await` del
+    ///     RPC, así que un pull cuya petición salió ANTES de ese RPC vuelve, legítimamente, sin el grupo
+    ///     recién creado. Sin este gate, crear un grupo con un pull en vuelo lo borraría.
+    ///
+    /// La unidad es la ZONA y la pertenencia al canal se decide ANY-row, como en toda esta familia:
+    /// `memberships` es autoritativo para las zonas cuya verdad vive en el backend y **no dice absolutamente
+    /// nada de las de CloudKit**, que es la no-regresión que más importa en este release. El predicado es el
+    /// ESTRECHO (`isBackendGroup` a secas) y NO `belongsToBackendChannel`, que es el de RETENCIÓN: una copia
+    /// CONGELADA (`movedToBackendAt != nil`, `isBackendGroup == false`) es un grupo cuyo miembro AÚN NO
+    /// re-joineó ⇒ no tiene membresía server-side ⇒ **no puede aparecer en `memberships` jamás**, y con el
+    /// predicado ancho sería candidata permanente a que la borráramos. Mismo criterio, y por la misma razón,
+    /// que `GroupBackendIdentityLogic.membershipRoutesToBackend`.
+    ///
+    /// **El cursor del grupo se resetea a 0 ANTES de limpiar, y ese orden carga peso.** Sin reset, un
+    /// re-join posterior encontraría el cursor en su marca alta y el servidor solo manda lo que tenga
+    /// `server_seq` mayor ⇒ ni el `split_groups` ni el contenido vuelven a bajar y el re-admitido se queda
+    /// sin grupo (el reset por re-join de `applyMember` no lo cubre: exige una fila de member PREEXISTENTE
+    /// en `pendingApproval`, y aquí la limpieza se la llevó). Y con el reset delante, morir entre las dos
+    /// mitades deja el grupo como candidato en la vuelta siguiente —auto-sana—; al revés no: sin filas
+    /// locales ya no hay candidata que reconsiderar. El reset va bajo `outboxSaveAuthor` y no puede pisarlo
+    /// la página en vuelo, porque un grupo que no está en `memberships` tampoco puede estar en `page.cursors`.
+    ///
+    /// POST-SAVE y jamás dentro del `saveWithAuthor`, molde de `publishTrackedJoinPhaseIfNeeded`: el
+    /// `rollback()` del `catch` revertiría el grafo de la página y esto habría borrado un grupo sobre un
+    /// estado que no está en disco.
+    private func reconcileLostMemberships(
+        _ page: GroupPulledPage, cursor: GroupSyncCursor, context: ModelContext
+    ) {
+        guard let memberships = page.memberships else { return }
+        var live = Set(memberships)
+        live.formUnion(page.deltas.map(\.groupID))
+        live.formUnion(page.cursors.keys)
+        let enumeratedByServer = Set(decodeCursors(cursor.groupCursorsJSON).keys)
+
+        let rows: [SplitGroup]
+        do { rows = try context.fetch(FetchDescriptor<SplitGroup>()) }
+        catch {
+            #if DEBUG
+            logger.error("GroupsSync: fetch de grupos para reconciliar membresías falló: \(error)")
+            #endif
+            return  // fail-closed: sin poder enumerar las zonas no se borra ninguna
+        }
+        var rowsByZone: [String: [SplitGroup]] = [:]
+        for row in rows where !row.cloudKitZoneID.isEmpty {
+            rowsByZone[row.cloudKitZoneID, default: []].append(row)
+        }
+        let lostZones = rowsByZone
+            .filter { zone, zoneRows in
+                !live.contains(zone) && enumeratedByServer.contains(zone)
+                    && zoneRows.contains(where: \.isBackendGroup)
+            }
+            .keys
+            .sorted()
+        guard !lostZones.isEmpty else { return }
+
+        GroupsSyncBreadcrumb.groupsMembershipLost(zones: lostZones.count)
+        MetricsService.canary(.groupsMembershipLost, detail: "pull", value: Double(lostZones.count))
+        resetGroupCursors(lostZones, context: context)
+        let cleanupContext = context
+        for zone in lostZones {
+            // `Task` porque el cleanup es `async` (su mitad CloudKit lo es), molde EXACTO del canal viejo
+            // (`SplitSyncManager.handleFetchedRecordZoneChanges`, drenaje de `pendingRemovedSelfZoneNames`).
+            // Perder el Task no pierde la señal: la vuelta siguiente del pull la vuelve a traer.
+            Task { @MainActor in
+                await GroupService.shared.performRemovedSelfCleanup(zoneName: zone, context: cleanupContext)
+            }
+        }
     }
 
     /// Deshace el puente personal de los gastos y liquidaciones que esta página borró por tombstone.
@@ -2752,7 +2855,9 @@ final class GroupsSyncClient {
         return GroupPulledPage(
             deltas: deltas,
             cursors: decoded.cursors ?? [:],
-            memberships: decoded.memberships ?? []
+            // SIN `?? []`: la ausencia del campo se propaga como `nil` y `reconcileLostMemberships` no
+            // toca nada. Ver el docblock de `GroupPulledPage`.
+            memberships: decoded.memberships
         )
     }
 
@@ -2893,7 +2998,14 @@ extension GroupsSyncClient {
 
         // [R4] Política remoto-vacío: root remoto de corpus VACÍO (todas las entities count 0) + local no
         // vacío → NO es divergencia, es la firma de remoción de membership vía RLS (el server responde tablas
-        // vacías al no-member). Skip SIN canario ni remediación; la limpieza llega por memberships del pull.
+        // vacías al no-member). Skip SIN canario ni remediación porque de la limpieza se encarga
+        // `reconcileLostMemberships`, que lee esa misma remoción del `memberships` del pull.
+        //
+        // Esa frase estuvo AQUÍ ANTES QUE LA IMPLEMENTACIÓN, y era el bug B-1 de la re-medición del
+        // 2026-08-04: `GroupPulledPage.memberships` se escribía y no se leía en ningún sitio, así que el skip
+        // se apoyaba en una limpieza que no existía — misma familia que el `AppAttestClient.ensureRegistered()`
+        // de `.claude/rules/gateway-attest.md`. Si alguien vuelve a retirar ese lector, este skip pasa a ser
+        // un descarte silencioso: cámbialo por remediación o canario en el mismo commit.
         let remoteEmpty = remote.entities.values.allSatisfy { $0.count == 0 }
         let localEmpty = local.entities.values.allSatisfy { $0.count == 0 }
         if remoteEmpty && !localEmpty {
@@ -3092,10 +3204,15 @@ struct GroupPulledDelta: Equatable {
 }
 
 /// Página del pull de Grupos: deltas + cursores autoritativos por grupo + memberships descubiertas.
+///
+/// **`memberships` es OPCIONAL a propósito y `nil` NO es `[]`.** El gateway lo manda SIEMPRE
+/// (`routes.ts:481`, aunque el array sea vacío), así que su ausencia solo puede venir de una respuesta que
+/// no conoce el contrato. `GroupsSyncClient.reconcileLostMemberships` BORRA grupos locales a partir de este
+/// campo: colapsar la ausencia a «no eres miembro de nada» con un `??` es leer «no sé» como una remoción.
 struct GroupPulledPage: Equatable {
     let deltas: [GroupPulledDelta]
     let cursors: [String: Int64]
-    let memberships: [String]
+    let memberships: [String]?
 }
 
 private struct RawGroupPullResponse: Decodable {

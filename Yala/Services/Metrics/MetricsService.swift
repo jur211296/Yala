@@ -119,6 +119,12 @@ enum MetricsCanary: String {
     /// cola real de aquel bug, esperada y de UNA sola vez por device. **Sostenido en >0 = el camino de
     /// emisión volvió a abrirse** y el barrido lo está tapando. `detail` separa filas de archivos del espejo.
     case groupsOutboxGroupTombstonePurged
+    /// El pull dejó de listar una zona backend que el device tiene localmente ⇒ al usuario lo sacaron del
+    /// grupo (o le rechazaron la solicitud) y se dispara la limpieza local. Es un evento NORMAL y esperado:
+    /// lo que se vigila es su ausencia total conviviendo con reportes de «grupo fantasma», y su exceso en un
+    /// mismo device (el gateway dejando de listar grupos vivos). Único rastro en la flota de un camino que
+    /// BORRA datos locales — `value` = zonas de esa página. Sin PII.
+    case groupsMembershipLost
 
     // Batch "salir de todos mis grupos" (D10)
     case groupBatchLeaveStarted

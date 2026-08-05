@@ -622,10 +622,16 @@ final class GroupService {
         SessionState.shared.incrementDataVersion()
     }
 
-    /// Flow simétrico a `leaveGroup` disparado por observer (`SplitSyncManager.applyMember`
-    /// cuando el current user pasa a `.removed` vía admin remoto). Idempotente: si el
-    /// SplitGroup local ya fue borrado (e.g. leaveGroup previo en otro device del mismo
-    /// user), no-op.
+    /// Flow simétrico a `leaveGroup` disparado por observer cuando el admin remoto saca al current user del
+    /// grupo. Idempotente: si el SplitGroup local ya fue borrado (e.g. leaveGroup previo en otro device del
+    /// mismo user), no-op.
+    ///
+    /// **DOS disparadores, uno por canal, y el segundo cambia lo que esta función puede asumir.** CloudKit:
+    /// `SplitSyncManager.applyMember` ve al member propio pasar de `.active` a `.removed`. Backend:
+    /// `GroupsSyncClient.reconcileLostMemberships` ve desaparecer la zona del `memberships` del pull — ahí
+    /// NO hay fila de member que observar (la RLS deja de entregarla en cuanto el status es `removed`), así
+    /// que la señal es la ausencia. La consecuencia práctica está en el `guard` de la mitad CloudKit de
+    /// abajo: una zona born-backend no tiene CKShare del que salir.
     func performRemovedSelfCleanup(zoneName: String, context providedContext: ModelContext? = nil) async {
         guard let context = providedContext ?? modelContext else { return }
         // `createdAt` ASC = la fila CANÓNICA de la zona, mismo criterio que `group(for:)`. El barrido ya es
@@ -651,6 +657,31 @@ final class GroupService {
         // que SÍ tenga identidad CloudKit.
         let shareRow = rows.first { !$0.cloudKitZoneOwnerName.isEmpty || $0.ckSystemFieldsData != nil } ?? group
         let leaveShareOwnerName = SplitZoneManager(syncManager: .shared).ownerName(for: shareRow)
+        // El CKShare es del canal CloudKit y NO existe en una zona del canal backend
+        // (`SplitZoneManager.createZone`/`createShare` guardan por `!isBackendGroup`). Desde que este flow
+        // tiene un segundo disparador —`GroupsSyncClient.reconcileLostMemberships`, que lee la remoción del
+        // `memberships` del pull— la rama de abajo es alcanzable con una zona born-backend, donde
+        // `ownerName(for:)` degrada a `CKCurrentUserDefaultName` (no hay ni `cloudKitZoneOwnerName` ni
+        // `ckSystemFieldsData`).
+        //
+        // **Qué hace de malo, MEDIDO y no inferido** (`SplitZoneManager.leaveShareByZone`, :238): borra
+        // contra `container.sharedCloudDatabase`, donde las zonas PROPIAS no están por construcción ⇒ con
+        // ese owner el delete no puede acertar en el share de otro: solo puede FALLAR. El daño real es el
+        // `catch` de abajo: deja una entry en `PendingLeaveShareTracker` que `retryPendingLeaveShares`
+        // (`AppBootstrapper`) NO clasifica como permanente y conserva para siempre ⇒ una petición a CloudKit
+        // inútil en CADA arranque, eternamente. Es el mismo residuo que la rama backend de `leaveGroup`
+        // (:563) declara por escrito, y por eso allí tampoco se encola nada.
+        //
+        // **El predicado es el ESTRECHO (`isBackendGroup` a secas, ANY-row sobre la zona) y NO
+        // `belongsToBackendChannel`**, que es el de RETENCIÓN. Lo dice el docblock de
+        // `GroupBackendIdentityLogic.membershipRoutesToBackend`: una copia CONGELADA (`movedToBackendAt !=
+        // nil`, `isBackendGroup == false`) es un grupo cuyo miembro AÚN NO re-joineó ⇒ sigue dentro del
+        // CKShare y tiene que poder salir; ampliar el predicado lo dejaría dentro de un share del que cree
+        // haber salido. ANY-row por la misma razón que el resto de la familia (un duplicado MIXTO no puede
+        // enrutar el mismo grupo por un canal u otro según qué fila se tenga en la mano), leído ANTES de
+        // borrar las filas, y SIN consultar `CloudSyncFlags.groupsBackendEnabled`: con el kill remoto puesto
+        // la zona sigue sin tener share, así que decidir por el flag reabriría el fallo.
+        let zoneIsOnBackendChannel = rows.contains(where: \.isBackendGroup)
 
         do {
             try performLocalCleanupAndDelete(group: group, context: context)
@@ -662,6 +693,7 @@ final class GroupService {
         }
         SessionState.shared.incrementDataVersion()
 
+        guard !zoneIsOnBackendChannel else { return }
         do {
             try await SplitZoneManager(syncManager: .shared).leaveShareByZone(
                 zoneName: leaveShareZoneName,
