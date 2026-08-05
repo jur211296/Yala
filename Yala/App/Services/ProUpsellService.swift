@@ -16,8 +16,19 @@ final class ProUpsellService {
     /// `UserDefaults.standard` (regla del repo). Producción usa `.standard`.
     private let defaults: UserDefaults
 
-    init(defaults: UserDefaults = .standard) {
+    /// Predicado Pro inyectable. Existe por la MISMA razón que `defaults`, y hasta el
+    /// 2026-08-05 faltaba: los tests aislaban sus defaults pero la premisa de los guards
+    /// seguía siendo `FeatureGateService.shared`, un singleton de proceso que cualquiera
+    /// puede mover (el toggle "Simular Pro" del Perfil, un `-uitest-pro` de una corrida
+    /// anterior). Esa asimetría es lo que hacía que los tests se pusieran rojos por algo
+    /// que ocurrió FUERA de ellos. Inyectado, el caso free y el caso Pro se afirman los
+    /// dos, en vez de asumir uno.
+    private let isProUser: @MainActor () -> Bool
+
+    init(defaults: UserDefaults = .standard,
+         isProUser: @escaping @MainActor () -> Bool = { FeatureGateService.shared.isProUser }) {
         self.defaults = defaults
+        self.isProUser = isProUser
     }
 
     // MARK: - In-Memory State
@@ -43,7 +54,7 @@ final class ProUpsellService {
 
     /// Whether a periodic upgrade banner should appear for Free users.
     func shouldShowPeriodicBanner() -> Bool {
-        guard !FeatureGateService.shared.isProUser else { return false }
+        guard !isProUser() else { return false }
         guard !StoreKitManager.shared.isInTrial else { return false }
         guard !shownThisSession else { return false }
         guard !isVoluntaryChurn else { return false }
@@ -65,7 +76,7 @@ final class ProUpsellService {
 
     /// Whether the trial-expired sheet should appear (once per lifetime).
     func shouldShowTrialExpiredSheet() -> Bool {
-        guard !FeatureGateService.shared.isProUser else { return false }
+        guard !isProUser() else { return false }
         guard defaults.bool(forKey: wasInTrialKey) else { return false }
         guard !defaults.bool(forKey: trialExpiredSheetShownKey) else { return false }
         return true
@@ -73,7 +84,7 @@ final class ProUpsellService {
 
     /// Whether a milestone upgrade sheet should appear for this transaction count.
     func shouldShowMilestone(transactionCount: Int) -> Bool {
-        guard !FeatureGateService.shared.isProUser else { return false }
+        guard !isProUser() else { return false }
         guard !shownThisSession else { return false }
         let lastShown = defaults.integer(forKey: lastMilestoneShownKey)
         return milestones.contains(transactionCount) && transactionCount > lastShown
@@ -126,10 +137,13 @@ final class ProUpsellService {
 
     // MARK: - Private
 
-    /// Voluntary churn: was Pro, no longer Pro, and never had trial
+    /// Voluntary churn: was Pro, no longer Pro, and never had trial.
+    /// `wasProUser` sigue leyéndose del singleton (es historia persistida, no el estado
+    /// actual, y ningún test lo ejercita todavía); el "ya no es Pro" usa el predicado
+    /// inyectado para que las dos mitades hablen de la misma fuente.
     private var isVoluntaryChurn: Bool {
         StoreKitManager.shared.wasProUser
-            && !StoreKitManager.shared.isProUser
+            && !isProUser()
             && !defaults.bool(forKey: wasInTrialKey)
     }
 

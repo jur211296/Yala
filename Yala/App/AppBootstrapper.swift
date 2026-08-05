@@ -612,13 +612,13 @@ final class AppBootstrapper {
             UserDefaults.standard.removeObject(forKey: PrefSyncKey.groupsConsentAcceptedAt.rawValue)
             UserDefaults.standard.removeObject(forKey: PrefSyncKey.groupsConsentTextVersion.rawValue)
         }
-        // Estado Pro determinista según el launch arg, idempotente entre tests.
-        // `devForceProTier` se persiste en UserDefaults (`dev.forceProTier`) y el wipe
-        // de SwiftData no lo toca → sin esto, un test con `-uitest-pro` dejaría Pro
-        // "pegajoso" para los siguientes, rompiendo las verificaciones de gating free.
-        if StoreKitManager.shared.devForceProTier != UITestHooks.forcePro {
-            StoreKitManager.shared.toggleDevProTier()
-        }
+        // Estado Pro determinista según el launch arg, EFÍMERO y sin rastro en disco.
+        // Va incondicional (no solo bajo `-uitest-reset`): también hay que fijar el estado
+        // en los launches con `reset: false`, y la purga tiene que correr en TODOS.
+        // Esto era `toggleDevProTier()`, que persistía `dev.forceProTier` y contaminaba al
+        // host de unit tests —mismo bundle `.dev`— hasta ponerlo en rojo. El porqué completo
+        // está en `StoreKitManager.applyUITestProTier(_:)`.
+        StoreKitManager.shared.applyUITestProTier(UITestHooks.forcePro)
         if UITestHooks.skipOnboarding {
             UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
             UserDefaults.standard.set(true, forKey: "hasShownWelcomeChooser")

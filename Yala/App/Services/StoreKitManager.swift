@@ -102,6 +102,11 @@ final class StoreKitManager {
     /// Dev-only flag: when true, forces Pro tier regardless of StoreKit entitlements.
     /// Persisted to UserDefaults so it survives app restart. Only works with dev bundle.
     private(set) var devForceProTier: Bool = false
+
+    /// Estado Pro de `-uitest-pro`: EFÍMERO a propósito — vive solo en este proceso y NO se
+    /// persiste. `nil` = la app no corre bajo uitest y manda el camino normal (dev flags /
+    /// entitlements). Ver `applyUITestProTier(_:)` para el porqué de que no sea `devForceProTier`.
+    private(set) var uiTestForcedProTier: Bool?
     #endif
 
     // MARK: - Init
@@ -242,6 +247,15 @@ final class StoreKitManager {
     /// Check current entitlements and update subscription state
     func updateSubscriptionStatus() async {
         #if DEBUG
+        // El override de uitest gana ANTES que los dev flags: es lo que hace que
+        // `-uitest-pro` no necesite persistir nada. Sin esta rama, el `refreshSubscriptionStatus`
+        // del paso 3 del bootstrap caería al early-return `.dev` de abajo y pondría
+        // `isProUser = false`, deshaciendo el arg a mitad del arranque.
+        if let uiTestForcedProTier {
+            isProUser = uiTestForcedProTier
+            syncToAppGroup()
+            return
+        }
         // Cada rama DEV early-return DEBE syncear a App Group: el flag `isProUser`
         // queda consistente cross-process (intents, widgets). Sin esto, SiriNatural
         // en Yala Dev nunca pasa el gate Pro aunque "Simular Pro" esté ON.
@@ -476,6 +490,47 @@ final class StoreKitManager {
         UserDefaults.standard.set(devForceProTier, forKey: Self.devForceProTierKey)
         syncToAppGroup()
         print("StoreKitManager: Dev Pro tier \(devForceProTier ? "ON" : "OFF") (persisted)")
+    }
+
+    /// Aplica el estado Pro de `-uitest-pro` **sin persistir absolutamente nada**, y borra el
+    /// rastro que el camino anterior dejaba. Lo llama SOLO `AppBootstrapper.applyUITestHooksEarly`.
+    ///
+    /// Antes esto era `toggleDevProTier()`, y ese atajo —reusar el toggle de "Simular Pro" del
+    /// Perfil— es lo que convertía un seam de QA en estado GLOBAL: el toggle persiste
+    /// `dev.forceProTier` en `UserDefaults.standard`, el `init` de arriba lo relee, y el host de
+    /// unit tests comparte bundle (`…yala.dev`) con el de los XCUITest ⇒ **correr los XCUITest y
+    /// después los unitarios dejaba `FeatureGateService.shared.isProUser == true` y ponía en rojo
+    /// a `ProUpsellServiceOneShotTests`, sin que nadie hubiera tocado nada de Pro.** El wipe de
+    /// SwiftData no limpia `UserDefaults`, y el bloque de `-uitest-reset` limpia al ARRANQUE de la
+    /// siguiente corrida uitest — lo cual no protege a un target que corre DESPUÉS.
+    ///
+    /// De ahí las dos mitades:
+    /// 1. **efímero** — `uiTestForcedProTier` vive en el proceso y muere con él;
+    /// 2. **purga** — se borran las cuatro keys que el toggle escribía. No es limpieza de cinturón:
+    ///    cura los simuladores YA contaminados (nada más las borraría) y garantiza que tras
+    ///    cualquier launch uitest el disco quede como si `-uitest-pro` no existiera. `wasProUser`
+    ///    importa más de lo que parece: sucia hace `justDowngraded == true` en el siguiente launch
+    ///    SIN el arg, y `checkForDowngrade` llega a `resetPremiumIconIfNeeded` (que cambia el icono
+    ///    del sistema) y a `resetProThemeIfNeeded`. `chatFABVisible` se borra en vez de escribirse a
+    ///    `true` porque `true` YA es su default en `AppPreferences` — mismo efecto, cero rastro.
+    ///
+    /// Sin guard de bundle `.dev`, al revés que el toggle: este método no es la preferencia de dev,
+    /// es el seam de test, y solo se alcanza bajo `-uitest` dentro de `#if DEBUG`.
+    func applyUITestProTier(_ forced: Bool) {
+        uiTestForcedProTier = forced
+        isProUser = forced
+
+        devForceProTier = false
+        devForceFreeTier = false
+        UserDefaults.standard.removeObject(forKey: Self.devForceProTierKey)
+        UserDefaults.standard.removeObject(forKey: Self.devForceFreeTierKey)
+        UserDefaults.standard.removeObject(forKey: wasProUserKey)
+        UserDefaults.standard.removeObject(forKey: "chatFABVisible")
+
+        // El gate Pro de QuickExpenseIntent lee el App Group, no `isProUser` — sin esto los
+        // intents verían el estado del launch anterior (paridad con el toggle que sustituye).
+        syncToAppGroup()
+        print("StoreKitManager: uitest Pro tier \(forced ? "ON" : "OFF") (efímero, sin persistir)")
     }
     #endif
 }
