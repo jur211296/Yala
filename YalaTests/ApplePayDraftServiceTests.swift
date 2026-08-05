@@ -12,10 +12,24 @@
 //  NOTA sobre acceso al App Group: `ApplePayDraftService.processPending` llama a
 //  `ApplePayPendingStore.peekAll()` / `.remove()` y a `LastUsedAccountStore.read()` SIN inyección
 //  de `UserDefaults` — usan el App Group real del proceso. Por eso esta suite es
-//  `@Suite(.serialized)` (además del contrato de `makeTestContext`) y limpia las keys del App
-//  Group en `init` y en `deinit`. Se escribe/lee vía la API pública de `ApplePayPendingStore`
-//  (que sí acepta `defaults` inyectable) apuntando al MISMO App Group que lee `processPending`,
-//  para no depender de detalles internos del suite name.
+//  `@Suite(.serialized)` (además del contrato de `makeTestContext`). La cola pending va por la API
+//  pública de `ApplePayPendingStore` (que sí acepta `defaults` inyectable) apuntando al MISMO App
+//  Group que lee `processPending`, para no depender de detalles internos del suite name.
+//
+//  `lastUsedAccountID` NO es inyectable y vive en el App Group REAL, que sobrevive al proceso y
+//  comparten el host de los unit tests y el de los XCUITest. Lo aísla `.lastUsedAccountIsolated`
+//  (`SharedStateIsolation.swift`), que lo limpia al entrar y lo devuelve al salir. **Hasta el
+//  2026-08-05 esto lo hacía un `removeObject` en el `init()` y este mismo docblock afirmaba que
+//  además se limpiaba «en `deinit`»: la suite es un `struct` y no puede tener `deinit`, así que la
+//  garantía no existía —solo el borrado— y la última cuenta usada del simulador se perdía en cada
+//  corrida.** Medido con un centinela plantado en el App Group: con el código de entonces
+//  desaparece; con el trait puesto sobrevive a los 17 tests.
+//
+//  No devuelvas ese `removeObject` al `init()`. No porque rompa hoy —el scope envuelve también la
+//  construcción de la suite, así que el `init()` corre DESPUÉS del capture y el borrado sería
+//  redundante con el clear— sino porque su inocuidad depende por completo de que nadie quite el
+//  trait, y es el patrón que se copia a la siguiente suite. Lo pinnea
+//  `SharedStateIsolationTests.ningunInitDeSuiteBorraLaUltimaCuentaUsada`.
 //
 //  NOTA (no cubierto): el gate de quiescencia (`iCloudSyncService.shared.isImportQuiescent`) se
 //  fuerza a `true` vía `_testReset()` (status .idle + lastImportDate nil → .run). El PATH de
@@ -31,7 +45,7 @@ import Testing
 
 @testable import Yala
 
-@Suite(.serialized)
+@Suite(.serialized, .lastUsedAccountIsolated)
 @MainActor
 struct ApplePayDraftServiceTests {
 
@@ -41,14 +55,12 @@ struct ApplePayDraftServiceTests {
     /// que ve el SUT (causa del flaky `noMatchingAccount` en la suite completa). Suite UUID única
     /// por instancia (Swift Testing crea una instancia por @Test) → siempre arranca vacía.
     private let pendingDefaults: UserDefaults
-    /// App Group REAL: `LastUsedAccountStore` (test del `$` ambiguo) NO es inyectable → usa el real.
-    private let realAppGroup: UserDefaults
 
+    /// El `init()` NO toca el App Group a propósito: la premisa «se arranca sin última cuenta usada»
+    /// la da el clear de `.lastUsedAccountIsolated`, y hacerlo aquí volvería a romper la restauración
+    /// (ver el docblock de arriba).
     init() {
         pendingDefaults = UserDefaults(suiteName: "test.applepay.pending.\(UUID().uuidString)")!
-        realAppGroup = UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)!
-        // La última cuenta usada vive en el App Group real (LastUsedAccountStore no inyectable).
-        realAppGroup.removeObject(forKey: AppPreferences.Keys.lastUsedAccountID)
         // Quiescencia garantizada: status .idle + lastSuccessfulImportDate nil → gate .run.
         iCloudSyncService.shared._testReset()
     }

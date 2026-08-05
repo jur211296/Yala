@@ -20,7 +20,7 @@ import Testing
 // por dentro y no acepta almacén inyectado. El trait captura, limpia y restaura esas claves
 // alrededor de CADA test, así que ni los de aquí ni los que se añadan mañana pueden dejar la app
 // en alemán para el siguiente XCUITest. Por qué un trait y no un `defer` por test, en
-// `AppLanguageStateIsolation.swift`. **Ningún test de este fichero necesita restaurar nada.**
+// `SharedStateIsolation.swift`. **Ningún test de este fichero necesita restaurar nada.**
 @Suite(.serialized, .appLanguageStateIsolated)
 @MainActor
 struct AppLanguageSyncTests {
