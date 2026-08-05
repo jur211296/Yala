@@ -616,5 +616,28 @@ declarado, habría habido que corregirlos.**
 producción es `SplitSyncManager.swift:2643`, que muere con el fichero— y se re-cablea o se borra dentro del
 commit 1.
 
+### A4 · El vaciado manual de los grupos legacy — CANCELADO, no diferido
+
+**«No existen grupos en CloudKit legacy útiles en ningún usuario de Yala. Pueden morir sin que nadie los
+rescate.»** (owner, 2026-08-04.) El §1 del plan de simplificación queda **cancelado**, y con él **desaparece
+la única ventana que ordenaba el trabajo**: el commit 1 de la Fase 3 ya no espera a nada del owner.
+
+**Y la premisa con la que se había justificado era FALSA, lo que importa más que la cancelación.** El punto de
+control afirmaba que «lo que no se vacíe queda inalcanzable para siempre tras la Fase 4». Medido: el store de
+Grupos monta `cloudKitDatabase: .none` en producción (`Yala/Utils/SwiftDataConfiguration.swift:747`), o sea
+que es **local por dispositivo** y CloudKit es puro transporte ⇒ los datos legacy **no desaparecen ni se
+vuelven inaccesibles**, siguen en cada teléfono. Lo único que se pierde tras la Fase 3 es la **propagación**
+del borrado al otro device, que es exactamente lo que el §1.1 del plan decía y nadie había vuelto a leer. Era
+una **inferencia escrita como medición** — el fallo que el punto 7 de `.claude/rules/swiftdata-cloudkit.md`
+prohíbe por escrito, cometido en el documento que existe para evitarlo.
+
+**Efecto sobre A2:** el precio declarado de la dirección (iii) —«las huérfanas de zonas legacy quedan sin
+reparar en silencio»— **baja a cero**, porque no hay corpus legacy que merezca repararse. La decisión no
+cambia; su coste sí, y por eso queda anotado aquí y no solo en el mensaje del commit `d686e661`.
+
+**Residual cosmético declarado:** los grupos legacy que sigan en un teléfono continuarán **visibles** ahí
+después de la Fase 3, cada device por su lado y sin sincronizar. No es dañino —nadie los usa— pero tampoco
+se van solos, así que puede aparecer en un QA y no debe leerse como un bug nuevo.
+
 Los dos chips (**A3-S4** y **A2-impl**) están redactados en
 `$VAULT/Backlog/modo-nube/MODO-NUBE-CHIPS-FASE3.md`.

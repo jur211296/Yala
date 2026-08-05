@@ -38,6 +38,30 @@ statement).
 
 ## §1 · Lo que el owner hace a mano, y cuándo
 
+> ## ⛔ CANCELADO por el owner el 2026-08-04 — no diferido, CANCELADO
+>
+> **«No existen grupos en CloudKit legacy útiles en ningún usuario de Yala. Pueden morir sin que nadie los
+> rescate.»** (owner, 2026-08-04). Este §1 entero deja de ser trabajo pendiente ⇒ **su ventana ya no existe y
+> NO bloquea la Fase 3**: el commit 1 se puede abrir sin esperar nada del owner.
+>
+> **Qué se pierde al no hacerlo, medido y no inferido:** solo la **propagación** del borrado al otro device.
+> El store de Grupos es `cloudKitDatabase: .none` en producción
+> (`Yala/Utils/SwiftDataConfiguration.swift:747`) — **local por dispositivo**, con CloudKit como puro
+> transporte ⇒ los datos legacy **no desaparecen ni se vuelven inaccesibles** tras la Fase 3 ni tras la
+> Fase 4: siguen en cada teléfono, visibles y editables. Lo único que cambia es que dejan de sincronizarse
+> entre devices. Si alguna vez leíste que quedaban «inalcanzables para siempre», era **falso**.
+>
+> **Consecuencia sobre A2:** la dirección (iii) —el barredor deja de considerar candidatas las zonas
+> legacy— tenía como precio «huérfanas legacy sin reparar, en silencio». Con este §1 cancelado ese precio
+> **baja a cero**: no hay corpus legacy que valga la pena reparar. La decisión no cambia; su coste sí.
+>
+> **Residual cosmético, para que no sorprenda en un QA:** los grupos legacy que queden en un teléfono seguirán
+> **visibles** ahí después de la Fase 3, cada device por su lado y sin sincronizar. No es dañino —nadie los
+> usa— pero tampoco desaparecen solos.
+>
+> Lo que sigue documenta el procedimiento y sus verificaciones, que se conservan por si algún día reaparece
+> un grupo legacy que sí importe.
+
 Esta sección sustituye la Fase 0 del plan viejo. **No hay código que la implemente: es trabajo del owner en la
 app**, y su ventana se cierra en la Fase 3.
 
