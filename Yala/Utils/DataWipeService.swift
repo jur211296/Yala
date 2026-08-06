@@ -613,7 +613,11 @@ final class DataWipeService {
         }
 
         // --- Seed guards ---
-        defaults.removeObject(forKey: "seedCategoriesExecuted") // Allow re-seed after wipe
+        // Las DOS keys del centinela, no una: `CategorySeedSentinel` lo namespacea por store
+        // (personal vs `YalaModel-UITest`) porque `UserDefaults.standard` es el mismo almacén para
+        // los dos y una key única dejaba sin categorías al arranque manual. En producción la key
+        // uitest no existe nunca y borrarla es un no-op.
+        CategorySeedSentinel.allKeys.forEach { defaults.removeObject(forKey: $0) }
         defaults.removeObject(forKey: "notificationsSeeded")    // Allow re-seed after wipe
         defaults.removeObject(forKey: "devSeedDataExecuted")    // DEV — simetría con seedCategoriesExecuted
 

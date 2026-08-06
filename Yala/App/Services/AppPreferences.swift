@@ -379,9 +379,23 @@ final class AppPreferences {
         }
     }
 
+    /// El segundo guard no es redundante y cuesta explicarlo, así que aquí va: **`loadFromDefaults`
+    /// RE-PERSISTE lo que acaba de leer.** El default hardcoded es `false`, un store que traiga
+    /// `true` dispara el `didSet`, y `persistBool` lo escribe de vuelta. Para un valor que ya estaba
+    /// en disco eso es un no-op invisible; para uno que venía del dominio VOLÁTIL de `UserDefaults`
+    /// —el que usa el seam `-uitest-skip-onboarding` (`UITestEphemeralDefaults`)— es un **lavado**:
+    /// convierte en permanente algo que debía morir con el proceso, y devuelve el bug de «tras un
+    /// XCUITest, abrir Yala Dev a mano se salta onboarding». Medido en el simulador el 2026-08-05:
+    /// con el seam ya efímero, estas dos keys seguían apareciendo en el plist del contenedor.
+    /// «Ya lo dice el store» ⇒ no hay nada que persistir, venga del dominio que venga.
+    ///
+    /// El docblock del `init` afirma que el guard diferencial evita re-persistir; eso es cierto solo
+    /// para los valores que coinciden con el default hardcoded — justo los que no importan.
     var hasCompletedOnboarding: Bool = false {
         didSet {
-            guard oldValue != hasCompletedOnboarding else { return }
+            guard oldValue != hasCompletedOnboarding,
+                  defaults.bool(forKey: Keys.hasCompletedOnboarding) != hasCompletedOnboarding
+            else { return }
             persistBool(hasCompletedOnboarding, forKey: Keys.hasCompletedOnboarding, synced: false)
         }
     }
@@ -389,9 +403,13 @@ final class AppPreferences {
     /// Welcome Chooser pre-onboarding (A4). Per-device (no synced) — cada device pregunta
     /// una vez al user. Se setea SOLO tras tap consciente en una de las 3 cards (no en
     /// dismissals programáticos por race con CKShare).
+    /// Mismo guard anti-lavado que `hasCompletedOnboarding` y por el mismo motivo — el seam las pone
+    /// juntas y sin esto solo una de las dos moría con el proceso.
     var hasShownWelcomeChooser: Bool = false {
         didSet {
-            guard oldValue != hasShownWelcomeChooser else { return }
+            guard oldValue != hasShownWelcomeChooser,
+                  defaults.bool(forKey: Keys.hasShownWelcomeChooser) != hasShownWelcomeChooser
+            else { return }
             persistBool(hasShownWelcomeChooser, forKey: Keys.hasShownWelcomeChooser, synced: false)
         }
     }

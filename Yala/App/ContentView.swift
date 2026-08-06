@@ -231,8 +231,10 @@ struct ContentView: View {
         }
         .alert(L10n.iCloud.remoteWipeTitle, isPresented: $showRemoteWipeAlert) {
             Button(L10n.iCloud.remoteWipeConfirm, role: .destructive) {
-                // Reset seed guards so onboarding can re-create data
-                UserDefaults.standard.removeObject(forKey: "seedCategoriesExecuted")
+                // Reset seed guards so onboarding can re-create data. El centinela de categorías
+                // va por `CategorySeedSentinel.currentKey`: está namespaceado por store (personal
+                // vs `YalaModel-UITest`) y el literal suelto apuntaría al del otro proceso.
+                UserDefaults.standard.removeObject(forKey: CategorySeedSentinel.currentKey)
                 UserDefaults.standard.removeObject(forKey: "notificationsSeeded")
                 hasCompletedOnboarding = false
             }

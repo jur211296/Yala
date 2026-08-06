@@ -258,7 +258,10 @@ final class DevSeedService {
 
         // Clear flags
         UserDefaults.standard.removeObject(forKey: "devSeedDataExecuted")
-        UserDefaults.standard.removeObject(forKey: "seedCategoriesExecuted")
+        // El centinela del store de ESTE proceso (`CategorySeedSentinel` lo namespacea: bajo
+        // `-uitest` el store es otro y la key también). Borrar el literal de producción aquí
+        // dejaría el centinela uitest puesto y el re-seed de abajo no crearía categorías.
+        UserDefaults.standard.removeObject(forKey: CategorySeedSentinel.currentKey)
         hasSeeded = false
 
         updateStep(L10n.DevSeed.stepReloading, progress: 0.10)

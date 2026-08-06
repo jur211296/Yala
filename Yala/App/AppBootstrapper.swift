@@ -619,16 +619,19 @@ final class AppBootstrapper {
         // host de unit tests —mismo bundle `.dev`— hasta ponerlo en rojo. El porqué completo
         // está en `StoreKitManager.applyUITestProTier(_:)`.
         StoreKitManager.shared.applyUITestProTier(UITestHooks.forcePro)
-        if UITestHooks.skipOnboarding {
-            UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
-            UserDefaults.standard.set(true, forKey: "hasShownWelcomeChooser")
-        }
-        // Modo solo-grupos determinista: onboarding saltado + onboardingMode=.groupInvite
+        // Onboarding + Welcome Chooser dados por vistos, EFÍMERO y sin rastro en disco. Igual que
+        // la línea de arriba, va incondicional: los launches que SÍ quieren ver el onboarding
+        // necesitan la purga tanto como estos la necesitan puesta. Esto eran cuatro
+        // `UserDefaults.standard.set(true, forKey:)` que persistían y no limpiaba nadie, así que
+        // tras cualquier XCUITest abrir la app A MANO en ese simulador saltaba las dos pantallas.
+        // El porqué completo está en `UITestEphemeralDefaults`.
+        UITestEphemeralDefaults.applyOnboardingAlreadySeen(
+            UITestHooks.skipOnboarding || UITestHooks.forceGroupInvite
+        )
+        // Modo solo-grupos determinista: onboarding saltado (arriba) + onboardingMode=.groupInvite
         // + tab Grupos seleccionado. El init de SessionState no deriva el tab, así que se
         // setea explícitamente (idempotente; no-op en release vía hasArg).
         if UITestHooks.forceGroupInvite {
-            UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
-            UserDefaults.standard.set(true, forKey: "hasShownWelcomeChooser")
             OnboardingMode.setCurrent(.groupInvite)
             SessionState.shared.onboardingMode = .groupInvite
             SessionState.shared.selectedMainTab = .groups
@@ -653,9 +656,17 @@ final class AppBootstrapper {
         // Gate beta de Grupos (validación v2.0.1, TEMPORAL): los XCUITests prueban la
         // funcionalidad de Grupos, no el gate del código beta. Desbloquear en uitest
         // evita que GroupsBetaGateView intercepte DeeplinkRoutingUITests / GroupsSmokeUITests.
-        if UITestHooks.isActive {
-            UserDefaults.standard.set(true, forKey: AppPreferences.Keys.groupsBetaUnlocked)
-        }
+        // EFÍMERO y con purga: esto era un `set(true, forKey:)` que NADIE limpiaba jamás
+        // —`removeUserPreferenceKeys` excluye esta key a propósito— así que una sola corrida
+        // dejaba Grupos desbloqueado para siempre en el simulador, también en arranques manuales.
+        UITestEphemeralDefaults.applyGroupsBetaUnlocked()
+
+        // Centinela del seed de categorías: purga de lo que dejaron las corridas ANTERIORES. Que
+        // esta corrida no lo vuelva a escribir lo garantiza el namespacing por store de
+        // `CategorySeedSentinel` — bajo `-uitest` el centinela vivo es otra key, porque el store
+        // es otro (`YalaModel-UITest`) y `UserDefaults.standard` no. Sin esto, un arranque manual
+        // con el store personal VACÍO hacía early-return y se quedaba sin categorías.
+        UITestEphemeralDefaults.purgeCategorySeedSentinel()
 
         // `-uitest-fake-icloud`: simula cuenta iCloud disponible (+ import asentado) para
         // ejercitar en sim los flujos gated por `isAccountAvailable` (onboarding "Solo

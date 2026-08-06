@@ -24,6 +24,51 @@
 import Foundation
 import SwiftData
 
+/// Dónde vive el centinela «ya sembré las categorías», y por qué NO es una sola key.
+///
+/// El centinela es de `UserDefaults.standard` y los datos están en un `ModelContainer`. Bajo
+/// `-uitest` esas dos cosas se separan: el store pasa a ser `YalaModel-UITest`
+/// (`SwiftDataConfiguration.swift:692`) mientras `UserDefaults.standard` sigue siendo el MISMO —
+/// los dos hosts del scheme `Yala Dev` comparten bundle (`…yala.dev`) y el almacén sobrevive a la
+/// corrida. Con una key única, una corrida de XCUITest dejaba el centinela puesto y el ARRANQUE
+/// MANUAL siguiente —store personal VACÍO— hacía early-return y se quedaba **sin categorías**.
+/// Confirmado por barrido el 2026-08-05, junto a `groupsBetaUnlocked` y las dos de onboarding
+/// (ver `UITestEphemeralDefaults`, que es donde se arreglan las otras).
+///
+/// Esta es la mitad que impide volver a ensuciar. La otra —purgar lo que las corridas anteriores
+/// ya escribieron— es `UITestEphemeralDefaults.purgeCategorySeedSentinel(from:)`.
+///
+/// **El literal `"seedCategoriesExecuted"` no debe aparecer suelto en ningún sitio bajo `Yala/`**:
+/// un solo call site que se lo salte reabre el agujero entero, y por eso lo prohíbe un source-scan
+/// (`YalaTests/UITestSeamPersistenceIsolationTests.swift`).
+enum CategorySeedSentinel {
+    /// El centinela del store PERSONAL. Es el que lee un arranque manual, y el que una corrida
+    /// uitest no debe tocar jamás.
+    static let productionKey = "seedCategoriesExecuted"
+
+    /// El centinela del store `YalaModel-UITest`. Vive fuera de `#if DEBUG` a propósito: `allKeys`
+    /// lo usa en un barrido que también compila en release, donde la key sencillamente no existe
+    /// nunca y borrarla es un no-op.
+    static let uiTestKey = "seedCategoriesExecuted.uitest"
+
+    /// Pure-logic, separada para poder testearla: el host de unit tests NO lleva `-uitest`, así que
+    /// la rama uitest de `currentKey` es inalcanzable desde un test.
+    static func key(isUITest: Bool) -> String { isUITest ? uiTestKey : productionKey }
+
+    /// El centinela que le corresponde al store de ESTE proceso.
+    static var currentKey: String {
+        #if DEBUG
+        key(isUITest: UITestHooks.isActive)
+        #else
+        productionKey
+        #endif
+    }
+
+    /// Las dos, para los barridos que deben dejar el disco limpio sea cual sea el proceso que los
+    /// ejecuta (`DataWipeService.removeUserPreferenceKeys`).
+    static let allKeys = [productionKey, uiTestKey]
+}
+
 /// Estructura interna para describir cada subcategoría de la semilla
 private struct SubcategorySeedDefinition {
     let name: String
@@ -332,9 +377,13 @@ func seedCategoriesIfNeeded(in modelContext: ModelContext) {
     // (el flag `seedCategoriesExecuted` ya lo impide en la práctica, esto es cinturón).
     if SecondarySessionStore.isActive() { return }
 
-    // 0. Flag guard — prevents TOCTOU race with CloudKit sync
+    // 0. Flag guard — prevents TOCTOU race with CloudKit sync.
+    //    El centinela va por `CategorySeedSentinel`, que lo namespacea por STORE: bajo `-uitest`
+    //    los datos viven en otro container y `UserDefaults.standard` es el mismo, así que una key
+    //    única dejaba sin categorías al siguiente arranque manual. El porqué, en el enum.
     let defaults = UserDefaults.standard
-    if defaults.bool(forKey: "seedCategoriesExecuted") {
+    let sentinelKey = CategorySeedSentinel.currentKey
+    if defaults.bool(forKey: sentinelKey) {
         #if DEBUG
         print("CategorySeed: Semilla ya ejecutada anteriormente (flag).")
         #endif
@@ -367,12 +416,12 @@ func seedCategoriesIfNeeded(in modelContext: ModelContext) {
         print("CategorySeed: Semilla NO ejecutada (ya existen categorías de usuario).")
         #endif
         // Set flag so we don't check the DB again next launch
-        defaults.set(true, forKey: "seedCategoriesExecuted")
+        defaults.set(true, forKey: sentinelKey)
         return
     }
 
     // 2. Set flag BEFORE inserting — wins race vs CloudKit delivering same categories
-    defaults.set(true, forKey: "seedCategoriesExecuted")
+    defaults.set(true, forKey: sentinelKey)
 
     // 3. Ejecutar semilla completa de categorías y subcategorías
     #if DEBUG
