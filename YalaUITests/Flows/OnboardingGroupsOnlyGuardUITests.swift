@@ -104,6 +104,47 @@ final class OnboardingGroupsOnlyGuardUITests: XCTestCase {
         )
     }
 
+    /// LA MITAD QUE NO ES COSMÉTICA DEL CHIP C5: el tap de vuelta. Con "Dividir gastos con
+    /// amigos" elegido, tocar "Llevar el control de mi dinero" no hacía NADA —su closure era
+    /// `if expensesOnlyMode { … }`, un selector de tres cards decidido con un booleano de dos—
+    /// así que el usuario que cambiaba de idea tenía que pasar por "Solo anotar gastos". Y como
+    /// la card ADEMÁS se pintaba marcada (la otra mitad), no tenía motivo para sospechar que su
+    /// tap se había perdido.
+    ///
+    /// La aserción que carga el peso es POSITIVA: el paso de CUENTAS solo es alcanzable si el
+    /// modo volvió al grupo de control — `OnboardingStepPlan` lo salta entero con `.groupsOnly`,
+    /// cuyo siguiente paso es el de moneda. Afirmar la ausencia del selector de moneda se
+    /// cumpliría igual si el tap se hubiera perdido y el flujo no hubiera avanzado, que es la
+    /// familia del falso verde de `.claude/rules/testing.md`.
+    ///
+    /// La MARCA (la primera mitad) no se afirma aquí y no es un olvido: `binaryCard` expone solo
+    /// `accessibilityIdentifier` —la selección es un `stroke`, no un trait— así que no es
+    /// observable desde XCUITest sin tocar el componente, que está fuera del alcance del chip.
+    /// Vive en YalaTests/OnboardingPurposeSelectionLogicTests.
+    func test_purposeStep_tapBackToControl_afterGroupsOnly_takesEffect() {
+        let app = launchAtPurposeStep()
+
+        let groupsCard = app.buttons["onboarding_purpose_groups"]
+        XCTAssertTrue(groupsCard.waitForExistence(timeout: 10), "No apareció la card de solo-grupos.")
+        groupsCard.tap()
+
+        let controlCard = app.buttons["onboarding_purpose_control"]
+        XCTAssertTrue(controlCard.waitForExistence(timeout: 5), "No apareció la card 'Llevar el control'.")
+        controlCard.tap()
+
+        let next = app.buttons["onboarding_next_button"]
+        XCTAssertTrue(next.waitForExistence(timeout: 5), "No apareció el botón Siguiente en Propósito.")
+        next.tap()
+
+        XCTAssertTrue(
+            app.buttons["onboarding_accounts_multiple"].waitForExistence(timeout: 10),
+            """
+            El tap de 'Llevar el control' se perdió: con .groupsOnly todavía puesto el siguiente \
+            paso es el de moneda, no el de cuentas.
+            """
+        )
+    }
+
     /// Happy-path con iCloud disponible (forzado por -uitest-fake-icloud): elegir "Solo
     /// grupos" avanza al paso de moneda (sin guard), donde el botón "Continuar" está
     /// HABILITADO aunque el campo de nombre de cuenta esté oculto — regresión del bug

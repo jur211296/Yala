@@ -48,9 +48,11 @@ struct OnboardingView: View {
     /// Salta cuentas/tipo/saldo/categorías; conserva nombre + moneda + confirmación.
     private var groupsOnlyMode: Bool { selectedUsageMode == .groupsOnly }
 
-    private enum UsageMode: String {
-        case expensesOnly, dayToDay, fullControl, groupsOnly
-    }
+    /// Definición movida a `OnboardingUsageMode` (pure-logic en
+    /// `Yala/App/Logic/OnboardingPurposeSelectionLogic.swift`) para que la selección
+    /// del paso «Propósito» sea testeable — mismo movimiento que `OnboardingStep`.
+    /// `UsageMode` queda como alias local.
+    private typealias UsageMode = OnboardingUsageMode
 
     // Animation state for category grid
     @State private var showCategoryIcons: Bool = false
@@ -469,21 +471,27 @@ struct OnboardingView: View {
                     .padding(.top, DS.Spacing.xl)
 
                     VStack(spacing: DS.Spacing.sm) {
+                        // La marca y el efecto del tap salen de la MISMA decisión pura
+                        // (`OnboardingPurposeSelectionLogic`): el bug de C5 no era que los dos
+                        // predicados estuvieran mal, era que eran DISTINTOS —`!expensesOnlyMode`
+                        // para pintar, `expensesOnlyMode` para decidir—, un selector de tres
+                        // cards expresado con un booleano de dos. Y vive fuera del `body` porque
+                        // aquí ningún unitario la alcanza (la lección de `965a4d86`).
                         binaryCard(
-                            isSelected: !expensesOnlyMode,
+                            isSelected: OnboardingPurposeSelectionLogic.isSelected(.control, mode: selectedUsageMode),
                             icon: "dollarsign.circle",
                             iconColor: .priorityNeed,
                             title: L10n.Onboarding.purposeControl,
                             description: L10n.Onboarding.purposeControlDesc,
                             accessibilityId: "onboarding_purpose_control"
                         ) {
-                            if expensesOnlyMode {
+                            if OnboardingPurposeSelectionLogic.shouldSelectFullControl(from: selectedUsageMode) {
                                 selectedUsageMode = .fullControl
                             }
                         }
 
                         binaryCard(
-                            isSelected: expensesOnlyMode,
+                            isSelected: OnboardingPurposeSelectionLogic.isSelected(.expenses, mode: selectedUsageMode),
                             icon: "list.bullet.clipboard",
                             iconColor: .essentialNeed,
                             title: L10n.Onboarding.purposeExpenses,
@@ -499,7 +507,7 @@ struct OnboardingView: View {
                         // Yala completo no debe poder volver a "solo grupos" aquí).
                         if mode == .initial {
                             binaryCard(
-                                isSelected: groupsOnlyMode,
+                                isSelected: OnboardingPurposeSelectionLogic.isSelected(.groups, mode: selectedUsageMode),
                                 icon: "person.3.fill",
                                 iconColor: .hotPink,
                                 title: L10n.Onboarding.purposeGroups,
