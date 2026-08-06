@@ -48,11 +48,6 @@ final class AppBootstrapper {
     // MARK: - State
 
     private(set) var isInitialized = false
-    /// Guard runtime (NO persistido) contra procesamiento concurrente de un invite:
-    /// el re-emit (cold launch + foreground) y un `handleInviteLink` warm podrían
-    /// lanzar `acceptShareFromURL` en paralelo. Runtime-only — un re-launch debe
-    /// poder reintentar. El invite pendiente vive en `PendingInviteStore` (persistente).
-    private var isProcessingInvite = false
     private var subscriptionCheckTask: Task<Void, Never>?
     /// C-8: sync del entitlement de CUENTA, fuera del camino crítico del boot (hace red).
     private var accountEntitlementTask: Task<Void, Never>?
@@ -311,15 +306,12 @@ final class AppBootstrapper {
             Task { await CloudSyncRuntime.startShared(context: context) }
         }
 
-        // 15. Initialize CKSyncEngine for shared group data (separate groups store)
-        // M1 / D8: el CKSyncEngine de grupos JAMÁS arranca en sesión secundaria — SIN CAMBIO con o sin
-        // el flag `groupsBackendEnabled`. Está atado al Apple ID del OS (el DUEÑO): arrancarlo mostraría/
-        // sincronizaría SUS grupos por CloudKit bajo la sesión de la invitada. Con el flag ON la invitada
-        // ve sus grupos por el canal BACKEND (`GroupsSyncClient`, abajo), NO por este engine CloudKit.
-        SplitSyncManager.shared.setContext(context)
-        if !uiTestActive && !SecondarySessionStore.isActive() { SplitSyncManager.shared.initialize() }
-
-        // G2 (DARK): canal de sync de Grupos → backend. NO-OP salvo con `groupsBackendEnabled` ON (jamás
+        // 15. Canal de sync de Grupos → backend. Era el paso donde además arrancaba el CKSyncEngine de
+        // Grupos; la Fase 3 se llevó ese transporte y con él el gate de sesión SECUNDARIA que lo protegía
+        // (el engine estaba atado al Apple ID del OS, así que en secundaria habría sincronizado los grupos
+        // del DUEÑO). El canal backend no tiene ese problema —va por el `sub` de la sesión Yala— y por eso
+        // su propia condición ya contemplaba a la invitada.
+        // G2 (DARK): NO-OP salvo con `groupsBackendEnabled` ON (jamás
         // en producción esta fase) — el guard interno retorna antes de tocar red o modelos.
         // M1 / D8 (G5-C): con el flag ON la sesión secundaria SÍ arranca el canal backend (sus grupos, su
         // sesión; el `currentUserIDProvider` = sub de la invitada + el espejo owner-scoped la aíslan).
@@ -368,23 +360,14 @@ final class AppBootstrapper {
             }
         }
 
-        // 16.4.4. Purga del dominio Grupos por CAMBIO DE APPLE ID que quedó pendiente (privacidad entre
-        // humanos que comparten dispositivo). El evento de cuenta del OS llega UNA vez y nadie lo
-        // re-entrega; si al llegar el import personal seguía en curso, la purga se difiere y solo vive en
-        // `GroupsIdentityPurgeIntent` (UserDefaults, sin TTL). Aquí se retoma, gateada por QUIESCENCIA como
-        // los demás boot-saves: borra filas del mainContext compartido. Idempotente y convergente — si no
-        // asienta, el intent sobrevive y reintenta en el próximo arranque.
-        //
-        // El `isArmed` se comprueba DENTRO (en el manager), no aquí: `SplitSyncManager.initialize()` (:317)
-        // lanza `runIdentityBootGuard`, cuyo fetch de red puede ARMAR el intent SEGUNDOS DESPUÉS de que
-        // este Task se creara — un snapshot en un `if` externo lo perdería hasta el arranque siguiente.
-        Task { @MainActor in
-            guard await awaitPersonalStoreReady() else {
-                SaveBreadcrumb.deferred("AppBootstrapper.groupsIdentityPurgeResume", "import not quiescent")
-                return
-            }
-            SplitSyncManager.shared.resumeDeferredIdentityPurgeIfNeeded()
-        }
+        // 16.4.4. **RETIRADO en la Fase 3.** Aquí se retomaba `GroupsIdentityPurgeIntent`, la purga del
+        // dominio Grupos por cambio de Apple ID que se hubiera diferido. Su armador Y su drenador vivían los
+        // dos DENTRO de `SplitSyncManager` (el retome era suyo; solo el call-site estaba aquí), así que el
+        // borrado del transporte se lleva el mecanismo entero — no queda una intención sin drenador, queda
+        // sin intención: nadie arma ya esa purga. Lo que la motivaba era el boot-guard de identidad iCloud,
+        // que también muere con el transporte; el dominio de Grupos del canal vivo se aísla por el `sub` de
+        // la sesión Yala, no por el Apple ID del OS. **Declarado como pérdida en el commit 1 de la Fase 3:**
+        // un device que se actualice con el intent YA ARMADO en disco no ejecuta esa purga.
 
         // 16.4.5. Safety net: hidden groups + removed-self cleanup que el observer pudo perder.
         // Corre ANTES de retryPendingBridges para que el bridge guard `isHiddenForAll` aplique.
@@ -446,11 +429,6 @@ final class AppBootstrapper {
                 return
             }
             await reconcileCurrentUserDisplayNameIfNeeded()
-        }
-
-        // 16.7. Retry persistente de `leaveShare` que falló por network en sesión previa.
-        Task { @MainActor in
-            await retryPendingLeaveShares()
         }
 
         // 16.8. Reconciliar join intents pendientes (PendingJoinStore): members de
@@ -526,11 +504,6 @@ final class AppBootstrapper {
         #if DEBUG
         if uiTestActive { await applyUITestSeed(context: context) }
         #endif
-
-        // 19. Re-emit pending invite (cold launch via universal link / native share).
-        // Reads PendingInviteStore (persistent) — covers invites that arrived
-        // pre-bootstrap AND invites dropped by resetTransients in a prior session.
-        reEmitPendingInviteIfNeeded(isPresenting: false)
 
         // 20. Drain DeferredIntentBuffer: re-submit any RouterIntent that
         // arrived during pre-bootstrap or mid-onboarding.
@@ -1186,11 +1159,9 @@ final class AppBootstrapper {
         // arranque entero. Hereda los dos gates de arriba, que es justo lo que necesita (el bridge salva el
         // mainContext compartido).
         //
-        // El `onBridged` solo pone al día el camino rápido en memoria del transporte CloudKit: cuando la
-        // Fase 3 se lleve `SplitSyncManager`, se borra ESTE argumento y el retome sigue en pie.
-        GroupsPendingBridgeResume.resumeIfNeeded(context: context) { expenseIDs, settlementIDs in
-            SplitSyncManager.shared.forgetBridged(expenseIDs: expenseIDs, settlementIDs: settlementIDs)
-        }
+        // El `onBridged` ponía al día el camino rápido en memoria del transporte CloudKit. La Fase 3 se
+        // llevó ese argumento y el retome sigue en pie, que es exactamente lo que su diseño prometía.
+        GroupsPendingBridgeResume.resumeIfNeeded(context: context)
 
         let descriptor = FetchDescriptor<SplitExpense>(
             predicate: #Predicate { $0.bridgePending == true }
@@ -1305,31 +1276,6 @@ final class AppBootstrapper {
         }
     }
 
-    /// Retry de `leaveShare` que falló en sesiones previas (network/offline). Itera
-    /// `PendingLeaveShareTracker.all()`; entries que succeden se quitan, las que vuelven a
-    /// fallar permanecen para el siguiente boot.
-    @MainActor
-    func retryPendingLeaveShares() async {
-        let entries = PendingLeaveShareTracker.all()
-        guard !entries.isEmpty else { return }
-        for entry in entries {
-            do {
-                try await SplitZoneManager(syncManager: .shared).leaveShareByZone(
-                    zoneName: entry.zoneName,
-                    ownerName: entry.zoneOwnerName
-                )
-                PendingLeaveShareTracker.remove(entry)
-                #if DEBUG
-                logger.info("retryPendingLeaveShares: succeeded for \(entry.zoneName, privacy: .public)")
-                #endif
-            } catch {
-                #if DEBUG
-                logger.error("retryPendingLeaveShares: failed for \(entry.zoneName, privacy: .public): \(error.localizedDescription, privacy: .public). Mantengo en tracker.")
-                #endif
-            }
-        }
-    }
-
     /// A13: Reconcile current user's `displayName` across all SplitMembers if a real
     /// name was already set (UserDefaults `userName`) but a previous onboarding flow
     /// was interrupted (e.g. kill-app between `acceptShare` and `performSilentSetup`).
@@ -1413,15 +1359,6 @@ final class AppBootstrapper {
         // todo el parque de 2.x es `notStarted` ⇒ sigue siendo no-op.
         if CloudBackendConfig.isConfigured {
             Task { await CloudMigrationController.shared?.rekickIfParked() }
-        }
-
-        // Prefetch group changes on foreground resume (the group CKSyncEngines don't auto-fetch
-        // without a handled push). Debounced + quiescence-gated inside syncNow. This pulls the data
-        // down; a mounted Groups view refreshes it on its next appear / pull-to-refresh (the fetch
-        // handler's markRemoteChangePending drives the deferred refresh, same as the rest of the app).
-        // M1: no en secundaria (los engines de Grupos ni arrancaron — simetría con el gate del boot).
-        if !SecondarySessionStore.isActive() {
-            Task { await SplitSyncManager.shared.syncNow() }
         }
 
         // Check if iCloud became available after container was created without it
@@ -1872,7 +1809,21 @@ final class AppBootstrapper {
             didRefreshFlags: didRefreshFlags
         ) {
         case .ckShare:
-            processCKShareInviteLink(url)
+            // **Fase 3: este canal ya no existe.** Un link de CKShare no puede unir a nadie —el transporte
+            // que aceptaba el share se borró—, así que la rama INFORMA en vez de quedarse muda. Un apagón
+            // silencioso aquí (tapear un enlace y que no pase nada) es el peor modo de fallo de esta épica,
+            // y el copy correcto es el mismo de `.backendUnavailable`: el enlace no es inválido, el canal
+            // que lo servía es el que ya no está.
+            // El copy de `.showInviteError` («ya no es válido o expiró; pídele al admin que regenere uno»)
+            // es LITERALMENTE cierto aquí, al revés que en `.backendUnavailable`: el enlace regenerado
+            // será del canal backend y ese sí funciona. Por eso este camino no reusa
+            // `groups.invite.channelUnavailable`, cuyo «guardamos tu solicitud» sería falso — aquí no se
+            // persiste ningún intent.
+            logger.error("Invite: CKShare link but that channel no longer exists (Fase 3) — informing user")
+            MetricsService.canary(.groupJoinIntentDeferred, detail: "ckShareChannelRemoved")
+            RouterEntryGate.shared.submit(.showInviteError(
+                String(localized: "groups.invite.linkInvalidDetail")
+            ))
 
         case .backend:
             // `route` devuelve `.backend` solo con `isBackendLink == true` ⇒ el guard no es
@@ -1955,45 +1906,18 @@ final class AppBootstrapper {
         }
     }
 
-    /// Canal CKShare de siempre. Solo lo alcanza un link que NO parsea como backend, con el flag
-    /// como esté — es lo que mantiene intacto el camino de los grupos que no migraron.
-    private func processCKShareInviteLink(_ url: URL) {
-        guard let shareURL = InviteLinkService.extractShareURL(from: url) else {
-            logger.error("Invalid invite link: \(url.absoluteString, privacy: .public)")
-            RouterEntryGate.shared.submit(.showInviteError(
-                String(localized: "groups.invite.linkInvalidDetail")
-            ))
-            return
-        }
-
-        let brandedMetadata = InviteLinkService.extractMetadata(from: url)
-
-        #if DEBUG
-        print("AppBootstrapper: Invite link received, CKShare URL: \(shareURL.absoluteString) brandedName=\(brandedMetadata.name ?? "nil")")
-        #endif
-
-        if !isInitialized {
-            // Persistente (no in-memory) → el invite sobrevive un kill antes de que
-            // bootstrap corra. El paso 19 lo procesa vía `reEmitPendingInviteIfNeeded`.
-            PendingInviteStore.save(PendingInviteEntry(shareURL: shareURL, branded: brandedMetadata))
-            #if DEBUG
-            print("AppBootstrapper: Deferring invite (persisted) — not yet initialized")
-            #endif
-            return
-        }
-
-        processInvite(shareURL: shareURL, branded: brandedMetadata)
-    }
-
     /// A12: Decisión de routing para un share aceptado. Pure function — testeable.
-    /// Replica la lógica simétrica con `YalaAppDelegate.userDidAcceptCloudKitShareWith`.
+    ///
+    /// **HUÉRFANA en producción desde la Fase 3**, declarado: su consumidor era `CKShareEntryHandler`, que
+    /// murió con el transporte. Se conserva porque `ReconnectMode` y su tabla siguen describiendo la UI de
+    /// reconexión que el canal backend usa, y podarla es decisión de producto, no del compilador.
     enum InviteRouteDecision: Equatable {
         /// Invitado nuevo (sin onboarding completo y NO mid-invite): acepta eagerly + muestra invite onboarding.
         case acceptAndShowInviteOnboarding
         /// Todos los demás casos: muestra reconnect con el mode apropiado.
         case showReconnect(mode: ReconnectMode)
         /// Parte F: returning user con datos en iCloud (sin wipe) → ofrecer cargar
-        /// sus datos antes de unirse al grupo. El invite queda en PendingInviteStore.
+        /// sus datos antes de unirse al grupo.
         case offerRestoreThenInvite
     }
 
@@ -2031,97 +1955,6 @@ final class AppBootstrapper {
             }
         }
         return .showReconnect(mode: .standardReconnect)
-    }
-
-    /// Re-emite el invite pendiente persistido si procede. Llamado en cold launch
-    /// (bootstrap paso 19, `isPresenting: false`) y en foreground
-    /// (`ContentView` `.active`, con el estado real de presentación).
-    func reEmitPendingInviteIfNeeded(isPresenting: Bool) {
-        // Simetría con el guard de `handleInviteLink`: no procesar pre-bootstrap
-        // (routing leería SessionState/onboardingMode aún sin inicializar). El paso
-        // 19 corre post-`isInitialized`; un `.active` temprano de ContentView se
-        // difiere hasta ese paso (o al siguiente foreground warm).
-        guard isInitialized else { return }
-        guard let entry = PendingInviteStore.current(),
-              let resolved = entry.resolved(),
-              Self.shouldReEmitInvite(
-                  storeHasEntry: true,
-                  isProcessing: isProcessingInvite,
-                  queueHasInviteIntent: AppRouter.shared.contains(where: Self.isInviteIntent),
-                  isPresenting: isPresenting
-              )
-        else { return }
-        MetricsService.inviteReEmittedFromStore()
-        processInvite(shareURL: resolved.url, branded: resolved.branded)
-    }
-
-    /// Pure-logic del guard de re-emisión. Re-emite solo si hay un invite pendiente,
-    /// no hay otro procesamiento en vuelo, no hay ya un intent de invite encolado, y
-    /// no hay un invite presentándose (cover abierto) — esto último evita la
-    /// re-presentación espuria que el clear-on-complete causaría con el cover abierto.
-    nonisolated static func shouldReEmitInvite(
-        storeHasEntry: Bool,
-        isProcessing: Bool,
-        queueHasInviteIntent: Bool,
-        isPresenting: Bool
-    ) -> Bool {
-        storeHasEntry && !isProcessing && !queueHasInviteIntent && !isPresenting
-    }
-
-    /// `true` si el intent es uno de los de invite de grupo (guard del re-emit).
-    nonisolated static func isInviteIntent(_ intent: RouterIntent) -> Bool {
-        switch intent {
-        case .presentGroupInviteOnboarding, .presentGroupReconnect, .offerRestoreBeforeInvite: return true
-        default: return false
-        }
-    }
-
-    /// Lanza `acceptShareFromURL` con guard de concurrencia. El `guard` es síncrono
-    /// en MainActor → un segundo llamador lo ve de inmediato y aborta. El flag se
-    /// libera siempre vía `defer`, aunque el fetch/accept lance.
-    private func processInvite(shareURL: URL, branded: InviteLinkService.BrandedMetadata) {
-        guard !isProcessingInvite else { return }
-        isProcessingInvite = true
-        Task { @MainActor in
-            defer { isProcessingInvite = false }
-            await acceptShareFromURL(shareURL, brandedMetadata: branded)
-        }
-    }
-
-    /// Acepta un CKShare a partir de su URL.
-    /// A12: Comportamiento simétrico con `YalaAppDelegate.userDidAcceptCloudKitShareWith`.
-    /// `brandedMetadata` lleva nombre/icono/color del grupo extraídos del URL
-    /// branded para personalizar el banner de invitación.
-    private func acceptShareFromURL(
-        _ shareURL: URL,
-        brandedMetadata: InviteLinkService.BrandedMetadata = .empty
-    ) async {
-        do {
-            let metadata = try await InviteLinkService.fetchShareMetadata(for: shareURL)
-
-            // CKShare acceptance + routing centralised in CKShareEntryHandler.
-            await CKShareEntryHandler.handle(
-                metadata: metadata,
-                branded: brandedMetadata,
-                source: .universalLink
-            )
-        } catch {
-            logger.error("Failed to accept share from URL: \(error.localizedDescription, privacy: .public)")
-            if Self.isRecoverableInviteFetchError(error) {
-                // Red transitoria: NO limpiar el store ni mostrar error — el re-emit
-                // reintentará en el próximo foreground (acotado por el TTL de 24h).
-                #if DEBUG
-                logger.debug("acceptShareFromURL: recoverable network error — will retry on next foreground")
-                #endif
-            } else {
-                // Permanente (share borrado, sin permiso, link inválido): limpia el
-                // store para no re-loopear y notifica al usuario.
-                PendingInviteStore.clear()
-                RouterEntryGate.shared.submit(.showInviteError(
-                    String(localized: "groups.invite.linkInvalidDetail")
-                ))
-            }
-        }
     }
 
     /// `true` si el error de fetch/accept del share es transitorio (red) y vale la

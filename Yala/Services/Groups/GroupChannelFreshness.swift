@@ -2,8 +2,8 @@
 //  GroupChannelFreshness.swift
 //  Yala
 //
-//  Adaptador de runtime de `GroupChannelFreshnessGate`: lee el store y los DOS canales de Grupos y produce
-//  el veredicto por ZONA. La decisión vive en la lógica pura; aquí solo se recoge la evidencia.
+//  Adaptador de runtime de `GroupChannelFreshnessGate`: lee el store y el canal de Grupos y produce el
+//  veredicto por ZONA. La decisión vive en la lógica pura; aquí solo se recoge la evidencia.
 //
 //  Sus dos consumidores hacen la MISMA pregunta y por eso comparten esta pieza: `OrphanedBridgedTxSweeper`
 //  (que borra o suelta punteros cuando la respuesta es «el gasto no existe») y
@@ -21,26 +21,23 @@ import SwiftData
 @MainActor
 enum GroupChannelFreshness {
 
-    /// Señales de SESIÓN de los dos canales. Se pasan como valor —y no se leen dentro— para que la
-    /// evidencia sea inyectable en test sin tocar los singletons vivos, que llevan estado de proceso
-    /// (`lastPullCycleCompleted` se apaga en cada ciclo no completado; los sets de engines se limpian con
-    /// `resetLocalGroupsSyncState`) y se filtrarían de un test al siguiente.
+    /// Señales de SESIÓN del canal. Se pasan como valor —y no se leen dentro— para que la evidencia sea
+    /// inyectable en test sin tocar el singleton vivo, que lleva estado de proceso
+    /// (`lastPullCycleCompleted` se apaga en cada ciclo no completado) y se filtraría de un test al
+    /// siguiente.
+    ///
+    /// Llevó dos campos más —los dos brazos CloudKit— hasta que la Fase 3 borró ese transporte. Hoy una
+    /// zona que no es del canal backend no tiene canal ninguno, y eso lo decide `belongsToBackendChannel`
+    /// dentro de `evidence(...)`: no hay señal de sesión que recoger para ellas.
     struct ChannelSignals {
         let backendPullCompleted: Bool
-        let cloudKitAllEnginesCompletedFetchCycle: Bool
-        let cloudKitZoneFetchFailed: (String) -> Bool
 
         /// Lo que ven los call-sites de producción. Es `static func` y no `static var` con default de
         /// parámetro: un default se evalúa en contexto NONISOLATED y leer los singletons `@MainActor`
         /// desde ahí es un warning hoy y un error en Swift 6 — por eso los métodos toman `ChannelSignals?`
         /// y resuelven `?? .live()` DENTRO del cuerpo, que sí es `@MainActor`.
         static func live() -> ChannelSignals {
-            ChannelSignals(
-                backendPullCompleted: GroupsSyncClient.shared.lastPullCycleCompleted,
-                cloudKitAllEnginesCompletedFetchCycle:
-                    SplitSyncManager.shared.hasCompletedFetchCycleOnAllEngines,
-                cloudKitZoneFetchFailed: { SplitSyncManager.shared.zoneFetchFailedThisSession($0) }
-            )
+            ChannelSignals(backendPullCompleted: GroupsSyncClient.shared.lastPullCycleCompleted)
         }
     }
 
@@ -135,8 +132,8 @@ enum GroupChannelFreshness {
     ///
     /// Los dos cuantificadores son deliberados y opuestos, y es el criterio de esta familia:
     /// «asentada» se exige a TODAS las filas (restringe — con un duplicado, una fila que sigue importando
-    /// tiene que bloquear) y «del canal backend» basta con UNA (es la que decide a QUÉ canal preguntarle,
-    /// y una fila backend en la zona significa que su verdad vive allí).
+    /// tiene que bloquear) y «del canal backend» basta con UNA (una sola fila backend en la zona significa
+    /// que su verdad vive en el servidor y que hay que esperar al pull antes de dar nada por inexistente).
     private static func evidence(
         zoneID: String,
         rows: [SplitGroup],
@@ -150,9 +147,7 @@ enum GroupChannelFreshness {
                     (isBackendGroup: $0.isBackendGroup, movedToBackendAt: $0.movedToBackendAt)
                 }),
             backendPullCompleted: signals.backendPullCompleted,
-            backendCursorListsZone: pulledZones.contains(zoneID),
-            cloudKitBothEnginesCompletedFetchCycle: signals.cloudKitAllEnginesCompletedFetchCycle,
-            cloudKitZoneFetchFailedThisSession: signals.cloudKitZoneFetchFailed(zoneID)
+            backendCursorListsZone: pulledZones.contains(zoneID)
         )
     }
 }

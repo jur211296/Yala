@@ -395,56 +395,30 @@ struct GroupBatchStepZoneTests {
                 "el cuantificador ANY-row vive en la lógica pura, no inline")
     }
 
-    /// El hermano del enunciado: `performRemovedSelfCleanup` elegía también con `.first` sin `sortBy`. Su
-    /// barrido ya es por zona desde 2026-08-03, así que la fila no cambia QUÉ se borra — pero sí alimenta el
-    /// `ownerName` del `leaveShareByZone`, y una fila born-backend no tiene identidad CloudKit con la que
-    /// resolverlo. No es unit-asertable (ese camino habla con un `CKContainer` real), así que va aquí.
+    /// El hermano del enunciado: `performRemovedSelfCleanup` elegía también con `.first` sin `sortBy`.
     ///
-    /// MUTACIÓN: quitar el `sortBy` deja la primera aserción en rojo; resolver el owner sobre `group` en vez
-    /// de sobre `shareRow`, la segunda.
-    @Test func sourceScan_removedSelfCleanupIsOrderedAndResolvesTheShareRow() throws {
+    /// **Fase 3 — de las cinco aserciones que tenía esta pareja de scans solo sobrevive una**, y con ella
+    /// solo la mitad de su razón. El `sortBy` se justificaba porque alimentaba el `ownerName` del
+    /// `leaveShareByZone` (y una fila born-backend no tiene identidad CloudKit con la que resolverlo);
+    /// borrada esa mitad, lo que queda es determinismo puro: la fila canónica de la zona no la elige
+    /// SQLite. Sigue mereciendo el pin porque el criterio `createdAt` ASC lo comparte con `group(for:)`
+    /// y divergir sería un bug silencioso.
+    ///
+    /// MUTACIÓN: quitar el `sortBy` deja esto en rojo.
+    @Test func sourceScan_removedSelfCleanupPicksTheCanonicalRowDeterministically() throws {
         let cleanup = try #require(
             Self.body(try Self.groupServiceSource(),
                       from: "func performRemovedSelfCleanup(zoneName: String, context providedContext: ModelContext? = nil) async {"),
             "cambió la firma o el cierre de performRemovedSelfCleanup")
         #expect(cleanup.contains("sortBy: [SortDescriptor(\\.createdAt, order: .forward)]"),
                 "la fila canónica de la zona volvió a elegirla el store")
-        #expect(cleanup.contains("ownerName(for: shareRow)"),
-                "el ownerName del leaveShare debe salir de la fila con identidad CloudKit")
     }
 
-    /// **La mitad CloudKit de este flow no es unit-asertable y por eso vive aquí** — es la misma razón que la
-    /// cabecera de este fichero (`:34-36`) ya deja escrita: llegar al `catch` del `leaveShareByZone` exige un
-    /// `CKContainer` real que complete el round-trip. Desde S4 (2026-08-04) `performRemovedSelfCleanup` tiene
-    /// un SEGUNDO disparador —`GroupsSyncClient.reconcileLostMemberships`, que lee la remoción del
-    /// `memberships` del pull— así que la mitad CloudKit pasa a ser alcanzable con una zona BORN-BACKEND,
-    /// que no tiene share del que salir: sin el guard, `leaveShareByZone` borra contra
-    /// `sharedCloudDatabase` con `ownerName == CKCurrentUserDefaultName` (donde las zonas propias no están
-    /// por construcción) ⇒ falla SIEMPRE ⇒ `PendingLeaveShareTracker` se queda una entry que
-    /// `AppBootstrapper.retryPendingLeaveShares` no clasifica como permanente y reintenta en CADA arranque,
-    /// eternamente.
-    ///
-    /// Las TRES aserciones son distintas y ninguna sobra: qué predicado decide, que la mitad LOCAL corre
-    /// igual (el guard va DESPUÉS del cleanup — ponerlo antes dejaría el grupo fantasma imborrable), y que
-    /// corta ANTES de hablar con CloudKit.
-    ///
-    /// MUTACIÓN: borrar el `guard`, o subirlo por encima de `performLocalCleanupAndDelete`, o cambiar el
-    /// predicado estrecho por `GroupZoneCacheGate.belongsToBackendChannel` (el de RETENCIÓN, que dejaría a
-    /// una copia CONGELADA dentro de un CKShare del que cree haber salido) ⇒ rojo.
-    @Test func sourceScan_removedSelfCleanupSkipsTheCloudKitHalfOnBackendZones() throws {
-        let cleanup = try #require(
-            Self.body(try Self.groupServiceSource(),
-                      from: "func performRemovedSelfCleanup(zoneName: String, context providedContext: ModelContext? = nil) async {"),
-            "cambió la firma o el cierre de performRemovedSelfCleanup")
-        #expect(cleanup.contains("let zoneIsOnBackendChannel = rows.contains(where: \\.isBackendGroup)"),
-                "el canal de la zona debe decidirse con el predicado ESTRECHO y ANY-row, no con el de retención")
-        let localCleanup = try #require(cleanup.range(of: "try performLocalCleanupAndDelete(group:"))
-        let guardRange = try #require(cleanup.range(of: "guard !zoneIsOnBackendChannel else { return }"),
-                                      "desapareció el guard de la mitad CloudKit")
-        let leaveShare = try #require(cleanup.range(of: "leaveShareByZone("))
-        #expect(localCleanup.upperBound < guardRange.lowerBound,
-                "el guard se comió la limpieza LOCAL: una zona backend se quedaría el grupo fantasma")
-        #expect(guardRange.upperBound < leaveShare.lowerBound,
-                "el guard debe cortar ANTES de hablar con CloudKit")
-    }
+    // `sourceScan_removedSelfCleanupSkipsTheCloudKitHalfOnBackendZones` — RETIRADO en la Fase 3, con las
+    // otras tres aserciones. Pinneaba el guard `zoneIsOnBackendChannel` que saltaba la mitad CloudKit del
+    // flow (`SplitZoneManager.leaveShareByZone` + su retry en `PendingLeaveShareTracker`) para las zonas
+    // born-backend. El commit 1 borró esa mitad ENTERA, así que ya no hay dos caminos que separar: toda
+    // zona hace solo la limpieza local, que es lo que el guard concedía a las backend. El modo de fallo que
+    // impedía —una entry de retry inmortal pegándole a CloudKit en cada arranque— se extinguió con el
+    // tracker.
 }

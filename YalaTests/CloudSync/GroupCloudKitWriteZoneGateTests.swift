@@ -184,42 +184,14 @@ struct GroupCloudKitWriteZoneGateTests {
         try String(contentsOf: repoRoot.appendingPathComponent(relative), encoding: .utf8)
     }
 
-    /// **Conteo esperado por sitio.** Los CUATRO guards C2 tienen que pasar por el helper por zona, y ninguno
-    /// puede volver a evaluar el predicado por fila inline. Sin el conteo, un guard nuevo (o un renombrado)
-    /// pasaría en verde sin comprobar nada — la familia de «Executed 0 tests».
-    ///
-    /// MUTACIÓN: devolver cualquiera de los cuatro a `group.isBackendGroup || group.isMigratedFrozen` deja
-    /// las dos aserciones en rojo.
-    @Test func sourceScan_allFourC2GuardsAskTheZone() throws {
-        let manager = try Self.source("Yala/Services/Groups/SplitSyncManager.swift")
-        // 4 call-sites (enqueueSave, enqueueDeletion, zoneRecovery, recordRecovery) + la definición del
-        // helper + su llamada a la primitiva pura de `GroupFreezeLogic`.
-        let uses = manager.components(separatedBy: "zoneBlocksCloudKitWrites(").count - 1
-        #expect(uses == 6, "los guards C2 que pasan por el helper por zona cambiaron: \(uses) (esperados 6)")
-        #expect(!manager.contains("isBackendGroup || group.isMigratedFrozen)"),
-                "un guard C2 volvió a decidir con la fila del parámetro")
-        #expect(!manager.contains("$0.isBackendGroup || $0.isMigratedFrozen)"),
-                "el filtro del zoneRecovery volvió a decidir por fila")
-    }
-
-    /// El helper tiene que degradar a la fila en mano —nunca abrir el paso— cuando no puede enumerar la zona,
-    /// y cortar sin fetch cuando la fila ya bloquea (el `enqueueSave` tiene ~30 call-sites).
-    ///
-    /// MUTACIÓN: cambiar cualquiera de los dos `return inHandBlocks` por `return false` deja esto rojo.
-    @Test func sourceScan_c2HelperFailsToTheRowInHand() throws {
-        let manager = try Self.source("Yala/Services/Groups/SplitSyncManager.swift")
-        guard let start = manager.range(of: "private func zoneBlocksCloudKitWrites(_ group: SplitGroup) -> Bool {"),
-              let end = manager.range(of: "\n    /// Enqueue a save, auto-routing", range: start.upperBound..<manager.endIndex)
-        else {
-            Issue.record("cambió la firma o el cierre del helper: el escáner no tiene sujeto")
-            return
-        }
-        let body = String(manager[start.upperBound..<end.lowerBound])
-        #expect(body.contains("if inHandBlocks { return true }"), "se perdió el corte sin fetch")
-        #expect(body.components(separatedBy: "return inHandBlocks").count - 1 == 2,
-                "el helper debe degradar a la fila en mano SIN contexto y con el fetch en error")
-        #expect(!body.contains("return false"), "el helper abre el paso en un camino de error")
-    }
+    // `sourceScan_allFourC2GuardsAskTheZone` y `sourceScan_c2HelperFailsToTheRowInHand` — RETIRADOS en la
+    // Fase 3. Contaban los 6 usos de `zoneBlocksCloudKitWrites(` dentro de `SplitSyncManager` y anclaban en
+    // el cuerpo de ese helper. El commit 1 borró el fichero, así que el conteo esperado no tiene sujeto y el
+    // scan lanzaría en runtime.
+    //
+    // **Lo que queda huérfano, declarado:** `GroupFreezeLogic.zoneBlocksCloudKitWrites` pierde sus SEIS
+    // consumidores, que vivían todos ahí. La primitiva pura y sus tests de comportamiento se conservan —
+    // `GroupFreezeLogic` tiene más miembros vivos— pero ese en concreto ya no lo llama nadie en producción.
 
     /// La fusión del dedup va ANTES del borrado: la evidencia vive SOLO en las filas que van a desaparecer.
     /// No es unit-asertable sin `ModelContext` (la primitiva pura devuelve el plan, no lo aplica).

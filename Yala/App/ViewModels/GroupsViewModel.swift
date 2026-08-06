@@ -197,10 +197,11 @@ final class GroupsViewModel {
 
     /// Fuerza un fetch remoto y recarga la lista (refresh acotado a Grupos, no un bump global de
     /// dataVersion). Usado por pull-to-refresh (`force: true`) y entrada al tab (`force: false`).
-    /// Fase 2 · 2.5: pide el ciclo a los DOS canales. El del backend está self-gateado (no-op sin red con
-    /// el flag OFF); la línea de CloudKit se va con el transporte en la Fase 3.
+    /// Fase 3: queda un solo canal. `syncNowFromUI` está self-gateado (no-op sin sesión de nube o con el
+    /// kill remoto puesto) y descarta su `Bool` — residuo declarado en la re-medición de A1 (§S5.1), fuera
+    /// del alcance de este commit.
     func refreshFromCloud(force: Bool) async {
-        await SplitSyncManager.shared.syncNow(force: force)
+        _ = force
         await GroupsSyncClient.shared.syncNowFromUI()
         loadData()
     }

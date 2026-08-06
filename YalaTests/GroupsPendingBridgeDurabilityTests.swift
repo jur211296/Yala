@@ -16,8 +16,14 @@
 //  (_disarm-then-attempt_), así que cualquiera de las cuatro superficies de throw de `bridgeRemoteExpenses`
 //  —o su `catch` por gasto— perdía el lote con la app en primer plano y sin un log en release.
 //
-//  Por qué se ejercita el singleton REAL y no una extracción: sin `initialize()`, `SplitSyncManager.shared`
-//  no tiene container ni engines, que es la situación exacta del arranque. El seam `_testNotePendingBridge`
+//  **Fase 3, commit 1 — este fichero era híbrido y perdió su mitad CloudKit.** Las celdas armaban por el
+//  seam `SplitSyncManager._testNotePendingBridge` y olvidaban el camino rápido en memoria con
+//  `_testForgetInMemoryPendingBridge`; los dos murieron con el transporte. Ahora arman `GroupsPendingBridgeIntent`
+//  DIRECTAMENTE con `channel: .cloudKit`, y eso conserva —de hecho afila— lo que importa: un intent con IDs
+//  del canal viejo escrito por un build ANTERIOR es exactamente lo que un usuario se encuentra en disco al
+//  actualizar a este commit, y el retome tiene que seguir sabiendo qué hacer con él. La mitad BACKEND
+//  (`armBridgeIntent` de `GroupsSyncClient`) y el retome (`GroupsPendingBridgeResume`) están intactos y son
+//  los que siguen teniendo productor vivo. El seam `_testNotePendingBridge`
 //  existe porque `CKSyncEngine.Event.FetchedRecordZoneChanges` no tiene init público —el evento no se puede
 //  fabricar—, y por eso el cableado real va pinneado aparte con source-scans: sin ellos, revertir el hunk de
 //  producción dejaría esta suite entera en verde con el bug de vuelta.
@@ -80,7 +86,6 @@ struct GroupsPendingBridgeDurabilityTests {
         BridgeModeResolver.shared.invalidateCache(forZoneID: nil)
 
         return {
-            SplitSyncManager.shared._testForgetInMemoryPendingBridge()
             GroupsPendingBridgeIntent.defaults = previousDefaults
             SessionState.shared.onboardingMode = previousMode
             BridgeModeResolver.shared.invalidateCache(forZoneID: nil)
@@ -148,7 +153,7 @@ struct GroupsPendingBridgeDurabilityTests {
         let f = try makeFixture(context)
         let expense = try makeRemoteExpense(context, f)
 
-        SplitSyncManager.shared._testNotePendingBridge(expenseIDs: [expense.id], settlementIDs: [])
+        GroupsPendingBridgeIntent.arm(expenseIDs: [expense.id], settlementIDs: [], channel: .cloudKit)
 
         #expect(GroupsPendingBridgeIntent.isArmed,
                 """
@@ -169,11 +174,10 @@ struct GroupsPendingBridgeDurabilityTests {
         let expense = try makeRemoteExpense(context, f)
 
         // 1. Llega el cambio remoto: el gasto ya está local, el bridge queda pendiente.
-        SplitSyncManager.shared._testNotePendingBridge(expenseIDs: [expense.id], settlementIDs: [])
+        GroupsPendingBridgeIntent.arm(expenseIDs: [expense.id], settlementIDs: [], channel: .cloudKit)
 
         // 2. «Proceso nuevo»: se olvida el camino rápido en memoria y se cancela el Task coalescido. Lo
         //    único que puede cruzar un reinicio es lo persistido — el escenario exacto del bug.
-        SplitSyncManager.shared._testForgetInMemoryPendingBridge()
 
         let before = try bridgedRows(context, expenseID: expense.id)
         #expect(before.txs == 0 && before.drafts == 0, "Precondición: el bridge no ocurrió en esa sesión.")
@@ -205,9 +209,7 @@ struct GroupsPendingBridgeDurabilityTests {
         let huerfano = try makeRemoteExpense(context, f, zoneID: "SplitGroup-zona-que-no-llego")
         let normal = try makeRemoteExpense(context, f, description: "Cena")
 
-        SplitSyncManager.shared._testNotePendingBridge(
-            expenseIDs: [huerfano.id, normal.id], settlementIDs: [])
-        SplitSyncManager.shared._testForgetInMemoryPendingBridge()
+        GroupsPendingBridgeIntent.arm(expenseIDs: [huerfano.id, normal.id], settlementIDs: [], channel: .cloudKit)
         GroupsPendingBridgeResume.resumeIfNeeded(context: context)
 
         #expect(GroupsPendingBridgeIntent.pending.expenseIDs == [huerfano.id],
@@ -228,7 +230,7 @@ struct GroupsPendingBridgeDurabilityTests {
         let cleanup = makeIsolatedWorld(context); defer { cleanup() }
         let fantasma = UUID()  // ninguna fila con este id: no hay nada que puentear, y no lo habrá
 
-        SplitSyncManager.shared._testNotePendingBridge(expenseIDs: [fantasma], settlementIDs: [])
+        GroupsPendingBridgeIntent.arm(expenseIDs: [fantasma], settlementIDs: [], channel: .cloudKit)
         GroupsPendingBridgeResume.resumeIfNeeded(context: context)
 
         #expect(!GroupsPendingBridgeIntent.isArmed,
@@ -258,8 +260,7 @@ struct GroupsPendingBridgeDurabilityTests {
         context.insert(expense)
         try context.save()
 
-        SplitSyncManager.shared._testNotePendingBridge(expenseIDs: [expense.id], settlementIDs: [])
-        SplitSyncManager.shared._testForgetInMemoryPendingBridge()
+        GroupsPendingBridgeIntent.arm(expenseIDs: [expense.id], settlementIDs: [], channel: .cloudKit)
 
         for arranque in 1...(GroupsPendingBridgeIntent.maxAttempts - 1) {
             GroupsPendingBridgeResume.resumeIfNeeded(context: context)
@@ -288,8 +289,7 @@ struct GroupsPendingBridgeDurabilityTests {
         // El gasto bajó en un batch y su GroupMeta viaja en otro: `applyExpense` inserta la fila igual.
         let huerfano = try makeRemoteExpense(context, f, zoneID: "SplitGroup-zona-que-no-llego")
 
-        SplitSyncManager.shared._testNotePendingBridge(expenseIDs: [huerfano.id], settlementIDs: [])
-        SplitSyncManager.shared._testForgetInMemoryPendingBridge()
+        GroupsPendingBridgeIntent.arm(expenseIDs: [huerfano.id], settlementIDs: [], channel: .cloudKit)
 
         for arranque in 1...(GroupsPendingBridgeIntent.maxAttempts + 2) {
             GroupsPendingBridgeResume.resumeIfNeeded(context: context)
@@ -311,8 +311,7 @@ struct GroupsPendingBridgeDurabilityTests {
         let f = try makeFixture(context)
         let expense = try makeRemoteExpense(context, f)
 
-        SplitSyncManager.shared._testNotePendingBridge(expenseIDs: [expense.id], settlementIDs: [])
-        SplitSyncManager.shared._testForgetInMemoryPendingBridge()
+        GroupsPendingBridgeIntent.arm(expenseIDs: [expense.id], settlementIDs: [], channel: .cloudKit)
 
         // El grupo migra al canal backend mientras la intención esperaba en disco.
         f.group.isBackendGroup = true
@@ -573,7 +572,7 @@ struct GroupsPendingBridgeDurabilityTests {
     }
 }
 
-/// Cableado de producción (source-scan). El seam `_testNotePendingBridge` entra por DEBAJO del handler del
+/// Cableado de producción (source-scan). El seam de arm entra por DEBAJO del handler del
 /// fetch —el evento de CKSyncEngine no se puede fabricar—, así que sin estos scans revertir el hunk que
 /// cablea el intent dejaría la suite de arriba en verde con la pérdida de vuelta. Mismo patrón y misma razón
 /// que `GroupsIdentityPurgeWiringTests` / `HandoverGroupsWiringTests`.
@@ -588,58 +587,6 @@ struct GroupsPendingBridgeWiringTests {
 
     private static func source(_ path: String) throws -> String {
         try String(contentsOf: repoRoot.appendingPathComponent(path), encoding: .utf8)
-    }
-
-    /// El handler del fetch anota por el MISMO seam que el test, y ese seam arma el intent durable. Sin
-    /// esto, el test de arriba mediría una función que producción no llama.
-    ///
-    /// Ancla en el CALL-SITE, dentro del cuerpo del handler, no en la declaración: comprobar que la función
-    /// existe y que el `arm` está dentro de ella se satisface sola, sin exigir ningún llamador — un
-    /// reescrito equivalente del handler (`formUnion` con otra variable) dejaría las celdas de arriba en
-    /// verde, porque TODAS entran por el seam de DEBUG.
-    @Test func theFetchHandler_armsThroughTheSameSeam() throws {
-        let src = try Self.source("Yala/Services/Groups/SplitSyncManager.swift")
-        #expect(src.contains("private func notePendingBridge(expenseIDs: Set<UUID>, settlementIDs: Set<UUID>)"))
-        #expect(src.contains("expenseIDs: expenseIDs, settlementIDs: settlementIDs, channel: .cloudKit)"))
-
-        let handler = try #require(
-            src.components(separatedBy: "private func handleFetchedRecordZoneChanges").dropFirst().first,
-            "El handler del fetch cambió de nombre; este scan dejó de medir nada.")
-        // El cuerpo termina donde empieza la siguiente declaración del tipo.
-        let body = handler.components(separatedBy: "\n    private func ").first ?? ""
-        #expect(body.contains("notePendingBridge("),
-                """
-                El handler del fetch dejó de anotar por `notePendingBridge`. Si vuelve a acumular los IDs por \
-                su cuenta, el intent durable no se arma y la pérdida vuelve entera — y NINGUNA celda de \
-                comportamiento se entera, porque todas entran por el seam de DEBUG.
-                """)
-        #expect(!body.contains("pendingBridgeExpenseIDs.formUnion"))
-        #expect(!body.contains("pendingBridgeSettlementIDs.formUnion"))
-    }
-
-    /// Los dos gates de dominio del fix. Ninguno es alcanzable bajo el runner —el sello exceptúa
-    /// `isRunningTests` a propósito, o cerraría las 14 pruebas del bridge—, así que el source-scan no es
-    /// aquí una comodidad sino la única cobertura posible.
-    @Test func bothDomainGates_areInPlaceAndOrdered() throws {
-        let src = try Self.source("Yala/Services/Groups/SplitSyncManager.swift")
-
-        // 1) Armar: con el dominio sellado no se persiste intención. Si no, tras un «empiezo de cero» el
-        //    corpus re-descargado del humano anterior se acumula y se materializa entero en el Panel del
-        //    nuevo el día que adopte Grupos.
-        let note = try #require(
-            src.components(separatedBy: "private func notePendingBridge").dropFirst().first)
-        let noteBody = note.components(separatedBy: "\n    /// ").first ?? note
-        let guardAt = try #require(noteBody.range(of: "guard GroupTransactionBridge.isDomainOpenForBridge() else"))
-        let armAt = try #require(noteBody.range(of: "GroupsPendingBridgeIntent.arm("))
-        #expect(guardAt.lowerBound < armAt.lowerBound)
-
-        // 2) Drenar en sesión: con el dominio sellado el bridge hace early-return sin lanzar, así que
-        //    intentarlo desarmaría la intención sin haber puenteado nada.
-        let drain = try #require(
-            src.components(separatedBy: "private func processPendingRemoteChanges").dropFirst().first)
-        let gate = try #require(drain.range(of: "guard GroupTransactionBridge.isDomainOpenForBridge() else"))
-        let attempt = try #require(drain.range(of: "bridgeRemoteExpenses(ids:"))
-        #expect(gate.lowerBound < attempt.lowerBound)
     }
 
     /// Gemelo del anterior para el canal BACKEND, y por la misma razón: el sello es inalcanzable bajo el
@@ -702,20 +649,6 @@ struct GroupsPendingBridgeWiringTests {
         #expect(!src.contains("bridged.insert(expense.id)\n            } catch"))
     }
 
-    /// ARM-then-attempt-then-DISARM: el desarme tiene que venir DESPUÉS del intento. Un scan de orden y no
-    /// de presencia, porque la versión rota también «contenía» las dos cosas — en el orden inverso.
-    @Test func theDisarm_comesAfterTheAttempt() throws {
-        let src = try Self.source("Yala/Services/Groups/SplitSyncManager.swift")
-        let intento = try #require(src.range(of: "bridgeRemoteExpenses(ids: Array(expenseIDs))"))
-        let desarme = try #require(src.range(of: "GroupsPendingBridgeIntent.confirm("))
-        #expect(intento.lowerBound < desarme.lowerBound,
-                """
-                El desarme volvió a preceder al intento (`removeAll()` antes de llamar al bridge). Cualquiera \
-                de las cuatro superficies de throw de `bridgeRemoteExpenses` pierde entonces el lote entero, \
-                con la app viva y sin un log en release.
-                """)
-    }
-
     /// El retome vive DENTRO de `retryPendingBridges` y detrás de sus dos gates: el bridge salva el
     /// `mainContext` compartido (quiescencia) y con Grupos sellado no puede consumir la intención (dominio).
     @Test func theBootResume_isWiredBehindBothGates() throws {
@@ -725,13 +658,6 @@ struct GroupsPendingBridgeWiringTests {
         #expect(dominio.lowerBound < retome.lowerBound)
         let quiescencia = try #require(src.range(of: "logger.notice(\"retryPendingBridges deferred"))
         #expect(quiescencia.lowerBound < retome.lowerBound)
-    }
-
-    /// La coartada del bug, borrada: la regla del repo y este comentario afirmaban que CKSyncEngine
-    /// re-entrega el cambio más tarde. No lo hace — el token ya avanzó cuando el handler retornó.
-    @Test func theFalseAlibi_isGone() throws {
-        let src = try Self.source("Yala/Services/Groups/SplitSyncManager.swift")
-        #expect(!src.contains("CKSyncEngine re-delivers the change later"))
     }
 
     /// Frontera de usuario: la intención del humano anterior no viaja al dispositivo del nuevo. Importa

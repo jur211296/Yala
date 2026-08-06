@@ -3,8 +3,9 @@
 //  Yala
 //
 //  UIApplicationDelegate for:
-//  - APNs registration (required by CKSyncEngine for silent push)
-//  - CKShare acceptance with segment-based routing (GC-08)
+//  - APNs registration (silent push)
+//  - Clasificación de los push de CloudKit del store PERSONAL, que sigue espejado por
+//    NSPersistentCloudKitContainer (la Fase 3 solo se llevó el transporte de GRUPOS)
 //
 
 import CloudKit
@@ -98,16 +99,5 @@ class YalaAppDelegate: NSObject, UIApplicationDelegate {
             AppBootstrapper.shared.handleInviteLink(url)
         }
         return true
-    }
-
-    // MARK: - CKShare Acceptance (GC-08: segment-based routing)
-
-    func application(
-        _ application: UIApplication,
-        userDidAcceptCloudKitShareWith cloudKitShareMetadata: CKShare.Metadata
-    ) {
-        Task { @MainActor in
-            await CKShareEntryHandler.handle(metadata: cloudKitShareMetadata, source: .shareAccepted)
-        }
     }
 }

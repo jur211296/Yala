@@ -232,7 +232,7 @@ final class DataWipeService {
     /// **Es borrado LOCAL, jamás remoto.** Los grupos siguen intactos en CloudKit: el store de
     /// grupos monta `cloudKitDatabase: .none` (`SwiftDataConfiguration.groupsConfiguration`) ⇒
     /// SwiftData no puede exportar nada, y el único camino de export es el enqueue EXPLÍCITO
-    /// (`SplitSyncManager.markPendingDeletion`, solo desde acciones de usuario en
+    /// (solo desde acciones de usuario en
     /// `GroupExpenseService`). Por eso el invariante «borrar filas con el mirror montado exporta los
     /// deletes a iCloud» NO aplica aquí — habla del store PERSONAL, que sí lleva mirror.
     /// Corolario CRÍTICO: esta función JAMÁS debe usar `GroupService.leaveGroup` /
@@ -243,7 +243,7 @@ final class DataWipeService {
     /// borrar las filas dejando `private.json`/`shared.json` intactos deja los change tokens
     /// diciendo «estás al día» ⇒ CloudKit no reenvía JAMÁS esos records ⇒ el mismo humano que
     /// vuelve pierde sus grupos de forma permanente con los datos vivos en la nube. El precedente
-    /// correcto empareja las dos cosas (`SplitSyncManager.performAccountSwitchCleanup`). Que el
+    /// correcto empareja las dos cosas. Que el
     /// corpus se re-descargue es DELIBERADO: quien lo mantiene fuera de la vida personal de B es el
     /// gate de dominio del bridge (`GroupTransactionBridge.isDomainOpenForBridge`), no la ausencia
     /// de filas.
@@ -260,14 +260,13 @@ final class DataWipeService {
     ///     comportamiento del bridge (por eso `isDomainOpenForBridge` exceptúa además el runner).
     ///   - resetSyncState: seam del estado del motor + identidad cacheada + espejo del outbox de Grupos
     ///     en el App Group. Default = producción; los tests lo inyectan para no tocar
-    ///     `SplitSyncManager.shared` ni el disco. `@MainActor` en el TIPO del parámetro y no solo en la
+    ///     el espejo real ni el disco. `@MainActor` en el TIPO del parámetro y no solo en la
     ///     función: los valores por defecto se evalúan en el contexto del CALLER, así que sin la
     ///     anotación el default no puede llamar al singleton.
     static func wipeLocalGroupsDomain(
         in context: ModelContext,
         defaults: UserDefaults = .standard,
         resetSyncState: @MainActor () -> Void = {
-            SplitSyncManager.shared.resetLocalGroupsSyncState()
             // 2.7: sin esto, borrar las filas del outbox (abajo) es COSMÉTICO —
             // `GroupsSyncClient.rehydrateOutboxFromMirror` las re-inserta en el próximo boot desde el
             // App Group. Su filtro por `userID` NO protege en esta frontera: este camino no cierra la

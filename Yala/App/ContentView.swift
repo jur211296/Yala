@@ -285,7 +285,7 @@ struct ContentView: View {
         // Parte F: oferta para un returning user con datos al abrir un link de invitación.
         .alert(L10n.Welcome.OfferRestore.title, isPresented: $showRestoreOffer) {
             Button(L10n.Welcome.OfferRestore.loadData) {
-                // Cargar datos: el invite queda retenido en PendingInviteStore; tras
+                // Cargar datos: el intent de invitación lo conserva su propio store; tras
                 // restaurar se re-emite (reEmitInviteAfterRestore en onContinue/onComplete).
                 showRestoreOffer = false
                 showWelcomeRestore = true
@@ -586,12 +586,6 @@ struct ContentView: View {
             case .active:
                 // GC-08: Recalculate user segment on each foreground activation
                 UserSegmentService.shared.recalculate()
-                // Re-emite un invite pendiente persistido si su intent transient fue
-                // dropeado por resetTransients en background. `isPresenting` evita
-                // re-presentar cuando el cover de invite/reconnect ya está abierto.
-                AppBootstrapper.shared.reEmitPendingInviteIfNeeded(
-                    isPresenting: showGroupInviteOnboarding || showGroupReconnect || showRestoreOffer
-                )
                 // Cinturón del join intent: cubre "grupo ya local pero el reconcile
                 // de boot se difirió por quiescencia". El propio reconciler gatea
                 // por quiescencia y hace no-op sin intents.
@@ -1161,13 +1155,14 @@ struct ContentView: View {
         }
     }
 
-    /// Parte F: tras restaurar/onboarding desde la oferta de invitación, re-emite el
-    /// invite retenido en `PendingInviteStore` (si lo hay). Idempotente — no-op si no
-    /// hay invite pendiente. Con `hasCompletedOnboarding=true` ya, `inviteRouteDecision`
-    /// da `.standardReconnect` (no re-oferta); tras wipe da el mini-onboarding de grupos.
+    /// Parte F: tras restaurar/onboarding desde la oferta de invitación se re-emitía el invite retenido en
+    /// `PendingInviteStore`. **La Fase 3 se llevó ese store con el canal CKShare**, y el canal backend no lo
+    /// necesita: su intención vive en `GroupBackendInviteEntryHandler.persistIntent` y la retoma
+    /// `GroupJoinReconciler` en sus cuatro triggers. Se conserva el hook por sus call-sites y para no
+    /// cambiar el flujo de la oferta de restauración en este commit.
     private func reEmitInviteAfterRestore() {
         Task { @MainActor in
-            AppBootstrapper.shared.reEmitPendingInviteIfNeeded(isPresenting: false)
+            await GroupJoinReconciler.reconcile(trigger: .foreground)
         }
     }
 
@@ -1645,11 +1640,12 @@ private struct GroupInviteModifier: ViewModifier {
     /// una acción distinta: archived no debe llegar acá (CTA es solo dismiss); alreadyMember/
     /// pendingDuplicate solo navegan; los retry modes (rejected/left/removed) aceptan el
     /// share + reactivan al member como pending.
+    ///
+    /// **Fase 3 — las dos ramas que ACEPTABAN el share perdieron su acción.** `acceptAndSettle` llamaba a
+    /// `SplitSyncManager.acceptShare`, que murió con el transporte: no hay forma de aceptar un CKShare, así
+    /// que `standardReconnect` y los tres retry modes informan en vez de navegar a un grupo que nunca va a
+    /// llegar. Las que solo navegan (`alreadyMember`, `pendingDuplicate`) no cambian: su grupo ya es local.
     @MainActor
-    /// Grace period tras `acceptShare` para que CKSyncEngine fetch + propague el grupo
-    /// antes de navegar — sin esto el detalle abre vacío.
-    private static let postAcceptGracePeriod: Duration = .seconds(2)
-
     static func handleReconnectJoin(invite: InviteMetadata) async {
         let metadata = invite.shareMetadata
         let zoneName = metadata.share.recordID.zoneID.zoneName
@@ -1670,30 +1666,31 @@ private struct GroupInviteModifier: ViewModifier {
             RouterEntryGate.shared.submit(.navigate(.groups))
 
         case .rejectedRetry, .leftRetry, .removedRetry:
-            await acceptAndSettle(metadata: metadata)
-            // `group(for:)` y `ensureCurrentUserMemberExists` operan ambos sobre el mainContext
-            // compartido (el sync ya no usa un contexto dedicado) → mismo contexto, sin riesgo cross-context.
+            // El grupo puede seguir siendo local (el usuario fue miembro): reactivar su member sigue
+            // teniendo sentido y es puramente local. Lo que ya no ocurre es el accept del share.
             if let group = GroupService.shared.group(for: zoneName) {
                 do {
                     _ = try await GroupService.shared.ensureCurrentUserMemberExists(in: group, reactivateInactive: true)
+                    RouterEntryGate.shared.submit(.navigate(.groups))
+                    return
                 } catch {
                     #if DEBUG
                     print("ContentView: ensureCurrentUserMemberExists retry failed: \(error)")
                     #endif
                 }
             }
-            RouterEntryGate.shared.submit(.navigate(.groups))
+            RouterEntryGate.shared.submit(.showInviteError(
+                String(localized: "groups.invite.linkInvalidDetail")
+            ))
 
         case .standardReconnect:
-            await acceptAndSettle(metadata: metadata)
-            RouterEntryGate.shared.submit(.navigate(.groups))
+            // Sin canal que acepte el share, navegar a Grupos dejaría al usuario mirando una lista donde
+            // su grupo nunca aparece. Mismo criterio y mismo copy que la rama `.ckShare` del router de
+            // canal (`AppBootstrapper.handleInviteLink`).
+            RouterEntryGate.shared.submit(.showInviteError(
+                String(localized: "groups.invite.linkInvalidDetail")
+            ))
         }
-    }
-
-    private static func acceptAndSettle(metadata: CKShare.Metadata) async {
-        await SplitSyncManager.shared.acceptShare(metadata: metadata)
-        try? await Task.sleep(for: postAcceptGracePeriod)
-        SessionState.shared.incrementDataVersion()
     }
 
     @Binding var showGroupInviteOnboarding: Bool
@@ -1738,7 +1735,6 @@ private struct GroupInviteModifier: ViewModifier {
                     // error RECUPERABLE se conserva para que el re-emit de cold
                     // launch/foreground reintente el accept (TTL 24h).
                     if GroupInviteOnboardingLogic.shouldClearPendingInvite(outcome: outcome) {
-                        PendingInviteStore.clear()
                     }
                     // El setup silencioso ya corrió (nombre/moneda): no re-onboardear
                     // en ningún outcome; el join intent sigue trabajando en background.
@@ -1751,7 +1747,6 @@ private struct GroupInviteModifier: ViewModifier {
             .sheet(isPresented: $showGroupReconnect, onDismiss: {
                 // Consumo del invite pendiente al cerrar el reconnect (X / swipe / CTA).
                 // Incondicional y antes de reabrir welcome → no re-emerge.
-                PendingInviteStore.clear()
                 pendingReconnectInvite = nil
                 // Pre-onboarding: user llegó al sheet vía Chooser → InviteRecoveryView →
                 // handleInviteLink. Cualquier dismiss (X, swipe down, CTA) sin reabrir
@@ -2062,18 +2057,12 @@ struct MainTabView: View {
             if GroupsBetaGateLogic.shouldShowGate(isUnlocked: groupsBetaUnlocked,
                                                   isGroupInviteMode: sessionState.isGroupInviteMode) {
                 GroupsBetaGateView()
-            } else if GroupsICloudAvailabilityGateLogic.shouldShowGate(
-                          isAccountAvailable: syncService.isAccountAvailable,
-                          isBackendChannelEnabled: CloudSyncFlags.groupsBackendEnabled,
-                          isUITest: UITestHooks.isActive
-                      ) {
-                // M1 / D8 (G5-C): el gate CloudKit-era (sin iCloud del OS) se RETIRA bajo el flag — el
-                // canal grupos→backend no exige la cuenta iCloud del sistema. Con flag OFF (TODO device
-                // prod hoy) es byte-idéntico. La lógica pura y la vista NO se borran (retiro real post-G6).
-                // El flag va como PARÁMETRO, no como condición de este `else if`: ahí no lo alcanzaba
-                // ningún test y borrarlo dejaba la suite en verde (ver docblock de la lógica pura).
-                GroupsICloudUnavailableView()
             } else {
+                // El muro «Grupos necesita iCloud» (gate CloudKit-era + `GroupsICloudUnavailableView`) se
+                // RETIRÓ aquí, que es el retiro real que su propio comentario prometía «post-G6»: el canal
+                // superviviente no exige la cuenta iCloud del OS. La lectura de `syncService.status` de
+                // arriba se conserva a propósito — sigue siendo lo que registra la dependencia @Observable
+                // de este branch.
                 GroupsContainerView()
             }
         }

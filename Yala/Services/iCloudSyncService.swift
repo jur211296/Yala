@@ -90,7 +90,7 @@ final class iCloudSyncService {
     /// sobre el coordinator del store personal mientras NSPersistentCloudKitContainer importa
     /// dispara el `_assertionFailure` interno de SwiftData (SIGTRAP). Adaptador runtime sobre
     /// `SubcategoryDedupGate.decide` (la lógica pura testeada); mismo gate que usan
-    /// `retryPendingBridges` y `SplitSyncManager.processPendingRemoteChanges`.
+    /// `retryPendingBridges` y el apply del pull de Grupos.
     var isImportQuiescent: Bool {
         SubcategoryDedupGate.decide(
             now: .now,
@@ -106,11 +106,6 @@ final class iCloudSyncService {
         if let forced = _testForceAccountAvailable { return forced }
         #endif
         return SwiftDataConfiguration.isICloudAvailable()
-    }
-
-    /// Split group sync status (from CKSyncEngine) — preserved from 2.0.
-    var splitSyncStatus: SplitSyncManager.SyncStatus {
-        SplitSyncManager.shared.syncStatus
     }
 
     /// Assigns a new status only if it differs from the current one. Prevents

@@ -12,7 +12,6 @@
 //  reintento persistente en accept/remoteInsert/boot/foreground.
 //
 
-import CloudKit
 import Foundation
 
 enum GroupJoinReconcileLogic {
@@ -125,37 +124,5 @@ enum GroupJoinReconcileLogic {
         guard let regionFallbackCode, let currentPreferenceCode else { return false }
         guard currentPreferenceCode == regionFallbackCode else { return false }
         return groupCode != currentPreferenceCode
-    }
-
-    // MARK: - Contenido esperado del enqueue (oráculo: CKConstants / enqueueSharedSave)
-
-    /// Proyección testeable de lo que `enqueueSave(modelID:group:)` encolará —
-    /// el mismo cálculo que SplitSyncManager hace por dentro (lección d49d2e47:
-    /// assertar el contenido real, no solo que "no lanza").
-    struct EnqueuePlan: Equatable {
-        let recordName: String
-        let zoneName: String
-        let zoneOwnerName: String
-        let routesToSharedEngine: Bool
-    }
-
-    static func enqueuePlan(
-        memberID: UUID,
-        zoneName: String,
-        zoneOwnerName: String,
-        isOwner: Bool
-    ) -> EnqueuePlan {
-        let resolvedOwner = zoneOwnerName.isEmpty ? CKCurrentUserDefaultName : zoneOwnerName
-        let zoneID = CKRecordZone.ID(
-            zoneName: zoneName,
-            ownerName: isOwner ? CKCurrentUserDefaultName : resolvedOwner
-        )
-        let recordID = CKConstants.recordID(for: memberID, in: zoneID)
-        return EnqueuePlan(
-            recordName: recordID.recordName,
-            zoneName: recordID.zoneID.zoneName,
-            zoneOwnerName: recordID.zoneID.ownerName,
-            routesToSharedEngine: !isOwner
-        )
     }
 }

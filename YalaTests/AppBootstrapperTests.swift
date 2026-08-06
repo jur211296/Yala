@@ -317,44 +317,12 @@ struct AppBootstrapperTests {
         #expect(decision == .showReconnect(mode: .deletedForAll))
     }
 
-    // MARK: - shouldReEmitInvite (pure guard del re-emit de invites pendientes)
-
-    @Test func shouldReEmitInvite_allConditionsMet_returnsTrue() {
-        #expect(AppBootstrapper.shouldReEmitInvite(
-            storeHasEntry: true, isProcessing: false,
-            queueHasInviteIntent: false, isPresenting: false
-        ))
-    }
-
-    @Test func shouldReEmitInvite_noEntry_returnsFalse() {
-        #expect(!AppBootstrapper.shouldReEmitInvite(
-            storeHasEntry: false, isProcessing: false,
-            queueHasInviteIntent: false, isPresenting: false
-        ))
-    }
-
-    @Test func shouldReEmitInvite_alreadyProcessing_returnsFalse() {
-        #expect(!AppBootstrapper.shouldReEmitInvite(
-            storeHasEntry: true, isProcessing: true,
-            queueHasInviteIntent: false, isPresenting: false
-        ))
-    }
-
-    @Test func shouldReEmitInvite_intentAlreadyQueued_returnsFalse() {
-        #expect(!AppBootstrapper.shouldReEmitInvite(
-            storeHasEntry: true, isProcessing: false,
-            queueHasInviteIntent: true, isPresenting: false
-        ))
-    }
-
-    @Test func shouldReEmitInvite_coverPresenting_returnsFalse() {
-        // Cover ya abierto → NO re-emitir (evita re-presentación espuria que el
-        // clear-on-complete causaría con el cover visible).
-        #expect(!AppBootstrapper.shouldReEmitInvite(
-            storeHasEntry: true, isProcessing: false,
-            queueHasInviteIntent: false, isPresenting: true
-        ))
-    }
+    // MARK: - shouldReEmitInvite — RETIRADO en la Fase 3
+    //
+    // Las 5 celdas cubrían el guard puro del re-emit de un invite pendiente, y el mecanismo entero
+    // (`reEmitPendingInviteIfNeeded` + `PendingInviteStore`) era del canal CKShare que el commit 1 borra.
+    // El canal backend no re-emite: su intención vive en `GroupBackendInviteEntryHandler.persistIntent` y
+    // la retoma `GroupJoinReconciler` en sus cuatro triggers, con su propia cobertura.
 
     // MARK: - isRecoverableInviteFetchError (red transitoria vs permanente)
 

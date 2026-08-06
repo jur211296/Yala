@@ -3,10 +3,8 @@
 //  YalaTests
 //
 //  Pure-logic del reconciliador de join intents. Sin SwiftData/CloudKit-container
-//  (CKRecordZone.ID / CKRecord.ID son value types instanciables offline).
 //
 
-import CloudKit
 import Foundation
 import Testing
 
@@ -150,49 +148,11 @@ struct GroupJoinReconcileLogicTests {
             currentPreferenceCode: "PEN", regionFallbackCode: "PEN", groupCode: "PEN"))
     }
 
-    // MARK: - enqueuePlan (contenido REAL del enqueue — lección d49d2e47)
+    // MARK: - enqueuePlan — RETIRADO en la Fase 3
+    //
+    // Las 3 celdas proyectaban lo que `SplitSyncManager.enqueueSave(modelID:group:)` iba a encolar
+    // (recordName, zona, owner, engine privado vs compartido). Borrado el transporte, esa proyección no
+    // tiene oráculo: describía un encolado que ya no ocurre. La función se fue con ellas — dejarla habría
+    // sido una tabla verde de algo que el producto no hace, la familia de `AppAttestClient.ensureRegistered()`.
 
-    @Test func enqueuePlan_invitedMember_routesToSharedWithOwnerZone() {
-        let memberID = UUID()
-        let groupID = UUID()
-        let zoneName = "SplitGroup-\(groupID.uuidString)"
-        let plan = GroupJoinReconcileLogic.enqueuePlan(
-            memberID: memberID,
-            zoneName: zoneName,
-            zoneOwnerName: "_ownerRecord123",
-            isOwner: false
-        )
-        // Oráculo: el mismo CKConstants.recordID que usa enqueueSharedSave.
-        let expectedZone = CKRecordZone.ID(zoneName: zoneName, ownerName: "_ownerRecord123")
-        let expected = CKConstants.recordID(for: memberID, in: expectedZone)
-        #expect(plan.recordName == expected.recordName)
-        #expect(plan.recordName == memberID.uuidString)
-        #expect(plan.zoneName == zoneName)
-        #expect(plan.zoneOwnerName == "_ownerRecord123")
-        #expect(plan.routesToSharedEngine)
-    }
-
-    @Test func enqueuePlan_emptyOwnerName_fallsBackToCurrentUser() {
-        // Espejo del fallback de enqueueSharedSave (ownerName vacío).
-        let plan = GroupJoinReconcileLogic.enqueuePlan(
-            memberID: UUID(),
-            zoneName: "SplitGroup-X",
-            zoneOwnerName: "",
-            isOwner: false
-        )
-        #expect(plan.zoneOwnerName == CKCurrentUserDefaultName)
-        #expect(plan.routesToSharedEngine)
-    }
-
-    @Test func enqueuePlan_owner_routesToPrivate() {
-        let plan = GroupJoinReconcileLogic.enqueuePlan(
-            memberID: UUID(),
-            zoneName: "SplitGroup-Y",
-            zoneOwnerName: "_ownerRecord123",
-            isOwner: true
-        )
-        // El private engine opera sobre la zona propia (owner = current user).
-        #expect(plan.zoneOwnerName == CKCurrentUserDefaultName)
-        #expect(!plan.routesToSharedEngine)
-    }
 }

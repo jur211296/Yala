@@ -253,64 +253,16 @@ struct GroupZoneCacheGateWiringTests {
         try String(contentsOf: repoRoot.appendingPathComponent(path), encoding: .utf8)
     }
 
-    /// El guard viejo (`GroupService.group(for:)` + `if let`) ya no decide ningún borrado de zona. Es lo que
-    /// impide que vuelvan las DOS formas de fallo: la fila equivocada del duplicado, y el fail-open
-    /// (`group(for:)` devuelve `nil` con el contexto ausente y también cuando el fetch LANZA, así que un
-    /// fallo de LECTURA abría el camino destructivo).
-    @Test func zoneDeletionPaths_decideThroughTheZoneGate() throws {
-        let src = try Self.source("Yala/Services/Groups/SplitSyncManager.swift")
-        // Anclas de CÓDIGO por sitio, no un conteo total: el conteo se rompe en cuanto un comentario
-        // nombre el símbolo, y así el fallo señala al handler exacto que alguien tocó.
-        let deletionsHandler = try #require(
-            src.components(separatedBy: "private func handleFetchedDatabaseChanges(").last)
-            .components(separatedBy: "\n    private func ").first ?? ""
-        let notFoundHandler = try #require(
-            src.components(separatedBy: "private func handleZoneNotFound(").last)
-            .components(separatedBy: "\n    private func ").first ?? ""
-
-        for (name, body) in [("handleFetchedDatabaseChanges", deletionsHandler),
-                             ("handleZoneNotFound", notFoundHandler)] {
-            #expect(body.contains("GroupZoneCacheGate.classify(zoneName: zoneName, context: modelContext) == .cloudKitZone"),
-                    "\(name) dejó de decidir por ZONA")
-            #expect(!body.contains("GroupService.shared.group(for: zoneName)"),
-                    Comment(rawValue: "\(name) volvió al guard de UNA fila: `group(for:)` ordena por "
-                            + "createdAt y devuelve `results.first`, y falla ABIERTO si el fetch lanza"))
-        }
-    }
-
-    /// El primitivo y su hermano de `.encryptedDataReset` operan por la ZONA DEL EVENTO. La negativa sobre
-    /// `SplitGroupZone.zoneName(` es la que cierra la familia entera: es la derivación que solo vale para
-    /// los grupos nacidos en CloudKit, y no debe volver a este fichero.
-    @Test func theTwoZoneSweeps_keyOnTheEventZone_neverOnTheIDDerivation() throws {
-        let src = try Self.source("Yala/Services/Groups/SplitSyncManager.swift")
-        #expect(src.contains("private func deleteGroupCache(zoneName: String, context: ModelContext)"))
-        #expect(src.contains("private func reuploadGroupRecords(zoneName: String, zoneID: CKRecordZone.ID,"))
-        // El símbolo solo puede aparecer en comentarios (el docblock explica por qué NO se usa).
-        let code = src.split(separator: "\n").filter {
-            !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//")
-        }.joined(separator: "\n")
-        #expect(!code.contains("SplitGroupZone.zoneName("),
-                Comment(rawValue: "la derivación de la zona desde el `id` volvió al transporte: solo vale "
-                        + "para grupos nacidos en CloudKit, y un born-remote tiene un id fresco sin "
-                        + "relación con su zona"))
-    }
-
-    /// El barrido corre bajo el `save()` del handler y NO bajo `Self.outboxSaveAuthor`: eso es correcto y
-    /// deliberado (el transporte CloudKit no debe suprimir el drain de las ediciones locales legítimas), y
-    /// por eso lo ÚNICO que separa un borrado de caché de una emisión de tombstones al backend es el gate
-    /// por zona. Este test fija que el gate va ANTES del barrido en los dos handlers.
-    @Test func theGateRunsBeforeTheSweep_inBothHandlers() throws {
-        let src = try Self.source("Yala/Services/Groups/SplitSyncManager.swift")
-        for handler in ["private func handleFetchedDatabaseChanges(", "private func handleZoneNotFound("] {
-            let body = try #require(src.components(separatedBy: handler).last)
-                .components(separatedBy: "\n    private func ").first ?? ""
-            let gate = try #require(body.range(of: "GroupZoneCacheGate.classify("),
-                                    "\(handler) perdió el gate")
-            let sweep = try #require(body.range(of: "deleteGroupCache(zoneName:"),
-                                     "\(handler) perdió el barrido")
-            #expect(gate.lowerBound < sweep.lowerBound,
-                    Comment(rawValue: "el gate tiene que decidir ANTES de borrar: invertirlos devuelve "
-                            + "la emisión de tombstones de gastos al servidor"))
-        }
-    }
+    // Los TRES source-scans de este fichero — `zoneDeletionPaths_decideThroughTheZoneGate`,
+    // `theTwoZoneSweeps_keyOnTheEventZone_neverOnTheIDDerivation` y `theGateRunsBeforeTheSweep_inBothHandlers`
+    // — RETIRADOS en la Fase 3. Anclaban en los cuerpos de `handleFetchedDatabaseChanges` y
+    // `handleZoneNotFound` de `SplitSyncManager`, y en `deleteGroupCache`/`reuploadGroupRecords`. El commit 1
+    // borró ese fichero: sus tres sujetos ya no existen, y un source-scan sobre un fichero borrado LANZA en
+    // runtime sin romper la compilación (la familia de «Executed 0 tests»), así que retirarlos aquí no es
+    // adelantar trabajo de B2: es no dejar tres rojos mudos.
+    //
+    // **Lo que esto deja huérfano, declarado:** `GroupZoneCacheGate.classify` y `.deleteCache` pierden TODOS
+    // sus call-sites de producción. El fichero NO se borra porque `belongsToBackendChannel` sobrevive y tiene
+    // consumidores vivos (`GroupChannelFreshness`, `GroupsSyncClient`), y sus tests de comportamiento —los de
+    // arriba, que son la mayoría de este fichero— siguen siendo la red de ese predicado.
 }

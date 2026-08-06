@@ -3,10 +3,10 @@
 //  Yala
 //
 //  CRUD for groups and members.
-//  Creates CKRecordZones via SplitZoneManager and enqueues sync via SplitSyncManager.
+//  Persistencia local del dominio Grupos. Las operaciones de MEMBRESÍA que viajan lo hacen por el canal
+//  backend (RPC); la Fase 3 se llevó el encolado a CKSyncEngine y la creación de zonas de CloudKit.
 //
 
-import CloudKit
 import Foundation
 import SwiftData
 import os.log
@@ -76,13 +76,13 @@ final class GroupService {
     ///
     /// El fetch degrada a la fila en mano si no hay contexto o si lanza: nunca peor que el criterio anterior.
     ///
-    /// El choke-point C2 de aguas abajo (`SplitSyncManager.enqueueSave(modelID:group:)`) decide con el MISMO
-    /// cuantificador desde 2026-08-03 (`GroupFreezeLogic.zoneBlocksCloudKitWrites`, ANY-row por zona), así que
-    /// las promesas de `removeMember`, `removeMemberLocal` y `approveMember` —«su `enqueueSave` queda no-op
-    /// por C2»— vuelven a ser ciertas también en una zona MIXTA. Su predicado por fila sigue siendo el ANCHO
-    /// (`isBackendGroup || isMigratedFrozen`) y el de aquí el ESTRECHO (`isBackendGroup`): son preguntas
-    /// distintas —«¿puede escribir a CloudKit?» vs «¿esta op de membresía va por RPC?»— y el docblock de
-    /// `GroupBackendIdentityLogic.belongsToBackendChannel` explica por qué no se deben confundir.
+    /// **Fase 3 — lo que este docblock declaraba como red de seguridad ya no existe, y por eso este
+    /// predicado se quedó solo.** El choke-point C2 de aguas abajo era `SplitSyncManager.enqueueSave`, que
+    /// con `GroupFreezeLogic.zoneBlocksCloudKitWrites` volvía no-op el encolado de `removeMember`,
+    /// `removeMemberLocal` y `approveMember` cuando este predicado se hubiera equivocado. Borrado el
+    /// transporte no hay segunda barrera: **equivocarse aquí hacia `false` ya no produce una escritura a un
+    /// canal muerto, produce que la op no viaje a ninguna parte**, que es un fallo más visible pero también
+    /// más silencioso en local. El criterio ANY-row por zona es lo único que lo sostiene.
     private func routesMembershipToBackend(_ group: SplitGroup) -> Bool {
         let flagEnabled = CloudSyncFlags.groupsBackendEnabled
         // Con el flag OFF no se enumera la zona: el resultado ya es `false` y el camino CloudKit tiene que
@@ -152,9 +152,6 @@ final class GroupService {
         group.isOwner = true
         context.insert(group)
 
-        // Create CK zone + GroupMeta root record
-        SplitZoneManager(syncManager: .shared).createZone(for: group)
-
         // Add current user as admin member
         let member = SplitMember(
             groupZoneID: group.cloudKitZoneID,
@@ -169,7 +166,6 @@ final class GroupService {
             name: "\(group.cloudKitZoneID):\(recordName)"
         )
         context.insert(member)
-        SplitSyncManager.shared.enqueueSave(modelID: member.id, group: group)
 
         do {
             try context.save()
@@ -230,7 +226,6 @@ final class GroupService {
         }
 
         SessionState.shared.incrementDataVersion()
-        SplitSyncManager.shared.enqueueSave(modelID: group.id, group: group)
     }
 
     /// Update the group options that ANY active member may change (not admin-only).
@@ -255,7 +250,6 @@ final class GroupService {
         }
 
         SessionState.shared.incrementDataVersion()
-        SplitSyncManager.shared.enqueueSave(modelID: group.id, group: group)
     }
 
     /// Archive or unarchive a group.
@@ -272,36 +266,6 @@ final class GroupService {
         }
 
         SessionState.shared.incrementDataVersion()
-
-        // Propaga la flag por dos canales convergentes: (a) SplitGroup record vía enqueueSave
-        // + sync (path normal para invitados con app abierta — F2 propagation), (b) CKShare
-        // custom key zone-wide (race-tolerant fallback para invitados pre-accept retap link).
-        // Ambos llegan eventualmente al device del invitado y resetean su SplitGroup.isArchived local.
-        SplitSyncManager.shared.enqueueSave(modelID: group.id, group: group)
-        let zoneID = group.cloudKitZoneID
-        Task {
-            await Self.propagateBoolCustomKey(zoneID: zoneID, key: CKShareCustomKey.isArchived, value: isArchived)
-        }
-    }
-
-    /// Escribe una bool custom key (codificada como Int 0/1) en el CKShare zone-wide.
-    /// Solo el owner del CKShare puede modificarlo (admin = owner por construcción).
-    /// Failure mode: silent fail en DEBUG log; red de seguridad es el sync del SplitGroup record.
-    /// `static` (no private) para que `SplitSyncManager.handleConflict` re-propague tras race.
-    static func propagateBoolCustomKey(zoneID: String, key: String, value: Bool) async {
-        let zoneIDObj = CKRecordZone.ID(zoneName: zoneID, ownerName: CKCurrentUserDefaultName)
-        let shareRecordID = CKRecord.ID(recordName: CKRecordNameZoneWideShare, zoneID: zoneIDObj)
-        let database = CKContainer(identifier: CKConstants.containerID).privateCloudDatabase
-        do {
-            let record = try await database.record(for: shareRecordID)
-            guard let share = record as? CKShare else { return }
-            share[key] = value ? 1 : 0
-            _ = try await database.modifyRecords(saving: [share], deleting: [])
-        } catch {
-            #if DEBUG
-            print("GroupService.propagateBoolCustomKey(\(key)): failed for zone \(zoneID): \(error)")
-            #endif
-        }
     }
 
     /// Soft-delete del grupo. Owner-only. Bloquea si cualquier miembro tiene balance pendiente.
@@ -343,7 +307,6 @@ final class GroupService {
         // Sube el SplitGroup record con isHiddenForAll=true para que el sync lo propague
         // a los devices de los invitados (el CKShare custom key abajo es solo race-tolerant
         // fallback para el flow de retap link).
-        SplitSyncManager.shared.enqueueSave(modelID: group.id, group: group)
 
         // Libera TX cuenta real (preserva rastro financiero) + convierte drafts a manual.
         // No-bloqueante: el observer del sync y la red de seguridad boot-time cubren
@@ -359,9 +322,6 @@ final class GroupService {
         }
 
         let zoneID = group.cloudKitZoneID
-        Task {
-            await Self.propagateBoolCustomKey(zoneID: zoneID, key: CKShareCustomKey.isHiddenForAll, value: true)
-        }
 
         // Cleanup override del bridge para este zone — el SplitGroup queda visible
         // pero `isHiddenForAll==true` lo trata como zona inactiva; el override ya no
@@ -405,7 +365,6 @@ final class GroupService {
         }
 
         SessionState.shared.incrementDataVersion()
-        SplitSyncManager.shared.enqueueSave(modelID: member.id, group: group)
 
         return member
     }
@@ -456,7 +415,6 @@ final class GroupService {
         }
 
         SessionState.shared.incrementDataVersion()
-        SplitSyncManager.shared.enqueueSave(modelID: member.id, group: group)
     }
 
     /// members awaiting admin approval (status `.pendingApproval`).
@@ -510,7 +468,6 @@ final class GroupService {
         }
 
         SessionState.shared.incrementDataVersion()
-        SplitSyncManager.shared.enqueueSave(modelID: member.id, group: group)
     }
 
     /// Change a member's role.
@@ -543,7 +500,6 @@ final class GroupService {
         }
 
         SessionState.shared.incrementDataVersion()
-        SplitSyncManager.shared.enqueueSave(modelID: member.id, group: group)
     }
 
     /// Current user leaves a group they were invited to (non-owner).
@@ -560,16 +516,11 @@ final class GroupService {
         // las filas de la zona; con una sola, un duplicado dejaba la zona dentro del set y esta frase era
         // falsa). RPC falla → throw ANTES de tocar el contexto → local INTACTO.
         //
-        // **RESIDUAL DECLARADO, del mismo estado que motivó el criterio por zona.** «No hay CKShare» es
-        // cierto por FILA (`SplitZoneManager.createZone`/`createShare` guardan por `!isBackendGroup`) y
-        // FALSO en una zona MIXTA: ahí la gemela CloudKit sí pudo mintear uno, y desde que el canal se
-        // decide por ZONA esta rama se toma SIEMPRE ⇒ el usuario sale del grupo server-side pero se queda
-        // dentro del share. Antes pasaba lo mismo en la mitad de los casos —cuando la fila en mano era la
-        // backend—, así que el fix lo vuelve determinista, no lo introduce, y a cambio retira el fallo
-        // grave (no salir del grupo). **NO se cierra encolando en `PendingLeaveShareTracker`**: ese retry
-        // (`AppBootstrapper.retryPendingLeaveShares`) no clasifica el fallo permanente y CONSERVA la entry
-        // para siempre ⇒ una zona sin share se llevaría un request a CloudKit en cada boot, eternamente.
-        // Cerrarlo bien pide antes darle TTL/clasificación a ese tracker — ticket aparte.
+        // **El residual del CKShare que esta rama declaraba se EXTINGUIÓ con la Fase 3**, no se arregló:
+        // decía que en una zona MIXTA el usuario salía server-side pero se quedaba dentro del share, y que
+        // cerrarlo pedía antes darle TTL al tracker. Borrado el transporte no hay `leaveShare` que llamar
+        // ni tracker donde encolar, y el share huérfano que pueda quedar en CloudKit no lo ve ya ninguna
+        // superficie de la app.
         if routesMembershipToBackend(group) {
             _ = try await backendMembershipFactory().leave(groupID: group.cloudKitZoneID)
             try performLocalCleanupAndDelete(group: group, context: context)
@@ -582,6 +533,11 @@ final class GroupService {
             return
         }
 
+        // Zona SIN canal (legacy que nunca migró): la salida es puramente LOCAL y eso es todo lo que
+        // puede ser — el transporte que la habría propagado ya no existe, y ningún otro miembro va a
+        // enterarse por ninguna vía. Se marca el member como `.left` igual que antes para que el estado
+        // local quede coherente si la fila sobrevive a la limpieza de abajo por cualquier camino.
+        //
         // El usuario puede salir aunque tenga saldo pendiente. La UI muestra warning
         // explícito en el confirmation dialog antes de invocar este método.
         let currentMember = try await ensureCurrentUserMemberExists(in: group, reactivateInactive: false)
@@ -589,26 +545,11 @@ final class GroupService {
         if currentMember.isActive {
             currentMember.memberStatus = .left
             currentMember.isCurrentUser = true
-            SplitSyncManager.shared.enqueueSave(modelID: currentMember.id, group: group)
             do {
                 try context.save()
             } catch {
                 throw GroupServiceError.saveFailed(error)
             }
-            try await SplitSyncManager.shared.sendPendingChanges(for: group)
-        }
-
-        // Captura (zoneName, ownerName) ANTES de borrar el SplitGroup local para que el
-        // retry persistente funcione si la red falla durante `leaveShare`.
-        let leaveShareZoneName = group.cloudKitZoneID
-        let leaveShareOwnerName = SplitZoneManager(syncManager: .shared).ownerName(for: group)
-        do {
-            try await SplitZoneManager(syncManager: .shared).leaveShare(for: group)
-        } catch {
-            #if DEBUG
-            logger.error("leaveShare failed for \(leaveShareZoneName, privacy: .public): \(error.localizedDescription, privacy: .public). Persistiendo retry en tracker.")
-            #endif
-            PendingLeaveShareTracker.add(PendingLeaveShareEntry(zoneName: leaveShareZoneName, zoneOwnerName: leaveShareOwnerName))
         }
 
         try performLocalCleanupAndDelete(group: group, context: context)
@@ -626,17 +567,19 @@ final class GroupService {
     /// grupo. Idempotente: si el SplitGroup local ya fue borrado (e.g. leaveGroup previo en otro device del
     /// mismo user), no-op.
     ///
-    /// **DOS disparadores, uno por canal, y el segundo cambia lo que esta función puede asumir.** CloudKit:
-    /// `SplitSyncManager.applyMember` ve al member propio pasar de `.active` a `.removed`. Backend:
-    /// `GroupsSyncClient.reconcileLostMemberships` ve desaparecer la zona del `memberships` del pull — ahí
-    /// NO hay fila de member que observar (la RLS deja de entregarla en cuanto el status es `removed`), así
-    /// que la señal es la ausencia. La consecuencia práctica está en el `guard` de la mitad CloudKit de
-    /// abajo: una zona born-backend no tiene CKShare del que salir.
+    /// **Le quedaba UN disparador tras la Fase 3.** Eran dos, uno por canal; el de CloudKit
+    /// (`SplitSyncManager.applyMember`, que veía al member propio pasar de `.active` a `.removed`) se fue
+    /// con el transporte. Hoy solo la llama `GroupsSyncClient.reconcileLostMemberships`, que ve desaparecer
+    /// la zona del `memberships` del pull — ahí NO hay fila de member que observar (la RLS deja de
+    /// entregarla en cuanto el status es `removed`), así que la señal es la ausencia.
+    ///
+    /// Y con él se fue la mitad CloudKit del cuerpo: el `leaveShareByZone` y su retry persistido. Lo que
+    /// queda es la limpieza LOCAL, que era su otra mitad y la única que sigue teniendo a quién servir.
     func performRemovedSelfCleanup(zoneName: String, context providedContext: ModelContext? = nil) async {
         guard let context = providedContext ?? modelContext else { return }
-        // `createdAt` ASC = la fila CANÓNICA de la zona, mismo criterio que `group(for:)`. El barrido ya es
-        // por zona desde 2026-08-03, así que la elegida no cambia QUÉ se borra — pero sí alimenta el
-        // `ownerName` de abajo, y sin `sortBy` la elegía SQLite.
+        // `createdAt` ASC = la fila CANÓNICA de la zona, mismo criterio que `group(for:)`. El barrido es
+        // por zona desde 2026-08-03, así que la elegida no cambia QUÉ se borra; el `sortBy` se conserva
+        // para que la elección no la haga SQLite.
         let descriptor = FetchDescriptor<SplitGroup>(
             predicate: #Predicate { $0.cloudKitZoneID == zoneName },
             sortBy: [SortDescriptor(\.createdAt, order: .forward)])
@@ -649,40 +592,6 @@ final class GroupService {
         }
         guard let group = rows.first else { return }  // already deleted — idempotent
 
-        let leaveShareZoneName = group.cloudKitZoneID
-        // `ownerName(for:)` es lo ÚNICO aquí que de verdad depende de la FILA: lee `cloudKitZoneOwnerName` y
-        // `ckSystemFieldsData`, que una fila born-backend no tiene ⇒ devolvería `CKCurrentUserDefaultName` y
-        // `leaveShareByZone` saldría del share equivocado (o de ninguno). Con un duplicado MIXTO la canónica
-        // por `createdAt` puede ser precisamente esa, así que el owner se resuelve sobre la fila de la zona
-        // que SÍ tenga identidad CloudKit.
-        let shareRow = rows.first { !$0.cloudKitZoneOwnerName.isEmpty || $0.ckSystemFieldsData != nil } ?? group
-        let leaveShareOwnerName = SplitZoneManager(syncManager: .shared).ownerName(for: shareRow)
-        // El CKShare es del canal CloudKit y NO existe en una zona del canal backend
-        // (`SplitZoneManager.createZone`/`createShare` guardan por `!isBackendGroup`). Desde que este flow
-        // tiene un segundo disparador —`GroupsSyncClient.reconcileLostMemberships`, que lee la remoción del
-        // `memberships` del pull— la rama de abajo es alcanzable con una zona born-backend, donde
-        // `ownerName(for:)` degrada a `CKCurrentUserDefaultName` (no hay ni `cloudKitZoneOwnerName` ni
-        // `ckSystemFieldsData`).
-        //
-        // **Qué hace de malo, MEDIDO y no inferido** (`SplitZoneManager.leaveShareByZone`, :238): borra
-        // contra `container.sharedCloudDatabase`, donde las zonas PROPIAS no están por construcción ⇒ con
-        // ese owner el delete no puede acertar en el share de otro: solo puede FALLAR. El daño real es el
-        // `catch` de abajo: deja una entry en `PendingLeaveShareTracker` que `retryPendingLeaveShares`
-        // (`AppBootstrapper`) NO clasifica como permanente y conserva para siempre ⇒ una petición a CloudKit
-        // inútil en CADA arranque, eternamente. Es el mismo residuo que la rama backend de `leaveGroup`
-        // (:563) declara por escrito, y por eso allí tampoco se encola nada.
-        //
-        // **El predicado es el ESTRECHO (`isBackendGroup` a secas, ANY-row sobre la zona) y NO
-        // `belongsToBackendChannel`**, que es el de RETENCIÓN. Lo dice el docblock de
-        // `GroupBackendIdentityLogic.membershipRoutesToBackend`: una copia CONGELADA (`movedToBackendAt !=
-        // nil`, `isBackendGroup == false`) es un grupo cuyo miembro AÚN NO re-joineó ⇒ sigue dentro del
-        // CKShare y tiene que poder salir; ampliar el predicado lo dejaría dentro de un share del que cree
-        // haber salido. ANY-row por la misma razón que el resto de la familia (un duplicado MIXTO no puede
-        // enrutar el mismo grupo por un canal u otro según qué fila se tenga en la mano), leído ANTES de
-        // borrar las filas, y SIN consultar `CloudSyncFlags.groupsBackendEnabled`: con el kill remoto puesto
-        // la zona sigue sin tener share, así que decidir por el flag reabriría el fallo.
-        let zoneIsOnBackendChannel = rows.contains(where: \.isBackendGroup)
-
         do {
             try performLocalCleanupAndDelete(group: group, context: context)
             try context.save()
@@ -692,21 +601,6 @@ final class GroupService {
             #endif
         }
         SessionState.shared.incrementDataVersion()
-
-        guard !zoneIsOnBackendChannel else { return }
-        do {
-            try await SplitZoneManager(syncManager: .shared).leaveShareByZone(
-                zoneName: leaveShareZoneName,
-                ownerName: leaveShareOwnerName
-            )
-        } catch {
-            #if DEBUG
-            logger.error("performRemovedSelfCleanup: leaveShareByZone failed for \(leaveShareZoneName, privacy: .public): \(error.localizedDescription, privacy: .public). Persistiendo retry en tracker.")
-            #endif
-            PendingLeaveShareTracker.add(
-                PendingLeaveShareEntry(zoneName: leaveShareZoneName, zoneOwnerName: leaveShareOwnerName)
-            )
-        }
     }
 
     /// Bloque común de cleanup local al salir o ser removido de un grupo: libera TX cuenta
@@ -1006,7 +900,6 @@ final class GroupService {
                 changed = true
             }
             if changed {
-                SplitSyncManager.shared.enqueueSave(modelID: existing.id, group: group)
                 do {
                     try context.save()
                 } catch {
@@ -1028,7 +921,6 @@ final class GroupService {
                     legacy.isGroupOwner = true
                     legacy.role = "admin"
                 }
-                SplitSyncManager.shared.enqueueSave(modelID: legacy.id, group: group)
                 do {
                     try context.save()
                 } catch {
@@ -1065,7 +957,6 @@ final class GroupService {
         )
 
         context.insert(member)
-        SplitSyncManager.shared.enqueueSave(modelID: member.id, group: group)
         try context.save()
         SessionState.shared.incrementDataVersion()
         return member
@@ -1116,9 +1007,6 @@ final class GroupService {
             // re-join (update_member_display_name). Guard per-grupo (NO throw global: la acción es multi-grupo).
             if let group, group.isMigratedFrozen { continue }
             member.displayName = trimmed
-            if let group {
-                SplitSyncManager.shared.enqueueSave(modelID: member.id, group: group)
-            }
         }
 
         do {
@@ -1238,7 +1126,6 @@ final class GroupService {
                 let nameMatches = candidates.filter { $0.displayName == localDisplayName }
                 if nameMatches.count == 1, let candidate = nameMatches.first {
                     candidate.cloudKitUserRecordID = recordName
-                    SplitSyncManager.shared.enqueueSave(modelID: candidate.id, group: group)
                     changed = true
                     continue
                 }
@@ -1249,7 +1136,6 @@ final class GroupService {
                 let candidate = (admins.count == 1 ? admins.first : candidates.min(by: { $0.joinedAt < $1.joinedAt }))
                 if let candidate {
                     candidate.cloudKitUserRecordID = recordName
-                    SplitSyncManager.shared.enqueueSave(modelID: candidate.id, group: group)
                     changed = true
                 }
             }
@@ -1289,9 +1175,6 @@ final class GroupService {
                     && member.isCurrentUser && member.cloudKitUserRecordID.isEmpty
                     && member.memberKey == nil && member.userID == nil {
                     member.cloudKitUserRecordID = recordName
-                    if let group = groupsByZone[member.groupZoneID] {
-                        SplitSyncManager.shared.enqueueSave(modelID: member.id, group: group)
-                    }
                     changed = true
                 }
 
@@ -1334,7 +1217,6 @@ final class GroupService {
                 {
                     member.isGroupOwner = true
                     member.role = "admin"
-                    SplitSyncManager.shared.enqueueSave(modelID: member.id, group: group)
                     changed = true
                 }
             }

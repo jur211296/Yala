@@ -169,7 +169,7 @@ son la razón de que exista.
 | scripts de migración de D1 | `03ee208d` | irrelevante (solo `package.json`) |
 | guard del umbral de forzado de versión | `69092b24` | irrelevante (solo un test) |
 
-### Fase 3 — DESBLOQUEADA el 2026-08-02 (commit 0 hecho; 1 y 2 siguen sin abrir)
+### Fase 3 — commit 1 ATERRIZADO el 2026-08-06 (commits 0 y 1 hechos; el 2 sigue sin abrir)
 
 > ✅ **La puerta que bloqueaba la fase está cumplida.** El 2026-07-31 este bloque decía que el canal backend
 > no subía filas de datos y que `POST /groups/push` no había ocurrido ni una vez. **Eso dejó de ser cierto
@@ -206,9 +206,12 @@ son la razón de que exista.
 >    grupo bien, pero deja huérfana la `TransactionItem` puenteada, y el candado de solo-lectura
 >    (`splitExpenseID != nil || splitSettlementID != nil`, sin comprobar que resuelva) la deja **imposible de
 >    borrar a mano**. Afecta a gastos y liquidaciones, en las dos direcciones. **No lo introdujo el Modo
->    Nube**: `SplitSyncManager.applyRemoteDeletion` tiene el hueco idéntico y le está pasando hoy a usuarios
->    en producción por CloudKit. Por eso no bloquea la fase — borrar CloudKit no lo empeora. Chip
->    `task_736f2831` con las cuatro instancias y las tres piezas del arreglo.
+>    Nube**: `SplitSyncManager.applyRemoteDeletion` tenía el hueco idéntico. Por eso no bloqueó la fase —
+>    borrar CloudKit no lo empeoraba. Chip `task_736f2831` con las cuatro instancias y las tres piezas.
+>    **CERRADO en las dos mitades:** el candado de solo-lectura resuelve el puntero desde el fix del gate de
+>    frescura (2026-08-04), y el commit 1 de la Fase 3 le quitó al gate su última forma de atrapar dinero —
+>    una zona sin canal ya no puede alegar «todavía no ha llegado». Las dos instancias CloudKit murieron
+>    con el transporte; las dos del canal backend siguen vivas y cubiertas.
 > 2. **El emisor en segundo plano no sube nada** hasta que se vuelve a abrir la app. Es comportamiento
 >    correcto de iOS (no hay BGTask ni despertar del emisor), pero es un hueco de producto sin ticket.
 >    Costó siete minutos de diagnóstico el 2026-08-02 antes de entenderlo; si vuelve a aparecer un silencio
@@ -216,11 +219,29 @@ son la razón de que exista.
 
 | Paso | Commit | ¿Revert de git lo deshace? |
 |---|---|---|
+| **commit 1 · borrar el transporte CloudKit de Grupos** (B1, 2026-08-06) | el hijo de `3c0f498c` en `2.0.5` — `git log --oneline 3c0f498c..` y es el primero | **Sí en git, NO en efecto.** Ver abajo |
 | commit 0 · lo que NO muere sale de los ficheros condenados | `bc486c92` | **Sí**, limpio — es un movimiento de código, sin cambio de comportamiento |
 
-Los commits 1 y 2 van AQUÍ, arriba de todo, y hay que **anotarlos en esta tabla en el mismo commit que los
-crea**. Sin eso este runbook queda desactualizado el día que más falta hace. Ese fallo ya ocurrió una vez:
-el commit 0 (`bc486c92`) y el paso 1 del encendido (`3c49278c`) aterrizaron sin anotarse y se añadieron
+> **Por qué el commit 1 no lleva su propio hash.** §5 exige anotarlo *en el mismo commit que lo crea*, y un
+> commit no puede citar su hash dentro de sí mismo (escribirlo cambia el árbol y con él el hash). El ancla
+> por PADRE es unívoca y se resuelve en un comando. Anotar «después» es lo que ya falló dos veces.
+>
+> **Qué NO devuelve un `git revert` de este commit, y es la razón de que la Fase 3 sea cara:**
+> 1. **El transporte vuelve al binario, pero no vuelven sus datos.** Las zonas CloudKit siguen en el
+>    container de Grupos (nada se borró server-side), así que un revert las volvería a leer. Lo que no
+>    vuelve es lo que el usuario hizo mientras tanto por el canal backend: eso vive en Supabase y el
+>    transporte revertido no lo conoce.
+> 2. **`GroupsIdentityPurgeIntent` queda sin armador y sin drenador** (hueco G3 de la re-medición). Un
+>    device que actualizó con el intent ya armado en disco NO ejecuta esa purga de privacidad, y revertir
+>    no la re-dispara: el evento de cambio de Apple ID llega una sola vez y nadie lo re-entrega.
+> 3. **Los enlaces de invitación por CKShare ya emitidos quedan muertos** y el revert no los resucita para
+>    quien ya los tapeó y recibió «este enlace ya no es válido».
+> 4. Un usuario que en la ventana borrara a mano una transacción puenteada huérfana —cosa que este commit
+>    le PERMITE hacer a propósito, ver la decisión del gate de frescura en su mensaje— no la recupera.
+
+El commit 2 va AQUÍ, arriba de todo, y hay que **anotarlo en esta tabla en el mismo commit que lo crea**.
+Sin eso este runbook queda desactualizado el día que más falta hace. Ese fallo ya ocurrió dos veces: el
+commit 0 (`bc486c92`) y el paso 1 del encendido (`3c49278c`) aterrizaron sin anotarse y se añadieron
 después, al validar el gemelo del bridge.
 
 > **NO revertir** los commits ajenos intercalados: `66960f7d` (cover de la bandeja), `bd9435b8` (salir

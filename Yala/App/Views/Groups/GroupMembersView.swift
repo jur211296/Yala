@@ -452,6 +452,10 @@ struct GroupMembersView: View {
 
         isCreatingShare = true
         do {
+            // Fase 3: el `else` era el CKShare y ya no existe canal que lo sirva. El guard se conserva
+            // ENTERO —flag + zona backend— y su rama negativa informa: un grupo legacy no se puede invitar
+            // por ninguna vía, y dejar el botón mudo sería el apagón silencioso que la re-medición marca
+            // como peor modo de fallo (§S5.2).
             if CloudSyncFlags.groupsBackendEnabled && group.isBackendGroup {
                 // C4: grupo backend → invite por TOKEN RPC (link ya branded). Cache in-VM (`shareURL != nil`,
                 // arriba) conservado. Nota A1: el flag cubre "no emitir hasta que el parser esté desplegado".
@@ -462,11 +466,10 @@ struct GroupMembersView: View {
                         client: GroupsMembershipClient(attestProvider: AttestSessionProvider.live))
                 ).createInviteLink(for: group, inviterName: inviterName, members: viewModel.activeMembers)
             } else {
-                // Grupo CloudKit (flag OFF o grupo no-backend) → CKShare byte-idéntico.
-                let (_, ckURL) = try await SplitZoneManager(syncManager: .shared).createShare(for: group)
-                if let ckURL {
-                    shareURL = buildBrandedInviteURL(from: ckURL)
-                }
+                isCreatingShare = false
+                shareErrorMessage = L10n.Groups.Errors.inviteFailed
+                showShareError = true
+                return
             }
             isCreatingShare = false
             if shareURL != nil {
@@ -474,23 +477,11 @@ struct GroupMembersView: View {
             }
         } catch {
             isCreatingShare = false
-            // SplitZoneError carries localized copy; map any other error (raw CKError) to the
-            // branded inviteFailed copy instead of leaking a technical system string.
-            shareErrorMessage = (error as? SplitZoneError)?.errorDescription ?? L10n.Groups.Errors.inviteFailed
+            shareErrorMessage = L10n.Groups.Errors.inviteFailed
             showShareError = true
         }
     }
 
-    private func buildBrandedInviteURL(from ckURL: URL) -> URL {
-        let name = UserDefaults.standard.string(forKey: "userName") ?? ""
-        let inviterName = name.isEmpty ? L10n.Profile.defaultName : name
-        return InviteLinkService.buildInviteURL(
-            shareURL: ckURL,
-            group: group,
-            members: viewModel.activeMembers,
-            inviterName: inviterName
-        ) ?? ckURL
-    }
 
     private func changeRole(_ member: SplitMember) {
         let newRole = member.role == "admin" ? "member" : "admin"

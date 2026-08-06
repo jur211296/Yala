@@ -3,7 +3,7 @@
 //  Yala
 //
 //  Fachada @Observable del join intent para la UI (GroupInviteOnboardingView y
-//  el banner de GroupsContainerView). La alimentan `SplitSyncManager.acceptShare`
+//  el banner de GroupsContainerView). La alimenta
 //  (fases de accept) y `GroupJoinReconciler` (fases de member). La vista computa
 //  su step con `GroupInviteOnboardingLogic.step(...)` — pure logic; este tracker
 //  solo publica la fase real.
@@ -107,11 +107,15 @@ final class GroupJoinIntentTracker {
     // MARK: - Retry
 
     /// Re-dirige según la razón del fallo. `.memberSaveFailed` → reconcile
-    /// directo (el ensure es idempotente). `.acceptFailed` → el metadata no
-    /// sobrevive relaunch: re-resuelve desde la entry de `PendingInviteStore` y
-    /// llama `acceptShare` directo (skipNavigation — el cover ya está abierto;
-    /// pasar por el router re-presentaría la UI). Sin entry (TTL 24h vencido)
-    /// → `.expired`.
+    /// directo (el ensure es idempotente).
+    ///
+    /// **`.acceptFailed` perdió su recuperación en la Fase 3**, y es la mitad de S3c que el compilador SÍ
+    /// caza: re-resolvía el share desde `PendingInviteStore` y llamaba a `SplitSyncManager.acceptShare`,
+    /// y los dos murieron con el transporte. No hay forma de reaceptar un CKShare, así que cae a
+    /// `.expired` —«el usuario necesita un enlace nuevo»—, que además es la verdad: el enlace nuevo será
+    /// del canal backend. Sus tres escritores también se fueron (los dos emisores de `noteAcceptStarted`
+    /// eran del transporte; queda el hook `#if DEBUG` de XCUITest), así que en un binario de RELEASE
+    /// ningún camino de producción escribe ya esta fase.
     func retry() async {
         guard case .failed(let reason) = phase else { return }
         switch reason {
@@ -119,23 +123,7 @@ final class GroupJoinIntentTracker {
             phase = .creatingMember
             await GroupJoinReconciler.reconcile(trigger: .acceptShare)
         case .acceptFailed:
-            guard let entry = PendingInviteStore.current(),
-                  let resolved = entry.resolved()
-            else {
-                phase = .failed(.expired)
-                return
-            }
-            phase = .accepting
-            do {
-                let metadata = try await InviteLinkService.fetchShareMetadata(for: resolved.url)
-                // acceptShare reporta noteAcceptStarted/Succeeded/Failed y corre
-                // el reconcile — el tracker sale de .accepting por esos callbacks.
-                await SplitSyncManager.shared.acceptShare(metadata: metadata, skipNavigation: true)
-            } catch {
-                phase = .failed(.acceptFailed(
-                    recoverable: AppBootstrapper.isRecoverableInviteFetchError(error)
-                ))
-            }
+            phase = .failed(.expired)
         case .expired:
             break  // sin recovery — el usuario necesita un enlace nuevo
         }

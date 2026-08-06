@@ -3,7 +3,8 @@
 //  Yala
 //
 //  CRUD for shared expenses, shares, and settlements.
-//  Enqueues changes to CKSyncEngine via SplitSyncManager.
+//  Las escrituras que viajan salen por el drain del canal backend; la Fase 3 se llevó el encolado
+//  directo a CKSyncEngine.
 //
 
 import Foundation
@@ -106,7 +107,6 @@ final class GroupExpenseService {
                 groupZoneID: group.cloudKitZoneID
             )
             context.insert(splitShare)
-            SplitSyncManager.shared.enqueueSave(modelID: splitShare.id, group: group)
         }
 
         do {
@@ -116,7 +116,6 @@ final class GroupExpenseService {
         }
 
         SessionState.shared.incrementDataVersion()
-        SplitSyncManager.shared.enqueueSave(modelID: expense.id, group: group)
 
         // Bridge to personal transaction/draft (guard: bridge may not be initialized yet)
         if GroupTransactionBridge.shared.isReady {
@@ -166,7 +165,6 @@ final class GroupExpenseService {
             additionalAllowedMemberIDs: Set(oldShares.map(\.memberID) + [expense.paidByMemberID])
         )
         for oldShare in oldShares {
-            SplitSyncManager.shared.enqueueDeletion(modelID: oldShare.id, group: group)
             context.delete(oldShare)
         }
 
@@ -191,7 +189,6 @@ final class GroupExpenseService {
                 groupZoneID: expense.groupZoneID
             )
             context.insert(splitShare)
-            SplitSyncManager.shared.enqueueSave(modelID: splitShare.id, group: group)
         }
 
         do {
@@ -201,7 +198,6 @@ final class GroupExpenseService {
         }
 
         SessionState.shared.incrementDataVersion()
-        SplitSyncManager.shared.enqueueSave(modelID: expense.id, group: group)
 
         // Update bridged record
         if GroupTransactionBridge.shared.isReady {
@@ -253,7 +249,6 @@ final class GroupExpenseService {
         // Delete shares first
         let shares = try fetchShares(for: expense)
         for share in shares {
-            SplitSyncManager.shared.enqueueDeletion(modelID: share.id, group: group)
             context.delete(share)
         }
 
@@ -267,7 +262,6 @@ final class GroupExpenseService {
             }
         }
 
-        SplitSyncManager.shared.enqueueDeletion(modelID: expense.id, group: group)
         context.delete(expense)
 
         do {
@@ -426,7 +420,6 @@ final class GroupExpenseService {
         }
 
         SessionState.shared.incrementDataVersion()
-        SplitSyncManager.shared.enqueueSave(modelID: settlement.id, group: group)
 
         // A0-Bridge: si settlement nace confirmed Y bridge ready, dispara TX.
         // Settlement nace con isConfirmed=false por default — caller debe confirmar.
@@ -465,7 +458,6 @@ final class GroupExpenseService {
         }
 
         SessionState.shared.incrementDataVersion()
-        SplitSyncManager.shared.enqueueSave(modelID: settlement.id, group: group)
 
         // A0-Bridge: dispara TX bridgeadas (Caso C/D según from/to).
         if GroupTransactionBridge.shared.isReady {
@@ -498,7 +490,6 @@ final class GroupExpenseService {
             }
         }
 
-        SplitSyncManager.shared.enqueueDeletion(modelID: settlement.id, group: group)
         context.delete(settlement)
 
         do {
@@ -586,8 +577,7 @@ final class GroupExpenseService {
     ///
     /// DEBE resolver el MISMO id que el consumidor `GroupNotificationService.currentMemberID(inZone:)`
     /// (resolución CANÓNICA: entre los members `isCurrentUser`, el de `joinedAt` más antiguo — mismo
-    /// criterio que su `FetchDescriptor` sortBy joinedAt + fetchLimit 1, y que `SplitSyncManager
-    /// .currentUserMember`). Un tie-break distinto (p.ej. `first(where:)` sobre el orden de `fetchMembers`
+    /// criterio que su `FetchDescriptor` sortBy joinedAt + fetchLimit 1). Un tie-break distinto (p.ej. `first(where:)` sobre el orden de `fetchMembers`
     /// por displayName) elegiría OTRO id bajo members `isCurrentUser` DUPLICADOS → el write-side y el
     /// clasificador guardarían/compararían ids distintos y el eco NO se autoexcluiría.
     ///

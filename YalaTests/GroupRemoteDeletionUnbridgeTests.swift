@@ -127,18 +127,11 @@ private enum UnbridgeHarness {
 
     // MARK: - Frescura del canal (gate del barrido)
 
-    /// Señales de SESIÓN de los dos canales. El default es el estado que hace posible barrer en el canal
-    /// backend —pull AGOTADO—, que es donde viven los grupos de `makeGroup`; se pasa explícito para que el
-    /// estado de los singletons no decida el resultado de un test.
-    static func signals(
-        backendPullCompleted: Bool = true,
-        cloudKitAllEngines: Bool = false,
-        failedZones: Set<String> = []
-    ) -> GroupChannelFreshness.ChannelSignals {
-        GroupChannelFreshness.ChannelSignals(
-            backendPullCompleted: backendPullCompleted,
-            cloudKitAllEnginesCompletedFetchCycle: cloudKitAllEngines,
-            cloudKitZoneFetchFailed: { failedZones.contains($0) })
+    /// Señales de SESIÓN del canal. El default es el estado que hace posible barrer —pull AGOTADO—, que es
+    /// donde viven los grupos de `makeGroup`; se pasa explícito para que el estado del singleton no decida
+    /// el resultado de un test. Llevaba dos parámetros más (los brazos CloudKit) hasta la Fase 3.
+    static func signals(backendPullCompleted: Bool = true) -> GroupChannelFreshness.ChannelSignals {
+        GroupChannelFreshness.ChannelSignals(backendPullCompleted: backendPullCompleted)
     }
 
     /// Deja el cursor del pull listando estas zonas — es lo que el servidor devuelve para todo grupo del
@@ -512,87 +505,20 @@ struct RemoteTombstoneUnbridgeBackendTests {
     }
 }
 
-// MARK: - Pieza 1 · canal CLOUDKIT (`SplitSyncManager.applyRemoteDeletion`)
-
-@Suite("Tombstone remoto · des-puenteo en el canal CloudKit", .serialized)
-@MainActor
-struct RemoteTombstoneUnbridgeCloudKitTests {
-
-    private func recordID(_ modelID: UUID, zone: String) -> CKRecord.ID {
-        CKConstants.recordID(
-            for: modelID,
-            in: CKRecordZone.ID(zoneName: zone, ownerName: CKCurrentUserDefaultName))
-    }
-
-    /// El canal viejo arrastraba el mismo defecto desde antes del Modo Nube: le pasa HOY a los usuarios
-    /// que no están en el rollout.
-    @Test func expenseDeletion_accumulatesAndUnbridges() throws {
-        let dir = UnbridgeHarness.freshDir(); defer { UnbridgeHarness.cleanup(dir) }
-        let context = try UnbridgeHarness.makeContext(dir)
-
-        let expenseID = UUID()
-        let expense = SplitExpense(
-            groupZoneID: "SplitGroup-B", amount: 20, currencyCode: "USD",
-            expenseDescription: "Cena", paidByMemberID: "member-1")
-        expense.id = expenseID
-        context.insert(expense)
-        UnbridgeHarness.makeBridgedTx(expenseID: expenseID, zone: "SplitGroup-B", context: context)
-        try context.save()
-
-        try UnbridgeHarness.withBridge(context) {
-            let accumulated = SplitSyncManager.shared._testApplyRemoteDeletion(
-                recordID: recordID(expenseID, zone: "SplitGroup-B"),
-                recordType: CKConstants.RecordType.splitExpense, context: context)
-            #expect(accumulated.expenseIDs == [expenseID])
-            #expect(accumulated.settlementIDs.isEmpty)
-            try GroupTransactionBridge.shared.unbridgeDeletedRemotely(
-                expenseIDs: accumulated.expenseIDs, settlementIDs: accumulated.settlementIDs)
-        }
-
-        #expect(try context.fetchCount(FetchDescriptor<SplitExpense>()) == 0)
-        #expect(try UnbridgeHarness.txCount(context) == 0)
-    }
-
-    @Test func settlementDeletion_accumulatesAndUnbridges() throws {
-        let dir = UnbridgeHarness.freshDir(); defer { UnbridgeHarness.cleanup(dir) }
-        let context = try UnbridgeHarness.makeContext(dir)
-
-        let settlementID = UUID()
-        let settlement = SplitSettlement(
-            groupZoneID: "SplitGroup-B", fromMemberID: "m1", toMemberID: "m2",
-            amount: 25, currencyCode: "USD")
-        settlement.id = settlementID
-        context.insert(settlement)
-        UnbridgeHarness.makeBridgedTx(
-            settlementID: settlementID, zone: "SplitGroup-B", amount: 25, context: context)
-        try context.save()
-
-        try UnbridgeHarness.withBridge(context) {
-            let accumulated = SplitSyncManager.shared._testApplyRemoteDeletion(
-                recordID: recordID(settlementID, zone: "SplitGroup-B"),
-                recordType: CKConstants.RecordType.splitSettlement, context: context)
-            #expect(accumulated.settlementIDs == [settlementID])
-            #expect(accumulated.expenseIDs.isEmpty)
-            try GroupTransactionBridge.shared.unbridgeDeletedRemotely(
-                expenseIDs: accumulated.expenseIDs, settlementIDs: accumulated.settlementIDs)
-        }
-
-        #expect(try context.fetchCount(FetchDescriptor<SplitSettlement>()) == 0)
-        #expect(try UnbridgeHarness.txCount(context) == 0)
-    }
-
-    /// El borrado de una `SplitShare` no acumula nada: no tiene puente propio.
-    @Test func shareDeletion_accumulatesNothing() throws {
-        let dir = UnbridgeHarness.freshDir(); defer { UnbridgeHarness.cleanup(dir) }
-        let context = try UnbridgeHarness.makeContext(dir)
-
-        let accumulated = SplitSyncManager.shared._testApplyRemoteDeletion(
-            recordID: recordID(UUID(), zone: "SplitGroup-B"),
-            recordType: CKConstants.RecordType.splitShare, context: context)
-        #expect(accumulated.expenseIDs.isEmpty)
-        #expect(accumulated.settlementIDs.isEmpty)
-    }
-}
+// MARK: - Pieza 1 · canal CLOUDKIT — RETIRADA en la Fase 3
+//
+// `RemoteTombstoneUnbridgeCloudKitTests` (3 celdas) probaba que `SplitSyncManager.applyRemoteDeletion`
+// acumulara los IDs de gasto/liquidación y NO los de `SplitShare`, para que el des-puenteo del lote los
+// consumiera. El commit 1 de la Fase 3 borró ese fichero: el canal ya no existe y con él sus dos sitios de
+// tombstone (1 y 2 de los cuatro que la regla durable enumera). Los que siguen vivos son los del canal
+// backend —`GroupsSyncClient.applyExpense`/`applySettlement`—, cubiertos por
+// `RemoteTombstoneUnbridgeBackendTests` justo arriba, que la re-medición de A1 midió como estrictamente
+// MÁS fuerte en tres invariantes (tiene `rollback()`, tiene protección tombstone-luego-upsert en la misma
+// página, y su tombstone de grupo sí congela).
+//
+// **Lo que se pierde con ellas está declarado y no lo cubre nadie** (hueco G1 de la re-medición): los dos
+// guards eran COMPLEMENTARIOS por construcción, así que el conjunto que cubría CloudKit —los grupos que el
+// servidor no enumera— no se traslada a nadie al borrarlo.
 
 // MARK: - Pieza 1 bis · el lote no guarda si no hay nada que borrar
 
@@ -924,15 +850,18 @@ struct OrphanedBridgedTxSweeperTests {
     /// **A2 · (iii): una zona que no pertenece al canal backend NO es candidata, con el canal CloudKit en
     /// CUALQUIER estado.** Antes su evidencia era la del otro brazo del adaptador —ambos engines con ≥1
     /// ciclo de fetch entero, más el testigo negativo por zona— y con los dos engines cerrados esta misma
-    /// huérfana SÍ se reparaba. La Fase 3 borra `SplitSyncManager`, que es quien alimenta esas dos señales,
+    /// huérfana SÍ se reparaba. La Fase 3 borró `SplitSyncManager`, que alimentaba esas dos señales,
     /// así que el barredor deja de preguntarle: la zona legacy sale del conjunto y sus huérfanas quedan sin
     /// reparar, **en silencio**. Ése es el precio declarado de la dirección que eligió el owner.
     ///
-    /// Los tres estados del canal CloudKit se ejercitan a propósito, incluido el que antes CONCEDÍA: sin la
-    /// tercera vuelta este test pasaría igual con el fix revertido.
+    /// **Y desde el commit 1 de la Fase 3 esta celda carga TODO el peso, no una parte.** Antes había dos
+    /// frenos encadenados: el guard del conjunto de candidatas Y el veredicto del gate, que negaba a las
+    /// zonas sin evidencia CloudKit. Hoy el gate CONCEDE a estas zonas —una zona sin canal no puede recibir
+    /// nada, así que «no está» es «no existe», ver `GroupChannelFreshnessGate`— y el guard es lo ÚNICO que
+    /// impide que el barrido las toque. Quitarlo ya no degrada a «repara de más»: DESTRUYE.
     ///
     /// Mutación: quitar el `guard status.belongsToBackendChannel` de `zoneIsSweepable` deja este test en
-    /// rojo (la tercera vuelta repara).
+    /// rojo, y con el gate concediendo cae en las DOS vueltas, no solo en una.
     @Test func sweep_cloudKitZone_isNotACandidate() throws {
         let dir = UnbridgeHarness.freshDir(); defer { UnbridgeHarness.cleanup(dir) }
         let context = try UnbridgeHarness.makeContext(dir)
@@ -945,21 +874,21 @@ struct OrphanedBridgedTxSweeperTests {
             expenseID: UUID(), zone: "SplitGroup-CK", amount: 40, accountIsSystem: false, context: context)
         try context.save()
 
-        // 1 · engines quietos — no se tocaba antes y no se toca ahora.
+        // El estado del canal backend NO puede cambiar el resultado: la zona no es suya. Las dos vueltas
+        // ejercitan sus dos valores a propósito — con una sola, un mutante que decidiera por el pull en vez
+        // de por el canal podría colarse. Y el cursor lista la zona para que ni ese camino la excuse.
+        try UnbridgeHarness.markZonesPulled(["SplitGroup-CK"], context: context)
         #expect(OrphanedBridgedTxSweeper.sweep(
             context: context,
-            signals: UnbridgeHarness.signals(cloudKitAllEngines: false)).isEmpty)
-        // 2 · el testigo NEGATIVO por zona (fetch de esta zona con error).
+            signals: UnbridgeHarness.signals(backendPullCompleted: false)).isEmpty)
         #expect(OrphanedBridgedTxSweeper.sweep(
             context: context,
-            signals: UnbridgeHarness.signals(
-                cloudKitAllEngines: true, failedZones: ["SplitGroup-CK"])).isEmpty)
-        // 3 · **la que cambia**: con los dos engines cerrados y sin fallo de zona, antes reparaba.
-        #expect(OrphanedBridgedTxSweeper.sweep(
-            context: context,
-            signals: UnbridgeHarness.signals(
-                backendPullCompleted: false, cloudKitAllEngines: true)).isEmpty,
-                "una zona fuera del canal backend volvió a ser candidata del barredor")
+            signals: UnbridgeHarness.signals(backendPullCompleted: true)).isEmpty,
+                """
+                Una zona fuera del canal backend volvió a ser candidata del barredor. Con el gate \
+                concediéndoles `.fresh` desde la Fase 3, eso ya no repara de más: BORRA la virtual y suelta \
+                la de cuenta real de un corpus que nadie puede volver a traer.
+                """)
 
         #expect(try UnbridgeHarness.txCount(context) == 2, "ni se borró la virtual")
         #expect(virtual.isDeleted == false)
@@ -985,9 +914,10 @@ struct OrphanedBridgedTxSweeperTests {
             expenseID: UUID(), zone: "SplitGroup-BE", accountIsSystem: true, context: context)
         try context.save()
 
-        // Los dos canales dan su evidencia: si el canal fuera lo único que decide, caerían las dos.
+        // El canal vivo da su evidencia. Si el veredicto fuera lo único que decide caerían las DOS:
+        // desde la Fase 3 la zona legacy también sale `.fresh`, y lo que la salva es el guard.
         let outcome = OrphanedBridgedTxSweeper.sweep(
-            context: context, signals: UnbridgeHarness.signals(cloudKitAllEngines: true))
+            context: context, signals: UnbridgeHarness.signals())
 
         #expect(outcome.deleted == 1, "la huérfana de la zona backend no se reparó")
         #expect(legacyTx.isDeleted == false, "la huérfana de la zona legacy entró en el conjunto")
@@ -1085,37 +1015,11 @@ struct RemoteUnbridgeWiringTests {
         try String(contentsOf: repoRoot.appendingPathComponent(path), encoding: .utf8)
     }
 
-    /// El handler REAL del fetch de CloudKit drena lo acumulado. Ancla DENTRO del cuerpo del handler: que
-    /// la función exista y llame a `unbridgeDeletedRemotely` en algún sitio se satisface sin ningún
-    /// llamador.
-    @Test func cloudKitFetchHandler_drainsTheUnbridge() throws {
-        let src = try Self.source("Yala/Services/Groups/SplitSyncManager.swift")
-        let handler = try #require(
-            src.components(separatedBy: "private func handleFetchedRecordZoneChanges").dropFirst().first,
-            "El handler del fetch cambió de nombre; este scan dejó de medir nada.")
-        let body = handler.components(separatedBy: "\n    private func ").first ?? ""
-        #expect(body.contains("unbridgeDeletedRemotely("),
-                """
-                El handler del fetch de CloudKit dejó de des-puentear lo que borra. Las TransactionItem del \
-                otro miembro vuelven a quedarse huérfanas, y NINGUNA celda de comportamiento se entera \
-                porque todas entran por el seam de DEBUG.
-                """)
-        // Y solo con el batch persistido: su `save()` arrastraría filas Split* dirty bajo el autor por
-        // defecto, que es justo lo que el drain de Grupos re-empuja al servidor. Se ancla en el GUARD
-        // literal, no en el nombre: `body.contains("didPersistBatch")` lo satisface la declaración de la
-        // variable aunque nadie la lea.
-        #expect(body.contains("if didPersistBatch, !unbridgeExpenseIDs.isEmpty || !unbridgeSettlementIDs.isEmpty"),
-                """
-                El drenaje del canal CloudKit dejó de exigir que el save del batch hubiera tenido éxito. \
-                Con el batch sin persistir, el `save()` del des-puenteo comitea las filas Split* dirty bajo \
-                el autor por defecto y el drain las re-empuja al servidor con HLC fresco.
-                """)
-        // Y el ORDEN: el drenaje va DESPUÉS del save, no antes del bucle de deletions.
-        let saveIndex = try #require(body.range(of: "try modelContext.save()")?.lowerBound)
-        let drainIndex = try #require(body.range(of: "unbridgeDeletedRemotely(")?.lowerBound)
-        #expect(drainIndex > saveIndex,
-                "El des-puenteo se movió por encima del save del batch.")
-    }
+    // `cloudKitFetchHandler_drainsTheUnbridge` — RETIRADO en la Fase 3. Anclaba dentro del cuerpo de
+    // `SplitSyncManager.handleFetchedRecordZoneChanges` (drenaje presente, gateado por `didPersistBatch`, y
+    // POSTERIOR al save del batch). El fichero que leía ya no existe, y un source-scan sobre un fichero
+    // borrado no rompe la compilación: LANZA en runtime — la familia de «Executed 0 tests». Por eso se
+    // retira aquí y no se deja para B2. El gemelo del canal vivo es el de abajo.
 
     /// El apply del canal backend drena post-save, después del `return false` del `catch` — un unbridge
     /// anterior al `rollback()` se llevaría la transacción de un gasto que sigue vivo.

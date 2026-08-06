@@ -6,7 +6,6 @@
 //  para invitaciones de grupo via Universal Links.
 //
 
-import CloudKit
 import Foundation
 
 enum InviteLinkService {
@@ -230,21 +229,6 @@ enum InviteLinkService {
 
     // MARK: - Fetch Share Metadata
 
-    /// Obtiene CKShare.Metadata desde un CKShare URL usando CKFetchShareMetadataOperation.
-    static func fetchShareMetadata(for url: URL) async throws -> CKShare.Metadata {
-        try await withCheckedThrowingContinuation { continuation in
-            let operation = CKFetchShareMetadataOperation(shareURLs: [url])
-            operation.perShareMetadataResultBlock = { _, result in
-                switch result {
-                case .success(let metadata):
-                    continuation.resume(returning: metadata)
-                case .failure(let error):
-                    continuation.resume(throwing: error)
-                }
-            }
-            CKContainer(identifier: CKConstants.containerID).add(operation)
-        }
-    }
 
     // MARK: - Base64URL Helpers
 

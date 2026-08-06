@@ -2,17 +2,22 @@
 //  GroupUserIdentityService.swift
 //  Yala
 //
-//  Fetches the current iCloud user record name for the Groups CloudKit container
-//  and provides deterministic IDs for per-user records (e.g., SplitMember).
+//  Cache in-memory del record name de iCloud del usuario, y los IDs deterministas de los records
+//  por-usuario (p. ej. `SplitMember`).
 //
 //  Fase 2 bis: el ESCRITOR de `cachedRecordName` ya NO vive aquí. Vive en
 //  `GroupICloudIdentitySeed` (`Yala/Services/CloudSync/Groups/`), con la key y el fetch, porque este
-//  fichero se vacía de CloudKit en la Fase 3 y la propiedad se conserva: dejar el `UserDefaults.set`
+//  fichero se vació de CloudKit en la Fase 3 y la propiedad se conserva: dejar el `UserDefaults.set`
 //  dentro de `currentUserRecordName()` era dejar la key sin nadie que la escribiera en cuanto el método
 //  muriera. Lo que queda aquí es el CACHE (in-memory, dueño de la propiedad) y `deterministicUUID`.
 //
+//  Fase 3: se fue `fetchFreshRecordName()` —el fetch DIRECTO a `CKContainer` del boot-guard de identidad,
+//  cuyo único llamador era `SplitSyncManager`— y con él el `import CloudKit`. También
+//  `deterministicMemberID`, que ya estaba sin call-sites. **Esto es lo que deja al canal superviviente
+//  sin ningún fetch a CloudKit propio**: la identidad la siembra `GroupICloudIdentitySeed`, que sí lo
+//  conserva a propósito (ver su docblock).
+//
 
-import CloudKit
 import CryptoKit
 import Foundation
 
@@ -27,10 +32,10 @@ final class GroupUserIdentityService {
         cachedRecordName = GroupICloudIdentitySeed.persistedRecordName
     }
 
-    /// Fachada histórica del seed, conservada mientras el transporte CloudKit siga vivo (`createGroup`,
-    /// `ensureCurrentUserMemberExists`, `refreshCurrentUserFlags`). Delega en el escritor del canal nuevo:
-    /// mismo coalescing, misma persistencia, mismo error propagado. La Fase 3 puede borrar ESTE método sin
-    /// dejar la identidad sin escritor — el seed de boot ya entra por `GroupICloudIdentitySeed`.
+    /// Fachada histórica del seed. Sus tres consumidores están VIVOS y son del canal superviviente
+    /// (`GroupService.createGroup`, `ensureCurrentUserMemberExists`, `refreshCurrentUserFlags`), así que la
+    /// Fase 3 no la toca. Delega en el escritor del canal nuevo: mismo coalescing, misma persistencia,
+    /// mismo error propagado.
     func currentUserRecordName() async throws -> String {
         try await GroupICloudIdentitySeed.seedIfNeeded()
     }
@@ -46,15 +51,6 @@ final class GroupUserIdentityService {
         GroupICloudIdentitySeed.forgetPersisted()
     }
 
-    /// Boot-guard GAP 1: fetch DIRECTO a CKContainer que NO lee ni escribe el cache.
-    /// El boot-guard compara el valor fresco CONTRA `cachedRecordName` — si este
-    /// método actualizara el cache, la limpieza correría con el cache ya renovado
-    /// (orden roto: `decide` vería match). Tras la limpieza, `clearCache()` deja que
-    /// `currentUserRecordName()` repueble lazy bajo la identidad nueva.
-    func fetchFreshRecordName() async throws -> String {
-        try await CKContainer(identifier: CKConstants.containerID).userRecordID().recordName
-    }
-
     #if DEBUG
     /// Test-only: fija la identidad cacheada sin tocar CKContainer (los tests de
     /// GroupJoinReconciler necesitan que `currentUserRecordName()` resuelva
@@ -63,11 +59,6 @@ final class GroupUserIdentityService {
         cachedRecordName = name
     }
     #endif
-
-    func deterministicMemberID(groupZoneID: String) async throws -> UUID {
-        let recordName = try await currentUserRecordName()
-        return Self.deterministicUUID(namespace: "SplitMember", name: "\(groupZoneID):\(recordName)")
-    }
 
     /// `nonisolated`: primitiva pura (solo CryptoKit, sin estado del actor). Compartida con
     /// `GroupBackendIdentityLogic` (canal backend), que corre fuera del main actor.

@@ -27,32 +27,40 @@
 //  gasto por fin baja a B, `bridgeExpense` ya no encuentra `existingRealTx` y crea un draft Caso A: aprobarlo
 //  DUPLICA el gasto.
 //
-//  ── La evidencia que sí sirve, y por qué es la misma pregunta en los dos canales ───────────────────────
+//  ── La evidencia que sí sirve ──────────────────────────────────────────────────────────────────────────
 //  «El canal ha AGOTADO su entrega y esta zona estaba en su alcance», leído en el instante de decidir:
+//  `GroupsSyncClient.lastPullCycleCompleted`, que solo se enciende cuando `pullUntilExhausted` devuelve
+//  `.completed`, y eso exige una página con **0 deltas** (el `limit` del gateway es POR GRUPO, así que el
+//  atajo `deltas.count < limit` del canal personal no vale). Más el `group_id` de la zona presente en
+//  `GroupSyncCursor.groupCursorsJSON`, que el server manda **aunque no haya deltas** ⇒ tras un pull completo,
+//  todo grupo del alcance del usuario tiene entrada. El `group_id` ES el `cloudKitZoneID` de la fila
+//  (`applyGroupMeta` lo pisa con él; `GroupBackendMembershipService` manda ese mismo string al crear), así
+//  que el mapa es indexable por zona sin ninguna derivación.
 //
-//  * **Canal backend** — `GroupsSyncClient.lastPullCycleCompleted`, que solo se enciende cuando
-//    `pullUntilExhausted` devuelve `.completed`, y eso exige una página con **0 deltas** (el `limit` del
-//    gateway es POR GRUPO, así que el atajo `deltas.count < limit` del canal personal no vale). Más el
-//    `group_id` de la zona presente en `GroupSyncCursor.groupCursorsJSON`, que el server manda **aunque no
-//    haya deltas** ⇒ tras un pull completo, todo grupo del alcance del usuario tiene entrada. El `group_id`
-//    ES el `cloudKitZoneID` de la fila (`applyGroupMeta` :2361 lo pisa con él; `GroupBackendMembershipService`
-//    :132 manda ese mismo string al crear), así que el mapa es indexable por zona sin ninguna derivación.
-//  * **Canal CloudKit** — `SplitSyncManager.enginesWithCompletedFetchCycle`, los engines que cerraron ≥1
-//    ciclo de fetch ENTERO en esta sesión (`didFetchChanges`, :1201). **Es el equivalente exacto**: un ciclo
-//    entero de una base de datos enumera todas sus zonas, igual que un pull agotado enumera todos los grupos
-//    del alcance. Y se limpia en `resetLocalGroupsSyncState` (:1563) por la misma razón por la que el pull
-//    reinicia: ahí los change tokens se invalidan y «ya completó un ciclo» deja de decir nada del corpus que
-//    viene. Más el testigo NEGATIVO por zona `zonesWithFailedFetchThisSession` (:174) — negativo a propósito,
-//    porque una zona SIN cambios no emite `didFetchRecordZoneChanges` y exigir un set positivo por zona
-//    deadlockearía.
+//  ── La zona SIN canal, y por qué su veredicto se INVIRTIÓ al borrar el transporte (Fase 3, commit 1) ────
+//  Mientras existió el transporte CloudKit, una zona no-backend tenía su propia evidencia —los dos engines
+//  con ≥1 ciclo de fetch cerrado, más un testigo negativo por zona— y sin ella se negaba, porque «no está»
+//  podía significar «todavía no ha bajado». **Borrado el transporte, esa segunda lectura deja de existir:
+//  una zona a la que ningún canal sirve no puede recibir nada nunca más, así que «no está» significa «no
+//  existe» y el veredicto correcto es el que CONCEDE.**
 //
-//  **Por qué AMBOS engines y no el que sirve a la zona.** Un grupo CloudKit propio vive en la base privada y
-//  uno al que me uní en la compartida, y lo que distingue una de otra es `SplitGroup.isOwner` — un predicado
-//  POR FILA. Con un `SplitGroup` duplicado (estado documentado, con servicio de dedup propio) leer la fila
-//  equivocada CONCEDERÍA evidencia falsa, que es la dirección que destruye. Exigir los dos engines no puede
-//  equivocarse y su coste —no barrer si uno de los dos no cierra ciclo— es reversible y OBSERVABLE
-//  (`MetricsCanary.bridgedTxOrphanSweepDeferred`). Es la misma asimetría del resto de esta familia: bloquear
-//  de más deja una limpieza sin hacer, bloquear de menos borra dinero.
+//  Conceder aquí no reabre la dirección destructiva del inventario A2·(ii), y la razón es de ORDEN, no de
+//  grado: desde A2·(iii) (`0ca523a6`) el barrido saca las zonas no-backend de su conjunto de CANDIDATAS
+//  —`OrphanedBridgedTxSweeper.zoneIsSweepable` abre con `guard status.belongsToBackendChannel`— y ese guard
+//  corre ANTES de mirar el veredicto. ⇒ nada automático toca una zona legacy, dijera lo que dijera este
+//  gate; lo único que el veredicto gobierna en ellas es el editor, que no destruye por su cuenta: le
+//  devuelve al usuario Borrar y Duplicar sobre una transacción cuyo gasto ya no puede llegar. Negarlo
+//  dejaría dinero fantasma **atrapado** —ni editable ni borrable, con un banner que ofrece abrir un grupo
+//  vacío—, que es el bug de `qa_groups-tx-fantasma-al-borrar-gasto-de-grupo` por la puerta de atrás.
+//  **Ese guard del barrido pasa aquí de optimización a load-bearing**: quitarlo, con este veredicto puesto,
+//  sí destruiría. Lo pinnean `sweep_cloudKitZone_isNotACandidate` y el source-scan
+//  `sweeperCanary_isEmittedBeforeTheEmptyOutcomeReturn`, los dos en `GroupRemoteDeletionUnbridgeTests`.
+//
+//  **Lo que sigue cubriendo el device recién reinstalado** es el PRIMER escalón, no el brazo que se fue: ahí
+//  el store de Grupos arranca literalmente vacío (`cloudKitDatabase: .none`) y una zona legacy no tiene
+//  `SplitGroup` que la repueble —el pull backend no la enumera— ⇒ `zoneHasSettledGroup` es `false` ⇒
+//  `.noSettledGroup`, y no se llega a conceder. La concesión exige una fila local asentada de esa zona, que
+//  es exactamente el estado «este device ya conoce el grupo y lo que tiene es todo lo que habrá».
 //
 //  ── FALLA CERRADO ─────────────────────────────────────────────────────────────────────────────────────
 //  Todo campo de `ZoneEvidence` es un `Bool` cuyo valor «no sé» es el que NIEGA. Sin evidencia no se toca
@@ -80,9 +88,9 @@ enum GroupChannelFreshnessGate {
         let zoneHasSettledGroup: Bool
 
         /// ALGUNA fila de la zona pertenece al canal backend (ANY-row, vía
-        /// `GroupBackendIdentityLogic.belongsToBackendChannel`). Decide QUÉ canal tiene que dar la evidencia:
-        /// con una fila backend en la zona, sus gastos bajan por el pull —el guard G6-3 descarta los records
-        /// CloudKit de esa zona— así que preguntarle a CloudKit no diría nada.
+        /// `GroupBackendIdentityLogic.belongsToBackendChannel`). Decide si esta zona TIENE canal: con una
+        /// fila backend, su verdad vive en el servidor y hay que esperar a que el pull la agote; sin
+        /// ninguna, ya no la sirve nadie y no hay nada que esperar.
         let belongsToBackendChannel: Bool
 
         /// El canal backend agotó su última entrega (`GroupsSyncClient.lastPullCycleCompleted`).
@@ -90,13 +98,6 @@ enum GroupChannelFreshnessGate {
 
         /// El cursor del pull lista el `group_id` de esta zona.
         let backendCursorListsZone: Bool
-
-        /// **AMBOS** engines de CloudKit cerraron ≥1 ciclo de fetch ENTERO en esta sesión.
-        let cloudKitBothEnginesCompletedFetchCycle: Bool
-
-        /// El último `didFetchRecordZoneChanges` de esta zona llegó CON error y aún no ha vuelto a cerrar
-        /// limpio: su contenido no bajó. Se auto-sana, así que un transitorio no deja el gate clavado.
-        let cloudKitZoneFetchFailedThisSession: Bool
     }
 
     /// Por qué se concede o se niega. El motivo viaja al canario: un gate clavado tiene que ser
@@ -114,25 +115,20 @@ enum GroupChannelFreshnessGate {
         /// usuario. No es evidencia de que sus gastos no existan: es evidencia de que este canal no habla de
         /// ella.
         case backendZoneOutOfScope
-        /// Zona de CloudKit y alguno de los dos engines no ha cerrado un ciclo entero en esta sesión.
-        case cloudKitChannelIdle
-        /// El último fetch de esta zona concreta falló.
-        case cloudKitZoneFetchFailed
 
         var isFresh: Bool { self == .fresh }
     }
 
-    /// Decisión pura. El orden importa: primero el guard anterior (que cubre el device recién instalado),
-    /// después el canal que corresponda.
+    /// Decisión pura. El ORDEN de los dos primeros guards es lo que sostiene el fail-closed tras la Fase 3:
+    /// el escalón de la fila asentada va PRIMERO, así que una zona sin `SplitGroup` local —el device recién
+    /// reinstalado— nunca alcanza la concesión de la zona sin canal.
     static func evaluate(_ e: ZoneEvidence) -> Verdict {
         guard e.zoneHasSettledGroup else { return .noSettledGroup }
-        if e.belongsToBackendChannel {
-            guard e.backendPullCompleted else { return .backendChannelIdle }
-            guard e.backendCursorListsZone else { return .backendZoneOutOfScope }
-            return .fresh
-        }
-        guard !e.cloudKitZoneFetchFailedThisSession else { return .cloudKitZoneFetchFailed }
-        guard e.cloudKitBothEnginesCompletedFetchCycle else { return .cloudKitChannelIdle }
+        // Zona sin canal: nadie puede entregarle nada ya, así que «no está» es «no existe». Ver la cabecera
+        // — esto solo gobierna al editor; el barrido las excluyó del conjunto de candidatas en A2·(iii).
+        guard e.belongsToBackendChannel else { return .fresh }
+        guard e.backendPullCompleted else { return .backendChannelIdle }
+        guard e.backendCursorListsZone else { return .backendZoneOutOfScope }
         return .fresh
     }
 

@@ -54,13 +54,6 @@ struct GroupSettingsView: View {
     @State private var showDeleteConfirm: Bool = false
     @State private var isDeleting: Bool = false
 
-    // G6-3 (C5): "Borrar mi copia congelada" (owner-only, grupo migrado). Confirmación DOBLE.
-    // D4: paso 1 = hoja de alcance (`.sheet`, `showDeleteCopyConfirm1`); "Borrar copia" fija
-    // `pendingDeleteCopyConfirm2` y cierra la hoja; su `onDismiss` presenta el paso 2 (dialog corto) sin carrera.
-    @State private var showDeleteCopyConfirm1 = false
-    @State private var pendingDeleteCopyConfirm2 = false
-    @State private var showDeleteCopyConfirm2 = false
-    @State private var isDeletingCopy = false
 
     // MARK: - Body
 
@@ -97,11 +90,6 @@ struct GroupSettingsView: View {
                         deleteGroupSection
                     }
 
-                    // G6-3 (C5): "Borrar mi copia congelada" — owner del grupo YA migrado a backend (la zona
-                    // CloudKit sigue viva pero es basura). Owner-only v1 (el path del member queda fuera).
-                    if group.isOwner && group.movedToBackendAt != nil && group.ckSystemFieldsData != nil {
-                        migratedDeleteCopySection
-                    }
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xl)
@@ -180,31 +168,6 @@ struct GroupSettingsView: View {
                 Button(L10n.Common.cancel, role: .cancel) {}
             } message: {
                 Text(L10n.Groups.Settings.deleteGroupFinalConfirm)
-            }
-            // G6-3 (C5) + D4: paso 1 = hoja de alcance (📱/☁️/👥). "Borrar copia" fija el flag y cierra la
-            // hoja; el `onDismiss` presenta el paso 2 (dialog corto EXISTENTE) sin carrera same-anchor.
-            .sheet(isPresented: $showDeleteCopyConfirm1, onDismiss: {
-                if pendingDeleteCopyConfirm2 {
-                    pendingDeleteCopyConfirm2 = false
-                    showDeleteCopyConfirm2 = true
-                }
-            }) {
-                DestructiveScopeSheet(config: .make(
-                    operation: .deleteFrozenCopy,
-                    cloudLabel: .icloud,  // la copia congelada es siempre la zona CloudKit vieja de iCloud
-                    onConfirm: { pendingDeleteCopyConfirm2 = true }))
-            }
-            .confirmationDialog(
-                L10n.Groups.Migrated.deleteCopyConfirmTitle,
-                isPresented: $showDeleteCopyConfirm2,
-                titleVisibility: .visible
-            ) {
-                Button(L10n.Groups.Migrated.deleteCopyConfirmButton, role: .destructive) {
-                    performDeleteFrozenCopy()
-                }
-                Button(L10n.Common.cancel, role: .cancel) {}
-            } message: {
-                Text(L10n.Groups.Migrated.deleteCopyConfirmBody)
             }
         }
     }
@@ -614,62 +577,6 @@ struct GroupSettingsView: View {
             }
         }
         .solidCard(radius: DS.Radius.card)
-    }
-
-    // G6-3 (C5): sección "Borrar mi copia congelada" (owner del grupo migrado).
-    private var migratedDeleteCopySection: some View {
-        VStack(spacing: DS.Spacing.xs) {
-            Button {
-                showDeleteCopyConfirm1 = true
-            } label: {
-                HStack {
-                    Image(systemName: "trash.slash.fill")
-                        .foregroundStyle(DS.Semantic.errorForeground)
-                    Text(L10n.Groups.Migrated.deleteCopyRow)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(DS.Semantic.errorForeground)
-                    Spacer()
-                    if isDeletingCopy { ProgressView() }
-                }
-                .padding(.horizontal, DS.FormRow.paddingH)
-                .padding(.vertical, DS.FormRow.paddingV)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .disabled(isDeletingCopy)
-
-            Text(L10n.Groups.Migrated.deleteCopyHint)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, DS.FormRow.paddingH)
-                .padding(.bottom, DS.FormRow.paddingV)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .solidCard(radius: DS.Radius.card)
-    }
-
-    /// G6-3 (C5): borra la zona CloudKit congelada (private engine del owner — `deleteZone` no tiene guard
-    /// isBackendGroup). Limpia el `ckSystemFieldsData` local (la sección se oculta) y cierra. La verdad del
-    /// grupo sigue viva en el backend.
-    /// RESIDUAL R3/LOW-2 (review G6-3, aceptado): el `deleteZone` es un ENQUEUE durable a CKSyncEngine
-    /// (fire-and-forget — no hay ack awaitable); si el delete fallara PERMANENTE server-side, la zona
-    /// quedaría huérfana en CloudKit con la fila local ya "sin copia" (cosmético: el guard de PULL la
-    /// ignora y el path C5 desaparece — sin reintento). Sin daño de datos: el backend es la verdad.
-    private func performDeleteFrozenCopy() {
-        guard !isDeletingCopy else { return }
-        isDeletingCopy = true
-        SplitZoneManager(syncManager: .shared).deleteZone(for: group)
-        group.ckSystemFieldsData = nil
-        do {
-            try modelContext.save()
-        } catch {
-            #if DEBUG
-            print("GroupSettingsView: performDeleteFrozenCopy save failed: \(error)")
-            #endif
-        }
-        isDeletingCopy = false
-        DS.Haptic.success()
-        dismiss()
     }
 
     private func performSoftDelete() async {

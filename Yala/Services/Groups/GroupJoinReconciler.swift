@@ -36,7 +36,7 @@ enum GroupJoinReconciler {
     /// Recorre los intents vigentes y reconcilia los que ya tienen zona local.
     /// - Parameters:
     ///   - context/groupLookup/engineReady: inyectables para tests; defaults de
-    ///     producción (mainContext del sync + SplitSyncManager).
+    ///     producción (mainContext del sync).
     static func reconcile(
         trigger: Trigger,
         context providedContext: ModelContext? = nil,
@@ -66,9 +66,15 @@ enum GroupJoinReconciler {
             }
 
             let group = groupLookup?(entry.zoneName) ?? GroupService.shared.group(for: entry.zoneName)
+            // Fase 3: el transporte que respondía «¿hay engine para esta zona?» ya no existe, así que en
+            // producción esta rama es siempre `.waitForEngines` — un intent CloudKit no puede completarse
+            // por ningún canal. NO se convierte en `.skip`: eso limpiaría el intent y perdería el registro
+            // de que el usuario quiso unirse; el TTL de 7 días de `PendingJoinStore` lo cierra solo, y su
+            // canario `groupJoinIntentDeferred` queda acotado a esa ventana en vez de para siempre. El seam
+            // `engineReady` se conserva porque es lo único que ejercita esta rama desde los tests.
             let engineIsReady: Bool = {
                 guard let group else { return false }
-                return engineReady?(group) ?? SplitSyncManager.shared.hasEngine(forOwned: group.isOwner)
+                return engineReady?(group) ?? false
             }()
 
             switch GroupJoinReconcileLogic.decide(
@@ -250,7 +256,6 @@ enum GroupJoinReconciler {
               )
         else { return }
         member.displayName = name
-        SplitSyncManager.shared.enqueueSave(modelID: member.id, group: group)
         guard let context = providedContext ?? member.modelContext else { return }
         do {
             try context.save()

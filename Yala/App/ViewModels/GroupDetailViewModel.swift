@@ -129,10 +129,11 @@ final class GroupDetailViewModel {
     /// Fuerza un fetch remoto y recarga (refresh acotado, no bump global de dataVersion).
     /// Usado por pull-to-refresh (`force: true`) y entrada al detalle (`force: false`) — así los
     /// gastos de otros miembros aún no sincronizados aparecen al abrir el grupo.
-    /// Fase 2 · 2.5: pide el ciclo a los DOS canales. El del backend está self-gateado (no-op sin red con
-    /// el flag OFF); la línea de CloudKit se va con el transporte en la Fase 3.
+    /// Fase 3: queda un solo canal. `syncNowFromUI` está self-gateado (no-op sin sesión de nube o con el
+    /// kill remoto puesto) y descarta su `Bool` — residuo declarado en la re-medición de A1 (§S5.1), fuera
+    /// del alcance de este commit.
     func refreshFromCloud(force: Bool) async {
-        await SplitSyncManager.shared.syncNow(force: force)
+        _ = force
         await GroupsSyncClient.shared.syncNowFromUI()
         loadData()
     }
@@ -452,9 +453,13 @@ final class GroupDetailViewModel {
         if shareURL != nil { return }
         isCreatingShare = true
         do {
+            // Fase 3: el `else` era el CKShare y ya no existe canal que lo sirva. El guard se conserva
+            // ENTERO —flag + zona backend— y su rama negativa informa: un grupo legacy no se puede invitar
+            // por ninguna vía, y dejar el botón mudo sería el apagón silencioso que la re-medición marca
+            // como peor modo de fallo (§S5.2).
             if CloudSyncFlags.groupsBackendEnabled && group.isBackendGroup {
                 // C4: grupo backend → invite por TOKEN RPC. El link vuelve YA branded (buildBackendInviteURL) →
-                // se asigna directo (sin buildBrandedInviteURL, que envuelve un CKShare URL). El cache in-VM
+                // se asigna directo. El cache in-VM
                 // (`shareURL != nil`, arriba) SE CONSERVA para backend: evita mintear un token nuevo por re-tap
                 // en la misma sesión de la vista (tokens múltiples son válidos igual). Nota A1: no emitir links
                 // backend hasta que la base instalada tenga el parser — el flag lo cubre por construcción.
@@ -463,21 +468,15 @@ final class GroupDetailViewModel {
                         client: GroupsMembershipClient(attestProvider: AttestSessionProvider.live))
                 ).createInviteLink(for: group, inviterName: currentInviterName, members: activeMembers)
             } else {
-                // Grupo CloudKit (flag OFF o grupo no-backend) → CKShare byte-idéntico.
-                let (_, ckURL) = try await SplitZoneManager(syncManager: .shared).createShare(for: group)
-                if let ckURL {
-                    shareURL = buildBrandedInviteURL(from: ckURL)
-                }
+                surfaceActionError(L10n.Groups.Errors.inviteFailed)
+                isCreatingShare = false
+                return
             }
         } catch {
             #if DEBUG
             print("GroupDetailViewModel: Error creating share: \(error)")
             #endif
-            // SplitZoneError carries localized copy (e.g. "sync preparing"); any other error
-            // (raw CKError — network/quota) maps to the branded inviteFailed copy instead of
-            // leaking a technical system string into the alert.
-            let message = (error as? SplitZoneError)?.errorDescription ?? L10n.Groups.Errors.inviteFailed
-            surfaceActionError(message)
+            surfaceActionError(L10n.Groups.Errors.inviteFailed)
         }
         isCreatingShare = false
     }
@@ -488,14 +487,6 @@ final class GroupDetailViewModel {
         return name.isEmpty ? L10n.Profile.defaultName : name
     }
 
-    private func buildBrandedInviteURL(from ckURL: URL) -> URL {
-        return InviteLinkService.buildInviteURL(
-            shareURL: ckURL,
-            group: group,
-            members: activeMembers,
-            inviterName: currentInviterName
-        ) ?? ckURL
-    }
 }
 
 // MARK: - Sheet Enum

@@ -63,28 +63,14 @@ struct GroupChannelRoutingTests {
         GroupsSyncClientTests.StubHTTPSession(responseData: Data(json.utf8), statusCode: status)
     }
 
-    // MARK: - C2 · Partición del INVITE (createShare)
-
-    /// Un grupo backend nunca debe mintear un CKShare — su invite va por token RPC (C4). El guard C2 de
-    /// `createShare` es lo PRIMERO (antes del check de engine) → lanza `.backendGroup`.
-    @Test func createShare_backendGroup_throwsBackendGroupError() async {
-        let group = SplitGroup(name: "Backend")
-        group.isOwner = true
-        group.isBackendGroup = true
-
-        do {
-            _ = try await SplitZoneManager(syncManager: .shared).createShare(for: group)
-            Issue.record("createShare debió lanzar para un grupo backend")
-        } catch let error as SplitZoneError {
-            guard case .backendGroup = error else {
-                Issue.record("error inesperado: \(error)")
-                return
-            }
-            // OK — partición C2 respetada.
-        } catch {
-            Issue.record("tipo de error inesperado: \(error)")
-        }
-    }
+    // MARK: - C2 · Partición del INVITE (createShare) — RETIRADA en la Fase 3
+    //
+    // `createShare_backendGroup_throwsBackendGroupError` probaba que un grupo backend jamás minteara un
+    // CKShare, porque el guard C2 de `SplitZoneManager.createShare` lanzaba `.backendGroup` antes que nada.
+    // El commit 1 de la Fase 3 borró `SplitZoneManager`, así que la partición ya no la sostiene un guard:
+    // la sostiene que no existe ningún productor de CKShare. Un test de la ausencia de un tipo no aporta —
+    // la ausencia la comprueba el compilador — y su cobertura de la ruta VIVA (invite por token RPC) la
+    // llevan `GroupBackendInviteService` y los tests de C4.
 
     // MARK: - C5 · Membership routing (approve / remove / leave)
 
