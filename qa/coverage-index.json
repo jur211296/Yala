@@ -984,9 +984,9 @@
       ],
       "scenarioIDs": [],
       "classification": "manual",
-      "coverage": "unit:YalaTests/GroupsICloudAvailabilityGateLogicTests + manual:device-sin-cuenta-icloud (el estado real 'sin iCloud' solo es honesto en device; en sim se verifica con/sin -fake-icloud). Exención uitest por diseño — un XCUITest exigiría un tercer modo de lanzamiento.",
+      "coverage": "unit:YalaTests/GroupsICloudAvailabilityGateLogicTests (tabla de 8 celdas iCloud × canal backend × uitest, MÁS source-scan del cableado en ContentView: el flag va como parámetro del gate porque en el `else if` del @ViewBuilder no lo alcanzaba ningún test y borrarlo dejaba la suite en verde) + manual:device-sin-cuenta-icloud (el estado real 'sin iCloud' solo es honesto en device; en sim se verifica con/sin -fake-icloud). Exención uitest por diseño — un XCUITest exigiría un tercer modo de lanzamiento.",
       "owner": "",
-      "lastVerified": "2026-07-13"
+      "lastVerified": "2026-08-06"
     },
     {
       "area": "groups-notifications-deeplinks",

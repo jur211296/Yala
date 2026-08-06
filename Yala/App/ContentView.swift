@@ -2062,14 +2062,16 @@ struct MainTabView: View {
             if GroupsBetaGateLogic.shouldShowGate(isUnlocked: groupsBetaUnlocked,
                                                   isGroupInviteMode: sessionState.isGroupInviteMode) {
                 GroupsBetaGateView()
-            } else if !CloudSyncFlags.groupsBackendEnabled,
-                      GroupsICloudAvailabilityGateLogic.shouldShowGate(
+            } else if GroupsICloudAvailabilityGateLogic.shouldShowGate(
                           isAccountAvailable: syncService.isAccountAvailable,
+                          isBackendChannelEnabled: CloudSyncFlags.groupsBackendEnabled,
                           isUITest: UITestHooks.isActive
                       ) {
                 // M1 / D8 (G5-C): el gate CloudKit-era (sin iCloud del OS) se RETIRA bajo el flag — el
                 // canal grupos→backend no exige la cuenta iCloud del sistema. Con flag OFF (TODO device
                 // prod hoy) es byte-idéntico. La lógica pura y la vista NO se borran (retiro real post-G6).
+                // El flag va como PARÁMETRO, no como condición de este `else if`: ahí no lo alcanzaba
+                // ningún test y borrarlo dejaba la suite en verde (ver docblock de la lógica pura).
                 GroupsICloudUnavailableView()
             } else {
                 GroupsContainerView()
