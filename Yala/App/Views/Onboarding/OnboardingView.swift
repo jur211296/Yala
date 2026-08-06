@@ -506,13 +506,19 @@ struct OnboardingView: View {
                                 description: L10n.Onboarding.purposeGroupsDesc,
                                 accessibilityId: "onboarding_purpose_groups"
                             ) {
-                                // Grupos exige iCloud (identidad + zonas CloudKit). Bloquea la
-                                // elección con un aviso claro ANTES de avanzar (prereq #2).
-                                if iCloudSyncService.shared.isAccountAvailable {
+                                // El muro iCloud solo aplica con el canal de Grupos APAGADO: con
+                                // el canal ON los grupos ya no viven en CloudKit y la cuenta del
+                                // OS deja de ser requisito. La decisión vive en lógica pura
+                                // (`OnboardingGroupsPurposeGateLogic`) porque aquí, dentro del
+                                // `body`, ningún unitario la alcanza — la lección de `965a4d86`.
+                                if OnboardingGroupsPurposeGateLogic.shouldBlockSelection(
+                                    isAccountAvailable: iCloudSyncService.shared.isAccountAvailable,
+                                    isBackendChannelEnabled: CloudSyncFlags.groupsBackendEnabled
+                                ) {
+                                    showGroupsICloudAlert = true
+                                } else {
                                     selectedUsageMode = .groupsOnly
                                     selectedMindset = "cashFlow"
-                                } else {
-                                    showGroupsICloudAlert = true
                                 }
                             }
                         }

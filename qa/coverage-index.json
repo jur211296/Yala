@@ -1413,14 +1413,15 @@
       "area": "onboarding-groups-only",
       "codeGlobs": [
         "Yala/App/Views/Onboarding/OnboardingView.swift",
+        "Yala/App/Logic/OnboardingGroupsPurposeGateLogic.swift",
         "Yala/App/Logic/OnboardingStepPlan.swift",
         "Yala/App/Logic/OnboardingNextEnablement.swift"
       ],
       "scenarioIDs": [],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/OnboardingGroupsOnlyGuardUITests (paso Propósito ofrece la card; guard iCloud al elegirla sin cuenta; Y happy-path e2e con -uitest-fake-icloud: card → paso moneda → botón Continuar HABILITADO → completa → landing en tab Grupos, regresión del botón muerto fix 2.0.5); unit:YalaTests/OnboardingStepPlanTests (skip de steps groupsOnly); unit:YalaTests/OnboardingNextEnablementTests (habilitación del botón Continuar por paso). El happy-path e2e ya NO es device/TestFlight: el launch arg -uitest-fake-icloud fuerza isAccountAvailable en sim (crear grupo/CKShare real siguen siendo TestFlight). NOTA 2026-07-31: el happy-path e2e también necesitó `-uitest-fake-cloud-session`. Aterriza en el tab Grupos VACÍO, y con `groupsBackendEnabled` ON ese landing sin sesión de nube es el empty state de RE-ENTRADA, no el estándar que la aserción final espera: `-uitest-fake-icloud` habla de la cuenta iCloud del OS y NO crea sesión backend — son dos gates distintos. Este test estaba ROJO por esa causa y no figuraba en la Lista Negra (se descubrió y se verificó por separado al cerrar los otros dos).",
+      "coverage": "xcuitest:YalaUITests/OnboardingGroupsOnlyGuardUITests (paso Propósito ofrece la card; elegirla SIN cuenta iCloud avanza al paso de moneda —la celda del bug de C4, aserción POSITIVA: en fullControl el siguiente paso es .accounts y no tiene selector de moneda—; Y happy-path e2e con -uitest-fake-icloud: card → paso moneda → botón Continuar HABILITADO → completa → landing en tab Grupos, regresión del botón muerto fix 2.0.5); unit:YalaTests/OnboardingGroupsPurposeGateLogicTests (tabla de 4 celdas iCloud × canal backend MÁS source-scan del cableado en OnboardingView: el flag va como parámetro de la lógica pura porque en el `if` del body no lo alcanzaba ningún test y borrarlo dejaba la suite en verde); unit:YalaTests/OnboardingStepPlanTests (skip de steps groupsOnly); unit:YalaTests/OnboardingNextEnablementTests (habilitación del botón Continuar por paso). El happy-path e2e ya NO es device/TestFlight: el launch arg -uitest-fake-icloud fuerza isAccountAvailable en sim (crear grupo real sigue siendo TestFlight). NOTA 2026-07-31: el happy-path e2e también necesitó `-uitest-fake-cloud-session` — aterriza en el tab Grupos VACÍO, y con `groupsBackendEnabled` ON ese landing sin sesión de nube es el empty state de RE-ENTRADA, no el estándar que la aserción final espera. NOTA 2026-08-06 (C4): el XCUITest solo puede ejercitar la columna canal-ON — bajo `-uitest` `CloudSyncFlags.groupsBackendEnabled` es SIEMPRE true (CloudRemoteConfig.decide corta en isUITestHost → absentDefault, true bajo DEV_BUILD) y no hay launch arg que lo apague; las dos celdas de canal OFF viven solo en el unitario. El estado real «sin cuenta iCloud» en DEVICE lo cierra el owner (A5).",
       "owner": "",
-      "lastVerified": "2026-07-31"
+      "lastVerified": "2026-08-06"
     },
     {
       "area": "onboarding-privacy-and-tutorials",

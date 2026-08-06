@@ -5,13 +5,20 @@
 //  Cobertura XCUITest del área onboarding "Solo grupos" (commit 182c326a).
 //  Dos caras:
 //   1. SIN iCloud (sim por defecto): el paso Propósito ofrece la card "Dividir gastos
-//      con amigos" (onboarding_purpose_groups) y elegirla dispara el guard (alerta
-//      "Activa iCloud para usar grupos") sin avanzar.
+//      con amigos" (onboarding_purpose_groups) y elegirla AVANZA — el muro iCloud se
+//      retiró con el canal de Grupos encendido (chip C4).
 //   2. CON iCloud (forzado por -uitest-fake-icloud): happy-path e2e — elegir la card
 //      avanza al paso de moneda, donde el botón "Continuar" está HABILITADO pese a no
 //      haber nombre de cuenta (oculto en Solo Grupos), y el onboarding completa
 //      aterrizando en el tab Grupos. Esto ejercita el fix del "botón Continuar muerto"
 //      (2.0.5) que antes solo era verificable en device con iCloud.
+//
+//  ⚠️ Este fichero solo puede ejercitar la columna «canal backend ON»: bajo `-uitest`
+//  `CloudSyncFlags.groupsBackendEnabled` es SIEMPRE `true` (`CloudRemoteConfig.decide`
+//  corta en `isUITestHost` devolviendo `absentDefault`, que bajo DEV_BUILD es `true`), y
+//  no hay launch arg que lo apague. Las dos celdas de canal OFF —el muro legítimo cuando
+//  el kill remoto está activo— viven en YalaTests/OnboardingGroupsPurposeGateLogicTests.
+//
 //  Usa el hook -uitest-onboarding (presenta OnboardingView directo sin marcarlo
 //  completado). Convenciones: ver CLAUDE.md (sin sleeps, scheme Yala Dev).
 //
@@ -61,19 +68,39 @@ final class OnboardingGroupsOnlyGuardUITests: XCTestCase {
         XCTAssertTrue(app.buttons["onboarding_purpose_expenses"].exists, "Falta la card 'Solo anotar gastos'.")
     }
 
-    /// Elegir "Solo grupos" sin cuenta iCloud (sim) dispara el guard y no avanza.
-    func test_groupsOnlyCard_withoutICloud_showsGuardAlert() {
+    /// LA CELDA DEL BUG (chip C4): sin cuenta iCloud —el estado por defecto del sim, y el de
+    /// todo usuario born-cloud— y con el canal de Grupos ON, elegir "Solo grupos" YA NO se
+    /// bloquea. Hasta el fix salía la alerta "Activa iCloud para usar grupos" y la elección no
+    /// se registraba, cerrando la única ruta del onboarding a `.groupsOnly`.
+    ///
+    /// La aserción que carga el peso es POSITIVA y no la ausencia de la alerta: llegar al paso
+    /// de moneda solo es posible si `selectedUsageMode == .groupsOnly` (en `fullControl` el
+    /// siguiente paso es `.accounts`, que no tiene selector de moneda), y el campo de nombre de
+    /// cuenta ausente lo confirma. Una aserción negativa a secas pasaría igual si el tap se
+    /// hubiera perdido — la familia del falso verde de `.claude/rules/testing.md`.
+    func test_groupsOnlyCard_withoutICloud_isAllowed_channelOn() {
         let app = launchAtPurposeStep()
 
         let groupsCard = app.buttons["onboarding_purpose_groups"]
         XCTAssertTrue(groupsCard.waitForExistence(timeout: 10), "No apareció la card de solo-grupos.")
         groupsCard.tap()
 
-        // Sin iCloud (ubiquityIdentityToken == nil en sim) el guard muestra una alerta
-        // y bloquea el avance. Aserción robusta por presencia de alerta (no por texto localizado).
+        XCTAssertFalse(
+            app.alerts.firstMatch.waitForExistence(timeout: 3),
+            "Volvió el muro iCloud: el canal de Grupos ya no vive en CloudKit y el aviso miente."
+        )
+
+        let next = app.buttons["onboarding_next_button"]
+        XCTAssertTrue(next.waitForExistence(timeout: 5), "No apareció el botón Siguiente en Propósito.")
+        next.tap()
+
         XCTAssertTrue(
-            app.alerts.firstMatch.waitForExistence(timeout: 5),
-            "El guard de iCloud no apareció al elegir 'Solo grupos' sin cuenta."
+            app.buttons["onboarding_currency_selector"].waitForExistence(timeout: 10),
+            "No se llegó al paso de moneda: la elección de 'Solo grupos' no se registró."
+        )
+        XCTAssertFalse(
+            app.textFields["onboarding_account_name"].exists,
+            "El paso alcanzado no es el de Solo Grupos (el campo de nombre de cuenta debería estar oculto)."
         )
     }
 
