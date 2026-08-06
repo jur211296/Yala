@@ -639,5 +639,37 @@ cambia; su coste sí, y por eso queda anotado aquí y no solo en el mensaje del 
 después de la Fase 3, cada device por su lado y sin sincronizar. No es dañino —nadie los usa— pero tampoco
 se van solos, así que puede aparecer en un QA y no debe leerse como un bug nuevo.
 
-Los dos chips (**A3-S4** y **A2-impl**) están redactados en
+### A6 · La reacción al cambio de Apple ID en Grupos — PÉRDIDA DECLARADA (owner, 2026-08-06)
+
+El commit 1 se lleva **tres piezas a la vez**, y ninguna lista del brief las nombra juntas: el **disparador**
+reactivo (`CKSyncEngine` entrega `.accountChange` → `handleAccountChange`, 10 referencias **dentro de**
+`SplitSyncManager`), la **lógica** (`GroupsIdentityPurgeGate.apply`, cuyo **único** call-site de producción es
+`SplitSyncManager.swift:1663`) y la **segunda red** (`GroupsIdentityBootGuardLogic`, también entre los 14).
+⇒ tras la Fase 3 el dominio de Grupos **no reacciona a un cambio de Apple ID**.
+
+**DECIDIDO: se declara la pérdida. Cero código.** Se sostiene en tres cosas medidas, no en conveniencia:
+
+1. **Para el canal backend, no reaccionar es lo CORRECTO.** Su identidad es el `sub` de la cuenta Yala, así
+   que un cambio de Apple ID del OS es un **no-evento** para esas filas y borrarlas sería pérdida
+   permanente — es literalmente lo que la excepción C-3 de `.claude/rules/swiftdata-cloudkit.md` existe para
+   impedir. La rama que se pierde ahí (`retainRevokingRejoinCredentials`) protegía un caso que el canal nuevo
+   no plantea del mismo modo.
+2. **El contenido que la otra rama borraba es basura**, desde que el §1 del plan quedó cancelado: no hay
+   grupos CloudKit legacy útiles en ningún usuario.
+3. **El relevo de humano sigue cubierto.** El camino principal es el «empiezo de cero» del Welcome
+   (`DataWipeService.wipeLocalGroupsDomain`), que es de **INTENCIÓN** y no pasa por `SplitSyncManager` ⇒
+   **sobrevive al commit 1**.
+
+**Residuo declarado, para que nadie lo redescubra como bug:** un humano nuevo que herede el device **sin**
+pasar por el «empiezo de cero» puede ver **cascarones de grupos legacy** del anterior (nombres, sin datos
+útiles). No hay pérdida de dinero ni acceso a datos financieros vivos. Si algún día eso importa, la pieza a
+reponer es solo la revocación de credenciales, cableada a un disparador que sobreviva —el boot, no
+CKSyncEngine—, **no la purga entera**.
+
+**Y G3 se cierra con esto:** `GroupsIdentityPurgeIntent` perdía armador y drenador a la vez (sus cuatro
+call-sites funcionales viven en `SplitSyncManager`). Al declarar la pérdida, el intent **se retira con ellos**
+en vez de quedarse como una intención que nadie arma ni drena — que es el patrón de `quotaFailedRecordIDs` y
+es peor que no tenerlo.
+
+Los chips (**A3-S4** y **A2-impl**, ambos ✅ HECHOS) están en
 `$VAULT/Backlog/modo-nube/MODO-NUBE-CHIPS-FASE3.md`.
