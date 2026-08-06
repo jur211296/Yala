@@ -45,12 +45,18 @@
 //  purga SIEMPRE, también en la rama que no registra nada.
 //
 //  AL AÑADIR UN SEAM AQUÍ, BUSCA QUIÉN MÁS LEE ESA KEY Y LA RE-ESCRIBE — es el LAVADO, y no basta
-//  con que este fichero haga su parte. `AppPreferences.loadFromDefaults` re-persiste lo que acaba
-//  de leer (default hardcoded `false` + store que devuelve `true` ⇒ el `didSet` lo escribe de
+//  con que este fichero haga su parte. `AppPreferences.loadFromDefaults` re-persistía lo que acaba
+//  de leer (default hardcoded `false` + store que devuelve `true` ⇒ el `didSet` lo escribía de
 //  vuelta), así que convertía en PERMANENTE lo que aquí muere con el proceso: con estos tres seams
 //  ya efímeros, las dos keys de onboarding seguían apareciendo en el plist del contenedor tras un
-//  launch `-uitest`. El arreglo vive en el `didSet` de esas dos propiedades («si el store ya dice
-//  eso, no hay nada que persistir»). Un mirror observable de la key nueva necesitaría lo mismo.
+//  launch `-uitest`.
+//
+//  El arreglo YA NO son dos guards en esas dos propiedades: desde el lavado general (2026-08-05)
+//  `loadFromDefaults` no escribe NADA mientras carga (`isLoadingFromDefaults`), así que cualquier
+//  key que gane un mirror en `AppPreferences` está cubierta de nacimiento. Lo que sigue habiendo que
+//  comprobar es que el lector nuevo no sea OTRO mirror con `didSet` fuera de `AppPreferences`
+//  —`SessionState`, `ThemeManager` y `ProTourManager` re-escriben lo que se les asigna— porque a
+//  ésos el mecanismo no los cubre.
 //
 //  DÓNDE VA EL GUARD. Ninguna función de aquí comprueba `UITestHooks.isActive`, igual que
 //  `applyUITestProTier(_:)`: el guard es el ÚNICO llamador (`AppBootstrapper.applyUITestHooksEarly`,

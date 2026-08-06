@@ -21,9 +21,16 @@
 //    con guard oldValue != newValue para evitar loop con el observer externo.
 //  - Init carga TODAS las properties desde UserDefaults ANTES de registrar observers.
 //  - Observer de `UserDefaults.didChangeNotification` + `NSUbiquitousKeyValueStore` →
-//    `refreshFromDefaults()` diferencial (solo asigna si el valor cambió) evitando
+//    `loadFromDefaults()` diferencial (solo asigna si el valor cambió) evitando
 //    re-renders innecesarios cuando cambian keys ajenas.
+//  - **CARGAR NO ESCRIBE**: `loadFromDefaults()` levanta `isLoadingFromDefaults` y los tres
+//    `persist*` se vuelven no-op mientras dura. Sin eso, este objeto es un mirror que RELEE y
+//    RE-ESCRIBE lo leído — el porqué completo está en el docblock de `loadFromDefaults`.
 //  - Captura `[weak self]` en closures del observer + `deinit` remueve observers.
+//
+//  Este mirror NO es un mecanismo de sincronización, y conviene no confundirlo con uno: quien
+//  escriba una key `synced: true` por fuera (`UserDefaults.set` directo, otro mirror) tiene que
+//  publicar ÉL a `PreferenceSyncService` — ver `loadFromDefaults`.
 //
 //  Backwards compatibility: los callsites legacy con `@AppStorage` siguen funcionando
 //  porque leen/escriben a los mismos UserDefaults keys. Ambas rutas conviven sin migración
@@ -50,6 +57,16 @@ final class AppPreferences {
     // MARK: - Dependencies
 
     private let defaults: UserDefaults
+
+    /// Verdadero SOLO mientras corre `loadFromDefaults()`. Es lo que hace que cargar no escriba;
+    /// el porqué —y por qué un `guard oldValue != nuevo` no basta— está en su docblock.
+    ///
+    /// Su único riesgo es FUGARSE: si cubriera el `init` entero, las migraciones de `:826-855`
+    /// dejarían de persistir sus centinelas, correrían en cada arranque y todo quedaría en VERDE.
+    /// De ahí el `defer` y el call-site único, y de ahí que el pin lleve un caso dedicado a la
+    /// revocación de consent de `aiTogglesRemovedV2`.
+    @ObservationIgnored
+    private var isLoadingFromDefaults = false
 
     /// Observer tokens. Marcados `nonisolated(unsafe)` porque (1) se asignan solo durante
     /// `registerObservers()` en MainActor, (2) se leen solo en deinit (nonisolated por
@@ -137,9 +154,11 @@ final class AppPreferences {
     }
 
     /// Pipe-separated list of account names in sort order.
-    /// NOTE: pipe (`|`) chosen to match legacy `@AppStorage("accountsSortOrderNames")` callsites
-    /// and `PanelViewModel.ensureAccountsSortOrderConsistency`. Account names may legitimately
-    /// contain commas but never pipes, so this separator is collision-safe.
+    /// NOTE: el separador es `|` porque los nombres de cuenta pueden llevar comas legítimamente
+    /// («Ahorros, casa») y nunca pipes, así que es a prueba de colisiones. (Este docblock citaba
+    /// unos call-sites `@AppStorage("accountsSortOrderNames")` y un
+    /// `PanelViewModel.ensureAccountsSortOrderConsistency` que ya no existen: hoy todos los
+    /// consumidores van por esta property y el helper vive en `PanelView`.)
     var accountsSortOrderNames: [String] = [] {
         didSet {
             guard oldValue != accountsSortOrderNames else { return }
@@ -379,23 +398,21 @@ final class AppPreferences {
         }
     }
 
-    /// El segundo guard no es redundante y cuesta explicarlo, así que aquí va: **`loadFromDefaults`
-    /// RE-PERSISTE lo que acaba de leer.** El default hardcoded es `false`, un store que traiga
-    /// `true` dispara el `didSet`, y `persistBool` lo escribe de vuelta. Para un valor que ya estaba
-    /// en disco eso es un no-op invisible; para uno que venía del dominio VOLÁTIL de `UserDefaults`
-    /// —el que usa el seam `-uitest-skip-onboarding` (`UITestEphemeralDefaults`)— es un **lavado**:
-    /// convierte en permanente algo que debía morir con el proceso, y devuelve el bug de «tras un
-    /// XCUITest, abrir Yala Dev a mano se salta onboarding». Medido en el simulador el 2026-08-05:
-    /// con el seam ya efímero, estas dos keys seguían apareciendo en el plist del contenedor.
-    /// «Ya lo dice el store» ⇒ no hay nada que persistir, venga del dominio que venga.
+    /// Estas dos son las que destaparon el LAVADO (2026-08-05): son las keys que el seam
+    /// `-uitest-skip-onboarding` pone en el dominio VOLÁTIL de `UserDefaults`
+    /// (`UITestEphemeralDefaults`), y seguían apareciendo en el plist del contenedor tras un launch
+    /// `-uitest` porque `loadFromDefaults` re-persistía lo que acababa de leer.
     ///
-    /// El docblock del `init` afirma que el guard diferencial evita re-persistir; eso es cierto solo
-    /// para los valores que coinciden con el default hardcoded — justo los que no importan.
+    /// Llevaron durante unas horas un segundo guard propio («si el store ya dice eso, no hay nada
+    /// que persistir»). Ya no lo llevan, y quitarlo es deliberado: el mecanismo general
+    /// (`isLoadingFromDefaults`) las cubre y es estrictamente más fuerte —cubre el `init` Y la
+    /// recarga por notificación, y las 70 properties, no dos—, y sobre todo **un guard local dejaba
+    /// al pin sin caer con el mutante**: borrar el mecanismo general habría dejado
+    /// `cargarPreferencias_noReescribeLoQueYaDiceElStore` en verde justo sobre las dos keys que
+    /// nombra. Un cinturón que oculta el fallo del mecanismo es peor que no llevarlo.
     var hasCompletedOnboarding: Bool = false {
         didSet {
-            guard oldValue != hasCompletedOnboarding,
-                  defaults.bool(forKey: Keys.hasCompletedOnboarding) != hasCompletedOnboarding
-            else { return }
+            guard oldValue != hasCompletedOnboarding else { return }
             persistBool(hasCompletedOnboarding, forKey: Keys.hasCompletedOnboarding, synced: false)
         }
     }
@@ -403,13 +420,10 @@ final class AppPreferences {
     /// Welcome Chooser pre-onboarding (A4). Per-device (no synced) — cada device pregunta
     /// una vez al user. Se setea SOLO tras tap consciente en una de las 3 cards (no en
     /// dismissals programáticos por race con CKShare).
-    /// Mismo guard anti-lavado que `hasCompletedOnboarding` y por el mismo motivo — el seam las pone
-    /// juntas y sin esto solo una de las dos moría con el proceso.
+    /// La otra mitad del seam de onboarding — ver `hasCompletedOnboarding`.
     var hasShownWelcomeChooser: Bool = false {
         didSet {
-            guard oldValue != hasShownWelcomeChooser,
-                  defaults.bool(forKey: Keys.hasShownWelcomeChooser) != hasShownWelcomeChooser
-            else { return }
+            guard oldValue != hasShownWelcomeChooser else { return }
             persistBool(hasShownWelcomeChooser, forKey: Keys.hasShownWelcomeChooser, synced: false)
         }
     }
@@ -819,8 +833,14 @@ final class AppPreferences {
         self.defaults = defaults
 
         // Carga inicial ANTES de registrar observers (mitiga race con notificaciones
-        // tempranas durante bootstrap). Los `didSet` de cada property aplican el guard
-        // diferencial; no se re-persisten valores que no cambiaron del default hardcoded.
+        // tempranas durante bootstrap). No persiste nada: `loadFromDefaults` levanta
+        // `isLoadingFromDefaults` y los `persist*` se vuelven no-op mientras dura.
+        //
+        // Todo lo que viene DESPUÉS de esta línea sí persiste, y tiene que seguir haciéndolo: las
+        // tres migraciones de abajo escriben sus centinelas y revocan consents por asignación de
+        // property. Si alguien mueve el flag para cubrir el `init` entero, las migraciones dejan de
+        // grabar, corren en cada arranque y la suite no se entera — por eso el pin lleva un caso
+        // dedicado a la revocación de `aiTogglesRemovedV2`.
         loadFromDefaults()
 
         // Desacople consent/feature de AI Insights: usuarios con consent=true preexistente
@@ -892,15 +912,48 @@ final class AppPreferences {
 
     // MARK: - Load from Defaults (init + external change refresh)
 
-    /// Re-lee todas las properties desde `defaults` y asigna solo las que cambiaron.
+    /// Re-lee todas las properties desde `defaults` y asigna solo las que cambiaron. **No escribe.**
     ///
     /// Usado tanto en la carga inicial (`init`) como tras notificaciones externas
     /// (`UserDefaults.didChangeNotification` global, `NSUbiquitousKeyValueStore`).
-    /// El guard `oldValue != newValue` en cada `didSet` evita re-renders innecesarios
-    /// cuando la notificación se dispara por keys ajenas (TipKit, StoreKit) — y también
-    /// previene persist-loops cuando el valor viene de una escritura externa (iKV) y
-    /// no debe propagarse de vuelta.
+    ///
+    /// EL GUARD `oldValue != newValue` DE CADA `didSet` NO BASTA, y creer que sí es el error que
+    /// costó el bug: corta el bucle, pero **no el primer rebote**, que es justo el que escribe.
+    /// Asignar un valor que vino del store dispara el `didSet` siempre que difiera del **default
+    /// hardcoded** ⇒ toda preferencia tocada por el usuario se RE-PERSISTÍA al cargar. Dos daños,
+    /// los dos medidos el 2026-08-05 y ninguno visible desde la app:
+    ///
+    ///  1. **LAVADO.** El `didSet` no sabe de qué DOMINIO vino el valor. Uno del dominio de REGISTRO
+    ///     —volátil, muere con el proceso, el que usan los seams de `UITestEphemeralDefaults`— se
+    ///     copiaba al PERSISTENTE y se volvía permanente: es el bug de «tras un XCUITest, abrir Yala
+    ///     Dev a mano se salta onboarding». Para un valor que ya estaba en disco el mismo `set` es
+    ///     un no-op invisible, y por eso nadie lo vio en once meses.
+    ///  2. **TRÁFICO DE SYNC.** Las 37 `synced: true` llaman además a `PreferenceSyncService`. Medido
+    ///     contra el plist real del simulador: 6 keys re-empujaban a iKV en CADA lanzamiento (suelo,
+    ///     no caso típico), con un `iKV.synchronize()` por key. Y como el `init` de este objeto corre
+    ///     estructuralmente ANTES de `PreferenceSyncService.bootstrap()` (`AppBootstrapper:38` es
+    ///     property almacenada), esa ráfaga PISABA en iKV lo que otro device hubiera cambiado con la
+    ///     app cerrada. Eso no es coste: es corrección.
+    ///     El mismo circuito cerraba un ECO: `applyRemoteValues`/`applyPulledPrefs` escriben en
+    ///     `UserDefaults.standard` → notificación → esta carga → `didSet` → push. En `.icloud`
+    ///     devolvía a iKV lo que acababa de bajar; en `.cloud` lo re-encolaba al outbox con un **HLC
+    ///     FRESCO**, convirtiendo al receptor en autor LWW de un valor que no escribió.
+    ///
+    /// Lo que lo cierra es `isLoadingFromDefaults`: mientras dura esta función, los tres `persist*`
+    /// son no-op. **Cargar no escribe, venga el valor del dominio que venga.**
+    ///
+    /// CONSECUENCIA QUE HAY QUE CONOCER ANTES DE TOCAR ESTO: esta relectura era el ÚNICO puente por
+    /// el que un escritor directo de `UserDefaults` llegaba al canal de sync. Era un efecto
+    /// colateral y no un mecanismo —cubría por casualidad las keys que tienen mirror, y por eso
+    /// `financialMindset`, de forma idéntica y sin mirror, lleva sin sincronizar desde siempre—.
+    /// Los dos que dependían de él se pagaron en su punto de INTENCIÓN, como ya hacía
+    /// `OnboardingView`: `NotificationPrimerSheet` (`budgetAlertsEnabled`) y el toggle de
+    /// `PersonalizationSettingsView` (`expensesOnlyMode`). ⇒ **quien escriba una key `synced: true`
+    /// por fuera de aquí publica él a `PreferenceSyncService`; este mirror ya no lo hace por él.**
     private func loadFromDefaults() {
+        isLoadingFromDefaults = true
+        defer { isLoadingFromDefaults = false }
+
         // Currency & Format
         if let raw = defaults.string(forKey: Keys.defaultCurrencyCode), let code = CurrencyCode(rawValue: raw) {
             defaultCurrencyCode = code
@@ -940,7 +993,12 @@ final class AppPreferences {
             if raw.contains("|") {
                 tagsSortOrderNames = raw.split(separator: "|").map(String.init)
             } else if !raw.isEmpty {
-                // Legacy comma-separated data — preserves order; next didSet re-serializa con "|".
+                // Legacy comma-separated data — preserves order. NO se re-serializa aquí: cargar no
+                // escribe (ver `loadFromDefaults`). El disco conserva el formato viejo hasta que el
+                // usuario reordene una etiqueta, y no le importa a nadie — esta rama es permanente e
+                // idempotente y ningún otro sitio lee la key en crudo. Antes sí se re-serializaba en
+                // esta misma carga, y eso CONGELABA una corrupción: un nombre con coma («Comida,
+                // casa») se partía en dos y se persistía ya partido, irreversible.
                 tagsSortOrderNames = raw.split(separator: ",").map(String.init)
             } else {
                 tagsSortOrderNames = []
@@ -1113,7 +1171,16 @@ final class AppPreferences {
 
     // MARK: - Persistence Helpers
 
+    // El `guard !isLoadingFromDefaults` va en LOS TRES y es el arreglo entero (ver
+    // `loadFromDefaults`). Va aquí arriba y no en los `didSet` a propósito: gatea de una sola vez
+    // la escritura local Y el push al canal, que es lo que permite pinnear las dos mitades contando
+    // escrituras sobre el `UserDefaults` inyectado — `PreferenceSyncService` es un singleton
+    // hardcodeado a `.standard` (`:78`) y no se puede espiar desde un test sin refactor.
+    // Si alguien separa el guard del push, ese proxy deja de valer: por eso el pin lleva además un
+    // source-scan con conteo 3.
+
     private func persistString(_ value: String, forKey key: String, synced: Bool) {
+        guard !isLoadingFromDefaults else { return }
         defaults.set(value, forKey: key)
         if synced {
             PreferenceSyncService.shared.set(string: value, forKey: key)
@@ -1121,6 +1188,7 @@ final class AppPreferences {
     }
 
     private func persistBool(_ value: Bool, forKey key: String, synced: Bool) {
+        guard !isLoadingFromDefaults else { return }
         defaults.set(value, forKey: key)
         if synced {
             PreferenceSyncService.shared.set(bool: value, forKey: key)
@@ -1128,6 +1196,7 @@ final class AppPreferences {
     }
 
     private func persistInt(_ value: Int, forKey key: String, synced: Bool) {
+        guard !isLoadingFromDefaults else { return }
         defaults.set(value, forKey: key)
         if synced {
             PreferenceSyncService.shared.set(int: value, forKey: key)

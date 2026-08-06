@@ -102,8 +102,15 @@ struct NotificationPrimerSheet: View {
                     }
                     try modelContext.save()
                     await NotificationService.shared.rescheduleAllNotifications(items: items)
-                    // Enable budget alerts global toggle so BudgetAlertService activates
-                    UserDefaults.standard.set(true, forKey: "budgetAlertsEnabled")
+                    // Enable budget alerts global toggle so BudgetAlertService activates.
+                    // Va por `PreferenceSyncService` y no por `UserDefaults.standard.set`: la key es
+                    // `synced: true` y esto es un punto de INTENCIÓN del usuario, así que tiene que
+                    // llegar a sus otros devices. Escribir en crudo llegaba a iCloud de rebote —
+                    // `AppPreferences.loadFromDefaults` re-persistía lo que releía— y ese puente
+                    // accidental se cerró (ver el docblock de `loadFromDefaults`). El service hace
+                    // el `local.set` por dentro, así que `BudgetAlertService` lee lo mismo que antes.
+                    PreferenceSyncService.shared.set(
+                        bool: true, forKey: AppPreferences.Keys.budgetAlertsEnabled)
                 } catch {
                     #if DEBUG
                     print("NotificationPrimerSheet: Error activating notifications: \(error)")

@@ -717,7 +717,19 @@ struct PersonalizationSettingsView: View {
                     : L10n.Settings.expensesOnlyActivateConfirm,
                 role: sessionState.isExpensesOnlyMode ? nil : .destructive
             ) {
-                sessionState.isExpensesOnlyMode.toggle()
+                // Este toggle es el punto de INTENCIÓN del usuario y la key es `synced: true`, así
+                // que publica ÉL — mismo orden que `OnboardingView`, que ya lo hacía a mano.
+                // El espejo (`SessionState.isExpensesOnlyMode.didSet`) escribe local + App Group +
+                // recarga widgets, pero NO encola y no debe: a ese mismo `didSet` llegan también el
+                // merge remoto (`PreferenceSyncService.applyMergeOutcome`) y el reset de
+                // `-uitest-reset`, y publicar ahí devolvería el eco (en `.cloud`, con HLC fresco
+                // sobre un valor recién bajado) y haría que un XCUITest encolara preferencias.
+                // Hasta ahora llegaba a iCloud de rebote, porque `AppPreferences.loadFromDefaults`
+                // re-persistía lo que releía; ese puente accidental se cerró.
+                let newValue = !sessionState.isExpensesOnlyMode
+                PreferenceSyncService.shared.set(
+                    bool: newValue, forKey: AppPreferences.Keys.expensesOnlyMode)
+                sessionState.isExpensesOnlyMode = newValue
             }
             Button(L10n.Settings.cancel, role: .cancel) {}
         } message: {

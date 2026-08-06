@@ -136,6 +136,16 @@ class SessionState {
 
     /// When true, hides income/transfer UI throughout the app. Data is NOT deleted, only hidden.
     /// Uses stored property (NOT computed) so @Observable tracks changes.
+    ///
+    /// ESTE ESPEJO NO PUBLICA A `PreferenceSyncService`, Y NO ES UN OLVIDO. La key es `synced: true`
+    /// (`AppPreferences.Keys.expensesOnlyMode`), pero a este `didSet` llegan asignaciones que NO son
+    /// intención del usuario: el merge remoto (`PreferenceSyncService.applyMergeOutcome`) y el reset
+    /// de `-uitest-reset` (`AppBootstrapper.applyUITestHooksEarly`). Publicar aquí devolvería el eco
+    /// —en `.cloud`, re-encolando con HLC fresco un valor recién bajado del backend— y haría que un
+    /// XCUITest encolara preferencias, cosa que el repo prohíbe a propósito.
+    /// ⇒ **publica quien DECIDE**: `PersonalizationSettingsView` (toggle de Ajustes) y
+    /// `OnboardingView`. Un punto de intención nuevo tiene que hacer lo mismo; hasta 2026-08-05
+    /// llegaba a iCloud de rebote por `AppPreferences.loadFromDefaults`, que ya no re-persiste.
     var isExpensesOnlyMode: Bool = UserDefaults.standard.bool(forKey: AppPreferences.Keys.expensesOnlyMode) {
         didSet {
             // No-op guard avoids spurious UserDefaults writes (which materialize the key

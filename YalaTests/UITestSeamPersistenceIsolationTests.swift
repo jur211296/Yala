@@ -45,6 +45,16 @@
 //  dominio de registro se cuela igual en ellos. Sería este mismo bug movido de disco a memoria.
 //  ⇒ el mecanismo se prueba con una key de SONDA que no lee nadie, y los seams reales con un doble.
 //
+//  Y AQUÍ VIVE TAMBIÉN EL LAVADO GENERAL, cerrado el 2026-08-05, porque es donde se destapó: el
+//  seam efímero hace su parte bien y las dos keys de onboarding SEGUÍAN apareciendo en el plist del
+//  contenedor. El culpable era `AppPreferences.loadFromDefaults`, que re-persistía lo que acababa de
+//  leer — para un valor ya en disco, un no-op invisible; para uno del dominio volátil, un lavado.
+//  El arreglo NO son dos guards en las dos properties del seam (los llevó unas horas y se quitaron a
+//  propósito: un cinturón local dejaba al pin sin caer con el mutante): es `isLoadingFromDefaults`,
+//  y con él **cargar no escribe**, ni al disco ni al canal de sync. Cuatro tests lo sostienen y
+//  ninguno cubre a otro — la matriz por FORMA de carga, la recarga tras un wipe, la no-fuga del flag
+//  hacia las migraciones del `init`, y los dos escáneres estructurales del final.
+//
 
 import Foundation
 import Testing
@@ -212,9 +222,9 @@ struct UITestSeamPersistenceIsolationTests {
     /// el 2026-08-05, con `applyOnboardingAlreadySeen` ya sin escribir nada, las dos keys SEGUÍAN
     /// apareciendo en el plist del contenedor tras un launch `-uitest`.
     ///
-    /// El culpable es `AppPreferences.loadFromDefaults`, que **re-persiste lo que acaba de leer**:
+    /// El culpable es `AppPreferences.loadFromDefaults`, que **re-persistía lo que acababa de leer**:
     /// el default hardcoded es `false`, el store devuelve `true` —del dominio VOLÁTIL— y el `didSet`
-    /// lo escribe de vuelta al persistente. Un **lavado**: lo efímero se vuelve permanente y el bug
+    /// lo escribía de vuelta al persistente. Un **lavado**: lo efímero se vuelve permanente y el bug
     /// regresa entero. Es una clase de fallo que ningún test del seam puede ver, porque el seam hace
     /// su parte bien.
     ///
@@ -223,27 +233,181 @@ struct UITestSeamPersistenceIsolationTests {
     /// dominio de registro es del PROCESO y no se puede deshacer (§ cabecera), así que usarlo en un
     /// test envenenaría a las suites vecinas. El invariante que se juzga es el mismo: **cargar no
     /// escribe**.
+    ///
+    /// LA MATRIZ ES POR **FORMA DE CARGA**, NO POR PREFERENCIA, y ésa es la única manera de que sirva
+    /// de algo: `loadFromDefaults` lee de siete maneras distintas (enum tras `if let`, `Int` tras
+    /// `object != nil`, `Bool` incondicional, `String ?? ""`, listas por coma, listas por pipe,
+    /// `loadBool(defaultIfMissing:)`) y cada una entra por un `persist*` distinto. Con la versión
+    /// anterior —solo las dos keys de onboarding, las dos `Bool`— quitar el guard de `persistString`
+    /// o de `persistInt` dejaba el test en VERDE. Verificado por mutación, no por inspección.
+    ///
+    /// Y por eso también se contabiliza el **tráfico de sync** sin poder espiarlo: `PreferenceSyncService`
+    /// es un singleton con `local` hardcodeado a `.standard`, así que un contador sobre el store
+    /// inyectado no ve el push. Lo que lo cubre es que ambas cosas están detrás del MISMO guard,
+    /// dentro del mismo helper — y eso lo fija `losTresPersistLlevanElGuardYSonElUnicoPushDeAquí`.
     @Test func cargarPreferencias_noReescribeLoQueYaDiceElStore() throws {
         let suite = "test.uitest-seam.lavado.\(UUID().uuidString)"
         let counting = try #require(CountingDefaults(suiteName: suite))
         defer { counting.removePersistentDomain(forName: suite) }
-        let keys = [AppPreferences.Keys.hasCompletedOnboarding, AppPreferences.Keys.hasShownWelcomeChooser]
 
-        for key in keys { counting.set(true, forKey: key) }
+        // Los centinelas de las tres migraciones del `init`. Corren FUERA de `loadFromDefaults` y SÍ
+        // deben escribir (por eso hay un test dedicado a que el flag no se les filtre), así que aquí
+        // se desactivan o su ruido entra en el conteo. `PanelPreferencesMigration` además consulta el
+        // `NSUbiquitousKeyValueStore` REAL del proceso cuando corre: sin plantar su centinela, el
+        // número de escrituras dependería de estado global y el test sería flaky por el entorno.
+        for centinela in [
+            AppPreferences.Keys.aiInsightsMigratedV1,
+            AppPreferences.Keys.aiTogglesRemovedV2,
+            AppPreferences.Keys.panelPrefsMigratedV2,
+        ] {
+            counting.set(true, forKey: centinela)
+        }
+
+        // Valor plantado ≠ default hardcoded en TODAS: si coincidieran, el `guard oldValue != nuevo`
+        // cortaría solo y el test pasaría sin ejercitar el arreglo.
+        let plantadas: [(key: String, valor: Any, forma: String)] = [
+            (AppPreferences.Keys.hasCompletedOnboarding, true, "Bool incondicional — la key del seam"),
+            (AppPreferences.Keys.hasShownWelcomeChooser, true, "Bool incondicional — la otra key del seam"),
+            (AppPreferences.Keys.defaultCurrencyCode, "USD", "enum String tras `if let` + parse"),
+            (AppPreferences.Keys.usageFocus, "groupsOnly", "enum String con fallback incondicional (reset-on-absent)"),
+            (AppPreferences.Keys.userProfileIcon, "star", "String con `?? \"\"` incondicional"),
+            (AppPreferences.Keys.decimalPlaces, 4, "Int tras `object != nil`"),
+            (AppPreferences.Keys.firstWeekday, 1, "Int con rawValue (`.sunday`)"),
+            (AppPreferences.Keys.colorfulIcons, false, "Bool con default hardcoded TRUE"),
+            (AppPreferences.Keys.panelAccountsCollapsed, false, "Bool por `loadBool(defaultIfMissing: true)`"),
+            (AppPreferences.Keys.budgetAlertsEnabled, true, "Bool SYNCED, lectura incondicional"),
+            (AppPreferences.Keys.expensesOnlyMode, true, "Bool SYNCED con dos rutas de entrada"),
+            (AppPreferences.Keys.secondaryCurrencies, "USD,EUR", "lista serializada por COMA"),
+            (AppPreferences.Keys.accountsSortOrderNames, "Cash|Bank", "lista serializada por PIPE"),
+            (AppPreferences.Keys.panelTendenciasOrder, "a,b", "lista por `parseList`"),
+        ]
+        for p in plantadas { counting.set(p.valor, forKey: p.key) }
         counting.writes = [:]
 
-        _ = AppPreferences(defaults: counting)
+        let prefs = AppPreferences(defaults: counting)
 
-        for key in keys {
+        // LLEGADA ANTES QUE EL CERO. Un rawValue que no parsea no asigna, el `didSet` no corre y el
+        // contador daría 0 sin haber ejercitado nada — la familia de «Executed 0 tests». Cada
+        // aserción de aquí es la que hace que su cero signifique algo.
+        #expect(prefs.hasCompletedOnboarding == true)
+        #expect(prefs.hasShownWelcomeChooser == true)
+        #expect(prefs.defaultCurrencyCode == .usd)
+        #expect(prefs.usageFocus == .groupsOnly)
+        #expect(prefs.userProfileIcon == "star")
+        #expect(prefs.decimalPlaces == 4)
+        #expect(prefs.firstWeekday == .sunday)
+        #expect(prefs.colorfulIcons == false)
+        #expect(prefs.panelAccountsCollapsed == false)
+        #expect(prefs.budgetAlertsEnabled == true)
+        #expect(prefs.expensesOnlyMode == true)
+        #expect(prefs.secondaryCurrencies == ["USD", "EUR"])
+        #expect(prefs.accountsSortOrderNames == ["Cash", "Bank"])
+        #expect(prefs.panelTendenciasOrder == ["a", "b"])
+
+        for p in plantadas {
             #expect(
-                counting.writes[key, default: 0] == 0,
+                counting.writes[p.key, default: 0] == 0,
                 """
-                `AppPreferences` re-escribió «\(key)» al cargarla (\(counting.writes[key, default: 0]) veces). \
-                Sobre un valor VOLÁTIL eso es un lavado: lo convierte en persistente y devuelve el bug de \
-                «tras un XCUITest, abrir Yala Dev a mano se salta onboarding y Welcome Chooser».
+                `AppPreferences` re-escribió «\(p.key)» al cargarla (\(counting.writes[p.key, default: 0]) veces) \
+                — forma de carga: \(p.forma). Sobre un valor VOLÁTIL eso es un lavado: lo convierte en \
+                persistente y devuelve el bug de «tras un XCUITest, abrir Yala Dev a mano se salta onboarding \
+                y Welcome Chooser». Y sobre una key `synced: true` es además un push a iKV/outbox por \
+                lanzamiento, con el eco de HLC fresco que eso arrastra en Modo Nube.
                 """
             )
         }
+
+        // CONTROL POSITIVO. Sin él, un `persist*` roto del todo —o un `defer` que no restaura el
+        // flag— dejaría todos los ceros de arriba en verde sin persistir absolutamente nada.
+        prefs.hasSeenSettingsTour = true
+        #expect(
+            counting.writes[AppPreferences.Keys.hasSeenSettingsTour, default: 0] == 1,
+            "Asignar una preferencia ya no la escribe: el guard de carga se quedó puesto (¿falta el `defer`?) y AppPreferences no persiste nada."
+        )
+    }
+
+    /// La otra dirección del mismo bug, y la que se lleva un daño de USUARIO: `DataWipeService`
+    /// borra la key, el observer dispara una recarga, el mirror cae a su default y —antes— el
+    /// `didSet` la RE-MATERIALIZABA con ese default y lo empujaba a iKV. Cinco propiedades
+    /// `synced: true` se leen sin guard de presencia, así que el wipe quedaba a medias y encima
+    /// propagaba el reset. `OnboardingView` describe por escrito esa contaminación («A standalone
+    /// `expensesOnlyMode` key is contamination from didSet side-effects»).
+    ///
+    /// Se ejercita el camino REAL (notificación → observer), no una llamada directa: el `init` ya lo
+    /// cubre el test de arriba, y lo que aquí importa es la recarga, que es por donde entra el eco.
+    @Test func recargaTrasUnWipe_noReMaterializaLaKeyBorrada() async throws {
+        let suite = "test.uitest-seam.wipe.\(UUID().uuidString)"
+        let counting = try #require(CountingDefaults(suiteName: suite))
+        defer { counting.removePersistentDomain(forName: suite) }
+        let key = AppPreferences.Keys.expensesOnlyMode
+
+        for centinela in [
+            AppPreferences.Keys.aiInsightsMigratedV1,
+            AppPreferences.Keys.aiTogglesRemovedV2,
+            AppPreferences.Keys.panelPrefsMigratedV2,
+        ] {
+            counting.set(true, forKey: centinela)
+        }
+        counting.set(true, forKey: key)
+
+        let prefs = AppPreferences(defaults: counting)
+        try #require(prefs.expensesOnlyMode == true, "El mirror no cargó el valor: el wipe de abajo no tendría nada que revertir.")
+
+        counting.removeObject(forKey: key)  // ← lo que hace `DataWipeService.removeUserPreferenceKeys`
+        counting.writes = [:]
+        NotificationCenter.default.post(name: UserDefaults.didChangeNotification, object: counting)
+
+        // Esperar al POSITIVO (el observer salta a MainActor por `Task`), nunca al cero: sin esto se
+        // estaría aserjando sobre una recarga que quizá no ha ocurrido todavía.
+        var vueltas = 0
+        while prefs.expensesOnlyMode && vueltas < 200 {
+            try await Task.sleep(for: .milliseconds(5))
+            vueltas += 1
+        }
+        try #require(prefs.expensesOnlyMode == false, "El observer no recargó en 1 s — el instrumento no tocó nada y los ceros de abajo no miden.")
+
+        #expect(
+            counting.writes[key, default: 0] == 0,
+            "La recarga re-escribió «\(key)» (\(counting.writes[key, default: 0]) veces) con su default tras el wipe, y por ser `synced: true` lo empujó además a iKV/outbox."
+        )
+        #expect(
+            counting.object(forKey: key) == nil,
+            "«\(key)» volvió a existir tras el wipe: el borrado queda a medias y la detección de instalación fresca de `OnboardingView` lee una key que nadie escribió a propósito."
+        )
+    }
+
+    /// El riesgo que introduce el flag, hecho aserción. `isLoadingFromDefaults` es un MODO: si
+    /// alguien lo mueve para cubrir el `init` entero, las tres migraciones de `:826-855` dejan de
+    /// grabar, corren en CADA arranque y **ningún otro test de este fichero se entera**.
+    ///
+    /// El escenario es el de `aiTogglesRemovedV2`: consent aceptado + toggle apagado ⇒ revoca el
+    /// consent. La aserción que carga el peso es la del dominio PERSISTENTE, no la de memoria: con
+    /// el flag filtrado, la property queda en `false` y el store se queda en `true`.
+    @Test func elFlagDeCarga_noSeFiltraALasMigracionesDelInit() throws {
+        let store = try makeToyStore()
+        defer { store.defaults.removePersistentDomain(forName: store.suite) }
+        let consent = AppPreferences.Keys.aiInsightsConsentAccepted
+
+        store.defaults.set(true, forKey: AppPreferences.Keys.aiInsightsMigratedV1)  // la OTRA migración, fuera
+        store.defaults.set(true, forKey: AppPreferences.Keys.panelPrefsMigratedV2)
+        store.defaults.set(true, forKey: consent)
+        store.defaults.set(false, forKey: AppPreferences.Keys.aiInsightsEnabled)
+
+        let prefs = AppPreferences(defaults: store.defaults)
+
+        #expect(prefs.aiInsightsConsentAccepted == false, "La migración `aiTogglesRemovedV2` no revocó el consent en memoria.")
+        #expect(
+            store.persisted(consent) as? Bool == false,
+            """
+            El consent revocado NO quedó ESCRITO: `isLoadingFromDefaults` se filtró más allá de \
+            `loadFromDefaults` y las migraciones del `init` dejaron de persistir. Corren en cada \
+            arranque y todo lo demás sigue en verde.
+            """
+        )
+        #expect(
+            store.persisted(AppPreferences.Keys.aiTogglesRemovedV2) as? Bool == true,
+            "El centinela de la migración no se escribió — misma fuga, vista desde el `defaults.set` directo."
+        )
     }
 
     // MARK: - Comportamiento · centinela del seed de categorías
@@ -329,17 +493,19 @@ struct UITestSeamPersistenceIsolationTests {
             .joined(separator: "\n")
     }
 
-    /// El CUERPO de `applyUITestHooksEarly`, delimitado por llaves. Acotar es load-bearing: sobre el
-    /// fichero entero, `groupsBetaUnlocked` aparece también en `persistBackendInviteIntent`, que es
-    /// producción y tiene que seguir escribiendo la key.
-    private func hookBody() throws -> String {
-        let source = try code(at: "Yala/App/AppBootstrapper.swift")
-        let signature = try #require(
-            source.range(of: "func applyUITestHooksEarly"),
-            "El escáner no encontró `applyUITestHooksEarly` — se movió o se renombró, y este test dejó de comprobar nada."
+    /// El CUERPO de una función, delimitado por llaves. Acotar es load-bearing en los dos escáneres
+    /// que lo usan, y vale la lección de `TestProcessGuardTests`: un rango demasiado ancho comprueba
+    /// que el símbolo EXISTE, no que alguien lo llame. Sobre `AppBootstrapper.swift` entero,
+    /// `groupsBetaUnlocked` aparece también en `persistBackendInviteIntent` —producción, tiene que
+    /// seguir escribiendo la key—; sobre `AppPreferences.swift` entero, un `guard` suelto en
+    /// cualquier sitio contaría igual que uno dentro del helper.
+    private func body(ofFunc signature: String, in source: String) throws -> String {
+        let found = try #require(
+            source.range(of: signature),
+            "El escáner no encontró `\(signature)` — se movió o se renombró, y este test dejó de comprobar nada."
         )
-        let rest = source[signature.upperBound...]
-        let open = try #require(rest.firstIndex(of: "{"), "`applyUITestHooksEarly` sin cuerpo.")
+        let rest = source[found.upperBound...]
+        let open = try #require(rest.firstIndex(of: "{"), "`\(signature)` sin cuerpo.")
 
         var depth = 0
         var close: String.Index?
@@ -355,8 +521,12 @@ struct UITestSeamPersistenceIsolationTests {
             if close != nil { break }
             index = rest.index(after: index)
         }
-        let end = try #require(close, "Llaves desbalanceadas al acotar `applyUITestHooksEarly`.")
-        let body = String(rest[open...end])
+        let end = try #require(close, "Llaves desbalanceadas al acotar `\(signature)`.")
+        return String(rest[open...end])
+    }
+
+    private func hookBody() throws -> String {
+        let body = try body(ofFunc: "func applyUITestHooksEarly", in: code(at: "Yala/App/AppBootstrapper.swift"))
 
         // Un corte que no capturó nada devolvería «cero apariciones» y PARECERÍA una medición: es la
         // misma familia que «Executed 0 tests». Estas dos anclas son código que vive dentro del
@@ -430,6 +600,99 @@ struct UITestSeamPersistenceIsolationTests {
             registros == 1,
             "`register(defaults:)` aparece \(registros) veces y solo debe estar dentro de `liveVolatileApply` — es el único punto por el que pasa el mecanismo."
         )
+    }
+
+    /// La mitad estructural del arreglo del LAVADO, y es la que hace honesto al test de conteo.
+    ///
+    /// El contador vive en el `UserDefaults` inyectado, así que ve `defaults.set` y **no ve el push**
+    /// a `PreferenceSyncService` —singleton con `local` hardcodeado a `.standard` (`:78`), no
+    /// espiable sin refactorear sus ~20 construcciones—. Que contar escrituras cubra TAMBIÉN la mitad
+    /// de tráfico depende por completo de que las dos cosas vivan detrás del MISMO guard y dentro del
+    /// MISMO helper. Eso no es una propiedad que un test de comportamiento pueda observar: es
+    /// estructura, y va por escáner.
+    ///
+    /// El mutante que lo justifica: dejar el push FUERA del guard
+    /// (`guard !isLoadingFromDefaults else { if synced { … } ; return }`) deja los tests de conteo en
+    /// VERDE con la mitad de sync entera sin arreglar.
+    @Test func losTresPersistLlevanElGuardYSonElUnicoPushDeAqui() throws {
+        let source = try code(at: "Yala/App/Services/AppPreferences.swift")
+        let helpers = ["func persistString(", "func persistBool(", "func persistInt("]
+
+        for helper in helpers {
+            let cuerpo = try body(ofFunc: helper, in: source)
+            try #require(cuerpo.contains("defaults.set("), "El corte de `\(helper)` salió vacío o mal delimitado.")
+            #expect(
+                cuerpo.contains("guard !isLoadingFromDefaults else { return }"),
+                """
+                `\(helper)` perdió el guard de carga: `loadFromDefaults` vuelve a escribir por esa vía. \
+                Sobre un valor volátil es el lavado del seam de onboarding; sobre una key `synced: true`, \
+                un push a iKV/outbox en cada lanzamiento.
+                """
+            )
+        }
+
+        // Y que el push NO viva en ningún otro sitio de este fichero. Si alguien lo saca del helper
+        // —a un `didSet`, a un método nuevo— el contador deja de cubrirlo y nadie se entera.
+        let pushesTotales = source.components(separatedBy: "PreferenceSyncService.shared.set(").count - 1
+        let pushesEnHelpers = try helpers.reduce(0) { total, helper in
+            try total + (body(ofFunc: helper, in: source)
+                .components(separatedBy: "PreferenceSyncService.shared.set(").count - 1)
+        }
+        #expect(pushesEnHelpers == 3, "Se esperaba 1 push por helper y hay \(pushesEnHelpers) en total dentro de los tres.")
+        #expect(
+            pushesTotales == pushesEnHelpers,
+            """
+            `AppPreferences` empuja a `PreferenceSyncService` desde \(pushesTotales - pushesEnHelpers) sitio(s) \
+            fuera de `persist*`. Ese push no está detrás del guard de carga y el test que cuenta escrituras \
+            en el store inyectado no puede verlo.
+            """
+        )
+    }
+
+    /// El puente que el arreglo CORTÓ, pagado en su punto de intención. Hasta el 2026-08-05 estas dos
+    /// preferencias llegaban a iCloud de rebote —escribían `UserDefaults` en crudo y
+    /// `AppPreferences.loadFromDefaults` re-persistía lo que releía, empujándolas al canal—. Al dejar
+    /// de re-persistir, ese puente desaparece: sin este cableado, activar las alertas de presupuesto
+    /// desde el primer de notificaciones o el modo «solo gastos» desde Ajustes queda LOCAL para
+    /// siempre, sin un solo rojo y sin nada visible en la app.
+    ///
+    /// Es un escáner y no un test de comportamiento porque el fallo es una AUSENCIA: revertir el
+    /// cableado no rompe ninguna aserción observable desde un unit test —el valor sigue llegando a
+    /// `UserDefaults`, que es lo que leen los consumidores locales— y lo único que cambia es que
+    /// nunca sale del dispositivo. Eso solo lo probaría un e2e con dos devices.
+    @Test func losDosPuntosDeIntencionPublicanSuPreferencia() throws {
+        // `simbolo` es cómo se NOMBRA la key en el call-site, no su valor: el escáner lee código
+        // fuente, así que comparar contra el literal de `Keys` no serviría de nada si el call-site
+        // usa la constante (que es lo que debe usar).
+        let casos: [(fichero: String, simbolo: String, consecuencia: String)] = [
+            (
+                "Yala/App/Views/Notifications/NotificationPrimerSheet.swift",
+                "AppPreferences.Keys.budgetAlertsEnabled",
+                "activar las notificaciones desde el primer sheet deja de propagar las alertas de presupuesto a los otros devices"
+            ),
+            (
+                "Yala/App/Views/Settings/PersonalizationSettingsView.swift",
+                "AppPreferences.Keys.expensesOnlyMode",
+                "el toggle de «solo gastos» de Ajustes deja de propagar, mientras el de onboarding sigue haciéndolo ⇒ sincroniza a veces sí y a veces no, que es el peor síntoma posible"
+            ),
+        ]
+
+        for caso in casos {
+            let source = try code(at: caso.fichero)
+            let pushes = source.components(separatedBy: "PreferenceSyncService.shared.set(").count - 1
+            #expect(
+                pushes == 1,
+                """
+                \(caso.fichero) tiene \(pushes) llamadas a `PreferenceSyncService.shared.set(` y debe tener 1: \
+                sin ella \(caso.consecuencia). El mirror ya no publica por nadie — ver el docblock de \
+                `AppPreferences.loadFromDefaults`.
+                """
+            )
+            #expect(
+                source.contains(caso.simbolo),
+                "\(caso.fichero) ya no nombra `\(caso.simbolo)`: publica, pero quizá otra preferencia."
+            )
+        }
     }
 
     /// El centinela del seed no tiene una mitad efímera que lo proteja: lo único que impide que una
