@@ -49,10 +49,26 @@ tags: [modo-nube, decision, release, 2.1]
   > **Al construir D-A7, abrir [[MODO-NUBE-ONBOARDING-GRUPOS-POST-CLOUDKIT]] primero.** Anclado aquí a
   > petición del owner (2026-07-31) porque son cabos que solo se vuelven visibles cuando la nube es el
   > único camino, y la fecha en que eso pasa es ésta. **Uno de los tres bloquea a la población de la que
-  > depende esta línea**: el muro «Grupos necesita iCloud» (`GroupsICloudAvailabilityGateLogic`) es
-  > incondicional sobre `isAccountAvailable` y NO consulta el canal ⇒ con el canal encendido, un usuario
-  > born-cloud SIN iCloud sigue sin poder abrir Grupos. Los otros dos son limpieza de la Fase 3 (dos flags
-  > que quedan muertos al borrar el transporte) y el cierre del onboarding educativo de Grupos.
+  > depende esta línea** — pero NO es el que este párrafo decía, y la corrección importa porque señala al
+  > fichero equivocado:
+  >
+  > **CORREGIDO el 2026-08-06, medido en el árbol.** Este texto afirmaba que el muro
+  > `GroupsICloudAvailabilityGateLogic` era «incondicional sobre `isAccountAvailable` y NO consulta el canal».
+  > **Era falso ya cuando se escribió**: `7b5ff216` (2026-07-15, G5-C) había puesto el cortocircuito por flag
+  > en el call-site **dos semanas antes** ⇒ ningún born-cloud estaba bloqueado ahí. Lo que sí estaba roto era
+  > invisible y de otra naturaleza: esa condición vivía en un `else if` del `@ViewBuilder` de `ContentView`,
+  > donde **ningún test la alcanzaba** —borrarla dejaba los 5564 en verde—, y eso lo cerró `965a4d86`
+  > (validado por mutación el 06/08). ⇒ **el muro de Grupos no es un bloqueante de D-A7 y no lo era.**
+  >
+  > **El bloqueante REAL es su gemelo, en otro fichero:** `OnboardingView.swift:511` mira
+  > `isAccountAvailable` sin consultar el canal, y **corta la única ruta a `.groupsOnly` del onboarding**
+  > (`:512`) con el aviso «Activa iCloud para usar grupos / Los grupos se sincronizan por iCloud» — copy que
+  > con el canal al 100% **miente**. Ése sí bloquea hoy, en el primer contacto, y **no muere con la Fase 3**
+  > (`OnboardingView` no está entre los 14 ficheros que borra el commit 1). Es el **CHIP C4** de
+  > [[MODO-NUBE-CHIPS-FASE3]], primero de la cola.
+  >
+  > Los otros dos cabos siguen como estaban: limpieza de la Fase 3 (dos flags que quedan muertos al borrar el
+  > transporte) y el cierre del onboarding educativo de Grupos.
 - La regla de no-regresión sube de importancia: como la inmensa mayoría se queda en `.icloud`, **cualquier regresión en esa rama afecta a todos los usuarios reales** y el modo nube no compensa nada.
 
 ## Trabajo que esta decisión cancela
