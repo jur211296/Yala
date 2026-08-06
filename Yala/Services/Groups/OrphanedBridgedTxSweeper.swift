@@ -27,6 +27,20 @@
 //  dentro del nuevo como su primer escalón, así que el caso que SÍ cubría —device recién instalado cuyo
 //  import personal se asienta antes del pull— sigue cubierto.
 //
+//  ── El conjunto de CANDIDATAS: solo las zonas del canal backend (A2 · iii, 2026-08-06) ─────────────────
+//  El gate sigue siendo el de arriba y sigue siendo el mismo para los dos consumidores. Lo que se acotó es
+//  a QUIÉN se le pregunta: una transacción cuya zona no pertenece al canal backend ya no es candidata, y
+//  por tanto ni se repara ni cuenta para el canario. La razón es que su evidencia venía del brazo CloudKit
+//  del adaptador, y la Fase 3 lo deja sin fuente al borrar `SplitSyncManager`. Las alternativas eran
+//  peores: concederles frescura a ciegas es la dirección que DESTRUYE (un device recién instalado tomaría
+//  todo su corpus puenteado por huérfano), y negarla con constantes `false` haría que
+//  `bridgedTxOrphanSweepDeferred` se emitiera en todos los arranques con candidatas, quemando la única
+//  superficie de observación del subsistema. **Precio, dicho para que nadie lo redescubra:** las huérfanas
+//  de zonas legacy dejan de repararse y se pierde la señal de cuántas hay. El owner lo aceptó el
+//  2026-08-04 con el §1 del plan cancelado: no hay grupos CloudKit legacy útiles en ningún usuario.
+//  La rama CloudKit de `GroupChannelFreshnessGate` NO se toca — sigue siendo la decisión pura correcta y
+//  el editor (`NewTransactionView.resolveBridgedPointer`) la sigue consumiendo.
+//
 
 import Foundation
 import SwiftData
@@ -190,8 +204,10 @@ enum OrphanedBridgedTxSweeper {
         let verdicts = GroupChannelFreshness.verdictsByZone(context: context, signals: signals)
         // Motivos por los que se dejó una candidata sin tocar. Solo se cuentan las que el guard viejo
         // habría barrido, para que el canario signifique «el gate está frenando algo» y no «hoy no había
-        // huérfanas»: sin esa distinción, un gate clavado —un engine que no cierra ciclo, un canal apagado
-        // durante semanas— sería indistinguible del caso sano y silencioso.
+        // huérfanas»: sin esa distinción, un gate clavado —un canal apagado durante semanas— sería
+        // indistinguible del caso sano y silencioso. Y desde A2·(iii) solo se cuentan las de zonas del
+        // canal BACKEND: las legacy no son candidatas, así que contarlas convertiría el canario en un
+        // censo permanente y le quitaría exactamente el significado que existe para tener.
         var deferredByVerdict: [GroupChannelFreshnessGate.Verdict: Int] = [:]
 
         func isOrphan(_ pointer: String?, in live: Set<String>) -> Bool {
@@ -199,16 +215,30 @@ enum OrphanedBridgedTxSweeper {
             return !live.contains(pointer)
         }
 
-        /// Sin `splitGroupZoneID` no hay forma de saber de qué grupo colgaba, así que no hay evidencia y
-        /// no se toca. El bridge escribe siempre los dos punteros juntos, de modo que esto solo cubre
-        /// filas de una versión anterior o a medio escribir — y en la duda no se destruye nada.
-        func zoneEvidenceIsFresh(_ zone: String?, pointerIsOrphan: Bool) -> Bool {
-            let verdict: GroupChannelFreshnessGate.Verdict = {
-                guard let zone, !zone.isEmpty else { return .noSettledGroup }
-                return verdicts[zone] ?? .noSettledGroup
-            }()
-            if pointerIsOrphan, !verdict.isFresh { deferredByVerdict[verdict, default: 0] += 1 }
-            return verdict.isFresh
+        /// ¿Entra esta zona en el conjunto de candidatas, y con evidencia suficiente para actuar?
+        ///
+        /// Sin `splitGroupZoneID`, o sin `SplitGroup` local de esa zona, no hay forma de saber de qué grupo
+        /// colgaba ni a qué canal preguntarle: no hay evidencia y no se toca, pero SÍ cuenta para el
+        /// canario — es el caso «todavía no ha bajado», que es justo lo que hay que poder ver. El bridge
+        /// escribe siempre los dos punteros juntos, de modo que la rama de zona vacía solo cubre filas de
+        /// una versión anterior o a medio escribir, y en la duda no se destruye nada.
+        ///
+        /// **A2 · dirección (iii): una zona FUERA del canal backend no es candidata.** Su evidencia sería
+        /// la del brazo CloudKit, que la Fase 3 deja sin fuente al borrar `SplitSyncManager`, y las dos
+        /// alternativas son peores: concederla a ciegas es la dirección que destruye datos, y negarla con
+        /// constantes `false` emitiría `bridgedTxOrphanSweepDeferred` en TODOS los arranques con
+        /// candidatas, con lo que el canario dejaría de significar «el gate está frenando algo» y el
+        /// subsistema se quedaría sin su única superficie de observación. Sacándolas del conjunto, el
+        /// canario conserva su significado para las zonas del canal vivo. **El precio, declarado:** las
+        /// huérfanas de zonas legacy dejan de repararse, y en silencio.
+        func zoneIsSweepable(_ zone: String?, pointerIsOrphan: Bool) -> Bool {
+            guard let zone, !zone.isEmpty, let status = verdicts[zone] else {
+                if pointerIsOrphan { deferredByVerdict[.noSettledGroup, default: 0] += 1 }
+                return false
+            }
+            guard status.belongsToBackendChannel else { return false }
+            if pointerIsOrphan, !status.verdict.isFresh { deferredByVerdict[status.verdict, default: 0] += 1 }
+            return status.verdict.isFresh
         }
 
         // ══ FASE 1 · CLASIFICAR, SIN MUTAR NADA ══
@@ -231,7 +261,7 @@ enum OrphanedBridgedTxSweeper {
                 expensePointerIsOrphan: expenseIsOrphan,
                 settlementPointerIsOrphan: settlementIsOrphan,
                 accountIsSystem: tx.account?.isSystemAccount == true,
-                zoneEvidenceIsFresh: zoneEvidenceIsFresh(
+                zoneEvidenceIsFresh: zoneIsSweepable(
                     tx.splitGroupZoneID, pointerIsOrphan: expenseIsOrphan || settlementIsOrphan)
             )
             guard let action = decide(shape) else { continue }
@@ -242,7 +272,7 @@ enum OrphanedBridgedTxSweeper {
         let orphanDrafts = bridgedDrafts.filter { draft in
             let pointerIsOrphan = isOrphan(draft.splitExpenseID, in: liveExpenseIDs)
                 || isOrphan(draft.splitSettlementID, in: liveSettlementIDs)
-            return zoneEvidenceIsFresh(draft.splitGroupZoneID, pointerIsOrphan: pointerIsOrphan)
+            return zoneIsSweepable(draft.splitGroupZoneID, pointerIsOrphan: pointerIsOrphan)
                 && pointerIsOrphan
         }
         // Con los punteros TODAVÍA intactos. Mismo plan que el freeze de soft-delete: los punteros de

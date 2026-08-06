@@ -46,6 +46,22 @@ enum GroupChannelFreshness {
 
     // MARK: - Veredicto
 
+    /// Veredicto de una zona **y a qué canal se le pidió la evidencia**.
+    ///
+    /// Las dos cosas viajan juntas porque el barrido necesita las dos y son preguntas distintas: el
+    /// veredicto decide si «no está» significa «no existe», y `belongsToBackendChannel` decide si la zona
+    /// entra siquiera en su conjunto de CANDIDATAS. Van en el mismo valor para no repetir el fetch de
+    /// grupos ni ampliar el número de call-sites de esta primitiva, que va con conteo esperado en
+    /// `freshnessGate_hasExactlyItsThreeProductionCallSites`.
+    struct ZoneStatus: Equatable {
+        let verdict: GroupChannelFreshnessGate.Verdict
+        /// ALGUNA fila de la zona pertenece al canal backend (ANY-row) — el mismo predicado con el que el
+        /// gate eligió a qué canal preguntar.
+        let belongsToBackendChannel: Bool
+
+        var isFresh: Bool { verdict.isFresh }
+    }
+
     /// Veredicto de TODAS las zonas con `SplitGroup` local, con un solo fetch de grupos y uno del cursor.
     /// Es la forma que usa el barrido, que decide sobre muchas zonas a la vez.
     ///
@@ -54,7 +70,7 @@ enum GroupChannelFreshness {
     static func verdictsByZone(
         context: ModelContext,
         signals: ChannelSignals? = nil
-    ) -> [String: GroupChannelFreshnessGate.Verdict] {
+    ) -> [String: ZoneStatus] {
         let signals = signals ?? .live()
         let rows: [SplitGroup]
         do {
@@ -72,9 +88,11 @@ enum GroupChannelFreshness {
             byZone[row.cloudKitZoneID, default: []].append(row)
         }
         return byZone.mapValues { zoneRows in
-            GroupChannelFreshnessGate.evaluate(
-                evidence(zoneID: zoneRows[0].cloudKitZoneID, rows: zoneRows,
-                         pulledZones: pulledZones, signals: signals))
+            let e = evidence(zoneID: zoneRows[0].cloudKitZoneID, rows: zoneRows,
+                             pulledZones: pulledZones, signals: signals)
+            return ZoneStatus(
+                verdict: GroupChannelFreshnessGate.evaluate(e),
+                belongsToBackendChannel: e.belongsToBackendChannel)
         }
     }
 

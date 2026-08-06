@@ -921,48 +921,76 @@ struct OrphanedBridgedTxSweeperTests {
         #expect(try UnbridgeHarness.txCount(context) == 1)
     }
 
-    /// Un grupo de CloudKit (`isBackendGroup == false`) no tiene entrada en el cursor del pull JAMÁS, así
-    /// que su evidencia es la del otro canal: **ambos** engines con ≥1 ciclo de fetch entero. Con el canal
-    /// CloudKit quieto no se toca nada aunque el backend haya completado su pull.
-    @Test func sweep_cloudKitZone_needsBothEnginesFetchCycle() throws {
+    /// **A2 · (iii): una zona que no pertenece al canal backend NO es candidata, con el canal CloudKit en
+    /// CUALQUIER estado.** Antes su evidencia era la del otro brazo del adaptador —ambos engines con ≥1
+    /// ciclo de fetch entero, más el testigo negativo por zona— y con los dos engines cerrados esta misma
+    /// huérfana SÍ se reparaba. La Fase 3 borra `SplitSyncManager`, que es quien alimenta esas dos señales,
+    /// así que el barredor deja de preguntarle: la zona legacy sale del conjunto y sus huérfanas quedan sin
+    /// reparar, **en silencio**. Ése es el precio declarado de la dirección que eligió el owner.
+    ///
+    /// Los tres estados del canal CloudKit se ejercitan a propósito, incluido el que antes CONCEDÍA: sin la
+    /// tercera vuelta este test pasaría igual con el fix revertido.
+    ///
+    /// Mutación: quitar el `guard status.belongsToBackendChannel` de `zoneIsSweepable` deja este test en
+    /// rojo (la tercera vuelta repara).
+    @Test func sweep_cloudKitZone_isNotACandidate() throws {
         let dir = UnbridgeHarness.freshDir(); defer { UnbridgeHarness.cleanup(dir) }
         let context = try UnbridgeHarness.makeContext(dir)
         let group = UnbridgeHarness.makeGroup(zoneID: "SplitGroup-CK", context: context)
         group.isBackendGroup = false
-        UnbridgeHarness.makeBridgedTx(
-            expenseID: UUID(), zone: "SplitGroup-CK", accountIsSystem: true, context: context)
+        group.movedToBackendAt = nil  // legacy pura: ni nacida ni migrada al backend
+        let virtual = UnbridgeHarness.makeBridgedTx(
+            expenseID: UUID(), zone: "SplitGroup-CK", amount: 10, accountIsSystem: true, context: context)
+        let real = UnbridgeHarness.makeBridgedTx(
+            expenseID: UUID(), zone: "SplitGroup-CK", amount: 40, accountIsSystem: false, context: context)
         try context.save()
 
-        // El pull backend completó, pero esta zona no es suya: irrelevante.
+        // 1 · engines quietos — no se tocaba antes y no se toca ahora.
         #expect(OrphanedBridgedTxSweeper.sweep(
             context: context,
             signals: UnbridgeHarness.signals(cloudKitAllEngines: false)).isEmpty)
-        #expect(try UnbridgeHarness.txCount(context) == 1)
-
-        // Con los dos engines cerrados, la misma huérfana SÍ se repara.
-        let outcome = OrphanedBridgedTxSweeper.sweep(
-            context: context,
-            signals: UnbridgeHarness.signals(backendPullCompleted: false, cloudKitAllEngines: true))
-        #expect(outcome.deleted == 1)
-        #expect(try UnbridgeHarness.txCount(context) == 0)
-    }
-
-    /// El testigo NEGATIVO por zona: el último `didFetchRecordZoneChanges` de esta zona llegó con error, así
-    /// que su contenido no bajó — aunque los dos engines hayan cerrado su ciclo.
-    @Test func sweep_cloudKitZone_withFailedZoneFetch_touchesNothing() throws {
-        let dir = UnbridgeHarness.freshDir(); defer { UnbridgeHarness.cleanup(dir) }
-        let context = try UnbridgeHarness.makeContext(dir)
-        let group = UnbridgeHarness.makeGroup(zoneID: "SplitGroup-CK", context: context)
-        group.isBackendGroup = false
-        UnbridgeHarness.makeBridgedTx(
-            expenseID: UUID(), zone: "SplitGroup-CK", accountIsSystem: true, context: context)
-        try context.save()
-
-        let outcome = OrphanedBridgedTxSweeper.sweep(
+        // 2 · el testigo NEGATIVO por zona (fetch de esta zona con error).
+        #expect(OrphanedBridgedTxSweeper.sweep(
             context: context,
             signals: UnbridgeHarness.signals(
-                cloudKitAllEngines: true, failedZones: ["SplitGroup-CK"]))
-        #expect(outcome.isEmpty)
+                cloudKitAllEngines: true, failedZones: ["SplitGroup-CK"])).isEmpty)
+        // 3 · **la que cambia**: con los dos engines cerrados y sin fallo de zona, antes reparaba.
+        #expect(OrphanedBridgedTxSweeper.sweep(
+            context: context,
+            signals: UnbridgeHarness.signals(
+                backendPullCompleted: false, cloudKitAllEngines: true)).isEmpty,
+                "una zona fuera del canal backend volvió a ser candidata del barredor")
+
+        #expect(try UnbridgeHarness.txCount(context) == 2, "ni se borró la virtual")
+        #expect(virtual.isDeleted == false)
+        #expect(real.splitExpenseID != nil, "ni se liberó la de cuenta real")
+        #expect(real.splitGroupZoneID == "SplitGroup-CK")
+    }
+
+    /// La exclusión es POR ZONA, no un apagado del barrido: en el mismo store, la huérfana de la zona
+    /// legacy se queda intacta y la de la zona backend SÍ se repara. Es el criterio de hecho de A2·(iii).
+    @Test func sweep_sparesLegacyZone_whileRepairingBackendOne() throws {
+        let dir = UnbridgeHarness.freshDir(); defer { UnbridgeHarness.cleanup(dir) }
+        let context = try UnbridgeHarness.makeContext(dir)
+        let legacy = UnbridgeHarness.makeGroup(zoneID: "SplitGroup-CK", context: context)
+        legacy.isBackendGroup = false
+        legacy.movedToBackendAt = nil
+        UnbridgeHarness.makeGroup(zoneID: "SplitGroup-BE", context: context)
+        // El cursor lista las DOS: lo que decide no es el alcance del pull, es el canal de la zona.
+        try UnbridgeHarness.markZonesPulled(["SplitGroup-CK", "SplitGroup-BE"], context: context)
+
+        let legacyTx = UnbridgeHarness.makeBridgedTx(
+            expenseID: UUID(), zone: "SplitGroup-CK", accountIsSystem: true, context: context)
+        UnbridgeHarness.makeBridgedTx(
+            expenseID: UUID(), zone: "SplitGroup-BE", accountIsSystem: true, context: context)
+        try context.save()
+
+        // Los dos canales dan su evidencia: si el canal fuera lo único que decide, caerían las dos.
+        let outcome = OrphanedBridgedTxSweeper.sweep(
+            context: context, signals: UnbridgeHarness.signals(cloudKitAllEngines: true))
+
+        #expect(outcome.deleted == 1, "la huérfana de la zona backend no se reparó")
+        #expect(legacyTx.isDeleted == false, "la huérfana de la zona legacy entró en el conjunto")
         #expect(try UnbridgeHarness.txCount(context) == 1)
     }
 
@@ -1147,6 +1175,44 @@ struct RemoteUnbridgeWiringTests {
                 "La espera del canal se movió por DEBAJO del barrido: no gatea nada.")
         #expect(body.contains("\"groups channel not fresh\""),
                 "El diferido por canal no fresco dejó de dejar rastro en el breadcrumb.")
+    }
+
+    /// **El canario del diferido se emite ANTES del early-return del outcome vacío.** Es la única forma de
+    /// distinguir «el gate está frenando candidatas» de «no había huérfanas»: en el dashboard los dos se
+    /// leen igual (`bridgedTxOrphansRepaired == 0`). Mover la emisión por debajo del `guard` la apagaría
+    /// justo en el caso que existe para observar —el barrido que no hizo NADA— y no lo caza ningún test de
+    /// comportamiento, porque el `Outcome` no lleva el recuento de diferidas.
+    ///
+    /// Y el ORDEN dentro del helper: el guard del canal va ANTES del contador, que es lo que impide que las
+    /// zonas legacy —ya fuera del conjunto de candidatas desde A2·(iii)— sigan inflando el canario y lo
+    /// conviertan en un censo permanente.
+    @Test func sweeperCanary_isEmittedBeforeTheEmptyOutcomeReturn() throws {
+        let src = try Self.source("Yala/Services/Groups/OrphanedBridgedTxSweeper.swift")
+        // Sin líneas de comentario: la cabecera del fichero nombra el canario y el guard al explicarlos.
+        let code = src.split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+
+        let canary = try #require(
+            code.range(of: "MetricsService.canary(.bridgedTxOrphanSweepDeferred"),
+            "El canario del diferido desapareció: el subsistema se queda sin superficie de observación.")
+        let earlyReturn = try #require(
+            code.range(of: "guard !outcome.isEmpty else { return outcome }"),
+            "El early-return del outcome vacío cambió de forma; este scan dejó de medir nada.")
+        #expect(canary.lowerBound < earlyReturn.lowerBound,
+                """
+                El canario se movió por DEBAJO del early-return: un gate clavado durante semanas vuelve a \
+                leerse igual que «no había huérfanas».
+                """)
+
+        let channelGuard = try #require(
+            code.range(of: "guard status.belongsToBackendChannel else { return false }"),
+            "El guard del canal desapareció: las zonas legacy volvieron al conjunto de candidatas.")
+        let counter = try #require(
+            code.range(of: "deferredByVerdict[status.verdict"),
+            "El contador de diferidas cambió de forma; este scan dejó de medir nada.")
+        #expect(channelGuard.lowerBound < counter.lowerBound,
+                "El guard del canal se movió por debajo del contador: las zonas legacy inflan el canario.")
     }
 
     /// El gate vive en UNA primitiva y la consumen los DOS sitios que hacen la misma pregunta. El conteo
