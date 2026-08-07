@@ -368,6 +368,11 @@ final class AppBootstrapper {
         // que también muere con el transporte; el dominio de Grupos del canal vivo se aísla por el `sub` de
         // la sesión Yala, no por el Apple ID del OS. **Declarado como pérdida en el commit 1 de la Fase 3:**
         // un device que se actualice con el intent YA ARMADO en disco no ejecuta esa purga.
+        //
+        // El commit 2 borró además el TIPO (`GroupsIdentityPurgeIntent.swift`): sin armador, sin drenador y
+        // sin un solo call-site, era la familia de `AppAttestClient.ensureRegistered()` — un tipo vivo
+        // prometiendo una garantía que nadie ejerce. La key `yala.groups.pendingIdentityPurge` sobrevive
+        // en el `UserDefaults` de quien la tuviera armada; es inerte, ya no la lee nadie.
 
         // 16.4.5. Safety net: hidden groups + removed-self cleanup que el observer pudo perder.
         // Corre ANTES de retryPendingBridges para que el bridge guard `isHiddenForAll` aplique.

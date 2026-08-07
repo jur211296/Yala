@@ -169,7 +169,7 @@ son la razón de que exista.
 | scripts de migración de D1 | `03ee208d` | irrelevante (solo `package.json`) |
 | guard del umbral de forzado de versión | `69092b24` | irrelevante (solo un test) |
 
-### Fase 3 — commit 1 ATERRIZADO el 2026-08-06 (commits 0 y 1 hechos; el 2 sigue sin abrir)
+### Fase 3 — commits 0, 1 y 2 ATERRIZADOS el 2026-08-06 (la fase está completa; queda la Fase 4)
 
 > ✅ **La puerta que bloqueaba la fase está cumplida.** El 2026-07-31 este bloque decía que el canal backend
 > no subía filas de datos y que `POST /groups/push` no había ocurrido ni una vez. **Eso dejó de ser cierto
@@ -219,8 +219,19 @@ son la razón de que exista.
 
 | Paso | Commit | ¿Revert de git lo deshace? |
 |---|---|---|
+| **commit 2 · cerrar el rastro que dejó el borrado** (B2, 2026-08-06) | el hijo de `2f96ad84` en `2.0.5` — `git log --oneline 2f96ad84..` y es el primero | **Sí, limpio y sin riesgo.** Ver abajo |
 | **commit 1 · borrar el transporte CloudKit de Grupos** (B1, 2026-08-06) | el hijo de `3c0f498c` en `2.0.5` — `git log --oneline 3c0f498c..` y es el primero | **Sí en git, NO en efecto.** Ver abajo |
 | commit 0 · lo que NO muere sale de los ficheros condenados | `bc486c92` | **Sí**, limpio — es un movimiento de código, sin cambio de comportamiento |
+
+> **El commit 2 es el único de la Fase 3 que se puede revertir sin pensarlo**, y conviene saber por qué para
+> no gastarle tiempo en un incidente: es **sustractivo y sin comportamiento**. Toca `qa/coverage-index.json`
+> (6 áreas con rutas y citas que apuntaban al código borrado, una de ellas retirada), dos comentarios que
+> habían quedado MINTIENDO, un `import CloudKit` muerto, el marcado histórico de
+> `.claude/rules/swiftdata-cloudkit.md` y este runbook. **La única línea ejecutable que se lleva es el
+> borrado de `Yala/Services/Groups/GroupsIdentityPurgeIntent.swift`**, un tipo con cero call-sites desde
+> que el commit 1 se llevó su armador y su drenador. Revertirlo devuelve el fichero y **no** re-arma la
+> purga: sigue sin haber quien la dispare (la pérdida ya declarada en el punto 2 de abajo no cambia en
+> ninguna dirección). ⇒ si hay que echar atrás la Fase 3, **este commit no es el que hay que mirar.**
 
 > **Por qué el commit 1 no lleva su propio hash.** §5 exige anotarlo *en el mismo commit que lo crea*, y un
 > commit no puede citar su hash dentro de sí mismo (escribirlo cambia el árbol y con él el hash). El ancla
@@ -239,10 +250,11 @@ son la razón de que exista.
 > 4. Un usuario que en la ventana borrara a mano una transacción puenteada huérfana —cosa que este commit
 >    le PERMITE hacer a propósito, ver la decisión del gate de frescura en su mensaje— no la recupera.
 
-El commit 2 va AQUÍ, arriba de todo, y hay que **anotarlo en esta tabla en el mismo commit que lo crea**.
-Sin eso este runbook queda desactualizado el día que más falta hace. Ese fallo ya ocurrió dos veces: el
-commit 0 (`bc486c92`) y el paso 1 del encendido (`3c49278c`) aterrizaron sin anotarse y se añadieron
-después, al validar el gemelo del bridge.
+~~El commit 2 va AQUÍ, arriba de todo, y hay que **anotarlo en esta tabla en el mismo commit que lo
+crea**.~~ **HECHO el 2026-08-06**, y en el mismo commit, con el ancla por PADRE que estrenó el commit 1 (la
+forma está ahora en el §5). El fallo que este párrafo prevenía ocurrió dos veces antes —el commit 0
+(`bc486c92`) y el paso 1 del encendido (`3c49278c`) aterrizaron sin anotarse— y no ha vuelto a ocurrir en
+los dos commits en que la ventana era de uno solo.
 
 > **NO revertir** los commits ajenos intercalados: `66960f7d` (cover de la bandeja), `bd9435b8` (salir
 > del último grupo), `5c84df88` (deeplink del smoke), `b1a5033f`, ni ningún `docs(...)`. No son de las
@@ -340,7 +352,19 @@ final útil según el plan.
 
 ## 5 · Mantenimiento
 
-- Los commits de la **Fase 3** se anotan en el §1 **en el mismo commit que los crea**.
+- Los commits de la **Fase 3** se anotan en el §1 **en el mismo commit que los crea** — y eso **se anota
+  por PADRE, nunca por hash**. Este punto pedía un imposible hasta el 2026-08-06: **un commit no puede
+  citar su propio hash**, porque escribirlo cambia el árbol y con él el hash. El commit 1 lo resolvió sobre
+  la marcha y el 2 lo repitió; la forma, que es unívoca y se resuelve en un comando, es:
+
+  ```
+  el hijo de <hash del padre> en 2.0.5 — `git log --oneline <hash del padre>..` y es el primero
+  ```
+
+  El padre SÍ se conoce al escribir (`git rev-parse HEAD` antes de commitear). ⇒ **no dejes la fila para
+  «después de commitear»**: ése es exactamente el atajo que hizo que el commit 0 y el paso 1 del encendido
+  aterrizaran sin anotar. Al rebasar o hacer squash, el ancla hay que rehacerla; un hash tampoco habría
+  sobrevivido.
 - Si aparece una acción de infraestructura nueva (deploy, SQL a mano, migración), va al **§2** en el
   turno en que se ejecuta. Ese es el apartado que se queda obsoleto en silencio.
 - ~~Cuando se encienda `groupsBackendCompiledDefault` en 2.1, **borrar el §0**~~ — **HECHO el 2026-07-30**

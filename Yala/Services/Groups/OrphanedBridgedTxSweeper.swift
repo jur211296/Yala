@@ -38,8 +38,28 @@
 //  superficie de observación del subsistema. **Precio, dicho para que nadie lo redescubra:** las huérfanas
 //  de zonas legacy dejan de repararse y se pierde la señal de cuántas hay. El owner lo aceptó el
 //  2026-08-04 con el §1 del plan cancelado: no hay grupos CloudKit legacy útiles en ningún usuario.
-//  La rama CloudKit de `GroupChannelFreshnessGate` NO se toca — sigue siendo la decisión pura correcta y
-//  el editor (`NewTransactionView.resolveBridgedPointer`) la sigue consumiendo.
+//
+//  ── Lo que cambió DEBAJO de este fichero el 2026-08-06 (Fase 3 · commit 1), y por qué el guard de abajo
+//     dejó de ser una optimización ────────────────────────────────────────────────────────────────────────
+//  Hasta ese commit aquí ponía que la rama CloudKit de `GroupChannelFreshnessGate` no se tocaba y que el
+//  editor la seguía consumiendo. **Las dos mitades son falsas desde entonces:** el commit se llevó esa rama
+//  con el transporte, y el veredicto de la zona sin canal se INVIRTIÓ — hoy el gate abre con
+//  `guard e.belongsToBackendChannel else { return .fresh }`
+//  (`Yala/App/Logic/GroupChannelFreshnessGate.swift:129`), o sea que **CONCEDE**. Es la decisión correcta:
+//  una zona a la que ya no sirve ningún canal no puede recibir nada nunca más, así que «no está» pasa a
+//  significar «no existe», y negarlo dejaría al usuario una transacción fantasma que no puede ni editar ni
+//  borrar — el bug de `qa_groups-tx-fantasma-al-borrar-gasto-de-grupo` por la puerta de atrás.
+//
+//  ⇒ **El `guard status.belongsToBackendChannel` de `zoneIsSweepable` (`:239`) es HOY lo ÚNICO que impide
+//  que este barrido destruya las transacciones puenteadas de las zonas sin canal.** Antes era redundante
+//  —el gate ya las negaba— y ahora carga todo el peso: con el veredicto concediendo, quitarlo mete a TODA
+//  huérfana legacy en el conjunto de candidatas y la saca borrada o liberada. El otro consumidor del gate,
+//  el editor (`NewTransactionView.resolveBridgedPointer`), no tiene guard equivalente **y no lo necesita**:
+//  no destruye por su cuenta, solo le devuelve al usuario Borrar y Duplicar.
+//
+//  Medido por mutación en este árbol, no heredado: quitar ese `guard` da **exit 65** en
+//  `sweep_cloudKitZone_isNotACandidate` y `sweep_sparesLegacyZone_whileRepairingBackendOne`
+//  (`YalaTests/GroupRemoteDeletionUnbridgeTests.swift`). Si alguien lo toca, esos dos son los que avisan.
 //
 
 import Foundation

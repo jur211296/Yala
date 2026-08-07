@@ -589,10 +589,13 @@ struct GroupsPendingBridgeWiringTests {
         try String(contentsOf: repoRoot.appendingPathComponent(path), encoding: .utf8)
     }
 
-    /// Gemelo del anterior para el canal BACKEND, y por la misma razón: el sello es inalcanzable bajo el
-    /// runner, así que sin este scan los dos gates del canal que el paso 2 del encendido ENCIENDE no los
-    /// pinnea nada — y el scan de arriba lee un fichero que la Fase 3 borra entero, así que tampoco heredaría
-    /// su cobertura.
+    /// El sello es inalcanzable bajo el runner, así que sin este scan los dos gates del canal que el paso 2
+    /// del encendido ENCIENDE no los pinnea nada.
+    ///
+    /// **Era el «gemelo» de un scan que ya no está** (2026-08-06): el original leía `SplitSyncManager.swift`
+    /// para pinnear los mismos dos gates en el canal CloudKit, y se fue con el fichero en el commit 1 de la
+    /// Fase 3. Éste no heredaba su cobertura entonces ni la hereda ahora — cubre el canal vivo, que es el
+    /// único que queda.
     @Test func backendChannel_domainGates_areInPlaceAndOrdered() throws {
         let src = try Self.source("Yala/Services/CloudSync/Groups/GroupsSyncClient.swift")
 

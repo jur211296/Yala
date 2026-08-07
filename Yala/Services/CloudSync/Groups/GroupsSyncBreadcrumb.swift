@@ -212,6 +212,14 @@ enum GroupsSyncBreadcrumb {
     }
 
     // MARK: - Cambio de identidad de iCloud (C-3)
+    //
+    // ⚠️ **HISTÓRICOS desde la Fase 3 (2026-08-06): los CUATRO están SIN EMISOR.** Sus emisores vivían en
+    // `SplitSyncManager`, que borró el commit 1, y el `GroupsIdentityPurgeIntent` que citan lo borró el
+    // commit 2 por quedarse sin armador ni drenador. Se conservan porque describen un subsistema real y su
+    // porqué sigue valiendo si alguien vuelve a necesitarlo — **pero NO son superficie de observación de
+    // nada**: un dashboard que los espere seguirá en cero para siempre, y eso no significa «sano».
+    // El canal vivo se aísla por el `sub` de la sesión Yala, no por el Apple ID del OS, así que un cambio
+    // de Apple ID dejó de ser un evento para él.
 
     /// [C-3] Un cambio de identidad de iCloud (sign-out o switch de Apple ID) CONSERVÓ zonas del canal
     /// backend porque había SESIÓN de nube viva (D4). Counts POR ZONA (un duplicado de fila no infla el
