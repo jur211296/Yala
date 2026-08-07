@@ -10,7 +10,6 @@
 //  member ni solicitud, y el owner nunca se enteraba).
 //
 
-import CloudKit
 import SwiftData
 import SwiftUI
 
@@ -377,13 +376,6 @@ struct GroupInviteOnboardingView: View {
         sync.set(string: currency.rawValue, forKey: "defaultCurrencyCode")
         sync.set(string: DetailPeriod.thisMonth.rawValue, forKey: "defaultPeriod")
         sessionState.selectedPeriod = .thisMonth
-
-        // 3.5. Si la moneda salió de la REGIÓN (el grupo no había llegado por la
-        // ventana export-only), registrarla en el intent: al reconciliar, si la
-        // pref no cambió a mano, se re-aplica la moneda real del grupo.
-        if groupCurrency == nil, let zoneName = inviteMetadata?.shareMetadata.share.recordID.zoneID.zoneName {
-            PendingJoinStore.updateRegionFallbackCurrency(currency.rawValue, zoneName: zoneName)
-        }
 
         // 4-6. Seeds + save del store personal. Si el invite se acepta DURANTE el import del restore,
         // este `save()` dispararía el `_assertionFailure`. Gatear por quiescencia: las prefs de arriba
