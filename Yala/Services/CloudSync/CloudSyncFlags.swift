@@ -345,8 +345,10 @@ nonisolated enum CloudSyncFlags {
         accountEntitlementEnabledTestOverride = nil
     }
 
-    /// SUB-flag de la purga de SwiftData History tras un ciclo completo del runtime (sigue DOBLE-DARK:
-    /// exige además `syncRuntimeEnabled`, hoy `false` → la purga NO corre en producción todavía).
+    /// SUB-flag de la purga de SwiftData History tras un ciclo completo del runtime. Exige además
+    /// `syncRuntimeEnabled` — hoy `true` (encendido I14/P1), así que con ambos en `true` la purga SÍ
+    /// corre en producción para quien esté en `.cloud` (donde corre el runtime; en `.icloud` el gate
+    /// de dominio la deja inalcanzable).
     /// `true` desde el veredicto del spike device S2 (owner, 2026-07-08, iPhone real con datos +
     /// grupo activo): una purga de 6284 transacciones de History inmediatamente después de un import
     /// inicial completo NO invalidó el token del mirror personal de NSPersistentCloudKitContainer

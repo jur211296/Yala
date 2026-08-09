@@ -15,12 +15,14 @@
 //  `revoke` de `migrate_group`) y abre el fetch de `GET /config`, que es donde vive el aviso de
 //  versión obligatoria (`ForceUpdateDecisionLogic`; el gateway sirve `MIN_SUPPORTED_BUILD = "0"`).
 //
-//  Lo que sigue apagado, y por qué un usuario de 2.x no nota nada: las superficies de ENTRADA (fila
-//  "Dónde viven tus datos", cards de nube del Welcome, entrada secundaria M1) van detrás de
-//  `CloudRemoteFlags`, cuyo `absentDefault` en producción es `false` (fail-closed) y cuyos percents
-//  el gateway sirve en `0`; el modo persistido es `.icloud`, así que el gate de dominio corta el
-//  runtime antes de red o mutación; y el canal de Grupos conserva `groupsBackendCompiledDefault ==
-//  false`. El encendido de Grupos es el PASO 2, en otro build.
+//  Estado del encendido (D-R1 COMPLETO, 30–31-jul-2026): el paso 2 flipeó
+//  `groupsBackendCompiledDefault = true` y el paso 3 subió `GROUPS_BACKEND_ROLLOUT_PERCENT` a 100 —
+//  el canal de Grupos corre contra el backend en producción (e2e device-verified 2026-08-02).
+//  `CLOUD_MODE_ROLLOUT_PERCENT = 100` es permanente (migración opt-in silenciosa desde Ajustes) y
+//  `CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT = 0` mantiene apagada la card born-cloud del onboarding.
+//  Por qué un usuario de 2.x no nota nada en su store personal: el modo persistido es `.icloud`,
+//  así que el gate de dominio corta el runtime antes de red o mutación; `CloudRemoteFlags` sigue
+//  fail-closed (`absentDefault == false` en producción) para todo snapshot ausente.
 //
 //  Por qué el JWT legacy `anon` y no la publishable moderna (el proyecto tiene las dos): SIMETRÍA
 //  con staging. `CloudAuthService` manda la clave en `Authorization: Bearer` y en `apikey`

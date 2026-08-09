@@ -2,12 +2,14 @@
 //  CloudSyncEngine.swift
 //  Yala
 //
-//  Motor de CAPTURA del Modo Nube (incremento I3). Lee el SwiftData History del ModelContainer
+//  Motor de CAPTURA del Modo Nube (nació en I3). Lee el SwiftData History del ModelContainer
 //  (write→drain) y traduce cada cambio de las 6 entidades sincronizables en una fila de `SyncOutbox`
-//  (upsert / tombstone) lista para reenviarse al backend (el sender llega en I8). DARK: nada de
-//  producción lo instancia todavía — el wiring del ciclo de vida llega en I9/I12.
+//  (upsert / tombstone) que el sender (I8) reenvía al backend. VIVO en producción desde el encendido
+//  (`syncRuntimeEnabled == true`): lo instancia `CloudSyncRuntime.startShared` (:275), y para quien
+//  siga en `.icloud` es el gate de dominio del runtime quien lo deja inerte, no este fichero.
+//  [El «DARK: nada de producción lo instancia» que vivió aquí fue cierto hasta I9/I14.]
 //
-//  Una instancia por proceso (NO un singleton global; el owner del ciclo de vida llega en I9/I12).
+//  Una instancia por proceso (NO un singleton global; el owner del ciclo de vida es `CloudSyncRuntime`).
 //  Patrón "one in-flight, one queued" (§a.4): `drainOnce` re-entrante coalescea a lo sumo una vuelta
 //  pendiente. Todo `@MainActor` (manipula `ModelContext` / `@Model`, regla inviolable del repo).
 //
