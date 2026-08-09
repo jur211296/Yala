@@ -19,6 +19,9 @@ enum WelcomeFlowStep {
     /// 2º nivel de "Ya tengo una cuenta" (H4): Restaurar iCloud | Sign in with Apple.
     /// Solo alcanzable con >1 opción visible (bypass en `handleExistingBranch`).
     case existingChooser
+    /// 2º nivel de "Soy nuevo" (A4 de D-A7, §k.2): privacidad total (iCloud) | cuenta en la nube.
+    /// Solo alcanzable con >1 opción visible (bypass en `handleNewBranch`).
+    case newChooser
 }
 
 struct WelcomeFlowContainer: View {
@@ -30,9 +33,21 @@ struct WelcomeFlowContainer: View {
     var onLoadMyData: () -> Void
     /// Sub-elección de "Ya tengo una cuenta" (también el resultado del bypass).
     var onSelectExistingOption: (WelcomeAccountChoiceLogic.ExistingOption) -> Void
+    /// "Soy nuevo" con la opción PRIVADA elegida (también el resultado del bypass, que es el
+    /// recorrido de producción de hoy). La opción de NUBE no sale por aquí en A4: termina en el
+    /// stub explícito de `handleNewOption` hasta que A5 monte el encadenado del alta.
+    var onSelectPrivateAccount: () -> Void
+    /// A26 (§k.2): el faro de iCloud-KV dice que este Apple ID YA tiene cuenta nube ⇒ el Welcome
+    /// NO ofrece la elección y encamina al returning-user con el provider del propio faro.
+    var onBeaconRoutesToCloudSignIn: (CloudSignInProvider) -> Void
 
     @State private var step: WelcomeFlowStep = .hero
     @State private var showDetectedDataAlert: Bool = false
+    /// STUB A4 → A5: la card "nube" ya está construida y cableada, pero su destino (consent →
+    /// sign-in → claim → par → relanzamiento) lo monta A5. Hasta entonces avisa en voz alta en vez
+    /// de ser un botón muerto silencioso. En producción NADIE lo ve: la card exige el percent
+    /// remoto `CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT`, hoy `"0"` y fail-closed.
+    @State private var showBornCloudPendingAlert: Bool = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -40,12 +55,16 @@ struct WelcomeFlowContainer: View {
         initialStep: WelcomeFlowStep = .hero,
         onSelectBranch: @escaping (WelcomeChooserView.Branch) -> Void,
         onLoadMyData: @escaping () -> Void,
-        onSelectExistingOption: @escaping (WelcomeAccountChoiceLogic.ExistingOption) -> Void
+        onSelectExistingOption: @escaping (WelcomeAccountChoiceLogic.ExistingOption) -> Void,
+        onSelectPrivateAccount: @escaping () -> Void,
+        onBeaconRoutesToCloudSignIn: @escaping (CloudSignInProvider) -> Void
     ) {
         self.initialStep = initialStep
         self.onSelectBranch = onSelectBranch
         self.onLoadMyData = onLoadMyData
         self.onSelectExistingOption = onSelectExistingOption
+        self.onSelectPrivateAccount = onSelectPrivateAccount
+        self.onBeaconRoutesToCloudSignIn = onBeaconRoutesToCloudSignIn
         self._step = State(initialValue: initialStep)
     }
 
@@ -61,6 +80,25 @@ struct WelcomeFlowContainer: View {
             remoteCloudEnabled: CloudRemoteFlags.cloudModeEnabled)
     }
 
+    /// A4: espejo EXACTO de los argumentos del existing (mismo opt-in de uitest, mismo kill-switch)
+    /// más los dos términos propios del born-cloud: la constante COMPILADA (hoy `true`) y el
+    /// sub-flag remoto de la elección, que es el que sirve `"0"` en producción.
+    private var visibleNewOptions: [WelcomeAccountChoiceLogic.NewOption] {
+        WelcomeAccountChoiceLogic.visibleNewOptions(
+            isConfigured: CloudBackendConfig.isConfigured,
+            isUITest: SwiftDataConfiguration.isUITesting && !UITestHooks.forceCloudChooser,
+            bornCloudEnabled: CloudSyncFlags.bornCloudChoiceEnabled,
+            remoteCloudEnabled: CloudRemoteFlags.cloudModeEnabled,
+            remoteOnboardingChoiceEnabled: CloudRemoteFlags.cloudOnboardingChoiceEnabled)
+    }
+
+    /// El encaminamiento por faro (A26) va a la MISMA pantalla que la card `.cloudSignIn` del
+    /// sub-chooser de "Ya tengo cuenta" ⇒ su disponibilidad se DERIVA de ahí en vez de re-escribir
+    /// los tres términos, que es como dos gates que deberían coincidir empiezan a divergir.
+    private var cloudEntryAvailable: Bool {
+        visibleExistingOptions.contains(.cloudSignIn)
+    }
+
     var body: some View {
         ZStack {
             switch step {
@@ -72,12 +110,12 @@ struct WelcomeFlowContainer: View {
             case .chooser:
                 WelcomeChooserView(
                     onSelect: { branch in
-                        // "Ya tengo una cuenta" abre el 2º nivel (o bypass con 1 opción —
-                        // hoy en prod DARK equivale exactamente al flujo restore actual).
-                        if branch == .restore {
-                            handleExistingBranch()
-                        } else {
-                            onSelectBranch(branch)
+                        // "Ya tengo una cuenta" y "Soy nuevo" abren su 2º nivel (o bypass con 1
+                        // opción — en producción hoy equivale exactamente al flujo actual).
+                        switch branch {
+                        case .restore: handleExistingBranch()
+                        case .new: handleNewBranch()
+                        case .invite: onSelectBranch(branch)
                         }
                     },
                     onBack: { goTo(.hero) }
@@ -87,6 +125,13 @@ struct WelcomeFlowContainer: View {
                 WelcomeExistingChooserView(
                     options: visibleExistingOptions,
                     onSelect: { option in onSelectExistingOption(option) },
+                    onBack: { goTo(.chooser) }
+                )
+                .transition(.opacity)
+            case .newChooser:
+                WelcomeNewChooserView(
+                    options: visibleNewOptions,
+                    onSelect: { option in handleNewOption(option) },
                     onBack: { goTo(.chooser) }
                 )
                 .transition(.opacity)
@@ -119,6 +164,12 @@ struct WelcomeFlowContainer: View {
         } message: {
             Text(L10n.Welcome.DetectedData.message)
         }
+        // STUB A4 → A5 (ver `showBornCloudPendingAlert`). Vive DENTRO del cover, como su hermano
+        // de arriba: un alert colgado del anchor de ContentView sería una presentación nueva y
+        // tendría que entrar en la matriz de readiness — para un stub que A5 sustituye, no.
+        .alert(L10n.Common.comingSoon, isPresented: $showBornCloudPendingAlert) {
+            Button(L10n.Common.ok, role: .cancel) {}
+        }
     }
 
     private func handleHeroDecision(_ decision: HeroDecision) {
@@ -138,6 +189,40 @@ struct WelcomeFlowContainer: View {
             onSelectExistingOption(single)
         } else {
             goTo(.existingChooser)
+        }
+    }
+
+    /// "Soy nuevo" (A4). **El faro se consulta ANTES de ofrecer nada** (§k.2 / A26) y, por tanto,
+    /// antes de que `ContentView` limpie las prefs residuales del fresh-start: ese orden es el
+    /// contrato. Medido el 2026-08-09: `OnboardingResetHelper.safeKeysToClear` son SOLO `userName`
+    /// y `defaultCurrencyCode`, así que la limpieza no toca las `yala.cloud.*` del faro — no hay
+    /// bug ahí, y el orden se respeta igual para que siga sin haberlo.
+    ///
+    /// Con una sola opción visible NO se muestra pantalla intermedia: en producción (percent
+    /// remoto en 0) y bajo uitest el recorrido es byte-idéntico al de hoy.
+    private func handleNewBranch() {
+        switch WelcomeNewBranchRouter.route(
+            beacon: CloudBeacon(),
+            cloudEntryAvailable: cloudEntryAvailable,
+            options: visibleNewOptions
+        ) {
+        case .cloudSignIn(let provider):
+            onBeaconRoutesToCloudSignIn(provider)
+        case .single(let option):
+            handleNewOption(option)
+        case .chooser:
+            goTo(.newChooser)
+        }
+    }
+
+    private func handleNewOption(_ option: WelcomeAccountChoiceLogic.NewOption) {
+        switch option {
+        case .privateAccount:
+            onSelectPrivateAccount()
+        case .cloudAccount:
+            // STUB EXPLÍCITO de A4 — A5 lo sustituye por consent → sign-in → claim → par →
+            // relanzamiento. Nunca un no-op silencioso.
+            showBornCloudPendingAlert = true
         }
     }
 

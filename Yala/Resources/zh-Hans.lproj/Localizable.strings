@@ -5420,3 +5420,13 @@
 
 /* Backend invite link arrived but the groups backend channel is off (remote flag/kill-switch). The link is valid; the intent stays persisted. */
 "groups.invite.channelUnavailable" = "暂时无法打开这个邀请。我们已保存你的请求，请稍后再试。";
+
+/* Welcome > "I'm new" second level (A4 of D-A7, born-cloud): where the personal data lives —
+   privacy-first (iCloud) highlighted on top, cloud account below with the trade-off spelled out. */
+"welcome.new.subtitle" = "选择你想把数据存放在哪里。";
+"welcome.new.privateTitle" = "只有你和你的设备";
+"welcome.new.privateBody" = "数据保存在你的 iPhone 上，通过你的私人 iCloud 同步。其他人都读不到，我们也一样。";
+"welcome.new.recommendedBadge" = "推荐";
+"welcome.new.cloudTitle" = "你的云端账户";
+"welcome.new.cloudBody" = "用 Apple 或 Google 登录，即使不用 iCloud，也能在任何设备上打开你的数据。数据会保存在 Yala 的服务器上，我们的团队可能会查看，用于为你提供支持和智能功能。";
+"welcome.new.cloudWarning" = "在这个模式下，你放弃了另一个选项的完全隐私。";

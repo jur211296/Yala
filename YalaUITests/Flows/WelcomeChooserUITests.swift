@@ -58,4 +58,45 @@ final class WelcomeChooserUITests: XCTestCase {
         XCTAssertTrue(app.buttons["welcome_chooser_restore"].waitForExistence(timeout: 10),
                       "El back no volvió al chooser.")
     }
+
+    /// A4 de D-A7: el 2º nivel de "Soy nuevo". Mismo opt-in `-uitest-cloud-chooser` que el hermano
+    /// —sin él, `visibleNewOptions` deja una sola card y el container hace bypass, con el recorrido
+    /// byte-idéntico al de hoy (lo cubre `OnboardingFlowUITests`, que lanza sin el arg).
+    func testNewChooser_withCloudConfigured_showsBothCards_andCloudCardIsStubbed() throws {
+        let app = XCUIApplication()
+        app.launchForUITest(
+            reset: true,
+            skipOnboarding: false,
+            seed: nil,
+            extraArguments: ["-uitest-cloud-chooser"]
+        )
+        let heroCTA = app.buttons["welcome_hero_cta"]
+        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
+        heroCTA.tap()
+
+        // "Soy nuevo" → 2º nivel (con el opt-in hay 2 opciones, no hay bypass).
+        let newBranch = app.buttons["welcome_chooser_new"]
+        XCTAssertTrue(newBranch.waitForExistence(timeout: 10), "No apareció la card 'Soy nuevo'.")
+        newBranch.tap()
+
+        let privateCard = app.buttons["welcome_new_private"]
+        XCTAssertTrue(privateCard.waitForExistence(timeout: 10), "No apareció la card de privacidad total.")
+        let cloudCard = app.buttons["welcome_new_cloud"]
+        XCTAssertTrue(cloudCard.exists, "No apareció la card de cuenta en la nube.")
+
+        // Stub A4 → A5: la card de nube AVISA (alert) en vez de ser un botón muerto silencioso.
+        // Se comprueba por la presencia del alert, nunca por su texto localizado.
+        cloudCard.tap()
+        let alert = app.alerts.firstMatch
+        XCTAssertTrue(alert.waitForExistence(timeout: 10),
+                      "La card de nube no avisó de nada: es un botón muerto.")
+        alert.buttons.firstMatch.tap()
+
+        // Back → de vuelta al chooser (nivel 1).
+        let backButton = app.buttons["welcome_back_button"].firstMatch
+        XCTAssertTrue(backButton.waitForExistence(timeout: 10), "No apareció el botón Volver del 2º nivel.")
+        backButton.tap()
+        XCTAssertTrue(app.buttons["welcome_chooser_new"].waitForExistence(timeout: 10),
+                      "El back no volvió al chooser.")
+    }
 }

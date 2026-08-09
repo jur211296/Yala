@@ -1259,21 +1259,11 @@ private struct WelcomeFlowModifier: ViewModifier {
                         hasShownWelcomeChooser = true
                         switch branch {
                         case .new:
-                            // Limpia prefs residuales del KV-Store del Apple ID
-                            // (userName, currency) que sobreviven al uninstall.
-                            OnboardingResetHelper.clearResidualPreferencesForFreshStart()
-                            // Segunda barrera vs data residual: el alert "Detectamos tu
-                            // cuenta" del Hero cubre el caso iCloud-con-data, pero falla
-                            // en (1) sim sin iCloud, (2) timeout del fetch, (3) CloudKit
-                            // mirror sync que llega post-Hero. Si hay data al momento del
-                            // tap, pedir confirmation explícito antes de wipe.
-                            if hasExistingData {
-                                showFreshStartWipeAlert = true
-                                // welcomeFlow sigue visible hasta resolver el alert
-                            } else {
-                                showWelcomeFlow = false
-                                showOnboarding = true
-                            }
+                            // Inalcanzable desde A4: el container desvía `.new` a su 2º nivel
+                            // (`handleNewBranch`) igual que ya hacía con `.restore`. Se delega al
+                            // MISMO helper que el callback nuevo — dos copias de este camino es
+                            // como divergen la limpieza de residuales y el alert de wipe.
+                            startFreshPrivateOnboarding()
                         case .restore:
                             showWelcomeFlow = false
                             showWelcomeRestore = true
@@ -1308,6 +1298,23 @@ private struct WelcomeFlowModifier: ViewModifier {
                             showWelcomeFlow = false
                             showWelcomeCloudSignIn = true
                         }
+                    },
+                    onSelectPrivateAccount: {
+                        // A4: "Soy nuevo" → privacidad total (o su bypass, que es el recorrido de
+                        // producción de hoy). Byte-idéntico al `case .new` de siempre.
+                        hasShownWelcomeChooser = true
+                        startFreshPrivateOnboarding()
+                    },
+                    onBeaconRoutesToCloudSignIn: { provider in
+                        // A26 (§k.2): el faro dice que este Apple ID YA tiene cuenta nube ⇒ este
+                        // device es un 2º device (o un reinstall), no un usuario nuevo. Se reusa el
+                        // MISMO cover de re-entrada que la card "Ya tengo cuenta"; el provider viene
+                        // del faro y se setea EXPLÍCITO (jamás heredar el del intento anterior).
+                        // Aquí NO se limpian prefs residuales: no es un fresh start.
+                        hasShownWelcomeChooser = true
+                        welcomeCloudProvider = provider
+                        showWelcomeFlow = false
+                        showWelcomeCloudSignIn = true
                     }
                 )
                 .environment(SessionState.shared)
@@ -1353,6 +1360,25 @@ private struct WelcomeFlowModifier: ViewModifier {
                     }
                 )
             }
+    }
+
+    /// "Soy nuevo → privacidad total": el camino de siempre, extraído a un helper para que el
+    /// callback de A4 y la rama `.new` histórica no puedan divergir.
+    private func startFreshPrivateOnboarding() {
+        // Limpia prefs residuales del KV-Store del Apple ID (userName, currency) que
+        // sobreviven al uninstall.
+        OnboardingResetHelper.clearResidualPreferencesForFreshStart()
+        // Segunda barrera vs data residual: el alert "Detectamos tu cuenta" del Hero cubre
+        // el caso iCloud-con-data, pero falla en (1) sim sin iCloud, (2) timeout del fetch,
+        // (3) CloudKit mirror sync que llega post-Hero. Si hay data al momento del tap,
+        // pedir confirmation explícito antes de wipe.
+        if hasExistingData {
+            showFreshStartWipeAlert = true
+            // welcomeFlow sigue visible hasta resolver el alert
+        } else {
+            showWelcomeFlow = false
+            showOnboarding = true
+        }
     }
 }
 

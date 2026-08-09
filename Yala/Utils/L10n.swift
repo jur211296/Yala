@@ -4827,6 +4827,18 @@ enum L10n {
             static var googleBody: String { ls("welcome.existing.googleBody", comment: "") }
         }
 
+        /// Sub-chooser de "Soy nuevo" (2º nivel, A4 de D-A7): dónde viven tus datos.
+        enum New {
+            static var subtitle: String { ls("welcome.new.subtitle", comment: "") }
+            static var privateTitle: String { ls("welcome.new.privateTitle", comment: "") }
+            static var privateBody: String { ls("welcome.new.privateBody", comment: "") }
+            static var recommendedBadge: String { ls("welcome.new.recommendedBadge", comment: "") }
+            static var cloudTitle: String { ls("welcome.new.cloudTitle", comment: "") }
+            static var cloudBody: String { ls("welcome.new.cloudBody", comment: "") }
+            /// La renuncia, dicha sin eufemismos e inline en la card (§k.6).
+            static var cloudWarning: String { ls("welcome.new.cloudWarning", comment: "") }
+        }
+
         /// Pantalla de sign-in a cuenta del Modo Nube (H4).
         enum Cloud {
             static var title: String { ls("welcome.cloud.title", comment: "") }

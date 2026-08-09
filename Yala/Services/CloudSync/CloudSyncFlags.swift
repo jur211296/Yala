@@ -323,6 +323,22 @@ nonisolated enum CloudSyncFlags {
         groupsBackendEnabledTestOverride = nil
     }
 
+    /// Encendido COMPILADO de la choice card born-cloud del Welcome (A4 de D-A7). `true` desde el
+    /// PROPIO A4 — no lo flipa A7, y esa es una corrección al plan de julio (`WelcomeAccountChoiceLogic`
+    /// decía «queda cableado a `false` en el callsite»).
+    ///
+    /// **Por qué nace en `true` sin que eso encienda nada en producción:** `visibleNewOptions` exige
+    /// además los DOS flags remotos (`cloudModeEnabled && cloudOnboardingChoiceEnabled`), y el segundo
+    /// sirve `CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT = "0"` en el bloque de producción de
+    /// `gateway/wrangler.toml` con `absentDefault` fail-closed ⇒ la card nace DARK en prod sin trabajo
+    /// extra. La palanca operativa de release es ese percent (A7), exactamente el patrón de Grupos
+    /// (`groupsBackendCompiledDefault = true` + percent, D-R1). A cambio, A5 puede ejercitar el alta
+    /// entera contra staging/DEV —que sirven el percent al 100— sin recompilar.
+    ///
+    /// No lleva override de tests a propósito: la lógica que decide recibe el booleano por PARÁMETRO
+    /// (`WelcomeAccountChoiceLogic.visibleNewOptions`), así que los tests no necesitan tocar el flag.
+    static let bornCloudChoiceEnabled = true
+
     /// Gate de la RESOLUCIÓN del derecho Pro por CUENTA (C-8, 2026-07-27). DARK: hoy `false` en
     /// producción, así que `isProUser` sale EXACTAMENTE de donde salía antes del fix
     /// (`Transaction.currentEntitlements` = el Apple ID del device) y monetización no cambia.

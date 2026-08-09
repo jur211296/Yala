@@ -5408,3 +5408,13 @@
 
 /* Backend invite link arrived but the groups backend channel is off (remote flag/kill-switch). The link is valid; the intent stays persisted. */
 "groups.invite.channelUnavailable" = "Wir konnten diese Einladung gerade nicht öffnen. Wir haben deine Anfrage gespeichert – versuche es in einem Moment noch einmal.";
+
+/* Welcome > "I'm new" second level (A4 of D-A7, born-cloud): where the personal data lives —
+   privacy-first (iCloud) highlighted on top, cloud account below with the trade-off spelled out. */
+"welcome.new.subtitle" = "Wähle, wo deine Daten gespeichert werden sollen.";
+"welcome.new.privateTitle" = "Nur du und deine Geräte";
+"welcome.new.privateBody" = "Deine Daten bleiben auf deinem iPhone und werden über deine private iCloud synchronisiert. Niemand sonst kann sie lesen, auch wir nicht.";
+"welcome.new.recommendedBadge" = "Empfohlen";
+"welcome.new.cloudTitle" = "Dein Konto in der Cloud";
+"welcome.new.cloudBody" = "Melde dich mit Apple oder Google an und greife von jedem Gerät auf deine Daten zu, auch ohne iCloud. Sie liegen dann auf den Servern von Yala, und unser Team könnte sie einsehen, um dir zu helfen und dir smarte Funktionen zu bieten.";
+"welcome.new.cloudWarning" = "In diesem Modus gibst du die vollständige Privatsphäre der anderen Option auf.";
