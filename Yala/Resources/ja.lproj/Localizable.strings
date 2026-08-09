@@ -5430,3 +5430,8 @@
 "welcome.new.cloudTitle" = "クラウドのアカウント";
 "welcome.new.cloudBody" = "AppleまたはGoogleでサインインすると、iCloudがなくてもどのデバイスからでもデータを見られます。データはYalaのサーバーに保存され、サポートや便利な機能のために私たちのチームが見ることがあります。";
 "welcome.new.cloudWarning" = "このモードでは、もう一方の完全なプライバシーはなくなります。";
+
+/* A5 de D-A7 — alta born-cloud: intro del alta. Las terminales (relanzamiento, espera, mismatch, error) reusan welcome.cloud.* */
+"welcome.bornCloud.title" = "Yalaのアカウントを作る";
+"welcome.bornCloud.subtitle" = "アカウントがあれば、どのデバイスからでもYalaを開けます。";
+"welcome.bornCloud.creating" = "アカウントを作成しています…";

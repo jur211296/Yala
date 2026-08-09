@@ -59,10 +59,16 @@ final class WelcomeChooserUITests: XCTestCase {
                       "El back no volvió al chooser.")
     }
 
-    /// A4 de D-A7: el 2º nivel de "Soy nuevo". Mismo opt-in `-uitest-cloud-chooser` que el hermano
-    /// —sin él, `visibleNewOptions` deja una sola card y el container hace bypass, con el recorrido
-    /// byte-idéntico al de hoy (lo cubre `OnboardingFlowUITests`, que lanza sin el arg).
-    func testNewChooser_withCloudConfigured_showsBothCards_andCloudCardIsStubbed() throws {
+    /// A4 + A5 de D-A7: el 2º nivel de "Soy nuevo" y el destino REAL de su card de nube. Mismo
+    /// opt-in `-uitest-cloud-chooser` que el hermano —sin él, `visibleNewOptions` deja una sola card
+    /// y el container hace bypass, con el recorrido byte-idéntico al de hoy (lo cubre
+    /// `OnboardingFlowUITests`, que lanza sin el arg).
+    ///
+    /// **A5 cambió el final de este test**: antes afirmaba el STUB de A4 (un alert «próximamente»);
+    /// ahora afirma que la card abre el intro del ALTA. El sign-in NO se tapea — SIWA no funciona en
+    /// sim y el claim iría a un backend real; lo que se prueba aquí es el recorrido hasta la
+    /// pantalla, no el alta.
+    func testNewChooser_withCloudConfigured_showsBothCards_andCloudCardOpensSignUp() throws {
         let app = XCUIApplication()
         app.launchForUITest(
             reset: true,
@@ -84,15 +90,20 @@ final class WelcomeChooserUITests: XCTestCase {
         let cloudCard = app.buttons["welcome_new_cloud"]
         XCTAssertTrue(cloudCard.exists, "No apareció la card de cuenta en la nube.")
 
-        // Stub A4 → A5: la card de nube AVISA (alert) en vez de ser un botón muerto silencioso.
-        // Se comprueba por la presencia del alert, nunca por su texto localizado.
+        // A5: la card de nube abre el intro del ALTA, con los dos métodos de prominencia
+        // equivalente. Se afirma el intro Y sus dos botones: sin el segundo, un intro que montara
+        // vacío pasaría igual.
         cloudCard.tap()
-        let alert = app.alerts.firstMatch
-        XCTAssertTrue(alert.waitForExistence(timeout: 10),
-                      "La card de nube no avisó de nada: es un botón muerto.")
-        alert.buttons.firstMatch.tap()
+        let appleSignUp = app.descendants(matching: .any)
+            .matching(identifier: "welcome_borncloud_signup_apple").firstMatch
+        XCTAssertTrue(appleSignUp.waitForExistence(timeout: 10),
+                      "La card de nube no abrió el alta: sigue siendo un botón muerto.")
+        XCTAssertTrue(app.descendants(matching: .any)
+            .matching(identifier: "welcome_borncloud_signup_google").firstMatch.exists,
+                      "Falta el método Google (prominencia equivalente, guideline 4.8).")
 
-        // Back → de vuelta al chooser (nivel 1).
+        // Back → de vuelta al chooser (nivel 1). Nada se ha comprometido todavía: el consent ni se
+        // ha pedido, así que la fase `.intro` permite salir (`canGoBack`).
         let backButton = app.buttons["welcome_back_button"].firstMatch
         XCTAssertTrue(backButton.waitForExistence(timeout: 10), "No apareció el botón Volver del 2º nivel.")
         backButton.tap()

@@ -5430,3 +5430,8 @@
 "welcome.new.cloudTitle" = "Je account in de cloud";
 "welcome.new.cloudBody" = "Log in met Apple of Google en kom bij je gegevens vanaf elk apparaat, ook zonder iCloud. Ze staan dan op de servers van Yala, en ons team zou ze kunnen inzien om je te helpen en je slimme functies te bieden.";
 "welcome.new.cloudWarning" = "In deze modus geef je de volledige privacy van de andere optie op.";
+
+/* A5 de D-A7 — alta born-cloud: intro del alta. Las terminales (relanzamiento, espera, mismatch, error) reusan welcome.cloud.* */
+"welcome.bornCloud.title" = "Maak je Yala-account";
+"welcome.bornCloud.subtitle" = "Daarmee open je Yala op elk apparaat.";
+"welcome.bornCloud.creating" = "Je account wordt aangemaakt…";

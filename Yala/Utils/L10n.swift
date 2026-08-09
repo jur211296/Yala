@@ -4839,6 +4839,16 @@ enum L10n {
             static var cloudWarning: String { ls("welcome.new.cloudWarning", comment: "") }
         }
 
+        /// Alta born-cloud desde la card «nube» de "Soy nuevo" (A5 de D-A7). Solo tres keys propias:
+        /// las fases terminales (relanzamiento, espera de líder, mismatch, error) y la nota §13 del
+        /// método reusan las de `Cloud` — son literalmente el mismo hecho.
+        enum BornCloud {
+            static var title: String { ls("welcome.bornCloud.title", comment: "") }
+            static var subtitle: String { ls("welcome.bornCloud.subtitle", comment: "") }
+            /// Progreso del claim: la cuenta se está CREANDO, no verificando.
+            static var creating: String { ls("welcome.bornCloud.creating", comment: "") }
+        }
+
         /// Pantalla de sign-in a cuenta del Modo Nube (H4).
         enum Cloud {
             static var title: String { ls("welcome.cloud.title", comment: "") }

@@ -17,6 +17,10 @@ nonisolated enum CloudWelcomeSignInPhase: Equatable {
     case intro
     /// `exists` en vuelo tras SIWA exitoso.
     case checking
+    /// A5 (alta born-cloud): el claim está en vuelo — la cuenta se está CREANDO, no verificando.
+    /// Caso propio y no un `.checking` con otro copy: son dos hechos distintos, y el alta cae a
+    /// `.checking` de verdad cuando el claim la reencamina al returning-user.
+    case creating
     /// Cross-cuenta con datos locales (F0-C degradado) — mensaje + volver.
     case blockedForeignData
     /// Adopt en curso (progreso de la máquina de migración).
@@ -82,6 +86,59 @@ nonisolated enum CloudWelcomeSignInFlow {
         case .reverting, .needsRelaunch(.toICloud):
             // Imposibles en un adopt desde Welcome; jamás presentar UI de reversa.
             return .error(retryable: false)
+        }
+    }
+}
+
+// MARK: - A5 · el encadenado del alta born-cloud
+
+/// Pure-logic del ALTA nube (born-cloud, A5 de D-A7): traduce el resultado del claim
+/// (`BornCloudSignUpService.signUp()`) al siguiente paso del encadenado.
+///
+/// Vive aquí y no en el servicio porque es una decisión de PANTALLA: el servicio sabe qué pasó
+/// server-side y esta tabla sabe qué hace la UI con ello. El paso que carga el peso es
+/// `.continueAsReturningUser` — la variante A de §f.1: sobre una cuenta ya poblada **JAMÁS se
+/// siembra**, se encamina al returning-user que ya existe.
+nonisolated enum BornCloudSignUpFlow {
+
+    /// Qué hace el llamador con el resultado del claim.
+    enum Step: Equatable {
+        /// `created` + rama born-cloud: escribir el par `.cloud` + `mirrorOffArmed` (A3) y presentar
+        /// la terminal de relanzamiento. **Es el ÚNICO paso que toca el almacenamiento.**
+        case activateStorageAndRelaunch
+        /// La cuenta ya existía (2º device o reintento tras un `created` previo): continuar por el
+        /// flujo de re-entrada CON LA SESIÓN VIVA (`exists` → guard cross-cuenta → adopt). No siembra.
+        case continueAsReturningUser
+        /// Terminal directa: otro device lidera, el método no casa, o un error del claim.
+        case show(CloudWelcomeSignInPhase)
+        /// 401: el JWT no sirve. Soltar la sesión ANTES de mostrar el error — si no, el re-tap
+        /// reusaría la sesión muerta (`runSignInFlow` salta el sign-in cuando `hasSession`) y el
+        /// usuario quedaría en un bucle de reintentos que no pueden funcionar.
+        case releaseSessionAndShowError
+    }
+
+    static func step(for outcome: BornCloudSignUpOutcome) -> Step {
+        switch outcome {
+        case .seeded:
+            return .activateStorageAndRelaunch
+        case .routeReturningUser:
+            return .continueAsReturningUser
+        case .waitForLeader:
+            return .show(.waitingLeader)
+        case .providerMismatch(let knownProvider):
+            // Hoy INALCANZABLE desde `.bornCloud` (la variante B es `returningUser`-only,
+            // `AccountClaimDecision.swift:83` — medido en A2). Se mapea igual porque la tabla que
+            // decide vive allí: el día que alguien la amplíe, esto ya muestra el copy R9 correcto.
+            return .show(.providerMismatch(knownProvider: knownProvider))
+        case .sessionExpired:
+            return .releaseSessionAndShowError
+        case .accountUnavailable:
+            // 403 = cuenta suspendida. Reintentar no la despierta: error SIN botón de retry.
+            return .show(.error(retryable: false))
+        case .transient:
+            // El claim es idempotente por contrato (§f.1: el re-claim del MISMO device colapsa a
+            // `created`), así que reintentar es seguro.
+            return .show(.error(retryable: true))
         }
     }
 }

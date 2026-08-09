@@ -4687,3 +4687,8 @@
 "welcome.new.cloudTitle" = "A tua conta na nuvem";
 "welcome.new.cloudBody" = "Inicia sessão com a Apple ou a Google e acede aos teus dados a partir de qualquer dispositivo, mesmo sem iCloud. Ficam nos servidores da Yala, e a nossa equipa poderia vê-los para te dar apoio e funcionalidades inteligentes.";
 "welcome.new.cloudWarning" = "Neste modo abdicas da privacidade total da outra opção.";
+
+/* A5 de D-A7 — alta born-cloud: intro del alta. Las terminales (relanzamiento, espera, mismatch, error) reusan welcome.cloud.* */
+"welcome.bornCloud.title" = "Cria a tua conta Yala";
+"welcome.bornCloud.subtitle" = "Com ela abres o Yala em qualquer dispositivo.";
+"welcome.bornCloud.creating" = "A criar a tua conta…";

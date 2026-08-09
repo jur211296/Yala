@@ -242,7 +242,15 @@ final class CloudMigrationController {
     // MARK: - Flujos de UI
 
     /// Ruta del consent (para la telemetría §j.4).
-    enum ConsentPath: String { case migration, adopt }
+    ///
+    /// ⚠️ El `rawValue` VIAJA (telemetría `cloudConsentAccepted(path:)` y, en los dos primeros, la
+    /// máquina de migración): renombrar un case parte la serie histórica del dashboard. Si hiciera
+    /// falta cambiar el nombre en Swift, el raw se fija explícito y NO se toca.
+    ///
+    /// `bornCloud` (A5 de D-A7) lo produce SOLO el Welcome — el alta nube de un usuario nuevo, que no
+    /// pasa por la máquina de migración porque no hay nada que migrar. `StorageSettingsView` nunca lo
+    /// asigna.
+    enum ConsentPath: String { case migration, adopt, bornCloud }
 
     /// CÓMO se autentica la migración/adopt (C-7, 2026-07-27): `StorageMigrationSignInLogic.Plan`,
     /// explícito y sin default — un `.apple` implícito era el hardcode del hallazgo original, y un

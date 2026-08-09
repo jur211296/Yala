@@ -7,18 +7,13 @@
 //  nube pueda continuar: faro escrito, acción de claim estampada y el registro contado.
 //
 //  ─────────────────────────────────────────────────────────────────────────────────────────────────────
-//  ⚠️ SIN CALL-SITE DE PRODUCCIÓN — A PROPÓSITO, Y ESO ES UN CONTRATO, NO UNA COARTADA.
+//  CABLEADO (A5, 2026-08-09): el aviso DARK de A2 se cumplió y por eso ya no está aquí.
 //
-//  Este servicio nace DARK: lo cablea el incremento **A5** de D-A7 (el encadenado consent → sign-in →
-//  claim → par `.cloud` → relanzamiento → onboarding), descrito en
-//  `$VAULT/Backlog/modo-nube/MODO-NUBE-CHIPS-D-A7.md` §«CHIP A5». Hasta entonces es byte-idéntico para
-//  todo usuario existente: nadie lo construye, nadie lo llama.
-//
-//  **Si A5 ya pasó y esto sigue sin call-site, esto es código muerto: bórralo o cabléalo.** La frase va
-//  aquí porque un header que promete un cableado inexistente ya costó una vuelta entera de diagnóstico
-//  (`AppAttestClient.ensureRegistered()`, `.claude/rules/gateway-attest.md`) y otro («NADIE lo llama en
-//  producción», punto 13 de la saga de zonas en `.claude/rules/swiftdata-cloudkit.md`) costó tiempo por
-//  invitar a archivar un caso como inalcanzable.
+//  Su ÚNICO call-site de producción es `WelcomeCloudSignInView.runBornCloudFlow()` (entrada
+//  `Entry.bornCloud`, la card «nube» de «Soy nuevo»): consent → sign-in → `signUp()` →
+//  `activateBornCloudStorage()` → terminal de relanzamiento. Ese orden lo pinnea un source-scan en
+//  `BornCloudSignUpFlowTests`, porque lo que decide es QUIÉN llama y en qué orden y ningún test de
+//  comportamiento lo caza.
 //  ─────────────────────────────────────────────────────────────────────────────────────────────────────
 //
 //  Lo que NO hace, y no por olvido:

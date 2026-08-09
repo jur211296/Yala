@@ -281,15 +281,26 @@ struct WelcomeNewChooserWiringTests {
         #expect(body.contains("visibleExistingOptions.contains(.cloudSignIn)"))
     }
 
-    /// STUB de A4: la card de nube avisa en voz alta hasta que A5 monte el encadenado. Si esto se
-    /// pone rojo porque el destino ya existe, es A5 — bórralo en ESE commit, no lo silencies.
-    @Test("la card de nube NO es un botón muerto silencioso (stub explícito hasta A5)")
-    func cloudCard_hasAnExplicitStub() throws {
+    /// A5 SUSTITUYE AL STUB DE A4. La versión anterior de este test exigía
+    /// `showBornCloudPendingAlert = true` (el aviso «próximamente» de la card de nube) y decía por
+    /// escrito que había que BORRARLO en el commit de A5, no silenciarlo. Esto es ese borrado: la
+    /// card ya tiene destino real y lo que se pinnea ahora es que lo tenga.
+    @Test("la card de nube arranca el alta born-cloud (y el stub de A4 ya no existe)")
+    func cloudCard_startsTheBornCloudSignUp() throws {
+        let src = try Self.source(Self.containerPath)
         let body = try Self.body(
             of: "private func handleNewOption(_ option: WelcomeAccountChoiceLogic.NewOption) {",
-            in: try Self.source(Self.containerPath))
+            in: src)
         #expect(body.contains("case .cloudAccount:"))
-        #expect(body.contains("showBornCloudPendingAlert = true"))
+        #expect(body.contains("onSelectCloudAccount()"),
+                "sin este callback la card vuelve a ser un botón muerto, ahora en silencio")
+        // Sobre el CÓDIGO, no sobre el texto: el comentario que explica el borrado nombra el símbolo
+        // borrado, así que un `!contains` sobre el fichero crudo se rompe al documentar el invariante.
+        let code = src.split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+        #expect(!code.contains("showBornCloudPendingAlert"),
+                "el stub de A4 se BORRA en el commit de A5 — una promesa con fecha, no un residual")
     }
 
     /// A7 verifica esta constante antes de subir el percent de producción; que lo haga un test y no

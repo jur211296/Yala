@@ -5419,3 +5419,8 @@
 "welcome.new.cloudTitle" = "Ton compte dans le cloud";
 "welcome.new.cloudBody" = "Connecte-toi avec Apple ou Google et retrouve tes données depuis n'importe quel appareil, même sans iCloud. Elles sont enregistrées sur les serveurs de Yala, et notre équipe pourrait les consulter pour t'aider et te proposer des fonctions intelligentes.";
 "welcome.new.cloudWarning" = "Dans ce mode, tu renonces à la confidentialité totale de l'autre option.";
+
+/* A5 de D-A7 — alta born-cloud: intro del alta. Las terminales (relanzamiento, espera, mismatch, error) reusan welcome.cloud.* */
+"welcome.bornCloud.title" = "Crée ton compte Yala";
+"welcome.bornCloud.subtitle" = "Avec lui, tu peux ouvrir Yala depuis n'importe quel appareil.";
+"welcome.bornCloud.creating" = "Création de ton compte…";

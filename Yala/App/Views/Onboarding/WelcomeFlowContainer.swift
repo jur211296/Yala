@@ -34,20 +34,17 @@ struct WelcomeFlowContainer: View {
     /// Sub-elección de "Ya tengo una cuenta" (también el resultado del bypass).
     var onSelectExistingOption: (WelcomeAccountChoiceLogic.ExistingOption) -> Void
     /// "Soy nuevo" con la opción PRIVADA elegida (también el resultado del bypass, que es el
-    /// recorrido de producción de hoy). La opción de NUBE no sale por aquí en A4: termina en el
-    /// stub explícito de `handleNewOption` hasta que A5 monte el encadenado del alta.
+    /// recorrido de producción de hoy).
     var onSelectPrivateAccount: () -> Void
+    /// A5: "Soy nuevo" con la opción NUBE elegida ⇒ alta born-cloud (consent → sign-in → claim →
+    /// par → relanzamiento). El destino es el MISMO cover que la re-entrada, con `Entry.bornCloud`.
+    var onSelectCloudAccount: () -> Void
     /// A26 (§k.2): el faro de iCloud-KV dice que este Apple ID YA tiene cuenta nube ⇒ el Welcome
     /// NO ofrece la elección y encamina al returning-user con el provider del propio faro.
     var onBeaconRoutesToCloudSignIn: (CloudSignInProvider) -> Void
 
     @State private var step: WelcomeFlowStep = .hero
     @State private var showDetectedDataAlert: Bool = false
-    /// STUB A4 → A5: la card "nube" ya está construida y cableada, pero su destino (consent →
-    /// sign-in → claim → par → relanzamiento) lo monta A5. Hasta entonces avisa en voz alta en vez
-    /// de ser un botón muerto silencioso. En producción NADIE lo ve: la card exige el percent
-    /// remoto `CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT`, hoy `"0"` y fail-closed.
-    @State private var showBornCloudPendingAlert: Bool = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -57,6 +54,7 @@ struct WelcomeFlowContainer: View {
         onLoadMyData: @escaping () -> Void,
         onSelectExistingOption: @escaping (WelcomeAccountChoiceLogic.ExistingOption) -> Void,
         onSelectPrivateAccount: @escaping () -> Void,
+        onSelectCloudAccount: @escaping () -> Void,
         onBeaconRoutesToCloudSignIn: @escaping (CloudSignInProvider) -> Void
     ) {
         self.initialStep = initialStep
@@ -64,6 +62,7 @@ struct WelcomeFlowContainer: View {
         self.onLoadMyData = onLoadMyData
         self.onSelectExistingOption = onSelectExistingOption
         self.onSelectPrivateAccount = onSelectPrivateAccount
+        self.onSelectCloudAccount = onSelectCloudAccount
         self.onBeaconRoutesToCloudSignIn = onBeaconRoutesToCloudSignIn
         self._step = State(initialValue: initialStep)
     }
@@ -164,12 +163,6 @@ struct WelcomeFlowContainer: View {
         } message: {
             Text(L10n.Welcome.DetectedData.message)
         }
-        // STUB A4 → A5 (ver `showBornCloudPendingAlert`). Vive DENTRO del cover, como su hermano
-        // de arriba: un alert colgado del anchor de ContentView sería una presentación nueva y
-        // tendría que entrar en la matriz de readiness — para un stub que A5 sustituye, no.
-        .alert(L10n.Common.comingSoon, isPresented: $showBornCloudPendingAlert) {
-            Button(L10n.Common.ok, role: .cancel) {}
-        }
     }
 
     private func handleHeroDecision(_ decision: HeroDecision) {
@@ -220,9 +213,9 @@ struct WelcomeFlowContainer: View {
         case .privateAccount:
             onSelectPrivateAccount()
         case .cloudAccount:
-            // STUB EXPLÍCITO de A4 — A5 lo sustituye por consent → sign-in → claim → par →
-            // relanzamiento. Nunca un no-op silencioso.
-            showBornCloudPendingAlert = true
+            // A5: el alta born-cloud. El stub explícito de A4 (`showBornCloudPendingAlert`) queda
+            // BORRADO en este mismo commit, no silenciado — era una promesa con fecha.
+            onSelectCloudAccount()
         }
     }
 

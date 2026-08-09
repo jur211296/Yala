@@ -5430,3 +5430,8 @@
 "welcome.new.cloudTitle" = "你的云端账户";
 "welcome.new.cloudBody" = "用 Apple 或 Google 登录，即使不用 iCloud，也能在任何设备上打开你的数据。数据会保存在 Yala 的服务器上，我们的团队可能会查看，用于为你提供支持和智能功能。";
 "welcome.new.cloudWarning" = "在这个模式下，你放弃了另一个选项的完全隐私。";
+
+/* A5 de D-A7 — alta born-cloud: intro del alta. Las terminales (relanzamiento, espera, mismatch, error) reusan welcome.cloud.* */
+"welcome.bornCloud.title" = "创建你的 Yala 账户";
+"welcome.bornCloud.subtitle" = "有了它，你可以在任何设备上打开 Yala。";
+"welcome.bornCloud.creating" = "正在创建你的账户…";

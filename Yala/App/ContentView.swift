@@ -20,10 +20,13 @@ struct ContentView: View {
     @State private var showLanguageSelection: Bool = false
     @State private var showWelcomeRestore: Bool = false
     // H4: re-entrada a cuenta del Modo Nube desde el Welcome (SIWA → exists → adopt).
+    // A5: el MISMO cover sirve el alta born-cloud — lo distingue `welcomeCloudEntry`.
     @State private var showWelcomeCloudSignIn: Bool = false
-    /// Provider elegido en el chooser para el cover de sign-in de nube (sesión 2 Google).
-    /// Cada card lo setea EXPLÍCITO antes de presentar (`.cloudSignIn` → `.apple`).
-    @State private var welcomeCloudProvider: CloudSignInProvider = .apple
+    /// Qué va a hacer el cover de nube: re-entrar a una cuenta que ya existe (con el provider que
+    /// eligió la card, o el que dictó el faro) o dar de ALTA una cuenta nueva (A5, el provider se
+    /// elige dentro). Cada productor lo setea EXPLÍCITO antes de presentar — jamás se hereda el del
+    /// intento anterior.
+    @State private var welcomeCloudEntry: WelcomeCloudSignInView.Entry = .reentry(.apple)
     // H4 + fix carrera 2026-07-14: DUEÑO ÚNICO del cover de relaunch del sign-out
     // `.cloud`/secundario. ProfileView ya NO presenta (ante la fase cierra su sheet) —
     // dos anchors ante el mismo observable tumbaban ambas cadenas. La presentación se
@@ -430,7 +433,7 @@ struct ContentView: View {
             showWelcomeRestore: $showWelcomeRestore,
             showInviteRecovery: $showInviteRecovery,
             showWelcomeCloudSignIn: $showWelcomeCloudSignIn,
-            welcomeCloudProvider: $welcomeCloudProvider,
+            welcomeCloudEntry: $welcomeCloudEntry,
             prefilledOnboardingData: $prefilledOnboardingData,
             hasShownWelcomeChooser: $hasShownWelcomeChooser,
             hasCompletedOnboarding: $hasCompletedOnboarding,
@@ -1232,9 +1235,9 @@ private struct WelcomeFlowModifier: ViewModifier {
     @Binding var showWelcomeRestore: Bool
     @Binding var showInviteRecovery: Bool
     @Binding var showWelcomeCloudSignIn: Bool
-    /// Provider del cover de sign-in de nube (sesión 2): cada card del chooser lo setea
-    /// EXPLÍCITO antes de presentar — jamás se hereda el valor del intento anterior.
-    @Binding var welcomeCloudProvider: CloudSignInProvider
+    /// Qué hace el cover de nube: re-entrada (con su provider) o alta born-cloud (A5). Cada
+    /// productor lo setea EXPLÍCITO antes de presentar — jamás se hereda el del intento anterior.
+    @Binding var welcomeCloudEntry: WelcomeCloudSignInView.Entry
     @Binding var prefilledOnboardingData: ICloudAccountSummary?
     @Binding var hasShownWelcomeChooser: Bool
     @Binding var hasCompletedOnboarding: Bool
@@ -1290,11 +1293,11 @@ private struct WelcomeFlowModifier: ViewModifier {
                             showWelcomeFlow = false
                             showWelcomeRestore = true
                         case .cloudSignIn:
-                            welcomeCloudProvider = .apple  // EXPLÍCITO (jamás heredar el previo)
+                            welcomeCloudEntry = .reentry(.apple)  // EXPLÍCITO (jamás heredar el previo)
                             showWelcomeFlow = false
                             showWelcomeCloudSignIn = true
                         case .googleSignIn:
-                            welcomeCloudProvider = .google
+                            welcomeCloudEntry = .reentry(.google)
                             showWelcomeFlow = false
                             showWelcomeCloudSignIn = true
                         }
@@ -1305,6 +1308,23 @@ private struct WelcomeFlowModifier: ViewModifier {
                         hasShownWelcomeChooser = true
                         startFreshPrivateOnboarding()
                     },
+                    onSelectCloudAccount: {
+                        // A5: "Soy nuevo" → cuenta en la nube. El alta va por el MISMO cover que la
+                        // re-entrada (`Entry.bornCloud`): un cover propio sería un segundo anchor
+                        // presentando ante el mismo estado, y ese es el bug del sign-out de
+                        // 2026-07-14 (regla (4) de Presentaciones).
+                        //
+                        // **NO se llama a `startFreshPrivateOnboarding()`**, y no es un olvido: aquí
+                        // no se limpia nada ni se pregunta por el wipe. La limpieza de residuales y
+                        // el alert de datos existentes pertenecen al camino iCloud; el alta nube
+                        // decide el destino de los datos DESPUÉS del relanzamiento, con el
+                        // onboarding normal, y el corpus local lo gobierna el guard cross-cuenta si
+                        // el claim acaba encaminando al returning-user.
+                        hasShownWelcomeChooser = true
+                        welcomeCloudEntry = .bornCloud
+                        showWelcomeFlow = false
+                        showWelcomeCloudSignIn = true
+                    },
                     onBeaconRoutesToCloudSignIn: { provider in
                         // A26 (§k.2): el faro dice que este Apple ID YA tiene cuenta nube ⇒ este
                         // device es un 2º device (o un reinstall), no un usuario nuevo. Se reusa el
@@ -1312,7 +1332,7 @@ private struct WelcomeFlowModifier: ViewModifier {
                         // del faro y se setea EXPLÍCITO (jamás heredar el del intento anterior).
                         // Aquí NO se limpian prefs residuales: no es un fresh start.
                         hasShownWelcomeChooser = true
-                        welcomeCloudProvider = provider
+                        welcomeCloudEntry = .reentry(provider)
                         showWelcomeFlow = false
                         showWelcomeCloudSignIn = true
                     }
@@ -1333,7 +1353,7 @@ private struct WelcomeFlowModifier: ViewModifier {
                 }
             ) {
                 WelcomeCloudSignInView(
-                    provider: welcomeCloudProvider,
+                    entry: welcomeCloudEntry,
                     hasLocalDataNow: hasLocalDataNow,
                     onAdoptStarted: {
                         // TEMPRANO (antes de conducir la máquina): cierra el hazard

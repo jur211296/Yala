@@ -2,16 +2,36 @@
 //  WelcomeCloudSignInView.swift
 //  Yala
 //
-//  Re-entrada a una cuenta del Modo Nube desde el Welcome (H4/pieza 2).
-//  Flujo: consent (paridad con Ajustes) → SIWA → GET /account/exists (read-only —
-//  el claim con `created` CREA cuenta server-side, por eso JAMÁS se claimea sin
-//  `exists == true`) → guard cross-cuenta → adopt vía la máquina de migración
-//  existente (`startAdoptWithExistingSession`, sin re-SIWA) → relaunch asistido.
+//  Las DOS entradas a una cuenta del Modo Nube desde el Welcome, en una sola pantalla.
+//
+//  · `.reentry` (H4/pieza 2) — la cuenta YA existe:
+//      consent (paridad con Ajustes) → SIWA/Google → GET /account/exists (read-only — el claim con
+//      `created` CREA cuenta server-side, por eso JAMÁS se claimea sin `exists == true`) → guard
+//      cross-cuenta → adopt vía la máquina de migración existente
+//      (`startAdoptWithExistingSession`, sin re-SIWA) → relaunch asistido.
+//
+//  · `.bornCloud` (A5 de D-A7) — el ALTA de un usuario nuevo que elige la nube:
+//      consent (`path: .bornCloud`) → sign-in → claim (`BornCloudSignUpService`, A2) → par
+//      `.cloud` + `mirrorOffArmed` (A3) → terminal «Cierra y reabre Yala» → [el usuario relanza] →
+//      `OnboardingView` NORMAL, ya con el store montado sin mirror.
+//      **NO hay máquina de estados y NO se journalea nada**: en born-cloud no hay corpus que mover.
+//
+//  POR QUÉ UNA VISTA PARAMETRIZADA Y NO UNA HERMANA (decisión de A5, y su razón principal no es
+//  ahorrar código): el claim del alta puede devolver `existing_stable` —2º device del mismo Apple ID,
+//  o un reintento tras un `created` previo— y entonces el contrato es «encamina al returning-user que
+//  ya existe, JAMÁS siembres». Aquí eso es una transición de FASE con la sesión ya viva
+//  (`runSignInFlow` salta el sign-in cuando `hasSession`); con una vista hermana sería un segundo
+//  anchor presentando mientras el primero se desmonta, que es la carrera de reconciliación de la
+//  regla (4) de Presentaciones (`.claude/rules/swiftui-ds.md`) y ya costó el bug del sign-out del
+//  2026-07-14. De paso, las cuatro fases terminales que ya existen (`relaunch`, `waitingLeader`,
+//  `providerMismatch`, `error`) se comparten en vez de duplicarse, y el alta no añade ninguna
+//  presentación nueva a la matriz de readiness: cuelga del cover que ya está en ella.
 //
 //  Los flags de onboarding se marcan TEMPRANO (`onAdoptStarted`, antes de conducir
 //  la máquina): un kill a mitad del adopt aterriza en MainTab con la card de
 //  Almacenamiento reflejando el estado real — el seed del onboarding JAMÁS corre
-//  sobre una cuenta existente (hazard seed-over-account).
+//  sobre una cuenta existente (hazard seed-over-account). El alta born-cloud NO los marca: su
+//  onboarding es justamente lo que corre después del relanzamiento.
 //
 
 import AuthenticationServices
@@ -19,10 +39,18 @@ import SwiftUI
 
 struct WelcomeCloudSignInView: View {
 
-    /// Provider del sign-in (sesión 2 Google): `.apple` conserva el flujo actual BYTE-IDÉNTICO
-    /// (mismo botón SIWA, mismo subtitle, mismos catches); `.google` monta el botón custom y
-    /// distingue cancel de fallo real. El chooser lo setea EXPLÍCITO por card.
-    let provider: CloudSignInProvider
+    /// Qué está haciendo el usuario en esta pantalla. Decide el `ConsentPath`, el intro y qué pasa
+    /// después del sign-in — el resto de fases son comunes.
+    enum Entry: Equatable {
+        /// Re-entrada a una cuenta que ya existe. El provider lo eligió la card del chooser (o lo
+        /// dictó el faro) y se setea EXPLÍCITO por el productor: jamás se hereda el del intento previo.
+        case reentry(CloudSignInProvider)
+        /// Alta born-cloud desde la card «nube» de «Soy nuevo». El provider NO viene decidido: se
+        /// elige aquí, con los dos botones de prominencia equivalente (guideline 4.8).
+        case bornCloud
+    }
+
+    let entry: Entry
     /// Corpus personal en el device, evaluado EN el momento de la decisión (S5: el
     /// mirror de iCloud puede estar re-importando en background durante el Welcome —
     /// un snapshot sería stale). Input del guard cross-cuenta F0-C.
@@ -40,6 +68,10 @@ struct WelcomeCloudSignInView: View {
 
     @State private var phase: CloudWelcomeSignInPhase = .intro
     @State private var showConsent = false
+    /// A5: el método que el usuario tapeó en el intro del ALTA (en `.reentry` no se usa — ahí el
+    /// provider lo trae el `Entry`). Se fija ANTES de abrir el consent y de ahí sale el `provider`
+    /// que ve `CloudAuthService`.
+    @State private var chosenProvider: CloudSignInProvider?
     /// Task del flujo/poll en vuelo — se cancela en onDisappear (el Task nace de un
     /// callback, NO de `.task`, así que el desmontaje no lo cancela solo).
     @State private var flowTask: Task<Void, Never>?
@@ -69,10 +101,14 @@ struct WelcomeCloudSignInView: View {
             }
         }
         .welcomeBackButton(tint: .white, action: canGoBack ? onBack : nil)
+        // EL CONSENT VA SIEMPRE ANTES DEL SIGN-IN, en las dos entradas: el login envía identidad, así
+        // que pedir permiso después sería pedirlo para algo ya hecho (docblock de `CloudConsentView`).
+        // Estructuralmente lo garantiza que el ÚNICO productor del flujo sea este `onAccept`: los
+        // botones del intro solo abren el sheet, nunca firman.
         .sheet(isPresented: $showConsent) {
-            CloudConsentView(path: .adopt) {
+            CloudConsentView(path: consentPath) {
                 showConsent = false
-                launchFlow { await runSignInFlow() }
+                launchFlow { await runFlowAfterConsent() }
             }
         }
         .onDisappear { flowTask?.cancel() }
@@ -84,6 +120,33 @@ struct WelcomeCloudSignInView: View {
         flowTask = Task { await operation() }
     }
 
+    /// Método con el que se va a firmar. En `.reentry` lo trae el `Entry`; en `.bornCloud` es el que
+    /// el usuario acaba de tapear. El `?? .apple` no es una elección silenciosa: el flujo del alta no
+    /// arranca sin pasar por un botón, y ese botón siempre escribe `chosenProvider`.
+    private var provider: CloudSignInProvider {
+        switch entry {
+        case .reentry(let p): return p
+        case .bornCloud:      return chosenProvider ?? .apple
+        }
+    }
+
+    /// Ruta que se registra con el consent (telemetría §j.4). El alta tiene la suya para que el
+    /// dashboard pueda separar «cuánta gente entra a una cuenta que ya tenía» de «cuánta se da de alta».
+    private var consentPath: CloudMigrationController.ConsentPath {
+        switch entry {
+        case .reentry:   return .adopt
+        case .bornCloud: return .bornCloud
+        }
+    }
+
+    /// Qué corre al aceptar el consent. Es el ÚNICO punto donde el flujo se bifurca por entrada.
+    private func runFlowAfterConsent() async {
+        switch entry {
+        case .reentry:   await runSignInFlow()
+        case .bornCloud: await runBornCloudFlow()
+        }
+    }
+
     /// Back solo en fases donde nada está comprometido; adopt en vuelo o relaunch = sin salida.
     /// `.secondaryConfirm` usa su botón Cancelar propio (suelta la sesión SIWA — el back genérico
     /// la dejaría colgada); `.relaunchSecondary` es terminal como `.relaunch`.
@@ -91,7 +154,10 @@ struct WelcomeCloudSignInView: View {
         switch phase {
         // `.providerMismatch`: sesión ya soltada y sin claim — nada comprometido.
         case .intro, .notFound, .blockedForeignData, .error, .providerMismatch: true
-        case .checking, .adopting, .waitingLeader, .relaunch, .secondaryConfirm, .relaunchSecondary: false
+        // `.creating`: el claim está en vuelo y puede CREAR la cuenta server-side — salir a mitad
+        // dejaría al usuario sin saber si se dio de alta. Mismo criterio que `.checking`.
+        case .checking, .creating, .adopting, .waitingLeader, .relaunch,
+             .secondaryConfirm, .relaunchSecondary: false
         }
     }
 
@@ -104,6 +170,8 @@ struct WelcomeCloudSignInView: View {
             introContent
         case .checking:
             progressContent(L10n.Welcome.Cloud.checking, hint: nil)
+        case .creating:
+            progressContent(L10n.Welcome.BornCloud.creating, hint: nil)
         case .adopting(let fraction):
             adoptingContent(fraction: fraction)
         case .waitingLeader:
@@ -138,7 +206,7 @@ struct WelcomeCloudSignInView: View {
                     body: L10n.Welcome.Cloud.errorBody)
                 if retryable {
                     YalaPrimaryButton(L10n.Welcome.Cloud.retry) {
-                        launchFlow { await runSignInFlow() }
+                        launchFlow { await runFlowAfterConsent() }
                     }
                     .padding(.horizontal, DS.Spacing.xl)
                     .accessibilityIdentifier("welcome_cloud_retry")
@@ -147,7 +215,68 @@ struct WelcomeCloudSignInView: View {
         }
     }
 
+    @ViewBuilder
     private var introContent: some View {
+        switch entry {
+        case .reentry:   reentryIntro
+        case .bornCloud: bornCloudIntro
+        }
+    }
+
+    /// A5 · intro del ALTA. Los dos métodos con prominencia EQUIVALENTE (guideline 4.8, patrón
+    /// apilado de `StorageSignInChooserView`): aquí el usuario no re-entra a nada, elige con qué
+    /// nace su cuenta. La nota §13 es la misma que en la re-entrada porque dice exactamente lo que
+    /// hay que decir en este momento: la cuenta queda ligada al método.
+    private var bornCloudIntro: some View {
+        VStack(spacing: DS.Spacing.lg) {
+            VStack(spacing: DS.Spacing.sm) {
+                Text(L10n.Welcome.BornCloud.title)
+                    .font(DS.Typography.title2)
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                Text(L10n.Welcome.BornCloud.subtitle)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.white.opacity(0.7))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, DS.Spacing.lg)
+            }
+            VStack(spacing: DS.Spacing.md) {
+                AppleSignInButton {
+                    DS.Haptic.selection()
+                    beginBornCloudSignUp(with: .apple)
+                }
+                .frame(height: 50)
+                .accessibilityIdentifier("welcome_borncloud_signup_apple")
+
+                GoogleSignInButton(variant: .light) {
+                    DS.Haptic.selection()
+                    beginBornCloudSignUp(with: .google)
+                }
+                .frame(height: 50)
+                .accessibilityIdentifier("welcome_borncloud_signup_google")
+            }
+            .padding(.horizontal, DS.Spacing.xl)
+
+            Text(L10n.Welcome.Cloud.providerNote)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.white.opacity(0.6))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, DS.Spacing.xl)
+        }
+        // SIN identifier de contenedor a propósito: uno aplicado al `VStack` PISA el de sus hijos
+        // —medido con `snapshot_ui`: los dos botones salían como `welcome_borncloud_intro` y sus
+        // propios ids no existían en el árbol— y dejaría el XCUITest sin poder targetearlos
+        // (`.claude/rules/testing.md`). La pantalla se identifica por sus botones.
+    }
+
+    /// Fija el método y abre el consent. **No firma nada**: el sign-in vive detrás del `onAccept`
+    /// del sheet, que es lo que mantiene el orden consent → sign-in.
+    private func beginBornCloudSignUp(with provider: CloudSignInProvider) {
+        chosenProvider = provider
+        showConsent = true
+    }
+
+    private var reentryIntro: some View {
         VStack(spacing: DS.Spacing.lg) {
             VStack(spacing: DS.Spacing.sm) {
                 Text(L10n.Welcome.Cloud.title)
@@ -263,7 +392,14 @@ struct WelcomeCloudSignInView: View {
                 title: L10n.Welcome.Cloud.waitingTitle,
                 body: L10n.Welcome.Cloud.waitingBody)
             YalaPrimaryButton(L10n.Welcome.Cloud.retry) {
-                launchFlow { await retryLeaderPoll() }
+                // En el ALTA no hay máquina de migración que pollear: lo que se reintenta es el
+                // CLAIM, idempotente por contrato (§f.1, el re-claim del mismo device colapsa a
+                // `created`). Llamar a `pollLeader()` aquí conduciría una máquina que born-cloud no
+                // tiene y dejaría la pantalla clavada.
+                switch entry {
+                case .reentry:   launchFlow { await retryLeaderPoll() }
+                case .bornCloud: launchFlow { await runBornCloudFlow() }
+                }
             }
             .padding(.horizontal, DS.Spacing.xl)
             Button(L10n.Welcome.Cloud.continueToApp) {
@@ -361,33 +497,78 @@ struct WelcomeCloudSignInView: View {
 
     // MARK: - Flujo
 
+    /// Sign-in con el método elegido. Devuelve `false` cuando NO hay que seguir (y deja la fase ya
+    /// puesta). Extraído para que el alta y la re-entrada compartan literalmente los mismos catches
+    /// —incluida la asimetría Apple/Google, que no es cosmética— en vez de tener dos copias que se
+    /// separen a la primera.
+    private func ensureSignedIn() async -> Bool {
+        // Retry con sesión ya viva (falló solo el paso siguiente): no re-pedir Face ID.
+        guard !CloudAuthService.shared.hasSession else { return true }
+        do {
+            try await CloudAuthService.shared.signIn(with: provider)
+            return true
+        } catch CloudAuthError.cancelled {
+            // Cancel EXPLÍCITO (Google) → volver al intro en silencio (el user re-tapea).
+            phase = .intro
+            return false
+        } catch {
+            #if DEBUG
+            print("WelcomeCloudSignInView: sign-in \(provider.rawValue) falló/cancelado: \(error)")
+            #endif
+            switch provider {
+            case .apple:
+                // BYTE-IDÉNTICO con hoy: ASAuthorization no distingue cancel de fallo →
+                // volver al intro sin alarma.
+                phase = .intro
+            case .google:
+                // Google SÍ distingue (el cancel ya salió arriba): esto es fallo REAL
+                // (red/SDK/exchange) → error visible con retry.
+                phase = .error(retryable: true)
+            }
+            return false
+        }
+    }
+
+    // MARK: - A5 · el alta born-cloud
+
+    /// El encadenado del ALTA, y **el orden ES el contrato**: sign-in (el consent ya se aceptó, es
+    /// quien invoca esto) → claim → par `.cloud` + terminal de relanzamiento.
+    ///
+    /// Lo que NO hace, y no por olvido: no marca los flags de onboarding (el onboarding NORMAL corre
+    /// después del relanzamiento — `hasShownWelcomeChooser` ya quedó `true`, así que
+    /// `presentNextOnboardingScreen` va directo a `OnboardingView`), no journalea ninguna fase (el
+    /// journal se queda en `notStarted`, que YA es estable para el runtime) y no conduce ninguna
+    /// máquina de migración: en born-cloud no hay corpus que mover.
+    private func runBornCloudFlow() async {
+        phase = .creating
+        guard await ensureSignedIn() else { return }
+
+        let service = BornCloudSignUpService(session: LiveCloudSessionProvider())
+        switch BornCloudSignUpFlow.step(for: await service.signUp()) {
+        case .activateStorageAndRelaunch:
+            // El par se escribe ANTES de sembrar nada — en born-cloud es trivialmente cierto porque
+            // no hay nada pre-relanzamiento que sembrar. La primitiva DEVUELVE la fase terminal;
+            // jamás mata el proceso.
+            phase = service.activateBornCloudStorage()
+        case .continueAsReturningUser:
+            // Variante A de §f.1: la cuenta ya estaba poblada ⇒ **NO se siembra**. Con la sesión ya
+            // viva, `runSignInFlow` salta el sign-in y sigue por el returning-user que YA existe
+            // (`exists` → guard cross-cuenta → adopt). Sin cover nuevo y sin pantalla nueva.
+            await runSignInFlow()
+        case .show(let terminal):
+            phase = terminal
+        case .releaseSessionAndShowError:
+            // 401: soltar la sesión ANTES de mostrar el error, o el retry la reusaría muerta.
+            await CloudAuthService.shared.signOut()
+            phase = .error(retryable: true)
+        }
+    }
+
+    // MARK: - Re-entrada (H4)
+
     private func runSignInFlow() async {
         phase = .checking
-        // Retry con sesión ya viva (falló solo el exists): no re-pedir Face ID.
-        if !CloudAuthService.shared.hasSession {
-            do {
-                try await CloudAuthService.shared.signIn(with: provider)
-            } catch CloudAuthError.cancelled {
-                // Cancel EXPLÍCITO (Google) → volver al intro en silencio (el user re-tapea).
-                phase = .intro
-                return
-            } catch {
-                #if DEBUG
-                print("WelcomeCloudSignInView: sign-in \(provider.rawValue) falló/cancelado: \(error)")
-                #endif
-                switch provider {
-                case .apple:
-                    // BYTE-IDÉNTICO con hoy: ASAuthorization no distingue cancel de fallo →
-                    // volver al intro sin alarma.
-                    phase = .intro
-                case .google:
-                    // Google SÍ distingue (el cancel ya salió arriba): esto es fallo REAL
-                    // (red/SDK/exchange) → error visible con retry.
-                    phase = .error(retryable: true)
-                }
-                return
-            }
-        }
+        guard await ensureSignedIn() else { return }
 
         guard let userID = CloudAuthService.shared.currentUserID,
               let jwt = await CloudAuthService.shared.accessToken() else {

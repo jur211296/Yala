@@ -485,10 +485,13 @@ struct BornCloudSignUpWiringTests {
         #expect(!body.contains("migration: true"))
     }
 
-    /// DARK: A2 entrega el productor sin cablearlo. Si esto se pone rojo porque apareció una construcción de
-    /// producción, es A5 y hay que borrar este test (y el aviso del docblock) en ese commit — no silenciarlo.
-    @Test("sigue SIN call-site de producción: A2 es DARK y A5 es quien lo cablea")
-    func service_hasNoProductionCallSite_yet() throws {
+    /// **A5 INVIERTE ESTE TEST.** En A2 afirmaba lo contrario («sigue SIN call-site: es DARK») y decía por
+    /// escrito que al cablearlo había que darle la vuelta en ESE commit. Hecho: ahora exige que el servicio
+    /// tenga EXACTAMENTE un productor de producción y que sea la vista del Welcome. El conteo importa —sin
+    /// él, un segundo constructor (otra pantalla que decidiera dar de alta por su cuenta) pasaría en verde—,
+    /// y es la misma familia que los conteos esperados de `AttestWiringTests`.
+    @Test("tiene UN solo call-site de producción, y es la vista del alta del Welcome (A5)")
+    func service_hasExactlyOneProductionCallSite() throws {
         var constructions: [String] = []
         for root in ["Yala", "YalaWidgets", "YalaShare"] {
             let base = Self.repoRoot.appendingPathComponent(root)
@@ -507,18 +510,20 @@ struct BornCloudSignUpWiringTests {
                 }
             }
         }
-        #expect(constructions.isEmpty, """
-            `BornCloudSignUpService` ya se construye en producción (\(constructions.joined(separator: ", "))).
-            Si es A5, borra este test en ESE commit junto con el aviso DARK del docblock del servicio.
+        #expect(constructions == ["Yala/WelcomeCloudSignInView.swift"], """
+            El productor del alta born-cloud debe ser exactamente `WelcomeCloudSignInView` (A5).
+            Encontrado: \(constructions.isEmpty ? "NINGUNO — el servicio volvió a quedarse sin call-site, o sea código muerto" : constructions.joined(separator: ", ")).
             """)
     }
 
-    @Test("el docblock declara el estado DARK nombrando A5 (la coartada convertida en contrato)")
-    func docblock_namesTheIncrementThatWiresIt() throws {
+    /// El aviso DARK de A2 tenía fecha de caducidad y se cumplió: el docblock ya no puede prometer un
+    /// cableado inexistente (la familia de `AppAttestClient.ensureRegistered()`).
+    @Test("el docblock ya NO declara el estado DARK: nombra su call-site real")
+    func docblock_namesItsRealCallSite() throws {
         let source = try Self.serviceSource()
-        #expect(source.contains("A5"))
-        #expect(source.contains("SIN CALL-SITE DE PRODUCCIÓN"))
-        #expect(source.contains("bórralo o cabléalo"))
+        #expect(!source.contains("SIN CALL-SITE DE PRODUCCIÓN"),
+                "A5 cableó el servicio: el aviso DARK se borra, no se deja envejeciendo")
+        #expect(source.contains("WelcomeCloudSignInView.runBornCloudFlow()"))
     }
 
     // MARK: - A3

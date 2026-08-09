@@ -483,6 +483,14 @@ struct StorageSettingsView: View {
         case .migration:
             // Migración: doble confirmación sobre la ACCIÓN antes de mover datos.
             confirmMigrate1 = true
+        case .bornCloud:
+            // INALCANZABLE desde Almacenamiento: `consentPath` solo se asigna `.adopt`/`.migration`
+            // arriba, y el alta born-cloud (A5 de D-A7) vive entera en el Welcome, que no monta esta
+            // vista. El case existe porque el `switch` es exhaustivo por el compilador — y ese es
+            // justamente su valor: si algún día esta pantalla ofreciera el alta, el compilador NO
+            // avisaría, pero este `break` deja el camino muerto en vez de disparar una doble
+            // confirmación de migración sobre un flujo que no migra nada.
+            break
         }
     }
 
