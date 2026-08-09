@@ -4329,9 +4329,10 @@
 "groups.onboarding.step2.bridgeAwareness" = "Gdy płacisz wydatek, automatycznie zapisujemy go też na Twoim koncie osobistym — aby Twoje saldo zawsze odzwierciedlało rzeczywistość.";
 "groups.onboarding.step3.title" = "Twoja prywatność na pierwszym miejscu";
 "groups.onboarding.step3.subtitle" = "Udostępniamy tylko to, co konieczne, nic więcej.";
-"groups.onboarding.step3.point1" = "Każdy członek potrzebuje konta iCloud.";
+"groups.onboarding.step3.point1" = "Każdy członek potrzebuje konta Yala.";
 "groups.onboarding.step3.point2" = "Twoje dane osobowe nie są synchronizowane z grupą, tylko wspólne wydatki.";
 "groups.onboarding.step3.cta" = "Przejdź do grup";
+"groups.onboarding.step3.signInCTA" = "Zaloguj się";
 
 "groups.onboarding.step3.bridgeAwareness" = "Możesz zmienić to zachowanie w Ustawieniach grup.";
 

@@ -512,16 +512,33 @@ extension View {
 /// `onPersistFlag` se invoca en `.complete` (CTA Step 3 "Ir a Grupos") — persiste
 /// flag y dispara seed lazy de categorías sistema. En `.close` (X topLeft) no se
 /// invoca, lo que hace que el onboarding reaparezca al próximo tap del tab.
+///
+/// A1 (D-A7): `.completeAndSignIn` (CTA "Iniciar sesión" del cierre, solo sin sesión) persiste
+/// igual —el educativo TERMINÓ— y además pide el sign-in. La petición se emite en el
+/// `onDismiss`, con el sheet YA desmontado: emitirla desde dentro dejaría el intent RETENIDO
+/// por peek-first bajo este mismo sheet (el molde es el comentario de
+/// `GroupsContainerView.requestCreateGroup`), y presentar desde otro anchor con éste todavía
+/// montado es justo la regla (4) de Presentaciones de `.claude/rules/swiftui-ds.md`.
 struct GroupsOnboardingSheetModifier: ViewModifier {
     @Binding var isPresented: Bool
     let onPersistFlag: () -> Void
+    let onRequestSignIn: () -> Void
+
+    @State private var signInRequested = false
 
     func body(content: Content) -> some View {
-        content.sheet(isPresented: $isPresented) {
+        content.sheet(isPresented: $isPresented, onDismiss: {
+            guard signInRequested else { return }
+            signInRequested = false
+            onRequestSignIn()
+        }) {
             GroupsOnboardingView { result in
                 switch result {
                 case .complete:
                     onPersistFlag()
+                case .completeAndSignIn:
+                    onPersistFlag()
+                    signInRequested = true
                 case .close:
                     break
                 }
@@ -534,11 +551,13 @@ struct GroupsOnboardingSheetModifier: ViewModifier {
 extension View {
     func groupsOnboardingSheet(
         isPresented: Binding<Bool>,
-        onPersistFlag: @escaping () -> Void
+        onPersistFlag: @escaping () -> Void,
+        onRequestSignIn: @escaping () -> Void
     ) -> some View {
         modifier(GroupsOnboardingSheetModifier(
             isPresented: isPresented,
-            onPersistFlag: onPersistFlag
+            onPersistFlag: onPersistFlag,
+            onRequestSignIn: onRequestSignIn
         ))
     }
 }

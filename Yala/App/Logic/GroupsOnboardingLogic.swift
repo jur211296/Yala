@@ -37,6 +37,33 @@ enum GroupsOnboardingLogic {
         if hasPendingGroupDeeplink { return false }
         return true
     }
+
+    /// ¿El último step del educativo ofrece el CTA de iniciar sesión? (A1 de D-A7, decisión
+    /// P1(b) del owner: CTA al cierre ADEMÁS del contextual que ya existe).
+    ///
+    /// Va en lógica pura y NO como un `if` dentro del `body`: un predicado enterrado en un
+    /// `@ViewBuilder` es invisible para los unitarios y se puede borrar con la suite entera en
+    /// verde (lección de `965a4d86`, molde exacto de `OnboardingGroupsPurposeGateLogic`). El
+    /// CABLEADO —que la vista pase los valores REALES y no literales— lo pinnea el source-scan
+    /// de `GroupsOnboardingSignInCTAWiringTests`.
+    ///
+    /// - Parameters:
+    ///   - isLastStep: solo el step de cierre ofrece el CTA; los intermedios siguen con
+    ///     "Continuar".
+    ///   - flagOn: `CloudSyncFlags.groupsBackendEnabled`. Con el canal APAGADO Grupos sigue
+    ///     viviendo en CloudKit y no hay sesión Yala que pedir ⇒ el recorrido queda
+    ///     byte-idéntico al de siempre. Es la MISMA señal que gatea el empty state
+    ///     (`GroupsEmptyStateLogic.decide`), no una segunda fuente.
+    ///   - hasSession: `CloudAuthService.shared.hasSession`, la misma que lee el caller de
+    ///     `GroupsEmptyStateLogic.decide` en `GroupsContainerView`. Con sesión viva el CTA
+    ///     sería un prompt sin sentido.
+    static func shouldShowSignInCTA(
+        isLastStep: Bool,
+        flagOn: Bool,
+        hasSession: Bool
+    ) -> Bool {
+        isLastStep && flagOn && !hasSession
+    }
 }
 
 /// Origen del trigger del onboarding — telemetría para distinguir entry points si
@@ -50,6 +77,11 @@ enum GroupsOnboardingLauncher: String {
 enum GroupsOnboardingResult: Equatable {
     /// CTA Step 3 "Ir a Grupos": persistir flag + ejecutar seed lazy.
     case complete
+    /// CTA Step 3 "Iniciar sesión" (A1, solo sin sesión): mismos efectos que `.complete`
+    /// —el usuario TERMINÓ el educativo— más el sign-in de Grupos. El intent se emite con el
+    /// sheet YA desmontado (`onDismiss`): emitirlo con el sheet puesto lo dejaría RETENIDO por
+    /// peek-first, igual que documenta `GroupsContainerView.requestCreateGroup`.
+    case completeAndSignIn
     /// "X" topLeft (cualquier step): NO persistir flag (volverá a aparecer).
     case close
 }

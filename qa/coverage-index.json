@@ -1000,13 +1000,14 @@
         "Yala/App/Views/Groups/Onboarding/GroupsOnboardingView.swift",
         "Yala/App/Views/Groups/Onboarding/GroupsOnboardingDemo.swift",
         "Yala/App/Views/Groups/Onboarding/OnboardingDemoGroupCard.swift",
-        "Yala/App/Views/Groups/Onboarding/OnboardingDemoNotificationBubble.swift"
+        "Yala/App/Views/Groups/Onboarding/OnboardingDemoNotificationBubble.swift",
+        "Yala/App/Logic/GroupsOnboardingLogic.swift"
       ],
       "scenarioIDs": [
         "F-S1-03"
       ],
       "classification": "agentic",
-      "coverage": "device-qa",
+      "coverage": "device-qa + unit:YalaTests/GroupsOnboardingSignInCTATests (tabla 8 celdas del CTA de sign-in del cierre, A1) + unit:YalaTests/GroupsOnboardingSignInCTAWiringTests (source-scan del cableado: senales reales en la vista, onDismiss del sheet, reuso del intent del empty state). Bajo -uitest el educativo NO se monta (evaluateGroupsOnboarding hace early-return) => no hay XCUITest posible; el aspecto del cierre con CTA sigue SIN pasar por device-qa (queda para el QA de A7 con build de distribucion), por eso lastVerified NO se bumpea",
       "owner": "",
       "lastVerified": "2026-06-01"
     },

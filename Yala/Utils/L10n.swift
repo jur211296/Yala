@@ -2390,6 +2390,9 @@ enum L10n {
             static var step3Point1: String { ls("groups.onboarding.step3.point1", comment: "") }
             static var step3Point2: String { ls("groups.onboarding.step3.point2", comment: "") }
             static var step3CTA: String { ls("groups.onboarding.step3.cta", comment: "") }
+            /// A1 (D-A7): CTA de sign-in del cierre. Solo se pinta sin sesión Yala viva
+            /// (`GroupsOnboardingLogic.shouldShowSignInCTA`).
+            static var step3SignInCTA: String { ls("groups.onboarding.step3.signInCTA", comment: "") }
             /// F6 awareness: hint que el bridge es configurable en Ajustes de Grupos.
             static var step3BridgeAwareness: String { ls("groups.onboarding.step3.bridgeAwareness", comment: "") }
         }

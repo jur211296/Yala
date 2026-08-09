@@ -4329,9 +4329,10 @@
 "groups.onboarding.step2.bridgeAwareness" = "当你支付一笔支出时,我们也会自动将其记录到你的个人账户,让你的余额始终反映真实情况。";
 "groups.onboarding.step3.title" = "隐私优先";
 "groups.onboarding.step3.subtitle" = "只共享必要内容,不多不少。";
-"groups.onboarding.step3.point1" = "每位成员都需要一个 iCloud 账户。";
+"groups.onboarding.step3.point1" = "每位成员都需要一个 Yala 账户。";
 "groups.onboarding.step3.point2" = "你的个人数据不会与群组同步,只有共享开支会同步。";
 "groups.onboarding.step3.cta" = "前往群组";
+"groups.onboarding.step3.signInCTA" = "登录";
 
 "groups.onboarding.step3.bridgeAwareness" = "你可以在群组设置中更改此行为。";
 

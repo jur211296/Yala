@@ -4329,9 +4329,10 @@
 "groups.onboarding.step2.bridgeAwareness" = "支出を支払うと、個人の口座にも自動的に記録します。残高が常に実態を反映するようにするためです。";
 "groups.onboarding.step3.title" = "プライバシーを第一に";
 "groups.onboarding.step3.subtitle" = "必要な情報だけを共有します。";
-"groups.onboarding.step3.point1" = "メンバー全員にiCloudアカウントが必要です。";
+"groups.onboarding.step3.point1" = "メンバー全員にYalaアカウントが必要です。";
 "groups.onboarding.step3.point2" = "個人データはグループと同期されません。共有された支払いのみが同期されます。";
 "groups.onboarding.step3.cta" = "グループへ";
+"groups.onboarding.step3.signInCTA" = "サインイン";
 
 "groups.onboarding.step3.bridgeAwareness" = "この動作はグループ設定で変更できます。";
 

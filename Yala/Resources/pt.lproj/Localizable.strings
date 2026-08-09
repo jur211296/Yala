@@ -4295,9 +4295,10 @@
 "groups.onboarding.step2.card3.body" = "Finalize pagamentos e volte ao zero. Sem discussões, sem Excel.";
 "groups.onboarding.step3.title" = "Sua privacidade em primeiro lugar";
 "groups.onboarding.step3.subtitle" = "Você só compartilha o necessário, nada mais.";
-"groups.onboarding.step3.point1" = "Cada membro precisa de uma conta iCloud.";
+"groups.onboarding.step3.point1" = "Cada membro precisa de uma conta Yala.";
 "groups.onboarding.step3.point2" = "Seus dados pessoais não são sincronizados com o grupo, apenas as despesas compartilhadas.";
 "groups.onboarding.step3.cta" = "Ir para Grupos";
+"groups.onboarding.step3.signInCTA" = "Entrar";
 
 // MARK: FU-02-reconnect
 "groups.reconnect.deletedForAll.title" = "%@ foi excluído";

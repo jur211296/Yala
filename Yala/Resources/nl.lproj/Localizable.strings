@@ -4329,9 +4329,10 @@
 "groups.onboarding.step2.bridgeAwareness" = "Wanneer je een uitgave betaalt, leggen we die automatisch ook vast op je persoonlijke rekening — zodat je saldo altijd de werkelijkheid weerspiegelt.";
 "groups.onboarding.step3.title" = "Jouw privacy staat voorop";
 "groups.onboarding.step3.subtitle" = "Je deelt alleen het noodzakelijke, niets meer.";
-"groups.onboarding.step3.point1" = "Elk lid heeft een iCloud-account nodig.";
+"groups.onboarding.step3.point1" = "Elk lid heeft een eigen Yala-account nodig.";
 "groups.onboarding.step3.point2" = "Je persoonlijke gegevens worden niet met de groep gesynchroniseerd, alleen gedeelde uitgaven.";
 "groups.onboarding.step3.cta" = "Naar groepen";
+"groups.onboarding.step3.signInCTA" = "Aanmelden";
 
 "groups.onboarding.step3.bridgeAwareness" = "Je kunt dit gedrag wijzigen in Groepsinstellingen.";
 

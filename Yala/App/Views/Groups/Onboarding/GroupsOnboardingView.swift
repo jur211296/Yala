@@ -11,6 +11,11 @@
 //  El CTA solo cierra el sheet; NO abre `GroupFormView`. El user queda en
 //  `GroupsContainerView` con su empty state, que ya tiene CTA "Crear grupo".
 //
+//  A1 (D-A7, P1(b)): SIN sesión Yala el Step 3 ofrece ADEMÁS "Iniciar sesión"
+//  (`onResult(.completeAndSignIn)`), que reusa el MISMO intent que el CTA del empty state
+//  (`.presentGroupsSignIn`) — no monta una presentación nueva. La visibilidad la decide
+//  `GroupsOnboardingLogic.shouldShowSignInCTA` (lógica pura, tests de tabla).
+//
 
 import SwiftUI
 
@@ -242,7 +247,8 @@ struct GroupsOnboardingView: View {
             }
 
             VStack(spacing: DS.Spacing.md) {
-                privacyPoint(icon: "icloud.fill", text: L10n.Groups.Onboarding.step3Point1)
+                // El icono acompaña al copy: la cuenta es de Yala, no de iCloud (A1).
+                privacyPoint(icon: "person.crop.circle.badge.checkmark", text: L10n.Groups.Onboarding.step3Point1)
                 privacyPoint(icon: "lock.shield.fill", text: L10n.Groups.Onboarding.step3Point2)
             }
             .padding(.top, DS.Spacing.md)
@@ -279,13 +285,36 @@ struct GroupsOnboardingView: View {
 
     // MARK: - CTA
 
+    @ViewBuilder
     private var ctaSection: some View {
         let label = currentStep == .privacy
             ? L10n.Groups.Onboarding.step3CTA
             : L10n.Action.continueAction
 
-        return YalaPrimaryButton(label) {
-            advance()
+        // A1: sin sesión Yala, el cierre convierte — el sign-in manda y "Ir a Grupos" queda
+        // como salida visible (nunca un muro: quien lo salte se topa con el CTA del empty
+        // state, que es el contextual de siempre).
+        if GroupsOnboardingLogic.shouldShowSignInCTA(
+            isLastStep: currentStep == .privacy,
+            flagOn: CloudSyncFlags.groupsBackendEnabled,
+            hasSession: CloudAuthService.shared.hasSession
+        ) {
+            VStack(spacing: DS.Spacing.sm) {
+                YalaPrimaryButton(L10n.Groups.Onboarding.step3SignInCTA) {
+                    onResult(.completeAndSignIn)
+                }
+                .accessibilityIdentifier("groups_onboarding_signin_cta")
+
+                YalaSecondaryButton(label) {
+                    advance()
+                }
+                .accessibilityIdentifier("groups_onboarding_cta")
+            }
+        } else {
+            YalaPrimaryButton(label) {
+                advance()
+            }
+            .accessibilityIdentifier("groups_onboarding_cta")
         }
     }
 

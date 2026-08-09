@@ -4327,9 +4327,10 @@
 "groups.onboarding.step2.bridgeAwareness" = "Quando paghi una spesa, la registriamo automaticamente anche nel tuo conto personale, così il tuo saldo riflette sempre la realtà.";
 "groups.onboarding.step3.title" = "La tua privacy prima di tutto";
 "groups.onboarding.step3.subtitle" = "Condividi solo il necessario, niente di più.";
-"groups.onboarding.step3.point1" = "Ogni membro deve avere un account iCloud.";
+"groups.onboarding.step3.point1" = "Ogni membro deve avere un account Yala.";
 "groups.onboarding.step3.point2" = "I tuoi dati personali non si sincronizzano con il gruppo, solo le spese condivise.";
 "groups.onboarding.step3.cta" = "Vai ai gruppi";
+"groups.onboarding.step3.signInCTA" = "Accedi";
 
 "groups.onboarding.step3.bridgeAwareness" = "Puoi cambiare questo comportamento nelle Impostazioni dei Gruppi.";
 

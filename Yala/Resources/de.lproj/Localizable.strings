@@ -4295,9 +4295,10 @@
 "groups.onboarding.step2.card3.body" = "Zahlungen abschließen und auf Null setzen. Keine Diskussionen, kein Excel.";
 "groups.onboarding.step3.title" = "Ihre Privatsphäre zuerst";
 "groups.onboarding.step3.subtitle" = "Sie teilen nur das Nötige, nichts weiter.";
-"groups.onboarding.step3.point1" = "Jedes Mitglied benötigt ein iCloud-Konto.";
+"groups.onboarding.step3.point1" = "Jedes Mitglied benötigt ein eigenes Yala-Konto.";
 "groups.onboarding.step3.point2" = "Ihre persönlichen Daten werden nicht mit der Gruppe synchronisiert, nur geteilte Ausgaben.";
 "groups.onboarding.step3.cta" = "Zu Gruppen";
+"groups.onboarding.step3.signInCTA" = "Anmelden";
 
 // MARK: FU-02-reconnect
 "groups.reconnect.deletedForAll.title" = "%@ wurde gelöscht";

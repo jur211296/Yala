@@ -199,7 +199,10 @@ struct GroupsContainerView: View {
                 onPersistFlag: {
                     seedSystemGroupCategoriesIfNeeded(in: modelContext)
                     appPreferences.hasShownGroupsOnboarding = true
-                }
+                },
+                // A1 (D-A7): el CTA de sign-in del cierre reusa el MISMO camino que el del
+                // empty state — un solo productor de `.presentGroupsSignIn`.
+                onRequestSignIn: { requestGroupsSignIn() }
             )
             .onDisappear {
                 showNudgeBanner = false
