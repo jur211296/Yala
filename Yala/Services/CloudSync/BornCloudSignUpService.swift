@@ -26,7 +26,10 @@
 //     El born-cloud NO tiene migración: no hay corpus que subir, no hay líder, no hay cutover. Meterlo
 //     dentro de esa máquina es justo el error que A2 existe para no cometer. De ahí también el
 //     `migration: false` del claim (ver `signUp()`).
-//   · **No escribe `storageMode` ni el par `.cloud` + `mirrorOffArmed`** — eso es A3.
+//   · **`signUp()` no escribe `storageMode` ni el par `.cloud` + `mirrorOffArmed`.** Eso lo hace la
+//     primitiva SEPARADA `activateBornCloudStorage()` (A3), que el encadenado de A5 invoca DESPUÉS de un
+//     `.seeded`. Separadas y no fundidas a propósito: el par es un cambio de estado del DEVICE y sus tres
+//     salidas restantes (`routeReturningUser`/`waitForLeader`/mismatch) NO deben tocarlo.
 //   · **No presenta UI** y no decide navegación: devuelve un `BornCloudSignUpOutcome` y el llamador (A5)
 //     encamina.
 //
@@ -96,6 +99,12 @@ enum BornCloudBreadcrumb {
         logger.notice("BornCloud consentMissing \(missing, privacy: .public) — alta continúa, traza GDPR incompleta")
     }
 
+    /// A3: el par `.cloud` + `mirrorOffArmed` quedó escrito y el device espera el relanzamiento. Es la
+    /// marca de agua del alta: lo que venga después de esto ya corre en modo nube.
+    static func storageActivated() {
+        logger.notice("BornCloud storageActivated — par .cloud+mirrorOffArmed escrito; esperando relanzamiento (el proceso NO se mata solo)")
+    }
+
     /// La tabla de `AccountClaimDecision` devolvió una acción que la rama born-cloud no puede producir.
     /// Hoy imposible; si aparece, alguien cambió la tabla sin mirar a este consumidor.
     static func unexpectedAction(_ action: String) {
@@ -120,6 +129,10 @@ final class BornCloudSignUpService {
     /// Donde `PreferenceSyncService` espeja las preferencias (producción: `.standard`). Se lee para VERIFICAR
     /// el consent; este servicio no lo escribe. Inyectable (nunca `.standard` directo en tests).
     private let consentDefaults: UserDefaults
+    /// Donde vive el par `.cloud` + `mirrorOffArmed` (producción: `.standard`). Separado de
+    /// `consentDefaults` porque son dos almacenes distintos conceptualmente y un test debe poder aislar
+    /// cada uno; en producción coinciden.
+    private let storageDefaults: UserDefaults
     private let now: () -> Date
 
     /// Los defaults MainActor-aislados se resuelven en el CUERPO (los default args son `nonisolated`) —
@@ -132,6 +145,7 @@ final class BornCloudSignUpService {
         beacon: CloudBeacon? = nil,
         claimStore: CloudClaimActionStore? = nil,
         consentDefaults: UserDefaults = .standard,
+        storageDefaults: UserDefaults = .standard,
         now: @escaping () -> Date = { .now }
     ) {
         self.session = session
@@ -143,6 +157,7 @@ final class BornCloudSignUpService {
         self.beacon = beacon ?? CloudBeacon()
         self.claimStore = claimStore ?? .shared
         self.consentDefaults = consentDefaults
+        self.storageDefaults = storageDefaults
         self.now = now
     }
 
@@ -261,6 +276,37 @@ final class BornCloudSignUpService {
             BornCloudBreadcrumb.unexpectedAction(CloudClaimActionStore.encode(action))
             return .transient(detail: "unexpected action: proceedMigration")
         }
+    }
+
+    // MARK: - Activación del almacenamiento nube (A3)
+
+    /// **La primitiva del camino feliz de A3.** Escribe el par `.cloud` + `mirrorOffArmed` y devuelve la
+    /// FASE TERMINAL que el llamador debe presentar: «Cierra y vuelve a abrir Yala».
+    ///
+    /// Se invoca SOLO tras un `.seeded` (cuenta reservada con `created`), y **ANTES de sembrar nada** — en
+    /// born-cloud eso es trivialmente cierto porque no hay nada pre-relanzamiento que sembrar: el onboarding
+    /// corre DESPUÉS, ya con el store montado sin mirror.
+    ///
+    /// Tres cosas que van escritas porque no son obvias:
+    ///  1. **El relanzamiento no es una preferencia de UX, es lo que sostiene el invariante.**
+    ///     `SwiftDataConfiguration.personalConfiguration` se evalúa UNA vez al construir el container, así
+    ///     que escribir el par aquí NO remonta nada: el mirror de CloudKit sigue vivo en este proceso. Lo
+    ///     que impide que el motor arranque encima es
+    ///     `MigrationRuntimeGate.isPersonalMountMismatch` (A3, segunda mitad), no la buena voluntad del
+    ///     llamador.
+    ///  2. **Devuelve la fase, NO mata el proceso.** `CloudWelcomeSignInPhase.relaunch` es terminal y su
+    ///     contrato es que el usuario cierra la app a mano — jamás un `exit(0)`: iOS trata la auto-muerte
+    ///     como un crash y App Review la rechaza.
+    ///  3. **No journalea nada.** El journal se queda en `notStarted`, que YA es fase estable para el
+    ///     runtime, así que post-relanzamiento el motor arranca solo con el estampado del claim que dejó
+    ///     `signUp()`. Meter esto en la máquina de migración es el error que A2/A3 existen para no cometer.
+    ///
+    /// Idempotente: re-invocarla reescribe las mismas dos keys.
+    @discardableResult
+    func activateBornCloudStorage() -> CloudWelcomeSignInPhase {
+        StorageModePersistence.writeCloudArmed(defaults: storageDefaults)
+        BornCloudBreadcrumb.storageActivated()
+        return .relaunch
     }
 
     // MARK: - Consent (paso 5)

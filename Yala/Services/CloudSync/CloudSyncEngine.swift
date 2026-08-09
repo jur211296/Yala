@@ -757,6 +757,16 @@ enum CloudSyncBreadcrumb {
         logger.error("CloudSyncRuntime storageModePairViolation phase=\(phase, privacy: .public) — .cloud con mirror ON en fase estable: motor BLOQUEADO")
     }
 
+    /// A3 (D-A7): el modo efectivo dice nube pero ESTE proceso montó el store personal en `.icloud` — el
+    /// motor NO arranca hasta el relanzamiento. Estado ESPERADO y transitorio en el alta born-cloud (entre
+    /// la escritura del par y el relanzamiento asistido) y en la ventana del adopt; sostenido a lo largo de
+    /// varios arranques significaría que alguien escribe el par sin pedir el relanzamiento.
+    /// Sin canario de métrica a propósito: el camino normal lo emite, así que contarlo no distinguiría un
+    /// incidente de un alta sana.
+    static func runtimeBlockedByPersonalMountMismatch(phase: String) {
+        logger.notice("CloudSyncRuntime personalMountMismatch phase=\(phase, privacy: .public) — modo nube con el store personal montado en .icloud: motor BLOQUEADO hasta el relanzamiento")
+    }
+
     /// w6 paso 4: flag `relaunchRequested` persistido. iOS no se auto-relanza — el relanzamiento asistido
     /// con UI es I14; en DEBUG el panel indica MATAR Y RELANZAR. El proceso NO se mata solo.
     static func migrationRelaunchRequested() {

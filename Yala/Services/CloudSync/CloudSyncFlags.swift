@@ -67,8 +67,19 @@ nonisolated enum StorageModePersistence {
     }
 
     /// Escritor ÚNICO del par completo (`.cloud` + mirror-off ARMADO) para los caminos que YA cruzaron el
-    /// gate del marcador — hoy solo el ADOPT (`runAdoptFlow`), donde el marcador lo exportó el LÍDER. C-1
-    /// colapsa aquí las dos escrituras sueltas para que no puedan divergir por descuido.
+    /// gate del marcador —el ADOPT (`runAdoptFlow`), donde el marcador lo exportó el LÍDER— **y para el
+    /// ALTA BORN-CLOUD** (A3 de D-A7, `BornCloudSignUpService.activateBornCloudStorage`). C-1 colapsa aquí
+    /// las dos escrituras sueltas para que no puedan divergir por descuido.
+    ///
+    /// **Por qué el born-cloud puede escribir el par SIN gate de marcador, que es la pregunta obvia:** el
+    /// gate existe para que un corpus que vive en CloudKit no se quede sin el `CloudMigrationMarker` que
+    /// avisa a los 2º devices (SERIO-1). En un alta born-cloud **no hay corpus en CloudKit**: la cuenta
+    /// acaba de nacer, el usuario no tiene datos que exportar y no existe nadie de quien divergir ⇒ no hay
+    /// marcador que esperar. Es el mismo razonamiento que `ICloudChannelVerdict.noChannelNoFootprint`
+    /// (`ICloudCutoverGateLogic.swift`): sin canal y sin huella, el gate del marcador no protege nada.
+    /// Lo que el born-cloud SÍ hereda del adopt es el relanzamiento: escribir el par no remonta el store
+    /// (`personalConfiguration` se evalúa una sola vez), y hasta que el proceso muera el mirror sigue vivo
+    /// — por eso `MigrationRuntimeGate.isPersonalMountMismatch` deja el motor quieto en esa ventana.
     ///
     /// **`UserDefaults` NO tiene transacción**, así que esto NO da atomicidad: un kill entre las dos keys
     /// sigue siendo posible. E **invertir el orden tampoco arregla nada**: la mitad `armado + .icloud` hace

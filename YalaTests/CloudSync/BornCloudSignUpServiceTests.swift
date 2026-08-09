@@ -335,6 +335,86 @@ struct BornCloudSignUpServiceTests {
     }
 }
 
+// MARK: - A3 · la primitiva del par `.cloud` + relanzamiento asistido
+
+/// La segunda cosa que A3 entrega (la primera es el guard de mount-mismatch, en
+/// `PersonalMountMismatchGuardTests`): el escritor del par en el camino born-cloud y la fase TERMINAL que
+/// su llamador debe presentar.
+@Suite("A3 · BornCloudSignUpService.activateBornCloudStorage (el par + la terminal)", .serialized)
+@MainActor
+struct BornCloudStorageActivationTests {
+
+    /// SUT mínimo: la primitiva no toca red, sesión ni faro — solo el almacén del par.
+    private func makeSUT() -> (sut: BornCloudSignUpService, storage: UserDefaults) {
+        let storage = makeIsolatedDefaults(prefix: "bornCloud.storage")
+        let sut = BornCloudSignUpService(
+            session: FakeSession(token: "jwt", userID: "sub-born"),
+            accountClient: CloudAccountClient(baseURL: URL(string: "https://gw.local")!,
+                                              urlSession: ClaimStubHTTP()),
+            deviceID: "device-born",
+            beacon: CloudBeacon(store: FakeBeaconStore()),
+            claimStore: CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "bornCloud.claim.a3")),
+            consentDefaults: makeIsolatedDefaults(prefix: "bornCloud.consent.a3"),
+            storageDefaults: storage)
+        return (sut, storage)
+    }
+
+    @Test("escribe el par COMPLETO por el escritor único → isCloudWithMirrorOn false")
+    func writesTheCompletePair() {
+        let (sut, storage) = makeSUT()
+        // Premisa: virgen. `.icloud` y sin armar, como todo device de 2.x.
+        #expect(StorageModePersistence.read(storage) == .icloud)
+        #expect(StorageModePersistence.isMirrorOffArmed(storage) == false)
+
+        sut.activateBornCloudStorage()
+
+        #expect(StorageModePersistence.read(storage) == .cloud)
+        #expect(StorageModePersistence.isMirrorOffArmed(storage) == true)
+        // El invariante C-1 visto desde su aserción: escribir SOLO el modo dejaría esto en `true` (= "modo
+        // nube con el mirror de CloudKit VIVO"), que es el estado PROHIBIDO en una fase estable.
+        #expect(StorageModePersistence.isCloudWithMirrorOn(storage) == false)
+    }
+
+    @Test("devuelve la fase TERMINAL de relanzamiento (y el proceso sigue vivo)")
+    func returnsTheRelaunchTerminalPhase() {
+        let (sut, _) = makeSUT()
+        #expect(sut.activateBornCloudStorage() == .relaunch)
+        // Si la primitiva se auto-matara, este test no llegaría a su segunda línea — pero eso no es una
+        // aserción sino una casualidad, así que el pin REAL de "jamás auto-kill" es el source-scan de abajo.
+    }
+
+    @Test("idempotente: re-invocarla deja el mismo par (un reintento del alta no rompe nada)")
+    func isIdempotent() {
+        let (sut, storage) = makeSUT()
+        sut.activateBornCloudStorage()
+        sut.activateBornCloudStorage()
+        #expect(StorageModePersistence.read(storage) == .cloud)
+        #expect(StorageModePersistence.isMirrorOffArmed(storage) == true)
+    }
+
+    @Test("no journalea NADA: la fase sigue en `notStarted`, que ya es estable para el runtime")
+    func doesNotJournalAnything() {
+        // El born-cloud no tiene máquina de migración. Post-relanzamiento el motor arranca solo por el
+        // estampado del claim (A2) + la fase estable + el par completo + el mount ya en `.cloud`. Si alguien
+        // journalea una fase transicional aquí, el motor se queda esperando a un runner que nadie conduce.
+        let (sut, _) = makeSUT()
+        let before = MigrationPhaseStore.shared.currentPhase
+        sut.activateBornCloudStorage()
+        #expect(MigrationPhaseStore.shared.currentPhase == before)
+        #expect(MigrationRuntimeGate.isDomainStablePhase(MigrationPhaseStore.shared.currentPhase))
+    }
+
+    @Test("el par NO se escribe por el mero hecho de construir el servicio ni de resolver un claim")
+    func pairIsNotWrittenAsASideEffectOfSignUp() async {
+        // A2 declara que `signUp()` no toca el storage y A3 lo mantiene: el par es un cambio de estado del
+        // DEVICE que solo el camino `.seeded` debe provocar, y lo provoca su llamador (A5) explícitamente.
+        let (sut, storage) = makeSUT()
+        _ = await sut.signUp()
+        #expect(StorageModePersistence.read(storage) == .icloud)
+        #expect(StorageModePersistence.isMirrorOffArmed(storage) == false)
+    }
+}
+
 // MARK: - Orden de efectos y estado DARK (source-scan)
 
 /// Lo que estos tests pinnean NO es observable desde el resultado: los tres efectos del orden van a
@@ -439,5 +519,53 @@ struct BornCloudSignUpWiringTests {
         #expect(source.contains("A5"))
         #expect(source.contains("SIN CALL-SITE DE PRODUCCIÓN"))
         #expect(source.contains("bórralo o cabléalo"))
+    }
+
+    // MARK: - A3
+
+    /// Cuerpo de `activateBornCloudStorage()`, sin comentarios. Mismo acotado y mismo porqué que
+    /// `signUpBody` (un rango ancho comprobaría que el símbolo EXISTE, no que se use aquí).
+    private static func activateBody(_ source: String) throws -> String {
+        let marker = "func activateBornCloudStorage() -> CloudWelcomeSignInPhase {"
+        let start = try #require(source.range(of: marker))
+        let chars = Array(source[start.upperBound...])
+        var depth = 1
+        var i = 0
+        while i < chars.count {
+            if chars[i] == "{" { depth += 1 }
+            if chars[i] == "}" { depth -= 1; if depth == 0 { break } }
+            i += 1
+        }
+        return String(chars[0..<min(i, chars.count)])
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+    }
+
+    @Test("A3: el par lo escribe el ESCRITOR ÚNICO, jamás dos `set` sueltos")
+    func activate_usesTheSinglePairWriter() throws {
+        let body = try Self.activateBody(try Self.serviceSource())
+        #expect(body.contains("StorageModePersistence.writeCloudArmed("), """
+            C-1 colapsó las dos escrituras en un solo escritor para que no puedan divergir. Escribir el modo
+            y el flag por separado aquí reabre la mitad `armado + .icloud`, que `CloudMigrationUIStateDeriver`
+            lee como `needsRelaunch(.toCloud)` ⇒ tarjeta de relanzamiento en bucle sin salida.
+            """)
+        #expect(!body.contains("StorageModePersistence.write("),
+                "el modo suelto no: el par entero o nada")
+    }
+
+    @Test("A3: la terminal NUNCA auto-mata el proceso (contrato de la fase `.relaunch`)")
+    func activate_neverKillsTheProcess() throws {
+        // iOS trata la auto-muerte como un crash y App Review la rechaza; además dejaría al usuario sin
+        // saber qué pasó. El contrato es que el usuario cierra la app a mano, igual que en el adopt.
+        // Se escanea el fichero ENTERO, no solo el cuerpo: un `exit` escondido en un helper privado de al
+        // lado tendría exactamente el mismo efecto.
+        let source = try Self.serviceSource()
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+        for killer in ["exit(0)", "exit(", "abort()", "fatalError(", "kill(", "SIGKILL"] {
+            #expect(!source.contains(killer), "el alta born-cloud no puede matar el proceso: \(killer)")
+        }
     }
 }

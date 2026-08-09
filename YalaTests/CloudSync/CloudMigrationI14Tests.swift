@@ -50,21 +50,25 @@ struct MigrationRuntimeGateTests {
         // adopt o por un cierre de reversa a medias— dejaba pasar el gate con el mirror de CloudKit MONTADO:
         // motor del dominio y mirror escribiendo el MISMO store, y ninguna fase que lo delatara. `UserDefaults`
         // no tiene transacción ⇒ el invariante no se puede garantizar en el escritor y se enforcea aquí.
-        #expect(!MigrationRuntimeGate.canRun(phase: .notStarted, cloudWithMirrorOn: true))
+        #expect(!MigrationRuntimeGate.canRun(phase: .notStarted, cloudWithMirrorOn: true,
+                                             personalMountMismatch: false))
     }
 
     @Test("notStarted + par coherente → arranca (device adoptado normal, byte-idéntico a antes)")
     func canRun_notStarted_pairCoherent_allows() {
         // La otra mitad del par de tests: el fix NO puede apagar el motor del adoptado sano. Si alguien
         // invierte el término nuevo, este test cae y no el de arriba.
-        #expect(MigrationRuntimeGate.canRun(phase: .notStarted, cloudWithMirrorOn: false))
+        #expect(MigrationRuntimeGate.canRun(phase: .notStarted, cloudWithMirrorOn: false,
+                                            personalMountMismatch: false))
     }
 
     @Test("done: bloqueado con el par roto, permitido con el par coherente")
     func canRun_done_bothPairValues() {
         // `done` es la otra fase estable (el LÍDER que migró) — mismo razonamiento que `notStarted`.
-        #expect(!MigrationRuntimeGate.canRun(phase: .done, cloudWithMirrorOn: true))
-        #expect(MigrationRuntimeGate.canRun(phase: .done, cloudWithMirrorOn: false))
+        #expect(!MigrationRuntimeGate.canRun(phase: .done, cloudWithMirrorOn: true,
+                                             personalMountMismatch: false))
+        #expect(MigrationRuntimeGate.canRun(phase: .done, cloudWithMirrorOn: false,
+                                            personalMountMismatch: false))
     }
 
     @Test("fase transicional: bloqueada con AMBOS valores del par (el término nuevo no la desbloquea)")
@@ -75,8 +79,48 @@ struct MigrationRuntimeGateTests {
         // arrancaría el motor a mitad del cutover.
         for cloudWithMirrorOn in [true, false] {
             #expect(!MigrationRuntimeGate.canRun(phase: .cutover(.markerWritten),
-                                                 cloudWithMirrorOn: cloudWithMirrorOn),
+                                                 cloudWithMirrorOn: cloudWithMirrorOn,
+                                                 personalMountMismatch: false),
                     "par roto=\(cloudWithMirrorOn)")
+        }
+    }
+
+    // MARK: - A3 (D-A7): mount-mismatch del store PERSONAL
+
+    @Test("par COMPLETO + mount `.icloud` → el motor NO arranca (el agujero que cierra A3)")
+    func canRun_pairComplete_butMirrorStillMounted_blocks() {
+        // El caso del born-cloud: el par se escribe en caliente ⇒ `cloudWithMirrorOn` es FALSE (el par está
+        // completo) y la fase es `notStarted` (ESTABLE) ⇒ los dos términos anteriores dejan pasar. Lo único
+        // que sabe que este proceso sigue con el mirror de CloudKit montado es el testigo del mount.
+        #expect(!MigrationRuntimeGate.canRun(phase: .notStarted, cloudWithMirrorOn: false,
+                                             personalMountMismatch: true))
+        #expect(!MigrationRuntimeGate.canRun(phase: .done, cloudWithMirrorOn: false,
+                                             personalMountMismatch: true))
+    }
+
+    @Test("isPersonalMountMismatch: solo `.cloud` persistido sobre mount `.icloud` (tabla de 4 celdas)")
+    func isPersonalMountMismatch_onlyCloudOverICloudMount() {
+        // La celda `.icloud` × `.icloud` es el 99 % del parque de 2.x: el término nuevo es inerte por
+        // construcción, exactamente igual que el de C-1. La celda `.cloud` × `.cloud` es el device ya
+        // relanzado (born-cloud o adopt), donde el motor DEBE poder arrancar.
+        for persisted in [StorageMode.icloud, .cloud] {
+            for mounted in [StorageMode.icloud, .cloud] {
+                let expected = (persisted == .cloud && mounted == .icloud)
+                #expect(MigrationRuntimeGate.isPersonalMountMismatch(persistedMode: persisted,
+                                                                    mountedMode: mounted) == expected,
+                        "persistido=\(persisted) montado=\(mounted)")
+            }
+        }
+    }
+
+    @Test("en `.icloud` el término nuevo es INERTE con cualquier mount (no-regresión del 99 % del parque)")
+    func icloudMode_mountMismatchTermIsInert() {
+        // Pin del no-cambio: un device 2.x nunca puede ver este guard, ni siquiera si su testigo dijera
+        // `.cloud` por lo que fuera. Si alguien reescribe el predicado mirando solo el mount, esto cae.
+        for mounted in [StorageMode.icloud, .cloud] {
+            #expect(!MigrationRuntimeGate.isPersonalMountMismatch(persistedMode: .icloud,
+                                                                  mountedMode: mounted),
+                    "montado=\(mounted)")
         }
     }
 
@@ -115,10 +159,20 @@ struct MigrationRuntimeGateTests {
         for phase in allPhases {
             let expected = expectedStable(phase)
             #expect(MigrationRuntimeGate.isDomainStablePhase(phase) == expected, "fase \(phase)")
-            #expect(MigrationRuntimeGate.canRun(phase: phase, cloudWithMirrorOn: false) == expected,
+            #expect(MigrationRuntimeGate.canRun(phase: phase, cloudWithMirrorOn: false,
+                                                personalMountMismatch: false) == expected,
                     "fase \(phase) con par coherente")
             // Y con el par ROTO ninguna fase arranca — ni las estables (el agujero de C-1) ni las demás.
-            #expect(!MigrationRuntimeGate.canRun(phase: phase, cloudWithMirrorOn: true), "fase \(phase) con par roto")
+            #expect(!MigrationRuntimeGate.canRun(phase: phase, cloudWithMirrorOn: true,
+                                                 personalMountMismatch: false),
+                    "fase \(phase) con par roto")
+            // A3: con mount-mismatch tampoco arranca NINGUNA, con el par sano o roto. Es una conjunción de
+            // tres términos: un `||` por descuido dejaría arrancar el born-cloud pre-relanzamiento.
+            for cloudWithMirrorOn in [true, false] {
+                #expect(!MigrationRuntimeGate.canRun(phase: phase, cloudWithMirrorOn: cloudWithMirrorOn,
+                                                     personalMountMismatch: true),
+                        "fase \(phase) con mount-mismatch (par roto=\(cloudWithMirrorOn))")
+            }
         }
     }
 }

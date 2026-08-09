@@ -210,6 +210,13 @@ final class CloudSyncRuntime {
     /// está viva y su claim registrado — sin este guard, cualquier re-arranque (startShared desde
     /// handleBecameActive, startRuntimeIfStable) drenaría la History del DUEÑO y pushearía sus filas
     /// a la cuenta entrante. Choke point único: TODOS los paths de arranque pasan por aquí.
+    ///
+    /// A3 (D-A7) — GUARD DE MOUNT-MISMATCH DEL STORE PERSONAL: el gemelo del anterior para el store del
+    /// DUEÑO, y hasta hoy NO existía. El par persistido dice qué modo QUIERE el device; el testigo
+    /// (`SwiftDataConfiguration.personalStoreMountedMode`) dice qué montó ESTE proceso, y escribir el par en
+    /// caliente no remonta nada. Ver `MigrationRuntimeGate.isPersonalMountMismatch` para el porqué completo.
+    /// Va DESPUÉS del guard M1 a propósito: la ventana de entrada de la secundaria satisface las dos
+    /// condiciones y su canario es el que dice la verdad de ese caso.
     static func canRunDomain() -> Bool {
         if SecondarySessionStore.isActive() && !SwiftDataConfiguration.secondaryStoreMounted {
             CloudSyncBreadcrumb.runtimeBlockedByMountMismatch()
@@ -235,7 +242,19 @@ final class CloudSyncRuntime {
                 MetricsService.cloudStorageModePairViolation()
             }
         }
-        return MigrationRuntimeGate.canRun(phase: phase, cloudWithMirrorOn: cloudWithMirrorOn)
+        // A3 (D-A7): el par puede estar COMPLETO y aun así este proceso tener el mirror montado — es el caso
+        // del born-cloud entre la escritura del par y el relanzamiento, y también la ventana del adopt. El
+        // testigo se captura al construir el container y NO cambia en caliente, así que aquí solo NO
+        // arrancamos: lo cura el relanzamiento, que es el contrato de la pantalla terminal.
+        let personalMountMismatch = MigrationRuntimeGate.isPersonalMountMismatch(
+            persistedMode: CloudSyncFlags.storageMode,
+            mountedMode: SwiftDataConfiguration.personalStoreMountedMode)
+        if personalMountMismatch {
+            CloudSyncBreadcrumb.runtimeBlockedByPersonalMountMismatch(phase: "\(phase)")
+        }
+        return MigrationRuntimeGate.canRun(phase: phase,
+                                           cloudWithMirrorOn: cloudWithMirrorOn,
+                                           personalMountMismatch: personalMountMismatch)
     }
 
     /// Canario D3 una-vez-por-proceso (el guard se consulta en cada becameActive — sin dedup

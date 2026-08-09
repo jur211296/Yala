@@ -288,6 +288,16 @@ enum SwiftDataConfiguration {
         secondaryStoreMounted = value
     }
 
+    /// Solo tests: fuerza el testigo del mount PERSONAL. El host de tests nunca evalúa la rama de
+    /// producción de `personalConfiguration` (corta antes en `isRunningTests`) ⇒ el testigo se queda en su
+    /// default `.icloud` SIEMPRE, así que un test que quiera ejercitar un device ya relanzado en modo nube
+    /// (el estado post-relanzamiento del born-cloud o del adopt) tiene que declararlo — es el mismo contrato
+    /// I11-2 que hace fake-able `isMirrorConfirmedOff`. Restaurar en `defer` bajo `@Suite(.serialized)`:
+    /// esto es estado GLOBAL DE PROCESO y dejarlo puesto contamina a las demás suites.
+    static func _testSetPersonalStoreMountedMode(_ value: StorageMode) {
+        personalStoreMountedMode = value
+    }
+
     private static func capturePersonalStoreMountedModeOnce(_ mode: StorageMode, secondary: Bool = false) {
         guard !personalStoreMountedModeCaptured else { return }
         personalStoreMountedModeCaptured = true

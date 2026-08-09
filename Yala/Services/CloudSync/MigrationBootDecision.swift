@@ -43,8 +43,42 @@ nonisolated enum MigrationRuntimeGate {
     ///
     /// `isDomainStablePhase` queda INTACTO (lo consumen otros sitios) y en `.icloud` el término nuevo es
     /// `false` por construcción ⇒ inerte para 2.x.
-    static func canRun(phase: MigrationPhase, cloudWithMirrorOn: Bool) -> Bool {
-        !cloudWithMirrorOn && isDomainStablePhase(phase)
+    ///
+    /// **A3 (D-A7) — TERCER término: `personalMountMismatch`.** El par persistido dice qué modo QUIERE el
+    /// device; no dice qué montó ESTE proceso. Un born-cloud escribe el par entero en caliente y hasta el
+    /// relanzamiento sigue corriendo sobre el store montado en `.icloud`: ahí `isCloudWithMirrorOn` da
+    /// `false` (el par está COMPLETO) y la fase es `notStarted` (ESTABLE) ⇒ los dos términos anteriores
+    /// dejaban arrancar el motor con el mirror de CloudKit todavía montado. Es el MISMO desenlace que el
+    /// agujero de C-1 por un camino distinto, y por eso el término es aditivo y va aquí: `canRun` es el
+    /// único sitio por el que pasa la decisión de arrancar. Es un parámetro SIN default a propósito —
+    /// cualquier consumidor futuro está obligado por el compilador a pronunciarse sobre el mount.
+    static func canRun(phase: MigrationPhase, cloudWithMirrorOn: Bool, personalMountMismatch: Bool) -> Bool {
+        !personalMountMismatch && !cloudWithMirrorOn && isDomainStablePhase(phase)
+    }
+
+    /// A3 (D-A7): ¿el modo EFECTIVO dice nube pero este proceso montó el store personal en `.icloud`?
+    ///
+    /// `personalConfiguration` se evalúa UNA sola vez al construir el container y el testigo
+    /// (`SwiftDataConfiguration.personalStoreMountedMode`) se captura con él, así que **escribir el par en
+    /// caliente no remonta nada**: hasta el relanzamiento el proceso sigue con el mirror de CloudKit vivo.
+    /// Arrancar el motor del dominio ahí sería motor + mirror escribiendo el mismo store — la doble
+    /// escritura que el relanzamiento asistido (P3) existe para evitar.
+    ///
+    /// Hasta A3 lo único que impedía ese estado era una CONVENCIÓN: el único camino a `.cloud` pasaba por la
+    /// máquina de migración, que exige el relanzamiento. El born-cloud abre un segundo camino, y una
+    /// convención no es un guard. Con esto, si alguien mañana escribe el par sin relanzar, el motor se queda
+    /// quieto en vez de duplicar escrituras.
+    ///
+    /// **En `.icloud` es `false` por construcción** ⇒ inerte para el 99 % del parque, igual que el término
+    /// de C-1. Y cubre también la ventana del ADOPT existente (par escrito por `runAdoptFlow`, proceso
+    /// viejo), que hoy depende de que nadie invoque `start()` a mitad de sesión.
+    ///
+    /// El modo que se pasa es el EFECTIVO (`CloudSyncFlags.storageMode`), no el persistido: es el que
+    /// gobierna qué store se sincroniza. En la sesión secundaria OPERATIVA el testigo vale `.cloud`
+    /// (`personalStoreDecision == .secondaryCloudSession`) ⇒ no hay mismatch; su VENTANA DE ENTRADA la corta
+    /// antes el guard M1 de `CloudSyncRuntime.canRunDomain`, que tiene su propio canario.
+    static func isPersonalMountMismatch(persistedMode: StorageMode, mountedMode: StorageMode) -> Bool {
+        persistedMode == .cloud && mountedMode == .icloud
     }
 
     static func isDomainStablePhase(_ phase: MigrationPhase) -> Bool {
