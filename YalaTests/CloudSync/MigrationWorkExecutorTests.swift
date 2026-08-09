@@ -1365,6 +1365,67 @@ struct MigrationWorkExecutorTests {
                 "created + branch migración → proceedMigration persistido (contenido real, lección d49d2e47)")
     }
 
+    // MARK: - Claim · los otros tres estados (ampliación de la tabla, A2 de D-A7)
+    //
+    // Al escribir el productor born-cloud (`BornCloudSignUpService`, A2) la nota del punto de control exigía
+    // comprobar que la rama `.migration` ya estuviera pinneada antes de acotar la matriz nueva a
+    // `.bornCloud`. **No lo estaba**: a nivel de `performClaim` solo había `created` y el camino sin JWT —
+    // `existing_stable`, `claiming_in_progress` y el transient viajaban cubiertos únicamente por la lógica
+    // PURA (`AccountClaimDecisionTests`) y por el runner con un executor FALSO, que no ejercita ni el
+    // estampado ni el gate de la métrica. Estos tres cierran esa mitad.
+
+    @Test("performClaim: 200 existing_stable → estampa routeReturningUser (el líder se retira, no re-migra)")
+    func performClaim_existingStable_stampsRouteReturningUser() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-stable")
+        let stub = RoutingStub()
+        stub.claimBody = Data(#"{"state":"existing_stable"}"#.utf8)
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.claim.stable"))
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    claimStore: claimStore)
+        #expect(await executor.performClaim() == .success(.existingStable))
+        #expect(claimStore.action(forUserID: "sub-stable") == .routeReturningUser,
+                "existing_stable NUNCA siembra ni lidera: es la clausura de la variante A (§k.4)")
+    }
+
+    @Test("performClaim: 200 claiming_in_progress → estampa waitForLeader (otro device lidera; el gate no arranca)")
+    func performClaim_claimingInProgress_stampsWaitForLeader() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-follower")
+        let stub = RoutingStub()
+        stub.claimBody = Data(#"{"state":"claiming_in_progress"}"#.utf8)
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.claim.follower"))
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    claimStore: claimStore)
+        #expect(await executor.performClaim() == .success(.claimingInProgress))
+        #expect(claimStore.action(forUserID: "sub-follower") == .waitForLeader)
+        #expect(CloudSyncRuntime.shouldStartSync(after: .waitForLeader) == false,
+                "un seguidor no debe arrancar el sync mientras el líder no termine (§g.6)")
+    }
+
+    @Test("performClaim: 500 → transient y el claim-store queda INTACTO (nada que estampar sin claim)")
+    func performClaim_transient_doesNotStamp() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-5xx")
+        let stub = RoutingStub()
+        stub.claimStatus = 500
+        stub.claimBody = Data(#"{"error":{"message":"upstream"}}"#.utf8)
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.claim.5xx"))
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    claimStore: claimStore)
+        guard case .transient = await executor.performClaim() else {
+            Issue.record("500 debe clasificar como transient (retomable)")
+            return
+        }
+        #expect(claimStore.action(forUserID: "sub-5xx") == nil)
+    }
+
     // MARK: - Canal iCloud · probeICloudChannel (C-1)
     //
     // La decisión es pura y se pinnea celda a celda en `ICloudCutoverGateLogicTests`. Lo que se pinnea AQUÍ
