@@ -106,6 +106,55 @@ final class GroupsSmokeUITests: XCTestCase {
         )
     }
 
+    /// groups-form: con «Moneda única para deudas» activado, tocar la fila de divisa abre el
+    /// selector de moneda.
+    ///
+    /// **Este test es el pin de un bug de PRODUCTO, no un smoke de montaje.** El label del botón
+    /// de la fila es un `HStack` con `Spacer()` y sin fondo relleno; mientras el
+    /// `.contentShape(Rectangle())` vivió en el `Button` en vez de dentro del label, el hueco
+    /// central de la fila no era tocable y **solo respondían los glifos de los extremos**. XCUITest
+    /// sintetiza el tap en el centro del frame de accesibilidad, que cae exacto en ese hueco ⇒
+    /// `.tap()` sobre la fila es el mutante natural del fix: devolver el `contentShape` al `Button`
+    /// deja este test en rojo y ninguno de los otros siete se entera. Medido el 2026-08-07 en
+    /// iPhone 17 Pro / iOS 26.5 (dos taps sobre la MISMA fila y la MISMA `y`: sobre el glifo abre,
+    /// al centro no corre ni la acción). No es flake — es determinista, y a un dedo humano que
+    /// apunte al medio de la fila le pasaba igual.
+    func test_groupFormCurrencyRowOpensSelector() {
+        let app = launchOnGroupsWithSession()
+
+        let fab = app.buttons["groups_fab_new"]
+        XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció el FAB de Grupos.")
+        fab.tap()
+
+        let newGroup = app.buttons["groups_fab_new_group"]
+        XCTAssertTrue(newGroup.waitForExistence(timeout: 5), "No apareció la opción 'Nuevo grupo' del FAB.")
+        newGroup.tap()
+
+        XCTAssertTrue(
+            app.textFields["group_form_name_input"].waitForExistence(timeout: 5),
+            "GroupFormView no montó (group_form_name_input)."
+        )
+
+        // La fila de divisa solo existe con el toggle ON.
+        let toggle = app.switches["group_form_single_currency_toggle"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: 5), "No apareció el toggle de moneda única.")
+        toggle.tap()
+
+        let currencyRow = app.buttons["group_form_currency_row"]
+        XCTAssertTrue(
+            currencyRow.waitForExistence(timeout: 5),
+            "El toggle no reveló la fila de divisa (group_form_currency_row)."
+        )
+        currencyRow.tap()
+
+        // El selector monta con su sección de recomendadas, donde USD está SIEMPRE (regional +
+        // USD/EUR/GBP) y sin necesidad de scroll.
+        XCTAssertTrue(
+            app.buttons["currency_selector_row_USD"].waitForExistence(timeout: 5),
+            "El tap al CENTRO de la fila de divisa no abrió CurrencySelectorView — el hueco del Spacer volvió a quedar muerto."
+        )
+    }
+
     /// groups-expense-form: desde el tab, FAB → "Nuevo gasto" abre el composer con el chip de
     /// grupo editable (2 grupos en el seed) y el cambio de grupo desde el selector.
     func test_groupExpenseFromTabFAB() {

@@ -138,6 +138,7 @@ struct CurrencySelectorView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("currency_selector_row_\(currency.rawValue)")
     }
 }
 

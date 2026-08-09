@@ -176,6 +176,7 @@ struct GroupFormView: View {
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     Toggle(L10n.Groups.Form.showDebtsInSingleCurrency, isOn: $showDebtsInSingleCurrency)
                         .font(DS.Typography.body)
+                        .accessibilityIdentifier("group_form_single_currency_toggle")
 
                     Text(L10n.Groups.Form.showDebtsInSingleCurrencyHint)
                         .font(DS.Typography.captionSmall)
@@ -205,9 +206,14 @@ struct GroupFormView: View {
                                     .foregroundStyle(.secondary)
                             }
                             .padding(.vertical, DS.Spacing.sm)
+                            // El `contentShape` va DENTRO del label, NO en el `Button`: el label es un
+                            // `HStack` con `Spacer()` y sin fondo relleno, así que ahí el hueco central
+                            // no es tocable y solo responden los glifos de los extremos. Ver la regla del
+                            // DS en `.claude/rules/swiftui-ds.md`.
+                            .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .contentShape(Rectangle())
+                        .accessibilityIdentifier("group_form_currency_row")
                     }
                 }
                 .padding(.horizontal, DS.FormRow.paddingH)
