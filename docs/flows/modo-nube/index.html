@@ -19,6 +19,7 @@
 <script src="vendor/mermaid.min.js"></script>
 <script src="data/nodes.js"></script>
 <script src="data/flows.js"></script>
+<script src="data/f2.js"></script>
 <style>
   :root {
     --bg: #0f1115;
@@ -226,7 +227,7 @@
     <span>HEAD <b>9d6f0f1c</b></span>
     <span>branch <b>2.0.5</b></span>
     <span>medido el <b>2026-08-09</b></span>
-    <span>chip <b>F1</b> · las capturas las pone F2</span>
+    <span>capturas F2: <b>2026-08-10</b> en sim (iPhone 17 Pro · Yala Dev · staging), sobre HEAD <b>f4d10fa6</b></span>
   </div>
   <div class="rule">
     <b>Regla madre.</b> Cada nodo de este Atlas sale de una celda REAL de una tabla de lógica pura o de una
@@ -269,15 +270,21 @@
   </section>
 
   <section id="f2">
-    <h2>Qué le toca a F2</h2>
+    <h2>Capturas · estado tras F2</h2>
     <p class="lede">
-      Cada nodo con <code>id</code> de screenshot espera su imagen en <code>img/&lt;id&gt;.png</code>. Los
-      nodos marcados <em>«decisión pura, sin pantalla»</em> no tienen captura por construcción y no cuentan
-      como hueco. El sim no puede dar: el sheet real de SIWA/Google completándose, la atestación contra
-      producción y el faro cross-device real (iCloud KV sin cuenta en el simulador) — esos van a la lista
-      <code>device-only</code> que F2 consolida.
+      Cada nodo con <code>id</code> de screenshot tiene o una imagen REAL del simulador en
+      <code>img/&lt;id&gt;.png</code>, o una marca <code>device-only</code> con su motivo y qué debería
+      verse — nunca una pantalla parecida de otro estado. Los nodos <em>«decisión pura, sin pantalla»</em>
+      no tienen captura por construcción. <code>check.mjs</code> valida que ningún nodo quede vacío.
+      Las capturas se tomaron el <b>2026-08-10</b> (scheme Yala Dev contra staging); las pantallas que el
+      sim no puede dar las captura el owner en device y se integran en una pasada posterior.
     </p>
     <div class="summary" id="shots"></div>
+    <h3 style="font-size:15px;margin:18px 0 8px">Lista device-only consolidada</h3>
+    <div id="deviceonly"></div>
+    <h3 style="font-size:15px;margin:22px 0 8px">Hallazgos de F2</h3>
+    <p class="lede">Lo que el recorrido del simulador contradijo o añadió a lo dibujado.</p>
+    <div id="f2findings"></div>
   </section>
 
   <section id="mantenimiento">
@@ -309,6 +316,7 @@
   const FLOWS = window.ATLAS_FLOWS;
   const COV = window.ATLAS_COVERAGE;
   const FIND = window.ATLAS_FINDINGS;
+  const F2 = window.ATLAS_F2 || { deviceOnly: {}, captureNotes: {}, findings: [] };
 
   // ── Índice de flujos ──────────────────────────────────────────────────────
   const nav = document.getElementById("nav");
@@ -321,7 +329,7 @@
   ["cobertura", "hallazgos", "f2", "mantenimiento"].forEach((id, i) => {
     const a = document.createElement("a");
     a.href = "#" + id;
-    a.textContent = ["Cobertura", "Hallazgos", "Para F2", "Mantenimiento"][i];
+    a.textContent = ["Cobertura", "Hallazgos", "Capturas", "Mantenimiento"][i];
     nav.appendChild(a);
   });
 
@@ -370,10 +378,18 @@
       return;
     }
     let html = "<h3>" + n.title + "</h3>";
-    if (n.shot) {
+    const dOnly = n.shot ? F2.deviceOnly[id] : null;
+    if (n.shot && !dOnly) {
       html += '<div class="shot">img/' + n.shot + "</div>";
       html += '<div class="imgslot"><img src="img/' + n.shot + '" alt="" ' +
-              "onerror=\"this.parentElement.textContent='Pendiente de F2 · img/" + n.shot + "'\"></div>";
+              "onerror=\"this.parentElement.textContent='FALTA la imagen · img/" + n.shot + "'\"></div>";
+      if (F2.captureNotes[id]) {
+        html += '<div class="field"><h4>Cómo se capturó (F2)</h4><p>' + F2.captureNotes[id] + "</p></div>";
+      }
+    } else if (dOnly) {
+      html += '<div class="shot none">device-only · sin captura de sim</div>';
+      html += '<div class="imgslot" style="text-align:left"><b>Por qué no hay captura:</b> ' + dOnly.reason +
+              "<br><br><b>Qué debería verse:</b> " + dOnly.expected + "</div>";
     } else {
       html += '<div class="shot none">decisión pura · sin pantalla, sin captura</div>';
     }
@@ -437,20 +453,53 @@
     showNode(a.getAttribute("data-node"));
   });
 
-  // ── Inventario de capturas para F2 ────────────────────────────────────────
+  // ── Estado de capturas tras F2 ────────────────────────────────────────────
   const ids = Object.keys(NODES);
   const withShot = ids.filter(k => NODES[k].shot);
   const pure = ids.length - withShot.length;
-  const byFlow = {};
-  withShot.forEach(k => {
-    const p = NODES[k].shot.split("-")[0];
-    byFlow[p] = (byFlow[p] || 0) + 1;
-  });
+  const dOnlyIds = withShot.filter(k => F2.deviceOnly[k]);
+  const captured = withShot.filter(k => !F2.deviceOnly[k]);
   document.getElementById("shots").innerHTML =
     "<div><b>" + ids.length + "</b>nodos con panel</div>" +
-    "<div><b>" + withShot.length + "</b>capturas que F2 debe poblar</div>" +
-    "<div><b>" + pure + "</b>decisiones puras (sin pantalla)</div>" +
-    Object.keys(byFlow).sort().map(p => "<div><b>" + byFlow[p] + "</b>" + p + "-*.png</div>").join("");
+    "<div><b>" + captured.length + "</b>capturas reales de sim</div>" +
+    "<div><b>" + dOnlyIds.length + "</b>device-only (con motivo)</div>" +
+    "<div><b>" + pure + "</b>decisiones puras (sin pantalla)</div>";
+
+  const dl = document.getElementById("deviceonly");
+  dOnlyIds.sort().forEach(k => {
+    const d = document.createElement("div");
+    d.className = "finding";
+    d.innerHTML =
+      '<div class="meta">' + esc(NODES[k].shot) + "</div>" +
+      "<h4>" + NODES[k].title + "</h4>" +
+      "<p><b>Motivo:</b> " + F2.deviceOnly[k].reason + "</p>" +
+      "<p style='margin-top:6px'><b>Qué debería verse:</b> " + F2.deviceOnly[k].expected + "</p>" +
+      '<p><a href="#" data-node="' + k + '">Abrir el nodo →</a></p>';
+    dl.appendChild(d);
+  });
+  dl.addEventListener("click", e => {
+    const a = e.target.closest("a[data-node]");
+    if (!a) return;
+    e.preventDefault();
+    showNode(a.getAttribute("data-node"));
+  });
+
+  const f2f = document.getElementById("f2findings");
+  F2.findings.forEach(f => {
+    const d = document.createElement("div");
+    d.className = "finding";
+    d.innerHTML =
+      '<div class="meta">' + f.id + " · " + f.sev + "</div>" +
+      "<h4>" + f.title + "</h4><p>" + f.body + "</p>" +
+      '<p><a href="#" data-node="' + f.node + '">Abrir el nodo →</a></p>';
+    f2f.appendChild(d);
+  });
+  f2f.addEventListener("click", e => {
+    const a = e.target.closest("a[data-node]");
+    if (!a) return;
+    e.preventDefault();
+    showNode(a.getAttribute("data-node"));
+  });
 
   // ── Mermaid ───────────────────────────────────────────────────────────────
   mermaid.initialize({

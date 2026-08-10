@@ -31,9 +31,10 @@ dibujaron. Un desajuste es un hueco **dicho**, no silencioso.
 | `index.html` | El Atlas: índice, 7 diagramas, panel lateral, cobertura, hallazgos |
 | `data/nodes.js` | El CONTENIDO de los paneles (62 nodos con sus coordenadas de código) |
 | `data/flows.js` | Los 7 diagramas Mermaid + la auto-auditoría + los hallazgos |
+| `data/f2.js` | El estado del chip **F2**: lista `device-only` con motivos, notas de captura y hallazgos F2 |
 | `vendor/mermaid.min.js` | Mermaid 11.6.0 vendorizado — **2,5 MB**, la única dependencia |
-| `img/` | Las capturas. Las puebla el chip **F2**, una por `id` de screenshot |
-| `check.mjs` | El pin: valida diagramas, enlaces, convención de ids y que el HTML sea offline |
+| `img/` | Las capturas reales del simulador (31), una por `id` de screenshot capturable en sim |
+| `check.mjs` | El pin: valida diagramas, enlaces, convención de ids, que el HTML sea offline y el contrato F2 (cero nodos vacíos) |
 
 ### Sobre el peso de `vendor/mermaid.min.js`
 
@@ -57,12 +58,18 @@ una coordenada de código, y `index.html` no referencia **ni una** URL remota.
 **Muerde** (verificado el 2026-08-09): apuntar un `click` a un nodo inexistente da 2 fallos (el enlace roto
 y el panel que se queda huérfano); devolver el `<script>` de mermaid a un CDN da el fallo de offline.
 
-## Para el chip F2
+## Estado de las capturas (F2, 2026-08-10)
 
-Cada nodo con `id` de screenshot espera su imagen en `img/<id>.png`. Los nodos marcados «decisión pura,
-sin pantalla» no tienen captura **por construcción** y no cuentan como hueco — el propio Atlas los cuenta
-aparte en la sección «Qué le toca a F2».
+Recorrido en el simulador (iPhone 17 Pro · scheme Yala Dev contra staging) el **2026-08-10** sobre HEAD
+`f4d10fa6`. De los 54 `id` de screenshot: **31 capturas reales** y **23 `device-only`** — cada una con su
+motivo y qué debería verse, en `data/f2.js` y en la sección «Capturas» del propio Atlas. `check.mjs`
+valida el contrato: cero nodos vacíos, ninguna imagen huérfana, ningún device-only con imagen presente.
 
-Lo que el simulador no puede dar (y se marca `device-only`, no se finge): el sheet real de SIWA/Google
-completándose, la atestación contra producción y el faro cross-device real (iCloud KV sin cuenta en el
-simulador).
+Lo que el simulador no pudo dar (marcado, no fingido): todo lo que exige una **sesión backend real**
+(SIWA/Google no completan en sim) — claim `created`, adopt, reversa conducida, cutover, banner de sesión,
+push-all —, los estados **multi-device** (marcador de líder, faro cross-device) y los que dependen de una
+**respuesta del servidor** no fabricable (403, `claiming_in_progress`). El owner los captura en device y
+se integran en una pasada posterior.
+
+**Muerde también el contrato F2** (verificado el 2026-08-10): borrar una imagen da `nodo VACÍO`; marcar
+device-only un nodo con imagen da la contradicción. Ambos, exit 1.

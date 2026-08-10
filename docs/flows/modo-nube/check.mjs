@@ -56,12 +56,13 @@ vm.runInThisContext(src, { filename: "mermaid.min.js" });
 const mermaid = globalThis.mermaid;
 
 // Cargar los datos del Atlas (asignan window.ATLAS_*)
-for (const f of ["data/nodes.js", "data/flows.js"]) {
+for (const f of ["data/nodes.js", "data/flows.js", "data/f2.js"]) {
   vm.runInThisContext(fs.readFileSync(`${ROOT}/${f}`, "utf8"), { filename: f });
 }
 
 const FLOWS = win.ATLAS_FLOWS ?? globalThis.ATLAS_FLOWS;
 const NODES = win.ATLAS_NODES ?? globalThis.ATLAS_NODES;
+const F2 = win.ATLAS_F2 ?? globalThis.ATLAS_F2;
 
 mermaid.initialize({ startOnLoad: false, securityLevel: "loose", theme: "dark" });
 
@@ -126,7 +127,31 @@ const remote = [...html.matchAll(/(?:src|href)\s*=\s*"(https?:)?\/\/[^"]+"/g)].m
 if (remote.length) { fail++; console.log(`FAIL  offline referencias remotas: ${remote.join(", ")}`); }
 else console.log("OK    offline sin una sola URL remota en index.html");
 
-// 7) Render REAL de un diagrama (prueba que no solo parsea: dibuja)
+// 7) Contrato F2: CERO nodos vacíos — todo shot id tiene o su imagen real en img/ o su
+//    marca device-only con motivo Y qué-debería-verse. Y sin sobras: ni un device-only
+//    con imagen presente (contradicción), ni una imagen huérfana sin nodo.
+{
+  let capturadas = 0;
+  for (const [k, n] of Object.entries(NODES)) {
+    if (!n.shot) continue;
+    const hasImg = fs.existsSync(`${ROOT}/img/${n.shot}`);
+    const dOnly = F2?.deviceOnly?.[k];
+    if (hasImg && dOnly) { fail++; console.log(`FAIL  f2     ${k}: marcado device-only PERO img/${n.shot} existe`); }
+    else if (!hasImg && !dOnly) { fail++; console.log(`FAIL  f2     ${k}: sin imagen y sin marca device-only — nodo VACÍO`); }
+    else if (dOnly && (!dOnly.reason || !dOnly.expected)) {
+      fail++; console.log(`FAIL  f2     ${k}: device-only sin motivo o sin qué-debería-verse`);
+    }
+    if (hasImg) capturadas++;
+  }
+  const known = new Set(Object.values(NODES).map(n => n.shot).filter(Boolean));
+  for (const f of fs.readdirSync(`${ROOT}/img`).filter(f => f.endsWith(".png"))) {
+    if (!known.has(f)) { fail++; console.log(`FAIL  f2     img/${f} no corresponde a ningún nodo`); }
+  }
+  const dCount = Object.keys(F2?.deviceOnly ?? {}).length;
+  console.log(`OK    f2     ${capturadas} capturas + ${dCount} device-only = cero nodos vacíos`);
+}
+
+// 8) Render REAL de un diagrama (prueba que no solo parsea: dibuja)
 try {
   const { svg } = await mermaid.render("probe", FLOWS[0].graph);
   if (!svg.includes("<svg")) throw new Error("sin <svg>");
