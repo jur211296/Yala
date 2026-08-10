@@ -22,6 +22,11 @@ enum WelcomeFlowStep {
     /// 2º nivel de "Soy nuevo" (A4 de D-A7, §k.2): privacidad total (iCloud) | cuenta en la nube.
     /// Solo alcanzable con >1 opción visible (bypass en `handleNewBranch`).
     case newChooser
+    /// R2 · TERMINAL: este proceso montó el store NEUTRO y el destino elegido necesita el mirror de
+    /// CloudKit ⇒ hay que reabrir la app. Vive DENTRO de este cover a propósito: un cover propio sería una
+    /// presentación nueva colgando del anchor de `ContentView` (matriz de readiness, regla (3) de
+    /// Presentaciones) para enseñar dos párrafos; aquí es un step más del contenedor que ya está montado.
+    case mirrorRelaunch
 }
 
 struct WelcomeFlowContainer: View {
@@ -42,6 +47,10 @@ struct WelcomeFlowContainer: View {
     /// A26 (§k.2): el faro de iCloud-KV dice que este Apple ID YA tiene cuenta nube ⇒ el Welcome
     /// NO ofrece la elección y encamina al returning-user con el provider del propio faro.
     var onBeaconRoutesToCloudSignIn: (CloudSignInProvider) -> Void
+    /// R2: el destino elegido necesita el mirror y este proceso montó neutro ⇒ el container va a su step
+    /// terminal y ContentView PERSISTE el destino para retomarlo tras el relanzamiento. Se separa en dos
+    /// responsabilidades porque el container no debe tocar `UserDefaults` ni los flags de onboarding.
+    var onNeedsMirrorRelaunch: (WelcomeMirrorRelaunchLogic.Destination) -> Void
 
     @State private var step: WelcomeFlowStep = .hero
     @State private var showDetectedDataAlert: Bool = false
@@ -55,7 +64,8 @@ struct WelcomeFlowContainer: View {
         onSelectExistingOption: @escaping (WelcomeAccountChoiceLogic.ExistingOption) -> Void,
         onSelectPrivateAccount: @escaping () -> Void,
         onSelectCloudAccount: @escaping () -> Void,
-        onBeaconRoutesToCloudSignIn: @escaping (CloudSignInProvider) -> Void
+        onBeaconRoutesToCloudSignIn: @escaping (CloudSignInProvider) -> Void,
+        onNeedsMirrorRelaunch: @escaping (WelcomeMirrorRelaunchLogic.Destination) -> Void
     ) {
         self.initialStep = initialStep
         self.onSelectBranch = onSelectBranch
@@ -64,6 +74,7 @@ struct WelcomeFlowContainer: View {
         self.onSelectPrivateAccount = onSelectPrivateAccount
         self.onSelectCloudAccount = onSelectCloudAccount
         self.onBeaconRoutesToCloudSignIn = onBeaconRoutesToCloudSignIn
+        self.onNeedsMirrorRelaunch = onNeedsMirrorRelaunch
         self._step = State(initialValue: initialStep)
     }
 
@@ -114,7 +125,7 @@ struct WelcomeFlowContainer: View {
                         switch branch {
                         case .restore: handleExistingBranch()
                         case .new: handleNewBranch()
-                        case .invite: onSelectBranch(branch)
+                        case .invite: leaveWelcome(to: .inviteRecovery) { onSelectBranch(branch) }
                         }
                     },
                     onBack: { goTo(.hero) }
@@ -123,7 +134,7 @@ struct WelcomeFlowContainer: View {
             case .existingChooser:
                 WelcomeExistingChooserView(
                     options: visibleExistingOptions,
-                    onSelect: { option in onSelectExistingOption(option) },
+                    onSelect: { option in handleExistingOption(option) },
                     onBack: { goTo(.chooser) }
                 )
                 .transition(.opacity)
@@ -134,6 +145,9 @@ struct WelcomeFlowContainer: View {
                     onBack: { goTo(.chooser) }
                 )
                 .transition(.opacity)
+            case .mirrorRelaunch:
+                WelcomeMirrorRelaunchView()
+                    .transition(.opacity)
             }
         }
         .task {
@@ -148,7 +162,10 @@ struct WelcomeFlowContainer: View {
             isPresented: $showDetectedDataAlert
         ) {
             Button(L10n.Welcome.DetectedData.loadMyData) {
-                onLoadMyData()
+                // Mismo destino que "Restaurar de iCloud" (el RestoreView es literalmente el mismo), así
+                // que el portal decide igual: sin mirror adjunto, esa pantalla contaría filas de un import
+                // que nunca va a llegar.
+                leaveWelcome(to: .restoreICloud) { onLoadMyData() }
             }
             Button(L10n.Welcome.DetectedData.startFresh) {
                 goTo(.chooser)
@@ -174,15 +191,46 @@ struct WelcomeFlowContainer: View {
         }
     }
 
+    /// **R2 · el único portal de salida del Welcome.** Toda elección que abandona este cover pasa por aquí,
+    /// y aquí se decide si antes hay que reabrir la app.
+    ///
+    /// Está en el CONTAINER y no en los callbacks de `ContentView` por una razón concreta: los destinos se
+    /// producen en SEIS sitios (las dos cards del sub-chooser nuevo, las tres del existente, el `.invite`
+    /// del chooser, el encaminamiento por faro y el alert «Detectamos tu cuenta»), varios de ellos con
+    /// bypass, y repartir la comprobación por los seis es exactamente cómo divergen. Con un portal único,
+    /// añadir una salida nueva obliga a nombrar su `Destination`.
+    private func leaveWelcome(to destination: WelcomeMirrorRelaunchLogic.Destination,
+                              proceed: () -> Void) {
+        guard WelcomeMirrorRelaunchLogic.shouldRelaunch(
+            destination: destination,
+            mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision) else {
+            proceed()
+            return
+        }
+        onNeedsMirrorRelaunch(destination)
+        goTo(.mirrorRelaunch)
+    }
+
     /// "Ya tengo una cuenta": con una sola opción visible (prod DARK / uitest) hace
     /// bypass directo — comportamiento idéntico al flujo restore de hoy; con ambas,
     /// muestra el 2º nivel.
     private func handleExistingBranch() {
         if let single = WelcomeAccountChoiceLogic.bypass(visibleExistingOptions) {
-            onSelectExistingOption(single)
+            handleExistingOption(single)
         } else {
             goTo(.existingChooser)
         }
+    }
+
+    /// R2: el sub-chooser de "Ya tengo una cuenta" y su bypass comparten portal. Solo `restoreICloud`
+    /// necesita el mirror; las dos entradas a la cuenta nube montan el mismo store que el neutro ya es.
+    private func handleExistingOption(_ option: WelcomeAccountChoiceLogic.ExistingOption) {
+        let destination: WelcomeMirrorRelaunchLogic.Destination
+        switch option {
+        case .restoreICloud: destination = .restoreICloud
+        case .cloudSignIn, .googleSignIn: destination = .cloudSignIn
+        }
+        leaveWelcome(to: destination) { onSelectExistingOption(option) }
     }
 
     /// "Soy nuevo" (A4). **El faro se consulta ANTES de ofrecer nada** (§k.2 / A26) y, por tanto,
@@ -200,7 +248,7 @@ struct WelcomeFlowContainer: View {
             options: visibleNewOptions
         ) {
         case .cloudSignIn(let provider):
-            onBeaconRoutesToCloudSignIn(provider)
+            leaveWelcome(to: .cloudSignIn) { onBeaconRoutesToCloudSignIn(provider) }
         case .single(let option):
             handleNewOption(option)
         case .chooser:
@@ -211,11 +259,15 @@ struct WelcomeFlowContainer: View {
     private func handleNewOption(_ option: WelcomeAccountChoiceLogic.NewOption) {
         switch option {
         case .privateAccount:
-            onSelectPrivateAccount()
+            // R2: **es el bypass de producción** (percent remoto de la elección nube en 0 ⇒ el sub-chooser
+            // ni se muestra), así que este es el camino por el que pasa hoy todo usuario nuevo — y el que
+            // paga el relanzamiento que el alta nube deja de pagar. Es el reparto que la Opción C aprueba.
+            leaveWelcome(to: .privateOnboarding) { onSelectPrivateAccount() }
         case .cloudAccount:
             // A5: el alta born-cloud. El stub explícito de A4 (`showBornCloudPendingAlert`) queda
             // BORRADO en este mismo commit, no silenciado — era una promesa con fecha.
-            onSelectCloudAccount()
+            // R2: pasa por el portal igual que los demás, y sale sin relanzar — que es el chip entero.
+            leaveWelcome(to: .cloudAccount) { onSelectCloudAccount() }
         }
     }
 

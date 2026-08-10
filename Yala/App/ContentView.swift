@@ -1202,7 +1202,31 @@ struct ContentView: View {
         #endif
         if needsLanguageSelection {
             showLanguageSelection = true
-        } else if !hasShownWelcomeChooser {
+            return
+        }
+        // R2: destino retenido por el relanzamiento del mount neutro. Va ANTES del chooser y del onboarding
+        // porque es más específico que los dos: el usuario YA eligió, y lo que este arranque tiene que hacer
+        // es honrar esa elección en vez de volver a preguntar (chooser) o asumir la de por defecto
+        // (onboarding). Se CONSUME al leerlo — un destino que no se retira secuestra la pantalla inicial de
+        // todos los arranques siguientes.
+        if let pending = WelcomePendingDestinationStore.consume() {
+            switch pending {
+            case .privateOnboarding:
+                showOnboarding = true
+            case .restoreICloud:
+                showWelcomeRestore = true
+            case .inviteRecovery:
+                showInviteRecovery = true
+            case .cloudAccount, .cloudSignIn:
+                // Inalcanzables: `requiresMirror` es `false` para las dos, así que el portal del Welcome
+                // nunca las persiste. Si aparecen, la respuesta segura es el recorrido normal — jamás
+                // saltar al cover de nube con una sesión que este proceso no ha visto.
+                welcomeFlowInitialStep = .chooser
+                showWelcomeFlow = true
+            }
+            return
+        }
+        if !hasShownWelcomeChooser {
             welcomeFlowInitialStep = .hero
             showWelcomeFlow = true
         } else {
@@ -1335,6 +1359,23 @@ private struct WelcomeFlowModifier: ViewModifier {
                         welcomeCloudEntry = .reentry(provider)
                         showWelcomeFlow = false
                         showWelcomeCloudSignIn = true
+                    },
+                    onNeedsMirrorRelaunch: { destination in
+                        // R2: el destino necesita el mirror y este proceso montó neutro. Se cierra la
+                        // elección (el chooser no vuelve a salir) y se GUARDA a dónde iba, porque el
+                        // relanzamiento mata el proceso: sin esto, quien pidió restaurar reabriría la app
+                        // y aterrizaría en el onboarding normal con su elección perdida.
+                        //
+                        // La limpieza de residuales del camino privado corre AQUÍ y no tras el
+                        // relanzamiento: es la misma que hace `startFreshPrivateOnboarding` y tiene que
+                        // ocurrir antes de que el onboarding lea nada. El alert de datos existentes que
+                        // esa función también monta NO hace falta — el mount neutro exige que no haya
+                        // archivo de store, así que en este camino no puede haber datos que confirmar.
+                        hasShownWelcomeChooser = true
+                        if destination == .privateOnboarding {
+                            OnboardingResetHelper.clearResidualPreferencesForFreshStart()
+                        }
+                        WelcomePendingDestinationStore.set(destination)
                     }
                 )
                 .environment(SessionState.shared)
@@ -1346,7 +1387,11 @@ private struct WelcomeFlowModifier: ViewModifier {
             .fullScreenCover(
                 isPresented: $showWelcomeCloudSignIn.gated(by: showGroupInviteOnboarding),
                 onDismiss: {
-                    if !hasCompletedOnboarding && !showGroupInviteOnboarding {
+                    // R2: `!showOnboarding` es el término nuevo. El alta born-cloud que NO relanza cierra
+                    // este cover y enciende el onboarding en la misma vuelta; sin este término, el respaldo
+                    // devolvería al usuario al chooser encima del onboarding que acaba de abrirse — dos
+                    // presentaciones ante el mismo anchor, que es la regla (4) de Presentaciones.
+                    if !hasCompletedOnboarding && !showGroupInviteOnboarding && !showOnboarding {
                         welcomeFlowInitialStep = .chooser
                         showWelcomeFlow = true
                     }
@@ -1372,6 +1417,18 @@ private struct WelcomeFlowModifier: ViewModifier {
                     },
                     onFinishedToApp: {
                         showWelcomeCloudSignIn = false
+                    },
+                    onBornCloudCompleted: {
+                        // R2: el alta terminó sin relanzamiento (mount neutro). Se cierra el cover y se
+                        // presenta el onboarding NORMAL — que es exactamente lo que el usuario habría visto
+                        // tras reabrir la app. `hasShownWelcomeChooser` ya quedó `true` al elegir la card
+                        // nube, así que no hay chooser al que volver.
+                        //
+                        // `hasCompletedOnboarding` NO se marca aquí: el onboarding es real y lo marca él.
+                        // Por eso `showOnboarding` se enciende EXPLÍCITAMENTE en vez de dejar que el
+                        // `onDismiss` decida — su rama de respaldo devuelve al chooser.
+                        showWelcomeCloudSignIn = false
+                        showOnboarding = true
                     },
                     onBack: {
                         showWelcomeCloudSignIn = false

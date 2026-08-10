@@ -5423,3 +5423,18 @@
 "welcome.bornCloud.title" = "Erstelle dein Yala-Konto";
 "welcome.bornCloud.subtitle" = "Damit kannst du Yala auf jedem Gerät öffnen.";
 "welcome.bornCloud.creating" = "Dein Konto wird erstellt…";
+
+/* Welcome · terminal de relanzamiento cuando el destino elegido necesita el espejo de iCloud (R2) */
+"welcome.mirrorRelaunch.title" = "Ein letzter Schritt: Öffne Yala neu";
+
+/* Welcome · cuerpo del terminal de relanzamiento del mount neutro (R2) */
+"welcome.mirrorRelaunch.body" = "Schließe die App und öffne sie erneut, damit wir deine Daten schützen können. Danach machen wir genau dort weiter, wo du aufgehört hast.";
+
+/* Welcome · alta born-cloud completada sin relanzamiento (R2) */
+"welcome.bornCloud.readyTitle" = "Dein Konto ist bereit!";
+
+/* Welcome · cuerpo del alta born-cloud sin relanzamiento (R2) */
+"welcome.bornCloud.readyBody" = "Alles bereit. Alles, was du erfasst, wird in deinem Konto gespeichert.";
+
+/* Welcome · CTA del alta born-cloud sin relanzamiento (R2) */
+"welcome.bornCloud.readyCta" = "Loslegen";

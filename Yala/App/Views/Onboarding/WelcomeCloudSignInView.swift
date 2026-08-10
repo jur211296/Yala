@@ -35,6 +35,7 @@
 //
 
 import AuthenticationServices
+import SwiftData
 import SwiftUI
 
 struct WelcomeCloudSignInView: View {
@@ -63,8 +64,17 @@ struct WelcomeCloudSignInView: View {
     var onSecondaryEntryFlagsMarked: () -> Void
     /// Salida a la app (waitingLeader → "Continuar a la app").
     var onFinishedToApp: () -> Void
+    /// R2: el alta born-cloud terminó **sin relanzamiento** (el mount ya era compatible) ⇒ cerrar este
+    /// cover y presentar el onboarding NORMAL. Distinto de `onFinishedToApp`, que solo cierra: sin este
+    /// callback el `onDismiss` del cover devolvería al usuario al chooser (`!hasCompletedOnboarding`),
+    /// que es justo el sitio del que acaba de salir.
+    var onBornCloudCompleted: () -> Void
     /// Volver al chooser (solo en fases no comprometidas: intro/notFound/blocked/error).
     var onBack: () -> Void
+
+    /// R2: el alta sin relanzar arranca el motor del dominio EN ESTA SESIÓN y `startShared` necesita un
+    /// contexto. Es el mismo `mainContext` que el bootstrap le pasa en el paso 14.7.
+    @Environment(\.modelContext) private var modelContext
 
     @State private var phase: CloudWelcomeSignInPhase = .intro
     @State private var showConsent = false
@@ -156,7 +166,8 @@ struct WelcomeCloudSignInView: View {
         case .intro, .notFound, .blockedForeignData, .error, .providerMismatch: true
         // `.creating`: el claim está en vuelo y puede CREAR la cuenta server-side — salir a mitad
         // dejaría al usuario sin saber si se dio de alta. Mismo criterio que `.checking`.
-        case .checking, .creating, .adopting, .waitingLeader, .relaunch,
+        // `.bornCloudReady` es terminal como `.relaunch`: la cuenta está creada y el par escrito.
+        case .checking, .creating, .adopting, .waitingLeader, .relaunch, .bornCloudReady,
              .secondaryConfirm, .relaunchSecondary: false
         }
     }
@@ -178,6 +189,8 @@ struct WelcomeCloudSignInView: View {
             waitingLeaderContent
         case .relaunch:
             relaunchContent
+        case .bornCloudReady:
+            bornCloudReadyContent
         case .secondaryConfirm:
             secondaryConfirmContent
         case .relaunchSecondary:
@@ -430,6 +443,33 @@ struct WelcomeCloudSignInView: View {
         .accessibilityIdentifier("welcome_cloud_relaunch")
     }
 
+    /// R2 · el alta terminó y NO hay nada que reabrir. Es una pantalla de continuidad, no una terminal de
+    /// espera: por eso lleva CTA y no un texto pasivo. El copy no promete sincronización todavía —el motor
+    /// acaba de arrancar— sino que la cuenta está lista, que es lo único medido en este instante.
+    private var bornCloudReadyContent: some View {
+        VStack(spacing: DS.Spacing.lg) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 44))
+                .foregroundStyle(.white.opacity(0.9))
+                .accessibilityHidden(true)
+            Text(L10n.Welcome.BornCloud.readyTitle)
+                .font(DS.Typography.title2)
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+            Text(L10n.Welcome.BornCloud.readyBody)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.white.opacity(0.7))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, DS.Spacing.xl)
+            YalaPrimaryButton(L10n.Welcome.BornCloud.readyCta) {
+                onBornCloudCompleted()
+            }
+            .padding(.horizontal, DS.Spacing.xl)
+            .accessibilityIdentifier("welcome_born_cloud_ready_cta")
+        }
+        .accessibilityIdentifier("welcome_born_cloud_ready")
+    }
+
     private var secondaryConfirmContent: some View {
         VStack(spacing: DS.Spacing.lg) {
             messageContent(
@@ -549,7 +589,13 @@ struct WelcomeCloudSignInView: View {
             // El par se escribe ANTES de sembrar nada — en born-cloud es trivialmente cierto porque
             // no hay nada pre-relanzamiento que sembrar. La primitiva DEVUELVE la fase terminal;
             // jamás mata el proceso.
-            phase = service.activateBornCloudStorage()
+            //
+            // R2: qué terminal sale de ahí lo decide el TESTIGO de mount de este proceso, no la pantalla.
+            // Se le pasa desde aquí (y no lo lee la primitiva por dentro) para que la decisión sea
+            // inyectable y su tabla, testeable sin montar un container.
+            phase = service.activateBornCloudStorage(
+                mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision,
+                context: modelContext)
         case .continueAsReturningUser:
             // Variante A de §f.1: la cuenta ya estaba poblada ⇒ **NO se siembra**. Con la sesión ya
             // viva, `runSignInFlow` salta el sign-in y sigue por el returning-user que YA existe

@@ -4847,6 +4847,19 @@ enum L10n {
             static var subtitle: String { ls("welcome.bornCloud.subtitle", comment: "") }
             /// Progreso del claim: la cuenta se está CREANDO, no verificando.
             static var creating: String { ls("welcome.bornCloud.creating", comment: "") }
+            /// R2 · el alta terminó SIN relanzamiento (el proceso montó el store neutro). Copy propio y no
+            /// el de `Storage.Relaunch`: aquí no hay nada que reabrir, hay que seguir al onboarding.
+            static var readyTitle: String { ls("welcome.bornCloud.readyTitle", comment: "") }
+            static var readyBody: String { ls("welcome.bornCloud.readyBody", comment: "") }
+            static var readyCta: String { ls("welcome.bornCloud.readyCta", comment: "") }
+        }
+
+        /// R2 · terminal del Welcome cuando el destino elegido necesita el espejo de iCloud y este proceso
+        /// montó el store NEUTRO. Copy propio y NO `Storage.Relaunch.*`: aquel describe una migración de un
+        /// corpus que ya existe; aquí el usuario acaba de elegir y todavía no tiene datos.
+        enum MirrorRelaunch {
+            static var title: String { ls("welcome.mirrorRelaunch.title", comment: "") }
+            static var body: String { ls("welcome.mirrorRelaunch.body", comment: "") }
         }
 
         /// Pantalla de sign-in a cuenta del Modo Nube (H4).

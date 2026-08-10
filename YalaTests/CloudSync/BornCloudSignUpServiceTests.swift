@@ -344,9 +344,18 @@ struct BornCloudSignUpServiceTests {
 @MainActor
 struct BornCloudStorageActivationTests {
 
-    /// SUT mínimo: la primitiva no toca red, sesión ni faro — solo el almacén del par.
-    private func makeSUT() -> (sut: BornCloudSignUpService, storage: UserDefaults) {
+    /// Contador de arranques del motor (R2·d). El seam existe porque la implementación real asigna el
+    /// singleton `CloudSyncRuntime.shared`; aquí solo interesa CUÁNTAS veces se pidió.
+    @MainActor final class EngineStartSpy {
+        private(set) var starts = 0
+        func record() { starts += 1 }
+    }
+
+    /// SUT mínimo: la primitiva no toca red, sesión ni faro — solo el almacén del par (y, desde R2, el seam
+    /// del arranque del motor).
+    private func makeSUT() -> (sut: BornCloudSignUpService, storage: UserDefaults, engine: EngineStartSpy) {
         let storage = makeIsolatedDefaults(prefix: "bornCloud.storage")
+        let engine = EngineStartSpy()
         let sut = BornCloudSignUpService(
             session: FakeSession(token: "jwt", userID: "sub-born"),
             accountClient: CloudAccountClient(baseURL: URL(string: "https://gw.local")!,
@@ -355,18 +364,28 @@ struct BornCloudStorageActivationTests {
             beacon: CloudBeacon(store: FakeBeaconStore()),
             claimStore: CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "bornCloud.claim.a3")),
             consentDefaults: makeIsolatedDefaults(prefix: "bornCloud.consent.a3"),
-            storageDefaults: storage)
-        return (sut, storage)
+            storageDefaults: storage,
+            startSyncEngine: { _ in engine.record() })
+        return (sut, storage, engine)
+    }
+
+    /// Envoltura de conveniencia: la firma de R2 pide los dos argumentos nuevos en cada llamada. El contexto
+    /// es de juguete a propósito — la primitiva no lo TOCA, solo se lo pasa al seam del arranque.
+    private func activate(
+        _ sut: BornCloudSignUpService,
+        mount: SwiftDataConfiguration.PersonalStoreDecision
+    ) throws -> CloudWelcomeSignInPhase {
+        sut.activateBornCloudStorage(mountedDecision: mount, context: try makeTestContext())
     }
 
     @Test("escribe el par COMPLETO por el escritor único → isCloudWithMirrorOn false")
-    func writesTheCompletePair() {
-        let (sut, storage) = makeSUT()
+    func writesTheCompletePair() throws {
+        let (sut, storage, _) = makeSUT()
         // Premisa: virgen. `.icloud` y sin armar, como todo device de 2.x.
         #expect(StorageModePersistence.read(storage) == .icloud)
         #expect(StorageModePersistence.isMirrorOffArmed(storage) == false)
 
-        sut.activateBornCloudStorage()
+        _ = try activate(sut, mount: .iCloudMirror)
 
         #expect(StorageModePersistence.read(storage) == .cloud)
         #expect(StorageModePersistence.isMirrorOffArmed(storage) == true)
@@ -375,31 +394,72 @@ struct BornCloudStorageActivationTests {
         #expect(StorageModePersistence.isCloudWithMirrorOn(storage) == false)
     }
 
-    @Test("devuelve la fase TERMINAL de relanzamiento (y el proceso sigue vivo)")
-    func returnsTheRelaunchTerminalPhase() {
-        let (sut, _) = makeSUT()
-        #expect(sut.activateBornCloudStorage() == .relaunch)
-        // Si la primitiva se auto-matara, este test no llegaría a su segunda línea — pero eso no es una
-        // aserción sino una casualidad, así que el pin REAL de "jamás auto-kill" es el source-scan de abajo.
+    @Test("el par se escribe SIEMPRE, decida lo que decida la terminal (R2)")
+    func writesThePair_onEveryMount() throws {
+        // El par es un cambio de estado del DEVICE y no depende de si hace falta relanzar. Si alguien lo
+        // metiera dentro de la rama del relanzamiento, un alta sobre mount neutro quedaría con la cuenta
+        // creada server-side y el device todavía en `.icloud`: cuenta huérfana y motor apagado.
+        for mount in SwiftDataConfiguration.PersonalStoreDecision.allCases {
+            let (sut, storage, _) = makeSUT()
+            _ = try activate(sut, mount: mount)
+            #expect(StorageModePersistence.read(storage) == .cloud, "montado=\(mount)")
+            #expect(StorageModePersistence.isMirrorOffArmed(storage) == true, "montado=\(mount)")
+        }
+    }
+
+    @Test("R2 · la terminal la decide el MOUNT: con mirror adjunto sigue siendo el relanzamiento")
+    func terminal_isRelaunch_whenMirrorIsStillAttached() throws {
+        // Es el comportamiento de HOY y el que ve todo device que llegó al alta con archivo de store.
+        for mount in SwiftDataConfiguration.PersonalStoreDecision.allCases
+        where mount.attachesCloudKitMirror {
+            let (sut, _, engine) = makeSUT()
+            #expect(try activate(sut, mount: mount) == .relaunch, "montado=\(mount)")
+            #expect(engine.starts == 0, """
+                con el mirror todavía montado, arrancar el motor sería motor + mirror escribiendo el mismo
+                store: lo cura el relanzamiento, no un arranque en caliente. montado=\(mount)
+                """)
+        }
+    }
+
+    @Test("R2 · con el mount NEUTRO el alta NO relanza y el motor arranca en sesión")
+    func terminal_isBornCloudReady_onNeutralMount_andStartsTheEngine() throws {
+        let (sut, _, engine) = makeSUT()
+        #expect(try activate(sut, mount: .neutralNoMirror) == .bornCloudReady)
+        #expect(engine.starts == 1, """
+            (R2·d) sin este arranque el alta sin relanzamiento deja el motor apagado hasta el siguiente
+            lanzamiento de la app: nada sube, en silencio.
+            """)
+    }
+
+    @Test("R2 · los mounts de modo nube tampoco relanzan (el store ya es el que el par pide)")
+    func terminal_isBornCloudReady_onCloudModeMounts() throws {
+        // Alcanzable como reintento: un alta que ya escribió el par y se relanzó vuelve a esta primitiva con
+        // el mount ya en `.cloudMirrorOff`. Pedir un segundo relanzamiento ahí sería un bucle.
+        for mount in SwiftDataConfiguration.PersonalStoreDecision.allCases
+        where !mount.attachesCloudKitMirror {
+            let (sut, _, engine) = makeSUT()
+            #expect(try activate(sut, mount: mount) == .bornCloudReady, "montado=\(mount)")
+            #expect(engine.starts == 1, "montado=\(mount)")
+        }
     }
 
     @Test("idempotente: re-invocarla deja el mismo par (un reintento del alta no rompe nada)")
-    func isIdempotent() {
-        let (sut, storage) = makeSUT()
-        sut.activateBornCloudStorage()
-        sut.activateBornCloudStorage()
+    func isIdempotent() throws {
+        let (sut, storage, _) = makeSUT()
+        _ = try activate(sut, mount: .iCloudMirror)
+        _ = try activate(sut, mount: .iCloudMirror)
         #expect(StorageModePersistence.read(storage) == .cloud)
         #expect(StorageModePersistence.isMirrorOffArmed(storage) == true)
     }
 
     @Test("no journalea NADA: la fase sigue en `notStarted`, que ya es estable para el runtime")
-    func doesNotJournalAnything() {
+    func doesNotJournalAnything() throws {
         // El born-cloud no tiene máquina de migración. Post-relanzamiento el motor arranca solo por el
         // estampado del claim (A2) + la fase estable + el par completo + el mount ya en `.cloud`. Si alguien
         // journalea una fase transicional aquí, el motor se queda esperando a un runner que nadie conduce.
-        let (sut, _) = makeSUT()
+        let (sut, _, _) = makeSUT()
         let before = MigrationPhaseStore.shared.currentPhase
-        sut.activateBornCloudStorage()
+        _ = try activate(sut, mount: .iCloudMirror)
         #expect(MigrationPhaseStore.shared.currentPhase == before)
         #expect(MigrationRuntimeGate.isDomainStablePhase(MigrationPhaseStore.shared.currentPhase))
     }
@@ -408,7 +468,7 @@ struct BornCloudStorageActivationTests {
     func pairIsNotWrittenAsASideEffectOfSignUp() async {
         // A2 declara que `signUp()` no toca el storage y A3 lo mantiene: el par es un cambio de estado del
         // DEVICE que solo el camino `.seeded` debe provocar, y lo provoca su llamador (A5) explícitamente.
-        let (sut, storage) = makeSUT()
+        let (sut, storage, _) = makeSUT()
         _ = await sut.signUp()
         #expect(StorageModePersistence.read(storage) == .icloud)
         #expect(StorageModePersistence.isMirrorOffArmed(storage) == false)
@@ -528,10 +588,10 @@ struct BornCloudSignUpWiringTests {
 
     // MARK: - A3
 
-    /// Cuerpo de `activateBornCloudStorage()`, sin comentarios. Mismo acotado y mismo porqué que
+    /// Cuerpo de `activateBornCloudStorage(...)`, sin comentarios. Mismo acotado y mismo porqué que
     /// `signUpBody` (un rango ancho comprobaría que el símbolo EXISTE, no que se use aquí).
     private static func activateBody(_ source: String) throws -> String {
-        let marker = "func activateBornCloudStorage() -> CloudWelcomeSignInPhase {"
+        let marker = ") -> CloudWelcomeSignInPhase {"
         let start = try #require(source.range(of: marker))
         let chars = Array(source[start.upperBound...])
         var depth = 1
@@ -572,5 +632,64 @@ struct BornCloudSignUpWiringTests {
         for killer in ["exit(0)", "exit(", "abort()", "fatalError(", "kill(", "SIGKILL"] {
             #expect(!source.contains(killer), "el alta born-cloud no puede matar el proceso: \(killer)")
         }
+    }
+
+    // MARK: - R2 (d) · el motor arranca EN SESIÓN al cerrar el alta
+
+    /// Cuerpo del `init`, sin comentarios. Mismo acotado y mismo porqué que los dos de arriba.
+    private static func initBody(_ source: String) throws -> String {
+        let marker = "startSyncEngine: (@MainActor (ModelContext) -> Void)? = nil\n    ) {"
+        let start = try #require(source.range(of: marker), "la firma del init cambió")
+        let chars = Array(source[start.upperBound...])
+        var depth = 1
+        var i = 0
+        while i < chars.count {
+            if chars[i] == "{" { depth += 1 }
+            if chars[i] == "}" { depth -= 1; if depth == 0 { break } }
+            i += 1
+        }
+        return String(chars[0..<min(i, chars.count)])
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+    }
+
+    /// **La mutación (d) del chip.** Hasta R2, `CloudSyncRuntime.startShared` solo se invocaba en el boot
+    /// (`AppBootstrapper`, paso 14.7) y en el re-arranque del controller de migración — los dos ANTES de
+    /// que el alta escriba el par. Un alta que no relanza y no arranca el motor deja el device con la
+    /// cuenta creada, el par escrito y NADA subiendo hasta el siguiente lanzamiento: el mismo daño que el
+    /// relanzamiento existía para evitar, con peor visibilidad porque no hay pantalla que lo anuncie.
+    ///
+    /// Va por source-scan y no solo por el spy porque lo que decide es QUIÉN se invoca de verdad en
+    /// producción: el seam podría quedarse con un default no-op y los tests de comportamiento —que inyectan
+    /// su propio doble— seguirían todos en verde.
+    @Test("R2 (d): el default del seam es el arranque REAL del motor del dominio")
+    func engineSeam_defaultsToTheRealRuntimeStart() throws {
+        let body = try Self.initBody(try Self.serviceSource())
+        #expect(body.contains("CloudSyncRuntime.startShared("), """
+            El default del seam tiene que ser `CloudSyncRuntime.startShared`. Con un no-op ahí, el alta sin
+            relanzamiento deja el motor apagado hasta el arranque siguiente y ningún test de comportamiento
+            lo nota: todos inyectan su propio doble.
+            """)
+        #expect(body.contains("startSyncEngine ?? {"),
+                "el seam es un OVERRIDE de tests, no la vía normal: producción tiene que caer al default")
+    }
+
+    @Test("R2 (d): el cierre del alta INVOCA el seam, y solo en la rama sin relanzamiento")
+    func activate_invokesTheEngineSeam_onlyWhenItDoesNotRelaunch() throws {
+        let body = try Self.activateBody(try Self.serviceSource())
+        let guardRelaunch = try #require(body.range(of: "return .relaunch"))
+        let start = try #require(body.range(of: "startSyncEngine(context)"), """
+            El cierre del alta tiene que arrancar el motor. Sin esta línea el chip entrega un alta más
+            rápida y un device que no sincroniza.
+            """)
+        #expect(guardRelaunch.lowerBound < start.lowerBound, """
+            el arranque va DESPUÉS del early-return del relanzamiento: con el mirror todavía montado,
+            arrancar el motor sería motor + mirror sobre el mismo store.
+            """)
+        // Y después de escribir el par: al revés, `startShared` leería `.icloud` y se retiraría sin dejar
+        // nada arrancado — un no-op silencioso que ningún spy de este fichero distinguiría del correcto.
+        let pair = try #require(body.range(of: "StorageModePersistence.writeCloudArmed("))
+        #expect(pair.lowerBound < start.lowerBound)
     }
 }

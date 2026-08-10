@@ -321,7 +321,14 @@ struct BornCloudSignUpOrderWiringTests {
                                  in: try Self.source(Self.viewPath))
         let signIn = try #require(body.range(of: "ensureSignedIn()"))
         let claim = try #require(body.range(of: "service.signUp()"))
-        let activate = try #require(body.range(of: "service.activateBornCloudStorage()"))
+        let activate = try #require(body.range(of: "service.activateBornCloudStorage("))
+        // R2: la vista le pasa el TESTIGO de mount de este proceso. Sin ese argumento la primitiva tendría
+        // que leerlo por dentro y su tabla dejaría de ser testeable sin montar un container.
+        #expect(body.contains("mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision"), """
+            la terminal del alta la decide qué montó ESTE proceso. Pasar una constante —o leer
+            `CloudSyncFlags.storageMode`, que es el modo de AHORA y cambia en caliente— devuelve el
+            relanzamiento a un camino que ya no lo necesita, o peor, lo quita de uno que sí.
+            """)
         #expect(signIn.lowerBound < claim.lowerBound,
                 "claimear sin sesión no puede autenticarse")
         #expect(claim.lowerBound < activate.lowerBound, """

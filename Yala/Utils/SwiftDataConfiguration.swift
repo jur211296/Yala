@@ -225,6 +225,55 @@ enum SwiftDataConfiguration {
         /// Sin iCloud → store local **con `cloudKitDatabase` por DEFECTO** (`.automatic`). El nombre dice
         /// "sin mirror" y es engañoso: ver `attachesCloudKitMirror`.
         case localNoMirror
+        /// **R2 · el mount NEUTRO del relanzamiento cero.** Primer arranque de una instalación sin archivo
+        /// de store, sin par persistido, sin sesión secundaria y sin chooser visto (`isFreshInstallForNeutralMount`)
+        /// → `cloudKitDatabase: .none` **EXPLÍCITO** sobre el archivo personal.
+        ///
+        /// Es byte-idéntico a `.cloudMirrorOff` como `ModelConfiguration` (mismo archivo, mismo schema,
+        /// mismo `.none`) y esa identidad ES la razón de ser del chip: elegir la nube en un alta fresh deja
+        /// de exigir un remonte, porque el store montado **ya es** el que el par `.cloud` + `mirrorOffArmed`
+        /// pide. Se mantiene como caso APARTE y no se reusa `.cloudMirrorOff` porque son dos hechos
+        /// distintos —aquí el device todavía no ha elegido nada— y los tres ejes de abajo los separan:
+        /// el neutro NO es un mount de modo nube (eje C), así que el aviso de iCloud SÍ le habla.
+        ///
+        /// El `.none` es explícito y no heredado: la auditoría R1(c) MIDIÓ que `.automatic` adjunta el
+        /// mirror igual sin cuenta iCloud, así que "no pasar `cloudKitDatabase:`" no es un atajo, es el
+        /// mount contrario.
+        case neutralNoMirror
+    }
+
+    /// **R2 · el predicado PURO de «instalación fresca» que habilita el mount neutro.** Cuatro términos, y
+    /// los cuatro son señales PRE-MOUNT (se pueden leer antes de construir un solo `ModelContainer`):
+    ///
+    ///  1. **No existe el archivo del store personal.** Es el término estructural del chip: todo device del
+    ///     parque actual tiene archivo ⇒ **el camino nuevo le es inalcanzable por construcción**, y con él
+    ///     la promesa de no-regresión de 2.1. La URL se deriva de una `ModelConfiguration` efímera (patrón
+    ///     de `deleteStoreFiles`) para no capturar el testigo antes de tiempo.
+    ///  2. **El par de storage está en su estado virgen** (`.icloud` sin armar). Un par a medias o `.cloud`
+    ///     ya escrito significa que este device YA eligió, y quien decide entonces es la rama del par.
+    ///  3. **No hay descriptor de sesión secundaria.** Redundante con la precedencia de abajo y aun así
+    ///     explícito: si alguien reordena las ramas, el término sigue aquí.
+    ///  4. **El chooser del Welcome no se ha visto.** Es lo que hace que el neutro dure UN solo arranque:
+    ///     en cuanto el usuario elige, el flag queda `true` y el arranque siguiente vuelve a la tabla
+    ///     normal. Sin este término, un kill a mitad del Welcome con el archivo aún sin crear podría
+    ///     re-montar neutro indefinidamente.
+    ///
+    /// **Un device que acaba de ejecutar el wipe de cierre de sesión pasa este predicado, y es CORRECTO:**
+    /// `performSignOutWipeIfArmed` borra los archivos, repone el par a `.icloud` y devuelve el device a
+    /// "recién instalado" (su propio docblock lo dice), así que a esta altura es INDISTINGUIBLE de una
+    /// reinstalación — y tratarlo igual es lo que R4 querrá. Este chip no toca el sign-out; solo declara
+    /// que no hay nada que distinguir.
+    static func isFreshInstallForNeutralMount(
+        personalStoreFileExists: Bool,
+        persistedMode: StorageMode,
+        mirrorOffArmed: Bool,
+        secondarySessionActive: Bool,
+        hasShownWelcomeChooser: Bool
+    ) -> Bool {
+        !personalStoreFileExists
+            && persistedMode == .icloud && !mirrorOffArmed
+            && !secondarySessionActive
+            && !hasShownWelcomeChooser
     }
 
     /// SERIO 1 del review adversarial (ciclo C): `storageMode == .cloud` por sí solo NO basta para
@@ -243,12 +292,22 @@ enum SwiftDataConfiguration {
     /// M1: `secondarySessionActive` (descriptor de `SecondarySessionStore`) gana ANTES que todo —
     /// SIN acoplarse a `mirrorOffArmed` (ese par protege el kill-window del cutover de MIGRACIÓN;
     /// la sesión secundaria no migra, adopta sobre un archivo propio que nunca tuvo mirror).
+    ///
+    /// **R2 — `freshInstall` va SIN default a propósito** (molde del tercer término de
+    /// `MigrationRuntimeGate.canRun`): la tabla de mounts es el sitio donde un descuido cuesta un store
+    /// montado del revés, así que todo llamador está obligado por el compilador a pronunciarse sobre si
+    /// este device es una instalación fresca. Su posición en la cadena tampoco es cosmética: va **DESPUÉS**
+    /// de la sesión secundaria y del par `.cloud`+armado —que protegen invariantes duros (M1 y SERIO-1)—
+    /// aunque `isFreshInstallForNeutralMount` ya los excluya. Las tres ramas son mutuamente excluyentes
+    /// hoy; el orden es lo que mantiene inofensivo un ensanchamiento futuro del predicado.
     static func personalStoreDecision(
         storageMode: StorageMode, mirrorOffArmed: Bool, iCloudAvailable: Bool,
-        secondarySessionActive: Bool = false
+        secondarySessionActive: Bool = false,
+        freshInstall: Bool
     ) -> PersonalStoreDecision {
         if secondarySessionActive { return .secondaryCloudSession }
         if storageMode == .cloud && mirrorOffArmed { return .cloudMirrorOff }
+        if freshInstall { return .neutralNoMirror }
         return iCloudAvailable ? .iCloudMirror : .localNoMirror
     }
 }
@@ -290,7 +349,7 @@ extension SwiftDataConfiguration.PersonalStoreDecision {
             return true   // `.private(container)` explícito
         case .localNoMirror:
             return true   // `.automatic` — MEDIDO: adjunta aunque no haya cuenta
-        case .cloudMirrorOff, .secondaryCloudSession:
+        case .cloudMirrorOff, .secondaryCloudSession, .neutralNoMirror:
             return false  // `.none` explícito
         }
     }
@@ -303,11 +362,17 @@ extension SwiftDataConfiguration.PersonalStoreDecision {
     /// espeja nada, y es EL caso que el aviso existe para atender — el usuario acaba de iniciar sesión en
     /// iCloud y hay que remontar con `.private` explícito. Colapsar los dos ejes en un booleano dejaría el
     /// aviso mudo para ese device.
+    ///
+    /// **R2 · `neutralNoMirror` es `false`, y es la celda que da sentido al eje.** Un mount neutro se hace
+    /// muchas veces CON cuenta iCloud disponible (es un fresh install cualquiera): si el testigo durable
+    /// guardara la disponibilidad —lo que hacía antes de R1— registraría `true` y el aviso «monté sin
+    /// CloudKit y ahora hay iCloud» quedaría MUDO para siempre, dejando al device sin mirror y sin forma de
+    /// enterarse. Registrando el eje B queda `false` y el aviso funciona.
     nonisolated var mirrorsToICloud: Bool {
         switch self {
         case .iCloudMirror:
             return true
-        case .localNoMirror, .cloudMirrorOff, .secondaryCloudSession:
+        case .localNoMirror, .cloudMirrorOff, .secondaryCloudSession, .neutralNoMirror:
             return false
         }
     }
@@ -326,11 +391,17 @@ extension SwiftDataConfiguration.PersonalStoreDecision {
     ///
     /// Y sigue vivo lo que R1 existe para proteger: un mount SIN mirror que NO sea de modo nube —el
     /// `localNoMirror` de hoy, el neutro de R2— sí avisa.
+    ///
+    /// **R2 · `neutralNoMirror` es `false`, y esa decisión la heredó este chip ya tomada de R1.** El neutro
+    /// no es una elección de modo nube: es la ausencia de elección. Un device que arranca neutro con cuenta
+    /// iCloud disponible está exactamente en el estado que §1.3 describe —montado sin espejo, con iCloud a
+    /// mano— y tiene que poder oír el aviso. Ponerlo del lado `true` "porque no lleva mirror" colapsaría el
+    /// eje C con el eje A y dejaría al mount neutro sin ninguna superficie que lo delate.
     nonisolated var isCloudModeMount: Bool {
         switch self {
         case .cloudMirrorOff, .secondaryCloudSession:
             return true
-        case .iCloudMirror, .localNoMirror:
+        case .iCloudMirror, .localNoMirror, .neutralNoMirror:
             return false
         }
     }
@@ -785,6 +856,34 @@ extension SwiftDataConfiguration {
         return baseDeleted
     }
 
+    // MARK: - Instalación fresca (R2 · el mount neutro)
+
+    /// ¿Existe el archivo BASE del store personal? La URL se deriva de una `ModelConfiguration` efímera
+    /// (misma name+schema ⇒ misma URL) SIN pasar por `personalConfiguration`, exactamente por el mismo
+    /// motivo que `deleteStoreFiles`: preguntarlo no puede capturar el testigo del mount.
+    ///
+    /// Se mira SOLO el archivo base. Un `-wal`/`-shm` huérfano sin base es inerte (SQLite los descarta al
+    /// recrear el store), así que tratarlo como "hay datos" bloquearía el mount neutro por un residuo.
+    private static func personalStoreFileExists() -> Bool {
+        let url = ModelConfiguration(databaseName, schema: personalSchema, cloudKitDatabase: .none).url
+        return FileManager.default.fileExists(atPath: url.path)
+    }
+
+    /// Adaptador de producción del predicado puro: lee las cuatro señales del mundo real. Corre PRE-MOUNT,
+    /// dentro de `personalConfiguration` y antes de capturar el testigo.
+    ///
+    /// `hasShownWelcomeChooser` se lee con el literal de la key —igual que hacen los dos wipes de este
+    /// mismo fichero— y no vía `AppPreferences`: esto corre en `@main`, antes de que exista ningún
+    /// `AppBootstrapper`.
+    static func isFreshInstallForNeutralMount(_ defaults: UserDefaults = .standard) -> Bool {
+        isFreshInstallForNeutralMount(
+            personalStoreFileExists: personalStoreFileExists(),
+            persistedMode: StorageModePersistence.read(defaults),
+            mirrorOffArmed: StorageModePersistence.isMirrorOffArmed(defaults),
+            secondarySessionActive: SecondarySessionStore.isActive(defaults),
+            hasShownWelcomeChooser: defaults.bool(forKey: "hasShownWelcomeChooser"))
+    }
+
     // MARK: - Container CloudKit State
 
     private static let containerCloudKitKey = "containerCreatedWithCloudKit"
@@ -863,16 +962,25 @@ extension SwiftDataConfiguration {
         // `personalStoreDecision`). DARK: nadie escribe `storageMode=.cloud` ni arma el flag en
         // producción hasta que el cutover de una migración real ejecute sus pasos.
         // M1: el descriptor de sesión secundaria gana ANTES que todo (archivo propio, JAMÁS `.private`).
+        // R2: el término `freshInstall`. Se evalúa ANTES de capturar el testigo y sin construir ningún
+        // container (la URL sale de una `ModelConfiguration` efímera, patrón `deleteStoreFiles`).
         let decision = personalStoreDecision(
             storageMode: CloudSyncFlags.storageMode,
             mirrorOffArmed: StorageModePersistence.isMirrorOffArmed(),
             iCloudAvailable: isICloudAvailable(),
-            secondarySessionActive: SecondarySessionStore.isActive())
+            secondarySessionActive: SecondarySessionStore.isActive(),
+            freshInstall: isFreshInstallForNeutralMount())
         capturePersonalStoreMountedDecisionOnce(decision)
         switch decision {
         case .secondaryCloudSession:
             return ModelConfiguration(secondaryDatabaseName, schema: personalSchema, cloudKitDatabase: .none)
         case .cloudMirrorOff:
+            return ModelConfiguration(databaseName, schema: personalSchema, cloudKitDatabase: .none)
+        case .neutralNoMirror:
+            // R2 · `.none` EXPLÍCITO. Omitirlo cae en `.automatic`, que la auditoría R1(c) MIDIÓ que
+            // adjunta el mirror igual (mismos eventos de `NSPersistentCloudKitContainer` que `.private`,
+            // mientras `.none` emite cero) ⇒ sería el mount CONTRARIO al que este caso declara, y el alta
+            // nube volvería a necesitar el relanzamiento que el chip existe para quitar.
             return ModelConfiguration(databaseName, schema: personalSchema, cloudKitDatabase: .none)
         case .iCloudMirror:
             return ModelConfiguration(

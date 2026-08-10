@@ -29,6 +29,15 @@ nonisolated enum CloudWelcomeSignInPhase: Equatable {
     case waitingLeader
     /// Adopt completo — TERMINAL: "Cierra y reabre Yala" (NUNCA auto-kill).
     case relaunch
+    /// **R2: alta born-cloud completa SIN relanzar.** El proceso montó el store personal NEUTRO
+    /// (`.none` explícito), que es la MISMA `ModelConfiguration` que pide el par `.cloud` + `mirrorOffArmed`
+    /// recién escrito ⇒ no hay nada que remontar y el motor ya arrancó en esta sesión. Terminal como
+    /// `.relaunch`, pero su salida es continuar al onboarding normal, no matar la app.
+    ///
+    /// Caso propio y no un `.relaunch` con otro copy: son dos desenlaces distintos del MISMO alta y quien
+    /// los distingue es el testigo de mount, no la pantalla. Colapsarlos obligaría a la vista a re-derivar
+    /// la decisión.
+    case bornCloudReady
     /// M1: confirmación explícita ANTES de escribir nada de la sesión secundaria
     /// ("entrarás con tu cuenta; los datos del dueño no se tocan").
     case secondaryConfirm
@@ -103,8 +112,12 @@ nonisolated enum BornCloudSignUpFlow {
 
     /// Qué hace el llamador con el resultado del claim.
     enum Step: Equatable {
-        /// `created` + rama born-cloud: escribir el par `.cloud` + `mirrorOffArmed` (A3) y presentar
-        /// la terminal de relanzamiento. **Es el ÚNICO paso que toca el almacenamiento.**
+        /// `created` + rama born-cloud: escribir el par `.cloud` + `mirrorOffArmed` (A3) y presentar la
+        /// terminal que corresponda. **Es el ÚNICO paso que toca el almacenamiento.**
+        ///
+        /// R2: la terminal ya no es siempre el relanzamiento — la decide `activateBornCloudStorage`
+        /// preguntándole al testigo de mount. El nombre del caso se conserva porque lo que este paso
+        /// significa (activar el almacenamiento nube) no ha cambiado.
         case activateStorageAndRelaunch
         /// La cuenta ya existía (2º device o reintento tras un `created` previo): continuar por el
         /// flujo de re-entrada CON LA SESIÓN VIVA (`exists` → guard cross-cuenta → adopt). No siembra.

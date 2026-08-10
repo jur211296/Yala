@@ -36,6 +36,7 @@
 //
 
 import Foundation
+import SwiftData
 import os
 
 // MARK: - Resultado
@@ -94,10 +95,17 @@ enum BornCloudBreadcrumb {
         logger.notice("BornCloud consentMissing \(missing, privacy: .public) — alta continúa, traza GDPR incompleta")
     }
 
-    /// A3: el par `.cloud` + `mirrorOffArmed` quedó escrito y el device espera el relanzamiento. Es la
-    /// marca de agua del alta: lo que venga después de esto ya corre en modo nube.
-    static func storageActivated() {
-        logger.notice("BornCloud storageActivated — par .cloud+mirrorOffArmed escrito; esperando relanzamiento (el proceso NO se mata solo)")
+    /// A3: el par `.cloud` + `mirrorOffArmed` quedó escrito. Es la marca de agua del alta: lo que venga
+    /// después de esto ya corre en modo nube. R2: `terminal` dice si hizo falta relanzar o si el mount ya
+    /// era compatible — es la única forma de distinguir los dos desenlaces en un log de producción.
+    static func storageActivated(terminal: String) {
+        logger.notice("BornCloud storageActivated — par .cloud+mirrorOffArmed escrito; terminal=\(terminal, privacy: .public)")
+    }
+
+    /// R2: el motor del dominio se arrancó EN ESTA SESIÓN, al cerrar el alta sin relanzar. Sin este paso el
+    /// alta sin relanzamiento dejaría el motor apagado hasta el arranque siguiente: nada sube, en silencio.
+    static func engineStartedInSession() {
+        logger.notice("BornCloud engineStartedInSession — startShared invocado tras el alta sin relanzamiento")
     }
 
     /// La tabla de `AccountClaimDecision` devolvió una acción que la rama born-cloud no puede producir.
@@ -129,6 +137,12 @@ final class BornCloudSignUpService {
     /// cada uno; en producción coinciden.
     private let storageDefaults: UserDefaults
     private let now: () -> Date
+    /// **R2 · seam del arranque del motor EN SESIÓN.** En producción es `CloudSyncRuntime.startShared`.
+    /// Es inyectable —y no una llamada directa— porque la implementación real asigna el singleton
+    /// `CloudSyncRuntime.shared` y compone los clients vivos de la sesión: estado global de proceso que en
+    /// un unit test contaminaría a las demás suites (regla de `testing.md` sobre singletons). El cableado
+    /// real, que es lo que este chip no puede permitirse perder, lo pinnea un source-scan del `init`.
+    private let startSyncEngine: @MainActor (ModelContext) -> Void
 
     /// Los defaults MainActor-aislados se resuelven en el CUERPO (los default args son `nonisolated`) —
     /// mismo motivo y mismo molde que `MigrationWorkExecutor.init`.
@@ -141,7 +155,8 @@ final class BornCloudSignUpService {
         claimStore: CloudClaimActionStore? = nil,
         consentDefaults: UserDefaults = .standard,
         storageDefaults: UserDefaults = .standard,
-        now: @escaping () -> Date = { .now }
+        now: @escaping () -> Date = { .now },
+        startSyncEngine: (@MainActor (ModelContext) -> Void)? = nil
     ) {
         self.session = session
         self.accountClient = accountClient ?? CloudAccountClient()
@@ -154,6 +169,13 @@ final class BornCloudSignUpService {
         self.consentDefaults = consentDefaults
         self.storageDefaults = storageDefaults
         self.now = now
+        // R2 (d): EL call-site de producción del arranque del motor en sesión. `startShared` es idempotente
+        // (no re-arranca si ya corre) y sus propios guards deciden — aquí solo se le da la oportunidad, que
+        // es justo lo que no existía: los otros dos call-sites del repo (boot y re-arranque del controller)
+        // corren ANTES de que el alta escriba el par.
+        self.startSyncEngine = startSyncEngine ?? { context in
+            Task { await CloudSyncRuntime.startShared(context: context) }
+        }
     }
 
     // MARK: - Alta
@@ -276,32 +298,63 @@ final class BornCloudSignUpService {
     // MARK: - Activación del almacenamiento nube (A3)
 
     /// **La primitiva del camino feliz de A3.** Escribe el par `.cloud` + `mirrorOffArmed` y devuelve la
-    /// FASE TERMINAL que el llamador debe presentar: «Cierra y vuelve a abrir Yala».
+    /// FASE TERMINAL que el llamador debe presentar.
     ///
     /// Se invoca SOLO tras un `.seeded` (cuenta reservada con `created`), y **ANTES de sembrar nada** — en
     /// born-cloud eso es trivialmente cierto porque no hay nada pre-relanzamiento que sembrar: el onboarding
     /// corre DESPUÉS, ya con el store montado sin mirror.
     ///
+    /// **R2 — la terminal la decide el MOUNT de este proceso, no una constante.** Escribir el par no remonta
+    /// nada (`personalConfiguration` se evalúa una sola vez), así que la pregunta correcta es si el store
+    /// que YA está montado es el que el par pide:
+    ///  · **mount con mirror adjunto** (`.iCloudMirror`/`.localNoMirror`) ⇒ `.relaunch`, exactamente como
+    ///    antes de R2. Es lo que sigue viendo un device que llegó al alta con archivo de store.
+    ///  · **mount sin mirror** (el neutro de R2, byte-idéntico a `.cloudMirrorOff`) ⇒ no hay nada que
+    ///    remontar ⇒ `.bornCloudReady` y el alta sigue a la app.
+    ///
     /// Tres cosas que van escritas porque no son obvias:
-    ///  1. **El relanzamiento no es una preferencia de UX, es lo que sostiene el invariante.**
-    ///     `SwiftDataConfiguration.personalConfiguration` se evalúa UNA vez al construir el container, así
-    ///     que escribir el par aquí NO remonta nada: el mirror de CloudKit sigue vivo en este proceso. Lo
-    ///     que impide que el motor arranque encima es
+    ///  1. **El relanzamiento, cuando hace falta, no es una preferencia de UX: es lo que sostiene el
+    ///     invariante.** Con el mirror todavía montado, lo que impide que el motor arranque encima es
     ///     `MigrationRuntimeGate.isPersonalMountMismatch` (A3, segunda mitad), no la buena voluntad del
-    ///     llamador.
+    ///     llamador — y ese mismo guard es el que DEJA PASAR el caso neutro, porque su pregunta es el eje
+    ///     `attachesCloudKitMirror` y no el nombre de la decisión.
     ///  2. **Devuelve la fase, NO mata el proceso.** `CloudWelcomeSignInPhase.relaunch` es terminal y su
     ///     contrato es que el usuario cierra la app a mano — jamás un `exit(0)`: iOS trata la auto-muerte
     ///     como un crash y App Review la rechaza.
     ///  3. **No journalea nada.** El journal se queda en `notStarted`, que YA es fase estable para el
-    ///     runtime, así que post-relanzamiento el motor arranca solo con el estampado del claim que dejó
-    ///     `signUp()`. Meter esto en la máquina de migración es el error que A2/A3 existen para no cometer.
+    ///     runtime, así que el motor arranca solo con el estampado del claim que dejó `signUp()`. Meter
+    ///     esto en la máquina de migración es el error que A2/A3 existen para no cometer.
     ///
-    /// Idempotente: re-invocarla reescribe las mismas dos keys.
+    /// **EL ARRANQUE DEL MOTOR EN SESIÓN (R2·d) vive aquí y es obligatorio.** Hasta este chip `startShared`
+    /// solo se invocaba en el boot (`AppBootstrapper`, paso 14.7) y en el re-arranque del controller de
+    /// migración; los dos corren ANTES de que exista el par. Sin este call-site, un alta que no relanza
+    /// deja el motor apagado hasta el siguiente arranque de la app: **nada sube, en silencio**, que es el
+    /// mismo daño que el relanzamiento existía para evitar pero con peor visibilidad. `startShared` es
+    /// idempotente (no re-arranca si ya corre) y el precedente de invocarlo a mitad de sesión ya existía en
+    /// `CloudMigrationController.startRuntimeIfStable`. Lo pinnea un source-scan
+    /// (`BornCloudRelaunchZeroTests`), porque lo que decide es QUIÉN llama y ningún test de comportamiento
+    /// del servicio lo caza.
+    ///
+    /// Idempotente: re-invocarla reescribe las mismas dos keys y re-pide un arranque que es no-op.
     @discardableResult
-    func activateBornCloudStorage() -> CloudWelcomeSignInPhase {
+    func activateBornCloudStorage(
+        mountedDecision: SwiftDataConfiguration.PersonalStoreDecision,
+        context: ModelContext
+    ) -> CloudWelcomeSignInPhase {
         StorageModePersistence.writeCloudArmed(defaults: storageDefaults)
-        BornCloudBreadcrumb.storageActivated()
-        return .relaunch
+
+        guard !mountedDecision.attachesCloudKitMirror else {
+            BornCloudBreadcrumb.storageActivated(terminal: "relaunch")
+            return .relaunch
+        }
+
+        BornCloudBreadcrumb.storageActivated(terminal: "bornCloudReady")
+        // El par ya está escrito, así que el gate del motor (`canRunDomain`) ve modo `.cloud`, fase estable
+        // y CERO mismatch de mount. Va DESPUÉS de escribir el par a propósito: al revés, `startShared`
+        // encontraría `.icloud` y se retiraría sin dejar nada arrancado.
+        BornCloudBreadcrumb.engineStartedInSession()
+        startSyncEngine(context)
+        return .bornCloudReady
     }
 
     // MARK: - Consent (paso 5)
