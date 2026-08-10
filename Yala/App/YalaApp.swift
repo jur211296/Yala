@@ -77,11 +77,15 @@ struct YalaApp: App {
             // M1: primer boot de una sesión secundaria — purga E2E-M1 de las superficies App
             // Group del dueño + cancelación de sus notifs + healing de flags (one-shot).
             SwiftDataConfiguration.performSecondaryEntryTasksIfNeeded()
-            let iCloudWasAvailable = SwiftDataConfiguration.isICloudAvailable()
-            SwiftDataConfiguration.markContainerCloudKitState(iCloudWasAvailable)
+            // R1 (relanzamiento cero): el testigo durable guarda la DECISIÓN de mount, no la
+            // DISPONIBILIDAD de iCloud. Evaluar `personalConfiguration` PRIMERO no es cosmético: es lo
+            // que captura la decisión, y sin esa captura previa aquí se registraría el default.
+            let personalConfiguration = SwiftDataConfiguration.personalConfiguration
+            SwiftDataConfiguration.markContainerCloudKitState(
+                decision: SwiftDataConfiguration.personalStoreMountedDecision)
             return try ModelContainer(
                 for: SwiftDataConfiguration.schema,
-                configurations: SwiftDataConfiguration.personalConfiguration,
+                configurations: personalConfiguration,
                                SwiftDataConfiguration.groupsConfiguration,
                                SwiftDataConfiguration.syncMetaConfiguration
             )

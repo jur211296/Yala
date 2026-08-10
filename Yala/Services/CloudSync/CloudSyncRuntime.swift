@@ -213,8 +213,9 @@ final class CloudSyncRuntime {
     ///
     /// A3 (D-A7) — GUARD DE MOUNT-MISMATCH DEL STORE PERSONAL: el gemelo del anterior para el store del
     /// DUEÑO, y hasta hoy NO existía. El par persistido dice qué modo QUIERE el device; el testigo
-    /// (`SwiftDataConfiguration.personalStoreMountedMode`) dice qué montó ESTE proceso, y escribir el par en
-    /// caliente no remonta nada. Ver `MigrationRuntimeGate.isPersonalMountMismatch` para el porqué completo.
+    /// (`SwiftDataConfiguration.personalStoreMountedDecision`) dice qué montó ESTE proceso, y escribir el par
+    /// en caliente no remonta nada. Ver `MigrationRuntimeGate.isPersonalMountMismatch` para el porqué
+    /// completo.
     /// Va DESPUÉS del guard M1 a propósito: la ventana de entrada de la secundaria satisface las dos
     /// condiciones y su canario es el que dice la verdad de ese caso.
     static func canRunDomain() -> Bool {
@@ -248,7 +249,7 @@ final class CloudSyncRuntime {
         // arrancamos: lo cura el relanzamiento, que es el contrato de la pantalla terminal.
         let personalMountMismatch = MigrationRuntimeGate.isPersonalMountMismatch(
             persistedMode: CloudSyncFlags.storageMode,
-            mountedMode: SwiftDataConfiguration.personalStoreMountedMode)
+            mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision)
         if personalMountMismatch {
             CloudSyncBreadcrumb.runtimeBlockedByPersonalMountMismatch(phase: "\(phase)")
         }

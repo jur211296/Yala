@@ -661,12 +661,15 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         }
     }
 
-    /// Observación post-relaunch (§g.4): ¿ESTE proceso montó el store personal en modo `.cloud` (mirror
-    /// OFF)? Testigo de arranque (`SwiftDataConfiguration.personalStoreMountedMode`), NO lo persistido: en
+    /// Observación post-relaunch (§g.4): ¿ESTE proceso montó el store personal SIN mirror de CloudKit?
+    /// Testigo de arranque (`SwiftDataConfiguration.personalStoreMountedDecision`), NO lo persistido: en
     /// la misma sesión, tras `persistLocalMode`, el mirror SIGUE vivo (se montó al arrancar) → esto queda
-    /// `false` hasta el RELANZAMIENTO, cuando un proceso nuevo monta `.none` y captura `.cloud`.
+    /// `false` hasta el RELANZAMIENTO, cuando un proceso nuevo monta `.none` y captura `.cloudMirrorOff`.
+    ///
+    /// R1: la pregunta se hace por el EJE del mirror y no comparando el testigo con `.cloud`. `localNoMirror`
+    /// sigue dando `false` —el mirror está adjunto ahí, MEDIDO— igual que antes del cambio.
     func isMirrorConfirmedOff() -> Bool {
-        SwiftDataConfiguration.personalStoreMountedMode == .cloud
+        !SwiftDataConfiguration.personalStoreMountedDecision.attachesCloudKitMirror
     }
 
     /// Gate de EXPORT del marcador (§g.4 ajuste, entre paso 3 y 4): ¿el `CloudMigrationMarker` LLEGÓ a
@@ -818,12 +821,13 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         }
     }
 
-    /// Observación post-relaunch (§h): ¿ESTE proceso montó el store personal en modo `.icloud` (mirror ON)?
-    /// Testigo de arranque (`personalStoreMountedMode`), NO lo persistido — análogo INVERSO de
-    /// `isMirrorConfirmedOff`. CONTRATO I11-2 (machine doc): el default del testigo es `.icloud` → un read
-    /// real reportaría "montado SIEMPRE" = false green → los tests FAKEAN esta observación (no usan el real).
+    /// Observación post-relaunch (§h): ¿ESTE proceso montó el store personal CON el mirror adjunto?
+    /// Testigo de arranque (`personalStoreMountedDecision`), NO lo persistido — análogo INVERSO de
+    /// `isMirrorConfirmedOff`. CONTRATO I11-2 (machine doc): el default del testigo es `.iCloudMirror` → un
+    /// read real reportaría "montado SIEMPRE" = false green → los tests FAKEAN esta observación (no usan el
+    /// real).
     func isMirrorConfirmedOn() -> Bool {
-        SwiftDataConfiguration.personalStoreMountedMode == .icloud
+        SwiftDataConfiguration.personalStoreMountedDecision.attachesCloudKitMirror
     }
 
     /// §h.3 `deletingZombies` — EL NÚCLEO. Enumera tombstones del backend en LECTURA PURA (`pullPage`, SIN

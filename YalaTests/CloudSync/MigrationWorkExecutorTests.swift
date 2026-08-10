@@ -384,7 +384,7 @@ struct MigrationWorkExecutorTests {
         #expect(StorageModePersistence.read(storageDefaults) == .cloud)
     }
 
-    @Test("isMirrorConfirmedOff: false en tests (personalStoreMountedMode default .icloud)")
+    @Test("isMirrorConfirmedOff: false en tests (personalStoreMountedDecision default .iCloudMirror)")
     func isMirrorConfirmedOff_defaultFalse() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)

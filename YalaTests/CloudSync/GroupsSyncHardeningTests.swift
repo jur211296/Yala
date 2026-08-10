@@ -862,13 +862,13 @@ struct GroupsSyncHardeningTests {
         // A3 (D-A7): el guard de mount-mismatch personal lee el testigo del mount, `.icloud` por default en
         // el host de tests. La premisa de este test es un device en modo nube YA RELANZADO (si no, el
         // personal NO cadenciaría y Grupos correría su loop propio — que es el test de al lado).
-        SwiftDataConfiguration._testSetPersonalStoreMountedMode(.cloud)
+        SwiftDataConfiguration._testSetPersonalStoreMountedDecision(.cloudMirrorOff)
         SecondarySessionStore._testSetActiveOverride(false)
         defer {
             CloudSyncFlags._testResetGroupsBackendEnabledOverride()
             CloudSyncFlags.syncRuntimeEnabled = prevRuntime
             CloudSyncFlags._testResetStorageModeOverride()
-            SwiftDataConfiguration._testSetPersonalStoreMountedMode(.icloud)
+            SwiftDataConfiguration._testSetPersonalStoreMountedDecision(.iCloudMirror)
             SecondarySessionStore._testSetActiveOverride(nil)
         }
 

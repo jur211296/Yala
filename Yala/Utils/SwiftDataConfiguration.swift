@@ -209,7 +209,11 @@ enum SwiftDataConfiguration {
     /// `isRunningTests` fuerza in-memory y ocultaría la rama real). `.cloud` ARMADO gana ANTES del check
     /// de iCloud: tener cuenta iCloud NO importa (Grupos la usa, pero el store personal ya NO lo espeja
     /// el mirror).
-    enum PersonalStoreDecision: Equatable {
+    /// `nonisolated` como lo era el `StorageMode` al que sustituye como testigo: sus consumidores incluyen
+    /// dos `enum nonisolated` de lógica pura (`MigrationRuntimeGate`, `CloudMigrationUIStateDeriver`), y sin
+    /// esto `allCases`, `rawValue` y las conformances derivadas quedarían aisladas al MainActor por el
+    /// `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` del target.
+    nonisolated enum PersonalStoreDecision: String, Equatable, CaseIterable {
         /// Sesión SECUNDARIA activa (M1) → `cloudKitDatabase: .none` sobre el archivo SECUNDARIO
         /// (`YalaModel-Secondary`). Gana ANTES que todo — el archivo del dueño ni se lee ni se
         /// escribe, y el mirror JAMÁS se adjunta al secundario.
@@ -218,7 +222,8 @@ enum SwiftDataConfiguration {
         case cloudMirrorOff
         /// iCloud disponible → mirror `NSPersistentCloudKitContainer` (`.private`) — comportamiento de HOY.
         case iCloudMirror
-        /// Sin iCloud → store local plano (sin mirror).
+        /// Sin iCloud → store local **con `cloudKitDatabase` por DEFECTO** (`.automatic`). El nombre dice
+        /// "sin mirror" y es engañoso: ver `attachesCloudKitMirror`.
         case localNoMirror
     }
 
@@ -229,6 +234,11 @@ enum SwiftDataConfiguration {
     /// El montaje mirror-OFF exige el par COMPLETO: `.cloud` Y `mirrorOffArmed` (que el executor arma
     /// SOLO tras `isMarkerExported()`). Un kill pre-armado → mirror remonta ON → el marcador exporta en
     /// el resume → recién el relaunch posterior apaga el mirror. R9: JAMÁS caer a `.automatic`.
+    ///
+    /// **R9 está INCUMPLIDO hoy por `.localNoMirror`, y su consecuencia está MEDIDA (auditoría R1(c),
+    /// 2026-08-10): `.automatic` adjunta el mirror igual, sin cuenta iCloud.** La medición y por qué el fix
+    /// —explicitar `.none`— es una decisión APARTE y no de este chip (cambiaría el comportamiento del parque
+    /// sin iCloud) están en `PersonalStoreDecision.attachesCloudKitMirror`.
     ///
     /// M1: `secondarySessionActive` (descriptor de `SecondarySessionStore`) gana ANTES que todo —
     /// SIN acoplarse a `mirrorOffArmed` (ese par protege el kill-window del cutover de MIGRACIÓN;
@@ -241,6 +251,92 @@ enum SwiftDataConfiguration {
         if storageMode == .cloud && mirrorOffArmed { return .cloudMirrorOff }
         return iCloudAvailable ? .iCloudMirror : .localNoMirror
     }
+}
+
+// MARK: - Los dos EJES derivados de la decisión de mount (R1 · relanzamiento cero)
+
+/// Las dos preguntas que los consumidores del testigo de mount hacen de verdad, y que hasta R1 estaban
+/// COLAPSADAS en un `StorageMode` de dos valores. Son EJES DISTINTOS y por eso hacen falta las dos: un
+/// mount puede llevar el mirror ADJUNTO y aun así no espejar nada.
+///
+/// El colapso viejo (`decision == .cloudMirrorOff || decision == .secondaryCloudSession ? .cloud : .icloud`)
+/// no era solo impreciso: hacía imposible expresar un mount SIN mirror que no fuera ninguna de esas dos
+/// decisiones — que es exactamente el mount neutro que el relanzamiento cero necesita. Este chip NO lo
+/// introduce (R1 es DARK): solo deja el testigo capaz de decirlo.
+extension SwiftDataConfiguration.PersonalStoreDecision {
+
+    /// EJE A — ¿este mount ADJUNTA `NSPersistentCloudKitContainer` al store personal? Es la pregunta de los
+    /// cuatro consumidores del testigo de mount: lo que les importa es si hay un mirror escribiendo el
+    /// MISMO store (la doble escritura que el relanzamiento asistido existe para evitar), no si ese mirror
+    /// llega a subir algo.
+    ///
+    /// **`localNoMirror` es `true`, y está MEDIDO (2026-08-10, iPhone 17 Pro / iOS 26.5, sim SIN cuenta
+    /// iCloud, auditoría R1(c) del chip).** Esa rama no pasa `cloudKitDatabase:` (`personalConfiguration`,
+    /// abajo) ⇒ cae en el default `.automatic`, y `.automatic` **adjunta el mirror igual**: emite los mismos
+    /// 2 eventos de `NSPersistentCloudKitContainer.eventChangedNotification` que `.private` explícito, con
+    /// el mismo `NSCocoaErrorDomain/134400 (CKAccountStatusNoAccount)` y el mismo
+    /// `NSCloudKitMirroringDelegate` vivo, mientras `.none` explícito emite CERO. Lo que la falta de cuenta
+    /// cambia es que el mirror no puede SINCRONIZAR, no que no esté ahí.
+    ///
+    /// ⇒ dos consecuencias que hay que tener presentes antes de "arreglar" nada:
+    ///  - el valor viejo del testigo para `localNoMirror` (`.icloud` = mirror vivo) **era correcto**; lo que
+    ///    mentía era el colapso de cuatro decisiones en dos valores, no esta celda;
+    ///  - la violación de «R9: JAMÁS caer a `.automatic`» (docblock de `personalStoreDecision`) es REAL,
+    ///    pero explicitarla a `.none` sería un CAMBIO DE COMPORTAMIENTO para el parque sin iCloud, y esa
+    ///    decisión es del punto de control — **no de este chip**, que solo la mide y la documenta.
+    nonisolated var attachesCloudKitMirror: Bool {
+        switch self {
+        case .iCloudMirror:
+            return true   // `.private(container)` explícito
+        case .localNoMirror:
+            return true   // `.automatic` — MEDIDO: adjunta aunque no haya cuenta
+        case .cloudMirrorOff, .secondaryCloudSession:
+            return false  // `.none` explícito
+        }
+    }
+
+    /// EJE B — ¿este mount montó el store personal CON el mirror de CloudKit espejando de verdad? Es la
+    /// pregunta del testigo DURABLE (`containerCreatedWithCloudKit`) y de su único lector, el aviso
+    /// «monté sin CloudKit y ahora hay iCloud» (`AppBootstrapper.checkForICloudMismatch`).
+    ///
+    /// Se separa del eje A justo por `localNoMirror`: ahí el mirror está adjunto (eje A `true`) pero no
+    /// espeja nada, y es EL caso que el aviso existe para atender — el usuario acaba de iniciar sesión en
+    /// iCloud y hay que remontar con `.private` explícito. Colapsar los dos ejes en un booleano dejaría el
+    /// aviso mudo para ese device.
+    nonisolated var mirrorsToICloud: Bool {
+        switch self {
+        case .iCloudMirror:
+            return true
+        case .localNoMirror, .cloudMirrorOff, .secondaryCloudSession:
+            return false
+        }
+    }
+
+    /// EJE C — ¿este mount se quedó sin mirror **por decisión de modo nube**? Es el término R9 del aviso de
+    /// iCloud, y va por el MOUNT y no por el modo de AHORA: lo que hace que «tener cuenta iCloud no sea un
+    /// mismatch» no es lo que diga la key en el instante de preguntar, sino que ESTE proceso montara el
+    /// store personal en modo nube a propósito.
+    ///
+    /// La distinción muerde en una ventana real: la reversa persiste `.icloud` EN CALIENTE
+    /// (`persistICloudMode`) sobre un proceso montado en `.cloudMirrorOff`, y el lector del aviso corre en
+    /// CADA vuelta a primer plano (`AppBootstrapper.handleBecameActive` → `checkForICloudMismatch`, y no
+    /// solo desde el observer de `NSUbiquityIdentityDidChange`). Leyendo el modo de ahora, esa ventana
+    /// pasaría el término R9 y el device recibiría un «reinicia la app» redundante encima del que la propia
+    /// tarjeta de reversa ya está pidiendo. Leyendo el mount, no.
+    ///
+    /// Y sigue vivo lo que R1 existe para proteger: un mount SIN mirror que NO sea de modo nube —el
+    /// `localNoMirror` de hoy, el neutro de R2— sí avisa.
+    nonisolated var isCloudModeMount: Bool {
+        switch self {
+        case .cloudMirrorOff, .secondaryCloudSession:
+            return true
+        case .iCloudMirror, .localNoMirror:
+            return false
+        }
+    }
+}
+
+extension SwiftDataConfiguration {
 
     // MARK: - Groups store mount decision (M1 / D8 — G5-C)
 
@@ -262,14 +358,23 @@ enum SwiftDataConfiguration {
         }
     }
 
-    /// Testigo de QUÉ modo montó realmente ESTE proceso el store personal (NO lo persistido). Lo captura
-    /// UNA sola vez, en la PRIMERA evaluación de `personalConfiguration` en el path de producción (= el
-    /// build de `sharedModelContainer` al arrancar). Es el árbitro de `isMirrorConfirmedOff()`: en-sesión,
-    /// tras `persistLocalMode` escribir `.cloud`, el mirror SIGUE montado (se montó al arrancar) → este
-    /// testigo permanece en su valor de arranque hasta el RELANZAMIENTO, cuando un proceso nuevo lo captura
-    /// como `.cloud`. Default `.icloud` (los paths test/uitest/spike no lo capturan → mirror asumido vivo).
-    nonisolated(unsafe) static private(set) var personalStoreMountedMode: StorageMode = .icloud
-    nonisolated(unsafe) private static var personalStoreMountedModeCaptured = false
+    /// Testigo de QUÉ DECISIÓN de mount ejecutó realmente ESTE proceso sobre el store personal (NO lo
+    /// persistido). Lo captura UNA sola vez, en la PRIMERA evaluación de `personalConfiguration` en el path
+    /// de producción (= el build de `sharedModelContainer` al arrancar). Es el árbitro de
+    /// `isMirrorConfirmedOff()`: en-sesión, tras `persistLocalMode` escribir `.cloud`, el mirror SIGUE
+    /// montado (se montó al arrancar) → este testigo permanece en su valor de arranque hasta el
+    /// RELANZAMIENTO, cuando un proceso nuevo captura `.cloudMirrorOff`.
+    ///
+    /// **R1 (relanzamiento cero): guarda la DECISIÓN, no un `StorageMode` de dos valores.** Antes se
+    /// capturaba `.cloud`/`.icloud` colapsando las cuatro decisiones en dos, y ningún consumidor podía
+    /// distinguir un mount sin mirror de otro. Los consumidores no leen esta propiedad a pelo: preguntan por
+    /// el eje que les toca (`attachesCloudKitMirror` / `mirrorsToICloud`), que es donde vive la única
+    /// definición de qué mount lleva mirror.
+    ///
+    /// Default `.iCloudMirror` — los paths test/uitest/spike no lo capturan ⇒ mirror asumido vivo, que es
+    /// el valor conservador y el mismo default (`.icloud`) que tenía el testigo viejo.
+    nonisolated(unsafe) static private(set) var personalStoreMountedDecision: PersonalStoreDecision = .iCloudMirror
+    nonisolated(unsafe) private static var personalStoreMountedDecisionCaptured = false
 
     /// Testigo M1: ¿ESTE proceso montó el store SECUNDARIO? Capturado junto al modo, misma
     /// semántica una-sola-vez. Es el árbitro de la VENTANA DE ENTRADA (descriptor persistido pero
@@ -290,19 +395,27 @@ enum SwiftDataConfiguration {
 
     /// Solo tests: fuerza el testigo del mount PERSONAL. El host de tests nunca evalúa la rama de
     /// producción de `personalConfiguration` (corta antes en `isRunningTests`) ⇒ el testigo se queda en su
-    /// default `.icloud` SIEMPRE, así que un test que quiera ejercitar un device ya relanzado en modo nube
-    /// (el estado post-relanzamiento del born-cloud o del adopt) tiene que declararlo — es el mismo contrato
-    /// I11-2 que hace fake-able `isMirrorConfirmedOff`. Restaurar en `defer` bajo `@Suite(.serialized)`:
-    /// esto es estado GLOBAL DE PROCESO y dejarlo puesto contamina a las demás suites.
-    static func _testSetPersonalStoreMountedMode(_ value: StorageMode) {
-        personalStoreMountedMode = value
+    /// default `.iCloudMirror` SIEMPRE, así que un test que quiera ejercitar un device ya relanzado en modo
+    /// nube (el estado post-relanzamiento del born-cloud o del adopt) tiene que declararlo — es el mismo
+    /// contrato I11-2 que hace fake-able `isMirrorConfirmedOff`. Restaurar en `defer` bajo
+    /// `@Suite(.serialized)`: esto es estado GLOBAL DE PROCESO y dejarlo puesto contamina a las demás suites.
+    ///
+    /// **NO deriva `secondaryStoreMounted`, al revés que la captura de producción, y es a propósito:** la
+    /// VENTANA DE ENTRADA de la sesión secundaria (descriptor persistido + store del DUEÑO todavía montado)
+    /// es justo el estado que producción NO puede producir en un solo proceso, y es el que el guard M1 y su
+    /// canario existen para cubrir. Acoplar los dos seams lo volvería inexpresable.
+    static func _testSetPersonalStoreMountedDecision(_ value: PersonalStoreDecision) {
+        personalStoreMountedDecision = value
     }
 
-    private static func capturePersonalStoreMountedModeOnce(_ mode: StorageMode, secondary: Bool = false) {
-        guard !personalStoreMountedModeCaptured else { return }
-        personalStoreMountedModeCaptured = true
-        personalStoreMountedMode = mode
-        secondaryStoreMounted = secondary
+    /// El testigo secundario viaja con el personal y se DERIVA de la misma decisión: son la misma
+    /// observación (qué montó este proceso) y tenerlos como dos argumentos independientes permitía que
+    /// divergieran por descuido.
+    private static func capturePersonalStoreMountedDecisionOnce(_ decision: PersonalStoreDecision) {
+        guard !personalStoreMountedDecisionCaptured else { return }
+        personalStoreMountedDecisionCaptured = true
+        personalStoreMountedDecision = decision
+        secondaryStoreMounted = decision == .secondaryCloudSession
     }
 
     // MARK: - Sign-out wipe (H4 — "Cerrar sesión" en `.cloud`)
@@ -650,7 +763,7 @@ enum SwiftDataConfiguration {
 
     /// Borra el trío de archivos SQLite de un store (base + -wal + -shm). La URL se deriva de una
     /// ModelConfiguration efímera (misma name+schema ⇒ misma URL) SIN pasar por `personalConfiguration`
-    /// para no capturar el testigo `personalStoreMountedMode` antes del wipe.
+    /// para no capturar el testigo `personalStoreMountedDecision` antes del wipe.
     /// Devuelve `false` solo si el archivo BASE no pudo borrarse (≠ no-existe) — los sidecars
     /// -wal/-shm huérfanos sin base son inertes (SQLite los descarta al recrear el store).
     private static func deleteStoreFiles(named name: String, schema: Schema) -> Bool {
@@ -676,14 +789,57 @@ enum SwiftDataConfiguration {
 
     private static let containerCloudKitKey = "containerCreatedWithCloudKit"
 
-    static func markContainerCloudKitState(_ withCloudKit: Bool) {
-        UserDefaults.standard.set(withCloudKit, forKey: containerCloudKitKey)
+    /// Registra si ESTE proceso montó el store personal con el mirror de CloudKit espejando (eje B).
+    ///
+    /// **R1: recibe la DECISIÓN de mount, no la disponibilidad de iCloud.** Antes se le pasaba
+    /// `isICloudAvailable()`, que es una pregunta distinta: dice si HAY cuenta, no qué se montó. Para las
+    /// cuatro decisiones de hoy las dos formulaciones coinciden en las únicas celdas que su lector puede
+    /// alcanzar (`checkForICloudMismatch` corta en `storageMode == .cloud`, así que `cloudMirrorOff` y
+    /// `secondaryCloudSession` son inertes), y por eso el cambio es DARK. Deja de coincidir en cuanto exista
+    /// un mount SIN mirror con cuenta iCloud disponible —el mount neutro del relanzamiento cero—: ahí la
+    /// disponibilidad diría `true` y el aviso quedaría MUDO para siempre, dejando al device sin mirror y sin
+    /// forma de enterarse.
+    ///
+    /// En los hosts de TEST y de UITEST `personalConfiguration` retorna ANTES de capturar el testigo, así
+    /// que aquí se registra su default (`.iCloudMirror` ⇒ `true`) donde antes se registraba la
+    /// disponibilidad del simulador (`false`). Es inocuo y se auto-cura: el único lector exige además
+    /// `isICloudAvailable()`, que en el simulador es `false` en los dos casos, y el primer arranque REAL de
+    /// esa app re-escribe la key con su decisión de verdad. Se anota porque los dos hosts del scheme
+    /// comparten `UserDefaults.standard` (ver `.claude/rules/testing.md`) y una key que cambia de valor
+    /// entre corridas merece estar dicha.
+    ///
+    /// La ventana que este cambio SÍ abría —montar `.cloudMirrorOff` y persistir `.icloud` en caliente, que
+    /// es lo que hace la reversa— queda CERRADA por el término R9 del aviso, que decide por el MOUNT y no
+    /// por el modo de ahora: ver `PersonalStoreDecision.isCloudModeMount`. No se documentó como residual
+    /// aceptable porque la acotación que lo habría justificado era falsa: el lector no depende de
+    /// `NSUbiquityIdentityDidChange`, corre en cada vuelta a primer plano.
+    static func markContainerCloudKitState(decision: PersonalStoreDecision,
+                                           defaults: UserDefaults = .standard) {
+        defaults.set(decision.mirrorsToICloud, forKey: containerCloudKitKey)
     }
 
-    static var containerWasCreatedWithCloudKit: Bool {
+    static func containerWasCreatedWithCloudKit(_ defaults: UserDefaults = .standard) -> Bool {
         // Si la key nunca fue escrita, asumir true (usuario existente pre-update)
-        guard UserDefaults.standard.object(forKey: containerCloudKitKey) != nil else { return true }
-        return UserDefaults.standard.bool(forKey: containerCloudKitKey)
+        guard defaults.object(forKey: containerCloudKitKey) != nil else { return true }
+        return defaults.bool(forKey: containerCloudKitKey)
+    }
+
+    /// El predicado PURO del aviso «monté sin CloudKit y ahora hay iCloud» (§1.3 del spec del relanzamiento
+    /// cero), consumido por `AppBootstrapper.checkForICloudMismatch`. Extraído para poder pinnearlo: hasta
+    /// R1 este aviso no tenía ni un test, y es el único lector del testigo durable.
+    ///
+    /// **Los DOS inputs son testigos de mount, y ninguno es el modo de ahora.** El término R9 (I10-wiring
+    /// w6) —en modo nube el store personal ya NO lo espeja el mirror, así que tener cuenta iCloud, que
+    /// Grupos usa, no es un mismatch— se decide por `mountedDecision.isCloudModeMount` y no por
+    /// `CloudSyncFlags.storageMode`, que es lo que leía el guard antes de R1. Los dos coinciden salvo
+    /// mientras el modo cambia EN CALIENTE sin remontar, que es exactamente lo que hace la reversa; ahí el
+    /// modo de ahora dice `.icloud` sobre un proceso montado en modo nube y el aviso saldría de más. Ver
+    /// el docblock de `isCloudModeMount`.
+    static func shouldOfferICloudRestart(mountedDecision: PersonalStoreDecision,
+                                         mountedWithMirroring: Bool,
+                                         iCloudAvailableNow: Bool) -> Bool {
+        guard !mountedDecision.isCloudModeMount else { return false }
+        return !mountedWithMirroring && iCloudAvailableNow
     }
 
     /// Personal data — CloudKit synced (same databaseName = same SQLite file).
@@ -712,9 +868,7 @@ enum SwiftDataConfiguration {
             mirrorOffArmed: StorageModePersistence.isMirrorOffArmed(),
             iCloudAvailable: isICloudAvailable(),
             secondarySessionActive: SecondarySessionStore.isActive())
-        capturePersonalStoreMountedModeOnce(
-            decision == .cloudMirrorOff || decision == .secondaryCloudSession ? .cloud : .icloud,
-            secondary: decision == .secondaryCloudSession)
+        capturePersonalStoreMountedDecisionOnce(decision)
         switch decision {
         case .secondaryCloudSession:
             return ModelConfiguration(secondaryDatabaseName, schema: personalSchema, cloudKitDatabase: .none)

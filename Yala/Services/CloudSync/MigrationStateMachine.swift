@@ -248,11 +248,12 @@ nonisolated enum MigrationEvent: Equatable {
     case reverseVerifyOutcome(VerifyOutcome)
     /// Ack: the account is marked `reverting`.
     case reverseBackendFrozen
-    /// OBSERVATION post-relaunch: the `.private` mirror mounted (witness `personalStoreMountedMode ==
-    /// .icloud`) — analogous to `mirrorRelaunchCompleted`. CONTRACT (I11-2): this observation MUST be
-    /// injectable/fake-able in tests (`personalStoreMountedMode` defaults to `.icloud` and is only
-    /// captured on the production path → a real read would report "mounted" ALWAYS = false green). Seam
-    /// like `isMirrorConfirmedOff` of the fake.
+    /// OBSERVATION post-relaunch: the `.private` mirror mounted (witness
+    /// `personalStoreMountedDecision.attachesCloudKitMirror`) — analogous to `mirrorRelaunchCompleted`.
+    /// CONTRACT (I11-2): this observation MUST be injectable/fake-able in tests
+    /// (`personalStoreMountedDecision` defaults to `.iCloudMirror` and is only captured on the production
+    /// path → a real read would report "mounted" ALWAYS = false green). Seam like `isMirrorConfirmedOff`
+    /// of the fake.
     case reverseMirrorMounted
     /// `awaitingQuiescence` → `deletingZombies`.
     case reverseQuiescenceReached

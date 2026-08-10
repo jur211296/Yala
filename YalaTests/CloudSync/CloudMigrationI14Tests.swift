@@ -98,16 +98,18 @@ struct MigrationRuntimeGateTests {
                                              personalMountMismatch: true))
     }
 
-    @Test("isPersonalMountMismatch: solo `.cloud` persistido sobre mount `.icloud` (tabla de 4 celdas)")
-    func isPersonalMountMismatch_onlyCloudOverICloudMount() {
-        // La celda `.icloud` × `.icloud` es el 99 % del parque de 2.x: el término nuevo es inerte por
-        // construcción, exactamente igual que el de C-1. La celda `.cloud` × `.cloud` es el device ya
-        // relanzado (born-cloud o adopt), donde el motor DEBE poder arrancar.
+    @Test("isPersonalMountMismatch: solo `.cloud` persistido sobre un mount CON mirror adjunto")
+    func isPersonalMountMismatch_onlyCloudOverAttachedMirror() {
+        // R1: el barrido va por `allCases`, así que una decisión de mount nueva entra sola en la tabla y
+        // tiene que declarar aquí de qué lado cae. `.iCloudMirror` y `.localNoMirror` adjuntan mirror (el
+        // segundo por el `.automatic`, MEDIDO); las dos nube no. La celda `.icloud` × cualquiera es el 99 %
+        // del parque de 2.x, donde el término es inerte por construcción; `.cloud` × sin-mirror es el device
+        // ya relanzado (born-cloud o adopt), donde el motor DEBE poder arrancar.
         for persisted in [StorageMode.icloud, .cloud] {
-            for mounted in [StorageMode.icloud, .cloud] {
-                let expected = (persisted == .cloud && mounted == .icloud)
+            for mounted in SwiftDataConfiguration.PersonalStoreDecision.allCases {
+                let expected = (persisted == .cloud && mounted.attachesCloudKitMirror)
                 #expect(MigrationRuntimeGate.isPersonalMountMismatch(persistedMode: persisted,
-                                                                    mountedMode: mounted) == expected,
+                                                                    mountedDecision: mounted) == expected,
                         "persistido=\(persisted) montado=\(mounted)")
             }
         }
@@ -115,11 +117,11 @@ struct MigrationRuntimeGateTests {
 
     @Test("en `.icloud` el término nuevo es INERTE con cualquier mount (no-regresión del 99 % del parque)")
     func icloudMode_mountMismatchTermIsInert() {
-        // Pin del no-cambio: un device 2.x nunca puede ver este guard, ni siquiera si su testigo dijera
-        // `.cloud` por lo que fuera. Si alguien reescribe el predicado mirando solo el mount, esto cae.
-        for mounted in [StorageMode.icloud, .cloud] {
+        // Pin del no-cambio: un device 2.x nunca puede ver este guard, ni siquiera si su testigo dijera un
+        // mount nube. Si alguien reescribe el predicado mirando solo el mount, esto cae.
+        for mounted in SwiftDataConfiguration.PersonalStoreDecision.allCases {
             #expect(!MigrationRuntimeGate.isPersonalMountMismatch(persistedMode: .icloud,
-                                                                  mountedMode: mounted),
+                                                                  mountedDecision: mounted),
                     "montado=\(mounted)")
         }
     }
@@ -281,21 +283,21 @@ struct CloudMigrationUIStateDeriverTests {
     @Test("iCloud + notStarted → idle")
     func idle() {
         #expect(Deriver.derive(storageMode: .icloud, phase: .notStarted,
-                               mirrorOffArmed: false, mountedMode: .icloud) == .idle)
+                               mirrorOffArmed: false, mountedDecision: .iCloudMirror) == .idle)
     }
 
     @Test("cloud + done/notStarted → cloudActive (adoptado estable)")
     func cloudActive() {
         #expect(Deriver.derive(storageMode: .cloud, phase: .done,
-                               mirrorOffArmed: false, mountedMode: .cloud) == .cloudActive)
+                               mirrorOffArmed: false, mountedDecision: .cloudMirrorOff) == .cloudActive)
         #expect(Deriver.derive(storageMode: .cloud, phase: .notStarted,
-                               mirrorOffArmed: false, mountedMode: .cloud) == .cloudActive)
+                               mirrorOffArmed: false, mountedDecision: .cloudMirrorOff) == .cloudActive)
     }
 
     @Test("cloud + fase forward transicional → migrating")
     func migrating() {
         guard case .migrating = Deriver.derive(storageMode: .cloud, phase: .uploadingSnapshot,
-                                               mirrorOffArmed: false, mountedMode: .icloud) else {
+                                               mirrorOffArmed: false, mountedDecision: .iCloudMirror) else {
             Issue.record("esperaba .migrating"); return
         }
     }
@@ -303,7 +305,7 @@ struct CloudMigrationUIStateDeriverTests {
     @Test("cloud + fase reversa transicional → reverting")
     func reverting() {
         guard case .reverting = Deriver.derive(storageMode: .cloud, phase: .reverseDrainAll,
-                                               mirrorOffArmed: false, mountedMode: .cloud) else {
+                                               mirrorOffArmed: false, mountedDecision: .cloudMirrorOff) else {
             Issue.record("esperaba .reverting"); return
         }
     }
@@ -311,36 +313,36 @@ struct CloudMigrationUIStateDeriverTests {
     @Test("mirror-off ARMADO + mount .icloud → needsRelaunch(.toCloud) — cutover y adopt")
     func needsRelaunchToCloud() {
         #expect(Deriver.derive(storageMode: .cloud, phase: .cutover(.mirrorOff),
-                               mirrorOffArmed: true, mountedMode: .icloud) == .needsRelaunch(.toCloud))
+                               mirrorOffArmed: true, mountedDecision: .iCloudMirror) == .needsRelaunch(.toCloud))
         // Adopt: journal notStarted + .cloud armado + mount .icloud.
         #expect(Deriver.derive(storageMode: .cloud, phase: .notStarted,
-                               mirrorOffArmed: true, mountedMode: .icloud) == .needsRelaunch(.toCloud))
+                               mirrorOffArmed: true, mountedDecision: .iCloudMirror) == .needsRelaunch(.toCloud))
     }
 
     @Test("reverseMountMirror + mount .cloud → needsRelaunch(.toICloud)")
     func needsRelaunchToICloud() {
         #expect(Deriver.derive(storageMode: .cloud, phase: .reverseMountMirror,
-                               mirrorOffArmed: false, mountedMode: .cloud) == .needsRelaunch(.toICloud))
+                               mirrorOffArmed: false, mountedDecision: .cloudMirrorOff) == .needsRelaunch(.toICloud))
     }
 
     @Test("terminales de fallo → failed(kind)")
     func failed() {
         #expect(Deriver.derive(storageMode: .icloud, phase: .failedRollback,
-                               mirrorOffArmed: false, mountedMode: .icloud) == .failed(.migration))
+                               mirrorOffArmed: false, mountedDecision: .iCloudMirror) == .failed(.migration))
         #expect(Deriver.derive(storageMode: .cloud, phase: .reverseFailedRollback,
-                               mirrorOffArmed: false, mountedMode: .cloud) == .failed(.reverse))
+                               mirrorOffArmed: false, mountedDecision: .cloudMirrorOff) == .failed(.reverse))
     }
 
     @Test("waitingForLeader")
     func waiting() {
         #expect(Deriver.derive(storageMode: .cloud, phase: .waitingForLeader,
-                               mirrorOffArmed: false, mountedMode: .cloud) == .waitingForLeader)
+                               mirrorOffArmed: false, mountedDecision: .cloudMirrorOff) == .waitingForLeader)
     }
 
     @Test("icloudActive (terminal reversa) → idle")
     func icloudActiveIdle() {
         #expect(Deriver.derive(storageMode: .icloud, phase: .icloudActive,
-                               mirrorOffArmed: false, mountedMode: .icloud) == .idle)
+                               mirrorOffArmed: false, mountedDecision: .iCloudMirror) == .idle)
     }
 }
 

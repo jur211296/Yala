@@ -63,21 +63,27 @@ nonisolated struct MigrationUIStep: Equatable {
 /// La derivación PURA del estado de UI. Aislada como `enum` estático para testearla sin el controller.
 nonisolated enum CloudMigrationUIStateDeriver {
 
+    /// R1 (relanzamiento cero): `mountedDecision` sustituye al `StorageMode` colapsado. Las dos preguntas
+    /// que esta función le hace al testigo son sobre el MIRROR («¿sigue vivo?» / «¿ya está apagado?»), y un
+    /// enum de dos valores no podía responderlas para un mount que no fuera ninguna de las dos decisiones
+    /// nube. La tabla de estados de UI no se mueve: `localNoMirror` lleva mirror adjunto (MEDIDO), así que
+    /// cae del mismo lado que antes en los dos términos.
     static func derive(
         storageMode: StorageMode,
         phase: MigrationPhase,
         mirrorOffArmed: Bool,
-        mountedMode: StorageMode
+        mountedDecision: SwiftDataConfiguration.PersonalStoreDecision
     ) -> CloudMigrationUIState {
-        // 1) Relanzamiento de IDA/adopt: el mirror-off está ARMADO pero este proceso aún montó `.icloud`
-        //    (el mirror sigue vivo) → hay que MATAR Y REABRIR para montarlo en `.cloud`. Cubre el cutover
-        //    (`cutover(.mirrorOff)`) y el adopt (`notStarted` + `.cloud` armado, #30).
-        if mirrorOffArmed && mountedMode == .icloud {
+        let mirrorStillAttached = mountedDecision.attachesCloudKitMirror
+        // 1) Relanzamiento de IDA/adopt: el mirror-off está ARMADO pero este proceso montó CON mirror (sigue
+        //    vivo) → hay que MATAR Y REABRIR para montar sin él. Cubre el cutover (`cutover(.mirrorOff)`) y
+        //    el adopt (`notStarted` + `.cloud` armado, #30).
+        if mirrorOffArmed && mirrorStillAttached {
             return .needsRelaunch(.toCloud)
         }
-        // 2) Relanzamiento de REVERSA: la máquina está en `reverseMountMirror` pero este proceso aún montó
-        //    `.cloud` (mirror OFF) → hay que MATAR Y REABRIR para re-encender el mirror `.private`.
-        if phase == .reverseMountMirror && mountedMode == .cloud {
+        // 2) Relanzamiento de REVERSA: la máquina está en `reverseMountMirror` pero este proceso montó SIN
+        //    mirror → hay que MATAR Y REABRIR para re-encender el mirror `.private`.
+        if phase == .reverseMountMirror && !mirrorStillAttached {
             return .needsRelaunch(.toICloud)
         }
         switch phase {
@@ -547,7 +553,7 @@ final class CloudMigrationController {
         journaledPhase = phase
         pendingEffectCount = pendingCount
 
-        let mountedMode = SwiftDataConfiguration.personalStoreMountedMode
+        let mountedDecision = SwiftDataConfiguration.personalStoreMountedDecision
         let mirrorOffArmed = StorageModePersistence.isMirrorOffArmed()
         uiState = CloudMigrationUIStateDeriver.derive(
             // M1: modo PERSISTIDO del dueño, no el efectivo — la UI de migración describe la
@@ -555,7 +561,7 @@ final class CloudMigrationController {
             storageMode: StorageModePersistence.read(),
             phase: phase,
             mirrorOffArmed: mirrorOffArmed,
-            mountedMode: mountedMode)
+            mountedDecision: mountedDecision)
 
         refreshSyncBanner()
     }

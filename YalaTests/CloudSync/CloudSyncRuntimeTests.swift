@@ -133,11 +133,11 @@ struct CloudSyncRuntimeTests {
         // A3 (D-A7): el testigo del mount es `.icloud` por default en el host de tests, y el guard nuevo lo
         // lee ⇒ hay que declarar el device como YA RELANZADO (que es el escenario de todo test que llegue
         // al arranque). Restaurar SIEMPRE: es estado global de proceso.
-        SwiftDataConfiguration._testSetPersonalStoreMountedMode(.cloud)
+        SwiftDataConfiguration._testSetPersonalStoreMountedDecision(.cloudMirrorOff)
         defer {
             CloudSyncFlags.syncRuntimeEnabled = prev
             CloudSyncFlags.storageMode = prevMode
-            SwiftDataConfiguration._testSetPersonalStoreMountedMode(.icloud)
+            SwiftDataConfiguration._testSetPersonalStoreMountedDecision(.iCloudMirror)
         }
 
         let dir = freshDir(); defer { cleanup(dir) }
@@ -176,11 +176,11 @@ struct CloudSyncRuntimeTests {
         CloudSyncFlags.syncRuntimeEnabled = true
         let prevMode = CloudSyncFlags.storageMode
         CloudSyncFlags.storageMode = .cloud
-        SwiftDataConfiguration._testSetPersonalStoreMountedMode(.cloud)  // A3: device ya relanzado
+        SwiftDataConfiguration._testSetPersonalStoreMountedDecision(.cloudMirrorOff)  // A3: device ya relanzado
         defer {
             CloudSyncFlags.syncRuntimeEnabled = prev
             CloudSyncFlags.storageMode = prevMode
-            SwiftDataConfiguration._testSetPersonalStoreMountedMode(.icloud)
+            SwiftDataConfiguration._testSetPersonalStoreMountedDecision(.iCloudMirror)
         }
 
         let dir = freshDir(); defer { cleanup(dir) }
@@ -197,11 +197,11 @@ struct CloudSyncRuntimeTests {
         CloudSyncFlags.syncRuntimeEnabled = true
         let prevMode = CloudSyncFlags.storageMode
         CloudSyncFlags.storageMode = .cloud
-        SwiftDataConfiguration._testSetPersonalStoreMountedMode(.cloud)  // A3: device ya relanzado
+        SwiftDataConfiguration._testSetPersonalStoreMountedDecision(.cloudMirrorOff)  // A3: device ya relanzado
         defer {
             CloudSyncFlags.syncRuntimeEnabled = prev
             CloudSyncFlags.storageMode = prevMode
-            SwiftDataConfiguration._testSetPersonalStoreMountedMode(.icloud)
+            SwiftDataConfiguration._testSetPersonalStoreMountedDecision(.iCloudMirror)
         }
 
         let dir = freshDir(); defer { cleanup(dir) }
@@ -287,11 +287,11 @@ struct CloudSyncRuntimeTests {
         let prevMode = CloudSyncFlags.storageMode
         // P0/P6 (I14): el arranque exige `.cloud` + claim proceed-like para llegar al rehydrate.
         CloudSyncFlags.storageMode = .cloud
-        SwiftDataConfiguration._testSetPersonalStoreMountedMode(.cloud)  // A3: device ya relanzado
+        SwiftDataConfiguration._testSetPersonalStoreMountedDecision(.cloudMirrorOff)  // A3: device ya relanzado
         defer {
             CloudSyncFlags.syncRuntimeEnabled = prev
             CloudSyncFlags.storageMode = prevMode
-            SwiftDataConfiguration._testSetPersonalStoreMountedMode(.icloud)
+            SwiftDataConfiguration._testSetPersonalStoreMountedDecision(.iCloudMirror)
         }
 
         let dir = freshDir(); defer { cleanup(dir) }

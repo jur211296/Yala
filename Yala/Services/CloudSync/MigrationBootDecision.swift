@@ -59,8 +59,8 @@ nonisolated enum MigrationRuntimeGate {
     /// A3 (D-A7): ¿el modo EFECTIVO dice nube pero este proceso montó el store personal en `.icloud`?
     ///
     /// `personalConfiguration` se evalúa UNA sola vez al construir el container y el testigo
-    /// (`SwiftDataConfiguration.personalStoreMountedMode`) se captura con él, así que **escribir el par en
-    /// caliente no remonta nada**: hasta el relanzamiento el proceso sigue con el mirror de CloudKit vivo.
+    /// (`SwiftDataConfiguration.personalStoreMountedDecision`) se captura con él, así que **escribir el par
+    /// en caliente no remonta nada**: hasta el relanzamiento el proceso sigue con el mirror de CloudKit vivo.
     /// Arrancar el motor del dominio ahí sería motor + mirror escribiendo el mismo store — la doble
     /// escritura que el relanzamiento asistido (P3) existe para evitar.
     ///
@@ -74,11 +74,17 @@ nonisolated enum MigrationRuntimeGate {
     /// viejo), que hoy depende de que nadie invoque `start()` a mitad de sesión.
     ///
     /// El modo que se pasa es el EFECTIVO (`CloudSyncFlags.storageMode`), no el persistido: es el que
-    /// gobierna qué store se sincroniza. En la sesión secundaria OPERATIVA el testigo vale `.cloud`
-    /// (`personalStoreDecision == .secondaryCloudSession`) ⇒ no hay mismatch; su VENTANA DE ENTRADA la corta
+    /// gobierna qué store se sincroniza. En la sesión secundaria OPERATIVA el mount es
+    /// `.secondaryCloudSession`, que NO adjunta mirror ⇒ no hay mismatch; su VENTANA DE ENTRADA la corta
     /// antes el guard M1 de `CloudSyncRuntime.canRunDomain`, que tiene su propio canario.
-    static func isPersonalMountMismatch(persistedMode: StorageMode, mountedMode: StorageMode) -> Bool {
-        persistedMode == .cloud && mountedMode == .icloud
+    ///
+    /// **R1 (relanzamiento cero): el segundo parámetro es la DECISIÓN de mount, no un `StorageMode`.** La
+    /// pregunta que decide es «¿hay un mirror de CloudKit adjunto a este store?», y el `StorageMode` de dos
+    /// valores no podía expresarla: colapsaba las cuatro decisiones en dos y hacía imposible declarar un
+    /// mount sin mirror que no fuera `.cloudMirrorOff` ni la secundaria. Sigue SIN default a propósito.
+    static func isPersonalMountMismatch(persistedMode: StorageMode,
+                                        mountedDecision: SwiftDataConfiguration.PersonalStoreDecision) -> Bool {
+        persistedMode == .cloud && mountedDecision.attachesCloudKitMirror
     }
 
     static func isDomainStablePhase(_ phase: MigrationPhase) -> Bool {

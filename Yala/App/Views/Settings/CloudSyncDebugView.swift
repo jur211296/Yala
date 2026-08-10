@@ -527,7 +527,11 @@ final class CloudSyncMigrationPanelModel {
         } catch {
             outboxDiagLabel = "diag falló: \(error.localizedDescription)"
         }
-        mountedModeLabel = SwiftDataConfiguration.personalStoreMountedMode.rawValue
+        // R1: el testigo es la DECISIÓN de mount (4 valores) — el panel enseña la decisión y, entre
+        // paréntesis, el eje que consumen los gates: si el mirror de CloudKit está adjunto o no.
+        let mountedDecision = SwiftDataConfiguration.personalStoreMountedDecision
+        mountedModeLabel = "\(mountedDecision.rawValue) (mirror "
+            + (mountedDecision.attachesCloudKitMirror ? "adjunto" : "off") + ")"
         persistedModeLabel = StorageModePersistence.read().rawValue
         relaunchRequested = UserDefaults.standard.bool(forKey: MigrationWorkExecutor.relaunchRequestedKey)
         var descriptor = FetchDescriptor<MigrationState>()

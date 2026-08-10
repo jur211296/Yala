@@ -27,7 +27,7 @@ struct PersonalMountMismatchGuardTests {
     /// contamina a las demás (lección de `.claude/rules/testing.md` sobre el estado compartido).
     private func restoreGlobals() {
         CloudSyncFlags._testResetStorageModeOverride()
-        SwiftDataConfiguration._testSetPersonalStoreMountedMode(.icloud)
+        SwiftDataConfiguration._testSetPersonalStoreMountedDecision(.iCloudMirror)
         SecondarySessionStore._testSetActiveOverride(nil)
     }
 
@@ -35,11 +35,11 @@ struct PersonalMountMismatchGuardTests {
     func cloudPairComplete_butMirrorMounted_blocksDomain() {
         SecondarySessionStore._testSetActiveOverride(false)  // el guard M1 no interviene
         CloudSyncFlags.storageMode = .cloud
-        SwiftDataConfiguration._testSetPersonalStoreMountedMode(.icloud)  // proceso PRE-relanzamiento
+        SwiftDataConfiguration._testSetPersonalStoreMountedDecision(.iCloudMirror)  // proceso PRE-relanzamiento
         defer { restoreGlobals() }
 
         // Premisas explícitas: si alguna dejara de cumplirse, este test pasaría por la razón equivocada.
-        #expect(SwiftDataConfiguration.personalStoreMountedMode == .icloud)
+        #expect(SwiftDataConfiguration.personalStoreMountedDecision.attachesCloudKitMirror)
         #expect(MigrationRuntimeGate.isDomainStablePhase(MigrationPhaseStore.shared.currentPhase),
                 "la fase tiene que ser ESTABLE: si no, bloquearía el término de fase y no el nuevo")
 
@@ -52,7 +52,7 @@ struct PersonalMountMismatchGuardTests {
         // arriba y dejaría el Modo Nube muerto para todo el mundo.
         SecondarySessionStore._testSetActiveOverride(false)
         CloudSyncFlags.storageMode = .cloud
-        SwiftDataConfiguration._testSetPersonalStoreMountedMode(.cloud)
+        SwiftDataConfiguration._testSetPersonalStoreMountedDecision(.cloudMirrorOff)
         defer { restoreGlobals() }
 
         #expect(CloudSyncRuntime.canRunDomain() == true)
@@ -61,25 +61,26 @@ struct PersonalMountMismatchGuardTests {
     @Test("en `.icloud` el término es inerte con CUALQUIER mount (no-regresión del 99 % del parque)")
     func icloudMode_unaffectedByMountWitness() {
         // Un device 2.x jamás puede ver este guard: el gate corta antes en `storageMode == .cloud`. Se
-        // recorren los dos valores del testigo para que el pin no dependa del default.
+        // recorren TODAS las decisiones de mount (R1: `allCases`, así una decisión nueva entra sola en el
+        // barrido) para que el pin no dependa del default.
         SecondarySessionStore._testSetActiveOverride(false)
         CloudSyncFlags.storageMode = .icloud
         defer { restoreGlobals() }
 
-        for mounted in [StorageMode.icloud, .cloud] {
-            SwiftDataConfiguration._testSetPersonalStoreMountedMode(mounted)
+        for mounted in SwiftDataConfiguration.PersonalStoreDecision.allCases {
+            SwiftDataConfiguration._testSetPersonalStoreMountedDecision(mounted)
             #expect(CloudSyncRuntime.canRunDomain() == false, "montado=\(mounted)")
         }
     }
 
     @Test("la secundaria OPERATIVA no queda atrapada por el guard nuevo (M1 sigue funcionando)")
     func secondaryMountedSession_isNotBlockedByTheNewTerm() {
-        // En la secundaria montada, `personalStoreDecision` devuelve `.secondaryCloudSession` ⇒ el testigo
-        // se captura como `.cloud`, así que NO hay mismatch. Si alguien reescribiera el predicado contra la
-        // key PERSISTIDA (que en una secundaria sigue siendo `.icloud` por invariante) este test caería.
+        // En la secundaria montada, `personalStoreDecision` devuelve `.secondaryCloudSession`, que NO
+        // adjunta mirror ⇒ NO hay mismatch. Si alguien reescribiera el predicado contra la key PERSISTIDA
+        // (que en una secundaria sigue siendo `.icloud` por invariante) este test caería.
         SecondarySessionStore._testSetActiveOverride(true)
         SwiftDataConfiguration._testSetSecondaryStoreMounted(true)
-        SwiftDataConfiguration._testSetPersonalStoreMountedMode(.cloud)
+        SwiftDataConfiguration._testSetPersonalStoreMountedDecision(.secondaryCloudSession)
         defer {
             SwiftDataConfiguration._testSetSecondaryStoreMounted(false)
             restoreGlobals()
@@ -139,7 +140,7 @@ struct PersonalMountMismatchWiringTests {
         let body = try Self.canRunDomainBody(try Self.runtimeSource())
         #expect(body.contains("MigrationRuntimeGate.isPersonalMountMismatch("),
                 "la decisión tiene que salir de la lógica pura, no de una comparación escrita aquí")
-        #expect(body.contains("SwiftDataConfiguration.personalStoreMountedMode"), """
+        #expect(body.contains("SwiftDataConfiguration.personalStoreMountedDecision"), """
             el input tiene que ser el TESTIGO del mount de ESTE proceso. La key persistida no sirve: dice qué
             modo quiere el device, no qué montó el proceso — y en una sesión secundaria además vale `.icloud`
             por invariante.

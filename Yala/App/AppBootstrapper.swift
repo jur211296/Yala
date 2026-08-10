@@ -815,15 +815,14 @@ final class AppBootstrapper {
     private func checkForICloudMismatch() {
         guard !iCloudMismatchAlreadyDetected else { return }
 
-        // R9 (I10-wiring w6): en `storageMode == .cloud` el store personal ya NO lo espeja el mirror —
-        // tener cuenta iCloud (que Grupos usa) NO es un mismatch → no ofrecer el reinicio. DARK: nadie
-        // persiste `.cloud` hasta el cutover de una migración real.
-        guard CloudSyncFlags.storageMode != .cloud else { return }
-
-        let wasCreatedWithCloudKit = SwiftDataConfiguration.containerWasCreatedWithCloudKit
-        let isNowAvailable = SwiftDataConfiguration.isICloudAvailable()
-
-        if !wasCreatedWithCloudKit && isNowAvailable {
+        // R1 (relanzamiento cero): la decisión vive en `SwiftDataConfiguration.shouldOfferICloudRestart`
+        // (pura, testeable) e incluye el término R9. Sus dos primeros inputs son testigos de lo que ESTE
+        // proceso MONTÓ —no si había cuenta iCloud al arrancar, ni qué modo dice la key AHORA—: esta función
+        // corre en cada vuelta a primer plano, y la reversa cambia el modo en caliente sin remontar.
+        if SwiftDataConfiguration.shouldOfferICloudRestart(
+            mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision,
+            mountedWithMirroring: SwiftDataConfiguration.containerWasCreatedWithCloudKit(),
+            iCloudAvailableNow: SwiftDataConfiguration.isICloudAvailable()) {
             iCloudMismatchAlreadyDetected = true
             #if DEBUG
             print("AppBootstrapper: iCloud mismatch — container was local, iCloud now available")
