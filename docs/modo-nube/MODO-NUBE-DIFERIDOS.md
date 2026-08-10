@@ -1,6 +1,6 @@
 ---
 created: 2026-07-03
-updated: 2026-08-08
+updated: 2026-08-09
 tags: [modo-nube, diferidos, registro]
 ---
 
@@ -41,8 +41,8 @@ Registro vivo de todo lo pospuesto, descartado-revisable, o marcado como futuro 
 - **Gatillo de reconsideración (explícito en el doc, no inventado aquí):** (a) el número de usuarios cloud-only activos supera un umbral donde perder 24h de datos sea inaceptable — orientativo: **>~500 usuarios cloud-only activos**; o (b) el `observe` mode (§j.2) muestra un volumen de escritura donde 24h de pérdida representaría daño material; o (c) el primer incidente real de pérdida de datos de más de unas horas. Se revisa en cada escalón del rollout gradual del flag `cloudModeEnabled`.
 - **Por qué importa más de lo habitual:** para usuarios **born-cloud** (nacidos en la nube, sin cuenta iCloud) el backend es la ÚNICA copia — no hay red de seguridad de CloudKit. Riesgo A16 lo marca explícitamente como "Media→Alta para born-cloud".
 - **Nota 2026-08-08:** la cláusula «se revisa en cada escalón del rollout» tiene al menos un escalón pagado sin revisión anotada (Grupos a 100% el 31-jul; `CLOUD_MODE=100` permanente desde el 30-jul). Con 2.1 todo-ON ya no habrá escalones: la revisión entra en el **punto 2 del plan hacia 2.1** (tanda de verificación de producción — el estado del PITR del proyecto prod sigue SIN VERIFICAR según [[MODO-NUBE-DECISION-RELEASE-2.1]]). Además, D-A7 vuelve a los born-cloud la población objetivo de 2.1 ⇒ el «importa más para born-cloud» deja de ser hipotético en cuanto se publique.
-- **Estado:** DIFERIDO — con revisión OBLIGADA en el punto 2 del plan hacia 2.1
-- **Decisión al revisar:** ___
+- **Estado:** DIFERIDO — **revisado y DECIDIDO por el owner el 2026-08-09** (sesión de spec de D-A7)
+- **Decisión al revisar (owner, 2026-08-09):** **backups diarios + gatillo por volumen.** NO se activa PITR con el release de 2.1: se mantiene el RPO de 24 h para el arranque y el PITR entra al superar el umbral ya escrito arriba (~500 usuarios cloud-only activos). ⚠️ **Decidido SIN el dato**: la tabla de resultados de [[MODO-NUBE-VERIFICACION-PROD-GUION-DEVICE]] sigue **vacía**, así que ni siquiera está verificado que los backups diarios estén activos ⇒ el paso 3 de ese guion no desaparece, se convierte en una **comprobación** («¿están los diarios?»), y si la respuesta fuera NO, esta decisión se vuelve a preguntar. **Y un gatillo que nadie observa es un diferido sin dueño:** el contador que puede alimentarlo es `MetricsService.cloudRegistrationCompletedIfFirst` (one-shot por `userID`), que el incremento **A2 de [[MODO-NUBE-D-A7-BORN-CLOUD-PREP]] §6.4** emite con `detail: "bornCloud"` — falta asignar quién mira esa cifra y cada cuánto.
 
 ### 3. Migración de Grupos al backend (Supabase)
 
@@ -371,6 +371,14 @@ Registro vivo de todo lo pospuesto, descartado-revisable, o marcado como futuro 
 - **Gatillo de reconsideración:** **antes de implementar el corte** (no antes del muro D-A1 — ese va primero y es independiente), y con datos en la mano: cola real de grupos legacy sin migrar tras el rollout de D-A4, y % de usuarios que firman en los primeros N días. Re-revisar la decisión completa con el owner en ese momento, incluida la alternativa de no cortar y vivir con la cola.
 - **Nota 2026-08-08 — la premisa cambió de naturaleza:** **A4 quedó CANCELADO** (owner 04-ago: «no existen grupos en CloudKit legacy útiles en ningún usuario de Yala») y la Fase 3 borró el transporte y la migración de grupos vivos (D-A4/D-A5 murieron sin ejecutarse — G6 se borró en la Fase 1 de la simplificación). La «cola de grupos legacy» sobre la que este corte decidía ya no tiene mecanismo de migración ni población declarada ⇒ al re-revisar, la primera pregunta es **si el corte sigue teniendo objeto** (la alternativa «no cortar» quedó, de facto, como estado actual: los datos legacy son locales per-device y solo perdieron la sincronización).
 - **Estado:** REVISAR (registrado 2026-07-27 a petición explícita del owner: "anota que re-revisemos la decisión D-A6 a detalle cuando sea tiempo").
+
+### 39. El relanzamiento asistido del alta born-cloud (y del cutover) — sustituirlo por un remount in-process (mejora de UX)
+
+- **Qué es:** la pantalla terminal «Cierra y vuelve a abrir Yala» — hoy en dos sitios: el alta born-cloud (A3/A5 de D-A7) y el cutover de la migración. Existe por una restricción de plataforma: el contenedor SwiftData se monta UNA vez por proceso y Apple no da API para cambiarle el espejo de CloudKit a un store vivo; la alternativa «arrancar el motor sin relanzar» está MEDIDA y es doble-escritura (spec D-A7 §6.2.1), y el auto-kill está prohibido (App Review + parece crash). La mejora propuesta: **reconstruir el contenedor DENTRO del proceso** (un relanzamiento invisible) tras la elección o el cutover, eliminando la pantalla.
+- **Por qué se difirió:** es cirugía mayor sobre el arranque entero — los ~16 pasos del bootstrap, los engines y los observers asumen un contenedor por proceso (precedente directo: la saga de crashes de Grupos de junio nació de estado compartido durante montajes) — con riesgo de regresión a la rama `.icloud` del 99 % del parque, contra la regla de no-regresión de 2.1. Decisión del owner (2026-08-09, conversación con el punto de control): **se registra como mejora de experiencia de usuario por derecho propio, NO gateada únicamente por telemetría de abandono** — el relanzamiento es un peaje de plataforma que vale la pena eliminar aunque nadie abandone en él.
+- **Gatillo de reconsideración:** la **revisión integral de los flujos de Modo Nube que el owner anunció** (post-release; tiene dudas abiertas sobre algunos flujos — ese es el foro natural para decidir esta y las demás asperezas de UX juntas). Insumo, no condición: la telemetría del alta (`cloudRegistrationCompletedIfFirst` de A2 + un contador de relaunch completado si se añade) puede cuantificar cuánta gente toca esta pantalla y cuántos pausan ahí.
+- **Estado:** DIFERIDO (mejora de UX)
+- **Decisión al revisar:** ___
 
 ---
 
