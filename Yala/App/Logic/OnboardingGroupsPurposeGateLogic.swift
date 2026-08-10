@@ -17,6 +17,11 @@
 //  born-cloud sin cuenta iCloud del OS se quedaba sin salida salvo entrar por invitación
 //  (`onboardingMode == .groupInvite`, que es otro flujo y no pasa por el selector).
 //
+//  DESDE A6 DE D-A7 el fichero decide DOS cosas sobre la misma card, y son distintas: si se
+//  PINTA (`shouldShowGroupsCard`) y si tocarla queda BLOQUEADA (`shouldBlockSelection`). Viven
+//  juntas a propósito — quien mañana toque una tiene la otra delante, que es exactamente el
+//  olvido que se paga caro aquí.
+//
 
 import Foundation
 
@@ -52,5 +57,48 @@ nonisolated enum OnboardingGroupsPurposeGateLogic {
                                      isBackendChannelEnabled: Bool) -> Bool {
         guard !isBackendChannelEnabled else { return false }
         return !isAccountAvailable
+    }
+
+    /// Decide si la card «Dividir gastos con amigos» (`onboarding_purpose_groups`) se PINTA.
+    ///
+    /// Es otra decisión que el muro de arriba, y el orden importa: primero se decide si la card
+    /// existe, y solo si existe puede su tap toparse con el muro. En modo nube la card **no se
+    /// pinta**, así que el muro nunca llega a evaluarse por ese camino.
+    ///
+    /// - Parameters:
+    ///   - isInitialFlow: `mode == .initial` en `OnboardingView`. Término PREEXISTENTE, que vivía
+    ///     dentro del `body`: la reutilización del flujo por `FullModeActivation` no debe poder
+    ///     devolver a «solo grupos» a un `groupInvite` que acaba de activar Yala completo. Sube
+    ///     aquí con A6 en vez de quedarse como un `&&` en el `if`, porque un predicado partido
+    ///     entre el `body` y la lógica pura deja la mitad de la decisión sin un solo test que la
+    ///     alcance — la lección de `965a4d86`, otra vez.
+    ///   - storageMode: `CloudSyncFlags.storageMode`, el modo EFECTIVO (no
+    ///     `StorageModePersistence.read()`): en una sesión secundaria M1 el store montado es el
+    ///     secundario y lo sincroniza el motor, así que el argumento de abajo aplica igual aunque
+    ///     la key persistida del dueño siga en `.icloud`.
+    ///
+    /// **Por qué desaparece en `.cloud`** (decisión de diseño ya tomada — cierre A4 de
+    /// [[MODO-NUBE-ARQUITECTURA]] §k.7, DIFERIDOS #17): «elegí la nube para mis datos personales»
+    /// + «solo quiero Grupos» es contradictorio. El modo solo-grupos NO usa el store personal, así
+    /// que dejaría VACÍO el backend que el usuario acaba de estrenar. Un usuario `.cloud` que
+    /// quiera Grupos entra por el tab normal, cuyo gate ya consulta el canal (C3, `965a4d86`).
+    /// Se OCULTA y no se deshabilita con copy: un botón que solo sirve para explicar por qué no
+    /// sirve es peor que su ausencia.
+    ///
+    /// **La invariante que esto NO toca, y que no puede tocar:** `OnboardingUsageMode` sigue
+    /// teniendo CUATRO casos y `OnboardingPurposeSelectionLogic.selectedCard(for:)` sigue siendo
+    /// TOTAL y ÚNICA. Ocultar la card no puede dejar cero marcadas porque el tap de esa card es
+    /// la ÚNICA ruta del onboarding a `.groupsOnly` (el default es `.fullControl` y la migración
+    /// legacy del `.task` solo produce `.expensesOnly`/`.fullControl`/`.dayToDay`) ⇒ en `.cloud`
+    /// ese modo es inalcanzable desde aquí, no un estado huérfano.
+    ///
+    /// En `.icloud` —el 99 % del parque— el resultado es el término de siempre, palabra por
+    /// palabra: el flujo queda byte-idéntico.
+    static func shouldShowGroupsCard(isInitialFlow: Bool, storageMode: StorageMode) -> Bool {
+        guard isInitialFlow else { return false }
+        switch storageMode {
+        case .icloud: return true
+        case .cloud:  return false
+        }
     }
 }

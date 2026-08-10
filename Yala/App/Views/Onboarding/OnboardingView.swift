@@ -502,10 +502,18 @@ struct OnboardingView: View {
                             selectedMindset = "cashFlow"
                         }
 
-                        // "Solo grupos" solo en el onboarding inicial — NO en la
-                        // reutilización de FullModeActivation (un groupInvite activando
-                        // Yala completo no debe poder volver a "solo grupos" aquí).
-                        if mode == .initial {
+                        // Dos motivos para que la card NO exista, y los dos viven en lógica pura
+                        // (`OnboardingGroupsPurposeGateLogic.shouldShowGroupsCard`) porque aquí,
+                        // dentro del `body`, ningún unitario los alcanza:
+                        //   · "Solo grupos" solo en el onboarding inicial — NO en la
+                        //     reutilización de FullModeActivation (un groupInvite activando Yala
+                        //     completo no debe poder volver a "solo grupos" aquí).
+                        //   · En modo NUBE desaparece (A6 de D-A7): el modo solo-grupos no usa el
+                        //     store personal y dejaría vacío el backend recién estrenado.
+                        if OnboardingGroupsPurposeGateLogic.shouldShowGroupsCard(
+                            isInitialFlow: mode == .initial,
+                            storageMode: CloudSyncFlags.storageMode
+                        ) {
                             binaryCard(
                                 isSelected: OnboardingPurposeSelectionLogic.isSelected(.groups, mode: selectedUsageMode),
                                 icon: "person.3.fill",
