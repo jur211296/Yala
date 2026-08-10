@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atlas de Flujos · Modo Nube · Yala</title>
+<!--
+  Atlas de Flujos de Modo Nube — chip F1 de $VAULT/Backlog/modo-nube/MODO-NUBE-CHIPS-FLUJOS.md
+
+  REGLA MADRE (no negociable): los diagramas se derivan de las TABLAS de la lógica pura y de lo que la
+  app hace de verdad — JAMÁS de MODO-NUBE-ARQUITECTURA. Donde el diseño y el código difieren, gana el
+  código y la divergencia se ANOTA en el panel del nodo con la marca ⚠︎.
+
+  ANCLAJE: medido el 2026-08-09 contra HEAD 9d6f0f1c (branch 2.0.5).
+
+  OFFLINE: `vendor/mermaid.min.js` está vendorizado (v11.6.0, 2.5 MB). Es la única dependencia y no hay
+  ninguna URL remota en este fichero: el Atlas abre con doble clic, sin servidor y sin red.
+-->
+<script src="vendor/mermaid.min.js"></script>
+<script src="data/nodes.js"></script>
+<script src="data/flows.js"></script>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --card: #1d2129;
+    --line: #2a2f3a;
+    --fg: #e7e9ee;
+    --dim: #9aa3b2;
+    --accent: #6ea8fe;
+    --warn: #f0b429;
+    --bad: #f26d6d;
+    --ok: #5ec98a;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  }
+  header {
+    padding: 28px 32px 20px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, #141822, var(--bg));
+  }
+  h1 { margin: 0 0 6px; font-size: 24px; letter-spacing: -0.01em; }
+  .anchor {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--dim);
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+  .anchor b { color: var(--accent); font-weight: 600; }
+  .rule {
+    margin-top: 16px;
+    padding: 12px 14px;
+    border-left: 3px solid var(--warn);
+    background: #1b1a14;
+    border-radius: 0 8px 8px 0;
+    font-size: 13.5px;
+    color: #e4d9bd;
+    max-width: 980px;
+  }
+  nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 16px 32px;
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+    background: rgba(15,17,21,0.96);
+    backdrop-filter: blur(8px);
+    z-index: 20;
+  }
+  nav a {
+    color: var(--fg);
+    text-decoration: none;
+    font-size: 13px;
+    padding: 6px 11px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--card);
+  }
+  nav a:hover { border-color: var(--accent); color: var(--accent); }
+  main { padding: 28px 32px 120px; max-width: 1180px; }
+  section { margin-bottom: 52px; scroll-margin-top: 76px; }
+  h2 { font-size: 19px; margin: 0 0 6px; }
+  .lede { color: var(--dim); font-size: 14px; margin: 0 0 16px; max-width: 900px; }
+  .diagram {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px;
+    overflow-x: auto;
+  }
+  .diagram .node { cursor: pointer; }
+  .hint { font-size: 12px; color: var(--dim); margin-top: 8px; }
+
+  /* Panel lateral */
+  #panel {
+    position: fixed;
+    top: 0; right: 0; bottom: 0;
+    width: min(520px, 94vw);
+    background: var(--panel);
+    border-left: 1px solid var(--line);
+    transform: translateX(100%);
+    transition: transform 0.18s ease;
+    overflow-y: auto;
+    z-index: 60;
+    box-shadow: -18px 0 44px rgba(0,0,0,0.45);
+  }
+  #panel.open { transform: none; }
+  #panel .inner { padding: 22px 24px 60px; }
+  #panel h3 { margin: 0 0 4px; font-size: 18px; }
+  #panel .shot {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    margin-bottom: 18px;
+    word-break: break-all;
+  }
+  #panel .shot.none { color: var(--dim); }
+  .field { margin-bottom: 18px; }
+  .field h4 {
+    margin: 0 0 5px;
+    font-size: 11.5px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--dim);
+  }
+  .field p { margin: 0; font-size: 14px; }
+  .coord { list-style: none; padding: 0; margin: 0; }
+  .coord li {
+    font-size: 13px;
+    padding: 8px 10px;
+    background: var(--card);
+    border-radius: 7px;
+    margin-bottom: 6px;
+    border-left: 2px solid var(--accent);
+  }
+  .coord code { font-family: var(--mono); font-size: 12px; color: var(--accent); }
+  .coord span { display: block; color: var(--dim); margin-top: 3px; }
+  .notes li {
+    font-size: 13px;
+    padding: 9px 11px;
+    background: #1b1a14;
+    border-left: 2px solid var(--warn);
+    border-radius: 0 7px 7px 0;
+    margin-bottom: 7px;
+    list-style: none;
+    color: #e4d9bd;
+  }
+  .notes { padding: 0; margin: 0; }
+  #close {
+    position: absolute;
+    top: 14px; right: 16px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    color: var(--fg);
+    border-radius: 8px;
+    padding: 5px 11px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .imgslot {
+    width: 100%;
+    border: 1px dashed var(--line);
+    border-radius: 10px;
+    background: var(--card);
+    color: var(--dim);
+    font-size: 12.5px;
+    text-align: center;
+    padding: 26px 12px;
+    margin-bottom: 16px;
+    font-family: var(--mono);
+  }
+  .imgslot img { max-width: 100%; border-radius: 8px; display: block; }
+
+  /* Cobertura */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--dim); font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; }
+  td.num { text-align: right; font-family: var(--mono); white-space: nowrap; }
+  td.logic { font-family: var(--mono); font-size: 12px; }
+  td.logic small { display: block; color: var(--dim); font-size: 11px; margin-top: 3px; }
+  .delta-ok { color: var(--ok); font-family: var(--mono); }
+  .delta-say { color: var(--warn); }
+  .summary {
+    display: flex;
+    gap: 22px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+    padding: 14px 16px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    font-size: 13px;
+  }
+  .summary b { display: block; font-size: 22px; font-family: var(--mono); }
+  .finding {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--warn);
+    border-radius: 0 10px 10px 0;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .finding h4 { margin: 0 0 6px; font-size: 15px; }
+  .finding .meta { font-family: var(--mono); font-size: 11.5px; color: var(--dim); margin-bottom: 6px; }
+  .finding p { margin: 0; font-size: 13.5px; color: #cfd5df; }
+  .finding a { color: var(--accent); font-size: 12.5px; }
+  code { font-family: var(--mono); font-size: 0.92em; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Atlas de Flujos · Modo Nube</h1>
+  <div class="anchor">
+    <span>HEAD <b>9d6f0f1c</b></span>
+    <span>branch <b>2.0.5</b></span>
+    <span>medido el <b>2026-08-09</b></span>
+    <span>chip <b>F1</b> · las capturas las pone F2</span>
+  </div>
+  <div class="rule">
+    <b>Regla madre.</b> Cada nodo de este Atlas sale de una celda REAL de una tabla de lógica pura o de una
+    línea de una vista leída — nunca de <code>MODO-NUBE-ARQUITECTURA</code>. Donde el diseño y el código
+    difieren, gana el código y la divergencia se anota en el panel del nodo con ⚠︎. La
+    <a href="#cobertura" style="color:var(--accent)">auto-auditoría de cobertura</a> dice, tabla por tabla,
+    cuántas celdas hay y cuántas se dibujaron: un desajuste es un hueco <em>dicho</em>, no silencioso.
+  </div>
+</header>
+
+<nav id="nav"></nav>
+
+<main>
+  <div id="flows"></div>
+
+  <section id="cobertura">
+    <h2>Cobertura · auto-auditoría de completitud</h2>
+    <p class="lede">
+      <code>celdas</code> = clases de equivalencia contadas leyendo el <code>switch</code>/predicado del
+      fichero. <code>tests</code> = número de <code>@Test</code> medido con grep en la suite indicada (no es
+      el número de celdas). <code>dibujados</code> = branches que aparecen como nodo o arista en algún
+      diagrama. Un <code>delta &gt; 0</code> no es un fallo: es un hueco con su motivo escrito.
+    </p>
+    <div class="summary" id="summary"></div>
+    <table>
+      <thead>
+        <tr><th>Lógica</th><th class="num">celdas</th><th class="num">dibujados</th><th>delta declarado</th></tr>
+      </thead>
+      <tbody id="cov"></tbody>
+    </table>
+  </section>
+
+  <section id="hallazgos">
+    <h2>Hallazgos de F1</h2>
+    <p class="lede">
+      Lo que apareció al derivar los diagramas del código y que el diseño no dice, o dice al revés. Cada uno
+      enlaza al nodo donde vive.
+    </p>
+    <div id="findings"></div>
+  </section>
+
+  <section id="f2">
+    <h2>Qué le toca a F2</h2>
+    <p class="lede">
+      Cada nodo con <code>id</code> de screenshot espera su imagen en <code>img/&lt;id&gt;.png</code>. Los
+      nodos marcados <em>«decisión pura, sin pantalla»</em> no tienen captura por construcción y no cuentan
+      como hueco. El sim no puede dar: el sheet real de SIWA/Google completándose, la atestación contra
+      producción y el faro cross-device real (iCloud KV sin cuenta en el simulador) — esos van a la lista
+      <code>device-only</code> que F2 consolida.
+    </p>
+    <div class="summary" id="shots"></div>
+  </section>
+
+  <section id="mantenimiento">
+    <h2>Cómo se mantiene esto</h2>
+    <p class="lede">
+      Los diagramas viven en <code>data/flows.js</code> y los paneles en <code>data/nodes.js</code>: se
+      editan en texto, no en un SVG dibujado a mano. <code>vendor/mermaid.min.js</code> (v11.6.0,
+      <b>2,5&nbsp;MB</b>) está vendorizado a propósito — es lo que hace que el Atlas abra sin red, y el
+      coste es un blob en el historial a cambio de que los diagramas sigan siendo editables.
+    </p>
+    <p class="lede">
+      El pin es <code>check.mjs</code>: valida que los 7 diagramas parsean, que uno renderiza de verdad,
+      que cada nodo clickeable resuelve, que ningún panel queda huérfano, que los <code>id</code> de
+      screenshot son únicos y con convención, que todo panel tiene sus 4 campos y su coordenada, y que este
+      HTML no referencia ni una URL remota. Verificado el 2026-08-09: romper un enlace da 2 fallos, y
+      devolver Mermaid a un CDN da el fallo de offline.
+    </p>
+  </section>
+</main>
+
+<aside id="panel">
+  <button id="close">Cerrar</button>
+  <div class="inner" id="panelBody"></div>
+</aside>
+
+<script>
+(function () {
+  const NODES = window.ATLAS_NODES;
+  const FLOWS = window.ATLAS_FLOWS;
+  const COV = window.ATLAS_COVERAGE;
+  const FIND = window.ATLAS_FINDINGS;
+
+  // ── Índice de flujos ──────────────────────────────────────────────────────
+  const nav = document.getElementById("nav");
+  FLOWS.forEach(f => {
+    const a = document.createElement("a");
+    a.href = "#" + f.id;
+    a.textContent = f.title;
+    nav.appendChild(a);
+  });
+  ["cobertura", "hallazgos", "f2", "mantenimiento"].forEach((id, i) => {
+    const a = document.createElement("a");
+    a.href = "#" + id;
+    a.textContent = ["Cobertura", "Hallazgos", "Para F2", "Mantenimiento"][i];
+    nav.appendChild(a);
+  });
+
+  // ── Secciones de flujo ────────────────────────────────────────────────────
+  const host = document.getElementById("flows");
+  FLOWS.forEach(f => {
+    const s = document.createElement("section");
+    s.id = f.id;
+    const h2 = document.createElement("h2");
+    h2.textContent = f.title;
+    const lede = document.createElement("p");
+    lede.className = "lede";
+    lede.textContent = f.lede;
+    const box = document.createElement("div");
+    box.className = "diagram";
+    const pre = document.createElement("pre");
+    pre.className = "mermaid";
+    // textContent y NO innerHTML: los labels llevan `<br/>`, que Mermaid necesita crudo.
+    pre.textContent = f.graph;
+    box.appendChild(pre);
+    const hint = document.createElement("p");
+    hint.className = "hint";
+    hint.textContent = "Toca cualquier nodo para abrir su panel. Los nodos punteados son estados que hoy NO son alcanzables — y el panel dice por qué.";
+    s.append(h2, lede, box, hint);
+    host.appendChild(s);
+  });
+
+  // ── Panel ─────────────────────────────────────────────────────────────────
+  const panel = document.getElementById("panel");
+  const body = document.getElementById("panelBody");
+  document.getElementById("close").onclick = () => panel.classList.remove("open");
+  document.addEventListener("keydown", e => { if (e.key === "Escape") panel.classList.remove("open"); });
+
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+
+  function field(label, value) {
+    if (!value) return "";
+    return '<div class="field"><h4>' + label + "</h4><p>" + value + "</p></div>";
+  }
+
+  window.showNode = function (id) {
+    const n = NODES[id];
+    if (!n) {
+      body.innerHTML = "<h3>Nodo sin panel</h3><p>Id <code>" + esc(id) + "</code> no está en <code>data/nodes.js</code>. Eso es un hueco del Atlas, no del código.</p>";
+      panel.classList.add("open");
+      return;
+    }
+    let html = "<h3>" + n.title + "</h3>";
+    if (n.shot) {
+      html += '<div class="shot">img/' + n.shot + "</div>";
+      html += '<div class="imgslot"><img src="img/' + n.shot + '" alt="" ' +
+              "onerror=\"this.parentElement.textContent='Pendiente de F2 · img/" + n.shot + "'\"></div>";
+    } else {
+      html += '<div class="shot none">decisión pura · sin pantalla, sin captura</div>';
+    }
+    html += field("Qué ve el usuario", n.sees);
+    html += field("Qué queda persistido", n.persists);
+    html += field("Salidas y recuperación", n.exits);
+    if (n.code && n.code.length) {
+      html += '<div class="field"><h4>Coordenadas de código</h4><ul class="coord">';
+      n.code.forEach(c => {
+        html += "<li><code>" + esc(c.t) + "</code><span>" + c.d + "</span></li>";
+      });
+      html += "</ul></div>";
+    }
+    if (n.notes && n.notes.length) {
+      html += '<div class="field"><h4>Divergencias, huecos y residuales</h4><ul class="notes">';
+      n.notes.forEach(t => { html += "<li>" + t + "</li>"; });
+      html += "</ul></div>";
+    }
+    body.innerHTML = html;
+    panel.classList.add("open");
+    panel.scrollTop = 0;
+  };
+
+  // ── Cobertura ─────────────────────────────────────────────────────────────
+  const cov = document.getElementById("cov");
+  let cells = 0, drawn = 0, withDelta = 0;
+  COV.forEach(r => {
+    cells += r.cells;
+    drawn += r.drawn;
+    if (r.delta) withDelta++;
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      '<td class="logic">' + esc(r.logic) + "<small>" + esc(r.file) + " · " + esc(r.tests) + " · flujo: " + r.flow + "</small></td>" +
+      '<td class="num">' + r.cells + "</td>" +
+      '<td class="num">' + r.drawn + "</td>" +
+      "<td>" + (r.delta ? '<span class="delta-say">' + r.delta + "</span>" : '<span class="delta-ok">= completo</span>') + "</td>";
+    cov.appendChild(tr);
+  });
+  document.getElementById("summary").innerHTML =
+    "<div><b>" + COV.length + "</b>tablas auditadas</div>" +
+    "<div><b>" + cells + "</b>celdas contadas</div>" +
+    "<div><b>" + drawn + "</b>branches dibujados</div>" +
+    "<div><b>" + withDelta + "</b>tablas con delta declarado</div>" +
+    "<div><b>" + (COV.length - withDelta) + "</b>tablas dibujadas al completo</div>";
+
+  // ── Hallazgos ─────────────────────────────────────────────────────────────
+  const fh = document.getElementById("findings");
+  FIND.forEach(f => {
+    const d = document.createElement("div");
+    d.className = "finding";
+    d.innerHTML =
+      '<div class="meta">' + f.id + " · " + f.sev + "</div>" +
+      "<h4>" + f.title + "</h4><p>" + f.body + "</p>" +
+      '<p><a href="#" data-node="' + f.node + '">Abrir el nodo →</a></p>';
+    fh.appendChild(d);
+  });
+  fh.addEventListener("click", e => {
+    const a = e.target.closest("a[data-node]");
+    if (!a) return;
+    e.preventDefault();
+    showNode(a.getAttribute("data-node"));
+  });
+
+  // ── Inventario de capturas para F2 ────────────────────────────────────────
+  const ids = Object.keys(NODES);
+  const withShot = ids.filter(k => NODES[k].shot);
+  const pure = ids.length - withShot.length;
+  const byFlow = {};
+  withShot.forEach(k => {
+    const p = NODES[k].shot.split("-")[0];
+    byFlow[p] = (byFlow[p] || 0) + 1;
+  });
+  document.getElementById("shots").innerHTML =
+    "<div><b>" + ids.length + "</b>nodos con panel</div>" +
+    "<div><b>" + withShot.length + "</b>capturas que F2 debe poblar</div>" +
+    "<div><b>" + pure + "</b>decisiones puras (sin pantalla)</div>" +
+    Object.keys(byFlow).sort().map(p => "<div><b>" + byFlow[p] + "</b>" + p + "-*.png</div>").join("");
+
+  // ── Mermaid ───────────────────────────────────────────────────────────────
+  mermaid.initialize({
+    startOnLoad: false,          // las secciones se inyectan arriba; se renderiza a mano al final
+    securityLevel: "loose",      // necesario para que `click … call showNode(...)` funcione
+    theme: "dark",
+    flowchart: { curve: "basis", useMaxWidth: true, htmlLabels: true },
+    themeVariables: {
+      primaryColor: "#1d2129",
+      primaryTextColor: "#e7e9ee",
+      primaryBorderColor: "#3a4150",
+      lineColor: "#6ea8fe",
+      secondaryColor: "#232833",
+      tertiaryColor: "#171a21",
+      fontSize: "14px"
+    }
+  });
+  mermaid.run({ querySelector: "pre.mermaid" }).catch(err => {
+    const box = document.createElement("div");
+    box.className = "rule";
+    box.textContent = "Mermaid no pudo renderizar: " + err;
+    document.querySelector("main").prepend(box);
+  });
+})();
+</script>
+</body>
+</html>
