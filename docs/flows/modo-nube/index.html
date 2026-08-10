@@ -101,6 +101,28 @@
     overflow-x: auto;
   }
   .diagram .node { cursor: pointer; }
+  /* El SVG se pinta a tamaño NATURAL (useMaxWidth: false): el texto no se encoge para caber
+     y el diagrama ancho se recorre con scroll horizontal dentro de su caja. */
+  .diagram svg { display: block; margin: 0 auto; }
+  /* Labels de nodo y de arista legibles sobre el fondo oscuro (htmlLabels: true ⇒ CSS manda). */
+  .diagram .nodeLabel { font-size: 14px; line-height: 1.3; }
+  .diagram .edgeLabel {
+    font-size: 12.5px;
+    color: #c6d0e2 !important;
+    background: #10131a !important;
+    padding: 2px 7px;
+    border-radius: 999px;
+  }
+  .diagram .edgeLabel p { background: transparent !important; margin: 0; }
+  /* El rect SVG de fondo del label queda desplazado cuando el chip CSS crece tras la medición
+     de mermaid — se apaga y el fondo lo pone el propio chip. */
+  .diagram svg rect.labelBkg, .diagram svg .edgeLabel rect { fill: transparent !important; }
+  .diagram .edgeLabel foreignObject { overflow: visible; }
+  /* Aristas sin etiqueta: que el chip vacío no deje un cuadradito pintado. */
+  .diagram .edgeLabel:empty, .diagram .edgeLabel:has(p:empty) {
+    padding: 0;
+    background: transparent !important;
+  }
   .hint { font-size: 12px; color: var(--dim); margin-top: 8px; }
 
   /* Panel lateral */
@@ -413,6 +435,11 @@
     panel.scrollTop = 0;
   };
 
+  // Deep-link por nodo (`?node=alta-consent`): abre el panel al cargar. Para citar un nodo
+  // exacto en un ticket de la revisión.
+  const qNode = new URLSearchParams(location.search).get("node");
+  if (qNode) showNode(qNode);
+
   // ── Cobertura ─────────────────────────────────────────────────────────────
   const cov = document.getElementById("cov");
   let cells = 0, drawn = 0, withDelta = 0;
@@ -506,14 +533,26 @@
     startOnLoad: false,          // las secciones se inyectan arriba; se renderiza a mano al final
     securityLevel: "loose",      // necesario para que `click … call showNode(...)` funcione
     theme: "dark",
-    flowchart: { curve: "basis", useMaxWidth: true, htmlLabels: true },
+    // useMaxWidth: false — ANTES el SVG entero se ENCOGÍA para caber en la caja y el texto de los
+    // diagramas grandes quedaba ilegible; ahora se pinta a tamaño natural y la caja scrollea.
+    // curve: "linear" — las curvas "basis" dibujaban arcos larguísimos que se cruzaban; con rectas
+    // se sigue mejor de qué nodo sale cada arista.
+    flowchart: {
+      curve: "linear",
+      useMaxWidth: false,
+      htmlLabels: true,
+      nodeSpacing: 45,
+      rankSpacing: 55,
+      padding: 10
+    },
     themeVariables: {
       primaryColor: "#1d2129",
       primaryTextColor: "#e7e9ee",
-      primaryBorderColor: "#3a4150",
-      lineColor: "#6ea8fe",
+      primaryBorderColor: "#4a5468",
+      lineColor: "#5f7fb8",
       secondaryColor: "#232833",
       tertiaryColor: "#171a21",
+      edgeLabelBackground: "#10131a",
       fontSize: "14px"
     }
   });
