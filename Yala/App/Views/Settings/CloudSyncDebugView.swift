@@ -571,6 +571,11 @@ struct CloudSyncDebugView: View {
     @State private var s7Quiescent = false
     // DIFERIDOS #34: espejo del toggle de simulación del kill-switch (se hidrata en .task).
     @State private var simulateRemoteOff = false
+    #if DEBUG
+    // SPIKE R3 — quitar al cerrar R4 (deuda explícita anotada en el chip R3 y en el header del harness).
+    // Solo se instancia en DEBUG (el harness entero vive ahí).
+    @State private var spikeR3 = SpikeR3Harness()
+    #endif
     @Environment(\.modelContext) private var modelContext
 
     var body: some View {
@@ -584,6 +589,11 @@ struct CloudSyncDebugView: View {
                 reverseCard
                 secondarySessionCard
                 spikeS7Card
+                #if DEBUG
+                // SPIKE R3 — quitar al cerrar R4. Gateado por el launch arg: sin `-spike-r3` el panel
+                // queda EXACTAMENTE como estaba.
+                if SpikeR3Harness.isEnabled { spikeR3Card }
+                #endif
                 if let message = model.lastMessage {
                     Text(message)
                         .font(DS.Typography.caption.monospaced())
@@ -1154,6 +1164,109 @@ struct CloudSyncDebugView: View {
         .buttonStyle(.bordered)
         .disabled(disabled || model.isWorking)
     }
+
+    // MARK: - Spike R3 (DEBUG · launch arg `-spike-r3`) — ¿muere el container al soltarlo?
+
+    #if DEBUG
+    /// SPIKE R3 — quitar al cerrar R4 (deuda explícita, ver el header de `SpikeR3Harness`).
+    /// Conduce `SpikeR3Harness`: los ejes locales (1·2·4) corren en
+    /// cualquier sitio; el eje 3 (mirror `.private` VIVO) es DEVICE-ONLY y aborta con un mensaje claro
+    /// si no hay cuenta iCloud. Cero contacto con el store real: el harness monta el suyo (`YalaSpikeR3`).
+    private var spikeR3Card: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            Text("Spike R3 · ¿muere el container al soltarlo?")
+                .font(DS.Typography.body.weight(.semibold))
+                .foregroundStyle(.primary)
+            Text("Store PROPIO (YalaSpikeR3) y modelo propio — NO toca los datos de la app. El eje 3 monta con mirror .private y NO inserta ni una fila (sin export no se crea nada en el schema de CloudKit ni se sube nada a tu cuenta).")
+                .font(DS.Typography.caption)
+                .foregroundStyle(.tertiary)
+
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                row("store", SpikeR3Harness.storeURL.lastPathComponent)
+                row("archivos", SpikeR3Harness.fileTrio().description)
+                row("iCloud", SwiftDataConfiguration.isICloudAvailable() ? "cuenta presente ✅" : "SIN cuenta ❌ (eje 3 no medible)")
+                row("container", SwiftDataConfiguration.cloudKitContainerIdentifier)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(DS.Spacing.sm)
+            .background(.thBackground)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+
+            HStack(spacing: DS.Spacing.sm) {
+                Button {
+                    Task { await spikeR3.runLocalAxes() }
+                } label: {
+                    Label("Ejes 1·2·4 (locales)", systemImage: "play.circle")
+                        .font(DS.Typography.caption)
+                }
+                .buttonStyle(.bordered)
+                .disabled(spikeR3.isWorking)
+
+                Button {
+                    Task { await spikeR3.runMirrorAxis() }
+                } label: {
+                    Label("Eje 3 · mirror (device)", systemImage: "icloud.circle")
+                        .font(DS.Typography.caption)
+                }
+                .buttonStyle(.bordered)
+                .disabled(spikeR3.isWorking)
+            }
+
+            HStack(spacing: DS.Spacing.sm) {
+                Button {
+                    UIPasteboard.general.string = spikeR3.log
+                } label: {
+                    Label("Copiar log", systemImage: "doc.on.doc")
+                        .font(DS.Typography.caption)
+                }
+                .buttonStyle(.bordered)
+                .disabled(spikeR3.log.isEmpty)
+
+                Button {
+                    spikeR3.clearLog()
+                } label: {
+                    Label("Limpiar", systemImage: "trash")
+                        .font(DS.Typography.caption)
+                }
+                .buttonStyle(.bordered)
+                .disabled(spikeR3.log.isEmpty)
+
+                Button {
+                    SpikeR3Harness.deleteSpikeStoreFiles()
+                } label: {
+                    Label("Borrar store del spike", systemImage: "xmark.bin")
+                        .font(DS.Typography.caption)
+                }
+                .buttonStyle(.bordered)
+            }
+
+            if spikeR3.isWorking {
+                Text("Corriendo… (el eje 3 puede tardar ~1 min: espera eventos del mirror y luego observa 10 s de silencio)")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if !spikeR3.log.isEmpty {
+                ScrollView {
+                    Text(spikeR3.log)
+                        .font(DS.Typography.caption.monospaced())
+                        .foregroundStyle(.primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .textSelection(.enabled)
+                }
+                .frame(maxHeight: 320)
+                .padding(DS.Spacing.sm)
+                .background(.thBackground)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(DS.Spacing.lg)
+        .background(.thCard)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
+        .padding(.horizontal, DS.Spacing.lg)
+    }
+    #endif
 
     private func row(_ label: String, _ value: String) -> some View {
         HStack(alignment: .top, spacing: DS.Spacing.sm) {
