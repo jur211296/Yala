@@ -11,7 +11,9 @@
   app hace de verdad — JAMÁS de MODO-NUBE-ARQUITECTURA. Donde el diseño y el código difieren, gana el
   código y la divergencia se ANOTA en el panel del nodo con la marca ⚠︎.
 
-  ANCLAJE: medido el 2026-08-09 contra HEAD 9d6f0f1c (branch 2.0.5).
+  ANCLAJE: medido el 2026-08-09 contra HEAD 9d6f0f1c (branch 2.0.5). Chip F3 (2026-08-11): los flujos 1,
+  2, 5 y 7 están re-derivados contra HEAD 24b4bc91 tras la tanda del «relanzamiento cero»; los flujos 3, 4
+  y 6 siguen anclados al 2026-08-09 porque esa tanda no toca su código (comprobado, no asumido).
 
   OFFLINE: `vendor/mermaid.min.js` está vendorizado (v11.6.0, 2.5 MB). Es la única dependencia y no hay
   ninguna URL remota en este fichero: el Atlas abre con doble clic, sin servidor y sin red.
@@ -246,10 +248,10 @@
 <header>
   <h1>Atlas de Flujos · Modo Nube</h1>
   <div class="anchor">
-    <span>HEAD <b>9d6f0f1c</b></span>
+    <span>HEAD <b>9d6f0f1c</b> · flujos 1·2·5·7 re-derivados contra <b>24b4bc91</b></span>
     <span>branch <b>2.0.5</b></span>
-    <span>medido el <b>2026-08-09</b></span>
-    <span>capturas F2: <b>2026-08-10</b> en sim (iPhone 17 Pro · Yala Dev · staging), sobre HEAD <b>f4d10fa6</b></span>
+    <span>medido el <b>2026-08-09</b> · refresco <b>2026-08-11</b> (F3)</span>
+    <span>capturas en sim (iPhone 17 Pro · Yala Dev · staging): <b>2026-08-10</b> (F2) y <b>2026-08-11</b> (F3)</span>
   </div>
   <div class="rule">
     <b>Regla madre.</b> Cada nodo de este Atlas sale de una celda REAL de una tabla de lógica pura o de una
@@ -283,10 +285,12 @@
   </section>
 
   <section id="hallazgos">
-    <h2>Hallazgos de F1</h2>
+    <h2>Hallazgos (F1 · F3)</h2>
     <p class="lede">
       Lo que apareció al derivar los diagramas del código y que el diseño no dice, o dice al revés. Cada uno
-      enlaza al nodo donde vive.
+      enlaza al nodo donde vive. Los <code>F1-*</code> se conservan con su estado actualizado —cuando una
+      tanda paga uno, se marca con el commit que lo pagó en vez de borrarlo—; los <code>F3-*</code> salieron
+      del refresco del 2026-08-11.
     </p>
     <div id="findings"></div>
   </section>
@@ -298,8 +302,10 @@
       <code>img/&lt;id&gt;.png</code>, o una marca <code>device-only</code> con su motivo y qué debería
       verse — nunca una pantalla parecida de otro estado. Los nodos <em>«decisión pura, sin pantalla»</em>
       no tienen captura por construcción. <code>check.mjs</code> valida que ningún nodo quede vacío.
-      Las capturas se tomaron el <b>2026-08-10</b> (scheme Yala Dev contra staging); las pantallas que el
-      sim no puede dar las captura el owner en device y se integran en una pasada posterior.
+      Las capturas se tomaron el <b>2026-08-10</b> (F2) y el <b>2026-08-11</b> (F3, refresco tras el
+      relanzamiento cero: <code>alta-newchooser</code> re-hecha sin el badge «Recomendado» y
+      <code>alta-mirrorrelaunch</code> nueva); las pantallas que el sim no puede dar las captura el owner en
+      device y se integran en una pasada posterior.
     </p>
     <div class="summary" id="shots"></div>
     <h3 style="font-size:15px;margin:18px 0 8px">Lista device-only consolidada</h3>
@@ -322,7 +328,12 @@
       que cada nodo clickeable resuelve, que ningún panel queda huérfano, que los <code>id</code> de
       screenshot son únicos y con convención, que todo panel tiene sus 4 campos y su coordenada, y que este
       HTML no referencia ni una URL remota. Verificado el 2026-08-09: romper un enlace da 2 fallos, y
-      devolver Mermaid a un CDN da el fallo de offline.
+      devolver Mermaid a un CDN da el fallo de offline. Desde el 2026-08-11 lleva además un
+      <b>conteo esperado</b> (66 paneles · 56 <code>id</code> de screenshot · 32 imágenes · 24 device-only),
+      porque las demás comprobaciones son relaciones entre lo que hay y un Atlas que crece no dispara
+      ninguna: medido ese día, un nodo nuevo bien cableado deja los siete bloques en verde y solo cae en el
+      conteo. Tres mutaciones verificadas: borrar una imagen (nodo VACÍO), un nodo sin referenciar
+      (huérfano) y un nodo bien cableado sin declarar — las tres, exit 1.
     </p>
   </section>
 </main>

@@ -6,6 +6,11 @@
 // campos y al menos una coordenada de código, y que `index.html` no referencia NI UNA URL remota (que es
 // lo que hace que el Atlas abra offline).
 //
+// F3 (2026-08-11) añade un **conteo esperado** (bloque 8). Lo que MIDE, medido con su mutante y no
+// inferido: un nodo nuevo CORRECTAMENTE cableado —panel completo, click en un diagrama, sin imagen porque
+// es decisión pura— pasa TODAS las comprobaciones relacionales y **solo lo caza el conteo** (1 fallo,
+// exit 1). Es lo que obliga a que el Atlas crezca de forma declarada en vez de callada.
+//
 // Cómo se corre (jsdom NO es dependencia del proyecto y no debe serlo — este validador es de docs):
 //
 //     mkdir -p /tmp/atlas-check && cd /tmp/atlas-check && npm init -y && npm i jsdom
@@ -151,7 +156,29 @@ else console.log("OK    offline sin una sola URL remota en index.html");
   console.log(`OK    f2     ${capturadas} capturas + ${dCount} device-only = cero nodos vacíos`);
 }
 
-// 8) Render REAL de un diagrama (prueba que no solo parsea: dibuja)
+// 8) CONTEO ESPERADO (F3, 2026-08-11). Todo lo de arriba comprueba RELACIONES entre lo que hay, así que un
+//    Atlas que crece no dispara nada: MEDIDO el 2026-08-11, un nodo nuevo bien cableado (panel completo +
+//    click en un diagrama + `shot: null`) deja los siete bloques en verde y **solo cae aquí**. Al añadir o
+//    quitar un nodo, este bloque se actualiza a mano y a propósito: la fricción ES el aviso.
+{
+  const EXPECTED = { panels: 66, shots: 56, images: 32, deviceOnly: 24 };
+  const actual = {
+    panels: Object.keys(NODES).length,
+    shots: shots.size,
+    images: fs.readdirSync(`${ROOT}/img`).filter(f => f.endsWith(".png")).length,
+    deviceOnly: Object.keys(F2?.deviceOnly ?? {}).length
+  };
+  let mismatched = 0;
+  for (const [k, want] of Object.entries(EXPECTED)) {
+    if (actual[k] !== want) {
+      fail++; mismatched++;
+      console.log(`FAIL  count  ${k}: esperado ${want}, medido ${actual[k]} — actualiza EXPECTED si el cambio es querido`);
+    }
+  }
+  if (!mismatched) console.log(`OK    count  ${actual.panels} paneles · ${actual.shots} shots · ${actual.images} imágenes · ${actual.deviceOnly} device-only`);
+}
+
+// 9) Render REAL de un diagrama (prueba que no solo parsea: dibuja)
 try {
   const { svg } = await mermaid.render("probe", FLOWS[0].graph);
   if (!svg.includes("<svg")) throw new Error("sin <svg>");

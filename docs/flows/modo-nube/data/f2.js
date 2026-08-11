@@ -15,27 +15,38 @@
 // `cloudSync.migration.relaunchRequested`); un `defaults write` del host NO persiste
 // (el cfprefsd del sim lo pisa).
 
+// **F3 (2026-08-11)** · pasada de refresco tras la tanda del relanzamiento cero, contra HEAD
+// `24b4bc91`, mismo vehículo y mismo simulador. Re-capturado `alta-newchooser.png` (el badge
+// «Recomendado» ya no existe) y capturado por primera vez `alta-mirrorrelaunch.png`, el terminal
+// nuevo del Welcome. `alta-privado.png` se CONSERVA tras comprobar que la pantalla de destino es la
+// misma —lo que cambió es que ahora hay un relanzamiento por delante, y eso se verificó en sim—.
+// Los dos estados nuevos que el sim NO puede dar entran a `deviceOnly` con su motivo.
+
 window.ATLAS_F2 = {
-  head: "f4d10fa6",
-  date: "2026-08-10",
+  head: "24b4bc91",
+  date: "2026-08-11",
 
   // ── Nodos SIN captura de sim: motivo + qué debería verse ─────────────────────────────
   deviceOnly: {
     "alta-error-403": {
       reason: "Requiere un 403 real del backend (cuenta suspendida server-side); el sim no puede fabricarlo.",
-      expected: "El mismo layout de error del alta que alta-error-401, pero SIN botón Reintentar (CloudWelcomeSignInFlow.swift:136-137)."
+      expected: "El mismo layout de error del alta que alta-error-401, pero SIN botón Reintentar (CloudWelcomeSignInFlow.swift:161-163)."
     },
     "alta-error-transient": {
       reason: "La fase de pantalla es la MISMA que la del 401 — `.error(retryable: true)` — y su render está capturado en alta-error-401. Provocar la causa real (red caída / 5xx) no es posible en sim con staging accesible.",
       expected: "Idéntico a img/alta-error-401.png: «Algo no salió bien» + Reintentar. La vista no distingue la causa; solo el flag retryable cambia el render."
     },
     "alta-par-relaunch": {
-      reason: "La pantalla terminal exige un claim `created` real y en sim SIWA/Google no completan sesión (el sim no tiene cuenta de Apple; Google exige credenciales reales).",
-      expected: "Pantalla terminal con icono de recarga: «Cierra Yala y vuelve a abrirla», sin botones ni back (WelcomeCloudSignInView.swift:414). El equivalente visual del sign-out sí está capturado en img/signout-relaunch.png."
+      reason: "La pantalla terminal exige un claim `created` real y en sim SIWA/Google no completan sesión (el sim no tiene cuenta de Apple; Google exige credenciales reales). Desde R2 exige ADEMÁS un device con archivo de store: una instalación fresca ya no llega aquí.",
+      expected: "Pantalla terminal con icono de recarga: «Cierra Yala y vuelve a abrirla», sin botones ni back (WelcomeCloudSignInView.swift:427). El equivalente visual del sign-out sí está capturado en img/signout-relaunch.png, y el del Welcome en img/alta-mirrorrelaunch.png."
+    },
+    "alta-bornready": {
+      reason: "Exige un claim `created` REAL: la fase `.bornCloudReady` sale de `activateBornCloudStorage`, que solo corre tras un alta completa contra el backend, y en sim SIWA/Google no completan sesión. El seam `-uitest-fake-cloud-session` no sirve —hace `hasSession` true con `accessToken()` nil, así que el claim devuelve `sessionExpired` y la pantalla es el error 401, ya capturado—.",
+      expected: "Check verde, «¡Tu cuenta está lista!», «Ya puedes empezar. Todo lo que registres se guardará en tu cuenta.» y un botón «Empezar» (`welcome_born_cloud_ready`, WelcomeCloudSignInView.swift:449). Al pulsarlo, el onboarding de img/alta-postrelaunch.png."
     },
     "alta-waitingleader": {
       reason: "Requiere que el backend devuelva `claiming_in_progress` (otro device liderando un claim) — no fabricable desde el sim.",
-      expected: "«Otro dispositivo está migrando» + Reintentar + «Continuar a la app» (WelcomeCloudSignInView.swift:388)."
+      expected: "«Otro dispositivo está migrando» + Reintentar + «Continuar a la app» (WelcomeCloudSignInView.swift:401)."
     },
     "degradado-claiming": {
       reason: "Misma pantalla y misma dependencia server-side que alta-waitingleader.",
@@ -117,11 +128,12 @@ window.ATLAS_F2 = {
 
   // ── Notas de captura: contexto de CÓMO se obtuvo la imagen (sin tocar lo medido en F1) ─
   captureNotes: {
+    "alta-mirrorrelaunch": "F3 · captura NUEVA (2026-08-11). Recorrido REAL sin ningún hook: `simctl uninstall` + `install` de Yala Dev (Debug-Dev) para que NO exista archivo de store ⇒ mount neutro; Hero → «Soy nuevo» → «Solo tú y tus dispositivos» y esta pantalla monta sola. En la misma corrida se verificó el auto-exit (Inicio ⇒ el proceso desaparece de `launchctl list`), la durabilidad del destino (`welcome.pendingMirrorRelaunchDestination = privateOnboarding` en el plist del contenedor) y el consumo one-shot (al relanzar aterriza en el onboarding y la key ya no está).",
     "alta-creating": "El alert «Inicia sesión en tu cuenta de Apple» es el sim sin cuenta de Apple reaccionando al ASAuthorization — sale a ~0,5 s del tap y no existe ventana limpia (ráfaga de 14 frames a 120 ms lo confirmó). Debajo se ve el estado REAL de la fase `.creating`: spinner + «Creando tu cuenta…».",
     "alta-signin": "Es el flujo web REAL de Google (ASWebAuthenticationSession) corriendo en sim. El sheet nativo de SIWA no aparece en sim sin cuenta de Apple: ese lado queda device-only, como el nodo ya anota.",
     "alta-error-401": "Provocado REAL con `-uitest-fake-cloud-session`: el predicado global de sesión es true pero `accessToken()` es nil ⇒ el claim devuelve `sessionExpired` ⇒ `releaseSessionAndShowError`. Es la fase `.error(retryable: true)` auténtica.",
-    "alta-privado": "El alert de wipe («Detectamos datos previos… ¿Borrar todo?») también se verificó en sim con datos residuales; esta captura es el camino limpio directo al onboarding.",
-    "alta-postrelaunch": "Estado sembrado con las MISMAS keys que escribe `writeCloudArmed` + `hasShownWelcomeChooser` (vía `simctl spawn defaults`). La evidencia A6: el paso Propósito pinta SOLO dos cards — «Dividir gastos con amigos» no está, como dicta `OnboardingGroupsPurposeGateLogic` en `.cloud`.",
+    "alta-privado": "El alert de wipe («Detectamos datos previos… ¿Borrar todo?») también se verificó en sim con datos residuales; esta captura es el estado FINAL (el onboarding ya montado). F3 (2026-08-11): se CONSERVA porque la pantalla de destino no cambió, y se re-verificó en sim que sobre un mount neutro se llega aquí DESPUÉS del terminal «Un último paso: reabre Yala» —no en su lugar—; sobre un device con archivo de store sigue siendo directo.",
+    "alta-postrelaunch": "F3: el nodo ahora cubre las DOS entradas (el CTA de «Tu cuenta está lista» y el post-relanzamiento del device con archivo de store); la pantalla es la misma y la captura vale para ambas. Estado sembrado con las MISMAS keys que escribe `writeCloudArmed` + `hasShownWelcomeChooser` (vía `simctl spawn defaults`). La evidencia A6: el paso Propósito pinta SOLO dos cards — «Dividir gastos con amigos» no está, como dicta `OnboardingGroupsPurposeGateLogic` en `.cloud`.",
     "migracion-progreso": "Migración REAL contra staging desde el panel DEBUG (consent + signInSucceeded journaleados); sin sesión la máquina se aparca en `claimingMigration` ⇒ ESTA es la pantalla de una migración aparcada con «Retomar». La barra al 100 % de fases no se alcanza en sim.",
     "migracion-cloudactive": "Par `.cloud` completo sembrado (mismas keys que el cutover). La card de reversa muestra la variante NO-elegible real (sin sesión).",
     "migracion-relaunch": "Mount-mismatch REAL: par escrito con el proceso vivo montado en `.icloud` ⇒ `CloudMigrationUIStateDeriver` pinta `needsRelaunch(.toCloud)`. Es también el único reflejo visible del estado que `degradado-mount` guarda en silencio.",
@@ -132,7 +144,7 @@ window.ATLAS_F2 = {
     "onboarding-muro": "Canal apagado con el kill-switch DEBUG (`cloudSync.debug.remoteFlagsForceOff`) + sim sin cuenta iCloud ⇒ el muro real del selector.",
     "onboarding-crear": "Ruta `needsConsent` de `GroupCreateRoutingLogic`: sesión fingida (`-uitest-fake-cloud-session`) sin consent ⇒ el consent de Grupos en el camino de crear.",
     "signout-borrarcuenta": "`-uitest-fake-backend-session` + seed `grupos` (saldos pendientes) ⇒ hoja real con el aviso de deudas en ámbar y «Ver mis grupos» PRIMERO en las secundarias.",
-    "signout-relaunch": "Cover terminal real presentado por el dueño único (`SignOutRelaunchNetModifier`) tras `_debugForceAwaitingRelaunch()` del panel DEBUG — solo fase, sin wipe.",
+    "signout-relaunch": "Cover terminal real presentado por el dueño único (`SignOutRelaunchNetModifier`) tras `_debugForceAwaitingRelaunch()` del panel DEBUG — solo fase, sin wipe. F3: sigue siendo la captura correcta de este nodo, que desde R4 describe el camino DEGRADADO; forzar la fase es justamente lo que el swap abortado deja en pantalla.",
     "degradado-killswitch": "Kill-switch simulado del panel DEBUG: la fila «Dónde viven tus datos» desaparece del Perfil (usuario no-engaged). En el mismo estado el tab Grupos cae al canal CloudKit («Crear grupo» directo)."
   },
 

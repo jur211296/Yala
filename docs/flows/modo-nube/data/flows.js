@@ -5,22 +5,33 @@
 // el estable (`<flujo>-<nodo>`), que es el que F2 usa para poblar `img/`.
 //
 // Medido el 2026-08-09 contra HEAD 9d6f0f1c (branch 2.0.5).
+//
+// F3 (2026-08-11): los diagramas 1, 2, 5 y 7 están re-derivados contra HEAD 24b4bc91 (tanda del
+// relanzamiento cero). Los diagramas 3, 4 y 6 siguen anclados al 2026-08-09 — la tanda no toca su código,
+// comprobado con `git diff f4d10fa6..HEAD`.
 
 window.ATLAS_FLOWS = [
   {
     id: "alta",
     title: "1 · Alta born-cloud (A4 → A5)",
-    lede: "«Soy nuevo» → chooser (con bypass y faro) → consent → sign-in → las cuatro salidas del claim → par + relanzamiento → post-relanzamiento. Incluye la matriz de cancelación de tres filas y el encaminamiento del 2º device por faro.",
+    lede: "«Soy nuevo» → chooser (con bypass y faro) → consent → sign-in → las cuatro salidas del claim → par de storage → onboarding en modo nube. Desde el relanzamiento cero (R2) el alta nube NO relanza y el camino privado SÍ: el portal `leaveWelcome` es quien lo decide. Incluye la matriz de cancelación de tres filas y el encaminamiento del 2º device por faro.",
     graph: `flowchart TD
   H["Welcome · Hero"] --> C["Chooser · 3 ramas"]
   C -->|Ya tengo cuenta| RE(["→ Flujo 2 · re-entrada"])
-  C -->|Me invitaron a un grupo| INV(["Invite recovery<br/>fuera del alcance de F1"])
+  C -->|Me invitaron a un grupo| PORTAL
   C -->|Soy nuevo| F{"¿El faro dice que este Apple ID<br/>ya tiene cuenta nube?"}
-  F -->|"vinculado ∧ entrada nube disponible"| RE
-  F -->|"1 sola opción visible ⇒ bypass"| PRIV
-  F -->|"≥2 opciones"| NC["Sub-chooser «Soy nuevo»"]
-  NC -->|privacidad total| PRIV["Onboarding privado<br/>(limpia residuales)"]
-  NC -->|cuenta en la nube| CON["Consentimiento · path .bornCloud"]
+  F -->|"vinculado ∧ entrada nube disponible<br/>(el portal no relanza: destino de nube)"| RE
+  F -->|"1 sola opción visible ⇒ bypass"| PORTAL
+  F -->|"≥2 opciones"| NC["Sub-chooser «Soy nuevo»<br/>(sin «Recomendado» · RC)"]
+  NC -->|privacidad total| PORTAL
+  NC -->|"cuenta en la nube<br/>(el portal no relanza)"| CON["Consentimiento · path .bornCloud"]
+  PORTAL{"PORTAL leaveWelcome · R2<br/>¿el destino necesita el mirror<br/>Y este proceso montó NEUTRO?"}
+  PORTAL -->|"sí"| MR["«Un último paso: reabre Yala»<br/>destino persistido · auto-exit en background"]
+  MR --> DEST(["Al reabrir: se CONSUME el destino"])
+  DEST --> PRIV["Onboarding privado<br/>(limpia residuales)"]
+  DEST --> RES2(["Restaurar de iCloud · Invitación<br/>fuera del alcance de F1"])
+  PORTAL -->|"no · mount con mirror ⇒ sigue directo"| PRIV
+  PORTAL -->|"no · mount con mirror"| RES2
   PRIV -->|hay datos locales| WIPE["Alert de borrado<br/>del fresh start"]
   CON --> INT["Intro del alta<br/>Apple | Google"]
   INT --> SI{"Sign-in"}
@@ -28,7 +39,9 @@ window.ATLAS_FLOWS = [
   SI -->|fallo real de Google| ETR
   SI -->|"ok (o sesión ya viva)"| CR["«Creando tu cuenta…»"]
   CR --> CL{"POST /account/claim<br/>+ AccountClaimDecision"}
-  CL -->|created| PAR["Par .cloud + mirrorOffArmed<br/>«Cierra y vuelve a abrir Yala»"]
+  CL -->|created| ACT{"Par .cloud + mirrorOffArmed escrito.<br/>¿El mount de este proceso<br/>ADJUNTA mirror?"}
+  ACT -->|"sí · device CON archivo de store"| PAR["«Cierra y vuelve a abrir Yala»"]
+  ACT -->|"no · mount neutro (R2)"| RDY["«¡Tu cuenta está lista!»<br/>motor arrancado EN SESIÓN"]
   CL -->|existing_stable| RU["Continuar como returning-user"]
   CL -->|claiming_in_progress| WL["Esperar al líder"]
   CL -->|401| E401["Soltar sesión + error"]
@@ -36,7 +49,8 @@ window.ATLAS_FLOWS = [
   CL -->|red · 5xx| ETR["Error transitorio<br/>con Reintentar"]
   CL -.->|"variante B · INALCANZABLE hoy"| MM(["Método equivocado"])
   RU --> RE
-  PAR --> POST["Post-relanzamiento<br/>onboarding normal en modo nube"]
+  PAR --> POST["Onboarding normal en modo nube"]
+  RDY -->|CTA «Empezar»| POST
   ETR --> CR
   WL -->|Reintentar = re-claim| CR
   CANCEL{{"Matriz de cancelación · 3 filas"}}
@@ -45,6 +59,9 @@ window.ATLAS_FLOWS = [
   click C call showNode("alta-chooser")
   click F call showNode("alta-faro")
   click NC call showNode("alta-newchooser")
+  click PORTAL call showNode("alta-mirrorrelaunch")
+  click MR call showNode("alta-mirrorrelaunch")
+  click DEST call showNode("alta-mirrorrelaunch")
   click PRIV call showNode("alta-privado")
   click WIPE call showNode("alta-privado")
   click CON call showNode("alta-consent")
@@ -52,7 +69,9 @@ window.ATLAS_FLOWS = [
   click SI call showNode("alta-signin")
   click CR call showNode("alta-creating")
   click CL call showNode("alta-claim")
+  click ACT call showNode("alta-par-relaunch")
   click PAR call showNode("alta-par-relaunch")
+  click RDY call showNode("alta-bornready")
   click POST call showNode("alta-postrelaunch")
   click RU call showNode("alta-returning")
   click WL call showNode("alta-waitingleader")
@@ -63,15 +82,18 @@ window.ATLAS_FLOWS = [
   click CANCEL call showNode("alta-cancel")
 
   classDef unreachable stroke-dasharray: 5 5,opacity:0.65
-  class MM,INV unreachable`
+  class MM,RES2 unreachable`
   },
 
   {
     id: "reentry",
     title: "2 · Returning-user / re-entrada",
-    lede: "«Ya tengo cuenta» → WelcomeCloudSignInView(.reentry) → exists → guard cross-cuenta → adopt. Incluye el guard R9 de provider y el poll con auto-resume.",
+    lede: "«Ya tengo cuenta» → WelcomeCloudSignInView(.reentry) → exists → guard cross-cuenta → adopt. Incluye el guard R9 de provider, el poll con auto-resume y —desde R2— el relanzamiento que la rama «Restaurar de iCloud» sí necesita cuando el proceso montó neutro.",
     graph: `flowchart TD
-  EC["Sub-chooser «Ya tengo una cuenta»"] -->|Restaurar de iCloud| RES(["Restore iCloud<br/>fuera del alcance de F1"])
+  EC["Sub-chooser «Ya tengo una cuenta»"] -->|Restaurar de iCloud| PORT2{"PORTAL leaveWelcome · R2<br/>restaurar necesita el mirror"}
+  PORT2 -->|"mount NEUTRO"| MR2["«Un último paso: reabre Yala»<br/>destino restoreICloud persistido"]
+  PORT2 -->|"mount con mirror"| RES(["Restore iCloud<br/>fuera del alcance de F1"])
+  MR2 -->|"al reabrir se consume el destino"| RES
   EC -->|Apple · Google| RI["Intro de re-entrada"]
   RI --> CON2["Consentimiento · path .adopt"]
   CON2 --> SI2["Sign-in"]
@@ -93,6 +115,8 @@ window.ATLAS_FLOWS = [
   SEC --> RLS["Relanzamiento de la secundaria"]
 
   click EC call showNode("reentry-chooser")
+  click PORT2 call showNode("alta-mirrorrelaunch")
+  click MR2 call showNode("alta-mirrorrelaunch")
   click RI call showNode("reentry-intro")
   click CON2 call showNode("alta-consent")
   click SI2 call showNode("alta-signin")
@@ -205,7 +229,7 @@ window.ATLAS_FLOWS = [
   {
     id: "signout",
     title: "5 · Sign-out en `.cloud` + las tres borradas",
-    lede: "Camino de cierre por modo (drena el outbox, arma el wipe, la fila «Salir de Yala en este dispositivo») más eliminar cuenta y vaciar datos.",
+    lede: "Camino de cierre por modo (drena el outbox, arma el wipe, la fila «Salir de Yala en este dispositivo») más eliminar cuenta y vaciar datos. Desde R4 el cierre `.cloud` intenta el swap in-process: el cover «cierra y reabre» sigue existiendo como camino DEGRADADO, con el canario `swapReleaseAborted` como firma.",
     graph: `flowchart TD
   AJ["Ajustes · Seguridad y cuenta"] --> PATH{"Precedencia CONGELADA<br/>CloudSignOutFlowLogic.path"}
   PATH -->|"secundaria M1"| SEC2["signOutSecondary"]
@@ -222,7 +246,9 @@ window.ATLAS_FLOWS = [
   PUSH -->|"bloqueo permanente 401/403"| PERM["Error inmediato<br/>sin reintentar"]
   RETRY --> PUSH
   RETRY -->|"presupuesto agotado"| TRANS["«Un momento más»"]
-  ARM --> BOOT["Boot pre-mount:<br/>borra ARCHIVOS, nunca filas"]
+  ARM --> SWAP{"R4 · swap in-process<br/>(solo cierre .cloud)<br/>mount sin mirror ∧ release VERIFICADO"}
+  SWAP -->|"swapped"| WELC(["Store vaciado + remonte NEUTRO<br/>→ Welcome, sin relanzar"])
+  SWAP -->|"mount con mirror · release abortado · remonte falló"| BOOT["Camino DEGRADADO:<br/>cover terminal + boot pre-mount<br/>borra ARCHIVOS, nunca filas"]
   EXIT["Salir de Yala en este dispositivo"] --> PRIV2
   DEL["Eliminar mi cuenta"] --> HOJA2["Hoja + hasta 5 líneas condicionales"]
   HOJA2 --> FINAL["Segundo diálogo irreversible"]
@@ -240,6 +266,8 @@ window.ATLAS_FLOWS = [
   click PERM call showNode("signout-pushall")
   click TRANS call showNode("signout-pushall")
   click ARM call showNode("signout-relaunch")
+  click SWAP call showNode("signout-swap")
+  click WELC call showNode("signout-swap")
   click BOOT call showNode("signout-relaunch")
   click EXIT call showNode("signout-exityala")
   click DEL call showNode("signout-borrarcuenta")
@@ -303,7 +331,7 @@ window.ATLAS_FLOWS = [
   {
     id: "degradado",
     title: "7 · Estados degradados (transversales)",
-    lede: "Kill-switch remoto, sesión caducada, sin red, claim en progreso, provider mismatch y el guard de mount-mismatch — que NO tiene pantalla, y eso es un hallazgo.",
+    lede: "Kill-switch remoto, sesión caducada, sin red, claim en progreso, provider mismatch, el mount NEUTRO que el relanzamiento cero introduce y el guard de mount-mismatch — que NO tiene pantalla, y eso es un hallazgo.",
     graph: `flowchart TD
   KS["Kill-switch remoto puesto"] --> KS1["Desaparece la card nube de «Soy nuevo»"]
   KS --> KS2["Desaparecen las cards de sign-in de re-entrada"]
@@ -324,8 +352,13 @@ window.ATLAS_FLOWS = [
 
   PM["Provider mismatch"] --> PM1["Pantalla R9 · sesión soltada, sin claim"]
 
-  MNT["Par .cloud escrito, proceso montado en .icloud"] --> MNT1["El motor NO arranca"]
+  MNT["Par .cloud escrito, mount con mirror ADJUNTO"] --> MNT1["El motor NO arranca"]
   MNT1 --> MNT2(["SIN pantalla propia:<br/>solo el breadcrumb personalMountMismatch"])
+
+  NEU["Mount NEUTRO (R2/R4)"] --> NEU1["Sin archivo de store, o neutro ARMADO<br/>tras el cierre de sesión · chooser no visto"]
+  NEU1 --> NEU2["Elegir nube: NO remonta nada<br/>(el neutro ya es cloudKitDatabase .none)"]
+  NEU1 --> NEU3["Elegir privado · restaurar · invitación:<br/>«Un último paso: reabre Yala»"]
+  NEU1 --> NEU4["El aviso de iCloud SÍ le habla<br/>(el neutro no es un mount de modo nube)"]
 
   click KS call showNode("degradado-killswitch")
   click KS1 call showNode("degradado-killswitch")
@@ -349,6 +382,11 @@ window.ATLAS_FLOWS = [
   click MNT call showNode("degradado-mount")
   click MNT1 call showNode("degradado-mount")
   click MNT2 call showNode("degradado-mount")
+  click NEU call showNode("degradado-neutro")
+  click NEU1 call showNode("degradado-neutro")
+  click NEU2 call showNode("degradado-neutro")
+  click NEU3 call showNode("alta-mirrorrelaunch")
+  click NEU4 call showNode("degradado-neutro")
 
   classDef unreachable stroke-dasharray: 5 5,opacity:0.65
   class MNT2 unreachable`
@@ -370,18 +408,18 @@ window.ATLAS_COVERAGE = [
     cells: 10, tests: "6 · YalaTests/CloudSync/AccountClaimDecisionTests.swift", drawn: 4, flow: "alta",
     delta: "Las 3 celdas de la rama `.bornCloud` se dibujan como branches propios y la variante B va punteada (inalcanzable). Las 6 celdas de `.migration` y `.returningUser` NO se dibujan una a una: esos dos flujos entran por la máquina de migración y por `exists`, no por esta tabla, y dibujarlas ahí duplicaría la decisión." },
 
-  { logic: "BornCloudSignUpFlow.step", file: "Yala/App/Logic/CloudWelcomeSignInFlow.swift:120",
+  { logic: "BornCloudSignUpFlow.step", file: "Yala/App/Logic/CloudWelcomeSignInFlow.swift:146",
     cells: 7, tests: "15 · YalaTests/CloudSync/BornCloudSignUpFlowTests.swift", drawn: 7, flow: "alta", delta: "" },
 
-  { logic: "CloudWelcomeSignInFlow.route", file: "Yala/App/Logic/CloudWelcomeSignInFlow.swift:58",
+  { logic: "CloudWelcomeSignInFlow.route", file: "Yala/App/Logic/CloudWelcomeSignInFlow.swift:80",
     cells: 4, tests: "18 · YalaTests/CloudWelcomeSignInFlowTests.swift", drawn: 3, flow: "reentry",
     delta: "`sessionExpired` y `transient` colapsan en el diagrama a una sola arista porque la tabla los colapsa antes: los dos dan `failed(retryable: true)`." },
 
-  { logic: "CloudWelcomeSignInFlow.phase(for:)", file: "Yala/App/Logic/CloudWelcomeSignInFlow.swift:70",
+  { logic: "CloudWelcomeSignInFlow.phase(for:)", file: "Yala/App/Logic/CloudWelcomeSignInFlow.swift:92",
     cells: 8, tests: "18 · YalaTests/CloudWelcomeSignInFlowTests.swift", drawn: 8, flow: "reentry",
     delta: "" },
 
-  { logic: "WelcomeAdoptAutoResume.tick", file: "Yala/App/Logic/CloudWelcomeSignInFlow.swift:178",
+  { logic: "WelcomeAdoptAutoResume.tick", file: "Yala/App/Logic/CloudWelcomeSignInFlow.swift:204",
     cells: 5, tests: "18 · YalaTests/CloudWelcomeSignInFlowTests.swift", drawn: 3, flow: "reentry",
     delta: "Las dos celdas de reposición (avance real repone intentos; drive en curso corta la racha conservando intentos) están en el PANEL y no como arista: son transiciones del contador, no de pantalla." },
 
@@ -414,26 +452,57 @@ window.ATLAS_COVERAGE = [
   { logic: "MigrationRuntimeGate.canRun", file: "Yala/Services/CloudSync/MigrationBootDecision.swift:55",
     cells: 4, tests: "6 · YalaTests/CloudSync/PersonalMountMismatchGuardTests.swift", drawn: 4, flow: "degradado", delta: "" },
 
-  { logic: "MigrationRuntimeGate.isPersonalMountMismatch", file: "Yala/Services/CloudSync/MigrationBootDecision.swift:80",
-    cells: 4, tests: "6 · YalaTests/CloudSync/PersonalMountMismatchGuardTests.swift", drawn: 2, flow: "degradado",
-    delta: "En `.icloud` el predicado es `false` por construcción ⇒ dos de las cuatro celdas son inertes y se dicen en el panel en vez de dibujarse." },
+  { logic: "MigrationRuntimeGate.isPersonalMountMismatch", file: "Yala/Services/CloudSync/MigrationBootDecision.swift:85",
+    cells: 10, tests: "6 · YalaTests/CloudSync/PersonalMountMismatchGuardTests.swift", drawn: 2, flow: "degradado",
+    delta: "R1 cambió el segundo parámetro de un `StorageMode` de dos valores a la DECISIÓN de mount (5 casos) ⇒ 2 modos × 5 decisiones. Se dibujan las dos salidas; el reparto lo da el eje `attachesCloudKitMirror` y vive en los paneles de mount-mismatch y del mount neutro. En `.icloud` el predicado es `false` por construcción ⇒ las 5 celdas de ese modo son inertes." },
 
-  { logic: "MigrationRuntimeGate.isDomainStablePhase", file: "Yala/Services/CloudSync/MigrationBootDecision.swift:84",
+  { logic: "SwiftDataConfiguration.personalStoreDecision", file: "Yala/Utils/SwiftDataConfiguration.swift:333",
+    cells: 5, tests: "25 · YalaTests/CloudSync/NeutralMountRelaunchZeroTests.swift (+14 en StorageModePersistenceTests)", drawn: 3, flow: "alta · degradado",
+    delta: "R2/R4: las 5 salidas de la tabla de mounts. Se dibujan las tres que el Welcome puede observar (neutro, mirror adjunto, y el par `.cloud` ya armado); `secondaryCloudSession` vive en el flujo 2 (M1, DARK) y `localNoMirror`/`iCloudMirror` colapsan en «el mount adjunta mirror», que es lo que decide el eje." },
+
+  { logic: "SwiftDataConfiguration.isFreshInstallForNeutralMount", file: "Yala/Utils/SwiftDataConfiguration.swift:266",
+    cells: 5, tests: "25 · YalaTests/CloudSync/NeutralMountRelaunchZeroTests.swift", drawn: 2, flow: "degradado",
+    delta: "4 términos AND ⇒ el diagrama dibuja «es fresh» / «no es fresh»; los 4 términos y por qué el primero (sin archivo de store) es la protección estructural del parque van en el panel del mount neutro." },
+
+  { logic: "SwiftDataConfiguration.shouldMountNeutralDurable", file: "Yala/Utils/SwiftDataConfiguration.swift:296",
+    cells: 4, tests: "26 · YalaTests/CloudSync/PersonalSwapReleaseTests.swift", drawn: 2, flow: "degradado · signout",
+    delta: "2 términos ⇒ 4 celdas, 2 salidas dibujadas. El segundo (`hasShownWelcomeChooser == false`) es lo que hace el bucle imposible y se explica en el panel." },
+
+  { logic: "PersonalStoreDecision · los 3 ejes (attachesCloudKitMirror · mirrorsToICloud · isCloudModeMount)", file: "Yala/Utils/SwiftDataConfiguration.swift:377",
+    cells: 15, tests: "20 · YalaTests/CloudSync/PersonalMountWitnessTests.swift", drawn: 3, flow: "degradado",
+    delta: "5 decisiones × 3 ejes. Los ejes NO se dibujan uno a uno: son la traducción que cada consumidor hace del testigo, y dibujarlos convertiría una lectura en una pantalla. El reparto completo está en los paneles del mount neutro y del guard de mount-mismatch, con la medición de `.automatic` que decide la celda de `localNoMirror`." },
+
+  { logic: "WelcomeMirrorRelaunchLogic.requiresMirror", file: "Yala/App/Logic/WelcomeMirrorRelaunchLogic.swift:70",
+    cells: 5, tests: "25 · YalaTests/CloudSync/NeutralMountRelaunchZeroTests.swift", drawn: 5, flow: "alta · reentry", delta: "" },
+
+  { logic: "WelcomeMirrorRelaunchLogic.shouldRelaunch", file: "Yala/App/Logic/WelcomeMirrorRelaunchLogic.swift:86",
+    cells: 10, tests: "25 · YalaTests/CloudSync/NeutralMountRelaunchZeroTests.swift", drawn: 2, flow: "alta · reentry",
+    delta: "5 destinos × «mount neutro sí/no». Se dibujan las dos salidas del portal; el reparto por destino ya está dibujado en `requiresMirror`, y comparar contra `.neutralNoMirror` y no contra `!attachesCloudKitMirror` es la decisión que el panel explica." },
+
+  { logic: "RelaunchNetLogic.shouldExitOnBackground", file: "Yala/App/Logic/RelaunchNetLogic.swift:86",
+    cells: 24, tests: "17 · YalaTests/RelaunchNetLogicTests.swift", drawn: 1, flow: "alta · signout",
+    delta: "3 fases de escena × los 3 términos durables (sign-out en `awaitingRelaunch`, entrada secundaria armada sin montar, destino del Welcome pendiente). R0 la volvió EXHAUSTIVA en tests porque antes cada término tenía su test suelto y la combinatoria no existía. En el diagrama es una arista —el auto-exit— porque no cambia de pantalla: mata el proceso." },
+
+  { logic: "PersonalSwapReleaseLogic.verdict / authorizesWipe / mountAdmitsSwap", file: "Yala/App/Logic/PersonalSwapReleaseLogic.swift:57",
+    cells: 8, tests: "26 · YalaTests/CloudSync/PersonalSwapReleaseTests.swift", drawn: 4, flow: "signout",
+    delta: "3 veredictos (`released` · `abortObjectAlive` · `abortDescriptorsOpen`) + la admisión por mount. Se dibujan las 4 salidas del swap; que «release verificado» exija los DOS instrumentos —sentinel y descriptores— es lo que carga el peso y va en el panel." },
+
+  { logic: "MigrationRuntimeGate.isDomainStablePhase", file: "Yala/Services/CloudSync/MigrationBootDecision.swift:90",
     cells: 21, tests: "35 · YalaTests/CloudSync/CloudMigrationI14Tests.swift", drawn: 2, flow: "degradado",
     delta: "COLAPSO DECLARADO: las 21 fases se agrupan en «estable» (`done`, `notStarted`) y «transicional» (las otras 19). Las fases sí se dibujan una a una, pero en los flujos 3 y 4, que es donde son observables." },
 
-  { logic: "MigrationBootDecision.decide", file: "Yala/Services/CloudSync/MigrationBootDecision.swift:117",
+  { logic: "MigrationBootDecision.decide", file: "Yala/Services/CloudSync/MigrationBootDecision.swift:123",
     cells: 22, tests: "35 · YalaTests/CloudSync/CloudMigrationI14Tests.swift", drawn: 3, flow: "migracion",
     delta: "Igual: 1 fila de «hay efectos pendientes» + 21 fases → 3 decisiones (`resume` · `pollLeader` · `none`). Se dibujan las 3 decisiones; el mapeo fase→decisión vive en el panel." },
 
-  { logic: "MigrationForegroundRekick.shouldRekick", file: "Yala/Services/CloudSync/MigrationBootDecision.swift:144",
+  { logic: "MigrationForegroundRekick.shouldRekick", file: "Yala/Services/CloudSync/MigrationBootDecision.swift:150",
     cells: 2, tests: "35 · YalaTests/CloudSync/CloudMigrationI14Tests.swift", drawn: 2, flow: "migracion", delta: "" },
 
-  { logic: "CloudMigrationUIStateDeriver.derive", file: "Yala/Services/CloudSync/CloudMigrationController.swift:66",
+  { logic: "CloudMigrationUIStateDeriver.derive", file: "Yala/Services/CloudSync/CloudMigrationController.swift:71",
     cells: 10, tests: "35 · YalaTests/CloudSync/CloudMigrationI14Tests.swift", drawn: 8, flow: "migracion · reversa",
     delta: "Sus 8 estados de UI se dibujan todos. Las 2 celdas no dibujadas son la normalización de `dryRun` por modo, que no tiene pantalla propia (cae en `idle` o `cloudActive`)." },
 
-  { logic: "CloudMigrationUIStateDeriver.fraction(for:)", file: "Yala/Services/CloudSync/CloudMigrationController.swift:111",
+  { logic: "CloudMigrationUIStateDeriver.fraction(for:)", file: "Yala/Services/CloudSync/CloudMigrationController.swift:117",
     cells: 21, tests: "35 · YalaTests/CloudSync/CloudMigrationI14Tests.swift", drawn: 0, flow: "—",
     delta: "NO se dibuja: es la fracción de la barra, presentación continua. Aparece en el panel del nodo de progreso (el 89 % del paso 4 tiene su propio caption por eso)." },
 
@@ -537,16 +606,37 @@ window.ATLAS_COVERAGE = [
 window.ATLAS_FINDINGS = [
   {
     id: "F1-H1",
-    sev: "hallazgo",
-    title: "El guard de mount-mismatch NO tiene pantalla, al contrario de lo que sugiere el enunciado del chip",
-    body: "El chip F1 lo describe como «el guard de mount-mismatch (la pantalla de relanzamiento pendiente)». MEDIDO: `MigrationRuntimeGate.isPersonalMountMismatch` solo apaga el motor y deja un breadcrumb; no pinta nada. La única card de relanzamiento la deriva `CloudMigrationUIStateDeriver` a partir del par armado, y vive en Almacenamiento — inalcanzable durante el alta born-cloud, porque el onboarding todavía no ha terminado. No es un bug: durante el alta la fase `.relaunch` es terminal, sin back y con `interactiveDismissDisabled()`, así que el usuario no puede escapar. Es un hueco de OBSERVABILIDAD, y queda dicho.",
+    sev: "acotado por `339f7825`",
+    title: "El guard de mount-mismatch NO tiene pantalla — y desde el relanzamiento cero su ventana se estrecha al device que YA tenía store",
+    body: "El chip F1 lo describe como «el guard de mount-mismatch (la pantalla de relanzamiento pendiente)». MEDIDO: `MigrationRuntimeGate.isPersonalMountMismatch` solo apaga el motor y deja un breadcrumb; no pinta nada. La única card de relanzamiento la deriva `CloudMigrationUIStateDeriver` a partir del par armado, y vive en Almacenamiento — inalcanzable durante el alta born-cloud, porque el onboarding todavía no ha terminado. No es un bug: durante el alta la fase `.relaunch` es terminal, sin back y con `interactiveDismissDisabled()`, así que el usuario no puede escapar. **ACOTADO el 2026-08-11 (F3): en una instalación fresca la ventana ya no existe** — el mount es neutro, el guard pregunta por el eje `attachesCloudKitMirror` y DEJA PASAR, así que el motor arranca en la misma sesión. Sobrevive en el device que llega al alta con archivo de store y en el adopt, donde sigue habiendo relanzamiento. El hueco de observabilidad no se cierra: se estrecha, y ahora afecta a menos recorridos que superficie tiene.",
     node: "degradado-mount"
+  },
+  {
+    id: "F3-H1",
+    sev: "hallazgo",
+    title: "El recorrido de producción de hoy —el privado— es el que PAGA el relanzamiento que el alta nube deja de pagar",
+    body: "MEDIDO en sim el 2026-08-11 con una instalación limpia: «Soy nuevo → privacidad total» monta el terminal «Un último paso: reabre Yala». Con `CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT = 0` el sub-chooser ni se muestra, así que **el 100 % de las altas de producción entra por esa rama** mientras la que deja de relanzar (born-cloud) sigue DARK ⇒ el saldo neto para el parque, hoy, es **+1 relanzamiento**. No es un defecto de la implementación —el predicado de fresh no puede consultar el remote-config, porque en un fresh install el snapshot no existe y su `absentDefault` es fail-closed— y el punto de control lo ratificó con una regla de secuencia: ningún build que contenga R2 se distribuye con ese percent en 0. Se dibuja aquí porque es exactamente lo que la revisión de flujos del owner tiene que ver en su sitio: el reparto aprobado (+0 nube / +1 iCloud) depende del flip del percent, no del código.",
+    node: "alta-privado"
+  },
+  {
+    id: "F3-H2",
+    sev: "corrección",
+    title: "El alta nube no va «directa al onboarding»: hay una pantalla de continuidad con CTA",
+    body: "El enunciado del chip F3 daba por hecho que, sin relanzamiento, el alta seguía directo al onboarding. MEDIDO en `24b4bc91`: `activateBornCloudStorage` devuelve la fase `.bornCloudReady` y la vista pinta «¡Tu cuenta está lista!» con un botón «Empezar» (`welcome_born_cloud_ready`); es ese CTA el que cierra el cover y enciende el onboarding, y tiene que hacerlo EXPLÍCITAMENTE porque la rama de respaldo del `onDismiss` devolvería al chooser. El Atlas dibuja la pantalla que existe, con su nodo propio. Es la regla madre aplicada al propio chip: el código ya aterrizado gana también sobre el prompt que ordena el trabajo.",
+    node: "alta-bornready"
+  },
+  {
+    id: "F3-H3",
+    sev: "verificación",
+    title: "El auto-exit del terminal del Welcome, su destino durable y su consumo one-shot funcionan — medidos en sim, no inferidos",
+    body: "El chip R0 dejó el auto-exit como «no verificable desde el repo, lo ve el owner en TestFlight» porque el call-site corta en `isRunningTests`. Eso vale para un unit test, no para el simulador: con un build normal de Yala Dev, pulsar Inicio en la pantalla «Un último paso: reabre Yala» **hace desaparecer el proceso** (`launchctl list` sin la app), el plist del contenedor conserva `welcome.pendingMirrorRelaunchDestination = privateOnboarding` y `hasShownWelcomeChooser = true`, y al relanzar la app aterriza en el **onboarding** con la key del destino ya retirada. Las tres piezas que R0 y R2 no podían ejercitar juntas —auto-exit, durabilidad y consumo— quedan verificadas de punta a punta en sim. Lo que sigue siendo device-only es el alta contra producción (App Attest rechaza los builds de desarrollo por AAGUID) y el swap de persona de R4.",
+    node: "alta-mirrorrelaunch"
   },
   {
     id: "F1-H2",
     sev: "corrección",
     title: "«Cancelar deja el device exactamente como estaba» es falso, y por eso la matriz tiene tres filas",
-    body: "El criterio de hecho de A5 en el spec pide que cancelar no deje «ni par, ni faro, ni consent». Es insatisfacible: el consent se persiste al ACEPTARSE (registro append-only, precedente del repo) y el faro es TEMPRANO por diseño. Tras un `created` el estado es re-entrante, no virgen. Ya está corregido en la anotación 3 del punto de control; el Atlas lo dibuja.",
+    body: "El criterio de hecho de A5 en el spec pide que cancelar no deje «ni par, ni faro, ni consent». Es insatisfacible: el consent se persiste al ACEPTARSE (registro append-only, precedente del repo) y el faro es TEMPRANO por diseño. Tras un `created` el estado es re-entrante, no virgen. Ya está corregido en la anotación 3 del punto de control; el Atlas lo dibuja. Re-medido el 2026-08-11: las tres filas siguen intactas y la tanda del relanzamiento cero no las toca — lo único que cambia es que, en una instalación fresca, la fila 3 ya no deja además un relanzamiento pendiente.",
     node: "alta-cancel"
   },
   {
