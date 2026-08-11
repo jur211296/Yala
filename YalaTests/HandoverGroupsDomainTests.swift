@@ -34,6 +34,44 @@ import Testing
 
 @testable import Yala
 
+/// Doble del iCloud key-value store. Registra el ORDEN y la FORMA de cada escritura, no solo el estado
+/// final: la aserción que carga el peso del camino de handover es «al iKV va UNA key y va como `""`» —
+/// una key de más propaga a la CUENTA y un `removeObject` le quita el modo a los otros dispositivos del
+/// Apple ID. Escribir al `NSUbiquitousKeyValueStore.default` real desde un test tocaría el iCloud del
+/// simulador y contaminaría a las suites vecinas.
+private final class RecordingKVStore: BeaconKeyValueStore, @unchecked Sendable {
+    private(set) var strings: [String: String] = [:]
+    private(set) var writtenKeys: [String] = []
+    private(set) var removedKeys: [String] = []
+    private(set) var synchronizeCalls = 0
+
+    func setBool(_ value: Bool, forKey key: String) { record(key) }
+    func setDouble(_ value: Double, forKey key: String) { record(key) }
+    func setString(_ value: String, forKey key: String) {
+        strings[key] = value
+        record(key)
+    }
+
+    func bool(forKey key: String) -> Bool { false }
+    func string(forKey key: String) -> String? { strings[key] }
+    func double(forKey key: String) -> Double { 0 }
+
+    func removeObject(forKey key: String) {
+        strings[key] = nil
+        removedKeys.append(key)
+        record(key)
+    }
+
+    @discardableResult func synchronize() -> Bool {
+        synchronizeCalls += 1
+        return true
+    }
+
+    private func record(_ key: String) {
+        if !writtenKeys.contains(key) { writtenKeys.append(key) }
+    }
+}
+
 @MainActor
 @Suite(.serialized)
 struct HandoverGroupsDomainTests {
@@ -151,6 +189,90 @@ struct HandoverGroupsDomainTests {
         DataWipeService.removeUserPreferenceKeys(from: defaults)
 
         #expect(defaults.bool(forKey: AppPreferences.Keys.groupsBetaUnlocked) == true)
+    }
+
+    // MARK: - El sello y el iCloud KV (el segundo término de `isDomainOpen`)
+
+    /// **El escenario completo del bug**, y la razón de que borrar la copia local no bastara: el humano
+    /// anterior entró por invitación (o por el alta solo-grupos) ⇒ `onboardingMode = .groupInvite` vive
+    /// también en el iCloud KV del Apple ID, con merge never-downgrade. Sin esta mitad, el siguiente
+    /// merge re-imponía el `.groupInvite` remoto, `isDomainOpen` volvía a dar `true` por su SEGUNDO
+    /// término y el sello quedaba neutralizado sin ningún acto deliberado del usuario nuevo.
+    @Test func wipeLocalGroupsDomain_clearsTheRemoteOnboardingMode_soTheSealSurvivesTheNextMerge() throws {
+        let context = try makeTestContext()
+        let defaults = makeIsolatedDefaults()
+        let iKV = RecordingKVStore()
+        let previousMode = SessionState.shared.onboardingMode
+        defer { SessionState.shared.onboardingMode = previousMode }
+
+        let key = OnboardingMode.userDefaultsKey
+        defaults.set(OnboardingMode.groupInvite.rawValue, forKey: key)
+        iKV.setString(OnboardingMode.groupInvite.rawValue, forKey: key)
+        SessionState.shared.onboardingMode = .groupInvite
+
+        try DataWipeService.wipeLocalGroupsDomain(
+            in: context, defaults: defaults, iKV: iKV, resetSyncState: {})
+
+        // 1. Vacío, NUNCA `removeObject`: es lo que hace `.skip` al merge sin quitarle el modo a los
+        //    otros dispositivos del mismo Apple ID.
+        #expect(iKV.string(forKey: key) == "")
+        #expect(defaults.string(forKey: key) == nil)
+
+        // 2. El merge siguiente ya no re-impone nada.
+        let remote = PrefValue.string(iKV.string(forKey: key) ?? "")
+        let local = defaults.string(forKey: key).map { PrefValue.string($0) }
+        #expect(PreferenceMergeLogic.decide(key: .onboardingMode, remote: remote, local: local) == .skip)
+
+        // 3. Y con el modo de vuelta en `.full`, el sello vuelve a cortar el bridge.
+        let merged = OnboardingMode(rawValue: defaults.string(forKey: key) ?? "") ?? .full
+        #expect(GroupsBetaGateLogic.isDomainOpen(
+            isUnlocked: defaults.bool(forKey: AppPreferences.Keys.groupsBetaUnlocked),
+            isGroupInviteMode: merged == .groupInvite) == false)
+        #expect(GroupsBetaGateLogic.isBridgeAllowed(
+            sealedForFreshStart: defaults.bool(forKey: AppPreferences.Keys.groupsDomainSealedForFreshStart),
+            isUnlocked: defaults.bool(forKey: AppPreferences.Keys.groupsBetaUnlocked),
+            isGroupInviteMode: merged == .groupInvite) == false)
+    }
+
+    /// La otra mitad, que ningún barrido de `UserDefaults` cubre: el proceso VIVO. `SessionState` leyó el
+    /// modo al arrancar, así que sin reasignarlo la app sigue en `.groupInvite` —shell reducida y bridge
+    /// del humano anterior— hasta el próximo lanzamiento.
+    @Test func wipeLocalGroupsDomain_resetsTheOnboardingModeInMemory() throws {
+        let context = try makeTestContext()
+        let previousMode = SessionState.shared.onboardingMode
+        defer { SessionState.shared.onboardingMode = previousMode }
+        SessionState.shared.onboardingMode = .groupInvite
+
+        try DataWipeService.wipeLocalGroupsDomain(
+            in: context, defaults: makeIsolatedDefaults(), iKV: RecordingKVStore(), resetSyncState: {})
+
+        #expect(SessionState.shared.onboardingMode == .full)
+        #expect(SessionState.shared.isGroupInviteMode == false)
+    }
+
+    /// **La invariante del camino**: al iKV va UNA sola key. Escribir cualquier otra desde aquí propaga a
+    /// la CUENTA —no al dispositivo— y este camino solo declara el relevo de humano en ESTE dispositivo.
+    /// Un `removeObject` tampoco vale: borraría el valor para los demás devices del Apple ID.
+    @Test func wipeLocalGroupsDomain_touchesOnlyTheOnboardingModeKeyInTheIKV() throws {
+        let context = try makeTestContext()
+        let iKV = RecordingKVStore()
+
+        try DataWipeService.wipeLocalGroupsDomain(
+            in: context, defaults: makeIsolatedDefaults(), iKV: iKV, resetSyncState: {})
+
+        #expect(iKV.writtenKeys == [OnboardingMode.userDefaultsKey])
+        #expect(iKV.removedKeys.isEmpty)
+    }
+
+    /// No-regresión: fuera del handover, `.groupInvite` remoto sigue GANANDO al `.full` local — un
+    /// usuario legítimo que estrena un segundo dispositivo tiene que seguir recibiendo su modo.
+    @Test func remoteGroupInvite_withoutAHandover_stillWinsOverLocalFull() {
+        let decision = PreferenceMergeLogic.decide(
+            key: .onboardingMode,
+            remote: .string(OnboardingMode.groupInvite.rawValue),
+            local: .string(OnboardingMode.full.rawValue))
+
+        #expect(decision.write == .set(.string(OnboardingMode.groupInvite.rawValue)))
     }
 
     /// El sello es lo que hace que el bridge se cierre; sin él el bridge sigue abierto.
@@ -385,6 +507,18 @@ struct HandoverGroupsWiringTests {
     ///     (§2.7 decía «repuntar el default a `CloudSessionSignOut.purgeGroupsSyncState`»): esa función
     ///     borra outbox **y** cursor, y su propio docblock acota su uso a «tras el teardown (generación
     ///     cortada)», precondición que este camino no cumple.
+    /// El default del seam del iKV tiene que ser el store REAL, y el wipe tiene que llamarlo. Los tests
+    /// de comportamiento inyectan su doble, así que un default cambiado por un no-op —o la llamada
+    /// borrada de `wipeLocalGroupsDomain`— dejaría el bug entero de vuelta con la suite en verde.
+    @Test func handoverWipe_clearsTheOnboardingModeThroughTheRealIKV() throws {
+        let src = try Self.source("Yala/Utils/DataWipeService.swift")
+        #expect(src.contains("iKV: BeaconKeyValueStore = NSUbiquitousKeyValueStore.default"))
+        #expect(src.contains("clearHandoverOnboardingMode(from: defaults, iKV: iKV)"))
+        // El vacío es lo que hace `.skip` al merge never-downgrade; un `removeObject` sobre esta key
+        // borraría el modo para los demás dispositivos del Apple ID.
+        #expect(src.contains("iKV.setString(\"\", forKey: OnboardingMode.userDefaultsKey)"))
+    }
+
     @Test func wipeSeam_purgesTheAppGroupMirror_andNeverReusesTheSignOutPurge() throws {
         let src = try Self.source("Yala/Utils/DataWipeService.swift")
         #expect(src.contains("GroupsOutboxMirror()?.purgeAll()"),

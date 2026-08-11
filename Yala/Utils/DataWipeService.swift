@@ -258,6 +258,9 @@ final class DataWipeService {
     ///     unit tests es la propia app, así que su `UserDefaults.standard` es el del simulador y el
     ///     sello escrito ahí sobrevive a la corrida — cerrando el bridge para las suites de
     ///     comportamiento del bridge (por eso `isDomainOpenForBridge` exceptúa además el runner).
+    ///   - iKV: el iCloud key-value store del Apple ID, por donde viaja `onboardingMode`. Inyectable
+    ///     para tests (mismo protocolo mínimo que usa `CloudBeacon`, el otro escritor del iKV del
+    ///     repo). Ver `clearHandoverOnboardingMode`.
     ///   - resetSyncState: seam del estado del motor + identidad cacheada + espejo del outbox de Grupos
     ///     en el App Group. Default = producción; los tests lo inyectan para no tocar
     ///     el espejo real ni el disco. `@MainActor` en el TIPO del parámetro y no solo en la
@@ -266,6 +269,7 @@ final class DataWipeService {
     static func wipeLocalGroupsDomain(
         in context: ModelContext,
         defaults: UserDefaults = .standard,
+        iKV: BeaconKeyValueStore = NSUbiquitousKeyValueStore.default,
         resetSyncState: @MainActor () -> Void = {
             // 2.7: sin esto, borrar las filas del outbox (abajo) es COSMÉTICO —
             // `GroupsSyncClient.rehydrateOutboxFromMirror` las re-inserta en el próximo boot desde el
@@ -304,6 +308,7 @@ final class DataWipeService {
         try context.save()
 
         removeGroupsDomainPreferenceKeys(from: defaults)
+        clearHandoverOnboardingMode(from: defaults, iKV: iKV)
         resetSyncState()
 
         // SELLO: el borrado de arriba es local, y el reset de los tokens hace que el motor
@@ -355,6 +360,42 @@ final class DataWipeService {
         }
 
         defaults.synchronize()
+    }
+
+    /// La OTRA mitad del sello, y la que faltaba: `onboardingMode` no muere con la copia local.
+    ///
+    /// `GroupsBetaGateLogic.isDomainOpen` es `isUnlocked || isGroupInviteMode`, y ese segundo término sale
+    /// de `onboardingMode == .groupInvite` (`SessionState.isGroupInviteMode`) — una preferencia
+    /// SINCRONIZADA por iCloud KV per-Apple-ID cuyo merge es never-downgrade por rank
+    /// (`PreferenceMergeLogic`, familia `.onboardingModeNeverDowngrade`; `.groupInvite` rank 1 >
+    /// `.full` rank 0). Con solo el `removeObject` local de `removeUserPreferenceKeys`, el `.groupInvite`
+    /// REMOTO vuelve a ganar en el siguiente merge y `PreferenceSyncService` lo re-impone en
+    /// `SessionState` ⇒ **en un dispositivo cuyo humano anterior entró por invitación o por el alta
+    /// solo-grupos, el bridge quedaba abierto para el humano NUEVO sin ningún acto deliberado suyo, con
+    /// el sello puesto y el gate beta intacto** (escenario `NEW-E2-03`).
+    ///
+    /// **Se escribe `""` al iKV, JAMÁS `removeObject`**, y es el mecanismo que ya usa
+    /// `OnboardingResetHelper` para sus dos keys: el merge abre con
+    /// `guard let r = remote.stringValue, !r.isEmpty` ⇒ el vacío es `.skip` ⇒ los demás dispositivos del
+    /// Apple ID **conservan su modo** y un usuario legítimo que estrena un segundo device sigue
+    /// recibiendo el suyo. Por eso la lista es de UNA sola key: escribir cualquier otra desde aquí
+    /// propagaría a la CUENTA (regla de `swiftdata-cloudkit.md` §«Preferencias y fronteras de cuenta»),
+    /// mientras que lo único que este camino declara es el relevo de humano en ESTE dispositivo.
+    ///
+    /// Y la mitad que ningún barrido de `UserDefaults` cubre: el PROCESO VIVO. `SessionState.shared
+    /// .onboardingMode` se leyó al arrancar, así que sin reasignarlo la app sigue en `.groupInvite` —
+    /// shell reducida y bridge del humano anterior— hasta el próximo lanzamiento.
+    static func clearHandoverOnboardingMode(from defaults: UserDefaults, iKV: BeaconKeyValueStore) {
+        // La memoria va ANTES del borrado local: el `didSet` de `SessionState.onboardingMode` persiste
+        // vía `OnboardingMode.setCurrent`, así que al revés dejaría la key materializada con "full"
+        // justo después de haberla quitado. El guard de igualdad ahorra esa escritura cuando no hay
+        // nada que resetear.
+        if SessionState.shared.onboardingMode != .full {
+            SessionState.shared.onboardingMode = .full
+        }
+        defaults.removeObject(forKey: OnboardingMode.userDefaultsKey)
+        iKV.setString("", forKey: OnboardingMode.userDefaultsKey)
+        iKV.synchronize()
     }
 
     // MARK: - Reset del boot-cleanup de cierre de sesión (H4)
@@ -544,6 +585,11 @@ final class DataWipeService {
         defaults.removeObject(forKey: "hasCompletedOnboarding") // Default: false (triggers onboarding)
         defaults.removeObject(forKey: "hasShownWelcomeChooser") // A4: tras wipe vuelve a mostrarse el chooser
         defaults.removeObject(forKey: "hasShownYalaAIOnboarding") // Tras wipe vuelve a mostrarse el onboarding del chat
+        // Este `removeObject` es SOLO la copia local. La key viaja además por iCloud KV con merge
+        // never-downgrade, así que en el camino de RELEVO DE HUMANO («empiezo de cero») hay que
+        // emparejarlo con `clearHandoverOnboardingMode` — que es donde va, y no aquí: este barrido corre
+        // también en «Vaciar datos» y en el wipe remoto, donde sigue siendo el MISMO usuario y borrarle
+        // el modo del iKV se lo quitaría al device que estrene mañana.
         defaults.removeObject(forKey: "onboardingMode")         // Default: .full (normal onboarding)
         defaults.removeObject(forKey: AppPreferences.Keys.usageFocus)  // D1: reset foco de shell a .full — el reset-on-absent de AppPreferences.loadFromDefaults (vía didChangeNotification) revierte el valor EN MEMORIA a .full al remover la key, sin depender del brazo de retención
         defaults.removeObject(forKey: "sessionTimestamps")      // Default: [] (UserSegmentService sessions)
