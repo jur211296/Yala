@@ -4145,7 +4145,6 @@
 // MARK: - Welcome Hero (A4 v3.1: pantalla de presentación pre-Chooser)
 "welcome.hero.title" = "Le tue finanze personali,";
 "welcome.hero.titleAccent" = "senza sforzo.";
-"welcome.hero.subtitle" = "Tu cattura. Yala se ne occupa.";
 "welcome.hero.cta" = "Iniziare";
 "welcome.hero.trust" = "100% privato · Le tue info rimangono con te";
 

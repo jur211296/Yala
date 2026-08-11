@@ -4966,7 +4966,6 @@ enum L10n {
         enum Hero {
             static var title: String { ls("welcome.hero.title", comment: "") }
             static var titleAccent: String { ls("welcome.hero.titleAccent", comment: "") }
-            static var subtitle: String { ls("welcome.hero.subtitle", comment: "") }
             static var cta: String { ls("welcome.hero.cta", comment: "") }
             static var trust: String { ls("welcome.hero.trust", comment: "") }
 

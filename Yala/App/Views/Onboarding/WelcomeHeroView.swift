@@ -105,7 +105,7 @@ struct WelcomeHeroView: View {
 
                 Spacer(minLength: DS.Spacing.lg)
 
-                titleAndSubtitle
+                heroTitle
                     .padding(.horizontal, DS.Spacing.xl)
 
                 Spacer(minLength: DS.Spacing.xl)
@@ -255,32 +255,28 @@ struct WelcomeHeroView: View {
         startCardRotation()
     }
 
-    // MARK: Title + subtitle
+    // MARK: Title
 
-    private var titleAndSubtitle: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            VStack(spacing: 0) {
-                Text(L10n.Welcome.Hero.title)
-                    .foregroundStyle(.white)
-                Text(L10n.Welcome.Hero.titleAccent)
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.hotPink, .white],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
+    /// Sin subtítulo (decisión del owner 2026-08-11, punto 1): las 8 cards que rotan justo
+    /// encima ya cuentan qué hace Yala, y la línea «Tú captura. Yala se encarga.» repetía la
+    /// primera de ellas. La key `welcome.hero.subtitle` se retiró de los 16 locales.
+    private var heroTitle: some View {
+        VStack(spacing: 0) {
+            Text(L10n.Welcome.Hero.title)
+                .foregroundStyle(.white)
+            Text(L10n.Welcome.Hero.titleAccent)
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [.hotPink, .white],
+                        startPoint: .leading,
+                        endPoint: .trailing
                     )
-            }
-            .font(DS.Typography.largeTitle)
-            .multilineTextAlignment(.center)
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("\(L10n.Welcome.Hero.title) \(L10n.Welcome.Hero.titleAccent)")
-
-            Text(L10n.Welcome.Hero.subtitle)
-                .font(DS.Typography.body)
-                .foregroundStyle(.white.opacity(0.7))
-                .multilineTextAlignment(.center)
+                )
         }
+        .font(DS.Typography.largeTitle)
+        .multilineTextAlignment(.center)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(L10n.Welcome.Hero.title) \(L10n.Welcome.Hero.titleAccent)")
     }
 
     // MARK: CTA

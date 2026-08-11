@@ -65,15 +65,26 @@ struct WelcomeHeroReentryTests {
                 "el callback murió con el alert: era su única salida")
     }
 
+    /// Punto 1 del mismo chip: el Hero se queda sin subtítulo. Las 8 cards que rotan encima
+    /// ya cuentan qué hace Yala y la línea repetía la primera de ellas.
+    @Test("el Hero no pinta subtítulo")
+    func hero_hasNoSubtitle() throws {
+        let src = try Self.code(Self.heroPath)
+        #expect(!src.contains("Hero.subtitle"))
+        #expect(!src.contains("titleAndSubtitle"),
+                "el nombre viejo prometía un subtítulo que ya no existe")
+    }
+
     /// Sin el conteo de locales esto pasaría en verde con el escáner roto o con las
     /// `.lproj` fuera del bundle — la familia de «Executed 0 tests».
-    @Test("las 4 keys del alert están retiradas de los 16 locales")
+    @Test("las keys retiradas no existen en ninguno de los 16 locales")
     func detectedDataKeys_areGoneFromEveryLocale() {
         let retired = [
             "welcome.detectedData.title",
             "welcome.detectedData.message",
             "welcome.detectedData.loadMyData",
             "welcome.detectedData.startFresh",
+            "welcome.hero.subtitle",
         ]
         var scanned = 0
         for locale in SupportedLocale.allCases {

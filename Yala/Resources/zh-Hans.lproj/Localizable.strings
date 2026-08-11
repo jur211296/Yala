@@ -4147,7 +4147,6 @@
 // MARK: - Welcome Hero (A4 v3.1: pantalla de presentación pre-Chooser)
 "welcome.hero.title" = "你的个人财务,";
 "welcome.hero.titleAccent" = "轻松搞定。";
-"welcome.hero.subtitle" = "你拍下来。Yala 全搞定。";
 "welcome.hero.cta" = "开始";
 "welcome.hero.trust" = "100% 私密 · 你的信息始终与你同在";
 
