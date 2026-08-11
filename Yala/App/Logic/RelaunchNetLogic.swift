@@ -55,12 +55,43 @@ enum RelaunchNetLogic {
     /// terminal pendiente — el próximo launch corre el cleanup pre-mount y aterriza donde
     /// corresponde, sin pedirle al usuario que mate la app. Solo `.background` (jamás
     /// `.inactive`: app switcher/notification center no deben matar el proceso).
+    ///
+    /// **R0 · el tercer término es el terminal del WELCOME**, y qué pantalla es exactamente eso cambió
+    /// con R2: hoy es `WelcomeMirrorRelaunchView` (step `.mirrorRelaunch` del portal `leaveWelcome`), la
+    /// que pide reabrir para ENCENDER el mirror de CloudKit cuando el destino elegido lo necesita
+    /// —onboarding privado, restaurar de iCloud, recuperar invitación— y este proceso montó el store
+    /// NEUTRO. El chip se redactó antes de R2 apuntando al `.relaunch` de `WelcomeCloudSignInView`,
+    /// dando por hecho que la rama iCloud reusaría esa pantalla; R2 creó una nueva con copy propio.
+    ///
+    /// **Por qué el testigo es el DESTINO PENDIENTE y no una fase de pantalla.** Esta función la llama
+    /// `YalaApp.handleScenePhase`, que ve el scenePhase AGREGADO del proceso y no tiene acceso al
+    /// `@State` de ninguna vista; sus otros dos términos son, por eso, estado durable. El destino que
+    /// `WelcomePendingDestinationStore` persiste vale exactamente igual: se escribe en la MISMA vuelta
+    /// que monta el terminal (`WelcomeFlowContainer.leaveWelcome` → `onNeedsMirrorRelaunch` →
+    /// `goTo(.mirrorRelaunch)`) y solo se retira al consumirlo el arranque siguiente ⇒ «hay destino
+    /// pendiente» ≡ «el terminal está puesto». Es el molde de `secondaryEntryArmedUnmounted`: armado y
+    /// no consumido.
+    ///
+    /// **Y por qué el `.relaunch` de `WelcomeCloudSignInView` NO entra**, que es la otra mitad de la
+    /// medición: (a) su fase es `@State private` de la vista, así que no hay nada que este call-site
+    /// pueda leer sin inventarle un observable —fuera del alcance del chip—; y (b) su docblock declara
+    /// «NUNCA auto-kill» y sus dos productores viven en la máquina de migración (el adopt) y en el alta
+    /// sobre un device CON archivo de store, que este chip no toca.
+    ///
+    /// Matar el proceso en el terminal del Welcome es seguro **por construcción, no por cuidado**: todo
+    /// lo persistente ya está escrito cuando la pantalla aparece —`hasShownWelcomeChooser`, la limpieza
+    /// de residuales del camino privado y el propio destino—, y ese primer flag es justamente el término
+    /// que rompe `isFreshInstallForNeutralMount` y `isNeutralMountArmed`, así que el arranque siguiente
+    /// monta CON mirror y consume el destino. No hay bucle posible.
     static func shouldExitOnBackground(
         scenePhase: ScenePhase,
         signOutPhase: CloudSessionSignOut.Phase,
-        secondaryEntryArmedUnmounted: Bool
+        secondaryEntryArmedUnmounted: Bool,
+        welcomeMirrorRelaunchArmed: Bool
     ) -> Bool {
         scenePhase == .background
-            && (signOutPhase == .awaitingRelaunch || secondaryEntryArmedUnmounted)
+            && (signOutPhase == .awaitingRelaunch
+                || secondaryEntryArmedUnmounted
+                || welcomeMirrorRelaunchArmed)
     }
 }

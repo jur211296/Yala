@@ -164,7 +164,8 @@ struct YalaApp: App {
             }
         } else if newPhase == .background {
             // Decisión owner UX 2026-07-14: con un relaunch terminal pendiente (sign-out
-            // `.cloud`/secundario o ventana de ENTRADA secundaria — todo lo persistente ya
+            // `.cloud`/secundario, ventana de ENTRADA secundaria, o —desde R0— el terminal
+            // del Welcome que pide reabrir para encender el mirror; todo lo persistente ya
             // se escribió), terminar el proceso al ir a background: el próximo launch corre
             // el cleanup pre-mount y aterriza en Welcome sin pedir matar la app a mano.
             // También es la red FINAL del cover terminal (la ventana peligrosa no sobrevive
@@ -179,7 +180,12 @@ struct YalaApp: App {
                 scenePhase: newPhase,
                 signOutPhase: CloudSessionSignOut.shared.phase,
                 secondaryEntryArmedUnmounted: SecondarySessionStore.isActive()
-                    && !SwiftDataConfiguration.secondaryStoreMounted
+                    && !SwiftDataConfiguration.secondaryStoreMounted,
+                // R0 · `peek` y JAMÁS `consume`: retirar aquí el destino dejaría al usuario que pidió
+                // restaurar de iCloud aterrizando en el onboarding normal tras reabrir, con su elección
+                // perdida — que es exactamente el daño para el que R2 lo hizo durable. Lo consume el
+                // encaminamiento del arranque siguiente (`ContentView`), que es quien lo honra.
+                welcomeMirrorRelaunchArmed: WelcomePendingDestinationStore.peek() != nil
             ) {
                 CloudSyncBreadcrumb.relaunchExitOnBackground()
                 exit(0)

@@ -5439,7 +5439,7 @@
 "welcome.mirrorRelaunch.title" = "あと一歩：Yala を開き直してください";
 
 /* Welcome · cuerpo del terminal de relanzamiento del mount neutro (R2) */
-"welcome.mirrorRelaunch.body" = "データを安全に扱うために、アプリを一度閉じてから開き直してください。戻ったら、続きからそのまま再開できます。";
+"welcome.mirrorRelaunch.body" = "データを安全に扱うために、Yala を開き直す必要があります。ホーム画面に戻ってからもう一度開いてください。続きからそのまま再開できます。";
 
 /* Welcome · alta born-cloud completada sin relanzamiento (R2) */
 "welcome.bornCloud.readyTitle" = "アカウントの準備ができました！";

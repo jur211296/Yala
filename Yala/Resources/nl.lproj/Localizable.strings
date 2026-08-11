@@ -5439,7 +5439,7 @@
 "welcome.mirrorRelaunch.title" = "Nog één stap: open Yala opnieuw";
 
 /* Welcome · cuerpo del terminal de relanzamiento del mount neutro (R2) */
-"welcome.mirrorRelaunch.body" = "Sluit de app en open hem opnieuw, zodat we je gegevens goed kunnen beschermen. Daarna gaan we verder waar je gebleven was.";
+"welcome.mirrorRelaunch.body" = "Om je gegevens goed te beschermen moet Yala opnieuw starten. Ga naar het beginscherm en kom terug — daarna gaan we verder waar je gebleven was.";
 
 /* Welcome · alta born-cloud completada sin relanzamiento (R2) */
 "welcome.bornCloud.readyTitle" = "Je account is klaar!";

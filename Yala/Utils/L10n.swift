@@ -4861,6 +4861,14 @@ enum L10n {
         /// corpus que ya existe; aquí el usuario acaba de elegir y todavía no tiene datos.
         enum MirrorRelaunch {
             static var title: String { ls("welcome.mirrorRelaunch.title", comment: "") }
+            /// R0 · el cuerpo dice ya la variante AUTO-EXIT («ve a la pantalla de inicio y vuelve»), porque
+            /// desde este chip el terminal se cierra solo al pasar a background y pedir que el usuario
+            /// mate la app a mano sería instrucción de más.
+            ///
+            /// Es un cambio de VALOR y no una key `bodyAutoExit` nueva —al revés que `Storage.Relaunch`—
+            /// porque aquí no hay bifurcación: `Storage.Relaunch` mantiene las dos porque tiene cuatro
+            /// consumidores repartidos entre auto-exit y manual, y este terminal tiene UNO solo. Una key
+            /// con un valor vivo y otro muerto es residuo, no cobertura.
             static var body: String { ls("welcome.mirrorRelaunch.body", comment: "") }
         }
 

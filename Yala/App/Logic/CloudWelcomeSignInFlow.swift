@@ -28,6 +28,13 @@ nonisolated enum CloudWelcomeSignInPhase: Equatable {
     /// Claim devolvió `claiming_in_progress` — otro device lidera.
     case waitingLeader
     /// Adopt completo — TERMINAL: "Cierra y reabre Yala" (NUNCA auto-kill).
+    ///
+    /// R0 (el auto-exit del terminal del Welcome) la dejó FUERA a propósito, y conviene saber por qué
+    /// antes de "completarlo": esta fase es `@State` privado de `WelcomeCloudSignInView`, así que
+    /// `YalaApp.handleScenePhase` —que decide con el scenePhase AGREGADO del proceso y por eso solo lee
+    /// estado durable— no tiene nada que consultar. Sus dos productores están además fuera del alcance
+    /// de aquel chip: el adopt (máquina de migración) y el alta born-cloud sobre un device CON archivo
+    /// de store. Darle auto-exit exige antes un testigo durable, no un observable de pantalla.
     case relaunch
     /// **R2: alta born-cloud completa SIN relanzar.** El proceso montó el store personal NEUTRO
     /// (`.none` explícito), que es la MISMA `ModelConfiguration` que pide el par `.cloud` + `mirrorOffArmed`
@@ -42,7 +49,13 @@ nonisolated enum CloudWelcomeSignInPhase: Equatable {
     /// ("entrarás con tu cuenta; los datos del dueño no se tocan").
     case secondaryConfirm
     /// M1: descriptor + claim armados — TERMINAL: "Cierra y reabre Yala" (el boot
-    /// monta el store secundario). Sin auto-kill, igual que `.relaunch`.
+    /// monta el store secundario).
+    ///
+    /// **SÍ auto-exita en background**, por el término `secondaryEntryArmedUnmounted` de
+    /// `RelaunchNetLogic` —descriptor activo con el store secundario sin montar, que es estado durable—,
+    /// y por eso su copy es la variante auto-exit. Hasta el 2026-08-10 esta línea decía «sin auto-kill,
+    /// igual que `.relaunch`» y llevaba siendo FALSA desde el fix de la carrera de anchors: es
+    /// exactamente la clase de comentario que MIDE mal y hace perder una vuelta de diagnóstico.
     case relaunchSecondary
     /// El Apple ID firmado no tiene cuenta Yala en la nube.
     case notFound

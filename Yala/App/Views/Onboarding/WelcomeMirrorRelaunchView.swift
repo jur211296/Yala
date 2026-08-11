@@ -11,9 +11,13 @@
 //  terminando de mover tus datos») sería mentirle. Tono BRAND-VOICE: segunda persona, motivo antes que
 //  instrucción, cero jerga — ni "mirror", ni "CloudKit", ni "contenedor".
 //
-//  NO auto-exita en background: `RelaunchNetLogic.shouldExitOnBackground` no contempla este terminal, y
-//  ampliarlo es el chip R0. Cuando R0 aterrice, esta pantalla hereda el auto-exit y su cuerpo pasa a la
-//  variante `bodyAutoExit` — está anotado en el propio chip.
+//  R0 · AUTO-EXITA en background, y por eso el cuerpo dice «ve a la pantalla de inicio y vuelve» en vez de
+//  pedir que mates la app. Quien lo decide es `RelaunchNetLogic.shouldExitOnBackground`, y su testigo es el
+//  DESTINO PENDIENTE (`WelcomePendingDestinationStore`), no esta vista: el `handleScenePhase` de `YalaApp`
+//  ve el scenePhase agregado del proceso y no puede leer el estado de una pantalla. El destino se persiste
+//  en la misma vuelta que monta este step, así que «hay destino» ≡ «este terminal está puesto».
+//
+//  Solo `.background` — `.inactive` (app switcher, centro de notificaciones) JAMÁS mata el proceso.
 //
 
 import SwiftUI
