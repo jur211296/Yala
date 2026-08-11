@@ -39,9 +39,26 @@ enum OnboardingMode: String, Codable {
         return mode
     }
 
-    /// Write to UserDefaults
-    static func setCurrent(_ mode: OnboardingMode) {
-        UserDefaults.standard.set(mode.rawValue, forKey: key)
+    /// Write to UserDefaults.
+    ///
+    /// **M1 · en sesión secundaria NO se persiste, y el valor en memoria sí cambia.** La key vive en
+    /// el `UserDefaults.standard` COMPARTIDO con el dueño y su merge es NEVER-DOWNGRADE por rank
+    /// (`PreferenceMergeLogic`): un `.completed` (rank 2) escrito por la invitada deja al dueño una
+    /// shell escalada que su propio `.groupInvite` (rank 1) del iKV **ya no puede recuperar**, y el
+    /// wipe de salida de la secundaria no repone esta key. Este es el embudo de TODAS las
+    /// asignaciones a `SessionState.onboardingMode` (su `didSet` llama aquí) y de los dos
+    /// `setCurrent` directos; los tres escritores que van por `PreferenceSyncService` con
+    /// `OnboardingMode.userDefaultsKey` **no pasan por aquí** y llevan su propio guard.
+    ///
+    /// Residual consciente: la invitada ve su shell nueva durante la sesión (memoria) pero un
+    /// relanzamiento se la devuelve a la del dueño. Persistirla exigiría namespacear la key por
+    /// sesión, y eso toca el merge never-downgrade — fuera del alcance de este chip.
+    ///
+    /// `defaults` inyectable (regla del repo: nunca `.standard` directo en tests) y el descriptor se
+    /// consulta sobre ESE store, para que el guard sea afirmable sin depender del simulador.
+    static func setCurrent(_ mode: OnboardingMode, _ defaults: UserDefaults = .standard) {
+        guard !SecondarySessionStore.isActive(defaults) else { return }
+        defaults.set(mode.rawValue, forKey: key)
     }
 
     /// UserDefaults key (exposed for DataWipeService cleanup)

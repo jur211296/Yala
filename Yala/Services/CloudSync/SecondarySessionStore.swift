@@ -6,7 +6,11 @@
 //  MODO-NUBE-M1-DISENO-MULTICUENTA, decisiones owner 2026-07-13): tras el sign-out del dueño,
 //  otra cuenta nube monta un store personal SECUNDARIO por archivo (`YalaModel-Secondary`,
 //  mirror CloudKit JAMÁS adjunto). 1 slot: la presencia del descriptor ES la sesión activa;
-//  el `userID` (sub de Supabase) valida que quien re-entra al slot es la misma cuenta.
+//  el `userID` (sub de Supabase) dice QUIÉN lo ocupa, y lo compara `SecondarySlotOccupancyLogic`
+//  en la ENTRADA (`WelcomeCloudSignInView.confirmSecondaryEntry`) — hasta el chip M1 esa validación
+//  la prometía este comentario y no la hacía nadie: `activeUserID` no tenía un solo consumidor de
+//  producción, así que una cuenta B entraba al slot de A con los archivos de A vivos en disco.
+//  **El mount NO pregunta quién** (solo `isActive()`), y eso es deliberado — ver el párrafo del flag.
 //  Persistente hasta el sign-out explícito (decisión 5 — supersede la regla efímera de
 //  ENLACE-OPCIONAL §5.2: cold-launch REANUDA la sesión activa, no la descarta).
 //

@@ -1826,7 +1826,15 @@ struct OnboardingView: View {
         // Modo Solo Grupos: reusa `.groupInvite`. Push al KV (dual-write, patrón
         // FullModeActivationView) — el `onboardingMode` didSet solo escribe local,
         // así que el push explícito es necesario para la paridad cross-device.
-        sync.set(string: OnboardingMode.groupInvite.rawValue, forKey: OnboardingMode.userDefaultsKey)
+        //
+        // M1 · el guard es el mismo de `FullModeActivationView`, y por la misma razón: en
+        // `.localOnly` este `set` sigue escribiendo el espejo local, que en una sesión secundaria es
+        // el `UserDefaults.standard` del DUEÑO, y `.groupInvite` (rank 1) sobre su `.full` (rank 0)
+        // es irreversible por never-downgrade. El camino es estrecho —la invitada entra con el
+        // onboarding ya marcado— pero existe tras un borrado de datos en sesión.
+        if !SecondarySessionStore.isActive() {
+            sync.set(string: OnboardingMode.groupInvite.rawValue, forKey: OnboardingMode.userDefaultsKey)
+        }
         sessionState.onboardingMode = .groupInvite
 
         // Adopción explícita del dominio Grupos: `.groupInvite` ya la implica por el segundo

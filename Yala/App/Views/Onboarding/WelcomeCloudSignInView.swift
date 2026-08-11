@@ -749,6 +749,21 @@ struct WelcomeCloudSignInView: View {
             phase = .error(retryable: true)
             return
         }
+        // M1 · el slot es de UNA cuenta. Con el descriptor de OTRA invitada vivo, sus archivos
+        // `-Secondary` siguen en disco y `activate(userID:)` se limitaría a reescribir el nombre del
+        // ocupante: el boot montaría el corpus de ella bajo esta sesión. Se bloquea con la pantalla
+        // que ya dice ese hecho (`blockedForeignData`) y se suelta la sesión SIWA, igual que la otra
+        // salida bloqueada del guard — dejarla colgada es lo que `runSignInFlow` evita a mano.
+        // Va en la ENTRADA y JAMÁS en el mount, que honra el descriptor incondicionalmente.
+        if SecondarySlotOccupancyLogic.decide(
+            occupantUserID: SecondarySessionStore.activeUserID(),
+            enteringUserID: userID) == .occupiedByOther {
+            launchFlow {
+                await CloudAuthService.shared.signOut()
+                phase = .blockedForeignData
+            }
+            return
+        }
         SecondaryEntryLogic.begin(
             userID: userID,
             recordClaim: { CloudClaimActionStore.shared.record(.routeReturningUser, forUserID: $0) },

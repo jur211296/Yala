@@ -90,7 +90,16 @@ struct FullModeActivationView: View {
     /// creadas por el bridge automático (modelo M5) — no requiere import.
     private func completeFullActivation() {
         let sync = PreferenceSyncService.shared
-        sync.set(string: OnboardingMode.completed.rawValue, forKey: OnboardingMode.userDefaultsKey)
+        // M1 · frontera de cuenta. Este `set` escribe la key del modo por `PreferenceSyncService`
+        // —que en `.localOnly` (sesión secundaria) sigue escribiendo el ESPEJO LOCAL, o sea el
+        // `UserDefaults.standard` del DUEÑO— así que el guard de `OnboardingMode.setCurrent` no lo
+        // cubre: va aquí, en el escritor. `.completed` es rank 2 y el merge es never-downgrade ⇒
+        // escribirlo desde la sesión de la invitada deja al dueño una shell escalada que su
+        // `.groupInvite` del iKV ya no puede recuperar, y el wipe de salida no repone la key.
+        // La activación SÍ ocurre en memoria: la invitada ve su shell completa durante su sesión.
+        if !SecondarySessionStore.isActive() {
+            sync.set(string: OnboardingMode.completed.rawValue, forKey: OnboardingMode.userDefaultsKey)
+        }
         sessionState.onboardingMode = .completed
 
         // D1: des-reducir la shell. DEBE ir ANTES de `selectMainTab(.panel)` — `effectiveShellMode`
