@@ -59,6 +59,11 @@ export function handleConfig(c: Ctx): Response {
       cloudModeRolloutPercent: parseRolloutPercent(c.env.CLOUD_MODE_ROLLOUT_PERCENT),
       cloudOnboardingChoiceRolloutPercent: parseRolloutPercent(c.env.CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT),
       groupsBackendRolloutPercent: parseRolloutPercent(c.env.GROUPS_BACKEND_ROLLOUT_PERCENT),
+      // Sesión secundaria (M1). Se publica SIEMPRE, también en 0: un cliente que reciba el campo con
+      // 0 sabe que el server dijo «no», mientras que omitirlo lo dejaría en `absentDefault` — que en
+      // DEV es ON. Como los otros dos de su clase, el servidor NO lo enforza en ninguna ruta: solo
+      // cambia lo que publica este endpoint, así que su latencia es la del refresh del cliente.
+      secondarySessionRolloutPercent: parseRolloutPercent(c.env.SECONDARY_SESSION_ROLLOUT_PERCENT),
     },
     // Forzado de actualización (min-version). YA NO es DARK: desde D-R1 paso 1 el cliente de producción
     // fetchea /config (CloudBackendConfig.isConfigured pasó a true), así que lo único que separa al

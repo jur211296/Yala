@@ -982,14 +982,23 @@ struct CloudSyncDebugView: View {
                 row("Mount secundario (testigo)", SwiftDataConfiguration.secondaryStoreMounted ? "SÍ" : "no")
                 row("Entry purge done", SecondarySessionStore.isEntryPurgeDone() ? "sí" : "no")
                 row("Wipe secundario armado", SecondarySessionStore.isWipeArmed() ? "SÍ" : "no")
-                row("Flag entrada (debug)", UserDefaults.standard.bool(
-                    forKey: CloudSyncFlags.debugSecondarySessionEnabledKey) ? "ON" : "off (DARK)")
+                row("Key de entrada (debug)", UserDefaults.standard.bool(
+                    forKey: CloudSyncFlags.debugSecondarySessionEnabledKey) ? "ON" : "off")
+                // Desde el chip M2 la key DEBUG ya no es el único término: la capacidad compilada es
+                // `true` y el rollout lo decide el percent remoto PROPIO. Pintar solo la key mentiría
+                // en un build DEV (staging sirve el percent al 100 ⇒ la entrada está disponible con la
+                // key en off), y este panel es la superficie de observación del subsistema.
+                row("Entrada disponible (compuesto)",
+                    CloudSyncFlags.secondarySessionEntryAvailable ? "SÍ" : "no (DARK)")
+                row("Percent remoto (secundaria)", CloudRemoteConfigStore.readSnapshot()?
+                    .secondarySessionRolloutPercent.map(String.init) ?? "ausente")
             }
-            actionButton("Toggle flag de entrada (QA device sin recompilar)", disabled: false) {
+            actionButton("Toggle key de entrada (QA device sin recompilar)", disabled: false) {
                 let key = CloudSyncFlags.debugSecondarySessionEnabledKey
                 let next = !UserDefaults.standard.bool(forKey: key)
                 UserDefaults.standard.set(next, forKey: key)
-                model.lastMessage = "secondarySessionEnabled(debug)=\(next). Solo builds Dev; prod sigue DARK."
+                model.lastMessage = "secondarySessionEnabled(debug)=\(next). Solo builds Dev. La ENTRADA "
+                    + "exige además el percent remoto propio + CLOUD_MODE; prod los sirve en 0 y 100."
             }
             actionButton("Activar descriptor FAKE (guest-debug) — relanzar monta -Secondary", disabled: false) {
                 SecondarySessionStore.activate(userID: "guest-debug")

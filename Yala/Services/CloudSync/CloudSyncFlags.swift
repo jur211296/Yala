@@ -260,22 +260,40 @@ nonisolated enum CloudSyncFlags {
         storageModeTestOverride = nil
     }
 
-    /// Flag del feature "sesión secundaria" (M1 multi-cuenta). DARK: gatea ÚNICAMENTE la ENTRADA
-    /// (la tercera salida de `CrossAccountEntryGuardLogic`) — el mount y el wipe honran el
+    /// CAPACIDAD COMPILADA del feature "sesión secundaria" (M1 multi-cuenta). Gatea ÚNICAMENTE la
+    /// ENTRADA (la tercera salida de `CrossAccountEntryGuardLogic`) — el mount y el wipe honran el
     /// descriptor (`SecondarySessionStore`) incondicionalmente, para que una sesión YA activa
     /// jamás quede brickeada si el flag se apagara. En builds DEV, la key
-    /// `debugSecondarySessionEnabledKey` (panel DEBUG) enciende la entrada sin recompilar (QA
-    /// device); producción IGNORA la key (sigue DARK). Setter = override en memoria (tests).
+    /// `debugSecondarySessionEnabledKey` (panel DEBUG) sigue mandando: enciende la capacidad sin
+    /// recompilar (QA device).
+    ///
+    /// **Desde el chip M2 el ROLLOUT no vive aquí: vive en `secondarySessionEntryAvailable`**, que
+    /// compone esta capacidad con el percent remoto PROPIO (`CloudRemoteFlags.secondarySessionEnabled`).
+    /// Por eso el compilado pasa a `true` sin encender nada en producción — el patrón exacto de
+    /// `bornCloudChoiceEnabled` y de Grupos (D-R1): `SECONDARY_SESSION_ROLLOUT_PERCENT = "0"` en el
+    /// bloque de producción de `gateway/wrangler.toml` y `absentDefault` fail-closed antes del primer
+    /// fetch ⇒ la entrada nace DARK en prod y la palanca operativa de release es ese percent (chip M5).
+    /// A cambio, un build DEV contra staging —que sirve 100— puede ejercitar la entrada sin recompilar.
+    ///
+    /// No hay getter público de capacidad separado A PROPÓSITO: a diferencia de Grupos, aquí ningún
+    /// teardown consulta el flag (mount y wipe van por el descriptor), así que un
+    /// `secondarySessionCompiledCapability` nacería sin un solo call-site — la familia
+    /// `AppAttestClient.ensureRegistered()`. Setter = override en memoria (tests).
     static var secondarySessionEnabled: Bool {
         get {
             if let override = secondarySessionEnabledTestOverride { return override }
             #if DEV_BUILD
             if UserDefaults.standard.bool(forKey: debugSecondarySessionEnabledKey) { return true }
             #endif
-            return false
+            return secondarySessionCompiledDefault
         }
         set { secondarySessionEnabledTestOverride = newValue }
     }
+
+    /// Encendido COMPILADO de la capacidad (la palanca de release del binario; el percent remoto es
+    /// el rollout Y el kill). `true` desde el chip M2 — ver el porqué de que eso NO encienda nada en
+    /// producción en el docblock de arriba.
+    private static let secondarySessionCompiledDefault = true
     static let debugSecondarySessionEnabledKey = "cloudSync.debug.secondarySessionEnabled"
     nonisolated(unsafe) private static var secondarySessionEnabledTestOverride: Bool?
 
@@ -284,13 +302,19 @@ nonisolated enum CloudSyncFlags {
         secondarySessionEnabledTestOverride = nil
     }
 
-    /// Composición completa del gate de ENTRADA secundaria: el feature requiere backend
-    /// configurado (sin auth no hay sesión nube), el wiring del motor encendido y el flag
-    /// REMOTO vivo (DIFERIDOS #34 — es una ENTRADA: el kill-switch la corta; una secundaria
-    /// YA ACTIVA no se toca — mount/wipe honran el descriptor incondicionalmente).
+    /// Composición completa del gate de ENTRADA secundaria: capacidad compilada, backend configurado
+    /// (sin auth no hay sesión nube), wiring del motor encendido y **DOS flags remotos** — el percent
+    /// PROPIO del feature (chip M2) y el kill-switch del Modo Nube. Los dos se conservan a propósito:
+    /// son palancas independientes y cualquiera corta la entrada, que es un kill-switch doble y gratis.
+    ///
+    /// Es una ENTRADA: el kill la corta, pero una secundaria YA ACTIVA no se toca — mount y wipe
+    /// honran el descriptor incondicionalmente. Eso es lo que hace barato usar el kill-switch.
+    /// Con el percent ausente (fresh install de producción antes del primer fetch) el término remoto
+    /// es `absentDefault` = `false` ⇒ `CrossAccountEntryGuardLogic` degrada la celda a
+    /// `blockedForeignData`: el usuario ve la pantalla honesta de hoy, jamás un error.
     static var secondarySessionEntryAvailable: Bool {
         secondarySessionEnabled && syncRuntimeEnabled && CloudBackendConfig.isConfigured
-            && CloudRemoteFlags.cloudModeEnabled
+            && CloudRemoteFlags.secondarySessionEnabled && CloudRemoteFlags.cloudModeEnabled
     }
 
     /// Gate del canal de sync de GRUPOS → backend (incremento G2). Cuando `true`,

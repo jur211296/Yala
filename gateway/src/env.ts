@@ -26,6 +26,11 @@ export interface Env {
   CLOUD_MODE_ROLLOUT_PERCENT?: string;
   CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT?: string;
   GROUPS_BACKEND_ROLLOUT_PERCENT?: string;
+  // Sesión secundaria (M1 multi-cuenta en el mismo iPhone). Gatea SOLO la ENTRADA: una sesión ya
+  // activa se monta y se limpia por su descriptor, pase lo que pase con este percent — bajarlo NUNCA
+  // brickea a quien ya está dentro. Hasta el chip M2 este feature no tenía percent propio y tomaba
+  // prestado el kill-switch de CLOUD_MODE; el AND con CLOUD_MODE se conserva (doble kill-switch).
+  SECONDARY_SESSION_ROLLOUT_PERCENT?: string;
   // Forzado de actualización (min-version): build de CFBundleVersion por debajo del cual el cliente
   // muestra la pantalla bloqueante. Ausente/inválido → 0 (desactivado). Flip = editar var + deploy.
   MIN_SUPPORTED_BUILD?: string;

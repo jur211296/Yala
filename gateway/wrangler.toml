@@ -51,6 +51,9 @@ SIWA_KEY_ID = "PQ53RQ5D3G"
 CLOUD_MODE_ROLLOUT_PERCENT = "100"
 CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT = "100"
 GROUPS_BACKEND_ROLLOUT_PERCENT = "100"
+# Sesión secundaria (M1, chip M2): staging al 100 como los otros tres — es lo que permite ejercitar la
+# entrada de la invitada en un build DEV sin recompilar (antes hacía falta la key del panel DEBUG).
+SECONDARY_SESSION_ROLLOUT_PERCENT = "100"
 # Forzado de actualización (min-version): build por debajo del cual el cliente bloquea. 0 = desactivado.
 # STAGING también en 0 a propósito: un valor > 0 BLOQUEARÍA la app de dogfooding/QA (≠ percents, que
 # encienden superficie). Se sube conscientemente al probar el flujo end-to-end.
@@ -161,6 +164,16 @@ CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT = "0"
 # viva — sin sesión, `startIfEligible` retorna en su primer guard. Es decir, los dos teléfonos del
 # owner en TestFlight.
 GROUPS_BACKEND_ROLLOUT_PERCENT = "100"
+# Sesión secundaria (M1: el dueño cierra su sesión y otra persona entra con SU cuenta nube en el mismo
+# iPhone, con store propio por archivo y el corpus del dueño intacto). EN 0 — el feature nace DARK en
+# producción y **este chip no lo enciende**: el flip es del owner y es el chip M5, después del device-QA
+# de 2 cuentas. Vive en la misma clase de latencia que CLOUD_MODE (hasta 6 h, nadie lo enforza
+# server-side), lo cual está bien porque gatea SOLO la ENTRADA: subirlo no puede romper nada de lo que
+# ya está montado, y bajarlo NO brickea una sesión secundaria viva — el mount y el wipe honran el
+# descriptor incondicionalmente, por diseño. El cliente lo compone además con CLOUD_MODE (doble
+# kill-switch): con cualquiera de los dos en 0, la entrada no se ofrece y el usuario ve la pantalla
+# honesta de «hay datos de otra persona en este dispositivo».
+SECONDARY_SESSION_ROLLOUT_PERCENT = "0"
 # Forzado de actualización (min-version): 0 = desactivado. Se sube al build mínimo soportado cuando
 # haya que forzar una versión crítica (requiere que /config esté vivo en prod — D9/Modo Nube).
 MIN_SUPPORTED_BUILD = "0"

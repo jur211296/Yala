@@ -13,6 +13,7 @@ interface ConfigBody {
     cloudModeRolloutPercent: number;
     cloudOnboardingChoiceRolloutPercent: number;
     groupsBackendRolloutPercent: number;
+    secondarySessionRolloutPercent: number;
   };
   forceUpdate: {
     minSupportedBuild: number;
@@ -24,11 +25,12 @@ function getConfig(env: Record<string, string>): Response | Promise<Response> {
 }
 
 describe("GET /config — shape y semántica fail-closed", () => {
-  it("golden del shape: v=1 + los 3 percents + forceUpdate, con valores parseados del env", async () => {
+  it("golden del shape: v=1 + los 4 percents + forceUpdate, con valores parseados del env", async () => {
     const res = await getConfig({
       CLOUD_MODE_ROLLOUT_PERCENT: "25",
       CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT: "0",
       GROUPS_BACKEND_ROLLOUT_PERCENT: "100",
+      SECONDARY_SESSION_ROLLOUT_PERCENT: "50",
       MIN_SUPPORTED_BUILD: "137",
     });
     expect(res.status).toBe(200);
@@ -39,6 +41,7 @@ describe("GET /config — shape y semántica fail-closed", () => {
         cloudModeRolloutPercent: 25,
         cloudOnboardingChoiceRolloutPercent: 0,
         groupsBackendRolloutPercent: 100,
+        secondarySessionRolloutPercent: 50,
       },
       forceUpdate: {
         minSupportedBuild: 137,
@@ -46,12 +49,31 @@ describe("GET /config — shape y semántica fail-closed", () => {
     });
   });
 
-  it("vars AUSENTES → 0 en los 3 percents + minSupportedBuild (fail-closed: nada enciende)", async () => {
+  it("vars AUSENTES → 0 en los 4 percents + minSupportedBuild (fail-closed: nada enciende)", async () => {
     const body = (await (await getConfig({})).json()) as ConfigBody;
     expect(body.flags.cloudModeRolloutPercent).toBe(0);
     expect(body.flags.cloudOnboardingChoiceRolloutPercent).toBe(0);
     expect(body.flags.groupsBackendRolloutPercent).toBe(0);
+    expect(body.flags.secondarySessionRolloutPercent).toBe(0);
     expect(body.forceUpdate.minSupportedBuild).toBe(0);
+  });
+
+  // El percent de la sesión secundaria es INDEPENDIENTE de los otros tres: hasta el chip M2 el feature
+  // tomaba prestado el kill-switch de CLOUD_MODE, y el bug que eso escondía es que no había forma de
+  // encenderlo sin encender también las superficies de alta. Este test es lo que impide volver a
+  // atarlos: los dos valores se mueven por separado en la misma respuesta.
+  it("el percent de la secundaria NO está atado al de CLOUD_MODE", async () => {
+    const body = (await (
+      await getConfig({ CLOUD_MODE_ROLLOUT_PERCENT: "100", SECONDARY_SESSION_ROLLOUT_PERCENT: "0" })
+    ).json()) as ConfigBody;
+    expect(body.flags.cloudModeRolloutPercent).toBe(100);
+    expect(body.flags.secondarySessionRolloutPercent).toBe(0);
+
+    const inverso = (await (
+      await getConfig({ CLOUD_MODE_ROLLOUT_PERCENT: "0", SECONDARY_SESSION_ROLLOUT_PERCENT: "100" })
+    ).json()) as ConfigBody;
+    expect(inverso.flags.cloudModeRolloutPercent).toBe(0);
+    expect(inverso.flags.secondarySessionRolloutPercent).toBe(100);
   });
 
   it("MIN_SUPPORTED_BUILD inválido → 0; número grande se PRESERVA (sin clamp, ≠ percents)", async () => {

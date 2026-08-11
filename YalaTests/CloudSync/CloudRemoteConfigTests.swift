@@ -81,14 +81,17 @@ struct CloudRemoteConfigTests {
         #expect(CloudRemoteFlags.cloudModeEnabled == CloudRemoteFlags.absentDefault)
         #expect(CloudRemoteFlags.groupsBackendEnabled == CloudRemoteFlags.absentDefault)
         #expect(CloudRemoteFlags.cloudOnboardingChoiceEnabled == CloudRemoteFlags.absentDefault)
+        #expect(CloudRemoteFlags.secondarySessionEnabled == CloudRemoteFlags.absentDefault)
     }
 
     @Test func remoteFlags_testOverrides_win() {
-        CloudRemoteFlags._testSetOverrides(cloudMode: false, onboardingChoice: true, groupsBackend: false)
+        CloudRemoteFlags._testSetOverrides(
+            cloudMode: false, onboardingChoice: true, groupsBackend: false, secondarySession: true)
         defer { CloudRemoteFlags._testResetOverrides() }
         #expect(!CloudRemoteFlags.cloudModeEnabled)
         #expect(CloudRemoteFlags.cloudOnboardingChoiceEnabled)
         #expect(!CloudRemoteFlags.groupsBackendEnabled)
+        #expect(CloudRemoteFlags.secondarySessionEnabled)
     }
 
     // MARK: - Composición groupsBackend (compilado && remoto)
@@ -143,7 +146,7 @@ struct CloudRemoteConfigTests {
         #expect(!CloudSyncFlags.groupsBackendEnabled)
     }
 
-    // MARK: - Entrada secundaria (composición con el flag remoto)
+    // MARK: - Entrada secundaria (composición con los DOS flags remotos)
 
     @Test func secondaryEntry_killedByRemoteOff() {
         // La ENTRADA secundaria es superficie de alta nueva → el kill-switch la corta.
@@ -155,9 +158,138 @@ struct CloudRemoteConfigTests {
         // Control POSITIVO primero (fix del review: sin él, cualquier otro conjunct en false
         // haría pasar el negativo sin probar el AND remoto). `isConfigured` es `true` en los DOS
         // schemes desde D-R1 paso 1 — antes, con el scheme `Yala`, este control positivo fallaba.
-        CloudRemoteFlags._testSetOverrides(cloudMode: true)
+        // Desde el chip M2 hay que fijar los DOS términos remotos: dejar el propio sin override lo
+        // haría caer en `absentDefault`, que es `false` bajo el scheme `Yala`.
+        CloudRemoteFlags._testSetOverrides(cloudMode: true, secondarySession: true)
         #expect(CloudSyncFlags.secondarySessionEntryAvailable)
-        CloudRemoteFlags._testSetOverrides(cloudMode: false)
+        CloudRemoteFlags._testSetOverrides(cloudMode: false, secondarySession: true)
         #expect(!CloudSyncFlags.secondarySessionEntryAvailable)
+    }
+
+    // MARK: - Chip M2 · el percent PROPIO de la sesión secundaria
+
+    /// **La razón de ser del chip, en dos aserciones.** Hasta M2 la entrada secundaria tomaba prestado
+    /// el kill-switch de `cloudModeEnabled`, que no se puede mover sin mover también las superficies
+    /// de alta del Modo Nube. El AND se CONSERVA (doble kill-switch), pero cada palanca corta sola.
+    @Test func secondaryEntry_hasItsOwnRemoteLever_andKeepsTheCloudModeAnd() {
+        CloudSyncFlags.secondarySessionEnabled = true
+        defer {
+            CloudSyncFlags._testResetSecondarySessionEnabledOverride()
+            CloudRemoteFlags._testResetOverrides()
+        }
+        // Control POSITIVO: los dos ON ⇒ entrada disponible.
+        CloudRemoteFlags._testSetOverrides(cloudMode: true, secondarySession: true)
+        #expect(CloudSyncFlags.secondarySessionEntryAvailable)
+        // El percent PROPIO corta sin tocar el Modo Nube. Sin esta mitad, el flag nuevo podría estar
+        // declarado y no compuesto, y todo lo demás seguiría en verde.
+        CloudRemoteFlags._testSetOverrides(cloudMode: true, secondarySession: false)
+        #expect(!CloudSyncFlags.secondarySessionEntryAvailable)
+    }
+
+    /// La capacidad COMPILADA nace en `true` (palanca de release del binario) y aun así la entrada es
+    /// DARK en producción, porque el percent la decide. Es el patrón de `bornCloudChoiceEnabled`.
+    @Test func secondaryEntry_compiledCapabilityIsOn_butTheRolloutDecides() {
+        CloudSyncFlags._testResetSecondarySessionEnabledOverride()
+        defer { CloudRemoteFlags._testResetOverrides() }
+        #expect(CloudSyncFlags.secondarySessionEnabled, """
+            La capacidad compilada volvió a `false`: el flip del percent (chip M5) dejaría de encender \
+            nada y encender M1 volvería a exigir recompilar, que es el bug que M2 arregla.
+            """)
+        CloudRemoteFlags._testSetOverrides(cloudMode: true, secondarySession: false)
+        #expect(!CloudSyncFlags.secondarySessionEntryAvailable)
+    }
+
+    /// **FAIL-CLOSED en fresh install, hasta la celda del guard.** Sin snapshot (producción antes del
+    /// primer fetch) el percent es ausente ⇒ `absentDefault` fail-closed ⇒ el guard cross-cuenta
+    /// degrada a `blockedForeignData`: la pantalla honesta de hoy, jamás un error.
+    @Test func absentPercent_failsClosed_andTheGuardDegradesToBlocked() {
+        #expect(RemoteFlagDecisionLogic.isEnabled(percent: nil, bucket: 0, absentDefault: false) == false)
+        #expect(RemoteFlagDecisionLogic.isEnabled(percent: 0, bucket: 0, absentDefault: true) == false)
+        #expect(RemoteFlagDecisionLogic.isEnabled(percent: 100, bucket: 99, absentDefault: false))
+
+        #expect(CrossAccountEntryGuardLogic.decide(
+            hasLocalData: true, sameAccountClaimExists: false,
+            accountExists: true, secondarySessionEnabled: false) == .blockedForeignData)
+        // Control positivo de la celda: con la entrada disponible, la MISMA fila enruta a secundaria.
+        #expect(CrossAccountEntryGuardLogic.decide(
+            hasLocalData: true, sameAccountClaimExists: false,
+            accountExists: true, secondarySessionEnabled: true) == .proceedSecondarySession)
+    }
+
+    /// **LA MUTACIÓN DEL CHIP: hacer el campo del snapshot no-opcional.** Un snapshot cacheado por un
+    /// build anterior no trae la key; si el campo no fuera opcional el decode LANZA, `readSnapshot`
+    /// lo trata como ausente y el device pierde también los otros tres percents hasta el próximo
+    /// fetch — un flag nuevo apagando flags viejos.
+    @Test func oldCachedSnapshot_decodesAsAbsentPercent_neverAsAnError() throws {
+        let viejo = Data(#"""
+        {"cloudModeRolloutPercent":100,"groupsBackendRolloutPercent":100,\#
+        "fetchedAt":768614400}
+        """#.utf8)
+        let snapshot = try JSONDecoder().decode(RemoteFlagsSnapshot.self, from: viejo)
+        #expect(snapshot.secondarySessionRolloutPercent == nil)
+        #expect(snapshot.cloudModeRolloutPercent == 100, "el snapshot viejo conserva lo que SÍ traía")
+    }
+
+    /// El wire del gateway: campo presente se lee, ausente queda nil (tolerancia de shape en las dos
+    /// direcciones — un cliente nuevo contra un gateway sin desplegar).
+    @Test func wireDecode_secondarySessionPercent() throws {
+        let conCampo = Data(#"{"v":1,"flags":{"secondarySessionRolloutPercent":100}}"#.utf8)
+        #expect(try JSONDecoder().decode(RemoteConfigWireResponse.self, from: conCampo)
+            .flags?.secondarySessionRolloutPercent == 100)
+
+        let sinCampo = Data(#"{"v":1,"flags":{"cloudModeRolloutPercent":100}}"#.utf8)
+        #expect(try JSONDecoder().decode(RemoteConfigWireResponse.self, from: sinCampo)
+            .flags?.secondarySessionRolloutPercent == nil)
+    }
+}
+
+/// Cableado del flag (source-scan). Que la key DEBUG siga mandando en `DEV_BUILD` y que el getter
+/// componga la capacidad con el percent PROPIO son afirmaciones sobre la FORMA del getter: los tests
+/// de comportamiento corren con overrides (y no pueden tocar `.standard` para la key DEV), así que
+/// sin este scan un getter que perdiera la key DEV, o que se dejara el término remoto, pasaría verde.
+@Suite("M2 · cableado del percent propio de la sesión secundaria (source-scan)")
+struct SecondarySessionFlagWiringTests {
+
+    private static func code(_ path: String) throws -> String {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        return try String(contentsOf: root.appendingPathComponent(path), encoding: .utf8)
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+    }
+
+    @Test("la key DEBUG sigue mandando en DEV_BUILD y el compuesto lleva los DOS términos remotos")
+    func entryAvailable_composesOwnPercent_andKeepsTheDevKey() throws {
+        let src = try Self.code("Yala/Services/CloudSync/CloudSyncFlags.swift")
+
+        let getter = try #require(src.range(of: "static var secondarySessionEnabled: Bool {"))
+        let capability = try #require(src.range(of: "secondarySessionCompiledDefault", range: getter.upperBound..<src.endIndex))
+        let devKey = try #require(src.range(of: "debugSecondarySessionEnabledKey", range: getter.upperBound..<src.endIndex))
+        #expect(devKey.lowerBound < capability.lowerBound, """
+            La key DEBUG dejó de tener prioridad sobre el compilado: el QA en device volvería a \
+            necesitar un build nuevo para encender la entrada.
+            """)
+
+        let compuesto = try #require(src.range(of: "static var secondarySessionEntryAvailable: Bool {"))
+        let cuerpo = String(src[compuesto.upperBound...].prefix(400))
+        #expect(cuerpo.contains("CloudRemoteFlags.secondarySessionEnabled"), """
+            El compuesto perdió el percent PROPIO: el flip del chip M5 no encendería nada y el feature \
+            volvería a depender del kill-switch prestado de CLOUD_MODE.
+            """)
+        #expect(cuerpo.contains("CloudRemoteFlags.cloudModeEnabled"),
+                "el AND con el Modo Nube es el segundo kill-switch y no se sustituye por el nuevo")
+    }
+
+    /// El percent viaja de punta a punta: la var del Worker, el campo del wire y el del snapshot tienen
+    /// que existir los tres. Que el gateway lo publique lo cubre `gateway/test/config.test.ts`; esto es
+    /// la mitad del cliente, que ningún test del gateway puede ver.
+    @Test("el percent se mapea del wire al snapshot al refrescar")
+    func wirePercent_isMappedIntoTheSnapshot() throws {
+        let src = try Self.code("Yala/Services/CloudSync/CloudRemoteConfig.swift")
+        #expect(src.contains("secondarySessionRolloutPercent: wire.flags?.secondarySessionRolloutPercent"), """
+            `refreshIfDue` no copia el percent nuevo al snapshot: el campo existiría, el gateway lo \
+            publicaría y el device leería SIEMPRE «ausente» ⇒ fail-closed permanente en producción.
+            """)
     }
 }
