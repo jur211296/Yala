@@ -1,191 +1,236 @@
 // check.mjs — el pin del Atlas de Flujos de Modo Nube.
 //
-// Comprueba, SIN navegador, lo que el chip F1 pide como criterio de hecho: que los 7 diagramas parsean y
-// RENDERIZAN, que cada nodo clickeable resuelve a un panel real, que ningún panel queda huérfano, que los
-// `id` de screenshot son únicos y siguen la convención `<flujo>-<nodo>.png`, que todo panel tiene sus 4
-// campos y al menos una coordenada de código, y que `index.html` no referencia NI UNA URL remota (que es
-// lo que hace que el Atlas abra offline).
+// Desde F4 corre SIN dependencias externas (jsdom fuera): el parser y la geometría viven en
+// `lib/graph.js` —los MISMOS que usa index.html— y el layout lo calcula el elkjs vendorizado.
+// `node check.mjs` y listo.
 //
-// F3 (2026-08-11) añade un **conteo esperado** (bloque 8). Lo que MIDE, medido con su mutante y no
-// inferido: un nodo nuevo CORRECTAMENTE cableado —panel completo, click en un diagrama, sin imagen porque
-// es decisión pura— pasa TODAS las comprobaciones relacionales y **solo lo caza el conteo** (1 fallo,
-// exit 1). Es lo que obliga a que el Atlas crezca de forma declarada en vez de callada.
+// Qué comprueba (los bloques de F1/F3 se conservan; F4 añade solapes, l10n y storyboard):
+//  1. Los 7 grafos de flows.js PARSEAN con el parser real (una línea desconocida es error duro).
+//  2. Cada `click … showNode("X")` apunta a un panel que existe.
+//  3. Ningún panel queda huérfano.
+//  4. Ids de screenshot únicos y con convención `<flujo>-<nodo>.png`.
+//  5. Todo panel tiene sus 4 campos y al menos una coordenada.
+//  6. index.html no referencia NI UNA URL remota (offline) y todo script local que carga existe.
+//  7. Contrato F2: cero nodos vacíos (imagen real o device-only con motivo), sin contradicciones
+//     ni imágenes huérfanas.
+//  8. SOLAPES (F4): el layout ELK de cada flujo, medido con las cajas VISUALES que la página pinta
+//     (lib/graph.js), no produce ningún par nodo-nodo, etiqueta-nodo ni etiqueta-etiqueta que se
+//     superponga. Un solape es un fallo, igual que un enlace roto.
+//  9. L10N (F4): toda key citada en data/l10n.js EXISTE de verdad en es.lproj (Localizable.strings o
+//     .stringsdict) y su valor coincide con el del .strings (el Atlas promete «copy exacto»). Todo
+//     nodo con pantalla tiene su entrada.
+// 10. STORYBOARD (F4): todo frame referencia un panel real y todo nodo con pantalla aparece en el
+//     storyboard de su flujo — «todo lo que ve el usuario, en orden, sin clic» no puede perder nodos
+//     en silencio.
+// 11. CONTEO ESPERADO: 66 paneles · 56 shots · 32 imágenes · 24 device-only · 56 entradas l10n.
+//     Las demás comprobaciones son relaciones entre lo que hay; el conteo obliga a crecer declarando.
 //
-// Cómo se corre (jsdom NO es dependencia del proyecto y no debe serlo — este validador es de docs):
+// MUTACIONES verificadas el 2026-08-11 (F4), cada una a exit 1:
+//  - declarar a ELK la mitad del ancho real de los nodos (lib/graph.js) → decenas de solapes;
+//  - inventar una key en data/l10n.js → FAIL l10n;
+//  - quitar un frame del storyboard de su flujo → FAIL storyboard;
+//  - borrar una imagen → nodo VACÍO (bloque 7), igual que en F2/F3.
 //
-//     mkdir -p /tmp/atlas-check && cd /tmp/atlas-check && npm init -y && npm i jsdom
-//     node /Users/jur/Yala/docs/flows/modo-nube/check.mjs
-//
-// `jsdom` se resuelve desde el CWD a propósito, para que el repo no gane una dependencia por un doc.
 // Salida `RESULT: OK` / exit 0 · cualquier fallo → exit 1.
 
 import fs from "node:fs";
 import vm from "node:vm";
 import { createRequire } from "node:module";
 
-const requireFromCwd = createRequire(process.cwd() + "/");
-let JSDOM;
-try {
-  ({ JSDOM } = requireFromCwd("jsdom"));
-} catch {
-  console.error("Falta `jsdom` en el CWD. Ver la cabecera de este fichero para el comando.");
-  process.exit(2);
-}
-
+const require_ = createRequire(import.meta.url);
 const ROOT = new URL(".", import.meta.url).pathname;
 
-const dom = new JSDOM(`<!doctype html><html><body></body></html>`, { pretendToBeVisual: true });
-const win = dom.window;
+const G = require_("./lib/graph.js");
+const ELK = require_("./vendor/elk.bundled.js");
+const elk = new ELK();
 
-// Globals que mermaid espera
-global.window = win;
-global.document = win.document;
-Object.defineProperty(global, "navigator", { value: win.navigator, configurable: true });
-global.self = win;
-global.HTMLElement = win.HTMLElement;
-global.SVGElement = win.SVGElement;
-global.Element = win.Element;
-global.Node = win.Node;
-global.getComputedStyle = win.getComputedStyle;
-global.DOMPurify = undefined;
-global.requestAnimationFrame = cb => setTimeout(cb, 0);
-global.MutationObserver = win.MutationObserver;
-// jsdom no implementa la geometría SVG; el render de mermaid la pide para medir labels.
-// Es una carencia del ENTORNO de prueba, no del Atlas — se stubea para poder ejercitar el render.
-win.SVGElement.prototype.getBBox = function () { return { x: 0, y: 0, width: 120, height: 20 }; };
-win.SVGElement.prototype.getComputedTextLength = function () { return 120; };
-
-// Cargar el mermaid vendorizado en este contexto global
-const src = fs.readFileSync(`${ROOT}/vendor/mermaid.min.js`, "utf8");
-vm.runInThisContext(src, { filename: "mermaid.min.js" });
-const mermaid = globalThis.mermaid;
-
-// Cargar los datos del Atlas (asignan window.ATLAS_*)
-for (const f of ["data/nodes.js", "data/flows.js", "data/f2.js"]) {
-  vm.runInThisContext(fs.readFileSync(`${ROOT}/${f}`, "utf8"), { filename: f });
+// Los data/*.js asignan window.ATLAS_* — un sandbox donde window === globalThis del contexto.
+const sandbox = {};
+sandbox.window = sandbox;
+vm.createContext(sandbox);
+for (const f of ["data/nodes.js", "data/flows.js", "data/f2.js", "data/l10n.js", "data/storyboard.js"]) {
+  vm.runInContext(fs.readFileSync(`${ROOT}/${f}`, "utf8"), sandbox, { filename: f });
 }
-
-const FLOWS = win.ATLAS_FLOWS ?? globalThis.ATLAS_FLOWS;
-const NODES = win.ATLAS_NODES ?? globalThis.ATLAS_NODES;
-const F2 = win.ATLAS_F2 ?? globalThis.ATLAS_F2;
-
-mermaid.initialize({ startOnLoad: false, securityLevel: "loose", theme: "dark" });
+const FLOWS = sandbox.ATLAS_FLOWS;
+const NODES = sandbox.ATLAS_NODES;
+const F2 = sandbox.ATLAS_F2;
+const L10N = sandbox.ATLAS_L10N;
+const SB = sandbox.ATLAS_STORYBOARD;
 
 let fail = 0;
+const bad = (tag, msg) => { fail++; console.log(`FAIL  ${tag} ${msg}`); };
 
-// 1) Cada diagrama parsea
+// 1) Cada grafo parsea con el parser REAL (el mismo del index)
+const parsedByFlow = {};
 for (const f of FLOWS) {
   try {
-    await mermaid.parse(f.graph);
-    console.log(`OK    parse  ${f.id}`);
+    parsedByFlow[f.id] = G.parseFlow(f.graph);
+    console.log(`OK    parse  ${f.id} (${parsedByFlow[f.id].nodes.length} nodos, ${parsedByFlow[f.id].edges.length} aristas)`);
   } catch (e) {
-    fail++;
-    console.log(`FAIL  parse  ${f.id}: ${String(e.message ?? e).split("\n")[0]}`);
+    bad("parse ", `${f.id}: ${String(e.message ?? e).split("\n")[0]}`);
   }
 }
 
-// 2) Cada `click … call showNode("X")` apunta a un nodo que existe
+// 2) Cada click resuelve a un panel real
 const referenced = new Set();
 for (const f of FLOWS) {
   for (const m of f.graph.matchAll(/showNode\("([^"]+)"\)/g)) {
     referenced.add(m[1]);
-    if (!NODES[m[1]]) {
-      fail++;
-      console.log(`FAIL  click  ${f.id} → "${m[1]}" no existe en nodes.js`);
-    }
+    if (!NODES[m[1]]) bad("click ", `${f.id} → "${m[1]}" no existe en nodes.js`);
   }
 }
-console.log(`OK    click  ${referenced.size} ids referenciados, todos resueltos`);
+console.log(`OK    click  ${referenced.size} ids referenciados`);
 
-// 3) Ningún nodo definido queda huérfano (sin ninguna referencia)
+// 3) Ningún panel huérfano
 for (const k of Object.keys(NODES)) {
-  if (!referenced.has(k)) {
-    fail++;
-    console.log(`FAIL  orphan ${k} está en nodes.js y ningún diagrama lo referencia`);
-  }
+  if (!referenced.has(k)) bad("orphan", `${k} está en nodes.js y ningún grafo lo referencia`);
 }
 
-// 4) Ids de screenshot únicos y con la convención <flujo>-<nodo>.png
+// 4) Shots únicos y con convención
 const shots = new Map();
 for (const [k, n] of Object.entries(NODES)) {
   if (!n.shot) continue;
-  if (!/^[a-z0-9]+(-[a-z0-9]+)+\.png$/.test(n.shot)) {
-    fail++; console.log(`FAIL  shot   ${k}: "${n.shot}" no cumple la convención`);
-  }
-  if (shots.has(n.shot)) { fail++; console.log(`FAIL  shot   duplicado: ${n.shot}`); }
+  if (!/^[a-z0-9]+(-[a-z0-9]+)+\.png$/.test(n.shot)) bad("shot  ", `${k}: "${n.shot}" no cumple la convención`);
+  if (shots.has(n.shot)) bad("shot  ", `duplicado: ${n.shot}`);
   shots.set(n.shot, k);
 }
-console.log(`OK    shot   ${shots.size} ids de screenshot únicos y con convención`);
+console.log(`OK    shot   ${shots.size} ids de screenshot únicos`);
 
-// 5) Todo nodo tiene los 4 campos + al menos una coordenada de código
+// 5) Paneles completos
 for (const [k, n] of Object.entries(NODES)) {
   for (const f of ["title", "sees", "persists", "exits"]) {
-    if (!n[f]) { fail++; console.log(`FAIL  field  ${k}: falta "${f}"`); }
+    if (!n[f]) bad("field ", `${k}: falta "${f}"`);
   }
-  if (!n.code || !n.code.length) { fail++; console.log(`FAIL  code   ${k}: sin coordenada de código`); }
+  if (!n.code || !n.code.length) bad("code  ", `${k}: sin coordenada de código`);
 }
-console.log(`OK    field  ${Object.keys(NODES).length} nodos con panel completo`);
+console.log(`OK    field  ${Object.keys(NODES).length} paneles completos`);
 
-// 6) El HTML no referencia NADA remoto
-const html = fs.readFileSync(`${ROOT}/index.html`, "utf8");
-const remote = [...html.matchAll(/(?:src|href)\s*=\s*"(https?:)?\/\/[^"]+"/g)].map(m => m[0]);
-if (remote.length) { fail++; console.log(`FAIL  offline referencias remotas: ${remote.join(", ")}`); }
-else console.log("OK    offline sin una sola URL remota en index.html");
+// 6) Offline + scripts locales existentes
+{
+  const html = fs.readFileSync(`${ROOT}/index.html`, "utf8");
+  const remote = [...html.matchAll(/(?:src|href)\s*=\s*"(https?:)?\/\/[^"]+"/g)].map(m => m[0]);
+  if (remote.length) bad("offline", `referencias remotas: ${remote.join(", ")}`);
+  const scripts = [...html.matchAll(/<script src="([^"]+)"/g)].map(m => m[1]);
+  for (const s of scripts) {
+    if (!fs.existsSync(`${ROOT}/${s}`)) bad("offline", `script local ausente: ${s}`);
+  }
+  if (!remote.length) console.log(`OK    offline sin URLs remotas · ${scripts.length} scripts locales presentes`);
+}
 
-// 7) Contrato F2: CERO nodos vacíos — todo shot id tiene o su imagen real en img/ o su
-//    marca device-only con motivo Y qué-debería-verse. Y sin sobras: ni un device-only
-//    con imagen presente (contradicción), ni una imagen huérfana sin nodo.
+// 7) Contrato F2: cero nodos vacíos, sin contradicciones ni imágenes huérfanas
 {
   let capturadas = 0;
   for (const [k, n] of Object.entries(NODES)) {
     if (!n.shot) continue;
     const hasImg = fs.existsSync(`${ROOT}/img/${n.shot}`);
     const dOnly = F2?.deviceOnly?.[k];
-    if (hasImg && dOnly) { fail++; console.log(`FAIL  f2     ${k}: marcado device-only PERO img/${n.shot} existe`); }
-    else if (!hasImg && !dOnly) { fail++; console.log(`FAIL  f2     ${k}: sin imagen y sin marca device-only — nodo VACÍO`); }
-    else if (dOnly && (!dOnly.reason || !dOnly.expected)) {
-      fail++; console.log(`FAIL  f2     ${k}: device-only sin motivo o sin qué-debería-verse`);
-    }
+    if (hasImg && dOnly) bad("f2    ", `${k}: marcado device-only PERO img/${n.shot} existe`);
+    else if (!hasImg && !dOnly) bad("f2    ", `${k}: sin imagen y sin marca device-only — nodo VACÍO`);
+    else if (dOnly && (!dOnly.reason || !dOnly.expected)) bad("f2    ", `${k}: device-only incompleto`);
     if (hasImg) capturadas++;
   }
   const known = new Set(Object.values(NODES).map(n => n.shot).filter(Boolean));
   for (const f of fs.readdirSync(`${ROOT}/img`).filter(f => f.endsWith(".png"))) {
-    if (!known.has(f)) { fail++; console.log(`FAIL  f2     img/${f} no corresponde a ningún nodo`); }
+    if (!known.has(f)) bad("f2    ", `img/${f} no corresponde a ningún nodo`);
   }
-  const dCount = Object.keys(F2?.deviceOnly ?? {}).length;
-  console.log(`OK    f2     ${capturadas} capturas + ${dCount} device-only = cero nodos vacíos`);
+  console.log(`OK    f2     ${capturadas} capturas + ${Object.keys(F2?.deviceOnly ?? {}).length} device-only = cero nodos vacíos`);
 }
 
-// 8) CONTEO ESPERADO (F3, 2026-08-11). Todo lo de arriba comprueba RELACIONES entre lo que hay, así que un
-//    Atlas que crece no dispara nada: MEDIDO el 2026-08-11, un nodo nuevo bien cableado (panel completo +
-//    click en un diagrama + `shot: null`) deja los siete bloques en verde y **solo cae aquí**. Al añadir o
-//    quitar un nodo, este bloque se actualiza a mano y a propósito: la fricción ES el aviso.
+// 8) SOLAPES: layout real por flujo, cajas visuales, cero intersecciones
+for (const f of FLOWS) {
+  const parsed = parsedByFlow[f.id];
+  if (!parsed) continue;
+  const { graph, visuals } = G.buildElk(parsed, NODES, F2.deviceOnly);
+  const laidOut = await elk.layout(graph);
+  const overlaps = G.findOverlaps(laidOut, visuals);
+  if (overlaps.length) {
+    for (const [a, b] of overlaps) bad("solape", `${f.id}: ${a} × ${b}`);
+  } else {
+    console.log(`OK    solape ${f.id}: 0 solapes (${laidOut.children.length} nodos + etiquetas)`);
+  }
+}
+
+// 9) L10N: toda key citada existe en es.lproj y su valor coincide
 {
-  const EXPECTED = { panels: 66, shots: 56, images: 32, deviceOnly: 24 };
+  const stringsPath = `${ROOT}/../../../Yala/Resources/es.lproj/Localizable.strings`;
+  const dictPath = `${ROOT}/../../../Yala/Resources/es.lproj/Localizable.stringsdict`;
+  const src = fs.readFileSync(stringsPath, "utf8");
+  const table = new Map();
+  for (const m of src.matchAll(/^"((?:[^"\\]|\\.)+)"\s*=\s*"((?:[^"\\]|\\.)*)";/gm)) {
+    const unesc = s => s.replace(/\\n/g, "\n").replace(/\\"/g, '"').replace(/\\\\/g, "\\");
+    table.set(m[1], unesc(m[2]));
+  }
+  const dictKeys = new Set();
+  if (fs.existsSync(dictPath)) {
+    const dsrc = fs.readFileSync(dictPath, "utf8");
+    // Las keys top-level del plist: <key>…</key> seguidas de <dict>
+    for (const m of dsrc.matchAll(/<key>([^<]+)<\/key>\s*\n\s*<dict>/g)) dictKeys.add(m[1]);
+  }
+  let entries = 0, keys = 0;
+  for (const [nodeId, entry] of Object.entries(L10N)) {
+    entries++;
+    if (!NODES[nodeId]) { bad("l10n  ", `entrada para nodo inexistente: ${nodeId}`); continue; }
+    for (const c of entry.copy ?? []) {
+      keys++;
+      if (!table.has(c.key) && !dictKeys.has(c.key)) {
+        bad("l10n  ", `${nodeId}: la key "${c.key}" NO existe en es.lproj`);
+      } else if (table.has(c.key) && table.get(c.key) !== c.value) {
+        bad("l10n  ", `${nodeId}: el valor citado de "${c.key}" no coincide con es.lproj`);
+      }
+    }
+  }
+  // Todo nodo con pantalla tiene su entrada (los de decisión pura no la necesitan)
+  for (const [k, n] of Object.entries(NODES)) {
+    if (n.shot && !L10N[k]) bad("l10n  ", `${k} tiene pantalla y NO tiene entrada en data/l10n.js`);
+  }
+  console.log(`OK    l10n   ${entries} nodos · ${keys} citas de key verificadas contra es.lproj`);
+}
+
+// 10) STORYBOARD: frames reales y completitud por flujo
+{
+  const inStoryboard = {}; // flowId → Set(nodeIds)
+  for (const [fid, sb] of Object.entries(SB)) {
+    if (!FLOWS.some(f => f.id === fid)) { bad("story ", `storyboard para flujo inexistente: ${fid}`); continue; }
+    inStoryboard[fid] = new Set();
+    for (const tr of sb.tracks) {
+      for (const id of tr.frames) {
+        if (!NODES[id]) bad("story ", `${fid}: frame "${id}" no existe en nodes.js`);
+        inStoryboard[fid].add(id);
+      }
+    }
+  }
+  for (const f of FLOWS) {
+    if (!SB[f.id]) { bad("story ", `el flujo ${f.id} no tiene storyboard`); continue; }
+  }
+  let covered = 0;
+  for (const [k, n] of Object.entries(NODES)) {
+    if (!n.shot) continue;
+    const home = k.split("-")[0];
+    if (!inStoryboard[home] || !inStoryboard[home].has(k)) {
+      bad("story ", `${k} tiene pantalla y NO aparece en el storyboard de su flujo (${home})`);
+    } else covered++;
+  }
+  console.log(`OK    story  ${covered} nodos con pantalla presentes en el storyboard de su flujo`);
+}
+
+// 11) CONTEO ESPERADO — al añadir o quitar un nodo, se actualiza a mano: la fricción ES el aviso.
+{
+  const EXPECTED = { panels: 66, shots: 56, images: 32, deviceOnly: 24, l10nNodes: 56 };
   const actual = {
     panels: Object.keys(NODES).length,
     shots: shots.size,
     images: fs.readdirSync(`${ROOT}/img`).filter(f => f.endsWith(".png")).length,
-    deviceOnly: Object.keys(F2?.deviceOnly ?? {}).length
+    deviceOnly: Object.keys(F2?.deviceOnly ?? {}).length,
+    l10nNodes: Object.keys(L10N).length
   };
   let mismatched = 0;
   for (const [k, want] of Object.entries(EXPECTED)) {
     if (actual[k] !== want) {
-      fail++; mismatched++;
-      console.log(`FAIL  count  ${k}: esperado ${want}, medido ${actual[k]} — actualiza EXPECTED si el cambio es querido`);
+      mismatched++;
+      bad("count ", `${k}: esperado ${want}, medido ${actual[k]} — actualiza EXPECTED si el cambio es querido`);
     }
   }
-  if (!mismatched) console.log(`OK    count  ${actual.panels} paneles · ${actual.shots} shots · ${actual.images} imágenes · ${actual.deviceOnly} device-only`);
-}
-
-// 9) Render REAL de un diagrama (prueba que no solo parsea: dibuja)
-try {
-  const { svg } = await mermaid.render("probe", FLOWS[0].graph);
-  if (!svg.includes("<svg")) throw new Error("sin <svg>");
-  console.log(`OK    render ${FLOWS[0].id} → ${svg.length} bytes de SVG`);
-} catch (e) {
-  fail++;
-  console.log(`FAIL  render ${String(e.message ?? e).split("\n")[0]}`);
+  if (!mismatched) console.log(`OK    count  ${actual.panels} paneles · ${actual.shots} shots · ${actual.images} imágenes · ${actual.deviceOnly} device-only · ${actual.l10nNodes} l10n`);
 }
 
 console.log(fail === 0 ? "\nRESULT: OK" : `\nRESULT: ${fail} FALLOS`);

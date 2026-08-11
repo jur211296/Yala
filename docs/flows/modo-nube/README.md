@@ -1,12 +1,18 @@
 # Atlas de Flujos · Modo Nube
 
-Herramienta de la **revisión integral de los flujos de Modo Nube**: diagramas de decisión por flujo,
-**derivados del CÓDIGO**, con cada nodo clickeable → qué ve el usuario · qué queda persistido · cómo se
-sale · la coordenada de la Logic que decide ese branch.
+Herramienta de la **revisión integral de los flujos de Modo Nube**. Desde el chip **F4** es un
+**storyboard**: una pestaña por flujo y, dentro, la secuencia de pantallas como **frames grandes visibles
+sin un solo clic** — la captura real a tamaño legible, el **copy exacto con su key de l10n** (seleccionable),
+qué queda persistido, cómo se sale y la coordenada de código. Cada flujo tiene además una vista **Mapa**
+con todas las ramas (layout calculado con ELK, no dibujado a mano).
 
 **Se abre con doble clic en `index.html`.** Funciona offline: no hay ni una URL remota.
 
     open docs/flows/modo-nube/index.html
+
+Deep-link para citar un nodo en un ticket: `index.html?node=<id>` (salta a su frame y lo resalta).
+Cada frame tiene un botón **«⧉ referencia»** que copia al portapapeles una plantilla de ticket con el id,
+el flujo, las keys de l10n visibles y la coordenada.
 
 ## Anclaje
 
@@ -21,11 +27,16 @@ el swap de persona del sign-out y el mount NEUTRO) y coordenadas re-resueltas un
 y 6** siguen anclados al 2026-08-09 porque la tanda no toca su código — comprobado con
 `git diff f4d10fa6..HEAD`, no asumido.
 
+**Rediseño del 2026-08-11 (chip F4).** Presentación nueva (storyboard + mapa), **cero re-derivación de
+narrativa**: `data/nodes.js`, `data/flows.js` y `data/f2.js` conservan su contenido de F3. Lo único nuevo
+de CONTENIDO son las **keys de l10n por pantalla** (`data/l10n.js`), medidas del código y de
+`es.lproj/Localizable.strings` contra `24b4bc91`.
+
 ## La regla madre
 
-> Los diagramas se derivan de las **tablas de la lógica pura** y de lo que la app hace de verdad —
+> El contenido se deriva de las **tablas de la lógica pura** y de lo que la app hace de verdad —
 > **jamás de `MODO-NUBE-ARQUITECTURA`**. Donde el diseño y el código difieren, gana el código y la
-> divergencia se **anota** en el panel del nodo con ⚠︎.
+> divergencia se **anota** en el frame del nodo con ⚠︎.
 
 Un Atlas derivado del diseño sería el mismo drift documental que esta épica lleva un mes pagando, en
 bonito. Por eso la sección **Cobertura** existe: dice, tabla por tabla, cuántas celdas tiene y cuántas se
@@ -35,58 +46,58 @@ dibujaron. Un desajuste es un hueco **dicho**, no silencioso.
 
 | Ruta | Qué es |
 |---|---|
-| `index.html` | El Atlas: índice, 7 diagramas, panel lateral, cobertura, hallazgos |
+| `index.html` | El Atlas: pestañas por flujo, storyboard + mapa, cobertura, hallazgos, guion device |
+| `lib/graph.js` | Parser de los grafos + medición de texto + geometría — **compartido** entre la página y `check.mjs`, para que el pin de solapes mida exactamente lo que se pinta |
 | `data/nodes.js` | El CONTENIDO de los paneles (66 nodos con sus coordenadas de código) |
-| `data/flows.js` | Los 7 diagramas Mermaid + la auto-auditoría + los hallazgos |
+| `data/flows.js` | Los 7 grafos (sintaxis mermaid, SSOT de la estructura) + la auto-auditoría + los hallazgos |
 | `data/f2.js` | El estado del chip **F2**: lista `device-only` con motivos, notas de captura y hallazgos F2 |
-| `vendor/mermaid.min.js` | Mermaid 11.6.0 vendorizado — **2,5 MB**, la única dependencia |
+| `data/l10n.js` | **F4**: las keys de l10n del copy visible de cada pantalla, con su valor exacto de `es.lproj` |
+| `data/storyboard.js` | **F4**: el ORDEN de presentación (camino feliz + ramas) — solo orden, cero narrativa |
+| `vendor/elk.bundled.js` | elkjs 0.11.0 vendorizado — **1,6 MB**, la única dependencia (sustituye a mermaid, 2,5 MB) |
 | `img/` | Las capturas reales del simulador (32), una por `id` de screenshot capturable en sim |
-| `check.mjs` | El pin: valida diagramas, enlaces, convención de ids, que el HTML sea offline y el contrato F2 (cero nodos vacíos) |
+| `check.mjs` | El pin — ver abajo. Desde F4 corre **sin dependencias** (`node check.mjs` y listo) |
 
-### Sobre el peso de `vendor/mermaid.min.js`
+### Sobre el peso de `vendor/elk.bundled.js`
 
-2,5 MB en un fichero, versión pinneada. Se decidió **vendorizarlo** en vez de cargarlo de un CDN porque el
-Atlas tiene que abrir sin red desde el repo, y en vez de dibujar los diagramas a mano en SVG porque un SVG
-escrito a mano es exactamente el tipo de artefacto que nadie vuelve a actualizar cuando el código cambia.
-El coste es un blob binario-ish en el historial; el beneficio es que los diagramas se editan en texto.
+1,6 MB en un fichero, versión pinneada (elkjs 0.11.0, `lib/elk.bundled.js` de npm vía unpkg). Se vendoriza
+porque el Atlas tiene que abrir sin red desde el repo. Sustituye a `mermaid.min.js` (2,5 MB): el peso total
+vendorizado **baja** ~0,9 MB con el rediseño. Los grafos siguen editándose en texto (`data/flows.js`); lo
+que cambió es quién los dibuja: ELK calcula el layout (capas + ruteo ortogonal + espacio reservado para las
+etiquetas de arista, que es lo que mata el solape) y los nodos son HTML con la captura dentro — lo que
+Mermaid no puede hacer. El pan/zoom son ~40 líneas propias, sin dependencia.
 
 ## Cómo se verifica
 
-`jsdom` NO es dependencia del proyecto y no debe serlo — se instala en un directorio temporal:
+    node docs/flows/modo-nube/check.mjs
 
-    mkdir -p /tmp/atlas-check && cd /tmp/atlas-check && npm init -y && npm i jsdom
-    node /Users/jur/Yala/docs/flows/modo-nube/check.mjs
+Sin instalar nada: el parser y la geometría salen de `lib/graph.js` y el layout del elkjs vendorizado
+(`jsdom` ya no hace falta — era para renderizar Mermaid).
 
-Comprueba ocho cosas: los 7 diagramas **parsean**, uno **renderiza** de verdad a SVG, cada
-`click … showNode("x")` resuelve a un panel existente, ningún panel queda **huérfano**, los `id` de
-screenshot son únicos y siguen la convención `<flujo>-<nodo>.png`, todo panel tiene sus 4 campos y al menos
-una coordenada de código, `index.html` no referencia **ni una** URL remota, y —desde F3— el **conteo
-esperado** cuadra (66 paneles · 56 `id` · 32 imágenes · 24 device-only).
+Once bloques: los 7 grafos **parsean** con el parser real (una línea desconocida es error duro, no un
+skip) · cada `click … showNode("x")` resuelve · ningún panel **huérfano** · `id` de screenshot únicos y con
+convención · panel completo con coordenada · **offline** (ni una URL remota, y todo script local existe) ·
+contrato F2 (cero nodos vacíos) · **SOLAPES**: el layout de cada flujo, medido con las cajas visuales que
+la página pinta, no produce ninguna intersección nodo-nodo, etiqueta-nodo ni etiqueta-etiqueta · **L10N**:
+toda key citada existe en `es.lproj` y su **valor coincide** (el Atlas promete copy exacto) · **STORYBOARD**:
+todo nodo con pantalla aparece en el storyboard de su flujo · y el **conteo esperado**
+(66 paneles · 56 `id` · 32 imágenes · 24 device-only · 56 entradas l10n).
 
-**Muerde** (verificado el 2026-08-09): apuntar un `click` a un nodo inexistente da 2 fallos (el enlace roto
-y el panel que se queda huérfano); devolver el `<script>` de mermaid a un CDN da el fallo de offline.
-**Y el conteo muerde lo que ningún otro bloque ve** (medido el 2026-08-11): un nodo nuevo bien cableado
-—panel completo, click en un diagrama, `shot: null`— deja los siete bloques anteriores en verde y **solo
-cae en el conteo**. Por eso añadir un nodo obliga a actualizar `EXPECTED` a mano: la fricción es el aviso.
+**Muerde** (mutaciones verificadas el 2026-08-11, todas a exit 1): declarar a ELK la mitad del ancho real
+→ 51 solapes; inventar una key de l10n → FAIL l10n; quitar un frame del storyboard → FAIL story; borrar
+una imagen → nodo VACÍO + conteo. El pin de solapes comprueba las cajas **visuales** en las posiciones
+finales — mentirle al layouter sobre el tamaño no lo esquiva.
 
 ## Estado de las capturas (F2 2026-08-10 · F3 2026-08-11)
 
 Recorrido en el simulador (iPhone 17 Pro · scheme Yala Dev contra staging) el **2026-08-10** sobre HEAD
 `f4d10fa6`, con un refresco el **2026-08-11** sobre HEAD `24b4bc91`. De los 56 `id` de screenshot: **32
-capturas reales** y **24 `device-only`** — cada una con su motivo y qué debería verse, en `data/f2.js` y en
-la sección «Capturas» del propio Atlas. `check.mjs` valida el contrato: cero nodos vacíos, ninguna imagen
-huérfana, ningún device-only con imagen presente.
-
-Lo que el refresco de F3 cambió: `alta-newchooser.png` re-hecha (el badge «Recomendado» ya no existe) y
-`alta-mirrorrelaunch.png` nueva (el terminal del Welcome, capturado en un recorrido REAL sin hooks: app
-reinstalada para que no exista archivo de store ⇒ mount neutro). `alta-privado.png` se conserva tras
-comprobar que su pantalla de destino no cambió.
+capturas reales** y **24 `device-only`** — cada una con su motivo y qué debería verse, en `data/f2.js`.
+Desde F4 los huecos son **frames visibles** en el storyboard (borde violeta discontinuo, con el motivo y
+el «qué debería verse» dentro) y la pestaña **«Capturas · guion device»** los ordena por flujo como guion
+de captura para la pasada del owner.
 
 Lo que el simulador no pudo dar (marcado, no fingido): todo lo que exige una **sesión backend real**
 (SIWA/Google no completan en sim) — claim `created`, adopt, reversa conducida, cutover, banner de sesión,
 push-all —, los estados **multi-device** (marcador de líder, faro cross-device) y los que dependen de una
 **respuesta del servidor** no fabricable (403, `claiming_in_progress`). El owner los captura en device y
 se integran en una pasada posterior.
-
-**Muerde también el contrato F2** (verificado el 2026-08-10): borrar una imagen da `nodo VACÍO`; marcar
-device-only un nodo con imagen da la contradicción. Ambos, exit 1.
