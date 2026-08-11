@@ -238,8 +238,13 @@ struct WelcomeCloudSignInView: View {
 
     /// A5 · intro del ALTA. Los dos métodos con prominencia EQUIVALENTE (guideline 4.8, patrón
     /// apilado de `StorageSignInChooserView`): aquí el usuario no re-entra a nada, elige con qué
-    /// nace su cuenta. La nota §13 es la misma que en la re-entrada porque dice exactamente lo que
-    /// hay que decir en este momento: la cuenta queda ligada al método.
+    /// nace su cuenta.
+    ///
+    /// W4 (decisión del owner 2026-08-11, puntos 15 y 16): por eso los dos botones dicen CREAR
+    /// —`.signUp` en los dos, el del sistema y el nuestro— y la nota es la del alta y no la de la
+    /// re-entrada. La compartían, y su primera mitad («entra con el mismo método que usaste») no
+    /// significa nada para quien no ha usado ninguno: lo que sí informa aquí es la segunda, que la
+    /// cuenta queda ligada al método que elija.
     private var bornCloudIntro: some View {
         VStack(spacing: DS.Spacing.lg) {
             VStack(spacing: DS.Spacing.sm) {
@@ -254,14 +259,14 @@ struct WelcomeCloudSignInView: View {
                     .padding(.horizontal, DS.Spacing.lg)
             }
             VStack(spacing: DS.Spacing.md) {
-                AppleSignInButton {
+                AppleSignInButton(type: .signUp) {
                     DS.Haptic.selection()
                     beginBornCloudSignUp(with: .apple)
                 }
                 .frame(height: 50)
                 .accessibilityIdentifier("welcome_borncloud_signup_apple")
 
-                GoogleSignInButton(variant: .light) {
+                GoogleSignInButton(variant: .light, purpose: .signUp) {
                     DS.Haptic.selection()
                     beginBornCloudSignUp(with: .google)
                 }
@@ -270,7 +275,7 @@ struct WelcomeCloudSignInView: View {
             }
             .padding(.horizontal, DS.Spacing.xl)
 
-            Text(L10n.Welcome.Cloud.providerNote)
+            Text(L10n.Welcome.BornCloud.providerNote)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.white.opacity(0.6))
                 .multilineTextAlignment(.center)
@@ -304,9 +309,10 @@ struct WelcomeCloudSignInView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, DS.Spacing.lg)
             }
+            // W4: aquí la cuenta YA existe ⇒ el verbo es iniciar sesión, en los dos botones.
             switch provider {
             case .apple:
-                AppleSignInButton {
+                AppleSignInButton(type: .signIn) {
                     DS.Haptic.selection()
                     showConsent = true
                 }
@@ -314,7 +320,7 @@ struct WelcomeCloudSignInView: View {
                 .padding(.horizontal, DS.Spacing.xl)
                 .accessibilityIdentifier("welcome_cloud_signin_button")
             case .google:
-                GoogleSignInButton(variant: .light) {
+                GoogleSignInButton(variant: .light, purpose: .signIn) {
                     DS.Haptic.selection()
                     showConsent = true
                 }
@@ -322,7 +328,8 @@ struct WelcomeCloudSignInView: View {
                 .padding(.horizontal, DS.Spacing.xl)
                 .accessibilityIdentifier("welcome_cloud_signin_button_google")
             }
-            // Nota §13 del primer sign-in (AMBOS providers): la cuenta queda ligada al método.
+            // Nota §13 del primer sign-in (AMBOS providers): entra con el método que usaste, y la
+            // cuenta queda ligada a él. La primera mitad es lo que la separa de la del alta (W4).
             Text(L10n.Welcome.Cloud.providerNote)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.white.opacity(0.6))
@@ -796,11 +803,17 @@ struct WelcomeCloudSignInView: View {
 /// `ASAuthorizationAppleIDButton` (obligado por HIG/App Review 4.8 — aquí SIWA es el único
 /// login). El flujo real (nonce, exchange, captura de perfil) vive en
 /// `CloudAuthService.signInWithApple()`; este botón es solo el afford visual + target-action.
+///
+/// W4: el `type` lo decide el contexto y NO tiene default, igual que el `purpose` del botón de
+/// Google — el par tiene que decir lo mismo o la pantalla se contradice a sí misma. Los gemelos de
+/// `StorageSignInChooserView` y `GroupsSignInView` conservan su `.signIn` fijo: sus pantallas están
+/// fuera del alcance del punto 15, y ahí sus dos botones siguen diciendo lo mismo entre ellos.
 private struct AppleSignInButton: UIViewRepresentable {
+    let type: ASAuthorizationAppleIDButton.ButtonType
     let action: () -> Void
 
     func makeUIView(context: Context) -> ASAuthorizationAppleIDButton {
-        let button = ASAuthorizationAppleIDButton(type: .signIn, style: .white)
+        let button = ASAuthorizationAppleIDButton(type: type, style: .white)
         button.cornerRadius = DS.Radius.lg
         button.addTarget(context.coordinator, action: #selector(Coordinator.tapped), for: .touchUpInside)
         return button

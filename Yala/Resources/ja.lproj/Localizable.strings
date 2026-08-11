@@ -4958,6 +4958,8 @@
 
 /* Google sign-in button label (brand guideline text next to the G logo) */
 "auth.googleButton" = "Googleで続ける";
+"auth.googleButtonSignUp" = "Google でアカウントを作成";
+"auth.googleButtonSignIn" = "Google でログイン";
 
 /* Existing-account chooser: Google sign-in card title */
 "welcome.existing.googleTitle" = "Googleでサインイン";
@@ -5424,6 +5426,7 @@
 /* A5 de D-A7 — alta born-cloud: intro del alta. Las terminales (relanzamiento, espera, mismatch, error) reusan welcome.cloud.* */
 "welcome.bornCloud.title" = "Yalaのアカウントを作る";
 "welcome.bornCloud.subtitle" = "アカウントがあれば、どのデバイスからでもYalaを開けます。";
+"welcome.bornCloud.providerNote" = "Yala のアカウントは、選んだ方法にひも付きます。";
 "welcome.bornCloud.creating" = "アカウントを作成しています…";
 
 /* Welcome · terminal de relanzamiento cuando el destino elegido necesita el espejo de iCloud (R2) */

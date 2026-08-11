@@ -12,6 +12,12 @@
 //  (GroupsSignIn en dark mode, pareja del Apple black/white del sheet `.subtle`).
 //  Los botones Apple duplicados existentes NO se refactorizan (fuera de alcance).
 //
+//  W4 (decisión del owner 2026-08-11, punto 15): el VERBO lo decide el contexto y por eso `purpose`
+//  NO tiene default. Un default convertiría cada superficie nueva en «Continuar con Google» por
+//  omisión —que es justo el verbo equivocado en un alta— y nadie se enteraría: el compilador no ve la
+//  diferencia. Sin default, añadir una pantalla obliga a decidir. Hoy son cuatro y las cuatro están
+//  pinneadas con conteo en `WelcomeSignInVerbTests`.
+//
 
 import SwiftUI
 
@@ -22,8 +28,27 @@ struct GoogleSignInButton: View {
         case dark
     }
 
+    /// Qué está haciendo el usuario al pulsar. Decide el label y nada más — el flujo es idéntico.
+    enum Purpose {
+        /// Alta: la cuenta no existe todavía.
+        case signUp
+        /// Re-entrada: la cuenta ya existe y el usuario vuelve a ella.
+        case signIn
+        /// Neutro: la misma pantalla sirve a las dos cosas (Ajustes/migración, Grupos).
+        case `continue`
+    }
+
     let variant: Variant
+    let purpose: Purpose
     let action: () -> Void
+
+    private var label: String {
+        switch purpose {
+        case .signUp:    L10n.Auth.googleButtonSignUp
+        case .signIn:    L10n.Auth.googleButtonSignIn
+        case .continue:  L10n.Auth.googleButton
+        }
+    }
 
     // Colores de las brand guidelines de Google — inalterables por contrato de marca.
     // A11Y-DM: fondo/stroke/texto hardcodeados por variante (el caller elige la variante
@@ -57,11 +82,16 @@ struct GoogleSignInButton: View {
                     .scaledToFit()
                     .frame(width: 20, height: 20)  // brand guideline: el logo JAMÁS se recolorea
                     .accessibilityHidden(true)
-                Text(L10n.Auth.googleButton)
+                Text(label)
                     // A11Y-DT: paridad visual con ASAuthorizationAppleIDButton a 50pt (UIKit,
                     // tampoco escala). Desviación consciente de Roboto: no se bundlea una fuente
                     // por un botón — system .medium con prominencia equivalente.
                     .font(.system(size: 19, weight: .medium))
+                    // Los verbos de W4 son más largos que «Continuar con Google» y en alemán o
+                    // polaco crecen otro tanto: sin esto, el label envuelve a dos líneas dentro de
+                    // los 50 pt del botón. El botón de Apple encoge igual por su cuenta.
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                     .foregroundStyle(textColor)
             }
             .frame(maxWidth: .infinity)
@@ -78,19 +108,23 @@ struct GoogleSignInButton: View {
     }
 }
 
-#Preview("Light variant") {
-    VStack {
-        GoogleSignInButton(variant: .light) {}
+#Preview("Light variant · los tres verbos") {
+    VStack(spacing: 12) {
+        GoogleSignInButton(variant: .light, purpose: .signUp) {}
             .frame(height: 50)
-            .padding(.horizontal, DS.Spacing.xl)
+        GoogleSignInButton(variant: .light, purpose: .signIn) {}
+            .frame(height: 50)
+        GoogleSignInButton(variant: .light, purpose: .continue) {}
+            .frame(height: 50)
     }
+    .padding(.horizontal, DS.Spacing.xl)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(Color.black)
 }
 
 #Preview("Dark variant") {
     VStack {
-        GoogleSignInButton(variant: .dark) {}
+        GoogleSignInButton(variant: .dark, purpose: .continue) {}
             .frame(height: 50)
             .padding(.horizontal, DS.Spacing.xl)
     }

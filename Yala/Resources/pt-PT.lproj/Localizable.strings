@@ -4215,6 +4215,8 @@
 
 /* Google sign-in button label (brand guideline text next to the G logo) */
 "auth.googleButton" = "Continuar com o Google";
+"auth.googleButtonSignUp" = "Criar conta com o Google";
+"auth.googleButtonSignIn" = "Entrar com o Google";
 
 /* Existing-account chooser: Google sign-in card title */
 "welcome.existing.googleTitle" = "Iniciar sessão com o Google";
@@ -4681,6 +4683,7 @@
 /* A5 de D-A7 — alta born-cloud: intro del alta. Las terminales (relanzamiento, espera, mismatch, error) reusan welcome.cloud.* */
 "welcome.bornCloud.title" = "Cria a tua conta Yala";
 "welcome.bornCloud.subtitle" = "Com ela abres o Yala em qualquer dispositivo.";
+"welcome.bornCloud.providerNote" = "A sua conta Yala vai ficar ligada ao método que escolher.";
 "welcome.bornCloud.creating" = "A criar a tua conta…";
 
 /* Welcome · terminal de relanzamiento cuando el destino elegido necesita el espejo de iCloud (R2) */

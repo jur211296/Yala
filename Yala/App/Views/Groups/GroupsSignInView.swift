@@ -81,7 +81,10 @@ struct GroupsSignInView: View {
                             .frame(height: 50)
                             .accessibilityIdentifier("groups_signin_button")
 
-                            GoogleSignInButton(variant: colorScheme == .dark ? .dark : .light) {
+                            // W4: verbo NEUTRO — aquí entra tanto quien ya tiene cuenta de nube como
+                            // quien la estrena para usar Grupos. Sin cambio visual respecto a hoy.
+                            GoogleSignInButton(variant: colorScheme == .dark ? .dark : .light,
+                                               purpose: .continue) {
                                 DS.Haptic.selection()
                                 startSignIn(provider: .google)
                             }

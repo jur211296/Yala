@@ -4797,8 +4797,13 @@ enum L10n {
 
     enum Auth {
         /// "Continuar con Google" — texto del `GoogleSignInButton` (brand guideline: acompaña
-        /// SIEMPRE al logo G; compartido por Welcome y GroupsSignIn).
+        /// SIEMPRE al logo G). Es el verbo NEUTRO: lo usan las superficies donde el usuario puede
+        /// estar creando cuenta o entrando a la suya (Ajustes/migración y Grupos).
         static var googleButton: String { ls("auth.googleButton", comment: "") }
+        /// W4 (decisión del owner 2026-08-11, punto 15): el ALTA dice crear, no continuar.
+        static var googleButtonSignUp: String { ls("auth.googleButtonSignUp", comment: "") }
+        /// W4: la RE-ENTRADA dice iniciar sesión — el usuario ya tiene cuenta.
+        static var googleButtonSignIn: String { ls("auth.googleButtonSignIn", comment: "") }
     }
 
     // MARK: - Welcome (Chooser pre-onboarding A4)
@@ -4849,6 +4854,10 @@ enum L10n {
         enum BornCloud {
             static var title: String { ls("welcome.bornCloud.title", comment: "") }
             static var subtitle: String { ls("welcome.bornCloud.subtitle", comment: "") }
+            /// W4 (decisión del owner 2026-08-11, punto 16): la nota del alta dice SOLO que la cuenta
+            /// queda ligada al método. La de `Cloud.providerNote` empieza por «entra con el mismo método
+            /// que usaste», que aquí no significa nada: el usuario no ha usado ninguno todavía.
+            static var providerNote: String { ls("welcome.bornCloud.providerNote", comment: "") }
             /// Progreso del claim: la cuenta se está CREANDO, no verificando.
             static var creating: String { ls("welcome.bornCloud.creating", comment: "") }
             /// R2 · el alta terminó SIN relanzamiento (el proceso montó el store neutro). Copy propio y no

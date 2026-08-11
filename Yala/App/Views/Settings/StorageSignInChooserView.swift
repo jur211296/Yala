@@ -67,7 +67,12 @@ struct StorageSignInChooserView: View {
                         .frame(height: 50)
                         .accessibilityIdentifier("storage_signin_apple")
 
-                        GoogleSignInButton(variant: colorScheme == .dark ? .dark : .light) {
+                        // W4: verbo NEUTRO — desde aquí se llega tanto a una cuenta que ya existe
+                        // (adopt) como a una que se crea al migrar, así que ni «crear» ni «iniciar
+                        // sesión» valen para las dos. El `.signIn` del botón de Apple de al lado se
+                        // conserva: esta pantalla queda fuera del punto 15.
+                        GoogleSignInButton(variant: colorScheme == .dark ? .dark : .light,
+                                           purpose: .continue) {
                             DS.Haptic.selection()
                             onSelect(.google)
                         }
