@@ -405,6 +405,18 @@ final class GroupsSyncClient {
         outboxMirror?.purgeAll()
     }
 
+    /// **R4 · seam del swap de persona in-process.** Suelta el `mainContext` retenido, que es lo único que
+    /// `teardownForSignOut` NO hace y que este singleton conserva con vida de proceso: sin esto el
+    /// container viejo sobrevive dentro del canal de Grupos y el release verificado aborta.
+    ///
+    /// **Va DESPUÉS de `teardownForSignOut()` y nunca en su lugar.** Aquel corta la generación y para el
+    /// loop; éste solo suelta la referencia. Invertirlos —o llamar solo a éste— dejaría un ciclo en vuelo
+    /// que ya capturó el contexto por parámetro escribiendo sobre un store a punto de borrarse. Lo repone
+    /// `startIfEligible(context:)` en el re-bootstrap.
+    func releaseContextForSwap() {
+        context = nil
+    }
+
     /// Anti-solape del ciclo "one in-flight, one queued" (B2, molde `performCycleCoalesced` del runtime):
     /// si ya hay un ciclo en vuelo, encola a lo sumo UNO y devuelve `.coalesced` (sin señal de red — el
     /// caller no lo cuenta como transitorio). Con el piggyback 5.6 este es el punto de entrada de AMBOS

@@ -67,6 +67,15 @@ final class AppBootstrapper {
     /// (fix MENOR del review de I9: descartarlo con `_ =` lo hacía irremovible).
     private var cloudSyncFanOutObserver: NSObjectProtocol?
 
+    /// **R4: los cuatro observers de `NotificationCenter` de este bootstrap se instalan UNA vez por
+    /// PROCESO, no una vez por bootstrap.** Hasta el swap de persona in-process las dos cosas eran lo
+    /// mismo (`bootstrap` corta en `isInitialized` y nadie lo reponía), y ninguno de los cuatro guarda su
+    /// token ⇒ un segundo bootstrap los duplicaría y no habría forma de retirarlos: cada
+    /// `.NSPersistentStoreRemoteChange` dispararía dos veces el coalescing, y el race-cleaner correría
+    /// dos veces por import. Ninguno de ellos captura el `ModelContext` (leen la propiedad del singleton,
+    /// que el swap sí repone), así que sobrevivir al remonte es correcto — lo que no puede es multiplicarse.
+    private var lifecycleObserversInstalled = false
+
     // MARK: - Initialization
 
     private init() {
@@ -246,18 +255,25 @@ final class AppBootstrapper {
         // 12. Check if any report notifications should be sent now (app launch case)
         await ReportNotificationService.shared.sendDueReports(context: context)
 
-        // 12.5. Observe exchange rate updates to invalidate the latest-rates cache
-        observeExchangeRateUpdates()
-
-        // 13. Observe CloudKit remote changes to auto-refresh UI
-        observeRemoteStoreChanges(context: context)
-
-        // 14. Observe iCloud account changes — detect mismatch if container was created without CloudKit
-        observeICloudAccountChanges()
-
-        // 14.5 (M6). Observe TX imports from CKSync personal — autodelete drafts pendientes Caso A
-        // cuyo splitExpenseID ya tiene TX cuenta real (race resuelto por sync).
-        observeTransactionsImportedFromSync(context: context)
+        // 12.5–14.5. Los cuatro observers del ciclo de vida. **R4: por PROCESO, no por bootstrap** — el
+        // swap de persona vuelve a llamar a `bootstrap` con el container nuevo y ninguno de los cuatro
+        // guarda su token, así que reinstalarlos sería duplicarlos sin poder retirarlos. Las dos
+        // propiedades de contexto que alimentan a dos de ellos SÍ se reponen en cada bootstrap (abajo),
+        // que es lo que hace correcto que el observer sobreviva al remonte.
+        raceCleanerModelContext = context
+        remoteChangeModelContext = context
+        if !lifecycleObserversInstalled {
+            lifecycleObserversInstalled = true
+            // 12.5. Observe exchange rate updates to invalidate the latest-rates cache
+            observeExchangeRateUpdates()
+            // 13. Observe CloudKit remote changes to auto-refresh UI
+            observeRemoteStoreChanges()
+            // 14. Observe iCloud account changes — detect mismatch if container was created without CloudKit
+            observeICloudAccountChanges()
+            // 14.5 (M6). Observe TX imports from CKSync personal — autodelete drafts pendientes Caso A
+            // cuyo splitExpenseID ya tiene TX cuenta real (race resuelto por sync).
+            observeTransactionsImportedFromSync()
+        }
 
         // 14.55 B1 (SIWA revoke 5.1.1(v)): composición de PRODUCCIÓN del hook de canje — el ÚNICO punto
         // que instala el closure real (AJUSTE #2 del brief: CloudAuthService no depende de
@@ -762,6 +778,76 @@ final class AppBootstrapper {
     }
     #endif
 
+    // MARK: - R4 · swap de persona in-process (quiesce + re-bootstrap)
+
+    /// **Fase de QUIESCE del swap: suelta todas las referencias al container que NO cuelgan de la
+    /// jerarquía de vistas.** Desmontar la UI se lleva los 37 ViewModels y los 67 `@Query`; esto se lleva
+    /// lo otro — los singletons de proceso, el journal, el canal de Grupos y las cuatro piezas de la
+    /// migración, que retienen su `ModelContext` con `let` y por eso se sueltan tirando su dueño entero.
+    ///
+    /// **Esto NO es «la lista de retenedores», y confundirlo sería repetir el error que el spike R3
+    /// refutó.** El spec §1.11 enumeró 62 propiedades y las trató como si cerraran la cuestión; el eje 1c
+    /// midió que **una fila `@Model` retenida mantiene vivo el container por sí sola**, así que la lista no
+    /// se puede cerrar por inspección y este método no puede garantizar nada. Lo que decide es el canario
+    /// de `PersonalSwapReleaseLogic` — esto solo maximiza sus posibilidades de salir verde.
+    ///
+    /// **El orden importa en un solo punto**: los teardowns del motor personal y del canal de Grupos van
+    /// ANTES de soltar sus instancias, para que ningún ciclo en vuelo siga escribiendo sobre un store que
+    /// está a punto de borrarse. Los llama el coordinador de sign-out antes de invocar esto; aquí se
+    /// repiten por idempotencia, porque este método también tiene que ser correcto si se invoca solo.
+    func releaseModelContextsForSwap() {
+        // Motores: cortar la generación PRIMERO, soltar la instancia después.
+        CloudSyncRuntime.shared?.teardownGuestSession()
+        CloudSyncRuntime.releaseSharedForSwap()
+        GroupsSyncClient.shared.teardownForSignOut()
+        GroupsSyncClient.shared.releaseContextForSwap()
+        // Las 4 piezas `let` de la migración se van con su dueño (no son re-inyectables).
+        CloudMigrationController.releaseSharedForSwap()
+        // Journal + BGTasks.
+        BackgroundTaskManager.shared.releaseModelContainerForSwap()
+        // Servicios de proceso con contexto inyectado.
+        currencyConverter.setContext(nil)
+        budgetAlertService.setContext(nil)
+        draftService.setContext(nil)
+        entityDeletionService.setContext(nil)
+        transactionService.setContext(nil)
+        ScheduledPaymentNotificationService.shared.setContext(nil)
+        NudgeService.shared.setContext(nil)
+        UserSegmentService.shared.setContext(nil)
+        GroupService.shared.setContext(nil)
+        GroupExpenseService.shared.setContext(nil)
+        GroupTransactionBridge.shared.setContext(nil)
+        GroupNotificationService.shared.setContext(nil)
+        // Los dos contextos que alimentan a los observers de proceso (los observers NO se retiran: son
+        // por-proceso y leen estas propiedades, que el re-bootstrap repone).
+        raceCleanerModelContext = nil
+        remoteChangeModelContext = nil
+        // Tareas de boot que podrían tocar el contexto viejo tras el remonte.
+        remoteChangeTask?.cancel()
+        remoteChangeTask = nil
+        subscriptionCheckTask?.cancel()
+        subscriptionCheckTask = nil
+        accountEntitlementTask?.cancel()
+        accountEntitlementTask = nil
+    }
+
+    /// **Re-ejecuta el arranque completo sobre el container NUEVO tras un swap verificado.**
+    ///
+    /// Reponer `isInitialized` no es un atajo: tras el wipe el device ESTÁ recién instalado —store vacío,
+    /// onboarding y preferencias reseteados— y el arranque que le corresponde es exactamente el de una
+    /// instalación fresca, que es este. Lo que hace que sea seguro repetirlo es que los cuatro observers de
+    /// `NotificationCenter` se instalan por PROCESO (`lifecycleObserversInstalled`) y no aquí.
+    ///
+    /// `isBootstrapSettled` se baja a propósito antes de empezar: es el blocker `bootstrapPending` de la
+    /// matriz de readiness, y un cover montado con el bootstrap en curso se queda PEGADO (medido en iOS
+    /// 27.0). El `defer` de `bootstrap` lo vuelve a subir.
+    func rebootstrapAfterSwap(container: ModelContainer) async {
+        isInitialized = false
+        iCloudMismatchAlreadyDetected = false
+        SessionState.shared.isBootstrapSettled = false
+        await bootstrap(container: container)
+    }
+
     // MARK: - Exchange Rate Cache Invalidation
 
     /// Subscribes to `.yalaExchangeRatesUpdated` posted by `ExchangeRateService`
@@ -796,8 +882,7 @@ final class AppBootstrapper {
     /// Subscribe a `.transactionsImportedFromSync` (cada import successful de CKSync personal).
     /// Dispara `GroupBridgeRaceCleaner` para borrar drafts pendientes Caso A obsoletos —
     /// su TX cuenta real ya llegó vía sync personal, el draft ya no aplica.
-    private func observeTransactionsImportedFromSync(context: ModelContext) {
-        raceCleanerModelContext = context
+    private func observeTransactionsImportedFromSync() {
         NotificationCenter.default.addObserver(
             forName: .transactionsImportedFromSync,
             object: nil,
@@ -838,8 +923,7 @@ final class AppBootstrapper {
 
     // MARK: - Remote Change Observation
 
-    private func observeRemoteStoreChanges(context: ModelContext) {
-        remoteChangeModelContext = context
+    private func observeRemoteStoreChanges() {
         NotificationCenter.default.addObserver(
             forName: .NSPersistentStoreRemoteChange,
             object: nil,

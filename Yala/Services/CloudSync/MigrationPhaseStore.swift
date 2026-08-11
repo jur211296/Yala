@@ -61,6 +61,18 @@ final class MigrationPhaseStore {
         PreferenceSyncService.shared.drainiKVToOutboxOnceIfNeeded()
     }
 
+    /// **R4 · seam del swap de persona in-process.** Suelta el container del journal. Sin `nil` aquí, el
+    /// `ModelContainer` viejo sobrevive dentro de este singleton y el release verificado aborta — este
+    /// store no cuelga de ninguna vista, así que desmontar la jerarquía no lo alcanza.
+    ///
+    /// **NO apaga `identityCaptureEnabled`**, y esa asimetría con `configure` es deliberada: ese flag es
+    /// una decisión sobre la MIGRACIÓN de este device, derivada de una fase journaleada que el wipe del
+    /// cierre de sesión acaba de destruir junto con el store de sync-meta. El re-bootstrap lo re-deriva del
+    /// journal nuevo (vacío ⇒ `notStarted` ⇒ fuera de la ventana), que es la única fuente legítima.
+    func releaseContainerForSwap() {
+        container = nil
+    }
+
     /// La ventana en que el gate permanente de captura de identidad debe estar ON (§g.3): desde que se
     /// asignó identidad hasta que la migración termina (done) o revierte (failedRollback). NO incluye las
     /// fases previas al backfill (notStarted/dryRun/consent/authenticating/waitingForLeader/claimingMigration).

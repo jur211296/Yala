@@ -57,7 +57,7 @@ final class ScheduledPaymentNotificationService {
         self.tracker = tracker
     }
 
-    func setContext(_ context: ModelContext) {
+    func setContext(_ context: ModelContext?) {
         self.modelContext = context
     }
 

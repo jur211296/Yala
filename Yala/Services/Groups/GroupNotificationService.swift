@@ -58,7 +58,7 @@ final class GroupNotificationService {
         return Date(timeIntervalSince1970: ts)
     }
 
-    func setContext(_ ctx: ModelContext) {
+    func setContext(_ ctx: ModelContext?) {
         modelContext = ctx
     }
 

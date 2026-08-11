@@ -85,6 +85,16 @@ final class CloudSyncRuntime {
     /// NO es un singleton global auto-creado — se asigna explícitamente en `startShared`.
     static private(set) var shared: CloudSyncRuntime?
 
+    /// **R4 · seam del swap de persona in-process.** Suelta la instancia entera (y con ella su `context`,
+    /// su engine y su cadencia). Va SIEMPRE después de `teardownGuestSession()`: el teardown corta la
+    /// generación y para el loop, esto suelta la referencia — hacerlo al revés dejaría un ciclo en vuelo
+    /// escribiendo sobre el store que se está a punto de borrar.
+    ///
+    /// La repone `startShared(context:)` en el re-bootstrap, con el `mainContext` del container nuevo.
+    static func releaseSharedForSwap() {
+        shared = nil
+    }
+
     // MARK: Estado del ciclo de vida
 
     enum RuntimeState: Equatable {

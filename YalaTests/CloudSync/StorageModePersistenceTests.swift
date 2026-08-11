@@ -103,9 +103,9 @@ struct StorageModePersistenceTests {
     @Test func decision_cloudArmed_winsBeforeICloudCheck() {
         // `.cloud` ARMADO gana AUNQUE haya iCloud (Grupos la usa, pero el store personal ya no lo espeja).
         #expect(SwiftDataConfiguration.personalStoreDecision(
-            storageMode: .cloud, mirrorOffArmed: true, iCloudAvailable: true, freshInstall: false) == .cloudMirrorOff)
+            storageMode: .cloud, mirrorOffArmed: true, iCloudAvailable: true, freshInstall: false, neutralDurable: false) == .cloudMirrorOff)
         #expect(SwiftDataConfiguration.personalStoreDecision(
-            storageMode: .cloud, mirrorOffArmed: true, iCloudAvailable: false, freshInstall: false) == .cloudMirrorOff)
+            storageMode: .cloud, mirrorOffArmed: true, iCloudAvailable: false, freshInstall: false, neutralDurable: false) == .cloudMirrorOff)
     }
 
     @Test func decision_cloudNotArmed_keepsMirrorOn_killWindowRecovery() {
@@ -113,18 +113,18 @@ struct StorageModePersistenceTests {
         // el export del marcador) → el mirror REMONTA — el marcador puede exportar en el resume; sin
         // esto la migración quedaba enclavada en markerWritten para siempre.
         #expect(SwiftDataConfiguration.personalStoreDecision(
-            storageMode: .cloud, mirrorOffArmed: false, iCloudAvailable: true, freshInstall: false) == .iCloudMirror)
+            storageMode: .cloud, mirrorOffArmed: false, iCloudAvailable: true, freshInstall: false, neutralDurable: false) == .iCloudMirror)
         #expect(SwiftDataConfiguration.personalStoreDecision(
-            storageMode: .cloud, mirrorOffArmed: false, iCloudAvailable: false, freshInstall: false) == .localNoMirror)
+            storageMode: .cloud, mirrorOffArmed: false, iCloudAvailable: false, freshInstall: false, neutralDurable: false) == .localNoMirror)
     }
 
     @Test func decision_icloud_dependsOnAvailability_armedIrrelevant() {
         // En `.icloud` el flag de armado es irrelevante (residuo de un intento anterior no cambia nada).
         for armed in [true, false] {
             #expect(SwiftDataConfiguration.personalStoreDecision(
-                storageMode: .icloud, mirrorOffArmed: armed, iCloudAvailable: true, freshInstall: false) == .iCloudMirror)
+                storageMode: .icloud, mirrorOffArmed: armed, iCloudAvailable: true, freshInstall: false, neutralDurable: false) == .iCloudMirror)
             #expect(SwiftDataConfiguration.personalStoreDecision(
-                storageMode: .icloud, mirrorOffArmed: armed, iCloudAvailable: false, freshInstall: false) == .localNoMirror)
+                storageMode: .icloud, mirrorOffArmed: armed, iCloudAvailable: false, freshInstall: false, neutralDurable: false) == .localNoMirror)
         }
     }
 
@@ -138,7 +138,7 @@ struct StorageModePersistenceTests {
                 for icloud in [true, false] {
                     #expect(SwiftDataConfiguration.personalStoreDecision(
                         storageMode: mode, mirrorOffArmed: armed, iCloudAvailable: icloud,
-                        secondarySessionActive: true, freshInstall: false) == .secondaryCloudSession)
+                        secondarySessionActive: true, freshInstall: false, neutralDurable: false) == .secondaryCloudSession)
                 }
             }
         }
@@ -149,13 +149,13 @@ struct StorageModePersistenceTests {
         // (regresión del dueño — los otros tests cubren el default omitido).
         #expect(SwiftDataConfiguration.personalStoreDecision(
             storageMode: .cloud, mirrorOffArmed: true, iCloudAvailable: true,
-            secondarySessionActive: false, freshInstall: false) == .cloudMirrorOff)
+            secondarySessionActive: false, freshInstall: false, neutralDurable: false) == .cloudMirrorOff)
         #expect(SwiftDataConfiguration.personalStoreDecision(
             storageMode: .cloud, mirrorOffArmed: false, iCloudAvailable: true,
-            secondarySessionActive: false, freshInstall: false) == .iCloudMirror)
+            secondarySessionActive: false, freshInstall: false, neutralDurable: false) == .iCloudMirror)
         #expect(SwiftDataConfiguration.personalStoreDecision(
             storageMode: .icloud, mirrorOffArmed: false, iCloudAvailable: false,
-            secondarySessionActive: false, freshInstall: false) == .localNoMirror)
+            secondarySessionActive: false, freshInstall: false, neutralDurable: false) == .localNoMirror)
     }
 
     @Test func secondaryStoreNames_deriveFromOwnerNames() {

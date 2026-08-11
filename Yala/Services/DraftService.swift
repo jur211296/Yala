@@ -33,7 +33,7 @@ final class DraftService {
     // MARK: - Context Injection
 
     /// Sets the model context (call this from views that use the service)
-    func setContext(_ context: ModelContext) {
+    func setContext(_ context: ModelContext?) {
         self.modelContext = context
     }
 

@@ -1232,7 +1232,10 @@ struct CloudSyncDebugView: View {
                 .disabled(spikeR3.log.isEmpty)
 
                 Button {
-                    SpikeR3Harness.deleteSpikeStoreFiles()
+                    // R4 (herencia de R3): el botón era MUDO — llamaba al estático y descartaba su
+                    // `[String]` de problemas, así que no se distinguía «ya no estaba» de «no se pudo
+                    // borrar». Ahora escribe su resultado en el mismo log que el resto del harness.
+                    spikeR3.deleteSpikeStoreAndLog()
                 } label: {
                     Label("Borrar store del spike", systemImage: "xmark.bin")
                         .font(DS.Typography.caption)

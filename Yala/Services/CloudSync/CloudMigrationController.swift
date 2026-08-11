@@ -160,6 +160,18 @@ final class CloudMigrationController {
         if shared == nil { shared = CloudMigrationController(context: context) }
     }
 
+    /// **R4 · seam del swap de persona in-process.** Suelta la instancia entera, y tiene que ser la
+    /// instancia y no una re-inyección: este controller y sus tres piezas hijas (`MigrationRunner`,
+    /// `MigrationWorkExecutor`, `MigrationSnapshotUploader`) retienen el `ModelContext` con `let`, así que
+    /// **no son re-inyectables por construcción** — el spec §1.11 las cuenta una a una por eso mismo.
+    /// Soltar el `shared` es lo único que se lleva las cuatro de golpe.
+    ///
+    /// Se repone sola: `configureShared` es idempotente por su `if shared == nil`, y el re-bootstrap la
+    /// vuelve a crear con el `mainContext` del container nuevo.
+    static func releaseSharedForSwap() {
+        shared = nil
+    }
+
     // MARK: Estado observable (derivado del journal)
 
     var uiState: CloudMigrationUIState = .idle

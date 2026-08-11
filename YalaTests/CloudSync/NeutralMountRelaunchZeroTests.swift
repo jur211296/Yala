@@ -125,7 +125,7 @@ struct NeutralMountDecisionTests {
         for iCloud in [true, false] {
             #expect(SwiftDataConfiguration.personalStoreDecision(
                 storageMode: .icloud, mirrorOffArmed: false, iCloudAvailable: iCloud,
-                freshInstall: true) == .neutralNoMirror,
+                freshInstall: true, neutralDurable: false) == .neutralNoMirror,
                 "el neutro no depende de que haya cuenta iCloud (iCloud=\(iCloud))")
         }
     }
@@ -137,10 +137,10 @@ struct NeutralMountDecisionTests {
         // siguen ganando y ninguna sesión secundaria acaba montando el archivo del dueño.
         #expect(SwiftDataConfiguration.personalStoreDecision(
             storageMode: .icloud, mirrorOffArmed: false, iCloudAvailable: true,
-            secondarySessionActive: true, freshInstall: true) == .secondaryCloudSession)
+            secondarySessionActive: true, freshInstall: true, neutralDurable: false) == .secondaryCloudSession)
         #expect(SwiftDataConfiguration.personalStoreDecision(
             storageMode: .cloud, mirrorOffArmed: true, iCloudAvailable: true,
-            freshInstall: true) == .cloudMirrorOff)
+            freshInstall: true, neutralDurable: false) == .cloudMirrorOff)
     }
 
     @Test("el neutro NO adjunta mirror, NO espeja y NO es modo nube")

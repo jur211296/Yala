@@ -276,6 +276,30 @@ enum SwiftDataConfiguration {
             && !hasShownWelcomeChooser
     }
 
+    /// **R4 · el predicado PURO del NEUTRO DURABLE.** Dos términos, y el segundo no es una precaución: es
+    /// lo que impide el bucle.
+    ///
+    ///  1. **El neutro está ARMADO** (`StorageModePersistence.neutralMountArmedKey`). Lo arma el wipe de
+    ///     cierre de sesión, en sus dos caminos. Es un estado EXPLÍCITO — la ausencia de la key de storage
+    ///     significa `.icloud` por contrato, así que "neutro" no se puede decir borrando nada.
+    ///  2. **El chooser del Welcome no se ha visto.** En cuanto el usuario elige, la key queda INERTE y la
+    ///     tabla de mounts vuelve a la normal. Sin este término, un destino que necesita el mirror
+    ///     —restaurar de iCloud, onboarding privado— pediría reabrir la app y el arranque siguiente
+    ///     volvería a montar neutro: relanzamiento en bucle y una cuenta que nunca se restaura.
+    ///
+    /// **Se separa de `isFreshInstallForNeutralMount` en vez de ensancharlo** porque son dos hechos
+    /// distintos con dos evidencias distintas: allí la protección estructural es que el archivo del store
+    /// NO existe (por eso el parque actual no puede alcanzar el camino nuevo); aquí el archivo SÍ existe
+    /// —lo acaba de crear el remonte del swap— y lo que autoriza el neutro es que este device escribió la
+    /// marca al vaciarse. Colapsarlos obligaría a soltar el primer término y con él la promesa de
+    /// no-regresión de R2.
+    static func shouldMountNeutralDurable(
+        neutralMountArmed: Bool,
+        hasShownWelcomeChooser: Bool
+    ) -> Bool {
+        neutralMountArmed && !hasShownWelcomeChooser
+    }
+
     /// SERIO 1 del review adversarial (ciclo C): `storageMode == .cloud` por sí solo NO basta para
     /// apagar el mirror — `.cloud` se persiste en el paso 2 del cutover (§g.4) y el marcador CloudKit
     /// exporta ASYNC en el paso 3; un kill involuntario en esa ventana relanzaría con el mirror OFF y el
@@ -300,14 +324,21 @@ enum SwiftDataConfiguration {
     /// de la sesión secundaria y del par `.cloud`+armado —que protegen invariantes duros (M1 y SERIO-1)—
     /// aunque `isFreshInstallForNeutralMount` ya los excluya. Las tres ramas son mutuamente excluyentes
     /// hoy; el orden es lo que mantiene inofensivo un ensanchamiento futuro del predicado.
+    ///
+    /// **R4 — `neutralDurable` va SIN default por el mismo motivo que `freshInstall`**, y comparte rama con
+    /// él: las dos son «este device todavía no ha elegido», con evidencias distintas (R2 lo prueba porque no
+    /// hay archivo de store; R4 porque el wipe del cierre de sesión dejó la marca). Su posición tampoco es
+    /// cosmética: va DESPUÉS del par `.cloud`+armado, así que un device a mitad del cutover jamás cae aquí
+    /// aunque alguien dejara la marca puesta por descuido.
     static func personalStoreDecision(
         storageMode: StorageMode, mirrorOffArmed: Bool, iCloudAvailable: Bool,
         secondarySessionActive: Bool = false,
-        freshInstall: Bool
+        freshInstall: Bool,
+        neutralDurable: Bool
     ) -> PersonalStoreDecision {
         if secondarySessionActive { return .secondaryCloudSession }
         if storageMode == .cloud && mirrorOffArmed { return .cloudMirrorOff }
-        if freshInstall { return .neutralNoMirror }
+        if freshInstall || neutralDurable { return .neutralNoMirror }
         return iCloudAvailable ? .iCloudMirror : .localNoMirror
     }
 }
@@ -489,6 +520,21 @@ extension SwiftDataConfiguration {
         secondaryStoreMounted = decision == .secondaryCloudSession
     }
 
+    /// **R4: reabre la captura del testigo para el REMONTE in-process.** "Una sola vez" era exacto mientras
+    /// el único mount de un proceso fuera el del arranque; el swap de persona monta un segundo container
+    /// vivo el proceso, y dejar el testigo en su valor de arranque lo convertiría en una MENTIRA con
+    /// consecuencias inmediatas — `WelcomeMirrorRelaunchLogic.shouldRelaunch` compara contra
+    /// `.neutralNoMirror`, así que un testigo congelado en `.cloudMirrorOff` haría que "Restaurar de
+    /// iCloud" NO pidiera reabrir la app y el usuario se quedara esperando un import que nadie va a
+    /// arrancar, sobre un store sin mirror.
+    ///
+    /// Lo llama ÚNICAMENTE el orquestador del swap, y justo antes de evaluar `personalConfiguration` para
+    /// el container nuevo. No relaja la garantía de una-sola-vez del arranque: la re-arma un camino
+    /// explícito, que es lo contrario de un default permisivo.
+    static func reopenPersonalStoreMountedDecisionCaptureForSwap() {
+        personalStoreMountedDecisionCaptured = false
+    }
+
     // MARK: - Sign-out wipe (H4 — "Cerrar sesión" en `.cloud`)
 
     /// BOOT-CLEANUP del cierre de sesión en `.cloud`. DEBE correr ANTES de construir el
@@ -583,6 +629,23 @@ extension SwiftDataConfiguration {
 
         StorageModePersistence.write(.icloud, defaults: defaults)
         defaults.removeObject(forKey: StorageModePersistence.mirrorOffArmedKey)
+
+        // **R4 · el NEUTRO DURABLE, y vive AQUÍ por una razón que conviene no perder.** Este hook es el
+        // único código que devuelve el device a "recién instalado", y desde R4 tiene DOS caminos: el boot
+        // (cuando el swap in-process no fue posible) y el propio swap, que lo invoca con el proceso vivo.
+        // Armar la marca dentro del hook es lo que hace que los dos terminen en el MISMO estado — si la
+        // armara el coordinador de sign-out, el camino degradado dependería de que el arm y el wipe no se
+        // separaran nunca, y el kill entre ambos es justo lo que este orden kill-safe existe para tolerar.
+        //
+        // Va PEGADO al `write(.icloud)` porque son la misma decisión vista dos veces: el par vuelve a su
+        // estado virgen y el mount se declara sin elección hecha. Y va ANTES de `resetPrefs()` a propósito,
+        // aunque `removeUserPreferenceKeys` excluya `cloudSync.*`: depender de esa exclusión sería apoyar
+        // un invariante de mount en la lista de exclusiones de un barrido de preferencias.
+        //
+        // Sin esto, un device que acabara de remontar in-process y muriera antes de que el usuario eligiera
+        // volvería a `.iCloudMirror` en el arranque siguiente —el archivo del store YA existe, así que el
+        // predicado de R2 no lo cubre— adjuntando el mirror al store vaciado del humano que se fue.
+        StorageModePersistence.armNeutralMount(defaults)
 
         // El consent de GRUPOS (§C5) es un registro de la CUENTA y `removeUserPreferenceKeys` no lo
         // nombra (ni en su lista ni en sus exclusiones deliberadas): sin esto sobrevive al wipe y la
@@ -884,6 +947,15 @@ extension SwiftDataConfiguration {
             hasShownWelcomeChooser: defaults.bool(forKey: "hasShownWelcomeChooser"))
     }
 
+    /// R4 · adaptador de producción del NEUTRO DURABLE. Mismo contrato que su hermano: corre PRE-MOUNT y
+    /// lee `hasShownWelcomeChooser` con el literal de la key porque esto se evalúa en `@main`, antes de que
+    /// exista ningún `AppBootstrapper`.
+    static func shouldMountNeutralDurable(_ defaults: UserDefaults = .standard) -> Bool {
+        shouldMountNeutralDurable(
+            neutralMountArmed: StorageModePersistence.isNeutralMountArmed(defaults),
+            hasShownWelcomeChooser: defaults.bool(forKey: "hasShownWelcomeChooser"))
+    }
+
     // MARK: - Container CloudKit State
 
     private static let containerCloudKitKey = "containerCreatedWithCloudKit"
@@ -969,7 +1041,8 @@ extension SwiftDataConfiguration {
             mirrorOffArmed: StorageModePersistence.isMirrorOffArmed(),
             iCloudAvailable: isICloudAvailable(),
             secondarySessionActive: SecondarySessionStore.isActive(),
-            freshInstall: isFreshInstallForNeutralMount())
+            freshInstall: isFreshInstallForNeutralMount(),
+            neutralDurable: shouldMountNeutralDurable())
         capturePersonalStoreMountedDecisionOnce(decision)
         switch decision {
         case .secondaryCloudSession:

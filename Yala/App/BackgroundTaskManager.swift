@@ -49,6 +49,19 @@ final class BackgroundTaskManager {
         MigrationPhaseStore.shared.configure(container: container)
     }
 
+    /// **R4 · seam del swap de persona in-process.** Suelta el container ANTES de que el orquestador
+    /// verifique el release: este manager y el journal de migración lo retienen con vida propia (viven en
+    /// singletons de proceso, no en la jerarquía de vistas), así que desmontar la UI no basta para
+    /// matarlos. Se repone entero en el re-bootstrap, por el mismo `setModelContainer` de arriba.
+    ///
+    /// No es un `teardown`: no cancela ni desprograma un solo `BGTask`. Los requests encolados en el
+    /// sistema sobreviven al swap a propósito —son del DEVICE, no de la sesión— y sus handlers ya gatean
+    /// por container ausente.
+    func releaseModelContainerForSwap() {
+        modelContainer = nil
+        MigrationPhaseStore.shared.releaseContainerForSwap()
+    }
+
     /// Registers all background tasks with the system
     /// Call this early in app lifecycle (e.g., in bootstrap)
     func registerTasks() {

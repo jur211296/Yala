@@ -199,6 +199,23 @@ final class SpikeR3Harness {
         return problems
     }
 
+    /// Borra el store del spike **y lo DICE en el log**. Es lo que consume el botón «Borrar store del
+    /// spike» del panel, que hasta R4 llamaba a `deleteSpikeStoreFiles()` descartando su `[String]` de
+    /// problemas: el botón no daba ninguna señal ni cuando borraba ni cuando fallaba, así que el operador
+    /// no podía distinguir «ya no estaba» de «no se pudo borrar» — la misma familia de silencio que este
+    /// harness existe para no cometer. El trío se imprime ANTES y DESPUÉS porque el propio guard de
+    /// prefijo puede abortar sin tocar nada.
+    func deleteSpikeStoreAndLog() {
+        let before = Self.fileTrio()
+        let problems = Self.deleteSpikeStoreFiles()
+        let after = Self.fileTrio()
+        if problems.isEmpty {
+            line("borrado manual del store del spike: OK · trío \(before.description) → \(after.description)")
+        } else {
+            line("borrado manual del store del spike CON PROBLEMAS: \(problems.joined(separator: " · ")) · trío \(before.description) → \(after.description)")
+        }
+    }
+
     // MARK: - Espera de la muerte
 
     /// Poll de 10 ms (nunca un `sleep` largo: la regla de tests prohíbe >0.5 s) hasta `timeoutMs`.

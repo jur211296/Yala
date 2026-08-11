@@ -153,6 +153,42 @@ nonisolated enum StorageModePersistence {
         defaults.removeObject(forKey: signOutWipeIncludesGroupsKey)
     }
 
+    /// **R4 · el NEUTRO DURABLE.** Marca "este device no ha elegido nada y debe montar el store personal
+    /// NEUTRO (`cloudKitDatabase: .none` explícito)". Lo escribe el wipe de cierre de sesión —el mismo
+    /// código en sus DOS caminos, el boot-hook y el swap in-process— justo después de reponer el par a
+    /// `.icloud`.
+    ///
+    /// **Por qué hace falta una key y no basta con `isFreshInstallForNeutralMount` (R2).** El predicado de
+    /// R2 exige que NO exista el archivo del store, y eso es cierto para un device que acaba de ejecutar el
+    /// boot-wipe... pero deja de serlo en el instante en que el swap in-process **remonta**: el archivo
+    /// vuelve a existir, con el proceso todavía vivo. Sin este estado explícito, matar la app justo
+    /// entonces y reabrirla montaría `.iCloudMirror` sobre el store recién vaciado — adjuntando el mirror
+    /// al corpus del humano que se acaba de ir y obligando al SIGUIENTE a pagar el relanzamiento que este
+    /// chip existe para quitar.
+    ///
+    /// **Estado EXPLÍCITO, jamás ausencia de key** (§R4(a)): la ausencia de `cloudSync.storageMode`
+    /// significa `.icloud` por contrato, así que "neutro" no se puede expresar borrando nada.
+    ///
+    /// **Caduca sola con `hasShownWelcomeChooser`, y eso es lo que hace IMPOSIBLE el bucle.** El mount
+    /// neutro solo se honra mientras el usuario no haya elegido (ver `shouldMountNeutralDurable`). Si
+    /// eligiera un destino que SÍ necesita el mirror —onboarding privado, restaurar de iCloud—,
+    /// `WelcomeMirrorRelaunchLogic` le pide reabrir, y en ese arranque el flag del chooser ya es `true` ⇒
+    /// esta key queda INERTE y la tabla de mounts vuelve a la normal. Sin ese segundo término, el
+    /// relanzamiento del restore volvería a montar neutro y el usuario giraría para siempre.
+    static let neutralMountArmedKey = "cloudSync.neutralMountArmed"
+
+    static func armNeutralMount(_ defaults: UserDefaults = .standard) {
+        defaults.set(true, forKey: neutralMountArmedKey)
+    }
+
+    static func isNeutralMountArmed(_ defaults: UserDefaults = .standard) -> Bool {
+        defaults.bool(forKey: neutralMountArmedKey)
+    }
+
+    static func clearNeutralMountArm(_ defaults: UserDefaults = .standard) {
+        defaults.removeObject(forKey: neutralMountArmedKey)
+    }
+
     /// Marker "wipe de sesión SOLO-GRUPOS ARMADO" (G5-B, camino `groupsOnlySignOut`). Lo escribe el
     /// coordinador como ÚLTIMO write del cierre solo-grupos (kill-safe); el BOOT siguiente (pre-mount,
     /// `SwiftDataConfiguration.performGroupsOnlySignOutWipeIfArmed`) borra SOLO los archivos del store de

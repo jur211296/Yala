@@ -423,6 +423,39 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSignOut relaunch exit-on-background — proceso terminado limpio; el próximo launch corre el cleanup")
     }
 
+    // MARK: R4 · swap de persona in-process — sin PII
+
+    /// El swap ni se intentó: este proceso montó el store personal CON el mirror adjunto, y la Opción C
+    /// está acotada a transiciones en las que ninguno de los dos extremos lo tiene. No es un fallo — es el
+    /// guard de alcance haciendo su trabajo; el usuario ve la pantalla de relanzamiento de siempre.
+    static func swapSkippedMountHasMirror() {
+        logger.notice("CloudSignOut swap SKIPPED — el mount de este proceso lleva mirror adjunto; se conserva el relanzamiento")
+    }
+
+    /// **El canario del release verificado, y es la superficie de observación de todo este subsistema.**
+    /// El swap se abortó porque el container viejo no murió del todo: `container-alive` = alguien retiene
+    /// una referencia fuerte (una fila `@Model` basta); `descriptors-open:N` = el objeto murió pero la pila
+    /// de Core Data no soltó el archivo, que es EXACTAMENTE el estado que un `weak` sentinel a secas
+    /// declararía verificado. Un valor alto y sostenido en producción significa que el swap no rinde y que
+    /// todos los cierres de sesión están pagando el relanzamiento — no que haya datos en riesgo: el aborto
+    /// repone el container y el wipe de boot sigue armado.
+    static func swapReleaseAborted(reason: String) {
+        logger.error("CloudSignOut swap ABORTED reason=\(reason, privacy: .public) — release NO verificado; degrada al relanzamiento de boot")
+    }
+
+    /// El wipe se consumó pero el container nuevo no se pudo construir. No hay riesgo de datos: el disco
+    /// quedó consistente (store vacío, par `.icloud`, neutro armado) y la pantalla es el cover terminal, así
+    /// que el arranque siguiente monta neutro y aterriza en el Welcome. Un valor >0 en producción apunta al
+    /// mount, no al swap.
+    static func swapRemountFailed() {
+        logger.error("CloudSignOut swap remount FAILED — wipe consumado; el arranque siguiente monta neutro")
+    }
+
+    /// Swap consumado: store vaciado, container nuevo montado y jerarquía reconstruida sin relanzar.
+    static func swapCompleted() {
+        logger.notice("CloudSignOut swap COMPLETED — store vaciado y remontado en sesión; sin relanzamiento")
+    }
+
     // MARK: Sesión secundaria (M1) — sin PII
 
     /// BOOT: el wipe secundario armado se ejecutó (archivos `-Secondary` borrados, descriptor

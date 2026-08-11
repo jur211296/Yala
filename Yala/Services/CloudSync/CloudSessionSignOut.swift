@@ -307,6 +307,26 @@ final class CloudSessionSignOut {
         CloudSyncBreadcrumb.signOutWipeArmed()
         clearLocalSurfacesForArmedWipe()
         phase = .awaitingRelaunch
+
+        // **R4 · el swap de persona SIN relanzar.** Va aquí, en la ÚLTIMA línea y no una antes, y el orden
+        // es lo que convierte esto en una mejora sin riesgo nuevo:
+        //  · el wipe de boot ya está ARMADO ⇒ si el swap no puede ejecutarse (mount con mirror, release no
+        //    verificado, kill del proceso a mitad), el boot siguiente hace exactamente lo de siempre. La
+        //    red se CONSERVA y este camino jamás la desarma por su cuenta — la desarma el propio wipe al
+        //    ejecutarse, aquí o en el boot;
+        //  · `phase` ya es `.awaitingRelaunch` ⇒ el cover terminal está en pantalla y el blocker de la
+        //    matriz contiene el router antes de que la jerarquía se desmonte, así que el usuario no ve un
+        //    hueco entre el árbol viejo y el nuevo;
+        //  · y el swap **no toca credenciales ni outbox**: todo eso ya se resolvió arriba, con la sesión
+        //    viva y el push-all verificado dos veces.
+        //
+        // Si sale `.swapped`, el store quedó vacío, el container remontado NEUTRO y la app está en el
+        // Welcome — la persona siguiente entra sin haber cerrado la app ni una vez. La fase se devuelve a
+        // `.idle` SOLO en ese caso: mientras el cierre siga dependiendo de un relanzamiento, la fase es lo
+        // que sostiene el cover y el exit-on-background.
+        if await PersonalContainerSwap.attemptSignOutSwap() == .swapped {
+            phase = .idle
+        }
     }
 
     // MARK: - Camino secundario (M1) — push-all verificado + wipe SECUNDARIO armado

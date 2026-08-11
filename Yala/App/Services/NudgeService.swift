@@ -47,7 +47,7 @@ final class NudgeService {
 
     // MARK: - Context Injection
 
-    func setContext(_ context: ModelContext) {
+    func setContext(_ context: ModelContext?) {
         self.modelContext = context
     }
 

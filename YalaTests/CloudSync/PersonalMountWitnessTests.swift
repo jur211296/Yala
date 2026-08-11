@@ -186,7 +186,7 @@ struct PersonalMountWitnessParityTests {
         for available in [true, false] {
             let decision = SwiftDataConfiguration.personalStoreDecision(
                 storageMode: .icloud, mirrorOffArmed: false, iCloudAvailable: available,
-                freshInstall: false)
+                freshInstall: false, neutralDurable: false)
             #expect(decision == (available ? .iCloudMirror : .localNoMirror))
             #expect(decision.mirrorsToICloud == available,
                     "el eje B y la disponibilidad coinciden en las celdas alcanzables")
@@ -199,16 +199,16 @@ struct PersonalMountWitnessParityTests {
         // de store falla. Con el término apagado, las cuatro decisiones de siempre salen intactas.
         #expect(SwiftDataConfiguration.personalStoreDecision(
             storageMode: .icloud, mirrorOffArmed: false, iCloudAvailable: true,
-            secondarySessionActive: true, freshInstall: false) == .secondaryCloudSession)
+            secondarySessionActive: true, freshInstall: false, neutralDurable: false) == .secondaryCloudSession)
         #expect(SwiftDataConfiguration.personalStoreDecision(
             storageMode: .cloud, mirrorOffArmed: true, iCloudAvailable: true,
-            freshInstall: false) == .cloudMirrorOff)
+            freshInstall: false, neutralDurable: false) == .cloudMirrorOff)
         #expect(SwiftDataConfiguration.personalStoreDecision(
             storageMode: .cloud, mirrorOffArmed: false, iCloudAvailable: true,
-            freshInstall: false) == .iCloudMirror)
+            freshInstall: false, neutralDurable: false) == .iCloudMirror)
         #expect(SwiftDataConfiguration.personalStoreDecision(
             storageMode: .icloud, mirrorOffArmed: false, iCloudAvailable: false,
-            freshInstall: false) == .localNoMirror)
+            freshInstall: false, neutralDurable: false) == .localNoMirror)
         #expect(Decision.allCases.count == 5, "R2 añade el mount neutro, y ninguna más")
     }
 }
@@ -318,10 +318,17 @@ struct PersonalMountWitnessWiringTests {
             .joined(separator: "\n")
     }
 
-    @Test("`YalaApp` registra el testigo durable con la DECISIÓN, no con la disponibilidad de iCloud")
-    func yalaApp_marksWithTheMountDecision() throws {
-        let src = try Self.source("Yala/App/YalaApp.swift")
-        let container = try Self.body(of: "var sharedModelContainer: ModelContainer = {", in: src)
+    /// **R4 movió el constructor del container de `YalaApp` a `PersonalContainerHost.makeContainer()`** —
+    /// el swap de persona necesita poder remontar con el proceso vivo, y un `struct App` no da dónde
+    /// hacerlo. El cuerpo se movió ENTERO y sin partirlo justamente para que estos dos escáneres sigan
+    /// midiendo lo mismo: el testigo se registra con la DECISIÓN, y después de evaluarla.
+    private static let containerBuilder = "static func makeContainer() throws -> ModelContainer {"
+    private static let containerBuilderPath = "Yala/Services/CloudSync/PersonalContainerSwap.swift"
+
+    @Test("el constructor del container registra el testigo durable con la DECISIÓN, no con la disponibilidad de iCloud")
+    func containerBuilder_marksWithTheMountDecision() throws {
+        let src = try Self.source(Self.containerBuilderPath)
+        let container = try Self.body(of: Self.containerBuilder, in: src)
 
         #expect(container.contains("markContainerCloudKitState(") &&
                 container.contains("decision: SwiftDataConfiguration.personalStoreMountedDecision"), """
@@ -335,12 +342,12 @@ struct PersonalMountWitnessWiringTests {
     }
 
     @Test("el registro va DESPUÉS de evaluar `personalConfiguration` (si no, registra el default)")
-    func yalaApp_evaluatesTheMountBeforeRecordingIt() throws {
+    func containerBuilder_evaluatesTheMountBeforeRecordingIt() throws {
         // El testigo lo captura `personalConfiguration` en su primera evaluación. Invertir estas dos líneas
         // deja `personalStoreMountedDecision` en su default `.iCloudMirror` en el instante del registro ⇒ el
         // testigo durable diría "monté con espejo" SIEMPRE, y ninguna tabla de las de arriba lo notaría.
-        let src = try Self.source("Yala/App/YalaApp.swift")
-        let container = try Self.body(of: "var sharedModelContainer: ModelContainer = {", in: src)
+        let src = try Self.source(Self.containerBuilderPath)
+        let container = try Self.body(of: Self.containerBuilder, in: src)
         let mount = try #require(container.range(of: "SwiftDataConfiguration.personalConfiguration"))
         let mark = try #require(container.range(of: "markContainerCloudKitState("))
         #expect(mount.lowerBound < mark.lowerBound)

@@ -48,7 +48,7 @@ final class GroupTransactionBridge {
 
     // MARK: - Context Injection
 
-    func setContext(_ context: ModelContext) {
+    func setContext(_ context: ModelContext?) {
         self.modelContext = context
     }
 

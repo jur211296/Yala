@@ -89,7 +89,7 @@ final class CurrencyConverter: CurrencyConverting {
 
     /// Sets the ModelContext for database-backed conversions.
     /// Called from AppBootstrapper during app initialization.
-    func setContext(_ context: ModelContext) {
+    func setContext(_ context: ModelContext?) {
         self.modelContext = context
     }
 
