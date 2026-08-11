@@ -190,8 +190,8 @@
 "welcome.chooser.optionNew.body" = "Start from scratch with me. I'll help you set everything up step by step.";
 "welcome.chooser.optionExisting.title" = "I already have an account";
 "welcome.chooser.optionExisting.body" = "I've used Yala before and want my data back, whether it's in iCloud or in my account.";
-"welcome.chooser.optionInvite.title" = "I was invited to a group";
-"welcome.chooser.optionInvite.body" = "I have an invitation link and want to join.";
+"welcome.chooser.optionInvite.title" = "I'm here for a group";
+"welcome.chooser.optionInvite.body" = "I want to split expenses with friends: create a group or join one.";
 
 "welcome.restore.searching" = "Looking for your data in iCloud…";
 "welcome.restore.searchingTip" = "This may take a few seconds.";
@@ -4695,3 +4695,21 @@
 
 /* Welcome · CTA del alta born-cloud sin relanzamiento (R2) */
 "welcome.bornCloud.readyCta" = "Get started";
+
+/* Title of the two-paths groups screen in the Welcome flow */
+"welcome.groups.title" = "How do you want to start with your group?";
+
+/* Subtitle of the two-paths groups screen in the Welcome flow */
+"welcome.groups.subtitle" = "Both paths get you to the same place.";
+
+/* Card title: the user organizes a new group */
+"welcome.groups.createTitle" = "Create my first group";
+
+/* Card body: the user creates the group and invites others */
+"welcome.groups.createBody" = "You do the inviting. Log what everyone pays and Yala keeps the accounts.";
+
+/* Card title: the user already received an invitation link */
+"welcome.groups.joinTitle" = "I have an invitation";
+
+/* Card body: paste the invitation link to join */
+"welcome.groups.joinBody" = "Paste the link you were sent and you're in.";

@@ -110,4 +110,66 @@ final class WelcomeChooserUITests: XCTestCase {
         XCTAssertTrue(app.buttons["welcome_chooser_new"].waitForExistence(timeout: 10),
                       "El back no volvió al chooser.")
     }
+
+    /// G2 de Grupos-first: la card «Vengo por un grupo» ya no sale disparada a la recuperación de
+    /// invitación — abre el step de los DOS caminos. Este test es el pin del re-ruteo: devolver el
+    /// `.invite` del chooser al portal directo (`leaveWelcome(to: .inviteRecovery)`) lo pone en rojo,
+    /// porque las cards del step no llegan a existir.
+    ///
+    /// **Sin `-uitest-cloud-chooser`**: la card `.invite` se pinta desde `Branch.allCases` y no está
+    /// gateada por nada, así que este recorrido es el de producción.
+    ///
+    /// La rama «crear» NO se afirma aquí porque en G2 **no existe**: queda inerte tras un TODO que G3
+    /// consume, y su card ni se pinta. Un test que la esperase estaría afirmando un stub.
+    func testGroupsChooser_inviteCardOpensTwoPaths_andJoinStillReachesInviteRecovery() throws {
+        let app = XCUIApplication()
+        app.launchForUITest(reset: true, skipOnboarding: false, seed: nil)
+
+        let heroCTA = app.buttons["welcome_hero_cta"]
+        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
+        heroCTA.tap()
+
+        // La card conserva su identifier (`Branch.invite` no se renombra: es lo que tocan los XCUI
+        // deterministas del área `onboarding-flow`); lo que cambia es su destino.
+        let inviteBranch = app.buttons["welcome_chooser_invite"]
+        XCTAssertTrue(inviteBranch.waitForExistence(timeout: 10), "No apareció la card «Vengo por un grupo».")
+        inviteBranch.tap()
+
+        let joinCard = app.buttons["welcome_groups_join"]
+        XCTAssertTrue(joinCard.waitForExistence(timeout: 10),
+                      "La card de grupos no abrió el step de dos caminos.")
+
+        // El back del step vuelve al chooser (nivel 1).
+        let backButton = app.buttons["welcome_back_button"].firstMatch
+        XCTAssertTrue(backButton.waitForExistence(timeout: 10), "No apareció el botón Volver del step.")
+        backButton.tap()
+        XCTAssertTrue(inviteBranch.waitForExistence(timeout: 10), "El back no volvió al chooser.")
+
+        // Y el invitado no pierde nada: «Tengo una invitación» sale por el MISMO destino de siempre y
+        // aterriza en la recuperación de invitación, que NO es una pantalla del WelcomeFlow.
+        inviteBranch.tap()
+        XCTAssertTrue(joinCard.waitForExistence(timeout: 10), "El step no volvió a montarse.")
+        joinCard.tap()
+
+        // El desmontaje del step es la señal de que se salió del cover (`exists` del fondo no probaría
+        // nada, ver `.claude/rules/testing.md`), y el campo de pegar el enlace es contenido NUEVO que el
+        // Welcome no tiene en ninguna de sus pantallas.
+        XCTAssertTrue(waitForNonExistence(of: joinCard, timeout: 10),
+                      "El step de grupos no se desmontó: no se salió del Welcome.")
+        //
+        // El campo es un `TextField` y no un `textView` pese al `axis: .vertical` — MEDIDO con
+        // `app.debugDescription` sobre esta misma corrida, no supuesto: en el árbol sale como
+        // `TextField … placeholderValue: 'https://yala-app.pe/invite?...'`.
+        let linkField = app.textFields.firstMatch
+        XCTAssertTrue(linkField.waitForExistence(timeout: 10),
+                      "No apareció el campo de pegar el enlace: la card de unirse no llegó a InviteRecoveryView.")
+    }
+
+    /// `waitForNonExistence` local: el helper compartido de `Support/` cubre `isHittable`, y aquí lo que
+    /// prueba el desmontaje es la AUSENCIA del elemento.
+    private func waitForNonExistence(of element: XCUIElement, timeout: TimeInterval) -> Bool {
+        let predicate = NSPredicate(format: "exists == false")
+        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: element)
+        return XCTWaiter().wait(for: [expectation], timeout: timeout) == .completed
+    }
 }

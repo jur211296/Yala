@@ -25,6 +25,10 @@ enum WelcomeFlowStep {
     /// 2º nivel de "Soy nuevo" (A4 de D-A7, §k.2): privacidad total (iCloud) | cuenta en la nube.
     /// Solo alcanzable con >1 opción visible (bypass en `handleNewBranch`).
     case newChooser
+    /// G2 · 2º nivel de «Vengo por un grupo»: los dos caminos con los que se empieza un grupo —crearlo o
+    /// entrar con la invitación—. La rama `.invite` del chooser deja de salir por el portal para venir
+    /// aquí; el que ya tiene enlace sale por el MISMO `Destination .inviteRecovery` desde la card.
+    case groupsChooser
     /// R2 · TERMINAL: este proceso montó el store NEUTRO y el destino elegido necesita el mirror de
     /// CloudKit ⇒ hay que reabrir la app. Vive DENTRO de este cover a propósito: un cover propio sería una
     /// presentación nueva colgando del anchor de `ContentView` (matriz de readiness, regla (3) de
@@ -124,10 +128,23 @@ struct WelcomeFlowContainer: View {
                         switch branch {
                         case .restore: handleExistingBranch()
                         case .new: handleNewBranch()
-                        case .invite: leaveWelcome(to: .inviteRecovery) { onSelectBranch(branch) }
+                        // G2: la card ya no es «me invitaron» sino «vengo por un grupo», así que no
+                        // puede salir directa a la recuperación de invitación — abre el step de los
+                        // dos caminos y es ahí donde el invitado elige el suyo.
+                        case .invite: goTo(.groupsChooser)
                         }
                     },
                     onBack: { goTo(.hero) }
+                )
+                .transition(.opacity)
+            case .groupsChooser:
+                WelcomeGroupsChooserView(
+                    // G3 cablea `onCreate`. Sin handler la card no se pinta: un stub que enseñara un
+                    // alert sería el camino muerto que el spec prohíbe.
+                    onJoin: {
+                        leaveWelcome(to: .inviteRecovery) { onSelectBranch(.invite) }
+                    },
+                    onBack: { goTo(.chooser) }
                 )
                 .transition(.opacity)
             case .existingChooser:
@@ -162,10 +179,16 @@ struct WelcomeFlowContainer: View {
     /// y aquí se decide si antes hay que reabrir la app.
     ///
     /// Está en el CONTAINER y no en los callbacks de `ContentView` por una razón concreta: los destinos se
-    /// producen en CINCO sitios (el `.invite` del chooser, el sub-chooser existente, el encaminamiento por
-    /// faro y las dos cards del sub-chooser nuevo), varios de ellos con bypass, y repartir la comprobación
-    /// por los cinco es exactamente cómo divergen. Con un portal único, añadir una salida nueva obliga a
-    /// nombrar su `Destination`.
+    /// producen en CINCO sitios (la card «Tengo una invitación» del sub-chooser de grupos, el sub-chooser
+    /// existente, el encaminamiento por faro y las dos cards del sub-chooser nuevo), varios de ellos con
+    /// bypass, y repartir la comprobación por los cinco es exactamente cómo divergen. Con un portal único,
+    /// añadir una salida nueva obliga a nombrar su `Destination`.
+    ///
+    /// G2 (2026-08-11) movió el primero de nivel: lo producía la card `.invite` del chooser y ahora lo
+    /// produce la card de unirse DENTRO del step de grupos. El `Destination` es el MISMO —`.inviteRecovery`,
+    /// con su misma fila `requiresMirror`— así que el invitado no pierde nada; lo que cambia es que
+    /// `hasShownWelcomeChooser` deja de marcarse al tapear la card de nivel 1, igual que ya pasaba con las
+    /// otras dos ramas cuando muestran su 2º nivel.
     ///
     /// Eran SEIS hasta el 2026-08-11: el alert «Detectamos tu cuenta» tenía el suyo (`.restoreICloud`), y
     /// se fue entero con el alert cuando la reentrada pasó a ser decisión del usuario.

@@ -4848,6 +4848,18 @@ enum L10n {
             // sobrevive (16 locales).
         }
 
+        /// Step de dos caminos de «Vengo por un grupo» (G2 de Grupos-first). La card del chooser dejó de
+        /// hablarle solo al invitado con enlace: aquí elige entre organizar su primer grupo o pegar la
+        /// invitación que ya tiene.
+        enum Groups {
+            static var title: String { ls("welcome.groups.title", comment: "") }
+            static var subtitle: String { ls("welcome.groups.subtitle", comment: "") }
+            static var createTitle: String { ls("welcome.groups.createTitle", comment: "") }
+            static var createBody: String { ls("welcome.groups.createBody", comment: "") }
+            static var joinTitle: String { ls("welcome.groups.joinTitle", comment: "") }
+            static var joinBody: String { ls("welcome.groups.joinBody", comment: "") }
+        }
+
         /// Alta born-cloud desde la card «nube» de "Soy nuevo" (A5 de D-A7). Solo tres keys propias:
         /// las fases terminales (relanzamiento, espera de líder, mismatch, error) y la nota §13 del
         /// método reusan las de `Cloud` — son literalmente el mismo hecho.

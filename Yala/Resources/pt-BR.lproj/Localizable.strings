@@ -4072,8 +4072,8 @@
 "welcome.chooser.optionNew.body" = "Começa do zero comigo. Te ajudo a configurar tudo passo a passo.";
 "welcome.chooser.optionExisting.title" = "Já tenho conta";
 "welcome.chooser.optionExisting.body" = "Já usei o Yala e quero recuperar meus dados, do iCloud ou da minha conta.";
-"welcome.chooser.optionInvite.title" = "Me convidaram para um grupo";
-"welcome.chooser.optionInvite.body" = "Tenho um link de convite e quero entrar.";
+"welcome.chooser.optionInvite.title" = "Vim por causa de um grupo";
+"welcome.chooser.optionInvite.body" = "Quero dividir despesas com amigos: criar um grupo ou entrar em um.";
 
 "welcome.restore.searching" = "Buscando seus dados no iCloud…";
 "welcome.restore.searchingTip" = "Pode levar alguns segundos.";
@@ -5431,3 +5431,21 @@
 
 /* Welcome · CTA del alta born-cloud sin relanzamiento (R2) */
 "welcome.bornCloud.readyCta" = "Começar";
+
+/* Title of the two-paths groups screen in the Welcome flow */
+"welcome.groups.title" = "Como você quer começar com seu grupo?";
+
+/* Subtitle of the two-paths groups screen in the Welcome flow */
+"welcome.groups.subtitle" = "Os dois caminhos levam ao mesmo lugar.";
+
+/* Card title: the user organizes a new group */
+"welcome.groups.createTitle" = "Criar meu primeiro grupo";
+
+/* Card body: the user creates the group and invites others */
+"welcome.groups.createBody" = "Você convida. Registra o que cada um paga e o Yala faz as contas.";
+
+/* Card title: the user already received an invitation link */
+"welcome.groups.joinTitle" = "Tenho um convite";
+
+/* Card body: paste the invitation link to join */
+"welcome.groups.joinBody" = "Cole o link que te enviaram e você entra no grupo.";

@@ -365,11 +365,16 @@ struct NeutralMountWiringTests {
             """)
     }
 
-    /// **El portal del Welcome, y por qué el escáner es la única red.** Los destinos se producen en seis
-    /// sitios distintos del container (dos sub-choosers, el `.invite`, el faro y el alert del Hero), varios
-    /// con bypass. Una salida que se olvide de pasar por `leaveWelcome` no rompe ningún test de
-    /// comportamiento: simplemente entra al restore sobre un store sin mirror y la pantalla dice que la
-    /// cuenta está vacía.
+    /// **El portal del Welcome, y por qué el escáner es la única red.** Los destinos se producen en varios
+    /// sitios distintos del container (los tres sub-choosers y el faro), varios con bypass. Una salida que
+    /// se olvide de pasar por `leaveWelcome` no rompe ningún test de comportamiento: simplemente entra al
+    /// restore sobre un store sin mirror y la pantalla dice que la cuenta está vacía.
+    ///
+    /// La salida de la rama de grupos se busca por `onSelectBranch(` y no por su argumento: G2 la movió del
+    /// `.invite` del chooser a la card de unirse del step nuevo, y ahí el argumento es el literal `.invite`
+    /// en vez de la variable `branch`. Buscar el prefijo cubre las dos formas y cualquier tercera — lo que
+    /// el contrato exige es que la llamada esté DENTRO de una closure de `leaveWelcome`, no cómo se
+    /// escriba su argumento.
     @Test("R2 (e): TODA salida del Welcome pasa por el portal del relanzamiento")
     func everyWelcomeExit_goesThroughThePortal() throws {
         let src = try Self.source("Yala/App/Views/Onboarding/WelcomeFlowContainer.swift")
@@ -380,7 +385,7 @@ struct NeutralMountWiringTests {
         // Los cinco callbacks que ABANDONAN el cover. Cada uno tiene que aparecer dentro de una closure de
         // `leaveWelcome`, nunca invocado a pelo.
         for exit in ["onSelectPrivateAccount()", "onSelectCloudAccount()", "onSelectExistingOption(option)",
-                     "onBeaconRoutesToCloudSignIn(provider)", "onSelectBranch(branch)"] {
+                     "onBeaconRoutesToCloudSignIn(provider)", "onSelectBranch("] {
             let occurrences = code.components(separatedBy: exit).count - 1
             #expect(occurrences >= 1, "salida no encontrada: \(exit) (¿renombrada?)")
             for range in code.ranges(of: exit) {
