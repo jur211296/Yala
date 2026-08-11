@@ -4678,7 +4678,6 @@
 "welcome.new.subtitle" = "Elegí dónde querés guardar tus datos.";
 "welcome.new.privateTitle" = "Solo vos y tus dispositivos";
 "welcome.new.privateBody" = "Tus datos viven en tu iPhone y se sincronizan con tu iCloud privado. Nadie más puede leerlos, ni siquiera nosotros.";
-"welcome.new.recommendedBadge" = "Recomendado";
 "welcome.new.cloudTitle" = "Tu cuenta en la nube";
 "welcome.new.cloudBody" = "Entrá con Apple o Google y accedé a tus datos desde cualquier dispositivo, aunque no uses iCloud. Se guardan en los servidores de Yala y nuestro equipo podría verlos para darte soporte y funciones inteligentes.";
 "welcome.new.cloudWarning" = "En este modo renunciás a la privacidad total de la otra opción.";

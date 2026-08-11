@@ -5426,7 +5426,6 @@
 "welcome.new.subtitle" = "Kies waar je je gegevens wilt bewaren.";
 "welcome.new.privateTitle" = "Alleen jij en je apparaten";
 "welcome.new.privateBody" = "Je gegevens blijven op je iPhone en synchroniseren via je privé-iCloud. Niemand anders kan ze lezen, wij ook niet.";
-"welcome.new.recommendedBadge" = "Aanbevolen";
 "welcome.new.cloudTitle" = "Je account in de cloud";
 "welcome.new.cloudBody" = "Log in met Apple of Google en kom bij je gegevens vanaf elk apparaat, ook zonder iCloud. Ze staan dan op de servers van Yala, en ons team zou ze kunnen inzien om je te helpen en je slimme functies te bieden.";
 "welcome.new.cloudWarning" = "In deze modus geef je de volledige privacy van de andere optie op.";

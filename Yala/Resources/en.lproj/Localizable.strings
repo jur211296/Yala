@@ -5420,7 +5420,6 @@
 "welcome.new.subtitle" = "Choose where you want your data to live.";
 "welcome.new.privateTitle" = "Just you and your devices";
 "welcome.new.privateBody" = "Your data lives on your iPhone and syncs through your private iCloud. Nobody else can read it, not even us.";
-"welcome.new.recommendedBadge" = "Recommended";
 "welcome.new.cloudTitle" = "Your account in the cloud";
 "welcome.new.cloudBody" = "Sign in with Apple or Google and reach your data from any device, even without iCloud. It's stored on Yala's servers, and our team could see it to give you support and smart features.";
 "welcome.new.cloudWarning" = "In this mode you give up the total privacy of the other option.";

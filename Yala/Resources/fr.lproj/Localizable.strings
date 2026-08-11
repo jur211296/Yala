@@ -5415,7 +5415,6 @@
 "welcome.new.subtitle" = "Choisis où tu veux garder tes données.";
 "welcome.new.privateTitle" = "Toi et tes appareils, c'est tout";
 "welcome.new.privateBody" = "Tes données restent sur ton iPhone et se synchronisent via ton iCloud privé. Personne d'autre ne peut les lire, pas même nous.";
-"welcome.new.recommendedBadge" = "Recommandé";
 "welcome.new.cloudTitle" = "Ton compte dans le cloud";
 "welcome.new.cloudBody" = "Connecte-toi avec Apple ou Google et retrouve tes données depuis n'importe quel appareil, même sans iCloud. Elles sont enregistrées sur les serveurs de Yala, et notre équipe pourrait les consulter pour t'aider et te proposer des fonctions intelligentes.";
 "welcome.new.cloudWarning" = "Dans ce mode, tu renonces à la confidentialité totale de l'autre option.";

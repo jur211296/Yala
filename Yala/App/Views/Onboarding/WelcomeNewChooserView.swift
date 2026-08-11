@@ -4,9 +4,15 @@
 //
 //  Sub-chooser de "Soy nuevo" (2º nivel del Welcome, A4 de D-A7 · §k.2): dónde
 //  viven los datos personales — privacidad total (iCloud) o cuenta en la nube de
-//  Yala. Calco estructural de `WelcomeExistingChooserView`; lo que añade es la
-//  JERARQUÍA que pide §k.6: la opción privacy-first va arriba y destacada con
-//  "Recomendado", y la de nube dice la renuncia sin eufemismos, inline y visible.
+//  Yala. Calco estructural de `WelcomeExistingChooserView`; lo que añade es que la
+//  card de nube dice la renuncia sin eufemismos, inline y visible.
+//
+//  NINGUNA de las dos opciones se recomienda — decisión de producto del owner
+//  (2026-08-10), que SUPERSEDE el §k.6 de arquitectura en esta pantalla: aquel pedía
+//  destacar la privacy-first con un badge "Recomendado" y ese badge ya no existe, ni en
+//  la vista ni en la etiqueta de accesibilidad. La elección es netamente del usuario.
+//  Lo que §k.6 sigue gobernando aquí y NO cambia: el ORDEN de las cards (la privada va
+//  primero) y la renuncia dicha dentro de la card que la provoca.
 //
 //  Solo se monta con MÁS de una opción visible: con una sola (producción con el
 //  percent remoto en 0, backend no configurado, o uitest sin el opt-in) el
@@ -99,12 +105,16 @@ struct WelcomeNewChooserView: View {
         }
     }
 
-    /// Etiqueta de accesibilidad completa: el badge y el aviso son parte del mensaje, no adorno —
-    /// leerlos importa especialmente en la card de nube, que es donde vive la renuncia.
+    /// Etiqueta de accesibilidad completa: el aviso de la card de nube es parte del mensaje, no
+    /// adorno — es donde vive la renuncia y VoiceOver tiene que leerla.
+    ///
+    /// La card privada NO lleva ningún distintivo: mientras existió el badge "Recomendado" esta
+    /// etiqueta lo incluía, y retirarlo de la vista dejándolo aquí le habría dicho a VoiceOver que
+    /// Yala recomienda una opción que en pantalla ya no recomienda.
     private func accessibilityLabel(for option: WelcomeAccountChoiceLogic.NewOption) -> String {
         switch option {
         case .privateAccount:
-            "\(title(for: option)). \(L10n.Welcome.New.recommendedBadge). \(body(for: option))"
+            "\(title(for: option)). \(body(for: option))"
         case .cloudAccount:
             "\(title(for: option)). \(body(for: option)). \(L10n.Welcome.New.cloudWarning)"
         }
@@ -119,18 +129,6 @@ struct WelcomeNewChooserView: View {
                 .font(.system(size: 22, weight: .semibold))
                 .foregroundStyle(tint)
         }
-    }
-
-    /// "Recomendado" (§k.6: la privacy-first es la opción primaria y se ve).
-    private var recommendedBadge: some View {
-        Text(L10n.Welcome.New.recommendedBadge)
-            .font(DS.Typography.labelTiny)
-            .foregroundStyle(Color.neonCyan)
-            .padding(.horizontal, DS.Spacing.sm)
-            .padding(.vertical, DS.Spacing.xxs)
-            .background(
-                Capsule().fill(Color.neonCyan.opacity(0.18))
-            )
     }
 
     /// La renuncia, dicha inline y sin eufemismos (§k.6). No es un disclaimer escondido: va DENTRO
@@ -158,12 +156,6 @@ struct WelcomeNewChooserView: View {
                 systemIconCircle(name: iconName(for: option), tint: iconTint(for: option))
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    // El badge va ENCIMA y no al lado: medido en sim, junto a un título de dos
-                    // líneas lo parte, y con las traducciones largas (de/pl) sería peor.
-                    if option == .privateAccount {
-                        recommendedBadge
-                    }
-
                     Text(title(for: option))
                         .font(DS.Typography.headline)
                         .foregroundStyle(.white)

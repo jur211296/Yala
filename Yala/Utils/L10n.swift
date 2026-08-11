@@ -4832,7 +4832,9 @@ enum L10n {
             static var subtitle: String { ls("welcome.new.subtitle", comment: "") }
             static var privateTitle: String { ls("welcome.new.privateTitle", comment: "") }
             static var privateBody: String { ls("welcome.new.privateBody", comment: "") }
-            static var recommendedBadge: String { ls("welcome.new.recommendedBadge", comment: "") }
+            // `recommendedBadge` RETIRADA (2026-08-10): ninguna de las dos opciones se recomienda
+            // — decisión del owner que supersede el §k.6. Se quitó de la vista, de la etiqueta de
+            // accesibilidad y de los 16 locales; sin call-sites, la key no sobrevive.
             static var cloudTitle: String { ls("welcome.new.cloudTitle", comment: "") }
             static var cloudBody: String { ls("welcome.new.cloudBody", comment: "") }
             /// La renuncia, dicha sin eufemismos e inline en la card (§k.6).

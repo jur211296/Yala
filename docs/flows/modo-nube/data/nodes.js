@@ -68,7 +68,7 @@ window.ATLAS_NODES = {
   "alta-newchooser": {
     title: "Sub-chooser «Soy nuevo» (privado | nube)",
     shot: "alta-newchooser.png",
-    sees: "Dos cards: privacidad total (iCloud) y cuenta en la nube. Con UNA sola opción visible esta pantalla NO se monta (bypass) — que es el recorrido de producción de hoy.",
+    sees: "Dos cards: privacidad total (iCloud) y cuenta en la nube. NINGUNA lleva distintivo de recomendada — la elección es del usuario. La de nube muestra su renuncia de privacidad inline. Con UNA sola opción visible esta pantalla NO se monta (bypass) — que es el recorrido de producción de hoy.",
     persists: "Nada.",
     exits: "Back → chooser.",
     code: [
@@ -77,7 +77,10 @@ window.ATLAS_NODES = {
       { t: "WelcomeAccountChoiceLogic.swift:73 `bypass`", d: "una sola opción ⇒ se navega directo a ella" },
       { t: "CloudRemoteConfig.swift:133 `cloudOnboardingChoiceEnabled`", d: "el percent remoto — `\"0\"` en producción, fail-closed" }
     ],
-    notes: ["`bornCloudEnabled` es la constante COMPILADA `CloudSyncFlags.bornCloudChoiceEnabled`, hoy `true`. La palanca de release es el PERCENT remoto, no la constante — la fila «A7 flipa la constante» del spec quedó obsoleta (anotación 1 del punto de control)."]
+    notes: [
+      "`bornCloudEnabled` es la constante COMPILADA `CloudSyncFlags.bornCloudChoiceEnabled`, hoy `true`. La palanca de release es el PERCENT remoto, no la constante — la fila «A7 flipa la constante» del spec quedó obsoleta (anotación 1 del punto de control).",
+      "⚠︎ La captura `alta-newchooser.png` está OBSOLETA a propósito (2026-08-10, chip RC): muestra el badge «Recomendado» sobre la card privada, que ya no existe ni en la vista ni en la etiqueta de accesibilidad. Se re-captura en la pasada de screenshots ya prevista."
+    ]
   },
 
   "alta-privado": {

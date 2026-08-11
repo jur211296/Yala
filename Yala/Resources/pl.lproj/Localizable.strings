@@ -5426,7 +5426,6 @@
 "welcome.new.subtitle" = "Wybierz, gdzie chcesz przechowywać swoje dane.";
 "welcome.new.privateTitle" = "Tylko Ty i Twoje urządzenia";
 "welcome.new.privateBody" = "Twoje dane zostają na iPhonie i synchronizują się przez Twój prywatny iCloud. Nikt inny ich nie odczyta, my też nie.";
-"welcome.new.recommendedBadge" = "Zalecane";
 "welcome.new.cloudTitle" = "Twoje konto w chmurze";
 "welcome.new.cloudBody" = "Zaloguj się przez Apple lub Google i korzystaj ze swoich danych na każdym urządzeniu, nawet bez iCloud. Trafiają na serwery Yala, a nasz zespół mógłby je zobaczyć, żeby udzielić Ci wsparcia i zaoferować inteligentne funkcje.";
 "welcome.new.cloudWarning" = "W tym trybie rezygnujesz z pełnej prywatności drugiej opcji.";

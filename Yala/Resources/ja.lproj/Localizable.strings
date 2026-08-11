@@ -5426,7 +5426,6 @@
 "welcome.new.subtitle" = "データの保存場所を選んでください。";
 "welcome.new.privateTitle" = "あなたとあなたのデバイスだけ";
 "welcome.new.privateBody" = "データはiPhoneに保存され、あなただけのiCloudで同期します。ほかの誰も読めません。私たちも読めません。";
-"welcome.new.recommendedBadge" = "おすすめ";
 "welcome.new.cloudTitle" = "クラウドのアカウント";
 "welcome.new.cloudBody" = "AppleまたはGoogleでサインインすると、iCloudがなくてもどのデバイスからでもデータを見られます。データはYalaのサーバーに保存され、サポートや便利な機能のために私たちのチームが見ることがあります。";
 "welcome.new.cloudWarning" = "このモードでは、もう一方の完全なプライバシーはなくなります。";
