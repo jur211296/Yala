@@ -3428,7 +3428,7 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "财务助理";
-"aiConsent.chatMessage" = "为回答你的问题，此功能会向 OpenAI 发送你财务状况的摘要：你的账户余额和名称、按类别的总计、常用商家、预算和定期付款。\n\n这些数据仅用于生成回答。OpenAI 不会使用这些数据来训练其模型。";
+"aiConsent.chatMessage" = "为回答你的问题，此功能会向 OpenAI 发送你最近 13 个月财务状况的摘要：你的账户余额和名称、按类别的总计、常用商家、预算和定期付款。\n\n这些数据仅用于生成回答。OpenAI 不会使用这些数据来训练其模型。";
 "aiConsent.inlineHintChat" = "你的财务摘要由 OpenAI 处理以作答，不会被永久存储。";
 "aiConsent.inlineHintMultiple" = "多项 AI 功能使用 OpenAI 处理你的数据,不会被永久存储。";
 
@@ -4700,14 +4700,11 @@
 "storage.errors.title" = "出了点问题";
 "storage.errors.generic" = "操作未成功。请重试。";
 "storage.errors.signIn" = "无法登录。请重试。";
-"storage.consent.title" = "启用云端之前";
-"storage.consent.point1" = "您的交易、账户、备注以及我们从收据中读取的文字将离开您的设备，保存在 Yala 的服务器上。";
-"storage.consent.point2" = "收据照片仅保留在此设备上：不会备份到云端，也不会在其他设备上显示。如需保留，请在更换手机前先保存。";
-"storage.consent.point3" = "我们的团队可能会读取这些数据，以便为您提供支持、恢复账户并提供智能功能（自动分类、收据识别）。这不是端到端加密。";
-"storage.consent.point4" = "使用聊天时，我们会将您财务的摘要（最长约 13 个月）发送给我们的 AI 提供商，以便回复您。";
-"storage.consent.point5" = "您的数据存储在位于美国的服务器上。";
-"storage.consent.point6" = "作为交换，您只需 Apple 或 Google 登录即可在任何设备上访问数据，无需依赖 iCloud。前提是您保留该登录方式：没有电子邮件或 Yala 密码找回，因此如果您失去该账户的访问权限，请先导出数据（设置 → 导出数据）。";
-"storage.consent.point7" = "您可以随时切换回私密模式，不会丢失任何内容。";
+"storage.consent.title" = "您在 Yala 云端的数据";
+"storage.consent.pointServers" = "您的数据保存在 Yala 的服务器上，我们的团队可以查看这些数据，以便为您提供支持和智能功能。我们不使用端到端加密。";
+"storage.consent.pointPhotos" = "收据照片仅保留在此设备上：不会备份到云端，也不会在其他设备上显示。如需保留，请在更换手机前先保存。";
+"storage.consent.pointAccess" = "作为交换，您只需 Apple 或 Google 登录即可在任何设备上访问数据，无需依赖 iCloud。前提是您保留该登录方式：没有电子邮件或 Yala 密码找回，因此如果您失去该账户的访问权限，请先导出数据（设置 → 导出数据）。";
+"storage.consent.footer" = "您可以随时切换回私密模式，不会丢失任何内容。";
 "storage.consent.accept" = "我已了解并希望启用云端";
 "storage.consent.privacyLink" = "查看隐私政策";
 

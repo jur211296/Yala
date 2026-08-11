@@ -3418,7 +3418,7 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Assistant financier";
-"aiConsent.chatMessage" = "Pour répondre à tes questions, cette fonction envoie à OpenAI un résumé de ta situation financière : les soldes et noms de tes comptes, les totaux par catégorie, les commerces fréquents, les budgets et les paiements récurrents.\n\nLes données servent uniquement à générer la réponse. OpenAI ne les utilise pas pour entraîner ses modèles.";
+"aiConsent.chatMessage" = "Pour répondre à tes questions, cette fonction envoie à OpenAI un résumé de ta situation financière des 13 derniers mois : les soldes et noms de tes comptes, les totaux par catégorie, les commerces fréquents, les budgets et les paiements récurrents.\n\nLes données servent uniquement à générer la réponse. OpenAI ne les utilise pas pour entraîner ses modèles.";
 "aiConsent.inlineHintChat" = "Ton résumé financier est traité par OpenAI pour répondre. Il n'est pas stocké de façon permanente.";
 "aiConsent.inlineHintMultiple" = "Plusieurs fonctions IA utilisent OpenAI pour traiter tes données. Elles ne sont pas stockées de façon permanente.";
 
@@ -4689,14 +4689,11 @@
 "storage.errors.title" = "Une erreur s’est produite";
 "storage.errors.generic" = "Quelque chose n’a pas fonctionné. Réessaie.";
 "storage.errors.signIn" = "Nous n’avons pas pu te connecter. Réessaie.";
-"storage.consent.title" = "Avant d’activer le cloud";
-"storage.consent.point1" = "Tes opérations, comptes, notes et le texte que nous lisons sur tes reçus quitteront ton appareil et seront stockés sur les serveurs de Yala.";
-"storage.consent.point2" = "Les photos de tes reçus restent uniquement sur cet appareil : elles ne sont pas sauvegardées dans le cloud ni visibles sur d’autres appareils. Si tu veux les garder, enregistre-les avant de changer de téléphone.";
-"storage.consent.point3" = "Notre équipe peut lire ces données pour t’aider, récupérer ton compte et t’offrir des fonctions intelligentes (catégorisation, lecture des reçus). Ce n’est pas chiffré de bout en bout.";
-"storage.consent.point4" = "Quand tu utilises le chat, nous envoyons un résumé de tes finances (jusqu’à environ 13 mois) à notre fournisseur d’IA pour qu’il puisse te répondre.";
-"storage.consent.point5" = "Tes données sont stockées sur des serveurs aux États-Unis.";
-"storage.consent.point6" = "En échange, tu accèdes depuis n’importe quel appareil avec ton seul identifiant Apple ou Google, sans dépendre d’iCloud. Tant que tu conserves cet identifiant : il n’y a pas de récupération par e-mail ni de mot de passe Yala, donc si tu perds l’accès à ce compte, exporte d’abord tes données (Réglages → Exporter les données).";
-"storage.consent.point7" = "Tu peux revenir au mode privé quand tu veux, sans rien perdre.";
+"storage.consent.title" = "Tes données dans le cloud Yala";
+"storage.consent.pointServers" = "Tes données sont conservées sur les serveurs de Yala et notre équipe peut les consulter pour t'offrir de l'assistance et des fonctions intelligentes. Nous n'utilisons pas de chiffrement de bout en bout.";
+"storage.consent.pointPhotos" = "Les photos de tes reçus restent uniquement sur cet appareil : elles ne sont pas sauvegardées dans le cloud ni visibles sur d’autres appareils. Si tu veux les garder, enregistre-les avant de changer de téléphone.";
+"storage.consent.pointAccess" = "En échange, tu accèdes depuis n’importe quel appareil avec ton seul identifiant Apple ou Google, sans dépendre d’iCloud. Tant que tu conserves cet identifiant : il n’y a pas de récupération par e-mail ni de mot de passe Yala, donc si tu perds l’accès à ce compte, exporte d’abord tes données (Réglages → Exporter les données).";
+"storage.consent.footer" = "Tu peux revenir au mode privé quand tu veux, sans rien perdre.";
 "storage.consent.accept" = "Je comprends et je veux activer le cloud";
 "storage.consent.privacyLink" = "Voir la politique de confidentialité";
 

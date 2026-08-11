@@ -3428,7 +3428,7 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Asystent finansowy";
-"aiConsent.chatMessage" = "Aby odpowiedzieć na twoje pytania, ta funkcja wysyła do OpenAI podsumowanie twojej sytuacji finansowej: salda i nazwy twoich kont, sumy według kategorii, częstych sprzedawców, budżety i płatności cykliczne.\n\nDane są używane wyłącznie do wygenerowania odpowiedzi. OpenAI nie używa ich do trenowania swoich modeli.";
+"aiConsent.chatMessage" = "Aby odpowiedzieć na twoje pytania, ta funkcja wysyła do OpenAI podsumowanie twojej sytuacji finansowej z ostatnich 13 miesięcy: salda i nazwy twoich kont, sumy według kategorii, częstych sprzedawców, budżety i płatności cykliczne.\n\nDane są używane wyłącznie do wygenerowania odpowiedzi. OpenAI nie używa ich do trenowania swoich modeli.";
 "aiConsent.inlineHintChat" = "Twoje podsumowanie finansowe jest przetwarzane przez OpenAI, aby udzielić odpowiedzi. Nie jest przechowywane na stałe.";
 "aiConsent.inlineHintMultiple" = "Kilka funkcji AI używa OpenAI do przetwarzania twoich danych. Nie są przechowywane na stałe.";
 
@@ -4700,14 +4700,11 @@
 "storage.errors.title" = "Coś poszło nie tak";
 "storage.errors.generic" = "Coś nie zadziałało. Spróbuj ponownie.";
 "storage.errors.signIn" = "Nie udało się zalogować. Spróbuj ponownie.";
-"storage.consent.title" = "Zanim włączysz chmurę";
-"storage.consent.point1" = "Twoje transakcje, konta, notatki oraz tekst, który odczytujemy z paragonów, opuszczą urządzenie i będą przechowywane na serwerach Yala.";
-"storage.consent.point2" = "Zdjęcia paragonów pozostają tylko na tym urządzeniu: nie są zapisywane w chmurze ani widoczne na innych urządzeniach. Jeśli chcesz je zachować, zapisz je przed zmianą telefonu.";
-"storage.consent.point3" = "Nasz zespół może odczytywać te dane, aby zapewnić Ci pomoc, odzyskać konto i oferować inteligentne funkcje (kategoryzacja, odczyt paragonów). To nie jest szyfrowanie end-to-end.";
-"storage.consent.point4" = "Gdy korzystasz z czatu, wysyłamy podsumowanie Twoich finansów (do około 13 miesięcy) do naszego dostawcy AI, aby mógł Ci odpowiedzieć.";
-"storage.consent.point5" = "Twoje dane są przechowywane na serwerach w Stanach Zjednoczonych.";
-"storage.consent.point6" = "W zamian korzystasz z danych na dowolnym urządzeniu tylko za pomocą logowania Apple lub Google, bez zależności od iCloud. Dopóki zachowasz to logowanie: nie ma odzyskiwania przez e-mail ani hasła Yala, więc jeśli utracisz dostęp do tego konta, najpierw wyeksportuj dane (Ustawienia → Eksportuj dane).";
-"storage.consent.point7" = "Możesz wrócić do trybu prywatnego, kiedy zechcesz, bez utraty czegokolwiek.";
+"storage.consent.title" = "Twoje dane w chmurze Yala";
+"storage.consent.pointServers" = "Twoje dane są przechowywane na serwerach Yala, a nasz zespół może je zobaczyć, żeby udzielić Ci wsparcia i dodawać inteligentne funkcje. Nie stosujemy szyfrowania end-to-end.";
+"storage.consent.pointPhotos" = "Zdjęcia paragonów pozostają tylko na tym urządzeniu: nie są zapisywane w chmurze ani widoczne na innych urządzeniach. Jeśli chcesz je zachować, zapisz je przed zmianą telefonu.";
+"storage.consent.pointAccess" = "W zamian korzystasz z danych na dowolnym urządzeniu tylko za pomocą logowania Apple lub Google, bez zależności od iCloud. Dopóki zachowasz to logowanie: nie ma odzyskiwania przez e-mail ani hasła Yala, więc jeśli utracisz dostęp do tego konta, najpierw wyeksportuj dane (Ustawienia → Eksportuj dane).";
+"storage.consent.footer" = "Możesz wrócić do trybu prywatnego, kiedy zechcesz, bez utraty czegokolwiek.";
 "storage.consent.accept" = "Rozumiem i chcę włączyć chmurę";
 "storage.consent.privacyLink" = "Zobacz politykę prywatności";
 

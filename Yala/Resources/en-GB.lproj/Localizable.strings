@@ -797,7 +797,7 @@
 "action.viewAll" = "View all";
 "action.viewLess" = "View less";
 "aiConsent.accept" = "Accept and Enable";
-"aiConsent.chatMessage" = "To answer your questions, this feature sends OpenAI a summary of your financial situation: your account balances and names, totals by category, frequent merchants, budgets, and recurring payments.\n\nThe data is used only to generate the response. OpenAI does not use it to train its models.";
+"aiConsent.chatMessage" = "To answer your questions, this feature sends OpenAI a summary of your financial situation from the past 13 months: your account balances and names, totals by category, frequent merchants, budgets, and recurring payments.\n\nThe data is used only to generate the response. OpenAI does not use it to train its models.";
 "aiConsent.chatTitle" = "Financial assistant";
 "aiConsent.inlineHintBoth" = "Your voice, image, and summary data is processed with OpenAI. It is not stored permanently.";
 "aiConsent.inlineHintChat" = "Your financial summary is processed by OpenAI to answer. It is not stored permanently.";
@@ -3952,14 +3952,11 @@
 "storage.errors.title" = "Something went wrong";
 "storage.errors.generic" = "Something didn’t work. Please try again.";
 "storage.errors.signIn" = "We couldn’t sign you in. Please try again.";
-"storage.consent.title" = "Before you turn on the cloud";
-"storage.consent.point1" = "Your transactions, accounts, notes and the text we read from your receipts will leave your device and be stored on Yala’s servers.";
-"storage.consent.point2" = "Your receipt photos stay only on this device: they aren’t backed up to the cloud or seen on other devices. If you want to keep them, save them before switching phones.";
-"storage.consent.point3" = "Our team may read that data to give you support, recover your account and offer smart features (categorization, receipt reading). It isn’t end-to-end encrypted.";
-"storage.consent.point4" = "When you use the chat, we send a summary of your finances (up to about 13 months) to our AI provider so it can answer you.";
-"storage.consent.point5" = "Your data is stored on servers in the United States.";
-"storage.consent.point6" = "In exchange, you reach your data from any device with just your Apple or Google login, without depending on iCloud. As long as you keep that login: there’s no email or Yala-password recovery, so if you lose access to that account, export your data first (Settings → Export Data).";
-"storage.consent.point7" = "You can switch back to private mode whenever you want, without losing anything.";
+"storage.consent.title" = "Your data in Yala's cloud";
+"storage.consent.pointServers" = "Your data is stored on Yala's servers, and our team can see it to give you support and smart features. We don't use end-to-end encryption.";
+"storage.consent.pointPhotos" = "Your receipt photos stay only on this device: they aren’t backed up to the cloud or seen on other devices. If you want to keep them, save them before switching phones.";
+"storage.consent.pointAccess" = "In exchange, you reach your data from any device with just your Apple or Google login, without depending on iCloud. As long as you keep that login: there’s no email or Yala-password recovery, so if you lose access to that account, export your data first (Settings → Export Data).";
+"storage.consent.footer" = "You can switch back to private mode whenever you want, without losing anything.";
 "storage.consent.accept" = "I understand and want to turn on the cloud";
 "storage.consent.privacyLink" = "View the privacy policy";
 

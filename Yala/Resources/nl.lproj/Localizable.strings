@@ -3428,7 +3428,7 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Financiële assistent";
-"aiConsent.chatMessage" = "Om je vragen te beantwoorden stuurt deze functie een samenvatting van je financiële situatie naar OpenAI: saldi en namen van je rekeningen, totalen per categorie, veelgebruikte verkopers, budgetten en terugkerende betalingen.\n\nDe gegevens worden alleen gebruikt om het antwoord te genereren. OpenAI gebruikt ze niet om zijn modellen te trainen.";
+"aiConsent.chatMessage" = "Om je vragen te beantwoorden stuurt deze functie een samenvatting van je financiële situatie van de afgelopen 13 maanden naar OpenAI: saldi en namen van je rekeningen, totalen per categorie, veelgebruikte verkopers, budgetten en terugkerende betalingen.\n\nDe gegevens worden alleen gebruikt om het antwoord te genereren. OpenAI gebruikt ze niet om zijn modellen te trainen.";
 "aiConsent.inlineHintChat" = "Je financiële samenvatting wordt door OpenAI verwerkt om te antwoorden. Deze wordt niet permanent bewaard.";
 "aiConsent.inlineHintMultiple" = "Meerdere AI-functies gebruiken OpenAI om je gegevens te verwerken. Ze worden niet permanent bewaard.";
 
@@ -4700,14 +4700,11 @@
 "storage.errors.title" = "Er ging iets mis";
 "storage.errors.generic" = "Er ging iets niet goed. Probeer het opnieuw.";
 "storage.errors.signIn" = "We konden je niet aanmelden. Probeer het opnieuw.";
-"storage.consent.title" = "Voordat je de cloud inschakelt";
-"storage.consent.point1" = "Je transacties, rekeningen, notities en de tekst die we van je bonnetjes lezen verlaten je apparaat en worden opgeslagen op de servers van Yala.";
-"storage.consent.point2" = "De foto’s van je bonnetjes blijven alleen op dit apparaat: ze worden niet in de cloud bewaard en niet op andere apparaten getoond. Wil je ze bewaren, sla ze dan op voordat je van telefoon wisselt.";
-"storage.consent.point3" = "Ons team kan die gegevens lezen om je te helpen, je account te herstellen en slimme functies te bieden (categorisatie, bonnetjes lezen). Het is geen end-to-end-versleuteling.";
-"storage.consent.point4" = "Wanneer je de chat gebruikt, sturen we een samenvatting van je financiën (tot zo’n 13 maanden) naar onze AI-provider om je te kunnen antwoorden.";
-"storage.consent.point5" = "Je gegevens worden opgeslagen op servers in de Verenigde Staten.";
-"storage.consent.point6" = "In ruil daarvoor gebruik je je gegevens op elk apparaat met alleen je Apple- of Google-login, zonder afhankelijk te zijn van iCloud. Zolang je die login behoudt: er is geen herstel via e-mail of Yala-wachtwoord, dus als je de toegang tot dat account verliest, exporteer dan eerst je gegevens (Instellingen → Gegevens exporteren).";
-"storage.consent.point7" = "Je kunt op elk moment terug naar de privémodus, zonder iets te verliezen.";
+"storage.consent.title" = "Je gegevens in de Yala-cloud";
+"storage.consent.pointServers" = "Je gegevens worden opgeslagen op de servers van Yala en ons team kan ze inzien om je ondersteuning en slimme functies te bieden. We gebruiken geen eind-tot-eindversleuteling.";
+"storage.consent.pointPhotos" = "De foto’s van je bonnetjes blijven alleen op dit apparaat: ze worden niet in de cloud bewaard en niet op andere apparaten getoond. Wil je ze bewaren, sla ze dan op voordat je van telefoon wisselt.";
+"storage.consent.pointAccess" = "In ruil daarvoor gebruik je je gegevens op elk apparaat met alleen je Apple- of Google-login, zonder afhankelijk te zijn van iCloud. Zolang je die login behoudt: er is geen herstel via e-mail of Yala-wachtwoord, dus als je de toegang tot dat account verliest, exporteer dan eerst je gegevens (Instellingen → Gegevens exporteren).";
+"storage.consent.footer" = "Je kunt op elk moment terug naar de privémodus, zonder iets te verliezen.";
 "storage.consent.accept" = "Ik begrijp het en wil de cloud inschakelen";
 "storage.consent.privacyLink" = "Bekijk het privacybeleid";
 

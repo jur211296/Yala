@@ -6521,15 +6521,18 @@ enum L10n {
             static var signIn: String { ls("storage.errors.signIn", comment: "") }
         }
 
+        /// W3 (2026-08-11): los 7 bullets numerados se podaron a TRES + un pie, y las keys
+        /// pasaron a nombres semánticos — con `point1…point7` la numeración mentía sobre lo
+        /// que quedó dentro. Qué salió y a dónde: el resumen que viaja al proveedor de IA
+        /// vive ahora en `aiConsent.chatMessage` (que ya lo decía, y gana el horizonte de 13
+        /// meses) y la ubicación de los servidores en la política de privacidad.
         enum Consent {
             static var title: String { ls("storage.consent.title", comment: "") }
-            static var point1: String { ls("storage.consent.point1", comment: "") }
-            static var point2: String { ls("storage.consent.point2", comment: "") }
-            static var point3: String { ls("storage.consent.point3", comment: "") }
-            static var point4: String { ls("storage.consent.point4", comment: "") }
-            static var point5: String { ls("storage.consent.point5", comment: "") }
-            static var point6: String { ls("storage.consent.point6", comment: "") }
-            static var point7: String { ls("storage.consent.point7", comment: "") }
+            static var pointServers: String { ls("storage.consent.pointServers", comment: "") }
+            static var pointPhotos: String { ls("storage.consent.pointPhotos", comment: "") }
+            static var pointAccess: String { ls("storage.consent.pointAccess", comment: "") }
+            /// Es un alivio, no una advertencia: va al pie y con jerarquía secundaria.
+            static var footer: String { ls("storage.consent.footer", comment: "") }
             static var accept: String { ls("storage.consent.accept", comment: "") }
             static var privacyLink: String { ls("storage.consent.privacyLink", comment: "") }
         }

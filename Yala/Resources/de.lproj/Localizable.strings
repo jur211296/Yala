@@ -3417,7 +3417,7 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Finanzassistent";
-"aiConsent.chatMessage" = "Um deine Fragen zu beantworten, sendet diese Funktion eine Zusammenfassung deiner finanziellen Situation an OpenAI: Salden und Namen deiner Konten, Summen nach Kategorie, häufige Händler, Budgets und wiederkehrende Zahlungen.\n\nDie Daten werden nur zur Erstellung der Antwort verwendet. OpenAI verwendet sie nicht zum Trainieren seiner Modelle.";
+"aiConsent.chatMessage" = "Um deine Fragen zu beantworten, sendet diese Funktion eine Zusammenfassung deiner finanziellen Situation der letzten 13 Monate an OpenAI: Salden und Namen deiner Konten, Summen nach Kategorie, häufige Händler, Budgets und wiederkehrende Zahlungen.\n\nDie Daten werden nur zur Erstellung der Antwort verwendet. OpenAI verwendet sie nicht zum Trainieren seiner Modelle.";
 "aiConsent.inlineHintChat" = "Deine Finanzzusammenfassung wird von OpenAI verarbeitet, um zu antworten. Sie wird nicht dauerhaft gespeichert.";
 "aiConsent.inlineHintMultiple" = "Mehrere KI-Funktionen nutzen OpenAI zur Datenverarbeitung. Daten werden nicht dauerhaft gespeichert.";
 
@@ -4688,14 +4688,11 @@
 "storage.errors.title" = "Etwas ist schiefgelaufen";
 "storage.errors.generic" = "Etwas hat nicht geklappt. Bitte versuche es erneut.";
 "storage.errors.signIn" = "Wir konnten dich nicht anmelden. Bitte versuche es erneut.";
-"storage.consent.title" = "Bevor du die Cloud aktivierst";
-"storage.consent.point1" = "Deine Transaktionen, Konten, Notizen und der Text, den wir aus deinen Belegen lesen, verlassen dein Gerät und werden auf Yalas Servern gespeichert.";
-"storage.consent.point2" = "Die Fotos deiner Belege bleiben nur auf diesem Gerät: Sie werden nicht in der Cloud gesichert und nicht auf anderen Geräten angezeigt. Wenn du sie behalten willst, sichere sie, bevor du das Telefon wechselst.";
-"storage.consent.point3" = "Unser Team kann diese Daten lesen, um dir zu helfen, dein Konto wiederherzustellen und dir smarte Funktionen (Kategorisierung, Belegerkennung) anzubieten. Es ist keine Ende-zu-Ende-Verschlüsselung.";
-"storage.consent.point4" = "Wenn du den Chat nutzt, senden wir eine Zusammenfassung deiner Finanzen (bis zu etwa 13 Monate) an unseren KI-Anbieter, damit er dir antworten kann.";
-"storage.consent.point5" = "Deine Daten werden auf Servern in den USA gespeichert.";
-"storage.consent.point6" = "Im Gegenzug greifst du von jedem Gerät nur mit deinem Apple- oder Google-Login zu, ohne von iCloud abhängig zu sein. Solange du diesen Login behältst: Es gibt keine Wiederherstellung per E-Mail oder Yala-Passwort. Wenn du also den Zugang zu diesem Konto verlierst, exportiere vorher deine Daten (Einstellungen → Daten exportieren).";
-"storage.consent.point7" = "Du kannst jederzeit in den privaten Modus zurückwechseln, ohne etwas zu verlieren.";
+"storage.consent.title" = "Deine Daten in der Yala-Cloud";
+"storage.consent.pointServers" = "Deine Daten werden auf den Servern von Yala gespeichert, und unser Team kann sie einsehen, um dir Support und intelligente Funktionen zu bieten. Wir verwenden keine Ende-zu-Ende-Verschlüsselung.";
+"storage.consent.pointPhotos" = "Die Fotos deiner Belege bleiben nur auf diesem Gerät: Sie werden nicht in der Cloud gesichert und nicht auf anderen Geräten angezeigt. Wenn du sie behalten willst, sichere sie, bevor du das Telefon wechselst.";
+"storage.consent.pointAccess" = "Im Gegenzug greifst du von jedem Gerät nur mit deinem Apple- oder Google-Login zu, ohne von iCloud abhängig zu sein. Solange du diesen Login behältst: Es gibt keine Wiederherstellung per E-Mail oder Yala-Passwort. Wenn du also den Zugang zu diesem Konto verlierst, exportiere vorher deine Daten (Einstellungen → Daten exportieren).";
+"storage.consent.footer" = "Du kannst jederzeit in den privaten Modus zurückwechseln, ohne etwas zu verlieren.";
 "storage.consent.accept" = "Ich verstehe und möchte die Cloud aktivieren";
 "storage.consent.privacyLink" = "Datenschutzrichtlinie ansehen";
 

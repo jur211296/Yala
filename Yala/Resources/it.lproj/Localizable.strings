@@ -3426,7 +3426,7 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Assistente finanziario";
-"aiConsent.chatMessage" = "Per rispondere alle tue domande, questa funzione invia a OpenAI un riepilogo della tua situazione finanziaria: saldi e nomi dei tuoi conti, totali per categoria, commercianti frequenti, budget e pagamenti ricorrenti.\n\nI dati vengono usati solo per generare la risposta. OpenAI non li utilizza per addestrare i suoi modelli.";
+"aiConsent.chatMessage" = "Per rispondere alle tue domande, questa funzione invia a OpenAI un riepilogo della tua situazione finanziaria degli ultimi 13 mesi: saldi e nomi dei tuoi conti, totali per categoria, commercianti frequenti, budget e pagamenti ricorrenti.\n\nI dati vengono usati solo per generare la risposta. OpenAI non li utilizza per addestrare i suoi modelli.";
 "aiConsent.inlineHintChat" = "Il riepilogo delle tue finanze viene elaborato da OpenAI per rispondere. Non viene archiviato permanentemente.";
 "aiConsent.inlineHintMultiple" = "Diverse funzioni IA utilizzano OpenAI per elaborare i tuoi dati. Non vengono archiviati permanentemente.";
 
@@ -4698,14 +4698,11 @@
 "storage.errors.title" = "Qualcosa è andato storto";
 "storage.errors.generic" = "Qualcosa non ha funzionato. Riprova.";
 "storage.errors.signIn" = "Non siamo riusciti ad accedere. Riprova.";
-"storage.consent.title" = "Prima di attivare il cloud";
-"storage.consent.point1" = "Le tue transazioni, i conti, le note e il testo che leggiamo dalle tue ricevute usciranno dal tuo dispositivo e verranno archiviati sui server di Yala.";
-"storage.consent.point2" = "Le foto delle tue ricevute restano solo su questo dispositivo: non vengono salvate nel cloud né viste su altri dispositivi. Se vuoi conservarle, salvale prima di cambiare telefono.";
-"storage.consent.point3" = "Il nostro team può leggere quei dati per offrirti assistenza, recuperare il tuo account e proporti funzioni intelligenti (categorizzazione, lettura delle ricevute). Non è crittografia end-to-end.";
-"storage.consent.point4" = "Quando usi la chat, inviamo un riepilogo delle tue finanze (fino a circa 13 mesi) al nostro fornitore di intelligenza artificiale per poterti rispondere.";
-"storage.consent.point5" = "I tuoi dati sono archiviati su server negli Stati Uniti.";
-"storage.consent.point6" = "In cambio, accedi da qualsiasi dispositivo con il solo accesso Apple o Google, senza dipendere da iCloud. Finché conservi quell’accesso: non c’è recupero via email né password Yala, quindi se perdi l’accesso a quell’account, esporta prima i tuoi dati (Impostazioni → Esporta dati).";
-"storage.consent.point7" = "Puoi tornare alla modalità privata quando vuoi, senza perdere nulla.";
+"storage.consent.title" = "I tuoi dati nel cloud di Yala";
+"storage.consent.pointServers" = "I tuoi dati sono conservati sui server di Yala e il nostro team può vederli per darti assistenza e funzioni intelligenti. Non usiamo la crittografia end-to-end.";
+"storage.consent.pointPhotos" = "Le foto delle tue ricevute restano solo su questo dispositivo: non vengono salvate nel cloud né viste su altri dispositivi. Se vuoi conservarle, salvale prima di cambiare telefono.";
+"storage.consent.pointAccess" = "In cambio, accedi da qualsiasi dispositivo con il solo accesso Apple o Google, senza dipendere da iCloud. Finché conservi quell’accesso: non c’è recupero via email né password Yala, quindi se perdi l’accesso a quell’account, esporta prima i tuoi dati (Impostazioni → Esporta dati).";
+"storage.consent.footer" = "Puoi tornare alla modalità privata quando vuoi, senza perdere nulla.";
 "storage.consent.accept" = "Ho capito e voglio attivare il cloud";
 "storage.consent.privacyLink" = "Vedi l’informativa sulla privacy";
 
