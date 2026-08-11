@@ -4,15 +4,31 @@
 //
 //  Sub-chooser de "Soy nuevo" (2º nivel del Welcome, A4 de D-A7 · §k.2): dónde
 //  viven los datos personales — privacidad total (iCloud) o cuenta en la nube de
-//  Yala. Calco estructural de `WelcomeExistingChooserView`; lo que añade es que la
-//  card de nube dice la renuncia sin eufemismos, inline y visible.
+//  Yala. Calco estructural de `WelcomeExistingChooserView`.
 //
-//  NINGUNA de las dos opciones se recomienda — decisión de producto del owner
-//  (2026-08-10), que SUPERSEDE el §k.6 de arquitectura en esta pantalla: aquel pedía
-//  destacar la privacy-first con un badge "Recomendado" y ese badge ya no existe, ni en
-//  la vista ni en la etiqueta de accesibilidad. La elección es netamente del usuario.
-//  Lo que §k.6 sigue gobernando aquí y NO cambia: el ORDEN de las cards (la privada va
-//  primero) y la renuncia dicha dentro de la card que la provoca.
+//  **El §k.6 de arquitectura ya no gobierna nada de esta pantalla.** Se fue en tres
+//  decisiones de producto del owner, todas anotadas aquí porque este docblock era quien lo
+//  citaba para justificarse:
+//
+//  1. (2026-08-10, chip RC) NINGUNA de las dos opciones se recomienda — el badge
+//     "Recomendado" de la privacy-first ya no existe, ni en la vista ni en la etiqueta de
+//     accesibilidad.
+//  2. (2026-08-11, chip W2 · punto 6 de MODO-NUBE-REVISION-FLUJOS-NOTAS) el ORDEN se
+//     invierte: **la nube va primero y la privada después**. §k.6 pedía privacy-first como
+//     opción primaria; el owner re-decide, coherente con 1 — si ninguna se recomienda, el
+//     orden es presentación y no jerarquía.
+//  3. (2026-08-11, chip W2 · punto 10) la renuncia inline (`welcome.new.cloudWarning`,
+//     «renuncias a la privacidad total de la otra opción») SE RETIRA: sermoneaba. La idea NO
+//     desaparece del flujo — el `cloudBody` recortado dice quién puede ver los datos, y el
+//     consent posterior la lleva completa.
+//
+//  **Dónde vive el orden, y por qué aquí.** MEDIDO: lo producía el literal de
+//  `WelcomeAccountChoiceLogic.visibleNewOptions` (`[.privateAccount]` + append de
+//  `.cloudAccount`), que el chip W2 dejó EXPLÍCITAMENTE fuera de alcance por ser la lógica de
+//  VISIBILIDAD. Así que el orden de PANTALLA se decide en `displayOrder(_:)`, aquí abajo, y
+//  esta vista es su único dueño: la lógica dice QUÉ cards hay, la vista en qué orden se ven.
+//  ⚠️ Corolario para el yo-futuro: reordenar el array de `visibleNewOptions` NO cambia nada
+//  de lo que se ve — cámbialo aquí.
 //
 //  Solo se monta con MÁS de una opción visible: con una sola (producción con el
 //  percent remoto en 0, backend no configurado, o uitest sin el opt-in) el
@@ -27,6 +43,13 @@ struct WelcomeNewChooserView: View {
     let options: [WelcomeAccountChoiceLogic.NewOption]
     var onSelect: (WelcomeAccountChoiceLogic.NewOption) -> Void
     var onBack: () -> Void
+
+    /// Alto NATURAL del contenido de cada card, para igualarlas (punto 11). Se mide el
+    /// contenido y NO la card ya enmarcada: el `minHeight` de abajo propone más alto, pero un
+    /// stack de textos no se estira ante una propuesta mayor, así que lo reportado sigue siendo
+    /// lo natural y no hay realimentación (crecer → medir más → crecer). Como además puede
+    /// MENGUAR, un cambio de Dynamic Type reajusta hacia abajo en vez de quedarse pegado alto.
+    @State private var contentHeights: [WelcomeAccountChoiceLogic.NewOption: CGFloat] = [:]
 
     var body: some View {
         WelcomeFlowScreen { logoTopSpacing in
@@ -58,7 +81,7 @@ struct WelcomeNewChooserView: View {
                 Spacer(minLength: DS.Spacing.lg)
 
                 VStack(spacing: DS.Spacing.md) {
-                    ForEach(options, id: \.self) { option in
+                    ForEach(Self.displayOrder(options), id: \.self) { option in
                         optionCard(option)
                     }
                 }
@@ -68,6 +91,29 @@ struct WelcomeNewChooserView: View {
             }
         }
         .welcomeBackButton(tint: .white, action: onBack)
+    }
+
+    /// Orden de PANTALLA: la nube primero (punto 6). Es una función pura y no un `sorted` inline
+    /// para que se pueda aserjar sin montar la vista — el orden es la decisión, no un detalle de
+    /// layout. Filtra por pertenencia en vez de ordenar la entrada: así una opción NUEVA que
+    /// alguien añada al enum no se cuela en pantalla sin decidir dónde va.
+    nonisolated static func displayOrder(
+        _ options: [WelcomeAccountChoiceLogic.NewOption]
+    ) -> [WelcomeAccountChoiceLogic.NewOption] {
+        [.cloudAccount, .privateAccount].filter(options.contains)
+    }
+
+    /// **Cards parejas (punto 11), por LAYOUT y no por copy.** MEDIDO en el simulador con el copy
+    /// ya recortado: la card privada seguía una fila más alta porque su título envuelve a dos
+    /// líneas y el de la nube no. Recortar el título lo arreglaría en español y volvería a
+    /// romperse en alemán o polaco — el alto depende del idioma, así que la igualación tiene que
+    /// ser de layout. `nil` hasta que TODAS las cards se han medido: igualar con media medición
+    /// daría un salto visible en el primer frame.
+    private var evenCardHeight: CGFloat? {
+        let visibles = Self.displayOrder(options)
+        guard visibles.count > 1,
+              visibles.allSatisfy({ contentHeights[$0] != nil }) else { return nil }
+        return visibles.compactMap { contentHeights[$0] }.max()
     }
 
     private func title(for option: WelcomeAccountChoiceLogic.NewOption) -> String {
@@ -105,19 +151,13 @@ struct WelcomeNewChooserView: View {
         }
     }
 
-    /// Etiqueta de accesibilidad completa: el aviso de la card de nube es parte del mensaje, no
-    /// adorno — es donde vive la renuncia y VoiceOver tiene que leerla.
-    ///
-    /// La card privada NO lleva ningún distintivo: mientras existió el badge "Recomendado" esta
-    /// etiqueta lo incluía, y retirarlo de la vista dejándolo aquí le habría dicho a VoiceOver que
-    /// Yala recomienda una opción que en pantalla ya no recomienda.
+    /// Las dos cards leen IGUAL: título y cuerpo, nada más. Ya van dos veces que a esta etiqueta
+    /// hay que quitarle algo que la pantalla dejó de decir —el badge "Recomendado" (RC) y ahora la
+    /// renuncia inline (W2)—, y en ambos casos dejarlo aquí le habría contado a VoiceOver una
+    /// pantalla distinta de la que ve todo el mundo. Si un día vuelve un distintivo a una card,
+    /// vuelve también aquí; mientras no lo haya, esto no se ramifica por opción.
     private func accessibilityLabel(for option: WelcomeAccountChoiceLogic.NewOption) -> String {
-        switch option {
-        case .privateAccount:
-            "\(title(for: option)). \(body(for: option))"
-        case .cloudAccount:
-            "\(title(for: option)). \(body(for: option)). \(L10n.Welcome.New.cloudWarning)"
-        }
+        "\(title(for: option)). \(body(for: option))"
     }
 
     private func systemIconCircle(name: String, tint: Color) -> some View {
@@ -129,20 +169,6 @@ struct WelcomeNewChooserView: View {
                 .font(.system(size: 22, weight: .semibold))
                 .foregroundStyle(tint)
         }
-    }
-
-    /// La renuncia, dicha inline y sin eufemismos (§k.6). No es un disclaimer escondido: va DENTRO
-    /// de la card que la provoca.
-    private var cloudWarning: some View {
-        HStack(alignment: .top, spacing: DS.Spacing.xxs) {
-            Image(systemName: "exclamationmark.circle.fill")
-                .font(DS.Typography.captionSmall)
-            Text(L10n.Welcome.New.cloudWarning)
-                .font(DS.Typography.captionSmall)
-                .multilineTextAlignment(.leading)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .foregroundStyle(.white.opacity(0.85))
     }
 
     /// Mismo shape visual que `WelcomeExistingChooserView.optionCard` (réplica consciente: no se
@@ -166,11 +192,6 @@ struct WelcomeNewChooserView: View {
                         .foregroundStyle(.white.opacity(0.7))
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
-
-                    if option == .cloudAccount {
-                        cloudWarning
-                            .padding(.top, DS.Spacing.xxs)
-                    }
                 }
 
                 Spacer(minLength: DS.Spacing.sm)
@@ -182,6 +203,10 @@ struct WelcomeNewChooserView: View {
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { alto in
+                contentHeights[option] = alto
+            }
+            .frame(minHeight: evenCardHeight, alignment: .leading)
             .contentShape(Rectangle())
             .welcomeFlowCard(radius: DS.Radius.xl)
         }

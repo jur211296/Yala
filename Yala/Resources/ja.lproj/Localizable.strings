@@ -4098,12 +4098,12 @@
 "groups.errors.pendingApproval" = "まだこの操作はできません。管理者があなたのリクエストを承認する必要があります。";
 
 // MARK: - Welcome (A4 — Chooser pre-onboarding)
-"welcome.chooser.title" = "こんにちは！どうやってYalaにたどり着きましたか？";
-"welcome.chooser.subtitle" = "あなたに合わせた体験をご提供するため、教えてください。";
-"welcome.chooser.optionNew.title" = "初めて利用します";
+"welcome.chooser.title" = "こんにちは！Yalaで何をしたいですか？";
+"welcome.chooser.subtitle" = "スタート地点を選んでください。あとは一緒に進みましょう。";
+"welcome.chooser.optionNew.title" = "Yalaを使うのは初めてです";
 "welcome.chooser.optionNew.body" = "ゼロから始めましょう。一緒にステップごとに設定していきます。";
 "welcome.chooser.optionExisting.title" = "すでにアカウントがあります";
-"welcome.chooser.optionExisting.body" = "Yalaを再インストールしました。iCloudからデータを復元したいです。";
+"welcome.chooser.optionExisting.body" = "Yalaを使ったことがあります。iCloudでもアカウントでも、データを復元したいです。";
 "welcome.chooser.optionInvite.title" = "グループに招待されました";
 "welcome.chooser.optionInvite.body" = "招待リンクを持っています。グループに参加したいです。";
 
@@ -5419,11 +5419,10 @@
 /* Welcome > "I'm new" second level (A4 of D-A7, born-cloud): where the personal data lives —
    privacy-first (iCloud) highlighted on top, cloud account below with the trade-off spelled out. */
 "welcome.new.subtitle" = "データの保存場所を選んでください。";
-"welcome.new.privateTitle" = "あなたとあなたのデバイスだけ";
-"welcome.new.privateBody" = "データはiPhoneに保存され、あなただけのiCloudで同期します。ほかの誰も読めません。私たちも読めません。";
+"welcome.new.privateTitle" = "プライベートなiCloudのアカウント";
+"welcome.new.privateBody" = "データはあなたのApple IDのApple製デバイスに保存され、あなただけのiCloudで同期します。ほかの誰も読めません。私たちも読めません。";
 "welcome.new.cloudTitle" = "クラウドのアカウント";
-"welcome.new.cloudBody" = "AppleまたはGoogleでサインインすると、iCloudがなくてもどのデバイスからでもデータを見られます。データはYalaのサーバーに保存され、サポートや便利な機能のために私たちのチームが見ることがあります。";
-"welcome.new.cloudWarning" = "このモードでは、もう一方の完全なプライバシーはなくなります。";
+"welcome.new.cloudBody" = "データはほかの多くのアプリと同じように、私たちのサーバーに保存されます。サポートや新しい機能のために、私たちのチームが見ることがあります。";
 
 /* A5 de D-A7 — alta born-cloud: intro del alta. Las terminales (relanzamiento, espera, mismatch, error) reusan welcome.cloud.* */
 "welcome.bornCloud.title" = "Yalaのアカウントを作る";

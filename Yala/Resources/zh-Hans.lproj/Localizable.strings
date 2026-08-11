@@ -4098,12 +4098,12 @@
 "groups.errors.pendingApproval" = "暂时还不能执行此操作。管理员需要先批准你的请求。";
 
 // MARK: - Welcome (A4 — Chooser pre-onboarding)
-"welcome.chooser.title" = "你好！你是怎么找到 Yala 的？";
-"welcome.chooser.subtitle" = "告诉我们，我们会为你定制体验。";
-"welcome.chooser.optionNew.title" = "我是新用户";
+"welcome.chooser.title" = "你好！你想用 Yala 做什么？";
+"welcome.chooser.subtitle" = "选择你的起点，接下来我们一起走。";
+"welcome.chooser.optionNew.title" = "我第一次使用 Yala";
 "welcome.chooser.optionNew.body" = "和我从零开始吧。我会一步步帮你配置好一切。";
 "welcome.chooser.optionExisting.title" = "我已经有账户了";
-"welcome.chooser.optionExisting.body" = "我重新安装了 Yala，想从 iCloud 恢复我的数据。";
+"welcome.chooser.optionExisting.body" = "我以前用过 Yala，想恢复我的数据，不管在 iCloud 还是在我的账户里。";
 "welcome.chooser.optionInvite.title" = "有人邀请我加入群组";
 "welcome.chooser.optionInvite.body" = "我有一个邀请链接，想要加入。";
 
@@ -5419,11 +5419,10 @@
 /* Welcome > "I'm new" second level (A4 of D-A7, born-cloud): where the personal data lives —
    privacy-first (iCloud) highlighted on top, cloud account below with the trade-off spelled out. */
 "welcome.new.subtitle" = "选择你想把数据存放在哪里。";
-"welcome.new.privateTitle" = "只有你和你的设备";
-"welcome.new.privateBody" = "数据保存在你的 iPhone 上，通过你的私人 iCloud 同步。其他人都读不到，我们也一样。";
+"welcome.new.privateTitle" = "你的私人 iCloud 账户";
+"welcome.new.privateBody" = "数据保存在使用你 Apple ID 的 Apple 设备上，通过你的私人 iCloud 同步。其他人都读不到，我们也一样。";
 "welcome.new.cloudTitle" = "你的云端账户";
-"welcome.new.cloudBody" = "用 Apple 或 Google 登录，即使不用 iCloud，也能在任何设备上打开你的数据。数据会保存在 Yala 的服务器上，我们的团队可能会查看，用于为你提供支持和智能功能。";
-"welcome.new.cloudWarning" = "在这个模式下，你放弃了另一个选项的完全隐私。";
+"welcome.new.cloudBody" = "数据保存在我们的服务器上，和你大多数应用一样。我们的团队可以查看，用于为你提供支持和新功能。";
 
 /* A5 de D-A7 — alta born-cloud: intro del alta. Las terminales (relanzamiento, espera, mismatch, error) reusan welcome.cloud.* */
 "welcome.bornCloud.title" = "创建你的 Yala 账户";

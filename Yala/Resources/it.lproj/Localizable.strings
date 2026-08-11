@@ -4096,12 +4096,12 @@
 "groups.errors.pendingApproval" = "Non puoi ancora farlo — l'admin deve prima approvare la tua richiesta.";
 
 // MARK: - Welcome (A4 — Chooser pre-onboarding)
-"welcome.chooser.title" = "Ciao! Come sei arrivato su Yala?";
-"welcome.chooser.subtitle" = "Dicci come per personalizzare la tua esperienza.";
-"welcome.chooser.optionNew.title" = "Sono nuovo";
+"welcome.chooser.title" = "Ciao! Cosa vuoi fare in Yala?";
+"welcome.chooser.subtitle" = "Scegli il tuo punto di partenza e proseguiamo insieme.";
+"welcome.chooser.optionNew.title" = "È la mia prima volta su Yala";
 "welcome.chooser.optionNew.body" = "Iniziamo da zero. Ti aiuto a configurare tutto passo dopo passo.";
 "welcome.chooser.optionExisting.title" = "Ho già un account";
-"welcome.chooser.optionExisting.body" = "Ho reinstallato Yala e voglio recuperare i miei dati da iCloud.";
+"welcome.chooser.optionExisting.body" = "Ho già usato Yala e voglio recuperare i miei dati, da iCloud o dal mio account.";
 "welcome.chooser.optionInvite.title" = "Mi hanno invitato a un gruppo";
 "welcome.chooser.optionInvite.body" = "Ho un link d'invito e voglio unirmi.";
 
@@ -5417,11 +5417,10 @@
 /* Welcome > "I'm new" second level (A4 of D-A7, born-cloud): where the personal data lives —
    privacy-first (iCloud) highlighted on top, cloud account below with the trade-off spelled out. */
 "welcome.new.subtitle" = "Scegli dove vuoi conservare i tuoi dati.";
-"welcome.new.privateTitle" = "Solo tu e i tuoi dispositivi";
-"welcome.new.privateBody" = "I tuoi dati restano sul tuo iPhone e si sincronizzano con il tuo iCloud privato. Nessun altro può leggerli, nemmeno noi.";
+"welcome.new.privateTitle" = "Il tuo account nel tuo iCloud privato";
+"welcome.new.privateBody" = "I tuoi dati restano sui dispositivi Apple del tuo ID Apple e si sincronizzano con il tuo iCloud privato. Nessun altro può leggerli, nemmeno noi.";
 "welcome.new.cloudTitle" = "Il tuo account nel cloud";
-"welcome.new.cloudBody" = "Accedi con Apple o Google e raggiungi i tuoi dati da qualsiasi dispositivo, anche senza iCloud. Vengono salvati sui server di Yala e il nostro team potrebbe vederli per darti assistenza e funzioni intelligenti.";
-"welcome.new.cloudWarning" = "In questa modalità rinunci alla privacy totale dell'altra opzione.";
+"welcome.new.cloudBody" = "I tuoi dati stanno sui nostri server, come nella maggior parte delle tue app. Il nostro team può vederli per darti assistenza e nuove funzioni.";
 
 /* A5 de D-A7 — alta born-cloud: intro del alta. Las terminales (relanzamiento, espera, mismatch, error) reusan welcome.cloud.* */
 "welcome.bornCloud.title" = "Crea il tuo account Yala";
