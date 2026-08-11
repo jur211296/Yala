@@ -2,37 +2,31 @@
 //  WelcomeHeroView.swift
 //  Yala
 //
-//  Pantalla de presentación entre splash y Welcome Chooser.
-//  Mientras el user lee las cards animadas, el fetch de iCloud corre invisible.
-//  Al tap "Empezar", ContentView decide entre alert (con data) o Chooser (sin data).
+//  Pantalla de presentación entre splash y Welcome Chooser. Mientras el user lee
+//  las cards animadas no corre ninguna detección: al tap "Empezar" el flow va
+//  SIEMPRE al Chooser.
+//
+//  **La reentrada es decisión del usuario** (decisión del owner 2026-08-11, punto 2
+//  de MODO-NUBE-REVISION-FLUJOS-NOTAS). El Hero ofrecía un alert «Detectamos tu
+//  cuenta» disparado por la señal del KV-store (`RestoreOfferGate.hasReturningSignal`),
+//  y esa señal solo habla de la cuenta iCloud del container: empujaba hacia esa mitad
+//  a quien podía tener su cuenta en la nube (Apple/Google). Quien vuelve entra por
+//  "Ya tengo una cuenta", que ofrece las tres vías. La señal del KV-store NO se
+//  retiró — MEDIDO: la siguen leyendo `ContentView` y `WelcomeRestoreView`.
 //
 
 import SwiftData
 import SwiftUI
 
-// MARK: - Hero Decision
-
-enum HeroDecision {
-    /// Sin data en iCloud (o la señal no llegó tras el timeout). ContentView abre Chooser.
-    case proceedNoData
-    /// Returning user detectado por señal rápida (KV-store). ContentView muestra
-    /// el alert genérico "Detectamos tu cuenta".
-    case proceedWithData
-}
-
 // MARK: - WelcomeHeroView
 
 struct WelcomeHeroView: View {
-    var onContinue: (HeroDecision) -> Void
+    var onContinue: () -> Void
 
     // MARK: Constants
 
     /// Intervalo entre rotaciones de cards. Spring animation 0.45s ya cubre el movimiento.
     private static let cardRotationInterval: Duration = .seconds(3.5)
-    /// Timeout del fetch background de iCloud durante el Hero.
-    private static let iCloudFetchTimeout: TimeInterval = 10
-    /// Espera adicional tras tap "Empezar" si el fetch aún no completó.
-    private static let postTapWaitTimeout: Duration = .seconds(3)
 
     /// Dimensiones del card.
     private static let cardWidth: CGFloat = 200
@@ -56,14 +50,7 @@ struct WelcomeHeroView: View {
 
     @State private var currentCardIndex: Int = 0
     @State private var rotationTask: Task<Void, Never>?
-    @State private var iCloudFetchTask: Task<Void, Never>?
     @State private var cards: [HeroCard] = []
-    @State private var hasReturningData: Bool = false
-    @State private var fetchCompleted: Bool = false
-    /// Continuations parqueadas mientras `fetchCompleted == false`. Se reanudan
-    /// todas en `markFetchCompleted()` — reemplaza el polling busy-loop.
-    @State private var fetchWaiters: [CheckedContinuation<Void, Never>] = []
-    @State private var isCheckingFetch: Bool = false
     @State private var hasTappedEmpezar: Bool = false
 
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
@@ -132,15 +119,10 @@ struct WelcomeHeroView: View {
             if cards.isEmpty {
                 cards = Self.makeCards()
             }
-            startReturningSignalCheck()
             startCardRotation()
         }
         .onDisappear {
             rotationTask?.cancel()
-            iCloudFetchTask?.cancel()
-            // Drenar continuations parqueadas — evita leak si el view se cierra mid-tap.
-            for waiter in fetchWaiters { waiter.resume() }
-            fetchWaiters = []
         }
     }
 
@@ -305,11 +287,7 @@ struct WelcomeHeroView: View {
 
     private var ctaSection: some View {
         VStack(spacing: DS.Spacing.md) {
-            YalaPrimaryButton(
-                L10n.Welcome.Hero.cta,
-                isDisabled: false,
-                isLoading: isCheckingFetch
-            ) {
+            YalaPrimaryButton(L10n.Welcome.Hero.cta) {
                 handleEmpezar()
             }
             .accessibilityIdentifier("welcome_hero_cta")
@@ -321,106 +299,19 @@ struct WelcomeHeroView: View {
         }
     }
 
-    // MARK: Empezar handler (single-shot, signal-based — sin polling)
+    // MARK: Empezar handler
 
+    /// Single-shot y sin espera: el Hero ya no consulta nada antes de continuar, así que
+    /// tampoco hay `isLoading` ni timeout post-tap que gastar. El `guard` se conserva para
+    /// que un doble tap no dispare dos transiciones del container.
     private func handleEmpezar() {
         guard !hasTappedEmpezar else { return }
         hasTappedEmpezar = true
         DS.Haptic.selection()
-
-        Task {
-            // Fast path: fetch ya completó.
-            if fetchCompleted {
-                await MainActor.run { dispatchDecision() }
-                return
-            }
-
-            // Slow path: esperar señal real (`markFetchCompleted`) con timeout.
-            // Sin polling busy-loop. Si timeout primero → asume noData.
-            await MainActor.run { isCheckingFetch = true }
-            await waitForFetchOrTimeout()
-            await MainActor.run {
-                isCheckingFetch = false
-                dispatchDecision()
-            }
-        }
-    }
-
-    /// Suspende hasta que `markFetchCompleted()` resuma la continuation o el timeout
-    /// expire. Reemplaza el polling con sleeps de 500ms — la señal real es el flag
-    /// `fetchCompleted` que `startICloudFetch` setea cuando termina.
-    private func waitForFetchOrTimeout() async {
-        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            Task { @MainActor in
-                if fetchCompleted {
-                    continuation.resume()
-                    return
-                }
-                fetchWaiters.append(continuation)
-                Task {
-                    try? await Task.sleep(for: Self.postTapWaitTimeout)
-                    await MainActor.run { resolvePendingWaiters() }
-                }
-            }
-        }
-    }
-
-    @MainActor
-    private func markFetchCompleted() {
-        fetchCompleted = true
-        resolvePendingWaiters()
-    }
-
-    @MainActor
-    private func resolvePendingWaiters() {
-        guard !fetchWaiters.isEmpty else { return }
-        let pending = fetchWaiters
-        fetchWaiters = []
-        for waiter in pending { waiter.resume() }
-    }
-
-    @MainActor
-    private func dispatchDecision() {
-        RestoreBreadcrumb.heroSignal(returning: hasReturningData)
-        onContinue(hasReturningData ? .proceedWithData : .proceedNoData)
+        onContinue()
     }
 
     // MARK: Tasks
-
-    /// Detección rápida de "returning user" vía señal del KV-store
-    /// (`lastOnboardingTimestamp > lastWipeTimestamp`), que sincroniza mucho antes
-    /// que el mirror de CloudKit. Poll corto hasta que el KV baje o venza el timeout.
-    /// NO construye el `ICloudAccountSummary` (eso lo hace el RestoreView tras
-    /// consentir, con quiescencia). El edge "datos en iCloud sin timestamp de
-    /// onboarding" (usuarios pre-señal) cae al Chooser → "Ya tengo cuenta" hace el
-    /// fetch completo (red de seguridad universal).
-    private func startReturningSignalCheck() {
-        iCloudFetchTask = Task {
-            guard iCloudSyncService.shared.isAccountAvailable else {
-                await MainActor.run { markFetchCompleted() }
-                return
-            }
-            let deadline = Date.now.addingTimeInterval(Self.iCloudFetchTimeout)
-            while Date.now < deadline {
-                let returning = await MainActor.run {
-                    RestoreOfferGate.hasReturningSignal(
-                        lastOnboarding: PreferenceSyncService.shared.lastOnboardingTimestamp,
-                        lastWipe: PreferenceSyncService.shared.lastWipeTimestamp
-                    )
-                }
-                if returning {
-                    await MainActor.run {
-                        hasReturningData = true
-                        markFetchCompleted()
-                    }
-                    return
-                }
-                if Task.isCancelled { return }
-                try? await Task.sleep(for: .seconds(1))
-            }
-            await MainActor.run { markFetchCompleted() }
-        }
-    }
 
     private func startCardRotation() {
         rotationTask = Task {

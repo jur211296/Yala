@@ -255,10 +255,6 @@
 "welcome.hero.cards.more.body" = "Let's discover it together.";
 
 // MARK: - Welcome Detected Data (alert post-Hero cuando iCloud tiene data residual)
-"welcome.detectedData.title" = "Welcome back! We found your account";
-"welcome.detectedData.message" = "You have data saved in your iCloud. Load it on this device?";
-"welcome.detectedData.loadMyData" = "Load my data";
-"welcome.detectedData.startFresh" = "Start fresh";
 "welcome.offerRestore.title" = "We found your account";
 "welcome.offerRestore.message" = "You have data in iCloud. Load it before joining the group?";
 "welcome.offerRestore.loadData" = "Load my data";

@@ -1299,15 +1299,6 @@ private struct WelcomeFlowModifier: ViewModifier {
                             showInviteRecovery = true
                         }
                     },
-                    onLoadMyData: {
-                        // Alert "Detectamos tu cuenta" → "Cargar mis datos":
-                        // decisión consciente equivalente a "Ya tengo cuenta" del Chooser.
-                        // El RestoreView hace el fetch completo (con quiescencia) y decide
-                        // el destino; no usamos un summary prematuro del Hero.
-                        hasShownWelcomeChooser = true
-                        showWelcomeFlow = false
-                        showWelcomeRestore = true
-                    },
                     onSelectExistingOption: { option in
                         // H4: sub-elección de "Ya tengo una cuenta" (o su bypass — hoy en
                         // prod DARK siempre .restoreICloud = flujo restore actual intacto).

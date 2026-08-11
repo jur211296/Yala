@@ -4169,10 +4169,6 @@
 "welcome.hero.cards.more.body" = "一緒に発見していきましょう。";
 
 // MARK: - Welcome Detected Data (alert post-Hero cuando iCloud tiene data residual)
-"welcome.detectedData.title" = "おかえりなさい！アカウントを見つけました";
-"welcome.detectedData.message" = "iCloudにデータが保存されています。この端末に読み込みますか？";
-"welcome.detectedData.loadMyData" = "データを読み込む";
-"welcome.detectedData.startFresh" = "ゼロから始める";
 "welcome.offerRestore.title" = "アカウントが見つかりました";
 "welcome.offerRestore.message" = "iCloudにデータがあります。グループに参加する前に読み込みますか？";
 "welcome.offerRestore.loadData" = "データを読み込む";

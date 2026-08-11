@@ -7,8 +7,11 @@
 //  present del Chooser que aparecía con dos covers separados — el background
 //  gradient persiste y la transición entre steps es un cross-fade smooth.
 //
-//  El alert "Detectamos tu cuenta" vive dentro del container (no en el
-//  ContentView) para mantener todo el flow Hero+Chooser+alert encapsulado.
+//  **El Hero desemboca SIEMPRE en el chooser** (decisión del owner 2026-08-11,
+//  punto 2 de MODO-NUBE-REVISION-FLUJOS-NOTAS): aquí vivía el alert "Detectamos
+//  tu cuenta", que empujaba hacia la cuenta iCloud del container a quien podía
+//  tener su cuenta en la nube. La reentrada la elige el usuario en
+//  "Ya tengo una cuenta", que ofrece las tres vías.
 //
 
 import SwiftUI
@@ -35,7 +38,6 @@ struct WelcomeFlowContainer: View {
     let initialStep: WelcomeFlowStep
 
     var onSelectBranch: (WelcomeChooserView.Branch) -> Void
-    var onLoadMyData: () -> Void
     /// Sub-elección de "Ya tengo una cuenta" (también el resultado del bypass).
     var onSelectExistingOption: (WelcomeAccountChoiceLogic.ExistingOption) -> Void
     /// "Soy nuevo" con la opción PRIVADA elegida (también el resultado del bypass, que es el
@@ -53,14 +55,12 @@ struct WelcomeFlowContainer: View {
     var onNeedsMirrorRelaunch: (WelcomeMirrorRelaunchLogic.Destination) -> Void
 
     @State private var step: WelcomeFlowStep = .hero
-    @State private var showDetectedDataAlert: Bool = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(
         initialStep: WelcomeFlowStep = .hero,
         onSelectBranch: @escaping (WelcomeChooserView.Branch) -> Void,
-        onLoadMyData: @escaping () -> Void,
         onSelectExistingOption: @escaping (WelcomeAccountChoiceLogic.ExistingOption) -> Void,
         onSelectPrivateAccount: @escaping () -> Void,
         onSelectCloudAccount: @escaping () -> Void,
@@ -69,7 +69,6 @@ struct WelcomeFlowContainer: View {
     ) {
         self.initialStep = initialStep
         self.onSelectBranch = onSelectBranch
-        self.onLoadMyData = onLoadMyData
         self.onSelectExistingOption = onSelectExistingOption
         self.onSelectPrivateAccount = onSelectPrivateAccount
         self.onSelectCloudAccount = onSelectCloudAccount
@@ -113,8 +112,8 @@ struct WelcomeFlowContainer: View {
         ZStack {
             switch step {
             case .hero:
-                WelcomeHeroView { decision in
-                    handleHeroDecision(decision)
+                WelcomeHeroView {
+                    goTo(.chooser)
                 }
                 .transition(.opacity)
             case .chooser:
@@ -157,48 +156,19 @@ struct WelcomeFlowContainer: View {
             guard !SwiftDataConfiguration.isUITesting else { return }
             await RemoteConfigClient.shared.refreshIfDue()
         }
-        .alert(
-            L10n.Welcome.DetectedData.title,
-            isPresented: $showDetectedDataAlert
-        ) {
-            Button(L10n.Welcome.DetectedData.loadMyData) {
-                // Mismo destino que "Restaurar de iCloud" (el RestoreView es literalmente el mismo), así
-                // que el portal decide igual: sin mirror adjunto, esa pantalla contaría filas de un import
-                // que nunca va a llegar.
-                leaveWelcome(to: .restoreICloud) { onLoadMyData() }
-            }
-            Button(L10n.Welcome.DetectedData.startFresh) {
-                goTo(.chooser)
-            }
-            // B-11: Cancel explícito captura el dismiss implícito de iOS (swipe-down,
-            // gesture, Escape) que antes dejaba el Hero en estado consumido (`hasTappedEmpezar=true`)
-            // sin posibilidad de re-tap. Si el user ignora el aviso, lo llevamos al Chooser
-            // donde decidirá entre "Soy nuevo" / "Tengo cuenta".
-            Button(L10n.Action.cancel, role: .cancel) {
-                goTo(.chooser)
-            }
-        } message: {
-            Text(L10n.Welcome.DetectedData.message)
-        }
-    }
-
-    private func handleHeroDecision(_ decision: HeroDecision) {
-        switch decision {
-        case .proceedNoData:
-            goTo(.chooser)
-        case .proceedWithData:
-            showDetectedDataAlert = true
-        }
     }
 
     /// **R2 · el único portal de salida del Welcome.** Toda elección que abandona este cover pasa por aquí,
     /// y aquí se decide si antes hay que reabrir la app.
     ///
     /// Está en el CONTAINER y no en los callbacks de `ContentView` por una razón concreta: los destinos se
-    /// producen en SEIS sitios (las dos cards del sub-chooser nuevo, las tres del existente, el `.invite`
-    /// del chooser, el encaminamiento por faro y el alert «Detectamos tu cuenta»), varios de ellos con
-    /// bypass, y repartir la comprobación por los seis es exactamente cómo divergen. Con un portal único,
-    /// añadir una salida nueva obliga a nombrar su `Destination`.
+    /// producen en CINCO sitios (el `.invite` del chooser, el sub-chooser existente, el encaminamiento por
+    /// faro y las dos cards del sub-chooser nuevo), varios de ellos con bypass, y repartir la comprobación
+    /// por los cinco es exactamente cómo divergen. Con un portal único, añadir una salida nueva obliga a
+    /// nombrar su `Destination`.
+    ///
+    /// Eran SEIS hasta el 2026-08-11: el alert «Detectamos tu cuenta» tenía el suyo (`.restoreICloud`), y
+    /// se fue entero con el alert cuando la reentrada pasó a ser decisión del usuario.
     private func leaveWelcome(to destination: WelcomeMirrorRelaunchLogic.Destination,
                               proceed: () -> Void) {
         guard WelcomeMirrorRelaunchLogic.shouldRelaunch(

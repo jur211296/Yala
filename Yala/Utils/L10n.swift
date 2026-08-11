@@ -4989,15 +4989,6 @@ enum L10n {
             static var moreBody: String { ls("welcome.hero.cards.more.body", comment: "") }
         }
 
-        // MARK: - DetectedData (A4 v3.1: alert post-Hero cuando iCloud tiene data residual)
-
-        enum DetectedData {
-            static var title: String { ls("welcome.detectedData.title", comment: "") }
-            static var message: String { ls("welcome.detectedData.message", comment: "") }
-            static var loadMyData: String { ls("welcome.detectedData.loadMyData", comment: "") }
-            static var startFresh: String { ls("welcome.detectedData.startFresh", comment: "") }
-        }
-
         // MARK: - OfferRestore (Parte F: oferta cargar-datos al abrir un link siendo returning)
 
         enum OfferRestore {
