@@ -4471,24 +4471,6 @@
 "groups.errors.inviteFailed" = "无法创建邀请链接。请检查你的网络连接后重试。";
 /* Generic group action failure (delete expense, settle, approve/reject member) */
 "groups.errors.actionFailed" = "无法完成操作。请重试。";
-/* Beta gate (Groups): screen/alert title */
-"groups.beta.gate.title" = "Beta 功能";
-
-/* Beta gate (Groups): explanation message */
-"groups.beta.gate.message" = "此功能为 Beta 版，仅向部分用户开放";
-
-/* Beta gate (Groups): button to enter the beta code */
-"groups.beta.gate.haveCode" = "我有 Beta 代码";
-
-/* Beta gate (Groups): code entry alert title */
-"groups.beta.gate.codePrompt" = "请输入你的 Beta 代码";
-
-/* Beta gate (Groups): code field placeholder */
-"groups.beta.gate.placeholder" = "代码";
-
-/* Beta gate (Groups): wrong code error */
-"groups.beta.gate.wrongCode" = "代码不正确";
-
 /* Chip 'Dividir entre' cuando todos los miembros del grupo están seleccionados */
 "groups.expense.allMembers" = "所有人";
 

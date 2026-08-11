@@ -84,7 +84,7 @@ struct DataWipeServiceTests {
     /// `removeUserPreferenceKeys`).
     private static let preservedKeys: [String] = [
         "lastKnownWipeTimestamp",      // anti-eco de la señal de wipe cross-device
-        "groupsBetaUnlocked",          // gate beta per-device (doc en AppPreferences.Keys)
+        "groupsBetaUnlocked",          // adopcion del dominio Grupos, per-device (doc en AppPreferences.Keys)
         "pro.upsell.sessionCount",     // pacing de monetización del device/App Store
         "pro.trial.wasInTrial",
         "pro.trial.expiredSheetShown",

@@ -11,7 +11,7 @@
 //  no eran los tests sino un **ARRANQUE MANUAL** de Yala Dev en ese simulador — que es justo el
 //  observador al que nadie mira cuando la suite está verde:
 //
-//    · `groupsBetaUnlocked`   — el gate beta de Grupos quedaba desbloqueado PARA SIEMPRE, porque
+//    · `groupsBetaUnlocked`   — el dominio Grupos quedaba ADOPTADO para siempre, porque
 //                               `removeUserPreferenceKeys` excluye esa key a propósito y nadie más
 //                               la borraba.
 //    · `hasCompletedOnboarding` + `hasShownWelcomeChooser` — la app se abría saltándose onboarding
@@ -138,7 +138,7 @@ struct UITestSeamPersistenceIsolationTests {
         )
     }
 
-    // MARK: - Comportamiento · gate beta de Grupos
+    // MARK: - Comportamiento · adopción del dominio Grupos
 
     /// Parte de un simulador YA contaminado, que es el estado en el que quedaron todos los que
     /// corrieron la versión anterior. La purga no es cinturón: es lo único que los cura, y además
@@ -154,10 +154,10 @@ struct UITestSeamPersistenceIsolationTests {
 
         UITestEphemeralDefaults.applyGroupsBetaUnlocked(to: store.defaults, volatileApply: spy.function)
 
-        #expect(spy.value(key) == true, "El seam no dejó Grupos desbloqueado: los XCUI de Grupos chocarían con GroupsBetaGateView.")
+        #expect(spy.value(key) == true, "El seam no dejó el dominio Grupos adoptado: con el sello puesto, el bridge queda cerrado en los XCUI de Grupos.")
         #expect(
             store.persisted(key) == nil,
-            "«\(key)» sigue ESCRITA: el gate beta de Grupos queda desbloqueado para siempre en ese simulador, también en un arranque manual."
+            "«\(key)» sigue ESCRITA: el dominio Grupos queda adoptado para siempre en ese simulador, también en un arranque manual."
         )
     }
 
@@ -555,7 +555,7 @@ struct UITestSeamPersistenceIsolationTests {
         // concreto —cubre también un `@AppStorage`, un helper nuevo o un literal— y es exactamente
         // lo que estaba escrito antes del fix.
         let prohibidas = [
-            (AppPreferences.Keys.groupsBetaUnlocked, "el gate beta de Grupos queda desbloqueado para siempre en ese simulador"),
+            (AppPreferences.Keys.groupsBetaUnlocked, "el dominio Grupos queda adoptado para siempre en ese simulador"),
             (AppPreferences.Keys.hasCompletedOnboarding, "abrir la app a mano tras un XCUITest se salta el onboarding"),
             (AppPreferences.Keys.hasShownWelcomeChooser, "abrir la app a mano tras un XCUITest se salta el Welcome Chooser"),
             (CategorySeedSentinel.productionKey, "el arranque manual siguiente se queda sin categorías"),
@@ -583,7 +583,7 @@ struct UITestSeamPersistenceIsolationTests {
 
     /// El otro extremo del mismo hueco: que el DEFAULT de los seams sea el mecanismo real. Cambiarlo
     /// por un no-op no rompe ni un solo test de comportamiento —todos inyectan— y deja los XCUITest
-    /// arrancando con onboarding y con el gate beta puesto.
+    /// arrancando con onboarding y sin la adopción de Grupos aplicada.
     @Test func losSeamsPorDefectoUsanElMecanismoReal() throws {
         let source = try code(at: "Yala/App/UITestEphemeralDefaults.swift")
 
@@ -591,7 +591,7 @@ struct UITestSeamPersistenceIsolationTests {
         #expect(
             porDefecto == 2,
             """
-            Se esperaban 2 seams con `liveVolatileApply` por defecto (gate beta y onboarding) y hay \(porDefecto). \
+            Se esperaban 2 seams con `liveVolatileApply` por defecto (adopción de Grupos y onboarding) y hay \(porDefecto). \
             O se renombró el mecanismo, o alguno dejó de usarlo: en los dos casos el pin dejó de comprobar nada.
             """
         )

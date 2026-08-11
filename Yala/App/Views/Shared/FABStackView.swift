@@ -18,10 +18,6 @@ struct FABStackView: View {
     let isChatLocked: Bool
     let chatConsentAccepted: Bool
     let chatFABVisible: Bool
-    /// Muestra la opción "Grupo" (registrar un gasto de grupo). El tap navega al tab
-    /// Grupos y abre el composer allí — el Panel queda desacoplado de los datos de grupos.
-    /// Gateada por disponibilidad de Grupos (`groupsBetaUnlocked`) desde cada host.
-    var showGroupOption: Bool = false
 
     // MARK: - Callbacks
 
@@ -179,13 +175,15 @@ struct FABStackView: View {
 
     private var menuButtons: some View {
         VStack(spacing: DS.Spacing.sm) {
-            if showGroupOption {
-                fabMenuButton(icon: "person.2.fill", text: L10n.Panel.fabGroup, color: .priorityNeedNew) {
-                    dismissMenu()
-                    sessionState.navigateToGroupsAndComposeExpense()
-                }
-                .accessibilityIdentifier("panel_fab_group")
+            // "Grupo" (registrar un gasto de grupo): el tap navega al tab Grupos y abre el
+            // composer allí — el host queda desacoplado de los datos de grupos. Estuvo gateada
+            // por el código beta hasta 2.1; hoy Grupos está abierto para todos y se muestra
+            // siempre.
+            fabMenuButton(icon: "person.2.fill", text: L10n.Panel.fabGroup, color: .priorityNeedNew) {
+                dismissMenu()
+                sessionState.navigateToGroupsAndComposeExpense()
             }
+            .accessibilityIdentifier("panel_fab_group")
 
             fabMenuButton(icon: "waveform", text: L10n.Panel.fabVoice, color: .hotPink, isLocked: isVoiceLocked) {
                 dismissMenu()

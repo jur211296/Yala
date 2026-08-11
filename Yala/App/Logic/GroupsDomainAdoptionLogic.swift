@@ -1,12 +1,22 @@
 //
-//  GroupsBetaGateLogic.swift
+//  GroupsDomainAdoptionLogic.swift
 //  Yala
 //
-//  Pure decision logic para el gate de código beta del tab Grupos. Grupos se
-//  libera en producción de forma controlada (validación de la v2.0.1): nadie
-//  entra sin el código beta, salvo quien llega por enlace de invitación.
+//  Pure decision logic del gate de ADOPCIÓN del dominio Grupos: ¿este dispositivo, que declaró
+//  «aquí empieza un usuario nuevo», deja que el bridge materialice gastos de grupo en el corpus
+//  personal?
 //
-//  Gate TEMPORAL — se removerá al estabilizar la 2.0.1.
+//  **Antes fue `GroupsBetaGateLogic` y era SSOT de DOS preguntas** —si se VE Grupos y si el bridge
+//  escribe en un dispositivo SELLADO—. La primera murió en 2.1 con el código beta «1050» (decisión
+//  del owner: Grupos abierto para todos), y de aquel gate no queda ni la pantalla, ni el modifier de
+//  ingreso del código, ni sus 6 keys de l10n. **La segunda sigue viva y es la razón de este fichero.**
+//  Si vuelves buscando dónde se decide si el tab se ve: ya no se decide en ningún sitio, se ve
+//  siempre.
+//
+//  La key de `UserDefaults` conserva su string histórico `"groupsBetaUnlocked"`
+//  (`AppPreferences.Keys.groupsBetaUnlocked`): renombrarla obligaría a migrar el parque sin ganar
+//  nada. Quien la ESCRIBE hoy es `GroupsDomainAdoptionMarker` (entrada al tab), el alta solo-grupos
+//  y la entrada por invitación — todos actos de adopción deliberados.
 //
 //  Extraído como pure-logic para tests sin SwiftData ni UI (sin flake R8 conocido
 //  por `makeTestContext()`). Patrón análogo a `GroupsOnboardingLogic`.
@@ -14,32 +24,19 @@
 
 import Foundation
 
-enum GroupsBetaGateLogic {
+enum GroupsDomainAdoptionLogic {
 
-    /// Código beta numérico que desbloquea el acceso a Grupos.
-    static let betaCode = "1050"
-
-    /// `true` si el texto ingresado coincide con el código beta. Trim defensivo:
-    /// `.numberPad` no garantiza solo-dígitos (teclados de terceros, pegado).
-    static func isValidCode(_ input: String) -> Bool {
-        input.trimmingCharacters(in: .whitespacesAndNewlines) == betaCode
-    }
-
-    /// Decide si mostrar el gate de bloqueo en lugar del contenido de Grupos.
-    /// - Parameters:
-    ///   - isUnlocked: `AppPreferences.Keys.groupsBetaUnlocked` (per-device). Una vez
-    ///     `true` (código correcto o invitación aceptada), el gate no se muestra más.
-    ///   - isGroupInviteMode: `SessionState.isGroupInviteMode`. Los invitados por enlace
-    ///     entran sin código (exentos del gate).
-    static func shouldShowGate(isUnlocked: Bool, isGroupInviteMode: Bool) -> Bool {
-        !isDomainOpen(isUnlocked: isUnlocked, isGroupInviteMode: isGroupInviteMode)
-    }
-
-    /// ¿El dominio Grupos está ABIERTO para el usuario actual de ESTE dispositivo?
+    /// ¿El usuario actual de ESTE dispositivo ADOPTÓ el dominio Grupos con un acto deliberado?
     ///
-    /// Mismo predicado que `shouldShowGate`, invertido — SSOT deliberada: la puerta que decide
-    /// si se VE Grupos es la misma que decide si un dispositivo SELLADO deja que el bridge
-    /// materialice gastos de grupo en el corpus personal (ver `isBridgeAllowed`).
+    /// Dos términos, y los dos hacen falta: la adopción per-device
+    /// (`AppPreferences.Keys.groupsBetaUnlocked`, escrita al entrar al tab, al aceptar una
+    /// invitación o en el alta solo-grupos) y el modo solo-grupos vivo
+    /// (`SessionState.isGroupInviteMode`, que ES una adopción: este dispositivo se dio de alta
+    /// PARA grupos). Quitar el segundo cerraría el bridge al invitado normal, que es la mayoría.
+    ///
+    /// **No es un gate de visibilidad.** Solo lo consume `isBridgeAllowed`; colapsarlo a `true`
+    /// deja `sealedForFreshStart` sin efecto observable y abre los 5 guards de
+    /// `GroupTransactionBridge.isDomainOpenForBridge` a la vez.
     static func isDomainOpen(isUnlocked: Bool, isGroupInviteMode: Bool) -> Bool {
         isUnlocked || isGroupInviteMode
     }
@@ -54,7 +51,7 @@ enum GroupsBetaGateLogic {
     /// disponible es de intención, no de identidad: quién declaró el relevo y quién adoptó Grupos
     /// después.
     ///
-    /// **Por qué un SELLO y no un gate general.** Exigir el dominio abierto SIEMPRE habría
+    /// **Por qué un SELLO y no un gate general.** Exigir el dominio adoptado SIEMPRE habría
     /// bloqueado el bridge de todo usuario que aún no abrió Grupos —el estado por DEFECTO— con un
     /// falso negativo silencioso: el bug se convierte en «mis gastos de grupo no aparecen» y nadie
     /// sabe por qué. Así que el default es PERMITIR: solo el dispositivo que pasó por «empiezo de

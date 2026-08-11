@@ -20,9 +20,6 @@ struct RecordsStandaloneView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
 
-    /// Disponibilidad de Grupos (gate beta temporal v2.0.1) — gatea la opción "Grupo" del FAB.
-    @AppStorage(AppPreferences.Keys.groupsBetaUnlocked) private var groupsBetaUnlocked = false
-
     // MARK: - ViewModels
 
     @State private var dataViewModel = DetailContainerViewModel()
@@ -166,7 +163,6 @@ struct RecordsStandaloneView: View {
                                     isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
                                     chatConsentAccepted: appPreferences.aiChatConsentAccepted,
                                     chatFABVisible: appPreferences.chatFABVisible,
-                                    showGroupOption: groupsBetaUnlocked,
                                     onVoiceTap: { showVoiceRecording = true },
                                     onImageTap: { showImageSelection = true },
                                     onManualTap: { recordsViewModel.showNewTransaction = true },

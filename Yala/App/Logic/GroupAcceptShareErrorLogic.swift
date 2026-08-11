@@ -16,7 +16,7 @@
 //  - `CKError.notAuthenticated`: el device no tiene sesión de iCloud — copy claro
 //    "necesitas iCloud" en vez del genérico de sync.
 //
-//  Patrón GroupsBetaGateLogic: sin SwiftData ni UI, tabla completa en
+//  Patrón GroupsDomainAdoptionLogic: sin SwiftData ni UI, tabla completa en
 //  GroupAcceptShareErrorLogicTests.
 //
 

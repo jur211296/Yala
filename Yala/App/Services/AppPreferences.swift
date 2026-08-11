@@ -1277,24 +1277,34 @@ final class AppPreferences {
         static let hasShownYalaAIOnboarding = "hasShownYalaAIOnboarding"
         static let hasShownGroupsOnboarding = "hasShownGroupsOnboarding"
         static let hasSeenTodayFXCoachMark = "hasSeenTodayFXCoachMark"
-        /// Gate TEMPORAL de código beta para el tab Grupos (validación v2.0.1).
-        /// Per-device, no sincronizado, NO se resetea en wipe. Leído vía @AppStorage
-        /// directo en las views del gate; escrito vía UserDefaults desde el código
-        /// correcto o desde `CKShareEntryHandler` (invitados). Remover al estabilizar.
+        /// ADOPCIÓN del dominio Grupos en ESTE dispositivo. Per-device, no sincronizada, NO se
+        /// resetea en el wipe normal (exclusión deliberada, ver abajo) pero SÍ en el handover.
+        ///
+        /// Nació en la 2.0.1 como gate del código beta «1050» y **conserva ese string a
+        /// propósito**: la validación beta se retiró en 2.1 (Grupos abierto para todos) y
+        /// renombrar la key obligaría a migrar el parque sin ganar nada. Lo que quedó vivo es la
+        /// otra mitad —la que decide si el bridge escribe en un dispositivo SELLADO
+        /// (`GroupsDomainAdoptionLogic.isBridgeAllowed`)— y por eso la key sigue teniendo dueño.
+        ///
+        /// La escriben los actos de adopción deliberados: entrar al tab Grupos
+        /// (`GroupsDomainAdoptionMarker`), aceptar una invitación
+        /// (`GroupBackendInviteEntryHandler` / `AppBootstrapper.persistBackendInviteIntent`) y el
+        /// alta solo-grupos del onboarding. Leída por `GroupTransactionBridge`.
         static let groupsBetaUnlocked = "groupsBetaUnlocked"
         /// SELLO del handover de dispositivo: lo escribe `DataWipeService.wipeLocalGroupsDomain`
         /// cuando alguien elige «empiezo de cero» en el Welcome. Marca que el dominio Grupos que
         /// este dispositivo pueda volver a descargar de iCloud (mismo Apple ID, otro humano) NO es
         /// del usuario actual mientras él no lo adopte con un acto deliberado.
         ///
-        /// Es un sello y no un gate general A PROPÓSITO (`GroupsBetaGateLogic.isBridgeAllowed`):
-        /// bloquear el bridge por AUSENCIA de `groupsBetaUnlocked` habría afectado a todo usuario
-        /// que nunca abrió Grupos, con un falso negativo silencioso. Con el sello, el único
-        /// dispositivo cuyo comportamiento cambia es el que declaró el relevo.
+        /// Es un sello y no un gate general A PROPÓSITO
+        /// (`GroupsDomainAdoptionLogic.isBridgeAllowed`): bloquear el bridge por AUSENCIA de
+        /// `groupsBetaUnlocked` habría afectado a todo usuario que nunca abrió Grupos, con un
+        /// falso negativo silencioso. Con el sello, el único dispositivo cuyo comportamiento
+        /// cambia es el que declaró el relevo.
         ///
-        /// No se borra nunca: el predicado lo NEUTRALIZA en cuanto el usuario abre Grupos (código
-        /// beta, invitación aceptada u onboarding «Solo Grupos»), así que no hace falta cablear su
-        /// limpieza en los 5 sitios que desbloquean el tab. Excluido del barrido del wipe normal.
+        /// No se borra nunca: el predicado lo NEUTRALIZA en cuanto el usuario ADOPTA Grupos
+        /// (entrar al tab, invitación aceptada u onboarding «Solo Grupos»), así que no hace falta
+        /// cablear su limpieza en cada uno de esos sitios. Excluido del barrido del wipe normal.
         static let groupsDomainSealedForFreshStart = "groupsDomainSealedForFreshStart"
         static let lastSeenAppVersion = "lastSeenAppVersion"
         nonisolated static let expensesOnlyMode = "expensesOnlyMode"  // accedida cross-process desde intents

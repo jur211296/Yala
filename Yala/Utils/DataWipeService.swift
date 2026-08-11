@@ -313,8 +313,9 @@ final class DataWipeService {
 
         // SELLO: el borrado de arriba es local, y el reset de los tokens hace que el motor
         // re-descargue el corpus de grupos del Apple ID (deliberado — ver arriba). Quien lo mantiene
-        // fuera de la vida personal del usuario nuevo es este sello, que `GroupsBetaGateLogic
-        // .isBridgeAllowed` traduce en «el bridge no escribe hasta que ADOPTES Grupos». Va AL FINAL:
+        // fuera de la vida personal del usuario nuevo es este sello, que
+        // `GroupsDomainAdoptionLogic.isBridgeAllowed` traduce en «el bridge no escribe hasta que
+        // ADOPTES Grupos». Va AL FINAL:
         // el barrido de prefs de arriba no lo nombra, pero el orden lo deja explícito ante un
         // futuro añadido a esa lista.
         defaults.set(true, forKey: AppPreferences.Keys.groupsDomainSealedForFreshStart)
@@ -324,10 +325,11 @@ final class DataWipeService {
     /// testearse con un `UserDefaults` aislado, igual que `removeUserPreferenceKeys`.
     ///
     /// `groupsBetaUnlocked` se borra AQUÍ y no en `removeUserPreferenceKeys`: allí sigue siendo una
-    /// exclusión deliberada (gate per-device del wipe de «Vaciar datos», con test que lo pinnea) —
-    /// un dispositivo recuerda su desbloqueo, pero un dispositivo que declara «aquí empieza un
-    /// usuario nuevo» no debe recordar el del anterior. Es además la pieza que cierra la puerta:
-    /// sin ella, B entra a Grupos sin código y reabre el bridge.
+    /// exclusión deliberada (adopción per-device que el wipe de «Vaciar datos» no debe olvidar, con
+    /// test que lo pinnea) — un dispositivo recuerda que adoptó Grupos, pero un dispositivo que
+    /// declara «aquí empieza un usuario nuevo» no debe heredar la adopción del anterior. Es la
+    /// pieza que cierra la puerta: sin ella el sello nace neutralizado y el bridge de B queda
+    /// abierto desde el primer arranque, sin que B haya pedido ver Grupos.
     ///
     /// `groups_currentUserRecordName` NO se toca aquí a propósito: la borra `clearCache()` del
     /// `resetSyncState`, que además tira el valor EN MEMORIA del singleton (borrar solo la key
@@ -364,7 +366,7 @@ final class DataWipeService {
 
     /// La OTRA mitad del sello, y la que faltaba: `onboardingMode` no muere con la copia local.
     ///
-    /// `GroupsBetaGateLogic.isDomainOpen` es `isUnlocked || isGroupInviteMode`, y ese segundo término sale
+    /// `GroupsDomainAdoptionLogic.isDomainOpen` es `isUnlocked || isGroupInviteMode`, y ese segundo término sale
     /// de `onboardingMode == .groupInvite` (`SessionState.isGroupInviteMode`) — una preferencia
     /// SINCRONIZADA por iCloud KV per-Apple-ID cuyo merge es never-downgrade por rank
     /// (`PreferenceMergeLogic`, familia `.onboardingModeNeverDowngrade`; `.groupInvite` rank 1 >
@@ -464,7 +466,7 @@ final class DataWipeService {
     /// - `groupsDomainSealedForFreshStart` — SELLO del handover, no preferencia: lo escribe
     ///   `wipeLocalGroupsDomain` y borrarlo aquí REABRIRÍA el bridge en un dispositivo que declaró
     ///   el relevo, devolviendo los gastos del usuario anterior al Panel del nuevo. Su vida útil la
-    ///   termina el propio predicado (`GroupsBetaGateLogic.isBridgeAllowed`) cuando el usuario adopta
+    ///   termina el propio predicado (`GroupsDomainAdoptionLogic.isBridgeAllowed`) cuando el usuario adopta
     ///   Grupos, no un barrido.
     /// - `groupPrefs_*` y estado de Grupos — el dominio Grupos sobrevive el wipe por diseño
     ///   (store propio, CKSyncEngine); sus prefs se limpian en leaveGroup.

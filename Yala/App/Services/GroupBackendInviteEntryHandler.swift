@@ -70,7 +70,7 @@ enum GroupBackendInviteEntryHandler {
         branded: InviteLinkService.BrandedMetadata = .empty,
         source: Source = .universalLink
     ) async {
-        // 1. Desbloquea beta (igual que CKShareEntryHandler).
+        // 1. Adopta el dominio Grupos: aceptar una invitación ES el acto deliberado.
         UserDefaults.standard.set(true, forKey: AppPreferences.Keys.groupsBetaUnlocked)
         // 2. Persiste el intent ANTES de cualquier await.
         persistIntent(groupID: groupID, token: token)

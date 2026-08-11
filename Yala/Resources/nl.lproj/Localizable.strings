@@ -4471,24 +4471,6 @@
 "groups.errors.inviteFailed" = "Kan de uitnodigingslink niet aanmaken. Controleer je verbinding en probeer het opnieuw.";
 /* Generic group action failure (delete expense, settle, approve/reject member) */
 "groups.errors.actionFailed" = "Kan de actie niet voltooien. Probeer het opnieuw.";
-/* Beta gate (Groups): screen/alert title */
-"groups.beta.gate.title" = "Bètafunctie";
-
-/* Beta gate (Groups): explanation message */
-"groups.beta.gate.message" = "Deze functie is in bèta en alleen beschikbaar voor bepaalde gebruikers";
-
-/* Beta gate (Groups): button to enter the beta code */
-"groups.beta.gate.haveCode" = "Ik heb een bètacode";
-
-/* Beta gate (Groups): code entry alert title */
-"groups.beta.gate.codePrompt" = "Voer je bètacode in";
-
-/* Beta gate (Groups): code field placeholder */
-"groups.beta.gate.placeholder" = "Code";
-
-/* Beta gate (Groups): wrong code error */
-"groups.beta.gate.wrongCode" = "Onjuiste code";
-
 /* Chip 'Dividir entre' cuando todos los miembros del grupo están seleccionados */
 "groups.expense.allMembers" = "Iedereen";
 

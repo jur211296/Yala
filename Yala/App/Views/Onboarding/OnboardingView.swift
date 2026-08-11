@@ -1829,9 +1829,10 @@ struct OnboardingView: View {
         sync.set(string: OnboardingMode.groupInvite.rawValue, forKey: OnboardingMode.userDefaultsKey)
         sessionState.onboardingMode = .groupInvite
 
-        // Exención del gate beta: reusar `.groupInvite` solo exime el gate del tab,
-        // no los otros lectores del flag → setearlo explícito (per-device, como
-        // CKShareEntryHandler hace al aceptar un enlace).
+        // Adopción explícita del dominio Grupos: `.groupInvite` ya la implica por el segundo
+        // término de `GroupsDomainAdoptionLogic.isDomainOpen`, pero ese término muere si el usuario
+        // activa Yala completo más tarde. La key es per-device y permanente (mismo trato que la
+        // entrada por invitación).
         UserDefaults.standard.set(true, forKey: AppPreferences.Keys.groupsBetaUnlocked)
 
         // Seeds idénticos al invite path: categorías personales (subcategorías para

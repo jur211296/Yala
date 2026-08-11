@@ -1881,9 +1881,6 @@ struct MainTabView: View {
     @Environment(AppPreferences.self) private var appPreferences
     @State private var searchText: String = ""
     @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
-    /// Gate beta de Grupos (validación v2.0.1). @AppStorage directo: reacciona al
-    /// desbloqueo desde la card de "Más", el gate o `CKShareEntryHandler` (invitados).
-    @AppStorage(AppPreferences.Keys.groupsBetaUnlocked) private var groupsBetaUnlocked = false
     /// Gate "Grupos necesita iCloud" (§i.8(c)2): singleton observado — leer `status`
     /// (stored) en el branch `.groups` registra la dependencia; `isAccountAvailable`
     /// es computed y @Observable no la trackea. Patrón iCloudSyncSettingsView.
@@ -2148,17 +2145,18 @@ struct MainTabView: View {
             // stored y transiciona vía NSUbiquityIdentityDidChange → leerlo registra la
             // dependencia que re-evalúa este branch cuando la cuenta iCloud cambia.
             let _ = syncService.status
-            if GroupsBetaGateLogic.shouldShowGate(isUnlocked: groupsBetaUnlocked,
-                                                  isGroupInviteMode: sessionState.isGroupInviteMode) {
-                GroupsBetaGateView()
-            } else {
-                // El muro «Grupos necesita iCloud» (gate CloudKit-era + `GroupsICloudUnavailableView`) se
-                // RETIRÓ aquí, que es el retiro real que su propio comentario prometía «post-G6»: el canal
-                // superviviente no exige la cuenta iCloud del OS. La lectura de `syncService.status` de
-                // arriba se conserva a propósito — sigue siendo lo que registra la dependencia @Observable
-                // de este branch.
-                GroupsContainerView()
-            }
+            // El muro «Grupos necesita iCloud» (gate CloudKit-era + `GroupsICloudUnavailableView`) se
+            // RETIRÓ aquí, que es el retiro real que su propio comentario prometía «post-G6»: el canal
+            // superviviente no exige la cuenta iCloud del OS. La lectura de `syncService.status` de
+            // arriba se conserva a propósito — sigue siendo lo que registra la dependencia @Observable
+            // de este branch. El gate del código beta «1050» también se retiró (2.1: Grupos abierto
+            // para todos), y por eso el tab monta su contenido SIN condición.
+            GroupsContainerView()
+                // Entrar al tab ES el acto de adopción del dominio: ocupa el hueco que dejó el
+                // código beta. Sin este escritor, un dispositivo SELLADO por «empiezo de cero» se
+                // queda sin nadie que escriba la key y el bridge le queda cerrado en silencio
+                // («mis gastos de grupo no aparecen»). Es idempotente — ver el guard del marker.
+                .onAppear { GroupsDomainAdoptionMarker.recordEntry() }
         }
     }
 

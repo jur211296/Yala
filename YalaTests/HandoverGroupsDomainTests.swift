@@ -8,7 +8,8 @@
 //  El escenario, reproducido en simulador antes del fix: el usuario A hace «Cerrar sesión»
 //  (`.privateReset`, no borra nada) y B elige «Soy nuevo» en el MISMO dispositivo con el MISMO Apple ID.
 //  `wipeAllUserData` vaciaba el corpus personal (36 TX → 0) pero el dominio Grupos quedaba intacto
-//  (2 grupos, 12 gastos), `groupsBetaUnlocked` sobrevivía —B entraba a Grupos sin el código— y el bridge,
+//  (2 grupos, 12 gastos), `groupsBetaUnlocked` sobrevivía —B heredaba la adopción de A, que entonces era
+//  el desbloqueo del código beta— y el bridge,
 //  ciego a la identidad, volvía a materializar los gastos de A como `TransactionItem`/`InboxDraft`:
 //  el Panel de B pasaba de «S/ 1.000 en 1 cuenta» a «S/ 900 en 2 cuentas» con gastos de A.
 //
@@ -19,7 +20,7 @@
 //  re-descargados fuera de la vida personal.
 //
 //  **Aislamiento (lección de esta sesión).** NINGÚN test de aquí toca `UserDefaults.standard`: el
-//  sello y el gate beta viven en preferencias, y escribirlas en el dominio real desde un test CIERRA
+//  sello y la adopción del dominio viven en preferencias, y escribirlas en el dominio real CIERRA
 //  el bridge para las suites que se interleavan con esta (Swift Testing solapa suites distintas aun
 //  con `-parallel-testing-enabled NO`). La primera versión de estos tests usaba snapshot/restore de
 //  `UserDefaults.standard` y puso 14 tests ajenos del bridge en rojo — con la variante peor de por
@@ -168,8 +169,8 @@ struct HandoverGroupsDomainTests {
 
         DataWipeService.removeGroupsDomainPreferenceKeys(from: defaults)
 
-        // El gate beta es LA pieza que cierra la puerta: sin esto B entra a Grupos sin código y
-        // reabre el bridge (`GroupsBetaGateLogic.isDomainOpen`).
+        // La adopción per-device es LA pieza que cierra la puerta: heredada del usuario anterior,
+        // el sello nace neutralizado (`GroupsDomainAdoptionLogic.isDomainOpen`).
         #expect(defaults.object(forKey: AppPreferences.Keys.groupsBetaUnlocked) == nil)
         #expect(defaults.object(forKey: AppPreferences.Keys.hasShownGroupsOnboarding) == nil)
         #expect(defaults.object(forKey: AppPreferences.Keys.hasSeenGroupsNotificationPrompt) == nil)
@@ -179,7 +180,7 @@ struct HandoverGroupsDomainTests {
         #expect(defaults.string(forKey: "groupsSomethingElse") == "keepMe")
     }
 
-    /// `groupsBetaUnlocked` sigue siendo exclusión deliberada del wipe NORMAL (gate per-device de
+    /// `groupsBetaUnlocked` sigue siendo exclusión deliberada del wipe NORMAL (adopción per-device de
     /// «Vaciar datos», pinneado en `DataWipeServiceTests.preservedKeys_surviveReset`). Las dos
     /// direcciones importan: el barrido general la conserva, el del handover se la lleva.
     @Test func generalPreferenceSweep_stillPreservesBetaGate() throws {
@@ -225,10 +226,10 @@ struct HandoverGroupsDomainTests {
 
         // 3. Y con el modo de vuelta en `.full`, el sello vuelve a cortar el bridge.
         let merged = OnboardingMode(rawValue: defaults.string(forKey: key) ?? "") ?? .full
-        #expect(GroupsBetaGateLogic.isDomainOpen(
+        #expect(GroupsDomainAdoptionLogic.isDomainOpen(
             isUnlocked: defaults.bool(forKey: AppPreferences.Keys.groupsBetaUnlocked),
             isGroupInviteMode: merged == .groupInvite) == false)
-        #expect(GroupsBetaGateLogic.isBridgeAllowed(
+        #expect(GroupsDomainAdoptionLogic.isBridgeAllowed(
             sealedForFreshStart: defaults.bool(forKey: AppPreferences.Keys.groupsDomainSealedForFreshStart),
             isUnlocked: defaults.bool(forKey: AppPreferences.Keys.groupsBetaUnlocked),
             isGroupInviteMode: merged == .groupInvite) == false)
@@ -290,10 +291,10 @@ struct HandoverGroupsDomainTests {
     // MARK: - Gate de dominio (pure logic)
 
     @Test func isDomainOpen_onlyWithADeliberateActOnThisDevice() {
-        #expect(GroupsBetaGateLogic.isDomainOpen(isUnlocked: false, isGroupInviteMode: false) == false)
-        #expect(GroupsBetaGateLogic.isDomainOpen(isUnlocked: true, isGroupInviteMode: false) == true)
-        #expect(GroupsBetaGateLogic.isDomainOpen(isUnlocked: false, isGroupInviteMode: true) == true)
-        #expect(GroupsBetaGateLogic.isDomainOpen(isUnlocked: true, isGroupInviteMode: true) == true)
+        #expect(GroupsDomainAdoptionLogic.isDomainOpen(isUnlocked: false, isGroupInviteMode: false) == false)
+        #expect(GroupsDomainAdoptionLogic.isDomainOpen(isUnlocked: true, isGroupInviteMode: false) == true)
+        #expect(GroupsDomainAdoptionLogic.isDomainOpen(isUnlocked: false, isGroupInviteMode: true) == true)
+        #expect(GroupsDomainAdoptionLogic.isDomainOpen(isUnlocked: true, isGroupInviteMode: true) == true)
     }
 
     /// **El test que impide el falso negativo**: sin sello el bridge está SIEMPRE permitido, incluido
@@ -305,7 +306,7 @@ struct HandoverGroupsDomainTests {
         for unlocked in [true, false] {
             for invite in [true, false] {
                 #expect(
-                    GroupsBetaGateLogic.isBridgeAllowed(
+                    GroupsDomainAdoptionLogic.isBridgeAllowed(
                         sealedForFreshStart: false, isUnlocked: unlocked, isGroupInviteMode: invite)
                         == true)
             }
@@ -313,16 +314,16 @@ struct HandoverGroupsDomainTests {
     }
 
     /// Con sello, la puerta de Grupos manda: cerrada bloquea, y cualquier acto deliberado de adopción
-    /// (código beta o modo invitación) la reabre sin necesidad de borrar el sello.
+    /// (entrar al tab, invitación o alta solo-grupos) la reabre sin necesidad de borrar el sello.
     @Test func isBridgeAllowed_withSeal_followsTheGroupsDoor() {
         #expect(
-            GroupsBetaGateLogic.isBridgeAllowed(
+            GroupsDomainAdoptionLogic.isBridgeAllowed(
                 sealedForFreshStart: true, isUnlocked: false, isGroupInviteMode: false) == false)
         #expect(
-            GroupsBetaGateLogic.isBridgeAllowed(
+            GroupsDomainAdoptionLogic.isBridgeAllowed(
                 sealedForFreshStart: true, isUnlocked: true, isGroupInviteMode: false) == true)
         #expect(
-            GroupsBetaGateLogic.isBridgeAllowed(
+            GroupsDomainAdoptionLogic.isBridgeAllowed(
                 sealedForFreshStart: true, isUnlocked: false, isGroupInviteMode: true) == true)
     }
 
@@ -337,20 +338,12 @@ struct HandoverGroupsDomainTests {
         #expect(defaults.bool(forKey: AppPreferences.Keys.groupsDomainSealedForFreshStart) == true)
     }
 
-    /// SSOT: la puerta que decide si se VE Grupos es la misma que decide si el bridge escribe. Si
-    /// alguien las separa, el tab y el bridge pueden discrepar y la fuga vuelve por el lado que quede
-    /// abierto.
-    @Test func gateAndDomain_areExactInverses() {
-        for unlocked in [true, false] {
-            for invite in [true, false] {
-                #expect(
-                    GroupsBetaGateLogic.shouldShowGate(
-                        isUnlocked: unlocked, isGroupInviteMode: invite)
-                        != GroupsBetaGateLogic.isDomainOpen(
-                            isUnlocked: unlocked, isGroupInviteMode: invite))
-            }
-        }
-    }
+    // El test `gateAndDomain_areExactInverses` vivía aquí y pinneaba que la puerta de la UI y la
+    // del bridge eran el MISMO predicado invertido. Se retiró en 2.1 con el gate beta: la pregunta
+    // de la UI ya no existe —Grupos se ve siempre— así que no hay dos puertas que puedan discrepar.
+    // Lo que sobrevive de esa SSOT son los dos términos de `isDomainOpen`, que pinnean
+    // `isDomainOpen_onlyWithADeliberateActOnThisDevice` (aquí) y
+    // `GroupsDomainAdoptionTests.isDomainOpen_keepsBothTerms`.
 
     /// Contrato explícito del adaptador BAJO EL RUNNER: el sello se ignora, así que el bridge nunca
     /// queda cerrado en unit tests. No es un descuido — el host de los tests comparte el

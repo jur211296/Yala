@@ -88,13 +88,16 @@ enum UITestEphemeralDefaults {
         defaults.register(defaults: values)
     }
 
-    /// Gate beta de Grupos desbloqueado para ESTE proceso (los XCUITest prueban la funcionalidad
-    /// de Grupos, no el gate del código beta), sin dejar la key escrita.
+    /// Dominio Grupos ADOPTADO para ESTE proceso (los XCUITest prueban la funcionalidad de Grupos,
+    /// no el acto de adoptarla), sin dejar la key escrita.
     ///
     /// Antes esto era `UserDefaults.standard.set(true, forKey:)` en `applyUITestHooksEarly`, y su
     /// purga no existía en ninguna parte: `removeUserPreferenceKeys` excluye esta key A PROPÓSITO
-    /// (es un gate per-device que el wipe de «Vaciar datos» no debe olvidar, con test que lo
-    /// pinnea) ⇒ una sola corrida de XCUITest desbloqueaba Grupos para siempre en ese simulador.
+    /// (es una adopción per-device que el wipe de «Vaciar datos» no debe olvidar, con test que lo
+    /// pinnea) ⇒ una sola corrida de XCUITest dejaba Grupos adoptado para siempre en ese simulador.
+    ///
+    /// El dominio de REGISTRO (volátil) es además lo que hace que `GroupsDomainAdoptionMarker`
+    /// —que escribe la adopción al entrar al tab— vea la key ya puesta y NO persista nada.
     static func applyGroupsBetaUnlocked(
         to defaults: UserDefaults = .standard,
         volatileApply: VolatileApply = liveVolatileApply

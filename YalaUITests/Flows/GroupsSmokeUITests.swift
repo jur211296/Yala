@@ -205,9 +205,9 @@ final class GroupsSmokeUITests: XCTestCase {
     }
 
     /// groups-expense-form: desde el FAB del PANEL, la opción "Grupo" navega al tab Grupos y
-    /// abre el composer "Nuevo gasto" allí (integración Panel → Grupos). El gate beta se
-    /// desbloquea en uitest (la opción aparece) y el seed `grupos` siembra cuentas personales
-    /// (FAB del Panel habilitado) + 2 grupos elegibles.
+    /// abre el composer "Nuevo gasto" allí (integración Panel → Grupos). La opción ya no está
+    /// gateada por nada (el código beta se retiró en 2.1) y el seed `grupos` siembra cuentas
+    /// personales (FAB del Panel habilitado) + 2 grupos elegibles.
     func test_groupExpenseFromPanelFAB() {
         let app = launch()
 

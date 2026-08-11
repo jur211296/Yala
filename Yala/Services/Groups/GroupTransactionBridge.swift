@@ -71,10 +71,11 @@ final class GroupTransactionBridge {
 
     // MARK: - Gate de dominio (handover de dispositivo)
 
-    /// Adaptador runtime de `GroupsBetaGateLogic.isBridgeAllowed`. En un dispositivo normal
+    /// Adaptador runtime de `GroupsDomainAdoptionLogic.isBridgeAllowed`. En un dispositivo normal
     /// devuelve SIEMPRE `true` (byte-idéntico al comportamiento anterior al fix); solo cambia en el
-    /// que pasó por «empiezo de cero» en el Welcome, donde la puerta de Grupos —la MISMA que decide
-    /// si el tab se ve (`ContentView.viewForTab(.groups)`)— decide también si el bridge escribe.
+    /// que pasó por «empiezo de cero» en el Welcome, donde lo que decide si el bridge escribe es si
+    /// el dueño NUEVO adoptó Grupos con un acto deliberado (entrar al tab, aceptar una invitación o
+    /// darse de alta en solo-grupos).
     ///
     /// Con el sello puesto y la puerta cerrada, el bridge no materializa NADA en el corpus
     /// personal: es lo que impide que los gastos de grupo del usuario ANTERIOR de este dispositivo
@@ -91,14 +92,14 @@ final class GroupTransactionBridge {
     /// verificar el handover A MANO en ese simulador deja el sello escrito, cerrando el bridge para
     /// las 14 pruebas de comportamiento del bridge que sí lo necesitan abierto. Sin este guard, QA
     /// manual y suite unitaria se pisan. Los tests del gate NO pierden cobertura: ejercitan
-    /// `GroupsBetaGateLogic.isBridgeAllowed` directamente y este adaptador con `defaults` inyectado.
+    /// `GroupsDomainAdoptionLogic.isBridgeAllowed` directamente y este adaptador con `defaults` inyectado.
     ///
     /// `defaults` inyectable por la misma razón en la otra dirección: un test que escriba estas keys
     /// en `UserDefaults.standard` afectaría a las suites que se interleavan con él.
     static func isDomainOpenForBridge(defaults: UserDefaults = .standard) -> Bool {
         let sealed = !SwiftDataConfiguration.isRunningTests
             && defaults.bool(forKey: AppPreferences.Keys.groupsDomainSealedForFreshStart)
-        return GroupsBetaGateLogic.isBridgeAllowed(
+        return GroupsDomainAdoptionLogic.isBridgeAllowed(
             sealedForFreshStart: sealed,
             isUnlocked: defaults.bool(forKey: AppPreferences.Keys.groupsBetaUnlocked),
             isGroupInviteMode: SessionState.shared.isGroupInviteMode

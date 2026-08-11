@@ -647,12 +647,12 @@ final class AppBootstrapper {
         let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
         UserDefaults.standard.set(currentVersion, forKey: "lastSeenAppVersion")
 
-        // Gate beta de Grupos (validación v2.0.1, TEMPORAL): los XCUITests prueban la
-        // funcionalidad de Grupos, no el gate del código beta. Desbloquear en uitest
-        // evita que GroupsBetaGateView intercepte DeeplinkRoutingUITests / GroupsSmokeUITests.
+        // Adopción del dominio Grupos dada por hecha en uitest: los XCUITests prueban la
+        // funcionalidad de Grupos, no el acto de adoptarla, y con el sello del handover puesto un
+        // dominio no adoptado deja el bridge cerrado (`GroupsDomainAdoptionLogic.isBridgeAllowed`).
         // EFÍMERO y con purga: esto era un `set(true, forKey:)` que NADIE limpiaba jamás
         // —`removeUserPreferenceKeys` excluye esta key a propósito— así que una sola corrida
-        // dejaba Grupos desbloqueado para siempre en el simulador, también en arranques manuales.
+        // dejaba Grupos adoptado para siempre en el simulador, también en arranques manuales.
         UITestEphemeralDefaults.applyGroupsBetaUnlocked()
 
         // Centinela del seed de categorías: purga de lo que dejaron las corridas ANTERIORES. Que
@@ -1953,10 +1953,11 @@ final class AppBootstrapper {
         }
     }
 
-    /// Beta unlock + intent DURABLE + canario. Es el par exacto que ya hacían el cold path y
-    /// `GroupBackendInviteEntryHandler.handle`; extraído porque ahora hay un tercer llamador (flag
-    /// OFF). El beta unlock va aquí y no solo en `handle` porque el reconciler completa el join vía
-    /// `drive`, que no lo toca: sin esto el invitado entraría al grupo y seguiría detrás del gate.
+    /// Adopción del dominio + intent DURABLE + canario. Es el par exacto que ya hacían el cold path
+    /// y `GroupBackendInviteEntryHandler.handle`; extraído porque ahora hay un tercer llamador (flag
+    /// OFF). La adopción va aquí y no solo en `handle` porque el reconciler completa el join vía
+    /// `drive`, que no lo toca: sin esto el invitado entraría al grupo y, en un dispositivo sellado
+    /// por «empiezo de cero», sus gastos no llegarían nunca a su Panel.
     private func persistBackendInviteIntent(groupID: String, token: String) {
         UserDefaults.standard.set(true, forKey: AppPreferences.Keys.groupsBetaUnlocked)
         GroupBackendInviteEntryHandler.persistIntent(groupID: groupID, token: token)

@@ -3730,24 +3730,6 @@
 /* Generic group action failure (delete expense, settle, approve/reject member) */
 "groups.errors.actionFailed" = "No se pudo completar la acción. Vuelve a intentarlo.";
 
-/* Beta gate (Groups): screen/alert title */
-"groups.beta.gate.title" = "Función en beta";
-
-/* Beta gate (Groups): explanation message */
-"groups.beta.gate.message" = "Esta funcionalidad está en beta solo para algunos usuarios";
-
-/* Beta gate (Groups): button to enter the beta code */
-"groups.beta.gate.haveCode" = "Tengo un código beta";
-
-/* Beta gate (Groups): code entry alert title */
-"groups.beta.gate.codePrompt" = "Ingresa tu código beta";
-
-/* Beta gate (Groups): code field placeholder */
-"groups.beta.gate.placeholder" = "Código";
-
-/* Beta gate (Groups): wrong code error */
-"groups.beta.gate.wrongCode" = "Código incorrecto";
-
 /* Chip 'Dividir entre' cuando todos los miembros del grupo están seleccionados */
 "groups.expense.allMembers" = "Todos";
 
