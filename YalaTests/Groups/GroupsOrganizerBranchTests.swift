@@ -43,17 +43,27 @@ private typealias Flow = GroupsOrganizerFlowLogic
 private final class SpyPreferenceWriter: GroupsOrganizerPreferenceWriting {
     let defaults: UserDefaults
     private(set) var writes: [String] = []
+    /// Separado del total porque el CANAL importa: `defaultCurrencyCode` y el nombre son `synced: true`
+    /// en `AppPreferences`, y mandarlos por el canal per-device los dejaría fuera del iKV en silencio.
+    private(set) var syncedWrites: [String] = []
 
     init(defaults: UserDefaults) { self.defaults = defaults }
 
     func setSynced(_ value: String, forKey key: String) {
         writes.append(key)
+        syncedWrites.append(key)
         defaults.set(value, forKey: key)
     }
 
     func setLocal(_ value: Bool, forKey key: String) {
         writes.append(key)
         defaults.set(value, forKey: key)
+    }
+
+    /// Se pregunta al MISMO store aislado, nunca a `.standard`: el host de los unit tests es la app, así
+    /// que `.standard` es el del simulador y la divisa que dejara ahí otra corrida decidiría este test.
+    func hasValue(forKey key: String) -> Bool {
+        defaults.object(forKey: key) != nil
     }
 }
 
@@ -166,17 +176,45 @@ struct GroupsOrganizerNoWriteTests {
         #expect(defaults.string(forKey: AppPreferences.Keys.userName) == "Ana")
     }
 
-    @Test("la DIVISA no se escribe: es del chip G4")
-    func setupDoesNotWriteCurrency() {
-        // Anotado como aserción y no solo como comentario porque es una frontera de alcance: G4 añade
-        // `defaultCurrencyCode = CurrencyDefaults.detectCurrencyFromRegion()` a este mismo alta, y hasta
-        // entonces la key tiene que quedar AUSENTE (`AppPreferences` cae a su default). Si alguien la
-        // adelanta aquí sin el resto de G4, este test lo dice.
-        let defaults = makeIsolatedDefaults(prefix: "g3.alta.divisa")
+    @Test("G4 · la divisa sale de la REGIÓN, no del default global `.pen`")
+    func setupWritesRegionCurrency() {
+        // Región inyectada (molde de `CurrencyDefaultsTests`): sin ella el test afirmaría lo que diga el
+        // simulador y pasaría en verde con un hardcode puesto, siempre que el sim estuviera en esa región.
+        // Tres regiones ⇒ tres divisas: PE es la que coincide con el default global, así que sola no
+        // distinguiría «lee la región» de «cayó al `.pen` de `AppPreferences`».
+        for (region, expected) in [("PE", CurrencyCode.pen), ("US", .usd), ("MX", .mxn)] {
+            let defaults = makeIsolatedDefaults(prefix: "g4.alta.divisa.\(region)")
+            let writer = SpyPreferenceWriter(defaults: defaults)
+
+            GroupsOrganizerOnboarding.writePreferences(displayName: "Ana", writer: writer, regionCode: region)
+
+            #expect(defaults.string(forKey: AppPreferences.Keys.defaultCurrencyCode) == expected.rawValue,
+                    "región \(region) ⇒ esperaba \(expected.rawValue)")
+            // Va por el canal SINCRONIZADO, como el nombre: `defaultCurrencyCode` es `synced: true` en
+            // `AppPreferences`, así que mandarla por el canal per-device la dejaría fuera del iKV.
+            #expect(writer.syncedWrites.contains(AppPreferences.Keys.defaultCurrencyCode),
+                    "la divisa se escribió por el canal per-device: \(writer.syncedWrites)")
+        }
+    }
+
+    @Test("G4 · una divisa YA escrita no se pisa — el invariante del parque")
+    func setupNeverOverwritesAnExistingCurrency() {
+        // `defaultCurrencyCode` es `synced: true`: en una instalación nueva de un Apple ID que ya usa Yala,
+        // el valor puede haber bajado por iKV ANTES de que el organizador toque nada. Pisarlo le cambiaría
+        // la divisa por la de la región donde esté hoy, y esa escritura viaja de vuelta a la CUENTA.
+        let defaults = makeIsolatedDefaults(prefix: "g4.alta.divisa.existente")
+        defaults.set(CurrencyCode.eur.rawValue, forKey: AppPreferences.Keys.defaultCurrencyCode)
         let writer = SpyPreferenceWriter(defaults: defaults)
 
-        GroupsOrganizerOnboarding.writePreferences(displayName: "Ana", writer: writer)
-        #expect(defaults.object(forKey: AppPreferences.Keys.defaultCurrencyCode) == nil)
+        GroupsOrganizerOnboarding.writePreferences(displayName: "Ana", writer: writer, regionCode: "US")
+
+        #expect(defaults.string(forKey: AppPreferences.Keys.defaultCurrencyCode) == CurrencyCode.eur.rawValue)
+        // Contar la escritura, no solo mirar el estado final: re-escribir el MISMO valor dejaría el store
+        // idéntico y un mutante sin guard pasaría en verde si el fixture casara con la región.
+        #expect(!writer.writes.contains(AppPreferences.Keys.defaultCurrencyCode),
+                "el alta escribió la divisa encima de una existente: \(writer.writes)")
+        // El resto del alta sí ocurre: el guard es de la divisa, no del alta entera.
+        #expect(defaults.string(forKey: OnboardingMode.userDefaultsKey) == OnboardingMode.groupInvite.rawValue)
     }
 }
 
@@ -314,8 +352,10 @@ struct GroupsOrganizerWiringTests {
     @Test("MUTACIÓN (b'): la puerta no nombra ni el alta ni las keys del trío")
     func gateNeverWrites() throws {
         let code = try Self.code(Self.gateView)
+        // `defaultCurrencyCode` entra con G4: es `synced: true`, así que escribirla en la puerta
+        // propagaría a la CUENTA una divisa decidida antes de saber si el canal está encendido.
         for forbidden in ["GroupsOrganizerOnboarding", "groupsBetaUnlocked",
-                          "hasCompletedOnboarding", "onboardingMode"] {
+                          "hasCompletedOnboarding", "onboardingMode", "defaultCurrencyCode"] {
             #expect(!code.contains(forbidden), """
                 la puerta escribió `\(forbidden)`. El paso 2 comprueba y NO escribe: con el canal apagado el
                 usuario tiene que volver al chooser con el dispositivo exactamente como lo encontró.

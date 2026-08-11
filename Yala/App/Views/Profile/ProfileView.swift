@@ -263,10 +263,14 @@ struct ProfileView: View {
             usageFocus: appPreferences.usageFocus) == .groupsFocused
     }
 
-    /// D1: `true` solo cuando el usuario eligió «Solo mis grupos» (no en group-invite legado,
-    /// que usa el CTA de «Más»). Gatea la fila «Activar Yala completo» de Ajustes.
+    /// D1 + G4: gatea la fila «Activar Yala completo». Es la MISMA pregunta que `isGroupsFocusedShell`
+    /// —«¿este dispositivo tiene la shell reducida a Grupos?»— y por eso la delega en vez de responderla
+    /// por su cuenta: leía `usageFocus` CRUDO, era el único de los 5 lectores de esa preferencia que no
+    /// pasaba por `ShellModeLogic.effective`, y como **ninguna** de las cuatro escrituras de
+    /// `onboardingMode = .groupInvite` escribe `usageFocus`, quien llegaba por invitación o por el alta
+    /// solo-grupos no veía la fila NUNCA. Mismo criterio que el CTA gemelo de `MoreView`.
     private var showsActivateFullRow: Bool {
-        appPreferences.usageFocus == .groupsOnly
+        isGroupsFocusedShell
     }
 
     /// En solo-grupos no se muestra cromo Pro (no hay venta de Pro en ese modo).
@@ -312,8 +316,9 @@ struct ProfileView: View {
                             // Header
                             profileHeader
 
-                            // D1 (retención): fila permanente «Activar Yala completo» cuando el usuario
-                            // eligió «Solo mis grupos» — la vuelta a la app completa (flujo guiado).
+                            // D1 (retención) + G4: fila permanente «Activar Yala completo» en toda shell
+                            // reducida a Grupos —la eligió («Solo mis grupos») o llegó por un grupo—:
+                            // la vuelta a la app completa (flujo guiado).
                             if showsActivateFullRow {
                                 activateFullYalaSection
                             }
@@ -741,9 +746,10 @@ struct ProfileView: View {
 
     // MARK: - Sections
 
-    /// D1 (retención): CTA «Activar Yala completo» para el usuario en «Solo mis grupos».
-    /// Abre el flujo guiado (FullModeActivationView vía router); el reset de `usageFocus`
-    /// a `.full` lo hace `completeFullActivation`. Molde de `MoreView.activateFullYalaButton`.
+    /// D1 (retención) + G4: CTA «Activar Yala completo» para el usuario con la shell reducida
+    /// a Grupos. Abre el flujo guiado (FullModeActivationView vía router), que escribe las DOS
+    /// mitades —`onboardingMode = .completed` y `usageFocus = .full`— así que también des-reduce
+    /// la shell de quien llegó por invitación. Molde de `MoreView.activateFullYalaButton`.
     private var activateFullYalaSection: some View {
         Button {
             RouterEntryGate.shared.submit(.presentFullModeActivation)

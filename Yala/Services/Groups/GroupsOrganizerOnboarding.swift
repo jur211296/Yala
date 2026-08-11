@@ -18,12 +18,20 @@
 //  invoca DESPUÉS de `GroupsOrganizerGateLogic` y de la cadena sign-in → consent, nunca antes, y por eso
 //  un source-scan pinnea que tenga un solo call-site de producción.
 //
-//  **La divisa NO se escribe aquí todavía.** Es el chip G4 («la divisa por región del organizador»), que
-//  añade `defaultCurrencyCode = CurrencyDefaults.detectCurrencyFromRegion()` a este mismo alta siguiendo
-//  el precedente vivo de `GroupInviteOnboardingView` («grupo primero, región después»). Mientras tanto la
-//  key queda ausente y `AppPreferences` cae a su default; es editable en el grupo desde el primer minuto.
+//  **La divisa (G4) es la ÚNICA escritura CONDICIONAL del alta, y esa condición es el invariante.**
+//  `defaultCurrencyCode = CurrencyDefaults.detectCurrencyFromRegion()` sigue el precedente vivo de
+//  `GroupInviteOnboardingView` («grupo primero, región después», `:374-376`), pero **solo si la key está
+//  AUSENTE**: el default global `.pen` de `AppPreferences` NO se toca —79 lectores, 3 de ellos
+//  pre-onboarding y 2 tests que lo pinnean— y quien ya tenga una divisa escrita no puede verla cambiar.
+//  Y «ya escrita» no es un caso raro: `defaultCurrencyCode` es `synced: true`, así que en una instalación
+//  nueva de un Apple ID con Yala en otro dispositivo el valor puede haber bajado por iKV ANTES de que el
+//  organizador toque nada; sobrescribirlo le cambiaría la divisa por la de la región donde esté hoy. Por
+//  eso el writer expone `hasValue(forKey:)` en vez de que el alta consulte `UserDefaults.standard`: la
+//  condición tiene que ser afirmable sobre un STORE inyectado, igual que el «cero escrituras» del gate.
+//  La divisa es editable en el grupo desde el primer minuto (`GroupFormView` / `GroupSettingsView`).
 //
 
+import Foundation
 import SwiftData
 import SwiftUI
 
@@ -41,6 +49,10 @@ protocol GroupsOrganizerPreferenceWriting {
     func setSynced(_ value: String, forKey key: String)
     /// Preferencia PER-DEVICE: jamás viaja.
     func setLocal(_ value: Bool, forKey key: String)
+    /// ¿Este dispositivo ya tiene valor para esta key? Lo pide la divisa, la única escritura CONDICIONAL
+    /// del alta: sin lectura inyectable habría que preguntarle a `UserDefaults.standard`, y entonces el
+    /// test de «no se pisa una divisa existente» dependería del simulador en vez del store que le pasan.
+    func hasValue(forKey key: String) -> Bool
 }
 
 /// El canal de producción: `PreferenceSyncService` para lo sincronizado, `UserDefaults` para lo del device.
@@ -56,6 +68,13 @@ struct LiveGroupsOrganizerPreferenceWriter: GroupsOrganizerPreferenceWriting {
     func setLocal(_ value: Bool, forKey key: String) {
         defaults.set(value, forKey: key)
     }
+
+    /// `.standard` es el espejo local también de lo sincronizado: `PreferenceSyncService.set(string:)`
+    /// escribe ahí antes de empujar al canal, y el merge de bajada aplica ahí lo que llega del iKV o del
+    /// backend. ⇒ es el sitio correcto para preguntar «¿este dispositivo ya sabe una divisa?».
+    func hasValue(forKey key: String) -> Bool {
+        defaults.object(forKey: key) != nil
+    }
 }
 
 // MARK: - El alta
@@ -63,12 +82,16 @@ struct LiveGroupsOrganizerPreferenceWriter: GroupsOrganizerPreferenceWriting {
 @MainActor
 enum GroupsOrganizerOnboarding {
 
-    /// Las cinco keys que este alta escribe. Publicadas para que el test pueda afirmar su AUSENCIA en el
-    /// camino bloqueado con el mismo inventario que usa el camino que sí escribe — una lista duplicada a
+    /// Las seis keys que este alta puede escribir. Publicadas para que el test pueda afirmar su AUSENCIA en
+    /// el camino bloqueado con el mismo inventario que usa el camino que sí escribe — una lista duplicada a
     /// mano en el test se quedaría corta en cuanto alguien añadiera una escritura aquí.
+    ///
+    /// - Note: `defaultCurrencyCode` es la única CONDICIONAL (solo si está ausente), así que el control
+    ///   positivo del test que compara contra este inventario tiene que correr sobre un store limpio.
     static let writtenKeys: [String] = [
         AppPreferences.Keys.userName,
         AppPreferences.Keys.defaultPeriod,
+        AppPreferences.Keys.defaultCurrencyCode,
         OnboardingMode.userDefaultsKey,
         AppPreferences.Keys.groupsBetaUnlocked,
         AppPreferences.Keys.hasCompletedOnboarding
@@ -77,12 +100,28 @@ enum GroupsOrganizerOnboarding {
     /// Solo las preferencias, sin SwiftData. Separada de `completeSetup` para poder ejercitarla contra un
     /// writer espía sin montar un `ModelContainer` — no es una división cosmética: es la mitad que el test
     /// del gate usa como CONTROL POSITIVO de que sabe detectar una escritura.
-    static func writePreferences(displayName: String, writer: any GroupsOrganizerPreferenceWriting) {
+    ///
+    /// - Parameter regionCode: región ISO con la que se deriva la divisa. Default: la del dispositivo,
+    ///   inyectable para tests deterministas (patrón canónico `now: Date = .now`; el mismo default que
+    ///   `CurrencyDefaults.detectCurrencyFromRegion`, que es quien la traduce a divisa).
+    static func writePreferences(displayName: String,
+                                 writer: any GroupsOrganizerPreferenceWriting,
+                                 regionCode: String = Locale.current.region?.identifier ?? "") {
         let trimmed = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
         let effectiveName = trimmed.isEmpty ? L10n.Profile.defaultName : trimmed
 
         writer.setSynced(effectiveName, forKey: AppPreferences.Keys.userName)
         writer.setSynced(DetailPeriod.thisMonth.rawValue, forKey: AppPreferences.Keys.defaultPeriod)
+
+        // G4 · la divisa por región, en silencio y SOLO sobre una key ausente. El alta del organizador no
+        // pregunta la moneda (decisión del owner: solo nombre) y sin esta línea nacería en `.pen` —el
+        // default global, que NO se cambia— fuera de Perú. El guard es el invariante, no una optimización:
+        // esta key es `synced: true` y pisarla propagaría a la CUENTA la divisa de la región donde el
+        // usuario esté hoy, encima de la que ya eligió en otro dispositivo.
+        if !writer.hasValue(forKey: AppPreferences.Keys.defaultCurrencyCode) {
+            let currency = CurrencyDefaults.detectCurrencyFromRegion(regionCode: regionCode)
+            writer.setSynced(currency.rawValue, forKey: AppPreferences.Keys.defaultCurrencyCode)
+        }
 
         // Modo Solo Grupos: reusa `.groupInvite`. Push EXPLÍCITO al canal sincronizado (dual-write, mismo
         // patrón que `completeGroupsOnlyOnboarding` y `FullModeActivationView`) — el `didSet` de
