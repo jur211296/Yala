@@ -27,6 +27,14 @@
 //  `providerMismatch`, `error`) se comparten en vez de duplicarse, y el alta no añade ninguna
 //  presentación nueva a la matriz de readiness: cuelga del cover que ya está en ella.
 //
+//  M0 (ola M, §6.3 del spec M1 revival) — QUIÉN escribe el registro GDPR del consent, y cuándo. El
+//  consent SIGUE presentándose antes del sign-in en las dos entradas; lo que cambió es que en `.reentry`
+//  la ESCRITURA se difiere hasta que el guard cross-cuenta dice la ruta (tabla:
+//  `CloudConsentRegistrationLogic`). Antes se escribía al aceptar, cuando el único modo que
+//  `PreferenceSyncService` podía resolver era el `.icloud` del DUEÑO ⇒ un intento cross-cuenta que
+//  terminaba BLOQUEADO dejaba el epoch de la otra persona en el iKV de él. El alta born-cloud escribe al
+//  aceptar como siempre: su ruta ya se conoce ahí y su claim la VERIFICA.
+//
 //  Los flags de onboarding se marcan TEMPRANO (`onAdoptStarted`, antes de conducir
 //  la máquina): un kill a mitad del adopt aterriza en MainTab con la card de
 //  Almacenamiento reflejando el estado real — el seed del onboarding JAMÁS corre
@@ -78,6 +86,11 @@ struct WelcomeCloudSignInView: View {
 
     @State private var phase: CloudWelcomeSignInPhase = .intro
     @State private var showConsent = false
+    /// M0 · el usuario ACEPTÓ el consent y su epoch todavía no está escrito. Solo la RE-ENTRADA lo deja
+    /// pendiente: hasta que el guard cross-cuenta decida, escribirlo resolvería el destino con el modo
+    /// del DUEÑO. Se consume al escribir (una sola vez — el epoch conserva su T0 aunque el flujo
+    /// reintente).
+    @State private var consentPendingPersistence = false
     /// A5: el método que el usuario tapeó en el intro del ALTA (en `.reentry` no se usa — ahí el
     /// provider lo trae el `Entry`). Se fija ANTES de abrir el consent y de ahí sale el `provider`
     /// que ve `CloudAuthService`.
@@ -116,8 +129,9 @@ struct WelcomeCloudSignInView: View {
         // Estructuralmente lo garantiza que el ÚNICO productor del flujo sea este `onAccept`: los
         // botones del intro solo abren el sheet, nunca firman.
         .sheet(isPresented: $showConsent) {
-            CloudConsentView(path: consentPath) {
+            CloudConsentView(path: consentPath, persistsOnAccept: persistsConsentOnAccept) {
                 showConsent = false
+                consentPendingPersistence = !persistsConsentOnAccept
                 launchFlow { await runFlowAfterConsent() }
             }
         }
@@ -147,6 +161,32 @@ struct WelcomeCloudSignInView: View {
         case .reentry:   return .adopt
         case .bornCloud: return .bornCloud
         }
+    }
+
+    /// M0 · quién ESCRIBE el registro GDPR del consent. El alta born-cloud ya conoce su ruta al aceptar
+    /// (no pasa por el guard cross-cuenta) y su claim la VERIFICA (paso 5 de `BornCloudSignUpService`),
+    /// así que ahí escribe la pantalla, como siempre. La RE-ENTRADA no: su ruta la decide el guard
+    /// DESPUÉS del sign-in, y escribir antes deja el epoch de la invitada en el iKV del DUEÑO.
+    private var persistsConsentOnAccept: Bool {
+        switch entry {
+        case .bornCloud: true
+        case .reentry:   false
+        }
+    }
+
+    /// M0 · escribe el registro GDPR del consent SOLO si (a) la pantalla lo dejó pendiente —re-entrada—
+    /// y (b) la ruta que decidió el guard cae en ESTE punto del flujo. La tabla vive en
+    /// `CloudConsentRegistrationLogic`, así que llamar desde el punto equivocado es un no-op y no una
+    /// fuga: la decisión no se re-deriva aquí.
+    private func persistConsentIfDue(
+        at point: CloudConsentRegistrationLogic.Placement,
+        routedBy decision: CrossAccountEntryGuardLogic.Decision
+    ) {
+        CloudConsentRegistrationLogic.persistIfDue(
+            at: point,
+            routedBy: decision,
+            pending: &consentPendingPersistence,
+            persist: { CloudConsentRegistrar.register() })
     }
 
     /// Qué corre al aceptar el consent. Es el ÚNICO punto donde el flujo se bifurca por entrada.
@@ -665,9 +705,15 @@ struct WelcomeCloudSignInView: View {
                 secondarySessionEnabled: CloudSyncFlags.secondarySessionEntryAvailable)
             switch decision {
             case .blockedForeignData:
+                // M0: aquí NO se escribe el consent — la tabla dice `.never`. La sesión se descarta sin
+                // dejar rastro en el device y el registro GDPR real de esa cuenta vive en SU backend;
+                // escribirlo antes de saber la ruta era el bug del chip (caía en el iKV del dueño).
                 await CloudAuthService.shared.signOut()
                 phase = .blockedForeignData
             case .proceedSecondarySession:
+                // M0: tampoco aquí — la escritura va en `confirmSecondaryEntry`, DESPUÉS del descriptor
+                // (es el único punto donde el behavior de prefs resuelve `.localOnly`).
+                //
                 // M1 belt: invariante estructural — durante el Welcome post sign-out la key
                 // PERSISTIDA es `.icloud` (el sign-out cloud siempre la resetea antes de llegar
                 // aquí). Si no lo es, hay estado corrupto: delatarlo temprano, jamás armar.
@@ -678,6 +724,10 @@ struct WelcomeCloudSignInView: View {
                 }
                 phase = .secondaryConfirm
             case .proceed:
+                // M0: la ruta ya se conoce y es la del PROPIO dueño ⇒ el epoch se escribe AQUÍ, antes de
+                // arrancar la máquina: el paso 5-bis de `adoptBackendAccount` re-emite el epoch
+                // PERSISTIDO y sin él cae al fallback `now()`, que es la hora de FIN del adopt.
+                persistConsentIfDue(at: .beforeAdopt, routedBy: decision)
                 onAdoptStarted()
                 phase = .adopting(fraction: 0)
                 // Detector de aparcada FRESCO por adopt (un retry tras `.error` no debe
@@ -704,6 +754,11 @@ struct WelcomeCloudSignInView: View {
             recordClaim: { CloudClaimActionStore.shared.record(.routeReturningUser, forUserID: $0) },
             activateDescriptor: { SecondarySessionStore.activate(userID: $0) },
             markOnboardingFlags: onSecondaryEntryFlagsMarked)
+        // M0: DESPUÉS del descriptor, y ese orden ES el fix. `PrefsSyncBehavior.resolve` pregunta por el
+        // descriptor VIVO en CADA llamada, así que solo a partir de `activate` el epoch de la invitada
+        // resuelve `.localOnly` — ni el iKV del dueño ni el outbox de nadie. Un paso antes se propagaría
+        // a los otros devices del Apple ID del dueño.
+        persistConsentIfDue(at: .afterSecondaryDescriptor, routedBy: .proceedSecondarySession)
         CloudSyncBreadcrumb.secondaryEntryArmed()
         phase = .relaunchSecondary
     }

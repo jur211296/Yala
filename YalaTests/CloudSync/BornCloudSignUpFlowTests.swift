@@ -311,7 +311,11 @@ struct BornCloudSignUpOrderWiringTests {
                 "la re-entrada conserva su path: A5 no cambia la telemetría del adopt")
 
         let sheet = try Self.body(of: ".sheet(isPresented: $showConsent) {", in: src)
-        #expect(sheet.contains("CloudConsentView(path: consentPath)"))
+        // Sin el paréntesis de cierre: M0 le añadió `persistsOnAccept:` (quién ESCRIBE el epoch, que en
+        // el alta sigue siendo la pantalla). Lo que este test pinnea es que el sheet hospeda el consent
+        // con su `path` y que de él sale el flujo; el destino de la escritura lo pinnea
+        // `CloudConsentRegistrationTests`.
+        #expect(sheet.contains("CloudConsentView(path: consentPath"))
         #expect(sheet.contains("runFlowAfterConsent()"))
     }
 

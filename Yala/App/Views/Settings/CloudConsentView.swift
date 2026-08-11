@@ -4,9 +4,16 @@
 //
 //  Pantalla de consentimiento informado del Modo Nube (§2.8 / §k.6, I14 P5). SIEMPRE precede al sign-in
 //  (el login envía identidad) y a la doble confirmación de migración. Dice, en lenguaje claro, QUÉ sale
-//  del dispositivo, QUIÉN puede leerlo y qué NO viaja. Al aceptar registra `cloudConsentAcceptedAt` +
-//  `cloudConsentTextVersion` (trazabilidad GDPR §e.6) + telemetría, y ejecuta `onAccept` (el caller sigue
-//  con la doble confirmación → migración/adopt).
+//  del dispositivo, QUIÉN puede leerlo y qué NO viaja. Al aceptar emite la telemetría, registra
+//  `cloudConsentAcceptedAt` + `cloudConsentTextVersion` (trazabilidad GDPR §e.6) **si el caller ya conoce
+//  su ruta** y ejecuta `onAccept` (el caller sigue con la doble confirmación → migración/adopt).
+//
+//  M0 (ola M, §6.3 de MODO-NUBE-SPEC-M1-REVIVAL): la PERSISTENCIA es lo único condicional, y no por
+//  gusto. El destino de esas dos keys lo resuelve `PreferenceSyncService` en el INSTANTE de escribir, y
+//  en la RE-ENTRADA del Welcome ese instante es anterior al guard cross-cuenta ⇒ el epoch de la invitada
+//  caía en el iKV del Apple ID del DUEÑO. La pantalla no se mueve de sitio (pedir permiso después del
+//  sign-in sería pedirlo para algo ya hecho); lo que se difiere es la escritura, y la hace
+//  `CloudConsentRegistrar` desde el punto que la tabla `CloudConsentRegistrationLogic` elige.
 //
 //  Distinción (§k.6): este consent es sobre PRIVACIDAD (qué sale / quién lo lee). La doble confirmación de
 //  migración (patrón `DataWipeService`) es sobre la ACCIÓN (mover los datos) y la muestra `StorageSettingsView`.
@@ -29,7 +36,14 @@ import SwiftUI
 struct CloudConsentView: View {
     /// Ruta que abrió el consent (para la telemetría §j.4).
     let path: CloudMigrationController.ConsentPath
-    /// Se invoca al ACEPTAR (tras registrar consent + telemetría). El caller sigue con la doble confirmación.
+    /// M0 · ¿escribe ESTA pantalla el registro GDPR al aceptar? `true` en los dos contextos que ya
+    /// conocen su ruta cuando lo piden: la migración desde Ajustes y el alta born-cloud (cuyo claim
+    /// además lo VERIFICA — paso 5 de `BornCloudSignUpService`). La RE-ENTRADA del Welcome lo pasa a
+    /// `false` y escribe ella cuando el guard cross-cuenta dice por dónde va. La TELEMETRÍA no se
+    /// difiere en ningún caso: aceptar ocurrió aquí.
+    var persistsOnAccept = true
+    /// Se invoca al ACEPTAR (tras el registro —cuando toca— y la telemetría). El caller sigue con la
+    /// doble confirmación.
     var onAccept: () -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -104,15 +118,12 @@ struct CloudConsentView: View {
         .padding(.horizontal, DS.Spacing.lg)
     }
 
-    /// Registra el consentimiento (persistencia GDPR + telemetría). En `.icloud` va a iKV y el drenaje del
-    /// cutover lo lleva al backend; en `.cloud` (adopt) va directo al outbox de prefs.
+    /// Registra el consentimiento: persistencia GDPR (si el caller conoce ya su ruta — M0) + telemetría.
+    /// La escritura vive en `CloudConsentRegistrar`, escritor ÚNICO de las dos keys: en `.icloud` va a
+    /// iKV y el drenaje del cutover la lleva al backend; en `.cloud` (adopt) va directo al outbox de
+    /// prefs; en secundaria, `.localOnly`. Cuál de las tres es depende del INSTANTE, no de la pantalla.
     private func registerConsent() {
-        PreferenceSyncService.shared.set(
-            int: Int(Date.now.timeIntervalSince1970),
-            forKey: PrefSyncKey.cloudConsentAcceptedAt.rawValue)
-        PreferenceSyncService.shared.set(
-            int: CloudConsentText.version,
-            forKey: PrefSyncKey.cloudConsentTextVersion.rawValue)
+        if persistsOnAccept { CloudConsentRegistrar.register() }
         MetricsService.cloudConsentAccepted(path: path.rawValue)
     }
 
