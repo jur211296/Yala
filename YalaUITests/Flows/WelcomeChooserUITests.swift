@@ -165,6 +165,64 @@ final class WelcomeChooserUITests: XCTestCase {
                       "No apareció el campo de pegar el enlace: la card de unirse no llegó a InviteRecoveryView.")
     }
 
+    /// G3 · el recorrido COMPLETO de la rama organizador, desde la card hasta el formulario de grupo.
+    ///
+    /// **Qué se finge y por qué es lo único que se puede fingir.** El simulador no tiene sesión de nube ni
+    /// puede firmar con Apple/Google, así que `-uitest-fake-cloud-session` y `-uitest-groups-consent`
+    /// saltan los pasos 4 y 5 poniendo sus condiciones VIVAS a `true` — que es exactamente lo que la
+    /// máquina re-evalúa en cada avance. El tráfico HTTP sigue en CERO: ninguno de los dos fabrica un JWT.
+    ///
+    /// **La celda que este test NO puede ejercitar, y va dicho aquí para que nadie la busque:** la puerta
+    /// CERRADA. Bajo `-uitest` `CloudSyncFlags.groupsBackendEnabled` es SIEMPRE `true` (`CloudRemoteConfig
+    /// .decide` corta en `isUITestHost` → `absentDefault`, ON bajo `DEV_BUILD`) y no hay launch arg que lo
+    /// apague. Esa celda vive en `GroupsOrganizerBranchTests` y en ningún otro sitio.
+    func testGroupsOrganizer_createCardWalksToTheGroupForm() throws {
+        let app = XCUIApplication()
+        app.launchForUITest(
+            reset: true,
+            skipOnboarding: false,
+            seed: nil,
+            cloudSession: true,
+            groupsConsent: true
+        )
+
+        let heroCTA = app.buttons["welcome_hero_cta"]
+        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
+        heroCTA.tap()
+
+        let inviteBranch = app.buttons["welcome_chooser_invite"]
+        XCTAssertTrue(inviteBranch.waitForExistence(timeout: 10), "No apareció la card «Vengo por un grupo».")
+        inviteBranch.tap()
+
+        // G3 cableó `onCreate`, así que la card ya se pinta: en G2 `visiblePaths` la filtraba y solo había una.
+        let createCard = app.buttons["welcome_groups_create"]
+        XCTAssertTrue(createCard.waitForExistence(timeout: 10),
+                      "La card «Crear mi primer grupo» no se pinta: ¿`onCreate` sin cablear?")
+        createCard.tap()
+
+        // La puerta abre (canal ON bajo uitest, device sin datos) ⇒ sale del cover y la cadena
+        // sign-in → consent se salta por las condiciones vivas ⇒ el siguiente paso es el nombre.
+        let nameField = app.textFields["groups_organizer_name_field"]
+        XCTAssertTrue(nameField.waitForExistence(timeout: 20),
+                      "La puerta no dejó pasar, o la rama no llegó al paso del nombre.")
+        nameField.tap()
+        nameField.typeText("Ana")
+
+        let nameCTA = app.buttons["groups_organizer_name_cta"]
+        XCTAssertTrue(nameCTA.waitForExistence(timeout: 10), "No apareció el CTA del alta.")
+        nameCTA.tap()
+
+        // El desmontaje del campo es la señal de que el cover se fue de verdad — `exists` del fondo no
+        // probaría nada (`.claude/rules/testing.md`).
+        XCTAssertTrue(waitForNonExistence(of: nameField, timeout: 15),
+                      "El cover del nombre no se desmontó tras completar el alta.")
+
+        // Y el último paso: el formulario de grupo, directo, sin que el usuario haya tenido que buscarlo.
+        let groupNameInput = app.textFields["group_form_name_input"]
+        XCTAssertTrue(groupNameInput.waitForExistence(timeout: 20),
+                      "El alta terminó pero el formulario de grupo no se abrió solo.")
+    }
+
     /// `waitForNonExistence` local: el helper compartido de `Support/` cubre `isHittable`, y aquí lo que
     /// prueba el desmontaje es la AUSENCIA del elemento.
     private func waitForNonExistence(of element: XCUIElement, timeout: TimeInterval) -> Bool {

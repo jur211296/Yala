@@ -5443,3 +5443,24 @@
 
 /* Card body: paste the invitation link to join */
 "welcome.groups.joinBody" = "届いたリンクを貼り付ければ、グループに参加できます。";
+
+/* G3 gate: mientras se re-mide el canal de Grupos */
+"welcome.groups.checking" = "準備が整っているか確認しています…";
+
+/* G3 gate: canal de Grupos apagado */
+"welcome.groups.channelOffTitle" = "今はグループを開けません";
+
+/* G3 gate: cuerpo del canal apagado */
+"welcome.groups.channelOffBody" = "こちら側の問題で、すぐに直ります。少ししてからもう一度お試しください。何も保存されていません。";
+
+/* G3 gate: CTA de las pantallas de bloqueo */
+"welcome.groups.gateBack" = "戻る";
+
+/* G3: pantalla de nombre del organizador */
+"welcome.groups.nameTitle" = "お名前は？";
+
+/* G3: cuerpo de la pantalla de nombre */
+"welcome.groups.nameBody" = "グループのみんなに表示される名前です。";
+
+/* G3: CTA del alta del organizador */
+"welcome.groups.nameCta" = "グループを作成";

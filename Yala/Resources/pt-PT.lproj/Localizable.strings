@@ -4700,3 +4700,24 @@
 
 /* Card body: paste the invitation link to join */
 "welcome.groups.joinBody" = "Cola a ligação que te enviaram e entras no grupo.";
+
+/* G3 gate: mientras se re-mide el canal de Grupos */
+"welcome.groups.checking" = "A verificar se está tudo pronto…";
+
+/* G3 gate: canal de Grupos apagado */
+"welcome.groups.channelOffTitle" = "Neste momento não conseguimos abrir grupos para ti";
+
+/* G3 gate: cuerpo del canal apagado */
+"welcome.groups.channelOffBody" = "É algo do nosso lado e dura pouco. Tenta de novo daqui a pouco: não foi guardado nada.";
+
+/* G3 gate: CTA de las pantallas de bloqueo */
+"welcome.groups.gateBack" = "Voltar";
+
+/* G3: pantalla de nombre del organizador */
+"welcome.groups.nameTitle" = "Como te chamas?";
+
+/* G3: cuerpo de la pantalla de nombre */
+"welcome.groups.nameBody" = "É o nome que os outros vão ver no grupo.";
+
+/* G3: CTA del alta del organizador */
+"welcome.groups.nameCta" = "Criar o meu grupo";

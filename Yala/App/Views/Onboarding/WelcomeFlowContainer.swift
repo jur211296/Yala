@@ -29,6 +29,11 @@ enum WelcomeFlowStep {
     /// entrar con la invitación—. La rama `.invite` del chooser deja de salir por el portal para venir
     /// aquí; el que ya tiene enlace sale por el MISMO `Destination .inviteRecovery` desde la card.
     case groupsChooser
+    /// G3 · la PUERTA de la rama organizador: re-mide el canal de Grupos con `force` y comprueba que el
+    /// device no tenga datos de otro humano. Es un step y no un alert porque el source-scan de W1 prohíbe
+    /// `.alert(` en este fichero, y porque una pantalla de bloqueo con salida no es un camino muerto.
+    /// **Nada se escribe hasta que esta puerta dice que sí.**
+    case groupsGate
     /// R2 · TERMINAL: este proceso montó el store NEUTRO y el destino elegido necesita el mirror de
     /// CloudKit ⇒ hay que reabrir la app. Vive DENTRO de este cover a propósito: un cover propio sería una
     /// presentación nueva colgando del anchor de `ContentView` (matriz de readiness, regla (3) de
@@ -53,10 +58,17 @@ struct WelcomeFlowContainer: View {
     /// A26 (§k.2): el faro de iCloud-KV dice que este Apple ID YA tiene cuenta nube ⇒ el Welcome
     /// NO ofrece la elección y encamina al returning-user con el provider del propio faro.
     var onBeaconRoutesToCloudSignIn: (CloudSignInProvider) -> Void
+    /// G3: «Crear mi primer grupo» con la puerta ya CONFIRMADA abierta (canal encendido y sin datos de
+    /// otro humano en el device). El container no comprueba nada aquí: eso es del step `.groupsGate`, que
+    /// es el único que puede llamarlo.
+    var onSelectGroupsOrganizer: () -> Void
     /// R2: el destino elegido necesita el mirror y este proceso montó neutro ⇒ el container va a su step
     /// terminal y ContentView PERSISTE el destino para retomarlo tras el relanzamiento. Se separa en dos
     /// responsabilidades porque el container no debe tocar `UserDefaults` ni los flags de onboarding.
     var onNeedsMirrorRelaunch: (WelcomeMirrorRelaunchLogic.Destination) -> Void
+    /// G3: fetch VIVO del corpus local para la puerta (mismo closure que alimenta el guard cross-cuenta
+    /// del sign-in de nube — un snapshot no vale, el mirror puede estar re-importando).
+    var hasLocalDataNow: @MainActor @Sendable () -> Bool
 
     @State private var step: WelcomeFlowStep = .hero
 
@@ -68,8 +80,10 @@ struct WelcomeFlowContainer: View {
         onSelectExistingOption: @escaping (WelcomeAccountChoiceLogic.ExistingOption) -> Void,
         onSelectPrivateAccount: @escaping () -> Void,
         onSelectCloudAccount: @escaping () -> Void,
+        onSelectGroupsOrganizer: @escaping () -> Void,
         onBeaconRoutesToCloudSignIn: @escaping (CloudSignInProvider) -> Void,
-        onNeedsMirrorRelaunch: @escaping (WelcomeMirrorRelaunchLogic.Destination) -> Void
+        onNeedsMirrorRelaunch: @escaping (WelcomeMirrorRelaunchLogic.Destination) -> Void,
+        hasLocalDataNow: @escaping @MainActor @Sendable () -> Bool
     ) {
         self.initialStep = initialStep
         self.onSelectBranch = onSelectBranch
@@ -77,7 +91,9 @@ struct WelcomeFlowContainer: View {
         self.onSelectPrivateAccount = onSelectPrivateAccount
         self.onSelectCloudAccount = onSelectCloudAccount
         self.onBeaconRoutesToCloudSignIn = onBeaconRoutesToCloudSignIn
+        self.onSelectGroupsOrganizer = onSelectGroupsOrganizer
         self.onNeedsMirrorRelaunch = onNeedsMirrorRelaunch
+        self.hasLocalDataNow = hasLocalDataNow
         self._step = State(initialValue: initialStep)
     }
 
@@ -139,12 +155,26 @@ struct WelcomeFlowContainer: View {
                 .transition(.opacity)
             case .groupsChooser:
                 WelcomeGroupsChooserView(
-                    // G3 cablea `onCreate`. Sin handler la card no se pinta: un stub que enseñara un
-                    // alert sería el camino muerto que el spec prohíbe.
+                    // G3: la card de crear ya está cableada y por tanto se pinta. Su handler NO sale del
+                    // cover: abre la puerta, que es el step siguiente. El portal se cruza más tarde, y
+                    // solo si la puerta abre.
+                    onCreate: { goTo(.groupsGate) },
                     onJoin: {
                         leaveWelcome(to: .inviteRecovery) { onSelectBranch(.invite) }
                     },
                     onBack: { goTo(.chooser) }
+                )
+                .transition(.opacity)
+            case .groupsGate:
+                WelcomeGroupsGateView(
+                    // Re-envuelto en vez de reenviado: pasar la property directa convierte un valor de
+                    // función no-Sendable y avisa (`may introduce data races`). El closure nuevo nace ya en
+                    // este contexto y no cruza ninguna frontera.
+                    hasLocalDataNow: { hasLocalDataNow() },
+                    onProceed: {
+                        leaveWelcome(to: .groupsOrganizer) { onSelectGroupsOrganizer() }
+                    },
+                    onBack: { goTo(.groupsChooser) }
                 )
                 .transition(.opacity)
             case .existingChooser:
@@ -179,10 +209,11 @@ struct WelcomeFlowContainer: View {
     /// y aquí se decide si antes hay que reabrir la app.
     ///
     /// Está en el CONTAINER y no en los callbacks de `ContentView` por una razón concreta: los destinos se
-    /// producen en CINCO sitios (la card «Tengo una invitación» del sub-chooser de grupos, el sub-chooser
-    /// existente, el encaminamiento por faro y las dos cards del sub-chooser nuevo), varios de ellos con
-    /// bypass, y repartir la comprobación por los cinco es exactamente cómo divergen. Con un portal único,
-    /// añadir una salida nueva obliga a nombrar su `Destination`.
+    /// producen en SEIS sitios (las dos cards del sub-chooser de grupos —«Tengo una invitación» directa y
+    /// «Crear mi primer grupo» a través de su puerta—, el sub-chooser existente, el encaminamiento por faro
+    /// y las dos cards del sub-chooser nuevo), varios de ellos con bypass, y repartir la comprobación por
+    /// los seis es exactamente cómo divergen. Con un portal único, añadir una salida nueva obliga a nombrar
+    /// su `Destination`.
     ///
     /// G2 (2026-08-11) movió el primero de nivel: lo producía la card `.invite` del chooser y ahora lo
     /// produce la card de unirse DENTRO del step de grupos. El `Destination` es el MISMO —`.inviteRecovery`,
@@ -190,8 +221,12 @@ struct WelcomeFlowContainer: View {
     /// `hasShownWelcomeChooser` deja de marcarse al tapear la card de nivel 1, igual que ya pasaba con las
     /// otras dos ramas cuando muestran su 2º nivel.
     ///
-    /// Eran SEIS hasta el 2026-08-11: el alert «Detectamos tu cuenta» tenía el suyo (`.restoreICloud`), y
-    /// se fue entero con el alert cuando la reentrada pasó a ser decisión del usuario.
+    /// G3 (2026-08-11) añadió el sexto, `.groupsOrganizer`, y es el único que pasa por una PUERTA: la card
+    /// de crear no llama aquí, va al step `.groupsGate` y es él quien cruza el portal si —y solo si— el
+    /// canal está encendido y el device no tiene datos de otro humano.
+    ///
+    /// Eran SEIS hasta el 2026-08-11 por otra razón: el alert «Detectamos tu cuenta» tenía el suyo
+    /// (`.restoreICloud`), y se fue entero con el alert cuando la reentrada pasó a ser decisión del usuario.
     private func leaveWelcome(to destination: WelcomeMirrorRelaunchLogic.Destination,
                               proceed: () -> Void) {
         guard WelcomeMirrorRelaunchLogic.shouldRelaunch(

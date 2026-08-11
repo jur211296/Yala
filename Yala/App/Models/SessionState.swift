@@ -547,6 +547,12 @@ class SessionState {
     /// elegible (espeja el patrón de `pendingGroupID`).
     var pendingNewGroupExpense: Bool = false
 
+    /// G3 · último paso de la rama organizador del Welcome: abrir el FORMULARIO de grupo nuevo al aterrizar
+    /// en el tab. Espeja `pendingNewGroupExpense` —mismo molde, mismo consumidor— pero es su hermano y no
+    /// el mismo flag: aquel exige un grupo elegible para consumirse y este existe precisamente porque
+    /// todavía no hay ninguno. Lo consume `GroupsContainerView` al montar.
+    var pendingNewGroupForm: Bool = false
+
     /// URL of a shared image captured from the Share Extension. Not a flag —
     /// it's the payload that ImageSelectionView consumes once opened. The
     /// .presentSharedImage router intent sets this alongside the sheet.

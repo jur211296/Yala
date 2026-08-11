@@ -27,19 +27,20 @@ struct WelcomeGroupsChooserView: View {
     /// Los dos caminos. `String` + `CaseIterable` para que el rawValue alimente el identifier de XCUI
     /// igual que hace `WelcomeChooserView.Branch`, y para que un camino nuevo tenga que declararse.
     enum Path: String, CaseIterable {
-        /// Organizar un grupo propio e invitar a los demás. **INERTE en G2** — ver `onCreate`.
+        /// Organizar un grupo propio e invitar a los demás. Su camino entero (puerta → sign-in → consent →
+        /// nombre → formulario) lo cableó G3.
         case create
         /// Ya tiene el enlace: sale por el MISMO `Destination .inviteRecovery` de siempre.
         case join
     }
 
-    /// **G2 lo deja INERTE a propósito.** La rama organizador entera —comprobar el canal antes de escribir
-    /// nada, sign-in, consent, nombre y el form— es el CHIP G3, y montarle aquí un stub (un alert
-    /// «próximamente», una pantalla vacía) sería justo lo que el spec prohíbe: un camino muerto que el
-    /// usuario puede tocar. Mientras no exista, la card no se pinta.
+    /// **G3 lo cableó** (2026-08-11) y con él la card dejó de ser opcional: el handler NO sale del cover,
+    /// abre el step de la PUERTA (`WelcomeGroupsGateView`), que re-mide el canal de Grupos con `force` y
+    /// comprueba que el device no tenga datos de otro humano antes de dejar escribir nada.
     ///
-    /// TODO(G3): pasar el handler real de la rama organizador y quitar el filtro de `visiblePaths`.
-    var onCreate: (() -> Void)?
+    /// Durante G2 fue `(() -> Void)?` y su card ni se pintaba: la alternativa —un stub con un alert
+    /// «próximamente»— era justo el camino muerto que el spec prohíbe.
+    var onCreate: () -> Void
     var onJoin: () -> Void
     var onBack: () -> Void
 
@@ -48,12 +49,9 @@ struct WelcomeGroupsChooserView: View {
     /// español), así que la igualación es de layout y no de copy.
     @State private var contentHeights: [Path: CGFloat] = [:]
 
-    /// Con `onCreate` sin cablear se pinta UNA card. No es un caso degenerado: es el estado de G2, y la
-    /// pantalla sigue teniendo sentido —el invitado ve su camino y el back sigue devolviéndolo al
-    /// chooser—. En cuanto G3 cablee el handler aparecen las dos, en este orden.
-    private var visiblePaths: [Path] {
-        Path.allCases.filter { $0 != .create || onCreate != nil }
-    }
+    /// Los dos caminos, en este orden. Fue un filtro sobre `onCreate != nil` mientras la rama organizador
+    /// no existía (G2); con G3 cableado, `Path.allCases` ES la pantalla y no hay nada que ocultar.
+    private var visiblePaths: [Path] { Path.allCases }
 
     var body: some View {
         WelcomeFlowScreen { logoTopSpacing in
@@ -134,7 +132,7 @@ struct WelcomeGroupsChooserView: View {
         }
     }
 
-    private func action(for path: Path) -> (() -> Void)? {
+    private func action(for path: Path) -> () -> Void {
         switch path {
         case .create: onCreate
         case .join: onJoin
@@ -154,9 +152,8 @@ struct WelcomeGroupsChooserView: View {
 
     private func pathCard(_ path: Path) -> some View {
         Button {
-            guard let action = action(for: path) else { return }
             DS.Haptic.selection()
-            action()
+            action(for: path)()
         } label: {
             HStack(spacing: DS.Spacing.md) {
                 systemIconCircle(name: iconName(for: path), tint: iconTint(for: path))

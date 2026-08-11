@@ -124,6 +124,13 @@ enum RouterIntent: Identifiable, Equatable {
     /// capturar el nombre ANTES del join; su CTA dispara el join vía el reconciler. El drain
     /// re-evalúa la condición viva (onboarding aún pendiente) antes de presentar.
     case presentGroupBackendInviteOnboarding(pendingJoin: String)
+    /// G3 de Grupos-first: avanzar UN paso la rama organizador del Welcome (sign-in → consent → nombre →
+    /// formulario). **Sin payload a propósito**: el paso no se recuerda, se RE-DECIDE en el drain con
+    /// condiciones vivas (`GroupsOrganizerFlowLogic.nextStep`), que es la regla del repo y lo que hace que
+    /// un sign-in ya hecho, un consent aceptado en otra pantalla o un kill a mitad no desalineen la máquina.
+    /// Los dos primeros pasos reusan los sheets de `GroupsBackendInviteModifier` —el dueño ÚNICO de ese
+    /// anchor—, así que la única presentación nueva es la del nombre.
+    case presentGroupsOrganizerStep
 
     // D) Tab navigation
     case navigate(DeepLinkDestination)
@@ -154,6 +161,7 @@ extension RouterIntent {
         case .showInboxAlert, .presentTrialOffer, .presentWhatsNew,
              .presentGroupInviteOnboarding, .presentGroupReconnect, .offerRestoreBeforeInvite,
              .presentGroupsConsent, .presentGroupsSignIn, .presentGroupBackendInviteOnboarding,
+             .presentGroupsOrganizerStep,
              .showInviteError,
              .showGroupSyncError,
              .iCloudMismatch, .remoteWipe, .remoteOnboardingCompleted,
@@ -192,6 +200,7 @@ extension RouterIntent {
              .presentFullModeActivation, .navigate,
              .presentGroupInviteOnboarding, .presentGroupReconnect, .offerRestoreBeforeInvite,
              .presentGroupsConsent, .presentGroupsSignIn, .presentGroupBackendInviteOnboarding,
+             .presentGroupsOrganizerStep,
              .presentTrialOffer, .autoOpenBudgetEditor, .autoOpenScheduledEditor:
             return .normal
         case .requestAppStoreReview, .presentWhatsNew:
@@ -249,6 +258,10 @@ extension RouterIntent {
             return "groupsSignIn:\(pendingJoin)"
         case .presentGroupBackendInviteOnboarding(let pendingJoin):
             return "groupBackendInviteOnboarding:\(pendingJoin)"
+        case .presentGroupsOrganizerStep:
+            // Clave FIJA (sin payload): dos avances encolados a la vez son el mismo avance, y colapsarlos
+            // es lo correcto — el drain re-decide el paso con condiciones vivas de todos modos.
+            return "groupsOrganizerStep"
         case .navigate(let dest):
             return "navigate:\(dest.routerKey)"
         case .autoOpenBudgetEditor:
@@ -283,6 +296,11 @@ extension RouterIntent {
     /// pendiente, de modo que su drain (y presentación) pase el readiness gate
     /// — sin esto el cover del WelcomeFlow bloquea el propio intent que lo
     /// reemplazaría (deadlock B4-04).
+    /// G3 · `.presentGroupsOrganizerStep` **NO está aquí, y es deliberado**: los otros seis llegan de fuera
+    /// (un link, una notificación) y se encuentran el Welcome montado por delante; este lo emite el propio
+    /// Welcome al salir por su portal, que cierra `showWelcomeFlow` en la MISMA vuelta. Marcarlo como
+    /// superseding le daría permiso para tumbar la cadena welcome en cualquier otro momento —por ejemplo,
+    /// si el usuario relanza a mitad de la rama— en vez de esperar su turno, que es lo correcto.
     var supersedesWelcomeChain: Bool {
         switch self {
         case .presentGroupInviteOnboarding, .presentGroupReconnect, .offerRestoreBeforeInvite,

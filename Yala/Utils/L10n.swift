@@ -4847,6 +4847,19 @@ enum L10n {
             static var createBody: String { ls("welcome.groups.createBody", comment: "") }
             static var joinTitle: String { ls("welcome.groups.joinTitle", comment: "") }
             static var joinBody: String { ls("welcome.groups.joinBody", comment: "") }
+            /// G3 · la PUERTA de la rama organizador, mientras re-mide el canal.
+            static var checking: String { ls("welcome.groups.checking", comment: "") }
+            /// G3 · el canal sigue apagado tras el refresh forzado. Tono del único sitio donde el kill se
+            /// le explica hoy a alguien (`groups.invite.channelUnavailable`): transitorio y honesto, jamás
+            /// «enlace no válido» — aquí no hay ningún enlace y el usuario no ha hecho nada mal.
+            static var channelOffTitle: String { ls("welcome.groups.channelOffTitle", comment: "") }
+            static var channelOffBody: String { ls("welcome.groups.channelOffBody", comment: "") }
+            /// CTA de las DOS pantallas de bloqueo: vuelta al step con las otras vías intactas.
+            static var gateBack: String { ls("welcome.groups.gateBack", comment: "") }
+            /// G3 · el único dato que el alta del organizador pide (decisión del owner: solo nombre).
+            static var nameTitle: String { ls("welcome.groups.nameTitle", comment: "") }
+            static var nameBody: String { ls("welcome.groups.nameBody", comment: "") }
+            static var nameCta: String { ls("welcome.groups.nameCta", comment: "") }
         }
 
         /// Alta born-cloud desde la card «nube» de "Soy nuevo" (A5 de D-A7). Solo tres keys propias:

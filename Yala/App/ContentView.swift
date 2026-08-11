@@ -76,8 +76,21 @@ struct ContentView: View {
     /// OFF los intents jamás se submitean.
     @State private var showGroupsConsent: Bool = false
     @State private var showGroupsSignIn: Bool = false
-    /// Keying `zoneName` (== group_id backend) del join pendiente que abrió el sheet.
+    /// Keying `zoneName` (== group_id backend) del join pendiente que abrió el sheet. `nil` cuando los
+    /// mismos dos sheets los abre la rama ORGANIZADOR (G3), que no se une a ninguna zona.
     @State private var pendingGroupsJoinZone: String?
+    /// G3 · la rama organizador del Welcome está en curso. Es el discriminador de la continuación del
+    /// anchor único de `GroupsBackendInviteModifier`: sin él, ese modifier solo sabe seguir el camino del
+    /// INVITADO, que se apoya en `pendingGroupsJoinZone`. Se enciende al salir por el portal con
+    /// `.groupsOrganizer` y se apaga cuando el alta termina o cuando el usuario cancela un sheet.
+    @State private var groupsOrganizerFlowActive: Bool = false
+    /// G3 · la ÚNICA presentación nueva de la rama (paso 6). Blocker propio de la matriz de readiness.
+    @State private var showGroupsOrganizerName: Bool = false
+    /// G3 · one-shot de resultado del cover del nombre, molde de los dos de `GroupsBackendInviteModifier`:
+    /// se arma en el callback de éxito y se consume en `onDismiss`. **No se mira `hasCompletedOnboarding`
+    /// en su lugar** aunque el alta lo escriba: ese `@AppStorage` se refresca por notificación y depender
+    /// de su timing dentro del `onDismiss` es una carrera; el flag es la señal directa.
+    @State private var organizerSetupCompleted: Bool = false
     @State private var showFullModeActivation: Bool = false
     /// D1: acción elegida en la pantalla de retención; se EJECUTA en el `onDismiss` del cover
     /// (con el cover YA fuera — anti-carrera toolbar-muerta). `nil` = ninguna elegida aún.
@@ -438,6 +451,7 @@ struct ContentView: View {
             hasShownWelcomeChooser: $hasShownWelcomeChooser,
             hasCompletedOnboarding: $hasCompletedOnboarding,
             showFreshStartWipeAlert: $showFreshStartWipeAlert,
+            groupsOrganizerFlowActive: $groupsOrganizerFlowActive,
             hasExistingData: hasExistingData,
             hasLocalDataNow: { checkHasExistingData() },
             showGroupInviteOnboarding: showGroupInviteOnboarding
@@ -455,8 +469,34 @@ struct ContentView: View {
         .modifier(GroupsBackendInviteModifier(
             showGroupsConsent: $showGroupsConsent,
             showGroupsSignIn: $showGroupsSignIn,
-            pendingGroupsJoinZone: $pendingGroupsJoinZone
+            pendingGroupsJoinZone: $pendingGroupsJoinZone,
+            groupsOrganizerFlowActive: $groupsOrganizerFlowActive,
+            onGroupsOrganizerCancelled: { returnToGroupsChooser() }
         ))
+        // G3 · paso 6 de la rama organizador. Cover propio (no sheet): el alta es terminal —cancelarla a
+        // medias dejaría al usuario fuera del Welcome y sin shell— y su blocker `groupsOrganizerName` ya
+        // está en la matriz. `onDismiss` de respaldo: si UIKit lo tumba sin que el alta corriera, la rama
+        // se apaga en vez de quedarse colgada esperando un paso que nadie va a dar.
+        .fullScreenCover(isPresented: $showGroupsOrganizerName, onDismiss: {
+            // La continuación corre AQUÍ y no en el callback de éxito (contrato C7): con la dismissal ya
+            // terminada, lo que el drain presente a continuación no se lo traga SwiftUI. Cancel (swipe,
+            // o UIKit tumbando el cover) ⇒ la rama se apaga y el usuario vuelve al Welcome, nunca a una
+            // pantalla muerta.
+            guard organizerSetupCompleted else {
+                groupsOrganizerFlowActive = false
+                returnToGroupsChooser()
+                return
+            }
+            organizerSetupCompleted = false
+            // El trío ya está escrito ⇒ el siguiente paso que decide la máquina es el formulario.
+            RouterEntryGate.shared.submit(.presentGroupsOrganizerStep)
+        }) {
+            GroupsOrganizerNameView {
+                organizerSetupCompleted = true
+                showGroupsOrganizerName = false
+            }
+            .environment(SessionState.shared)
+        }
         .modifier(GroupInviteModifier(
             showGroupInviteOnboarding: $showGroupInviteOnboarding,
             pendingInviteMetadata: $pendingInviteMetadata,
@@ -682,6 +722,7 @@ struct ContentView: View {
             showGroupReconnect: showGroupReconnect,
             showGroupsConsent: showGroupsConsent,
             showGroupsSignIn: showGroupsSignIn,
+            showGroupsOrganizerName: showGroupsOrganizerName,
             showFullModeActivation: showFullModeActivation,
             showProTrialOffer: showProTrialOffer,
             showWhatsNew: showWhatsNew,
@@ -699,6 +740,17 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .remoteOnboardingCompleted)) { _ in
             handleRemoteOnboardingCompleted()
         }
+    }
+
+    /// G3 · devuelve al organizador al step de los dos caminos. Es la salida de todo abandono de la rama
+    /// (cancelar el sign-in, el consent o el cover del nombre): el usuario ya salió del Welcome y debajo no
+    /// hay shell —su alta no ha corrido—, así que dejarlo ahí sería el camino muerto que el chip prohíbe.
+    /// Va al `.groupsChooser` y no al `.chooser` porque es donde estaba, y porque desde ahí puede
+    /// reintentar o irse a la otra vía sin volver a recorrer el Hero.
+    @MainActor
+    private func returnToGroupsChooser() {
+        welcomeFlowInitialStep = .groupsChooser
+        showWelcomeFlow = true
     }
 
     /// Cierra el sub-flow del Welcome (Rama B o C) y devuelve al user al Chooser.
@@ -766,6 +818,7 @@ struct ContentView: View {
             showGroupReconnect: showGroupReconnect,
             showGroupsConsent: showGroupsConsent,
             showGroupsSignIn: showGroupsSignIn,
+            showGroupsOrganizerName: showGroupsOrganizerName,
             showFullModeActivation: showFullModeActivation,
             showProTrialOffer: showProTrialOffer,
             showWhatsNew: showWhatsNew,
@@ -874,6 +927,10 @@ struct ContentView: View {
         case .presentGroupsSignIn(let zone):
             pendingGroupsJoinZone = zone
             showGroupsSignIn = true
+        // G3: un solo intent para toda la rama organizador — el paso se RE-DECIDE aquí con condiciones
+        // vivas en vez de viajar en el payload.
+        case .presentGroupsOrganizerStep:
+            advanceGroupsOrganizerFlow()
         case .presentGroupBackendInviteOnboarding(let zone):
             // Condición viva al drenar (regla del repo): el intent pudo quedar retenido bajo
             // un cover; si el onboarding YA se completó mientras tanto, no re-presentar —
@@ -888,6 +945,40 @@ struct ContentView: View {
             }
         default:
             break
+        }
+    }
+
+    /// G3 · el avance de la rama organizador, y el ÚNICO sitio que lo decide.
+    ///
+    /// Los dos primeros pasos encienden los sheets que ya existen (`GroupsBackendInviteModifier` es su
+    /// dueño único: un anchor propio sería la regla (4) de Presentaciones, dos anchors ante el mismo
+    /// observable) con `pendingGroupsJoinZone = nil`, que es lo que los distingue del camino del invitado.
+    /// El último NO presenta nada: pide el formulario en el tab Grupos, donde ya vive su anchor.
+    @MainActor
+    private func advanceGroupsOrganizerFlow() {
+        // Condición viva al drenar: un intent retenido bajo un cover puede llegar con la rama ya abandonada
+        // (cancel de un sheet), y entonces no hay nada que avanzar.
+        guard groupsOrganizerFlowActive else { return }
+        switch GroupsOrganizerFlowLogic.nextStep(
+            hasSession: CloudAuthService.shared.hasSession,
+            isConsented: GroupsConsentState.isAccepted,
+            hasCompletedSetup: hasCompletedOnboarding
+        ) {
+        case .presentSignIn:
+            pendingGroupsJoinZone = nil
+            showGroupsSignIn = true
+        case .presentConsent:
+            pendingGroupsJoinZone = nil
+            showGroupsConsent = true
+        case .presentName:
+            showGroupsOrganizerName = true
+        case .presentGroupForm:
+            // La rama termina aquí: el form lo abre `GroupsContainerView` al montar el tab (molde de
+            // `pendingNewGroupExpense`). Y si el usuario lo cancela, aterriza en el empty state estándar
+            // con su CTA «crear grupo» — la red ya existía, por eso el último paso puede ser el form.
+            groupsOrganizerFlowActive = false
+            SessionState.shared.selectedMainTab = .groups
+            SessionState.shared.pendingNewGroupForm = true
         }
     }
 
@@ -1217,10 +1308,11 @@ struct ContentView: View {
                 showWelcomeRestore = true
             case .inviteRecovery:
                 showInviteRecovery = true
-            case .cloudAccount, .cloudSignIn:
-                // Inalcanzables: `requiresMirror` es `false` para las dos, así que el portal del Welcome
+            case .cloudAccount, .cloudSignIn, .groupsOrganizer:
+                // Inalcanzables: `requiresMirror` es `false` para las tres, así que el portal del Welcome
                 // nunca las persiste. Si aparecen, la respuesta segura es el recorrido normal — jamás
-                // saltar al cover de nube con una sesión que este proceso no ha visto.
+                // saltar al cover de nube con una sesión que este proceso no ha visto, ni retomar una rama
+                // organizador a mitad en un proceso que no ha visto su puerta.
                 welcomeFlowInitialStep = .chooser
                 showWelcomeFlow = true
             }
@@ -1266,11 +1358,14 @@ private struct WelcomeFlowModifier: ViewModifier {
     @Binding var hasShownWelcomeChooser: Bool
     @Binding var hasCompletedOnboarding: Bool
     @Binding var showFreshStartWipeAlert: Bool
+    /// G3: la rama organizador arranca aquí y la conduce `ContentView` desde su drain — este modifier solo
+    /// la ENCIENDE, porque es quien tiene el callback del portal.
+    @Binding var groupsOrganizerFlowActive: Bool
     let hasExistingData: Bool
     /// S5 del review adversarial: el guard cross-cuenta evalúa datos locales EN el
     /// momento de la decisión (fetch vivo), no el snapshot `hasExistingData` — el
     /// mirror de iCloud puede estar re-importando en background durante el Welcome.
-    let hasLocalDataNow: @MainActor () -> Bool
+    let hasLocalDataNow: @MainActor @Sendable () -> Bool
     let showGroupInviteOnboarding: Bool
 
     func body(content: Content) -> some View {
@@ -1340,6 +1435,19 @@ private struct WelcomeFlowModifier: ViewModifier {
                         showWelcomeFlow = false
                         showWelcomeCloudSignIn = true
                     },
+                    onSelectGroupsOrganizer: {
+                        // G3 · la puerta ya dijo que sí (canal encendido y sin datos de otro humano): el
+                        // step `.groupsGate` es el único que puede llegar hasta aquí.
+                        //
+                        // **`hasShownWelcomeChooser` NO se marca, y es deliberado**: a diferencia de las
+                        // otras cinco salidas, esta rama todavía no ha escrito NADA —el trío va cuatro
+                        // pasos más allá— así que un abandono a mitad tiene que poder volver al Welcome y
+                        // reintentar. Marcarlo mandaría al usuario al onboarding completo, que no es el
+                        // camino que eligió. Es el mismo criterio con el que G2 dejó de marcarlo al tapear
+                        // la card de nivel 1.
+                        showWelcomeFlow = false
+                        startGroupsOrganizerBranch()
+                    },
                     onBeaconRoutesToCloudSignIn: { provider in
                         // A26 (§k.2): el faro dice que este Apple ID YA tiene cuenta nube ⇒ este
                         // device es un 2º device (o un reinstall), no un usuario nuevo. Se reusa el
@@ -1367,7 +1475,8 @@ private struct WelcomeFlowModifier: ViewModifier {
                             OnboardingResetHelper.clearResidualPreferencesForFreshStart()
                         }
                         WelcomePendingDestinationStore.set(destination)
-                    }
+                    },
+                    hasLocalDataNow: hasLocalDataNow
                 )
                 .environment(SessionState.shared)
             }
@@ -1428,6 +1537,15 @@ private struct WelcomeFlowModifier: ViewModifier {
                     }
                 )
             }
+    }
+
+    /// G3 · arranca la rama organizador. **No presenta nada directamente**: submitea el avance al router
+    /// para que el primer sheet espere a que el cover del Welcome termine de irse (el gate ve
+    /// `showWelcomeFlow` y no drena hasta que baja). Presentarlo a pelo en esta misma vuelta es la carrera
+    /// clásica de dos presentaciones sobre el mismo anchor.
+    private func startGroupsOrganizerBranch() {
+        groupsOrganizerFlowActive = true
+        RouterEntryGate.shared.submit(.presentGroupsOrganizerStep)
     }
 
     /// "Soy nuevo → privacidad total": el camino de siempre, extraído a un helper para que el

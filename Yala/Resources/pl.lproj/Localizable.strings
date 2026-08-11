@@ -5443,3 +5443,24 @@
 
 /* Card body: paste the invitation link to join */
 "welcome.groups.joinBody" = "Wklej otrzymany link i dołączasz do grupy.";
+
+/* G3 gate: mientras se re-mide el canal de Grupos */
+"welcome.groups.checking" = "Sprawdzamy, czy wszystko jest gotowe…";
+
+/* G3 gate: canal de Grupos apagado */
+"welcome.groups.channelOffTitle" = "Na razie nie możemy otworzyć dla Ciebie grup";
+
+/* G3 gate: cuerpo del canal apagado */
+"welcome.groups.channelOffBody" = "To po naszej stronie i zaraz minie. Spróbuj za chwilę — nic nie zostało zapisane.";
+
+/* G3 gate: CTA de las pantallas de bloqueo */
+"welcome.groups.gateBack" = "Wróć";
+
+/* G3: pantalla de nombre del organizador */
+"welcome.groups.nameTitle" = "Jak masz na imię?";
+
+/* G3: cuerpo de la pantalla de nombre */
+"welcome.groups.nameBody" = "To imię zobaczą inni w grupie.";
+
+/* G3: CTA del alta del organizador */
+"welcome.groups.nameCta" = "Utwórz moją grupę";

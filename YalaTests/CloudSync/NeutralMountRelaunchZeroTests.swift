@@ -187,6 +187,12 @@ struct WelcomeMirrorRelaunchLogicTests {
             .inviteRecovery: true,      // no lo necesita para su trabajo, pero su destino es usar la app
             .cloudAccount: false,       // el alta nube: el mount neutro YA es su store
             .cloudSignIn: false,        // la re-entrada: idem, y su relanzamiento lo decide su máquina
+            // G3 · el alta del ORGANIZADOR va por el backend (store de Grupos, `cloudKitDatabase: .none`),
+            // y su alta es solo-grupos ⇒ no crea corpus personal que espejar. Cae con las del Modo Nube y
+            // NO con `inviteRecovery`, que recupera un CKShare y desemboca en usar la app con datos
+            // personales. Ponerlo en `true` le cobra al organizador una pantalla de relanzamiento por un
+            // mirror que su camino no usa — es la mutación (c) del chip G3.
+            .groupsOrganizer: false,
         ]
         #expect(Set(expected.keys) == Set(Destination.allCases),
                 "toda salida del Welcome tiene que declarar si necesita el mirror")
@@ -236,7 +242,7 @@ struct WelcomeMirrorRelaunchLogicTests {
         #expect(WelcomePendingDestinationStore.consume(defaults) == nil)
     }
 
-    @Test("los cinco destinos hacen round-trip por el almacén")
+    @Test("todos los destinos hacen round-trip por el almacén")
     func everyDestination_roundTrips() {
         // El rawValue es lo que viaja en `UserDefaults`: si alguien renombra un caso sin migrar, el destino
         // guardado deja de parsear y el usuario aterriza en el onboarding por defecto.
@@ -382,10 +388,13 @@ struct NeutralMountWiringTests {
             .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
             .joined(separator: "\n")
 
-        // Los cinco callbacks que ABANDONAN el cover. Cada uno tiene que aparecer dentro de una closure de
-        // `leaveWelcome`, nunca invocado a pelo.
+        // Los SEIS callbacks que ABANDONAN el cover. Cada uno tiene que aparecer dentro de una closure de
+        // `leaveWelcome`, nunca invocado a pelo. `onSelectGroupsOrganizer()` (G3) es el más reciente y el
+        // único que además pasa por una PUERTA antes del portal — que la puerta exista no lo exime: sin
+        // esta fila, cablear la card de crear directo al callback saldría del cover sin declarar destino.
         for exit in ["onSelectPrivateAccount()", "onSelectCloudAccount()", "onSelectExistingOption(option)",
-                     "onBeaconRoutesToCloudSignIn(provider)", "onSelectBranch("] {
+                     "onBeaconRoutesToCloudSignIn(provider)", "onSelectBranch(",
+                     "onSelectGroupsOrganizer()"] {
             let occurrences = code.components(separatedBy: exit).count - 1
             #expect(occurrences >= 1, "salida no encontrada: \(exit) (¿renombrada?)")
             for range in code.ranges(of: exit) {

@@ -81,10 +81,13 @@ struct GroupsSignInView: View {
                             .frame(height: 50)
                             .accessibilityIdentifier("groups_signin_button")
 
-                            // W4: verbo NEUTRO — aquí entra tanto quien ya tiene cuenta de nube como
-                            // quien la estrena para usar Grupos. Sin cambio visual respecto a hoy.
+                            // G3 (2026-08-11): el verbo pasa de `.continue` a `.signUp`. W4 enseñó al
+                            // Welcome a distinguir alta de reentrada y este sheet se quedó en el neutro,
+                            // pero sus dos entradas —el invitado por link y ahora el ORGANIZADOR que crea
+                            // su primer grupo— son altas: nadie llega aquí con una sesión viva (el
+                            // `onAppear` de abajo la cierra si la hay, y el productor lo garantiza).
                             GoogleSignInButton(variant: colorScheme == .dark ? .dark : .light,
-                                               purpose: .continue) {
+                                               purpose: .signUp) {
                                 DS.Haptic.selection()
                                 startSignIn(provider: .google)
                             }

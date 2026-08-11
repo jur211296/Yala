@@ -24,6 +24,17 @@ struct GroupsBackendInviteModifier: ViewModifier {
     @Binding var showGroupsConsent: Bool
     @Binding var showGroupsSignIn: Bool
     @Binding var pendingGroupsJoinZone: String?
+    /// G3: la rama ORGANIZADOR del Welcome reusa estos dos sheets —este modifier es el dueño ÚNICO de su
+    /// anchor y un segundo sería la regla (4) de Presentaciones— pero su continuación es otra: no hay zona
+    /// a la que unirse, hay un alta que terminar. Este flag es el discriminador, y va explícito en vez de
+    /// derivarse de `pendingGroupsJoinZone == nil`: ese `nil` también es el estado de «nadie lo puso».
+    @Binding var groupsOrganizerFlowActive: Bool
+    /// G3: el usuario canceló un sheet de la rama organizador (toolbar/swipe). El invitado puede quedarse
+    /// donde está —su intent sobrevive en `PendingJoinStore` y el reconciler re-evalúa— pero el
+    /// organizador acaba de SALIR del Welcome y debajo no hay shell que usar: sin esto, cancelar deja una
+    /// pantalla muerta, que es lo que la invariante (2) del chip prohíbe. `ContentView` lo devuelve al
+    /// step de los dos caminos.
+    var onGroupsOrganizerCancelled: () -> Void
 
     /// One-shots de resultado del sheet: se arman en el callback de éxito y se consumen en
     /// `onDismiss` (dismiss sin éxito = cancel ⇒ sin continuación).
@@ -33,7 +44,7 @@ struct GroupsBackendInviteModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .sheet(isPresented: $showGroupsSignIn, onDismiss: {
-                guard signInAuthenticated else { return }  // cancel → sin continuación
+                guard signInAuthenticated else { return handleCancel() }  // cancel → sin continuación
                 signInAuthenticated = false
                 continueFlow()
             }) {
@@ -56,7 +67,7 @@ struct GroupsBackendInviteModifier: ViewModifier {
                 .environment(SessionState.shared)
             }
             .sheet(isPresented: $showGroupsConsent, onDismiss: {
-                guard consentAccepted else { return }  // cancel → sin continuación
+                guard consentAccepted else { return handleCancel() }  // cancel → sin continuación
                 consentAccepted = false
                 continueFlow()
             }) {
@@ -68,7 +79,22 @@ struct GroupsBackendInviteModifier: ViewModifier {
             }
     }
 
+    /// Cancel: para el invitado es un no-op (su intent persiste, TTL 7 d); para el organizador es la
+    /// vuelta al Welcome.
+    private func handleCancel() {
+        guard groupsOrganizerFlowActive else { return }
+        groupsOrganizerFlowActive = false
+        onGroupsOrganizerCancelled()
+    }
+
     private func continueFlow() {
+        // G3 primero: la rama organizador no tiene zona, así que el `guard` de abajo la dejaría muda.
+        // Vuelve al router en vez de decidir aquí — el paso se RE-DECIDE con condiciones vivas, y así la
+        // presentación siguiente espera a que este sheet haya terminado de irse.
+        if groupsOrganizerFlowActive {
+            RouterEntryGate.shared.submit(.presentGroupsOrganizerStep)
+            return
+        }
         guard let zone = pendingGroupsJoinZone else { return }
         Task { @MainActor in
             await GroupBackendInviteEntryHandler.continueFlow(zoneName: zone)

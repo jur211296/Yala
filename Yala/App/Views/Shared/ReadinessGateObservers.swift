@@ -30,6 +30,7 @@ private struct ReadinessGateObserversModifier: ViewModifier {
     let showGroupReconnect: Bool
     let showGroupsConsent: Bool
     let showGroupsSignIn: Bool
+    let showGroupsOrganizerName: Bool
     let showFullModeActivation: Bool
     let showProTrialOffer: Bool
     let showWhatsNew: Bool
@@ -37,12 +38,14 @@ private struct ReadinessGateObserversModifier: ViewModifier {
     let recompute: () -> Void
 
     func body(content: Content) -> some View {
-        // Cadena partida en dos sub-expresiones: 18 onChange encadenados en una
-        // sola expresión exceden el presupuesto del type-checker.
-        alertObservers(sheetObservers(content))
+        // Cadena partida en TRES sub-expresiones: 25 onChange encadenados en una sola exceden el
+        // presupuesto del type-checker, y con 17 en un solo helper ya volvía a excederlo (G3, al añadir
+        // `showGroupsOrganizerName`). Si añades un observador y el build se queja de «unable to
+        // type-check in reasonable time», parte otra vez — no es tu expresión, es la longitud.
+        alertObservers(groupObservers(welcomeObservers(content)))
     }
 
-    private func sheetObservers(_ content: some View) -> some View {
+    private func welcomeObservers(_ content: some View) -> some View {
         content
             .onChange(of: showOnboarding) { _, _ in recompute() }
             .onChange(of: showWelcomeFlow) { _, _ in recompute() }
@@ -52,10 +55,15 @@ private struct ReadinessGateObserversModifier: ViewModifier {
             .onChange(of: showWelcomeCloudSignIn) { _, _ in recompute() }
             .onChange(of: showSignOutRelaunch) { _, _ in recompute() }
             .onChange(of: secondaryEntryRelaunch) { _, _ in recompute() }
+    }
+
+    private func groupObservers(_ content: some View) -> some View {
+        content
             .onChange(of: showGroupInviteOnboarding) { _, _ in recompute() }
             .onChange(of: showGroupReconnect) { _, _ in recompute() }
             .onChange(of: showGroupsConsent) { _, _ in recompute() }
             .onChange(of: showGroupsSignIn) { _, _ in recompute() }
+            .onChange(of: showGroupsOrganizerName) { _, _ in recompute() }
             .onChange(of: showFullModeActivation) { _, _ in recompute() }
             .onChange(of: showProTrialOffer) { _, _ in recompute() }
             .onChange(of: showWhatsNew) { _, _ in recompute() }
@@ -97,6 +105,7 @@ extension View {
         showGroupReconnect: Bool,
         showGroupsConsent: Bool,
         showGroupsSignIn: Bool,
+        showGroupsOrganizerName: Bool,
         showFullModeActivation: Bool,
         showProTrialOffer: Bool,
         showWhatsNew: Bool,
@@ -124,6 +133,7 @@ extension View {
             showGroupReconnect: showGroupReconnect,
             showGroupsConsent: showGroupsConsent,
             showGroupsSignIn: showGroupsSignIn,
+            showGroupsOrganizerName: showGroupsOrganizerName,
             showFullModeActivation: showFullModeActivation,
             showProTrialOffer: showProTrialOffer,
             showWhatsNew: showWhatsNew,

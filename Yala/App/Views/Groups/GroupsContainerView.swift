@@ -235,6 +235,10 @@ struct GroupsContainerView: View {
             .onChange(of: sessionState.pendingNewGroupExpense, initial: true) { _, _ in
                 openExpenseComposerIfRequested()
             }
+            // G3: último paso de la rama organizador del Welcome — el formulario de grupo, directo.
+            .onChange(of: sessionState.pendingNewGroupForm, initial: true) { _, _ in
+                openGroupFormIfRequested()
+            }
             .onChange(of: viewModel.groups.count, initial: true) { _, _ in
                 openPendingGroupIfAvailable()
                 openExpenseComposerIfRequested()
@@ -402,6 +406,17 @@ struct GroupsContainerView: View {
 
         sessionState.pendingNewGroupExpense = false
         expenseComposerPayload = ExpenseComposerPayload(groups: eligibles, initialGroup: first)
+    }
+
+    /// G3 · abre el formulario de grupo pedido por la rama organizador del Welcome. **Se consume al
+    /// primer intento y no espera a nada** —al contrario que su hermano `openExpenseComposerIfRequested`,
+    /// que necesita un grupo elegible—: aquí el usuario acaba de darse de alta y todavía no tiene ninguno,
+    /// que es justo el motivo de abrir el form. Si el sheet no llegara a presentarse, la red es el empty
+    /// state estándar con su CTA «crear grupo», que ya existe.
+    private func openGroupFormIfRequested() {
+        guard sessionState.pendingNewGroupForm else { return }
+        sessionState.pendingNewGroupForm = false
+        requestCreateGroup()
     }
 
     /// Presenta el prompt de notificaciones de grupos, SALVO que un composer del FAB del

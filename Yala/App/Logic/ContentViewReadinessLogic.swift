@@ -68,6 +68,10 @@ struct ShellReadinessState: Equatable {
     /// que todo lo demás — mientras uno está arriba, el drain se retiene (peek-first).
     let showGroupsConsent: Bool
     let showGroupsSignIn: Bool
+    /// G3 · la ÚNICA presentación nueva de la rama organizador (sign-in y consent reusan los dos de
+    /// arriba, del mismo anchor). Entra aquí porque la regla 3 de Presentaciones no admite excepciones:
+    /// un cover del anchor de `ContentView` que no bloquee deja que el siguiente intent se monte encima.
+    let showGroupsOrganizerName: Bool
     let showFullModeActivation: Bool
 
     // Shell sheets (same anchor as everything above — a second presentation
@@ -137,6 +141,7 @@ enum ContentViewReadinessLogic {
         if state.showGroupReconnect { return "groupReconnect" }
         if state.showGroupsConsent { return "groupsConsent" }
         if state.showGroupsSignIn { return "groupsSignIn" }
+        if state.showGroupsOrganizerName { return "groupsOrganizerName" }
 
         // Shell sheets: while one is presented, a drained intent that sets a
         // second sheet/cover on this same anchor gets discarded by SwiftUI
@@ -207,6 +212,7 @@ extension ShellReadinessState {
             showGroupReconnect: showGroupReconnect,
             showGroupsConsent: showGroupsConsent,
             showGroupsSignIn: showGroupsSignIn,
+            showGroupsOrganizerName: showGroupsOrganizerName,
             showFullModeActivation: showFullModeActivation,
             showProTrialOffer: showProTrialOffer,
             showWhatsNew: showWhatsNew,

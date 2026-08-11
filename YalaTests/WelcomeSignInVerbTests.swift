@@ -74,16 +74,28 @@ struct WelcomeSignInVerbTests {
         #expect(intro.contains("GoogleSignInButton(variant: .light, purpose: .signIn)"))
     }
 
-    /// El owner las dejó explícitamente fuera del cambio de verbo. Pasan a DECLARAR `.continue` porque el
-    /// `purpose` no tiene default —esa es su gracia—, pero el texto que ven es el mismo de siempre.
-    @Test("Ajustes/migración y Grupos conservan el verbo neutro")
-    func settingsAndGroups_keepTheNeutralVerb() throws {
-        for path in [Self.storagePath, Self.groupsPath] {
-            let src = try Self.code(path)
-            #expect(src.contains("purpose: .continue"), "\(path) dejó de declarar el verbo neutro")
-            #expect(!src.contains("purpose: .signUp"))
-            #expect(!src.contains("purpose: .signIn"))
-        }
+    /// Ajustes/migración se quedó fuera del cambio de verbo por decisión del owner. Pasa a DECLARAR
+    /// `.continue` porque el `purpose` no tiene default —esa es su gracia—, pero el texto que ve el usuario
+    /// es el mismo de siempre: ahí entra tanto quien ya tiene cuenta como quien la estrena al migrar.
+    @Test("Ajustes/migración conserva el verbo neutro")
+    func settings_keepsTheNeutralVerb() throws {
+        let src = try Self.code(Self.storagePath)
+        #expect(src.contains("purpose: .continue"), "\(Self.storagePath) dejó de declarar el verbo neutro")
+        #expect(!src.contains("purpose: .signUp"))
+        #expect(!src.contains("purpose: .signIn"))
+    }
+
+    /// **G3 (2026-08-11) sacó a Grupos del neutro.** W4 lo dejó en `.continue` cuando su única entrada era
+    /// el invitado por link; con la rama ORGANIZADOR del Welcome, quien llega aquí está CREANDO su cuenta
+    /// para estrenar Grupos. Y las dos entradas coinciden en eso: nadie alcanza este sheet con una sesión
+    /// viva —el `onAppear` la cierra si la hay, y el productor lo garantiza—, así que el verbo del alta es
+    /// el correcto para ambas.
+    @Test("Grupos pide CREAR cuenta: sus dos entradas son altas")
+    func groups_usesTheSignUpVerb() throws {
+        let src = try Self.code(Self.groupsPath)
+        #expect(src.contains("purpose: .signUp"), "\(Self.groupsPath) dejó de declarar el verbo del alta")
+        #expect(!src.contains("purpose: .continue"))
+        #expect(!src.contains("purpose: .signIn"))
     }
 
     /// El conteo es lo que convierte esto en una red: una superficie NUEVA que se cuele sin decidir su

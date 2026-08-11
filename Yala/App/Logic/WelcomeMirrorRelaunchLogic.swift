@@ -48,6 +48,9 @@ nonisolated enum WelcomeMirrorRelaunchLogic {
         /// «Ya tengo una cuenta» → iniciar sesión en la cuenta nube (re-entrada/adopt), en cualquiera de
         /// sus dos proveedores y también cuando encamina el faro.
         case cloudSignIn
+        /// G3 · «Vengo por un grupo» → «Crear mi primer grupo»: el alta del ORGANIZADOR (sign-in de
+        /// grupos → consent → nombre → formulario). Solo se alcanza con la puerta ya confirmada abierta.
+        case groupsOrganizer
     }
 
     /// ¿Este destino necesita que el mirror de CloudKit esté ADJUNTO al store personal?
@@ -67,11 +70,16 @@ nonisolated enum WelcomeMirrorRelaunchLogic {
     ///    Grupos— pero su destino es usar la app con datos personales, así que cae del mismo lado que el
     ///    onboarding privado. Sesgo deliberado: pedir un relanzamiento de más cuesta una pantalla; de menos,
     ///    una sesión entera sin espejo.
+    ///  · `groupsOrganizer` (G3) cae con las del Modo Nube y **no con `inviteRecovery`**, aunque las dos
+    ///    hablen de grupos: aquella recupera un CKShare y desemboca en usar la app con datos personales;
+    ///    esta va por el BACKEND (store de Grupos con `cloudKitDatabase: .none`) y su alta es solo-grupos,
+    ///    que por definición no crea corpus personal que espejar. Pedirle un relanzamiento sería cobrarle
+    ///    una pantalla por un mirror que su camino no usa.
     static func requiresMirror(_ destination: Destination) -> Bool {
         switch destination {
         case .privateOnboarding, .restoreICloud, .inviteRecovery:
             return true
-        case .cloudAccount, .cloudSignIn:
+        case .cloudAccount, .cloudSignIn, .groupsOrganizer:
             return false
         }
     }

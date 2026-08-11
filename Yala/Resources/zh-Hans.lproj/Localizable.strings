@@ -5443,3 +5443,24 @@
 
 /* Card body: paste the invitation link to join */
 "welcome.groups.joinBody" = "粘贴收到的链接，就能加入群组。";
+
+/* G3 gate: mientras se re-mide el canal de Grupos */
+"welcome.groups.checking" = "正在确认一切就绪…";
+
+/* G3 gate: canal de Grupos apagado */
+"welcome.groups.channelOffTitle" = "现在还打不开群组";
+
+/* G3 gate: cuerpo del canal apagado */
+"welcome.groups.channelOffBody" = "这是我们这边的问题，很快就好。稍后再试一次——什么都没有保存。";
+
+/* G3 gate: CTA de las pantallas de bloqueo */
+"welcome.groups.gateBack" = "返回";
+
+/* G3: pantalla de nombre del organizador */
+"welcome.groups.nameTitle" = "你叫什么名字？";
+
+/* G3: cuerpo de la pantalla de nombre */
+"welcome.groups.nameBody" = "群组里的其他人会看到这个名字。";
+
+/* G3: CTA del alta del organizador */
+"welcome.groups.nameCta" = "创建我的群组";
