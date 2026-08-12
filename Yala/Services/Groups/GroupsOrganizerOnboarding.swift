@@ -129,10 +129,40 @@ enum GroupsOrganizerOnboarding {
     ///     protege de pisar una elección previa con una DERIVACIÓN silenciosa y aquí no hay derivación: hay
     ///     una elección, la más reciente y la única hecha a mano. Con `nil` el comportamiento es el de G4,
     ///     intacto — que es el de la rama del Welcome, donde el alta no pregunta la moneda.
+    ///   - isSecondarySession: C3 · `SecondarySessionStore.isActive()` por default, evaluado EN LA LLAMADA.
+    ///     Va como parámetro y no leído por dentro para que el invariante sea afirmable sin tocar el
+    ///     `UserDefaults.standard` del simulador — el override global de `isActive()` es estado de PROCESO
+    ///     y contaminaría a las suites que corren en paralelo. Que el default siga siendo el mecanismo real
+    ///     lo pinnea un source-scan: cambiarlo por `false` dejaría los tests de comportamiento en verde.
+    ///
+    /// - Returns: `false` si el alta se abortó por la frontera M1. El caller **tiene que respetarlo**:
+    ///   seguir con los seeds y el aterrizaje dejaría al usuario en un shell de Grupos que ninguna
+    ///   preferencia sostiene.
+    @discardableResult
     static func writePreferences(displayName: String,
                                  writer: any GroupsOrganizerPreferenceWriting,
                                  regionCode: String = Locale.current.region?.identifier ?? "",
-                                 explicitCurrencyCode: String? = nil) {
+                                 explicitCurrencyCode: String? = nil,
+                                 isSecondarySession: Bool = SecondarySessionStore.isActive()) -> Bool {
+        // **C3 · el guard subió de UNA key al MÉTODO ENTERO, y esa es la corrección.** Hasta C3 solo
+        // `onboardingMode` lo llevaba, porque el escáner de M1 buscaba los literales de ESA key y C2
+        // arregló exactamente lo que el escáner señalaba. Las otras CINCO cruzaban igual: `set(string:)` de
+        // `PreferenceSyncService` hace su `local.set(...)` FUERA del switch de behavior, así que
+        // `.localOnly` no evita la escritura local — solo la propagación—, y `local` es `.standard`
+        // hardcodeado, que en secundaria es el dominio del DUEÑO.
+        //
+        // La que más pesa no es el modo: es `groupsBetaUnlocked`, porque **nadie la repone al salir**.
+        // `DataWipeService.removeGroupsDomainPreferenceKeys` tiene UN call-site, dentro de
+        // `wipeLocalGroupsDomain` (el «empiezo de cero» del Welcome) ⇒ cerrar la sesión de la invitada le
+        // deja al dueño el dominio Grupos adoptado, que es justo lo que
+        // `recordEntry_isInertUnderASecondarySession` ya advierte por escrito para el OTRO escritor de esa
+        // misma key.
+        //
+        // Esto es defensa en profundidad y NO la respuesta al usuario: la rama entera se bloquea antes, en
+        // `GroupsOrganizerGateLogic` (`.blockedSecondarySession`), y su choke-point es
+        // `ContentView.advanceGroupsOrganizerFlow`. Aquí solo se garantiza que ninguna escritura sale.
+        guard !isSecondarySession else { return false }
+
         let trimmed = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
         let effectiveName = trimmed.isEmpty ? L10n.Profile.defaultName : trimmed
 
@@ -158,24 +188,19 @@ enum GroupsOrganizerOnboarding {
         // patrón que `FullModeActivationView`) — el `didSet` de `onboardingMode` solo escribe local, así
         // que sin esto no hay paridad cross-device.
         //
-        // **M1 · el guard es el mismo de `FullModeActivationView`, y en C2 dejó de ser opcional.** Hasta
-        // C2 este tipo tenía un solo call-site —el Welcome, inalcanzable con un descriptor secundario
-        // vivo— y por eso no lo llevaba. C2 le añade el segundo: la card «Solo grupos» del onboarding de 8
-        // pasos, cuyo camino SÍ existe en sesión secundaria (la invitada entra con el onboarding ya
-        // marcado, pero un borrado de datos en sesión lo reabre) — es exactamente el caso que
-        // `OnboardingView.completeGroupsOnlyOnboarding` cubría con este mismo guard antes de que C2 la
-        // eliminara. Sin él, en `.localOnly` este `set` sigue escribiendo el espejo local, que en una
-        // sesión secundaria es el `UserDefaults.standard` del DUEÑO, y `.groupInvite` (rank 1) sobre su
-        // `.full` (rank 0) es irreversible por never-downgrade.
-        if !SecondarySessionStore.isActive() {
-            writer.setSynced(OnboardingMode.groupInvite.rawValue, forKey: OnboardingMode.userDefaultsKey)
-        }
+        // **M1 · el `if !SecondarySessionStore.isActive()` que envolvía SOLO esta línea se retiró en C3**,
+        // absorbido por el `guard` de la cabecera. No es una relajación: es que proteger una de las seis
+        // escrituras y dejar las otras cinco era la mitad del bug — `.groupInvite` (rank 1) sobre el
+        // `.full` (rank 0) del dueño es irreversible por never-downgrade, pero `groupsBetaUnlocked` es
+        // PEOR, porque ni siquiera hay quien la reponga al cerrar la sesión.
+        writer.setSynced(OnboardingMode.groupInvite.rawValue, forKey: OnboardingMode.userDefaultsKey)
 
         // Adopción explícita del dominio Grupos. `.groupInvite` ya la implica por el segundo término de
         // `GroupsDomainAdoptionLogic.isDomainOpen`, pero ese término muere si el usuario activa Yala
         // completo más tarde; la key es per-device y permanente (mismo trato que la entrada por invitación).
         writer.setLocal(true, forKey: AppPreferences.Keys.groupsBetaUnlocked)
         writer.setLocal(true, forKey: AppPreferences.Keys.hasCompletedOnboarding)
+        return true
     }
 
     /// El alta completa: preferencias, espejo en memoria, seeds y aterrizaje en el tab Grupos.
@@ -195,9 +220,13 @@ enum GroupsOrganizerOnboarding {
                               writer: (any GroupsOrganizerPreferenceWriting)? = nil,
                               explicitCurrencyCode: String? = nil) {
         let sessionState = SessionState.shared
-        writePreferences(displayName: displayName,
-                         writer: writer ?? LiveGroupsOrganizerPreferenceWriter(),
-                         explicitCurrencyCode: explicitCurrencyCode)
+        // C3 · si las preferencias no se escribieron (frontera M1), el alta NO ocurre: seguir con el modo
+        // en memoria, los seeds y el aterrizaje en el tab dejaría a la invitada dentro de un shell de
+        // Grupos que ninguna preferencia sostiene, y los seeds escribirían en el store del DUEÑO si el
+        // mount todavía es el suyo. El usuario ya recibió su respuesta en la puerta.
+        guard writePreferences(displayName: displayName,
+                               writer: writer ?? LiveGroupsOrganizerPreferenceWriter(),
+                               explicitCurrencyCode: explicitCurrencyCode) else { return }
 
         // Espejo en memoria: el proceso vivo tiene que ver el modo nuevo YA (el tab bar se reduce a
         // [.groups] en el mismo render), no en el próximo arranque.

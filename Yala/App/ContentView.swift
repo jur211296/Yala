@@ -967,6 +967,25 @@ struct ContentView: View {
         // Condición viva al drenar: un intent retenido bajo un cover puede llegar con la rama ya abandonada
         // (cancel de un sheet), y entonces no hay nada que avanzar.
         guard groupsOrganizerFlowActive else { return }
+
+        // C3 · **la rama entera no existe en sesión secundaria, y este es el único sitio por el que pasan
+        // sus DOS puertas.** La del Welcome (`WelcomeGroupsGateView`) ya lo comprueba por su cuenta; la de
+        // la card «Solo grupos» del onboarding NO pasa por esa puerta —`startGroupsOnlyBranch` enciende el
+        // discriminador y submitea directo— y su camino SÍ existe con un descriptor vivo: la invitada entra
+        // con el onboarding ya marcado, pero un borrado de datos en sesión lo reabre. Sin esto, el alta
+        // escribiría sus seis preferencias en el `UserDefaults.standard` del DUEÑO.
+        //
+        // Se manda a la PUERTA en vez de inventar aquí una superficie de bloqueo: es la que ya sabe pintar
+        // este veredicto, y así el usuario recibe la misma respuesta honesta viniendo por donde venga —un
+        // `return` mudo le dejaría un botón que no hace nada, que es el «camino muerto» que el spec prohíbe.
+        if SecondarySessionStore.isActive() {
+            groupsOrganizerFlowActive = false
+            pendingGroupsOnlyPayload = nil
+            showOnboarding = false
+            welcomeFlowInitialStep = .groupsGate
+            showWelcomeFlow = true
+            return
+        }
         switch GroupsOrganizerFlowLogic.nextStep(
             // C2 · el PRIMER escalón. La señal es la misma que usa el tab (`GroupsOnboardingLogic`), con su
             // término legacy incluido: quien completó su alta en modo Grupos antes de C2 ya vio el suyo.

@@ -263,17 +263,65 @@ struct SecondaryOwnerDomainWiringTests {
             viaja al iKV del Apple ID y no vuelve.
             """)
 
-        // **C2 invirtió esta aserción, y el porqué importa.** Hasta C2 `GroupsOrganizerOnboarding` NO
-        // llevaba guard, y era una decisión razonada: su único call-site vivía en el Welcome
-        // (`GroupsOrganizerNameView`), inalcanzable con un descriptor secundario vivo. C2 le añade el
-        // segundo —la card «Solo grupos», cuyo camino SÍ existe en sesión secundaria tras un borrado de
-        // datos en sesión— así que hereda el guard junto con el camino. Quitarlo devuelve el agujero que
-        // `completeGroupsOnlyOnboarding` cubría.
+        // **C2 invirtió esta aserción y C3 la SUBIÓ de la key al método, que es la corrección de fondo.**
+        // Hasta C2 `GroupsOrganizerOnboarding` no llevaba guard (su único call-site vivía en el Welcome,
+        // inalcanzable con un descriptor vivo); C2 le añadió el segundo call-site y con él el guard, pero
+        // sobre UNA sola de sus seis escrituras — que es justo lo que este escáner señalaba. C3 lo pone en
+        // la cabecera: ver `theOrganizerSetupGuardsAllSixKeys`, que es donde vive ahora el peso.
         let organizer = try Self.code("Yala/Services/Groups/GroupsOrganizerOnboarding.swift")
-        #expect(organizer.contains("if !SecondarySessionStore.isActive()"), """
+        #expect(organizer.contains("guard !isSecondarySession else { return false }"), """
             el alta del organizador escribe el modo sin guard M1. Con una sesión secundaria viva ese `set`
             cae en el `UserDefaults.standard` del DUEÑO y le deja `.groupInvite` (rank 1) sobre su `.full`
             (rank 0), irreversible por never-downgrade.
+            """)
+    }
+
+    /// **C3 · el escáner tampoco viajaba solo, y esta es su otra mitad.**
+    ///
+    /// El de arriba busca los escritores de `onboardingMode` —los literales `set(string: OnboardingMode` y
+    /// `setSynced(OnboardingMode`— y por eso C2 arregló EXACTAMENTE una key: la que el escáner sabía ver.
+    /// `GroupsOrganizerOnboarding` escribe SEIS (`userName`, `defaultPeriod`, `defaultCurrencyCode`, el
+    /// modo, `groupsBetaUnlocked`, `hasCompletedOnboarding`) y las otras cinco cruzaban la frontera igual:
+    /// `PreferenceSyncService.set(string:)` hace su `local.set(...)` FUERA del switch de behavior ⇒
+    /// `.localOnly` corta la propagación pero **no la escritura local**, y `local` es `.standard`
+    /// hardcodeado, que en secundaria es el dominio del DUEÑO.
+    ///
+    /// Es la regla de `0c39e884` («un guard no viaja solo con el camino que protegía») una capa más
+    /// arriba: **el inventario que el escáner mira tiene que ser el inventario que la función escribe.**
+    /// Por eso este test lee `writtenKeys` en vez de una lista a mano — una duplicada se quedaría corta en
+    /// cuanto alguien añadiera la séptima, y la aserción seguiría en verde.
+    @Test("el guard del alta cubre las SEIS keys, no la que el escáner sabía ver")
+    func theOrganizerSetupGuardsAllSixKeys() throws {
+        let organizer = try Self.code("Yala/Services/Groups/GroupsOrganizerOnboarding.swift")
+
+        // El guard está en la CABECERA de `writePreferences`, o sea antes de la primera escritura. Un
+        // `if` alrededor de una sola línea vuelve a dejar cinco fuera.
+        let write = try Self.body(
+            of: "isSecondarySession: Bool = SecondarySessionStore.isActive()) -> Bool {",
+            in: organizer)
+        let guardIdx = try #require(write.range(of: "guard !isSecondarySession"), """
+            `writePreferences` perdió su guard de cabecera: las seis escrituras vuelven a caer en el \
+            `UserDefaults` del DUEÑO en cuanto haya un descriptor vivo.
+            """)
+        for key in ["AppPreferences.Keys.userName",
+                    "AppPreferences.Keys.defaultPeriod",
+                    "AppPreferences.Keys.defaultCurrencyCode",
+                    "OnboardingMode.userDefaultsKey",
+                    "AppPreferences.Keys.groupsBetaUnlocked",
+                    "AppPreferences.Keys.hasCompletedOnboarding"] {
+            let use = try #require(write.range(of: key), "el alta dejó de escribir \(key)")
+            #expect(guardIdx.upperBound < use.lowerBound, """
+                la escritura de \(key) quedó POR DELANTE del guard M1. El orden es el invariante: el guard \
+                aborta el método entero, así que cualquier escritura anterior a él se escapa.
+                """)
+        }
+
+        // El inventario publicado y lo que la función escribe tienen que ser lo MISMO. Sin esto, alguien
+        // puede añadir una séptima escritura sin tocar `writtenKeys` y los tests que se alimentan de ese
+        // inventario —el control positivo de `GroupsOrganizerNoWriteTests`— no la cubrirían nunca.
+        #expect(GroupsOrganizerOnboarding.writtenKeys.count == 6, """
+            el inventario del alta cambió de tamaño (\(GroupsOrganizerOnboarding.writtenKeys.count)). \
+            Decide explícitamente si la escritura nueva entra, en vez de dejarla aparecer en silencio.
             """)
     }
 }

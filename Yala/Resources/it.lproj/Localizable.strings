@@ -5476,3 +5476,9 @@
 
 /* C2 · variante del CTA para quien nunca tuvo cuenta */
 "groups.onboarding.step3.createAccountCTA" = "Crea il mio account";
+
+/* G3/C3 — the organizer branch is blocked because a secondary (guest) session is active: the setup would write six preferences into the OWNER's local mirror */
+"welcome.groups.secondaryTitle" = "Qui sei un ospite";
+
+/* G3/C3 — body of the secondary-session block in the organizer gate */
+"welcome.groups.secondaryBody" = "Questa sessione vive sul dispositivo di un'altra persona, quindi il tuo primo gruppo si crea dal tuo. Chiudi la sessione ospite e riprova da lì.";

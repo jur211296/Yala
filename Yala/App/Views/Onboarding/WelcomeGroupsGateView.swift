@@ -63,6 +63,15 @@ struct WelcomeGroupsGateView: View {
                         title: L10n.Welcome.Groups.channelOffTitle,
                         body: L10n.Welcome.Groups.channelOffBody,
                         identifier: "welcome_groups_gate_channel_off")
+                case .blockedSecondarySession:
+                    // C3 · estás de visita en el móvil de otra persona. Copy PROPIO: el hecho no es «hay
+                    // datos de otro humano» sino «esta sesión no es de este dispositivo», y aquí sí hay
+                    // salida (cerrar la sesión de invitado y volver desde el suyo).
+                    blockedContent(
+                        icon: "person.crop.circle.badge.clock",
+                        title: L10n.Welcome.Groups.secondaryTitle,
+                        body: L10n.Welcome.Groups.secondaryBody,
+                        identifier: "welcome_groups_gate_secondary_session")
                 case .blockedForeignData:
                     // El copy que YA existe para este hecho — la misma pantalla honesta del guard
                     // cross-cuenta del sign-in de nube. Cuando M1 se encienda, esta celda podrá ofrecer la
@@ -147,6 +156,10 @@ struct WelcomeGroupsGateView: View {
 
         let verdict = GroupsOrganizerGateLogic.decide(
             channelEnabled: CloudSyncFlags.groupsBackendEnabled,
+            // C3 · el descriptor, no el corpus: en secundaria el detector de abajo mide el store de la
+            // INVITADA (vacío en una sesión recién montada) y daría vía libre justo donde el alta escribe
+            // las seis preferencias en el `UserDefaults` del DUEÑO.
+            isSecondarySession: SecondarySessionStore.isActive(),
             hasExistingData: hasLocalDataNow())
 
         decision = verdict

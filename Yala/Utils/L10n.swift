@@ -4885,7 +4885,12 @@ enum L10n {
             /// «enlace no válido» — aquí no hay ningún enlace y el usuario no ha hecho nada mal.
             static var channelOffTitle: String { ls("welcome.groups.channelOffTitle", comment: "") }
             static var channelOffBody: String { ls("welcome.groups.channelOffBody", comment: "") }
-            /// CTA de las DOS pantallas de bloqueo: vuelta al step con las otras vías intactas.
+            /// C3 · sesión secundaria M1 viva. Copy PROPIO y no el de datos ajenos (`welcome.cloud.blocked*`)
+            /// porque el hecho es otro —«estás de visita»— y aquí sí hay salida: cerrar la sesión de
+            /// invitado y volver desde el dispositivo propio.
+            static var secondaryTitle: String { ls("welcome.groups.secondaryTitle", comment: "") }
+            static var secondaryBody: String { ls("welcome.groups.secondaryBody", comment: "") }
+            /// CTA de las TRES pantallas de bloqueo: vuelta al step con las otras vías intactas.
             static var gateBack: String { ls("welcome.groups.gateBack", comment: "") }
             /// G3 · el único dato que el alta del organizador pide (decisión del owner: solo nombre).
             static var nameTitle: String { ls("welcome.groups.nameTitle", comment: "") }

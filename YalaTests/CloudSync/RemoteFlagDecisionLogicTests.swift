@@ -238,9 +238,11 @@ struct StorageRowDevPanelWiringTests {
         // condición VIEJA, que es exactamente el bug que este trigger cierra.
         let firstPost = try #require(panel.range(of: "DevSecondaryDescriptorSignal.post()"))
         #expect(activate.upperBound < firstPost.lowerBound)
-        #expect(clear.upperBound < panel.range(
-            of: "DevSecondaryDescriptorSignal.post()",
-            range: clear.upperBound..<panel.endIndex)!.lowerBound)
+        let postAfterClear = try #require(
+            panel.range(of: "DevSecondaryDescriptorSignal.post()",
+                        range: clear.upperBound..<panel.endIndex),
+            "el botón de limpiar el descriptor no emite ninguna señal DESPUÉS de limpiarlo")
+        #expect(clear.upperBound < postAfterClear.lowerBound)
     }
 
     @Test("el net secundario monta el cuarto trigger, y el signout NO")
