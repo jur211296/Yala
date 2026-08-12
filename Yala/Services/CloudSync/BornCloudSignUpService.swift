@@ -159,6 +159,12 @@ final class BornCloudSignUpService {
         startSyncEngine: (@MainActor (ModelContext) -> Void)? = nil
     ) {
         self.session = session
+        // SIN `attestProvider`, y es el ÚNICO de los seis supervivientes que nació sin decir por qué
+        // (corregido en C1): el alta born-cloud llama a `/account/claim`, que va por `requireUser`
+        // (`gateway/src/sync/account.ts`) porque es un flujo PRE-SESIÓN — el claim PRECEDE al
+        // `/attest/bind`, así que aquí todavía no hay token de attest que pasar. Cablearlo no sería
+        // inocuo: rompería el alta. Si algún día este servicio llama a un método de los DESTRUCTIVOS
+        // (`deleteAccount`, `siwaRevoke`, bajo `requireUserAndAttest`), el proveedor deja de ser opcional.
         self.accountClient = accountClient ?? CloudAccountClient()
         self.provider = provider ?? { CloudAuthService.shared.storedProvider() ?? "apple" }
         // MISMA SSOT que el claim de migración y el faro (`CloudMigrationController.swift:190`): un

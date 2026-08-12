@@ -3,7 +3,8 @@
  * sync (`/groups/push|pull|merkle`); convive con `/sync/*` y `/account/*` sin tocarlos.
  *
  * Invariantes de seguridad (espejo del canal de sync de grupos):
- * - `fn` DEBE estar en la ALLOWLIST estática (10 RPCs de membresía) — cualquier otra ruta (p.ej.
+ * - `fn` DEBE estar en la ALLOWLIST estática (12 RPCs: 10 de membresía + los 2 del consent C1) —
+ *   cualquier otra ruta (p.ej.
  *   apply_group_delta, que solo va por /groups/push) → 404. Evita que el gateway sea un proxy RPC
  *   genérico contra PostgREST.
  * - ALLOWLIST DE PARAMS por fn: los params desconocidos del body se DESCARTAN silenciosamente. Motivo
@@ -28,7 +29,8 @@ import { KILL_EXEMPT_RPCS, groupsChannelKilled } from "./killSwitch";
 type Ctx = Context<{ Bindings: Env }>;
 
 // ALLOWLIST de RPCs + de sus params (del DDL supabase-groups-staging.ddl). create_group tiene 10 params
-// tras g3_01_create_group_full_meta (los 3 nuevos con DEFAULT). groups_forget_user no lleva params.
+// tras g3_01_create_group_full_meta (los 3 nuevos con DEFAULT). groups_forget_user y groups_consent_state
+// no llevan params.
 // Exportada para que `test/groups.killswitch.test.ts` derive de AQUÍ la lista de RPCs a clasificar (kill vs
 // exento) en vez de copiarla a mano: con un espejo manual, un RPC nuevo nacería sin clasificar y ningún test
 // lo notaría. Solo se lee en tests — el handler la usa directamente.
@@ -56,6 +58,14 @@ export const PARAM_ALLOWLIST: Record<string, Set<string>> = {
   // D10 (batch "salir de todos mis grupos"): transfiere el ownership de UN grupo backend al co-member
   // elegible más antiguo. NO escribe columnas † → NO va a RPC_NEEDS_ENC_KEY (sin p_key).
   transfer_group_ownership: new Set(["p_group_id"]),
+  // C1 (registro GDPR del consent de Grupos, g13_01): alcance-CUENTA dentro del namespace de grupos —
+  // precedente exacto `groups_forget_user`, que también deriva todo de auth.uid(). NO escriben columnas †
+  // ⇒ fuera de RPC_NEEDS_ENC_KEY. `p_accepted_at` viaja del cliente A PROPÓSITO (el epoch es la hora de la
+  // ACEPTACIÓN, no la del reintento que consiguió red) y el RPC lo acota: futuro → clamp, absurdo → 400.
+  // NO son KILL_EXEMPT: con el canal apagado el registro devuelve 403 y el intent durable del cliente lo
+  // CONSERVA como transitorio — el consent ya ocurrió y la prueba no se tira.
+  record_groups_consent: new Set(["p_text_version", "p_accepted_at", "p_path"]),
+  groups_consent_state: new Set<string>(),
 };
 
 // G7: RPCs que escriben columnas † → se les inyecta la llave de cifrado (p_key) tras el filtro de la allowlist.

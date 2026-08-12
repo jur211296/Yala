@@ -26,9 +26,12 @@
 //  (user-action)— exige un `save()` sobre el `mainContext` COMPARTIDO, que es exactamente lo que la ventana
 //  del import personal prohíbe: con el store personal a medio importar, ese save dispara el
 //  `_assertionFailure` interno de SwiftData (`EXC_BREAKPOINT`, no atrapable, crash-loop en cada cold launch;
-//  builds 29-32). La intención tiene que vivir FUERA de SwiftData, y el molde ya está estrenado en
-//  `GroupsIdentityPurgeIntent`. El Caso A conserva su flag: aquel nace de una acción del usuario que ya
-//  salvó el contexto, este de un evento remoto en una ventana donde salvar es lo que no se puede hacer.
+//  builds 29-32). La intención tiene que vivir FUERA de SwiftData. El molde lo estrenó
+//  `GroupsIdentityPurgeIntent`, **borrado el 2026-08-06** (su armador y su drenador vivían los dos dentro de
+//  `SplitSyncManager` y murieron con él) ⇒ este fichero es hoy el ejemplo VIVO del patrón, y su segundo
+//  hermano es `GroupsConsentPendingIntent` (C1). El Caso A conserva su flag: aquel nace de una acción del
+//  usuario que ya salvó el contexto, este de un evento remoto en una ventana donde salvar es lo que no se
+//  puede hacer.
 //
 //  **SIN TTL**, por la misma razón que el intent de la purga: caducar aquí significa no puentear, o sea
 //  perder el gasto. La dirección segura es persistir hasta cumplirse.

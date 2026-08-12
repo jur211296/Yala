@@ -35,9 +35,16 @@ Para cada construcción, la pregunta es **a qué ruta llama y qué guard usa ESE
 | `requireUserAndAttest` | **401 sin header** | `/groups/rpc/:fn` · `/groups/push` · `/groups/pull` · `/groups/merkle` · `/push/register` · `/push/unregister` · `/account/delete` · `/account/siwa/revoke` · `/sync/*` · `/prefs/*` · `/attest/bind` |
 | `requireUser` | pasa sin header | `/account/claim` · `/account/exists` · `/account/migration` · `/account/siwa/exchange` · `/account/entitlement` |
 
-Las tres definiciones de la guard estricta están DUPLICADAS a propósito y son espejos declarados:
-`groups/rpc.ts`, `groups/routes.ts` (que `push/register.ts` reusa) y `sync/routes.ts`. Al tocar una, mirar
-las otras.
+Las **CUATRO** definiciones de la guard estricta están DUPLICADAS a propósito y son espejos declarados:
+`groups/rpc.ts`, `groups/routes.ts` (que `push/register.ts` reusa), `sync/routes.ts` y —la que esta regla
+se dejó fuera hasta el 2026-08-11— **`sync/account.ts`, cuerpo byte-equivalente, que es la que sirve a
+`/account/delete` y `/account/siwa/revoke`, las dos rutas más destructivas del canal**. Al tocar una, mirar
+las otras: durante meses «las otras» apuntaba a 3 de 4, y la que faltaba era justo la peligrosa.
+
+⚠️ **Y la coordenada del enforcement, que estaba mal en TRES sitios** (`AttestWiringTests.swift`,
+`GroupsMembershipClient.swift`, `GroupService.swift`, corregidos en C1): en `groups/rpc.ts` el attest se
+exige en el `if (enforce && !attest)` del guard, **no** en las líneas que validan el JWT de Supabase. Quien
+verificara la premisa por cualquiera de esas tres puertas podía concluir que la ruta **no** exige attest.
 
 **Cablear attest donde NO se exige puede romper el alta**: `/account/claim`, `/account/exists` y
 `/account/siwa/exchange` son flujos PRE-SESIÓN, anteriores al `/attest/bind`. Por eso `CloudAccountClient`
@@ -60,7 +67,17 @@ inyectan el proveedor — no el cliente entero.
   él, un escáner roto o una clase renombrada pasarían en verde sin comprobar nada — la misma familia que
   «Executed 0 tests».
 - **Un `{ nil }` que sobreviva lleva su porqué EN EL CÓDIGO**, nombrando el fichero y la línea del handler
-  que lo justifica. Hay cinco, todos de `CloudAccountClient`.
+  que lo justifica. Son **SEIS**, todos de `CloudAccountClient`, y **ninguno es un `{ nil }` literal: son
+  OMISIONES del parámetro** que caen en el default del init. Importa al buscarlos —un `grep '{ nil }'` los
+  pierde todos— y explica por qué el escáner los cuenta por otra vía. El sexto
+  (`BornCloudSignUpService.swift`) fue el único que nació sin su porqué escrito, que es exactamente el hueco
+  por el que un método que SÍ exija attest entraría sin que nadie lo viera.
+- **Un método NUEVO en un client ya cableado no lo cubre el escáner.** Cuenta el `attestProvider:` del
+  INIT, no los `setValue(…, forHTTPHeaderField:)` de cada método: en `GroupsMembershipClient` el header vive
+  en su `call(fn:args:)` común, así que la forma de romperlo es escribir un método que NO pase por ahí, y
+  eso deja los tres tests de cableado en verde. ⇒ **todo método nuevo lleva su par de transporte** (provider
+  vivo ⇒ header presente, provider nil ⇒ ausente), molde `AttestHeaderTransportTests`. Los dos del consent
+  de Grupos (C1, `record_groups_consent` / `groups_consent_state`) son el primer caso que lo estrena.
 - **Al añadir una ruta nueva al gateway o un método nuevo a un client**, decide por la guard de su handler y
   actualiza este mapa. Si la ruta es de las estrictas, el cliente que la llame necesita el proveedor y su
   construcción tiene que entrar en el conteo del test.

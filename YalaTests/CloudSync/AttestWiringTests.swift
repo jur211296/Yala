@@ -18,7 +18,10 @@
 //
 //  Contrato de decisión (leído del gateway, no de la intuición) — la guard del HANDLER es el criterio:
 //    · `requireUserAndAttest` ⇒ EXIGE attest bajo `enforce` (401 sin header):
-//        POST /groups/rpc/{fn}   `groups/rpc.ts:81-83`      → GroupsMembershipClient
+//        POST /groups/rpc/{fn}   `groups/rpc.ts:87-89`      → GroupsMembershipClient
+//          (OJO: `:81-83` es la validación del JWT de Supabase, NO el enforcement del attest. Tres
+//           docblocks del repo apuntaban ahí, y quien verificara la premisa por cualquiera de ellos
+//           podía concluir que la ruta no exige attest. Corregido en C1.)
 //        POST /groups/push       `groups/routes.ts:67-73`   → GroupsSyncClient
 //        GET  /groups/pull       `groups/routes.ts:67-73`   → GroupsSyncClient
 //        GET  /groups/merkle     `groups/routes.ts:67-73`   → GroupsMerkleClient
@@ -53,7 +56,9 @@ struct AttestWiringTests {
     /// Si añades o quitas una construcción legítima, ajusta el `expected` a conciencia.
     private static let scanned: [(type: String, expected: Int)] = [
         // Canal de Grupos + push (donde nació el 401 del 2026-07-31).
-        ("GroupsMembershipClient", 7),
+        // 8 desde C1: `GroupsConsentRegistrar` construye la suya para registrar el consent contra la
+        // cuenta (`record_groups_consent` / `groups_consent_state`, los dos bajo la MISMA guard estricta).
+        ("GroupsMembershipClient", 8),
         ("GroupsSyncClient", 1),
         ("GroupsMerkleClient", 1),
         ("PushTokenRegistrationClient", 2),
@@ -254,6 +259,63 @@ struct AttestHeaderTransportTests {
 
         #expect(session.lastRequest?.value(forHTTPHeaderField: header) == nil,
                 "Este es EXACTAMENTE el request que el gateway rechazó con 401 en producción.")
+    }
+
+    // MARK: POST /groups/rpc/record_groups_consent — C1
+
+    /// El escáner de arriba comprueba el `attestProvider:` del INIT, no que cada método pase por `call()`.
+    /// Un método nuevo escrito sin pasar por ahí pondría el header a nadie y los tres tests de cableado
+    /// seguirían verdes. Por eso los métodos del consent llevan su propio par: son los dos primeros que se
+    /// añaden a este cliente desde que el 401 ocurrió.
+    @Test func recordConsent_sendsAttest_whenProviderIsLive() async throws {
+        let session = stub(#"{"text_version":1,"accepted_at":"2026-08-11T18:04:05Z","inserted":true}"#)
+        let client = GroupsMembershipClient(
+            baseURL: base, tokenProvider: { "jwt" },
+            attestProvider: { "attest-tok" }, urlSession: session)
+        client.sleeper = { _ in }
+
+        _ = try await client.recordConsent(textVersion: 1, acceptedAt: .now, path: "invite")
+
+        #expect(session.lastRequest?.url?.absoluteString.contains("groups/rpc/record_groups_consent") == true)
+        #expect(session.lastRequest?.value(forHTTPHeaderField: header) == "Bearer attest-tok")
+    }
+
+    @Test func recordConsent_omitsAttest_whenProviderIsNil() async throws {
+        let session = stub(#"{"text_version":1,"accepted_at":"2026-08-11T18:04:05Z","inserted":true}"#)
+        let client = GroupsMembershipClient(
+            baseURL: base, tokenProvider: { "jwt" },
+            attestProvider: { nil }, urlSession: session)
+        client.sleeper = { _ in }
+
+        _ = try await client.recordConsent(textVersion: 1, acceptedAt: .now, path: nil)
+
+        #expect(session.lastRequest?.value(forHTTPHeaderField: header) == nil,
+                "bajo `enforce` esto es un 401 y el registro del consent no llega nunca a la cuenta.")
+    }
+
+    @Test func consentState_sendsAttest_whenProviderIsLive() async throws {
+        let session = stub(#"{"text_version":1,"accepted_at":"2026-08-11T18:04:05Z"}"#)
+        let client = GroupsMembershipClient(
+            baseURL: base, tokenProvider: { "jwt" },
+            attestProvider: { "attest-tok" }, urlSession: session)
+        client.sleeper = { _ in }
+
+        _ = try await client.consentState()
+
+        #expect(session.lastRequest?.url?.absoluteString.contains("groups/rpc/groups_consent_state") == true)
+        #expect(session.lastRequest?.value(forHTTPHeaderField: header) == "Bearer attest-tok")
+    }
+
+    @Test func consentState_omitsAttest_whenProviderIsNil() async throws {
+        let session = stub(#"{"text_version":1,"accepted_at":"2026-08-11T18:04:05Z"}"#)
+        let client = GroupsMembershipClient(
+            baseURL: base, tokenProvider: { "jwt" },
+            attestProvider: { nil }, urlSession: session)
+        client.sleeper = { _ in }
+
+        _ = try await client.consentState()
+
+        #expect(session.lastRequest?.value(forHTTPHeaderField: header) == nil)
     }
 
     // MARK: POST /push/register

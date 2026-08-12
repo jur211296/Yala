@@ -63,6 +63,11 @@ struct GroupsBackendInviteModifier: ViewModifier {
                     // solo corría en cold boot) → arrancarlo aquí cubre crear-grupo / invite / futuro CTA del
                     // empty state. D8-safe por el guard de mount-mismatch; no-op temprano con el flag OFF.
                     GroupsSyncClient.shared.startIfEligible(context: modelContext, trigger: "post-sign-in")
+                    // C1: la sesión acaba de nacer, y es el instante en que (a) un consent aceptado sin red
+                    // por fin tiene cuenta a la que atribuirse, (b) el consent LEGACY de este device —el
+                    // que vivía en el iKV del Apple ID y nunca llegó a Yala— se sella y se registra, y (c)
+                    // el consent que esta persona ya dio en OTRO device baja y evita volver a preguntarle.
+                    Task { @MainActor in await GroupsConsentRegistrar.shared.handleSignIn() }
                 }
                 .environment(SessionState.shared)
             }
@@ -71,7 +76,7 @@ struct GroupsBackendInviteModifier: ViewModifier {
                 consentAccepted = false
                 continueFlow()
             }) {
-                GroupsConsentView {
+                GroupsConsentView(path: groupsOrganizerFlowActive ? "organizer" : "invite") {
                     consentAccepted = true
                     showGroupsConsent = false
                 }

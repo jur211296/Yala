@@ -135,6 +135,63 @@ struct TransferOwnershipResult: Decodable, Equatable {
     }
 }
 
+/// C1: estado del consent de Grupos de la CUENTA, tal y como lo devuelven `record_groups_consent` y
+/// `groups_consent_state`. Shape uniforme con nulls cuando la cuenta no ha aceptado nunca — el RPC lo
+/// garantiza para que aquí no haya dos ramas de decode (que es donde nacen los `try?`).
+///
+/// `accepted_at` llega como `timestamptz` serializado por PostgREST, cuya precisión fraccionaria VARÍA
+/// (`…T18:04:05.123456+00:00`, `…T18:04:05+00:00`). Se decodifica como `String` y se parsea con los dos
+/// formatos: un `JSONDecoder` con `.iso8601` a secas rechaza el primero y dejaría la fecha en `nil`
+/// exactamente cuando el servidor SÍ la mandó.
+struct GroupsConsentStateResult: Decodable, Equatable, Sendable {
+    let textVersion: Int?
+    let acceptedAt: Date?
+    /// `true` solo en la respuesta de `record_groups_consent` cuando la fila se insertó de verdad (en un
+    /// re-registro idempotente es `false`). Diagnóstico: el desarme del intent NO depende de esto — un
+    /// `do nothing` es un éxito igual de bueno, porque significa que la cuenta ya tiene su registro.
+    let inserted: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case textVersion = "text_version"
+        case acceptedAt = "accepted_at"
+        case inserted
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        textVersion = try c.decodeIfPresent(Int.self, forKey: .textVersion)
+        inserted = try c.decodeIfPresent(Bool.self, forKey: .inserted)
+        let raw = try c.decodeIfPresent(String.self, forKey: .acceptedAt)
+        acceptedAt = raw.flatMap(GroupsConsentStateResult.parseTimestamp)
+    }
+
+    init(textVersion: Int?, acceptedAt: Date?, inserted: Bool?) {
+        self.textVersion = textVersion
+        self.acceptedAt = acceptedAt
+        self.inserted = inserted
+    }
+
+    /// `nonisolated`: lo llama `init(from:)`, que es un requisito de `Decodable` y corre fuera del
+    /// MainActor (este target compila con `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`).
+    nonisolated static func parseTimestamp(_ raw: String) -> Date? {
+        let withFraction = ISO8601DateFormatter()
+        withFraction.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let d = withFraction.date(from: raw) { return d }
+        let plain = ISO8601DateFormatter()
+        plain.formatOptions = [.withInternetDateTime]
+        return plain.date(from: raw)
+    }
+
+    /// El formato con el que la fecha de ACEPTACIÓN viaja hacia el RPC. UTC explícito y fracciones: el
+    /// servidor la castea a `timestamptz`, y una fecha sin zona la interpretaría en la del servidor.
+    nonisolated static func wireTimestamp(_ date: Date) -> String {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        f.timeZone = TimeZone(secondsFromGMT: 0)
+        return f.string(from: date)
+    }
+}
+
 // MARK: - Cliente
 
 @MainActor
@@ -153,7 +210,9 @@ final class GroupsMembershipClient {
     }
 
     /// El default `{ nil }` de `attestProvider` es **SOLO PARA TESTS**: TODA ruta de este cliente es
-    /// `POST /groups/rpc/{fn}`, que exige App Attest bajo `enforce` (`gateway/src/groups/rpc.ts:81-83`).
+    /// `POST /groups/rpc/{fn}`, que exige App Attest bajo `enforce` (el enforcement está en el guard
+    /// `requireUserAndAttest`, `gateway/src/groups/rpc.ts:87-89` — `:81-83` es la validación del JWT de
+    /// Supabase, que es otra cosa y a la que apuntaban tres docblocks del repo).
     /// Producción DEBE pasar `AttestSessionProvider.live` — sin él, 401 `yala_attest_required`. No se
     /// invierte el default porque ~20 construcciones de la suite lo usan y llamarían al App Attest REAL
     /// (red) en un unit test. Lo que impide que nazca un call-site de producción sin él es
@@ -200,6 +259,9 @@ final class GroupsMembershipClient {
     ///   groups_forget_user           | SÍ               | destructivo pero convergente (re-aplicable)
     ///   transfer_group_ownership     | SÍ               | idempotente-suave: 2º call tras 502 → ya no soy
     ///                                |                  | owner → already:true (sin re-transferir a otro heredero)
+    ///   record_groups_consent        | SÍ               | PK (user_id, text_version) + ON CONFLICT DO NOTHING
+    ///                                |                  | → un ack perdido post-COMMIT no duplica ni re-fecha
+    ///   groups_consent_state         | SÍ               | lectura pura
     private static let neverRetryTransient: Set<String> = ["create_group", "create_group_invite"]
 
     /// Envuelve `call` con retry SOLO de `.transient` ([R5]): delays fijos `[1s, 3s]` (3 intentos máx).
@@ -414,5 +476,35 @@ final class GroupsMembershipClient {
     func transferOwnership(groupID: String) async throws -> TransferOwnershipResult {
         let data = try await callWithRetry(fn: "transfer_group_ownership", args: ["p_group_id": groupID])
         return try decode(TransferOwnershipResult.self, from: data)
+    }
+
+    // MARK: - Consent de Grupos (C1)
+
+    /// Registra el consentimiento contra la CUENTA (`groups_consents`, append-only por grant).
+    ///
+    /// `acceptedAt` es la hora de la ACEPTACIÓN y viaja del cliente A PROPÓSITO: el registro no puede
+    /// quedar fechado en el reintento que consiguió red. El servidor la acota (futuro → clamp a `now()`,
+    /// anterior a 2015 → `yala_bad_input`), así que la fecha del cliente no es una firma en blanco.
+    ///
+    /// Idempotente por la PK `(user_id, text_version)` + `on conflict do nothing` ⇒ **SÍ es seguro
+    /// reintentar `.transient`** y por eso NO entra en `neverRetryTransient`: a diferencia de
+    /// `create_group_invite`, un ack perdido post-COMMIT no deja nada huérfano — el segundo intento no
+    /// duplica la fila ni le cambia la fecha.
+    func recordConsent(textVersion: Int, acceptedAt: Date, path: String?) async throws -> GroupsConsentStateResult {
+        var args: [String: Any] = [
+            "p_text_version": textVersion,
+            "p_accepted_at": GroupsConsentStateResult.wireTimestamp(acceptedAt),
+        ]
+        if let path, !path.isEmpty { args["p_path"] = path }
+        let data = try await callWithRetry(fn: "record_groups_consent", args: args)
+        return try decode(GroupsConsentStateResult.self, from: data)
+    }
+
+    /// El consent vigente de la cuenta (la versión más alta aceptada y cuándo). Es lo que hace que entrar
+    /// con tu cuenta en un device nuevo no vuelva a preguntarte — y la razón de que la lectura NO entre por
+    /// el canal de prefs: la frontera M1 sigue cerrada y esto es un hecho de la CUENTA, no del device.
+    func consentState() async throws -> GroupsConsentStateResult {
+        let data = try await callWithRetry(fn: "groups_consent_state", args: [:])
+        return try decode(GroupsConsentStateResult.self, from: data)
     }
 }

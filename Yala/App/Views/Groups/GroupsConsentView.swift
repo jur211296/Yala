@@ -19,6 +19,10 @@
 import SwiftUI
 
 struct GroupsConsentView: View {
+    /// Por dónde entró el usuario (`organizer` | `invite` | `tab`). Viaja al registro de la cuenta como
+    /// diagnóstico —jamás PII, y el RPC lo acota a 32 chars—: sirve para saber qué puerta produce los
+    /// consents y, en un incidente, cuál dejó de producirlos.
+    var path: String = "invite"
     /// Se invoca al ACEPTAR (tras registrar consent + telemetría). El caller continúa el join.
     var onAccept: () -> Void
 
@@ -100,9 +104,17 @@ struct GroupsConsentView: View {
         .padding(.horizontal, DS.Spacing.lg)
     }
 
-    /// Registra el consentimiento (persistencia GDPR C5 + telemetría R7).
+    /// Registra el consentimiento (persistencia GDPR + telemetría R7).
+    ///
+    /// Es el CHOKE-POINT ÚNICO que comparten organizador, invitado y tab, y por eso el intent durable se
+    /// arma aquí dentro (`GroupsConsentRegistrar.register`) y **antes** de `onAccept()`: ese callback
+    /// cierra el sheet y continúa el flujo, así que armar después de él ya sería tarde.
+    ///
+    /// El registro contra la cuenta NO bloquea al usuario: aceptó de verdad y un fallo nuestro de red no
+    /// puede castigarle. La caché local se escribe siempre y las cinco tablas de routing la leen, así que
+    /// la puerta no depende del request.
     private func registerConsent() {
-        GroupsConsentState.register()
+        GroupsConsentRegistrar.shared.register(path: path)
         MetricsService.cloudConsentAccepted(path: "groups")
     }
 

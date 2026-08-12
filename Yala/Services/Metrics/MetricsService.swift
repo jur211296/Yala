@@ -125,6 +125,18 @@ enum MetricsCanary: String {
     /// mismo device (el gateway dejando de listar grupos vivos). Único rastro en la flota de un camino que
     /// BORRA datos locales — `value` = zonas de esa página. Sin PII.
     case groupsMembershipLost
+    /// C1 · Hay un consent de Grupos ACEPTADO que la cuenta todavía no tiene registrado. `value` = la edad
+    /// en HORAS del intent, `detail` = intentos consumidos. Se emite en CADA retome y ANTES de cualquier
+    /// early-return, a propósito: sin eso, «hay intents frenados» y «no había ninguno» se leen igual en el
+    /// dashboard (misma lección que `bridgedTxOrphanSweepDeferred`). Picos cortos son normales (aceptar sin
+    /// red); **edades que CRECEN arranque tras arranque = el registro no está llegando**, y es el único
+    /// aviso de que el Art. 7.1 se está quedando sin prueba. ⚠️ El spool tiene cap 50 con drop-oldest, así
+    /// que un canario puede caer por presión de cola: es observación, no garantía de entrega.
+    case groupsConsentPending
+    /// C1 · El servidor RECHAZÓ el registro del consent con un error permanente (400). No es una razón para
+    /// tirar la prueba —el intent se conserva— sino un bug NUESTRO: firma del RPC, fecha fuera de rango o
+    /// versión imposible. >0 sostenido = el registro legal de esa cohorte no se está creando.
+    case groupsConsentRegistrationRejected
 
     // Batch "salir de todos mis grupos" (D10)
     case groupBatchLeaveStarted

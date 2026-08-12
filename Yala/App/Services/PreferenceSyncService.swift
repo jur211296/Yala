@@ -26,7 +26,7 @@ extension Notification.Name {
 
 // MARK: - Comportamiento de sync de prefs (M1 Inc 4)
 
-/// Resolver PURO del comportamiento de las 34 keys sincronizadas. Tres modos — el tercero existe
+/// Resolver PURO del comportamiento de las 37 keys sincronizadas. Tres modos — el tercero existe
 /// porque en sesión SECUNDARIA el modo EFECTIVO es `.cloud` (getter descriptor-aware) pero la
 /// decisión 7 del diseño M1 apaga el sync de prefs: sin `localOnly`, la rama `.icloud` escribiría
 /// las prefs de la invitada al iCloud KV del DUEÑO (propagándolas a sus otros devices) y la rama
@@ -58,7 +58,7 @@ final class PreferenceSyncService {
 
     // MARK: - Synced Keys
     //
-    // La taxonomía de las 34 keys sincronizadas (familias de merge + señales + tipos) vive en el helper
+    // La taxonomía de las 37 keys sincronizadas (familias de merge + señales + tipos) vive en el helper
     // pure-logic `PrefSyncKey` (SSOT único, `PreferenceMergeLogic.swift`), consumido por AMBAS ramas
     // (`.icloud` iKV y `.cloud` backend). El merge se decide en `PreferenceMergeLogic.decide` (byte-idéntico
     // a la lógica que vivía inline aquí) y el bloque POST-PASS compartido es `applyMergeOutcome`.
@@ -92,7 +92,7 @@ final class PreferenceSyncService {
     /// Sesión secundaria activa (M1 Inc 4). Inyectable para tests.
     var secondarySessionActiveProvider: () -> Bool = { SecondarySessionStore.isActive() }
 
-    /// Comportamiento resuelto de las 34 keys (ver `PrefsSyncBehavior`).
+    /// Comportamiento resuelto de las 37 keys (ver `PrefsSyncBehavior`).
     private var behavior: PrefsSyncBehavior {
         PrefsSyncBehavior.resolve(
             storageMode: CloudSyncFlags.storageMode,
@@ -121,7 +121,7 @@ final class PreferenceSyncService {
             iKV.synchronize()
             applyRemoteValues()
         case .cloudOutbox:
-            // La fuente de las 34 keys es el BACKEND vía `CloudSyncRuntime` (pull + merge en su ciclo);
+            // La fuente de las 37 keys es el BACKEND vía `CloudSyncRuntime` (pull + merge en su ciclo);
             // NO se lee iKV aquí. Las señales wipe/onboarding (WipeKeys) SÍ siguen en iKV en ambos modos
             // v1 (su reemplazo por el summary del backend es I14/§k.4 — documentado).
             //
@@ -575,7 +575,7 @@ final class PreferenceSyncService {
 
     @objc private func iCloudDidChange(_ notification: Notification) {
         Task { @MainActor in
-            // En `.cloud` las 34 keys NO vienen de iKV (el backend es la fuente) → solo se procesan las
+            // En `.cloud` las 37 keys NO vienen de iKV (el backend es la fuente) → solo se procesan las
             // señales wipe/onboarding, que SÍ viven en iKV en ambos modos v1. En `.icloud`, ambos.
             // En SECUNDARIA (localOnly), NADA: el iKV es del DUEÑO — ni valores ni señales de wipe
             // deben operar la sesión de la invitada.

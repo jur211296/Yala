@@ -174,17 +174,20 @@ struct SignOutWipeHookTests {
     /// consent— sube sus grupos bajo un `user_id` que jamás consintió.
     ///
     /// El ORDEN es load-bearing, no cosmético, en las DOS direcciones:
-    /// - DESPUÉS de `write(.icloud)`: ahí `PreferenceSyncService.behavior` resuelve `.icloudKeyValue`
-    ///   (local + iKV, cero backend). Con el modo aún `.cloud` tomaría `.cloudOutbox` y encolaría
-    ///   `.int(0)`, borrando por LWW el registro GDPR de una cuenta VIVA.
-    /// - ANTES de `resetPrefs()`: el gate de producción LEE la key que ese reset podría barrer.
+    /// - DESPUÉS de `write(.icloud)`: ahí `PreferenceSyncService.behavior` resolvía `.icloudKeyValue`
+    ///   (local + iKV, cero backend). Con el modo aún `.cloud` tomaba `.cloudOutbox` y encolaba
+    ///   `.int(0)`, borrando por LWW el registro GDPR de una cuenta VIVA. **Ese riesgo murió en C1**: el
+    ///   consent salió del canal de prefs y `GroupsConsentState.clear()` es local puro (además, el grant
+    ///   de `groups_consents` no tiene `delete`). El orden se conserva porque sigue siendo el camino
+    ///   byte-idéntico y no cuesta nada — pero ya no es lo que impide el daño.
+    /// - ANTES de `resetPrefs()`: el gate de producción LEE lo que ese reset podría barrer.
     ///
     /// El modo se captura DENTRO de la closure a propósito: leerlo tras el return solo probaría que
     /// el hook terminó en `.icloud`, no que el clear corriera ya en esa rama — un mutante que moviera
     /// `write(.icloud)` por debajo del clear dejaría verde una aserción post-return.
     @Test func armed_clearsGroupsConsent_beforePrefsReset_withModeAlreadyICloud() {
         let defaults = armedDefaults(prefix: "sowipe.consent", includesGroups: true)
-        defaults.set(1_700_000_000, forKey: PrefSyncKey.groupsConsentAcceptedAt.rawValue)
+        defaults.set(1_700_000_000, forKey: GroupsConsentState.legacyAcceptedAtKey)
         var events: [String] = []
         var modeAtClear: StorageMode?
         SwiftDataConfiguration.performSignOutWipeIfArmed(
@@ -207,8 +210,8 @@ struct SignOutWipeHookTests {
         #expect(modeAtClear == .icloud)
     }
 
-    /// Byte-identidad con el flag OFF: las keys del consent solo se escriben vía
-    /// `GroupsConsentState.register()` (DARK §C5), así que sin ellas la closure JAMÁS se invoca.
+    /// Byte-identidad con el flag OFF: el consent solo se escribe al aceptar, así que sin rastro local la
+    /// closure JAMÁS se invoca.
     /// Gate por PRESENCIA y no por `signOutWipeIncludesGroups`: cubre además el hueco del
     /// kill-switch remoto (flag apagado entre el `register()` y el sign-out ⇒ marker ausente,
     /// consent presente).
@@ -228,7 +231,29 @@ struct SignOutWipeHookTests {
     /// limpia — el device vuelve a "recién instalado" y el consent es de la cuenta que se fue.
     @Test func consentKeyPresent_clearsEvenWithoutGroupsMarker() {
         let defaults = armedDefaults(prefix: "sowipe.consentnomarker")
-        defaults.set(1_700_000_000, forKey: PrefSyncKey.groupsConsentAcceptedAt.rawValue)
+        defaults.set(1_700_000_000, forKey: GroupsConsentState.legacyAcceptedAtKey)
+        var cleared = 0
+        SwiftDataConfiguration.performSignOutWipeIfArmed(
+            defaults: defaults,
+            deleteFiles: { _, _ in true },
+            resetPrefs: {},
+            cancelNotifications: {},
+            clearGroupsConsent: { cleared += 1 })
+        #expect(cleared == 1)
+    }
+
+    /// C1: el gate cubre las DOS formas del consent local. Con solo el snapshot nuevo —el device ya volvió
+    /// a aceptar tras la actualización, así que las keys legacy ya no están— tiene que limpiar igual.
+    /// Comprobar solo una de las dos dejaría fuera a media población, y en direcciones opuestas.
+    @MainActor
+    @Test func newSnapshotPresent_alsoTriggersTheClear() {
+        let defaults = armedDefaults(prefix: "sowipe.consentsnapshot", includesGroups: true)
+        let previous = GroupsConsentState.defaults
+        GroupsConsentState.defaults = defaults
+        defer { GroupsConsentState.defaults = previous }
+        GroupsConsentState.write(GroupsConsentSnapshot(
+            userID: "sub-A", textVersion: GroupsConsentText.version, acceptedAt: .now))
+
         var cleared = 0
         SwiftDataConfiguration.performSignOutWipeIfArmed(
             defaults: defaults,
@@ -243,7 +268,7 @@ struct SignOutWipeHookTests {
     /// sigue siendo válido. Mismo racional que notificaciones y colas del App Group.
     @Test func baseDeleteFails_neverClearsGroupsConsent() {
         let defaults = armedDefaults(prefix: "sowipe.consentabort", includesGroups: true)
-        defaults.set(1_700_000_000, forKey: PrefSyncKey.groupsConsentAcceptedAt.rawValue)
+        defaults.set(1_700_000_000, forKey: GroupsConsentState.legacyAcceptedAtKey)
         var cleared = 0
         SwiftDataConfiguration.performSignOutWipeIfArmed(
             defaults: defaults,
@@ -346,6 +371,18 @@ struct SignOutNotificationWiringTests {
         try String(contentsOf: repoRoot.appendingPathComponent(path), encoding: .utf8)
     }
 
+    /// El fuente SIN las líneas que son comentario entero. Molde `AttestWiringTests`, y aquí no es
+    /// cosmética: los scans de abajo CUENTAN ocurrencias de `GroupsConsentState.clear()`, y este repo
+    /// explica sus invariantes nombrando el símbolo del que hablan — así que documentar por qué el clear
+    /// vive donde vive ponía el conteo en 2 y el test en rojo sin que nada cambiara en producción. Pasó
+    /// literalmente al escribir C1. Los comentarios de FINAL de línea se conservan a propósito: recortar
+    /// desde el primer `//` destrozaría cualquier `URL(string: "https://…")`.
+    private static func codeOnly(_ source: String) -> String {
+        source.split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+    }
+
     /// Los 3 wrappers que borran o abandonan el store PERSONAL cablean el barrido total.
     @Test func bootHooks_wirePersonalNotificationCleanup() throws {
         let src = try Self.source("Yala/Utils/SwiftDataConfiguration.swift")
@@ -430,18 +467,22 @@ struct SignOutNotificationWiringTests {
     /// La ASIMETRÍA con el hook solo-grupos es a CONSERVAR, no a "arreglar" por simetría: allí el
     /// consent ya se limpió in-session en `finalizeGroupsOnlyClose` y el store personal sobrevive.
     @Test func consentCleanup_wiredOnlyWherePersonalStoreDies() throws {
-        let src = try Self.source("Yala/Utils/SwiftDataConfiguration.swift")
-        #expect(src.contains("clearGroupsConsent: { GroupsConsentState.clear() }"))
+        let full = try Self.source("Yala/Utils/SwiftDataConfiguration.swift")
+        // El CONTEO va sobre el código sin comentarios; los MARCADORES se buscan en el fuente entero,
+        // porque uno de ellos ES un comentario (`// MARK:`) y `codeOnly` se lo llevaría por delante.
+        let code = Self.codeOnly(full)
+        #expect(code.contains("clearGroupsConsent: { GroupsConsentState.clear() }"))
         // 1 sola vez: los 2 hooks M1 lo obtienen dentro de `SecondarySessionBoundaryPurge.purge()`.
-        #expect(src.components(separatedBy: "GroupsConsentState.clear()").count - 1 == 1)
+        #expect(code.components(separatedBy: "GroupsConsentState.clear()").count - 1 == 1)
 
         let marker = "static func performGroupsOnlySignOutWipeIfArmed()"
         let nextMarker = "// MARK: - Sesión secundaria (M1)"
-        guard let start = src.range(of: marker), let end = src.range(of: nextMarker) else {
+        guard let start = full.range(of: marker), let end = full.range(of: nextMarker) else {
             Issue.record("No se localizaron los marcadores del hook solo-grupos — ¿se renombró?")
             return
         }
-        #expect(!String(src[start.lowerBound..<end.lowerBound]).contains("GroupsConsentState.clear()"))
+        let body = Self.codeOnly(String(full[start.lowerBound..<end.lowerBound]))
+        #expect(!body.contains("GroupsConsentState.clear()"))
     }
 
     /// Los clears IN-SESSION siguen atados a caminos que corren con el modo `.icloud` persistido
@@ -450,7 +491,7 @@ struct SignOutNotificationWiringTests {
     /// GDPR de una cuenta VIVA y lo propagaría a sus otros devices. Por eso el wipe personal lo hace
     /// en el BOOT-HOOK (ya en `.icloud`) y no aquí.
     @Test func inSessionConsentClears_neverOnCloudModePaths() throws {
-        let src = try Self.source("Yala/Services/CloudSync/CloudSessionSignOut.swift")
+        let src = Self.codeOnly(try Self.source("Yala/Services/CloudSync/CloudSessionSignOut.swift"))
         // exitYalaOnThisDevice + finalizeGroupsOnlyClose + closeLocalAfterAccountDeletionGroupsOnly.
         #expect(src.components(separatedBy: "GroupsConsentState.clear()").count - 1 == 3)
 
@@ -473,11 +514,11 @@ struct SignOutNotificationWiringTests {
                 .prefix(while: { $0.isLetter || $0.isNumber || $0 == "_" }))
             #expect(
                 allowed.contains(name),
-                "GroupsConsentState.clear() en `\(name)`: ese camino corre con el modo `.cloud` aún persistido ⇒ `behavior == .cloudOutbox` ⇒ encolaría .int(0) al backend, borrando el consent de una cuenta viva.")
+                "GroupsConsentState.clear() en `\(name)`: el consent solo se OLVIDA en los cierres solo-grupos. Hasta C1 la razón era mecánica (ese camino corre con `.cloud` persistido ⇒ `.cloudOutbox` ⇒ encolaba .int(0) y borraba el registro de una cuenta viva); hoy el clear es local puro y el grant del servidor no tiene delete, así que la razón es de PRODUCTO y sigue valiendo: un sign-out normal es «hasta luego», y olvidar el consent ahí obligaría a re-preguntarlo sin motivo.")
             searchStart = hit.upperBound
         }
 
-        let purge = try Self.source("Yala/Services/CloudSync/SecondarySessionBoundaryPurge.swift")
+        let purge = Self.codeOnly(try Self.source("Yala/Services/CloudSync/SecondarySessionBoundaryPurge.swift"))
         #expect(purge.contains("GroupsConsentState.clear()"))
     }
 

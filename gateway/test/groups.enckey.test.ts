@@ -24,6 +24,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "../src/env";
 import { ENC_KEY_MISSING_MESSAGE } from "../src/groups/encKey";
 import { GROUP_ENTITIES } from "../src/groups/manifest";
+import { PARAM_ALLOWLIST } from "../src/groups/rpc";
 
 const SUB = "11111111-2222-3333-4444-555555555555";
 const VALID = "valid-user-jwt"; // token sentinela: el mock de verifyUserToken lo acepta
@@ -55,6 +56,10 @@ const NO_KEY = [
   "leave_group",
   "revoke_invite",
   "transfer_group_ownership",
+  // C1: el registro del consent no escribe ninguna columna † (la tabla `groups_consents` es texto plano
+  // por diseño — un registro legal tiene que poder auditarse sin la llave).
+  "record_groups_consent",
+  "groups_consent_state",
 ];
 
 function makeEnv(overrides: Partial<Env> = {}): Env {
@@ -207,6 +212,13 @@ describe("/groups/rpc/:fn — RPC_NEEDS_ENC_KEY es el criterio EXACTO", () => {
       expect(calls[0].args).not.toHaveProperty("p_key");
     });
   }
+
+  it("la partición NEEDS_KEY/NO_KEY cubre la allowlist ENTERA (un RPC nuevo no nace sin clasificar)", () => {
+    // El docblock de arriba lo prometía («si crece una, este test obliga a clasificar la nueva») y hasta
+    // C1 no lo comprobaba nadie: las dos listas eran espejos manuales, así que un RPC nuevo se quedaba
+    // fuera de las dos y la suite seguía verde. Derivar de `PARAM_ALLOWLIST` lo hace cierto.
+    expect([...NEEDS_KEY, ...NO_KEY].sort()).toEqual(Object.keys(PARAM_ALLOWLIST).sort());
+  });
 
   it("fn fuera de la allowlist → 404 aunque falte la llave (el guard de allowlist manda)", async () => {
     const calls = stubUpstream();

@@ -21,7 +21,7 @@
  *    equivalencia compara los DOS consumidores del mismo parser: si alguien parsea por su cuenta en el
  *    guard, un valor basura se leería OFF en un sitio y ON en el otro (split-brain) y la tabla cae.
  * 4. **`groups_forget_user` está EXENTO** (teardown del borrado de cuenta; el cliente ya lo exceptúa por
- *    capacidad compilada). Meterlo en el kill → rojo. Sacar del kill cualquiera de los otros 9 → rojo.
+ *    capacidad compilada). Meterlo en el kill → rojo. Sacar del kill cualquiera de los otros 11 → rojo.
  * 5. **El orden**: el kill va ANTES de la auth y ANTES del guard de `GROUPS_ENC_KEY`, para que con el
  *    canal apagado el cliente vea SIEMPRE el apagado deliberado y nunca un 401/503 que lo mandaría a
  *    re-firmar o a un backoff sobre un veredicto que ningún reintento cambia.
@@ -55,7 +55,7 @@ const SUPA = "https://killswitch-unit.local";
  * que es justo el agujero por el que este chip entró (una var que solo dos ficheros leían).
  */
 const ALL_RPCS = Object.keys(PARAM_ALLOWLIST);
-/** Las 9 ENTRADAS que el kill SÍ corta = allowlist menos los exentos. Si nace un RPC, hay que clasificarlo. */
+/** Las 11 entradas que el kill SÍ corta = allowlist menos los exentos. Si nace un RPC, hay que clasificarlo. */
 const KILLED_RPCS = ALL_RPCS.filter((fn) => !KILL_EXEMPT_RPCS.has(fn));
 
 function makeEnv(percent: string | undefined, overrides: Partial<Env> = {}): Env {
@@ -265,9 +265,9 @@ describe("fail-closed y COHERENTE con lo que GET /config publica", () => {
   }
 });
 
-describe("/groups/rpc/:fn — el kill corta las 9 ENTRADAS y NO el teardown", () => {
+describe("/groups/rpc/:fn — el kill corta las 11 no-exentas y NO el teardown", () => {
   for (const fn of KILLED_RPCS) {
-    it(`${fn} es una ENTRADA → 403 con el canal apagado, sin tocar PostgREST`, async () => {
+    it(`${fn} lo corta el kill → 403 con el canal apagado, sin tocar PostgREST`, async () => {
       const calls = stubUpstream();
       const res = await rpc(makeEnv("0"), fn, { p_group_id: GID });
       expect(res.status).toBe(403);

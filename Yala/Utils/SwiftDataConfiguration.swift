@@ -656,37 +656,34 @@ extension SwiftDataConfiguration {
         // trío de superficies de Grupos: `PendingJoinStore`/`GroupJoinIntentTracker` mueren en el
         // `resetPrefs()` de abajo (vía `AppRouter.resetAll`).
         //
-        // AQUÍ y no in-session en `CloudSessionSignOut`, por el reparto de `PreferenceSyncService.remove`:
-        // este punto corre DESPUÉS de `write(.icloud)` ⇒ `behavior == .icloudKeyValue` ⇒ borra local + iKV
-        // y NADA en el backend. En el coordinador el modo persistido aún es `.cloud` ⇒ `.cloudOutbox` ⇒
-        // encolaría `.int(0)` (≡ "no aceptado" para `intPresence`), y sin tombstone en el wire ese `0`
-        // pisaría por LWW el registro GDPR de una cuenta VIVA, propagándolo a sus otros devices. El device
-        // olvida, la cuenta recuerda: al re-entrar por adopt (el claim-store sobrevive) el pull de prefs
-        // del backend lo devuelve sin volver a preguntar. Limpiar el iKV es OBLIGATORIO (CR-2 de
-        // `GroupsConsentState.clear`): es la única capa que este wipe no toca en ningún paso, y el
-        // `applyRemoteValues()` del próximo bootstrap `.icloud` lo resucitaría. La posición entre
-        // `write(.icloud)` y `resetPrefs()` es lo ÚNICO que garantiza esa rama — `modeAtClear` en
-        // `SignOutWipeHookTests` la pinnea desde DENTRO de la closure (leer el modo tras el return no
-        // prueba nada sobre el instante del clear).
+        // AQUÍ y no in-session en `CloudSessionSignOut` — POR QUÉ SIGUE SIENDO CIERTO, con otra razón desde
+        // C1. La original era el reparto de `PreferenceSyncService.remove`: el consent viajaba por el canal
+        // de prefs, así que en el coordinador (modo persistido aún `.cloud`) el clear encolaba un `.int(0)`
+        // que, sin tombstone en el wire, pisaba por LWW el registro GDPR de una cuenta VIVA. **Ese riesgo
+        // MURIÓ en C1**: el consent ya no es una `PrefSyncKey`, `GroupsConsentState.clear()` es local puro
+        // en las tres ramas, y el grant de `groups_consents` no tiene `delete` ⇒ ningún camino del cliente
+        // puede alcanzar el registro de la cuenta. Lo que NO ha cambiado es la razón de producto: el device
+        // olvida y la CUENTA recuerda, así que al re-entrar el propio dueño no vuelve a ver la pantalla
+        // (ahora lo devuelve `groups_consent_state()` en vez del pull de prefs). La posición entre
+        // `write(.icloud)` y `resetPrefs()` se conserva —`modeAtClear` en `SignOutWipeHookTests` la pinnea
+        // desde DENTRO de la closure— porque sigue siendo la que hace el camino byte-idéntico y no cuesta
+        // nada; simplemente ya no es lo que impide el daño.
         //
-        // ANTES de `resetPrefs()` y no después, aunque el consent sea una pref: el gate de abajo LEE la
-        // key que ese reset podría barrer. Hoy `removeUserPreferenceKeys` no la nombra, pero añadirla
-        // allí es el movimiento "natural" para quien quiera que el device olvide — y con el clear detrás
-        // el gate dejaría de dispararse en silencio, el iKV quedaría sucio y el gap volvería entero.
-        // Delante, ambas capas son correctas y el barrido posterior sería un no-op redundante.
+        // ANTES de `resetPrefs()` y no después, aunque el consent sea local: el gate de abajo LEE lo que
+        // ese reset podría barrer. Hoy `removeUserPreferenceKeys` no lo nombra, pero añadirlo allí es el
+        // movimiento "natural" para quien quiera que el device olvide — y con el clear detrás el gate
+        // dejaría de dispararse en silencio. Delante, ambas capas son correctas y el barrido posterior
+        // sería un no-op redundante.
         //
-        // Gate por PRESENCIA de la key y no por `signOutWipeIncludesGroups`: sin canal las keys nunca se
-        // escriben ⇒ la closure JAMÁS se invoca ⇒ byte-identidad literal. Este gate se eligió además para
-        // cubrir «el hueco que deja el marker si `groupsBackendEnabled` se apaga en remoto entre el
-        // `register()` y el sign-out (marker ausente, consent presente)»; desde D-R1 paso 2 ese hueco ya
-        // no existe en la fuente —el marker lo escribe la capacidad COMPILADA, inmune al kill—, así que
-        // hoy este gate es la red redundante y no la única. Residual: un consent que solo exista en el iKV
-        // (lo registró OTRO device del mismo Apple ID y este nunca lo aplicó) no pasa el gate — caso
-        // inofensivo y parte del residual iKV general, mucho más ancho que el consent.
+        // Gate por PRESENCIA del consent local y no por `signOutWipeIncludesGroups`: sin canal nunca se
+        // escribe ⇒ la closure JAMÁS se invoca ⇒ byte-identidad literal. Cubre las DOS formas —el snapshot
+        // sellado de C1 y las dos keys del formato anterior, que un device que no haya vuelto a aceptar
+        // desde la actualización sigue teniendo— porque comprobar solo la nueva dejaría fuera exactamente a
+        // quien lleva más tiempo con el consent puesto.
         //
         // DESPUÉS del guard abort-S3 por el mismo racional que las notificaciones y las colas: si el
         // store sobrevive, el consent de esa sesión sigue siendo legítimo.
-        if defaults.object(forKey: PrefSyncKey.groupsConsentAcceptedAt.rawValue) != nil {
+        if GroupsConsentState.hasLocalRecord(in: defaults) {
             clearGroupsConsent()
         }
 

@@ -19,6 +19,11 @@
 --   §7 g10_01_transfer_group_ownership — the D10 batch "leave all my groups": hands ONE group's ownership to the
 --                                   eligible heir (heir criterion VERBATIM from groups_forget_user loop1) and nothing
 --                                   else. NEVER tombstones when there is no heir. No † columns ⇒ no p_key.
+--   §8 g13_01_groups_consents     — the server-side GDPR record of the Groups consent (chip C1): one APPEND-ONLY
+--                                   table (grant WITHOUT update/delete — the invariant is enforced by the grant,
+--                                   not by a client convention) + record_groups_consent / groups_consent_state.
+--                                   Account-scoped, like groups_forget_user: everything derives from auth.uid().
+--                                   No † columns ⇒ no p_key.
 -- Applied migrations (staging): g1_01, g1_02, g2_01, g6_01, and — 2026-07-16 —
 --   g7_01_encrypt_groups_columns + g7_02_encrypt_groups_cutover (the G7 cutover: the 8 † columns become bytea NULLABLE,
 --   and create_group / join_group / groups_forget_user / update_member_display_name / migrate_group / apply_group_delta
@@ -1723,3 +1728,122 @@ end $$;
 -- proacl {postgres=X/postgres, authenticated=X/postgres, service_role=X/postgres}.
 revoke all on function public.transfer_group_ownership(text) from public, anon;
 grant execute on function public.transfer_group_ownership(text) to authenticated;
+
+-- ============================================================================
+-- §8 — g13_01_groups_consents (chip C1: el registro server-side del consent de Grupos)
+-- ============================================================================
+-- POR QUÉ. El consent de Grupos vivía en dos `PrefSyncKey` cuyo destino era una propiedad del INSTANTE en
+-- que se escribían: con `storageMode == .icloud` —el default del parque— acababan en el iCloud KV del Apple
+-- ID y jamás llegaban a Yala, mientras Grupos va al 100 % sin exigir Modo Nube. ⇒ para el grueso de los
+-- usuarios el registro NO existía en ningún sitio que Yala controle (RGPD Art. 7.1). Para casi todos, esto
+-- lo CREA; no lo mueve de canal.
+--
+-- APPEND-ONLY POR EL GRANT. `authenticated` recibe SOLO `select, insert`. Sin `update` ni `delete`, un
+-- `clear()` del cliente mal colocado no puede borrar nada remoto: cierra por construcción el incidente
+-- `bdbc46d1` (el `.int(0)` del outbox de prefs pisando por LWW el epoch de una cuenta VIVA, porque el wire
+-- de prefs no tiene tombstone). Dos policies, no cuatro — la AUSENCIA es el invariante.
+--
+-- PK `(user_id, text_version)`: idempotencia con `on conflict do nothing` (aceptar dos veces no duplica NI
+-- re-fecha) + historia (qué versión se aceptó y cuándo cada una, que es lo que el Art. 7.1 pide demostrar).
+-- Molde de forma: `claim_report` (supabase-staging.ddl).
+--
+-- `p_accepted_at` VIAJA DEL CLIENTE a propósito: el epoch es la hora de la ACEPTACIÓN, jamás la del
+-- reintento que consiguió red (mismo criterio que el paso 5-bis del cutover, que re-emite el epoch
+-- PERSISTIDO y nunca `now()`). Por eso se acota: futuro → CLAMP a now() (un reloj adelantado no registra
+-- una aceptación que no ocurrió, pero tampoco pierde su registro — un 400 aquí sería PERMANENTE sobre la
+-- aceptación del usuario); antigüedad absurda (< 2015) → RECHAZO.
+--
+-- ALCANCE-CUENTA dentro del namespace de grupos, precedente exacto `groups_forget_user`: que el consent sea
+-- un hecho de la cuenta no lo saca de `/groups/rpc/:fn`. Sin columnas † ⇒ NO entra en RPC_NEEDS_ENC_KEY.
+
+create table public.groups_consents (
+  user_id      uuid        not null references auth.users(id) on delete cascade,
+  text_version integer     not null,
+  accepted_at  timestamptz not null,
+  -- Por dónde entró (organizer|invite|tab|onboarding). Diagnóstico, NUNCA PII: acotado a 32 chars en el RPC.
+  path         text,
+  -- Cuándo lo recibió el SERVIDOR. Distinto de `accepted_at` a propósito: la diferencia entre ambos ES la
+  -- ventana en que el intent durable estuvo armado sin red, y es la única forma de verla desde fuera.
+  recorded_at  timestamptz not null default now(),
+  primary key (user_id, text_version)
+);
+
+alter table public.groups_consents enable row level security;
+create policy groups_consents_select on public.groups_consents
+  for select to authenticated using (user_id = (select auth.uid()));
+create policy groups_consents_insert on public.groups_consents
+  for insert to authenticated with check (user_id = (select auth.uid()));
+revoke all on public.groups_consents from anon, authenticated;
+grant select, insert on public.groups_consents to authenticated;
+
+-- SECURITY INVOKER: corre con el JWT del usuario ⇒ la RLS de arriba arbitra y `auth.uid()` es la ÚNICA
+-- fuente del user_id (el gateway filtra el body por su PARAM_ALLOWLIST y jamás inyecta identidad).
+create function public.record_groups_consent(
+  p_text_version integer,
+  p_accepted_at  timestamptz,
+  p_path         text default null
+) returns jsonb
+  language plpgsql security invoker set search_path = public as $$
+declare
+  v_uid      uuid := (select auth.uid());
+  v_at       timestamptz;
+  v_inserted boolean;
+  v_ver      integer;
+  v_acc      timestamptz;
+begin
+  if v_uid is null then
+    raise exception 'yala_not_authorized' using errcode = 'P0001';
+  end if;
+
+  if p_text_version is null or p_text_version < 1 or p_text_version > 10000 then
+    raise exception 'yala_bad_input' using errcode = 'P0001';
+  end if;
+
+  if p_accepted_at is null then
+    raise exception 'yala_bad_input' using errcode = 'P0001';
+  end if;
+
+  if p_accepted_at < timestamptz '2015-01-01T00:00:00Z' then
+    raise exception 'yala_bad_input' using errcode = 'P0001';
+  end if;
+
+  v_at := least(p_accepted_at, now());
+
+  insert into groups_consents (user_id, text_version, accepted_at, path)
+  values (v_uid, p_text_version, v_at, left(p_path, 32))
+  on conflict (user_id, text_version) do nothing;
+  v_inserted := found;
+
+  select gc.text_version, gc.accepted_at into v_ver, v_acc
+    from groups_consents gc where gc.user_id = v_uid
+    order by gc.text_version desc limit 1;
+
+  return jsonb_build_object('text_version', v_ver, 'accepted_at', v_acc, 'inserted', v_inserted);
+end $$;
+
+revoke all on function public.record_groups_consent(integer, timestamptz, text) from public, anon;
+grant execute on function public.record_groups_consent(integer, timestamptz, text) to authenticated;
+
+-- La LECTURA: es lo que hace que entrar con tu cuenta en un iPad nuevo no vuelva a preguntarte. NO entra
+-- por el canal de prefs a propósito (la frontera M1 sigue cerrada); molde exacto de /account/entitlement.
+-- Shape UNIFORME con nulls cuando no hay aceptación: dos ramas de decode en el cliente es donde nacen los `try?`.
+create function public.groups_consent_state() returns jsonb
+  language plpgsql security invoker set search_path = public as $$
+declare
+  v_uid uuid := (select auth.uid());
+  v_ver integer;
+  v_acc timestamptz;
+begin
+  if v_uid is null then
+    raise exception 'yala_not_authorized' using errcode = 'P0001';
+  end if;
+
+  select gc.text_version, gc.accepted_at into v_ver, v_acc
+    from groups_consents gc where gc.user_id = v_uid
+    order by gc.text_version desc limit 1;
+
+  return jsonb_build_object('text_version', v_ver, 'accepted_at', v_acc);
+end $$;
+
+revoke all on function public.groups_consent_state() from public, anon;
+grant execute on function public.groups_consent_state() to authenticated;

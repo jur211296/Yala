@@ -494,6 +494,21 @@ final class AppBootstrapper {
             await GroupService.shared.refreshCurrentUserFlags()
         }
 
+        // 16.9. C1 — el registro del consent de Grupos contra la cuenta.
+        //
+        // Tres cosas en una sola llamada, todas idempotentes y todas no-op sin sesión: adoptar el consent
+        // LEGACY de este device (el que vivía en el iKV del Apple ID y nunca llegó a Yala) sellándolo con
+        // el `sub`, RETOMAR el intent durable de una aceptación que no consiguió red, y traerse el consent
+        // que esta persona ya dio en otro device.
+        //
+        // SIN `awaitPersonalStoreReady`, al revés que sus vecinos, y no por descuido: aquí no hay ningún
+        // `save()` sobre el `mainContext` compartido —es `UserDefaults` y un request— así que el gate de
+        // quiescencia no tiene nada que proteger, y esperarlo solo retrasaría el registro (o lo perdería
+        // entero en un arranque cuyo import no se asienta, que es justo la cohorte que peor lo lleva).
+        Task { @MainActor in
+            await GroupsConsentRegistrar.shared.handleSignIn()
+        }
+
         // 17. Initialize Group Notification Service (GC-06)
         GroupNotificationService.shared.setContext(context)
 
@@ -599,12 +614,12 @@ final class AppBootstrapper {
             //    pegajosas de `.standard` (misma clase que el snapshot de remote-config). El
             //    servicio NO arranca bajo uitest, pero una corrida manual previa las deja.
             MetricsService.resetLocalState()
-            //  · Consent de Grupos (`-uitest-groups-consent`): sus 2 keys son UserDefaults de la
+            //  · Consent de Grupos (`-uitest-groups-consent`): su snapshot (y las 2 keys del formato
+            //    anterior a C1, que un simulador viejo puede seguir teniendo) son UserDefaults de la
             //    MISMA clase pegajosa. Sin esto, una corrida CON el arg dejaría el consent aceptado
             //    para la siguiente, y un test que espera ver el gate de consent pasaría en verde sin
-            //    haberlo ejercitado nunca. Se limpian aquí y se re-siembran abajo si el arg viene.
-            UserDefaults.standard.removeObject(forKey: PrefSyncKey.groupsConsentAcceptedAt.rawValue)
-            UserDefaults.standard.removeObject(forKey: PrefSyncKey.groupsConsentTextVersion.rawValue)
+            //    haberlo ejercitado nunca. Se limpian aquí y se re-siembra abajo si el arg viene.
+            GroupsConsentState.clear()
         }
         // Estado Pro determinista según el launch arg, EFÍMERO y sin rastro en disco.
         // Va incondicional (no solo bajo `-uitest-reset`): también hay que fijar el estado
@@ -630,16 +645,19 @@ final class AppBootstrapper {
             SessionState.shared.onboardingMode = .groupInvite
             SessionState.shared.selectedMainTab = .groups
         }
-        // `-uitest-groups-consent`: consent de Grupos por sembrado DIRECTO de sus dos keys (el
-        // `rawValue` de `PrefSyncKey` ES la key de UserDefaults, declarado en PreferenceMergeLogic).
-        // NO se usa `GroupsConsentState.register()` a propósito: ese camino va por
-        // `PreferenceSyncService` (iKV en `.icloud` / outbox en `.cloud`) y un XCUITest no debe encolar
-        // preferencias. Va DESPUÉS del bloque de reset, que borra estas mismas keys.
+        // `-uitest-groups-consent`: consent de Grupos por sembrado DIRECTO de su snapshot local. NO se usa
+        // `GroupsConsentRegistrar.register()` a propósito: ese camino arma el intent durable y lanza un
+        // request al gateway, y un XCUITest no debe registrar consents contra ninguna cuenta.
+        //
+        // El snapshot va SIN sellar (`userID: nil`), que es lo correcto y no un atajo: el simulador nunca
+        // tiene sesión de nube real —`-uitest-fake-cloud-session` fuerza `hasSession` y deja
+        // `currentUserID` en `nil` a propósito, para que el tráfico HTTP siga en CERO— así que no hay `sub`
+        // con el que sellarlo. `GroupsConsentDecisionLogic` acepta el snapshot sin sello mientras no haya
+        // una sesión que lo CONTRADIGA, que es exactamente este caso. Va DESPUÉS del bloque de reset, que
+        // borra el snapshot.
         if UITestHooks.groupsConsentAccepted {
-            UserDefaults.standard.set(Int(Date().timeIntervalSince1970),
-                                      forKey: PrefSyncKey.groupsConsentAcceptedAt.rawValue)
-            UserDefaults.standard.set(GroupsConsentState.textVersion,
-                                      forKey: PrefSyncKey.groupsConsentTextVersion.rawValue)
+            GroupsConsentState.write(GroupsConsentSnapshot(
+                userID: nil, textVersion: GroupsConsentText.version, acceptedAt: Date()))
         }
         // El What's New de la versión corriente se marca visto en todo arranque
         // uitest: con contenido publicado para la versión (WhatsNewConfig), el sheet

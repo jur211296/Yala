@@ -62,9 +62,9 @@ nonisolated enum PrefSideSignal {
 /// Las keys sincronizadas cross-device (SSOT único: el service itera `allCases`). `rawValue` = la key
 /// EXACTA de UserDefaults / iKV / backend (no renombrar: rompería la persistencia y el matching).
 ///
-/// El orden de los cases NO importa para el merge (cada key es independiente). El conteo actual es 38
-/// (34 hasta I13; I14 P5 añadió `cloudConsentAcceptedAt` + `cloudConsentTextVersion`; G4 añadió
-/// `groupsConsentAcceptedAt` + `groupsConsentTextVersion`).
+/// El orden de los cases NO importa para el merge (cada key es independiente). El conteo actual es **37**
+/// (34 hasta I13; I14 P5 añadió `cloudConsentAcceptedAt` + `cloudConsentTextVersion`; D1 añadió
+/// `usageFocus`; y C1 SACÓ las dos del consent de Grupos — ver el bloque de abajo).
 nonisolated enum PrefSyncKey: String, CaseIterable {
     // Strings guard no-vacío (12)
     case defaultCurrencyCode
@@ -114,11 +114,15 @@ nonisolated enum PrefSyncKey: String, CaseIterable {
     // al backend; en `.cloud` (adopt) van directo al outbox de prefs. rawValue = key de UserDefaults.
     case cloudConsentAcceptedAt
     case cloudConsentTextVersion
-    // Consent de GRUPOS (§C5, G4-invites): mismo molde que cloudConsent* — epoch + versión del texto.
-    // DARK: solo se escriben vía `GroupsConsentState.register()` (flag-gated); con el flag OFF quedan nil
-    // → skip en merge/outbox, cero tráfico nuevo.
-    case groupsConsentAcceptedAt
-    case groupsConsentTextVersion
+    // El consent de GRUPOS estuvo aquí (`groupsConsentAcceptedAt` + `groupsConsentTextVersion`) y SALIÓ en
+    // el chip C1 (2026-08-11). No es limpieza: era el bug. Su destino lo decidía el `behavior` del instante
+    // en que se escribían, y con `storageMode == .icloud` —el default del parque, mientras Grupos va al
+    // 100 % sin exigir Modo Nube— acababan en el iCloud KV del Apple ID y JAMÁS llegaban a Yala ⇒ no
+    // podíamos demostrar el consentimiento (RGPD Art. 7.1). Ahora el registro vive en la CUENTA
+    // (`groups_consents`, append-only por grant) y la copia local es un snapshot SELLADO con el `userID`
+    // dentro (`GroupsConsentState`), que la frontera M1 no puede confundir con el del dueño.
+    // ⇒ **no las devuelvas a este enum**: re-meterlas volvería a subir el consent al iKV y reabriría el
+    // camino por el que un `.int(0)` borra por LWW el registro de una cuenta viva (incidente `bdbc46d1`).
 
     /// La familia de merge de esta key.
     var family: PrefFamily {
@@ -142,8 +146,7 @@ nonisolated enum PrefSyncKey: String, CaseIterable {
              .includeGroupTransactionsInStats, .bridgeGroupExpensesToPersonalAccounts:
             return .boolPresence
         case .firstWeekday, .decimalPlaces, .averageLineMode,
-             .cloudConsentAcceptedAt, .cloudConsentTextVersion,
-             .groupsConsentAcceptedAt, .groupsConsentTextVersion:
+             .cloudConsentAcceptedAt, .cloudConsentTextVersion:
             return .intPresence
         }
     }

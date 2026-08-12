@@ -112,7 +112,8 @@ final class GroupService {
 
     /// Servicio de membership del canal backend (RPC tipado). Inyectable para tests (`.shared` es singleton).
     /// `attestProvider` OBLIGATORIO: todo lo que sale de aquí va a `POST /groups/rpc/{fn}`, que exige App
-    /// Attest bajo `enforce` (`gateway/src/groups/rpc.ts:81-83`).
+    /// Attest bajo `enforce` (guard `requireUserAndAttest`, `gateway/src/groups/rpc.ts:87-89`; `:81-83` es
+    /// la validación del JWT de Supabase, otra cosa).
     var backendMembershipFactory: @MainActor () -> GroupBackendMembershipService = {
         GroupBackendMembershipService(
             client: GroupsMembershipClient(attestProvider: AttestSessionProvider.live))

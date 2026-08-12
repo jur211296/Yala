@@ -45,9 +45,20 @@
  * y su docblock —`Yala/Services/CloudSync/Groups/GroupBackendMembershipService.swift:13-20`— dice por
  * escrito que compartir el gate compuesto «haría fallar el paso 1 del borrado y dejaría al usuario sin
  * poder ejercer su derecho de supresión mientras durase» el kill. Un servidor que corte más que el
- * cliente reintroduce esa retención de PII desde el otro lado. Los otros 9 RPCs de la allowlist son
+ * cliente reintroduce esa retención de PII desde el otro lado. Otros 9 RPCs de la allowlist son
  * ENTRADAS (crear, unirse, invitar, revocar, aprobar, expulsar, salir, renombrarse, transferir
  * ownership), todos con gate COMPUESTO en el cliente, y son justo lo que el kill existe para cerrar.
+ *
+ * ## Los 2 del consent (C1): NO exentos, y no es por descarte
+ *
+ * `record_groups_consent` / `groups_consent_state` no los llama ninguno de los dos gates de arriba: los
+ * llama un INTENT DURABLE, y esa es exactamente la razón de dejarlos dentro del kill. Un 403 aquí no
+ * pierde nada — el cliente clasifica `yala_groups_disabled` como TRANSITORIO y CONSERVA el intent (sin
+ * TTL, sin tope), así que el registro se completa solo cuando el canal vuelva. Exceptuarlos, en cambio,
+ * dejaría escrituras entrando durante un incidente por una puerta que nadie mira, y sin ninguna ganancia:
+ * con el canal apagado no hay grupos que crear ni a los que unirse, así que registrar el consent en ese
+ * instante no desbloquea a nadie. La aceptación ya ocurrió y la prueba de que ocurrió no depende de que
+ * el request llegue HOY.
  *
  * ## Las rutas que NO llevan el kill, y por qué (la pregunta que se hace todo el que llega aquí)
  *
