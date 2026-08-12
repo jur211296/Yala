@@ -3490,7 +3490,6 @@
 "groups.bridge.errorTransactionUpdate" = "更改未反映到你的个人记录。我们会重试。";
 "groups.bridge.errorDelete" = "无法删除该支出的个人记录。";
 "groups.bridge.errorNoAccounts" = "你还没有设置账户。请先创建一个。";
-"groups.sync.errorAcceptShare" = "无法完成加入群组。请再试一次。";
 "groups.sync.errorMemberSetup" = "你已加入，但群组中的身份出现问题。请重新打开应用。";
 
 // Groups — Reconnect (GC-08)
@@ -4812,12 +4811,6 @@
 
 /* Chip shown while the secondary (guest) session pulls its account data after relaunch */
 "welcome.cloud.secondaryHydrationBanner" = "正在下载你的数据…";
-
-/* Shown when a group invite is opened while a secondary (guest) session is active — groups only work in the owner's primary session */
-"groups.sync.errorAcceptShareSecondary" = "群组邀请只能在主会话中接受。请切换会话后重新打开邀请。";
-
-/* Shown when accepting a group invite fails because the device has no iCloud account (CKError.notAuthenticated) */
-"groups.sync.errorAcceptShareNoICloud" = "要加入群组，你需要登录 iCloud。请在“设置”中登录后重新打开邀请。";
 
 /* Title of the proactive gate shown in the Groups tab when the device has no iCloud account */
 "groups.icloud.gate.title" = "群组需要 iCloud";

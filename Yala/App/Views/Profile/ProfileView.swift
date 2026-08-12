@@ -933,12 +933,16 @@ struct ProfileView: View {
                 // ⇒ hoy en producción lo que mantiene la fila oculta es el flag remoto (percent 0), no
                 // `isConfigured`. M1: oculta en sesión SECUNDARIA. DIFERIDOS #34: el flag remoto gatea solo
                 // la ENTRADA — un usuario "engaged" conserva la fila SIEMPRE. Gate StorageRowGateLogic intacto.
+                // M3: en builds DEV la celda de secundaria se abre (`devPanelOverrideAvailable`, `false`
+                // literal en producción) porque detrás de esta fila vive el panel DEBUG, que es la única
+                // salida por producto de una sesión FAKE.
                 if StorageRowGateLogic.isVisible(
                     isConfigured: CloudBackendConfig.isConfigured,
                     isSecondaryActive: SecondarySessionStore.isActive(),
                     remoteEnabled: CloudRemoteFlags.cloudModeEnabled,
                     isEngaged: StorageModePersistence.read() == .cloud
-                        || (CloudMigrationController.shared?.uiState ?? .idle) != .idle
+                        || (CloudMigrationController.shared?.uiState ?? .idle) != .idle,
+                    devPanelOverride: StorageRowGateLogic.devPanelOverrideAvailable
                 ) {
                     SubsectionDivider()
                     NavigationLink(value: ProfileDestination.storageMode) {

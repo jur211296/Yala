@@ -3483,7 +3483,6 @@
 "groups.bridge.errorTransactionUpdate" = "El cambio no se reflejó en tu registro personal. Lo reintentaremos.";
 "groups.bridge.errorDelete" = "No se pudo borrar el registro personal del gasto.";
 "groups.bridge.errorNoAccounts" = "No tienes cuentas configuradas. Crea una primero.";
-"groups.sync.errorAcceptShare" = "No pudimos completar tu unión al grupo. Inténtalo de nuevo.";
 "groups.sync.errorMemberSetup" = "Te uniste, pero hubo un problema con tu identidad en el grupo. Reabre la app.";
 
 // Groups — Reconnect (GC-08)
@@ -4817,12 +4816,6 @@
 
 /* Chip shown while the secondary (guest) session pulls its account data after relaunch */
 "welcome.cloud.secondaryHydrationBanner" = "Descargando tus datos…";
-
-/* Shown when a group invite is opened while a secondary (guest) session is active — groups only work in the owner's primary session */
-"groups.sync.errorAcceptShareSecondary" = "Las invitaciones a grupos se aceptan desde la sesión principal. Cambia de sesión y abre la invitación de nuevo.";
-
-/* Shown when accepting a group invite fails because the device has no iCloud account (CKError.notAuthenticated) */
-"groups.sync.errorAcceptShareNoICloud" = "Para unirte a un grupo necesitas iniciar sesión en iCloud. Hazlo desde Configuración y abre la invitación de nuevo.";
 
 /* Title of the proactive gate shown in the Groups tab when the device has no iCloud account */
 "groups.icloud.gate.title" = "Grupos necesita iCloud";

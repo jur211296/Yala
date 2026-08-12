@@ -1712,6 +1712,10 @@ private struct SecondaryEntryRelaunchNetModifier: ViewModifier {
                 if newScene == .active && isArmedUnmounted && !coverDidAppear
                     && !welcomeCloudCoverVisible { arm() }
             }
+            // M3 · CUARTO trigger, DEV-only: el descriptor cambió desde el panel DEBUG. Los otros tres
+            // esperan a un evento del ciclo de vida, y activar el descriptor no es ninguno — esa ventana
+            // (app navegable sobre el store del DUEÑO con la sesión ya armada) es el residual de M1-1.
+            .modifier(DevSecondaryDescriptorReevaluation(onSignal: reevaluate))
             .fullScreenCover(
                 isPresented: $showRelaunchCover,
                 onDismiss: {
@@ -1743,6 +1747,40 @@ private struct SecondaryEntryRelaunchNetModifier: ViewModifier {
             coverDidAppear: { coverDidAppear },
             setCover: { showRelaunchCover = $0 }
         )
+    }
+
+    /// M3 · re-evaluación en los DOS sentidos, que es lo que la hace útil como herramienta de QA: los tres
+    /// triggers de arriba solo saben ARMAR, así que limpiar el descriptor desde el panel dejaría el cover
+    /// terminal puesto sobre una condición que ya no existe — y el panel que acaba de limpiarlo, detrás.
+    /// La condición que decide es la VIVA (statics), nunca un payload de la notificación.
+    private func reevaluate() {
+        if isArmedUnmounted {
+            arm()
+        } else {
+            verifyTask?.cancel()
+            verifyTask = nil
+            coverDidAppear = false
+            showRelaunchCover = false
+        }
+    }
+}
+
+/// M3 · el cuarto trigger del net secundario, aislado en su propio modifier para que el `#if` no viva en
+/// medio del `body` del net —donde una rama `#else` que se comiera un modifier real sería invisible en
+/// review— y para que un source-scan pueda afirmar el cableado. En producción esto es `content` y nada más.
+private struct DevSecondaryDescriptorReevaluation: ViewModifier {
+    let onSignal: () -> Void
+
+    func body(content: Content) -> some View {
+        #if DEV_BUILD
+        content.onReceive(
+            NotificationCenter.default.publisher(for: DevSecondaryDescriptorSignal.didChange)
+        ) { _ in
+            onSignal()
+        }
+        #else
+        content
+        #endif
     }
 }
 

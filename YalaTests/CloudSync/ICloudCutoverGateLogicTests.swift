@@ -2,7 +2,9 @@
 //  ICloudCutoverGateLogicTests.swift
 //  YalaTests / CloudSync
 //
-//  Tabla COMPLETA del veredicto puro del canal iCloud (bug C-1, molde GroupAcceptShareErrorLogicTests).
+//  Tabla COMPLETA del veredicto puro del canal iCloud (bug C-1). El molde era `GroupAcceptShareErrorLogicTests`,
+//  borrado con su lógica en el chip M3 (2026-08-12) al quedarse sin superficie tras la Fase 3; lo que se
+//  heredó de él —una tabla completa sobre lógica pura, sin SwiftData ni CloudKit real— sigue siendo esto.
 //  Pure-logic: sin SwiftData, sin CloudKit real, sin `Date.now`.
 //
 //  Lo que estas pruebas defienden, en una línea: el cutover no puede quedarse esperando PARA SIEMPRE a

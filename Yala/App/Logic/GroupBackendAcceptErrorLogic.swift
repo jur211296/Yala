@@ -2,10 +2,15 @@
 //  GroupBackendAcceptErrorLogic.swift
 //  Yala
 //
-//  Pure decision logic para el fallo del join backend (`GroupBackendMembershipService.join`),
-//  molde de `GroupAcceptShareErrorLogic` (canal CloudKit). Clasifica un `GroupsRPCError` en QUÉ
-//  mostrarle al usuario y, crucialmente, si el fallo es PERMANENTE (limpia intent + canario) o
-//  reintenta el reconciler (transient/sessionRequired conservan el intent).
+//  Pure decision logic para el fallo del join backend (`GroupBackendMembershipService.join`). Clasifica un
+//  `GroupsRPCError` en QUÉ mostrarle al usuario y, crucialmente, si el fallo es PERMANENTE (limpia intent +
+//  canario) o reintenta el reconciler (transient/sessionRequired conservan el intent).
+//
+//  Nació como molde de `GroupAcceptShareErrorLogic`, su gemelo del canal CloudKit, **borrado en el chip M3
+//  (2026-08-12)**: la superficie que clasificaba —`CKShareEntryHandler` y el `container.accept`— murió con
+//  la Fase 3, y con ella sus tres copys (`groups.sync.errorAcceptShare*`). Este tipo se quedó SIN gemelo,
+//  no sin razón de ser: es el único vivo, y por eso ya no tiene caso de sesión secundaria —un join en
+//  secundaria hoy es una FEATURE (la invitada se une a SU grupo con SU identidad), no un bug.
 //
 //  Contrato C4 (G4-invites). Sin SwiftData ni UI — tabla completa en
 //  GroupBackendAcceptErrorLogicTests. DARK: nadie lo invoca con `groupsBackendEnabled` OFF.

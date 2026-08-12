@@ -3490,7 +3490,6 @@
 "groups.bridge.errorTransactionUpdate" = "変更は個人の記録に反映されませんでした。もう一度試みます。";
 "groups.bridge.errorDelete" = "個人の記録を削除できませんでした。";
 "groups.bridge.errorNoAccounts" = "口座が設定されていません。先に1つ作成してください。";
-"groups.sync.errorAcceptShare" = "グループへの参加を完了できませんでした。もう一度お試しください。";
 "groups.sync.errorMemberSetup" = "グループに参加しましたが、識別情報に問題があります。アプリを再起動してください。";
 
 // Groups — Reconnect (GC-08)
@@ -4812,12 +4811,6 @@
 
 /* Chip shown while the secondary (guest) session pulls its account data after relaunch */
 "welcome.cloud.secondaryHydrationBanner" = "データをダウンロード中…";
-
-/* Shown when a group invite is opened while a secondary (guest) session is active — groups only work in the owner's primary session */
-"groups.sync.errorAcceptShareSecondary" = "グループへの招待はメインセッションでのみ承認できます。セッションを切り替えて、もう一度招待を開いてください。";
-
-/* Shown when accepting a group invite fails because the device has no iCloud account (CKError.notAuthenticated) */
-"groups.sync.errorAcceptShareNoICloud" = "グループに参加するには iCloud にサインインする必要があります。設定からサインインして、もう一度招待を開いてください。";
 
 /* Title of the proactive gate shown in the Groups tab when the device has no iCloud account */
 "groups.icloud.gate.title" = "グループには iCloud が必要です";

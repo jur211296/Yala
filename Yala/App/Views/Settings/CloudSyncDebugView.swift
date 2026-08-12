@@ -1002,15 +1002,28 @@ struct CloudSyncDebugView: View {
             }
             actionButton("Activar descriptor FAKE (guest-debug) — relanzar monta -Secondary", disabled: false) {
                 SecondarySessionStore.activate(userID: "guest-debug")
-                model.lastMessage = "Descriptor=guest-debug. RELANZA: el boot monta YalaModel-Secondary "
-                    + "(testigo secundario=SÍ) y corre la purga de entrada. Mientras tanto: runtime "
-                    + "bloqueado por mount-mismatch + blocker secondaryEntryRelaunch."
+                // M3 · la señal va DESPUÉS de escribir el descriptor: el net re-evalúa la condición viva y
+                // el cover terminal aparece en esta misma vuelta, sin esperar a un foreground. Antes de esto
+                // la app quedaba navegable sobre el store del DUEÑO hasta la siguiente re-evaluación.
+                #if DEV_BUILD
+                DevSecondaryDescriptorSignal.post()
+                #endif
+                model.lastMessage = "Descriptor=guest-debug. El blocker se presenta YA (sin relanzar). "
+                    + "RELANZA para montar YalaModel-Secondary (testigo secundario=SÍ) y correr la purga "
+                    + "de entrada."
             }
             actionButton("Limpiar descriptor (deshace el fake SIN wipe)", disabled: false) {
                 SecondarySessionStore.clear()
                 SecondarySessionStore.clearEntryPurgeMark()
-                model.lastMessage = "Descriptor limpiado. RELANZA para volver al mount del dueño "
-                    + "(los archivos -Secondary quedan huérfanos inertes; usa el wipe para borrarlos)."
+                // La MISMA señal en el sentido contrario: sin ella el cover terminal se queda puesto sobre
+                // un descriptor que ya no existe, y el panel que acaba de borrarlo queda detrás — que es la
+                // otra mitad de «la sesión FAKE con salida».
+                #if DEV_BUILD
+                DevSecondaryDescriptorSignal.post()
+                #endif
+                model.lastMessage = "Descriptor limpiado y blocker retirado. RELANZA para volver al mount "
+                    + "del dueño (los archivos -Secondary quedan huérfanos inertes; usa el wipe para "
+                    + "borrarlos)."
             }
             actionButton("Armar wipe secundario (borra -Secondary al relanzar)", disabled: false) {
                 SecondarySessionStore.armWipe()
