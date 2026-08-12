@@ -2,10 +2,42 @@
 //  GroupCreateRoutingLogic.swift
 //  Yala
 //
-//  Pure-logic del routing de CREAR GRUPO (G5-A, contrato C3). Decide si el grupo nuevo nace en el canal
-//  CloudKit (camino vigente) o BACKEND (RPC `create_group`), y si antes hay que pedir sign-in / consent.
-//  Sin SwiftData/CloudKit/UI — tabla completa en GroupCreateRoutingLogicTests. Con el flag OFF SIEMPRE
-//  `.cloudKit` (byte-idéntico al camino actual).
+//  Pure-logic del routing de CREAR GRUPO (G5-A, contrato C3 · **C4: la fábrica de zombis, CERRADA**).
+//  Decide si el grupo nuevo nace en el canal BACKEND (RPC `create_group`), si antes hay que pedir
+//  sign-in / consent, o si el canal está apagado y **no se crea nada**.
+//
+//  **La rama `.cloudKit` MURIÓ, y no por limpieza: fabricaba grupos irrecuperables.** Con el canal
+//  apagado, `route` devolvía `.cloudKit` y `GroupService.createGroup` acuñaba un `SplitGroup` local con
+//  `isBackendGroup == false`. Eso no tiene vuelta atrás, medido en este árbol: no hay ninguna llamada
+//  cliente a `fetchCandidates` (cero ocurrencias en el repo), `migrate_group` no tiene endpoint en
+//  `gateway/src/`, `movedToBackendAt` no tiene un escritor que lo ponga (su único autor lo copia del
+//  `min` de un duplicado ⇒ punto fijo en `nil`) y `createShareLink` cae al `else` para todo
+//  `isBackendGroup == false` ⇒ `Groups.Errors.inviteFailed` SIEMPRE. Un grupo de una persona, no
+//  invitable, para siempre — y sin ningún error visible, porque el camino funciona OFFLINE.
+//
+//  **Y la ventana no es de instalaciones nuevas: el kill-switch la reabría en TODO el parque.** Con
+//  `GROUPS_BACKEND_ROLLOUT_PERCENT = 0` cualquier device tiene `flagOn == false` ≤6 h después, con su
+//  CTA «crear grupo» intacta. Bajar ese percent es la respuesta operativa documentada a un incidente
+//  ⇒ el remedio ENCENDÍA la fábrica.
+//
+//  **La invariante que esta lógica NO puede sostener por sí sola:** `refreshIfDue(force: true)` va
+//  ANTES de leer el flag. `route` es pura y recibe `flagOn` ya leído, así que puede ser perfecta y sus
+//  tests verdes mientras el llamador mide un snapshot de hasta 6 h — que es exactamente el caso del
+//  bug. Lo único que fija ese orden es un **source-scan** del call-site
+//  (`GroupCreateRoutingWiringTests`, molde `GroupsOrganizerBranchTests`).
+//
+//  **Al bloquear, CERO escrituras**: `.channelOff` no persiste `onboardingMode`, ni
+//  `groupsBetaUnlocked`, ni `hasCompletedOnboarding` — molde literal de
+//  `GroupsOrganizerGateLogic.Decision.blockedChannelOff`, con cuyo copy comparte además el texto
+//  («ahora mismo no podemos abrirte grupos»): describe un estado transitorio y no culpa al usuario.
+//
+//  ⚠️ **El escenario del canal apagado NO es ejercitable en el harness — no lo busques.**
+//  `CloudRemoteFlags.decide()` cortocircuita a `absentDefault` bajo `isRunningTests || isUITestHost`
+//  **sin leer el snapshot** (`CloudRemoteConfig.swift:186`), y en `Yala Dev` —el scheme de los
+//  XCUITest— `absentDefault` es `true` (`:120-126`) ⇒ el flag nace ON y `.channelOff` es inalcanzable
+//  desde un test de integración, en los dos targets. Es la asimetría observe/enforce de
+//  `.claude/rules/gateway-attest.md` con otra ropa: la red es **estructural** (esta tabla + el
+//  source-scan del orden), no un e2e.
 //
 
 import Foundation
@@ -13,8 +45,10 @@ import Foundation
 nonisolated enum GroupCreateRoutingLogic {
 
     enum Route: Equatable {
-        /// Crear vía CKSyncEngine (camino vigente). Flag OFF SIEMPRE cae aquí.
-        case cloudKit
+        /// El canal de Grupos está apagado DESPUÉS del refresh forzado. **No se crea nada y no se
+        /// escribe nada**: copy honesto y vuelta. Antes de C4 este caso era `.cloudKit` y acuñaba un
+        /// grupo local irrecuperable.
+        case channelOff
         /// Crear vía `GroupBackendMembershipService.createGroup` (RPC server-first).
         case backend
         /// Flag ON con sesión pero sin consent → presentar el consent de grupos ANTES del form.
@@ -24,9 +58,13 @@ nonisolated enum GroupCreateRoutingLogic {
     }
 
     /// Precedencia (flag ON): sin sesión → sign-in; con sesión sin consent → consent; listo → backend.
-    /// Flag OFF → cloudKit (el gate consent/sign-in NUNCA aplica al camino CloudKit vigente).
+    /// Flag OFF → `.channelOff` (el gate consent/sign-in no llega a preguntarse: sin canal no hay nada
+    /// que crear, y pedir identidad para después bloquear sería pedirla en vano).
+    ///
+    /// - Parameter flagOn: `CloudSyncFlags.groupsBackendEnabled` **leído después** del
+    ///   `refreshIfDue(force: true)` del call-site. Leerlo antes es el no-op que el bug describe.
     static func route(flagOn: Bool, hasSession: Bool, consentAccepted: Bool) -> Route {
-        guard flagOn else { return .cloudKit }
+        guard flagOn else { return .channelOff }
         if !hasSession { return .needsSignIn }
         if !consentAccepted { return .needsConsent }
         return .backend

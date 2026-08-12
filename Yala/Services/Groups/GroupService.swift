@@ -120,68 +120,16 @@ final class GroupService {
 
     // MARK: - Group CRUD
 
-    /// Create a new group with the current user as admin.
-    @discardableResult
-    func createGroup(
-        name: String,
-        iconName: String = "person.2.fill",
-        colorHex: String = "#8B5CF6",
-        currencyCode: String = "PEN",
-        simplifyDebts: Bool = false,
-        showDebtsInSingleCurrency: Bool = false,
-        defaultSplitType: String = "equal",
-        membersCanInvite: Bool = false
-    ) async throws -> SplitGroup {
-        let context = try requireContext()
-
-        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedName.isEmpty else { throw GroupServiceError.emptyName }
-
-        let recordName = try await GroupUserIdentityService.shared.currentUserRecordName()
-
-        let group = SplitGroup(
-            name: trimmedName,
-            iconName: iconName,
-            colorHex: colorHex,
-            currencyCode: currencyCode,
-            simplifyDebts: simplifyDebts,
-            showDebtsInSingleCurrency: showDebtsInSingleCurrency,
-            defaultSplitType: defaultSplitType,
-            membersCanInvite: membersCanInvite
-        )
-        group.isOwner = true
-        context.insert(group)
-
-        // Add current user as admin member
-        let member = SplitMember(
-            groupZoneID: group.cloudKitZoneID,
-            displayName: currentUserDisplayName(),
-            cloudKitUserRecordID: recordName,
-            role: "admin",
-            isGroupOwner: true,
-            isCurrentUser: true
-        )
-        member.id = GroupUserIdentityService.deterministicUUID(
-            namespace: "SplitMember",
-            name: "\(group.cloudKitZoneID):\(recordName)"
-        )
-        context.insert(member)
-
-        do {
-            try context.save()
-        } catch {
-            throw GroupServiceError.saveFailed(error)
-        }
-
-        SessionState.shared.incrementDataVersion()
-        NudgeService.shared.recordGroupJoinIfNeeded()
-
-        #if DEBUG
-        logger.info("Created group '\(trimmedName)' with zone \(group.cloudKitZoneID)")
-        #endif
-
-        return group
-    }
+    // C4 · `createGroup` FUE BORRADA aquí, y no por dead-code: **era la fábrica de zombis.** Acuñaba un
+    // `SplitGroup` con `isBackendGroup == false` (el default del modelo), y eso es irrecuperable —
+    // `fetchCandidates` tiene cero ocurrencias en el repo, `migrate_group` no tiene endpoint en
+    // `gateway/src/`, `movedToBackendAt` no tiene escritor que lo ponga y `createShareLink` devuelve
+    // `Groups.Errors.inviteFailed` para todo grupo no-backend ⇒ grupo de una persona, no invitable, para
+    // siempre. Su único call-site de producción era la rama `.cloudKit` de `GroupFormView.saveAsync`, que
+    // murió con ella; dejarla viva y sin llamador sería la familia de `AppAttestClient.ensureRegistered()`.
+    // **La creación de grupos vive HOY en `GroupBackendMembershipService.createGroup` (RPC server-first),
+    // y es el único camino.** No la resucites: para reabrir la creación local haría falta antes un
+    // productor de migración que hoy no existe en ninguna capa.
 
     /// Update group metadata.
     /// G6-3 (C4, FREEZE — RED de correctness): un grupo migrado y congelado (`movedToBackendAt != nil &&

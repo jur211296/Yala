@@ -41,6 +41,9 @@ struct GroupsContainerView: View {
     /// Payload del composer "Nuevo gasto": captura los grupos elegibles AL MOMENTO del tap.
     /// Evita que un `loadData()` remoto entre el tap y la presentación deje el sheet en blanco.
     @State private var expenseComposerPayload: ExpenseComposerPayload?
+    /// C4: el canal de Grupos sigue apagado tras el `refreshIfDue(force: true)` de `requestCreateGroup`.
+    /// Antes de C4 este camino abría el form igual y acuñaba un grupo local irrecuperable.
+    @State private var showChannelOffAlert = false
 
     // MARK: - Body
 
@@ -307,6 +310,14 @@ struct GroupsContainerView: View {
             } message: {
                 Text(leaveErrorMessage ?? "")
             }
+            .alert(
+                L10n.Welcome.Groups.channelOffTitle,
+                isPresented: $showChannelOffAlert
+            ) {
+                Button(L10n.Common.ok) { showChannelOffAlert = false }
+            } message: {
+                Text(L10n.Welcome.Groups.channelOffBody)
+            }
         }
     }
 
@@ -324,7 +335,7 @@ struct GroupsContainerView: View {
             hasSession: CloudAuthService.shared.hasSession
         ) {
         case .standard:
-            let base = YalaEmptyState.noGroups { requestCreateGroup() }
+            let base = YalaEmptyState.noGroups { Task { await requestCreateGroup() } }
             if let standardAccessibilityID {
                 base.accessibilityIdentifier(standardAccessibilityID)
             } else {
@@ -416,7 +427,7 @@ struct GroupsContainerView: View {
     private func openGroupFormIfRequested() {
         guard sessionState.pendingNewGroupForm else { return }
         sessionState.pendingNewGroupForm = false
-        requestCreateGroup()
+        Task { await requestCreateGroup() }
     }
 
     /// Presenta el prompt de notificaciones de grupos, SALVO que un composer del FAB del
@@ -628,22 +639,47 @@ struct GroupsContainerView: View {
                 hasSession: CloudAuthService.shared.hasSession) == .signInToView
     }
 
-    // MARK: - Create-group routing (G5-A / C3)
+    // MARK: - Create-group routing (G5-A / C3 · C4)
 
-    /// Gate consent/sign-in ANTES de abrir el form. El form es sheet de ESTE anchor (GroupsContainerView),
-    /// distinto del ContentView que posee `GroupsBackendInviteModifier` — emitir el intent con el form
-    /// abierto lo dejaría RETENIDO por peek-first ("el save no haría nada"). Con el flag OFF SIEMPRE abre el
-    /// form (byte-idéntico). Residual documentado: sin auto-continuación — tras la chain (consent/sign-in) el
-    /// usuario re-tapea "crear grupo".
-    private func requestCreateGroup() {
+    /// Gate canal/consent/sign-in ANTES de abrir el form, y **choke-point ÚNICO de las cuatro entradas**
+    /// de creación del tab (empty state, FAB simple, FAB expandible y el `pendingNewGroupForm` que deja la
+    /// rama organizador del Welcome). El form es sheet de ESTE anchor (GroupsContainerView), distinto del
+    /// ContentView que posee `GroupsBackendInviteModifier` — emitir el intent con el form abierto lo dejaría
+    /// RETENIDO por peek-first ("el save no haría nada"). Residual documentado: sin auto-continuación — tras
+    /// la chain (consent/sign-in) el usuario re-tapea "crear grupo".
+    ///
+    /// **C4 · el `force: true` va ANTES de leer el flag, y no es cosmético:** sin él `refreshIfDue` es un
+    /// no-op exactamente en el caso del bug (min-interval de 6 h, ya gastada por el refresh fire-and-forget
+    /// del arranque) y las cuatro entradas medirían un snapshot rancio. La regla —«la intención del usuario
+    /// ES evidencia de que el canal debería estar encendido»— es la misma que aplica
+    /// `GroupInviteChannelRoutingLogic` al recibir un link backend, y la que ya protegía el Welcome
+    /// (`WelcomeGroupsGateView.evaluate`). El `force` vive AQUÍ y no replicado en los cuatro call-sites a
+    /// propósito: un solo punto de decisión es lo que hace que añadir una quinta entrada no reabra el
+    /// agujero. Lo fija `GroupCreateRoutingWiringTests` por source-scan — la lógica pura puede estar
+    /// perfecta y verde mientras nadie la llame donde hace falta.
+    ///
+    /// **Con `.channelOff` no se escribe NADA** (ni preferencias, ni `SplitGroup`): solo se dice la verdad.
+    private func requestCreateGroup() async {
+        // Hermeticidad: bajo `-uitest` no se toca red, igual que la puerta del Welcome. Los getters ya
+        // devuelven su default (ON bajo `Yala Dev`), así que el XCUITest recorre la rama buena.
+        if !SwiftDataConfiguration.isUITesting {
+            await RemoteConfigClient.shared.refreshIfDue(force: true)
+        }
+
         switch GroupCreateRoutingLogic.route(
             flagOn: CloudSyncFlags.groupsBackendEnabled,
             hasSession: CloudAuthService.shared.hasSession,
             consentAccepted: GroupsConsentState.isAccepted
         ) {
-        case .cloudKit, .backend:
-            // El anchor de ESTA vista abre el form; la rama backend la resuelve `GroupFormView.saveAsync`.
+        case .backend:
+            // El anchor de ESTA vista abre el form; la creación la resuelve `GroupFormView.saveAsync`.
             viewModel.showCreateGroup = true
+        case .channelOff:
+            // El copy que YA existe para este hecho, el de la puerta del Welcome (`welcome.groups.channelOff*`):
+            // estado transitorio, sin culpar al usuario y diciendo que no se guardó nada. Es el mismo
+            // precedente por el que esa puerta reusa `welcome.cloud.blocked*`.
+            DS.Haptic.warning()
+            showChannelOffAlert = true
         case .needsConsent:
             // Ceder el anchor: ContentView (libre) presenta el consent de inmediato. Sentinel "" ⇒
             // `continueFlow` no-op (no hay PendingJoin para la creación — verificado en el handler).
@@ -686,7 +722,7 @@ struct GroupsContainerView: View {
                 accessibilityLabel: L10n.Groups.newGroup,
                 accessibilityIdentifier: "groups_fab_new"
             ) {
-                requestCreateGroup()
+                Task { await requestCreateGroup() }
             }
             .dsFloatingShadow()
         } else {
@@ -700,7 +736,7 @@ struct GroupsContainerView: View {
                         color: .electricIndigo,
                         accessibilityIdentifier: "groups_fab_new_group"
                     ) {
-                        requestCreateGroup()
+                        Task { await requestCreateGroup() }
                     },
                     ExpandableFABAction(
                         id: "newExpense",

@@ -272,25 +272,24 @@ struct GroupFormView: View {
                     membersCanInvite: false
                 )
             } else {
-                // Create — C3: routing CloudKit vs backend. El gate consent/sign-in ya corrió en el call-site
-                // que abrió el form (GroupsContainerView.requestCreateGroup); las ramas needs* aquí son belt
-                // defensivo (no deberían alcanzarse) — ceden el anchor con dismiss() PRIMERO.
+                // Create — C4: el ÚNICO canal de creación es el backend. El gate canal/consent/sign-in ya
+                // corrió en el call-site que abrió el form (GroupsContainerView.requestCreateGroup, que
+                // además re-mide el flag con `refreshIfDue(force: true)`); las ramas no-`.backend` de aquí
+                // son belt defensivo (no deberían alcanzarse) — las needs* ceden el anchor con dismiss()
+                // PRIMERO, y `.channelOff` NO cede: se queda y dice el porqué, porque tras el dismiss no
+                // queda nadie que pueda contárselo al usuario.
                 switch GroupCreateRoutingLogic.route(
                     flagOn: CloudSyncFlags.groupsBackendEnabled,
                     hasSession: CloudAuthService.shared.hasSession,
                     consentAccepted: GroupsConsentState.isAccepted
                 ) {
-                case .cloudKit:
-                    try await GroupService.shared.createGroup(
-                        name: trimmedName,
-                        iconName: iconName,
-                        colorHex: colorHex,
-                        currencyCode: currencyCode,
-                        simplifyDebts: simplifyDebts,
-                        showDebtsInSingleCurrency: showDebtsInSingleCurrency,
-                        defaultSplitType: defaultSplitType.rawValue,
-                        membersCanInvite: false
-                    )
+                case .channelOff:
+                    // Cero escrituras: antes de C4 esta rama era `.cloudKit` y acuñaba un `SplitGroup`
+                    // local con `isBackendGroup == false` — no invitable y sin vía de migración.
+                    DS.Haptic.warning()
+                    saveErrorMessage = L10n.Welcome.Groups.channelOffBody
+                    showSaveError = true
+                    return
                 case .backend:
                     // `displayName` no-vacío (patrón defaultName R1: `join`/`create_group` hacen btrim=''
                     // → yala_bad_input permanente si vacío).
