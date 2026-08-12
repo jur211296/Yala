@@ -1732,6 +1732,15 @@ grant execute on function public.transfer_group_ownership(text) to authenticated
 -- ============================================================================
 -- §8 — g13_01_groups_consents (chip C1: el registro server-side del consent de Grupos)
 -- ============================================================================
+-- APLICADA EN LOS DOS ENTORNOS el 2026-08-12: staging `20260812115736`, producción `20260812120453`.
+-- Mismo TEXTO VERBATIM en ambos ⇒ md5(pg_get_functiondef) idénticos y paridad por construcción:
+--   record_groups_consent → 1fab251ac926dc8f8e71bd307084a36a
+--   groups_consent_state  → 47b8829a8667aff4c5acab29f3fc2514
+-- (funciones en `public`: 34 → 36 en los dos ⇒ paridad 36/36). El md5 del archivo .sql es OTRA cosa
+-- (5f3f5c148a13d53099b7a1589a97641a) y confundirlos hace abortar una promoción por un falso positivo.
+-- Post-check: owner postgres · prosecdef=false (INVOKER) · search_path=public · EXECUTE anon=false /
+-- authenticated=true · proacl sin PUBLIC · advisors sin clase nueva. El GRANT se ejercitó como
+-- `authenticated` en AMBOS: UPDATE y DELETE → permission denied; INSERT con user_id ajeno → cortado por RLS.
 -- POR QUÉ. El consent de Grupos vivía en dos `PrefSyncKey` cuyo destino era una propiedad del INSTANTE en
 -- que se escribían: con `storageMode == .icloud` —el default del parque— acababan en el iCloud KV del Apple
 -- ID y jamás llegaban a Yala, mientras Grupos va al 100 % sin exigir Modo Nube. ⇒ para el grueso de los
