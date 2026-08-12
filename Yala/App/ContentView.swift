@@ -91,6 +91,14 @@ struct ContentView: View {
     /// en su lugar** aunque el alta lo escriba: ese `@AppStorage` se refresca por notificación y depender
     /// de su timing dentro del `onDismiss` es una carrera; el flag es la señal directa.
     @State private var organizerSetupCompleted: Bool = false
+    /// C2 · el educativo como PRIMER escalón de las puertas A y B. Blocker propio de la matriz de
+    /// readiness, igual que su hermana de arriba y por la misma regla.
+    @State private var showGroupsEducational: Bool = false
+    /// C2 · lo que la card «Solo grupos» del onboarding ya preguntó (nombre y divisa), **en memoria y sin
+    /// persistir**. Esa es la invariante entera del chip: hasta que haya identidad y consent no se escribe
+    /// nada, y cuando se escribe va todo junto en `GroupsOrganizerOnboarding.completeSetup`. Que viaje en
+    /// un `@State` y no en `UserDefaults` es lo que hace la afirmación comprobable.
+    @State private var pendingGroupsOnlyPayload: GroupsOnlyOnboardingPayload?
     @State private var showFullModeActivation: Bool = false
     /// D1: acción elegida en la pantalla de retención; se EJECUTA en el `onDismiss` del cover
     /// (con el cover YA fuera — anti-carrera toolbar-muerta). `nil` = ninguna elegida aún.
@@ -114,6 +122,10 @@ struct ContentView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(ThemeManager.self) private var themeManager
     @Environment(\.yalaTheme) private var theme
+    /// C2 · el educativo de las puertas A/B marca `hasShownGroupsOnboarding` AQUÍ, por el espejo observable
+    /// y no por `UserDefaults` directo: el tab lee esa property para decidir su empty state y su sheet, y
+    /// escribir por debajo dejaría el valor en memoria stale hasta la siguiente recarga por notificación.
+    @Environment(AppPreferences.self) private var appPreferences
 
     /// Lightweight state for existing data detection (replaces @Query to prevent
     /// synchronous SwiftData fetches during iOS snapshot capture — 0x8BADF00D fix).
@@ -138,6 +150,19 @@ struct ContentView: View {
     private let minimumSplashDuration: Double = 2.5
 
     var body: some View {
+        shellObservers(shellPresentations(rootContent))
+    }
+
+    /// El árbol base: shell, toast, banner de sync y splash.
+    ///
+    /// **`body` está partido en tres y eso NO es estético.** Medido con `-warn-long-function-bodies`:
+    /// con la cadena entera inline el getter tardaba **591 s** en type-checkear y la compilación moría
+    /// con «unable to type-check this expression in reasonable time». El coste es superlineal en la
+    /// LONGITUD de la cadena —eran 33 eslabones—, así que lo que lo baja no es simplificar un closure
+    /// sino cortarla en tramos que se resuelven por separado. Si al añadir una presentación vuelve a
+    /// reventar, el arreglo es partir otra vez, no revertir el cambio.
+    @ViewBuilder
+    private var rootContent: some View {
         ZStack {
             // Main content deferred until initial state check completes (~2s after launch).
             // Creating MainTabView during the first commit triggers PanelView data loading
@@ -245,200 +270,30 @@ struct ContentView: View {
                 wipeGraceTask = nil
             }
         }
-        .alert(L10n.iCloud.remoteWipeTitle, isPresented: $showRemoteWipeAlert) {
-            Button(L10n.iCloud.remoteWipeConfirm, role: .destructive) {
-                // Reset seed guards so onboarding can re-create data. El centinela de categorías
-                // va por `CategorySeedSentinel.currentKey`: está namespaceado por store (personal
-                // vs `YalaModel-UITest`) y el literal suelto apuntaría al del otro proceso.
-                UserDefaults.standard.removeObject(forKey: CategorySeedSentinel.currentKey)
-                UserDefaults.standard.removeObject(forKey: "notificationsSeeded")
-                hasCompletedOnboarding = false
-            }
-            Button(L10n.iCloud.remoteWipeCancel, role: .cancel) {}
-        } message: {
-            Text(L10n.iCloud.remoteWipeMessage)
-        }
-        .alert(L10n.iCloud.mismatchTitle, isPresented: $showICloudRestartAlert) {
-            Button(L10n.iCloud.mismatchAction) {}
-        } message: {
-            Text(L10n.iCloud.mismatchMessage)
-        }
-        .alert(L10n.Welcome.FreshStart.alertTitle, isPresented: $showFreshStartWipeAlert) {
-            Button(L10n.Welcome.FreshStart.alertConfirm, role: .destructive) {
-                do {
-                    try DataWipeService.wipeAllUserData(
-                        in: modelContext,
-                        broadcastSignal: false
-                    )
-                    // Handover: «empiezo de cero» es la frontera de OTRO usuario en este
-                    // dispositivo, no un vaciado del mismo. El dominio Grupos, que sobrevive al
-                    // wipe por diseño, se purga LOCALMENTE aquí — si no, el usuario nuevo hereda
-                    // los grupos del anterior (mismo Apple ID ⇒ ninguna señal de identidad los
-                    // distingue) y el bridge le mete sus gastos en Panel, Inbox y presupuestos.
-                    try DataWipeService.wipeLocalGroupsDomain(in: modelContext)
-                    hasExistingData = false
-                    // El wipe es DELIBERADO: cancelar la gracia antes de bajar la señal, para que
-                    // el true→false no se lea como wipe remoto y se apile un alert sobre el
-                    // onboarding que este mismo camino está abriendo.
-                    wipeGraceTask?.cancel()
-                    wipeGraceTask = nil
-                    hasPersonalData = false
-                } catch {
-                    #if DEBUG
-                    print("ContentView: fresh-start wipe failed: \(error)")
-                    #endif
-                }
-                showWelcomeFlow = false
-                showOnboarding = true
-            }
-            // Cancel: user queda en el Chooser (showWelcomeFlow sigue true) —
-            // puede elegir Restore/Invite o re-tap "Soy nuevo".
-            Button(L10n.Action.cancel, role: .cancel) {}
-                .tint(.primary)  // A11Y-DM: el indigo global se pierde sobre el alert del Welcome oscuro
-        } message: {
-            Text(L10n.Welcome.FreshStart.alertMessage)
-        }
-        // Parte F: oferta para un returning user con datos al abrir un link de invitación.
-        .alert(L10n.Welcome.OfferRestore.title, isPresented: $showRestoreOffer) {
-            Button(L10n.Welcome.OfferRestore.loadData) {
-                // Cargar datos: el intent de invitación lo conserva su propio store; tras
-                // restaurar se re-emite (reEmitInviteAfterRestore en onContinue/onComplete).
-                showRestoreOffer = false
-                showWelcomeRestore = true
-            }
-            Button(L10n.Welcome.OfferRestore.startFresh, role: .destructive) {
-                // Empezar de cero: wipe CON señal (lastWipeTimestamp) para que el re-emit
-                // vea wipe>onboarding → mini-onboarding de grupos (no vuelve a ofrecer).
-                showRestoreOffer = false
-                do {
-                    try DataWipeService.wipeAllUserData(in: modelContext)
-                    // Misma frontera de usuario que el alert de arriba (ver su nota): esto también
-                    // es «empiezo de cero», no un vaciado del mismo usuario. Residual conocido de
-                    // ESTE camino: la invitación abre el dominio Grupos (`groupsBetaUnlocked`) en
-                    // cuanto se acepta el enlace, así que el gate del bridge queda abierto y un
-                    // re-fetch de las zonas del Apple ID puede devolver los grupos del usuario
-                    // anterior. Cerrarlo exige el sello de corpus (diferido en el ticket).
-                    try DataWipeService.wipeLocalGroupsDomain(in: modelContext)
-                    hasExistingData = false
-                    // Mismo racional que el fresh-start de arriba: wipe deliberado ⇒ cancelar la
-                    // gracia antes de bajar la señal personal.
-                    wipeGraceTask?.cancel()
-                    wipeGraceTask = nil
-                    hasPersonalData = false
-                } catch {
-                    #if DEBUG
-                    print("ContentView: offer-restore fresh-start wipe failed: \(error)")
-                    #endif
-                }
-                reEmitInviteAfterRestore()
-            }
-            Button(L10n.Action.cancel, role: .cancel) {
-                showRestoreOffer = false
-                // Decisión consciente: volver al Chooser (el invite sigue en el store).
-                if !hasCompletedOnboarding {
-                    welcomeFlowInitialStep = .chooser
-                    showWelcomeFlow = true
-                }
-            }
-        } message: {
-            Text(L10n.Welcome.OfferRestore.message)
-        }
-        .fullScreenCover(isPresented: $showLanguageSelection) {
-            LanguageSelectionView {
-                showLanguageSelection = false
-                if !hasCompletedOnboarding {
-                    presentNextOnboardingScreen()
-                }
-            }
-            .environment(SessionState.shared)
-        }
-        .fullScreenCover(isPresented: $showInviteRecovery) {
-            InviteRecoveryView(
-                onSuccess: { url in
-                    showInviteRecovery = false
-                    AppBootstrapper.shared.handleInviteLink(url)
-                },
-                onBack: {
-                    // Vuelve al WelcomeFlow en step .chooser (donde estaba).
-                    returnToWelcomeChooser(dismissing: $showInviteRecovery)
-                }
-            )
-            .environment(SessionState.shared)
-        }
-        .fullScreenCover(isPresented: $showWelcomeRestore) {
-            WelcomeRestoreView(
-                onContinueWithSummary: { summary in
-                    showWelcomeRestore = false
-                    // Destino por onboardingMode restaurado (synced) — RestoreRouter.
-                    let destination = RestoreRouter.decide(
-                        onboardingMode: OnboardingMode.current(),
-                        isFullyPrefilled: summary.isFullyPrefilled
-                    )
-                    RestoreBreadcrumb.destination(String(describing: destination))
-                    MetricsService.canary(.iCloudRestoreOutcome, detail: String(describing: destination))
-                    switch destination {
-                    case .groupsOnly:
-                        // El usuario era "solo grupos": no forzar onboarding personal.
-                        OnboardingMode.setCurrent(.groupInvite)
-                        SessionState.shared.onboardingMode = .groupInvite
-                        completeOnboardingAsRestoreSkip()
-                        hasCompletedOnboarding = true
-                        reEmitInviteAfterRestore()
-                    case .directToApp:
-                        completeOnboardingAsRestoreSkip()
-                        hasCompletedOnboarding = true
-                        reEmitInviteAfterRestore()
-                    case .onboarding:
-                        prefilledOnboardingData = summary
-                        showOnboarding = true
-                        // Parte F: el re-emit ocurre en el onComplete del OnboardingView
-                        // (hasCompletedOnboarding=true ahí → reconnect, no re-oferta).
-                    }
-                },
-                onStartFresh: {
-                    // A4 v3.2 (#9b): clean slate también desde WelcomeRestoreView.
-                    // Cubre paths .notFound/.error/.iCloudDisabled → "Empezar
-                    // configuración" + confirmation dialog desde state .found.
-                    OnboardingResetHelper.clearResidualPreferencesForFreshStart()
-                    prefilledOnboardingData = nil
-                    showWelcomeRestore = false
-                    showOnboarding = true
-                },
-                onOpenSettings: {
-                    if let url = URL(string: UIApplication.openSettingsURLString) {
-                        UIApplication.shared.open(url)
-                    }
-                },
-                onBack: {
-                    returnToWelcomeChooser(dismissing: $showWelcomeRestore)
-                }
-            )
-            .environment(SessionState.shared)
-        }
-        .fullScreenCover(isPresented: $showOnboarding) {
-            OnboardingView(
-                prefilledData: prefilledOnboardingData,
-                onCancelFromStep1: {
-                    // Resetea `hasShownWelcomeChooser` para que el Hero se vuelva
-                    // a presentar (no salta al Chooser automáticamente).
-                    showOnboarding = false
-                    hasShownWelcomeChooser = false
-                    prefilledOnboardingData = nil
-                    presentNextOnboardingScreen()
-                }
-            ) {
-                // Set flag BEFORE dismiss — onChange picks it up reliably
-                if !FeatureGateService.shared.isProUser {
-                    SessionState.shared.needsPostOnboardingTrial = true
-                }
-                hasCompletedOnboarding = true
-                SetupChecklistManager.shared.markAsNewInstall()
-                showOnboarding = false
-                prefilledOnboardingData = nil
-                reEmitInviteAfterRestore()
-            }
-            .environment(SessionState.shared)
-        }
+    }
+
+    /// Tramo 2: las presentaciones del anchor — covers, sheets y los seis `ViewModifier` del shell.
+    private func shellPresentations(_ base: some View) -> some View {
+        base
+        .modifier(ShellDataAlertsModifier(
+            showRemoteWipeAlert: $showRemoteWipeAlert,
+            showICloudRestartAlert: $showICloudRestartAlert,
+            showFreshStartWipeAlert: $showFreshStartWipeAlert,
+            showRestoreOffer: $showRestoreOffer,
+            hasCompletedOnboarding: $hasCompletedOnboarding,
+            hasExistingData: $hasExistingData,
+            hasPersonalData: $hasPersonalData,
+            showWelcomeFlow: $showWelcomeFlow,
+            showOnboarding: $showOnboarding,
+            showWelcomeRestore: $showWelcomeRestore,
+            welcomeFlowInitialStep: $welcomeFlowInitialStep,
+            onCancelWipeGrace: { wipeGraceTask?.cancel(); wipeGraceTask = nil },
+            onReEmitInviteAfterRestore: { reEmitInviteAfterRestore() }
+        ))
+        .fullScreenCover(isPresented: $showLanguageSelection) { languageSelectionCover }
+        .fullScreenCover(isPresented: $showInviteRecovery) { inviteRecoveryCover }
+        .fullScreenCover(isPresented: $showWelcomeRestore) { welcomeRestoreCover }
+        .fullScreenCover(isPresented: $showOnboarding) { onboardingCover }
         .modifier(WelcomeFlowModifier(
             showWelcomeFlow: $showWelcomeFlow,
             welcomeFlowInitialStep: $welcomeFlowInitialStep,
@@ -469,8 +324,10 @@ struct ContentView: View {
         .modifier(GroupsBackendInviteModifier(
             showGroupsConsent: $showGroupsConsent,
             showGroupsSignIn: $showGroupsSignIn,
+            showGroupsEducational: $showGroupsEducational,
             pendingGroupsJoinZone: $pendingGroupsJoinZone,
             groupsOrganizerFlowActive: $groupsOrganizerFlowActive,
+            pendingGroupsOnlyPayload: $pendingGroupsOnlyPayload,
             onGroupsOrganizerCancelled: { returnToGroupsChooser() }
         ))
         // G3 · paso 6 de la rama organizador. Cover propio (no sheet): el alta es terminal —cancelarla a
@@ -615,6 +472,11 @@ struct ContentView: View {
             .presentationBackground(.clear)
             .environment(SessionState.shared)
         }
+    }
+
+    /// Tramo 3: los observadores de ciclo de vida y de readiness.
+    private func shellObservers(_ base: some View) -> some View {
+        base
         .onAppear {
             themeManager.systemColorScheme = colorScheme
             // D1: recoge un `groupsRetentionPending` armado ANTES de que ContentView observara
@@ -723,6 +585,7 @@ struct ContentView: View {
             showGroupsConsent: showGroupsConsent,
             showGroupsSignIn: showGroupsSignIn,
             showGroupsOrganizerName: showGroupsOrganizerName,
+            showGroupsEducational: showGroupsEducational,
             showFullModeActivation: showFullModeActivation,
             showProTrialOffer: showProTrialOffer,
             showWhatsNew: showWhatsNew,
@@ -742,13 +605,157 @@ struct ContentView: View {
         }
     }
 
+    /// Extraído del `body` por presupuesto del type-checker (ver `ShellDataAlertsModifier`).
+    @ViewBuilder
+    private var languageSelectionCover: some View {
+        LanguageSelectionView {
+            showLanguageSelection = false
+            if !hasCompletedOnboarding {
+                presentNextOnboardingScreen()
+            }
+        }
+        .environment(SessionState.shared)
+    }
+
+    /// Extraído del `body` por presupuesto del type-checker (ver `ShellDataAlertsModifier`).
+    @ViewBuilder
+    private var inviteRecoveryCover: some View {
+        InviteRecoveryView(
+            onSuccess: { url in
+                showInviteRecovery = false
+                AppBootstrapper.shared.handleInviteLink(url)
+            },
+            onBack: {
+                // Vuelve al WelcomeFlow en step .chooser (donde estaba).
+                returnToWelcomeChooser(dismissing: $showInviteRecovery)
+            }
+        )
+        .environment(SessionState.shared)
+    }
+
+    /// Extraído del `body` por presupuesto del type-checker (ver `ShellDataAlertsModifier`).
+    @ViewBuilder
+    private var welcomeRestoreCover: some View {
+        WelcomeRestoreView(
+            onContinueWithSummary: { summary in
+                showWelcomeRestore = false
+                // Destino por onboardingMode restaurado (synced) — RestoreRouter.
+                let destination = RestoreRouter.decide(
+                    onboardingMode: OnboardingMode.current(),
+                    isFullyPrefilled: summary.isFullyPrefilled
+                )
+                RestoreBreadcrumb.destination(String(describing: destination))
+                MetricsService.canary(.iCloudRestoreOutcome, detail: String(describing: destination))
+                switch destination {
+                case .groupsOnly:
+                    // El usuario era "solo grupos": no forzar onboarding personal.
+                    OnboardingMode.setCurrent(.groupInvite)
+                    SessionState.shared.onboardingMode = .groupInvite
+                    completeOnboardingAsRestoreSkip()
+                    hasCompletedOnboarding = true
+                    reEmitInviteAfterRestore()
+                case .directToApp:
+                    completeOnboardingAsRestoreSkip()
+                    hasCompletedOnboarding = true
+                    reEmitInviteAfterRestore()
+                case .onboarding:
+                    prefilledOnboardingData = summary
+                    showOnboarding = true
+                    // Parte F: el re-emit ocurre en el onComplete del OnboardingView
+                    // (hasCompletedOnboarding=true ahí → reconnect, no re-oferta).
+                }
+            },
+            onStartFresh: {
+                // A4 v3.2 (#9b): clean slate también desde WelcomeRestoreView.
+                // Cubre paths .notFound/.error/.iCloudDisabled → "Empezar
+                // configuración" + confirmation dialog desde state .found.
+                OnboardingResetHelper.clearResidualPreferencesForFreshStart()
+                prefilledOnboardingData = nil
+                showWelcomeRestore = false
+                showOnboarding = true
+            },
+            onOpenSettings: {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            },
+            onBack: {
+                returnToWelcomeChooser(dismissing: $showWelcomeRestore)
+            }
+        )
+        .environment(SessionState.shared)
+    }
+
+    /// El onboarding de 8 pasos. Extraído del `body` a una property porque la cadena de ese `body` está en
+    /// el límite del type-checker: con este `OnboardingView` inline —y su callback de C2— la compilación
+    /// muere con «unable to type-check this expression in reasonable time». Es el mismo motivo por el que
+    /// la mitad de las presentaciones de esta vista viven en `ViewModifier`s separados.
+    @ViewBuilder
+    private var onboardingCover: some View {
+        OnboardingView(
+            prefilledData: prefilledOnboardingData,
+            onCancelFromStep1: {
+                // Resetea `hasShownWelcomeChooser` para que el Hero se vuelva
+                // a presentar (no salta al Chooser automáticamente).
+                showOnboarding = false
+                hasShownWelcomeChooser = false
+                prefilledOnboardingData = nil
+                presentNextOnboardingScreen()
+            },
+            // C2 · la card «Solo grupos» no completa aquí: cede a la cadena sin escribir nada.
+            onGroupsOnlyComplete: { startGroupsOnlyBranch(payload: $0) }
+        ) {
+            // Set flag BEFORE dismiss — onChange picks it up reliably
+            if !FeatureGateService.shared.isProUser {
+                SessionState.shared.needsPostOnboardingTrial = true
+            }
+            hasCompletedOnboarding = true
+            SetupChecklistManager.shared.markAsNewInstall()
+            showOnboarding = false
+            prefilledOnboardingData = nil
+            reEmitInviteAfterRestore()
+        }
+        .environment(SessionState.shared)
+    }
+
+    /// C2 · la card «Solo grupos» del onboarding entra en la MISMA cadena que la rama organizador del
+    /// Welcome, con el nombre y la divisa que ya preguntó viajando **en memoria**.
+    ///
+    /// **Lo que este método NO hace es la mitad del chip:** no escribe `hasCompletedOnboarding`, ni
+    /// `onboardingMode`, ni `groupsBetaUnlocked`, ni la divisa. Todo eso lo escribía
+    /// `OnboardingView.completeGroupsOnlyOnboarding` —ya eliminado— aquí mismo y sin cuenta; ahora se
+    /// escribe junto y al final, en `GroupsOrganizerOnboarding.completeSetup`.
+    ///
+    /// `hasShownWelcomeChooser` tampoco se marca, igual que en `onSelectGroupsOrganizer` y por lo mismo:
+    /// esta rama todavía no ha escrito nada, así que un abandono a mitad tiene que poder reintentarlo en
+    /// vez de caer al onboarding completo.
+    @MainActor
+    private func startGroupsOnlyBranch(payload: GroupsOnlyOnboardingPayload) {
+        pendingGroupsOnlyPayload = payload
+        showOnboarding = false
+        prefilledOnboardingData = nil
+        // Mismo par que `WelcomeFlowModifier.startGroupsOrganizerBranch` (que vive allí porque su productor
+        // es el chooser): encender el discriminador y SUBMITEAR, sin presentar nada a pelo — el gate ve el
+        // cover del onboarding todavía bajando y no drena hasta que se vaya. Presentar en esta misma vuelta
+        // es la carrera clásica de dos presentaciones sobre el mismo anchor.
+        groupsOrganizerFlowActive = true
+        RouterEntryGate.shared.submit(.presentGroupsOrganizerStep)
+    }
+
     /// G3 · devuelve al organizador al step de los dos caminos. Es la salida de todo abandono de la rama
-    /// (cancelar el sign-in, el consent o el cover del nombre): el usuario ya salió del Welcome y debajo no
-    /// hay shell —su alta no ha corrido—, así que dejarlo ahí sería el camino muerto que el chip prohíbe.
-    /// Va al `.groupsChooser` y no al `.chooser` porque es donde estaba, y porque desde ahí puede
-    /// reintentar o irse a la otra vía sin volver a recorrer el Hero.
+    /// (cancelar el educativo, el sign-in, el consent o el cover del nombre): el usuario ya salió del
+    /// Welcome y debajo no hay shell —su alta no ha corrido—, así que dejarlo ahí sería el camino muerto
+    /// que el chip prohíbe. Va al `.groupsChooser` y no al `.chooser` porque es donde estaba, y porque
+    /// desde ahí puede reintentar o irse a la otra vía sin volver a recorrer el Hero.
     @MainActor
     private func returnToGroupsChooser() {
+        // C2 · choke-point de TODA cancelación de la cadena (educativo, sign-in, consent y el cover del
+        // nombre pasan por aquí), así que es el sitio donde el payload de la card «Solo grupos» se descarta
+        // — un payload superviviente haría que el siguiente intento saltara la pantalla del nombre con
+        // datos de una sesión abandonada. Y para la card B esta salida es además la que evita la pantalla
+        // muerta: el onboarding de 8 pasos ya se cerró, así que el chooser de Grupos es el sitio vivo más
+        // cercano desde el que reintentar o irse por la otra vía.
+        pendingGroupsOnlyPayload = nil
         welcomeFlowInitialStep = .groupsChooser
         showWelcomeFlow = true
     }
@@ -819,6 +826,7 @@ struct ContentView: View {
             showGroupsConsent: showGroupsConsent,
             showGroupsSignIn: showGroupsSignIn,
             showGroupsOrganizerName: showGroupsOrganizerName,
+            showGroupsEducational: showGroupsEducational,
             showFullModeActivation: showFullModeActivation,
             showProTrialOffer: showProTrialOffer,
             showWhatsNew: showWhatsNew,
@@ -960,10 +968,23 @@ struct ContentView: View {
         // (cancel de un sheet), y entonces no hay nada que avanzar.
         guard groupsOrganizerFlowActive else { return }
         switch GroupsOrganizerFlowLogic.nextStep(
+            // C2 · el PRIMER escalón. La señal es la misma que usa el tab (`GroupsOnboardingLogic`), con su
+            // término legacy incluido: quien completó su alta en modo Grupos antes de C2 ya vio el suyo.
+            hasSeenEducational: GroupsOnboardingLogic.hasSeenAnyGroupsEducational(
+                hasShownOnboarding: appPreferences.hasShownGroupsOnboarding,
+                onboardingMode: SessionState.shared.onboardingMode,
+                hasCompletedSetup: hasCompletedOnboarding),
             hasSession: CloudAuthService.shared.hasSession,
             isConsented: GroupsConsentState.isAccepted,
-            hasCompletedSetup: hasCompletedOnboarding
+            // Se lee de `UserDefaults` y NO del `@AppStorage` a propósito: cuando la card B escribe el trío
+            // unas líneas más abajo y re-submitea para que la máquina re-decida, el espejo observable puede
+            // no haberse refrescado todavía (se actualiza por notificación) y la cadena volvería a
+            // `.presentName` — un alta repetida. `UserDefaults` es la verdad inmediata.
+            hasCompletedSetup: UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding),
+            entry: pendingGroupsOnlyPayload == nil ? .organizer : .onboardingCard
         ) {
+        case .presentEducational:
+            showGroupsEducational = true
         case .presentSignIn:
             pendingGroupsJoinZone = nil
             showGroupsSignIn = true
@@ -971,7 +992,22 @@ struct ContentView: View {
             pendingGroupsJoinZone = nil
             showGroupsConsent = true
         case .presentName:
-            showGroupsOrganizerName = true
+            // C2 · la card «Solo grupos» ya preguntó nombre y divisa en sus steps 1 y 5, así que aquí no se
+            // vuelve a preguntar: se ESCRIBE, que es lo que la invariante pedía —con la identidad y el
+            // consent ya en mano, y todo junto—. La rama del Welcome, que no preguntó nada, sí pasa por la
+            // pantalla del nombre.
+            guard let payload = pendingGroupsOnlyPayload else {
+                showGroupsOrganizerName = true
+                return
+            }
+            pendingGroupsOnlyPayload = nil
+            GroupsOrganizerOnboarding.completeSetup(
+                displayName: payload.displayName,
+                context: modelContext,
+                explicitCurrencyCode: payload.currencyCode)
+            // Re-decidir en vez de encadenar a mano el terminal: es la regla del repo («cada llamada
+            // re-evalúa condiciones VIVAS») y evita duplicar aquí lo que ya hace `.presentGroupForm`.
+            RouterEntryGate.shared.submit(.presentGroupsOrganizerStep)
         case .presentGroupForm:
             // La rama termina aquí: el form lo abre `GroupsContainerView` al montar el tab (molde de
             // `pendingNewGroupExpense`). Y si el usuario lo cancela, aterriza en el empty state estándar

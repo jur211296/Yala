@@ -16,24 +16,48 @@ import Foundation
 
 enum GroupsOnboardingLogic {
 
+    /// **C2 (2026-08-12) · el hecho REAL: «esta persona ya vio UN educativo de Grupos».**
+    ///
+    /// Sustituye al corte `onboardingMode == .groupInvite` que vivía dentro de `shouldShow`. Aquel corte
+    /// era un proxy y estaba MAL en la dirección cara: `.groupInvite` es también lo que escribía la card
+    /// «Solo grupos» del onboarding de 8 pasos, así que suprimía el educativo justo para quien entraba por
+    /// la puerta que menos contexto daba —y que además no pedía ni sesión ni consent—. Son dos estados
+    /// distintos («ya se lo contamos» vs. «está en modo Grupos») y estaban colapsados en uno falso.
+    ///
+    /// - Parameters:
+    ///   - hasShownOnboarding: `AppPreferences.hasShownGroupsOnboarding`. Per-device y permanente. La
+    ///     escriben los DOS educativos: el general (`GroupsOnboardingView`, en el tab y en el cover de las
+    ///     puertas A/B) y el del invitado (`GroupInviteOnboardingView`, contextual al link) — porque ESE
+    ///     es el educativo del invitado, y esa es exactamente la sustitución que el chip pide.
+    ///   - onboardingMode / hasCompletedSetup: el término **LEGACY**, y solo eso. Quien completó su alta en
+    ///     modo Grupos ANTES de C2 vio su educativo y no dejó marca: sin este término, actualizar la app le
+    ///     presentaría un educativo que ya conoce. No hay migración que escribir — la evidencia ya está en
+    ///     disco. Para todo alta POSTERIOR a C2 el término es redundante (la marca se pone en el educativo,
+    ///     que va antes que el modo) y se puede retirar cuando el parque haya rotado.
+    static func hasSeenAnyGroupsEducational(
+        hasShownOnboarding: Bool,
+        onboardingMode: OnboardingMode,
+        hasCompletedSetup: Bool
+    ) -> Bool {
+        if hasShownOnboarding { return true }
+        return onboardingMode == .groupInvite && hasCompletedSetup
+    }
+
     /// Decide si presentar el onboarding del tab Grupos. AND-gating: cualquier
     /// blocker presente bloquea (no OR — el orden de evaluación es irrelevante).
     ///
     /// - Parameters:
-    ///   - hasShownOnboarding: `AppPreferences.hasShownGroupsOnboarding`. Una vez
-    ///     `true`, el onboarding no se muestra más (persistencia per-device).
-    ///   - onboardingMode: `SessionState.onboardingMode`. En `.groupInvite` el user
-    ///     ya pasó por `GroupInviteOnboardingView` contextual al link — no duplicar.
+    ///   - hasSeenEducational: el resultado de `hasSeenAnyGroupsEducational`. **Es la MISMA señal que
+    ///     alimenta a `GroupsGateLogic`**: el tab y las cuatro puertas no pueden discrepar sobre si a esta
+    ///     persona ya se le contó qué es un grupo.
     ///   - hasPendingGroupDeeplink: `sessionState.pendingGroupID != nil`. Si hay
     ///     deeplink hacia un grupo específico, abrir el detail tiene prioridad UX
     ///     sobre el onboarding informativo.
     static func shouldShow(
-        hasShownOnboarding: Bool,
-        onboardingMode: OnboardingMode,
+        hasSeenEducational: Bool,
         hasPendingGroupDeeplink: Bool
     ) -> Bool {
-        if hasShownOnboarding { return false }
-        if onboardingMode == .groupInvite { return false }
+        if hasSeenEducational { return false }
         if hasPendingGroupDeeplink { return false }
         return true
     }

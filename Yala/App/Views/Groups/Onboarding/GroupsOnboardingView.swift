@@ -247,6 +247,10 @@ struct GroupsOnboardingView: View {
             }
 
             VStack(spacing: DS.Spacing.md) {
+                // C2 · el HECHO sustantivo, y va PRIMERO. Los otros dos tranquilizan sin decir nunca dónde
+                // se guardan los gastos del grupo; el consent sí lo dice, pero llega después de pedir
+                // identidad, y a estas alturas el usuario todavía no ha dado ninguna.
+                privacyPoint(icon: "icloud.fill", text: L10n.Groups.Onboarding.step3Point0)
                 // El icono acompaña al copy: la cuenta es de Yala, no de iCloud (A1).
                 privacyPoint(icon: "person.crop.circle.badge.checkmark", text: L10n.Groups.Onboarding.step3Point1)
                 privacyPoint(icon: "lock.shield.fill", text: L10n.Groups.Onboarding.step3Point2)
@@ -300,7 +304,16 @@ struct GroupsOnboardingView: View {
             hasSession: CloudAuthService.shared.hasSession
         ) {
             VStack(spacing: DS.Spacing.sm) {
-                YalaPrimaryButton(L10n.Groups.Onboarding.step3SignInCTA) {
+                // C2 · el MISMO CTA con el copy honesto por caso: a quien nunca tuvo cuenta se le está
+                // CREANDO una, y «Iniciar sesión» le pide volver a un sitio donde no ha estado. La señal es
+                // el latch `GroupsSessionHistoryMarker`, la misma que decide el empty state — no una
+                // segunda fuente. El intent que emite es idéntico en los dos casos: `GroupsSignInView` es
+                // la pantalla que crea la cuenta además de recuperarla.
+                YalaPrimaryButton(
+                    GroupsSessionHistoryMarker.hadSessionEver()
+                        ? L10n.Groups.Onboarding.step3SignInCTA
+                        : L10n.Groups.Onboarding.step3CreateAccountCTA
+                ) {
                     onResult(.completeAndSignIn)
                 }
                 .accessibilityIdentifier("groups_onboarding_signin_cta")

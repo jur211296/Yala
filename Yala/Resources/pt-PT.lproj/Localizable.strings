@@ -4721,3 +4721,24 @@
 
 /* G3: CTA del alta del organizador */
 "welcome.groups.nameCta" = "Criar o meu grupo";
+
+/* C2 · empty state cuando aún no vio el educativo */
+"groups.empty.needsEducational.title" = "Como funcionam os grupos?";
+"groups.empty.needsEducational.message" = "Contamos-te num minuto: o que podes fazer e onde fica guardada cada despesa.";
+"groups.empty.needsEducational.action" = "Ver como funciona";
+
+/* C2 · empty state de quien NUNCA tuvo cuenta (no «vuelve a la tuya») */
+"groups.empty.createAccount.title" = "Cria a tua conta Yala";
+"groups.empty.createAccount.message" = "As despesas de um grupo ficam na tua conta, para que todos vejam o mesmo, atualizado.";
+"groups.empty.createAccount.action" = "Criar a minha conta";
+
+/* C2 · empty state con sesión viva y sin consent */
+"groups.empty.needsConsent.title" = "Um último passo";
+"groups.empty.needsConsent.message" = "Dizemos-te o que fica guardado na nuvem da Yala e tu decides.";
+"groups.empty.needsConsent.action" = "Continuar";
+
+/* C2 · el hecho sustantivo, antes de pedir identidad */
+"groups.onboarding.step3.point0" = "As despesas que registas num grupo ficam guardadas nos servidores da Yala, para que todos as vejam atualizadas.";
+
+/* C2 · variante del CTA para quien nunca tuvo cuenta */
+"groups.onboarding.step3.createAccountCTA" = "Criar a minha conta";

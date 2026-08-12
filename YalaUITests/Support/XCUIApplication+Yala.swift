@@ -30,6 +30,7 @@ extension XCUIApplication {
         fakeICloud: Bool = false,
         cloudSession: Bool = false,
         groupsConsent: Bool = false,
+        groupsEducativo: Bool = false,
         inviteOnboarding: Bool = false,
         joinPhase: String? = nil,
         joinSoftTimeout: String? = nil,
@@ -65,6 +66,12 @@ extension XCUIApplication {
         // daría un rojo MUDO — el arg desconocido se ignora en silencio.
         if cloudSession { args.append("-uitest-fake-cloud-session") }
         if groupsConsent { args.append("-uitest-groups-consent") }
+        // C2 · invierte el early-return que desmonta el educativo bajo `-uitest`. Va aquí, con nombre, y
+        // NO por `extraArguments:` por la misma razón que sus dos vecinos: un typo en un string suelto se
+        // ignora en silencio y el rojo resultante no menciona el arg. **Por defecto `false`**, así que
+        // ninguna corrida existente cambia: el sheet del educativo interceptaría los taps de toda la suite
+        // de Grupos, que es justo por lo que ese early-return existe.
+        if groupsEducativo { args.append("-uitest-groups-educativo") }
         if inviteOnboarding { args.append("-uitest-invite-onboarding") }
         if let joinPhase {
             args.append("-uitest-join-phase")

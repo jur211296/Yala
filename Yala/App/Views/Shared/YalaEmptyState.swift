@@ -178,6 +178,45 @@ extension YalaEmptyState {
         )
     }
 
+    /// C2 · aún no vio ningún educativo de Grupos. Es el primer escalón de `GroupsGateLogic`, y el empty
+    /// state lo anuncia con el mismo orden: primero se cuenta qué es un grupo, después se pide identidad.
+    static func groupsNeedsEducational(action: (() -> Void)? = nil) -> YalaEmptyState {
+        YalaEmptyState(
+            icon: "sparkles",
+            title: L10n.Groups.Empty.NeedsEducational.title,
+            message: L10n.Groups.Empty.NeedsEducational.message,
+            actionTitle: action != nil ? L10n.Groups.Empty.NeedsEducational.action : nil,
+            action: action,
+            actionAccessibilityIdentifier: action != nil ? "groups_empty_educational_cta" : nil
+        )
+    }
+
+    /// C2 · nunca tuvo cuenta. Distinto de `groupsSignedOut` a propósito: a esta persona no le espera
+    /// ningún grupo en ninguna cuenta, y la cuenta hay que CREARLA.
+    static func groupsCreateAccount(action: (() -> Void)? = nil) -> YalaEmptyState {
+        YalaEmptyState(
+            icon: "person.crop.circle.badge.plus",
+            title: L10n.Groups.Empty.CreateAccount.title,
+            message: L10n.Groups.Empty.CreateAccount.message,
+            actionTitle: action != nil ? L10n.Groups.Empty.CreateAccount.action : nil,
+            action: action,
+            actionAccessibilityIdentifier: action != nil ? "groups_empty_create_account_cta" : nil
+        )
+    }
+
+    /// C2 · sesión viva sin consent. El tap de «crear grupo» acabaría en la pantalla de consentimiento;
+    /// decirlo antes evita que aparezca como una sorpresa a mitad de camino.
+    static func groupsNeedsConsent(action: (() -> Void)? = nil) -> YalaEmptyState {
+        YalaEmptyState(
+            icon: "checkmark.shield",
+            title: L10n.Groups.Empty.NeedsConsent.title,
+            message: L10n.Groups.Empty.NeedsConsent.message,
+            actionTitle: action != nil ? L10n.Groups.Empty.NeedsConsent.action : nil,
+            action: action,
+            actionAccessibilityIdentifier: action != nil ? "groups_empty_consent_cta" : nil
+        )
+    }
+
     /// Empty state for no scheduled payments
     static func noScheduledPayments(icon: String = "calendar.badge.clock", action: (() -> Void)? = nil) -> YalaEmptyState {
         YalaEmptyState(

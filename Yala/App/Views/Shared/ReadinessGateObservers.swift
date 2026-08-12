@@ -31,6 +31,10 @@ private struct ReadinessGateObserversModifier: ViewModifier {
     let showGroupsConsent: Bool
     let showGroupsSignIn: Bool
     let showGroupsOrganizerName: Bool
+    /// C2 · el educativo de las puertas A/B. Observarlo NO es opcional: su cover es un blocker de la
+    /// matriz, así que sin este `onChange` el readiness no se recomputa al montarlo ni al bajarlo y el
+    /// drain retiene (o suelta) en el momento equivocado.
+    let showGroupsEducational: Bool
     let showFullModeActivation: Bool
     let showProTrialOffer: Bool
     let showWhatsNew: Bool
@@ -64,6 +68,7 @@ private struct ReadinessGateObserversModifier: ViewModifier {
             .onChange(of: showGroupsConsent) { _, _ in recompute() }
             .onChange(of: showGroupsSignIn) { _, _ in recompute() }
             .onChange(of: showGroupsOrganizerName) { _, _ in recompute() }
+            .onChange(of: showGroupsEducational) { _, _ in recompute() }
             .onChange(of: showFullModeActivation) { _, _ in recompute() }
             .onChange(of: showProTrialOffer) { _, _ in recompute() }
             .onChange(of: showWhatsNew) { _, _ in recompute() }
@@ -106,6 +111,7 @@ extension View {
         showGroupsConsent: Bool,
         showGroupsSignIn: Bool,
         showGroupsOrganizerName: Bool,
+        showGroupsEducational: Bool,
         showFullModeActivation: Bool,
         showProTrialOffer: Bool,
         showWhatsNew: Bool,
@@ -134,6 +140,7 @@ extension View {
             showGroupsConsent: showGroupsConsent,
             showGroupsSignIn: showGroupsSignIn,
             showGroupsOrganizerName: showGroupsOrganizerName,
+            showGroupsEducational: showGroupsEducational,
             showFullModeActivation: showFullModeActivation,
             showProTrialOffer: showProTrialOffer,
             showWhatsNew: showWhatsNew,

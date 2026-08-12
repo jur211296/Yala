@@ -437,9 +437,20 @@ struct HandoverGroupsWiringTests {
     /// fresh-start y «Empezar de cero» de la oferta de restore. Los otros 3 call-sites de
     /// `wipeAllUserData` (Ajustes, wipe remoto, reset de XCUITest) NO deben purgarlo — ahí es el
     /// mismo usuario y el copy promete que sus grupos se conservan.
+    ///
+    /// **C2 movió los dos alerts de `ContentView` a `ShellDataAlertsModifier`**, y no por gusto: con ellos
+    /// inline el getter de `ContentView.body` tardaba 591 s en type-checkear y la compilación moría. El
+    /// escáner apunta al fichero nuevo; los cuerpos son literales, no cambió ninguna decisión.
     @Test func bothFreshStartPaths_purgeTheGroupsDomain() throws {
-        let src = try Self.source("Yala/App/ContentView.swift")
+        let src = try Self.source("Yala/App/Views/Shared/ShellDataAlertsModifier.swift")
         #expect(src.components(separatedBy: "DataWipeService.wipeLocalGroupsDomain(in: modelContext)").count - 1 == 2)
+        // Y no se quedaron también en `ContentView`: dos copias del mismo alert es la regla (4) de
+        // Presentaciones (dos anchors ante el mismo flujo) con un wipe destructivo detrás.
+        let contentView = try Self.source("Yala/App/ContentView.swift")
+        #expect(!contentView.contains("DataWipeService.wipeLocalGroupsDomain(in: modelContext)"), """
+            los alerts de fresh-start volvieron a `ContentView` sin salir de `ShellDataAlertsModifier`: hay
+            DOS presentaciones del mismo alert destructivo colgando del mismo anchor.
+            """)
     }
 
     /// El wipe de Ajustes («Vaciar datos») JAMÁS purga Grupos: su hoja de alcance promete

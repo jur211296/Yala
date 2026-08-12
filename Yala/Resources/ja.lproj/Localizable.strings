@@ -5464,3 +5464,24 @@
 
 /* G3: CTA del alta del organizador */
 "welcome.groups.nameCta" = "グループを作成";
+
+/* C2 · empty state cuando aún no vio el educativo */
+"groups.empty.needsEducational.title" = "グループの仕組み";
+"groups.empty.needsEducational.message" = "1分で説明します。できることと、支出がどこに保存されるか。";
+"groups.empty.needsEducational.action" = "仕組みを見る";
+
+/* C2 · empty state de quien NUNCA tuvo cuenta (no «vuelve a la tuya») */
+"groups.empty.createAccount.title" = "Yalaアカウントを作成";
+"groups.empty.createAccount.message" = "グループの支出はあなたのアカウントに保存され、全員が最新の同じ内容を見られます。";
+"groups.empty.createAccount.action" = "アカウントを作成";
+
+/* C2 · empty state con sesión viva y sin consent */
+"groups.empty.needsConsent.title" = "あと1ステップ";
+"groups.empty.needsConsent.message" = "Yalaのクラウドに何が保存されるかをお伝えします。決めるのはあなたです。";
+"groups.empty.needsConsent.action" = "続ける";
+
+/* C2 · el hecho sustantivo, antes de pedir identidad */
+"groups.onboarding.step3.point0" = "グループに記録した支出はYalaのサーバーに保存され、全員が最新の状態で確認できます。";
+
+/* C2 · variante del CTA para quien nunca tuvo cuenta */
+"groups.onboarding.step3.createAccountCTA" = "アカウントを作成";

@@ -5464,3 +5464,24 @@
 
 /* G3: CTA del alta del organizador */
 "welcome.groups.nameCta" = "创建我的群组";
+
+/* C2 · empty state cuando aún no vio el educativo */
+"groups.empty.needsEducational.title" = "群组是怎么用的？";
+"groups.empty.needsEducational.message" = "一分钟讲清楚：你能做什么，以及每笔支出保存在哪里。";
+"groups.empty.needsEducational.action" = "看看怎么用";
+
+/* C2 · empty state de quien NUNCA tuvo cuenta (no «vuelve a la tuya») */
+"groups.empty.createAccount.title" = "创建你的 Yala 账户";
+"groups.empty.createAccount.message" = "群组的支出保存在你的账户里，让所有人看到同样的、最新的内容。";
+"groups.empty.createAccount.action" = "创建我的账户";
+
+/* C2 · empty state con sesión viva y sin consent */
+"groups.empty.needsConsent.title" = "最后一步";
+"groups.empty.needsConsent.message" = "我们会告诉你哪些内容会保存在 Yala 云端，由你决定。";
+"groups.empty.needsConsent.action" = "继续";
+
+/* C2 · el hecho sustantivo, antes de pedir identidad */
+"groups.onboarding.step3.point0" = "你记在群组里的支出会保存在 Yala 的服务器上，让所有人都能看到最新的内容。";
+
+/* C2 · variante del CTA para quien nunca tuvo cuenta */
+"groups.onboarding.step3.createAccountCTA" = "创建我的账户";

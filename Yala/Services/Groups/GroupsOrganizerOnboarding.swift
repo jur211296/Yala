@@ -77,6 +77,26 @@ struct LiveGroupsOrganizerPreferenceWriter: GroupsOrganizerPreferenceWriting {
     }
 }
 
+// MARK: - Lo que la card «Solo grupos» arrastra sin persistir
+
+/// C2 · el nombre y la divisa que la card «Solo grupos» del onboarding de 8 pasos ya preguntó (steps 1 y
+/// 5), **en memoria y sin escribir**, hasta que la cadena confirme identidad y consent.
+///
+/// Que sea un valor y no dos keys de `UserDefaults` **es** la invariante del chip hecha comprobable: antes
+/// de C2, `OnboardingView.completeGroupsOnlyOnboarding` escribía ahí mismo `userName`,
+/// `defaultCurrencyCode`, `defaultPeriod`, `onboardingMode = .groupInvite` EMPUJADO AL iKV,
+/// `groupsBetaUnlocked` y `hasCompletedOnboarding` — sin sesión, sin consent y sin canal comprobado. El
+/// modo es **never-downgrade cross-device**, así que esa escritura prematura viajaba al Apple ID y dejaba
+/// al usuario con la app recortada a Grupos, vacía y sin cuenta, en todos sus dispositivos.
+struct GroupsOnlyOnboardingPayload: Equatable, Sendable {
+    /// Sin trimear ni resolver a `Profile.defaultName`: eso lo hace `writePreferences`, que es el único
+    /// sitio donde el nombre se convierte en dato.
+    let displayName: String
+    /// `CurrencyCode.rawValue`. Es una elección EXPLÍCITA del usuario en el step de divisa, así que al
+    /// escribirla gana sobre el guard de «solo si está ausente» que aplica la derivación por región (G4).
+    let currencyCode: String
+}
+
 // MARK: - El alta
 
 @MainActor
@@ -104,9 +124,15 @@ enum GroupsOrganizerOnboarding {
     /// - Parameter regionCode: región ISO con la que se deriva la divisa. Default: la del dispositivo,
     ///   inyectable para tests deterministas (patrón canónico `now: Date = .now`; el mismo default que
     ///   `CurrencyDefaults.detectCurrencyFromRegion`, que es quien la traduce a divisa).
+    ///   - explicitCurrencyCode: C2 · la divisa que el usuario ELIGIÓ en el step 5 de la card «Solo
+    ///     grupos». Cuando viene, **gana sobre el guard de ausencia** y se escribe siempre, porque el guard
+    ///     protege de pisar una elección previa con una DERIVACIÓN silenciosa y aquí no hay derivación: hay
+    ///     una elección, la más reciente y la única hecha a mano. Con `nil` el comportamiento es el de G4,
+    ///     intacto — que es el de la rama del Welcome, donde el alta no pregunta la moneda.
     static func writePreferences(displayName: String,
                                  writer: any GroupsOrganizerPreferenceWriting,
-                                 regionCode: String = Locale.current.region?.identifier ?? "") {
+                                 regionCode: String = Locale.current.region?.identifier ?? "",
+                                 explicitCurrencyCode: String? = nil) {
         let trimmed = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
         let effectiveName = trimmed.isEmpty ? L10n.Profile.defaultName : trimmed
 
@@ -118,15 +144,32 @@ enum GroupsOrganizerOnboarding {
         // default global, que NO se cambia— fuera de Perú. El guard es el invariante, no una optimización:
         // esta key es `synced: true` y pisarla propagaría a la CUENTA la divisa de la región donde el
         // usuario esté hoy, encima de la que ya eligió en otro dispositivo.
-        if !writer.hasValue(forKey: AppPreferences.Keys.defaultCurrencyCode) {
+        //
+        // C2 · y por eso la elección EXPLÍCITA de la card «Solo grupos» sí puede pisar: lo que el guard
+        // protege es de que una derivación automática tape una decisión del usuario, no al revés.
+        if let explicitCurrencyCode {
+            writer.setSynced(explicitCurrencyCode, forKey: AppPreferences.Keys.defaultCurrencyCode)
+        } else if !writer.hasValue(forKey: AppPreferences.Keys.defaultCurrencyCode) {
             let currency = CurrencyDefaults.detectCurrencyFromRegion(regionCode: regionCode)
             writer.setSynced(currency.rawValue, forKey: AppPreferences.Keys.defaultCurrencyCode)
         }
 
         // Modo Solo Grupos: reusa `.groupInvite`. Push EXPLÍCITO al canal sincronizado (dual-write, mismo
-        // patrón que `completeGroupsOnlyOnboarding` y `FullModeActivationView`) — el `didSet` de
-        // `onboardingMode` solo escribe local, así que sin esto no hay paridad cross-device.
-        writer.setSynced(OnboardingMode.groupInvite.rawValue, forKey: OnboardingMode.userDefaultsKey)
+        // patrón que `FullModeActivationView`) — el `didSet` de `onboardingMode` solo escribe local, así
+        // que sin esto no hay paridad cross-device.
+        //
+        // **M1 · el guard es el mismo de `FullModeActivationView`, y en C2 dejó de ser opcional.** Hasta
+        // C2 este tipo tenía un solo call-site —el Welcome, inalcanzable con un descriptor secundario
+        // vivo— y por eso no lo llevaba. C2 le añade el segundo: la card «Solo grupos» del onboarding de 8
+        // pasos, cuyo camino SÍ existe en sesión secundaria (la invitada entra con el onboarding ya
+        // marcado, pero un borrado de datos en sesión lo reabre) — es exactamente el caso que
+        // `OnboardingView.completeGroupsOnlyOnboarding` cubría con este mismo guard antes de que C2 la
+        // eliminara. Sin él, en `.localOnly` este `set` sigue escribiendo el espejo local, que en una
+        // sesión secundaria es el `UserDefaults.standard` del DUEÑO, y `.groupInvite` (rank 1) sobre su
+        // `.full` (rank 0) es irreversible por never-downgrade.
+        if !SecondarySessionStore.isActive() {
+            writer.setSynced(OnboardingMode.groupInvite.rawValue, forKey: OnboardingMode.userDefaultsKey)
+        }
 
         // Adopción explícita del dominio Grupos. `.groupInvite` ya la implica por el segundo término de
         // `GroupsDomainAdoptionLogic.isDomainOpen`, pero ese término muere si el usuario activa Yala
@@ -137,18 +180,24 @@ enum GroupsOrganizerOnboarding {
 
     /// El alta completa: preferencias, espejo en memoria, seeds y aterrizaje en el tab Grupos.
     ///
-    /// - Important: **el único call-site de producción vive en `GroupsOrganizerNameView`**, detrás de la
-    ///   puerta y de la cadena sign-in → consent. Pinneado por source-scan; moverlo antes es la mutación
-    ///   (b) del chip.
+    /// - Important: **son DOS call-sites de producción y los dos están detrás de la cadena completa**:
+    ///   `GroupsOrganizerNameView` (puerta A, Welcome) y `ContentView.advanceGroupsOrganizerFlow` en su
+    ///   caso `.presentName` con payload (puerta B, card «Solo grupos», que ya preguntó el nombre y no lo
+    ///   vuelve a pedir). Antes de C2 la puerta B no pasaba por aquí: escribía el trío ella misma, en el
+    ///   paso 8 del onboarding y sin identidad. Pinneado por source-scan con conteo; moverlo antes de la
+    ///   cadena es la mutación (b) del chip.
     /// - Parameter writer: `nil` = el canal de producción. Va opcional y no con un default construido en
     ///   la firma porque `LiveGroupsOrganizerPreferenceWriter` es `@MainActor` (sus dos dependencias lo son)
     ///   y un default se evalúa en contexto nonisolated.
+    /// - Parameter explicitCurrencyCode: ver `writePreferences`. Solo lo pasa la puerta B.
     static func completeSetup(displayName: String,
                               context: ModelContext,
-                              writer: (any GroupsOrganizerPreferenceWriting)? = nil) {
+                              writer: (any GroupsOrganizerPreferenceWriting)? = nil,
+                              explicitCurrencyCode: String? = nil) {
         let sessionState = SessionState.shared
         writePreferences(displayName: displayName,
-                         writer: writer ?? LiveGroupsOrganizerPreferenceWriter())
+                         writer: writer ?? LiveGroupsOrganizerPreferenceWriter(),
+                         explicitCurrencyCode: explicitCurrencyCode)
 
         // Espejo en memoria: el proceso vivo tiene que ver el modo nuevo YA (el tab bar se reduce a
         // [.groups] en el mismo render), no en el próximo arranque.

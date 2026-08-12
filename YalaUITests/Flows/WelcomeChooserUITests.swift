@@ -183,7 +183,9 @@ final class WelcomeChooserUITests: XCTestCase {
             skipOnboarding: false,
             seed: nil,
             cloudSession: true,
-            groupsConsent: true
+            groupsConsent: true,
+            // C2 · el educativo es el PRIMER escalón de esta rama, y bajo `-uitest` no se monta sin el seam.
+            groupsEducativo: true
         )
 
         let heroCTA = app.buttons["welcome_hero_cta"]
@@ -200,11 +202,24 @@ final class WelcomeChooserUITests: XCTestCase {
                       "La card «Crear mi primer grupo» no se pinta: ¿`onCreate` sin cablear?")
         createCard.tap()
 
-        // La puerta abre (canal ON bajo uitest, device sin datos) ⇒ sale del cover y la cadena
-        // sign-in → consent se salta por las condiciones vivas ⇒ el siguiente paso es el nombre.
+        // **C2 · la puerta abre y lo PRIMERO que sale es el educativo**, no el nombre. Antes de C2 esta
+        // rama pedía identidad sin haber contado nunca qué es un grupo ni dónde viven sus gastos.
+        let educationalCTA = app.buttons["groups_onboarding_cta"]
+        XCTAssertTrue(educationalCTA.waitForExistence(timeout: 20),
+                      "La puerta no dejó pasar, o la rama no empieza por el educativo (C2).")
+        // Tres steps: dos «Continuar» y el cierre, que es el que marca `hasShownGroupsOnboarding` y deja
+        // que la cadena avance.
+        educationalCTA.tap()
+        XCTAssertTrue(educationalCTA.waitForExistence(timeout: 5), "El educativo no avanzó al step 2.")
+        educationalCTA.tap()
+        XCTAssertTrue(educationalCTA.waitForExistence(timeout: 5), "El educativo no avanzó al step 3.")
+        educationalCTA.tap()
+
+        // Y AHORA sí: con sesión y consent fingidos, la cadena se salta sign-in y consent por condiciones
+        // vivas ⇒ el siguiente paso es el nombre.
         let nameField = app.textFields["groups_organizer_name_field"]
         XCTAssertTrue(nameField.waitForExistence(timeout: 20),
-                      "La puerta no dejó pasar, o la rama no llegó al paso del nombre.")
+                      "Tras el educativo, la rama no llegó al paso del nombre.")
         nameField.tap()
         nameField.typeText("Ana")
 

@@ -362,6 +362,14 @@ struct GroupInviteOnboardingView: View {
         // 1. Set onboarding mode
         sessionState.onboardingMode = .groupInvite
 
+        // 1.5. C2 · **ESTA vista ES el educativo del invitado**, contextual al link y con la metadata del
+        // grupo, así que al terminarla se marca el hecho real: «ya se le contó qué es un grupo». Antes,
+        // esa supresión la hacía `GroupsOnboardingLogic.shouldShow` cortando por `onboardingMode ==
+        // .groupInvite` — un proxy que además tapaba el educativo a quien entraba por la card «Solo
+        // grupos», que era justo quien menos contexto tenía. Sin esta línea, el invitado vería el educativo
+        // general del tab justo después del suyo.
+        UserDefaults.standard.set(true, forKey: AppPreferences.Keys.hasShownGroupsOnboarding)
+
         // 2. Save user name
         sync.set(string: effectiveName, forKey: AppPreferences.Keys.userName)
 

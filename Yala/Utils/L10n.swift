@@ -1750,6 +1750,29 @@ enum L10n {
                 /// D2 (§3.3.3): banner one-shot sobre el empty state tras "Cerrar sesión de grupos".
                 static var reentryBanner: String { ls("groups.empty.signedOut.reentryBanner", comment: "") }
             }
+
+            /// C2 · aún no vio ningún educativo de Grupos: primero se le cuenta, después se le pide nada.
+            enum NeedsEducational {
+                static var title: String { ls("groups.empty.needsEducational.title", comment: "") }
+                static var message: String { ls("groups.empty.needsEducational.message", comment: "") }
+                static var action: String { ls("groups.empty.needsEducational.action", comment: "") }
+            }
+
+            /// C2 · NUNCA tuvo cuenta. `SignedOut` le mentía dos veces: no hay grupos suyos esperando en
+            /// ninguna cuenta, y la cuenta hay que CREARLA, no «iniciar sesión» en ella.
+            enum CreateAccount {
+                static var title: String { ls("groups.empty.createAccount.title", comment: "") }
+                static var message: String { ls("groups.empty.createAccount.message", comment: "") }
+                static var action: String { ls("groups.empty.createAccount.action", comment: "") }
+            }
+
+            /// C2 · sesión viva sin consent: el tap de «crear grupo» acabaría en `GroupsConsentView`, así
+            /// que el empty state lo anuncia en vez de que aparezca como sorpresa.
+            enum NeedsConsent {
+                static var title: String { ls("groups.empty.needsConsent.title", comment: "") }
+                static var message: String { ls("groups.empty.needsConsent.message", comment: "") }
+                static var action: String { ls("groups.empty.needsConsent.action", comment: "") }
+            }
         }
 
         enum Summary {
@@ -2376,12 +2399,20 @@ enum L10n {
             // Step 3 — Privacy + CTA
             static var step3Title: String { ls("groups.onboarding.step3.title", comment: "") }
             static var step3Subtitle: String { ls("groups.onboarding.step3.subtitle", comment: "") }
+            /// C2 · el HECHO sustantivo, y va el primero. Los otros dos puntos tranquilizan («tu privacidad,
+            /// primero») sin decir nunca DÓNDE se guardan los gastos del grupo; el consent sí lo dice, pero
+            /// llega después de pedir identidad. Sin promesa de cifrado, a propósito: `GroupsConsentView`
+            /// evita esa palabra por lo mismo (G7 no aterrizó — «protegidos» es lo honesto).
+            static var step3Point0: String { ls("groups.onboarding.step3.point0", comment: "") }
             static var step3Point1: String { ls("groups.onboarding.step3.point1", comment: "") }
             static var step3Point2: String { ls("groups.onboarding.step3.point2", comment: "") }
             static var step3CTA: String { ls("groups.onboarding.step3.cta", comment: "") }
             /// A1 (D-A7): CTA de sign-in del cierre. Solo se pinta sin sesión Yala viva
             /// (`GroupsOnboardingLogic.shouldShowSignInCTA`).
             static var step3SignInCTA: String { ls("groups.onboarding.step3.signInCTA", comment: "") }
+            /// C2 · la variante del mismo CTA para quien NUNCA tuvo cuenta. «Iniciar sesión» le pide volver
+            /// a un sitio donde no ha estado; el hecho es que se le está creando una cuenta de Yala.
+            static var step3CreateAccountCTA: String { ls("groups.onboarding.step3.createAccountCTA", comment: "") }
             /// F6 awareness: hint que el bridge es configurable en Ajustes de Grupos.
             static var step3BridgeAwareness: String { ls("groups.onboarding.step3.bridgeAwareness", comment: "") }
         }

@@ -99,6 +99,21 @@ final class UITestHooks {
     /// el seam. Solo DEBUG (inerte en release vía `hasArg`).
     nonisolated static var groupsConsentAccepted: Bool { hasArg("-uitest-groups-consent") }
 
+    /// `-uitest-groups-educativo`: **invierte el early-return que desmonta el educativo bajo `-uitest`**
+    /// (`GroupsContainerView.evaluateGroupsOnboarding`). Ese early-return existe porque el sheet
+    /// interceptaría los taps de toda la suite de Grupos, y por eso NO se retira: lo que este seam hace es
+    /// permitir que las corridas que ejercitan el educativo lo monten a propósito.
+    ///
+    /// **Sin él, C2 dejaría su primer escalón sin ninguna red determinista.** El educativo pasa a ser el
+    /// paso 1 de las cuatro puertas y era, medido, inalcanzable desde XCUITest — `qa/coverage-index.json`
+    /// ya anotaba el hueco. La alternativa era cubrirlo solo con unit + device-qa, y el spec lo dice: el
+    /// primer escalón de la cadena nacería sin red.
+    ///
+    /// Es ORTOGONAL a `-uitest-fake-cloud-session` y a `-uitest-groups-consent`, por la misma razón que
+    /// ellos entre sí: cada uno abre un escalón distinto de la cadena y combinarlos en uno impediría
+    /// ejercitar los intermedios. Solo DEBUG (inerte en release vía `hasArg`).
+    nonisolated static var groupsEducativo: Bool { hasArg("-uitest-groups-educativo") }
+
     /// `-uitest-groups-batch-demo`: QA/XCUITest del batch "salir de todos mis grupos" (D10) SIN backend ni
     /// iCloud (imposibles en sim — la ejecución real de leave/transfer es device/TestFlight). Fuerza que la
     /// hoja de Vaciar OFREZCA «También salir de mis grupos» (input `canLeaveAllGroups` de `UserDataResetView`)

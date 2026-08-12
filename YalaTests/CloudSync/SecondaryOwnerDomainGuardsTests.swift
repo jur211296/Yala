@@ -211,7 +211,7 @@ struct SecondaryOwnerDomainWiringTests {
     ///
     /// El CONTEO es lo que hace que esto envejezca bien: un cuarto escritor rompe el test y obliga a
     /// decidir si necesita guard, en vez de aparecer en silencio.
-    @Test("los escritores de `onboardingMode` por PreferenceSyncService son 3, y los 2 alcanzables llevan guard")
+    @Test("los escritores de `onboardingMode` por PreferenceSyncService son 2, y los DOS llevan guard")
     func preferenceSyncWritersOfTheMode_areGuardedWhereReachable() throws {
         var files: [URL] = []
         let dir = Self.repoRoot.appendingPathComponent("Yala")
@@ -235,8 +235,11 @@ struct SecondaryOwnerDomainWiringTests {
             }
         }
 
+        // C2 · bajaron de 3 a 2: `OnboardingView.completeGroupsOnlyOnboarding` fue ELIMINADA. Escribía el
+        // trío en el paso 8 del onboarding sin sesión, sin consent y sin canal comprobado; hoy la card
+        // «Solo grupos» entra en la cadena y su alta la ejecuta `GroupsOrganizerOnboarding`, que heredó su
+        // guard M1 justamente porque heredó su camino.
         #expect(Set(writers) == ["FullModeActivationView.swift",
-                                 "OnboardingView.swift",
                                  "GroupsOrganizerOnboarding.swift"], """
             Cambió el conjunto de escritores del modo por el canal de prefs (hoy: \(Set(writers).sorted())). \
             Cada uno necesita una decisión explícita sobre el guard M1, porque en `.localOnly` este \
@@ -251,15 +254,26 @@ struct SecondaryOwnerDomainWiringTests {
             reducida del dueño y activar Yala completo le deja a él un `.completed` irreversible.
             """)
 
-        let groupsOnly = try Self.body(
-            of: "private func completeGroupsOnlyOnboarding() {", in: Self.code(Self.onboardingPath))
-        #expect(groupsOnly.contains("if !SecondarySessionStore.isActive()"))
+        // C2 · `OnboardingView` ya no escribe el modo (su `completeGroupsOnlyOnboarding` fue eliminada),
+        // así que el guard que llevaba se comprueba ahora donde vive su camino.
+        let onboarding = try Self.code(Self.onboardingPath)
+        #expect(!onboarding.contains("set(string: OnboardingMode"), """
+            `OnboardingView` volvió a empujar el modo al canal de prefs. Esa escritura ocurría en el paso 8
+            del onboarding, SIN sesión y SIN consent, y `.groupInvite` es never-downgrade cross-device:
+            viaja al iKV del Apple ID y no vuelve.
+            """)
 
-        // `GroupsOrganizerOnboarding` NO lleva guard, y es una decisión: su único call-site vive en el
-        // Welcome (`GroupsOrganizerNameView`), inalcanzable con un descriptor vivo, y escribe por un
-        // writer INYECTADO cuyo inventario de keys se afirma contra un store de juguete — leer
-        // `.standard` desde ahí ataría esa suite al estado del simulador.
+        // **C2 invirtió esta aserción, y el porqué importa.** Hasta C2 `GroupsOrganizerOnboarding` NO
+        // llevaba guard, y era una decisión razonada: su único call-site vivía en el Welcome
+        // (`GroupsOrganizerNameView`), inalcanzable con un descriptor secundario vivo. C2 le añade el
+        // segundo —la card «Solo grupos», cuyo camino SÍ existe en sesión secundaria tras un borrado de
+        // datos en sesión— así que hereda el guard junto con el camino. Quitarlo devuelve el agujero que
+        // `completeGroupsOnlyOnboarding` cubría.
         let organizer = try Self.code("Yala/Services/Groups/GroupsOrganizerOnboarding.swift")
-        #expect(!organizer.contains("SecondarySessionStore"))
+        #expect(organizer.contains("if !SecondarySessionStore.isActive()"), """
+            el alta del organizador escribe el modo sin guard M1. Con una sesión secundaria viva ese `set`
+            cae en el `UserDefaults.standard` del DUEÑO y le deja `.groupInvite` (rank 1) sobre su `.full`
+            (rank 0), irreversible por never-downgrade.
+            """)
     }
 }

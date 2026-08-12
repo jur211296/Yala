@@ -227,24 +227,24 @@ struct GroupsOrganizerFlowTests {
     func noSession_signsInFirst() {
         // El orden es el del INVITADO (`GroupBackendInviteEntryLogic` pone `presentSignIn` antes que
         // `presentConsent`), al revés que el Welcome, donde el consent va antes y en la misma pantalla.
-        #expect(Flow.nextStep(hasSession: false, isConsented: false, hasCompletedSetup: false) == .presentSignIn)
-        #expect(Flow.nextStep(hasSession: false, isConsented: true, hasCompletedSetup: true) == .presentSignIn)
+        #expect(Flow.nextStep(hasSeenEducational: true, hasSession: false, isConsented: false, hasCompletedSetup: false) == .presentSignIn)
+        #expect(Flow.nextStep(hasSeenEducational: true, hasSession: false, isConsented: true, hasCompletedSetup: true) == .presentSignIn)
     }
 
     @Test("con sesión y sin consent ⇒ consent")
     func sessionWithoutConsent_asksForIt() {
-        #expect(Flow.nextStep(hasSession: true, isConsented: false, hasCompletedSetup: false) == .presentConsent)
-        #expect(Flow.nextStep(hasSession: true, isConsented: false, hasCompletedSetup: true) == .presentConsent)
+        #expect(Flow.nextStep(hasSeenEducational: true, hasSession: true, isConsented: false, hasCompletedSetup: false) == .presentConsent)
+        #expect(Flow.nextStep(hasSeenEducational: true, hasSession: true, isConsented: false, hasCompletedSetup: true) == .presentConsent)
     }
 
     @Test("con sesión y consent, sin alta ⇒ el nombre")
     func readyButNoSetup_asksForTheName() {
-        #expect(Flow.nextStep(hasSession: true, isConsented: true, hasCompletedSetup: false) == .presentName)
+        #expect(Flow.nextStep(hasSeenEducational: true, hasSession: true, isConsented: true, hasCompletedSetup: false) == .presentName)
     }
 
     @Test("todo listo ⇒ el formulario, que es el ÚLTIMO paso y no presenta un join")
     func allReady_opensTheForm() {
-        #expect(Flow.nextStep(hasSession: true, isConsented: true, hasCompletedSetup: true) == .presentGroupForm)
+        #expect(Flow.nextStep(hasSeenEducational: true, hasSession: true, isConsented: true, hasCompletedSetup: true) == .presentGroupForm)
     }
 
     @Test("la tabla completa: cada paso se RE-DECIDE, nunca se recuerda")
@@ -252,15 +252,21 @@ struct GroupsOrganizerFlowTests {
         // Es lo que hace que un sign-in ya hecho, un consent aceptado en otra pantalla o un kill a mitad no
         // desalineen la máquina: el drain vuelve aquí después de cada sheet en vez de avanzar un contador.
         var seen: Set<Flow.Step> = []
-        for session in [true, false] {
-            for consent in [true, false] {
-                for setup in [true, false] {
-                    seen.insert(Flow.nextStep(hasSession: session, isConsented: consent, hasCompletedSetup: setup))
+        for educational in [true, false] {
+            for session in [true, false] {
+                for consent in [true, false] {
+                    for setup in [true, false] {
+                        seen.insert(Flow.nextStep(
+                            hasSeenEducational: educational, hasSession: session,
+                            isConsented: consent, hasCompletedSetup: setup))
+                    }
                 }
             }
         }
-        #expect(seen == [.presentSignIn, .presentConsent, .presentName, .presentGroupForm],
-                "los cuatro pasos tienen que ser alcanzables desde alguna combinación: \(seen)")
+        // C2 añadió el QUINTO: el educativo, y va PRIMERO. Antes de él la rama pedía identidad sin haber
+        // contado nunca qué es un grupo ni dónde viven sus gastos.
+        #expect(seen == [.presentEducational, .presentSignIn, .presentConsent, .presentName, .presentGroupForm],
+                "los cinco pasos tienen que ser alcanzables desde alguna combinación: \(seen)")
     }
 }
 
@@ -322,8 +328,8 @@ struct GroupsOrganizerWiringTests {
             """)
     }
 
-    @Test("MUTACIÓN (b): el alta tiene UN SOLO call-site de producción, y NO está en la puerta")
-    func setupHasExactlyOneProductionCallSite() throws {
+    @Test("MUTACIÓN (b): el alta solo se llama desde DETRÁS de la cadena, y nunca desde la puerta")
+    func setupIsOnlyCalledFromBehindTheChain() throws {
         // `onboardingMode = .groupInvite` es never-downgrade cross-device: adelantar esta llamada por delante
         // de la puerta la manda al iKV del Apple ID sin vuelta atrás. El conteo esperado es lo que impide
         // que un escáner roto —o un fichero renombrado— pase en verde sin comprobar nada.
@@ -344,8 +350,14 @@ struct GroupsOrganizerWiringTests {
                 callSites.append(url.lastPathComponent)
             }
         }
-        #expect(callSites == ["GroupsOrganizerNameView.swift"], """
-            el alta se escribe en el paso 6 y en ningún otro sitio. Encontrado: \(callSites)
+        // C2 · son DOS, y el segundo NO relaja el invariante: la card «Solo grupos» del onboarding entra
+        // en la MISMA cadena (educativo → login → consent) y su alta se ejecuta en el caso `.presentName`
+        // del router, con identidad y consent ya en mano; lo que cambia es que no vuelve a pedir el nombre
+        // porque ya lo tiene en memoria. Antes de C2 esa puerta no llamaba aquí: escribía el trío ella
+        // misma, en el paso 8 del onboarding y sin cuenta en ninguna parte.
+        #expect(Set(callSites) == Set(["GroupsOrganizerNameView.swift", "ContentView.swift"]), """
+            el alta se escribe detrás de la cadena y en ningún otro sitio. Un call-site nuevo es, con casi
+            total seguridad, una escritura del trío adelantada. Encontrado: \(callSites)
             """)
     }
 

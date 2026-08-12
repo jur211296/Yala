@@ -99,18 +99,34 @@ struct OnboardingView: View {
     /// Chevron back en step 1. Solo se setea cuando el OnboardingView viene
     /// del flow Welcome — descarta state silenciosamente y vuelve al Hero.
     var onCancelFromStep1: (() -> Void)? = nil
+    /// C2 · la card «Solo grupos» terminó de recoger sus datos y **esta vista no escribe nada**: entrega el
+    /// nombre y la divisa en memoria y cede a la cadena (educativo → login → consent → alta).
+    ///
+    /// Antes de C2, esta rama llamaba a un `completeGroupsOnlyOnboarding()` privado que escribía aquí mismo
+    /// `userName`, `defaultCurrencyCode`, `defaultPeriod`, `onboardingMode = .groupInvite` EMPUJADO al iKV,
+    /// `groupsBetaUnlocked` y `hasCompletedOnboarding` — sin sesión, sin consent y sin canal comprobado. El
+    /// modo es never-downgrade cross-device: se propagaba al Apple ID y dejaba al usuario con la app
+    /// recortada a Grupos, vacía y sin cuenta en ninguna parte, en todos sus dispositivos.
+    ///
+    /// Opcional porque la card solo existe en el flujo INICIAL
+    /// (`OnboardingGroupsPurposeGateLogic.shouldShowGroupsCard(isInitialFlow:)`) y `FullModeActivationView`
+    /// monta esta vista con `mode: .fullActivation` ⇒ ahí la rama es inalcanzable. Lo que impide que un
+    /// flujo nuevo muestre la card sin cablearlo es un source-scan, no el compilador.
+    var onGroupsOnlyComplete: ((GroupsOnlyOnboardingPayload) -> Void)? = nil
 
     init(prefilledData: ICloudAccountSummary? = nil,
          backgroundStyle: OnboardingBackgroundStyle = .heroFlow,
          mode: OnboardingFlowMode = .initial,
          onCancel: (() -> Void)? = nil,
          onCancelFromStep1: (() -> Void)? = nil,
+         onGroupsOnlyComplete: ((GroupsOnlyOnboardingPayload) -> Void)? = nil,
          onComplete: @escaping () -> Void) {
         self.prefilledData = prefilledData
         self.backgroundStyle = backgroundStyle
         self.mode = mode
         self.onCancel = onCancel
         self.onCancelFromStep1 = onCancelFromStep1
+        self.onGroupsOnlyComplete = onGroupsOnlyComplete
         self.onComplete = onComplete
 
         // Reconciliar el paso inicial con los pasos saltados por prefill: si el
@@ -1745,11 +1761,18 @@ struct OnboardingView: View {
     // MARK: - Completion
 
     private func completeOnboarding() {
-        // Solo Grupos: rama dedicada — activa `.groupInvite` sin crear cuenta ni
-        // presupuesto personal (siembra categorías en silencio para tener
-        // subcategorías en los gastos de grupo).
+        // C2 · Solo Grupos: **esta vista ya no escribe NADA en esta rama**. Entrega lo que preguntó y cede
+        // a la cadena (educativo → login → consent → alta), que termina en
+        // `GroupsOrganizerOnboarding.completeSetup` con identidad y consent en mano. Ver el docblock de
+        // `onGroupsOnlyComplete` para lo que se escribía aquí antes y por qué era irreversible.
         if groupsOnlyMode {
-            completeGroupsOnlyOnboarding()
+            // Inalcanzable con el callback sin cablear: la card solo se pinta en `mode == .initial`, que es
+            // el único flujo que lo pasa. Y si algún día un flujo nuevo mostrara la card sin cablearlo, NO
+            // completar es lo correcto — el fallback de antes era escribir el trío sin cuenta, o sea el bug.
+            guard let onGroupsOnlyComplete else { return }
+            onGroupsOnlyComplete(GroupsOnlyOnboardingPayload(
+                displayName: userName,
+                currencyCode: selectedCurrency.rawValue))
             return
         }
 
@@ -1809,69 +1832,21 @@ struct OnboardingView: View {
         onComplete()
     }
 
-    /// Completa el onboarding en modo "Solo grupos": activa `.groupInvite` (+ push
-    /// al KV para paridad cross-device), desbloquea el gate beta, siembra categorías
-    /// (personales para el selector de subcategoría del gasto de grupo + sistema de
-    /// grupos para el bridge) y aterriza en el tab Grupos. NO crea cuenta ni saldo.
-    private func completeGroupsOnlyOnboarding() {
-        let sync = PreferenceSyncService.shared
-        let finalName = userName.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        sync.set(string: finalName.isEmpty ? L10n.Profile.defaultName : finalName,
-                 forKey: AppPreferences.Keys.userName)
-        sync.set(string: selectedCurrency.rawValue, forKey: AppPreferences.Keys.defaultCurrencyCode)
-        sync.set(string: DetailPeriod.thisMonth.rawValue, forKey: AppPreferences.Keys.defaultPeriod)
-        sessionState.selectedPeriod = .thisMonth
-
-        // Modo Solo Grupos: reusa `.groupInvite`. Push al KV (dual-write, patrón
-        // FullModeActivationView) — el `onboardingMode` didSet solo escribe local,
-        // así que el push explícito es necesario para la paridad cross-device.
-        //
-        // M1 · el guard es el mismo de `FullModeActivationView`, y por la misma razón: en
-        // `.localOnly` este `set` sigue escribiendo el espejo local, que en una sesión secundaria es
-        // el `UserDefaults.standard` del DUEÑO, y `.groupInvite` (rank 1) sobre su `.full` (rank 0)
-        // es irreversible por never-downgrade. El camino es estrecho —la invitada entra con el
-        // onboarding ya marcado— pero existe tras un borrado de datos en sesión.
-        if !SecondarySessionStore.isActive() {
-            sync.set(string: OnboardingMode.groupInvite.rawValue, forKey: OnboardingMode.userDefaultsKey)
-        }
-        sessionState.onboardingMode = .groupInvite
-
-        // Adopción explícita del dominio Grupos: `.groupInvite` ya la implica por el segundo
-        // término de `GroupsDomainAdoptionLogic.isDomainOpen`, pero ese término muere si el usuario
-        // activa Yala completo más tarde. La key es per-device y permanente (mismo trato que la
-        // entrada por invitación).
-        UserDefaults.standard.set(true, forKey: AppPreferences.Keys.groupsBetaUnlocked)
-
-        // Seeds idénticos al invite path: categorías personales (subcategorías para
-        // los gastos de grupo) + sistema de grupos (bridge) + notificaciones. Sin
-        // cuenta ni presupuesto personal.
-        seedCategoriesIfNeeded(in: modelContext)
-        seedSystemGroupCategoriesIfNeeded(in: modelContext)
-        createDefaultNotifications()
-
-        do {
-            try modelContext.save()
-        } catch {
-            #if DEBUG
-            print("OnboardingView: Error saving groups-only onboarding: \(error)")
-            #endif
-        }
-
-        // KPI registros/día (alta local — modo solo-grupos)
-        MetricsService.localRegistrationCompleted(mode: "groupsOnly")
-
-        UserDefaults.standard.set(true, forKey: AppPreferences.Keys.hasCompletedOnboarding)
-        PreferenceSyncService.shared.signalOnboardingCompleted()
-
-        // Aterrizar en el tab Grupos: con `.groupInvite` el tab bar se reduce a
-        // [.groups] y el `selectedMainTab` persistido (.panel) no está montado.
-        // Asignación directa (mismo patrón que `resetToDefaults`) — `.groups` es el
-        // tab primario del modo, no un tab oculto en "Más" (gotcha bde61bb2).
-        sessionState.selectedMainTab = .groups
-
-        onComplete()
-    }
+    // C2 · `completeGroupsOnlyOnboarding()` vivía AQUÍ y se **ELIMINÓ**. Escribía el trío
+    // (`onboardingMode = .groupInvite` empujado al iKV, `groupsBetaUnlocked`, `hasCompletedOnboarding`) más
+    // `userName`, `defaultCurrencyCode` y `defaultPeriod` en el paso 8 del onboarding: **sin sesión, sin
+    // consent y sin canal comprobado**. El modo es never-downgrade cross-device (rank 1 > 0,
+    // `PreferenceMergeLogic`), así que la escritura viajaba al Apple ID y dejaba al usuario con la app
+    // recortada a Grupos, VACÍA y sin cuenta en ninguna parte, en todos sus dispositivos — y su única
+    // recuperación era restaurar por iCloud.
+    //
+    // Su sustituto es `GroupsOrganizerOnboarding.completeSetup`, que hace lo mismo (mismo modo, mismos
+    // seeds, mismo aterrizaje en el tab, misma métrica de alta) pero **al final de la cadena**, con
+    // identidad y consent en mano. La única diferencia funcional es querida: la divisa que el usuario
+    // eligió en el step 5 viaja como `explicitCurrencyCode` y gana sobre la derivación por región.
+    //
+    // No se dejó como código muerto a propósito: un método privado que sigue compilando es exactamente lo
+    // que alguien vuelve a llamar desde una rama nueva.
 
     private func createOnboardingAccount() {
         let finalName = accountName.trimmingCharacters(in: .whitespacesAndNewlines)

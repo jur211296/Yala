@@ -41,8 +41,11 @@ final class OnboardingGroupsOnlyGuardUITests: XCTestCase {
     /// ese landing sin sesión es el empty state de RE-ENTRADA, no el estándar que este test asserta.
     private func launchAtPurposeStep(fakeICloud: Bool = false, cloudSession: Bool = false) -> XCUIApplication {
         let app = XCUIApplication()
+        // C2 · `groupsEducativo: true` es OBLIGATORIO aquí desde que la card cede a la cadena: su primer
+        // escalón es el educativo, y bajo `-uitest` el sheet no se monta salvo con este seam (el
+        // early-return existe porque interceptaría los taps del resto de la suite de Grupos).
         app.launchForUITest(skipOnboarding: false, seed: nil, onboarding: true,
-                            fakeICloud: fakeICloud, cloudSession: cloudSession)
+                            fakeICloud: fakeICloud, cloudSession: cloudSession, groupsEducativo: true)
 
         let nameField = app.textFields["onboarding_name_field"]
         XCTAssertTrue(nameField.waitForExistence(timeout: 30), "No apareció onboarding_name_field.")
@@ -184,16 +187,37 @@ final class OnboardingGroupsOnlyGuardUITests: XCTestCase {
             "El botón 'Continuar' debe estar HABILITADO en Solo Grupos (regresión del botón muerto)."
         )
 
-        // Continuar → paso de confirmación → completar el onboarding.
+        // Continuar → paso de confirmación → el CTA final.
         continueBtn.tap()
         let finish = app.buttons["onboarding_next_button"]
         XCTAssertTrue(finish.waitForExistence(timeout: 10), "No apareció el CTA final (confirmación).")
         finish.tap()
 
-        // Aterriza en el tab Grupos (Solo Grupos, sin grupos → empty state).
+        // **C2 · aquí ya NO se aterriza en el tab Grupos, y ese cambio ES el chip.** Hasta C2, el CTA final
+        // llamaba a `completeGroupsOnlyOnboarding`, que escribía el trío —`onboardingMode = .groupInvite`
+        // EMPUJADO al iKV, `groupsBetaUnlocked`, `hasCompletedOnboarding`— sin sesión, sin consent y sin
+        // canal comprobado, y dejaba al usuario en un tab Grupos vacío y sin cuenta en ninguna parte. El
+        // modo es never-downgrade cross-device: viajaba al Apple ID y no volvía.
+        //
+        // Hoy la card cede a la MISMA cadena que la rama organizador del Welcome (educativo → login →
+        // consent → alta) sin escribir nada, así que lo que sigue al CTA es el EDUCATIVO. Aterrizar en el
+        // tab requiere una sesión de nube real ⇒ device-qa, imposible en simulador.
+        //
+        // La aserción que carga el peso es la NEGATIVA: si `groups_empty_state` volviera a aparecer aquí,
+        // es que alguien devolvió la escritura del trío al paso 8.
         XCTAssertTrue(
-            app.descendants(matching: .any)["groups_empty_state"].waitForExistence(timeout: 20),
-            "No se aterrizó en el tab Grupos (groups_empty_state ausente tras completar)."
+            app.buttons["groups_onboarding_cta"].waitForExistence(timeout: 20),
+            """
+            Tras el CTA final, la card «Solo grupos» debe entrar en la cadena por su PRIMER escalón (el
+            educativo). Si no aparece, o la cesión no está cableada o alguien la devolvió a completar aquí.
+            """
+        )
+        XCTAssertFalse(
+            app.descendants(matching: .any)["groups_empty_state"].firstMatch.exists,
+            """
+            La card «Solo grupos» volvió a dar de alta al usuario en el paso 8: sin sesión, sin consent y
+            escribiendo `onboardingMode = .groupInvite`, que es never-downgrade cross-device.
+            """
         )
     }
 }

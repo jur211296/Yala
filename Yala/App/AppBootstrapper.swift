@@ -642,6 +642,12 @@ final class AppBootstrapper {
             //    para la siguiente, y un test que espera ver el gate de consent pasaría en verde sin
             //    haberlo ejercitado nunca. Se limpian aquí y se re-siembra abajo si el arg viene.
             GroupsConsentState.clear()
+            //  · C2 · el latch «este device tuvo sesión de Grupos alguna vez». Es de la MISMA clase
+            //    pegajosa y peor: es MONOTÓNICO, así que una sola corrida con `-uitest-fake-cloud-session`
+            //    lo arma —el `onAppear` del tab lo hace— y desde ahí TODAS las siguientes verían el empty
+            //    state de re-entrada donde debe salir el de alta, en verde y sin haberlo ejercitado. Y lo
+            //    heredaría también un arranque manual del simulador.
+            UserDefaults.standard.removeObject(forKey: GroupsSessionHistoryMarker.key)
         }
         // Estado Pro determinista según el launch arg, EFÍMERO y sin rastro en disco.
         // Va incondicional (no solo bajo `-uitest-reset`): también hay que fijar el estado

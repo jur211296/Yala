@@ -32,16 +32,35 @@ nonisolated enum GroupBackendInviteEntryLogic {
     ///     si podemos capturar el real primero).
     ///   - canPresentOnboarding: `false` cuando el paso viene del CTA del PROPIO onboarding
     ///     (source `.userAction`) — sin este discriminador el tap de "unirme" re-presentaría la vista.
+    ///
+    /// **C2 (2026-08-12): deriva de `GroupsGateLogic.nextStep(entry: .invite)`.** El invitado es la única
+    /// puerta que NO lleva el educativo general delante: el suyo es `GroupInviteOnboardingView`, contextual
+    /// al link y con la metadata del grupo, y llega DESPUÉS del consent. Anteponer el general le daría dos
+    /// educativos seguidos. Por eso esta firma no toma `hasSeenEducational`.
     static func nextStep(
         hasSession: Bool,
         isConsented: Bool,
         hasCompletedOnboarding: Bool = true,
         canPresentOnboarding: Bool = true
     ) -> Step {
-        if !hasSession { return .presentSignIn }
-        if !isConsented { return .presentConsent }
-        if !hasCompletedOnboarding && canPresentOnboarding { return .presentInviteOnboarding }
-        return .join
+        switch GroupsGateLogic.nextStep(
+            entry: .invite,
+            // `.invite` no antepone el educativo (`showsEducationalFirst == false`), así que este valor no
+            // participa en la decisión. Va `true` para que el parámetro no sugiera lo contrario.
+            hasSeenEducational: true,
+            hasSession: hasSession,
+            isConsented: isConsented,
+            hasCompletedSetup: hasCompletedOnboarding,
+            canPresentInviteOnboarding: canPresentOnboarding
+        ) {
+        case .presentSignIn:           return .presentSignIn
+        case .presentConsent:          return .presentConsent
+        case .presentInviteOnboarding: return .presentInviteOnboarding
+        // Inalcanzables con `entry: .invite`: la tabla única no produce educativo, nombre ni formulario
+        // para esta puerta. El terminal del invitado es el join.
+        case .join, .presentEducational, .presentName, .presentGroupForm:
+            return .join
+        }
     }
 
     /// C2/R4: la rama backend del entry point solo se toma con el flag ENCENDIDO Y un link backend

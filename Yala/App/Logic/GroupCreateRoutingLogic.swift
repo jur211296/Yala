@@ -61,12 +61,35 @@ nonisolated enum GroupCreateRoutingLogic {
     /// Flag OFF → `.channelOff` (el gate consent/sign-in no llega a preguntarse: sin canal no hay nada
     /// que crear, y pedir identidad para después bloquear sería pedirla en vano).
     ///
+    /// **C2 (2026-08-12): los tres escalones de identidad DERIVAN de `GroupsGateLogic.nextStep(entry:
+    /// .tab)`; el canal se queda aquí y sigue siendo el PRIMER término.** La tabla única no conoce el flag
+    /// a propósito —ver su encabezado—, así que el orden canal-antes-que-identidad que C4 fijó no se puede
+    /// perder al derivar: el `guard flagOn` está antes de la llamada.
+    ///
+    /// **El educativo tampoco entra aquí, y es una medición:** `.tab` no lo antepone porque
+    /// `GroupsContainerView.evaluateGroupsOnboarding` lo presenta al MONTAR el tab —en el `onAppear`,
+    /// antes de que ninguna de las cuatro CTA de creación sea alcanzable—, así que devolverlo desde aquí
+    /// sería una segunda presentación compitiendo con ese sheet.
+    ///
     /// - Parameter flagOn: `CloudSyncFlags.groupsBackendEnabled` **leído después** del
     ///   `refreshIfDue(force: true)` del call-site. Leerlo antes es el no-op que el bug describe.
     static func route(flagOn: Bool, hasSession: Bool, consentAccepted: Bool) -> Route {
         guard flagOn else { return .channelOff }
-        if !hasSession { return .needsSignIn }
-        if !consentAccepted { return .needsConsent }
-        return .backend
+        switch GroupsGateLogic.nextStep(
+            entry: .tab,
+            // `.tab` no antepone el educativo (`showsEducationalFirst == false`) ⇒ no participa.
+            hasSeenEducational: true,
+            hasSession: hasSession,
+            isConsented: consentAccepted,
+            // El tab no da de alta a nadie: quien llega aquí ya tiene shell. El terminal de `.tab` es
+            // siempre el formulario, así que este valor no cambia la decisión.
+            hasCompletedSetup: true
+        ) {
+        case .presentSignIn:  return .needsSignIn
+        case .presentConsent: return .needsConsent
+        // Inalcanzables con `entry: .tab`: su único terminal es el formulario.
+        case .presentGroupForm, .presentEducational, .presentName, .presentInviteOnboarding, .join:
+            return .backend
+        }
     }
 }

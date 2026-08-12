@@ -38,6 +38,7 @@ struct ContentViewReadinessLogicTests {
         showGroupsConsent: Bool = false,
         showGroupsSignIn: Bool = false,
         showGroupsOrganizerName: Bool = false,
+        showGroupsEducational: Bool = false,
         showFullModeActivation: Bool = false,
         showProTrialOffer: Bool = false,
         showWhatsNew: Bool = false,
@@ -64,6 +65,7 @@ struct ContentViewReadinessLogicTests {
             showGroupReconnect: showGroupReconnect,
             showGroupsConsent: showGroupsConsent, showGroupsSignIn: showGroupsSignIn,
             showGroupsOrganizerName: showGroupsOrganizerName,
+            showGroupsEducational: showGroupsEducational,
             showFullModeActivation: showFullModeActivation,
             showProTrialOffer: showProTrialOffer, showWhatsNew: showWhatsNew,
             showSyncSettingsSheet: showSyncSettingsSheet,
@@ -88,6 +90,23 @@ struct ContentViewReadinessLogicTests {
         #expect(ContentViewReadinessLogic.blocker(
             state: make(showGroupsSignIn: true)) == "groupsSignIn")
         #expect(!ContentViewReadinessLogic.isReady(state: make(showGroupsSignIn: true)))
+    }
+
+    /// C2 · el educativo es el PRIMER escalón de las puertas A y B, y su cover cuelga del mismo anchor.
+    /// Que bloquee no es defensa genérica: el paso SIGUIENTE de la cadena es `GroupsSignInView`, un sheet
+    /// de ESTE anchor, así que sin blocker el drain lo montaría encima del educativo aún puesto — y SwiftUI
+    /// descarta la segunda presentación en silencio, dejando el intent ya consumido.
+    @Test func groupsEducational_blocks() {
+        #expect(ContentViewReadinessLogic.blocker(
+            state: make(showGroupsEducational: true)) == "groupsEducational")
+        #expect(!ContentViewReadinessLogic.isReady(state: make(showGroupsEducational: true)))
+    }
+
+    /// El educativo NO es de la cadena welcome: un intent que la supersede (invite/reconnect) no puede
+    /// cerrarlo por su cuenta. Es el mismo trato que sus hermanos de Grupos.
+    @Test func groupsEducational_isNotTearableWelcomeChain() {
+        #expect(!ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(
+            state: make(showGroupsEducational: true)))
     }
 
     @Test func groupsSheets_areNotTearableWelcomeChain() {

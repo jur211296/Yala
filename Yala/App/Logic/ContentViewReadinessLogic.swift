@@ -72,6 +72,12 @@ struct ShellReadinessState: Equatable {
     /// arriba, del mismo anchor). Entra aquí porque la regla 3 de Presentaciones no admite excepciones:
     /// un cover del anchor de `ContentView` que no bloquee deja que el siguiente intent se monte encima.
     let showGroupsOrganizerName: Bool
+    /// C2 · el educativo montado como PRIMER escalón de las puertas A (Welcome organizador) y B (card
+    /// «Solo grupos»). Es la segunda presentación propia de esa rama y entra aquí por lo mismo que su
+    /// hermana: la regla 3 de Presentaciones no admite excepciones. Y aquí muerde más que en ninguna, dado
+    /// que el paso SIGUIENTE de la cadena es un sheet del mismo anchor (`GroupsSignInView`): sin bloquear,
+    /// el drain podría montarlo encima del educativo todavía puesto.
+    let showGroupsEducational: Bool
     let showFullModeActivation: Bool
 
     // Shell sheets (same anchor as everything above — a second presentation
@@ -142,6 +148,7 @@ enum ContentViewReadinessLogic {
         if state.showGroupsConsent { return "groupsConsent" }
         if state.showGroupsSignIn { return "groupsSignIn" }
         if state.showGroupsOrganizerName { return "groupsOrganizerName" }
+        if state.showGroupsEducational { return "groupsEducational" }
 
         // Shell sheets: while one is presented, a drained intent that sets a
         // second sheet/cover on this same anchor gets discarded by SwiftUI
@@ -213,6 +220,7 @@ extension ShellReadinessState {
             showGroupsConsent: showGroupsConsent,
             showGroupsSignIn: showGroupsSignIn,
             showGroupsOrganizerName: showGroupsOrganizerName,
+            showGroupsEducational: showGroupsEducational,
             showFullModeActivation: showFullModeActivation,
             showProTrialOffer: showProTrialOffer,
             showWhatsNew: showWhatsNew,

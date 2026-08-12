@@ -193,6 +193,14 @@ struct GroupsContainerView: View {
                 if !showGroupsSignOutReentryBanner {
                     showGroupsSignOutReentryBanner = GroupsSignOutBannerMarker.isPending()
                 }
+                // C2 · el SEGUNDO armador del latch «tuvo sesión alguna vez», y no es un cinturón: es lo
+                // único que cubre al parque que YA tenía sesión antes de esta versión —para quien no habrá
+                // ningún evento de sign-in futuro— y a quien firmó por el camino de nube completo, que no
+                // pasa por el closure de `GroupsSignInView`. Sin él, todos ellos leerían «crea una cuenta»
+                // al cerrar sesión. Idempotente y monotónico: solo arma.
+                if CloudAuthService.shared.hasSession {
+                    GroupsSessionHistoryMarker.markSessionSeen()
+                }
                 // Traer cambios remotos de grupos al entrar al tab (el engine no auto-fetchea sin
                 // push; debounced + gateado por quiescencia dentro de syncNow), luego recarga.
                 Task { await viewModel.refreshFromCloud(force: false) }
@@ -323,16 +331,32 @@ struct GroupsContainerView: View {
 
     // MARK: - Helpers
 
-    /// Empty state del tab. Decide (pure-logic) entre el estándar ("aún no tienes grupos", CTA crear) y el
-    /// de re-entrada ("tus grupos están en tu cuenta", CTA iniciar sesión) tras cerrar sesión solo-grupos
-    /// (H-2026-07-18-7). Con `groupsBackendEnabled` OFF SIEMPRE `.standard` ⇒ byte-idéntico al camino actual.
-    /// `standardAccessibilityID` preserva la identidad de accesibilidad exacta por rama (total = `groups_empty_state`,
-    /// solo-archivados = ninguna); la variante sign-in siempre usa `groups_empty_state_signin`.
+    /// C2 · ¿ya se le contó a esta persona qué es un grupo? La MISMA señal para el educativo del tab y para
+    /// el empty state: si discreparan, el tab podría anunciar «ver cómo funciona» y no presentar nada.
+    private var hasSeenGroupsEducational: Bool {
+        GroupsOnboardingLogic.hasSeenAnyGroupsEducational(
+            hasShownOnboarding: appPreferences.hasShownGroupsOnboarding,
+            onboardingMode: sessionState.onboardingMode,
+            hasCompletedSetup: UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
+        )
+    }
+
+    /// Empty state del tab. Decide (pure-logic) QUÉ le falta al usuario y lo dice, con la MISMA precedencia
+    /// que `GroupsGateLogic` usa para decidir qué le va a pedir el tap — lo anunciado y lo pedido no pueden
+    /// divergir. Con `groupsBackendEnabled` OFF SIEMPRE `.standard` ⇒ byte-idéntico al camino actual.
+    ///
+    /// `standardAccessibilityID` preserva la identidad de accesibilidad exacta por rama (total =
+    /// `groups_empty_state`, solo-archivados = ninguna); las cuatro variantes llevan la suya fija. **El id
+    /// va en el CONTENEDOR y pisa el del botón interior** (regla medida en `testing.md`): un XCUITest que
+    /// busque el id declarado en `YalaEmptyState` no lo encuentra en el árbol.
     @ViewBuilder
     private func emptyState(standardAccessibilityID: String?) -> some View {
         switch GroupsEmptyStateLogic.decide(
             flagOn: CloudSyncFlags.groupsBackendEnabled,
-            hasSession: CloudAuthService.shared.hasSession
+            hasSeenEducational: hasSeenGroupsEducational,
+            hadSessionEver: GroupsSessionHistoryMarker.hadSessionEver(),
+            hasSession: CloudAuthService.shared.hasSession,
+            isConsented: GroupsConsentState.isAccepted
         ) {
         case .standard:
             let base = YalaEmptyState.noGroups { Task { await requestCreateGroup() } }
@@ -341,9 +365,20 @@ struct GroupsContainerView: View {
             } else {
                 base
             }
+        case .needsEducational:
+            YalaEmptyState.groupsNeedsEducational { showGroupsOnboarding = true }
+                .accessibilityIdentifier("groups_empty_state_educational")
         case .signInToView:
             YalaEmptyState.groupsSignedOut { requestGroupsSignIn() }
                 .accessibilityIdentifier("groups_empty_state_signin")
+        case .createAccount:
+            // Mismo intent que la re-entrada: `GroupsSignInView` es la pantalla que CREA la cuenta además
+            // de recuperarla. Lo que cambia es el copy, que es justo lo que estaba mal.
+            YalaEmptyState.groupsCreateAccount { requestGroupsSignIn() }
+                .accessibilityIdentifier("groups_empty_state_create_account")
+        case .needsConsent:
+            YalaEmptyState.groupsNeedsConsent { requestGroupsConsent() }
+                .accessibilityIdentifier("groups_empty_state_consent")
         }
     }
 
@@ -384,11 +419,17 @@ struct GroupsContainerView: View {
     private func evaluateGroupsOnboarding() {
         #if DEBUG
         // F1c: en uitest no montar el onboarding informativo del tab (interceptaría taps).
-        if UITestHooks.isActive { return }
+        //
+        // **C2 · el seam que invierte este early-return, y por qué existe.** Sin él, el educativo —que C2
+        // convierte en el PRIMER escalón de las cuatro puertas— nace sin ninguna red determinista: no hay
+        // XCUITest posible porque esta línea lo desmonta, y `qa/coverage-index.json` ya anotaba el hueco.
+        // `-uitest-groups-educativo` lo monta a propósito para las corridas que lo ejercitan; el resto de
+        // la suite sigue con el early-return intacto (el arg no está en `launchForUITest` por defecto), así
+        // que ningún test existente cambia de comportamiento.
+        if UITestHooks.isActive && !UITestHooks.groupsEducativo { return }
         #endif
         let shouldShow = GroupsOnboardingLogic.shouldShow(
-            hasShownOnboarding: appPreferences.hasShownGroupsOnboarding,
-            onboardingMode: sessionState.onboardingMode,
+            hasSeenEducational: hasSeenGroupsEducational,
             hasPendingGroupDeeplink: sessionState.pendingGroupID != nil
         )
         if shouldShow {
@@ -636,7 +677,10 @@ struct GroupsContainerView: View {
             && viewModel.activeGroups.isEmpty && viewModel.archivedGroups.isEmpty
             && GroupsEmptyStateLogic.decide(
                 flagOn: CloudSyncFlags.groupsBackendEnabled,
-                hasSession: CloudAuthService.shared.hasSession) == .signInToView
+                hasSeenEducational: hasSeenGroupsEducational,
+                hadSessionEver: GroupsSessionHistoryMarker.hadSessionEver(),
+                hasSession: CloudAuthService.shared.hasSession,
+                isConsented: GroupsConsentState.isAccepted) == .signInToView
     }
 
     // MARK: - Create-group routing (G5-A / C3 · C4)
@@ -696,6 +740,13 @@ struct GroupsContainerView: View {
     /// CTA solo presenta el sign-in y hereda ese arranque gratis.
     private func requestGroupsSignIn() {
         RouterEntryGate.shared.submit(.presentGroupsSignIn(pendingJoin: ""))
+    }
+
+    /// C2 · CTA del empty state `.needsConsent`. Cede el anchor igual que sus hermanas y reusa el MISMO
+    /// intent que `requestCreateGroup` emite en su rama `.needsConsent` — un segundo productor duplicaría
+    /// el dueño de esa cadena. Sentinel "" ⇒ `continueFlow` no-op (no hay PendingJoin aquí).
+    private func requestGroupsConsent() {
+        RouterEntryGate.shared.submit(.presentGroupsConsent(pendingJoin: ""))
     }
 
     // MARK: - FAB

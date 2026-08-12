@@ -343,6 +343,13 @@ final class DataWipeService {
         defaults.removeObject(forKey: AppPreferences.Keys.hasShownGroupsOnboarding)
         defaults.removeObject(forKey: AppPreferences.Keys.hasSeenGroupsNotificationPrompt)
 
+        // C2 · el latch «este device tuvo sesión de Grupos alguna vez», que gobierna si el empty state
+        // dice «vuelve a tu cuenta» o «crea una cuenta». Es del humano ANTERIOR: conservarlo le diría al
+        // nuevo que tiene grupos esperando en una cuenta que nunca creó. Va nombrado AQUÍ, y su key vive
+        // fuera de `cloudSync.*` justamente por esto — ese prefijo está excluido del wipe a propósito
+        // (ver `removeUserPreferenceKeys`), así que allí el latch habría sobrevivido al relevo en silencio.
+        defaults.removeObject(forKey: GroupsSessionHistoryMarker.key)
+
         // La intención de puentear gastos remotos que quedó a medias. Es del humano ANTERIOR y apunta a
         // filas que este camino acaba de borrar; conservarla importa porque el reset de tokens re-descarga
         // el corpus del Apple ID con los MISMOS UUID (el `recordName` ES el modelID), así que un intent
