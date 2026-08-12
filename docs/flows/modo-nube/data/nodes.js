@@ -6,6 +6,20 @@
 //
 // Medido el 2026-08-09 contra HEAD 9d6f0f1c (branch 2.0.5).
 //
+// **F5 (2026-08-12) · re-derivación contra HEAD 6c6eb3fe.** Las olas W (el Welcome habla claro), G
+// (Grupos-first), C (consent y puertas) y M (frontera de sesión secundaria) —19 commits desde `724f661e`—
+// traen superficie que el Atlas no tenía: la vía del ORGANIZADOR entera con su puerta, las CUATRO puertas
+// de Grupos unificadas, el consent que viaja con la cuenta, el empty state de cinco casos, el retiro de
+// los grupos de la era CloudKit y los cuatro ajustes que una visita ya no toca. Los flujos 1, 2, 6 y 7
+// están re-derivados; **los flujos 3 y 4 no se tocan, y eso está MEDIDO**: `git diff 724f661e..HEAD` no
+// roza `StorageSettingsView`, `MigrationStateMachine`, `CloudMigrationController` ni `MigrationBootDecision`
+// (sus 12 coordenadas se re-verificaron una a una y siguen exactas).
+//
+// Y una lección de este refresco, para el yo-futuro: `check.mjs` estaba en EXIT 1 por 24 fallos de l10n,
+// todos del flujo 1 — pero eso era lo BARATO de arreglar. Lo que el pin no puede ver son las pantallas que
+// FALTAN y las coordenadas desplazadas: 35 símbolos se habían movido de línea sin que ningún bloque lo
+// notara. Un `check.mjs` en verde no significa que el Atlas esté completo.
+//
 // **F3 (2026-08-11) · re-derivación contra HEAD 24b4bc91.** La tanda «relanzamiento cero»
 // (`6d0358b5`…`24b4bc91`, 6 chips) movió el relanzamiento de sitio y cambió el alta, la rama
 // iCloud/restaurar, el sign-out y el chooser. Los nodos de los flujos 1, 2, 5 y 7 afectados están
@@ -31,30 +45,39 @@ window.ATLAS_NODES = {
   // ══════════════════════════════════════════════════════════════════════════
 
   "alta-hero": {
-    title: "Welcome · Hero",
+    title: "Welcome · Hero (W1 · sin subtítulo y sin alert)",
     shot: "alta-hero.png",
-    sees: "Pantalla de bienvenida con el logo y el botón «Empezar». Si el Hero detectó datos en iCloud, al tocar sale el alert «Detectamos tu cuenta» con tres botones: Cargar mis datos · Empezar de cero · Cancelar.",
-    persists: "Nada. `hasTappedEmpezar` es estado de vista.",
-    exits: "El Cancel del alert es EXPLÍCITO a propósito (B-11): sin él, el dismiss implícito de iOS dejaba el Hero consumido y sin re-tap posible. Cancelar → chooser.",
+    sees: "Logo, el carousel de 8 cards rotando, el título en dos líneas y el botón «Empezar». **Nada más**: desde `c8575d8b` no hay subtítulo, y desde `e999bfef` el tap NO abre ningún alert. Sea cual sea el estado del device, «Empezar» lleva SIEMPRE al chooser.",
+    persists: "Nada. `hasTappedEmpezar` sigue siendo estado de vista y solo sirve para no re-disparar la animación de salida.",
+    exits: "Una sola salida, y esa es la noticia: `WelcomeHeroView { goTo(.chooser) }`. La rama que se fue —el alert «Detectamos tu cuenta» con sus tres botones— era la ÚNICA bifurcación del Hero; con ella se fueron su Cancel explícito (B-11) y su productor de destino `.restoreICloud`.",
     code: [
-      { t: "WelcomeFlowContainer.swift:185 `handleHeroDecision`", d: "`.proceedNoData` → chooser · `.proceedWithData` → alert" },
-      { t: "WelcomeFlowContainer.swift:160-182", d: "los 3 botones del alert y a dónde va cada uno" },
-      { t: "WelcomeFlowContainer.swift:168", d: "R2: «Cargar mis datos» sale por el PORTAL con destino `.restoreICloud` — mismo destino que «Restaurar de iCloud», así que puede interponer el relanzamiento del mirror" }
+      { t: "WelcomeFlowContainer.swift:134-138", d: "el `case .hero` entero: un solo callback, `goTo(.chooser)`, sin alert ni condición" },
+      { t: "WelcomeHeroView.swift:9-14", d: "el porqué, escrito en el docblock: la señal del KV-store solo habla de la cuenta iCloud del container y empujaba hacia esa mitad a quien podía tener su cuenta en la nube ⇒ **la reentrada es decisión del usuario**, y se elige en «Ya tengo una cuenta»" },
+      { t: "WelcomeHeroView.swift:70-83 `makeCards`", d: "las 8 cards del carousel, cacheadas en `@State`: 16 lookups por recompute a 60 fps sería derroche" },
+      { t: "WelcomeHeroView.swift:110-112", d: "`heroTitle` — el subtítulo que iba aquí se retiró con su key" }
     ],
-    notes: []
+    notes: [
+      "⚠︎ RE-DERIVADO el 2026-08-12 (F5). El panel de F4 describía una pantalla que ya no existe: subtítulo (`welcome.hero.subtitle`) y alert de datos detectados (`welcome.detectedData.*`). Las cinco keys están BORRADAS de los 16 locales — por eso el pin de l10n cayó, y ese fallo es la señal de que el Atlas había caducado, no un defecto del pin.",
+      "MEDIDO, y es lo que evita el error de leer «se retiró la detección»: la señal del KV-store **NO** se retiró. `RestoreOfferGate` y `RestoreBreadcrumb` siguen vivos y los siguen leyendo `ContentView` y `WelcomeRestoreView`. Lo que se retiró es que el HERO decidiera con ella."
+    ]
   },
 
   "alta-chooser": {
     title: "Welcome · Chooser (3 ramas)",
     shot: "alta-chooser.png",
-    sees: "«Soy nuevo» · «Ya tengo una cuenta» · «Me invitaron a un grupo».",
-    persists: "Nada todavía. `hasShownWelcomeChooser` lo escribe el CALLBACK de ContentView, no el chooser.",
-    exits: "Back → Hero.",
+    sees: "«Es mi primera vez en Yala» · «Ya tengo una cuenta» · «Vengo por un grupo». Las tres ramas siguen ahí, pero **ninguna de las tres se llama como antes**: la pregunta pasó de «¿cómo llegaste a Yala?» a «¿qué quieres hacer en Yala?», y la tercera dejó de presuponer que traes invitación.",
+    persists: "Nada todavía. `hasShownWelcomeChooser` lo escribe el CALLBACK de ContentView, no el chooser — y desde G2 tampoco lo escribe la rama de grupos al tapear, porque ahora abre un 2º nivel igual que las otras dos.",
+    exits: "Back → Hero. Las tres ramas abren su 2º nivel (o hacen bypass si solo hay una opción visible); ninguna sale ya directa del cover.",
     code: [
-      { t: "WelcomeFlowContainer.swift:120-133", d: "`.restore` → handleExistingBranch · `.new` → handleNewBranch · `.invite` → el PORTAL con destino `.inviteRecovery`" },
-      { t: "ContentView.swift:1286-1298", d: "el `case .new` histórico sigue existiendo y es INALCANZABLE desde A4 (el container desvía `.new` a su 2º nivel); delega al mismo helper para que los dos caminos no diverjan" }
+      { t: "WelcomeFlowContainer.swift:139-155", d: "el `case .chooser`: `.restore` → handleExistingBranch · `.new` → handleNewBranch · `.invite` → `goTo(.groupsChooser)`" },
+      { t: "WelcomeFlowContainer.swift:147-150", d: "G2: la card ya no es «me invitaron» sino «vengo por un grupo» ⇒ **no puede salir directa a la recuperación de invitación**; abre el step de los dos caminos y ahí elige el invitado" },
+      { t: "WelcomeChooserView.swift:30-44", d: "las 3 cards salen de `Branch.title`/`.body`" },
+      { t: "ContentView.swift:1438-1443", d: "el `case .new` histórico sigue existiendo y es INALCANZABLE desde A4 (el container desvía `.new` a su 2º nivel); delega en el MISMO helper que el callback nuevo para que los dos caminos no diverjan" }
     ],
-    notes: ["`WelcomeChooserView.Branch` conserva sus TRES ramas — §k.2 es explícito y A4 no las tocó."]
+    notes: [
+      "⚠︎ RE-DERIVADO el 2026-08-12 (F5): los tres títulos y los tres cuerpos cambiaron de valor (G1), y la rama `.invite` cambió de DESTINO (G2). El id de las keys es el mismo, así que solo el pin de valores lo detecta — es exactamente el caso que un check de existencia de keys dejaría pasar.",
+      "`WelcomeChooserView.Branch` conserva sus TRES ramas — §k.2 es explícito y ni A4 ni G2 las tocaron: lo que cambia es a dónde lleva cada una."
+    ]
   },
 
   "alta-faro": {
@@ -66,8 +89,8 @@ window.ATLAS_NODES = {
     code: [
       { t: "WelcomeAccountChoiceLogic.swift:103 `routeNewBranch`", d: "faro vinculado + entrada nube disponible → `.cloudSignIn(provider)`; si no, `bypass` → `.single` o `.chooser`" },
       { t: "WelcomeAccountChoiceLogic.swift:123 `WelcomeNewBranchRouter.route`", d: "el adaptador que la vista llama: lee el faro vivo y delega en la tabla pura" },
-      { t: "WelcomeFlowContainer.swift:244 `handleNewBranch`", d: "el ORDEN es el contrato: el faro se consulta antes de ofrecer nada y antes de que ContentView limpie prefs residuales" },
-      { t: "WelcomeFlowContainer.swift:251", d: "R2: el encaminamiento por faro sale por el PORTAL con destino `.cloudSignIn`, que NO necesita el mirror ⇒ nunca interpone relanzamiento" },
+      { t: "WelcomeFlowContainer.swift:272 `handleNewBranch`", d: "el ORDEN es el contrato: el faro se consulta antes de ofrecer nada y antes de que ContentView limpie prefs residuales" },
+      { t: "WelcomeFlowContainer.swift:279", d: "R2: el encaminamiento por faro sale por el PORTAL con destino `.cloudSignIn`, que NO necesita el mirror ⇒ nunca interpone relanzamiento" },
       { t: "WelcomeAccountChoiceLogic.swift:112", d: "provider desconocido/ausente ⇒ `.apple`; el faro solo ENCAMINA, el mismatch lo dice la pantalla de destino" },
       { t: "CloudBeacon.swift:45-51", d: "las 4 keys del faro" }
     ],
@@ -80,15 +103,18 @@ window.ATLAS_NODES = {
   "alta-newchooser": {
     title: "Sub-chooser «Soy nuevo» (privado | nube)",
     shot: "alta-newchooser.png",
-    sees: "Dos cards: privacidad total (iCloud) y cuenta en la nube. NINGUNA lleva distintivo de recomendada — la elección es del usuario. La de nube muestra su renuncia de privacidad inline. Con UNA sola opción visible esta pantalla NO se monta (bypass) — que es el recorrido de producción de hoy.",
+    sees: "Dos cards con títulos paralelos —«Tu cuenta en la nube» y «Tu cuenta en tu iCloud privado»—, **en ese orden**, sin distintivo de recomendada en ninguna y **sin la renuncia inline** que llevaba la de nube. Con UNA sola opción visible esta pantalla NO se monta (bypass) — que es el recorrido de producción de hoy.",
     persists: "Nada.",
     exits: "Back → chooser.",
     code: [
+      { t: "WelcomeNewChooserView.swift:100 `displayOrder`", d: "W3: **la nube va primero**. El orden de PANTALLA vive aquí y no en `visibleNewOptions` — reordenar el array de la Logic no cambiaría nada de lo que se ve, y el docblock lo avisa" },
+      { t: "WelcomeNewChooserView.swift:9-32", d: "las tres decisiones de producto que retiraron §k.6 de esta pantalla: sin badge (RC), orden invertido (W2 punto 6) y sin renuncia inline (W2 punto 10)" },
+      { t: "WelcomeNewChooserView.swift:47-52 `contentHeights`", d: "las dos cards se igualan midiendo el CONTENIDO y no la card enmarcada: medir la enmarcada realimentaría (crecer → medir más → crecer)" },
       { t: "WelcomeAccountChoiceLogic.swift:42 `visibleNewOptions`", d: "la card nube exige los CINCO términos: configurado ∧ ¬uitest ∧ compilado ∧ kill-switch nube ∧ sub-flag de la elección" },
-      { t: "WelcomeFlowContainer.swift:96-103", d: "el cableado real de los 5 términos" },
+      { t: "WelcomeFlowContainer.swift:115-121", d: "el cableado real de los 5 términos" },
       { t: "WelcomeAccountChoiceLogic.swift:73 `bypass`", d: "una sola opción ⇒ se navega directo a ella" },
-      { t: "CloudRemoteConfig.swift:133 `cloudOnboardingChoiceEnabled`", d: "el percent remoto — `\"0\"` en producción, fail-closed" },
-      { t: "WelcomeNewChooserView.swift:114 `accessibilityLabel`", d: "RC: la card privada ya no interpola ningún distintivo — retirarlo de la vista y dejarlo aquí habría hecho que VoiceOver recomendara lo que la pantalla no recomienda" }
+      { t: "CloudRemoteConfig.swift:140 `cloudOnboardingChoiceEnabled`", d: "el percent remoto — `\"0\"` en producción, fail-closed" },
+      { t: "WelcomeNewChooserView.swift:159 `accessibilityLabel`", d: "RC: la card privada ya no interpola ningún distintivo — retirarlo de la vista y dejarlo aquí habría hecho que VoiceOver recomendara lo que la pantalla no recomienda" }
     ],
     notes: [
       "`bornCloudEnabled` es la constante COMPILADA `CloudSyncFlags.bornCloudChoiceEnabled`, hoy `true`. La palanca de release es el PERCENT remoto, no la constante — la fila «A7 flipa la constante» del spec quedó obsoleta (anotación 1 del punto de control).",
@@ -103,11 +129,11 @@ window.ATLAS_NODES = {
     persists: "`hasShownWelcomeChooser = true` · `OnboardingResetHelper.clearResidualPreferencesForFreshStart()` borra `userName` y `defaultCurrencyCode` del KV. En el camino con relanzamiento las dos cosas se escriben ANTES de pedir que se reabra (más el destino pendiente), no después.",
     exits: "El alert de wipe deja el cover del Welcome VISIBLE hasta resolverse. En el camino con relanzamiento no hay alert que mostrar: el mount neutro exige que NO exista archivo de store, así que no puede haber datos que confirmar.",
     code: [
-      { t: "WelcomeFlowContainer.swift:259-271 `handleNewOption`", d: "R2: las dos cards salen por el PORTAL; `.privateAccount` → destino `.privateOnboarding`, que SÍ necesita el mirror" },
-      { t: "WelcomeMirrorRelaunchLogic.swift:70 `requiresMirror`", d: "`privateOnboarding` es `true` porque lo que el usuario cree en su primera sesión tiene que espejarse; que un mirror adjuntado en un arranque POSTERIOR exporte lo escrito en la ventana neutra es plausible pero NO está medido" },
-      { t: "ContentView.swift:1444 `startFreshPrivateOnboarding`", d: "el camino SIN relanzamiento: limpieza de residuales → alert si `hasExistingData`, si no → onboarding" },
-      { t: "ContentView.swift:1329-1334", d: "callback `onSelectPrivateAccount`" },
-      { t: "ContentView.swift:1363-1378", d: "callback `onNeedsMirrorRelaunch`: marca el chooser visto, limpia residuales y PERSISTE el destino" }
+      { t: "WelcomeFlowContainer.swift:287-300 `handleNewOption`", d: "R2: las dos cards salen por el PORTAL; `.privateAccount` → destino `.privateOnboarding`, que SÍ necesita el mirror" },
+      { t: "WelcomeMirrorRelaunchLogic.swift:78 `requiresMirror`", d: "`privateOnboarding` es `true` porque lo que el usuario cree en su primera sesión tiene que espejarse; que un mirror adjuntado en un arranque POSTERIOR exporte lo escrito en la ventana neutra es plausible pero NO está medido" },
+      { t: "ContentView.swift:1608 `startFreshPrivateOnboarding`", d: "el camino SIN relanzamiento: limpieza de residuales → alert si `hasExistingData`, si no → onboarding" },
+      { t: "ContentView.swift:1470-1475", d: "callback `onSelectPrivateAccount`" },
+      { t: "ContentView.swift:1517-1532", d: "callback `onNeedsMirrorRelaunch`: marca el chooser visto, limpia residuales y PERSISTE el destino" }
     ],
     notes: [
       "⚠︎ MEDIDO en sim el 2026-08-11 (F3): este es **el recorrido de producción de hoy** —con el percent remoto de la elección nube en 0 el sub-chooser ni se monta— y desde `339f7825` **paga un relanzamiento que antes no pagaba**. El saldo del parque es +1 relanzamiento hasta que el owner suba ese percent; es el reparto que la Opción C aprueba y la decisión del punto de control lo ratifica (ningún build con R2 se distribuye con el percent en 0). Ver el hallazgo F3-H1.",
@@ -122,13 +148,13 @@ window.ATLAS_NODES = {
     persists: "`hasShownWelcomeChooser = true` (que es lo que rompe el mount neutro en el arranque siguiente) · el destino elegido en `WelcomePendingDestinationStore` (`welcome.pendingMirrorRelaunchDestination`) · en la rama privada, la limpieza de residuales.",
     exits: "**Se cierra sola al ir a background** (R0): el proceso hace `exit(0)` y el arranque siguiente CONSUME el destino y aterriza donde el usuario pidió. Solo `.background` — `.inactive` (app switcher, centro de notificaciones) no mata nada. El testigo del auto-exit es el DESTINO PENDIENTE y se lee con `peek`, jamás con `consume`: retirarlo ahí dejaría a quien pidió restaurar aterrizando en el onboarding normal con su elección perdida.",
     code: [
-      { t: "WelcomeMirrorRelaunchLogic.swift:86 `shouldRelaunch`", d: "dos términos: el destino necesita mirror ∧ el mount es EXACTAMENTE `.neutralNoMirror` (no `!attachesCloudKitMirror`: los otros mounts sin mirror son devices ya en modo nube, donde este Welcome no se presenta)" },
-      { t: "WelcomeFlowContainer.swift:202-212 `leaveWelcome`", d: "el PORTAL ÚNICO de salida del Welcome — seis productores de destino pasan por aquí, así que una salida nueva está obligada a nombrar su `Destination`" },
+      { t: "WelcomeMirrorRelaunchLogic.swift:94 `shouldRelaunch`", d: "dos términos: el destino necesita mirror ∧ el mount es EXACTAMENTE `.neutralNoMirror` (no `!attachesCloudKitMirror`: los otros mounts sin mirror son devices ya en modo nube, donde este Welcome no se presenta)" },
+      { t: "WelcomeFlowContainer.swift:230-240 `leaveWelcome`", d: "el PORTAL ÚNICO de salida del Welcome — seis productores de destino pasan por aquí, así que una salida nueva está obligada a nombrar su `Destination`" },
       { t: "WelcomeMirrorRelaunchView.swift:25", d: "la pantalla, con `interactiveDismissDisabled()`; vive como STEP del cover del Welcome y no como cover propio (regla 3 de Presentaciones)" },
       { t: "RelaunchNetLogic.swift:86 `shouldExitOnBackground`", d: "el tercer término, `welcomeMirrorRelaunchArmed`" },
       { t: "YalaApp.swift:179-191", d: "el cableado: `WelcomePendingDestinationStore.peek() != nil` y el `exit(0)`" },
-      { t: "ContentView.swift:1212-1232", d: "el consumo al arrancar: va ANTES del chooser y del onboarding porque es más específico que los dos" },
-      { t: "WelcomeMirrorRelaunchLogic.swift:105 `WelcomePendingDestinationStore`", d: "`set` / `peek` / `consume` / `clear` — sin TTL y de consumo one-shot; vive en el mismo fichero que la decisión, no en un servicio aparte" }
+      { t: "ContentView.swift:1358-1379", d: "el consumo al arrancar: va ANTES del chooser y del onboarding porque es más específico que los dos" },
+      { t: "WelcomeMirrorRelaunchLogic.swift:113 `WelcomePendingDestinationStore`", d: "`set` / `peek` / `consume` / `clear` — sin TTL y de consumo one-shot; vive en el mismo fichero que la decisión, no en un servicio aparte" }
     ],
     notes: [
       "MEDIDO en sim el 2026-08-11 (F3), instalación limpia de Yala Dev: «Soy nuevo → privacidad total» monta esta pantalla; al pulsar Inicio el **proceso desaparece** (`launchctl list` sin la app) dejando `welcome.pendingMirrorRelaunchDestination = privateOnboarding` y `hasShownWelcomeChooser = true` en el plist del contenedor; al relanzar, la app aterriza en el **onboarding** y la key del destino ya NO existe. Las tres mitades del mecanismo —auto-exit, durabilidad y consumo one-shot— quedan verificadas de punta a punta. El chip R0 daba el auto-exit por no verificable desde el repo: lo es en sim con un build normal (el corte es `isRunningTests`, no `#if DEBUG`).",
@@ -136,30 +162,164 @@ window.ATLAS_NODES = {
     ]
   },
 
+  // ── G2/G3/G4 · la vía del ORGANIZADOR («Vengo por un grupo» → «Crear mi primer grupo») ──────
+
+  "alta-groupschooser": {
+    title: "G2 · «¿Cómo empiezas con tu grupo?» — las dos vías",
+    shot: "alta-groupschooser.png",
+    sees: "Título «¿Cómo empiezas con tu grupo?», la bajada «Las dos vías te dejan en el mismo sitio.» y DOS cards de alto igualado: «Crear mi primer grupo» y «Tengo una invitación». Antes de G2 esta pantalla no existía: la card de nivel 1 se llamaba «Me invitaron a un grupo» y salía directa a recuperar la invitación, así que quien quería CREAR uno no tenía puerta.",
+    persists: "Nada. Y en concreto **no** se marca `hasShownWelcomeChooser`: desde que este step se interpuso, tapear la card de nivel 1 dejó de marcarlo, para que un abandono aquí pueda volver al Welcome en vez de caer al onboarding completo.",
+    exits: "«Volver» → chooser de 3 ramas. «Tengo una invitación» cruza el portal con destino `.inviteRecovery`, que SÍ pide mirror ⇒ sobre un mount neutro pasa antes por «Un último paso: reabre Yala». «Crear mi primer grupo» NO cruza el portal: abre el step de la PUERTA, y solo ella lo cruza si abre.",
+    code: [
+      { t: "WelcomeFlowContainer.swift:150", d: "`case .invite: goTo(.groupsChooser)` — la card «Vengo por un grupo» dejó de salir por el portal" },
+      { t: "WelcomeFlowContainer.swift:161", d: "`onCreate` → `goTo(.groupsGate)`: no sale del cover" },
+      { t: "WelcomeFlowContainer.swift:163", d: "`onJoin` → `leaveWelcome(to: .inviteRecovery)`, el MISMO destino de siempre" },
+      { t: "WelcomeGroupsChooserView.swift:54 `visiblePaths`", d: "`Path.allCases`: las dos cards se pintan SIEMPRE" },
+      { t: "WelcomeMirrorRelaunchLogic.swift:78-85 `requiresMirror`", d: "`.inviteRecovery` → true · `.groupsOrganizer` → false: las dos cards contiguas caen a lados opuestos" }
+    ],
+    notes: [
+      "⚠︎ Dos cards de la MISMA pantalla se comportan distinto ante el mount neutro: unirse puede exigir reabrir la app, crear nunca. MEDIDO en `requiresMirror`, con el porqué escrito en el propio fichero (:73-77): la vía del organizador va por el BACKEND y su alta es solo-grupos, así que no crea corpus personal que espejar.",
+      "⚠︎ Asimetría de `hasShownWelcomeChooser`: la card de unirse lo marca (pasa por `onSelectBranch`), la de crear no. Abandonar la vía de crear devuelve al Welcome; abandonar la de unirse ya no.",
+      "El alto de las dos cards se iguala por MEDICIÓN (`onGeometryChange`) y no por copy: el título envuelve distinto según el idioma."
+    ]
+  },
+
+  "alta-groupsgate": {
+    title: "G3 · LA PUERTA — «Comprobando que todo esté listo…»",
+    shot: "alta-groupsgate.png",
+    sees: "Un spinner grande y «Comprobando que todo esté listo…». Es lo único que se ve mientras corre el refresh forzado del remote-config. Si todo está en orden el step se desmonta en la misma vuelta —no hay pantalla de éxito, sería un parpadeo— y si no, sale uno de los tres bloqueos.",
+    persists: "**NADA, y esa es la mitad del chip**: ni `onboardingMode`, ni `groupsBetaUnlocked`, ni `hasCompletedOnboarding`, ni la divisa. `evaluate()` no escribe una sola key ni llama a nada que escriba.",
+    exits: "El `.task` hace tres cosas en orden: fuerza `refreshIfDue(force: true)` (salvo bajo `-uitest`), comprueba `Task.isCancelled` y decide. `.proceed` cruza el portal a `.groupsOrganizer`, que **nunca** relanza.",
+    code: [
+      { t: "WelcomeGroupsGateView.swift:148-150", d: "el `force: true` no es cosmético: sin él `refreshIfDue` es un no-op EXACTAMENTE en el caso del bug — el min-interval de 6 h ya lo gastó el refresh del arranque" },
+      { t: "WelcomeGroupsGateView.swift:155 `guard !Task.isCancelled`", d: "la cancelación del step es COOPERATIVA y `refreshIfDue` no la mira: sin este guard, un «Volver» durante el refresh sacaría igual al usuario del Welcome cuando la red conteste" },
+      { t: "WelcomeGroupsGateView.swift:157-163", d: "el cableado: canal ya re-medido · `SecondarySessionStore.isActive()` · fetch VIVO del corpus" },
+      { t: "GroupsOrganizerGateLogic.swift:78-85 `decide`", d: "tres guards en cascada: canal → secundaria → datos ajenos → `.proceed`" },
+      { t: "WelcomeGroupsGateView.swift:39", d: "`decision` arranca en `nil` a propósito: un default optimista pintaría medio frame de la rama buena antes de bloquear" },
+      { t: "WelcomeFlowContainer.swift:175", d: "`leaveWelcome(to: .groupsOrganizer)` — el único cruce del portal de esta rama" }
+    ],
+    notes: [
+      "CELDAS: 3 booleanos = 8 combinaciones, **4 clases** por cortocircuito. El ORDEN es load-bearing y está escrito: el canal va primero porque es lo que el `force` acaba de re-medir y porque su copy describe algo TRANSITORIO; **la secundaria va antes que los datos ajenos** porque en secundaria el detector mide el store de la INVITADA —vacío en una sesión recién montada— así que `hasExistingData` daría `false` y la puerta abriría justo en el caso más caro.",
+      "⚠︎ HALLAZGO: la puerta no emite NINGÚN canario. En las cuatro salidas no hay una sola llamada a `MetricsService` ⇒ «cuántos organizadores rebotan aquí, y por cuál de los tres motivos» es hoy inobservable en producción.",
+      "No puede ser un `.alert(`: el source-scan de `WelcomeHeroReentryTests` lo prohíbe en el container, y un alert contaría además como camino muerto en un flujo que el spec exige que no lo tenga."
+    ]
+  },
+
+  "alta-groupsgate-blocked": {
+    title: "G3/C3 · Las TRES puertas cerradas",
+    shot: "alta-groupsgate-blocked.png",
+    sees: "Tres pantallas hermanas —icono, título, cuerpo y un «Volver»— con copy distinto según el motivo: **canal apagado** («Ahora mismo no podemos abrirte grupos»), **sesión de visita** («Aquí estás como invitado», C3) y **datos de otro humano** (el «Este dispositivo tiene datos de otra cuenta» prestado del guard de sign-in).",
+    persists: "Nada, en las tres. Es literalmente el punto: se bloquea ANTES de pedir nombre e identidad.",
+    exits: "«Volver» → chooser de grupos, con la otra vía intacta. No hay botón de reintento: el reintento ES volver a tapear la card, que remonta el step y vuelve a forzar el refresh. La salida real del bloqueo por visita está FUERA de la app —cerrar la sesión de invitado y volver desde el dispositivo propio—, y el copy lo dice.",
+    code: [
+      { t: "WelcomeGroupsGateView.swift:60-83", d: "las tres ramas del `switch` con sus identifiers: `..._channel_off` · `..._secondary_session` · `..._foreign_data`" },
+      { t: "GroupsOrganizerGateLogic.swift:81-83", d: "los tres guards, en el orden en que se evalúan" },
+      { t: "CloudSyncFlags.swift:344-347 `groupsBackendEnabled`", d: "compilado ∧ remoto: el remoto solo puede MATAR" },
+      { t: "GroupsOrganizerOnboarding.swift:164", d: "C3 · defensa en profundidad en el ESCRITOR: el guard de secundaria subió de una key al método entero" },
+      { t: "ContentView.swift:1086-1102 `checkHasExistingData`", d: "cuenta cuentas y categorías no-sistema MÁS `SplitGroup` y las `TransactionItem` con `splitExpenseID`: un dueño anterior que venía de «Solo Grupos» daría `false` con el detector estrecho" },
+      { t: "ContentView.swift:1104-1107", d: "el `catch` devuelve `true`: falla CERRADO" }
+    ],
+    notes: [
+      "⚠︎ El copy de datos ajenos es PRESTADO del guard de sign-in de nube y habla de «conectar una cuenta distinta»: aquí el usuario no está conectando ninguna cuenta, está intentando crear un grupo. El hecho es el mismo; la acción que el texto nombra, no. Y su «Su dueño puede volver a entrar cuando quiera» describe una salida que en ESTA pantalla no existe.",
+      "⚠︎ Como `checkHasExistingData` falla cerrado, un error de lectura pinta «este dispositivo tiene datos de otra cuenta» a alguien con el device vacío. La dirección es la segura; el copy miente sobre la causa.",
+      "El bloqueo por visita (C3) es el único de los tres con copy PROPIO en los 16 locales, y por eso: el hecho no es «hay datos de otro humano» sino «esta sesión no es de este dispositivo», y aquí sí hay salida.",
+      "⚠︎ Las tres pantallas tienen DOS controles que hacen lo mismo: el back de la esquina y el botón primario «Volver». No es un bug, pero conviene saberlo al leer una captura."
+    ]
+  },
+
+  "alta-organizername": {
+    title: "G3 · «¿Cómo te llamas?» → «Crear mi grupo»",
+    shot: "alta-organizername.png",
+    sees: "Cover a pantalla completa: «¿Cómo te llamas?», «Es el nombre que verán los demás en el grupo.», un campo con placeholder «Tu nombre» y el botón «Crear mi grupo». Es lo ÚNICO que esta rama pide.",
+    persists: "Nada mientras la pantalla está abierta. Al tapear el CTA se escribe todo de golpe — ver el nodo del alta.",
+    exits: "El CTA escribe y cierra el cover; su `onDismiss` submitea el avance, que ya decide el formulario. Cerrar por swipe —o que UIKit tumbe el cover— apaga la rama y devuelve al chooser de grupos: nunca deja una pantalla muerta. **El botón NO se deshabilita con el campo vacío**: un nombre vacío es legítimo y el escritor lo resuelve a «Usuario»; un botón muerto aquí sería la regresión del «botón muerto» de la 2.0.5.",
+    code: [
+      { t: "GroupsOrganizerNameView.swift:77-80", d: "`YalaPrimaryButton` sin `isDisabled`, a propósito" },
+      { t: "GroupsOrganizerNameView.swift:90-93 `complete()`", d: "escribe (`completeSetup`) y después avisa" },
+      { t: "ContentView.swift:337-356", d: "el cover, su `onDismiss` de respaldo y el one-shot `organizerSetupCompleted`" },
+      { t: "ContentView.swift:1013-1029", d: "la puerta B (card «Solo grupos») SALTA esta pantalla: ya preguntó nombre y divisa, así que escribe directamente con el payload" },
+      { t: "ContentViewReadinessLogic.swift:150", d: "blocker `groupsOrganizerName` en la matriz de readiness" }
+    ],
+    notes: [
+      "Pantalla propia y NO `OnboardingView`: reusar aquella arrastraría sus 8 steps, el planner por `selectedUsageMode` y el gate de la card de propósito, para pedir un campo.",
+      "Decisión del owner: el alta del organizador pide SOLO el nombre. La divisa se deriva de la región en silencio y es editable en el grupo desde el primer minuto.",
+      "⚠︎ El docblock de `GroupsOrganizerNameView` dice que `completeSetup` tiene «su ÚNICO call-site de producción» aquí. MEDIDO: hoy son DOS —esta vista y `ContentView.advanceGroupsOrganizerFlow` en su caso `.presentName` con payload— y el propio `GroupsOrganizerOnboarding` lo dice bien. Es un docblock que se quedó atrás al añadirse la puerta B."
+    ]
+  },
+
+  "alta-organizerwrite": {
+    title: "G3+G4 · El alta del organizador: lo único que escribe la rama entera",
+    shot: null,
+    sees: "Nada propio. Lo que el usuario percibe es que el tab bar se reduce a Grupos y aterriza allí en el mismo render.",
+    persists: "SEIS keys, y solo aquí. **Sincronizadas** (iKV en `.icloud`, outbox de prefs en `.cloud`): `userName` (trimeado, o «Usuario» si viene vacío), `defaultPeriod = thisMonth`, `defaultCurrencyCode` y `onboardingMode = groupInvite`. **Per-device**: `groupsBetaUnlocked` y `hasCompletedOnboarding`. Además, en SwiftData: categorías personales, categorías de sistema del bridge y notificaciones por defecto — sin cuenta ni presupuesto.",
+    exits: "No es una pantalla: es el paso terminal del cover del nombre (o, en la puerta B, el que sustituye a esa pantalla). Si `writePreferences` devuelve `false` —frontera de sesión secundaria— `completeSetup` aborta ANTES de los seeds y del aterrizaje: seguir dejaría a la invitada en un shell de Grupos que ninguna preferencia sostiene.",
+    code: [
+      { t: "GroupsOrganizerOnboarding.swift:111-118 `writtenKeys`", d: "el inventario PUBLICADO; el test del camino bloqueado afirma su ausencia contra ESTA lista y no contra una copia a mano" },
+      { t: "GroupsOrganizerOnboarding.swift:180-185", d: "G4 · la divisa: la elección EXPLÍCITA (puerta B) gana siempre; si no, se deriva de la región y **solo si la key está AUSENTE**" },
+      { t: "CurrencyUtils.swift:837-845 `detectCurrencyFromRegion`", d: "`CurrencyCode.fromRegion`; sin match cae a `.usd`, no al `.pen` global de `AppPreferences`" },
+      { t: "GroupsOrganizerOnboarding.swift:196", d: "`onboardingMode = .groupInvite` por el canal sincronizado (dual-write)" },
+      { t: "GroupsOrganizerOnboarding.swift:238-240", d: "los seeds: categorías personales, categorías de sistema del bridge y notificaciones" },
+      { t: "GroupsOrganizerOnboarding.swift:254-259", d: "métrica de alta y aterrizaje en el tab Grupos" },
+      { t: "GroupsOrganizerOnboarding.swift:47-56", d: "el canal de escritura inyectable, con los dos caminos SEPARADOS y un `hasValue(forKey:)` para que la condición de la divisa sea afirmable sobre un store" }
+    ],
+    notes: [
+      "G4 · la divisa por país es la ÚNICA escritura condicional del alta, y el guard es el invariante: `defaultCurrencyCode` es sincronizada, así que en una instalación nueva de un Apple ID que ya usa Yala en otro dispositivo el valor puede haber BAJADO por iKV antes de que el organizador toque nada; pisarlo le cambiaría la divisa por la de la región donde esté hoy.",
+      "⚠︎ TELEMETRÍA: los dos caminos que llegan aquí emiten el MISMO `localRegistrationCompleted(mode: \"groupsOrganizer\")`, aunque el comentario de esa línea diga que el modo propio existe «para poder separar las dos puertas de entrada al mismo shell». Desde que la card «Solo grupos» pasa por `completeSetup`, las dos puertas son indistinguibles en el dashboard.",
+      "El orden de la rama es lo que hace segura esta escritura: `onboardingMode` es never-downgrade cross-device y viaja al iKV del Apple ID; escrito antes de confirmar la puerta, no vuelve."
+    ]
+  },
+
+  "alta-organizercancel": {
+    title: "G3 · Matriz de cancelación de la rama organizador",
+    shot: null,
+    sees: "Nada propio: el usuario ve reaparecer «¿Cómo empiezas con tu grupo?».",
+    persists: "Nada, en las CUATRO filas (educativo · sign-in · consent · cover del nombre). Y se descarta el payload en memoria de la puerta B: un payload superviviente haría que el siguiente intento saltara la pantalla del nombre con datos de una sesión abandonada.",
+    exits: "Cancelar cualquiera de los cuatro apaga `groupsOrganizerFlowActive` y reabre el Welcome en `.groupsChooser` — al chooser de GRUPOS y no al de tres ramas, porque es donde estaba el usuario y desde ahí puede reintentar o irse por la otra vía sin volver a pasar por el Hero.",
+    code: [
+      { t: "ContentView.swift:750-761 `returnToGroupsChooser`", d: "choke-point de TODA cancelación: descarta el payload y reabre el Welcome en el step de los dos caminos" },
+      { t: "GroupsBackendInviteModifier.swift:153-157 `handleCancel`", d: "no-op para el INVITADO; para el organizador, vuelta al Welcome" },
+      { t: "ContentView.swift:342-346", d: "el cancel del cover del nombre, por su `onDismiss` de respaldo" }
+    ],
+    notes: [
+      "El organizador NO puede quedarse donde está al cancelar: ya SALIÓ del Welcome y debajo no hay shell, porque su alta no ha corrido. Esa es la diferencia entera con el invitado, cuyo intent sobrevive en `PendingJoinStore` (TTL 7 días) y para quien estos mismos sheets no cancelan nada.",
+      "El descarte del payload NO se centralizó en el modifier sino en `returnToGroupsChooser`, porque el cover del nombre no pasa por el modifier."
+    ]
+  },
+
   "alta-consent": {
     title: "Consentimiento informado (path `.bornCloud`)",
     shot: "alta-consent.png",
-    sees: "Sheet con los 7 puntos de §k.6 y el botón «Aceptar». El copy es GENÉRICO — no cambia por path.",
-    persists: "AL ACEPTAR: `cloudConsentAcceptedAt` (epoch) y `cloudConsentTextVersion` vía `PreferenceSyncService.set(int:)`. En `.icloud` van al iKV; el drenaje del cutover los lleva al backend. Métrica `cloudConsentAccepted(path:)`.",
-    exits: "Descartar el sheet sin aceptar NO persiste nada (el registro vive en el botón). El flujo solo arranca desde `onAccept` — los botones del intro únicamente abren el sheet.",
+    sees: "Sheet con **tres puntos y un pie**, título «Tus datos en la nube de Yala», el enlace a la política de privacidad y el botón «Entiendo y quiero activar la nube». Se lee como unos términos, no como una alarma. El copy es GENÉRICO — no cambia por path.",
+    persists: "AL ACEPTAR, y **desde M0 depende de por dónde vaya el flujo**: en el alta born-cloud y en la migración escribe la pantalla (`CloudConsentRegistrar.register()` → `cloudConsentAcceptedAt` + `cloudConsentTextVersion`, hoy **versión 2**); en la RE-ENTRADA la pantalla NO escribe (`persistsOnAccept = false`) y la escritura se difiere hasta que el guard cross-cuenta diga por dónde va. La métrica `cloudConsentAccepted(path:)` NO se difiere en ningún caso: aceptar ocurrió aquí.",
+    exits: "Descartar el sheet sin aceptar NO persiste nada. Y en re-entrada, un intento que termina BLOQUEADO tampoco deja nada: su `Placement` es `.never`.",
     code: [
-      { t: "WelcomeCloudSignInView.swift:114-122", d: "el consent SIEMPRE precede al sign-in, en las dos entradas — lo garantiza que el ÚNICO productor del flujo sea su `onAccept`" },
-      { t: "CloudConsentView.swift:92-111 `registerConsent`", d: "las dos keys + la métrica, en el tap de Aceptar" },
+      { t: "CloudConsentView.swift:125-128 `registerConsent`", d: "el registro CONDICIONAL (`persistsOnAccept`) + la métrica incondicional" },
+      { t: "CloudConsentView.swift:136-138 `points`", d: "los tres puntos que quedan: servidores · fotos · acceso" },
+      { t: "CloudConsentText.swift:33 `version`", d: "**2** desde W4: el recorte saca del contrato el envío a la IA y la ubicación de los servidores ⇒ es un cambio de qué-sale y dónde-se-guarda, y por eso bumpea" },
+      { t: "CloudConsentRegistrationLogic.swift:44 `placement(for:)`", d: "M0: la tabla que decide DÓNDE cae la escritura en re-entrada — `.beforeAdopt` · `.afterSecondaryDescriptor` · `.never`" },
+      { t: "CloudConsentRegistrationLogic.swift:63 `persistIfDue`", d: "las tres condiciones y el `pending` como `inout`: un retry tras `.error` no re-escribe, así que el epoch conserva su T0" },
       { t: "CloudMigrationController.swift:271", d: "`ConsentPath` — `.migration` · `.adopt` · `.bornCloud`" }
     ],
-    notes: ["⚠︎ Corrección MEDIDA del spec (anotación 3 del punto de control): la promesa «cancelar deja el device sin consent-flag ni faro» era INSATISFACIBLE. El consent se persiste al aceptarse (append-only, precedente del repo). Ver el nodo «Matriz de cancelación»."]
+    notes: [
+      "⚠︎ RE-DERIVADO el 2026-08-12 (F5): el panel de F4 describía **siete** puntos con las keys `storage.consent.point1..point7`, hoy borradas de los 16 locales.",
+      "⚠︎ El BUG que M0 cierra, medido y vale la pena leerlo entero: la pantalla escribía al aceptar, y en re-entrada ahí la ruta todavía no existe —el sign-in ni ha ocurrido—, así que `PreferenceSyncService` resolvía el destino con el modo persistido del device, que durante el Welcome es el `.icloud` **del dueño del móvil**. Un intento cross-cuenta que acababa BLOQUEADO ya había dejado el epoch de la otra persona en el iKV del dueño, y el paso 5-bis del cutover lo habría subido un día como consent SUYO.",
+      "MEDIDO y conviene saberlo antes de razonar sobre la versión: **ningún camino compara `CloudConsentText.version` con lo persistido**. La pantalla se presenta siempre antes de firmar, así que nadie se queda con una versión vieja sin volver a aceptar; la versión deja registrado QUÉ texto se aceptó, no gatea una re-petición.",
+      "⚠︎ Corrección MEDIDA del spec (anotación 3 del punto de control): la promesa «cancelar deja el device sin consent-flag ni faro» era INSATISFACIBLE. El consent se persiste al aceptarse (append-only). Ver el nodo «Matriz de cancelación» — y desde M0 su FILA 2 se estrecha en la re-entrada, donde cortar antes del guard ya no deja epoch."
+    ]
   },
 
   "alta-intro": {
     title: "Intro del alta · elegir método",
     shot: "alta-intro.png",
-    sees: "Título + subtítulo del alta y DOS botones de prominencia equivalente (Apple y Google, guideline 4.8) más la nota §13: la cuenta queda ligada al método.",
+    sees: "Título + subtítulo del alta y DOS botones de prominencia equivalente (Apple y Google, guideline 4.8), los dos con el verbo de **crear cuenta** — «Crear cuenta con Google» y el rótulo de registro que pinta el sistema en el de Apple —, más la nota §13 en su variante de alta: la cuenta quedará ligada al método que elijas.",
     persists: "Nada. El tap solo fija `chosenProvider` en memoria y abre el consent.",
     exits: "Back permitido (`canGoBack` incluye `.intro`).",
     code: [
-      { t: "WelcomeCloudSignInView.swift:243 `bornCloudIntro`", d: "los dos botones + la nota" },
-      { t: "WelcomeCloudSignInView.swift:287 `beginBornCloudSignUp`", d: "fija el método y abre el consent — NO firma nada" },
-      { t: "WelcomeCloudSignInView.swift:163 `canGoBack`", d: "`.intro`/`.notFound`/`.blockedForeignData`/`.error`/`.providerMismatch` → sí; el resto no — y desde R2 `.bornCloudReady` entra en el lado sin salida" }
+      { t: "WelcomeCloudSignInView.swift:296 `bornCloudIntro`", d: "los dos botones + la nota" },
+      { t: "WelcomeCloudSignInView.swift:311-321", d: "W4b: `AppleSignInButton(type: .signUp)` y `GoogleSignInButton(purpose: .signUp)` — el verbo es del CONTEXTO, no del botón" },
+      { t: "GoogleSignInButton.swift:44-50", d: "los tres propósitos y su key: `.signUp` → crear cuenta · `.signIn` → iniciar sesión · `.continue` → continuar" },
+      { t: "WelcomeCloudSignInView.swift:340 `beginBornCloudSignUp`", d: "fija el método y abre el consent — NO firma nada" },
+      { t: "WelcomeCloudSignInView.swift:203 `canGoBack`", d: "`.intro`/`.notFound`/`.blockedForeignData`/`.error`/`.providerMismatch` → sí; el resto no — y desde R2 `.bornCloudReady` entra en el lado sin salida" }
     ],
     notes: ["El VStack va SIN `accessibilityIdentifier` de contenedor a propósito: uno aplicado arriba PISA los ids de los botones (medido con `snapshot_ui`) y dejaría al XCUITest sin poder targetearlos."]
   },
@@ -171,7 +331,7 @@ window.ATLAS_NODES = {
     persists: "Sesión Yala en el Keychain (`CloudAuthService`) + provider almacenado.",
     exits: "Con sesión ya viva se SALTA (no re-pide Face ID). Cancel de Google → vuelta al intro en silencio. Fallo de Apple → vuelta al intro sin alarma (ASAuthorization no distingue cancel de fallo). Fallo de Google → error con retry.",
     code: [
-      { t: "WelcomeCloudSignInView.swift:544 `ensureSignedIn`", d: "las 4 salidas y la asimetría Apple/Google, que NO es cosmética" }
+      { t: "WelcomeCloudSignInView.swift:599 `ensureSignedIn`", d: "las 4 salidas y la asimetría Apple/Google, que NO es cosmética" }
     ],
     notes: ["El sim NO completa SIWA/Google reales: en F2 esto queda `device-only` salvo la captura del sheet."]
   },
@@ -184,7 +344,7 @@ window.ATLAS_NODES = {
     exits: "SIN back: el claim puede CREAR la cuenta server-side y salir a mitad dejaría al usuario sin saber si se dio de alta.",
     code: [
       { t: "CloudWelcomeSignInFlow.swift:20-24 `.creating`", d: "por qué es un caso propio" },
-      { t: "WelcomeCloudSignInView.swift:163-173 `canGoBack`", d: "`.creating` NO permite back" }
+      { t: "WelcomeCloudSignInView.swift:203-213 `canGoBack`", d: "`.creating` NO permite back" }
     ],
     notes: []
   },
@@ -218,7 +378,7 @@ window.ATLAS_NODES = {
       { t: "BornCloudSignUpService.swift:340 `activateBornCloudStorage`", d: "escribe el par y DEVUELVE la fase terminal" },
       { t: "BornCloudSignUpService.swift:344-348", d: "R2: la terminal la decide el testigo de mount — `attachesCloudKitMirror` ⇒ `.relaunch`; sin mirror ⇒ `.bornCloudReady`" },
       { t: "CloudSyncFlags.swift:91 `writeCloudArmed`", d: "modo → armado, en ese orden; el docblock explica por qué el born-cloud puede saltarse el gate del marcador" },
-      { t: "WelcomeCloudSignInView.swift:427 `relaunchContent`", d: "la pantalla" },
+      { t: "WelcomeCloudSignInView.swift:482 `relaunchContent`", d: "la pantalla" },
       { t: "MigrationBootDecision.swift:85 `isPersonalMountMismatch`", d: "en esta ventana el motor NO arranca: el par dice `.cloud` y el mount de este proceso lleva el mirror ADJUNTO" }
     ],
     notes: [
@@ -237,10 +397,10 @@ window.ATLAS_NODES = {
     code: [
       { t: "BornCloudSignUpService.swift:351-357", d: "sin mirror adjunto: breadcrumb `bornCloudReady`, arranque del motor y fase de continuidad" },
       { t: "BornCloudSignUpService.swift:176-180", d: "el seam del arranque: en producción es `CloudSyncRuntime.startShared`, y va DESPUÉS de escribir el par (al revés encontraría `.icloud` y se retiraría sin arrancar nada)" },
-      { t: "WelcomeCloudSignInView.swift:449 `bornCloudReadyContent`", d: "la pantalla y su CTA" },
-      { t: "WelcomeCloudSignInView.swift:163-173 `canGoBack`", d: "`.bornCloudReady` entra en la lista de fases sin salida" },
-      { t: "ContentView.swift:1421-1432", d: "`onBornCloudCompleted`: cierra el cover y enciende `showOnboarding`" },
-      { t: "ContentView.swift:1389-1395", d: "el término `!showOnboarding` del `onDismiss` — sin él, el respaldo montaría el chooser ENCIMA del onboarding recién abierto (regla 4 de Presentaciones)" }
+      { t: "WelcomeCloudSignInView.swift:504 `bornCloudReadyContent`", d: "la pantalla y su CTA" },
+      { t: "WelcomeCloudSignInView.swift:203-213 `canGoBack`", d: "`.bornCloudReady` entra en la lista de fases sin salida" },
+      { t: "ContentView.swift:1576-1587", d: "`onBornCloudCompleted`: cierra el cover y enciende `showOnboarding`" },
+      { t: "ContentView.swift:1544-1550", d: "el término `!showOnboarding` del `onDismiss` — sin él, el respaldo montaría el chooser ENCIMA del onboarding recién abierto (regla 4 de Presentaciones)" }
     ],
     notes: [
       "⚠︎ Precisión sobre el enunciado del chip F3, MEDIDA: «el alta sigue directo al onboarding» no es exacto — hay una pantalla intermedia con CTA (`welcome_born_cloud_ready`). El Atlas dibuja la que existe.",
@@ -255,7 +415,7 @@ window.ATLAS_NODES = {
     persists: "Lo que escriba el onboarding. El store personal monta SIN mirror de CloudKit y el motor de sync ya corre (arrancado en sesión por el alta, o al boot con fase `notStarted` = estable + el estampado del claim).",
     exits: "N/A — es el estado normal.",
     code: [
-      { t: "WelcomeCloudSignInView.swift:576-581", d: "el alta NO marca los flags de onboarding: el onboarding es justamente lo que corre después" },
+      { t: "WelcomeCloudSignInView.swift:631-636", d: "el alta NO marca los flags de onboarding: el onboarding es justamente lo que corre después" },
       { t: "MigrationBootDecision.swift:90 `isDomainStablePhase`", d: "`notStarted` y `done` son las dos fases estables" },
       { t: "OnboardingGroupsPurposeGateLogic.swift:97 `shouldShowGroupsCard`", d: "en `.cloud` la card «Solo grupos» NO se pinta (A6)" }
     ],
@@ -269,7 +429,7 @@ window.ATLAS_NODES = {
     persists: "Nada propio: a partir de aquí manda el flujo 2.",
     exits: "Ver flujo 2.",
     code: [
-      { t: "WelcomeCloudSignInView.swift:599-604", d: "variante A de §f.1: sobre una cuenta poblada JAMÁS se siembra" },
+      { t: "WelcomeCloudSignInView.swift:654-659", d: "variante A de §f.1: sobre una cuenta poblada JAMÁS se siembra" },
       { t: "WelcomeCloudSignInView.swift:19-28", d: "por qué es una vista PARAMETRIZADA y no una hermana: una hermana sería un segundo anchor presentando (el bug del sign-out del 2026-07-14)" }
     ],
     notes: []
@@ -282,8 +442,8 @@ window.ATLAS_NODES = {
     persists: "Nada.",
     exits: "En el ALTA, Reintentar re-lanza el CLAIM (idempotente), no un poll de máquina: born-cloud no tiene máquina que pollear y llamar a `pollLeader()` dejaría la pantalla clavada.",
     code: [
-      { t: "WelcomeCloudSignInView.swift:401 `waitingLeaderContent`", d: "la pantalla" },
-      { t: "WelcomeCloudSignInView.swift:407-415", d: "la bifurcación del Reintentar por entrada" }
+      { t: "WelcomeCloudSignInView.swift:456 `waitingLeaderContent`", d: "la pantalla" },
+      { t: "WelcomeCloudSignInView.swift:462-470", d: "la bifurcación del Reintentar por entrada" }
     ],
     notes: []
   },
@@ -296,7 +456,7 @@ window.ATLAS_NODES = {
     exits: "Si no se soltara, el re-tap reusaría la sesión muerta (`runSignInFlow` salta el sign-in cuando `hasSession`) y el usuario quedaría en un bucle de reintentos imposibles.",
     code: [
       { t: "CloudWelcomeSignInFlow.swift:140-143 `.releaseSessionAndShowError`", d: "el porqué, escrito en la tabla" },
-      { t: "WelcomeCloudSignInView.swift:606-609", d: "signOut → `.error(retryable: true)`" }
+      { t: "WelcomeCloudSignInView.swift:661-664", d: "signOut → `.error(retryable: true)`" }
     ],
     notes: []
   },
@@ -329,7 +489,7 @@ window.ATLAS_NODES = {
     exits: "FILA 1 · antes de aceptar el consent: nada persistido (el device queda como estaba). FILA 2 · consent aceptado y cortado antes del `created`: quedan `cloudConsentAcceptedAt` + `cloudConsentTextVersion` (registro append-only, por precedente del repo NINGÚN camino los borra) y, si hubo sign-in, la sesión Yala. FILA 3 · tras un `created`: además el faro (4 keys en iCloud-KV) y el estampado del claim ⇒ el estado es RE-ENTRANTE, no virgen: el siguiente intento cae en `existing_stable` y encamina al returning-user.",
     code: [
       { t: "CloudConsentView.swift:103-110", d: "el consent se persiste al ACEPTAR" },
-      { t: "BornCloudSignUpService.swift:236-248", d: "faro + estampado, solo con `created`" },
+      { t: "BornCloudSignUpService.swift:242-254", d: "faro + estampado, solo con `created`" },
       { t: "AccountClaimDecision.swift:80-81", d: "`existing_stable` → `routeReturningUser`, NUNCA sembrar" }
     ],
     notes: [
@@ -350,9 +510,9 @@ window.ATLAS_NODES = {
     exits: "Back → chooser.",
     code: [
       { t: "WelcomeAccountChoiceLogic.swift:60 `visibleExistingOptions`", d: "las cards de nube exigen configurado ∧ ¬uitest ∧ kill-switch nube" },
-      { t: "WelcomeFlowContainer.swift:217-223 `handleExistingBranch`", d: "bypass con una sola opción" },
-      { t: "WelcomeFlowContainer.swift:227-234 `handleExistingOption`", d: "R2: el sub-chooser y su bypass comparten PORTAL — `restoreICloud` → destino que necesita mirror; las dos entradas de nube montan el mismo store que el neutro ya es" },
-      { t: "ContentView.swift:1311-1327", d: "el provider se setea EXPLÍCITO por card — jamás se hereda el del intento anterior" }
+      { t: "WelcomeFlowContainer.swift:245-251 `handleExistingBranch`", d: "bypass con una sola opción" },
+      { t: "WelcomeFlowContainer.swift:255-262 `handleExistingOption`", d: "R2: el sub-chooser y su bypass comparten PORTAL — `restoreICloud` → destino que necesita mirror; las dos entradas de nube montan el mismo store que el neutro ya es" },
+      { t: "ContentView.swift:1452-1468", d: "el provider se setea EXPLÍCITO por card — jamás se hereda el del intento anterior" }
     ],
     notes: [
       "Residual ratificado por el owner: un usuario nube que REINSTALA bajo el kill-switch no ve la card ⇒ no re-entra hasta el re-encendido (WelcomeAccountChoiceLogic.swift:57-59).",
@@ -366,7 +526,7 @@ window.ATLAS_NODES = {
     sees: "Un solo botón, el del método que trae el `Entry` (o el que dictó el faro), más la nota §13.",
     persists: "Nada.",
     exits: "Back permitido.",
-    code: [{ t: "WelcomeCloudSignInView.swift:292 `reentryIntro`", d: "el botón por provider y el subtítulo específico de Google" }],
+    code: [{ t: "WelcomeCloudSignInView.swift:345 `reentryIntro`", d: "el botón por provider y el subtítulo específico de Google" }],
     notes: []
   },
 
@@ -378,7 +538,7 @@ window.ATLAS_NODES = {
     exits: "`sessionExpired` y `transient` colapsan a `failed(retryable: true)`.",
     code: [
       { t: "CloudWelcomeSignInFlow.swift:80 `route`", d: "4 outcomes → 3 rutas" },
-      { t: "WelcomeCloudSignInView.swift:625-628", d: "`CloudAccountClient` SIN attest a propósito: `/account/exists` va por `requireUser` y es PRE-SESIÓN" }
+      { t: "WelcomeCloudSignInView.swift:680-683", d: "`CloudAccountClient` SIN attest a propósito: `/account/exists` va por `requireUser` y es PRE-SESIÓN" }
     ],
     notes: []
   },
@@ -391,7 +551,7 @@ window.ATLAS_NODES = {
     exits: "Back permitido: nada está comprometido.",
     code: [
       { t: "ProviderMismatchLogic.swift:45 `decide`", d: "las 5 reglas EN ORDEN, sub-first" },
-      { t: "WelcomeCloudSignInView.swift:630-651", d: "el cableado: faro → veredicto → signOut → fase" },
+      { t: "WelcomeCloudSignInView.swift:685-706", d: "el cableado: faro → veredicto → signOut → fase" },
       { t: "ProviderMismatchLogic.swift:74 `displayName`", d: "desconocido → nil ⇒ copy genérico; jamás interpolar un rawValue del wire" }
     ],
     notes: ["La señal PRIMARIA es el SUB, no el provider: GoTrue LINKEA identidades con el mismo email verificado al MISMO `sub`, así que un sign-in Google puede aterrizar legítimamente en una cuenta creada con Apple (hallazgo H4 del wire)."]
@@ -403,7 +563,7 @@ window.ATLAS_NODES = {
     sees: "«No encontramos una cuenta».",
     persists: "Sesión soltada.",
     exits: "Back permitido.",
-    code: [{ t: "WelcomeCloudSignInView.swift:649-651", d: "`.proceed` del guard R9 ⇒ `.notFound` honesto" }],
+    code: [{ t: "WelcomeCloudSignInView.swift:703-704", d: "`.proceed` del guard R9 ⇒ `.notFound` honesto" }],
     notes: []
   },
 
@@ -415,7 +575,7 @@ window.ATLAS_NODES = {
     exits: "Tres salidas: `proceed` (device limpio o misma cuenta) · `blockedForeignData` · `proceedSecondarySession` (M1, hoy DARK).",
     code: [
       { t: "CrossAccountEntryGuardLogic.swift:47 `decide`", d: "la tabla completa" },
-      { t: "WelcomeCloudSignInView.swift:653-660", d: "el cableado; `hasLocalDataNow` es un fetch VIVO, no un snapshot (S5: el mirror puede estar re-importando durante el Welcome)" }
+      { t: "WelcomeCloudSignInView.swift:708-715", d: "el cableado; `hasLocalDataNow` es un fetch VIVO, no un snapshot (S5: el mirror puede estar re-importando durante el Welcome)" }
     ],
     notes: ["La MISMA cuenta re-entra libre: su claim persistido (`CloudClaimActionStore`, keyed por userID, sobrevive al sign-out a propósito) es la prueba de que el corpus local le pertenece."]
   },
@@ -426,7 +586,7 @@ window.ATLAS_NODES = {
     sees: "«Estos datos son de otra cuenta» con el icono de escudo.",
     persists: "Sesión soltada antes de mostrar la pantalla.",
     exits: "Back permitido.",
-    code: [{ t: "WelcomeCloudSignInView.swift:661-663", d: "signOut → `.blockedForeignData`" }],
+    code: [{ t: "WelcomeCloudSignInView.swift:719-721", d: "signOut → `.blockedForeignData`" }],
     notes: ["El bloqueo existe porque el orphan-reconcile del adopt corre ANTES del relanzamiento y pushearía las filas del dueño a la cuenta entrante."]
   },
 
@@ -437,11 +597,56 @@ window.ATLAS_NODES = {
     persists: "SOLO al confirmar, y EN ORDEN: claim → descriptor (`SecondarySessionStore.activate`) → flags de onboarding.",
     exits: "El Cancelar es PROPIO (suelta la sesión SIWA; el back genérico la dejaría colgada). Belt: si el modo persistido no es `.icloud`, hay estado corrupto ⇒ error, jamás armar.",
     code: [
-      { t: "WelcomeCloudSignInView.swift:690 `confirmSecondaryEntry`", d: "el orden y su kill-safety" },
-      { t: "WelcomeCloudSignInView.swift:664-673", d: "el belt del modo persistido" },
-      { t: "CloudSyncFlags.swift:291 `secondarySessionEntryAvailable`", d: "el gate de ENTRADA (DARK hoy)" }
+      { t: "WelcomeCloudSignInView.swift:755 `confirmSecondaryEntry`", d: "el orden y su kill-safety" },
+      { t: "WelcomeCloudSignInView.swift:725-734", d: "el belt del modo persistido" },
+      { t: "CloudSyncFlags.swift:315 `secondarySessionEntryAvailable`", d: "M2: el gate de ENTRADA, ahora con **cuatro** términos y DOS flags remotos — el percent PROPIO del feature y el kill-switch del Modo Nube" },
+      { t: "CloudRemoteConfig.swift:157 `secondarySessionEnabled`", d: "el percent propio que M2 le dio: hasta entonces esta entrada tomaba prestado el kill-switch del Modo Nube" }
     ],
-    notes: ["DARK: la entrada exige el flag M1, que en producción es `false`. El mount y el wipe honran el descriptor incondicionalmente para que una secundaria YA activa no quede brickeada si el flag se apagara."]
+    notes: [
+      "⚠︎ RE-DERIVADO el 2026-08-12 (F5): **el DARK ya no lo pone el binario**. Hasta `b5dab36d` la entrada estaba apagada por la constante compilada; hoy la apaga un PERCENT REMOTO propio, y el kill del Modo Nube se conserva como segunda palanca porque son independientes y cualquiera corta la entrada — un kill-switch doble y gratis.",
+      "Con el percent ausente (fresh install de producción antes del primer fetch) el término remoto es `absentDefault = false` ⇒ el guard cross-cuenta degrada la celda a «datos ajenos»: el usuario ve la pantalla honesta de hoy, jamás un error.",
+      "Sigue siendo una ENTRADA: el kill la corta, pero una secundaria YA ACTIVA no se toca — mount y wipe honran el descriptor incondicionalmente, que es lo que hace barato usar el kill-switch."
+    ]
+  },
+
+  "reentry-consentwrite": {
+    title: "M0 · Decisión: dónde se registra el consent aceptado",
+    shot: null,
+    sees: "Nada. Ocurre entre el sign-in y la pantalla siguiente: el usuario ya aceptó en el sheet y lo único que cambia es en qué almacén cae su epoch.",
+    persists: "Depende de la salida del guard cross-cuenta, y de nada más. `.proceed` (el propio dueño) → las dos keys se escriben ANTES de arrancar la máquina de adopt. `.proceedSecondarySession` (invitada M1) → DESPUÉS de `SecondarySessionStore.activate`, que es el único instante en que la resolución de prefs devuelve `.localOnly`. `.blockedForeignData` → **nunca** se escribe nada en este device.",
+    exits: "Salida única por rama y de una sola vez: `pending` es `inout` y se consume al escribir, así que un retry tras `.error` vuelve a pasar por el guard sin mover el epoch de su T0. Matar la app entre aceptar y el veredicto NO deja registro —el pendiente vive en `@State`— y al reintentar el epoch será el de la SEGUNDA aceptación.",
+    code: [
+      { t: "CloudConsentRegistrationLogic.swift:44 `placement(for:)`", d: "la tabla, total sobre las tres salidas del guard: añadir una cuarta obliga a decidir su destino aquí y no en la pantalla" },
+      { t: "CloudConsentRegistrationLogic.swift:32-39 `Placement`", d: "el porqué de cada punto: `beforeAdopt` porque el paso 5-bis del cutover re-emite el epoch PERSISTIDO y sin él cae al fallback `now()`, que es la hora de FIN del adopt" },
+      { t: "WelcomeCloudSignInView.swift:738", d: "rama `.proceed`: la escritura va ANTES de arrancar el adopt" },
+      { t: "WelcomeCloudSignInView.swift:784", d: "rama secundaria: la escritura va DESPUÉS de activar el descriptor — **ese orden ES el fix**" },
+      { t: "PreferenceSyncService.swift:43 `PrefsSyncBehavior.resolve`", d: "la secundaria gana PRIMERO (`.localOnly`); si no, `.icloud` → iKV y `.cloud` → outbox. Es lo que hace que el DÓNDE sea propiedad del instante en que se escribe" }
+    ],
+    notes: [
+      "MEDIDO: el alta born-cloud NO pasa por aquí. Su ruta ya se conoce al aceptar (no cruza el guard) y su claim la VERIFICA — aunque esa verificación solo comprueba PRESENCIA de las dos keys y hace ruido si falta alguna; no aborta nada.",
+      "⚠︎ INFERIDO del código, no medido en device: el pendiente es `@State` y muere con la vista. Aceptar y no llegar al veredicto (kill, back desde `.notFound`, error no reintentado) deja la métrica de consent emitida y CERO registro GDPR en el device.",
+      "Lo que sostiene el invariante es un source-scan del cableado, no un test de comportamiento: la tabla puede ser perfecta y sus tests verdes mientras la pantalla sigue escribiendo al aceptar."
+    ]
+  },
+
+  "reentry-slotocupado": {
+    title: "M1 · El hueco de invitada ya es de otra persona: se bloquea, no se mezcla",
+    shot: "reentry-slotocupado.png",
+    sees: "La misma pantalla honesta que ya existía para los datos ajenos: candado y «Este dispositivo tiene datos de otra cuenta». **No hay copy propio** para este caso — el hecho que se le cuenta a la segunda invitada es el mismo (aquí hay datos que no son tuyos), aunque los datos ajenos sean los de otra invitada y no los del dueño del móvil.",
+    persists: "Nada. La sesión recién firmada se suelta antes de pintar —igual que la otra salida bloqueada del guard— y el descriptor sigue nombrando a la PRIMERA invitada, con sus archivos `-Secondary` intactos.",
+    exits: "Terminal dentro del Welcome: se vuelve al chooser. Entrar habría sido montar el corpus de la primera invitada bajo la sesión de la segunda, porque `activate(userID:)` se limita a reescribir el nombre del ocupante del único hueco. La celda «misma cuenta» SÍ pasa a propósito: es la re-entrada idempotente de quien murió entre el descriptor y el relanzamiento, y bloquearla la dejaría sin forma de volver a su propia sesión.",
+    code: [
+      { t: "SecondarySlotOccupancyLogic.swift:46 `decide`", d: "la tabla entera: tres celdas — hueco libre, misma cuenta, ocupado por otro" },
+      { t: "SecondarySlotOccupancyLogic.swift:47", d: "un descriptor vacío cuenta como hueco LIBRE, no como ocupante anónimo" },
+      { t: "WelcomeCloudSignInView.swift:755 `confirmSecondaryEntry`", d: "el único call-site: compara el ocupante leído del store con el `sub` recién firmado, ANTES de armar la entrada" },
+      { t: "SecondarySessionStore.swift:42 `activate(userID:)`", d: "lo que habría pasado sin el guard: un `set` del nombre nuevo sobre el mismo slot" }
+    ],
+    notes: [
+      "⚠︎ El `userID` del descriptor existía desde antes y su docblock prometía por escrito que «valida que quien re-entra al slot es la misma cuenta»: hasta `9301b74d` **no tenía un solo consumidor de producción** — el mount pregunta `isActive()`, nunca *quién*.",
+      "MEDIDO: la comprobación vive en la ENTRADA y en ningún otro sitio. El mount y el wipe honran el descriptor INCONDICIONALMENTE por diseño, para que una sesión ya activa no quede brickeada si el flag se apagara.",
+      "Comparte copy con la pantalla de datos ajenos: si mañana hace falta distinguir «datos del dueño» de «datos de otra invitada», hace falta key nueva.",
+      "En producción el camino entero es inalcanzable: la entrada secundaria sigue DARK (ver el nodo de la sesión secundaria)."
+    ]
   },
 
   "reentry-adopt": {
@@ -451,9 +656,9 @@ window.ATLAS_NODES = {
     persists: "Los flags de onboarding se marcan TEMPRANO (antes de conducir la máquina): un kill a mitad aterriza en MainTab con la card de Almacenamiento reflejando el estado real, y el seed del onboarding JAMÁS corre sobre una cuenta existente.",
     exits: "SIN back. Sin red, el drive corta retomable y el auto-resume entra.",
     code: [
-      { t: "WelcomeCloudSignInView.swift:673-681", d: "`onAdoptStarted` → `startAdoptWithExistingSession` → poll" },
+      { t: "WelcomeCloudSignInView.swift:734-746", d: "`onAdoptStarted` → `startAdoptWithExistingSession` → poll" },
       { t: "CloudWelcomeSignInFlow.swift:92 `phase(for:)`", d: "mapea los 8 casos de `CloudMigrationUIState` a fase de pantalla; `reverting` y `needsRelaunch(.toICloud)` son IMPOSIBLES aquí y degradan a error no-retryable" },
-      { t: "ContentView.swift:1406-1410", d: "`completeOnboardingAsRestoreSkip()` + `hasCompletedOnboarding`" }
+      { t: "ContentView.swift:1561-1565", d: "`completeOnboardingAsRestoreSkip()` + `hasCompletedOnboarding`" }
     ],
     notes: []
   },
@@ -466,8 +671,8 @@ window.ATLAS_NODES = {
     exits: "4 ticks ociosos (~4 s) → auto-resume; 3 autos sin avance → botón manual. Un avance REAL de la máquina repone intentos frescos.",
     code: [
       { t: "CloudWelcomeSignInFlow.swift:204 `WelcomeAdoptAutoResume.tick`", d: "la tabla del tick" },
-      { t: "WelcomeCloudSignInView.swift:740 `evaluateAutoResume`", d: "el cableado + el belt: jamás conducir con el wipe de sign-out armado" },
-      { t: "WelcomeCloudSignInView.swift:771 `retryAdoptResume`", d: "con el journal normalizado a `notStarted` sin efectos, `resumeIfNeeded` sería un no-op perpetuo ⇒ re-arranca el adopt" }
+      { t: "WelcomeCloudSignInView.swift:825 `evaluateAutoResume`", d: "el cableado + el belt: jamás conducir con el wipe de sign-out armado" },
+      { t: "WelcomeCloudSignInView.swift:856 `retryAdoptResume`", d: "con el journal normalizado a `notStarted` sin efectos, `resumeIfNeeded` sería un no-op perpetuo ⇒ re-arranca el adopt" }
     ],
     notes: ["Existe porque `startAdoptWithExistingSession()` RETORNA cuando el drive corta retomable y el poll solo OBSERVABA: sin botón y con el re-kick disparando solo al volver a foreground, la pantalla quedaba clavada en «Conectando…» (H-2026-07-17-5)."]
   },
@@ -495,8 +700,8 @@ window.ATLAS_NODES = {
     persists: "Nada.",
     exits: "Con el kill-switch remoto OFF la fila DESAPARECE… salvo para un usuario «engaged».",
     code: [
-      { t: "StorageRowGateLogic.swift:26 `isVisible`", d: "configurado ∧ ¬secundaria ∧ (remoto ∨ engaged)" },
-      { t: "ProfileView.swift:930", d: "el cableado" },
+      { t: "StorageRowGateLogic.swift:50 `isVisible`", d: "configurado ∧ ¬secundaria ∧ (remoto ∨ engaged)" },
+      { t: "ProfileView.swift:939", d: "el cableado" },
       { t: "ProfileView.swift:225-229 `dataLocationSubtitle`", d: "el subtítulo por modo" }
     ],
     notes: ["Decisión owner: el kill-switch corta la ENTRADA, no la SALIDA — quien ya está en `.cloud` o con una migración en vuelo/fallida conserva la fila SIEMPRE: es su panel de gestión, resume y REVERSA."]
@@ -742,7 +947,7 @@ window.ATLAS_NODES = {
     code: [
       { t: "CloudSignOutFlowLogic.swift:9-12", d: "el invariante F0, escrito en la cabecera" },
       { t: "CloudSyncFlags.swift:107-126", d: "armar / leer / desarmar el wipe" },
-      { t: "ContentView.swift:1476 `SignOutRelaunchNetModifier`", d: "DUEÑO ÚNICO del cover; la presentación EFECTIVA solo la prueba el `onAppear` del contenido real" },
+      { t: "ContentView.swift:1640 `SignOutRelaunchNetModifier`", d: "DUEÑO ÚNICO del cover; la presentación EFECTIVA solo la prueba el `onAppear` del contenido real" },
       { t: "CloudSessionSignOut.swift:308-330", d: "R4: el swap se intenta en la ÚLTIMA línea, con el wipe ya armado y el cover ya en pantalla; la fase vuelve a `.idle` SOLO si sale `.swapped`" },
       { t: "CloudSyncEngine.swift:442 `swapReleaseAborted`", d: "**la firma de esta degradación**: su `reason` distingue «alguien retiene el container» de «la conexión sigue abierta»" }
     ],
@@ -784,7 +989,7 @@ window.ATLAS_NODES = {
     code: [
       { t: "CloudSignOutFlowLogic.swift:80 `shouldShowExitYalaRow`", d: "group-invite ∧ sin sesión" },
       { t: "CloudSignOutFlowLogic.swift:71 `shouldShowRow`", d: "«Cerrar sesión» siempre, salvo group-invite sin sesión" },
-      { t: "ProfileView.swift:411", d: "el dispatch a `exitYalaOnThisDevice`" }
+      { t: "ProfileView.swift:416", d: "el dispatch a `exitYalaOnThisDevice`" }
     ],
     notes: []
   },
@@ -829,7 +1034,7 @@ window.ATLAS_NODES = {
     code: [
       { t: "OnboardingGroupsPurposeGateLogic.swift:97 `shouldShowGroupsCard`", d: "flujo inicial ∧ modo `.icloud`" },
       { t: "OnboardingPurposeSelectionLogic.swift:62 `selectedCard`", d: "SSOT total-y-única: los 4 modos → 3 cards" },
-      { t: "OnboardingView.swift:513-540", d: "el cableado de las dos decisiones" }
+      { t: "OnboardingView.swift:529-556", d: "el cableado de las dos decisiones" }
     ],
     notes: ["A6: en `.cloud` la card NO se pinta (elegir nube para lo personal + «solo quiero Grupos» es contradictorio: el modo solo-grupos no usa el store personal y dejaría VACÍO el backend recién estrenado). Se OCULTA y no se deshabilita con copy: un botón que solo sirve para explicar por qué no sirve es peor que su ausencia."]
   },
@@ -842,62 +1047,189 @@ window.ATLAS_NODES = {
     exits: "Con el canal backend ON el muro se RETIRA ENTERO — y además su copy («los grupos se sincronizan por iCloud») MENTIRÍA.",
     code: [
       { t: "OnboardingGroupsPurposeGateLogic.swift:56 `shouldBlockSelection`", d: "canal ON ⇒ nunca bloquea; canal OFF ⇒ bloquea sin cuenta iCloud" },
-      { t: "OnboardingView.swift:530-538", d: "el cableado" }
+      { t: "OnboardingView.swift:546-554", d: "el cableado" }
     ],
     notes: ["Sin parámetro `isUITest` a propósito: bajo `-uitest` el canal está SIEMPRE ON, así que ningún XCUITest puede alcanzar la rama del muro."]
   },
 
   "onboarding-groupsonly": {
-    title: "Cierre en modo «Solo grupos»",
+    title: "C2 · La card «Solo grupos» ya no cierra el alta: la CEDE",
     shot: "onboarding-groupsonly.png",
-    sees: "Aterriza directamente en el tab Grupos (con `.groupInvite` el tab bar se reduce).",
-    persists: "Nombre, divisa y período · `onboardingMode = groupInvite` (dual-write al KV) · `groupsBetaUnlocked` · semillas de categorías personales y de sistema · notificaciones. NO crea cuenta ni presupuesto.",
-    exits: "N/A.",
+    sees: "El último paso del onboarding de 8 pasos en su variante solo-grupos. Al terminarlo el usuario **ya no aterriza en el tab**: entra en la misma cadena que la rama organizador del Welcome —educativo, cuenta, permiso— y solo al final se le da de alta y se le lleva a Grupos.",
+    persists: "**NADA en este paso, y ese es el chip entero.** El nombre y la divisa viajan EN MEMORIA hasta que la cadena confirma identidad y consent; el alta la escribe `GroupsOrganizerOnboarding.completeSetup` al final, con sus seis keys y sus semillas. Sigue sin crear cuenta personal ni presupuesto. En sesión SECUNDARIA no escribe ni una key y el alta no ocurre.",
+    exits: "Ya no es un terminal. Cancelar en cualquier escalón descarta el payload y devuelve al chooser de Grupos del Welcome —no al onboarding de 8 pasos, que ya se cerró—. En sesión secundaria la rama entera se desvía a la puerta del Welcome, que es la que sabe pintar ese veredicto: un `return` mudo dejaría un botón que no hace nada.",
     code: [
-      { t: "OnboardingView.swift:1816 `completeGroupsOnlyOnboarding`", d: "todo lo que escribe" },
-      { t: "OnboardingView.swift:1858-1862", d: "el aterrizaje en el tab Grupos" }
+      { t: "OnboardingView.swift:1768-1777", d: "la rama ya no escribe: entrega el payload y cede; **sin el callback cableado NO completa**, a propósito — el fallback de antes era escribir el trío sin cuenta" },
+      { t: "OnboardingView.swift:1835-1849", d: "la LÁPIDA: qué escribía `completeGroupsOnlyOnboarding()` y por qué era irreversible. No se dejó como código muerto porque un método privado que sigue compilando es lo que alguien vuelve a llamar" },
+      { t: "ContentView.swift:733 `startGroupsOnlyBranch`", d: "guarda el payload, cierra el onboarding y submitea sin presentar nada a pelo" },
+      { t: "ContentView.swift:1003", d: "`entry = .onboardingCard` cuando hay payload: comparte cadena y terminal con la rama organizador" },
+      { t: "ContentView.swift:1013-1029", d: "`case .presentName` CON payload: no se vuelve a preguntar el nombre, se ESCRIBE, y se re-submitea para que la máquina re-decida" },
+      { t: "GroupsOrganizerOnboarding.swift:218 `completeSetup`", d: "el sustituto, con DOS call-sites de producción y los dos detrás de la cadena completa" }
     ],
-    notes: ["⚠︎ AGUJERO DE DATOS MEDIDO (§6.2 punto 4 del spec, confirmado en este árbol): `completeGroupsOnlyOnboarding` NO toca `storageMode` ⇒ el device queda `.icloud` y, sin cuenta iCloud del OS, el store monta local-sin-mirror. Las `TransactionItem` puenteadas desde los gastos de grupo no tienen NINGUNA copia. D-A7 le da salida a los usuarios NUEVOS (elegir nube en el alta); la cohorte que ya existe NO se cura sola — ticket aparte, §6.5."]
+    notes: [
+      "⚠︎ **EL AGUJERO DE DATOS SIGUE ABIERTO Y CAMBIÓ DE DUEÑO** — re-medido el 2026-08-12 sobre HEAD `6c6eb3fe`: el sustituto `completeSetup` TAMPOCO toca `storageMode` (no aparece ni en su inventario de keys ni en su cuerpo), y ninguno de los escritores del modo de storage está en la cadena de Grupos ⇒ el device queda `.icloud` y, sin cuenta iCloud del OS, monta local-sin-mirror: las `TransactionItem` puenteadas desde los gastos de grupo **siguen sin ninguna copia**. Sin re-anclar el hallazgo a `completeSetup`, el borrado de la función vieja lo haría parecer resuelto.",
+      "Lo que C2 SÍ cierra es otra cosa, y está cerrado: que el trío se escribiera sin cuenta, sin consent y sin canal comprobado. Los datos del GRUPO tienen ahora respaldo en la cuenta; lo que no lo tiene es su espejo personal.",
+      "MEDIDO: el retiro de los grupos de la era CloudKit (`43b473c8`) **no** toca este camino ni lo cierra — su barrido solo alcanza zonas sin canal vivo, y un alta solo-grupos de hoy nace en el canal backend.",
+      "Lo que el borrado se llevó sin que nadie lo listara fue el guard de sesión secundaria de la función eliminada; reponerlo en el destino es lo que hace `ec551b71`."
+    ]
+  },
+
+  "onboarding-puertas": {
+    title: "C2 · las CUATRO puertas de Grupos, una sola tabla",
+    shot: null,
+    sees: "Nada: es la decisión de qué pantalla toca ahora. Lo que el usuario nota es el ORDEN — primero le cuentan qué es un grupo, después se le pide la cuenta, después el permiso, y solo al final el nombre.",
+    persists: "Nada **a propósito, y es la invariante entera del chip**: nombre, modo y consent se escriben JUNTOS y al final, en `GroupsOrganizerOnboarding.completeSetup`. `onboardingMode = .groupInvite` es never-downgrade cross-device y viaja al iKV del Apple ID: escrito antes de confirmar la ruta, se propaga a los otros dispositivos de esa cuenta —donde el usuario ve una app recortada a Grupos y vacía— y **no vuelve**; su única recuperación sería restaurar por iCloud.",
+    exits: "Cada llamada RE-EVALÚA condiciones vivas en vez de recordar en qué paso iba, así que un sign-in hecho en otra pantalla, un consent aceptado por otra vía o un kill-and-relaunch a mitad no dejan la máquina desalineada.",
+    code: [
+      { t: "GroupsGateLogic.swift:105 `nextStep`", d: "la SSOT: precedencia educativo → sign-in → consent → terminal por entrada" },
+      { t: "GroupsGateLogic.swift:56-67 `Entry`", d: "las cuatro puertas: `.organizer` (Welcome) · `.onboardingCard` (card «Solo grupos») · `.invite` (link backend) · `.tab` (crear desde el tab)" },
+      { t: "GroupsGateLogic.swift:135 `showsEducationalFirst`", d: "el educativo general se antepone SOLO en dos: al invitado le tocaría uno detrás de otro y en el tab competiría con el sheet que ya lo monta" },
+      { t: "GroupsGateLogic.swift:93-97", d: "el término es `hasShownGroupsOnboarding`, el hecho REAL. El corte anterior (`onboardingMode == .groupInvite`) suprimía el educativo justo a quien entraba por la card «Solo grupos» — la gente con MENOS contexto" },
+      { t: "GroupsGateLogic.swift:37-43", d: "el canal NO entra aquí: vive en `GroupCreateRoutingLogic` y en `GroupsOrganizerGateLogic`, y en los dos es el PRIMER término" }
+    ],
+    notes: [
+      "⚠︎ La cuarta puerta —la card «Solo grupos» del onboarding de 8 pasos— **no pasaba por ninguna tabla**: escribía el trío (`userName`, `onboardingMode`, `groupsBetaUnlocked`, `hasCompletedOnboarding`) sin sesión, sin consent y sin canal comprobado. Las otras tres se prometían paridad por docblock, que es como divergen.",
+      "MEDIDO y anotado en el propio código: esta tabla es PURA y recibe el canal ya leído, así que puede estar perfecta y sus tests verdes mientras un llamador mide un snapshot de hasta 6 h. Lo que fija el `refreshIfDue(force: true)` antes de la lectura son los source-scan de los call-sites, no esta tabla."
+    ]
+  },
+
+  "onboarding-adopcion": {
+    title: "G2 · Entrar al tab Grupos ES el acto de adopción (murió el código «1050»)",
+    shot: null,
+    sees: "Lo que se ve es una pantalla que **ya no existe**: el tab Grupos monta su contenido sin condición. Desaparecen la pantalla de bloqueo con el campo del código, el alert «tengo un código» de la card de «Más», el badge «Beta» de esa card y el gateo de la opción «Grupo» del FAB en Panel, Registros y Estadísticas — hoy se muestra siempre.",
+    persists: "`groupsBetaUnlocked = true`, escrito en el `onAppear` del tab. La key conserva su string histórico a propósito: renombrarla obligaría a migrar el parque sin ganar nada. Con la key ya puesta no se escribe nada, y en una sesión SECUNDARIA no se escribe nada en absoluto.",
+    exits: "No hay deshacer: la adopción es per-device y permanente. El único camino que la repone es «empiezo de cero» del Welcome ⇒ ⚠︎ cerrar una sesión de invitada NO la repone, y por eso el guard de sesión secundaria es lo que impide que la invitada le deje al dueño el dominio adoptado.",
+    code: [
+      { t: "ContentView.swift:2354-2365", d: "el tab monta el contenedor de Grupos SIN condición" },
+      { t: "ContentView.swift:2370", d: "el cableado del marcador de adopción, en el `onAppear`" },
+      { t: "GroupsDomainAdoptionLogic.swift:40 `isDomainOpen`", d: "`isUnlocked || isGroupInviteMode`; quitar el segundo término cerraría el bridge al invitado normal, que es la mayoría" },
+      { t: "GroupsDomainAdoptionLogic.swift:66-70 `isBridgeAllowed`", d: "el default es PERMITIR; solo el device sellado por un fresh-start queda cerrado" },
+      { t: "MoreView.swift:242", d: "la card, sin badge y con navegación directa: el alert de intro y el modifier del código se borraron" },
+      { t: "FABStackView.swift:182-186", d: "la opción «Grupo» ya no lleva gate: se pinta siempre en los tres hosts" }
+    ],
+    notes: [
+      "**Cierra el hallazgo F2-H1.** MEDIDO con grep sobre este árbol: cero ocurrencias de `GroupsBetaGateView`, del campo del código y del gate del FAB; las 6 keys del gate se retiraron de los 16 idiomas. Lo único que sobrevive es el STRING de la key de `UserDefaults`.",
+      "⚠︎ MEDIDO: hay CUATRO escritores de la adopción en producción —el tab, la invitación warm, la invitación con el flag apagado y el alta solo-grupos— y **solo dos llevan guard de sesión secundaria**.",
+      "MEDIDO: Grupos no es un tab activo por defecto, así que la puerta normal al tab —y por tanto a la adopción— es la card de «Más»."
+    ]
+  },
+
+  "onboarding-consent": {
+    title: "C1 · El consent de Grupos — una sola pantalla para las cuatro puertas",
+    shot: "onboarding-consent.png",
+    sees: "«Grupos en la nube» y cuatro puntos: que los grupos viven en la nube de Yala para que todos vean lo mismo, que solo sale el alias y los gastos del grupo, que las finanzas personales no se mueven, y que los datos viajan protegidos y se puede salir cuando se quiera. Debajo, el enlace a la política de privacidad y «Aceptar y continuar».",
+    persists: "Al aceptar, y EN ESTE ORDEN: el snapshot local **sellado con el `sub`** de la cuenta, el intent durable del registro, y —cuando haya red— la fila en `groups_consents` de la cuenta. La hora guardada es la de la ACEPTACIÓN, jamás la del reintento que consiguió red.",
+    exits: "Aceptar cierra el sheet y la continuación corre en el `onDismiss`, con la dismissal ya terminada. Cancelar no continúa nada: el invitado se queda como estaba —su intent sobrevive 7 días— y al organizador se le apaga la rama y vuelve al chooser de Grupos. **El registro contra la cuenta NO bloquea**: la caché local se escribe siempre, así que la puerta no depende del request.",
+    code: [
+      { t: "GroupsConsentView.swift:116-118 `registerConsent`", d: "choke-point único: `GroupsConsentRegistrar.register` + la métrica" },
+      { t: "GroupsConsentRegistrar.swift:88 `register`", d: "caché local → arma el intent → lanza el intento; sin sesión escribe la caché y no arma" },
+      { t: "GroupsConsentDecisionLogic.swift:53 `isAccepted`", d: "las tres reglas: sin snapshot no; versión por debajo de la sustantiva no; sello que contradice al `sub` vivo, tampoco" },
+      { t: "GroupsConsentText.swift:41-47", d: "`version = 1` y `requiresReacceptanceFrom = 1` ⇒ hoy nadie vuelve a ver esta pantalla por versión" },
+      { t: "GroupsBackendInviteModifier.swift:143", d: "el ÚNICO call-site de la vista; el `path` sale de `groupsOrganizerFlowActive`" }
+    ],
+    notes: [
+      "⚠︎ El `path` que llega al servidor nunca vale `\"tab\"`, aunque el docblock de la vista declare `organizer | invite | tab`: el único call-site discrimina por `groupsOrganizerFlowActive`, así que un consent aceptado desde el FAB o desde el empty state del tab se registra como `\"invite\"`. Es diagnóstico, no PII — pero es justo el campo con el que se sabría por dónde entra la gente.",
+      "⚠︎ El header del fichero sigue citando `GroupsConsentState.register()` (PrefSyncKeys §C5). Ese método ya no existe: C1 lo sustituyó por `GroupsConsentRegistrar` y las dos `PrefSyncKey` salieron del enum.",
+      "El sheet lleva `path` como parámetro y no como rama: la pantalla es literal para las cuatro puertas, sin variantes de copy."
+    ]
+  },
+
+  "onboarding-consentcuenta": {
+    title: "C1 · Tu permiso viaja con tu cuenta (decisión, sin pantalla)",
+    shot: null,
+    sees: "Nada nuevo — se nota por lo que YA NO pasa: quien aceptó en su iPhone y entra con su cuenta en el iPad, o reinstala, no vuelve a ver la pantalla de consentimiento.",
+    persists: "En la CUENTA: una fila en `groups_consents` con `(user_id, text_version)` y la fecha de aceptación, append-only **por el grant** (`select, insert`, sin `update` ni `delete`). En el DISPOSITIVO: el snapshot sellado y, mientras no haya 2xx, el intent durable con el `sub` de su dueño dentro.",
+    exits: "Sin sesión no se arma nada (no hay cuenta a la que atribuirlo) y la caché local se escribe igual. Un intent cuyo `sub` no case con la sesión viva ni se intenta ni se descarta: espera a su dueño. Un rechazo permanente del servidor CONSERVA la prueba y emite canario en vez de tirarla. `clear()` es solo local: la cuenta sigue recordando su consent.",
+    code: [
+      { t: "GroupsConsentRegistrar.swift:179 `handleSignIn`", d: "las tres mitades en una llamada: adoptar el legacy, retomar el intent, traer el estado de la cuenta" },
+      { t: "GroupsConsentRegistrar.swift:188 `adoptLegacyIfNeeded`", d: "sella con el `sub` vivo el consent que el device tenía sin identidad y ARMA su registro — para el grueso del parque esto CREA el registro, no lo mueve" },
+      { t: "GroupsConsentRegistrar.swift:209 `refreshFromServer`", d: "un fallo de red nunca borra ni degrada la caché" },
+      { t: "GroupsConsentRegistrar.swift:226 `applyServerState`", d: "solo sella si lo remoto es igual o más nuevo: lo local puede ser una aceptación de hace un segundo cuyo registro aún viaja" },
+      { t: "GroupsMembershipClient.swift:506 `consentState`", d: "la lectura va por su propio RPC y NO por el canal de prefs — la frontera M1 sigue cerrada" },
+      { t: "AppBootstrapper.swift:530-531", d: "el retome del boot, sin `awaitPersonalStoreReady`: aquí no hay `save()` que proteger" }
+    ],
+    notes: [
+      "El problema que cierra: antes el permiso acababa en el iCloud del Apple ID de ESE teléfono —el `storageMode` por defecto es `.icloud` y Grupos va al 100 % sin exigir Modo Nube— y no llegaba nunca a Yala, así que el segundo dispositivo preguntaba otra vez.",
+      "⚠︎ MEDIDO en el ORDEN del código, no cronometrado: en el mismo flujo, el sign-in dispara `handleSignIn()` dentro de un `Task` y acto seguido cierra el sheet; el `onDismiss` re-decide leyendo la caché LOCAL de forma síncrona, y no hay ningún `await` que ordene las dos cosas ⇒ la promesa «entras en tu iPad y la app ya lo sabe» se cumple en la evaluación SIGUIENTE, no necesariamente en esa.",
+      "El canario de `resumeIfNeeded` va antes de todo early-return **de aplazamiento** (in-flight, sin sesión, `sub` que no casa, backoff); el `.idle` de «no había intent» queda fuera a propósito, y es lo que hace que «frenados» y «no había nada» se distingan en el dashboard. El docblock del método dice «antes de todo early-return» a secas — es impreciso, medido el 2026-08-12."
+    ]
+  },
+
+  "onboarding-canalapagado": {
+    title: "C4 · Crear grupo con el canal apagado: no nace nada",
+    shot: "onboarding-canalapagado.png",
+    sees: "Al tocar «crear grupo» (empty state, FAB simple, FAB desplegable o el formulario que deja la rama organizador), un aviso con vibración de advertencia: «Ahora mismo no podemos abrirte grupos». La lista sigue como estaba. Si el bloqueo se detecta ya DENTRO del formulario, el mismo texto sale como error de guardado y el formulario **no se cierra** — tras el dismiss no quedaría nadie que pudiera contárselo.",
+    persists: "Nada, y eso es el chip entero: ni `SplitGroup`, ni `onboardingMode`, ni `groupsBetaUnlocked`, ni `hasCompletedOnboarding`.",
+    exits: "«OK» cierra el aviso y devuelve al tab. El canal se re-mide EN EL PROPIO TAP: `refreshIfDue(force: true)` va antes de leer el flag, porque sin `force` es un no-op exactamente en el caso del bug.",
+    code: [
+      { t: "GroupCreateRoutingLogic.swift:77", d: "`guard flagOn else { return .channelOff }` — el canal es el PRIMER término" },
+      { t: "GroupCreateRoutingLogic.swift:51 `case channelOff`", d: "la ruta que sustituye a `.cloudKit`, muerta desde `ad291c7f`" },
+      { t: "GroupsContainerView.swift:706-711 `requestCreateGroup`", d: "choke-point de las CUATRO entradas de creación del tab, con el `force` dentro y no replicado" },
+      { t: "GroupsContainerView.swift:321-328", d: "el alert, que reusa `welcome.groups.channelOff*`" },
+      { t: "GroupFormView.swift:286-292", d: "la segunda superficie: dentro del formulario el bloqueo se dice como error de guardado y NO cede el anchor" }
+    ],
+    notes: [
+      "⚠︎ Lo que había antes: este mismo tap acuñaba un grupo LOCAL con `isBackendGroup == false` — de una sola persona, no invitable y sin vía de migración, para siempre y sin ningún error visible, porque el camino funcionaba offline. Y no era una ventana de instalaciones nuevas: bajar el percent del canal a 0 —la respuesta operativa documentada a un incidente— dejaba a TODO el parque así en ≤6 h con la CTA intacta, o sea que el remedio encendía la fábrica de grupos zombis.",
+      "⚠︎ NO es ejercitable en el harness, y está dicho para que nadie lo persiga: `CloudRemoteFlags.decide()` cortocircuita a `absentDefault` bajo `isRunningTests || isUITestHost`, y en `Yala Dev` ese default es `true` ⇒ el flag nace ON y `.channelOff` es inalcanzable desde un test de integración en los dos targets. La red es estructural (tabla + source-scan del orden), no un e2e.",
+      "El dominio de la tabla es 2×2×2 = 8 celdas y cuatro rutas; las CUATRO celdas con el canal apagado devolvían `.cloudKit` y hoy devuelven `.channelOff`."
+    ]
   },
 
   "onboarding-educativo": {
     title: "Educativo del tab Grupos + CTA de sign-in",
     shot: "onboarding-educativo.png",
-    sees: "Sheet informativo; el último paso ofrece «Iniciar sesión» cuando el canal está ON y no hay sesión.",
-    persists: "`hasShownGroupsOnboarding` solo si se completa (la «X» NO la persiste: volverá a aparecer).",
-    exits: "El CTA NO es un muro: quien lo salte cae en el empty state, que ya pide sesión. El intent se emite con el sheet YA desmontado (`onDismiss`) — emitirlo con el sheet puesto lo dejaría RETENIDO por peek-first.",
+    sees: "Sheet informativo de tres pasos. El último, «Tu privacidad, primero», abre desde C2 con el hecho SUSTANTIVO —dónde se guardan los gastos del grupo— y solo después tranquiliza. Sin sesión y con el canal ON, el botón principal es «Crear mi cuenta» si este móvil nunca tuvo sesión, o «Iniciar sesión» si ya la tuvo.",
+    persists: "`hasShownGroupsOnboarding` solo si se COMPLETA —la «X» no la persiste, así que volverá a aparecer— tanto en «Ir a Grupos» como en el CTA de cuenta: el educativo terminó en los dos casos. Es la misma marca que escriben el educativo del invitado y el cover de las puertas A y B.",
+    exits: "El CTA NO es un muro: quien lo salte cae en el empty state, que ya pide lo que falte. El intent se emite con el sheet YA desmontado (`onDismiss`) — emitirlo con el sheet puesto lo dejaría RETENIDO por peek-first.",
     code: [
-      { t: "GroupsOnboardingLogic.swift:30 `shouldShow`", d: "AND-gating: flag persistida, modo group-invite y deeplink pendiente bloquean" },
-      { t: "GroupsOnboardingLogic.swift:60 `shouldShowSignInCTA`", d: "último paso ∧ canal ON ∧ sin sesión" },
-      { t: "GroupsContainerView.swift:374", d: "el cableado" }
+      { t: "GroupsOnboardingLogic.swift:37 `hasSeenAnyGroupsEducational`", d: "C2: el hecho REAL que sustituye al corte por `onboardingMode == .groupInvite`, que suprimía el educativo justo a quien menos contexto tenía; ese modo queda solo como término LEGACY" },
+      { t: "GroupsOnboardingLogic.swift:56 `shouldShow`", d: "AND-gating: educativo ya visto o deeplink de grupo pendiente bloquean" },
+      { t: "GroupsOnboardingLogic.swift:84 `shouldShowSignInCTA`", d: "último paso ∧ canal ON ∧ sin sesión" },
+      { t: "GroupsContainerView.swift:431", d: "el cableado, en el `onAppear` del tab" },
+      { t: "GroupsOnboardingView.swift:312-315", d: "el copy del CTA lo decide el MISMO latch que el empty state, no una segunda fuente" }
     ],
-    notes: []
+    notes: [
+      "⚠︎ Este nodo es el educativo del TAB (sheet). Las puertas A y B montan el MISMO contenido como fullScreenCover desde `GroupsBackendInviteModifier`, con otras salidas.",
+      "⚠︎ Cerrar con la «X» deja el FAB y la CTA del empty state alcanzables, y la puerta del tab pasa `hasSeenEducational: true` LITERAL ⇒ **es la única puerta por la que se puede crear o firmar sin haber visto nunca el educativo**."
+    ]
   },
 
   "onboarding-empty": {
-    title: "Empty state del tab Grupos",
+    title: "Empty state del tab Grupos · CINCO casos (C2)",
     shot: "onboarding-empty.png",
-    sees: "«Aún no tienes grupos» (CTA crear) o «tus grupos están en tu cuenta» (CTA iniciar sesión).",
+    sees: "Cinco copys según lo que FALTE, en la misma precedencia que la tabla de las cuatro puertas: «¿Cómo funcionan los grupos?» (aún no vio el educativo) · «Crea tu cuenta de Yala» (sin sesión y nunca tuvo) · «Tus grupos están en tu cuenta» (sin sesión pero ya tuvo) · «Un último paso» (sesión viva sin consent) · «Sin grupos» con «Crear grupo» (no falta nada, solo el grupo).",
     persists: "Nada.",
-    exits: "Con el canal OFF SIEMPRE es el estándar ⇒ el shipping DARK queda byte-idéntico.",
+    exits: "Cada caso lleva a lo que anuncia, y **esa correspondencia es el invariante**: educativo → el sheet del educativo · crear-cuenta y re-entrada → el MISMO intent de sign-in (la vista crea la cuenta además de recuperarla; lo que cambia es el copy) · consent → el mismo intent que emite crear grupo · estándar → el choke-point `requestCreateGroup`. Con el canal OFF SIEMPRE es el estándar ⇒ el shipping DARK queda byte-idéntico.",
     code: [
-      { t: "GroupsEmptyStateLogic.swift:29 `decide`", d: "flag ON ∧ sin sesión ⇒ re-entrada" },
-      { t: "GroupsContainerView.swift:318", d: "el cableado, con la identidad de accesibilidad preservada por rama" }
+      { t: "GroupsEmptyStateLogic.swift:67 `decide`", d: "precedencia canal → educativo → identidad (crear vs. volver) → consent → estándar" },
+      { t: "GroupsEmptyStateLogic.swift:74-78", d: "las cinco líneas que producen los cinco casos" },
+      { t: "GroupsContainerView.swift:354", d: "el cableado, con la identidad de accesibilidad preservada por rama" },
+      { t: "GroupsSessionHistoryMarker.swift:59 `hadSessionEver`", d: "el latch monotónico que separa «vuelve a tu cuenta» de «crea una cuenta»" },
+      { t: "YalaEmptyState.swift:183", d: "las variantes nuevas y sus ids de accesibilidad" }
     ],
-    notes: ["Fuera de v1 y DOCUMENTADO: el caso «sin sesión + grupos CloudKit todavía visibles» no aplica aquí — el empty state solo se pinta con la lista VACÍA."]
+    notes: [
+      "⚠︎ Lo que C2 arregla eran DOS mentiras, no una: con dos casos, todo el que no tenía sesión leía «tus grupos están en tu cuenta · inicia sesión». Para quien **nunca tuvo cuenta** —el caso dominante en un fresh install— eso es falso dos veces: no hay grupos suyos esperando en ninguna parte, y no hay sesión que «iniciar» porque la cuenta hay que CREARLA. Y faltaba un tercer estado real: sesión viva sin consent, donde el tap mandaba a una pantalla de consentimiento que el usuario no esperaba.",
+      "MEDIDO antes de usarlo: `hadSessionEver` **no** puede ser `GroupsSignOutBannerMarker` — ese es one-shot (se quema en el `onAppear` del banner y se desarma al re-firmar), así que en cuanto el banner se muestra una vez, quien SÍ tuvo cuenta volvería a leer «crea una cuenta».",
+      "⚠︎ El latch es per-device y no viaja: quien ya tiene cuenta y estrena móvil lee «Crea tu cuenta de Yala».",
+      "⚠︎ El caso `.needsEducational` casi nunca se ve solo: la misma condición hace que el sheet del educativo se presente en el `onAppear` del tab. Queda a la vista tras cerrarlo con la «X», que no marca nada.",
+      "Fuera de v1 y DOCUMENTADO: el caso «sin sesión + grupos CloudKit todavía visibles» no aplica aquí — el empty state solo se pinta con la lista VACÍA."
+    ]
   },
 
   "onboarding-crear": {
     title: "Crear grupo · sign-in contextual",
     shot: "onboarding-crear.png",
-    sees: "El form de crear grupo, o antes el consent de grupos, o antes el sign-in.",
+    sees: "El formulario de grupo — o, antes, lo que la puerta del tab diga que falta: el sign-in de Grupos o el consent. Desde C4 hay una cuarta salida: con el canal apagado no se abre nada y sale el aviso.",
     persists: "Nada hasta guardar.",
-    exits: "Residual DOCUMENTADO: no hay auto-continuación — tras el consent/sign-in el usuario re-tapea «crear grupo».",
+    exits: "Residual DOCUMENTADO: no hay auto-continuación — tras el consent o el sign-in el usuario re-tapea «crear grupo».",
     code: [
-      { t: "GroupCreateRoutingLogic.swift:28 `route`", d: "flag OFF → CloudKit; sin sesión → sign-in; sin consent → consent; listo → backend" },
-      { t: "GroupsContainerView.swift:623 `requestCreateGroup`", d: "cede el anchor a ContentView para presentar; el form es sheet de ESTE anchor" }
+      { t: "GroupCreateRoutingLogic.swift:76 `route`", d: "C4: canal OFF → `.channelOff` (antes `.cloudKit`, que acuñaba un grupo local irrecuperable); sin sesión → sign-in; sin consent → consent; listo → backend" },
+      { t: "GroupCreateRoutingLogic.swift:78-84", d: "delega en la tabla de las cuatro puertas con `entry: .tab`, en vez de reimplementar la precedencia" },
+      { t: "GroupsContainerView.swift:706 `requestCreateGroup`", d: "choke-point de las CUATRO entradas de creación del tab; cede el anchor a ContentView para presentar" }
     ],
-    notes: []
+    notes: [
+      "⚠︎ La entrada `.tab` es la única de las cuatro que NO antepone el educativo: lo monta el sheet del `onAppear`. Quien lo cierre con la «X» puede crear o firmar sin haberlo visto nunca — ver el panel del educativo."
+    ]
   },
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -911,10 +1243,10 @@ window.ATLAS_NODES = {
     persists: "El snapshot de remote-config; se refresca como MUCHO cada 6 h, y ausente ⇒ `false` en producción (fail-closed).",
     exits: "El Welcome y Almacenamiento fuerzan un `refreshIfDue()` al ENTRAR, porque un fresh install pre-onboarding puede no tener cache del boot.",
     code: [
-      { t: "CloudRemoteConfig.swift:127-141", d: "`cloudModeEnabled` · `cloudOnboardingChoiceEnabled` · `groupsBackendEnabled` (el remoto solo puede MATAR)" },
-      { t: "CloudRemoteConfig.swift:113 `absentDefault`", d: "fail-closed en producción" },
-      { t: "StorageRowGateLogic.swift:26", d: "engaged conserva la fila" },
-      { t: "WelcomeFlowContainer.swift:153-159", d: "el refresh en la entrada; bajo uitest NO se toca red" }
+      { t: "CloudRemoteConfig.swift:134-148", d: "`cloudModeEnabled` · `cloudOnboardingChoiceEnabled` · `groupsBackendEnabled` (el remoto solo puede MATAR)" },
+      { t: "CloudRemoteConfig.swift:120 `absentDefault`", d: "fail-closed en producción" },
+      { t: "StorageRowGateLogic.swift:50", d: "engaged conserva la fila" },
+      { t: "WelcomeFlowContainer.swift:199-205", d: "el refresh en la entrada; bajo uitest NO se toca red" }
     ],
     notes: ["Con el kill puesto, el faro deja de encaminar (`cloudEntryAvailable` es false) ⇒ el residual del 2º device born-cloud vuelve a estar abierto. Está declarado, no escondido."]
   },
@@ -927,8 +1259,8 @@ window.ATLAS_NODES = {
     exits: "El método de re-firma NO se elige: es determinista, el de la cuenta (`storedProvider()`, que la expiración del SDK no borra). Ofrecer chooser aquí invitaría al mismatch R9.",
     code: [
       { t: "SessionExpiryPolicy.swift:34 `decide`", d: "pendientes > 0 ∧ sesión irrenovable ⇒ estado bloqueado explícito" },
-      { t: "CloudMigrationController.swift:564 `refreshSyncBanner`", d: "cuenta las filas VIVAS del outbox" },
-      { t: "CloudMigrationController.swift:583 `signInToResumeSync`", d: "el belt: si la sesión revivió por otra entrada, solo despierta la cadencia" }
+      { t: "CloudMigrationController.swift:582 `refreshSyncBanner`", d: "cuenta las filas VIVAS del outbox" },
+      { t: "CloudMigrationController.swift:601 `signInToResumeSync`", d: "el belt: si la sesión revivió por otra entrada, solo despierta la cadencia" }
     ],
     notes: []
   },
@@ -964,13 +1296,57 @@ window.ATLAS_NODES = {
       { t: "SwiftDataConfiguration.swift:266 `isFreshInstallForNeutralMount`", d: "los 4 términos PRE-MOUNT; el primero (sin archivo de store) es la protección ESTRUCTURAL: el parque actual no puede alcanzar el camino nuevo" },
       { t: "SwiftDataConfiguration.swift:296 `shouldMountNeutralDurable`", d: "R4: marca armada ∧ chooser no visto" },
       { t: "SwiftDataConfiguration.swift:333 `personalStoreDecision`", d: "el orden de la cadena: secundaria → par `.cloud`+armado → neutro → iCloud/local. Los dos términos nuevos van SIN default para obligar a todo llamador a pronunciarse" },
-      { t: "SwiftDataConfiguration.swift:1051-1057", d: "la rama del mount, con el porqué del `.none` explícito medido en la auditoría R1(c)" },
+      { t: "SwiftDataConfiguration.swift:1049-1054", d: "la rama del mount, con el porqué del `.none` explícito medido en la auditoría R1(c)" },
       { t: "SwiftDataConfiguration.swift:1009 `shouldOfferICloudRestart`", d: "R1: el aviso «monté sin CloudKit y ahora hay iCloud» decide por el MOUNT (`isCloudModeMount`) y no por el modo persistido ⇒ al neutro SÍ le habla, que es lo que pedía §1.3" },
       { t: "CloudSyncDebugView.swift:530", d: "la única superficie que lo enseña dentro de la app" }
     ],
     notes: [
       "`.automatic` NO es un atajo de `.none`: la auditoría R1(c) MIDIÓ (sim sin cuenta iCloud, con control positivo y negativo) que `.automatic` adjunta el mirror igual —mismos eventos de `NSPersistentCloudKitContainer` que `.private`— mientras `.none` emite cero. Omitir el parámetro sería el mount CONTRARIO al que este caso declara.",
       "Corolario del testigo: el neutro NO es `isCloudModeMount` (eje C) pero sí es `!attachesCloudKitMirror` (eje A). Esa separación es lo que deja pasar el motor tras el alta y a la vez mantiene vivo el aviso de iCloud — un booleano colapsado no podía expresar las dos cosas."
+    ]
+  },
+
+  "degradado-legacyretire": {
+    title: "C3 · El barrido que retira los grupos de la era CloudKit",
+    shot: null,
+    sees: "**NADA en el momento en que ocurre.** Entre un arranque y el siguiente, los grupos creados en la etapa CloudKit dejan de aparecer en el tab Grupos y en «Más», y sus espejos «presté 40» / «debo 10» desaparecen de Panel, presupuestos y reportes. Si esos eran sus únicos grupos, el usuario aterriza en el empty state sin que nada le explique por qué.",
+    persists: "Por cada zona sin canal vivo: el grupo se marca oculto **en todas sus filas —la fila jamás se borra—**, los tres punteros de grupo se nilean en las transacciones de cuenta real, las del espejo virtual se BORRAN y los borradores del grupo pasan a manuales o se borran. Un solo `save()`, y después el canario `legacyGroupsRetired` con recuentos y sin PII. Con el resultado vacío no hay ni `save()` ni canario.",
+    exits: "No hay salida: es un `Task` del arranque. **Falla CERRADO en dos niveles** —el fetch global que lanza no retira nada; el fetch de UNA zona que lanza salta esa zona con el grupo todavía visible— porque ocultar un grupo sin soltar su puente dejaría las transacciones colgando de una zona invisible, que es el fantasma que esto viene a evitar. Es idempotente y SIN sentinel a propósito: un kill, un `save()` que lanza o una zona que se quedó fuera se reintentan en el arranque siguiente.",
+    code: [
+      { t: "AppBootstrapper.swift:458-464", d: "el único call-site de producción, detrás de `awaitPersonalStoreReady()`" },
+      { t: "LegacyGroupsRetirement.swift:145 `legacyZones`", d: "un solo fetch agrupado por zona; el `catch` devuelve vacío (falla cerrado)" },
+      { t: "LegacyGroupsRetirement.swift:160-165", d: "el predicado es la NEGACIÓN de «esta zona pertenece a algún canal vivo», ANY-row **por ZONA**: por fila se llevaría la copia congelada" },
+      { t: "LegacyGroupsRetirement.swift:281-284", d: "la fila se OCULTA, jamás se borra: borrarla dejaría al editor deshabilitando Borrar y Duplicar sobre un gasto que sigue a la vista" },
+      { t: "LegacyGroupsRetirement.swift:304-306", d: "el canario `legacyGroupsRetired`, la ÚNICA superficie de observación del barrido" },
+      { t: "DevSeedGroups.swift:29", d: "el seed de Dev acuña sus grupos como backend a propósito: sin eso el barrido los ocultaría y dejaría sin datos a los XCUITest de Grupos" }
+    ],
+    notes: [
+      "⚠︎ MEDIDO: el fichero entero **no tiene una sola key de l10n**, y `grep` no encuentra ninguna vista que lo cite. El barrido no tiene superficie de usuario: el canario es telemetría, no comunicación. Un usuario con grupos legacy ve desaparecer contenido sin explicación.",
+      "MEDIDO: el grupo retirado sale además de los elegibles para apuntar un gasto, así que tampoco se puede seguir usando — que es el punto.",
+      "INFERIDO del código y declarado en su cabecera, NO ejercitado contra el servidor: ocultar es seguro hacia fuera porque el drain solo traduce filas cuya zona esté en el canal backend ⇒ en una zona legacy el flip no sale del móvil.",
+      "RESIDUAL declarado y no cerrado: el plan de congelación sigue sin mirar los gastos programados de grupo, así que en sus seis call-sites ese borrador sobrevive apuntando a una zona muerta. C3 lo cubre solo en su propio camino."
+    ]
+  },
+
+  "degradado-ajustesdueno": {
+    title: "M1/C3 · Los cuatro ajustes del dueño que una visita ya no te toca",
+    shot: null,
+    sees: "Nada propio. La invitada SÍ ve el efecto durante su sesión —la shell cambia en memoria—; lo que no ocurre es la escritura persistida en el dominio del dueño.",
+    persists: "NADA de la invitada en las keys del dueño. **Cuatro puertas, una por escritor**: el modo de onboarding no se persiste · activar «Yala completo» no manda `.completed` por el canal sincronizado · entrar al tab Grupos no marca la adopción del dominio · el alta solo-grupos no escribe ninguna de sus seis preferencias. Las cuatro keys viven en el `UserDefaults.standard` COMPARTIDO y el wipe de salida repone solo tres flags de onboarding, así que sin los guards se quedaban pegadas.",
+    exits: "No hay salida que tomar: son guards, no pantallas. Al cerrar la sesión de invitada el móvil vuelve al dueño con sus ajustes intactos, y lo que la invitada vio durante su sesión muere con el proceso porque solo existió en memoria.",
+    code: [
+      { t: "OnboardingMode.swift:60", d: "el embudo: el `didSet` del modo en sesión y los dos `setCurrent` directos pasan por aquí" },
+      { t: "FullModeActivationView.swift:100", d: "`.completed` es rank 2 y el merge es never-downgrade: escribirlo dejaría al dueño una shell escalada que su propio valor del iKV ya no puede bajar" },
+      { t: "GroupsDomainAdoptionMarker.swift:51", d: "la adopción del dominio Grupos es del DUEÑO; en un móvil sellado por «empiezo de cero» neutralizaría el sello del siguiente humano" },
+      { t: "GroupsOrganizerOnboarding.swift:164", d: "C3: el guard subió de UNA key al MÉTODO entero — si no, las seis escrituras del alta caen en el dominio del dueño" },
+      { t: "ContentView.swift:981", d: "el único sitio por el que pasan las DOS puertas de la rama organizador" }
+    ],
+    notes: [
+      "⚠︎ Residual CONSCIENTE y escrito en el código: la invitada ve su shell nueva durante la sesión (memoria) pero un relanzamiento se la devuelve a la del dueño. Persistirla exigiría namespacear la key por sesión, y eso toca el merge never-downgrade.",
+      "MEDIDO: el embudo del modo NO cubre a los tres escritores que van por el servicio de prefs con la misma key — de ahí que las puertas sean CUATRO y no una.",
+      "MEDIDO: hay CUATRO escritores de la adopción del dominio en producción y **solo DOS llevan guard de sesión secundaria**.",
+      "El tab Grupos SÍ es visible en secundaria cuando el canal backend está encendido (la invitada ve SUS grupos con SU identidad); con el canal apagado se filtra, porque entonces Grupos sería el iCloud del dueño.",
+      "Lo pinnea una suite con DOS mitades —comportamiento y source-scan del cableado— y la mutación la caza el escáner: con el guard quitado, todo el comportamiento observable en el harness es idéntico, porque el descriptor está inactivo en cualquier test normal."
     ]
   },
 

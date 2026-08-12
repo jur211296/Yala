@@ -9,17 +9,32 @@
 // F3 (2026-08-11): los diagramas 1, 2, 5 y 7 están re-derivados contra HEAD 24b4bc91 (tanda del
 // relanzamiento cero). Los diagramas 3, 4 y 6 siguen anclados al 2026-08-09 — la tanda no toca su código,
 // comprobado con `git diff f4d10fa6..HEAD`.
+//
+// F5 (2026-08-12, HEAD 6c6eb3fe): re-derivados los diagramas 1, 2, 6 y 7 tras las olas W/G/C/M. El 1 gana
+// la vía del organizador (chooser de grupos → PUERTA → nombre → alta), el 6 las cuatro puertas unificadas
+// y los cinco casos del empty state, el 2 la frontera de sesión secundaria y el registro del consent, y el
+// 7 el barrido de grupos legacy y los ajustes del dueño. Los diagramas 3 y 4 siguen anclados al 2026-08-09:
+// `git diff 724f661e..HEAD` no roza un solo fichero suyo.
 
 window.ATLAS_FLOWS = [
   {
     id: "alta",
     title: "1 · Alta born-cloud (A4 → A5)",
-    lede: "«Soy nuevo» → chooser (con bypass y faro) → consent → sign-in → las cuatro salidas del claim → par de storage → onboarding en modo nube. Desde el relanzamiento cero (R2) el alta nube NO relanza y el camino privado SÍ: el portal `leaveWelcome` es quien lo decide. Incluye la matriz de cancelación de tres filas y el encaminamiento del 2º device por faro.",
+    lede: "«Es mi primera vez» → chooser (con bypass y faro) → consent → sign-in → las cuatro salidas del claim → par de storage → onboarding en modo nube. Desde el relanzamiento cero (R2) el alta nube NO relanza y el camino privado SÍ: el portal `leaveWelcome` es quien lo decide. Desde G2/G3 la tercera rama —«Vengo por un grupo»— dejó de salir directa a recuperar una invitación y pregunta primero si el grupo lo creas tú, con una PUERTA que comprueba antes de escribir nada. Incluye la matriz de cancelación de tres filas y el encaminamiento del 2º device por faro.",
     graph: `flowchart TD
-  H["Welcome · Hero"] --> C["Chooser · 3 ramas"]
-  C -->|Ya tengo cuenta| RE(["→ Flujo 2 · re-entrada"])
-  C -->|Me invitaron a un grupo| PORTAL
-  C -->|Soy nuevo| F{"¿El faro dice que este Apple ID<br/>ya tiene cuenta nube?"}
+  H["Welcome · Hero<br/>(sin alert desde W1)"] --> C["Chooser · 3 ramas"]
+  C -->|Ya tengo una cuenta| RE(["→ Flujo 2 · re-entrada"])
+  C -->|Vengo por un grupo| GC["¿Cómo empiezas con tu grupo?"]
+  GC -->|Tengo una invitación| PORTAL
+  GC -->|Crear mi primer grupo| GG{"PUERTA · canal → visita → datos ajenos<br/>NADA se escribe hasta que abre"}
+  GG -->|"canal OFF · sesión de visita · datos de otro"| GBLK["Puerta cerrada<br/>(3 copys, un layout)"]
+  GBLK -->|Volver| GC
+  GG -->|"proceed · destino que NO pide mirror"| PORTAL
+  PORTAL -->|"organizador"| GNAME["«¿Cómo te llamas?»"]
+  GNAME --> GWRITE{"El alta: 6 keys, y solo aquí"}
+  GWRITE --> GFORM(["Formulario de grupo<br/>→ Flujo 6"])
+  GCANCEL{{"Matriz de cancelación<br/>de la rama organizador"}}
+  C -->|Es mi primera vez en Yala| F{"¿El faro dice que este Apple ID<br/>ya tiene cuenta nube?"}
   F -->|"vinculado ∧ entrada nube disponible<br/>(el portal no relanza: destino de nube)"| RE
   F -->|"1 sola opción visible ⇒ bypass"| PORTAL
   F -->|"≥2 opciones"| NC["Sub-chooser «Soy nuevo»<br/>(sin «Recomendado» · RC)"]
@@ -57,6 +72,13 @@ window.ATLAS_FLOWS = [
 
   click H call showNode("alta-hero")
   click C call showNode("alta-chooser")
+  click GC call showNode("alta-groupschooser")
+  click GG call showNode("alta-groupsgate")
+  click GBLK call showNode("alta-groupsgate-blocked")
+  click GNAME call showNode("alta-organizername")
+  click GWRITE call showNode("alta-organizerwrite")
+  click GFORM call showNode("onboarding-crear")
+  click GCANCEL call showNode("alta-organizercancel")
   click F call showNode("alta-faro")
   click NC call showNode("alta-newchooser")
   click PORTAL call showNode("alta-mirrorrelaunch")
@@ -106,6 +128,9 @@ window.ATLAS_FLOWS = [
   G -->|"sin datos locales · misma cuenta"| AD["Adopt en curso"]
   G -->|"datos ajenos, sin salida M1"| BL["Bloqueado"]
   G -->|"datos ajenos + M1 encendido"| SEC["Confirmación de sesión secundaria"]
+  G --> CW{"M0 · ¿dónde se registra<br/>el consent aceptado?"}
+  SEC --> SLOT{"¿El hueco de invitada<br/>ya es de otra persona?"}
+  SLOT -->|"ocupado por otra"| BL
   AD --> POLL{"Poll del adopt"}
   POLL -->|"aparcado ≥4 ticks"| AR["Auto-resume<br/>3 intentos → botón manual"]
   AR --> POLL
@@ -127,6 +152,8 @@ window.ATLAS_FLOWS = [
   click G call showNode("reentry-guard")
   click BL call showNode("reentry-blocked")
   click SEC call showNode("reentry-secondary")
+  click SLOT call showNode("reentry-slotocupado")
+  click CW call showNode("reentry-consentwrite")
   click RLS call showNode("reentry-secondary")
   click AD call showNode("reentry-adopt")
   click POLL call showNode("reentry-adopt")
@@ -280,7 +307,7 @@ window.ATLAS_FLOWS = [
   {
     id: "onboarding",
     title: "6 · Onboarding de propósito + alta solo-grupos",
-    lede: "La card «Solo grupos» oculta en modo nube (A6) y el camino solo-grupos: educativo con su CTA (A1) → sign-in contextual al crear.",
+    lede: "La card «Solo grupos» oculta en modo nube (A6) y el camino solo-grupos. Desde C2 las CUATRO puertas de Grupos comparten una sola tabla —educativo → sign-in → consent → terminal por entrada—, el empty state dice en CINCO copys qué es lo que falta, y con el canal apagado ya no nace un grupo que no sirve para nada (C4).",
     graph: `flowchart TD
   PUR["Paso «Propósito»"] --> SHOW{"¿Se pinta la card<br/>«Dividir gastos con amigos»?"}
   SHOW -->|"no es flujo inicial"| NO1(["No se pinta"])
@@ -291,20 +318,29 @@ window.ATLAS_FLOWS = [
   BLOCK -->|"canal OFF ∧ sin cuenta iCloud"| MURO["Alert «necesitas iCloud»"]
   BLOCK -->|"canal OFF ∧ con cuenta"| SEL
   SEL --> GO["Cierre solo-grupos<br/>→ tab Grupos"]
+  ADOPT["Entrar al tab Grupos"] --> ADOPT1{"G2 · ya no hay código beta:<br/>entrar ES adoptar el dominio"}
+  ADOPT1 --> EMPTY
   PUR --> OTRAS["Control · Solo gastos<br/>(selectedCard: 4 modos → 3 cards)"]
   OTRAS --> NORM["Cierre normal"]
   GO --> EDU["Educativo del tab Grupos"]
   EDU --> CTA{"¿CTA de sign-in<br/>en el último paso?"}
   CTA -->|"canal ON ∧ sin sesión"| SIGN["Sign-in de grupos"]
   CTA -->|"con sesión · canal OFF"| CONT(["Continuar"])
-  EDU --> EMPTY{"Empty state del tab"}
-  EMPTY -->|"canal ON ∧ sin sesión"| REENTRY["«Tus grupos están en tu cuenta»"]
-  EMPTY -->|else| STD["«Aún no tienes grupos»"]
+  EDU --> EMPTY{"Empty state del tab · 5 casos"}
+  EMPTY -->|"nunca vio el educativo"| STD
+  EMPTY -->|"sin sesión · ya tuvo cuenta"| REENTRY["«Tus grupos están en tu cuenta»"]
+  EMPTY -->|"sin sesión · nunca tuvo"| NEWACC["«Crea tu cuenta de Yala»"]
+  EMPTY -->|"sesión sin consent"| NEEDC["«Un último paso»"]
+  EMPTY -->|"no falta nada"| STD["«Sin grupos» · CTA crear"]
   STD --> CREATE{"Crear grupo · routing"}
   REENTRY --> SIGN
-  CREATE -->|"flag OFF"| CK["Form (canal CloudKit)"]
+  NEWACC --> SIGN
+  NEEDC --> CONS
+  PUERTAS{"C2 · las CUATRO puertas<br/>educativo → sign-in → consent → terminal"}
+  CREATE -->|"canal OFF (C4)"| OFF["Aviso: no nace nada"]
   CREATE -->|"sin sesión"| SIGN
-  CREATE -->|"sin consent"| CONS["Consent de grupos"]
+  CREATE -->|"sin consent"| CONS["Consent de Grupos"]
+  CONS --> CUENTA(["El permiso queda en tu CUENTA (C1)"])
   CREATE -->|"listo"| BE["Form (canal backend)"]
 
   click PUR call showNode("onboarding-purpose")
@@ -320,11 +356,17 @@ window.ATLAS_FLOWS = [
   click CTA call showNode("onboarding-educativo")
   click EMPTY call showNode("onboarding-empty")
   click REENTRY call showNode("onboarding-empty")
+  click NEWACC call showNode("onboarding-empty")
+  click NEEDC call showNode("onboarding-empty")
   click STD call showNode("onboarding-empty")
+  click PUERTAS call showNode("onboarding-puertas")
+  click ADOPT call showNode("onboarding-adopcion")
+  click ADOPT1 call showNode("onboarding-adopcion")
   click CREATE call showNode("onboarding-crear")
-  click CK call showNode("onboarding-crear")
+  click OFF call showNode("onboarding-canalapagado")
   click BE call showNode("onboarding-crear")
-  click CONS call showNode("onboarding-crear")
+  click CONS call showNode("onboarding-consent")
+  click CUENTA call showNode("onboarding-consentcuenta")
   click SIGN call showNode("onboarding-crear")`
   },
 
@@ -360,6 +402,9 @@ window.ATLAS_FLOWS = [
   NEU1 --> NEU3["Elegir privado · restaurar · invitación:<br/>«Un último paso: reabre Yala»"]
   NEU1 --> NEU4["El aviso de iCloud SÍ le habla<br/>(el neutro no es un mount de modo nube)"]
 
+  VIS["Sesión de visita viva (M1)"] --> VIS1{"Los 4 ajustes del dueño<br/>que la visita no toca"}
+  LEG["Grupos de la era CloudKit"] --> LEG1{"Barrido del arranque<br/>sin superficie de usuario"}
+
   click KS call showNode("degradado-killswitch")
   click KS1 call showNode("degradado-killswitch")
   click KS2 call showNode("degradado-killswitch")
@@ -387,6 +432,10 @@ window.ATLAS_FLOWS = [
   click NEU2 call showNode("degradado-neutro")
   click NEU3 call showNode("alta-mirrorrelaunch")
   click NEU4 call showNode("degradado-neutro")
+  click VIS call showNode("degradado-ajustesdueno")
+  click VIS1 call showNode("degradado-ajustesdueno")
+  click LEG call showNode("degradado-legacyretire")
+  click LEG1 call showNode("degradado-legacyretire")
 
   classDef unreachable stroke-dasharray: 5 5,opacity:0.65
   class MNT2 unreachable`
@@ -472,10 +521,10 @@ window.ATLAS_COVERAGE = [
     cells: 15, tests: "20 · YalaTests/CloudSync/PersonalMountWitnessTests.swift", drawn: 3, flow: "degradado",
     delta: "5 decisiones × 3 ejes. Los ejes NO se dibujan uno a uno: son la traducción que cada consumidor hace del testigo, y dibujarlos convertiría una lectura en una pantalla. El reparto completo está en los paneles del mount neutro y del guard de mount-mismatch, con la medición de `.automatic` que decide la celda de `localNoMirror`." },
 
-  { logic: "WelcomeMirrorRelaunchLogic.requiresMirror", file: "Yala/App/Logic/WelcomeMirrorRelaunchLogic.swift:70",
+  { logic: "WelcomeMirrorRelaunchLogic.requiresMirror", file: "Yala/App/Logic/WelcomeMirrorRelaunchLogic.swift:78",
     cells: 5, tests: "25 · YalaTests/CloudSync/NeutralMountRelaunchZeroTests.swift", drawn: 5, flow: "alta · reentry", delta: "" },
 
-  { logic: "WelcomeMirrorRelaunchLogic.shouldRelaunch", file: "Yala/App/Logic/WelcomeMirrorRelaunchLogic.swift:86",
+  { logic: "WelcomeMirrorRelaunchLogic.shouldRelaunch", file: "Yala/App/Logic/WelcomeMirrorRelaunchLogic.swift:94",
     cells: 10, tests: "25 · YalaTests/CloudSync/NeutralMountRelaunchZeroTests.swift", drawn: 2, flow: "alta · reentry",
     delta: "5 destinos × «mount neutro sí/no». Se dibujan las dos salidas del portal; el reparto por destino ya está dibujado en `requiresMirror`, y comparar contra `.neutralNoMirror` y no contra `!attachesCloudKitMirror` es la decisión que el panel explica." },
 
@@ -521,8 +570,8 @@ window.ATLAS_COVERAGE = [
     cells: 4, tests: "14 · YalaTests/CloudSync/StorageModePersistenceTests.swift", drawn: 3, flow: "alta · migracion",
     delta: "La cuarta celda (`.icloud` + armado, mitad imposible en operación normal) no se dibuja: es el estado que el orden del par existe para no producir. Va en el panel." },
 
-  { logic: "StorageRowGateLogic.isVisible", file: "Yala/App/Logic/StorageRowGateLogic.swift:26",
-    cells: 4, tests: "5 · YalaTests/CloudSync/RemoteFlagDecisionLogicTests.swift (suite StorageRowGateLogicTests)", drawn: 4, flow: "migracion · degradado", delta: "" },
+  { logic: "StorageRowGateLogic.isVisible", file: "Yala/App/Logic/StorageRowGateLogic.swift:50",
+    cells: 4, tests: "11 · YalaTests/CloudSync/RemoteFlagDecisionLogicTests.swift (suites StorageRowGateLogicTests + DevSecondaryDescriptorSignalTests)", drawn: 4, flow: "migracion · degradado", delta: "" },
 
   { logic: "StorageMigrationSignInLogic.decide", file: "Yala/App/Logic/StorageMigrationSignInLogic.swift",
     cells: 3, tests: "14 · YalaTests/StorageMigrationSignInLogicTests.swift", drawn: 3, flow: "migracion", delta: "" },
@@ -578,32 +627,112 @@ window.ATLAS_COVERAGE = [
     cells: 4, tests: "7 · YalaTests/OnboardingPurposeSelectionLogicTests.swift", drawn: 0, flow: "—",
     delta: "NO se dibuja: decide si un tap CAMBIA el modo dentro del mismo paso, sin transición de pantalla. Desde `.dayToDay` el tap NO reasigna a propósito (reasignar cambiaría en silencio la respuesta del paso siguiente)." },
 
-  { logic: "GroupsOnboardingLogic.shouldShow", file: "Yala/App/Logic/GroupsOnboardingLogic.swift:30",
-    cells: 4, tests: "12 · YalaTests/GroupsOnboardingLogicTests.swift", drawn: 2, flow: "onboarding",
+  { logic: "GroupsOnboardingLogic.shouldShow", file: "Yala/App/Logic/GroupsOnboardingLogic.swift:56",
+    cells: 4, tests: "14 · YalaTests/GroupsOnboardingLogicTests.swift", drawn: 2, flow: "onboarding",
     delta: "AND-gating de 3 bloqueadores → se dibuja «se muestra» / «no se muestra»; los 3 bloqueadores se listan en el panel." },
 
-  { logic: "GroupsOnboardingLogic.shouldShowSignInCTA", file: "Yala/App/Logic/GroupsOnboardingLogic.swift:60",
-    cells: 4, tests: "12 · YalaTests/GroupsOnboardingLogicTests.swift", drawn: 2, flow: "onboarding",
+  { logic: "GroupsOnboardingLogic.shouldShowSignInCTA", file: "Yala/App/Logic/GroupsOnboardingLogic.swift:84",
+    cells: 4, tests: "14 · YalaTests/GroupsOnboardingLogicTests.swift", drawn: 2, flow: "onboarding",
     delta: "3 términos, dos resultados. Las negaciones van en el panel." },
 
-  { logic: "GroupsEmptyStateLogic.decide", file: "Yala/App/Logic/GroupsEmptyStateLogic.swift:29",
-    cells: 3, tests: "4 · YalaTests/GroupsEmptyStateLogicTests.swift", drawn: 2, flow: "onboarding",
+  { logic: "GroupsEmptyStateLogic.decide", file: "Yala/App/Logic/GroupsEmptyStateLogic.swift:67",
+    cells: 3, tests: "8 · YalaTests/GroupsEmptyStateLogicTests.swift", drawn: 2, flow: "onboarding",
     delta: "«flag OFF» y «flag ON con sesión» colapsan los dos en `.standard`, igual que en la tabla." },
 
   { logic: "GroupCreateRoutingLogic.route", file: "Yala/App/Logic/GroupCreateRoutingLogic.swift:28",
-    cells: 4, tests: "4 · YalaTests/GroupCreateRoutingLogicTests.swift", drawn: 4, flow: "onboarding", delta: "" },
+    cells: 4, tests: "13 · YalaTests/GroupCreateRoutingLogicTests.swift", drawn: 4, flow: "onboarding", delta: "" },
 
   { logic: "SessionExpiryPolicy.decide", file: "Yala/Services/CloudSync/SessionExpiryPolicy.swift:34",
     cells: 3, tests: "5 · YalaTests/CloudSync/SessionExpiryPolicyTests.swift", drawn: 2, flow: "degradado",
     delta: "«sin pendientes» y «sesión renovable» colapsan en `.ok`, igual que en la tabla." },
 
-  { logic: "CloudRemoteFlags (cloudMode · onboardingChoice · groupsBackend)", file: "Yala/Services/CloudSync/CloudRemoteConfig.swift:127",
-    cells: 6, tests: "5 · YalaTests/CloudSync/RemoteFlagDecisionLogicTests.swift", drawn: 3, flow: "degradado",
-    delta: "Se dibuja el efecto de cada flag apagado. Las tres celdas de «encendido» son el camino normal, ya dibujado en los flujos 1, 2 y 6." }
+  { logic: "CloudRemoteFlags (cloudMode · onboardingChoice · groupsBackend)", file: "Yala/Services/CloudSync/CloudRemoteConfig.swift:134",
+    cells: 6, tests: "11 · YalaTests/CloudSync/RemoteFlagDecisionLogicTests.swift", drawn: 3, flow: "degradado",
+    delta: "Se dibuja el efecto de cada flag apagado. Las tres celdas de «encendido» son el camino normal, ya dibujado en los flujos 1, 2 y 6." },
+
+  // ── F5 (2026-08-12): la lógica que trajeron las olas W · G · C · M ──────────────────────────────
+
+  { logic: "GroupsOrganizerGateLogic.decide", file: "Yala/App/Logic/GroupsOrganizerGateLogic.swift:78",
+    cells: 8, tests: "25 · YalaTests/Groups/GroupsOrganizerBranchTests.swift", drawn: 4, flow: "alta",
+    delta: "3 booleanos ⇒ 8 celdas, 4 clases por cortocircuito. Se dibujan las 4 salidas; las 8 celdas las barre `proceedNeedsAllThreeTerms` con un bucle 2×2×2 y la PRECEDENCIA la fijan dos tests propios, que es lo que de verdad carga el peso aquí." },
+
+  { logic: "GroupsGateLogic.nextStep", file: "Yala/App/Logic/GroupsGateLogic.swift:105",
+    cells: 18, tests: "20 · YalaTests/GroupsGateLogicTests.swift", drawn: 7, flow: "onboarding",
+    delta: "4 entradas × sus escalones alcanzables = 18 clases (5 organizador + 5 card «Solo grupos» + 5 invitación + 3 tab). Se dibujan los 7 `Step`; el reparto por entrada vive en el panel, porque dibujar las cuatro columnas sería el mismo grafo cuatro veces." },
+
+  { logic: "GroupsGateLogic.Entry.showsEducationalFirst", file: "Yala/App/Logic/GroupsGateLogic.swift:135",
+    cells: 4, tests: "20 · YalaTests/GroupsGateLogicTests.swift", drawn: 2, flow: "onboarding",
+    delta: "Las dos entradas que dicen `false` NO se saltan el educativo: lo montan en otro sitio del recorrido (el invitado, el suyo contextual después del consent; el tab, el sheet que ya presenta al montarse). Esa tabla de cuatro filas está en el panel." },
+
+  { logic: "GroupsEmptyStateLogic.decide", file: "Yala/App/Logic/GroupsEmptyStateLogic.swift:67",
+    cells: 6, tests: "8 · YalaTests/GroupsEmptyStateLogicTests.swift", drawn: 5, flow: "onboarding",
+    delta: "C2 la llevó de 3 a 6 clases (canal OFF · educativo · nunca-tuvo-cuenta · ya-tuvo · sin consent · completo). Se dibujan los 5 casos con copy; la sexta es «canal OFF ⇒ estándar», que colapsa en el mismo nodo porque pinta exactamente lo mismo." },
+
+  { logic: "GroupCreateRoutingLogic.route", file: "Yala/App/Logic/GroupCreateRoutingLogic.swift:76",
+    cells: 8, tests: "13 · YalaTests/GroupCreateRoutingLogicTests.swift", drawn: 4, flow: "onboarding",
+    delta: "C4 · 2×2×2 = 8 celdas y cuatro rutas. Las CUATRO celdas con el canal apagado devolvían `.cloudKit` —que acuñaba un grupo local irrecuperable— y hoy devuelven `.channelOff`. Se dibujan las 4 rutas." },
+
+  { logic: "CloudConsentRegistrationLogic.placement / persistIfDue", file: "Yala/App/Logic/CloudConsentRegistrationLogic.swift:44",
+    cells: 3, tests: "11 · YalaTests/CloudSync/CloudConsentRegistrationTests.swift", drawn: 3, flow: "reentry",
+    delta: "M0 · total sobre las TRES salidas del guard cross-cuenta: añadir una cuarta obliga a decidir aquí su destino. Las tres se dibujan como un nodo de decisión; las 8 combinaciones de `persistIfDue` no, porque son la mecánica del consumo (`pending` como `inout`), no una bifurcación de pantalla." },
+
+  { logic: "SecondarySlotOccupancyLogic.decide", file: "Yala/App/Logic/SecondarySlotOccupancyLogic.swift:46",
+    cells: 3, tests: "7 · YalaTests/CloudSync/SecondaryOwnerDomainGuardsTests.swift", drawn: 2, flow: "reentry",
+    delta: "M1 · hueco libre · misma cuenta · ocupado por otra. Se dibujan las dos salidas visibles (pasa / bloquea); «misma cuenta» comparte arista con «libre» porque las dos siguen, y su porqué —la re-entrada idempotente de quien murió entre el descriptor y el relanzamiento— va en el panel." },
+
+  { logic: "GroupsConsentDecisionLogic.isAccepted", file: "Yala/App/Logic/GroupsConsentDecisionLogic.swift:53",
+    cells: 3, tests: "26 · YalaTests/GroupsConsentStateTests.swift", drawn: 1, flow: "onboarding",
+    delta: "C1 · las tres reglas del sello (sin snapshot · versión por debajo de la sustantiva · sello que contradice al `sub` vivo) producen un solo booleano, que es el término `isConsented` de la tabla de puertas. No se dibujan una a una: van en el panel del consent." },
+
+  { logic: "WelcomeNewChooserView.displayOrder", file: "Yala/App/Views/Onboarding/WelcomeNewChooserView.swift:100",
+    cells: 2, tests: "7 · YalaTests/WelcomeNewChooserOrderTests.swift", drawn: 0, flow: "—",
+    delta: "NO se dibuja y no debe: es el ORDEN de dos cards en una pantalla, no una bifurcación. Está aquí porque W3 lo convirtió en contrato con test propio, y porque el sitio donde vive —la vista, no `visibleNewOptions`— es justo lo que el yo-futuro se equivocaría al buscar." }
 ];
 
 // Hallazgos: lo que el Atlas encontró al derivarse del CÓDIGO y que el diseño no dice (o dice al revés).
 window.ATLAS_FINDINGS = [
+  {
+    id: "F5-H1",
+    sev: "alto · contradice el consent",
+    title: "La pantalla de novedades de la 2.0 sigue diciendo que los gastos de grupo viajan «por tu iCloud privado, sin servidores nuestros» — y es alcanzable hoy",
+    body: "MEDIDO el 2026-08-12 contra `6c6eb3fe`, con la key delante: `whatsNew.v20.groups.description` = «Crea grupos para compartir gastos y Yala calcula quién le debe a quién. Y tranquilo: **todo viaja por tu iCloud privado, sin servidores nuestros**.», y su título es «Grupos (Beta)». La entrada sigue viva en `WhatsNewConfig.swift:92-98` (bloque `version2_0`), así que la ve cualquiera que actualice a una 2.0.x desde una versión anterior. Con el canal backend encendido al 100 % y el consent de Grupos afirmando lo contrario en la misma app —«viven en la nube de Yala», `groups.consent.point1`—, la app se contradice a sí misma sobre dónde están los datos del usuario, y la afirmación falsa es la que no pide confirmación. El «(Beta)» del título es además el último rastro visible de un gate que `9e504480` retiró. No es un hueco del Atlas: es copy de producción que caducó y ningún test lo mira.",
+    node: "onboarding-adopcion"
+  },
+  {
+    id: "F5-H2",
+    sev: "cierre de F2-H1",
+    title: "El gate beta de Grupos ya no existe: entrar al tab ES el acto de adopción",
+    body: "El hallazgo F2-H1 (chip F2) decía que «el flujo 6 tiene una capa previa que el Atlas no dibuja: el GATE BETA de Grupos (código 1050)». **Queda CERRADO por `9e504480`**, y se comprobó en vez de asumirse: cero ocurrencias de `GroupsBetaGateView`, del campo del código y del gate de la opción «Grupo» del FAB, y las 6 keys del gate retiradas de los 16 idiomas. Lo único que sobrevive es el STRING de la key `groupsBetaUnlocked`, que conserva su nombre histórico a propósito —renombrarla obligaría a migrar el parque sin ganar nada— pero hoy significa otra cosa: que este dispositivo ADOPTÓ el dominio Grupos. El Atlas lo dibuja como lo que es, un nodo de decisión sin pantalla.",
+    node: "onboarding-adopcion"
+  },
+  {
+    id: "F5-H3",
+    sev: "alto · sigue abierto",
+    title: "El agujero de datos del alta «Solo grupos» no se cerró: cambió de dueño",
+    body: "F1-H4 apuntaba a `completeGroupsOnlyOnboarding`, que `3a960fd9` **borró entera**. Sin re-medirlo, el borrado haría parecer que el problema se fue con la función. RE-MEDIDO el 2026-08-12: el sustituto `GroupsOrganizerOnboarding.completeSetup` **tampoco toca `storageMode`** —no aparece ni en su inventario publicado de keys ni en su cuerpo— y ninguno de los escritores del modo de storage está en la cadena de Grupos ⇒ el device sigue quedando `.icloud` y, sin cuenta iCloud del OS, monta local-sin-mirror: las `TransactionItem` puenteadas desde los gastos de grupo continúan sin ninguna copia. Lo que C2 SÍ cierra es otra cosa, y está cerrada: que el trío se escribiera sin cuenta, sin consent y sin canal comprobado. Y el retiro de los grupos de la era CloudKit no lo toca: su barrido solo alcanza zonas sin canal vivo, y un alta solo-grupos de hoy nace en el canal backend.",
+    node: "onboarding-groupsonly"
+  },
+  {
+    id: "F5-H4",
+    sev: "hallazgo",
+    title: "La puerta del organizador no emite un solo canario: sus tres bloqueos son invisibles en producción",
+    body: "MEDIDO: en las CUATRO salidas de `GroupsOrganizerGateLogic` no hay una sola llamada a `MetricsService`. La pantalla existe justamente para rebotar al usuario antes de escribir nada —lo cual es correcto— pero «cuántos organizadores rebotan aquí, y por cuál de los tres motivos» no se puede responder desde el dashboard. El motivo del canal es transitorio y observable por otra vía (el percent remoto), pero los de sesión de visita y datos ajenos no: si el bloqueo por visita se disparara más de lo previsto, nada lo diría. Es el mismo patrón que el Atlas ya anotó en `swapReleaseAborted`, pero al revés: allí el canario ES la superficie de observación; aquí no hay ninguna.",
+    node: "alta-groupsgate"
+  },
+  {
+    id: "F5-H5",
+    sev: "hallazgo",
+    title: "El barrido que retira los grupos de la era CloudKit no tiene NINGUNA superficie de usuario",
+    body: "MEDIDO: `LegacyGroupsRetirement.swift` no contiene una sola key de l10n, y ninguna vista lo cita. Entre un arranque y el siguiente, los grupos de la etapa CloudKit dejan de aparecer y sus espejos «presté 40» / «debo 10» desaparecen de Panel, presupuestos y reportes. Si esos eran los únicos grupos del usuario, aterriza en el empty state sin que nada le explique por qué. La única superficie es el canario `legacyGroupsRetired`, que es telemetría y no comunicación. El único sitio donde el usuario se entera de que sus grupos legacy existieron es —a propósito— el caveat GDPR de la hoja de borrado de cuenta.",
+    node: "degradado-legacyretire"
+  },
+  {
+    id: "F5-H6",
+    sev: "estado del Atlas",
+    title: "OCHO capturas del Atlas retratan pantallas que la app ya no pinta, y el pin no puede verlo",
+    body: "El bloque 7 de `check.mjs` comprueba que la imagen EXISTA, no que siga siendo cierta ⇒ una pantalla re-escrita deja una captura que miente en verde. F5 identificó ocho: el Hero (perdió el subtítulo), el chooser (seis de sus ocho valores), el sub-chooser de «Soy nuevo» (orden invertido y copy nuevo), el consent de nube (de siete puntos a tres), los dos intros de sign-in (cambiaron de verbo), el educativo de Grupos (punto nuevo y CTA de crear cuenta) y el cierre solo-grupos (el nodo cambió de significado). Quedan MARCADAS en ámbar dentro de su frame, con qué cambió en cada una — enseñarlas sin decirlo sería exactamente el drift documental que este Atlas existe para no tener. Se resuelven re-capturando, y el guion de captura las lista aparte de los huecos device-only.",
+    node: "alta-hero"
+  },
   {
     id: "F1-H1",
     sev: "acotado por `339f7825`",
@@ -648,9 +777,9 @@ window.ATLAS_FINDINGS = [
   },
   {
     id: "F1-H4",
-    sev: "hallazgo",
+    sev: "hallazgo · re-anclado en F5-H3",
     title: "El alta «Solo grupos» sigue dejando datos sin ninguna copia",
-    body: "`completeGroupsOnlyOnboarding` NO toca `storageMode` ⇒ el device se queda `.icloud` y, sin cuenta iCloud del OS, el store personal monta local-sin-mirror: las `TransactionItem` puenteadas desde los gastos de grupo no tienen copia en ninguna parte. D-A7 da salida a los usuarios NUEVOS; la cohorte existente no se cura sola y está declarada fuera de alcance en §6.5 del spec. Medido de nuevo en este árbol.",
+    body: "La función que este hallazgo señalaba —`completeGroupsOnlyOnboarding`— **ya no existe**: `3a960fd9` la borró entera. El hallazgo NO se fue con ella: el sustituto `GroupsOrganizerOnboarding.completeSetup` tampoco toca `storageMode`, así que el device sigue quedando `.icloud` y, sin cuenta iCloud del OS, el store personal monta local-sin-mirror: las `TransactionItem` puenteadas desde los gastos de grupo no tienen copia en ninguna parte. Ver **F5-H3**, que lo re-ancla con la medición del 2026-08-12. La cohorte existente no se cura sola y está declarada fuera de alcance en §6.5 del spec.",
     node: "onboarding-groupsonly"
   },
   {

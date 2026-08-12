@@ -215,7 +215,11 @@ for (const f of FLOWS) {
 
 // 11) CONTEO ESPERADO — al añadir o quitar un nodo, se actualiza a mano: la fricción ES el aviso.
 {
-  const EXPECTED = { panels: 66, shots: 56, images: 32, deviceOnly: 24, l10nNodes: 56 };
+  // F5 (2026-08-12): 66 → 81 paneles. Los 15 nuevos son la superficie que las olas W/G/C/M trajeron y
+  // que ningún bloque de arriba podía echar en falta — el pin detecta una key mal citada, no una pantalla
+  // que nadie añadió. `deviceOnly` sube de 24 a 31: 25 device-only de verdad + SEIS con `pending: true`,
+  // que el sim SÍ puede dar y este chip no capturó (F5 no abrió el simulador).
+  const EXPECTED = { panels: 81, shots: 63, images: 32, deviceOnly: 31, l10nNodes: 63 };
   const actual = {
     panels: Object.keys(NODES).length,
     shots: shots.size,

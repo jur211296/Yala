@@ -12,8 +12,10 @@
   código y la divergencia se ANOTA en el frame del nodo con la marca ⚠︎.
 
   ANCLAJE: medido el 2026-08-09 contra HEAD 9d6f0f1c (branch 2.0.5). Chip F3 (2026-08-11): los flujos 1,
-  2, 5 y 7 están re-derivados contra HEAD 24b4bc91; los flujos 3, 4 y 6 siguen anclados al 2026-08-09
-  porque esa tanda no toca su código. Chip F4 (2026-08-11): REDISEÑO DE PRESENTACIÓN — storyboard por
+  2, 5 y 7 están re-derivados contra HEAD 24b4bc91. Chip F5 (2026-08-12, HEAD 6c6eb3fe): re-derivados los
+  flujos 1, 2, 6 y 7 tras las olas W/G/C/M (19 commits); los flujos 3 y 4 NO se tocan — medido con
+  `git diff 724f661e..HEAD`, que no roza StorageSettingsView, MigrationStateMachine, CloudMigrationController
+  ni MigrationBootDecision. Chip F4 (2026-08-11): REDISEÑO DE PRESENTACIÓN — storyboard por
   flujo (frames visibles sin clic) + mapa con layout calculado (elkjs) — sin re-derivar narrativa; lo
   ÚNICO nuevo de contenido son las keys de l10n por pantalla (data/l10n.js), medidas del código.
 
@@ -165,6 +167,14 @@
   .gapbox .gaptag { font: 700 11px/1 var(--mono); letter-spacing: 0.08em; color: var(--gap); text-transform: uppercase; display: block; margin-bottom: 12px; }
   .gapbox b { color: #e0d5f5; }
   .gapbox p { margin: 0 0 10px; }
+  /* F5 · la captura existe pero es de una pantalla ANTERIOR. Enseñarla sin decirlo sería justo el
+     drift que el Atlas combate, así que la imagen se marca y se dice qué cambió desde entonces. */
+  .fshot.stale img { border-color: rgba(240,180,80,0.7); opacity: 0.72; }
+  .stalewarn {
+    margin-top: 6px; padding: 7px 9px; border: 1px solid rgba(240,180,80,0.45); border-radius: 8px;
+    background: rgba(240,180,80,0.08); font-size: 11.5px; line-height: 1.5; color: #f0c07a;
+  }
+  .stalewarn b { color: #ffd9a0; }
   .finfo { flex: 1; min-width: 0; }
   .fsees { margin: 0 0 12px; font-size: 13px; color: #cfd5df; }
 
@@ -292,10 +302,10 @@
 <header>
   <h1>Atlas de Flujos · Modo Nube</h1>
   <div class="anchor">
-    <span>HEAD <b>9d6f0f1c</b> · flujos 1·2·5·7 re-derivados contra <b>24b4bc91</b></span>
+    <span>HEAD <b>6c6eb3fe</b> · flujos 1·2·6·7 re-derivados en F5 · <b>3 y 4 intactos</b> (diff cero desde F4)</span>
     <span>branch <b>2.0.5</b></span>
-    <span>medido <b>2026-08-09</b> · refresco F3 <b>2026-08-11</b> · storyboard F4 <b>2026-08-11</b></span>
-    <span>capturas sim (iPhone 17 Pro · Yala Dev · staging): <b>2026-08-10 / 2026-08-11</b></span>
+    <span>medido <b>2026-08-09</b> · F3 <b>2026-08-11</b> · storyboard F4 <b>2026-08-11</b> · refresco F5 <b>2026-08-12</b></span>
+    <span>capturas sim (iPhone 17 Pro · Yala Dev · staging): <b>2026-08-10 / 2026-08-11</b> — <b>8 caducadas</b> por F5, marcadas en su frame</span>
   </div>
   <div class="rule">
     <b>Regla madre.</b> Cada frame de este Atlas sale de una celda REAL de una tabla de lógica pura o de
@@ -406,7 +416,9 @@
     const frame = el("article", "frame kind-" + kind);
     frame.dataset.node = id;
 
-    const badge = kind === "screen" ? "captura sim" : kind === "gap" ? "hueco device-only" : "decisión · sin pantalla";
+    const badge = kind === "screen" ? ((F2.stale || {})[id] ? "captura sim · CADUCADA" : "captura sim")
+      : kind === "gap" ? (F2.deviceOnly[id].pending ? "pendiente de captura" : "hueco device-only")
+      : "decisión · sin pantalla";
     const head = el("div", "fhead");
     head.appendChild(el("span", "fbadge", badge));
     const h4 = el("h4");
@@ -426,16 +438,18 @@
     const body = el("div", "fbody");
 
     if (kind === "screen") {
-      const fig = el("figure", "fshot");
+      const stale = (F2.stale || {})[id];
+      const fig = el("figure", "fshot" + (stale ? " stale" : ""));
       fig.innerHTML = `<img src="img/${esc(n.shot)}" alt="" loading="lazy"
         onerror="this.parentElement.innerHTML='<div class=gapbox><span class=gaptag>FALTA LA IMAGEN</span>img/${esc(n.shot)}</div>'">` +
-        `<div class="shotid">img/${esc(n.shot)}</div>`;
+        `<div class="shotid">img/${esc(n.shot)}</div>` +
+        (stale ? `<div class="stalewarn"><b>⚠︎ Captura anterior a F5.</b> ${stale}</div>` : "");
       body.appendChild(fig);
     } else if (kind === "gap") {
       const d = F2.deviceOnly[id];
       const box = el("div", "gapbox");
-      box.innerHTML = `<span class="gaptag">device-only · sin captura de sim</span>` +
-        `<p><b>Por qué no hay captura:</b> ${d.reason}</p>` +
+      box.innerHTML = `<span class="gaptag">${d.pending ? "pendiente de captura · el sim SÍ puede darla" : "device-only · sin captura de sim"}</span>` +
+        `<p><b>${d.pending ? "Por qué está pendiente:" : "Por qué no hay captura:"}</b> ${d.reason}</p>` +
         `<p><b>Qué debería verse:</b> ${d.expected}</p>` +
         `<div class="shotid" style="font:10.5px/1.5 var(--mono);color:var(--dim)">reservado: img/${esc(n.shot)}</div>`;
       body.appendChild(box);
@@ -526,9 +540,9 @@
 
   const LEGEND = `
     <span class="lg-screen"><i>●</i>pantalla capturada en sim</span>
-    <span class="lg-gap"><i>◌</i>hueco device-only (lo captura el owner)</span>
+    <span class="lg-gap"><i>◌</i>sin captura: device-only, o pendiente de la pasada de sim</span>
     <span class="lg-dec"><i>◇</i>decisión sin pantalla</span>
-    <span class="lg-warn"><i>⚠︎</i>divergencia medida</span>`;
+    <span class="lg-warn"><i>⚠︎</i>divergencia medida · o captura anterior a F5</span>`;
 
   for (const f of FLOWS) {
     const s = el("section", "tab");
@@ -781,13 +795,26 @@
     const withShot = ids.filter(k => NODES[k].shot);
     const dOnlyIds = withShot.filter(k => F2.deviceOnly[k]);
     const captured = withShot.filter(k => !F2.deviceOnly[k]);
+    const staleIds = withShot.filter(k => (F2.stale || {})[k]);
+    const pendingIds = dOnlyIds.filter(k => F2.deviceOnly[k].pending);
     const sum = el("div", "summary");
     sum.innerHTML = `<div><b>${ids.length}</b>nodos</div><div><b>${captured.length}</b>capturas reales de sim</div>` +
-      `<div><b>${dOnlyIds.length}</b>device-only (con motivo)</div><div><b>${ids.length - withShot.length}</b>decisiones puras</div>`;
+      `<div><b>${staleIds.length}</b>de ellas CADUCADAS (F5)</div>` +
+      `<div><b>${dOnlyIds.length - pendingIds.length}</b>device-only (con motivo)</div>` +
+      `<div><b>${pendingIds.length}</b>pendientes de sim</div><div><b>${ids.length - withShot.length}</b>decisiones puras</div>`;
     s.appendChild(sum);
     s.appendChild(el("p", "lede",
-      "Guion para la pasada de captura en device del owner, ORDENADO POR FLUJO: cada hueco dice por qué el sim no puede darlo " +
-      "y qué debería verse. Al capturar, la imagen se guarda con el nombre reservado (img/<id>.png) y el nodo sale de deviceOnly en data/f2.js."));
+      "Guion para la pasada de captura, ORDENADO POR FLUJO. Tres cosas distintas conviven aquí y conviene no confundirlas: " +
+      "los huecos DEVICE-ONLY (el simulador no puede darlos y los captura el owner en device), los PENDIENTES (el sim sí puede darlos — " +
+      "F5 fue una pasada de derivación y no abrió el simulador) y las CADUCADAS (hay imagen, pero es de una pantalla anterior a los " +
+      "commits de W/G/C/M). Al capturar, la imagen se guarda con el nombre reservado (img/<id>.png) y el nodo sale de deviceOnly en data/f2.js."));
+    if (staleIds.length) {
+      const box = el("div", "finding");
+      box.innerHTML = `<div class="meta">re-captura · ${staleIds.length} pantalla${staleIds.length > 1 ? "s" : ""} cambiada${staleIds.length > 1 ? "s" : ""}</div>` +
+        `<h4>Capturas que ya no muestran lo que la app pinta hoy</h4>` +
+        staleIds.map(k => `<p><b>img/${esc(NODES[k].shot)}</b> — ${F2.stale[k]}</p>`).join("");
+      s.appendChild(box);
+    }
     let step = 0;
     for (const f of FLOWS) {
       const mine = dOnlyIds.filter(k => flowOfNode(k) === f.id);

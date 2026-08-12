@@ -29,10 +29,17 @@ window.ATLAS_STORYBOARD = {
         frames: ["alta-newchooser", "alta-mirrorrelaunch", "alta-privado"]
       },
       {
+        label: "G2/G3 · «Vengo por un grupo» → crear el primero (la puerta comprueba antes de escribir)",
+        linked: true,
+        frames: ["alta-chooser", "alta-groupschooser", "alta-groupsgate", "alta-organizername",
+                 "alta-organizerwrite"]
+      },
+      {
         label: "Las otras salidas del claim, los errores y la cancelación",
         linked: false,
         frames: ["alta-par-relaunch", "alta-returning", "alta-waitingleader", "alta-error-401",
-                 "alta-error-403", "alta-error-transient", "alta-cancel"]
+                 "alta-error-403", "alta-error-transient", "alta-cancel",
+                 "alta-groupsgate-blocked", "alta-organizercancel"]
       }
     ]
   },
@@ -54,7 +61,7 @@ window.ATLAS_STORYBOARD = {
         label: "Guardas y errores",
         linked: false,
         frames: ["reentry-mismatch", "reentry-notfound", "reentry-blocked", "reentry-secondary",
-                 "reentry-autoresume"]
+                 "reentry-slotocupado", "reentry-consentwrite", "reentry-autoresume"]
       }
     ]
   },
@@ -106,15 +113,15 @@ window.ATLAS_STORYBOARD = {
   onboarding: {
     tracks: [
       {
-        label: "Camino solo-grupos · de la card al primer grupo",
+        label: "Camino solo-grupos · de la card al primer grupo (C2: las cuatro puertas comparten esta cadena)",
         linked: true,
         frames: ["onboarding-purpose", "onboarding-groupsonly", "onboarding-educativo",
-                 "onboarding-empty", "onboarding-crear"]
+                 "onboarding-empty", "onboarding-consent", "onboarding-crear"]
       },
       {
-        label: "El muro iCloud (canal de Grupos OFF)",
+        label: "Lo que corta el paso: el muro iCloud (canal OFF en el selector) y el canal apagado al crear (C4)",
         linked: false,
-        frames: ["onboarding-muro"]
+        frames: ["onboarding-muro", "onboarding-canalapagado"]
       }
     ]
   },

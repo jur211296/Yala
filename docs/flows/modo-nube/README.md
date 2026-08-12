@@ -32,6 +32,20 @@ narrativa**: `data/nodes.js`, `data/flows.js` y `data/f2.js` conservan su conten
 de CONTENIDO son las **keys de l10n por pantalla** (`data/l10n.js`), medidas del código y de
 `es.lproj/Localizable.strings` contra `24b4bc91`.
 
+**Refresco del 2026-08-12 (chip F5), contra HEAD `6c6eb3fe`.** Las olas W (el Welcome habla claro), G
+(Grupos-first), C (consent y puertas) y M (frontera de sesión secundaria) —19 commits— movieron el flujo 1
+y reescribieron el 6. El Atlas pasa de **66 a 81 paneles**: la vía del ORGANIZADOR entera con su puerta,
+las CUATRO puertas de Grupos unificadas, el consent que viaja con la cuenta, el empty state de cinco casos,
+el retiro de los grupos de la era CloudKit y los cuatro ajustes que una visita ya no toca. Los flujos **3 y
+4 no se tocan**, y está MEDIDO: `git diff 724f661e..HEAD` no roza un solo fichero suyo, y sus 12
+coordenadas se re-verificaron una a una.
+
+> **Lo que este refresco enseñó sobre el propio pin.** `check.mjs` estaba en exit 1 con 24 fallos de l10n,
+> todos del flujo 1 — y eso era la parte BARATA. Lo que el pin no puede ver son las pantallas que FALTAN y
+> las coordenadas que se desplazaron: **35 símbolos citados se habían movido de línea** sin que ningún
+> bloque lo notara, y ocho capturas retrataban pantallas que la app ya no pinta. Un `check.mjs` en verde no
+> significa que el Atlas esté completo.
+
 ## La regla madre
 
 > El contenido se deriva de las **tablas de la lógica pura** y de lo que la app hace de verdad —
@@ -50,7 +64,7 @@ dibujaron. Un desajuste es un hueco **dicho**, no silencioso.
 | `lib/graph.js` | Parser de los grafos + medición de texto + geometría — **compartido** entre la página y `check.mjs`, para que el pin de solapes mida exactamente lo que se pinta |
 | `data/nodes.js` | El CONTENIDO de los paneles (66 nodos con sus coordenadas de código) |
 | `data/flows.js` | Los 7 grafos (sintaxis mermaid, SSOT de la estructura) + la auto-auditoría + los hallazgos |
-| `data/f2.js` | El estado del chip **F2**: lista `device-only` con motivos, notas de captura y hallazgos F2 |
+| `data/f2.js` | El estado de las capturas: `device-only` con motivos, los `pending` de F5, las `stale` y los hallazgos F2 |
 | `data/l10n.js` | **F4**: las keys de l10n del copy visible de cada pantalla, con su valor exacto de `es.lproj` |
 | `data/storyboard.js` | **F4**: el ORDEN de presentación (camino feliz + ramas) — solo orden, cero narrativa |
 | `vendor/elk.bundled.js` | elkjs 0.11.0 vendorizado — **1,6 MB**, la única dependencia (sustituye a mermaid, 2,5 MB) |
@@ -80,14 +94,27 @@ contrato F2 (cero nodos vacíos) · **SOLAPES**: el layout de cada flujo, medido
 la página pinta, no produce ninguna intersección nodo-nodo, etiqueta-nodo ni etiqueta-etiqueta · **L10N**:
 toda key citada existe en `es.lproj` y su **valor coincide** (el Atlas promete copy exacto) · **STORYBOARD**:
 todo nodo con pantalla aparece en el storyboard de su flujo · y el **conteo esperado**
-(66 paneles · 56 `id` · 32 imágenes · 24 device-only · 56 entradas l10n).
+(81 paneles · 63 `id` · 32 imágenes · 31 sin captura · 63 entradas l10n).
+
+**Lo que el pin NO puede ver, y conviene saber antes de fiarse de su verde:** una pantalla que nadie añadió
+(detecta una key mal citada, no un nodo ausente), una coordenada `Fichero.swift:línea` que se desplazó
+—cita el fichero, no la línea— y una captura que sigue existiendo pero ya no retrata lo que la app pinta.
+Las tres cosas mordieron en F5 y las tres se resolvieron a mano: re-anclando 35 coordenadas contra el árbol,
+derivando los 15 paneles nuevos del código y marcando en ámbar las 8 capturas caducadas.
 
 **Muerde** (mutaciones verificadas el 2026-08-11, todas a exit 1): declarar a ELK la mitad del ancho real
 → 51 solapes; inventar una key de l10n → FAIL l10n; quitar un frame del storyboard → FAIL story; borrar
 una imagen → nodo VACÍO + conteo. El pin de solapes comprueba las cajas **visuales** en las posiciones
 finales — mentirle al layouter sobre el tamaño no lo esquiva.
 
-## Estado de las capturas (F2 2026-08-10 · F3 2026-08-11)
+## Estado de las capturas (F2 2026-08-10 · F3 2026-08-11 · F5 2026-08-12)
+
+**F5 no abrió el simulador**: fue una pasada de derivación. Eso deja tres categorías distintas, y el Atlas
+las distingue en pantalla porque confundirlas sería mentir: **device-only** (el sim no puede producir ese
+estado — 25 nodos), **pendiente** (el sim SÍ puede y este chip no lo hizo — 6 nodos, marcados
+`pending: true`) y **caducada** (hay imagen, pero es de antes de las olas W/G/C/M — 8 nodos, en `stale`,
+con qué cambió en cada una). La pestaña «Capturas · guion device» las separa para la pasada del owner.
+
 
 Recorrido en el simulador (iPhone 17 Pro · scheme Yala Dev contra staging) el **2026-08-10** sobre HEAD
 `f4d10fa6`, con un refresco el **2026-08-11** sobre HEAD `24b4bc91`. De los 56 `id` de screenshot: **32

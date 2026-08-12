@@ -22,12 +22,65 @@
 // misma —lo que cambió es que ahora hay un relanzamiento por delante, y eso se verificó en sim—.
 // Los dos estados nuevos que el sim NO puede dar entran a `deviceOnly` con su motivo.
 
+// **F5 (2026-08-12)** · pasada de DERIVACIÓN, sin simulador. No se capturó ni se re-capturó nada, y por
+// eso aparecen aquí dos categorías nuevas que antes no hacían falta:
+//   · `stale` — la imagen EXISTE pero es de una pantalla anterior a las olas W/G/C/M. Enseñarla sin
+//     decirlo sería exactamente el drift documental que el Atlas combate, así que el frame la marca en
+//     ámbar y dice qué cambió. Se resuelven RE-CAPTURANDO, no borrando.
+//   · `pending: true` dentro de una entrada de `deviceOnly` — el nodo no tiene imagen, pero **el
+//     simulador SÍ puede darla**: no es un hueco device-only, es una captura que este chip no hizo.
+//     Meterlas en el saco de device-only habría sido una afirmación falsa sobre lo que el sim puede.
+
 window.ATLAS_F2 = {
-  head: "24b4bc91",
-  date: "2026-08-11",
+  head: "6c6eb3fe",
+  date: "2026-08-12",
+
+  // ── Capturas que ya no muestran la pantalla de hoy ───────────────────────────────────
+  stale: {
+    "alta-hero": "El Hero perdió su subtítulo (`c8575d8b`): la imagen todavía muestra «Tú captura. Yala se encarga.» bajo el título.",
+    "alta-chooser": "Las tres cards se re-escribieron enteras (`e999bfef` + G1): la imagen muestra «Soy nuevo» / «Me invitaron a un grupo» y la pregunta «¿Cómo llegaste a Yala?», que ya no existen.",
+    "alta-newchooser": "Se invirtió el ORDEN de las dos cards (la nube va primero), cambiaron los dos títulos y los dos cuerpos, y desapareció la renuncia inline (W3).",
+    "alta-consent": "El sheet pasó de SIETE puntos a tres y un pie, y cambió el título (W4). La imagen muestra el contrato en su versión 1.",
+    "alta-intro": "Los dos botones cambiaron de verbo a «crear cuenta» y la nota §13 pasó a su variante propia del alta (W4b).",
+    "reentry-intro": "El botón cambió de verbo a «iniciar sesión» (W4b).",
+    "onboarding-educativo": "El paso 3 ganó un punto NUEVO que va primero —dónde se guardan los gastos del grupo— y su CTA principal dice «Crear mi cuenta» cuando el móvil nunca tuvo sesión (C2). La imagen muestra el paso 3 anterior, con «Iniciar sesión».",
+    "onboarding-groupsonly": "La imagen muestra el ATERRIZAJE en el tab, que era lo que el nodo describía. Hoy el nodo describe el paso 8 del onboarding, que ya no aterriza en ningún sitio: cede el payload a la cadena de las cuatro puertas (C2)."
+  },
 
   // ── Nodos SIN captura de sim: motivo + qué debería verse ─────────────────────────────
+  // `pending: true` ⇒ el simulador SÍ puede darla y este chip no la hizo. Todo lo demás es device-only
+  // de verdad: el sim NO puede producir ese estado.
   deviceOnly: {
+    "alta-groupschooser": {
+      pending: true,
+      reason: "Pantalla NUEVA de G2. Es alcanzable en sim sin sesión ni red (Hero → «Vengo por un grupo»), pero F5 fue una pasada de derivación y no abrió el simulador.",
+      expected: "«¿Cómo empiezas con tu grupo?» con las dos cards de alto igualado —«Crear mi primer grupo» y «Tengo una invitación»— y el back de la esquina (WelcomeGroupsChooserView.swift)."
+    },
+    "alta-groupsgate": {
+      pending: true,
+      reason: "Pantalla NUEVA de G3, alcanzable en sim con `Yala Dev` (canal ON en staging). Dura lo que dure el refresh forzado, así que la captura pide una ráfaga — el mismo problema que ya tuvo `alta-creating`.",
+      expected: "Spinner grande en blanco sobre el fondo hero y «Comprobando que todo esté listo…» (WelcomeGroupsGateView.swift:97-109)."
+    },
+    "alta-groupsgate-blocked": {
+      pending: true,
+      reason: "Las TRES variantes son fabricables en sim: canal apagado con el kill-switch DEBUG (`cloudSync.debug.remoteFlagsForceOff`), visita con el descriptor FAKE del panel DEBUG que M3 estrenó, y datos ajenos sembrando corpus antes de entrar.",
+      expected: "Tres pantallas con el mismo layout (icono, título, cuerpo, botón «Volver») y copy distinto: «Ahora mismo no podemos abrirte grupos» · «Aquí estás como invitado» · «Este dispositivo tiene datos de otra cuenta»."
+    },
+    "alta-organizername": {
+      pending: true,
+      reason: "Pantalla NUEVA de G3. Vive DETRÁS del sign-in de Grupos, así que en sim exige el seam `-uitest-fake-cloud-session` (SIWA/Google no completan) — alcanzable, pero no con un recorrido limpio.",
+      expected: "Cover con «¿Cómo te llamas?», «Es el nombre que verán los demás en el grupo.», campo «Tu nombre» y el botón «Crear mi grupo» (GroupsOrganizerNameView.swift)."
+    },
+    "onboarding-crear": {
+      pending: true,
+      reason: "F5 · la imagen que este nodo tenía (`onboarding-crear.png`) NO era el formulario: era la pantalla del consent de Grupos, capturada por la ruta `needsConsent`. Al ganar el consent frame propio, la imagen se RENOMBRÓ a `onboarding-consent.png` —que es lo que de verdad muestra— y este nodo se queda sin la suya.",
+      expected: "El formulario de grupo (`GroupFormView`) recién abierto: nombre, divisa y la lista de miembros vacía. Alcanzable en sim por la ruta `.backend` (sesión fingida CON consent aceptado)."
+    },
+    "onboarding-canalapagado": {
+      pending: true,
+      reason: "Fabricable en sim con el kill-switch DEBUG (`cloudSync.debug.remoteFlagsForceOff`), que es como se obtuvo `degradado-killswitch.png`. NO es alcanzable desde un test —`CloudRemoteFlags.decide` cortocircuita bajo `isRunningTests || isUITestHost`—, pero eso no impide capturarlo a mano.",
+      expected: "Alert «Ahora mismo no podemos abrirte grupos» sobre el tab Grupos, con la lista intacta detrás y sin ningún grupo creado. La segunda superficie es el mismo texto como error de guardado dentro del formulario."
+    },
     "alta-error-403": {
       reason: "Requiere un 403 real del backend (cuenta suspendida server-side); el sim no puede fabricarlo.",
       expected: "El mismo layout de error del alta que alta-error-401, pero SIN botón Reintentar (CloudWelcomeSignInFlow.swift:161-163)."
@@ -100,6 +153,10 @@ window.ATLAS_F2 = {
       reason: "Terminal del adopt completo — misma dependencia que reentry-adopt.",
       expected: "La misma pantalla terminal de relanzamiento del alta (ver img/signout-relaunch.png como referencia visual del patrón)."
     },
+    "reentry-slotocupado": {
+      reason: "Exige DOS cuentas SIWA reales y un descriptor secundario ya escrito por la primera invitada; el seam `-uitest-secondary-session` finge el descriptor pero no puede firmar una segunda cuenta distinta. Y la entrada secundaria sigue DARK en producción.",
+      expected: "La MISMA pantalla de img/reentry-blocked.png cuando exista: candado, «Este dispositivo tiene datos de otra cuenta» y el back permitido. No hay copy propio para este caso."
+    },
     "reentry-secondary": {
       reason: "M1 está DARK y la pantalla de confirmación vive tras exists + guard con sesión real; el descriptor FAKE del panel DEBUG monta el store secundario pero no fabrica esta pantalla.",
       expected: "«Entrarás con tu cuenta; los datos del dueño no se tocan» + CTA y Cancelar propio."
@@ -152,10 +209,10 @@ window.ATLAS_F2 = {
   findings: [
     {
       id: "F2-H1",
-      sev: "hueco del Atlas",
-      title: "El flujo 6 tiene una capa previa que el Atlas no dibuja: el GATE BETA de Grupos",
-      node: "onboarding-educativo",
-      body: "En el recorrido full sin uitest, tocar la card «Grupos» de Más NO lleva al educativo ni al empty: sale el diálogo «Función en beta» (código 1050, `GroupsBetaGateLogic.shouldShowGate`, gate temporal de la 2.0.1). El educativo solo montó tras destrabar `groupsBetaUnlocked`. El alta solo-grupos lo destraba solo (`completeGroupsOnlyOnboarding` escribe la key), por eso el flujo 6 dibujado ES fiel para esa cohorte — pero un usuario full que llega al tab por Más pasa primero por un gate que ningún diagrama menciona."
+      sev: "CERRADO el 2026-08-12 (F5)",
+      title: "El flujo 6 tenía una capa previa que el Atlas no dibujaba: el GATE BETA de Grupos",
+      node: "onboarding-adopcion",
+      body: "En el recorrido full sin uitest, tocar la card «Grupos» de Más NO llevaba al educativo ni al empty: salía el diálogo «Función en beta» (código 1050), un gate temporal de la 2.0.1. **CERRADO por `9e504480`**, comprobado y no asumido: cero ocurrencias de la vista del gate, del campo del código y del gate del FAB, y las 6 keys retiradas de los 16 idiomas. Lo único que sobrevive es el STRING de la key `groupsBetaUnlocked`, que hoy significa otra cosa —que este dispositivo adoptó el dominio Grupos— y que el Atlas dibuja como tal. Ver el nodo de adopción y el hallazgo F5-H2."
     },
     {
       id: "F2-H2",

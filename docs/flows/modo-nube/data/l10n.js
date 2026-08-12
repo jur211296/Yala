@@ -23,53 +23,50 @@ window.ATLAS_L10N = {
     copy: [
       { key: "welcome.hero.title", value: "Tus finanzas personales,", role: "title" },
       { key: "welcome.hero.titleAccent", value: "sin esfuerzo.", role: "title" },
-      { key: "welcome.hero.subtitle", value: "Tú captura. Yala se encarga.", role: "body" },
       { key: "welcome.hero.cta", value: "Empezar", role: "button" },
-      { key: "welcome.hero.trust", value: "100% privado · Tu info siempre contigo", role: "caption" },
-      { key: "welcome.detectedData.title", value: "¡Hola de nuevo! Detectamos tu cuenta", role: "alert-title" },
-      { key: "welcome.detectedData.message", value: "Tienes datos guardados en tu iCloud. ¿Quieres cargarlos en este dispositivo?", role: "alert-body" },
-      { key: "welcome.detectedData.loadMyData", value: "Cargar mis datos", role: "button" },
-      { key: "welcome.detectedData.startFresh", value: "Empezar desde cero", role: "button" },
-      { key: "action.cancel", value: "Cancelar", role: "button" }
+      { key: "welcome.hero.trust", value: "100% privado · Tu info siempre contigo", role: "caption" }
     ],
     missing: [],
     hardcoded: [],
     notes: [
-      "El Hero rota además un carousel de 8 cards: 16 keys `welcome.hero.cards.{capture,assistant,groups,budgets,multiAndCurrencies,import,icloud,more}.{title,body}` (WelcomeHeroView.swift:84-95), omitidas por el tope de entradas.",
-      "El alert vive en WelcomeFlowContainer.swift:160-182; su Cancel es `action.cancel`."
+      "F5: **cinco keys menos**. `welcome.hero.subtitle` la retiró `c8575d8b` y las cuatro `welcome.detectedData.*` se fueron con el alert en `e999bfef` — borradas de los 16 locales, no solo del código.",
+      "El Hero rota además un carousel de 8 cards: 16 keys `welcome.hero.cards.{capture,assistant,groups,budgets,multiAndCurrencies,import,icloud,more}.{title,body}` (WelcomeHeroView.swift:70-83), omitidas por el tope de entradas."
     ]
   },
   "alta-chooser": {
     copy: [
-      { key: "welcome.chooser.title", value: "¡Hola! ¿Cómo llegaste a Yala?", role: "title" },
-      { key: "welcome.chooser.subtitle", value: "Cuéntanos para acomodar tu experiencia.", role: "body" },
-      { key: "welcome.chooser.optionNew.title", value: "Soy nuevo", role: "row" },
+      { key: "welcome.chooser.title", value: "¡Hola! ¿Qué quieres hacer en Yala?", role: "title" },
+      { key: "welcome.chooser.subtitle", value: "Elige tu punto de partida y seguimos desde ahí.", role: "body" },
+      { key: "welcome.chooser.optionNew.title", value: "Es mi primera vez en Yala", role: "row" },
       { key: "welcome.chooser.optionNew.body", value: "Empieza desde cero conmigo. Te ayudo a configurar todo paso a paso.", role: "row" },
       { key: "welcome.chooser.optionExisting.title", value: "Ya tengo una cuenta", role: "row" },
-      { key: "welcome.chooser.optionExisting.body", value: "Reinstalé Yala y quiero recuperar mis datos desde iCloud.", role: "row" },
-      { key: "welcome.chooser.optionInvite.title", value: "Me invitaron a un grupo", role: "row" },
-      { key: "welcome.chooser.optionInvite.body", value: "Tengo un enlace de invitación y quiero unirme.", role: "row" }
-    ],
-    missing: [],
-    hardcoded: [],
-    notes: ["WelcomeChooserView.swift:60-108; las 3 cards salen de `Branch.title/.body` (:30-44)."]
-  },
-  "alta-newchooser": {
-    copy: [
-      { key: "welcome.chooser.optionNew.title", value: "Soy nuevo", role: "title" },
-      { key: "welcome.new.subtitle", value: "Elige dónde quieres guardar tus datos.", role: "body" },
-      { key: "welcome.new.privateTitle", value: "Solo tú y tus dispositivos", role: "row" },
-      { key: "welcome.new.privateBody", value: "Tus datos viven en tu iPhone y se sincronizan con tu iCloud privado. Nadie más puede leerlos, ni siquiera nosotros.", role: "row" },
-      { key: "welcome.new.cloudTitle", value: "Tu cuenta en la nube", role: "row" },
-      { key: "welcome.new.cloudBody", value: "Entra con Apple o Google y accede a tus datos desde cualquier dispositivo, aunque no uses iCloud. Se guardan en los servidores de Yala y nuestro equipo podría verlos para darte soporte y funciones inteligentes.", role: "row" },
-      { key: "welcome.new.cloudWarning", value: "En este modo renuncias a la privacidad total de la otra opción.", role: "caption" }
+      { key: "welcome.chooser.optionExisting.body", value: "Ya usé Yala antes y quiero recuperar mis datos, estén en iCloud o en mi cuenta.", role: "row" },
+      { key: "welcome.chooser.optionInvite.title", value: "Vengo por un grupo", role: "row" },
+      { key: "welcome.chooser.optionInvite.body", value: "Quiero dividir gastos con amigos: crear un grupo o unirme a uno.", role: "row" }
     ],
     missing: [],
     hardcoded: [],
     notes: [
-      "El título reusa la key del chooser (WelcomeNewChooserView.swift:46).",
-      "La key del badge `recommendedBadge` fue RETIRADA del código y de los 16 locales (comentario en L10n.swift:4835-4837): no queda distintivo de recomendada.",
-      "La renuncia (`cloudWarning`) va inline DENTRO de la card de nube y VoiceOver la lee como parte de la etiqueta."
+      "F5: **seis de los ocho valores cambiaron** (G1) conservando su key. El cuerpo de `optionExisting` deja de decir «desde iCloud» —que era falso para quien tiene cuenta en la nube— y el de `optionInvite` deja de presuponer el enlace.",
+      "Las 3 cards salen de `Branch.title`/`.body` (WelcomeChooserView.swift:30-44)."
+    ]
+  },
+  "alta-newchooser": {
+    copy: [
+      { key: "welcome.chooser.optionNew.title", value: "Es mi primera vez en Yala", role: "title" },
+      { key: "welcome.new.subtitle", value: "Elige dónde quieres guardar tus datos.", role: "body" },
+      { key: "welcome.new.cloudTitle", value: "Tu cuenta en la nube", role: "row" },
+      { key: "welcome.new.cloudBody", value: "Tus datos viven en nuestros servidores, como en la mayoría de tus aplicaciones. Nuestro equipo puede verlos para darte soporte y funciones nuevas.", role: "row" },
+      { key: "welcome.new.privateTitle", value: "Tu cuenta en tu iCloud privado", role: "row" },
+      { key: "welcome.new.privateBody", value: "Tus datos viven en los dispositivos Apple de tu Apple ID y se sincronizan por tu iCloud privado. Nadie más puede leerlos, ni siquiera nosotros.", role: "row" }
+    ],
+    missing: [],
+    hardcoded: [],
+    notes: [
+      "F5 · **el orden de esta lista ES el de la pantalla, y se invirtió** (W3): la nube va primero. Las dos cards se re-titularon en paralelo («tu cuenta en X»), de modo que el eje que se compara es DÓNDE viven los datos y no cuál es la buena.",
+      "F5 · `welcome.new.cloudWarning` («renuncias a la privacidad total de la otra opción») está BORRADA de los 16 locales: sermoneaba. La idea no se pierde — el `cloudBody` dice quién puede ver los datos y el consent posterior la lleva entera.",
+      "El título reusa la key del chooser (WelcomeNewChooserView.swift:69), así que cambió con él.",
+      "La key del badge `recommendedBadge` sigue retirada (chip RC): ninguna de las dos opciones se recomienda, ni en pantalla ni para VoiceOver."
     ]
   },
   "alta-privado": {
@@ -101,16 +98,63 @@ window.ATLAS_L10N = {
     hardcoded: [],
     notes: ["Sin botones — icono + título + cuerpo (WelcomeMirrorRelaunchView.swift:41-58). Copy propio, NO reusa `storage.relaunch.*`."]
   },
+  "alta-groupschooser": {
+    copy: [
+      { key: "welcome.groups.title", value: "¿Cómo empiezas con tu grupo?", role: "title" },
+      { key: "welcome.groups.subtitle", value: "Las dos vías te dejan en el mismo sitio.", role: "body" },
+      { key: "welcome.groups.createTitle", value: "Crear mi primer grupo", role: "row" },
+      { key: "welcome.groups.createBody", value: "Invitas tú. Registras lo que pagan todos y Yala lleva las cuentas.", role: "row" },
+      { key: "welcome.groups.joinTitle", value: "Tengo una invitación", role: "row" },
+      { key: "welcome.groups.joinBody", value: "Pega el enlace que te enviaron y entras al grupo.", role: "row" }
+    ],
+    missing: [],
+    hardcoded: [],
+    notes: ["Pantalla NUEVA de G2 (`35077287`). El subtítulo es una promesa comprobable: las dos vías desembocan en el mismo shell de Grupos, aunque una pase por la puerta y la otra por el portal."]
+  },
+  "alta-groupsgate": {
+    copy: [
+      { key: "welcome.groups.checking", value: "Comprobando que todo esté listo…", role: "body" }
+    ],
+    missing: [],
+    hardcoded: [],
+    notes: ["Un solo texto, sin CTA: la pantalla dura lo que dure el refresh forzado del remote-config."]
+  },
+  "alta-groupsgate-blocked": {
+    copy: [
+      { key: "welcome.groups.channelOffTitle", value: "Ahora mismo no podemos abrirte grupos", role: "title" },
+      { key: "welcome.groups.channelOffBody", value: "Es algo de nuestro lado y dura poco. Vuelve a intentarlo en un momento: no se ha guardado nada.", role: "body" },
+      { key: "welcome.groups.secondaryTitle", value: "Aquí estás como invitado", role: "title" },
+      { key: "welcome.groups.secondaryBody", value: "Esta sesión vive en el dispositivo de otra persona, así que tu primer grupo se crea desde el tuyo. Cierra tu sesión de invitado y vuelve a intentarlo allí.", role: "body" },
+      { key: "welcome.cloud.blockedTitle", value: "Este dispositivo tiene datos de otra cuenta", role: "title" },
+      { key: "welcome.cloud.blockedBody", value: "Para proteger esos datos, no podemos conectar una cuenta distinta aquí. Su dueño puede volver a entrar cuando quiera.", role: "body" },
+      { key: "welcome.groups.gateBack", value: "Volver", role: "button" }
+    ],
+    missing: [],
+    hardcoded: [],
+    notes: [
+      "Tres motivos, tres copys, un solo layout. El par `channelOff*` es SSOT de ese hecho: el mismo par sirve el alert de `GroupsContainerView` cuando el canal se apaga al crear desde el tab.",
+      "El par `secondary*` es lo único que M3 (`ec551b71`) estrenó en los 16 locales, y el de datos ajenos es PRESTADO del guard de sign-in de nube — con las dos imprecisiones que el panel anota."
+    ]
+  },
+  "alta-organizername": {
+    copy: [
+      { key: "welcome.groups.nameTitle", value: "¿Cómo te llamas?", role: "title" },
+      { key: "welcome.groups.nameBody", value: "Es el nombre que verán los demás en el grupo.", role: "body" },
+      { key: "groups.invite.namePlaceholder", value: "Tu nombre", role: "caption" },
+      { key: "welcome.groups.nameCta", value: "Crear mi grupo", role: "button" }
+    ],
+    missing: [],
+    hardcoded: [],
+    notes: ["El placeholder se reusa de la vía del invitado; el CTA es propio y nombra el resultado («crear mi grupo»), no el paso."]
+  },
+
   "alta-consent": {
     copy: [
-      { key: "storage.consent.title", value: "Antes de activar la nube", role: "title" },
-      { key: "storage.consent.point1", value: "Tus transacciones, cuentas, notas y el texto que leemos de tus recibos saldrán de tu dispositivo y se guardarán en los servidores de Yala.", role: "body" },
-      { key: "storage.consent.point2", value: "Las fotos de tus recibos se quedan solo en este dispositivo: no se respaldan en la nube ni se ven en otros dispositivos. Si quieres conservarlas, guárdalas antes de cambiar de teléfono.", role: "body" },
-      { key: "storage.consent.point3", value: "Nuestro equipo podría leer esos datos para darte soporte, recuperar tu cuenta y ofrecerte funciones inteligentes (categorización, lectura de recibos). No es cifrado de extremo a extremo.", role: "body" },
-      { key: "storage.consent.point4", value: "Cuando usas el chat, enviamos un resumen de tus finanzas (hasta unos 13 meses) a nuestro proveedor de inteligencia artificial para poder responderte.", role: "body" },
-      { key: "storage.consent.point5", value: "Tus datos se guardan en servidores en Estados Unidos.", role: "body" },
-      { key: "storage.consent.point6", value: "A cambio, accedes desde cualquier dispositivo con solo tu login de Apple o Google, sin depender de iCloud. Mientras conserves ese login: no hay recuperación por email ni contraseña de Yala, así que si pierdes el acceso a esa cuenta, exporta tus datos antes (Ajustes → Exportar datos).", role: "body" },
-      { key: "storage.consent.point7", value: "Puedes volver al modo privado cuando quieras, sin perder nada.", role: "body" },
+      { key: "storage.consent.title", value: "Tus datos en la nube de Yala", role: "title" },
+      { key: "storage.consent.pointServers", value: "Tus datos se guardan en los servidores de Yala y nuestro equipo puede verlos para darte soporte y funciones inteligentes. No usamos cifrado de extremo a extremo.", role: "body" },
+      { key: "storage.consent.pointPhotos", value: "Las fotos de tus recibos se quedan solo en este dispositivo: no se respaldan en la nube ni se ven en otros dispositivos. Si quieres conservarlas, guárdalas antes de cambiar de teléfono.", role: "body" },
+      { key: "storage.consent.pointAccess", value: "A cambio, accedes desde cualquier dispositivo con solo tu login de Apple o Google, sin depender de iCloud. Mientras conserves ese login: no hay recuperación por email ni contraseña de Yala, así que si pierdes el acceso a esa cuenta, exporta tus datos antes (Ajustes → Exportar datos).", role: "body" },
+      { key: "storage.consent.footer", value: "Puedes volver al modo privado cuando quieras, sin perder nada.", role: "caption" },
       { key: "storage.consent.privacyLink", value: "Ver la política de privacidad", role: "button" },
       { key: "storage.consent.accept", value: "Entiendo y quiero activar la nube", role: "button" },
       { key: "action.cancel", value: "Cancelar", role: "button" }
@@ -118,20 +162,24 @@ window.ATLAS_L10N = {
     missing: [],
     hardcoded: [],
     notes: [
-      "El título se usa dos veces: navigationTitle y header inline (CloudConsentView.swift:53 y 69).",
-      "Confirmado: el copy es genérico e idéntico para los tres `ConsentPath` — la ruta solo cambia la telemetría."
+      "F5 · **de siete puntos a tres y un pie** (W4, `e8b59372`): las keys `point1..point7` están borradas de los 16 locales y las sustituyen `pointServers` · `pointPhotos` · `pointAccess` + `footer`. Salieron del contrato el envío a la IA (que ya lo dice el consent de IA) y la ubicación de los servidores (que la dice la política de privacidad), y el punto 7 pasó de viñeta a pie.",
+      "El título ya NO se pinta dos veces: solo `navigationTitle` (CloudConsentView.swift:84). El header inline desapareció con el recorte.",
+      "Confirmado: el copy sigue siendo genérico e idéntico para los tres `ConsentPath` — la ruta solo cambia la telemetría y, desde M0, DÓNDE se registra."
     ]
   },
   "alta-intro": {
     copy: [
       { key: "welcome.bornCloud.title", value: "Crea tu cuenta de Yala", role: "title" },
       { key: "welcome.bornCloud.subtitle", value: "Con ella podrás abrir Yala desde cualquier dispositivo.", role: "body" },
-      { key: "auth.googleButton", value: "Continuar con Google", role: "button" },
-      { key: "welcome.cloud.providerNote", value: "Entra con el mismo método que usaste al crear tu cuenta: tu cuenta de Yala queda ligada a él.", role: "caption" }
+      { key: "auth.googleButtonSignUp", value: "Crear cuenta con Google", role: "button" },
+      { key: "welcome.bornCloud.providerNote", value: "Tu cuenta de Yala quedará ligada al método que elijas.", role: "caption" }
     ],
     missing: [],
     hardcoded: [],
-    notes: ["El botón de Apple es `ASAuthorizationAppleIDButton(type: .signIn)`: su rótulo lo pinta el sistema, sin key de Yala."]
+    notes: [
+      "F5 · **el verbo lo decide el contexto** (W4b): aquí la cuenta NO existe todavía ⇒ Google dice «Crear cuenta con Google» (`purpose: .signUp`) y el botón de Apple es `AppleSignInButton(type: .signUp)`, cuyo rótulo lo pinta el sistema en el idioma del OS. Antes los dos decían «continuar»/«iniciar sesión».",
+      "F5 · la nota §13 también se desdobló: el alta usa `welcome.bornCloud.providerNote` («quedará ligada al método que elijas») y la re-entrada conserva `welcome.cloud.providerNote` («entra con el mismo método que usaste»). Una sola nota no podía decir las dos cosas."
+    ]
   },
   "alta-signin": {
     copy: [],
@@ -241,12 +289,15 @@ window.ATLAS_L10N = {
       { key: "welcome.cloud.title", value: "Entra a tu cuenta", role: "title" },
       { key: "welcome.cloud.subtitle", value: "Usa el mismo Apple ID con el que creaste tu cuenta de la nube.", role: "body" },
       { key: "welcome.cloud.subtitleGoogle", value: "Usa la misma cuenta de Google con la que creaste tu cuenta de la nube.", role: "body" },
-      { key: "auth.googleButton", value: "Continuar con Google", role: "button" },
+      { key: "auth.googleButtonSignIn", value: "Iniciar sesión con Google", role: "button" },
       { key: "welcome.cloud.providerNote", value: "Entra con el mismo método que usaste al crear tu cuenta: tu cuenta de Yala queda ligada a él.", role: "caption" }
     ],
     missing: [],
     hardcoded: [],
-    notes: ["El subtítulo conmuta por provider (WelcomeCloudSignInView.swift:299-301). El botón de Apple es nativo del sistema."]
+    notes: [
+      "F5 · aquí la cuenta YA existe ⇒ el verbo es iniciar sesión en los DOS botones: Google con `purpose: .signIn` y Apple con `AppleSignInButton(type: .signIn)` (WelcomeCloudSignInView.swift:361-377).",
+      "El subtítulo conmuta por provider (WelcomeCloudSignInView.swift:352-354)."
+    ]
   },
   "reentry-mismatch": {
     copy: [
@@ -286,6 +337,15 @@ window.ATLAS_L10N = {
     missing: [],
     hardcoded: [],
     notes: ["Tras confirmar, la fase `.relaunchSecondary` usa `storage.relaunch.title` + `storage.relaunch.bodyAutoExit`. Fase DARK en producción (flag M1)."]
+  },
+  "reentry-slotocupado": {
+    copy: [
+      { key: "welcome.cloud.blockedTitle", value: "Este dispositivo tiene datos de otra cuenta", role: "title" },
+      { key: "welcome.cloud.blockedBody", value: "Para proteger esos datos, no podemos conectar una cuenta distinta aquí. Su dueño puede volver a entrar cuando quiera.", role: "body" }
+    ],
+    missing: [],
+    hardcoded: [],
+    notes: ["Sin copy propio: reusa LITERAL el de datos ajenos. El hecho es el mismo para quien lo lee («aquí hay datos que no son tuyos»), aunque el dueño de esos datos sea otra invitada y no el del móvil."]
   },
   "reentry-adopt": {
     copy: [
@@ -657,21 +717,49 @@ window.ATLAS_L10N = {
       { key: "groups.empty.signedOut.title", value: "Tus grupos están en tu cuenta", role: "title" },
       { key: "groups.empty.signedOut.message", value: "Inicia sesión para ver los grupos que compartes.", role: "body" },
       { key: "groups.empty.signedOut.action", value: "Iniciar sesión", role: "button" },
-      { key: "groups.empty.signedOut.reentryBanner", value: "Cerraste tu sesión de grupos. Inicia sesión cuando quieras verlos de nuevo.", role: "note" }
+      { key: "groups.empty.signedOut.reentryBanner", value: "Cerraste tu sesión de grupos. Inicia sesión cuando quieras verlos de nuevo.", role: "note" },
+      { key: "groups.empty.needsEducational.title", value: "¿Cómo funcionan los grupos?", role: "title" },
+      { key: "groups.empty.needsEducational.action", value: "Ver cómo funciona", role: "button" },
+      { key: "groups.empty.createAccount.title", value: "Crea tu cuenta de Yala", role: "title" },
+      { key: "groups.empty.createAccount.action", value: "Crear mi cuenta", role: "button" },
+      { key: "groups.empty.needsConsent.title", value: "Un último paso", role: "title" },
+      { key: "groups.empty.needsConsent.action", value: "Continuar", role: "button" }
     ],
     missing: [],
     hardcoded: [],
-    notes: ["El panel parafrasea la variante estándar como «Aún no tienes grupos»; el valor real de `groups.empty.title` es «Sin grupos». El reentryBanner es el banner D2 asociado al mismo estado."]
+    notes: [
+      "F5 · C2 añadió TRES estados con copy propio (`needsEducational`, `createAccount`, `needsConsent`); los dos que ya había (`groups.empty.*` estándar y `signedOut`) quedan acotados a cuando son verdad.",
+      "El panel parafrasea la variante estándar como «Aún no tienes grupos»; el valor real de `groups.empty.title` es «Sin grupos». El `reentryBanner` (D2) solo se pinta sobre el caso de re-entrada."
+    ]
   },
-  "onboarding-crear": {
+  "onboarding-consent": {
     copy: [
-      { key: "groups.new", value: "Nuevo grupo", role: "title" },
       { key: "groups.consent.title", value: "Grupos en la nube", role: "title" },
       { key: "groups.consent.point1", value: "Los grupos son compartidos por naturaleza: viven en la nube de Yala para que todos vean los mismos gastos, al día.", role: "row" },
       { key: "groups.consent.point2", value: "Solo se comparte lo mínimo: tu alias y los gastos del grupo. Tu correo no sale de tu dispositivo.", role: "row" },
       { key: "groups.consent.point3", value: "Tus finanzas personales no se mueven: siguen donde tú elegiste, privadas como siempre.", role: "row" },
       { key: "groups.consent.point4", value: "Los datos del grupo viajan y se guardan protegidos, y puedes salir del grupo cuando quieras.", role: "row" },
+      { key: "storage.consent.privacyLink", value: "Ver la política de privacidad", role: "button" },
       { key: "groups.consent.accept", value: "Aceptar y continuar", role: "button" },
+      { key: "action.cancel", value: "Cancelar", role: "button" }
+    ],
+    missing: [],
+    hardcoded: [],
+    notes: ["La pantalla es LITERAL para las cuatro puertas: `path` es un parámetro de telemetría, no una rama de copy. Comparte el enlace de privacidad con el consent de Nube."]
+  },
+  "onboarding-canalapagado": {
+    copy: [
+      { key: "welcome.groups.channelOffTitle", value: "Ahora mismo no podemos abrirte grupos", role: "alert-title" },
+      { key: "welcome.groups.channelOffBody", value: "Es algo de nuestro lado y dura poco. Vuelve a intentarlo en un momento: no se ha guardado nada.", role: "alert-body" },
+      { key: "common.ok", value: "OK", role: "button" }
+    ],
+    missing: [],
+    hardcoded: [],
+    notes: ["El par `channelOff*` es SSOT de este hecho: lo comparten el alert del tab, el error de guardado del formulario y la puerta del Welcome. Un solo texto para un solo hecho."]
+  },
+  "onboarding-crear": {
+    copy: [
+      { key: "groups.new", value: "Nuevo grupo", role: "title" },
       { key: "groups.signin.title", value: "Conecta tu cuenta", role: "title" },
       { key: "groups.signin.body", value: "Para unirte al grupo necesitas una cuenta de Yala. Entra con Apple o Google y sigue con tu invitación.", role: "body" },
       { key: "groups.signin.accountNote", value: "Esta será tu cuenta de Yala: si algún día llevas tus datos personales a la nube, usarás esta misma.", role: "caption" },
@@ -679,7 +767,10 @@ window.ATLAS_L10N = {
     ],
     missing: [],
     hardcoded: [],
-    notes: ["El copy de `groups.signin.body` está redactado para el flujo de invitación («unirte al grupo») aunque también se presenta desde crear-grupo."]
+    notes: [
+      "F5 · las cinco keys del consent de Grupos se han mudado a su frame propio, que es donde se pinta esa pantalla.",
+      "⚠︎ El copy de `groups.signin.body` está redactado para el flujo de INVITACIÓN («para unirte al grupo… y sigue con tu invitación») aunque esta misma pantalla se le presenta a quien viene a CREAR un grupo y no tiene ninguna invitación que seguir."
+    ]
   },
 
   // ══ FLUJO 7 · degradados ════════════════════════════════════════════════
