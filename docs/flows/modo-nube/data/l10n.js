@@ -732,6 +732,21 @@ window.ATLAS_L10N = {
       "El panel parafrasea la variante estándar como «Aún no tienes grupos»; el valor real de `groups.empty.title` es «Sin grupos». El `reentryBanner` (D2) solo se pinta sobre el caso de re-entrada."
     ]
   },
+  "onboarding-groupssignin": {
+    copy: [
+      { key: "groups.signin.title", value: "Conecta tu cuenta", role: "title" },
+      { key: "groups.signin.body", value: "Para unirte al grupo necesitas una cuenta de Yala. Entra con Apple o Google y sigue con tu invitación.", role: "body" },
+      { key: "auth.googleButtonSignUp", value: "Crear cuenta con Google", role: "button" },
+      { key: "groups.signin.accountNote", value: "Esta será tu cuenta de Yala: si algún día llevas tus datos personales a la nube, usarás esta misma.", role: "caption" },
+      { key: "action.cancel", value: "Cancelar", role: "button" }
+    ],
+    missing: [],
+    hardcoded: [],
+    notes: [
+      "⚠︎ El botón de Apple lo pinta el sistema con `type: .signIn` («Iniciar sesión con Apple») y el de Google con `purpose: .signUp` («Crear cuenta con Google»): **dos verbos contradictorios en la misma pantalla**, medido en sim el 2026-08-12.",
+      "⚠︎ El cuerpo es el del INVITADO y no tiene variante: quien llega desde «Crear mi primer grupo» lee que se va a unir a un grupo y que siga con su invitación."
+    ]
+  },
   "onboarding-consent": {
     copy: [
       { key: "groups.consent.title", value: "Grupos en la nube", role: "title" },

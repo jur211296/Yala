@@ -1114,6 +1114,24 @@ window.ATLAS_NODES = {
     ]
   },
 
+  "onboarding-groupssignin": {
+    title: "El sign-in de Grupos — el segundo escalón de las cuatro puertas",
+    shot: "onboarding-groupssignin.png",
+    sees: "«Conecta tu cuenta», un cuerpo que habla de unirse al grupo y seguir con la invitación, los dos botones de método y la nota de que esta será su cuenta de Yala. Es la pantalla que sale cuando la puerta dice que falta identidad — venga el usuario de una invitación, del tab, de la card «Solo grupos» o de crear su primer grupo.",
+    persists: "Nada por sí misma: la sesión la escribe el proveedor al completarse. Es el escalón previo al consent, y hasta que la cadena termina no se persiste ninguna preferencia.",
+    exits: "Cancelar no continúa nada: el invitado se queda como estaba (su intent sobrevive 7 días) y al organizador se le apaga la rama y vuelve al chooser de Grupos. En sim los dos métodos son inalcanzables de verdad —SIWA no completa sin cuenta de Apple— así que el recorrido se detiene aquí.",
+    code: [
+      { t: "GroupsSignInView.swift:77", d: "el botón de Apple: `ASAuthorizationAppleIDButton(type: .signIn)` (:174) ⇒ el sistema pinta «Iniciar sesión con Apple»" },
+      { t: "GroupsSignInView.swift:89-90", d: "el de Google: `GoogleSignInButton(purpose: .signUp)` ⇒ «Crear cuenta con Google». **Los dos verbos conviven en la misma pantalla**" },
+      { t: "GroupsGateLogic.swift:73-74 `.presentSignIn`", d: "el escalón que la monta; es el de GRUPOS y jamás una hermana de `WelcomeCloudSignInView`" }
+    ],
+    notes: [
+      "⚠︎ MEDIDO EN PANTALLA el 2026-08-12 (sim, Yala Dev): **los dos botones se contradicen**. Apple dice «Iniciar sesión» y Google «Crear cuenta», uno encima del otro, para la misma acción. W4b desdobló el verbo por contexto en el Welcome —donde el alta dice crear y la re-entrada iniciar sesión— pero esta pantalla se quedó con uno de cada.",
+      "⚠︎ MEDIDO: el cuerpo (`groups.signin.body`) está redactado SOLO para el invitado — «Para unirte al grupo… y sigue con tu invitación»— y es exactamente la pantalla que ve quien viene de «Crear mi primer grupo», que no tiene ninguna invitación que seguir ni grupo al que unirse. Es la misma clase de copy prestado que el bloqueo por datos ajenos de la puerta.",
+      "La pantalla NO consulta el guard cross-cuenta (regla dura de su docblock) — y esa es justamente la razón de que la puerta del organizador tenga que comprobar los datos ajenos antes de llegar aquí."
+    ]
+  },
+
   "onboarding-consent": {
     title: "C1 · El consent de Grupos — una sola pantalla para las cuatro puertas",
     shot: "onboarding-consent.png",

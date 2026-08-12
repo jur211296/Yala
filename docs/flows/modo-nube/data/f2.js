@@ -22,63 +22,61 @@
 // misma —lo que cambió es que ahora hay un relanzamiento por delante, y eso se verificó en sim—.
 // Los dos estados nuevos que el sim NO puede dar entran a `deviceOnly` con su motivo.
 
-// **F5 (2026-08-12)** · pasada de DERIVACIÓN, sin simulador. No se capturó ni se re-capturó nada, y por
-// eso aparecen aquí dos categorías nuevas que antes no hacían falta:
-//   · `stale` — la imagen EXISTE pero es de una pantalla anterior a las olas W/G/C/M. Enseñarla sin
-//     decirlo sería exactamente el drift documental que el Atlas combate, así que el frame la marca en
-//     ámbar y dice qué cambió. Se resuelven RE-CAPTURANDO, no borrando.
-//   · `pending: true` dentro de una entrada de `deviceOnly` — el nodo no tiene imagen, pero **el
-//     simulador SÍ puede darla**: no es un hueco device-only, es una captura que este chip no hizo.
-//     Meterlas en el saco de device-only habría sido una afirmación falsa sobre lo que el sim puede.
+// **F5 (2026-08-12)** · derivación del código + pasada de captura en el simulador (iPhone 17 Pro
+// `9D0F6D32`, iOS 26.5, scheme **Yala Dev** en configuración `Debug-Dev`).
+//
+// ⚠️ La configuración importa y costó un build: el scheme «Yala Dev» NO usa `Debug` sino **`Debug-Dev`**.
+// Compilado con `Debug` sale el bundle de PRODUCCIÓN (`com.jurgenschmidt.yala`, sin `DEV_BUILD`), y con él
+// los percents remotos apagados ⇒ ni el sub-chooser de nube ni el canal de Grupos aparecen, y el recorrido
+// que este chip necesitaba habría sido invisible.
+//
+// Se RE-capturaron las 8 que las olas W/G/C/M habían dejado obsoletas y se estrenaron 3 pantallas que el
+// Atlas no tenía. `stale` queda VACÍO, y se conserva el mecanismo: es la categoría que hay que usar cuando
+// una pantalla se re-escribe y su imagen no se puede rehacer en el momento.
+//
+// Lo que la pasada verificó de paso, además de fotografiar (comportamiento, no solo píxeles):
+//   · el educativo es el PRIMER escalón de la puerta del organizador, y la card «Solo grupos» del
+//     onboarding cede a ESA MISMA cadena — las dos mitades de `GroupsGateLogic` vistas en vivo;
+//   · cancelar el educativo devuelve al chooser de grupos del Welcome, que es lo que la matriz de
+//     cancelación de la rama organizador promete;
+//   · la puerta con el canal apagado pinta su copy propio y sus DOS botones «Volver».
+//
+// ⚠️ Y una trampa de método, MEDIDA aquí: en un build **Yala Dev**, una instalación limpia **no nace
+// virgen en preferencias**. A los 12 s de un launch sin tocar nada ya existen `onboardingMode = groupInvite`,
+// `userName = Ana` y `defaultCurrencyCode = PEN` —las TRES sincronizadas, ninguna per-device—. No lo escribe
+// la rama del organizador (se comprobó sin interactuar) y no se identificó al escritor. Consecuencia
+// práctica: **la invariante «nada se persiste hasta que la cadena confirma» NO se puede verificar en Dev
+// leyendo el plist**, porque el arranque ya deja esas keys puestas.
 
 window.ATLAS_F2 = {
   head: "6c6eb3fe",
   date: "2026-08-12",
 
-  // ── Capturas que ya no muestran la pantalla de hoy ───────────────────────────────────
-  stale: {
-    "alta-hero": "El Hero perdió su subtítulo (`c8575d8b`): la imagen todavía muestra «Tú captura. Yala se encarga.» bajo el título.",
-    "alta-chooser": "Las tres cards se re-escribieron enteras (`e999bfef` + G1): la imagen muestra «Soy nuevo» / «Me invitaron a un grupo» y la pregunta «¿Cómo llegaste a Yala?», que ya no existen.",
-    "alta-newchooser": "Se invirtió el ORDEN de las dos cards (la nube va primero), cambiaron los dos títulos y los dos cuerpos, y desapareció la renuncia inline (W3).",
-    "alta-consent": "El sheet pasó de SIETE puntos a tres y un pie, y cambió el título (W4). La imagen muestra el contrato en su versión 1.",
-    "alta-intro": "Los dos botones cambiaron de verbo a «crear cuenta» y la nota §13 pasó a su variante propia del alta (W4b).",
-    "reentry-intro": "El botón cambió de verbo a «iniciar sesión» (W4b).",
-    "onboarding-educativo": "El paso 3 ganó un punto NUEVO que va primero —dónde se guardan los gastos del grupo— y su CTA principal dice «Crear mi cuenta» cuando el móvil nunca tuvo sesión (C2). La imagen muestra el paso 3 anterior, con «Iniciar sesión».",
-    "onboarding-groupsonly": "La imagen muestra el ATERRIZAJE en el tab, que era lo que el nodo describía. Hoy el nodo describe el paso 8 del onboarding, que ya no aterriza en ningún sitio: cede el payload a la cadena de las cuatro puertas (C2)."
-  },
+  // ── Capturas que ya no muestran la pantalla de hoy (vacío: F5 las rehízo todas) ──────
+  stale: {},
 
   // ── Nodos SIN captura de sim: motivo + qué debería verse ─────────────────────────────
   // `pending: true` ⇒ el simulador SÍ puede darla y este chip no la hizo. Todo lo demás es device-only
   // de verdad: el sim NO puede producir ese estado.
   deviceOnly: {
-    "alta-groupschooser": {
-      pending: true,
-      reason: "Pantalla NUEVA de G2. Es alcanzable en sim sin sesión ni red (Hero → «Vengo por un grupo»), pero F5 fue una pasada de derivación y no abrió el simulador.",
-      expected: "«¿Cómo empiezas con tu grupo?» con las dos cards de alto igualado —«Crear mi primer grupo» y «Tengo una invitación»— y el back de la esquina (WelcomeGroupsChooserView.swift)."
-    },
     "alta-groupsgate": {
       pending: true,
-      reason: "Pantalla NUEVA de G3, alcanzable en sim con `Yala Dev` (canal ON en staging). Dura lo que dure el refresh forzado, así que la captura pide una ráfaga — el mismo problema que ya tuvo `alta-creating`.",
-      expected: "Spinner grande en blanco sobre el fondo hero y «Comprobando que todo esté listo…» (WelcomeGroupsGateView.swift:97-109)."
-    },
-    "alta-groupsgate-blocked": {
-      pending: true,
-      reason: "Las TRES variantes son fabricables en sim: canal apagado con el kill-switch DEBUG (`cloudSync.debug.remoteFlagsForceOff`), visita con el descriptor FAKE del panel DEBUG que M3 estrenó, y datos ajenos sembrando corpus antes de entrar.",
-      expected: "Tres pantallas con el mismo layout (icono, título, cuerpo, botón «Volver») y copy distinto: «Ahora mismo no podemos abrirte grupos» · «Aquí estás como invitado» · «Este dispositivo tiene datos de otra cuenta»."
+      reason: "INTENTADA el 2026-08-12 y no conseguida: la pantalla dura lo que dure el `refreshIfDue(force: true)` y con el canal encendido el step se desmonta en la misma vuelta. Dos ráfagas de `simctl io` no la pillaron —la primera terminó antes del tap, la segunda tampoco coincidió—. Se captura provocando latencia (Network Link Conditioner) o con el canal a punto de responder, no con una ráfaga a ciegas.",
+      expected: "Spinner grande en blanco sobre el fondo hero y «Comprobando que todo esté listo…» (WelcomeGroupsGateView.swift:97-109). Su variante BLOQUEADA sí está capturada, en img/alta-groupsgate-blocked.png."
     },
     "alta-organizername": {
       pending: true,
-      reason: "Pantalla NUEVA de G3. Vive DETRÁS del sign-in de Grupos, así que en sim exige el seam `-uitest-fake-cloud-session` (SIWA/Google no completan) — alcanzable, pero no con un recorrido limpio.",
+      reason: "MEDIDO el 2026-08-12: vive detrás del sign-in de Grupos, y el simulador no completa SIWA (sin cuenta de Apple) ni Google. El recorrido llega hasta la pantalla de sign-in —capturada— y se detiene ahí. El seam `-uitest-fake-cloud-session` da `hasSession` pero pone la app bajo `-uitest`, donde los getters de canal cortan a su default y el recorrido deja de ser el real.",
       expected: "Cover con «¿Cómo te llamas?», «Es el nombre que verán los demás en el grupo.», campo «Tu nombre» y el botón «Crear mi grupo» (GroupsOrganizerNameView.swift)."
     },
     "onboarding-crear": {
       pending: true,
-      reason: "F5 · la imagen que este nodo tenía (`onboarding-crear.png`) NO era el formulario: era la pantalla del consent de Grupos, capturada por la ruta `needsConsent`. Al ganar el consent frame propio, la imagen se RENOMBRÓ a `onboarding-consent.png` —que es lo que de verdad muestra— y este nodo se queda sin la suya.",
-      expected: "El formulario de grupo (`GroupFormView`) recién abierto: nombre, divisa y la lista de miembros vacía. Alcanzable en sim por la ruta `.backend` (sesión fingida CON consent aceptado)."
+      reason: "F5 · la imagen que este nodo tenía (`onboarding-crear.png`) NO era el formulario: era la pantalla del consent de Grupos. Al ganar el consent frame propio, la imagen se RENOMBRÓ a `onboarding-consent.png` —que es lo que de verdad muestra— y este nodo se queda sin la suya. El formulario vive detrás del sign-in, con la misma barrera que `alta-organizername`.",
+      expected: "El formulario de grupo (`GroupFormView`) recién abierto: nombre, divisa y la lista de miembros vacía."
     },
     "onboarding-canalapagado": {
       pending: true,
-      reason: "Fabricable en sim con el kill-switch DEBUG (`cloudSync.debug.remoteFlagsForceOff`), que es como se obtuvo `degradado-killswitch.png`. NO es alcanzable desde un test —`CloudRemoteFlags.decide` cortocircuita bajo `isRunningTests || isUITestHost`—, pero eso no impide capturarlo a mano.",
+      reason: "MEDIDO el 2026-08-12: el alert vive en el TAB Grupos, y llegar al tab exige haber cerrado la cadena de puertas (sesión real). Por el Welcome no se alcanza: con el canal apagado la rama del organizador se detiene ANTES, en la puerta —ese estado sí está capturado en img/alta-groupsgate-blocked.png, con el MISMO par de keys—. Y bajo `-uitest` el kill-switch DEBUG ni siquiera se respeta: `CloudRemoteFlags.decide` corta a `absentDefault` antes de leerlo.",
       expected: "Alert «Ahora mismo no podemos abrirte grupos» sobre el tab Grupos, con la lista intacta detrás y sin ningún grupo creado. La segunda superficie es el mismo texto como error de guardado dentro del formulario."
     },
     "alta-error-403": {
@@ -185,6 +183,17 @@ window.ATLAS_F2 = {
 
   // ── Notas de captura: contexto de CÓMO se obtuvo la imagen (sin tocar lo medido en F1) ─
   captureNotes: {
+    "alta-hero": "F5 · RE-capturada (2026-08-12) sobre `6c6eb3fe`: sin subtítulo. El árbol de accesibilidad lo confirma — solo `welcome.hero.title`, `titleAccent` y `trust`, y un único target (`welcome_hero_cta`) sin ninguna rama de alert.",
+    "alta-chooser": "F5 · RE-capturada: los seis valores nuevos de las tres cards, leídos del árbol y coincidentes byte a byte con `es.lproj`.",
+    "alta-newchooser": "F5 · RE-capturada: **la nube va primero** y la card privada después, sin renuncia inline y sin distintivo de recomendada. Es la evidencia visual del `displayOrder` de W3.",
+    "alta-intro": "F5 · RE-capturada: «Registrarse con Apple» (lo pinta el sistema por `type: .signUp`) + «Crear cuenta con Google» + la nota propia del alta. Los tres verbos de W4b en una sola pantalla.",
+    "alta-consent": "F5 · RE-capturada: tres puntos y un pie (versión 2 del contrato), sin el header inline duplicado que tenía la versión 1.",
+    "reentry-intro": "F5 · RE-capturada por la rama Google: «Iniciar sesión con Google» — el otro lado del desdoble de verbos.",
+    "alta-groupschooser": "F5 · captura NUEVA. Recorrido real sin ningún hook: Hero → «Vengo por un grupo». Las dos cards con su alto igualado.",
+    "alta-groupsgate-blocked": "F5 · captura NUEVA, variante CANAL APAGADO, fabricada con el kill-switch DEBUG (`simctl spawn defaults write cloudSync.debug.remoteFlagsForceOff -bool YES`) y un relanzamiento SIN args de uitest —bajo `-uitest` el kill-switch ni se lee—. El árbol confirma el identifier `welcome_groups_gate_channel_off` y los DOS botones «Volver» que el panel anota.",
+    "onboarding-groupssignin": "F5 · captura NUEVA, alcanzada por el recorrido real del organizador (la puerta abrió con el canal ON). Es la pantalla donde se ve el hallazgo F5-H7: «Iniciar sesión con Apple» encima de «Crear cuenta con Google».",
+    "onboarding-educativo": "F5 · RE-capturada en su PASO 3, que es donde C2 puso el punto nuevo («los gastos se guardan en los servidores de Yala») y donde el CTA dice «Crear mi cuenta» porque este móvil nunca tuvo sesión. Ojo: esta imagen es el educativo montado como COVER por la puerta del organizador; el del tab es el mismo contenido en sheet.",
+    "onboarding-groupsonly": "F5 · RE-capturada: el paso 8 en variante solo-grupos («¡Listo para dividir gastos con amigos!», resumen «Dividir gastos con amigos · PEN»). Se verificó además lo que el nodo afirma: su CTA NO aterriza en el tab — cede a la cadena de puertas y monta el educativo.",
     "alta-mirrorrelaunch": "F3 · captura NUEVA (2026-08-11). Recorrido REAL sin ningún hook: `simctl uninstall` + `install` de Yala Dev (Debug-Dev) para que NO exista archivo de store ⇒ mount neutro; Hero → «Soy nuevo» → «Solo tú y tus dispositivos» y esta pantalla monta sola. En la misma corrida se verificó el auto-exit (Inicio ⇒ el proceso desaparece de `launchctl list`), la durabilidad del destino (`welcome.pendingMirrorRelaunchDestination = privateOnboarding` en el plist del contenedor) y el consumo one-shot (al relanzar aterriza en el onboarding y la key ya no está).",
     "alta-creating": "El alert «Inicia sesión en tu cuenta de Apple» es el sim sin cuenta de Apple reaccionando al ASAuthorization — sale a ~0,5 s del tap y no existe ventana limpia (ráfaga de 14 frames a 120 ms lo confirmó). Debajo se ve el estado REAL de la fase `.creating`: spinner + «Creando tu cuenta…».",
     "alta-signin": "Es el flujo web REAL de Google (ASWebAuthenticationSession) corriendo en sim. El sheet nativo de SIWA no aparece en sim sin cuenta de Apple: ese lado queda device-only, como el nodo ya anota.",

@@ -367,7 +367,7 @@ window.ATLAS_FLOWS = [
   click BE call showNode("onboarding-crear")
   click CONS call showNode("onboarding-consent")
   click CUENTA call showNode("onboarding-consentcuenta")
-  click SIGN call showNode("onboarding-crear")`
+  click SIGN call showNode("onboarding-groupssignin")`
   },
 
   {
@@ -727,10 +727,17 @@ window.ATLAS_FINDINGS = [
     node: "degradado-legacyretire"
   },
   {
+    id: "F5-H7",
+    sev: "medio · copy",
+    title: "El sign-in de Grupos pide «iniciar sesión» y «crear cuenta» a la vez, y le habla solo al invitado",
+    body: "MEDIDO EN PANTALLA el 2026-08-12 (sim, Yala Dev): la pantalla que sirve a las CUATRO puertas tiene el botón de Apple con `type: .signIn` («Iniciar sesión con Apple», `GroupsSignInView.swift:174`) justo encima del de Google con `purpose: .signUp` («Crear cuenta con Google», `:89-90`). Dos verbos contradictorios, uno sobre otro, para la misma acción — precisamente lo que W4b vino a arreglar en el Welcome, donde el alta dice crear y la re-entrada iniciar sesión. Y el cuerpo (`groups.signin.body`) está escrito solo para el invitado: «Para unirte al grupo… y sigue con tu invitación», que es lo que lee quien acaba de tapear «Crear mi primer grupo» y no tiene ninguna invitación. Es la misma clase de copy prestado que el bloqueo por datos ajenos de la puerta, y aquí lo ve todo el que entra a Grupos sin sesión.",
+    node: "onboarding-groupssignin"
+  },
+  {
     id: "F5-H6",
-    sev: "estado del Atlas",
-    title: "OCHO capturas del Atlas retratan pantallas que la app ya no pinta, y el pin no puede verlo",
-    body: "El bloque 7 de `check.mjs` comprueba que la imagen EXISTA, no que siga siendo cierta ⇒ una pantalla re-escrita deja una captura que miente en verde. F5 identificó ocho: el Hero (perdió el subtítulo), el chooser (seis de sus ocho valores), el sub-chooser de «Soy nuevo» (orden invertido y copy nuevo), el consent de nube (de siete puntos a tres), los dos intros de sign-in (cambiaron de verbo), el educativo de Grupos (punto nuevo y CTA de crear cuenta) y el cierre solo-grupos (el nodo cambió de significado). Quedan MARCADAS en ámbar dentro de su frame, con qué cambió en cada una — enseñarlas sin decirlo sería exactamente el drift documental que este Atlas existe para no tener. Se resuelven re-capturando, y el guion de captura las lista aparte de los huecos device-only.",
+    sev: "estado del Atlas · RESUELTO el mismo día",
+    title: "OCHO capturas retrataban pantallas que la app ya no pinta, y el pin no puede verlo",
+    body: "El bloque 7 de `check.mjs` comprueba que la imagen EXISTA, no que siga siendo cierta ⇒ una pantalla re-escrita deja una captura que miente en verde. F5 identificó ocho: el Hero (perdió el subtítulo), el chooser (seis de sus ocho valores), el sub-chooser de «Soy nuevo» (orden invertido y copy nuevo), el consent de nube (de siete puntos a tres), los dos intros de sign-in (cambiaron de verbo), el educativo de Grupos (punto nuevo y CTA de crear cuenta) y el cierre solo-grupos (el nodo cambió de significado). **Las OCHO se re-capturaron el 2026-08-12** en el simulador, así que `stale` queda vacío; el mecanismo se conserva porque el problema volverá a aparecer en cuanto una pantalla se re-escriba. Lo que NO se resolvió es la causa estructural: sigue sin haber nada que detecte una captura caducada, y esa detección no es barata (exigiría comparar el copy visible de la imagen con el `.strings`).",
     node: "alta-hero"
   },
   {

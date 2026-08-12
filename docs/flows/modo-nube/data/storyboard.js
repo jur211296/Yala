@@ -116,7 +116,8 @@ window.ATLAS_STORYBOARD = {
         label: "Camino solo-grupos · de la card al primer grupo (C2: las cuatro puertas comparten esta cadena)",
         linked: true,
         frames: ["onboarding-purpose", "onboarding-groupsonly", "onboarding-educativo",
-                 "onboarding-empty", "onboarding-consent", "onboarding-crear"]
+                 "onboarding-empty", "onboarding-groupssignin", "onboarding-consent",
+                 "onboarding-crear"]
       },
       {
         label: "Lo que corta el paso: el muro iCloud (canal OFF en el selector) y el canal apagado al crear (C4)",
