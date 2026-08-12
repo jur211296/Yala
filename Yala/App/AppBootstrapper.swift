@@ -649,6 +649,13 @@ final class AppBootstrapper {
             //    heredaría también un arranque manual del simulador.
             UserDefaults.standard.removeObject(forKey: GroupsSessionHistoryMarker.key)
         }
+        // M4 · sesión secundaria (M1) determinista, EFÍMERA y sin rastro en disco. Va la PRIMERA de las
+        // incondicionales porque no es un estado más: decide el MODO EFECTIVO de todo el proceso
+        // (`CloudSyncFlags.storageMode` → `.cloud`) y con él la mitad de los gates que corren debajo.
+        // Incondicional —no solo cuando el arg viene— por la misma razón que sus dos vecinos: la purga
+        // tiene que correr en TODOS los launches, y aquí más, porque nadie más borra esa key (ni el
+        // bloque de reset de arriba ni `DataWipeService`, que excluye `cloudSync.*` a propósito).
+        UITestEphemeralDefaults.applySecondarySession(UITestHooks.secondarySession)
         // Estado Pro determinista según el launch arg, EFÍMERO y sin rastro en disco.
         // Va incondicional (no solo bajo `-uitest-reset`): también hay que fijar el estado
         // en los launches con `reset: false`, y la purga tiene que correr en TODOS.

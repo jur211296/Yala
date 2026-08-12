@@ -129,6 +129,51 @@ enum UITestEphemeralDefaults {
         ])
     }
 
+    /// El `userID` que ocupa el slot secundario bajo `-uitest-secondary-session`. Vive AQUÍ y no en
+    /// `AppBootstrapper` porque el escáner de `UITestSeamPersistenceIsolationTests` prohíbe que el cuerpo
+    /// del hook NOMBRE la key del descriptor — y un literal suelto allí sería exactamente eso.
+    ///
+    /// No es `guest-debug` a propósito: ése es el del panel DEBUG (`CloudSyncDebugView`), y un valor
+    /// distinto es lo que permite distinguir en un volcado si el descriptor lo puso una corrida de
+    /// XCUITest o una sesión de QA a mano.
+    static let secondarySessionUserID = "uitest-guest"
+
+    /// **M4 · sesión secundaria OPERATIVA para ESTE proceso, sin dejar el descriptor escrito.**
+    ///
+    /// Son DOS mitades y ninguna basta sola, porque bajo `-uitest` el mount NO puede ser secundario:
+    /// `SwiftDataConfiguration.personalConfiguration` retorna `YalaModel-UITest` en su rama `isUITesting`
+    /// **antes** de evaluar `personalStoreDecision`, así que ni este seam ni una escritura persistente
+    /// harían que el proceso montara `YalaModel-Secondary` (lo mismo en `groupsConfiguration` y
+    /// `syncMetaConfiguration`). Consecuencia buena: **ningún archivo `-Secondary` llega al disco del
+    /// simulador**. Consecuencia mala si se ignora: `capturePersonalStoreMountedDecisionOnce` tampoco
+    /// corre, así que el testigo se queda en `false` y el par `isActive() && !secondaryStoreMounted` es la
+    /// VENTANA DE ENTRADA — que arma el cover terminal de `SecondaryEntryRelaunchNetModifier` y enciende
+    /// el blocker `secondaryEntryRelaunch` de la matriz de readiness. La app quedaría TAPADA y ningún
+    /// XCUITest podría ver la pantalla que viene a probar.
+    ///
+    /// Por eso se declara también el testigo (`_testSetSecondaryStoreMounted`, estado de PROCESO que muere
+    /// con él): el estado que se reproduce es el de la sesión **ya relanzada y operativa**, que es donde
+    /// vive la puerta de Grupos-first. La VENTANA DE ENTRADA no es expresable desde XCUITest y no se
+    /// intenta — vive en los unit tests del guard de mount-mismatch.
+    ///
+    /// **La purga NO es cinturón, y aquí menos que en ningún otro seam de este fichero:** el bloque de
+    /// `-uitest-reset` NO limpia `cloudSync.*` y `DataWipeService` las excluye a propósito («infra del
+    /// propio sign-out/wipe»), así que un descriptor que llegara al dominio persistente **no lo borraría
+    /// nadie**: dejaría el simulador en sesión secundaria para todas las suites siguientes y para
+    /// cualquier arranque manual, que es la clase exacta del sello heredado del QA manual. Se purga
+    /// SIEMPRE, también en la rama que no registra nada.
+    static func applySecondarySession(
+        _ active: Bool,
+        to defaults: UserDefaults = .standard,
+        volatileApply: VolatileApply = liveVolatileApply,
+        setMountWitness: (Bool) -> Void = SwiftDataConfiguration._testSetSecondaryStoreMounted
+    ) {
+        defaults.removeObject(forKey: SecondarySessionStore.userIDKey)
+        guard active else { return }
+        volatileApply(defaults, [SecondarySessionStore.userIDKey: secondarySessionUserID])
+        setMountWitness(true)
+    }
+
     /// Purga el centinela del seed de categorías **de PRODUCCIÓN**. No registra nada: bajo
     /// `-uitest` el centinela vivo es otro (`CategorySeedSentinel.uiTestKey`), porque el store
     /// también es otro.

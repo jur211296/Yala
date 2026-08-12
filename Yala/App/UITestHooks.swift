@@ -90,6 +90,24 @@ final class UITestHooks {
     /// JWT mandaría credenciales basura a un backend real. Solo DEBUG (inerte en release vía `hasArg`).
     nonisolated static var fakeCloudSession: Bool { hasArg("-uitest-fake-cloud-session") }
 
+    /// `-uitest-secondary-session`: monta el proceso como **sesión secundaria M1 OPERATIVA** — la invitada
+    /// que ya relanzó y está usando el móvil de otra persona. Enciende `SecondarySessionStore.isActive()`
+    /// por el dominio VOLÁTIL de `UserDefaults` y declara el testigo del mount; el porqué de que hagan
+    /// falta las dos mitades (y de que el descriptor JAMÁS se persista) está en
+    /// `UITestEphemeralDefaults.applySecondarySession`.
+    ///
+    /// **No es ortogonal a los otros seams de nube, es de otro eje:** `-uitest-fake-cloud-session` finge la
+    /// sesión de backend del usuario de ESTE móvil; éste dice de QUIÉN es la sesión. Combinarlos es
+    /// legítimo (la invitada tiene su propia cuenta), y de hecho es lo que hace el XCUITest de la puerta.
+    ///
+    /// **Blast radius querido y medido**, porque es lo que reproduce el estado real: el modo EFECTIVO del
+    /// proceso pasa a `.cloud` (`CloudSyncFlags.storageMode`), el seed de categorías se salta
+    /// (`CategorySeed`), `OnboardingMode.setCurrent` y `GroupsDomainAdoptionMarker.recordEntry` son no-op
+    /// (los guards del chip M1), la fila iCloud del Perfil desaparece y la card «Solo grupos» del
+    /// onboarding deja de pintarse (`OnboardingGroupsPurposeGateLogic`). Solo DEBUG (inerte en release vía
+    /// `hasArg`).
+    nonisolated static var secondarySession: Bool { hasArg("-uitest-secondary-session") }
+
     /// `-uitest-groups-consent`: da por aceptado el consent de Grupos (§C5) sembrando sus dos keys de
     /// `UserDefaults` desde `AppBootstrapper`, SIN pasar por `GroupsConsentState.register()` —ese camino
     /// escribe por `PreferenceSyncService` (iKV en `.icloud`, outbox en `.cloud`) y un XCUITest no debe

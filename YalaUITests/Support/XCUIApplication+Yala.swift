@@ -31,6 +31,7 @@ extension XCUIApplication {
         cloudSession: Bool = false,
         groupsConsent: Bool = false,
         groupsEducativo: Bool = false,
+        secondarySession: Bool = false,
         inviteOnboarding: Bool = false,
         joinPhase: String? = nil,
         joinSoftTimeout: String? = nil,
@@ -72,6 +73,11 @@ extension XCUIApplication {
         // ninguna corrida existente cambia: el sheet del educativo interceptaría los taps de toda la suite
         // de Grupos, que es justo por lo que ese early-return existe.
         if groupsEducativo { args.append("-uitest-groups-educativo") }
+        // M4 · «este móvil es de otra persona y yo estoy de visita». Parámetro NOMBRADO por la misma
+        // razón que sus tres vecinos de arriba, y con una de propina: es el ÚNICO seam que cambia el
+        // modo efectivo del proceso entero, así que un typo que lo dejara fuera no da un rojo — da un
+        // VERDE que prueba la rama del dueño creyendo probar la de la invitada.
+        if secondarySession { args.append("-uitest-secondary-session") }
         if inviteOnboarding { args.append("-uitest-invite-onboarding") }
         if let joinPhase {
             args.append("-uitest-join-phase")
