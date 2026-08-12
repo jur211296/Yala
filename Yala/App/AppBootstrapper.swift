@@ -441,6 +441,28 @@ final class AppBootstrapper {
             OrphanedBridgedTxSweeper.sweep(context: context)
         }
 
+        // 16.5.6. Retirada de los grupos de la era CloudKit (C3): se ocultan y se suelta el puente personal
+        // que colgaba de ellos. Su transporte murió en la Fase 3 y desde C4 (`ad291c7f`) ya no puede nacer
+        // ninguno más, así que este barrido no puede llevarse un grupo recién creado.
+        //
+        // UN SOLO gate, y la diferencia con el barrido de arriba no es un descuido: `awaitPersonalStoreReady`
+        // hace falta porque esto SALVA el store personal, pero `awaitGroupsChannelEvidence` NO, porque la
+        // pregunta es otra. Aquel decide «este gasto no existe», que es una afirmación sobre lo que un canal
+        // todavía podría entregar; este decide «esta zona no pertenece a ningún canal vivo», y eso es estable:
+        // un grupo del backend lleva `isBackendGroup = true` desde el instante en que su fila existe (las dos
+        // ramas de `GroupsSyncClient.applyGroupMeta` y `GroupBackendMembershipService.createGroup`), y un
+        // device recién instalado tiene el store de Grupos vacío ⇒ cero zonas ⇒ cero trabajo.
+        //
+        // Sin orden respecto del barrido de huérfanas, y no hace falta: sus conjuntos de zonas son DISJUNTOS
+        // por construcción — aquel excluye las zonas sin canal backend, este actúa solo sobre ellas.
+        Task { @MainActor in
+            guard await awaitPersonalStoreReady() else {
+                SaveBreadcrumb.deferred("AppBootstrapper.legacyGroupsRetirement", "import not quiescent")
+                return
+            }
+            LegacyGroupsRetirement.retire(context: context)
+        }
+
         // 16.6. A13: Reconcile current user's displayName across groups.
         // Covers kill-app between acceptShare and performSilentSetup (SplitMember
         // would otherwise stay with the "Usuario" default forever). Idempotent.

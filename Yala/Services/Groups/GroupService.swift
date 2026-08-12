@@ -1370,7 +1370,8 @@ final class GroupService {
     ///    sub-conteo, JAMÁS sobre-aviso (dirección segura: el aviso solo informa, nunca bloquea).
     ///  - `hasLegacyCloudKitFootprint`: si algún grupo tiene zona CloudKit viva (`ckSystemFieldsData != nil`),
     ///    donde el nombre persiste tras el GDPR delete (`groups_forget_user` anonimiza SOLO el backend). Se
-    ///    evalúa en memoria (evita el gotcha de `#Predicate` sobre opcionales).
+    ///    evalúa en memoria (evita el gotcha de `#Predicate` sobre opcionales) y **sobre TODOS los grupos,
+    ///    ocultos incluidos** — a diferencia de la deuda, ver el porqué en el cuerpo.
     /// Degrada a `.empty` si el contexto no está montado o un fetch lanza. La composición del copy vive en
     /// `AccountDeletionMessageLogic`; el conteo se delega a `AccountDeletionDebtLogic` (ambos puros/testeados).
     ///
@@ -1381,9 +1382,16 @@ final class GroupService {
     func accountDeletionGroupsSummary(context: ModelContext? = nil) -> AccountDeletionGroupsSummary {
         guard let context = context ?? modelContext else { return .empty }
         do {
-            let groups = try context.fetch(FetchDescriptor<SplitGroup>(
-                predicate: #Predicate { $0.isHiddenForAll == false }))
-            let hasLegacy = groups.contains { $0.ckSystemFieldsData != nil }
+            // La huella CloudKit se evalúa sobre TODOS los grupos, OCULTOS INCLUIDOS: es un hecho del
+            // servidor de Apple, no de la vista. C3 retira los grupos de la era CloudKit ocultándolos
+            // (`LegacyGroupsRetirement`), y con el filtro puesto esa retirada APAGABA el caveat
+            // `.legacyFootprint` del diálogo de borrado de cuenta (`AccountDeletionDebtLogic:98`) sin borrar
+            // ni una de las zonas cuyo nombre sigue visible. Ocultar el grupo no retira la huella.
+            let allGroups = try context.fetch(FetchDescriptor<SplitGroup>())
+            let hasLegacy = allGroups.contains { $0.ckSystemFieldsData != nil }
+            // La deuda y `hasGroups` sí son de los grupos VIVOS: un grupo oculto no admite gastos ni sale en
+            // ninguna lista, así que avisar de su saldo sería avisar de algo que el usuario ya no puede ver.
+            let groups = allGroups.filter { !$0.isHiddenForAll }
 
             var perGroupNets: [[Double]] = []
             for group in groups {

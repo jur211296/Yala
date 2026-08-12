@@ -116,4 +116,19 @@ struct AccountDeletionGroupsSummaryTests {
         try seedGroup(ctx, currentUserNet: 0, ckSystemFields: nil)
         #expect(!summary(ctx).hasLegacyCloudKitFootprint)
     }
+
+    /// **C3 · el caveat GDPR no se apaga al ocultar.** La huella es un hecho del servidor de Apple: la zona
+    /// CloudKit sigue ahí con el nombre del usuario dentro (`groups_forget_user` anonimiza SOLO el backend).
+    /// `LegacyGroupsRetirement` retira los grupos de esa era poniéndoles `isHiddenForAll = true`, así que con
+    /// el filtro que este método tenía la retirada BORRABA el aviso `.legacyFootprint` del diálogo de
+    /// «Eliminar mi cuenta» sin borrar ni una zona. Mutación: devolver el `#Predicate` de `isHiddenForAll`
+    /// deja este test en rojo con los ocho de al lado en verde.
+    @Test func legacyFootprint_survivesWhenTheGroupIsHidden() throws {
+        let ctx = try makeTestContext()
+        try seedGroup(ctx, hidden: true, currentUserNet: 0, ckSystemFields: Data([0x01]))
+        let s = summary(ctx)
+        #expect(s.hasLegacyCloudKitFootprint)
+        // Y la otra mitad sigue siendo de los grupos VIVOS: un grupo oculto no cuenta como grupo.
+        #expect(!s.hasGroups)
+    }
 }

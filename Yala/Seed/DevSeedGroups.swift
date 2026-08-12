@@ -23,6 +23,10 @@ enum DevSeedGroups {
             currencyCode: "PEN",
             isOwner: true
         )
+        // C3: del canal BACKEND, como todo grupo que puede nacer hoy. Sin esto el seed acuña grupos LEGACY
+        // (el default del modelo es `false`, `SplitGroup:52`) y `LegacyGroupsRetirement` los oculta en el
+        // arranque siguiente ⇒ los XCUITest de Grupos se quedan sin datos. Ver `devSeed_createsBackendGroups`.
+        group.isBackendGroup = true
         context.insert(group)
         let zoneID = group.cloudKitZoneID
 
@@ -108,6 +112,7 @@ enum DevSeedGroups {
             currencyCode: "PEN",
             isOwner: true
         )
+        group2.isBackendGroup = true  // C3: ver el porqué en el primer grupo.
         context.insert(group2)
         let zone2 = group2.cloudKitZoneID
         let me2 = SplitMember(
@@ -281,6 +286,7 @@ enum DevSeedGroups {
             currencyCode: "PEN",
             isOwner: false
         )
+        group.isBackendGroup = true  // C3: ver el porqué en `create(in:)`.
         context.insert(group)
         let zoneID = group.cloudKitZoneID
 

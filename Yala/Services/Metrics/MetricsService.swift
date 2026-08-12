@@ -53,6 +53,13 @@ enum MetricsCanary: String {
     /// Un pico aislado es normal (el barrido corre antes de que el pull termine); SOSTENIDO arranque tras
     /// arranque con el mismo veredicto = el canal de esa cohorte no está entregando.
     case bridgedTxOrphanSweepDeferred
+    /// El barrido del arranque retiró grupos de la era CloudKit: los ocultó y soltó su puente personal
+    /// (cuenta real → liberada; espejo virtual → borrado). **Un pico tras el release es lo esperado y de
+    /// una sola vez por usuario** — es la cola de zombis que dejó el transporte muerto. `detail` separa
+    /// grupos ocultados, transacciones liberadas, espejos borrados y borradores tocados, sin PII.
+    /// SOSTENIDO en >0 arranque tras arranque = **hay un productor de grupos legacy otra vez**, que es lo
+    /// que C4 cerró (`GroupCreateRoutingLogic` sin rama `.cloudKit`), o una zona cuyo fetch falla siempre.
+    case legacyGroupsRetired
     case iCloudRestoreOutcome
     case cloudkitGroupSyncGateHardCap
     case cloudkitGroupSyncPromotedToAuto
