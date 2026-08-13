@@ -1207,7 +1207,7 @@ final class AppPreferences {
 
     /// Centraliza los raw string keys de UserDefaults. Mantiene compatibilidad con
     /// `@AppStorage` callsites legacy (mismo key → misma persistencia).
-    enum Keys {
+    nonisolated enum Keys {
         // Currency & Format
         static let defaultCurrencyCode = "defaultCurrencyCode"
         static let secondaryCurrencies = "secondaryCurrencies"

@@ -155,7 +155,7 @@ enum SwiftDataConfiguration {
     ///
     /// Cacheado en `let` para que sea estable durante el ciclo del proceso (evita
     /// que la decisión cambie entre boot temprano y boot tardío del host).
-    static let isRunningTests: Bool = {
+    nonisolated static let isRunningTests: Bool = {
         let env = ProcessInfo.processInfo.environment
         // SEÑAL CANÓNICA: el TestAction de los schemes (Yala / Yala Dev) inyecta
         // `YALA_TEST_MODE=1` en el host. Es la ÚNICA señal disponible de forma
@@ -194,7 +194,7 @@ enum SwiftDataConfiguration {
     /// UI-testing seam (mirror de `isRunningTests`). En release siempre false.
     /// Fuerza store local dedicado sin CloudKit para aislar los XCUITests del
     /// CloudKit del Apple ID (espejo del bypass de tests unitarios).
-    static let isUITesting: Bool = {
+    nonisolated static let isUITesting: Bool = {
         #if DEBUG
         return ProcessInfo.processInfo.arguments.contains("-uitest")
         #else
@@ -796,6 +796,8 @@ extension SwiftDataConfiguration {
     ///    el guard abort-S3 cubre los 3: fallo en el BASE de CUALQUIERA aborta, el arm y el descriptor
     ///    persisten, el mount sigue siendo el secundario y el próximo boot reintenta) → 2) purga E2E-M1
     ///    (incl. el espejo App Group de grupos) → 2.5) notificaciones de la INVITADA canceladas →
+    ///    2.75) el CAJÓN de preferencias de la visita (`yala.session.<sub>`), que va OBLIGATORIAMENTE
+    ///    antes del paso 3 porque ése borra el `sub` con el que se compone su nombre →
     ///    3) descriptor + marker de entrada → 3.5) los 3 flags de
     ///    onboarding a `false` (EN EL BOOT y jamás in-session: con el proceso vivo montaría la cadena Welcome
     ///    DEBAJO del cover de relaunch — doble presentación mismo anchor, clase toolbar-muerta) → 4) desarmar.
@@ -824,7 +826,8 @@ extension SwiftDataConfiguration {
         defaults: UserDefaults,
         deleteFiles: (String, Schema) -> Bool,
         purge: () -> Void,
-        cancelNotifications: () -> Void = {}
+        cancelNotifications: () -> Void = {},
+        destroySessionDomain: (String) -> Void = { SessionDefaults.destroySuite(forUserID: $0) }
     ) {
         guard SecondarySessionStore.isWipeArmed(defaults) else { return }
 
@@ -837,6 +840,18 @@ extension SwiftDataConfiguration {
 
         purge()
         cancelNotifications()
+
+        // 2.75) El CAJÓN de preferencias de la visita (M1). Va AQUÍ y no una línea más abajo, y el
+        // orden es el fix entero: `SecondarySessionStore.clear` borra el `userIDKey`, y sin `sub` no
+        // hay forma de componer el nombre del suite ⇒ el cajón quedaría HUÉRFANO PARA SIEMPRE en el
+        // móvil del dueño, con el nombre, la divisa y la barra de la invitada dentro. El `sub` se
+        // captura y se pasa EXPLÍCITO: resolver la puerta en este punto y borrar el dominio que
+        // devuelva arrasaría el `UserDefaults` entero del dueño. Ver `SessionDefaults.destroySuite`.
+        // Después del guard de abort a propósito: un wipe que aborta reintenta en el próximo boot y
+        // todavía necesita el cajón.
+        if let sessionUserID = SecondarySessionStore.activeUserID(defaults) {
+            destroySessionDomain(sessionUserID)
+        }
 
         SecondarySessionStore.clear(defaults)
         SecondarySessionStore.clearEntryPurgeMark(defaults)
@@ -875,10 +890,24 @@ extension SwiftDataConfiguration {
     static func performSecondaryEntryTasksIfNeeded(
         defaults: UserDefaults,
         purge: () -> Void,
-        cancelNotifications: () -> Void
+        cancelNotifications: () -> Void,
+        seedSessionDomain: (UserDefaults, String) -> Void = {
+            SessionDefaults.seedDeviceKeysIfNeeded(from: $0, forUserID: $1)
+        }
     ) {
-        guard SecondarySessionStore.isActive(defaults),
-              !SecondarySessionStore.isEntryPurgeDone(defaults) else { return }
+        guard SecondarySessionStore.isActive(defaults) else { return }
+
+        // La SIEMBRA del cajón va ANTES del guard one-shot y tiene su propia condición de
+        // idempotencia (D3, decisión del owner): con un dominio de preferencias por sesión, sembrar
+        // deja de ser kill-recovery y pasa a ser el camino normal, así que colgarla de
+        // `entryPurgeDone` significaría que un kill entre la purga y la siembra deja el cajón vacío
+        // para siempre — y un cajón sin `hasCompletedOnboarding` es el brick del Welcome sobre store
+        // secundario vacío. Su guard lee DEL CAJÓN; ver `SessionDefaults.seedDeviceKeysIfNeeded`.
+        if let sessionUserID = SecondarySessionStore.activeUserID(defaults) {
+            seedSessionDomain(defaults, sessionUserID)
+        }
+
+        guard !SecondarySessionStore.isEntryPurgeDone(defaults) else { return }
 
         purge()
         cancelNotifications()

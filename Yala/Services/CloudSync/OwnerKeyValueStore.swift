@@ -32,9 +32,11 @@
 //
 //  **Lo que esta puerta NO cubre** (y por qué no es un descuido): el `UserDefaults.standard`. Ese es
 //  el OTRO medio por el que la sesión secundaria toca el dominio del dueño —`PreferenceSyncService`
-//  escribe su espejo local SIEMPRE, también en `.localOnly`— y cerrarlo exige un dominio de
-//  preferencias por sesión, que hoy no existe (`local` está hardcodeado a `.standard`). Está medido
-//  y anotado en el ticket; no se tapa aquí para no dar por cerrada una frontera que sigue abierta.
+//  escribe su espejo local SIEMPRE, también en `.localOnly`—. Su gemela es `SessionDefaults`, la
+//  puerta que decide EN QUÉ dominio se escribe; **existe desde F1 con su ciclo de vida completo, pero
+//  todavía no la usa ningún consumidor**: `local` sigue hardcodeado a `.standard` (`:83`) y los
+//  cinco consumidores se mueven —con sus lectores, en el mismo commit— en F3. Hasta entonces esta
+//  frontera sigue abierta por el lado local, y decir lo contrario sería dar por cerrado lo que no lo está.
 //
 
 import Foundation

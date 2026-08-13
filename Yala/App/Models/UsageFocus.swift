@@ -22,7 +22,8 @@ enum UsageFocus: String, CaseIterable, Sendable {
     case groupsOnly
 
     /// Key de UserDefaults (SSOT). `AppPreferences.Keys.usageFocus` la referencia.
-    static let userDefaultsKey = "usageFocus"
+    /// `nonisolated` como el `Keys` que la consume: un `String` constante no necesita actor.
+    nonisolated static let userDefaultsKey = "usageFocus"
 
     /// Lee el valor persistido (fallback `.full` si ausente/ inválido). Point-read para
     /// call-sites IMPERATIVOS (`SessionState.effectiveShellMode`, `selectMainTab`,

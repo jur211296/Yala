@@ -1022,8 +1022,8 @@ struct CloudSyncDebugView: View {
                 DevSecondaryDescriptorSignal.post()
                 #endif
                 model.lastMessage = "Descriptor limpiado y blocker retirado. RELANZA para volver al mount "
-                    + "del dueño (los archivos -Secondary quedan huérfanos inertes; usa el wipe para "
-                    + "borrarlos)."
+                    + "del dueño (los archivos -Secondary Y el cajón de preferencias yala.session.* "
+                    + "quedan huérfanos inertes; usa el wipe para borrarlos)."
             }
             actionButton("Armar wipe secundario (borra -Secondary al relanzar)", disabled: false) {
                 SecondarySessionStore.armWipe()

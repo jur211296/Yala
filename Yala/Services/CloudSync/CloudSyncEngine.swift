@@ -52,7 +52,7 @@ nonisolated enum CloudSyncCursorError: Error, Equatable {
 /// (solo tipos de entidad, counts, seq — nunca valores de usuario).
 @MainActor
 enum CloudSyncBreadcrumb {
-    private static let logger = Logger(subsystem: "com.yala", category: "CloudSync")
+    nonisolated private static let logger = Logger(subsystem: "com.yala", category: "CloudSync")
 
     /// Una vuelta de drain terminó: número de secuencia + filas de outbox pendientes tras la vuelta.
     static func drain(seq: Int, pending: Int) {
@@ -481,6 +481,20 @@ enum CloudSyncBreadcrumb {
     /// queda pendiente del relaunch (el boot siguiente monta el store `-Secondary`).
     static func secondaryEntryArmed() {
         logger.notice("CloudSecondary entry ARMED — descriptor persisted, awaiting relaunch")
+    }
+
+    /// ENTRADA (M1): el cajón de preferencias de la visita quedó sembrado con las keys de
+    /// DISPOSITIVO del dueño. Una vez por sesión secundaria (sentinel propio, leído DEL CAJÓN).
+    nonisolated static func sessionDomainSeeded() {
+        logger.notice("CloudSecondary session domain SEEDED — device keys copied from owner")
+    }
+
+    /// La puerta de dominio (`SessionDefaults`) no pudo abrir el cajón de la visita y DEGRADÓ al
+    /// dominio del dueño. Inalcanzable por diseño con `sub` de la nube (son UUID): si suena, la
+    /// sesión secundaria está escribiendo en el cajón del dueño — que es justo el bug que la puerta
+    /// cierra. La degradación es deliberada: devolver un store vacío brickearía la app.
+    nonisolated static func sessionDomainUnavailable(reason: String) {
+        logger.error("CloudSecondary session domain UNAVAILABLE reason=\(reason, privacy: .public) — degraded to owner domain")
     }
 
     /// BELT (M1): el efecto `.writeBeacon` se SUPRIMIÓ porque hay sesión secundaria activa —
