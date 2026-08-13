@@ -2055,11 +2055,10 @@ private struct GroupInviteModifier: ViewModifier {
             }
             .fullScreenCover(isPresented: $showGroupInviteOnboarding) {
                 GroupInviteOnboardingView(inviteMetadata: pendingInviteMetadata) { outcome in
-                    // Consumo del invite pendiente según el outcome: en abandono con
-                    // error RECUPERABLE se conserva para que el re-emit de cold
-                    // launch/foreground reintente el accept (TTL 24h).
-                    if GroupInviteOnboardingLogic.shouldClearPendingInvite(outcome: outcome) {
-                    }
+                    // El consumo del invite pendiente según el outcome vivía aquí y su cuerpo llevaba
+                    // vacío desde que `PendingInviteStore` —lo único que limpiaba— dejó de existir con el
+                    // transporte CloudKit. Un `if` sin cuerpo no es una decisión: es un residuo que se lee
+                    // como si algo pasara.
                     // El setup silencioso ya corrió (nombre/moneda): no re-onboardear
                     // en ningún outcome; el join intent sigue trabajando en background.
                     hasCompletedOnboarding = true

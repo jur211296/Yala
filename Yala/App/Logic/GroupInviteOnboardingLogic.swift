@@ -136,12 +136,4 @@ enum GroupInviteOnboardingLogic {
             return false
         }
     }
-
-    /// `PendingInviteStore.clear()` al cerrar el onboarding: true salvo abandono
-    /// con error RECUPERABLE — ahí el re-emit de cold-launch/foreground debe
-    /// poder reintentar el accept (acotado por el TTL 24h del invite).
-    static func shouldClearPendingInvite(outcome: GroupInviteOnboardingOutcome) -> Bool {
-        if case .abandonedAfterFailure(recoverable: true) = outcome { return false }
-        return true
-    }
 }

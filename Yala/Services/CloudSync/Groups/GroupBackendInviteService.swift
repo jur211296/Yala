@@ -4,8 +4,15 @@
 //
 //  Arma un invite LINK backend (contrato C1): pide el token al RPC `create_group_invite` (vía
 //  `GroupBackendMembershipService`) y construye el URL branded con `InviteLinkService.buildBackendInviteURL`.
-//  DARK (G4): sin call-sites de UI — el "compartir enlace" backend lo cablea G5. Gate heredado del service
-//  (`groupsBackendEnabled && hasSession`): con el flag OFF, `createInvite` lanza `sessionExpired`.
+//  **VIVO desde G5** (medido el 2026-08-12): `createInviteLink` se llama desde `GroupMembersView.swift:467`
+//  y `GroupDetailViewModel.swift:469`, los dos botones reales de generar el enlace. Este docblock decía
+//  «DARK (G4): sin call-sites de UI» y era cierto cuando se escribió — hasta esa fecha invitaba a archivar
+//  como inalcanzable el ÚNICO productor vivo del recorrido del invitado. Misma familia que el
+//  `AppAttestClient.ensureRegistered()` de `.claude/rules/gateway-attest.md`, cuya promesa falsa costó una
+//  vuelta entera de diagnóstico. ⇒ **si vuelves a escribir DARK aquí, pega el grep de call-sites al lado.**
+//
+//  Gate heredado del service (`groupsBackendEnabled && hasSession`): con el flag OFF, `createInvite` lanza
+//  `sessionExpired`.
 //
 
 import Foundation

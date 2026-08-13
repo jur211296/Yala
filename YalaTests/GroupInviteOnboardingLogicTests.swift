@@ -144,15 +144,4 @@ struct GroupInviteOnboardingLogicTests {
                 "phase \(phase) se movió por un member de otra zona")
         }
     }
-
-    // MARK: - shouldClearPendingInvite
-
-    @Test func clearPolicy_keepsInviteOnlyForRecoverableAbandon() {
-        #expect(Logic.shouldClearPendingInvite(outcome: .joined))
-        #expect(Logic.shouldClearPendingInvite(outcome: .pendingApproval))
-        #expect(Logic.shouldClearPendingInvite(outcome: .closedWhileSyncing))
-        #expect(Logic.shouldClearPendingInvite(outcome: .abandonedAfterFailure(recoverable: false)))
-        // Recuperable → conservar para que el re-emit de foreground reintente.
-        #expect(!Logic.shouldClearPendingInvite(outcome: .abandonedAfterFailure(recoverable: true)))
-    }
 }
