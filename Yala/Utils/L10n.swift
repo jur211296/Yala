@@ -2237,6 +2237,16 @@ enum L10n {
             static var ready: String { ls("groups.invite.ready", comment: "") }
             static var goToGroup: String { ls("groups.invite.goToGroup", comment: "") }
             static var waitingApprovalTitle: String { ls("groups.invite.waitingApproval.title", comment: "") }
+            /// **No promete ningún aviso, y eso está MEDIDO** (2026-08-12). Decía «Te avisamos cuando esté
+            /// listo» y era falso por dos vías independientes: el único push del gateway es un *silent*
+            /// `content-available:1` de fan-out disparado SOLO por `/groups/push` (deltas de sync) —los RPC,
+            /// donde vive `approve_member`, no hacen fan-out— y además `get_group_push_tokens` EXCLUYE a los
+            /// `pendingApproval`, así que ni siquiera recibiría ese.
+            ///
+            /// Y nombra lo que NO se ve: un endurecimiento del DDL pasó las policies SELECT de
+            /// `split_expenses`/`split_shares`/`split_settlements` a `is_group_writer` (solo `active`), así
+            /// que mientras espera le llegan el grupo y el roster y CERO contenido financiero. El copy
+            /// hablaba de «participar» cuando el hecho es que tampoco VE.
             static var waitingApprovalBody: String { ls("groups.invite.waitingApproval.body", comment: "") }
             static var waitingApprovalBanner: String { ls("groups.invite.waitingApproval.banner", comment: "") }
             static var rejectedTitle: String { ls("groups.invite.rejected.title", comment: "") }

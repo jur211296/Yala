@@ -4088,7 +4088,7 @@
 "groups.member.rejectConfirm" = "%@ のリクエストを拒否しますか？別のリンクで再度アクセスをリクエストできます。";
 "groups.member.pendingRequestsSection" = "保留中のリクエスト";
 "groups.invite.waitingApproval.title" = "リクエストを送信しました";
-"groups.invite.waitingApproval.body" = "参加するには、グループの管理者の承認が必要です。準備ができたらお知らせします。";
+"groups.invite.waitingApproval.body" = "グループの管理者が承認するまでは参加できません。それまではグループと参加者は見えますが、支出はまだ見えません。しばらくしてからYalaをもう一度開いて、承認されたか確認してください。";
 "groups.invite.waitingApproval.banner" = "管理者の承認を待っています";
 "groups.invite.rejected.title" = "リクエストが拒否されました";
 "groups.invite.rejected.body" = "管理者がリクエストを承認しませんでした。再度試したい場合は、新しいリンクを依頼してください。";

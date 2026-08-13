@@ -4057,7 +4057,7 @@
 "groups.member.rejectConfirm" = "Refuser la demande de %@ ? Cette personne pourra redemander l'accès avec un autre lien.";
 "groups.member.pendingRequestsSection" = "Demandes en attente";
 "groups.invite.waitingApproval.title" = "Demande envoyée";
-"groups.invite.waitingApproval.body" = "L'administrateur du groupe doit vous approuver avant que vous puissiez participer. Nous vous préviendrons dès que ce sera fait.";
+"groups.invite.waitingApproval.body" = "L'admin du groupe doit t'accepter avant que tu puisses participer. En attendant, tu verras le groupe et qui en fait partie, mais aucune dépense pour l'instant. Rouvre Yala dans un moment pour voir si c'est bon.";
 "groups.invite.waitingApproval.banner" = "En attente de l'approbation de l'admin";
 "groups.invite.rejected.title" = "Demande refusée";
 "groups.invite.rejected.body" = "L'administrateur n'a pas approuvé votre demande. Demandez-lui un nouveau lien si vous souhaitez réessayer.";

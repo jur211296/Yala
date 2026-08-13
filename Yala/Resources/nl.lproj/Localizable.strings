@@ -4088,7 +4088,7 @@
 "groups.member.rejectConfirm" = "Het verzoek van %@ afwijzen? Diegene kan opnieuw toegang vragen met een andere link.";
 "groups.member.pendingRequestsSection" = "Openstaande verzoeken";
 "groups.invite.waitingApproval.title" = "Verzoek verstuurd";
-"groups.invite.waitingApproval.body" = "De groepsbeheerder moet je goedkeuren voordat je kunt meedoen. We laten het je weten zodra het zover is.";
+"groups.invite.waitingApproval.body" = "De groepsbeheerder moet je goedkeuren voordat je kunt meedoen. Ondertussen zie je de groep en wie erin zit, maar nog geen uitgaven. Open Yala straks nog eens om te zien of het gelukt is.";
 "groups.invite.waitingApproval.banner" = "Wacht op goedkeuring van de beheerder";
 "groups.invite.rejected.title" = "Verzoek afgewezen";
 "groups.invite.rejected.body" = "De beheerder heeft je verzoek niet goedgekeurd. Vraag een nieuwe link als je het opnieuw wilt proberen.";

@@ -4088,7 +4088,7 @@
 "groups.member.rejectConfirm" = "Odrzucić prośbę od %@? Może ponownie poprosić o dostęp, jeśli otrzyma kolejny link.";
 "groups.member.pendingRequestsSection" = "Oczekujące prośby";
 "groups.invite.waitingApproval.title" = "Prośba wysłana";
-"groups.invite.waitingApproval.body" = "Administrator grupy musi Cię zaakceptować, zanim będziesz mógł dołączyć. Powiadomimy Cię, gdy będzie gotowe.";
+"groups.invite.waitingApproval.body" = "Administrator grupy musi Cię zatwierdzić, zanim dołączysz. W międzyczasie zobaczysz grupę i jej uczestników, ale jeszcze żadnych wydatków. Otwórz Yalę za jakiś czas, żeby sprawdzić, czy już jesteś w środku.";
 "groups.invite.waitingApproval.banner" = "Oczekiwanie na akceptację administratora";
 "groups.invite.rejected.title" = "Prośba odrzucona";
 "groups.invite.rejected.body" = "Administrator nie zaakceptował Twojej prośby. Poproś o nowy link, jeśli chcesz spróbować jeszcze raz.";

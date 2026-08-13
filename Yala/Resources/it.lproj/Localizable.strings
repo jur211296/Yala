@@ -4086,7 +4086,7 @@
 "groups.member.rejectConfirm" = "Rifiutare la richiesta di %@? Potrà richiedere di nuovo l'accesso con un altro link.";
 "groups.member.pendingRequestsSection" = "Richieste in sospeso";
 "groups.invite.waitingApproval.title" = "Richiesta inviata";
-"groups.invite.waitingApproval.body" = "L'admin del gruppo deve approvarti prima che tu possa partecipare. Ti avviseremo non appena è pronto.";
+"groups.invite.waitingApproval.body" = "L'admin del gruppo deve approvarti prima che tu possa partecipare. Nell'attesa vedrai il gruppo e chi ne fa parte, ma ancora nessuna spesa. Riapri Yala tra un po' per vedere se sei dentro.";
 "groups.invite.waitingApproval.banner" = "In attesa dell'approvazione dell'admin";
 "groups.invite.rejected.title" = "Richiesta rifiutata";
 "groups.invite.rejected.body" = "L'admin non ha approvato la tua richiesta. Chiedigli un nuovo link se vuoi riprovare.";
