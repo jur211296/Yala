@@ -149,6 +149,11 @@ struct RestoreProgressView: View {
             // Espera real (primer import + quiescencia) con tope.
             let settled = await iCloudSyncService.shared.waitForImportQuiescence(timeout: timeout)
             refresher.cancel()
+            // El flujo terminó, gane (`settled`) o pierda (timeout): a partir de aquí no hay ninguna
+            // descarga en curso que justifique tener abierto el guard cross-cuenta. Va ANTES del
+            // `guard !Task.isCancelled` de abajo a propósito — si la vista se desmontó justo ahora, el
+            // early-return se llevaría el apagado y la ventana quedaría viva hasta caducar.
+            ICloudRestoreSessionSignal.noteRestoreFinished()
             guard !Task.isCancelled else { return }
             phase = settled ? .completed : .partial
             do {

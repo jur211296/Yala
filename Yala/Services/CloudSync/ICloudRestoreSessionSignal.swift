@@ -21,35 +21,55 @@ import Foundation
 @MainActor
 enum ICloudRestoreSessionSignal {
 
-    /// El usuario abrió el restore de iCloud en ESTE proceso y la búsqueda arrancó de verdad.
-    /// Latch de una sola dirección dentro de la sesión: lo que cierra la ventana es el import, no la
-    /// navegación (ver el docblock).
-    private(set) static var restoreRequestedThisSession = false
+    /// CUÁNDO arrancó la búsqueda del restore en ESTE proceso. `nil` = no se pidió.
+    ///
+    /// **Es un instante y no un `Bool` a propósito** (fix del 2026-08-13): como `Bool` era un latch que
+    /// no se apagaba nunca dentro de la sesión, y toda la ventana dependía de que el import asentara —
+    /// algo que puede no ocurrir JAMÁS. Con el instante, la ventana caduca sola aunque no la apague
+    /// nadie, que es lo único que hace el sesgo fail-closed de verdad.
+    private(set) static var restoreStartedAt: Date?
 
     /// Lo llama `WelcomeRestoreView` al pasar a `.searching`, que es el único estado en el que hay un
     /// import de CloudKit de verdad — `.wiped` y `.iCloudDisabled` no importan nada y encender ahí
     /// abriría la señal sin corpus que la justifique.
-    static func noteRestoreStarted() {
-        restoreRequestedThisSession = true
+    ///
+    /// **No re-arma si ya estaba abierta**: el botón de reintentar de la pantalla vuelve a llamar aquí,
+    /// y dejar que reinicie el reloj convertiría el tope en una ventana extensible a voluntad.
+    static func noteRestoreStarted(now: Date = .now) {
+        guard restoreStartedAt == nil else { return }
+        restoreStartedAt = now
+    }
+
+    /// El flujo de restauración TERMINÓ — gane o pierda. Lo llama `RestoreProgressView` cuando su
+    /// espera se resuelve, en los DOS desenlaces (`completed` y `partial`): en ese punto ya no hay
+    /// ninguna descarga que justifique tener abierto un guard de frontera de cuenta.
+    ///
+    /// Es precisión, no la red: el usuario que toca «atrás» a mitad desmonta la vista y cancela ese
+    /// `Task`, así que este apagado no llega a correr. Para ese camino —que es el escenario del propio
+    /// bug que la señal arregla— quien cierra la ventana es la caducidad de la lógica pura.
+    static func noteRestoreFinished() {
+        restoreStartedAt = nil
     }
 
     /// El input del guard cross-cuenta. Se lee EN el instante de decidir y nunca se cachea: el mirror
     /// puede asentar entre que se monta la pantalla y que el usuario firma.
     static var isRestoringNow: Bool {
         ICloudRestoreInProgressLogic.isRestoringNow(
-            restoreRequestedThisSession: restoreRequestedThisSession,
+            restoreStartedAt: restoreStartedAt,
             hasCompletedFirstImport: iCloudSyncService.shared.hasCompletedFirstImport,
-            isImportQuiescent: iCloudSyncService.shared.isImportQuiescent)
+            isImportQuiescent: iCloudSyncService.shared.isImportQuiescent,
+            hasObservedImportActivity: iCloudSyncService.shared.hasObservedImportActivity,
+            now: .now)
     }
 
     #if DEBUG
     /// Solo tests: el latch es estado de proceso y las suites que lo tocan van `.serialized`.
     static func _testReset() {
-        restoreRequestedThisSession = false
+        restoreStartedAt = nil
     }
 
-    static func _testSetRequested(_ value: Bool) {
-        restoreRequestedThisSession = value
+    static func _testSetStartedAt(_ value: Date?) {
+        restoreStartedAt = value
     }
     #endif
 }
