@@ -175,7 +175,7 @@ struct ContentView: View {
             // By waiting for isInitialCheckDone, the first frame (just the splash) renders
             // instantly, promoting the app to Foreground (20s timeout).
             if hasCompletedOnboarding && isInitialCheckDone {
-                MainTabView()
+                MainTabView(storeLooksEmpty: !hasExistingData)
                     .environment(SessionState.shared)
                     .modifier(TagCatalogProvider())
                     .id(languageVersion) // re-render on .languageDidChange
@@ -2159,7 +2159,13 @@ struct MainTabView: View {
         visibleTabs.count <= 3
     }
 
-    init() {
+    /// «La app se ve vacía», medido por el shell con el MISMO detector que decide el alert del Welcome
+    /// (`checkHasExistingData`). Solo lo consume el banner de hidratación; viaja por el init en vez de
+    /// re-contarse aquí porque dos detectores distintos de «hay datos» es como divergen.
+    private let storeLooksEmpty: Bool
+
+    init(storeLooksEmpty: Bool = false) {
+        self.storeLooksEmpty = storeLooksEmpty
         // Get SessionState from the environment wrapper
         // This is initialized here to work with @Bindable
         _sessionState = Bindable(wrappedValue: SessionState.shared)
@@ -2194,8 +2200,13 @@ struct MainTabView: View {
             .tint(theme.accent)
             .tabBarMinimizeBehavior(.onScrollDown)
             .transaction { $0.animation = nil }
-            // M1: fase real de la hidratación de la sesión secundaria (no-op para el dueño).
-            .overlay(alignment: .top) { SecondaryHydrationBanner() }
+            // Fase real de la hidratación: la invitada (M1) y, desde 2026-08-12, también el dueño que
+            // vuelve — tras el relanzamiento del adopt su store nace igual de vacío. `hasExistingData`
+            // es el MISMO detector que decide el alert del Welcome; pasárselo evita un segundo contador
+            // de «hay datos», que es como divergen.
+            .overlay(alignment: .top) {
+                SecondaryHydrationBanner(storeLooksEmpty: storeLooksEmpty)
+            }
             .sheet(isPresented: $showDowngradeResolution) {
                 DowngradeResolutionSheet(
                     accounts: downgradeAccounts,

@@ -74,15 +74,49 @@ struct CrossAccountEntryGuardLogicTests {
     }
 }
 
-@Suite("SecondaryHydrationLogic · visibilidad del banner (M1)")
+/// El banner de «Descargando tus datos…» cubría SOLO a la invitada, y su propio docblock nombraba el
+/// daño que evita: «el store nace VACÍO […] vería una app en cero sin explicación». **Tras el
+/// relanzamiento del adopt, el store personal del DUEÑO nace igual de vacío** y se puebla con el pull
+/// desde el cursor 0 — mismo hecho, misma pantalla en blanco, y el primer término del gate lo excluía.
+///
+/// El gate nuevo lee el MUNDO y no el camino: se ve vacío + el motor está hidratando. Eso hace que el
+/// banner llegue a quien vuelve sin tener que enumerar por qué ruta llegó.
+@Suite("SecondaryHydrationLogic · visibilidad del banner")
 struct SecondaryHydrationLogicTests {
 
-    @Test func table() {
-        // Solo (secundaria && sin primer pull) muestra el banner.
-        #expect(SecondaryHydrationLogic.showBanner(secondaryActive: true, firstPullCompleted: false))
-        #expect(!SecondaryHydrationLogic.showBanner(secondaryActive: true, firstPullCompleted: true))
-        #expect(!SecondaryHydrationLogic.showBanner(secondaryActive: false, firstPullCompleted: false))
-        #expect(!SecondaryHydrationLogic.showBanner(secondaryActive: false, firstPullCompleted: true))
+    @Test("la invitada: su store SIEMPRE nace vacío, no hace falta mirar nada más")
+    func secondarySession() {
+        #expect(SecondaryHydrationLogic.showBanner(
+            secondaryActive: true, firstPullCompleted: false,
+            cloudEngineActive: false, storeLooksEmpty: false))
+        #expect(!SecondaryHydrationLogic.showBanner(
+            secondaryActive: true, firstPullCompleted: true,
+            cloudEngineActive: false, storeLooksEmpty: true))
+    }
+
+    /// LA aserción del ticket de re-entrada: el dueño que acaba de adoptar y relanzar.
+    @Test("el dueño que vuelve, con el store aún vacío y el motor sin cerrar su primer pull")
+    func returningOwnerIsCovered() {
+        #expect(SecondaryHydrationLogic.showBanner(
+            secondaryActive: false, firstPullCompleted: false,
+            cloudEngineActive: true, storeLooksEmpty: true), """
+            Quien vuelve en un móvil nuevo sigue viendo la app vacía SIN explicación: es el mismo \
+            hecho que el banner ya cubría para la invitada, por la otra puerta.
+            """)
+    }
+
+    /// Los dos falsos positivos que el gate tiene que seguir evitando: el usuario con sus datos ya
+    /// bajados (que no está esperando nada) y el que ni siquiera tiene motor de nube.
+    @Test("no sale para quien ya tiene datos ni para quien no tiene motor")
+    func noFalsePositives() {
+        #expect(!SecondaryHydrationLogic.showBanner(
+            secondaryActive: false, firstPullCompleted: false,
+            cloudEngineActive: true, storeLooksEmpty: false),
+            "con datos en pantalla, «descargando tus datos» es ruido")
+        #expect(!SecondaryHydrationLogic.showBanner(
+            secondaryActive: false, firstPullCompleted: false,
+            cloudEngineActive: false, storeLooksEmpty: true),
+            "sin motor de nube no hay ninguna descarga en curso que explicar")
     }
 }
 
