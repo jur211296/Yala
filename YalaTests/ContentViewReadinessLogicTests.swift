@@ -27,6 +27,7 @@ struct ContentViewReadinessLogicTests {
         showSignOutRelaunch: Bool = false,
         secondaryEntryRelaunch: Bool = false,
         showFreshStartWipeAlert: Bool = false,
+        showFreshStartWipeFailedAlert: Bool = false,
         showRemoteWipeAlert: Bool = false,
         showICloudRestartAlert: Bool = false,
         showRestoreOffer: Bool = false,
@@ -58,6 +59,7 @@ struct ContentViewReadinessLogicTests {
             showSignOutRelaunch: showSignOutRelaunch,
             secondaryEntryRelaunch: secondaryEntryRelaunch,
             showFreshStartWipeAlert: showFreshStartWipeAlert,
+            showFreshStartWipeFailedAlert: showFreshStartWipeFailedAlert,
             showRemoteWipeAlert: showRemoteWipeAlert, showICloudRestartAlert: showICloudRestartAlert,
             showRestoreOffer: showRestoreOffer, hasActiveInviteError: hasActiveInviteError,
             hasActiveGroupSyncError: hasActiveGroupSyncError,
@@ -243,6 +245,14 @@ struct ContentViewReadinessLogicTests {
 
     @Test func freshStartWipeAlert_blocks() {
         #expect(ContentViewReadinessLogic.blocker(state: make(showFreshStartWipeAlert: true)) == "freshStartWipeAlert")
+    }
+
+    /// El alert de «no pudimos borrar tus datos»: mientras la persona lo lee, nada del router puede
+    /// presentarse sobre el mismo anchor.
+    @Test func freshStartWipeFailedAlert_blocks() {
+        #expect(
+            ContentViewReadinessLogic.blocker(state: make(showFreshStartWipeFailedAlert: true))
+                == "freshStartWipeFailedAlert")
     }
 
     @Test func languageSelection_blocks() {

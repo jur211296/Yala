@@ -5489,3 +5489,9 @@
 
 /* G3/C3 — body of the secondary-session block in the organizer gate */
 "welcome.groups.secondaryBody" = "Esta sesión vive en el dispositivo de otra persona, así que tu primer grupo se crea desde el tuyo. Cierra tu sesión de invitado y vuelve a intentarlo allí.";
+
+/* Title of the alert shown when the fresh-start wipe throws */
+"welcome.freshStart.failedTitle" = "No pudimos borrar tus datos";
+
+/* Body of the alert shown when the fresh-start wipe throws */
+"welcome.freshStart.failedMessage" = "Tus datos siguen aquí, así que no seguimos adelante. Cierra Yala y vuelve a abrirla; si vuelve a pasar, escríbenos.";

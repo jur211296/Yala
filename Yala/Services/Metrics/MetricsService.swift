@@ -60,6 +60,12 @@ enum MetricsCanary: String {
     /// SOSTENIDO en >0 arranque tras arranque = **hay un productor de grupos legacy otra vez**, que es lo
     /// que C4 cerró (`GroupCreateRoutingLogic` sin rama `.cloudKit`), o una zona cuyo fetch falla siempre.
     case legacyGroupsRetired
+    /// El wipe de «empiezo de cero» del Welcome LANZÓ y el usuario se quedó con sus datos y sin
+    /// entrar al onboarding. Antes este camino era mudo fuera de Debug: la app seguía adelante como
+    /// si hubiera borrado, así que un fallo sistemático (store bloqueado, disco lleno, migración a
+    /// medias) era invisible en producción. `detail` separa cuál de los dos alerts lo emitió, sin PII.
+    /// Misma familia que `attestKeyDiscardedAfterAssertFailure`.
+    case freshStartWipeFailed
     case iCloudRestoreOutcome
     case cloudkitGroupSyncGateHardCap
     case cloudkitGroupSyncPromotedToAuto

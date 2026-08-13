@@ -54,6 +54,9 @@ struct ShellReadinessState: Equatable {
 
     // System alerts (block readiness — alert → would collide with subsequent intent)
     let showFreshStartWipeAlert: Bool
+    /// El wipe de «empiezo de cero» LANZÓ y la app NO navegó al onboarding: el usuario está
+    /// leyendo «no pudimos borrar tus datos» y nada del router puede presentarse debajo.
+    let showFreshStartWipeFailedAlert: Bool
     let showRemoteWipeAlert: Bool
     let showICloudRestartAlert: Bool
     let showRestoreOffer: Bool
@@ -129,6 +132,7 @@ enum ContentViewReadinessLogic {
         if state.showRemoteWipeAlert { return "remoteWipeAlert" }
         if state.showICloudRestartAlert { return "iCloudRestartAlert" }
         if state.showFreshStartWipeAlert { return "freshStartWipeAlert" }
+        if state.showFreshStartWipeFailedAlert { return "freshStartWipeFailedAlert" }
         if state.showRestoreOffer { return "restoreOffer" }
         if state.hasActiveInviteError { return "inviteError" }
         if state.hasActiveGroupSyncError { return "groupSyncError" }
@@ -209,6 +213,7 @@ extension ShellReadinessState {
             showSignOutRelaunch: showSignOutRelaunch,
             secondaryEntryRelaunch: secondaryEntryRelaunch,
             showFreshStartWipeAlert: showFreshStartWipeAlert,
+            showFreshStartWipeFailedAlert: showFreshStartWipeFailedAlert,
             showRemoteWipeAlert: showRemoteWipeAlert,
             showICloudRestartAlert: showICloudRestartAlert,
             showRestoreOffer: showRestoreOffer,

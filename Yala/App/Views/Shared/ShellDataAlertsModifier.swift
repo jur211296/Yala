@@ -27,6 +27,9 @@ struct ShellDataAlertsModifier: ViewModifier {
     @Binding var showRemoteWipeAlert: Bool
     @Binding var showICloudRestartAlert: Bool
     @Binding var showFreshStartWipeAlert: Bool
+    /// El wipe de cualquiera de los DOS caminos de «empiezo de cero» lanzó. Se presenta en vez de
+    /// navegar al onboarding: la app llevaba mintiendo sobre un borrado que no ocurrió.
+    @Binding var showFreshStartWipeFailedAlert: Bool
     @Binding var showRestoreOffer: Bool
     @Binding var hasCompletedOnboarding: Bool
     @Binding var hasExistingData: Bool
@@ -68,6 +71,12 @@ struct ShellDataAlertsModifier: ViewModifier {
                             in: modelContext,
                             broadcastSignal: false
                         )
+                        // La limpieza de prefs residuales vive AQUÍ y no en el disparador del alert:
+                        // corriendo antes del `if`, «Cancelar» no la deshacía y el usuario perdía
+                        // `userName` y `defaultCurrencyCode` por preguntar. Se limpia cuando se
+                        // BORRA. Va DESPUÉS del wipe para que un wipe que lanza no se lleve por
+                        // delante las prefs de unos datos que siguen ahí.
+                        OnboardingResetHelper.clearResidualPreferencesForFreshStart()
                         // Handover: «empiezo de cero» es la frontera de OTRO usuario en este
                         // dispositivo, no un vaciado del mismo. El dominio Grupos, que sobrevive al
                         // wipe por diseño, se purga LOCALMENTE aquí — si no, el usuario nuevo hereda
@@ -80,13 +89,18 @@ struct ShellDataAlertsModifier: ViewModifier {
                         // onboarding que este mismo camino está abriendo.
                         onCancelWipeGrace()
                         hasPersonalData = false
+                        // La navegación al onboarding cuelga del camino que SÍ borró. Vivía fuera
+                        // del `do/catch` y corría igual cuando el wipe lanzaba: la app metía a la
+                        // persona en un onboarding «de cero» sobre sus datos intactos, sin decir
+                        // una palabra.
+                        showWelcomeFlow = false
+                        showOnboarding = true
                     } catch {
-                        #if DEBUG
-                        print("ContentView: fresh-start wipe failed: \(error)")
-                        #endif
+                        // Canario FUERA de `#if DEBUG` a propósito: este fallo era invisible en
+                        // producción. Sin PII — el detalle es de qué alert vino.
+                        MetricsService.canary(.freshStartWipeFailed, detail: "welcomeFreshStart")
+                        showFreshStartWipeFailedAlert = true
                     }
-                    showWelcomeFlow = false
-                    showOnboarding = true
                 }
                 // Cancel: user queda en el Chooser (showWelcomeFlow sigue true) —
                 // puede elegir Restore/Invite o re-tap "Soy nuevo".
@@ -121,12 +135,15 @@ struct ShellDataAlertsModifier: ViewModifier {
                         // gracia antes de bajar la señal personal.
                         onCancelWipeGrace()
                         hasPersonalData = false
+                        // Igual que el alert de arriba: seguir adelante solo si el borrado ocurrió.
+                        // El re-emit de la invitación asume un corpus limpio (mira wipe>onboarding
+                        // para no volver a ofrecer restaurar), así que dispararlo tras un wipe que
+                        // lanzó deja al invitado en el mini-onboarding con los datos del anterior.
+                        onReEmitInviteAfterRestore()
                     } catch {
-                        #if DEBUG
-                        print("ContentView: offer-restore fresh-start wipe failed: \(error)")
-                        #endif
+                        MetricsService.canary(.freshStartWipeFailed, detail: "offerRestore")
+                        showFreshStartWipeFailedAlert = true
                     }
-                    onReEmitInviteAfterRestore()
                 }
                 Button(L10n.Action.cancel, role: .cancel) {
                     showRestoreOffer = false
@@ -138,6 +155,19 @@ struct ShellDataAlertsModifier: ViewModifier {
                 }
             } message: {
                 Text(L10n.Welcome.OfferRestore.message)
+            }
+            // El wipe lanzó. Un solo alert para los DOS caminos que borran: lo que la persona
+            // necesita saber es idéntico —sus datos siguen aquí y no la hemos movido de sitio— y el
+            // canario ya distingue de cuál vino. Sin acción destructiva: el reintento es cerrar y
+            // volver a abrir, porque un segundo wipe sobre el mismo store fallaría igual.
+            .alert(
+                L10n.Welcome.FreshStart.failedTitle,
+                isPresented: $showFreshStartWipeFailedAlert
+            ) {
+                Button(L10n.Common.ok, role: .cancel) {}
+                    .tint(.primary)  // A11Y-DM: el indigo global se pierde sobre el Welcome oscuro
+            } message: {
+                Text(L10n.Welcome.FreshStart.failedMessage)
             }
     }
 }

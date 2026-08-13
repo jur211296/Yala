@@ -5064,6 +5064,10 @@ enum L10n {
             static var alertTitle: String { ls("welcome.freshStart.alertTitle", comment: "") }
             static var alertMessage: String { ls("welcome.freshStart.alertMessage", comment: "") }
             static var alertConfirm: String { ls("welcome.freshStart.alertConfirm", comment: "") }
+            /// El wipe LANZÓ. Antes este camino era mudo fuera de Debug y la app entraba igual al
+            /// onboarding «de cero» sobre datos que no se borraron.
+            static var failedTitle: String { ls("welcome.freshStart.failedTitle", comment: "") }
+            static var failedMessage: String { ls("welcome.freshStart.failedMessage", comment: "") }
         }
     }
 

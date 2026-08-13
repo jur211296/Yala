@@ -20,6 +20,7 @@ private struct ReadinessGateObserversModifier: ViewModifier {
     let showSignOutRelaunch: Bool
     let secondaryEntryRelaunch: Bool
     let showFreshStartWipeAlert: Bool
+    let showFreshStartWipeFailedAlert: Bool
     let showRemoteWipeAlert: Bool
     let showICloudRestartAlert: Bool
     let showRestoreOffer: Bool
@@ -79,6 +80,7 @@ private struct ReadinessGateObserversModifier: ViewModifier {
         content
             .onChange(of: forceUpdateRequired) { _, _ in recompute() }
             .onChange(of: showFreshStartWipeAlert) { _, _ in recompute() }
+            .onChange(of: showFreshStartWipeFailedAlert) { _, _ in recompute() }
             .onChange(of: showRemoteWipeAlert) { _, _ in recompute() }
             .onChange(of: showICloudRestartAlert) { _, _ in recompute() }
             .onChange(of: showRestoreOffer) { _, _ in recompute() }
@@ -100,6 +102,7 @@ extension View {
         showSignOutRelaunch: Bool,
         secondaryEntryRelaunch: Bool,
         showFreshStartWipeAlert: Bool,
+        showFreshStartWipeFailedAlert: Bool,
         showRemoteWipeAlert: Bool,
         showICloudRestartAlert: Bool,
         showRestoreOffer: Bool,
@@ -129,6 +132,7 @@ extension View {
             showSignOutRelaunch: showSignOutRelaunch,
             secondaryEntryRelaunch: secondaryEntryRelaunch,
             showFreshStartWipeAlert: showFreshStartWipeAlert,
+            showFreshStartWipeFailedAlert: showFreshStartWipeFailedAlert,
             showRemoteWipeAlert: showRemoteWipeAlert,
             showICloudRestartAlert: showICloudRestartAlert,
             showRestoreOffer: showRestoreOffer,

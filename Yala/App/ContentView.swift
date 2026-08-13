@@ -60,6 +60,9 @@ struct ContentView: View {
     @State private var showRemoteWipeAlert: Bool = false
     @State private var showICloudRestartAlert: Bool = false
     @State private var showFreshStartWipeAlert: Bool = false
+    /// El wipe de «empiezo de cero» LANZÓ (cualquiera de los dos caminos que borran). Blocker de la
+    /// matriz de readiness como sus hermanos: mientras esté puesto, nada del router presenta debajo.
+    @State private var showFreshStartWipeFailedAlert: Bool = false
     @State private var showSyncSettingsSheet: Bool = false
     @State private var showProTrialOffer: Bool = false
     @State private var showWhatsNew: Bool = false
@@ -279,6 +282,7 @@ struct ContentView: View {
             showRemoteWipeAlert: $showRemoteWipeAlert,
             showICloudRestartAlert: $showICloudRestartAlert,
             showFreshStartWipeAlert: $showFreshStartWipeAlert,
+            showFreshStartWipeFailedAlert: $showFreshStartWipeFailedAlert,
             showRestoreOffer: $showRestoreOffer,
             hasCompletedOnboarding: $hasCompletedOnboarding,
             hasExistingData: $hasExistingData,
@@ -574,6 +578,7 @@ struct ContentView: View {
             secondaryEntryRelaunch: showSecondaryEntryRelaunchCover
                 || (SecondarySessionStore.isActive() && !SwiftDataConfiguration.secondaryStoreMounted),
             showFreshStartWipeAlert: showFreshStartWipeAlert,
+            showFreshStartWipeFailedAlert: showFreshStartWipeFailedAlert,
             showRemoteWipeAlert: showRemoteWipeAlert,
             showICloudRestartAlert: showICloudRestartAlert,
             showRestoreOffer: showRestoreOffer,
@@ -815,6 +820,7 @@ struct ContentView: View {
             secondaryEntryRelaunch: showSecondaryEntryRelaunchCover
                 || (SecondarySessionStore.isActive() && !SwiftDataConfiguration.secondaryStoreMounted),
             showFreshStartWipeAlert: showFreshStartWipeAlert,
+            showFreshStartWipeFailedAlert: showFreshStartWipeFailedAlert,
             showRemoteWipeAlert: showRemoteWipeAlert,
             showICloudRestartAlert: showICloudRestartAlert,
             showRestoreOffer: showRestoreOffer,
@@ -1606,9 +1612,6 @@ private struct WelcomeFlowModifier: ViewModifier {
     /// "Soy nuevo → privacidad total": el camino de siempre, extraído a un helper para que el
     /// callback de A4 y la rama `.new` histórica no puedan divergir.
     private func startFreshPrivateOnboarding() {
-        // Limpia prefs residuales del KV-Store del Apple ID (userName, currency) que
-        // sobreviven al uninstall.
-        OnboardingResetHelper.clearResidualPreferencesForFreshStart()
         // Segunda barrera vs data residual: el alert "Detectamos tu cuenta" del Hero cubre
         // el caso iCloud-con-data, pero falla en (1) sim sin iCloud, (2) timeout del fetch,
         // (3) CloudKit mirror sync que llega post-Hero. Si hay data al momento del tap,
@@ -1617,6 +1620,14 @@ private struct WelcomeFlowModifier: ViewModifier {
             showFreshStartWipeAlert = true
             // welcomeFlow sigue visible hasta resolver el alert
         } else {
+            // La limpieza de prefs residuales del KV-Store del Apple ID (userName, currency —
+            // sobreviven al uninstall) va DENTRO de las ramas que de verdad proceden: aquí, y en
+            // el botón destructivo del alert. Corrió durante meses ANTES de este `if`, así que
+            // «Cancelar» no la deshacía y el usuario perdía su nombre y su divisa por preguntar.
+            // Y el efecto era DIFERIDO —`AppPreferences.loadFromDefaults()` solo corre en el
+            // `init` y descarta los vacíos— así que lo percibía un arranque en frío después.
+            // Se limpia cuando se BORRA, no cuando se pregunta.
+            OnboardingResetHelper.clearResidualPreferencesForFreshStart()
             showWelcomeFlow = false
             showOnboarding = true
         }

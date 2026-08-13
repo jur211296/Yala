@@ -5484,3 +5484,9 @@
 
 /* G3/C3 — body of the secondary-session block in the organizer gate */
 "welcome.groups.secondaryBody" = "这个会话在别人的设备上，所以你的第一个群组要在自己的设备上创建。请退出访客会话，然后在你的设备上重试。";
+
+/* Title of the alert shown when the fresh-start wipe throws */
+"welcome.freshStart.failedTitle" = "我们无法清除你的数据";
+
+/* Body of the alert shown when the fresh-start wipe throws */
+"welcome.freshStart.failedMessage" = "你的数据还在，所以我们没有继续。请关闭 Yala 再重新打开；如果还是这样，请联系我们。";

@@ -5484,3 +5484,9 @@
 
 /* G3/C3 — body of the secondary-session block in the organizer gate */
 "welcome.groups.secondaryBody" = "このセッションは他の人の端末のものです。最初のグループはあなた自身の端末で作成してください。ゲストセッションを終了して、そちらでもう一度お試しください。";
+
+/* Title of the alert shown when the fresh-start wipe throws */
+"welcome.freshStart.failedTitle" = "データを削除できませんでした";
+
+/* Body of the alert shown when the fresh-start wipe throws */
+"welcome.freshStart.failedMessage" = "データはそのまま残っているので、ここで止めました。Yalaを一度閉じてから開き直してください。それでも同じなら、ご連絡ください。";
