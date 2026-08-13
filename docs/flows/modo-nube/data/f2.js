@@ -178,6 +178,235 @@ window.ATLAS_F2 = {
     "signout-pushall": {
       reason: "El spinner y el caption «Guardando tus cambios pendientes…» son ventanas del drenaje real de un outbox con sesión backend viva.",
       expected: "Spinner en la fila de cerrar sesión y, en bloqueo transitorio, el caption honesto."
+    },
+    // ── R3 · Llego con una invitación a un grupo ──
+    "r3-landing": {
+      pending: true,
+      reason: "No es una pantalla de iOS: es la página SSR `Web/src/pages/invite.astro` renderizada en un navegador. El simulador no la produce por definición. Para capturarla hay que levantar el sitio (`Web/`) y abrir `/invite` con una query completa (`?g=&t=&s=&n=&i=&c=&m=&u=`), o abrir un enlace de invitación real en un navegador. No se intentó en esta pasada.",
+      expected: "Fondo oscuro, logo de Yala arriba, tarjeta con el icono del grupo en su color, el NOMBRE del grupo como titular, la etiqueta «Miembros» con los chips de los nombres, y los dos botones «Abrir en Yala» (arriba, relleno) y «Descargar en App Store» (abajo, contorno). Footer «Yala — Finanzas personales, sin esfuerzo». Una segunda toma sin `m=` debería mostrar «Te invitaron a este grupo en Yala» en lugar de los chips."
+    },
+    "r3-aprobacion": {
+      reason: "Requiere un SEGUNDO humano con rol admin aprobando o dando de baja contra el backend REAL, y que ese cambio baje por el pull. El simulador no puede: crear el grupo y el member exigen sesión Nube y App Attest, y App Attest rechaza un build de desarrollo contra producción (`verifyAttestation.ts:79`). Con `Yala Dev` (staging) sería otro mundo de datos y aun así hace falta el segundo device. No hay ningún seam `-uitest` que ponga a mi member en `pendingApproval` — `DevSeedGroups` los siembra todos `.active` (`DevSeedGroups.swift:46`).",
+      expected: "Dos tomas. (a) APROBADO: el mismo grupo antes con el banner naranja «Esperando aprobación del admin» y la lista de gastos vacía, y después sin banner, con sus gastos y con el FAB de crear gasto visible. (b) BAJA: el tab Grupos con la tarjeta del grupo, y la toma siguiente sin ella — sin ningún alert, banner ni mensaje entre las dos."
+    },
+    "r3-err-canal": {
+      pending: true,
+      reason: "No se puede producir de forma determinista desde el código: la rama `.backendUnavailable` exige que `CloudSyncFlags.groupsBackendEnabled` siga OFF DESPUÉS de un `refreshIfDue(force: true)`, y eso lo decide el snapshot vivo de remote-config (`absentDefault = false`, refresco ≤ 6 h, `GROUPS_BACKEND_ROLLOUT_PERCENT`, hoy al 100 en producción). Con el device dentro del bucket la ruta sale `.backend` y el alert no llega. Confirmarlo exige correr el escenario con el canal apagado, no leer código. No se intentó.",
+      expected: "Un alert del sistema, título «Hubo un problema con el grupo», cuerpo «No pudimos abrir esta invitación ahora. Guardamos tu solicitud: vuelve a intentarlo en un momento.» y un único botón «OK». Sin botón de reintentar y sin nada detrás salvo la pantalla en la que estuviera el usuario."
+    },
+    "r3-err-red": {
+      pending: true,
+      reason: "Su cara distintiva es el texto rojo de `GroupsSignInView`, y llegar a esa vista exige el canal ENCENDIDO más un enlace backend real sin sesión Nube (`.presentGroupsSignIn`); encima hay que hacer FALLAR el sign-in para encender `signInFailed` (`GroupsSignInView.swift:58`). No existe ningún seam `-uitest` que fuerce ese estado (`-uitest-fake-cloud-session` hace lo contrario). Las otras dos caras no son capturables por definición: una es la ausencia de UI y la otra es el sheet de sign-in reapareciendo.",
+      expected: "La pantalla de sign-in de Grupos (icono `person.crop.circle.badge.checkmark`, título y cuerpo de `groups.signin.*`) con un párrafo en rojo bajo el cuerpo: «Hmm, no pudimos conectar tu cuenta ahora. Tu grupo sigue aquí y no pierdes nada — inténtalo más tarde.», y los botones de Apple y Google intactos debajo."
+    },
+    // ── R10 · Estoy de visita en el móvil de otra persona ──
+    "visita-reentrar-cuenta": {
+      reason: "La parte distintiva del panel es lo que el guard cross-cuenta decide DESPUÉS de que el backend conteste `accountFound`, y eso exige una cuenta real y un sign-in real (Apple o Google) contra el gateway. En producción la entrada secundaria no existe (`SECONDARY_SESSION_ROLLOUT_PERCENT = \"0\"`, gateway/wrangler.toml:176) y un build de desarrollo no puede atestar contra producción; contra staging haría falta el scheme `Yala Dev` con una segunda cuenta real firmada en el simulador, que no es un estado que el sim reproduzca por sí solo. El sub-chooser de las tres cards SÍ se pinta en un build DEV, pero la captura sin el desenlace no dice nada de este panel.",
+      expected: "El sub-chooser «Elige cómo quieres recuperar tus datos.» con sus tres cards y, encadenada, la pantalla de sign-in de la re-entrada — con la sesión de invitada viva y sin ninguna mención de ella. En el caso bloqueado, la pantalla honesta «Este dispositivo tiene datos de otra cuenta»."
+    },
+    "visita-restaurar-icloud": {
+      reason: "Las tres ramas del panel exigen tres estados de iCloud distintos y el simulador solo produce uno con fiabilidad: sin cuenta iCloud, `startSearch` sale por `.iCloudDisabled` y ni la búsqueda ni el `.notFound` llegan a existir. La rama `.wiped` es capturable en sim (basta llegar aquí tras el vaciado en sesión), pero la rama que el panel usa para su tesis —los 90 s de espera sobre un store sin espejo hasta «No encontramos tus datos»— necesita un dispositivo con cuenta iCloud viva y sin señal de wipe fresca.",
+      expected: "Las tres pantallas del fan-out: «Activa iCloud para continuar», «Borraste tus datos» y la secuencia «Conectando con iCloud…» → «Trayendo tus datos…» → «No encontramos tus datos», las tres con «Empezar desde cero» como botón."
+    },
+    "visita-cuenta-nueva": {
+      reason: "El sub-chooser con las dos cards sí se pinta en un build DEV (staging sirve `CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT` al 100), pero lo que el panel retrata es el ALTA que resuelve `created` y escribe el faro, y eso crea una cuenta real en el backend. En producción la card no existe (percent 0, gateway/wrangler.toml:132) y la sesión secundaria tampoco (:176), así que la combinación no es alcanzable ahí; en staging exige un alta real que no se puede fabricar desde el simulador sin ensuciar el backend.",
+      expected: "«Elige dónde quieres guardar tus datos.» con las dos cards, el consentimiento y el alta, más la evidencia de que el faro quedó escrito en el iCloud KV del Apple ID del dispositivo (no hay pantalla que lo muestre: sería una comprobación fuera de la captura)."
+    },
+    "visita-privado-alert": {
+      pending: true,
+      reason: "El alert exige `hasExistingData == true` en el instante del tap, y el único camino medido que trae a la invitada al chooser —el vaciado en sesión— es justamente el que deja el store personal vacío. Para que salte harían falta grupos vivos en el store MONTADO: con el canal de Grupos encendido (que es lo que sirve staging a un build `Yala Dev`) ese store es `YalaGroups-Secondary`, que nace vacío porque no hay pull real; y para que fuera el del dueño haría falta apagar el canal, cosa que no he medido cómo hacer desde un build DEV en el simulador. La variante que el panel llama HALLAZGO GRAVE (borrar los grupos del dueño) es exactamente la que no se puede montar hoy.",
+      expected: "El alert «Empezar desde cero» · «Detectamos datos previos en tu dispositivo. ¿Borrar todo para empezar como nuevo?» con «Borrar todo y continuar» y «Cancelar», sobre el Welcome oscuro y con el chooser detrás."
+    },
+    // ── R11 · El dueño recupera su móvil ──
+    "vuelta-pushall": {
+      reason: "El estado que retrata (fila con spinner y deshabilitada) exige `signOutCoordinator.phase == .working` SOSTENIDO, y eso solo ocurre mientras el push-all cicla contra un backend real. En el simulador `CloudMigrationController.shared` sí existe (AppBootstrapper.swift:305-306 solo pide `CloudBackendConfig.isConfigured`), pero con el outbox vacío el veredicto es `.drained` en microsegundos y el spinner es un parpadeo, no una pantalla. Y forzarlo de verdad exige una sesión secundaria REAL: está al 0 % en producción y App Attest rechaza builds de desarrollo contra producción (AAGUID `appattestdevelop` vs `production`).",
+      expected: "La sección «Seguridad y cuenta» con la fila «Cerrar sesión» deshabilitada y su spinner a la derecha, y SIN el caption «Guardando tus cambios pendientes…» debajo — la ausencia de ese caption es justo lo que la captura tiene que probar."
+    },
+    "vuelta-bloqueado": {
+      reason: "El alert exige un veredicto `.blocked`, es decir filas VIVAS en `SyncOutbox` que el push-all no consiga drenar. En el simulador bajo `-uitest` el store es `YalaModel-UITest` recién creado y el conteo da 0 ⇒ `.drained`. No medí si un guardado dentro de la sesión secundaria fake llega a encolar filas de outbox en el simulador (dependería de que el runtime de sync arranque en ese proceso), así que no lo afirmo en ninguna dirección: lo que sí está medido es que el camino natural en sim NO bloquea.",
+      expected: "Alert de sistema con el título «No pudimos cerrar tu sesión», el cuerpo «Hay cambios sin subir a la nube y no queremos que pierdas nada. Revisa tu conexión e inténtalo de nuevo.» y un único botón «OK», sobre la pantalla de Ajustes."
+    },
+    "vuelta-cover": {
+      pending: true,
+      reason: "MEDIDO y refuta la vía alternativa que se había propuesto: el cover NO se puede sacar de la ventana de ENTRADA secundaria (ContentView.swift:1746). `UITestEphemeralDefaults.applySecondarySession` declara el testigo del mount con `setMountWitness(true)` (:174) precisamente para no caer en esa ventana, y su docblock (:154-157) lo dice —«La VENTANA DE ENTRADA no es expresable desde XCUITest y no se intenta»—, lo mismo que la cabecera de `SecondarySessionGateUITests.swift:23-26`. Queda la vía del propio cierre (presentador ContentView.swift:1671): con el outbox vacío el camino secundario llega a `.drained` → `armWipe` → `.awaitingRelaunch` y el cover aparece. No la ejercité, y tiene un coste que hay que decidir antes: `SecondarySessionStore.armWipe()` escribe `cloudSync.secondaryWipeArmed` en el `UserDefaults` PERSISTENTE del simulador, y ese dominio no lo purga nadie (`-uitest-reset` no limpia `cloudSync.*` y `DataWipeService` las excluye a propósito — UITestEphemeralDefaults.swift:159-164), así que el siguiente arranque manual correría el boot-cleanup y dejaría el simulador en Welcome.",
+      expected: "Pantalla completa sobre fondo de panel, sin ningún botón: flecha circular gris, título «Ya casi está — reinicia Yala» y debajo «Ve a la pantalla de inicio y vuelve a abrir Yala — todo quedará listo.» Nada de barra de navegación ni tab bar."
+    },
+    "vuelta-restaurar": {
+      pending: true,
+      reason: "No medí qué pinta `WelcomeRestoreView` en un simulador sin cuenta de iCloud. Tiene cuatro estados alternativos con copy propio —«no encontrada» (:281-283), «iCloud desactivado» (:292-296), error (:305-307) y «wiped» (:319-321)— y cuál sale depende del fetch de CloudKit, que en el simulador no corre de verdad (`-uitest-fake-icloud` fuerza `isAccountAvailable` pero no habilita CloudKit real). El resumen sí se calcula del store LOCAL, así que con datos sembrados la pantalla del resumen podría salir; hay que probarlo antes de afirmarlo.",
+      expected: "«¡Hola <nombre>! Qué bueno verte de vuelta.», «Encontramos tus datos en iCloud:» y los chips con los conteos («N cuentas», «N registros», «N presupuestos», y «N grupos compartidos» si los hay), el botón «Continuar» y, debajo, «Empezar desde cero»."
+    },
+    // ── R6 · Soy privada y salgo de Yala ──
+    "signout-restaurar-vuelta": {
+      pending: true,
+      reason: "`WelcomeRestoreView.startSearch()` (WelcomeRestoreView.swift:113-117) corta en `guard iCloudSyncService.shared.isAccountAvailable` ANTES de buscar nada, y ese getter es `FileManager.default.ubiquityIdentityToken != nil` (SwiftDataConfiguration.swift:36-38). Un simulador sin Apple ID iniciado cae SIEMPRE en `.iCloudDisabled` y no llega jamás a la pantalla de reencuentro. NO se intentó en esta sesión: no se lanzó la app ni se comprobó si el iPhone 17 Pro del inventario tiene sesión de iCloud. Si la tiene, la captura es posible en sim, con la advertencia de que `RestoreProgressView` espera quiescencia hasta 90 s (RestoreProgressView.swift:28) antes de asentar y decidir `.found`/`.notFound`.",
+      expected: "La pantalla de reencuentro: «¡Hola <nombre>! Qué bueno verte de vuelta.», «Encontramos tus datos en iCloud:» y las cuatro tarjetas de conteo (cuentas / registros / presupuestos / grupos compartidos), con «Continuar» y el «Empezar desde cero» pequeño debajo. Idealmente además un segundo fotograma de la pantalla de progreso con «Trayendo tus datos…»."
+    },
+    // ── R5 · Vuelvo a Yala en un móvil nuevo ──
+    "reentry-movilnuevo": {
+      reason: "El arco termina en «Verificando tu cuenta…», que exige un sign-in REAL con SIWA o Google. El propio código lo declara donde más cuesta: WelcomeCloudSignInView.swift:254-260 dice que llegar a esas fases «exige un sign-in REAL con SIWA/Google […] y el simulador no firma». El prefijo (chooser → sub-chooser → «Entra a tu cuenta») SÍ es alcanzable en `Yala Dev` contra staging sin firmar, pero duplicaría `reentry-chooser.png` y `reentry-intro.png`, que ya existen. NO ejecuté el simulador para refutarlo.",
+      expected: "Idealmente una tira de tres: el sub-chooser con sus TRES cards («Restaurar desde iCloud» · «Entrar con Apple» · «Entrar con Google») bajo «Elige cómo quieres recuperar tus datos.», la pantalla «Entra a tu cuenta», y el spinner «Verificando tu cuenta…» inmediatamente después de la hoja de Apple. Lo que hay que ver es que la pantalla intermedia EXISTE y que después del Face ID no hay ninguna pregunta más."
+    },
+    "reentry-mismomovil": {
+      reason: "El panel entero cuelga de que la sesión de Supabase sobreviva al borrado de la app, que es una INFERENCIA sin medir. Reproducirlo exige: firmar de verdad en un device, borrar la app, reinstalarla y llegar al consent. Ninguno de esos pasos existe en el simulador (no hay sign-in real), y además es la primera cosa que el device-QA debería comprobar.",
+      expected: "Dos fotogramas consecutivos: el sheet del consent con «Entiendo y quiero activar la nube», y lo que sale al tapearlo — «Verificando tu cuenta…» SIN que se haya interpuesto ninguna hoja de Apple/Google ni Face ID. La ausencia es la prueba."
+    },
+    "reentry-falsobloqueo": {
+      reason: "La cadena exige un import REAL de CloudKit (corpus materializado) más un sign-in REAL, y además el resultado depende del flag de sesión secundaria: en producción da el bloqueo, en un build DEV contra staging (percent 100) la misma cadena rutea a la confirmación de sesión secundaria. No se puede fabricar en el simulador sin falsear las dos mitades a la vez.",
+      expected: "La pantalla «Este dispositivo tiene datos de otra cuenta» con el icono `lock.shield` y el cuerpo «Para proteger esos datos, no podemos conectar una cuenta distinta aquí. Su dueño puede volver a entrar cuando quiera.» — sobre un device cuyo corpus es del PROPIO usuario que la está viendo."
+    },
+    "reentry-errores": {
+      reason: "MEDIDO que el simulador no puede: el único seam que finge sesión (`UITestHooks.fakeCloudSession`) pasa por `hasArg`, que exige `-uitest` (UITestHooks.swift:274-280); y bajo `-uitest` las dos cards de nube desaparecen (`WelcomeAccountChoiceLogic.visibleExistingOptions` pide `!isUITest`) y el faro deja de encaminar porque `cloudEntryAvailable` se deriva de ellas. Los dos seams son mutuamente excluyentes por construcción, así que a `WelcomeCloudSignInView` no se llega con sesión fingida.",
+      expected: "La pantalla de error: icono `wifi.exclamationmark`, «Algo no salió bien», «No pudimos verificar tu cuenta. Revisa tu conexión e inténtalo de nuevo.» y el botón «Reintentar». Vale con provocarla en device cortando la red durante `GET /account/exists`."
+    },
+    "reentry-killmidadopt": {
+      reason: "Exige un adopt en vuelo, y un adopt en vuelo exige sesión real + `POST /account/claim` contra el backend. El estado post-kill (app abierta con tabs y sin datos) es indistinguible a ojo de cualquier app vacía, así que una captura fabricada en el simulador mentiría sobre lo que el panel afirma.",
+      expected: "Dos cosas juntas: la app en su tab normal tras relanzar a mitad del adopt (NO el Welcome), y la card de Ajustes → «Dónde viven tus datos» mostrando el estado REAL de la máquina (progreso o relanzamiento pendiente), no `idle`."
+    },
+    "reentry-vacio": {
+      reason: "El punto del panel es lo que NO se ve mientras el pull baja la cuenta. En el simulador se puede fabricar una app vacía, pero no una app vacía CON datos bajando: eso exige un adopt real completado y un corpus en el backend. Una captura de sim sería visualmente igual y factualmente falsa.",
+      expected: "La pantalla principal recién relanzada, con los empty states y —si no hay Pro— la hoja «Prueba Yala Pro gratis» encima, mientras el primer pull está en curso. Lo que hay que poder señalar es el hueco donde debería estar «Descargando tus datos…» y no está."
+    },
+    "reentry-puertaequivocada": {
+      pending: true,
+      reason: "Es la única de las ocho que el simulador podría dar, pero no sin preparar el entorno: `WelcomeRestoreView.startSearch` (:113-117) sale por `.iCloudDisabled` («Activa iCloud para continuar») si el sim no tiene cuenta de iCloud, y por `.wiped` si los timestamps del iKV dicen que el último acto fue un borrado. Para la rama born-cloud hace falta un sim con sesión de iCloud y base privada de CloudKit VACÍA. No lo intenté en esta pasada.",
+      expected: "«No encontramos tus datos · No hay datos asociados a tu cuenta de iCloud. ¿Quieres empezar desde cero?» con el botón «Empezar desde cero», tras haber elegido «Restaurar desde iCloud» y pagado el relanzamiento. Idealmente, al lado, la card de Ajustes con el copy de adopción («Activar la nube en este dispositivo») para la rama del que migró."
+    },
+    // ── F6 · capturables en simulador, pendientes de la pasada de captura ──
+    "r3-enlace-origen": {
+      pending: true,
+      reason: "F6 (2026-08-12): el simulador SÍ puede producir este estado. Esta pasada DERIVÓ el contenido del código y no abrió el simulador — la captura entra en el guion de la próxima pasada.",
+      expected: "Un enlace `https://yala-app.pe/invite?g=…&t=…&s=…&n=…&i=…&c=…&m=…&u=…` en WhatsApp."
+    },
+    "r3-recovery": {
+      pending: true,
+      reason: "F6 (2026-08-12): el simulador SÍ puede producir este estado. Esta pasada DERIVÓ el contenido del código y no abrió el simulador — la captura entra en el guion de la próxima pasada.",
+      expected: "Un icono de enlace verde, «Pega tu enlace de invitación» y debajo «Si te invitaron a un grupo en Yala, pega aquí el enlace que recibiste.»."
+    },
+    "r3-onboarding-nombre": {
+      pending: true,
+      reason: "F6 (2026-08-12): el simulador SÍ puede producir este estado. Esta pasada DERIVÓ el contenido del código y no abrió el simulador — la captura entra en el guion de la próxima pasada.",
+      expected: "Un círculo con el color de acento del tema y el icono `person.2.fill`, «Te invitaron a un grupo» y debajo «Yala te ayuda a dividir gastos y saber cuánto debes o te deben»."
+    },
+    "r3-esperando": {
+      pending: true,
+      reason: "F6 (2026-08-12): el simulador SÍ puede producir este estado. Esta pasada DERIVÓ el contenido del código y no abrió el simulador — la captura entra en el guion de la próxima pasada.",
+      expected: "Primero un spinner grande con «Conectando con tu grupo…» y «Estamos preparando todo para que puedas dividir gastos."
+    },
+    "r3-solicitud": {
+      pending: true,
+      reason: "F6 (2026-08-12): el simulador SÍ puede producir este estado. Esta pasada DERIVÓ el contenido del código y no abrió el simulador — la captura entra en el guion de la próxima pasada.",
+      expected: "Un reloj naranja, «Solicitud enviada» y «El admin del grupo debe aprobarte antes de que puedas participar."
+    },
+    "r3-listo": {
+      pending: true,
+      reason: "F6 (2026-08-12): el simulador SÍ puede producir este estado. Esta pasada DERIVÓ el contenido del código y no abrió el simulador — la captura entra en el guion de la próxima pasada.",
+      expected: "Un check verde, «¡Todo listo!» y un botón «Ir al grupo»."
+    },
+    "r3-banner": {
+      pending: true,
+      reason: "F6 (2026-08-12): el simulador SÍ puede producir este estado. Esta pasada DERIVÓ el contenido del código y no abrió el simulador — la captura entra en el guion de la próxima pasada.",
+      expected: "Una tira flotante sobre la lista de grupos, con CINCO caras según la fase: spinner + «Conectando con tu grupo…» · reloj + «Esperando aprobación del admin» · triángulo + «No pudimos unirte al grupo» con botón «Reintentar» · triá…"
+    },
+    "r3-err-ckshare": {
+      pending: true,
+      reason: "F6 (2026-08-12): el simulador SÍ puede producir este estado. Esta pasada DERIVÓ el contenido del código y no abrió el simulador — la captura entra en el guion de la próxima pasada.",
+      expected: "El alert «Enlace no válido» / «Este enlace ya no es válido o expiró."
+    },
+    "r3-err-enlace": {
+      pending: true,
+      reason: "F6 (2026-08-12): el simulador SÍ puede producir este estado. Esta pasada DERIVÓ el contenido del código y no abrió el simulador — la captura entra en el guion de la próxima pasada.",
+      expected: "DOS superficies según dónde te pille."
+    },
+    "visita-shell": {
+      pending: true,
+      reason: "F6 (2026-08-12): el simulador SÍ puede producir este estado. Esta pasada DERIVÓ el contenido del código y no abrió el simulador — la captura entra en el guion de la próxima pasada.",
+      expected: "La app normal, con tres diferencias."
+    },
+    "visita-vaciar": {
+      pending: true,
+      reason: "F6 (2026-08-12): el simulador SÍ puede producir este estado. Esta pasada DERIVÓ el contenido del código y no abrió el simulador — la captura entra en el guion de la próxima pasada.",
+      expected: "En Ajustes, la última fila de su sección: «Vaciar datos» · «Borra tus datos."
+    },
+    "visita-chooser": {
+      pending: true,
+      reason: "F6 (2026-08-12): el simulador SÍ puede producir este estado. Esta pasada DERIVÓ el contenido del código y no abrió el simulador — la captura entra en el guion de la próxima pasada.",
+      expected: "El Welcome de siempre: «¡Hola!"
+    },
+    "visita-crear-grupo": {
+      pending: true,
+      reason: "F6 (2026-08-12): el simulador SÍ puede producir este estado. Esta pasada DERIVÓ el contenido del código y no abrió el simulador — la captura entra en el guion de la próxima pasada.",
+      expected: "Primero «Comprobando que todo esté listo…» con un spinner; después, la pantalla honesta: reloj sobre persona, «Aquí estás como invitado» y «Esta sesión vive en el dispositivo de otra persona, así que tu primer grupo se crea des…"
+    },
+    "visita-privado": {
+      pending: true,
+      reason: "F6 (2026-08-12): el simulador SÍ puede producir este estado. Esta pasada DERIVÓ el contenido del código y no abrió el simulador — la captura entra en el guion de la próxima pasada.",
+      expected: "Si las dos cards son visibles, «Tu cuenta en tu iCloud privado» · «Tus datos viven en los dispositivos Apple de tu Apple ID y se sincronizan por tu iCloud privado."
+    },
+    "visita-privado-onboarding": {
+      pending: true,
+      reason: "F6 (2026-08-12): el simulador SÍ puede producir este estado. Esta pasada DERIVÓ el contenido del código y no abrió el simulador — la captura entra en el guion de la próxima pasada.",
+      expected: "El onboarding completo de siempre: «¿Cómo quieres que te llamemos?» con el campo «Tu nombre», «¿Qué te gustaría hacer con Yala?», divisa, estilo, cuenta inicial, presupuesto."
+    },
+    "visita-salida": {
+      pending: true,
+      reason: "F6 (2026-08-12): el simulador SÍ puede producir este estado. Esta pasada DERIVÓ el contenido del código y no abrió el simulador — la captura entra en el guion de la próxima pasada.",
+      expected: "La salida se pide desde Ajustes y la cuenta el nodo del cierre de sesión; lo que este panel retrata es lo que pasa DESPUÉS, en el arranque siguiente, antes de que exista una sola vista."
+    },
+    "vuelta-salida-ajustes": {
+      pending: true,
+      reason: "F6 (2026-08-12): el simulador SÍ puede producir este estado. Esta pasada DERIVÓ el contenido del código y no abrió el simulador — la captura entra en el guion de la próxima pasada.",
+      expected: "Ajustes, DOS secciones y un reparto que importa."
+    },
+    "vuelta-hoja": {
+      pending: true,
+      reason: "F6 (2026-08-12): el simulador SÍ puede producir este estado. Esta pasada DERIVÓ el contenido del código y no abrió el simulador — la captura entra en el guion de la próxima pasada.",
+      expected: "Título «¿Cerrar tu sesión en este dispositivo?» y las tres filas de siempre."
+    },
+    "vuelta-welcome": {
+      pending: true,
+      reason: "F6 (2026-08-12): el simulador SÍ puede producir este estado. Esta pasada DERIVÓ el contenido del código y no abrió el simulador — la captura entra en el guion de la próxima pasada.",
+      expected: "El Hero de bienvenida: logo, el carrusel de cards, «Tus finanzas personales, sin esfuerzo.» y el botón «Empezar»."
+    },
+    "signout-fila-privada": {
+      pending: true,
+      reason: "F6 (2026-08-12): el simulador SÍ puede producir este estado. Esta pasada DERIVÓ el contenido del código y no abrió el simulador — la captura entra en el guion de la próxima pasada.",
+      expected: "Al final de la sección «Seguridad y cuenta», una fila con icono rojo de salida (`rectangle.portrait.and.arrow.right`)."
+    },
+    "signout-hoja-privada": {
+      pending: true,
+      reason: "F6 (2026-08-12): el simulador SÍ puede producir este estado. Esta pasada DERIVÓ el contenido del código y no abrió el simulador — la captura entra en el guion de la próxima pasada.",
+      expected: "Pantalla completa (`.large`, con drag indicator) titulada «¿Cerrar tu sesión en este dispositivo?» y las tres filas de siempre, cada una con su símbolo de sistema y en tono «no se toca» (ninguna en rojo): iPhone (`iphone`) «En …"
+    },
+    "signout-welcome-condatos": {
+      pending: true,
+      reason: "F6 (2026-08-12): el simulador SÍ puede producir este estado. Esta pasada DERIVÓ el contenido del código y no abrió el simulador — la captura entra en el guion de la próxima pasada.",
+      expected: "El Hero de siempre: logo, carousel de cards, «Tus finanzas personales, sin esfuerzo.», el botón «Empezar» y, bajo él en pequeño, «100% privado · Tu info siempre contigo»."
+    },
+    "signout-freshstart-alert": {
+      pending: true,
+      reason: "F6 (2026-08-12): el simulador SÍ puede producir este estado. Esta pasada DERIVÓ el contenido del código y no abrió el simulador — la captura entra en el guion de la próxima pasada.",
+      expected: "Alert del sistema sobre el Welcome: título «Empezar desde cero», mensaje «Detectamos datos previos en tu dispositivo."
+    },
+    "signout-restaurar-errores": {
+      pending: true,
+      reason: "F6 (2026-08-12): el simulador SÍ puede producir este estado. Esta pasada DERIVÓ el contenido del código y no abrió el simulador — la captura entra en el guion de la próxima pasada.",
+      expected: "Cuatro pantallas hermanas, decididas ANTES de buscar nada."
+    },
+    "signout-hoja-legado5a": {
+      pending: true,
+      reason: "F6 (2026-08-12): el simulador SÍ puede producir este estado. Esta pasada DERIVÓ el contenido del código y no abrió el simulador — la captura entra en el guion de la próxima pasada.",
+      expected: "La misma hoja de tres filas con los mismos símbolos de sistema (`iphone` / `icloud` / `person.2`), pero con otro título y otro copy: «¿Salir de Yala en este dispositivo?» · «En este dispositivo» → «Vuelves a la pantalla de inic…"
+    },
+    "reentry-nuevainstalacion": {
+      pending: true,
+      reason: "F6 (2026-08-12): el simulador SÍ puede producir este estado. Esta pasada DERIVÓ el contenido del código y no abrió el simulador — la captura entra en el guion de la próxima pasada.",
+      expected: "Tras reabrir la app, el usuario que acaba de recuperar su cuenta de años se encuentra tratado como recién llegado: en el Panel aparece la card «Primeros pasos» con su contador «%d de %d completados» arrancando de cero y, si no …"
+    },
+    "reentry-killswitch": {
+      pending: true,
+      reason: "F6 (2026-08-12): el simulador SÍ puede producir este estado. Esta pasada DERIVÓ el contenido del código y no abrió el simulador — la captura entra en el guion de la próxima pasada.",
+      expected: "Un chooser que parece normal y no lo es."
     }
   },
 

@@ -18,439 +18,569 @@
 
 window.ATLAS_FLOWS = [
   {
-    id: "alta",
-    title: "1 · Alta born-cloud (A4 → A5)",
-    lede: "«Es mi primera vez» → chooser (con bypass y faro) → consent → sign-in → las cuatro salidas del claim → par de storage → onboarding en modo nube. Desde el relanzamiento cero (R2) el alta nube NO relanza y el camino privado SÍ: el portal `leaveWelcome` es quien lo decide. Desde G2/G3 la tercera rama —«Vengo por un grupo»— dejó de salir directa a recuperar una invitación y pregunta primero si el grupo lo creas tú, con una PUERTA que comprueba antes de escribir nada. Incluye la matriz de cancelación de tres filas y el encaminamiento del 2º device por faro.",
+    id: "r1",
+    title: "1 · Empiezo de cero · cuenta privada",
+    lede: "Móvil nuevo, sin nada dentro, y elijo «privacidad total». **Es el recorrido que hace HOY todo usuario nuevo de producción**, porque el percent remoto de la elección de nube está en 0 y el sub-chooser ni se muestra. Es también el que PAGA el relanzamiento que el alta en la nube dejó de pagar.",
     graph: `flowchart TD
-  H["Welcome · Hero<br/>(sin alert desde W1)"] --> C["Chooser · 3 ramas"]
-  C -->|Ya tengo una cuenta| RE(["→ Flujo 2 · re-entrada"])
-  C -->|Vengo por un grupo| GC["¿Cómo empiezas con tu grupo?"]
-  GC -->|Tengo una invitación| PORTAL
-  GC -->|Crear mi primer grupo| GG{"PUERTA · canal → visita → datos ajenos<br/>NADA se escribe hasta que abre"}
-  GG -->|"canal OFF · sesión de visita · datos de otro"| GBLK["Puerta cerrada<br/>(3 copys, un layout)"]
-  GBLK -->|Volver| GC
-  GG -->|"proceed · destino que NO pide mirror"| PORTAL
-  PORTAL -->|"organizador"| GNAME["«¿Cómo te llamas?»"]
-  GNAME --> GWRITE{"El alta: 6 keys, y solo aquí"}
-  GWRITE --> GFORM(["Formulario de grupo<br/>→ Flujo 6"])
-  GCANCEL{{"Matriz de cancelación<br/>de la rama organizador"}}
-  C -->|Es mi primera vez en Yala| F{"¿El faro dice que este Apple ID<br/>ya tiene cuenta nube?"}
-  F -->|"vinculado ∧ entrada nube disponible<br/>(el portal no relanza: destino de nube)"| RE
-  F -->|"1 sola opción visible ⇒ bypass"| PORTAL
-  F -->|"≥2 opciones"| NC["Sub-chooser «Soy nuevo»<br/>(sin «Recomendado» · RC)"]
-  NC -->|privacidad total| PORTAL
-  NC -->|"cuenta en la nube<br/>(el portal no relanza)"| CON["Consentimiento · path .bornCloud"]
-  PORTAL{"PORTAL leaveWelcome · R2<br/>¿el destino necesita el mirror<br/>Y este proceso montó NEUTRO?"}
-  PORTAL -->|"sí"| MR["«Un último paso: reabre Yala»<br/>destino persistido · auto-exit en background"]
-  MR --> DEST(["Al reabrir: se CONSUME el destino"])
-  DEST --> PRIV["Onboarding privado<br/>(limpia residuales)"]
-  DEST --> RES2(["Restaurar de iCloud · Invitación<br/>fuera del alcance de F1"])
-  PORTAL -->|"no · mount con mirror ⇒ sigue directo"| PRIV
-  PORTAL -->|"no · mount con mirror"| RES2
-  PRIV -->|hay datos locales| WIPE["Alert de borrado<br/>del fresh start"]
-  CON --> INT["Intro del alta<br/>Apple | Google"]
-  INT --> SI{"Sign-in"}
-  SI -->|cancel · fallo Apple| INT
-  SI -->|fallo real de Google| ETR
-  SI -->|"ok (o sesión ya viva)"| CR["«Creando tu cuenta…»"]
-  CR --> CL{"POST /account/claim<br/>+ AccountClaimDecision"}
-  CL -->|created| ACT{"Par .cloud + mirrorOffArmed escrito.<br/>¿El mount de este proceso<br/>ADJUNTA mirror?"}
-  ACT -->|"sí · device CON archivo de store"| PAR["«Cierra y vuelve a abrir Yala»"]
-  ACT -->|"no · mount neutro (R2)"| RDY["«¡Tu cuenta está lista!»<br/>motor arrancado EN SESIÓN"]
-  CL -->|existing_stable| RU["Continuar como returning-user"]
-  CL -->|claiming_in_progress| WL["Esperar al líder"]
-  CL -->|401| E401["Soltar sesión + error"]
-  CL -->|403| E403["Cuenta no disponible<br/>sin reintentar"]
-  CL -->|red · 5xx| ETR["Error transitorio<br/>con Reintentar"]
-  CL -.->|"variante B · INALCANZABLE hoy"| MM(["Método equivocado"])
-  RU --> RE
-  PAR --> POST["Onboarding normal en modo nube"]
-  RDY -->|CTA «Empezar»| POST
-  ETR --> CR
-  WL -->|Reintentar = re-claim| CR
-  CANCEL{{"Matriz de cancelación · 3 filas"}}
-
+  MT{"Mount de este proceso<br/>¿existe el archivo de store?"} -->|"no · monta NEUTRO"| H["Welcome · Hero"]
+  H --> C["Chooser · 3 ramas"]
+  C -->|"Es mi primera vez"| F{"¿El faro dice que este Apple ID<br/>ya tiene cuenta nube?"}
+  F -->|"1 sola opción ⇒ bypass"| PRIV["«Soy nuevo → privacidad total»"]
+  F -->|"≥2 opciones"| NC["Sub-chooser «Soy nuevo»"]
+  NC -->|"privacidad total"| PRIV
+  PRIV --> MR["«Un último paso: reabre Yala»<br/>destino persistido"]
+  MR --> OB["Onboarding · paso Propósito"]
+  OB -->|"card «Solo grupos»"| MURO["Muro iCloud del selector"]
+  MURO --> GO["El alta solo-grupos"]
+  KS{{"Kill-switch remoto puesto:<br/>la elección de nube desaparece"}}
+  click MT call showNode("degradado-neutro")
   click H call showNode("alta-hero")
   click C call showNode("alta-chooser")
-  click GC call showNode("alta-groupschooser")
-  click GG call showNode("alta-groupsgate")
-  click GBLK call showNode("alta-groupsgate-blocked")
-  click GNAME call showNode("alta-organizername")
-  click GWRITE call showNode("alta-organizerwrite")
-  click GFORM call showNode("onboarding-crear")
-  click GCANCEL call showNode("alta-organizercancel")
   click F call showNode("alta-faro")
   click NC call showNode("alta-newchooser")
-  click PORTAL call showNode("alta-mirrorrelaunch")
-  click MR call showNode("alta-mirrorrelaunch")
-  click DEST call showNode("alta-mirrorrelaunch")
   click PRIV call showNode("alta-privado")
-  click WIPE call showNode("alta-privado")
+  click MR call showNode("alta-mirrorrelaunch")
+  click OB call showNode("onboarding-purpose")
+  click MURO call showNode("onboarding-muro")
+  click GO call showNode("onboarding-groupsonly")
+  click KS call showNode("degradado-killswitch")`
+  },
+
+  {
+    id: "r2",
+    title: "2 · Empiezo de cero · cuenta en la nube",
+    lede: "El alta born-cloud: consent → sign-in → claim → dentro. Desde el relanzamiento cero **no pide reabrir la app** —salvo que el mount llevara mirror—, que es justo lo contrario que el camino privado. Incluye las cuatro salidas del claim, los tres errores y la matriz de cancelación de tres filas.",
+    graph: `flowchart TD
+  MT{"Mount NEUTRO"} --> H["Welcome · Hero"]
+  H --> C["Chooser · 3 ramas"]
+  C -->|"Es mi primera vez"| F{"¿faro vinculado?"}
+  F --> NC["Sub-chooser «Soy nuevo»"]
+  NC -->|"cuenta en la nube"| CON["Consentimiento informado"]
+  CON --> INT["Intro del alta · Apple | Google"]
+  INT --> SI["Sign-in"]
+  SI --> CR["«Creando tu cuenta…»"]
+  CR --> CL{"POST /account/claim"}
+  CL -->|"created"| ACT{"¿El mount ADJUNTA mirror?"}
+  ACT -->|"no · neutro"| RDY["«¡Tu cuenta está lista!»<br/>motor arrancado EN SESIÓN"]
+  ACT -->|"sí"| PAR["«Cierra y vuelve a abrir Yala»"]
+  RDY --> POST["Onboarding en modo nube"]
+  PAR --> MM{"Guard de mount-mismatch<br/>(sin pantalla)"}
+  MM --> POST
+  POST --> OB["Paso Propósito"]
+  CL -->|"existing_stable"| RU["Continuar como returning-user"]
+  CL -->|"claiming_in_progress"| WL["Esperar al líder"]
+  WL --> CLM["Otro device lidera"]
+  CL -->|"401"| E401["Sesión no viva"]
+  CL -->|"403"| E403["Cuenta no disponible"]
+  CL -->|"red · 5xx"| ETR["Transitorio"]
+  ETR --> SR["Sin red"]
+  CAN{{"Matriz de cancelación · TRES filas"}}
+  KS{{"Kill-switch remoto"}}
+  SES{{"Sesión caducada con cambios pendientes"}}
+  click MT call showNode("degradado-neutro")
+  click H call showNode("alta-hero")
+  click C call showNode("alta-chooser")
+  click F call showNode("alta-faro")
+  click NC call showNode("alta-newchooser")
   click CON call showNode("alta-consent")
   click INT call showNode("alta-intro")
   click SI call showNode("alta-signin")
   click CR call showNode("alta-creating")
   click CL call showNode("alta-claim")
   click ACT call showNode("alta-par-relaunch")
-  click PAR call showNode("alta-par-relaunch")
   click RDY call showNode("alta-bornready")
+  click PAR call showNode("alta-par-relaunch")
+  click MM call showNode("degradado-mount")
   click POST call showNode("alta-postrelaunch")
+  click OB call showNode("onboarding-purpose")
   click RU call showNode("alta-returning")
   click WL call showNode("alta-waitingleader")
+  click CLM call showNode("degradado-claiming")
   click E401 call showNode("alta-error-401")
   click E403 call showNode("alta-error-403")
   click ETR call showNode("alta-error-transient")
-  click MM call showNode("alta-claim")
-  click CANCEL call showNode("alta-cancel")
-
-  classDef unreachable stroke-dasharray: 5 5,opacity:0.65
-  class MM,RES2 unreachable`
+  click SR call showNode("degradado-sinred")
+  click CAN call showNode("alta-cancel")
+  click KS call showNode("degradado-killswitch")
+  click SES call showNode("degradado-sesion")`
   },
 
   {
-    id: "reentry",
-    title: "2 · Returning-user / re-entrada",
-    lede: "«Ya tengo cuenta» → WelcomeCloudSignInView(.reentry) → exists → guard cross-cuenta → adopt. Incluye el guard R9 de provider, el poll con auto-resume y —desde R2— el relanzamiento que la rama «Restaurar de iCloud» sí necesita cuando el proceso montó neutro.",
+    id: "r3",
+    title: "3 · Llego con una invitación a un grupo",
+    lede: "**El recorrido que el Atlas no tenía.** Del tap en el enlace de WhatsApp a la sala de espera de la aprobación, pasando por la página web, las tres puertas de entrada al mismo método y el sign-in de Grupos. Aquí viven cuatro hallazgos medidos: el «no» del admin no tiene pantalla, la sala de espera no deja ver ni un gasto, «¡Todo listo!» casi no se alcanza y tres pantallas del invitado no tienen productor.",
     graph: `flowchart TD
-  EC["Sub-chooser «Ya tengo una cuenta»"] -->|Restaurar de iCloud| PORT2{"PORTAL leaveWelcome · R2<br/>restaurar necesita el mirror"}
-  PORT2 -->|"mount NEUTRO"| MR2["«Un último paso: reabre Yala»<br/>destino restoreICloud persistido"]
-  PORT2 -->|"mount con mirror"| RES(["Restore iCloud<br/>fuera del alcance de F1"])
-  MR2 -->|"al reabrir se consume el destino"| RES
-  EC -->|Apple · Google| RI["Intro de re-entrada"]
-  RI --> CON2["Consentimiento · path .adopt"]
-  CON2 --> SI2["Sign-in"]
-  SI2 --> EX{"GET /account/exists<br/>(read-only)"}
-  EX -->|"exists = false"| R9{"Guard R9 · sub-first"}
-  EX -->|"sessionExpired · transient"| ERR2["Error con Reintentar"]
-  EX -->|"exists = true"| G{"Guard cross-cuenta"}
-  R9 -->|mismatch| MM2["«Método equivocado»<br/>sesión soltada, sin claim"]
-  R9 -->|proceed| NF["«No encontramos una cuenta»"]
-  G -->|"sin datos locales · misma cuenta"| AD["Adopt en curso"]
-  G -->|"datos ajenos, sin salida M1"| BL["Bloqueado"]
-  G -->|"datos ajenos + M1 encendido"| SEC["Confirmación de sesión secundaria"]
-  G --> CW{"M0 · ¿dónde se registra<br/>el consent aceptado?"}
-  SEC --> SLOT{"¿El hueco de invitada<br/>ya es de otra persona?"}
-  SLOT -->|"ocupado por otra"| BL
-  AD --> POLL{"Poll del adopt"}
-  POLL -->|"aparcado ≥4 ticks"| AR["Auto-resume<br/>3 intentos → botón manual"]
-  AR --> POLL
-  POLL -->|needsRelaunch · cloudActive| RL["«Cierra y reabre Yala»"]
-  POLL -->|waitingForLeader| WL2["Esperar al líder"]
-  POLL -->|"failed · fases imposibles"| ERR2
-  SEC --> RLS["Relanzamiento de la secundaria"]
+  ORI["El enlace: qué lleva y cuánto vive"] --> LAND["Página web del enlace<br/>(sin Yala instalada)"]
+  ORI --> TAP{"Toco el enlace<br/>¿app instalada?"}
+  LAND -->|"Abrir en Yala"| TAP
+  TAP -->|"app cerrada"| FRIO["El silencio deliberado"]
+  TAP --> CAN{"¿A qué canal va?"}
+  CAN -->|"backend"| PIN{"Puerta .invite<br/>la única que NO empieza por el educativo"}
+  CAN -->|"era CloudKit"| ECK["El canal que lo servía ya no existe"]
+  PIN --> PUER{"Tabla de las CUATRO puertas"}
+  PUER --> GSI["Sign-in de Grupos"]
+  GSI --> CONS["Consent de Grupos"]
+  CONS --> CC{"Dónde se registra el consent"}
+  CC --> NOM["«Te invitaron a un grupo» → tu nombre"]
+  NOM --> JOIN{"join_group contra el servidor"}
+  JOIN --> ESP["«Conectando con tu grupo…»"]
+  ESP --> SOL["«Solicitud enviada»"]
+  SOL --> BAN["Banner del tab Grupos"]
+  BAN --> EMPTY["Empty state del tab"]
+  EMPTY --> ADOP["Entrar al tab ES la adopción"]
+  ADOP --> INT{"Lo que queda escrito"}
+  INT --> APR["El admin decide"]
+  APR --> LISTO["«¡Todo listo!»"]
+  H["Welcome · Hero"] --> C["Chooser · 3 ramas"]
+  C -->|"Vengo por un grupo"| GC["¿Cómo empiezas con tu grupo?"]
+  GC -->|"Tengo una invitación"| RREL{"La ÚNICA vía de grupos<br/>que pide reabrir la app"}
+  RREL --> MT{"Mount NEUTRO"}
+  MT --> MR["«Un último paso: reabre Yala»"]
+  MR --> REC["«Pega tu enlace de invitación»"]
+  REC --> CAN
+  EENL["El enlace ya no vale"]
+  ECAN["Canal apagado: «Guardamos tu solicitud»"]
+  ERED["Sin red o sesión caída"]
+  OSES{"Llega a un móvil con sesión de otra persona"}
+  SLOT["El hueco de invitada ya es de otra"]
+  MUE{{"Las tres pantallas sin productor"}}
+  KS{{"Kill-switch remoto"}}
+  SES{{"Sesión caducada"}}
+  SR{{"Sin red"}}
+  click ORI call showNode("r3-enlace-origen")
+  click LAND call showNode("r3-landing")
+  click TAP call showNode("r3-tap")
+  click FRIO call showNode("r3-frio")
+  click CAN call showNode("r3-canal")
+  click PIN call showNode("r3-puerta-invite")
+  click ECK call showNode("r3-err-ckshare")
+  click PUER call showNode("onboarding-puertas")
+  click GSI call showNode("onboarding-groupssignin")
+  click CONS call showNode("onboarding-consent")
+  click CC call showNode("onboarding-consentcuenta")
+  click NOM call showNode("r3-onboarding-nombre")
+  click JOIN call showNode("r3-join")
+  click ESP call showNode("r3-esperando")
+  click SOL call showNode("r3-solicitud")
+  click BAN call showNode("r3-banner")
+  click EMPTY call showNode("onboarding-empty")
+  click ADOP call showNode("onboarding-adopcion")
+  click INT call showNode("r3-intent")
+  click APR call showNode("r3-aprobacion")
+  click LISTO call showNode("r3-listo")
+  click H call showNode("alta-hero")
+  click C call showNode("alta-chooser")
+  click GC call showNode("alta-groupschooser")
+  click RREL call showNode("r3-recovery-relanzamiento")
+  click MT call showNode("degradado-neutro")
+  click MR call showNode("alta-mirrorrelaunch")
+  click REC call showNode("r3-recovery")
+  click EENL call showNode("r3-err-enlace")
+  click ECAN call showNode("r3-err-canal")
+  click ERED call showNode("r3-err-red")
+  click OSES call showNode("r3-otra-sesion")
+  click SLOT call showNode("reentry-slotocupado")
+  click MUE call showNode("r3-muertos")
+  click KS call showNode("degradado-killswitch")
+  click SES call showNode("degradado-sesion")
+  click SR call showNode("degradado-sinred")`
+  },
 
-  click EC call showNode("reentry-chooser")
-  click PORT2 call showNode("alta-mirrorrelaunch")
-  click MR2 call showNode("alta-mirrorrelaunch")
+  {
+    id: "r4",
+    title: "4 · Solo quiero grupos · creo el primero",
+    lede: "El organizador: «Vengo por un grupo → Crear mi primer grupo». La PUERTA comprueba tres cosas —canal, visita, datos ajenos— **antes de escribir nada**, y el alta entera escribe sus seis preferencias juntas y al final. Incluye la otra vía a lo mismo (la card «Solo grupos» del onboarding de 8 pasos) y las cuatro puertas de Grupos en una sola tabla.",
+    graph: `flowchart TD
+  MT{"Mount NEUTRO"} --> H["Welcome · Hero"]
+  H --> C["Chooser · 3 ramas"]
+  C -->|"Vengo por un grupo"| GC["¿Cómo empiezas con tu grupo?"]
+  GC -->|"Crear mi primer grupo"| GG{"LA PUERTA<br/>canal → visita → datos ajenos"}
+  GG -->|"cerrada · 3 copys"| GBLK["Puerta cerrada"]
+  GBLK -->|"Volver"| GC
+  GG -->|"abre"| PUER{"Tabla de las CUATRO puertas"}
+  PUER --> EDU["Educativo del tab Grupos"]
+  EDU --> GSI["Sign-in de Grupos"]
+  GSI --> CONS["Consent de Grupos"]
+  CONS --> CC{"El consent viaja con la cuenta"}
+  CC --> NAME["«¿Cómo te llamas?»"]
+  NAME --> WRITE{"El alta: 6 keys, y solo aquí"}
+  WRITE --> ADOP["Entrar al tab ES la adopción"]
+  ADOP --> EMPTY["Empty state · CINCO casos"]
+  EMPTY --> CREAR["Crear grupo · sign-in contextual"]
+  OB["Onboarding · paso Propósito"] -->|"card «Solo grupos»"| MURO["Muro iCloud del selector"]
+  MURO --> GO["La card ya no cierra el alta: la CEDE"]
+  GO --> PUER
+  CANC{{"Matriz de cancelación del organizador"}}
+  COFF["Crear grupo con el canal apagado"]
+  LEG["El barrido de los grupos de la era CloudKit"]
+  SP{"Camino de sign-out"} --> SH["Hoja de alcance"]
+  SH --> PA["Push-all previo"]
+  PA --> REL["Cover terminal de cierre"]
+  EXIT["«Salir de Yala en este dispositivo»"]
+  VAC["Vaciar mis datos"]
+  DEL["Eliminar mi cuenta"]
+  click MT call showNode("degradado-neutro")
+  click H call showNode("alta-hero")
+  click C call showNode("alta-chooser")
+  click GC call showNode("alta-groupschooser")
+  click GG call showNode("alta-groupsgate")
+  click GBLK call showNode("alta-groupsgate-blocked")
+  click PUER call showNode("onboarding-puertas")
+  click EDU call showNode("onboarding-educativo")
+  click GSI call showNode("onboarding-groupssignin")
+  click CONS call showNode("onboarding-consent")
+  click CC call showNode("onboarding-consentcuenta")
+  click NAME call showNode("alta-organizername")
+  click WRITE call showNode("alta-organizerwrite")
+  click ADOP call showNode("onboarding-adopcion")
+  click EMPTY call showNode("onboarding-empty")
+  click CREAR call showNode("onboarding-crear")
+  click OB call showNode("onboarding-purpose")
+  click MURO call showNode("onboarding-muro")
+  click GO call showNode("onboarding-groupsonly")
+  click CANC call showNode("alta-organizercancel")
+  click COFF call showNode("onboarding-canalapagado")
+  click LEG call showNode("degradado-legacyretire")
+  click SP call showNode("signout-path")
+  click SH call showNode("signout-hoja")
+  click PA call showNode("signout-pushall")
+  click REL call showNode("signout-relaunch")
+  click EXIT call showNode("signout-exityala")
+  click VAC call showNode("signout-vaciar")
+  click DEL call showNode("signout-borrarcuenta")`
+  },
+
+  {
+    id: "r5",
+    title: "5 · Vuelvo a Yala en un móvil nuevo",
+    lede: "Segundo dispositivo o reinstalación: el faro, el guard cross-cuenta y el adopt. **Aquí la app se ve VACÍA tras el relanzamiento y ninguna superficie lo explica** —el banner que lo diría excluye justo a quien vuelve—, y encima el arranque re-arma el checklist de instalación nueva. Incluye la reinstalación con la llave de App Attest muerta y las dos puertas que el kill-switch cierra a la vez.",
+    graph: `flowchart TD
+  ARR{"Primer arranque:<br/>qué sobrevivió y qué no"} --> MT{"Mount NEUTRO"}
+  MT --> H["Welcome · Hero"]
+  H --> C["Chooser · 3 ramas"]
+  C --> F{"El faro"}
+  F --> MN["Móvil NUEVO: hay sign-in"]
+  MN --> RC["Sub-chooser «Ya tengo una cuenta»"]
+  RC --> RI["Intro de re-entrada"]
+  RI --> CON["Consentimiento"]
+  CON --> SI["Sign-in"]
+  SI --> CW{"Dónde se registra el consent"}
+  CW --> EX{"GET /account/exists"}
+  EX --> GU{"Guard cross-cuenta"}
+  GU --> AV{"El adopt sobre un store VACÍO"}
+  AV --> AD["Adopt en curso"]
+  AD --> RR{"Por qué la re-entrada SÍ relanza"}
+  RR --> REL["«Cierra y reabre Yala»"]
+  REL --> MM{"Guard de mount-mismatch"}
+  MM --> VAC["La app aparece VACÍA"]
+  VAC --> NI["Cuenta como instalación nueva"]
+  NI --> ACT["Modo nube activo"]
+  RE["Reinstalación en el MISMO móvil"] --> AT["La llave de attest murió con la app"]
+  RE --> F
+  PE{"Elegí «Restaurar desde iCloud»"} --> MR["«Un último paso: reabre Yala»"]
+  MR --> ADC["Marcador de un líder en el mirror"]
+  ADC --> SD{"Paso de auth"}
+  SD --> PROG["Migración en curso"]
+  PROG --> MREL["Card BLOQUEANTE de relanzamiento"]
+  MIS["Firmaste con el método equivocado"]
+  NF["Sin cuenta para este Apple ID"]
+  FB["Falso bloqueo: restaurar → atrás → cuenta"]
+  BLK["Bloqueado · datos de otra identidad"]
+  RU["Continuar como returning-user"]
+  WL["Esperar al líder"]
+  CLM["Otro device lidera"]
+  AR["Detector de adopt aparcado"]
+  ERR{"Los errores de la re-entrada"}
+  E401["401"]
+  E403["403"]
+  ETR["Transitorio"]
+  SR["Sin red"]
+  KMA["Maté la app a mitad del adopt"]
+  RKS["Con el kill-switch, quien reinstala se queda fuera"]
+  KS{{"Kill-switch remoto puesto"}}
+  click ARR call showNode("reentry-arranque")
+  click MT call showNode("degradado-neutro")
+  click H call showNode("alta-hero")
+  click C call showNode("alta-chooser")
+  click F call showNode("alta-faro")
+  click MN call showNode("reentry-movilnuevo")
+  click RC call showNode("reentry-chooser")
   click RI call showNode("reentry-intro")
-  click CON2 call showNode("alta-consent")
-  click SI2 call showNode("alta-signin")
+  click CON call showNode("alta-consent")
+  click SI call showNode("alta-signin")
+  click CW call showNode("reentry-consentwrite")
   click EX call showNode("reentry-exists")
-  click R9 call showNode("reentry-mismatch")
-  click MM2 call showNode("reentry-mismatch")
+  click GU call showNode("reentry-guard")
+  click AV call showNode("reentry-adoptvacio")
+  click AD call showNode("reentry-adopt")
+  click RR call showNode("reentry-relanzamientoR5")
+  click REL call showNode("reentry-relaunch")
+  click MM call showNode("degradado-mount")
+  click VAC call showNode("reentry-vacio")
+  click NI call showNode("reentry-nuevainstalacion")
+  click ACT call showNode("migracion-cloudactive")
+  click RE call showNode("reentry-mismomovil")
+  click AT call showNode("reentry-attestmuerta")
+  click PE call showNode("reentry-puertaequivocada")
+  click MR call showNode("alta-mirrorrelaunch")
+  click ADC call showNode("migracion-adopt-copy")
+  click SD call showNode("migracion-signin-decision")
+  click PROG call showNode("migracion-progreso")
+  click MREL call showNode("migracion-relaunch")
+  click MIS call showNode("reentry-mismatch")
   click NF call showNode("reentry-notfound")
-  click G call showNode("reentry-guard")
-  click BL call showNode("reentry-blocked")
+  click FB call showNode("reentry-falsobloqueo")
+  click BLK call showNode("reentry-blocked")
+  click RU call showNode("alta-returning")
+  click WL call showNode("alta-waitingleader")
+  click CLM call showNode("degradado-claiming")
+  click AR call showNode("reentry-autoresume")
+  click ERR call showNode("reentry-errores")
+  click E401 call showNode("alta-error-401")
+  click E403 call showNode("alta-error-403")
+  click ETR call showNode("alta-error-transient")
+  click SR call showNode("degradado-sinred")
+  click KMA call showNode("reentry-killmidadopt")
+  click RKS call showNode("reentry-killswitch")
+  click KS call showNode("degradado-killswitch")`
+  },
+
+  {
+    id: "r6",
+    title: "6 · Soy privada y salgo de Yala",
+    lede: "La fila dice **«Cerrar sesión»**, no «Salir de Yala en este dispositivo» —esa es de otro humano— y su camino no toca ni un dato: devuelve al Welcome en la misma sesión. Lo interesante empieza ahí: **las SEIS salidas del Welcome tienen políticas distintas sobre los datos que siguen en el móvil**, y una de ellas ya borró dos preferencias antes de preguntar.",
+    graph: `flowchart TD
+  FILA["Ajustes · la fila por la que se sale"] --> SP{"Camino de sign-out"}
+  SP --> SH["Hoja de alcance"]
+  SH --> HP["La hoja de una persona privada"]
+  HP --> EJ{"Qué hace .privateReset"}
+  EJ --> WC["El Welcome sobre un móvil LLENO"]
+  WC --> H["Welcome · Hero"]
+  H --> C["Chooser · 3 ramas"]
+  C --> MX{"Las SEIS salidas<br/>sobre un móvil CON datos"}
+  MX -->|"Es mi primera vez"| AL["«Empezar desde cero» · el alert que borra"]
+  AL --> PRIV["Onboarding privado"]
+  MX -->|"Ya tengo cuenta"| RC["Sub-chooser existente"]
+  RC --> RV["Restaurar de iCloud · la vuelta a casa"]
+  RV --> RE["Los cuatro finales no-felices"]
+  MX -->|"Vengo por un grupo"| GB["«Este dispositivo tiene datos de otra cuenta»"]
+  MX -->|"cuenta nube"| GU{"Guard cross-cuenta"}
+  GU --> BLK["Bloqueado · datos de otra identidad"]
+  L5["La hoja del solo-grupos legado 5a"] --> EXIT["«Salir de Yala en este dispositivo»"]
+  click FILA call showNode("signout-fila-privada")
+  click SP call showNode("signout-path")
+  click SH call showNode("signout-hoja")
+  click HP call showNode("signout-hoja-privada")
+  click EJ call showNode("signout-privado-ejecucion")
+  click WC call showNode("signout-welcome-condatos")
+  click H call showNode("alta-hero")
+  click C call showNode("alta-chooser")
+  click MX call showNode("signout-salidas-matriz")
+  click AL call showNode("signout-freshstart-alert")
+  click PRIV call showNode("alta-privado")
+  click RC call showNode("reentry-chooser")
+  click RV call showNode("signout-restaurar-vuelta")
+  click RE call showNode("signout-restaurar-errores")
+  click GB call showNode("alta-groupsgate-blocked")
+  click GU call showNode("reentry-guard")
+  click BLK call showNode("reentry-blocked")
+  click L5 call showNode("signout-hoja-legado5a")
+  click EXIT call showNode("signout-exityala")`
+  },
+
+  {
+    id: "r7",
+    title: "7 · Soy de la nube y cierro sesión",
+    lede: "El cierre `.cloud`: drena el outbox —**jamás descarta lo que no subió**—, arma el wipe por archivos y, desde R4, intenta el cambio de persona sin reiniciar. El cover «cierra y reabre» sigue existiendo como camino DEGRADADO, con el canario `swapReleaseAborted` como firma. Con las otras dos filas de la misma pantalla: vaciar datos y eliminar la cuenta.",
+    graph: `flowchart TD
+  ACT["Modo nube activo"] --> SES["Sesión caducada con cambios pendientes"]
+  ACT --> SP{"Camino de sign-out<br/>precedencia CONGELADA"}
+  SP --> SH["Hoja de alcance · 3 filas"]
+  SH --> PA["Push-all previo al cierre"]
+  PA --> SW{"¿Swap de persona sin relanzar?"}
+  SW -->|"sí"| SWAP["Cambio de persona in-process"]
+  SW -->|"no · degradado"| REL["Cover terminal + wipe al boot"]
+  REL --> MT{"Al reabrir: mount NEUTRO"}
+  VAC["Vaciar mis datos"]
+  DEL["Eliminar mi cuenta"]
+  click ACT call showNode("migracion-cloudactive")
+  click SES call showNode("degradado-sesion")
+  click SP call showNode("signout-path")
+  click SH call showNode("signout-hoja")
+  click PA call showNode("signout-pushall")
+  click SW call showNode("signout-swap")
+  click SWAP call showNode("signout-swap")
+  click REL call showNode("signout-relaunch")
+  click MT call showNode("degradado-neutro")
+  click VAC call showNode("signout-vaciar")
+  click DEL call showNode("signout-borrarcuenta")`
+  },
+
+  {
+    id: "r8",
+    title: "8 · Paso de privada a la nube",
+    lede: "La migración desde Ajustes → «Dónde viven tus datos»: dry-run → consent → sign-in → claim → upload → verify → cutover → relanzamiento. Con el Retomar, el re-kick y el rollback con copy por MOTIVO. El cutover tiene cuatro sub-estados en orden estricto y es la frontera del rollback.",
+    graph: `flowchart TD
+  FILA["Ajustes · «Dónde viven tus datos»"] --> IDLE["Almacenamiento · estado iCloud"]
+  IDLE --> SD{"Paso de auth"}
+  SD --> SI["Sign-in"]
+  SI --> CON["Consentimiento"]
+  CON --> CONF["Doble confirmación destructiva"]
+  CONF --> ADC["Variante ADOPT · marcador de líder"]
+  ADC --> PROG["Migración en curso · fases journaleadas"]
+  PROG --> CUT["Cutover · 4 sub-estados"]
+  CUT --> REL["Card BLOQUEANTE de relanzamiento"]
+  REL --> MM{"Guard de mount-mismatch"}
+  MM --> ACT["Modo nube activo"]
+  PROG -->|"falla"| FALL["Rollback · copy por MOTIVO"]
+  SR["Sin red"]
+  CLM["Otro device lidera"]
+  SES["Sesión caducada"]
+  KS{{"Kill-switch remoto"}}
+  click FILA call showNode("migracion-fila")
+  click IDLE call showNode("migracion-idle")
+  click SD call showNode("migracion-signin-decision")
+  click SI call showNode("alta-signin")
+  click CON call showNode("alta-consent")
+  click CONF call showNode("migracion-confirm")
+  click ADC call showNode("migracion-adopt-copy")
+  click PROG call showNode("migracion-progreso")
+  click CUT call showNode("migracion-cutover")
+  click REL call showNode("migracion-relaunch")
+  click MM call showNode("degradado-mount")
+  click ACT call showNode("migracion-cloudactive")
+  click FALL call showNode("migracion-fallo")
+  click SR call showNode("degradado-sinred")
+  click CLM call showNode("degradado-claiming")
+  click SES call showNode("degradado-sesion")
+  click KS call showNode("degradado-killswitch")`
+  },
+
+  {
+    id: "r9",
+    title: "9 · Vuelvo de la nube a privada",
+    lede: "La reversa: las fases `reverse*` y el cuarteto de cierre, con lo que ve el usuario en cada una. **La frontera del rollback es el montaje del mirror**: antes se puede volver atrás, después ya no.",
+    graph: `flowchart TD
+  ACT["Modo nube activo"] --> FILA["Ajustes · «Dónde viven tus datos»"]
+  FILA --> CARD["Card «Volver a iCloud»"]
+  CARD --> CONF["Doble confirmación de reversa"]
+  CONF --> FAS["Fases de la reversa"]
+  FAS --> REL["Relanzamiento de reversa"]
+  REL --> MM{"Guard de mount-mismatch"}
+  MM --> CIE["Cuarteto de cierre + terminal"]
+  CIE --> IDLE["Almacenamiento · estado iCloud"]
+  click ACT call showNode("migracion-cloudactive")
+  click FILA call showNode("migracion-fila")
+  click CARD call showNode("reversa-card")
+  click CONF call showNode("reversa-confirm")
+  click FAS call showNode("reversa-fases")
+  click REL call showNode("reversa-relaunch")
+  click MM call showNode("degradado-mount")
+  click CIE call showNode("reversa-cierre")
+  click IDLE call showNode("migracion-idle")`
+  },
+
+  {
+    id: "r10",
+    title: "10 · Estoy de visita en el móvil de otra persona",
+    lede: "La sesión secundaria y sus fronteras. De las **cuatro cosas que la visita puede intentar desde el Welcome, solo UNA tiene puerta**: crear un grupo. Las otras tres —entrar a su cuenta, crear una cuenta nueva y «privacidad total»— pasan, y la última escribe en el dominio del dueño sin que nada la detenga. Cuatro hallazgos medidos viven aquí.",
+    graph: `flowchart TD
+  GU{"Guard cross-cuenta"} --> SEC["Confirmación de sesión secundaria"]
+  SEC --> SLOT["El hueco de invitada ya es de otra"]
+  SEC --> REL["Adopt completo · «Cierra y reabre»"]
+  REL --> ST{"De quién es cada cajón"}
+  ST --> SHELL["La app que ve mientras baja su cuenta"]
+  SHELL --> AJU["Los cuatro ajustes del dueño que no toca"]
+  AJU --> FRO{"La frontera de los cuatro guards"}
+  FRO --> VAC["«Vaciar mis datos»: la puerta de vuelta"]
+  VAC --> C["Chooser · 3 ramas"]
+  C --> VC["El chooser con la sesión de visita viva"]
+  VC -->|"Vengo por un grupo"| GC["¿Cómo empiezas con tu grupo?"]
+  GC --> CG["Intento 1 · «Crear mi primer grupo»"]
+  CG --> GBLK["La ÚNICA con puerta: bloqueada"]
+  VC -->|"Ya tengo una cuenta"| RE["Intento 2a · entrar a MI cuenta"]
+  RE --> BLK["Bloqueado · datos de otra identidad"]
+  VC -->|"Restaurar de iCloud"| RI["Intento 2b · sobre un store sin espejo"]
+  VC -->|"cuenta nube nueva"| CN["Intento 3 · escribe el FARO del dueño"]
+  VC -->|"privacidad total"| PRIV["Intento 4 · la rama SIN puerta"]
+  PRIV --> PAL["¿Salta el alert de borrado?"]
+  PAL --> PON["El onboarding en el móvil del dueño"]
+  SP{"Camino de sign-out"} --> SH["Hoja de alcance"]
+  SH --> SAL["La frontera de salida"]
+  click GU call showNode("reentry-guard")
   click SEC call showNode("reentry-secondary")
   click SLOT call showNode("reentry-slotocupado")
-  click CW call showNode("reentry-consentwrite")
-  click RLS call showNode("reentry-secondary")
-  click AD call showNode("reentry-adopt")
-  click POLL call showNode("reentry-adopt")
-  click AR call showNode("reentry-autoresume")
-  click RL call showNode("reentry-relaunch")
-  click WL2 call showNode("alta-waitingleader")
-  click ERR2 call showNode("alta-error-transient")
-
-  classDef unreachable stroke-dasharray: 5 5,opacity:0.65
-  class RES unreachable`
+  click REL call showNode("reentry-relaunch")
+  click ST call showNode("visita-stores")
+  click SHELL call showNode("visita-shell")
+  click AJU call showNode("degradado-ajustesdueno")
+  click FRO call showNode("visita-frontera-prefs")
+  click VAC call showNode("visita-vaciar")
+  click C call showNode("alta-chooser")
+  click VC call showNode("visita-chooser")
+  click GC call showNode("alta-groupschooser")
+  click CG call showNode("visita-crear-grupo")
+  click GBLK call showNode("alta-groupsgate-blocked")
+  click RE call showNode("visita-reentrar-cuenta")
+  click BLK call showNode("reentry-blocked")
+  click RI call showNode("visita-restaurar-icloud")
+  click CN call showNode("visita-cuenta-nueva")
+  click PRIV call showNode("visita-privado")
+  click PAL call showNode("visita-privado-alert")
+  click PON call showNode("visita-privado-onboarding")
+  click SP call showNode("signout-path")
+  click SH call showNode("signout-hoja")
+  click SAL call showNode("visita-salida")`
   },
 
   {
-    id: "migracion",
-    title: "3 · Migración iCloud → nube",
-    lede: "Ajustes «Dónde viven tus datos»: dry-run → consent → sign-in → claim → upload → verify → cutover → relanzamiento. Con Retomar / re-kick y el rollback con copy por motivo.",
+    id: "r11",
+    title: "11 · El dueño recupera su móvil",
+    lede: "La salida de la visita y la vuelta del dueño. El cierre secundario **solo empuja UN outbox de los dos** mientras el wipe borra los dos archivos, cualquier bloqueo se le presenta a la visita como permanente («revisa tu conexión»), y el dueño reabre encontrándose el Welcome en vez de su app. Con el inventario medido de lo que la visita deja atrás.",
     graph: `flowchart TD
-  ROW{"Fila «Dónde viven tus datos»<br/>StorageRowGateLogic"} -->|"oculta"| NADA(["Sin acceso"])
-  ROW -->|"remoto ON · o usuario engaged"| IDLE["Almacenamiento · estado iCloud"]
-  IDLE --> DRY["Ver qué se migraría<br/>(dry-run, no escribe nada)"]
-  IDLE --> MARK{"¿Marcador de un líder<br/>en el mirror?"}
-  MARK -->|sí| ADOPTC["Copy de ADOPTAR"]
-  MARK -->|no| MIGC["Copy de MIGRAR"]
-  ADOPTC --> CON3["Consentimiento"]
-  MIGC --> CON3
-  CON3 -->|".adopt ⇒ sin doble confirmación"| AUTH
-  CON3 -->|".migration"| CONF["Doble confirmación destructiva"]
-  CONF --> AUTH{"Paso de auth · C-7"}
-  AUTH -->|"sesión viva"| RUN
-  AUTH -->|"sin sesión"| CHOOSE["Chooser Apple | Google"]
-  AUTH -->|"cuenta ajena"| BLK["Botón deshabilitado<br/>+ nota de cuenta ajena"]
-  CHOOSE --> RUN["Migración en curso<br/>(fases journaleadas)"]
-  RUN --> CUT["Cutover · 4 sub-estados"]
-  RUN -->|"fallo pre-cutover"| FAIL["failedRollback<br/>copy por MOTIVO"]
-  CUT -->|"veredicto bloquea la entrada"| FAIL
-  CUT --> RLM["Card bloqueante<br/>«cierra y vuelve a abrir»"]
-  RLM --> CA["Modo nube activo"]
-  FAIL -->|Reintentar| IDLE
-  RUN -.->|"kill · sin red"| RESUME["Retomar: boot resume,<br/>re-kick de foreground, empujón cada 30 s"]
-  RESUME --> RUN
-
-  click ROW call showNode("migracion-fila")
-  click IDLE call showNode("migracion-idle")
-  click DRY call showNode("migracion-idle")
-  click MARK call showNode("migracion-adopt-copy")
-  click ADOPTC call showNode("migracion-adopt-copy")
-  click MIGC call showNode("migracion-idle")
-  click CON3 call showNode("alta-consent")
-  click CONF call showNode("migracion-confirm")
-  click AUTH call showNode("migracion-signin-decision")
-  click CHOOSE call showNode("migracion-signin-decision")
-  click BLK call showNode("migracion-signin-decision")
-  click RUN call showNode("migracion-progreso")
-  click RESUME call showNode("migracion-progreso")
-  click CUT call showNode("migracion-cutover")
-  click RLM call showNode("migracion-relaunch")
-  click FAIL call showNode("migracion-fallo")
-  click CA call showNode("migracion-cloudactive")`
-  },
-
-  {
-    id: "reversa",
-    title: "4 · Reversa nube → iCloud",
-    lede: "Las fases `reverse*` y el cuarteto de cierre, con lo que ve el usuario en cada una. La frontera del rollback es el montaje del mirror.",
-    graph: `flowchart TD
-  CA2["Modo nube activo"] --> RC{"Card «Volver a iCloud»<br/>gate de elegibilidad"}
-  RC -->|no elegible| INE(["Texto de no elegible"])
-  RC -->|elegible| RCONF["Doble confirmación"]
-  RCONF --> P1["reverseClaimLeader"]
-  P1 --> P2["reverseDrainAll"]
-  P2 --> P3["reverseVerify"]
-  P3 --> P4["reverseFreezeBackend"]
-  P4 --> P5["reverseMountMirror"]
-  P5 --> RLR["Relanzamiento (toICloud)"]
-  RLR --> P6["reverseReconcile · 4 sub-estados"]
-  P6 --> P7["reverseUpload"]
-  P7 --> FIN["icloudActive<br/>(el deriver lo pinta como idle:<br/>vuelve a ofrecer migrar)"]
-  P1 -.->|"fallo PRE-mount"| RFAIL["reverseFailedRollback<br/>el device sigue en nube limpia"]
-  P3 -.-> RFAIL
-  P6 -.->|"fallo POST-mount"| HOLD["Sostener + resume idempotente<br/>(el mirror ya está vivo)"]
-  HOLD --> P6
-
-  click CA2 call showNode("migracion-cloudactive")
-  click RC call showNode("reversa-card")
-  click INE call showNode("reversa-card")
-  click RCONF call showNode("reversa-confirm")
-  click P1 call showNode("reversa-fases")
-  click P2 call showNode("reversa-fases")
-  click P3 call showNode("reversa-fases")
-  click P4 call showNode("reversa-fases")
-  click P5 call showNode("reversa-fases")
-  click P6 call showNode("reversa-fases")
-  click P7 call showNode("reversa-fases")
-  click HOLD call showNode("reversa-fases")
-  click RLR call showNode("reversa-relaunch")
-  click FIN call showNode("reversa-cierre")
-  click RFAIL call showNode("reversa-cierre")`
-  },
-
-  {
-    id: "signout",
-    title: "5 · Sign-out en `.cloud` + las tres borradas",
-    lede: "Camino de cierre por modo (drena el outbox, arma el wipe, la fila «Salir de Yala en este dispositivo») más eliminar cuenta y vaciar datos. Desde R4 el cierre `.cloud` intenta el swap in-process: el cover «cierra y reabre» sigue existiendo como camino DEGRADADO, con el canario `swapReleaseAborted` como firma.",
-    graph: `flowchart TD
-  AJ["Ajustes · Seguridad y cuenta"] --> PATH{"Precedencia CONGELADA<br/>CloudSignOutFlowLogic.path"}
-  PATH -->|"secundaria M1"| SEC2["signOutSecondary"]
-  PATH -->|".cloud"| CLOUD["cloudSecureSignOut"]
-  PATH -->|"flag ∧ sesión backend"| GRP["groupsOnlySignOut<br/>+ fila «Salir de Yala»"]
-  PATH -->|else| PRIV2["privateReset<br/>no se toca nada"]
-  CLOUD --> HOJA["Hoja de alcance · 3 filas"]
-  SEC2 --> HOJA
-  GRP --> HOJA
-  PRIV2 --> HOJA
-  HOJA --> PUSH{"Push-all previo<br/>(jamás descartar)"}
-  PUSH -->|"outbox vivo = 0"| ARM["Armar el wipe<br/>+ cover terminal"]
-  PUSH -->|"bloqueo transitorio"| RETRY["Retry interno<br/>45 s de presupuesto, cada 2 s"]
-  PUSH -->|"bloqueo permanente 401/403"| PERM["Error inmediato<br/>sin reintentar"]
-  RETRY --> PUSH
-  RETRY -->|"presupuesto agotado"| TRANS["«Un momento más»"]
-  ARM --> SWAP{"R4 · swap in-process<br/>(solo cierre .cloud)<br/>mount sin mirror ∧ release VERIFICADO"}
-  SWAP -->|"swapped"| WELC(["Store vaciado + remonte NEUTRO<br/>→ Welcome, sin relanzar"])
-  SWAP -->|"mount con mirror · release abortado · remonte falló"| BOOT["Camino DEGRADADO:<br/>cover terminal + boot pre-mount<br/>borra ARCHIVOS, nunca filas"]
-  EXIT["Salir de Yala en este dispositivo"] --> PRIV2
-  DEL["Eliminar mi cuenta"] --> HOJA2["Hoja + hasta 5 líneas condicionales"]
-  HOJA2 --> FINAL["Segundo diálogo irreversible"]
-  WIPE2["Vaciar mis datos"] --> HOJA3["Hoja de vaciado<br/>+ residual multi-device en copy"]
-
-  click AJ call showNode("signout-path")
-  click PATH call showNode("signout-path")
-  click SEC2 call showNode("signout-path")
-  click CLOUD call showNode("signout-path")
-  click GRP call showNode("signout-path")
-  click PRIV2 call showNode("signout-path")
-  click HOJA call showNode("signout-hoja")
-  click PUSH call showNode("signout-pushall")
-  click RETRY call showNode("signout-pushall")
-  click PERM call showNode("signout-pushall")
-  click TRANS call showNode("signout-pushall")
-  click ARM call showNode("signout-relaunch")
-  click SWAP call showNode("signout-swap")
-  click WELC call showNode("signout-swap")
-  click BOOT call showNode("signout-relaunch")
-  click EXIT call showNode("signout-exityala")
-  click DEL call showNode("signout-borrarcuenta")
-  click HOJA2 call showNode("signout-borrarcuenta")
-  click FINAL call showNode("signout-borrarcuenta")
-  click WIPE2 call showNode("signout-vaciar")
-  click HOJA3 call showNode("signout-vaciar")`
-  },
-
-  {
-    id: "onboarding",
-    title: "6 · Onboarding de propósito + alta solo-grupos",
-    lede: "La card «Solo grupos» oculta en modo nube (A6) y el camino solo-grupos. Desde C2 las CUATRO puertas de Grupos comparten una sola tabla —educativo → sign-in → consent → terminal por entrada—, el empty state dice en CINCO copys qué es lo que falta, y con el canal apagado ya no nace un grupo que no sirve para nada (C4).",
-    graph: `flowchart TD
-  PUR["Paso «Propósito»"] --> SHOW{"¿Se pinta la card<br/>«Dividir gastos con amigos»?"}
-  SHOW -->|"no es flujo inicial"| NO1(["No se pinta"])
-  SHOW -->|"modo .cloud (A6)"| NO2(["No se pinta"])
-  SHOW -->|"flujo inicial ∧ .icloud"| CARD["Card visible"]
-  CARD --> BLOCK{"¿El tap queda bloqueado?"}
-  BLOCK -->|"canal de Grupos ON"| SEL["selectedUsageMode = .groupsOnly"]
-  BLOCK -->|"canal OFF ∧ sin cuenta iCloud"| MURO["Alert «necesitas iCloud»"]
-  BLOCK -->|"canal OFF ∧ con cuenta"| SEL
-  SEL --> GO["Cierre solo-grupos<br/>→ tab Grupos"]
-  ADOPT["Entrar al tab Grupos"] --> ADOPT1{"G2 · ya no hay código beta:<br/>entrar ES adoptar el dominio"}
-  ADOPT1 --> EMPTY
-  PUR --> OTRAS["Control · Solo gastos<br/>(selectedCard: 4 modos → 3 cards)"]
-  OTRAS --> NORM["Cierre normal"]
-  GO --> EDU["Educativo del tab Grupos"]
-  EDU --> CTA{"¿CTA de sign-in<br/>en el último paso?"}
-  CTA -->|"canal ON ∧ sin sesión"| SIGN["Sign-in de grupos"]
-  CTA -->|"con sesión · canal OFF"| CONT(["Continuar"])
-  EDU --> EMPTY{"Empty state del tab · 5 casos"}
-  EMPTY -->|"nunca vio el educativo"| STD
-  EMPTY -->|"sin sesión · ya tuvo cuenta"| REENTRY["«Tus grupos están en tu cuenta»"]
-  EMPTY -->|"sin sesión · nunca tuvo"| NEWACC["«Crea tu cuenta de Yala»"]
-  EMPTY -->|"sesión sin consent"| NEEDC["«Un último paso»"]
-  EMPTY -->|"no falta nada"| STD["«Sin grupos» · CTA crear"]
-  STD --> CREATE{"Crear grupo · routing"}
-  REENTRY --> SIGN
-  NEWACC --> SIGN
-  NEEDC --> CONS
-  PUERTAS{"C2 · las CUATRO puertas<br/>educativo → sign-in → consent → terminal"}
-  CREATE -->|"canal OFF (C4)"| OFF["Aviso: no nace nada"]
-  CREATE -->|"sin sesión"| SIGN
-  CREATE -->|"sin consent"| CONS["Consent de Grupos"]
-  CONS --> CUENTA(["El permiso queda en tu CUENTA (C1)"])
-  CREATE -->|"listo"| BE["Form (canal backend)"]
-
-  click PUR call showNode("onboarding-purpose")
-  click SHOW call showNode("onboarding-purpose")
-  click CARD call showNode("onboarding-purpose")
-  click OTRAS call showNode("onboarding-purpose")
-  click BLOCK call showNode("onboarding-muro")
-  click MURO call showNode("onboarding-muro")
-  click SEL call showNode("onboarding-groupsonly")
-  click GO call showNode("onboarding-groupsonly")
-  click NORM call showNode("alta-postrelaunch")
-  click EDU call showNode("onboarding-educativo")
-  click CTA call showNode("onboarding-educativo")
-  click EMPTY call showNode("onboarding-empty")
-  click REENTRY call showNode("onboarding-empty")
-  click NEWACC call showNode("onboarding-empty")
-  click NEEDC call showNode("onboarding-empty")
-  click STD call showNode("onboarding-empty")
-  click PUERTAS call showNode("onboarding-puertas")
-  click ADOPT call showNode("onboarding-adopcion")
-  click ADOPT1 call showNode("onboarding-adopcion")
-  click CREATE call showNode("onboarding-crear")
-  click OFF call showNode("onboarding-canalapagado")
-  click BE call showNode("onboarding-crear")
-  click CONS call showNode("onboarding-consent")
-  click CUENTA call showNode("onboarding-consentcuenta")
-  click SIGN call showNode("onboarding-groupssignin")`
-  },
-
-  {
-    id: "degradado",
-    title: "7 · Estados degradados (transversales)",
-    lede: "Kill-switch remoto, sesión caducada, sin red, claim en progreso, provider mismatch, el mount NEUTRO que el relanzamiento cero introduce y el guard de mount-mismatch — que NO tiene pantalla, y eso es un hallazgo.",
-    graph: `flowchart TD
-  KS["Kill-switch remoto puesto"] --> KS1["Desaparece la card nube de «Soy nuevo»"]
-  KS --> KS2["Desaparecen las cards de sign-in de re-entrada"]
-  KS --> KS3{"Fila de Almacenamiento"}
-  KS3 -->|"usuario engaged"| KS4["Se CONSERVA<br/>(su panel de resume y reversa)"]
-  KS3 -->|"no engaged"| KS5["Oculta"]
-  KS --> KS6["El faro deja de encaminar<br/>⇒ residual del 2º device, declarado"]
-
-  EXP["Sesión caducada"] --> EXP1{"¿Hay cambios pendientes?"}
-  EXP1 -->|"pendientes = 0"| EXP2["Sin banner · «al día»"]
-  EXP1 -->|"pendientes > 0"| EXP3["Banner S11 con el conteo<br/>+ CTA de re-firma determinista"]
-
-  NET["Sin red"] --> NET1["Alta: error con Reintentar"]
-  NET --> NET2["Adopt: auto-resume"]
-  NET --> NET3["Migración: aparcada + re-kick;<br/>tope por TIEMPO, no por intentos"]
-
-  CIP["claiming_in_progress"] --> CIP1["Esperar al líder<br/>(un seguidor nunca siembra ni adopta)"]
-
-  PM["Provider mismatch"] --> PM1["Pantalla R9 · sesión soltada, sin claim"]
-
-  MNT["Par .cloud escrito, mount con mirror ADJUNTO"] --> MNT1["El motor NO arranca"]
-  MNT1 --> MNT2(["SIN pantalla propia:<br/>solo el breadcrumb personalMountMismatch"])
-
-  NEU["Mount NEUTRO (R2/R4)"] --> NEU1["Sin archivo de store, o neutro ARMADO<br/>tras el cierre de sesión · chooser no visto"]
-  NEU1 --> NEU2["Elegir nube: NO remonta nada<br/>(el neutro ya es cloudKitDatabase .none)"]
-  NEU1 --> NEU3["Elegir privado · restaurar · invitación:<br/>«Un último paso: reabre Yala»"]
-  NEU1 --> NEU4["El aviso de iCloud SÍ le habla<br/>(el neutro no es un mount de modo nube)"]
-
-  VIS["Sesión de visita viva (M1)"] --> VIS1{"Los 4 ajustes del dueño<br/>que la visita no toca"}
-  LEG["Grupos de la era CloudKit"] --> LEG1{"Barrido del arranque<br/>sin superficie de usuario"}
-
-  click KS call showNode("degradado-killswitch")
-  click KS1 call showNode("degradado-killswitch")
-  click KS2 call showNode("degradado-killswitch")
-  click KS3 call showNode("migracion-fila")
-  click KS4 call showNode("migracion-fila")
-  click KS5 call showNode("migracion-fila")
-  click KS6 call showNode("alta-faro")
-  click EXP call showNode("degradado-sesion")
-  click EXP1 call showNode("degradado-sesion")
-  click EXP2 call showNode("degradado-sesion")
-  click EXP3 call showNode("degradado-sesion")
-  click NET call showNode("degradado-sinred")
-  click NET1 call showNode("degradado-sinred")
-  click NET2 call showNode("reentry-autoresume")
-  click NET3 call showNode("migracion-progreso")
-  click CIP call showNode("degradado-claiming")
-  click CIP1 call showNode("degradado-claiming")
-  click PM call showNode("reentry-mismatch")
-  click PM1 call showNode("reentry-mismatch")
-  click MNT call showNode("degradado-mount")
-  click MNT1 call showNode("degradado-mount")
-  click MNT2 call showNode("degradado-mount")
-  click NEU call showNode("degradado-neutro")
-  click NEU1 call showNode("degradado-neutro")
-  click NEU2 call showNode("degradado-neutro")
-  click NEU3 call showNode("alta-mirrorrelaunch")
-  click NEU4 call showNode("degradado-neutro")
-  click VIS call showNode("degradado-ajustesdueno")
-  click VIS1 call showNode("degradado-ajustesdueno")
-  click LEG call showNode("degradado-legacyretire")
-  click LEG1 call showNode("degradado-legacyretire")
-
-  classDef unreachable stroke-dasharray: 5 5,opacity:0.65
-  class MNT2 unreachable`
+  AJU["La visita busca la salida"] --> SP{"Camino de sign-out"}
+  SP --> SH["Hoja de alcance"]
+  SH --> HJ["La hoja de la despedida"]
+  HJ --> PA["Push-all previo"]
+  PA --> VPA["Lo que Yala sí sube"]
+  VPA --> NOG{"Lo que NO sube: el outbox de Grupos"}
+  NOG --> ARM{"Qué se arma, y qué JAMÁS"}
+  ARM --> COV["«Ya casi está — reinicia Yala»"]
+  COV --> REL["Cover terminal de cierre"]
+  REL --> BOOT{"El arranque siguiente"}
+  BOOT --> WEL["El dueño se encuentra el Welcome"]
+  WEL --> MT{"Mount NEUTRO"}
+  MT --> RES["«Restaurar de iCloud»: vuelve a su app"]
+  RES --> QUE{"Qué queda de la visita"}
+  QUE --> AJD["Los cuatro ajustes del dueño"]
+  AJD --> CONS["El permiso de Grupos se va con la visita"]
+  BLQ["«No pudimos cerrar tu sesión»"]
+  CAD{"La sesión de la visita caducó"}
+  KILL{"Salida a medias: las tres ventanas"}
+  AB{"Si el borrado falla"}
+  click AJU call showNode("vuelta-salida-ajustes")
+  click SP call showNode("signout-path")
+  click SH call showNode("signout-hoja")
+  click HJ call showNode("vuelta-hoja")
+  click PA call showNode("signout-pushall")
+  click VPA call showNode("vuelta-pushall")
+  click NOG call showNode("vuelta-gruposnoempuja")
+  click ARM call showNode("vuelta-armado")
+  click COV call showNode("vuelta-cover")
+  click REL call showNode("signout-relaunch")
+  click BOOT call showNode("vuelta-boot")
+  click WEL call showNode("vuelta-welcome")
+  click MT call showNode("degradado-neutro")
+  click RES call showNode("vuelta-restaurar")
+  click QUE call showNode("vuelta-queda")
+  click AJD call showNode("degradado-ajustesdueno")
+  click CONS call showNode("vuelta-consent")
+  click BLQ call showNode("vuelta-bloqueado")
+  click CAD call showNode("vuelta-sesioncaducada")
+  click KILL call showNode("vuelta-kill")
+  click AB call showNode("vuelta-abort")`
   }
 ];
-
-// ══════════════════════════════════════════════════════════════════════════════
-// AUTO-AUDITORÍA DE COMPLETITUD
-//
-// `celdas` = clases de equivalencia de la tabla, contadas LEYENDO el `switch`/predicado del fichero.
-// `tests`  = número de `@Test` MEDIDO con grep en la suite indicada el 2026-08-09 (no es el número de
-//            celdas: una celda puede tener varios tests y un test puede barrer varias).
-// `dibujados` = branches que aparecen como arista o nodo en algún diagrama de arriba.
-// `delta` = celdas NO dibujadas. Un delta > 0 NO es un fallo: es un hueco DICHO, con su motivo.
-// ══════════════════════════════════════════════════════════════════════════════
 
 window.ATLAS_COVERAGE = [
   { logic: "AccountClaimDecision.decide", file: "Yala/Services/CloudSync/AccountClaimDecision.swift:71",

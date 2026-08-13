@@ -186,44 +186,53 @@ for (const f of FLOWS) {
   console.log(`OK    l10n   ${entries} nodos · ${keys} citas de key verificadas contra es.lproj`);
 }
 
-// 10) STORYBOARD: frames reales y completitud por flujo
+// 10) STORYBOARD: frames reales y completitud por RECORRIDO
+//
+// F6: el eje del Atlas pasó de MECANISMO a PERSONA, y con él esta comprobación. Antes derivaba el flujo
+// «casa» de un panel del PREFIJO de su id (`k.split("-")[0]`), que funcionaba porque los siete flujos y los
+// siete prefijos eran la misma cosa. Ya no: un panel vive en varios recorridos y su id es su nombre propio,
+// no su clasificación. La regla nueva no depende del nombre y es MÁS fuerte: todo panel con pantalla
+// aparece en AL MENOS UN recorrido. Un panel que se caiga del reparto sigue siendo un fallo, no un hueco
+// silencioso — que es lo único que esta comprobación tiene que garantizar.
 {
-  const inStoryboard = {}; // flowId → Set(nodeIds)
+  const enAlgunRecorrido = new Set();
   for (const [fid, sb] of Object.entries(SB)) {
-    if (!FLOWS.some(f => f.id === fid)) { bad("story ", `storyboard para flujo inexistente: ${fid}`); continue; }
-    inStoryboard[fid] = new Set();
+    if (!FLOWS.some(f => f.id === fid)) { bad("story ", `storyboard para recorrido inexistente: ${fid}`); continue; }
     for (const tr of sb.tracks) {
       for (const id of tr.frames) {
         if (!NODES[id]) bad("story ", `${fid}: frame "${id}" no existe en nodes.js`);
-        inStoryboard[fid].add(id);
+        enAlgunRecorrido.add(id);
       }
     }
   }
   for (const f of FLOWS) {
-    if (!SB[f.id]) { bad("story ", `el flujo ${f.id} no tiene storyboard`); continue; }
+    if (!SB[f.id]) { bad("story ", `el recorrido ${f.id} no tiene storyboard`); continue; }
   }
   let covered = 0;
   for (const [k, n] of Object.entries(NODES)) {
     if (!n.shot) continue;
-    const home = k.split("-")[0];
-    if (!inStoryboard[home] || !inStoryboard[home].has(k)) {
-      bad("story ", `${k} tiene pantalla y NO aparece en el storyboard de su flujo (${home})`);
+    if (!enAlgunRecorrido.has(k)) {
+      bad("story ", `${k} tiene pantalla y NO aparece en NINGÚN recorrido`);
     } else covered++;
   }
-  console.log(`OK    story  ${covered} nodos con pantalla presentes en el storyboard de su flujo`);
+  console.log(`OK    story  ${covered} nodos con pantalla presentes en al menos un recorrido`);
 }
 
 // 11) CONTEO ESPERADO — al añadir o quitar un nodo, se actualiza a mano: la fricción ES el aviso.
 {
-  // F5 (2026-08-12): 66 → 82 paneles. Los 16 nuevos son la superficie que las olas W/G/C/M trajeron y
-  // que ningún bloque de arriba podía echar en falta — el pin detecta una key mal citada, no una pantalla
-  // que nadie añadió.
+  // F6 (2026-08-12): 82 → 154 paneles. Los 72 nuevos son los recorridos que el eje por MECANISMO no
+  // contaba de principio a fin: la invitación entera (22, que no tenía UN SOLO panel pese a que
+  // `InviteRecoveryView.swift` existe), la visita en el móvil de otra persona (13), la vuelta del dueño
+  // (15), la salida de la persona privada (9) y la re-entrada en un móvil nuevo (13).
   //
-  // La pasada de captura del MISMO día subió las imágenes de 32 a 35 (el Hero, el chooser, el sub-chooser,
-  // el consent, los dos intros y el educativo RE-capturados sobre el árbol de hoy, más tres pantallas que
-  // el Atlas no tenía: el chooser de grupos, la puerta cerrada y el sign-in de Grupos). `deviceOnly` baja
-  // a 29: 25 device-only de verdad + CUATRO `pending: true` que el sim puede dar y no se llegaron a hacer.
-  const EXPECTED = { panels: 82, shots: 64, images: 35, deviceOnly: 29, l10nNodes: 64 };
+  // `images` NO sube: los 72 nuevos nacen SIN captura, y eso está declarado, no escondido. 47 de ellos
+  // tienen pantalla ⇒ `deviceOnly` sube de 29 a 76: **37 device-only de verdad** (el sim no puede producir
+  // el estado) y **39 `pending: true`** (el sim SÍ puede y esta pasada no abrió el simulador). Los 27
+  // `pending` nuevos son el guion de la próxima pasada de captura.
+  //
+  // Que `images` siga en 35 con 111 paneles con pantalla es el hueco MÁS GRANDE del Atlas hoy, y por eso
+  // se cuenta aquí en vez de dejarlo implícito.
+  const EXPECTED = { panels: 154, shots: 111, images: 35, deviceOnly: 76, l10nNodes: 113 };
   const actual = {
     panels: Object.keys(NODES).length,
     shots: shots.size,

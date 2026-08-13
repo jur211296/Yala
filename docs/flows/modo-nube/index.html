@@ -12,12 +12,23 @@
   código y la divergencia se ANOTA en el frame del nodo con la marca ⚠︎.
 
   ANCLAJE: medido el 2026-08-09 contra HEAD 9d6f0f1c (branch 2.0.5). Chip F3 (2026-08-11): los flujos 1,
-  2, 5 y 7 están re-derivados contra HEAD 24b4bc91. Chip F5 (2026-08-12, HEAD 6c6eb3fe): re-derivados los
-  flujos 1, 2, 6 y 7 tras las olas W/G/C/M (19 commits); los flujos 3 y 4 NO se tocan — medido con
-  `git diff 724f661e..HEAD`, que no roza StorageSettingsView, MigrationStateMachine, CloudMigrationController
-  ni MigrationBootDecision. Chip F4 (2026-08-11): REDISEÑO DE PRESENTACIÓN — storyboard por
-  flujo (frames visibles sin clic) + mapa con layout calculado (elkjs) — sin re-derivar narrativa; lo
-  ÚNICO nuevo de contenido son las keys de l10n por pantalla (data/l10n.js), medidas del código.
+  2, 5 y 7 re-derivados contra HEAD 24b4bc91. Chip F4 (2026-08-11): REDISEÑO DE PRESENTACIÓN — storyboard
+  (frames visibles sin clic) + mapa con layout calculado (elkjs) — sin re-derivar narrativa; lo único nuevo
+  de contenido fueron las keys de l10n por pantalla (data/l10n.js). Chip F5 (2026-08-12, HEAD 6c6eb3fe):
+  re-derivados los flujos 1, 2, 6 y 7 tras las olas W/G/C/M (19 commits).
+
+  CHIP F6 (2026-08-12, HEAD 5bbb5690): CAMBIO DE EJE. El Atlas deja de estar indexado por MECANISMO (las
+  siete máquinas del código) y pasa a estarlo por PERSONA: once recorridos que empiezan en «soy esta
+  persona, tengo este móvil, toco este botón». Decisión del owner, con dos consecuencias: (1) los errores
+  viven DENTRO del recorrido donde te los encuentras — no hay pestaña «degradados»; (2) los ids de los
+  paneles NO se renombran: el id es el nombre propio del panel, no su clasificación, así que un panel puede
+  vivir en varios recorridos y el reparto está en data/storyboard.js, y solo ahí.
+
+  F6 añadió 72 paneles (82 → 154), derivados del código en cinco pasadas con refutación adversarial: solo
+  15 de los 72 sobrevivieron intactos a la primera refutación. El mayor hueco cerrado es el recorrido de la
+  INVITACIÓN, que no tenía un solo panel pese a que InviteRecoveryView.swift existe. Los 24 hallazgos de
+  producto que salieron de la derivación NO viven aquí: están en $VAULT/Bugs/, índice
+  `_hallazgos-atlas-eje-persona-2026-08-12.md`.
 
   OFFLINE: `vendor/elk.bundled.js` (elkjs 0.11.0, 1,6 MB) es la única dependencia y está vendorizada
   (sustituye a mermaid.min.js, 2,5 MB, retirado en F4). Cero URLs remotas: doble clic y funciona.
@@ -302,10 +313,10 @@
 <header>
   <h1>Atlas de Flujos · Modo Nube</h1>
   <div class="anchor">
-    <span>HEAD <b>6c6eb3fe</b> · flujos 1·2·6·7 re-derivados en F5 · <b>3 y 4 intactos</b> (diff cero desde F4)</span>
+    <span>HEAD <b>5bbb5690</b> · <b>F6</b>: el eje pasa de MECANISMO a <b>PERSONA</b> — 11 recorridos, 154 paneles (+72)</span>
     <span>branch <b>2.0.5</b></span>
-    <span>medido <b>2026-08-09</b> · F3 <b>2026-08-11</b> · storyboard F4 <b>2026-08-11</b> · refresco F5 <b>2026-08-12</b></span>
-    <span>capturas sim (iPhone 17 Pro · Yala Dev · <b>Debug-Dev</b> · staging): <b>2026-08-10 / 2026-08-11</b> · pasada F5 <b>2026-08-12</b> (8 rehechas + 3 nuevas)</span>
+    <span>medido <b>2026-08-09</b> · F3 <b>2026-08-11</b> · storyboard F4 <b>2026-08-11</b> · refresco F5 <b>2026-08-12</b> · eje F6 <b>2026-08-12</b></span>
+    <span>capturas sim (iPhone 17 Pro · Yala Dev · <b>Debug-Dev</b> · staging): <b>2026-08-10 / 2026-08-11 / 2026-08-12</b> — <b>35 imágenes para 111 pantallas</b>: los 72 paneles de F6 nacen sin captura y están declarados como <code>pending</code> o <code>device-only</code>, nunca vacíos</span>
   </div>
   <div class="rule">
     <b>Regla madre.</b> Cada frame de este Atlas sale de una celda REAL de una tabla de lógica pura o de
@@ -341,7 +352,24 @@
   };
 
   const flowById = Object.fromEntries(FLOWS.map(f => [f.id, f]));
-  const flowOfNode = id => id.split("-")[0]; // convención <flujo>-<nodo>
+
+  // F6 · el recorrido de un panel sale del STORYBOARD, no de su nombre.
+  //
+  // Hasta F5 esto era `id.split("-")[0]`, y funcionaba solo porque los siete flujos y los siete prefijos
+  // eran la misma cosa. Con el eje por PERSONA el id es el nombre propio del panel (`alta-hero` lo ven
+  // siete recorridos) y ese atajo devolvía "alta", que ya no es ninguna pestaña: los deep-links
+  // `?node=<id>` y los clics del mapa habrían dejado de llevar a ninguna parte, en silencio.
+  const recorridosDe = {};
+  for (const [fid, sb] of Object.entries(SB)) {
+    for (const tr of sb.tracks) {
+      for (const id of tr.frames) {
+        if (!recorridosDe[id]) recorridosDe[id] = [];
+        if (!recorridosDe[id].includes(fid)) recorridosDe[id].push(fid);
+      }
+    }
+  }
+  const flowsOfNode = id => recorridosDe[id] || [];
+  const flowOfNode = id => flowsOfNode(id)[0] || (FLOWS[0] && FLOWS[0].id);
   const flowTitle = fid => (flowById[fid] ? flowById[fid].title : fid);
   const kindOf = id => {
     const n = NODES[id];
@@ -425,9 +453,14 @@
     h4.textContent = n.title;
     head.appendChild(h4);
     if (hasWarn(id)) head.appendChild(el("span", "warnmark", "⚠︎"));
-    if (flowOfNode(id) !== homeFlow) {
+    // F6: «compartido» ya no significa «prestado de otro flujo» sino «esta misma pantalla la ven varias
+    // personas» — que con el eje por recorrido es lo normal, no la excepción. El rótulo dice CUÁNTAS y el
+    // tooltip, cuáles.
+    const otros = flowsOfNode(id).filter(fid => fid !== homeFlow);
+    if (otros.length) {
       const o = el("span", "origin");
-      o.textContent = "compartido · flujo " + flowTitle(flowOfNode(id)).replace(/\s*\(.*$/, "");
+      o.textContent = "compartido · " + (otros.length + 1) + " recorridos";
+      o.title = "También en: " + otros.map(fid => flowTitle(fid)).join(" · ");
       head.appendChild(o);
     }
     const ref = el("button", "fref", "⧉ referencia");
@@ -817,7 +850,10 @@
     }
     let step = 0;
     for (const f of FLOWS) {
-      const mine = dOnlyIds.filter(k => flowOfNode(k) === f.id);
+      // F6: un panel sin captura pertenece a todos los recorridos que lo muestran, así que el guion de
+      // cada uno lista los suyos aunque se repitan entre recorridos — quien va a capturar recorre UNA
+      // persona de principio a fin, no una lista global deduplicada.
+      const mine = dOnlyIds.filter(k => flowsOfNode(k).includes(f.id));
       if (!mine.length) continue;
       s.appendChild(el("h3", "guionflow", `<b>${esc(f.title)}</b> · ${mine.length} captura${mine.length > 1 ? "s" : ""}`));
       for (const k of mine) {
