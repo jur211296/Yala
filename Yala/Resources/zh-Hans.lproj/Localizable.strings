@@ -4780,6 +4780,10 @@
 /* Body when foreign local data blocks sign-in */
 "welcome.cloud.blockedBody" = "为保护这些数据，无法在此连接其他账户。数据所有者可以随时重新登录。";
 
+"welcome.cloud.blockedRestoreHint" = "如果这些数据是你的呢？如果你刚开始从 iCloud 恢复，请等它完成后再登录。";
+
+"welcome.cloud.blockedBack" = "返回";
+
 /* Title for cloud sign-in error */
 "welcome.cloud.errorTitle" = "出了点问题";
 

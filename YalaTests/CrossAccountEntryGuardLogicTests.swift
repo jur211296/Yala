@@ -120,6 +120,74 @@ struct SecondaryHydrationLogicTests {
     }
 }
 
+/// La pantalla de datos ajenos era un CALLEJÓN: pintaba «su dueño puede volver a entrar cuando quiera»
+/// —una salida que no es del que está mirando— y ni una acción. El `welcomeBackButton` de la toolbar
+/// existe, pero es una flecha de 44 pt en una pantalla que acaba de decirle a alguien que no puede
+/// entrar a su cuenta: no es una salida, es la ausencia de una.
+///
+/// Esto NO toca el veredicto del guard (eso es la otra pieza): la pantalla sigue apareciendo cuando
+/// tiene que aparecer, y lo único que cambia es que ahora dice qué hacer y ofrece por dónde.
+@Suite("Welcome · la pantalla de datos ajenos ofrece salida (source-scan)")
+struct WelcomeCloudBlockedExitTests {
+
+    private static var repoRoot: URL {
+        URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()   // YalaTests
+            .deletingLastPathComponent()   // repo
+    }
+
+    /// Código SIN líneas de comentario: el docblock de esta rama nombra a propósito lo que arregla, y
+    /// contar la prosa haría que documentar el invariante lo «cumpliera».
+    private static func code(_ path: String) throws -> String {
+        try String(contentsOf: repoRoot.appendingPathComponent(path), encoding: .utf8)
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+    }
+
+    private static let signInView = "Yala/App/Views/Onboarding/WelcomeCloudSignInView.swift"
+
+    /// La rama de un `switch` no abre llaves, así que el corte va de su `case` al siguiente
+    /// (molde `GroupsOrganizerWiringTests.rama`).
+    private static func branch(_ caso: String, in source: String) -> String? {
+        guard let start = source.range(of: "case .\(caso):") else { return nil }
+        let resto = source[start.upperBound...]
+        guard let next = resto.range(of: "\n        case .") else { return String(resto) }
+        return String(resto[..<next.lowerBound])
+    }
+
+    @Test("la rama pinta el caso del dueño que está restaurando, y no solo el del dueño ausente")
+    func blockedBranchNamesTheRestoreCase() throws {
+        let view = try Self.code(Self.signInView)
+        let rama = try #require(
+            Self.branch("blockedForeignData", in: view),
+            "`WelcomeCloudSignInView` dejó de tener la rama `.blockedForeignData`.")
+
+        #expect(rama.contains("L10n.Welcome.Cloud.blockedRestoreHint"), """
+            La pantalla vuelve a describir UN solo mundo: el del dispositivo con datos de otro humano. \
+            El dueño que restauró de iCloud y tocó «atrás» con el import a medias aterriza aquí \
+            —`hasLocalDataNow` ya cuenta las filas que él mismo está bajando— y lee que sus datos son \
+            de otra cuenta, sin nada que le diga qué hacer.
+            """)
+    }
+
+    @Test("MUTACIÓN: hay una salida EXPLÍCITA, no solo la flecha de la toolbar")
+    func blockedBranchOffersAnExplicitWayBack() throws {
+        let view = try Self.code(Self.signInView)
+        let rama = try #require(Self.branch("blockedForeignData", in: view))
+
+        #expect(rama.contains("onBack()"), """
+            La rama volvió a quedarse sin acción. `canGoBack` incluye `.blockedForeignData`, así que la \
+            flecha de la toolbar sigue ahí — pero una pantalla que bloquea la entrada a una cuenta tiene \
+            que ofrecer su vuelta como botón, no esconderla en una esquina.
+            """)
+        #expect(rama.contains("welcome_cloud_blocked_back"), """
+            El botón de vuelta perdió su `accessibilityIdentifier`: el device-QA se ancla a él (esta \
+            fase exige un sign-in REAL y no hay XCUITest que la alcance).
+            """)
+    }
+}
+
 @Suite("SecondaryEntryLogic · orden de escrituras (M1)")
 struct SecondaryEntryLogicTests {
 

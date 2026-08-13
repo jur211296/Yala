@@ -4032,6 +4032,10 @@
 /* Body when foreign local data blocks sign-in */
 "welcome.cloud.blockedBody" = "To protect that data, we can't connect a different account here. Its owner can sign back in anytime.";
 
+"welcome.cloud.blockedRestoreHint" = "What if they're yours? If you just started an iCloud restore, wait for it to finish and sign in again.";
+
+"welcome.cloud.blockedBack" = "Go back";
+
 /* Title for cloud sign-in error */
 "welcome.cloud.errorTitle" = "Something didn't go right";
 

@@ -4780,6 +4780,10 @@
 /* Body when foreign local data blocks sign-in */
 "welcome.cloud.blockedBody" = "Aby chronić te dane, nie możemy tu połączyć innego konta. Właściciel może zalogować się ponownie w każdej chwili.";
 
+"welcome.cloud.blockedRestoreHint" = "A jeśli są Twoje? Jeśli właśnie zaczęło się przywracanie z iCloud, poczekaj, aż się skończy, i zaloguj się ponownie.";
+
+"welcome.cloud.blockedBack" = "Wróć";
+
 /* Title for cloud sign-in error */
 "welcome.cloud.errorTitle" = "Coś poszło nie tak";
 

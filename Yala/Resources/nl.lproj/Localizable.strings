@@ -4780,6 +4780,10 @@
 /* Body when foreign local data blocks sign-in */
 "welcome.cloud.blockedBody" = "Om die gegevens te beschermen kunnen we hier geen ander account koppelen. De eigenaar kan altijd weer inloggen.";
 
+"welcome.cloud.blockedRestoreHint" = "En als ze van jou zijn? Als je net een iCloud-herstel bent gestart, wacht dan tot het klaar is en meld je opnieuw aan.";
+
+"welcome.cloud.blockedBack" = "Terug";
+
 /* Title for cloud sign-in error */
 "welcome.cloud.errorTitle" = "Er ging iets mis";
 

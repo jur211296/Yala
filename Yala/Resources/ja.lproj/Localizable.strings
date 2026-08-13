@@ -4780,6 +4780,10 @@
 /* Body when foreign local data blocks sign-in */
 "welcome.cloud.blockedBody" = "データ保護のため、ここでは別のアカウントを接続できません。持ち主はいつでも再度サインインできます。";
 
+"welcome.cloud.blockedRestoreHint" = "もし自分のデータなら、iCloudからの復元を始めたばかりの可能性があります。完了するまで待ってから、もう一度サインインしてください。";
+
+"welcome.cloud.blockedBack" = "戻る";
+
 /* Title for cloud sign-in error */
 "welcome.cloud.errorTitle" = "問題が発生しました";
 

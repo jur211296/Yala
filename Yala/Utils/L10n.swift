@@ -4978,6 +4978,11 @@ enum L10n {
             static var notFoundBody: String { ls("welcome.cloud.notFoundBody", comment: "") }
             static var blockedTitle: String { ls("welcome.cloud.blockedTitle", comment: "") }
             static var blockedBody: String { ls("welcome.cloud.blockedBody", comment: "") }
+            /// El SEGUNDO mundo de la misma pantalla: el dueño que restauró de iCloud y volvió atrás con
+            /// el import a medias. `checkHasExistingData` cuenta filas y no sabe de quién son, así que a
+            /// él le cuenta en contra lo que él mismo está bajando.
+            static var blockedRestoreHint: String { ls("welcome.cloud.blockedRestoreHint", comment: "") }
+            static var blockedBack: String { ls("welcome.cloud.blockedBack", comment: "") }
             static var errorTitle: String { ls("welcome.cloud.errorTitle", comment: "") }
             static var errorBody: String { ls("welcome.cloud.errorBody", comment: "") }
             static var retry: String { ls("welcome.cloud.retry", comment: "") }

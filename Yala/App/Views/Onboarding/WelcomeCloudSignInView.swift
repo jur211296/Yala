@@ -247,18 +247,40 @@ struct WelcomeCloudSignInView: View {
                 body: providerMismatchBody(knownProvider: knownProvider))
                 .accessibilityIdentifier("welcome_cloud_provider_mismatch")
         case .blockedForeignData:
-            messageContent(
-                icon: "lock.shield",
-                title: L10n.Welcome.Cloud.blockedTitle,
-                body: L10n.Welcome.Cloud.blockedBody)
-                // M4 · gancho de QA, hoy sin XCUITest y así declarado: llegar a esta fase exige un
-                // sign-in REAL con SIWA/Google sobre un device con corpus ajeno, y el simulador no
-                // firma. Lo que sí puede afirmarse en sim es su GEMELA de la puerta de Grupos-first
-                // (`welcome_groups_gate_foreign_data`, mismo hecho y mismo copy), que es lo que
-                // cubre `SecondarySessionGateUITests`. El identifier va puesto para que el device-QA
-                // pueda anclarse a él sin recompilar y para que el día que exista un seam de sign-in
-                // el test no dependa de texto localizado.
-                .accessibilityIdentifier("welcome_cloud_blocked_foreign_data")
+            // La pantalla describe DOS mundos porque el detector no sabe distinguirlos: `hasLocalDataNow`
+            // cuenta filas, así que dice «hay datos», nunca «hay datos de otro». El cuerpo habla del caso
+            // dominante —datos de otro humano— y el hint nombra el otro, que es el que dejaba a una persona
+            // sin salida: el dueño que restauró de iCloud y volvió atrás con el import a medias ve sus
+            // PROPIAS filas contadas en su contra. El veredicto no se toca aquí (eso es
+            // `ICloudRestoreSessionSignal`, la otra mitad); esto es que la pantalla deje de ser un callejón.
+            VStack(spacing: DS.Spacing.lg) {
+                messageContent(
+                    icon: "lock.shield",
+                    title: L10n.Welcome.Cloud.blockedTitle,
+                    body: L10n.Welcome.Cloud.blockedBody)
+                    // M4 · gancho de QA, hoy sin XCUITest y así declarado: llegar a esta fase exige un
+                    // sign-in REAL con SIWA/Google sobre un device con corpus ajeno, y el simulador no
+                    // firma. Lo que sí puede afirmarse en sim es su GEMELA de la puerta de Grupos-first
+                    // (`welcome_groups_gate_foreign_data`, mismo hecho y mismo copy), que es lo que
+                    // cubre `SecondarySessionGateUITests`. El identifier va puesto para que el device-QA
+                    // pueda anclarse a él sin recompilar y para que el día que exista un seam de sign-in
+                    // el test no dependa de texto localizado.
+                    .accessibilityIdentifier("welcome_cloud_blocked_foreign_data")
+
+                Text(L10n.Welcome.Cloud.blockedRestoreHint)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.white.opacity(0.7))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, DS.Spacing.xl)
+
+                // La flecha de la toolbar (`canGoBack` la incluye) sigue ahí, pero una pantalla que acaba
+                // de bloquear la entrada a una cuenta no puede dejar su única salida en una esquina.
+                YalaPrimaryButton(L10n.Welcome.Cloud.blockedBack) {
+                    onBack()
+                }
+                .padding(.horizontal, DS.Spacing.xl)
+                .accessibilityIdentifier("welcome_cloud_blocked_back")
+            }
         case .error(let retryable):
             VStack(spacing: DS.Spacing.lg) {
                 messageContent(
