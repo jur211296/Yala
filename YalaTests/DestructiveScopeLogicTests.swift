@@ -10,6 +10,7 @@
 //  Lógica pura sin estado → `@Suite` sin `.serialized` (molde de `CloudSignOutRowLayoutTests`).
 //
 
+import Foundation
 import Testing
 @testable import Yala
 
@@ -227,5 +228,73 @@ struct DestructiveScopeLogicTests {
         #expect(m.hasConservationNote)
         #expect(m.extraLines.isEmpty)
         #expect(m.secondaryActions.isEmpty)
+    }
+}
+
+// MARK: - Identifiers: qué escenario retrata cada pantalla de salida
+
+/// **El problema es de PRUEBA, no de usuario.** `CloudSignOutFlowLogic.rowLayout` produce cuatro
+/// distribuciones de filas en «Seguridad y cuenta» y son de humanos distintos —la persona privada, la
+/// de la nube, el solo-grupos legado 5a y el privado-con-grupos— pero hasta el 2026-08-12 compartían
+/// dos identifiers de dos en dos: un XCUITest que tapeara `profile_security_signout` pasaba en verde
+/// sin saber si estaba ejerciendo `.privateReset` o `.groupsOnlySignOut`, que arman borrados
+/// distintos. Y una captura del Atlas etiquetada «la fila del privado» no podía demostrarlo.
+///
+/// Es la familia de «Executed 0 tests»: verde que no prueba lo que dice.
+@Suite("Salidas de sesión · cada distribución es distinguible")
+struct SignOutRowIdentifiersTests {
+
+    private static var repoRoot: URL {
+        URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()  // YalaTests/
+            .deletingLastPathComponent()  // repo root
+    }
+
+    private static func code(_ path: String) throws -> String {
+        try String(contentsOf: repoRoot.appendingPathComponent(path), encoding: .utf8)
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+    }
+
+    @Test("las cuatro filas de salida llevan identifiers DISTINTOS")
+    func fourExitRows_haveDistinctIdentifiers() throws {
+        let profile = try Self.code("Yala/App/Views/Profile/ProfileView.swift")
+
+        let esperados = [
+            "profile_security_signout_plain",     // .plainSignOut — privada / nube
+            "profile_security_signout_groups",    // .groupsSignOutPlusExitYala, fila 1
+            "profile_security_exit_yala_split",   // .groupsSignOutPlusExitYala, fila 2
+            "profile_security_exit_yala_legacy",  // .exitYalaOnly — solo-grupos legado 5a
+        ]
+        for id in esperados {
+            let veces = profile.components(separatedBy: "\"\(id)\"").count - 1
+            #expect(veces == 1, """
+                `\(id)` aparece \(veces) veces y tiene que aparecer UNA. Si son dos, dos \
+                distribuciones distintas volvieron a compartir identifier y ningún test puede \
+                demostrar cuál está ejerciendo.
+                """)
+        }
+
+        // Y los genéricos que se compartían no pueden volver.
+        for viejo in ["\"profile_security_signout\"", "\"profile_security_exit_yala\""] {
+            #expect(!profile.contains(viejo), """
+                Volvió el identifier compartido \(viejo): lo llevaban DOS filas de humanos distintos.
+                """)
+        }
+    }
+
+    /// La hoja destructiva es la otra mitad: su botón es siempre `destructive_scope_confirm` (no se
+    /// puede tocar sin romper cinco aserciones de dos XCUITests), así que la operación viaja en el
+    /// CONTENEDOR. Sin esto, una captura de la hoja no puede demostrar de qué salida es.
+    @Test("la hoja destructiva nombra su escenario, y las once operaciones dan ids únicos")
+    func destructiveSheet_namesItsScenario() {
+        let ids = DestructiveScopeLogic.Operation.allCases.map {
+            DestructiveScopeSheet.Config.scenarioIdentifier(for: $0)
+        }
+        #expect(Set(ids).count == ids.count, """
+            Dos operaciones comparten identifier de escenario: \(ids.sorted()).
+            """)
+        #expect(ids.allSatisfy { $0.hasPrefix("destructive_scope_sheet_") })
     }
 }

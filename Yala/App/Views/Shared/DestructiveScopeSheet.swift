@@ -45,6 +45,15 @@ struct DestructiveScopeSheet: View {
         let secondaries: [SecondaryAction]
         let confirmLabel: String
         let confirmIdentifier: String
+        /// Identifier de la HOJA, con la operación dentro (`destructive_scope_sheet_<op>`).
+        ///
+        /// El botón destructivo NO puede llevarlo: `destructive_scope_confirm` lo assertan cinco
+        /// aserciones de dos XCUITests, y cambiarlo por operación las rompería a todas. Pero un test que
+        /// tapea ese botón genérico no puede demostrar QUÉ escenario estaba ejerciendo —«Vaciar»,
+        /// «Cerrar sesión privado» y «Salir de Yala» arman borrados distintos y comparten pantalla— así
+        /// que la operación viaja en el contenedor. Misma familia que «Executed 0 tests»: verde que no
+        /// prueba lo que dice.
+        let scenarioIdentifier: String
         let cancelLabel: String
         /// Se invoca ANTES del `dismiss()` de la hoja — el callsite fija su `pending` aquí.
         let onConfirm: () -> Void
@@ -75,6 +84,17 @@ struct DestructiveScopeSheet: View {
     // MARK: - Body
 
     var body: some View {
+        sheetBody
+            // `children: .contain` es OBLIGATORIO y no es cosmético: un `accessibilityIdentifier` a
+            // secas sobre el contenedor hace que SwiftUI trate el subárbol como UN elemento y los
+            // botones de dentro dejan de existir para XCUITest. Medido el 2026-08-12 — sin esto, los
+            // 4 tests de `UserDataResetScopeUITests`/`DeleteAccountDialogUITests` se ponen rojos
+            // porque ni `destructive_scope_confirm` ni `delete_account_continue` son alcanzables.
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier(config.scenarioIdentifier)
+    }
+
+    private var sheetBody: some View {
         VStack(spacing: 0) {
             ScrollView {
                 // A pantalla completa (`.large`) el bloque —título arriba, filas y nota debajo, con jerarquía
@@ -282,6 +302,7 @@ extension DestructiveScopeSheet.Config {
             secondaries: secondaries,
             confirmLabel: Self.confirmLabel(for: operation),
             confirmIdentifier: Self.confirmIdentifier(for: operation),
+            scenarioIdentifier: Self.scenarioIdentifier(for: operation),
             cancelLabel: L10n.Common.cancel,
             onConfirm: onConfirm)
     }
@@ -425,6 +446,27 @@ extension DestructiveScopeSheet.Config {
         case .deleteFrozenCopy:
             return L10n.Groups.Migrated.deleteCopyConfirmButton
         }
+    }
+
+    /// Nombra el ESCENARIO en el contenedor de la hoja, para que una prueba (o una captura del Atlas)
+    /// pueda demostrar cuál de las once operaciones está retratando. No sustituye al identifier del
+    /// botón: lo complementa, precisamente porque ese no se puede tocar sin romper cinco aserciones.
+    static func scenarioIdentifier(for operation: DestructiveScopeLogic.Operation) -> String {
+        let suffix: String
+        switch operation {
+        case .wipeDataFull: suffix = "wipe_full"
+        case .wipeDataGroupsOnly: suffix = "wipe_groups_only"
+        case .deleteAccountCloud: suffix = "delete_account_cloud"
+        case .deleteAccountGroupsOnly: suffix = "delete_account_groups_only"
+        case .signOutPrivate: suffix = "signout_private"
+        case .signOutCloud: suffix = "signout_cloud"
+        case .signOutSecondary: suffix = "signout_secondary"
+        case .signOutGroupsOnly: suffix = "signout_groups_only"
+        case .exitYalaLegacy: suffix = "exit_yala_legacy"
+        case .exitYalaGroups: suffix = "exit_yala_groups"
+        case .deleteFrozenCopy: suffix = "delete_frozen_copy"
+        }
+        return "destructive_scope_sheet_\(suffix)"
     }
 
     /// Preserva los identifiers que `DeleteAccountDialogUITests` asserta; el resto usa el genérico.

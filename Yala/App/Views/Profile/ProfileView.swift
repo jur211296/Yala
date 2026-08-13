@@ -1074,7 +1074,11 @@ struct ProfileView: View {
                         }
                         .buttonStyle(.plain)
                         .disabled(signOutCoordinator.phase == .working)
-                        .accessibilityIdentifier("profile_security_signout")
+                        // Sufijo por `RowLayout`: esta fila y la primera del split compartían
+                        // `profile_security_signout`, y son de humanos distintos con borrados distintos
+                        // (`.privateReset`/`.cloudSecureSignOut` aquí, `.groupsOnlySignOut` allí). Un test
+                        // que tapeara el id compartido pasaba en verde sin saber cuál estaba ejerciendo.
+                        .accessibilityIdentifier("profile_security_signout_plain")
 
                         signOutWorkingCaption
                     }
@@ -1096,7 +1100,7 @@ struct ProfileView: View {
                         }
                         .buttonStyle(.plain)
                         .disabled(signOutCoordinator.phase == .working)
-                        .accessibilityIdentifier("profile_security_signout")
+                        .accessibilityIdentifier("profile_security_signout_groups")
 
                         signOutWorkingCaption
                     }
@@ -1115,7 +1119,7 @@ struct ProfileView: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(signOutCoordinator.phase == .working)
-                    .accessibilityIdentifier("profile_security_exit_yala")
+                    .accessibilityIdentifier("profile_security_exit_yala_split")
 
                 case .exitYalaOnly:
                     // D6 (§3.3.6): salida del solo-grupos legado 5a. `.privateReset` vuelve al Welcome sin
@@ -1134,7 +1138,7 @@ struct ProfileView: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(signOutCoordinator.phase == .working)
-                    .accessibilityIdentifier("profile_security_exit_yala")
+                    .accessibilityIdentifier("profile_security_exit_yala_legacy")
 
                 case .none:
                     EmptyView()
