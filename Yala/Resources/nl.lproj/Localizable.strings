@@ -5490,3 +5490,9 @@
 
 /* Body of the alert shown when the fresh-start wipe throws */
 "welcome.freshStart.failedMessage" = "Je gegevens staan er nog, dus we zijn gestopt. Sluit Yala en open de app opnieuw; gebeurt het weer, laat het ons weten.";
+
+/* Organizer gate: the device already holds data, so creating a group here would sign an account on top of it */
+"welcome.groups.existingDataTitle" = "Er staan al gegevens op dit apparaat";
+
+/* Organizer gate body for existing data */
+"welcome.groups.existingDataBody" = "Hier een groep maken zou er een account bovenop koppelen, en dat mengen we liever niet. Ga terug — alles staat er nog. Zijn ze van jou, maak de groep dan vanuit de app die je al gebruikt.";

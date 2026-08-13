@@ -5490,3 +5490,9 @@
 
 /* Body of the alert shown when the fresh-start wipe throws */
 "welcome.freshStart.failedMessage" = "データはそのまま残っているので、ここで止めました。Yalaを一度閉じてから開き直してください。それでも同じなら、ご連絡ください。";
+
+/* Organizer gate: the device already holds data, so creating a group here would sign an account on top of it */
+"welcome.groups.existingDataTitle" = "この端末にはすでにデータがあります";
+
+/* Organizer gate body for existing data */
+"welcome.groups.existingDataBody" = "ここからグループを作ると、そのデータの上にアカウントをつなぐことになるので、混ざらないようにしています。前の画面に戻ってください。データはそのままです。あなたのデータなら、いつも使っているアプリからグループを作れます。";

@@ -4890,6 +4890,15 @@ enum L10n {
             /// invitado y volver desde el dispositivo propio.
             static var secondaryTitle: String { ls("welcome.groups.secondaryTitle", comment: "") }
             static var secondaryBody: String { ls("welcome.groups.secondaryBody", comment: "") }
+            /// El dispositivo ya tiene datos. Copy PROPIO desde el 2026-08-12: antes se pedía prestado el
+            /// del guard cross-cuenta del sign-in (`welcome.cloud.blocked*`), que dice «este dispositivo
+            /// tiene datos de otra cuenta … no podemos conectar una cuenta distinta aquí» — dicho a la
+            /// DUEÑA de esos datos, que no está conectando ninguna cuenta sino intentando crear un grupo.
+            /// El detector (`checkHasExistingData`) cuenta filas y **no puede saber de quién son**, así que
+            /// el copy nombra el hecho que sí es cierto: aquí ya hay datos, y crear un grupo desde esta
+            /// pantalla conectaría una cuenta encima.
+            static var existingDataTitle: String { ls("welcome.groups.existingDataTitle", comment: "") }
+            static var existingDataBody: String { ls("welcome.groups.existingDataBody", comment: "") }
             /// CTA de las TRES pantallas de bloqueo: vuelta al step con las otras vías intactas.
             static var gateBack: String { ls("welcome.groups.gateBack", comment: "") }
             /// G3 · el único dato que el alta del organizador pide (decisión del owner: solo nombre).

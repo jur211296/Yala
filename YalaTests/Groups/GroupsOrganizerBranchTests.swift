@@ -455,6 +455,59 @@ struct GroupsOrganizerWiringTests {
         }
     }
 
+    /// **Cada razón de la puerta con SU copy, y ninguna prestada.**
+    ///
+    /// `.blockedForeignData` pintaba `welcome.cloud.blocked*`, el copy del guard cross-cuenta del
+    /// sign-in: «Este dispositivo tiene datos de otra cuenta … no podemos conectar una cuenta distinta
+    /// aquí». Dicho a la DUEÑA de esos datos, que no está conectando ninguna cuenta sino intentando
+    /// crear un grupo, es una acusación falsa por partida doble. El bloqueo es correcto; lo que estaba
+    /// mal era lo que se decía al bloquear.
+    ///
+    /// El escáner es por CONTENIDO y no por conteo de casos: lo que hay que impedir es que dos ramas
+    /// compartan key, no que existan tres ramas (eso ya lo cubre la tabla de `Gate.decide`).
+    @Test("las TRES razones de la puerta tienen copy propio, sin préstamos entre ellas")
+    func eachBlockReasonHasItsOwnCopy() throws {
+        let view = try Self.code(Self.gateView)
+
+        // El copy del guard de SIGN-IN no puede volver a esta pantalla: aquí nadie conecta una cuenta.
+        #expect(!view.contains("L10n.Welcome.Cloud.blocked"), """
+            La puerta del organizador volvió a pedir prestado el copy del guard cross-cuenta del \
+            sign-in (`welcome.cloud.blocked*`). A quien llega por «Crear mi primer grupo» le dice que \
+            este dispositivo tiene datos de OTRA cuenta y que no puede conectar una cuenta distinta — \
+            y esos datos son suyos, y no está conectando nada.
+            """)
+
+        // Una key por razón, y cada una distinta de las otras dos.
+        let porRazon: [(String, String)] = [
+            ("blockedChannelOff", "L10n.Welcome.Groups.channelOff"),
+            ("blockedSecondarySession", "L10n.Welcome.Groups.secondary"),
+            ("blockedForeignData", "L10n.Welcome.Groups.existingData"),
+        ]
+        // Una rama de `switch` no abre llaves, así que `bodyOf` no vale aquí: se corta desde el `case`
+        // hasta el siguiente `case .`, que es el límite real de lo que pinta cada razón.
+        func rama(_ caso: String) -> String? {
+            guard let start = view.range(of: "case .\(caso):") else { return nil }
+            let resto = view[start.upperBound...]
+            guard let next = resto.range(of: "\n                case .") else { return String(resto) }
+            return String(resto[..<next.lowerBound])
+        }
+
+        for (caso, prefijo) in porRazon {
+            let rama = try #require(
+                rama(caso), "La puerta dejó de tener la rama `.\(caso)`.")
+            #expect(rama.contains(prefijo), """
+                La rama `.\(caso)` ya no pinta su propio copy (`\(prefijo)*`). Las tres razones son \
+                hechos distintos y con salidas distintas: un copy compartido describe una acción que \
+                la persona no está haciendo.
+                """)
+            for (otro, otroPrefijo) in porRazon where otro != caso {
+                #expect(!rama.contains(otroPrefijo), """
+                    La rama `.\(caso)` está pintando el copy de `.\(otro)`.
+                    """)
+            }
+        }
+    }
+
     @Test("el alta se cablea a la lógica del alta y aterriza en el tab Grupos")
     func nameViewCompletesTheSetup() throws {
         let code = try Self.code(Self.nameView)

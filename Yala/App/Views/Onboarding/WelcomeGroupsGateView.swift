@@ -73,13 +73,19 @@ struct WelcomeGroupsGateView: View {
                         body: L10n.Welcome.Groups.secondaryBody,
                         identifier: "welcome_groups_gate_secondary_session")
                 case .blockedForeignData:
-                    // El copy que YA existe para este hecho — la misma pantalla honesta del guard
-                    // cross-cuenta del sign-in de nube. Cuando M1 se encienda, esta celda podrá ofrecer la
-                    // sesión secundaria; aquí solo se bloquea.
+                    // Copy PROPIO, como las otras dos razones. Hasta el 2026-08-12 esta rama pedía
+                    // prestado el del guard cross-cuenta del sign-in (`welcome.cloud.blocked*`), que
+                    // dice «este dispositivo tiene datos de OTRA cuenta … no podemos conectar una
+                    // cuenta distinta aquí» — y quien llega hasta aquí no está conectando ninguna
+                    // cuenta, sino intentando crear un grupo, muchas veces sobre datos SUYOS. El
+                    // detector cuenta filas y no puede saber de quién son (`CloudClaimActionStore`,
+                    // la única prueba de propiedad, no se consulta en esta puerta y además muere con
+                    // la reinstalación), así que el copy nombra el hecho que sí es cierto.
+                    // El bloqueo NO cambia: sigue siendo el de la ventana M1 del docblock del gate.
                     blockedContent(
-                        icon: "lock.shield",
-                        title: L10n.Welcome.Cloud.blockedTitle,
-                        body: L10n.Welcome.Cloud.blockedBody,
+                        icon: "square.stack.3d.up.slash",
+                        title: L10n.Welcome.Groups.existingDataTitle,
+                        body: L10n.Welcome.Groups.existingDataBody,
                         identifier: "welcome_groups_gate_foreign_data")
                 }
 

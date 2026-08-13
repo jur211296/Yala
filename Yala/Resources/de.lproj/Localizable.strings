@@ -5478,3 +5478,9 @@
 
 /* Body of the alert shown when the fresh-start wipe throws */
 "welcome.freshStart.failedMessage" = "Deine Daten sind noch da, deshalb haben wir abgebrochen. Schließe Yala und öffne sie erneut; falls es wieder passiert, schreib uns.";
+
+/* Organizer gate: the device already holds data, so creating a group here would sign an account on top of it */
+"welcome.groups.existingDataTitle" = "Auf diesem Gerät sind schon Daten";
+
+/* Organizer gate body for existing data */
+"welcome.groups.existingDataBody" = "Eine Gruppe von hier aus zu erstellen würde ein Konto darüber verbinden, und wir mischen die beiden lieber nicht. Geh zurück — alles ist noch da. Wenn es deine Daten sind, erstelle die Gruppe aus der App, die du schon nutzt.";
