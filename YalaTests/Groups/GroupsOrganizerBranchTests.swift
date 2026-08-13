@@ -591,3 +591,53 @@ struct GroupsOrganizerWiringTests {
                 "la puerta es un STEP del container, no una presentación del anchor de ContentView")
     }
 }
+
+/// **El «Atrás» de cada sub-flow del Welcome vuelve al step del que SALIÓ.**
+///
+/// `InviteRecoveryView` (pegar el enlace) usaba el helper compartido con `WelcomeRestoreView`, que
+/// fuerza `.chooser` — el chooser de nivel 1, «¿qué quieres hacer en Yala?». Para `WelcomeRestoreView`
+/// es correcto (de ahí viene); para quien llegó con un enlace es un nivel de más: al volver tenía que
+/// re-elegir «Vengo por un grupo» antes de poder reintentar. Su hermano `returnToGroupsChooser` ya
+/// resolvía lo mismo bien, y su comentario explica por qué importa.
+///
+/// El pin es un source-scan porque los dos lados son callbacks de vistas SwiftUI: lo que decide es qué
+/// step se pasa en cada callback, y eso no se puede afirmar desde un unit test de otra forma.
+@Suite("Welcome · el «Atrás» de cada sub-flow vuelve a su sitio (source-scan)")
+struct WelcomeBackDestinationTests {
+
+    private static func contentView() throws -> String {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()  // YalaTests/Groups/
+            .deletingLastPathComponent()  // YalaTests/
+            .deletingLastPathComponent()  // repo root
+        return try String(
+            contentsOf: root.appendingPathComponent("Yala/App/ContentView.swift"), encoding: .utf8)
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+    }
+
+    @Test("el helper exige el step y no lo asume")
+    func helperTakesAnExplicitStep() throws {
+        let src = try Self.contentView()
+        #expect(src.contains("returnToWelcomeChooser(dismissing flag: Binding<Bool>, step: WelcomeFlowStep)"), """
+            El helper volvió a decidir el destino por su cuenta. Sus dos llamadores vienen de sitios \
+            distintos: un default los iguala otra vez en silencio.
+            """)
+        #expect(!src.contains("step: WelcomeFlowStep = "), """
+            Un valor por defecto en el `step` reintroduce el bug: el llamador que no lo piense vuelve \
+            a mandar al invitado un nivel por encima de donde estaba.
+            """)
+    }
+
+    @Test("pegar-el-enlace vuelve al sub-step de Grupos; restaurar vuelve al chooser")
+    func eachCallerReturnsWhereItCameFrom() throws {
+        let src = try Self.contentView()
+        #expect(src.contains("returnToWelcomeChooser(dismissing: $showInviteRecovery, step: .groupsChooser)"), """
+            El «Atrás» de `InviteRecoveryView` volvió a subir al chooser de nivel 1.
+            """)
+        #expect(src.contains("returnToWelcomeChooser(dismissing: $showWelcomeRestore, step: .chooser)"), """
+            `WelcomeRestoreView` sí viene del chooser de nivel 1 — su destino no cambia.
+            """)
+    }
+}

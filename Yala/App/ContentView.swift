@@ -631,8 +631,13 @@ struct ContentView: View {
                 AppBootstrapper.shared.handleInviteLink(url)
             },
             onBack: {
-                // Vuelve al WelcomeFlow en step .chooser (donde estaba).
-                returnToWelcomeChooser(dismissing: $showInviteRecovery)
+                // Vuelve al step del que SALIÓ («¿Cómo empiezas con tu grupo?»), no al chooser de nivel 1
+                // («¿qué quieres hacer en Yala?»). Hasta el 2026-08-12 usaba el helper compartido con
+                // `WelcomeRestoreView` —para el que `.chooser` SÍ es correcto, porque de ahí viene— y a
+                // quien llegaba con un enlace le subía un nivel de más: para reintentar tenía que volver a
+                // elegir «Vengo por un grupo». Es el mismo criterio que su hermano `returnToGroupsChooser`
+                // explica en su comentario.
+                returnToWelcomeChooser(dismissing: $showInviteRecovery, step: .groupsChooser)
             }
         )
         .environment(SessionState.shared)
@@ -685,7 +690,7 @@ struct ContentView: View {
                 }
             },
             onBack: {
-                returnToWelcomeChooser(dismissing: $showWelcomeRestore)
+                returnToWelcomeChooser(dismissing: $showWelcomeRestore, step: .chooser)
             }
         )
         .environment(SessionState.shared)
@@ -765,11 +770,14 @@ struct ContentView: View {
         showWelcomeFlow = true
     }
 
-    /// Cierra el sub-flow del Welcome (Rama B o C) y devuelve al user al Chooser.
-    /// Usado por callbacks `onBack` de `InviteRecoveryView` y `WelcomeRestoreView`.
-    private func returnToWelcomeChooser(dismissing flag: Binding<Bool>) {
+    /// Cierra el sub-flow del Welcome (Rama B o C) y devuelve al user al step del que salió.
+    ///
+    /// El `step` es EXPLÍCITO desde el 2026-08-12 y no tiene default: los dos llamadores vienen de sitios
+    /// distintos —`WelcomeRestoreView` del chooser de nivel 1, `InviteRecoveryView` del sub-step de
+    /// Grupos— y un default los volvería a igualar en silencio, que es el bug que este parámetro cierra.
+    private func returnToWelcomeChooser(dismissing flag: Binding<Bool>, step: WelcomeFlowStep) {
         flag.wrappedValue = false
-        welcomeFlowInitialStep = .chooser
+        welcomeFlowInitialStep = step
         showWelcomeFlow = true
     }
 
