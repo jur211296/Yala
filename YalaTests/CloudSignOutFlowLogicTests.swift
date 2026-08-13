@@ -309,3 +309,79 @@ struct GroupsSignOutRetryDecisionTests {
             elapsedSeconds: budget, budgetSeconds: budget, reason: .transient) == .surfaceTransient)
     }
 }
+
+/// **La invitada tiene DOS outboxes y el cierre solo empujaba uno.**
+///
+/// El camino `.cloud` empuja el personal Y el de grupos, y re-verifica los dos antes de soltar
+/// credenciales. El camino secundario (M1) empujaba solo el personal — mientras el wipe de arranque
+/// borra igual `YalaGroups-Secondary` y `YalaSyncMeta-Secondary`, que es donde vive `GroupSyncOutbox`,
+/// y la purga de frontera se lleva además el espejo del App Group, que era la red de rehidratación.
+/// ⇒ los últimos gastos de grupo de la visita podían quedarse sin subir, y su copia local moría con la
+/// sesión.
+///
+/// **Y el comentario que lo justificaba era falso**: decía que en secundaria el canal de Grupos «ni
+/// corre», cuando con el canal encendido la sesión secundaria lo corre sobre su propio store — que es
+/// exactamente la configuración en la que ese archivo existe.
+///
+/// Source-scan porque `performSecondaryCloudSignOut` es privado y su camino exige runtime de red: lo
+/// que hay que fijar es que el paso EXISTA y que la re-verificación cuente los dos, y eso no se puede
+/// afirmar desde fuera de otra forma. Molde `SecondaryOwnerDomainWiringTests`.
+@Suite("Cerrar sesión — la sesión secundaria empuja los DOS outboxes (source-scan)")
+struct SecondarySignOutPushesBothOutboxesTests {
+
+    private static func body(of marker: String, in source: String) throws -> String {
+        let start = try #require(source.range(of: marker))
+        var depth = 1
+        var out = ""
+        for ch in source[start.upperBound...] {
+            if ch == "{" { depth += 1 }
+            if ch == "}" { depth -= 1; if depth == 0 { break } }
+            out.append(ch)
+        }
+        return out
+    }
+
+    private static func signOutSource() throws -> String {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()  // YalaTests/
+            .deletingLastPathComponent()  // repo root
+        return try String(
+            contentsOf: root.appendingPathComponent("Yala/Services/CloudSync/CloudSessionSignOut.swift"),
+            encoding: .utf8)
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+    }
+
+    @Test("el camino secundario hace push-all de GRUPOS antes del teardown")
+    func secondaryPushesGroupsOutbox() throws {
+        let secondary = try Self.body(
+            of: "private func performSecondaryCloudSignOut(context: ModelContext) async {",
+            in: Self.signOutSource())
+
+        let push = try #require(
+            secondary.range(of: "pushAllPendingGroupsForSignOut(context: context)"), """
+            El cierre de la sesión secundaria dejó de empujar el outbox de GRUPOS. El wipe de arranque \
+            borra `YalaGroups-Secondary` y la purga se lleva el espejo del App Group: lo que no suba \
+            aquí no sube nunca.
+            """)
+        let teardown = try #require(secondary.range(of: "GroupsSyncClient.shared.teardownForSignOut()"))
+        #expect(push.lowerBound < teardown.lowerBound, """
+            El push-all quedó DESPUÉS del teardown: la guardia de generación aborta el ciclo, así que \
+            empujar ahí no empuja nada (mismo racional que el paso 2 del camino `.cloud`).
+            """)
+    }
+
+    @Test("la re-verificación previa a soltar credenciales cuenta los DOS outboxes")
+    func secondaryReverifiesBoth() throws {
+        let secondary = try Self.body(
+            of: "private func performSecondaryCloudSignOut(context: ModelContext) async {",
+            in: Self.signOutSource())
+
+        #expect(secondary.contains("controller.livePendingUploadCount()"))
+        #expect(secondary.contains("Self.liveGroupsPendingCount(context: context)"), """
+            La re-verificación de S2 volvió a mirar solo el outbox personal: una fila de grupos encolada \
+            por un save concurrente durante el push-all pasaría el guard y moriría en el wipe.
+            """)
+    }
+}

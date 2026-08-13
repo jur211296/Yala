@@ -101,7 +101,7 @@ final class CloudSessionSignOut {
         case .cloudSecureSignOut:
             await performCloudSecureSignOut(context: context)
         case .secondaryCloudSignOut:
-            await performSecondaryCloudSignOut()
+            await performSecondaryCloudSignOut(context: context)
         case .groupsOnlySignOut:
             await performGroupsOnlySignOut(context: context)
         }
@@ -337,7 +337,7 @@ final class CloudSessionSignOut {
     /// el boot wipe (resetearlos con el proceso vivo montaría la cadena Welcome DEBAJO del cover
     /// de relaunch: doble presentación en el mismo anchor, clase toolbar-muerta). Reusa la fase
     /// `.awaitingRelaunch` ⇒ el cover durable C1 y el blocker de la matriz funcionan sin cambios.
-    private func performSecondaryCloudSignOut() async {
+    private func performSecondaryCloudSignOut(context: ModelContext) async {
         phase = .working
         CloudSyncBreadcrumb.signOutStarted(path: "secondary")
 
@@ -353,13 +353,35 @@ final class CloudSessionSignOut {
             phase = .blocked(pendingCount: pending, reason: .permanent)
             CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
         case .drained:
+            // Push-all de GRUPOS, igual que el camino `.cloud` y por la misma razón: el wipe de arranque
+            // borra `YalaGroups-Secondary` y `YalaSyncMeta-Secondary` —donde vive `GroupSyncOutbox`— y la
+            // purga de frontera se lleva además el espejo del App Group, que era la red de rehidratación.
+            // Sin esto, los últimos gastos de grupo de la invitada se quedaban sin subir y su copia local
+            // moría con la sesión.
+            //
+            // El comentario que ocupaba estas líneas decía que «en secundaria el canal ni corre» y era
+            // FALSO desde que el canal está encendido: con `groupsBackendEnabled` ON la sesión secundaria
+            // corre el canal sobre su propio store (`GroupsSyncClient.swift`, y el mount de
+            // `YalaGroups-Secondary` en `SwiftDataConfiguration.decide`). Justificaba no empujar
+            // precisamente en la configuración en la que este archivo existe.
+            switch await pushAllPendingGroupsForSignOut(context: context) {
+            case .blocked(let pending, _):
+                phase = .blocked(pendingCount: pending, reason: .permanent)
+                CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
+                return
+            case .drained:
+                break
+            }
             CloudSyncRuntime.shared?.teardownGuestSession()
-            // B2: canal de Grupos→backend — loop fuera + espejo purgado (en secundaria el canal ni corre,
-            // pero el teardown es idempotente y la purga del espejo es red M1 obligatoria).
+            // B2: canal de Grupos→backend — loop fuera + espejo purgado. El teardown es idempotente y la
+            // purga del espejo es red M1 obligatoria.
             GroupsSyncClient.shared.teardownForSignOut()
             await PushTokenSignOutSeam.clearForSignOut()  // G8-2: desregistro best-effort del push token
-            // S2: re-verificar el outbox con la sesión AÚN viva (mismo racional que el camino .cloud).
+            // S2: re-verificar AMBOS outboxes con la sesión AÚN viva (mismo racional que el camino
+            // `.cloud`): si un save concurrente encoló filas durante el push-all, se bloquea mientras
+            // reintentar todavía sirve de algo.
             let residual = controller.livePendingUploadCount()
+                + Self.liveGroupsPendingCount(context: context)
             guard residual == 0 else {
                 phase = .blocked(pendingCount: residual, reason: .permanent)
                 CloudSyncBreadcrumb.signOutPushBlocked(pending: residual)
