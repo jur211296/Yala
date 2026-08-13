@@ -408,7 +408,10 @@ final class ScheduledPaymentNotificationService {
     static func flipMasterToggleIfNeeded(
         context: ModelContext,
         defaults: UserDefaults = .standard,
-        ubiquitous: NSUbiquitousKeyValueStore? = .default,
+        // La PUERTA y no el store crudo (frontera M1, 2026-08-12): en sesión secundaria este espejo
+        // cae en el iCloud del DUEÑO y le quema el one-shot del interruptor maestro con la decisión
+        // de otra persona. Era la OCTAVA vía y no estaba en ningún inventario.
+        ubiquitous: OwnerKeyValueWriting? = OwnerKeyValueStore.shared,
         isQuiescent: (() -> Bool)? = nil
     ) {
         if defaults.bool(forKey: masterToggleFlipKey) { return }
@@ -442,7 +445,7 @@ final class ScheduledPaymentNotificationService {
             }
             // A partir de aquí, OFF = decisión del usuario (local + espejo de cuenta).
             defaults.set(true, forKey: masterToggleFlipKey)
-            ubiquitous?.set(true, forKey: masterToggleFlipKey)
+            ubiquitous?.setBool(true, forKey: masterToggleFlipKey)
         } catch {
             // Fetch/save fallido → NO marcar; reintenta en el próximo pass.
             #if DEBUG

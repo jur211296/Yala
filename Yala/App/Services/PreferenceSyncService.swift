@@ -74,7 +74,12 @@ final class PreferenceSyncService {
     /// Key for notification userInfo
     static let onboardingAlreadyDoneKey = "onboardingAlreadyDone"
 
-    private let iKV = NSUbiquitousKeyValueStore.default
+    /// **La puerta**, no el store crudo (`OwnerKeyValueStore`): en sesión secundaria el iCloud KV es
+    /// el del DUEÑO del dispositivo. El `switch behavior` de los `set`/`remove` ya salta la rama
+    /// `.icloudKeyValue` en `.localOnly`, pero los DOS señalizadores de wipe/onboarding viven FUERA
+    /// de ese switch y escribían directo — que es la vía 1 del ticket. Con la puerta, el guard deja
+    /// de depender de que cada método se acuerde.
+    private let iKV: OwnerKeyValueWriting = OwnerKeyValueStore.shared
     private let local = UserDefaults.standard
     private var isObserverRegistered = false
 
@@ -147,8 +152,11 @@ final class PreferenceSyncService {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(iCloudDidChange(_:)),
-            name: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
-            object: iKV
+            name: OwnerKeyValueStore.didChangeExternallyNotification,
+            // El EMISOR real, no la puerta: `object:` filtra por identidad, así que registrar aquí el
+            // wrapper daría un observer que no dispara jamás y las prefs de otro dispositivo dejarían
+            // de aplicarse en silencio.
+            object: OwnerKeyValueStore.notificationSource
         )
     }
 
@@ -163,7 +171,7 @@ final class PreferenceSyncService {
         local.set(value, forKey: key)
         switch behavior {
         case .icloudKeyValue:
-            iKV.set(value, forKey: key)
+            iKV.setString(value, forKey: key)
             iKV.synchronize()
         case .cloudOutbox:
             enqueuePref(key: key, value: .string(value))
@@ -176,7 +184,7 @@ final class PreferenceSyncService {
         local.set(value, forKey: key)
         switch behavior {
         case .icloudKeyValue:
-            iKV.set(value, forKey: key)
+            iKV.setBool(value, forKey: key)
             iKV.synchronize()
         case .cloudOutbox:
             enqueuePref(key: key, value: .bool(value))
@@ -189,7 +197,7 @@ final class PreferenceSyncService {
         local.set(value, forKey: key)
         switch behavior {
         case .icloudKeyValue:
-            iKV.set(value, forKey: key)
+            iKV.setInt(value, forKey: key)
             iKV.synchronize()
         case .cloudOutbox:
             enqueuePref(key: key, value: .int(value))
@@ -480,7 +488,7 @@ final class PreferenceSyncService {
     /// Called by DataWipeService BEFORE deleting data — signals other devices that a wipe occurred.
     func signalWipeInitiated() {
         let timestamp = Date.now.timeIntervalSince1970
-        iKV.set(timestamp, forKey: WipeKey.remoteWipe)
+        iKV.setDouble(timestamp, forKey: WipeKey.remoteWipe)
         iKV.synchronize()
 
         // Save locally so THIS device doesn't react to its own signal
@@ -494,7 +502,7 @@ final class PreferenceSyncService {
     /// Called after onboarding completes — signals other devices that onboarding is done.
     func signalOnboardingCompleted() {
         let timestamp = Date.now.timeIntervalSince1970
-        iKV.set(timestamp, forKey: WipeKey.remoteOnboarding)
+        iKV.setDouble(timestamp, forKey: WipeKey.remoteOnboarding)
         iKV.synchronize()
 
         // Save locally to avoid redundant processing

@@ -56,9 +56,12 @@ enum LanguageManager {
         set {
             guard newValue != sharedDefaults.string(forKey: overrideKey) else { return }
             sharedDefaults.set(newValue, forKey: overrideKey)
-            let iKV = NSUbiquitousKeyValueStore.default
+            // La PUERTA, no el store crudo. En sesión secundaria el iCloud KV es el del DUEÑO: el
+            // idioma que elija la invitada le cambiaría la app en todos sus dispositivos. Esta era
+            // la SÉPTIMA vía de la frontera M1 y no estaba en ningún inventario (2026-08-12).
+            let iKV = OwnerKeyValueStore.shared
             if let value = newValue {
-                iKV.set(value, forKey: overrideKey)
+                iKV.setString(value, forKey: overrideKey)
             } else {
                 iKV.removeObject(forKey: overrideKey)
             }
@@ -147,8 +150,10 @@ enum LanguageManager {
            let alias = SupportedLocale(rawValue: current),
            let canonical = aliasRemap[alias] {
             suite.set(canonical.code, forKey: overrideKey)
-            NSUbiquitousKeyValueStore.default.set(canonical.code, forKey: overrideKey)
-            NSUbiquitousKeyValueStore.default.synchronize()
+            // Misma frontera que el setter de arriba: el remap de alias es una escritura al iCloud
+            // KV del Apple ID, y en secundaria ese Apple ID es el del dueño.
+            OwnerKeyValueStore.shared.setString(canonical.code, forKey: overrideKey)
+            OwnerKeyValueStore.shared.synchronize()
 
             #if DEBUG
             print("LanguageManager: Remapped legacy alias '\(current)' → '\(canonical.code)'")

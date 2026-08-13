@@ -516,7 +516,11 @@ struct HandoverGroupsWiringTests {
     /// borrada de `wipeLocalGroupsDomain`— dejaría el bug entero de vuelta con la suite en verde.
     @Test func handoverWipe_clearsTheOnboardingModeThroughTheRealIKV() throws {
         let src = try Self.source("Yala/Utils/DataWipeService.swift")
-        #expect(src.contains("iKV: BeaconKeyValueStore = NSUbiquitousKeyValueStore.default"))
+        // 2026-08-12 · el default pasó de `NSUbiquitousKeyValueStore.default` a `OwnerKeyValueStore.shared`
+        // con la frontera M1 del iCloud KV. El invariante NO se relaja: la puerta escribe en el store real
+        // salvo con una sesión secundaria viva, que es justo el caso en que este barrido tocaría el modo
+        // de onboarding del DUEÑO. Lo que el test sigue prohibiendo es un default que no llegue a iCloud.
+        #expect(src.contains("iKV: BeaconKeyValueStore = OwnerKeyValueStore.shared"))
         #expect(src.contains("clearHandoverOnboardingMode(from: defaults, iKV: iKV)"))
         // El vacío es lo que hace `.skip` al merge never-downgrade; un `removeObject` sobre esta key
         // borraría el modo para los demás dispositivos del Apple ID.

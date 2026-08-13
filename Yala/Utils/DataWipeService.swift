@@ -269,7 +269,7 @@ final class DataWipeService {
     static func wipeLocalGroupsDomain(
         in context: ModelContext,
         defaults: UserDefaults = .standard,
-        iKV: BeaconKeyValueStore = NSUbiquitousKeyValueStore.default,
+        iKV: BeaconKeyValueStore = OwnerKeyValueStore.shared,
         resetSyncState: @MainActor () -> Void = {
             // 2.7: sin esto, borrar las filas del outbox (abajo) es COSMÉTICO —
             // `GroupsSyncClient.rehydrateOutboxFromMirror` las re-inserta en el próximo boot desde el

@@ -33,14 +33,16 @@ enum OnboardingResetHelper {
     /// señal explícita de "empezar de cero".
     static func clearResidualPreferencesForFreshStart() {
         let local = UserDefaults.standard
-        let iKV = NSUbiquitousKeyValueStore.default
+        // La PUERTA, no el store crudo: en sesión secundaria el iCloud KV es el del DUEÑO, y este
+        // barrido le dejaría su nombre y su divisa en blanco en todos sus dispositivos.
+        let iKV = OwnerKeyValueStore.shared
 
         for key in safeKeysToClear {
             local.removeObject(forKey: key)
             // Escribir "" al KV-Store en lugar de removeObject: el guard
             // `!remote.isEmpty` de applyRemoteValues filtra valores vacíos,
             // así que otros devices del Apple ID NO pierden sus prefs.
-            iKV.set("", forKey: key)
+            iKV.setString("", forKey: key)
         }
         iKV.synchronize()
     }

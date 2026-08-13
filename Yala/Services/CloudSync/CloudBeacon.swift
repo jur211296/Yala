@@ -30,12 +30,8 @@ protocol BeaconKeyValueStore: AnyObject {
     @discardableResult func synchronize() -> Bool
 }
 
-extension NSUbiquitousKeyValueStore: BeaconKeyValueStore {
-    func setBool(_ value: Bool, forKey key: String) { set(value, forKey: key) }
-    func setString(_ value: String, forKey key: String) { set(value, forKey: key) }
-    func setDouble(_ value: Double, forKey key: String) { set(value, forKey: key) }
-    // `bool(forKey:)`/`string(forKey:)`/`double(forKey:)`/`synchronize()` ya existen en la API nativa.
-}
+// La conformance del store CRUDO vive en `OwnerKeyValueStore.swift`, que es el único fichero del árbol
+// autorizado a nombrarlo (frontera M1, 2026-08-12). Aquí solo se consume el protocolo.
 
 // MARK: - CloudBeacon
 
@@ -53,8 +49,11 @@ final class CloudBeacon {
 
     private let store: BeaconKeyValueStore
 
-    /// Producción: el store iCloud-KV por defecto. Inyectable en tests.
-    init(store: BeaconKeyValueStore = NSUbiquitousKeyValueStore.default) {
+    /// Producción: la PUERTA del iCloud-KV, no el store crudo. El faro es la vía 3 del ticket de la
+    /// frontera M1: escrito desde una sesión secundaria, encaminaría los OTROS dispositivos del dueño
+    /// a la cuenta de la invitada. Su hermano `MigrationWorkExecutor` ya suprimía el faro en
+    /// secundaria a mano; aquí lo hace el store. Inyectable en tests.
+    init(store: BeaconKeyValueStore = OwnerKeyValueStore.shared) {
         self.store = store
     }
 
