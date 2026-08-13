@@ -732,7 +732,11 @@ struct WelcomeCloudSignInView: View {
                 hasLocalData: hasLocalDataNow(),
                 sameAccountClaimExists: CloudClaimActionStore.shared.action(forUserID: userID) != nil,
                 accountExists: true,
-                secondarySessionEnabled: CloudSyncFlags.secondarySessionEntryAvailable)
+                secondarySessionEnabled: CloudSyncFlags.secondarySessionEntryAvailable,
+                // Se lee AQUÍ y no se cachea: el mirror puede asentar entre que se monta la pantalla y
+                // que el usuario firma, y con el import ya asentado sus filas dejan de ser «las que
+                // estoy bajando». Mismo criterio que `hasLocalDataNow`, que es un closure por eso mismo.
+                restoreInProgress: ICloudRestoreSessionSignal.isRestoringNow)
             switch decision {
             case .blockedForeignData:
                 // M0: aquí NO se escribe el consent — la tabla dice `.never`. La sesión se descarta sin

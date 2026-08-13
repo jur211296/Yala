@@ -123,6 +123,13 @@ struct WelcomeRestoreView: View {
             state = .wiped
             return
         }
+        // El ÚNICO encendido de la señal, y va aquí y no en el tap de la card por dos razones medidas:
+        // (a) los dos `return` de arriba son los estados en los que NO hay import de CloudKit —sin
+        // cuenta y tras un wipe— y encender ahí abriría el guard cross-cuenta sin corpus que lo
+        // justifique; (b) elegir «Restaurar» con el mount neutro RELANZA la app
+        // (`WelcomeMirrorRelaunchLogic.requiresMirror(.restoreICloud)`), así que una señal encendida en
+        // el tap moriría con el proceso — este punto vive ya en el proceso que importa.
+        ICloudRestoreSessionSignal.noteRestoreStarted()
         state = .searching
     }
 

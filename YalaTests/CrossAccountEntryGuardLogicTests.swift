@@ -14,6 +14,82 @@ import Testing
 @Suite("Guard cross-cuenta del sign-in en Welcome (F0-C + M1)")
 struct CrossAccountEntryGuardLogicTests {
 
+    /// Atajo de la matriz histórica: los 16 combos de v1/M1 se afirman con la restauración APAGADA,
+    /// que es el estado de todo el mundo salvo la ventana de segundos del restore.
+    private static func decide(
+        hasLocalData: Bool, sameAccountClaimExists: Bool,
+        accountExists: Bool, secondarySessionEnabled: Bool
+    ) -> CrossAccountEntryGuardLogic.Decision {
+        CrossAccountEntryGuardLogic.decide(
+            hasLocalData: hasLocalData, sameAccountClaimExists: sameAccountClaimExists,
+            accountExists: accountExists, secondarySessionEnabled: secondarySessionEnabled,
+            restoreInProgress: false)
+    }
+
+    // MARK: - El dueño que está bajando SUS datos
+
+    /// EL caso del ticket. El dueño cambia de móvil o reinstala, entra por «Restaurar desde iCloud» y
+    /// —con la descarga a medias— toca «atrás» y entra por la card de su cuenta:
+    ///
+    ///  · `hasLocalData` es `true` por las filas que él mismo está bajando (`RestoreProgressView` las
+    ///    cuenta en vivo, así que no es una hipótesis: es lo que la pantalla muestra),
+    ///  · y no hay claim que las reclame, porque `CloudClaimActionStore` vive en `UserDefaults` y
+    ///    murió con la reinstalación — que es justo la mitad del escenario.
+    ///
+    /// Sin el término de la restauración, el guard clasifica como AJENAS unas filas que el propio
+    /// dueño acaba de pedir.
+    @Test("restaurando de iCloud, sus propias filas no cuentan como corpus de otro humano")
+    func ownerRestoringOwnData_isNotForeign() {
+        #expect(CrossAccountEntryGuardLogic.decide(
+            hasLocalData: true, sameAccountClaimExists: false,
+            accountExists: true, secondarySessionEnabled: false,
+            restoreInProgress: true
+        ) == .proceed, """
+            El dueño que restaura de iCloud y vuelve atrás con el import a medias tiene BLOQUEADA la \
+            entrada a su propia cuenta, y el texto le dice que estos datos son de otro.
+            """)
+    }
+
+    /// La celda que la sesión secundaria vuelve PEOR, y que el ticket no nombraba: con el feature
+    /// encendido (staging y `Yala Dev` al 100 %) la misma entrada da `.proceedSecondarySession` ⇒ el
+    /// dueño entraría como VISITA en su propio teléfono, con su corpus intacto pero invisible.
+    @Test("y tampoco lo mandan a la sesión secundaria de su propio móvil")
+    func ownerRestoringOwnData_isNotRoutedToSecondarySession() {
+        #expect(CrossAccountEntryGuardLogic.decide(
+            hasLocalData: true, sameAccountClaimExists: false,
+            accountExists: true, secondarySessionEnabled: true,
+            restoreInProgress: true
+        ) == .proceed, """
+            Con la sesión secundaria encendida, el dueño que está restaurando entra en su propio \
+            teléfono como si fuera una visita.
+            """)
+    }
+
+    /// El contrapeso, y es el que sostiene el fix entero: **la MISMA entrada, con la señal apagada,
+    /// sigue bloqueando**. Es lo que separa «el dueño está bajando sus datos» de «este device tiene
+    /// datos de otro humano», dos mundos que el detector de filas no puede distinguir por su cuenta.
+    ///
+    /// Su mutante es el que importa: cablear `restoreInProgress` a `true` fijo —o encender la señal en
+    /// un sitio que no sea el restore— desarma el guard cross-cuenta ENTERO y deja pasar a cualquiera
+    /// que firme sobre el corpus de otra persona.
+    @Test("con la señal APAGADA la misma celda sigue bloqueando: el fix no es un pase libre")
+    func withoutTheSignal_theSameCellStillBlocks() {
+        #expect(CrossAccountEntryGuardLogic.decide(
+            hasLocalData: true, sameAccountClaimExists: false,
+            accountExists: true, secondarySessionEnabled: false,
+            restoreInProgress: false
+        ) == .blockedForeignData, """
+            La señal dejó de ser el término que decide: sin restauración en curso, unas filas locales \
+            sin claim son corpus de otro humano y el guard tiene que cerrar.
+            """)
+        #expect(CrossAccountEntryGuardLogic.decide(
+            hasLocalData: true, sameAccountClaimExists: false,
+            accountExists: true, secondarySessionEnabled: true,
+            restoreInProgress: false
+        ) == .proceedSecondarySession,
+            "y con el feature encendido, la visita real sigue yendo a su sesión secundaria")
+    }
+
     @Test
     func cleanDevice_proceeds_always() {
         // Sin datos locales → adopt clásico, JAMÁS secundaria (aunque el flag esté ON:
@@ -21,7 +97,7 @@ struct CrossAccountEntryGuardLogicTests {
         for claim in [true, false] {
             for exists in [true, false] {
                 for flag in [true, false] {
-                    #expect(CrossAccountEntryGuardLogic.decide(
+                    #expect(Self.decide(
                         hasLocalData: false, sameAccountClaimExists: claim,
                         accountExists: exists, secondarySessionEnabled: flag
                     ) == .proceed)
@@ -35,7 +111,7 @@ struct CrossAccountEntryGuardLogicTests {
         // Re-entrada de la MISMA cuenta: el claim-store sobrevive el sign-out a propósito.
         for exists in [true, false] {
             for flag in [true, false] {
-                #expect(CrossAccountEntryGuardLogic.decide(
+                #expect(Self.decide(
                     hasLocalData: true, sameAccountClaimExists: true,
                     accountExists: exists, secondarySessionEnabled: flag
                 ) == .proceed)
@@ -47,7 +123,7 @@ struct CrossAccountEntryGuardLogicTests {
     func localData_foreignAccount_flagOff_blocks_exactlyAsV1() {
         // DARK: con el flag apagado, la tabla es EXACTAMENTE la de v1 (caso Pia bloqueado).
         for exists in [true, false] {
-            #expect(CrossAccountEntryGuardLogic.decide(
+            #expect(Self.decide(
                 hasLocalData: true, sameAccountClaimExists: false,
                 accountExists: exists, secondarySessionEnabled: false
             ) == .blockedForeignData)
@@ -57,7 +133,7 @@ struct CrossAccountEntryGuardLogicTests {
     @Test
     func localData_foreignAccount_flagOn_existsTrue_proceedsSecondary() {
         // LA celda M1: datos ajenos + cuenta existente + feature encendido → secundaria.
-        #expect(CrossAccountEntryGuardLogic.decide(
+        #expect(Self.decide(
             hasLocalData: true, sameAccountClaimExists: false,
             accountExists: true, secondarySessionEnabled: true
         ) == .proceedSecondarySession)
@@ -67,7 +143,7 @@ struct CrossAccountEntryGuardLogicTests {
     func localData_foreignAccount_flagOn_existsFalse_stillBlocks() {
         // Sin cuenta existente NO hay secundaria (v1 solo returningUser — born-cloud de
         // invitado diferido a v1.1, decisión 6): se bloquea como siempre.
-        #expect(CrossAccountEntryGuardLogic.decide(
+        #expect(Self.decide(
             hasLocalData: true, sameAccountClaimExists: false,
             accountExists: false, secondarySessionEnabled: true
         ) == .blockedForeignData)

@@ -209,11 +209,13 @@ struct CloudRemoteConfigTests {
 
         #expect(CrossAccountEntryGuardLogic.decide(
             hasLocalData: true, sameAccountClaimExists: false,
-            accountExists: true, secondarySessionEnabled: false) == .blockedForeignData)
+            accountExists: true, secondarySessionEnabled: false,
+            restoreInProgress: false) == .blockedForeignData)
         // Control positivo de la celda: con la entrada disponible, la MISMA fila enruta a secundaria.
         #expect(CrossAccountEntryGuardLogic.decide(
             hasLocalData: true, sameAccountClaimExists: false,
-            accountExists: true, secondarySessionEnabled: true) == .proceedSecondarySession)
+            accountExists: true, secondarySessionEnabled: true,
+            restoreInProgress: false) == .proceedSecondarySession)
     }
 
     /// **LA MUTACIÓN DEL CHIP: hacer el campo del snapshot no-opcional.** Un snapshot cacheado por un

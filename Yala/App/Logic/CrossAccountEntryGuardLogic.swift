@@ -44,13 +44,26 @@ nonisolated enum CrossAccountEntryGuardLogic {
     ///   - accountExists: `GET /account/exists == true` (la secundaria v1 solo soporta
     ///     `returningUser` — born-cloud de invitado diferido a v1.1, decisión 6).
     ///   - secondarySessionEnabled: `CloudSyncFlags.secondarySessionEntryAvailable`.
+    ///   - restoreInProgress: ESTA sesión pidió restaurar de iCloud y ese import no ha terminado
+    ///     (`ICloudRestoreSessionSignal.isRestoringNow`). **SIN valor por defecto a propósito**: un
+    ///     default sería `false` y cualquier call-site nuevo heredaría el bug en silencio, que es la
+    ///     familia del `attestProvider: { nil }` de `.claude/rules/gateway-attest.md`. Sin él, añadir
+    ///     una puerta obliga a decidir, y lo comprueba el compilador y no un escáner.
     static func decide(
         hasLocalData: Bool,
         sameAccountClaimExists: Bool,
         accountExists: Bool,
-        secondarySessionEnabled: Bool
+        secondarySessionEnabled: Bool,
+        restoreInProgress: Bool
     ) -> Decision {
-        guard hasLocalData else { return .proceed }
+        // Las filas que el propio dueño está bajando de SU iCloud ahora mismo no son «corpus
+        // preexistente»: son el resultado, a medias, de lo que él acaba de pedir. Sin este término el
+        // guard las clasifica como ajenas —el claim que las reclamaría vive en `UserDefaults` y muere
+        // con la reinstalación, que es la mitad del escenario— y le bloquea la entrada a su cuenta.
+        //
+        // Va DELANTE del `guard hasLocalData` y no como una cuarta rama a propósito: lo que la señal
+        // corrige es el TÉRMINO de los datos, no el veredicto. Todo lo demás del guard sigue mandando.
+        guard hasLocalData, !restoreInProgress else { return .proceed }
         if sameAccountClaimExists { return .proceed }
         if accountExists && secondarySessionEnabled { return .proceedSecondarySession }
         return .blockedForeignData
