@@ -249,8 +249,15 @@ struct SessionDefaultsWiringTests {
             if Self.misalignedReaderExceptions.keys.contains(path) { continue }
             for (n, line) in code(path).split(separator: "\n", omittingEmptySubsequences: false).enumerated()
             where line.contains("UserDefaults.standard") {
-                let named = person.contains { line.contains("\"\($0)\"") } || symbols.contains { line.contains($0) }
-                if named { offenders.append("\(path):\(n + 1)  \(line.trimmingCharacters(in: .whitespaces))") }
+                // Tres formas de nombrar una key de persona, y las tres cuentan: el literal, el
+                // símbolo de `AppPreferences.Keys`, y las FAMILIAS dinámicas (`nudge.interacted.<x>`,
+                // `guide.<id>.dismissed`), que un `Set` exacto perdería enteras.
+                let byLiteral = person.contains { line.contains("\"\($0)\"") }
+                let bySymbol = symbols.contains { line.contains($0) }
+                let byFamily = SessionPreferenceKeys.personPrefixes.contains { line.contains("\"\($0)") }
+                if byLiteral || bySymbol || byFamily {
+                    offenders.append("\(path):\(n + 1)  \(line.trimmingCharacters(in: .whitespaces))")
+                }
             }
         }
         #expect(offenders.isEmpty, """

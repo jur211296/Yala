@@ -101,13 +101,13 @@ struct AIPrivacySettingsView: View {
         // aquí estaría stale y revertiría el toggle aunque el usuario haya aceptado. La key es la
         // misma SSOT que persiste el alert.
         .onChange(of: showDataConsentAlert) { _, shown in
-            if !shown && !UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) { dataToggle = false }
+            if !shown && !SessionDefaults.current.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) { dataToggle = false }
         }
         .onChange(of: showChatConsentAlert) { _, shown in
-            if !shown && !UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiChatConsentAccepted) { chatToggle = false }
+            if !shown && !SessionDefaults.current.bool(forKey: AppPreferences.Keys.aiChatConsentAccepted) { chatToggle = false }
         }
         .onChange(of: showInsightsConsentAlert) { _, shown in
-            if !shown && !UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiInsightsConsentAccepted) { insightsToggle = false }
+            if !shown && !SessionDefaults.current.bool(forKey: AppPreferences.Keys.aiInsightsConsentAccepted) { insightsToggle = false }
         }
         .aiConsentAlert(isPresented: $showDataConsentAlert, pendingInput: $pendingAIInput) { _ in }
         .chatConsentAlert(isPresented: $showChatConsentAlert)

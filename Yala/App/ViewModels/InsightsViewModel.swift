@@ -209,7 +209,7 @@ final class InsightsViewModel {
 
         // Check prerequisites
         let isPro = FeatureGateService.shared.canAccess(.smartInsightsAI)
-        let hasConsent = UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiInsightsConsentAccepted)
+        let hasConsent = SessionDefaults.current.bool(forKey: AppPreferences.Keys.aiInsightsConsentAccepted)
         let isOnline = NetworkMonitor.shared.isConnected
 
         guard isPro, hasConsent, isOnline else {

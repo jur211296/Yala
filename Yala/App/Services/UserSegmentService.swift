@@ -156,10 +156,10 @@ final class UserSegmentService {
         if budgetCount > 0 { return true }
 
         // Check if AI insights consent was given
-        if UserDefaults.standard.bool(forKey: "aiInsightsConsentAccepted") { return true }
+        if SessionDefaults.current.bool(forKey: "aiInsightsConsentAccepted") { return true }
 
         // Check if export was used
-        if UserDefaults.standard.bool(forKey: "hasExportedData") { return true }
+        if SessionDefaults.current.bool(forKey: "hasExportedData") { return true }
 
         return false
     }

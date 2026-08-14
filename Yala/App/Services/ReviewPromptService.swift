@@ -27,8 +27,8 @@ enum ReviewPromptService {
 
     /// Registrar primera apertura (llamar en bootstrap, solo la primera vez)
     static func recordFirstLaunchIfNeeded() {
-        if UserDefaults.standard.object(forKey: firstLaunchDateKey) == nil {
-            UserDefaults.standard.set(Date.now, forKey: firstLaunchDateKey)
+        if SessionDefaults.current.object(forKey: firstLaunchDateKey) == nil {
+            SessionDefaults.current.set(Date.now, forKey: firstLaunchDateKey)
         }
     }
 
@@ -38,17 +38,17 @@ enum ReviewPromptService {
         guard transactionCount >= minTransactions else { return false }
 
         // 2. Onboarding completo
-        guard UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") else { return false }
+        guard SessionDefaults.current.bool(forKey: "hasCompletedOnboarding") else { return false }
 
         // 3. Madurez: 7+ días desde install
-        guard let firstLaunch = UserDefaults.standard.object(forKey: firstLaunchDateKey) as? Date else {
+        guard let firstLaunch = SessionDefaults.current.object(forKey: firstLaunchDateKey) as? Date else {
             return false
         }
         let daysSinceInstall = Calendar.current.dateComponents([.day], from: firstLaunch, to: Date.now).day ?? 0
         guard daysSinceInstall >= minDaysSinceInstall else { return false }
 
         // 4. Cooldown: 120+ días desde último prompt
-        if let lastPrompt = UserDefaults.standard.object(forKey: lastPromptDateKey) as? Date {
+        if let lastPrompt = SessionDefaults.current.object(forKey: lastPromptDateKey) as? Date {
             let daysSinceLastPrompt = Calendar.current.dateComponents([.day], from: lastPrompt, to: Date.now).day ?? 0
             guard daysSinceLastPrompt >= cooldownDays else { return false }
         }
@@ -58,8 +58,8 @@ enum ReviewPromptService {
 
     /// Registrar que se mostró el prompt
     static func recordPromptShown() {
-        UserDefaults.standard.set(Date.now, forKey: lastPromptDateKey)
-        let count = UserDefaults.standard.integer(forKey: promptCountKey) + 1
-        UserDefaults.standard.set(count, forKey: promptCountKey)
+        SessionDefaults.current.set(Date.now, forKey: lastPromptDateKey)
+        let count = SessionDefaults.current.integer(forKey: promptCountKey) + 1
+        SessionDefaults.current.set(count, forKey: promptCountKey)
     }
 }

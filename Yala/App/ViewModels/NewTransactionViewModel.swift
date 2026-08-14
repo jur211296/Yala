@@ -949,9 +949,9 @@ final class NewTransactionViewModel {
 
     func checkNotificationPrimer() async {
         let count = SessionDefaults.current.integer(forKey: "transactionsSavedCount")
-        guard count >= 3, !UserDefaults.standard.bool(forKey: "hasSeenNotificationPrimer") else { return }
+        guard count >= 3, !SessionDefaults.current.bool(forKey: "hasSeenNotificationPrimer") else { return }
         let status = await NotificationService.shared.checkPermissionStatus()
-        UserDefaults.standard.set(true, forKey: "hasSeenNotificationPrimer")
+        SessionDefaults.current.set(true, forKey: "hasSeenNotificationPrimer")
         if status == .notDetermined {
             showNotificationPrimer = true
         }
@@ -1007,9 +1007,9 @@ final class NewTransactionViewModel {
         self.amountString = AmountInputHelper.formatWithGrouping(amount)
 
         // Save last used preferences
-        UserDefaults.standard.set(splitType.rawValue, forKey: "lastSplitType")
+        SessionDefaults.current.set(splitType.rawValue, forKey: "lastSplitType")
         if splitType == .percentage {
-            UserDefaults.standard.set(myValue, forKey: "lastSplitPercentage")
+            SessionDefaults.current.set(myValue, forKey: "lastSplitPercentage")
         }
     }
 

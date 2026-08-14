@@ -368,7 +368,7 @@ struct GroupInviteOnboardingView: View {
         // .groupInvite` — un proxy que además tapaba el educativo a quien entraba por la card «Solo
         // grupos», que era justo quien menos contexto tenía. Sin esta línea, el invitado vería el educativo
         // general del tab justo después del suyo.
-        UserDefaults.standard.set(true, forKey: AppPreferences.Keys.hasShownGroupsOnboarding)
+        SessionDefaults.current.set(true, forKey: AppPreferences.Keys.hasShownGroupsOnboarding)
 
         // 2. Save user name
         sync.set(string: effectiveName, forKey: AppPreferences.Keys.userName)

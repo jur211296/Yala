@@ -112,7 +112,77 @@ nonisolated enum SessionPreferenceKeys {
         "pro.upsell.sessionCount", "pro.upsell.lastShownDate", "pro.upsell.dismissCount",
         "pro.upsell.monthlyShownCount", "pro.upsell.monthlyResetDate",
         "pro.trial.wasInTrial", "pro.trial.expiredSheetShown", "pro.milestone.lastShown",
+
+        // — F4 · el resto de `AppPreferences`, las `synced: false`. **Ya viajaban al cajón** desde F3
+        //   (el consumidor se mueve entero, no key por key); declararlas aquí es lo que las mete en la
+        //   red del escáner de lectores desalineados, que es donde estaba el trabajo de verdad.
+
+        //   Consentimientos de IA. Son de la PERSONA por la razón más fuerte de todo el inventario:
+        //   un consentimiento es un hecho de quien lo da, y heredar el del dueño equivaldría a darlo
+        //   por ella. Es la misma lección que sacó del canal de prefs el consent de Grupos (C1).
+        "aiDataConsentAccepted", "aiChatConsentAccepted", "aiInsightsConsentAccepted",
+
+        //   Qué funciones de IA quiere encendidas, y por dónde entra.
+        "aiInsightsEnabled", "cashFlowAIEnabled", "chatAssistantEnabled",
+        "imageInputEnabled", "voiceInputEnabled", "chatFABVisible",
+
+        //   Qué ideas quiere ver en su panel, y cómo ordena lo suyo.
+        "insightsShowTexts", "insightsShowNature", "insightsShowWeekday", "insightsShowQuickStats",
+        "insightsShowBudgetsAtRisk", "insightsShowSubscriptions", "insightsShowPendingPayments",
+        "budgets.hideInactive", "tagsSortOrderNames", "userAlias",
+
+        //   Tours, hints y coach-marks: PERSONA, y la decisión merece decirse porque la intuición
+        //   tira a «esto es del teléfono». Un tour no recuerda un ajuste: explica la app a alguien que
+        //   no la conoce. Si la visita nunca ha usado Yala, verlos es lo correcto — y el cajón nace
+        //   vacío, así que los ve sin que nadie tenga que sembrarlos. La contrapartida es que el dueño
+        //   NO los vuelve a ver al recuperar su móvil, porque los suyos nunca se tocaron.
+        "hasSeenSettingsTour", "hasSeenCashFlowSetupTour", "hasSeenCashFlowTableTour",
+        "hasSeenTodayFXCoachMark", "hasSeenGroupsNotificationPrompt", "hasShownGroupsOnboarding",
+        "showSiriTip", "showWidgetHints",
+
+        // — F4 · los servicios con su propio almacén, fuera de `AppPreferences`. Aquí el criterio es
+        //   el mismo de siempre —¿el hecho es de la persona o del teléfono?— aplicado a cuatro casos
+        //   que ni el ticket ni el plan nombraban.
+
+        //   La apariencia elegida. Es lo más visible de todo el inventario: si la visita cambia el
+        //   tema, el dueño recupera su móvil con otro aspecto.
+        "userTheme",
+
+        //   Cuántas veces se le enseñó un aviso a ESTA persona y si interactuó. Misma familia exacta
+        //   que `pro.upsell.sessionCount`, que el owner ya resolvió como PERSONA: a la visita le
+        //   saldrían en su primera pantalla como si llevara meses.
+        "nudge.lastShownDate", "nudge.weeklyShownCount", "nudge.monthlyShownCount",
+        "nudge.weeklyResetDate", "nudge.monthlyResetDate",
+
+        //   «Ya le pedí una reseña a esta persona». Pedírsela a la visita el día que entra, contando
+        //   los meses de uso del dueño, es justo lo que estas tres evitan.
+        "reviewFirstLaunchDate", "reviewLastPromptDate", "reviewPromptCount",
+
+        //   El PAR de `chatQuestionsToday`, y la lección más cara de F4: al mover el contador sin
+        //   ella, `ChatAssistantService` quedó comparando la fecha del DUEÑO contra el contador de la
+        //   VISITA — el lector desalineado en su forma exacta, introducido por el propio fix. **El
+        //   escáner no lo cazó porque solo protege lo que está DECLARADO**: un par cuya otra mitad no
+        //   figura en esta lista es invisible para él. ⇒ al añadir una key, busca con qué se compara.
+        "chatLastQuestionDate",
+
+        //   Lo suyo, en pantallas donde el reparto y la bandeja recuerdan la última elección.
+        "lastSplitType", "lastSplitPercentage", "lastInboxDraftCheckDate",
+        "hasSeenNotificationPrimer", "hasExportedData",
     ]
+
+    /// **Familias de keys DINÁMICAS de la persona**, que no se pueden enumerar una a una porque su
+    /// nombre se compone en tiempo de ejecución. Son tres y cada una tiene su generador:
+    /// `nudge.interacted.<tipo>` (`NudgeService.Keys.interacted`), `guide.<id>.dismissed`
+    /// (`ContextualGuideBanner`) y la familia `pro.*` de la oferta.
+    ///
+    /// Un `Set` exacto las perdería enteras, y perderlas no es inocuo: son justo las que registran
+    /// «a esta persona ya se le enseñó esto».
+    static let personPrefixes: [String] = ["nudge.", "guide.", "pro."]
+
+    /// ¿Esta key viaja con la persona? Contempla las dos formas — enumerada y por familia.
+    static func belongsToPerson(_ key: String) -> Bool {
+        person.contains(key) || personPrefixes.contains { key.hasPrefix($0) }
+    }
 
     /// **Keys que NO son de la persona**, cada una con su porqué EN EL CÓDIGO.
     ///
@@ -141,5 +211,23 @@ nonisolated enum SessionPreferenceKeys {
             "Del TELÉFONO, y con historia: es el sello de adopción del dominio Grupos, y que la visita "
             + "lo escribiera en el dominio del dueño fue una de las tres vías que cerró el chip M1 de "
             + "2026-08-11. Su guard vive en el ESCRITOR y ahí se queda.",
+        "yala.wasProUser":
+            "Del TELÉFONO, y es el caso donde la intuición falla: Pro NO se compra con la cuenta de "
+            + "Yala sino con el Apple ID del dispositivo, así que durante la visita la app es Pro "
+            + "porque lo es el móvil del dueño — no porque ella haya comprado nada. Llevarlo al cajón "
+            + "haría que StoreKit y el espejo local discreparan, y al salir el dueño podría encontrarse "
+            + "la app creyendo que dejó de ser Pro. El estado de suscripción lo resuelve StoreKit por "
+            + "Apple ID; esta key solo lo espeja.",
+        "dev.forceProTier":
+            "Del TELÉFONO: interruptor de desarrollo del scheme Dev, sin significado para ningún "
+            + "usuario real. Vive fuera de la frontera a propósito.",
+        "dev.forceFreeTier":
+            "Del TELÉFONO, por el mismo motivo que su gemelo `dev.forceProTier`.",
+        "devSeedDataExecuted":
+            "Del TELÉFONO: centinela del seed de datos de desarrollo, sin significado para ningún "
+            + "usuario real.",
+        "notificationsSeeded":
+            "Del TELÉFONO: centinela de que las notificaciones locales de ESTA instalación ya se "
+            + "sembraron. Habla del aparato y de su permiso del sistema, no de quién lo usa.",
     ]
 }

@@ -1631,7 +1631,7 @@ final class AppBootstrapper {
                 RouterEntryGate.shared.submit(.presentUpgradeSheet(.voice))
                 return
             }
-            if UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) {
+            if SessionDefaults.current.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) {
                 RouterEntryGate.shared.submit(.presentVoiceEntry)
             } else {
                 RouterEntryGate.shared.submit(.requestAIConsent(.voice))
@@ -1641,7 +1641,7 @@ final class AppBootstrapper {
                 RouterEntryGate.shared.submit(.presentUpgradeSheet(.image))
                 return
             }
-            if UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) {
+            if SessionDefaults.current.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) {
                 RouterEntryGate.shared.submit(.presentImageEntry)
             } else {
                 RouterEntryGate.shared.submit(.requestAIConsent(.image))
@@ -2285,9 +2285,9 @@ final class AppBootstrapper {
     private func resetProThemeIfNeeded() {
         guard !FeatureGateService.shared.isProUser else { return }
 
-        let currentTheme = AppTheme(rawValue: UserDefaults.standard.integer(forKey: "userTheme")) ?? .liquidGlass
+        let currentTheme = AppTheme(rawValue: SessionDefaults.current.integer(forKey: "userTheme")) ?? .liquidGlass
         if currentTheme.isPro {
-            UserDefaults.standard.set(AppTheme.liquidGlass.rawValue, forKey: "userTheme")
+            SessionDefaults.current.set(AppTheme.liquidGlass.rawValue, forKey: "userTheme")
             #if DEBUG
             print("AppBootstrapper: Reset Pro theme '\(currentTheme.label)' to Liquid Glass")
             #endif
@@ -2350,7 +2350,7 @@ final class AppBootstrapper {
         // Legacy Date-based watermark is dropped on migration — the first
         // post-upgrade check emits an alert for all real pending drafts
         // (no silent suppression).
-        UserDefaults.standard.removeObject(forKey: "lastInboxDraftCheckDate")
+        SessionDefaults.current.removeObject(forKey: "lastInboxDraftCheckDate")
 
         var processed = Set(loadProcessedInboxSignatures())
 
@@ -2444,7 +2444,7 @@ final class AppBootstrapper {
     private func enqueueSharedImage(_ url: URL) {
         sessionState.pendingSharedImageURL = url
         RouterEntryGate.shared.submit(.navigate(.panel))
-        if UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) {
+        if SessionDefaults.current.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) {
             RouterEntryGate.shared.submit(.presentSharedImage(url))
         } else {
             RouterEntryGate.shared.submit(.requestAIConsent(.image))

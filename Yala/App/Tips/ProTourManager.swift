@@ -63,7 +63,7 @@ final class ProTourManager {
     func triggerIfEligible() {
         guard !hasCompleted,
               !triggered,
-              UserDefaults.standard.bool(forKey: "hasSeenSettingsTour"),
+              SessionDefaults.current.bool(forKey: "hasSeenSettingsTour"),
               FeatureGateService.shared.isProUser else { return }
 
         #if DEBUG

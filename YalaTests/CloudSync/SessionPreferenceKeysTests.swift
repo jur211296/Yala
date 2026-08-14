@@ -120,6 +120,49 @@ struct SessionPreferenceKeysNetTests {
         #expect(both.isEmpty, "clasificada dos veces: \(both.sorted().joined(separator: ", "))")
     }
 
+    /// **El cierre de F4: lo que sigue en `.standard` está medido, no supuesto.**
+    ///
+    /// El inventario no puede demostrar que esté completo —ninguna lista puede—, así que la garantía
+    /// se construye por el otro lado: se cuentan las keys LITERALES que quedan escribiéndose en el
+    /// dominio del dueño y se exige que todas estén clasificadas. Si mañana alguien añade una key
+    /// nueva contra `UserDefaults.standard` sin decir de quién es, este test la nombra.
+    ///
+    /// Lo que queda es infraestructura del aparato: centinelas de seed, interruptores de desarrollo y
+    /// los flags de onboarding que la siembra hereda a propósito.
+    @Test("ninguna key literal escrita en `.standard` se queda sin clasificar")
+    func noUnclassifiedLiteralsRemain() {
+        var unknown: [String: Int] = [:]
+        for url in sourceFiles(in: "Yala") {
+            for line in code(url).split(separator: "\n", omittingEmptySubsequences: false)
+            where line.contains("UserDefaults.standard") {
+                for m in line.matches(of: /forKey: "([^"]+)"/) {
+                    let key = String(m.1)
+                    guard !SessionPreferenceKeys.belongsToPerson(key),
+                          SessionPreferenceKeys.deviceExceptions[key] == nil else { continue }
+                    unknown[key, default: 0] += 1
+                }
+            }
+        }
+        #expect(unknown.isEmpty, """
+            \(unknown.count) key(s) se escriben en el dominio del dueño sin estar clasificadas.
+            Decide de quién es cada una en `SessionPreferenceKeys` — si es del teléfono, va a
+            `deviceExceptions` CON SU PORQUÉ:
+            \(unknown.sorted { $0.key < $1.key }.map { "\($0.key) ×\($0.value)" }.joined(separator: ", "))
+            """)
+    }
+
+    @Test("las familias dinámicas están declaradas y `belongsToPerson` las resuelve")
+    func dynamicFamiliesAreCovered() {
+        // Tres familias componen su nombre en runtime, así que un `Set` exacto las perdería enteras —
+        // y son justo las que registran «a esta persona ya se le enseñó esto».
+        #expect(SessionPreferenceKeys.belongsToPerson("nudge.interacted.groupsInvite"))
+        #expect(SessionPreferenceKeys.belongsToPerson("guide.panelHero.dismissed"))
+        #expect(SessionPreferenceKeys.belongsToPerson("pro.upsell.sessionCount"))
+        // Y no se pasa de lista: una key del teléfono no cae dentro por accidente.
+        #expect(!SessionPreferenceKeys.belongsToPerson("lastSeenAppVersion"))
+        #expect(!SessionPreferenceKeys.belongsToPerson("devSeedDataExecuted"))
+    }
+
     @Test("toda excepción declara su porqué, y no de cualquier manera")
     func everyExceptionCarriesItsReason() {
         for (key, reason) in SessionPreferenceKeys.deviceExceptions {
