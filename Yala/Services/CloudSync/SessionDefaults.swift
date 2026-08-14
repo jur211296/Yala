@@ -51,7 +51,7 @@
 //  comodidad: `AppBootstrapper.swift:658` planta el descriptor en los XCUITest, pero lo hace en el
 //  dominio VOLÁTIL (`UITestEphemeralDefaults.applySecondarySession` → `volatileApply`, sin rastro en
 //  disco) mientras que un suite SÍ persistiría; y los dos anclajes del ciclo de vida están apagados
-//  en ambos entornos (`SwiftDataConfiguration.swift:811` y `:876`). Sin la excepción nacería un cajón
+//  en ambos entornos (`SwiftDataConfiguration.swift:811` y `:888`). Sin la excepción nacería un cajón
 //  que nadie siembra, nadie destruye y ninguna purga alcanza — el precedente exacto de
 //  `groupsDomainSealedForFreshStart`, que dejó 14 tests rojos «hasta que alguien borre el simulador».
 //  Los tests ejercitan la puerta por el parámetro `isTestEnvironment`, molde de las variantes

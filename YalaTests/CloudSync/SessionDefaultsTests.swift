@@ -78,7 +78,7 @@ struct SessionDefaultsGateTests {
     func testEnvironmentBypassesSuite() {
         // Ver la cabecera de `SessionDefaults`: bajo XCUITest el descriptor se planta en el dominio
         // VOLÁTIL, pero un suite persistiría en disco y ninguno de los dos anclajes del ciclo de vida
-        // corre ahí (`SwiftDataConfiguration:811` y `:876`) ⇒ cajón huérfano que ninguna purga
+        // corre ahí (`SwiftDataConfiguration:811` y `:888`) ⇒ cajón huérfano que ninguna purga
         // alcanza. Es el precedente `groupsDomainSealedForFreshStart`.
         let owner = makeIsolatedDefaults(prefix: "sd.testenv")
         SecondarySessionStore.activate(userID: freshUserID("guest"), owner)
