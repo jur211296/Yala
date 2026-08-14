@@ -343,6 +343,10 @@ final class GroupExpenseViewModel {
         currencyCode = template.currencyCode
         expenseDescription = template.description
         splitType = template.splitType
+        // La fecha del origen. `date` nace en `.now` (el caso «gasto nuevo»), así que sin esta
+        // línea un borrador de hace tres días se convertía en un gasto de grupo fechado HOY —
+        // la plantilla traía monto, descripción y reparto, y perdía justo la fecha.
+        date = template.date
 
         let activeIDs = Set(activeSheetMembers.map { $0.id.uuidString })
         selectedMemberIDs = Set(template.participantIDs.map { $0.uuidString }).intersection(activeIDs)

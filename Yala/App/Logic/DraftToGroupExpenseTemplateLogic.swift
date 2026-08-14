@@ -24,13 +24,17 @@ enum DraftToGroupExpenseTemplateLogic {
     ///   - activeMemberIDs: miembros activos del grupo elegido (todos preseleccionados).
     ///   - groupCurrencyCode: moneda nativa del grupo (fallback de moneda).
     ///   - accountPrefill: cuenta personal del pagador (Caso A). `nil` en tests.
+    ///   - date: fecha DEL DRAFT. Sin default a propósito — ver el campo `date` de
+    ///     `GroupExpensePrefillTemplate`: un default `.now` reintroduce el bug que este
+    ///     parámetro existe para cerrar, y lo hace sin que nadie lo note.
     static func buildTemplate(
         amount: Double,
         cachedCurrencyCode: String?,
         note: String,
         activeMemberIDs: [UUID],
         groupCurrencyCode: String,
-        accountPrefill: Account? = nil
+        accountPrefill: Account? = nil,
+        date: Date
     ) -> GroupExpensePrefillTemplate {
         GroupExpensePrefillTemplate(
             totalAmount: abs(amount),
@@ -39,7 +43,8 @@ enum DraftToGroupExpenseTemplateLogic {
             participantIDs: activeMemberIDs,
             values: [:],
             description: note,
-            accountPrefill: accountPrefill
+            accountPrefill: accountPrefill,
+            date: date
         )
     }
 }

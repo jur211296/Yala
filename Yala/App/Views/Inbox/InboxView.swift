@@ -117,7 +117,13 @@ struct InboxView: View {
             participantIDs: payment.resolvedParticipantIDs(),
             values: payment.resolvedSplitValues(),
             description: payment.name,
-            accountPrefill: payment.account
+            accountPrefill: payment.account,
+            // La del DRAFT (el vencimiento que se está aprobando), no `payment.nextDueDate`: el
+            // pago recurrente ya avanzó su próxima fecha, así que tomarla de ahí fecharía el gasto
+            // en el vencimiento SIGUIENTE. El draft es la ocurrencia concreta que el usuario ve.
+            // `effectiveDate` y no `date`: éste es opcional y su fallback (`createdAt`) es el que
+            // el resto del Inbox ya usa para mostrar y ordenar.
+            date: draft.effectiveDate
         )
         return (group, members, lookup, template)
     }
@@ -202,7 +208,10 @@ struct InboxView: View {
             note: draft.note,
             activeMemberIDs: activeMembers.map { $0.id },
             groupCurrencyCode: group.currencyCode,
-            accountPrefill: draft.account
+            accountPrefill: draft.account,
+            // `effectiveDate`: `date` es opcional y su fallback (`createdAt`) es el que el resto
+            // del Inbox usa para mostrar y ordenar.
+            date: draft.effectiveDate
         )
         return ConversionContext(draft: draft, group: group, members: members, lookup: lookup, template: template)
     }

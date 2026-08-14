@@ -30,6 +30,17 @@ struct GroupExpensePrefillTemplate {
     let values: [UUID: Double]
     let description: String
     let accountPrefill: Account?
+    /// Fecha del origen (el draft), NO la de la conversión.
+    ///
+    /// **Sin valor por defecto a propósito.** El bug que cierra este campo era justo su ausencia:
+    /// `GroupExpenseViewModel.date` arranca en `.now`, así que un borrador de hace tres días se
+    /// convertía en un gasto de grupo fechado HOY, y el usuario no tenía forma de notarlo salvo
+    /// mirando la fecha. Un default `.now` aquí cumpliría la letra y dejaría el mismo agujero
+    /// abierto para cualquier productor nuevo, en silencio: los DOS que existen hoy
+    /// (`InboxView.loadGroupScheduledContext` y `loadConversionContext`, vía
+    /// `DraftToGroupExpenseTemplateLogic`) nacieron con él. Quien añada un tercero tiene que
+    /// decidir qué fecha corresponde, y el compilador se lo va a exigir.
+    let date: Date
 }
 
 struct GroupExpenseFormView: View {
