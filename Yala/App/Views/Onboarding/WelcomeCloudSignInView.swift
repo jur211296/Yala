@@ -808,6 +808,22 @@ struct WelcomeCloudSignInView: View {
         // resuelve `.localOnly` — ni el iKV del dueño ni el outbox de nadie. Un paso antes se propagaría
         // a los otros devices del Apple ID del dueño.
         persistConsentIfDue(at: .afterSecondaryDescriptor, routedBy: .proceedSecondarySession)
+
+        // El WIDGET, in-session y no solo en el hook de entrada. La purga de frontera
+        // (`SecondarySessionBoundaryPurge`) ya hace este mismo `clearCache()`, pero corre PRE-MOUNT: solo
+        // en el arranque siguiente. Entre esta línea y ese arranque el teléfono lo tiene la invitada, y el
+        // widget de la pantalla de inicio sigue pintando los saldos y los nombres de cuenta DEL DUEÑO —
+        // basta con que ella salga a la home para verlos. Es la simétrica de lo que la SALIDA ya hacía
+        // (`CloudSessionSignOut.clearLocalSurfacesForArmedWipe`), y la asimetría entre las dos era el único
+        // hueco vivo que quedaba de este ticket (medido 2026-08-14).
+        //
+        // El orden con `republishActiveSeal` importa poco —`clearCache` no toca la key del sello— pero se
+        // deja así para que se lea como lo que es: primero se retira lo del dueño, después se declara de
+        // quién será lo siguiente. El republish va DESPUÉS de `activate`, que ya ocurrió arriba: antes
+        // publicaría `nil` y el primer snapshot de la invitada se serviría como si fuera de él.
+        WidgetDataCache.clearCache()
+        WidgetDataCache.republishActiveSeal()
+
         CloudSyncBreadcrumb.secondaryEntryArmed()
         phase = .relaunchSecondary
     }

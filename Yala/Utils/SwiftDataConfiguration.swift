@@ -827,7 +827,14 @@ extension SwiftDataConfiguration {
         deleteFiles: (String, Schema) -> Bool,
         purge: () -> Void,
         cancelNotifications: () -> Void = {},
-        destroySessionDomain: (String) -> Void = { SessionDefaults.destroySuite(forUserID: $0) }
+        destroySessionDomain: (String) -> Void = { SessionDefaults.destroySuite(forUserID: $0) },
+        // `@MainActor` en el TIPO y no solo en el cuerpo: la expresión por defecto de un parámetro se
+        // evalúa en contexto nonisolated aunque la función que lo declara sea MainActor, así que sin la
+        // anotación el default no compila (`WidgetDataCache` sí lo es). Formar la closure ahí es legal; la
+        // llamada ocurre dentro del cuerpo, que ya está en el actor.
+        republishWidgetSeal: @MainActor (UserDefaults) -> Void = {
+            WidgetDataCache.republishActiveSeal($0)
+        }
     ) {
         guard SecondarySessionStore.isWipeArmed(defaults) else { return }
 
@@ -855,6 +862,17 @@ extension SwiftDataConfiguration {
 
         SecondarySessionStore.clear(defaults)
         SecondarySessionStore.clearEntryPurgeMark(defaults)
+
+        // 3.25) El SELLO del widget, y este ORDEN es el mecanismo entero: la key del App Group espeja el
+        // DESCRIPTOR, así que solo a partir del `clear` de arriba `republish` resuelve `nil` y RETIRA el
+        // sello de la invitada. Ponerlo una línea antes lo re-publicaría y dejaría válido cualquier
+        // snapshot suyo que hubiera quedado en disco — que es justo lo que el lector tiene que rechazar.
+        //
+        // Es lo que hace la garantía independiente de que ninguna limpieza llegue a correr: la purga del
+        // paso 2 ya hace `clearCache()`, pero un `clearCache()` que no corra falla ABIERTO (el snapshot
+        // sigue sirviéndose) y un sello retirado falla CERRADO (el snapshot deja de casar). Por eso van los
+        // dos, y por eso éste cuelga del descriptor y no del snapshot.
+        republishWidgetSeal(defaults)
 
         // **Estas tres SE QUEDAN, y con el dominio por sesión ya cableado hace falta decir por qué**
         // (decisión del owner, 2026-08-13). El plan de la frontera las daba por «compensación» del
@@ -905,6 +923,13 @@ extension SwiftDataConfiguration {
         cancelNotifications: () -> Void,
         seedSessionDomain: (UserDefaults, String) -> Void = {
             SessionDefaults.seedDeviceKeysIfNeeded(from: $0, forUserID: $1)
+        },
+        // `@MainActor` en el TIPO y no solo en el cuerpo: la expresión por defecto de un parámetro se
+        // evalúa en contexto nonisolated aunque la función que lo declara sea MainActor, así que sin la
+        // anotación el default no compila (`WidgetDataCache` sí lo es). Formar la closure ahí es legal; la
+        // llamada ocurre dentro del cuerpo, que ya está en el actor.
+        republishWidgetSeal: @MainActor (UserDefaults) -> Void = {
+            WidgetDataCache.republishActiveSeal($0)
         }
     ) {
         guard SecondarySessionStore.isActive(defaults) else { return }
@@ -918,6 +943,14 @@ extension SwiftDataConfiguration {
         if let sessionUserID = SecondarySessionStore.activeUserID(defaults) {
             seedSessionDomain(defaults, sessionUserID)
         }
+
+        // El SELLO del widget, y va FUERA del guard one-shot por el mismo motivo que la siembra: no es
+        // kill-recovery, es el camino normal. La key vive en el App Group, que otras limpiezas barren
+        // (`DataWipeService.resetAllUserPreferences` ya se lleva tres keys de ahí), así que re-publicarla
+        // en CADA arranque de la sesión es lo que la hace auto-sanable; colgarla del marker significaría
+        // que una pérdida posterior no se repone nunca y el widget de la invitada dejaría de servirse a
+        // ella misma. Idempotente y ordenada detrás de `activeUserID`, que es de donde sale.
+        republishWidgetSeal(defaults)
 
         guard !SecondarySessionStore.isEntryPurgeDone(defaults) else { return }
 

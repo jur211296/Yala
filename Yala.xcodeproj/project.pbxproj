@@ -101,6 +101,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				App/Logic/Helpers/WidgetAmountSplitter.swift,
+				App/Logic/Helpers/WidgetSessionSeal.swift,
 				Shared/ControlCenterIntents.swift,
 			);
 			target = CFB1B6AB2F30EC930083BC08 /* YalaWidgetsExtension */;

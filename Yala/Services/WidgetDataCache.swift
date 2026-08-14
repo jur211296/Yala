@@ -175,6 +175,12 @@ struct WidgetDataSnapshot: Codable {
 
     // Precalculated summaries for all periods (keyed by period rawValue)
     let periodSummaries: [String: WidgetPeriodSummary]
+
+    /// SELLO de identidad de la sesión que escribió este snapshot. `nil` = sesión del DUEÑO, que es lo que
+    /// decodifica también todo snapshot escrito antes de que este campo existiera — y es de quien era.
+    /// El lector (`WidgetDataService.loadSnapshot`) lo compara contra el sello ACTIVO del App Group; ver
+    /// `WidgetSessionSeal` para por qué la key activa cuelga del descriptor y no de esta escritura.
+    let sessionSeal: String?
 }
 
 // MARK: - WidgetDataCache
@@ -193,12 +199,52 @@ enum WidgetDataCache {
 
     /// Updates the widget cache with current data from SwiftData
     /// Call this after any data change that should reflect in widgets
+    ///
+    /// LA PUERTA. Con un wipe ARMADO el store montado está a punto de morir y sus datos ya no son de
+    /// nadie: repoblar el snapshot en esa ventana deja en la pantalla de inicio los saldos de la cuenta
+    /// que acaba de cerrar sesión, y ahí se quedan si nadie vuelve a abrir la app. Va AQUÍ y no en los
+    /// **48** call-sites de producción (18 ficheros) por la razón que el gemelo de notificaciones ya dejó
+    /// escrita en `NotificationService.isPersonalWipeArmed`: evaluarlo en el choke-point cierra la ventana
+    /// para cualquier productor, presente o futuro, sin rastrear tareas ni mantener una lista.
+    ///
+    /// `clearCache()` NO lleva guard — retirar siempre es seguro, y es lo que los caminos de cierre piden.
     static func updateCache(context: ModelContext) {
+        guard !isWipeArmed else {
+            #if DEBUG
+            print("WidgetDataCache: updateCache SUSPENDIDO — wipe armado")
+            #endif
+            return
+        }
+
         let snapshot = buildSnapshot(context: context)
         saveSnapshot(snapshot)
 
         // Trigger widget refresh
         WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    /// El predicado de la puerta, ESPEJO EXACTO de `NotificationService.isPersonalWipeArmed`: cubre el
+    /// cierre `.cloud` del dueño y la salida de la sesión secundaria M1. NO incluye `groupsOnlyWipeArmed`,
+    /// misma asimetría deliberada que allí — en ese camino el store personal sobrevive y lo que pinta el
+    /// widget sigue siendo legítimo.
+    static var isWipeArmed: Bool {
+        StorageModePersistence.isSignOutWipeArmed() || SecondarySessionStore.isWipeArmed()
+    }
+
+    /// Republica en el App Group el sello de la sesión VIVA, leyéndolo del DESCRIPTOR. Idempotente.
+    ///
+    /// El descriptor se resuelve POR LLAMADA y jamás se captura: la frontera de entrada lo activa con el
+    /// proceso del dueño todavía vivo, así que un valor cacheado publicaría el sello equivocado justo en la
+    /// ventana que este mecanismo existe para cubrir (misma cláusula que `SessionDefaults`).
+    ///
+    /// Los tres call-sites son las dos fronteras M1 y el commit point de la entrada; el de la SALIDA va
+    /// obligatoriamente DESPUÉS de `SecondarySessionStore.clear` — antes republicaría el sello de la
+    /// invitada sobre una sesión que ya no existe, que es exactamente el estado que el lector tiene que
+    /// poder rechazar.
+    static func republishActiveSeal(_ defaults: UserDefaults = .standard) {
+        WidgetSessionSeal.publish(
+            WidgetSessionSeal.seal(forUserID: SecondarySessionStore.activeUserID(defaults)),
+            in: sharedDefaults)
     }
 
     /// Clears the widget cache
@@ -442,7 +488,9 @@ enum WidgetDataCache {
             trendData: trendData,
             thisMonthSummary: thisMonthSummary,
             allTimeSummary: allTimeSummary,
-            periodSummaries: periodSummaries
+            periodSummaries: periodSummaries,
+            // Resuelto POR LLAMADA desde el descriptor vivo — nunca capturado. Ver `republishActiveSeal`.
+            sessionSeal: WidgetSessionSeal.seal(forUserID: SecondarySessionStore.activeUserID())
         )
     }
 

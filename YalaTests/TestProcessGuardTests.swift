@@ -57,9 +57,12 @@ struct TestProcessGuardTests {
         }
     }
 
-    /// Las TRES, no una. Si alguien recorta la lista, el espejo vuelve a filtrar por la que falte.
-    @Test func protege_lasTresClavesQueEscribeElWidgetCache() {
-        #expect(Set(TestProcessGuard.protectedKeys) == ["widget_data_cache", "firstWeekday", "defaultPeriod"])
+    /// Las CUATRO, no una. Si alguien recorta la lista, el espejo vuelve a filtrar por la que falte.
+    /// La cuarta (`widget_session_seal`) la publican las fronteras M1, no `saveSnapshot`.
+    @Test func protege_lasCuatroClavesDelEspejoDelWidget() {
+        #expect(Set(TestProcessGuard.protectedKeys) == [
+            "widget_data_cache", "firstWeekday", "defaultPeriod", "widget_session_seal",
+        ])
     }
 
     // MARK: - Cableado

@@ -152,6 +152,11 @@ struct WidgetDataSnapshot: Codable {
     // Precalculated summaries for all periods (keyed by WidgetPeriod.rawValue)
     // Optional for backwards compatibility
     let periodSummaries: [String: WidgetPeriodSummary]?
+
+    /// SELLO de identidad de la sesión que lo escribió (`WidgetSessionSeal`). Opcional por la MISMA razón
+    /// que los dos de arriba y por una más: todo snapshot ya escrito en los teléfonos lo trae ausente, y
+    /// `nil` significa «sesión del dueño», que es exactamente de quien era. Lo compara `loadSnapshot()`.
+    let sessionSeal: String?
 }
 
 // MARK: - WidgetDataService
@@ -205,6 +210,12 @@ enum WidgetDataService {
 
     /// Loads the cached widget data snapshot
     /// Returns nil if no data is available or data is corrupted
+    ///
+    /// EL SELLO. Un snapshot cuya identidad no case con la sesión viva se trata como AUSENTE: es lo que
+    /// impide que los saldos de una sesión de visita (M1) sigan pintándose en la pantalla de inicio del
+    /// dueño después de que ella cierre sesión. La garantía no depende de que ninguna limpieza llegue a
+    /// correr — la key activa la retira `SecondarySessionStore.clear` en la frontera, así que un snapshot
+    /// suyo que sobreviva en disco deja de servirse igual. Ver `WidgetSessionSeal`.
     static func loadSnapshot() -> WidgetDataSnapshot? {
         guard let defaults = sharedDefaults else {
             #if DEBUG
@@ -222,6 +233,15 @@ enum WidgetDataService {
 
         do {
             let snapshot = try JSONDecoder().decode(WidgetDataSnapshot.self, from: data)
+            guard WidgetSessionSeal.isFresh(
+                snapshotSeal: snapshot.sessionSeal,
+                activeSeal: WidgetSessionSeal.activeSeal(in: defaults)
+            ) else {
+                #if DEBUG
+                print("WidgetDataService: snapshot de otra sesión — se descarta")
+                #endif
+                return nil
+            }
             return snapshot
         } catch {
             #if DEBUG
