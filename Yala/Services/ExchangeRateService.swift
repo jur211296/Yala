@@ -512,11 +512,11 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
         var required: Set<String> = []
 
         // 1. Preferred currency (always needed)
-        let preferredCode = UserDefaults.standard.string(forKey: "defaultCurrencyCode") ?? "PEN"
+        let preferredCode = SessionDefaults.current.string(forKey: "defaultCurrencyCode") ?? "PEN"
         required.insert(preferredCode)
 
         // 2. Secondary currencies (for ExchangeRateWidget)
-        if let secondaryRaw = UserDefaults.standard.string(forKey: "secondaryCurrencies"),
+        if let secondaryRaw = SessionDefaults.current.string(forKey: "secondaryCurrencies"),
            !secondaryRaw.isEmpty
         {
             let secondary = secondaryRaw.split(separator: ",").map { String($0) }

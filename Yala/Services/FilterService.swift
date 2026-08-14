@@ -333,7 +333,7 @@ struct FilterService {
         // (default true cuando key ausente). Esto evita cablear 15 callsites stats
         // manualmente; cada VM recibe la decisión correcta sin cambios.
         let includeFlag = includeBridgedGroupTx
-            ?? (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool)
+            ?? (SessionDefaults.current.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool)
             ?? true
         // Determine eligible accounts (not excluded from statistics; archived accounts still count)
         let eligibleAccounts = accounts.filter { account in

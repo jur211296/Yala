@@ -267,7 +267,7 @@ enum GroupJoinReconciler {
     /// Re-aplica la moneda del grupo si la pref sigue en el fallback regional
     /// que `performSilentSetup` detectó cuando el grupo aún no había llegado.
     private static func applyGroupCurrencyIfNeeded(entry: PendingJoinEntry, group: SplitGroup) {
-        let current = UserDefaults.standard.string(forKey: "defaultCurrencyCode")
+        let current = SessionDefaults.current.string(forKey: "defaultCurrencyCode")
         guard GroupJoinReconcileLogic.shouldApplyGroupCurrency(
             currentPreferenceCode: current,
             regionFallbackCode: entry.regionFallbackCurrency,

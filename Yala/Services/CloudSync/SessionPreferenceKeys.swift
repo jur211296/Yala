@@ -102,6 +102,7 @@ nonisolated enum SessionPreferenceKeys {
         // — Contadores (D6, decisión del owner 2026-08-13). No están en ninguna red: son literales
         //   sueltos repartidos por servicios, y cada uno mide algo de UNA persona.
         "chatQuestionsToday",        // cupo diario del chat de IA: si es del dueño, ella se lo come
+        "chat_draft_saved_signal", // su borrador de chat a medias; viaja con `SessionState`
         "transactionsSavedCount",    // a las 3 transacciones se pide permiso de notificaciones
         "needsPostOnboardingTrial",  // one-shot del trial; la decisión de no ofrecérselo sigue en pie
 

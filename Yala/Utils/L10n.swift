@@ -35,8 +35,21 @@ enum LanguageManager {
 
     /// App Group suite — compartido con widgets, share extension y procesos hermanos.
     /// Si por alguna razón el suite no está disponible, fallback a `UserDefaults.standard`.
+    ///
+    /// **M1 (D2, decisión del owner): en sesión secundaria manda el cajón de la visita.** Éste es el
+    /// único consumidor cuyo dominio normal NO es `.standard`, así que ninguno de los otros cuatro lo
+    /// alcanza: sin este desvío, la visita cambia el idioma y **el dueño recupera su móvil con la app
+    /// en otro idioma**. Va contra el App Group a propósito y no contra `.standard`: ahí es donde lo
+    /// leen los procesos hermanos —widget y share extension—, que son del dueño y no saben nada de
+    /// sesiones; dejarles el idioma de ella sería el mismo daño por la puerta de al lado.
+    ///
+    /// Y el motivo de peso no es el bug sino su VERIFICACIÓN: el criterio E2E del ticket manda
+    /// comprobar el idioma, y ese paso **puede salir verde sin estar arreglado**, porque
+    /// `applyRemoteValues` se lo restaura al dueño desde su iCloud KV intacto. Un test que pasa por la
+    /// razón equivocada es la familia de fallo que este repo ya ha pagado varias veces.
     static var sharedDefaults: UserDefaults {
-        UserDefaults(suiteName: SharedContainerService.appGroupIdentifier) ?? .standard
+        if let session = SessionDefaults.sessionSuite() { return session }
+        return UserDefaults(suiteName: SharedContainerService.appGroupIdentifier) ?? .standard
     }
 
     /// Supported locales as the typed enum. Use `.code/.nativeName/.flag` properties.

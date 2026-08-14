@@ -107,6 +107,13 @@ struct YalaApp: App {
     @ViewBuilder
     private func rootView(container: ModelContainer) -> some View {
         ContentView()
+            // M1 · el store por defecto de TODOS los `@AppStorage` del árbol, en un solo sitio: son 11
+            // y ninguno hay que tocar. Se resuelve UNA vez al montar la raíz, y ese congelado es
+            // deliberado (cláusula 3 del contrato de `SessionDefaults`): un `@AppStorage` que
+            // re-apuntara durante la ventana de entrada leería un cajón todavía vacío,
+            // `hasCompletedOnboarding` daría `false` y montaría la cadena Welcome bajo el cover de
+            // relanzamiento — el brick que el mount prohíbe.
+            .defaultAppStorage(SessionDefaults.current)
             .preferredColorScheme(themeManager.userChoice == .system ? nil : themeManager.resolved.baseColorScheme)
             .tint(themeManager.resolved.accent)
             .environment(\.yalaTheme, themeManager.resolved)

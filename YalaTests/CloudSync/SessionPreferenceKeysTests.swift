@@ -249,9 +249,11 @@ struct SessionPreferenceKeysWipeScanTests {
         #expect(!body.contains("UserDefaults.standard"),
                 "la función nombra `.standard` directamente: el dominio ya no lo decide su llamador")
 
-        // Y el call-site que sí fija el dominio, en una línea sin ninguna key.
-        #expect(src.contains("removeUserPreferenceKeys(from: .standard)"),
-                "el call-site de `resetAllUserPreferences` cambió: re-mide antes de tocar F3")
+        // Y el call-site que sí fija el dominio, en una línea sin ninguna key. Hasta F3 pasaba
+        // `.standard` clavado; desde F3 pasa la puerta, y el invariante que importa es el MISMO: el
+        // dominio lo decide el llamador, no la función.
+        #expect(src.contains("removeUserPreferenceKeys(from: SessionDefaults.current)"),
+                "el call-site de `resetAllUserPreferences` ya no fija el dominio por la puerta")
     }
 
     @Test("las keys del wipe se nombran con las DOS grafías dentro de la misma función")

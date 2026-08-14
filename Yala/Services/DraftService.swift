@@ -340,8 +340,8 @@ final class DraftService {
         try context.save()
 
         // Count approved draft toward transaction total (for review prompt)
-        let txCount = UserDefaults.standard.integer(forKey: "transactionsSavedCount") + 1
-        UserDefaults.standard.set(txCount, forKey: "transactionsSavedCount")
+        let txCount = SessionDefaults.current.integer(forKey: "transactionsSavedCount") + 1
+        SessionDefaults.current.set(txCount, forKey: "transactionsSavedCount")
 
         if ReviewPromptService.shouldPrompt(transactionCount: txCount) {
             RouterEntryGate.shared.submit(.requestAppStoreReview)
@@ -479,8 +479,8 @@ final class DraftService {
         // Los drafts de grupo delegados a approveDraft NO cuentan (sus branches de grupo no
         // tocan el counter ni el review prompt), consistente con el flujo individual.
         if genericApprovedCount > 0 {
-            let txCount = UserDefaults.standard.integer(forKey: "transactionsSavedCount") + genericApprovedCount
-            UserDefaults.standard.set(txCount, forKey: "transactionsSavedCount")
+            let txCount = SessionDefaults.current.integer(forKey: "transactionsSavedCount") + genericApprovedCount
+            SessionDefaults.current.set(txCount, forKey: "transactionsSavedCount")
 
             if ReviewPromptService.shouldPrompt(transactionCount: txCount) {
                 RouterEntryGate.shared.submit(.requestAppStoreReview)

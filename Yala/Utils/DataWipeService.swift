@@ -435,7 +435,10 @@ final class DataWipeService {
         // survive the wipe and replay against the reseeded data.
         AppRouter.shared.resetAll()
 
-        removeUserPreferenceKeys(from: .standard)
+        // M1: el dominio de quien PULSA. `ProfileView.swift:961` es un `NavigationLink`
+        // incondicional, así que la invitada llega aquí sin un solo guard: con `.standard` clavado,
+        // «Vaciar mis datos» le borraba al DUEÑO sus ~114 preferencias.
+        removeUserPreferenceKeys(from: SessionDefaults.current)
 
         ProTourManager.shared.reset()                                // Re-show pro tour
 

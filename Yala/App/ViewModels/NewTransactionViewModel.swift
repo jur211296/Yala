@@ -561,8 +561,8 @@ final class NewTransactionViewModel {
 
             // Track new transaction count for notification primer
             if isNewTransaction {
-                let count = UserDefaults.standard.integer(forKey: "transactionsSavedCount") + 1
-                UserDefaults.standard.set(count, forKey: "transactionsSavedCount")
+                let count = SessionDefaults.current.integer(forKey: "transactionsSavedCount") + 1
+                SessionDefaults.current.set(count, forKey: "transactionsSavedCount")
 
                 // Check if we should prompt for App Store review
                 if ReviewPromptService.shouldPrompt(transactionCount: count) {
@@ -948,7 +948,7 @@ final class NewTransactionViewModel {
     // MARK: - Notification Primer
 
     func checkNotificationPrimer() async {
-        let count = UserDefaults.standard.integer(forKey: "transactionsSavedCount")
+        let count = SessionDefaults.current.integer(forKey: "transactionsSavedCount")
         guard count >= 3, !UserDefaults.standard.bool(forKey: "hasSeenNotificationPrimer") else { return }
         let status = await NotificationService.shared.checkPermissionStatus()
         UserDefaults.standard.set(true, forKey: "hasSeenNotificationPrimer")

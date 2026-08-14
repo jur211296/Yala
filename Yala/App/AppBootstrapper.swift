@@ -35,7 +35,9 @@ final class AppBootstrapper {
     let entityDeletionService = EntityDeletionService.shared
     let transactionService = TransactionService.shared
     let budgetAlertService = BudgetAlertService.shared
-    let appPreferences = AppPreferences()
+    /// M1: la puerta de dominio decide si estas 76 properties viven en el cajón del dueño o en el de
+    /// la visita. Es el ÚNICO constructor de producción — el resto son `#Preview`.
+    let appPreferences = AppPreferences(defaults: SessionDefaults.current)
 
     // MARK: - Panel Action (Control Center / widgets)
 
@@ -619,7 +621,7 @@ final class AppBootstrapper {
             //    en SessionState (leída de UserDefaults en su init, antes de este reset).
             //  · `seededGroupIDKey` stale apuntaría a un grupo ya borrado (stale ≠ nil) → el
             //    token `seeded-first` del deep link rutearía a un grupo fantasma.
-            UserDefaults.standard.removeObject(forKey: AppPreferences.Keys.expensesOnlyMode)
+            SessionDefaults.current.removeObject(forKey: AppPreferences.Keys.expensesOnlyMode)
             SessionState.shared.isExpensesOnlyMode = false
             UserDefaults.standard.removeObject(forKey: UITestHooks.seededGroupIDKey)
             //  · usageFocus (D1): un `.groupsOnly` de una corrida previa reduciría la shell a
@@ -1423,7 +1425,7 @@ final class AppBootstrapper {
     /// Idempotent — `updateCurrentUserDisplayName` is a no-op when nothing differs.
     @MainActor
     func reconcileCurrentUserDisplayNameIfNeeded() async {
-        let realName = (UserDefaults.standard.string(forKey: AppPreferences.Keys.userName) ?? "")
+        let realName = (SessionDefaults.current.string(forKey: AppPreferences.Keys.userName) ?? "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
         guard !realName.isEmpty else { return }
 

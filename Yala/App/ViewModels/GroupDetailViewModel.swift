@@ -483,7 +483,7 @@ final class GroupDetailViewModel {
 
     /// Nombre del invitador para el link (perfil o `defaultName`). Compartido por el CKShare y el token backend.
     private var currentInviterName: String {
-        let name = UserDefaults.standard.string(forKey: "userName") ?? ""
+        let name = SessionDefaults.current.string(forKey: "userName") ?? ""
         return name.isEmpty ? L10n.Profile.defaultName : name
     }
 

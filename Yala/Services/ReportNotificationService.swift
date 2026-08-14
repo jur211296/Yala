@@ -77,7 +77,7 @@ final class ReportNotificationService {
     /// está respaldado 1:1 por esa key (`SessionState`/`AppPreferences`) y así la capa
     /// Service no depende del singleton de UI ni de su inicialización.
     private func isExpensesOnly() -> Bool {
-        expensesOnlyOverride?() ?? UserDefaults.standard.bool(forKey: AppPreferences.Keys.expensesOnlyMode)
+        expensesOnlyOverride?() ?? SessionDefaults.current.bool(forKey: AppPreferences.Keys.expensesOnlyMode)
     }
 
     /// En Solo Gastos, los tipos de dato income/balance quedan huérfanos de config

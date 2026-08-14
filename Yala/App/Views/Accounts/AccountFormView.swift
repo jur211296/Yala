@@ -610,7 +610,7 @@ struct AccountFormView: View {
 
     private func acceptSecondaryCurrency() {
         guard let code = viewModel.currencyToSuggestAsSecondary else { return }
-        let raw = UserDefaults.standard.string(forKey: "secondaryCurrencies") ?? ""
+        let raw = SessionDefaults.current.string(forKey: "secondaryCurrencies") ?? ""
         var existing = raw.split(separator: ",").map(String.init).filter { !$0.isEmpty }
         existing.append(code.rawValue)
         let newValue = existing.joined(separator: ",")

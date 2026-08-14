@@ -7,7 +7,7 @@
 //  `@MainActor`-isolated `AppPreferences` cannot be accessed).
 //
 //  Reads `decimalPlaces` and `currencyDisplayFormat` directly from
-//  `UserDefaults.standard` — output is byte-identical to `appPreferences.X(...)`
+//  `SessionDefaults.current` — output is byte-identical to `appPreferences.X(...)`
 //  for the same prefs.
 //
 //  RULE: in `@MainActor` (Views, ViewModels) use `appPreferences.X(...)` for
@@ -20,19 +20,19 @@ import Foundation
 enum YalaFormatterStatic {
 
     private static var decimalPlaces: Int {
-        if UserDefaults.standard.object(forKey: "decimalPlaces") == nil {
+        if SessionDefaults.current.object(forKey: "decimalPlaces") == nil {
             // Migration: older builds stored a Bool flag instead of an Int.
-            if UserDefaults.standard.object(forKey: "useRoundedAmounts") != nil {
-                let oldValue = UserDefaults.standard.bool(forKey: "useRoundedAmounts")
+            if SessionDefaults.current.object(forKey: "useRoundedAmounts") != nil {
+                let oldValue = SessionDefaults.current.bool(forKey: "useRoundedAmounts")
                 return oldValue ? 0 : 2
             }
             return 2
         }
-        return UserDefaults.standard.integer(forKey: "decimalPlaces")
+        return SessionDefaults.current.integer(forKey: "decimalPlaces")
     }
 
     private static var currencyDisplayFormat: String {
-        UserDefaults.standard.string(forKey: "currencyDisplayFormat") ?? "symbol"
+        SessionDefaults.current.string(forKey: "currencyDisplayFormat") ?? "symbol"
     }
 
     static func currencyIdentifier(for code: String) -> String {

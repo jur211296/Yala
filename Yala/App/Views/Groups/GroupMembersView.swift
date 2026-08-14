@@ -459,7 +459,7 @@ struct GroupMembersView: View {
             if CloudSyncFlags.groupsBackendEnabled && group.isBackendGroup {
                 // C4: grupo backend → invite por TOKEN RPC (link ya branded). Cache in-VM (`shareURL != nil`,
                 // arriba) conservado. Nota A1: el flag cubre "no emitir hasta que el parser esté desplegado".
-                let name = UserDefaults.standard.string(forKey: "userName") ?? ""
+                let name = SessionDefaults.current.string(forKey: "userName") ?? ""
                 let inviterName = name.isEmpty ? L10n.Profile.defaultName : name
                 shareURL = try await GroupBackendInviteService(
                     membership: GroupBackendMembershipService(

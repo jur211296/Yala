@@ -79,7 +79,7 @@ final class InsightsLLMService {
     /// Build a cache key from period + filter hash + transaction count + comparison mode + locale context
     func cacheKey(period: String, filterHash: Int, txnCount: Int, comparisonMode: String = "month", tone: InsightTone = .normal, focus: InsightFocus = .balanced) -> String {
         let country = Locale.current.region?.identifier ?? ""
-        let currencyFormat = UserDefaults.standard.string(forKey: "currencyDisplayFormat") ?? "code"
+        let currencyFormat = SessionDefaults.current.string(forKey: "currencyDisplayFormat") ?? "code"
         return "\(period)_\(filterHash)_\(txnCount)_\(comparisonMode)_\(tone.rawValue)_\(focus.rawValue)_\(country)_\(currencyFormat)"
     }
 

@@ -856,6 +856,18 @@ extension SwiftDataConfiguration {
         SecondarySessionStore.clear(defaults)
         SecondarySessionStore.clearEntryPurgeMark(defaults)
 
+        // **Estas tres SE QUEDAN, y con el dominio por sesión ya cableado hace falta decir por qué**
+        // (decisión del owner, 2026-08-13). El plan de la frontera las daba por «compensación» del
+        // daño de la visita y mandaba retirarlas al mover los consumidores. **Medido: no lo son.** Son
+        // el paso 3.5 declarado arriba —el device vuelve al Welcome tras la salida— y ya antes del
+        // cajón no compensaban nada: la invitada escribía `true` sobre el `true` que el dueño ya
+        // tenía, así que el `false` de aquí siempre fue el FLUJO y no la cura.
+        //
+        // Retirarlas es un cambio de PRODUCTO —¿el dueño vuelve al Welcome o directo a su app?— que ni
+        // el ticket ni el plan justifican, y que no se puede verificar sin saber si el Welcome hace
+        // falta para re-montar su sesión. Quien lo retome: la pregunta no es «¿siguen haciendo falta
+        // ahora que el cajón existe?» sino «¿qué necesita el dueño ver al recuperar su teléfono?».
+        // Pinneado por `SecondaryBoundaryHooksTests` (`:86-88`).
         defaults.set(false, forKey: AppPreferences.Keys.hasCompletedOnboarding)
         defaults.set(false, forKey: "hasShownWelcomeChooser")
         defaults.set(false, forKey: AppPreferences.Keys.hasShownYalaAIOnboarding)

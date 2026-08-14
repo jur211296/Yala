@@ -1361,7 +1361,7 @@ final class PanelViewModel {
     ) -> [TransactionItem] {
         // Toggle "incluir gastos de grupo en stats" (default ON) — cuando está OFF, los pies de
         // categoría/subcategoría excluyen las TX bridgeadas de grupo (pata real + virtual).
-        let includeGroupTxs = (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
+        let includeGroupTxs = (SessionDefaults.current.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
         let calendar = Calendar.current
         return transactions.filter { transaction in
             guard let account = transaction.account else { return false }
@@ -1523,7 +1523,7 @@ final class PanelViewModel {
         // de los sets de GASTO/INGRESO (`filtered` → cashflow/trend/weekday/tags/need/records;
         // `transactionsWithoutDateFilter` → comparación de período). NO se aplica a
         // `balanceTransactions` (el saldo refleja montos reales).
-        let includeGroupTxs = (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
+        let includeGroupTxs = (SessionDefaults.current.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
 
         let (newTrendGrouping, newCashFlowGrouping, newNeedGrouping) = determineGroupings()
         let (eligibleAccounts, eligibleAccountIDs) = computeEligibleAccounts(from: accounts)
@@ -2084,7 +2084,7 @@ final class PanelViewModel {
     /// Loads currency selection from secondaryCurrencies (onboarding/settings).
     /// This is the single source of truth for which currencies to display.
     private func loadExchangeRateCurrencySelection() {
-        if let secondaryCurrenciesRaw = UserDefaults.standard.string(forKey: "secondaryCurrencies"),
+        if let secondaryCurrenciesRaw = SessionDefaults.current.string(forKey: "secondaryCurrencies"),
            !secondaryCurrenciesRaw.isEmpty {
             let currencies = secondaryCurrenciesRaw
                 .split(separator: ",")
@@ -2731,7 +2731,7 @@ final class PanelViewModel {
     /// Called from `performCalculation()` only when `.health` section is visible.
     /// El score reacciona a `selectedPeriod` — cada cambio de período recalcula.
     private func calculateHealthWidget(paidAmounts: [String: [PaidOccurrenceInfo]]) {
-        let includeBridgedGroupTx = (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
+        let includeBridgedGroupTx = (SessionDefaults.current.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
         let newScore = FinancialScoreCalculator.calculate(
             transactions: transactions,
             budgets: budgets,
@@ -2792,7 +2792,7 @@ final class PanelViewModel {
         // El Hero se alimenta de `transactions` directo (no del contexto de widgets), así que
         // honra el toggle "incluir gastos de grupo en stats" aquí: los buckets del Hero son
         // ingreso/gasto (NO saldo). Toggle ON (default) = identidad; OFF = excluye bridgeados.
-        let includeGroupTxs = (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
+        let includeGroupTxs = (SessionDefaults.current.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
         let heroTransactions = transactions.filter { tx in
             BridgedTransactionFilter.shouldInclude(
                 splitExpenseID: tx.splitExpenseID,

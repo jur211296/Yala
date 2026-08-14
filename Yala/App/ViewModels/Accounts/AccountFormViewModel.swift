@@ -388,7 +388,7 @@ final class AccountFormViewModel {
         let savedCurrency = normalizeCurrencyCode(selectedCurrency.rawValue)
         let preferred = CurrencyDefaults.currentPreferred
         guard savedCurrency != preferred, let code = CurrencyCode(rawValue: savedCurrency) else { return }
-        let raw = UserDefaults.standard.string(forKey: "secondaryCurrencies") ?? ""
+        let raw = SessionDefaults.current.string(forKey: "secondaryCurrencies") ?? ""
         let existing = raw.split(separator: ",").map(String.init)
         if existing.count < 2, !existing.contains(savedCurrency) {
             currencyToSuggestAsSecondary = code

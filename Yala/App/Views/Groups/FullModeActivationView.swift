@@ -50,9 +50,9 @@ struct FullModeActivationView: View {
             categoriesCount = 0
         }
         return FullModeActivationLogic.buildSummary(
-            userName: UserDefaults.standard.string(forKey: AppPreferences.Keys.userName),
+            userName: SessionDefaults.current.string(forKey: AppPreferences.Keys.userName),
             groupCurrency: GroupService.shared.mostRecentGroup()?.currencyCode,
-            defaultCurrency: UserDefaults.standard.string(forKey: AppPreferences.Keys.defaultCurrencyCode),
+            defaultCurrency: SessionDefaults.current.string(forKey: AppPreferences.Keys.defaultCurrencyCode),
             userCategoriesCount: categoriesCount
         )
     }
@@ -92,7 +92,7 @@ struct FullModeActivationView: View {
         let sync = PreferenceSyncService.shared
         // M1 · frontera de cuenta. Este `set` escribe la key del modo por `PreferenceSyncService`
         // —que en `.localOnly` (sesión secundaria) sigue escribiendo el ESPEJO LOCAL, o sea el
-        // `UserDefaults.standard` del DUEÑO— así que el guard de `OnboardingMode.setCurrent` no lo
+        // `SessionDefaults.current` del DUEÑO— así que el guard de `OnboardingMode.setCurrent` no lo
         // cubre: va aquí, en el escritor. `.completed` es rank 2 y el merge es never-downgrade ⇒
         // escribirlo desde la sesión de la invitada deja al dueño una shell escalada que su
         // `.groupInvite` del iKV ya no puede recuperar, y el wipe de salida no repone la key.
@@ -108,7 +108,7 @@ struct FullModeActivationView: View {
         // group-invite (usageFocus ya `.full`, guard del didSet).
         appPreferences.usageFocus = .full
 
-        UserDefaults.standard.set(
+        SessionDefaults.current.set(
             TabBarConfiguration.default.toJSON(),
             forKey: TabBarConfiguration.storageKey
         )

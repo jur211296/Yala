@@ -80,7 +80,11 @@ final class PreferenceSyncService {
     /// de ese switch y escribían directo — que es la vía 1 del ticket. Con la puerta, el guard deja
     /// de depender de que cada método se acuerde.
     private let iKV: OwnerKeyValueWriting = OwnerKeyValueStore.shared
-    private let local = UserDefaults.standard
+    /// M1: resuelto POR LLAMADA y jamás capturado. Este servicio es un singleton construido en el
+    /// bootstrap, mucho antes de que la visita confirme su entrada; con un `let` se quedaría con el
+    /// dominio del dueño para toda la vida del proceso, y en la ventana entre `activate` y el
+    /// relanzamiento se escribe el consentimiento RGPD de la invitada.
+    private var local: UserDefaults { SessionDefaults.current }
     private var isObserverRegistered = false
 
     // MARK: - Modo Nube (I13) — cola durable de prefs para la rama `.cloud`

@@ -44,7 +44,7 @@ enum GroupBackendInviteEntryHandler {
         UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
     }
     static var profileNameProvider: @MainActor () -> String = {
-        UserDefaults.standard.string(forKey: "userName") ?? ""
+        SessionDefaults.current.string(forKey: "userName") ?? ""
     }
     /// `join_group` RPC. Default = servicio real (gate `groupsBackendEnabled && hasSession`).
     static var joinProvider: @MainActor (_ token: String, _ displayName: String, _ legacyMemberKey: String?) async throws -> JoinGroupResult = {

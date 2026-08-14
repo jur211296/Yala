@@ -165,7 +165,7 @@ final class SetupChecklistManager {
         UserDefaults.standard.set(isCollapsed, forKey: Keys.collapsed)
 
         if isCollapsed {
-            let sessionCount = UserDefaults.standard.integer(forKey: "pro.upsell.sessionCount")
+            let sessionCount = SessionDefaults.current.integer(forKey: "pro.upsell.sessionCount")
             UserDefaults.standard.set(sessionCount, forKey: Keys.collapsedAtSession)
         }
     }
@@ -181,7 +181,7 @@ final class SetupChecklistManager {
         guard isCollapsed, !isAllComplete else { return }
 
         let collapsedAt = UserDefaults.standard.integer(forKey: Keys.collapsedAtSession)
-        let currentSession = UserDefaults.standard.integer(forKey: "pro.upsell.sessionCount")
+        let currentSession = SessionDefaults.current.integer(forKey: "pro.upsell.sessionCount")
 
         if currentSession - collapsedAt >= reExpandInterval {
             isCollapsed = false

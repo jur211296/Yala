@@ -101,6 +101,18 @@ nonisolated enum SessionDefaults {
     // MARK: - La puerta
 
     /// El dominio en el que la app debe escribir AHORA. Computed a propósito (cláusula 2).
+    ///
+    /// **Sí, resuelve en CADA acceso, y no, no se cachea.** Fuera de sesión secundaria —el 99,9 % del
+    /// tiempo— el coste es un `string(forKey:)` sobre `.standard`, que CFPreferences sirve de memoria;
+    /// dentro de sesión, además, un lookup en un diccionario. Se llama desde sitios calientes
+    /// (`YalaFormatterStatic` formatea cada importe de la pantalla) y aun así es ruido frente al
+    /// trabajo de formatear.
+    ///
+    /// Si alguien viene a «optimizar» esto guardando el resultado en un `static let` o en un flag
+    /// «¿hay sesión?» calculado una vez: **eso es exactamente el mutante que la cláusula 2 prohíbe**, y
+    /// lo que rompe es la ventana de entrada —el descriptor se activa con el proceso del dueño vivo y
+    /// el consentimiento RGPD de la invitada se escribe en esos segundos—. El pin es
+    /// `SessionDefaultsGateTests.resolutionHappensPerCall`, y el mutante da exit 65.
     static var current: UserDefaults { resolve() }
 
     /// Variante inyectable — `owner` para tests con `UserDefaults` aislado, `isTestEnvironment` para
@@ -123,6 +135,23 @@ nonisolated enum SessionDefaults {
             return owner
         }
         return suite
+    }
+
+    /// El cajón de la visita **o `nil` si no hay sesión secundaria**, para quien no tenga a
+    /// `.standard` como fallback.
+    ///
+    /// Existe por `LanguageManager`, que es el único consumidor cuyo dominio normal **no** es
+    /// `.standard` sino el suite del App Group (`L10n.swift:38-40`). Ahí `current` no sirve: devolvería
+    /// `.standard` fuera de sesión y le cambiaría el almacén al 99 % de los usuarios. Con esto, el
+    /// idioma cae en el cajón durante la visita y en el App Group el resto del tiempo.
+    static func sessionSuite(
+        owner: UserDefaults = .standard,
+        isTestEnvironment: Bool = SwiftDataConfiguration.isRunningTests || SwiftDataConfiguration.isUITesting
+    ) -> UserDefaults? {
+        guard !isTestEnvironment else { return nil }
+        guard let userID = SecondarySessionStore.activeUserID(owner),
+              let name = suiteName(forUserID: userID) else { return nil }
+        return suite(named: name)
     }
 
     // MARK: - La caché (cláusula 1)

@@ -293,7 +293,7 @@ struct GroupFormView: View {
                 case .backend:
                     // `displayName` no-vacío (patrón defaultName R1: `join`/`create_group` hacen btrim=''
                     // → yala_bad_input permanente si vacío).
-                    let profile = UserDefaults.standard.string(forKey: "userName") ?? ""
+                    let profile = SessionDefaults.current.string(forKey: "userName") ?? ""
                     let displayName = profile.isEmpty ? L10n.Profile.defaultName : profile
                     _ = try await GroupBackendMembershipService(
                         client: GroupsMembershipClient(attestProvider: AttestSessionProvider.live))
