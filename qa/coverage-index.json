@@ -1693,9 +1693,9 @@
         "F-SCH-02"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/ScheduledPaymentsCrudUITests",
+      "coverage": "xcuitest:YalaUITests/ScheduledPaymentsCrudUITests + 2026-08-14: el editor gana DOS accessibilityIdentifier — scheduled_recurrence_picker (segmentado Una sola vez / Repeticion) y scheduled_day_of_month_picker. No son cosmeticos: sin ellos el control es INALCANZABLE desde automatizacion (un Picker segmentado y uno .menu no aparecen como elementos tapeables en el arbol de accesibilidad, salen como TEXTO) y targetear por el rotulo esta prohibido por estar localizado. Bloquearon el QA visual de qa_pagos-planificados-notifs el 2026-08-14: para que un pago venza HOY hay que elegir Una sola vez o poner el dia del mes, porque el default es repeticion mensual con dayOfMonth=1 y el primer vencimiento cae el dia 1 del mes SIGUIENTE (la pantalla lo lista en Proximas fechas) — con la recurrencia por defecto, CHECK B saldria verde por la razon equivocada y CHECK C rojo sin bug.",
       "owner": "",
-      "lastVerified": "2026-06-09"
+      "lastVerified": "2026-08-14"
     },
     {
       "area": "scheduled-payments-visual-consistency",

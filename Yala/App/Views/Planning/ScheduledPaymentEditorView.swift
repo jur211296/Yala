@@ -751,6 +751,15 @@ struct ScheduledPaymentEditorView: View {
                     Text(NSLocalizedString("scheduled.recurrence.recurring", comment: "")).tag(true)
                 }
                 .pickerStyle(.segmented)
+                // Sin este id el control es INALCANZABLE desde automatización: un `Picker`
+                // segmentado no aparece como elemento tapeable en el árbol de accesibilidad (sale
+                // como texto), y targetear por el rótulo está prohibido porque está localizado.
+                // Bloqueó el QA de las notificaciones de pagos el 2026-08-14: para que el pago
+                // venza HOY hay que elegir "Una sola vez" —el default es repetición mensual con
+                // `dayOfMonth = 1`, o sea que el primer vencimiento cae el día 1 del mes que
+                // viene—, y sin poder tocarlo el escenario entero se queda sin montar.
+                // Los dos segmentos se alcanzan por índice sobre este id (0 = una sola vez).
+                .accessibilityIdentifier("scheduled_recurrence_picker")
                 .padding()
 
                 SubsectionDivider()
@@ -933,6 +942,9 @@ struct ScheduledPaymentEditorView: View {
                 }
             }
             .pickerStyle(.menu)
+            // Hermano del id del selector de recurrencia: es la otra vía para que un pago
+            // recurrente venza HOY (poner aquí el día de hoy) y tampoco era alcanzable.
+            .accessibilityIdentifier("scheduled_day_of_month_picker")
         }
         .padding()
     }
