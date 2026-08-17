@@ -4,7 +4,7 @@
 //
 //  Unit tests para el límite Free de cuentas: las cuentas de sistema del bridge
 //  de grupos NO consumen el límite. SSOT = `Account.isBillableUserAccount`.
-//  @Model directo sin makeTestContext() ni ModelContainer (patrón preferido).
+//  @Model directo sin makeTestContext ni ModelContainer (patrón preferido).
 //
 
 import Foundation
