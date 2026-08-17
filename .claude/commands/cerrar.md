@@ -47,3 +47,19 @@ Tres líneas, no más: **dónde quedó**, **qué sigue**, **qué está bloqueado
 - Nada se borra sin confirmación explícita del usuario, ni siquiera lo obvio.
 - No commitees, no pushees, no cambies el estado de un ticket sin decirlo.
 - Si la sesión no tocó código (fue exploración o conversación), salta los bloques 2 y 4: informe de disco y cierre.
+
+## 5 · Escribir planning/NOW.md
+
+Reescribir el archivo entero (no append). Tope 40 líneas.
+
+Campos:
+- Fecha (hoy, Lima)
+- Rama y HEAD (`git rev-parse --abbrev-ref HEAD`, `git rev-parse --short HEAD`) + sujeto del último commit
+- Tema de esta sesión (una línea, lenguaje de usuario)
+- Abiertos: máx. 3 tickets que siguen vivos
+- Siguiente: un item
+- Bloqueo: uno, o “ninguno”
+
+Si el archivo pasaría de 40 líneas, recortar Abiertos. No copiar STATE. No listar el diff.
+
+En el informe de /cerrar, una línea: `✓ NOW.md <fecha> <HEAD>`
