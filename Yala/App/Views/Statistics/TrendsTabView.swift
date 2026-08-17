@@ -1486,11 +1486,21 @@ struct TrendsTabView: View {
         if byCurrency != cashFlowByCurrency { cashFlowByCurrency = byCurrency }
 
         // 4. Calculate PREVIOUS period cash flow for variation chip
-        calculatePreviousCashFlow(fetchedTransactions: fetchedTransactions)
+        calculatePreviousCashFlow(
+            fetchedTransactions: fetchedTransactions,
+            currentFiltered: filtered,
+            currentInterval: interval
+        )
     }
 
-    /// Calculate previous period cash flow summary for VariationChip
-    private func calculatePreviousCashFlow(fetchedTransactions: [TransactionItem]) {
+    /// Calculate previous period cash flow summary for VariationChip.
+    /// El previo se recorta al día equivalente del actual (p20-15) — mismo
+    /// helper que el Flujo de Efectivo del Panel.
+    private func calculatePreviousCashFlow(
+        fetchedTransactions: [TransactionItem],
+        currentFiltered: [TransactionItem],
+        currentInterval: DateInterval
+    ) {
         // Skip for All Time period
         guard trendsViewModel.detailPeriod != .allTime else {
             previousCashFlowSummary = nil
@@ -1527,11 +1537,20 @@ struct TrendsTabView: View {
         )
 
         // Filter transactions for previous period
-        let previousFiltered = FilterService.filterForTrends(
+        let previousFilteredRaw = FilterService.filterForTrends(
             transactions: fetchedTransactions,
             accounts: accounts,
             criteria: previousCriteria
         )
+        // p20-15: recorte MTD/WTD/YTD. No-op en períodos cerrados.
+        let previousFiltered = DateAlignmentHelper.alignedPreviousItems(
+            previousFilteredRaw,
+            currentDates: currentFiltered.map(\.date),
+            currentInterval: currentInterval,
+            previousInterval: previousInterval,
+            period: trendsViewModel.detailPeriod,
+            comparisonMode: sessionState.comparisonMode
+        ) { $0.date }
 
         // 1. Calculate TOTAL previous period cash flow
         previousCashFlowSummary = CashFlowCalculator.calculateCashFlow(

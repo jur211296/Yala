@@ -156,13 +156,10 @@ enum DateAlignmentHelper {
         comparisonMode: ComparisonMode,
         calendar: Calendar = .current
     ) -> DateInterval {
-        // Gate: solo el caso asimétrico. Resto → no-op full-vs-full.
-        // ⚠️ Si añades un DetailPeriod cuyo `previousInterval` sea el período
-        // COMPLETO mientras el actual es parcial (MTD), EXTIENDE este gate — si no,
-        // el sesgo parcial-vs-completo reaparece en el hero EN SILENCIO (hoy solo
-        // `.thisMonth`+`.month` es asimétrico; el resto ya empareja span vía
-        // `sameIntervalPreviousYear` o la ventana trailing de igual duración).
-        guard period == .thisMonth, comparisonMode == .month else { return previousInterval }
+        // Gate: períodos parciales en curso (mes / semana / año). Resto → no-op.
+        guard aggregatePreviousNeedsAlignment(period: period, comparisonMode: comparisonMode) else {
+            return previousInterval
+        }
 
         // Normaliza a medianoche del día en curso; defensivo si el período ya cerró.
         let startOfToday = calendar.startOfDay(for: asOf)
@@ -287,32 +284,23 @@ enum DateAlignmentHelper {
 
     // MARK: - Sumas agregadas (VariationChips del Panel, p20-15 fase 2)
 
-    /// El período ACTUAL es PARCIAL y su período anterior (modo `.month`) es un
-    /// período COMPLETO más largo → la comparación de SUMAS agregadas tiene sesgo
-    /// temporal y su previo debe truncarse al día equivalente
-    /// (`alignedPreviousItems`). SOLO `.thisMonth` (`.month`): es el ÚNICO caso
-    /// asimétrico parcial-vs-completo, porque `PreviousPeriodHelper.previousInterval`
-    /// le devuelve el MES ANTERIOR COMPLETO. El resto ya es simétrico en duración y
-    /// NO debe tocarse:
-    /// - `.thisWeek`: su previo NO es la semana calendario anterior sino una VENTANA
-    ///   TRAILING de igual duración (comparte rama con `.last7Days` en
-    ///   `previousPeriodInterval`) → ya simétrico; alinear con `.dayOfWeek` empujaría
-    ///   las TX previas fuera del rango y VACIARÍA la comparación a mitad de semana.
-    /// - `.thisYear` cae a YTD-vs-YTD (`sameIntervalPreviousYear`); rodantes
-    ///   (`.last7Days`/`.last30Days`/`.custom`) igual duración; cerrados
-    ///   (`.lastMonth`/`.lastYear`) completo-vs-completo; `.allTime` no compara.
-    /// Los widgets agregados del Panel siempre pasan modo `.month` → alineación
-    /// `.dayOfMonth`. (Coincide con la conclusión del hero: `alignedPreviousInterval`
-    /// también trata `.thisMonth` como único caso.)
+    /// El período ACTUAL es PARCIAL y el anterior es el período calendario
+    /// COMPLETO (o más largo) → hay que truncar al día equivalente.
+    /// p20-15: `.thisMonth`+`.month`, `.thisWeek`+`.month` (semana calendario
+    /// anterior, no trailing) y `.thisYear` (YTD; default `.year`).
+    /// Cerrados y rodantes (`.lastMonth`, `.last7Days`, …) se quedan full-vs-full.
     static func aggregatePreviousNeedsAlignment(
         period: DetailPeriod,
         comparisonMode: ComparisonMode
     ) -> Bool {
-        guard comparisonMode == .month else { return false }
         switch period {
         case .thisMonth:
+            return comparisonMode == .month
+        case .thisWeek:
+            return comparisonMode == .month
+        case .thisYear:
             return true
-        case .thisWeek, .last7Days, .last30Days, .thisYear, .lastMonth, .lastYear, .allTime, .custom:
+        case .last7Days, .last30Days, .lastMonth, .lastYear, .allTime, .custom:
             return false
         }
     }
