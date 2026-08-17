@@ -340,10 +340,13 @@ struct DateAlignmentHelperTests {
         #expect(result == previousInterval)             // modo año ya es simétrico
     }
 
-    @Test("thisWeek+month: no-op (ventana trailing ya simétrica)")
-    func alignedPreviousInterval_thisWeek_noOp() {
-        let currentInterval = DateInterval(start: date(2026, 7, 6), end: date(2026, 7, 9))
-        let previousInterval = DateInterval(start: date(2026, 7, 3), end: date(2026, 7, 6))
+    @Test("thisWeek+month: recorta la semana calendario al weekday de hoy")
+    func alignedPreviousInterval_thisWeek_calendarWeekWidth() {
+        var weekCal = cal
+        weekCal.firstWeekday = 2 // lunes
+        // Semana actual lun 6-jul → …; hoy mié 8-jul. Previo = lun 29-jun → lun 6-jul.
+        let currentInterval = DateInterval(start: date(2026, 7, 6), end: date(2026, 7, 13))
+        let previousInterval = DateInterval(start: date(2026, 6, 29), end: date(2026, 7, 6))
 
         let result = DateAlignmentHelper.alignedPreviousInterval(
             currentInterval: currentInterval,
@@ -351,10 +354,13 @@ struct DateAlignmentHelperTests {
             asOf: date(2026, 7, 8),
             period: .thisWeek,
             comparisonMode: .month,
-            calendar: cal
+            calendar: weekCal
         )
 
-        #expect(result == previousInterval)
+        #expect(result.start == previousInterval.start)
+        #expect(result.end > result.start)
+        let days = result.duration / 86400
+        #expect(days >= 2.9 && days <= 3.1) // lun-mié
     }
 
     @Test("thisYear+year: no-op (previo ya YTD del año anterior)")
@@ -570,6 +576,30 @@ struct DateAlignmentHelperTests {
         #expect(result.contains(date(2026, 6, 30)))
         #expect(result.contains(date(2026, 7, 1)))
         #expect(!result.contains(date(2026, 7, 2)))
+    }
+
+
+    @Test("alignedPreviousItems thisWeek domingo: conserva los 7 días del previo")
+    func alignedPreviousItems_thisWeek_sundayKeepsSevenDays() {
+        var weekCal = cal
+        weekCal.firstWeekday = 2 // lunes
+        // Semana actual lun 6-jul → lun 13-jul, hoy domingo 12, 7 días con datos.
+        let currentInterval = DateInterval(start: date(2026, 7, 6), end: date(2026, 7, 13))
+        let previousInterval = DateInterval(start: date(2026, 6, 29), end: date(2026, 7, 6))
+        let currentDates = (0...6).map { weekCal.date(byAdding: .day, value: $0, to: date(2026, 7, 6))! }
+        let previous = (0...6).map { weekCal.date(byAdding: .day, value: $0, to: date(2026, 6, 29))! }
+
+        let result = DateAlignmentHelper.alignedPreviousItems(
+            previous,
+            currentDates: currentDates,
+            currentInterval: currentInterval,
+            previousInterval: previousInterval,
+            period: .thisWeek,
+            comparisonMode: .month,
+            calendar: weekCal
+        ) { $0 }
+
+        #expect(result.count == 7)
     }
 
     @Test("alignedPreviousItems: períodos cerrados/rodantes → previo intacto (no-op)")

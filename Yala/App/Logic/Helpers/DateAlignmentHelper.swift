@@ -82,7 +82,7 @@ enum DateAlignmentHelper {
             let weekday = calendar.component(.weekday, from: previousDate)
             let currentWeekStart = currentInterval.start
             let currentWeekday = calendar.component(.weekday, from: currentWeekStart)
-            let dayOffset = weekday - currentWeekday
+            let dayOffset = ((weekday - currentWeekday) % 7 + 7) % 7
             return calendar.date(byAdding: .day, value: dayOffset, to: currentWeekStart) ?? previousDate
 
         case .proportional:
@@ -125,7 +125,7 @@ enum DateAlignmentHelper {
             let weekday = calendar.component(.weekday, from: currentDate)
             let previousWeekStart = previousInterval.start
             let previousWeekday = calendar.component(.weekday, from: previousWeekStart)
-            let dayOffset = weekday - previousWeekday
+            let dayOffset = ((weekday - previousWeekday) % 7 + 7) % 7
             return calendar.date(byAdding: .day, value: dayOffset, to: previousWeekStart) ?? currentDate
 
         case .proportional:

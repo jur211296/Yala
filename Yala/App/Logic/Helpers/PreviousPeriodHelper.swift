@@ -94,7 +94,10 @@ enum PreviousPeriodHelper {
             // (lun→hoy vs lun→mismo weekday) lo hace DateAlignmentHelper.
             // No es una ventana trailing: esa vaciaba el «vs» al alinear por weekday.
             let startOfPreviousWeek = calendar.date(byAdding: .weekOfYear, value: -1, to: currentInterval.start) ?? currentInterval.start
-            return DateInterval(start: startOfPreviousWeek, end: currentInterval.start)
+            // DateInterval + FilterService.contains: sin -1s, una TX a medianoche
+            // del primer día de esta semana cae en ambos periodos.
+            let endOfPreviousWeek = calendar.date(byAdding: .second, value: -1, to: currentInterval.start) ?? currentInterval.start
+            return DateInterval(start: startOfPreviousWeek, end: endOfPreviousWeek)
 
         case .last7Days:
             // Go back 7 days

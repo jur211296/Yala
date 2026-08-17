@@ -65,12 +65,25 @@ struct PreviousPeriodHelperTests {
         let now = cal.date(from: DateComponents(year: 2026, month: 7, day: 8))! // miércoles
         let interval = PreviousPeriodHelper.previousInterval(for: .thisWeek, mode: .month, now: now)
         let currentInterval = DetailPeriod.thisWeek.dateInterval(now: now)
-        // Semana calendario anterior: termina donde empieza esta.
-        #expect(interval.end == currentInterval.start)
+        // Semana calendario anterior: no solapa el primer día de esta (F1).
+        #expect(interval.end < currentInterval.start)
         let expectedStart = cal.date(byAdding: .weekOfYear, value: -1, to: currentInterval.start)!
         #expect(interval.start == expectedStart)
         let days = interval.duration / 86400
         #expect(days >= 6.9 && days <= 7.1)
+    }
+
+
+    @Test func previousInterval_thisWeek_month_noOverlapCurrentStart() {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "America/Lima")!
+        cal.firstWeekday = 2 // lunes
+        let now = cal.date(from: DateComponents(year: 2026, month: 7, day: 8))! // miércoles
+        let currentInterval = DetailPeriod.thisWeek.dateInterval(now: now)
+        let previous = PreviousPeriodHelper.previousInterval(for: .thisWeek, mode: .month, now: now)
+        let mondayMidnight = currentInterval.start
+        #expect(!previous.contains(mondayMidnight))
+        #expect(currentInterval.contains(mondayMidnight) || mondayMidnight == currentInterval.start)
     }
 
     @Test func previousInterval_thisMonth_month_previousMonth() {
