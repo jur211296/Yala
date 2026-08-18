@@ -26,6 +26,10 @@ final class SecondaryCurrencyPromptUITests: XCTestCase {
     private func editAccount(_ app: XCUIApplication, named name: String) {
         app.openProfile()
         app.openSettingsSection("profile_accounts")
+        openAccountEditor(app, named: name)
+    }
+
+    private func openAccountEditor(_ app: XCUIApplication, named name: String) {
         let row = app.buttons["accounts_row_\(name)"]
         XCTAssertTrue(row.waitForExistence(timeout: 5), "No apareció la cuenta '\(name)' del seed.")
         row.tap()
@@ -35,13 +39,39 @@ final class SecondaryCurrencyPromptUITests: XCTestCase {
         )
     }
 
+    /// Quita una secundaria restaurada por el seed y deja el Perfil visible.
+    private func dropSecondaryCurrency(_ app: XCUIApplication, code: String) {
+        app.openProfile()
+        app.openSettingsSection("profile_currency")
+        let secondaryButton = app.buttons["currency_secondary_button"]
+        XCTAssertTrue(secondaryButton.waitForExistence(timeout: 5), "No apareció currency_secondary_button.")
+        secondaryButton.tap()
+        let row = app.buttons["secondary_currency_row_\(code)"]
+        XCTAssertTrue(row.waitForExistence(timeout: 5), "No apareció secondary_currency_row_\(code).")
+        row.tap()
+        app.buttons["secondary_currency_done"].tap()
+        XCTAssertTrue(
+            app.buttons["secondary_currency_done"].waitForNonExistence(timeout: 5),
+            "El picker de divisa secundaria no se cerró tras «Listo»."
+        )
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(
+            app.buttons["profile_accounts"].waitForExistence(timeout: 5),
+            "No volvió al Perfil tras cerrar Divisa."
+        )
+    }
+
     /// Editar la cuenta en USD (≠ PEN preferida) y guardar → sugiere divisa secundaria.
     func test_secondaryCurrencyPromptAppearsForNonPreferred() {
         let app = XCUIApplication()
         app.launchForUITest()
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
-        editAccount(app, named: "Ahorros USD")
+        // El seed restaura USD+EUR (tope 2). El prompt solo se ofrece si hay hueco
+        // y la divisa de la cuenta no está ya. Quitamos USD para dejar el hueco.
+        dropSecondaryCurrency(app, code: "USD")
+        app.openSettingsSection("profile_accounts")
+        openAccountEditor(app, named: "Ahorros USD")
         app.buttons["toolbar_save_button"].tap()
 
         XCTAssertTrue(
