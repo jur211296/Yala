@@ -462,6 +462,14 @@ final class AppBootstrapper {
                 SaveBreadcrumb.deferred("AppBootstrapper.legacyGroupsRetirement", "import not quiescent")
                 return
             }
+            // Fixture B2 (`-uitest-seed dead-pointer`): retire() en ESTE boot nilea
+            // splitExpenseID y Mini vería una TX personal (falso verde del AC c).
+            // Solo DEBUG + uitest + ese perfil. Release siempre retira. Producto intacto.
+            #if DEBUG
+            if UITestHooks.isActive, UITestHooks.seedProfile == "dead-pointer" {
+                return
+            }
+            #endif
             LegacyGroupsRetirement.retire(context: context)
         }
 

@@ -632,8 +632,10 @@ struct DevSeedTransactions {
     /// canal backend en uitest queda `.backendChannelIdle` (no hay pull) ⇒ `isFresh == false`
     /// ⇒ el puntero se trata como VIVO y Borrar/Duplicar se apagan — justo el bug. Una zona
     /// asentada SIN canal concede `.fresh` (Fase 3). El barrido de huérfanas no la toca
-    /// (`belongsToBackendChannel` es el primer guard). `LegacyGroupsRetirement` sí la
-    /// retiraría en un arranque POSTERIOR: Mini debe lanzar con `-uitest-reset`.
+    /// (`belongsToBackendChannel` es el primer guard). `LegacyGroupsRetirement.retire`
+    /// corre en el MISMO boot (tras `awaitPersonalStoreReady`) y nilea el puntero:
+    /// AppBootstrapper salta ese retire solo bajo DEBUG + `-uitest` + perfil
+    /// `dead-pointer`. `-uitest-reset` no basta.
     ///
     /// **No se setea `isBackendGroup = true`.** Eso es a propósito y va pinneado: el seed
     /// `.grupos` lo pone por C3, y copiarlo aquí reabriría el caso.
