@@ -38,6 +38,11 @@ struct PanelThematicSection: View {
                 content: { contentView(widgets: widgets) },
                 footer: { footerView() }
             )
+            // `.contain` BEFORE the section id: a bare identifier on this
+            // container overwrites children (Mini only saw `panel_section_tools`).
+            // Keeps `panel_section_<kind>` AND child ids such as
+            // `panel_exchange_rate_widget`. Ticket: qa_cloud-fx-rates-blob-dos-caras.
+            .accessibilityElement(children: .contain)
             .accessibilityIdentifier("panel_section_\(kind.rawValue)")
         }
     }

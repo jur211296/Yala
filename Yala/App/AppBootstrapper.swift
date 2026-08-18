@@ -761,6 +761,13 @@ final class AppBootstrapper {
         }
     }
 
+    /// Tras `-uitest-reset`, DataWipeService borra `secondaryCurrencies`. El gráfico
+    /// del Panel solo monta con al menos una secundaria. USD+EUR basta para Mini.
+    /// Ticket: Bugs/qa_cloud-fx-rates-blob-dos-caras.md (F1).
+    static func restoreUITestSecondaryCurrencies(into defaults: UserDefaults) {
+        defaults.set("USD,EUR", forKey: AppPreferences.Keys.secondaryCurrencies)
+    }
+
     /// Seed de datos UI-test al final del bootstrap + señal `uitest_ready`.
     private func applyUITestSeed(context: ModelContext) async {
         defer { UITestHooks.shared.markReady() }
@@ -769,6 +776,12 @@ final class AppBootstrapper {
         if let raw = UITestHooks.seedProfile, !UITestHooks.seedDesync {
             let profile = DevSeedProfile(rawValue: raw) ?? .realista
             await DevSeedService().seed(in: context, profile: profile)
+            // Tras `-uitest-reset`, DataWipeService borra `secondaryCurrencies` y el
+            // gráfico del Panel no monta (empty state). Mismo patrón que skip-onboarding
+            // re-setea flags tras el wipe. USD+EUR basta: el seed ya escribe esas tasas.
+            // Ticket: Bugs/qa_cloud-fx-rates-blob-dos-caras.md (F1 Mini QA).
+            Self.restoreUITestSecondaryCurrencies(into: SessionDefaults.current)
+            SessionState.shared.needsExchangeRateWidgetRefresh = true
         }
         // Seed desync AISLADO (excluyente con `-uitest-seed`): 4 TX con signo↔categoría
         // desincronizada para el XCUI de clasificación income/expense por categoría.

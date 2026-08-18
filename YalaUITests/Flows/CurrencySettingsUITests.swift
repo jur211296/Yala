@@ -5,8 +5,8 @@
 //  Cobertura XCUITest del área `settings-currency-exchange` (escenarios 13.2, 13.3,
 //  13.3.1, 13.3.2): navegación a Divisa y cambio + agregar una divisa secundaria
 //  (acción aislada que NO recalcula transacciones, a diferencia de cambiar la
-//  divisa preferida). Verifica que la divisa agregada aparece en el display de
-//  secundarias. Reusa openProfile/openSettingsSection. Seed `minimal`.
+//  divisa preferida). El seed uitest restaura USD+EUR; el alta prueba GBP
+//  (deselecciona USD para liberar el tope de 2). Reusa openProfile/openSettingsSection. Seed `minimal`.
 //  Convenciones: ver CLAUDE.md (sin sleeps, scheme Yala Dev).
 //
 
@@ -47,10 +47,16 @@ final class CurrencySettingsUITests: XCTestCase {
         XCTAssertTrue(secondaryButton.waitForExistence(timeout: 5), "No apareció currency_secondary_button.")
         secondaryButton.tap()
 
-        // EUR está en la sección "Recomendadas" del picker (visible sin scroll).
-        let eurRow = app.buttons.matching(identifier: "secondary_currency_row_EUR").firstMatch
-        XCTAssertTrue(eurRow.waitForExistence(timeout: 5), "No se montó SecondaryCurrencyPickerSheet (secondary_currency_row_EUR).")
-        eurRow.tap()
+        // El seed uitest restaura USD+EUR (tope 2). EUR ya está seleccionada: tocarla
+        // la QUITARÍA. Deseleccionamos USD (sección Selected) y agregamos GBP
+        // (Recomendadas, visible sin scroll) para seguir probando el alta.
+        let usdRow = app.buttons.matching(identifier: "secondary_currency_row_USD").firstMatch
+        XCTAssertTrue(usdRow.waitForExistence(timeout: 5), "No se montó SecondaryCurrencyPickerSheet (secondary_currency_row_USD).")
+        usdRow.tap()
+
+        let gbpRow = app.buttons.matching(identifier: "secondary_currency_row_GBP").firstMatch
+        XCTAssertTrue(gbpRow.waitForExistence(timeout: 5), "No apareció secondary_currency_row_GBP tras liberar un hueco.")
+        gbpRow.tap()
 
         // Cerrar el picker (la selección ya se aplicó al togglear).
         app.buttons["secondary_currency_done"].tap()
@@ -63,9 +69,9 @@ final class CurrencySettingsUITests: XCTestCase {
             "El picker de divisa secundaria no se cerró tras «Listo»."
         )
 
-        // El display de divisas secundarias debe reflejar EUR.
+        // El display de divisas secundarias debe reflejar GBP.
         XCTAssertTrue(secondaryButton.waitForExistence(timeout: 5), "No volvió a CurrencySettingsView.")
-        let showsEUR = secondaryButton.label.contains("EUR") || secondaryButton.staticTexts["EUR"].exists
-        XCTAssertTrue(showsEUR, "El display de divisas secundarias no refleja EUR tras agregarlo.")
+        let showsGBP = secondaryButton.label.contains("GBP") || secondaryButton.staticTexts["GBP"].exists
+        XCTAssertTrue(showsGBP, "El display de divisas secundarias no refleja GBP tras agregarlo.")
     }
 }
