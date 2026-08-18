@@ -17,7 +17,7 @@ import UIKit
 /// Handle del `beginBackgroundTask` de iOS. El valor no implica que el sistema haya concedido
 /// segundos extra — `.invalid` es una respuesta válida.
 struct GroupsBackgroundTaskID: Equatable, Sendable {
-    let rawValue: UInt
+    let rawValue: Int
     static let invalid = GroupsBackgroundTaskID(rawValue: UIBackgroundTaskIdentifier.invalid.rawValue)
 }
 
