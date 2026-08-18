@@ -213,7 +213,9 @@ final class UITestHooks {
     /// lanza SIN perfil para no contaminar los totales. Ver `DevSeedTransactions.createDesyncFixtures`.
     nonisolated static var seedDesync: Bool { hasArg("-uitest-seed-desync") }
 
-    /// Valor de `-uitest-seed <perfil>` (ej. "realista", "pesado"). Nil si ausente.
+    /// Valor de `-uitest-seed <perfil>` (ej. "realista", "pesado", "dead-pointer"). Nil si ausente.
+    /// `dead-pointer` siembra UNA TX personal cuyo puntero de grupo no resuelve — AC (c) de
+    /// `qa_groups-tx-fantasma-al-borrar-gasto-de-grupo`. Ver `DevSeedTransactions.createDeadPointerFixture`.
     nonisolated static var seedProfile: String? {
         #if DEBUG
         guard isActive else { return nil }

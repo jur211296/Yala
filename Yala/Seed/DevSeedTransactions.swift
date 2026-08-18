@@ -612,5 +612,63 @@ struct DevSeedTransactions {
             print("DevSeedTransactions: Desync fixtures save error: \(error)")
         }
     }
+
+    // MARK: - Dead-pointer fixture (AC-c fantasma)
+
+    /// Constantes que Mini y los unit tests comparten. La nota viaja al
+    /// `accessibilityLabel` de `record_row` (`note, amount, …`).
+    enum DeadPointerUITestSeed {
+        static let profile = "dead-pointer"
+        static let note = "Dead group pointer"
+        static let unresolvedExpenseIDString = "DEAD0000-0000-4000-8000-000000000001"
+        static let amount: Double = -42
+    }
+
+    /// Planta el estado que `NewTransactionView.resolveBridgedPointer` trata como puntero
+    /// MUERTO: `bridgedPointerResolves = found || !isFresh` sale `false`.
+    ///
+    /// **Por qué un grupo legacy asentado, y no un backend.** El editor no toma un fetch
+    /// vacío por «no existe» a secas: exige que la zona sea fresca. Un `SplitGroup` del
+    /// canal backend en uitest queda `.backendChannelIdle` (no hay pull) ⇒ `isFresh == false`
+    /// ⇒ el puntero se trata como VIVO y Borrar/Duplicar se apagan — justo el bug. Una zona
+    /// asentada SIN canal concede `.fresh` (Fase 3). El barrido de huérfanas no la toca
+    /// (`belongsToBackendChannel` es el primer guard). `LegacyGroupsRetirement` sí la
+    /// retiraría en un arranque POSTERIOR: Mini debe lanzar con `-uitest-reset`.
+    ///
+    /// **No se setea `isBackendGroup = true`.** Eso es a propósito y va pinneado: el seed
+    /// `.grupos` lo pone por C3, y copiarlo aquí reabriría el caso.
+    @MainActor
+    static func createDeadPointerFixture(
+        account: Account,
+        currencyCode: String,
+        in context: ModelContext
+    ) {
+        let group = SplitGroup(
+            name: "Dead pointer zone",
+            currencyCode: currencyCode,
+            isOwner: true
+        )
+        group.initialMemberImportStartedAt = nil
+        context.insert(group)
+
+        let tx = TransactionItem(
+            date: Date.now,
+            amount: DeadPointerUITestSeed.amount,
+            currencyCode: currencyCode,
+            note: DeadPointerUITestSeed.note,
+            account: account,
+            exchangeRate: 1.0,
+            amountInPreferredCurrency: DeadPointerUITestSeed.amount,
+            preferredCurrencyCode: currencyCode
+        )
+        tx.splitExpenseID = DeadPointerUITestSeed.unresolvedExpenseIDString
+        tx.splitGroupZoneID = group.cloudKitZoneID
+        tx.createdAt = Date.now
+        context.insert(tx)
+
+        do { try context.save() } catch {
+            print("DevSeedTransactions: Dead pointer fixture save error: \(error)")
+        }
+    }
 }
 #endif

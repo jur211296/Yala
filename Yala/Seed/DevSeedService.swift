@@ -33,13 +33,18 @@ enum DevSeedProfile: String {
     /// rico de `DevSeedGroups.create` (2 grupos multi-moneda); para la perspectiva invitado/deudor
     /// combina `.gruposInvitado` con el flag.
     case soloGrupos = "solo-grupos"
+    /// Fixture AISLADO para el AC (c) de `qa_groups-tx-fantasma-al-borrar-gasto-de-grupo`:
+    /// una TX personal de cuenta REAL cuyo `splitExpenseID` no resuelve, en una zona
+    /// asentada SIN canal backend (para que el editor la trate como puntero muerto).
+    /// No arranca el generador aleatorio. Ver `DevSeedTransactions.createDeadPointerFixture`.
+    case deadPointer = "dead-pointer"
 
     /// Días de historial de transacciones a generar (escala el volumen).
-    /// `minimal`/`grupos`/`gruposInvitado`/`gruposSaldado`/`soloGrupos` (~1 semana) son rápidos para XCUITests.
+    /// `minimal`/`grupos`/`gruposInvitado`/`gruposSaldado`/`soloGrupos`/`deadPointer` (~1 semana) son rápidos para XCUITests.
     /// `realista`/`pesado` para escenarios ricos / performance (arranque más lento, riesgo watchdog).
     var daysBack: Int {
         switch self {
-        case .minimal, .grupos, .gruposInvitado, .gruposSaldado, .soloGrupos: return 7
+        case .minimal, .grupos, .gruposInvitado, .gruposSaldado, .soloGrupos, .deadPointer: return 7
         case .realista: return 730
         case .pesado: return 3650
         }
@@ -51,8 +56,8 @@ enum DevSeedProfile: String {
     }
 
     /// Si siembra vida personal (cuentas, transacciones, presupuestos, tags, pagos, drafts).
-    /// `.soloGrupos` es el único que NO — sólo grupos, para el escenario 5a puro.
-    var seedsPersonalData: Bool { self != .soloGrupos }
+    /// `.soloGrupos` no — sólo grupos. `.deadPointer` tampoco: va por su fixture aislado.
+    var seedsPersonalData: Bool { self != .soloGrupos && self != .deadPointer }
 }
 
 @MainActor @Observable
@@ -70,6 +75,14 @@ final class DevSeedService {
         guard !isSeeding else { return }
         isSeeding = true
         progress = 0
+
+        // Fixture aislado: no arranca el generador aleatorio (contaminaría la lista que Mini
+        // tiene que abrir). Gana el perfil; `-uitest-seed-desync` sigue siendo excluyente
+        // más arriba, en `applyUITestSeed`.
+        if profile == .deadPointer {
+            seedDeadPointerFixtures(in: context)
+            return
+        }
 
         let calendar = Calendar.current
         let endDate = Date.now
@@ -227,6 +240,31 @@ final class DevSeedService {
         UserDefaults.standard.set(true, forKey: "devSeedDataExecuted")
         hasSeeded = true
         SessionState.shared.incrementDataVersion()
+    }
+
+    // MARK: - Dead-pointer fixture (AC-c fantasma)
+
+    /// Seed AISLADO para `-uitest-seed dead-pointer`: categorías + una cuenta + UNA TX
+    /// personal cuyo puntero de grupo no resuelve. Mini abre esa fila y afirma
+    /// `new_transaction_delete_action` / `new_transaction_duplicate_action` habilitados.
+    private func seedDeadPointerFixtures(in context: ModelContext) {
+        defer { isSeeding = false }
+
+        seedCategoriesIfNeeded(in: context)
+        let accounts = DevSeedAccounts.create(in: context)
+        DevSeedTransactions.createDeadPointerFixture(
+            account: accounts.cuentaPrincipal,
+            currencyCode: accounts.cuentaPrincipal.currencyCode,
+            in: context
+        )
+
+        do { try context.save() } catch {
+            print("DevSeedService: Dead pointer fixture save error: \(error)")
+        }
+        UserDefaults.standard.set(true, forKey: "devSeedDataExecuted")
+        hasSeeded = true
+        SessionState.shared.incrementDataVersion()
+        updateStep(L10n.DevSeed.stepDone, progress: 1.0)
     }
 
     // MARK: - Reset

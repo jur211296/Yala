@@ -29,6 +29,10 @@ import Testing
         #expect(UITestHooks.parseSeedProfile(from: ["app", "-uitest-seed", "-uitest-pro"]) == nil)
     }
 
+    @Test func parseSeedProfile_deadPointer() {
+        #expect(UITestHooks.parseSeedProfile(from: ["app", "-uitest", "-uitest-seed", "dead-pointer"]) == "dead-pointer")
+    }
+
     // MARK: - parseValue (genérico — usado por -uitest-deeplink)
 
     @Test func parseValue_deeplinkPresent_returnsValue() {
