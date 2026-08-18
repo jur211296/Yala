@@ -1736,15 +1736,16 @@
         "Yala/App/Views/Settings/CurrencyPickerSheet.swift",
         "Yala/App/Views/Settings/SecondaryCurrencyPickerSheet.swift",
         "Yala/App/Views/Settings/ExchangeRatesSheet.swift",
-        "Yala/App/Views/Panel/ExchangeRateWidget.swift"
+        "Yala/App/Views/Panel/ExchangeRateWidget.swift",
+        "Yala/Seed/DevSeedExchangeRates.swift"
       ],
       "scenarioIDs": [
         "F-SET-05"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/CurrencySettingsUITests — 2026-08-04: la asercion de cierre era un FALSO VERDE (afirmaba un elemento del FONDO, que sigue en el arbol con el sheet puesto). Confirmado por mutacion: sin el tap de cierre el test pasaba igual. Ahora exige el desmontaje con waitForNonExistence del boton de la vista presentada, y la mutacion lo pone rojo.",
+      "coverage": "xcuitest:YalaUITests/CurrencySettingsUITests — 2026-08-04: la asercion de cierre era un FALSO VERDE (afirmaba un elemento del FONDO, que sigue en el arbol con el sheet puesto). Confirmado por mutacion: sin el tap de cierre el test pasaba igual. Ahora exige el desmontaje con waitForNonExistence del boton de la vista presentada, y la mutacion lo pone rojo. — 2026-08-18 seam B1 (qa_cloud-fx-rates-blob-dos-caras): `-uitest -uitest-seed <perfil>` escribe ExchangeRate.rates como cara post-pull (strings escala-8, no Doubles nativos). Identifier del gráfico in-app Panel: panel_exchange_rate_widget. unit:YalaTests/DevSeedExchangeRatesFaceTests (cara-string vs gemelo Double + source-scan del seed y del id).",
       "owner": "",
-      "lastVerified": "2026-08-04"
+      "lastVerified": "2026-08-18"
     },
     {
       "area": "settings-profile-general",
