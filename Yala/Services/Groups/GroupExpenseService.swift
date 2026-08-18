@@ -24,6 +24,13 @@ final class GroupExpenseService {
     private var modelContext: ModelContext?
     private let logger = Logger(subsystem: "com.yala", category: "GroupExpense")
 
+    /// Tras un save local de gasto, pide un ciclo de sync bajo background task. Inyectable para
+    /// afirmar que el ciclo se PIDIÓ, no que iOS concedió tiempo.
+    @ObservationIgnored
+    var requestSyncAfterLocalSave: () -> Void = {
+        GroupsSaveSyncTrigger.shared.requestAfterLocalSave()
+    }
+
     // MARK: - Init
 
     private init() {}
@@ -47,6 +54,7 @@ final class GroupExpenseService {
     /// verifican el branch `noContext` deben llamar este helper antes de ejercer el SUT.
     func _testResetContext() {
         self.modelContext = nil
+        requestSyncAfterLocalSave = { GroupsSaveSyncTrigger.shared.requestAfterLocalSave() }
     }
     #endif
 
@@ -115,6 +123,7 @@ final class GroupExpenseService {
             throw GroupExpenseServiceError.saveFailed(error)
         }
 
+        requestSyncAfterLocalSave()
         SessionState.shared.incrementDataVersion()
 
         // Bridge to personal transaction/draft (guard: bridge may not be initialized yet)
@@ -197,6 +206,7 @@ final class GroupExpenseService {
             throw GroupExpenseServiceError.saveFailed(error)
         }
 
+        requestSyncAfterLocalSave()
         SessionState.shared.incrementDataVersion()
 
         // Update bridged record

@@ -141,4 +141,49 @@ struct GroupsSyncClientPushTests {
         #expect(result)
         #expect(stub.callCount > 0)
     }
+
+    /// El ciclo del trigger por save usa los mismos gates. Flag OFF ⇒ no se pide red.
+    @Test func syncNowAfterLocalSave_flagOff_noNetwork() async throws {
+        CloudSyncFlags.groupsBackendEnabled = false
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let stub = CountingStub()
+        let client = GroupsSyncClient(
+            tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { true }, outboxMirror: nil)
+        client._testSetContext(context)
+
+        await client.syncNowAfterLocalSave()
+        #expect(stub.callCount == 0)
+    }
+
+    /// Con el canal encendido el save-trigger SÍ cicla. El test afirma que el ciclo se pidió
+    /// (el stub recibió red), no que iOS concedió un background task.
+    @Test func syncNowAfterLocalSave_flagOn_runsCycle() async throws {
+        CloudSyncFlags.groupsBackendEnabled = true
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let stub = CountingStub()
+        let client = GroupsSyncClient(
+            tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { true }, outboxMirror: nil)
+        client._testSetContext(context)
+
+        await client.syncNowAfterLocalSave()
+        #expect(stub.callCount > 0)
+    }
+
+    @Test func syncNowAfterLocalSave_noContext_noNetwork() async throws {
+        CloudSyncFlags.groupsBackendEnabled = true
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
+
+        let stub = CountingStub()
+        let client = GroupsSyncClient(
+            tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { true }, outboxMirror: nil)
+
+        await client.syncNowAfterLocalSave()
+        #expect(stub.callCount == 0)
+    }
 }
