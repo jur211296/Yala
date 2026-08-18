@@ -141,7 +141,7 @@ struct GroupsSaveSyncTriggerTests {
         #expect(cycles == 1)
     }
 
-    @Test func expirationDuringDebounce_doesNotRunTheCycle() async {
+    @Test func expirationDuringDebounce_doesNotRunTheCycle() async throws {
         let hold = Hold()
         var cycles = 0
         var expiration: (() -> Void)?
