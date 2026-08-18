@@ -402,6 +402,7 @@ final class GroupsSyncClient {
     func teardownForSignOut() {
         teardownGeneration += 1  // aborta el ciclo EN VUELO en su próximo re-chequeo post-await (MEDIA)
         stopLoop()
+        GroupsSaveSyncTrigger.shared.cancel()
         outboxMirror?.purgeAll()
     }
 
@@ -485,6 +486,16 @@ final class GroupsSyncClient {
     @discardableResult
     func syncNowFromUI(timeout: Duration = .seconds(15)) async -> Bool {
         await syncNowFromPush(timeout: timeout)
+    }
+
+    /// Ciclo pedido por `GroupsSaveSyncTrigger` tras un save local. Mismos gates que `syncNowFromPush`
+    /// (flag, sesión, `stoppedUntilRelaunch`, context retenido), SIN carrera de timeout: el presupuesto
+    /// es el background task que el trigger ya pidió. No toca `consecutiveTransients` — un fallo aquí
+    /// no escala la escalera de backoff del loop.
+    func syncNowAfterLocalSave() async {
+        guard CloudSyncFlags.groupsBackendEnabled, sessionCheck(), !stoppedUntilRelaunch,
+              let ctx = context else { return }
+        _ = await syncCycleOnceCoalesced(context: ctx)
     }
 
     /// UNA vuelta del ciclo: captura local → push → pull-hasta-agotar → apply. Devuelve el

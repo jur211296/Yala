@@ -32,8 +32,8 @@ nonisolated enum SyncCadencePolicy {
     /// en v1 (el trigger por save local queda diferido — ver D1 del plan; 60s es el peor caso aceptable).
     static let pullInterval: TimeInterval = 60
 
-    /// Debounce del push tras un save local (coalescing de ráfagas de ediciones). No lo consume el loop
-    /// de I9 (el push va dentro del ciclo); queda declarado para el trigger por save de I10.
+    /// Debounce del push tras un save local (coalescing de ráfagas de ediciones). Lo consume
+    /// `GroupsSaveSyncTrigger` antes de pedir UN ciclo; el loop de cadencia no lo lee.
     static let pushDebounce: TimeInterval = 2
 
     /// Base del backoff exponencial ante fallos transitorios (red/HTTP/decode/save de página).
