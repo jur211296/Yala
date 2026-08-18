@@ -781,6 +781,7 @@ final class AppBootstrapper {
             // re-setea flags tras el wipe. USD+EUR basta: el seed ya escribe esas tasas.
             // Ticket: Bugs/qa_cloud-fx-rates-blob-dos-caras.md (F1 Mini QA).
             Self.restoreUITestSecondaryCurrencies(into: SessionDefaults.current)
+            SessionState.shared.needsExchangeRateWidgetRefresh = true
         }
         // Seed desync AISLADO (excluyente con `-uitest-seed`): 4 TX con signo↔categoría
         // desincronizada para el XCUI de clasificación income/expense por categoría.
