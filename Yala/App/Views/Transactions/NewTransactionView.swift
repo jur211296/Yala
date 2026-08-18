@@ -875,6 +875,7 @@ struct NewTransactionView: View {
                 }
                 .disabled(isBridgedCasoA)  // M6: duplicar TX bridgeada generaría TX huérfana sin splitExpenseID
                 .opacity(isBridgedCasoA ? 0.4 : 1.0)
+                .accessibilityIdentifier("new_transaction_duplicate_action")
             }
 
             // Delete (only in edit mode)
@@ -887,6 +888,7 @@ struct NewTransactionView: View {
                 }
                 .disabled(isBridgedCasoA)  // M6: delete reaparece como draft via próximo sync. Bloqueamos.
                 .opacity(isBridgedCasoA ? 0.4 : 1.0)
+                .accessibilityIdentifier("new_transaction_delete_action")
             }
 
             // Split calculator (only for expenses)
