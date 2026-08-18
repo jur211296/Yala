@@ -1333,12 +1333,20 @@ struct CategoriesTabView: View {
         enforceListViewLock()
 
         // Calculate previous period totals for comparison
-        calculatePreviousPeriodTotals()
+        calculatePreviousPeriodTotals(
+            currentCategorySource: pieFiltered,
+            currentTagSource: tagFiltered,
+            currentNeedSource: needFiltered
+        )
     }
 
     // MARK: - Previous Period Calculation
 
-    private func calculatePreviousPeriodTotals() {
+    private func calculatePreviousPeriodTotals(
+        currentCategorySource: [TransactionItem],
+        currentTagSource: [TransactionItem],
+        currentNeedSource: [TransactionItem]
+    ) {
         // Proyección "mi parte" (neto) desde el set AMPLIO (con AMBAS hermanas del bridge).
         let adjustment = GroupBridgeStatsAdjustment.build(from: allTransactions, context: modelContext)
 
@@ -1358,6 +1366,27 @@ struct CategoriesTabView: View {
             mode: sessionState.comparisonMode,
             customRange: sessionState.customDateRange
         )
+        let currentInterval = viewModel.panelDateInterval
+        let naturesFilter: Set<TransactionNature>? = viewModel.selectedTransactionNatures.isEmpty
+            ? nil
+            : viewModel.selectedTransactionNatures
+
+        func alignedPrevious(
+            _ previous: [TransactionItem],
+            currentSource: [TransactionItem],
+            natures: Set<TransactionNature>?
+        ) -> [TransactionItem] {
+            DistributionPreviousPeriodCalculator.alignedPrevious(
+                previous,
+                currentDates: DistributionPreviousPeriodCalculator.currentDates(
+                    from: currentSource, in: currentInterval, natures: natures
+                ),
+                currentInterval: currentInterval,
+                previousInterval: previousInterval,
+                period: viewModel.detailPeriod,
+                comparisonMode: sessionState.comparisonMode
+            )
+        }
 
         // Build filter criteria for previous period
         // Include mode: show all (no filter) for comparison
@@ -1380,19 +1409,19 @@ struct CategoriesTabView: View {
             from: allTags.filter { criteria.selectedTags.contains($0.persistentModelID) }
         )
 
-        // Filter transactions for previous period
-        let previousFiltered = FilterService.filterForTrends(
-            transactions: allTransactions,
-            accounts: accounts,
-            criteria: criteria
+        // Filter transactions for previous period, then WTD/MTD al weekday/día equivalente
+        let previousFiltered = alignedPrevious(
+            FilterService.filterForTrends(
+                transactions: allTransactions,
+                accounts: accounts,
+                criteria: criteria
+            ),
+            currentSource: currentCategorySource,
+            natures: naturesFilter
         )
 
         // Calculate previous period category spending
         // Use same need filter as current period for consistent comparison
-        let naturesFilter: Set<TransactionNature>? = viewModel.selectedTransactionNatures.isEmpty
-            ? nil
-            : viewModel.selectedTransactionNatures
-
         let previousCategorySpending = TopSpendingCategoriesCalculator.calculateTopSpending(
             transactions: previousFiltered,
             interval: previousInterval,
@@ -1458,8 +1487,12 @@ struct CategoriesTabView: View {
             searchText: viewModel.searchText,
             dateInterval: previousInterval
         )
-        let prevTagFiltered = FilterService.filterForTrends(
-            transactions: allTransactions, accounts: accounts, criteria: prevTagCriteria
+        let prevTagFiltered = alignedPrevious(
+            FilterService.filterForTrends(
+                transactions: allTransactions, accounts: accounts, criteria: prevTagCriteria
+            ),
+            currentSource: currentTagSource,
+            natures: naturesFilter
         )
         let previousTagSpending = TagSpendingCalculator.calculateTopSpending(
             transactions: prevTagFiltered,
@@ -1498,10 +1531,15 @@ struct CategoriesTabView: View {
         prevNeedCriteria.populateTagUUIDs(
             from: allTags.filter { prevNeedCriteria.selectedTags.contains($0.persistentModelID) }
         )
-        let prevNeedFiltered = FilterService.filterForTrends(
-            transactions: allTransactions,
-            accounts: accounts,
-            criteria: prevNeedCriteria
+        // NeedTrendHelper cuenta solo gasto → corte gasto-only (igual que el Panel).
+        let prevNeedFiltered = alignedPrevious(
+            FilterService.filterForTrends(
+                transactions: allTransactions,
+                accounts: accounts,
+                criteria: prevNeedCriteria
+            ),
+            currentSource: currentNeedSource,
+            natures: [.expense]
         )
 
         let preferredCurrency = CurrencyCode(rawValue: defaultCurrencyCode) ?? .pen

@@ -130,7 +130,11 @@ final class FinancialReportViewModel: Filterable {
         transactions: [TransactionItem],
         accounts: [Account],
         preferredCurrency: String,
-        allTags: [Tag] = []
+        allTags: [Tag] = [],
+        now: Date = .now,
+        period: DetailPeriod? = nil,
+        comparisonMode: ComparisonMode? = nil,
+        expensesOnly: Bool? = nil
     ) {
         // Proyección "mi parte" (neto) desde el set AMPLIO (`transactions` completo, con AMBAS
         // hermanas del bridge, antes de cualquier filtro por cuenta/etiqueta).
@@ -138,13 +142,15 @@ final class FinancialReportViewModel: Filterable {
         // límite del type-checker): `build(from:)` cubre los casos comunes; residual conocido —
         // la rara pata de préstamo SUELTA (payer con parte 0) no se suprime en el informe.
         let adjustment = GroupBridgeStatsAdjustment.build(from: transactions)
-        let interval = panelDateInterval
-        let comparisonMode = SessionState.shared.comparisonMode
-        let expensesOnly = SessionState.shared.isExpensesOnlyMode
+        let resolvedPeriod = period ?? detailPeriod
+        let resolvedMode = comparisonMode ?? SessionState.shared.comparisonMode
+        let resolvedExpensesOnly = expensesOnly ?? SessionState.shared.isExpensesOnlyMode
+        let interval = resolvedPeriod.dateInterval(customRange: customDateRange, now: now)
         let previousInterval = PreviousPeriodHelper.previousInterval(
-            for: detailPeriod,
-            mode: comparisonMode,
-            customRange: customDateRange
+            for: resolvedPeriod,
+            mode: resolvedMode,
+            customRange: customDateRange,
+            now: now
         )
 
         // Build filter criteria (shared base, only dateInterval differs)
@@ -158,7 +164,7 @@ final class FinancialReportViewModel: Filterable {
                 selectedTransactionNatures: selectedTransactionNatures,
                 selectedCurrencies: selectedCurrencies,
                 isExcludeMode: isExcludeMode,
-                transactionTypeFilter: Self.transactionTypeFilter(expensesOnly: expensesOnly),
+                transactionTypeFilter: Self.transactionTypeFilter(expensesOnly: resolvedExpensesOnly),
                 amountCondition: amountCondition,
                 searchText: searchText,
                 dateInterval: dateInterval
@@ -183,7 +189,16 @@ final class FinancialReportViewModel: Filterable {
 
         // Exclude balance adjustments and transfers from the report
         let currentTxns = currentFiltered.filter { $0.balanceAdjustmentType == nil }
-        let previousTxns = previousFiltered.filter { $0.balanceAdjustmentType == nil }
+        // WTD/MTD/YTD: recorta el previo al span de días del actual (p20-15).
+        // No-op en modo año, cerrados y rodantes (`aggregatePreviousNeedsAlignment`).
+        let previousTxns = DateAlignmentHelper.alignedPreviousItems(
+            previousFiltered.filter { $0.balanceAdjustmentType == nil },
+            currentDates: currentTxns.map(\.date),
+            currentInterval: interval,
+            previousInterval: previousInterval,
+            period: resolvedPeriod,
+            comparisonMode: resolvedMode
+        ) { $0.date }
 
         // Build pivot tree
         let hierarchy = groupingState.activeDimensions
