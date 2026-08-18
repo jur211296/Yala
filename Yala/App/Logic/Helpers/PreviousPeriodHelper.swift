@@ -89,7 +89,17 @@ enum PreviousPeriodHelper {
         calendar: Calendar
     ) -> DateInterval {
         switch period {
-        case .thisWeek, .last7Days:
+        case .thisWeek:
+            // Semana calendario anterior completa (lun→lun). El recorte MTD
+            // (lun→hoy vs lun→mismo weekday) lo hace DateAlignmentHelper.
+            // No es una ventana trailing: esa vaciaba el «vs» al alinear por weekday.
+            let startOfPreviousWeek = calendar.date(byAdding: .weekOfYear, value: -1, to: currentInterval.start) ?? currentInterval.start
+            // DateInterval + FilterService.contains: sin -1s, una TX a medianoche
+            // del primer día de esta semana cae en ambos periodos.
+            let endOfPreviousWeek = calendar.date(byAdding: .second, value: -1, to: currentInterval.start) ?? currentInterval.start
+            return DateInterval(start: startOfPreviousWeek, end: endOfPreviousWeek)
+
+        case .last7Days:
             // Go back 7 days
             let duration = currentInterval.duration
             let previousStart = currentInterval.start.addingTimeInterval(-duration)

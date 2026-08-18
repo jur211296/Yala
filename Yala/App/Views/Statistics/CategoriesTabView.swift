@@ -163,80 +163,108 @@ struct CategoriesTabView: View {
 
     @ViewBuilder
     private var scrollBody: some View {
+        scrollLifecycle(scrollView)
+    }
+
+    private var scrollView: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: DS.Spacing.md) {
-                heroSummary
-                filterBarPanel
-
-                if hasNoData {
-                    YalaEmptyState(
-                        icon: "chart.pie",
-                        title: L10n.Empty.noData
-                    )
-                    .padding(.top, DS.Spacing.xxxxl)
-                } else {
-                    LazyVStack(spacing: DS.Spacing.xl) {
-                        contentModePill
-
-                        switch contentMode {
-                        case .charts:
-                            chartsSection
-                            sankeyWidget
-                            // Need bars no aplican en income mode (need classification es expense-only)
-                            if !isIncomeMode {
-                                needsLargeSection
-                            }
-                        case .details:
-                            categoriesListSection
-                            if !isIncomeMode {
-                                needsCompactSection
-                            }
-                        }
-
-                        distributionInsightCard
-                    }
-                    .yalaSafeBottomPadding()
-                }
-            }
-            .padding(.top, DS.Spacing.sm)
+            scrollContent
         }
         .scrollViewGlassEdges()
-        .onAppear {
-            calculateData()
-            recomputeSankey()
+    }
+
+    /// Cadena de observers partida del `ScrollView` para que el type-checker
+    /// resuelva cada tramo por separado (mismo molde que `ContentView.body`).
+    private func scrollLifecycle(_ content: some View) -> some View {
+        content
+            .onAppear {
+                calculateData()
+                recomputeSankey()
+            }
+            .onChange(of: viewModel.sankeyInputKey) { recomputeSankey() }
+            .onChange(of: allTransactions.count) { recomputeSankey() }
+            .onChange(of: scheduledPaymentsSignature) { recomputeSankey() }
+            // Filtros del VM que disparan recálculo, extraídos a un ViewModifier para no exceder el
+            // presupuesto del type-checker de Swift (cadena larga de .onChange en este body).
+            .modifier(CategoriesFilterRecalcObservers(viewModel: viewModel, onRecalc: { calculateData() }))
+            .onChange(of: viewModel.selectedNeeds) {
+                calculateData()
+                syncNeedFilterToSelection()
+            }
+            .onChange(of: allSubcategories) { calculateData() }
+            .onChange(of: selectedNeed) {
+                syncSelectionToNeedFilter()
+                calculateData()
+            }
+            .onChange(of: sessionState.customDateRange) { calculateData() }
+            .onChange(of: sessionState.comparisonMode) {
+                // Recalcula el período actual para pasar las fuentes al recorte WTD/MTD.
+                // El call site anterior (`calculatePreviousPeriodTotals()` sin args) quedó
+                // inválido al exigir currentCategory/Tag/NeedSource y, dentro de este
+                // ViewBuilder, el type-checker expiraba en vez de reportar el mismatch.
+                calculateData()
+            }
+            .onChange(of: sessionState.selectedTransactionNatures) {
+                viewModel.selectedTransactionNatures = sessionState.selectedTransactionNatures
+                enforceListViewLock()
+                chartsCarouselPosition = isIncomeMode ? "subcategory" : "category"
+                calculateData()
+            }
+            .sheet(isPresented: $showCustomPeriodPicker) {
+                CustomPeriodPickerSheet(
+                    minDate: transactionDateRange.start,
+                    maxDate: transactionDateRange.end,
+                    currentRange: sessionState.customDateRange
+                )
+            }
+    }
+
+    /// Extraído de `scrollBody` para que el type-checker resuelva el árbol del
+    /// `ScrollView` aparte de la cadena de modifiers. Con el VStack + `if`/`switch`
+    /// inline, CI (Xcode 26.6) moría en `CategoriesTabView.swift:166` con
+    /// «unable to type-check this expression in reasonable time».
+    @ViewBuilder
+    private var scrollContent: some View {
+        VStack(spacing: DS.Spacing.md) {
+            heroSummary
+            filterBarPanel
+
+            if hasNoData {
+                YalaEmptyState(
+                    icon: "chart.pie",
+                    title: L10n.Empty.noData
+                )
+                .padding(.top, DS.Spacing.xxxxl)
+            } else {
+                populatedScrollContent
+            }
         }
-        .onChange(of: viewModel.sankeyInputKey) { recomputeSankey() }
-        .onChange(of: allTransactions.count) { recomputeSankey() }
-        .onChange(of: scheduledPaymentsSignature) { recomputeSankey() }
-        // Filtros del VM que disparan recálculo, extraídos a un ViewModifier para no exceder el
-        // presupuesto del type-checker de Swift (cadena larga de .onChange en este body).
-        .modifier(CategoriesFilterRecalcObservers(viewModel: viewModel, onRecalc: { calculateData() }))
-        .onChange(of: viewModel.selectedNeeds) {
-            calculateData()
-            syncNeedFilterToSelection()
+        .padding(.top, DS.Spacing.sm)
+    }
+
+    @ViewBuilder
+    private var populatedScrollContent: some View {
+        LazyVStack(spacing: DS.Spacing.xl) {
+            contentModePill
+
+            switch contentMode {
+            case .charts:
+                chartsSection
+                sankeyWidget
+                // Need bars no aplican en income mode (need classification es expense-only)
+                if !isIncomeMode {
+                    needsLargeSection
+                }
+            case .details:
+                categoriesListSection
+                if !isIncomeMode {
+                    needsCompactSection
+                }
+            }
+
+            distributionInsightCard
         }
-        .onChange(of: allSubcategories) { calculateData() }
-        .onChange(of: selectedNeed) {
-            syncSelectionToNeedFilter()
-            calculateData()
-        }
-        .onChange(of: sessionState.customDateRange) { calculateData() }
-        .onChange(of: sessionState.comparisonMode) {
-            calculatePreviousPeriodTotals()
-        }
-        .onChange(of: sessionState.selectedTransactionNatures) {
-            viewModel.selectedTransactionNatures = sessionState.selectedTransactionNatures
-            enforceListViewLock()
-            chartsCarouselPosition = isIncomeMode ? "subcategory" : "category"
-            calculateData()
-        }
-        .sheet(isPresented: $showCustomPeriodPicker) {
-            CustomPeriodPickerSheet(
-                minDate: transactionDateRange.start,
-                maxDate: transactionDateRange.end,
-                currentRange: sessionState.customDateRange
-            )
-        }
+        .yalaSafeBottomPadding()
     }
 
     /// Date range of all transactions (for custom period picker limits)
@@ -1333,12 +1361,20 @@ struct CategoriesTabView: View {
         enforceListViewLock()
 
         // Calculate previous period totals for comparison
-        calculatePreviousPeriodTotals()
+        calculatePreviousPeriodTotals(
+            currentCategorySource: pieFiltered,
+            currentTagSource: tagFiltered,
+            currentNeedSource: needFiltered
+        )
     }
 
     // MARK: - Previous Period Calculation
 
-    private func calculatePreviousPeriodTotals() {
+    private func calculatePreviousPeriodTotals(
+        currentCategorySource: [TransactionItem],
+        currentTagSource: [TransactionItem],
+        currentNeedSource: [TransactionItem]
+    ) {
         // Proyección "mi parte" (neto) desde el set AMPLIO (con AMBAS hermanas del bridge).
         let adjustment = GroupBridgeStatsAdjustment.build(from: allTransactions, context: modelContext)
 
@@ -1358,6 +1394,27 @@ struct CategoriesTabView: View {
             mode: sessionState.comparisonMode,
             customRange: sessionState.customDateRange
         )
+        let currentInterval = viewModel.panelDateInterval
+        let naturesFilter: Set<TransactionNature>? = viewModel.selectedTransactionNatures.isEmpty
+            ? nil
+            : viewModel.selectedTransactionNatures
+
+        func alignedPrevious(
+            _ previous: [TransactionItem],
+            currentSource: [TransactionItem],
+            natures: Set<TransactionNature>?
+        ) -> [TransactionItem] {
+            DistributionPreviousPeriodCalculator.alignedPrevious(
+                previous,
+                currentDates: DistributionPreviousPeriodCalculator.currentDates(
+                    from: currentSource, in: currentInterval, natures: natures
+                ),
+                currentInterval: currentInterval,
+                previousInterval: previousInterval,
+                period: viewModel.detailPeriod,
+                comparisonMode: sessionState.comparisonMode
+            )
+        }
 
         // Build filter criteria for previous period
         // Include mode: show all (no filter) for comparison
@@ -1380,19 +1437,19 @@ struct CategoriesTabView: View {
             from: allTags.filter { criteria.selectedTags.contains($0.persistentModelID) }
         )
 
-        // Filter transactions for previous period
-        let previousFiltered = FilterService.filterForTrends(
-            transactions: allTransactions,
-            accounts: accounts,
-            criteria: criteria
+        // Filter transactions for previous period, then WTD/MTD al weekday/día equivalente
+        let previousFiltered = alignedPrevious(
+            FilterService.filterForTrends(
+                transactions: allTransactions,
+                accounts: accounts,
+                criteria: criteria
+            ),
+            currentSource: currentCategorySource,
+            natures: naturesFilter
         )
 
         // Calculate previous period category spending
         // Use same need filter as current period for consistent comparison
-        let naturesFilter: Set<TransactionNature>? = viewModel.selectedTransactionNatures.isEmpty
-            ? nil
-            : viewModel.selectedTransactionNatures
-
         let previousCategorySpending = TopSpendingCategoriesCalculator.calculateTopSpending(
             transactions: previousFiltered,
             interval: previousInterval,
@@ -1458,8 +1515,12 @@ struct CategoriesTabView: View {
             searchText: viewModel.searchText,
             dateInterval: previousInterval
         )
-        let prevTagFiltered = FilterService.filterForTrends(
-            transactions: allTransactions, accounts: accounts, criteria: prevTagCriteria
+        let prevTagFiltered = alignedPrevious(
+            FilterService.filterForTrends(
+                transactions: allTransactions, accounts: accounts, criteria: prevTagCriteria
+            ),
+            currentSource: currentTagSource,
+            natures: naturesFilter
         )
         let previousTagSpending = TagSpendingCalculator.calculateTopSpending(
             transactions: prevTagFiltered,
@@ -1498,10 +1559,15 @@ struct CategoriesTabView: View {
         prevNeedCriteria.populateTagUUIDs(
             from: allTags.filter { prevNeedCriteria.selectedTags.contains($0.persistentModelID) }
         )
-        let prevNeedFiltered = FilterService.filterForTrends(
-            transactions: allTransactions,
-            accounts: accounts,
-            criteria: prevNeedCriteria
+        // NeedTrendHelper cuenta solo gasto → corte gasto-only (igual que el Panel).
+        let prevNeedFiltered = alignedPrevious(
+            FilterService.filterForTrends(
+                transactions: allTransactions,
+                accounts: accounts,
+                criteria: prevNeedCriteria
+            ),
+            currentSource: currentNeedSource,
+            natures: [.expense]
         )
 
         let preferredCurrency = CurrencyCode(rawValue: defaultCurrencyCode) ?? .pen

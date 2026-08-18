@@ -340,10 +340,13 @@ struct DateAlignmentHelperTests {
         #expect(result == previousInterval)             // modo año ya es simétrico
     }
 
-    @Test("thisWeek+month: no-op (ventana trailing ya simétrica)")
-    func alignedPreviousInterval_thisWeek_noOp() {
-        let currentInterval = DateInterval(start: date(2026, 7, 6), end: date(2026, 7, 9))
-        let previousInterval = DateInterval(start: date(2026, 7, 3), end: date(2026, 7, 6))
+    @Test("thisWeek+month: recorta la semana calendario al weekday de hoy")
+    func alignedPreviousInterval_thisWeek_calendarWeekWidth() {
+        var weekCal = cal
+        weekCal.firstWeekday = 2 // lunes
+        // Semana actual lun 6-jul → …; hoy mié 8-jul. Previo = lun 29-jun → lun 6-jul.
+        let currentInterval = DateInterval(start: date(2026, 7, 6), end: date(2026, 7, 13))
+        let previousInterval = DateInterval(start: date(2026, 6, 29), end: date(2026, 7, 6))
 
         let result = DateAlignmentHelper.alignedPreviousInterval(
             currentInterval: currentInterval,
@@ -351,10 +354,13 @@ struct DateAlignmentHelperTests {
             asOf: date(2026, 7, 8),
             period: .thisWeek,
             comparisonMode: .month,
-            calendar: cal
+            calendar: weekCal
         )
 
-        #expect(result == previousInterval)
+        #expect(result.start == previousInterval.start)
+        #expect(result.end > result.start)
+        let days = result.duration / 86400
+        #expect(days >= 2.9 && days <= 3.1) // lun-mié
     }
 
     @Test("thisYear+year: no-op (previo ya YTD del año anterior)")
@@ -504,17 +510,18 @@ struct DateAlignmentHelperTests {
 
     // MARK: - alignedPreviousItems / aggregatePreviousNeedsAlignment (sumas agregadas del Panel, p20-15 fase 2)
 
-    @Test("aggregatePreviousNeedsAlignment: SOLO thisMonth en modo mes (thisWeek ya es simétrico)")
-    func aggregatePreviousNeedsAlignment_soloThisMonth() {
+    @Test("aggregatePreviousNeedsAlignment: thisMonth, thisWeek (mes) y thisYear; cerrados no")
+    func aggregatePreviousNeedsAlignment_parcialesEnCurso() {
         #expect(DateAlignmentHelper.aggregatePreviousNeedsAlignment(period: .thisMonth, comparisonMode: .month))
-        // .thisWeek NO se alinea: su previo es una ventana trailing de igual duración
-        // (no la semana calendario) → ya simétrico; alinear lo vaciaría a mitad de semana.
-        // El resto también ya es simétrico → false (no truncar).
-        for p: DetailPeriod in [.thisWeek, .thisYear, .lastMonth, .lastYear, .last7Days, .last30Days, .allTime, .custom] {
+        #expect(DateAlignmentHelper.aggregatePreviousNeedsAlignment(period: .thisWeek, comparisonMode: .month))
+        #expect(DateAlignmentHelper.aggregatePreviousNeedsAlignment(period: .thisYear, comparisonMode: .year))
+        #expect(DateAlignmentHelper.aggregatePreviousNeedsAlignment(period: .thisYear, comparisonMode: .month))
+        // thisMonth en modo año = A-1 (mismo mes año pasado, ya recortado por sameIntervalPreviousYear)
+        #expect(!DateAlignmentHelper.aggregatePreviousNeedsAlignment(period: .thisMonth, comparisonMode: .year))
+        #expect(!DateAlignmentHelper.aggregatePreviousNeedsAlignment(period: .thisWeek, comparisonMode: .year))
+        for p: DetailPeriod in [.lastMonth, .lastYear, .last7Days, .last30Days, .allTime, .custom] {
             #expect(!DateAlignmentHelper.aggregatePreviousNeedsAlignment(period: p, comparisonMode: .month))
         }
-        // Modo año nunca alinea (guard defensivo; los agregados siempre usan .month).
-        #expect(!DateAlignmentHelper.aggregatePreviousNeedsAlignment(period: .thisMonth, comparisonMode: .year))
     }
 
     @Test("alignedPreviousItems thisMonth: trunca el previo al día equivalente (corte por día, no timestamp)")
@@ -544,21 +551,14 @@ struct DateAlignmentHelperTests {
         #expect(!result.contains { cal.component(.day, from: $0) == 7 })
     }
 
-    @Test("alignedPreviousItems thisWeek: NO-OP (previo = ventana trailing simétrica, no se trunca)")
-    func alignedPreviousItems_thisWeek_noOp() {
-        // Escenario REAL que produce PreviousPeriodHelper (no uno sintético): hoy
-        // miércoles 8-jul; semana actual [Lun 6-jul, Jue 9-jul) (duración 3 días).
-        // previousInterval(.thisWeek) es una ventana TRAILING de IGUAL duración
-        // (comparte rama con .last7Days): [Vie 3-jul .. Dom 5-jul] → Vie/Sáb/Dom,
-        // NO el lunes de la semana calendario anterior. Por eso .thisWeek ya es
-        // simétrico y el gate NO lo alinea.
+    @Test("alignedPreviousItems thisWeek: recorta la semana calendario anterior al mismo weekday")
+    func alignedPreviousItems_thisWeek_truncaAlWeekdayEquivalente() {
+        // Semana actual lun 6-jul → jue 9-jul (datos lun-mié).
+        // Previo = semana calendario anterior lun 29-jun → lun 6-jul.
         let currentInterval = DateInterval(start: date(2026, 7, 6), end: date(2026, 7, 9))
-        let previousInterval = DateInterval(
-            start: date(2026, 7, 3),
-            end: date(2026, 7, 6).addingTimeInterval(-1)
-        )
-        let currentDates = [date(2026, 7, 6), date(2026, 7, 7), date(2026, 7, 8)]  // Lun-Mié con datos
-        let previous = [date(2026, 7, 3), date(2026, 7, 4), date(2026, 7, 5)]      // Vie/Sáb/Dom previos
+        let previousInterval = DateInterval(start: date(2026, 6, 29), end: date(2026, 7, 6))
+        let currentDates = [date(2026, 7, 6), date(2026, 7, 7), date(2026, 7, 8)]
+        let previous = (0...6).map { cal.date(byAdding: .day, value: $0, to: date(2026, 6, 29))! }
 
         let result = DateAlignmentHelper.alignedPreviousItems(
             previous,
@@ -570,11 +570,36 @@ struct DateAlignmentHelperTests {
             calendar: cal
         ) { $0 }
 
-        // Gate false para .thisWeek → previo INTACTO. Regresión que esto guarda:
-        // alinear con .dayOfWeek empujaba Vie/Sáb fuera del rango y el Dom antes del
-        // lunes → VACIABA todo el previo (chips sin "vs" a mitad de semana).
+        // Conserva lun-mié de la semana anterior (29, 30 jun, 1 jul). Descarta jue-dom.
         #expect(result.count == 3)
-        #expect(Set(result) == Set(previous))
+        #expect(result.contains(date(2026, 6, 29)))
+        #expect(result.contains(date(2026, 6, 30)))
+        #expect(result.contains(date(2026, 7, 1)))
+        #expect(!result.contains(date(2026, 7, 2)))
+    }
+
+
+    @Test("alignedPreviousItems thisWeek domingo: conserva los 7 días del previo")
+    func alignedPreviousItems_thisWeek_sundayKeepsSevenDays() {
+        var weekCal = cal
+        weekCal.firstWeekday = 2 // lunes
+        // Semana actual lun 6-jul → lun 13-jul, hoy domingo 12, 7 días con datos.
+        let currentInterval = DateInterval(start: date(2026, 7, 6), end: date(2026, 7, 13))
+        let previousInterval = DateInterval(start: date(2026, 6, 29), end: date(2026, 7, 6))
+        let currentDates = (0...6).map { weekCal.date(byAdding: .day, value: $0, to: date(2026, 7, 6))! }
+        let previous = (0...6).map { weekCal.date(byAdding: .day, value: $0, to: date(2026, 6, 29))! }
+
+        let result = DateAlignmentHelper.alignedPreviousItems(
+            previous,
+            currentDates: currentDates,
+            currentInterval: currentInterval,
+            previousInterval: previousInterval,
+            period: .thisWeek,
+            comparisonMode: .month,
+            calendar: weekCal
+        ) { $0 }
+
+        #expect(result.count == 7)
     }
 
     @Test("alignedPreviousItems: períodos cerrados/rodantes → previo intacto (no-op)")
@@ -628,4 +653,47 @@ struct DateAlignmentHelperTests {
         // Todos los días de febrero (≤ 28 < 30) se conservan (sin over-trunca por rollover).
         #expect(result.count == 28)
     }
+
+    @Test("cash flow thisMonth: 14 días vs 31 se recorta a 14 (clase del bug de Tendencias)")
+    func alignedPreviousItems_cashFlowThisMonth_14vs31() {
+        let currentInterval = DateInterval(start: date(2026, 8, 1), end: date(2026, 8, 15))
+        let previousInterval = DateInterval(start: date(2026, 7, 1), end: date(2026, 8, 1))
+        let currentDates = (1...14).map { date(2026, 8, $0) }
+        // Julio completo: 1..31. Sin recorte el «vs» usa 31 días.
+        let previous = (1...31).map { date(2026, 7, $0) }
+
+        let aligned = DateAlignmentHelper.alignedPreviousItems(
+            previous, currentDates: currentDates,
+            currentInterval: currentInterval, previousInterval: previousInterval,
+            period: .thisMonth, comparisonMode: .month, calendar: cal
+        ) { $0 }
+        #expect(aligned.count == 14)
+        #expect(aligned.allSatisfy { cal.component(.month, from: $0) == 7 && cal.component(.day, from: $0) <= 14 })
+
+        // Mutación: si el gate no aplica (lastMonth), se quedan los 31.
+        let unaligned = DateAlignmentHelper.alignedPreviousItems(
+            previous, currentDates: currentDates,
+            currentInterval: currentInterval, previousInterval: previousInterval,
+            period: .lastMonth, comparisonMode: .month, calendar: cal
+        ) { $0 }
+        #expect(unaligned.count == 31)
+    }
+
+    @Test("alignedPreviousItems thisYear: recorta YTD del año pasado al último día con datos")
+    func alignedPreviousItems_thisYear_truncaAlDiaEquivalente() {
+        let currentInterval = DateInterval(start: date(2026, 1, 1), end: date(2026, 8, 15))
+        let previousInterval = DateInterval(start: date(2025, 1, 1), end: date(2025, 8, 15))
+        let currentDates = [date(2026, 8, 14)]
+        let previous = [date(2025, 8, 10), date(2025, 8, 14), date(2025, 8, 20)]
+
+        let result = DateAlignmentHelper.alignedPreviousItems(
+            previous, currentDates: currentDates,
+            currentInterval: currentInterval, previousInterval: previousInterval,
+            period: .thisYear, comparisonMode: .year, calendar: cal
+        ) { $0 }
+        #expect(result.contains(date(2025, 8, 10)))
+        #expect(result.contains(date(2025, 8, 14)))
+        #expect(!result.contains(date(2025, 8, 20)))
+    }
+
 }
