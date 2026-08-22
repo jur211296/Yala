@@ -34,8 +34,11 @@ final class StoreKitManager {
     /// Loading state for purchases
     private(set) var isPurchasing: Bool = false
 
-    /// Error message to display
+    /// Error / status message to display
     var errorMessage: String?
+
+    /// Title for the user-facing alert. `nil` → `L10n.Subscription.errorTitle`.
+    var alertTitle: String?
 
     // MARK: - Trial State
 
@@ -63,6 +66,8 @@ final class StoreKitManager {
     // MARK: - Downgrade Detection
 
     private let wasProUserKey = "yala.wasProUser"
+    private let lastVerifiedProductIDKey = "yala.lastVerifiedProProductID"
+    private let lastVerifiedExpirationKey = "yala.lastVerifiedProExpiresAt"
 
     /// Whether user was previously a Pro user (persisted)
     var wasProUser: Bool {
@@ -179,15 +184,22 @@ final class StoreKitManager {
             switch result {
             case .success(let verification):
                 let transaction = try checkVerified(verification)
-                await transaction.finish()
                 #if DEBUG
                 devForceFreeTier = false
                 devForceProTier = false
                 UserDefaults.standard.removeObject(forKey: Self.devForceFreeTierKey)
                 UserDefaults.standard.removeObject(forKey: Self.devForceProTierKey)
                 #endif
-                await updateSubscriptionStatus()
-                didJustSubscribe = true
+                // Aplicar la Transaction verificada ANTES de finish y ANTES de fiarse de
+                // currentEntitlements: en sandbox ese iterator puede llegar vacío y el usuario
+                // se quedaba Free con el sheet de éxito ya puesto (TF 2.1 b11).
+                await updateSubscriptionStatus(verifiedPurchase: transaction)
+                await transaction.finish()
+                didJustSubscribe = ProSubscriptionActivationLogic.shouldCelebratePurchase(isProUser: isProUser)
+                if !didJustSubscribe {
+                    alertTitle = L10n.Subscription.errorTitle
+                    errorMessage = L10n.Subscription.purchaseNotActivated
+                }
                 // C-8: la compra acaba de nacer con su `appAccountToken`; vincularla a la cuenta
                 // cuanto antes (y no en el próximo foreground) pone el derecho en la cuenta desde el
                 // primer segundo. En BACKGROUND a propósito: esperarlo aquí retendría `isPurchasing`
@@ -237,15 +249,26 @@ final class StoreKitManager {
         do {
             try await AppStore.sync()
             await updateSubscriptionStatus()
+            switch ProSubscriptionActivationLogic.restoreOutcome(isProUser: isProUser) {
+            case .restoredPro:
+                didJustSubscribe = ProSubscriptionActivationLogic.shouldCelebratePurchase(isProUser: isProUser)
+            case .noEntitlement:
+                alertTitle = L10n.Subscription.restoreEmptyTitle
+                errorMessage = L10n.Subscription.restoreEmpty
+            }
         } catch {
+            alertTitle = L10n.Subscription.errorTitle
             errorMessage = error.localizedDescription
         }
     }
 
     // MARK: - Subscription Status
 
-    /// Check current entitlements and update subscription state
-    func updateSubscriptionStatus() async {
+    /// Check current entitlements and update subscription state.
+    /// `verifiedPurchase` is the Transaction StoreKit just confirmed (compra o
+    /// `Transaction.updates`). Cuenta como derecho local aunque `currentEntitlements`
+    /// todavía no la liste.
+    func updateSubscriptionStatus(verifiedPurchase: StoreKit.Transaction? = nil) async {
         #if DEBUG
         // El override de uitest gana ANTES que los dev flags: es lo que hace que
         // `-uitest-pro` no necesite persistir nada. Sin esta rama, el `refreshSubscriptionStatus`
@@ -290,12 +313,23 @@ final class StoreKitManager {
         }
         #endif
 
+        var entitlementFacts: [ProSubscriptionActivationLogic.TransactionFacts] = []
         var foundActive: StoreKit.Transaction?
+
+        if let verifiedPurchase {
+            let purchaseFacts = facts(from: verifiedPurchase)
+            entitlementFacts.append(purchaseFacts)
+            if ProSubscriptionActivationLogic.isActiveLocalEntitlement(purchaseFacts) {
+                foundActive = verifiedPurchase
+            }
+        }
 
         for await result in StoreKit.Transaction.currentEntitlements {
             do {
                 let transaction = try checkVerified(result)
-                if transaction.productType == .autoRenewable {
+                let txnFacts = facts(from: transaction)
+                entitlementFacts.append(txnFacts)
+                if ProSubscriptionActivationLogic.isActiveLocalEntitlement(txnFacts) {
                     foundActive = transaction
                 }
             } catch {
@@ -305,12 +339,23 @@ final class StoreKitManager {
             }
         }
 
+        let nextVerified = ProSubscriptionActivationLogic.updatedLastVerified(
+            entitlements: entitlementFacts,
+            previous: loadLastVerified()
+        )
+        persistLastVerified(nextVerified)
+
+        let localActive = ProSubscriptionActivationLogic.localActive(
+            entitlements: entitlementFacts,
+            lastVerified: nextVerified
+        )
+
         activeSubscription = foundActive
-        // C-8: el derecho puede venir del Apple ID de este device (`foundActive`) O de la cuenta de
+        // C-8: el derecho puede venir del Apple ID de este device (`localActive`) O de la cuenta de
         // Yala. La combinación vive en `ProEntitlementLogic` — DARK mientras
-        // `accountEntitlementEnabled` sea false, donde esto es idénticamente `foundActive != nil`.
+        // `accountEntitlementEnabled` sea false, donde esto es idénticamente `localActive`.
         let nowProUser = ProEntitlementLogic.isPro(
-            localActive: foundActive != nil,
+            localActive: localActive,
             snapshot: AccountEntitlementService.shared.cachedSnapshot,
             sessionUserID: CloudAuthService.shared.currentUserID,
             resolutionEnabled: CloudSyncFlags.accountEntitlementEnabled)
@@ -332,6 +377,9 @@ final class StoreKitManager {
 
         // Update Pro status
         isProUser = nowProUser
+        if SessionState.shared.isProUser != isProUser {
+            SessionState.shared.isProUser = isProUser
+        }
 
         if nowProUser && !wasAlreadyPro {
             SessionDefaults.current.set(true, forKey: "chatFABVisible")
@@ -409,6 +457,45 @@ final class StoreKitManager {
 
     // MARK: - Private Helpers
 
+    private func facts(from transaction: StoreKit.Transaction) -> ProSubscriptionActivationLogic.TransactionFacts {
+        ProSubscriptionActivationLogic.TransactionFacts(
+            productID: transaction.productID,
+            productTypeIsAutoRenewable: transaction.productType == .autoRenewable,
+            revocationDate: transaction.revocationDate,
+            expirationDate: transaction.expirationDate
+        )
+    }
+
+    private func loadLastVerified() -> ProSubscriptionActivationLogic.LastVerifiedLocal? {
+        guard let productID = UserDefaults.standard.string(forKey: lastVerifiedProductIDKey) else {
+            return nil
+        }
+        let expiration: Date?
+        if let raw = UserDefaults.standard.object(forKey: lastVerifiedExpirationKey) as? TimeInterval {
+            expiration = Date(timeIntervalSince1970: raw)
+        } else {
+            expiration = nil
+        }
+        return ProSubscriptionActivationLogic.LastVerifiedLocal(
+            productID: productID,
+            expirationDate: expiration
+        )
+    }
+
+    private func persistLastVerified(_ last: ProSubscriptionActivationLogic.LastVerifiedLocal?) {
+        if let last {
+            UserDefaults.standard.set(last.productID, forKey: lastVerifiedProductIDKey)
+            if let expiration = last.expirationDate {
+                UserDefaults.standard.set(expiration.timeIntervalSince1970, forKey: lastVerifiedExpirationKey)
+            } else {
+                UserDefaults.standard.removeObject(forKey: lastVerifiedExpirationKey)
+            }
+        } else {
+            UserDefaults.standard.removeObject(forKey: lastVerifiedProductIDKey)
+            UserDefaults.standard.removeObject(forKey: lastVerifiedExpirationKey)
+        }
+    }
+
     private nonisolated func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
         switch result {
         case .unverified:
@@ -424,8 +511,8 @@ final class StoreKitManager {
                 guard let self else { return }
                 do {
                     let transaction = try self.checkVerified(result)
+                    await self.updateSubscriptionStatus(verifiedPurchase: transaction)
                     await transaction.finish()
-                    await self.updateSubscriptionStatus()
                 } catch {
                     #if DEBUG
                     print("StoreKitManager: Transaction update verification failed: \(error)")
@@ -458,6 +545,7 @@ final class StoreKitManager {
         trialEndDate = nil
         subscriptionExpirationDate = nil
         wasProUser = false
+        persistLastVerified(nil)
         didJustSubscribe = false
         devForceFreeTier = true
         devForceProTier = false

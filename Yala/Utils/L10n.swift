@@ -5933,6 +5933,9 @@ enum L10n {
         static var subscribe: String { ls("subscription.subscribe", comment: "") }
         static var processing: String { ls("subscription.processing", comment: "") }
         static var restore: String { ls("subscription.restore", comment: "") }
+        static var restoreEmptyTitle: String { ls("subscription.restoreEmptyTitle", comment: "") }
+        static var restoreEmpty: String { ls("subscription.restoreEmpty", comment: "") }
+        static var purchaseNotActivated: String { ls("subscription.purchaseNotActivated", comment: "") }
         static var planMonthly: String { ls("subscription.planMonthly", comment: "") }
         static var planYearly: String { ls("subscription.planYearly", comment: "") }
         static var perYear: String { ls("subscription.perYear", comment: "") }
