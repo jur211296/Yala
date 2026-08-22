@@ -5500,3 +5500,12 @@
 
 /* Organizer gate body for existing data */
 "welcome.groups.existingDataBody" = "Utworzenie grupy stąd podłączyłoby konto na wierzchu, a wolimy tego nie mieszać. Wróć — wszystko jest nietknięte. Jeśli to Twoje dane, utwórz grupę w aplikacji, z której już korzystasz.";
+
+/* Título del aviso cuando Restaurar compras no encuentra Yala Pro */
+"subscription.restoreEmptyTitle" = "Brak subskrypcji";
+
+/* Cuerpo del aviso cuando Restaurar no encuentra una suscripción */
+"subscription.restoreEmpty" = "Nie znaleźliśmy Yala Pro na tym koncie Apple. Jeśli właśnie kupiłeś, poczekaj chwilę i spróbuj ponownie.";
+
+/* Apple confirmó la compra pero el derecho Pro no quedó activo */
+"subscription.purchaseNotActivated" = "Płatność przeszła, ale Yala Pro nie jest jeszcze aktywne. Spróbuj Przywróć zakupy.";

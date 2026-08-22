@@ -48,7 +48,7 @@ struct SubscriptionView: View {
             await store.loadProducts()
             await store.updateSubscriptionStatus()
         }
-        .alert(L10n.Subscription.errorTitle, isPresented: $showError) {
+        .alert(store.alertTitle ?? L10n.Subscription.errorTitle, isPresented: $showError) {
             Button(L10n.Common.ok, role: .cancel) {}
         } message: {
             Text(store.errorMessage ?? "")
@@ -59,10 +59,10 @@ struct SubscriptionView: View {
             }
         }
         .onChange(of: store.didJustSubscribe) { _, didSubscribe in
-            if didSubscribe {
+            if didSubscribe && store.isProUser {
                 showSuccessView = true
-                store.didJustSubscribe = false
             }
+            store.didJustSubscribe = false
         }
         .fullScreenCover(isPresented: $showSuccessView, onDismiss: {
             ProTourManager.shared.triggerIfEligible()

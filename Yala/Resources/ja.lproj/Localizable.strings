@@ -5500,3 +5500,12 @@
 
 /* Organizer gate body for existing data */
 "welcome.groups.existingDataBody" = "ここからグループを作ると、そのデータの上にアカウントをつなぐことになるので、混ざらないようにしています。前の画面に戻ってください。データはそのままです。あなたのデータなら、いつも使っているアプリからグループを作れます。";
+
+/* Título del aviso cuando Restaurar compras no encuentra Yala Pro */
+"subscription.restoreEmptyTitle" = "サブスクリプションがありません";
+
+/* Cuerpo del aviso cuando Restaurar no encuentra una suscripción */
+"subscription.restoreEmpty" = "このAppleアカウントにYala Proが見つかりませんでした。購入した直後なら、少し待ってもう一度お試しください。";
+
+/* Apple confirmó la compra pero el derecho Pro no quedó activo */
+"subscription.purchaseNotActivated" = "支払いは完了しましたが、Yala Proはまだ有効になっていません。「購入を復元」を試してください。";

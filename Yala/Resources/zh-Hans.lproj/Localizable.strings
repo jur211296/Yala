@@ -5500,3 +5500,12 @@
 
 /* Organizer gate body for existing data */
 "welcome.groups.existingDataBody" = "从这里创建群组会在这些数据之上连接一个账户，我们不想把它们混在一起。返回上一步，数据都还在。如果这些数据是你的，就从你平时用的 Yala 里创建群组。";
+
+/* Título del aviso cuando Restaurar compras no encuentra Yala Pro */
+"subscription.restoreEmptyTitle" = "未找到订阅";
+
+/* Cuerpo del aviso cuando Restaurar no encuentra una suscripción */
+"subscription.restoreEmpty" = "在此 Apple 账户上找不到 Yala Pro。如果刚购买，请稍等片刻再试。";
+
+/* Apple confirmó la compra pero el derecho Pro no quedó activo */
+"subscription.purchaseNotActivated" = "付款已确认，但 Yala Pro 尚未生效。请尝试恢复购买。";

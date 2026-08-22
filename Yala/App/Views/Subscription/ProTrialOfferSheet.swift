@@ -152,7 +152,7 @@ struct ProTrialOfferSheet: View {
                 contentOpacity = 1.0
             }
         }
-        .alert(L10n.Subscription.errorTitle, isPresented: $showError) {
+        .alert(store.alertTitle ?? L10n.Subscription.errorTitle, isPresented: $showError) {
             Button(L10n.Common.ok, role: .cancel) {}
         } message: {
             Text(store.errorMessage ?? "")
@@ -163,10 +163,10 @@ struct ProTrialOfferSheet: View {
             }
         }
         .onChange(of: store.didJustSubscribe) { _, didSubscribe in
-            if didSubscribe {
-                store.didJustSubscribe = false
+            if didSubscribe && store.isProUser {
                 showSuccess = true
             }
+            store.didJustSubscribe = false
         }
         .fullScreenCover(isPresented: $showSuccess, onDismiss: {
             ProTourManager.shared.triggerIfEligible()
