@@ -2,6 +2,7 @@
 DerivedData/
 .deriveddata/
 build/
+build_output.txt
 build_output_*.txt
 *.xcworkspace/xcuserdata/
 *.xcodeproj/project.xcworkspace/xcuserdata/
@@ -47,6 +48,5 @@ qa/results/
 
 # Agent skills (third-party, reinstall via: npx skills add)
 .agents/
-.claude/skills/ui-ux-pro-max/scripts/__pycache__/
 .claude/sessions/tests-passed
 docs/modo-nube/briefs/
