@@ -9,7 +9,7 @@
 
 **SSOT único = este repo Yala.** Tickets, NOW y DECISIONS se absorben a `docs/`. YalaWiki se archiva. Obsidian deja de ser SSOT (viewer opcional).
 
-Las §§0–3 son la medición del árbol *antes* de absorber. Las §§4–8 son la propuesta de destino y el plan por fases. Nada de eso se ejecutó en este PR.
+Las §§0–3 son la medición del árbol *antes* de absorber. Las §§4–9 son el árbol destino, la clasificación raíz y el plan por fases. Nada de eso se ejecutó en este PR.
 
 **Versión de producto verificada en `Yala.xcodeproj/project.pbxproj`:** `MARKETING_VERSION = 2.1`, `CURRENT_PROJECT_VERSION = 12`. Coincide con el último commit de `2.1`.
 
