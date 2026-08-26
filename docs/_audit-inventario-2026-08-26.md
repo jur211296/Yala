@@ -2,8 +2,14 @@
 
 **Fecha de medición:** 2026-08-26  
 **Árbol medido:** `origin/2.1` tip `f4cf3d2b` («Build 12 para TestFlight de 2.1»), inventario escrito en rama `cursor/audit-inventario-docs-9e87`.  
-**Qué es esto:** mapa factual del árbol y de la documentación que *este* repo contiene. Cero borrados, cero refactors, cero cambios de producto.  
+**Qué es esto:** mapa factual del árbol y de la documentación que *este* repo contiene, más el plan de absorción **después** de la decisión del owner. Cero borrados, cero refactors, cero cambios de producto. **Este documento no absorbe ni mueve nada.**  
 **Qué no es:** no vi el vault Obsidian (`jur211296/YalaWiki`). Donde `CLAUDE.md` apunta a `$VAULT/planning/*`, solo puedo afirmar que **esos ficheros no están en este repo**. No invento su contenido ni si están al día.
+
+## Decisión del owner (2026-08-26) — no reabrir
+
+**SSOT único = este repo Yala.** Tickets, NOW y DECISIONS se absorben a `docs/`. YalaWiki se archiva. Obsidian deja de ser SSOT (viewer opcional).
+
+Las §§0–3 son la medición del árbol *antes* de absorber. Las §§4–8 son la propuesta de destino y el plan por fases. Nada de eso se ejecutó en este PR.
 
 **Versión de producto verificada en `Yala.xcodeproj/project.pbxproj`:** `MARKETING_VERSION = 2.1`, `CURRENT_PROJECT_VERSION = 12`. Coincide con el último commit de `2.1`.
 
@@ -380,146 +386,241 @@ Tres instrucciones distintas para «dónde vive una idea» (STATE.md / vault Ide
 
 ---
 
-## 4. Propuesta (no aplicada) — set mínimo en **este** repo
+## 4. Árbol destino en `docs/` (propuesta — no creado)
 
-Objetivo declarado: un agente o humano abre el clone y tiene contexto para trabajar (arquitectura, cómo testear, cómo no romper, dónde están las reglas) **sin el vault**.
+SSOT = este repo. Obsidian, si se usa, **solo lee** estos paths (viewer). No se escribe al vault.
 
-Hoy, sin vault, el clone da: `CLAUDE.md` + `.claude/rules/` + `qa/coverage-index.json` + código. **No da** mapa de arquitectura, patrones UI, estilo Swift, escenarios QA narrativos, STATE/ROADMAP, ni BRAND-VOICE «oficial» (hay una copia en `docs/planning/` de fecha 2026-01-26).
+Hoy `docs/` tiene `planning/BRAND-VOICE.md`, `modo-nube/` y `flows/`. Faltan las carpetas de tickets y el planning vivo. El vault **no está en este clone**: las filas «absorber» asumen que esos *nombres* existen allí porque `CLAUDE.md` y `.claude/commands/` los citan. **No afirmé que el fichero esté, ni su contenido.**
 
-### 4.1 Lo que DEBERÍA vivir en el git (propuesta)
+```
+docs/
+├── README.md                 # índice: qué leer en una sesión desde cero
+├── backlog/                  # tickets de producto (antes $VAULT/Backlog/)
+├── bugs/                     # tickets de bug (antes $VAULT/Bugs/)
+├── ideas/                    # captura /idea (antes $VAULT/Ideas/)
+├── attachments/              # PNG de /qa (antes $VAULT/Attachments/)
+├── planning/
+│   ├── NOW.md                # qué está en curso (rol de STATE.md / Parking Lot)
+│   ├── DECISIONS.md          # registro de decisiones
+│   ├── CODEBASE-MAP.md       # si existe en el vault; CLAUDE.md ya pide actualizarlo
+│   ├── UI-PATTERNS.md
+│   ├── SWIFT-STYLE.md
+│   ├── L10N.md
+│   ├── DEVICE-QA.md
+│   ├── TESTING-STRATEGY.md
+│   ├── QA-SCENARIOS.md
+│   ├── BRAND-VOICE.md        # YA está aquí (2026-01-26). Pasa de espejo a SSOT.
+│   ├── WORKFLOW.md
+│   ├── PROJECT.md
+│   └── ROADMAP.md
+├── modo-nube/                # YA está. Deja de ser «copia». Es SSOT de esa épica.
+│   └── fase3-medicion/       # bitácora → fase D a archive/
+├── flows/                    # YA está (atlas HTML). Se queda.
+└── archive/                  # docs raíz stale + bitácoras (fase D)
+    ├── AUDIT-*.md
+    ├── DESIGN-*.md
+    ├── EXECUTION-RULES.md
+    ├── release-guia-asc.docx
+    └── modo-nube/
+```
 
-Un set corto. Todo lo demás o es código, o es vault, o es archive.
+Reglas de colocación:
 
-| # | Pieza | Ya está? | Nota |
-|---|--------|----------|------|
-| 1 | `README.md` de raíz | **No** | Una página: qué es Yala, schemes, iOS 26, cómo clonar+`Secrets.xcconfig`, «empieza por `CLAUDE.md`», pointer al vault y a `.claude/rules/`. Hoy no hay puerta de entrada humana. |
-| 2 | `CLAUDE.md` | Sí | Mantenerlo como contrato del agente. Recortar la tabla vault a «si el vault está montado». |
-| 3 | `.claude/rules/*.md` (5) | Sí | Esta es la SSOT de «cómo no romper». Encaja con la regla de dos superficies. |
-| 4 | `.claude/commands/` vivos | Sí, con limpieza | `gate`, `verify-ios`, `qa`, `qa-sync`, `cerrar`, `commit-one`, `review-plan`, `l10n-check`, `swift-audit`, `bug-triage`. `spec`/`backlog`/`idea` solo sirven con vault — o se reescriben para fallar claro. |
-| 5 | `qa/coverage-index.json` + `validate-coverage.*` + `qa/README.md` | Sí | SSOT de cobertura. El README debería dejar de depender de `QA-SCENARIOS.md` o copiar un índice mínimo. |
-| 6 | Mapa de arquitectura **en el repo** | **No** (solo vault) | Un `docs/CODEBASE-MAP.md` (o el nombre que elijan) con tables de Services / VMs / tests. Sin esto, sesión desde cero = grep. `CLAUDE.md` ya pide actualizarlo al tocar modelos. |
-| 7 | Cómo testear en device/sim | Parcial | `.claude/rules/testing.md` + `qa/README.md` cubren unit/XCUITest/runner. `DEVICE-QA.md` no está. Un extracto de launch args (`-uitest`, scheme Yala Dev, iPhone 17 Pro) cabe en el README o en `testing.md`. |
-| 8 | Contratos de sync/backend | Sí | `capability_manifest.json`, `group_capability_manifest.json`, `*.ddl`, `gateway/README.md` **reescribiendo la cabecera scaffold**. |
-| 9 | `Secrets.xcconfig.template` | Sí | Onboarding de clone. |
-| 10 | Brand voice si se escribe copy en el repo | Copia 2026-01-26 | O se declara `docs/planning/BRAND-VOICE.md` SSOT del git, o se deja solo en vault y se borra la copia para no divergir. |
+| Cosa | Destino | No va a |
+|------|---------|---------|
+| Ticket vivo (feature / spec) | `docs/backlog/*.md` | `.planning/`, vault, raíz |
+| Bug / `qa_*` | `docs/bugs/*.md` | |
+| Idea sin spec | `docs/ideas/*.md` + línea en `planning/NOW.md` si hace falta | `STATE.md` en raíz (no existe; no se crea) |
+| Decisión durable | `docs/planning/DECISIONS.md` | AUDIT/DESIGN en raíz |
+| Gotcha que un agente no debe romper | se **queda** en `.claude/rules/` | `docs/` |
+| Índice de cobertura ejecutable | se **queda** en `qa/coverage-index.json` | `docs/` |
+| Snapshot de auditoría / diseño ya implementado | `docs/archive/` | raíz |
 
-**No** meter en el git (propuesta): tickets, STATE/ROADMAP bitácora, briefs de fase, mediciones de un HEAD concreto, AUDIT snapshots, PNG de campañas. Eso es vault o `archive/`.
+`NOW.md` vs `STATE.md`: el owner pidió `planning/NOW`. El comando `idea.md` hoy escribe un «Parking Lot» en `STATE.md` (ausente). En la absorción ese rol pasa a `docs/planning/NOW.md`. Si el vault solo tiene `STATE.md`, aterriza con ese rename y se anota.
 
-### 4.2 Qué podría ir a YalaWiki (ya es la intención de `CLAUDE.md`)
+`.planning/` (gitignored, ausente): no se usa. La SSOT es `docs/`.
 
-Si el vault es la SSOT de producto, encaja ahí (y **no** hace falta espejarlo salvo que una sesión headless lo necesite, que es el argumento de `docs/modo-nube/`):
+`docs/modo-nube/briefs/` está en `.gitignore`. Si al absorber hay briefs que deban versionarse, hay que **dejar de ignorarlos** (fase A). Si son basura de sesión, se quedan ignorados o van a `docs/archive/`.
 
-- Tickets Backlog / Ideas / Bugs (ya viven ahí, no los vi).
-- `PROJECT`, `ROADMAP`, `STATE`, `DECISIONS`, `WORKFLOW`.
-- Narrativa QA: `QA-SCENARIOS`, `DEVICE-QA`, `TESTING-STRATEGY` (la regla durable se queda en `.claude/rules/testing.md`).
-- `UI-PATTERNS`, `SWIFT-STYLE`, `L10N` (gotchas durables → rules; catálogo largo → wiki).
-- Todo `docs/modo-nube/*` **si** el vault está al día; el README del espejo ya describe el protocolo. Las mediciones `fase3-medicion/` y briefs de fase son bitácora, no contrato.
-- `docs/flows/modo-nube/` (atlas): wiki o pages internas; 7.7M de HTML/JS en el repo de la app es opcional.
-- AUDIT-* y DESIGN-* una vez archivados.
-- Copy de App Store / legales web en revisión.
-
-### 4.3 Qué podría ir a `archive/` (o salir del clone de trabajo)
-
-Sin borrar en esta PR. Candidatos con evidencia en §5.
-
----
-
-## 5. Candidatos a borrar o archivar (con evidencia)
-
-Nada de esto se tocó. «Candidato» ≠ «bórralo ya».
-
-### 5.1 Evidencia fuerte (huérfanos o contradichos por el código)
-
-| Candidato | Evidencia | Riesgo si se borra |
-|-----------|-----------|-------------------|
-| `build_output.txt` | Log de build **Neto** 2026-01-13. No es documentación. | Nulo para producto. |
-| `Web/test.txt` | Contenido: `It Works`. | Nulo. |
-| `Web/build_out.txt` | Log `astro build --verbose`. | Nulo. |
-| `Web/README.md` | Starter Astro («Delete this file»). | Nulo si se escribe un README real del sitio. |
-| `EXECUTION-RULES.md` | 2026-01-16; comandos GSD inexistentes. Solapado por `CLAUDE.md`. | Bajo: alguien podría tener el hábito de abrirlo. |
-| `.agent/workflows/ui-patterns.md` | Neto, 2026-01-13. El DS vivo está en `.claude/rules/swiftui-ds.md` (+ vault UI-PATTERNS). | Bajo. |
-| `DESIGN-telemetry-2.0.md` | Propuesta de un stack que `MetricsService.swift` dice haber sustituido. | Bajo (historia de por qué se cambió). |
-| `qa/manifest.json` | Self-deprecated 2026-06-01. | Bajo. Confirmar que ningún script lo lee (no lo busqué línea a línea en `runner.sh`; **hipótesis**: solo referencia humana). |
-| `YalaWidgets/SETUP.md` | Guía para crear un target que ya está en el xcodeproj; iOS 18 vs 26. | Bajo. |
-
-### 5.2 Evidencia media (marketing / era 2.0 / rebrand)
-
-| Candidato | Evidencia | Riesgo |
-|-----------|-----------|--------|
-| `Instagram/` (24M, 40 PNG, 2026-03-17) | Último commit = merge 1.1.1→1.2. El pipeline vivo de posts es `screenshots-appstore/` (2026-08-03, 36 PNG en `daily-post/out`). | Medio: el owner puede querer los PNG originales de esas 8 campañas. No están en el xcodeproj. |
-| `Yala_Spark_Assets_*-2/` (~3.6M) | Último commit 2026-01-28. **No** aparecen en `project.pbxproj`. Solo en `.vercelignore`. | Medio: assets de marca/Spark; pueden servir para web/tienda fuera de git. |
-| `ReferenceAssets/Neto_Logo_*.png` | Nombre Neto; commit de rebrand 2026-01-24. | Bajo para producto; histórico de marca. |
-| `Demo/demo_transactions.csv` | 2026-01-28; **cero** refs en `.swift`/`.md`/`.json` de proceso. | Bajo. **Hipótesis**: seed manual de demos. |
-| `AUDIT-*.md` (4) | Snapshots junio 2026, branch/era 2.0. Hallazgos parcialmente superados (gateway) o **aún abiertos** (copy App Store EN). | Medio: no borrar el de App Store hasta decidir el copy 2.1. Archivar el resto. |
-| `DESIGN-secure-proxy-gateway.md` | Diseño inicial; el living doc debería ser `gateway/README.md` (hoy stale). | Bajo si el README se actualiza primero. |
-| `App Store/ARCHIVE-build-25.md` + `ARCHIVE-build-26.md` + `build-25/` | Runbooks de 2.0 builds 25–26. El tip es 2.1 build **12** (numeración reiniciada). | Bajo. |
-| `App Store/PNG-*` (32M) | Screenshots de ficha; no hay evidencia de que sean los de 2.1. | Alto si son los que hay en ASC hoy — **desconocido** sin mirar App Store Connect. |
-| `docs/modo-nube/MODO-NUBE-ESTRATEGIA-RELEASE.md` | El doc 2.1 lo supersede por completo. | Bajo si se deja un stub «ver DECISION-RELEASE-2.1». |
-| `docs/modo-nube/fase3-medicion/` | Mediciones de un HEAD de `2.0.5`. | Bajo (bitácora). |
-| `.qa-test-data/` | README Neto; último commit 2026-01-22; cero refs. | Medio: pueden usarse a mano en import QA. **Hipótesis** de desuso. |
-| `Yala - Guia Release App Store Connect.docx` | 2026-04-09, era 1.2. | Bajo/medio: única guía ASC en prosa; contenido no auditado (docx). |
-
-### 5.3 Hipótesis — carpetas que *parecen* innecesarias en el clone de trabajo
-
-Marcadas como hipótesis. Verificado lo verificable; el resto es desconocido.
-
-| Hipótesis | Qué verifiqué | Qué no sé |
-|-----------|---------------|-----------|
-| `Instagram/` es redundante con `screenshots-appstore/` | Fechas (mar vs ago), tamaños, que el generador tiene `captions.md` + `daily-post/`. No comparé PNG pixel a pixel. | Si Frank publica todavía desde esas 8 carpetas. |
-| Los 4 `Yala_Spark_Assets_*` no los usa la app | No están en el pbxproj; no hay grep de `Yala_Spark` en Swift/md. | Si un flujo de diseño/Spark los abre por path. |
-| `ReferenceAssets/` sobra post-rebrand | Logos Neto; `Screenshots/Espanol` no lo inventarié archivo a archivo (19M). | Si alguna ficha o la web apunta a esas rutas. |
-| `.agents/` + `skills/` (symlinks) sobran si `.claude/skills/` es el loader | md5 idénticos; `.gitignore` ya quiere ignorar `.agents/`. | Qué runtime (Cursor vs Claude Code vs `npx skills`) resuelve qué path. **Desconocido.** |
-| `docs/flows/modo-nube/` (7.7M) no hace falta en el repo de la app | Es una tool HTML offline de revisión de flujos, anclada a 2.0.5. | Si el owner la abre en sesiones 2.1 como SSOT visual. |
-| `Web/Screenshots/` (59M) se puede servir desde CDN / no-git | El sitio se tocó por última vez en junio 2026. | Si el deploy de Vercel depende de esos PNG en el repo (`.vercelignore` **no** los excluye; sí excluye `App Store/` e `Instagram/`). **Hipótesis:** sí se despliegan. No borrar sin comprobar el sitio. |
-
-### 5.4 No son candidatos a borrar (aunque sean grandes o «docs»)
-
-| Ruta | Por qué se queda |
-|------|------------------|
-| `Yala/`, tests, xcodeproj, widgets, share | Producto. |
-| `qa/coverage-index.json` + validators + `YalaUITests/` | Contrato anti-drift; CI lo corre. |
-| `.claude/rules/` + `CLAUDE.md` | Sesión desde cero. |
-| `gateway/` + manifests + `*.ddl` + fixtures Merkle/HLC | Contrato de nube. |
-| `Cloudkit Schemas/` | Aún hay path iCloud; la regla de área los lista. |
-| `screenshots-appstore/` | Último toque 2026-08-03; pipeline de marketing **vivo**. |
-| `Secrets.xcconfig.template` | Clone usable. |
+Tickets de modo-nube que vivan en `$VAULT/Backlog/modo-nube/`: aterrizan en `docs/backlog/` **o** se dejan en `docs/modo-nube/` (ya trackeado). No duplicar. Decisión en fase C según qué haya en el vault (no medido aquí).
 
 ---
 
-## 6. Hueco de «sesión desde cero» (síntesis)
+## 5. Raíz: se queda / se mueve a `docs/archive/` / se borra (PR posterior)
 
-Lo que un agente **sí** encuentra al clonar `2.1` hoy:
+Nada de esto se ejecutó. Clasificación de **docs y contratos en la raíz** (más `.claude/` y `qa/`, que el owner nombró). Marketing (`App Store/`, `Web/`, `Instagram/`, Spark) no es absorción de wiki: queda fuera de este plan salvo nota.
 
-1. Qué es la app y las reglas inviolables → `CLAUDE.md`.
-2. Cómo no romper SwiftData / UI / l10n / tests / attest → `.claude/rules/`.
-3. Qué hay que cubrir al tocar `Yala/` → `qa/coverage-index.json`.
-4. Cómo corre CI → `.github/workflows/qa.yml`.
-5. Código y tests.
+### 5.1 Se quedan donde están
 
-Lo que **no** encuentra (y `CLAUDE.md` da por sentado):
+| Ruta | Por qué |
+|------|---------|
+| `CLAUDE.md` | Contrato del agente. En fase A se **reescriben** los pointers `$VAULT/…` → `docs/…`. No se mueve. |
+| `.claude/rules/` (5 md) | Reglas durables. El owner las dejó fuera de `docs/`. |
+| `.claude/commands/` | Runtime. Fase C: paths vault → `docs/backlog\|bugs\|ideas\|planning`. No se archivan. |
+| `.claude/agents/`, `workflows/`, `settings.json`, `launch.json` | Runtime. `settings.json` tiene `/Users/jur/Yala` — portable es otro PR. |
+| `.claude/skills/bugfix/` | Skill de producto; apunta a `$VAULT/Bugs/`. Path-fix en fase C. Skills vendor: no es este plan. |
+| `qa/` entero | SSOT **ejecutable** de cobertura + CI. No se mezcla con prosa. |
+| `qa/README.md` | Se queda; fase A apunta escenarios a `docs/planning/QA-SCENARIOS.md` cuando exista. |
+| `docs/` (planning / modo-nube / flows) | Casa de la SSOT. `modo-nube/README.md` deja de decir «NO son la SSOT» (fase B). |
+| `Secrets.xcconfig.template` | Onboarding de clone. |
+| Manifests, `*.ddl`, fixtures Merkle/HLC | Contratos de sync, no prosa. |
+| `gateway/` | Código. `gateway/README.md` se reescribe **in situ** (fase E). |
+| `README.md` (raíz) | **No existe.** Se crea en fase A. |
 
-1. Mapa de arquitectura (CODEBASE-MAP).
-2. Patrones UI canónicos (UI-PATTERNS) — solo gotchas en `swiftui-ds.md`.
-3. Escenarios QA narrativos (QA-SCENARIOS / DEVICE-QA).
-4. Estado de producto / decisiones (STATE, DECISIONS, ROADMAP).
-5. Un README humano.
-6. What's New y metadata de tienda para **2.1** (el árbol para en 2.0 / marzo 2026).
-7. Un README de `gateway/` que describa el worker real, no el scaffold de junio.
+### 5.2 Se mueven a `docs/archive/` (PR posterior, no este)
 
-`docs/modo-nube/` mitiga eso **solo** para la épica de nube, y se declara stale respecto al vault. Varios de esos md siguen titulados `2.0.5` después de que `2.1` sea el trunk.
+| Ruta actual | Destino propuesto | Evidencia |
+|-------------|-------------------|-----------|
+| `AUDIT-UI-patterns.md` | `docs/archive/AUDIT-UI-patterns.md` | Snapshot 2026-06-03, era 2.0. |
+| `AUDIT-release-readiness.md` | `docs/archive/AUDIT-release-readiness.md` | 2.0 build 19, branch `2.0`. |
+| `AUDIT-security.md` | `docs/archive/AUDIT-security.md` | 2026-06-14; el gateway ya existe. |
+| `AUDIT-appstore-guidelines.md` | `docs/archive/AUDIT-appstore-guidelines.md` | 2.0; el hallazgo #1 **sigue vivo** en metadata EN — al mover, no perder el pointer. |
+| `DESIGN-secure-proxy-gateway.md` | `docs/archive/DESIGN-secure-proxy-gateway.md` | «No implementar»; living doc = `gateway/README.md`. |
+| `DESIGN-telemetry-2.0.md` | `docs/archive/DESIGN-telemetry-2.0.md` | Superseded por `MetricsService`. |
+| `EXECUTION-RULES.md` | `docs/archive/EXECUTION-RULES.md` | GSD 2026-01-16; comandos inexistentes. |
+| `Yala - Guia Release App Store Connect.docx` | `docs/archive/Yala-Guia-Release-ASC.docx` | 2026-04-09, era 1.2. Renombrar para evitar espacios. |
+| `App Store/ARCHIVE-build-25.md` | `docs/archive/app-store/ARCHIVE-build-25.md` | Runbook 2.0. |
+| `App Store/ARCHIVE-build-26.md` | `docs/archive/app-store/ARCHIVE-build-26.md` | Runbook 2.0. |
+| `docs/modo-nube/MODO-NUBE-ESTRATEGIA-RELEASE.md` | `docs/archive/modo-nube/MODO-NUBE-ESTRATEGIA-RELEASE.md` | Superseded por DECISION-RELEASE-2.1. Dejar nota en el doc vivo. |
+| `docs/modo-nube/fase3-medicion/` | `docs/archive/modo-nube/fase3-medicion/` | Bitácora contra HEAD de `2.0.5`. |
+| `YalaWidgets/SETUP.md` | `docs/archive/YalaWidgets-SETUP.md` | Guía de crear un target que ya existe. |
+| `.agent/workflows/ui-patterns.md` | `docs/archive/neto-ui-patterns.md` | Neto, 2026-01-13. |
+
+### 5.3 Se borran en un PR posterior (no este) — evidencia fuerte
+
+| Ruta | Evidencia | Antes de borrar |
+|------|-----------|-----------------|
+| `build_output.txt` | Log `xcodebuild -scheme Neto` 2026-01-13. No es doc. | Nada. |
+| `Web/test.txt` | Texto `It Works`. | Nada. |
+| `Web/build_out.txt` | Log `astro build`. | Nada. |
+
+### 5.4 Borrar o archivar — evidencia media / hipótesis (otro PR, dueño confirma)
+
+No son la absorción wiki. Siguen en el árbol hasta decisión explícita.
+
+| Ruta | Evidencia | Nota |
+|------|-----------|------|
+| `Web/README.md` | Starter Astro. | Reescribir, no borrar a ciegas. |
+| `qa/manifest.json` | Self-deprecated. | Confirmar que `runner.sh` no lo lee. |
+| `Instagram/` (24M) | Último commit 2026-03-17; pipeline vivo = `screenshots-appstore/`. | Marketing. |
+| `Yala_Spark_Assets_*-2/` | No están en el pbxproj. | Marketing. |
+| `ReferenceAssets/Neto_Logo_*.png` | Nombre Neto. | Histórico de marca. |
+| `Demo/demo_transactions.csv` | Cero refs. | **Hipótesis** de desuso. |
+| `.qa-test-data/` | README Neto; cero refs. | **Hipótesis** de desuso. |
+| `App Store/PNG-*` | 32M; no hay evidencia de que sean 2.1. | **Desconocido** sin ASC. |
+| `.agents/` + `skills/` (symlinks) | Copia de `.claude/skills/`. | Runtime; **desconocido** qué loader usa cada herramienta. |
+| `docs/flows/modo-nube/` (7.7M) | Atlas anclado a 2.0.5. | Se **queda** por defecto. Archive solo si el owner lo declara muerto. |
+
+### 5.5 No se tocan en la absorción
+
+Producto (`Yala/`, tests, xcodeproj, widgets, share), `Cloudkit Schemas/`, manifests, `screenshots-appstore/`, `gateway/src`, CI.
 
 ---
 
-## 7. Checks corridos en esta sesión
+## 6. Plan de absorción por fases (no ejecutado)
+
+Orden: **primero el contrato de paths**, después el planning que desbloquea sesiones, después los tickets, después el archive, al final la basura. Así un agente no escribe al vault a mitad de mudanza.
+
+### Fase A — Esqueleto y pointers (primero)
+
+**Qué:** crear el árbol vacío (o con README de carpeta) y dejar de apuntar al vault. **Sin** copiar tickets todavía.
+
+1. Crear `docs/backlog/`, `docs/bugs/`, `docs/ideas/`, `docs/attachments/`, `docs/archive/`, y en `docs/planning/` los stubs `NOW.md` y `DECISIONS.md` si aún no existen (este clone: no existen).
+2. Añadir `docs/README.md` (índice) y `README.md` de raíz (schemes, iOS 26, «empieza por `CLAUDE.md` y `docs/README.md`»).
+3. Reescribir `CLAUDE.md`: tabla de docs → `docs/planning/…`; borrar `$VAULT = ~/Library/Mobile Documents/…`; «dos superficies» pasa a **rules + `docs/`**.
+4. `.gitignore`: quitar o comentar «Planning docs live in Obsidian vault» / `.planning/`. Revisar `docs/modo-nube/briefs/` si se van a versionar briefs.
+5. `qa/README.md`: el mapa de escenarios apunta a `docs/planning/QA-SCENARIOS.md` cuando aterrice.
+
+**Por qué primero:** a partir de aquí `/spec` y `/idea` no tienen un path oficial al vault. Si se absorbe contenido antes de cambiar pointers, la siguiente sesión sigue escribiendo en iCloud.
+
+**Quién puede hacerlo:** cualquier clone. No necesita el vault.
+
+### Fase B — Planning (segundo)
+
+**Qué:** absorber `$VAULT/planning/*` → `docs/planning/`. Este CA **no tiene el vault**; lo hace una máquina donde iCloud esté montado, o un export del owner.
+
+Orden de copia sugerido (nombres según `CLAUDE.md`, no inventados):
+
+1. `DECISIONS.md`, `NOW.md` (o el STATE/NOW real — si el vault solo tiene `STATE.md`, aterriza como `docs/planning/NOW.md` y se anota el rename).
+2. `CODEBASE-MAP.md` (desbloquea sesión desde cero).
+3. `TESTING-STRATEGY.md`, `DEVICE-QA.md`, `QA-SCENARIOS.md`.
+4. `UI-PATTERNS.md`, `SWIFT-STYLE.md`, `L10N.md`, `BRAND-VOICE.md` (el de `docs/planning/` ya existe: **diff contra vault** y gana el más reciente; no dejar dos).
+5. `WORKFLOW.md`, `PROJECT.md`, `ROADMAP.md`.
+
+Después: `docs/modo-nube/README.md` deja de decir «NO son la SSOT / escribí en el vault». Esos md **ya están** en el repo; no se vuelven a copiar salvo que el vault tenga `updated:` posterior (el propio README pide comprobar fechas).
+
+**No** mover `.claude/rules/` a `docs/planning/`. Las rules se quedan; `testing.md` puede citar `docs/planning/TESTING-STRATEGY.md` en vez de `$VAULT/planning/TESTING-STRATEGY.md`.
+
+### Fase C — Tickets (tercero)
+
+**Qué:** `$VAULT/Backlog/` → `docs/backlog/`, `$VAULT/Bugs/` → `docs/bugs/`, `$VAULT/Ideas/` → `docs/ideas/`, `$VAULT/Attachments/` → `docs/attachments/` (peso de binarios: **hipótesis**, no medí el vault).
+
+Luego reescribir paths en:
+
+| Fichero | Path actual (medido) | Path nuevo |
+|---------|----------------------|------------|
+| `.claude/commands/spec.md` | `…/YalaWiki/Backlog/` | `docs/backlog/` |
+| `.claude/commands/backlog.md` | idem + `STATE.md` | `docs/backlog/` + `docs/planning/NOW.md` |
+| `.claude/commands/idea.md` | `STATE.md` Parking Lot | `docs/ideas/` + línea en `NOW.md` |
+| `.claude/commands/bug-triage.md` | `$VAULT/Bugs/` | `docs/bugs/` |
+| `.claude/commands/qa.md` | `$VAULT/Bugs/qa_*.md`, `Backlog/qa_*.md`, copy a `Attachments/` | `docs/bugs/`, `docs/backlog/`, `docs/attachments/` |
+| `.claude/commands/commit-one.md` | ticket en Obsidian | ticket en `docs/backlog/` o `docs/bugs/` |
+| `.claude/commands/cerrar.md` | `$VAULT/Backlog/` / `Bugs/` | mismos dirs en `docs/` |
+| `.claude/skills/bugfix/SKILL.md` | `$VAULT/Bugs/` | `docs/bugs/` |
+| `.claude/rules/testing.md` | `$VAULT/planning/TESTING-STRATEGY.md` | `docs/planning/TESTING-STRATEGY.md` |
+
+Hasta que C cierre, un agente con el `CLAUDE.md` de A ya no debe crear tickets en el vault. Si el vault aún no se copió, **para** y no inventa tickets.
+
+### Fase D — Archive de raíz (cuarto)
+
+Mover la lista §5.2 a `docs/archive/`. Un commit, solo `git mv` + stubs si hace falta (p. ej. nota en DECISION-RELEASE-2.1: «ESTRATEGIA archivada»). Actualizar greps que citen `AUDIT-appstore-guidelines.md` en raíz (`Web/CAMBIOS-LEGALES-2.0-DRAFT.md` lo hace).
+
+### Fase E — Limpieza y higiene (último)
+
+1. Borrar §5.3 (`build_output.txt`, `Web/test.txt`, `Web/build_out.txt`).
+2. Reescribir `gateway/README.md` (quitar «scaffold»).
+3. Reescribir `Web/README.md` si se toca el sitio.
+4. YalaWiki: archivar el repo espejo (fuera de este git). No borrar iCloud desde aquí.
+5. Obsidian: si se conserva, apuntar a `docs/` de este clone, modo viewer.
+6. Marketing Neto / Instagram / Spark / PNG ASC: **fuera de este plan**. Otro ticket.
+
+### Qué no hacer en ninguna fase
+
+- No borrar `qa/coverage-index.json` ni mezclarlo con prosa.
+- No mover `.claude/rules/` a `docs/`.
+- No reabrir «el vault es SSOT».
+- No absorber en este PR (el de inventario).
+- No `--no-verify` / force.
+
+---
+
+## 7. Hueco de «sesión desde cero» (sigue, hasta que B+C cierren)
+
+Hoy un clone de `2.1` tiene:
+
+1. Reglas inviolables → `CLAUDE.md` + `.claude/rules/`.
+2. Cobertura ejecutable → `qa/coverage-index.json`.
+3. Código y tests.
+4. Épica nube (espejo, textos 2.0.5) → `docs/modo-nube/`.
+5. Brand voice (copia 2026-01-26) → `docs/planning/BRAND-VOICE.md`.
+
+Sigue faltando (aterriza en fase B, nombres según `CLAUDE.md`): mapa de arquitectura, UI-PATTERNS, TESTING-STRATEGY, DEVICE-QA, QA-SCENARIOS, NOW, DECISIONS, tickets. What's New / metadata 2.1 y el README del gateway son otro trabajo (fase E / marketing).
+
+---
+
+## 8. Checks de esta revisión
+
+- Solo se editó `docs/_audit-inventario-2026-08-26.md`.
+- `qa/scripts/precommit-gate.sh` no aplica (no hay `.swift` en staging).
+- No se crearon carpetas destino. No se movió nada.
+
+Validación de la medición original (sigue vigente):
 
 - `python3 qa/validate-coverage.py` → **OK** (warnings de `scenarioIDs` / `lastVerified` vacíos; no fallan el ratchet).
 - `bash qa/check-test-isolation.sh` → **OK** (48 archivos).
-- `qa/scripts/precommit-gate.sh` no aplica: este cambio no stagea `.swift`.
-
-No se compiló la app (fuera de alcance; cero cambios de producto).
 
 ---
 
-## 8. Cómo usar este fichero
+## 9. Cómo usar este fichero
 
-Es un mapa para que Frank/Jurgen decidan SSOT y qué tirar. No es un plan de limpieza ni un PR de delete. Si hay un siguiente paso, es **una decisión** (qué vive en git vs wiki vs archive), no más inventario.
+La decisión de SSOT **ya está tomada** (cabecera). Este archivo es el mapa + el plan. El siguiente PR es la **fase A** (esqueleto + pointers), no un delete masivo ni la copia del vault.
