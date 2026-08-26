@@ -17,6 +17,8 @@ Session start from a clean clone. Do not use Obsidian / YalaWiki as SSOT.
 
 This repo. Tickets live in `tickets/` (index: `docs/TICKETS.md`). Process: `docs/ESTADO.md`, this file, `docs/DECISIONS.md`.
 
+Ticket bodies are now in the tree under `tickets/<status>/`. `docs/ESTADO.md` is the vault `planning/NOW.md`. `docs/DECISIONS.md` is the vault decision log. Source: `jur211296/YalaWiki` @ `1934e8ad`.
+
 ## HOLD
 
 Do not ship / do not close these without the owner:

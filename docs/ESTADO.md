@@ -1,41 +1,42 @@
-# Estado
+---
+updated: 2026-08-22
+tags: [now, punto-de-retomada]
+---
 
-Fecha: 2026-08-26 (Lima)
+# NOW — 2026-08-22 (Lima)
 
-- **Rama:** `2.1`
-- **HEAD:** `f4cf3d2b` — Build 12 para TestFlight de 2.1
-- **TestFlight:** 2.1 build 12 VALID
-- **SSOT:** este repo (`jur211296/Yala`). No usar Obsidian / YalaWiki como fuente de verdad.
-- **Tickets:** `tickets/` — índice en `docs/TICKETS.md`
+**Rama** `2.1` · **HEAD** `f4cf3d2b` — En TestFlight build **12** (CPV 12). asc VALID `e961a77b` (Frank). Frank pushea bump a `origin/2.1`.
+**Campo.** MARKETING 2.1. Build 11 = corte 18-ago / HEAD `af1b7350` entonces.
 
-## HOLD
+## Decisión (Jurgen, 17–18 ago)
+- 2.0.5 no se lanza.
+- Release = 2.1. A7 y M5 van en 2.1. HOLD, no flip.
+- TF de 2.1 autorizado. Cada rama reinicia builds en 1.
+- **Subida Yala (TF/store) = solo Mini.**
 
-store · tag · A7 · M5
+## TestFlight 2.1
+- En TF: build **12** = CPV 12 = HEAD `f4cf3d2b`. asc VALID `e961a77b` (Tim/Frank 22-ago).
+- A7 / M5: HOLD, no flip.
 
-## Discarded (Jurgen, 2026-08-26)
+## Sesión
+- Device-QA / guion: `planning/DEVICE-QA-SESION-OWNER-2026-08-18.md` (si sigue vivo).
+- Cero `ok_` inventado. D-R1 sigue no ok_ sin QA device.
 
-No PASS. No `tickets/done/`. CloudKit dead / no remaining written AC:
+## Prod
+- CLOUD_MODE 100
+- GROUPS_BACKEND 100
+- CLOUD_ONBOARDING_CHOICE 0 — A7 HOLD
+- SECONDARY_SESSION 0 — M5 HOLD
 
-- `groups-cloud-mode-hardening-v1` → `tickets/discarded/`
-- `groups-cloud-identity-loss-on-migrate` → `tickets/discarded/`
-- `device-handover-groups-leak` → `tickets/discarded/`
+## Ya en el árbol (evidencia PR / Mini)
+- p20-15: merged-in-tree PR 15 @ `4bf4ead`. No `ok_` (QA visual desconocido).
+- Cola A A1–A3: READY Mini 17 ago. Tickets padre siguen `qa_` (mixtos).
+- Cola B: PR 17 y PR 18 merged a 2.0.5; corte 2.1. No reabrir.
+- D-R1: merged-in-tree PR 19 @ `b9526c8e`. No `ok_` (QA device pendiente).
 
-## Abiertos
-
-Absorción SSOT fase A+C: punteros y schema en este repo. Los 60 cuerpos de ticket y el texto de `planning/NOW.md` + `planning/DECISIONS.md` salen de `jur211296/YalaWiki` @ `1934e8ad`.
+## Abierto (escrito)
+- Cola C: 9 ACs owner/device, no corrida.
+- A7 / M5: no flip.
 
 ## Siguiente
-
-Copiar los 60 tickets del mapa en `docs/TICKETS.md` (los 3 de arriba directo a `tickets/discarded/`) y el texto de NOW/DECISIONS cuando este entorno pueda leer YalaWiki.
-
-## Bloqueo
-
-Tras las setup actions del 2026-08-26 (App en YalaWiki + secret `YALAWIKI_GITHUB_TOKEN` marcados completed):
-
-- `GET /installation/repositories` sigue listando solo `jur211296/Yala`.
-- `YALAWIKI_GITHUB_TOKEN` no está en el entorno de **esta** VM (los user secrets se inyectan al arrancar el agente, no a mitad de run).
-- `gh api repos/jur211296/YalaWiki` sigue en 404.
-
-No se inventó ningún cuerpo de ticket. Un agente **nuevo** en esta rama, con el PAT o un token que incluya YalaWiki, puede copiar los 60 @ `1934e8ad`.
-
-> Este ESTADO es el de la sesión de absorción (hechos medidos + owner), no una copia de `planning/NOW.md` del vault.
+Sin flip A7/M5. No inventar ok_. Bump `origin/2.1` a cargo de Frank.

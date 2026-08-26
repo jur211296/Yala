@@ -1,0 +1,160 @@
+---
+id: invite-link-five-causes-one-message
+status: in-progress
+created: 2026-08-12
+updated: 2026-08-26
+source: YalaWiki/Bugs/grupos-enlace-de-invitacion-cinco-causas-un-solo-mensaje.md
+---
+
+
+# El enlace de invitación: cinco causas, un solo mensaje, y un consejo que a veces es mentira
+
+## El síntoma, en lenguaje de usuario
+
+Toco el enlace que me pasaron y Yala me dice:
+
+> **Este enlace ya no es válido o expiró. Pídele al admin que regenere uno.**
+
+Ese mensaje sale tanto si el enlace caducó como si **el grupo ya no existe** — y entonces el consejo es
+falso: el admin no puede regenerar el enlace de un grupo borrado. Además, la página web que acabo de ver
+me enseñaba el nombre del grupo, y la app me recibe con un título genérico.
+
+## Lo medido
+
+### 1 · Cinco causas colapsadas en una
+
+`join_group` (`supabase-groups-staging.ddl:444-454`) devuelve `yala_invalid_invite` —sin oráculo, **a
+propósito**— para: token inexistente · revocado · caducado · agotado · **grupo con `deleted = true`**. El
+cliente los clasifica todos a `.invalidInvite` (`GroupBackendAcceptErrorLogic.swift:42-54`) y pinta el
+mismo copy.
+
+Que el servidor no dé oráculo es una decisión de seguridad correcta. **El grupo borrado no es un secreto
+que proteger**: es el único de los cinco donde el consejo («pídele al admin que regenere uno») manda al
+usuario a una acción imposible.
+
+*Dato menor medido: con `max_uses = null` por defecto en los dos call-sites, «ya se usó» ni siquiera es
+alcanzable hoy.*
+
+### 2 · El nombre del grupo viaja en el enlace y la app lo tira
+
+`GroupBackendInviteEntryHandler.handle` declara `branded: InviteLinkService.BrandedMetadata = .empty` en
+su firma (`:70`) y **no lo referencia ni una vez** en el cuerpo. `AppBootstrapper.swift:2038` calcula
+`InviteLinkService.extractMetadata(from: url)` y se lo pasa **para nada**. Por la otra puerta, el drain
+de `.presentGroupBackendInviteOnboarding` pone `pendingInviteMetadata = nil` explícitamente.
+
+⇒ `L10n.Groups.Invite.welcomeWithGroup` («Te invitaron al grupo %@»), `groupColor` y `groupIcon` son
+código vivo **sin camino alcanzable** en el canal backend. El invitado ve un título genérico con el color
+del tema, un segundo después de que la web le enseñara el nombre.
+
+### 3 · La puerta de entrada es más estrecha que el parser
+
+`InviteLinkService.extractBackendInvite` sabe leer `g`+`t` **sin** `s` (`:147`), pero las tres puertas de
+entrada (`YalaAppDelegate.swift:94`, `AppBootstrapper.swift:1865`, `InviteRecoveryView.swift:29`) gatean
+por `isInviteLink`, que **exige `s`** (`:223`). El AASA hace lo mismo
+(`components: { "/": "/invite", "?": { "s": "*" } }`).
+
+Hoy es **inocuo** porque `buildBackendInviteURL` siempre pone `s`. Deja de serlo el día que alguien emita
+un enlace sin él: un `yala://invite?g=..&t=..` cae al `switch url.host` y **muere en el `default`, sin una
+línea de UI** — el modo de fallo que este subsistema ya pagó una vez.
+
+### 4 · El botón de generar el enlace culpa a la conexión cuando el fallo es permanente
+
+`GroupMembersView.createShareLink` (`:469-473`) usa `L10n.Groups.Errors.inviteFailed` («No se pudo crear
+el enlace de invitación. **Revisa tu conexión** e inténtalo de nuevo.») tanto en el `catch` de red como en
+el `else` del guard `CloudSyncFlags.groupsBackendEnabled && group.isBackendGroup` — o sea, para un grupo
+de la **era CloudKit**, donde el fallo es permanente y no tiene nada que ver con la conexión. Idéntico en
+`GroupDetailViewModel.swift:470`.
+
+El comentario del propio código reconoce que el mudismo sería peor; el copy elegido manda al admin a
+reintentar algo que **nunca** va a funcionar.
+
+> Corrección de la primera pasada: hay **DOS** superficies de producción que acuñan enlace
+> (`GroupMembersView.swift:208-212` y `GroupDetailView.swift:420-428`), no una. Importa para el fix: el
+> copy hay que arreglarlo en los dos.
+
+### 5 · El «Atrás» de la pantalla de pegar el enlace devuelve un nivel de más
+
+`InviteRecoveryView.onBack` → `ContentView.returnToWelcomeChooser(dismissing:)`, que fuerza
+`welcomeFlowInitialStep = .chooser` — el chooser de nivel 1 («¿qué quieres hacer en Yala?»), **no** el
+step de dos vías del que salió («¿Cómo empiezas con tu grupo?»). El helper está compartido con
+`WelcomeRestoreView`, para el que sí es correcto. Su hermano de la rama organizador
+(`returnToGroupsChooser`, `ContentView.swift:750-760`) sí vuelve al sitio exacto, **y su comentario
+explica por qué eso importa**.
+
+## El fix
+
+1. **Separar el grupo borrado de los otros cuatro.** Es el único que necesita otro consejo. Exige que el
+   servidor lo distinga — decisión de seguridad a tomar conscientemente, porque hoy el no-oráculo es
+   deliberado.
+2. **Cablear `branded`** o borrar el parámetro y su copy. Lo que no vale es la firma que promete y el
+   cuerpo que ignora: es la forma exacta en que este repo genera código muerto que parece vivo.
+3. **`isInviteLink` que acepte lo que el parser sabe leer** (`g`+`t` sin `s`), o un fallo con UI en el
+   `default`.
+4. **Copy por causa en el botón de generar enlace**, en las dos superficies.
+5. **`returnToGroupsChooser` para el «Atrás» de `InviteRecoveryView`.**
+
+## Relacionados
+
+- [[grupos-invitado-el-no-no-tiene-pantalla]]
+- [[grupos-recorrido-del-invitado-codigo-muerto-y-docblock-caducado]]
+- [[qa_invite-backend-mudo-config-stale]]
+
+## Implementación · pieza 5 (2026-08-12, `e4d660a4`)
+
+**El «Atrás» de `InviteRecoveryView`.** Coordenadas del ticket exactas. El `step` de
+`returnToWelcomeChooser` pasa a ser un parámetro EXPLÍCITO y **sin default**: los dos llamadores vienen
+de sitios distintos y un valor por defecto los volvería a igualar en silencio, que es el bug. Pin:
+`WelcomeBackDestinationTests` (source-scan; las dos aserciones daban 0 coincidencias contra el árbol
+anterior, verificado con `git show`).
+
+## Las otras cuatro, con lo que medí de cada una
+
+### 1 · separar el grupo borrado — BLOQUEADA (servidor)
+
+Exige que el servidor distinga ese caso de los otros cuatro, y el no-oráculo de `join_group` es
+deliberado. Autorización de esta sesión: solo iOS. **Mi lectura, para cuando se decida**: el grupo
+borrado es el único de los cinco donde el consejo actual manda a una acción imposible, y no es un
+secreto que proteger — quien tiene el token ya sabía que el grupo existió.
+
+### 2 · cablear `branded` — MEDIDA A FONDO, no hecha, y NO es un cable suelto
+
+El ticket dice «cablear `branded` o borrar el parámetro». Medido, la primera opción cuesta más de lo
+que parece y por una razón concreta:
+
+- `GroupInviteOnboardingView` consume la marca por `inviteMetadata?.groupName/groupIcon/groupColor`
+  (`:441-457`), y esos tres campos **existen** en `InviteLinkService.BrandedMetadata` (`name`/`icon`/`color`);
+- pero `InviteMetadata` —el tipo que la vista recibe— exige `shareMetadata: CKShare.Metadata`
+  (`RouterIntent.swift:55`), **un objeto de CloudKit que el canal backend no tiene**. Por eso el drain
+  pone `pendingInviteMetadata = nil` con el comentario «backend: sin CKShare metadata — visual genérico»
+  (`ContentView.swift:953`): no es un olvido, es que el tipo no le sirve;
+- y el intent `.presentGroupBackendInviteOnboarding(pendingJoin: String)` solo transporta el `groupID`,
+  así que la marca **no tiene por dónde viajar** del handler a la vista.
+
+⇒ el fix mínimo honesto son **tres piezas**: (a) que la vista acepte la marca sin `CKShare.Metadata`
+(un segundo parámetro, o hacer `shareMetadata` opcional); (b) que la marca viaje —en el payload del
+intent, o mejor en `PendingJoinEntry`, que ya persiste y así también cubre el **cold start**, que es
+el caso dominante: el invitado llega desde la web—; (c) el drain que la ponga.
+
+No lo hice porque toca el router y el modelo persistido del intent, y prefería no dejar eso a medias
+en una sesión larga. **Sigue mereciendo la pena**: el nombre del grupo ya viaja en el enlace, ya se
+calcula en `AppBootstrapper:2040`, y el copy existe en 16 locales.
+
+### 3 · `isInviteLink` más estrecho que el parser — no tocada
+
+Sigue siendo inocua hoy (`buildBackendInviteURL` siempre pone `s`). Es endurecimiento, y el argumento
+del ticket —«el modo de fallo que este subsistema ya pagó una vez»— se sostiene.
+
+### 4 · copy por causa en el botón de generar enlace — no tocada, y el ticket se queda corto
+
+Re-medido: el `else` del guard `CloudSyncFlags.groupsBackendEnabled && group.isBackendGroup` cubre
+**DOS** causas distintas, no una:
+
+- **grupo de la era CloudKit** (`!isBackendGroup`) → permanente, y es la que el ticket describe;
+- **canal apagado** (`!groupsBackendEnabled`, kill remoto o snapshot de remote-config ausente) →
+  **transitorio**, y ahí «revisa tu conexión» es casi lo correcto pero por el motivo equivocado.
+
+⇒ el fix no es «un copy nuevo» sino **clasificar en tres** (legacy · canal · red), en las dos
+superficies (`GroupMembersView:470`+`:480` y `GroupDetailViewModel:471`+`:479`). El molde ya existe:
+`groups.invite.channelUnavailable` es el tono correcto para el canal apagado.
+
+migrated from YalaWiki Bugs/grupos-enlace-de-invitacion-cinco-causas-un-solo-mensaje.md @ 1934e8ad
