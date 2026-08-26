@@ -18,6 +18,7 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 | `docs/HANDOFF.md` | Traspaso de sesión |
 | `docs/DECISIONS.md` | Registro de decisiones |
 | `docs/TICKETS.md` | Índice + schema de tickets |
+| `docs/sessions/` | Sesiones vivas; las obsoletas van a `docs/sessions/_archive/` |
 | `tickets/` | Tickets vivos (`backlog` · `in-progress` · `qa` · `done` · `blocked` · `discarded`) |
 | `qa/README.md` | QA automatizado (suites y scripts) |
 | `marketing/` | Árbol vivo de marketing (ficha App Store + screenshots). `Web/` queda en la raíz. |
