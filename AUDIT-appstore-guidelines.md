@@ -10,7 +10,7 @@ Sin bloqueantes de IAP, borrado de datos, login ni completitud — esas áreas *
 ## 🔴 Alto riesgo de rechazo (verificados)
 
 ### 1. El copy público dice "todo en tu dispositivo / nada en servidores" — y se envía a OpenAI
-- **Dónde:** `App Store/metadata/description-en.md:25` → *"Your financial data is stored exclusively on your device. We don't connect to banks, don't sell data, and store nothing on servers. Your information is yours. Period."* (y la frase equivalente en la web, `Web/src/i18n/translations.ts`).
+- **Dónde:** `marketing/App Store/metadata/description-en.md:25` → *"Your financial data is stored exclusively on your device. We don't connect to banks, don't sell data, and store nothing on servers. Your information is yours. Period."* (y la frase equivalente en la web, `Web/src/i18n/translations.ts`).
 - **Realidad:** el chat/voz/imágenes envían contexto financiero a OpenAI (`FullFinancialContextBuilder`, `ImageVisionService`, `TranscriptionParserService`).
 - **Por qué rechaza:** Guideline 5.1.1/5.1.2 — Apple compara las afirmaciones de la ficha/política con el comportamiento real. "Exclusively on your device" + "store nothing on servers" es insostenible cuando se transmiten datos a un tercero.
 - **Fix:** reescribir el copy de privacidad en la descripción de App Store Connect **y** en la web (lo cubre el chip de rediseño web #4), declarando el uso de OpenAI con claridad. Matiz defendible a conservar: OpenAI no entrena con los datos (política de API) y no hay servidores propios de Yala.

@@ -73,7 +73,7 @@ Apple compara web ↔ app ↔ App Store Connect. Estos puntos **no se tocaron** 
 
 1. **`Yala/Resources/PrivacyInfo.xcprivacy` → `FinancialInfo`.** La sesión de App Store **ya añadió** `NSPrivacyCollectedDataTypeFinancialInfo` (linked, no-tracking, AppFunctionality) al manifiesto — alineado con el disclosure de la web. Pendiente del owner: (a) commitear ese cambio, y (b) reflejarlo en las **nutrition labels de App Store Connect** (Apple compara web ↔ app ↔ ASC). Reabrir la decisión **D-C** en `DECISIONS.md`. Detalle en `AUDIT-appstore-guidelines.md` (hallazgo #3).
 
-2. **`App Store/metadata/description-*.md`** aún dicen *"no almacenamos nada en servidores… Tu información es tuya. Punto."* → matizar en ASC por Yala IA (OpenAI) y Grupos (CloudKit), para que la ficha del App Store no contradiga la web.
+2. **`marketing/App Store/metadata/description-*.md`** aún dicen *"no almacenamos nada en servidores… Tu información es tuya. Punto."* → matizar en ASC por Yala IA (OpenAI) y Grupos (CloudKit), para que la ficha del App Store no contradiga la web.
 
 3. **Sub-procesador OpenAI:** confirmar si la política de privacidad debe **nombrar a OpenAI como sub-procesador** de forma más formal (lista de sub-procesadores / DPA) según GDPR/leyes aplicables (Yala lista mercados en EU: de/fr/it/pt-PT).
 
