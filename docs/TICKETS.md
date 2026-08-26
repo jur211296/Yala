@@ -74,9 +74,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | records-standalone-amount-discrepancy | backlog | tickets/backlog/records-standalone-amount-discrepancy.md |
 | trends-comparison-kpi-vs-curve | in-progress | tickets/in-progress/trends-comparison-kpi-vs-curve.md |
 | apppreferences-rewritten-on-launch | qa | tickets/qa/apppreferences-rewritten-on-launch.md |
-| groups-cloud-mode-hardening-v1 | blocked | tickets/blocked/groups-cloud-mode-hardening-v1.md |
-| groups-cloud-identity-loss-on-migrate | qa | tickets/qa/groups-cloud-identity-loss-on-migrate.md |
-| device-handover-groups-leak | qa | tickets/qa/device-handover-groups-leak.md |
+| groups-cloud-mode-hardening-v1 | discarded | tickets/discarded/groups-cloud-mode-hardening-v1.md |
+| groups-cloud-identity-loss-on-migrate | discarded | tickets/discarded/groups-cloud-identity-loss-on-migrate.md |
+| device-handover-groups-leak | discarded | tickets/discarded/device-handover-groups-leak.md |
 | inbox-convert-draft-to-group-expense | qa | tickets/qa/inbox-convert-draft-to-group-expense.md |
 | prefs-domain-per-secondary-session | qa | tickets/qa/prefs-domain-per-secondary-session.md |
 | trends-insight-card-v2-bullets | backlog | tickets/backlog/trends-insight-card-v2-bullets.md |
@@ -93,7 +93,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-consent-door-spec | qa | tickets/qa/groups-consent-door-spec.md |
 | rescue-discarded-groups-pull | qa | tickets/qa/rescue-discarded-groups-pull.md |
 
-Counts by folder (intended): backlog 25 · in-progress 13 · qa 21 · blocked 1 · done 0 · discarded 0.
+Counts by folder (intended): backlog 25 · in-progress 13 · qa 18 · blocked 0 · done 0 · discarded 3.
+
+Jurgen 2026-08-26: `groups-cloud-mode-hardening-v1`, `groups-cloud-identity-loss-on-migrate`, `device-handover-groups-leak` are **discarded** (CloudKit dead / no remaining written AC). Not PASS. Not `done/`.
 
 ## Origin map (YalaWiki → tickets/)
 
@@ -141,9 +143,9 @@ Counts by folder (intended): backlog 25 · in-progress 13 · qa 21 · blocked 1 
 | Backlog/p20-13_records-standalone-discrepancy.md | tickets/backlog/records-standalone-amount-discrepancy.md |
 | Backlog/p20-15_comparativa-kpi-vs-curva-descuadre.md | tickets/in-progress/trends-comparison-kpi-vs-curve.md |
 | Backlog/qa_apppreferences-lavado-general.md | tickets/qa/apppreferences-rewritten-on-launch.md |
-| Backlog/qa_groups-endurecimiento-modo-nube-v1.md | tickets/blocked/groups-cloud-mode-hardening-v1.md |
-| Backlog/qa_grupos-nube-perdida-identidad-y-migracion.md | tickets/qa/groups-cloud-identity-loss-on-migrate.md |
-| Backlog/qa_handover-dispositivo-grupos-fuga.md | tickets/qa/device-handover-groups-leak.md |
+| Backlog/qa_groups-endurecimiento-modo-nube-v1.md | tickets/discarded/groups-cloud-mode-hardening-v1.md |
+| Backlog/qa_grupos-nube-perdida-identidad-y-migracion.md | tickets/discarded/groups-cloud-identity-loss-on-migrate.md |
+| Backlog/qa_handover-dispositivo-grupos-fuga.md | tickets/discarded/device-handover-groups-leak.md |
 | Backlog/qa_inbox-convertir-a-gasto-de-grupo.md | tickets/qa/inbox-convert-draft-to-group-expense.md |
 | Backlog/qa_prefs-dominio-por-sesion-secundaria.md | tickets/qa/prefs-domain-per-secondary-session.md |
 | Backlog/trends-insight-card-v2-bullets.md | tickets/backlog/trends-insight-card-v2-bullets.md |
