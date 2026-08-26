@@ -72,7 +72,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-shareable-summary | backlog | tickets/backlog/groups-shareable-summary.md |
 | insights-precomputed-icon-lookup | backlog | tickets/backlog/insights-precomputed-icon-lookup.md |
 | records-standalone-amount-discrepancy | backlog | tickets/backlog/records-standalone-amount-discrepancy.md |
-| trends-comparison-kpi-vs-curve | in-progress | tickets/in-progress/trends-comparison-kpi-vs-curve.md |
+| trends-comparison-kpi-vs-curve | done | tickets/done/trends-comparison-kpi-vs-curve.md |
 | apppreferences-rewritten-on-launch | qa | tickets/qa/apppreferences-rewritten-on-launch.md |
 | groups-cloud-mode-hardening-v1 | discarded | tickets/discarded/groups-cloud-mode-hardening-v1.md |
 | groups-cloud-identity-loss-on-migrate | discarded | tickets/discarded/groups-cloud-identity-loss-on-migrate.md |
@@ -94,7 +94,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | rescue-discarded-groups-pull | qa | tickets/qa/rescue-discarded-groups-pull.md |
 | distribution-balance-kpi-skips-fx | backlog | tickets/backlog/distribution-balance-kpi-skips-fx.md |
 
-Counts by folder (intended): backlog 26 · in-progress 12 · qa 18 · blocked 0 · done 1 · discarded 3.
+Counts by folder (intended): backlog 26 · in-progress 11 · qa 18 · blocked 0 · done 2 · discarded 3.
 
 Jurgen 2026-08-26: `groups-cloud-mode-hardening-v1`, `groups-cloud-identity-loss-on-migrate`, `device-handover-groups-leak` are **discarded** (CloudKit dead / no remaining written AC). Not PASS. Not `done/`.
 
@@ -142,7 +142,7 @@ Jurgen 2026-08-26: `groups-cloud-mode-hardening-v1`, `groups-cloud-identity-loss
 | Backlog/groups-resumen-compartible-exportable.md | tickets/backlog/groups-shareable-summary.md |
 | Backlog/insights-calculator-iconlookup-precomputed.md | tickets/backlog/insights-precomputed-icon-lookup.md |
 | Backlog/p20-13_records-standalone-discrepancy.md | tickets/backlog/records-standalone-amount-discrepancy.md |
-| Backlog/p20-15_comparativa-kpi-vs-curva-descuadre.md | tickets/in-progress/trends-comparison-kpi-vs-curve.md |
+| Backlog/p20-15_comparativa-kpi-vs-curva-descuadre.md | tickets/done/trends-comparison-kpi-vs-curve.md |
 | Backlog/qa_apppreferences-lavado-general.md | tickets/qa/apppreferences-rewritten-on-launch.md |
 | Backlog/qa_groups-endurecimiento-modo-nube-v1.md | tickets/discarded/groups-cloud-mode-hardening-v1.md |
 | Backlog/qa_grupos-nube-perdida-identidad-y-migracion.md | tickets/discarded/groups-cloud-identity-loss-on-migrate.md |
