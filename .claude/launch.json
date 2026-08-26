@@ -19,7 +19,7 @@
       "runtimeArgs": [
         "run",
         "--cwd",
-        "screenshots-appstore/generator",
+        "marketing/screenshots-appstore/generator",
         "dev"
       ],
       "port": 3000,

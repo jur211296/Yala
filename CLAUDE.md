@@ -20,6 +20,7 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 | `docs/TICKETS.md` | Índice + schema de tickets |
 | `tickets/` | Tickets vivos (`backlog` · `in-progress` · `qa` · `done` · `blocked` · `discarded`) |
 | `qa/README.md` | QA automatizado (suites y scripts) |
+| `marketing/` | Árbol vivo de marketing (ficha App Store + screenshots). `Web/` queda en la raíz. |
 
 La SSOT de proceso y tickets es **este repo**. No uses Obsidian / YalaWiki como fuente de verdad. Skills: `/backlog`, `/spec`, `/idea`.
 

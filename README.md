@@ -24,3 +24,7 @@ Personal finance app for iOS.
 Process docs: [`docs/HANDOFF.md`](docs/HANDOFF.md) · [`docs/DECISIONS.md`](docs/DECISIONS.md) · [`docs/TICKETS.md`](docs/TICKETS.md)
 
 Tickets live in [`tickets/`](tickets/) (folder = status).
+
+## Marketing
+
+Living marketing assets live in [`marketing/`](marketing/). The Yala website stays at [`Web/`](Web/).
