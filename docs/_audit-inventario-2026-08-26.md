@@ -13,7 +13,8 @@
 
 - `docs/` → proceso vivo: `ESTADO.md` (NOW), `HANDOFF.md`, `DECISIONS.md`, `TICKETS.md`. `TICKETS.md` documenta **este** schema inglés (índice + contrato). Proceso corto extra solo si no vive ya en `CLAUDE.md` / `qa/`.
 - `tickets/{backlog,in-progress,qa,done,blocked,discarded}/` → una carpeta = un estado. Frontmatter `status` = el nombre de la carpeta (mismas strings). `priority: high | medium | low`. Slugs/filenames: English kebab-case, **los asigna Frank** (no el user ni el CA).
-- `marketing/` en la raíz (para Lola). Todo el marketing vive ahí. Mapeo en §4.4. **No reabrir.**
+- `Web/` se queda en la **raíz**. Independiente. **No** va a `marketing/`.
+- `marketing/` en la raíz (para Lola) = **solo lo vivo**: `screenshots-appstore/` + metadata/PNG actuales de `App Store/`. Mapeo y DROP en §4.4. Cerrado: «todo a `marketing/`».
 - `CLAUDE.md`, `.claude/rules/`, `qa/` se quedan en raíz (el CA los descubre).
 - Skills de producto Yala viven en el repo, **una** carpeta canónica (ver §4.3).
 
@@ -122,9 +123,9 @@ Tamaños: `du -sh` del checkout. «Último commit» = `git log -1` sobre esa rut
 | `Instagram/` | 24M | 2026-03-17 `5db085b2` | 8 carpetas `POSTS-*` (40 PNG, campañas 1.x/1.2) | **marketing / stale** frente al generador de agosto |
 | `Yala_Spark_Assets_{DARK,LIGHT,NEON,ORIGINAL}-2/` | 0.3–2.7M | 2026-01-28 `46170f2b` | Packs Spark (Headers/iOS/iPad/Mac/Store/Web). **Cero refs** en `project.pbxproj` | **marketing**; uso en la app **no evidenciado** |
 | `ReferenceAssets/` | 19M | 2026-01-24 `aa7adc70` («rebrand Neto to Yala») | `Neto_Logo_Header_ForDarkBG (1).png`, `…ForLightBG.png`, `Screenshots/Espanol/` | **marketing / Neto leftover** |
-| `Demo/` | 16K | 2026-01-28 `46170f2b` | `demo_transactions.csv`. Cero refs en código | **desconocido** (fixture huérfano; **no** está en el mapeo `marketing/`) |
+| `Demo/` | 16K | 2026-01-28 `46170f2b` | `demo_transactions.csv`. Cero refs en código | **desconocido** (fixture huérfano; DROP recomendado, §4.4) |
 
-Destino (fijado, **no ejecutado**): esas rutas de marketing → `marketing/` (§4.4, fase M). La tabla de arriba es el árbol **medido hoy**.
+Destino (fijado, **no ejecutado**): `Web/` se queda; Lola recibe solo lo vivo → `marketing/`; el resto es DROP o HOLD (§4.4). La tabla de arriba es el árbol **medido hoy**.
 
 ### 1.5 Segundo nivel de carpetas que importan para docs
 
@@ -424,16 +425,13 @@ jur211296/Yala   (rama 2.1)
 │   ├── done/
 │   ├── blocked/
 │   └── discarded/
-└── marketing/                         # Lola; no es docs/ ni tickets/
-    ├── app-store/                     # hoy App Store/
-    ├── instagram/                     # hoy Instagram/
-    ├── web/                           # hoy Web/; sitio Vercel
+├── Web/                               # se queda en raíz; Vercel; no es marketing/
+└── marketing/                         # Lola: solo lo vivo
     ├── screenshots-appstore/          # hoy screenshots-appstore/
-    ├── spark/                         # hoy los 4 Yala_Spark_Assets_*
-    └── reference-assets/              # hoy ReferenceAssets/
+    └── app-store/                     # metadata/ + PNG actuales (no ARCHIVE)
 ```
 
-No se usa `docs/backlog/`, `docs/bugs/`, `docs/ideas/`, `docs/planning/NOW.md`, ni las carpetas en español (`en-progreso`, `bloqueada`, `descartada`). El owner las reemplazó. Marketing **no** vive bajo `docs/`: es `marketing/` en la raíz.
+No se usa `docs/backlog/`, `docs/bugs/`, `docs/ideas/`, `docs/planning/NOW.md`, ni las carpetas en español (`en-progreso`, `bloqueada`, `descartada`). El owner las reemplazó. Cerrado: «todo a `marketing/`» (Web, Instagram, Spark, ReferenceAssets no entran).
 
 ### 4.1 `docs/` — proceso vivo
 
@@ -543,55 +541,52 @@ Plan de no-duplicar (fase A, no este PR):
 
 No mover skills vendor a `docs/`. No crear `skills/` paralelo con las mismas copias.
 
-### 4.4 `marketing/` — para Lola (fijado 2026-08-26)
+### 4.4 `marketing/` — solo lo vivo (corte 2026-08-26, reemplaza «todo a marketing/»)
 
-Una carpeta en la **raíz** de Yala. No es `docs/`, no es `tickets/`, no es `docs/archive/`. El owner lo fijó; no reabrir.
+`Web/` **se queda en la raíz**. Independiente del árbol de Lola. No se mueve.
+
+`marketing/` en la raíz = **solo lo vivo** (para Lola):
 
 | Hoy (medido) | Destino |
 |--------------|---------|
-| `App Store/` | `marketing/app-store/` |
-| `Instagram/` | `marketing/instagram/` |
-| `Web/` | `marketing/web/` |
-| `screenshots-appstore/` | `marketing/screenshots-appstore/` |
-| `Yala_Spark_Assets_{DARK,LIGHT,NEON,ORIGINAL}-2/` | `marketing/spark/` (los 4 packs **dentro**, sin aplanar nombres) |
-| `ReferenceAssets/` | `marketing/reference-assets/` |
+| `screenshots-appstore/` (entero) | `marketing/screenshots-appstore/` |
+| `App Store/metadata/` | `marketing/app-store/metadata/` |
+| `App Store/PNG-*` | `marketing/app-store/PNG-*` |
+| `App Store/whats-new/` + `metadata-2.0-extra-locales.md` + `asc-extra-locales-2.0.py` | `marketing/app-store/` — copy de ficha **actual** (stale vs 2.1, pero es la superficie viva, no un runbook). Si el owner quiso *solo* metadata+PNG, pelar estos tres en el PR de M. |
 
-`Demo/` y `.qa-test-data/` **no** están en este mapeo. Siguen en §5.4.
+**DROP recomendado** (no a `marketing/`, no a `docs/archive/`):
 
-**Vercel (medido, no inferido a ciegas).** Proyecto `yala-app` (`prj_4L3v3cHPzJx8wXr7VQ9MixyZoJ3i`) ligado a `jur211296/Yala`, framework `astro`. Deploy de `2.1` @ `f4cf3d2` (`dpl_7htTQZb8…`):
+| Ruta | Por qué | ¿Confirma owner? |
+|------|---------|------------------|
+| `ReferenceAssets/` | Neto leftover (logos + screenshots ES). Cero uso en `project.pbxproj`. | Sí — DROP |
+| `App Store/ARCHIVE-build-25.md` + `26` + `build-25/` | Runbooks 2.0 / ExportOptions del archive 25. No son ficha viva. | Sí — DROP |
+| `Demo/` | `demo_transactions.csv` huérfano. Cero refs. | Sí — DROP |
+| `Instagram/` | Campañas 1.x/1.2; el generador de agosto las supersede. | **Pendiente** |
+| `Yala_Spark_Assets_{DARK,LIGHT,NEON,ORIGINAL}-2/` | Packs Spark. Cero refs en pbxproj. | **Pendiente** |
 
-- «Found `.vercelignore`» en la **raíz del clone**; «Removed 131 ignored files» (incluye `/ReferenceAssets/…`).
-- `npm run build` → `web@0.0.1` → `astro build` → `directory: /vercel/path0/Web/dist/`.
+`.qa-test-data/` no está en este corte. Sigue en §5.4.
 
-Consecuencia: el sitio se construye desde `Web/`. Mover `Web/` sin cambiar el Root Directory del dashboard (`Web` → `marketing/web`) deja el próximo deploy sin `package.json`. El `.vercelignore` de raíz **sigue aplicándose** aunque el build corra dentro de `Web/`.
+**Vercel (medido).** Proyecto `yala-app` ligado a este repo. Deploy `2.1` @ `f4cf3d2`: build = `web@0.0.1` → `/vercel/path0/Web/dist/`; `.vercelignore` de **raíz** se aplica (131 files, incl. `ReferenceAssets/`).
 
-**Pie que rompe el deploy:** una línea `marketing/` en `.vercelignore`. Tras el `git mv`, eso ignora también `marketing/web/` y Vercel sube el sitio vacío. Reescribir ignores **por hijo**, nunca el padre:
+Con `Web/` en la raíz, **no** hay que tocar el Root Directory del dashboard. M ya no es el PR que tumba yala-app.pe.
 
-```
-marketing/app-store/
-marketing/instagram/
-marketing/spark/
-marketing/reference-assets/
-marketing/screenshots-appstore/
-```
+`.vercelignore` hoy lista `App Store/`, `Instagram/`, `ReferenceAssets/`, los 4 Spark. **No** lista `screenshots-appstore/` (52M se suben). Tras M:
 
-`marketing/web/` **no** se ignora. `screenshots-appstore/` hoy **no** está en el ignore de raíz (52M se suben); al moverlo, sí hay que listarlo.
+- Añadir `marketing/` (o los dos hijos). **Ahora sí es seguro ignorar el padre**: `Web/` no vive ahí.
+- Quitar las líneas viejas cuando esas rutas desaparezcan (DROP o mv).
+- `Web/.vercelignore` **se queda** en `Web/`. `ReferenceAssets/` ahí es no-op el día que se borre.
 
-`Web/.vercelignore` (viaja a `marketing/web/.vercelignore`) tiene paths con forma de raíz (`Web/Screenshots/`, `ReferenceAssets/`). En el mismo PR que el mv: `Screenshots/` (el comentario de case-insensitive ya está) y quitar `ReferenceAssets/` (ya no es hermano).
+Pointers del PR de M (cero código de producto): `.claude/launch.json` (`screenshots-appstore/generator` → `marketing/screenshots-appstore/generator`). `qa/coverage-index.json` (`Web/src/…`) **no** cambia: `Web/` no se mueve.
 
-Otros pointers del **mismo** PR de mv (cero código de producto): `.claude/launch.json` (`Web`, `screenshots-appstore/generator`); `qa/coverage-index.json` área `welcome-universal-link-icloud` (`Web/src/pages/invite.astro`, `Web/src/i18n/translations.ts`).
+**Dónde va en el plan:** fase **M**, después de A. **No** D (otro destino). Los DROP confirmados van en **E** (o un E-marketing), no a `docs/archive/`. Instagram/Spark **no** se borran hasta que el owner confirme.
 
-**Dónde va en el plan — recomendación:** fase **M**, propia. Después de A (el esqueleto `docs/` + `tickets/` ya existe para anotar el move). **No** dentro de D (D es `docs/archive/`, otro destino). **No** dentro de E (E borra basura; esto es reubicar para Lola). B/C no la bloquean (M no necesita el vault). D **después** de M para que las refs a `Web/` se reescriban al path nuevo.
-
-Si se parte para no tocar Vercel en el primer commit: **M1** = packs ya ignorados (`App Store/`, `Instagram/`, Spark, `ReferenceAssets/`) + reescribir esas líneas del `.vercelignore`. **M2** = `Web/` + `screenshots-appstore/` + Root Directory del dashboard + ignore de `screenshots-appstore` + `launch.json` + coverage-index. M2 es el commit que puede tumbar yala-app.pe.
-
-Este PR **no ejecuta** esos `git mv`.
+Este PR **no ejecuta** `git mv` ni deletes.
 
 ---
 
 ## 5. Raíz: se queda / archive / borrar / marketing (PR posterior)
 
-Nada ejecutado. Marketing **sí** entra en el plan (fase M, §4.4); no es «otro ticket».
+Nada ejecutado. `Web/` se queda. `marketing/` = solo lo vivo. DROP confirmados ≠ Instagram/Spark (HOLD).
 
 ### 5.1 Se quedan
 
@@ -603,6 +598,7 @@ Nada ejecutado. Marketing **sí** entra en el plan (fase M, §4.4); no es «otro
 | `.claude/commands/` | Runtime. Fase C: paths a `tickets/` y `docs/ESTADO.md`. |
 | `.claude/skills/` | Canónica (§4.3). |
 | `docs/modo-nube/`, `docs/flows/`, `docs/planning/BRAND-VOICE.md` | Ya en `docs/`; no son tickets. |
+| `Web/` | Sitio Astro. **Se queda en raíz.** Vercel Root Directory no cambia. |
 | Manifests, `*.ddl`, fixtures, `Secrets.xcconfig.template`, `gateway/` | Contratos / código. |
 | `README.md` (raíz) | **No existe.** Se crea en fase A (schemes, iOS 26, «empieza por `CLAUDE.md`»). |
 
@@ -625,27 +621,34 @@ Nada ejecutado. Marketing **sí** entra en el plan (fase M, §4.4); no es «otro
 | Ruta | Evidencia |
 |------|-----------|
 | `build_output.txt` | Log scheme `Neto` 2026-01-13. |
-| `Web/test.txt` | `It Works`. Tras M: `marketing/web/test.txt`. |
-| `Web/build_out.txt` | Log `astro build`. Tras M: `marketing/web/build_out.txt`. |
+| `Web/test.txt` | `It Works`. Path **no** cambia (`Web/` se queda). |
+| `Web/build_out.txt` | Log `astro build`. Path no cambia. |
 | `.claude/skills/excalidraw-diagram/` | Directorio vacío. |
+| `ReferenceAssets/` | Neto leftover. DROP owner. |
+| `App Store/ARCHIVE-build-25.md` + `26` + `build-25/` | Runbooks 2.0. DROP owner. **No** a `marketing/` ni a `docs/archive/`. |
+| `Demo/` | CSV huérfano. DROP owner. |
 
-`App Store/ARCHIVE-build-25.md` + `26` **viajan con** `App Store/` → `marketing/app-store/` (fase M). No se pelan a `docs/archive/`.
+### 5.4 Fuera de este plan / HOLD
 
-### 5.4 Fuera de este plan (dueño confirma después)
+| Ruta | Estado |
+|------|--------|
+| `Instagram/` | DROP **recomendado**; **pendiente confirmación owner**. No borrar en E hasta entonces. |
+| Spark (`Yala_Spark_Assets_*`) | DROP **recomendado**; **pendiente confirmación owner**. |
+| `.qa-test-data/` | Sin corte. Confirmar después. |
+| `Web/README.md` | Reescribir (sigue en `Web/`). |
+| `qa/manifest.json` | Confirmar que `runner.sh` no lo lee. |
 
-Ya **no** están aquí Instagram / Spark / ReferenceAssets / App Store PNG / Web: van a `marketing/` (fase M).
-
-Siguen pendientes de confirmación: `Demo/`, `.qa-test-data/`, reescribir el README del sitio (tras M: `marketing/web/README.md`), `qa/manifest.json` (confirmar que `runner.sh` no lo lee). Dedup de `.agents/` + `skills/` = fase A.
+Dedup de `.agents/` + `skills/` = fase A.
 
 ### 5.5 No se tocan
 
-Producto (`Yala/`, tests, xcodeproj, widgets, share), `Cloudkit Schemas/`, `gateway/src`, CI. El generador Next de screenshots se **mueve entero** a `marketing/screenshots-appstore/`; no se edita su código en esta absorción.
+Producto (`Yala/`, tests, xcodeproj, widgets, share), `Cloudkit Schemas/`, `gateway/src`, CI, **`Web/`** (código del sitio). El generador Next se **mueve entero** a `marketing/screenshots-appstore/`; no se edita su código.
 
 ---
 
 ## 6. Plan de absorción por fases (no ejecutado)
 
-Orden: **paths y esqueleto** → **proceso en `docs/`** → **tickets por estado** → **`marketing/`** → **archive** → **basura**. Skills canónicos no necesitan vault: van con A. Marketing tampoco: va en M (después de A; no espera B/C).
+Orden: **paths y esqueleto** → **proceso en `docs/`** → **tickets por estado** → **`marketing/` (solo lo vivo)** → **archive** → **basura + DROP confirmados**. Skills y M no necesitan vault. M **no** mueve `Web/`.
 
 ### Fase A — Esqueleto, pointers, skills (primero)
 
@@ -691,43 +694,44 @@ No volcar CODEBASE-MAP / UI-PATTERNS / … a `docs/planning/` salvo pedido expl�
 
 Si el vault aún no se copió: **parar**. No inventar tickets.
 
-### Fase M — `marketing/` (después de A; no D, no E)
+### Fase M — `marketing/` solo lo vivo (después de A)
 
-`git mv` del mapeo §4.4. Cero código de producto. **No se ejecuta en este PR.**
+`git mv` de §4.4 (screenshots + App Store metadata/PNG). Cero código de producto. **`Web/` no se mueve.** **No se ejecuta en este PR.**
 
-1. Crear `marketing/` y mover según la tabla. Spark: los 4 packs **dentro** de `marketing/spark/`, sin renombrar cada pack.
-2. Reescribir `.vercelignore` de raíz: quitar las rutas viejas (`App Store/`, `Instagram/`, `ReferenceAssets/`, los 4 Spark); **añadir los hijos** de §4.4, **nunca** una línea `marketing/`.
-3. Ajustar `marketing/web/.vercelignore` (ex-`Web/.vercelignore`).
-4. En el **mismo** commit que mueve `Web/`: Root Directory del proyecto Vercel `yala-app` de `Web` → `marketing/web`. Si se parte: M1 (ya ignorados) / M2 (`Web/` + dashboard) — ver §4.4.
-5. `.claude/launch.json` y `qa/coverage-index.json` (`welcome-universal-link-icloud`).
-6. Una línea en `docs/DECISIONS.md` / `ESTADO.md` (A ya los creó).
+1. Crear `marketing/` y mover `screenshots-appstore/` + metadata/PNG (y, salvo pelado del owner, whats-new + extra-locales).
+2. **No** mover Instagram, Spark, ReferenceAssets, ARCHIVE-25/26, Demo, `Web/`.
+3. `.vercelignore`: añadir `marketing/` (ahora es seguro: el sitio no vive ahí). Quitar `App Store/` cuando esa carpeta quede vacía o desaparezca. `Web/.vercelignore` no se toca salvo limpiar `ReferenceAssets/` el día del DROP.
+4. `.claude/launch.json`: cwd del generador → `marketing/screenshots-appstore/generator`.
+5. Línea en `docs/DECISIONS.md` / `ESTADO.md` (A ya los creó).
 
-**Por qué no D:** D archiva AUDIT/DESIGN a `docs/archive/`. Destino distinto, riesgo distinto (deploy). Mezclar ~190M de PNG con bits de auditoría es cómo se rompe yala-app.pe.
-**Por qué no E:** E borra basura. Esto es la casa de Lola.
-**Por qué después de A:** A es barato y no toca Vercel. M es el PR sensible al deploy.
+**Vercel:** Root Directory del dashboard **no cambia**. M ya no es el PR que tumba yala-app.pe.
+**Por qué no D:** D es `docs/archive/` (AUDIT/DESIGN). Lola no archiva runbooks 2.0.
+**Por qué no E:** E borra. M solo reubica lo vivo.
 
-### Fase D — Archive (después de M)
+### Fase D — Archive (docs de proceso)
 
-`git mv` de §5.2 a `docs/archive/`. Actualizar refs (`marketing/web/CAMBIOS-LEGALES-2.0-DRAFT.md` cita `AUDIT-appstore-guidelines.md` en raíz; hoy el path es `Web/…` si M aún no corrió).
+`git mv` de §5.2 a `docs/archive/`. Actualizar refs (`Web/CAMBIOS-LEGALES-2.0-DRAFT.md` cita `AUDIT-appstore-guidelines.md` en raíz; `Web/` no se mueve).
 
-Los runbooks `ARCHIVE-build-25/26` **no** vienen aquí: ya están en `marketing/app-store/`.
+`ARCHIVE-build-25/26` **no** vienen aquí: son DROP (fase E), no archive.
 
-### Fase E — Limpieza (último)
+### Fase E — Limpieza + DROP confirmados (último)
 
-1. Borrar §5.3 (paths post-M: `marketing/web/test.txt`, `marketing/web/build_out.txt`).
-2. Reescribir `gateway/README.md` (quitar «scaffold»).
-3. Archivar el repo YalaWiki (fuera de este git).
-4. Obsidian viewer → `docs/` + `tickets/` de este clone.
+1. Borrar §5.3: `build_output.txt`, `Web/test.txt`, `Web/build_out.txt`, excalidraw vacío, **`ReferenceAssets/`**, **`App Store/ARCHIVE-build-25.md` + `26` + `build-25/`**, **`Demo/`**.
+2. **No** borrar `Instagram/` ni Spark hasta confirmación del owner.
+3. Reescribir `gateway/README.md` (quitar «scaffold»).
+4. Archivar el repo YalaWiki (fuera de este git).
+5. Obsidian viewer → `docs/` + `tickets/` de este clone.
 
 ### Qué no hacer
 
 - No borrar `qa/coverage-index.json`.
 - No mover `.claude/rules/` a `docs/`.
-- No reabrir `docs/backlog|bugs|ideas`, `docs/planning/NOW`, ni carpetas ES (`en-progreso`, `bloqueada`, `descartada`).
+- No mover `Web/` a `marketing/`.
+- No reabrir «todo a `marketing/`» ni `docs/backlog|bugs|ideas` ni carpetas ES.
 - No conservar filenames en español al absorber tickets.
 - No duplicar skills.
-- No absorber ni `git mv` de marketing en este PR.
-- No poner `marketing/` (el padre) en `.vercelignore`.
+- No absorber ni `git mv` / delete de marketing en este PR.
+- No borrar Instagram/Spark sin confirmación.
 - No `--no-verify` / force.
 
 ---
@@ -736,14 +740,14 @@ Los runbooks `ARCHIVE-build-25/26` **no** vienen aquí: ya están en `marketing/
 
 Hoy el clone tiene: `CLAUDE.md` + `.claude/rules/` + `qa/coverage-index.json` + código + `docs/modo-nube/` (espejo) + `BRAND-VOICE.md` (2026-01-26).
 
-Falta: `docs/ESTADO.md`, `HANDOFF.md`, `DECISIONS.md`, `TICKETS.md`, el árbol `tickets/`, el árbol `marketing/`, y el skill `bugfix` sigue apuntando al vault. What's New 2.1 y el README del gateway son otro trabajo.
+Falta: `docs/ESTADO.md`, `HANDOFF.md`, `DECISIONS.md`, `TICKETS.md`, el árbol `tickets/`, el árbol `marketing/` (solo lo vivo), y el skill `bugfix` sigue apuntando al vault. `Web/` ya está en raíz. What's New 2.1 y el README del gateway son otro trabajo.
 
 ---
 
 ## 8. Checks de esta revisión
 
 - Solo se editó `docs/_audit-inventario-2026-08-26.md`.
-- No se crearon `docs/ESTADO.md`, `tickets/` ni `marketing/`. No se ejecutó ningún `git mv`.
+- No se crearon `docs/ESTADO.md`, `tickets/` ni `marketing/`. No se ejecutó ningún `git mv` ni delete.
 - `qa/scripts/precommit-gate.sh` no aplica (no hay `.swift` en staging).
 
 Validación original (sigue vigente): `validate-coverage.py` OK; `check-test-isolation.sh` OK.
@@ -752,4 +756,4 @@ Validación original (sigue vigente): `validate-coverage.py` OK; `check-test-iso
 
 ## 9. Cómo usar este fichero
 
-El árbol destino **está fijado**. Este archivo es el mapa + el plan. Siguiente PR: **fase A** (esqueleto `docs/` + `tickets/` + pointers + skills canónicos). Después: B/C (vault) y **M** (`marketing/`, PR sensible a Vercel). No un delete masivo ni los `git mv` de marketing en este PR.
+El árbol destino **está fijado**. Este archivo es el mapa + el plan. Siguiente PR: **fase A**. Después: B/C (vault), **M** (`marketing/` = screenshots + App Store vivo; `Web/` no se mueve), D archive, E DROP confirmados (Instagram/Spark HOLD). No `git mv` ni deletes en este PR.
