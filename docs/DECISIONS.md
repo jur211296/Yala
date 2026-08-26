@@ -17,6 +17,32 @@ Cada decisión sigue esta estructura:
 
 ## Decisiones Activas
 
+### [2026-08-26] Balance en Distribución: stock, Panel no se toca
+
+**Contexto:** En device-QA (Jurgen, 2026-08-26, TF 2.1 build 12, cuenta multi-moneda) el KPI de Balance no coincide entre Panel y Distribución. La causa en código: Panel usa stock vivo (`LiveBalanceCalculator` × TC actual); Distribución usa flujo del período (`TopSpendingCategoriesCalculator`) cuando `natures` está vacío. Ticket: `distribution-balance-kpi-skips-fx`. El fix previo de Comparativa (`trends-comparison-kpi-vs-curve`, MTD-vs-MTD) se verificó OK en Tendencias (Este mes, 3 métricas); el widget Comparativa del Panel sigue pendiente.
+
+**Decisión:** Igualar el KPI de Balance en Distribución a **stock** — el mismo número live que el Panel. No tocar Panel: su stock vivo (`LiveBalanceCalculator`, TC actual) es la fuente de verdad del Balance. Lectura acotada de Frank (no son palabras extra de Jurgen): solo el KPI de Balance en Distribución (hero / header del pie cuando `natures` está vacío / métrica Balance) pasa a ser ese número. Ingresos/Gastos en Distribución siguen siendo flujo del período. No reescribir el pie como participaciones de stock por cuenta. El ticket sigue `backlog`; sin implementación en esta decisión.
+
+**Razones:**
+- El usuario ve dos KPI de “Balance” distintos; la SSOT del saldo es el Panel (stock vivo, TC actual).
+- Un pie de Ingresos/Gastos es flujo del período; igualarlo a stock no tiene sentido.
+- Tocar Panel para “igualar” semánticas invertiría la fuente de verdad.
+
+**Alternativas descartadas:**
+- **Mantener stock vs flujo** para el KPI de Balance: deja dos números distintos para la misma métrica.
+- **Igualar todo a flujo:** el Balance de Distribución dejaría de ser saldo y contradiría el Panel.
+- **Igualar todo a stock tocando Panel:** cambia la SSOT y reescribiría el pie como participaciones de cuentas.
+
+**Consecuencias:**
+- Implementación futura (otro commit, no este): el hero/header de Distribución en métrica Balance lee `LiveBalanceCalculator` / TC actual. Panel sin cambios.
+- Ingresos/Gastos en Distribución y el pie de gasto no cambian de semántica.
+- `trends-comparison-kpi-vs-curve` no se cierra (widget Panel pendiente; MTD-vs-MTD se mantiene).
+- `distribution-balance-kpi-skips-fx` sigue backlog. No inventar PASS.
+
+**Estado:** Activa
+
+---
+
 ### [2026-04-21] Sync Status: Banner Global vs Toolbar Indicator
 
 **Contexto:** En `29feb572` se añadió `SyncStatusIndicator` (botón ☁️❗ en el top-bar de cada tab) como primera expresión UI del observer real de `NSPersistentCloudKitContainer.eventChangedNotification`. Tras revisión, el icono en toolbar pasaba desapercibido — el usuario buscaba algo con más peso visual y narrativa clara ("hay un detalle con iCloud · toca para revisar").
