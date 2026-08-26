@@ -14,7 +14,7 @@ git status --porcelain
 **Si el árbol de trabajo ya tiene cambios sin commitear, NO commitees nada en toda la corrida.** Investiga, documenta y deja los fixes sin commitear con una nota clara. Motivo: esto puede correr desatendido mientras hay trabajo a medias del usuario, y un `git add` arrastraría su WIP dentro de un commit ajeno. Es irrecuperable sin que él se entere.
 
 Rutas:
-- Bugs: `$VAULT/Bugs/*.md` donde `VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki"`
+- Tickets: `tickets/**/*.md` (índice: `docs/TICKETS.md`). Los bugs viven en las mismas seis carpetas que el resto.
 - Reglas del proyecto: `CLAUDE.md` y `.claude/rules/` — léelas antes de cambiar código
 
 ## 1 · Recopilar

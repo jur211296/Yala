@@ -1,23 +1,26 @@
 ---
-description: Lee un item del Backlog en Obsidian, analiza el codebase, y escribe un plan detallado en el mismo archivo.
+description: Lee un item del Backlog en tickets/, analiza el codebase, y escribe un plan detallado en el mismo archivo.
 ---
 
 Desarrolla a profundidad el spec de un feature del Backlog.
 
 ## PASO 1: IDENTIFICAR EL ARCHIVO
 
-Si el usuario pasa un nombre como argumento (ej: `/spec widget-balance`), buscar el archivo:
+Si el usuario pasa un nombre como argumento (ej: `/spec widget-balance`), buscar el archivo en `tickets/` (las seis carpetas de estado):
+
 ```
-~/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki/Backlog/*widget-balance*
+tickets/*/*widget-balance*
 ```
 
-Si no pasa argumento, listar los archivos en `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki/Backlog/` y preguntar cuál quiere desarrollar.
+Índice: `docs/TICKETS.md`.
 
-Ignorar README.md.
+Si no pasa argumento, listar los archivos en `tickets/backlog/` y `tickets/in-progress/` y preguntar cuál quiere desarrollar.
+
+Ignorar `.gitkeep` y `README.md`.
 
 ## PASO 2: LEER Y ANALIZAR
 
-1. Leer el archivo completo del Backlog
+1. Leer el archivo completo del ticket
 2. Entender: problema, solución propuesta, acceptance criteria
 3. Analizar el codebase relevante:
    - Buscar archivos, ViewModels, Services, Models involucrados
@@ -26,7 +29,7 @@ Ignorar README.md.
 
 ## PASO 3: ESCRIBIR EL PLAN EN EL MISMO ARCHIVO
 
-Actualizar el status del frontmatter a `spec-ready` y agregar estas secciones AL FINAL del archivo (preservar todo el contenido original):
+Dejar `status` igual a la carpeta. Agregar estas secciones AL FINAL del archivo (preservar todo el contenido original):
 
 ```markdown
 ---
@@ -72,7 +75,7 @@ Incrementos: [N]
 Complejidad: [baja/media/alta]
 Archivos principales: [lista corta]
 
-El plan esta en ~/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki/Backlog/[archivo].md
+El plan esta en tickets/<status>/[archivo].md
 Siguiente paso: Plan Mode para implementar
 ```
 
@@ -80,4 +83,4 @@ Siguiente paso: Plan Mode para implementar
 - NO implementar nada, solo planificar
 - Ser concreto: nombres de archivos reales, no genericos
 - Respetar patrones existentes (leer CLAUDE.md si necesitas referencia)
-- El archivo se escribe directo en el vault de Obsidian — iCloud lo sincroniza a todos los dispositivos
+- El archivo se escribe en `tickets/` de este repo — no en Obsidian

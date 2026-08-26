@@ -1,5 +1,5 @@
 ---
-description: Cierra la sesión — verifica que nada quedó abierto, sincroniza el ticket, escribe NOW y libera el disco sin preguntar
+description: Cierra la sesión — verifica que nada quedó abierto, sincroniza el ticket, escribe docs/ESTADO.md y libera el disco sin preguntar
 allowed-tools: Bash(git:*), Bash(bash qa/scripts/disk-report.sh:*), Bash(bash qa/scripts/session-cleanup.sh:*), Bash(xcrun simctl:*), Bash(tmutil:*), Bash(pgrep:*), Read, Edit, Glob, Grep
 ---
 
@@ -16,7 +16,7 @@ Si hay cambios sin commitear: decláralos WIP en el informe y sigue. Nunca pregu
 
 Solo dos superficies. Si ya están al día, dilo en una línea y sigue.
 
-- **El ticket** en `$VAULT/Backlog/` o `$VAULT/Bugs/` del trabajo de esta sesión: ¿refleja lo hecho y su estado? Si pasó a QA, prefijo `qa_` + `status: needs-testing`.
+- **El ticket** en `tickets/` del trabajo de esta sesión: ¿refleja lo hecho y su estado? Si pasó a QA, muévelo a `tickets/qa/` y `status: qa`.
 - **`qa/coverage-index.json`**: obligatorio solo si se tocó código bajo `Yala/`. Actualiza `lastVerified` de las áreas afectadas y corre `bash qa/validate-coverage.sh`.
 
 Una regla nueva y duradera va a `.claude/rules/` o a CLAUDE.md — una vez cada muchas sesiones, no en cada cierre. No inventes una para tener algo que escribir.
@@ -37,7 +37,7 @@ Orden, alineado al teardown del puente (YalaAgent `session_teardown.py`):
 3. Aplica ya, sin confirmación:
    `bash qa/scripts/session-cleanup.sh --apply --clones --derived --scratch --sims-off`
    Eso borra DerivedData (`$HOME/Library/Developer/Xcode/DerivedData/*` y `$HOME/Library/Developer/XcodeBuildMCP/*`), scratchpads terminados (`/private/tmp/claude-501/*`, conserva sesión actual y mtime < 90 min), clones huérfanos, y apaga Simulator (`xcrun simctl shutdown all`).
-4. Si el script no está, fallback ya medido en el puente: `xcrun simctl shutdown all` y `rm -rf` de esos dos DerivedData. No toques el repo, el vault ni `~/Secrets`.
+4. Si el script no está, fallback ya medido en el puente: `xcrun simctl shutdown all` y `rm -rf` de esos dos DerivedData. No toques el repo ni `~/Secrets`.
 
 En el informe, una línea por destino (TM / DerivedData / scratch / clones / sims-off) con GB o «nada». Si tras limpiar quedan < 25 GB, dilo. No ofrezcas saltarte DerivedData.
 
@@ -45,7 +45,7 @@ En el informe, una línea por destino (TM / DerivedData / scratch / clones / sim
 
 Tres líneas, no más: **dónde quedó**, **qué sigue**, **qué está bloqueado esperando algo tuyo**.
 
-## 5 · Escribir planning/NOW.md
+## 5 · Escribir docs/ESTADO.md
 
 Reescribir el archivo entero (no append). Tope 40 líneas.
 
@@ -57,12 +57,12 @@ Campos:
 - Siguiente: un item
 - Bloqueo: uno, o “ninguno”
 
-Si pasaría de 40 líneas, recortar Abiertos. No copiar STATE. No listar el diff.
+Si pasaría de 40 líneas, recortar Abiertos. No copiar DECISIONS. No listar el diff.
 
-En el informe: `✓ NOW.md <fecha> <HEAD>`
+En el informe: `✓ docs/ESTADO.md <fecha> <HEAD>`
 
 ## Reglas
 
 - Disco: ejecuta y listo. No pidas confirmación. El puente (YalaAgent) ya corre el mismo teardown al terminar cada orden, sin Claude; este comando es para cuando Claude sí lo corre.
 - No commitees, no pushees, no cambies el estado de un ticket sin decirlo.
-- Si la sesión no tocó código, salta el bloque 2: disco + NOW + cierre.
+- Si la sesión no tocó código, salta el bloque 2: disco + ESTADO + cierre.
