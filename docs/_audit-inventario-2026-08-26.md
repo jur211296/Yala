@@ -14,7 +14,7 @@
 - `docs/` → proceso vivo: `ESTADO.md` (NOW), `HANDOFF.md`, `DECISIONS.md`, `TICKETS.md`. `TICKETS.md` documenta **este** schema inglés (índice + contrato). Proceso corto extra solo si no vive ya en `CLAUDE.md` / `qa/`.
 - `tickets/{backlog,in-progress,qa,done,blocked,discarded}/` → una carpeta = un estado. Frontmatter `status` = el nombre de la carpeta (mismas strings). `priority: high | medium | low`. Slugs/filenames: English kebab-case, **los asigna Frank** (no el user ni el CA).
 - `Web/` se queda en la **raíz**. Independiente. **No** va a `marketing/`.
-- `marketing/` en la raíz (para Lola) = **solo lo vivo**: `screenshots-appstore/` + metadata/PNG actuales de `App Store/`. Mapeo y DROP en §4.4. Cerrado: «todo a `marketing/`».
+- `marketing/` en la raíz (para Lola) = **solo lo vivo**: `screenshots-appstore/` + `App Store` metadata + PNG actuales **only**. DROP confirmado en §4.4 (Instagram, 4 Spark, ReferenceAssets, ARCHIVE-25/26, Demo). Cerrado: «todo a `marketing/`».
 - `CLAUDE.md`, `.claude/rules/`, `qa/` se quedan en raíz (el CA los descubre).
 - Skills de producto Yala viven en el repo, **una** carpeta canónica (ver §4.3).
 
@@ -123,9 +123,9 @@ Tamaños: `du -sh` del checkout. «Último commit» = `git log -1` sobre esa rut
 | `Instagram/` | 24M | 2026-03-17 `5db085b2` | 8 carpetas `POSTS-*` (40 PNG, campañas 1.x/1.2) | **marketing / stale** frente al generador de agosto |
 | `Yala_Spark_Assets_{DARK,LIGHT,NEON,ORIGINAL}-2/` | 0.3–2.7M | 2026-01-28 `46170f2b` | Packs Spark (Headers/iOS/iPad/Mac/Store/Web). **Cero refs** en `project.pbxproj` | **marketing**; uso en la app **no evidenciado** |
 | `ReferenceAssets/` | 19M | 2026-01-24 `aa7adc70` («rebrand Neto to Yala») | `Neto_Logo_Header_ForDarkBG (1).png`, `…ForLightBG.png`, `Screenshots/Espanol/` | **marketing / Neto leftover** |
-| `Demo/` | 16K | 2026-01-28 `46170f2b` | `demo_transactions.csv`. Cero refs en código | **desconocido** (fixture huérfano; DROP recomendado, §4.4) |
+| `Demo/` | 16K | 2026-01-28 `46170f2b` | `demo_transactions.csv`. Cero refs en código | **desconocido** (fixture huérfano; DROP **confirmado**, §4.4) |
 
-Destino (fijado, **no ejecutado**): `Web/` se queda; Lola recibe solo lo vivo → `marketing/`; el resto es DROP o HOLD (§4.4). La tabla de arriba es el árbol **medido hoy**.
+Destino (fijado, **no ejecutado**): `Web/` se queda; Lola recibe solo lo vivo → `marketing/`; DROP confirmado en §4.4. La tabla de arriba es el árbol **medido hoy**.
 
 ### 1.5 Segundo nivel de carpetas que importan para docs
 
@@ -552,17 +552,18 @@ No mover skills vendor a `docs/`. No crear `skills/` paralelo con las mismas cop
 | `screenshots-appstore/` (entero) | `marketing/screenshots-appstore/` |
 | `App Store/metadata/` | `marketing/app-store/metadata/` |
 | `App Store/PNG-*` | `marketing/app-store/PNG-*` |
-| `App Store/whats-new/` + `metadata-2.0-extra-locales.md` + `asc-extra-locales-2.0.py` | `marketing/app-store/` — copy de ficha **actual** (stale vs 2.1, pero es la superficie viva, no un runbook). Si el owner quiso *solo* metadata+PNG, pelar estos tres en el PR de M. |
 
-**DROP recomendado** (no a `marketing/`, no a `docs/archive/`):
+Owner: metadata + PNG **actuales only**. `whats-new/`, `metadata-2.0-extra-locales.md`, `asc-extra-locales-2.0.py` **no** van a `marketing/`. No están en el DROP confirmado: §5.4.
 
-| Ruta | Por qué | ¿Confirma owner? |
-|------|---------|------------------|
-| `ReferenceAssets/` | Neto leftover (logos + screenshots ES). Cero uso en `project.pbxproj`. | Sí — DROP |
-| `App Store/ARCHIVE-build-25.md` + `26` + `build-25/` | Runbooks 2.0 / ExportOptions del archive 25. No son ficha viva. | Sí — DROP |
-| `Demo/` | `demo_transactions.csv` huérfano. Cero refs. | Sí — DROP |
-| `Instagram/` | Campañas 1.x/1.2; el generador de agosto las supersede. | **Pendiente** |
-| `Yala_Spark_Assets_{DARK,LIGHT,NEON,ORIGINAL}-2/` | Packs Spark. Cero refs en pbxproj. | **Pendiente** |
+**DROP confirmado** (2026-08-26, no reabrir — no a `marketing/`, no a `docs/archive/`):
+
+| Ruta | Por qué |
+|------|---------|
+| `Instagram/` | Campañas 1.x/1.2; el generador de agosto las supersede. |
+| `Yala_Spark_Assets_{DARK,LIGHT,NEON,ORIGINAL}-2/` (los 4) | Packs Spark. Cero refs en pbxproj. |
+| `ReferenceAssets/` | Neto leftover (logos + screenshots ES). Cero uso en `project.pbxproj`. |
+| `App Store/ARCHIVE-build-25.md` + `26` | Runbooks 2.0. No son ficha viva. `build-25/` (ExportOptions del archive 25) viaja con ellos. |
+| `Demo/` | `demo_transactions.csv` huérfano. Cero refs. |
 
 `.qa-test-data/` no está en este corte. Sigue en §5.4.
 
@@ -578,7 +579,7 @@ Con `Web/` en la raíz, **no** hay que tocar el Root Directory del dashboard. M 
 
 Pointers del PR de M (cero código de producto): `.claude/launch.json` (`screenshots-appstore/generator` → `marketing/screenshots-appstore/generator`). `qa/coverage-index.json` (`Web/src/…`) **no** cambia: `Web/` no se mueve.
 
-**Dónde va en el plan:** fase **M**, después de A. **No** D (otro destino). Los DROP confirmados van en **E** (o un E-marketing), no a `docs/archive/`. Instagram/Spark **no** se borran hasta que el owner confirme.
+**Dónde va en el plan:** fase **M**, después de A. **No** D (otro destino). Los DROP confirmados van en **E**, no a `docs/archive/`. Instagram y Spark **sí** se borran en E (owner confirmó).
 
 Este PR **no ejecuta** `git mv` ni deletes.
 
@@ -586,7 +587,7 @@ Este PR **no ejecuta** `git mv` ni deletes.
 
 ## 5. Raíz: se queda / archive / borrar / marketing (PR posterior)
 
-Nada ejecutado. `Web/` se queda. `marketing/` = solo lo vivo. DROP confirmados ≠ Instagram/Spark (HOLD).
+Nada ejecutado. `Web/` se queda. `marketing/` = screenshots + metadata + PNG actuales. DROP confirmado incluye Instagram y Spark.
 
 ### 5.1 Se quedan
 
@@ -624,16 +625,17 @@ Nada ejecutado. `Web/` se queda. `marketing/` = solo lo vivo. DROP confirmados �
 | `Web/test.txt` | `It Works`. Path **no** cambia (`Web/` se queda). |
 | `Web/build_out.txt` | Log `astro build`. Path no cambia. |
 | `.claude/skills/excalidraw-diagram/` | Directorio vacío. |
-| `ReferenceAssets/` | Neto leftover. DROP owner. |
-| `App Store/ARCHIVE-build-25.md` + `26` + `build-25/` | Runbooks 2.0. DROP owner. **No** a `marketing/` ni a `docs/archive/`. |
-| `Demo/` | CSV huérfano. DROP owner. |
+| `ReferenceAssets/` | Neto leftover. DROP confirmado. |
+| `App Store/ARCHIVE-build-25.md` + `26` + `build-25/` | Runbooks 2.0. DROP confirmado. **No** a `marketing/` ni a `docs/archive/`. |
+| `Demo/` | CSV huérfano. DROP confirmado. |
+| `Instagram/` | Campañas 1.x/1.2. DROP confirmado. |
+| `Yala_Spark_Assets_{DARK,LIGHT,NEON,ORIGINAL}-2/` | Los 4 packs. DROP confirmado. |
 
-### 5.4 Fuera de este plan / HOLD
+### 5.4 Fuera de este plan
 
 | Ruta | Estado |
 |------|--------|
-| `Instagram/` | DROP **recomendado**; **pendiente confirmación owner**. No borrar en E hasta entonces. |
-| Spark (`Yala_Spark_Assets_*`) | DROP **recomendado**; **pendiente confirmación owner**. |
+| `App Store/whats-new/` + `metadata-2.0-extra-locales.md` + `asc-extra-locales-2.0.py` | No KEEP (owner: metadata + PNG only). No están en el DROP confirmado. No inventar destino. |
 | `.qa-test-data/` | Sin corte. Confirmar después. |
 | `Web/README.md` | Reescribir (sigue en `Web/`). |
 | `qa/manifest.json` | Confirmar que `runner.sh` no lo lee. |
@@ -698,8 +700,8 @@ Si el vault aún no se copió: **parar**. No inventar tickets.
 
 `git mv` de §4.4 (screenshots + App Store metadata/PNG). Cero código de producto. **`Web/` no se mueve.** **No se ejecuta en este PR.**
 
-1. Crear `marketing/` y mover `screenshots-appstore/` + metadata/PNG (y, salvo pelado del owner, whats-new + extra-locales).
-2. **No** mover Instagram, Spark, ReferenceAssets, ARCHIVE-25/26, Demo, `Web/`.
+1. Crear `marketing/` y mover **solo** `screenshots-appstore/` + `App Store/metadata/` + `App Store/PNG-*`.
+2. **No** mover `Web/`, Instagram, Spark, ReferenceAssets, ARCHIVE-25/26, Demo, ni whats-new/extra-locales.
 3. `.vercelignore`: añadir `marketing/` (ahora es seguro: el sitio no vive ahí). Quitar `App Store/` cuando esa carpeta quede vacía o desaparezca. `Web/.vercelignore` no se toca salvo limpiar `ReferenceAssets/` el día del DROP.
 4. `.claude/launch.json`: cwd del generador → `marketing/screenshots-appstore/generator`.
 5. Línea en `docs/DECISIONS.md` / `ESTADO.md` (A ya los creó).
@@ -716,8 +718,8 @@ Si el vault aún no se copió: **parar**. No inventar tickets.
 
 ### Fase E — Limpieza + DROP confirmados (último)
 
-1. Borrar §5.3: `build_output.txt`, `Web/test.txt`, `Web/build_out.txt`, excalidraw vacío, **`ReferenceAssets/`**, **`App Store/ARCHIVE-build-25.md` + `26` + `build-25/`**, **`Demo/`**.
-2. **No** borrar `Instagram/` ni Spark hasta confirmación del owner.
+1. Borrar §5.3: `build_output.txt`, `Web/test.txt`, `Web/build_out.txt`, excalidraw vacío, **`Instagram/`**, **los 4 Spark**, **`ReferenceAssets/`**, **`App Store/ARCHIVE-build-25.md` + `26` + `build-25/`**, **`Demo/`**.
+2. No inventar DROP de `whats-new/` / extra-locales (no están en el corte confirmado).
 3. Reescribir `gateway/README.md` (quitar «scaffold»).
 4. Archivar el repo YalaWiki (fuera de este git).
 5. Obsidian viewer → `docs/` + `tickets/` de este clone.
@@ -731,7 +733,7 @@ Si el vault aún no se copió: **parar**. No inventar tickets.
 - No conservar filenames en español al absorber tickets.
 - No duplicar skills.
 - No absorber ni `git mv` / delete de marketing en este PR.
-- No borrar Instagram/Spark sin confirmación.
+- No reabrir el DROP confirmado (Instagram, Spark, ReferenceAssets, ARCHIVE-25/26, Demo).
 - No `--no-verify` / force.
 
 ---
@@ -756,4 +758,4 @@ Validación original (sigue vigente): `validate-coverage.py` OK; `check-test-iso
 
 ## 9. Cómo usar este fichero
 
-El árbol destino **está fijado**. Este archivo es el mapa + el plan. Siguiente PR: **fase A**. Después: B/C (vault), **M** (`marketing/` = screenshots + App Store vivo; `Web/` no se mueve), D archive, E DROP confirmados (Instagram/Spark HOLD). No `git mv` ni deletes en este PR.
+El árbol destino **está fijado**. Este archivo es el mapa + el plan. Siguiente PR: **fase A**. Después: B/C (vault), **M** (`marketing/` = screenshots + metadata + PNG; `Web/` no se mueve), D archive, E DROP confirmados (Instagram + Spark + ReferenceAssets + ARCHIVE-25/26 + Demo). No `git mv` ni deletes en este PR.
