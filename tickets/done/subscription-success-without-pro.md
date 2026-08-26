@@ -1,6 +1,6 @@
 ---
 id: subscription-success-without-pro
-status: in-progress
+status: done
 priority: high
 area: subscription
 created: 2026-08-22
@@ -75,3 +75,11 @@ No es race de un segundo tras el sheet. Entitlement no queda activo (o no se lee
 - HOLD: App Store, tag, A7/M5.
 
 migrated from YalaWiki Bugs/tf-suscripcion-exito-sin-pro.md @ 1934e8ad
+
+## Owner check 2026-08-26 (Jurgen, TF 2.1 build 12)
+
+- Device: cuenta día a día. Estaba Free.
+- Manage Subscriptions aplicó Pro.
+- Force-quit (swipe up) + reopen: sigue Pro.
+- No se re-probó el sheet de compra in-app desde Free en esta sesión.
+- Ticket cerrado por persistencia de entitlement (el fallo en build 11 era force-quit sigue Free + restore silencioso).
