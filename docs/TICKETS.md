@@ -56,7 +56,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | secondary-groups-off-wipes-owner | in-progress | tickets/in-progress/secondary-groups-off-wipes-owner.md |
 | secondary-visitor-writes-owner-domain | in-progress | tickets/in-progress/secondary-visitor-writes-owner-domain.md |
 | secondary-guest-exit-lock-and-outbox | in-progress | tickets/in-progress/secondary-guest-exit-lock-and-outbox.md |
-| subscription-success-without-pro | in-progress | tickets/in-progress/subscription-success-without-pro.md |
+| subscription-success-without-pro | done | tickets/done/subscription-success-without-pro.md |
 | update-banner-appstore-criteria | qa | tickets/qa/update-banner-appstore-criteria.md |
 | orphan-alerts-behind-fullscreen-covers | backlog | tickets/backlog/orphan-alerts-behind-fullscreen-covers.md |
 | debounce-sync-imported-transactions | backlog | tickets/backlog/debounce-sync-imported-transactions.md |
@@ -93,7 +93,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-consent-door-spec | qa | tickets/qa/groups-consent-door-spec.md |
 | rescue-discarded-groups-pull | qa | tickets/qa/rescue-discarded-groups-pull.md |
 
-Counts by folder (intended): backlog 25 · in-progress 13 · qa 18 · blocked 0 · done 0 · discarded 3.
+Counts by folder (intended): backlog 25 · in-progress 12 · qa 18 · blocked 0 · done 1 · discarded 3.
 
 Jurgen 2026-08-26: `groups-cloud-mode-hardening-v1`, `groups-cloud-identity-loss-on-migrate`, `device-handover-groups-leak` are **discarded** (CloudKit dead / no remaining written AC). Not PASS. Not `done/`.
 
@@ -125,7 +125,7 @@ Jurgen 2026-08-26: `groups-cloud-mode-hardening-v1`, `groups-cloud-identity-loss
 | Bugs/secundaria-canal-apagado-la-visita-borra-los-grupos-del-dueno.md | tickets/in-progress/secondary-groups-off-wipes-owner.md |
 | Bugs/secundaria-la-visita-escribe-en-el-dominio-del-dueno.md | tickets/in-progress/secondary-visitor-writes-owner-domain.md |
 | Bugs/secundaria-salida-de-la-invitada-bloqueo-permanente-y-outbox-de-grupos.md | tickets/in-progress/secondary-guest-exit-lock-and-outbox.md |
-| Bugs/tf-suscripcion-exito-sin-pro.md | tickets/in-progress/subscription-success-without-pro.md |
+| Bugs/tf-suscripcion-exito-sin-pro.md | tickets/done/subscription-success-without-pro.md |
 | Bugs/ux_update-banner-appstore-criterios-y-forzado.md | tickets/qa/update-banner-appstore-criteria.md |
 | Backlog/alerts-huerfanos-detras-de-fullscreencovers.md | tickets/backlog/orphan-alerts-behind-fullscreen-covers.md |
 | Backlog/debounce-transactions-imported-from-sync-observer.md | tickets/backlog/debounce-sync-imported-transactions.md |
