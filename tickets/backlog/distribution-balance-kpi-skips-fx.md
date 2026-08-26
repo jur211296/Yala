@@ -76,8 +76,21 @@ La curva histórica del trend sí usa `amountInPreferredCurrency` (`TrendDataPro
 
 No es “Distribución omite FX”. No es `trends-comparison-kpi-vs-curve` (KPI vs curva en Comparativa). Sin números de device-QA no hay PASS.
 
+## Decisión (2026-08-26)
+
+Jurgen, device-QA TF 2.1 build 12:
+
+1. El fix previo de Comparativa (`trends-comparison-kpi-vs-curve`, MTD-vs-MTD) se mantiene. Device-QA en Tendencias → Comparativa (Este mes, 3 métricas) OK. El widget Comparativa del Panel sigue pendiente. **No cerrar** ese ticket.
+2. No mantener stock vs flujo para el KPI de Balance. No igualar todo a flujo. Igualar Balance a **stock**.
+3. No tocar Panel. El stock vivo del Panel (`LiveBalanceCalculator`, TC actual) es la fuente de verdad del Balance.
+
+Lectura acotada de Frank (no son palabras extra de Jurgen): solo el KPI de Balance en Distribución (hero / header del pie cuando `natures` está vacío / métrica Balance) pasa a ser el mismo número de stock vivo que el Panel. Ingresos/Gastos en Distribución siguen siendo flujo del período (un pie de gasto no tiene sentido de otro modo). No reescribir el pie como participaciones de stock por cuenta.
+
+Status sigue `backlog`. Sin implementación en este ticket.
+
 ## Acceptance Criteria
 
-- [ ] Mismo período y mismos filtros: KPI de Balance en Panel y en Distribución usan la misma base de moneda (preferida) y el mismo número (o documentar por qué no, si hay decisión).
+- [ ] Con métrica Balance (`natures` vacío), el KPI hero/header de Distribución == KPI de Balance del Panel (mismo `LiveBalanceCalculator` / TC actual). Panel sin cambios.
+- [ ] Ingresos/Gastos en Distribución siguen siendo flujo del período.
 - [ ] Device-QA con cuenta multi-moneda.
 - [ ] No inventar PASS.
