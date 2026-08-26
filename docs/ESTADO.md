@@ -30,6 +30,12 @@ Copiar los 60 tickets del mapa en `docs/TICKETS.md` (los 3 de arriba directo a `
 
 ## Bloqueo
 
-La GitHub App de este agente solo ve `jur211296/Yala` (`GET /installation/repositories`). `jur211296/YalaWiki` responde 404. No se inventó ningún cuerpo de ticket.
+Tras las setup actions del 2026-08-26 (App en YalaWiki + secret `YALAWIKI_GITHUB_TOKEN` marcados completed):
 
-> Intento de leer `YalaWiki/planning/NOW.md` @ `1934e8ad`: 404. Este ESTADO es el de la sesión de absorción (hechos del owner), no una copia del NOW del vault.
+- `GET /installation/repositories` sigue listando solo `jur211296/Yala`.
+- `YALAWIKI_GITHUB_TOKEN` no está en el entorno de **esta** VM (los user secrets se inyectan al arrancar el agente, no a mitad de run).
+- `gh api repos/jur211296/YalaWiki` sigue en 404.
+
+No se inventó ningún cuerpo de ticket. Un agente **nuevo** en esta rama, con el PAT o un token que incluya YalaWiki, puede copiar los 60 @ `1934e8ad`.
+
+> Este ESTADO es el de la sesión de absorción (hechos medidos + owner), no una copia de `planning/NOW.md` del vault.
