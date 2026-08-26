@@ -1,6 +1,6 @@
 ---
 id: trends-comparison-kpi-vs-curve
-status: in-progress
+status: done
 priority: high
 created: 2026-07-06
 updated: 2026-08-26
@@ -268,3 +268,9 @@ Si **Opción 1 (MTD-vs-MTD)** — la de menor cambio y que alinea todo:
 - [x] **D2 (hero de Tendencias):** las 4 variaciones del hero (balance/ingreso/gasto/prom-diario) alineadas a MTD vía `InsightsCalculator` (gate `.thisMonth`+`.month`, **converge** con fase 2); 2 bugs de `/code-review high` corregidos (asimetría de medianoche del día equivalente + determinismo `now`); unit cubierto (13 tests, incl. bordes día-1/mes-corto/bisiesto); committeado en `f779a7ab`. Device-QA sim parcial (launch + Charts sin crash; visual del hero → TestFlight). ✅ 2026-07-06
 
 migrated from YalaWiki Backlog/p20-15_comparativa-kpi-vs-curva-descuadre.md @ 1934e8ad
+
+## Owner check 2026-08-26 (Jurgen, TF 2.1 build 12)
+
+- Estadísticas → Tendencias → card Comparativa, período Este mes: KPI período anterior, badge y curva punteada cuentan la misma historia en Balance, Ingresos y Gastos.
+- Panel → card Comparativa: mismo criterio, cuadra.
+- Ticket cerrado por device-QA de alineación KPI/curva. Tests de DateAlignmentHelper ya estaban en árbol (PR 15).
