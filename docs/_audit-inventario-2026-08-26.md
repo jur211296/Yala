@@ -12,7 +12,7 @@
 Árbol destino **fijado** (no reabrir):
 
 - `docs/` → proceso vivo: `ESTADO.md` (NOW), `HANDOFF.md`, `DECISIONS.md`, `TICKETS.md` (formato estándar). Proceso corto extra solo si no vive ya en `CLAUDE.md` / `qa/`.
-- `tickets/{backlog,en-progreso,qa,done,bloqueada,descartada}/` → una carpeta = un estado. El `status` del frontmatter **debe** coincidir con la carpeta.
+- `tickets/{backlog,in-progress,qa,done,blocked,discarded}/` → una carpeta = un estado. Frontmatter `status` = el nombre de la carpeta (mismas strings). `priority: high | medium | low`. Slugs/filenames: English kebab-case, **los asigna Frank** (no el user ni el CA).
 - `CLAUDE.md`, `.claude/rules/`, `qa/` se quedan en raíz (el CA los descubre).
 - Skills de producto Yala viven en el repo, **una** carpeta canónica (ver §4.3).
 
@@ -416,14 +416,14 @@ jur211296/Yala   (rama 2.1)
 │   └── archive/                       # AUDIT/DESIGN/bitácoras (fase D)
 └── tickets/
     ├── backlog/
-    ├── en-progreso/
+    ├── in-progress/
     ├── qa/
     ├── done/
-    ├── bloqueada/
-    └── descartada/
+    ├── blocked/
+    └── discarded/
 ```
 
-No se usa `docs/backlog/`, `docs/bugs/`, `docs/ideas/` ni `docs/planning/NOW.md`. Eso era la propuesta anterior; el owner la reemplazó.
+No se usa `docs/backlog/`, `docs/bugs/`, `docs/ideas/`, `docs/planning/NOW.md`, ni las carpetas en español (`en-progreso`, `bloqueada`, `descartada`). El owner las reemplazó.
 
 ### 4.1 `docs/` — proceso vivo
 
@@ -434,18 +434,25 @@ No se usa `docs/backlog/`, `docs/bugs/`, `docs/ideas/` ni `docs/planning/NOW.md`
 | `docs/DECISIONS.md` | Decisiones durables | **Ausente.** `CLAUDE.md` lo cita en el vault. |
 | `docs/TICKETS.md` | Índice de `tickets/` + contrato de formato | **Ausente.** |
 
-Formato estándar de ticket (propuesta de contrato para `TICKETS.md`; no inventa tickets):
+`docs/TICKETS.md` documenta **este** schema (inglés). Contrato propuesto:
 
 ```yaml
 ---
-id: slug-corto
-titulo: …
-status: backlog | en-progreso | qa | done | bloqueada | descartada
-tipo: feature | bug | idea
+id: english-kebab-slug          # = filename sin .md; lo asigna Frank
+title: …
+status: backlog | in-progress | qa | done | blocked | discarded
+priority: high | medium | low
+type: feature | bug | idea
 ---
 ```
 
-Regla: `status` **= nombre de la carpeta**. Mover el fichero y editar el frontmatter es el mismo acto. `TICKETS.md` lista ids y apunta a `tickets/<status>/<id>.md`. No es SSOT del cuerpo: el cuerpo vive en `tickets/`.
+Reglas:
+
+- `status` **= nombre de la carpeta** (mismas strings).
+- Filename = `id` + `.md`, English kebab-case. **No** conservar nombres en español, ni `qa_`, ni espacios, ni underscores de Obsidian.
+- Frank asigna el slug. El CA / el user **no** lo inventan en absorción real; la tabla §4.2 es solo el *shape* propuesto para el plan.
+- Mover el fichero y editar `status` es el mismo acto.
+- `TICKETS.md` es el índice (`id`, `status`, `priority`, path). El cuerpo vive en `tickets/<status>/<id>.md`.
 
 Proceso corto **extra** — solo si no está ya en `CLAUDE.md` / `qa/`:
 
@@ -459,20 +466,36 @@ Proceso corto **extra** — solo si no está ya en `CLAUDE.md` / `qa/`:
 
 ### 4.2 `tickets/` — una carpeta = un estado
 
-| Carpeta | Quién aterriza (mapeo desde *nombres* de vault, no contenido) |
-|---------|---------------------------------------------------------------|
-| `tickets/backlog/` | Items de `$VAULT/Backlog/` / Ideas sin empezar; `status: backlog` |
-| `tickets/en-progreso/` | Los que `STATE`/NOW marque en curso |
-| `tickets/qa/` | Prefijo `qa_` o `status: needs-testing` (lo que hoy usa `/cerrar`) |
-| `tickets/done/` | Cerrados |
-| `tickets/bloqueada/` | Bloqueados |
-| `tickets/descartada/` | Descartados |
+| Carpeta | `status` | Quién aterriza (clase de origen; vault no medido) |
+|---------|----------|---------------------------------------------------|
+| `tickets/backlog/` | `backlog` | `$VAULT/Backlog/` / Ideas sin empezar |
+| `tickets/in-progress/` | `in-progress` | Lo que STATE/NOW marque en curso |
+| `tickets/qa/` | `qa` | Lo que hoy es prefijo `qa_*` o `needs-testing` (`/cerrar`) |
+| `tickets/done/` | `done` | Cerrados |
+| `tickets/blocked/` | `blocked` | Bloqueados |
+| `tickets/discarded/` | `discarded` | Descartados |
 
-Bugs y features **comparten** estas seis carpetas (`tipo:` en el frontmatter). No hay `tickets/bugs/` aparte.
+Bugs y features **comparten** estas seis carpetas (`type:` en el frontmatter). No hay `tickets/bugs/` aparte.
 
-Attachments de `/qa`: `docs/attachments/` **no** está en el árbol fijado. Destino: o junto al ticket, o `tickets/qa/attachments/` — se decide al copiar (peso **desconocido**; el vault no se midió).
+Attachments de `/qa`: no hay `docs/attachments/` en el árbol fijado. Destino al copiar: junto al ticket o `tickets/qa/` (peso del vault **desconocido**).
 
 `.planning/` (gitignored, ausente): no se usa.
+
+#### Slugs propuestos (English kebab-case)
+
+El vault **no está aquí**: no hay filenames reales que conservar. En absorción, **Frank asigna** el `id`. Abajo hay slugs de *ejemplo* para el mapeo — shape inglés, **cero nombres en español**. No son tickets creados.
+
+| Clase de origen (citada en este repo) | No usar | Slug propuesto | Carpeta | `priority` |
+|---------------------------------------|---------|----------------|---------|------------|
+| Feature Backlog (genérico) | `feature-foo.md`, nombres ES | `feature-<topic>.md` | `backlog` | medium (default hasta que Frank ponga otra) |
+| Idea (`/idea`, Parking Lot) | `idea-….md` en español | `idea-<topic>.md` | `backlog` | low |
+| Bug (`$VAULT/Bugs/`, `/bug-triage`) | `bug-….md` en español | `bug-<topic>.md` | según estado | high si es bloqueante de release |
+| Lote QA (`qa_*`, `/cerrar`) | `qa_inbox-….md`, `qa_*.md` | `qa-<topic>.md` | `qa` | medium |
+| Cover del aviso de bandeja (citado en `MODO-NUBE-HANDOFF-2026-07-28.md` / TestFlight 2.0.5) | cualquier slug ES | `bug-inbox-alert-cover-stuck.md` | `done` si el handoff lo da por cerrado; si no, `qa` | high |
+| Decisión release 2.1 ON (doc vivo en `docs/modo-nube/`) | `MODO-NUBE-…` como ticket | `cloud-mode-release-2-1.md` | `done` (decisión ya tomada) o no es ticket — vive en `DECISIONS.md` | — |
+| Épica grupos backend (docs `groups-backend-v1`) | `grupos-backend-….md` | `groups-backend-v1.md` | `in-progress` o `done` según ESTADO | high |
+
+Regla de absorción (fase C): si el fichero del vault se llama en español o `qa_…`, **rename** al slug inglés de Frank (o, en el PR de absorción, al slug de esta tabla si Frank no lo cambió). Nunca `git mv` conservando el nombre ES.
 
 ### 4.3 Skills — inventario y carpeta canónica
 
@@ -571,7 +594,7 @@ Orden: **paths y esqueleto** → **proceso en `docs/`** → **tickets por estado
 
 Cualquier clone. Sin copiar el vault.
 
-1. Crear `docs/ESTADO.md`, `docs/HANDOFF.md`, `docs/DECISIONS.md`, `docs/TICKETS.md` (stubs del formato) y `tickets/{backlog,en-progreso,qa,done,bloqueada,descartada}/` (cada una con un `.gitkeep` o README de una línea).
+1. Crear `docs/ESTADO.md`, `docs/HANDOFF.md`, `docs/DECISIONS.md`, `docs/TICKETS.md` (el stub de `TICKETS.md` documenta el schema inglés) y `tickets/{backlog,in-progress,qa,done,blocked,discarded}/` (cada una con un `.gitkeep` o README de una línea).
 2. `README.md` de raíz: schemes, iOS 26, «empieza por `CLAUDE.md` + `docs/ESTADO.md`».
 3. Reescribir `CLAUDE.md`: quitar `$VAULT = ~/Library/…`; tabla → `docs/ESTADO.md`, `docs/DECISIONS.md`, `docs/TICKETS.md`, `tickets/`; «dos superficies» = **rules + `docs/` + `tickets/`**.
 4. `.gitignore`: quitar el comentario «Planning docs live in Obsidian vault» / `.planning/` si ya no aplica.
@@ -593,10 +616,11 @@ No volcar CODEBASE-MAP / UI-PATTERNS / … a `docs/planning/` salvo pedido expl�
 
 ### Fase C — Tickets (tercero)
 
-1. Cada item de `$VAULT/Backlog/`, `Bugs/`, `Ideas/` → `tickets/<status>/` según su frontmatter (o el default `backlog` si no tiene). Ajustar `status:` para que **coincida con la carpeta**.
-2. Prefijo `qa_*` / `needs-testing` → `tickets/qa/`.
-3. Actualizar `docs/TICKETS.md` (índice).
-4. Paths:
+1. Cada item de `$VAULT/Backlog/`, `Bugs/`, `Ideas/` → `tickets/<status>/` con `status` ∈ {backlog, in-progress, qa, done, blocked, discarded} (default `backlog`). Frontmatter `status` = carpeta. `priority: high|medium|low`.
+2. Lo que hoy es `qa_*` / `needs-testing` → `tickets/qa/<english-slug>.md` (no conservar `qa_`).
+3. Filename = slug inglés kebab-case (**Frank asigna**; si no hay asignación, usar el shape de §4.2 — nunca el nombre ES del vault).
+4. Actualizar `docs/TICKETS.md` (índice + schema).
+5. Paths:
 
 | Fichero | Hoy (medido) | Nuevo |
 |---------|--------------|-------|
@@ -604,7 +628,7 @@ No volcar CODEBASE-MAP / UI-PATTERNS / … a `docs/planning/` salvo pedido expl�
 | `.claude/commands/backlog.md` | idem + `STATE.md` | `tickets/backlog/` + `docs/ESTADO.md` |
 | `.claude/commands/idea.md` | `STATE.md` | `tickets/backlog/` o `tickets/` + línea en `ESTADO.md` |
 | `.claude/commands/bug-triage.md` | `$VAULT/Bugs/` | `tickets/` filtrando `tipo: bug` |
-| `.claude/commands/qa.md` | `$VAULT/Bugs/qa_*`, `Backlog/qa_*` | `tickets/qa/` |
+| `.claude/commands/qa.md` | `$VAULT/Bugs/qa_*`, `Backlog/qa_*` | `tickets/qa/*.md` (slugs EN, no `qa_`) |
 | `.claude/commands/commit-one.md` / `cerrar.md` | ticket Obsidian | ticket en `tickets/` |
 | `.claude/skills/bugfix/SKILL.md` | `$VAULT/Bugs/` | `tickets/` |
 
@@ -626,7 +650,8 @@ Si el vault aún no se copió: **parar**. No inventar tickets.
 
 - No borrar `qa/coverage-index.json`.
 - No mover `.claude/rules/` a `docs/`.
-- No reabrir el árbol `docs/backlog|bugs|ideas` ni `docs/planning/NOW`.
+- No reabrir `docs/backlog|bugs|ideas`, `docs/planning/NOW`, ni carpetas ES (`en-progreso`, `bloqueada`, `descartada`).
+- No conservar filenames en español al absorber tickets.
 - No duplicar skills.
 - No absorber en este PR.
 - No `--no-verify` / force.
