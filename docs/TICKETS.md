@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (60)
+## Index (61)
 
 | id | status | path |
 |----|--------|------|
@@ -92,8 +92,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | debt-tracking | backlog | tickets/backlog/debt-tracking.md |
 | groups-consent-door-spec | qa | tickets/qa/groups-consent-door-spec.md |
 | rescue-discarded-groups-pull | qa | tickets/qa/rescue-discarded-groups-pull.md |
+| distribution-balance-kpi-skips-fx | backlog | tickets/backlog/distribution-balance-kpi-skips-fx.md |
 
-Counts by folder (intended): backlog 25 · in-progress 12 · qa 18 · blocked 0 · done 1 · discarded 3.
+Counts by folder (intended): backlog 26 · in-progress 12 · qa 18 · blocked 0 · done 1 · discarded 3.
 
 Jurgen 2026-08-26: `groups-cloud-mode-hardening-v1`, `groups-cloud-identity-loss-on-migrate`, `device-handover-groups-leak` are **discarded** (CloudKit dead / no remaining written AC). Not PASS. Not `done/`.
 
