@@ -11,7 +11,7 @@
 
 Árbol destino **fijado** (no reabrir):
 
-- `docs/` → proceso vivo: `ESTADO.md` (NOW), `HANDOFF.md`, `DECISIONS.md`, `TICKETS.md` (formato estándar). Proceso corto extra solo si no vive ya en `CLAUDE.md` / `qa/`.
+- `docs/` → proceso vivo: `ESTADO.md` (NOW), `HANDOFF.md`, `DECISIONS.md`, `TICKETS.md`. `TICKETS.md` documenta **este** schema inglés (índice + contrato). Proceso corto extra solo si no vive ya en `CLAUDE.md` / `qa/`.
 - `tickets/{backlog,in-progress,qa,done,blocked,discarded}/` → una carpeta = un estado. Frontmatter `status` = el nombre de la carpeta (mismas strings). `priority: high | medium | low`. Slugs/filenames: English kebab-case, **los asigna Frank** (no el user ni el CA).
 - `CLAUDE.md`, `.claude/rules/`, `qa/` se quedan en raíz (el CA los descubre).
 - Skills de producto Yala viven en el repo, **una** carpeta canónica (ver §4.3).
@@ -627,7 +627,7 @@ No volcar CODEBASE-MAP / UI-PATTERNS / … a `docs/planning/` salvo pedido expl�
 | `.claude/commands/spec.md` | `YalaWiki/Backlog/` | `tickets/` (buscar en las 6 carpetas o leer `TICKETS.md`) |
 | `.claude/commands/backlog.md` | idem + `STATE.md` | `tickets/backlog/` + `docs/ESTADO.md` |
 | `.claude/commands/idea.md` | `STATE.md` | `tickets/backlog/` o `tickets/` + línea en `ESTADO.md` |
-| `.claude/commands/bug-triage.md` | `$VAULT/Bugs/` | `tickets/` filtrando `tipo: bug` |
+| `.claude/commands/bug-triage.md` | `$VAULT/Bugs/` | `tickets/` filtrando `type: bug` |
 | `.claude/commands/qa.md` | `$VAULT/Bugs/qa_*`, `Backlog/qa_*` | `tickets/qa/*.md` (slugs EN, no `qa_`) |
 | `.claude/commands/commit-one.md` / `cerrar.md` | ticket Obsidian | ticket en `tickets/` |
 | `.claude/skills/bugfix/SKILL.md` | `$VAULT/Bugs/` | `tickets/` |
