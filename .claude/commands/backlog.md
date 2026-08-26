@@ -6,12 +6,12 @@ Muestra el estado del Backlog de features.
 
 ## PASO 1: LEER BACKLOG
 
-Leer todos los archivos `.md` en `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki/Backlog/` (ignorar README.md).
+Leer todos los archivos `.md` en `tickets/backlog/` y `tickets/in-progress/` (ignorar `.gitkeep` y README.md). Índice: `docs/TICKETS.md`. Estado vivo: `docs/ESTADO.md`.
 Para cada archivo, extraer del frontmatter: `status`, `priority`, `area`, `created`.
 
 ## PASO 2: MOSTRAR TABLA
 
-Presentar ordenado por prioridad (alta > media > baja), luego por fecha:
+Presentar ordenado por prioridad (alta > media > baja; sin priority al final), luego por fecha:
 
 ```
 ## Backlog
@@ -26,19 +26,16 @@ Presentar ordenado por prioridad (alta > media > baja), luego por fecha:
 - Total: N features
 - En progreso: N
 - Listos para spec: N (status = backlog)
-- Con spec: N (status = spec-ready)
+- En `tickets/qa/`: N
 
 ## PASO 3: SUGERIR ACCION
 
 Si hay items con status `backlog` sin spec:
 > Hay N features sin spec. Usa `/spec [nombre]` para desarrollar uno.
 
-Si hay items con status `spec-ready`:
-> Hay N features listos para implementar. Usa Plan Mode con el spec.
-
 Si hay items con status `in-progress`:
-> Hay N features en progreso. Continua desde donde quedaste (revisa STATE.md).
+> Hay N features en progreso. Continua desde donde quedaste (revisa `docs/ESTADO.md`).
 
 ## REGLAS
-- Si el Backlog esta vacio, sugerir crear un feature: "Crea un archivo en Backlog/ desde Obsidian o dime una idea y la creo yo."
+- Si el Backlog esta vacio, sugerir crear un feature: "Crea un archivo en `tickets/backlog/` o dime una idea y la creo yo."
 - NO modificar ningun archivo, solo lectura

@@ -61,15 +61,17 @@ Nunca `git add -A`. Nunca incluyas un trailer `Co-Authored-By`. No pushees: el h
 
 **Dos superficies, no cinco.** Git ya guarda el qué y el cuándo.
 
-**a) El ticket en Obsidian** (`$VAULT/Backlog/` o `$VAULT/Bugs/`, donde `VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki"`):
+**a) El ticket en `tickets/`** (índice: `docs/TICKETS.md`):
 
-Renombra según el estado y actualiza el frontmatter.
+Muévelo a la carpeta del nuevo estado y actualiza el frontmatter (`status` = nombre de la carpeta).
 
-| Estado | Prefijo | Frontmatter |
+| Estado | Carpeta | Frontmatter |
 |---|---|---|
-| Implementado, falta QA | `qa_` | `status: needs-testing` · `qa-status: needs-testing` · `implementation_date:` |
-| QA pasado | `ok_` | `status: done` (Backlog) o `fixed` (Bugs) |
-| Descartado | `out_` | `status: discarded` |
+| Implementado, falta QA | `tickets/qa/` | `status: qa` · `qa-status: needs-testing` · `implementation_date:` |
+| QA pasado | `tickets/done/` | `status: done` |
+| Descartado | `tickets/discarded/` | `status: discarded` |
+
+No declares PASS ni cierres un ticket por inferencia. Actualiza `docs/TICKETS.md` si cambió el path.
 
 Añade a `## Implementación` la fecha, el hash, los archivos con qué cambió en cada uno, y **las decisiones técnicas con su porqué** — eso es lo único que el código no puede contar solo.
 

@@ -42,7 +42,7 @@ __pycache__/
 # QA automation results (generated at runtime)
 qa/results/
 
-# Planning docs live in Obsidian vault (iCloud)
+# Local scratch only (process + tickets live in docs/ and tickets/)
 .planning/
 
 # Agent skills (third-party, reinstall via: npx skills add)

@@ -5,7 +5,7 @@ description: Ciclo disciplinado para corregir un bug de Yala — causa raíz, fi
 
 # Ciclo de corrección de bugs
 
-1. **Leer el reporte completo** — el ticket de `$VAULT/Bugs/`, las notas de QA o la descripción. Si hay guion de reproducción, seguirlo antes de tocar código.
+1. **Leer el reporte completo** — el ticket en `tickets/` (cualquier carpeta de estado), las notas de QA o la descripción. Índice: `docs/TICKETS.md`. Si hay guion de reproducción, seguirlo antes de tocar código.
 2. **Causa raíz, no síntoma.** Buscar *todas* las instancias del mismo patrón antes de dar el fix por cerrado: en este repo los bugs suelen estar replicados en varios sitios — el de `DateInterval` cerrado en cuatro archivos independientes es el caso de manual.
 3. **Proponer el fix mínimo y esperar aprobación.** Nada de refactors adyacentes ni mejoras no pedidas.
 4. **Implementar.** Leer los archivos de localización antes de editarlos.

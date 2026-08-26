@@ -1,10 +1,10 @@
 ---
-description: QA visual en el simulador — recorre los tickets en qa_, captura evidencia y actualiza su estado. Modo lote por defecto.
+description: QA visual en el simulador — recorre los tickets en tickets/qa/, captura evidencia y actualiza su estado. Modo lote por defecto.
 allowed-tools: Bash(bash qa/validate-coverage.sh:*), Bash(xcrun simctl:*), Bash(cp:*), Bash(date:*), Bash(git:*), Read, Write, Edit, Glob, Grep
-argument-hint: "[nombre de ticket, o vacío para recorrer todos los qa_]"
+argument-hint: "[nombre de ticket, o vacío para recorrer todos los de tickets/qa/]"
 ---
 
-QA visual de Yala. **Por defecto trabaja en LOTE**: una sola sesión drena varios tickets. Sin argumento, recorre todos los `qa_` del vault; con argumento, solo ese.
+QA visual de Yala. **Por defecto trabaja en LOTE**: una sola sesión drena varios tickets. Sin argumento, recorre todos los `.md` de `tickets/qa/`; con argumento, solo ese.
 
 ## Herramientas — en este orden
 
@@ -26,26 +26,27 @@ Comprueba el disco: `bash qa/scripts/disk-report.sh --guard`. Por debajo del umb
 
 ## Flujo por ticket
 
-1. **Lee el ticket** en `$VAULT/Bugs/qa_*.md` o `$VAULT/Backlog/qa_*.md`. Su sección de qa-notes o el guion de pasos dice qué reproducir. Si no hay guion, dedúcelo del commit que lo cerró.
+1. **Lee el ticket** en `tickets/qa/*.md` (índice: `docs/TICKETS.md`). Su sección de qa-notes o el guion de pasos dice qué reproducir. Si no hay guion, dedúcelo del commit que lo cerró.
 2. **Prepara el estado**: `build_run_sim` con los launch args que haga falta (`-uitest-seed grupos`, `-uitest-skip-onboarding`, …; el catálogo vive en `UITestHooks`).
 3. **Reproduce y captura.** Screenshot en cada paso que demuestre algo, no en cada tap.
 4. **Veredicto PASS o FAIL**, con lo que viste — no con lo que esperabas ver.
 
 ## Al cerrar cada ticket
 
-Evidencia al vault y estado actualizado:
+Evidencia junto al ticket (no Obsidian) y estado actualizado:
 
 ```
-VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki"
-cp <screenshot> "$VAULT/Attachments/qa-<feature>-$(date +%Y%m%d-%H%M%S).png"
+cp <screenshot> "tickets/qa/qa-<feature>-$(date +%Y%m%d-%H%M%S).png"
 ```
 
-| Resultado | Renombrar | Frontmatter |
+| Resultado | Mover | Frontmatter |
 |---|---|---|
-| PASS | `qa_x.md` → `ok_x.md` | `status: done` (Backlog) o `fixed` (Bugs) · `qa-status: passed` · `qa-date:` |
-| FAIL | `qa_x.md` → `x.md` | `status: reopened` · `qa-status: failed` · `qa-notes:` sin comillas ni acentos |
+| PASS | `tickets/qa/x.md` → `tickets/done/x.md` | `status: done` · `qa-status: passed` · `qa-date:` |
+| FAIL | `tickets/qa/x.md` → `tickets/in-progress/x.md` | `status: in-progress` · `qa-status: failed` · `qa-notes:` sin comillas ni acentos |
 
-Añade o actualiza la sección `## QA Visual` del ticket con fecha, veredicto, pasos y las capturas enlazadas.
+**No declares PASS si no lo viste en pantalla.** No cierres un ticket por inferencia.
+
+Añade o actualiza la sección `## QA Visual` del ticket con fecha, veredicto, pasos y las capturas enlazadas. Actualiza `docs/TICKETS.md` si moviste el archivo.
 
 Si el área tiene entrada en `qa/coverage-index.json`, actualiza su `lastVerified` y corre `bash qa/validate-coverage.sh`.
 

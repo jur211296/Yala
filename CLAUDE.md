@@ -14,21 +14,14 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 
 | Archivo | Propósito |
 |---------|-----------|
-| `$VAULT/planning/CODEBASE-MAP.md` | Tablas de Services / Calculators / ViewModels / Tests con paths |
-| `$VAULT/planning/UI-PATTERNS.md` | Design System, gotchas de SwiftUI, formularios, glass |
-| `$VAULT/planning/SWIFT-STYLE.md` | ViewModel pattern, idioms modernos, DS.Semantic / DS.Gradients, "añadir preferencia" |
-| `$VAULT/planning/L10N.md` | 16 locales, workflow para añadir keys, tests CI |
-| `$VAULT/planning/DEVICE-QA.md` | Setup Yala Dev, simulador y automatización de UI |
-| `$VAULT/planning/BRAND-VOICE.md` | Tono y estilo de marca |
-| `$VAULT/planning/WORKFLOW.md` | Workflow detallado de skills |
-| `$VAULT/planning/PROJECT.md` · `ROADMAP.md` · `STATE.md` | Producto, plan, progreso |
-| `$VAULT/planning/DECISIONS.md` | Registro de decisiones arquitectura |
-| `$VAULT/planning/QA-SCENARIOS.md` | Escenarios de prueba |
+| `docs/ESTADO.md` | Qué está en curso (NOW) |
+| `docs/HANDOFF.md` | Traspaso de sesión |
+| `docs/DECISIONS.md` | Registro de decisiones |
+| `docs/TICKETS.md` | Índice + schema de tickets |
+| `tickets/` | Tickets vivos (`backlog` · `in-progress` · `qa` · `done` · `blocked` · `discarded`) |
 | `qa/README.md` | QA automatizado (suites y scripts) |
 
-`$VAULT` = `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki/` (Obsidian, sync vía iCloud).
-
-Carpetas del vault: `Backlog/` · `Ideas/` · `Bugs/` · `Attachments/` · `planning/`. Skills: `/backlog`, `/spec`, `/idea`.
+La SSOT de proceso y tickets es **este repo**. No uses Obsidian / YalaWiki como fuente de verdad. Skills: `/backlog`, `/spec`, `/idea`.
 
 ## General Rules
 
@@ -70,14 +63,14 @@ Captura → Diseño → Construcción → Gate → Commit → QA → Cierre
         + /review-plan
 ```
 
-- **`/spec`** desarrolla el plan dentro del ticket del vault. Luego **Plan Mode + `/review-plan`** — su sección de "Diferidos" es lo que evita el retrabajo; no la saltes.
+- **`/spec`** desarrolla el plan dentro del ticket en `tickets/`. Luego **Plan Mode + `/review-plan`** — su sección de "Diferidos" es lo que evita el retrabajo; no la saltes.
 - **Construcción**: sesión larga y autónoma. `/verify-ios` para el bucle corto de «¿compila?».
 - **Review adversarial** (varias lentes independientes + refutación por hallazgo) cuando el cambio toque lógica densa donde un bug sale caro: sync/race (CKShare, bridges, notificaciones), cálculos financieros, migraciones SwiftData, bridge SplitExpense ↔ TransactionItem. Para l10n, rebranding o polish visual no aporta.
 - **`/gate`** antes de commitear: build ×2, unit, XCUITest de las áreas tocadas, audit y validación del índice. Sella el árbol; el hook de pre-commit comprueba ese sello.
 - **`/qa`** es por lotes: una sesión drena varios tickets `qa_`, no uno.
 - **`/cerrar`** al terminar: nada abierto, ticket sincronizado y disco liberado.
 
-**Documentación: dos superficies, no cinco.** El ticket del vault (qué y por qué, mientras el trabajo vive) y la regla durable en `.claude/rules/` (lo que el yo-futuro no debe romper). Git ya guarda el qué y el cuándo; `STATE.md` y `DECISIONS.md` son narrativa histórica, no bitácora de cada commit.
+**Documentación: dos superficies, no cinco.** El ticket en `tickets/` (qué y por qué, mientras el trabajo vive) y la regla durable en `.claude/rules/` (lo que el yo-futuro no debe romper). Git ya guarda el qué y el cuándo; `docs/ESTADO.md` y `docs/DECISIONS.md` son narrativa de proceso, no bitácora de cada commit.
 
 **Regla QA (contrato anti-drift):** la SSOT de cobertura es `qa/coverage-index.json` (validar: `bash qa/validate-coverage.sh`). Al tocar código bajo `Yala/`, en el MISMO commit actualizar el área correspondiente (`coverage`, `lastVerified`). Cobertura por clasificación: `deterministic` → XCUITest en `YalaUITests`; `agentic` → `/qa`; `manual` → documentada. El **ratchet** BLOQUEA si el backlog determinista crece respecto a `_meta.backlogBaseline` — escribe el test o baja el baseline conscientemente.
 
@@ -91,9 +84,7 @@ Captura → Diseño → Construcción → Gate → Commit → QA → Cierre
 
 ## Self-Maintenance
 
-Al modificar modelos / servicios / ViewModels: actualizar `$VAULT/planning/CODEBASE-MAP.md`.
-Los gotchas nuevos van al fichero de `.claude/rules/` de su área, no a este archivo.
-Preferencias nuevas (`UserDefaults`): checklist en SWIFT-STYLE.md.
+Al modificar modelos / servicios / ViewModels: los gotchas nuevos van al fichero de `.claude/rules/` de su área, no a este archivo. Preferencias nuevas (`UserDefaults`): checklist en las rules de área (no hay CODEBASE-MAP en este repo).
 
 ## Control de Ejecución
 
