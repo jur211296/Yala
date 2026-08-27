@@ -1,113 +1,324 @@
 [
-  { "id": "f-voz", "kind": "feature", "tag": "Funcionalidad", "emoji": "🎙️", "accent": "cyan", "screenshot": "captura-voz", "shot": "tilted",
-    "title": "Registra con la voz.", "highlight": "«Gasté 30 en el almuerzo».", "sub": "Yala lo entiende y lo guarda.",
-    "caption": "🎙️ Registrar un gasto puede ser tan simple como decirlo. Yala lo organiza por ti.\n\n#Yala #FinanzasSinFricción #IA" },
-
-  { "id": "anota-momento", "kind": "tip", "tag": "Tip Yala", "emoji": "💡", "accent": "pink",
-    "title": "Anota el gasto", "highlight": "en el momento.", "sub": "Después, el cerebro lo olvida.",
-    "caption": "💡 El mejor momento para registrar un gasto es justo cuando lo haces. En Yala toma segundos.\n\n#Yala #Hábitos #FinanzasPersonales" },
-
-  { "id": "r-hoy", "kind": "reminder", "tag": "Recordatorio", "emoji": "👋", "accent": "cyan",
-    "title": "¿Ya registraste", "highlight": "tus gastos de hoy?", "sub": "Toma 10 segundos.",
-    "caption": "👋 Un minuto hoy te ahorra el «¿en qué se fue?» de fin de mes. ¿Ya anotaste lo de hoy?\n\n#Yala #Hábitos #FinanzasClaras" },
-
-  { "id": "cafe", "kind": "dato", "tag": "Dato", "emoji": "☕", "accent": "cyan",
-    "title": "Un café diario", "highlight": "son ~S/ 150 al mes.", "sub": "No es el café. Es no verlo venir.",
-    "caption": "☕ Ese cafecito de cada día suma sin que lo notes. No se trata de dejarlo, se trata de verlo.\n\n#Yala #GastosHormiga #FinanzasClaras" },
-
-  { "id": "f-panel", "kind": "feature", "tag": "Funcionalidad", "emoji": "📲", "accent": "indigo", "screenshot": "panel-hero", "shot": "tilted",
-    "title": "Todo tu dinero,", "highlight": "de un vistazo.", "sub": "Saldo, cuentas, lo que quedó este mes.",
-    "caption": "Abres Yala y se acaba el ruido. Cuánto tienes, qué entró, qué salió.\n\n#Yala #FinanzasClaras" },
-
-  { "id": "ia-tono", "kind": "frase", "tag": "Frase", "emoji": "✨", "accent": "cyan",
-    "title": "Yala no te juzga.", "highlight": "Te entiende.", "sub": "Dices el gasto. Ella lo anota.",
-    "caption": "«Gasté 30 en el almuerzo» y listo. Sin cara de Excel, sin “deberías”. Un amigo que anota.\n\n#Yala" },
-
-  { "id": "presupuesto-mapa", "kind": "tip", "tag": "Tip Yala", "emoji": "💡", "accent": "indigo",
-    "title": "Un presupuesto no es una cárcel.", "highlight": "Es un mapa.", "sub": "Te dice a dónde va tu dinero.",
-    "caption": "💡 Un buen presupuesto no te limita, te orienta. En Yala lo armas en minutos.\n\n#Yala #Presupuesto #FinanzasPersonales" },
-
-  { "id": "r-domingo", "kind": "reminder", "tag": "Recordatorio", "emoji": "🗓️", "accent": "pink",
-    "title": "Domingo.", "highlight": "Revisa tu semana.", "sub": "10 minutos con tu café.",
-    "caption": "🗓️ Un repaso semanal corto te mantiene en control sin esfuerzo. Domingo + café + Yala.\n\n#Yala #Hábitos #FinanzasPersonales" },
-
-  { "id": "f-foto", "kind": "feature", "tag": "Funcionalidad", "emoji": "📸", "accent": "pink", "screenshot": "captura-imagen", "shot": "full",
-    "title": "Foto al recibo.", "highlight": "Yala lee el monto.", "sub": "Sin escribir nada.",
-    "caption": "📸 Llegó el recibo, tómale una foto y listo. Yala extrae los datos por ti.\n\n#Yala #FinanzasSinFricción #Recibos" },
-
-  { "id": "disponible-mes", "kind": "dato", "tag": "Dato", "emoji": "📊", "accent": "indigo",
-    "title": "Tener 60 mil", "highlight": "no es lo mismo que este mes.", "sub": "Yala te muestra lo que sí puedes usar.",
-    "caption": "Una cosa es lo que hay en tus cuentas. Otra, lo que te queda este mes. El panel enseña las dos, para no confundir ahorros con lo que puedes gastar.\n\n#Yala #FinanzasClaras" },
-
-  { "id": "dia-sin-gastar", "kind": "reto", "tag": "Reto", "emoji": "🎯", "accent": "pink",
-    "title": "Reto: un día sin gastar.", "highlight": "¿Te animas?", "sub": "Te sorprenderá lo que descubres.",
-    "caption": "🎯 Elige un día sin gastos. No es para sufrir, es para notar cuánto gastas en automático.\n\n#Yala #RetoFinanciero #DineroConsciente" },
-
-  { "id": "meta-numero", "kind": "tip", "tag": "Tip Yala", "emoji": "💡", "accent": "indigo",
-    "title": "Una meta sin número", "highlight": "es solo un deseo.", "sub": "Ponle cifra y fecha.",
-    "caption": "💡 «Quiero ahorrar» no es una meta. «S/ 2.000 para diciembre» sí.\n\n#Yala #Metas #Ahorro" },
-
-  { "id": "f-score", "kind": "feature", "tag": "Funcionalidad", "emoji": "📊", "accent": "violet", "screenshot": "stats-resumen", "shot": "full",
-    "title": "Tu salud financiera,", "highlight": "en un número.", "sub": "Y cómo mejorarla.",
-    "caption": "📊 Yala resume cómo estás con tu dinero en un solo número, y te dice cómo subirlo.\n\n#Yala #SaludFinanciera #FinanzasClaras" },
-
-  { "id": "saber-en-que", "kind": "frase", "tag": "Frase", "emoji": "✨", "accent": "cyan",
-    "title": "No se trata de gastar menos.", "highlight": "Se trata de saber en qué.", "sub": "Ahí empieza el control.",
-    "caption": "✨ Tener tus finanzas claras no es privarte. Es decidir con información.\n\n#Yala #DineroConsciente #FinanzasClaras" },
-
-  { "id": "r-finmes", "kind": "reminder", "tag": "Recordatorio", "emoji": "📅", "accent": "indigo",
-    "title": "Fin de mes.", "highlight": "¿Cómo te fue?", "sub": "Mira tus números en Yala.",
-    "caption": "📅 Cierra el mes con claridad: mira en qué se fue y ajusta para el próximo.\n\n#Yala #FinanzasClaras #BienestarFinanciero" },
-
-  { "id": "a-donde-fue", "kind": "dato", "tag": "Dato", "emoji": "📊", "accent": "pink",
-    "title": "«¿A dónde se fue", "highlight": "mi dinero?»", "sub": "Yala tiene la respuesta.",
-    "caption": "📊 La pregunta de fin de mes más común. Con Yala dejas de adivinar.\n\n#Yala #DejaDeAdivinar #FinanzasClaras" },
-
-  { "id": "f-flujo", "kind": "feature", "tag": "Funcionalidad", "emoji": "🔮", "accent": "cyan", "screenshot": "flujo-caja", "shot": "full",
-    "title": "Tu saldo del futuro.", "highlight": "Yala lo proyecta.", "sub": "Sin sorpresas a fin de mes.",
-    "caption": "🔮 Con tus ingresos y pagos, Yala proyecta tu saldo de los próximos meses.\n\n#Yala #FlujoDeCaja #FinanzasClaras" },
-
-  { "id": "efectivo", "kind": "tip", "tag": "Tip Yala", "emoji": "💵", "accent": "indigo",
-    "title": "El efectivo también cuenta.", "highlight": "Anótalo apenas lo uses.", "sub": "Es el que más se escapa.",
-    "caption": "💵 Lo que pagas en efectivo es lo más fácil de olvidar. Regístralo al instante.\n\n#Yala #FinanzasClaras #Efectivo" },
-
-  { "id": "7-dias", "kind": "reto", "tag": "Reto", "emoji": "🔥", "accent": "violet",
-    "title": "7 días registrando.", "highlight": "Ese es el hábito.", "sub": "Lo demás se vuelve automático.",
-    "caption": "🔥 La meta no es ser perfecto, es ser constante. 7 días seguidos y el hábito hace el resto.\n\n#Yala #Hábitos #RetoFinanciero" },
-
-  { "id": "tranquilidad", "kind": "frase", "tag": "Frase", "emoji": "✨", "accent": "cyan",
-    "title": "Saber cuánto tienes", "highlight": "es tranquilidad.", "sub": "No es lujo. Es tranquilidad.",
-    "caption": "✨ La paz financiera no viene de tener mucho, viene de saber dónde estás parado.\n\n#Yala #BienestarFinanciero #FinanzasClaras" },
-
-  { "id": "f-tendencias", "kind": "feature", "tag": "Funcionalidad", "emoji": "📈", "accent": "cyan", "screenshot": "stats-tendencias", "shot": "full",
-    "title": "Ve tus", "highlight": "tendencias reales.", "sub": "Mes a mes, sin esfuerzo.",
-    "caption": "📈 ¿Gastas más o menos que antes? Yala te lo muestra con tendencias claras.\n\n#Yala #FinanzasClaras #Tendencias" },
-
-  { "id": "suscripciones", "kind": "dato", "tag": "Dato", "emoji": "📊", "accent": "pink",
-    "title": "Casi todos pagamos", "highlight": "una suscripción que no usamos.", "sub": "¿Cuántas tienes tú?",
-    "caption": "📊 Streaming, apps, membresías… las suscripciones olvidadas son un clásico. Revísalas hoy.\n\n#Yala #Ahorro #FinanzasClaras" },
-
-  { "id": "categorias", "kind": "tip", "tag": "Tip Yala", "emoji": "💡", "accent": "violet",
-    "title": "Categoriza tus gastos.", "highlight": "Ahí está la historia.", "sub": "Patrones que no veías.",
-    "caption": "💡 Cuando agrupas tus gastos por categoría, aparecen patrones que cambian cómo decides.\n\n#Yala #FinanzasPersonales #Categorías" },
-
-  { "id": "r-nuevomes", "kind": "reminder", "tag": "Recordatorio", "emoji": "🌅", "accent": "violet",
-    "title": "Nuevo mes,", "highlight": "nuevo presupuesto.", "sub": "Empieza con el pie derecho.",
-    "caption": "🌅 Arranca el mes asignando tu dinero antes de gastarlo. Tu yo de fin de mes lo agradece.\n\n#Yala #Presupuesto #Ahorro" },
-
-  { "id": "f-presupuestos", "kind": "feature", "tag": "Funcionalidad", "emoji": "🎯", "accent": "indigo", "screenshot": "planificacion-presupuestos", "shot": "tilted",
-    "title": "Un presupuesto", "highlight": "que te avisa a tiempo.", "sub": "Antes de pasarte, no después.",
-    "caption": "Le pones un tope a una categoría. Yala te mira el número y te avisa. Sin sermón.\n\n#Yala #Presupuesto" },
-
-  { "id": "sin-culpa", "kind": "frase", "tag": "Frase", "emoji": "💪", "accent": "pink",
-    "title": "¿Te pasaste este mes?", "highlight": "Mañana es otro día.", "sub": "Ajustamos y seguimos.",
-    "caption": "💪 En Yala no te regañamos. Si te pasaste, lo vemos y ajustamos.\n\n#Yala #FinanzasSinDramas" },
-
-  { "id": "delivery", "kind": "dato", "tag": "Dato", "emoji": "🛵", "accent": "violet",
-    "title": "Delivery 3 veces por semana", "highlight": "puede ser tu mayor gasto hormiga.", "sub": "Míralo con números.",
-    "caption": "🛵 No está mal darse gustos. Ayuda saber cuánto suman. Yala te lo muestra sin juzgar.\n\n#Yala #GastosHormiga #FinanzasClaras" },
-
-  { "id": "sueldo", "kind": "tip", "tag": "Tip Yala", "emoji": "💡", "accent": "indigo",
-    "title": "Llegó el sueldo.", "highlight": "Asigna antes de gastar.", "sub": "Primero tú, luego lo demás.",
-    "caption": "💡 Dale un trabajo a cada sol apenas entra: ahorro, fijos, gustos.\n\n#Yala #Presupuesto #Ahorro" }
+  {
+    "id": "f-voz",
+    "kind": "feature",
+    "tag": "Funcionalidad",
+    "emoji": "🎙️",
+    "accent": "cyan",
+    "screenshot": "captura-voz",
+    "shot": "tilted",
+    "title": "Dilo en voz alta.",
+    "highlight": "Yala lo anota.",
+    "sub": "Como se lo contarías a un amigo.",
+    "caption": "🎙️ «Treinta en el menú del día». Lo dices, queda en su sitio. Sin teclado, sin drama.\n\n#Yala #YalaIA"
+  },
+  {
+    "id": "anota-momento",
+    "kind": "tip",
+    "tag": "Tip Yala",
+    "emoji": "💡",
+    "accent": "pink",
+    "title": "El gasto vive",
+    "highlight": "mientras lo recuerdas.",
+    "sub": "Anótalo antes de que se evapore.",
+    "caption": "💡 La compra ya pasó. El recuerdo se va en dos cuadras. Ábrelo en Yala mientras todavía está caliente.\n\n#Yala #Hábitos"
+  },
+  {
+    "id": "r-hoy",
+    "kind": "reminder",
+    "tag": "Recordatorio",
+    "emoji": "👋",
+    "accent": "cyan",
+    "title": "Hoy todavía",
+    "highlight": "está a tiempo.",
+    "sub": "Lo de ayer ya se fue.",
+    "caption": "👋 Si hoy no quedó escrito, mañana es un hueco. Un rato con Yala y el día cierra.\n\n#Yala #Hábitos"
+  },
+  {
+    "id": "cafe",
+    "kind": "dato",
+    "tag": "Dato",
+    "emoji": "☕",
+    "accent": "cyan",
+    "title": "El café no es",
+    "highlight": "el problema.",
+    "sub": "El problema es no sumarlo.",
+    "caption": "☕ Nadie se quiebra por un café. Se pierde el hilo cuando nadie los cuenta. Míralos juntos, no uno por uno.\n\n#Yala #GastosHormiga"
+  },
+  {
+    "id": "f-panel",
+    "kind": "feature",
+    "tag": "Funcionalidad",
+    "emoji": "📲",
+    "accent": "indigo",
+    "screenshot": "panel-hero",
+    "shot": "tilted",
+    "title": "Cuentas, gastos,",
+    "highlight": "lo que te queda.",
+    "sub": "En la misma pantalla.",
+    "caption": "El panel no te da un discurso. Te pone el mes al frente: qué hay, qué salió, qué puedes usar.\n\n#Yala #FinanzasClaras"
+  },
+  {
+    "id": "ia-tono",
+    "kind": "frase",
+    "tag": "Frase",
+    "emoji": "✨",
+    "accent": "cyan",
+    "title": "Aquí no hay",
+    "highlight": "cara de reproche.",
+    "sub": "Dices el número. Queda escrito.",
+    "caption": "✨ Gastaste. Pasa. Yala no te hace un powerpoint de culpa. Anota y sigue.\n\n#Yala"
+  },
+  {
+    "id": "presupuesto-mapa",
+    "kind": "tip",
+    "tag": "Tip Yala",
+    "emoji": "💡",
+    "accent": "indigo",
+    "title": "El presupuesto",
+    "highlight": "te ubica.",
+    "sub": "No te encierra.",
+    "caption": "💡 Un tope no es un castigo. Es saber en qué calle vas, antes de perderte a mitad de mes.\n\n#Yala #Presupuesto"
+  },
+  {
+    "id": "r-domingo",
+    "kind": "reminder",
+    "tag": "Recordatorio",
+    "emoji": "🗓️",
+    "accent": "pink",
+    "title": "Cierra la semana",
+    "highlight": "en domingo.",
+    "sub": "Café y números, nada más.",
+    "caption": "🗓️ Domingo corto: mira qué se movió. No es examen. Es no llegar al lunes a ciegas.\n\n#Yala #Hábitos"
+  },
+  {
+    "id": "f-foto",
+    "kind": "feature",
+    "tag": "Funcionalidad",
+    "emoji": "📸",
+    "accent": "pink",
+    "screenshot": "captura-imagen",
+    "shot": "full",
+    "title": "El recibo",
+    "highlight": "se fotografía.",
+    "sub": "Yala saca el monto.",
+    "caption": "📸 No copies el ticket. Le tomas foto y Yala lee el número. Tú sigues caminando.\n\n#Yala #Recibos"
+  },
+  {
+    "id": "disponible-mes",
+    "kind": "dato",
+    "tag": "Dato",
+    "emoji": "📊",
+    "accent": "indigo",
+    "title": "El saldo gordo",
+    "highlight": "no es tu mes.",
+    "sub": "Disponible es otra cifra.",
+    "caption": "Puedes tener mucho guardado y poco para este mes. El panel muestra las dos, para no gastar el colchón.\n\n#Yala #FinanzasClaras"
+  },
+  {
+    "id": "dia-sin-gastar",
+    "kind": "reto",
+    "tag": "Reto",
+    "emoji": "🎯",
+    "accent": "pink",
+    "title": "Un día",
+    "highlight": "sin abrir la billetera.",
+    "sub": "A ver qué extrañas.",
+    "caption": "🎯 Un día sin gastar no es penitencia. Es ver qué compras eran impulso y cuáles no.\n\n#Yala #Reto"
+  },
+  {
+    "id": "meta-numero",
+    "kind": "tip",
+    "tag": "Tip Yala",
+    "emoji": "💡",
+    "accent": "indigo",
+    "title": "«Ahorrar»",
+    "highlight": "no alcanza.",
+    "sub": "Ponle soles y mes.",
+    "caption": "💡 «Quiero ahorrar» se evapora. «S/ 1.500 para octubre» se puede mirar cada semana.\n\n#Yala #Ahorro"
+  },
+  {
+    "id": "f-score",
+    "kind": "feature",
+    "tag": "Funcionalidad",
+    "emoji": "📊",
+    "accent": "violet",
+    "screenshot": "stats-resumen",
+    "shot": "full",
+    "title": "Un número",
+    "highlight": "para tu mes.",
+    "sub": "Cómo vas, sin novela.",
+    "caption": "📊 Yala junta el mes en un solo score. No para asustarte: para que sepas si estás mejor o peor que ayer.\n\n#Yala #SaludFinanciera"
+  },
+  {
+    "id": "saber-en-que",
+    "kind": "frase",
+    "tag": "Frase",
+    "emoji": "✨",
+    "accent": "cyan",
+    "title": "El control",
+    "highlight": "no es privarte.",
+    "sub": "Es saber a dónde se fue.",
+    "caption": "✨ Nadie te pide que dejes de vivir. Pedirte que sepas en qué se fue, eso sí. Ahí decides.\n\n#Yala #FinanzasClaras"
+  },
+  {
+    "id": "r-finmes",
+    "kind": "reminder",
+    "tag": "Recordatorio",
+    "emoji": "📅",
+    "accent": "indigo",
+    "title": "El mes se acaba.",
+    "highlight": "Míralo de frente.",
+    "sub": "Qué quedó, qué se fue.",
+    "caption": "📅 Antes de que arranque el otro, abre Yala y mira el que se va. Ajustar después de ver, no de imaginar.\n\n#Yala #FinanzasClaras"
+  },
+  {
+    "id": "a-donde-fue",
+    "kind": "dato",
+    "tag": "Dato",
+    "emoji": "📊",
+    "accent": "pink",
+    "title": "El dinero",
+    "highlight": "deja rastro.",
+    "sub": "En Yala se ve el camino.",
+    "caption": "📊 «¿En qué se me fue?» deja de ser misterio cuando cada gasto tiene nombre.\n\n#Yala #FinanzasClaras"
+  },
+  {
+    "id": "f-flujo",
+    "kind": "feature",
+    "tag": "Funcionalidad",
+    "emoji": "🔮",
+    "accent": "cyan",
+    "screenshot": "flujo-caja",
+    "shot": "full",
+    "title": "El mes que viene",
+    "highlight": "ya se asoma.",
+    "sub": "Ingresos y pagos, adelante.",
+    "caption": "🔮 Yala arma el saldo de los meses que siguen con lo que ya conoces: lo que entra y lo que sale.\n\n#Yala #FlujoDeCaja"
+  },
+  {
+    "id": "efectivo",
+    "kind": "tip",
+    "tag": "Tip Yala",
+    "emoji": "💵",
+    "accent": "indigo",
+    "title": "El efectivo",
+    "highlight": "se esfuma primero.",
+    "sub": "Anótalo en la calle.",
+    "caption": "💵 El billete no deja notificación. Si no lo escribes al salir de la tienda, el mes miente.\n\n#Yala #Efectivo"
+  },
+  {
+    "id": "7-dias",
+    "kind": "reto",
+    "tag": "Reto",
+    "emoji": "🔥",
+    "accent": "violet",
+    "title": "Una semana",
+    "highlight": "sin saltarte el registro.",
+    "sub": "Siete días. Después se pega.",
+    "caption": "🔥 No busques el mes perfecto. Busca siete días seguidos anotando. El resto se acomoda.\n\n#Yala #Hábitos"
+  },
+  {
+    "id": "tranquilidad",
+    "kind": "frase",
+    "tag": "Frase",
+    "emoji": "✨",
+    "accent": "cyan",
+    "title": "Dormir",
+    "highlight": "sabiendo el número.",
+    "sub": "Eso ya es un alivio.",
+    "caption": "✨ No hace falta ser rico para estar más calmado. Hace falta no adivinar cuánto te queda.\n\n#Yala #FinanzasClaras"
+  },
+  {
+    "id": "f-tendencias",
+    "kind": "feature",
+    "tag": "Funcionalidad",
+    "emoji": "📈",
+    "accent": "cyan",
+    "screenshot": "stats-tendencias",
+    "shot": "full",
+    "title": "Este mes",
+    "highlight": "contra los otros.",
+    "sub": "La curva no miente.",
+    "caption": "📈 Un mes solo te miente. Varios juntos te dicen si estás subiendo o aflojando. Yala los pone en fila.\n\n#Yala #Tendencias"
+  },
+  {
+    "id": "suscripciones",
+    "kind": "dato",
+    "tag": "Dato",
+    "emoji": "📊",
+    "accent": "pink",
+    "title": "Hay un cobro",
+    "highlight": "que ya no usas.",
+    "sub": "Casi siempre hay uno.",
+    "caption": "📊 El streaming que nadie abre. La app del gym de enero. Míralos juntos y decide cuáles se quedan.\n\n#Yala #Ahorro"
+  },
+  {
+    "id": "categorias",
+    "kind": "tip",
+    "tag": "Tip Yala",
+    "emoji": "💡",
+    "accent": "violet",
+    "title": "Misma categoría,",
+    "highlight": "distinta historia.",
+    "sub": "Ahí se ve el patrón.",
+    "caption": "💡 Comida no es un solo gasto. Es mercado, delivery y el café de la esquina. Sepáralos y cambia la foto.\n\n#Yala #FinanzasClaras"
+  },
+  {
+    "id": "r-nuevomes",
+    "kind": "reminder",
+    "tag": "Recordatorio",
+    "emoji": "🌅",
+    "accent": "violet",
+    "title": "Mes nuevo.",
+    "highlight": "Primero reparte.",
+    "sub": "Después gasta.",
+    "caption": "🌅 El sueldo entra y todo parece posible. Parte el mes antes de que el mes te parta a ti.\n\n#Yala #Presupuesto"
+  },
+  {
+    "id": "f-presupuestos",
+    "kind": "feature",
+    "tag": "Funcionalidad",
+    "emoji": "🎯",
+    "accent": "indigo",
+    "screenshot": "planificacion-presupuestos",
+    "shot": "tilted",
+    "title": "El tope",
+    "highlight": "habla antes.",
+    "sub": "No cuando ya te pasaste.",
+    "caption": "Le pones un techo a una categoría. Yala te avisa cuando te acercas. Sin discurso.\n\n#Yala #Presupuesto"
+  },
+  {
+    "id": "sin-culpa",
+    "kind": "frase",
+    "tag": "Frase",
+    "emoji": "💪",
+    "accent": "pink",
+    "title": "Te pasaste.",
+    "highlight": "Ya está.",
+    "sub": "Mañana se ajusta.",
+    "caption": "💪 Un mes largo no te define. En Yala se ve el número, se mueve el tope, se sigue. Nadie te apunta con el dedo.\n\n#Yala"
+  },
+  {
+    "id": "delivery",
+    "kind": "dato",
+    "tag": "Dato",
+    "emoji": "🛵",
+    "accent": "violet",
+    "title": "El delivery",
+    "highlight": "se disfraza de poco.",
+    "sub": "Tres pedidos ya son un ítem.",
+    "caption": "🛵 Un pedido no pesa. Tres por semana sí. Yala los junta para que el gusto tenga precio, no sermón.\n\n#Yala #GastosHormiga"
+  },
+  {
+    "id": "sueldo",
+    "kind": "tip",
+    "tag": "Tip Yala",
+    "emoji": "💡",
+    "accent": "indigo",
+    "title": "El sueldo llegó.",
+    "highlight": "Antes de gastarlo.",
+    "sub": "Dale destino a cada parte.",
+    "caption": "💡 El día de pago es corto. Parte: lo que se guarda, lo fijo, lo que sí te puedes dar. Después sales.\n\n#Yala #Presupuesto"
+  }
 ]
