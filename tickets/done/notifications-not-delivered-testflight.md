@@ -1,6 +1,6 @@
 ---
 id: notifications-not-delivered-testflight
-status: in-progress
+status: done
 priority: high
 area: notifications
 created: 2026-08-27
@@ -244,3 +244,48 @@ entonces —y solo entonces— el fix mínimo con sus tests.
 - El predicado gemelo del widget y por qué se copió del de notificaciones:
   `.claude/rules/swiftdata-cloudkit.md` y `Yala/App/Logic/Helpers/WidgetSessionSeal.swift:48-53`.
 - Sesión de esta investigación: `docs/sessions/2026-08-27-notifications-not-delivered.md`.
+
+## Cierre del owner 2026-08-27 (Jurgen, Lima) — no es bug de entrega
+
+**Lo que encontró el owner en su device.** Tras **muchas reinstalaciones** de la app, las notificaciones
+de Yala estaban en **OFF a nivel de iOS**, y **la app no volvió a pedir permiso**. Los toggles in-app y
+el Focus —los dos hechos con los que se abrió este ticket— eran un **red herring**: no gobiernan la
+entrega mientras el permiso del sistema no esté concedido. Veredicto del owner: **aparentemente no hay
+bug**.
+
+**Lo que dice la revisión de código.** No se encontró ningún fallo de agendado ni de entrega que apague
+TODAS las entregas con el permiso de iOS en ON. Es la misma conclusión de «Causa: unknown» de arriba,
+ahora con la premisa del reporte caída.
+
+⇒ **Cerrado como no-es-bug-de-entrega.** No pasó por `qa` y **no hay PASS**: en este ticket no hay
+cambio de código, no hay subida a TestFlight y los AC de arriba siguen **sin verificar** — no hay fix
+que verificar. Lo que se cierra es la premisa del reporte, no un arreglo.
+
+### Lo medido sigue en pie, y este cierre no lo cambia
+
+- Solo `endOfDay`, `lunchTime` y `custom` se agendan de verdad en iOS. El resto depende de que la app
+  corra (bootstrap / foreground / `BGAppRefreshTask`), con la única excepción del canal agendado
+  `spDailySummary_*`. Coordenadas completas en «Lo medido».
+- Y esos tres **nacen en OFF** (`NotificationItem.swift:411`, `:420`); el único `isActive: true` de
+  fábrica es `scheduledPayments`, que es dinámico.
+- **H1 (`isPersonalWipeArmed` pegado en `true`) sigue siendo hipótesis, NO causa confirmada.** Este
+  cierre no la confirma ni la refuta: no se drenó ninguna de sus dos señales (widget congelado, línea
+  `wipe ABORTED` en el log del device). Queda escrita arriba por si vuelve a hacer falta.
+
+### El hueco de producto que queda — aquí NO se toca
+
+Sigue vivo lo ya medido en «El permiso NUNCA se pide en el onboarding», y encaja con el «la app no
+volvió a pedir permiso» del owner:
+
+1. `OnboardingView.swift:1937-1967` siembra las filas de notificación y **no llama a
+   `requestPermission`**.
+2. El primer contextual **quema su flag antes de decidir si se muestra**
+   (`NewTransactionViewModel.swift:954` va antes de `:955`) ⇒ puede quedar «ya visto» sin haber pedido
+   nada.
+
+**No se implementa en este cierre** y **no se abre ticket nuevo** para ello. Medido hoy en este árbol:
+ningún ticket de `tickets/` cubre este hueco — buscar `requestPermission`, `notDetermined` y
+`NotificationPrimerSheet` en `tickets/` solo devuelve este ticket y
+`tickets/qa/apppreferences-rewritten-on-launch.md`, que va de **publicar a iCloud al conceder** el
+permiso, no de pedirlo; `tickets/backlog/smart-ai-notifications.md` es otra cosa (feature de IA). Si
+algún día se decide trabajarlo, necesita ticket propio: este cierre no lo inventa.

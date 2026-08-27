@@ -8,10 +8,14 @@ Owner (Jurgen, urgente): las notificaciones de Yala no llegan; toggles in-app en
 permite Yala; empezó a fallar en una versión **desconocida**; el binario en campo es **TF 2.1 build
 12**. Implementar **solo** si se confirma la causa en el código.
 
-Ticket: `tickets/in-progress/notifications-not-delivered-testflight.md` (slug asignado por Frank:
-`notifications-not-delivered-testflight`).
+Ticket: `tickets/done/notifications-not-delivered-testflight.md` (slug asignado por Frank:
+`notifications-not-delivered-testflight`; abierto en `in-progress/` y cerrado el mismo día — ver
+«Cierre del owner» al final).
 
 ## Resultado
+
+> Leer con el cierre del final: el owner comprobó después que **el permiso de iOS estaba en OFF**, así
+> que la premisa del reporte («no llegan con todo concedido») no se sostiene.
 
 **Causa: unknown.** No se confirmó en el código ninguna causa que tire TODAS o casi todas las
 notificaciones con los toggles en ON sin depender de una precondición que no se puede verificar leyendo
@@ -79,11 +83,38 @@ Cuatro señales que discriminan entre las hipótesis **sin escribir código**:
 Si alguna confirma la causa, el ticket recibe su sección `Causa (código)` con `fichero:línea` y
 entonces —y solo entonces— el fix mínimo con tests (Swift Testing).
 
-## Estado al cerrar la sesión
+## Estado al cerrar la investigación
 
-- Ticket creado en `tickets/in-progress/`.
+- Ticket creado en `tickets/in-progress/` (movido a `tickets/done/` en el cierre de más abajo).
 - `docs/TICKETS.md`: fila añadida, índice 61 → 62 y línea de counts corregida a los valores medidos
   (decía 60 con 61 ficheros en disco; índice y disco sí coincidían).
 - Esta nota.
 - **Sin cambios bajo `Yala/`** ⇒ no aplica actualizar `qa/coverage-index.json`.
 - Sin fix, sin tests nuevos, sin QA, sin upload.
+
+## Cierre del owner (2026-08-27, Lima) — no es bug de entrega
+
+El owner revisó su device después de la investigación: tras **muchas reinstalaciones** de la app, las
+notificaciones de Yala estaban en **OFF a nivel de iOS** y **la app no volvió a pedir permiso**. Los
+toggles in-app y el Focus —los dos hechos con los que se abrió el encargo— eran un **red herring**: no
+gobiernan la entrega mientras el permiso del sistema no esté concedido. Veredicto del owner:
+**aparentemente no hay bug**. Del lado de ingeniería, la revisión de código no encontró ningún fallo de
+agendado ni de entrega que apague TODAS las entregas con el permiso de iOS en ON.
+
+⇒ **Cerrado como no-es-bug-de-entrega**, no por QA. **No hay PASS** y no hay nada que verificar: no se
+escribió código, no se compiló, no se subió nada.
+
+Lo medido arriba **no cambia**: solo `endOfDay`, `lunchTime` y `custom` se agendan de verdad, y los tres
+**nacen en OFF**. Y **H1 (`isPersonalWipeArmed` pegado en `true`) sigue siendo hipótesis, no causa
+confirmada** — este cierre no drenó sus señales (widget congelado, línea `wipe ABORTED` en el log), así
+que ni la confirma ni la refuta.
+
+Queda vivo el **hueco de producto** ya medido: el onboarding nunca pide el permiso
+(`OnboardingView.swift:1937-1967`) y el primer contextual quema su flag antes de decidir si se muestra
+(`NewTransactionViewModel.swift:954` antes de `:955`) — coherente con «la app no volvió a pedir
+permiso». **Aquí no se implementa y no se abre ticket nuevo**: medido en este árbol, ningún ticket de
+`tickets/` lo cubre hoy, y este cierre no inventa uno.
+
+Qué cambió en disco con este cierre: el ticket a `tickets/done/` con `status: done` y su sección de
+cierre, la fila y los counts de `docs/TICKETS.md` (in-progress 11 → 10, done 2 → 3, total 62) y esta
+nota. Nada bajo `Yala/` ⇒ `qa/coverage-index.json` sigue sin aplicar.

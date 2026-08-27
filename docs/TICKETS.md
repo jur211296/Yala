@@ -93,9 +93,14 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-consent-door-spec | qa | tickets/qa/groups-consent-door-spec.md |
 | rescue-discarded-groups-pull | qa | tickets/qa/rescue-discarded-groups-pull.md |
 | distribution-balance-kpi-skips-fx | backlog | tickets/backlog/distribution-balance-kpi-skips-fx.md |
-| notifications-not-delivered-testflight | in-progress | tickets/in-progress/notifications-not-delivered-testflight.md |
+| notifications-not-delivered-testflight | done | tickets/done/notifications-not-delivered-testflight.md |
 
-Counts by folder: backlog 27 · in-progress 11 · qa 19 · blocked 0 · done 2 · discarded 3 = 62.
+Counts by folder: backlog 27 · in-progress 10 · qa 19 · blocked 0 · done 3 · discarded 3 = 62.
+
+Jurgen 2026-08-27 (cierre): `notifications-not-delivered-testflight` pasa a `done/` como **no es bug de
+entrega** — en el device el permiso de notificaciones de iOS estaba en OFF y la app no volvió a pedirlo.
+**No es PASS**: no hubo cambio de código ni subida. Counts medidos tras el movimiento: in-progress
+11 → 10, done 2 → 3; el total sigue en 62 porque es un movimiento, no un ticket nuevo.
 
 Jurgen 2026-08-27: la línea de counts anterior decía `backlog 26 · in-progress 11 · qa 18` (= 60) con
 61 filas en el índice y 61 ficheros en disco. **Medido**: índice y disco coincidían exactamente
