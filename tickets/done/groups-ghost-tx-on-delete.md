@@ -1,10 +1,10 @@
 ---
 id: groups-ghost-tx-on-delete
-status: qa
+status: done
 priority: high
 area: "groups, sync, backend, bridge, integridad-datos"
 created: 2026-08-02
-updated: 2026-08-26
+updated: 2026-08-28
 source: YalaWiki/Bugs/qa_groups-tx-fantasma-al-borrar-gasto-de-grupo.md
 ---
 
@@ -175,3 +175,32 @@ El borrado remoto del GRUPO entero deja además **filas hijas huérfanas** en el
 7. **Reinstalación (2026-08-04).** Reinstalar la app en un teléfono con grupos y abrir una transacción de un gasto de grupo VIVO **antes** de que el grupo termine de bajar: Borrar y Duplicar tienen que seguir **desactivados**. Cuando el grupo baje, el comportamiento normal.
 
 migrated from YalaWiki Bugs/qa_groups-tx-fantasma-al-borrar-gasto-de-grupo.md @ 1934e8ad
+
+## Cierre del owner 2026-08-28 (Jurgen, Lima) — PASS en device del borrado de gasto
+
+**La corrida.** Dos teléfonos, el mismo grupo, **TestFlight 2.1 build 12** (el binario que hay en campo;
+no se subió nada nuevo para esto).
+
+1. El teléfono **A** crea un gasto de grupo (monto inusual, al 50/50) y se espera a que **B** lo vea en el
+   grupo **y** en su Panel personal.
+2. **A** borra ese gasto.
+3. En **B**, sin reabrir A: el gasto **se va del grupo** y la transacción personal puenteada
+   **desaparece de su Panel** — no queda la huérfana atascada.
+
+**Veredicto del owner: PASS.** Con eso el ticket pasa a `done/`: era el escenario que ningún test podía
+cerrar (el canal backend en producción no es ejercitable desde un test) y por la regla del repo no lo
+declara bueno quien escribió el fix.
+
+### Lo que este PASS NO cubre
+
+- **Liquidaciones.** Estaban en el ticket original como la MISMA clase de bug (el reporte del 2026-08-02
+  confirmó que pasaba igual con ellas, y bidireccional). **Hoy no se re-probaron.** Este cierre no dice
+  nada de su estado.
+- **Nada más allá del borrado de gasto.** De la nota de sync de arriba, **cola C (d)(e)** no recibe PASS
+  aquí: lo único corrido hoy es el escenario de este apartado. Igual con «Lo que NO está verificado» de
+  la sección de implementación: solo queda cubierta su primera parte (hacia delante, gasto). La
+  reparación de fantasmas ya existentes y la transacción con puntero muerto **no** están en el reporte
+  de hoy. El guion pedía además presupuestos y el total del mes en el paso 1; el reporte del owner llega
+  hasta el Panel.
+- **Sin subida y sin flip.** No hubo TestFlight nuevo hoy. **A7/M5 sigue en HOLD**, igual que App Store y
+  tag de release.

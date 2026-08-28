@@ -45,7 +45,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-approval-banner-stays | qa | tickets/qa/groups-approval-banner-stays.md |
 | groups-join-intent-reconciler | qa | tickets/qa/groups-join-intent-reconciler.md |
 | groups-tab-missing-panel-perf | backlog | tickets/backlog/groups-tab-missing-panel-perf.md |
-| groups-ghost-tx-on-delete | qa | tickets/qa/groups-ghost-tx-on-delete.md |
+| groups-ghost-tx-on-delete | done | tickets/done/groups-ghost-tx-on-delete.md |
 | invite-backend-stale-config | qa | tickets/qa/invite-backend-stale-config.md |
 | scheduled-payments-notif-dedup | qa | tickets/qa/scheduled-payments-notif-dedup.md |
 | storekit-appgroup-siri-pro-gate | qa | tickets/qa/storekit-appgroup-siri-pro-gate.md |
@@ -96,7 +96,17 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | notifications-not-delivered-testflight | done | tickets/done/notifications-not-delivered-testflight.md |
 | fx-partial-rate-rows-silent-1to1 | backlog | tickets/backlog/fx-partial-rate-rows-silent-1to1.md |
 
-Counts by folder: backlog 28 · in-progress 10 · qa 19 · blocked 0 · done 3 · discarded 3 = 63.
+Counts by folder: backlog 28 · in-progress 10 · qa 18 · blocked 0 · done 4 · discarded 3 = 63.
+
+Jurgen 2026-08-28 (cierre): `groups-ghost-tx-on-delete` pasa a `done/` con **PASS en device del owner**
+(Lima). Dos teléfonos, mismo grupo, **TF 2.1 build 12**: A crea un gasto al 50/50, B lo ve en el grupo y
+en su Panel, A lo borra y en B —sin reabrir A— el gasto se va del grupo **y** la transacción puenteada
+desaparece del Panel, sin huérfana atascada. **Lo que el PASS no cubre, escrito en el ticket:** las
+**liquidaciones** (misma clase de bug en el reporte original) **no se re-probaron hoy**, no hay PASS de
+cola C (d)(e) más allá de este escenario, no hubo subida nueva a TestFlight y A7/M5 sigue en HOLD.
+Counts medidos tras el movimiento: qa 19 → 18, done 3 → 4; el total sigue en 63 porque es un
+movimiento, no un ticket nuevo. `groups-background-emitter-no-upload` se deja **in-progress**: su cierre
+vive en PR 41, todavía sin mergear a `2.1`, y este cierre no lo toca.
 
 Jurgen 2026-08-28 (alta): `fx-partial-rate-rows-silent-1to1` entra en `backlog/` con prioridad
 **high** — familia FX del audit de Frank sobre `2.1` @ `68a7221c` (filas de tasas incompletas +
@@ -135,7 +145,7 @@ Jurgen 2026-08-26: `groups-cloud-mode-hardening-v1`, `groups-cloud-identity-loss
 | Bugs/qa_groups-aprobacion-no-retira-banner.md | tickets/qa/groups-approval-banner-stays.md |
 | Bugs/qa_groups-join-intent-reconciler.md | tickets/qa/groups-join-intent-reconciler.md |
 | Bugs/qa_groups-tab-no-perf-patterns.md | tickets/backlog/groups-tab-missing-panel-perf.md |
-| Bugs/qa_groups-tx-fantasma-al-borrar-gasto-de-grupo.md | tickets/qa/groups-ghost-tx-on-delete.md |
+| Bugs/qa_groups-tx-fantasma-al-borrar-gasto-de-grupo.md | tickets/done/groups-ghost-tx-on-delete.md |
 | Bugs/qa_invite-backend-mudo-config-stale.md | tickets/qa/invite-backend-stale-config.md |
 | Bugs/qa_pagos-planificados-notifs-incoherentes-y-dedup-sin-entrega.md | tickets/qa/scheduled-payments-notif-dedup.md |
 | Bugs/qa_storekit-appgroup-siri-pro-gate.md | tickets/qa/storekit-appgroup-siri-pro-gate.md |
