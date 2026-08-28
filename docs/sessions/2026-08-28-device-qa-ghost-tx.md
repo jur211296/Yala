@@ -4,7 +4,11 @@
   **TF 2.1 build 12**: A crea un gasto de grupo (monto inusual, al 50/50) y se espera a que B lo vea en el
   grupo y en su Panel personal; A lo borra; en B, sin reabrir A, el gasto se va del grupo **y** la
   transacción puenteada desaparece del Panel — sin huérfana atascada.
-- **Liquidaciones: no re-probadas hoy.** Iban en el ticket original como la misma clase de bug; este PASS
-  no dice nada de ellas.
-- **Nada más entra en el PASS**: no hay cola C (d)(e) más allá de este escenario de borrado de gasto.
+- **Liquidaciones: solo la mitad.** Comprobación posterior del mismo día, mismo grupo y mismo binario: A
+  registra una liquidación (B le pagó a A, monto inusual) y B, **sin force-quit**, la ve con los balances
+  cuadrando con A. Owner: **PASS**. Eso levanta el lado hacia delante; **borrar una liquidación NO se
+  corrió**, y es la otra mitad del bug original (el fantasma salía al borrar) ⇒ sin cobertura completa de
+  liquidaciones.
+- **Nada más entra en el PASS**: no hay cola C (d)(e) más allá de esos dos escenarios (borrado de gasto y
+  liquidación hacia delante).
 - Sin subida a TestFlight hoy. HOLD sigue: A7/M5, App Store, tag.

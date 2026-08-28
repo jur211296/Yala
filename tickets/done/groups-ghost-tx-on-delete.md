@@ -191,16 +191,29 @@ no se subió nada nuevo para esto).
 cerrar (el canal backend en producción no es ejercitable desde un test) y por la regla del repo no lo
 declara bueno quien escribió el fix.
 
+### Comprobación posterior del mismo día — la liquidación, solo hacia delante
+
+Después del PASS de arriba, en la misma fecha y con el mismo grupo y el mismo binario (TF 2.1 build 12):
+
+1. El teléfono **A** registra una **liquidación** (B le pagó a A, monto inusual).
+2. En **B**, sin force-quit: **ve la liquidación** y los **balances cuadran** con lo que muestra A.
+
+**Veredicto del owner: PASS.** Lo que levanta es el lado **hacia delante** de las liquidaciones —
+registrarla y que sincronice con los balances cuadrando. **No se corrió BORRAR una liquidación**, que es
+la otra mitad y justo la que emparenta con este ticket: el fantasma aparecía **al borrar**. ⇒ **no hay
+cobertura completa de liquidaciones.**
+
 ### Lo que este PASS NO cubre
 
-- **Liquidaciones.** Estaban en el ticket original como la MISMA clase de bug (el reporte del 2026-08-02
-  confirmó que pasaba igual con ellas, y bidireccional). **Hoy no se re-probaron.** Este cierre no dice
-  nada de su estado.
-- **Nada más allá del borrado de gasto.** De la nota de sync de arriba, **cola C (d)(e)** no recibe PASS
-  aquí: lo único corrido hoy es el escenario de este apartado. Igual con «Lo que NO está verificado» de
-  la sección de implementación: solo queda cubierta su primera parte (hacia delante, gasto). La
-  reparación de fantasmas ya existentes y la transacción con puntero muerto **no** están en el reporte
-  de hoy. El guion pedía además presupuestos y el total del mes en el paso 1; el reporte del owner llega
-  hasta el Panel.
+- **El borrado de una liquidación.** Estaba en el ticket original como la MISMA clase de bug (el reporte
+  del 2026-08-02 confirmó que pasaba igual con ellas, y en los dos sentidos). La comprobación de arriba
+  cubre el lado hacia delante y **nada más**: del paso 2 del guion queda fuera su borrado y la
+  repetición borrando desde B.
+- **Nada más allá de esos dos escenarios.** De la nota de sync de arriba, **cola C (d)(e)** no recibe
+  PASS aquí: lo único corrido hoy es el borrado de gasto y la liquidación hacia delante. Igual con «Lo
+  que NO está verificado» de la sección de implementación: solo queda cubierta su primera parte (hacia
+  delante, gasto). La reparación de fantasmas ya existentes y la transacción con puntero muerto **no**
+  están en el reporte de hoy. El guion pedía además presupuestos y el total del mes en el paso 1; el
+  reporte del owner llega hasta el Panel.
 - **Sin subida y sin flip.** No hubo TestFlight nuevo hoy. **A7/M5 sigue en HOLD**, igual que App Store y
   tag de release.
