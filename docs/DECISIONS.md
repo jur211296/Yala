@@ -17,6 +17,34 @@ Cada decisión sigue esta estructura:
 
 ## Decisiones Activas
 
+### [2026-08-28] CI: la suite de simulador solo corre si el diff puede afectarla
+
+**Contexto:** `.github/workflows/qa.yml` disparaba sus dos jobs en cada `push` y cada `pull_request`, sin filtro de rutas. Medido el 2026-08-28: los cuatro últimos PR a `2.1` (#38, #39, #40, #41) cambiaron **solo** marketing/docs/tickets, y aun así cada uno encoló el job `tests` en `macos-26`. Como una rama de PR recibe los dos eventos, el mismo commit paga la suite dos veces: en el PR #41 (3 ficheros `.md`) los runs 33183683112 (`push`, 1 h 42 min) y 33183687000 (`pull_request`, 1 h 45 min). El gasto no compra nada: los tres pasos de test son `continue-on-error: true` desde 2026-06-04, y el gate duro es `coverage-index` (ubuntu, segundos). Verificado también que `2.1` no tiene branch protection (`protected: false`, `required_status_checks.contexts: []`, cero rulesets), así que saltarse `tests` no bloquea ningún merge.
+
+**Decisión:** Añadir un job `changes` (ubuntu, sin checkout) que clasifica el diff y expone `run_tests`; `tests` pasa a `needs: changes` con `if: !cancelled() && needs.changes.outputs.run_tests != 'false'`. `coverage-index` no cambia: sigue corriendo en todo push y todo PR, incluidos los de solo docs. Los pasos del job `tests` tampoco cambian — solo se decide *si* arranca.
+
+**Razones:**
+- **Deny-by-default, no triggerlist.** `run_tests=false` solo sale si TODOS los ficheros del diff caen en un allowlist inerte (`docs/`, `tickets/`, `marketing/`, `Web/`, `.claude/`, y `README.md` / `CLAUDE.md` / `LICENSE*` en raíz). Con una lista de rutas que *disparan*, un fichero nuevo en la raíz (un `Package.swift`, un `Makefile`) se saltaría la suite en silencio; con allowlist, se cae del lado de correrla.
+- **El allowlist se midió, no se supuso:** ninguna de esas rutas aparece en `Yala.xcodeproj/project.pbxproj` ni en las fuentes de los targets. La única mención de `Web/` en Swift es un comentario en `InviteLinkService.swift`.
+- **Fail closed en cada rama del camino:** diff vacío, lista truncada por el tope de la API (300 en `compare`, 3000 en `pulls/N/files`), `push` sin commit base (rama nueva o historial reescrito), evento distinto de `push`/`pull_request`, o fallo de red ⇒ la suite corre. Si el propio job `changes` peta, su output llega vacío y `'' != 'false'` también la corre.
+- **Job separado, no un paso dentro de `tests`:** un `if` de paso ya habría encolado el runner de `macos-26`, que es justo lo que se quería evitar.
+
+**Alternativas descartadas:**
+- **`paths-ignore` en el `on:`**: es a nivel de workflow, así que también apagaría `coverage-index` — el gate duro — en los PR de docs.
+- **`dorny/paths-filter`**: dependencia externa nueva para ~40 líneas de shell, y su comportamiento en los bordes (merge commits, force-push, rama nueva) habría que verificarlo igual.
+- **Colgar `changes` de `coverage-index`** para ahorrar un job: acopla la suite al gate y obliga a `always()` para no saltarla cuando el gate falla.
+- **Un check dummy "siempre verde"** que sustituya a `tests`: innecesario, no hay required checks que satisfacer.
+
+**Consecuencias:**
+- Un PR de solo docs/tickets ya no encola `macos-26`; en GitHub aparece `tests` como *skipped*. Eso es lo esperado, no un fallo.
+- Cualquier cambio en `Yala/`, `YalaTests/`, `YalaUITests/`, `YalaWidgets/`, `YalaShare/`, `Yala.xcodeproj/`, `qa/`, `.github/`, `Secrets.xcconfig.template` o cualquier ruta desconocida sigue corriendo la suite entera.
+- Al meter una carpeta nueva en el allowlist hay que repetir la comprobación contra `project.pbxproj`, no heredarla de este texto.
+- Sigue habiendo dos runs por commit en rama de PR (`push` + `pull_request`). Esta decisión no lo toca; con el filtro, en los PR de docs los dos son baratos.
+
+**Estado:** Activa
+
+---
+
 ### [2026-08-26] Balance en Distribución: stock, Panel no se toca
 
 **Contexto:** En device-QA (Jurgen, 2026-08-26, TF 2.1 build 12, cuenta multi-moneda) el KPI de Balance no coincide entre Panel y Distribución. La causa en código: Panel usa stock vivo (`LiveBalanceCalculator` × TC actual); Distribución usa flujo del período (`TopSpendingCategoriesCalculator`) cuando `natures` está vacío. Ticket: `distribution-balance-kpi-skips-fx`. El fix previo de Comparativa (`trends-comparison-kpi-vs-curve`, MTD-vs-MTD) se verificó OK en Tendencias (Este mes, 3 métricas); el widget Comparativa del Panel sigue pendiente.
