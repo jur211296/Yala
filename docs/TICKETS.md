@@ -45,7 +45,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-approval-banner-stays | qa | tickets/qa/groups-approval-banner-stays.md |
 | groups-join-intent-reconciler | qa | tickets/qa/groups-join-intent-reconciler.md |
 | groups-tab-missing-panel-perf | backlog | tickets/backlog/groups-tab-missing-panel-perf.md |
-| groups-ghost-tx-on-delete | qa | tickets/qa/groups-ghost-tx-on-delete.md |
+| groups-ghost-tx-on-delete | done | tickets/done/groups-ghost-tx-on-delete.md |
 | invite-backend-stale-config | qa | tickets/qa/invite-backend-stale-config.md |
 | scheduled-payments-notif-dedup | qa | tickets/qa/scheduled-payments-notif-dedup.md |
 | storekit-appgroup-siri-pro-gate | qa | tickets/qa/storekit-appgroup-siri-pro-gate.md |
@@ -97,7 +97,22 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | fx-partial-rate-rows-silent-1to1 | backlog | tickets/backlog/fx-partial-rate-rows-silent-1to1.md |
 | groups-deleted-group-detail-stays-open | backlog | tickets/backlog/groups-deleted-group-detail-stays-open.md |
 
-Counts by folder: backlog 29 · in-progress 9 · qa 19 · blocked 0 · done 4 · discarded 3 = 64.
+Counts by folder: backlog 29 · in-progress 9 · qa 18 · blocked 0 · done 5 · discarded 3 = 64.
+
+Jurgen 2026-08-28 (cierre): `groups-ghost-tx-on-delete` pasa a `done/` con **PASS en device del owner**
+(Lima). Dos teléfonos, mismo grupo, **TF 2.1 build 12**: A crea un gasto al 50/50, B lo ve en el grupo y
+en su Panel, A lo borra y en B —sin reabrir A— el gasto se va del grupo **y** la transacción puenteada
+desaparece del Panel, sin huérfana atascada. Dos comprobaciones posteriores del mismo día completan la
+liquidación: A la registra y B la ve sin force-quit con los balances cuadrando, y después A la borra y en
+B desaparece sin dejar balances colgados (las dos PASS). ⇒ la clase de fantasma del ticket queda cubierta
+en device para las **dos** entidades del reporte original, gasto y liquidación. **Lo que estos PASS no
+cubren, escrito en el ticket:** los dos borrados salieron de **A**, así que el sentido contrario (borrar
+desde B, el bug era bidireccional) **no se corrió**; en la liquidación el reporte llega al grupo y a los
+balances, no al Panel de B; no hay PASS de cola C (d)(e) más allá de esos tres escenarios; no hubo subida
+nueva a TestFlight y A7/M5 sigue en HOLD.
+Counts medidos tras el movimiento: qa 19 → 18, done 4 → 5; el total sigue en 64 porque es un
+movimiento, no un ticket nuevo. `groups-background-emitter-no-upload` ya está `done/` (PR 41); este
+cierre no lo toca.
 
 Jurgen 2026-08-28 (alta): `groups-deleted-group-detail-stays-open` entra en `backlog/` con prioridad
 **high** — reporte de device del owner (TF 2.1 build 12, teléfono A, Lima): tras borrar el grupo el
@@ -160,7 +175,7 @@ Jurgen 2026-08-26: `groups-cloud-mode-hardening-v1`, `groups-cloud-identity-loss
 | Bugs/qa_groups-aprobacion-no-retira-banner.md | tickets/qa/groups-approval-banner-stays.md |
 | Bugs/qa_groups-join-intent-reconciler.md | tickets/qa/groups-join-intent-reconciler.md |
 | Bugs/qa_groups-tab-no-perf-patterns.md | tickets/backlog/groups-tab-missing-panel-perf.md |
-| Bugs/qa_groups-tx-fantasma-al-borrar-gasto-de-grupo.md | tickets/qa/groups-ghost-tx-on-delete.md |
+| Bugs/qa_groups-tx-fantasma-al-borrar-gasto-de-grupo.md | tickets/done/groups-ghost-tx-on-delete.md |
 | Bugs/qa_invite-backend-mudo-config-stale.md | tickets/qa/invite-backend-stale-config.md |
 | Bugs/qa_pagos-planificados-notifs-incoherentes-y-dedup-sin-entrega.md | tickets/qa/scheduled-payments-notif-dedup.md |
 | Bugs/qa_storekit-appgroup-siri-pro-gate.md | tickets/qa/storekit-appgroup-siri-pro-gate.md |
