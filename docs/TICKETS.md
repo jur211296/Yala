@@ -104,11 +104,13 @@ con prioridad **high** — device-QA del owner en TF 2.1 build 12, dos teléfono
 día: el gasto que A reparte mitad y mitad se ve en B como si B no hubiera participado, y solo se
 actualiza tras force-quit + reentrada en B. Es **un** ticket con dos tiempos (primera apertura
 equivocada / tras force-quit actualizado), **sin causa raíz declarada** y **sin** convertirlo en el
-bug de notificaciones (B no recibió aviso; el owner lo deja fuera a propósito). Mismo día se añade una
-**segunda observación de contraste** en el mismo ticket: un gasto posterior del mismo grupo, creado en
-A convirtiendo un borrador del Inbox, llegó bien a B **sin** matar la app (PASS del owner **de ese
-gasto**). El defecto queda como **condicional, no constante**, y el ticket **no** se cierra: qué
-distingue el caso que falla del que no sigue sin resolver. Sin implementación:
+bug de notificaciones (B no recibió aviso; el owner lo deja fuera a propósito). Mismo día se añaden
+**dos observaciones de contraste** al mismo ticket: un gasto posterior creado en A convirtiendo un
+borrador del Inbox, y una edición del importe de un gasto ya existente — las dos llegaron bien a B
+**sin** matar la app (PASS del owner **de ese gasto** y **de esa edición**, no del ticket). Una de tres
+observaciones falló: el defecto queda como **condicional, no constante** (no es una medida de
+frecuencia), y el ticket **no** se cierra: qué distingue el caso que falla de los que no sigue sin
+resolver. Sin implementación:
 cero Swift. **Medido** antes y después: el índice previo (63 filas) coincidía exactamente con disco en
 id, status y path en las 63; el único delta es este ticket nuevo. Counts tras el alta: backlog 28 →
 29, total 63 → 64. Sin tocar `qa/coverage-index.json` (no hay código nuevo bajo `Yala/`).
