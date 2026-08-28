@@ -62,7 +62,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | debounce-sync-imported-transactions | backlog | tickets/backlog/debounce-sync-imported-transactions.md |
 | yala-android | backlog | tickets/backlog/yala-android.md |
 | groups-in-group-search | backlog | tickets/backlog/groups-in-group-search.md |
-| groups-background-emitter-no-upload | in-progress | tickets/in-progress/groups-background-emitter-no-upload.md |
+| groups-background-emitter-no-upload | done | tickets/done/groups-background-emitter-no-upload.md |
 | groups-import-splitwise-tricount | backlog | tickets/backlog/groups-import-splitwise-tricount.md |
 | groups-guest-currency-from-region | backlog | tickets/backlog/groups-guest-currency-from-region.md |
 | groups-budget | backlog | tickets/backlog/groups-budget.md |
@@ -97,7 +97,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | fx-partial-rate-rows-silent-1to1 | backlog | tickets/backlog/fx-partial-rate-rows-silent-1to1.md |
 | groups-deleted-group-detail-stays-open | backlog | tickets/backlog/groups-deleted-group-detail-stays-open.md |
 
-Counts by folder: backlog 29 · in-progress 10 · qa 19 · blocked 0 · done 3 · discarded 3 = 64.
+Counts by folder: backlog 29 · in-progress 9 · qa 19 · blocked 0 · done 4 · discarded 3 = 64.
 
 Jurgen 2026-08-28 (alta): `groups-deleted-group-detail-stays-open` entra en `backlog/` con prioridad
 **high** — reporte de device del owner (TF 2.1 build 12, teléfono A, Lima): tras borrar el grupo el
@@ -107,10 +107,21 @@ distingue si lo que quedó delante era la sheet de Ajustes o el detalle en push,
 que decide dónde va el fix. Contraste con `groups-leave-rpc-error-10`: esa es otra corrida y otro
 teléfono (B), donde falló **salir** con «GroupsRPCError 10» y no había botón de borrar — ese ticket no
 se toca aquí, y **medido**: hoy no tiene fichero en este árbol (vive en una PR abierta a `2.1`, sin
-mergear). **Medido** antes y después: el índice previo (63 filas) coincidía exactamente con disco en id
-y status en las 63; el único delta es este ticket nuevo. Counts tras el alta: backlog 28 → 29, total
-63 → 64. Nota de alcance: hay varias PRs abiertas a `2.1` que mueven tickets de estado; estos counts
-miden **este** árbol (`2175e53e`) y no incorporan nada de ellas.
+mergear). **Medido** en el alta, sobre `2175e53e`: el índice previo (63 filas) coincidía exactamente
+con disco en id y status en las 63, y el único delta era este ticket nuevo (backlog 28 → 29, total
+63 → 64). **Re-medido** tras traer `2.1` @ `7ddf87fc` a esta rama —que ya incluye el cierre del emisor
+de abajo—: 64 filas ↔ 64 ficheros, sin huérfanos por ninguno de los dos lados, y los counts de arriba
+son los de este árbol ya fusionado. Nota de alcance: siguen abiertas otras PRs a `2.1` que mueven
+tickets de estado; nada de ellas está incorporado aquí, así que estos counts volverán a moverse a
+medida que entren.
+
+Jurgen 2026-08-28 (cierre): `groups-background-emitter-no-upload` pasa a `done/` por **QA device PASS**
+del owner — dos teléfonos, TF 2.1 build 12: A crea el gasto de grupo y se va al Home de iOS sin
+force-quit, B lo ve en ~30 s sin que A se reabra. El código ya estaba en `2.1` vía PR 19, así que **este
+cierre es QA, no un fix nuevo**, y hoy no hubo subida a TestFlight. Counts medidos tras el movimiento,
+ya con el alta de `fx-partial-rate-rows-silent-1to1` dentro: in-progress 10 → 9, done 3 → 4; el total
+sigue en 63 porque es un movimiento, no un ticket nuevo. (El 63 de esa línea es el de su propio árbol:
+en esta rama el total es 64 con el alta de arriba dentro.)
 
 Jurgen 2026-08-28 (alta): `fx-partial-rate-rows-silent-1to1` entra en `backlog/` con prioridad
 **high** — familia FX del audit de Frank sobre `2.1` @ `68a7221c` (filas de tasas incompletas +
@@ -166,7 +177,7 @@ Jurgen 2026-08-26: `groups-cloud-mode-hardening-v1`, `groups-cloud-identity-loss
 | Backlog/debounce-transactions-imported-from-sync-observer.md | tickets/backlog/debounce-sync-imported-transactions.md |
 | Backlog/future_yala-android.md | tickets/backlog/yala-android.md |
 | Backlog/groups-busqueda-interna.md | tickets/backlog/groups-in-group-search.md |
-| Backlog/groups-emisor-segundo-plano-no-sube.md | tickets/in-progress/groups-background-emitter-no-upload.md |
+| Backlog/groups-emisor-segundo-plano-no-sube.md | tickets/done/groups-background-emitter-no-upload.md |
 | Backlog/groups-import-splitwise-tricount.md | tickets/backlog/groups-import-splitwise-tricount.md |
 | Backlog/groups-invitado-moneda-region-red-muerta.md | tickets/backlog/groups-guest-currency-from-region.md |
 | Backlog/groups-presupuesto-de-grupo.md | tickets/backlog/groups-budget.md |
