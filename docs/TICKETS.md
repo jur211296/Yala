@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (63)
+## Index (64)
 
 | id | status | path |
 |----|--------|------|
@@ -95,8 +95,22 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | distribution-balance-kpi-skips-fx | backlog | tickets/backlog/distribution-balance-kpi-skips-fx.md |
 | notifications-not-delivered-testflight | done | tickets/done/notifications-not-delivered-testflight.md |
 | fx-partial-rate-rows-silent-1to1 | backlog | tickets/backlog/fx-partial-rate-rows-silent-1to1.md |
+| groups-deleted-group-detail-stays-open | backlog | tickets/backlog/groups-deleted-group-detail-stays-open.md |
 
-Counts by folder: backlog 28 · in-progress 10 · qa 19 · blocked 0 · done 3 · discarded 3 = 63.
+Counts by folder: backlog 29 · in-progress 10 · qa 19 · blocked 0 · done 3 · discarded 3 = 64.
+
+Jurgen 2026-08-28 (alta): `groups-deleted-group-detail-stays-open` entra en `backlog/` con prioridad
+**high** — reporte de device del owner (TF 2.1 build 12, teléfono A, Lima): tras borrar el grupo el
+detalle **se quedó abierto**, y el grupo solo desapareció de la lista después de tocar Atrás. En esta
+corrida el botón de borrar **sí** apareció. Sin implementación y **sin causa declarada**: el reporte no
+distingue si lo que quedó delante era la sheet de Ajustes o el detalle en push, y esa distinción es la
+que decide dónde va el fix. Contraste con `groups-leave-rpc-error-10`: esa es otra corrida y otro
+teléfono (B), donde falló **salir** con «GroupsRPCError 10» y no había botón de borrar — ese ticket no
+se toca aquí, y **medido**: hoy no tiene fichero en este árbol (vive en una PR abierta a `2.1`, sin
+mergear). **Medido** antes y después: el índice previo (63 filas) coincidía exactamente con disco en id
+y status en las 63; el único delta es este ticket nuevo. Counts tras el alta: backlog 28 → 29, total
+63 → 64. Nota de alcance: hay varias PRs abiertas a `2.1` que mueven tickets de estado; estos counts
+miden **este** árbol (`2175e53e`) y no incorporan nada de ellas.
 
 Jurgen 2026-08-28 (alta): `fx-partial-rate-rows-silent-1to1` entra en `backlog/` con prioridad
 **high** — familia FX del audit de Frank sobre `2.1` @ `68a7221c` (filas de tasas incompletas +
