@@ -2,7 +2,7 @@
 id: group-notif-credits-payer-not-editor
 status: qa
 created: 2026-07-22
-updated: 2026-08-26
+updated: 2026-08-28
 source: YalaWiki/Bugs/groups-notif-actualizo-atribuye-al-pagador-no-al-autor.md
 ---
 
@@ -81,5 +81,23 @@ Requiere el schema desplegado (Development si se usan builds dev contra el entor
 3. **Gasto nuevo:** el owner registra un gasto **pagado por B**. → B (y terceros) reciben "🧾 **[Owner]** agregó…" (creador), no "B agregó".
 4. **Eco settlement Caso D:** un member registra "X me pagó" (es el receptor). → **NO recibe** "X te pagó" por su propio registro.
 5. **2º device mismo iCloud:** el owner con 2 devices edita en A → **B NO le notifica** al owner su propia edición.
+
+---
+
+## Chequeo del owner 2026-08-28 (Jurgen, Lima) — NO cierra este ticket
+
+TestFlight **2.1 build 12**, dos cuentas del owner (**A** = personal, **B** = de prueba) en el grupo de la
+sesión de QA de ese día. A creó / editó un gasto de grupo y salieron dos hechos que tocan este ticket:
+
+- **A no recibió notificación.** A era el actor ⇒ **no hubo eco al autor**, que es la dirección correcta
+  del fix de la Capa 1.
+- **B sí la recibió, pero solo al ABRIR la app** — nada mientras B estaba fuera. Ese «cuándo» es otro
+  defecto y tiene ticket propio: `tickets/backlog/groups-expense-notif-only-on-foreground.md`. Aquí no
+  se trabaja.
+
+**Este ticket sigue en `qa/` y NO pasa a `done`.** Lo de arriba **no** es el guion de arriba corrido:
+del reporte de ese día **no consta quién pagaba** el gasto, así que el caso que abrió este ticket —editar
+un gasto **pagado por otro**, pasos 1 y 2 del guion device-QA— **no se puede dar por re-ejecutado**. Los
+pasos 3, 4 y 5 tampoco se tocaron. Sin eso no hay PASS que anotar.
 
 migrated from YalaWiki Bugs/groups-notif-actualizo-atribuye-al-pagador-no-al-autor.md @ 1934e8ad
