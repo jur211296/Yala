@@ -99,7 +99,7 @@ jobs:
           [ "$total" -lt "$cap" ] || run_suite "la API cortó la lista en $cap ficheros"
 
           echo "run_tests=false" >> "$GITHUB_OUTPUT"
-          echo "::notice title=Suite de simulador::SE SALTA — los $total ficheros del diff son docs/tickets/marketing"
+          echo "::notice title=Suite de simulador::SE SALTA — el diff es solo docs/tickets/marketing (ficheros: $total)"
 
   # Suite de tests. Runner macos-26 (Tahoe): Xcode `latest-stable` (26.x) + sim
   # iPhone 17 Pro. Build UNA vez + test-without-building.
