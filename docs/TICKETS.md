@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (63)
+## Index (64)
 
 | id | status | path |
 |----|--------|------|
@@ -95,8 +95,25 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | distribution-balance-kpi-skips-fx | backlog | tickets/backlog/distribution-balance-kpi-skips-fx.md |
 | notifications-not-delivered-testflight | done | tickets/done/notifications-not-delivered-testflight.md |
 | fx-partial-rate-rows-silent-1to1 | backlog | tickets/backlog/fx-partial-rate-rows-silent-1to1.md |
+| groups-invite-skips-unirme-sheet-if-onboarded | backlog | tickets/backlog/groups-invite-skips-unirme-sheet-if-onboarded.md |
 
-Counts by folder: backlog 28 · in-progress 10 · qa 19 · blocked 0 · done 3 · discarded 3 = 63.
+Counts by folder: backlog 29 · in-progress 10 · qa 19 · blocked 0 · done 3 · discarded 3 = 64.
+
+Jurgen 2026-08-28 (alta): `groups-invite-skips-unirme-sheet-if-onboarded` entra en `backlog/` con
+prioridad **high** — reporte de device del owner (Lima, TF 2.1 build 12): B, con la cuenta **ya creada**,
+abrió un enlace de invitación y **no vio la hoja de «Unirme»**; el alta se hizo sola. El owner pide que
+esa hoja aparezca **siempre**, venga de primer plano, de segundo plano o estando ya dentro de la app. Sin
+implementación: cero Swift. **Medido** en `2.1` @ `2175e53e`, y escrito en el ticket como medición y no
+como causa única de esa corrida (no hubo captura de Console): con `hasCompletedOnboarding` el camino del
+invite puede devolver `.join` y saltarse `.presentInviteOnboarding` — el corte vive en
+`GroupsGateLogic.nextStep:121`, que es lo que `GroupBackendInviteEntryLogic.nextStep` consume, y se repite
+en el drain de `ContentView:960`. Lo que hay hoy **cumple su propio contrato** (ese paso existe para el
+usuario FRESCO), así que lo que el owner pide es un cambio de contrato con dos tests que habrá que
+actualizar a propósito. **No** se dobla con `groups-join-intent-reconciler` (member que no nacía / «¡Todo
+listo!» falso), ni con `groups-pending-member-can-open-group` (que además **no está en este árbol**: vive
+en la PR 46, sin mergear), ni con `invite-link-five-causes-one-message` (copy de enlace inválido).
+**Medido** antes y después: el índice previo (63 filas) coincidía exactamente con disco en id, status y
+path en las 63; el único delta es este ticket nuevo. Counts tras el alta: backlog 28 → 29, total 63 → 64.
 
 Jurgen 2026-08-28 (alta): `fx-partial-rate-rows-silent-1to1` entra en `backlog/` con prioridad
 **high** — familia FX del audit de Frank sobre `2.1` @ `68a7221c` (filas de tasas incompletas +
