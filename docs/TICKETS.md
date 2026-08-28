@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (63)
+## Index (64)
 
 | id | status | path |
 |----|--------|------|
@@ -95,8 +95,23 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | distribution-balance-kpi-skips-fx | backlog | tickets/backlog/distribution-balance-kpi-skips-fx.md |
 | notifications-not-delivered-testflight | done | tickets/done/notifications-not-delivered-testflight.md |
 | fx-partial-rate-rows-silent-1to1 | backlog | tickets/backlog/fx-partial-rate-rows-silent-1to1.md |
+| groups-expense-notif-only-on-foreground | backlog | tickets/backlog/groups-expense-notif-only-on-foreground.md |
 
-Counts by folder: backlog 28 · in-progress 10 · qa 19 · blocked 0 · done 3 · discarded 3 = 63.
+Counts by folder: backlog 29 · in-progress 10 · qa 19 · blocked 0 · done 3 · discarded 3 = 64.
+
+Jurgen 2026-08-28 (alta): `groups-expense-notif-only-on-foreground` entra en `backlog/` con prioridad
+**high** — reporte de device del owner en TF **2.1 build 12**: A crea/edita un gasto de grupo y la
+notificación llega a B **solo al abrir la app**, nada mientras B está fuera; a A no le llega (era el
+actor). Sin causa declarada y sin implementación: el ticket lleva el mapa **medido** del camino
+(la notif de grupo es LOCAL y nace tras el pull —
+`GroupsSyncClient.applyPulledPage:1937` → `GroupNotificationService.processRemoteChanges`) y las
+hipótesis con su señal discriminante. **No** se declara el silent push roto: no está medido.
+No cierra `group-notif-credits-payer-not-editor`, que sigue en `qa/` con una nota del mismo día
+(el «A no recibió / B solo al abrir») y **sin** PASS: hoy no consta quién pagaba el gasto, así que el
+caso original (editar un gasto pagado por otro) no cuenta como re-ejecutado.
+**Medido** antes y después: el índice previo (63 filas) coincidía exactamente con disco en id, status y
+ruta en las 63; el único delta es este ticket nuevo. Counts tras el alta: backlog 28 → 29,
+total 63 → 64.
 
 Jurgen 2026-08-28 (alta): `fx-partial-rate-rows-silent-1to1` entra en `backlog/` con prioridad
 **high** — familia FX del audit de Frank sobre `2.1` @ `68a7221c` (filas de tasas incompletas +
