@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (64)
+## Index (65)
 
 | id | status | path |
 |----|--------|------|
@@ -42,7 +42,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | prefs-synced-keys-upload-not-download | in-progress | tickets/in-progress/prefs-synced-keys-upload-not-download.md |
 | cloud-fx-rates-blob-two-faces | qa | tickets/qa/cloud-fx-rates-blob-two-faces.md |
 | cloud-tx-epoch-orphan-relations | backlog | tickets/backlog/cloud-tx-epoch-orphan-relations.md |
-| groups-approval-banner-stays | qa | tickets/qa/groups-approval-banner-stays.md |
+| groups-approval-banner-stays | done | tickets/done/groups-approval-banner-stays.md |
 | groups-join-intent-reconciler | qa | tickets/qa/groups-join-intent-reconciler.md |
 | groups-tab-missing-panel-perf | backlog | tickets/backlog/groups-tab-missing-panel-perf.md |
 | groups-ghost-tx-on-delete | done | tickets/done/groups-ghost-tx-on-delete.md |
@@ -96,8 +96,30 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | notifications-not-delivered-testflight | done | tickets/done/notifications-not-delivered-testflight.md |
 | fx-partial-rate-rows-silent-1to1 | backlog | tickets/backlog/fx-partial-rate-rows-silent-1to1.md |
 | groups-deleted-group-detail-stays-open | backlog | tickets/backlog/groups-deleted-group-detail-stays-open.md |
+| groups-pending-member-can-open-group | backlog | tickets/backlog/groups-pending-member-can-open-group.md |
 
-Counts by folder: backlog 29 · in-progress 9 · qa 18 · blocked 0 · done 5 · discarded 3 = 64.
+Counts by folder: backlog 30 · in-progress 9 · qa 17 · blocked 0 · done 6 · discarded 3 = 65.
+
+Jurgen 2026-08-28 (alta, hallazgo de la MISMA corrida de device): `groups-pending-member-can-open-group`
+entra en `backlog/` con prioridad **high** — estando **pendiente de aprobación**, B veía el grupo en su
+lista y **al tocarlo podía entrar y verlo**. Owner: está mal. **No se dobla** dentro del ticket del aviso
+(allí el defecto era que el aviso no se retiraba DESPUÉS de aprobar, y hoy se retiró) ni se reusa
+`groups-join-intent-reconciler` (allí el miembro no nacía). Sin implementación y sin causa inventada: lo
+único medido del mecanismo es que entregar **grupo + roster** a un pendiente es **intencional** en el DDL
+(`supabase-groups-staging.ddl:125`, `:153`, comentario en `:814`) mientras el contenido financiero **no**
+baja (`:817`, `:819`, `:821`) ⇒ lo que queda abierto es una **decisión de producto**, y choca con
+`guest-decline-has-no-screen`, que trata el mismo hecho como problema de copy. Counts tras el alta en
+este árbol (ya con ghost-tx cerrado y deleted-group-detail dentro): backlog 29 → 30, total 64 → 65.
+
+Jurgen 2026-08-28 (cierre): `groups-approval-banner-stays` pasa a `done/` con **PASS del owner** (Lima,
+**TF 2.1 build 12**): B se une, ve «1 solicitudes pendientes» y el aviso de esperar al admin, A aprueba y
+**B —sin forzar el cierre de la app ni reabrirla— ve irse solos el aviso y el mensaje naranja**, con el
+grupo normal y 2 miembros activos. Es el escenario que ningún test podía cerrar, y **medido**: el fix
+`479e8e81` es ancestro de `f4cf3d2b` («Build 12 para TestFlight de 2.1») ⇒ el binario que probó el owner
+lleva el código. **Fuera del PASS**, escrito en el ticket: el rechazo y la contra-prueba del tercer
+miembro no se corrieron hoy (tienen unit, no device), B no era install limpia, y esto **no** cierra al
+hermano `groups-join-intent-reconciler`, que sigue en `qa/`. Counts medidos tras el movimiento: qa 18 →
+17, done 5 → 6; el total no se mueve por el cierre porque es un movimiento, no un ticket nuevo.
 
 Jurgen 2026-08-28 (cierre): `groups-ghost-tx-on-delete` pasa a `done/` con **PASS en device del owner**
 (Lima). Dos teléfonos, mismo grupo, **TF 2.1 build 12**: A crea un gasto al 50/50, B lo ve en el grupo y
@@ -172,7 +194,7 @@ Jurgen 2026-08-26: `groups-cloud-mode-hardening-v1`, `groups-cloud-identity-loss
 | Bugs/prefs-cinco-keys-synced-suben-y-no-vuelven.md | tickets/in-progress/prefs-synced-keys-upload-not-download.md |
 | Bugs/qa_cloud-fx-rates-blob-dos-caras.md | tickets/qa/cloud-fx-rates-blob-two-faces.md |
 | Bugs/qa_cloud-tx-epoca-relaciones-huerfanas.md | tickets/backlog/cloud-tx-epoch-orphan-relations.md |
-| Bugs/qa_groups-aprobacion-no-retira-banner.md | tickets/qa/groups-approval-banner-stays.md |
+| Bugs/qa_groups-aprobacion-no-retira-banner.md | tickets/done/groups-approval-banner-stays.md |
 | Bugs/qa_groups-join-intent-reconciler.md | tickets/qa/groups-join-intent-reconciler.md |
 | Bugs/qa_groups-tab-no-perf-patterns.md | tickets/backlog/groups-tab-missing-panel-perf.md |
 | Bugs/qa_groups-tx-fantasma-al-borrar-gasto-de-grupo.md | tickets/done/groups-ghost-tx-on-delete.md |
