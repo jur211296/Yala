@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (63)
+## Index (64)
 
 | id | status | path |
 |----|--------|------|
@@ -95,8 +95,19 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | distribution-balance-kpi-skips-fx | backlog | tickets/backlog/distribution-balance-kpi-skips-fx.md |
 | notifications-not-delivered-testflight | done | tickets/done/notifications-not-delivered-testflight.md |
 | fx-partial-rate-rows-silent-1to1 | backlog | tickets/backlog/fx-partial-rate-rows-silent-1to1.md |
+| groups-equal-split-shows-not-participating-on-peer | backlog | tickets/backlog/groups-equal-split-shows-not-participating-on-peer.md |
 
-Counts by folder: backlog 28 · in-progress 10 · qa 19 · blocked 0 · done 3 · discarded 3 = 63.
+Counts by folder: backlog 29 · in-progress 10 · qa 19 · blocked 0 · done 3 · discarded 3 = 64.
+
+Jurgen 2026-08-28 (alta): `groups-equal-split-shows-not-participating-on-peer` entra en `backlog/`
+con prioridad **high** — device-QA del owner en TF 2.1 build 12, dos teléfonos, grupo ya en uso ese
+día: el gasto que A reparte mitad y mitad se ve en B como si B no hubiera participado, y solo se
+actualiza tras force-quit + reentrada en B. Es **un** ticket con dos tiempos (primera apertura
+equivocada / tras force-quit actualizado), **sin causa raíz declarada** y **sin** convertirlo en el
+bug de notificaciones (B no recibió aviso; el owner lo deja fuera a propósito). Sin implementación:
+cero Swift. **Medido** antes y después: el índice previo (63 filas) coincidía exactamente con disco en
+id, status y path en las 63; el único delta es este ticket nuevo. Counts tras el alta: backlog 28 →
+29, total 63 → 64. Sin tocar `qa/coverage-index.json` (no hay código nuevo bajo `Yala/`).
 
 Jurgen 2026-08-28 (alta): `fx-partial-rate-rows-silent-1to1` entra en `backlog/` con prioridad
 **high** — familia FX del audit de Frank sobre `2.1` @ `68a7221c` (filas de tasas incompletas +
