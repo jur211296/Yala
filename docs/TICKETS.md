@@ -33,7 +33,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | id | status | path |
 |----|--------|------|
 | inbox-crash-convert-to-group-expense | qa | tickets/qa/inbox-crash-convert-to-group-expense.md |
-| group-notif-credits-payer-not-editor | qa | tickets/qa/group-notif-credits-payer-not-editor.md |
+| group-notif-credits-payer-not-editor | done | tickets/done/group-notif-credits-payer-not-editor.md |
 | invite-link-five-causes-one-message | in-progress | tickets/in-progress/invite-link-five-causes-one-message.md |
 | guest-decline-has-no-screen | in-progress | tickets/in-progress/guest-decline-has-no-screen.md |
 | guest-journey-dead-screens | in-progress | tickets/in-progress/guest-journey-dead-screens.md |
@@ -96,7 +96,22 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | notifications-not-delivered-testflight | done | tickets/done/notifications-not-delivered-testflight.md |
 | fx-partial-rate-rows-silent-1to1 | backlog | tickets/backlog/fx-partial-rate-rows-silent-1to1.md |
 
-Counts by folder: backlog 28 · in-progress 10 · qa 19 · blocked 0 · done 3 · discarded 3 = 63.
+Counts by folder: backlog 28 · in-progress 10 · qa 18 · blocked 0 · done 4 · discarded 3 = 63.
+
+Jurgen 2026-08-28 (cierre): `group-notif-credits-payer-not-editor` pasa a `done/` con **PASS del owner**
+(Lima). Dos teléfonos, el mismo grupo que el resto del QA de hoy, **TF 2.1 build 12**: **A** fue quien actuó
+(crear/editar) y **A no recibió notificación** —ningún eco que atribuyera su cambio a **B**—, mientras **B sí
+la recibió**. **Lo que el PASS no cubre, escrito en el ticket:** la notificación de B llegó **solo al abrir la
+app**, que es *cuándo* se entrega y no *a quién* se atribuye ⇒ va en ticket aparte
+(`groups-expense-notif-only-on-foreground`, en alta separada) y **no se dobla aquí** ni como PASS ni como
+FAIL; el escenario original (gasto pagado por Pia, editado por el owner) **no consta re-corrido palabra por
+palabra** —el reporte no fija quién pagaba, y con pagador = A el silencio ya existía antes del fix, así que
+esa variante no discrimina—; el **texto** de la notificación de B no está medido; y liquidaciones, gasto
+nuevo, terceros y 2º device siguen sin correr. Cierre de **QA**, no fix nuevo: sin cambio de código, sin
+subida a TestFlight, A7/M5 en HOLD. Counts medidos tras el movimiento: qa 19 → 18, done 3 → 4; el total sigue
+en 63 porque es un movimiento, no un ticket nuevo. **En vuelo y sin tocar aquí:** los cierres de
+`groups-background-emitter-no-upload` (PR 41) y `groups-ghost-tx-on-delete` (PR 43) y el alta de
+`groups-leave-rpc-error-10` (PR 44) todavía no están en `2.1`; este PR no los adelanta ni los recuenta.
 
 Jurgen 2026-08-28 (alta): `fx-partial-rate-rows-silent-1to1` entra en `backlog/` con prioridad
 **high** — familia FX del audit de Frank sobre `2.1` @ `68a7221c` (filas de tasas incompletas +
@@ -123,7 +138,7 @@ Jurgen 2026-08-26: `groups-cloud-mode-hardening-v1`, `groups-cloud-identity-loss
 | origin | destination |
 |--------|-------------|
 | Bugs/crash-inbox-convertir-a-gasto-grupo-draft-borrado.md | tickets/qa/inbox-crash-convert-to-group-expense.md |
-| Bugs/groups-notif-actualizo-atribuye-al-pagador-no-al-autor.md | tickets/qa/group-notif-credits-payer-not-editor.md |
+| Bugs/groups-notif-actualizo-atribuye-al-pagador-no-al-autor.md | tickets/done/group-notif-credits-payer-not-editor.md |
 | Bugs/grupos-enlace-de-invitacion-cinco-causas-un-solo-mensaje.md | tickets/in-progress/invite-link-five-causes-one-message.md |
 | Bugs/grupos-invitado-el-no-no-tiene-pantalla.md | tickets/in-progress/guest-decline-has-no-screen.md |
 | Bugs/grupos-recorrido-del-invitado-codigo-muerto-y-docblock-caducado.md | tickets/in-progress/guest-journey-dead-screens.md |
