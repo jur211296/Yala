@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (62)
+## Index (63)
 
 | id | status | path |
 |----|--------|------|
@@ -94,8 +94,17 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | rescue-discarded-groups-pull | qa | tickets/qa/rescue-discarded-groups-pull.md |
 | distribution-balance-kpi-skips-fx | backlog | tickets/backlog/distribution-balance-kpi-skips-fx.md |
 | notifications-not-delivered-testflight | done | tickets/done/notifications-not-delivered-testflight.md |
+| fx-partial-rate-rows-silent-1to1 | backlog | tickets/backlog/fx-partial-rate-rows-silent-1to1.md |
 
-Counts by folder: backlog 27 · in-progress 10 · qa 19 · blocked 0 · done 3 · discarded 3 = 62.
+Counts by folder: backlog 28 · in-progress 10 · qa 19 · blocked 0 · done 3 · discarded 3 = 63.
+
+Jurgen 2026-08-28 (alta): `fx-partial-rate-rows-silent-1to1` entra en `backlog/` con prioridad
+**high** — familia FX del audit de Frank sobre `2.1` @ `68a7221c` (filas de tasas incompletas +
+conversión 1:1 que se declara exacta). Es **un** ticket, no tres: las tres caras (lectura, cambio de
+moneda preferida, `persistRate`) comparten el predicado `rateExists` vs `rateHasAllCurrencies`. Sin
+implementación. **Medido** antes y después: el índice previo (62 filas) coincidía exactamente con
+disco en id y status en las 62; el único delta era este ticket nuevo. Counts tras el alta:
+backlog 27 → 28, total 62 → 63.
 
 Jurgen 2026-08-27 (cierre): `notifications-not-delivered-testflight` pasa a `done/` como **no es bug de
 entrega** — en el device el permiso de notificaciones de iOS estaba en OFF y la app no volvió a pedirlo.
