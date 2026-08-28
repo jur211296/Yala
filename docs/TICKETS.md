@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (68)
+## Index (69)
 
 | id | status | path |
 |----|--------|------|
@@ -100,8 +100,24 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-leave-rpc-error-10 | backlog | tickets/backlog/groups-leave-rpc-error-10.md |
 | groups-equal-split-shows-not-participating-on-peer | backlog | tickets/backlog/groups-equal-split-shows-not-participating-on-peer.md |
 | groups-expense-notif-only-on-foreground | backlog | tickets/backlog/groups-expense-notif-only-on-foreground.md |
+| groups-invite-skips-unirme-sheet-if-onboarded | backlog | tickets/backlog/groups-invite-skips-unirme-sheet-if-onboarded.md |
 
-Counts by folder: backlog 33 · in-progress 9 · qa 15 · blocked 0 · done 8 · discarded 3 = 68.
+Counts by folder: backlog 34 · in-progress 9 · qa 15 · blocked 0 · done 8 · discarded 3 = 69.
+
+Jurgen 2026-08-28 (alta): `groups-invite-skips-unirme-sheet-if-onboarded` entra en `backlog/` con
+prioridad **high** — reporte de device del owner (Lima, TF 2.1 build 12): B, con la cuenta **ya creada**,
+abrió un enlace de invitación y **no vio la hoja de «Unirme»**; el alta se hizo sola. El owner pide que
+esa hoja aparezca **siempre**, venga de primer plano, de segundo plano o estando ya dentro de la app. Sin
+implementación: cero Swift. **Medido** en `2.1` @ `2175e53e`, y escrito en el ticket como medición y no
+como causa única de esa corrida (no hubo captura de Console): con `hasCompletedOnboarding` el camino del
+invite puede devolver `.join` y saltarse `.presentInviteOnboarding` — el corte vive en
+`GroupsGateLogic.nextStep:121`, que es lo que `GroupBackendInviteEntryLogic.nextStep` consume, y se repite
+en el drain de `ContentView:960`. Lo que hay hoy **cumple su propio contrato** (ese paso existe para el
+usuario FRESCO), así que lo que el owner pide es un cambio de contrato con dos tests que habrá que
+actualizar a propósito. **No** se dobla con `groups-join-intent-reconciler` (member que no nacía / «¡Todo
+listo!» falso), ni con `groups-pending-member-can-open-group` (ya en el árbol vía PR 46), ni con
+`invite-link-five-causes-one-message` (copy de enlace inválido). Counts tras el alta en este árbol:
+backlog 33 → 34, total 68 → 69.
 
 Jurgen 2026-08-28 (alta): `groups-expense-notif-only-on-foreground` entra en `backlog/` con prioridad
 **high** — reporte de device del owner en TF **2.1 build 12**: A crea/edita un gasto de grupo y la
