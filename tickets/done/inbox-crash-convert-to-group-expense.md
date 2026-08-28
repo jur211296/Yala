@@ -1,8 +1,8 @@
 ---
 id: inbox-crash-convert-to-group-expense
-status: qa
+status: done
 created: 2026-07-22
-updated: 2026-08-26
+updated: 2026-08-28
 source: YalaWiki/Bugs/crash-inbox-convertir-a-gasto-grupo-draft-borrado.md
 ---
 
@@ -66,3 +66,45 @@ Alinear el path de conversión con la mitigación existente: `handleDraftConvert
 - Confirmación definitiva: con la poda aplicada, el crash desaparece; y/o simbolizar con el dSYM de ASC (si `0x104cc6b98` resuelve a `InboxDraftRowView.body`, P1 confirmado).
 
 migrated from YalaWiki Bugs/crash-inbox-convertir-a-gasto-grupo-draft-borrado.md @ 1934e8ad
+
+## Owner check 2026-08-28 (Jurgen, Lima, TF 2.1 build 12, teléfono A) — QA device PASS
+
+- Convirtió un borrador de la Bandeja en **gasto compartido de grupo**, sobre un grupo en uso ese día.
+- **La app no crasheó.** El borrador **salió de la bandeja**. El gasto **quedó en el grupo**.
+- Veredicto del owner: **PASS**.
+
+⇒ **Cerrado por QA device**: el PASS drena el «Pendiente: device QA en iOS 27 / TestFlight» que la Fase 2
+dejó abierto el 2026-07-22 — el único trabajo que le faltaba a este ticket.
+
+**Este cierre es QA, no un fix nuevo.** Medido hoy en este árbol (`2.1` @ `2175e53e`): `88a43237` es
+ancestro de `2.1`, `Yala/App/ViewModels/InboxRowPruneCoordinator.swift` existe y
+`DraftService.deleteInboxDraftPruningRow` (definido en `:100`) tiene **9 call-sites** en
+`Yala/Services/DraftService.swift` (`:115`, `:171`, `:191`, `:251`, `:691`, `:777`, `:783`, `:836`,
+`:932`). Aquí no se toca Swift.
+
+### Lo que este PASS no dice
+
+- **Cubre el path de CONVERSIÓN**, que es el que reportó el crash log — no los otros sitios a los que el
+  fix se amplió: los 4 sheets de finalización de grupo (subcategoría / cuenta / cuenta+subcategoría /
+  liquidación) y los drafts-puntero hermanos **no se ejercitaron hoy**. Lo que los sostiene es
+  `InboxRowPruneCoordinatorTests` (regresión determinista, roja al revertir la poda), no una observación
+  en device.
+- **El owner no declaró la versión de iOS del teléfono A.** El trap original es el assert estricto de
+  SwiftData de iOS 27 beta (el `.ips` es 24A5380h), así que un run sin crash en un OS con el assert más
+  laxo no prueba por sí solo la ausencia del bug. Lo que este PASS **sí** añade es que el path arreglado
+  funciona de punta a punta en campo: el borrador se fue y el gasto llegó al grupo.
+- **Hoy no hubo subida a TestFlight**: el PASS es sobre el build 12 que ya estaba en campo, no sobre
+  ningún build posterior.
+- La **verificación forense** que este ticket ofrecía como opcional —simbolizar el `.ips` con el dSYM del
+  build 2 desde ASC— sigue **sin hacer**, y sigue siendo opcional: confirmaría el frame de un camino que
+  el fix ya hizo inalcanzable.
+
+### El hermano de feature queda en `qa/`
+
+`inbox-convert-draft-to-group-expense` (la acción «Convertir a gasto compartido» en sí) **no se cierra
+con este PASS**. La corrida de hoy usó ese flujo con éxito y eso drena la mayor parte de su punto 1
+(guardar crea el gasto y borra el borrador), pero su guion pendiente del 2026-08-14 tiene tres puntos más
+que hoy no se tocaron: **cancelar** deja el borrador intacto, los **dos casos negativos** (ni ingreso ni
+sin grupos elegibles muestran el botón) y la **fecha en pantalla** con un borrador de fecha pasada. Ni
+siquiera su punto 1 quedó completo: el owner no reportó la contraparte **bridgeada a la cuenta personal**.
+AC distinta ⇒ sigue en `qa/`; ver la nota del 2026-08-28 en ese ticket.
