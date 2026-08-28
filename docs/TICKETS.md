@@ -62,7 +62,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | debounce-sync-imported-transactions | backlog | tickets/backlog/debounce-sync-imported-transactions.md |
 | yala-android | backlog | tickets/backlog/yala-android.md |
 | groups-in-group-search | backlog | tickets/backlog/groups-in-group-search.md |
-| groups-background-emitter-no-upload | in-progress | tickets/in-progress/groups-background-emitter-no-upload.md |
+| groups-background-emitter-no-upload | done | tickets/done/groups-background-emitter-no-upload.md |
 | groups-import-splitwise-tricount | backlog | tickets/backlog/groups-import-splitwise-tricount.md |
 | groups-guest-currency-from-region | backlog | tickets/backlog/groups-guest-currency-from-region.md |
 | groups-budget | backlog | tickets/backlog/groups-budget.md |
@@ -96,7 +96,14 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | notifications-not-delivered-testflight | done | tickets/done/notifications-not-delivered-testflight.md |
 | fx-partial-rate-rows-silent-1to1 | backlog | tickets/backlog/fx-partial-rate-rows-silent-1to1.md |
 
-Counts by folder: backlog 28 · in-progress 10 · qa 19 · blocked 0 · done 3 · discarded 3 = 63.
+Counts by folder: backlog 28 · in-progress 9 · qa 19 · blocked 0 · done 4 · discarded 3 = 63.
+
+Jurgen 2026-08-28 (cierre): `groups-background-emitter-no-upload` pasa a `done/` por **QA device PASS**
+del owner — dos teléfonos, TF 2.1 build 12: A crea el gasto de grupo y se va al Home de iOS sin
+force-quit, B lo ve en ~30 s sin que A se reabra. El código ya estaba en `2.1` vía PR 19, así que **este
+cierre es QA, no un fix nuevo**, y hoy no hubo subida a TestFlight. Counts medidos tras el movimiento,
+ya con el alta de `fx-partial-rate-rows-silent-1to1` dentro: in-progress 10 → 9, done 3 → 4; el total
+sigue en 63 porque es un movimiento, no un ticket nuevo.
 
 Jurgen 2026-08-28 (alta): `fx-partial-rate-rows-silent-1to1` entra en `backlog/` con prioridad
 **high** — familia FX del audit de Frank sobre `2.1` @ `68a7221c` (filas de tasas incompletas +
@@ -152,7 +159,7 @@ Jurgen 2026-08-26: `groups-cloud-mode-hardening-v1`, `groups-cloud-identity-loss
 | Backlog/debounce-transactions-imported-from-sync-observer.md | tickets/backlog/debounce-sync-imported-transactions.md |
 | Backlog/future_yala-android.md | tickets/backlog/yala-android.md |
 | Backlog/groups-busqueda-interna.md | tickets/backlog/groups-in-group-search.md |
-| Backlog/groups-emisor-segundo-plano-no-sube.md | tickets/in-progress/groups-background-emitter-no-upload.md |
+| Backlog/groups-emisor-segundo-plano-no-sube.md | tickets/done/groups-background-emitter-no-upload.md |
 | Backlog/groups-import-splitwise-tricount.md | tickets/backlog/groups-import-splitwise-tricount.md |
 | Backlog/groups-invitado-moneda-region-red-muerta.md | tickets/backlog/groups-guest-currency-from-region.md |
 | Backlog/groups-presupuesto-de-grupo.md | tickets/backlog/groups-budget.md |
