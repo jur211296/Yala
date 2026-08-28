@@ -4,7 +4,7 @@ status: qa
 priority: medium
 area: "groups, inbox"
 created: 2026-07-01
-updated: 2026-08-26
+updated: 2026-08-28
 source: YalaWiki/Backlog/qa_inbox-convertir-a-gasto-de-grupo.md
 ---
 
@@ -364,3 +364,28 @@ El arreglo NO cierra el ticket. Falta ejercitar en pantalla:
    un identificador al chip de fecha del editor.
 
 migrated from YalaWiki Backlog/qa_inbox-convertir-a-gasto-de-grupo.md @ 1934e8ad
+
+## Corrida en device del owner 2026-08-28 (Jurgen, Lima, TF 2.1 build 12, teléfono A) — SIGUE EN `qa/`
+
+El owner convirtió un borrador de la Bandeja en gasto compartido de un grupo en uso: la app no crasheó,
+el borrador salió de la bandeja y el gasto quedó en el grupo. Ese PASS cerró el hermano de crash
+(`inbox-crash-convert-to-group-expense` → `done/`), y **este ticket se evaluó para cerrarlo con él**.
+
+**No se cierra.** El guion pendiente que este ticket dejó escrito el 2026-08-14 tiene cuatro puntos y la
+corrida de hoy toca uno solo:
+
+| Pendiente del 2026-08-14 | Hoy |
+|---|---|
+| 1 · **Guardar** crea el gasto compartido, lo puentea a la cuenta personal y borra el borrador | **Parcial**: se vio el gasto en el grupo y el borrador fuera de la bandeja; la contraparte **bridgeada a la cuenta personal** no se reportó |
+| 2 · **Cancelar** deja el borrador intacto | Sin ejercitar |
+| 3 · Los **dos casos negativos**: el botón no aparece en un ingreso ni sin grupos elegibles | Sin ejercitar |
+| 4 · La **fecha en pantalla**, con un borrador de fecha **pasada** | Sin ejercitar |
+
+El punto 4 es el que más pesa: el arreglo de la fecha (`5954306f`, ancestro de `2.1`) está pinneado por
+unitario y mutación, pero **nunca se ha observado en pantalla**, y el sembrado fecha los borradores HOY,
+así que el fixture no discrimina — es el falso verde que este mismo ticket ya se advirtió dos veces. Un
+grupo en uso hoy, con un borrador de hoy, tampoco lo discrimina.
+
+⇒ Lo que hoy queda drenado es el riesgo de **crash** del flujo, no la AC de esta feature. Para la próxima
+tanda: los cuatro puntos siguen tal cual, y el punto 4 necesita un borrador con fecha pasada (sembrarlo,
+o darle identificador al chip de fecha del editor).

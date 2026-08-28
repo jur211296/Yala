@@ -32,7 +32,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 
 | id | status | path |
 |----|--------|------|
-| inbox-crash-convert-to-group-expense | qa | tickets/qa/inbox-crash-convert-to-group-expense.md |
+| inbox-crash-convert-to-group-expense | done | tickets/done/inbox-crash-convert-to-group-expense.md |
 | group-notif-credits-payer-not-editor | done | tickets/done/group-notif-credits-payer-not-editor.md |
 | invite-link-five-causes-one-message | in-progress | tickets/in-progress/invite-link-five-causes-one-message.md |
 | guest-decline-has-no-screen | in-progress | tickets/in-progress/guest-decline-has-no-screen.md |
@@ -98,7 +98,19 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-deleted-group-detail-stays-open | backlog | tickets/backlog/groups-deleted-group-detail-stays-open.md |
 | groups-pending-member-can-open-group | backlog | tickets/backlog/groups-pending-member-can-open-group.md |
 
-Counts by folder: backlog 30 · in-progress 9 · qa 16 · blocked 0 · done 7 · discarded 3 = 65.
+Counts by folder: backlog 30 · in-progress 9 · qa 15 · blocked 0 · done 8 · discarded 3 = 65.
+
+Jurgen 2026-08-28 (cierre): `inbox-crash-convert-to-group-expense` pasa a `done/` por **QA device PASS**
+del owner — TF 2.1 build 12, teléfono A: convertir un borrador de la Bandeja en gasto compartido de un
+grupo en uso **no crasheó**, el borrador salió de la bandeja y el gasto quedó en el grupo. El fix ya
+estaba en `2.1` (`88a43237`, medido hoy como ancestro), así que **este cierre es QA, no un fix nuevo**, y
+hoy no hubo subida a TestFlight. El PASS cubre el path de **conversión**, no los 4 sheets de finalización
+de grupo a los que el fix se amplió (esos los sostiene `InboxRowPruneCoordinatorTests`, determinista). El
+hermano de feature `inbox-convert-draft-to-group-expense` **se evaluó y se queda en `qa/`**: su guion
+pendiente tiene cuatro puntos y hoy solo se tocó uno (cancelar, los dos casos negativos y la fecha en
+pantalla siguen sin ejercitar) ⇒ AC distinta, no se cierra por inferencia; queda anotado en el ticket.
+Counts RECONTADOS sobre disco tras el movimiento: qa 16 → 15, done 7 → 8; el total sigue en 65 porque es
+un movimiento, no un ticket nuevo.
 
 Jurgen 2026-08-28 (cierre): `group-notif-credits-payer-not-editor` pasa a `done/` con **PASS del owner**
 (Lima). Dos teléfonos, el mismo grupo que el resto del QA de hoy, **TF 2.1 build 12**: **A** fue quien actuó
@@ -197,7 +209,7 @@ Jurgen 2026-08-26: `groups-cloud-mode-hardening-v1`, `groups-cloud-identity-loss
 
 | origin | destination |
 |--------|-------------|
-| Bugs/crash-inbox-convertir-a-gasto-grupo-draft-borrado.md | tickets/qa/inbox-crash-convert-to-group-expense.md |
+| Bugs/crash-inbox-convertir-a-gasto-grupo-draft-borrado.md | tickets/done/inbox-crash-convert-to-group-expense.md |
 | Bugs/groups-notif-actualizo-atribuye-al-pagador-no-al-autor.md | tickets/done/group-notif-credits-payer-not-editor.md |
 | Bugs/grupos-enlace-de-invitacion-cinco-causas-un-solo-mensaje.md | tickets/in-progress/invite-link-five-causes-one-message.md |
 | Bugs/grupos-invitado-el-no-no-tiene-pantalla.md | tickets/in-progress/guest-decline-has-no-screen.md |
