@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (67)
+## Index (68)
 
 | id | status | path |
 |----|--------|------|
@@ -99,8 +99,19 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-pending-member-can-open-group | backlog | tickets/backlog/groups-pending-member-can-open-group.md |
 | groups-leave-rpc-error-10 | backlog | tickets/backlog/groups-leave-rpc-error-10.md |
 | groups-equal-split-shows-not-participating-on-peer | backlog | tickets/backlog/groups-equal-split-shows-not-participating-on-peer.md |
+| groups-expense-notif-only-on-foreground | backlog | tickets/backlog/groups-expense-notif-only-on-foreground.md |
 
-Counts by folder: backlog 32 · in-progress 9 · qa 15 · blocked 0 · done 8 · discarded 3 = 67.
+Counts by folder: backlog 33 · in-progress 9 · qa 15 · blocked 0 · done 8 · discarded 3 = 68.
+
+Jurgen 2026-08-28 (alta): `groups-expense-notif-only-on-foreground` entra en `backlog/` con prioridad
+**high** — reporte de device del owner en TF **2.1 build 12**: A crea/edita un gasto de grupo y la
+notificación llega a B **solo al abrir la app**, nada mientras B está fuera; a A no le llega (era el
+actor). Sin causa declarada y sin implementación: el ticket lleva el mapa **medido** del camino
+(la notif de grupo es LOCAL y nace tras el pull —
+`GroupsSyncClient.applyPulledPage:1937` → `GroupNotificationService.processRemoteChanges`) y las
+hipótesis con su señal discriminante. **No** se declara el silent push roto: no está medido.
+`group-notif-credits-payer-not-editor` ya está `done/` (PR 47, PASS de atribución/eco); este alta **no**
+lo reabre. Counts tras el alta en este árbol: backlog 32 → 33, total 67 → 68.
 
 Jurgen 2026-08-28 (alta): `groups-equal-split-shows-not-participating-on-peer` entra en `backlog/`
 con prioridad **high** — device-QA del owner en TF 2.1 build 12, dos teléfonos, grupo ya en uso ese
