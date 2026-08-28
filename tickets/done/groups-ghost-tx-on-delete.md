@@ -176,10 +176,12 @@ El borrado remoto del GRUPO entero deja además **filas hijas huérfanas** en el
 
 migrated from YalaWiki Bugs/qa_groups-tx-fantasma-al-borrar-gasto-de-grupo.md @ 1934e8ad
 
-## Cierre del owner 2026-08-28 (Jurgen, Lima) — PASS en device del borrado de gasto
+## Cierre del owner 2026-08-28 (Jurgen, Lima) — PASS en device: gasto Y liquidación
 
-**La corrida.** Dos teléfonos, el mismo grupo, **TestFlight 2.1 build 12** (el binario que hay en campo;
-no se subió nada nuevo para esto).
+Dos teléfonos, el mismo grupo, **TestFlight 2.1 build 12** (el binario que hay en campo; no se subió nada
+nuevo para esto). Tres comprobaciones seguidas del mismo día, todas con veredicto del owner **PASS**.
+
+**1 · Borrado de un gasto de grupo.**
 
 1. El teléfono **A** crea un gasto de grupo (monto inusual, al 50/50) y se espera a que **B** lo vea en el
    grupo **y** en su Panel personal.
@@ -187,33 +189,32 @@ no se subió nada nuevo para esto).
 3. En **B**, sin reabrir A: el gasto **se va del grupo** y la transacción personal puenteada
    **desaparece de su Panel** — no queda la huérfana atascada.
 
-**Veredicto del owner: PASS.** Con eso el ticket pasa a `done/`: era el escenario que ningún test podía
-cerrar (el canal backend en producción no es ejercitable desde un test) y por la regla del repo no lo
-declara bueno quien escribió el fix.
+**2 · La liquidación, hacia delante.**
 
-### Comprobación posterior del mismo día — la liquidación, solo hacia delante
-
-Después del PASS de arriba, en la misma fecha y con el mismo grupo y el mismo binario (TF 2.1 build 12):
-
-1. El teléfono **A** registra una **liquidación** (B le pagó a A, monto inusual).
+1. **A** registra una **liquidación** (B le pagó a A, monto inusual).
 2. En **B**, sin force-quit: **ve la liquidación** y los **balances cuadran** con lo que muestra A.
 
-**Veredicto del owner: PASS.** Lo que levanta es el lado **hacia delante** de las liquidaciones —
-registrarla y que sincronice con los balances cuadrando. **No se corrió BORRAR una liquidación**, que es
-la otra mitad y justo la que emparenta con este ticket: el fantasma aparecía **al borrar**. ⇒ **no hay
-cobertura completa de liquidaciones.**
+**3 · Borrado de la liquidación.**
 
-### Lo que este PASS NO cubre
+1. **A** borra esa liquidación en A.
+2. En **B**, sin force-quit: la liquidación **desaparece** y los **balances no quedan colgados**.
 
-- **El borrado de una liquidación.** Estaba en el ticket original como la MISMA clase de bug (el reporte
-  del 2026-08-02 confirmó que pasaba igual con ellas, y en los dos sentidos). La comprobación de arriba
-  cubre el lado hacia delante y **nada más**: del paso 2 del guion queda fuera su borrado y la
-  repetición borrando desde B.
-- **Nada más allá de esos dos escenarios.** De la nota de sync de arriba, **cola C (d)(e)** no recibe
-  PASS aquí: lo único corrido hoy es el borrado de gasto y la liquidación hacia delante. Igual con «Lo
-  que NO está verificado» de la sección de implementación: solo queda cubierta su primera parte (hacia
-  delante, gasto). La reparación de fantasmas ya existentes y la transacción con puntero muerto **no**
-  están en el reporte de hoy. El guion pedía además presupuestos y el total del mes en el paso 1; el
-  reporte del owner llega hasta el Panel.
+**Con las tres, la clase de fantasma que da nombre a este ticket queda cubierta en device para las DOS
+entidades** —gasto y liquidación—, que es como el reporte del 2026-08-02 la describía. Por eso el ticket
+pasa a `done/`: era el escenario que ningún test podía cerrar (el canal backend en producción no es
+ejercitable desde un test) y por la regla del repo no lo declara bueno quien escribió el fix.
+
+### Lo que estos PASS NO cubren
+
+- **El sentido contrario.** Los **dos borrados de hoy salieron de A**. El reporte original decía que el
+  bug era **bidireccional** y el paso 2 del guion pedía repetir borrando desde **B**: eso **no se corrió**.
+- **Hasta dónde llega cada reporte.** En el gasto llega al **Panel de B** (la transacción puenteada
+  desaparece). En la liquidación llega al **grupo y a los balances**; la puenteada de una liquidación en
+  el Panel de B no está escrita en el reporte de hoy, así que no se afirma aquí.
+- **Nada más allá de esos tres escenarios.** De la nota de sync de arriba, **cola C (d)(e)** no recibe
+  PASS fuera de ellos. Igual con «Lo que NO está verificado» de la sección de implementación: queda
+  cubierta su primera parte (hacia delante) y no las otras dos — la **reparación de fantasmas ya
+  existentes** y la **transacción con puntero muerto** no están en el reporte de hoy. El guion pedía
+  además presupuestos y el total del mes en el paso 1; el reporte del owner llega hasta el Panel.
 - **Sin subida y sin flip.** No hubo TestFlight nuevo hoy. **A7/M5 sigue en HOLD**, igual que App Store y
   tag de release.

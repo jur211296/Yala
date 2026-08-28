@@ -101,12 +101,14 @@ Counts by folder: backlog 28 · in-progress 10 · qa 18 · blocked 0 · done 4 �
 Jurgen 2026-08-28 (cierre): `groups-ghost-tx-on-delete` pasa a `done/` con **PASS en device del owner**
 (Lima). Dos teléfonos, mismo grupo, **TF 2.1 build 12**: A crea un gasto al 50/50, B lo ve en el grupo y
 en su Panel, A lo borra y en B —sin reabrir A— el gasto se va del grupo **y** la transacción puenteada
-desaparece del Panel, sin huérfana atascada. Una comprobación posterior del mismo día suma el lado
-**hacia delante** de las liquidaciones: A registra una liquidación, B la ve sin force-quit y los balances
-cuadran (PASS). **Lo que el PASS no cubre, escrito en el ticket:** **borrar** una liquidación —la otra
-mitad del bug original, el fantasma salía al borrar— **no se corrió**, así que no hay cobertura completa
-de liquidaciones; no hay PASS de cola C (d)(e) más allá de esos dos escenarios; no hubo subida nueva a
-TestFlight y A7/M5 sigue en HOLD.
+desaparece del Panel, sin huérfana atascada. Dos comprobaciones posteriores del mismo día completan la
+liquidación: A la registra y B la ve sin force-quit con los balances cuadrando, y después A la borra y en
+B desaparece sin dejar balances colgados (las dos PASS). ⇒ la clase de fantasma del ticket queda cubierta
+en device para las **dos** entidades del reporte original, gasto y liquidación. **Lo que estos PASS no
+cubren, escrito en el ticket:** los dos borrados salieron de **A**, así que el sentido contrario (borrar
+desde B, el bug era bidireccional) **no se corrió**; en la liquidación el reporte llega al grupo y a los
+balances, no al Panel de B; no hay PASS de cola C (d)(e) más allá de esos tres escenarios; no hubo subida
+nueva a TestFlight y A7/M5 sigue en HOLD.
 Counts medidos tras el movimiento: qa 19 → 18, done 3 → 4; el total sigue en 63 porque es un
 movimiento, no un ticket nuevo. `groups-background-emitter-no-upload` se deja **in-progress**: su cierre
 vive en PR 41, todavía sin mergear a `2.1`, y este cierre no lo toca.
