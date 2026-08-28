@@ -42,7 +42,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | prefs-synced-keys-upload-not-download | in-progress | tickets/in-progress/prefs-synced-keys-upload-not-download.md |
 | cloud-fx-rates-blob-two-faces | qa | tickets/qa/cloud-fx-rates-blob-two-faces.md |
 | cloud-tx-epoch-orphan-relations | backlog | tickets/backlog/cloud-tx-epoch-orphan-relations.md |
-| groups-approval-banner-stays | qa | tickets/qa/groups-approval-banner-stays.md |
+| groups-approval-banner-stays | done | tickets/done/groups-approval-banner-stays.md |
 | groups-join-intent-reconciler | qa | tickets/qa/groups-join-intent-reconciler.md |
 | groups-tab-missing-panel-perf | backlog | tickets/backlog/groups-tab-missing-panel-perf.md |
 | groups-ghost-tx-on-delete | qa | tickets/qa/groups-ghost-tx-on-delete.md |
@@ -96,7 +96,18 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | notifications-not-delivered-testflight | done | tickets/done/notifications-not-delivered-testflight.md |
 | fx-partial-rate-rows-silent-1to1 | backlog | tickets/backlog/fx-partial-rate-rows-silent-1to1.md |
 
-Counts by folder: backlog 28 · in-progress 10 · qa 19 · blocked 0 · done 3 · discarded 3 = 63.
+Counts by folder: backlog 28 · in-progress 10 · qa 18 · blocked 0 · done 4 · discarded 3 = 63.
+
+Jurgen 2026-08-28 (cierre): `groups-approval-banner-stays` pasa a `done/` con **PASS del owner** (Lima,
+**TF 2.1 build 12**): B se une, ve «1 solicitudes pendientes» y el aviso de esperar al admin, A aprueba y
+**B —sin forzar el cierre de la app ni reabrirla— ve irse solos el aviso y el mensaje naranja**, con el
+grupo normal y 2 miembros activos. Es el escenario que ningún test podía cerrar, y **medido**: el fix
+`479e8e81` es ancestro de `f4cf3d2b` («Build 12 para TestFlight de 2.1») ⇒ el binario que probó el owner
+lleva el código. **Fuera del PASS**, escrito en el ticket: el rechazo y la contra-prueba del tercer
+miembro no se corrieron hoy (tienen unit, no device), B no era install limpia, y esto **no** cierra al
+hermano `groups-join-intent-reconciler`, que sigue en `qa/`. Counts medidos tras el movimiento: qa 19 →
+18, done 3 → 4; el total no se mueve porque es un movimiento, no un ticket nuevo. Índice y disco se
+comprobaron antes y después: 63 filas = 63 ficheros, con el mismo id, status y path en las 63.
 
 Jurgen 2026-08-28 (alta): `fx-partial-rate-rows-silent-1to1` entra en `backlog/` con prioridad
 **high** — familia FX del audit de Frank sobre `2.1` @ `68a7221c` (filas de tasas incompletas +
@@ -132,7 +143,7 @@ Jurgen 2026-08-26: `groups-cloud-mode-hardening-v1`, `groups-cloud-identity-loss
 | Bugs/prefs-cinco-keys-synced-suben-y-no-vuelven.md | tickets/in-progress/prefs-synced-keys-upload-not-download.md |
 | Bugs/qa_cloud-fx-rates-blob-dos-caras.md | tickets/qa/cloud-fx-rates-blob-two-faces.md |
 | Bugs/qa_cloud-tx-epoca-relaciones-huerfanas.md | tickets/backlog/cloud-tx-epoch-orphan-relations.md |
-| Bugs/qa_groups-aprobacion-no-retira-banner.md | tickets/qa/groups-approval-banner-stays.md |
+| Bugs/qa_groups-aprobacion-no-retira-banner.md | tickets/done/groups-approval-banner-stays.md |
 | Bugs/qa_groups-join-intent-reconciler.md | tickets/qa/groups-join-intent-reconciler.md |
 | Bugs/qa_groups-tab-no-perf-patterns.md | tickets/backlog/groups-tab-missing-panel-perf.md |
 | Bugs/qa_groups-tx-fantasma-al-borrar-gasto-de-grupo.md | tickets/qa/groups-ghost-tx-on-delete.md |

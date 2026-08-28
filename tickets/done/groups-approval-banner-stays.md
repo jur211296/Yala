@@ -1,10 +1,10 @@
 ---
 id: groups-approval-banner-stays
-status: qa
+status: done
 priority: high
 area: "groups, sync, backend, onboarding"
 created: 2026-07-31
-updated: 2026-08-26
+updated: 2026-08-28
 source: YalaWiki/Bugs/qa_groups-aprobacion-no-retira-banner.md
 ---
 
@@ -66,3 +66,78 @@ Y el mismo problema al revés: si el owner le hubiera **rechazado**, el aviso ta
 7. **Contra-prueba (que no se retire de más):** con B pendiente, que A apruebe a un TERCER miembro. El aviso de B debe seguir puesto.
 
 migrated from YalaWiki Bugs/qa_groups-aprobacion-no-retira-banner.md @ 1934e8ad
+
+## Cierre del owner 2026-08-28 (Jurgen, Lima) — PASS: la aprobación retira el aviso sin relanzar la app
+
+**La corrida.** Dos teléfonos, grupo NUEVO, **TestFlight 2.1 build 12** (el binario que hay en campo; no
+se subió nada nuevo para esto). **A** = owner, su cuenta personal. **B** = cuenta de prueba **ya
+creada** — no fue instalación limpia.
+
+1. **B** se une por el enlace y queda pendiente: ve **«1 solicitudes pendientes»** y el aviso de arriba
+   **«Esperando la aprobación del administrador»**.
+2. **A** aprueba.
+3. **B se queda en la hoja de Grupos**: no fuerza el cierre de la app ni la reabre.
+4. Al rato, **el aviso y el mensaje naranja se van solos**. El grupo queda normal, con **2 miembros
+   activos**.
+
+**Veredicto del owner: PASS.** Y es exactamente el paso que ningún test podía dar: el propio ticket
+dejaba escrito en «Lo que NO está verificado» que el canal backend en producción no es ejercitable desde
+un test y que **la corrida real con dos teléfonos es lo único que cierra este ticket** — más la regla del
+repo de que no lo declara bueno quien escribió el fix. El punto 3 es el que convierte la corrida en
+prueba: el bug original se quitaba de encima cerrando y reabriendo la app, así que un PASS con relanzado
+no habría valido.
+
+**Este cierre es de QA, no un fix nuevo.** Cero Swift hoy y ninguna subida a TestFlight.
+
+### Que el binario probado lleva el fix — medido, no supuesto
+
+- `479e8e81` (el fix del 2026-07-31) es **ancestro** de `f4cf3d2b` («Build 12 para TestFlight de 2.1»,
+  2026-08-22), y `Yala.xcodeproj/project.pbxproj:543` marca `CURRENT_PROJECT_VERSION = 12` con
+  `MARKETING_VERSION = 2.1` (`:561`) ⇒ el build 12 del device del owner **contiene** el código que este
+  ticket valida.
+- Las dos piezas siguen vivas en el árbol de hoy: `GroupInviteOnboardingLogic.shouldRepublishPhase`
+  (`Yala/App/Logic/GroupInviteOnboardingLogic.swift:126`) y `GroupsSyncClient`
+  `publishTrackedJoinPhaseIfNeeded` (`:2104`) + `ownMemberStatus` (`:2132`), con su call-site en `:1932`.
+
+### Las dos cadenas que citó el owner, identificadas
+
+El aviso de arriba es `groups.invite.waitingApproval.banner`. La cita del owner —«Esperando la
+aprobación del administrador»— es **literalmente** el valor de es-ES
+(`Yala/Resources/es-ES.lproj/Localizable.strings:102`); en es/es-419 el mismo key dice «Esperando
+aprobación del admin» (`es-419.lproj/Localizable.strings:4050`), que es la forma corta con la que está
+escrito el cuerpo de arriba. El contador es `groups.member.pendingCount`, y su cita literal («1
+solicitudes pendientes») es el valor **plano** de es-ES/es-AR
+(`Yala/Resources/es-ES.lproj/Localizable.strings:185`), mientras es/es-419 no tienen ese key en su
+`.strings` y lo resuelven por `Localizable.stringsdict`
+(`es-419.lproj/Localizable.stringsdict:405-420`, singular «%d solicitud pendiente» en `:416`). **INFERIDO** (no
+medido en el device): la corrida fue en es-ES. Aquí no se cambia ninguna cadena y no se abre nada de
+l10n por esto.
+
+### Lo que este PASS NO cubre
+
+- **El rechazo (paso 6 del guion): no se corrió hoy.** El ticket abría también con el caso simétrico: si
+  el owner hubiera **rechazado**, el aviso habría seguido diciendo «esperando aprobación» en vez de contar
+  que no lo dejaron entrar. Ese lado tiene test de cableado
+  (`YalaTests/CloudSync/GroupsSyncClientTests.swift:1394`,
+  `apply_member_ownRejection_retiresPendingApprovalPhase`), y un test no es un device.
+- **La contra-prueba del paso 7: no se corrió.** Con B pendiente, que A apruebe a un **tercer** miembro y
+  el aviso de B siga puesto. También tiene unit (`:1429`,
+  `apply_member_otherUserApproved_keepsPendingApprovalPhase`), y también sin device.
+- **La transición «¡Todo listo!» del cover abierto** (segunda mitad del paso 5) no está en el reporte: el
+  owner estaba en la **hoja de Grupos**, y lo que se vio retirarse es el aviso de esa superficie.
+- **B no era instalación limpia.** Cuenta ya creada. El escenario de install fresca —el del hermano
+  `groups-join-intent-reconciler`— no es el que se corrió.
+- **Esto no cierra al hermano.** `tickets/qa/groups-join-intent-reconciler.md` sigue en `qa/`: su REMAINS
+  es que la solicitud le llegue **al owner** y que el invitado no reciba la notif espuria «se unió». El
+  reporte de hoy dice que **A aprobó** y **no** dice por qué superficie supo de la solicitud ni si le
+  llegó push. Aquí no se le anota nada.
+- **Sin subida y sin flip.** No hubo TestFlight nuevo hoy. **A7/M5 sigue en HOLD**, igual que App Store y
+  tag de release.
+
+### Hallazgo nuevo de la MISMA corrida — va en ticket aparte, no aquí
+
+Con B **todavía pendiente de aprobación**, el grupo «Probando» aparecía en su lista de Grupos y **al
+tocarlo pudo entrar y ver el grupo**. Para el owner eso está mal. **No es este ticket** —aquí el defecto
+era que el aviso no se retiraba DESPUÉS de aprobar, y ese aviso se retiró— así que se abre en
+`tickets/backlog/groups-pending-member-can-open-group.md`, en este mismo PR. Sesión:
+`docs/sessions/2026-08-28-device-qa-approval-banner.md`.
