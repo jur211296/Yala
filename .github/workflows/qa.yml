@@ -16,6 +16,91 @@ jobs:
       - name: Aislamiento de tests (makeTestContext( ⇒ .serialized)
         run: bash qa/check-test-isolation.sh
 
+  # Decide si el job `tests` (macos-26, ~1,5 h de reloj) tiene algo que probar. Un
+  # cambio de solo docs/tickets no puede romper el build ni la suite y hasta ahora
+  # encolaba el runner de simulador igual: el PR #41 (3 ficheros .md) esperó 1 h 45 min.
+  # El gate duro sigue siendo `coverage-index`, que corre siempre y no depende de esto.
+  #
+  # DENY-BY-DEFAULT: `run_tests=false` solo sale si TODOS los ficheros del diff caen en
+  # el allowlist inerte de abajo. Todo lo demás corre — incluidos los casos en que NO
+  # sabemos qué cambió: diff vacío, lista truncada por el tope de la API, push sin base
+  # (rama nueva o historial reescrito), evento inesperado o fallo de red. Fail closed:
+  # 1,5 h de más sale más barato que un verde que no probó nada.
+  #
+  # El allowlist se MIDIÓ contra el árbol (2026-08-28): ninguna de esas rutas aparece en
+  # `Yala.xcodeproj/project.pbxproj` ni en las fuentes de los targets, así que no son
+  # input de xcodebuild. Al añadir una ruta nueva, repetir la comprobación, no asumirla.
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      run_tests: ${{ steps.decide.outputs.run_tests }}
+    steps:
+      - name: ¿El diff toca app, tests, proyecto o CI?
+        id: decide
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PUSH_BASE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+
+          # Única salida posible cuando no hay certeza. Cualquier error no capturado
+          # tumba el step, y el `if:` de `tests` también lee eso como "corre".
+          run_suite() {
+            echo "run_tests=true" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Suite de simulador::CORRE — $1"
+            exit 0
+          }
+
+          case "$GITHUB_EVENT_NAME" in
+            pull_request)
+              changed=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/files" --jq '.[].filename') \
+                || run_suite "la API de ficheros del PR no respondió"
+              cap=3000
+              ;;
+            push)
+              if [ -z "$PUSH_BASE" ] || [ "$PUSH_BASE" = "0000000000000000000000000000000000000000" ]; then
+                run_suite "push sin commit base (rama nueva o historial reescrito)"
+              fi
+              # `compare A...B` ancla en el merge-base, así que un merge commit en 2.1
+              # rinde todo lo que introduce el merge, no solo el segundo padre.
+              changed=$(gh api "repos/$GITHUB_REPOSITORY/compare/$PUSH_BASE...$GITHUB_SHA" --jq '.files[]?.filename') \
+                || run_suite "la API compare no respondió"
+              cap=300
+              ;;
+            *)
+              run_suite "evento $GITHUB_EVENT_NAME sin lista de ficheros fiable"
+              ;;
+          esac
+
+          [ -n "$changed" ] || run_suite "el diff llegó vacío"
+          echo "Ficheros del diff (primeros 50):"
+          printf '%s\n' "$changed" | awk 'NR <= 50 { print "  " $0 }'
+
+          total=0
+          culprit=""
+          while IFS= read -r file; do
+            [ -n "$file" ] || continue
+            total=$((total + 1))
+            case "$file" in
+              docs/*|tickets/*|marketing/*|Web/*|.claude/*) ;;
+              README.md|CLAUDE.md|LICENSE|LICENSE.md|LICENSE.txt) ;;
+              *) culprit="$file"; break ;;
+            esac
+          done <<< "$changed"
+
+          [ -z "$culprit" ] || run_suite "toca $culprit"
+          # La API corta la lista de ficheros en `cap`; si la tocamos, el diff real
+          # puede llevar código que no llegamos a ver.
+          [ "$total" -lt "$cap" ] || run_suite "la API cortó la lista en $cap ficheros"
+
+          echo "run_tests=false" >> "$GITHUB_OUTPUT"
+          echo "::notice title=Suite de simulador::SE SALTA — el diff es solo docs/tickets/marketing (ficheros: $total)"
+
   # Suite de tests. Runner macos-26 (Tahoe): Xcode `latest-stable` (26.x) + sim
   # iPhone 17 Pro. Build UNA vez + test-without-building.
   #
@@ -41,6 +126,10 @@ jobs:
   # TODO(@jur, 2026-07-15): resolver el EXC_BREAKPOINT SwiftData in-memory (repro mínima / bug
   # iOS 26.x sim / container compartido) — prerequisito para CUALQUIER paso de test bloqueante.
   tests:
+    needs: changes
+    # Fail closed también aquí: si `changes` peta, su output llega vacío y '' != 'false',
+    # así que la suite corre igual. Solo un 'false' explícito la salta.
+    if: ${{ !cancelled() && needs.changes.outputs.run_tests != 'false' }}
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
