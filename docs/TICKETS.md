@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (63)
+## Index (64)
 
 | id | status | path |
 |----|--------|------|
@@ -95,8 +95,27 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | distribution-balance-kpi-skips-fx | backlog | tickets/backlog/distribution-balance-kpi-skips-fx.md |
 | notifications-not-delivered-testflight | done | tickets/done/notifications-not-delivered-testflight.md |
 | fx-partial-rate-rows-silent-1to1 | backlog | tickets/backlog/fx-partial-rate-rows-silent-1to1.md |
+| groups-pending-member-can-open-group | backlog | tickets/backlog/groups-pending-member-can-open-group.md |
 
-Counts by folder: backlog 28 · in-progress 10 · qa 18 · blocked 0 · done 4 · discarded 3 = 63.
+Counts by folder: backlog 29 · in-progress 10 · qa 18 · blocked 0 · done 4 · discarded 3 = 64.
+
+Jurgen 2026-08-28 (alta, hallazgo de la MISMA corrida de device): `groups-pending-member-can-open-group`
+entra en `backlog/` con prioridad **high** — estando **pendiente de aprobación**, B veía el grupo en su
+lista y **al tocarlo podía entrar y verlo**. Owner: está mal. **No se dobla** dentro del ticket del aviso
+(allí el defecto era que el aviso no se retiraba DESPUÉS de aprobar, y hoy se retiró) ni se reusa
+`groups-join-intent-reconciler` (allí el miembro no nacía). Sin implementación y sin causa inventada: lo
+único medido del mecanismo es que entregar **grupo + roster** a un pendiente es **intencional** en el DDL
+(`supabase-groups-staging.ddl:125`, `:153`, comentario en `:814`) mientras el contenido financiero **no**
+baja (`:817`, `:819`, `:821`) ⇒ lo que queda abierto es una **decisión de producto**, y choca con
+`guest-decline-has-no-screen`, que trata el mismo hecho como problema de copy. Counts tras el alta:
+backlog 28 → 29, total 63 → 64.
+
+Índice y disco vuelven a cuadrar con el alta dentro, comprobado fila a fila (id, status y path): **64
+filas = 64 ficheros**. Lo que este PR **no** toca, a propósito: los cierres de **PR 41**
+(`groups-background-emitter-no-upload`) y **PR 43** (`groups-ghost-tx-on-delete`) siguen sin mergear a
+`2.1`, así que aquí siguen en `in-progress` y `qa` respectivamente; `fx-partial-rate-rows-silent-1to1` se
+queda en `backlog`; y de un ticket `leave-rpc-error-10` **no hay nada en este árbol** (cero ficheros en
+`tickets/`, cero menciones en el repo, y ningún PR abierto que lo traiga) ⇒ no había nada que preservar.
 
 Jurgen 2026-08-28 (cierre): `groups-approval-banner-stays` pasa a `done/` con **PASS del owner** (Lima,
 **TF 2.1 build 12**): B se une, ve «1 solicitudes pendientes» y el aviso de esperar al admin, A aprueba y
