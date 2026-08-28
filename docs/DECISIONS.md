@@ -41,6 +41,8 @@ Cada decisión sigue esta estructura:
 - Al meter una carpeta nueva en el allowlist hay que repetir la comprobación contra `project.pbxproj`, no heredarla de este texto.
 - Sigue habiendo dos runs por commit en rama de PR (`push` + `pull_request`). Esta decisión no lo toca; con el filtro, en los PR de docs los dos son baratos.
 
+**Verificación (medida, no inferida):** 44 casos contra el texto exacto del `run:` extraído del YAML, con un `gh` de mentira que aplica el filtro `--jq` real bajo `bash -e`; entre ellos la lista de ficheros real del PR #41, rutas con espacios de `marketing/`, y los prefijos trampa `docsx/` y `tickets-old/` (que deben correr). `actionlint` 1.7.7 + shellcheck 0.10 limpios — el único aviso, `label "macos-26" is unknown`, es preexistente y de la propia versión de actionlint. En vivo, el PR #42: el run de `pull_request` 33192805114 resolvió `CORRE — toca .github/workflows/qa.yml` y el de `push` 33192755229, primer push de la rama, cayó por `push sin commit base`. El job `changes` tardó 4 s y 2 s.
+
 **Estado:** Activa
 
 ---
