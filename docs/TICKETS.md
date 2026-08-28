@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (65)
+## Index (66)
 
 | id | status | path |
 |----|--------|------|
@@ -97,8 +97,20 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | fx-partial-rate-rows-silent-1to1 | backlog | tickets/backlog/fx-partial-rate-rows-silent-1to1.md |
 | groups-deleted-group-detail-stays-open | backlog | tickets/backlog/groups-deleted-group-detail-stays-open.md |
 | groups-pending-member-can-open-group | backlog | tickets/backlog/groups-pending-member-can-open-group.md |
+| groups-leave-rpc-error-10 | backlog | tickets/backlog/groups-leave-rpc-error-10.md |
 
-Counts by folder: backlog 30 · in-progress 9 · qa 15 · blocked 0 · done 8 · discarded 3 = 65.
+Counts by folder: backlog 31 · in-progress 9 · qa 15 · blocked 0 · done 8 · discarded 3 = 66.
+
+Jurgen 2026-08-28 (alta, la segunda del día): `groups-leave-rpc-error-10` entra en `backlog/` con
+prioridad **high** — hallazgo de device en Lima (TF `2.1` build 12, dos teléfonos): en uno «Salir del
+grupo» funciona y en el otro falla con el alert crudo «Error de Yala.GroupsRPCError 10», y en esa
+pantalla no hay botón de borrar el grupo. Es **un** ticket con dos caras (el número crudo del canal y
+el agujero de UX de último dueño / `isOwner` local que solo escribe el creador) porque comparten
+setup, pantalla y callejón sin salida. Sin implementación: cero Swift, `qa/coverage-index.json`
+intacto. **Nada se declara como causa**: el mapeo del discriminante 10 → `channelDisabled` está
+medido en el árbol `2.1` @ `2175e53e` (orden de declaración del enum), y el ticket deja escrito qué
+parte de esa lectura es inferencia y cómo zanjarla. Counts tras el alta en este árbol: backlog 30 → 31,
+total 65 → 66.
 
 Jurgen 2026-08-28 (cierre): `inbox-crash-convert-to-group-expense` pasa a `done/` por **QA device PASS**
 del owner — TF 2.1 build 12, teléfono A: convertir un borrador de la Bandeja en gasto compartido de un
