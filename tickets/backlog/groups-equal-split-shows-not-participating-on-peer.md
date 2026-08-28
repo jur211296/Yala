@@ -7,9 +7,12 @@ created: 2026-08-28
 updated: 2026-08-28
 ---
 
-# El gasto que A dividió mitad y mitad se ve en B como si B no hubiera participado, y solo se actualiza cuando B fuerza el cierre de la app
+# Un gasto que A dividió mitad y mitad puede verse en B como si B no hubiera participado, y solo se actualiza cuando B fuerza el cierre de la app
 
-## Reporte del owner (device, 2026-08-28, Lima)
+Dos observaciones del mismo día y el mismo grupo, y **no** dicen lo mismo: en el primer gasto pasó,
+en un segundo gasto posterior **no** pasó. El ticket registra las dos. No se cierra con la segunda.
+
+## Observación 1 — el gasto «Test» (device, 2026-08-28, Lima)
 
 TestFlight **2.1 build 12**. Dos teléfonos: **A** = personal (del owner), **B** = de pruebas. El
 grupo **no** es nuevo: es el mismo que ya se venía usando en el device-QA de hoy.
@@ -26,21 +29,52 @@ grupo **no** es nuevo: es el mismo que ya se venía usando en el device-QA de ho
 5. El owner **fuerza el cierre** de Yala en B y **vuelve a abrir el grupo**. **Solo entonces** el
    gasto se actualiza: el «No participé» rancio desaparece.
 
-Eso es TODO lo que hay del device. No se inventa nada por encima de esto.
+Eso es TODO lo que hay de esta observación. No se inventa nada por encima de esto.
 
-## Cuál es el defecto
-
-**B puede enseñar el gasto como si B no hubiera participado mientras A ya lo tiene mitad y mitad, y
-lo que lo refrescó fue forzar el cierre de la app y volver a entrar.** Dos tiempos, no uno:
+Los dos tiempos de este gasto:
 
 | momento | qué se ve en B |
 |---|---|
 | primera apertura del grupo (app venía de segundo plano) | el gasto **como si B no participara** |
 | tras force-quit + volver a abrir el grupo | el gasto **actualizado** |
 
-**No** es un descuadre permanente de split: no hay un reparto guardado en A y otro distinto guardado
-en B para siempre. El paso 5 demuestra que B llega al estado correcto sin que nadie edite el gasto.
-Lo que se reporta es el desajuste **mientras dura**, y que la salida fue matar la app.
+## Observación 2 — contraste: un gasto posterior sí llegó bien, sin matar la app
+
+Mismo día, **mismo grupo**, después de lo de arriba. En **A** se crea un segundo gasto compartido
+**convirtiendo un borrador del Inbox** en gasto de grupo. Se revisa en **B** **sin** forzar el cierre
+de la app.
+
+**PASS del owner:** B vio el gasto con **su parte correcta**. No hizo falta matar la app ni volver a
+abrirla.
+
+Eso es TODO lo que hay de esta observación. Del segundo gasto no se anotaron importe, divisa, tipo de
+reparto ni si B tenía la app en primer o segundo plano en ese momento. **No se inventa.**
+
+## Cuál es el defecto
+
+**B puede enseñar el gasto como si B no hubiera participado mientras A ya lo tiene mitad y mitad, y
+lo que lo refrescó fue forzar el cierre de la app y volver a entrar.**
+
+Con las dos observaciones sobre la mesa, el defecto es **condicional, no constante**:
+
+| | Observación 1 (gasto «Test») | Observación 2 (convertido del Inbox) |
+|---|---|---|
+| Cómo se creó en A | gasto de grupo, 20 soles, mitad y mitad | convirtiendo un borrador del Inbox |
+| Qué vio B sin matar la app | **como si B no participara** | **su parte, correcta** |
+| ¿Hizo falta force-quit? | **sí**, fue lo que lo refrescó | **no** |
+| Veredicto del owner | defecto | PASS de ese gasto |
+
+Lo que **no** es, leído contra estas dos observaciones (deducción del reporte, no medición de código):
+
+- **No** es un descuadre permanente de split: no hay un reparto guardado en A y otro distinto en B
+  para siempre. El paso 5 de la observación 1 demuestra que B llega al estado correcto sin que nadie
+  edite el gasto.
+- **No** es «todo gasto de grupo se ve mal en B». La observación 2 lo refuta: un gasto posterior, en
+  el mismo grupo y el mismo par de teléfonos, llegó bien y a la primera.
+
+Lo que queda: **un gasto de grupo puede quedarse en B con la versión equivocada hasta que el usuario
+mata la app, y todavía no se sabe qué distingue el caso que falla del que no.** Ese «qué distingue»
+es el trabajo de este ticket, y no está resuelto aquí.
 
 ## Qué ve el usuario
 
@@ -51,6 +85,10 @@ el cierre de la app se queda con esa versión, y los dos teléfonos cuentan el m
 distinta. Forzar el cierre de la app no es algo que un usuario sepa que tiene que hacer, ni algo que
 la pantalla le sugiera.
 
+Que no pase siempre (observación 2) no lo hace más leve: lo hace **menos creíble de puertas afuera**.
+Un grupo en el que casi todos los gastos salen bien y de vez en cuando uno dice «no participaste» es
+un grupo en el que ya no se puede confiar en ninguna cifra sin comprobarla en el otro teléfono.
+
 ## Qué NO es este ticket
 
 - **No es el ticket de notificaciones.** B no recibió aviso, y el owner lo deja fuera a propósito. No
@@ -59,6 +97,8 @@ la pantalla le sugiera.
 - **No es un descuadre permanente de split** guardado en A vs guardado en B (ver arriba).
 - **No es un número mal convertido.** El síntoma reportado es la participación, no el importe: 20
   soles, una sola divisa.
+- **No es un ticket cerrado.** El PASS de la observación 2 es el PASS **de ese gasto**, no del ticket.
+  Un caso que sale bien no cierra un caso que salió mal: sigue en `backlog`.
 
 ## Lo que este ticket NO decide
 
@@ -70,9 +110,18 @@ Este ticket **no** declara causa raíz. En concreto, no afirma ninguna de estas:
 - que sea **solo** refresco de UI,
 - que sea **solo** aplicación tardía del share en B.
 
-El force-quit prueba una cosa y solo una: el estado correcto **era alcanzable** en B sin editar el
-gasto. No descarta nada más. Quien retome esto mide primero y escribe la causa con evidencia de
-device (o con un repro), no a partir de la lectura de este párrafo.
+Y con la observación 2 encima, tampoco afirma:
+
+- que la **vía de creación** sea lo que distingue los dos casos (gasto de grupo directo vs convertir
+  un borrador del Inbox). Es **una** diferencia anotada entre las dos corridas, no la causa.
+- que el force-quit de la observación 1 dejara a B «arreglado» para lo que viniera después. Es otra
+  diferencia anotada: la observación 2 se revisó en una sesión de B que había arrancado con esa
+  relanzada.
+
+Las diferencias entre las dos corridas van listadas **sin orden de sospecha**. Nombrarlas no es
+elegirlas. El force-quit de la observación 1 prueba una cosa y solo una: el estado correcto **era
+alcanzable** en B sin editar el gasto. No descarta nada más. Quien retome esto mide primero y escribe
+la causa con evidencia de device (o con un repro), no a partir de la lectura de este párrafo.
 
 ## Medido en el árbol
 
@@ -80,7 +129,8 @@ Todo lo de esta sección está medido sobre `2.1` @ `2175e53e` — el árbol en 
 ticket, **no** el build 12 del device. Si al retomarlo el árbol ya no es ese commit, re-medir: es un
 grep, y en este repo la documentación envejece más rápido que el código.
 
-**Nada de esto prueba la causa de ESTA corrida.** Son coordenadas para quien retome, no veredicto.
+**Nada de esto prueba la causa de ninguna de las dos observaciones.** Son coordenadas para quien
+retome, no veredicto.
 
 - El texto que vio B es la key `groups.expense.notIncluded`, y en español dice **«No participaste»**:
   `Yala/Resources/es-419.lproj/Localizable.strings:3121` (igual en `es`, `es-ES`, `es-AR`). El owner
@@ -107,6 +157,8 @@ primera apertura, ni por qué.
 
 ## Qué falta del device (pendiente owner)
 
+De la observación 1:
+
 - Si B lo vio en la fila del feed, en el detalle del gasto, o en los dos.
 - Cuánto tiempo pasó entre la creación en A y la primera apertura en B, y cuánto hasta el force-quit.
 - Qué monto enseñaba el gasto en B en esa primera apertura (el total, cero, o ninguno).
@@ -117,7 +169,16 @@ primera apertura, ni por qué.
   pendiente en esa corrida.
 - Si tras el force-quit el gasto quedó bien **de forma estable**, o si volvió a torcerse.
 
-Sin esto no hay repro cerrado. No inventar los valores.
+De la observación 2 (hace falta para poder comparar las dos, que es el trabajo del ticket):
+
+- Importe, divisa y tipo de reparto del gasto convertido.
+- Si B tenía la app en primer plano, en segundo plano, o cerrada-no-matada cuando se revisó.
+- Cuánto tiempo pasó entre la conversión en A y la revisión en B.
+- Si B seguía en la misma sesión de app que arrancó con el force-quit de la observación 1, o si hubo
+  otra relanzada en medio.
+- Si B estaba dentro del grupo en ese momento o entró desde fuera.
+
+Sin esto no hay repro cerrado ni comparación limpia. No inventar los valores.
 
 ## Distinto de
 
@@ -131,12 +192,16 @@ Ids citados sin afirmar su status: hay movimientos en vuelo y el índice se mide
   estaba en la lista de B en la primera apertura; lo que no cuadraba era la participación.
 - `groups-ghost-tx-on-delete` — espejo que sobrevive a un borrado. Otro sentido: borrado, no
   creación.
+- `inbox-convert-draft-to-group-expense` — la vía por la que se creó el gasto de la observación 2.
+  Se cita porque es el camino que se usó, **no** como culpable ni como sospechoso: la observación 2
+  es justamente la que salió bien.
 - `distribution-balance-kpi-skips-fx` y `fx-partial-rate-rows-silent-1to1` — familia de números y
   FX. Este no es un importe mal convertido.
 
 ## HOLD
 
 - Status sigue `backlog`. **Sin implementación: cero Swift en este ticket.**
+- **No cerrar el ticket con la observación 2.** Ese PASS es de un gasto, no del ticket.
 - No inventar PASS ni `ok_`.
 - A7 / M5 siguen en HOLD, sin flip (`docs/ESTADO.md`). Sin subida a TestFlight, sin tag, sin store.
 - Sin tocar `qa/coverage-index.json` en el alta: no hay código nuevo bajo `Yala/`.
@@ -150,6 +215,9 @@ Ids citados sin afirmar su status: hay movimientos en vuelo y el índice se mide
 - [ ] B no necesita matar la app para llegar al estado correcto.
 - [ ] La causa se escribe con evidencia (device o repro), no a partir de este ticket. Si resulta ser
       más de una, el ticket se parte entonces, no antes.
+- [ ] La causa que se escriba **explica las dos observaciones**: por qué el gasto «Test» se quedó
+      rancio en B y por qué el gasto convertido del Inbox llegó bien a la primera. Una explicación
+      que solo cubra una de las dos no cierra este ticket.
 - [ ] Si se confirma que el estado correcto tarda en llegar, la pantalla no afirma «No participaste»
       mientras no lo sabe (copy por definir; leer `docs/planning/BRAND-VOICE.md`).
 - [ ] Device-QA en los dos teléfonos. No inventar PASS.
