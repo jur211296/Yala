@@ -1,10 +1,10 @@
 ---
 id: groups-background-emitter-no-upload
-status: in-progress
+status: done
 priority: medium
 area: groups
 created: 2026-08-02
-updated: 2026-08-26
+updated: 2026-08-28
 source: YalaWiki/Backlog/groups-emisor-segundo-plano-no-sube.md
 ---
 
@@ -111,3 +111,27 @@ No confundir con el chip `task_736f2831` (transacciones fantasma al borrar un
 gasto de grupo), que es otro defecto de la misma sesión.
 
 migrated from YalaWiki Backlog/groups-emisor-segundo-plano-no-sube.md @ 1934e8ad
+
+## Owner check 2026-08-28 (Jurgen, Lima, TF 2.1 build 12) — QA device PASS
+
+- Dos teléfonos en el mismo grupo, binario de campo **TF 2.1 build 12**.
+- Teléfono A (emisor): crea un gasto de grupo y se va al **Home de iOS**. **Sin force-quit**.
+- Teléfono B (receptor): en el feed. A **no se vuelve a abrir**.
+- El gasto apareció en B en **~30 s**. Veredicto del owner: **PASS**.
+- Es el caso dominante que abrió el ticket —apunto el gasto y guardo el teléfono—, el que antes se
+  quedaba en silencio indefinido hasta que el emisor reabría Yala.
+
+⇒ **Cerrado por QA device**: el PASS drena el «QA device pendiente» del estado del 2026-08-18.
+
+**Este cierre es QA, no un fix nuevo.** El código ya estaba en el árbol de `2.1` vía
+[PR 19](https://github.com/jur211296/Yala/pull/19) (merge `b9526c8e`, head `c1577137`) y aquí no se toca
+Swift. Medido hoy en este árbol, lo implementado es la **opción 1**: `GroupsSaveSyncTrigger.swift:72`
+pide el `beginBackgroundTask` y `:83` duerme `SyncCadencePolicy.pushDebounce` antes de pedir UN ciclo,
+colgado del save local por `GroupExpenseService.swift:29-32` — el seam que este ticket declaraba
+huérfano ya tiene consumidor.
+
+**Lo que este PASS no dice.** Hoy **no hubo subida a TestFlight**: el PASS es sobre el build 12 que ya
+estaba en campo, no sobre ningún build posterior. Los ~30 s son **una** medición del caso dominante, no
+una distribución ni un techo garantizado — el tiempo de fondo lo concede iOS. Y la **opción 2**
+(`BGAppRefreshTask` para el teléfono que se queda días sin abrirse) sigue sin implementar; medido hoy,
+ningún ticket de `tickets/` la cubre y este cierre no abre uno.
