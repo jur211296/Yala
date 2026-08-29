@@ -58,6 +58,45 @@ def tema(t):
             return nom
     return 'Otros'
 
+def indice_vinetas(f, s, vin, apply):
+    """Indice de un documento cuya estructura son vinetas '- **Titulo:**', no encabezados."""
+    lineas = s[:0]
+    idx = []
+    for i, (pos, tit) in enumerate(vin):
+        fin = vin[i + 1][0] if i + 1 < len(vin) else len(s)
+        nlinea = s.count('\n', 0, pos) + 1
+        peso = len(s[pos:fin].encode('utf-8'))
+        idx.append((nlinea, re.sub(r'\s+', ' ', tit).strip(' :'), peso))
+    kb = len(s.encode()) // 1024
+    b = ['<!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->', '',
+         '## Índice de reglas (%d)' % len(idx), '',
+         '> Este fichero son **%d KB en %d reglas largas**. No lo leas entero: localiza la regla' % (kb, len(idx)),
+         '> aquí y lee **solo su tramo** con `sed -n \'<linea>,<linea+N>p\'`.',
+         '> Los números de línea se desplazan al editar — regenera con',
+         '> `python3 scripts/indexar_doc.py <fichero> --apply`.', '',
+         '| Línea | Regla | Peso |', '|---|---|---|']
+    def filas(off):
+        return ['| `L%d` | %s | %s |' % (nl + off, tit[:120],
+                ('%.1f KB' % (peso / 1024.0)) if peso >= 1024 else '%d B' % peso)
+                for nl, tit, peso in idx]
+    # El propio indice desplaza el contenido hacia abajo: se cuenta cuanto ocupa y se
+    # corrigen los numeros. Como corregirlos no cambia el numero de lineas del bloque,
+    # una sola pasada basta.
+    desplaz = len(b) + len(filas(0)) + 3   # +2 del cierre, +1 de la linea en blanco
+    b += filas(desplaz)
+    b += ['', '<!-- INDICE:fin -->']
+    bloque = '\n'.join(b)
+    m = re.match(r'(?s)(\A---\n.*?\n---\n+)?(#[^\n]*\n+)((?:>[^\n]*\n|\n)*)', s)
+    cab = m.group(0) if m else ''
+    out = cab + bloque + '\n\n' + s[len(cab):]
+    print('  %s: %d reglas en vinetas, la mayor de %.1f KB' % (f, len(idx), max(p for _, _, p in idx) / 1024.0))
+    if apply:
+        io.open(f, 'w', encoding='utf-8').write(out)
+        print('  escrito: %d -> %d B' % (len(s.encode()), len(out.encode())))
+    else:
+        print('  (dry-run)')
+
+
 def main():
     f = sys.argv[1]
     apply = '--apply' in sys.argv
@@ -68,10 +107,20 @@ def main():
     _ACTIVOS = elegir_temas(s)
     n2 = len(re.findall(r'(?m)^## ', s)); n3 = len(re.findall(r'(?m)^### ', s))
     NIVEL = '##' if '--h2' in sys.argv else ('###' if '--h3' in sys.argv else ('###' if n3 > n2 else '##'))
-    if max(n2, n3) < 8:
-        print('  %s: solo %d encabezados; no hay nada que indexar (necesita secciones primero)'
-              % (f, max(n2, n3)))
+    n4 = len(re.findall(r'(?m)^#### ', s))
+    if max(n2, n3, n4) < 8:
+        # Sin encabezados suficientes: puede seguir habiendo estructura en vinetas
+        # "- **Titulo:**". Se indexan por NUMERO DE LINEA y peso, no por ancla, porque
+        # una vineta no genera ancla y porque a un agente le sirve mas saber que puede
+        # leer solo ese tramo con sed que tener un enlace que no existe.
+        vin = [(m.start(), m.group(1)) for m in re.finditer(r'(?m)^- \*\*(.+?)\*\*', s)]
+        if len(vin) >= 8:
+            return indice_vinetas(f, s, vin, apply)
+        print('  %s: solo %d encabezados y %d vinetas; no hay nada que indexar'
+              % (f, max(n2, n3, n4), len(vin)))
         return
+    if n4 > max(n2, n3) and '--h2' not in sys.argv and '--h3' not in sys.argv:
+        NIVEL = '####'
     print('  nivel de entrada: %s  (##=%d, ###=%d)' % (NIVEL, n2, n3))
 
     ents = []

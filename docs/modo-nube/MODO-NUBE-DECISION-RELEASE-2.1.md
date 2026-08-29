@@ -1,3 +1,26 @@
+<!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
+
+## Índice (13 entradas)
+
+> **No hace falta leer este fichero entero** — son 58 KB. Localiza la entrada
+> aquí y salta a ella.
+
+- `—` [Paso 1 · QUÉ PROBAR EN TESTFLIGHT — lo único que el build no puede demostrar solo](#paso-1--qu-probar-en-testflight--lo-nico-que-el-build-no-puede-demostrar-solo)
+- `—` [Por qué separados, y no en un build](#por-qu-separados-y-no-en-un-build)
+- `—` [Por qué el flip espera al bridge, y los 4 apagones NO lo bloquean](#por-qu-el-flip-espera-al-bridge-y-los-4-apagones-no-lo-bloquean)
+- `—` [El SEGUNDO bloqueante del paso 3 — y NO lo introdujo el Modo Nube](#el-segundo-bloqueante-del-paso-3--y-no-lo-introdujo-el-modo-nube)
+- `—` [Descartado](#descartado)
+- `—` [A3 · Los apagones S2 / S3b / S4](#a3--los-apagones-s2--s3b--s4)
+- `—` [El TERCER bloqueante del paso 3 — el canal no sincronizaba DATOS (RESUELTO el mismo día)](#el-tercer-bloqueante-del-paso-3--el-canal-no-sincronizaba-datos-resuelto-el-mismo-da)
+- `—` [A2 · Qué evidencia se concede al gate de frescura cuando desaparezca su brazo CloudKit](#a2--qu-evidencia-se-concede-al-gate-de-frescura-cuando-desaparezca-su-brazo-cloudkit)
+- `—` [A4 · El vaciado manual de los grupos legacy — CANCELADO, no diferido](#a4--el-vaciado-manual-de-los-grupos-legacy--cancelado-no-diferido)
+- `2026-08-06` [A6 · La reacción al cambio de Apple ID en Grupos — PÉRDIDA DECLARADA (owner, 2026-08-06)](#a6--la-reaccin-al-cambio-de-apple-id-en-grupos--prdida-declarada-owner-2026-08-06)
+- `2026-07-31` [Paso 3 · EJECUTADO el 2026-07-31 — y los TRES bloqueantes que destapó en device](#paso-3--ejecutado-el-2026-07-31--y-los-tres-bloqueantes-que-destap-en-device)
+- `2026-07-30` [Paso 1 · RESULTADO de la verificación en device (2026-07-30)](#paso-1--resultado-de-la-verificacin-en-device-2026-07-30)
+- `2026-07-30` [Paso 2 · EJECUTADO el 2026-07-30 — el flip y los 8 sitios de teardown](#paso-2--ejecutado-el-2026-07-30--el-flip-y-los-8-sitios-de-teardown)
+
+<!-- INDICE:fin -->
+
 ---
 created: 2026-07-28
 updated: 2026-08-04

@@ -1,5 +1,43 @@
 # qa/cloud — Modo Nube backend contract checks (I5)
 
+<!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
+
+## Índice (28 entradas)
+
+> **No hace falta leer este fichero entero** — son 113 KB. Localiza la entrada
+> aquí y salta a ella.
+
+- `—` [Running the RLS gate](#running-the-rls-gate)
+- `—` [Goldens de I7a (Worker `/account/*` contra staging)](#goldens-de-i7a-worker-account-contra-staging)
+- `—` [IdentityRemap (§b.4, DIFERIDOS #29) — traducción client-side, op first-class diferido a v2](#identityremap-b4-diferidos-29--traduccin-client-side-op-first-class-diferido-a-v2)
+- `—` [Reversa server-side (I11-3, §h) — columnas `reverse_*` + acciones del RPC](#reversa-server-side-i11-3-h--columnas-reverse--acciones-del-rpc)
+- `—` [Heartbeat del lease (I14-pre) — acción `heartbeat` del RPC `migration_progress`](#heartbeat-del-lease-i14-pre--accin-heartbeat-del-rpc-migrationprogress)
+- `—` [delete_personal_account (G5-D1) — borrado GDPR del corpus personal + verificación WIRE one-shot](#deletepersonalaccount-g5-d1--borrado-gdpr-del-corpus-personal--verificacin-wire-one-shot)
+- `—` [g12_01 — delete_personal_account TAMBIÉN borra `auth.users` (gate §12, Bloque B2)](#g1201--deletepersonalaccount-tambin-borra-authusers-gate-12-bloque-b2)
+- `—` [g12_02 — lockdown EXECUTE de `stamp_group_seq` (higiene advisor, molde i5_11) — APLICADA EN AMBOS EN](#g1202--lockdown-execute-de-stampgroupseq-higiene-advisor-molde-i511--aplicada-en-ambos-envs)
+- `—` [G8-1 — APNs server-side: registro de tokens + fan-out de silent push](#g8-1--apns-server-side-registro-de-tokens--fan-out-de-silent-push)
+- `—` [G8-3 — credencial de máquina `yala_push` (supersede el modelo de amenaza de G8-1)](#g8-3--credencial-de-mquina-yalapush-supersede-el-modelo-de-amenaza-de-g8-1)
+- `—` [B1 (gate §12) — SIWA revoke 5.1.1(v): canje + revocación del refresh token de Apple](#b1-gate-12--siwa-revoke-511v-canje--revocacin-del-refresh-token-de-apple)
+- `—` [Google revoke (sesión 3 Google Sign-In) — `disconnect()` del grant OAuth al borrar la cuenta](#google-revoke-sesin-3-google-sign-in--disconnect-del-grant-oauth-al-borrar-la-cuenta)
+- `—` [Related repo artifacts](#related-repo-artifacts)
+- `—` [Remote-config `GET /config` (DIFERIDOS #34 — kill-switch sin release, §j.1/§j.2)](#remote-config-get-config-diferidos-34--kill-switch-sin-release-j1j2)
+- `—` [Vaciar (wipe masivo por filas) — caracterización del drain en `.cloud`](#vaciar-wipe-masivo-por-filas--caracterizacin-del-drain-en-cloud)
+- `—` [Goldens de I6 (Worker `/sync/*` contra staging)](#goldens-de-i6-worker-sync-contra-staging)
+- `—` [migrate_group (G6-1) — migración de grupos VIVOS de CloudKit al backend (§9 D7)](#migrategroup-g6-1--migracin-de-grupos-vivos-de-cloudkit-al-backend-9-d7)
+- `—` [Sender e2e de I8e (`SyncPushClient` `/sync/push` contra staging)](#sender-e2e-de-i8e-syncpushclient-syncpush-contra-staging)
+- `—` [I14 — UI real de migración + consent + claimAction + relaunch asistido + encendido de flags](#i14--ui-real-de-migracin--consent--claimaction--relaunch-asistido--encendido-de-flags)
+- `—` [transfer_group_ownership (G10 / D10) — batch "salir de todos mis grupos" — APLICADA EN AMBOS ENVS ✅](#transfergroupownership-g10--d10--batch-salir-de-todos-mis-grupos--aplicada-en-ambos-envs)
+- `—` [G7 — cifrado pgcrypto de columnas † de grupos (data-at-rest)](#g7--cifrado-pgcrypto-de-columnas--de-grupos-data-at-rest)
+- `2026-07-28` [Addendum 2026-07-28 — `migrate_group` queda INERTE (Fase 1 de simplificación de Grupos)](#addendum-2026-07-28--migrategroup-queda-inerte-fase-1-de-simplificacin-de-grupos)
+- `2026-07-17` [Telemetría propia `POST /metrics` (2026-07-17 — sustituye TelemetryDeck)](#telemetra-propia-post-metrics-2026-07-17--sustituye-telemetrydeck)
+- `2026-07-16` [Google Sign-In (sesión 1 — brief `docs/modo-nube/briefs/BRIEF-GOOGLE-SIGNIN-V1.md`, 2026-07-16)](#google-sign-in-sesin-1--brief-docsmodo-nubebriefsbrief-google-signin-v1md-2026-07-16)
+- `2026-07-11` [Entidades de SISTEMA — política v1 de merge determinista (residual NOTA-2 de I12-B, 2026-07-11)](#entidades-de-sistema--poltica-v1-de-merge-determinista-residual-nota-2-de-i12-b-2026-07-11)
+- `2026-07-11` [Huérfano cross-device del cutover (DIFERIDOS #30) — adopt-reconcile v1 (DARK, 2026-07-11)](#hurfano-cross-device-del-cutover-diferidos-30--adopt-reconcile-v1-dark-2026-07-11)
+- `2026-07-11` [Hallazgos de la corrida device de la reversa (2026-07-11): cierres pre-flags](#hallazgos-de-la-corrida-device-de-la-reversa-2026-07-11-cierres-pre-flags)
+- `2026-07-11` [Proyecto Supabase de PRODUCCIÓN (DIFERIDOS #23 — creado 2026-07-11)](#proyecto-supabase-de-produccin-diferidos-23--creado-2026-07-11)
+
+<!-- INDICE:fin -->
+
 Scripts that validate the Supabase **staging** schema (`fostjbbwstyuunmmefuk`). They need network +
 the two seeded test users, so they do **NOT** run in CI — run them by hand after any `i5_*` migration.
 

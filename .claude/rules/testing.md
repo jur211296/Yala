@@ -6,6 +6,40 @@ paths:
 ---
 # Tests
 
+<!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
+
+## Índice de reglas (20)
+
+> Este fichero son **56 KB en 20 reglas largas**. No lo leas entero: localiza la regla
+> aquí y lee **solo su tramo** con `sed -n '<linea>,<linea+N>p'`.
+> Los números de línea se desplazan al editar — regenera con
+> `python3 scripts/indexar_doc.py <fichero> --apply`.
+
+| Línea | Regla | Peso |
+|---|---|---|
+| `L45` | TODO `ModelConfiguration` de un test lleva `cloudKitDatabase: .none` EXPLÍCITO — el default es `.automatic` y en el simu | 2.5 KB |
+| `L47` | NUNCA aserjar el valor EN MEMORIA de un `@Model` ya persistido justo después de un `context.rollback()` — es dependiente | 2.2 KB |
+| `L59` | Seed `minimal` por default | 371 B |
+| `L62` | Un `accessibilityIdentifier` aplicado a un CONTENEDOR pisa el de sus hijos, así que el id declarado en el componente pue | 782 B |
+| `L63` | `exists` NO implica alcanzable: con un sheet presentado, la vista de fondo sigue ENTERA en el árbol de accesibilidad y l | 3.6 KB |
+| `L64` | Un seam de QA que FUERZA el resultado de un predicado deja CIEGOS a todos los tests que lo usan: cubren el flujo, no la  | 1.5 KB |
+| `L65` | El gemelo del anterior: un seam de QA que PERSISTE pone rojos a los tests de OTRO target (2026-08-05). | 35.3 KB |
+| `L111` | Se finge la sesión, no se relajan las aserciones | 484 B |
+| `L112` | Crear grupo necesita ADEMÁS `-uitest-groups-consent` | 550 B |
+| `L113` | `-uitest-fake-cloud-session` ≠ `-uitest-fake-backend-session` | 475 B |
+| `L114` | `-uitest-fake-icloud` no sirve para esto | 245 B |
+| `L117` | El device DEBE casar con el runtime del SDK contra el que se compila. | 831 B |
+| `L118` | NO apagar el simulador entre corridas. | 385 B |
+| `L119` | La PRIMERA corrida tras bootear un simulador no cuenta — y en iOS 27.0 falla de verdad. | 990 B |
+| `L120` | iOS 27.0 (beta) es ~2× más lento que 26.4.1 para todo el ciclo de vida de UI, y cuelga el teardown de `xcodebuild` ~600  | 411 B |
+| `L121` | En iOS 27.0 NINGÚN swipe sintético materializa una celda de `LazyVGrid` que no esté ya en pantalla ⇒ no navegues por ahí | 2.4 KB |
+| `L122` | Clasificar la corrida por su exit code ANTES de leer el output | 618 B |
+| `L123` | Con Swift Testing, «cero casos» tiene un tercer modo y NO da 70: da exit 0, `TEST SUCCEEDED` y `Executed 0 tests` (2026- | 1.1 KB |
+| `L124` | `-only-testing` filtra por el TIPO, no por el FICHERO — y varios ficheros de este repo declaran DOS `@Suite` (2026-08-03 | 1014 B |
+| `L125` | Un worktree aislado necesita `Secrets.xcconfig` copiado a mano | 340 B |
+
+<!-- INDICE:fin -->
+
 Detalles completos en `$VAULT/planning/TESTING-STRATEGY.md`. Reglas mínimas:
 - `makeTestContext()` **REUSA un `ModelContainer` in-memory por archivo (`#fileID`)**, no uno por llamada (2026-07-04): crear >~15 containers in-memory en un proceso acumula estado global de SwiftData → `EXC_BREAKPOINT` no atrapable (crash-loop; iOS 26.2 y 26.5). ⇒ **toda suite con ≥2 `makeTestContext()` DEBE ser `@Suite(.serialized)`**. Residual conocido: los SUTs que spawnean `Task { @MainActor in save() }` huérfanos (CSV backfill, dedup repair) racean con el reuso → 2 tests flaky bajo suite completa (Lista Negra en TESTING-STRATEGY.md). Prefiere `@Model` directos sin contexto cuando la lógica lo permite (más rápido y sin este acoplamiento).
 - **TODO `ModelConfiguration` de un test lleva `cloudKitDatabase: .none` EXPLÍCITO — el default es `.automatic` y en el simulador mata el proceso (2026-08-02).** Con `.automatic` y un schema que tenga **relaciones**, SwiftData adjunta `NSPersistentCloudKitContainer` incluso a un store **in-memory** (`URL: file:///dev/null`); el sim no tiene cuenta iCloud, así que `_performSetupRequest:` falla con `CKAccountStatusNoAccount` (134400), `recoverFromError:` tampoco puede, y deja el store **sin conexión SQL** ⇒ el `save()` siguiente revienta con `NSInternalInconsistencyException "No eligible connection available"` desde `-[NSSQLDefaultConnectionManager handleStoreRequest:]`. Es una **excepción ObjC**: el `do/catch` de Swift NO la ve (familia de la Variante 2 de `swiftdata-cloudkit.md`), así que no es un rojo — es `SIGABRT`, `xcodebuild` reinicia el runner y la corrida acaba en exit 65. **Tres cosas que engañan al diagnosticar:** (1) **el disparador es tener relaciones, no cuántos modelos hay** — `Schema([ExchangeRate.self])` con el MISMO `ModelConfiguration(isStoredInMemoryOnly: true)` no crashea nunca porque sin relaciones no se adjunta el mirror, así que el sitio sano de al lado te hace descartar la config como sospechosa; (2) **parece dependiente del CONJUNTO** —crasheaba aislada en los dos schemes y pasaba dentro de la suite completa de `Yala Dev`— porque el desmontaje de la conexión es ASÍNCRONO y corre contra el `save()`: lo que cambia el resultado es qué se ejecutó antes en el proceso, no el test; (3) el `.ips` de `DiagnosticReports` trae `asi` **null** ⇒ el `reason:` no está ahí, está en el stdout del runner (`*** Terminating app due to uncaught exception`) — una corrida con el log entero lo da, y **razonar sobre el frame sin el mensaje cuesta hipótesis falsas** (aquí la primera fue «falta un modelo en el schema», refutada porque el fix dejó el schema INTACTO). El conocimiento existía desde 2026-07-04 pero solo como comentario dentro de `TestHelpers.testContainer(for:)`, y por eso no llegó a los dos sitios que lo escribieron a mano: **ahora la superficie es esta regla**. Auditoría: `ModelConfiguration(` sin `cloudKitDatabase` en `YalaTests/` debe dar cero, salvo `Spikes/SpikeSRuntimeTests` (que mide `.automatic` a propósito, aislado en su propio archivo y con schema sin relaciones).

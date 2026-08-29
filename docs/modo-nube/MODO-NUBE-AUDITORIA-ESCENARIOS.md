@@ -1,3 +1,29 @@
+<!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
+
+## Índice (16 entradas)
+
+> **No hace falta leer este fichero entero** — son 91 KB. Localiza la entrada
+> aquí y salta a ella.
+
+- `—` [E1 · Usuario existente Yala Completo que actualiza](#e1--usuario-existente-yala-completo-que-actualiza)
+- `—` [Invariante (ii) — «El sign-in de Apple/Google es 100 % independiente del container privado»](#invariante-ii--el-sign-in-de-applegoogle-es-100--independiente-del-container-privado)
+- `—` [Críticas](#crticas)
+- `—` [Altas](#altas)
+- `—` [Medias](#medias)
+- `—` [Bajas](#bajas)
+- `—` [Lo que SÍ cumple (verificado con lente inversa, no depende de ningún flag apagado)](#lo-que-s-cumple-verificado-con-lente-inversa-no-depende-de-ningn-flag-apagado)
+- `—` [A.1 Hallazgos que cayeron por completo](#a1-hallazgos-que-cayeron-por-completo)
+- `—` [A.2 Sub-afirmaciones caídas dentro de hallazgos que sí sobrevivieron](#a2-sub-afirmaciones-cadas-dentro-de-hallazgos-que-s-sobrevivieron)
+- `—` [E2 · Usuario existente Solo Grupos que actualiza](#e2--usuario-existente-solo-grupos-que-actualiza)
+- `—` [E4 · Usuario nuevo que elige nube (backend propio)](#e4--usuario-nuevo-que-elige-nube-backend-propio)
+- `—` [E5 · Usuario nuevo Solo Grupos](#e5--usuario-nuevo-solo-grupos)
+- `—` [E3 · Usuario nuevo que elige iCloud](#e3--usuario-nuevo-que-elige-icloud)
+- `—` [E6 · Usuario existente en iCloud que migra sus datos personales a la nube](#e6--usuario-existente-en-icloud-que-migra-sus-datos-personales-a-la-nube)
+- `—` [Invariante (i) — «Siempre se identifica si el container privado de iCloud está en uso o libre»](#invariante-i--siempre-se-identifica-si-el-container-privado-de-icloud-est-en-uso-o-libre)
+- `—` [Meta — «No seguir generando container de grupos en iCloud»](#meta--no-seguir-generando-container-de-grupos-en-icloud)
+
+<!-- INDICE:fin -->
+
 ---
 created: 2026-07-27
 updated: 2026-07-27

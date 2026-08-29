@@ -1,5 +1,26 @@
 # Auditoría de patrones UI — Yala
 
+<!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
+
+## Índice (11 entradas)
+
+> **No hace falta leer este fichero entero** — son 93 KB. Localiza la entrada
+> aquí y salta a ella.
+
+- `—` [Por severidad](#por-severidad)
+- `—` [Por dimensión](#por-dimensin)
+- `—` [Top 10 chunks con más hallazgos](#top-10-chunks-con-ms-hallazgos)
+- `—` [Tokens](#tokens)
+- `—` [Tipografía](#tipografa)
+- `—` [Botones](#botones)
+- `—` [Backgrounds](#backgrounds)
+- `—` [Glass-cards](#glass-cards)
+- `—` [Componentes](#componentes)
+- `—` [A11y](#a11y)
+- `—` [Color](#color)
+
+<!-- INDICE:fin -->
+
 Barrido de las **303 vistas** SwiftUI de Yala (~40 áreas de `Yala/App/Views/`) contra el Design System, cubriendo 8 dimensiones: tokens, tipografía, botones, backgrounds, glass-cards, color, componentes y a11y. **544 señales** detectadas y verificadas adversarialmente (las de severidad alta/media se confirmaron abriendo el código real para descartar falsos positivos); consolidando los sitios que violan varias reglas a la vez, son **~319 ubicaciones únicas** que tocar.
 
 > Generado por el workflow `ui-audit` (`.claude/workflows/ui-audit.js`) — 122 agentes, fecha 2026-06-03. Re-ejecutable completo o acotado por área (`args.onlyAreas`).

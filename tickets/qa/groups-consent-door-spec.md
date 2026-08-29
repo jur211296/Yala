@@ -1,3 +1,36 @@
+<!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
+
+## Índice (23 entradas)
+
+> **No hace falta leer este fichero entero** — son 93 KB. Localiza la entrada
+> aquí y salta a ella.
+
+- `—` [Lo que hay hoy (MEDIDO)](#lo-que-hay-hoy-medido)
+- `—` [La decisión: dónde vive](#la-decisin-dnde-vive)
+- `—` [La decisión: qué ruta y con qué guard](#la-decisin-qu-ruta-y-con-qu-guard)
+- `—` [Cómo se LEE](#cmo-se-lee)
+- `—` [La caché local, y por qué su forma importa](#la-cach-local-y-por-qu-su-forma-importa)
+- `—` [Lo que ya existe (MEDIDO) — y es más de lo que la exploración supone](#lo-que-ya-existe-medido--y-es-ms-de-lo-que-la-exploracin-supone)
+- `—` [La propuesta (INFERIDO)](#la-propuesta-inferido)
+- `—` [La tabla, MEDIDA y completa: son CINCO polaridades, no dos](#la-tabla-medida-y-completa-son-cinco-polaridades-no-dos)
+- `—` [Por qué `GroupService.softDelete` NO sirve — tres razones, no una](#por-qu-groupservicesoftdelete-no-sirve--tres-razones-no-una)
+- `—` [La recomendación (INFERIDO)](#la-recomendacin-inferido)
+- `—` [Los dos daños colaterales que hay que decidir](#los-dos-daos-colaterales-que-hay-que-decidir)
+- `—` [La recomendación (INFERIDO)](#la-recomendacin-inferido)
+- `—` [Las tres correcciones que la medición hizo al chip](#las-tres-correcciones-que-la-medicin-hizo-al-chip)
+- `—` [La regresión que el propio gate destapó, y que vale por el chip entero](#la-regresin-que-el-propio-gate-destap-y-que-vale-por-el-chip-entero)
+- `—` [Verificación](#verificacin)
+- `—` [La decisión: qué cliente, y qué arrastra al conteo de `AttestWiringTests`](#la-decisin-qu-cliente-y-qu-arrastra-al-conteo-de-attestwiringtests)
+- `—` [Lo que queda para device-qa (imposible en simulador)](#lo-que-queda-para-device-qa-imposible-en-simulador)
+- `—` [Las decisiones de diseño, con su porqué](#las-decisiones-de-diseo-con-su-porqu)
+- `—` [El efecto colateral que hubo que pagar: el `body` de `ContentView`](#el-efecto-colateral-que-hubo-que-pagar-el-body-de-contentview)
+- `2026-08-12` [C2 · La cadena unificada, el educativo y el estado vacío — 🟢 HECHO (`3a960fd9`, 2026-08-12) · *depen](#c2--la-cadena-unificada-el-educativo-y-el-estado-vaco---hecho-3a960fd9-2026-08-12--dependa-de-c1)
+- `2026-08-12` [C3 · Los grupos legacy desaparecen — 🟢 HECHO (2026-08-12) · *dependía de C4*](#c3--los-grupos-legacy-desaparecen---hecho-2026-08-12--dependa-de-c4)
+- `2026-08-11` [C4 · Cerrar la fábrica de zombis  — *va PRIMERO* — 🟢 HECHO (`ad291c7f`, validado 11-08)  ✅ **HECHO (](#c4--cerrar-la-fbrica-de-zombis---va-primero---hecho-ad291c7f-validado-11-08---hecho-2026-08-11-ad291c7f)
+- `2026-08-11` [C1 · El registro del consent contra la cuenta — 🟢 HECHO (`bc0bb256`, validado 11-08) · ⚠️ SQL SIN AP](#c1--el-registro-del-consent-contra-la-cuenta---hecho-bc0bb256-validado-11-08---sql-sin-aplicar-en-stagingprod---hecho-2026-08-11---worker-desplegado-2026-08-12-prod-1f72f6a5-staging-645b6820)
+
+<!-- INDICE:fin -->
+
 ---
 id: groups-consent-door-spec
 status: qa

@@ -1,3 +1,34 @@
+<!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
+
+## Índice (21 entradas)
+
+> **No hace falta leer este fichero entero** — son 68 KB. Localiza la entrada
+> aquí y salta a ella.
+
+- `—` [Archivos involucrados](#archivos-involucrados)
+- `—` [Modelo de datos](#modelo-de-datos)
+- `—` [Dependencias](#dependencias)
+- `—` [Incrementos (orden de ejecucion)](#incrementos-orden-de-ejecucion)
+- `—` [Riesgos](#riesgos)
+- `—` [Estimacion](#estimacion)
+- `2026-07-16` [G7 pgcrypto ✅ + G8 APNs ✅ — EL PLAN §11 (G0–G8) QUEDA COMPLETO EN CÓDIGO — ⚠️ reconciliar al vault](#2026-07-16-sesin-nocturna-6--g7-pgcrypto---g8-apns---el-plan-11-g0g8-queda-completo-en-cdigo---reconciliar-al-vault)
+- `2026-07-16` [(misma sesión, owner en línea) — G8-3 ✅: credencial de máquina `yala_push` — la enumeración de token](#2026-07-16-misma-sesin-owner-en-lnea--g8-3--credencial-de-mquina-yalapush--la-enumeracin-de-tokens-muere-decisin-owner---reconciliar-al-vault)
+- `2026-07-16` [BLOQUES A+B DEL GATE COMPLETOS: PROD PROMOVIDA (13 migraciones, paridad 33/33) + Worker prod DESPLEG](#2026-07-16-sesin-gate-12-7--bloques-ab-del-gate-completos-prod-promovida-13-migraciones-paridad-3333--worker-prod-desplegado--siwa-revoke-511v-real--authusers-muere-con-la-cuenta---reconciliar-al-vault)
+- `2026-07-16` [G6 COMPLETO EN CÓDIGO ✅ (migración de grupos vivos D7) — schema CloudKit DESPLEGADO; queda el gate d](#2026-07-16--g6-completo-en-cdigo--migracin-de-grupos-vivos-d7--schema-cloudkit-desplegado-queda-el-gate-device-qa-del-owner---reconciliar-al-vault)
+- `2026-07-15` [SESIÓN NOCTURNA REMOTA (otra Mac): G1 ✅ + G2 ✅ + G3-arranque ✅ (3 commits pusheados)](#2026-07-15--sesin-nocturna-remota-otra-mac-g1---g2---g3-arranque--3-commits-pusheados)
+- `2026-07-15` [SESIÓN NOCTURNA (2ª noche): G3 COMPLETO ✅ (`e22a991d`) — G4 en curso](#2026-07-15--sesin-nocturna-2-noche-g3-completo--e22a991d--g4-en-curso)
+- `2026-07-15` [G4 ✅ (`2a2cf471`) — el canal queda funcionalmente completo DARK](#2026-07-15--g4--2a2cf471--el-canal-queda-funcionalmente-completo-dark)
+- `2026-07-15` [perf del pull CERRADO (`68f5555d`) — el hallazgo de G4 resuelto pre-flags](#2026-07-15--perf-del-pull-cerrado-68f5555d--el-hallazgo-de-g4-resuelto-pre-flags)
+- `2026-07-15` [/16 — SESIÓN NOCTURNA (3ª noche): G4-INVITES/CONSENT ✅ + ENDURECIMIENTO PRE-FLAGS ✅ + CAS reverse_cl](#2026-07-1516--sesin-nocturna-3-noche-g4-invitesconsent---endurecimiento-pre-flags---cas-reverseclaim-verificado-ya-cerrado---reconciliar-al-vault)
+- `2026-07-15` [/16 — SESIÓN NOCTURNA (4ª noche): G5 COMPLETO ✅ (cutover + sign-out ×4 + M1/wipes + gestión de datos](#2026-07-1516--sesin-nocturna-4-noche-g5-completo--cutover--sign-out-4--m1wipes--gestin-de-datos---reconciliar-al-vault)
+- `2026-07-15` [(mañana, owner en sesión) — DECISIÓN + CIERRE del pendiente "claim sobre profile creado por grupos" ](#2026-07-15-maana-owner-en-sesin--decisin--cierre-del-pendiente-claim-sobre-profile-creado-por-grupos)
+- `2026-07-15` [Reconciliación §2 + R10 escrita en la COPIA DEL REPO del diseño](#2026-07-15-maana--reconciliacin-2--r10-escrita-en-la-copia-del-repo-del-diseo)
+- `2026-07-14` [`ef4a23f9` (G0 pasos 1–5 IMPLEMENTADOS, todo DARK)](#2026-07-14--ef4a23f9-g0-pasos-15-implementados-todo-dark)
+- `2026-07-14` [SPIKE B EJECUTADO Y VERDE ✅](#2026-07-14-2-tanda--spike-b-ejecutado-y-verde)
+- `2026-07-14` [SPIKE A: VEREDICTO HTTP/2 POSITIVO ✅ (transporte despejado SIN esperar el device)](#2026-07-14-3-tanda--spike-a-veredicto-http2-positivo--transporte-despejado-sin-esperar-el-device)
+
+<!-- INDICE:fin -->
+
 ---
 status: spec-ready
 priority: critica

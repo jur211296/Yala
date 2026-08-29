@@ -1,3 +1,53 @@
+<!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
+
+## Índice (40 entradas)
+
+> **No hace falta leer este fichero entero** — son 105 KB. Localiza la entrada
+> aquí y salta a ella.
+
+- `—` [1. Job de purga de tombstones (incremento I12b)](#1-job-de-purga-de-tombstones-incremento-i12b)
+- `—` [4. App-lock biométrico in-app (Face ID/código propio de Yala, no el nativo de iOS)](#4-app-lock-biomtrico-in-app-face-idcdigo-propio-de-yala-no-el-nativo-de-ios)
+- `—` [5. Cifrado de columna (pgcrypto) para PII de alta sensibilidad (`account_number`, `raw_text`/`eviden](#5-cifrado-de-columna-pgcrypto-para-pii-de-alta-sensibilidad-accountnumber-rawtextevidence)
+- `—` [6. Conflictos field-level (LWW+HLC por columna) en vez de row-level](#6-conflictos-field-level-lwwhlc-por-columna-en-vez-de-row-level)
+- `—` [9. Catch-up masivo del outbox tras offline prolongado (semanas sin red)](#9-catch-up-masivo-del-outbox-tras-offline-prolongado-semanas-sin-red)
+- `—` [10. Clientes web y Android](#10-clientes-web-y-android)
+- `—` [14. Ventana create+delete de App Intent sin drain (Apple Pay: pagar → descartar en segundos)](#14-ventana-createdelete-de-app-intent-sin-drain-apple-pay-pagar--descartar-en-segundos)
+- `—` [19. Prioridad relativa entre las 3 motivaciones de la épica](#19-prioridad-relativa-entre-las-3-motivaciones-de-la-pica)
+- `—` [20. Verificación exhaustiva consumidor-por-consumidor de campos AMBIGUOS del mapa de Fase 1](#20-verificacin-exhaustiva-consumidor-por-consumidor-de-campos-ambiguos-del-mapa-de-fase-1)
+- `—` [21. Runtime no verificado empíricamente (comportamiento de plataforma sin pruebas en device)](#21-runtime-no-verificado-empricamente-comportamiento-de-plataforma-sin-pruebas-en-device)
+- `—` [24. Invariante de emisión de coherencia bypasseable llamando `apply_delta` directo (residual I6)](#24-invariante-de-emisin-de-coherencia-bypasseable-llamando-applydelta-directo-residual-i6)
+- `—` [27. Regla INTERINA "real-gana" en el reconciliador de split (I8f-2) — desvía de §i.8(a)3, revisar en](#27-regla-interina-real-gana-en-el-reconciliador-de-split-i8f-2--desva-de-i8a3-revisar-en-i9)
+- `—` [26. Poison-row (clase no-cableada) estanca el batch de push entero (residual I8e)](#26-poison-row-clase-no-cableada-estanca-el-batch-de-push-entero-residual-i8e)
+- `—` [32. Red general v2 — reconcile local-ahead dirigido por diff Merkle (D-reconcile-local-ahead-v2)](#32-red-general-v2--reconcile-local-ahead-dirigido-por-diff-merkle-d-reconcile-local-ahead-v2)
+- `—` [33. Hazard de re-emisión del corpus en el full-rescan ante token IN-DECODIFICABLE (D-fullrescan-toke](#33-hazard-de-re-emisin-del-corpus-en-el-full-rescan-ante-token-in-decodificable-d-fullrescan-token-indecodificable)
+- `—` [34. `cloudModeEnabled` remote-config (kill-switch sin release) — prerequisito del rollout PÚBLICO](#34-cloudmodeenabled-remote-config-kill-switch-sin-release--prerequisito-del-rollout-pblico)
+- `—` [35. UX completa de re-login proactivo (S11) — v1 = banner mínimo](#35-ux-completa-de-re-login-proactivo-s11--v1--banner-mnimo)
+- `—` [39. El relanzamiento asistido del alta born-cloud (y del cutover) — sustituirlo por un remount in-pr](#39-el-relanzamiento-asistido-del-alta-born-cloud-y-del-cutover--sustituirlo-por-un-remount-in-process-mejora-de-ux)
+- `—` [40. El mount `localNoMirror` lleva un mirror ADJUNTO vía `.automatic` — ¿explicitarlo a `.none`?](#40-el-mount-localnomirror-lleva-un-mirror-adjunto-va-automatic--explicitarlo-a-none)
+- `—` [2. PITR de Supabase (Point-in-Time Recovery, +$100/mes)](#2-pitr-de-supabase-point-in-time-recovery-100mes)
+- `—` [11. Procesos de Grupos afectados/restringidos por el modo nube (frente B, `inv-grupos.md`)](#11-procesos-de-grupos-afectadosrestringidos-por-el-modo-nube-frente-b-inv-gruposmd)
+- `—` [15. Costo real de Supabase a escala (10k-50k usuarios)](#15-costo-real-de-supabase-a-escala-10k-50k-usuarios)
+- `—` [16. Refresh token de Supabase / Sign in with Apple — comportamiento no verificado](#16-refresh-token-de-supabase--sign-in-with-apple--comportamiento-no-verificado)
+- `—` [17. "Solo grupos nube" — un usuario 100% nube que solo quisiera usar Grupos](#17-solo-grupos-nube--un-usuario-100-nube-que-solo-quisiera-usar-grupos)
+- `—` [22. MCP de IA / conector directo a Claude (el usuario le pregunta a Claude y Claude lee sus datos de](#22-mcp-de-ia--conector-directo-a-claude-el-usuario-le-pregunta-a-claude-y-claude-lee-sus-datos-del-backend)
+- `—` [23. Revocación de Sign in with Apple NO invalida la sesión de Supabase (hallazgo del spike S-auth)](#23-revocacin-de-sign-in-with-apple-no-invalida-la-sesin-de-supabase-hallazgo-del-spike-s-auth)
+- `—` [25. `uuidArray` vacía DENTRO de un grupo de coherencia — contradicción §d.1/O8 vs §d.4bis (cazado en](#25-uuidarray-vaca-dentro-de-un-grupo-de-coherencia--contradiccin-d1o8-vs-d4bis-cazado-en-i8c)
+- `—` [30. Drenaje único KV→backend en el cutover (S8) — residual declarado en I13](#30-drenaje-nico-kvbackend-en-el-cutover-s8--residual-declarado-en-i13)
+- `—` [38. D-A6 — el corte por fecha de los grupos legacy: **RE-REVISAR A DETALLE** (petición explícita del](#38-d-a6--el-corte-por-fecha-de-los-grupos-legacy-re-revisar-a-detalle-peticin-explcita-del-owner)
+- `—` [3. Migración de Grupos al backend (Supabase)](#3-migracin-de-grupos-al-backend-supabase)
+- `—` [7. Runbook de soporte de última instancia (single dev) para migraciones/reversas atascadas](#7-runbook-de-soporte-de-ltima-instancia-single-dev-para-migracionesreversas-atascadas)
+- `—` [8. Versionado del schema LOCAL de las 4 tablas locales de sync (`SyncIdentity`, `SyncOutbox`, `SyncC](#8-versionado-del-schema-local-de-las-4-tablas-locales-de-sync-syncidentity-syncoutbox-synccursor-syncquarantine)
+- `—` [12. Bug prod `.groupInvite` (sync de grupos atascado en export-only)](#12-bug-prod-groupinvite-sync-de-grupos-atascado-en-export-only)
+- `—` [13. Downgrade Pro→Free durante sync activo](#13-downgrade-profree-durante-sync-activo)
+- `—` [18. Reuso de `PreferenceSyncService`/`OnboardingView.completeOnboarding()` para el camino nube sin m](#18-reuso-de-preferencesyncserviceonboardingviewcompleteonboarding-para-el-camino-nube-sin-modificarlos)
+- `—` [28. Merkle: trie fino por-sync_id + re-sync dirigido del subárbol (optimización de REMEDIACIÓN, dife](#28-merkle-trie-fino-por-syncid--re-sync-dirigido-del-subrbol-optimizacin-de-remediacin-diferida-en-i8f-3)
+- `—` [29. IdentityRemap (§b.4) sin implementar — regeneración de UUIDs de identidad desincroniza las entid](#29-identityremap-b4-sin-implementar--regeneracin-de-uuids-de-identidad-desincroniza-las-entidades-cableadas-con-idshortcutid)
+- `—` [37. La reversa no limpia el sentinel del drenaje iKV→outbox (H3, higiene sync-meta con evidencia)](#37-la-reversa-no-limpia-el-sentinel-del-drenaje-ikvoutbox-h3-higiene-sync-meta-con-evidencia)
+- `2026-07-12` [36. Resume de migración one-shot sin re-kick (H1 de la corrida device I14, 2026-07-12)](#36-resume-de-migracin-one-shot-sin-re-kick-h1-de-la-corrida-device-i14-2026-07-12)
+- `2026-07-11` [31. Reparación de metadata CloudKit huérfana (canario D4) + veredicto de la matriz de propagación de](#31-reparacin-de-metadata-cloudkit-hurfana-canario-d4--veredicto-de-la-matriz-de-propagacin-de-borrados-hallazgo-3-de-la-corrida-device-2026-07-11)
+
+<!-- INDICE:fin -->
+
 ---
 created: 2026-07-03
 updated: 2026-08-09

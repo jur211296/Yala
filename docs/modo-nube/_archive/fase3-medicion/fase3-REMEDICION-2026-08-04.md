@@ -1,3 +1,49 @@
+<!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
+
+## Índice (36 entradas)
+
+> **No hace falta leer este fichero entero** — son 59 KB. Localiza la entrada
+> aquí y salta a ella.
+
+- `—` [1.1 · Los dos «no son borrado entero» que el commit 0 resolvió — verificados](#11--los-dos-no-son-borrado-entero-que-el-commit-0-resolvi--verificados)
+- `—` [1.2 · `GroupUserIdentityService.swift` — el único que sigue sin ser borrado entero, y el brief lo de](#12--groupuseridentityserviceswift--el-nico-que-sigue-sin-ser-borrado-entero-y-el-brief-lo-describe-mal)
+- `—` [1.3 · Cuál es el trabajo real: los acoplamientos, no los imports](#13--cul-es-el-trabajo-real-los-acoplamientos-no-los-imports)
+- `—` [2.1 · `propagateBoolCustomKey` — las 5 coordenadas derivaron, la corrección semántica aguanta](#21--propagateboolcustomkey--las-5-coordenadas-derivaron-la-correccin-semntica-aguanta)
+- `—` [2.2 · `enqueueSave` / `enqueueDeletion` — 29 llamadas reales en 3 ficheros supervivientes](#22--enqueuesave--enqueuedeletion--29-llamadas-reales-en-3-ficheros-supervivientes)
+- `—` [2.4 · Recortes que el brief no tiene](#24--recortes-que-el-brief-no-tiene)
+- `—` [2.5 · La frontera que hay que fijar antes de dar un total](#25--la-frontera-que-hay-que-fijar-antes-de-dar-un-total)
+- `—` [2.6 · Dos correcciones concretas al informe del 29/07](#26--dos-correcciones-concretas-al-informe-del-2907)
+- `—` [2.7 · `InviteLinkService` — el brief sobrestima el recorte](#27--invitelinkservice--el-brief-sobrestima-el-recorte)
+- `—` [2.8 · Canarios y breadcrumbs que se quedan sin emisor](#28--canarios-y-breadcrumbs-que-se-quedan-sin-emisor)
+- `—` [3.1 · El gate de frescura — dos ficheros nuevos, cero menciones en el brief](#31--el-gate-de-frescura--dos-ficheros-nuevos-cero-menciones-en-el-brief)
+- `—` [3.2 · Los 4 sitios de des-puenteo del tombstone](#32--los-4-sitios-de-des-puenteo-del-tombstone)
+- `—` [3.3 · Los demás huérfanos que el commit 1 crea, y que no están en ninguna lista](#33--los-dems-hurfanos-que-el-commit-1-crea-y-que-no-estn-en-ninguna-lista)
+- `—` [S1 · El bloqueo está levantado, pero el getter sigue compuesto](#s1--el-bloqueo-est-levantado-pero-el-getter-sigue-compuesto)
+- `—` [S3 · Partido en tres](#s3--partido-en-tres)
+- `—` [S5 · No lo cerró la Fase 2: lo duplicó](#s5--no-lo-cerr-la-fase-2-lo-duplic)
+- `—` [S6 · `SoftDeleteObserverLogic` — confirmado exacto](#s6--softdeleteobserverlogic--confirmado-exacto)
+- `—` [6.1 · Los 9 que mueren enteros — 1.730 líneas *(verificado personalmente)*](#61--los-9-que-mueren-enteros--1730-lneas-verificado-personalmente)
+- `—` [6.2 · Lo que nadie cubre — con un matiz que cambia el riesgo](#62--lo-que-nadie-cubre--con-un-matiz-que-cambia-el-riesgo)
+- `—` [6.3 · La deuda del commit 0 — son 8 celdas, y la justificación del brief es la equivocada](#63--la-deuda-del-commit-0--son-8-celdas-y-la-justificacin-del-brief-es-la-equivocada)
+- `—` [6.6 · Las 16 anclas de ruta literal — el modo de fallo peor](#66--las-16-anclas-de-ruta-literal--el-modo-de-fallo-peor)
+- `—` [6.7 · Dos suites que se quedan sin sujeto](#67--dos-suites-que-se-quedan-sin-sujeto)
+- `—` [7.1 · Las 5 áreas cuyos `codeGlobs` apuntan a ficheros condenados](#71--las-5-reas-cuyos-codeglobs-apuntan-a-ficheros-condenados)
+- `—` [7.2 · La trampa, confirmada en el validador](#72--la-trampa-confirmada-en-el-validador)
+- `—` [7.3 · Corrección al brief: las áreas afectadas son 9, no 5](#73--correccin-al-brief-las-reas-afectadas-son-9-no-5)
+- `—` [8.1 · El grep del plan, hoy](#81--el-grep-del-plan-hoy)
+- `—` [8.2 · El criterio correcto, propuesto](#82--el-criterio-correcto-propuesto)
+- `—` [8.3 · Los greps que deben SEGUIR dando hits — el freno de verdad](#83--los-greps-que-deben-seguir-dando-hits--el-freno-de-verdad)
+- `—` [A3 · S2 / S3b / S4, uno por uno](#a3--s2--s3b--s4-uno-por-uno)
+- `—` [2.3 · La superficie externa de `SplitSyncManager` creció en 4 símbolos](#23--la-superficie-externa-de-splitsyncmanager-creci-en-4-smbolos)
+- `—` [3.4 · El commit 1 NO saca CloudKit del subsistema de Grupos](#34--el-commit-1-no-saca-cloudkit-del-subsistema-de-grupos)
+- `—` [6.4 · `CloudKitGroupsSchemaParityTests` — confirmado, sigue leyendo por RUTA](#64--cloudkitgroupsschemaparitytests--confirmado-sigue-leyendo-por-ruta)
+- `—` [A2 · Qué evidencia se concede al gate de frescura cuando desaparezca su brazo CloudKit](#a2--qu-evidencia-se-concede-al-gate-de-frescura-cuando-desaparezca-su-brazo-cloudkit)
+- `—` [S2 · `movedToBackendAt` — el hallazgo se invierte](#s2--movedtobackendat--el-hallazgo-se-invierte)
+- `—` [S4 · «Me sacaron del grupo» — abierto, y mucho más barato de lo que parece](#s4--me-sacaron-del-grupo--abierto-y-mucho-ms-barato-de-lo-que-parece)
+- `—` [6.5 · Los tests híbridos — el hueco que el brief no tiene](#65--los-tests-hbridos--el-hueco-que-el-brief-no-tiene)
+
+<!-- INDICE:fin -->
+
 ---
 created: 2026-08-04
 updated: 2026-08-04
