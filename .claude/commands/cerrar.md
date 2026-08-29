@@ -1,6 +1,6 @@
 ---
 description: Cierra la sesión — verifica que nada quedó abierto, sincroniza el ticket, escribe docs/ESTADO.md y libera el disco sin preguntar
-allowed-tools: Bash(git:*), Bash(bash qa/scripts/disk-report.sh:*), Bash(bash qa/scripts/session-cleanup.sh:*), Bash(xcrun simctl:*), Bash(tmutil:*), Bash(pgrep:*), Read, Edit, Glob, Grep
+allowed-tools: Bash(git:*), Bash(python3 scripts/glosario.py:*), Bash(bash qa/scripts/disk-report.sh:*), Bash(bash qa/scripts/session-cleanup.sh:*), Bash(xcrun simctl:*), Bash(tmutil:*), Bash(pgrep:*), Read, Edit, Glob, Grep
 ---
 
 Cierre de sesión de Yala. Cinco bloques, en este orden. Un solo informe al final; no narres cada paso. No preguntes. Tras reportar, ejecuta y listo.
@@ -17,6 +17,7 @@ Si hay cambios sin commitear: decláralos WIP en el informe y sigue. Nunca pregu
 Solo dos superficies. Si ya están al día, dilo en una línea y sigue.
 
 - **El ticket** en `tickets/` del trabajo de esta sesión: ¿refleja lo hecho y su estado? Si pasó a QA, muévelo a `tickets/qa/` y `status: qa`.
+- **`docs/glosario.md`**: solo si esta sesión añadió decisiones. `python3 scripts/glosario.py --repo . --apply` reescribe el bloque generado (término → dónde se decide) y deja intacta la cabecera a mano. Si no se tocó `DECISIONS.md`, no hay nada que hacer.
 - **`qa/coverage-index.json`**: obligatorio solo si se tocó código bajo `Yala/`. Actualiza `lastVerified` de las áreas afectadas y corre `bash qa/validate-coverage.sh`.
 
 Una regla nueva y duradera va a `.claude/rules/` o a CLAUDE.md — una vez cada muchas sesiones, no en cada cierre. No inventes una para tener algo que escribir.
