@@ -28,12 +28,12 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (63)
+## Index (69)
 
 | id | status | path |
 |----|--------|------|
-| inbox-crash-convert-to-group-expense | qa | tickets/qa/inbox-crash-convert-to-group-expense.md |
-| group-notif-credits-payer-not-editor | qa | tickets/qa/group-notif-credits-payer-not-editor.md |
+| inbox-crash-convert-to-group-expense | done | tickets/done/inbox-crash-convert-to-group-expense.md |
+| group-notif-credits-payer-not-editor | done | tickets/done/group-notif-credits-payer-not-editor.md |
 | invite-link-five-causes-one-message | in-progress | tickets/in-progress/invite-link-five-causes-one-message.md |
 | guest-decline-has-no-screen | in-progress | tickets/in-progress/guest-decline-has-no-screen.md |
 | guest-journey-dead-screens | in-progress | tickets/in-progress/guest-journey-dead-screens.md |
@@ -42,10 +42,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | prefs-synced-keys-upload-not-download | in-progress | tickets/in-progress/prefs-synced-keys-upload-not-download.md |
 | cloud-fx-rates-blob-two-faces | qa | tickets/qa/cloud-fx-rates-blob-two-faces.md |
 | cloud-tx-epoch-orphan-relations | backlog | tickets/backlog/cloud-tx-epoch-orphan-relations.md |
-| groups-approval-banner-stays | qa | tickets/qa/groups-approval-banner-stays.md |
+| groups-approval-banner-stays | done | tickets/done/groups-approval-banner-stays.md |
 | groups-join-intent-reconciler | qa | tickets/qa/groups-join-intent-reconciler.md |
 | groups-tab-missing-panel-perf | backlog | tickets/backlog/groups-tab-missing-panel-perf.md |
-| groups-ghost-tx-on-delete | qa | tickets/qa/groups-ghost-tx-on-delete.md |
+| groups-ghost-tx-on-delete | done | tickets/done/groups-ghost-tx-on-delete.md |
 | invite-backend-stale-config | qa | tickets/qa/invite-backend-stale-config.md |
 | scheduled-payments-notif-dedup | qa | tickets/qa/scheduled-payments-notif-dedup.md |
 | storekit-appgroup-siri-pro-gate | qa | tickets/qa/storekit-appgroup-siri-pro-gate.md |
@@ -95,15 +95,149 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | distribution-balance-kpi-skips-fx | backlog | tickets/backlog/distribution-balance-kpi-skips-fx.md |
 | notifications-not-delivered-testflight | done | tickets/done/notifications-not-delivered-testflight.md |
 | fx-partial-rate-rows-silent-1to1 | backlog | tickets/backlog/fx-partial-rate-rows-silent-1to1.md |
+| groups-deleted-group-detail-stays-open | backlog | tickets/backlog/groups-deleted-group-detail-stays-open.md |
+| groups-pending-member-can-open-group | backlog | tickets/backlog/groups-pending-member-can-open-group.md |
+| groups-leave-rpc-error-10 | backlog | tickets/backlog/groups-leave-rpc-error-10.md |
+| groups-equal-split-shows-not-participating-on-peer | backlog | tickets/backlog/groups-equal-split-shows-not-participating-on-peer.md |
+| groups-expense-notif-only-on-foreground | backlog | tickets/backlog/groups-expense-notif-only-on-foreground.md |
+| groups-invite-skips-unirme-sheet-if-onboarded | backlog | tickets/backlog/groups-invite-skips-unirme-sheet-if-onboarded.md |
 
-Counts by folder: backlog 28 · in-progress 9 · qa 19 · blocked 0 · done 4 · discarded 3 = 63.
+Counts by folder: backlog 34 · in-progress 9 · qa 15 · blocked 0 · done 8 · discarded 3 = 69.
+
+Jurgen 2026-08-28 (alta): `groups-invite-skips-unirme-sheet-if-onboarded` entra en `backlog/` con
+prioridad **high** — reporte de device del owner (Lima, TF 2.1 build 12): B, con la cuenta **ya creada**,
+abrió un enlace de invitación y **no vio la hoja de «Unirme»**; el alta se hizo sola. El owner pide que
+esa hoja aparezca **siempre**, venga de primer plano, de segundo plano o estando ya dentro de la app. Sin
+implementación: cero Swift. **Medido** en `2.1` @ `2175e53e`, y escrito en el ticket como medición y no
+como causa única de esa corrida (no hubo captura de Console): con `hasCompletedOnboarding` el camino del
+invite puede devolver `.join` y saltarse `.presentInviteOnboarding` — el corte vive en
+`GroupsGateLogic.nextStep:121`, que es lo que `GroupBackendInviteEntryLogic.nextStep` consume, y se repite
+en el drain de `ContentView:960`. Lo que hay hoy **cumple su propio contrato** (ese paso existe para el
+usuario FRESCO), así que lo que el owner pide es un cambio de contrato con dos tests que habrá que
+actualizar a propósito. **No** se dobla con `groups-join-intent-reconciler` (member que no nacía / «¡Todo
+listo!» falso), ni con `groups-pending-member-can-open-group` (ya en el árbol vía PR 46), ni con
+`invite-link-five-causes-one-message` (copy de enlace inválido). Counts tras el alta en este árbol:
+backlog 33 → 34, total 68 → 69.
+
+Jurgen 2026-08-28 (alta): `groups-expense-notif-only-on-foreground` entra en `backlog/` con prioridad
+**high** — reporte de device del owner en TF **2.1 build 12**: A crea/edita un gasto de grupo y la
+notificación llega a B **solo al abrir la app**, nada mientras B está fuera; a A no le llega (era el
+actor). Sin causa declarada y sin implementación: el ticket lleva el mapa **medido** del camino
+(la notif de grupo es LOCAL y nace tras el pull —
+`GroupsSyncClient.applyPulledPage:1937` → `GroupNotificationService.processRemoteChanges`) y las
+hipótesis con su señal discriminante. **No** se declara el silent push roto: no está medido.
+`group-notif-credits-payer-not-editor` ya está `done/` (PR 47, PASS de atribución/eco); este alta **no**
+lo reabre. Counts tras el alta en este árbol: backlog 32 → 33, total 67 → 68.
+
+Jurgen 2026-08-28 (alta): `groups-equal-split-shows-not-participating-on-peer` entra en `backlog/`
+con prioridad **high** — device-QA del owner en TF 2.1 build 12, dos teléfonos, grupo ya en uso ese
+día: el gasto que A reparte mitad y mitad se ve en B como si B no hubiera participado, y solo se
+actualiza tras force-quit + reentrada en B. Es **un** ticket con dos tiempos (primera apertura
+equivocada / tras force-quit actualizado), **sin causa raíz declarada** y **sin** convertirlo en el
+bug de notificaciones (B no recibió aviso; el owner lo deja fuera a propósito). Mismo día se añaden
+**dos observaciones de contraste** al mismo ticket: un gasto posterior creado en A convirtiendo un
+borrador del Inbox, y una edición del importe de un gasto ya existente — las dos llegaron bien a B
+**sin** matar la app (PASS del owner **de ese gasto** y **de esa edición**, no del ticket). Una de tres
+observaciones falló: el defecto queda como **condicional, no constante** (no es una medida de
+frecuencia), y el ticket **no** se cierra: qué distingue el caso que falla de los que no sigue sin
+resolver. Sin implementación: cero Swift. Counts tras el alta en este árbol: backlog 31 → 32, total
+66 → 67. Sin tocar `qa/coverage-index.json` (no hay código nuevo bajo `Yala/`).
+
+Jurgen 2026-08-28 (alta, la segunda del día): `groups-leave-rpc-error-10` entra en `backlog/` con
+prioridad **high** — hallazgo de device en Lima (TF `2.1` build 12, dos teléfonos): en uno «Salir del
+grupo» funciona y en el otro falla con el alert crudo «Error de Yala.GroupsRPCError 10», y en esa
+pantalla no hay botón de borrar el grupo. Es **un** ticket con dos caras (el número crudo del canal y
+el agujero de UX de último dueño / `isOwner` local que solo escribe el creador) porque comparten
+setup, pantalla y callejón sin salida. Sin implementación: cero Swift, `qa/coverage-index.json`
+intacto. **Nada se declara como causa**: el mapeo del discriminante 10 → `channelDisabled` está
+medido en el árbol `2.1` @ `2175e53e` (orden de declaración del enum), y el ticket deja escrito qué
+parte de esa lectura es inferencia y cómo zanjarla. Counts tras el alta en este árbol: backlog 30 → 31,
+total 65 → 66.
+
+Jurgen 2026-08-28 (cierre): `inbox-crash-convert-to-group-expense` pasa a `done/` por **QA device PASS**
+del owner — TF 2.1 build 12, teléfono A: convertir un borrador de la Bandeja en gasto compartido de un
+grupo en uso **no crasheó**, el borrador salió de la bandeja y el gasto quedó en el grupo. El fix ya
+estaba en `2.1` (`88a43237`, medido hoy como ancestro), así que **este cierre es QA, no un fix nuevo**, y
+hoy no hubo subida a TestFlight. El PASS cubre el path de **conversión**, no los 4 sheets de finalización
+de grupo a los que el fix se amplió (esos los sostiene `InboxRowPruneCoordinatorTests`, determinista). El
+hermano de feature `inbox-convert-draft-to-group-expense` **se evaluó y se queda en `qa/`**: su guion
+pendiente tiene cuatro puntos y hoy solo se tocó uno (cancelar, los dos casos negativos y la fecha en
+pantalla siguen sin ejercitar) ⇒ AC distinta, no se cierra por inferencia; queda anotado en el ticket.
+Counts RECONTADOS sobre disco tras el movimiento: qa 16 → 15, done 7 → 8; el total sigue en 65 porque es
+un movimiento, no un ticket nuevo.
+
+Jurgen 2026-08-28 (cierre): `group-notif-credits-payer-not-editor` pasa a `done/` con **PASS del owner**
+(Lima). Dos teléfonos, el mismo grupo que el resto del QA de hoy, **TF 2.1 build 12**: **A** fue quien actuó
+(crear/editar) y **A no recibió notificación** —ningún eco que atribuyera su cambio a **B**—, mientras **B sí
+la recibió**. **Lo que el PASS no cubre, escrito en el ticket:** la notificación de B llegó **solo al abrir la
+app**, que es *cuándo* se entrega y no *a quién* se atribuye ⇒ va en ticket aparte
+(`groups-expense-notif-only-on-foreground`, en alta separada) y **no se dobla aquí** ni como PASS ni como
+FAIL; el escenario original (gasto pagado por Pia, editado por el owner) **no consta re-corrido palabra por
+palabra** —el reporte no fija quién pagaba, y con pagador = A el silencio ya existía antes del fix, así que
+esa variante no discrimina—; el **texto** de la notificación de B no está medido; y liquidaciones, gasto
+nuevo, terceros y 2º device siguen sin correr. Cierre de **QA**, no fix nuevo: sin cambio de código, sin
+subida a TestFlight, A7/M5 en HOLD. Counts medidos tras el movimiento: qa 17 → 16, done 6 → 7; el total sigue
+en 65 porque es un movimiento, no un ticket nuevo.
+
+Jurgen 2026-08-28 (alta, hallazgo de la MISMA corrida de device): `groups-pending-member-can-open-group`
+entra en `backlog/` con prioridad **high** — estando **pendiente de aprobación**, B veía el grupo en su
+lista y **al tocarlo podía entrar y verlo**. Owner: está mal. **No se dobla** dentro del ticket del aviso
+(allí el defecto era que el aviso no se retiraba DESPUÉS de aprobar, y hoy se retiró) ni se reusa
+`groups-join-intent-reconciler` (allí el miembro no nacía). Sin implementación y sin causa inventada: lo
+único medido del mecanismo es que entregar **grupo + roster** a un pendiente es **intencional** en el DDL
+(`supabase-groups-staging.ddl:125`, `:153`, comentario en `:814`) mientras el contenido financiero **no**
+baja (`:817`, `:819`, `:821`) ⇒ lo que queda abierto es una **decisión de producto**, y choca con
+`guest-decline-has-no-screen`, que trata el mismo hecho como problema de copy. Counts tras el alta en
+este árbol (ya con ghost-tx cerrado y deleted-group-detail dentro): backlog 29 → 30, total 64 → 65.
+
+Jurgen 2026-08-28 (cierre): `groups-approval-banner-stays` pasa a `done/` con **PASS del owner** (Lima,
+**TF 2.1 build 12**): B se une, ve «1 solicitudes pendientes» y el aviso de esperar al admin, A aprueba y
+**B —sin forzar el cierre de la app ni reabrirla— ve irse solos el aviso y el mensaje naranja**, con el
+grupo normal y 2 miembros activos. Es el escenario que ningún test podía cerrar, y **medido**: el fix
+`479e8e81` es ancestro de `f4cf3d2b` («Build 12 para TestFlight de 2.1») ⇒ el binario que probó el owner
+lleva el código. **Fuera del PASS**, escrito en el ticket: el rechazo y la contra-prueba del tercer
+miembro no se corrieron hoy (tienen unit, no device), B no era install limpia, y esto **no** cierra al
+hermano `groups-join-intent-reconciler`, que sigue en `qa/`. Counts medidos tras el movimiento: qa 18 →
+17, done 5 → 6; el total no se mueve por el cierre porque es un movimiento, no un ticket nuevo.
+
+Jurgen 2026-08-28 (cierre): `groups-ghost-tx-on-delete` pasa a `done/` con **PASS en device del owner**
+(Lima). Dos teléfonos, mismo grupo, **TF 2.1 build 12**: A crea un gasto al 50/50, B lo ve en el grupo y
+en su Panel, A lo borra y en B —sin reabrir A— el gasto se va del grupo **y** la transacción puenteada
+desaparece del Panel, sin huérfana atascada. Dos comprobaciones posteriores del mismo día completan la
+liquidación: A la registra y B la ve sin force-quit con los balances cuadrando, y después A la borra y en
+B desaparece sin dejar balances colgados (las dos PASS). ⇒ la clase de fantasma del ticket queda cubierta
+en device para las **dos** entidades del reporte original, gasto y liquidación. **Lo que estos PASS no
+cubren, escrito en el ticket:** los dos borrados salieron de **A**, así que el sentido contrario (borrar
+desde B, el bug era bidireccional) **no se corrió**; en la liquidación el reporte llega al grupo y a los
+balances, no al Panel de B; no hay PASS de cola C (d)(e) más allá de esos tres escenarios; no hubo subida
+nueva a TestFlight y A7/M5 sigue en HOLD.
+Counts medidos tras el movimiento: qa 19 → 18, done 4 → 5; el total sigue en 64 porque es un
+movimiento, no un ticket nuevo. `groups-background-emitter-no-upload` ya está `done/` (PR 41); este
+cierre no lo toca.
+
+Jurgen 2026-08-28 (alta): `groups-deleted-group-detail-stays-open` entra en `backlog/` con prioridad
+**high** — reporte de device del owner (TF 2.1 build 12, teléfono A, Lima): tras borrar el grupo el
+detalle **se quedó abierto**, y el grupo solo desapareció de la lista después de tocar Atrás. En esta
+corrida el botón de borrar **sí** apareció. Sin implementación y **sin causa declarada**: el reporte no
+distingue si lo que quedó delante era la sheet de Ajustes o el detalle en push, y esa distinción es la
+que decide dónde va el fix. Contraste con `groups-leave-rpc-error-10`: esa es otra corrida y otro
+teléfono (B), donde falló **salir** con «GroupsRPCError 10» y no había botón de borrar — ese ticket no
+se toca aquí, y **medido**: hoy no tiene fichero en este árbol (vive en una PR abierta a `2.1`, sin
+mergear). **Medido** en el alta, sobre `2175e53e`: el índice previo (63 filas) coincidía exactamente
+con disco en id y status en las 63, y el único delta era este ticket nuevo (backlog 28 → 29, total
+63 → 64). **Re-medido** tras traer `2.1` @ `7ddf87fc` a esta rama —que ya incluye el cierre del emisor
+de abajo—: 64 filas ↔ 64 ficheros, sin huérfanos por ninguno de los dos lados, y los counts de arriba
+son los de este árbol ya fusionado. Nota de alcance: siguen abiertas otras PRs a `2.1` que mueven
+tickets de estado; nada de ellas está incorporado aquí, así que estos counts volverán a moverse a
+medida que entren.
 
 Jurgen 2026-08-28 (cierre): `groups-background-emitter-no-upload` pasa a `done/` por **QA device PASS**
 del owner — dos teléfonos, TF 2.1 build 12: A crea el gasto de grupo y se va al Home de iOS sin
 force-quit, B lo ve en ~30 s sin que A se reabra. El código ya estaba en `2.1` vía PR 19, así que **este
 cierre es QA, no un fix nuevo**, y hoy no hubo subida a TestFlight. Counts medidos tras el movimiento,
 ya con el alta de `fx-partial-rate-rows-silent-1to1` dentro: in-progress 10 → 9, done 3 → 4; el total
-sigue en 63 porque es un movimiento, no un ticket nuevo.
+sigue en 63 porque es un movimiento, no un ticket nuevo. (El 63 de esa línea es el de su propio árbol:
+en esta rama el total es 64 con el alta de arriba dentro.)
 
 Jurgen 2026-08-28 (alta): `fx-partial-rate-rows-silent-1to1` entra en `backlog/` con prioridad
 **high** — familia FX del audit de Frank sobre `2.1` @ `68a7221c` (filas de tasas incompletas +
@@ -129,8 +263,8 @@ Jurgen 2026-08-26: `groups-cloud-mode-hardening-v1`, `groups-cloud-identity-loss
 
 | origin | destination |
 |--------|-------------|
-| Bugs/crash-inbox-convertir-a-gasto-grupo-draft-borrado.md | tickets/qa/inbox-crash-convert-to-group-expense.md |
-| Bugs/groups-notif-actualizo-atribuye-al-pagador-no-al-autor.md | tickets/qa/group-notif-credits-payer-not-editor.md |
+| Bugs/crash-inbox-convertir-a-gasto-grupo-draft-borrado.md | tickets/done/inbox-crash-convert-to-group-expense.md |
+| Bugs/groups-notif-actualizo-atribuye-al-pagador-no-al-autor.md | tickets/done/group-notif-credits-payer-not-editor.md |
 | Bugs/grupos-enlace-de-invitacion-cinco-causas-un-solo-mensaje.md | tickets/in-progress/invite-link-five-causes-one-message.md |
 | Bugs/grupos-invitado-el-no-no-tiene-pantalla.md | tickets/in-progress/guest-decline-has-no-screen.md |
 | Bugs/grupos-recorrido-del-invitado-codigo-muerto-y-docblock-caducado.md | tickets/in-progress/guest-journey-dead-screens.md |
@@ -139,10 +273,10 @@ Jurgen 2026-08-26: `groups-cloud-mode-hardening-v1`, `groups-cloud-identity-loss
 | Bugs/prefs-cinco-keys-synced-suben-y-no-vuelven.md | tickets/in-progress/prefs-synced-keys-upload-not-download.md |
 | Bugs/qa_cloud-fx-rates-blob-dos-caras.md | tickets/qa/cloud-fx-rates-blob-two-faces.md |
 | Bugs/qa_cloud-tx-epoca-relaciones-huerfanas.md | tickets/backlog/cloud-tx-epoch-orphan-relations.md |
-| Bugs/qa_groups-aprobacion-no-retira-banner.md | tickets/qa/groups-approval-banner-stays.md |
+| Bugs/qa_groups-aprobacion-no-retira-banner.md | tickets/done/groups-approval-banner-stays.md |
 | Bugs/qa_groups-join-intent-reconciler.md | tickets/qa/groups-join-intent-reconciler.md |
 | Bugs/qa_groups-tab-no-perf-patterns.md | tickets/backlog/groups-tab-missing-panel-perf.md |
-| Bugs/qa_groups-tx-fantasma-al-borrar-gasto-de-grupo.md | tickets/qa/groups-ghost-tx-on-delete.md |
+| Bugs/qa_groups-tx-fantasma-al-borrar-gasto-de-grupo.md | tickets/done/groups-ghost-tx-on-delete.md |
 | Bugs/qa_invite-backend-mudo-config-stale.md | tickets/qa/invite-backend-stale-config.md |
 | Bugs/qa_pagos-planificados-notifs-incoherentes-y-dedup-sin-entrega.md | tickets/qa/scheduled-payments-notif-dedup.md |
 | Bugs/qa_storekit-appgroup-siri-pro-gate.md | tickets/qa/storekit-appgroup-siri-pro-gate.md |

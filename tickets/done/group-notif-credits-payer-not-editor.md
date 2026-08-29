@@ -1,8 +1,8 @@
 ---
 id: group-notif-credits-payer-not-editor
-status: qa
+status: done
 created: 2026-07-22
-updated: 2026-08-26
+updated: 2026-08-28
 source: YalaWiki/Bugs/groups-notif-actualizo-atribuye-al-pagador-no-al-autor.md
 ---
 
@@ -83,3 +83,51 @@ Requiere el schema desplegado (Development si se usan builds dev contra el entor
 5. **2º device mismo iCloud:** el owner con 2 devices edita en A → **B NO le notifica** al owner su propia edición.
 
 migrated from YalaWiki Bugs/groups-notif-actualizo-atribuye-al-pagador-no-al-autor.md @ 1934e8ad
+
+## Cierre del owner 2026-08-28 (Jurgen, Lima) — PASS de atribución/eco
+
+**La corrida.** Dos teléfonos, el **mismo grupo que el resto del QA de hoy**, **TestFlight 2.1 build 12**
+(el binario que ya hay en campo; no se subió nada nuevo para esto).
+
+- **A fue quien actuó** (crear/editar el gasto).
+- **A NO recibió notificación.** Ningún eco de su propio movimiento y, en particular, **ninguno que
+  atribuyera el cambio a B**. Es el síntoma con el que se abrió este ticket ("Pia actualizó" cuando el que
+  editó fui yo), visto ahora desde el lado del que actúa.
+- **B SÍ recibió notificación.** El aviso al otro miembro sigue saliendo: la autoexclusión del eco no
+  apagó el canal.
+
+**Veredicto del owner: PASS** en este ticket de atribución/eco. Con eso pasa a `done/`. Es el escenario que
+ningún test podía cerrar —el eco solo existe con dos devices y CloudKit real— y por la regla del repo no lo
+declara bueno quien escribió el fix.
+
+**Esto es un cierre de QA, no un fix nuevo.** No hay cambio de código en este movimiento, **no hubo subida a
+TestFlight** y **A7/M5 sigue en HOLD**, igual que App Store y tag.
+
+### Lo que este PASS NO cubre
+
+- **La notificación de B llegó solo al abrir la app.** Es un hallazgo real de la misma corrida, pero es
+  **otro problema**: el *momento de entrega*, no *a quién se atribuye* el cambio. Va en ticket aparte
+  (`groups-expense-notif-only-on-foreground`, en alta separada) y **no entra aquí ni como PASS ni como FAIL
+  de la atribución**: el contenido del aviso y la autoexclusión son correctos con independencia de cuándo
+  aparezca.
+- **El escenario original (gasto pagado por Pia y editado por el owner) no consta re-corrido palabra por
+  palabra.** El reporte de hoy dice que **A** fue el autor de la acción; **no dice quién era el pagador** ni
+  si el paso fue el de crear o el de editar. Lo que queda visto es la autoexclusión del eco; la precondición
+  literal del paso 1 del guion —gasto **pagado por B**, editado por A— no está escrita en el reporte.
+  - **Por qué importa cuál era el pagador:** el skip vive en `GroupNotificationRecipientLogic.expenseDecision`
+    como `(lastEditedByMemberID ?? paidByMemberID) == me`, y el guard legado `paidByMemberID == me` se
+    **preservó**. Si el gasto lo pagaba A, el silencio hacia A ya existía ANTES de este fix ⇒ esa variante no
+    discrimina. Solo discrimina con **pagador ≠ A**. El reporte no lo fija, así que el PASS se apoya en el
+    veredicto del owner, no en ese control.
+- **El texto de la notificación de B no está medido.** El reporte registra que **llegó**, no qué nombre
+  mostraba. El **paso 2** del guion —B ve "✏️ **[Owner]** actualizó '…'", atribuido al EDITOR y no al
+  pagador— no tiene lectura literal de pantalla hoy.
+- **Terceros y liquidaciones: sin correr.** Fuera de esta corrida quedan el caso «un tercero edita un gasto
+  pagado por otro» (Pia edita gasto de Marco, la parte que la Capa 1 sola no arreglaba), el **paso 3** (gasto
+  nuevo atribuido al creador), el **paso 4** (eco Caso D de liquidaciones, `recordedByMemberID`) y el
+  **paso 5** (2º device con el mismo iCloud).
+- **Los residuales de plataforma siguen escritos y sin probar**: rollout mixto (un editor en app vieja no
+  escribe la key ⇒ el server retiene el autor previo) y la ventana ultra-estrecha del primer arranque sin
+  identidad iCloud cacheada.
+- **El wire del canal backend sigue DIFERIDO.** El campo es invisible al emission map / Merkle; cuando las
+  notificaciones migren al canal backend hay que cablearlo. Este PASS es del canal **CloudKit**.
