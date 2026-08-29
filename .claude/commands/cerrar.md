@@ -1,6 +1,6 @@
 ---
 description: Cierra la sesión — verifica que nada quedó abierto, sincroniza el ticket, escribe docs/ESTADO.md y libera el disco sin preguntar
-allowed-tools: Bash(git:*), Bash(python3 scripts/glosario.py:*), Bash(bash qa/scripts/disk-report.sh:*), Bash(bash qa/scripts/session-cleanup.sh:*), Bash(xcrun simctl:*), Bash(tmutil:*), Bash(pgrep:*), Read, Edit, Glob, Grep
+allowed-tools: Bash(git:*), Bash(python3 scripts/glosario.py:*), Bash(bash qa/scripts/disk-report.sh:*), Bash(bash qa/scripts/session-cleanup.sh:*), Bash(xcrun simctl:*), Bash(tmutil:*), Bash(pgrep:*), Read, Edit, Glob, Grep, Bash(bash ~/.claude/scripts/limpiar-cowork.sh:*)
 ---
 
 Cierre de sesión de Yala. Cinco bloques, en este orden. Un solo informe al final; no narres cada paso. No preguntes. Tras reportar, ejecuta y listo.
@@ -39,8 +39,11 @@ Orden, alineado al teardown del puente (YalaAgent `session_teardown.py`):
    `bash qa/scripts/session-cleanup.sh --apply --clones --derived --scratch --sims-off`
    Eso borra DerivedData (`$HOME/Library/Developer/Xcode/DerivedData/*` y `$HOME/Library/Developer/XcodeBuildMCP/*`), scratchpads terminados (`/private/tmp/claude-501/*`, conserva sesión actual y mtime < 90 min), clones huérfanos, y apaga Simulator (`xcrun simctl shutdown all`).
 4. Si el script no está, fallback ya medido en el puente: `xcrun simctl shutdown all` y `rm -rf` de esos dos DerivedData. No toques el repo ni `~/Secrets`.
+5. `bash ~/.claude/scripts/limpiar-cowork.sh` — las carpetas de conversaciones de Cowork de más
+   de 60 días y su caché. Es otro almacén, en el disco interno, que nadie recicla: en agosto había
+   2 351 carpetas desde marzo, 5,9 GB. No pregunta y no falla; si no hay nada, dice «nada».
 
-En el informe, una línea por destino (TM / DerivedData / scratch / clones / sims-off) con GB o «nada». Si tras limpiar quedan < 25 GB, dilo. No ofrezcas saltarte DerivedData.
+En el informe, una línea por destino (TM / DerivedData / scratch / clones / sims-off / Cowork) con GB o «nada». Si tras limpiar quedan < 25 GB, dilo. No ofrezcas saltarte DerivedData.
 
 ## 4 · Traspaso
 
