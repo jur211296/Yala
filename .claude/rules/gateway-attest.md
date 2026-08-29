@@ -1,3 +1,15 @@
+---
+description: Gateway y App Attest — qué rutas exigen el header, por qué staging no detecta que falte, y dónde vive el proveedor. Se cargan al tocar el gateway o cualquier cliente de CloudSync.
+paths:
+  - "gateway/src/**"
+  - "gateway/test/**"
+  - "gateway/wrangler.toml"
+  - "Yala/Services/CloudSync/**"
+  - "Yala/App/Services/AppAttestClient.swift"
+  - "Yala/App/Services/ProxyClientFactory.swift"
+  - "Yala/App/Logic/Attest*.swift"
+  - "YalaTests/CloudSync/Attest*.swift"
+---
 # Gateway · App Attest · la asimetría observe/enforce
 
 ## La lección, antes que el fix
