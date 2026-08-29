@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (77 entradas)
+## Índice (78 entradas)
 
-> **No hace falta leer este fichero entero** — son 219 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 220 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-08-29` [Los roles de Frank pasan a Claude](#2026-08-29-los-roles-de-frank-pasan-a-claude)
 - `2026-08-28` [CI: la suite de simulador solo corre si el diff puede afectarla](#2026-08-28-ci-la-suite-de-simulador-solo-corre-si-el-diff-puede-afectarla)
 - `2026-08-26` [Balance en Distribución: stock, Panel no se toca](#2026-08-26-balance-en-distribucin-stock-panel-no-se-toca)
 - `2026-07-24` [Tanda 2026-07-24: fase 2.0.5 — 36 entradas (2026-07-08 → 2026-07-22)](#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
@@ -58,8 +59,8 @@
 - `2026-05-05` [Groups Pulido Final — Subset 3 (A6/A7/A8)](#2026-05-05-groups-pulido-final--subset-3-a6a7a8)
 - `2026-05-05` [A0-Bridge — rediseño completo del bridge SplitExpense ↔ TransactionItem (modelo M5)](#2026-05-05-a0-bridge--rediseo-completo-del-bridge-splitexpense--transactionitem-modelo-m5)
 - `2026-05-04` [Groups Pulido Final — Subset 2 (A9/A10/A12/A13)](#2026-05-04-groups-pulido-final--subset-2-a9a10a12a13)
-- `2026-04-28` [3 fixes runtime post-QA chat-registrar-transacciones](#2026-04-28-3-fixes-runtime-post-qa-chat-registrar-transacciones)
 - `2026-04-28` [Traducciones reales — 4 locales completos (nl, pl, zh-Hans, ja)](#2026-04-28-traducciones-reales--4-locales-completos-nl-pl-zh-hans-ja)
+- `2026-04-28` [3 fixes runtime post-QA chat-registrar-transacciones](#2026-04-28-3-fixes-runtime-post-qa-chat-registrar-transacciones)
 - `2026-04-27` [Sankey con rama Planificados](#2026-04-27-sankey-con-rama-planificados)
 - `2026-04-27` [Chat → Registrar transacciones (Opción C híbrida)](#2026-04-27-chat--registrar-transacciones-opcin-c-hbrida)
 - `2026-04-26` [Yala IA — pivot a context-rich (Opción B)](#2026-04-26-yala-ia--pivot-a-context-rich-opcin-b)
@@ -103,6 +104,23 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-08-29] Los roles de Frank pasan a Claude
+
+**Contexto.** Frank es un Grok Bot y GrokBot deja de estar en la foto. Tenía dos papeles vivos en
+este repo: **asignar los ids de ticket** y mantener `docs/TICKETS.md`, y **empujar el bump de build
+a `origin/2.1`**. Sin él, los dos quedan sin dueño.
+
+**Decisión.** Los hereda **Claude**. Los ids siguen siendo English kebab-case y el `status` sigue
+siendo el nombre de la carpeta — lo que cambia es quién los pone, no la convención.
+
+**Lo que NO cambia.** El bump de build y el push a `origin/2.1` son una acción de release, y la
+regla de `/cerrar` sigue mandando: **nunca se commitea en el cierre** y el hook `Stop` empuja lo ya
+commiteado. Que Claude pueda hacer el bump no lo convierte en parte del cierre.
+
+**Lo que no se toca: la historia.** «asc VALID (Tim/Frank 22-ago)» y «el audit de Frank sobre 2.1 @
+68a7221c» son registro de quién midió qué y siguen siendo ciertos. Un registro no se reescribe
+porque su autor deje de existir.
 
 ### [2026-08-28] CI: la suite de simulador solo corre si el diff puede afectarla
 

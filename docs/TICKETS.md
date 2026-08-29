@@ -1,6 +1,6 @@
 # Tickets
 
-Index of `tickets/`. Folder name **is** `status`. Filename **is** `id` + `.md` (English kebab-case, assigned by Frank).
+Index of `tickets/`. Folder name **is** `status`. Filename **is** `id` + `.md` (English kebab-case). Ids assigned by Claude since 2026-08-29.
 
 ## Schema
 

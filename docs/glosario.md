@@ -22,7 +22,8 @@
 - **status = carpeta** — en `tickets/`, el nombre de la carpeta **es** el `status` y el
   nombre del fichero **es** el `id`. Mover el fichero y editar el campo son el mismo acto:
   si no coinciden, el fichero manda.
-- **Frank** — quien asigna los ids de ticket y mantiene el tablero (`docs/TICKETS.md`). Sus
+- **Frank** — *(histórico)* el Grok Bot que asignaba los ids de ticket y mantenía el tablero;
+  desde el 2026-08-29 eso lo hace Claude. Sigue apareciendo en el registro, y ahí es correcto. Sus
   lecturas se citan acotadas: «lectura acotada de Frank» significa que eso es de él, no de
   Jurgen, y no se amplía.
 - **YalaWiki** — el repo de origen del que se absorbieron los tickets. **No es fuente de
@@ -36,10 +37,10 @@
 
 <!-- GLOSARIO:generado:inicio - no editar a mano -->
 
-## Dónde se decide cada término (144)
+## Dónde se decide cada término (145)
 
 > **No leas este bloque entero** — está ordenado alfabéticamente para buscar dentro
-> (`grep -i termino docs/glosario.md`), no para leerse. Sale de las 77 decisiones del
+> (`grep -i termino docs/glosario.md`), no para leerse. Sale de las 78 decisiones del
 > repo con `python3 scripts/glosario.py --repo . --apply`, así que **no se edita a mano**:
 > lo que escribas aquí se pierde en la siguiente regeneración. La parte que se mantiene
 > a mano es la de arriba. Un término marcado *(histórico)* solo vive en decisiones
@@ -165,6 +166,7 @@
 - **SSOT** — [2026-08-26](docs/DECISIONS.md#2026-08-26-balance-en-distribucin-stock-panel-no-se-toca), [2026-05-25](docs/DECISIONS.md#2026-05-25-csv-mirror-pico--budget-filters--transactioniteminboxdraft-tags-resilientes-a-cloudkit-lazy-hydration), [2026-05-26](docs/DECISIONS.md#2026-05-26-refactor-v3-unificado-del-csv-mirror-ssot-7-commits), [2026-07-01](docs/DECISIONS.md#2026-07-01-groups--pagos-planificados-de-grupo-gasto-compartido-recurrente), [2026-07-05](docs/DECISIONS.md#2026-07-05-cold-launch--share-image-al-share-sheet-no-haca-nada-intent-no-serializable-pre-init), [2026-07-06](docs/DECISIONS.md#2026-07-06-stats--comparativa-kpi-perodo-anterior-alineado-a-la-curva-mtd-vs-mtd-p20-15-completo) +2
 - **.stalled** — [2026-04-21](docs/DECISIONS.md#2026-04-21-sync-status-banner-global-vs-toolbar-indicator), [2026-04-21](docs/DECISIONS.md#2026-04-21-sync-silencioso-por-defecto--banner-pill-global)
 - **@State** — [2026-05-10](docs/DECISIONS.md#2026-05-1005-11-onboarding-restyle--5-iteraciones-de-qa-visual-iter1-iter5), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
+- **status** — [2026-08-29](docs/DECISIONS.md#2026-08-29-los-roles-de-frank-pasan-a-claude), [2026-04-21](docs/DECISIONS.md#2026-04-21-sync-status-banner-global-vs-toolbar-indicator)
 - **StoreKit** — [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-cierre-ltimas-5-entradas-de-la-fase-205)
 - **subcategoryName** — [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-cierre-ltimas-5-entradas-de-la-fase-205)
 - **Subcategory.shortcutID** — [2026-05-26](docs/DECISIONS.md#2026-05-26-fix-migracin-shortcutidtagid-colapsado-v2), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)

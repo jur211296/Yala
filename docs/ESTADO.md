@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-08-22 (Lima)
 
-**Rama** `2.1` · **HEAD** `f4cf3d2b` — En TestFlight build **12** (CPV 12). asc VALID `e961a77b` (Frank). Frank pushea bump a `origin/2.1`.
+**Rama** `2.1` · **HEAD** `f4cf3d2b` — En TestFlight build **12** (CPV 12). asc VALID `e961a77b`. El bump a `origin/2.1` lo empuja Claude (decisión 2026-08-29).
 **Campo.** MARKETING 2.1. Build 11 = corte 18-ago / HEAD `af1b7350` entonces.
 
 ## Decisión (Jurgen, 17–18 ago)
@@ -39,4 +39,4 @@ tags: [now, punto-de-retomada]
 - A7 / M5: no flip.
 
 ## Siguiente
-Sin flip A7/M5. No inventar ok_. Bump `origin/2.1` a cargo de Frank.
+Sin flip A7/M5. No inventar ok_. Bump `origin/2.1` a cargo de Claude.
