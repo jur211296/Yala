@@ -11,7 +11,8 @@ referencia, que pueden ser viejos y correctos.
 
 Uso: python3 scripts/frescura.py [--repo .] [--dias 90]
 """
-import os, sys, glob, argparse, subprocess, datetime
+import os
+import re, sys, glob, argparse, subprocess, datetime
 
 # umbral en dias por tipo: lo que describe el AHORA caduca antes que una referencia
 UMBRALES = [
@@ -31,8 +32,19 @@ def umbral(rel):
             return d, etq
     if '/decisions/' in rel.replace('\\', '/'):
         return 3650, 'decisión'          # un ADR viejo es correcto: no caduca
-    if '/histori' in rel.replace('\\', '/') or '/archive' in rel.replace('\\', '/'):
+    # con barra delante: una ruta relativa como 'research/x.md' no empieza por '/'
+    r = '/' + rel.replace('\\', '/').lstrip('/')
+    if '/histori' in r or '/archive' in r:
         return 3650, 'archivo'
+    # Un documento que REGISTRA un momento no caduca; caduca el que AFIRMA como
+    # funciona algo. Un acta de mayo sigue diciendo la verdad de mayo, igual que un
+    # ADR viejo suele ser correcto por serlo. Marcarlos de frios entrena el ojo a
+    # ignorar el informe entero, que es como se pierde el que si miente.
+    if any(x in r for x in ('/sesiones/', '/meetings/', '/actas/', '/research/',
+                            '/raw/', '/samples/', '/exploration/')):
+        return 3650, 'registro'
+    if re.search(r'\d{4}-\d{2}-\d{2}|\d{4}_\d{2}_\d{2}', os.path.basename(r)):
+        return 3650, 'registro'          # una fecha en el nombre lo delata
     return POR_DEFECTO, 'documento'
 
 
