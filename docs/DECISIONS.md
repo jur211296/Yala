@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (78 entradas)
+## Índice (79 entradas)
 
-> **No hace falta leer este fichero entero** — son 220 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 222 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-08-30` [Frank es el agente de Yala; el gate pasa a hook de git](#2026-08-30-frank-es-el-agente-de-yala-el-gate-pasa-a-hook-de-git)
 - `2026-08-29` [Los roles de Frank pasan a Claude](#2026-08-29-los-roles-de-frank-pasan-a-claude)
 - `2026-08-28` [CI: la suite de simulador solo corre si el diff puede afectarla](#2026-08-28-ci-la-suite-de-simulador-solo-corre-si-el-diff-puede-afectarla)
 - `2026-08-26` [Balance en Distribución: stock, Panel no se toca](#2026-08-26-balance-en-distribucin-stock-panel-no-se-toca)
@@ -104,6 +105,35 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-08-30] Frank es el agente de Yala; el gate pasa a hook de git
+
+**Contexto.** Los tres agentes del repo (`swift-reviewer`, `test-generator`, `branch-auditor`) eran
+de feb/mar y **nunca se invocaron**: 0 usos en todos los transcripts conservados (08-jul → 30-ago),
+frente a 27 de `general-purpose` y 13 de `Explore`. Además habían envejecido mal: `test-generator`
+declaraba `Framework: XCTest` y plantilla `import XCTest`, cuando el repo tiene **478 ficheros con
+`import Testing` y 0 con XCTest** — habría generado tests que no compilan. `swift-reviewer`
+duplicaba `/swift-audit` sin su lista de excepciones, o sea con falsos positivos garantizados.
+
+**Decisión.** Los tres se retiran. Entra **`frank`** (`.claude/agents/frank.md`, `memory: project`):
+todo el repo menos `marketing/`, rama por ticket, gate antes de commitear, PR para que Jürgen mire
+antes de que aterrice. Nunca commitea en `2.1` y **no mergea**.
+
+**Push automático, con condición comprobable.** Frank pushea solo si **el gate pasó** y **está en su
+rama**. No es criterio suyo: son dos condiciones que se verifican. Nunca a `2.1`.
+
+**El gate pasa a hook de git real.** `precommit-gate.sh` sólo corría en el hook `PreToolUse` de
+Claude Code, así que un commit desde la terminal o desde Xcode **se lo saltaba entero** — justo el
+agujero que importa cuando un agente trabaja solo y el owner commitea a mano de vez en cuando.
+Ahora vive en `.githooks/pre-commit` con `core.hooksPath`, versionado. Se salta con `--no-verify`.
+
+**Por qué rama por ticket y no commits directos.** Para un desarrollador solo, PR-por-todo suele ser
+ceremonia. Aquí no: en el momento en que Frank commitea directo a `2.1` no queda ningún punto donde
+mirar antes de que aterrice. La rama y el PR **son** el segundo par de ojos que ADR-241 de clínicas
+identificó como lo que se pierde al consolidar en un solo autor.
+
+**Limitación conocida.** `core.hooksPath` es configuración local y no viaja en el repo: un clon nuevo
+necesita `git config core.hooksPath .githooks` otra vez. Es de git, no un descuido.
 
 ### [2026-08-29] Los roles de Frank pasan a Claude
 

@@ -1,0 +1,9 @@
+#!/bin/bash
+# Hook de git real: corre el mismo gate que el hook PreToolUse de Claude Code.
+#
+# Existe porque el hook de Claude Code solo dispara si el commit pasa por su herramienta
+# Bash. Un commit desde la terminal o desde Xcode se lo saltaba entero — justo el agujero
+# que importa cuando Frank trabaja solo y tú commiteas a mano de vez en cuando.
+#
+# Se salta con `git commit --no-verify` cuando sepas lo que haces.
+exec bash qa/scripts/precommit-gate.sh
