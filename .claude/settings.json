@@ -83,5 +83,6 @@
   },
   "enabledPlugins": {
     "telegram@claude-plugins-official": true
-  }
+  },
+  "agent": "frank"
 }
