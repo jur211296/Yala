@@ -86,6 +86,24 @@ def recoger(repo, doc, hist, re_entrada, clave):
     return pre0, bloques
 
 
+RE_INDICE = re.compile(r'(?s)<!-- INDICE:inicio.*?<!-- INDICE:fin -->')
+
+
+def indice_previo(repo, rel):
+    """Rescata el bloque de indice que inyecta scripts/indexar_doc.py, si lo hay.
+
+    procesar() reconstruye cada fichero de historial desde cero a partir de la cabecera
+    y los bloques de entradas. El indice tematico vive en el preambulo, o sea que no es
+    ninguna de las dos cosas: sin esto, cada pasada de reorg_docs lo borraba, y
+    precisamente en los ficheros de >60 KB, que son los que nadie lee enteros.
+    """
+    full = os.path.join(repo, rel)
+    if not os.path.exists(full):
+        return ''
+    m = RE_INDICE.search(io.open(full, encoding='utf-8').read())
+    return m.group(0).strip() + '\n\n' if m else ''
+
+
 def escribir(repo, rel, s, apply):
     full = os.path.join(repo, rel)
     if apply:
@@ -154,9 +172,10 @@ def procesar(repo, doc, hist, mes, apply, tipo):
     for m, bs in por_mes.items():
         if m == mes:
             continue
-        h = ('# %s %s — histórico\n\n> Extraído de `%s`. El índice completo vive allí.\n\n---\n\n'
+        rel = '%s/%s-%s.md' % (hist, base, m)
+        h = ('# %s %s — histórico\n\n> Extraído de `%s`. El índice completo vive allí.\n\n'
              % (base, m, doc))
-        escribir(repo, '%s/%s-%s.md' % (hist, base, m), h + ''.join(bs), apply)
+        escribir(repo, rel, h + indice_previo(repo, rel) + '---\n\n' + ''.join(bs), apply)
     print('       antes %d B -> vivo %d B  (%d entradas indexadas)'
           % (antes, len(vivo.encode('utf-8')), len(bloques)))
     return len(bloques)

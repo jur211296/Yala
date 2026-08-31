@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (79 entradas)
+## Índice (80 entradas)
 
-> **No hace falta leer este fichero entero** — son 222 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 225 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-08-31` [El repo recibe /abrir, /higiene y reorg_docs; lo demás del estándar de casa no aplica](#2026-08-31-el-repo-recibe-abrir-higiene-y-reorgdocs-lo-dems-del-estndar-de-casa-no-aplica)
 - `2026-08-30` [Frank es el agente de Yala; el gate pasa a hook de git](#2026-08-30-frank-es-el-agente-de-yala-el-gate-pasa-a-hook-de-git)
 - `2026-08-29` [Los roles de Frank pasan a Claude](#2026-08-29-los-roles-de-frank-pasan-a-claude)
 - `2026-08-28` [CI: la suite de simulador solo corre si el diff puede afectarla](#2026-08-28-ci-la-suite-de-simulador-solo-corre-si-el-diff-puede-afectarla)
@@ -105,6 +106,44 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-08-31] El repo recibe /abrir, /higiene y reorg_docs; lo demás del estándar de casa no aplica
+
+**Contexto.** La auditoría del sistema (`~/Claude/casa/docs/auditoria-2026-08-30.md`) listó a Yala
+como «fuera del estándar de la casa»: sin `/abrir`, sin `/higiene`, sin `STATE.md` y sin dos de los
+seis scripts. **Ese diagnóstico estaba mal planteado.** Yala no está fuera del estándar: tiene su
+propia variante y es deliberada — el estado vive en `docs/ESTADO.md`, las decisiones van por fecha
+y no por `ADR-NNN`, y no hay `CHANGELOG.md` porque el rastro cronológico lo dan `tickets/` y
+`git log`.
+
+**Decisión.** Se toma lo que faltaba de verdad y se rechaza lo que no encaja.
+
+Entra: **`/abrir`**, que era lo único que daba continuidad entre sesiones y no existía — contrasta
+los documentos contra git y dice tres discrepancias siempre: el sello `updated:` de
+`docs/ESTADO.md` frente a lo que git dice del propio fichero, el estado fechado antes del último
+commit, y las rutas del `CLAUDE.md` que no resuelven. **`reorg_docs.py`**, que este repo necesita
+más que ninguno: `docs/DECISIONS.md` son 234 KB en un solo fichero, y era el único repo sin el
+script. Y **`/higiene`**, que consolida lo que vivía troceado dentro de `/cerrar`.
+
+No entra: **`split_adrs.py`**, que parte por `## ADR-NNN` — aquí las entradas van por fecha y
+forzarlo rompería las 77 que hay. Ni **`CHANGELOG.md` o `STATE.md` en la raíz**, que ya existen con
+otro nombre: renombrarlos rompería 74 tickets y los hooks que los referencian.
+
+**Razones.** El estándar sobrevive como principios, no como nombres de fichero. Lo que tiene que
+ser igual entre repos es qué trabajo hace cada documento y que los tres comandos existan.
+
+**Consecuencias.** Los tres hooks de `casa/decisions/ADR-002` aplican aquí por el frontmatter de
+Frank: apertura al arrancar, «cerramos aquí» dispara el `/cerrar`, y un aviso señala los commits
+sin bitácora — **este último calla en Yala**, porque no hay `CHANGELOG` y una ausencia deliberada
+no es un olvido.
+
+Corregido de paso: el sello `updated:` de `docs/ESTADO.md` decía 2026-08-22 con el fichero cambiado
+el 29. Un sello a mano miente en cuanto alguien se olvida, y ese olvido es exactamente lo que se
+busca — por eso ahora lo compara `/abrir` en cada arranque en vez de confiar en él.
+
+**Estado:** Activa
+
+---
 
 ### [2026-08-30] Frank es el agente de Yala; el gate pasa a hook de git
 
