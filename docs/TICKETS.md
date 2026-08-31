@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (74)
+## Index (75)
 
 | id | status | path |
 |----|--------|------|
@@ -106,6 +106,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-equal-split-shows-not-participating-on-peer | backlog | tickets/backlog/groups-equal-split-shows-not-participating-on-peer.md |
 | groups-expense-notif-only-on-foreground | backlog | tickets/backlog/groups-expense-notif-only-on-foreground.md |
 | groups-invite-skips-unirme-sheet-if-onboarded | backlog | tickets/backlog/groups-invite-skips-unirme-sheet-if-onboarded.md |
+| staging-test-credentials-in-public-repo | backlog | tickets/backlog/staging-test-credentials-in-public-repo.md |
 
 Counts by folder: backlog 34 · in-progress 9 · qa 15 · blocked 0 · done 8 · discarded 3 = 69.
 
