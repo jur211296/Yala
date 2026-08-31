@@ -44,15 +44,31 @@ def partir(texto, re_entrada):
     return ''.join(pre), bloques
 
 
-def limpiar_preambulo(pre):
+def limpiar_preambulo(pre, cab=()):
     """Quita del preambulo lo que generamos nosotros en pasadas anteriores.
 
     Sin esto el script es NO idempotente: el indice viejo queda como preambulo y se
     reemite junto al nuevo, y el fichero crece en cada ejecucion.
+
+    `cab` son las lineas de cabecera que esta misma pasada va a emitir. Se borran por
+    IGUALDAD EXACTA: adivinarlas por palabras clave fallaba en la linea del historial,
+    que no dice ninguna de ellas y sobrevivia suelta en el cuerpo.
+
+    El corte del indice previo para en el primer `---` horizontal. Con `\Z` se comia
+    todo lo que viniera despues -- incluido el preambulo escrito a mano, en silencio.
+    Es el mismo fallo que indice_previo() arregla para los ficheros de historial, pero
+    en el fichero vivo. La separadora de tabla (`|---|`) empieza por `|` y no corta.
     """
-    pre = re.sub(r'(?ms)^## Índice de .*?(?=^## |\Z)', '', pre)   # indice previo
+    for linea in cab:                                             # nuestra cabecera, exacta
+        if linea.startswith('>'):
+            pre = pre.replace(linea + '\n', '')
+    pre = re.sub(r'(?ms)^## Índice de .*?(?=^-{3,}\s*$|^## |\Z)', '', pre)  # indice previo
     pre = re.sub(r'(?m)\A#\s+[^\n]*\n+', '', pre)                # H1 previo
     pre = re.sub(r'(?m)^>.*(?:índice|Regenerar|histórico|mes en curso).*\n?', '', pre)
+    # las dos lineas de cabecera que llevan `hist` dentro: si el directorio de historial
+    # cambia entre pasadas, la de arriba no coincide y hay que cazarlas por su literal.
+    pre = re.sub(r'(?m)^> vive aquí; los meses cerrados en .*\n?', '', pre)
+    pre = re.sub(r'(?m)^> fichero de su mes en .*\n?', '', pre)
     pre = re.sub(r'(?m)^\|.*\|\s*$\n?', '', pre)                  # filas de tabla sueltas
     pre = re.sub(r'(?m)^-{3,}\s*$\n?', '', pre)
     return pre.strip()
@@ -161,7 +177,7 @@ def procesar(repo, doc, hist, mes, apply, tipo):
                '## Índice de decisiones (%d entradas)' % len(bloques), '',
                '| ID | Decisión | Fecha | Dónde |', '|---|---|---|---|']
 
-    pre_sin_h1 = limpiar_preambulo(pre)
+    pre_sin_h1 = limpiar_preambulo(pre, cab)
     cuerpo = ''.join(por_mes.get(mes, []))
     vivo = '\n'.join(cab) + '\n' + '\n'.join(filas) + '\n\n---\n\n'
     if pre_sin_h1.strip():

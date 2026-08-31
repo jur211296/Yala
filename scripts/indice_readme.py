@@ -30,7 +30,8 @@ PREGUNTAS = [
     (u'¿Qué hago si se cae en producción?',     ['docs/runbook.md']),
     (u'¿Qué credenciales y dependencias hay?',  ['docs/accesos.md']),
     (u'¿Qué significa este término?',           ['docs/glosario.md', 'docs/glossary.md']),
-    (u'¿Cómo arranco de cero en otra máquina?', ['docs/HANDOVER.md', 'docs/HANDOFF.md']),
+    (u'¿Cómo arranco de cero en otra máquina?', ['HANDOVER.md', 'HANDOFF.md',
+                                                 'docs/HANDOVER.md', 'docs/HANDOFF.md']),
 ]
 
 
