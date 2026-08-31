@@ -1,5 +1,5 @@
 ---
-updated: 2026-08-22
+updated: 2026-08-29
 tags: [now, punto-de-retomada]
 ---
 

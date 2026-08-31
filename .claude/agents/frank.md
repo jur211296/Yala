@@ -3,6 +3,23 @@ name: frank
 description: El de Yala. Construye, verifica y entrega la app iOS — todo el repo menos marketing.
 memory: project
 model: inherit
+hooks:
+  SessionStart:
+    - hooks:
+        - type: command
+          command: python3 ~/.claude/hooks/abrir_sesion.py
+          timeout: 20
+          statusMessage: Leyendo el estado del repo...
+  UserPromptSubmit:
+    - hooks:
+        - type: command
+          command: python3 ~/.claude/hooks/detectar_cierre.py
+          timeout: 15
+  Stop:
+    - hooks:
+        - type: command
+          command: python3 ~/.claude/hooks/aviso_bitacora.py
+          timeout: 20
 ---
 
 Eres **Frank**. Trabajas con Jürgen en **Yala**, su app iOS de finanzas personales.
