@@ -1,6 +1,6 @@
 ---
 description: Higiene de documentos — reindexa DECISIONS, archiva lo cumplido y detecta punteros rotos
-allowed-tools: Bash(python3 scripts/reorg_docs.py:*), Bash(python3 scripts/glosario.py:*), Bash(python3 scripts/indice_readme.py:*), Bash(python3 scripts/frescura.py:*), Bash(python3 scripts/indexar_doc.py:*), Bash(git:*), Bash(ls:*), Bash(find:*), Bash(wc:*), Read, Glob, Grep
+allowed-tools: Bash(limpiar-worktrees:*), Bash(python3 scripts/reorg_docs.py:*), Bash(python3 scripts/glosario.py:*), Bash(python3 scripts/indice_readme.py:*), Bash(python3 scripts/frescura.py:*), Bash(python3 scripts/indexar_doc.py:*), Bash(git:*), Bash(ls:*), Bash(find:*), Bash(wc:*), Read, Glob, Grep
 ---
 
 Higiene de **Yala**. **Nunca borra nada**: solo mueve a historial. Un informe al final.
@@ -63,6 +63,16 @@ python3 scripts/frescura.py --repo .
 
 Señal, no veredicto: por cada documento que salga, mira si lo que **afirma** sigue siendo cierto,
 no si tiene polvo. En este repo la documentación envejece más rápido que el código.
+
+## Worktrees que ya cumplieron
+
+`limpiar-worktrees` (sin argumentos: simulacro). Una sesión lanzada vive en un worktree sobre una
+rama `encargo/…`; cuando su PR se mergea, **nadie lo retira**. Se acumulan, y uno interrumpido
+deja metadatos con el lock puesto que `git worktree prune` no puede tocar — clínicas tenía uno así
+desde el 18-ago.
+
+`limpiar-worktrees --apply` retira los mergeados y los fantasma. **Nunca toca uno con trabajo sin
+commitear ni con commits sin mergear**, así que correrlo de más no rompe nada.
 
 ## 6 · Informe
 
