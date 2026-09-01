@@ -14,13 +14,14 @@
 # Al final imprime la auditoría MANUAL de logs (fuga de la llave) — no automatizable desde aquí.
 #
 # Usa SOLO la anon key + JWTs de usuario (password grant). NUNCA service_role. No corre en CI.
-# Env overrides: SUPABASE_URL, SUPABASE_ANON_KEY, USER_A_EMAIL/PASS, USER_B_EMAIL/PASS.
+# Env REQUERIDO: USER_A_PASS, USER_B_PASS (sin default en el arbol; ver qa/cloud/README.md).
+# Env opcional:  SUPABASE_URL, SUPABASE_ANON_KEY, USER_A_EMAIL, USER_B_EMAIL.
 set -uo pipefail
 
 URL="${SUPABASE_URL:-https://fostjbbwstyuunmmefuk.supabase.co}"
 ANON="${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZvc3RqYmJ3c3R5dXVubW1lZnVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0NTAxNTMsImV4cCI6MjA5OTAyNjE1M30.gTWg5a8NKNuL_RhOmaaSGhnJpdV6iMXhwYwZVJb-FKg}"
-A_EMAIL="${USER_A_EMAIL:-i5-user-a@test.yala}"; A_PASS="${USER_A_PASS:-I5-Passw0rd-A!}"
-B_EMAIL="${USER_B_EMAIL:-i5-user-b@test.yala}"; B_PASS="${USER_B_PASS:-I5-Passw0rd-B!}"
+A_EMAIL="${USER_A_EMAIL:-i5-user-a@test.yala}"; A_PASS="${USER_A_PASS:?falta en el entorno — ver qa/cloud/README.md (credenciales de staging)}"
+B_EMAIL="${USER_B_EMAIL:-i5-user-b@test.yala}"; B_PASS="${USER_B_PASS:?falta en el entorno — ver qa/cloud/README.md (credenciales de staging)}"
 
 login() { # email pass -> access_token
   curl -s -X POST "$URL/auth/v1/token?grant_type=password" \

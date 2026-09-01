@@ -8,8 +8,10 @@
 //  test (B) para NO ensuciar el estado del user A que consumen los otros e2e. Deja la fila de B en estado
 //  estable (mip=false); la limpieza pre-run de la suite de goldens la resetea si hace falta.
 //
-//  GATEADO por `YALA_CLOUD_E2E=1` (correr con `TEST_RUNNER_YALA_CLOUD_E2E=1 xcodebuild test …`). NO corre
-//  en CI ni en /test-smart (aparece skipped). anon key + password grant de B; NUNCA service_role.
+//  GATEADO por `YALA_CLOUD_E2E=1` **y** por `USER_B_PASS` en el entorno (correr con
+//  `TEST_RUNNER_YALA_CLOUD_E2E=1 TEST_RUNNER_USER_B_PASS='…' xcodebuild test …`). NO corre en CI ni
+//  en /test-smart (aparece skipped). anon key + password grant de B vía `StagingTestCredentials`
+//  (nunca literales en el árbol); NUNCA service_role.
 //
 
 import Foundation
@@ -23,6 +25,7 @@ struct MigrationCutoverE2EStagingTests {
 
     private nonisolated static var isEnabled: Bool {
         ProcessInfo.processInfo.environment["YALA_CLOUD_E2E"] == "1"
+            && StagingTestCredentials.areAvailable(.b)
     }
 
     private static let supabaseURL = "https://fostjbbwstyuunmmefuk.supabase.co"
@@ -37,7 +40,7 @@ struct MigrationCutoverE2EStagingTests {
         request.httpMethod = "POST"
         request.setValue(Self.anonKey, forHTTPHeaderField: "apikey")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = Data(#"{"email":"i5-user-b@test.yala","password":"I5-Passw0rd-B!"}"#.utf8)
+        request.httpBody = try StagingTestCredentials.passwordGrantBody(for: .b)
         let (data, _) = try await URLSession.shared.data(for: request)
         struct TokenResponse: Decodable { let access_token: String? }
         guard let token = try JSONDecoder().decode(TokenResponse.self, from: data).access_token else {

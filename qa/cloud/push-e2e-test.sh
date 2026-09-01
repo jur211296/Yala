@@ -13,13 +13,14 @@
 # FRESH sync_id per run (UUID). DELETE is REVOKED on staging → rows ACCUMULATE. Clean up by user_id via
 # the Supabase SQL editor / MCP (service context) — this script never uses service_role.
 #
-# Env overrides: SUPABASE_URL, SUPABASE_ANON_KEY, WORKER_URL, USER_A_EMAIL/PASS.
+# Env REQUERIDO: USER_A_PASS (sin default en el arbol; ver qa/cloud/README.md).
+# Env opcional:  SUPABASE_URL, SUPABASE_ANON_KEY, WORKER_URL, USER_A_EMAIL.
 set -uo pipefail
 
 URL="${SUPABASE_URL:-https://fostjbbwstyuunmmefuk.supabase.co}"
 ANON="${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZvc3RqYmJ3c3R5dXVubW1lZnVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0NTAxNTMsImV4cCI6MjA5OTAyNjE1M30.gTWg5a8NKNuL_RhOmaaSGhnJpdV6iMXhwYwZVJb-FKg}"
 WORKER="${WORKER_URL:-https://yala-gateway-staging.misty-surf-6866.workers.dev}"
-A_EMAIL="${USER_A_EMAIL:-i5-user-a@test.yala}"; A_PASS="${USER_A_PASS:-I5-Passw0rd-A!}"
+A_EMAIL="${USER_A_EMAIL:-i5-user-a@test.yala}"; A_PASS="${USER_A_PASS:?falta en el entorno — ver qa/cloud/README.md (credenciales de staging)}"
 
 login() {
   curl -s -X POST "$URL/auth/v1/token?grant_type=password" \

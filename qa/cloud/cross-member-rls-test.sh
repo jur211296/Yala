@@ -43,7 +43,9 @@
 #                      print the two MCP execute_sql statements the operator must run, then exit 0 (no matrix).
 #   --skip-legacy      run the gate but SKIP the rebind/expired-token legacy block WITHOUT failing (env absent is OK).
 #
-# Env overrides: SUPABASE_URL, SUPABASE_ANON_KEY, USER_A_EMAIL/PASS, USER_B_EMAIL/PASS, USER_C_EMAIL/PASS.
+# Env REQUERIDO: USER_A_PASS, USER_B_PASS (sin default en el arbol; ver qa/cloud/README.md).
+# Env opcional:  SUPABASE_URL, SUPABASE_ANON_KEY, USER_A_EMAIL, USER_B_EMAIL, USER_C_EMAIL,
+#                USER_C_PASS (sin ella, el sub-caso del user C cae de vuelta a B).
 set -uo pipefail
 
 URL="${SUPABASE_URL:-https://fostjbbwstyuunmmefuk.supabase.co}"
@@ -51,9 +53,9 @@ ANON="${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 # G7: llave de cifrado de las columnas † de grupos. SIN default (JAMÁS hardcodeada). Requerida en TODOS los modos.
 ENC_KEY="${GROUPS_ENC_KEY:-}"
 [ -n "$ENC_KEY" ] || { echo "FATAL: set GROUPS_ENC_KEY (staging groups enc key) — see README/g7_01 header"; exit 2; }
-A_EMAIL="${USER_A_EMAIL:-i5-user-a@test.yala}"; A_PASS="${USER_A_PASS:-I5-Passw0rd-A!}"
-B_EMAIL="${USER_B_EMAIL:-i5-user-b@test.yala}"; B_PASS="${USER_B_PASS:-I5-Passw0rd-B!}"
-C_EMAIL="${USER_C_EMAIL:-i5-user-c@test.yala}"; C_PASS="${USER_C_PASS:-I5-Passw0rd-C!}"
+A_EMAIL="${USER_A_EMAIL:-i5-user-a@test.yala}"; A_PASS="${USER_A_PASS:?falta en el entorno — ver qa/cloud/README.md (credenciales de staging)}"
+B_EMAIL="${USER_B_EMAIL:-i5-user-b@test.yala}"; B_PASS="${USER_B_PASS:?falta en el entorno — ver qa/cloud/README.md (credenciales de staging)}"
+C_EMAIL="${USER_C_EMAIL:-i5-user-c@test.yala}"; C_PASS="${USER_C_PASS:-}"
 LEGACY_ENV="/tmp/cross-member-rls-legacy.env"
 HLC="2026-07-14T00:00:00.000Z-0001-0123456789abcdef"   # 46-char dummy; not load-bearing for RLS/RPC
 
@@ -197,9 +199,13 @@ EOF
   exit 0
 fi
 
-# Optional user C (best-effort).
-JWT_C="$(login "$C_EMAIL" "$C_PASS")"
-if [ -z "$JWT_C" ]; then JWT_C="$(signup "$C_EMAIL" "$C_PASS")"; fi
+# Optional user C (best-effort). Sin USER_C_PASS en el entorno no se intenta el login: el
+# sub-caso de agotamiento cae de vuelta a B, que es el fallback que ya existia.
+JWT_C=""
+if [ -n "$C_PASS" ]; then
+  JWT_C="$(login "$C_EMAIL" "$C_PASS")"
+  if [ -z "$JWT_C" ]; then JWT_C="$(signup "$C_EMAIL" "$C_PASS")"; fi
+fi
 if [ -n "$JWT_C" ]; then SUB_C="$(sub_of "$JWT_C")"; echo "user C = $SUB_C"; else echo "user C = (unavailable — exhaustion sub-case falls back to B)"; fi
 echo
 

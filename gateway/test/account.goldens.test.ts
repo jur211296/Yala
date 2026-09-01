@@ -27,6 +27,10 @@ import { beforeAll, describe, expect, it } from "vitest";
 import app from "../src/index";
 import type { Env } from "../src/env";
 
+// Node expone `process` en runtime (vitest env node), pero el tsconfig del Worker no trae @types/node →
+// declaración mínima type-only para leer las credenciales de staging del entorno (nunca inline).
+declare const process: { env: Record<string, string | undefined> };
+
 const URL = "https://fostjbbwstyuunmmefuk.supabase.co";
 const ANON =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZvc3RqYmJ3c3R5dXVubW1lZnVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0NTAxNTMsImV4cCI6MjA5OTAyNjE1M30.gTWg5a8NKNuL_RhOmaaSGhnJpdV6iMXhwYwZVJb-FKg";
@@ -154,9 +158,27 @@ async function readMigrationUpdatedAt(jwt: string): Promise<string | null> {
 const DEV_A = "device-A-01";
 const DEV_OTHER = "device-other-99";
 
+// Credenciales de los usuarios de test de staging: SOLO desde el entorno. NUNCA literales en el
+// árbol — el repo es público y estuvieron en claro hasta el 2026-09-01 (ticket
+// `staging-test-credentials-in-public-repo`). Se invoca DENTRO del beforeAll, nunca al importar:
+// importar este fichero no debe lanzar, o se rompe el subset offline de la suite.
+function testUser(letra: "A" | "B"): { email: string; password: string } {
+  const email = process.env[`USER_${letra}_EMAIL`] ?? `i5-user-${letra.toLowerCase()}@test.yala`;
+  const password = process.env[`USER_${letra}_PASS`] ?? "";
+  if (!password) {
+    throw new Error(
+      `Falta USER_${letra}_PASS en el entorno — export USER_${letra}_PASS=<pass de staging> ` +
+        `antes de npm test (ver qa/cloud/README.md)`,
+    );
+  }
+  return { email, password };
+}
+
 beforeAll(async () => {
-  jwtA = await login("i5-user-a@test.yala", "I5-Passw0rd-A!");
-  jwtB = await login("i5-user-b@test.yala", "I5-Passw0rd-B!");
+  const userA = testUser("A");
+  const userB = testUser("B");
+  jwtA = await login(userA.email, userA.password);
+  jwtB = await login(userB.email, userB.password);
   subA = decodeSub(jwtA);
   subB = decodeSub(jwtB);
 });
