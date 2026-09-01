@@ -6,6 +6,7 @@ updated: 2026-08-26
 source: YalaWiki/Bugs/prefs-cinco-keys-synced-suben-y-no-vuelven.md
 ---
 
+# Cinco ajustes suben a la nube y no vuelven
 
 ## El síntoma, en lenguaje de usuario
 
