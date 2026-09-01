@@ -26,7 +26,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd /Users/jur/Yala && bash qa/scripts/disk-report.sh --guard 2>/dev/null || true",
+            "command": "cd \"${CLAUDE_PROJECT_DIR:-/Users/jur/Yala}\" && bash qa/scripts/disk-report.sh --guard 2>/dev/null || true",
             "timeout": 10,
             "statusMessage": "Comprobando espacio en disco..."
           }
@@ -69,7 +69,7 @@
           },
           {
             "type": "command",
-            "command": "cd /Users/jur/Yala && git log @{u}..HEAD --oneline 2>/dev/null | grep -q . && git push origin HEAD 2>&1 || true",
+            "command": "cd \"${CLAUDE_PROJECT_DIR:-/Users/jur/Yala}\" && git log @{u}..HEAD --oneline 2>/dev/null | grep -q . && git push origin HEAD 2>&1 || true",
             "timeout": 30,
             "statusMessage": "Pushing unpushed commits..."
           }

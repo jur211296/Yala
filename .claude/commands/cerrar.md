@@ -50,6 +50,19 @@ En el informe, una línea por destino (TM / DerivedData / scratch / clones / sim
 
 Tres líneas, no más: **dónde quedó**, **qué sigue**, **qué está bloqueado esperando algo tuyo**.
 
+## 4 bis · Si esta sesión corre en un worktree
+
+`git rev-parse --git-common-dir` distinto de `.git` significa que sí: la lanzó `lanzar-sesion`
+en `~/Claude/worktrees/`, sobre una rama `encargo/<slug>`. **El árbol principal es de Jürgen.**
+
+- **Sáltate el bloque 5: no escribas `docs/ESTADO.md`.** Es un fichero único que toda sesión
+  reescribe; dos ramas tocándolo chocan en el merge siempre. Se escribe en la rama principal
+  después de mergear. **El ticket sí va aquí** — es un fichero por ticket y no colisiona.
+- **Pushea tu rama y abre PR** con `gh pr create`, con el parte en el cuerpo: qué se hizo, qué
+  quedó abierto, qué sigue. Es lo que leerá quien mergee para escribir el estado.
+- El hook `Stop` respeta el worktree desde el 1-sep (`CLAUDE_PROJECT_DIR`), pero comprueba que
+  pusheó tu rama y no otra.
+
 ## 5 · Escribir docs/ESTADO.md
 
 Reescribir el archivo entero (no append). Tope 40 líneas.

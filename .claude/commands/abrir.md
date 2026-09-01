@@ -1,6 +1,6 @@
 ---
 description: Arranca la sesión — lee solo el set fijo, contrasta contra git y entrega el estado accionable
-allowed-tools: Bash(git:*), Bash(date:*), Read, Glob, Grep
+allowed-tools: Bash(git:*), Bash(gh:*), Bash(date:*), Read, Glob, Grep
 ---
 
 Arranque de **Yala — app iOS de finanzas personales**. No narres los pasos: entrega el briefing.
@@ -27,6 +27,12 @@ Tres discrepancias que se dicen **siempre** en el briefing:
   alguien se olvida, y ese olvido es justo lo que buscamos. El hook de arranque ya lo compara.
 - `docs/ESTADO.md` fechado antes del último commit: hubo trabajo después del último cierre.
 - Una ruta del `CLAUDE.md` que no resuelve. Es el fallo más caro que existe aquí.
+
+**¿Entró trabajo sin bitácora?** `git log --merges --oneline -10`. Un merge de una rama
+`encargo/…` trae una sesión que se cerró en un worktree, y **esas sesiones no escriben bitácora ni
+estado a propósito**: dos ramas tocando la misma foto chocan siempre, así que se escribe aquí,
+después de mergear. Si el merge no tiene su entrada, ese trabajo entró sin registro — **es lo
+primero que se arregla.** El parte está en el cuerpo del PR: `gh pr view <n>`.
 
 ## 3 · Briefing — máximo 12 líneas
 

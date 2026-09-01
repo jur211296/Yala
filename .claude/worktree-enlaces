@@ -1,0 +1,8 @@
+# Rutas que .gitignore deja fuera y que un worktree necesita igualmente.
+# Una por linea, relativa a la raiz del repo. Se enlazan al arbol principal.
+#
+# .planning/ esta en .gitignore:47 y es donde vive parte del estado de Yala
+# (los tickets si viajan: estan versionados).
+# node_modules NO se enlaza a proposito: dos npm sobre el mismo arbol se pisan.
+# Si un encargo toca gateway/ o Web/, que instale en su worktree.
+.planning
