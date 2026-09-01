@@ -45,9 +45,18 @@ No preguntes. No hagas dry-run de espera. Informa en el cierre qué se borró y 
 Orden, alineado al teardown del puente (YalaAgent `session_teardown.py`):
 
 1. Snapshots locales de Time Machine — **esto es lo que MÁS debe borrar**.
-   - `tmutil listlocalsnapshots /`
-   - por cada stamp: `tmutil deletelocalsnapshots <stamp>`
-   - No uses `thinlocalsnapshots`. No inventes otro path. El script `session-cleanup.sh` no cubre TM.
+   - `tmutil listlocalsnapshots /` lista nombres completos: `com.apple.TimeMachine.2026-09-01-073242.local`
+   - **`deletelocalsnapshots` NO acepta ese nombre**: quiere solo la fecha. Pasarle el nombre
+     entero falla con `is not a valid disk` (POSIX 22) en todos, y una sesión que siga la receta
+     al pie de la letra se queda sin borrar nada creyendo que borró. Medido el 2026-09-01.
+   - Por cada uno, recortando el prefijo y el sufijo:
+
+     ```bash
+     for s in $(tmutil listlocalsnapshots / | grep com.apple.TimeMachine | sed -E 's/com\.apple\.TimeMachine\.(.*)\.local/\1/'); do tmutil deletelocalsnapshots "$s"; done
+     ```
+
+   - Cada borrado responde `Deleted local snapshot '<fecha>'`. Si dice otra cosa, no borró.
+   - No uses `thinlocalsnapshots`. El script `session-cleanup.sh` no cubre TM.
 2. `bash qa/scripts/disk-report.sh`
 3. Aplica ya, sin confirmación:
    `bash qa/scripts/session-cleanup.sh --apply --clones --derived --scratch --sims-off`
