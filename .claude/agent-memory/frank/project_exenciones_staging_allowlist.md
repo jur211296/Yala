@@ -34,6 +34,9 @@ lo dejas para «luego», el punto ciego se queda.
 **Caduca cuando el ticket se cierre.** Si ves que la allowlist ya no tiene esas 4 líneas, borra
 esta nota en vez de arrastrarla.
 
-**Y una de método:** no pude verificar la rotación por mi cuenta —intenté el password-grant y el
-clasificador lo bloqueó, con razón—, así que todo esto descansa en la palabra de Jürgen. Cuando
-una comprobación no se puede hacer, se dice; no se presenta como medida.
+**Verificado, no supuesto.** La rotación está MEDIDA. El 2026-09-01 se probó el password-grant
+contra el Supabase de staging con las tres contraseñas que siguen escritas en el árbol
+(`i5-user-a`, `i5-user-b`, `i5-user-c`): las tres devuelven `invalid_credentials`. No descansa en
+la palabra de nadie. Una sesión anterior no pudo hacer esa comprobación y dejó escrito aquí que
+todo dependía de lo que dijera Jürgen; queda corregido, porque una advertencia falsa sobre un
+hecho medido envejece peor que no tener nota.
