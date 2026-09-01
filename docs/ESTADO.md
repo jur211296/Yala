@@ -5,26 +5,27 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-01 (Lima)
 
-**Rama** `2.1` · **HEAD** `a2df76fb` — *Merge pull request #56 (la receta de snapshots del /cerrar no borraba nada)*.
-En TestFlight build **12** (CPV 12). **Subida Yala (TF/store) = solo Mini.**
+**Rama** `2.1` · **HEAD** `adbe94ec` — *Merge PR #58 (credenciales de staging al entorno)*.
+TestFlight build **12** (CPV 12). **Subida Yala (TF/store) = solo Mini.**
 
 ## Esta sesión
-Higiene, sin tocar la app. Fuera el comando `/bug-triage` y sus dos llamadas a un webhook de
-n8n muerto hacía un mes. Las cuentas de test del Supabase de staging estaban en claro en el
-repo, que es público: **rotadas y verificadas** (las viejas ya no autentican). Se tituló el
-ticket de prefs para el kanban y se arregló el bloque de disco de `/cerrar`, que llevaba sin
-liberar un byte y sin avisar. Y 27 ramas fuera: sólo quedan `1.0` y `2.1`.
+Las contraseñas de las cuentas de test de staging ya no están en el repo: se leen del entorno en
+los tres frentes que las usaban (tests de Swift, scripts de `qa/cloud`, goldens del gateway), y
+`qa/cloud/README.md` dice qué exportar. Sin ellas cada frente avisa de lo que falta en vez de dar
+un `invalid_credentials` mudo. Con eso caen las 4 exenciones de la allowlist.
+**La app no cambia: no se tocó una línea de producción.**
+Dos correcciones medidas a documentación envejecida: el hook de secretos **ya no está registrado
+en ningún `settings.json`** (ADR-009) ⇒ nada escanea antes de un push; y `encargos/` **sí está
+versionado** desde ayer.
 
 ## Abiertos
-- **`staging-test-credentials-in-public-repo`** (backlog, alta) — rotación HECHA; falta sacar
-  las credenciales al entorno en 16 ficheros y **retirar en el mismo movimiento** las 4
-  exenciones de la allowlist, que hoy son un punto ciego.
-- **`AUDIT-appstore-guidelines.md`** (`docs/audit/`) — tres hallazgos de alto riesgo de rechazo
-  por la divulgación del uso de OpenAI, sin atacar. Es de Lola y toca copy de ficha, consent en
-  16 locales y `PrivacyInfo.xcprivacy` (revisar D-C).
-- **`encargos/` sin versionar** — es el canal del grokbot para dejar mandatos a este repo y el
-  playbook promete que «queda versionado»; aquí nunca se commiteó, así que no sobrevive a un
-  clon. Commitearlo, no borrarlo.
+- **`ci-suite-simulador-duplicada-y-allowlist-incompleta`** (backlog, alta) — el CI corre la
+  suite **dos veces por commit** (~100 min cada una) y la corre para cambios de `gateway/` y
+  `qa/cloud/`, que no son input de `xcodebuild`. Medido; con chip.
+- **El sello de `/gate`** — `git add` de un fichero nuevo invalida la huella y bloquea el commit
+  diciendo en falso que el código cambió. Aislado hoy. Sin ticket; con chip.
+- **`AUDIT-appstore-guidelines.md`** — 3 hallazgos de alto riesgo de rechazo por la divulgación
+  del uso de OpenAI, sin atacar. Es de Lola (copy de ficha, consent, `PrivacyInfo.xcprivacy`).
 
 ## Release 2.1 (sin cambios)
 - 2.0.5 no se lanza. Release = 2.1. A7 y M5 en 2.1: **HOLD, no flip**.
@@ -33,7 +34,7 @@ liberar un byte y sin avisar. Y 27 ramas fuera: sólo quedan `1.0` y `2.1`.
 - Cero `ok_` inventado.
 
 ## Siguiente
-Atacar el ticket de credenciales: sacar los literales al entorno y quitar las 4 exenciones.
+El ticket de CI: quitar el run duplicado y ampliar la allowlist. Medido y con chip.
 
 ## Bloqueo
 Ninguno.
