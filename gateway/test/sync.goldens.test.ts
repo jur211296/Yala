@@ -13,6 +13,10 @@ import { setBreakingColumnsForTest } from "../src/sync/schemaGate";
 import { canonRowC1, merkleColumns } from "../src/sync/canon";
 import type { SyncPushResponse, SyncPullResponse, PrefsPullResponse } from "../src/sync/types";
 
+// Node expone `process` en runtime (vitest env node), pero el tsconfig del Worker no trae @types/node →
+// declaración mínima type-only para leer las credenciales de staging del entorno (nunca inline).
+declare const process: { env: Record<string, string | undefined> };
+
 // Staging (mismo target que qa/cloud/cross-user-rls-test.sh). Anon key + 2 JWTs de usuario; NUNCA service_role.
 const URL = "https://fostjbbwstyuunmmefuk.supabase.co";
 const ANON =
@@ -95,9 +99,27 @@ const money = (amount: number, aip: number, rate: number, cur = "PEN", prov = fa
   is_exchange_rate_provisional: prov,
 });
 
+// Credenciales de los usuarios de test de staging: SOLO desde el entorno. NUNCA literales en el
+// árbol — el repo es público y estuvieron en claro hasta el 2026-09-01 (ticket
+// `staging-test-credentials-in-public-repo`). Se invoca DENTRO del beforeAll, nunca al importar:
+// importar este fichero no debe lanzar, o se rompe el subset offline de la suite.
+function testUser(letra: "A" | "B"): { email: string; password: string } {
+  const email = process.env[`USER_${letra}_EMAIL`] ?? `i5-user-${letra.toLowerCase()}@test.yala`;
+  const password = process.env[`USER_${letra}_PASS`] ?? "";
+  if (!password) {
+    throw new Error(
+      `Falta USER_${letra}_PASS en el entorno — export USER_${letra}_PASS=<pass de staging> ` +
+        `antes de npm test (ver qa/cloud/README.md)`,
+    );
+  }
+  return { email, password };
+}
+
 beforeAll(async () => {
-  jwtA = await login("i5-user-a@test.yala", "I5-Passw0rd-A!");
-  jwtB = await login("i5-user-b@test.yala", "I5-Passw0rd-B!");
+  const userA = testUser("A");
+  const userB = testUser("B");
+  jwtA = await login(userA.email, userA.password);
+  jwtB = await login(userB.email, userB.password);
   subA = decodeSub(jwtA);
 });
 

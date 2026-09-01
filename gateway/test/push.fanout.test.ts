@@ -102,9 +102,27 @@ function dummyToken(seed: string): string {
   return s;
 }
 
+// Credenciales de los usuarios de test de staging: SOLO desde el entorno. NUNCA literales en el
+// árbol — el repo es público y estuvieron en claro hasta el 2026-09-01 (ticket
+// `staging-test-credentials-in-public-repo`). Se invoca DENTRO del beforeAll, nunca al importar:
+// importar este fichero no debe lanzar, o se rompe el subset offline de la suite.
+function testUser(letra: "A" | "B"): { email: string; password: string } {
+  const email = process.env[`USER_${letra}_EMAIL`] ?? `i5-user-${letra.toLowerCase()}@test.yala`;
+  const password = process.env[`USER_${letra}_PASS`] ?? "";
+  if (!password) {
+    throw new Error(
+      `Falta USER_${letra}_PASS en el entorno — export USER_${letra}_PASS=<pass de staging> ` +
+        `antes de npm test (ver qa/cloud/README.md)`,
+    );
+  }
+  return { email, password };
+}
+
 beforeAll(async () => {
-  jwtA = await login("i5-user-a@test.yala", "I5-Passw0rd-A!");
-  jwtB = await login("i5-user-b@test.yala", "I5-Passw0rd-B!");
+  const userA = testUser("A");
+  const userB = testUser("B");
+  jwtA = await login(userA.email, userA.password);
+  jwtB = await login(userB.email, userB.password);
   subA = decodeSub(jwtA);
   subB = decodeSub(jwtB);
 }, 30_000);

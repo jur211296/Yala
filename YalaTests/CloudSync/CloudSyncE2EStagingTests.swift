@@ -7,9 +7,10 @@
 //  Verifica el decoder Swift contra los BYTES REALES del wire (NUMERIC de PostgREST como número
 //  JSON, timestamptz con offset, uuid[] null/[]) — lo que ningún fixture local puede garantizar.
 //
-//  GATEADO por la env var `YALA_CLOUD_E2E=1` (correr con `TEST_RUNNER_YALA_CLOUD_E2E=1 xcodebuild
-//  test …`): necesita red + el usuario de test sembrado en I5. NO corre en CI ni en /test-smart
-//  (aparece como skipped). Mismo target/credenciales que gateway/test/sync.goldens.test.ts y
+//  GATEADO por `YALA_CLOUD_E2E=1` **y** por la presencia de `USER_A_PASS` en el entorno (correr
+//  con `TEST_RUNNER_YALA_CLOUD_E2E=1 TEST_RUNNER_USER_A_PASS='…' xcodebuild test …`): necesita red
+//  + el usuario de test sembrado en I5. Credenciales: `StagingTestCredentials` — nunca literales
+//  en el árbol. NO corre en CI ni en /test-smart (aparece como skipped). Mismo target/credenciales que gateway/test/sync.goldens.test.ts y
 //  qa/cloud/push-e2e-test.sh (anon key + password grant del user A; NUNCA service_role). Los
 //  sync_id son ÚNICOS por run — sin cleanup posible (DELETE revocado por diseño en staging).
 //
@@ -26,6 +27,7 @@ struct CloudSyncE2EStagingTests {
 
     private nonisolated static var isEnabled: Bool {
         ProcessInfo.processInfo.environment["YALA_CLOUD_E2E"] == "1"
+            && StagingTestCredentials.areAvailable(.a)
     }
 
     // Staging (mismo target que qa/cloud/push-e2e-test.sh).
@@ -80,7 +82,7 @@ struct CloudSyncE2EStagingTests {
         request.httpMethod = "POST"
         request.setValue(Self.anonKey, forHTTPHeaderField: "apikey")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = Data(#"{"email":"i5-user-a@test.yala","password":"I5-Passw0rd-A!"}"#.utf8)
+        request.httpBody = try StagingTestCredentials.passwordGrantBody(for: .a)
         let (data, _) = try await URLSession.shared.data(for: request)
         struct TokenResponse: Decodable { let access_token: String? }
         guard let token = try JSONDecoder().decode(TokenResponse.self, from: data).access_token else {

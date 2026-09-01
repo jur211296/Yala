@@ -6,7 +6,8 @@
 //  JWT del user A (password-grant, mismo harness que `CloudSyncE2EStagingTests` y los goldens del
 //  gateway). Verifica el decoder Swift contra el WIRE REAL del RPC `claim_account`.
 //
-//  GATEADO por `YALA_CLOUD_E2E=1`. TOLERANTE al estado de staging (AJUSTE review): asertamos SOLO que el
+//  GATEADO por `YALA_CLOUD_E2E=1` **y** por `USER_A_PASS` en el entorno (credenciales vía
+//  `StagingTestCredentials`, nunca literales en el árbol). TOLERANTE al estado de staging (AJUSTE review): asertamos SOLO que el
 //  claim decodifica a UNO de los 3 estados válidos → `ClaimState` (el estado concreto depende de si la
 //  fila `profiles` del sub preexiste, y NO se limpia aquí — un reset de staging no debe flakear). NO hay
 //  e2e de Sign in with Apple en sim (imposible — device only; lo corre el owner por el panel DEBUG).
@@ -23,6 +24,7 @@ struct CloudAccountClaimE2EStagingTests {
 
     private nonisolated static var isEnabled: Bool {
         ProcessInfo.processInfo.environment["YALA_CLOUD_E2E"] == "1"
+            && StagingTestCredentials.areAvailable(.a)
     }
 
     private static let supabaseURL = "https://fostjbbwstyuunmmefuk.supabase.co"
@@ -34,7 +36,7 @@ struct CloudAccountClaimE2EStagingTests {
         request.httpMethod = "POST"
         request.setValue(Self.anonKey, forHTTPHeaderField: "apikey")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = Data(#"{"email":"i5-user-a@test.yala","password":"I5-Passw0rd-A!"}"#.utf8)
+        request.httpBody = try StagingTestCredentials.passwordGrantBody(for: .a)
         let (data, _) = try await URLSession.shared.data(for: request)
         struct TokenResponse: Decodable { let access_token: String? }
         guard let token = try JSONDecoder().decode(TokenResponse.self, from: data).access_token else {

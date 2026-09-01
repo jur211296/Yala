@@ -52,9 +52,37 @@ the two seeded test users, so they do **NOT** run in CI — run them by hand aft
 bash qa/cloud/cross-user-rls-test.sh      # expects 18/18
 ```
 
-Defaults target staging with the anon key and the two seeded users (`i5-user-a@test.yala` /
-`i5-user-b@test.yala`). Override via env: `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
-`USER_A_EMAIL`/`USER_A_PASS`, `USER_B_EMAIL`/`USER_B_PASS`.
+### Credenciales (obligatorio antes de correr nada)
+
+**Las contraseñas de los usuarios de test NO están en el repo** y no tienen valor por defecto:
+este repo es público y estuvieron en claro hasta el 2026-09-01 (ticket
+`staging-test-credentials-in-public-repo`). Hay que exportarlas antes de correr la batería, los
+goldens del gateway o los E2E de Swift:
+
+```bash
+export USER_A_PASS='…'      # i5-user-a@test.yala
+export USER_B_PASS='…'      # i5-user-b@test.yala
+export USER_C_PASS='…'      # opcional; solo cross-member-rls-test.sh (sin ella, ese sub-caso cae a B)
+```
+
+Sin ellas, cada frente falla de forma explícita en vez de dar `invalid_credentials`: los `.sh`
+mueren nombrando la variable que falta, los goldens del gateway lanzan en su `beforeAll`, y los
+E2E de Swift aparecen **skipped** (su gate exige la contraseña además de `YALA_CLOUD_E2E=1`).
+
+Para los tests de Swift, `xcodebuild` entrega las variables al runner con el prefijo
+`TEST_RUNNER_`, que el runner retira:
+
+```bash
+TEST_RUNNER_YALA_CLOUD_E2E=1 TEST_RUNNER_USER_A_PASS="$USER_A_PASS" \
+TEST_RUNNER_USER_B_PASS="$USER_B_PASS" xcodebuild test -scheme Yala …
+```
+
+Las contraseñas vivas no están en el árbol ni en este documento — pídeselas a Jürgen. Los
+**emails** sí conservan valor por defecto (cuentas sintéticas de staging, no son secreto) y se
+pueden sobrescribir con `USER_A_EMAIL` / `USER_B_EMAIL` / `USER_C_EMAIL`.
+
+El resto de valores por defecto apuntan a staging con la anon key (pública por diseño; nunca
+`service_role`) y se pueden sobrescribir con `SUPABASE_URL` y `SUPABASE_ANON_KEY`.
 
 The test leaves A's inserted rows behind (authenticated cannot DELETE by design). To clean them,
 delete rows for the two test `user_id`s via the Supabase SQL editor / MCP (service context) — the
@@ -267,8 +295,8 @@ Verificación one-shot con el JWT de **sub B** (aislado del push paralelo de syn
 CORRIDA MANUAL DESPUÉS de `npm test` (no antes — dejaría a B sin fila para los goldens de reversa):
 
 1. **Sembrar filas frescas** de B vía PostgREST con su JWT (o vía RPCs). El JWT de B:
-   `POST {SUPABASE_URL}/auth/v1/token?grant_type=password` con `i5-user-b@test.yala` / `I5-Passw0rd-B!`
-   (mismo helper `login()` del test). Con ese `access_token` como Bearer + `apikey: ANON`:
+   `POST {SUPABASE_URL}/auth/v1/token?grant_type=password` con `i5-user-b@test.yala` y la
+   contraseña de `USER_B_PASS` (ver «Credenciales» arriba; mismo helper `login()` del test). Con ese `access_token` como Bearer + `apikey: ANON`:
 
    ```
    POST /rest/v1/tx_items       body: {"sync_id":"<uuid1>","user_id":"<subB>","note":"g5-wire","hlc":"<hlc>", ...cols NOT NULL...}

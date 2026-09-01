@@ -7,8 +7,9 @@
 //  Verifica el decoder Swift contra los BYTES REALES del wire (value:string|null, server_seq numérico) y
 //  el LWW por HLC (push stale → noop, espeja el golden 8 de sync.goldens.test.ts desde Swift).
 //
-//  GATEADO por `YALA_CLOUD_E2E=1` (correr con `TEST_RUNNER_YALA_CLOUD_E2E=1 xcodebuild test …`). NO corre
-//  en CI ni en /test-smart (aparece skipped). Mismo user/credenciales que CloudSyncE2EStagingTests (anon
+//  GATEADO por `YALA_CLOUD_E2E=1` **y** por `USER_A_PASS` en el entorno (correr con
+//  `TEST_RUNNER_YALA_CLOUD_E2E=1 TEST_RUNNER_USER_A_PASS='…' xcodebuild test …`); credenciales vía
+//  `StagingTestCredentials`, nunca literales. NO corre en CI ni en /test-smart (aparece skipped). Mismo user/credenciales que CloudSyncE2EStagingTests (anon
 //  key + password grant del user A). En staging `ENFORCE != "enforce"` → el JWT basta (sin attest), igual
 //  que `/sync/*`. Los values llevan un marker único por run — sin cleanup posible (DELETE revocado).
 //
@@ -24,6 +25,7 @@ struct PrefsSyncE2EStagingTests {
 
     private nonisolated static var isEnabled: Bool {
         ProcessInfo.processInfo.environment["YALA_CLOUD_E2E"] == "1"
+            && StagingTestCredentials.areAvailable(.a)
     }
 
     // Staging (mismo target que CloudSyncE2EStagingTests / qa/cloud).
@@ -44,7 +46,7 @@ struct PrefsSyncE2EStagingTests {
         request.httpMethod = "POST"
         request.setValue(Self.anonKey, forHTTPHeaderField: "apikey")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = Data(#"{"email":"i5-user-a@test.yala","password":"I5-Passw0rd-A!"}"#.utf8)
+        request.httpBody = try StagingTestCredentials.passwordGrantBody(for: .a)
         let (data, _) = try await URLSession.shared.data(for: request)
         struct TokenResponse: Decodable { let access_token: String? }
         guard let token = try JSONDecoder().decode(TokenResponse.self, from: data).access_token else {

@@ -8,5 +8,4 @@
 - [Generar y persistir en un solo gesto](feedback_generar_y_persistir_credenciales.md) — una credencial nunca vive solo en pantalla; y verifica si una rotación se aplicó antes de rehacerla.
 
 ## Entorno y herramientas
-- [El hook de secretos se dispara por substring](hook_secretos_disparador_substring.md) — bloquea cualquier comando que diga «git» y «push», aunque no empuje nada.
-- [Exenciones de staging en la allowlist](project_exenciones_staging_allowlist.md) — 4 exenciones vivas tapan ese patrón; se retiran junto con el ticket, no después.
+- [El hook de secretos está desactivado](hook_secretos_disparador_substring.md) — retirado del push el 2026-09-01 (ADR-009); nada escanea hoy. Su trampa del substring, si vuelve.
