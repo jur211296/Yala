@@ -11,8 +11,10 @@
 # bastaba con haber pasado los tests alguna vez — se podía editar código después y
 # commitear igual. Ahora el sello es una huella del árbol y aquí se recalcula.
 #
-# Nota: la huella se toma contra HEAD, así que hacer `git add` entre el gate y el commit
-# no la invalida. Solo la invalidan cambios reales en el contenido.
+# Nota: la huella describe lo que hay EN DISCO, no cómo está repartido entre el índice y
+# el árbol, así que `git add` entre el gate y el commit no la invalida — tampoco el de un
+# fichero nuevo, que hasta el 2026-09-01 sí lo hacía. Solo la invalidan cambios reales:
+# contenido, permisos, altas y bajas. Pinneado en `qa/scripts/worktree-stamp-test.sh`.
 
 set -uo pipefail
 cd "$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
