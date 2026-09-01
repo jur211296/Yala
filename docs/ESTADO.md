@@ -5,8 +5,8 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-01 (Lima)
 
-**Rama** `2.1` · **HEAD** `adbe94ec` — *Merge PR #58 (credenciales de staging al entorno)*.
-TestFlight build **12** (CPV 12). **Subida Yala (TF/store) = solo Mini.**
+**Rama** `2.1` · **HEAD** `5fa484b3`. TestFlight build **12** (CPV 12).
+**Subida Yala (TF/store) = solo Mini.**
 
 ## Esta sesión
 Las contraseñas de las cuentas de test de staging ya no están en el repo: se leen del entorno en
@@ -17,6 +17,10 @@ un `invalid_credentials` mudo. Con eso caen las 4 exenciones de la allowlist.
 Dos correcciones medidas a documentación envejecida: el hook de secretos **ya no está registrado
 en ningún `settings.json`** (ADR-009) ⇒ nada escanea antes de un push; y `encargos/` **sí está
 versionado** desde ayer.
+**Proceso nuevo** (ver `CLAUDE.md` → «Dónde se commitea»): la rama la decide **dónde corre la
+sesión**, no quién llegó antes. Árbol principal → commit directo en `2.1`, sin PR, también para
+código, con `/gate` en verde y el árbol limpio de trabajo ajeno. Worktree → rama y PR siempre.
+Solo-documentación va directo desde cualquier sesión, salvo `.claude/`.
 
 ## Abiertos
 - **`ci-suite-simulador-duplicada-y-allowlist-incompleta`** (backlog, alta) — el CI corre la
@@ -28,10 +32,9 @@ versionado** desde ayer.
   del uso de OpenAI, sin atacar. Es de Lola (copy de ficha, consent, `PrivacyInfo.xcprivacy`).
 
 ## Release 2.1 (sin cambios)
-- 2.0.5 no se lanza. Release = 2.1. A7 y M5 en 2.1: **HOLD, no flip**.
-- Prod: CLOUD_MODE 100 · GROUPS_BACKEND 100 · CLOUD_ONBOARDING_CHOICE 0 · SECONDARY_SESSION 0.
-- Cola C: 9 ACs owner/device, no corrida. D-R1 sigue sin `ok_` (QA device pendiente).
-- Cero `ok_` inventado.
+2.0.5 no se lanza; release = 2.1. A7 y M5: **HOLD, no flip**. Prod: CLOUD_MODE 100 ·
+GROUPS_BACKEND 100 · CLOUD_ONBOARDING_CHOICE 0 · SECONDARY_SESSION 0. Cola C: 9 ACs owner/device,
+no corrida; D-R1 sigue sin `ok_` (QA device pendiente). **Cero `ok_` inventado.**
 
 ## Siguiente
 El ticket de CI: quitar el run duplicado y ampliar la allowlist. Medido y con chip.
