@@ -1,6 +1,6 @@
 ---
 id: staging-test-credentials-in-public-repo
-status: in-progress
+status: done
 priority: high
 area: cloud
 created: 2026-08-31
