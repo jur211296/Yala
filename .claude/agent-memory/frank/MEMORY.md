@@ -9,3 +9,4 @@
 
 ## Entorno y herramientas
 - [El hook de secretos se dispara por substring](hook_secretos_disparador_substring.md) — bloquea cualquier comando que diga «git» y «push», aunque no empuje nada.
+- [Push bloqueado hasta rotar staging](project_push_bloqueado_hasta_rotar_staging.md) — no subo nada desde Yala hasta la rotación; cuéntalo antes de prometer un PR. Caduca al rotar.
