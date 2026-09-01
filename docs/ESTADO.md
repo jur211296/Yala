@@ -1,42 +1,39 @@
 ---
-updated: 2026-08-29
+updated: 2026-09-01
 tags: [now, punto-de-retomada]
 ---
 
-# NOW — 2026-08-22 (Lima)
+# NOW — 2026-09-01 (Lima)
 
-**Rama** `2.1` · **HEAD** `f4cf3d2b` — En TestFlight build **12** (CPV 12). asc VALID `e961a77b`. El bump a `origin/2.1` lo empuja Claude (decisión 2026-08-29).
-**Campo.** MARKETING 2.1. Build 11 = corte 18-ago / HEAD `af1b7350` entonces.
+**Rama** `2.1` · **HEAD** `a2df76fb` — *Merge pull request #56 (la receta de snapshots del /cerrar no borraba nada)*.
+En TestFlight build **12** (CPV 12). **Subida Yala (TF/store) = solo Mini.**
 
-## Decisión (Jurgen, 17–18 ago)
-- 2.0.5 no se lanza.
-- Release = 2.1. A7 y M5 van en 2.1. HOLD, no flip.
-- TF de 2.1 autorizado. Cada rama reinicia builds en 1.
-- **Subida Yala (TF/store) = solo Mini.**
+## Esta sesión
+Higiene, sin tocar la app. Fuera el comando `/bug-triage` y sus dos llamadas a un webhook de
+n8n muerto hacía un mes. Las cuentas de test del Supabase de staging estaban en claro en el
+repo, que es público: **rotadas y verificadas** (las viejas ya no autentican). Se tituló el
+ticket de prefs para el kanban y se arregló el bloque de disco de `/cerrar`, que llevaba sin
+liberar un byte y sin avisar. Y 27 ramas fuera: sólo quedan `1.0` y `2.1`.
 
-## TestFlight 2.1
-- En TF: build **12** = CPV 12 = HEAD `f4cf3d2b`. asc VALID `e961a77b` (Tim/Frank 22-ago).
-- A7 / M5: HOLD, no flip.
+## Abiertos
+- **`staging-test-credentials-in-public-repo`** (backlog, alta) — rotación HECHA; falta sacar
+  las credenciales al entorno en 16 ficheros y **retirar en el mismo movimiento** las 4
+  exenciones de la allowlist, que hoy son un punto ciego.
+- **`AUDIT-appstore-guidelines.md`** (`docs/audit/`) — tres hallazgos de alto riesgo de rechazo
+  por la divulgación del uso de OpenAI, sin atacar. Es de Lola y toca copy de ficha, consent en
+  16 locales y `PrivacyInfo.xcprivacy` (revisar D-C).
+- **`encargos/` sin versionar** — es el canal del grokbot para dejar mandatos a este repo y el
+  playbook promete que «queda versionado»; aquí nunca se commiteó, así que no sobrevive a un
+  clon. Commitearlo, no borrarlo.
 
-## Sesión
-- Device-QA / guion: `planning/DEVICE-QA-SESION-OWNER-2026-08-18.md` (si sigue vivo).
-- Cero `ok_` inventado. D-R1 sigue no ok_ sin QA device.
-
-## Prod
-- CLOUD_MODE 100
-- GROUPS_BACKEND 100
-- CLOUD_ONBOARDING_CHOICE 0 — A7 HOLD
-- SECONDARY_SESSION 0 — M5 HOLD
-
-## Ya en el árbol (evidencia PR / Mini)
-- p20-15: merged-in-tree PR 15 @ `4bf4ead`. No `ok_` (QA visual desconocido).
-- Cola A A1–A3: READY Mini 17 ago. Tickets padre siguen `qa_` (mixtos).
-- Cola B: PR 17 y PR 18 merged a 2.0.5; corte 2.1. No reabrir.
-- D-R1: merged-in-tree PR 19 @ `b9526c8e`. No `ok_` (QA device pendiente).
-
-## Abierto (escrito)
-- Cola C: 9 ACs owner/device, no corrida.
-- A7 / M5: no flip.
+## Release 2.1 (sin cambios)
+- 2.0.5 no se lanza. Release = 2.1. A7 y M5 en 2.1: **HOLD, no flip**.
+- Prod: CLOUD_MODE 100 · GROUPS_BACKEND 100 · CLOUD_ONBOARDING_CHOICE 0 · SECONDARY_SESSION 0.
+- Cola C: 9 ACs owner/device, no corrida. D-R1 sigue sin `ok_` (QA device pendiente).
+- Cero `ok_` inventado.
 
 ## Siguiente
-Sin flip A7/M5. No inventar ok_. Bump `origin/2.1` a cargo de Claude.
+Atacar el ticket de credenciales: sacar los literales al entorno y quitar las 4 exenciones.
+
+## Bloqueo
+Ninguno.

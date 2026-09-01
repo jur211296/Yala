@@ -10,7 +10,13 @@
       "Task",
       "WebFetch",
       "WebSearch",
-      "NotebookEdit"
+      "NotebookEdit",
+      "Bash(git push origin --delete:*)",
+      "Bash(git branch -d:*)",
+      "Bash(git branch -D:*)",
+      "Bash(git worktree remove:*)",
+      "Bash(git worktree prune)",
+      "Bash(tmutil deletelocalsnapshots:*)"
     ],
     "deny": [
       "Bash(rm -rf:*)",
