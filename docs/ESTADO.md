@@ -9,18 +9,14 @@ tags: [now, punto-de-retomada]
 **Subida Yala (TF/store) = solo Mini.**
 
 ## Esta sesión
-Las contraseñas de las cuentas de test de staging ya no están en el repo: se leen del entorno en
-los tres frentes que las usaban (tests de Swift, scripts de `qa/cloud`, goldens del gateway), y
-`qa/cloud/README.md` dice qué exportar. Sin ellas cada frente avisa de lo que falta en vez de dar
-un `invalid_credentials` mudo. Con eso caen las 4 exenciones de la allowlist.
-**La app no cambia: no se tocó una línea de producción.**
-Dos correcciones medidas a documentación envejecida: el hook de secretos **ya no está registrado
-en ningún `settings.json`** (ADR-009) ⇒ nada escanea antes de un push; y `encargos/` **sí está
-versionado** desde ayer.
-**Proceso nuevo** (ver `CLAUDE.md` → «Dónde se commitea»): la rama la decide **dónde corre la
-sesión**, no quién llegó antes. Árbol principal → commit directo en `2.1`, sin PR, también para
-código, con `/gate` en verde y el árbol limpio de trabajo ajeno. Worktree → rama y PR siempre.
-Solo-documentación va directo desde cualquier sesión, salvo `.claude/`.
+Las contraseñas de las cuentas de test de staging salen del repo: se leen del entorno en los tres
+frentes que las usaban (tests de Swift, `qa/cloud`, goldens del gateway) y `qa/cloud/README.md`
+dice qué exportar. Con eso caen las 4 exenciones de la allowlist. **La app no cambia.**
+Dos correcciones medidas a doc envejecida: el hook de secretos **ya no está registrado en ningún
+`settings.json`** (ADR-009) ⇒ nada escanea antes de un push; y `encargos/` **sí está versionado**.
+**Proceso nuevo** (`CLAUDE.md` → «Dónde se commitea»): la rama la decide **dónde corre la sesión**.
+Árbol principal → commit directo en `2.1` sin PR, también código, con `/gate` verde y sin trabajo
+ajeno en el árbol. Worktree → rama y PR. Solo-documentación va directo, salvo `.claude/`.
 
 ## Abiertos
 - **`ci-suite-simulador-duplicada-y-allowlist-incompleta`** (backlog, alta) — el CI corre la
