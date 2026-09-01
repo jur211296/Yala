@@ -72,6 +72,26 @@ Captura → Diseño → Construcción → Gate → Commit → QA → Cierre
 - **`/qa`** es por lotes: una sesión drena varios tickets `qa_`, no uno.
 - **`/cerrar`** al terminar: nada abierto, ticket sincronizado y disco liberado.
 
+### Dónde se commitea (2026-09-01)
+
+La rama depende de **dónde corre la sesión** —comprobable con un comando— no de quién llegó antes:
+
+| Dónde corre | Cómo entrega |
+|---|---|
+| **Árbol principal** (`~/Yala`) | Commit directo en `2.1`. Sin rama y sin PR, **también para código**. |
+| **Worktree** (`lanzar-sesion`, Grokbot) | Rama + PR, siempre. |
+
+Se comprueba con `git rev-parse --git-common-dir`: si devuelve algo distinto de `.git`, es worktree. «Quién está trabajando primero» NO es comprobable y por eso no es el criterio: dos sesiones que arranquen a la vez se creerían ambas la primera.
+
+Dos condiciones innegociables para commitear directo en `2.1`:
+
+1. **`/gate` en verde.** Sin PR, el gate es la única red que queda. Si no pasa, no hay commit.
+2. **El árbol es tuyo.** Si `git status` trae cambios que no son de esta sesión, parar y avisar. Dos sesiones sobre el mismo árbol se arrastran y el aislamiento por hunks no funciona.
+
+**Solo documentación** —diffs que caen ENTEROS en `docs/` · `tickets/` · `marketing/` · `Web/` · `README.md` · `CLAUDE.md` · `LICENSE*`— va directo a `2.1` **desde cualquier sesión**, worktree incluido, y el gate salta a la validación del índice porque no hay nada que compilar. Es la allowlist del job `changes` de `.github/workflows/qa.yml` **menos `.claude/`**: hooks, rules y permisos no rompen el build —por eso el CI los deja pasar— pero cambian cómo trabaja todo el mundo, así que ésos van por PR.
+
+**El release sigue siendo de Jürgen**, y un PR abierto lo mergea él salvo que pida otra cosa. Lo que desaparece es el PR como trámite para el trabajo de una sesión única, no su criterio.
+
 **Documentación: dos superficies, no cinco.** El ticket en `tickets/` (qué y por qué, mientras el trabajo vive) y la regla durable en `.claude/rules/` (lo que el yo-futuro no debe romper). Git ya guarda el qué y el cuándo; `docs/ESTADO.md` y `docs/DECISIONS.md` son narrativa de proceso, no bitácora de cada commit.
 
 **Regla QA (contrato anti-drift):** la SSOT de cobertura es `qa/coverage-index.json` (validar: `bash qa/validate-coverage.sh`). Al tocar código bajo `Yala/`, en el MISMO commit actualizar el área correspondiente (`coverage`, `lastVerified`). Cobertura por clasificación: `deterministic` → XCUITest en `YalaUITests`; `agentic` → `/qa`; `manual` → documentada. El **ratchet** BLOQUEA si el backlog determinista crece respecto a `_meta.backlogBaseline` — escribe el test o baja el baseline conscientemente.

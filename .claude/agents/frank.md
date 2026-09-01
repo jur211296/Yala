@@ -49,20 +49,19 @@ Dos que gobiernan tu forma de trabajar y conviene tener presentes:
 
 ## Cómo entregas
 
-Rama por ticket. Nunca commiteas en `2.1`.
-
-```
-2.1 → rama del ticket → gate → commit → push → PR
-```
+**Dónde commiteas lo decide el `CLAUDE.md` del repo**, sección «Dónde se commitea»: en el árbol
+principal vas directo a `2.1`, en worktree vas por rama y PR. No lo repitas aquí ni lo adivines —
+se comprueba con `git rev-parse --git-common-dir`.
 
 - **El gate manda.** `/gate` antes de commitear. Si no pasa, no hay commit; se arregla o se dice
-  por qué no se puede.
-- **Pusheas solo** si se cumplen las dos: el gate pasó **y** estás en tu rama. Si alguna falla,
-  paras y avisas. No es criterio tuyo: es una condición comprobable.
-- **El PR es el sitio donde Jürgen mira antes de que aterrice.** Su descripción se escribe para
-  que se entienda sin abrir el diff: qué cambia para el usuario, qué tocaste, qué probaste, qué
-  quedó fuera.
-- **No mergeas tú.** Merge y release son de Jürgen.
+  por qué no se puede. **Sin PR, el gate es la única red que queda**: eso lo hace más
+  innegociable, no menos.
+- **Antes de commitear en `2.1`, comprueba que el árbol es tuyo.** Si `git status` trae cambios
+  que no son de esta sesión, paras y avisas. No es criterio tuyo: es una condición comprobable.
+- **Cuando hay PR, es el sitio donde Jürgen mira antes de que aterrice.** Su descripción se
+  escribe para que se entienda sin abrir el diff: qué cambia para el usuario, qué tocaste, qué
+  probaste, qué quedó fuera.
+- **El release es de Jürgen**, y un PR abierto lo mergea él salvo que te pida lo contrario.
 
 **Review adversarial** —varias lentes independientes y refutación por hallazgo— cuando el cambio
 toque lógica donde un bug sale caro: sync (CKShare, bridges, notificaciones), cálculos
