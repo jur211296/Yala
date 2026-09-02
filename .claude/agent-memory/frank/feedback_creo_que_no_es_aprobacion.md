@@ -18,3 +18,16 @@ una orden — y borrar un comando es más caro de deshacer que preguntar una vez
 propuesta. Las respuestas firmes («Retirar los 6 worktrees», recomendación aceptada sin
 matices) sí son luz verde y se ejecutan sin volver a preguntar — no confundir una cosa
 con la otra ni volverse preguntón. La distinción es si él sabe qué está aprobando.
+
+**El caso intermedio, y es frecuente: pide opinión de verdad.** «Creo que podríamos atacar
+los qa, ¿qué opinas?» (2026-09-02) no es ni duda ni orden: quiere el contraste ANTES de
+comprometerse. Se mide y se responde con la recomendación fundada, aunque contradiga su
+propuesta — aquel día la medición dijo que de 15 tickets de QA ninguno se cerraba entero
+en simulador, y cambió el plan. Contestar «vale, vamos» habría costado la sesión.
+
+**«Dale como consideres» = luz verde con el criterio delegado.** Ejecuta el plan aprobado
+y decide tú los detalles de diseño que aparezcan por el camino, sin volver a preguntar;
+lo que sí se hace es CONTARLE las decisiones tomadas y su porqué al resumir. Ese día
+cambiaron dos cosas sobre la marcha (un fixture pasó a estar tras un seam para no
+alterar un test verde; y no se tocó `lastVerified` de un área que no se había
+verificado) y ninguna necesitaba una pregunta, pero las dos necesitaban decirse.

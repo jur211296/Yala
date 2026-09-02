@@ -1,11 +1,13 @@
 ---
 id: inbox-convert-draft-to-group-expense
-status: qa
+status: done
 priority: medium
 area: "groups, inbox"
 created: 2026-07-01
-updated: 2026-08-28
+updated: 2026-09-02
 source: YalaWiki/Backlog/qa_inbox-convertir-a-gasto-de-grupo.md
+qa-status: passed
+qa-date: 2026-09-02
 ---
 
 
@@ -389,3 +391,85 @@ grupo en uso hoy, con un borrador de hoy, tampoco lo discrimina.
 ⇒ Lo que hoy queda drenado es el riesgo de **crash** del flujo, no la AC de esta feature. Para la próxima
 tanda: los cuatro puntos siguen tal cual, y el punto 4 necesita un borrador con fecha pasada (sembrarlo,
 o darle identificador al chip de fecha del editor).
+
+---
+
+## QA Visual · 2026-09-02 · simulador iPhone 17 Pro (iOS 26.5), scheme Yala (Debug)
+
+**VEREDICTO: PASS — los 12 ACs verificados EN PANTALLA.** Lo que faltaba del guion (guardar,
+cancelar, los dos negativos) queda cerrado, y con ello el punto ciego de la FECHA.
+
+**Lo que lo desbloqueó:** el seam `DevSeedDrafts.draftBDaysInThePast` (commit `3ba69eab`) hace nacer
+el borrador B tres dias atras. Hasta hoy los dos nacian en `.now`, asi que el fixture **no
+discriminaba** y el AC de la fecha solo estaba «medido en el codigo». Ahora se ve.
+
+### Estado de partida
+
+`-uitest -uitest-reset -uitest-seed grupos -uitest-skip-onboarding -uitest-fake-cloud-session -uitest-groups-consent`
+
+Negativo de «sin grupos»: mismo lanzamiento con `-uitest-seed realista`.
+
+### AC por AC, con lo que se vio
+
+| AC | Veredicto | Lo observado |
+|---|---|---|
+| 100 · boton con gasto + grupos | PASS | `inbox_convert_to_shared_button` presente en el sheet de «Taxi aeropuerto» |
+| 101 · sin grupos, no aparece | PASS | Con `-uitest-seed realista` el MISMO borrador abre su sheet y el boton NO esta en el arbol. Control positivo y negativo sobre el mismo draft |
+| 102 · prellenado (monto, descripcion, FECHA) | PASS | Form con `18.00`, «Taxi aeropuerto» y **«30 ago.»** — no «Hoy». El fix `5954306f` confirmado visualmente por primera vez |
+| 103 · 2+ grupos → picker | PASS | `GroupPickerSheet` con «Viaje a Cusco» (3 miembros) y «Viaje a Lima» (2) antes del form |
+| 104 · pagador fijado | PASS | «Pagado por · Tu», sin control para cambiarlo |
+| 105 · edicion libre | PASS | `group_expense_amount` cambiado de `18.00` a `99.00`: el prellenado es punto de partida, no valor fijo |
+| 106 · guardar crea SplitExpense + bridge | PASS | Saldo 6,619 → **6,613** (−6 = 18/3, la parte del usuario en un grupo de 3); Gastos 1,881 → 1,887; «2 cuentas» → «3 cuentas» |
+| 107 · el draft original se elimina | PASS | Ver la nota de abajo — es el AC donde un QA apresurado canta FAIL |
+| 108 · cancelar deja el draft intacto | PASS | Tras la X, «Taxi aeropuerto» sigue `pending` con su **30 ago. 2026** y el contador sigue en 2 |
+| 109 · tests pure-logic | PASS | `Test run with 16 tests in 2 suites passed` (`DraftConversionEligibilityLogicTests` + `DraftToGroupExpenseTemplateLogicTests`) |
+| 110 · build verde | PASS | Yala + Yala Dev, 0 warnings nuevos (gate de `3ba69eab`) |
+| 111 · coverage-index | PASS | Area `inbox-convert-to-group` actualizada |
+
+### AC 107 · por que NO es un FAIL, aunque lo parezca
+
+Tras guardar, el Inbox **sigue mostrando «Taxi aeropuerto» como pendiente y el contador sigue en 2**.
+Parece que el draft no se borro. No es eso: **es otro registro**. Medido al abrirlo:
+
+- El copy dice «Gasto del grupo Viaje a Cusco. Solo elige una subcategoria para clasificarlo; **el
+  monto y la fecha los gestiona el grupo**».
+- Su icono es `person.2.fill`, no el `tennisball.fill` de la subcategoria original.
+- Su accion es **«Finalizar»**, no aprobar como personal.
+- **Ya NO ofrece «Convertir a gasto compartido»** — coherente con el AC 109 (un draft ya de grupo no
+  muestra el boton), y prueba de que no se puede aprobar dos veces como personal.
+- Conserva **30 ago. 2026**: la fecha viajo draft → gasto de grupo → contraparte. El AC 102 de punta
+  a punta.
+
+⇒ el original SI se elimino; lo que queda es la contraparte que crea el bridge para que el usuario
+la clasifique. **Si el contador vuelve a 2 tras guardar, esto es lo que estas viendo.**
+
+### Evidencia
+
+- `qa-inbox-convert-fecha-20260902-105428.png` — el form con «30 ago.»
+- `qa-inbox-convert-guardado-20260902-105659.png` — el Panel tras guardar (6,613 · 3 cuentas)
+- `qa-inbox-convert-contraparte-bridge-20260902-105659.png` — la contraparte del bridge y su copy
+
+### Trampa de entorno que costo dos corridas
+
+**El `xcodebuild test` del gate SOBRESCRIBE la app instalada en el simulador.** Tras correr `/gate`,
+el binario del simulador es el suyo, no el que instalaste: los dos borradores volvian a decir «Hoy»
+porque la app era de otra construccion. Reinstalar antes de un QA posterior al gate.
+
+Y el arbol de accesibilidad se degrada tras muchos ciclos launch/stop: `snapshot_ui` devolvia UN
+elemento con la pantalla pintada correctamente. No lo arregla relanzar la app; si `shutdown` +
+`boot` del simulador.
+
+### Candidato a XCUITest
+
+El recorrido entero es determinista y se repitio a mano cuatro veces. Con los identifiers que ya
+existen (`inbox_convert_to_shared_button`, `group_picker_row_<id>`, `group_expense_amount`,
+`group_expense_save`) es automatizable; bajar el `_meta.backlogBaseline` valdria mas que estas
+capturas.
+
+### Lo que NO se puede verificar aqui — otra cola, no un FAIL
+
+- **Negativo de INGRESO** (un draft de ingreso no debe mostrar el boton): el seed no siembra ningun
+  draft de ingreso, asi que no es alcanzable desde la UI. Cubierto por unit test en
+  `DraftConversionEligibilityLogicTests`, no en pantalla. Haria falta un seam de seed.
+- **Sync real al grupo (CKSyncEngine)** y el reflejo en las cuentas personales **de los demas
+  participantes**: es cross-device, requiere dos dispositivos y TestFlight.

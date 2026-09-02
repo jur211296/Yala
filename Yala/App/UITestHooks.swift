@@ -213,6 +213,39 @@ final class UITestHooks {
     /// lanza SIN perfil para no contaminar los totales. Ver `DevSeedTransactions.createDesyncFixtures`.
     nonisolated static var seedDesync: Bool { hasArg("-uitest-seed-desync") }
 
+    /// `-uitest-scheduled-due-today`: añade al seed UN pago planificado «una sola vez» que vence
+    /// HOY (`DevSeedScheduledPayments.dueTodayName`). Los 8 del fixture base se reparten por el
+    /// mes y `min(day, 28)` capa los días 29-31, así que NINGUNO vence hoy de forma garantizada.
+    ///
+    /// Por qué existe: el escenario de vencimiento se alcanzaba solo eligiendo «Una sola vez» en
+    /// el segmentado de Recurrencia, y los `Picker` segmentados NO se enumeran en el árbol de
+    /// accesibilidad de `snapshot_ui` ⇒ el QA por referencia de elemento no podía llegar. Este
+    /// seam produce el mismo estado sin la interacción imposible.
+    ///
+    /// Es ADITIVO y apagado por defecto a propósito: el pago que vence hoy encabeza la lista, y
+    /// `ScheduledPaymentSkipUITests` opera sobre el `firstMatch` de las filas.
+    nonisolated static var scheduledDueToday: Bool { hasArg("-uitest-scheduled-due-today") }
+
+    /// `-uitest-fail-wipe`: hace que `DataWipeService.wipeAllUserData` y `wipeLocalGroupsDomain`
+    /// LANCEN antes de tocar nada, dejando los datos intactos. Es la superficie que faltaba para
+    /// ver en pantalla la rama de FALLO de «Empiezo de cero» (canario `freshStartWipeFailed` +
+    /// alert), que hoy solo cubren los 7 tests de `FreshStartWipeAlertTests` a nivel de lógica.
+    ///
+    /// NO simula un wipe a medias: lanza ANTES del primer borrado, así que el estado observable
+    /// tras el fallo es «todo sigue ahí», que es exactamente el caso que el alert debe cubrir.
+    /// Un wipe parcial es otro escenario y este seam no lo representa.
+    ///
+    /// **Gateado por `isReady` a propósito, y esto es lo que lo hace utilizable:** `-uitest-reset`
+    /// limpia el estado llamando al MISMO `wipeAllUserData` desde `applyUITestHooksEarly`, en
+    /// `YalaApp.init()`. Sin el gate, combinar los dos seams hacía fallar el reset del ARRANQUE —
+    /// y su `catch` solo imprime, así que el test habría corrido sobre un estado sucio en
+    /// silencio. `markReady()` corre al final del bootstrap (`applyUITestSeed`), después del
+    /// reset y antes de que nadie pueda tocar «Empiezo de cero» ⇒ separa los dos casos exactos.
+    @MainActor
+    static var shouldFailWipeNow: Bool {
+        hasArg("-uitest-fail-wipe") && shared.isReady
+    }
+
     /// Valor de `-uitest-seed <perfil>` (ej. "realista", "pesado", "dead-pointer"). Nil si ausente.
     /// `dead-pointer` siembra UNA TX personal cuyo puntero de grupo no resuelve — AC (c) de
     /// `qa_groups-tx-fantasma-al-borrar-gasto-de-grupo`. Ver `DevSeedTransactions.createDeadPointerFixture`.
