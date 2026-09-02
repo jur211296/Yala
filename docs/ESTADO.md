@@ -5,17 +5,16 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-02 (Lima)
 
-**Rama** `2.1` · **HEAD** `e7540621` — *test(inbox): pinnear la FECHA de la conversion a gasto de
-grupo*. TestFlight build **12** (CPV 12). **Subida Yala (TF/store) = solo Mini.**
+**Rama** `2.1` · **HEAD** `eebde759` — *PR #60: avisar a Grok cuando hay push directo a `2.1`*.
+TestFlight build **12** (CPV 12). **Subida Yala (TF/store) = solo Mini.**
 
 ## Esta sesión
-La cola de QA no estaba parada por falta de sesiones de QA: de sus 15 tickets, **ninguno se cerraba
-entero en simulador**. Se escribieron los tres seams que faltaban (un borrador que nace con fecha
-pasada, un pago planificado que vence hoy, y poder hacer fallar el borrado de «Empiezo de cero» a
-voluntad) y con el primero **se cerró `inbox-convert-draft-to-group-expense`**: 12/12 ACs vistos en
-pantalla, incluida la FECHA, que llevaba desde agosto solo «medida en el código». Cerrado además con
-XCUITest y mutación verificada. **La app en producción no cambia**: todo vive bajo `#if DEBUG`
-salvo un identifier de accesibilidad.
+Cuando una sesión entrega empujando directo a `2.1` —la vía normal en el árbol principal— Grok no
+se enteraba: su listener de GitHub ve el merge y el CI, pero no el push a principal. Ahora cada
+push a `2.1` le manda quién empujó, cuántos commits, el SHA, si fue force push y los mensajes.
+**La app no cambia**: es solo CI. Estrenado en su propio merge (PR #60) con **HTTP 200** medido.
+Si el webhook deja de responder, el check sale en ROJO en vez de callar — que es como murió el
+webhook de `bug-triage`, un mes entregando a un 404 sin que nadie lo notara.
 
 ## Abiertos
 - **`welcome-fresh-start-alert-leaves-blank-screen`** (backlog, **high**) — tocar «Es mi primera vez»
@@ -36,4 +35,6 @@ rinde: consolidar esos 11 en **un guion único de device-QA agrupado por montaje
 devices · flags), una tarde tuya en vez de once sesiones. Los 9 de `in-progress` siguen parados.
 
 ## Bloqueo
-Ninguno.
+**El sender key de Grok se rotó, pero `GROK_WEBHOOK_SENDER_KEY` en GitHub sigue con fecha
+`17:40:45Z` — anterior al único push que lo usó.** Si no se re-guardó con el valor nuevo, el
+próximo push a `2.1` dará 401 y el aviso no llegará. Lo delata el check del propio push.
