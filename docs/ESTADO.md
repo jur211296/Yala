@@ -5,21 +5,23 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-02 (Lima)
 
-**Rama** `2.1` · **HEAD** `80880f2d` — *PR #61: rediseño visual del Panel*.
+**Rama** `2.1` · **HEAD** `8168987a` — *el rojo de `.thisWeek` era el test*.
 TestFlight build **12** (CPV 12). **Subida Yala (TF/store) = solo Mini.**
 
 ## Esta sesión
-Rediseño visual del Panel contra Wise (PR #61). La jerarquía **iba al revés**: sección y widget
-usaban el MISMO token y el nombre de la fila era el rótulo mayor. Sección a `title3`, aire invertido
-(secciones 12→32, título a contenido 16→8) y color solo donde informa: barras al 22 % (**−60 %** de
-superficie cromática) y **el gasto deja de teñirse** —ninguno de los cinco tonos llega al AA de 4,5
-sobre tarjeta blanca—. El hero pierde el saludo y sus dos ejes; las acciones bajan al flujo y los
-flotantes solo vuelven cuando el scroll se lleva la fila. Antes: aviso a Grok en push directo (#60).
+Cerrado el **doble conteo del día 1**: una TX de día 1 a medianoche —alquiler, nómina— se contaba a
+la vez en el período actual y en el anterior. Medido: contaminaba el informe **730/730 días**,
+Estadísticas 28/730, la interanual 2/730; ahora **0/730**. Fix en la fuente (`PreviousPeriodHelper`,
+sus dos ramas) más dos instancias a mano; el `-1s` de la rama de año va **condicionado** a que el
+extremo sea medianoche. 3 mutantes en rojo. Antes: el rojo de `.thisWeek` y el trailer de commit.
 
 ## Abiertos
 - **`welcome-fresh-start-alert-leaves-blank-screen`** (backlog, **high**) — «Es mi primera vez» +
   cancelar deja la app sin salida salvo matarla. Preexistente, **en producción**.
 - **`scheduled-payment-once-labeled-monthly`** (backlog, low) — badge cosmético.
+- **`undercount-dias-intervalos-cerrados`** (backlog, medium) — `dateComponents([.day])` trunca, así
+  que todo intervalo que cierre en 23:59:59 cuenta un día de menos: medido, falla **730/730** en
+  `.lastMonth`. Son denominadores de promedios. Normalizado sólo donde este fix lo habría empeorado.
 - **`AUDIT-appstore-guidelines.md`** — 3 hallazgos de riesgo de rechazo (OpenAI). De Lola.
 
 ## Release 2.1 (sin cambios)
@@ -28,13 +30,11 @@ flotantes solo vuelven cuando el scroll se lleva la fila. Antes: aviso a Grok en
 sigue sin `ok_`. **Cero `ok_` inventado.**
 
 ## Siguiente
-Commitear lo de esta sesión (sin commitear aún; `/gate` pendiente). Del Panel quedan dos:
-«Últimos registros» se sigue diciendo dos veces —el rediseño lo hace más visible— y bajar los
-nombres de fila a 15 tocaría Estadísticas. **Zanjados hoy:** el trailer `Co-Authored-By` no va, ni
-en commits ni en PR (Jürgen ratificó su regla de mayo, medida; los 11 que ya lo llevan no se
-reescriben); y el rojo de `.thisWeek` — el test era el equivocado, 15/15 en verde, ver
-`[2026-08-17]` en DECISIONS. Abierto nuevo: quinta instancia del `DateInterval` cerrado
-(`PreviousPeriodHelper:112` + `InsightsCalculator`), ticket sin crear.
+El **undercount de días** (ticket arriba): ~6 sitios cuentan con `dateComponents([.day])` y falta
+trazar cuáles reciben un intervalo con `-1s`. Del Panel quedan dos: «Últimos registros» se dice dos
+veces y bajar los nombres de fila a 15 tocaría Estadísticas. **Zanjados hoy:** el trailer
+`Co-Authored-By` (no va; los 11 que lo llevan no se reescriben), el rojo de `.thisWeek` y el doble
+conteo. **Ojo al método:** hoy tres coordenadas citadas sin re-medir resultaron falsas.
 
 ## Bloqueo
 Ninguno.
