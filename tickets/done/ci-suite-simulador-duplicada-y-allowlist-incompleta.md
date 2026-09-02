@@ -1,6 +1,6 @@
 ---
 id: ci-suite-simulador-duplicada-y-allowlist-incompleta
-status: in-progress
+status: done
 priority: high
 area: platform
 created: 2026-09-01
@@ -117,9 +117,18 @@ se quedan fuera a propósito**: deciden cómo se verifica el proyecto.
   ojo).
 - Gate completo antes del commit: build de las dos schemes ✓, audit ✓, índice `RESULT: OK` ✓.
 
-### Comprobación pendiente, honestamente
+### Comprobado en vivo contra GitHub (punto 1)
 
-Que un PR de solo-`gateway` cierre en ~0,3 min **no se ha observado todavía en vivo**: no había
-un cambio de gateway a mano para provocarlo. La lógica está probada en local con las rutas
-reales; la confirmación en GitHub llegará con el primer PR que toque solo esa carpeta. Este mismo
-commit toca `.github/` y `qa/scripts/`, así que **corre la suite, y eso es lo correcto**.
+Se pusheó una rama desechable `tmp/verify-ci-trigger` **sin abrir PR** y GitHub disparó
+**0 runs**. Antes habría disparado uno por el evento `push`. La rama se borró acto seguido.
+
+Ojo con un dato que **no** prueba nada y podría parecer que sí: que el push de este commit a
+`2.1` diera un solo run. Un push directo a la rama principal también daba uno antes; la
+duplicación aparecía en **rama + PR**. Por eso la comprobación se hizo sobre una rama de ticket.
+
+### Pendiente de observar (punto 2)
+
+Que un PR de solo-`gateway` cierre en ~0,3 min **no se ha visto todavía en vivo**: no había un
+cambio de esa carpeta a mano para provocarlo. La lógica está probada en local contra las rutas
+reales (12/12) y la confirmación llegará con el primer PR que toque solo ahí. No es un riesgo
+abierto: si el filtro fallara, fallaría hacia correr de más, que es el lado seguro.
