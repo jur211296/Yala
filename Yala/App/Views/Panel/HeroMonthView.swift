@@ -40,14 +40,24 @@ struct HeroMonthView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isHeader)
-        .accessibilityLabel(chipText)
+        .accessibilityLabel(heroAccessibilityLabel)
     }
 
-    // MARK: - Top row (saludo + period selector inline)
+    // MARK: - Top row (label del KPI + period selector inline)
+    //
+    // El saludo salió del hero (2026-09-02, sesión de diseño): ocupaba la línea
+    // más grande de la pantalla para no decir ningún dato, y el nombre sigue
+    // apareciendo en el título de la barra al hacer scroll (`PanelView`).
+    // Su hueco lo ocupa el label del KPI, que antes vivía centrado dentro de
+    // `summaryRow` — así el hero tiene UN SOLO eje de lectura, el mismo margen
+    // izquierdo que el resto del Panel.
 
     private var topRow: some View {
         HStack(spacing: DS.Spacing.xs) {
-            chip
+            Text(summaryLabel)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
             Spacer(minLength: DS.Spacing.sm)
             TrendsPeriodMenu(
                 selectedPeriod: selectedPeriod,
@@ -58,16 +68,11 @@ struct HeroMonthView: View {
         }
     }
 
-    private var chip: some View {
-        HStack(spacing: DS.Spacing.xs) {
-            Image(systemName: "sparkles")
-                .font(DS.Typography.title2)
-                .foregroundStyle(DS.Semantic.favoriteIcon)
-            Text(chipText)
-                .font(DS.Typography.title2)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-        }
+    /// Label del KPI SIN el período: la píldora de `TrendsPeriodMenu` va al lado
+    /// y ya lo dice. Compuesto con el período seguiría en el label accesible,
+    /// donde no hay «al lado» que valga.
+    private var summaryLabel: String {
+        sessionState.isExpensesOnlyMode ? L10n.Panel.spent : L10n.Panel.Hero.availableLabel
     }
 
     // MARK: - Summary row ("Disponible · Período" + monto + chips)
@@ -83,20 +88,17 @@ struct HeroMonthView: View {
         let isExpenseFiltered = sessionState.selectedTransactionNatures == [.expense]
         let hasNatureFilter = isIncomeFiltered || isExpenseFiltered
 
-        return VStack(alignment: .center, spacing: DS.Spacing.sm) {
+        return VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             if sessionState.isExpensesOnlyMode {
                 // Solo Gastos: el "Disponible" (income - expense) siempre es 0
                 // sin ingresos → se muestra el GASTO del período como KPI, con un
                 // comparativo "vs período anterior" (MTD-alineado) que le da lectura.
                 // Sin pills: la naturaleza está forzada a gasto y el número YA es el gasto.
-                Text("\(L10n.Panel.spent) · \(selectedPeriod.displayName)")
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-
                 AmountText(
                     value: periodSummary.expense,
                     currencyCode: currencyCode,
-                    font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary
+                    font: DS.Typography.panelHeroAmount,
+                    secondaryFont: DS.Typography.panelHeroAmountSecondary
                 )
 
                 // Gateado también por `showVariations`: `VariationChip` se
@@ -111,14 +113,11 @@ struct HeroMonthView: View {
                     }
                 }
             } else {
-                Text("\(L10n.Panel.Hero.availableLabel) · \(selectedPeriod.displayName)")
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-
                 AmountText(
                     value: periodSummary.available,
                     currencyCode: currencyCode,
-                    font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary
+                    font: DS.Typography.panelHeroAmount,
+                    secondaryFont: DS.Typography.panelHeroAmountSecondary
                 )
 
                 HStack(spacing: DS.Spacing.md) {
@@ -179,17 +178,22 @@ struct HeroMonthView: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, DS.Spacing.sm)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, DS.Spacing.xs)
         .contentShape(Rectangle())
     }
 
     // MARK: - Copy
 
-    private var chipText: String {
-        // Saludo único para todos los estados — el icon `sparkles` cyan ya
-        // transmite "empezamos" sin ocupar espacio horizontal en el chip.
-        L10n.Panel.Hero.chipDefault(userName: appPreferences.userName)
+    /// Lo que oye VoiceOver al llegar al hero. Antes era el saludo, que además
+    /// de no ser un dato ya no existe. Aquí SÍ se compone con el período: el
+    /// lector no ve la píldora de al lado como parte de la misma frase.
+    private var heroAccessibilityLabel: String {
+        let valor = sessionState.isExpensesOnlyMode
+            ? periodSummary.expense
+            : periodSummary.available
+        let monto = appPreferences.currency(valor, currencyCode: currencyCode)
+        return "\(summaryLabel) · \(selectedPeriod.displayName), \(monto)"
     }
 
     /// SSOT del KPI motivacional: LLM cuando disponible, si no un fallback

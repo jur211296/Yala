@@ -51,6 +51,19 @@ struct PanelView: View {
     private static let inlineTitleShowAt: CGFloat = 8
     private static let inlineTitleHideAt: CGFloat = 0
 
+    /// Los botones flotantes sólo aparecen cuando el scroll se lleva la fila de
+    /// acciones del hero (`PanelQuickActionsRow`). Arriba sobran —las acciones
+    /// están a la vista, y ahí es donde tapaban cifras—; a partir de media
+    /// pantalla hacen falta, porque este Panel son cuatro pantallas de scroll y
+    /// subir del todo para registrar un gasto se paga todos los días.
+    ///
+    /// Mismos dos umbrales con histéresis que el título de la barra, y por el
+    /// mismo motivo: con un solo umbral, el scroll inercial cerca del límite
+    /// hace parpadear el botón.
+    @State private var showFloatingActions = false
+    private static let floatingActionsShowAt: CGFloat = 180
+    private static let floatingActionsHideAt: CGFloat = 150
+
     /// Check if voice input is locked (Pro feature)
     private var isVoiceLocked: Bool {
         !FeatureGateService.shared.canAccess(.voiceInput)
@@ -141,6 +154,53 @@ struct PanelView: View {
             "ExampleImages/example-transaction-list-\(suffix)"
         ].compactMap { UIImage(named: $0) }
         return images.isEmpty ? nil : images
+    }
+
+    // MARK: - Entrada de registros (fila de acciones y FAB comparten decisión)
+
+    /// Voz e imagen: gate Pro → consentimiento de datos → acción. `PanelView` es
+    /// el ÚNICO dueño de esta decisión a propósito. `FABStackView` monta su
+    /// propia `.aiConsentAlert` para su menú; si la fila de acciones montara
+    /// otra, serían dos anchors ante el mismo estado —regla 4 de presentaciones—
+    /// así que la fila sólo llama aquí y la alerta sigue siendo la de
+    /// `PanelSheetsModifier`. Mismo reparto que ya usaba `handleSetupStep`.
+    private func startAIEntry(_ input: PendingAIInput) {
+        switch input {
+        case .voice where isVoiceLocked:
+            sheets.showUpgradeForVoice = true
+            return
+        case .image where isImageLocked:
+            sheets.showUpgradeForImage = true
+            return
+        default:
+            break
+        }
+        guard appPreferences.aiDataConsentAccepted else {
+            sheets.pendingAIInput = input
+            sheets.showAIConsentAlert = true
+            return
+        }
+        switch input {
+        case .voice: sheets.showVoiceRecording = true
+        case .image: sheets.showImageSelection = true
+        }
+    }
+
+    /// Chat: gate Pro → onboarding/consentimiento → chat. Reusa el pure-logic
+    /// `YalaAIOnboardingLogic` en vez de reordenar los tres casos a mano.
+    private func startChat() {
+        guard FeatureGateService.shared.canAccess(.chatAssistant) else {
+            sheets.showUpgradeForChat = true
+            return
+        }
+        switch YalaAIOnboardingLogic.nextScreen(
+            consentAccepted: appPreferences.aiChatConsentAccepted,
+            onboardingShown: appPreferences.hasShownYalaAIOnboarding
+        ) {
+        case .onboarding: sheets.showYalaAIOnboarding = true
+        case .chat:       sheets.showChatSheet = true
+        case .consent:    sheets.showChatConsentAlert = true
+        }
     }
 
     // MARK: - Nudge CTA Routing
@@ -360,6 +420,18 @@ struct PanelView: View {
                             showCustomPeriodPicker: $sheets.showCustomPeriodPicker
                         )
 
+                        PanelQuickActionsRow(
+                            canCreateRecords: viewModel.canUseVoiceInput,
+                            isVoiceLocked: isVoiceLocked,
+                            isImageLocked: isImageLocked,
+                            isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
+                            isChatVisible: appPreferences.chatFABVisible,
+                            onManualTap: { sheets.showNewTransaction = true },
+                            onVoiceTap: { startAIEntry(.voice) },
+                            onImageTap: { startAIEntry(.image) },
+                            onChatTap: { startChat() }
+                        )
+
                         if !UITestHooks.isActive, appPreferences.showSiriTip, viewModel.transactions.count >= 5 {
                             SiriTipCard(isVisible: Binding(
                                 get: { appPreferences.showSiriTip },
@@ -457,12 +529,24 @@ struct PanelView: View {
                 .onScrollGeometryChange(for: CGFloat.self) { geom in
                     geom.contentOffset.y
                 } action: { _, offsetY in
-                    let shouldShow = showInlineTitle
+                    let shouldShowTitle = showInlineTitle
                         ? offsetY > Self.inlineTitleHideAt
                         : offsetY >= Self.inlineTitleShowAt
-                    guard showInlineTitle != shouldShow else { return }
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        showInlineTitle = shouldShow
+                    if showInlineTitle != shouldShowTitle {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showInlineTitle = shouldShowTitle
+                        }
+                    }
+
+                    // Los flotantes entran cuando la fila de acciones sale por
+                    // arriba, y se van cuando vuelve. Dos umbrales, no uno.
+                    let shouldShowFABs = showFloatingActions
+                        ? offsetY > Self.floatingActionsHideAt
+                        : offsetY >= Self.floatingActionsShowAt
+                    if showFloatingActions != shouldShowFABs {
+                        dsWithAnimation(reduceMotion) {
+                            showFloatingActions = shouldShowFABs
+                        }
                     }
                 }
                 .refreshable {
@@ -494,39 +578,44 @@ struct PanelView: View {
                 }
             }
 
-            // Botón flotante de nuevo registro + Chat FAB
-            VStack {
-                Spacer()
-                HStack {
+            // Botón flotante de nuevo registro + Chat FAB. Sólo mientras la
+            // fila de acciones del hero NO esté a la vista (ver
+            // `showFloatingActions`): con las dos a la vez, la acción principal
+            // saldría dos veces en la misma pantalla.
+            // `|| showProFabTour`: los dos pasos del tour de Pro (`ProTourSteps
+            // .panelSteps`, ids "fab" y "proChatFab") señalan estos botones, y el
+            // tour arranca con el Panel ARRIBA DEL TODO —donde ahora están
+            // ocultos—, así que sin esto el coach mark apuntaría a una vista que
+            // no existe. Mientras el tour corre, se muestran aunque el scroll
+            // diga que no.
+            if showFloatingActions || showProFabTour {
+                VStack {
                     Spacer()
-                    FABStackView(
-                        canUseVoiceInput: viewModel.canUseVoiceInput,
-                        isVoiceLocked: isVoiceLocked,
-                        isImageLocked: isImageLocked,
-                        isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
-                        chatConsentAccepted: appPreferences.aiChatConsentAccepted,
-                        chatFABVisible: appPreferences.chatFABVisible,
-                        onVoiceTap: { sheets.showVoiceRecording = true },
-                        onImageTap: { sheets.showImageSelection = true },
-                        onManualTap: { sheets.showNewTransaction = true },
-                        onUpgradeVoice: { sheets.showUpgradeForVoice = true },
-                        onUpgradeImage: { sheets.showUpgradeForImage = true },
-                        onChatTap: {
-                            // Helper compartido: si onboarding pendiente, mostrarlo ANTES del chat.
-                            // Reusa pure-logic (consent ya aceptado, sino onChatConsentNeeded gatea antes).
-                            switch YalaAIOnboardingLogic.nextScreen(
-                                consentAccepted: appPreferences.aiChatConsentAccepted,
-                                onboardingShown: appPreferences.hasShownYalaAIOnboarding
-                            ) {
-                            case .onboarding: sheets.showYalaAIOnboarding = true
-                            case .chat:       sheets.showChatSheet = true
-                            case .consent:    sheets.showChatConsentAlert = true
-                            }
-                        },
-                        onUpgradeChat: { sheets.showUpgradeForChat = true },
-                        onChatConsentNeeded: { sheets.showChatConsentAlert = true }
-                    )
+                    HStack {
+                        Spacer()
+                        FABStackView(
+                            canUseVoiceInput: viewModel.canUseVoiceInput,
+                            isVoiceLocked: isVoiceLocked,
+                            isImageLocked: isImageLocked,
+                            isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
+                            chatConsentAccepted: appPreferences.aiChatConsentAccepted,
+                            chatFABVisible: appPreferences.chatFABVisible,
+                            onVoiceTap: { sheets.showVoiceRecording = true },
+                            onImageTap: { sheets.showImageSelection = true },
+                            onManualTap: { sheets.showNewTransaction = true },
+                            onUpgradeVoice: { sheets.showUpgradeForVoice = true },
+                            onUpgradeImage: { sheets.showUpgradeForImage = true },
+                            // Misma decisión que la fila de acciones del hero, en
+                            // un solo sitio: `FABStackView` ya gatea el Pro antes
+                            // de llamar aquí y `startChat()` lo vuelve a comprobar
+                            // sin efecto, para que la fila pueda usar el helper.
+                            onChatTap: { startChat() },
+                            onUpgradeChat: { sheets.showUpgradeForChat = true },
+                            onChatConsentNeeded: { sheets.showChatConsentAlert = true }
+                        )
+                    }
                 }
+                .transition(.opacity)
             }
         }
     }

@@ -2183,8 +2183,6 @@
 "panel.health.voiceover.score" = "%d de 100";
 "panel.health.voiceover.summary" = "Salud financiera: %1$@. Presupuesto %2$@. Actividad %3$@. Pagos %4$@.";
 "panel.hero.availableLabel" = "Disponible";
-"panel.hero.chip.default %@" = "Hola, %@";
-"panel.hero.chip.monthStart %@ %@" = "Hola, %1$@ — empezamos %2$@";
 "panel.hero.kpi.monthStart %@ %d" = "Arrancamos el mes, paso a paso.";
 "panel.hero.kpi.neutral %@ %@ %@ %d" = "Tu mes en marcha — todo en orden.";
 "panel.hero.kpi.onTrack %@ %@ %@ %d" = "Vas con buen ritmo este mes, sigue así.";
@@ -4768,3 +4766,6 @@
 
 /* Apple confirmó la compra pero el derecho Pro no quedó activo */
 "subscription.purchaseNotActivated" = "El pago se confirmó, pero Yala Pro aún no está activo. Prueba Restaurar compras.";
+
+/* Panel quick actions — short label for the AI assistant pill (IA/AI/KI per locale) */
+"panel.aiPill" = "IA";
