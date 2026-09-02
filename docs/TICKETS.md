@@ -82,7 +82,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-cloud-mode-hardening-v1 | discarded | tickets/discarded/groups-cloud-mode-hardening-v1.md |
 | groups-cloud-identity-loss-on-migrate | discarded | tickets/discarded/groups-cloud-identity-loss-on-migrate.md |
 | device-handover-groups-leak | discarded | tickets/discarded/device-handover-groups-leak.md |
-| inbox-convert-draft-to-group-expense | qa | tickets/qa/inbox-convert-draft-to-group-expense.md |
+| inbox-convert-draft-to-group-expense | done | tickets/done/inbox-convert-draft-to-group-expense.md |
 | prefs-domain-per-secondary-session | qa | tickets/qa/prefs-domain-per-secondary-session.md |
 | trends-insight-card-v2-bullets | backlog | tickets/backlog/trends-insight-card-v2-bullets.md |
 | fx-pnl-education-card | backlog | tickets/backlog/fx-pnl-education-card.md |
@@ -108,7 +108,23 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-invite-skips-unirme-sheet-if-onboarded | backlog | tickets/backlog/groups-invite-skips-unirme-sheet-if-onboarded.md |
 | staging-test-credentials-in-public-repo | backlog | tickets/backlog/staging-test-credentials-in-public-repo.md |
 
-Counts by folder: backlog 34 · in-progress 9 · qa 15 · blocked 0 · done 8 · discarded 3 = 69.
+Counts by folder: backlog 39 · in-progress 9 · qa 14 · blocked 0 · done 11 · discarded 3 = 76.
+
+Frank 2026-09-02 (QA): `inbox-convert-draft-to-group-expense` **PASA y se cierra a `done/`** — los 12
+ACs verificados EN PANTALLA (sim iPhone 17 Pro), incluida la FECHA, que era el punto ciego y que hasta
+hoy solo estaba «medida en el código». Lo desbloqueó el seam `DevSeedDrafts.draftBDaysInThePast`
+(`3ba69eab`): antes los dos borradores del fixture nacían en `.now`, así que un falso verde era
+indistinguible de uno real. Con esto caen los cuatro puntos que la entrada del 2026-08-14 (más abajo)
+dejaba pendientes: guardar, cancelar, los dos negativos y la fecha. **Aviso para quien lo repita:**
+tras guardar, el Inbox vuelve a mostrar un pendiente con el mismo nombre y el contador vuelve a 2 —
+NO es el draft sin borrar, es la contraparte del bridge; está documentado en el ticket.
+Fuera de esta cola: el negativo de INGRESO no es alcanzable desde la UI (el seed no siembra drafts de
+ingreso) y el sync real al grupo es cross-device.
+
+**Counts RECONTADOS sobre disco, y corrigen un desfase que venía de antes:** el índice decía
+`backlog 34 · qa 15 · done 8 = 69` y el disco tiene `backlog 39 · qa 14 · done 11 = 76`. Mi
+movimiento solo explica `qa 15 → 14` y `done 10 → 11`; los otros 7 eran drift acumulado sin
+registrar.
 
 Jurgen 2026-08-28 (alta): `groups-invite-skips-unirme-sheet-if-onboarded` entra en `backlog/` con
 prioridad **high** — reporte de device del owner (Lima, TF 2.1 build 12): B, con la cuenta **ya creada**,
@@ -314,7 +330,7 @@ Jurgen 2026-08-26: `groups-cloud-mode-hardening-v1`, `groups-cloud-identity-loss
 | Backlog/qa_groups-endurecimiento-modo-nube-v1.md | tickets/discarded/groups-cloud-mode-hardening-v1.md |
 | Backlog/qa_grupos-nube-perdida-identidad-y-migracion.md | tickets/discarded/groups-cloud-identity-loss-on-migrate.md |
 | Backlog/qa_handover-dispositivo-grupos-fuga.md | tickets/discarded/device-handover-groups-leak.md |
-| Backlog/qa_inbox-convertir-a-gasto-de-grupo.md | tickets/qa/inbox-convert-draft-to-group-expense.md |
+| Backlog/qa_inbox-convertir-a-gasto-de-grupo.md | tickets/done/inbox-convert-draft-to-group-expense.md |
 | Backlog/qa_prefs-dominio-por-sesion-secundaria.md | tickets/qa/prefs-domain-per-secondary-session.md |
 | Backlog/trends-insight-card-v2-bullets.md | tickets/backlog/trends-insight-card-v2-bullets.md |
 | Ideas/idea-fx-pnl-card.md | tickets/backlog/fx-pnl-education-card.md |
