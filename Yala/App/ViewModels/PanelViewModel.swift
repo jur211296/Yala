@@ -2778,7 +2778,13 @@ final class PanelViewModel {
         // Mes anterior natural — independiente del selectedPeriod del Panel,
         // el Hero siempre compara contra el mes calendario anterior.
         let prevStart = Calendar.current.date(byAdding: .month, value: -1, to: monthInterval.start) ?? monthInterval.start
-        let prevInterval = DateInterval(start: prevStart, end: monthInterval.start)
+        // -1s por la misma razon que las ramas de `PreviousPeriodHelper`: `DateInterval` es
+        // CERRADO y `monthInterval.start` caeria en los dos periodos. Hoy no se nota porque
+        // `HeroBucketsCalculator` usa if/else-if mutuamente excluyente para estos dos
+        // buckets, pero esa proteccion vive en el CONSUMIDOR: si alguien los separa, el
+        // doble conteo aparece aqui sin tocar esta linea.
+        let prevEnd = Calendar.current.date(byAdding: .second, value: -1, to: monthInterval.start) ?? monthInterval.start
+        let prevInterval = DateInterval(start: prevStart, end: prevEnd)
 
         // Todos los montos numéricos del Hero (pills del mes, trend "vs mes
         // anterior", card "Disponible · Período") respetan `eligibleAccountIDs`,

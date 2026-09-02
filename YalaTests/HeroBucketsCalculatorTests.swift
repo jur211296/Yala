@@ -362,12 +362,16 @@ struct HeroBucketsCalculatorTests {
         #expect(result.periodPrevExpense == 0)
     }
 
-    /// Borde compartido: `DateInterval` es CERRADO en ambos extremos. Si la
-    /// ventana previa cierra EXACTAMENTE en `periodInterval.start` (el caso de
-    /// `.thisMonth`, cuya ventana previa alineada no resta 1s), una TX fechada a
-    /// medianoche de ese instante NO debe doble-contarse: cuenta solo en el
-    /// período actual, nunca en el previo. (Mutante: sin el guard
-    /// `!periodInterval.contains`, `periodPrevExpense` sería 500.)
+    /// Borde compartido: `DateInterval` es CERRADO en ambos extremos. Si la ventana previa
+    /// cierra EXACTAMENTE en `periodInterval.start`, una TX fechada a medianoche de ese
+    /// instante NO debe doble-contarse: cuenta sólo en el período actual, nunca en el
+    /// previo. (Mutante: sin el guard `!periodInterval.contains`, `periodPrevExpense`
+    /// sería 500.)
+    ///
+    /// El intervalo se construye A MANO aquí, y por eso el test sigue vivo aunque desde el
+    /// 2026-09-02 `PreviousPeriodHelper` ya no produzca ese borde en ninguna rama: lo que
+    /// fija es el CONTRATO del calculator ante un previo que cierre en el instante
+    /// compartido, venga de donde venga.
     @Test func calculate_periodPrevExpense_excludesSharedBoundaryTx() {
         let account = makeAccount()
         let food = makeCategory(name: "Food")

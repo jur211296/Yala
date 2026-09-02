@@ -88,13 +88,16 @@ enum HeroBucketsCalculator {
             }
 
             // Ventana previa comparable (solo gasto). Estrictamente disjunta de
-            // periodInterval: `DateInterval` es CERRADO en ambos extremos, y en
-            // `.thisMonth` la ventana previa alineada CIERRA en periodInterval.start
-            // (PreviousPeriodHelper NO le resta 1s a ese caso), así que una TX
-            // fechada a medianoche de ese instante compartido caería en AMBOS
-            // buckets → doble conteo que infla la base del comparativo. El guard
-            // `!periodInterval.contains` la excluye (los buckets del mes usan
-            // if/else-if mutuamente excluyente; estos son ifs independientes).
+            // periodInterval: `DateInterval` es CERRADO en ambos extremos, así que una TX
+            // fechada en el instante de cierre del previo caería en AMBOS buckets → doble
+            // conteo que infla la base del comparativo.
+            //
+            // Desde el 2026-09-02 `PreviousPeriodHelper` SÍ resta 1s en todas sus ramas
+            // (`.thisMonth` era la última sin hacerlo), así que hoy este guard es
+            // REDUNDANTE para el camino normal. NO se retira: es la única red que
+            // detectaría una regresión de esa fuente, el caller puede pasar un intervalo
+            // artesanal, y su coste es una comparación. Su test (`:371`) sigue siendo un
+            // test de contrato, no de implementación.
             if let periodPrevInterval, !isIncome,
                periodPrevInterval.contains(tx.date), !periodInterval.contains(tx.date) {
                 periodPrevExpense += amount

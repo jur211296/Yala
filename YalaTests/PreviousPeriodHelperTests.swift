@@ -87,13 +87,65 @@ struct PreviousPeriodHelperTests {
     }
 
     @Test func previousInterval_thisMonth_month_previousMonth() {
-        let interval = PreviousPeriodHelper.previousInterval(for: .thisMonth, mode: .month)
-        let currentInterval = DetailPeriod.thisMonth.dateInterval()
-        // Previous month start should be before current month start
+        // `now` INYECTADO: antes usaba el reloj real, y con el -1s del borde la duración
+        // pasa a 27,99999 días cuando el mes previo es febrero => el test sólo se habría
+        // puesto rojo en marzo de un año no bisiesto, meses después del cambio.
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "America/Lima")!
+        let now = cal.date(from: DateComponents(year: 2026, month: 3, day: 15))!  // previo = febrero, 28d
+        let interval = PreviousPeriodHelper.previousInterval(for: .thisMonth, mode: .month, now: now)
+        let currentInterval = DetailPeriod.thisMonth.dateInterval(now: now)
+
         #expect(interval.start < currentInterval.start)
-        // Should be roughly a month (28-31 days)
-        let durationDays = interval.duration / 86400
-        #expect(durationDays >= 28 && durationDays <= 31)
+        // Días de CALENDARIO, no `duration / 86400`: el intervalo cierra en 23:59:59, así
+        // que hay que normalizar el extremo antes de contar o sale uno de menos.
+        let dias = cal.dateComponents([.day], from: interval.start, to: interval.end.addingTimeInterval(1)).day
+        #expect(dias == 28)   // febrero de 2026
+    }
+
+    /// Espejo de `previousInterval_thisWeek_month_noOverlapCurrentStart` para `.thisMonth`.
+    /// `DateInterval` es CERRADO en ambos extremos: sin el -1s de la rama, una TX fechada
+    /// el día 1 a medianoche —lo que dejan el DatePicker de sólo-fecha y los pagos
+    /// programados— caía a la vez en el período actual y en el previo. Medido antes del
+    /// fix: contaminaba la columna «anterior» del informe los 730 días barridos.
+    @Test func previousInterval_thisMonth_month_noOverlapCurrentStart() {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "America/Lima")!
+        let now = cal.date(from: DateComponents(year: 2026, month: 4, day: 15))!
+        let currentInterval = DetailPeriod.thisMonth.dateInterval(now: now)
+        let previous = PreviousPeriodHelper.previousInterval(for: .thisMonth, mode: .month, now: now)
+
+        let dia1Medianoche = currentInterval.start
+        #expect(!previous.contains(dia1Medianoche))
+        #expect(currentInterval.contains(dia1Medianoche))
+        // Y no deja hueco: el previo cierra justo 1s antes.
+        #expect(previous.end == dia1Medianoche.addingTimeInterval(-1))
+    }
+
+    /// `.thisYear` el 31-dic: el previo desplazado un año cerraba exactamente en el inicio
+    /// del año en curso. Sólo 2 días de 730, pero contaminaba la comparativa interanual.
+    @Test func previousInterval_thisYear_year_noOverlapOnDec31() {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "America/Lima")!
+        let now = cal.date(from: DateComponents(year: 2026, month: 12, day: 31))!
+        let currentInterval = DetailPeriod.thisYear.dateInterval(now: now)
+        let previous = PreviousPeriodHelper.previousInterval(for: .thisYear, mode: .year, now: now)
+
+        #expect(!previous.contains(currentInterval.start))
+    }
+
+    /// El -1s de `sameIntervalPreviousYear` está CONDICIONADO a que el extremo sea
+    /// medianoche. Un período CERRADO ya cierra en 23:59:59 y restarle otro segundo le
+    /// quitaría un instante real — medido: pasaría los 730 días.
+    @Test func previousInterval_lastMonth_year_keepsClosedEndIntact() {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "America/Lima")!
+        let now = cal.date(from: DateComponents(year: 2026, month: 4, day: 15))!
+        let currentInterval = DetailPeriod.lastMonth.dateInterval(now: now)
+        let previous = PreviousPeriodHelper.previousInterval(for: .lastMonth, mode: .year, now: now)
+
+        let esperado = cal.date(byAdding: .year, value: -1, to: currentInterval.end)!
+        #expect(previous.end == esperado)   // sin segundo de más
     }
 
     @Test func previousInterval_lastMonth_month_twoMonthsAgo_exactBoundaries() {

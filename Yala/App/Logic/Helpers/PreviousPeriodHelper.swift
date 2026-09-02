@@ -109,7 +109,12 @@ enum PreviousPeriodHelper {
         case .thisMonth:
             // Previous month
             let startOfPreviousMonth = calendar.date(byAdding: .month, value: -1, to: currentInterval.start) ?? currentInterval.start
-            return DateInterval(start: startOfPreviousMonth, end: currentInterval.start)
+            // `DateInterval` es CERRADO: sin el -1s, `currentInterval.start` cae en el
+            // periodo actual Y en el previo, y una TX del dia 1 a medianoche (lo que
+            // dejan el DatePicker de solo-fecha y los pagos programados) se cuenta dos
+            // veces. Era la UNICA de las cinco ramas de este switch sin el ajuste.
+            let endOfPreviousMonth = calendar.date(byAdding: .second, value: -1, to: currentInterval.start) ?? currentInterval.start
+            return DateInterval(start: startOfPreviousMonth, end: endOfPreviousMonth)
 
         case .lastMonth:
             // Two months ago — anclado en currentInterval.start (medianoche exacta,
@@ -148,7 +153,15 @@ enum PreviousPeriodHelper {
         calendar: Calendar
     ) -> DateInterval {
         let previousYearStart = calendar.date(byAdding: .year, value: -1, to: currentInterval.start) ?? currentInterval.start
-        let previousYearEnd = calendar.date(byAdding: .year, value: -1, to: currentInterval.end) ?? currentInterval.end
+        let shiftedEnd = calendar.date(byAdding: .year, value: -1, to: currentInterval.end) ?? currentInterval.end
+        // Los periodos EN CURSO cierran en `endOfToday` (medianoche = inicio de manana,
+        // exclusivo de facto); desplazado un ano, el 31-dic ese instante coincide con
+        // `currentInterval.start` y la TX del 1-ene se cuenta en los dos lados. Se le
+        // resta 1s SOLO en ese caso: los periodos CERRADOS ya cierran en 23:59:59 y
+        // restarles otro segundo les quitaria un instante real (medido: los 730 dias).
+        let previousYearEnd = calendar.startOfDay(for: shiftedEnd) == shiftedEnd
+            ? (calendar.date(byAdding: .second, value: -1, to: shiftedEnd) ?? shiftedEnd)
+            : shiftedEnd
         return DateInterval(start: previousYearStart, end: previousYearEnd)
     }
 

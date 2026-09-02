@@ -271,7 +271,16 @@ struct InsightsCalculator {
         // completo): el numerador (`prevCashFlow.totalExpense`) ya es del tramo
         // truncado; el denominador debe escalar igual o `prevDailyAvg` colapsa y
         // `dailyAverageVariation` se dispara (D2 p20-15).
-        let prevDaysInPeriod = max(1, calendar.dateComponents([.day], from: alignedPrevInterval.start, to: alignedPrevInterval.end).day ?? 1)
+        // `dateComponents([.day])` TRUNCA, y estos intervalos cierran en 23:59:59 (el -1s
+        // que evita el doble conteo del borde) => contarian un dia de MENOS. Se normaliza
+        // el extremo antes de contar. Medido sobre `.lastMonth`, que ya llevaba el -1s: sin
+        // esta normalizacion el conteo difiere de la longitud real del mes los 730 dias
+        // barridos; con ella, ninguno.
+        let prevDaysInPeriod = max(1, calendar.dateComponents(
+            [.day],
+            from: alignedPrevInterval.start,
+            to: alignedPrevInterval.end.addingTimeInterval(1)
+        ).day ?? 1)
         let prevDailyAvg = prevCashFlow.totalExpense / Double(prevDaysInPeriod)
         let dailyAverageVariation = PreviousPeriodHelper.calculateVariation(
             currentAmount: dailyAverageExpense,
