@@ -11,6 +11,14 @@ import SwiftData
 import TipKit
 import WidgetKit
 
+#if DEBUG
+/// Error del seam `-uitest-fail-wipe`. Vive bajo `#if DEBUG` y no tiene ningún lanzador en
+/// producción: su única razón de ser es hacer observable en pantalla la rama de fallo del wipe.
+enum WipeSeamError: Error {
+    case forcedByUITestHook
+}
+#endif
+
 // Clase de utilidad para operaciones de borrado masivo de datos de usuario.
 // Marcada como @MainActor porque ModelContext debe usarse desde el hilo principal.
 @MainActor
@@ -27,6 +35,12 @@ final class DataWipeService {
         reseedInitialData: Bool = false,
         broadcastSignal: Bool = true
     ) throws {
+        #if DEBUG
+        // Seam de QA (`-uitest-fail-wipe`): lanza ANTES de tocar nada, así que los datos quedan
+        // intactos. Gateado por el fin del bootstrap — ver `UITestHooks.shouldFailWipeNow`.
+        if UITestHooks.shouldFailWipeNow { throw WipeSeamError.forcedByUITestHook }
+        #endif
+
         // ============================================================
         // PASO 0: Señalizar wipe a otros dispositivos via iCloud KV
         // ============================================================
@@ -278,6 +292,12 @@ final class DataWipeService {
             GroupsOutboxMirror()?.purgeAll()
         }
     ) throws {
+        #if DEBUG
+        // Mismo seam que `wipeAllUserData`: el camino de «Empiezo de cero» llama a las DOS, y el
+        // alert de fallo debe salir venga el throw de la que venga.
+        if UITestHooks.shouldFailWipeNow { throw WipeSeamError.forcedByUITestHook }
+        #endif
+
         // Los 5 `Split*` se vinculan por IDs planos (`groupZoneID`/`expenseID`/`memberID`), NO por
         // `@Relationship` ⇒ sin orden de dependencias que respetar y sin cascadas que disparar.
         for group in try context.fetch(FetchDescriptor<SplitGroup>()) { context.delete(group) }

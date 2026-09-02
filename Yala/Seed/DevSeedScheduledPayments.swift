@@ -15,6 +15,10 @@ struct DevSeedScheduledPayments {
         let payments: [ScheduledPayment]
     }
 
+    /// Nombre fijo (no localizado) del pago que vence hoy, para que los XCUITests lo
+    /// localicen igual en cualquier locale — mismo criterio que `DevSeedDrafts.draftNoteA`.
+    static let dueTodayName = "Recibo vence hoy"
+
     @MainActor
     static func create(
         account: Account,
@@ -58,6 +62,50 @@ struct DevSeedScheduledPayments {
         ]
 
         var payments: [ScheduledPayment] = []
+
+        // `-uitest-scheduled-due-today`: un pago que vence HOY, que los 8 de arriba nunca
+        // garantizan (se reparten por el mes y `min(day, 28)` capa los días 29-31).
+        //
+        // Por qué es un SEAM y no una fila más del fixture: un pago que vence hoy se ordena
+        // el PRIMERO de la lista, y `ScheduledPaymentSkipUITests` opera sobre
+        // `app.buttons["scheduled_payment_row"].firstMatch` ⇒ meterlo siempre le cambiaría el
+        // sujeto a un test verde. Aditivo y apagado por defecto.
+        //
+        // Es «una sola vez» (`isRecurring: false`) a propósito: replica el resultado de elegir
+        // esa opción en el segmentado de Recurrencia, que es la interacción que el QA por
+        // árbol de accesibilidad NO puede hacer (los `Picker` segmentados no se enumeran como
+        // tapeables). Con esto el escenario se alcanza sin tocar el segmentado.
+        //
+        // OJO al verificarlo en pantalla: la fila lo rotula «Mensual», no «Una sola vez».
+        // No es este seam fallando. `RecurrenceType` no tiene caso `once` —«una sola vez» se
+        // modela SOLO con `isRecurring: false`— y `ScheduledPaymentRowView.recurrenceBadge`
+        // pinta `recurrenceType` sin mirar `isRecurring`. El `recurrenceType: "monthly"` de
+        // abajo es el valor por defecto del modelo, inerte mientras `isRecurring` sea false.
+        if UITestHooks.scheduledDueToday {
+            // Mediodía, no `startOfDay`: una fecha a medianoche exacta cae en la frontera
+            // cerrada de `DateInterval` (CLAUDE.md → «Cálculos con fechas»).
+            let dueToday = calendar.startOfDay(for: today).addingTimeInterval(12 * 3600)
+            let oneOff = ScheduledPayment(
+                name: Self.dueTodayName,
+                amount: 75,
+                currencyCode: "PEN",
+                transactionType: TransactionType.expense.rawValue,
+                account: account,
+                subcategory: subcategoryLookup[L10n.Subcategory.utilities],
+                isRecurring: false,
+                recurrenceType: "monthly",
+                recurrenceInterval: 1,
+                nextDueDate: dueToday,
+                dayOfMonth: calendar.component(.day, from: dueToday),
+                paymentCategory: "recurring",
+                notifyOnDueDate: true,
+                notifyDaysBefore: 0,
+                isVariableAmount: false
+            )
+            context.insert(oneOff)
+            payments.append(oneOff)
+        }
+
         for def in definitions {
             let sub = subcategoryLookup[def.subKey]
             let payment = ScheduledPayment(
