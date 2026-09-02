@@ -10,18 +10,19 @@ TestFlight build **12** (CPV 12). **Subida Yala (TF/store) = solo Mini.**
 
 ## Esta sesión
 Cerrado el **doble conteo del día 1**: una TX de día 1 a medianoche —alquiler, nómina— se contaba a
-la vez en el período actual y en el anterior. Medido: contaminaba el informe **730/730 días**,
-Estadísticas 28/730, la interanual 2/730; ahora **0/730**. Fix en la fuente (`PreviousPeriodHelper`,
-sus dos ramas) más dos instancias a mano; el `-1s` de la rama de año va **condicionado** a que el
-extremo sea medianoche. 3 mutantes en rojo. Antes: el rojo de `.thisWeek` y el trailer de commit.
+la vez en el período actual y en el anterior. Medido: informe **730/730 → 0/730**. Fix en la fuente
+(las dos ramas de `PreviousPeriodHelper`) más dos instancias a mano; 3 mutantes en rojo. Antes: el
+rojo de `.thisWeek` y el trailer de commit.
 
 ## Abiertos
+- **`ci-verde-con-la-suite-en-rojo`** (backlog, **high**) — los 3 pasos de test llevan
+  `continue-on-error`, que los pinta `success` aunque salgan con `exit 65`: **8 tests en rojo**
+  y el CI en verde. Cazaba el rojo de `.thisWeek` desde el 17-ago sin que nadie lo viera.
 - **`welcome-fresh-start-alert-leaves-blank-screen`** (backlog, **high**) — «Es mi primera vez» +
   cancelar deja la app sin salida salvo matarla. Preexistente, **en producción**.
 - **`scheduled-payment-once-labeled-monthly`** (backlog, low) — badge cosmético.
-- **`undercount-dias-intervalos-cerrados`** (backlog, medium) — `dateComponents([.day])` trunca, así
-  que todo intervalo que cierre en 23:59:59 cuenta un día de menos: medido, falla **730/730** en
-  `.lastMonth`. Son denominadores de promedios. Normalizado sólo donde este fix lo habría empeorado.
+- **`undercount-dias-intervalos-cerrados`** (backlog, medium) — todo intervalo que cierre en
+  23:59:59 cuenta un día de menos (**730/730** en `.lastMonth`). Son denominadores de promedios.
 - **`AUDIT-appstore-guidelines.md`** — 3 hallazgos de riesgo de rechazo (OpenAI). De Lola.
 
 ## Release 2.1 (sin cambios)
