@@ -1,6 +1,6 @@
 ---
 id: ci-suite-simulador-duplicada-y-allowlist-incompleta
-status: backlog
+status: in-progress
 priority: high
 area: platform
 created: 2026-09-01
@@ -88,3 +88,38 @@ el evento es inesperado, la suite debe correr. Este ticket recorta lo que sobra,
 Los tres pasos de test siguen **advisory** (`continue-on-error: true`) por el `EXC_BREAKPOINT`
 flaky de SwiftData in-memory; el gate duro es `coverage-index`. Este ticket no cambia esa
 estrategia — eso es el TODO(@jur, 2026-07-15) que sigue vivo en el propio workflow.
+
+## Implementación (2026-09-01)
+
+**1 · Duplicación.** `on: push` pasa a `branches: ["2.1", "1.0"]`. Una rama de ticket ya no
+dispara run de `push`; el PR sigue disparando el suyo, y el commit que aterriza lo cubre el push
+sobre `2.1`.
+
+**Un fallo cazado al validar, que merece quedar escrito:** la primera versión ponía
+`branches: [2.1, "1.0"]` y **YAML parsea `2.1` sin comillas como el número 2.1**, no como la
+cadena `"2.1"`. Habría dejado el trigger de push sin casar nunca con la rama principal — es
+decir, el CI dejando de correr en `2.1` **en silencio**, que es peor que el problema que este
+ticket viene a resolver. Lo cazó validar el YAML y mirar el tipo, no leerlo. Va con comillas.
+
+**2 · Allowlist.** Añadidas `gateway/*` y `qa/cloud/*`, con la medición repetida y anotada
+dentro del propio workflow, como su comentario exige. **`qa/scripts/` y `qa/validate-coverage.*`
+se quedan fuera a propósito**: deciden cómo se verifica el proyecto.
+
+**3 · El deny-by-default no se tocó.**
+
+### Verificado
+
+- **`qa/scripts/ci-allowlist-test.sh`** (nuevo): **12/12**. No copia el `case` del workflow, lo
+  **extrae**, así que el test no puede divergir de lo que se ejecuta. Cubre las dos rutas nuevas,
+  los vecinos que deben seguir corriendo (`qa/scripts/` el primero), el deny-by-default con un
+  fichero mezclado, y lo que ya se saltaba antes.
+- **YAML válido** y ambas ramas tipadas como cadena (comprobado sobre el árbol de parseo, no a
+  ojo).
+- Gate completo antes del commit: build de las dos schemes ✓, audit ✓, índice `RESULT: OK` ✓.
+
+### Comprobación pendiente, honestamente
+
+Que un PR de solo-`gateway` cierre en ~0,3 min **no se ha observado todavía en vivo**: no había
+un cambio de gateway a mano para provocarlo. La lógica está probada en local con las rutas
+reales; la confirmación en GitHub llegará con el primer PR que toque solo esa carpeta. Este mismo
+commit toca `.github/` y `qa/scripts/`, así que **corre la suite, y eso es lo correcto**.

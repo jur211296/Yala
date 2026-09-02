@@ -1,7 +1,13 @@
 name: QA
 
 on:
+  # El push solo vigila las ramas que sobreviven. Sin el filtro, una rama de ticket
+  # disparaba DOS runs del mismo commit —uno por `push` y otro por `pull_request`— y cada
+  # uno encola el runner de simulador. Medido el 2026-09-01 sobre un mismo commit: 97,4 min
+  # (push) + 102,4 min (pull_request). El commit que se mergea lo vuelve a cubrir el push
+  # sobre `2.1`, así que no se pierde cobertura: se deja de pagarla dos veces.
   push:
+    branches: ["2.1", "1.0"]
   pull_request:
 
 jobs:
@@ -30,6 +36,9 @@ jobs:
   # El allowlist se MIDIÓ contra el árbol (2026-08-28): ninguna de esas rutas aparece en
   # `Yala.xcodeproj/project.pbxproj` ni en las fuentes de los targets, así que no son
   # input de xcodebuild. Al añadir una ruta nueva, repetir la comprobación, no asumirla.
+  # Repetida el 2026-09-01 al añadir `gateway/` y `qa/cloud/`:
+  #   grep -c "gateway"        Yala.xcodeproj/project.pbxproj  → 0
+  #   grep -cE "path = qa|qa/" Yala.xcodeproj/project.pbxproj  → 0
   changes:
     runs-on: ubuntu-latest
     permissions:
@@ -89,6 +98,12 @@ jobs:
             case "$file" in
               docs/*|tickets/*|marketing/*|Web/*|.claude/*) ;;
               README.md|CLAUDE.md|LICENSE|LICENSE.md|LICENSE.txt) ;;
+              # `gateway/` es el Worker de Cloudflare (TypeScript, su propia suite con
+              # vitest) y `qa/cloud/` son scripts contra staging: ninguno entra en el build
+              # de iOS. ACOTADO a `qa/cloud/` a proposito — `qa/scripts/` y
+              # `qa/validate-coverage.*` SI deciden como se verifica el proyecto, asi que
+              # siguen disparando la suite. Meter `qa/*` entero seria el error.
+              gateway/*|qa/cloud/*) ;;
               *) culprit="$file"; break ;;
             esac
           done <<< "$changed"
