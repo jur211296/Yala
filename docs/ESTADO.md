@@ -35,6 +35,6 @@ rinde: consolidar esos 11 en **un guion único de device-QA agrupado por montaje
 devices · flags), una tarde tuya en vez de once sesiones. Los 9 de `in-progress` siguen parados.
 
 ## Bloqueo
-**El sender key de Grok se rotó, pero `GROK_WEBHOOK_SENDER_KEY` en GitHub sigue con fecha
-`17:40:45Z` — anterior al único push que lo usó.** Si no se re-guardó con el valor nuevo, el
-próximo push a `2.1` dará 401 y el aviso no llegará. Lo delata el check del propio push.
+Ninguno. El canal a Grok respondió **200 en los dos pushes** de hoy (`eebde759`, `f09689b2`).
+Pendiente menor: `GROK_WEBHOOK_SENDER_KEY` conserva su fecha de creación pese a la rotación del
+panel — o se re-guardó igual, o la clave anterior sigue viva. Lo delataría un 401, y sale en rojo.
