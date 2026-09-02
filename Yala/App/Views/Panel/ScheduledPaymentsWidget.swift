@@ -330,7 +330,10 @@ struct ScheduledPaymentsWidget: View {
                     value: item.isIncome ? item.amount : -item.amount,
                     currencyCode: item.currencyCode,
                     font: DS.Typography.headline, secondaryFont: DS.Typography.caption,
-                    tint: .color(item.isIncome ? Color.priorityNeed : Color.hotPink),
+                    // Misma regla que `RecentRecordsWidget`: sólo el ingreso lleva
+                    // color. `priorityNeed` daba 2,19 de contraste sobre tarjeta
+                    // blanca, el peor de la paleta y muy por debajo del AA de 4,5.
+                    tint: .color(item.isIncome ? Color.incomeAmount : Color.primary),
                     forceSign: true,
                     isEstimate: item.isVariableAmount,
                     forceFullPrecision: true

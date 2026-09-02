@@ -22,7 +22,11 @@ struct PanelFilterAndWidgetsSection: View {
     @Binding var showCustomPeriodPicker: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+        // `xxl` (32) y no `md` (12): entre dos sections tiene que haber MÁS
+        // aire que entre un título y su contenido (`PanelSection.headerSpacing`,
+        // 8). Invertida, la proximidad hacía que cada título se leyera como
+        // pie de la section anterior en vez de cabecera de la suya.
+        VStack(alignment: .leading, spacing: DS.Spacing.xxl) {
             let allVisibleSections = PanelSectionKind.allCases.filter { kind in
                 viewModel.isSectionVisible(kind) && viewModel.hasAnyVisibleWidget(in: kind)
             }

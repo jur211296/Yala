@@ -30,22 +30,36 @@ struct PanelSection<Content: View, Footer: View>: View {
     var seeMoreAccessibilityLabel: String? = nil
     var seeMoreAccessibilityHint: String? = nil
 
-    /// Modo compacto: reduce el spacing header → content y content → footer
-    /// de `.lg` (16) a `.sm` (8). Útil cuando la section es secundaria
-    /// (ej. "Filtros aplicados" en Records).
+    /// Modo compacto: reduce los spacings de la section a la mitad. Útil
+    /// cuando la section es secundaria (ej. "Filtros aplicados" en Records).
     var compact: Bool = false
 
     @ViewBuilder var content: () -> Content
     @ViewBuilder var footer: () -> Footer
 
-    private var sectionSpacing: CGFloat {
+    /// Aire entre el título y SU contenido. Deliberadamente MENOR que la
+    /// separación entre sections (`DS.Spacing.xxl` en
+    /// `PanelFilterAndWidgetsSection`): por proximidad, el título tiene que
+    /// agruparse con lo que encabeza y no con la section de arriba. Cuando
+    /// esta constante era mayor que la de entre-sections —16 contra 12— el
+    /// título se leía como pie del bloque anterior.
+    private var headerSpacing: CGFloat {
+        compact ? DS.Spacing.xs : DS.Spacing.sm
+    }
+
+    /// Aire entre los widgets hermanos de una misma section, y entre el
+    /// contenido y el footer. Se mantiene en `.lg` a propósito: juntar el
+    /// título a su contenido no debe pegar dos widgets entre sí.
+    private var contentSpacing: CGFloat {
         compact ? DS.Spacing.sm : DS.Spacing.lg
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: sectionSpacing) {
-            header
-            VStack(spacing: sectionSpacing) { content() }
+        VStack(alignment: .leading, spacing: contentSpacing) {
+            VStack(alignment: .leading, spacing: headerSpacing) {
+                header
+                VStack(spacing: contentSpacing) { content() }
+            }
             footer()
         }
     }
@@ -56,7 +70,7 @@ struct PanelSection<Content: View, Footer: View>: View {
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 HStack(spacing: DS.Spacing.xs) {
                     Text(title)
-                        .font(DS.Typography.subheadlineEmphasized)
+                        .font(DS.Typography.title3)
                     if let onSeeMore {
                         seeMoreButton(action: onSeeMore)
                     }
