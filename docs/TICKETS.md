@@ -28,10 +28,12 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (75)
+## Index (78)
 
 | id | status | path |
 |----|--------|------|
+| welcome-fresh-start-alert-leaves-blank-screen | backlog | tickets/backlog/welcome-fresh-start-alert-leaves-blank-screen.md |
+| scheduled-payment-once-labeled-monthly | backlog | tickets/backlog/scheduled-payment-once-labeled-monthly.md |
 | synced-prefs-outside-prefsynckey | backlog | tickets/backlog/synced-prefs-outside-prefsynckey.md |
 | creategroup-throw-after-commit-loses-owner | backlog | tickets/backlog/creategroup-throw-after-commit-loses-owner.md |
 | verify-dual-channel-zone-in-supabase | backlog | tickets/backlog/verify-dual-channel-zone-in-supabase.md |
@@ -108,7 +110,22 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-invite-skips-unirme-sheet-if-onboarded | backlog | tickets/backlog/groups-invite-skips-unirme-sheet-if-onboarded.md |
 | staging-test-credentials-in-public-repo | backlog | tickets/backlog/staging-test-credentials-in-public-repo.md |
 
-Counts by folder: backlog 39 · in-progress 9 · qa 14 · blocked 0 · done 11 · discarded 3 = 76.
+Counts by folder: backlog 41 · in-progress 9 · qa 14 · blocked 0 · done 11 · discarded 3 = 78.
+
+Frank 2026-09-02 (altas): dos hallazgos del QA de hoy entran en `backlog/`, para que no se pierdan
+al cerrar la sesion.
+
+- **`welcome-fresh-start-alert-leaves-blank-screen`** (**high**) — cerrar el alert de «Empezar desde
+  cero» por CUALQUIERA de sus dos botones deja el Welcome sin un solo control: hay que matar la app.
+  Preexistente y **alcanzable en produccion** (onboarding de quien reinstala teniendo datos). Medido
+  con tres lanzamientos y control negativo: pasa con y sin el seam `-uitest-fail-wipe`, y en la rama
+  «Cancelar», que no invoca ningun wipe ⇒ no es un fallo del borrado, es el alert. Contradice el
+  comentario del propio codigo en `ShellDataAlertsModifier.swift:105` («user queda en el Chooser»).
+- **`scheduled-payment-once-labeled-monthly`** (low) — un pago «una sola vez» se rotula «Mensual»:
+  `recurrenceBadge` pinta `recurrenceType` y nunca mira `isRecurring`, y `RecurrenceType` no tiene
+  caso `once`. Presentacion, no calculo.
+
+Counts recontados sobre disco: backlog 39 → 41, total 76 → 78.
 
 Frank 2026-09-02 (QA): `inbox-convert-draft-to-group-expense` **PASA y se cierra a `done/`** — los 12
 ACs verificados EN PANTALLA (sim iPhone 17 Pro), incluida la FECHA, que era el punto ciego y que hasta
