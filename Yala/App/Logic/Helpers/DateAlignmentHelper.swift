@@ -137,17 +137,32 @@ enum DateAlignmentHelper {
         }
     }
 
-    /// Trunca el intervalo del período ANTERIOR al día equivalente del "as-of"
-    /// actual (MTD-vs-MTD) para el ÚNICO caso con asimetría parcial-vs-completo:
-    /// `.thisMonth` en modo `.month` (actual = MTD parcial; previo = mes COMPLETO).
-    /// Para cualquier otro período/modo devuelve `previousInterval` sin tocar: el
-    /// resto ya es simétrico en duración (su previo es del mismo span vía
-    /// `sameIntervalPreviousYear` o la ventana trailing de igual duración), así que
-    /// alinear sería no-op o dañino (excluiría txns no-medianoche del día
-    /// equivalente sin arreglar nada). Pura; reusa `getOriginalPreviousDate` (misma
-    /// estrategia `.dayOfMonth` que la curva). Usado por el hero de Estadísticas
-    /// (`InsightsCalculator`) para que su variación no compare parcial-vs-completo
-    /// (D2 de p20-15). `calendar` inyectable para tests deterministas.
+    /// Trunca el intervalo del período ANTERIOR al punto equivalente del "as-of"
+    /// actual, para los períodos con asimetría parcial-vs-completo. Quién entra y
+    /// quién no lo decide `aggregatePreviousNeedsAlignment` — el guard de abajo
+    /// delega en él, así que ESA función es la SSOT y esta lista es sólo su reflejo:
+    ///
+    /// - `.thisMonth` + `.month` → `.dayOfMonth` (actual = MTD parcial; previo = mes
+    ///   COMPLETO) — el caso original de D2 de p20-15.
+    /// - `.thisWeek` + `.month` → `.dayOfWeek` (actual = lunes-a-hoy; previo = semana
+    ///   calendario anterior ENTERA). Entró en `f6d4101d` (2026-08-17), cuando
+    ///   `PreviousPeriodHelper` dejó de darle una ventana trailing.
+    /// - `.thisYear` → cruza el gate SIEMPRE (no mira el modo), pero su previo es el
+    ///   mismo intervalo desplazado un año (`sameIntervalPreviousYear`), de igual
+    ///   span, así que el punto equivalente cae en el extremo y el recorte es
+    ///   inocuo. La estrategia depende del modo: `.calendarYear` en `.year`,
+    ///   `.proportional` en `.month` — y `.month` es alcanzable, es el default de
+    ///   `InsightsCalculator`. NO medido: el borde exacto cuando uno de los dos años
+    ///   es bisiesto.
+    ///
+    /// Para el resto devuelve `previousInterval` sin tocar: ya son simétricos en
+    /// duración (ventana trailing de igual duración, o cerrado contra cerrado), así
+    /// que alinear sería no-op o dañino (excluiría txns no-medianoche del día
+    /// equivalente sin arreglar nada). Pura; reusa `getOriginalPreviousDate`, cuya
+    /// estrategia sale de `alignmentStrategy(period:comparisonMode:)`. Usado por el
+    /// hero de Estadísticas (`InsightsCalculator`) y por el del Panel
+    /// (`HeroBucketsCalculator`) para que su variación no compare parcial-vs-completo.
+    /// `calendar` inyectable para tests deterministas.
     static func alignedPreviousInterval(
         currentInterval: DateInterval,
         previousInterval: DateInterval,
@@ -165,8 +180,9 @@ enum DateAlignmentHelper {
         let startOfToday = calendar.startOfDay(for: asOf)
         guard startOfToday < currentInterval.end else { return previousInterval }
 
-        // Mapea el día en curso → día equivalente del mes previo (medianoche, por
-        // la estrategia .dayOfMonth de .thisMonth).
+        // Mapea el día en curso → su equivalente en la ventana previa (medianoche).
+        // La estrategia la elige `alignmentStrategy`: `.dayOfMonth` para `.thisMonth`,
+        // `.dayOfWeek` para `.thisWeek`, `.calendarYear` en modo `.year`.
         let mapped = getOriginalPreviousDate(
             for: startOfToday,
             currentInterval: currentInterval,
@@ -317,17 +333,20 @@ enum DateAlignmentHelper {
     /// del actual". Así la suma del previo cubre el MISMO span de días que la del
     /// actual (elimina el sesgo "mes en curso vs mes anterior completo").
     ///
-    /// El gate `aggregatePreviousNeedsAlignment` sólo enruta `.thisMonth`
-    /// (estrategia `.dayOfMonth`). El borde INFERIOR (`>= currentInterval.start`)
-    /// es no-op para `.dayOfMonth` (el mapeo siempre cae dentro del mes actual) y
-    /// se conserva como defensa: hace el filtro correcto para CUALQUIER estrategia
-    /// —p.ej. `.dayOfWeek`, donde el domingo del previo (weekday 1 < lunes 2) mapea
-    /// a un offset negativo, ANTES del inicio de semana— por si el gate se ampliara.
+    /// El gate `aggregatePreviousNeedsAlignment` enruta `.thisMonth` (`.dayOfMonth`),
+    /// `.thisWeek` (`.dayOfWeek`) y `.thisYear`. El borde INFERIOR
+    /// (`>= currentInterval.start`) es no-op en las DOS estrategias vivas, no sólo en
+    /// `.dayOfMonth`: el `dayOffset` de `adjustDateToCurrent` es
+    /// `((weekday - currentWeekday) % 7 + 7) % 7`, normalizado a [0,6], así que el
+    /// mapeo nunca cae antes del inicio del período actual. (Este comentario decía
+    /// que el domingo mapeaba a un offset NEGATIVO; es imposible por construcción —
+    /// medido el 2026-09-02.) Se conserva porque es barato y porque una estrategia
+    /// futura sí podría producirlo, no porque hoy filtre nada.
     ///
     /// A DIFERENCIA de la curva (`clippedPreviousPoints`) NO aplica padding ±1d:
     /// ese `+1d` es breathing-room del eje X, no semántica; para una SUMA el corte
-    /// honesto es el día exacto. El gate limita a `.thisMonth` (nunca cerrados) →
-    /// sin riesgo de rollover de fin-de-mes que exigiera el padding.
+    /// honesto es el día exacto. El gate sólo admite períodos EN CURSO (nunca
+    /// cerrados) → sin riesgo de rollover de fin-de-mes que exigiera el padding.
     ///
     /// No-op (devuelve `previous` intacto) cuando el período ya es simétrico
     /// (`aggregatePreviousNeedsAlignment == false`) o cuando el actual no tiene

@@ -2,7 +2,7 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (81 entradas)
+## Índice (82 entradas)
 
 > **No hace falta leer este fichero entero** — son 228 KB. Localiza la entrada
 > aquí y salta a ella.
@@ -13,6 +13,7 @@
 - `2026-08-29` [Los roles de Frank pasan a Claude](#2026-08-29-los-roles-de-frank-pasan-a-claude)
 - `2026-08-28` [CI: la suite de simulador solo corre si el diff puede afectarla](#2026-08-28-ci-la-suite-de-simulador-solo-corre-si-el-diff-puede-afectarla)
 - `2026-08-26` [Balance en Distribución: stock, Panel no se toca](#2026-08-26-balance-en-distribucin-stock-panel-no-se-toca)
+- `2026-08-17` [Comparativas: el recorte al punto equivalente deja de ser sólo de `.thisMonth`](#2026-08-17-comparativas-el-recorte-al-punto-equivalente-deja-de-ser-slo-de-thismonth)
 - `2026-07-24` [Tanda 2026-07-24: fase 2.0.5 — 36 entradas (2026-07-08 → 2026-07-22)](#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
 - `2026-07-24` [Tanda 2026-07-24 (cierre): últimas 5 entradas de la fase 2.0.5](#tanda-2026-07-24-cierre-ltimas-5-entradas-de-la-fase-205)
 - `2026-07-06` [Stats — Comparativa: KPI "período anterior" alineado a la curva MTD-vs-MTD (p20-15 completo)](#2026-07-06-stats--comparativa-kpi-perodo-anterior-alineado-a-la-curva-mtd-vs-mtd-p20-15-completo)
@@ -296,6 +297,43 @@ porque su autor deje de existir.
 **Estado:** Activa
 
 ---
+
+### [2026-08-17] Comparativas: el recorte al punto equivalente deja de ser sólo de `.thisMonth`
+
+**Registrada el 2026-09-02, con dos semanas y media de retraso.** La decisión se tomó en código el
+2026-08-17 y nunca llegó a este fichero. Ese hueco dejó un test en rojo todo ese tiempo y tres
+sesiones re-litigando lo mismo, porque la entrada de julio seguía marcada «Activa» diciendo lo
+contrario del código.
+
+**Contexto.** La decisión de [2026-07-06] (p20-15) alineó el previo al día equivalente y concluyó
+que `.thisMonth`+`.month` era el ÚNICO caso asimétrico parcial-vs-completo. Tenía un motivo real
+entonces: `PreviousPeriodHelper` le daba a `.thisWeek` una ventana trailing de igual duración, y
+alinear esa ventana por weekday VACIABA las chips a mitad de semana.
+
+**Qué cambió.** `f6d4101d` le dio a `.thisWeek` la semana calendario anterior ENTERA —sacándolo de
+la rama que compartía con `.last7Days`— y en el MISMO commit lo metió en el gate
+`aggregatePreviousNeedsAlignment`. Que las dos cosas fueran juntas es lo que prueba que fue
+deliberado: con la semana calendario como previo, `.dayOfWeek` mapea lunes↔lunes y ya no vacía
+nada, así que la premisa que sostenía el gate `.thisMonth`-only dejó de existir en ese commit.
+`0dcc828f` (mismo día) endureció el borde del lunes compartido y `96bd55fb` (18-ago) extendió el
+criterio a Distribución e Informe.
+
+**Qué manda hoy.** Recortan los períodos EN CURSO cuyo previo llega completo: `.thisMonth` (día
+equivalente) y `.thisWeek` (weekday equivalente). `.thisYear` cruza el gate pero su previo ya es
+del mismo span, así que el recorte es inocuo. No se tocan los simétricos (`.last7Days`,
+`.last30Days`, `.custom`, `.lastMonth`, `.lastYear`). **La SSOT es
+`DateAlignmentHelper.aggregatePreviousNeedsAlignment`, no una lista en un comentario**: al
+registrar esto se encontraron OCHO copias de la lista vieja repartidas por el código, los tests,
+este fichero y `qa/coverage-index.json`. Repetir el hecho es lo que hizo que ninguna se
+actualizara. Si cambias el gate, cambia el gate — y apunta a él desde donde haga falta.
+
+**Por qué importa el número.** Sin el recorte, un miércoles el hero del Panel compararía 3 días
+contra 7 y mostraría un −57 % que además se pinta de morado —«gastaste menos»— en contexto de
+gasto. El sesgo es exactamente −(1 − d/7)·100: arranca en −85,7 % cada lunes por la mañana y sólo
+dice la verdad el domingo por la noche.
+
+**Estado:** Activa. Supersede el «gotcha maestro» de [2026-07-06], que se conserva íntegro por su
+razonamiento histórico: era correcto para el árbol de julio.
 
 ### [2026-04-21] Sync Status: Banner Global vs Toolbar Indicator
 
@@ -676,7 +714,7 @@ Gotcha maestro: un App Intent background NO debe escribir al store CloudKit de l
 (Commit `8347a776`; fase 1 Records en `13f2cbb0`.) `TrendDataProcessor`, `StatisticsViewModel` y `ReportNotificationService` clasificaban por el signo del monto; ahora usan la regla canónica `TransactionClassificationLogic.isIncome` (categoría manda; signo solo fallback sin categoría) con acumulación signed (paridad `CashFlowCalculator`; reembolso reduce el bucket). Cada pantalla migra total + curva/empty-check JUNTOS para quedar autocoherente. Empty-check por actividad (≥1 TX del tipo), no por `total==0`. Gotcha maestro: la acumulación signed hace posibles buckets/curvas NEGATIVOS (reembolsos > gastos) — al tocar cualquier cálculo signed, revisar su presentación (ejes `calculateYDomain`, copy). **Estado:** Activa.
 
 ### [2026-07-06] Stats — Comparativa: KPI "período anterior" alineado a la curva MTD-vs-MTD (p20-15 completo)
-(Commits `c27448dc` fase 1 + `f779a7ab` fase 2 + D2; dos sesiones concurrentes sobre el mismo ticket.) El KPI "vs período anterior" usaba el período previo COMPLETO mientras la curva clippea al día equivalente → comparación asimétrica con signo potencialmente invertido (+48% mostrado vs ≈−27% real). Fix: `DateAlignmentHelper` puro como SSOT del pipeline (curva y KPI consumen lo mismo → no pueden divergir); fase 2 alinea los 5 VariationChips agregados del Panel y D2 las 4 variaciones del hero de Tendencias en la fuente (`InsightsCalculator`, KPI intacto — solo la variación). Gotcha maestro (convergente en ambas sesiones): el ÚNICO (período,modo) asimétrico parcial-vs-completo es `.thisMonth`+`.month` → gate `.thisMonth`-only (alinear `.thisWeek` VACIABA las chips a mitad de semana). Gotchas: `Calendar.date(from:)` normaliza por rollover (feb31→mar3) en vez de nil; `alignedEnd` debe extenderse al FIN del día equivalente (medianoche excluía TX con hora y colapsaba el día 1); 2 sesiones co-editando los mismos archivos → aislamiento por hunks inviable, una commitea el archivo completo y arrastra a la otra. **Estado:** Activa.
+(Commits `c27448dc` fase 1 + `f779a7ab` fase 2 + D2; dos sesiones concurrentes sobre el mismo ticket.) El KPI "vs período anterior" usaba el período previo COMPLETO mientras la curva clippea al día equivalente → comparación asimétrica con signo potencialmente invertido (+48% mostrado vs ≈−27% real). Fix: `DateAlignmentHelper` puro como SSOT del pipeline (curva y KPI consumen lo mismo → no pueden divergir); fase 2 alinea los 5 VariationChips agregados del Panel y D2 las 4 variaciones del hero de Tendencias en la fuente (`InsightsCalculator`, KPI intacto — solo la variación). Gotcha maestro (convergente en ambas sesiones): el ÚNICO (período,modo) asimétrico parcial-vs-completo es `.thisMonth`+`.month` → gate `.thisMonth`-only (alinear `.thisWeek` VACIABA las chips a mitad de semana). Gotchas: `Calendar.date(from:)` normaliza por rollover (feb31→mar3) en vez de nil; `alignedEnd` debe extenderse al FIN del día equivalente (medianoche excluía TX con hora y colapsaba el día 1); 2 sesiones co-editando los mismos archivos → aislamiento por hunks inviable, una commitea el archivo completo y arrastra a la otra. **Estado:** Activa, SALVO su «gotcha maestro» (el gate `.thisMonth`-only), SUPERADO por [2026-08-17]: desde ese commit `.thisWeek` también recorta. El razonamiento de julio se conserva porque era correcto para el árbol de julio.
 
 ---
 

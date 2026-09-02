@@ -400,10 +400,12 @@ struct HeroBucketsCalculatorTests {
         #expect(result == nil)
     }
 
-    /// `.thisMonth` es el único caso asimétrico parcial-vs-completo: el previo
-    /// (mes anterior COMPLETO) se trunca al día equivalente (MTD). Verifica que
-    /// arranca en el inicio del mes previo pero TERMINA antes del fin del mes
-    /// previo completo.
+    /// `.thisMonth` es asimétrico parcial-vs-completo (actual = MTD parcial;
+    /// previo = mes COMPLETO), así que el previo se trunca al día equivalente.
+    /// NO es el único caso: `.thisWeek` y `.thisYear` también pasan por el gate
+    /// (`DateAlignmentHelper.aggregatePreviousNeedsAlignment`) — ver el test de
+    /// `.thisWeek` justo debajo. Verifica que arranca en el inicio del mes previo
+    /// pero TERMINA antes del fin del mes previo completo.
     @Test func periodPreviousInterval_thisMonth_truncatesToEquivalentDay() {
         let now = date(2026, 4, 15)
         let current = DetailPeriod.thisMonth.dateInterval(now: now)
@@ -418,9 +420,19 @@ struct HeroBucketsCalculatorTests {
         #expect((result?.end ?? .distantFuture) < fullPrev.end)  // truncado (MTD)
     }
 
-    /// `.thisWeek` ya es simétrico (ventana trailing de igual duración): la
-    /// alineación es no-op → devuelve la ventana previa completa sin truncar.
-    @Test func periodPreviousInterval_thisWeek_returnsFullTrailingWindow() {
+    /// `.thisWeek` TAMBIÉN es asimétrico parcial-vs-completo: el actual va del
+    /// inicio de semana a hoy (parcial) mientras `PreviousPeriodHelper` devuelve la
+    /// semana calendario anterior ENTERA, así que el previo se trunca al weekday
+    /// equivalente (WTD-vs-WTD). Lo invirtió `f6d4101d` (2026-08-17), que en el
+    /// mismo commit sacó `.thisWeek` de la rama trailing de `.last7Days` y lo metió
+    /// en el gate; antes de esa fecha el previo SÍ era una ventana trailing de igual
+    /// duración y alinear era no-op de verdad. Sin el truncado, un miércoles se
+    /// compararían 3 días contra 7 y el chip del hero mostraría un −57 % fantasma.
+    ///
+    /// La aserción que de verdad guarda la doctrina es la PARIDAD DE DURACIÓN: no
+    /// depende del `firstWeekday` de la máquina (`calendar` es `.current`) ni del
+    /// `now` elegido. Un `#expect(result != fullPrev)` no protegería de nada.
+    @Test func periodPreviousInterval_thisWeek_truncatesToEquivalentWeekday() {
         let now = date(2026, 4, 15)
         let current = DetailPeriod.thisWeek.dateInterval(now: now)
         let fullPrev = PreviousPeriodHelper.previousInterval(for: .thisWeek, mode: .month, now: now)
@@ -429,6 +441,12 @@ struct HeroBucketsCalculatorTests {
             period: .thisWeek, currentInterval: current, now: now
         )
 
-        #expect(result == fullPrev)
+        #expect(result != nil)
+        #expect(result?.start == fullPrev.start)                 // inicio de la semana previa
+        #expect((result?.end ?? .distantFuture) < fullPrev.end)  // truncado (WTD)
+        // El invariante: la ventana previa mide lo mismo que la actual. Tolerancia
+        // de 1 h por si el calendario del runner tiene horario de verano.
+        let deltaHoras = abs((result?.duration ?? 0) - current.duration) / 3600
+        #expect(deltaHoras <= 1)
     }
 }

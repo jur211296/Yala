@@ -16,7 +16,7 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (16 entradas)
+## Índice (17 entradas)
 
 > **No hace falta leer este fichero entero** — son 176 KB. Localiza la entrada
 > aquí y salta a ella.
@@ -68,6 +68,7 @@
 > `grep` cuesta menos que el trabajo que te ahorra. El molde de marcado, cuando haya que marcar un párrafo
 > suelto, es el bloque `[STALE, medido 2026-08-03 …]` que ya está más abajo: conserva el porqué y avisa de
 > que el código se fue.
+- `—` [Nombrar un metodo de Swift Testing en -only-testing no filtra: no corre NADA y devuelve TEST SUCCEEDED](#nombrar-un-metodo-de-swift-testing-en--only-testing-no-filtra-no-corre-nada-y-devuelve-test-succeeded-2026-09-02)
 
 ## Sync de Grupos · SwiftData · CloudKit
 
@@ -296,3 +297,11 @@
   - **La regla operativa.** Para extraer una línea concreta de una salida larga, `grep` con un patrón ANCLADO a esa línea y nada más (`grep -E "Test run with [0-9]+"`), sin `sort` y sin `head`. `sort -u` reordena por bytes —y el orden deja de ser el de la ejecución—, `head -N` trunca por un límite que no tiene relación con lo que buscas, y juntos convierten «no lo encontré» en «no está». Si hay que truncar, `tail` conserva el final, que es donde los runners ponen el resumen.
   - **Y el corolario de método, hermano del de `strings` y del `find` que no casaba nada:** antes de leer una AUSENCIA como señal, haz el control positivo — corre el mismo pipe sobre un caso donde la señal SÍ está y comprueba que aparece. Aquí bastaba con el caso de una sola suite, que se corrió el mismo día y con el pipe corregido; se dio por buena la ausencia sin comparar los dos instrumentos. **Una ausencia solo es un dato si el instrumento ha demostrado que sabe encontrar la presencia.**
   - Pin: no hay test posible sobre un pipe de shell de una sesión. Lo que queda es esta entrada y la regla del `/gate`, que ya pedía la línea de conteo: el fallo no fue de la regla, fue de cómo se miró.
+
+### Nombrar un metodo de Swift Testing en -only-testing no filtra: no corre NADA y devuelve TEST SUCCEEDED (2026-09-02)
+
+- **Nombrar un método de Swift Testing en `-only-testing` no filtra: no corre NADA, y un run vacío devuelve `** TEST SUCCEEDED **` (2026-09-02).** Medido al verificar por mutación el fix del rojo de `.thisWeek`. Con `-only-testing:YalaTests/HeroBucketsCalculatorTests/periodPreviousInterval_thisWeek_truncatesToEquivalentWeekday` —el método, con el nombre exacto— la corrida termina en `TEST SUCCEEDED` **sin una sola línea `◇ Test … started`**. El mismo mutante, con `-only-testing` **a nivel de FICHERO** (`…/HeroBucketsCalculatorTests`), da `✘ … failed after 0.004 seconds with 2 issues` y `** TEST FAILED **`. La diferencia no es el mutante: es que en el primer caso no se ejecutó nada.
+  - **Por qué es peligroso justo aquí.** Una prueba de mutación se lee al revés que un test normal: **esperas rojo**, y el verde es la mala noticia. Un run vacío entrega exactamente ese verde, así que la conclusión que produce —«el mutante sobrevivió, mi test no protege»— es la que te hace ir a reescribir un test que ya estaba bien. El falso verde de un test normal te deja una red rota; éste te manda a romper la red que sí funcionaba.
+  - **Hermana de la entrada anterior**, y con el mismo corolario aplicado en el otro sentido. Allí un pipe fabricó una AUSENCIA de señal; aquí un filtro fabricó una PRESENCIA de verde. En los dos casos la salvaguarda es el **control positivo**: antes de creerte el resultado, comprueba que el instrumento sabe producir el resultado contrario. La señal barata es el **conteo** — `Test run with N tests`. Si esa línea no aparece, o N es 0, no has medido nada, y da igual lo que diga `TEST SUCCEEDED`.
+  - **La regla operativa.** Filtra por FICHERO, nunca por método, mientras el target use Swift Testing; y en toda mutación exige ver las dos corridas completas con su conteo — la que muere y la que revive. `grep -E "Test run with [0-9]+"` en las dos, y compara N, no el veredicto.
+  - Pin: no hay test posible sobre un flag de `xcodebuild` de una sesión. Lo que queda es esta entrada.

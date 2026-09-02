@@ -19,9 +19,6 @@ flotantes solo vuelven cuando el scroll se lleva la fila. Antes: aviso a Grok en
 ## Abiertos
 - **`welcome-fresh-start-alert-leaves-blank-screen`** (backlog, **high**) — «Es mi primera vez» +
   cancelar deja la app sin salida salvo matarla. Preexistente, **en producción**.
-- **`rojo-heroBuckets-thisWeek-trailing-window`** (backlog, sin dueño) — `HeroBucketsCalculatorTests`
-  1/15 en rojo: el código trunca la ventana previa de `.thisWeek` (MTD) y el test la espera entera.
-  Medido preexistente con `git stash`. Mientras siga rojo tapa regresiones nuevas del suite.
 - **`scheduled-payment-once-labeled-monthly`** (backlog, low) — badge cosmético.
 - **`AUDIT-appstore-guidelines.md`** — 3 hallazgos de riesgo de rechazo (OpenAI). De Lola.
 
@@ -31,10 +28,13 @@ flotantes solo vuelven cuando el scroll se lleva la fila. Antes: aviso a Grok en
 sigue sin `ok_`. **Cero `ok_` inventado.**
 
 ## Siguiente
-Decidir el rojo de `.thisWeek` (ventana entera o truncada) y **si el trailer `Co-Authored-By` va o
-no**: dos sesiones lo midieron hoy con resultados opuestos porque la convención se partió a mitad
-de día. Del Panel quedan dos: «Últimos registros» se sigue diciendo dos veces —el rediseño lo hace
-más visible— y bajar los nombres de fila a 15 tocaría Estadísticas.
+Commitear lo de esta sesión (sin commitear aún; `/gate` pendiente). Del Panel quedan dos:
+«Últimos registros» se sigue diciendo dos veces —el rediseño lo hace más visible— y bajar los
+nombres de fila a 15 tocaría Estadísticas. **Zanjados hoy:** el trailer `Co-Authored-By` no va, ni
+en commits ni en PR (Jürgen ratificó su regla de mayo, medida; los 11 que ya lo llevan no se
+reescriben); y el rojo de `.thisWeek` — el test era el equivocado, 15/15 en verde, ver
+`[2026-08-17]` en DECISIONS. Abierto nuevo: quinta instancia del `DateInterval` cerrado
+(`PreviousPeriodHelper:112` + `InsightsCalculator`), ticket sin crear.
 
 ## Bloqueo
 Ninguno.

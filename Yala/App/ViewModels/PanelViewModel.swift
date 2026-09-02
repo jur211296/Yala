@@ -1682,9 +1682,11 @@ final class PanelViewModel {
     }
 
     /// Transacciones del período ANTERIOR (dentro de `previousInterval`) truncadas al
-    /// mismo span de días que los datos del período ACTUAL (MTD, p20-15 fase 2). El
+    /// mismo span de días que los datos del período ACTUAL (p20-15 fase 2). El
     /// corte se deriva de `currentSource` filtrado por `natures`, que deben coincidir
-    /// con lo que la calculadora del widget cuenta. No-op salvo `.thisMonth`.
+    /// con lo que la calculadora del widget cuenta. Recorta en los períodos EN CURSO
+    /// que el gate `DateAlignmentHelper.aggregatePreviousNeedsAlignment` admite
+    /// (`.thisMonth`, `.thisWeek`, `.thisYear`); no-op en el resto.
     /// Centraliza el pre-filtro del previo (antes duplicado en los 5 widgets) para no
     /// re-driftar el criterio de qué TX entran al período anterior.
     private func alignedPreviousTransactions(
@@ -1741,7 +1743,8 @@ final class PanelViewModel {
             customRange: nil
         )
 
-        // Previo truncado MTD al día equivalente del actual (p20-15 fase 2; no-op salvo .thisMonth).
+        // Previo truncado al punto equivalente del actual; quién entra lo decide el
+        // gate `DateAlignmentHelper.aggregatePreviousNeedsAlignment` (p20-15 fase 2).
         // El corte usa `naturesFilter` (mismo que la calculadora) para no correrse con ingresos.
         let previousTransactions = alignedPreviousTransactions(
             previousInterval: previousInterval,
@@ -1816,7 +1819,8 @@ final class PanelViewModel {
             customRange: nil
         )
 
-        // Previo truncado MTD al día equivalente del actual (p20-15 fase 2; no-op salvo .thisMonth).
+        // Previo truncado al punto equivalente del actual; quién entra lo decide el
+        // gate `DateAlignmentHelper.aggregatePreviousNeedsAlignment` (p20-15 fase 2).
         // El corte usa `naturesFilter` (mismo que la calculadora) para no correrse con ingresos.
         let previousTransactions = alignedPreviousTransactions(
             previousInterval: previousInterval,
@@ -1877,7 +1881,8 @@ final class PanelViewModel {
             mode: .month,
             customRange: nil
         )
-        // Previo truncado MTD al día equivalente del actual (p20-15 fase 2; no-op salvo .thisMonth).
+        // Previo truncado al punto equivalente del actual; quién entra lo decide el
+        // gate `DateAlignmentHelper.aggregatePreviousNeedsAlignment` (p20-15 fase 2).
         // Cash flow cuenta ingreso+gasto → el corte incluye ambos (a diferencia de los widgets de gasto).
         let previousTransactions = alignedPreviousTransactions(
             previousInterval: previousInterval,
@@ -1950,7 +1955,8 @@ final class PanelViewModel {
             customRange: nil
         )
 
-        // Previo truncado MTD al día equivalente del actual (p20-15 fase 2; no-op salvo .thisMonth).
+        // Previo truncado al punto equivalente del actual; quién entra lo decide el
+        // gate `DateAlignmentHelper.aggregatePreviousNeedsAlignment` (p20-15 fase 2).
         // NeedTrendHelper cuenta solo gasto (excluye ingresos) → corte gasto-only.
         let previousTransactions = alignedPreviousTransactions(
             previousInterval: previousInterval,
@@ -2588,7 +2594,8 @@ final class PanelViewModel {
             mode: .month,
             customRange: nil
         )
-        // Previo truncado MTD al día equivalente del actual (p20-15 fase 2; no-op salvo .thisMonth).
+        // Previo truncado al punto equivalente del actual; quién entra lo decide el
+        // gate `DateAlignmentHelper.aggregatePreviousNeedsAlignment` (p20-15 fase 2).
         // TagSpendingCalculator cuenta solo gasto etiquetado → corte gasto-only
         // (residual documentado: no filtra "tiene tag").
         let previousTransactions = alignedPreviousTransactions(

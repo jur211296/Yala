@@ -213,11 +213,14 @@ struct InsightsCalculator {
         // Transactions in current period
         let periodTxns = filtered.filter { interval.contains($0.date) }
 
-        // Previous period for variations. Se alinea a MTD-vs-MTD para .thisMonth
-        // en modo .month (único caso parcial-vs-completo, D2 de p20-15): el previo
-        // se trunca al día equivalente del actual, así las 4 variaciones (balance/
-        // ingreso/gasto/prom. diario) comparan a-la-fecha en vez de MTD-parcial vs
-        // mes-completo. `prevInterval` COMPLETO se conserva SOLO para el label.
+        // Previous period for variations. El previo se trunca al punto equivalente
+        // del actual para los períodos EN CURSO cuyo previo llega completo —
+        // .thisMonth (día equivalente) y .thisWeek (weekday equivalente); .thisYear
+        // cruza el gate pero su previo ya es del mismo span—, así las 4 variaciones
+        // (balance/ingreso/gasto/prom. diario) comparan a-la-fecha en vez de parcial
+        // contra completo. Quién entra lo decide
+        // `DateAlignmentHelper.aggregatePreviousNeedsAlignment`, no esta lista.
+        // `prevInterval` COMPLETO se conserva SOLO para el label.
         let prevInterval = PreviousPeriodHelper.previousInterval(for: period, mode: comparisonMode, customRange: customRange)
         let alignedPrevInterval = DateAlignmentHelper.alignedPreviousInterval(
             currentInterval: interval,

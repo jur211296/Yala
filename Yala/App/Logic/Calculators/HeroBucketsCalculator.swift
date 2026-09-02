@@ -114,14 +114,30 @@ enum HeroBucketsCalculator {
 
     /// Ventana previa COMPARABLE al `currentInterval` del período seleccionado,
     /// para el chip "vs período anterior" del hero en modo Solo Gastos.
-    /// MTD-alineada: el ÚNICO caso asimétrico parcial-vs-completo es `.thisMonth`
-    /// (`PreviousPeriodHelper` devuelve el mes anterior COMPLETO) y se trunca al
-    /// día equivalente vía `DateAlignmentHelper.alignedPreviousInterval`; el resto
-    /// ya es simétrico (ventana trailing de igual duración en `.thisWeek`/
-    /// `.last7Days`/`.last30Days`/`.custom`, YTD-vs-YTD en `.thisYear`/`.lastYear`
-    /// vía modo `.year`, closed-vs-closed en `.lastMonth`) → el helper es no-op ahí.
-    /// `nil` para `.allTime` (sin previo acotado → sin comparación). `now`/`calendar`
-    /// inyectables para determinismo en tests.
+    ///
+    /// Quién manda de verdad aquí es el gate `aggregatePreviousNeedsAlignment` de
+    /// `DateAlignmentHelper` — consúltalo ahí, no confíes en esta lista. Hoy:
+    ///
+    /// - **Se truncan** los períodos EN CURSO cuyo previo llega completo:
+    ///   `.thisMonth` (previo = mes anterior entero → se corta al día equivalente,
+    ///   MTD-vs-MTD) y `.thisWeek` (previo = semana calendario anterior entera → se
+    ///   corta al weekday equivalente, WTD-vs-WTD). `.thisYear` cruza el gate pero
+    ///   sale no-op: su previo ya es YTD simétrico.
+    /// - **No se tocan** los que ya son simétricos: `.last7Days`/`.last30Days`/
+    ///   `.custom` (ventana trailing de igual duración) y `.lastMonth`/`.lastYear`
+    ///   (cerrado contra cerrado).
+    /// - `nil` para `.allTime` (sin previo acotado → sin comparación).
+    ///
+    /// OJO: `.lastYear` recibe modo `.month`, no `.year` — el `mode` de abajo sólo
+    /// separa `.thisYear`. Hoy da igual (ambos modos caen en
+    /// `sameIntervalPreviousYear` y el gate devuelve false), pero si alguna vez se
+    /// mete `.lastYear` en el gate, la estrategia sería `.proportional` en vez de
+    /// `.calendarYear`.
+    ///
+    /// Hasta `f6d4101d` (2026-08-17) `.thisWeek` tenía ventana trailing y aquí no se
+    /// tocaba; esa frase sobrevivió en este docstring dos semanas y media y dejó un
+    /// test rojo afirmándola. Si cambias el gate, cambia también este párrafo.
+    /// `now`/`calendar` inyectables para determinismo en tests.
     static func periodPreviousInterval(
         period: DetailPeriod,
         currentInterval: DateInterval,
