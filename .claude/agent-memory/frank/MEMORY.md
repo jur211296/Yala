@@ -5,7 +5,7 @@
 - [Push: solo lo de la sesión](feedback_push_solo_lo_de_la_sesion.md) — lo pendiente de otros se deja y lo sube su agente; el aviso del arranque es info, no tarea.
 - [Levanta sus propias reglas](feedback_jurgen_levanta_sus_reglas.md) — si te pide algo que un default tuyo prohíbe, se hace y se dice; y la medición que contradice su propuesta la quiere ANTES.
 - [Las tarjetas blancas son identidad](feedback_tarjetas_blancas_identidad.md) — el contraste fondo↔tarjeta es de Yala; de una app ajena se trae la disciplina, no sus superficies.
-- [Trailer de commit: gana lo medido](feedback_trailer_commit_medido.md) — la nota de mayo falla en los commits (6/6 lo llevan) y acierta en los PR (0/4). Mide.
+- [Trailer de commit: nunca en Yala](feedback_trailer_commit_medido.md) — sin `Co-Authored-By` ni «Generated with», ratificado el 2026-09-02; y cómo una medición mal hecha casi tumba la regla.
 
 ## Cómo guío yo el trabajo manual
 - [Generar y persistir en un solo gesto](feedback_generar_y_persistir_credenciales.md) — una credencial nunca vive solo en pantalla; y verifica si una rotación se aplicó antes de rehacerla.
