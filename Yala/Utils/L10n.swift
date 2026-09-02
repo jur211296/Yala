@@ -811,14 +811,6 @@ enum L10n {
         /// con cifras concretas sube al protagonista. El chip conserva el sufijo
         /// de mes sólo durante la primera semana.
         enum Hero {
-            // MARK: Chip (greeting line)
-            static func chipMonthStart(userName: String, month: String) -> String {
-                String(format: ls("panel.hero.chip.monthStart %@ %@", comment: "Hero chip — first week, greets user + empezamos <mes>"), userName, month)
-            }
-            static func chipDefault(userName: String) -> String {
-                String(format: ls("panel.hero.chip.default %@", comment: "Hero chip — default greeting, greets user"), userName)
-            }
-
             // MARK: Rule-based KPI fallback (aiSubtitle nil — Free / sin consent / offline / cache miss).
             // Los montos llegan con `**` para render bold via `AttributedString(markdown:)`.
             static func kpiMonthStart(income: String, daysRemaining: Int) -> String {
@@ -860,6 +852,11 @@ enum L10n {
         static func title(_ name: String) -> String {
             String(format: ls("panel.title", comment: ""), name)
         }
+        /// Píldora de IA en la fila de acciones del Panel. Clave propia y no la
+        /// de `cashFlowPlan`: misma palabra hoy, pero acoplar dos pantallas por
+        /// un literal es cómo acaban cambiando juntas sin querer.
+        static var aiPill: String { ls("panel.aiPill", comment: "Panel quick actions — short label for the AI assistant pill (IA/AI/KI per locale)") }
+
         static var fabVoice: String {
             ls("panel.fabVoice", comment: "")
         }

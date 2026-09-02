@@ -566,8 +566,19 @@ enum DS {
         // minimumScaleFactor(0.7) en AmountText (no Dynamic Type).
         /// Hero amount integer — monto protagonista (Panel hero, Stats heroes, success screens).
         static let heroAmount = Font.system(size: 44, weight: .semibold)
+
+        /// Cifra del hero DEL PANEL. Vive aparte de `heroAmount` (44) a
+        /// propósito: ese token lo comparten 14 ficheros —Estadísticas, Bandeja,
+        /// Grupos, Transacciones, Planificación, Favoritos— y encogerlo ahí
+        /// cambiaría la cifra grande de toda la app. En el Panel el hero compite
+        /// con trece widgets debajo y 44 pt se comen el aire de todo lo que sigue.
+        static let panelHeroAmount = Font.system(size: 36, weight: .semibold)
         /// Hero amount secondary — symbol/decimal del hero (20pt regular).
         static let heroAmountSecondary = Font.system(size: 20, weight: .regular)
+
+        /// Símbolo y decimales de `panelHeroAmount`. Mantiene la misma
+        /// proporción respecto al entero que la pareja `heroAmount`/`Secondary`.
+        static let panelHeroAmountSecondary = Font.system(size: 17, weight: .regular)
     }
 
     // MARK: - Sizing

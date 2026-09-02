@@ -115,9 +115,6 @@
 
 // MARK: - Panel Hero (PP2-01)
 
-// Chip — saúda pelo nome; o emoji golden vive no ícone SF Symbol
-"panel.hero.chip.monthStart %@ %@" = "Olá, %1$@ — começamos %2$@";
-"panel.hero.chip.default %@" = "Olá, %@";
 
 // KPI fallback (aiSubtitle ocupa o slot de KPI quando disponível)
 // Markdown bold (**valor**) renderiza via AttributedString(markdown:)
@@ -5497,3 +5494,6 @@
 
 /* Apple confirmó la compra pero el derecho Pro no quedó activo */
 "subscription.purchaseNotActivated" = "O pagamento foi confirmado, mas o Yala Pro ainda não está ativo. Tente Restaurar compras.";
+
+/* Panel quick actions — short label for the AI assistant pill (IA/AI/KI per locale) */
+"panel.aiPill" = "IA";

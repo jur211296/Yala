@@ -41,7 +41,18 @@ final class EdgeCasesUITests: XCTestCase {
         app.launchForUITest()  // seed minimal (cuentas + subcategorías)
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
-        app.buttons["fab_new_transaction"].tap()
+        // El MENÚ del FAB (manual/voz/imagen) sigue siendo cosa del flotante: la
+        // fila del hero lleva a cada entrada directamente, sin desplegar. Así que
+        // aquí se baja hasta el FAB en vez de cambiar de camino, que perdería
+        // justo lo que este test cubre.
+        let fabMenu = app.buttons["fab_new_transaction"]
+        var intentos = 0
+        while !fabMenu.isHittable && intentos < 14 {
+            app.swipeUp()
+            intentos += 1
+        }
+        XCTAssertTrue(fabMenu.waitForExistence(timeout: 10), "No apareció el FAB tras bajar por el Panel.")
+        fabMenu.tap()
         let manual = app.buttons["fab_manual"]
         XCTAssertTrue(manual.waitForExistence(timeout: 5), "No se expandió el menú del FAB (fab_manual).")
         manual.tap()
@@ -72,6 +83,13 @@ final class EdgeCasesUITests: XCTestCase {
         // de abajo pasaría en verde con el sheet aún puesto.
         app.dismissTransactionSuccess()
 
+        // Misma red del 2026-08-04: afirmar el regreso al Panel con el sheet aún
+        // puesto daba verde en falso. El testigo sigue siendo el FLOTANTE y no la
+        // fila del hero — medido el 2026-09-02: al cerrar el éxito el Panel NO
+        // rebobina, se queda donde lo dejó el scroll de arriba, así que la fila
+        // está fuera de pantalla (existe en el árbol pero no es hittable) y el
+        // flotante sí se ve. La primera versión de este arreglo dio por hecho lo
+        // contrario y puso el test en rojo.
         let fab = app.buttons["fab_new_transaction"]
         XCTAssertTrue(
             fab.waitForExistence(timeout: 10),

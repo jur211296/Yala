@@ -211,7 +211,12 @@ struct RecentRecordsWidget: View {
     private func amountColor(for record: TransactionItem) -> Color {
         if record.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer { return Color(.label) }
         let isIncome = record.category?.isIncome ?? (record.amount >= 0)
-        return isIncome ? Color.electricIndigo : Color.hotPink
+        // Sólo el ingreso lleva color. El gasto es el caso mayoritario en esta
+        // lista: teñirlo pinta la pantalla entera y el color deja de avisar de
+        // nada. Además ninguno de los dos tonos anteriores llegaba al mínimo AA
+        // sobre tarjeta blanca (#FF0080 = 3,77 · #6366F1 = 4,47), y el símbolo
+        // y los decimales que `AmountText` pinta al 60 % los dejaban en ~2,5.
+        return isIncome ? Color.incomeAmount : Color.primary
     }
 
     private func shortDateFormat(_ date: Date) -> String {

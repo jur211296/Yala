@@ -47,9 +47,13 @@ final class PanelDashboardUITests: XCTestCase {
         app.launchForUITest()
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
+        // Prueba de "llegamos al dashboard". Desde 2026-09-02 ya no la da el FAB:
+        // con el Panel arriba del todo los flotantes están ocultos y las acciones
+        // viven en la fila del hero. `panel_action_new` es el elemento equivalente
+        // — y además SIEMPRE visible en ese estado, así que es mejor testigo.
         XCTAssertTrue(
-            app.buttons["fab_new_transaction"].waitForExistence(timeout: 10),
-            "No apareció el FAB del Panel — la app no llegó al dashboard."
+            app.buttons["panel_action_new"].waitForExistence(timeout: 10),
+            "No apareció la fila de acciones del Panel — la app no llegó al dashboard."
         )
 
         let configButton = app.buttons["panel_sections_config"]

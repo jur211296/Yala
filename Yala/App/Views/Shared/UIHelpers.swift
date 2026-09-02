@@ -239,6 +239,13 @@ extension Color {
     /// Priority Nature: Softer Cyan for „Priority" expenses.
     static let priorityNeed = Color(hex: "00C2CB")
 
+    /// Turquesa oscurecido para el MONTO de un ingreso sobre tarjeta blanca.
+    /// `priorityNeed` (#00C2CB) sólo alcanza 2,19 de contraste sobre blanco y
+    /// no llega al mínimo AA de 4,5; éste da 5,1 conservando el matiz. Medido
+    /// el 2026-09-02. Para superficies rellenas (chips, barras, anillos) sigue
+    /// usándose `priorityNeed`: el requisito de contraste es del TEXTO.
+    static let incomeAmount = Color(hex: "0F7A80")
+
     // MARK: - Need Colors (Distinct from brand colors)
 
     /// Essential Need: Warm amber for basic necessities

@@ -62,8 +62,20 @@ final class VoiceImageSettingsFabUITests: XCTestCase {
         app.launchForUITest(pro: false)
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
+        // Desde 2026-09-02 el FAB NO está a la vista con el Panel arriba del todo:
+        // las acciones viven en la fila del hero (`panel_quick_actions`) y los
+        // flotantes sólo entran cuando el scroll se la lleva. Hay que bajar para
+        // llegar a ellos — el molde del `scrollTo` de `YalaAccountUITests`.
         let fab = app.buttons["fab_new_transaction"]
-        XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció el FAB principal.")
+        var intentos = 0
+        while !fab.isHittable && intentos < 14 {
+            app.swipeUp()
+            intentos += 1
+        }
+        XCTAssertTrue(
+            fab.waitForExistence(timeout: 10),
+            "No apareció el FAB principal tras bajar por el Panel."
+        )
         fab.tap()
 
         XCTAssertTrue(

@@ -95,7 +95,10 @@ struct PanelPanoramaSection: View {
             title: L10n.Panel.panoramaTitle,
             subtitleAttributed: accountsSummaryAttributed,
             isExpanded: expanded,
-            titleFont: DS.Typography.subheadlineEmphasized,
+            // `title3` como en `PanelSection`: «Tu panorama» es un título de
+            // section, no de widget, y con el resto ya a 20 pt quedarse en 15
+            // lo dejaba como el único rótulo pequeño de la columna.
+            titleFont: DS.Typography.title3,
             subtitleFont: DS.Typography.subheadline,
             accessibilityValue: accessibilityValue(expanded: expanded),
             accessibilityHint: expanded ? L10n.Panel.panoramaCollapse : L10n.Panel.panoramaExpand
