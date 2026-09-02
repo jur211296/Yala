@@ -383,6 +383,12 @@ struct GroupExpenseFormView: View {
             )
         }
         .buttonStyle(.plain)
+        // El chip no era alcanzable desde XCUITest, y sin él la FECHA del prellenado no se podía
+        // afirmar: es el campo del bug que `GroupExpensePrefillTemplate.date` existe para impedir
+        // (un borrador de hace tres días convirtiéndose en un gasto fechado HOY). El label expone
+        // `dateChipText`, así que un test puede distinguir «Hoy» de una fecha real.
+        .accessibilityIdentifier("group_expense_date_chip")
+        .accessibilityLabel(dateChipText)
     }
 
     private var dateChipText: String {

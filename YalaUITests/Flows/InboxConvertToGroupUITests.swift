@@ -113,4 +113,64 @@ final class InboxConvertToGroupUITests: XCTestCase {
             "El draft convertido volvió a ofrecer Convertir (sigue siendo un draft personal manual)."
         )
     }
+
+    /// La conversión conserva la FECHA del borrador, no la del día en que se convierte.
+    ///
+    /// Por qué existe este test y no basta con el de arriba: el bug (un borrador de hace tres días
+    /// produciendo un gasto fechado HOY) se arregló el 2026-08-14 dando a
+    /// `GroupExpensePrefillTemplate` un campo `date` SIN valor por defecto — a propósito, porque un
+    /// default `.now` reintroduce el agujero **en silencio** para cualquier productor nuevo. Ese
+    /// silencio es justo lo que un test puede romper y una revisión de código no.
+    ///
+    /// Hasta el 2026-09-02 no era comprobable: `DevSeedDrafts` fechaba los DOS borradores en `.now`,
+    /// así que el fixture no discriminaba y el AC solo estaba «medido en el código». El seam
+    /// `DevSeedDrafts.draftBDaysInThePast` hace nacer el borrador B en el pasado y lo vuelve
+    /// afirmable.
+    func test_convertDraftToGroupExpense_preservesDraftDate() throws {
+        let app = XCUIApplication()
+        app.launchForUITest(pro: true, seed: "grupos-invitado")
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        openInbox(app)
+
+        // El borrador B es el que nace con fecha pasada (el A nace hoy y NO discrimina).
+        let rowB = app.buttons["inbox_draft_row_\(draftB)"]
+        XCTAssertTrue(rowB.waitForExistence(timeout: 5), "No apareció el draft con fecha pasada.")
+        rowB.tap()
+
+        let convertButton = app.buttons["inbox_convert_to_shared_button"]
+        XCTAssertTrue(convertButton.waitForExistence(timeout: 5), "No apareció el botón Convertir a gasto compartido.")
+        convertButton.tap()
+
+        XCTAssertTrue(
+            app.textFields["group_expense_amount"].waitForExistence(timeout: 15),
+            "No montó el form de gasto de grupo tras convertir (transición del sheet)."
+        )
+
+        // El chip formatea con `.dateTime.day().month(.abbreviated)` salvo hoy/ayer, que rinden
+        // «Hoy»/«Ayer». Con el borrador tres días atrás nunca cae en esos dos casos ⇒ si la
+        // conversión perdiera la fecha, el chip diría «Hoy» y esta igualdad fallaría.
+        //
+        // El 3 espeja `DevSeedDrafts.draftBDaysInThePast`, que vive en el target de la app y no es
+        // visible desde aquí. Si alguien cambia esa constante este test rompe: es lo correcto —
+        // romper avisa, y el mensaje dice dónde mirar.
+        let expectedDate = try XCTUnwrap(
+            Calendar.current.date(byAdding: .day, value: -3, to: Date.now),
+            "No se pudo construir la fecha esperada a partir de hoy."
+        )
+        let expected = expectedDate.formatted(.dateTime.day().month(.abbreviated))
+
+        let dateChip = app.buttons["group_expense_date_chip"]
+        XCTAssertTrue(dateChip.waitForExistence(timeout: 5), "No apareció el chip de fecha del form de grupo.")
+        XCTAssertEqual(
+            dateChip.label,
+            expected,
+            """
+            El form de conversión no conservó la fecha del borrador (esperado «\(expected)», \
+            visto «\(dateChip.label)»). Si dice «Hoy», ha vuelto el bug de 2026-08-14: revisa que \
+            los productores de GroupExpensePrefillTemplate sigan pasando `draft.effectiveDate` y \
+            que nadie haya dado a `date` un valor por defecto.
+            """
+        )
+    }
 }
