@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (80 entradas)
+## Índice (81 entradas)
 
-> **No hace falta leer este fichero entero** — son 225 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 228 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-09-02` [Panel — la jerarquía manda, el color informa y las tarjetas se quedan](#2026-09-02-panel--la-jerarqua-manda-el-color-informa-y-las-tarjetas-se-quedan)
 - `2026-08-31` [El repo recibe /abrir, /higiene y reorg_docs; lo demás del estándar de casa no aplica](#2026-08-31-el-repo-recibe-abrir-higiene-y-reorgdocs-lo-dems-del-estndar-de-casa-no-aplica)
 - `2026-08-30` [Frank es el agente de Yala; el gate pasa a hook de git](#2026-08-30-frank-es-el-agente-de-yala-el-gate-pasa-a-hook-de-git)
 - `2026-08-29` [Los roles de Frank pasan a Claude](#2026-08-29-los-roles-de-frank-pasan-a-claude)
@@ -24,8 +25,8 @@
 - `2026-07-01` [Groups — notificaciones filtradas por participación + copy con voz de marca](#2026-07-01-groups--notificaciones-filtradas-por-participacin--copy-con-voz-de-marca)
 - `2026-07-01` [Groups — pagos planificados de grupo (gasto compartido recurrente)](#2026-07-01-groups--pagos-planificados-de-grupo-gasto-compartido-recurrente)
 - `2026-06-30` [Personalización — toggle "Iconos coloridos" gobierna también "Más"](#2026-06-30-personalizacin--toggle-iconos-coloridos-gobierna-tambin-ms)
-- `2026-06-28` [..06-30] Groups — sync de "Solo Grupos" no bajaba cambios de otros miembros](#2026-06-2806-30-groups--sync-de-solo-grupos-no-bajaba-cambios-de-otros-miembros)
 - `2026-06-28` [Groups — rediseño del split de gastos estilo Splitwise](#2026-06-28-groups--rediseo-del-split-de-gastos-estilo-splitwise)
+- `2026-06-28` [..06-30] Groups — sync de "Solo Grupos" no bajaba cambios de otros miembros](#2026-06-2806-30-groups--sync-de-solo-grupos-no-bajaba-cambios-de-otros-miembros)
 - `2026-06-24` [Rediseño Welcome → Restore → Onboarding + invitaciones (6 commits)](#2026-06-24-rediseo-welcome--restore--onboarding--invitaciones-6-commits)
 - `2026-06-19` [..06-22] Groups — saga del crash-loop de sync en restore de iCloud (5 intentos, CERRADA en build 32)](#2026-06-1906-22-groups--saga-del-crash-loop-de-sync-en-restore-de-icloud-5-intentos-cerrada-en-build-32)
 - `2026-06-19` [Fix identity UUIDs colapsados tras restore lento de iCloud (Tag.id/Account.shortcutID/Subcategory.sh](#2026-06-19-fix-identity-uuids-colapsados-tras-restore-lento-de-icloud-tagidaccountshortcutidsubcategoryshortcutid)
@@ -50,16 +51,16 @@
 - `2026-05-10` [..05-11] Onboarding restyle — 5 iteraciones de QA visual (iter1-iter5)](#2026-05-1005-11-onboarding-restyle--5-iteraciones-de-qa-visual-iter1-iter5)
 - `2026-05-09` [Onboarding completo restyling — Welcome Hero/Chooser + Yala AI + 8 steps](#2026-05-09-onboarding-completo-restyling--welcome-herochooser--yala-ai--8-steps)
 - `2026-05-09` [Fix bug deeplinks a tabs ocultos en "Más" — centralizar `selectMainTab`](#2026-05-09-fix-bug-deeplinks-a-tabs-ocultos-en-ms--centralizar-selectmaintab)
+- `2026-05-08` [Fix subcategorías vacías en Grupos + FullModeActivation rediseñado](#2026-05-08-fix-subcategoras-vacas-en-grupos--fullmodeactivation-rediseado)
 - `2026-05-08` [Yala AI Onboarding — tutorial de 4 pasos post-consent](#2026-05-08-yala-ai-onboarding--tutorial-de-4-pasos-post-consent)
 - `2026-05-08` [Groups Pulido — Sprint Pulido 2 (9 bugs UX) + Sprint Pulido 3 (cierre diferidos)](#2026-05-08-groups-pulido--sprint-pulido-2-9-bugs-ux--sprint-pulido-3-cierre-diferidos)
-- `2026-05-08` [Fix subcategorías vacías en Grupos + FullModeActivation rediseñado](#2026-05-08-fix-subcategoras-vacas-en-grupos--fullmodeactivation-rediseado)
 - `2026-05-07` [A4 v3.2 — Welcome Hero + Chooser fix unificado (Sprint 2/2.1 polish visual)](#2026-05-07-a4-v32--welcome-hero--chooser-fix-unificado-sprint-221-polish-visual)
 - `2026-05-07` [Cleanup sistémico de duplicados CloudKit (TODO #10)](#2026-05-07-cleanup-sistmico-de-duplicados-cloudkit-todo-10)
 - `2026-05-07` [A4 v3.2 — Fix P0 #2 (nudge dormant sin grupos) + #6 (Welcome Hero residual tras reinstall)](#2026-05-07-a4-v32--fix-p0-2-nudge-dormant-sin-grupos--6-welcome-hero-residual-tras-reinstall)
 - `2026-05-06` [A4 — Landing + AASA + Welcome Chooser (cierra Fase A del épico Grupos)](#2026-05-06-a4--landing--aasa--welcome-chooser-cierra-fase-a-del-pico-grupos)
+- `2026-05-05` [A0-Bridge — rediseño completo del bridge SplitExpense ↔ TransactionItem (modelo M5)](#2026-05-05-a0-bridge--rediseo-completo-del-bridge-splitexpense--transactionitem-modelo-m5)
 - `2026-05-05` [A0-Bridge V2.0 — completa items P0+P1 diferidos](#2026-05-05-a0-bridge-v20--completa-items-p0p1-diferidos)
 - `2026-05-05` [Groups Pulido Final — Subset 3 (A6/A7/A8)](#2026-05-05-groups-pulido-final--subset-3-a6a7a8)
-- `2026-05-05` [A0-Bridge — rediseño completo del bridge SplitExpense ↔ TransactionItem (modelo M5)](#2026-05-05-a0-bridge--rediseo-completo-del-bridge-splitexpense--transactionitem-modelo-m5)
 - `2026-05-04` [Groups Pulido Final — Subset 2 (A9/A10/A12/A13)](#2026-05-04-groups-pulido-final--subset-2-a9a10a12a13)
 - `2026-04-28` [Traducciones reales — 4 locales completos (nl, pl, zh-Hans, ja)](#2026-04-28-traducciones-reales--4-locales-completos-nl-pl-zh-hans-ja)
 - `2026-04-28` [3 fixes runtime post-QA chat-registrar-transacciones](#2026-04-28-3-fixes-runtime-post-qa-chat-registrar-transacciones)
@@ -67,17 +68,17 @@
 - `2026-04-27` [Chat → Registrar transacciones (Opción C híbrida)](#2026-04-27-chat--registrar-transacciones-opcin-c-hbrida)
 - `2026-04-26` [Yala IA — pivot a context-rich (Opción B)](#2026-04-26-yala-ia--pivot-a-context-rich-opcin-b)
 - `2026-04-25` [AI toggles removal completo](#2026-04-25-ai-toggles-removal-completo)
-- `2026-04-24` [PP2-06d densidad CashFlow + Needs `.small`](#2026-04-24-pp2-06d-densidad-cashflow--needs-small)
 - `2026-04-24` [PP2-06c widgets `.small` chart-based](#2026-04-24-pp2-06c-widgets-small-chart-based)
 - `2026-04-24` [PP2-07 polish + Hero rediseñado (cierre épico Panel Polish #2)](#2026-04-24-pp2-07-polish--hero-rediseado-cierre-pico-panel-polish-2)
+- `2026-04-24` [PP2-06d densidad CashFlow + Needs `.small`](#2026-04-24-pp2-06d-densidad-cashflow--needs-small)
+- `2026-04-22` [PP2-03 Chrome Compacto de Widgets](#2026-04-22-pp2-03-chrome-compacto-de-widgets)
 - `2026-04-22` [PP2-01 Hero Compacto](#2026-04-22-pp2-01-hero-compacto)
 - `2026-04-22` [PP2-05 tamaño `.small` + pilotos](#2026-04-22-pp2-05-tamao-small--pilotos)
-- `2026-04-22` [PP2-03 Chrome Compacto de Widgets](#2026-04-22-pp2-03-chrome-compacto-de-widgets)
 - `2026-04-22` [Refactor consent/feature AI Insights](#2026-04-22-refactor-consentfeature-ai-insights)
 - `2026-04-21` [Sync Status: Banner Global vs Toolbar Indicator](#2026-04-21-sync-status-banner-global-vs-toolbar-indicator)
 - `2026-04-21` [Sync silencioso por defecto + banner pill global](#2026-04-21-sync-silencioso-por-defecto--banner-pill-global)
-- `2026-04-16` [..04-20] Épico Panel 2.0 (P20-01..P20-11)](#2026-04-1604-20-pico-panel-20-p20-01p20-11)
 - `2026-04-16` [containerRelativeFrame deadlock en ScrollView vertical](#2026-04-16-containerrelativeframe-deadlock-en-scrollview-vertical)
+- `2026-04-16` [..04-20] Épico Panel 2.0 (P20-01..P20-11)](#2026-04-1604-20-pico-panel-20-p20-01p20-11)
 - `2026-04-09` [GC-12: Permisos de grupo y flujo de invitación (2026-04-09)](#gc-12-permisos-de-grupo-y-flujo-de-invitacin-2026-04-09)
 - `2026-03-25` [Mindset onboarding: cuenta única = patrimonial, separadas = cashFlow](#2026-03-25-mindset-onboarding-cuenta-nica--patrimonial-separadas--cashflow)
 - `2026-03-05` [Filtros Excluir: Income/Expense siempre usa semántica de inclusión](#2026-03-05-filtros-excluir-incomeexpense-siempre-usa-semntica-de-inclusin)
@@ -106,6 +107,55 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-09-02] Panel — la jerarquía manda, el color informa y las tarjetas se quedan
+
+**Contexto.** Sesión de diseño comparando el Panel con el inicio de Wise, sobre pantallazos que
+trajo el owner. Lo medido tumbó la hipótesis de partida: el margen lateral era **idéntico** en las
+dos apps (16 pt), así que el problema no era el espacio. Era que **la jerarquía iba al revés** —
+`PanelSection` y las cabeceras de widget usaban el MISMO token (`subheadlineEmphasized`) y el
+nombre de la fila, en `headline`, era el rótulo mayor de la pantalla— y que el aire estaba
+invertido: 12 pt entre secciones contra 16 del título a su contenido, así que por proximidad cada
+título se leía como pie del bloque anterior.
+
+**Decisión.** Cuatro, y las cuatro tienen un porqué que sobrevive a quien las lea sin contexto.
+
+**1. Las tarjetas blancas sobre fondo no-blanco NO se tocan.** Wise deja sus listas desnudas y se
+propuso copiarlo; el owner lo vetó: ese contraste es identidad de Yala. De una app de referencia se
+trae la **disciplina** —un color, un tamaño de título constante, un ritmo de aire—, nunca sus
+superficies ni su paleta. La restricción no costó nada: jerarquía y aire se arreglaron enteros sin
+tocar una sola tarjeta.
+
+**2. El GASTO no lleva color; solo el ingreso.** Es lo contrario de lo que había y se puede leer
+como un olvido, así que queda escrito. Dos motivos. Uno de diseño: casi todo lo que se registra son
+gastos, y teñir el caso mayoritario pinta la pantalla entera y deja al color sin nada que avisar —
+Wise colorea solo lo que entra. Uno duro: **ninguno de los cinco tonos de la paleta llega al mínimo
+AA de 4,5 sobre tarjeta blanca** (`#FF0080` 3,77 · `#6366F1` 4,47 · `#00C2CB` 2,19 · `#F59E0B` 2,15
+· `#FB7185` 2,69), y el símbolo y los decimales, que `AmountText` pinta al 60 % de opacidad, caían a
+~2,5. El ingreso usa `Color.incomeAmount` (`#0F7A80`, contraste 5,1). **El requisito de contraste es
+del TEXTO**: en superficies rellenas —chips, barras, anillos— se sigue usando la paleta de siempre.
+
+**3. El color de categoría se queda, pero solo en el icono.** No se pasa a monocromo: el color de
+categoría es información y engancha con las tartas de Distribución y con Registros. Lo que sobra es
+repetirlo — medido, **las barras eran el 47 % de la superficie de color saturado de la tarjeta y los
+iconos el 35 %**, y la barra no identifica nada que el icono no haya dicho ya. Al 22 % de opacidad
+conserva la asociación y baja el color un **60 %** con los mismos datos.
+
+**4. Los botones flotantes aparecen por scroll, no siempre.** Las acciones viven ahora en una fila
+bajo la cifra del hero (`PanelQuickActionsRow`) y `FABStackView` vuelve cuando el scroll se lleva esa
+fila, con dos umbrales e histéresis. **No se copió a Wise del todo, y esto es lo que hay que saber
+antes de "simplificarlo"**: ellos pueden dejar las acciones arriba porque su pantalla se acaba en
+cuatro bloques; el Panel son cuatro pantallas de scroll con trece widgets, y obligar a subir del
+todo para registrar un gasto se paga a diario. El flotante también se muestra mientras corre el tour
+de Pro, cuyos dos pasos lo señalan con el Panel arriba.
+
+**Lo que NO entró, a propósito.** «Últimos registros» se sigue diciendo dos veces —como sección y
+como widget— y el rediseño lo hace más visible; y bajar los nombres de fila de 17 a 15 pt tocaría 14
+ficheros, tres de ellos compartidos con Estadísticas, que nadie pidió cambiar.
+
+**Rastro.** PR #61 (`ad07ceca`, `a4445a26`). La cifra del hero usa token propio del Panel
+(`panelHeroAmount`, 36) porque `heroAmount` lo comparten 14 ficheros y encogerlo ahí cambiaría la
+app entera.
 
 ### [2026-08-31] El repo recibe /abrir, /higiene y reorg_docs; lo demás del estándar de casa no aplica
 

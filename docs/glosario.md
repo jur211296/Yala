@@ -37,10 +37,10 @@
 
 <!-- GLOSARIO:generado:inicio - no editar a mano -->
 
-## Dónde se decide cada término (145)
+## Dónde se decide cada término (149)
 
 > **No leas este bloque entero** — está ordenado alfabéticamente para buscar dentro
-> (`grep -i termino docs/glosario.md`), no para leerse. Sale de las 78 decisiones del
+> (`grep -i termino docs/glosario.md`), no para leerse. Sale de las 81 decisiones del
 > repo con `python3 scripts/glosario.py --repo . --apply`, así que **no se edita a mano**:
 > lo que escribas aquí se pierde en la siguiente regeneración. La parte que se mantiene
 > a mano es la de arriba. Un término marcado *(histórico)* solo vive en decisiones
@@ -50,7 +50,7 @@
 - **AI** — [2026-04-22](docs/DECISIONS.md#2026-04-22-refactor-consentfeature-ai-insights), [2026-04-25](docs/DECISIONS.md#2026-04-25-ai-toggles-removal-completo), [2026-05-08](docs/DECISIONS.md#2026-05-08-yala-ai-onboarding--tutorial-de-4-pasos-post-consent), [2026-05-09](docs/DECISIONS.md#2026-05-09-onboarding-completo-restyling--welcome-herochooser--yala-ai--8-steps), [2026-05-17](docs/DECISIONS.md#2026-05-17-panel-polish--amounttext-api-simplificada-cierre-de-sprint)
 - **AISLADO** — [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-cierre-ltimas-5-entradas-de-la-fase-205)
 - **AJUSTES** — [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-cierre-ltimas-5-entradas-de-la-fase-205)
-- **AmountText** — [2026-05-17](docs/DECISIONS.md#2026-05-17-panel-polish--amounttext-api-simplificada-cierre-de-sprint)
+- **AmountText** — [2026-09-02](docs/DECISIONS.md#2026-09-02-panel--la-jerarqua-manda-el-color-informa-y-las-tarjetas-se-quedan), [2026-05-17](docs/DECISIONS.md#2026-05-17-panel-polish--amounttext-api-simplificada-cierre-de-sprint)
 - **API** — [2026-08-28](docs/DECISIONS.md#2026-08-28-ci-la-suite-de-simulador-solo-corre-si-el-diff-puede-afectarla), [2026-05-06](docs/DECISIONS.md#2026-05-06-a4--landing--aasa--welcome-chooser-cierra-fase-a-del-pico-grupos), [2026-05-17](docs/DECISIONS.md#2026-05-17-panel-polish--amounttext-api-simplificada-cierre-de-sprint), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
 - **applyUITestHooksEarly** — [2026-06-10](docs/DECISIONS.md#2026-06-10-sesin-de-cierre-pre-release-20), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
 - **AppPreferences** — [2026-04-16](docs/DECISIONS.md#2026-04-1604-20-pico-panel-20-p20-01p20-11), [2026-05-05](docs/DECISIONS.md#2026-05-05-a0-bridge--rediseo-completo-del-bridge-splitexpense--transactionitem-modelo-m5), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
@@ -63,6 +63,7 @@
 - **CAS** — [2026-07-04](docs/DECISIONS.md#2026-07-04-apple-pay--el-intent-deja-de-tocar-swiftdata-patrn-de-cola-app-group), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
 - **CashFlow** — [2026-04-24](docs/DECISIONS.md#2026-04-24-pp2-06c-widgets-small-chart-based), [2026-04-24](docs/DECISIONS.md#2026-04-24-pp2-06d-densidad-cashflow--needs-small)
 - **CERRADA** — [2026-06-19](docs/DECISIONS.md#2026-06-1906-22-groups--saga-del-crash-loop-de-sync-en-restore-de-icloud-5-intentos-cerrada-en-build-32), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
+- **/cerrar** — [2026-08-31](docs/DECISIONS.md#2026-08-31-el-repo-recibe-abrir-higiene-y-reorgdocs-lo-dems-del-estndar-de-casa-no-aplica), [2026-08-29](docs/DECISIONS.md#2026-08-29-los-roles-de-frank-pasan-a-claude)
 - **ChatSheet** — [2026-04-25](docs/DECISIONS.md#2026-04-25-ai-toggles-removal-completo), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
 - **CI** — [2026-08-28](docs/DECISIONS.md#2026-08-28-ci-la-suite-de-simulador-solo-corre-si-el-diff-puede-afectarla), [2026-07-02](docs/DECISIONS.md#2026-07-02-incidente-prod--sync-de-grupos-muerto-4-das-por-campo-sin-deploy-de-schema--hardening), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
 - **.ckdb** — [2026-07-02](docs/DECISIONS.md#2026-07-02-incidente-prod--sync-de-grupos-muerto-4-das-por-campo-sin-deploy-de-schema--hardening), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-cierre-ltimas-5-entradas-de-la-fase-205)
@@ -129,10 +130,11 @@
 - **OnboardingView** — [2026-05-06](docs/DECISIONS.md#2026-05-06-a4--landing--aasa--welcome-chooser-cierra-fase-a-del-pico-grupos), [2026-05-08](docs/DECISIONS.md#2026-05-08-fix-subcategoras-vacas-en-grupos--fullmodeactivation-rediseado), [2026-06-24](docs/DECISIONS.md#2026-06-24-rediseo-welcome--restore--onboarding--invitaciones-6-commits)
 - **.panel** — [2026-04-28](docs/DECISIONS.md#2026-04-28-3-fixes-runtime-post-qa-chat-registrar-transacciones), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
 - **PanelBackgroundView** — [2026-05-08](docs/DECISIONS.md#2026-05-08-yala-ai-onboarding--tutorial-de-4-pasos-post-consent), [2026-05-26](docs/DECISIONS.md#2026-05-26-auditora-sistmica-de-patrones-ui--13-commits-pico-cerrado)
+- **PanelSection** — [2026-09-02](docs/DECISIONS.md#2026-09-02-panel--la-jerarqua-manda-el-color-informa-y-las-tarjetas-se-quedan), [2026-05-13](docs/DECISIONS.md#2026-05-13-stats-polish--4-tabs-de-statistics-panel-aligned-pico-completo-registrosinsightstendenciasdistribucin)
 - **PendingInviteStore** — [2026-06-08](docs/DECISIONS.md#2026-06-08-fix-invite-drop--persistencia-de-invite-pendiente), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
 - **positiveToast** — [2026-04-21](docs/DECISIONS.md#2026-04-21-sync-status-banner-global-vs-toolbar-indicator), [2026-04-21](docs/DECISIONS.md#2026-04-21-sync-silencioso-por-defecto--banner-pill-global)
 - **PP2** — [2026-04-16](docs/DECISIONS.md#2026-04-1604-20-pico-panel-20-p20-01p20-11), [2026-04-22](docs/DECISIONS.md#2026-04-22-pp2-01-hero-compacto), [2026-04-22](docs/DECISIONS.md#2026-04-22-pp2-03-chrome-compacto-de-widgets), [2026-04-22](docs/DECISIONS.md#2026-04-22-pp2-05-tamao-small--pilotos), [2026-04-24](docs/DECISIONS.md#2026-04-24-pp2-06c-widgets-small-chart-based), [2026-04-24](docs/DECISIONS.md#2026-04-24-pp2-06d-densidad-cashflow--needs-small) +1
-- **PR** — [2026-08-28](docs/DECISIONS.md#2026-08-28-ci-la-suite-de-simulador-solo-corre-si-el-diff-puede-afectarla), [2026-07-02](docs/DECISIONS.md#2026-07-02-incidente-prod--sync-de-grupos-muerto-4-das-por-campo-sin-deploy-de-schema--hardening)
+- **PR** — [2026-09-02](docs/DECISIONS.md#2026-09-02-panel--la-jerarqua-manda-el-color-informa-y-las-tarjetas-se-quedan), [2026-08-30](docs/DECISIONS.md#2026-08-30-frank-es-el-agente-de-yala-el-gate-pasa-a-hook-de-git), [2026-08-28](docs/DECISIONS.md#2026-08-28-ci-la-suite-de-simulador-solo-corre-si-el-diff-puede-afectarla), [2026-07-02](docs/DECISIONS.md#2026-07-02-incidente-prod--sync-de-grupos-muerto-4-das-por-campo-sin-deploy-de-schema--hardening)
 - **#Predicate** — [2026-06-19](docs/DECISIONS.md#2026-06-1906-22-groups--saga-del-crash-loop-de-sync-en-restore-de-icloud-5-intentos-cerrada-en-build-32), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
 - **PresentationCoordinator** — [2026-05-26](docs/DECISIONS.md#2026-05-26-refactor-robusto-del-subsistema-de-routing-f0-f11), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
 - **PrivacyInfo** — [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
@@ -140,6 +142,7 @@
 - **QA** — [2026-08-26](docs/DECISIONS.md#2026-08-26-balance-en-distribucin-stock-panel-no-se-toca), [2026-04-09](docs/DECISIONS.md#gc-12-permisos-de-grupo-y-flujo-de-invitacin-2026-04-09), [2026-04-28](docs/DECISIONS.md#2026-04-28-3-fixes-runtime-post-qa-chat-registrar-transacciones), [2026-05-10](docs/DECISIONS.md#2026-05-1005-11-onboarding-restyle--5-iteraciones-de-qa-visual-iter1-iter5), [2026-06-10](docs/DECISIONS.md#2026-06-10-sesin-de-cierre-pre-release-20), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22) +1
 - **.refreshable** — [2026-05-08](docs/DECISIONS.md#2026-05-08-groups-pulido--sprint-pulido-2-9-bugs-ux--sprint-pulido-3-cierre-diferidos), [2026-06-28](docs/DECISIONS.md#2026-06-2806-30-groups--sync-de-solo-grupos-no-bajaba-cambios-de-otros-miembros)
 - **refreshCurrentUserFlags** — [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-cierre-ltimas-5-entradas-de-la-fase-205)
+- **reorg_docs** — [2026-08-31](docs/DECISIONS.md#2026-08-31-el-repo-recibe-abrir-higiene-y-reorgdocs-lo-dems-del-estndar-de-casa-no-aplica)
 - **ReportNotificationService** — [2026-07-05](docs/DECISIONS.md#2026-07-05-stats--clasificacin-incomeexpense-por-categora-fase-2-de-p20-14), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-cierre-ltimas-5-entradas-de-la-fase-205)
 - **rescheduleAllNotifications** — [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-cierre-ltimas-5-entradas-de-la-fase-205)
 - **RouterEntryGate** — [2026-05-26](docs/DECISIONS.md#2026-05-26-refactor-robusto-del-subsistema-de-routing-f0-f11), [2026-07-05](docs/DECISIONS.md#2026-07-05-cold-launch--share-image-al-share-sheet-no-haca-nada-intent-no-serializable-pre-init)
@@ -170,6 +173,7 @@
 - **StoreKit** — [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-cierre-ltimas-5-entradas-de-la-fase-205)
 - **subcategoryName** — [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-cierre-ltimas-5-entradas-de-la-fase-205)
 - **Subcategory.shortcutID** — [2026-05-26](docs/DECISIONS.md#2026-05-26-fix-migracin-shortcutidtagid-colapsado-v2), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
+- **subheadlineEmphasized** — [2026-09-02](docs/DECISIONS.md#2026-09-02-panel--la-jerarqua-manda-el-color-informa-y-las-tarjetas-se-quedan), [2026-04-22](docs/DECISIONS.md#2026-04-22-pp2-03-chrome-compacto-de-widgets)
 - **SwiftData** — [2026-02-02](docs/DECISIONS.md#2026-02-02-icloud-sync-integracin-nativa-swiftdata--cloudkit), [2026-05-25](docs/DECISIONS.md#2026-05-25-transfer-pair-integrity--pico-de-6-commits), [2026-05-26](docs/DECISIONS.md#2026-05-26-fix-migracin-shortcutidtagid-colapsado-v2), [2026-06-14](docs/DECISIONS.md#2026-06-14-fix-doble-canal-de-sync-cloudkit-en-grupos), [2026-06-19](docs/DECISIONS.md#2026-06-1906-22-groups--saga-del-crash-loop-de-sync-en-restore-de-icloud-5-intentos-cerrada-en-build-32), [2026-06-19](docs/DECISIONS.md#2026-06-19-fix-identity-uuids-colapsados-tras-restore-lento-de-icloud-tagidaccountshortcutidsubcategoryshortcutid) +2
 - **TabView** — [2026-04-21](docs/DECISIONS.md#2026-04-21-sync-status-banner-global-vs-toolbar-indicator), [2026-04-16](docs/DECISIONS.md#2026-04-1604-20-pico-panel-20-p20-01p20-11), [2026-05-09](docs/DECISIONS.md#2026-05-09-fix-bug-deeplinks-a-tabs-ocultos-en-ms--centralizar-selectmaintab)
 - **Tag.id** — [2026-05-26](docs/DECISIONS.md#2026-05-26-fix-migracin-shortcutidtagid-colapsado-v2), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)

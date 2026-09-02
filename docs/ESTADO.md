@@ -5,24 +5,25 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-02 (Lima)
 
-**Rama** `2.1` · **HEAD** `eebde759` — *PR #60: avisar a Grok cuando hay push directo a `2.1`*.
+**Rama** `2.1` · **HEAD** `80880f2d` — *PR #61: rediseño visual del Panel*.
 TestFlight build **12** (CPV 12). **Subida Yala (TF/store) = solo Mini.**
 
 ## Esta sesión
-Cuando una sesión entrega empujando directo a `2.1` —la vía normal en el árbol principal— Grok no
-se enteraba: su listener de GitHub ve el merge y el CI, pero no el push a principal. Ahora cada
-push a `2.1` le manda quién empujó, cuántos commits, el SHA, si fue force push y los mensajes.
-**La app no cambia**: es solo CI. Estrenado en su propio merge (PR #60) con **HTTP 200** medido.
-Si el webhook deja de responder, el check sale en ROJO en vez de callar — que es como murió el
-webhook de `bug-triage`, un mes entregando a un 404 sin que nadie lo notara.
+Rediseño visual del Panel contra Wise (PR #61). La jerarquía **iba al revés**: sección y widget
+usaban el MISMO token y el nombre de la fila era el rótulo mayor. Sección a `title3`, aire invertido
+(secciones 12→32, título a contenido 16→8) y color solo donde informa: barras al 22 % (**−60 %** de
+superficie cromática) y **el gasto deja de teñirse** —ninguno de los cinco tonos llega al AA de 4,5
+sobre tarjeta blanca—. El hero pierde el saludo y sus dos ejes; las acciones bajan al flujo y los
+flotantes solo vuelven cuando el scroll se lleva la fila. Antes: aviso a Grok en push directo (#60).
 
 ## Abiertos
-- **`welcome-fresh-start-alert-leaves-blank-screen`** (backlog, **high**) — tocar «Es mi primera vez»
-  y luego cancelar deja la app sin ningún control, sin salida salvo matarla. Preexistente, medido con
-  tres lanzamientos. Onboarding de usuario nuevo con datos previos, **en producción**.
-- **`scheduled-payment-once-labeled-monthly`** (backlog, low) — un pago «una sola vez» se rotula
-  «Mensual»: el badge lee `recurrenceType` y nunca mira `isRecurring`. Cosmético.
-- **`AUDIT-appstore-guidelines.md`** — 3 hallazgos de riesgo de rechazo (divulgación de OpenAI). De Lola.
+- **`welcome-fresh-start-alert-leaves-blank-screen`** (backlog, **high**) — «Es mi primera vez» +
+  cancelar deja la app sin salida salvo matarla. Preexistente, **en producción**.
+- **`rojo-heroBuckets-thisWeek-trailing-window`** (backlog, sin dueño) — `HeroBucketsCalculatorTests`
+  1/15 en rojo: el código trunca la ventana previa de `.thisWeek` (MTD) y el test la espera entera.
+  Medido preexistente con `git stash`. Mientras siga rojo tapa regresiones nuevas del suite.
+- **`scheduled-payment-once-labeled-monthly`** (backlog, low) — badge cosmético.
+- **`AUDIT-appstore-guidelines.md`** — 3 hallazgos de riesgo de rechazo (OpenAI). De Lola.
 
 ## Release 2.1 (sin cambios)
 2.0.5 no se lanza; release = 2.1. A7 y M5: **HOLD, no flip**. Prod: CLOUD_MODE 100 · GROUPS_BACKEND
@@ -30,11 +31,10 @@ webhook de `bug-triage`, un mes entregando a un 404 sin que nadie lo notara.
 sigue sin `ok_`. **Cero `ok_` inventado.**
 
 ## Siguiente
-De los 14 de `qa/`, **8 piden tu teléfono y 3 staging al 100** — no los drena un agente. Lo que
-rinde: consolidar esos 11 en **un guion único de device-QA agrupado por montaje** (2 cuentas · 2
-devices · flags), una tarde tuya en vez de once sesiones. Los 9 de `in-progress` siguen parados.
+Decidir el rojo de `.thisWeek` (ventana entera o truncada) y **si el trailer `Co-Authored-By` va o
+no**: dos sesiones lo midieron hoy con resultados opuestos porque la convención se partió a mitad
+de día. Del Panel quedan dos: «Últimos registros» se sigue diciendo dos veces —el rediseño lo hace
+más visible— y bajar los nombres de fila a 15 tocaría Estadísticas.
 
 ## Bloqueo
-Ninguno. El canal a Grok respondió **200 en los dos pushes** de hoy (`eebde759`, `f09689b2`).
-Pendiente menor: `GROK_WEBHOOK_SENDER_KEY` conserva su fecha de creación pese a la rotación del
-panel — o se re-guardó igual, o la clave anterior sigue viva. Lo delataría un 401, y sale en rojo.
+Ninguno.

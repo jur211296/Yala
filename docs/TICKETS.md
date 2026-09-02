@@ -28,10 +28,12 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (78)
+## Index (79)
 
 | id | status | path |
 |----|--------|------|
+| rojo-heroBuckets-thisWeek-trailing-window | backlog | tickets/backlog/rojo-heroBuckets-thisWeek-trailing-window.md |
+| ci-suite-simulador-duplicada-y-allowlist-incompleta | done | tickets/done/ci-suite-simulador-duplicada-y-allowlist-incompleta.md |
 | welcome-fresh-start-alert-leaves-blank-screen | backlog | tickets/backlog/welcome-fresh-start-alert-leaves-blank-screen.md |
 | scheduled-payment-once-labeled-monthly | backlog | tickets/backlog/scheduled-payment-once-labeled-monthly.md |
 | synced-prefs-outside-prefsynckey | backlog | tickets/backlog/synced-prefs-outside-prefsynckey.md |
