@@ -8,6 +8,21 @@ tags: [now, punto-de-retomada]
 **Rama** `2.1` · TestFlight build **12** (CPV 12). **Subida Yala (TF/store) = solo Mini.**
 Gateway de producción: **desplegado** (versión `6f033324`, 16:42 UTC del 3).
 
+## QA: aplazado al final, en una tanda (decisión del owner, 2026-09-03)
+
+**Nada de `tickets/qa/` se drena sobre la marcha.** Se acumula y se hace todo junto al final, cuando
+haya masa suficiente para que una sola sesión de simulador y una sola pasada de device rindan. Son
+**19 tickets** hoy, y varios comparten montaje: los dos de push necesitan los MISMOS dos teléfonos, y
+los tres de Welcome (`welcome-fresh-start-alert-leaves-blank-screen`,
+`welcome-start-fresh-wipes-before-ask`, `welcome-copy-blames-owner`) el mismo recorrido.
+
+**Qué NO significa:** que un ticket en `qa/` esté terminado. Significa que su código está hecho y
+verificado hasta donde el simulador alcanza, y que la comprobación en aparato real está pendiente y
+agrupada. Al leer el board, `qa` es «esperando la tanda», no «cerrado».
+
+**Y no cambia el gate:** cada commit sigue pasando build, unit y los XCUITest de su área. Lo que se
+aplaza es el QA manual y de device, no la verificación automática.
+
 ## Te esperan a ti
 
 1. **Verificar el push con dos teléfonos reales.** App Attest en `enforce` lo hace imposible desde
