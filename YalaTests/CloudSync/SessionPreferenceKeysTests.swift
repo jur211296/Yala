@@ -47,15 +47,22 @@ private func code(_ url: URL) -> String {
 }
 
 /// La red de completitud, calculada del árbol y no escrita a mano — una lista copiada envejece.
-private func completenessNet() -> Set<String> {
-    var net = Set(PrefSyncKey.allCases.map(\.rawValue))
-
+/// Las keys que `AppPreferences` empuja con `synced: true`, ya resueltas a su literal.
+/// Extraída de `completenessNet()` para poder medir esa mitad de la red por separado: el control del
+/// instrumento necesita saber si ESTE escáner concreto encontró algo, y no sólo si la unión no está
+/// vacía — la unión la puede llenar la otra mitad ella sola.
+private func syncedTrueKeys() -> Set<String> {
     let ap = code(repoRoot.appendingPathComponent("Yala/App/Services/AppPreferences.swift"))
+    var out: Set<String> = []
     // `forKey: Keys.x, synced: true` → el símbolo; se resuelve a su literal por el mapa de abajo.
     for m in ap.matches(of: /forKey: Keys\.([a-zA-Z]+), synced: true/) {
-        net.insert(AppPreferencesKeyLiterals.map[String(m.1)] ?? String(m.1))
+        out.insert(AppPreferencesKeyLiterals.map[String(m.1)] ?? String(m.1))
     }
-    return net
+    return out
+}
+
+private func completenessNet() -> Set<String> {
+    Set(PrefSyncKey.allCases.map(\.rawValue)).union(syncedTrueKeys())
 }
 
 /// `AppPreferences.Keys.<símbolo>` → literal, leído del propio fichero.
@@ -86,11 +93,32 @@ struct SessionPreferenceKeysNetTests {
         // Sin este control, un escáner que no encuentra los ficheros declararía completitud sobre el
         // conjunto vacío — verde perfecto y hueco.
         let net = completenessNet()
-        #expect(net.count >= 40, "la red salió con \(net.count) keys; el escáner no está leyendo el árbol")
+        #expect(net.count >= 35, "la red salió con \(net.count) keys; el escáner no está leyendo el árbol")
         #expect(net.contains("usageFocus"))
         #expect(net.contains("defaultCurrencyCode"))
         #expect(net.contains("appLanguageOverride"))   // PrefSyncKey que NO es synced: true
-        #expect(net.contains("moreSectionOrder"))      // synced: true que NO es PrefSyncKey
+
+        // **Las DOS mitades se comprueban por separado, y este control cambió el 2026-09-02.**
+        //
+        // Antes bastaba con `net.contains("moreSectionOrder")` para probar que la mitad de
+        // `AppPreferences` se estaba leyendo, porque esa key era `synced: true` sin ser `PrefSyncKey`
+        // — o sea, sólo podía venir de ese escáner. Pero eso era precisamente el DEFECTO que el
+        // ticket `prefs-synced-keys-upload-not-download` vino a cerrar: una key marcada `synced: true`
+        // fuera de `PrefSyncKey` sube al outbox y al iCloud KV y no vuelve nunca.
+        //
+        // Al arreglarlo, esa categoría se queda VACÍA por diseño, y con ella el testigo que este
+        // control usaba. Apoyarse en un ejemplo de la categoría defectuosa hacía que el control del
+        // instrumento sólo funcionara mientras el defecto existiera. Se mide cada mitad por su cuenta:
+        let porAppPreferences = syncedTrueKeys()
+        let porPrefSyncKey = Set(PrefSyncKey.allCases.map(\.rawValue))
+        #expect(porAppPreferences.count >= 25, """
+            el escáner de `forKey: Keys.X, synced: true` sobre AppPreferences encontró \
+            \(porAppPreferences.count) keys; esperaba la treintena larga que hay. Si cambió la forma de \
+            esas llamadas, la red pierde media fuente y `everyNetKeyIsClassified` pasaría a declarar \
+            completitud sobre la mitad que sí lee — verde, y ciego a la otra mitad.
+            """)
+        #expect(porPrefSyncKey.count >= 25,
+                "el escáner de `PrefSyncKey` encontró \(porPrefSyncKey.count) casos; esperaba la cuarentena que hay")
     }
 
     /// **Las dos mitades de la red no valen lo mismo, y conviene saber cuál cubre este test.**

@@ -16,9 +16,9 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (20 entradas)
+## Índice (21 entradas)
 
-> **No hace falta leer este fichero entero** — son 185 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 187 KB. Localiza la entrada
 > aquí y salta a ella.
 
 - `—` [Sync de Grupos (CKSyncEngine) NO debe arrancar/`save()` sobre el `mainContext` compartido antes](#sync-de-grupos-cksyncengine-no-debe-arrancarsave-sobre-el-maincontext-compartido-antes)
@@ -37,6 +37,7 @@
 - `—` [`xcodebuild test` REINSTALA la app del simulador: el QA que corres después del gate no mira tu](#xcodebuild-test-reinstala-la-app-del-simulador-el-qa-que-corres-despus-del-gate-no-mira-tu)
 - `—` [El árbol de accesibilidad del simulador se degrada tras muchos ciclos launch/stop y solo lo cura](#el-rbol-de-accesibilidad-del-simulador-se-degrada-tras-muchos-ciclos-launchstop-y-solo-lo-cura)
 - `2026-09-02` [Un helper de aislamiento puede vaciar 22 de 31 modelos y llamarse a sí mismo «borra todas las instan](#un-helper-de-aislamiento-puede-vaciar-22-de-31-modelos-y-llamarse-a-s-mismo-borra-todas-las-instancias-2026-09-02)
+- `2026-09-02` [Un control del instrumento puede apoyarse en el DEFECTO que vigila, y quedarse ciego justo al arregl](#un-control-del-instrumento-puede-apoyarse-en-el-defecto-que-vigila-y-quedarse-ciego-justo-al-arreglarlo-2026-09-02)
 - `2026-09-02` [Nombrar un metodo de Swift Testing en -only-testing no filtra: no corre NADA y devuelve TEST SUCCEED](#nombrar-un-metodo-de-swift-testing-en--only-testing-no-filtra-no-corre-nada-y-devuelve-test-succeeded-2026-09-02)
 - `2026-09-02` [Un test que assertea un literal traducido pinnea el idioma del simulador, no la lógica (2026-09-02)](#un-test-que-assertea-un-literal-traducido-pinnea-el-idioma-del-simulador-no-la-lgica-2026-09-02)
 - `2026-09-02` [`-only-testing` con el nombre del FICHERO tampoco filtra si el struct se llama distinto: verde silen](#-only-testing-con-el-nombre-del-fichero-tampoco-filtra-si-el-struct-se-llama-distinto-verde-silencioso-2026-09-02)
@@ -331,3 +332,11 @@
   - **Por qué es peor que el caso del método.** Allí el conteo era 0 y la ausencia de `◇ Test … started` saltaba a la vista. Aquí **sí corren tests y sí hay conteo**, así que el verde parece legítimo: sólo delata el número de SUITES, y solo si lo comparas con las que pediste.
   - **La regla operativa, corregida.** No basta con mirar que `Test run with N tests` exista: hay que **comparar `M suites` con el número de `-only-testing` que pasaste**, y si no cuadra, averiguar cuál no casó (`grep -E "^◇ Suite "` lista las que arrancaron de verdad). Los nombres se sacan del código, no del fichero: `grep -nE '^struct [A-Za-z]+' <fichero>`.
   - **El corolario general:** las tres veces que esto ha mordido, el patrón es el mismo — *un filtro descarta lo que buscabas y la ausencia se lee como resultado*. La defensa no es recordar la lista de trampas: es exigir siempre el **denominador** (cuántos pedí) junto al numerador (cuántos corrieron).
+
+### Un control del instrumento puede apoyarse en el DEFECTO que vigila, y quedarse ciego justo al arreglarlo (2026-09-02)
+
+- **`SessionPreferenceKeysNetTests.netIsNotEmpty` comprobaba `net.contains("moreSectionOrder")` para probar que su escáner leía `AppPreferences`.** Funcionaba por una razón incómoda: esa key era `synced: true` **sin** ser `PrefSyncKey`, o sea la única categoría que sólo podía venir de ese escáner… y esa categoría **era el bug** — una key así sube al outbox y al iCloud KV y el receptor no la materializa nunca.
+  - **Qué pasó al cerrarlo.** El fix (bajar las cinco a `synced: false`) vacía la categoría por diseño, y con ella el testigo. El test se puso rojo — bien — pero la lectura fácil («actualiza el ejemplo y baja el umbral de 40 a 35») deja el control apoyado en el siguiente accidente que haya.
+  - **El arreglo real: medir cada FUENTE por separado, no la unión.** La red era `PrefSyncKey ∪ synced:true`; comprobar que la unión no está vacía no prueba nada, porque una mitad la puede llenar sola. Ahora cada mitad tiene su propia aserción con su propio mínimo, así que si el escáner de `AppPreferences` deja de leer, salta — antes habría seguido verde mientras `PrefSyncKey` sostuviera el conteo, y `everyNetKeyIsClassified` habría declarado completitud sobre media fuente.
+  - **La regla general, y aplica a todo escáner con control positivo:** el testigo del control tiene que ser algo que exista **por diseño**, no por defecto. Si eliges como testigo una anomalía —una key mal clasificada, un fichero que sobra, un caso pendiente de migrar—, el día que alguien haga su trabajo y la anomalía desaparezca, tu control se apaga sin avisar. Y ese día nadie estará mirando el control: estará mirando el fix.
+  - Pin: `YalaTests/CloudSync/SessionPreferenceKeysTests.swift` (`netIsNotEmpty`, con `syncedTrueKeys()` extraída para poder medir esa mitad a solas).

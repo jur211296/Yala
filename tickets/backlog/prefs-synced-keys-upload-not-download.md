@@ -148,3 +148,57 @@ viaje falta.
   como residual «Sin ticket».
 
 migrated from YalaWiki Bugs/prefs-cinco-keys-synced-suben-y-no-vuelven.md @ 1934e8ad
+
+---
+
+## 2026-09-03 (noche) · decidido y aplicado
+
+**Decisión del owner (2026-09-02): las cinco pasan a `synced: false`; `financialMindset` sincroniza
+de verdad.**
+
+### Las cinco — hechas
+
+Son las cinco ajustes de PRESENTACIÓN (orden de las tarjetas de «Más», modo de etiqueta del Sankey y
+los tres de los KPIs del hero del Panel). Que cada dispositivo tenga el suyo es una decisión de
+producto legítima; lo que no era defendible es el estado en que estaban, con el coste de las dos
+opciones y el beneficio de ninguna.
+
+`Yala/App/Services/AppPreferences.swift` — `synced: true` → `synced: false` en `:632`, `:660`,
+`:675`, `:682`, `:689`.
+
+**Y la red, que es lo que impide la sexta copia:** `YalaTests/CloudSync/SyncedKeysArePrefSyncKeysTests.swift`
+compara por source-scan las keys marcadas `synced: true` contra los `case` de `PrefSyncKey` y falla si
+alguna sube sin que el merge sepa bajarla. Lleva **control positivo** en los dos escáneres (si
+cualquiera deja de leer, la resta daría vacío y el test pasaría en verde sin comprobar nada — el modo
+de fallo clásico de un source-scan). Cubre el primer punto del criterio de hecho.
+
+### `financialMindset` — el diagnóstico cambia el arreglo, y conviene leerlo antes de tocarlo
+
+Al medirlo se cae la formulación de arriba. **Hoy NO está roto**: baja bien (es `PrefSyncKey`, y
+`PreferenceSyncService.swift:468-470` lo aplica) y sube bien por el único camino que existe, que
+publica a mano en el punto de intención (`OnboardingView.swift:1793`).
+
+**El defecto es futuro, no presente.** No tiene property en `AppPreferences`, así que no hay
+`persist*(…, synced: true)` y el push automático no se dispara nunca por él. Mientras el perfil sólo
+se pueda elegir una vez, al final del onboarding, no se nota. El día que exista una pantalla para
+cambiarlo —o cualquier otro camino que lo escriba— ese cambio se queda en el teléfono, en silencio.
+
+**Y el arreglo que parece obvio es el equivocado:** publicar desde el `didSet` del espejo devolvería
+el ECO —re-encolar con HLC fresco un valor recién bajado— y haría que un XCUITest encolara
+preferencias. El porqué entero está escrito en el espejo gemelo de al lado (`SessionState.swift`,
+sobre `isExpensesOnlyMode`). **Se paga en el punto de intención**, que es justo lo que el onboarding
+ya hace.
+
+⇒ «Que sincronice de verdad» se traduce, con la medición delante, en **conservar la publicación en el
+punto de intención y poner una red que impida que aparezca un escritor sin publicar**. No hay cambio
+de comportamiento que hacer hoy.
+
+### Lo que queda
+
+- **El criterio de hecho declara que su primer punto NO alcanza al sexto caso**, y sigue siendo
+  cierto: el escáner nuevo comprueba «`synced: true` ⇒ `PrefSyncKey`», y `financialMindset` es el
+  caso contrario (`PrefSyncKey` sin `synced: true`, a propósito). Su red propia —contar los
+  escritores de la propiedad y exigir que cada uno, salvo el merge remoto, publique— **no está
+  escrita**: exige distinguir el escritor legítimo del eco, y eso es más que un conteo.
+- Comprobar en un aparato real que las cinco **dejan de aparecer** en el outbox de prefs y en el
+  iCloud KV. Es el segundo punto del criterio de hecho y necesita device-QA del owner.

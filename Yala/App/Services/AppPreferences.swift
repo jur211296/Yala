@@ -629,7 +629,7 @@ final class AppPreferences {
     var moreSectionOrder: [String] = [] {
         didSet {
             guard oldValue != moreSectionOrder else { return }
-            persistString(moreSectionOrder.joined(separator: ","), forKey: Keys.moreSectionOrder, synced: true)
+            persistString(moreSectionOrder.joined(separator: ","), forKey: Keys.moreSectionOrder, synced: false)
         }
     }
 
@@ -657,7 +657,7 @@ final class AppPreferences {
     var sankeyLabelMode: SankeyLabelMode = .amount {
         didSet {
             guard oldValue != sankeyLabelMode else { return }
-            persistString(sankeyLabelMode.rawValue, forKey: Keys.sankeyLabelMode, synced: true)
+            persistString(sankeyLabelMode.rawValue, forKey: Keys.sankeyLabelMode, synced: false)
         }
     }
 
@@ -672,21 +672,21 @@ final class AppPreferences {
     var panelHeroKPIsOrder: [String] = [] {
         didSet {
             guard oldValue != panelHeroKPIsOrder else { return }
-            persistString(panelHeroKPIsOrder.joined(separator: ","), forKey: Keys.panelHeroKPIsOrder, synced: true)
+            persistString(panelHeroKPIsOrder.joined(separator: ","), forKey: Keys.panelHeroKPIsOrder, synced: false)
         }
     }
 
     var panelHeroKPIsHidden: [String] = [] {
         didSet {
             guard oldValue != panelHeroKPIsHidden else { return }
-            persistString(panelHeroKPIsHidden.joined(separator: ","), forKey: Keys.panelHeroKPIsHidden, synced: true)
+            persistString(panelHeroKPIsHidden.joined(separator: ","), forKey: Keys.panelHeroKPIsHidden, synced: false)
         }
     }
 
     var panelHeroKPIsCustomized: Bool = false {
         didSet {
             guard oldValue != panelHeroKPIsCustomized else { return }
-            persistBool(panelHeroKPIsCustomized, forKey: Keys.panelHeroKPIsCustomized, synced: true)
+            persistBool(panelHeroKPIsCustomized, forKey: Keys.panelHeroKPIsCustomized, synced: false)
         }
     }
 
