@@ -224,10 +224,19 @@ Nota de método: la primera versión del golden daba `noop` en el tombstone porq
 (15-jul-2026) contra una fila creada hoy con `server_hlc()`. Un test que pasa por la razón equivocada es
 peor que uno rojo; queda escrito en el propio golden.
 
-### Falta
+### Producción · aplicada y verificada el 2026-09-03
 
-**Aplicar `g13_03` a producción.** No pude hacerlo en la misma sesión: el acceso de Supabase alterna
-entre organizaciones y al llegar aquí solo era visible staging. Mientras tanto, en producción el
-comportamiento es el de siempre.
+Se aplicó **sobre el cuerpo vivo** (un `do` block que lee `pg_get_functiondef`, sustituye solo el
+segundo `raise` y aborta si el fragmento no está exacto), no pegando la versión de staging: así el resto
+de la función queda byte-idéntico sin depender de que los dos entornos fueran iguales.
+
+La prueba más limpia es el delta: el cuerpo pasó de **4079 a 4078 caracteres**, una letra menos —
+exactamente la diferencia entre `yala_invalid_invite` y `yala_group_deleted`. Y `yala_invalid_invite`
+sigue apareciendo una vez, con `pgp_sym_encrypt` × 3 y `rebound` × 4 idénticos a antes.
+
+**Efecto en las apps ya publicadas**: una app que no conoce el código nuevo lo trata como rechazo
+permanente y muestra su mensaje GENÉRICO. Deja de dar el consejo imposible, pero todavía no dice que el
+grupo fue eliminado — eso llega con la próxima versión del cliente. Neutro-positivo mientras tanto, no
+una regresión.
 
 Piezas **2, 3 y 4 siguen abiertas** y nunca estuvieron bloqueadas: son código.
