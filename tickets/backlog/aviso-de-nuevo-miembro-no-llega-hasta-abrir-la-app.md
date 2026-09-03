@@ -352,3 +352,70 @@ silencioso» ataca exactamente estos dos puntos — añadir `alert` al payload p
 el SISTEMA sin depender de la app (1), y cablear el emisor en las RPC de membresía (2). Lo que cambia
 es el orden y la urgencia: la fase 2 pasa a ser la que arregla el problema de fondo de todo Grupos, y
 la fase 3 la que cierra este ticket en concreto.
+
+---
+
+## 2026-09-03 · IMPLEMENTADO (gateway + BD de staging). Falta el deploy, que es del owner
+
+Decisiones del owner: banner **directo**, los dos cambios **en un bloque**, **sin flag** de apagado, y
+aceptar que `loc-key` resuelva por el idioma del sistema.
+
+### Y una decisión que la medición obligó a cambiar
+
+Se pidió banner «con nombre, concepto e importe». **No es implementable, y no por esfuerzo:**
+
+- `split_groups.name`, `split_expenses.expense_description`, `.amount` y `group_members.display_name`
+  son **`bytea` †** (G7, cifrado at-rest). El Worker no los puede leer, y descifrarlos en el borde
+  rompería el motivo entero de que sean bytea.
+- El «te toca %@» de las claves locales es **distinto para cada destinatario**, y el fan-out manda el
+  MISMO payload a todos los tokens.
+- Y un push **no corresponde a un gasto**: el fan-out agrega por `group_id` todos los deltas aplicados
+  de una tanda.
+
+⇒ El banner del servidor es genérico **por obligación**, pero **específico por evento**, que sí se
+puede: el tipo de evento no es secreto. El texto rico lo sigue poniendo la app, que es la única que
+puede descifrarlo, cuando el eco la despierta.
+
+### Lo hecho
+
+| Pieza | Qué |
+|---|---|
+| `qa/cloud/g8_03_membership_push_audiences.sql` | **Dos RPC nuevas.** `get_group_admin_push_tokens` (la existente no devuelve el rol ⇒ avisaría a todo el grupo) y `get_group_member_push_tokens` (la existente filtra `status='active'` ⇒ al rechazado **no se le puede avisar**). Mismos grants: `revoke` a public/anon/authenticated, `grant` sólo a `yala_push`. **Aplicada a STAGING y verificada**; producción es del owner |
+| `gateway/src/push/apns.ts` | `apns-expiration` deja de ser el literal `"0"` («entrégalo ya o deséchalo»): 24 h para alerta. Con `0`, el aviso se perdía entero con el teléfono apagado |
+| `gateway/src/groups/routes.ts` | `pushType: "alert"` + payload con `alert` **y** `content-available`. Y `fanOutGroupPush` gana audiencia y `locKey`, con el resolver de RPC dejando de estar hardcodeado |
+| `gateway/src/groups/rpc.ts` | **El emisor que no existía.** `join_group` → admins; `approve_member`/`remove_member` → la persona afectada, por `member_key` |
+| 16 `.lproj` | `remoteActivity`, `remotePendingRequest`, `remoteMembershipUpdate`. Paridad verde |
+
+### Dos trampas que costaron una corrida cada una
+
+1. **`c.executionCtx` LANZA sin ExecutionContext.** El cableado convertía en **500** un RPC que ya
+   había tenido éxito, en cuanto un test llamaba `app.fetch(req, env)` sin 3er argumento. Rompió tres
+   goldens. Se resuelve una vez en el emisor y se omite el aviso con log: un push best-effort jamás
+   puede tumbar la operación que lo dispara.
+2. **`es` y `pt` son ALIAS**, copia idéntica de `es-419`/`pt-BR`. Traducirlos a mano rompe
+   `aliases_haveIdenticalValues_toTheirBase`, que lo cazó al instante.
+
+### Verificación
+
+`npm test` en `gateway/`: **321 pasan**, 1 falla (`account.goldens` nº 20, rojo preexistente con
+ticket propio: `account-goldens-freeze-read-test-times-out`). Typecheck sin errores nuevos en `src/`.
+
+**Cuatro mutantes a rojo**, y el primero es el que da valor a los tests del emisor: hasta escribirlos,
+cambiar la audiencia de la solicitud de `admins` a `coMembers` —o sea, anunciar a todo el grupo que
+alguien pidió entrar— **dejaba la batería entera en verde**.
+
+| Mutante | Cazado por |
+|---|---|
+| Quitar el eco `content-available` | el golden y el unit del payload |
+| Volver `apns-expiration` al literal `"0"` | el golden |
+| Solicitud a `coMembers` en vez de `admins` | el test del emisor (**antes sobrevivía**) |
+| Avisar también del re-tap del enlace | el test del emisor |
+
+### Lo que NO está hecho, y es del owner
+
+1. **Deploy.** `npm run deploy:production` en `gateway/` y aplicar `g8_03` a la BD de **producción**.
+2. **Verificación real.** Nada de esto prueba que Apple entregue el banner: App Attest en `enforce`
+   exige TestFlight con dos teléfonos. Lo medido es que el gateway compone y envía lo correcto.
+3. **El cliente no distingue tipos de push.** `YalaAppDelegate` lee `yala.kind` sólo para un
+   breadcrumb y dispara un sync para cualquier payload; no hay `switch`, ni se propaga `deepLink`, así
+   que tocar el banner no lleva al grupo. Es trabajo aparte y **no** bloquea a este.

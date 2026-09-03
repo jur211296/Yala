@@ -263,7 +263,7 @@ describe("G8 goldens · fan-out machine-role + revoke (post-aplicación g8_02)",
     return gid;
   }
 
-  it("A push delta → fan-out despierta SOLO a B (no a A); host sandbox; headers background/5; payload yala", async () => {
+  it("A push delta → fan-out AVISA SOLO a B (no a A); host sandbox; headers alert/10; alerta + eco", async () => {
     const gid = await setupSharedGroup();
     const tokA = dummyToken("fanA");
     const tokB = dummyToken("fanB");
@@ -285,9 +285,25 @@ describe("G8 goldens · fan-out machine-role + revoke (post-aplicación g8_02)",
     expect(appleHits[0].url).not.toContain(tokA);
     expect(appleHits[0].url).toContain("api.sandbox.push.apple.com");
     const headers = appleHits[0].init?.headers as Record<string, string>;
-    expect(headers["apns-push-type"]).toBe("background");
-    expect(headers["apns-priority"]).toBe("5");
+    // 2026-09-03: pasa de `background`/5 a `alert`/10. El aviso deja de depender de que iOS despierte
+    // a la app — con `background`, si no entregaba el silent push no había notificación ninguna.
+    expect(headers["apns-push-type"]).toBe("alert");
+    expect(headers["apns-priority"]).toBe("10");
+    // `apns-expiration` era el literal "0" = «entrégalo ya o deséchalo», correcto para un background e
+    // inaceptable para una alerta: con el teléfono apagado el aviso se perdía entero. Ahora es un
+    // INSTANTE unix futuro (24 h). Se afirma que está en el futuro, no un valor exacto: es un reloj.
+    const exp = Number(headers["apns-expiration"]);
+    expect(Number.isFinite(exp)).toBe(true);
+    expect(exp).toBeGreaterThan(Math.floor(Date.now() / 1000));
+
     const payload = JSON.parse(appleHits[0].init?.body as string);
+    // La ALERTA, que la pinta el sistema aunque la app esté cerrada. Genérica a propósito: el nombre
+    // del grupo, el concepto y el importe son `bytea †` en el DDL y el Worker no los puede leer.
+    expect(payload.aps.alert["loc-key"]).toBe("notifications.groups.remoteActivity");
+    expect(payload.aps.alert["title-loc-key"]).toBe("notifications.groups.name");
+    // El ECO silencioso viaja en el MISMO push y NO se ha perdido por el camino: es lo que permite
+    // que la app reemplace el banner pobre por el rico. Sin esta aserción, alguien podría quitar el
+    // `content-available` al tocar el payload y el test seguiría verde con la alerta sola.
     expect(payload.aps["content-available"]).toBe(1);
     expect(payload.yala.kind).toBe("groups-sync");
 

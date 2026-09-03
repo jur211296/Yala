@@ -164,11 +164,36 @@ const FANOUT_TOKEN_CAP = 50;
  * con un log — la respuesta del push ya se envió y la cadencia de pull es la red. ⚠️ un 401 recurrente en el log
  * `upstream 401` = legacy secret revocado → re-acuñar PUSH_ROLE_JWT (mint-push-role-jwt.mjs). Ver g8_02.
  */
+/**
+ * A quién despertar. El fan-out nació con una sola audiencia —«los co-members activos, menos el
+ * autor»— y su resolver estaba cableado a `get_group_push_tokens`. Los eventos de MEMBRESÍA necesitan
+ * otras dos, y no por capricho: esa función filtra por `status = 'active'` y no devuelve el rol, así
+ * que (a) avisar de una solicitud notificaría a TODO el grupo en vez de a quien puede aprobarla, y
+ * (b) avisar a quien acabas de rechazar es imposible — queda en `status='rejected'` y la función, por
+ * diseño, nunca lo devuelve.
+ *
+ * Las dos RPC nuevas son de `g8_03_membership_push_audiences.sql`, con los MISMOS grants que sus
+ * hermanas: `revoke` a public/anon/authenticated, `grant` sólo a `yala_push`.
+ */
+export type FanOutAudience =
+  /** Co-members ACTIVOS de los grupos tocados, menos el autor. El caso de siempre (deltas de sync). */
+  | { kind: "coMembers" }
+  /** Los ADMIN activos del grupo, menos el autor. Para «alguien pide entrar». */
+  | { kind: "admins" }
+  /** Una persona concreta por su `member_key`, SIN filtro de status. Para «te respondieron». */
+  | { kind: "member"; memberKey: string };
+
 export async function fanOutGroupPush(
   env: Env,
   auth: { userJWT: string; sub: string },
   groupIds: string[],
   excludeDeviceToken: string | null = null,
+  /**
+   * Audiencia y texto. Ambos opcionales para no tocar al llamador de siempre (`/groups/push`), cuyos
+   * 12 casos de `push.fanout.unit.test.ts` fijan la firma posicional de 4 argumentos.
+   */
+  audience: FanOutAudience = { kind: "coMembers" },
+  locKey: string = "notifications.groups.remoteActivity",
 ): Promise<void> {
   // Short-circuit si APNs no está configurado (espejo del 503 de /v1/debug/push; aquí silencioso, 1 log).
   // Prod arranca así hasta que el owner cargue APNS_KEY_ID/APNS_AUTH_KEY (pendiente-owner en wrangler.toml).
@@ -187,13 +212,21 @@ export async function fanOutGroupPush(
   // Recolectar tokens de todos los grupos del batch; dedup por device_token (un member en 2 grupos → 1 push).
   const targets = new Map<string, { userId: string; deviceToken: string; platform: string }>();
   for (const gid of groupIds) {
-    const { ok, status, body } = await callRpc(env, machineJWT, "get_group_push_tokens", {
-      p_group_id: gid,
-      p_exclude_user_id: auth.sub,
-      p_exclude_device_token: excludeDeviceToken,
-    });
+    // La RPC y sus args los elige la AUDIENCIA. Estuvieron hardcodeados mientras hubo un solo caso;
+    // el nombre viaja en el log de error para que un 403 diga cuál de las tres falló (los grants son
+    // por función: un `yala_push` sin EXECUTE en la nueva daría 403 sólo en esa rama).
+    const { rpc, args } =
+      audience.kind === "admins"
+        ? { rpc: "get_group_admin_push_tokens", args: { p_group_id: gid, p_exclude_user_id: auth.sub } }
+        : audience.kind === "member"
+          ? { rpc: "get_group_member_push_tokens", args: { p_group_id: gid, p_member_key: audience.memberKey } }
+          : {
+              rpc: "get_group_push_tokens",
+              args: { p_group_id: gid, p_exclude_user_id: auth.sub, p_exclude_device_token: excludeDeviceToken },
+            };
+    const { ok, status, body } = await callRpc(env, machineJWT, rpc, args);
     if (!ok) {
-      console.log(`[groups-fanout] get_group_push_tokens upstream ${status} group=${gid}`);
+      console.log(`[groups-fanout] ${rpc} upstream ${status} group=${gid}`);
       continue;
     }
     for (const row of Array.isArray(body) ? (body as Record<string, unknown>[]) : []) {
@@ -215,7 +248,46 @@ export async function fanOutGroupPush(
     const result = await sendPush(env, {
       deviceToken: t.deviceToken,
       sandbox: t.platform === "ios-sandbox",
-      payload: { aps: { "content-available": 1 }, yala: { kind: "groups-sync" } },
+      // ALERTA + eco silencioso en el MISMO push (decisión del owner, 2026-09-03).
+      //
+      // Hasta hoy esto era `content-available` a secas: un silent push que sólo despierta a la app
+      // para que sincronice, con el aviso fabricado LOCALMENTE por ella después. Por eso el aviso
+      // dependía de que la app corriese — si iOS no entregaba el silent push (presupuesto agotado,
+      // app force-quit, batería baja) no había notificación, y de ahí «no llega hasta abrir la app».
+      //
+      // Ahora el banner lo pinta el SISTEMA, y el `content-available` sigue viajando en el mismo
+      // push: si iOS despierta a la app, ella reemplaza este texto por el rico —con quién, qué y
+      // cuánto— que ya sabe componer. Si no la despierta, al menos ha sonado algo.
+      pushType: "alert",
+      payload: {
+        aps: {
+          // **El texto es GENÉRICO y no es una elección de estilo: es lo único que el servidor puede
+          // afirmar.** En el DDL están cifrados at-rest (bytea †) el nombre del grupo
+          // (`split_groups.name:101`), la descripción y el importe del gasto
+          // (`split_expenses.expense_description`, `.amount`) y hasta el nombre del miembro
+          // (`group_members.display_name`). El Worker no tiene forma de leerlos, y descifrarlos aquí
+          // rompería el motivo entero de que sean bytea. Lo que queda en claro son ids, colores e
+          // iconos: nada que poner en una pantalla de bloqueo.
+          //
+          // Y aunque no lo estuvieran, este push NO corresponde a un gasto: el fan-out agrega por
+          // `group_id` todos los deltas aplicados de una tanda, así que puede ser un gasto, tres, o
+          // una liquidación. Ni siquiera existe «el» importe — el «te toca X» de las claves locales
+          // es distinto para cada destinatario, y aquí todos reciben el MISMO payload.
+          //
+          // `loc-key` lo resuelve iOS contra el bundle: la clave existe en los 16 `.lproj`.
+          // ⚠️ Lo resuelve con el idioma del SISTEMA, no con el override de idioma de Yala
+          // (`L10n.swift` → `LanguageManager`), así que quien tenga el iPhone en un idioma y la app
+          // en otro verá este banner en el del iPhone hasta que la app lo reemplace. Aceptado
+          // conscientemente por el owner.
+          alert: {
+            "title-loc-key": "notifications.groups.name",
+            "loc-key": locKey,
+          },
+          sound: "default",
+          "content-available": 1,
+        },
+        yala: { kind: "groups-sync" },
+      },
     });
     if (result.delivered) continue;
 

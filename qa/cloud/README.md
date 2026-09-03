@@ -77,7 +77,24 @@ TEST_RUNNER_YALA_CLOUD_E2E=1 TEST_RUNNER_USER_A_PASS="$USER_A_PASS" \
 TEST_RUNNER_USER_B_PASS="$USER_B_PASS" xcodebuild test -scheme Yala …
 ```
 
-Las contraseñas vivas no están en el árbol ni en este documento — pídeselas a Jürgen. Los
+Las contraseñas vivas no están en el árbol ni en este documento — viven en
+`~/Secrets/yala-supabase-test/test-users.env` (permisos 600), que se carga con
+`set -a; source ~/Secrets/yala-supabase-test/test-users.env; set +a`.
+
+**Y con ellas NO basta: la batería del gateway necesita dos secretos más**, y sin ellos tres
+ficheros mueren en su `beforeAll` nombrando la variable que falta (que es el diseño correcto, pero
+cuesta tres corridas descubrir que son tres cosas distintas y no una):
+
+```bash
+export PUSH_ROLE_JWT="$(cat ~/Secrets/yala-groups-enc/staging-push-role.jwt)"   # test/push.fanout
+export GROUPS_ENC_KEY="$(cat ~/Secrets/yala-groups-enc/staging.key)"            # test/groups.goldens
+```
+
+Con las tres cosas cargadas, `npm test` en `gateway/` pasa de 242 a 286+ tests ejecutados. Medido el
+2026-09-03.
+
+**El usuario C no existe en `auth.users` de staging** (comprobado el 2026-09-03): no es que su
+contraseña esté rotada. El sub-caso que lo usa cae a B, como ya dice este documento. Los
 **emails** sí conservan valor por defecto (cuentas sintéticas de staging, no son secreto) y se
 pueden sobrescribir con `USER_A_EMAIL` / `USER_B_EMAIL` / `USER_C_EMAIL`.
 

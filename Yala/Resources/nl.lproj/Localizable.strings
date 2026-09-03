@@ -2369,6 +2369,9 @@
 
 // Groups
 "notifications.groups.name" = "Groepen";
+"notifications.groups.remoteActivity" = "Nieuws in je groepen";
+"notifications.groups.remotePendingRequest" = "👋 Iemand wil lid worden van een van je groepen";
+"notifications.groups.remoteMembershipUpdate" = "Er is nieuws over je groepslidmaatschap";
 "notifications.groups.hint" = "Meldingen wanneer andere leden uitgaven toevoegen of jou betalen";
 "notifications.groups.newExpense" = "🧾 %1$@ heeft '%2$@' toegevoegd — jouw deel: %3$@";
 "notifications.groups.newExpenseNoDesc" = "🧾 %1$@ heeft een uitgave toegevoegd — jouw deel: %2$@";

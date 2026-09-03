@@ -25,6 +25,9 @@ import { gateRequest } from "../ratelimit";
 import { bearerToken, callRpc, verifyUserToken } from "../sync/userauth";
 import { requireEncKey } from "./encKey";
 import { KILL_EXEMPT_RPCS, groupsChannelKilled } from "./killSwitch";
+// g8_03: los RPC de membresía pasan a emitir push. Vive en `routes.ts` porque el resolver de tokens,
+// el cap y el prune ya están ahí — duplicarlo aquí sería la segunda copia del mismo fan-out.
+import { fanOutGroupPush } from "./routes";
 
 type Ctx = Context<{ Bindings: Env }>;
 
@@ -178,8 +181,91 @@ export async function handleGroupsRpc(c: Ctx): Promise<Response> {
     return jsonError("yala_unavailable", `groups rpc upstream ${status}`, 502);
   }
 
+  // Fan-out de MEMBRESÍA (g8_03). Hasta hoy este fichero no emitía NADA: `fanOutGroupPush` tenía un
+  // único llamador, la ruta de deltas de `/groups/push`, así que el admin no se enteraba de una
+  // solicitud de entrada hasta que abría la app por su cuenta — podían ser horas, y mientras el
+  // invitado esperaba a ciegas.
+  //
+  // Va en `waitUntil` y DESPUÉS de que el RPC haya tenido éxito: es best-effort total, igual que su
+  // hermano, y jamás debe afectar a la respuesta que el cliente ya está esperando.
+  notifyMembershipChange(c, auth, fn, out);
+
   // Passthrough del body del RPC: jsonb (objeto) para casi todos; JSON string para create_group_invite.
   return c.json((out ?? null) as never);
+}
+
+/**
+ * Dispara el push de los RPC que cambian una membresía. No hace nada para el resto.
+ *
+ * **El `group_id` se lee del RETORNO, no de `args`, y no es un detalle.** `PARAM_ALLOWLIST.join_group`
+ * es `{p_token, p_display_name, p_legacy_member_key}`: no lleva group id, porque quien se une sólo
+ * tiene el token del enlace. Las tres ramas del RPC devuelven `{group_id, member_key, status}`
+ * (`supabase-groups-staging.ddl:483,:494,:509,:523`), y ahí sí está.
+ *
+ * **Y el `status` decide si hay algo que avisar.** La rama «ya eras miembro» de `join_group`
+ * (`ddl:492-495`) devuelve `status:'active'` SIN haber cambiado nada: notificar ahí spamearía a los
+ * admins cada vez que alguien reabre el enlace. Sólo se avisa de transiciones reales.
+ */
+export function notifyMembershipChange(
+  c: Context<{ Bindings: Env }>,
+  auth: { userJWT: string; sub: string },
+  fn: string,
+  out: unknown,
+): void {
+  if (fn !== "join_group" && fn !== "approve_member" && fn !== "remove_member") return;
+
+  // **`c.executionCtx` LANZA si el Worker se invocó sin ExecutionContext.** En el runtime real siempre
+  // existe, pero `app.fetch(req, env)` sin 3er argumento —como llaman varios tests— hace que Hono tire
+  // «no ExecutionContext», y aquí eso convertiría un RPC que YA tuvo éxito en un 500. El aviso es
+  // best-effort: jamás puede tumbar la operación que lo dispara.
+  //
+  // Se resuelve UNA vez y aquí, no en cada rama: `/groups/push` ya se topó con esto (su llamador de
+  // test pasa un ctx no-op a propósito, ver el comentario de `groups.goldens.test.ts:115`) y la
+  // lección es que el fan-out no debe depender de que cada llamador se acuerde.
+  let waitUntil: (p: Promise<unknown>) => void;
+  try {
+    const ctx = c.executionCtx;
+    waitUntil = (p) => ctx.waitUntil(p);
+  } catch {
+    // Sin ctx no hay dónde colgar el trabajo en segundo plano: se descarta el aviso y se deja rastro.
+    // Nunca se hace `await`: bloquearía la respuesta del RPC, que es justo lo que `waitUntil` evita.
+    console.log(`[groups-rpc] ${fn}: sin ExecutionContext — fan-out de membresía omitido`);
+    return;
+  }
+
+  const body = (out ?? {}) as Record<string, unknown>;
+  const groupId = typeof body.group_id === "string" ? body.group_id : "";
+  const memberKey = typeof body.member_key === "string" ? body.member_key : "";
+  const status = typeof body.status === "string" ? body.status : "";
+  if (!groupId) return;
+
+  // `join_group` → avisa a QUIEN PUEDE APROBAR, y sólo si de verdad quedó pendiente. Un `rebound` o
+  // un re-tap del enlace de alguien ya activo no es noticia para nadie.
+  if (fn === "join_group") {
+    if (status !== "pendingApproval") return;
+    waitUntil(
+      fanOutGroupPush(c.env, auth, [groupId], null, { kind: "admins" }, "notifications.groups.remotePendingRequest"),
+    );
+    return;
+  }
+
+  // `approve_member` / `remove_member` → avisan a LA PERSONA afectada, que no es quien llama: aquí el
+  // autor es el admin. Por eso la audiencia va por `member_key` y no excluye a nadie.
+  //
+  // El mismo texto neutro sirve para aprobado, rechazado y expulsado a propósito: una negativa no
+  // debería leerse en una pantalla de bloqueo delante de quien sea, y el detalle lo da la app al
+  // abrir — que además es la única que puede descifrarlo.
+  if (!memberKey) return;
+  waitUntil(
+    fanOutGroupPush(
+      c.env,
+      auth,
+      [groupId],
+      null,
+      { kind: "member", memberKey },
+      "notifications.groups.remoteMembershipUpdate",
+    ),
+  );
 }
 
 /** Extrae el `message` de un error de PostgREST (el código yala_* sanitizado vive ahí, no en `code`). */

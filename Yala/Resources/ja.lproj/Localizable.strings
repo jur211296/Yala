@@ -2369,6 +2369,9 @@
 
 // Groups
 "notifications.groups.name" = "グループ";
+"notifications.groups.remoteActivity" = "グループに新しい動きがあります";
+"notifications.groups.remotePendingRequest" = "👋 グループへの参加リクエストが届いています";
+"notifications.groups.remoteMembershipUpdate" = "グループのメンバーシップに関するお知らせです";
 "notifications.groups.hint" = "他のメンバーが支出を追加したり、支払いをした際の通知";
 "notifications.groups.newExpense" = "🧾 %1$@さんが「%2$@」を追加 — あなたの負担は%3$@";
 "notifications.groups.newExpenseNoDesc" = "🧾 %1$@さんが支出を追加 — あなたの負担は%2$@";

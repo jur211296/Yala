@@ -9,6 +9,7 @@ import { exportPKCS8, generateKeyPair } from "jose";
 import type { Env } from "../src/env";
 import { fanOutGroupPush } from "../src/groups/routes";
 import { handlePushRegister } from "../src/push/register";
+import { notifyMembershipChange } from "../src/groups/rpc";
 import { _resetJwtCacheForTests } from "../src/push/apns";
 
 const RPC_URL = "https://stub.local";
@@ -138,9 +139,16 @@ describe("fanOutGroupPush — units offline", () => {
     expect(apple[0].url).toContain("api.sandbox.push.apple.com"); // ios-sandbox
     expect(apple[0].url).toContain("b".repeat(64));
     const headers = apple[0].init?.headers as Record<string, string>;
-    expect(headers["apns-push-type"]).toBe("background");
-    expect(headers["apns-priority"]).toBe("5");
+    // g8_03 (2026-09-03): de `background`/5 a `alert`/10. El aviso deja de depender de que iOS
+    // despierte a la app — con `background`, si no entregaba el silent push no había notificación.
+    expect(headers["apns-push-type"]).toBe("alert");
+    expect(headers["apns-priority"]).toBe("10");
     const payload = JSON.parse(apple[0].init?.body as string);
+    // La alerta que pinta el sistema. Genérica: nombre de grupo, concepto e importe son bytea † en el
+    // DDL y el Worker no los puede leer.
+    expect(payload.aps.alert["loc-key"]).toBe("notifications.groups.remoteActivity");
+    // El eco silencioso sigue viajando en el MISMO push: es lo que permite que la app reemplace el
+    // banner pobre por el rico. Sin esta aserción, quitarlo dejaría el test verde con la alerta sola.
     expect(payload.aps["content-available"]).toBe(1);
     expect(payload.yala.kind).toBe("groups-sync");
   });
@@ -232,5 +240,214 @@ describe("/push/register — guard offline (sin red)", () => {
     expect(res.status).toBe(401);
     expect(calls.length).toBe(0); // ni siquiera intentó verificar el JWT (no hay Bearer)
     vi.unstubAllGlobals();
+  });
+});
+
+// =====================================================================================================
+// g8_03 · AUDIENCIAS. El fan-out nació con una sola («los co-members activos, menos el autor») y su
+// resolver estaba cableado a `get_group_push_tokens`. Los eventos de membresía necesitan otras dos, y
+// elegir mal aquí no rompe nada visible: manda el aviso a QUIEN NO TOCA, en silencio.
+//
+// Eso es exactamente lo que estos tests existen para impedir. Una solicitud de entrada notificada a
+// todo el grupo, o el aviso de «te respondieron» disparado con la RPC que excluye a los rechazados
+// (y que por tanto no avisaría a nadie), pasarían inadvertidos sin ellos.
+// =====================================================================================================
+describe("fanOutGroupPush — audiencias (g8_03)", () => {
+  beforeEach(() => {
+    _resetJwtCacheForTests();
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("audiencia `admins` → llama a get_group_admin_push_tokens, NO al resolver de co-members", async () => {
+    const pem = await makePem();
+    const calls: Recorded[] = [];
+    stubFetch((url) => {
+      if (url.includes("/rpc/get_group_admin_push_tokens")) {
+        return tokensResponse([{ user_id: "u-admin", device_token: "c".repeat(64), platform: "ios-sandbox" }]);
+      }
+      if (url.includes("push.apple.com")) return APPLE_OK();
+      return new Response("{}", { status: 200 });
+    }, calls);
+
+    await fanOutGroupPush(makeFanoutEnv(pem), AUTH, ["g-1"], null, { kind: "admins" }, "notifications.groups.remotePendingRequest");
+
+    // El resolver correcto, y el de co-members NI SE ROZA: usarlo avisaría a todo el grupo de una
+    // solicitud que sólo incumbe a quien puede aprobarla.
+    expect(calls.some((c) => c.url.includes("/rpc/get_group_admin_push_tokens"))).toBe(true);
+    expect(calls.some((c) => c.url.includes("/rpc/get_group_push_tokens"))).toBe(false);
+
+    const rpc = calls.find((c) => c.url.includes("/rpc/get_group_admin_push_tokens"));
+    const args = JSON.parse(rpc!.init?.body as string);
+    expect(args.p_group_id).toBe("g-1");
+    expect(args.p_exclude_user_id).toBe(AUTH.sub); // el solicitante no se avisa a sí mismo
+
+    const payload = JSON.parse(calls.find((c) => c.url.includes("push.apple.com"))!.init?.body as string);
+    expect(payload.aps.alert["loc-key"]).toBe("notifications.groups.remotePendingRequest");
+  });
+
+  it("audiencia `member` → get_group_member_push_tokens por member_key, y SIN excluir a nadie", async () => {
+    const pem = await makePem();
+    const calls: Recorded[] = [];
+    stubFetch((url) => {
+      if (url.includes("/rpc/get_group_member_push_tokens")) {
+        return tokensResponse([{ user_id: "u-target", device_token: "d".repeat(64), platform: "ios-sandbox" }]);
+      }
+      if (url.includes("push.apple.com")) return APPLE_OK();
+      return new Response("{}", { status: 200 });
+    }, calls);
+
+    await fanOutGroupPush(makeFanoutEnv(pem), AUTH, ["g-1"], null, { kind: "member", memberKey: "mk-42" }, "notifications.groups.remoteMembershipUpdate");
+
+    const rpc = calls.find((c) => c.url.includes("/rpc/get_group_member_push_tokens"));
+    expect(rpc).toBeDefined();
+    const args = JSON.parse(rpc!.init?.body as string);
+    expect(args.p_member_key).toBe("mk-42");
+    // **NO lleva p_exclude_user_id, y es la mitad del punto.** Aquí el autor es el admin y el
+    // destinatario es otro: excluir al autor no sobra, pero pasar la exclusión de la otra RPC sí
+    // rompería — y el rechazado, que queda en status 'rejected', es justo a quien hay que avisar.
+    expect(args.p_exclude_user_id).toBeUndefined();
+
+    const payload = JSON.parse(calls.find((c) => c.url.includes("push.apple.com"))!.init?.body as string);
+    expect(payload.aps.alert["loc-key"]).toBe("notifications.groups.remoteMembershipUpdate");
+  });
+
+  it("sin audiencia explícita → sigue siendo co-members (el llamador de siempre no cambia)", async () => {
+    const pem = await makePem();
+    const calls: Recorded[] = [];
+    stubFetch((url) => {
+      if (url.includes("/rpc/get_group_push_tokens")) return tokensResponse([]);
+      if (url.includes("push.apple.com")) return APPLE_OK();
+      return new Response("{}", { status: 200 });
+    }, calls);
+
+    await fanOutGroupPush(makeFanoutEnv(pem), AUTH, ["g-1"]);
+
+    expect(calls.some((c) => c.url.includes("/rpc/get_group_push_tokens"))).toBe(true);
+    expect(calls.some((c) => c.url.includes("/rpc/get_group_admin_push_tokens"))).toBe(false);
+    expect(calls.some((c) => c.url.includes("/rpc/get_group_member_push_tokens"))).toBe(false);
+  });
+});
+
+// =====================================================================================================
+// g8_03 · EL EMISOR ELIGE BIEN. Los tests de arriba prueban que `fanOutGroupPush` respeta la audiencia
+// que le pasan; éstos prueban que `notifyMembershipChange` le pasa la correcta.
+//
+// La distinción NO es académica: se descubrió por mutación. Cambiando `{kind:"admins"}` por
+// `{kind:"coMembers"}` en el emisor, TODA la batería seguía verde — los goldens de membresía no miran
+// el fan-out y los units de audiencia llaman a la función directamente. El defecto que eso deja pasar
+// es que una solicitud de entrada, que sólo incumbe a quien puede aprobarla, se anuncie a todo el
+// grupo. Silencioso y en producción.
+// =====================================================================================================
+describe("notifyMembershipChange — el emisor elige la audiencia (g8_03)", () => {
+  beforeEach(() => {
+    _resetJwtCacheForTests();
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  /** `c` mínimo: sólo lo que toca el emisor (env + executionCtx). El ctx COLECTA las promesas. */
+  function fakeCtx(env: Env, sink: Promise<unknown>[]) {
+    return {
+      env,
+      get executionCtx() {
+        return { waitUntil: (p: Promise<unknown>) => sink.push(p), passThroughOnException() {} };
+      },
+    } as unknown as Parameters<typeof notifyMembershipChange>[0];
+  }
+
+  it("join_group pendiente → audiencia ADMINS (no todo el grupo)", async () => {
+    const pem = await makePem();
+    const calls: Recorded[] = [];
+    stubFetch((url) => {
+      if (url.includes("/rpc/")) return tokensResponse([]);
+      return APPLE_OK();
+    }, calls);
+
+    const pending: Promise<unknown>[] = [];
+    notifyMembershipChange(fakeCtx(makeFanoutEnv(pem), pending), AUTH, "join_group", {
+      group_id: "g-1",
+      member_key: "mk-1",
+      status: "pendingApproval",
+    });
+    await Promise.all(pending);
+
+    expect(calls.some((c) => c.url.includes("/rpc/get_group_admin_push_tokens"))).toBe(true);
+    expect(calls.some((c) => c.url.includes("/rpc/get_group_push_tokens"))).toBe(false);
+  });
+
+  it("join_group de alguien YA activo → no avisa a nadie (re-tap del enlace no es noticia)", async () => {
+    const pem = await makePem();
+    const calls: Recorded[] = [];
+    stubFetch(() => APPLE_OK(), calls);
+
+    const pending: Promise<unknown>[] = [];
+    // La rama «ya eras miembro» del RPC devuelve status 'active' sin haber cambiado nada. Notificar
+    // aquí spamearía a los admins cada vez que alguien reabre el enlace de invitación.
+    notifyMembershipChange(fakeCtx(makeFanoutEnv(pem), pending), AUTH, "join_group", {
+      group_id: "g-1",
+      member_key: "mk-1",
+      status: "active",
+    });
+    await Promise.all(pending);
+
+    expect(calls.length).toBe(0);
+  });
+
+  it("approve_member y remove_member → audiencia MEMBER, por su member_key", async () => {
+    for (const fn of ["approve_member", "remove_member"]) {
+      const pem = await makePem();
+      const calls: Recorded[] = [];
+      stubFetch((url) => {
+        if (url.includes("/rpc/")) return tokensResponse([]);
+        return APPLE_OK();
+      }, calls);
+
+      const pending: Promise<unknown>[] = [];
+      notifyMembershipChange(fakeCtx(makeFanoutEnv(pem), pending), AUTH, fn, {
+        group_id: "g-1",
+        member_key: "mk-42",
+        status: fn === "approve_member" ? "active" : "rejected",
+      });
+      await Promise.all(pending);
+
+      const rpc = calls.find((c) => c.url.includes("/rpc/get_group_member_push_tokens"));
+      expect(rpc, `${fn} debería resolver por member`).toBeDefined();
+      expect(JSON.parse(rpc!.init?.body as string).p_member_key).toBe("mk-42");
+      // El de co-members EXCLUYE a los no-activos: usarlo para un rechazo no avisaría a nadie.
+      expect(calls.some((c) => c.url.includes("/rpc/get_group_push_tokens"))).toBe(false);
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("un RPC que no toca membresía no dispara nada", async () => {
+    const pem = await makePem();
+    const calls: Recorded[] = [];
+    stubFetch(() => APPLE_OK(), calls);
+    const pending: Promise<unknown>[] = [];
+    notifyMembershipChange(fakeCtx(makeFanoutEnv(pem), pending), AUTH, "create_group", { group_id: "g-1" });
+    await Promise.all(pending);
+    expect(calls.length).toBe(0);
+  });
+
+  it("sin ExecutionContext no lanza: el aviso se omite, el RPC no se convierte en 500", async () => {
+    const pem = await makePem();
+    const calls: Recorded[] = [];
+    stubFetch(() => APPLE_OK(), calls);
+    // Hono LANZA al acceder a `executionCtx` si el Worker se invocó sin él (`app.fetch(req, env)`).
+    // Un RPC que YA tuvo éxito no puede acabar en 500 por un aviso best-effort.
+    const cSinCtx = {
+      env: makeFanoutEnv(pem),
+      get executionCtx(): never {
+        throw new Error("This context has no ExecutionContext");
+      },
+    } as unknown as Parameters<typeof notifyMembershipChange>[0];
+
+    expect(() =>
+      notifyMembershipChange(cSinCtx, AUTH, "join_group", { group_id: "g-1", member_key: "mk-1", status: "pendingApproval" }),
+    ).not.toThrow();
+    expect(calls.length).toBe(0);
   });
 });

@@ -2369,6 +2369,9 @@
 
 // Groups
 "notifications.groups.name" = "Groups";
+"notifications.groups.remoteActivity" = "New activity in your groups";
+"notifications.groups.remotePendingRequest" = "👋 Someone wants to join one of your groups";
+"notifications.groups.remoteMembershipUpdate" = "There's an update about your group membership";
 "notifications.groups.hint" = "Alerts when other members add expenses or pay you";
 "notifications.groups.newExpense" = "🧾 %1$@ added '%2$@' — you owe %3$@";
 "notifications.groups.newExpenseNoDesc" = "🧾 %1$@ added an expense — you owe %2$@";

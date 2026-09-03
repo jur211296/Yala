@@ -1910,6 +1910,9 @@
 "notifications.groups.modifiedExpense" = "✏️ %1$@ actualizó '%2$@' — te toca %3$@";
 "notifications.groups.multipleChanges" = "📋 %d novedades para revisar";
 "notifications.groups.name" = "Grupos";
+"notifications.groups.remoteActivity" = "Novedades en tus grupos";
+"notifications.groups.remotePendingRequest" = "👋 Alguien quiere unirse a uno de tus grupos";
+"notifications.groups.remoteMembershipUpdate" = "Novedades sobre tu membresía en un grupo";
 "notifications.groups.newExpense" = "🧾 %1$@ agregó '%2$@' — te toca %3$@";
 "notifications.groups.newExpenseNoDesc" = "🧾 %1$@ agregó un gasto — te toca %2$@";
 "notifications.groups.newMember" = "🙌 %@ se unió al grupo";

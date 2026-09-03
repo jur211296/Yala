@@ -2369,6 +2369,9 @@
 
 // Groups
 "notifications.groups.name" = "群组";
+"notifications.groups.remoteActivity" = "你的群组有新动态";
+"notifications.groups.remotePendingRequest" = "👋 有人想加入你的群组";
+"notifications.groups.remoteMembershipUpdate" = "你的群组成员身份有新消息";
 "notifications.groups.hint" = "其他成员添加支出或向你付款时提醒";
 "notifications.groups.newExpense" = "🧾 %1$@ 添加了「%2$@」— 你需付 %3$@";
 "notifications.groups.newExpenseNoDesc" = "🧾 %1$@ 添加了一笔支出 — 你需付 %2$@";

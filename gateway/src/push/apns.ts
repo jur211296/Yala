@@ -22,6 +22,17 @@ export interface ApnsPushRequest {
   sandbox: boolean; // true → api.sandbox.push.apple.com (builds con aps-environment=development)
   pushType?: "background" | "alert";
   payload?: Record<string, unknown>;
+  /**
+   * Segundos que APNs debe guardar el push si el device está inalcanzable. `0` = no reintentar
+   * (se descarta al instante), que es lo correcto para un `background` cuyo único fin es
+   * despertar a la app: un delta viejo no sirve para nada.
+   *
+   * Para una ALERTA es justo lo contrario y por eso se parametriza: con `0`, el aviso de que
+   * alguien pidió entrar a tu grupo se pierde para siempre si tenías el teléfono apagado. El
+   * default de una alerta pasa a 24 h — más allá, un «alguien quiere unirse» ya no es
+   * accionable y encima llega descolocado.
+   */
+  expirationSeconds?: number;
 }
 
 export interface ApnsPushResult {
@@ -76,6 +87,21 @@ function defaultPayload(): Record<string, unknown> {
   };
 }
 
+/** Ventana por defecto de una alerta: 24 h. Ver el docblock de `expirationSeconds`. */
+const ALERT_EXPIRATION_SECONDS = 24 * 60 * 60;
+
+/**
+ * Traduce «cuánto tiempo debe guardarlo APNs» al INSTANTE unix que exige la cabecera.
+ *
+ * Un `0` explícito se respeta tal cual y NO se convierte en instante: es el valor sentinela de
+ * APNs para «no reintentar», y calcularle un timestamp lo rompería.
+ */
+function apnsExpiration(pushType: "background" | "alert", seconds?: number): number {
+  const window = seconds ?? (pushType === "alert" ? ALERT_EXPIRATION_SECONDS : 0);
+  if (window <= 0) return 0;
+  return Math.floor(Date.now() / 1000) + window;
+}
+
 export async function sendPush(env: Env, req: ApnsPushRequest): Promise<ApnsPushResult> {
   const host = req.sandbox ? "https://api.sandbox.push.apple.com" : "https://api.push.apple.com";
   // Para push background el topic es el bundle id sin sufijo. Staging tiene un solo id,
@@ -91,9 +117,13 @@ export async function sendPush(env: Env, req: ApnsPushRequest): Promise<ApnsPush
         authorization: `bearer ${jwt}`,
         "apns-topic": topic,
         "apns-push-type": pushType,
-        // background exige priority 5 (10 está prohibido); expiration 0 = no reintentar si offline.
+        // background exige priority 5 (10 está prohibido).
         "apns-priority": pushType === "background" ? "5" : "10",
-        "apns-expiration": "0",
+        // `apns-expiration` es un INSTANTE unix, no una duración: `0` significa «entrégalo ya o
+        // deséchalo». Estuvo clavado en `0` mientras el único push era `background`, donde es lo
+        // correcto. Una alerta con `0` se pierde entera si el teléfono está apagado, en avión o sin
+        // cobertura — que es justo cuando más falta hace que APNs la guarde.
+        "apns-expiration": String(apnsExpiration(pushType, req.expirationSeconds)),
         "content-type": "application/json",
       },
       body: JSON.stringify(req.payload ?? defaultPayload()),
