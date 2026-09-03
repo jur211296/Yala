@@ -217,3 +217,138 @@ App Store.
 - Por qué el copy de espera no promete aviso, ya medido el 2026-08-12: `Yala/Utils/L10n.swift:2250-2258`.
 - Reconciliación de la fase del join en el cliente:
   `tickets/blocked/groups-join-intent-reconciler.md`.
+
+---
+
+## 2026-09-03 · Recomendación de arquitectura (encargo del owner: «lo más robusto, para TODO Grupos»)
+
+Producida por un panel de 18 agentes: 5 lentes mapeando el sistema real (gateway, cliente iOS, lo que
+ya funciona, infraestructura, tickets), 4 diseños independientes desde ángulos distintos
+(fiabilidad · simplicidad · evolución · modos de fallo) y 2 refutaciones adversariales por diseño.
+**Las cuatro propuestas fueron refutadas 2/2**; ninguna sobrevivió intacta, y la recomendación es una
+síntesis, no una ganadora.
+
+### 0 · ~~BLOQUEANTE: puede que el sistema sea un no-op~~ — **REFUTADO el 2026-09-03, MIDIENDO**
+
+El panel afirmó que el fan-out podía ser un no-op silencioso por falta de secrets, apoyándose en el
+comentario de `gateway/src/groups/routes.ts:174` («Prod arranca así hasta que el owner cargue
+APNS_KEY_ID/APNS_AUTH_KEY»). **Es falso, y el propio repo lo desmentía dos ficheros más allá.**
+
+Medido con `npx wrangler secret list --env production` (desde `gateway/`, que es donde vive el
+`wrangler.toml` — correrlo desde la raíz da «No environment found», que fue el primer error):
+
+| Requisito del fan-out | Estado real |
+|---|---|
+| `APNS_AUTH_KEY` | **secret PRESENTE** en producción |
+| `PUSH_ROLE_JWT` | **secret PRESENTE** en producción |
+| `APNS_KEY_ID` | `var` declarada en `wrangler.toml:104` (no es secret) |
+
+Y `gateway/wrangler.toml:101-104` ya lo decía por escrito, con fecha: «APNs (G8-1, **encendido
+2026-07-16**) … está subida como secret `APNS_AUTH_KEY` en **AMBOS** envs».
+
+**La lección de método, que vale más que el hallazgo:** el comentario de `routes.ts` describía el
+estado del día en que se escribió y nunca se actualizó al encender APNs. Un panel de cinco lentes lo
+leyó y lo dio por vigente porque **ninguna cruzó el comentario del código con la configuración**. Es
+la trampa de siempre de este repo, esta vez dentro del propio código y sobreviviendo a una revisión
+adversarial. Los dos `console.log` de `routes.ts:175` y `:181` siguen siendo correctos como
+salvaguarda; lo obsoleto es su comentario, que induce a creer que ése es el estado de producción.
+
+### 1 · La arquitectura: «Alerta con eco silencioso»
+
+Es el diseño de *simplicidad* con tres injertos, y **sin outbox**. Los dos diseños con outbox
+puntuaron peor (3,5 y 3,0) porque su garantía transaccional **es falsa donde importa**:
+`apply_group_delta` es `SECURITY INVOKER` (`ddl:932`), así que para GASTOS —el caso del ticket vivo—
+el encolado sigue siendo una llamada de red posterior. Se pagaría una tabla, un cron y un reaper por
+una garantía que no cubre el caso principal.
+
+Los injertos, cada uno de un diseño distinto: **(a)** el payload lleva `alert` **y**
+`content-available: 1`; **(b)** `apns-expiration` parametrizado, 24 h para alerta; **(c)** audiencia
+por evento, con una RPC para admins y otra para el destinatario individual.
+
+### 2 · Qué pasa, en lenguaje de usuario
+
+Ana pide entrar al grupo. El teléfono del admin **suena y muestra un banner aunque la app esté
+cerrada y el teléfono bloqueado**, con texto genérico («Novedades en un grupo»). Si el teléfono
+estaba apagado, le llega al encenderlo, hasta 24 h después. En paralelo, si iOS lo permite, la app se
+despierta por detrás, se trae los datos y **reemplaza** ese banner por el bueno («Ana quiere unirse a
+Viaje a Cusco»). Si no puede, el aviso pobre ya cumplió su función.
+
+La diferencia con hoy es esa: **el aviso deja de depender de que la app corra.**
+
+### 3 · El cambio, pieza a pieza
+
+| Pieza | Cambio | Coordenada |
+|---|---|---|
+| APNs | `apns-expiration` deja de ser `"0"` fijo · `collapse-id` · `pushType: "alert"` (ya soportado, cero callers) | `apns.ts:96`, `:23`, `:85` |
+| Payload | `aps.alert{loc-key}` **+** `content-available: 1` + `deepLink` top-level con el UUID pelado (el `group_id` del servidor es `SplitGroup-<uuid>`) | `NotificationService.swift:45`, `SplitGroup.swift:102` |
+| Emisor de membresía | `waitUntil(fanOutGroupPush(...))` tras el `callRpc` — hoy **no existe ningún emisor** ahí | `rpc.ts:165` |
+| Audiencia | `get_group_admin_push_tokens` y `get_member_push_token` (**sin** el filtro `status='active'`); el switch de RPC hay que cablearlo: hoy el nombre y sus 3 args están hardcodeados | `routes.ts:190`, `ddl:1614` |
+| Delegate | `UNUserNotificationCenter.delegate` pasa a `didFinishLaunching`; hoy se asigna en el `.task` de SwiftUI ⇒ **el tap desde app cerrada se pierde** | `AppBootstrapper.swift:140` |
+| Token | `attemptUpload()` también en el seam de inicio de sesión — hoy sólo en boot, y **ése es el fallo dominante** | `PushTokenRegistrar.swift:91-93` |
+| Poder ver algo | `writeDataPoint` a Analytics Engine: hoy el gateway **no escribe ni un punto** y los canarios son `console.log` que sólo existen con `wrangler tail` abierto | `metrics.ts:102` |
+
+### 4 · Lo que NO cubre, honestamente
+
+| Caso | Resultado |
+|---|---|
+| Permiso en OFF o `notDetermined` | **Cero avisos**, y APNs devuelve 200 con el canario en verde. Ninguna arquitectura lo arregla: sólo se puede *ver*, guardando `authorization_status` |
+| Focus / Resumen programado | La alerta se retiene horas. Exige el entitlement `usernotifications.time-sensitive`, **que hoy no existe** |
+| Sin token (instalación nueva, restore) | Inalcanzable hasta abrir la app |
+| Offline >24 h, o ráfaga | APNs guarda **una** notificación por device: de 5 gastos se ve 1 |
+| Idioma | `loc-key` lo resuelve iOS contra el idioma del SISTEMA e ignora el override in-app ⇒ iPhone en inglés + Yala en español da banner en inglés hasta que el pull lo reemplace |
+
+**Y un dato que rompe tests: son 16 `.lproj`, no 7.** Cualquier paridad escrita con «7» nace rota.
+
+### 5 · Fases
+
+| Fase | Qué | Valor por sí sola |
+|---|---|---|
+| **0** | Medir secrets, deployment y permiso (30 min del owner) | Puede cerrar el caso entero |
+| **1** | l10n de las claves en los 16 idiomas + delegate en `didFinishLaunching` + `attemptUpload` en sign-in | Sin esto, la F2 pinta la clave cruda en la pantalla de bloqueo |
+| **2** | `apns-expiration` + alerta + `content-available` en el fan-out actual | **Arregla el caso de gastos.** Una jornada |
+| **3** | Emisor de membresía + las dos RPC de audiencia | Cierra este ticket |
+| **4** | `notif_prefs`, `unregister` en el wipe, datapoints a AE, entitlement Time-Sensitive | Hace el sistema operable |
+
+**La F1 va ANTES que la F2, y las cuatro propuestas lo pusieron al revés**: las cuatro se comieron esa
+refutación.
+
+### 6 · Lo que el panel NO pudo cerrar
+
+**Medido**: todo lo del repo en `2cbfae4b`. **Inferido**: que APNs acepte `content-available` dentro
+de un `apns-push-type: alert` (si no, son dos pushes); que el `.task` de SwiftUI no corra en un launch
+de background; el presupuesto de iOS para silent push. **No medido por nadie**: los secrets, el Worker
+desplegado y el DDL vivo de producción (`supabase-groups-staging.ddl` se autodescribe como molde
+*offline* de staging).
+
+Nada de esto se verifica en simulador: App Attest en `enforce` obliga a TestFlight con dos teléfonos.
+
+### 0-bis · La causa REAL, ya sin el falso bloqueante (medida el 2026-09-03)
+
+Con los secrets descartados como problema, el diagnóstico queda limpio y son **dos cosas
+independientes**, las dos verificadas en el árbol:
+
+**(1) El push que existe es SILENCIOSO por diseño.** `gateway/src/groups/routes.ts:218`:
+
+```ts
+payload: { aps: { "content-available": 1 }, yala: { kind: "groups-sync" } },
+```
+
+No lleva `alert`. Un `content-available` **no pinta banner ni suena**: sólo despierta la app para que
+sincronice, y el aviso que ve la persona lo fabrica la app **localmente** después. El propio
+comentario de `:159` lo dice: «Despierta con un silent push a los co-members ACTIVOS».
+
+⇒ El título de este ticket es literal, y aplica a TODO Grupos: el aviso **depende de que la app
+corra**. Si iOS no entrega el silent push —presupuesto agotado, app force-quit, batería baja— no hay
+notificación. Eso es también, y sin más misterio, el ticket `groups-expense-notif-only-on-foreground`.
+
+**(2) Las RPC de membresía no emiten NADA, ni siquiera el silent push.** `fanOutGroupPush` tiene
+**un único llamador** en todo el gateway: `routes.ts:145`, dentro de la ruta de deltas de grupo
+(gastos). `gateway/src/groups/rpc.ts` —donde viven `join_group` y `approve_member`— no lo llama.
+
+⇒ Para el caso de este ticket ni siquiera hay que discutir de entrega: **no hay emisor**.
+
+**Qué significa para la recomendación de abajo:** el paso 0 cae, pero el diseño no. «Alerta con eco
+silencioso» ataca exactamente estos dos puntos — añadir `alert` al payload para que el aviso lo pinte
+el SISTEMA sin depender de la app (1), y cablear el emisor en las RPC de membresía (2). Lo que cambia
+es el orden y la urgencia: la fase 2 pasa a ser la que arregla el problema de fondo de todo Grupos, y
+la fase 3 la que cierra este ticket en concreto.
