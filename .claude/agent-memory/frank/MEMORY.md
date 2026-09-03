@@ -10,6 +10,11 @@
 ## Cómo mido
 - [Mis mediciones fallan por el filtro](feedback_mis_mediciones_fallan_por_el_filtro.md) — cuatro veces en un día: el filtro descarta lo que busco y leo la ausencia como dato. Control positivo y conteo.
 
+- [El tablero antes que el bug](feedback_el_tablero_antes_que_el_bug.md) — elige sanear tickets antes que un bug de producción; en solo-docs quiere el bloque entero, no troceado.
+
+## Qué está parado y por qué
+- [Cinco decisiones que le esperan](project_decisiones_que_esperan_a_jurgen.md) — lo parado en `in-progress` no espera código, espera respuesta suya. Verifica antes de citarlas: caducan.
+
 ## Cómo guío yo el trabajo manual
 - [Generar y persistir en un solo gesto](feedback_generar_y_persistir_credenciales.md) — una credencial nunca vive solo en pantalla; y verifica si una rotación se aplicó antes de rehacerla.
 
