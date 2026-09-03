@@ -17,3 +17,4 @@
 
 ## Entorno y herramientas
 - [El hook de secretos está desactivado](hook_secretos_disparador_substring.md) — retirado del push el 2026-09-01 (ADR-009); nada escanea hoy. Su trampa del substring, si vuelve.
+- [El hook de /cerrar salta con «cerramos»](hook_cerrar_disparador_substring.md) — verifica la premisa contra su mensaje: cerrar un ticket no es cerrar la sesión, y el bloque de disco es irreversible.
