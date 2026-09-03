@@ -1,14 +1,27 @@
 ---
 id: apppreferences-rewritten-on-launch
-status: qa
+status: blocked
 priority: high
 created: 2026-08-05
-updated: 2026-08-26
+updated: 2026-09-02
 source: YalaWiki/Backlog/qa_apppreferences-lavado-general.md
 ---
 
 
 # Las preferencias se volvían a guardar solas cada vez que se abría la app
+
+## Qué lo desbloquea
+
+**Dos aparatos reales con la misma cuenta de iCloud, y nada más.** El arreglo ya está en el
+código desde el 2026-08-05; lo que falta es la única comprobación que no cabe en un test: que un
+ajuste cambiado en un aparato aparezca en el otro. Los tres casos de «QA pendiente» son los tres
+de la misma forma —tocar en A, mirar en B—, así que **con un solo dispositivo no se puede cerrar
+ninguno**, ni siquiera parcialmente. Un simulador no le propaga a otro aparato lo que guarda en
+iCloud, y por eso esto no es cuestión de dedicarle más tiempo a la suite.
+
+Mientras eso no ocurra el ticket se queda aquí. **Lo que sí se puede avanzar sin dispositivos son
+sus residuales**, y por eso dos de ellos ya salieron a tickets propios (ver la sección de
+residuales, al final): quedarse colgando de este bloqueo los congelaba sin motivo.
 
 ## Descripción
 
@@ -48,8 +61,17 @@ valor por defecto justo después del borrado, y encima se propagaban a los otros
 | `Yala/App/Models/SessionState.swift` | Comentario que deja escrito que ese espejo **no** publica, y por qué (a él llegan también los cambios que vienen de otro dispositivo). |
 | `Yala/App/UITestEphemeralDefaults.swift` | Su documentación apuntaba al parche retirado. |
 | `YalaTests/UITestSeamPersistenceIsolationTests.swift` | 3 pruebas nuevas + 2 escáneres de código; la matriz existente pasa de 2 a 14 preferencias. |
-| `.claude/rules/testing.md` | Residual cerrado y los cuatro que siguen abiertos. |
+| `.claude/rules/testing.md` | Residual cerrado y los cuatro que siguen abiertos. **Ya no están ahí** — ver el aviso bajo la tabla. |
 | `qa/coverage-index.json` | 3 áreas actualizadas. |
+
+> **Dónde están hoy los cuatro residuales (medido el 2026-09-02, árbol `553b91c9`).** Esa última
+> fila describe lo que el commit hizo en su día, no dónde buscar ahora: `.claude/rules/testing.md`
+> tiene hoy 102 líneas y **cero** menciones de `AppPreferences`, del lavado, de `financialMindset`
+> o de `ProTourManager` — el commit `9e7e8d6c` («las reglas de Yala dejan de inyectar 220 KB por
+> sesión») lo adelgazó después. El diagnóstico completo y los cuatro residuales viven en
+> **`docs/aprendizajes-tecnicos.md`**, en los apartados (a)-(d) de la entrada del lavado general
+> (hoy `:255`; la regla de sync que la acompaña arranca en `:215`). **No se copia aquí su
+> contenido a propósito**: duplicarlo en dos superficies es exactamente cómo divergen.
 
 ### Decisiones técnicas y su porqué
 
@@ -84,11 +106,17 @@ con default `true`, texto, listas por coma y por barra…). Medido con un meta-m
 matriz vieja —dos preferencias, las dos booleanas— romper el guard de los textos o de los
 enteros dejaba el test **en verde**.
 
-### Verificación
+### Verificación — foto del 2026-08-05, NO es el estado de hoy
 
-- Gate completo: `Yala` ✓ / `Yala Dev` ✓ (0 warnings nuevos), 5564 unit en 520 suites,
-  11 XCUITest en 6 suites, audit limpio, ratchet OK.
+- Gate completo **del 2026-08-05**: `Yala` ✓ / `Yala Dev` ✓ (0 warnings nuevos), 5564 unit en 520
+  suites, 11 XCUITest en 6 suites, audit limpio, ratchet OK.
 - **9 mutantes a exit 65**, cada uno cayendo solo en su mitad.
+
+> **Este «verde» no se puede reusar como estado actual.** Es una medición de hace casi un mes, y
+> además un verde ya no significa lo que parece: `tickets/backlog/ci-verde-con-la-suite-en-rojo.md`
+> documenta que los pasos de test del CI llevan `continue-on-error`, así que el run sale marcado
+> como correcto aunque `xcodebuild` termine en error — llevaba semanas ocultando ocho tests en
+> rojo. Quien retome este ticket **vuelve a correr el gate**; no da por bueno lo de arriba.
 
 ## QA pendiente
 
@@ -104,14 +132,27 @@ la misma cuenta de iCloud:
 
 ## Residuales, medidos y NO cerrados
 
-- Los `@AppStorage` de `ContentView`/`GroupReconnectView` escriben las dos preferencias del
-  onboarding sin ninguna comprobación y **desarman el mecanismo temporal a mitad de una
-  corrida de tests**.
-- 5 de las 37 preferencias marcadas como sincronizadas no existen en `PrefSyncKey`: suben a
-  iCloud y no vuelven jamás. Hay que decidir si entran o si dejan de marcarse.
-- `financialMindset` sigue sin sincronizar fuera del onboarding (preexistente).
+Los cuatro se midieron el 2026-08-05 y **el detalle vive en `docs/aprendizajes-tecnicos.md:255`**
+(apartados a-d), no aquí ni en `.claude/rules/testing.md`. Abajo solo queda quién los lleva.
+
+- **Las dos preferencias del onboarding se quedan escritas en el simulador tras una corrida de
+  tests** — y si lo que se escribe es `false`, el aislamiento se desarma a mitad de camino.
+  **Tiene ticket propio desde el 2026-09-02 y NO necesita dos móviles:**
+  `tickets/backlog/appstorage-onboarding-desarma-el-aislamiento-de-tests.md`. Es código de la app
+  y se comprueba con la suite, así que no tiene por qué esperar a este bloqueo.
+  **Corrección de este residual, re-medida el 2026-09-02 en el árbol `553b91c9`:** decía
+  «`ContentView`/`GroupReconnectView` escriben», y `GroupReconnectView` **no escribe** — sus dos
+  únicas apariciones son la declaración (`Yala/App/Views/Groups/GroupReconnectView.swift:15`) y
+  una lectura en un `guard` (`:69`). Lo que contamina está todo en `ContentView`.
+- **5 de las 37 preferencias marcadas como sincronizadas no existen en `PrefSyncKey`**: suben a
+  iCloud y no vuelven jamás. **Ya tiene dueño:**
+  `tickets/backlog/prefs-synced-keys-upload-not-download.md`. No lo abras otra vez — ya se abrió
+  dos veces, y el duplicado (`synced-prefs-outside-prefsynckey`) acaba de moverse a
+  `tickets/discarded/`.
+- `financialMindset` sigue sin sincronizar fuera del onboarding (preexistente). **Sin ticket.**
 - `ThemeManager.resetToDefaults` y `ProTourManager.reset` vuelven a escribir tras el vaciado
   lo que el vaciado acaba de borrar — mismo molde, inofensivo hoy porque ninguna de esas
-  preferencias se sincroniza.
+  preferencias se sincroniza. **Sin ticket**; importa sobre todo a quien escriba un test que
+  afirme «esta preferencia no existe tras el vaciado».
 
 migrated from YalaWiki Backlog/qa_apppreferences-lavado-general.md @ 1934e8ad

@@ -4,7 +4,7 @@ status: qa
 priority: high
 area: "groups, sync, backend, invites, remote-config"
 created: 2026-07-31
-updated: 2026-08-26
+updated: 2026-09-02
 source: YalaWiki/Bugs/qa_invite-backend-mudo-config-stale.md
 ---
 
@@ -26,7 +26,20 @@ El enlace se reconoce **por su forma**, no por lo que el teléfono crea recordar
 - Si lo está → sigue con el flujo normal de unirse.
 - Si de verdad está apagado → **te lo dice**: «No pudimos abrir esta invitación ahora. Guardamos tu solicitud: vuelve a intentarlo en un momento.» Y como la solicitud queda guardada (7 días), en cuanto se enciende te une **sin que tengas que pedir otro enlace**.
 
-Los enlaces de los grupos que no se han migrado siguen funcionando exactamente igual que antes.
+> [!warning] Esta frase decía «los enlaces de los grupos que no se han migrado siguen funcionando
+> exactamente igual que antes», y **hoy es falsa**. Se corrige aquí porque es la que más caro sale
+> en una corrida de QA: quien la lea de arriba clasificará como fallo un comportamiento que es el
+> esperado. Re-medida contra el árbol de hoy (HEAD `553b91c9`), no heredada.
+
+Los enlaces **antiguos** —los de un grupo que nunca se migró al canal nuevo— **ya no unen a nadie**.
+Quien toque uno ve una alerta: **«Enlace no válido — Este enlace ya no es válido o expiró. Pídele al
+admin que regenere uno.»** No es un fallo: el transporte que servía esos enlaces se retiró en la
+Fase 3, y el aviso es deliberado, porque un enlace que no hace nada es el peor final posible. El
+consejo que da además es cierto: el enlace que regenere el admin será del canal nuevo, y ése sí
+funciona.
+
+**Para quien corra la QA: esa alerta con un enlace viejo es el resultado CORRECTO, no un defecto.**
+Lo que sí sería un defecto es tocar el enlace y que no pase absolutamente nada.
 
 ## Implementación
 
@@ -62,8 +75,8 @@ Cualquier fix apoyado en «si `extractShareURL` devuelve `nil`, entonces…» no
 
 | Archivo | Qué cambió |
 |---|---|
-| `Yala/App/Logic/GroupInviteChannelRoutingLogic.swift` **(nuevo)** | La decisión, pura: `route(isBackendLink:flagEnabled:didRefreshFlags:)` → `.backend` / `.ckShare` / `.refreshFlagsThenRetry` / `.backendUnavailable`. `isBackendLink == false` → `.ckShare` siempre, con el flag como esté (canal viejo intacto). El docblock lleva el porqué completo del hallazgo |
-| `Yala/App/AppBootstrapper.swift` | `handleInviteLink` partido en tres: el enrutado (consume la lógica pura), `enterBackendInvite` (canal nuevo, sin cambios de comportamiento) y `processCKShareInviteLink` (canal viejo, extraído tal cual). Nuevo helper `persistBackendInviteIntent` = beta unlock + intent + canario, que ahora tiene tres llamadores |
+| `Yala/App/Logic/GroupInviteChannelRoutingLogic.swift` **(nuevo)** | La decisión, pura: `route(isBackendLink:flagEnabled:didRefreshFlags:)` → `.backend` / `.ckShare` / `.refreshFlagsThenRetry` / `.backendUnavailable`. `isBackendLink == false` → `.ckShare` siempre, con el flag como esté. ⚠️ La coletilla «(canal viejo intacto)» que llevaba esta celda **es falsa desde la Fase 3** y se retira: `.ckShare` ya no une, informa. El comentario del propio `route` (medido en `:66-67`) sigue diciendo «mantiene el camino CKShare literalmente intacto» — **es la misma frase caducada, en el código**; queda anotada aquí, no la corrijo porque este ticket no toca `.swift` |
+| `Yala/App/AppBootstrapper.swift` | `handleInviteLink` partido en el enrutado (consume la lógica pura) + `enterBackendInvite` (canal nuevo). Nuevo helper `persistBackendInviteIntent` = beta unlock + intent + canario, con tres llamadores. ⚠️ La celda listaba además un `processCKShareInviteLink` (canal viejo, extraído tal cual): **ya no existe** — `grep -rn processCKShareInviteLink` sobre el árbol de hoy da **cero** resultados, la Fase 3 se lo llevó y en su lugar hay una rama `case .ckShare` que informa |
 | `Yala/App/Logic/GroupBackendInviteEntryLogic.swift` | Advertencia en `routesToBackend`: su docblock describe la premisa **refutada** y la función no tiene —ni tuvo— call-site de producción. Ver «Deuda» abajo |
 | `YalaTests/GroupInviteChannelRoutingLogicTests.swift` **(nuevo)** | 8 de tabla + 4 de source-scan. Ver abajo |
 | 16 × `Localizable.strings` | `groups.invite.channelUnavailable`. Traducida a mano en los 12 locales que el script marca (`add-l10n-key.sh` + Python; **nunca** `perl -CSD` inline: mojibake que la paridad no caza) |
@@ -85,7 +98,9 @@ En `.claude/rules/swiftdata-cloudkit.md`: **un gate de feature no puede decidir 
 
 ## Deuda que deja abierta
 
-`GroupBackendInviteEntryLogic.routesToBackend` codifica la premisa que este fix refutó y **nunca tuvo un call-site de producción** — solo cuatro tests verdes «demostrando» algo que el producto no hacía. Es la misma familia que el `AppAttestClient.ensureRegistered()` de `.claude/rules/gateway-attest.md`, que costó una vuelta entera de diagnóstico. Lleva la advertencia en el docblock; **borrarla, junto con los tests que solo la ejercitan, queda para un commit aparte** (hay un chip de sesión con el detalle) porque eliminar tests verdes no entraba en el alcance aprobado de este fix.
+`GroupBackendInviteEntryLogic.routesToBackend` codifica la premisa que este fix refutó y **nunca tuvo un call-site de producción** — solo cuatro tests verdes «demostrando» algo que el producto no hacía.
+
+**Sigue viva, re-medida el 2026-09-02 contra HEAD `553b91c9`.** `grep -rn routesToBackend --include="*.swift" .`: el único resultado bajo `Yala/` es su propia definición, en `GroupBackendInviteEntryLogic.swift:77` (la coordenada de partida era `~:77` y cae exacta). Los cinco call-sites reales están todos en `YalaTests/` — `GroupBackendInviteEntryLogicTests.swift:68,72,73` y `GroupBackendInviteParserTests.swift:115,127`. (Otros dos aciertos del grep son ruido: `GroupInviteChannelRoutingLogicTests.swift:30` y `GroupBatchStepZoneTests.swift:175` son **nombres de test** que contienen la palabra, no llamadas.) El docblock de la función ya lleva la advertencia. **Limpieza aparte, no de esta QA.** Es la misma familia que el `AppAttestClient.ensureRegistered()` de `.claude/rules/gateway-attest.md`, que costó una vuelta entera de diagnóstico. Lleva la advertencia en el docblock; **borrarla, junto con los tests que solo la ejercitan, queda para un commit aparte** (hay un chip de sesión con el detalle) porque eliminar tests verdes no entraba en el alcance aprobado de este fix.
 
 ## 2026-08-17 — re-medición contra 2.0.5
 
@@ -98,9 +113,134 @@ En `.claude/rules/swiftdata-cloudkit.md`: **un gate de feature no puede decidir 
 **REMAINS (C) — owner / TestFlight, no Xcode ni staging:**
 
 - (1) enlace backend con config ya fresca → se une normal.
-- (2) enlace backend con config vieja (snapshot < 6 h) → se une igual, sin mensaje de error (refresh forzado).
-- (4) cold launch + enlace backend → se une tras el arranque.
+- (2) **reescrito el 2026-09-02, ver abajo.**
+- (4) cold launch + enlace backend → se une tras el arranque. ⚠️ Le aplica el mismo agujero que a (2):
+  el arranque en frío es justamente donde vive. Lo que hay que esperar es que el invitado **vea
+  primero la alerta** y entre al grupo más tarde, cuando la reconciliación retome la solicitud
+  guardada. Que esa segunda mitad ocurra **no está medido** — es lo que este ticket afirma
+  (intent con TTL de 7 días, cuatro disparadores), no lo que nadie haya visto pasar.
 
 No correr el caso 3 como «CKShare intacto». No cerrar el ticket. Joan revisa el nombre.
+
+### Criterio (2), reescrito — 2026-09-02
+
+**Antes decía:** «enlace backend con config vieja (snapshot < 6 h) → se une igual, sin mensaje de
+error (refresh forzado)». **Ese criterio hace fallar la QA por el motivo equivocado**: da por hecho
+que el refresco forzado siempre corre, y hay un caso muy común en el que no corre.
+
+**El agujero.** El `force` salta el intervalo mínimo de 6 h, pero **no salta un refresco que ya está
+en marcha**. Medido en `Yala/Services/CloudSync/CloudRemoteConfig.swift`: `guard !inFlight` está en
+la **línea 255** y el `guard force || shouldRefresh(...)` en la **257** — el que devuelve primero es
+el de arriba, así que con otro refresco en vuelo el forzado se va sin tocar la red. Y en un arranque
+en frío siempre hay uno en vuelo: el propio arranque lo lanza (`AppBootstrapper.swift:297-298`).
+
+**Qué ve el usuario cuando eso pasa:** acaba de instalar Yala, abre el enlace y en lugar de entrar
+al grupo le sale **«No pudimos abrir esta invitación ahora. Guardamos tu solicitud: vuelve a
+intentarlo en un momento.»** — un mensaje cuya causa es falsa, porque Grupos puede estar encendido
+para él; lo único que pasó es que la app no llegó a preguntarlo.
+
+**Criterio nuevo, para quien corra la QA:**
+
+- Con la app **ya abierta y asentada** (sin refresco de arranque en vuelo): enlace backend con
+  snapshot viejo → **se une, sin mensaje de error**. Esto es lo que el criterio original describía
+  y sigue siendo lo exigible.
+- En **arranque en frío**, o con el enlace tapeado en los primeros segundos: ver la alerta de
+  «no pudimos abrir esta invitación ahora» **NO es un hallazgo nuevo** — es este defecto, ya
+  levantado. No abras otro ticket, no lo persigas: anótalo contra
+  **`tickets/backlog/invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo.md`**, que lleva la cadena
+  completa con coordenadas.
+- Lo que **sí** hay que comprobar en ese caso: que la solicitud quedó guardada y el invitado acaba
+  entrando sin pedir otro enlace. Si tampoco ocurre eso, **eso sí es un hallazgo nuevo**.
+
+## 2026-09-02 — receta de QA que SÍ sale en simulador
+
+Hasta hoy este ticket mandaba todo a TestFlight, y eso dejaba sin cubrir las dos alertas, que son
+lo que más fácil se malinterpreta. **Los dos casos de abajo se reproducen en el simulador**, sin
+device, sin staging y sin tocar el rollout.
+
+Escrita leyendo el código en HEAD `553b91c9`. **No la ejecuté** — no me toca correr builds. Lo que
+sigue está MEDIDO en el fuente; el resultado en pantalla es lo que ese fuente produce, INFERIDO.
+
+### Montaje
+
+1. **Yala Dev, lanzado a mano desde Xcode o desde el simulador. Sin `-uitest`.** No es un detalle:
+   bajo ese argumento el canal se lee **siempre encendido** y el toggle de abajo **no hace nada**.
+   Medido: `CloudRemoteConfig.decide` corta en `isRunningTests || isUITestHost` (`CloudRemoteConfig.swift:186`)
+   antes de mirar la key de debug (`:188`); `isUITestHost` es literalmente `arguments.contains("-uitest")`
+   (`:174-180`), y el `absentDefault` de un build DEV es `true` (`:120-126`). Correr esto desde un
+   XCUITest da verde por el motivo equivocado.
+2. **Ajustes → Almacenamiento → fila «Modo Nube · Auth»** (subtítulo «Panel DEBUG (solo Yala Dev)»).
+   La fila está bajo `#if DEV_BUILD` en `StorageSettingsView.swift:66-67`; hay una gemela en la
+   pantalla de iCloud, sirve igual.
+3. Dentro del panel, en la tarjeta de remote-config, activar **«Simular remote OFF (kill-switch)»**
+   (`CloudSyncDebugView.swift:888`). Escribe `cloudSync.debug.remoteFlagsForceOff` y con eso el canal
+   de Grupos se lee apagado sin tocar red ni staging. **Acuérdate de apagarlo al terminar**: queda
+   guardado y se lleva a la siguiente sesión.
+
+### ⚠️ El enlace exige el parámetro `s`, o no llega ni al handler
+
+Un enlace sin `s` **se descarta antes de que nadie lo mire**: no hay alerta, no hay log de invitación,
+no pasa nada — y es facilísimo confundir eso con el bug original de «la app se abre y no ocurre nada».
+
+**Corrijo la pista con la que llegué a esto:** el que exige `s` **no** es `extractBackendInvite`. Ese
+parser acepta `g`+`t` en el nivel de arriba y ni mira `s` (`InviteLinkService.swift:146-147`); solo lo
+usa como plan B. Quien lo exige es el portero de antes, **`InviteLinkService.isInviteLink`**
+(`:221-228`), y lo hace en `:223` comprobando **únicamente que el parámetro exista** — su valor le da
+igual. Ese portero está en los dos caminos de entrada: `AppBootstrapper.swift:1888` (deep link) y
+`YalaAppDelegate.swift:95` (universal link).
+
+Consecuencia práctica: `s=x` basta para pasar. No hace falta fabricar un base64 válido.
+
+### Caso A — canal apagado (la alerta de «guardamos tu solicitud»)
+
+Con el toggle **activado**:
+
+```
+xcrun simctl openurl booted "yaladev://invite?g=demo&t=demo&s=x"
+```
+
+Esperado: alerta **«No pudimos abrir esta invitación ahora. Guardamos tu solicitud: vuelve a
+intentarlo en un momento.»**, y la solicitud guardada en el teléfono. El título **no** debe ser
+«Enlace no válido» — si lo fuera, sería un fallo real: mandaría al invitado a pedir un enlace nuevo
+que tampoco le serviría.
+
+Recorrido medido: el enlace parsea, el flag se lee apagado ⇒ `route` da `.refreshFlagsThenRetry`
+(`GroupInviteChannelRoutingLogic.swift:70`), se guarda la solicitud y se fuerza el refresco
+(`AppBootstrapper.swift:2007-2010`), se reentra (`:2011`), el flag **sigue** apagado —el toggle gana
+sobre lo que diga la red— ⇒ `.backendUnavailable`, canario `backendChannelOff` (`:2020`) y la alerta
+(`:2026-2027`).
+
+> [!warning] Esta receta produce **la misma alerta** que el defecto de arranque en frío del criterio
+> (2), pero por otra causa. **No sirve para probar aquel bug**: aquí el canal está apagado de verdad
+> —lo apagaste tú—, allí está encendido y la app no llegó a preguntarlo. No des por reproducido
+> `invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo` con esto.
+
+### Caso B — enlace antiguo (la alerta de «enlace no válido»)
+
+El toggle **da igual** aquí; este camino no mira el flag.
+
+```
+xcrun simctl openurl booted "yaladev://invite?s=aHR0cHM6Ly93d3cuaWNsb3VkLmNvbS9zaGFyZS8wYWJjREVGZ2hpSktMbW5vUFFSc3R1"
+```
+
+Ese `s` es un enlace de compartir de iCloud en base64url: no lleva grupo ni token dentro, así que el
+parser del canal nuevo lo rechaza y el enlace cae al camino antiguo.
+
+Esperado: alerta **«Enlace no válido — Este enlace ya no es válido o expiró. Pídele al admin que
+regenere uno.»** y el canario `ckShareChannelRemoved` (`AppBootstrapper.swift:1987`). **Eso es lo
+correcto**, ver el aviso del principio del ticket. El fallo aquí sería el silencio.
+
+(Si haces la prueba con el build de producción en vez de Yala Dev, el esquema es `yala://` en lugar
+de `yaladev://` — medido en `URL_SCHEME` del pbxproj. Pero el toggle del caso A no existe fuera de
+Yala Dev, así que el caso A solo sale en Dev.)
+
+### Lo que esta receta NO cierra
+
+Todo lo que exige **unirse de verdad** a un grupo — es decir, los casos (1), (4) y la mitad
+«asentada» del (2). El simulador no puede darlos: el toggle solo sabe **apagar** el canal, nunca
+encenderlo, y un grupo y un token reales no salen de aquí. **Siguen siendo de TestFlight y del
+owner.** La receta cubre las dos alertas y la persistencia de la solicitud; no cubre el join.
+
+Tampoco cierra el defecto del arranque en frío, por lo dicho en el aviso del caso A.
 
 migrated from YalaWiki Bugs/qa_invite-backend-mudo-config-stale.md @ 1934e8ad

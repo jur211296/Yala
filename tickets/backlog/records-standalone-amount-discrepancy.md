@@ -2,284 +2,314 @@
 id: records-standalone-amount-discrepancy
 status: backlog
 priority: medium
+area: calculos
 created: 2026-04-30
-updated: 2026-08-26
+updated: 2026-09-02
 source: YalaWiki/Backlog/p20-13_records-standalone-discrepancy.md
 ---
 
+# Los totales de ingresos y gastos no cuadran entre pantallas para el mismo período
 
-# Bug: RecordsStandalone muestra montos distintos a CashFlow/Insights con el mismo filtro
+## Qué ve el usuario
 
-## Descripcion
+Con el filtro global «Este mes» y sin filtros adicionales, el usuario abre cuatro sitios de la app
+y lee cuatro pares de cifras distintos para el mismo mes. Caso reportado el 2026-04-30:
 
-Con el filtro global "Este mes" del Panel y sin filtros adicionales, **cuatro vistas** de la app reportan ingresos/egresos diferentes para el mismo período. Caso reportado por el usuario el 2026-04-30:
-
-| Vista | Ingresos | Egresos |
+| Dónde mira | Ingresos | Gastos |
 |---|---|---|
-| Hero del Panel (chip/KPI) | 11356 | 7542 ← cubierto por p20-12 (ya resuelto) |
-| CashFlow widget | 11356 | 7063 |
-| Insights resumen | 11356 | 7063 |
-| **RecordsStandalone** | **11596** (+240) | **7303** (+240) |
+| Hero del Panel (chip/KPI) | 11356 | 7542 |
+| Widget Flujo de caja | 11356 | 7063 |
+| Resumen de Insights | 11356 | 7063 |
+| **Registros** (pestaña de Estadísticas y pantalla propia desde «Más») | **11596** (+240) | **7303** (+240) |
 
-El bug del Hero (+479 en egresos) fue cubierto por p20-12 (ticket ya cerrado/archivado — no existe como archivo en `Backlog/` a fecha 2026-07-01). Este ticket trata la discrepancia restante: **RecordsStandalone vs CashFlow/Insights** = +240 en ambos lados, y **por qué +240 en ambos simultáneamente** es la pista central: no es una TX que "aparece de más" en un solo pool (eso movería income O expense, no ambos por el mismo monto), sino una o más TX que **cruzan de bucket** — el pool de transacciones es el mismo en ambos lados, pero la clasificación income/expense de esas TX difiere entre calculators. Una TX de monto `X` que un lado cuenta como income y el otro como expense produce +X en el income de un lado y +X en el expense del otro (o viceversa) — exactamente el patrón "+240 en ambos" reportado, no "+240 en un total desalineado".
+La pista central es que Registros sube **+240 en los dos lados a la vez**. Eso no es una compra
+que aparece de más en un sitio (eso movería un solo lado): es un movimiento que una pantalla
+cuenta como ingreso y otra como gasto. Con un movimiento de 240 clasificado al revés, el ingreso
+sube 240 de un lado y el gasto sube 240 del otro — exactamente lo reportado.
 
-**Nota de alcance**: el análisis debajo confirma que esto no es exclusivo de "RecordsStandalone" — el mecanismo vive en `RecordsViewModel.calculateSummary()`, consumido por `RecordsTabView.swift`, que a su vez es la vista compartida tanto por la pestaña "Registros" dentro de Estadísticas como por `RecordsStandaloneView` (navegación desde "Más"). El bug se manifiesta en **cualquier lugar que muestre ese hero**, no solo en el standalone.
+El desajuste del hero (+479 en gastos) lo cubrió p20-12, ya cerrado. Este ticket es el resto.
 
-## Causa raiz confirmada
+**No es «la pantalla de Registros»**: la cifra sale de `RecordsViewModel.calculateSummary()`, que
+alimenta el mismo cabecero en la pestaña «Registros» de Estadísticas y en la pantalla suelta.
+Cualquier sitio que muestre ese cabecero enseña la misma cifra.
 
-Dos calculators clasifican la MISMA transacción con criterios distintos:
+## Estado a 2026-09-02
 
-**Lado "correcto" (CashFlow / Insights) — clasifica por categoría:**
+Medido en el árbol de hoy (HEAD `553b91c9`, rama `2.1`), no leído de la sesión anterior:
 
-`Yala/App/Logic/Calculators/HeroBucketsCalculator.swift:60-64` (usado por el Hero, ya resuelto en p20-12, pero mismo patrón):
+- **Registros (fase 1, 2026-07-05) — HECHO.** `RecordsViewModel.calculateSummary()` usa hoy el
+  helper canónico (`Yala/App/ViewModels/RecordsViewModel.swift:316`, dentro de la función que
+  empieza en `:297`) y acumula con signo (`:316-320`).
+- **Tendencias, Estadísticas y Reportes (fase 2, 2026-07-05, commit `8347a776`) — HECHO
+  TAMBIÉN.** Lo comprobé fichero por fichero; ver §«Corrección al parte de la fase 1» abajo.
+- **Sigue vivo**: dos residuales declarados (§Residuales), la convención para movimientos sin
+  categoría (§Las cuatro respuestas) y el calendario de Registros, que ya tiene ticket propio →
+  `tickets/backlog/registros-calendario-cuenta-gastos-por-signo.md`.
+
+El ticket se queda **en backlog** por esos cuatro frentes, no por la fase 2.
+
+## Causa raíz
+
+Dos formas de decidir si un movimiento es ingreso o gasto conviven en el código:
+
+- **Por categoría** — manda `category.isIncome`.
+- **Por el signo del importe** — manda que `amount` sea positivo o negativo.
+
+Mientras signo y categoría concuerdan (el caso normal) las dos dan lo mismo. Cuando **no**
+concuerdan —y hay maneras cotidianas de que no concuerden, ver §Cómo se desincronizan— cada
+pantalla contesta lo suyo y el usuario ve cifras que no cuadran.
+
+### La regla canónica ya existe en el código
+
+`Yala/App/Logic/TransactionClassificationLogic.swift:27-29`:
 ```swift
-let amount = abs(tx.amountInPreferredCurrency)
-let isIncome = tx.category?.isIncome == true
-```
-
-`Yala/App/Logic/Calculators/CashFlowCalculator.swift:54,63,76` (usado por el widget CashFlow del Panel — confirmado que `PanelViewModel.calculateCashFlowWidget:1743` llama `CashFlowCalculator.calculateCashFlow(transactions: context.expenseFilteredTransactions, ...)`):
-```swift
-guard let category = tx.category else { continue }   // línea 54 — EXCLUYE TX sin categoría
-guard tx.balanceAdjustmentType == nil else { continue }
-...
-val = tx.amountInPreferredCurrency   // línea 63 — signo tal cual, pero...
-let isIncome = category.isIncome     // línea 76 — LA CATEGORÍA decide el bucket, no el signo de `val`
-```
-
-`Yala/App/Logic/Calculators/InsightsCalculator.swift:468,579,640` — mismo patrón, ej. línea 579:
-```swift
-let expenseTxns = allTransactions.filter { $0.category?.isIncome == false && $0.balanceAdjustmentType == nil }
-```
-
-**Lado "divergente" (RecordsViewModel) — clasifica por signo literal:**
-
-`Yala/App/ViewModels/RecordsViewModel.swift:289-314`, función `calculateSummary()`:
-```swift
-private func calculateSummary() {
-    var income: Double = 0
-    var expense: Double = 0
-
-    for group in groupedRecords {
-        for record in group.records {
-            guard let account = record.account else { continue }
-            if account.excludeFromStatistics { continue }
-
-            // Exclude balance adjustments and transfers from summary
-            let isBalanceAdjustment = record.balanceAdjustmentType != nil
-            if !isBalanceAdjustment {
-                let amount = record.amountInPreferredCurrency
-                if amount > 0 {                    // línea 301 — SOLO mira el signo
-                    income += amount
-                } else {
-                    expense += abs(amount)
-                }
-            }
-        }
-    }
-
-    let newSummary = (income - expense, income, expense)
-    if newSummary != recordsSummary { recordsSummary = newSummary }
+static func isIncome(_ tx: TransactionItem) -> Bool {
+    tx.category?.isIncome ?? (tx.amountInPreferredCurrency >= 0)
 }
 ```
+La categoría decide; el signo es el fallback **solo** cuando no hay categoría. No es «ambos
+pesan igual» ni «el signo gana»: es un `??`, precedencia estricta. La misma regla, escrita a mano
+antes de que existiera el helper, vive en `TransactionDetailSheetLogic.swift:37-40`,
+`RecordRowView.swift:246-248`, `RecentRecordsWidget.swift:213`, `GlobalSearchView.swift:408` y
+`BalanceHelper.swift:61`.
 
-**Segunda divergencia independiente (guard de categoría)**: `CashFlowCalculator.swift:54` excluye explícitamente cualquier TX con `category == nil` ("Must have a category (excludes Transfers)"). `RecordsViewModel.calculateSummary()` **no tiene ese guard** — solo excluye por `excludeFromStatistics` de la cuenta y `balanceAdjustmentType != nil`. Cualquier TX con `category == nil` pero sin `balanceAdjustmentType` seteado contaría en Records y no en CashFlow/Insights. En la práctica esto es menos probable que el mecanismo de signo (la mayoría de flujos de creación siempre asignan `category`), pero es una discrepancia estructural real y vale la pena cerrarla en el mismo fix.
+El flujo normal de creación la respeta: al elegir subcategoría, el tipo (y con él el signo) se
+deriva de la categoría (`NewTransactionViewModel.swift:362-366`), y el importe final se firma
+desde ese tipo (`:602`, con `TransactionFormModels.swift:49`). Las transferencias tampoco son la
+causa: sus dos patas llevan `balanceAdjustmentType = adjustmentTypeTransfer`
+(`NewTransactionViewModel.swift:733,748,765,781`) y quedan excluidas por igual en todos los
+calculadores. Igual el ajuste de saldo inicial (`InitialBalanceService.swift:125,163`), que sí
+puede tener signo contrario a su categoría («Ajuste de saldo» vive bajo «Otros», `isIncome:false`,
+con importe positivo o negativo según `:141`) pero está excluido por el mismo guard.
 
-### Invariante real esperada — HAY UNA REGLA CANÓNICA YA DOCUMENTADA EN EL CÓDIGO
+### Cómo se desincronizan signo y categoría
 
-No es solo una inferencia: existe un doc-comment explícito que declara la regla del proyecto, en `Yala/App/Logic/TransactionDetailSheetLogic.swift:34-41`:
-```swift
-/// Clasificación visual de la TX. Transfer gana siempre; si no, la
-/// categoría decide y el signo del monto es el fallback — paridad exacta
-/// con RecordRowView.amountColor para que el hero no contradiga a la row.
-static func kind(isTransfer: Bool, categoryIsIncome: Bool?, amount: Double) -> Kind {
-    if isTransfer { return .transfer }
-    let isIncome = categoryIsIncome ?? (amount >= 0)
-    return isIncome ? .income : .expense
-}
-```
-Y su gemelo real en la fila de Records, `Yala/App/Views/Records/Components/RecordRowView.swift:262-265`:
-```swift
-private var amountColor: Color {
-    let isIncome = record.category?.isIncome ?? (record.amount >= 0)
-    return isIncome ? Color.electricIndigo : Color.hotPink
-}
-```
-Y en `Yala/App/Logic/Calculators/PivotTableCalculator.swift:173`, mismo patrón exacto: `let isIncome = tx.category?.isIncome ?? (tx.amount > 0)`.
+**Importar un CSV/XLSX en modo «solo categorías existentes».** El signo sale del archivo
+(`TransactionCSVImportService.swift:468`, y el mismo patrón repetido en `:706` y `:1326`) y la
+categoría se busca **solo por nombre**, sin comprobar que su `isIncome` case con ese signo
+(`:498-505`, `:731-734`, `:1353-1356`). Los dos viajan por separado en el borrador (`:539`,
+`:757`, `:1379`) y se materializan juntos sin reconciliar (`:188`, `:1104`, `:1495`, `:1652`).
+En modo «crear categorías nuevas» pasa igual: `CategoryImportHelper.fetchOrCreateCategory`
+(`CategoryImportHelper.swift:36`) reutiliza cualquier categoría homónima sin mirar `isIncome`, y
+el comentario de `:45-47` lo declara intencional (para que «Otros» sirva a transferencias). El
+efecto colateral alcanza a categorías normales homónimas, no solo a «Otros».
 
-**La regla canónica es: `category.isIncome` es la fuente de verdad primaria; el signo de `amount` es el fallback ÚNICAMENTE para cuando `category == nil`.** No es "ambos pesan igual", ni "el signo gana" — es un `??` de Swift, precedencia estricta. `RecordsViewModel.calculateSummary()` viola esto por completo: ni siquiera mira `category`, usa solo el signo incluso cuando la categoría existe.
+**Cambiar la subcategoría de varios movimientos a la vez.** `RecordsViewModel.bulkUpdateSubcategory`
+(`:533-551`) reasigna `subcategory` y `category` (`:540-541`) y **nunca toca el importe**. Si el
+usuario selecciona gastos y los reasigna a una subcategoría de ingreso, quedan con el signo
+contrario a su categoría. Su gemela `bulkUpdateAmount` (`:666-696`) hace lo inverso: conserva el
+signo previo (`:679`) y no toca la categoría. En todo el código de edición masiva no hay ningún
+punto que valide la coherencia signo↔categoría después de editar.
 
-Reforzado por el flujo de creación normal:
-- `Yala/App/ViewModels/NewTransactionViewModel.swift:356-366` (prefill del form): al elegir una subcategoría, el tipo de transacción (que determina el signo) se deriva de la categoría, no viceversa (`if subcategory.safeCategory.isIncome { transactionType = .income } else { transactionType = .expense }`). El picker de subcategorías además solo ofrece subcategorías coherentes con el `transactionType` activo (`SubcategorySelectorViewModel`), por lo que en el flujo normal de creación individual la divergencia signo/categoría no puede originarse — solo se produce por los mecanismos 1 y 2 de abajo, o por edición directa.
-- `Yala/App/Models/TransactionFormModels.swift:49-55` (`TransactionType.isNegative`) + `NewTransactionViewModel.swift:610`: `let finalAmount = transactionType.isNegative ? -amount : amount`.
-- **Transferencias no son la causa**: `NewTransactionViewModel.saveTransfer()` (líneas 683-772) asigna `category`/`subcategory` de sistema y signo de forma coherente por construcción (`outAmount = -amount` con `outflowSubcategory` de `isIncome==false`; `inAmount` positivo con `inflowSubcategory` de `isIncome==true`), y **ambas piernas llevan `balanceAdjustmentType = TransactionItem.adjustmentTypeTransfer`** (líneas 741, 756) — por lo que ya son excluidas por igual en `HeroBucketsCalculator` (línea 55), `CashFlowCalculator` (línea 55), `InsightsCalculator` (filtro `balanceAdjustmentType == nil`), `TrendDataProcessor`/`ReportNotificationService` (mismo guard) Y en `RecordsViewModel.calculateSummary` (línea 299-300). Las transferencias quedan simétricamente fuera de todos los lados — no explican el +240.
+## Alcance: dónde se clasifica ingreso/gasto
 
-**Caso legítimo adicional donde signo y categoría divergen a propósito (no bug de datos): ajuste de saldo inicial.** `Services/InitialBalanceService.swift` asigna siempre la subcategoría de sistema `"Ajuste de saldo"` (bajo la categoría "Otros", `isIncome: false`), pero el `amount`/`adjustmentAmount` puede ser positivo o negativo según si el ajuste aumenta o disminuye el saldo de la cuenta — un ajuste que sube el saldo en S/5000 queda con `amount > 0` y `category.isIncome == false`. Este caso normalmente no es visible porque **todos** los calculators relevantes (incluido `RecordsViewModel.calculateSummary`) ya excluyen por `balanceAdjustmentType != nil` — es el mismo guard que protege contra las transferencias. Solo sería un problema en un consumidor que omitiera ese guard.
+> **Este mapeo NO es exhaustivo, aunque una versión anterior de este ticket dijo que sí.** El
+> barrido del 2026-07-01 se presentó como «mapeo exhaustivo de todo el codebase» y se le escapó
+> `Yala/App/Logic/Calculators/DailySpendingCalculator.swift`, que clasifica por signo puro
+> (`:46-47`: `if amount < 0 { dayExpense += abs(amount) }`) y alimenta el calendario de Registros
+> vía `RecordsCalendarView.swift:61`. No es un fichero nuevo: existe desde el 2026-05-31 (commit
+> `18878f74`), **un mes antes** del barrido, y no aparece en ninguna fila de la tabla. Su propio
+> comentario de cabecera (`:12-17`) dice que replica `RecordsViewModel.calculateSummary` — lo cual
+> dejó de ser cierto el 2026-07-05, cuando ese resumen pasó a clasificar por categoría, y el
+> comentario nunca se corrigió. Tampoco figura en los `codeGlobs` del área
+> `income-expense-classification-parity` de `qa/coverage-index.json` (`:1288` y siguientes), así
+> que el ratchet no lo cubría.
+>
+> Segundo despiste medido, cosmético: `InboxView.swift:907` pasa `isExpense: amount < 0` al aviso
+> de confirmación teniendo la categoría a mano dos líneas antes (`:905-906`); solo pinta un color
+> (`InboxApproveSuccessView.swift:43`), pero tampoco está en la tabla.
+>
+> **Moraleja operativa: no des la tabla por cerrada.** Antes de reusarla, rehaz el barrido —
+> `grep -rn --include='*.swift' "isIncome" Yala` da hoy 319 aciertos en 83 ficheros — y busca
+> aparte las clasificaciones por signo, que no contienen la palabra `isIncome` y por eso se
+> escapan del grep obvio.
 
-### Dos mecanismos reales confirmados que rompen la invariante (con datos de usuario reales, no solo teóricos)
+Todas las coordenadas de esta tabla las medí en el árbol de hoy.
 
-**Mecanismo 1 — Import CSV/XLSX, modo "solo categorías existentes":**
+| Dónde | Cómo clasifica | Qué pantalla |
+|---|---|---|
+| `TransactionClassificationLogic.swift:27-29` | **Canónica**: categoría, y signo solo si no hay categoría | Helper compartido |
+| `RecordsViewModel.swift:316` (función desde `:297`) | Canónica (helper) + acumulación con signo `:316-320` | Cabecero de Registros — pestaña de Estadísticas y pantalla suelta |
+| `TrendDataProcessor.swift:97` (total), `:185` (curva ingresos), `:199` (curva gastos) | Canónica (helper) | Pestaña Tendencias y widget de tendencia del Panel (`PanelViewModel.swift:1177`, `:2675`, `:2687`; `TrendsTabView.swift:1668`, `:1711`) |
+| `StatisticsViewModel.swift:544,551` (totales), `:574,578` (lista de recientes), `:670,679` (curva por cuenta) | Canónica (helper) | Estadísticas |
+| `ReportNotificationService.swift:310` (totales y aviso de «hubo actividad», `:312,315`) | Canónica (helper) | Reportes automáticos por notificación |
+| `TransactionDetailSheetLogic.swift:37-40`; `RecordRowView.swift:246-248`; `RecentRecordsWidget.swift:213`; `GlobalSearchView.swift:408`; `BalanceHelper.swift:61` | Canónica, escrita a mano (5 copias) | Detalle de un movimiento, color de la fila, widget de últimos registros, búsqueda global, saldos |
+| `HeroBucketsCalculator.swift:73-74,77` | Categoría con `== true` (sin categoría ⇒ **gasto**), magnitud absoluta | Hero del Panel |
+| `CashFlowCalculator.swift:55` (guard), `:82,89` | Categoría; **excluye** los que no tienen categoría | Widget Flujo de caja (`PanelViewModel.swift:1864-1872`, previo en `:1893`) |
+| `InsightsCalculator.swift:512,624,689` | Categoría, excluye sin categoría | Resumen de Insights, presupuestos en riesgo, distribución por Necesidad |
+| `SankeyFlowCalculator.swift:68,79` | Categoría, excluye sin categoría | Diagrama Sankey (Distribución) |
+| `TopSpendingCategoriesCalculator.swift:43`; `TopSubcategoriesCalculator.swift:52`; `TagSpendingCalculator.swift:40`; `WeekdaySpendingCalculator.swift:62` | Categoría, excluye sin categoría | Gráficos de Categorías / Subcategorías / Etiquetas / gasto por día de la semana |
+| `PanelViewModel.swift:1045` y `:3042` (gasto por cuenta), `:1678` (naturaleza), `:2301` (presupuestos) | Categoría con `== false`, excluye sin categoría | Panel |
+| `PanelViewModel.swift:1916` | Categoría con `!= true` (sin categoría ⇒ **pasa como gasto**) | Modo solo-gastos |
+| `BudgetsViewModel.swift:608` | Categoría, excluye sin categoría | Presupuestos (y `BudgetAlertService`, que delega aquí) |
+| `FilterService.swift:255,257` (filtro de tipo) y `:268,270` (chips de naturaleza) | Categoría; sin categoría **no pasa ninguno de los dos** | Filtro de Registros y de Categorías/Reporte/Sankey |
+| `WidgetDataCache.swift:532-533` | Categoría con `?? false` (sin categoría ⇒ gasto) | Widgets de pantalla de inicio |
+| `PivotTableCalculator.swift:185` (dimensión «Tipo») | Categoría, fallback al signo con `>` sobre `tx.amount` | Tabla dinámica del Informe |
+| `PivotTableCalculator.swift:195,202,225` (dimensiones «Categoría», «Subcategoría», «Cuenta») | Categoría con `?? false` — **fallback distinto, en el mismo fichero** | Mismo Informe |
+| `FinancialScoreCalculator.swift:500`; `ScheduledPaymentsViewModel.swift:552` | Categoría con `?? false` | Salud financiera, pagos programados |
+| **`DailySpendingCalculator.swift:46-47`** | **Signo puro — único superviviente medido** | **Calendario de Registros** (`RecordsCalendarView.swift:61`) → ticket propio |
+| `RecordsViewModel.swift:736` (dentro de `:731-743`) | Categoría | Detecta si la selección es de ingresos, de gastos o mixta antes de una edición masiva |
 
-`Yala/Utils/TransactionCSVImportService.swift` tiene el mismo patrón duplicado en al menos 2 entry points (líneas 466-529 y 1325-1373). Ejemplo (líneas 466-495):
-```swift
-// Supuesto: montos >= 0 se consideran ingresos, < 0 gastos.
-let isIncome = decimalAmount >= 0
-...
-} else {
-    // Modo estricto: solo se permiten categorías existentes.
-    // Busca por nombre sin filtrar por isIncome para soportar categorías
-    // "neutrales" como "Otros" que contienen transferencias.
-    let categoryDescriptor = FetchDescriptor<Category>(
-        predicate: #Predicate { cat in cat.name == trimmedCategory }
-    )
-    ...
-    category = existingCategory   // se usa TAL CUAL, sin verificar isIncome vs signo del archivo
-}
-```
-El draft resultante (`ParsedTransactionDraft`) lleva `amount: decimalAmount` (signo del archivo importado) y `category: category` (resuelta solo por nombre) de forma **completamente independiente** — se materializan juntos en el `TransactionItem` final (ej. línea 1490-1497) sin ninguna reconciliación cruzada. Si el usuario mapea una fila con monto negativo a una categoría existente cuyo nombre coincide con una categoría `isIncome == true` en su catálogo (o viceversa), la TX resultante queda con signo y categoría contradictorios.
+`FinancialScoreCalculator` y `ScheduledPaymentsViewModel` clasifican además por
+`ScheduledPayment.transactionType` (un enum de texto propio de los pagos programados) en otros
+sitios: es otra fuente de verdad, sobre otro modelo, y no entra en esta comparación.
 
-**Incluso en modo "crear categorías nuevas"** (`allowCreatingNewCategories = true`), `Yala/Utils/CategoryImportHelper.swift:36-97` (`fetchOrCreateCategory`) reusa cualquier categoría existente con el mismo nombre **sin filtrar por `isIncome`** — el comentario del propio código lo confirma como diseño intencional (líneas 45-47): "Buscamos una categoría ya existente con el mismo nombre (sin filtrar por isIncome). Esto permite que categorías 'neutrales' como 'Otros' funcionen para transferencias que tienen montos positivos (entrada) y negativos (salida)." El efecto colateral es que categorías normales homónimas (no solo "Otros") pueden quedar con `isIncome` distinto al signo del monto importado.
+### Corrección al parte de la fase 1
 
-**Mecanismo 2 — Bulk-edit de subcategoría en Records:**
+El parte de la fase 1 decía que `TrendDataProcessor` y `ReportNotificationService` «se
+revirtieron» y quedaban para una fase 2. **Eso ya no describe el árbol.** La fase 2 se hizo el
+**2026-07-05**, commit `8347a776` («fix(stats): clasificar income/expense por categoría en
+Tendencias, Estadísticas y Reportes»), y hoy:
 
-`Yala/App/ViewModels/RecordsViewModel.swift:519-537` (`bulkUpdateSubcategory`):
-```swift
-func bulkUpdateSubcategory(_ subcategory: Subcategory, context: ModelContext) {
-    let transactions = getSelectedTransactions(context: context)
-    if transactions.contains(where: { $0.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer }) {
-        bulkUpdateError = L10n.BulkEdit.cannotEditTransferSubcategory
-        return
-    }
-    for transaction in transactions {
-        transaction.subcategory = subcategory
-        transaction.category = subcategory.safeCategory   // cambia la categoría...
-    }                                                       // ...pero NUNCA toca transaction.amount
-    ...
-}
-```
-A diferencia del form individual (que reconcilia `transactionType`/signo cuando cambia la subcategoría elegida — ver invariante arriba), el bulk-edit permite reasignar la subcategoría de N transacciones seleccionadas sin ajustar el signo del monto. Si el usuario selecciona TX de gasto (`amount < 0`) y las reasigna en bulk a una subcategoría de ingreso (o viceversa), el resultado es exactamente `amount` con signo contrario a `category.isIncome`.
+- `TrendDataProcessor.swift:97` clasifica con el helper para el total, y `:185`/`:199` para la
+  curva de ingresos y la de gastos — total y curva juntos, que era justo la objeción que frenó la
+  fase 1.
+- `StatisticsViewModel.swift:544,551` (totales), `:574,578` (lista de recientes) y `:670,679`
+  (curva por cuenta) usan el helper.
+- `ReportNotificationService.swift:310` clasifica con el helper, y el aviso de «hubo actividad»
+  (`:312,315`) cuelga de la misma decisión, no de un chequeo aparte.
 
-Nota menor: `RecordsViewModel.bulkUpdateAmount()` (líneas 652-683) hace lo inverso — preserva el signo previo del monto (`transaction.amount < 0 ? -abs(amount) : abs(amount)`) sin tocar la categoría. Esto por sí solo no crea divergencia nueva (preserva lo que ya había), pero confirma que en todo el código de bulk-edit no existe ningún punto que valide la coherencia signo↔categoría tras una edición.
+Consta en `qa/coverage-index.json` (área `income-expense-classification-parity`,
+`lastVerified: 2026-07-11`) una verificación en dispositivo de la fase 2 sobre TestFlight 2.0.5
+b2 — curva de gasto negativa con un reembolso real importado por CSV, coherencia entre
+Tendencias, Estadísticas y Registros, y el aviso de actividad.
 
-## Alcance real (ampliado 2026-07-01 — mapeo exhaustivo de todo el codebase)
+Lo que **no** consta y sigue sin hacerse: comprobar si el caso concreto del reporte (+240) se ve
+también en Tendencias en los datos de esa persona. No hay consulta ejecutada ni telemetría; la
+causa raíz explica el mecanismo, identificar los movimientos exactos requiere mirar sus datos.
 
-Un segundo pase de investigación (sub-agente en background, ~1h de trabajo) mapeó **todos** los sitios de clasificación income/expense del proyecto, no solo los relevantes al síntoma original. Confirma que el problema es sistémico, no acotado a Records — hay ~14 sitios con **Lógica A pura**, ~5 con **Lógica B pura**, ~4-5 con **"A con fallback"** (2 variantes distintas de fallback, ver hallazgo nuevo abajo), y ~6 con **Lógica C** (sobre `ScheduledPayment.transactionType`, fuente de verdad distinta — no comparable directo con `TransactionItem.category`).
+## Las cuatro respuestas para un movimiento sin categoría
 
-| Archivo:línea | Lógica | Snippet clave | Feature/vista que lo consume |
-|---|---|---|---|
-| `HeroBucketsCalculator.swift:60-64` | A (categoría, sin fallback) | `isIncome = tx.category?.isIncome == true` | Hero del Panel (chip/KPI) — ya resuelto por p20-12 con este mismo patrón |
-| `CashFlowCalculator.swift:54,76` | A (categoría) + excluye `category == nil` | `guard let category = tx.category else { continue }` / `let isIncome = category.isIncome` | **CashFlow widget del Panel** (`PanelViewModel.swift:1742-1749`) |
-| `InsightsCalculator.swift:468,579,640` | A (categoría, sin fallback) | `$0.category?.isIncome == false` | Resumen de Insights del Panel, presupuestos en riesgo, distribución por Necesidad |
-| `SankeyFlowCalculator.swift:67,75` | A pura | `if category.isIncome { … } else { … }` | Diagrama Sankey (tab Distribución) |
-| `TopSpendingCategoriesCalculator.swift:37,40` / `TopSubcategoriesCalculator.swift:43,49` / `TagSpendingCalculator.swift:35,37` | A pura | `category.isIncome ? .income : .expense` | Pie charts de Categorías/Subcategorías/Etiquetas |
-| `WeekdaySpendingCalculator.swift:60` | A pura | `guard ..., !category.isIncome else { continue }` | Chart "gasto por día de semana" |
-| `PanelViewModel.swift:1019,1786,2164,2857` | A pura (4 sitios propios) | `category?.isIncome == false/!= true` | Panel — gasto por cuenta, widget "Últimos registros", widget presupuestos |
-| `BudgetsViewModel.swift:588` | A pura | `$0.category?.isIncome == false` | Presupuestos + `BudgetAlertService` (delega 100% a este cálculo) |
-| `FilterService.matchesCriteria:255,257,268,270` | A (categoría, sin fallback) | `transaction.category?.isIncome == true/false` | Filtro de naturaleza (chips ingreso/gasto) — usado por `RecordsViewModel.applyFilters()` ANTES de `calculateSummary()`, y por Categories/FinancialReport/Sankey/TopSpendingCategories |
-| `TransactionDetailSheetLogic.kind:37-41` | A-fallback (canónico) | `categoryIsIncome ?? (amount >= 0)` | Sheet de detalle de una TX individual (Records) |
-| `RecordRowView.amountColor:262-265`, `RecentRecordsWidget.swift:213`, `GlobalSearchView.swift:411` | A-fallback (canónico, idéntico ×3) | `record.category?.isIncome ?? (record.amount >= 0)` | Color del monto en filas de Records, widget Panel, Búsqueda Global |
-| `NewTransactionView.swift:1387` | A-fallback (canónico) | `subcategory?.safeCategory.isIncome == true \|\| tx.amount > 0` | Prefill segmented Ingreso/Gasto al editar TX |
-| **`PivotTableCalculator.swift:173` (dimensión "Tipo")** | A-fallback (canónico) | `tx.category?.isIncome ?? (tx.amount > 0)` | Tabla pivote (Reports), dimensión "Tipo" |
-| **`PivotTableCalculator.swift:183,190,213` (dimensiones "Categoría"/"Subcategoría"/"Cuenta")** | **A-fallback DISTINTO (variante propia, nunca mira signo)** | `tx.category?.isIncome ?? false` | **Mismo Reporte, mismo archivo — para una TX sin categoría, la dimensión "Tipo" la clasificaría por signo mientras "Categoría"/"Subcategoría"/"Cuenta" la clasificarían siempre como gasto** — divergencia intra-archivo nueva, no documentada hasta ahora |
-| **`RecordsViewModel.swift:289-314` (`calculateSummary`)** | **B (signo puro, ignora categoría)** — seed original de este ticket | `if amount > 0 { income += amount } else { expense += abs(amount) }` | Header de `RecordsTabView.swift` — tab "Registros" de Estadísticas y `RecordsStandaloneView` |
-| **`RecordsViewModel.swift:719-726`** (bulk-edit) | A pura (consistente, no suma al problema) | `if subcategory.safeCategory.isIncome { … }` | `BulkEditSheet` — detecta selección income/expense/mixta antes de aplicar un bulk update |
-| **`Services/TrendDataProcessor.swift:81-94` (`processTrendData`)** | **B (signo puro, ignora categoría)** | `if amount > 0 { totalIncome += amount } else { totalExpense += abs(amount) }` | Tab **Tendencias** de Estadísticas (`TrendsTabView.swift`) y **trend widget del Panel** (`PanelViewModel.swift:1151,2528,2539`) |
-| **`StatisticsViewModel.swift:532-539,561-566,654-664`** (3 funciones propias) | **B (signo puro)** | `filter { $0.amountInPreferredCurrency > 0 }` / `< 0` | Totales de Stats, registros recientes en detalle, trend chart por cuenta |
+Esto **nunca se unificó**, y es la forma exacta del síntoma original repetida un piso más abajo:
+un solo movimiento, cuatro pantallas, cuatro respuestas. La fase 1 eligió el fallback al signo
+para el helper y lo dejó documentado, pero **solo lo aplicó a sus cuatro consumidores**; el resto
+del código siguió con lo suyo.
 
-### Hallazgo nuevo más grave: mezcla A/B **dentro de la misma pantalla**, no solo entre pantallas distintas
+Caso concreto para leer la lista: un movimiento **sin categoría**, sin `balanceAdjustmentType`,
+en una cuenta que sí cuenta para estadísticas, importe **+100**, dentro del período.
 
-El síntoma original documentado (Records vs CashFlow/Insights) ya era grave porque compara pantallas *distintas*. Este pase encontró algo peor — **el mismo `PanelViewModel`, en la misma pantalla del Panel, usa Lógica A para un widget y Lógica B para el widget de al lado**: el **widget Cash Flow** (línea 1742-1749, vía `CashFlowCalculator` → A) y el **widget Tendencias** (línea 1151, vía `TrendDataProcessor` → B) pueden mostrar totales de income/expense **distintos entre sí, en la misma vista, para el mismo período**, si existe una sola transacción con signo/categoría desincronizados. Verificado línea por línea contra el código real (no solo grep) — ambos callsites están en el mismo archivo, mismo ViewModel. El mismo patrón se repite en la tab Tendencias de Statistics (trend chart con B, Cash Flow widget con A) y dentro de `PivotTableCalculator` (dimensión "Tipo" con un fallback, "Categoría"/"Subcategoría"/"Cuenta" con otro).
+**1. Es un ingreso de 100.** `TransactionClassificationLogic.swift:28` cae al signo y `+100 >= 0`.
+Lo aplican el cabecero de Registros (`RecordsViewModel.swift:316`), los totales y las curvas de
+Tendencias (`TrendDataProcessor.swift:97,185`), Estadísticas
+(`StatisticsViewModel.swift:544,574,670`) y los reportes automáticos
+(`ReportNotificationService.swift:310`). La fila lo pinta como ingreso
+(`RecordRowView.swift:247`), igual el detalle (`TransactionDetailSheetLogic.swift:39`), el widget
+de últimos registros (`RecentRecordsWidget.swift:213`), la búsqueda global
+(`GlobalSearchView.swift:408`) y la dimensión «Tipo» del Informe (`PivotTableCalculator.swift:185`).
 
-**Esto eleva la prioridad de la Solución propuesta abajo**: el Fix B (helper compartido) deja de ser "recomendado, opcional" y pasa a ser la forma más segura de cerrar esto de raíz — con 3+ sitios de Lógica B pura y 2 variantes de fallback distintas ya confirmadas, seguir parchando sitio por sitio (Fix A) deja abierta la puerta a que aparezca un cuarto/quinto sitio divergente.
+**2. Es un gasto de 100.** El hero del Panel lo suma a gastos: `HeroBucketsCalculator.swift:74`
+usa `== true`, que sin categoría da `false`, y `:77` acumula la magnitud. Las dimensiones
+«Categoría», «Subcategoría» y «Cuenta» del **mismo Informe** hacen lo mismo con `?? false`
+(`PivotTableCalculator.swift:195,202,225`), igual que los widgets de pantalla de inicio
+(`WidgetDataCache.swift:533`), la salud financiera (`FinancialScoreCalculator.swift:500`) y los
+pagos programados (`ScheduledPaymentsViewModel.swift:552`). En modo solo-gastos también pasa como
+gasto (`PanelViewModel.swift:1916`, `!= true`).
 
-### Fuera de este ticket, pero relacionado (no tocar aquí)
+**3. No existe.** El widget Flujo de caja lo descarta con un guard antes de mirar nada
+(`CashFlowCalculator.swift:55`). Igual Insights (`InsightsCalculator.swift:512,624,689`), el
+Sankey (`SankeyFlowCalculator.swift:68`), el gasto por día de la semana
+(`WeekdaySpendingCalculator.swift:62`), los gráficos de categorías, subcategorías y etiquetas
+(`TopSpendingCategoriesCalculator.swift:43`, `TopSubcategoriesCalculator.swift:52`,
+`TagSpendingCalculator.swift:40`), los presupuestos (`BudgetsViewModel.swift:608`,
+`PanelViewModel.swift:2301`) y el gasto por cuenta (`PanelViewModel.swift:1045,3042`).
 
-`FinancialScoreCalculator.swift:356` y `ScheduledPaymentsViewModel.swift` (varios sitios) usan **Lógica C** — clasifican por `ScheduledPayment.transactionType` (un enum de string propio de pagos planificados, `"income"`/`"expense"`), no por `TransactionItem.category`. No es directamente comparable ni parte de esta divergencia (son modelos distintos), pero es la misma familia de riesgo (múltiples fuentes de verdad para "es esto un ingreso") — posible ticket aparte si se decide unificar.
-| **`Services/ReportNotificationService.swift:161-189`** | **B (signo puro, ignora categoría)** | `if amount > 0 { totalIncome += amount } else { totalExpense += abs(amount) }`, con comentario explícito línea 183: `// R4: Same sign convention as TrendDataProcessor` | Reportes automáticos/notificaciones programadas por email o push |
+**4. Desaparece de la lista.** Si el usuario toca el chip «Ingresos» o el chip «Gastos» para
+filtrar, el movimiento no pasa ninguno de los dos (`FilterService.swift:268,270`; lo mismo el
+filtro de tipo en `:255,257`). Es decir: existe en la lista sin filtro, y se esfuma en cuanto se
+filtra por naturaleza — sin que ningún filtro diga que lo está escondiendo.
 
-**Corrección importante vs mi primera pasada de este ticket**: la Lógica B (signo puro) NO está aislada en `RecordsViewModel` — es un clúster de **3 sitios** (`RecordsViewModel`, `TrendDataProcessor`, `ReportNotificationService`), y el comentario en `ReportNotificationService.swift:183` confirma que la réplica entre `TrendDataProcessor` y `ReportNotificationService` es deliberada ("same sign convention as..."), aunque contradice la regla canónica documentada en `TransactionDetailSheetLogic`/`RecordRowView`/`PivotTableCalculator`. Esto amplía el alcance real del bug reportado: **la tab Tendencias de Estadísticas y el trend widget del Panel también podrían mostrar montos income/expense divergentes** frente a CashFlow/Insights/Hero para cualquier cuenta con TX de signo/categoría desincronizados — no solo Records. No se verificó en esta sesión si el caso puntual del reporte (+240) también se manifiesta en Tendencias; sería el primer chequeo a hacer al retomar.
+Dos matices medidos, por si alguien los toma por una quinta respuesta y no lo son:
 
-**Hallazgo relacionado (bug distinto, mismo síntoma raíz) — prefill de edición con OR invertido**: `Yala/App/Views/Transactions/NewTransactionView.swift:1387`, al abrir el form para EDITAR una TX existente:
+- El calendario (`DailySpendingCalculator.swift:46`) clasifica por signo puro, así que para este
+  huérfano positivo coincide con la respuesta 1 (no lo cuenta como gasto). Su divergencia es
+  otra: la de un movimiento **con** categoría cuyo importe la contradice. Va en su propio ticket.
+- La respuesta 1 no es una sola implementación. El helper mira `amountInPreferredCurrency` con
+  `>= 0`; `PivotTableCalculator.swift:185` mira `tx.amount` con `> 0`; `RecordRowView.swift:247` y
+  `BalanceHelper.swift:61` miran `tx.amount` con `>= 0`. Para un importe exactamente 0 el helper
+  dice ingreso y el Informe dice gasto.
+
+Decidir **una** convención (fallback al signo, o excluir) y aplicarla en todos los sitios es lo
+que cierra este frente. Mientras no se decida, cualquier pantalla nueva elegirá la suya.
+
+## Residuales abiertos
+
+Los dos que declaró la fase 1 **siguen vivos**, verificados hoy:
+
+**1. El formulario de edición prefilla el tipo con `||` en vez de la regla canónica.**
+`Yala/App/Views/Transactions/NewTransactionView.swift:1497`:
 ```swift
 if tx.subcategory?.safeCategory.isIncome == true || tx.amount > 0 {
-    viewModel.transactionType = .income
-} else {
-    viewModel.transactionType = .expense
-}
 ```
-Este `OR` es más agresivo que el fallback canónico (`??`): si `category.isIncome == false` pero `amount > 0` (el escenario exacto de la divergencia), este código igual prefillea `.income`, en la dirección contraria a la regla "la categoría manda". No afecta cálculos de totales (es solo el estado inicial del formulario al editar), pero significa que al abrir para editar una TX ya divergente, el usuario ve un `transactionType` que no necesariamente coincide con su categoría real — vale la pena corregirlo en el mismo fix o documentarlo como follow-up, a decisión de quien retome.
+Con un `||`, un movimiento de categoría de gasto pero importe positivo prefilla **Ingreso** — la
+dirección contraria a «la categoría manda». No afecta a ningún total: es solo el estado inicial
+del formulario, pero al abrir para editar un movimiento ya descuadrado el usuario ve un tipo que
+no es el de su categoría. (La coordenada de este residual había derivado: el ticket citaba
+`:1387`.)
 
-**Hallazgo clave del alcance**: el filtro de *naturaleza* (chips ingreso/gasto) que `RecordsViewModel.applyFilters()` aplica vía `FilterService.matchesCriteria` **sí usa Lógica A** (`category?.isIncome`, líneas 254-271 de `FilterService.swift`). Es decir, dentro del mismo ViewModel, el filtrado por naturaleza y el cálculo del summary usan criterios **contradictorios** — si el usuario filtra explícitamente por "Ingresos" (que selecciona por categoría), el summary resultante reclasificaría por signo, pudiendo en teoría mostrar una TX filtrada como "ingreso" sumada al lado de gastos si su signo no coincide.
+**2. El mismo Informe usa dos fallbacks distintos.** `PivotTableCalculator.swift:185` cae al signo
+para la dimensión «Tipo»; `:195`, `:202` y `:225` dicen siempre gasto para «Categoría»,
+«Subcategoría» y «Cuenta». Para un movimiento sin categoría, cambiar de dimensión en el mismo
+informe lo mueve de lado. (Coordenadas anteriores del ticket: `:173` y `:183,190,213`.)
 
-## Fix propuesto
+**3. Nuevo, con ticket propio: el calendario de Registros.** Clasifica por signo puro y no cuadra
+con el chip de gasto que tiene justo encima, en la misma pantalla →
+`tickets/backlog/registros-calendario-cuenta-gastos-por-signo.md`.
 
-**La categoría debe ser la autoridad, con el signo como fallback solo si `category == nil`** — esto no es una propuesta nueva, es **la regla que el propio código ya declara como canónica** en `TransactionDetailSheetLogic.kind()` y replica en `RecordRowView.amountColor` y `PivotTableCalculator.swift:173`. El fix es hacer que los 3 sitios de Lógica B (`RecordsViewModel.calculateSummary`, `TrendDataProcessor.processTrendData`, `ReportNotificationService`) sigan esa misma regla en vez de ignorarla.
+## Riesgos al cerrar lo que queda
 
-Dos niveles de fix, no mutuamente excluyentes:
-
-**A. Fix inmediato (síntoma) — alinear los 3 sitios de Lógica B con el patrón canónico ya existente:**
-```swift
-let isIncome = record.category?.isIncome ?? (amount >= 0)
-if isIncome {
-    income += abs(amount)
-} else {
-    expense += abs(amount)
-}
-```
-Nota: este patrón usa el fallback `?? (amount >= 0)` (igual que `TransactionDetailSheetLogic`/`RecordRowView`/`PivotTableCalculator`), NO excluye TX con `category == nil` — a diferencia de `CashFlowCalculator`, que sí las excluye con un `guard`. Decidir explícitamente cuál de las dos convenciones adoptar (fallback vs exclusión) es parte del Acceptance Criteria — ambas son defendibles, pero deben ser la MISMA en los 3 sitios corregidos para no crear una tercera familia de divergencia.
-
-Aplicar el mismo cambio en los 3 sitios:
-- `Yala/App/ViewModels/RecordsViewModel.swift:289-314` (`calculateSummary`)
-- `Yala/Services/TrendDataProcessor.swift:81-94` (`processTrendData`)
-- `Yala/Services/ReportNotificationService.swift:161-189`
-
-**B. Fix estructural (recomendado, evita que la próxima vista nueva repita el bug) — extraer un helper compartido de clasificación:**
-
-La misma regla (`category?.isIncome ?? (amount >= 0)`, o su variante con exclusión de `category == nil`) está hoy duplicada literal en al menos 3 sitios "correctos" (`TransactionDetailSheetLogic`, `RecordRowView`, `PivotTableCalculator`) más las variantes sin-fallback de `HeroBucketsCalculator`/`InsightsCalculator`/`FilterService`, y violada en otros 3 (`RecordsViewModel`/`TrendDataProcessor`/`ReportNotificationService`). Un helper puro tipo:
-```swift
-enum TransactionClassification {
-    static func isIncome(_ tx: TransactionItem) -> Bool {
-        tx.category?.isIncome ?? (tx.amountInPreferredCurrency >= 0)
-    }
-}
-```
-permitiría que los 6+ sitios existentes lo consuman sin reinventar el criterio, y que cualquier calculator futuro lo use por default en vez de reinventar su propia variante. No es estrictamente necesario para cerrar este ticket puntual, pero reduce el riesgo de que aparezca un p20-14 análogo en otra vista nueva (de hecho, este ticket YA es ese caso — la Lógica B se replicó de `RecordsViewModel` a `TrendDataProcessor` a `ReportNotificationService` con un comentario que asume que copiar la convención es correcto). Decisión de alcance: aplicar solo A, o A+B, queda a criterio de quien retome — A por sí solo ya cierra el bug reportado en los 3 sitios conocidos.
-
-**Los mecanismos que CAUSAN la divergencia de datos (import CSV modo estricto, bulk-edit de subcategoría, y el `OR` invertido de `NewTransactionView.swift:1387` en el prefill de edición) NO son parte de este fix** — son comportamientos de producto potencialmente correctos (o al menos, decisiones de diseño ya tomadas conscientemente, ver comentarios en `CategoryImportHelper.swift:45-47`) que quedan fuera de alcance salvo que el equipo decida que también deben corregirse. Este ticket es sobre **cómo se lee/agrega** un dato que puede legítimamente llegar desincronizado, no sobre prevenir que llegue desincronizado.
-
-## Riesgos
-
-- **Totales visibles hoy cambiarán en 3 vistas, no solo RecordsStandalone**: header de Records (tab Estadísticas + Standalone), tab Tendencias de Estadísticas, y cualquier reporte automático generado por `ReportNotificationService` — para cualquier cuenta que tenga al menos una TX con signo/categoría desincronizados (vía import CSV modo estricto, bulk-edit de subcategoría histórico, o el ajuste de saldo inicial si algún consumidor omitiera el guard de `balanceAdjustmentType`). El monto que el usuario ve hoy bajará o subirá según el sentido de la(s) TX afectada(s) — pasará a coincidir con lo que YA muestran CashFlow/Insights/Hero, pero representa un cambio visual real para cualquier usuario con datos divergentes (no solo el reportante original; los reportes automáticos por email/push que reciban esos usuarios también cambiarán retroactivamente en el próximo envío).
-- **El balance (`income - expense`) no cambia** con el fix A en ninguno de los 3 sitios — solo se redistribuye entre income/expense, el neto es invariante ante reclasificación. Esto es importante para explicarle al usuario si pregunta "¿por qué cambió el número?": el balance total del período se mantiene igual, solo el desglose ingreso/gasto se corrige.
-- **Decisión fallback vs exclusión de `category == nil`** (ver Fix propuesto A): si se elige el patrón canónico con fallback (`?? amount>=0`, como `TransactionDetailSheetLogic`/`RecordRowView`), el comportamiento para TX sin categoría es "no romper, usar el signo" — no cambia respecto a lo que Records/Trends/Reports ya hacían hoy para esas TX (ambos lados ya usaban el signo, coincidentemente). Si en cambio se decide alinear con `CashFlowCalculator` (excluir `category == nil` con `guard`), cualquier cuenta con TX huérfanas de categoría vería un cambio adicional: esas TX dejarían de sumar a los 3 buckets corregidos. Verificar con una query real si existen TX así en producción antes de decidir.
-- **No se investigó (fuera de alcance de esta sesión) qué tan frecuente es la divergencia en datos reales de producción**, ni si el caso puntual reportado (+240, 2026-04-30) también se manifiesta en la tab Tendencias del mismo usuario — no hay telemetría ni query ejecutada contra sus datos para contar cuántas TX exactas explican el +240, ni para confirmar si el alcance ampliado (Tendencias/Reports) le afecta a él también. La causa raíz confirmada en código explica el MECANISMO y su alcance real en la base de código, pero identificar la(s) TX exacta(s) del caso reportado requiere un diff de datos real, que sigue pendiente si se quiere verificar el caso puntual antes de generalizar el fix.
-- **Ninguno de los 3 sitios de Lógica B tiene tests existentes que cubran la clasificación income/expense** (confirmado: no hay `RecordsViewModelTests.swift`, ni test de `TrendDataProcessor.processTrendData` ni de `ReportNotificationService` que verifique esto; sí existen `CashFlowCalculatorTests.swift` y `HeroBucketsCalculatorTests.swift` para el lado A). Si se extrae el helper compartido (fix B), se habilita testear la clasificación en aislado sin `makeTestContext()` (evita el flake R8 documentado en CLAUDE.md); si se aplica solo el fix A inline en los 3 sitios, seguirán sin cobertura unitaria directa de esta regla específica salvo que se agreguen tests de integración con SwiftData.
-- **El `OR` invertido de `NewTransactionView.swift:1387`** (ver Alcance real) es un bug relacionado pero separado — no afecta ningún total agregado, solo el estado inicial del formulario al editar una TX ya divergente. Si se corrige en la misma sesión, verificar que no rompe el flujo normal de edición (donde categoría y signo ya coinciden en el 99% de los casos).
-
-## Resolución — Fase 1 (2026-07-05): acotada a Registros
-
-Se implementó y verificó la corrección **solo en el header de Registros** (`RecordsViewModel.calculateSummary`), que resuelve el caso reportado (RecordsStandalone vs CashFlow/Insights) y es **autocoherente** (una sola cifra, sin curvas/listas que clasifiquen aparte).
-
-**Qué se hizo:**
-- Helper puro nuevo `Yala/App/Logic/TransactionClassificationLogic.swift` — regla canónica `category?.isIncome ?? (amountInPreferredCurrency >= 0)` (fallback al signo; decisión tomada).
-- `RecordsViewModel.calculateSummary` usa el helper + **acumulación signed** (paridad exacta con `CashFlowCalculator`: un monto que contradice su categoría se trata como reembolso y reduce el bucket). Esto preserva la invariante `balance = Σ montos con signo`.
-- Tests: `TransactionClassificationLogicTests` (7, lógica pura sin `ModelContext`). Build Yala+Yala Dev verde, 29 tests verdes. `qa/coverage-index.json` área `income-expense-classification-parity`.
-- Device-QA: no-regresión (app compila y arranca sin crash; Panel renderiza). Navegación interactiva a Registros bloqueada por conflicto agent-device↔runner (conocido); e2e con TX desincronizada = manual/TestFlight.
-
-**Qué se acotó y por qué:** `TrendDataProcessor` y `ReportNotificationService` (los otros 2 sitios que el plan original incluía) se **revirtieron**. El `/code-review high` (2026-07-05) confirmó que cambiar solo sus *totales*, dejando sin tocar el código adyacente que aún clasifica por signo (la **curva** de Tendencias, la lista de recientes de Estadísticas, el **empty-check** de Reportes), introduce **divergencias intra-pantalla nuevas** — lo contrario del objetivo. Esa migración coherente (total + curva/lista/empty-check juntos) vive ahora en **[[p20-14_income-expense-classification-trends-reports]]** (fase 2).
-
-**Estado de los AC (scope original abajo):** cubiertos para Records — clasificación por categoría, convención `category==nil` (fallback), helper extraído, invariante del balance, coverage-index. Diferidos a fase 2 (p20-14): Tendencias/Estadísticas/Reportes + confirmar caso +240 en Tendencias + QA-SCENARIOS §35.11. Sigue pendiente (follow-up): `OR` invertido en `NewTransactionView.swift:1387`. El ticket queda **open** hasta cerrar fase 2.
+- **Unificar la convención de «sin categoría» cambia cifras visibles.** Si se elige el fallback al
+  signo, las pantallas de la respuesta 3 empezarán a contar movimientos que hoy ignoran; si se
+  elige excluir, el cabecero de Registros, Tendencias, Estadísticas y los reportes automáticos
+  dejarán de contar movimientos que hoy suman. Antes de decidir conviene medir cuántos movimientos
+  sin categoría y sin `balanceAdjustmentType` existen de verdad.
+- **El neto no se mueve, el desglose sí.** Reclasificar redistribuye entre ingreso y gasto sin
+  tocar `ingresos − gastos`. Es la frase útil si el usuario pregunta por qué cambió el número.
+- **Los reportes automáticos cambian retroactivamente.** Al recalcularse en el próximo envío,
+  quien reciba reportes por notificación verá cifras distintas de las del mes pasado.
+- **No hay test que fije la convención de «sin categoría».** `TransactionClassificationLogicTests`
+  cubre el helper, pero la divergencia vive en los sitios que **no** lo usan
+  (`PivotTableCalculator`, `HeroBucketsCalculator`, `WidgetDataCache`, `FilterService`), y el área
+  `income-expense-classification-parity` de `qa/coverage-index.json` no los lista en sus
+  `codeGlobs` — tampoco a `DailySpendingCalculator`. Cualquier fix debería ampliar esos globs, o
+  el ratchet seguirá sin ver el siguiente despiste.
 
 ## Acceptance Criteria
 
-- [ ] `RecordsViewModel.calculateSummary()`, `TrendDataProcessor.processTrendData()` y `ReportNotificationService` (líneas de clasificación citadas en Causa raíz/Alcance real) clasifican income/expense por `category?.isIncome` (con o sin fallback de signo, ver decisión de abajo), no por el signo de `amount` como criterio primario.
-- [ ] Decidir y documentar UNA convención para TX con `category == nil` — fallback al signo (patrón `TransactionDetailSheetLogic`/`RecordRowView`) o exclusión (patrón `CashFlowCalculator`) — y aplicarla consistentemente en los 3 sitios corregidos.
-- [ ] (Opcional, recomendado) Extraer la clasificación income/expense a un helper puro reusado por los 3 sitios corregidos y, si se decide expandir el fix, por `HeroBucketsCalculator`/`CashFlowCalculator`/`InsightsCalculator`/`TransactionDetailSheetLogic`/`RecordRowView`/`PivotTableCalculator` — reduce la duplicación de la misma regla en 9+ sitios.
-- [ ] Test de regresión: con un dataset fijo que incluya al menos 1 TX con signo/categoría desincronizados (simulando el caso import CSV o bulk-edit), la suma del header de Records, del total de Tendencias, y de un reporte generado por `ReportNotificationService` coinciden con CashFlow widget al primer decimal, en al menos 3 períodos distintos (Este mes, Última semana, Este año).
-- [ ] Verificar que el balance (`income - expense`) de los 3 sitios corregidos no cambia tras el fix (solo se redistribuye entre income/expense) — test explícito de esta invariante.
-- [ ] Confirmar si el caso puntual reportado (+240, 2026-04-30) también se manifiesta en la tab Tendencias de la cuenta del reportante — primer chequeo recomendado al retomar, antes de aplicar el fix a ciegas.
-- [ ] (Opcional, follow-up) Corregir el `OR` invertido en `NewTransactionView.swift:1387` para que el prefill de edición siga la misma regla canónica.
-- [ ] Device QA: reproducir con los datos del reporter (o dataset sintético equivalente) y confirmar que RecordsStandalone, tab Tendencias, y CashFlow/Insights coinciden exactamente para "Este mes".
-- [ ] Añadir caso "Coherencia entre widgets de filtro de período" a QA-SCENARIOS sección 35.11 una vez resuelto.
-- [ ] Actualizar `qa/coverage-index.json` si se agrega test nuevo (regla anti-drift de CLAUDE.md).
+Hechos y medidos en el árbol de hoy:
 
-migrated from YalaWiki Backlog/p20-13_records-standalone-discrepancy.md @ 1934e8ad
+- [x] El cabecero de Registros clasifica por categoría (`RecordsViewModel.swift:316`) — fase 1,
+      2026-07-05.
+- [x] Tendencias, Estadísticas y los reportes automáticos clasifican por categoría, con el total y
+      la curva/lista/aviso de actividad migrados juntos (`TrendDataProcessor.swift:97,185,199`;
+      `StatisticsViewModel.swift:544,551,574,578,670,679`; `ReportNotificationService.swift:310`)
+      — fase 2, commit `8347a776`, 2026-07-05.
+- [x] Existe el helper compartido `TransactionClassificationLogic.swift:27-29` y lo consumen esos
+      cuatro sitios.
+
+Pendiente:
+
+- [ ] Decidir **una** convención para los movimientos sin categoría —fallback al signo o
+      exclusión— y aplicarla en los sitios de la §Las cuatro respuestas, no solo en los cuatro
+      consumidores del helper. Anotarla en `.claude/rules/` para que la próxima pantalla no
+      invente la suya.
+- [ ] Alinear el residual 1: el `||` de `NewTransactionView.swift:1497` debe seguir la regla
+      canónica (`??`).
+- [ ] Alinear el residual 2: un solo fallback dentro de `PivotTableCalculator` (`:185` vs
+      `:195,202,225`).
+- [ ] Corregir el comentario de cabecera de `DailySpendingCalculator.swift:12-17`, que afirma
+      replicar un criterio que `RecordsViewModel.calculateSummary` ya no usa (lo arregla el ticket
+      del calendario, pero si ese se cierra sin tocarlo, queda aquí).
+- [ ] Test de regresión con un conjunto fijo que incluya (a) un movimiento con signo contrario a
+      su categoría y (b) un movimiento sin categoría: cabecero de Registros, total de Tendencias,
+      Informe y widget Flujo de caja deben coincidir al primer decimal en al menos tres períodos
+      (Este mes, Última semana, Este año).
+- [ ] Test explícito de la invariante: `ingresos − gastos` no cambia al reclasificar.
+- [ ] Ampliar los `codeGlobs` del área `income-expense-classification-parity` en
+      `qa/coverage-index.json` para incluir los sitios que hoy quedan fuera del ratchet
+      (`DailySpendingCalculator`, `PivotTableCalculator`, `HeroBucketsCalculator`,
+      `WidgetDataCache`, `FilterService`).
+- [ ] Comprobar si el caso concreto del reporte (+240, 2026-04-30) también se ve en Tendencias en
+      los datos de esa persona — sigue sin ejecutarse.
+- [ ] QA en dispositivo del frente que quede tras la decisión de convención.
+
+migrado desde YalaWiki Backlog/p20-13_records-standalone-discrepancy.md @ 1934e8ad

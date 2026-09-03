@@ -1,6 +1,6 @@
 ---
 id: rescue-discarded-groups-pull
-status: qa
+status: discarded
 priority: high
 area: groups
 created: 2026-07-27

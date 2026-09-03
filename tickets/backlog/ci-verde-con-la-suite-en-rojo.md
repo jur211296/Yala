@@ -66,6 +66,75 @@ Fix probable: inyectar el calendario en el SSOT bajo test, o fijar la TZ del sim
 que elegir: inyectar prueba el algoritmo; fijar la TZ prueba además que el algoritmo no depende
 del entorno, que es lo que el usuario real experimenta.
 
+## Las tres banderas están puestas a propósito (medido hoy en el árbol)
+
+Antes de proponer «quitar los `continue-on-error`»: el propio `qa.yml` explica por qué están, y la
+explicación cambia cuál es el arreglo.
+
+Medido en `.github/workflows/qa.yml` de HOY: los tres `continue-on-error: true` están en las líneas
+**175** (unit pure-logic), **197** (unit context-based) y **215** (UI), y cada uno lleva su
+justificación inmediatamente encima:
+
+- **:168-173** — «Bloquear aquí = rojos aleatorios. `-retry` no converge. **Volver a bloqueante exige
+  resolver ese crash primero**».
+- **:193-195** — «no bloquean por el insert-trap flaky de SwiftData en el runner de CI».
+- El crash que las dos citan está descrito en **:126-132** (`EXC_BREAKPOINT` de SwiftData in-memory,
+  aleatorio por run, alcanza también a tests pure-logic que instancian `@Model` sin contexto), y el
+  **`TODO(@jur, 2026-07-15)` de :141-142** lo declara «prerequisito para CUALQUIER paso de test
+  bloqueante».
+
+⇒ **Quitar las tres banderas sin arreglar ese crash no arregla nada: cambia un verde mentiroso por
+rojos aleatorios, y entonces alguien vuelve a ponerlas.** Ya pasó una vez —el intento de dejar
+pure-logic bloqueante (`264e25f8`) se revirtió tras el crash del run `26963873224`, según :138-140—.
+El arreglo real empieza por el crash, no por la bandera. Esto es exactamente por lo que el punto 3 de
+abajo va DESPUÉS del 1 y el 2.
+
+## Dos rojos más, que el CI no ve (rescatados de un ticket que se archiva hoy)
+
+`tickets/discarded/rescue-discarded-groups-pull.md` —que pasa a `discarded` en **este mismo commit**—
+dejaba en su sección «Fuera de alcance, detectado de paso» (:237) un residual que, si no se traslada
+aquí, desaparece del tablero:
+
+> `ProUpsellServiceOneShotTests` (2 tests) falla bajo el scheme `Yala Dev` […] Efecto colateral: hoy
+> NINGÚN scheme corre la suite de unit entera en verde (con `Yala` fallan las dos suites que exigen
+> `DEV_BUILD`). Chip creado: `task_6bbda818`.
+
+**No entra en la tabla de arriba**, y la distinción importa: los ocho de la tabla salen del log del
+CI; éste es un rojo **local**, del scheme `Yala Dev`, que el CI no ve.
+
+### Y la medición de hoy NO lo sostiene — por eso no escribo aquí «ningún scheme corre la suite entera en verde»
+
+Comprobado en el árbol de hoy, sin correr nada (lectura de código):
+
+- `YalaTests/ProUpsellServiceOneShotTests.swift` tiene **6 tests**. Los **4** que dependen del tier Pro
+  **inyectan el predicado** (`isProUser: { false }` / `{ true }`, en :30, :45, :60 y :74); los otros 2
+  (:50 y :80) sólo llaman a `mark*` y leen sus propios defaults aislados. **Ninguna aserción del
+  fichero lee `FeatureGateService.shared`.**
+- Ese predicado inyectable entró en `Yala/App/Services/ProUpsellService.swift:26-32` con el commit
+  **`d48c5dad` (2026-08-05)**, y la cabecera del test lo documenta en :9-13.
+- Los **dos** mecanismos que la documentación nombra como causa de ese rojo actúan los dos a través de
+  `FeatureGateService.shared`: (a) `dev.forceProTier` que `-uitest-pro` dejaba persistido —cerrado en
+  `StoreKitManager.applyUITestProTier` (`Yala/App/Services/StoreKitManager.swift:607-622`) y pinneado
+  por `YalaTests/UITestProTierIsolationTests.swift`, 2 tests vivos—; y (b) la transacción de StoreKit
+  sandbox persistida en el simulador, que concede Pro por carrera del singleton (`docs/DECISIONS.md`,
+  entrada del **2026-07-13**, gotcha (a)).
+- Fechas: el ticket que arrastra el residual es `created: 2026-07-27`, y su texto llegó a este repo en
+  la migración masiva del **2026-08-26** (`2c0f482a`, «migrated from YalaWiki … @ 1934e8ad»), así que
+  la fecha de **redacción** del párrafo es la del vault, no la del import. `d48c5dad` cae en medio.
+
+**INFERIDO** (no medido: no corrí la suite, está fuera del alcance de esta sesión): si esos dos rojos
+siguen existiendo hoy, ya **no** los causa el mecanismo que ambas fuentes nombran. Lo único que queda
+tocando un singleton en ese servicio es `shouldShowPeriodicBanner` (vía `isVoluntaryChurn` →
+`StoreKitManager.shared.wasProUser`, `ProUpsellService.swift:144-148`), y **ningún test del fichero lo
+llama** — el `.serialized` de :23 sigue puesto por eso, según :15-16.
+
+**Qué hacer con esto: una corrida, no un diagnóstico.** Correr `YalaTests` bajo `Yala Dev` y ver.
+Si sale verde, el residual está cerrado desde el 2026-08-05 y se cierra el chip `task_6bbda818`; si
+sale rojo, hay causa NUEVA y ésa sí es un hallazgo. Lo que no se puede es seguir citando la frase
+«ningún scheme corre la suite entera en verde» como hecho: **la mitad que se puede medir sin ejecutar
+está en contra**, y la otra mitad (las suites que exigen `DEV_BUILD` bajo el scheme `Yala`) tampoco la
+he medido.
+
 ## Qué hacer, en este orden
 
 1. **Ver el rojo primero.** Correr la suite completa y separar los ocho en «rojo real», «divergencia
@@ -99,3 +168,7 @@ permite que el repo siga mergeando.
   `HandoverGroups`).
 - No se revisó cuántos runs hacia atrás llega el patrón: se comprobaron seis, todos con fallos.
 - El `TODO(@jur, 2026-07-15)` de `qa.yml` puede estar al día o caducado; no se comprobó cuál.
+- **`ProUpsellServiceOneShotTests` no se ha corrido.** Lo de arriba es lectura del árbol de hoy: dice
+  que la causa documentada ya no está en el código, no que la suite pase. Falta la corrida.
+- **Tampoco se ha corrido `YalaTests` bajo el scheme `Yala`**, así que «fallan las dos suites que
+  exigen `DEV_BUILD`» sigue siendo una cita del ticket de origen, no una medición de esta sesión.

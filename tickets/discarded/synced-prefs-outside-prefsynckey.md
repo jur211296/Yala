@@ -1,6 +1,6 @@
 ---
 id: synced-prefs-outside-prefsynckey
-status: backlog
+status: discarded
 area: sync
 priority: high
 created: 2026-08-29
