@@ -160,17 +160,21 @@ enum TransactionCSVImportService {
             let amountDouble = (draft.amount as NSDecimalNumber).doubleValue
 
             // Check if exact rate exists for this date (not using fallback)
-            let hasExactRate = CurrencyConverter.shared.hasExactRate(
-                for: draft.date, context: context)
+            // `convertChecked` sustituye al par `hasExactRate` + `convert`: aquél decidía por que la
+            // FILA de tasas EXISTIERA, no por que trajera la divisa del CSV, así que una fila parcial
+            // hacía nacer la transacción a 1:1 y con `isExchangeRateProvisional = false` — número malo
+            // sellado como oficial, y el reparador nunca vuelve a mirarlo
+            // (`fx-partial-rate-rows-silent-1to1`).
 
             // Calculate Preferred Currency Amount (uses fallback if exact rate not available)
-            let amountInPreferred = CurrencyConverter.shared.convert(
+            let rateOutcome = CurrencyConverter.shared.convertChecked(
                 draft.amount,
                 from: draft.normalizedCurrencyCode,
                 to: preferredCode,
                 on: draft.date,
                 context: context
             )
+            let amountInPreferred = rateOutcome.amount
 
             // Derive Rate
             let effectiveRate: Double
@@ -192,7 +196,7 @@ enum TransactionCSVImportService {
                 exchangeRate: abs(effectiveRate),
                 amountInPreferredCurrency: (amountInPreferred as NSDecimalNumber).doubleValue,
                 preferredCurrencyCode: preferredCode,
-                isExchangeRateProvisional: !hasExactRate
+                isExchangeRateProvisional: !rateOutcome.quality.isExact
             )
 
             // Mark transfers and adjustments so they're excluded from income/expense stats
@@ -1076,17 +1080,21 @@ enum TransactionCSVImportService {
             let amountDouble = (draft.amount as NSDecimalNumber).doubleValue
 
             // Check if exact rate exists for this date
-            let hasExactRate = CurrencyConverter.shared.hasExactRate(
-                for: draft.date, context: context)
+            // `convertChecked` sustituye al par `hasExactRate` + `convert`: aquél decidía por que la
+            // FILA de tasas EXISTIERA, no por que trajera la divisa del CSV, así que una fila parcial
+            // hacía nacer la transacción a 1:1 y con `isExchangeRateProvisional = false` — número malo
+            // sellado como oficial, y el reparador nunca vuelve a mirarlo
+            // (`fx-partial-rate-rows-silent-1to1`).
 
             // Calculate Preferred Currency Amount
-            let amountInPreferred = CurrencyConverter.shared.convert(
+            let rateOutcome = CurrencyConverter.shared.convertChecked(
                 draft.amount,
                 from: draft.normalizedCurrencyCode,
                 to: preferredCode,
                 on: draft.date,
                 context: context
             )
+            let amountInPreferred = rateOutcome.amount
 
             // Derive Rate
             let effectiveRate: Double
@@ -1108,7 +1116,7 @@ enum TransactionCSVImportService {
                 exchangeRate: abs(effectiveRate),
                 amountInPreferredCurrency: (amountInPreferred as NSDecimalNumber).doubleValue,
                 preferredCurrencyCode: preferredCode,
-                isExchangeRateProvisional: !hasExactRate
+                isExchangeRateProvisional: !rateOutcome.quality.isExact
             )
 
             // Mark transfers and adjustments so they're excluded from income/expense stats
@@ -1469,16 +1477,20 @@ enum TransactionCSVImportService {
         for draft in validDrafts {
             let amountDouble = (draft.amount as NSDecimalNumber).doubleValue
 
-            let hasExactRate = CurrencyConverter.shared.hasExactRate(
-                for: draft.date, context: context)
+            // `convertChecked` sustituye al par `hasExactRate` + `convert`: aquél decidía por que la
+            // FILA de tasas EXISTIERA, no por que trajera la divisa del CSV, así que una fila parcial
+            // hacía nacer la transacción a 1:1 y con `isExchangeRateProvisional = false` — número malo
+            // sellado como oficial, y el reparador nunca vuelve a mirarlo
+            // (`fx-partial-rate-rows-silent-1to1`).
 
-            let amountInPreferred = CurrencyConverter.shared.convert(
+            let rateOutcome = CurrencyConverter.shared.convertChecked(
                 draft.amount,
                 from: draft.normalizedCurrencyCode,
                 to: preferredCode,
                 on: draft.date,
                 context: context
             )
+            let amountInPreferred = rateOutcome.amount
 
             let effectiveRate: Double
             if abs(amountDouble) > 0.0001 {
@@ -1499,7 +1511,7 @@ enum TransactionCSVImportService {
                 exchangeRate: abs(effectiveRate),
                 amountInPreferredCurrency: (amountInPreferred as NSDecimalNumber).doubleValue,
                 preferredCurrencyCode: preferredCode,
-                isExchangeRateProvisional: !hasExactRate
+                isExchangeRateProvisional: !rateOutcome.quality.isExact
             )
 
             if draft.subcategory.isAnySystem {
@@ -1626,16 +1638,20 @@ enum TransactionCSVImportService {
         for (draft, account) in validDrafts {
             let amountDouble = (draft.amount as NSDecimalNumber).doubleValue
 
-            let hasExactRate = CurrencyConverter.shared.hasExactRate(
-                for: draft.date, context: context)
+            // `convertChecked` sustituye al par `hasExactRate` + `convert`: aquél decidía por que la
+            // FILA de tasas EXISTIERA, no por que trajera la divisa del CSV, así que una fila parcial
+            // hacía nacer la transacción a 1:1 y con `isExchangeRateProvisional = false` — número malo
+            // sellado como oficial, y el reparador nunca vuelve a mirarlo
+            // (`fx-partial-rate-rows-silent-1to1`).
 
-            let amountInPreferred = CurrencyConverter.shared.convert(
+            let rateOutcome = CurrencyConverter.shared.convertChecked(
                 draft.amount,
                 from: draft.normalizedCurrencyCode,
                 to: preferredCode,
                 on: draft.date,
                 context: context
             )
+            let amountInPreferred = rateOutcome.amount
 
             let effectiveRate: Double
             if abs(amountDouble) > 0.0001 {
@@ -1656,7 +1672,7 @@ enum TransactionCSVImportService {
                 exchangeRate: abs(effectiveRate),
                 amountInPreferredCurrency: (amountInPreferred as NSDecimalNumber).doubleValue,
                 preferredCurrencyCode: preferredCode,
-                isExchangeRateProvisional: !hasExactRate
+                isExchangeRateProvisional: !rateOutcome.quality.isExact
             )
 
             if draft.subcategory.isAnySystem {

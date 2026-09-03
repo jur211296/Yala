@@ -1,10 +1,10 @@
 ---
 id: fx-partial-rate-rows-silent-1to1
-status: backlog
+status: in-progress
 priority: high
 area: "currency, fx, integridad-datos"
 created: 2026-08-28
-updated: 2026-08-28
+updated: 2026-09-03
 ---
 
 # Filas de tasas FX incompletas y conversión 1:1 silenciosa que se declara exacta
@@ -290,3 +290,63 @@ Store, sin tag de release, sin TestFlight.
 
 Verificación pendiente: los tres criterios se comprueban cuando se implemente el fix. Hoy no hay
 device-QA y no se inventa PASS.
+
+---
+
+## Progreso · 2026-09-03 — H1 y H1-b hechos
+
+Decisiones del owner de hoy: destapar los escalones y marcar (no criterio estricto de completitud) ·
+punto de paso común + los 5 del ticket (no los 16) · solo persistencia, la presentación va aparte ·
+sí al barrido de reparación.
+
+### Lo que cambia, y lo que corrige del propio ticket
+
+**El ticket describe el 1:1 como «no hay tasa». Medido: sí la hay, dos escalones más abajo.**
+`getRatesForDate` degradaba en tres niveles —fila exacta → fila anterior → tabla estática— pero el
+primero cortaba por EXISTENCIA, así que una fila parcial devolvía su diccionario incompleto y tapaba
+los otros dos. ⇒ **una fila parcial era ESTRICTAMENTE PEOR que no tener fila**: sin fila se llegaba a
+la tabla estática, que cubre las 54 divisas por construcción (`allCases.map`) y convierte bien. Eso
+está pinneado como test ejecutable (`noRowAtAll_convertsBetterThanAPartialRow`), y es lo que hace que
+el arreglo de lectura no necesite ni refetch ni criterio de completitud nuevo.
+
+**Cifra corregida: son 54 divisas, no 53.** Al ticket se le pasó `case \`try\` = "TRY"` (lleva
+backticks). El CLAUDE.md dice ~48 y un doc-comment del propio servicio dice 7. Ninguna cifra se
+hardcodea en el fix: todo va contra `CurrencyCode.allRawValues`.
+
+**Un tercer callsite de `forceRefreshRates` que el ticket no vio**: `AccountFormView.swift:627`, y cae
+justo en el escenario de H1 punto 4 — pero detrás de que el usuario ACEPTE la sugerencia de divisa
+secundaria. Anotado, no tocado.
+
+### Hecho
+
+- `CurrencyConverter.resolveRates(for:needing:context:)` sustituye a `getRatesForDate`: recibe qué
+  divisas hacen falta, completa desde los escalones inferiores y devuelve **de dónde salió cada una**
+  (`RateQuality`: exacta / arrastrada / estática). **No usa `fetchMostRecentRate`**: su predicado es
+  `dateKey <= dateKey`, inclusivo, así que sobre una fila parcial de hoy devuelve esa misma fila.
+- `convertChecked` junto a `convert`. No se marca el viejo como deprecado a propósito: generaría 16
+  warnings y el gate exige cero nuevos. Presentación sigue con `convert`, según la decisión del owner.
+- `TransactionItem.recalculatePreferredCurrency` —el punto de paso, **21 llamadas en 5 ficheros**, 11
+  del bridge de Grupos, que el ticket no menciona— marca ahora `isExchangeRateProvisional`. Hasta hoy
+  no lo tocaba ninguno de los 21: toda TX que pasara por ahí nacía sellada como definitiva.
+- `TransactionUpdateService` deja de duplicar ese cálculo y delega en el punto de paso.
+- Los 4 pares del import CSV pasan de `!hasExactRate` a la calidad real.
+- `hasExactRate` exige ahora nombrar las divisas (`needing:`), así que la pregunta vieja —«¿existe la
+  fila?»— ya no es expresable. Se queda sin consumidores.
+- Área **nueva** en `qa/coverage-index.json`: `fx-conversion-persistence`. Ninguna de las 134 era
+  dueña de estos ficheros, así que la regla anti-drift no tenía dónde apuntar.
+
+### Verificación
+
+Build en las dos schemes · **5979 tests / 594 suites verdes** (antes 5970; el delta son los 9 nuevos
+de `CurrencyConverterPartialRateTests` y los movimientos de suites). Y lo que de verdad importa aquí,
+porque el módulo estaba ciego: **el test se escribió PRIMERO y se vio ROJO** (`converted → 1000`, mil
+yenes contados como mil soles). Mutación de las dos mitades por separado, cada una cazada por su
+propio test y sin tocar a los otros cuatro.
+
+### Pendiente en este ticket
+
+1. **H3** — `persistRate` fusiona en vez de sobrescribir, y deja de pisar el timestamp con `nil`.
+2. **H2** — refrescar tasas ANTES de migrar en `updatePreferredCurrency`.
+3. **El barrido** de reparación de lo ya persistido (aprobado por el owner).
+4. Anotados como ticket aparte: la presentación (~34 llamadas) y el widget, que ante una divisa
+   ausente la omite en silencio en vez de convertirla 1:1.

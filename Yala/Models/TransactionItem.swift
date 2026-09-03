@@ -114,16 +114,25 @@ final class TransactionItem {
 
     /// Recalculates exchangeRate, amountInPreferredCurrency, and preferredCurrencyCode
     /// based on the transaction's current amount and currencyCode.
+    ///
+    /// **Es el punto de paso de la escritura de montos convertidos: 21 llamadas en 5 ficheros**, once
+    /// de ellas del bridge de Grupos. Por eso marca aquí `isExchangeRateProvisional` en vez de dejarlo
+    /// a cada llamador: hasta el 2026-09-03 no lo tocaba ninguno de los 21, así que toda transacción
+    /// que pasara por aquí nacía con el flag en su default `false` —o sea, sellada como definitiva—
+    /// aunque la conversión no hubiera podido hacerse. Y el reparador
+    /// (`TransactionUpdateService`, cuyo `#Predicate` solo busca `== true`) no volvía a mirarla nunca.
+    /// Marcarlo es lo que le devuelve una ruta de auto-cura (`fx-partial-rate-rows-silent-1to1`).
     @MainActor
     func recalculatePreferredCurrency(context: ModelContext) {
         let preferredCode = CurrencyDefaults.currentPreferred
-        let amountInPreferred = CurrencyConverter.shared.convert(
+        let outcome = CurrencyConverter.shared.convertChecked(
             Decimal(amount),
             from: currencyCode,
             to: preferredCode,
             on: date,
             context: context
         )
+        let amountInPreferred = outcome.amount
         let effectiveRate: Double
         if abs(amount) > 0.0001 {
             effectiveRate = (amountInPreferred as NSDecimalNumber).doubleValue / amount
@@ -133,6 +142,10 @@ final class TransactionItem {
         exchangeRate = abs(effectiveRate)
         amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
         preferredCurrencyCode = preferredCode
+        // Solo una tasa EXACTA puede sellarse como definitiva. Una arrastrada de otro día o salida de
+        // la tabla estática da un número del orden correcto, pero sigue esperando la tasa real: dejar
+        // el flag en `false` es lo que hacía que un monto aproximado se quedara para siempre.
+        isExchangeRateProvisional = !outcome.quality.isExact
     }
 
     init(

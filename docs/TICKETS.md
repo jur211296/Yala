@@ -53,7 +53,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | distribution-balance-kpi-skips-fx | backlog | tickets/backlog/distribution-balance-kpi-skips-fx.md |
 | doble-conteo-dia1-previo-thismonth | done | tickets/done/doble-conteo-dia1-previo-thismonth.md |
 | exportable-insights | backlog | tickets/backlog/exportable-insights.md |
-| fx-partial-rate-rows-silent-1to1 | backlog | tickets/backlog/fx-partial-rate-rows-silent-1to1.md |
+| fx-partial-rate-rows-silent-1to1 | in-progress | tickets/in-progress/fx-partial-rate-rows-silent-1to1.md |
 | fx-pnl-education-card | backlog | tickets/backlog/fx-pnl-education-card.md |
 | gate-doc-says-swift-testing-only | backlog | tickets/backlog/gate-doc-says-swift-testing-only.md |
 | gateway-has-no-telemetry | backlog | tickets/backlog/gateway-has-no-telemetry.md |
@@ -126,7 +126,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | yala-android | backlog | tickets/backlog/yala-android.md |
 | zone-decisions-still-per-row | backlog | tickets/backlog/zone-decisions-still-per-row.md |
 
-Counts by folder: backlog 48 · in-progress 7 · qa 18 · blocked 2 · done 13 · discarded 5 = 93.
+Counts by folder: backlog 47 · in-progress 8 · qa 18 · blocked 2 · done 13 · discarded 5 = 93.
 
 Frank 2026-09-02 (altas): dos hallazgos del QA de hoy entran en `backlog/`, para que no se pierdan
 al cerrar la sesion.

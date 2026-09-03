@@ -59,40 +59,27 @@ enum TransactionUpdateService {
             await ExchangeRateService.shared.ensureRates(for: dateRange, context: context)
         }
 
-        // 4. Update each transaction with the now-available rates
-        let preferredCode = CurrencyDefaults.currentPreferred
+        // 4. Recalcular cada transacción provisional.
+        //
+        // Antes esto preguntaba `hasExactRate(for:)` y, si decía que sí, reimplementaba a mano las
+        // mismas cinco líneas de `TransactionItem.recalculatePreferredCurrency`. Dos problemas, los
+        // dos del ticket `fx-partial-rate-rows-silent-1to1`: (a) `hasExactRate` responde por que la
+        // FILA EXISTA, no por que traiga la divisa que hace falta, así que sobre una fila parcial
+        // decía `true`, la conversión devolvía el monto crudo y la línea final sellaba
+        // `isExchangeRateProvisional = false` — un 1:1 marcado como oficial y ya nunca revisitado,
+        // porque el `#Predicate` de arriba solo busca `== true`; y (b) el cálculo duplicado se
+        // desincroniza del punto de paso en cuanto uno de los dos cambia.
+        //
+        // Ahora se delega, y quien decide si sigue provisional es la CALIDAD de la tasa. El efecto
+        // para el usuario es que una transacción con tasa aproximada se corrige sola en cuanto llegan
+        // las tasas reales, en vez de quedarse con el número malo para siempre.
         var updatedCount = 0
 
         for transaction in transactions {
-            // Check if exact rate now exists
-            if CurrencyConverter.shared.hasExactRate(for: transaction.date, context: context) {
-                // Recalculate with exact rate
-                let amount = Decimal(transaction.amount)
-                let amountInPreferred = CurrencyConverter.shared.convert(
-                    amount,
-                    from: transaction.currencyCode,
-                    to: preferredCode,
-                    on: transaction.date,
-                    context: context
-                )
-
-                // Derive rate
-                let amountDouble = transaction.amount
-                let effectiveRate: Double
-                if abs(amountDouble) > 0.0001 {
-                    effectiveRate =
-                        (amountInPreferred as NSDecimalNumber).doubleValue / amountDouble
-                } else {
-                    effectiveRate = 1.0
-                }
-
-                // Update transaction
-                transaction.exchangeRate = abs(effectiveRate)
-                transaction.amountInPreferredCurrency =
-                    (amountInPreferred as NSDecimalNumber).doubleValue
-                transaction.preferredCurrencyCode = preferredCode
-                transaction.isExchangeRateProvisional = false
-
+            transaction.recalculatePreferredCurrency(context: context)
+            // Solo cuenta como reparada la que ya NO es provisional; las demás siguen en la cola para
+            // el próximo arranque, que es justo lo que se quiere.
+            if !transaction.isExchangeRateProvisional {
                 updatedCount += 1
             }
         }

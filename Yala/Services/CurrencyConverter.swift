@@ -19,6 +19,29 @@ extension Notification.Name {
     static let yalaExchangeRatesUpdated = Notification.Name("yalaExchangeRatesUpdated")
 }
 
+// MARK: - Rate Quality
+
+/// De dónde salió la tasa con la que se convirtió un monto.
+///
+/// **No es un `Bool` ni un opcional a propósito.** `getRatesForDate` ya degradaba en tres escalones
+/// —fila del día, fila anterior, tabla estática— pero los colapsaba todos en un `[String: Double]`
+/// indistinguible, y por eso el cuarto estado («la fila existe pero no trae esta divisa») podía
+/// devolver el monto crudo sin que nadie se enterara. Quien PERSISTE necesita saber cuál de los
+/// cuatro fue: solo el primero puede sellarse como definitivo.
+enum RateQuality: Equatable {
+    /// La fila de esa fecha traía las divisas pedidas.
+    case exact
+    /// Faltaba alguna y se completó con la fila real más reciente anterior. Aproximado pero del orden
+    /// correcto; se marca provisional para que el reparador vuelva cuando lleguen las tasas del día.
+    case carriedForward(fromDateKey: String)
+    /// Hubo que recurrir a la tabla estática de `CurrencyCode`. Siempre da número y nunca envejece
+    /// sola: es la señal más fuerte de que esa fecha necesita un refetch.
+    case staticFallback
+
+    /// Si esto es `false`, quien escriba el monto debe marcarlo `isExchangeRateProvisional`.
+    var isExact: Bool { self == .exact }
+}
+
 // MARK: - Currency Converting Protocol
 
 /// Protocol for currency conversion without ModelContext dependency.
@@ -128,18 +151,37 @@ final class CurrencyConverter: CurrencyConverting {
         on date: Date,
         context: ModelContext
     ) -> Decimal {
+        convertChecked(amount, from: from, to: to, on: date, context: context).amount
+    }
+
+    /// Igual que `convert`, pero además dice **de dónde salió la tasa**.
+    ///
+    /// Existe porque `convert` devuelve `Decimal` a secas y su llamador no puede distinguir «convertí»
+    /// de «no pude y te devuelvo lo que me diste» — y hay 21 sitios que PERSISTEN ese número en disco
+    /// y lo emiten por el canal nube. Quien escribe usa esto para marcar
+    /// `isExchangeRateProvisional` cuando la tasa no fue exacta, que es lo que permite que
+    /// `TransactionUpdateService` vuelva a pasar y lo repare. Quien solo PINTA el número puede seguir
+    /// usando `convert`.
+    func convertChecked(
+        _ amount: Decimal,
+        from: String,
+        to: String,
+        on date: Date,
+        context: ModelContext
+    ) -> (amount: Decimal, quality: RateQuality) {
         let fromCode = normalizeCurrencyCode(from)
         let toCode = normalizeCurrencyCode(to)
 
-        // Same currency, no conversion needed
+        // Misma divisa: no hay conversión que hacer y la tasa es exacta por definición, no por dato.
         if fromCode == toCode {
-            return amount
+            return (amount, .exact)
         }
 
-        // Get rates for the date
-        let rates = getRatesForDate(date, context: context)
-
-        return performConversion(amount: amount, from: fromCode, to: toCode, rates: rates)
+        let resolved = resolveRates(for: date, needing: [fromCode, toCode], context: context)
+        return (
+            performConversion(amount: amount, from: fromCode, to: toCode, rates: resolved.rates),
+            resolved.quality
+        )
     }
 
     /// Converts using the most recent available rate (for "today" calculations).
@@ -218,7 +260,10 @@ final class CurrencyConverter: CurrencyConverting {
             return 1.0
         }
 
-        let rates = getRatesForDate(date, context: context)
+        // Este método YA era honesto —devuelve `nil` cuando falta la divisa, veinte líneas encima del
+        // `guard` que devolvía el monto crudo—, así que aquí el cambio solo le da mejor material: con
+        // los escalones destapados, «no hay tasa» pasa a ser de verdad excepcional.
+        let rates = resolveRates(for: date, needing: [fromCode, toCode], context: context).rates
 
         guard let fromRate = rates[fromCode], let toRate = rates[toCode] else {
             return nil
@@ -241,29 +286,115 @@ final class CurrencyConverter: CurrencyConverting {
     /// - Parameters:
     ///   - date: The date to check
     ///   - context: SwiftData ModelContext
-    /// - Returns: true if an exact rate exists for the date, false if using fallback
-    func hasExactRate(for date: Date, context: ModelContext) -> Bool {
+    /// - Returns: `true` si la fila de esa fecha trae las divisas pedidas.
+    ///
+    /// **El parámetro `needing` NO tiene default a propósito, y ésa es la corrección de fondo.** Hasta
+    /// el 2026-09-03 esta función respondía solo por que la FILA EXISTIERA
+    /// (`fetchExchangeRate(...) != nil`), y sus cinco llamadores leían esa respuesta como «tengo la
+    /// tasa». Sobre una fila parcial —existe, pero sin la divisa que hace falta— decía `true`, la
+    /// conversión devolvía el monto crudo y quien escribía lo sellaba con
+    /// `isExchangeRateProvisional = false`: un 1:1 marcado como oficial que ningún proceso volvía a
+    /// revisar. Obligar a nombrar las divisas hace que la pregunta vieja ya no sea expresable
+    /// (`fx-partial-rate-rows-silent-1to1`).
+    ///
+    /// Hoy no la llama nadie —los cinco call-sites usan `convertChecked`, que además devuelve el
+    /// monto— y se conserva porque la pregunta «¿es exacta la tasa de esta fecha?» es legítima por sí
+    /// misma. Si vuelve a tener un consumidor que persista, que use la calidad de `convertChecked`.
+    func hasExactRate(for date: Date, needing codes: Set<String>, context: ModelContext) -> Bool {
         let dateKey = dateFormatter.string(from: date)
-        return fetchExchangeRate(for: dateKey, context: context) != nil
+        guard let row = fetchExchangeRate(for: dateKey, context: context) else { return false }
+        return codes.isSubset(of: Set(row.decodedRates().keys))
     }
 
     // MARK: - Private Helpers
 
-    private func getRatesForDate(_ date: Date, context: ModelContext) -> [String: Double] {
+    /// Resuelve las tasas de una fecha **para las divisas que hacen falta**, bajando por los tres
+    /// escalones hasta completarlas, y dice de dónde salió la peor de ellas.
+    ///
+    /// **El bug que esto arregla (`fx-partial-rate-rows-silent-1to1`), y su forma exacta.** La versión
+    /// anterior cortaba en el primer escalón por EXISTENCIA: `if let exactRate = fetch(...) { return
+    /// exactRate.decodedRates() }`. Una fila que existía pero no traía la divisa pedida devolvía su
+    /// diccionario incompleto, `performConversion` salía por su `guard let` y devolvía el monto CRUDO
+    /// —1000 JPY contados como 1000 PEN— presentándolo como bueno.
+    ///
+    /// Lo perverso es que la tasa **sí estaba disponible dos escalones más abajo**: una fila parcial
+    /// era ESTRICTAMENTE PEOR que no tener fila, porque sin fila se llegaba a la tabla estática, que
+    /// cubre las 54 divisas por construcción (`CurrencyCode.allCases.map`) y convierte bien. La fila
+    /// no es que faltara información: es que TAPABA la que había. Pinneado en
+    /// `CurrencyConverterPartialRateTests.noRowAtAll_convertsBetterThanAPartialRow`.
+    ///
+    /// **La trampa al destapar los escalones, y por eso este método no usa `fetchMostRecentRate`:**
+    /// su predicado es `$0.dateKey <= dateKey` con `fetchLimit = 1`, o sea INCLUSIVO — sobre una fila
+    /// parcial de hoy devuelve *esa misma fila* y el escalón no aporta nada. Aquí se piden las filas
+    /// **estrictamente anteriores** y se recorren hasta cubrir lo que falta.
+    ///
+    /// `needing` vacío = «lo que traiga la fila», que es la semántica que necesita la caché de últimas
+    /// tasas: no sabe qué divisas le van a pedir después.
+    private func resolveRates(
+        for date: Date,
+        needing codes: Set<String>,
+        context: ModelContext
+    ) -> (rates: [String: Double], quality: RateQuality) {
         let dateKey = dateFormatter.string(from: date)
 
-        // Try exact date first
-        if let exactRate = fetchExchangeRate(for: dateKey, context: context) {
-            return exactRate.decodedRates()
+        var merged = fetchExchangeRate(for: dateKey, context: context)?.decodedRates() ?? [:]
+        func missing() -> Set<String> { codes.subtracting(merged.keys) }
+
+        if !merged.isEmpty && missing().isEmpty {
+            return (merged, .exact)
         }
 
-        // Fall back to most recent rate before the date
-        if let fallbackRate = fetchMostRecentRate(onOrBefore: dateKey, context: context) {
-            return fallbackRate.decodedRates()
+        // Escalón 2: filas anteriores, de la más reciente hacia atrás, rellenando SOLO lo que falta —
+        // una tasa real de otro día es mejor aproximación que la tabla estática, que no envejece.
+        var carriedFrom: String?
+        if !missing().isEmpty {
+            for previous in fetchRates(strictlyBefore: dateKey, limit: Self.carryForwardLookback, context: context) {
+                let previousRates = previous.decodedRates()
+                for code in missing() where previousRates[code] != nil {
+                    merged[code] = previousRates[code]
+                    if carriedFrom == nil { carriedFrom = previous.dateKey }
+                }
+                if missing().isEmpty { break }
+            }
         }
 
-        // Last resort: use static fallback rates
-        return fallbackRates
+        // Escalón 3: lo que siga faltando, de la tabla estática.
+        var usedStatic = false
+        for code in missing() {
+            if let staticRate = fallbackRates[code] {
+                merged[code] = staticRate
+                usedStatic = true
+            }
+        }
+
+        if merged.isEmpty { return (fallbackRates, .staticFallback) }
+        if usedStatic { return (merged, .staticFallback) }
+        if let carriedFrom { return (merged, .carriedForward(fromDateKey: carriedFrom)) }
+        return (merged, .exact)
+    }
+
+    /// Cuántas filas anteriores se miran como mucho al completar una fecha. Acotado a propósito: es
+    /// una consulta por conversión y el caso normal se resuelve en la primera.
+    private static let carryForwardLookback = 30
+
+    private func fetchRates(
+        strictlyBefore dateKey: String,
+        limit: Int,
+        context: ModelContext
+    ) -> [ExchangeRate] {
+        var descriptor = FetchDescriptor<ExchangeRate>(
+            predicate: #Predicate { $0.dateKey < dateKey },
+            sortBy: [SortDescriptor(\ExchangeRate.dateKey, order: .reverse)]
+        )
+        descriptor.fetchLimit = limit
+        do {
+            return try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("CurrencyConverter: Error fetching previous rates: \(error)")
+            #endif
+            return []
+        }
     }
 
     /// Returns latest rates from cache or fetches and caches them on miss.
@@ -275,7 +406,10 @@ final class CurrencyConverter: CurrencyConverting {
         if let cached = latestRatesCache.withLock({ $0 }), cached.dayKey == todayKey {
             return cached.rates
         }
-        let rates = getRatesForDate(now, context: context)
+        // `needing: []` = «lo que traiga la fila»: esta caché se llena antes de saber qué divisas le
+        // van a pedir, así que no puede completar por adelantado. Los consumidores que sí saben
+        // (`convert`/`convertChecked`) resuelven por su cuenta.
+        let rates = resolveRates(for: now, needing: [], context: context).rates
         latestRatesCache.withLock { $0 = CachedRates(rates: rates, dayKey: todayKey) }
         return rates
     }
