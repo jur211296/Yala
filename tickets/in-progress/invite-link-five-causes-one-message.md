@@ -172,3 +172,62 @@ decisión y su razonamiento están en `guest-decline-has-no-screen`, que es dond
 piezas comparten autorización y conviene hacerlas en la misma pasada.
 
 Las piezas 2, 3 y 4 nunca estuvieron bloqueadas: son código y siguen esperando su turno.
+
+---
+
+## Pieza 1 · IMPLEMENTADA y verificada en staging · 2026-09-03
+
+**Qué cambia para el usuario.** Abres un enlace de un grupo que su creador borró. Antes: «Este enlace ya
+no es válido o expiró. **Pídele al admin que regenere uno**» — un consejo imposible de seguir, porque no
+hay grupo ni admin a quien pedírselo, así que la persona lo intenta, vuelve a fallar y nunca se entera.
+Ahora: «Este grupo fue eliminado por su creador».
+
+### Cómo se resolvió el bloqueo del no-oráculo
+
+El ticket lo daba por bloqueado porque distinguir causas parecía dar un oráculo. Medida la función, la
+propiedad se sostiene sola: **el `raise` del grupo borrado es el SEGUNDO**, y solo se alcanza después de
+que el token pasara las cuatro validaciones (existe, no revocado, no caducado, no agotado). Quien recibe
+el error nuevo **tenía un token real que alguien le dio** — ya sabía que el grupo existió. Con un token
+inventado se cae en el primer `raise`, que sigue siendo `yala_invalid_invite` y no dice nada.
+
+Eso no se argumenta: se comprueba. El golden `3-quater` afirma las dos mitades, y la segunda —token
+inventado → `yala_invalid_invite`— es la que impide que alguien abra el oráculo sin que nada se ponga
+rojo.
+
+### Hecho
+
+- `qa/cloud/g13_03_join_group_distinguishes_deleted.sql` — el segundo `raise` pasa a
+  `yala_group_deleted`. El resto de `join_group` va verbatim: rebind legacy, ya-member e insert intactos.
+- Cliente: `GroupsRPCError.groupDeleted` + mapeo · `GroupBackendAcceptErrorLogic` con kind propio,
+  permanente y **slug propio para el canario** (colapsarlo escondería cuánta gente llega por un grupo
+  borrado, que es justo lo que esto hace visible) · el handler elige el copy.
+- **Copy reutilizado, no nuevo**: `groups.reconnect.deletedForAll.body` dice exactamente este hecho y ya
+  está en los 16 idiomas. Es el MISMO hecho por otro camino. Queda avisado en el código que ese copy
+  tiene ahora un segundo consumidor.
+
+### Compatibilidad, medida ANTES de aplicar el DDL
+
+`GroupsRPCError.init(yalaCode:)` devuelve `nil` ante un código desconocido y el llamador lo convierte en
+`.permanentRejected`, **nunca** en `.transient` (regla A5: un 400 permanente reintentado sería bucle).
+⇒ una app que no conozca `yala_group_deleted` lo trata como rechazo permanente y muestra su mensaje
+genérico, exactamente como hacía antes. **Por eso se pudo aplicar en el servidor sin coordinar con la
+publicación de la app.** Hay un test que fija ese fallback.
+
+### Verificación
+
+`g13_03` aplicada a **staging** y verificada: `yala_group_deleted` aparece una vez, `yala_invalid_invite`
+**sigue** apareciendo una vez (el no-oráculo de las otras cuatro intacto) y los grants no cambiaron.
+Build en las dos schemes · **6011 tests iOS / 601 suites** verdes · **323 del gateway** (322 + el golden
+nuevo), 1 rojo preexistente con ticket. Mutación del cableado del mensaje: cazada.
+
+Nota de método: la primera versión del golden daba `noop` en el tombstone porque usaba un HLC de `T0`
+(15-jul-2026) contra una fila creada hoy con `server_hlc()`. Un test que pasa por la razón equivocada es
+peor que uno rojo; queda escrito en el propio golden.
+
+### Falta
+
+**Aplicar `g13_03` a producción.** No pude hacerlo en la misma sesión: el acceso de Supabase alterna
+entre organizaciones y al llegar aquí solo era visible staging. Mientras tanto, en producción el
+comportamiento es el de siempre.
+
+Piezas **2, 3 y 4 siguen abiertas** y nunca estuvieron bloqueadas: son código.

@@ -159,7 +159,7 @@ final class GroupsConsentRegistrar {
             return .deferred(reason: "channel-disabled")
         case .sessionExpired, .transient, .decoding:
             return .deferred(reason: "transient")
-        case .badInput, .notAuthorized, .permanentRejected, .invalidInvite, .groupExists,
+        case .badInput, .notAuthorized, .permanentRejected, .invalidInvite, .groupDeleted, .groupExists,
              .invalidGroupID, .memberNotFound, .cannotRemoveOwner, .ownerCannotLeave:
             // Un rechazo permanente sobre un registro LEGAL es un bug nuestro, no una razón para tirar la
             // prueba: se CONSERVA y se hace ruido. El backoff impide que el bucle cueste batería.

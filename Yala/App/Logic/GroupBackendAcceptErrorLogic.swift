@@ -35,6 +35,10 @@ nonisolated enum GroupBackendAcceptErrorLogic {
         /// (con `groups.invite.channelUnavailable`, el mismo copy y el mismo canario que el camino en que
         /// el flag local ya está OFF: es el MISMO estado del mundo visto por el otro lado).
         case channelDisabled
+        /// El token era válido pero el grupo ya no existe (`yala_group_deleted`, g13_03). Permanente,
+        /// como `.invalidInvite`, pero con su propio mensaje: aquí el consejo de «pide otro enlace» no
+        /// solo es inútil, es imposible de seguir.
+        case groupDeleted
         /// Cualquier otro (badInput, permanentRejected, decoding, invalidGroupID, …).
         case generic
     }
@@ -42,6 +46,7 @@ nonisolated enum GroupBackendAcceptErrorLogic {
     static func classify(_ error: GroupsRPCError) -> ErrorKind {
         switch error {
         case .invalidInvite:    return .invalidInvite
+        case .groupDeleted:     return .groupDeleted
         case .sessionExpired:   return .sessionRequired
         case .notAuthorized:    return .notAuthorized
         case .transient:        return .transient
@@ -56,7 +61,7 @@ nonisolated enum GroupBackendAcceptErrorLogic {
     /// `sessionRequired`/`transient` NO son permanentes: el reconciler reintenta y conserva el intent.
     static func isPermanent(_ kind: ErrorKind) -> Bool {
         switch kind {
-        case .invalidInvite, .notAuthorized, .generic:
+        case .invalidInvite, .groupDeleted, .notAuthorized, .generic:
             return true
         case .sessionRequired, .transient, .channelDisabled:
             // `channelDisabled` NO es permanente A PROPÓSITO: limpiar el intent aquí quemaría la
@@ -72,6 +77,10 @@ nonisolated enum GroupBackendAcceptErrorLogic {
     static func slug(for error: GroupsRPCError) -> String {
         switch classify(error) {
         case .invalidInvite:    return "invalidInvite"
+        // Slug propio y no `invalidInvite`: en el dashboard, «el grupo ya no existe» y «el enlace no
+        // sirve» son incidencias distintas, y colapsarlas escondería cuánta gente llega por un grupo
+        // borrado — que es justo lo que este cambio existe para hacer visible.
+        case .groupDeleted:     return "groupDeleted"
         case .sessionRequired:  return "sessionRequired"
         case .notAuthorized:    return "notAuthorized"
         case .transient:        return "transient"

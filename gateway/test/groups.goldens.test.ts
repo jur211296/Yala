@@ -701,6 +701,56 @@ describe("G3 goldens · /groups/rpc/* contra staging real", () => {
     expect(rows.length).toBe(1);
     expect(rows.every((d) => d.sync_id === memberKeyB)).toBe(true);
   }, 120_000);
+
+  // g13_03 · EL GRUPO BORRADO DEJA DE CONFUNDIRSE CON UN ENLACE MUERTO. `join_group` colapsaba CINCO
+  // causas en `yala_invalid_invite`, y el copy que las cubre a todas dice «pídele al admin que regenere
+  // uno» — imposible de seguir si el grupo ya no existe: no hay admin ni enlace que regenerar.
+  //
+  // Las dos aserciones son igual de importantes. La primera es la funcional. La SEGUNDA protege el
+  // no-oráculo: con un token INVENTADO el servidor sigue diciendo `yala_invalid_invite` y no revela
+  // nada, porque el error nuevo solo se alcanza DESPUÉS de validar que el token existe, no está
+  // revocado, no ha caducado y no está agotado. Quien lo recibe tenía un token real que alguien le dio.
+  it("3-quater. grupo borrado ≠ enlace inválido: token válido → yala_group_deleted; token inventado → yala_invalid_invite (g13_03)", async () => {
+    const gid = freshGid();
+    const cg = await rpcGw(jwtA, "create_group", {
+      p_group_id: gid, p_name: "G13-03 borrado", p_currency_code: "PEN", p_icon_name: "star",
+      p_color_hex: "#778899", p_display_name: "Alice", p_default_split_type: "equal",
+    });
+    expect(cg.status).toBe(200);
+
+    const inv = await rpcGw(jwtA, "create_group_invite", { p_group_id: gid, p_ttl_seconds: 3600, p_max_uses: null });
+    expect(inv.status).toBe(200);
+    const token = inv.body as string;
+
+    // A borra el grupo (tombstone del meta ⇒ split_groups.deleted = true).
+    //
+    // El HLC va al FUTURO y no a `T0 + n` como el resto del archivo: `apply_group_delta` solo aplica el
+    // tombstone si `p_row_hlc > v_row_hlc`, y la fila de `split_groups` ya existe con el `server_hlc()`
+    // real de `create_group` — que es de HOY, muy por delante de T0 (15-jul-2026). Con un HLC del
+    // pasado el tombstone sale `noop` y el grupo seguiría vivo, con lo que el test pasaría a medir otra
+    // cosa. Medido: así es como falló la primera versión de este golden.
+    const hDel = hlc(Date.now() + 3_600_000);
+    const del = await push(jwtA, [
+      { entity_type: "split_groups", group_id: gid, sync_id: null, op: "tombstone", fields: {}, field_hlcs: {}, hlc: hDel, client_mutation_id: uuid() },
+    ]);
+    expect(del.body.results[0].status).toBe("applied");
+
+    // ASERCIÓN 1: con el token REAL de un grupo borrado, el servidor lo dice.
+    const joinDeleted = await rpcGw(jwtB, "join_group", { p_token: token, p_display_name: "Bob", p_legacy_member_key: null });
+    expect(joinDeleted.status).toBe(400);
+    const codeDeleted = String((joinDeleted.body as { error?: { code?: string; message?: string } })?.error?.code
+      ?? (joinDeleted.body as { error?: { message?: string } })?.error?.message ?? "");
+    expect(codeDeleted).toContain("yala_group_deleted");
+
+    // ASERCIÓN 2, la que protege el no-oráculo: un token que no existe sigue dando el error genérico.
+    // Si algún día esto empieza a decir `yala_group_deleted`, se podría sondear qué tokens son válidos.
+    const joinFake = await rpcGw(jwtB, "join_group", { p_token: `no-existe-${uuid()}`, p_display_name: "Bob", p_legacy_member_key: null });
+    expect(joinFake.status).toBe(400);
+    const codeFake = String((joinFake.body as { error?: { code?: string; message?: string } })?.error?.code
+      ?? (joinFake.body as { error?: { message?: string } })?.error?.message ?? "");
+    expect(codeFake).toContain("yala_invalid_invite");
+    expect(codeFake).not.toContain("yala_group_deleted");
+  }, 120_000);
 });
 
 // ============================================================================

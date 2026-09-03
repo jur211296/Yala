@@ -310,7 +310,7 @@ enum GroupBackendInviteEntryHandler {
                 String(localized: "groups.invite.channelUnavailable")
             ))
             logger.error("BackendInvite[\(source.rawValue, privacy: .public)]: channel killed server-side for \(groupID, privacy: .public) → intent kept, informing user")
-        case .invalidInvite, .notAuthorized, .generic:
+        case .invalidInvite, .groupDeleted, .notAuthorized, .generic:
             // PERMANENTE: canario + limpiar intent + alerta localizada (cero silencios).
             MetricsService.canary(.groupJoinFailed, detail: GroupBackendAcceptErrorLogic.slug(for: error))
             PendingJoinStore.clear(zoneName: groupID)
@@ -318,7 +318,21 @@ enum GroupBackendInviteEntryHandler {
             // joining/takingLong con el alert retenido detrás del cover; recoverable: false
             // porque el intent ya se limpió (invalidInvite/permanente no se reintenta).
             GroupJoinIntentTracker.shared.noteAcceptFailed(zoneName: groupID, recoverable: false)
-            if kind == .invalidInvite {
+            if kind == .groupDeleted {
+                // El enlace era REAL: lo que ya no está es el grupo. `linkInvalidDetail` termina en
+                // «pídele al admin que regenere uno», y aquí eso manda a una acción IMPOSIBLE — no hay
+                // grupo ni admin a quien pedírselo. Ése era el defecto entero del ticket.
+                //
+                // Se reutiliza el copy de `reconnect.deletedForAll`, que dice exactamente este hecho
+                // («Este grupo fue eliminado por su creador») y ya está traducido a los 16 idiomas. Es
+                // el MISMO hecho visto desde otro camino, no un préstamo por comodidad. **Aviso para
+                // quien edite aquel copy: tiene un segundo consumidor, éste.**
+                //
+                // El título de `showInviteError` sigue siendo «Enlace no válido» y es honesto: ese
+                // enlace ya no lleva a ninguna parte. Lo que cambia es que el cuerpo explica por qué en
+                // vez de dar un consejo que no se puede seguir.
+                RouterEntryGate.shared.submit(.showInviteError(String(localized: "groups.reconnect.deletedForAll.body")))
+            } else if kind == .invalidInvite {
                 RouterEntryGate.shared.submit(.showInviteError(String(localized: "groups.invite.linkInvalidDetail")))
             } else {
                 RouterEntryGate.shared.submit(.showGroupSyncError(L10n.Groups.Errors.actionFailed))

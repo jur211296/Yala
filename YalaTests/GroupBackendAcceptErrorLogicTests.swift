@@ -59,4 +59,42 @@ struct GroupBackendAcceptErrorLogicTests {
         // join se aplazó por el kill-switch y no por una red mala.
         #expect(L.slug(for: .channelDisabled) == "channelDisabled")
     }
+
+    // MARK: - g13_03 · el grupo borrado tiene su propio camino
+
+    /// El servidor distingue desde g13_03 «el grupo ya no existe» de «el enlace no sirve», y el cliente
+    /// tiene que conservar esa distinción hasta el mensaje. Colapsarla en `.invalidInvite` devolvería el
+    /// consejo imposible que motivó el ticket: «pídele al admin que regenere uno», sin admin ni grupo.
+    @Test func groupDeleted_hasItsOwnKind() {
+        #expect(GroupBackendAcceptErrorLogic.classify(.groupDeleted) == .groupDeleted)
+        #expect(GroupBackendAcceptErrorLogic.classify(.invalidInvite) == .invalidInvite)
+    }
+
+    /// Permanente como `.invalidInvite`: el grupo no va a volver, así que reintentar es gastar batería
+    /// y el intent se limpia.
+    @Test func groupDeleted_isPermanent() {
+        #expect(GroupBackendAcceptErrorLogic.isPermanent(.groupDeleted))
+    }
+
+    /// Slug propio en el canario: en el dashboard, «grupo borrado» y «enlace inválido» son incidencias
+    /// distintas. Colapsarlas escondería cuánta gente llega por un grupo que ya no existe, que es
+    /// justamente lo que este cambio hace visible.
+    @Test func groupDeleted_reportsItsOwnSlug() {
+        #expect(GroupBackendAcceptErrorLogic.slug(for: .groupDeleted) == "groupDeleted")
+        #expect(GroupBackendAcceptErrorLogic.slug(for: .invalidInvite) == "invalidInvite")
+    }
+
+    /// El mapeo del código del servidor. Si esto se rompe, el error llega como `.permanentRejected` y el
+    /// usuario ve el mensaje genérico — el fallo sería silencioso, no un rojo.
+    @Test func serverCode_mapsToGroupDeleted() {
+        #expect(GroupsRPCError(yalaCode: "yala_group_deleted") == .groupDeleted)
+        #expect(GroupsRPCError(yalaCode: "yala_invalid_invite") == .invalidInvite)
+    }
+
+    /// Un código desconocido sigue devolviendo `nil` (→ `.permanentRejected` en el llamador, NUNCA
+    /// `.transient`). Es lo que permitió aplicar g13_03 en el servidor antes de publicar la app: los
+    /// clientes viejos trataron `yala_group_deleted` como rechazo permanente, igual que antes.
+    @Test func unknownCode_staysUnmapped() {
+        #expect(GroupsRPCError(yalaCode: "yala_algo_que_no_existe") == nil)
+    }
 }

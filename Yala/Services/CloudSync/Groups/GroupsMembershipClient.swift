@@ -24,6 +24,10 @@ enum GroupsRPCError: Error, Equatable {
     case sessionExpired          // 401, o token nil (sin request)
     case notAuthorized           // yala_not_authorized
     case invalidInvite           // yala_invalid_invite
+    /// yala_group_deleted (g13_03) — el token era VÁLIDO pero el grupo ya no existe. Se separa de
+    /// `.invalidInvite` porque el consejo de aquel copy («pídele al admin que regenere uno») manda a una
+    /// acción imposible: no hay grupo ni admin a quien pedírselo.
+    case groupDeleted            // yala_group_deleted
     case badInput                // yala_bad_input
     case groupExists             // yala_group_exists
     case invalidGroupID          // yala_invalid_group_id
@@ -44,11 +48,12 @@ enum GroupsRPCError: Error, Equatable {
     /// 200 pero el body no decodifica al struct esperado.
     case decoding
 
-    /// Traduce un código `yala_*` del DDL a su caso. `nil` si no es uno de los 8 conocidos.
+    /// Traduce un código `yala_*` del DDL a su caso. `nil` si no es uno de los 9 conocidos.
     init?(yalaCode: String) {
         switch yalaCode {
         case "yala_not_authorized":     self = .notAuthorized
         case "yala_invalid_invite":     self = .invalidInvite
+        case "yala_group_deleted":      self = .groupDeleted
         case "yala_bad_input":          self = .badInput
         case "yala_group_exists":       self = .groupExists
         case "yala_invalid_group_id":   self = .invalidGroupID
