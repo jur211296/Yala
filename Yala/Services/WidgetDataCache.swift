@@ -929,7 +929,11 @@ enum WidgetDataCache {
         // to avoid generating millions of empty points
         var points: [WidgetCashFlowPoint] = []
 
-        let daysBetween = calendar.dateComponents([.day], from: periodStart, to: periodEnd).day ?? 0
+        // Aquí no es un denominador sino un umbral, así que el día perdido solo importa en la
+        // frontera exacta; se normaliza igual porque es la misma instancia del patrón y dejar una suelta
+        // es lo que hace que el próximo barrido la encuentre como si fuera nueva.
+        let daysBetween = DateIntervalDayCount.days(
+            from: periodStart, to: periodEnd, calendar: calendar)
         let isLongPeriod = daysBetween > 365  // More than 1 year
 
         if isLongPeriod {

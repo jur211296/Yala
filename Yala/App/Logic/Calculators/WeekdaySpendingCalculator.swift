@@ -99,7 +99,13 @@ struct WeekdaySpendingCalculator {
     static func weekdayOccurrences(in interval: DateInterval) -> [Int: Int] {
         let calendar = Calendar.current
         var occurrences: [Int: Int] = [:]
-        let totalDays = calendar.dateComponents([.day], from: interval.start, to: interval.end).day ?? 0
+        // Contado con el helper: sobre un período CERRADO (`.lastMonth`, `.lastYear`, un rango
+        // personalizado) el intervalo llega con `-1 s` y `dateComponents` a pelo devolvía un día menos.
+        // Aquí no es un promedio, es peor: `totalDays` decide `fullWeeks` y `remainder`, así que el
+        // ÚLTIMO día del período no sumaba su día de la semana. En enero (31 días contados como 30) el
+        // sábado recibía 4 ocurrencias en vez de 5 y su media salía inflada ~25 %, con lo que el KPI
+        // «día más caro» podía señalar un día equivocado.
+        let totalDays = DateIntervalDayCount.days(in: interval, calendar: calendar)
         let fullWeeks = totalDays / 7
         let remainder = totalDays % 7
 

@@ -263,7 +263,12 @@ struct InsightsCalculator {
         )
 
         let calendar = Calendar.current
-        let daysInPeriod = max(1, calendar.dateComponents([.day], from: interval.start, to: interval.end).day ?? 1)
+        // El gemelo de `prevDaysInPeriod` (unas líneas abajo), que ya se corrigió el 2026-09-02
+        // mientras éste se quedó crudo: los dos dividen sobre el mismo tipo de intervalo. Con el período
+        // ACTUAL cerrado —`.lastMonth`, `.lastYear`, un rango personalizado— el denominador salía un día
+        // corto e inflaba «Promedio diario» ~3,3 % en un mes de 31. Y como el lado «anterior» ya estaba
+        // bien, los dos lados de la comparación usaban reglas distintas.
+        let daysInPeriod = max(1, DateIntervalDayCount.days(in: interval, calendar: calendar))
         let dailyAverageCount = Double(periodTxns.count) / Double(daysInPeriod)
         let dailyAverageExpense = cashFlow.totalExpense / Double(daysInPeriod)
 
@@ -271,16 +276,12 @@ struct InsightsCalculator {
         // completo): el numerador (`prevCashFlow.totalExpense`) ya es del tramo
         // truncado; el denominador debe escalar igual o `prevDailyAvg` colapsa y
         // `dailyAverageVariation` se dispara (D2 p20-15).
-        // `dateComponents([.day])` TRUNCA, y estos intervalos cierran en 23:59:59 (el -1s
-        // que evita el doble conteo del borde) => contarian un dia de MENOS. Se normaliza
-        // el extremo antes de contar. Medido sobre `.lastMonth`, que ya llevaba el -1s: sin
-        // esta normalizacion el conteo difiere de la longitud real del mes los 730 dias
-        // barridos; con ella, ninguno.
-        let prevDaysInPeriod = max(1, calendar.dateComponents(
-            [.day],
-            from: alignedPrevInterval.start,
-            to: alignedPrevInterval.end.addingTimeInterval(1)
-        ).day ?? 1)
+        // El conteo va por `DateIntervalDayCount`, igual que su gemelo `daysInPeriod` de arriba.
+        // Esta normalización se escribió aquí a mano el 2026-09-02 y el gemelo se quedó sin ella
+        // durante un día: con dos formas de contar lo mismo, una corrección arregla una sola. Ahora
+        // hay una.
+        let prevDaysInPeriod = max(1, DateIntervalDayCount.days(
+            in: alignedPrevInterval, calendar: calendar))
         let prevDailyAvg = prevCashFlow.totalExpense / Double(prevDaysInPeriod)
         let dailyAverageVariation = PreviousPeriodHelper.calculateVariation(
             currentAmount: dailyAverageExpense,

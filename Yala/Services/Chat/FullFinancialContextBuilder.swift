@@ -390,7 +390,13 @@ final class FullFinancialContextBuilder {
                 adjustment: adjustment,
                 converter: converter
             )
-            let days = max(1, calendar.dateComponents([.day], from: interval.start, to: min(interval.end, now)).day ?? 1)
+            // `min(interval.end, now)` recorta el período en curso al instante actual, y eso NO se
+            // toca: lo que se arregla es el otro extremo, el de los períodos ya cerrados que llegan con
+            // `-1 s`. Este promedio se serializa como `daily_avg` y viaja al contexto del asistente, así
+            // que un denominador corto hacía que el chat respondiera con cifras infladas — +16,7 % en
+            // «semana pasada», que sobre 7 días es un día entero de más.
+            let days = max(1, DateIntervalDayCount.days(
+                from: interval.start, to: min(interval.end, now), calendar: calendar))
             let dailyAvg = cashFlow.totalExpense / Double(days)
             let savingsRate: Double? = cashFlow.totalIncome > 0
                 ? ((cashFlow.totalIncome - cashFlow.totalExpense) / cashFlow.totalIncome) * 100

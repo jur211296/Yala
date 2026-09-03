@@ -292,4 +292,51 @@ struct WeekdaySpendingCalculatorTests {
         // 4 Mondays in 28-day interval → average = 100/4 = 25
         #expect(mondayEntry.average == 25)
     }
+
+    // MARK: - Períodos cerrados en 23:59:59 (`undercount-dias-intervalos-cerrados`)
+
+    /// **El caso que ninguna de las 5999 pruebas del repo cazaba.** Un período cerrado —«mes pasado»,
+    /// «año pasado», un rango personalizado— llega con el `-1 s` que evita el doble conteo del borde de
+    /// medianoche, y `dateComponents` a pelo devolvía un día menos. Aquí eso no infla una media: hace
+    /// que el ÚLTIMO día del período **no sume su día de la semana**.
+    ///
+    /// Enero de 2026 empieza en jueves y tiene 31 días, así que jueves, viernes y **sábado** salen 5
+    /// veces. Contando 30, el sábado 31 se pierde y quedan 4 — con lo que su media (`total /
+    /// ocurrencias`) se infla un 25 % y el KPI «día más caro» puede señalar el día equivocado.
+    @Test func closedPeriod_countsTheWeekdayOfItsLastDay() {
+        var lima = Calendar(identifier: .gregorian)
+        lima.timeZone = TimeZone(identifier: "America/Lima")!
+        let enero = DateInterval(
+            start: lima.date(from: DateComponents(year: 2026, month: 1, day: 1))!,
+            end: lima.date(from: DateComponents(
+                year: 2026, month: 1, day: 31, hour: 23, minute: 59, second: 59))!
+        )
+
+        let ocurrencias = WeekdaySpendingCalculator.weekdayOccurrences(in: enero)
+
+        // Enero 2026: del jueves 1 al sábado 31.
+        #expect(ocurrencias.values.reduce(0, +) == 31, """
+            Las ocurrencias tienen que sumar los días reales del período. Si suman 30, el último día se
+            perdió y algún día de la semana está contado de menos.
+            """)
+        #expect(ocurrencias[7] == 5, "Sábado: días 3, 10, 17, 24 y 31.")
+        #expect(ocurrencias[5] == 5, "Jueves: 1, 8, 15, 22 y 29.")
+        #expect(ocurrencias[2] == 4, "Lunes: 5, 12, 19 y 26.")
+    }
+
+    /// Control positivo: el mismo mes con el intervalo ABIERTO (end = 1 de febrero a medianoche, como
+    /// lo devuelve `Calendar.dateInterval(of:)`) ya era correcto y tiene que seguir siéndolo. Sin esto,
+    /// una normalización mal hecha que sumara un día a todo pasaría el test de arriba.
+    @Test func openPeriod_isUnchangedByTheFix() {
+        var lima = Calendar(identifier: .gregorian)
+        lima.timeZone = TimeZone(identifier: "America/Lima")!
+        let enero = DateInterval(
+            start: lima.date(from: DateComponents(year: 2026, month: 1, day: 1))!,
+            end: lima.date(from: DateComponents(year: 2026, month: 2, day: 1))!
+        )
+
+        let ocurrencias = WeekdaySpendingCalculator.weekdayOccurrences(in: enero)
+        #expect(ocurrencias.values.reduce(0, +) == 31)
+        #expect(ocurrencias[7] == 5)
+    }
 }

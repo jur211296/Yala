@@ -118,7 +118,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | synced-prefs-outside-prefsynckey | discarded | tickets/discarded/synced-prefs-outside-prefsynckey.md |
 | trends-comparison-kpi-vs-curve | done | tickets/done/trends-comparison-kpi-vs-curve.md |
 | trends-insight-card-v2-bullets | backlog | tickets/backlog/trends-insight-card-v2-bullets.md |
-| undercount-dias-intervalos-cerrados | backlog | tickets/backlog/undercount-dias-intervalos-cerrados.md |
+| undercount-dias-intervalos-cerrados | qa | tickets/qa/undercount-dias-intervalos-cerrados.md |
 | update-banner-appstore-criteria | qa | tickets/qa/update-banner-appstore-criteria.md |
 | verify-dual-channel-zone-in-supabase | backlog | tickets/backlog/verify-dual-channel-zone-in-supabase.md |
 | welcome-copy-blames-owner | qa | tickets/qa/welcome-copy-blames-owner.md |
@@ -128,7 +128,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | yala-android | backlog | tickets/backlog/yala-android.md |
 | zone-decisions-still-per-row | backlog | tickets/backlog/zone-decisions-still-per-row.md |
 
-Counts by folder: backlog 49 · in-progress 7 · qa 19 · blocked 2 · done 13 · discarded 5 = 95.
+Counts by folder: backlog 48 · in-progress 7 · qa 20 · blocked 2 · done 13 · discarded 5 = 95.
 
 Frank 2026-09-02 (altas): dos hallazgos del QA de hoy entran en `backlog/`, para que no se pierdan
 al cerrar la sesion.

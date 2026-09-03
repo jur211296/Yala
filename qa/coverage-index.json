@@ -2587,6 +2587,20 @@
       "coverage": "unit:YalaTests/CurrencyConverterPartialRateTests (fila de tasas PARCIAL: no devuelve el monto crudo, marca la TX provisional, y el control positivo de que una fila completa SÍ se sella) + CurrencyConverterTests + CurrencyConverterCacheTests. manual: el recorrido de punta a punta —cuenta en divisa nueva sobre fechas ya preescritas por el preload, y cambio de moneda preferida— necesita red y un histórico real de tasas, así que no es reproducible en simulador. AVISO AL SIGUIENTE: hasta el 2026-09-03 NINGUNA de las 134 áreas era dueña de estos ficheros, y las 53 pruebas que tocaban FX no podían ponerse rojas por el bug de la fila parcial — ninguna construía un fixture al que le faltara una divisa. Si añades un test aquí, comprueba con una MUTACIÓN que se pone rojo; en este módulo un verde no prueba gran cosa por sí solo. + ExchangeRateMergeLogicTests (fusión de la fila y su timestamp) + ExchangeRateMergeWiringTests (source-scan: persistRate fusiona y el merge queda tras el gate de quiescencia) + ExchangeRateRepairLogicTests (el barrido one-shot excluye la misma divisa, sin distinguir mayúsculas) + PreferredCurrencyChangeOrderTests (source-scan del ORDEN: las tasas se refrescan ANTES de migrar; sustituye a conciencia a un XCUITest que sería el más caro de los tres criterios de aceptación).",
       "owner": "frank",
       "lastVerified": "2026-09-03"
+    },
+    {
+      "area": "date-interval-day-counting",
+      "codeGlobs": [
+        "Yala/App/Logic/Helpers/DateIntervalDayCount.swift",
+        "Yala/App/Logic/Calculators/WeekdaySpendingCalculator.swift",
+        "Yala/App/Logic/Calculators/InsightsCalculator.swift",
+        "Yala/Services/Chat/FullFinancialContextBuilder.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "manual",
+      "coverage": "unit:YalaTests/DateIntervalDayCountTests (6 casos, incluido el que sostiene el diseño: normalizar NO altera un intervalo que ya cierra a medianoche, así que el helper no necesita guarda) + WeekdaySpendingCalculatorTests (2 casos de COMPORTAMIENTO sobre período cerrado). AVISO MEDIDO 2026-09-03: al mutar el helper caen SOLO sus propios tests — de los cuatro call-sites, únicamente WeekdaySpendingCalculator tiene cobertura de comportamiento. InsightsCalculator, FullFinancialContextBuilder y WidgetDataCache están cubiertos solo indirectamente. Si tocas un promedio diario ahí, escribe el caso y compruébalo con una mutación: un verde no prueba nada por sí solo en esta área.",
+      "owner": "frank",
+      "lastVerified": "2026-09-03"
     }
   ]
 }
