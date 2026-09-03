@@ -64,8 +64,35 @@ struct ShellDataAlertsModifier: ViewModifier {
             } message: {
                 Text(L10n.iCloud.mismatchMessage)
             }
+            // **PRESENTAR ESTE ALERT DESMONTA EL COVER DEL WELCOME. Medido, no inferido (2026-09-03).**
+            //
+            // El alert cuelga del anchor de `ContentView`; el Welcome es un `fullScreenCover` del MISMO
+            // anchor. Un anchor no puede presentar dos cosas a la vez, así que al encender este alert
+            // SwiftUI **dismissa el cover** — y lo hace por su setter, con lo que `showWelcomeFlow`
+            // queda en `false` legítimamente. No es un flag pegado: es un dismiss real.
+            //
+            // Traza del simulador (`-uitest -uitest-reset -uitest-seed grupos`), instrumentando el
+            // setter del cover y el log de readiness:
+            //
+            //     blocked by: freshStartWipeAlert  [freshStartAlert=true  welcomeFlow=true ]
+            //     DIAG gated.set: true -> false  (inhibitor=false)      <- SwiftUI tira el cover
+            //     blocked by: freshStartWipeAlert  [freshStartAlert=true  welcomeFlow=false]
+            //
+            // Consecuencia: al cerrar el alert no queda NADA debajo. El usuario se quedaba mirando una
+            // pantalla negra, cero elementos interactivos, sin más salida que matar la app — y daba
+            // igual el botón, porque el cover ya estaba muerto antes de pulsarlo. Reproducido con
+            // `screenHash 1njjbcs`, `count 6`.
+            //
+            // Es la regla (4) de Presentaciones (`.claude/rules/swiftui-ds.md`) en su forma menos
+            // evidente: no son dos anchors compitiendo por un observable, es UN anchor con dos
+            // presentaciones. El comentario de la rama Cancel decía que «el usuario queda en el
+            // Chooser»: describía la intención, nunca el comportamiento.
+            //
+            // Por eso las dos ramas son EXPLÍCITAS sobre a dónde va el usuario, en vez de confiar en
+            // que quede algo montado debajo: cerrar el alert es sólo la mitad del trabajo.
             .alert(L10n.Welcome.FreshStart.alertTitle, isPresented: $showFreshStartWipeAlert) {
                 Button(L10n.Welcome.FreshStart.alertConfirm, role: .destructive) {
+                    showFreshStartWipeAlert = false
                     do {
                         try DataWipeService.wipeAllUserData(
                             in: modelContext,
@@ -102,9 +129,30 @@ struct ShellDataAlertsModifier: ViewModifier {
                         showFreshStartWipeFailedAlert = true
                     }
                 }
-                // Cancel: user queda en el Chooser (showWelcomeFlow sigue true) —
-                // puede elegir Restore/Invite o re-tap "Soy nuevo".
-                Button(L10n.Action.cancel, role: .cancel) {}
+                // Cancel: **se REABRE el Welcome en el Chooser**, que es de donde vino el usuario.
+                //
+                // El cuerpo estaba vacío porque se daba por hecho que el Chooser seguía montado
+                // debajo. No seguía: presentarlo lo desmontó (ver la traza de arriba). Reabrirlo aquí
+                // no es un parche cosmético — es la única forma de cumplir lo que el copy promete,
+                // porque el cover que había ya no existe.
+                //
+                // `.chooser` y no `.hero`: cancelar devuelve al punto exacto donde se estaba, con las
+                // otras dos vías (Restaurar, Vengo por un grupo) a un toque. Mandarlo al Hero le
+                // cobraría un paso extra por haber preguntado.
+                //
+                // El molde no es nuevo: el alert de `showRestoreOffer`, treinta líneas más abajo en
+                // este mismo fichero, ya reabre el Chooser así —con su `if !hasCompletedOnboarding`—
+                // desde que alguien se topó con esto en aquel camino. Este se quedó sin ello.
+                Button(L10n.Action.cancel, role: .cancel) {
+                    showFreshStartWipeAlert = false
+                    // El guard es del precedente y no es decorativo: si el onboarding ya está
+                    // completo, este alert vino de un camino donde el Welcome NO estaba montado, y
+                    // reabrirlo le plantaría el flujo de bienvenida a alguien que ya usa la app.
+                    if !hasCompletedOnboarding {
+                        welcomeFlowInitialStep = .chooser
+                        showWelcomeFlow = true
+                    }
+                }
                     .tint(.primary)  // A11Y-DM: el indigo global se pierde sobre el alert del Welcome oscuro
             } message: {
                 Text(L10n.Welcome.FreshStart.alertMessage)
@@ -164,7 +212,22 @@ struct ShellDataAlertsModifier: ViewModifier {
                 L10n.Welcome.FreshStart.failedTitle,
                 isPresented: $showFreshStartWipeFailedAlert
             ) {
-                Button(L10n.Common.ok, role: .cancel) {}
+                // Mismo problema y mismo remedio que sus dos vecinos: este alert también se presenta
+                // desde el anchor de `ContentView`, así que para cuando aparece el cover del Welcome
+                // ya está desmontado. Con el cuerpo vacío, pulsar OK dejaba la misma pantalla negra
+                // —es el caso 1 de los tres lanzamientos del ticket, el de `-uitest-fail-wipe`—.
+                //
+                // Y aquí volver al Chooser es ADEMÁS lo correcto de producto: el borrado FALLÓ, los
+                // datos siguen ahí, y la persona tiene que poder elegir otra cosa. Mandarla al
+                // onboarding sería continuar como si se hubiera borrado, que es justo la mentira que
+                // el `do/catch` de arriba existe para evitar.
+                Button(L10n.Common.ok, role: .cancel) {
+                    showFreshStartWipeFailedAlert = false
+                    if !hasCompletedOnboarding {
+                        welcomeFlowInitialStep = .chooser
+                        showWelcomeFlow = true
+                    }
+                }
                     .tint(.primary)  // A11Y-DM: el indigo global se pierde sobre el Welcome oscuro
             } message: {
                 Text(L10n.Welcome.FreshStart.failedMessage)

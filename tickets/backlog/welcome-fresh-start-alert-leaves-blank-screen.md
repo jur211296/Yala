@@ -82,3 +82,74 @@ al cerrarse antes de dar el fix por completo.
 - [ ] Barrido de los otros alerts de `ShellDataAlertsModifier` con el mismo patrón.
 - [ ] XCUITest del recorrido: es determinista y los identifiers ya existen (`welcome_hero_cta`,
       `welcome_chooser_new`). El seam `-uitest-fail-wipe` cubre además la rama de fallo.
+
+---
+
+## 2026-09-03 · Arreglado. Y la causa NO era la hipótesis del ticket
+
+**Reproducido primero**, con la receta de arriba: `screenHash 1njjbcs`, `count 6`, cero targets, y
+captura en negro absoluto. El bug es real y alcanzable en producción.
+
+### La hipótesis del ticket era razonable y era falsa
+
+Decía: «que el `.alert` cuelgue de una vista que se desmonta al presentarse, de modo que al cerrarse
+no queda nada debajo». Se acerca, pero invierte la causa y el efecto — y esa inversión cambia el fix.
+Se probaron y descartaron **tres** hipótesis antes de medir:
+
+1. **El flag se queda pegado** (mía). Se implementó bajarlo a mano en las dos ramas. **No cambió
+   nada**: mismo `screenHash`, misma pantalla negra.
+2. **Dos anchors presentando ante el mismo observable** (regla 4). Falsa: `WelcomeFlowModifier`
+   recibe el binding pero sólo lo ENCIENDE (`ContentView.swift:1628`); quien presenta es únicamente
+   `ShellDataAlertsModifier`.
+3. **Otro alert con el mismo copy.** Falsa: sólo existe uno con `welcome.freshStart.*`.
+
+### Lo MEDIDO, instrumentando el setter del cover y el log de readiness
+
+```
+ContentView readiness blocked by: freshStartWipeAlert  [freshStartAlert=true  welcomeFlow=true ]
+DIAG gated.set: true -> false  (inhibitor=false)          <- SwiftUI desmonta el cover
+ContentView readiness blocked by: freshStartWipeAlert  [freshStartAlert=true  welcomeFlow=false]
+DIAG cancel: antes=true
+DIAG cancel: despues=false
+```
+
+**`showWelcomeFlow` pasa a `false` solo, mientras el alert está abierto y ANTES de que el usuario
+toque nada.** El alert cuelga del anchor de `ContentView`; el Welcome es un `fullScreenCover` del
+MISMO anchor. Un anchor no puede presentar dos cosas, así que al encender el alert SwiftUI **dismissa
+el cover** — y lo hace por su setter, con lo que el flag baja legítimamente. **No es un flag pegado:
+es un dismiss real.**
+
+⇒ Por eso el fix (1) no servía: para cuando la persona pulsa el botón, el Welcome ya está muerto.
+Cerrar el alert es sólo la mitad del trabajo; la otra mitad es decir a dónde va.
+
+Es la regla (4) de Presentaciones en su forma menos evidente: no son dos anchors compitiendo por un
+observable, es **un anchor con dos presentaciones**.
+
+### El fix, y no es invención: el vecino ya lo hacía
+
+`Yala/App/Views/Shared/ShellDataAlertsModifier.swift` — las dos ramas del alert de fresh-start y el
+botón OK del alert de fallo bajan su flag y **reabren el Welcome en `.chooser`**, con el guard
+`if !hasCompletedOnboarding`.
+
+Ese molde ya estaba treinta líneas más abajo, **en el mismo fichero**: el alert de `showRestoreOffer`
+reabre el Chooser exactamente así («Decisión consciente: volver al Chooser»), desde que alguien se
+topó con esto en aquel camino. El de fresh-start se quedó sin ello.
+
+`.chooser` y no `.hero`: cancelar devuelve al punto exacto donde se estaba. Y se arregla también la
+**rama del borrado fallido** —el caso 1 de los tres lanzamientos del ticket—, donde además es lo
+correcto de producto: el wipe falló, los datos siguen ahí, y hay que poder elegir otra cosa.
+
+### Verificación
+
+Simulador, misma receta, tras el fix: **`screenHash 09jhu32`** — el Chooser, con sus cuatro targets
+(`welcome_chooser_new`, `_restore`, `_invite`, `welcome_back_button`). Antes: `1njjbcs`, cero.
+
+Pin: `YalaUITests/Flows/WelcomeFreshStartAlertUITests.swift`, dos tests — que el Chooser vuelve
+ENTERO (las tres cards, no sólo «no está en blanco») y que vuelve USABLE (re-tocar la card reabre el
+alert; un Chooser inerte pasaría el primero).
+
+### Corrige un comentario que mentía
+
+`ShellDataAlertsModifier.swift` decía «Cancel: user queda en el Chooser (showWelcomeFlow sigue true)».
+No se quedaba. Describía la intención, nunca el comportamiento — y el cuerpo del botón estaba vacío
+precisamente porque se daba por cierta.
