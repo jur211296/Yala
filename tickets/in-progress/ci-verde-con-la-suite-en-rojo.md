@@ -1,10 +1,10 @@
 ---
 id: ci-verde-con-la-suite-en-rojo
-status: backlog
+status: in-progress
 priority: high
 area: platform
 created: 2026-09-02
-updated: 2026-09-02
+updated: 2026-09-03
 source: revisión del QA del CI a petición del owner (2026-09-02)
 ---
 

@@ -1,8 +1,8 @@
 ---
 id: prefs-synced-keys-upload-not-download
-status: backlog
+status: qa
 created: 2026-08-06
-updated: 2026-09-02
+updated: 2026-09-03
 source: YalaWiki/Bugs/prefs-cinco-keys-synced-suben-y-no-vuelven.md
 ---
 
