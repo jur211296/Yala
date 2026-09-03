@@ -25,10 +25,6 @@ aplaza es el QA manual y de device, no la verificación automática.
 
 ## Te esperan a ti
 
-0. **Desplegar el Worker a producción** (`npm run deploy:production` en `gateway/`). La policy
-   `g13_02` YA está aplicada y verificada en staging y en producción (registro `20260903213117`), pero
-   el Worker vivo es el de antes y todavía no pide las membresías `rejected`: hasta el deploy, el
-   aviso de rechazo no llega. **Inerte, no roto** — se comporta como hoy.
 
 1. **Verificar el push con dos teléfonos reales.** App Attest en `enforce` lo hace imposible desde
    simulador o build de Xcode. Lo medido es que el gateway compone y envía lo correcto; **que Apple

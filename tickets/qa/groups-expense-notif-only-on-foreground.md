@@ -263,3 +263,22 @@ encadenar dos cambios de A dentro de 5 min para medir el punto de H5.
 
 **Se comprueba en la misma pasada que `aviso-de-nuevo-miembro-no-llega-hasta-abrir-la-app`**: mismo
 emisor, mismos dos teléfonos, mismo `wrangler tail`.
+
+---
+
+## H2 CAE · 2026-09-03 (medido, no razonado)
+
+**`PUSH_ROLE_JWT` SÍ está configurado en el Worker de producción.** Verificado con
+`wrangler versions view <id> --env production`, que lista los secrets del despliegue vivo: aparece
+junto a `APNS_AUTH_KEY`, `GROUPS_ENC_KEY` y los demás.
+
+Eso **refuta H2** («el fan-out del servidor no salió porque falta el secret»), que era una de las dos
+hipótesis que seguían en pie después del cambio a push visible. El short-circuit de
+`gateway/src/groups/routes.ts` por secret ausente no puede estar disparándose.
+
+Quedan vivas **H4** (el receptor nunca tuvo token registrado) y **H5** (rate-limit y sub-ajustes de
+iOS), más la que el propio push visible ya no explica. Para el device-QA eso significa que
+`wrangler tail` sigue siendo útil, pero ya no hay que buscar el log de `PUSH_ROLE_JWT ausente`.
+
+Cómo se midió, por si hay que repetirlo: `npx wrangler versions view <version-id> --env production`
+desde `gateway/`. La lista de secrets sale sin exponer ningún valor.
