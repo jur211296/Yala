@@ -1,6 +1,10 @@
 # Xcode
 DerivedData/
 .deriveddata/
+# `.ddp` es el `-derivedDataPath` que usan los pasos de build y test de
+# .github/workflows/qa.yml, y toda corrida local que copie esos comandos. En el runner es
+# efimero; en local son GB sin ignorar que un `git add -A` metia enteros en el repo.
+.ddp/
 build/
 build_output.txt
 build_output_*.txt
