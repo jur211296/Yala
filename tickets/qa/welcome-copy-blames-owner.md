@@ -1,6 +1,6 @@
 ---
 id: welcome-copy-blames-owner
-status: in-progress
+status: qa
 created: 2026-08-12
 updated: 2026-09-02
 source: YalaWiki/Bugs/qa_welcome-copy-acusa-al-dueno-de-traer-datos-ajenos.md
@@ -316,3 +316,56 @@ invalidó**. Corregidas:
 > Sync 18 ago (Iris, Mac SSOT). Cola A A1 READY Mini 17 ago. Caso 2 = cola C, no corrida. No rename.
 
 migrated from YalaWiki Bugs/qa_welcome-copy-acusa-al-dueno-de-traer-datos-ajenos.md @ 1934e8ad
+
+---
+
+## 2026-09-02 (noche) · la pregunta está respondida y la pieza hecha
+
+**Decisión del owner: SÍ, la puerta de Grupos hereda la señal de restauración.** Con eso deja de
+estar bloqueado lo único que quedaba de este ticket.
+
+### Qué cambia para quien usa la app
+
+Cambias de móvil, restauras desde iCloud y —mientras tus datos van bajando— intentas crear tu primer
+grupo. Antes Yala te paraba diciendo que este dispositivo tiene datos de **otra cuenta**, y te
+ofrecía crear el grupo «desde la app que ya usas»: una salida imposible de seguir, porque esa app es
+justo la que tienes delante montándose. Ahora la puerta distingue tus propias filas bajando de las de
+otra persona, igual que ya lo distinguía la puerta gemela del sign-in.
+
+### El cambio
+
+| Archivo | Qué |
+|---|---|
+| `Yala/App/Logic/GroupsOrganizerGateLogic.swift` | `decide` gana `restoreInProgress` (**sin default**, como su gemelo) y el guard de datos ajenos pasa a `!(hasExistingData && !restoreInProgress)`. Docblock de cabecera al día: hablaba de «los tres términos» y ya son cuatro |
+| `Yala/App/Views/Onboarding/WelcomeGroupsGateView.swift` | El único call-site de producción pasa `ICloudRestoreSessionSignal.isRestoringNow` — la señal viva, leída en el momento de decidir y no capturada antes |
+| `YalaTests/Groups/GroupsOrganizerBranchTests.swift` | 2 tests nuevos de tabla + el barrido exhaustivo de 3 → 4 dimensiones + 1 source-scan del cableado. Las 10 llamadas existentes pasan `restoreInProgress: false`, que es el mundo que ya describían |
+| `qa/coverage-index.json` | `lastVerified` de `onboarding-flow` y `onboarding-groups-only` (las dos **deterministic**; las `agentic`/`manual` NO se tocan: no las he corrido) |
+
+**Se siguieron las tres decisiones que la pieza 1 dejó escritas**, porque el problema es el mismo:
+sin default (lo comprueba el compilador, no un escáner); el término corrige el TÉRMINO de los datos y
+no el veredicto (va dentro de la condición, no como cuarta rama); y la señal se lee viva.
+
+### Mutación: 2 mutantes a exit 65, cada uno en su mitad
+
+| Mutante | Resultado | Muerto por |
+|---|---|---|
+| Descablear el call-site (`restoreInProgress: false` a pelo) | **exit 65**, 2 issues | el source-scan `MUTACIÓN (e)` — la tabla habría seguido VERDE |
+| Quitar el término del guard (vuelve el bug) | **exit 65**, 2 issues | los dos tests de tabla — el source-scan habría seguido VERDE |
+
+Que cada uno caiga sólo en su mitad es la prueba de que las dos redes no son redundantes. Es el mismo
+reparto que la pieza 1 documentó con su mutante (b).
+
+### Verificación
+
+`Test run with 40 tests in 6 suites passed` — **6 suites pedidas, 6 arrancadas**, comprobado contra
+`◇ Suite`. El denominador importa aquí más que de costumbre: la primera corrida de este cambio pidió
+3 suites, arrancaron 2 y salió `TEST SUCCEEDED`, porque `-only-testing` resuelve por el nombre del
+TIPO y `GroupsOrganizerBranchTests` es el nombre del FICHERO — ninguna de sus cinco suites se llama
+así. La que no corrió era justo la del source-scan. Trampa nueva, anotada en
+`docs/aprendizajes-tecnicos.md`.
+
+### Lo que NO cierra este commit
+
+El **residual de device-QA sigue abierto y es del owner**: exige SIWA con un Apple ID real, no
+simulador, y el propio ticket lo marca como «Inferido, y NO reproducido». Por eso el ticket pasa a
+`qa/` y no a `done`: el código está hecho y pinneado, la comprobación con cuenta real no.

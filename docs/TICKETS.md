@@ -86,7 +86,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | secondary-groups-off-wipes-owner | in-progress | tickets/in-progress/secondary-groups-off-wipes-owner.md |
 | secondary-guest-exit-lock-and-outbox | in-progress | tickets/in-progress/secondary-guest-exit-lock-and-outbox.md |
 | secondary-visitor-writes-owner-domain | in-progress | tickets/in-progress/secondary-visitor-writes-owner-domain.md |
-| welcome-copy-blames-owner | in-progress | tickets/in-progress/welcome-copy-blames-owner.md |
+| welcome-copy-blames-owner | qa | tickets/qa/welcome-copy-blames-owner.md |
 | applepay-shortcut-warm-launch-empty-data | qa | tickets/qa/applepay-shortcut-warm-launch-empty-data.md |
 | cloud-fx-rates-blob-two-faces | qa | tickets/qa/cloud-fx-rates-blob-two-faces.md |
 | groups-consent-door-spec | qa | tickets/qa/groups-consent-door-spec.md |

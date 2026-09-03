@@ -166,7 +166,12 @@ struct WelcomeGroupsGateView: View {
             // INVITADA (vacío en una sesión recién montada) y daría vía libre justo donde el alta escribe
             // las seis preferencias en el `UserDefaults` del DUEÑO.
             isSecondarySession: SecondarySessionStore.isActive(),
-            hasExistingData: hasLocalDataNow())
+            hasExistingData: hasLocalDataNow(),
+            // La señal viva, leída aquí y no capturada antes: el import puede terminar mientras el
+            // usuario está en este step. Es el mismo latch que ya consume el guard cross-cuenta en
+            // `WelcomeCloudSignInView`, y el mismo detector de corpus, así que las dos puertas
+            // clasifican el mismo hecho igual.
+            restoreInProgress: ICloudRestoreSessionSignal.isRestoringNow)
 
         decision = verdict
         if verdict == .proceed {

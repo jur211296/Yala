@@ -16,9 +16,9 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (19 entradas)
+## Índice (20 entradas)
 
-> **No hace falta leer este fichero entero** — son 184 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 185 KB. Localiza la entrada
 > aquí y salta a ella.
 
 - `—` [Sync de Grupos (CKSyncEngine) NO debe arrancar/`save()` sobre el `mainContext` compartido antes](#sync-de-grupos-cksyncengine-no-debe-arrancarsave-sobre-el-maincontext-compartido-antes)
@@ -39,6 +39,7 @@
 - `2026-09-02` [Un helper de aislamiento puede vaciar 22 de 31 modelos y llamarse a sí mismo «borra todas las instan](#un-helper-de-aislamiento-puede-vaciar-22-de-31-modelos-y-llamarse-a-s-mismo-borra-todas-las-instancias-2026-09-02)
 - `2026-09-02` [Nombrar un metodo de Swift Testing en -only-testing no filtra: no corre NADA y devuelve TEST SUCCEED](#nombrar-un-metodo-de-swift-testing-en--only-testing-no-filtra-no-corre-nada-y-devuelve-test-succeeded-2026-09-02)
 - `2026-09-02` [Un test que assertea un literal traducido pinnea el idioma del simulador, no la lógica (2026-09-02)](#un-test-que-assertea-un-literal-traducido-pinnea-el-idioma-del-simulador-no-la-lgica-2026-09-02)
+- `2026-09-02` [`-only-testing` con el nombre del FICHERO tampoco filtra si el struct se llama distinto: verde silen](#-only-testing-con-el-nombre-del-fichero-tampoco-filtra-si-el-struct-se-llama-distinto-verde-silencioso-2026-09-02)
 - `2026-08-03` [[STALE, medido 2026-08-03 — el código que describe ya NO EXISTE: `applyRemoteRecordIfAbsent` y](#stale-medido-2026-08-03--el-cdigo-que-describe-ya-no-existe-applyremoterecordifabsent-y)
 
 <!-- INDICE:fin -->
@@ -322,3 +323,11 @@
 - **`#expect(vm.splitDescription?.contains("2 de 5") == true)` llevaba rojo en CI desde siempre.** El string sale de `L10n.Split.descShares`, que resuelve por `Bundle.main` (vía `LanguageManager.resolved`), o sea **el idioma del simulador**: en la Mac del owner da `"2 de 5 partes"` y en un runner que arranca en inglés, `"2 of 5 shares"`.
   - **Es la misma familia que la divergencia de zona horaria**, en otra dimensión: el test fija un entorno (idioma, TZ, región) que el código de producción toma del sistema, y las dos mitades sólo coinciden en la máquina donde se escribió. Sus dos tests hermanos eran inmunes por casualidad —buscaban `"80%"` y `"3"`—, lo que hace el fallo aún más desconcertante: falla uno de tres en el mismo fichero.
   - **El arreglo NO es fijar el idioma en CI.** Eso lo tapa y deja el test pinneando una traducción. Se compara contra la función localizada (`L10n.Split.descShares(2, 5)`) y se conserva aparte lo único que el literal sí protegía —el orden de los argumentos— con un `#expect` contra la llamada invertida. Que el string exista en los 16 idiomas es trabajo de la batería de l10n, que es su sitio.
+
+### `-only-testing` con el nombre del FICHERO tampoco filtra si el struct se llama distinto: verde silencioso (2026-09-02)
+
+- **Hermana directa de la entrada del método, y la salvaguarda que allí se recomendó —«filtra por FICHERO, nunca por método»— NO basta.** `-only-testing:YalaTests/<Suite>` resuelve por el nombre del **tipo**, no por el del fichero. En este repo un fichero puede declarar varias suites con nombres que no se parecen al suyo: `YalaTests/Groups/GroupsOrganizerBranchTests.swift` declara `GroupsOrganizerGateTests`, `GroupsOrganizerNoWriteTests`, `GroupsOrganizerFlowTests`, `GroupsOrganizerWiringTests` y `WelcomeBackDestinationTests` — **ninguna se llama como el fichero**.
+  - **Qué pasa entonces:** el filtro no casa con nada, `xcodebuild` **no avisa**, y la corrida sale `** TEST SUCCEEDED **`. Medido: pidiendo 3 suites salió `Test run with 15 tests in 2 suites passed`. Verde, exit 0, y una de las tres no se ejecutó — precisamente la que contenía el source-scan escrito para cazar el mutante del cambio.
+  - **Por qué es peor que el caso del método.** Allí el conteo era 0 y la ausencia de `◇ Test … started` saltaba a la vista. Aquí **sí corren tests y sí hay conteo**, así que el verde parece legítimo: sólo delata el número de SUITES, y solo si lo comparas con las que pediste.
+  - **La regla operativa, corregida.** No basta con mirar que `Test run with N tests` exista: hay que **comparar `M suites` con el número de `-only-testing` que pasaste**, y si no cuadra, averiguar cuál no casó (`grep -E "^◇ Suite "` lista las que arrancaron de verdad). Los nombres se sacan del código, no del fichero: `grep -nE '^struct [A-Za-z]+' <fichero>`.
+  - **El corolario general:** las tres veces que esto ha mordido, el patrón es el mismo — *un filtro descarta lo que buscabas y la ausencia se lee como resultado*. La defensa no es recordar la lista de trampas: es exigir siempre el **denominador** (cuántos pedí) junto al numerador (cuántos corrieron).

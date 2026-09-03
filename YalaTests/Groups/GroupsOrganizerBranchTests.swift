@@ -74,10 +74,10 @@ struct GroupsOrganizerGateTests {
 
     @Test("la tabla completa: canal × secundaria × datos ajenos")
     func fullTable() {
-        #expect(Gate.decide(channelEnabled: true, isSecondarySession: false, hasExistingData: false) == .proceed)
-        #expect(Gate.decide(channelEnabled: false, isSecondarySession: false, hasExistingData: false) == .blockedChannelOff)
-        #expect(Gate.decide(channelEnabled: true, isSecondarySession: true, hasExistingData: false) == .blockedSecondarySession)
-        #expect(Gate.decide(channelEnabled: true, isSecondarySession: false, hasExistingData: true) == .blockedForeignData)
+        #expect(Gate.decide(channelEnabled: true, isSecondarySession: false, hasExistingData: false, restoreInProgress: false) == .proceed)
+        #expect(Gate.decide(channelEnabled: false, isSecondarySession: false, hasExistingData: false, restoreInProgress: false) == .blockedChannelOff)
+        #expect(Gate.decide(channelEnabled: true, isSecondarySession: true, hasExistingData: false, restoreInProgress: false) == .blockedSecondarySession)
+        #expect(Gate.decide(channelEnabled: true, isSecondarySession: false, hasExistingData: true, restoreInProgress: false) == .blockedForeignData)
     }
 
     @Test("con el canal APAGADO gana el canal, aunque además haya datos de otro humano")
@@ -86,8 +86,8 @@ struct GroupsOrganizerGateTests {
         // fresco, y su copy describe algo TRANSITORIO («vuelve a intentarlo en un momento»). El de datos
         // ajenos describe un estado del DISPOSITIVO, que no se arregla esperando: dárselo a alguien cuyo
         // problema real es el canal le manda a buscar una causa que no existe.
-        #expect(Gate.decide(channelEnabled: false, isSecondarySession: false, hasExistingData: true) == .blockedChannelOff)
-        #expect(Gate.decide(channelEnabled: false, isSecondarySession: true, hasExistingData: true) == .blockedChannelOff)
+        #expect(Gate.decide(channelEnabled: false, isSecondarySession: false, hasExistingData: true, restoreInProgress: false) == .blockedChannelOff)
+        #expect(Gate.decide(channelEnabled: false, isSecondarySession: true, hasExistingData: true, restoreInProgress: false) == .blockedChannelOff)
     }
 
     /// **C3 · la celda que carga el peso, y la razón por la que no basta con `hasExistingData`.**
@@ -98,25 +98,65 @@ struct GroupsOrganizerGateTests {
     /// `UserDefaults.standard` del DUEÑO — incluida `groupsBetaUnlocked`, que **nadie repone al salir**.
     @Test("secundaria con el store de la invitada VACÍO: la celda que `hasExistingData` no ve")
     func secondarySessionBlocksEvenWithAnEmptyGuestStore() {
-        #expect(Gate.decide(channelEnabled: true, isSecondarySession: true, hasExistingData: false)
+        #expect(Gate.decide(channelEnabled: true, isSecondarySession: true, hasExistingData: false, restoreInProgress: false)
                 == .blockedSecondarySession)
         // Y va DELANTE de los datos ajenos: si además hay corpus, el hecho que hay que contarle al usuario
         // sigue siendo «estás de visita» — ese sí tiene salida (cerrar la sesión de invitado), y el copy de
         // datos ajenos («su dueño puede volver a entrar cuando quiera») le mandaría a esperar algo que no
         // va a pasar.
-        #expect(Gate.decide(channelEnabled: true, isSecondarySession: true, hasExistingData: true)
+        #expect(Gate.decide(channelEnabled: true, isSecondarySession: true, hasExistingData: true, restoreInProgress: false)
                 == .blockedSecondarySession)
     }
 
-    @Test("`proceed` exige las TRES condiciones — es la única celda que deja escribir")
-    func proceedNeedsAllThreeTerms() {
+    /// **D2 · la celda de la dueña restaurando (decisión del owner, 2026-09-02).**
+    ///
+    /// Cambias de móvil, restauras desde iCloud y mientras tus datos están bajando intentas crear tu
+    /// primer grupo. El detector cuenta filas y no puede saber que las estás bajando tú, así que la
+    /// puerta te clasificaba como «hay datos de otro humano» y te mandaba a crear el grupo «desde la app
+    /// que ya usas» — que es ÉSTA, montándose delante de ti. La salida que ofrecía era imposible de
+    /// seguir.
+    ///
+    /// Es el mismo hecho mal clasificado que ya corrigió `CrossAccountEntryGuardLogic` con esta misma
+    /// señal, y por eso las dos puertas la consumen igual: comparten el detector.
+    @Test("D2 · restaurando de iCloud, el corpus propio NO es corpus ajeno")
+    func ownRestoreIsNotForeignData() {
+        // La celda nueva: con datos y restaurando, se pasa.
+        #expect(Gate.decide(channelEnabled: true, isSecondarySession: false,
+                            hasExistingData: true, restoreInProgress: true) == .proceed)
+        // Y su control negativo, que es lo que impide que esto se convierta en un pase libre: sin
+        // restauración en curso, los mismos datos siguen bloqueando.
+        #expect(Gate.decide(channelEnabled: true, isSecondarySession: false,
+                            hasExistingData: true, restoreInProgress: false) == .blockedForeignData)
+    }
+
+    /// La señal corrige el TÉRMINO de los datos, no el veredicto: no es una llave maestra.
+    @Test("D2 · restaurar no desarma los otros dos términos")
+    func restoreDoesNotUnlockTheOtherGuards() {
+        // Canal apagado: sigue mandando el canal, restaure o no.
+        #expect(Gate.decide(channelEnabled: false, isSecondarySession: false,
+                            hasExistingData: true, restoreInProgress: true) == .blockedChannelOff)
+        // Sesión secundaria: sigue siendo «estás de visita». Que la invitada esté restaurando SU iCloud
+        // no la autoriza a escribir las seis preferencias en el `UserDefaults` del dueño.
+        #expect(Gate.decide(channelEnabled: true, isSecondarySession: true,
+                            hasExistingData: true, restoreInProgress: true) == .blockedSecondarySession)
+        #expect(Gate.decide(channelEnabled: true, isSecondarySession: true,
+                            hasExistingData: false, restoreInProgress: true) == .blockedSecondarySession)
+    }
+
+    @Test("`proceed` exige las CUATRO condiciones — es la única celda que deja escribir")
+    func proceedNeedsAllFourTerms() {
         for channel in [true, false] {
             for secondary in [true, false] {
                 for data in [true, false] {
-                    let decision = Gate.decide(
-                        channelEnabled: channel, isSecondarySession: secondary, hasExistingData: data)
-                    #expect((decision == .proceed) == (channel && !secondary && !data),
-                            "canal=\(channel) secundaria=\(secondary) datosAjenos=\(data) ⇒ \(decision)")
+                    for restoring in [true, false] {
+                        let decision = Gate.decide(
+                            channelEnabled: channel, isSecondarySession: secondary,
+                            hasExistingData: data, restoreInProgress: restoring)
+                        // El corpus solo cuenta como AJENO si no lo está bajando esta misma sesión.
+                        let dataIsForeign = data && !restoring
+                        #expect((decision == .proceed) == (channel && !secondary && !dataIsForeign),
+                                "canal=\(channel) secundaria=\(secondary) datos=\(data) restaurando=\(restoring) ⇒ \(decision)")
+                    }
                 }
             }
         }
@@ -141,7 +181,7 @@ struct GroupsOrganizerNoWriteTests {
         let defaults = makeIsolatedDefaults(prefix: "g3.gate.off")
         let writer = SpyPreferenceWriter(defaults: defaults)
 
-        let decision = Gate.decide(channelEnabled: false, isSecondarySession: false, hasExistingData: false)
+        let decision = Gate.decide(channelEnabled: false, isSecondarySession: false, hasExistingData: false, restoreInProgress: false)
         #expect(decision == .blockedChannelOff)
 
         // La aserción que carga el peso: `onboardingMode` es never-downgrade cross-device, así que una
@@ -168,7 +208,7 @@ struct GroupsOrganizerNoWriteTests {
         let defaults = makeIsolatedDefaults(prefix: "g3.gate.foreign")
         let writer = SpyPreferenceWriter(defaults: defaults)
 
-        #expect(Gate.decide(channelEnabled: true, isSecondarySession: false, hasExistingData: true) == .blockedForeignData)
+        #expect(Gate.decide(channelEnabled: true, isSecondarySession: false, hasExistingData: true, restoreInProgress: false) == .blockedForeignData)
         #expect(writer.writes.isEmpty)
         #expect(writtenKeysPresent(in: defaults).isEmpty)
     }
@@ -392,6 +432,25 @@ struct GroupsOrganizerWiringTests {
             """)
         #expect(!code.contains("refreshIfDue()"),
                 "un `refreshIfDue()` sin argumentos aquí es el no-op que el chip prohíbe")
+    }
+
+    /// **D2 · el escáner que caza el mutante que la tabla NO ve.**
+    ///
+    /// La tabla de arriba prueba que `decide` clasifica bien las cuatro celdas, pero pasaría igual de
+    /// verde si el call-site le pasara `restoreInProgress: false` a pelo, o leyera la señal en el sitio
+    /// equivocado. Ese es exactamente el mutante que en la pieza 1 de este ticket cayó SOLO en el
+    /// source-scan, con los ocho tests del guard en verde — la demostración de por qué este escáner
+    /// existe. El parámetro sin default obliga a poner ALGO; esto obliga a poner lo correcto.
+    @Test("MUTACIÓN (e): el call-site pasa la señal VIVA de restauración, no un literal")
+    func gatePassesTheLiveRestoreSignal() throws {
+        let code = try Self.code(Self.gateView)
+        #expect(code.contains("restoreInProgress: ICloudRestoreSessionSignal.isRestoringNow"), """
+            la puerta tiene que leer el latch VIVO. Con `restoreInProgress: false` cableado a mano, la
+            dueña que está restaurando vuelve a recibir «este dispositivo tiene datos de otra cuenta» y
+            una salida imposible de seguir («crea el grupo desde la app que ya usas» — es ésta).
+            """)
+        #expect(!code.contains("restoreInProgress: false"),
+                "un literal aquí es el bug de vuelta, y el compilador no puede cazarlo: el tipo casa")
     }
 
     @Test("la puerta decide con la lógica pura y lee el flag DESPUÉS del refresh")

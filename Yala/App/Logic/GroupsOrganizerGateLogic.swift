@@ -46,6 +46,19 @@
 //  es distinto —«estás de visita», no «hay datos de otro humano»— y la salida también, porque aquí sí
 //  la hay (cerrar la sesión de invitado y volver desde su propio dispositivo).
 //
+//  **El CUARTO término (D2, 2026-09-02) no es una razón más para bloquear: es la que impide bloquear
+//  mal.** El detector de corpus cuenta filas y no puede saber QUIÉN las está escribiendo, así que a la
+//  dueña que acaba de cambiar de móvil y está restaurando de SU iCloud la clasificaba como «datos de
+//  otro humano» — y el copy le ofrecía crear el grupo «desde la app que ya usas», que es ÉSTA,
+//  montándose delante de ella. Una salida imposible de seguir, que es la definición de camino muerto.
+//  La señal (`ICloudRestoreSessionSignal.isRestoringNow`) corrige el TÉRMINO de los datos, no el
+//  veredicto: por eso va DENTRO de la condición de `hasExistingData` y no como una cuarta rama, y por
+//  eso el canal y la sesión secundaria siguen bloqueando igual mientras se restaura. Es la misma
+//  enmienda, con la misma señal y sobre el mismo detector, que `CrossAccountEntryGuardLogic` ya
+//  aplicaba desde el 2026-08-13: eran dos consumidores del mismo hecho y sólo uno lo clasificaba bien.
+//  Decisión del owner; el contra que se aceptó es que cada puerta que hereda la señal es una
+//  superficie más donde un fallo de la señal sale caro.
+//
 
 import Foundation
 
@@ -75,12 +88,28 @@ nonisolated enum GroupsOrganizerGateLogic {
     ///   - hasExistingData: el detector del guard cross-cuenta (`ContentView.checkHasExistingData`),
     ///     que cuenta también grupos y filas bridgeadas — un dueño anterior que venía de «Solo Grupos»
     ///     no tiene cuentas ni categorías propias y daría `false` con el detector estrecho.
+    ///   - restoreInProgress: ESTA sesión pidió restaurar de iCloud y ese import no ha terminado
+    ///     (`ICloudRestoreSessionSignal.isRestoringNow`). **SIN valor por defecto a propósito**, igual
+    ///     que en `CrossAccountEntryGuardLogic.decide`: un default sería `false` y cualquier call-site
+    ///     nuevo heredaría el bug en silencio. Sin él, añadir una puerta obliga a decidir, y lo
+    ///     comprueba el compilador y no un escáner.
     static func decide(channelEnabled: Bool,
                        isSecondarySession: Bool,
-                       hasExistingData: Bool) -> Decision {
+                       hasExistingData: Bool,
+                       restoreInProgress: Bool) -> Decision {
         guard channelEnabled else { return .blockedChannelOff }
         guard !isSecondarySession else { return .blockedSecondarySession }
-        guard !hasExistingData else { return .blockedForeignData }
+        // Las filas que la propia dueña está bajando de SU iCloud ahora mismo no son «datos de otro
+        // humano»: son el resultado, a medias, de lo que ella acaba de pedir. El detector cuenta filas y
+        // no puede saber quién las está escribiendo, así que sin este término la puerta la acusa a ella
+        // — y la salida que le ofrece el copy («crea el grupo desde la app que ya usas») es literalmente
+        // esta app, montándose delante de ella. Imposible de seguir.
+        //
+        // Corrige el TÉRMINO de los datos, no el veredicto: es la misma forma que ya tiene el guard
+        // gemelo (`CrossAccountEntryGuardLogic`, que consume el mismo detector), y por eso va DENTRO de
+        // esta condición y no como una cuarta rama. Todo lo demás de la puerta sigue mandando: con el
+        // canal apagado o en sesión secundaria se bloquea igual, esté restaurando o no.
+        guard !(hasExistingData && !restoreInProgress) else { return .blockedForeignData }
         return .proceed
     }
 }
