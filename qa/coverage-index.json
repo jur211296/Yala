@@ -1292,13 +1292,14 @@
         "Yala/Services/TrendDataProcessor.swift",
         "Yala/App/ViewModels/StatisticsViewModel.swift",
         "Yala/Services/ReportNotificationService.swift",
-        "Yala/App/Logic/Helpers/TrendProcessingHelper.swift"
+        "Yala/App/Logic/Helpers/TrendProcessingHelper.swift",
+        "Yala/App/Logic/Calculators/DailySpendingCalculator.swift"
       ],
       "scenarioIDs": [],
       "classification": "manual",
-      "coverage": "unit:YalaTests/TransactionClassificationLogicTests + TrendDataProcessorTests (reembolso/KPI==curva/invariante/yDomain negativo) + ReportNotificationServiceTests (accumulateReportTotals/empty-check por actividad) + CashFlowCalculatorTests (reembolso) + TrendProcessingTests (yDomain incluye curva .expense negativa) + xcuitest:YalaUITests/IncomeExpenseClassificationUITests (discriminante e2e: seed -uitest-seed-desync con income-cat monto negativo + expense-cat monto positivo → cifras de Insights clasifican por CATEGORÍA [500/300], no por signo [800/600]). manual: Fase 1 device OK (header Records/RecordsStandalone == CashFlow). Fase 2 (p20-14) device OK (TestFlight 2.0.5 b2 2026-07-11): curva de gasto NEGATIVA con reembolso real vía import CSV — buckets bajo 0, ejes/yDomain, hero==KPI, coherencia Tendencias/Estadísticas/Registros, empty-check por actividad.",
+      "coverage": "unit:YalaTests/TransactionClassificationLogicTests + TrendDataProcessorTests (reembolso/KPI==curva/invariante/yDomain negativo) + ReportNotificationServiceTests (accumulateReportTotals/empty-check por actividad) + CashFlowCalculatorTests (reembolso) + TrendProcessingTests (yDomain incluye curva .expense negativa) + xcuitest:YalaUITests/IncomeExpenseClassificationUITests (discriminante e2e: seed -uitest-seed-desync con income-cat monto negativo + expense-cat monto positivo → cifras de Insights clasifican por CATEGORÍA [500/300], no por signo [800/600]). + DailySpendingCalculatorTests (calendario de Registros: categoria de gasto con monto POSITIVO resta del dia; categoria de ingreso con monto NEGATIVO no suma; dia del fixture desync == 300 igual que el chip del hero; category==nil mantiene el fallback por signo. Los 3 primeros FALLAN contra la version por signo puro anterior al 2026-09-02: 600/500/100 vs 300/300/nil, verificado ejecutando la suite con la logica revertida). manual: Fase 1 device OK (header Records/RecordsStandalone == CashFlow). Fase 2 (p20-14) device OK (TestFlight 2.0.5 b2 2026-07-11): curva de gasto NEGATIVA con reembolso real vía import CSV — buckets bajo 0, ejes/yDomain, hero==KPI, coherencia Tendencias/Estadísticas/Registros, empty-check por actividad.",
       "owner": "",
-      "lastVerified": "2026-07-11"
+      "lastVerified": "2026-09-02"
     },
     {
       "area": "merchant-memory",

@@ -70,7 +70,6 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | panel-accounts-redesign | backlog | tickets/backlog/panel-accounts-redesign.md |
 | prefs-synced-keys-upload-not-download | backlog | tickets/backlog/prefs-synced-keys-upload-not-download.md |
 | records-standalone-amount-discrepancy | backlog | tickets/backlog/records-standalone-amount-discrepancy.md |
-| registros-calendario-cuenta-gastos-por-signo | backlog | tickets/backlog/registros-calendario-cuenta-gastos-por-signo.md |
 | savings-tracking | backlog | tickets/backlog/savings-tracking.md |
 | scheduled-payment-once-labeled-monthly | backlog | tickets/backlog/scheduled-payment-once-labeled-monthly.md |
 | smart-ai-notifications | backlog | tickets/backlog/smart-ai-notifications.md |
@@ -93,6 +92,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-consent-door-spec | qa | tickets/qa/groups-consent-door-spec.md |
 | invite-backend-stale-config | qa | tickets/qa/invite-backend-stale-config.md |
 | prefs-domain-per-secondary-session | qa | tickets/qa/prefs-domain-per-secondary-session.md |
+| registros-calendario-cuenta-gastos-por-signo | qa | tickets/qa/registros-calendario-cuenta-gastos-por-signo.md |
 | scheduled-payments-notif-dedup | qa | tickets/qa/scheduled-payments-notif-dedup.md |
 | siri-intent-dual-container | qa | tickets/qa/siri-intent-dual-container.md |
 | storekit-appgroup-siri-pro-gate | qa | tickets/qa/storekit-appgroup-siri-pro-gate.md |

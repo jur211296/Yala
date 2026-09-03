@@ -8,35 +8,36 @@ paths:
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice de reglas (20)
+## Índice de reglas (21)
 
-> Este fichero son **19 KB en 20 reglas largas**. No lo leas entero: localiza la regla
+> Este fichero son **21 KB en 21 reglas largas**. No lo leas entero: localiza la regla
 > aquí y lee **solo su tramo** con `sed -n '<linea>,<linea+N>p'`.
 > Los números de línea se desplazan al editar — regenera con
 > `python3 scripts/indexar_doc.py <fichero> --apply`.
 
 | Línea | Regla | Peso |
 |---|---|---|
-| `L46` | TODO `ModelConfiguration` de un test lleva `cloudKitDatabase: .none` EXPLÍCITO — el default es `.automatic` y en el simu | 2.5 KB |
-| `L49` | NUNCA aserjar el valor EN MEMORIA de un `@Model` ya persistido justo después de un `context.rollback()` — es dependiente | 2.2 KB |
-| `L61` | Seed `minimal` por default | 372 B |
-| `L65` | Un `accessibilityIdentifier` aplicado a un CONTENEDOR pisa el de sus hijos, así que el id declarado en el componente pue | 783 B |
-| `L67` | `exists` NO implica alcanzable: con un sheet presentado, la vista de fondo sigue ENTERA en el árbol de accesibilidad y l | 396 B |
-| `L69` | Un seam de QA que FUERZA el resultado de un predicado deja CIEGOS a todos los tests que lo usan: cubren el flujo, no la  | 1.5 KB |
-| `L71` | El gemelo del anterior: un seam de QA que PERSISTE pone rojos a los tests de OTRO target (2026-08-05). | 1.5 KB |
-| `L76` | Se finge la sesión, no se relajan las aserciones | 485 B |
-| `L78` | Crear grupo necesita ADEMÁS `-uitest-groups-consent` | 551 B |
-| `L80` | `-uitest-fake-cloud-session` ≠ `-uitest-fake-backend-session` | 476 B |
-| `L82` | `-uitest-fake-icloud` no sirve para esto | 246 B |
-| `L86` | El device DEBE casar con el runtime del SDK contra el que se compila. | 832 B |
-| `L88` | NO apagar el simulador entre corridas. | 386 B |
-| `L90` | La PRIMERA corrida tras bootear un simulador no cuenta — y en iOS 27.0 falla de verdad. | 991 B |
-| `L92` | iOS 27.0 (beta) es ~2× más lento que 26.4.1 para todo el ciclo de vida de UI, y cuelga el teardown de `xcodebuild` ~600  | 412 B |
-| `L94` | En iOS 27.0 NINGÚN swipe sintético materializa una celda de `LazyVGrid` que no esté ya en pantalla ⇒ no navegues por ahí | 2.4 KB |
-| `L96` | Clasificar la corrida por su exit code ANTES de leer el output | 619 B |
-| `L98` | Con Swift Testing, «cero casos» tiene un tercer modo y NO da 70: da exit 0, `TEST SUCCEEDED` y `Executed 0 tests` (2026- | 1.1 KB |
-| `L100` | `-only-testing` filtra por el TIPO, no por el FICHERO — y varios ficheros de este repo declaran DOS `@Suite` (2026-08-03 | 1015 B |
-| `L102` | Un worktree aislado necesita `Secrets.xcconfig` copiado a mano | 340 B |
+| `L47` | TODO `ModelConfiguration` de un test lleva `cloudKitDatabase: .none` EXPLÍCITO — el default es `.automatic` y en el simu | 2.5 KB |
+| `L50` | NUNCA aserjar el valor EN MEMORIA de un `@Model` ya persistido justo después de un `context.rollback()` — es dependiente | 2.2 KB |
+| `L62` | Seed `minimal` por default | 372 B |
+| `L66` | Un `accessibilityIdentifier` aplicado a un CONTENEDOR pisa el de sus hijos, así que el id declarado en el componente pue | 783 B |
+| `L68` | `exists` NO implica alcanzable: con un sheet presentado, la vista de fondo sigue ENTERA en el árbol de accesibilidad y l | 396 B |
+| `L70` | Un seam de QA que FUERZA el resultado de un predicado deja CIEGOS a todos los tests que lo usan: cubren el flujo, no la  | 1.5 KB |
+| `L72` | El tercero de la familia, y el más barato de cometer: cuando el HELPER que construye el fixture omite el campo que decid | 1.7 KB |
+| `L74` | El gemelo del anterior: un seam de QA que PERSISTE pone rojos a los tests de OTRO target (2026-08-05). | 1.5 KB |
+| `L79` | Se finge la sesión, no se relajan las aserciones | 485 B |
+| `L81` | Crear grupo necesita ADEMÁS `-uitest-groups-consent` | 551 B |
+| `L83` | `-uitest-fake-cloud-session` ≠ `-uitest-fake-backend-session` | 476 B |
+| `L85` | `-uitest-fake-icloud` no sirve para esto | 246 B |
+| `L89` | El device DEBE casar con el runtime del SDK contra el que se compila. | 832 B |
+| `L91` | NO apagar el simulador entre corridas. | 386 B |
+| `L93` | La PRIMERA corrida tras bootear un simulador no cuenta — y en iOS 27.0 falla de verdad. | 991 B |
+| `L95` | iOS 27.0 (beta) es ~2× más lento que 26.4.1 para todo el ciclo de vida de UI, y cuelga el teardown de `xcodebuild` ~600  | 412 B |
+| `L97` | En iOS 27.0 NINGÚN swipe sintético materializa una celda de `LazyVGrid` que no esté ya en pantalla ⇒ no navegues por ahí | 2.4 KB |
+| `L99` | Clasificar la corrida por su exit code ANTES de leer el output | 619 B |
+| `L101` | Con Swift Testing, «cero casos» tiene un tercer modo y NO da 70: da exit 0, `TEST SUCCEEDED` y `Executed 0 tests` (2026- | 1.1 KB |
+| `L103` | `-only-testing` filtra por el TIPO, no por el FICHERO — y varios ficheros de este repo declaran DOS `@Suite` (2026-08-03 | 1015 B |
+| `L105` | Un worktree aislado necesita `Secrets.xcconfig` copiado a mano | 340 B |
 
 <!-- INDICE:fin -->
 
@@ -67,6 +68,8 @@ Detalles completos en `$VAULT/planning/TESTING-STRATEGY.md`. Reglas mínimas:
 - **`exists` NO implica alcanzable: con un sheet presentado, la vista de fondo sigue ENTERA en el árbol de accesibilidad y los taps sobre ella se pierden en `{-1, -1}` (2026-08-04).** — el caso entero (4 KB): [`exists` NO implica alcanzable: con un sheet prese…](../../docs/aprendizajes-tecnicos.md#exists-no-implica-alcanzable-con-un-sheet-presentado-la-vista-de-fondo-sigue-entera-en-el)
 
 - **Un seam de QA que FUERZA el resultado de un predicado deja CIEGOS a todos los tests que lo usan: cubren el flujo, no la decisión (2026-08-03).** `UserDataResetView.canLeaveAllGroups(_:)` abre con `if UITestHooks.groupsBatchDemo || UITestHooks.groupsBatchRunning { return true }` ⇒ los 3 casos de `GroupBatchLeaveUITests`, que entran por esos args, pasaban en **VERDE con el bug del `.sheet(isPresented:)` puesto** — el que hacía que la rama no se ofreciera NUNCA. Y el caso que afirmaba la AUSENCIA (`test_batchLeave_notOffered_whenFlagOff`) tampoco lo cazaba: con seed `minimal` (sin grupos) la ausencia se cumple igual con bug y sin él ⇒ **una aserción negativa sobre un input que ya la garantiza no prueba nada** — es la misma familia que el falso verde de `test_deleteAccountDialog_noViewGroups_whenNoDebt`. ⇒ **al añadir un seam `-uitest-*` que fuerce un predicado, el test de la CONDICIÓN va aparte y corre SIN el seam**, y suele necesitar un estado que ningún perfil de seed produce todavía (aquí `UserDataResetScopeUITests` + el perfil `grupos-saldado`, que es el único con grupos vivos y cero deuda: `.grupos` deja al usuario acreedor por construcción y `.gruposInvitado` deudor). Los dos tests son necesarios y prueban cosas distintas: el del seam, que el flujo aguas abajo monta; el de la condición, que la rama se elige. **Y la única forma de saber cuál tienes escrito es la MUTACIÓN**: revertir el fix tiene que poner rojo al de la condición — si sigue verde, es del primer tipo aunque su nombre diga lo contrario.
+
+- **El tercero de la familia, y el más barato de cometer: cuando el HELPER que construye el fixture omite el campo que decide, la suite entera queda ciega — sin ningún seam de por medio (2026-09-02).** `DailySpendingCalculatorTests` tenía **8 casos en verde** sobre un calculador que clasificaba gasto/ingreso por el SIGNO del monto mientras el resto de la app ya clasificaba por CATEGORÍA (`TransactionClassificationLogic.isIncome`) desde el 2026-07-05. Ninguno lo cazó, y no por descuido al aserjar: su helper `makeTx` no exponía `category:`, y el init de `TransactionItem` lo tiene con default `nil` ⇒ **todas las transacciones de prueba caían en el único caso donde las dos reglas coinciden**, porque la regla canónica usa el signo como fallback precisamente cuando `category == nil`. Los 8 daban idéntico verde con el bug dentro y con el fix puesto. El comentario del helper (`negativo = gasto, positivo = ingreso`) fijaba además el modelo mental equivocado para quien fuera a añadir el noveno. ⇒ **cuando la lógica bajo test tiene un fallback, el helper del fixture DEBE poder construir el caso que lo evita**: si el campo discriminante no es un parámetro del helper, la suite no puede distinguir la regla buena de la mala, por muchos casos que tenga. Y la comprobación es la misma de las dos reglas de arriba, la **MUTACIÓN**: revierte la lógica y exige rojo. Aquí los 3 casos nuevos dieron `600/500/100` contra los `300/300/nil` esperados — el mismo desajuste que el usuario veía entre el calendario de Registros y el chip de su propia pantalla. Un cuarto caso con `category == nil` se mantiene a propósito, para fijar que el fallback por signo sigue vivo y no se lo lleve un refactor.
 
 - **El gemelo del anterior: un seam de QA que PERSISTE pone rojos a los tests de OTRO target (2026-08-05).** — el caso entero (34 KB): [El gemelo del anterior: un seam de QA que PERSISTE…](../../docs/aprendizajes-tecnicos.md#el-gemelo-del-anterior-un-seam-de-qa-que-persiste-pone-rojos-a-los-tests-de-otro-target-2026-)
 

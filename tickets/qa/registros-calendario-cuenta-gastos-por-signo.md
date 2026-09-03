@@ -1,6 +1,6 @@
 ---
 id: registros-calendario-cuenta-gastos-por-signo
-status: backlog
+status: qa
 priority: high
 area: calculos
 created: 2026-09-02
@@ -207,3 +207,64 @@ del resumen cuando algún día neteara negativo, porque el resumen sí arrastra 
 Hay que decidir si el calendario debe representar un día neto negativo o simplemente no pintarlo —
 es una decisión de producto, no un detalle de implementación, y conviene tomarla antes de escribir
 el fix para que el test la fije.
+
+---
+
+## Resolución — 2026-09-02
+
+**Arreglado.** `DailySpendingCalculator.compute` clasifica ahora con la regla canónica
+(`TransactionClassificationLogic.isIncome`: la categoría decide, el signo solo es fallback si
+`category == nil`) y acumula **signed**, en paridad literal con `RecordsViewModel.calculateSummary`.
+El doc-comment se corrigió en el mismo cambio, con la fecha en que la promesa se rompió — llevaba
+dos meses describiendo un contrato que ya no existía, y eso es lo que produjo el bug.
+
+### Verificado por mutación, no por «BUILD SUCCEEDED»
+
+Se revirtió **solo la lógica**, dejando los tests nuevos puestos, y se corrió la suite. Los tres
+casos discriminantes fallaron con las cifras exactas que este ticket había predicho leyendo el
+código *(la predicción decía «calculado sobre el código, no ejecutado en simulador»; ya está
+ejecutado)*:
+
+| Caso | Con la versión por signo | Esperado |
+|---|---|---|
+| `desyncFixtureDay_matchesHeroSummary` | **600.0** | 300 |
+| `expenseCategoryWithPositiveAmount_reducesDay` | **500.0** | 300 |
+| `incomeCategoryWithNegativeAmount_notCountedAsExpense` | **100.0** | `nil` |
+| `nilCategory_stillFallsBackToSign` | pasa en ambos | *(correcto: fija el fallback)* |
+
+Con el fix restaurado: **12/12 en verde** (`-only-testing:YalaTests/DailySpendingCalculatorTests`,
+`-parallel-testing-enabled NO`). El helper `makeTx` ganó el parámetro `category:` — sin él la suite
+no podía discriminar, que es la razón por la que los 8 casos anteriores nunca cazaron esto. La
+lección quedó como regla 21 en `.claude/rules/testing.md`.
+
+### Decisión del owner sobre el residual (2026-09-02)
+
+**Un día cuyo gasto neto queda en cero o negativo no se pinta.** Se mantienen los dos guards
+(`DailySpendingCalculator` y la condición de la celda en `RecordsCalendarView`) para no introducir
+UI nueva en un ticket de clasificación. Consecuencia aceptada y anotada también en el doc-comment
+del calculador: en esos días concretos la suma de barras queda por encima del chip del hero, que sí
+arrastra el negativo. Si algún día se decide representarlos, es cambio de UI y ticket aparte.
+
+### Barrido del patrón
+
+Revisadas las ~80 apariciones de clasificación por signo en `Yala/`. Seis superficies ya usan la
+regla canónica. Descartados con motivo: `BalanceTrendCalculator:39` (el signo solo preserva la
+magnitud tras convertir divisa; clasifica con `category.isIncome` dos líneas después) y
+`CashFlowProjectionCalculator:424,447` (filtra meses con actividad para una media, no clasifica).
+
+**Queda uno vivo, fuera de este ticket:** `Yala/App/Views/Inbox/InboxView.swift:907` pasa
+`isExpense: amount < 0` teniendo `subcategory.safeCategory` disponible dos líneas antes. Es
+cosmético —la etiqueta del aviso de confirmación tras aprobar un borrador— y no se tocó.
+
+### Qué falta (esto es lo que hay que verificar en QA)
+
+1. **En el simulador**, con `-uitest-seed-desync`: abrir Registros en modo calendario y comprobar
+   que la celda del día del fixture dice **300**, igual que el chip «Gastos» de la misma pantalla
+   (antes decía 600).
+2. **VoiceOver**: la etiqueta de esa celda anuncia la misma cifra corregida.
+3. **Un día solo con reembolso**: comprobar que la celda no pinta barra — es el residual decidido
+   arriba, no un fallo.
+
+Sigue abierto el punto **opcional** de la propuesta: extender `IncomeExpenseClassificationUITests`
+al modo calendario. Requiere trabajo previo — `RecordsCalendarView` no tiene ningún
+`accessibilityIdentifier`, así que hoy no hay forma de afirmar sobre la cifra de una celda concreta.
