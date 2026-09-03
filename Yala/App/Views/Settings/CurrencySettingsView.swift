@@ -413,6 +413,26 @@ struct CurrencySettingsView: View {
 
         Task {
             do {
+                // LAS TASAS PRIMERO, LA MIGRACIÓN DESPUÉS (`fx-partial-rate-rows-silent-1to1`, H2).
+                //
+                // Este orden estaba invertido y era la cara más cara del bug: `updateAllTransactions`
+                // convertía y GUARDABA todos los montos, y solo entonces se refrescaban las tasas. Si a
+                // las filas les faltaba la divisa nueva —el caso normal, porque el preload histórico
+                // solo escribe las divisas que el usuario ya usaba— cada transacción se guardaba con
+                // `exchangeRate = 1.0`. Y no se recuperaba solo: `forceRefreshRates` repuebla
+                // `ExchangeRate`, pero NO vuelve a migrar `TransactionItem`.
+                //
+                // Refrescar antes cuesta una espera más larga en una pantalla que ya muestra progreso,
+                // y a cambio la migración corre sobre tasas reales.
+                await exchangeRateService.forceUpdateToday(context: modelContext)
+
+                let calendar = Calendar.current
+                let today = Date.now
+                if let oneYearAgo = calendar.date(byAdding: .year, value: -1, to: today) {
+                    let dateInterval = DateInterval(start: oneYearAgo, end: today)
+                    await exchangeRateService.forceRefreshRates(for: dateInterval, context: modelContext)
+                }
+
                 // Run the batch update for transactions
                 try await CurrencyChangeService.shared.updateAllTransactions(
                     to: newCurrency.rawValue,
@@ -424,17 +444,6 @@ struct CurrencySettingsView: View {
 
                 // Only update AppPreferences AFTER successful migration
                 appPreferences.defaultCurrencyCode = newCurrency
-
-                // Force refresh exchange rates
-                await exchangeRateService.forceUpdateToday(context: modelContext)
-
-                // Force refresh historical rates (1 year)
-                let calendar = Calendar.current
-                let today = Date.now
-                if let oneYearAgo = calendar.date(byAdding: .year, value: -1, to: today) {
-                    let dateInterval = DateInterval(start: oneYearAgo, end: today)
-                    await exchangeRateService.forceRefreshRates(for: dateInterval, context: modelContext)
-                }
 
                 // Signal widget to refresh with new preferred currency
                 SessionState.shared.needsExchangeRateWidgetRefresh = true

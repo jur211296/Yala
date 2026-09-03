@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (93)
+## Index (95)
 
 | id | status | path |
 |----|--------|------|
@@ -53,8 +53,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | distribution-balance-kpi-skips-fx | backlog | tickets/backlog/distribution-balance-kpi-skips-fx.md |
 | doble-conteo-dia1-previo-thismonth | done | tickets/done/doble-conteo-dia1-previo-thismonth.md |
 | exportable-insights | backlog | tickets/backlog/exportable-insights.md |
-| fx-partial-rate-rows-silent-1to1 | in-progress | tickets/in-progress/fx-partial-rate-rows-silent-1to1.md |
+| fx-partial-rate-rows-silent-1to1 | qa | tickets/qa/fx-partial-rate-rows-silent-1to1.md |
 | fx-pnl-education-card | backlog | tickets/backlog/fx-pnl-education-card.md |
+| fx-presentation-still-shows-1to1 | backlog | tickets/backlog/fx-presentation-still-shows-1to1.md |
+| fx-widget-drops-missing-currency | backlog | tickets/backlog/fx-widget-drops-missing-currency.md |
 | gate-doc-says-swift-testing-only | backlog | tickets/backlog/gate-doc-says-swift-testing-only.md |
 | gateway-has-no-telemetry | backlog | tickets/backlog/gateway-has-no-telemetry.md |
 | group-notif-credits-payer-not-editor | done | tickets/done/group-notif-credits-payer-not-editor.md |
@@ -126,7 +128,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | yala-android | backlog | tickets/backlog/yala-android.md |
 | zone-decisions-still-per-row | backlog | tickets/backlog/zone-decisions-still-per-row.md |
 
-Counts by folder: backlog 47 · in-progress 8 · qa 18 · blocked 2 · done 13 · discarded 5 = 93.
+Counts by folder: backlog 49 · in-progress 7 · qa 19 · blocked 2 · done 13 · discarded 5 = 95.
 
 Frank 2026-09-02 (altas): dos hallazgos del QA de hoy entran en `backlog/`, para que no se pierdan
 al cerrar la sesion.

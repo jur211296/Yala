@@ -1,6 +1,6 @@
 ---
 id: fx-partial-rate-rows-silent-1to1
-status: in-progress
+status: qa
 priority: high
 area: "currency, fx, integridad-datos"
 created: 2026-08-28
@@ -350,3 +350,49 @@ propio test y sin tocar a los otros cuatro.
 3. **El barrido** de reparación de lo ya persistido (aprobado por el owner).
 4. Anotados como ticket aparte: la presentación (~34 llamadas) y el widget, que ante una divisa
    ausente la omite en silencio en vez de convertirla 1:1.
+
+---
+
+## Completado · 2026-09-03 (segunda tanda: H3, H2 y el barrido)
+
+**H3 · la fila deja de perder divisas.** `persistRate` fusiona (`ExchangeRateMergeLogic.merged`) en
+vez de reemplazar, y el `timestamp` entrante solo pisa al guardado si trae valor. El defecto era
+diario y silencioso: `updateTodayIfNeeded` guardaba hoy con las 54 divisas y, unas líneas más abajo
+del mismo arranque, `preloadHistoricalIfNeeded` —cuyo primer chunk incluye hoy— la repisaba con las
+2-4 del usuario y le borraba la hora real de la API.
+
+La lógica se extrajo a `Yala/App/Logic/ExchangeRateMergeLogic.swift` porque `persistRate` es
+`private` y ningún unit test puede alcanzarla. Las dos mitades tienen red por separado: tabla para la
+fusión, source-scan para el cableado — una fusión correcta que nadie llama no arregla nada.
+
+**H2 · el cambio de moneda preferida ya no migra a ciegas.** `forceUpdateToday` y `forceRefreshRates`
+pasan DELANTE de `updateAllTransactions`. Su criterio de aceptación no tiene XCUITest —sería el más
+caro de los tres— y se sustituye a conciencia por un source-scan del ORDEN, que es exactamente lo que
+estaba mal. Es más débil y se elige sabiéndolo.
+
+**El barrido, y salió más pequeño de lo previsto.** Medido: `exchangeRate` e
+`isExchangeRateProvisional` viajan por la nube en el MISMO grupo de coherencia (`money`), y ya existe
+un reparador que corre en cada arranque cuyo `#Predicate` solo busca `== true`. ⇒ el barrido **no
+reconvierte nada**: solo levanta el flag de las candidatas y deja que el reparador de siempre haga el
+trabajo. Una sola implementación de la conversión en vez de dos, y menos código nuevo en un camino
+que toca dinero.
+
+`ExchangeRateRepairLogic.needsRepair` filtra por tasa 1.0 **y divisas distintas**, sin distinguir
+mayúsculas. Ese segundo filtro no es un detalle: 1.0 es el valor legítimo cuando origen y destino
+coinciden —la inmensa mayoría de las transacciones de cualquiera— así que sin él el barrido reabriría
+el corpus entero y lo emitiría entero por la nube. One-shot con flag en `UserDefaults`: el estado que
+busca solo lo produce el código viejo, y el flag NO se marca si el fetch lanza.
+
+### Verificación de la tanda
+
+Build en las dos schemes, cero errores · **5993 tests en 598 suites, verde** (delta exacto: los 14
+tests nuevos). Mutación de las tres piezas, cada una cazada por lo suyo: quitar la fusión (source-scan
+del cableado, 3 aserciones + la del orden respecto al gate de quiescencia), invertir el orden del
+cambio de moneda (`TEST FAILED`), y quitar el filtro de divisa igual del barrido (dos tests, incluido
+el de mayúsculas).
+
+### Estado
+
+Los tres pasos del ticket están implementados. Queda **device-QA** con los tres criterios de
+aceptación, que necesitan red y un histórico real de tasas. Salen a ticket propio, como se decidió:
+`fx-presentation-still-shows-1to1` y `fx-widget-drops-missing-currency`.

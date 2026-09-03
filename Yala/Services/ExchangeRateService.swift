@@ -394,10 +394,18 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
         }
         // Check if rate already exists for this date
         if let existing = fetchExchangeRate(for: dateKey, context: context) {
-            // Update existing rate
-            let data = try JSONEncoder().encode(rates)
-            existing.rates = data
-            existing.timestamp = timestamp
+            // FUSIÓN, no reemplazo (`fx-partial-rate-rows-silent-1to1`). `existing.rates = data`
+            // descartaba todo lo que la fila ya tenía y el `rates` entrante no traía, y el mismo
+            // ARRANQUE hacía las dos escrituras en el orden que peor le sienta: `updateTodayIfNeeded`
+            // guarda hoy con las 54 divisas, y acto seguido `preloadHistoricalIfNeeded` —cuyo primer
+            // chunk INCLUYE hoy— la repisa con las 2-4 de `getRequiredCurrencies`. El trabajo bueno se
+            // perdía solo, todos los días, sin que nadie tocara nada.
+            existing.rates = try JSONEncoder().encode(
+                ExchangeRateMergeLogic.merged(existing: existing.decodedRates(), incoming: rates)
+            )
+            existing.timestamp = ExchangeRateMergeLogic.mergedTimestamp(
+                existing: existing.timestamp, incoming: timestamp
+            )
         } else {
             // Create new rate
             let newRate = try ExchangeRate(

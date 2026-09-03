@@ -207,3 +207,42 @@ struct CurrencyConverterPartialRateTests {
         #expect(tx.exchangeRate == 1.0)
     }
 }
+
+// MARK: - H2 · el orden del cambio de moneda preferida (source-scan)
+
+/// El criterio de aceptación 3 del ticket —cambiar la moneda preferida no persiste `exchangeRate == 1.0`—
+/// vive en una vista, y su XCUITest sería el más caro de los tres: cuenta multi-moneda, cambio de
+/// preferida y lectura de KPI. El sustituto es fijar el ORDEN de llamadas, que es exactamente lo que
+/// estaba mal: se migraba y GUARDABA todo, y solo después se refrescaban las tasas.
+///
+/// Es más débil que un test de comportamiento —fija el texto, no el resultado— y se elige a
+/// conciencia, no por descuido: sin él, invertir el orden otra vez no lo nota nadie.
+@Suite("H2 · cableado del cambio de moneda preferida (source-scan)")
+struct PreferredCurrencyChangeOrderTests {
+
+    private static func source(_ path: String) throws -> String {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        return try String(contentsOf: root.appendingPathComponent(path), encoding: .utf8)
+    }
+
+    @Test("Las tasas se refrescan ANTES de migrar los montos")
+    func ratesAreRefreshedBeforeMigrating() throws {
+        let src = try Self.source("Yala/App/Views/Settings/CurrencySettingsView.swift")
+        let body = try #require(src.range(of: "private func updatePreferredCurrency"))
+        let scope = String(src[body.lowerBound...])
+
+        let refreshToday = try #require(scope.range(of: "forceUpdateToday("))
+        let refreshYear = try #require(scope.range(of: "forceRefreshRates("))
+        let migrate = try #require(scope.range(of: "updateAllTransactions("))
+
+        #expect(refreshToday.lowerBound < migrate.lowerBound, """
+            Migrar antes de tener tasas guarda los montos con `exchangeRate = 1.0`, y no se recupera
+            solo: `forceRefreshRates` repuebla ExchangeRate pero NO vuelve a migrar TransactionItem.
+            """)
+        #expect(refreshYear.lowerBound < migrate.lowerBound, """
+            Lo mismo para el histórico de un año: las fechas pasadas también se migran en esa pasada.
+            """)
+    }
+}

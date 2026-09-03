@@ -2152,6 +2152,11 @@ final class AppBootstrapper {
         // Preload historical data if needed (first launch or after data wipe)
         await ExchangeRateService.shared.preloadHistoricalIfNeeded(context: context)
 
+        // Barrido one-shot: devuelve a la cola las transacciones que el código viejo selló con un 1:1
+        // envenenado. Va JUSTO ANTES del reparador y después de refrescar las tasas, para que lo que
+        // reabra se arregle en este mismo arranque en vez de esperar al siguiente.
+        TransactionUpdateService.repairLegacyOneToOneRatesIfNeeded(context: context)
+
         // Update transactions with provisional exchange rates
         await TransactionUpdateService.updateProvisionalTransactions(context: context)
     }
