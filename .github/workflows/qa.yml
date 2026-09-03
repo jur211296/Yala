@@ -157,6 +157,30 @@ jobs:
       # son agentic, fuera de CI).
       - name: Crear Secrets.xcconfig (placeholder para CI)
         run: cp Secrets.xcconfig.template Secrets.xcconfig
+      # Los tests de intervalos construyen sus expectativas con un calendario fijado a
+      # America/Lima, pero el SSOT que comparan (`DetailPeriod.dateInterval`) resuelve sus
+      # fechas con `userConfiguredCalendar()` = `Calendar.current`, o sea la zona del
+      # dispositivo simulado, que la hereda del runner. En la Mac del owner las dos mitades
+      # coinciden y salen verdes; en un runner en UTC no coinciden y salen CUATRO rojos
+      # DETERMINISTAS —no flaky, categoria distinta del EXC_BREAKPOINT que justifica los
+      # `continue-on-error` de mas abajo—. Llevaban asi desde el 2026-08-17.
+      #
+      # Se fija la zona del runner en vez de inyectar el calendario en el SSOT (decision del
+      # owner, 2026-09-02): inyectar prueba el algoritmo aislado; fijar la zona prueba ademas
+      # que el algoritmo no depende del entorno, que es lo que el usuario real experimenta.
+      - name: Fijar zona horaria del runner (America/Lima)
+        run: |
+          set -euo pipefail
+          sudo systemsetup -settimezone America/Lima >/dev/null
+          # Control positivo. Sin esta comprobacion, un `systemsetup` que no aplica nada deja
+          # los mismos cuatro rojos veinte lineas mas abajo y sin explicacion: la ausencia de
+          # error se leeria como que la zona quedo puesta.
+          actual=$(sudo systemsetup -gettimezone | sed 's/.*: *//')
+          echo "Zona horaria del runner: $actual"
+          if [ "$actual" != "America/Lima" ]; then
+            echo "::error title=La zona horaria no se aplico::systemsetup devolvio '$actual'. Los tests de intervalos van a fallar por divergencia de entorno, no por una regresion."
+            exit 1
+          fi
       - name: Build for testing
         run: |
           xcodebuild build-for-testing \
@@ -172,6 +196,7 @@ jobs:
       # CurrencyDefaults). Bloquear aquí = rojos aleatorios. -retry no converge. Volver a
       # bloqueante exige resolver ese crash primero (TESTING-STRATEGY.md).
       - name: Unit tests (YalaTests pure-logic) — advisory (flaky crash SwiftData in-memory; ver Lista Negra)
+        id: unit_pure
         continue-on-error: true
         run: |
           xcodebuild test-without-building \
@@ -188,12 +213,12 @@ jobs:
             -skip-testing:YalaTests/UserSegmentServiceTests \
             -derivedDataPath .ddp \
             -parallel-testing-enabled NO \
-            -retry-tests-on-failure \
-            -quiet
+            -retry-tests-on-failure
       # ADVISORY: las 7 clases context-based (crean ModelContext in-memory). Corren para
       # visibilidad (cuando pasan confirman no-regresión); no bloquean por el insert-trap
       # flaky de SwiftData en el runner de CI. Plan de migración en TESTING-STRATEGY.md.
       - name: Unit tests (YalaTests context-based) — advisory (SwiftData insert-trap flaky; ver Lista Negra)
+        id: unit_context
         continue-on-error: true
         run: |
           xcodebuild test-without-building \
@@ -209,9 +234,9 @@ jobs:
             -only-testing:YalaTests/UserSegmentServiceTests \
             -derivedDataPath .ddp \
             -parallel-testing-enabled NO \
-            -retry-tests-on-failure \
-            -quiet
+            -retry-tests-on-failure
       - name: UI tests (YalaUITests) — advisory (flaky en runner frío, ver Lista Negra)
+        id: ui
         continue-on-error: true
         run: |
           xcodebuild test-without-building \
@@ -221,5 +246,86 @@ jobs:
             -only-testing:YalaUITests \
             -derivedDataPath .ddp \
             -parallel-testing-enabled NO \
-            -retry-tests-on-failure \
-            -quiet
+            -retry-tests-on-failure
+
+      # ------------------------------------------------------------------------------
+      # El paso que faltaba: los tres de arriba llevan `continue-on-error` a proposito
+      # —el EXC_BREAKPOINT de SwiftData in-memory haria rojos aleatorios, y volver a
+      # bloqueante exige resolver ESE crash primero—, pero GitHub pinta de `success` un
+      # paso asi aunque `xcodebuild` salga con 65. Resultado medido el 2026-09-02: el CI
+      # llevaba SEMANAS en verde con ocho tests en rojo, y el rojo mas viejo databa del
+      # 17 de agosto. La red funcionaba; estaba amordazada.
+      #
+      # Esto NO promueve nada a bloqueante (el job sigue pudiendo terminar en verde y el
+      # repo sigue mergeando). Lo que hace es que el fallo DEJE RASTRO: `outcome` guarda
+      # lo que de verdad devolvio el comando, mientras `conclusion` es el que
+      # `continue-on-error` pinta de verde. Se lee `outcome`.
+      - name: Avisar a Grok si algun paso advisory fallo
+        if: ${{ always() }}
+        env:
+          WEBHOOK_URL: ${{ secrets.GROK_WEBHOOK_URL }}
+          SENDER_KEY: ${{ secrets.GROK_WEBHOOK_SENDER_KEY }}
+          R_UNIT_PURE: ${{ steps.unit_pure.outcome }}
+          R_UNIT_CONTEXT: ${{ steps.unit_context.outcome }}
+          R_UI: ${{ steps.ui.outcome }}
+          REPO: ${{ github.repository }}
+          RAMA: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+
+          fallidos=""
+          [ "$R_UNIT_PURE" != "failure" ]    || fallidos="$fallidos\n- Unit tests (pure-logic)"
+          [ "$R_UNIT_CONTEXT" != "failure" ] || fallidos="$fallidos\n- Unit tests (context-based)"
+          [ "$R_UI" != "failure" ]           || fallidos="$fallidos\n- UI tests (YalaUITests)"
+
+          if [ -z "$fallidos" ]; then
+            echo "::notice title=Suite en verde::Ningun paso advisory fallo. No se avisa."
+            exit 0
+          fi
+
+          # Sin secrets no se puede avisar. Se deja MUY visible en el resumen del run en vez
+          # de morir en silencio: un canal de avisos que nadie mira se muere sin ruido, y en
+          # este repo ya paso —el webhook de bug-triage estuvo un mes devolviendo 404—.
+          if [ -z "${WEBHOOK_URL:-}" ] || [ -z "${SENDER_KEY:-}" ]; then
+            echo "::error title=Hay tests en rojo y no se pudo avisar::Faltan GROK_WEBHOOK_URL o GROK_WEBHOOK_SENDER_KEY. Pasos en rojo:$(printf "$fallidos")"
+            exit 1
+          fi
+
+          texto=$(printf '%s\n' \
+            "CI de $REPO ($RAMA): hay pasos de test en ROJO que el run marca como verde." \
+            "" \
+            "Estos pasos son advisory a proposito (continue-on-error), asi que el run NO se pone" \
+            "en rojo y el repo sigue mergeando. Este aviso existe para que el rojo no pase inadvertido." \
+            "" \
+            "Pasos en rojo:$(printf "$fallidos")" \
+            "" \
+            "HEAD: $SHA" \
+            "Log completo: $RUN_URL")
+
+          jq -n --arg context "$texto" '{context: $context}' > "$RUNNER_TEMP/payload-rojo.json"
+          printf '%s\n' "$texto" | sed 's/^/  /'
+
+          # Un curl que no mira el codigo HTTP no es una entrega, es una esperanza.
+          set +e
+          codigo=$(curl -sS -X POST "$WEBHOOK_URL" \
+            -H "Authorization: Bearer $SENDER_KEY" \
+            -H "Content-Type: application/json" \
+            --data-binary "@$RUNNER_TEMP/payload-rojo.json" \
+            --retry 3 --retry-delay 5 --retry-connrefused \
+            --max-time 30 \
+            -o "$RUNNER_TEMP/respuesta-rojo.txt" -w '%{http_code}')
+          rc=$?
+          set -e
+
+          if [ "$rc" -ne 0 ]; then
+            echo "::error title=Hay tests en rojo y el webhook no respondio::curl salio con $rc tras los reintentos."
+            exit 1
+          fi
+          case "$codigo" in
+            2??) echo "::warning title=Tests en rojo (avisado)::Grok recibio el aviso (HTTP $codigo). Pasos:$(printf "$fallidos")" ;;
+            *)   echo "::error title=Hay tests en rojo y el webhook fallo (HTTP $codigo)::Nadie se ha enterado."
+                 head -c 500 "$RUNNER_TEMP/respuesta-rojo.txt" || true
+                 exit 1 ;;
+          esac

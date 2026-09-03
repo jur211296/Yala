@@ -16,9 +16,9 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (17 entradas)
+## Índice (19 entradas)
 
-> **No hace falta leer este fichero entero** — son 176 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 184 KB. Localiza la entrada
 > aquí y salta a ella.
 
 - `—` [Sync de Grupos (CKSyncEngine) NO debe arrancar/`save()` sobre el `mainContext` compartido antes](#sync-de-grupos-cksyncengine-no-debe-arrancarsave-sobre-el-maincontext-compartido-antes)
@@ -36,6 +36,9 @@
 - `—` [`exists` NO implica alcanzable: con un sheet presentado, la vista de fondo sigue ENTERA en el á](#exists-no-implica-alcanzable-con-un-sheet-presentado-la-vista-de-fondo-sigue-entera-en-el)
 - `—` [`xcodebuild test` REINSTALA la app del simulador: el QA que corres después del gate no mira tu](#xcodebuild-test-reinstala-la-app-del-simulador-el-qa-que-corres-despus-del-gate-no-mira-tu)
 - `—` [El árbol de accesibilidad del simulador se degrada tras muchos ciclos launch/stop y solo lo cura](#el-rbol-de-accesibilidad-del-simulador-se-degrada-tras-muchos-ciclos-launchstop-y-solo-lo-cura)
+- `2026-09-02` [Un helper de aislamiento puede vaciar 22 de 31 modelos y llamarse a sí mismo «borra todas las instan](#un-helper-de-aislamiento-puede-vaciar-22-de-31-modelos-y-llamarse-a-s-mismo-borra-todas-las-instancias-2026-09-02)
+- `2026-09-02` [Nombrar un metodo de Swift Testing en -only-testing no filtra: no corre NADA y devuelve TEST SUCCEED](#nombrar-un-metodo-de-swift-testing-en--only-testing-no-filtra-no-corre-nada-y-devuelve-test-succeeded-2026-09-02)
+- `2026-09-02` [Un test que assertea un literal traducido pinnea el idioma del simulador, no la lógica (2026-09-02)](#un-test-que-assertea-un-literal-traducido-pinnea-el-idioma-del-simulador-no-la-lgica-2026-09-02)
 - `2026-08-03` [[STALE, medido 2026-08-03 — el código que describe ya NO EXISTE: `applyRemoteRecordIfAbsent` y](#stale-medido-2026-08-03--el-cdigo-que-describe-ya-no-existe-applyremoterecordifabsent-y)
 
 <!-- INDICE:fin -->
@@ -305,3 +308,17 @@
   - **Hermana de la entrada anterior**, y con el mismo corolario aplicado en el otro sentido. Allí un pipe fabricó una AUSENCIA de señal; aquí un filtro fabricó una PRESENCIA de verde. En los dos casos la salvaguarda es el **control positivo**: antes de creerte el resultado, comprueba que el instrumento sabe producir el resultado contrario. La señal barata es el **conteo** — `Test run with N tests`. Si esa línea no aparece, o N es 0, no has medido nada, y da igual lo que diga `TEST SUCCEEDED`.
   - **La regla operativa.** Filtra por FICHERO, nunca por método, mientras el target use Swift Testing; y en toda mutación exige ver las dos corridas completas con su conteo — la que muere y la que revive. `grep -E "Test run with [0-9]+"` en las dos, y compara N, no el veredicto.
   - Pin: no hay test posible sobre un flag de `xcodebuild` de una sesión. Lo que queda es esta entrada.
+
+### Un helper de aislamiento puede vaciar 22 de 31 modelos y llamarse a sí mismo «borra todas las instancias» (2026-09-02)
+
+- **`wipeAllModels` (`YalaTests/TestHelpers.swift`) prometía «todas las instancias de cada `@Model` del schema», su docblock decía «22 modelos», y el schema tiene **31**.** Los nueve ausentes eran todos de sync y migración: `GroupSyncCursor`, `GroupSyncOutbox`, `SyncOutbox`, `SyncCursor`, `SyncQuarantine`, `SyncDanglingRef`, `SyncUnitClock`, `MigrationState`, `CloudMigrationMarker`.
+  - **Por qué muerde y por qué tarda meses en verse.** `makeTestContext()` **reusa** el `ModelContainer` por `#fileID` —eso es deliberado y correcto: evita el `EXC_BREAKPOINT` por acumulación de containers in-memory—, así que el aislamiento entre tests del mismo fichero descansa **entero** en que el wipe vacíe de verdad. Una fila de esos nueve sobrevive de un test al siguiente y contamina sus conteos. Y `@Suite(.serialized)` garantiza que los tests **no se solapen**, no en qué **orden** corren: el mismo par de tests pasa en una máquina y falla en otra según el orden que le toque.
+  - **El síntoma no se parece a la causa.** Salía como un rojo «sólo de CI» en un test que contaba `GroupSyncCursor == 1` y veía 2. Eso invita a culpar al runner, al flaky de SwiftData o a la zona horaria — tres hipótesis caras y las tres falsas. Con `-retry-tests-on-failure` es peor: el reintento hereda el residuo de su propio primer intento, así que una vez rojo ya no se recupera y parece determinista.
+  - **La regla.** Un helper de reset que enumera modelos **a mano** diverge del schema en cuanto alguien añade un `@Model`, y no lo caza ningún test de comportamiento: lo caza, meses después, un rojo intermitente en otra suite. Si lo tienes, pínealo con un source-scan que compare las dos listas — y dale a ese escáner un **control positivo** (que falle si encuentra 0 modelos), porque un escáner que no lee nada compara dos conjuntos vacíos y sale verde.
+  - Pin: `YalaTests/WipeAllModelsCoverageTests.swift`.
+
+### Un test que assertea un literal traducido pinnea el idioma del simulador, no la lógica (2026-09-02)
+
+- **`#expect(vm.splitDescription?.contains("2 de 5") == true)` llevaba rojo en CI desde siempre.** El string sale de `L10n.Split.descShares`, que resuelve por `Bundle.main` (vía `LanguageManager.resolved`), o sea **el idioma del simulador**: en la Mac del owner da `"2 de 5 partes"` y en un runner que arranca en inglés, `"2 of 5 shares"`.
+  - **Es la misma familia que la divergencia de zona horaria**, en otra dimensión: el test fija un entorno (idioma, TZ, región) que el código de producción toma del sistema, y las dos mitades sólo coinciden en la máquina donde se escribió. Sus dos tests hermanos eran inmunes por casualidad —buscaban `"80%"` y `"3"`—, lo que hace el fallo aún más desconcertante: falla uno de tres en el mismo fichero.
+  - **El arreglo NO es fijar el idioma en CI.** Eso lo tapa y deja el test pinneando una traducción. Se compara contra la función localizada (`L10n.Split.descShares(2, 5)`) y se conserva aparte lo único que el literal sí protegía —el orden de los argumentos— con un `#expect` contra la llamada invertida. Que el string exista en los 16 idiomas es trabajo de la batería de l10n, que es su sitio.

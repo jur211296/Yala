@@ -116,7 +116,16 @@ func makeTestContext(fileID: String = #fileID) throws -> ModelContext {
 }
 
 /// Borra todas las instancias de cada `@Model` del schema (sin destruir el store).
-/// Mantener sincronizado con `SwiftDataConfiguration.schema` (22 modelos).
+/// Mantener sincronizado con `SwiftDataConfiguration.schema` (**31 modelos**).
+///
+/// El conteo importa y por eso lo pinnea `wipeCoversEveryModelInTheSchema`: hasta el
+/// 2026-09-02 este docblock decía «22 modelos» y borraba justo esos 22, dejando fuera los
+/// **nueve de sync y migración**. Como `makeTestContext()` REUSA el container por `#fileID`,
+/// una fila de esos nueve sobrevivía de un test al siguiente del mismo fichero, y el orden
+/// dentro de una suite `.serialized` no está garantizado: eso es lo que ponía en rojo a
+/// `HandoverGroupsDomainTests.wipeLocalGroupsDomain_killsTheOutbox_butKEEPSTheCursor` en CI
+/// —contaba 2 cursores donde esperaba 1— mientras pasaba en local. Un helper que promete
+/// «todas las instancias de cada `@Model`» y cumple con 22 de 31 no aísla: filtra.
 @MainActor
 private func wipeAllModels(_ context: ModelContext) {
     // Fetch + delete por objeto (NO `context.delete(model:)`): el bulk-delete opera a nivel
@@ -144,6 +153,12 @@ private func wipeAllModels(_ context: ModelContext) {
     wipe(CashFlowLine.self); wipe(CashFlowOverride.self); wipe(GroupBridgePreference.self)
     wipe(SplitGroup.self); wipe(SplitMember.self); wipe(SplitExpense.self)
     wipe(SplitShare.self); wipe(SplitSettlement.self); wipe(SyncIdentity.self)
+    // Los nueve de sync y migración. Van DESPUÉS de los de dominio a propósito: los de arriba
+    // pueden dejar filas de outbox al borrarse si algún observador las encola, así que vaciar
+    // la cola antes que su origen la volvería a llenar.
+    wipe(SyncOutbox.self); wipe(SyncCursor.self); wipe(SyncQuarantine.self)
+    wipe(SyncDanglingRef.self); wipe(SyncUnitClock.self); wipe(MigrationState.self)
+    wipe(CloudMigrationMarker.self); wipe(GroupSyncOutbox.self); wipe(GroupSyncCursor.self)
     if context.hasChanges {
         do { try context.save() } catch { print("makeTestContext: reset save error: \(error)") }
     }

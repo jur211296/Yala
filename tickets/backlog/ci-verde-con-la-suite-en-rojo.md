@@ -172,3 +172,154 @@ permite que el repo siga mergeando.
   que la causa documentada ya no está en el código, no que la suite pase. Falta la corrida.
 - **Tampoco se ha corrido `YalaTests` bajo el scheme `Yala`**, así que «fallan las dos suites que
   exigen `DEV_BUILD`» sigue siendo una cita del ticket de origen, no una medición de esta sesión.
+
+---
+
+## Sesión del 2026-09-02 (noche) — pasos 1 y 2 hechos
+
+Alcance acordado con el owner: **hasta el paso 2**. Los tres `continue-on-error` **siguen puestos**;
+no se promueve nada a bloqueante (paso 3) ni sale la suite UI del push (paso 4).
+
+### Paso 1 · el rojo, medido — y la tabla de arriba estaba equivocada en su forma
+
+Corrida local (`-scheme Yala`, iPhone 17 Pro, TZ del Mac = `America/Lima`, verificada con
+`systemsetup -gettimezone`), sin `-quiet` y comprobando el conteo:
+`Test run with 108 tests in 5 suites failed after 1.044 seconds with 1 issue`.
+
+**Un solo rojo local, no ocho.** Los ocho del CI se reparten en TRES categorías, no en una:
+
+| Test | Local | Categoría real |
+|---|---|---|
+| `WidgetDataServiceIntervalTests` (×4) | **verde** | Divergencia de entorno (TZ). Confirmado: el Mac está en Lima, el runner en UTC |
+| `NewTransactionViewModelTests.splitDescriptionShares` | **verde** | Divergencia de entorno (**IDIOMA**, no TZ) |
+| `HandoverGroupsDomainTests.wipeLocalGroupsDomain_killsTheOutbox_butKEEPSTheCursor` | **verde** | Fuga de estado entre tests, sensible al orden |
+| `GroupCreateRoutingWiringTests.splitGroupHasNoLegacyProducerInProduction` | **ROJO** | **Rojo real y reproducible en cualquier máquina** |
+| `HeroBucketsCalculatorTests.periodPreviousInterval_thisWeek…` | verde | Ya arreglado (`8168987a`) |
+
+⇒ **«pasa en la Mac del owner» era falso para el cuarto.** Falla aquí también. No se había visto
+porque `/gate` sólo corre las suites del área tocada, y el commit que lo rompió no tocaba la suya.
+
+### Las tres causas, con su arreglo
+
+**(a) Los cuatro del widget — zona horaria.** Diagnóstico del ticket confirmado por medición.
+Arreglo elegido por el owner: **fijar la TZ del runner**, no inyectar el calendario. Va con control
+positivo: si `systemsetup` no aplica la zona, el job para ahí en vez de dejar cuatro rojos sin
+explicación veinte líneas más abajo.
+
+**(b) `splitDescriptionShares` — idioma, y esto NO estaba en el ticket.** El test exigía
+`contains("2 de 5")`, un literal en español, contra un string que `ls()` resuelve por `Bundle.main`
+= idioma del simulador (`en` en el runner ⇒ `"2 of 5 shares"`). Pinneaba una traducción, no la
+lógica. Ahora compara contra `L10n.Split.descShares(2, 5)` y conserva lo único que el literal sí
+protegía —que `myValue` y `divisor` no viajen intercambiados— con un segundo `#expect` contra
+`descShares(5, 2)`. Que el string exista en los 16 idiomas ya lo cubre la batería de l10n.
+
+**(c) `wipeLocalGroupsDomain_killsTheOutbox…` — el helper de aislamiento filtraba.**
+`wipeAllModels` (`YalaTests/TestHelpers.swift`) prometía «todas las instancias de cada `@Model` del
+schema» y su docblock decía «22 modelos». **Medido: el schema tiene 31 y borraba 22.** Los nueve que
+faltaban son los de sync y migración (`GroupSyncCursor`, `GroupSyncOutbox`, `SyncOutbox`,
+`SyncCursor`, `SyncQuarantine`, `SyncDanglingRef`, `SyncUnitClock`, `MigrationState`,
+`CloudMigrationMarker`). Como `makeTestContext()` **reusa** el container por `#fileID`, un
+`GroupSyncCursor` sobrevivía de un test al siguiente del mismo fichero; `.serialized` garantiza que
+no se solapen, **no** en qué orden corren, así que el test contaba 2 donde esperaba 1. Añadidos los
+nueve, y pinneado con `WipeAllModelsCoverageTests` para que no vuelva a divergir en silencio.
+
+**(d) `splitGroupHasNoLegacyProducerInProduction` — el rojo real.** El escáner impide que nazca un
+`SplitGroup` fuera del canal backend, y su allowlist tenía un hueco: `DevSeedTransactions.swift:648`
+construye uno en `createDeadPointerFixture`. Medido: el fichero va del `#if DEBUG` de `:8` al
+`#endif` de `:676`, **que es su última línea** — entero bajo DEBUG, el mismo criterio con el que
+`DevSeedGroups.swift` ya estaba permitido. Y el propio código deja escrito en `:640-641` que no
+setea `isBackendGroup` **a propósito**. Entró con `2f6cb24f` el **2026-08-18** y estuvo quince días
+en rojo sin que nadie lo viera. Arreglo: la allowlist del test.
+Comprobado que no hay más instancias: de los seis ficheros de `Yala/` que contienen `SplitGroup(`,
+dos son líneas de comentario (`GroupZoneCacheGate.swift:24`, `SplitGroupZone.swift:24`) que el
+escáner ya descarta bien.
+
+### Paso 2 · que el fallo deje rastro
+
+En `.github/workflows/qa.yml`:
+
+1. Paso nuevo que fija `America/Lima` en el runner, **con control positivo**.
+2. `id:` en los tres pasos advisory (`unit_pure`, `unit_context`, `ui`), para poder leer su
+   `outcome` — que es lo que de verdad devolvió el comando. `conclusion` es el campo que
+   `continue-on-error` pinta de verde, y leerlo era justo el error que mantuvo esto oculto.
+3. Paso final que avisa a Grok cuando alguno sale en `failure`, con el molde ya probado de
+   `avisar-grok-push-principal.yml` (verifica el código HTTP: un `curl` que no lo mira no es una
+   entrega, es una esperanza).
+
+**Cambio no pedido, declarado:** se quitó `-quiet` de los tres pasos de test. Sin él no sale
+`Test run with N tests in M suites`, y sin esa línea una corrida que ejecutó **cero** tests —filtro
+mal expandido, nombre de suite inexistente— sale con `exit 0` y `TEST SUCCEEDED`. Un aviso que no
+puede distinguir ese caso miente igual que el verde que este ticket viene a arreglar. Se revierte
+en una línea.
+
+### Lo que sigue sin hacer
+
+- **Paso 3** (promover unit a bloqueante) y **paso 4** (sacar UI del push): fuera de alcance por
+  decisión del owner. El paso 4 sigue teniendo su peaje sin resolver: no hay guardián nocturno.
+- El `TODO(@jur, 2026-07-15)` de `qa.yml` sigue sin comprobar si está al día.
+- **No se ha medido si el arreglo de la TZ pone verdes los cuatro del widget EN EL RUNNER.** Aquí ya
+  estaban verdes; la comprobación real es el próximo run de CI. Es una predicción, no una medición.
+
+### Verificación (corrida real, no lectura)
+
+**`xcodebuild test -scheme "Yala Dev" -only-testing:YalaTests -parallel-testing-enabled NO`**
+⇒ `✔ Test run with 5964 tests in 592 suites passed after 78.479 seconds` · `** TEST SUCCEEDED **`
+
+Se corrió la suite ENTERA, no las suites tocadas, porque `wipeAllModels` lo usan **60 ficheros de
+test**: verificar sólo lo tocado no habría probado nada. Cero regresiones en las 592 suites.
+
+Control positivo de cada pieza (que la suite corriera, no sólo que compilara):
+
+- `◇`/`✔ Suite "Aislamiento · wipeAllModels cubre el schema entero (source-scan)"` — el pin nuevo
+- `✔ Test "MUTACIÓN (e): ningún camino de producción construye un SplitGroup fuera del canal backend"`
+- `✔ Test "splitDescription for shares type"`
+- `✔ Test wipeLocalGroupsDomain_killsTheOutbox_butKEEPSTheCursor()`
+
+**Y cierra la pregunta abierta que el ticket dejaba planteada.** Pedía «una corrida, no un
+diagnóstico» sobre `ProUpsellServiceOneShotTests` bajo `Yala Dev`:
+
+- `✔ Suite "ProUpsellService one-shots" passed after 0.010 seconds` ⇒ **el residual está cerrado** y
+  con él el chip `task_6bbda818`.
+- Y la frase heredada del ticket de origen —«hoy NINGÚN scheme corre la suite de unit entera en
+  verde»— queda **medida y es falsa**: `Yala Dev` corre las 592 suites en verde. Esa cita ya no se
+  reusa.
+
+**Lo que esta corrida NO prueba:** que el `EXC_BREAKPOINT` flaky de SwiftData esté resuelto. Es un
+fallo de ~1 de N runs; una corrida verde no es evidencia de ausencia. La premisa de los
+`continue-on-error` sigue sin refutar, y por eso el paso 3 sigue sin hacerse.
+
+### Control positivo de la TZ — el diagnóstico deja de ser lectura
+
+El ticket decía, honestamente, «confirmada por lectura, **NO ejecutada en UTC**». Ya está ejecutada,
+sin tocar la configuración del Mac (`TEST_RUNNER_TZ`, que `xcodebuild` propaga al proceso de test):
+
+| Zona | `YalaTests/WidgetDataServiceIntervalTests` |
+|---|---|
+| `America/Lima` (la del Mac) | `✔ Test run with 10 tests in 1 suite passed` |
+| `TZ=UTC` (la del runner) | `✘ Test run with 10 tests in 1 suite failed … with 10 issues` |
+
+Los tests en rojo son **exactamente los cuatro de la tabla de arriba**, ni uno más:
+`lastMonth_ssot_end_is_exactly_one_second_before_this_month_start`,
+`lastMonth_ssot_excludes_midnight_of_first_day_of_this_month`,
+`lastYear_ssot_excludes_midnight_of_first_day_of_this_year` y
+`parity_widgetReplica_matches_ssot_for_all_non_weekly_periods` (éste con 7 issues — barre todos los
+períodos —, de ahí que el total sean 10 issues y no 4).
+
+⇒ La causa está probada y el mecanismo elegido ataca la causa. Lo que sigue sin medir es la otra
+mitad: **que el runner de GitHub herede la zona que le fija el paso nuevo.** Eso lo dice el próximo
+run, y para eso está su control positivo — si `systemsetup` no la aplica, el job para ahí y lo dice.
+
+### Y la otra mitad que faltaba: el scheme `Yala`
+
+El ticket dejaba escrito «**Tampoco se ha corrido `YalaTests` bajo el scheme `Yala`**, así que
+"fallan las dos suites que exigen `DEV_BUILD`" sigue siendo una cita del ticket de origen, no una
+medición». Corrido:
+
+| Scheme | Resultado |
+|---|---|
+| `Yala Dev` | `✔ Test run with 5964 tests in 592 suites passed after 78.479 s` |
+| `Yala` | `✔ Test run with 5964 tests in 592 suites passed after 75.536 s` |
+
+**Conteo idéntico en los dos.** La cita heredada es falsa: no fallan dos suites bajo `Yala`, no falla
+ninguna. Con esto la frase «hoy NINGÚN scheme corre la suite de unit entera en verde» queda medida y
+descartada **por completo** —no a medias— y deja de citarse.

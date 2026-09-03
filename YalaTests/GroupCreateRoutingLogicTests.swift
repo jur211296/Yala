@@ -189,8 +189,19 @@ struct GroupCreateRoutingWiringTests {
         let allowed: Set<String> = [
             "GroupBackendMembershipService.swift",   // RPC server-first, isBackendGroup = true
             "GroupsSyncClient.swift",                // born-remote del pull, isBackendGroup = true
-            "DevSeedGroups.swift"                    // #if DEBUG — C3
+            "DevSeedGroups.swift",                   // #if DEBUG — C3
+            "DevSeedTransactions.swift"              // #if DEBUG — fixture de puntero muerto, ver abajo
         ]
+        // `DevSeedTransactions.swift` entra por el MISMO criterio que `DevSeedGroups.swift`: el
+        // fichero está entero bajo `#if DEBUG` (`:8` … `:676`, que es su última línea), así que no
+        // se compila en release y no es un «camino de producción». Su `SplitGroup(` de `:648` vive
+        // en `createDeadPointerFixture`, que construye a PROPÓSITO un grupo sin `isBackendGroup`
+        // para que un XCUITest pueda ejercitar el caso del puntero muerto — el propio código lo
+        // deja escrito y pinneado en `:640-641`.
+        //
+        // Este rojo entró el 2026-08-18 con `2f6cb24f` y no se vio hasta el 2026-09-02: los tres
+        // pasos de test del CI llevan `continue-on-error`, y GitHub los pinta de verde aunque
+        // `xcodebuild` salga con 65. El escáner funcionaba; nadie escuchaba.
 
         let root = Self.repoRoot.appendingPathComponent("Yala")
         var producers: [String] = []
