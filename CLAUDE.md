@@ -90,7 +90,12 @@ Dos condiciones innegociables para commitear directo en `2.1`:
 1. **`/gate` en verde.** Sin PR, el gate es la única red que queda. Si no pasa, no hay commit.
 2. **El árbol es tuyo.** Si `git status` trae cambios que no son de esta sesión, parar y avisar. Dos sesiones sobre el mismo árbol se arrastran y el aislamiento por hunks no funciona.
 
-**Solo documentación** —diffs que caen ENTEROS en `docs/` · `tickets/` · `marketing/` · `Web/` · `README.md` · `CLAUDE.md` · `LICENSE*`— va directo a `2.1` **desde cualquier sesión**, worktree incluido, y el gate salta a la validación del índice porque no hay nada que compilar. Es la allowlist del job `changes` de `.github/workflows/qa.yml` **menos `.claude/`**: hooks, rules y permisos no rompen el build —por eso el CI los deja pasar— pero cambian cómo trabaja todo el mundo, así que ésos van por PR.
+**Sin nada que compilar** —diffs que caen ENTEROS en `docs/` · `tickets/` · `marketing/` · `Web/` · `.github/` · `README.md` · `CLAUDE.md` · `LICENSE*`— va directo a `2.1` **desde cualquier sesión**, worktree incluido, y el gate salta a la validación del índice.
+
+Esta lista **ya no es** «la del job `changes` de `.github/workflows/qa.yml` menos `.claude/`». Las dos responden preguntas distintas —«¿hay que compilar antes de commitear?» aquí, «¿puede este diff romper el build?» allí— y divergen en dos sitios, los dos a propósito:
+
+- **`.claude/` está aquí fuera y allí dentro.** Hooks, rules y permisos no rompen el build —por eso el CI los deja pasar— pero cambian cómo trabaja todo el mundo, así que van por PR.
+- **`.github/` está aquí dentro y allí fuera** (2026-09-03). En local no hay nada que compilar, así que el gate no aporta; en CI un cambio al workflow **tiene** que disparar la suite, o el CI dejaría de probar sus propios cambios — que es justo lo que hay que evitar después de un día ejecutando cero tests.
 
 **El release sigue siendo de Jürgen**, y un PR abierto lo mergea él salvo que pida otra cosa. Lo que desaparece es el PR como trámite para el trabajo de una sesión única, no su criterio.
 
