@@ -355,3 +355,73 @@ que destruye algo que no vuelve solo, y su arreglo probablemente no sea «montar
 **que el detector del Welcome no cuente —ni el wipe borre— un store que no es de esta sesión**.
 
 migrated from YalaWiki Bugs/secundaria-la-visita-escribe-en-el-dominio-del-dueno.md @ 1934e8ad
+
+---
+
+## 2026-09-03 (noche) · el encauzamiento YA EXISTE, y lo que queda es otra cosa
+
+**Decisión del owner (2026-09-02): «encauzar», no bloquear** — que la visita pueda usar Grupos con su
+propio dominio aislado. Al ir a construirlo, medido contra `ae4d394f`: **ese dominio aislado ya está
+construido, cableado y verde.** La decisión sigue siendo la correcta; lo que cambia es que casi todo
+su coste ya está pagado.
+
+### Lo que ya existe (verificado en el árbol, no leído del ticket)
+
+`Yala/Services/CloudSync/SessionDefaults.swift` crea un cajón de `UserDefaults` por sesión
+(`yala.session.<sub>`, `:95-99`), lo resuelve **en cada acceso** (`:116`, deliberadamente no cacheado),
+lo siembra al entrar y lo destruye al salir. Y sus tres consumidores grandes ya lo usan:
+
+| Consumidor | Coordenada | Verificado |
+|---|---|---|
+| Todos los `@AppStorage` del árbol | `Yala/App/YalaApp.swift:116` — `.defaultAppStorage(SessionDefaults.current)` | ✅ |
+| `AppPreferences` (sus 76 properties) | `Yala/App/AppBootstrapper.swift:40` | ✅ |
+| `PreferenceSyncService` | `Yala/App/Services/PreferenceSyncService.swift:87` (**computed**, no `let`) | ✅ |
+
+Su ticket, `prefs-domain-per-secondary-session`, está en `tickets/qa/` porque sus cuatro fases están
+hechas: lo que le falta es el E2E en device del owner, no código.
+
+⇒ **De las ocho vías del inventario, la mayoría ya no escriben en el dominio de la dueña.** Este
+ticket describe un mundo anterior a ese trabajo y hay que leerlo con esa corrección delante.
+
+### Lo que SIGUE vivo, y es un defecto NUEVO que este ticket no describía
+
+**Un par escritor/lector partido en `hasCompletedOnboarding`:**
+
+| Rol | Coordenada | Dominio al que va |
+|---|---|---|
+| Escritor | `Yala/App/Views/Onboarding/OnboardingView.swift:1823` | **de la DUEÑA** (`UserDefaults.standard`) |
+| Lector | `Yala/App/ContentView.swift:16` (`@AppStorage`) | **de la VISITA** (el cajón, vía `:116` de `YalaApp`) |
+| Lector | `Yala/App/AppBootstrapper.swift:994` · `:2436` · `:2451` | **de la DUEÑA** |
+
+La key está declarada como de DISPOSITIVO (`SessionPreferenceKeys.swift:195-199`), así que el escritor
+casa con su clasificación; el problema es que **hay lectores en los dos dominios a la vez**. En sesión
+secundaria: la visita termina el onboarding, su flag sigue en `false` y el Welcome puede reabrirse;
+y la dueña recibe una escritura cruzada.
+
+Es exactamente el modo de fallo que la cabecera de `SessionDefaults` (`:20-24`) declara **peor que el
+bug original**, aquí invertido. Y **ningún escáner lo ve**: `hasCompletedOnboarding` no está en la
+lista `watched` de `YalaTests/CloudSync/SessionPreferenceKeysTests.swift`.
+
+### Por qué no se arregla en esta sesión
+
+**No es «alinear una línea»: es decidir en qué dominio vive la key, con un escritor y cuatro lectores
+repartidos entre los dos.** Mover sólo uno empeora la incoherencia, y la elección cambia el arranque
+de la app —qué ve la dueña y qué ve la visita al abrir—. Eso es del owner, y de madrugada no se
+decide. Las dos salidas, para que la decisión no haya que reconstruirla:
+
+1. **El escritor baja al cajón** (`SessionDefaults.current` en `:1823`) y los tres lectores de
+   `AppBootstrapper` también. Coherente con que cada sesión tenga su onboarding.
+2. **El lector de `ContentView:16` sube a `.standard`** (dejando de ser `@AppStorage` implícito).
+   Coherente con «es una key de dispositivo, no de persona».
+
+Sea cual sea, **la key entra en el `watched` del escáner en el mismo commit**: es la lección de la
+vía 7 aplicada a sí misma.
+
+### Lo demás que queda, ya sin sorpresas
+
+- La rama «privacidad total» sigue **sin puerta** (`WelcomeFlowContainer.swift:289-293`), mientras la
+  rama organizador sí la tiene. Con el dominio por sesión ya montado, la pregunta de producto es más
+  estrecha de lo que era: no «cómo aislarla» sino «qué se le enseña».
+- La segunda entrada al onboarding privado sigue **sin alert** (`ContentView.swift:678-686`).
+- Vía 6 (consent legacy) **no la cerró** el dominio por sesión: `GroupsConsentState.defaults` es
+  `.standard` a pelo (`GroupsConsentState.swift:72`). Va aparte, con su propia decisión.
