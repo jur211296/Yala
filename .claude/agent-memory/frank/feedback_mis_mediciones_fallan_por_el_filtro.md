@@ -1,6 +1,6 @@
 ---
 name: mis-mediciones-fallan-por-el-filtro
-description: Mis errores de medición se repiten con la misma forma — el filtro descarta justo lo que busco y la ausencia se lee como resultado. Cuatro casos en una sola sesión (2026-09-02).
+description: Mis errores de medición se repiten con la misma forma — el filtro descarta justo lo que busco y la ausencia se lee como resultado. Ocho casos en dos sesiones (2026-09-02).
 metadata:
   type: feedback
 ---
@@ -37,6 +37,31 @@ lo critiqué por escrito… antes de repetirlo dos veces.
 - **Cuenta el total y los que cumplen por separado**, y desconfía de toda proporción que dé 100 %.
 - **Un campo de estado no es el resultado.** `continue-on-error`, `advisory`, `|| true` y los
   reintentos desacoplan «lo que dice el campo» de «lo que pasó». Ve al log.
+
+## Cuatro casos MÁS, la noche del mismo día — y ya no es mala suerte
+
+Volvió a pasar cuatro veces en la sesión nocturna, con el mismo patrón y a pesar de tener esta
+ficha escrita. Eso es el dato: **conocer la lista de trampas no me protege; sólo me protege exigir
+el denominador.**
+
+5. `grep -E "failed"` sobre un log de `xcodebuild` casó con `.failed(.expired)` del código de los
+   tests y me sepultó el resultado. (La ficha ya lo decía: no hagas grep de subcadenas sueltas
+   sobre logs que contienen código.)
+6. **`-only-testing` con el nombre del FICHERO tampoco filtra** si las suites del fichero se llaman
+   distinto: pedí 3 suites, arrancaron 2, salió `TEST SUCCEEDED`. La que no corrió era la única red
+   del mutante que estaba verificando. Peor que el caso del método —el nº 1 de arriba— porque ahí
+   el conteo era 0 y saltaba a la vista; aquí sí hay tests y sí hay conteo, y sólo delata el número
+   de SUITES.
+7. Conté «tickets» con `ls tickets/done` y me llevé tres PNG de capturas por delante ⇒ reporté un
+   descuadre del índice que no existía.
+8. `grep -oE '^\| [a-z0-9-]+ \|'` no casó con un id que llevaba mayúsculas
+   (`rojo-heroBuckets-…`) ⇒ concluí que faltaba del índice cuando estaba.
+
+**El añadido a la regla:** el control positivo no basta si el instrumento es un `grep` que yo mismo
+escribo al vuelo. Antes de reportar una ausencia (falta X, sobra Y, no hay Z), **compara dos
+totales que tengan que cuadrar** — filas del índice contra ficheros en disco, suites pedidas contra
+suites arrancadas — y sólo entonces mira el detalle. Un total que cuadra refuta de golpe cualquier
+lista de faltantes que haya fabricado un filtro roto.
 
 Relacionado: [[trailer-de-commit-nunca-en-yala]] (el mismo error, cometido por otra sesión, es lo
 que casi tumba una regla del owner).
