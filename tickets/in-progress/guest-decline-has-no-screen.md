@@ -176,3 +176,71 @@ RPC, que ya llama `rejected` al resultado cuando el objetivo estaba `pendingAppr
 
 **Desbloquea también** la pieza 1 de `invite-link-five-causes-one-message`, que esperaba esta misma
 autorización de servidor. Las dos se hacen juntas o la segunda se queda a medias.
+
+---
+
+## Implementado · 2026-09-03 (falta aplicar el DDL)
+
+### Lo que el diseño del ticket no contemplaba, y habría empeorado el producto
+
+El ticket decía «que el pull entregue la membresía `rejected`; hoy `routes.ts:388` y `is_group_member`
+filtran». Medido contra producción, tres correcciones:
+
+1. **La coordenada es `routes.ts:460`**, no la 388.
+2. **RLS lo bloquea por sí sola.** La policy de SELECT es `is_group_member(group_id)`, que exige
+   `status in ('active','pendingApproval')`. Tocar solo el gateway no habría movido una pantalla.
+3. **Y la corrección aparente era la peligrosa**: añadir `rejected` a `is_group_member` habría dejado
+   al rechazado leer TODAS las filas de `group_members` de ese grupo —la policy es por grupo, no por
+   fila— es decir, la lista completa de miembros. Ése es justo el oráculo que el owner descartó.
+
+**El hallazgo que obligó a parar y decidir**: `leave_group` exige `status in
+('active','pendingApproval')`, así que **un rechazado no puede salir del grupo** (`yala_member_not_found`,
+verificado en la definición viva). Y el botón del banner solo abría Ajustes. ⇒ mostrar el aviso sin
+resolver eso habría dejado el grupo **pegado en la lista para siempre, con cartel y sin salida**: peor
+que la desaparición silenciosa que se venía a arreglar.
+
+**Decisión del owner (2026-09-03): la salida es LOCAL.** El botón quita el grupo de ESE teléfono
+(`performRemovedSelfCleanup`, que ya existía y es idempotente). Se descartó ampliar `leave_group` por
+desproporcionado: una segunda migración de BD para un recorrido que hoy no ha usado nadie. Efecto
+asumido: si esa persona reinstala, el aviso le llega una vez más — el «una sola vez» lo da el cursor
+`server_seq`, no la policy, y una reinstalación lo resetea.
+
+### Hecho
+
+- `qa/cloud/g13_02_rejected_member_sees_own_row.sql` — policy nueva, acotada a `user_id` propio Y
+  `status = 'rejected'`. **No toca `is_group_member`**, que es lo que mantiene cerrado el oráculo.
+  Trae su propio bloque de verificación (3 comprobaciones).
+- `gateway/src/groups/routes.ts:460` — `rejected` entra en el filtro del paso 1. Una línea.
+- `GroupDetailView` — el botón del banner llama a la limpieza local en vez de abrir Ajustes.
+- `RejectedMemberExitWiringTests` — source-scan de las dos mitades del cableado (el botón y el filtro),
+  porque el método es `private` en una `View` y el filtro es un string.
+
+### Verificación
+
+Build en las dos schemes · **6004 tests / 600 suites verdes** · **batería del gateway: 321 pasan** con
+las tres credenciales de staging cargadas, 1 rojo preexistente (`account.goldens` nº 20, con ticket
+propio). Mutación de las dos mitades del cableado: cada una cazada.
+
+### LO QUE FALTA, y es del owner
+
+**Aplicar `g13_02` a staging y a producción.** Hasta entonces el cambio del gateway es **inerte, no
+roto**: pide las filas `rejected` y la RLS no las devuelve, así que el comportamiento es idéntico al de
+hoy. Eso significa que **el orden de despliegue da igual** y que se puede desplegar el Worker antes que
+el DDL sin riesgo.
+
+Y hasta que esté aplicada, **el flujo no está verificado de punta a punta**: los goldens de
+`groups.goldens` corren contra staging y no pueden ejercitar un rechazo que la RLS aún oculta.
+
+### Frontera deliberada
+
+A quien **expulsan** de un grupo (`removed`, no `rejected`) le sigue desapareciendo en silencio.
+Decisión del owner del 2026-09-03: ahora no. Se cerraría cambiando una línea de la policy
+(`status in ('rejected','removed')`), pero necesita copy nuevo y «te sacaron» no es «no te aceptaron».
+
+### Residual medido, no resuelto
+
+En una instalación **limpia**, el delta del member rechazado aterriza sin su grupo: `split_groups`
+sigue invisible para él (su policy también cuelga de `is_group_member`), así que quedaría un
+`SplitMember` huérfano y ningún banner. En el flujo real no ocurre —el grupo ya está en el teléfono
+desde la sala de espera—, y ampliar `split_groups_select` sería dar nombre, icono y color del grupo:
+otra decisión.

@@ -457,7 +457,16 @@ export async function handleGroupsPull(c: Ctx): Promise<Response> {
 
   // 1. Memberships (RLS del JWT): descubre grupos NUEVOS y PERDIDOS (un gid en cursors que ya no esté
   //    en memberships se reporta solo en `memberships`, sin deltas).
-  const memQ = `select=group_id&user_id=eq.${auth.sub}&deleted=eq.false&status=in.(active,pendingApproval)`;
+  // `rejected` entra en la lista desde g13_02, y no es un detalle: hasta entonces, a quien el admin
+  // rechazaba se le caía el grupo de aquí, el cliente lo leía como AUSENCIA y lo borraba en silencio —
+  // sin una palabra, como si la app se hubiera roto. Manteniéndolo en la lista, el paso 2 le entrega su
+  // propia fila de membresía (y solo la suya: la policy nueva está acotada a `user_id` propio + status
+  // `rejected`), el cliente ve el estado y pinta el banner que ya sabe pintar. El grupo se queda hasta
+  // que la persona lo descarta, que es una acción LOCAL suya — decisión del owner del 2026-09-03.
+  //
+  // No se incluye `removed`: a quien EXPULSAN de un grupo le sigue desapareciendo en silencio, que es
+  // una frontera deliberada (necesita copy propio, y «te sacaron» no es «no te aceptaron»).
+  const memQ = `select=group_id&user_id=eq.${auth.sub}&deleted=eq.false&status=in.(active,pendingApproval,rejected)`;
   const mem = await getRows(c.env, auth.userJWT, "group_members", memQ);
   if (!mem.ok) {
     return jsonError("yala_unavailable", `pull memberships upstream ${mem.status}`, 502);

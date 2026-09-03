@@ -40,6 +40,32 @@ enum GroupDetailTab: String, CaseIterable, Identifiable {
 
 struct GroupDetailView: View {
 
+    // MARK: - Salida del rechazado
+
+    /// Quita de ESTE teléfono un grupo del que te rechazaron.
+    ///
+    /// **Es local a propósito, y no por simplificar** (decisión del owner, 2026-09-03). La salida por
+    /// servidor no está disponible: `leave_group` exige `status in ('active','pendingApproval')`, así que
+    /// a un `rejected` le responde `yala_member_not_found`. Ampliarla sería una segunda migración de BD
+    /// para un recorrido que hoy no ha usado nadie —cero membresías rechazadas en producción— y se
+    /// descartó por desproporcionada.
+    ///
+    /// Efecto conocido y asumido: la fila sigue `rejected` en el servidor, así que si esta persona
+    /// reinstala la app, el aviso le llega una vez más y vuelve a descartarlo. Es preferible a la
+    /// alternativa de hoy, que es que el grupo se esfume sin decir nada.
+    ///
+    /// **Antes el botón no hacía nada útil**: abría Ajustes del grupo, donde el botón de salir tampoco
+    /// habría funcionado. Sin esto, mostrar el aviso dejaría el grupo PEGADO en la lista para siempre —
+    /// un zombi con cartel, peor que la desaparición silenciosa que se venía a arreglar.
+    ///
+    /// `dismiss()` va primero, siguiendo el molde dismiss-first del `onChange` de abajo: decidir cerrar
+    /// antes de tocar el modelo evita recalcular sobre una vista que se está yendo.
+    private func discardRejectedGroup() {
+        let zoneID = group.cloudKitZoneID
+        dismiss()
+        Task { await GroupService.shared.performRemovedSelfCleanup(zoneName: zoneID, context: modelContext) }
+    }
+
     // MARK: - Environment
 
     @Environment(\.dismiss) private var dismiss
@@ -110,9 +136,7 @@ struct GroupDetailView: View {
                 } else if viewModel.currentUserMember?.isPendingApproval == true {
                     PendingApprovalBanner(state: .pending, onLeave: nil)
                 } else if viewModel.currentUserMember?.isRejected == true {
-                    PendingApprovalBanner(state: .rejected, onLeave: {
-                        viewModel.activeSheet = .settings
-                    })
+                    PendingApprovalBanner(state: .rejected, onLeave: { discardRejectedGroup() })
                 }
 
                 tabContent
