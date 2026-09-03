@@ -1,10 +1,10 @@
 ---
 id: groups-expense-notif-only-on-foreground
-status: backlog
+status: qa
 priority: high
 area: groups
 created: 2026-08-28
-updated: 2026-08-28
+updated: 2026-09-03
 ---
 
 # La notificación de un gasto de grupo solo aparece cuando el receptor ENTRA en la app, no mientras está fuera
@@ -233,3 +233,33 @@ tag de release, sin App Store. A7 / M5 siguen en HOLD.
   en iOS sigue siendo válido y ahorra trabajo aquí.
 - Notificaciones de aprobación y por qué el copy no promete aviso: `Yala/Utils/L10n.swift:2253-2257` y
   `tickets/qa/groups-approval-banner-stays.md`.
+
+---
+
+## Actualización 2026-09-03 — el mecanismo que mejor lo explicaba ya no existe
+
+Medido en `59d76e6e` (este árbol), no inferido. El commit `eb6593ce` cambió el emisor **compartido**:
+`fanOutGroupPush` es el único emisor de push del gateway (`grep` sobre `gateway/src`: dos llamadores,
+`routes.ts:145` en la ruta de deltas —la de los gastos— y `rpc.ts:247/260` en las de membresía), y ahora
+manda `pushType: "alert"` (`routes.ts:261`) con `apns-priority: 10` y `apns-expiration` de 24 h
+(`apns.ts`, `ALERT_EXPIRATION_SECONDS`). El banner lo pinta **iOS**; el `content-available` viaja en el
+mismo push para que la app, si despierta, lo reemplace por el texto rico.
+
+**Qué le pasa a las hipótesis de arriba:**
+
+| | Estado tras `eb6593ce` |
+|---|---|
+| **H1** (push llegó, el ciclo no corrió: `context == nil`) | **Ya no produce el síntoma.** El banner no depende de que el ciclo corra. El residual de `GroupsSyncClient.swift:453-455` sigue existiendo, pero ahora solo retrasa el texto rico, no el aviso. |
+| **H3** (APNs lo descartó: `expiration 0` + presupuesto de silent) | **Atacada por los dos lados**: prioridad 10 y ventana de 24 h. |
+| **H2** (el fan-out no salió: `PUSH_ROLE_JWT` ausente/revocado en producción) | **VIVA, sin cambios.** Sigue siendo un no-op silencioso con log. |
+| **H4** (B nunca tuvo token registrado) | **VIVA, sin cambios.** |
+| **H5** (rate-limit / sub-ajustes de iOS) | **Cambia de forma:** el banner del sistema **no** pasa por `GroupNotificationService`, así que el rate-limit de 5 min por grupo ya no lo filtra. Si A hace dos cambios seguidos, ahora B puede recibir **dos** banners genéricos donde antes recibía uno. Añadir eso al guion. |
+
+**Por eso pasa a `qa` y no a `done`:** nada de esto está verificado en device. App Attest en `enforce`
+exige TestFlight con dos teléfonos, así que lo único medido es que el gateway compone y envía lo
+correcto. El guion de «Cómo se verifica» sigue vigente tal cual, con dos ajustes: el paso 2 (proceso
+desalojado) es ahora el que más información da —es justo el que H1 predecía que fallaba—, y conviene
+encadenar dos cambios de A dentro de 5 min para medir el punto de H5.
+
+**Se comprueba en la misma pasada que `aviso-de-nuevo-miembro-no-llega-hasta-abrir-la-app`**: mismo
+emisor, mismos dos teléfonos, mismo `wrangler tail`.

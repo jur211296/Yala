@@ -1,10 +1,10 @@
 ---
 id: welcome-fresh-start-alert-leaves-blank-screen
-status: backlog
+status: qa
 priority: high
 area: onboarding
 created: 2026-09-02
-updated: 2026-09-02
+updated: 2026-09-03
 ---
 
 # Cerrar el alert de «Empezar desde cero» deja el Welcome en blanco, sin salida
@@ -153,3 +153,15 @@ alert; un Chooser inerte pasaría el primero).
 `ShellDataAlertsModifier.swift` decía «Cancel: user queda en el Chooser (showWelcomeFlow sigue true)».
 No se quedaba. Describía la intención, nunca el comportamiento — y el cuerpo del botón estaba vacío
 precisamente porque se daba por cierta.
+
+---
+
+## Paso a `qa` — 2026-09-03
+
+Fix y tests en `34ba3889` (`ShellDataAlertsModifier.swift` + `YalaUITests/Flows/WelcomeFreshStartAlertUITests.swift`,
+dos tests). El ticket se creó **en el mismo commit que su arreglo** y se quedó en `backlog`, donde leía
+como trabajo pendiente `high` que ya no existía.
+
+Queda la comprobación en device del recorrido completo, que se drena en lote con sus hermanos de
+`qa/`: `welcome-start-fresh-wipes-before-ask` y `welcome-copy-blames-owner`. No pasa a `done` porque
+no se inventa un PASS que nadie ha corrido en un teléfono.

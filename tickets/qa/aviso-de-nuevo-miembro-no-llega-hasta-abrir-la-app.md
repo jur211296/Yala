@@ -1,10 +1,10 @@
 ---
 id: aviso-de-nuevo-miembro-no-llega-hasta-abrir-la-app
-status: backlog
+status: qa
 priority: high
 area: grupos
 created: 2026-09-02
-updated: 2026-09-02
+updated: 2026-09-03
 ---
 
 # Cuando alguien se une a tu grupo el aviso llega TARDE: no lo ves hasta que abres la app por tu cuenta
@@ -419,3 +419,19 @@ alguien pidió entrar— **dejaba la batería entera en verde**.
 3. **El cliente no distingue tipos de push.** `YalaAppDelegate` lee `yala.kind` sólo para un
    breadcrumb y dispara un sync para cualquier payload; no hay `switch`, ni se propaga `deepLink`, así
    que tocar el banner no lleva al grupo. Es trabajo aparte y **no** bloquea a este.
+
+---
+
+## Paso a `qa` — 2026-09-03
+
+Código en `eb6593ce`. **El Worker de producción está desplegado** (`docs/ESTADO.md:9`, versión
+`6f033324`, 16:42 UTC).
+
+**Lo que NO consta en ninguna parte del repo: que `g8_03` se haya aplicado a la BD de producción.**
+Es el punto 1 de «Lo que NO está hecho» y son dos actos, no uno. Sin las dos RPC nuevas en producción,
+`fanOutGroupPush` resuelve cero tokens para las audiencias de membresía y sale por su short-circuit con
+un log — o sea, **un e2e hecho antes de aplicarlas mediría un falso negativo** y costaría una sesión de
+dos teléfonos para nada. Confirmarlo (o aplicarlo) va **antes** del device-QA.
+
+El e2e se corre en la misma pasada que `groups-expense-notif-only-on-foreground`: mismo emisor, mismos
+dos teléfonos, mismo `wrangler tail --env production`.
