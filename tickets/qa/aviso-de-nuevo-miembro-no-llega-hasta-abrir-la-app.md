@@ -427,11 +427,16 @@ alguien pidió entrar— **dejaba la batería entera en verde**.
 Código en `eb6593ce`. **El Worker de producción está desplegado** (`docs/ESTADO.md:9`, versión
 `6f033324`, 16:42 UTC).
 
-**Lo que NO consta en ninguna parte del repo: que `g8_03` se haya aplicado a la BD de producción.**
-Es el punto 1 de «Lo que NO está hecho» y son dos actos, no uno. Sin las dos RPC nuevas en producción,
-`fanOutGroupPush` resuelve cero tokens para las audiencias de membresía y sale por su short-circuit con
-un log — o sea, **un e2e hecho antes de aplicarlas mediría un falso negativo** y costaría una sesión de
-dos teléfonos para nada. Confirmarlo (o aplicarlo) va **antes** del device-QA.
+**`g8_03` está aplicado a producción. Verificado el 2026-09-03 contra la BD**, no contra el repo:
+`get_group_admin_push_tokens(p_group_id text, p_exclude_user_id uuid)` y
+`get_group_member_push_tokens(p_group_id text, p_member_key text)` existen en `public`, con el grant a
+`yala_push` y sin `anon`/`authenticated` — o sea, también se aplicó el `revoke`.
+
+**Corrección de una nota anterior de este mismo ticket, y la lección vale más que el dato.** El
+2026-09-03 escribí aquí que «no consta en el repo que se haya aplicado», y de ahí salió un aviso de
+que el device-QA estaba bloqueado. Era inferir un hecho del SERVIDOR de la ausencia de rastro en el
+CÓDIGO — leer la ausencia como resultado, el error que este repo persigue. El estado de la BD se
+comprueba contra la BD, y cuesta una consulta.
 
 El e2e se corre en la misma pasada que `groups-expense-notif-only-on-foreground`: mismo emisor, mismos
 dos teléfonos, mismo `wrangler tail --env production`.

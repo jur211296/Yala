@@ -63,5 +63,22 @@ totales que tengan que cuadrar** — filas del índice contra ficheros en disco,
 suites arrancadas — y sólo entonces mira el detalle. Un total que cuadra refuta de golpe cualquier
 lista de faltantes que haya fabricado un filtro roto.
 
+**La novena, y es de otra familia: el filtro estaba bien y el UNIVERSO era el equivocado.** El
+2026-09-03 escribí en el ESTADO y en un ticket que `g8_03` no estaba aplicado a producción, y de ahí
+salió un aviso a Jürgen de que el device-QA de los dos teléfonos estaba bloqueado. Lo que había medido
+de verdad es que **no consta en el repo**, que es otra afirmación: el estado de una base de datos no
+vive en git. Jürgen preguntó «¿no está hecho?», bastó una consulta a `pg_proc` y las dos RPC estaban
+ahí, con su grant a `yala_push` y con el `revoke` aplicado.
+
+**Why:** buscar en el sitio equivocado y leer el vacío como respuesta es el mismo error que los ocho
+de arriba, sin ningún grep roto de por medio — por eso conviene tenerlo aquí y no en otra ficha.
+Y el coste iba en la dirección cara: le habría hecho posponer una sesión de dos teléfonos por nada.
+
+**How to apply:** antes de reportar que algo del SERVIDOR no está hecho —una migración, un secret, un
+deploy, un flag de rollout—, compruébalo **contra el servidor**. Hay MCP de Supabase conectado y una
+consulta de solo lectura cuesta segundos; para Cloudflare, `wrangler`. Si de verdad no puedes medirlo,
+la frase que se escribe es «no consta en el repo», nunca «no está hecho» — y se dice qué comando lo
+resolvería.
+
 Relacionado: [[trailer-de-commit-nunca-en-yala]] (el mismo error, cometido por otra sesión, es lo
 que casi tumba una regla del owner).

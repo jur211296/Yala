@@ -10,18 +10,19 @@ Gateway de producción: **desplegado** (versión `6f033324`, 16:42 UTC del 3).
 
 ## Te esperan a ti
 
-1. **¿Se aplicó `g8_03` a la BD de producción?** El Worker está desplegado; de las dos RPC nuevas no
-   consta nada en el repo. Sin ellas el fan-out de membresía resuelve cero tokens y sale por un log:
-   **un e2e hecho antes mediría un falso negativo**. Va antes que el punto 2.
-2. **Verificar el push con dos teléfonos reales.** App Attest en `enforce` lo hace imposible desde
+1. **Verificar el push con dos teléfonos reales.** App Attest en `enforce` lo hace imposible desde
    simulador o build de Xcode. Lo medido es que el gateway compone y envía lo correcto; **que Apple
    entregue el banner, no**. Una sola pasada cubre `aviso-de-nuevo-miembro` y
    `groups-expense-notif-only-on-foreground`. Si no llega: `Ajustes → Yala → Notificaciones` en el
    receptor — el único ticket cerrado sobre esto era el permiso apagado, y APNs devuelve 200 igual.
-3. **`hasCompletedOnboarding`: par escritor/lector partido.** Un escritor y cuatro lectores repartidos
+   **Nada la bloquea**: `g8_03` está aplicado a producción (las dos RPC existen con su grant a
+   `yala_push`, verificado contra la BD el 2026-09-03) y el Worker está desplegado. Un aviso anterior
+   decía lo contrario por inferir «no está hecho» de «no consta en el repo» — el estado del servidor
+   se comprueba contra el servidor.
+2. **`hasCompletedOnboarding`: par escritor/lector partido.** Un escritor y cuatro lectores repartidos
    entre dos dominios. Es una decisión, no trabajo; las dos salidas están en
    `secondary-visitor-writes-owner-domain`.
-4. **D4 · consent legacy (RGPD)**, decidido «custodiar y reponer» y sin implementar. Dos riesgos que el
+3. **D4 · consent legacy (RGPD)**, decidido «custodiar y reponer» y sin implementar. Dos riesgos que el
    ticket no traía: `GroupsConsentState` escribe en `.standard` a pelo (el dominio por sesión **no** lo
    cubrió) y la reposición cae en la ventana donde un borrado mal dirigido arrasaría el `UserDefaults`
    entero de la dueña.
