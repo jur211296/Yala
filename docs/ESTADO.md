@@ -5,7 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-03 (Lima)
 
-**Rama** `2.1` · **HEAD** `70d3c27d` — *la red de tests dejó de mentir*.
+**Rama** `2.1` · **HEAD** `7a70f70f` — *la red de tests dejó de mentir*.
 TestFlight build **12** (CPV 12). **Subida Yala (TF/store) = solo Mini.**
 
 ## Sesión nocturna (2026-09-02/03)
@@ -58,4 +58,5 @@ otros filtros del repo están rotos igual.
 sigue sin `ok_`. **Cero `ok_` inventado.**
 
 ## Board
-87 tickets · backlog 47 · in-progress 7 · qa 13 · blocked 2 · done 13 · discarded 5. Índice cuadrado.
+87 tickets · backlog 45 · in-progress 8 · qa 14 · blocked 2 · done 13 · discarded 5. Índice cuadrado.
+**Movidos anoche: 3** — `welcome-copy-blames-owner` y `prefs-synced-keys` a `qa/`, `ci-verde` a `in-progress`.
