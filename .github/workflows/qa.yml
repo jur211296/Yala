@@ -146,6 +146,31 @@ jobs:
     # así que la suite corre igual. Solo un 'false' explícito la salta.
     if: ${{ !cancelled() && needs.changes.outputs.run_tests != 'false' }}
     runs-on: macos-26
+    # Los tests de intervalos construyen sus expectativas con un calendario fijado a
+    # America/Lima, pero el SSOT que comparan (`DetailPeriod.dateInterval`) resuelve sus
+    # fechas con `userConfiguredCalendar()` = `Calendar.current`. En la Mac del owner las
+    # dos mitades coinciden y salen verdes; bajo otra zona no coinciden y salen CUATRO rojos
+    # DETERMINISTAS —no flaky, categoria distinta del EXC_BREAKPOINT que justifica los
+    # `continue-on-error` de mas abajo—. Llevaban asi desde el 2026-08-17.
+    #
+    # `TEST_RUNNER_` es el prefijo que `xcodebuild` retira al propagar la variable al proceso
+    # de test, asi que el proceso recibe `TZ=America/Lima`. Medido el 2026-09-03 en la Mac del
+    # owner con el mecanismo EXACTO de aqui —la variable en el ENTORNO del proceso xcodebuild,
+    # que es como la entrega el `env:` de Actions, no en la linea de comandos—: con `UTC`,
+    # `✘ Test run with 10 tests in 1 suite failed ... with 10 issues`; con `America/Lima`,
+    # `✔ Test run with 10 tests in 1 suite passed`. Mismo binario, misma maquina, solo cambia
+    # la variable. El conteo `10 tests` es el control de que la suite corrio y no cero tests.
+    #
+    # Sustituye a `sudo systemsetup -settimezone`, que estuvo aqui del 2026-09-02 al -09-03 y
+    # se retiro por NO FIABLE: aplico la zona en 3 de 9 runs medidos, con la misma imagen de
+    # runner y el mismo sudo. El `### Error:-99` de `InternetServices.m` que imprimia NO era la
+    # causa —sale identico en los runs que SI aplicaron— y la causa ultima quedo sin cerrar.
+    # Como el paso no era `continue-on-error`, cada fallo tumbaba el job entero y dejaba el CI
+    # ejecutando CERO tests: cuatro commits de codigo entraron en 2.1 sin una sola corrida.
+    # Va a nivel de JOB, no de paso, para que un paso de test nuevo lo herede — olvidarse de
+    # aplicarlo es exactamente el modo de fallo que este bloque arregla.
+    env:
+      TEST_RUNNER_TZ: America/Lima
     steps:
       - uses: actions/checkout@v4
       - name: Seleccionar Xcode (latest-stable 26.x)
@@ -157,30 +182,6 @@ jobs:
       # son agentic, fuera de CI).
       - name: Crear Secrets.xcconfig (placeholder para CI)
         run: cp Secrets.xcconfig.template Secrets.xcconfig
-      # Los tests de intervalos construyen sus expectativas con un calendario fijado a
-      # America/Lima, pero el SSOT que comparan (`DetailPeriod.dateInterval`) resuelve sus
-      # fechas con `userConfiguredCalendar()` = `Calendar.current`, o sea la zona del
-      # dispositivo simulado, que la hereda del runner. En la Mac del owner las dos mitades
-      # coinciden y salen verdes; en un runner en UTC no coinciden y salen CUATRO rojos
-      # DETERMINISTAS —no flaky, categoria distinta del EXC_BREAKPOINT que justifica los
-      # `continue-on-error` de mas abajo—. Llevaban asi desde el 2026-08-17.
-      #
-      # Se fija la zona del runner en vez de inyectar el calendario en el SSOT (decision del
-      # owner, 2026-09-02): inyectar prueba el algoritmo aislado; fijar la zona prueba ademas
-      # que el algoritmo no depende del entorno, que es lo que el usuario real experimenta.
-      - name: Fijar zona horaria del runner (America/Lima)
-        run: |
-          set -euo pipefail
-          sudo systemsetup -settimezone America/Lima >/dev/null
-          # Control positivo. Sin esta comprobacion, un `systemsetup` que no aplica nada deja
-          # los mismos cuatro rojos veinte lineas mas abajo y sin explicacion: la ausencia de
-          # error se leeria como que la zona quedo puesta.
-          actual=$(sudo systemsetup -gettimezone | sed 's/.*: *//')
-          echo "Zona horaria del runner: $actual"
-          if [ "$actual" != "America/Lima" ]; then
-            echo "::error title=La zona horaria no se aplico::systemsetup devolvio '$actual'. Los tests de intervalos van a fallar por divergencia de entorno, no por una regresion."
-            exit 1
-          fi
       - name: Build for testing
         run: |
           xcodebuild build-for-testing \
@@ -280,8 +281,39 @@ jobs:
           [ "$R_UNIT_CONTEXT" != "failure" ] || fallidos="$fallidos\n- Unit tests (context-based)"
           [ "$R_UI" != "failure" ]           || fallidos="$fallidos\n- UI tests (YalaUITests)"
 
-          if [ -z "$fallidos" ]; then
-            echo "::notice title=Suite en verde::Ningun paso advisory fallo. No se avisa."
+          # Un paso advisory que no llego a EJECUTARSE deja `outcome` en `skipped`, no en
+          # `failure`: el job murio en un paso ANTERIOR (setup, Secrets, build) y GitHub salto
+          # los tres. Sin esta rama el aviso anunciaba "Suite en verde" sobre un run que ejecuto
+          # CERO tests — el MISMO error de lectura que este bloque vino a arreglar, un escalon
+          # mas arriba: comprobar el resultado de los tests sin comprobar antes que llegaran a
+          # correr. Medido el 2026-09-03: seis runs seguidos en 2.1 asi, y el aviso callado.
+          sin_correr=""
+          for r in "$R_UNIT_PURE" "$R_UNIT_CONTEXT" "$R_UI"; do
+            case "$r" in
+              success|failure) ;;
+              *) sin_correr="si" ;;
+            esac
+          done
+
+          if [ -n "$sin_correr" ]; then
+            asunto="la suite NO llego a correr"
+            detalle=$(printf '%s\n' \
+              "CI de $REPO ($RAMA): el job murio antes de los tests y la suite NO llego a correr." \
+              "" \
+              "Los pasos de test quedaron sin ejecutar (pure-logic: $R_UNIT_PURE, context-based:" \
+              "$R_UNIT_CONTEXT, UI: $R_UI). Esto NO es un verde: es un run que no probo nada." \
+              "La causa esta en un paso ANTERIOR del job — mira el log.")
+          elif [ -n "$fallidos" ]; then
+            asunto="hay tests en rojo"
+            detalle=$(printf '%s\n' \
+              "CI de $REPO ($RAMA): hay pasos de test en ROJO que el run marca como verde." \
+              "" \
+              "Estos pasos son advisory a proposito (continue-on-error), asi que el run NO se pone" \
+              "en rojo y el repo sigue mergeando. Este aviso existe para que el rojo no pase inadvertido." \
+              "" \
+              "Pasos en rojo:$(printf "$fallidos")")
+          else
+            echo "::notice title=Suite en verde::Los tres pasos advisory corrieron y ninguno fallo."
             exit 0
           fi
 
@@ -289,17 +321,12 @@ jobs:
           # de morir en silencio: un canal de avisos que nadie mira se muere sin ruido, y en
           # este repo ya paso —el webhook de bug-triage estuvo un mes devolviendo 404—.
           if [ -z "${WEBHOOK_URL:-}" ] || [ -z "${SENDER_KEY:-}" ]; then
-            echo "::error title=Hay tests en rojo y no se pudo avisar::Faltan GROK_WEBHOOK_URL o GROK_WEBHOOK_SENDER_KEY. Pasos en rojo:$(printf "$fallidos")"
+            echo "::error title=No se pudo avisar de que $asunto::Faltan GROK_WEBHOOK_URL o GROK_WEBHOOK_SENDER_KEY."
             exit 1
           fi
 
           texto=$(printf '%s\n' \
-            "CI de $REPO ($RAMA): hay pasos de test en ROJO que el run marca como verde." \
-            "" \
-            "Estos pasos son advisory a proposito (continue-on-error), asi que el run NO se pone" \
-            "en rojo y el repo sigue mergeando. Este aviso existe para que el rojo no pase inadvertido." \
-            "" \
-            "Pasos en rojo:$(printf "$fallidos")" \
+            "$detalle" \
             "" \
             "HEAD: $SHA" \
             "Log completo: $RUN_URL")
@@ -320,12 +347,12 @@ jobs:
           set -e
 
           if [ "$rc" -ne 0 ]; then
-            echo "::error title=Hay tests en rojo y el webhook no respondio::curl salio con $rc tras los reintentos."
+            echo "::error title=El webhook no respondio::curl salio con $rc tras los reintentos. Sin avisar: $asunto."
             exit 1
           fi
           case "$codigo" in
-            2??) echo "::warning title=Tests en rojo (avisado)::Grok recibio el aviso (HTTP $codigo). Pasos:$(printf "$fallidos")" ;;
-            *)   echo "::error title=Hay tests en rojo y el webhook fallo (HTTP $codigo)::Nadie se ha enterado."
+            2??) echo "::warning title=Aviso entregado::Grok recibio el aviso (HTTP $codigo): $asunto." ;;
+            *)   echo "::error title=El webhook fallo (HTTP $codigo)::Nadie se ha enterado de que $asunto."
                  head -c 500 "$RUNNER_TEMP/respuesta-rojo.txt" || true
                  exit 1 ;;
           esac

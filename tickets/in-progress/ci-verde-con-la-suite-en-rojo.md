@@ -323,3 +323,123 @@ medición». Corrido:
 **Conteo idéntico en los dos.** La cita heredada es falsa: no fallan dos suites bajo `Yala`, no falla
 ninguna. Con esto la frase «hoy NINGÚN scheme corre la suite de unit entera en verde» queda medida y
 descartada **por completo** —no a medias— y deja de citarse.
+
+---
+
+## Sesión del 2026-09-03 — los ocho están verdes, y el arreglo del paso 1 se retira
+
+### Los ocho rojos: CERRADOS, y medidos en el runner (no por lectura)
+
+Lo que este ticket dejaba escrito como pendiente —«**No se ha medido si el arreglo de la TZ pone
+verdes los cuatro del widget EN EL RUNNER**. Es una predicción, no una medición»— ya está medido.
+
+Run `33794198525` (commit `85ba0077`, 2026-09-03 19:04, `macos-26`). Es el único de los medidos en
+que el paso de la zona horaria SÍ aplicó (`Zona horaria del runner: America/Lima`), y con eso los
+dos pasos de unit corrieron enteros:
+
+```
+✔ Test run with 5885 tests in 587 suites passed after 195.129 seconds   (pure-logic)
+✔ Test run with 94 tests in 7 suites passed after 1.483 seconds         (context-based)
+```
+
+Cero fallos. Los ocho de la tabla son todos de `YalaTests` ⇒ **los ocho quedan cerrados**. La
+predicción del paso 1 se confirma como medición.
+
+### Pero el propio arreglo abrió un agujero mayor, y por eso se retira
+
+El paso `Fijar zona horaria del runner` **no llevaba `continue-on-error`**, así que cada vez que
+fallaba tumbaba el job `tests` entero y GitHub saltaba el build y los tres pasos de test.
+
+Medido sobre los 9 runs en que el paso llegó a ejecutarse: **aplicó la zona en 3**. Los otros 6
+murieron ahí. Consecuencia: entre `85ba0077` y `584aacba` entraron en `2.1` **cuatro commits que
+tocan código** —`6ddc4367`, `9f5fb2f8`, `6bf0f588`, `7d9f6d17`— y ninguno tiene una sola corrida de
+tests en CI. No salieron en rojo: **no se ejecutaron**. Durante esas horas la cobertura de CI fue
+*peor* que con el verde mentiroso de agosto — entonces los tests corrían y nadie los leía; después
+ni corrían.
+
+### La causa del fallo de `systemsetup` NO es la que parecía, y queda sin cerrar
+
+El paso imprimía `### Error:-99 … InternetServices.m Line:395` en cada run rojo, lo que invitaba a
+leerlo como «el runner no da permiso». **Falso, y medido**: ese mismo `Error:-99` aparece **idéntico
+en los tres runs que SÍ aplicaron la zona**, una sola vez por run. No discrimina. La imagen del
+runner también es la misma en verdes y rojos (`macos-26-arm64`).
+
+El delta entre `-settimezone` y `-gettimezone` correlaciona pero **no explica**:
+
+| Run | Δ set→get | Zona resultante |
+|---|---|---|
+| 33812015056 | 41 ms | GMT |
+| 33810993958 | 34 ms | GMT |
+| 33806661444 | 37 ms | GMT |
+| 33801694764 | 38 ms | GMT |
+| 33796674124 | 61 ms | GMT |
+| 33777488891 | **331 ms** | **GMT** |
+| 33789018825 | 120 ms | America/Lima |
+| 33756063332 | 105 ms | America/Lima |
+| 33794198525 | 562 ms | America/Lima |
+
+331 ms falló y 105 ms pasó ⇒ **no hay umbral que esperar**. Es consistente con que `systemsetup`
+aplica el cambio de forma asíncrona y no fiable, pero **la causa última no queda cerrada** y por eso
+no se intentó un reintento con espera: sería una apuesta, no un arreglo.
+
+### El mecanismo nuevo: `TEST_RUNNER_TZ` a nivel de job
+
+Decisión del owner (2026-09-03), sustituye a la del 2026-09-02: **fuera el paso `systemsetup`**, y la
+zona se fija con `TEST_RUNNER_TZ: America/Lima` en el `env:` del job `tests`. `xcodebuild` retira el
+prefijo `TEST_RUNNER_` al propagar la variable, así que el proceso de test recibe `TZ=America/Lima`.
+
+Va a nivel de **job** y no de paso a propósito: un paso de test nuevo lo hereda solo. Olvidarse de
+aplicarlo es exactamente el modo de fallo que este bloque arregla.
+
+Verificado hoy en esta Mac, con el mecanismo EXACTO del fix (la variable en el entorno del proceso
+`xcodebuild`, no en la línea de comandos), misma máquina y mismo binario:
+
+| `TEST_RUNNER_TZ` | `YalaTests/WidgetDataServiceIntervalTests` |
+|---|---|
+| `UTC` | `✘ Test run with 10 tests in 1 suite failed … with 10 issues` |
+| `America/Lima` | `✔ Test run with 10 tests in 1 suite passed` |
+
+Los fallos bajo `UTC` son **exactamente los cuatro de la tabla original**, ni uno más. El conteo
+`10 tests in 1 suite` es el control de que la suite corrió de verdad y no cero tests.
+
+**Lo que este cambio pierde, y se dice:** la decisión del 2026-09-02 eligió fijar la zona del
+*sistema* porque así se probaba además que el algoritmo no depende del entorno. `TEST_RUNNER_TZ`
+fija la zona del *proceso de test*. No toca el código (el SSOT sigue resolviendo con
+`Calendar.current`, sin calendario inyectado), pero la propiedad «probado bajo la zona del sistema»
+ya no se sostiene. Es el precio de tener CI que corre.
+
+### El aviso a Grok también mentía, un escalón más arriba
+
+`if: always()` estaba bien puesto: el paso SÍ corría. Lo que fallaba era la lectura — un paso que no
+llega a ejecutarse deja `outcome` en `skipped`, no en `failure`, y la condición solo miraba
+`!= "failure"`. Así que en los seis runs con cero tests el aviso imprimió:
+
+```
+::notice title=Suite en verde::Ningun paso advisory fallo. No se avisa.
+```
+
+Es **el mismo error que este ticket vino a arreglar**, un escalón más arriba: comprobar el resultado
+de los tests sin comprobar antes que los tests llegaran a correr.
+
+Arreglado con una rama `sin_correr` que trata cualquier `outcome` distinto de `success`/`failure`
+como motivo de aviso, con un texto propio («la suite NO llegó a correr»). Verificado ejecutando el
+script del paso con los tres escenarios:
+
+| `outcome` de los tres pasos | Antes (HEAD `584aacba`) | Ahora |
+|---|---|---|
+| `success` ×3 | «Suite en verde», exit 0 | «Suite en verde», exit 0 |
+| uno en `failure` | avisa «tests en rojo» | avisa «hay tests en rojo» |
+| `skipped` ×3 | **«Suite en verde», exit 0** | **avisa «la suite NO llegó a correr»** |
+
+La fila de abajo es el bug, reproducido contra el fichero de `HEAD` y ausente en el nuevo.
+
+### Lo que sigue sin hacer
+
+- **El paso 3 sigue sin tocar** (promover algún paso a bloqueante): su prerequisito es el
+  `EXC_BREAKPOINT` de SwiftData in-memory, sin resolver. Sin cambios.
+- **Por qué `systemsetup` aplicaba la zona 3 de 9 veces.** Se retira el mecanismo, no se diagnostica.
+  Si algún día hace falta fijar la zona del sistema en CI, esto sigue abierto.
+- **El paso de UI (`YalaUITests`) salió en `TEST EXECUTE FAILED`** en el único run que llegó a
+  ejecutarlo (`33794198525`, 43 fallos sobre 156 tests, 24 tests distintos). Es advisory y está
+  documentado como flaky en runner frío, así que **no distingo flaky de rojo real sin correrlo**. No
+  se ha corrido. Es lo primero que dirá el próximo run ahora que el job vuelve a llegar hasta ahí.
