@@ -155,3 +155,24 @@ una membresía propia. Habría que ratificar que es aceptable (lo es, en mi lect
 sabía que existía el grupo, porque tocó su enlace), y acotarlo a la propia fila del solicitante.
 
 migrated from YalaWiki Bugs/grupos-invitado-el-no-no-tiene-pantalla.md @ 1934e8ad
+
+---
+
+## DECISIÓN DEL OWNER · 2026-09-03 — sí al aviso de rechazo, acotado a la propia fila
+
+**Aprobado**: el pull entrega UNA vez al solicitante su propia membresía en estado `rejected`, y
+`reconcileLostMemberships` distingue rechazo de desaparición.
+
+**Sobre el oráculo, que era el reparo.** Sí es dar información que hoy no se da, pero solo sobre la
+propia fila de quien pregunta: alguien que pidió entrar a un grupo ya sabe que ese grupo existe y que
+pidió entrar. Lo que se le añade es el desenlace de su propia solicitud. **Acotarlo a su fila es parte
+de la decisión, no un detalle de implementación**: entregar el estado de OTROS sí sería un oráculo de
+verdad.
+
+**Lo que abarata la pieza:** el copy ya existe en los 16 idiomas (`groups.invite.rejected.title`,
+`groups.invite.rejected.body`, `groups.card.rejectedChip`) y el cliente ya sabe pintar el banner — el
+propio ticket corrige su tesis inicial: **no hay que escribir UI**. Y rechazar y expulsar son el mismo
+RPC, que ya llama `rejected` al resultado cuando el objetivo estaba `pendingApproval`.
+
+**Desbloquea también** la pieza 1 de `invite-link-five-causes-one-message`, que esperaba esta misma
+autorización de servidor. Las dos se hacen juntas o la segunda se queda a medias.

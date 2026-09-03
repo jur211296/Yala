@@ -34,13 +34,12 @@ aplaza es el QA manual y de device, no la verificación automática.
    `yala_push`, verificado contra la BD el 2026-09-03) y el Worker está desplegado. Un aviso anterior
    decía lo contrario por inferir «no está hecho» de «no consta en el repo» — el estado del servidor
    se comprueba contra el servidor.
-2. **`hasCompletedOnboarding`: par escritor/lector partido.** Un escritor y cuatro lectores repartidos
-   entre dos dominios. Es una decisión, no trabajo; las dos salidas están en
-   `secondary-visitor-writes-owner-domain`.
-3. **D4 · consent legacy (RGPD)**, decidido «custodiar y reponer» y sin implementar. Dos riesgos que el
-   ticket no traía: `GroupsConsentState` escribe en `.standard` a pelo (el dominio por sesión **no** lo
-   cubrió) y la reposición cae en la ventana donde un borrado mal dirigido arrasaría el `UserDefaults`
-   entero de la dueña.
+2. **Nada más.** Las cuatro decisiones que bloqueaban los `in-progress` se tomaron el 2026-09-03 y
+   están escritas en sus tickets: aviso de rechazo acotado a la propia fila (desbloquea
+   `guest-decline-has-no-screen` **y** la pieza 1 de `invite-link-five-causes-one-message`),
+   `hasCompletedOnboarding` al cajón de sesión, banner propio para los cambios pendientes de la
+   invitada, y custodiar-y-reponer el consent legacy. **Lo que queda en esos tickets es código, no
+   criterio.**
 
 ## Abiertos, por prioridad
 

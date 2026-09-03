@@ -145,3 +145,23 @@ sesión amplió (`d10adddd`) es el molde más cercano que hay hoy para ese banne
 Anotado por completitud en el ticket, confirmado por el código, **no es un defecto**. Sin cambios.
 
 migrated from YalaWiki Bugs/secundaria-salida-de-la-invitada-bloqueo-permanente-y-outbox-de-grupos.md @ 1934e8ad
+
+---
+
+## DECISIÓN DEL OWNER · 2026-09-03 — la invitada ve un aviso propio antes de salir
+
+**Aprobada la pieza 3** con la salida «banner propio»: al cerrar sesión con cambios de grupo sin
+subir, la invitada ve un aviso que le dice que los tiene y le deja **esperar o salir igualmente**.
+
+**Por qué no las otras dos.** «No avisar» es lo que pasa hoy y es pérdida de datos en silencio.
+«Bloquear la salida» no se elige por una razón de producto que el ticket ya apuntaba y conviene dejar
+escrita: la invitada está en el móvil de OTRA persona y ese móvil hay que devolverlo — un cierre que
+no se puede completar la deja atrapada, y con mala red es un final peor que perder un gasto.
+
+**Superficie**: tiene que ser nueva. La fila donde vive esa información está oculta a propósito en
+sesión de visita, así que no vale reutilizarla. El molde más cercano del repo es el banner de
+hidratación (`d10adddd`).
+
+La pieza 2 (clasificar el error de salida en vez de decir siempre «revisa tu conexión») no dependía de
+esta decisión y sigue siendo código pendiente — con el aviso del ticket: hay que mirar la tabla de
+reintentos entera, no solo las tres líneas.

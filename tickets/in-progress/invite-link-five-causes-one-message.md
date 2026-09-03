@@ -158,3 +158,17 @@ superficies (`GroupMembersView:470`+`:480` y `GroupDetailViewModel:471`+`:479`).
 `groups.invite.channelUnavailable` es el tono correcto para el canal apagado.
 
 migrated from YalaWiki Bugs/grupos-enlace-de-invitacion-cinco-causas-un-solo-mensaje.md @ 1934e8ad
+
+---
+
+## DESBLOQUEADO · 2026-09-03
+
+La pieza 1 (separar el caso «grupo borrado» de las otras cuatro causas) estaba **bloqueada por el
+servidor**: exigía que el backend distinguiera ese caso, y el no-oráculo de `join_group` era
+deliberado.
+
+**El owner autorizó ese oráculo el 2026-09-03**, acotado a la propia fila de quien pregunta. La
+decisión y su razonamiento están en `guest-decline-has-no-screen`, que es donde se planteó; las dos
+piezas comparten autorización y conviene hacerlas en la misma pasada.
+
+Las piezas 2, 3 y 4 nunca estuvieron bloqueadas: son código y siguen esperando su turno.

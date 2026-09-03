@@ -425,3 +425,46 @@ vía 7 aplicada a sí misma.
 - La segunda entrada al onboarding privado sigue **sin alert** (`ContentView.swift:678-686`).
 - Vía 6 (consent legacy) **no la cerró** el dominio por sesión: `GroupsConsentState.defaults` es
   `.standard` a pelo (`GroupsConsentState.swift:72`). Va aparte, con su propia decisión.
+
+---
+
+## DECISIONES DEL OWNER · 2026-09-03 — las dos que quedaban
+
+### 1 · `hasCompletedOnboarding` vive en el cajón de cada sesión (opción 1)
+
+**Aprobada la opción 1**: el escritor de `OnboardingView.swift:1823` baja a `SessionDefaults.current`
+y los tres lectores de `AppBootstrapper` bajan con él. Coherente con que cada persona tenga su propio
+onboarding: la visita hace el suyo sin marcar el de la dueña, y al revés.
+
+**La condición que el propio ticket puso a las dos salidas sigue en pie y no es opcional**: la key
+entra en el `watched` del escáner **en el mismo commit**. Un escritor movido sin su lector —o sin la
+red que avisa -de que se han vuelto a separar— es exactamente el estado del que se sale.
+
+Descartada la opción 2 (subir el lector de `ContentView:16` a `.standard`). Era defendible —«es una
+key del dispositivo, no de la persona»— pero deja a la visita heredando el onboarding de la dueña.
+
+### 2 · Consent legacy: custodiar y reponer
+
+**Aprobada la propuesta del ticket** (la de la vía 6, hoy sin implementar): en la frontera de entrada
+las dos keys legacy se **custodian** en un slot que `GroupsConsentDecisionLogic` no lee, y se
+**reponen** en la frontera de salida. No se borran.
+
+**Por qué no borrarlas, que era la alternativa simple**: la dueña volvería a ver una pantalla de
+permiso que ya aceptó, y como responsables del tratamiento perderíamos la prueba de ese
+consentimiento. El repo ya tiene precedente en esa dirección — el registro de consentimiento es
+append-only por diseño (C1, 2026-08-11).
+
+**Los dos riesgos que el ticket NO traía y que la implementación tiene que resolver**, medidos el
+2026-09-03 y repetidos aquí porque son la parte difícil:
+
+1. `GroupsConsentState` escribe en `.standard` **a pelo** — el dominio por sesión no lo cubrió, así
+   que custodiar «lo que resuelva la puerta» no basta.
+2. La reposición cae en la ventana donde un borrado mal dirigido **arrasaría el `UserDefaults` entero
+   de la dueña**. La destrucción del cajón va con el `sub` por parámetro explícito y ANTES de
+   `SecondarySessionStore.clear`, como ya documenta la regla de `swiftdata-cloudkit.md`.
+
+### Qué queda de este ticket
+
+Con esto **no quedan decisiones pendientes aquí**: lo que sigue abierto es código. La rama «privacidad
+total» del Welcome (`WelcomeFlowContainer.swift:289-293`) es diseño de producto y sigue sin decidirse,
+pero no bloquea a las dos de arriba.
