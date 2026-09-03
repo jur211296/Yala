@@ -2,6 +2,14 @@
 
 Automated QA scripts using [agent-device](https://github.com/callstackincubator/agent-device) for iOS simulator testing.
 
+## Tanda pendiente
+
+Los tickets de `tickets/qa/` **no se drenan de uno en uno**: se acumulan y se hacen juntos (decisión del
+owner, 2026-09-03). El guion agrupado por montaje está en **[`guion-tanda.md`](guion-tanda.md)** — hoy
+son 20 tickets en 4 montajes, y siete de ellos comparten los mismos dos teléfonos.
+
+Al mover un ticket a `qa/` o sacarlo de ahí, actualiza también ese guion.
+
 ## Prerequisites
 
 - `agent-device` v0.9+ (`npm install -g agent-device`)
