@@ -1,33 +1,30 @@
 ---
 name: decisiones-que-esperan-a-jurgen
-description: Los tickets parados de Yala no esperan código sino cinco decisiones de Jürgen; medido el 2026-09-02
+description: Las cinco decisiones que bloqueaban tickets desde agosto están CONTESTADAS (2026-09-02 noche); queda el método para la próxima tanda
 metadata:
   type: project
 ---
 
-Al 2026-09-02, la mayoría de lo parado en `tickets/in-progress/` **no espera implementación:
-espera una respuesta suya**. Llevaban desde el 6 y el 12–13 de agosto sin moverse, y
-`docs/ESTADO.md` no mencionaba ninguno.
+**Las decisiones que bloqueaban `tickets/in-progress/` desde el 6 y el 12–13 de agosto están
+contestadas: Jürgen las respondió todas la noche del 2026-09-02.** Lo que decidió vive en cada
+ticket, que es su sitio; aquí sólo queda por qué se destrabaron y qué funcionó.
 
-Las decisiones, tal como se las planteé:
+**Why:** llevaban tres semanas quietas porque nadie se las había puesto delante como decisiones.
+Un ticket que espera una respuesta y uno que espera trabajo se ven idénticos en el tablero.
 
-1. **Los ajustes de personalización que suben a la nube y no bajan** — ¿viajan de verdad entre
-   móviles, o dejamos de prometerlo? Es una decisión por ajuste. No hay nada que investigar.
-2. **¿La puerta de Grupos hereda la señal de «restauración en curso»?** Sí o no. Es lo único
-   que separa a `welcome-copy-blames-owner` de estar cerrado.
-3. **¿Puede el servidor decir «te rechazaron» o «ese grupo ya no existe»?** Rompe a propósito
-   el silencio que impide sondear grupos ajenos. Su sí desbloquea dos tickets a la vez.
-4. **¿Qué se le ofrece a quien entra en un móvil prestado y elige «empezar de cero»?** Es la
-   puerta que lleva al borrado que se lleva los grupos del dueño. No falta un guard: falta
-   saber qué se propone en su lugar.
-5. **¿Cuándo se borran las pantallas muertas del recorrido de invitado?** Ya decidió que se
-   van; falta aceptar que el barrido toca `ContentView`.
+**How to apply — lo que funcionó y conviene repetir:**
 
-**Why:** un ticket que espera una decisión y uno que espera trabajo se ven idénticos en el
-tablero, y por eso estos llevaban tres semanas quietos sin que nadie lo notara. La distinción
-no está escrita en ningún sitio del repo — se pierde en cuanto nadie la recuerda.
+- **Se destrabaron todas en una sentada** porque fueron con opciones concretas, consecuencia
+  escrita por opción, y una recomendación marcada. No en abstracto y no de una en una.
+- **Agrúpalas por lo que comparten, no por ticket.** Dos tickets distintos pedían lo mismo al
+  servidor (romper el no-oráculo de `join_group`); presentados juntos, fue una sola respuesta.
+- **La recomendación no es un trámite: se apartó de ella en 3 de 8.** Pidió arreglar los ocho
+  rojos ANTES de tocar tickets, eligió la opción cara en el móvil prestado, y mandó commitear
+  un fichero que yo proponía dejar quieto. Márcala igual —le ahorra tiempo— pero no des por
+  hecho que la toma.
+- **Verifica el bloqueo antes de citarlo.** Al medirlo, tres de los ocho «bloqueados» no
+  esperaban decisión ninguna, una de las cinco ni siquiera estaba en `in-progress`, y faltaba
+  una que nadie había listado (la custodia del consent legacy, RGPD). El `ESTADO.md` decía
+  «cinco decisiones bloquean 8 tickets»; eran cuatro y bloqueaban cinco.
 
-**How to apply:** cuando Jürgen pregunte qué hay pendiente, separa las dos pilas y pon ésta
-primero: son minutos suyos, no horas mías. Verifica antes de citarlas — un ticket puede
-haberse resuelto, y el bloqueo de `secondary-groups-off-wipes-owner` ya había **caducado**
-(decía esperar a un ticket que ya estaba hecho). Ver [[el-tablero-antes-que-el-bug]].
+Relacionado: [[el-tablero-antes-que-el-bug]] · [[jurgen-levanta-sus-reglas]]
