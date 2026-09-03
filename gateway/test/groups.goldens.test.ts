@@ -655,6 +655,52 @@ describe("G3 goldens · /groups/rpc/* contra staging real", () => {
     expect(expRow?.note).toBe("post-approve");
     expect(Number(expRow?.amount)).toBe(25);
   }, 120_000);
+
+  // g13_02 · A QUIEN RECHAZAN SE LE DICE. Hasta la policy `group_members_select_own_rejected`, la fila
+  // de B pasaba a `rejected`, salía del filtro del pull y el cliente leía esa AUSENCIA como «el grupo
+  // desapareció»: lo borraba sin una palabra, y a B le parecía que la app se había roto.
+  //
+  // Este golden prueba las DOS mitades, y la segunda es la que importa de verdad: que B vea SU fila y
+  // NO la de A. Ampliar `is_group_member` habría hecho pasar la primera aserción y fallar la segunda —
+  // le habría dado a B la lista completa de miembros de un grupo al que no le dejaron entrar.
+  it("3-ter. rechazo visible: A rechaza a B; el pull de B trae SU fila 'rejected' y NINGUNA otra (g13_02)", async () => {
+    const gid = freshGid();
+    const cg = await rpcGw(jwtA, "create_group", {
+      p_group_id: gid, p_name: "G13-02 rechazo", p_currency_code: "PEN", p_icon_name: "star",
+      p_color_hex: "#445566", p_display_name: "Alice", p_default_split_type: "equal",
+    });
+    expect(cg.status).toBe(200);
+
+    const inv = await rpcGw(jwtA, "create_group_invite", { p_group_id: gid, p_ttl_seconds: 3600, p_max_uses: null });
+    expect(inv.status).toBe(200);
+    const joined = await rpcGw(jwtB, "join_group", { p_token: inv.body as string, p_display_name: "Bob", p_legacy_member_key: null });
+    expect(joined.status).toBe(200);
+    expect(joined.body.status).toBe("pendingApproval");
+    const memberKeyB = joined.body.member_key as string;
+
+    // Control previo: en la sala de espera B ya ve el grupo. Sin esto, un pull vacío por cualquier otra
+    // razón haría pasar las aserciones de abajo por el motivo equivocado.
+    const before = await pull(jwtB, {});
+    expect(before.memberships).toContain(gid);
+
+    // A rechaza. `remove_member` deja 'rejected' porque el objetivo estaba pendingApproval.
+    const rm = await rpcGw(jwtA, "remove_member", { p_group_id: gid, p_member_key: memberKeyB });
+    expect(rm.status).toBe(200);
+    expect(rm.body.status).toBe("rejected");
+
+    const after = await pull(jwtB, {});
+
+    // MITAD 1: el grupo sigue en la lista (no se esfuma) y B recibe su propia fila con el estado.
+    expect(after.memberships).toContain(gid);
+    const rows = after.deltas.filter((d) => d.group_id === gid && d.entity_type === "group_members");
+    const meB = rows.find((d) => d.sync_id === memberKeyB);
+    expect(meB?.fields.status).toBe("rejected");
+
+    // MITAD 2, la decisión de seguridad: B ve SU fila y ninguna más. La policy está acotada por
+    // `user_id` propio, así que la fila de A (owner, 'active') tiene que seguir invisible para B.
+    expect(rows.length).toBe(1);
+    expect(rows.every((d) => d.sync_id === memberKeyB)).toBe(true);
+  }, 120_000);
 });
 
 // ============================================================================

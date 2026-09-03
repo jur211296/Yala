@@ -244,3 +244,25 @@ sigue invisible para él (su policy también cuelga de `is_group_member`), así 
 `SplitMember` huérfano y ningún banner. En el flujo real no ocurre —el grupo ya está en el teléfono
 desde la sala de espera—, y ampliar `split_groups_select` sería dar nombre, icono y color del grupo:
 otra decisión.
+
+### VERIFICADO DE PUNTA A PUNTA · 2026-09-03 (staging)
+
+`g13_02` **aplicada a staging** (`yala-modo-nube-staging`) y sus tres comprobaciones pasan: la policy
+existe con las DOS condiciones (`user_id` propio Y `status = 'rejected'`), `is_group_member` sigue
+intacto —que es lo que mantiene cerrado el oráculo— y `authenticated` conserva solo `SELECT`.
+
+Golden nuevo `3-ter` en `gateway/test/groups.goldens.test.ts`, corrido contra staging real: A crea el
+grupo, B se une (queda pendiente), **control previo** de que B ya ve el grupo, A lo rechaza, y el pull
+de B trae:
+
+- el grupo **todavía en `memberships`** — deja de esfumarse;
+- **su** fila con `status = 'rejected'` — el dato que enciende el banner;
+- y **exactamente UNA fila**, la suya. Ésta es la aserción que prueba la decisión de seguridad: si
+  alguien «arreglara» esto ampliando `is_group_member`, la primera mitad seguiría pasando y **ésta
+  fallaría**, porque B vería también la fila de A.
+
+Batería del gateway: **322 pasan** (321 + este golden), 1 rojo preexistente con ticket propio.
+
+**Falta producción**, y hoy no puedo aplicarla: el acceso de Supabase pasó a la organización de
+staging, así que el proyecto de producción ya no es visible desde aquí. El fichero y su bloque de
+verificación están listos para aplicarse tal cual.
