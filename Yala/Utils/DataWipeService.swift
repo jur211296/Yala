@@ -19,6 +19,17 @@ enum WipeSeamError: Error {
 }
 #endif
 
+/// Error del cinturón fail-closed de `wipeLocalGroupsDomain` (`secondary-groups-off-wipes-owner`).
+///
+/// **Vive FUERA del `#if DEBUG` a propósito.** `WipeSeamError`, justo arriba, solo existe en Debug
+/// porque su razón de ser es el seam de UITest; reutilizarlo aquí habría dejado el guard sin error
+/// precisamente en el build donde el borrado es real.
+enum GroupsWipeGuardError: Error {
+    /// Hay sesión secundaria activa pero ESTE proceso no montó el store secundario ⇒ el archivo de
+    /// grupos que está montado es el del DUEÑO, y no se borra.
+    case mountedStoreBelongsToOwner
+}
+
 // Clase de utilidad para operaciones de borrado masivo de datos de usuario.
 // Marcada como @MainActor porque ModelContext debe usarse desde el hilo principal.
 @MainActor
@@ -297,6 +308,33 @@ final class DataWipeService {
         // alert de fallo debe salir venga el throw de la que venga.
         if UITestHooks.shouldFailWipeNow { throw WipeSeamError.forcedByUITestHook }
         #endif
+
+        // CINTURÓN FAIL-CLOSED (`secondary-groups-off-wipes-owner`), y va ANTES del primer `delete`.
+        //
+        // `GroupsStoreDecision` ya evita que la visita monte el archivo del dueño, así que esto es la
+        // segunda capa — y la merece: el borrado de abajo es IRREVERSIBLE (este store va con
+        // `cloudKitDatabase: .none`; no hay mirror que lo reponga) y el precio de la capa son cuatro
+        // líneas.
+        //
+        // La pregunta es «¿el archivo que voy a borrar es el de ESTA sesión?», así que el testigo tiene
+        // que ser el del mount de GRUPOS. **No sirve `secondaryStoreMounted`**, que se deriva del mount
+        // PERSONAL: en una secundaria ya relanzada vale `true` diga lo que diga la decisión de grupos,
+        // y con él este guard se apagaba justo en el recorrido más común del bug —la visita, ya
+        // operativa, tocando «Vaciar mis datos»— además de ser ciego a una reversión de
+        // `GroupsStoreDecision`. Lo cazó la review adversarial de este mismo cambio.
+        //
+        // Cubre entonces los dos casos: la VENTANA DE ENTRADA (el descriptor ya dice «secundaria» pero
+        // el proceso vivo arrancó antes y montó el del dueño) y la visita operativa cuyo mount, por lo
+        // que sea, apunte al archivo del dueño.
+        //
+        // Lanzar es la respuesta correcta, no una salida silenciosa: los dos call-sites de «Empiezo de
+        // cero» (`ShellDataAlertsModifier`) ya envuelven esta llamada en un `do/catch` que muestra el
+        // alert de fallo y NO navega al onboarding, así que el usuario acaba en el Chooser con sus
+        // datos intactos. Un `return` mudo, en cambio, le diría que borró cuando no borró.
+        if SecondarySessionStore.isActive(defaults),
+           SwiftDataConfiguration.groupsStoreMounted != .secondary {
+            throw GroupsWipeGuardError.mountedStoreBelongsToOwner
+        }
 
         // Los 5 `Split*` se vinculan por IDs planos (`groupZoneID`/`expenseID`/`memberID`), NO por
         // `@Relationship` ⇒ sin orden de dependencias que respetar y sin cascadas que disparar.

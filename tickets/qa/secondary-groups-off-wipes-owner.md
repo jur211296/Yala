@@ -1,8 +1,8 @@
 ---
 id: secondary-groups-off-wipes-owner
-status: in-progress
+status: qa
 created: 2026-08-13
-updated: 2026-08-26
+updated: 2026-09-03
 source: YalaWiki/Bugs/secundaria-canal-apagado-la-visita-borra-los-grupos-del-dueno.md
 ---
 
@@ -163,3 +163,63 @@ arrastran.
 - [[qa_welcome-empiezo-de-cero-borra-antes-de-preguntar-y-falla-mudo]] — el mismo alert, otro humano
 
 migrated from YalaWiki Bugs/secundaria-canal-apagado-la-visita-borra-los-grupos-del-dueno.md @ 1934e8ad
+
+---
+
+## Implementado — 2026-09-03
+
+Las dos piezas que el owner eligió («mount + cinturón»), y no lo ya mezclado: se corta la causa y los
+datos que hoy estén cruzados se quedan como están (decisión del owner del 2026-09-03; con
+`SECONDARY_SESSION` al 0 % el parque afectado es prácticamente vacío, y una migración sobre datos
+ambiguos es el mismo acto que causó el bug).
+
+### Pieza 1 · el mount
+
+`GroupsStoreDecision.decide` deja de recibir `flagOn`: la sesión secundaria es el único eje. **El flag
+se quitó como PARÁMETRO, no solo de la condición** — mientras pudiera pasarse, volver a ANDearlo era
+un `&&` de distancia. `groupsConfiguration` registra además lo que montó en el testigo nuevo.
+
+Corrección a la coordenada del ticket: la definición está en `Yala/Utils/SwiftDataConfiguration.swift`
+(carpeta `Utils/`, no `Services/`); la línea 458 sí era correcta.
+
+### Pieza 2 · el cinturón, y el testigo que hubo que crear
+
+`wipeLocalGroupsDomain` se niega a borrar si hay sesión secundaria activa y el archivo de grupos
+montado no es el de esa sesión. Lanza `GroupsWipeGuardError.mountedStoreBelongsToOwner`, un error
+**fuera de `#if DEBUG`**: `WipeSeamError` solo existe en Debug y reutilizarlo habría dejado el guard
+sin error justo en el build donde el borrado es real.
+
+**La primera versión de esta pieza estaba mal y la cazó la review adversarial de este mismo cambio.**
+Se apoyaba en `secondaryStoreMounted`, que se deriva del mount **PERSONAL**: en una secundaria ya
+relanzada vale `true`, así que el guard se apagaba **justo en la vía dominante de este ticket** —la
+visita, ya operativa, tocando «Vaciar mis datos»— y solo cubría la ventana de entrada. Peor: su
+comentario afirmaba cubrir «una futura reversión de la decisión de mount», que era falso. Ahora hay un
+testigo propio del mount de grupos (`SwiftDataConfiguration.groupsStoreMounted`), que se **reescribe en
+cada evaluación** en vez de capturarse una vez — `PersonalContainerSwap` re-evalúa `groupsConfiguration`
+con el proceso vivo, y un one-shot se habría quedado con el valor del arranque: la misma mentira que
+`reopenPersonalStoreMountedDecisionCaptureForSwap` tuvo que ir a arreglar para el personal.
+
+### Verificación
+
+- Build `SUCCEEDED` en `Yala` y `Yala Dev`. Suite unitaria completa: **5973 tests en 593 suites**,
+  verde (antes del cambio: 5970 — el delta es exactamente los 3 tests nuevos).
+- **Mutación, que es lo que dice si los tests sirven.** Las tres dan rojo:
+
+  | Mutación | La caza |
+  |---|---|
+  | Reintroducir el `if groupsBackendEnabled` alrededor del switch del mount | `groupsConfiguration_asksOnlyTheSession` |
+  | Que el mount deje de escribir el testigo | `groupsConfiguration_recordsWhatItMounted` |
+  | Quitar el cinturón entero | `wipeLocalGroupsDomain_refusesAndKeepsRows_…` |
+
+- El primero cierra el hueco que la review levantó: la tabla pura de `decide` puede quedarse verde
+  para siempre porque la rama de producción de `groupsConfiguration` es **inalcanzable desde unit
+  tests** (corta en `isRunningTests`). El source-scan del cableado es la única red, y el molde ya
+  existía en `NeutralMountWiringTests`.
+- Las tres celdas del cinturón tienen test: se niega con el archivo del dueño montado; **sí** borra con
+  el de la visita montado (sin esto, un guard que se negara siempre pasaría los otros y rompería
+  «Empiezo de cero» para toda visita); y sigue borrando cuando no hay sesión secundaria.
+
+### Lo que queda
+
+Device-QA con la receta de repro del propio ticket. **No** se ha verificado en un teléfono, y el
+recorrido está DARK en producción (`SECONDARY_SESSION_ROLLOUT_PERCENT = 0`): se abre por kill-switch.

@@ -413,6 +413,90 @@ struct HandoverGroupsDomainTests {
         let cursors = try context.fetch(FetchDescriptor<GroupSyncCursor>())
         #expect(cursors.first?.groupCursorsJSON == "{\"g1\":5}")
     }
+
+    // MARK: - Cinturón fail-closed: la visita no borra el archivo del dueño
+
+    /// `secondary-groups-off-wipes-owner`. El mount ya evita que la visita monte el archivo del dueño,
+    /// pero queda la VENTANA DE ENTRADA: el descriptor ya dice «secundaria» y el proceso vivo arrancó
+    /// antes, con el store del DUEÑO montado. Lo arbitra `groupsStoreMounted`, el testigo del mount de
+    /// GRUPOS, cuyo default `.primary` es el valor conservador. Si «Empiezo de cero» corre en esa
+    /// ventana, borra los grupos del dueño sin vuelta atrás — este store va con `cloudKitDatabase: .none`.
+    ///
+    /// Aislamiento: la sesión secundaria se activa en un dominio de preferencias PROPIO y ese mismo
+    /// dominio se le pasa al wipe. Ningún seam global (`_testSetActiveOverride`,
+    /// `_testSetSecondaryStoreMounted`) hace falta, así que este test no puede filtrarse a las suites
+    /// que se interleavan con esta — la lección de la cabecera de este archivo.
+    @Test func wipeLocalGroupsDomain_refusesAndKeepsRows_whenSecondaryActiveButOwnerStoreMounted() throws {
+        let context = try makeTestContext()
+        try seedGroupsDomain(in: context)
+
+        let defaults = makeIsolatedDefaults()
+        SecondarySessionStore.activate(userID: "visitante-uid", defaults)
+        // `secondaryStoreMounted` es `false` por defecto en el host de tests = exactamente la ventana
+        // de entrada que se quiere pinear. No se toca.
+
+        // `do/catch` y no `#expect(throws:)`: el macro expande su closure en un contexto NONISOLATED,
+        // y `wipeLocalGroupsDomain` es `@MainActor` ⇒ no compila desde esta suite (que sí lo es).
+        var thrown: Error?
+        do {
+            try DataWipeService.wipeLocalGroupsDomain(
+                in: context, defaults: defaults, resetSyncState: {})
+        } catch {
+            thrown = error
+        }
+        guard case .some(GroupsWipeGuardError.mountedStoreBelongsToOwner) = thrown else {
+            Issue.record("Esperaba el cinturón fail-closed; llegó: \(String(describing: thrown))")
+            return
+        }
+
+        // Lo que de verdad importa no es el throw, sino que las filas SIGAN ahí: un guard que lanzara
+        // después de borrar dejaría este test en verde y al dueño sin grupos.
+        #expect(try context.fetchCount(FetchDescriptor<SplitGroup>()) == 1)
+        #expect(try context.fetchCount(FetchDescriptor<SplitMember>()) == 1)
+        #expect(try context.fetchCount(FetchDescriptor<SplitExpense>()) == 1)
+        #expect(try context.fetchCount(FetchDescriptor<SplitShare>()) == 1)
+        #expect(try context.fetchCount(FetchDescriptor<SplitSettlement>()) == 1)
+        #expect(try context.fetchCount(FetchDescriptor<GroupBridgePreference>()) == 1)
+    }
+
+    /// La otra celda del cinturón, y la que impide que el guard sea un candado permanente: la visita
+    /// YA relanzada, operativa sobre SU propio `YalaGroups-Secondary`, tiene todo el derecho a vaciar
+    /// sus datos. Sin este test, un guard que se negara siempre que hay sesión secundaria pasaría los
+    /// otros dos y rompería «Empiezo de cero» para toda visita.
+    ///
+    /// Este es además el recorrido DOMINANTE del ticket (la visita tocando «Vaciar mis datos» en su
+    /// sesión), y es justo el que la primera versión del cinturón no distinguía: se apoyaba en
+    /// `secondaryStoreMounted` —testigo del mount PERSONAL, `true` en toda secundaria relanzada— así
+    /// que no discriminaba entre este caso y el de arriba. Lo cazó la review adversarial.
+    @Test func wipeLocalGroupsDomain_wipes_whenSecondaryIsOperatingOnItsOwnStore() throws {
+        let context = try makeTestContext()
+        try seedGroupsDomain(in: context)
+
+        let defaults = makeIsolatedDefaults()
+        SecondarySessionStore.activate(userID: "visitante-uid", defaults)
+        SwiftDataConfiguration._testSetGroupsStoreMounted(.secondary)
+        defer { SwiftDataConfiguration._testSetGroupsStoreMounted(.primary) }
+
+        try DataWipeService.wipeLocalGroupsDomain(
+            in: context, defaults: defaults, resetSyncState: {})
+
+        #expect(try context.fetchCount(FetchDescriptor<SplitGroup>()) == 0)
+        #expect(try context.fetchCount(FetchDescriptor<GroupBridgePreference>()) == 0)
+    }
+
+    /// Control positivo, y no es decorativo: sin él, un guard demasiado agresivo —que se negara SIEMPRE—
+    /// dejaría el test de arriba en verde y rompería «Empiezo de cero» para todo el mundo. Sin sesión
+    /// secundaria en el dominio, el wipe debe borrar como siempre.
+    @Test func wipeLocalGroupsDomain_stillWipes_whenNoSecondarySession() throws {
+        let context = try makeTestContext()
+        try seedGroupsDomain(in: context)
+
+        try DataWipeService.wipeLocalGroupsDomain(
+            in: context, defaults: makeIsolatedDefaults(), resetSyncState: {})
+
+        #expect(try context.fetchCount(FetchDescriptor<SplitGroup>()) == 0)
+        #expect(try context.fetchCount(FetchDescriptor<GroupBridgePreference>()) == 0)
+    }
 }
 
 /// Cableado de producción (source-scan). El pipeline completo del bridge está en la Lista Negra R8

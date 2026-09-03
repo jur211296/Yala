@@ -442,21 +442,32 @@ extension SwiftDataConfiguration {
 
     // MARK: - Groups store mount decision (M1 / D8 — G5-C)
 
-    /// Decisión PURA de qué store de GRUPOS montar. Simetría con `PersonalStoreDecision`, pero BINARIA:
-    /// el store de grupos es SECUNDARIO solo cuando el canal grupos→backend está encendido (`flagOn`) Y hay
-    /// sesión secundaria activa. Con el flag OFF (TODO device de producción esta fase) es SIEMPRE `.primary`
-    /// — el store del dueño (`YalaGroups`), byte-idéntico a hoy: en secundaria+flag OFF el tab de Grupos
-    /// está filtrado y el canal backend NO corre (`AppBootstrapper`/`GroupsSyncClient` lo gatean), así que
-    /// el archivo del dueño queda inerte (nunca se lee ni se escribe). Con flag ON la invitada monta SU
-    /// propio `YalaGroups-Secondary` y el canal backend corre bajo su sesión (mueren M1-2/M1-3 por
-    /// construcción). Espeja `syncMetaConfiguration` pero ANDeado por el flag (el sync-meta secundario es
-    /// obligatorio SIEMPRE; el store de grupos solo cuando el canal backend participa).
+    /// Decisión PURA de qué store de GRUPOS montar. Simetría con `PersonalStoreDecision`, y BINARIA:
+    /// el store de grupos es SECUNDARIO **siempre que haya sesión secundaria activa**, esté encendido o
+    /// no el canal grupos→backend. Espeja `syncMetaConfiguration`, que también es obligatorio siempre.
+    ///
+    /// **Hasta el 2026-09-03 esto iba ANDeado con el flag del canal, y ahí vivía el bug**
+    /// (`secondary-groups-off-wipes-owner`): con el canal APAGADO la visita montaba `YalaGroups` —el
+    /// archivo del DUEÑO— bajo su propia sesión. La premisa que lo justificaba era que ese archivo
+    /// «queda inerte porque el tab está filtrado y el canal no corre», y **es falsa en un camino que sí
+    /// corre con el canal apagado**: «Empiezo de cero» llama a `DataWipeService.wipeLocalGroupsDomain`,
+    /// que borra las filas del store MONTADO — o sea, los grupos del dueño. Sin vuelta atrás: este store
+    /// va con `cloudKitDatabase: .none`, así que no hay mirror que los reponga y reinstalar era la única
+    /// recuperación.
+    ///
+    /// Ahora la invitada monta SIEMPRE su propio `YalaGroups-Secondary`. Con el canal apagado ese archivo
+    /// nace VACÍO y así se queda —sin canal no hay de dónde bajar sus grupos—, que es exactamente lo
+    /// correcto: ver vacío es preferible a ver, y poder borrar, los del dueño. El flag del canal deja de
+    /// participar en la decisión de MOUNT; sigue gateando quién SINCRONIZA
+    /// (`AppBootstrapper`/`GroupsSyncClient`), que es un eje distinto y no se toca aquí.
     enum GroupsStoreDecision: Equatable {
         case primary
         case secondary
 
-        static func decide(flagOn: Bool, secondaryActive: Bool) -> GroupsStoreDecision {
-            (flagOn && secondaryActive) ? .secondary : .primary
+        /// El flag del canal NO es parámetro a propósito: mientras lo fue, ANDearlo era el bug. Un
+        /// parámetro que no puede cambiar el resultado solo invita a volver a meterlo en la condición.
+        static func decide(secondaryActive: Bool) -> GroupsStoreDecision {
+            secondaryActive ? .secondary : .primary
         }
     }
 
@@ -493,6 +504,36 @@ extension SwiftDataConfiguration {
     /// bajo `@Suite(.serialized)` (molde `SecondarySessionStore._testSetActiveOverride`).
     static func _testSetSecondaryStoreMounted(_ value: Bool) {
         secondaryStoreMounted = value
+    }
+
+    /// Testigo del mount de GRUPOS: qué archivo montó la ÚLTIMA evaluación de `groupsConfiguration`
+    /// en este proceso. Lo consume el cinturón fail-closed de `DataWipeService.wipeLocalGroupsDomain`,
+    /// que necesita responder «¿el archivo de grupos que voy a borrar es el de esta sesión?».
+    ///
+    /// **Hace falta uno propio: `secondaryStoreMounted` NO sirve para esto.** Aquel se deriva del mount
+    /// PERSONAL (`capturePersonalStoreMountedDecisionOnce`), así que en una sesión secundaria ya
+    /// relanzada vale `true` diga lo que diga la decisión de GRUPOS — un guard apoyado en él se apaga
+    /// justo en el recorrido más común del bug (la visita, ya operativa, toca «Vaciar mis datos»), y
+    /// sería ciego a cualquier reversión de `GroupsStoreDecision`. La primera versión de este fix se
+    /// apoyaba en él y prometía en un comentario una cobertura que no daba.
+    ///
+    /// **Se reescribe en CADA evaluación, no una sola vez**, al revés que su hermano personal. El swap
+    /// de persona vuelve a evaluar `groupsConfiguration` con el proceso vivo
+    /// (`PersonalContainerSwap.swift:87`), y un testigo one-shot se quedaría con el valor del arranque:
+    /// exactamente la mentira que `reopenPersonalStoreMountedDecisionCaptureForSwap` tuvo que ir a
+    /// arreglar para el personal. Reescribir es más simple que re-abrir y no puede desincronizarse.
+    ///
+    /// Default `.primary` = el valor CONSERVADOR: es el que hace que el cinturón se niegue a borrar si
+    /// nadie evaluó el mount todavía. Los paths de test y UITest cortan antes de la rama de producción
+    /// y por eso no lo tocan.
+    nonisolated(unsafe) static private(set) var groupsStoreMounted: GroupsStoreDecision = .primary
+
+    /// Solo tests: fuerza el testigo del mount de GRUPOS. El host de tests nunca llega a la rama de
+    /// producción de `groupsConfiguration` (corta en `isRunningTests`), así que sin este seam la celda
+    /// «visita operativa sobre SU propio archivo» —la que debe SÍ dejar borrar— no es alcanzable.
+    /// Restaurar en `defer` bajo `@Suite(.serialized)`.
+    static func _testSetGroupsStoreMounted(_ value: GroupsStoreDecision) {
+        groupsStoreMounted = value
     }
 
     /// Solo tests: fuerza el testigo del mount PERSONAL. El host de tests nunca evalúa la rama de
@@ -1170,13 +1211,19 @@ extension SwiftDataConfiguration {
         // Grupos sincroniza SOLO vía CKSyncEngine en `iCloud.com.jurgenschmidt.yala.groups`
         // (ver Services/Groups/). Espeja la decisión de las ramas de test/UITest de arriba.
         //
-        // M1 / D8 (G5-C): en sesión secundaria + canal grupos→backend ENCENDIDO, la invitada monta su
-        // propio archivo `YalaGroups-Secondary` (los grupos de SU cuenta bajan del backend bajo su
-        // sesión). Lectura DIRECTA de `SecondarySessionStore.isActive()` (NO `capturePersonalStore...`:
-        // ese testigo lo captura SOLO el mount personal). Con flag OFF → `.primary` = byte-idéntico.
-        switch GroupsStoreDecision.decide(
-            flagOn: CloudSyncFlags.groupsBackendEnabled,
-            secondaryActive: SecondarySessionStore.isActive()) {
+        // M1 / D8 (G5-C): en sesión secundaria la invitada monta su propio archivo
+        // `YalaGroups-Secondary`, con el canal encendido o apagado. Lectura DIRECTA de
+        // `SecondarySessionStore.isActive()` (NO `capturePersonalStore...`: ese testigo lo captura SOLO
+        // el mount personal). El porqué de que el flag ya no participe está en el docblock de
+        // `GroupsStoreDecision`: mientras participó, la visita montaba el archivo del DUEÑO y podía
+        // borrarlo desde «Empiezo de cero».
+        let decision = GroupsStoreDecision.decide(
+            secondaryActive: SecondarySessionStore.isActive())
+        // El testigo se escribe AQUÍ y no en el `case`: así no hay forma de añadir una rama nueva y
+        // olvidarlo. Lo lee el cinturón de `wipeLocalGroupsDomain` para saber si el archivo que va a
+        // borrar es el de esta sesión.
+        groupsStoreMounted = decision
+        switch decision {
         case .secondary:
             return ModelConfiguration(secondaryGroupsDatabaseName, schema: groupsSchema, cloudKitDatabase: .none)
         case .primary:

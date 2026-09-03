@@ -104,7 +104,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | savings-tracking | backlog | tickets/backlog/savings-tracking.md |
 | scheduled-payment-once-labeled-monthly | backlog | tickets/backlog/scheduled-payment-once-labeled-monthly.md |
 | scheduled-payments-notif-dedup | qa | tickets/qa/scheduled-payments-notif-dedup.md |
-| secondary-groups-off-wipes-owner | in-progress | tickets/in-progress/secondary-groups-off-wipes-owner.md |
+| secondary-groups-off-wipes-owner | qa | tickets/qa/secondary-groups-off-wipes-owner.md |
 | secondary-guest-exit-lock-and-outbox | in-progress | tickets/in-progress/secondary-guest-exit-lock-and-outbox.md |
 | secondary-visitor-writes-owner-domain | in-progress | tickets/in-progress/secondary-visitor-writes-owner-domain.md |
 | siri-intent-dual-container | qa | tickets/qa/siri-intent-dual-container.md |
@@ -126,7 +126,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | yala-android | backlog | tickets/backlog/yala-android.md |
 | zone-decisions-still-per-row | backlog | tickets/backlog/zone-decisions-still-per-row.md |
 
-Counts by folder: backlog 48 · in-progress 8 · qa 17 · blocked 2 · done 13 · discarded 5 = 93.
+Counts by folder: backlog 48 · in-progress 7 · qa 18 · blocked 2 · done 13 · discarded 5 = 93.
 
 Frank 2026-09-02 (altas): dos hallazgos del QA de hoy entran en `backlog/`, para que no se pierdan
 al cerrar la sesion.

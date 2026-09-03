@@ -173,17 +173,14 @@ struct StorageModePersistenceTests {
 
     // MARK: - GroupsStoreDecision (M1 / D8 — G5-C, tabla flag × secundaria)
 
-    @Test func groupsDecision_secondaryOnlyWhenFlagOnAndSecondaryActive() {
-        // Único caso `.secondary`: flag ON Y sesión secundaria activa.
-        #expect(SwiftDataConfiguration.GroupsStoreDecision.decide(
-            flagOn: true, secondaryActive: true) == .secondary)
-        // Los otros 3 casos → `.primary` (byte-idéntico a hoy; flag OFF = TODO device prod).
-        #expect(SwiftDataConfiguration.GroupsStoreDecision.decide(
-            flagOn: false, secondaryActive: true) == .primary)
-        #expect(SwiftDataConfiguration.GroupsStoreDecision.decide(
-            flagOn: true, secondaryActive: false) == .primary)
-        #expect(SwiftDataConfiguration.GroupsStoreDecision.decide(
-            flagOn: false, secondaryActive: false) == .primary)
+    @Test func groupsDecision_secondaryWheneverSecondarySessionIsActive() {
+        // La sesión secundaria es el ÚNICO eje. El caso que este test protege es el que ANTES devolvía
+        // `.primary`: canal grupos→backend APAGADO + visita activa. Con `flagOn` en la condición, ahí la
+        // visita montaba el archivo del DUEÑO y «Empiezo de cero» se lo borraba sin vuelta atrás
+        // (`secondary-groups-off-wipes-owner`). Ese caso ya no es ni expresable: el flag dejó de ser
+        // parámetro, que es la forma fuerte de impedir que vuelva a la condición.
+        #expect(SwiftDataConfiguration.GroupsStoreDecision.decide(secondaryActive: true) == .secondary)
+        #expect(SwiftDataConfiguration.GroupsStoreDecision.decide(secondaryActive: false) == .primary)
     }
 
     @Test func secondaryGroupsStoreName_derivesFromGroupsName() {

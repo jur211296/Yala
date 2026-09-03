@@ -345,6 +345,55 @@ struct NeutralMountWiringTests {
             """)
     }
 
+    // MARK: - Cableado del mount de GRUPOS (`secondary-groups-off-wipes-owner`)
+
+    /// La lógica pura de `GroupsStoreDecision` tiene su tabla en `StorageModePersistenceTests`, y esa
+    /// tabla puede quedarse verde para siempre **mientras nadie la invoca bien** — el mismo agujero que
+    /// justifica esta suite entera. La rama de producción de `groupsConfiguration` es INALCANZABLE
+    /// desde unit tests (corta antes en `isRunningTests`), así que el source-scan es la única red.
+    ///
+    /// La mutación concreta que esto cierra, y que dejaba los ~5970 tests en verde: envolver el switch
+    /// en `if CloudSyncFlags.groupsBackendEnabled { … } else { return ModelConfiguration(groupsDatabaseName, …) }`.
+    /// Reintroduce el bug ENTERO sin tocar la firma de `decide`: la visita vuelve a montar el archivo
+    /// del DUEÑO y «Empiezo de cero» se lo borra sin vuelta atrás (este store va con
+    /// `cloudKitDatabase: .none`; no hay mirror que lo reponga).
+    @Test("El mount de grupos pregunta por la SESIÓN, y por nada más")
+    func groupsConfiguration_asksOnlyTheSession() throws {
+        let src = try Self.source("Yala/Utils/SwiftDataConfiguration.swift")
+        let config = try Self.body(of: "static var groupsConfiguration: ModelConfiguration {", in: src)
+
+        #expect(config.contains("GroupsStoreDecision.decide("), """
+            El mount tiene que delegar en la decisión pura, no reimplementarla aquí.
+            """)
+        #expect(config.contains("secondaryActive: SecondarySessionStore.isActive()"), """
+            La decisión tiene que recibir el predicado REAL de sesión secundaria.
+            """)
+        #expect(!config.contains("groupsBackendEnabled"), """
+            El flag del canal NO puede volver a decidir QUÉ archivo se monta: mientras lo hizo, la visita
+            montaba `YalaGroups` (el del dueño) con el canal apagado y «Empiezo de cero» se lo llevaba por
+            delante. El flag gatea quién SINCRONIZA, que es otro eje.
+            """)
+    }
+
+    /// El cinturón fail-closed de `wipeLocalGroupsDomain` lee `groupsStoreMounted` para saber si el
+    /// archivo montado es el de esta sesión. Si el mount deja de escribirlo, el testigo se queda en su
+    /// default `.primary` y el guard pasa a negarse SIEMPRE con sesión secundaria activa: la visita no
+    /// podría completar «Empiezo de cero» nunca. Es el fallo opuesto y también rompe a un usuario.
+    @Test("El mount de grupos deja constancia de lo que montó")
+    func groupsConfiguration_recordsWhatItMounted() throws {
+        let src = try Self.source("Yala/Utils/SwiftDataConfiguration.swift")
+        let config = try Self.body(of: "static var groupsConfiguration: ModelConfiguration {", in: src)
+
+        #expect(config.contains("groupsStoreMounted = decision"), """
+            Sin el testigo, el cinturón de `DataWipeService.wipeLocalGroupsDomain` se queda ciego.
+            """)
+        let decide = try #require(config.range(of: "GroupsStoreDecision.decide("))
+        let witness = try #require(config.range(of: "groupsStoreMounted = decision"))
+        #expect(decide.lowerBound < witness.lowerBound, """
+            Decidir va antes de registrar: al revés se registraría una decisión que no es la que se montó.
+            """)
+    }
+
     @Test("R2 (a): el predicado se evalúa ANTES de capturar el testigo de mount")
     func predicateIsEvaluatedBeforeCapturingTheWitness() throws {
         // El testigo se captura UNA vez por proceso. Si la captura ocurriera antes de decidir, registraría
