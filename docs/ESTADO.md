@@ -22,7 +22,11 @@ enlace, la app no le reconocía hasta reiniciarla.
 
 ## Abiertos, por prioridad
 
-- **`group-joiner-flag-consumers-still-narrow`** (nuevo, high) — el recién llegado ya se ve
+- **`panel-defaults-four-sections-four-widgets`** (nuevo, high) — **el siguiente**, por encargo del
+  owner del 2026-09-04. El Panel de un usuario nuevo pasa de 7 secciones y 9 widgets a 4 y 4.
+  Investigado y con las cuatro decisiones tomadas; el riesgo a resolver es el parpadeo de hasta 15 s
+  al arrancar con iCloud, en que el Panel se pinta entero antes de encogerse. Sin código escrito.
+- **`group-joiner-flag-consumers-still-narrow`** (high) — el recién llegado ya se ve
   reconocido, pero su gasto no llega a su cuenta personal hasta un arranque posterior, y aterriza en
   la cuenta «Grupos» en vez de la real. Trece consumidores del flag siguen estrechos. El ticket trae
   la vía fácil y por qué es peligrosa.
@@ -39,8 +43,8 @@ sigue sin `ok_`. **Cero `ok_` inventado.**
 
 ## Board
 
-96 tickets · backlog 49 · in-progress 7 · qa 20 · blocked 2 · done 13 · discarded 5. Índice cuadrado
-(96 filas = 96 ficheros). `qa` significa «esperando la tanda», no «cerrado».
+97 tickets · backlog 50 · in-progress 7 · qa 20 · blocked 2 · done 13 · discarded 5. Índice cuadrado
+(97 filas = 97 ficheros). `qa` significa «esperando la tanda», no «cerrado».
 
 **Lo que cambió en la red, y conviene saberlo:** el gate corría los XCUITest «de las áreas tocadas»
 y 30 de las 59 áreas no cubrían el código del que dependen — por eso dio verde sobre el rediseño del
