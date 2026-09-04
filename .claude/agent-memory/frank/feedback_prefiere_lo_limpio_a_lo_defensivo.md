@@ -31,3 +31,25 @@ ata si la medición de hoy lo desmiente.** Lo que descarta es el apaño que conv
   consideres»). La medición es lo que compra la autonomía, no la insistencia.
 
 Relacionado: [[jurgen-levanta-sus-reglas]] · [[el-tablero-antes-que-el-bug]] · [[mis-mediciones-fallan-por-el-filtro]]
+
+**Tercer caso el mismo día, y ya no es una preferencia de mecanismo: es de ALCANCE.** El
+2026-09-04, con el fix de identidad de miembro en Grupos, le ofrecí cuatro opciones y recomendé la
+mínima —un getter aparte que alimentara solo los dos banners de estado, sin tocar un permiso—.
+Eligió **«los cinco resolvedores»**: alinear también los gates de escritura del servicio, que es el
+camino donde un bug sale más caro. Antes, ese mismo día, había elegido dos veces más lo definitivo
+sobre lo prudente (retirar `systemsetup` en vez de apuntalarlo; el orden 3→1→2 completo en vez de
+parar en lo que más rojo quitaba).
+
+**Why:** las tres veces el argumento de mi recomendación era el riesgo, y las tres lo aceptó a
+cambio de que la cosa quede coherente. Lo que NO tolera es la mitad: un fix que arregla el síntoma
+y deja la app diciendo dos cosas distintas según la pantalla.
+
+**How to apply:**
+- **Ofrece la opción completa aunque la descartes en la recomendación**, y dale su coste real. Es
+  la que suele elegir, así que omitirla le quita la decisión.
+- **La recomendación mínima sigue valiendo la pena escribirla**: es lo que hace que compare. Pero
+  cuenta con que en trabajo de coherencia estructural elija la grande.
+- **Y entonces el listón sube, no baja.** Al elegir la completa aceptó tocar los gates de permisos:
+  eso es exactamente donde la review adversarial dejó de ser un trámite —cazó una auto-expulsión
+  que yo habría commiteado— y donde el alcance mínimo no la habría necesitado. Si elige la grande,
+  la review adversarial deja de ser opcional.
