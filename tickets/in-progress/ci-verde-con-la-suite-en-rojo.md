@@ -4,7 +4,7 @@ status: in-progress
 priority: high
 area: platform
 created: 2026-09-02
-updated: 2026-09-03
+updated: 2026-09-04
 source: revisión del QA del CI a petición del owner (2026-09-02)
 ---
 
@@ -443,3 +443,69 @@ La fila de abajo es el bug, reproducido contra el fichero de `HEAD` y ausente en
   ejecutarlo (`33794198525`, 43 fallos sobre 156 tests, 24 tests distintos). Es advisory y está
   documentado como flaky en runner frío, así que **no distingo flaky de rojo real sin correrlo**. No
   se ha corrido. Es lo primero que dirá el próximo run ahora que el job vuelve a llegar hasta ahí.
+
+---
+
+## Sesión del 2026-09-04 — el paso de UI, diagnosticado; y el gate que lo dejó pasar
+
+Cierra el último «no verificado» que quedaba arriba: **«el paso de UI salió en `TEST EXECUTE
+FAILED` […] no distingo flaky de rojo real sin correrlo»**. Corrido. No era flaky.
+
+### Los 16 en rojo: ninguno es un bug de la app
+
+El paso de UI del run `33815722522` dio 42 fallos. Son **issues de aserción, no tests**: los tests
+únicos son **16** (21 entradas con los reintentos). Repartidos, con su causa medida:
+
+| Causa | Tests | Qué pasó |
+|---|---|---|
+| Rediseño del Panel (`a4445a26`, 2026-09-02) | 11 en 7 suites | El FAB solo se monta al hacer scroll; los tests lo buscaban al arrancar |
+| Entorno y seed | 5 en 4 suites | Idioma heredado del dispositivo, `onboardingMode` filtrándose entre tests, y una carrera de arranque |
+
+**Cero bugs de producto.** Verificado en simulador antes de tocar nada: lanzada con los launch
+arguments reales del test, la app arranca en el Panel con el seed cargado y el «+ Nuevo registro» a
+la vista. Lo que dejó de describir la app eran los tests.
+
+**Y NO era el «flaky en runner frío»** que la Lista Negra les atribuía: fallaban igual en la Mac del
+owner, en simulador, sin runner de por medio y sin `-retry`. Esa hipótesis queda refutada.
+
+Arreglado en `910409be` (las 7 del FAB, con un helper `revealPanelFAB()` en el harness) y en
+`13ee8ab8` (los 5 de entorno). Medición final: **las 11 suites juntas, 29 tests, 0 fallos.**
+
+### Por qué el gate dio verde sobre un cambio que rompió siete suites
+
+Es el hallazgo que trasciende este ticket. `/gate` corre los XCUITest «de las áreas tocadas» y
+decide qué área lo está con los `codeGlobs` de `qa/coverage-index.json`. `a4445a26` tocó
+`PanelView.swift` — y **ninguna** de las siete áreas rotas lo listaba entre sus globs. Para el gate,
+nadie las había tocado.
+
+Auditadas las 59 áreas con cobertura xcuitest: **30 no cubrían el código del que dependen**. El caso
+mayor, `FABStackView.swift` —la puerta por la que 21 áreas llegan a su pantalla— no figuraba en los
+globs de ninguna.
+
+Arreglado en `7fcd8c1c`, y la segunda mitad es la que importa: no basta con añadir el fichero donde
+vive el identificador, hay que añadir **el que monta esa vista**, porque ahí está la condición que
+puede ocultarla. Medido antes de darlo por bueno: con la primera pasada sola, el arreglo habría
+cazado **1 de las 4** áreas rotas; con las dos, las 6.
+
+### Lo que sigue sin hacer
+
+- **Pasos 3 y 4 del plan**, sin cambios y fuera del alcance acordado. El 3 (promover unit a
+  bloqueante) sigue esperando al `EXC_BREAKPOINT` de SwiftData; el 4 (sacar UI del push) sigue
+  necesitando un nocturno que no existe.
+- **Por qué `systemsetup` aplicaba la zona 3 de 9 veces.** Se retiró el mecanismo, no se
+  diagnosticó. Sigue abierto si algún día hace falta fijar la zona del sistema en CI.
+- **La carrera de `GroupsRetentionUITests` no está cerrada**, solo tiene margen: `uitest_ready`
+  señala bootstrap y seed, no que el cover esté presentado. Cerrarla exigiría que `markReady()`
+  aguardase al cover, y eso haría esperar a todos los tests por algo que casi ninguno presenta.
+- **Cuatro áreas del índice se quedaron sin `lastVerified` nuevo** a propósito: dependen además de
+  suites que no se corrieron (`GroupsEmptyState`, `GroupExpenseSuccess`, `PaywallInboxAlertRouting`
+  y cinco de `settings-profile-general`).
+
+### Nota de método
+
+Dos errores propios que costaron tiempo y conviene que consten. Un `TEST EXECUTE FAILED` sin una
+sola línea de `Executed` **no es un test en rojo: es que no arrancó** — encajaba con el síntoma de
+disco lleno de la Lista Negra y estuvo a punto de irse por ahí, pero el error completo decía que
+faltaba el runner, borrado al liberar espacio y no reconstruido porque `xcodebuild build` no compila
+los targets de test. Y una medida de disco recién liberado no es fiable: tras `simctl erase`, APFS
+tardó en reclamar y los «12 GiB» por los que casi se para el trabajo eran 34.
