@@ -40,7 +40,8 @@
       "area": "accounts-crud",
       "codeGlobs": [
         "Yala/App/Views/Accounts/**",
-        "Yala/App/Views/Settings/AccountsSettingsListView.swift"
+        "Yala/App/Views/Settings/AccountsSettingsListView.swift",
+        "Yala/App/Views/Profile/ProfileView.swift"
       ],
       "scenarioIDs": [
         "F-ACC-01",
@@ -60,7 +61,11 @@
         "Yala/Services/FilterService.swift",
         "Yala/App/Views/Filters/ExcludeModeBadge.swift",
         "Yala/App/Views/Filters/FilterChipsSection.swift",
-        "Yala/App/Views/Filters/FilterControlBar.swift"
+        "Yala/App/Views/Filters/FilterControlBar.swift",
+        "Yala/App/ViewModels/RecordsViewModel.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+        "Yala/App/Views/Reports/FinancialReportView.swift",
+        "Yala/App/Views/Statistics/DetailContainerView.swift"
       ],
       "scenarioIDs": [
         "F-FIL-02"
@@ -151,7 +156,14 @@
         "Yala/App/Views/Settings/NotificationsSettingsView.swift",
         "Yala/App/ViewModels/NotificationsSettingsViewModel.swift",
         "Yala/App/Views/Onboarding/OnboardingView.swift",
-        "Yala/Models/Budget.swift"
+        "Yala/Models/Budget.swift",
+        "Yala/App/ContentView.swift",
+        "Yala/App/Views/Groups/FullModeActivationView.swift",
+        "Yala/App/Views/Planning/BudgetDetailView.swift",
+        "Yala/App/Views/Planning/BudgetsListView.swift",
+        "Yala/App/Views/Profile/ProfileView.swift",
+        "Yala/App/Views/Settings/BudgetsFavoritesSettingsView.swift",
+        "Yala/Seed/CategorySeed.swift"
       ],
       "scenarioIDs": [
         "F-BUD-03"
@@ -184,7 +196,9 @@
         "Yala/App/Views/Planning/BudgetsListView.swift",
         "Yala/App/Views/Planning/BudgetRowView.swift",
         "Yala/App/Views/Planning/BudgetChartsView.swift",
-        "Yala/App/Views/Planning/Components/BudgetPeriodSelectorSheet.swift"
+        "Yala/App/Views/Planning/Components/BudgetPeriodSelectorSheet.swift",
+        "Yala/App/Views/Planning/PlanningView.swift",
+        "Yala/App/Views/Settings/BudgetsFavoritesSettingsView.swift"
       ],
       "scenarioIDs": [
         "F-BUD-01",
@@ -249,7 +263,8 @@
         "Yala/App/Services/CategoryDeduplicationService.swift",
         "Yala/App/Logic/SubcategoryDedupLogic.swift",
         "Yala/App/Logic/SubcategoryDedupGate.swift",
-        "Yala/Seed/CategorySeed.swift"
+        "Yala/Seed/CategorySeed.swift",
+        "Yala/App/Views/Profile/ProfileView.swift"
       ],
       "scenarioIDs": [
         "F-CAT-01",
@@ -513,7 +528,13 @@
         "Yala/App/Views/Filters/FilterControlBar.swift",
         "Yala/App/Views/Filters/FilterChipsSection.swift",
         "Yala/App/Views/Statistics/StatisticsView.swift",
-        "Yala/Services/FilterService.swift"
+        "Yala/Services/FilterService.swift",
+        "Yala/App/Views/Records/RecordsFiltersView.swift",
+        "Yala/App/ContentView.swift",
+        "Yala/App/ViewModels/RecordsViewModel.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+        "Yala/App/Views/Reports/FinancialReportView.swift",
+        "Yala/App/Views/Statistics/DetailContainerView.swift"
       ],
       "scenarioIDs": [
         "F-STA-05"
@@ -531,7 +552,17 @@
         "Yala/App/Views/Settings/SecondaryCurrencyPickerSheet.swift",
         "Yala/App/Views/Settings/CurrencySettingsView.swift",
         "Yala/App/Views/Shared/CurrencySelectorView.swift",
-        "Yala/Utils/CurrencyUtils.swift"
+        "Yala/Utils/CurrencyUtils.swift",
+        "Yala/App/ContentView.swift",
+        "Yala/App/Views/Accounts/AccountFormView.swift",
+        "Yala/App/Views/Groups/FullModeActivationView.swift",
+        "Yala/App/Views/Groups/GroupExpenseFormView.swift",
+        "Yala/App/Views/Groups/GroupFormView.swift",
+        "Yala/App/Views/Groups/GroupOpeningBalanceFormView.swift",
+        "Yala/App/Views/Groups/GroupSettingsView.swift",
+        "Yala/App/Views/Planning/ScheduledPaymentEditorView.swift",
+        "Yala/App/Views/Profile/ProfileView.swift",
+        "Yala/Seed/CategorySeed.swift"
       ],
       "scenarioIDs": [
         "F-ONB-01",
@@ -571,7 +602,9 @@
         "Yala/App/Models/AppRouter.swift",
         "Yala/App/Logic/ShellModeLogic.swift",
         "Yala/App/Models/UsageFocus.swift",
-        "Yala/App/Models/TabBarConfiguration.swift"
+        "Yala/App/Models/TabBarConfiguration.swift",
+        "Yala/App/Views/Groups/GroupsContainerView.swift",
+        "Yala/App/ContentView.swift"
       ],
       "scenarioIDs": [
         "F-NAV-01",
@@ -589,7 +622,11 @@
       "codeGlobs": [
         "Yala/App/Views/Records/RecordsFiltersView.swift",
         "Yala/Services/FilterService.swift",
-        "Yala/App/Views/Filters/FilterChipsSection.swift"
+        "Yala/App/Views/Filters/FilterChipsSection.swift",
+        "Yala/App/ViewModels/RecordsViewModel.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+        "Yala/App/Views/Reports/FinancialReportView.swift",
+        "Yala/App/Views/Statistics/DetailContainerView.swift"
       ],
       "scenarioIDs": [
         "F-FIL-01",
@@ -652,7 +689,13 @@
         "Yala/App/ViewModels/FinancialReportViewModel.swift",
         "Yala/App/Views/Reports/FinancialReportView.swift",
         "Yala/App/Views/Reports/NetFlowSummaryView.swift",
-        "YalaWidgets/Widgets/**"
+        "YalaWidgets/Widgets/**",
+        "Yala/App/ContentView.swift",
+        "Yala/App/ViewModels/RecordsViewModel.swift",
+        "Yala/App/Views/Panel/FinancialScoreView.swift",
+        "Yala/App/Views/Profile/ProfileView.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+        "Yala/App/Views/Statistics/DetailContainerView.swift"
       ],
       "scenarioIDs": [
         "F-ONB-07"
@@ -680,7 +723,20 @@
     {
       "area": "face-id-protection-guide",
       "codeGlobs": [
-        "Yala/App/Views/Settings/FaceIDProtectionGuideView.swift"
+        "Yala/App/Views/Settings/FaceIDProtectionGuideView.swift",
+        "Yala/App/Views/Profile/ProfileView.swift",
+        "Yala/App/Views/Shared/ProfileToolbarButton.swift",
+        "Yala/App/ContentView.swift",
+        "Yala/App/Tips/ProTourManager.swift",
+        "Yala/App/Views/Favorites/FavoritesListView.swift",
+        "Yala/App/Views/Groups/GroupsContainerView.swift",
+        "Yala/App/Views/More/MoreView.swift",
+        "Yala/App/Views/Panel/PanelSheetsModifier.swift",
+        "Yala/App/Views/Planning/PlanningView.swift",
+        "Yala/App/Views/Profile/YalaAccountView.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+        "Yala/App/Views/Reports/FinancialReportView.swift",
+        "Yala/App/Views/Statistics/DetailContainerView.swift"
       ],
       "scenarioIDs": [],
       "classification": "manual",
@@ -692,7 +748,10 @@
       "area": "favorites",
       "codeGlobs": [
         "Yala/App/Views/Favorites/**",
-        "Yala/App/Views/Settings/BudgetsFavoritesSettingsView.swift"
+        "Yala/App/Views/Settings/BudgetsFavoritesSettingsView.swift",
+        "Yala/App/Views/Panel/PanelSheetsModifier.swift",
+        "Yala/App/Views/Planning/PlanningView.swift",
+        "Yala/App/Views/Profile/ProfileView.swift"
       ],
       "scenarioIDs": [
         "F-FAV-01",
@@ -708,7 +767,11 @@
       "codeGlobs": [
         "Yala/App/Views/Records/RecordsFiltersView.swift",
         "Yala/App/ViewModels/RecordsFiltersViewModel.swift",
-        "Yala/App/Views/Filters/**"
+        "Yala/App/Views/Filters/**",
+        "Yala/App/ViewModels/RecordsViewModel.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+        "Yala/App/Views/Reports/FinancialReportView.swift",
+        "Yala/App/Views/Statistics/DetailContainerView.swift"
       ],
       "scenarioIDs": [
         "F-FIL-01",
@@ -741,7 +804,16 @@
       "codeGlobs": [
         "Yala/App/Views/Settings/SubscriptionView.swift",
         "Yala/App/Views/Subscription/ProTrialOfferSheet.swift",
-        "Yala/App/Views/Shared/TrialBanner.swift"
+        "Yala/App/Views/Shared/TrialBanner.swift",
+        "Yala/App/Views/Panel/PanelView.swift",
+        "Yala/App/Views/Shared/InboxAlertModal.swift",
+        "Yala/App/Tips/ProTourManager.swift",
+        "Yala/App/Views/Panel/PanelSheetsModifier.swift",
+        "Yala/App/Views/Panel/PanelShell.swift",
+        "Yala/App/Views/Profile/ProfileView.swift",
+        "Yala/App/Views/Shared/MilestoneUpgradeSheet.swift",
+        "Yala/App/Views/Shared/UpgradePromptSheet.swift",
+        "Yala/App/Views/Subscription/DowngradeResolutionSheet.swift"
       ],
       "scenarioIDs": [
         "F-PRO-01",
@@ -775,7 +847,10 @@
       "codeGlobs": [
         "Yala/App/Logic/DeferredIntentBufferLogic.swift",
         "Yala/App/Models/DeferredIntentBuffer.swift",
-        "Yala/App/Models/RouterEntryGate.swift"
+        "Yala/App/Models/RouterEntryGate.swift",
+        "Yala/App/Views/Groups/GroupDetailView.swift",
+        "Yala/App/Views/Groups/GroupHeaderBalanceBar.swift",
+        "Yala/App/Views/Groups/GroupsContainerView.swift"
       ],
       "scenarioIDs": [],
       "classification": "manual",
@@ -809,7 +884,10 @@
         "Yala/Services/Groups/OrphanedBridgedTxSweeper.swift",
         "Yala/Services/Groups/GroupChannelFreshness.swift",
         "Yala/App/Logic/GroupChannelFreshnessGate.swift",
-        "Yala/Services/Groups/LegacyGroupsRetirement.swift"
+        "Yala/Services/Groups/LegacyGroupsRetirement.swift",
+        "Yala/App/Views/Groups/GroupSettingsView.swift",
+        "Yala/App/Views/Groups/GroupsGlobalSettingsView.swift",
+        "Yala/App/Views/Inbox/InboxView.swift"
       ],
       "scenarioIDs": [
         "F-S2-02",
@@ -834,7 +912,20 @@
         "Yala/App/Logic/BridgeResolverLogic.swift",
         "Yala/App/Logic/BridgeBranchLogic.swift",
         "Yala/App/Logic/BridgeOptOutAlertLogic.swift",
-        "Yala/App/Logic/BridgedTransactionFilter.swift"
+        "Yala/App/Logic/BridgedTransactionFilter.swift",
+        "Yala/App/Views/Groups/GroupExpenseDetailSheet.swift",
+        "Yala/App/Views/Groups/GroupExpenseFormView.swift",
+        "Yala/App/Views/Groups/GroupFormView.swift",
+        "Yala/App/Views/Groups/GroupsContainerView.swift",
+        "Yala/App/Views/Shared/FABStackView.swift",
+        "Yala/App/ContentView.swift",
+        "Yala/App/Views/Groups/GroupDetailView.swift",
+        "Yala/App/Views/Groups/GroupExpenseComposerView.swift",
+        "Yala/App/Views/Inbox/InboxView.swift",
+        "Yala/App/Views/Panel/PanelView.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+        "Yala/App/Views/Statistics/DetailContainerView.swift",
+        "Yala/Services/DraftService.swift"
       ],
       "scenarioIDs": [
         "F-S1-06",
@@ -926,7 +1017,22 @@
         "Yala/Seed/DevSeedGroups.swift",
         "Yala/App/Logic/GroupsEmptyStateLogic.swift",
         "Yala/App/Logic/GroupsSessionHistoryMarker.swift",
-        "Yala/App/Views/Shared/YalaEmptyState.swift"
+        "Yala/App/Views/Shared/YalaEmptyState.swift",
+        "Yala/App/Views/Groups/GroupExpenseDetailSheet.swift",
+        "Yala/App/Views/Groups/GroupExpenseFormView.swift",
+        "Yala/App/Views/Groups/GroupsGlobalSettingsView.swift",
+        "Yala/App/Views/Shared/FABStackView.swift",
+        "Yala/App/ContentView.swift",
+        "Yala/App/ViewModels/GroupDetailViewModel.swift",
+        "Yala/App/Views/Groups/GroupExpenseComposerView.swift",
+        "Yala/App/Views/Groups/GroupOpeningBalanceFormView.swift",
+        "Yala/App/Views/Inbox/InboxView.swift",
+        "Yala/App/Views/Panel/PanelView.swift",
+        "Yala/App/Views/Profile/ProfileView.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+        "Yala/App/Views/Settings/UserDataResetView.swift",
+        "Yala/App/Views/Statistics/DetailContainerView.swift",
+        "Yala/Services/DraftService.swift"
       ],
       "scenarioIDs": [
         "F-S1-04",
@@ -957,7 +1063,19 @@
         "Yala/App/Logic/GroupExpenseEligibilityLogic.swift",
         "Yala/App/Views/Shared/FABStackView.swift",
         "Yala/App/Views/Groups/GroupExpenseSuccessView.swift",
-        "Yala/App/Logic/GroupExpenseSuccessLogic.swift"
+        "Yala/App/Logic/GroupExpenseSuccessLogic.swift",
+        "Yala/App/Views/Groups/GroupExpenseDetailSheet.swift",
+        "Yala/App/Views/Groups/GroupFormView.swift",
+        "Yala/App/Views/Groups/GroupsContainerView.swift",
+        "Yala/App/Views/Groups/GroupsGlobalSettingsView.swift",
+        "Yala/App/ContentView.swift",
+        "Yala/App/Views/Groups/GroupDetailView.swift",
+        "Yala/App/Views/Inbox/InboxView.swift",
+        "Yala/App/Views/Panel/PanelView.swift",
+        "Yala/App/Views/Planning/ScheduledPaymentEditorView.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+        "Yala/App/Views/Statistics/DetailContainerView.swift",
+        "Yala/Services/DraftService.swift"
       ],
       "scenarioIDs": [
         "F-S1-05",
@@ -974,7 +1092,20 @@
         "Yala/App/Views/Groups/GroupFormView.swift",
         "Yala/App/Views/Groups/GroupSplitSelectorView.swift",
         "Yala/App/Views/Groups/SplitTypeSegmentedSelector.swift",
-        "Yala/App/Views/Groups/GroupExpenseFormView.swift"
+        "Yala/App/Views/Groups/GroupExpenseFormView.swift",
+        "Yala/App/Views/Groups/GroupExpenseDetailSheet.swift",
+        "Yala/App/Views/Groups/GroupsContainerView.swift",
+        "Yala/App/Views/Groups/GroupsGlobalSettingsView.swift",
+        "Yala/App/Views/Shared/FABStackView.swift",
+        "Yala/App/ContentView.swift",
+        "Yala/App/Views/Groups/GroupDetailView.swift",
+        "Yala/App/Views/Groups/GroupExpenseComposerView.swift",
+        "Yala/App/Views/Inbox/InboxView.swift",
+        "Yala/App/Views/Panel/PanelView.swift",
+        "Yala/App/Views/Planning/ScheduledPaymentEditorView.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+        "Yala/App/Views/Statistics/DetailContainerView.swift",
+        "Yala/Services/DraftService.swift"
       ],
       "scenarioIDs": [
         "F-S1-04"
@@ -1064,7 +1195,10 @@
         "Yala/Services/Groups/GroupJoinReconciler.swift",
         "Yala/Services/Groups/GroupJoinIntentTracker.swift",
         "Yala/App/Logic/GroupJoinReconcileLogic.swift",
-        "Yala/App/Logic/GroupInviteOnboardingLogic.swift"
+        "Yala/App/Logic/GroupInviteOnboardingLogic.swift",
+        "Yala/App/ContentView.swift",
+        "Yala/App/Services/GroupBackendInviteEntryHandler.swift",
+        "Yala/App/Views/Groups/GroupDetailView.swift"
       ],
       "scenarioIDs": [
         "F-S3-02",
@@ -1165,7 +1299,19 @@
         "Yala/App/Views/Settings/PersonalizationSettingsView.swift",
         "Yala/App/Views/Profile/ProfileView.swift",
         "Yala/App/Views/Shared/FABStackView.swift",
-        "Yala/App/Views/Panel/PanelView.swift"
+        "Yala/App/Views/Panel/PanelView.swift",
+        "Yala/App/ContentView.swift",
+        "Yala/App/Tips/ProTourManager.swift",
+        "Yala/App/Views/Favorites/FavoritesListView.swift",
+        "Yala/App/Views/Groups/GroupsContainerView.swift",
+        "Yala/App/Views/More/MoreView.swift",
+        "Yala/App/Views/Panel/PanelSheetsModifier.swift",
+        "Yala/App/Views/Panel/PanelShell.swift",
+        "Yala/App/Views/Planning/PlanningView.swift",
+        "Yala/App/Views/Profile/YalaAccountView.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+        "Yala/App/Views/Reports/FinancialReportView.swift",
+        "Yala/App/Views/Statistics/DetailContainerView.swift"
       ],
       "scenarioIDs": [
         "F-VIM-01"
@@ -1195,7 +1341,22 @@
       "area": "inbox-convert-to-group",
       "codeGlobs": [
         "Yala/App/Logic/DraftConversionEligibilityLogic.swift",
-        "Yala/App/Logic/DraftToGroupExpenseTemplateLogic.swift"
+        "Yala/App/Logic/DraftToGroupExpenseTemplateLogic.swift",
+        "Yala/App/Views/Groups/GroupExpenseFormView.swift",
+        "Yala/App/Views/Inbox/InboxDraftEditSheet.swift",
+        "Yala/App/Views/Panel/PanelView.swift",
+        "Yala/App/Views/Shared/StandardButtons.swift",
+        "Yala/App/Tips/ProTourManager.swift",
+        "Yala/App/Views/Groups/GroupDetailView.swift",
+        "Yala/App/Views/Groups/GroupExpenseComposerView.swift",
+        "Yala/App/Views/Groups/GroupExpenseDetailSheet.swift",
+        "Yala/App/Views/Image/ImageSelectionView.swift",
+        "Yala/App/Views/Inbox/InboxView.swift",
+        "Yala/App/Views/Panel/PanelSheetsModifier.swift",
+        "Yala/App/Views/Panel/PanelShell.swift",
+        "Yala/App/Views/Planning/ScheduledPaymentDetailView.swift",
+        "Yala/App/Views/Voice/VoiceRecordingView.swift",
+        "Yala/Services/DraftService.swift"
       ],
       "scenarioIDs": [
         "F-INB-05",
@@ -1217,7 +1378,15 @@
         "Yala/App/ViewModels/InboxDraftEditViewModel.swift",
         "Yala/App/ViewModels/InboxRowPruneCoordinator.swift",
         "Yala/Models/InboxDraft.swift",
-        "Yala/Models/InboxDraft+TagsCSVMirror.swift"
+        "Yala/Models/InboxDraft+TagsCSVMirror.swift",
+        "Yala/App/Views/Inbox/InboxApproveSuccessView.swift",
+        "Yala/App/Views/Panel/PanelView.swift",
+        "Yala/App/Tips/ProTourManager.swift",
+        "Yala/App/Views/Image/ImageSelectionView.swift",
+        "Yala/App/Views/Panel/PanelSheetsModifier.swift",
+        "Yala/App/Views/Panel/PanelShell.swift",
+        "Yala/App/Views/Planning/ScheduledPaymentDetailView.swift",
+        "Yala/App/Views/Voice/VoiceRecordingView.swift"
       ],
       "scenarioIDs": [
         "F-INB-01",
@@ -1256,7 +1425,27 @@
         "Yala/App/Models/RouterEntryGate.swift",
         "Yala/App/ContentView.swift",
         "Yala/App/Logic/ContentViewReadinessLogic.swift",
-        "Yala/App/ViewModels/InboxViewModel.swift"
+        "Yala/App/ViewModels/InboxViewModel.swift",
+        "Yala/App/Views/Panel/PanelView.swift",
+        "Yala/App/Views/Shared/FABStackView.swift",
+        "Yala/App/Views/Subscription/ProTrialOfferSheet.swift",
+        "Yala/App/Views/Transactions/NewTransactionView.swift",
+        "Yala/App/Services/GroupBackendInviteEntryHandler.swift",
+        "Yala/App/Tips/ProTourManager.swift",
+        "Yala/App/Views/Groups/GroupsContainerView.swift",
+        "Yala/App/Views/Inbox/InboxView.swift",
+        "Yala/App/Views/Panel/PanelSheetsModifier.swift",
+        "Yala/App/Views/Panel/PanelShell.swift",
+        "Yala/App/Views/Planning/ScheduledPaymentDetailView.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+        "Yala/App/Views/Records/TransactionDetailSheet.swift",
+        "Yala/App/Views/Search/GlobalSearchView.swift",
+        "Yala/App/Views/Settings/GroupsRetentionView.swift",
+        "Yala/App/Views/Shared/ForceUpdateView.swift",
+        "Yala/App/Views/Shared/GroupsBackendInviteModifier.swift",
+        "Yala/App/Views/Shared/SyncStatusBanner.swift",
+        "Yala/App/Views/Statistics/DetailContainerView.swift",
+        "Yala/App/YalaApp.swift"
       ],
       "scenarioIDs": [
         "F-INB-05"
@@ -1293,7 +1482,12 @@
         "Yala/App/ViewModels/StatisticsViewModel.swift",
         "Yala/Services/ReportNotificationService.swift",
         "Yala/App/Logic/Helpers/TrendProcessingHelper.swift",
-        "Yala/App/Logic/Calculators/DailySpendingCalculator.swift"
+        "Yala/App/Logic/Calculators/DailySpendingCalculator.swift",
+        "Yala/App/Views/Shared/ProfileToolbarButton.swift",
+        "Yala/App/Views/Statistics/DetailContainerView.swift",
+        "Yala/App/Views/Statistics/InsightsTabView.swift",
+        "Yala/App/Tips/ProTourManager.swift",
+        "Yala/App/Views/Statistics/StatisticsView.swift"
       ],
       "scenarioIDs": [],
       "classification": "manual",
@@ -1343,7 +1537,21 @@
     {
       "area": "more-dashboard-icons",
       "codeGlobs": [
-        "Yala/App/Views/More/**"
+        "Yala/App/Views/More/**",
+        "Yala/App/Views/Profile/ProfileView.swift",
+        "Yala/App/Views/Settings/PersonalizationSettingsView.swift",
+        "Yala/App/Views/Shared/ProfileToolbarButton.swift",
+        "Yala/App/ContentView.swift",
+        "Yala/App/Tips/ProTourManager.swift",
+        "Yala/App/Views/Favorites/FavoritesListView.swift",
+        "Yala/App/Views/Groups/GroupsContainerView.swift",
+        "Yala/App/Views/More/MoreView.swift",
+        "Yala/App/Views/Panel/PanelSheetsModifier.swift",
+        "Yala/App/Views/Planning/PlanningView.swift",
+        "Yala/App/Views/Profile/YalaAccountView.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+        "Yala/App/Views/Reports/FinancialReportView.swift",
+        "Yala/App/Views/Statistics/DetailContainerView.swift"
       ],
       "scenarioIDs": [],
       "classification": "agentic",
@@ -1375,7 +1583,8 @@
         "Yala/App/ViewModels/NotificationsSettingsViewModel.swift",
         "Yala/Models/NotificationItem.swift",
         "Yala/Services/NotificationService.swift",
-        "Yala/Services/ReportNotificationService.swift"
+        "Yala/Services/ReportNotificationService.swift",
+        "Yala/App/Views/Profile/ProfileView.swift"
       ],
       "scenarioIDs": [
         "F-NOT-01",
@@ -1402,7 +1611,21 @@
         "Yala/App/Views/Groups/GroupsOrganizerNameView.swift",
         "Yala/App/Logic/GroupsOrganizerGateLogic.swift",
         "Yala/App/Logic/GroupsOrganizerFlowLogic.swift",
-        "Yala/Services/Groups/GroupsOrganizerOnboarding.swift"
+        "Yala/Services/Groups/GroupsOrganizerOnboarding.swift",
+        "Yala/App/Views/Groups/GroupFormView.swift",
+        "Yala/App/Views/Groups/Onboarding/GroupsOnboardingView.swift",
+        "Yala/App/Views/Onboarding/WelcomeBackButton.swift",
+        "Yala/App/Views/Onboarding/WelcomeCloudSignInView.swift",
+        "Yala/App/Views/Onboarding/WelcomeHeroView.swift",
+        "Yala/App/Services/GroupBackendInviteEntryHandler.swift",
+        "Yala/App/Views/Groups/FullModeActivationView.swift",
+        "Yala/App/Views/Groups/GroupsContainerView.swift",
+        "Yala/App/Views/Settings/GroupsRetentionView.swift",
+        "Yala/App/Views/Shared/ForceUpdateView.swift",
+        "Yala/App/Views/Shared/GroupsBackendInviteModifier.swift",
+        "Yala/App/Views/Shared/SyncStatusBanner.swift",
+        "Yala/App/YalaApp.swift",
+        "Yala/Seed/CategorySeed.swift"
       ],
       "scenarioIDs": [
         "F-ONB-01",
@@ -1426,7 +1649,12 @@
         "Yala/App/Logic/GroupsGateLogic.swift",
         "Yala/Services/Groups/GroupsOrganizerOnboarding.swift",
         "Yala/App/Logic/GroupsOrganizerGateLogic.swift",
-        "Yala/App/Views/Onboarding/WelcomeGroupsGateView.swift"
+        "Yala/App/Views/Onboarding/WelcomeGroupsGateView.swift",
+        "Yala/App/Views/Groups/Onboarding/GroupsOnboardingView.swift",
+        "Yala/App/ContentView.swift",
+        "Yala/App/Views/Groups/FullModeActivationView.swift",
+        "Yala/App/Views/Onboarding/WelcomeFlowContainer.swift",
+        "Yala/Seed/CategorySeed.swift"
       ],
       "scenarioIDs": [],
       "classification": "deterministic",
@@ -1506,7 +1734,10 @@
         "Yala/App/Views/Panel/TopSubcategoriesWidget.swift",
         "Yala/App/Views/Panel/Sections/PanelPanoramaSection.swift",
         "Yala/App/Views/Panel/HeroMonthView.swift",
-        "Yala/App/Views/Panel/Components/PanelQuickActionsRow.swift"
+        "Yala/App/Views/Panel/Components/PanelQuickActionsRow.swift",
+        "Yala/App/Tips/ProTourManager.swift",
+        "Yala/App/Views/Panel/PanelSheetsModifier.swift",
+        "Yala/App/Views/Panel/Sections/PanelHeroSection.swift"
       ],
       "scenarioIDs": [
         "F-PAN-01",
@@ -1577,7 +1808,30 @@
         "Yala/App/Views/Shared/MilestoneUpgradeSheet.swift",
         "Yala/App/Views/Shared/UpgradePromptSheet.swift",
         "Yala/App/Services/FeatureGateService.swift",
-        "Yala/App/Services/ProUpsellService.swift"
+        "Yala/App/Services/ProUpsellService.swift",
+        "Yala/App/Views/Shared/FABStackView.swift",
+        "Yala/App/Views/Transactions/NewTransactionView.swift",
+        "Yala/App/ContentView.swift",
+        "Yala/App/Views/ExportWizard/ExportFiltersStepView.swift",
+        "Yala/App/Views/Inbox/InboxView.swift",
+        "Yala/App/Views/Panel/PanelSheetsModifier.swift",
+        "Yala/App/Views/Panel/PanelView.swift",
+        "Yala/App/Views/Panel/Sections/PanelPanoramaSection.swift",
+        "Yala/App/Views/Planning/BudgetsListView.swift",
+        "Yala/App/Views/Planning/ScheduledPaymentDetailView.swift",
+        "Yala/App/Views/Profile/ProfileView.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+        "Yala/App/Views/Records/TransactionDetailSheet.swift",
+        "Yala/App/Views/Reports/CashFlow/CashFlowChartsSheet.swift",
+        "Yala/App/Views/Search/GlobalSearchView.swift",
+        "Yala/App/Views/Settings/AccountsSettingsListView.swift",
+        "Yala/App/Views/Settings/AppIconSettingsView.swift",
+        "Yala/App/Views/Settings/BudgetsFavoritesSettingsView.swift",
+        "Yala/App/Views/Settings/ThemeSettingsView.swift",
+        "Yala/App/Views/Statistics/CategoriesTabView.swift",
+        "Yala/App/Views/Statistics/DetailContainerView.swift",
+        "Yala/App/Views/Statistics/InsightsTabView.swift",
+        "Yala/App/Views/Statistics/TrendsTabView.swift"
       ],
       "scenarioIDs": [
         "F-PRO-01",
@@ -1606,7 +1860,24 @@
         "gateway/src/proxy/webhook.ts",
         "gateway/src/db.ts",
         "gateway/src/attest/routes.ts",
-        "Yala/App/Services/AppAttestClient.swift"
+        "Yala/App/Services/AppAttestClient.swift",
+        "Yala/App/Views/Panel/PanelView.swift",
+        "Yala/App/Views/Shared/FABStackView.swift",
+        "Yala/App/Views/Shared/ProfileToolbarButton.swift",
+        "Yala/App/Views/Transactions/NewTransactionView.swift",
+        "Yala/App/Tips/ProTourManager.swift",
+        "Yala/App/Views/Inbox/InboxView.swift",
+        "Yala/App/Views/Panel/PanelSheetsModifier.swift",
+        "Yala/App/Views/Panel/PanelShell.swift",
+        "Yala/App/Views/Planning/ScheduledPaymentDetailView.swift",
+        "Yala/App/Views/Profile/ProfileView.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+        "Yala/App/Views/Records/TransactionDetailSheet.swift",
+        "Yala/App/Views/Search/GlobalSearchView.swift",
+        "Yala/App/Views/Shared/MilestoneUpgradeSheet.swift",
+        "Yala/App/Views/Shared/UpgradePromptSheet.swift",
+        "Yala/App/Views/Statistics/DetailContainerView.swift",
+        "Yala/App/Views/Subscription/DowngradeResolutionSheet.swift"
       ],
       "scenarioIDs": [
         "F-PRO-01"
@@ -1638,7 +1909,16 @@
       "area": "records-transaction-detail",
       "codeGlobs": [
         "Yala/App/Views/Records/TransactionDetailSheet.swift",
-        "Yala/App/Logic/TransactionDetailSheetLogic.swift"
+        "Yala/App/Logic/TransactionDetailSheetLogic.swift",
+        "Yala/App/Views/Records/Components/RecordRowView.swift",
+        "Yala/App/Views/Transactions/NewTransactionView.swift",
+        "Yala/App/Views/Inbox/InboxView.swift",
+        "Yala/App/Views/Panel/PanelSheetsModifier.swift",
+        "Yala/App/Views/Planning/ScheduledPaymentDetailView.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+        "Yala/App/Views/Search/GlobalSearchView.swift",
+        "Yala/App/Views/Statistics/DetailContainerView.swift",
+        "Yala/App/Views/Statistics/RecordsTabView.swift"
       ],
       "scenarioIDs": [
         "F-TX-01"
@@ -1677,7 +1957,9 @@
         "Yala/App/Views/Planning/ScheduledPaymentDetailView.swift",
         "Yala/App/Views/Planning/ScheduledPaymentRowView.swift",
         "Yala/App/Views/Planning/ScheduledPaymentsListView.swift",
-        "Yala/App/Views/Panel/ScheduledPaymentsWidget.swift"
+        "Yala/App/Views/Panel/ScheduledPaymentsWidget.swift",
+        "Yala/App/Views/Planning/ScheduledPaymentsView.swift",
+        "Yala/App/Views/Shared/PeriodNavigationHeader.swift"
       ],
       "scenarioIDs": [
         "F-SCH-02",
@@ -1696,7 +1978,12 @@
         "Yala/App/Views/Planning/ScheduledPaymentDetailView.swift",
         "Yala/App/Views/Planning/ScheduledPaymentsView.swift",
         "Yala/App/Views/Planning/ScheduledPaymentRowView.swift",
-        "Yala/App/Views/Settings/ScheduledPaymentsSettingsView.swift"
+        "Yala/App/Views/Settings/ScheduledPaymentsSettingsView.swift",
+        "Yala/App/Views/Shared/ProfileToolbarButton.swift",
+        "Yala/App/Views/Planning/PlanningView.swift",
+        "Yala/App/Views/Profile/ProfileView.swift",
+        "Yala/App/Views/Shared/PeriodNavigationHeader.swift",
+        "Yala/App/Views/Transactions/NewTransactionView.swift"
       ],
       "scenarioIDs": [
         "F-SCH-01",
@@ -1729,7 +2016,23 @@
         "Yala/App/Views/Accounts/AccountFormView.swift",
         "Yala/App/Views/Notifications/NotificationPrimerSheet.swift",
         "Yala/App/Views/Transactions/TransactionSuccessView.swift",
-        "Yala/App/Services/AppPreferences.swift"
+        "Yala/App/Services/AppPreferences.swift",
+        "Yala/App/Views/Profile/ProfileView.swift",
+        "Yala/App/Views/Settings/AccountsSettingsListView.swift",
+        "Yala/App/Views/Settings/CurrencySettingsView.swift",
+        "Yala/App/Views/Settings/SecondaryCurrencyPickerSheet.swift",
+        "Yala/App/ContentView.swift",
+        "Yala/App/Tips/ProTourManager.swift",
+        "Yala/App/Views/Favorites/FavoritesListView.swift",
+        "Yala/App/Views/Groups/GroupsContainerView.swift",
+        "Yala/App/Views/More/MoreView.swift",
+        "Yala/App/Views/Panel/PanelSheetsModifier.swift",
+        "Yala/App/Views/Planning/PlanningView.swift",
+        "Yala/App/Views/Profile/YalaAccountView.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+        "Yala/App/Views/Reports/FinancialReportView.swift",
+        "Yala/App/Views/Statistics/DetailContainerView.swift",
+        "Yala/App/Views/Transactions/NewTransactionView.swift"
       ],
       "scenarioIDs": [
         "F-ONB-07"
@@ -1748,7 +2051,9 @@
         "Yala/App/Views/Settings/ExchangeRatesSheet.swift",
         "Yala/App/Views/Panel/ExchangeRateWidget.swift",
         "Yala/App/Views/Panel/Sections/PanelThematicSection.swift",
-        "Yala/Seed/DevSeedExchangeRates.swift"
+        "Yala/Seed/DevSeedExchangeRates.swift",
+        "Yala/App/Views/Planning/ScheduledPaymentEditorView.swift",
+        "Yala/App/Views/Profile/ProfileView.swift"
       ],
       "scenarioIDs": [
         "F-SET-05"
@@ -1769,7 +2074,18 @@
         "Yala/App/Views/Settings/GroupBatchLeaveView.swift",
         "Yala/App/Views/Settings/GroupsRetentionView.swift",
         "Yala/App/Views/Profile/YalaAccountView.swift",
-        "Yala/App/Logic/YalaAccountLogic.swift"
+        "Yala/App/Logic/YalaAccountLogic.swift",
+        "Yala/App/Views/More/MoreEditorSheet.swift",
+        "Yala/App/Views/More/MoreView.swift",
+        "Yala/App/ContentView.swift",
+        "Yala/App/Tips/ProTourManager.swift",
+        "Yala/App/Views/Favorites/FavoritesListView.swift",
+        "Yala/App/Views/Groups/GroupsContainerView.swift",
+        "Yala/App/Views/Panel/PanelSheetsModifier.swift",
+        "Yala/App/Views/Planning/PlanningView.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+        "Yala/App/Views/Reports/FinancialReportView.swift",
+        "Yala/App/Views/Statistics/DetailContainerView.swift"
       ],
       "scenarioIDs": [
         "F-SET-01",
@@ -1894,7 +2210,11 @@
       "codeGlobs": [
         "Yala/App/Views/Shared/FABStackView.swift",
         "Yala/App/Views/Statistics/DetailContainerView.swift",
-        "Yala/App/Views/Records/RecordsStandaloneView.swift"
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+        "Yala/App/ContentView.swift",
+        "Yala/App/Views/Panel/PanelView.swift",
+        "Yala/App/Views/Statistics/StatisticsView.swift",
+        "Yala/Services/TrendDataProcessor.swift"
       ],
       "scenarioIDs": [
         "F-TX-05"
@@ -1911,7 +2231,17 @@
         "Yala/App/Logic/Calculators/SplitCalculator.swift",
         "Yala/App/Views/Transactions/NewTransactionView.swift",
         "Yala/App/Views/Records/Components/RecordRowView.swift",
-        "Yala/Utils/TransactionsExportService.swift"
+        "Yala/Utils/TransactionsExportService.swift",
+        "Yala/App/Views/Shared/FABStackView.swift",
+        "Yala/App/Views/Inbox/InboxView.swift",
+        "Yala/App/Views/Panel/PanelSheetsModifier.swift",
+        "Yala/App/Views/Panel/PanelView.swift",
+        "Yala/App/Views/Planning/ScheduledPaymentDetailView.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+        "Yala/App/Views/Records/TransactionDetailSheet.swift",
+        "Yala/App/Views/Search/GlobalSearchView.swift",
+        "Yala/App/Views/Statistics/DetailContainerView.swift",
+        "Yala/App/Views/Statistics/RecordsTabView.swift"
       ],
       "scenarioIDs": [
         "F-TX-08"
@@ -1929,7 +2259,11 @@
         "Yala/App/Views/Statistics/CategoriesTabView.swift",
         "Yala/App/Views/Statistics/RecordsTabView.swift",
         "Yala/App/Views/Statistics/StatisticsView.swift",
-        "Yala/App/Views/Statistics/InsightsTabView.swift"
+        "Yala/App/Views/Statistics/InsightsTabView.swift",
+        "Yala/App/ContentView.swift",
+        "Yala/App/Tips/ProTourManager.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+        "Yala/Services/TrendDataProcessor.swift"
       ],
       "scenarioIDs": [
         "F-STA-01",
@@ -1961,7 +2295,8 @@
       "area": "tags-crud",
       "codeGlobs": [
         "Yala/App/Views/Tags/**",
-        "Yala/App/Views/Settings/TagsSettingsListView.swift"
+        "Yala/App/Views/Settings/TagsSettingsListView.swift",
+        "Yala/App/Views/Profile/ProfileView.swift"
       ],
       "scenarioIDs": [
         "F-CAT-03"
@@ -2006,7 +2341,14 @@
       "codeGlobs": [
         "Yala/App/Views/Records/BulkEditSheet.swift",
         "Yala/App/ViewModels/BulkEditViewModel.swift",
-        "Yala/Services/TransactionService.swift"
+        "Yala/Services/TransactionService.swift",
+        "Yala/App/Views/Records/Components/RecordRowView.swift",
+        "Yala/App/Views/Statistics/DetailContainerView.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+        "Yala/App/Views/Records/TransactionDetailSheet.swift",
+        "Yala/App/Views/Statistics/RecordsTabView.swift",
+        "Yala/App/Views/Statistics/StatisticsView.swift",
+        "Yala/Services/TrendDataProcessor.swift"
       ],
       "scenarioIDs": [
         "F-TX-04"
@@ -2024,7 +2366,29 @@
         "Yala/App/Views/Transactions/SubcategorySelectorSheet.swift",
         "Yala/App/Views/Transactions/TagSelectorSheet.swift",
         "Yala/App/Views/Transactions/TransactionSuccessView.swift",
-        "Yala/App/Views/Records/RecordsStandaloneView.swift"
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+        "Yala/App/Views/Shared/FABStackView.swift",
+        "Yala/App/ContentView.swift",
+        "Yala/App/Views/Favorites/FavoriteEditorView.swift",
+        "Yala/App/Views/Groups/FullModeActivationView.swift",
+        "Yala/App/Views/Groups/GroupExpenseFormView.swift",
+        "Yala/App/Views/Groups/SettlementFormView.swift",
+        "Yala/App/Views/Inbox/GroupExpenseAccountAndSubcategoryFinalizationSheet.swift",
+        "Yala/App/Views/Inbox/GroupExpenseAccountFinalizationSheet.swift",
+        "Yala/App/Views/Inbox/GroupExpenseDraftFinalizationSheet.swift",
+        "Yala/App/Views/Inbox/GroupSettlementDraftFinalizationSheet.swift",
+        "Yala/App/Views/Inbox/InboxBulkActionsSheet.swift",
+        "Yala/App/Views/Inbox/InboxDraftEditSheet.swift",
+        "Yala/App/Views/Inbox/InboxView.swift",
+        "Yala/App/Views/Panel/PanelSheetsModifier.swift",
+        "Yala/App/Views/Panel/PanelView.swift",
+        "Yala/App/Views/Planning/ScheduledPaymentDetailView.swift",
+        "Yala/App/Views/Planning/ScheduledPaymentEditorView.swift",
+        "Yala/App/Views/Records/BulkEditSheet.swift",
+        "Yala/App/Views/Records/TransactionDetailSheet.swift",
+        "Yala/App/Views/Search/GlobalSearchView.swift",
+        "Yala/App/Views/Statistics/DetailContainerView.swift",
+        "Yala/App/Views/Transactions/SaveAsFavoriteSheet.swift"
       ],
       "scenarioIDs": [
         "F-TX-01",
@@ -2054,7 +2418,16 @@
       "codeGlobs": [
         "Yala/App/Views/Transactions/NewTransactionView.swift",
         "Yala/App/Views/Transactions/SaveAsFavoriteSheet.swift",
-        "Yala/App/Views/Transactions/DescriptionAutocomplete.swift"
+        "Yala/App/Views/Transactions/DescriptionAutocomplete.swift",
+        "Yala/App/Views/Shared/FABStackView.swift",
+        "Yala/App/Views/Inbox/InboxView.swift",
+        "Yala/App/Views/Panel/PanelSheetsModifier.swift",
+        "Yala/App/Views/Panel/PanelView.swift",
+        "Yala/App/Views/Planning/ScheduledPaymentDetailView.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+        "Yala/App/Views/Records/TransactionDetailSheet.swift",
+        "Yala/App/Views/Search/GlobalSearchView.swift",
+        "Yala/App/Views/Statistics/DetailContainerView.swift"
       ],
       "scenarioIDs": [
         "F-TX-02",
@@ -2094,7 +2467,11 @@
         "Yala/App/Services/ForceUpdateGate.swift",
         "Yala/App/Views/Shared/UpdateAvailableBanner.swift",
         "Yala/App/Views/Shared/ForceUpdateView.swift",
-        "Yala/App/Views/Panel/PanelView.swift"
+        "Yala/App/Views/Panel/PanelView.swift",
+        "Yala/App/ContentView.swift",
+        "Yala/App/Tips/ProTourManager.swift",
+        "Yala/App/Views/Panel/PanelSheetsModifier.swift",
+        "Yala/App/Views/Panel/PanelShell.swift"
       ],
       "scenarioIDs": [
         "F-PRO-04"
@@ -2109,7 +2486,12 @@
       "codeGlobs": [
         "Yala/App/Views/Voice/VoiceRecordingView.swift",
         "Yala/Services/VoiceTranscriptionService.swift",
-        "Yala/Utils/CurrencyUtils.swift"
+        "Yala/Utils/CurrencyUtils.swift",
+        "Yala/App/Views/Shared/FABStackView.swift",
+        "Yala/App/Views/Panel/PanelSheetsModifier.swift",
+        "Yala/App/Views/Panel/PanelView.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+        "Yala/App/Views/Statistics/DetailContainerView.swift"
       ],
       "scenarioIDs": [
         "F-VIM-02",
@@ -2143,7 +2525,20 @@
         "Yala/App/Views/Profile/ProfileView.swift",
         "Yala/App/Views/Shared/FABStackView.swift",
         "Yala/App/Views/Panel/PanelView.swift",
-        "Yala/App/Views/Statistics/DetailContainerView.swift"
+        "Yala/App/Views/Statistics/DetailContainerView.swift",
+        "Yala/App/ContentView.swift",
+        "Yala/App/Tips/ProTourManager.swift",
+        "Yala/App/Views/Favorites/FavoritesListView.swift",
+        "Yala/App/Views/Groups/GroupsContainerView.swift",
+        "Yala/App/Views/More/MoreView.swift",
+        "Yala/App/Views/Panel/PanelSheetsModifier.swift",
+        "Yala/App/Views/Panel/PanelShell.swift",
+        "Yala/App/Views/Planning/PlanningView.swift",
+        "Yala/App/Views/Profile/YalaAccountView.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+        "Yala/App/Views/Reports/FinancialReportView.swift",
+        "Yala/App/Views/Statistics/StatisticsView.swift",
+        "Yala/Services/TrendDataProcessor.swift"
       ],
       "scenarioIDs": [
         "F-VIM-01"
@@ -2173,7 +2568,16 @@
         "Yala/App/Views/Onboarding/WelcomeMirrorRelaunchView.swift",
         "Yala/App/Logic/WelcomeMirrorRelaunchLogic.swift",
         "Yala/App/Views/Onboarding/WelcomeGroupsChooserView.swift",
-        "Yala/App/Views/Onboarding/WelcomeGroupsGateView.swift"
+        "Yala/App/Views/Onboarding/WelcomeGroupsGateView.swift",
+        "Yala/App/Views/Groups/GroupFormView.swift",
+        "Yala/App/Views/Groups/GroupsOrganizerNameView.swift",
+        "Yala/App/Views/Groups/Onboarding/GroupsOnboardingView.swift",
+        "Yala/App/Views/Onboarding/WelcomeBackButton.swift",
+        "Yala/App/ContentView.swift",
+        "Yala/App/Logic/RestoreOfferGate.swift",
+        "Yala/App/Views/Groups/GroupsContainerView.swift",
+        "Yala/App/Views/Groups/GroupsSignInView.swift",
+        "Yala/App/Views/Settings/StorageSignInChooserView.swift"
       ],
       "scenarioIDs": [
         "F-WEL-01",
@@ -2332,7 +2736,9 @@
         "Yala/App/Views/Settings/CloudConsentView.swift",
         "Yala/App/Views/Settings/StorageSignInChooserView.swift",
         "Yala/Services/CloudSync/CloudConsentRegistrar.swift",
-        "Yala/App/Logic/CloudConsentRegistrationLogic.swift"
+        "Yala/App/Logic/CloudConsentRegistrationLogic.swift",
+        "Yala/App/Views/Onboarding/WelcomeCloudSignInView.swift",
+        "Yala/App/Views/Profile/ProfileView.swift"
       ],
       "scenarioIDs": [],
       "classification": "manual",
@@ -2368,7 +2774,10 @@
         "Yala/Services/CloudSync/AppGroupInboundPurge.swift",
         "Yala/Services/CloudSync/PersonalContainerSwap.swift",
         "Yala/App/Logic/PersonalSwapReleaseLogic.swift",
-        "Yala/App/YalaApp.swift"
+        "Yala/App/YalaApp.swift",
+        "Yala/App/ContentView.swift",
+        "Yala/App/Views/Profile/ProfileView.swift",
+        "Yala/App/Views/Settings/UserDataResetView.swift"
       ],
       "scenarioIDs": [],
       "classification": "agentic",
@@ -2400,7 +2809,34 @@
         "Yala/Services/CloudSync/SessionPreferenceKeys.swift",
         "Yala/App/Logic/Helpers/WidgetSessionSeal.swift",
         "Yala/Services/WidgetDataCache.swift",
-        "Yala/App/Views/Onboarding/WelcomeCloudSignInView.swift"
+        "Yala/App/Views/Onboarding/WelcomeCloudSignInView.swift",
+        "Yala/App/Views/Groups/Onboarding/GroupsOnboardingView.swift",
+        "Yala/App/Views/Onboarding/OnboardingView.swift",
+        "Yala/App/Views/Onboarding/WelcomeHeroView.swift",
+        "Yala/App/Views/Settings/SignOutRelaunchView.swift",
+        "Yala/App/Views/Shared/ProfileToolbarButton.swift",
+        "Yala/App/Services/GroupBackendInviteEntryHandler.swift",
+        "Yala/App/Tips/ProTourManager.swift",
+        "Yala/App/Views/Favorites/FavoritesListView.swift",
+        "Yala/App/Views/Groups/FullModeActivationView.swift",
+        "Yala/App/Views/Groups/GroupsContainerView.swift",
+        "Yala/App/Views/More/MoreView.swift",
+        "Yala/App/Views/Onboarding/WelcomeFlowContainer.swift",
+        "Yala/App/Views/Panel/PanelSheetsModifier.swift",
+        "Yala/App/Views/Planning/PlanningView.swift",
+        "Yala/App/Views/Profile/YalaAccountView.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+        "Yala/App/Views/Reports/FinancialReportView.swift",
+        "Yala/App/Views/Settings/GroupsRetentionView.swift",
+        "Yala/App/Views/Settings/StorageSettingsView.swift",
+        "Yala/App/Views/Settings/iCloudSyncSettingsView.swift",
+        "Yala/App/Views/Shared/ForceUpdateView.swift",
+        "Yala/App/Views/Shared/GroupsBackendInviteModifier.swift",
+        "Yala/App/Views/Shared/SyncStatusBanner.swift",
+        "Yala/App/Views/Statistics/DetailContainerView.swift",
+        "Yala/App/YalaApp.swift",
+        "Yala/App/YalaAppDelegate.swift",
+        "Yala/Seed/CategorySeed.swift"
       ],
       "scenarioIDs": [],
       "classification": "agentic",
@@ -2512,7 +2948,8 @@
         "Yala/Services/CloudSync/Groups/GroupBackendMembershipService.swift",
         "YalaTests/CloudSync/GroupCreateRaceZoneTests.swift",
         "Yala/App/Views/Groups/GroupsContainerView.swift",
-        "YalaTests/GroupCreateRoutingLogicTests.swift"
+        "YalaTests/GroupCreateRoutingLogicTests.swift",
+        "Yala/App/ContentView.swift"
       ],
       "scenarioIDs": [],
       "classification": "manual",
@@ -2561,7 +2998,20 @@
         "Yala/Services/CloudSync/GoogleTokenRevocation.swift",
         "Yala/App/Logic/AccountDeletionDebtLogic.swift",
         "Yala/App/Logic/DestructiveScopeLogic.swift",
-        "Yala/App/Views/Shared/DestructiveScopeSheet.swift"
+        "Yala/App/Views/Shared/DestructiveScopeSheet.swift",
+        "Yala/App/Views/Profile/ProfileView.swift",
+        "Yala/App/ContentView.swift",
+        "Yala/App/Tips/ProTourManager.swift",
+        "Yala/App/Views/Favorites/FavoritesListView.swift",
+        "Yala/App/Views/Groups/GroupsContainerView.swift",
+        "Yala/App/Views/More/MoreView.swift",
+        "Yala/App/Views/Panel/PanelSheetsModifier.swift",
+        "Yala/App/Views/Planning/PlanningView.swift",
+        "Yala/App/Views/Profile/YalaAccountView.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift",
+        "Yala/App/Views/Reports/FinancialReportView.swift",
+        "Yala/App/Views/Settings/UserDataResetView.swift",
+        "Yala/App/Views/Statistics/DetailContainerView.swift"
       ],
       "scenarioIDs": [],
       "classification": "manual",
@@ -2580,7 +3030,8 @@
         "Yala/Models/TransactionItem.swift",
         "Yala/App/Logic/ExchangeRateMergeLogic.swift",
         "Yala/App/Logic/ExchangeRateRepairLogic.swift",
-        "Yala/App/Views/Settings/CurrencySettingsView.swift"
+        "Yala/App/Views/Settings/CurrencySettingsView.swift",
+        "Yala/App/Views/Profile/ProfileView.swift"
       ],
       "scenarioIDs": [],
       "classification": "manual",
