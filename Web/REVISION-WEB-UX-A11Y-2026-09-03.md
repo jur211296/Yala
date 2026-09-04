@@ -7,7 +7,7 @@
 > que se indica; lo demás va marcado como inferencia o hipótesis.
 >
 > - **PR:** https://github.com/jur211296/Yala/pull/62
-> - **Preview de Vercel (con el rediseño, 2026-09-04):** https://yala-54tv7bb0p-jur211296s-projects.vercel.app
+> - **Preview de Vercel (con el rediseño, 2026-09-04):** https://yala-awn0b3ri7-jur211296s-projects.vercel.app
 > - **Producción (sin tocar):** https://yala-app.pe
 
 ## Índice
@@ -292,9 +292,10 @@ verificó hasta donde esta sesión pudo llegar:
    un usuario real, y (c) el cambio debe ir alineado con la ficha de la App Store (`marketing/`, que es de Lola)
    y las *nutrition labels*. **Paso concreto:** confirmar con el código de `GroupsSyncClient` qué se envía al
    gateway y reescribir `groupsBullet3`, `groupsNote`, `faq9A`, `privacyGroupsText` y `termsDataText`.
-2. **Revisión legal de §6 «Analítica anónima» (L1).** Lo reescribí porque lo anterior era falso; sigue siendo un
+2. **Revisión legal (L1 y L2).** Jürgen lo revisa al lanzar 2.1.
+3. ~~Revisión legal de §6 «Analítica anónima»~~ — Lo reescribí porque lo anterior era falso; sigue siendo un
    borrador. Confirmar además si Cloudflare debe figurar como encargado del tratamiento (RGPD) junto a OpenAI.
-3. **Autoalojar la fuente Inter.** Hoy se carga de Google Fonts: manda la IP del visitante a Google (sentencia de
+4. ~~**Autoalojar las fuentes**~~ — **hecho el 2026-09-04** (§11.7). Texto original: Hoy se carga de Google Fonts: manda la IP del visitante a Google (sentencia de
    Múnich 2022, relevante para DE/FR/IT/PT) y sigue siendo la principal dependencia externa. Lo dejé porque
    supone meter binarios woff2 en el repo o una dependencia (`@fontsource/inter`), y porque cambiar la tipografía
    (p. ej. a la del sistema, que en iPhone es la de la app) es una decisión de identidad. Con la carga no
@@ -315,7 +316,7 @@ verificó hasta donde esta sesión pudo llegar:
 
 ## 10. Cómo revisar el preview
 
-1. Abre **https://yala-54tv7bb0p-jur211296s-projects.vercel.app** en el Mac. Debe verse la home en español con dos botones en el hero.
+1. Abre **https://yala-awn0b3ri7-jur211296s-projects.vercel.app** en el Mac. Debe verse la home en español con dos botones en el hero.
 2. Pulsa el icono de sol (arriba a la derecha) para pasar a **modo claro**: fíjate en el badge «Pro» de la
    sección Yala IA, en «Con Yala» y en «Lo que SÍ hacemos» — antes eran cian casi blanco; ahora se leen.
 3. Baja hasta la galería y pulsa **«Pausar galería»**: se detiene y puedes arrastrarla. Vuelve a pulsar para
@@ -323,17 +324,17 @@ verificó hasta donde esta sesión pudo llegar:
 4. Pulsa **Tab** una vez desde el principio de la página: aparece «Saltar al contenido» arriba a la izquierda.
    Sigue con Tab: cada botón y enlace muestra un anillo de foco.
 5. Prueba el idioma: en Terminal,
-   `curl -sI -H "Accept-Language: en-US,en;q=0.9" https://yala-54tv7bb0p-jur211296s-projects.vercel.app/ | head -3` → debe responder `307`/`308` con
-   `location: /en/`. Sin cabecera → `200` (español). Y `curl -sI https://yala-54tv7bb0p-jur211296s-projects.vercel.app/privacy_content | head -3` →
+   `curl -sI -H "Accept-Language: en-US,en;q=0.9" https://yala-awn0b3ri7-jur211296s-projects.vercel.app/ | head -3` → debe responder `307`/`308` con
+   `location: /en/`. Sin cabecera → `200` (español). Y `curl -sI https://yala-awn0b3ri7-jur211296s-projects.vercel.app/privacy_content | head -3` →
    `308` a `/privacy`.
-6. Cabeceras: `curl -sI https://yala-54tv7bb0p-jur211296s-projects.vercel.app/ | grep -iE "x-content|referrer|x-frame|permissions"` → cuatro líneas.
+6. Cabeceras: `curl -sI https://yala-awn0b3ri7-jur211296s-projects.vercel.app/ | grep -iE "x-content|referrer|x-frame|permissions"` → cuatro líneas.
 7. En el **iPhone**, abre el preview en Safari: arriba debe aparecer el banner nativo de Yala («Abrir» o «Ver»).
    Nota: el preview **pide login de Vercel** (protección SSO): entra una vez con tu cuenta y el resto de pasos
    funcionan en ese navegador. Los `curl` de los pasos 5 y 6 necesitan la cookie de sesión, así que hazlos desde
    las DevTools (pestaña Network, recargando con «Disable cache») o directamente tras el merge contra
    `https://yala-app.pe`.
-8. Invitación: `https://yala-54tv7bb0p-jur211296s-projects.vercel.app/invite?n=Viaje%20a%20Cusco&c=8B5CF6&m=Ana,Luis&u=Camila&i=airplane` — chips
-   con texto claro; y `https://yala-54tv7bb0p-jur211296s-projects.vercel.app/invite?m=%ZZ` ya no da error.
+8. Invitación: `https://yala-awn0b3ri7-jur211296s-projects.vercel.app/invite?n=Viaje%20a%20Cusco&c=8B5CF6&m=Ana,Luis&u=Camila&i=airplane` — chips
+   con texto claro; y `https://yala-awn0b3ri7-jur211296s-projects.vercel.app/invite?m=%ZZ` ya no da error.
 9. Si algo no convence (el tono `#818CF8` del acento, el tema del sistema por defecto), son una línea cada uno:
    `--accent` en `global.css` y el script del `<body>` en `Layout.astro`.
 
@@ -460,3 +461,36 @@ abierta, y el teal vuelve a ser un acento. En móvil el bloque lleva menos paddi
   página, compitiendo con el titular. Pasa a superficie oscura `#16203A` (texto 15.4:1, meta 6.3:1, icono
   teal translúcido); en claro se queda blanca, que ahí sí es la superficie natural. axe: 0 violaciones en
   ambos temas.
+
+### 11.7 Que las máquinas la lean bien: estructura, datos estructurados y fuentes propias
+
+**Lo que ya estaba bien** (medido sobre el HTML servido, sin ejecutar JavaScript, que es como entran
+Google y la mayoría de lectores de IA): **4.762 caracteres de texto real** —la página no depende de JS—,
+**un solo `<h1>`**, siete `<h2>` (uno por sección) y los `<h3>` colgando del suyo, sin saltos de nivel;
+`header`/`nav`/`main`/`footer` únicos; las cifras y la FAQ en `<dl>/<dt>/<dd>` y la cita en
+`<blockquote>`; canonical, 13 `hreflang`, meta description, `og:image` absoluta, sitemap y `robots.txt`
+abierto.
+
+**Dos huecos, ya cerrados:**
+
+- **No había datos estructurados.** Ahora hay JSON-LD con `Organization`, `WebSite` y
+  `MobileApplication`: qué es la app, para qué sistema (iOS 26+), quién la publica, desde cuándo
+  (2026-03-03) y los dos planes con su precio. **Sin `aggregateRating`** — la nota de la App Store es
+  real (5,0) pero se apoya en 4 valoraciones; decisión del owner: se añade cuando haya volumen.
+- **No había `llms.txt`.** Se añadió: qué es Yala y qué no es, las cinco formas de anotar un gasto, la
+  postura de privacidad y el mapa de páginas, en texto plano. `robots.txt` lo apunta.
+
+**Fuentes propias (cierra el pendiente §9.3).** Inter y Bricolage se sirven desde `yala-app.pe`; no queda
+ninguna llamada a Google en el HTML. Motivo: cargarlas de Google manda la IP del visitante a Google, y eso
+costó una condena en Múnich (LG München I, 20-01-2022) — Yala vende en DE/FR/IT/PT.
+
+**El coste, dicho sin adornos: Lighthouse móvil baja de 95 a 86** (LCP 2,9 → 3,9 s). Esos bytes siempre
+existieron; venían de otro dominio y en diferido, así que la métrica no los contaba. Para amortiguarlo se
+sirven **tres caras y no seis** (Inter 500 y 700 caen a 400 y 600; la cita pasa de Bricolage a Inter):
+170 KB en la primera visita y caché de un año. La imagen del hero baja de 141 a 114 KB. Accesibilidad,
+buenas prácticas y SEO siguen en 100, y axe en 0 violaciones en los dos temas.
+
+Si en algún momento pesa más la métrica que el argumento legal, volver a Google Fonts es revertir un
+commit; y el camino intermedio —subsetear las caras a los caracteres que la web usa de verdad, con
+`pyftsubset`— recortaría ese 170 KB a la mitad, pero pedía instalar `fonttools` en esta máquina y no lo
+hice.
