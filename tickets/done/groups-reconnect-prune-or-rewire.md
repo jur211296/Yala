@@ -1,10 +1,10 @@
 ---
 id: groups-reconnect-prune-or-rewire
-status: backlog
+status: done
 priority: medium
 area: groups
 created: 2026-08-08
-updated: 2026-08-26
+updated: 2026-09-04
 source: YalaWiki/Backlog/groups-reconexion-poda-o-recableado.md
 ---
 
@@ -59,3 +59,32 @@ confirman, la reconexión CloudKit-era no tiene equivalente que construir — so
 3. Si (a): commit sustractivo con las cifras re-medidas + XCUITest del re-join si no existe.
 
 migrated from YalaWiki Backlog/groups-reconexion-poda-o-recableado.md @ 1934e8ad
+
+---
+
+## CERRADO · 2026-09-04 — se decidió (a), podar, y ya está ejecutado
+
+Este ticket pedía «verificar las dos hipótesis del re-join y decidir (a)/(b)/(c) con el owner».
+Las dos cosas ocurrieron el 2026-09-04, dentro de `guest-journey-dead-screens`:
+
+**Las hipótesis se verificaron, y salieron PARCIALES — no confirmadas.** Con sesión viva el pull
+re-baja el corpus entero sin pasar por ninguna pantalla, y el RPC `join_group` cubre ya-miembro,
+pendiente, rechazado, expulsado y grupo borrado. Pero aparecieron casos sin salida, y el mayor es
+que **al rechazado que tapea un enlace con la app cerrada no le pasa nada, de forma permanente**.
+
+**Aun así la decisión es (a), y el matiz importa:** ninguno de esos casos lo habría rescatado una
+pantalla de reconexión. Mueren aguas arriba —en `enterBackendInvite` y en `decideBackend`— antes de
+cualquier presentación. La opción (b), recablear, no era la respuesta a lo que se encontró.
+
+⇒ La poda se ejecutó en `4f01484e`: fuera `GroupReconnectView`, los ocho `ReconnectMode`,
+`handleReconnectJoin`, el `Equatable` e `InviteRouteDecision` con sus 23 pruebas. **El copy
+`groups.reconnect.*` se conservó en los 16 locales** a propósito: `deletedForAll.body` ya tiene un
+segundo consumidor vivo en el canal backend, y los cuerpos de reintento son el texto que necesita
+el arreglo del hueco.
+
+El hueco encontrado vive en `tickets/backlog/rejected-member-cold-tap-does-nothing.md` (high). No
+reabre esta decisión: su arreglo no necesita pantalla.
+
+**Aviso de coordenadas:** las de este ticket estaban caducadas —situaba `inviteRouteDecision` en
+`AppBootstrapper.swift:1915-1918` cuando al medirla estaba en `:2145-2179`, y `handleReconnectJoin`
+en `ContentView:1650` cuando estaba en `:1973`—. Hoy ya no existen ninguna de las dos.

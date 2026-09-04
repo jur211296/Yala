@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (98)
+## Index (99)
 
 | id | status | path |
 |----|--------|------|
@@ -80,12 +80,12 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-leave-rpc-error-10 | backlog | tickets/backlog/groups-leave-rpc-error-10.md |
 | groups-log-expense-via-chat-voice | backlog | tickets/backlog/groups-log-expense-via-chat-voice.md |
 | groups-pending-member-can-open-group | backlog | tickets/backlog/groups-pending-member-can-open-group.md |
-| groups-reconnect-prune-or-rewire | backlog | tickets/backlog/groups-reconnect-prune-or-rewire.md |
+| groups-reconnect-prune-or-rewire | done | tickets/done/groups-reconnect-prune-or-rewire.md |
 | groups-settlement-reminder | backlog | tickets/backlog/groups-settlement-reminder.md |
 | groups-shareable-summary | backlog | tickets/backlog/groups-shareable-summary.md |
 | groups-tab-missing-panel-perf | backlog | tickets/backlog/groups-tab-missing-panel-perf.md |
 | guest-decline-has-no-screen | qa | tickets/qa/guest-decline-has-no-screen.md |
-| guest-journey-dead-screens | in-progress | tickets/in-progress/guest-journey-dead-screens.md |
+| guest-journey-dead-screens | done | tickets/done/guest-journey-dead-screens.md |
 | history-token-guard-echo-blind-spot | backlog | tickets/backlog/history-token-guard-echo-blind-spot.md |
 | inbox-convert-draft-to-group-expense | done | tickets/done/inbox-convert-draft-to-group-expense.md |
 | inbox-crash-convert-to-group-expense | done | tickets/done/inbox-crash-convert-to-group-expense.md |
@@ -101,6 +101,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | prefs-domain-per-secondary-session | qa | tickets/qa/prefs-domain-per-secondary-session.md |
 | prefs-synced-keys-upload-not-download | qa | tickets/qa/prefs-synced-keys-upload-not-download.md |
 | push-client-ignores-yala-kind | backlog | tickets/backlog/push-client-ignores-yala-kind.md |
+| rejected-member-cold-tap-does-nothing | backlog | tickets/backlog/rejected-member-cold-tap-does-nothing.md |
 | records-standalone-amount-discrepancy | backlog | tickets/backlog/records-standalone-amount-discrepancy.md |
 | reentry-counts-as-fresh-install | in-progress | tickets/in-progress/reentry-counts-as-fresh-install.md |
 | registros-calendario-cuenta-gastos-por-signo | qa | tickets/qa/registros-calendario-cuenta-gastos-por-signo.md |
@@ -327,7 +328,7 @@ Jurgen 2026-08-26: `groups-cloud-mode-hardening-v1`, `groups-cloud-identity-loss
 | Bugs/groups-notif-actualizo-atribuye-al-pagador-no-al-autor.md | tickets/done/group-notif-credits-payer-not-editor.md |
 | Bugs/grupos-enlace-de-invitacion-cinco-causas-un-solo-mensaje.md | tickets/in-progress/invite-link-five-causes-one-message.md |
 | Bugs/grupos-invitado-el-no-no-tiene-pantalla.md | tickets/qa/guest-decline-has-no-screen.md |
-| Bugs/grupos-recorrido-del-invitado-codigo-muerto-y-docblock-caducado.md | tickets/in-progress/guest-journey-dead-screens.md |
+| Bugs/grupos-recorrido-del-invitado-codigo-muerto-y-docblock-caducado.md | tickets/done/guest-journey-dead-screens.md |
 | Bugs/ok_applepay-shortcut-ios27-warm-launch-datos-vacios.md | tickets/qa/applepay-shortcut-warm-launch-empty-data.md |
 | Bugs/ok_siri-intent-dual-container-refactor.md | tickets/qa/siri-intent-dual-container.md |
 | Bugs/prefs-cinco-keys-synced-suben-y-no-vuelven.md | tickets/qa/prefs-synced-keys-upload-not-download.md |
@@ -357,7 +358,7 @@ Jurgen 2026-08-26: `groups-cloud-mode-hardening-v1`, `groups-cloud-identity-loss
 | Backlog/groups-import-splitwise-tricount.md | tickets/backlog/groups-import-splitwise-tricount.md |
 | Backlog/groups-invitado-moneda-region-red-muerta.md | tickets/backlog/groups-guest-currency-from-region.md |
 | Backlog/groups-presupuesto-de-grupo.md | tickets/backlog/groups-budget.md |
-| Backlog/groups-reconexion-poda-o-recableado.md | tickets/backlog/groups-reconnect-prune-or-rewire.md |
+| Backlog/groups-reconexion-poda-o-recableado.md | tickets/done/groups-reconnect-prune-or-rewire.md |
 | Backlog/groups-recordatorio-liquidacion.md | tickets/backlog/groups-settlement-reminder.md |
 | Backlog/groups-registrar-gasto-por-chat-voz.md | tickets/backlog/groups-log-expense-via-chat-voice.md |
 | Backlog/groups-resumen-compartible-exportable.md | tickets/backlog/groups-shareable-summary.md |

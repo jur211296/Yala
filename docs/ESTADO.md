@@ -31,15 +31,22 @@ Panel, que para quien instale ahora arranca con cuatro secciones y cuatro widget
 
 Revisados los 7 `in-progress` uno a uno el 2026-09-04, verificando contra el árbol lo que cada
 ticket afirma. Hallazgo: **ninguno esperaba una decisión tuya** — la tanda del 3-sep las cerró
-todas. Dos salieron de `in-progress` en ese saneamiento; **quedan 5, y los 5 esperan código**.
+todas. Tres salieron ese día (dos en el saneamiento, `guest-journey` al ejecutarse); **quedan 4, y
+los 4 esperan código**.
 
+- **`rejected-member-cold-tap-does-nothing`** (high, nuevo) — **lo más caro que hay abierto.** A
+  quien rechazaron de un grupo, tapear un enlace nuevo **con la app cerrada** no le hace nada, y así
+  se queda: no es una carrera, es el estado estable. Con la app abierta funciona, así que depende de
+  algo que la persona no controla. **Es una regresión de `g13_02`**, que está al 100 % en producción
+  desde el 3-sep: al conservar la fila del rechazado para poder avisarle, se activó un camino que ya
+  estaba roto. La cadena está medida en código, **no en un teléfono**: empieza por el device-QA de
+  cinco minutos que la confirme.
 - **`group-joiner-flag-consumers-still-narrow`** (high, en `backlog`) — al recién llegado ya se le
   reconoce, pero su gasto no llega a su cuenta personal hasta un arranque posterior y aterriza en la
   cuenta «Grupos». Trece consumidores del flag siguen estrechos.
-- **`guest-journey-dead-screens`** — decidido el 12-ago, medido, y su freno era «no abrir un borrado
-  de 10 ficheros de noche»: esa sesión cerró hace 23 días. **Dos de sus seis piezas ya están hechas
-  y el ticket no lo registra** (el docblock se corrigió en `cd87cf3a`; el `if` vacío ya no existe).
-- **`invite-link-five-causes-one-message`** — piezas 2, 3 y 4 son código. Sin tocar.
+- **`invite-link-five-causes-one-message`** — piezas 2, 3 y 4 son código. Sin tocar. Su pieza 2
+  (cablear `branded`) se dejó aquí a propósito al podar el recorrido del invitado: la medición a
+  fondo vive en este ticket y duplicarla era la forma segura de divergir.
 - **`secondary-visitor-writes-owner-domain`** y **`secondary-guest-exit-lock-and-outbox`** — las
   decisiones del 3-sep están tomadas y **el código aprobado no está escrito**. Alcance real hoy: cero
   (SECONDARY_SESSION al 0 % en prod), pero bloquean el encendido.
@@ -58,9 +65,17 @@ sigue sin `ok_`. **Cero `ok_` inventado.**
 
 ## Board
 
-98 tickets · backlog 50 · in-progress 5 · qa 22 · blocked 2 · done 14 · discarded 5. Índice cuadrado
-(98 filas = 98 ficheros, status y ruta de cada fila comprobados contra el disco). `qa` significa
+99 tickets · backlog 50 · in-progress 4 · qa 22 · blocked 2 · done 16 · discarded 5. Índice cuadrado
+(99 filas = 99 ficheros, status y ruta de cada fila comprobados contra el disco). `qa` significa
 «esperando la tanda», no «cerrado».
+
+**Cerrado el recorrido muerto del invitado (`4f01484e` + el commit del pin).** Para el usuario no
+cambia nada: era código que ningún camino podía alcanzar. Se fueron `GroupReconnectView` con sus
+ocho modos, tres intents sin emisor, el alert de «oferta de restaurar» y el trigger `.remoteInsert`
+—41 ficheros, −821 líneas—. Lo que **no** se fue, y es lo que hay que recordar: el copy
+`groups.reconnect.*` en los 16 locales, porque producción lo usa por la key cruda y porque es el
+texto que necesita el bug de arriba. `groups-reconnect-prune-or-rewire` se cierra con él: preguntaba
+podar-o-recablear y la respuesta ya está ejecutada.
 
 **Saneado el 2026-09-04.** `ci-verde-con-la-suite-en-rojo` → `done`: su alcance —el que tú fijaste,
 hasta el paso 2— está completo y verificado; lo que quedaba fuera vive ahora en

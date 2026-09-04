@@ -72,7 +72,16 @@ enum InviteLinkService {
     ///   `https://yala-app.pe/invite?g=<gid>&t=<token>&s=<b64u("…/invite?g=&t=")>&n=..&i=..&c=..&m=..&u=..`
     /// `s` SIEMPRE presente (el AASA exige la presencia de `s`): es el base64URL de la forma MÍNIMA
     /// self-referential (`…/invite?g=..&t=..` sin cosméticos) para que `invite.astro` — que re-emite SOLO
-    /// `s` por el camino custom-scheme — preserve `g`/`t` sin tocarse. DARK: sin call-sites de UI hoy.
+    /// `s` por el camino custom-scheme — preserve `g`/`t` sin tocarse.
+    ///
+    /// **VIVO** (medido el 2026-09-04). Este docblock decía «DARK: sin call-sites de UI hoy» y era
+    /// cierto cuando se escribió, en G4. Su productor real es `GroupBackendInviteService.createInviteLink`
+    /// (`:48`), que a su vez cuelga de los dos botones de compartir enlace —`GroupMembersView` y
+    /// `GroupDetailViewModel`—, o sea del recorrido de invitación de todos los grupos backend.
+    /// Misma familia que el `AppAttestClient.ensureRegistered()` de `.claude/rules/gateway-attest.md`,
+    /// cuya promesa falsa costó una vuelta entera de diagnóstico del 401.
+    /// ⇒ **si vuelves a escribir DARK aquí, pega el grep de call-sites al lado:**
+    /// `grep -rn "buildBackendInviteURL" Yala/ --include='*.swift'`
     static func buildBackendInviteURL(
         groupID: String,
         token: String,
