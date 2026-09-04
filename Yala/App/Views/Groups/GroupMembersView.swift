@@ -183,6 +183,15 @@ struct GroupMembersView: View {
                         member: member,
                         groupColorHex: group.colorHex,
                         isCurrentUserAdmin: canActAsAdmin,
+                        // El flag O la identidad resuelta: la unión de los dos criterios, nunca uno
+                        // solo. Una zona MIGRADA puede tener DOS filas del mismo humano con el flag
+                        // puesto —`refreshCurrentUserFlags` conserva el de la fila legacy
+                        // (GroupService:1136) y enciende el de la born-backend por `sub`—, y el
+                        // resolvedor devuelve UNA (la de `min(joinedAt)`). Comparar solo contra ella
+                        // dejaría la otra fila propia con «quitar» y «cambiar rol» a la vista, que es
+                        // justo la regresión que este parámetro venía a evitar.
+                        isSelf: member.isCurrentUser
+                            || member.id.uuidString == viewModel.currentMemberID,
                         onChangeRole: { changeRole(member) },
                         onRemove: {
                             memberToRemove = member

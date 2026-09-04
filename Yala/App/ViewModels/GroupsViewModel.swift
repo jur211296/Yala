@@ -430,10 +430,19 @@ final class GroupsViewModel {
 
     /// Status del current user en el grupo. Drives `GroupCardView.displayMode`
     /// para mostrar chip pending/rejected en lugar del balance trailing.
+    /// Identidad RESUELTA, como en `GroupDetailViewModel.currentUserMember`. Sin esto la tarjeta
+    /// contradecía al detalle, y sobre todo: la tarjeta YA está cableada para los dos estados
+    /// —`.pendingApproval` la desactiva (`GroupCardView:90`) y `.rejected` enruta a `onRejectedTap`
+    /// (:275 → `GroupsContainerView:396`, la confirmación de salir)—, así que resolver aquí pone al
+    /// rechazado delante de esa salida en sesión viva, sin depender de que abra el detalle.
+    ///
+    /// Esa salida NO servía de nada por sí sola: `leaveGroup` no toleraba `memberNotFound` y a un
+    /// rechazado —que ya no es miembro server-side— el RPC le respondía con eso. Se le ofrecía una
+    /// acción destructiva que fallaba. Arreglado en el mismo commit dándole el `catch` que
+    /// `batchLeave` ya tenía.
     func currentMemberStatus(for group: SplitGroup) -> SplitMemberStatus? {
-        membersByGroup[group.cloudKitZoneID]?
-            .first(where: { $0.isCurrentUser })?
-            .memberStatus
+        guard let members = membersByGroup[group.cloudKitZoneID] else { return nil }
+        return GroupExpenseService.resolveCurrentUserMember(from: members)?.memberStatus
     }
 
     /// Grupos donde el current user puede crear un gasto USABLE (activo + miembro `.active`

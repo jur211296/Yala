@@ -12,6 +12,15 @@ struct GroupMemberRow: View {
     let member: SplitMember
     let groupColorHex: String
     let isCurrentUserAdmin: Bool
+    /// ¿Esta fila soy YO? Lo decide quien monta la lista, con la identidad RESUELTA — no se lee
+    /// `member.isCurrentUser` aquí a propósito.
+    ///
+    /// El flag es local y `applyMember` no lo enciende: un admin cuyo member bajó por el pull (2º
+    /// device, reinstalación, aprobación en vivo) resuelve identidad por `sub` y ve
+    /// `isCurrentUserAdmin == true`, pero su fila sigue con el flag apagado. Con la condición
+    /// leyendo el flag, su PROPIA fila mostraba «quitar» y «cambiar rol» — y el botón funciona:
+    /// llama al RPC. Se podía echar de su propio grupo.
+    let isSelf: Bool
     let onChangeRole: () -> Void
     let onRemove: () -> Void
     var onApprove: (() -> Void)? = nil
@@ -48,7 +57,7 @@ struct GroupMemberRow: View {
             Spacer()
 
             // Admin actions
-            if isCurrentUserAdmin && !member.isCurrentUser && !member.isGroupOwner {
+            if isCurrentUserAdmin && !isSelf && !member.isGroupOwner {
                 if member.memberStatus == .pendingApproval, let onApprove, let onReject {
                     // Iconos circulares (vs botones text): caben junto al badge
                     // "Pendiente de aprobación" sin truncar nombre/label.

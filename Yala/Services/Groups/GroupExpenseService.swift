@@ -639,27 +639,60 @@ final class GroupExpenseService {
         cachedRecordName: String?,
         currentUserID: String? = nil
     ) -> String? {
+        selectCurrentUserMember(
+            from: members, cachedRecordName: cachedRecordName, currentUserID: currentUserID
+        )?.id.uuidString
+    }
+
+    /// La PRIMITIVA de la resolución canónica: el mismo orden de criterios y el mismo desempate,
+    /// devolviendo el miembro en vez de su id. `selectCurrentUserMemberID` delega aquí para que las
+    /// dos no puedan divergir — que es exactamente el modo de fallo que esta tanda vino a cerrar:
+    /// once sitios resolviendo identidad de once maneras.
+    ///
+    /// Existe porque casi todos los consumidores necesitan el MIEMBRO (su `memberStatus`, su
+    /// `role`, su `isActive`), no su id, y con solo la variante `...ID` cada uno se fabricaba su
+    /// propio `first { $0.isCurrentUser }` para recuperarlo — volviendo al punto de partida.
+    static func selectCurrentUserMember(
+        from members: [SplitMember],
+        cachedRecordName: String?,
+        currentUserID: String? = nil
+    ) -> SplitMember? {
         if let current = members.filter({ $0.isCurrentUser }).min(by: { $0.joinedAt < $1.joinedAt }) {
-            return current.id.uuidString
+            return current
         }
         if let byBackendIdentity = members.filter({
             GroupJoinReconcileLogic.backendMemberMatchesCurrentUser(
                 memberUserID: $0.userID, memberKey: $0.memberKey, currentUserID: currentUserID)
         }).min(by: { $0.joinedAt < $1.joinedAt }) {
-            return byBackendIdentity.id.uuidString
+            return byBackendIdentity
         }
         if let recordName = cachedRecordName, !recordName.isEmpty,
            let byIdentity = members.filter({ $0.cloudKitUserRecordID == recordName })
                                    .min(by: { $0.joinedAt < $1.joinedAt }) {
-            return byIdentity.id.uuidString
+            return byIdentity
         }
         return nil
+    }
+
+    /// Resolución canónica de identidad para el proceso vivo, con las dos fuentes ya cableadas.
+    /// Es el molde que `GroupSettingsView.hasOutstandingBalance` escribía a mano, extraído para que
+    /// los consumidores no tengan que acordarse del gate de `groupsBackendEnabled` — olvidarlo
+    /// devuelve nil justo en el canal donde hace falta.
+    static func resolveCurrentUserMember(from members: [SplitMember]) -> SplitMember? {
+        selectCurrentUserMember(
+            from: members,
+            cachedRecordName: GroupUserIdentityService.shared.cachedRecordName,
+            currentUserID: CloudSyncFlags.groupsBackendEnabled ? CloudAuthService.shared.currentUserID : nil
+        )
     }
 
     private func validateCurrentUserCanWrite(in group: SplitGroup) throws {
         try validateGroupIsWritable(group)
         let members = try GroupService.shared.fetchMembers(for: group)
-        guard let current = members.first(where: { $0.isCurrentUser }) else {
+        // Identidad RESUELTA, no el flag pelado: si la UI ya reconoce al usuario y este gate no,
+        // el FAB aparece y el guardado lo rechaza — «ves algo que no funciona», que es peor que no
+        // verlo. Los dos lados tienen que decidir con el mismo criterio.
+        guard let current = Self.resolveCurrentUserMember(from: members) else {
             if group.isOwner { return }
             throw GroupExpenseServiceError.inactiveMember
         }

@@ -471,7 +471,18 @@ final class GroupService {
         // ni tracker donde encolar, y el share huérfano que pueda quedar en CloudKit no lo ve ya ninguna
         // superficie de la app.
         if routesMembershipToBackend(group) {
-            _ = try await backendMembershipFactory().leave(groupID: group.cloudKitZoneID)
+            do {
+                _ = try await backendMembershipFactory().leave(groupID: group.cloudKitZoneID)
+            } catch GroupsRPCError.memberNotFound {
+                // Ya no soy miembro server-side → sigo al cleanup local. Mismo criterio y mismo
+                // motivo que `batchLeave`, que lo tolera desde su origen.
+                //
+                // El caso que lo hacía falta aquí es el RECHAZADO: su fila server-side no es una
+                // membresía viva, así que el RPC responde `member_not_found` y la única salida que
+                // se le ofrece —la confirmación de salir de la tarjeta— terminaba en un alert de
+                // error, dejándole el grupo pegado en la lista para siempre. Sin este `catch`, la
+                // salida existe en la UI y no funciona.
+            }
             try performLocalCleanupAndDelete(group: group, context: context)
             do {
                 try context.save()
@@ -1182,7 +1193,9 @@ final class GroupService {
 
     private func requireCurrentUserAdmin(in group: SplitGroup, context: ModelContext) throws {
         let members = try fetchMembers(for: group)
-        if let current = members.first(where: { $0.isCurrentUser }) {
+        // Identidad resuelta: espeja a `GroupDetailViewModel.isCurrentUserAdmin`, que es quien
+        // decide si se PINTAN aprobar/rechazar/invitar. Divergir aquí deja botones que fallan.
+        if let current = GroupExpenseService.resolveCurrentUserMember(from: members) {
             guard current.isActive else { throw GroupServiceError.inactiveMember }
             guard current.role == "admin" else { throw GroupServiceError.adminRequired }
             return
@@ -1195,7 +1208,9 @@ final class GroupService {
     /// pasa aunque su SplitMember aún no exista localmente.
     private func requireCurrentUserActiveMember(in group: SplitGroup, context: ModelContext) throws {
         let members = try fetchMembers(for: group)
-        if let current = members.first(where: { $0.isCurrentUser }) {
+        // Identidad resuelta, por el mismo motivo que su hermano de arriba y que
+        // `GroupExpenseService.validateCurrentUserCanWrite`, del que este método es espejo.
+        if let current = GroupExpenseService.resolveCurrentUserMember(from: members) {
             guard current.isActive else { throw GroupServiceError.inactiveMember }
             return
         }

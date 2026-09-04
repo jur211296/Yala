@@ -74,8 +74,16 @@ final class GroupDetailViewModel {
         return GroupBalanceService.computeGroupHeaderBalance(debts: debts, currentMemberID: currentMemberID)
     }
 
+    /// Identidad RESUELTA (flag → `sub` del canal backend → identidad iCloud), no el flag pelado.
+    ///
+    /// `GroupsSyncClient.applyMember` NUNCA enciende `isCurrentUser`, y el único call-site de
+    /// producción de `refreshCurrentUserFlags` está en el ARRANQUE (`AppBootstrapper:526`). Quien se
+    /// une por el canal backend en sesión viva no tenía identidad local hasta reiniciar la app: de
+    /// aquí cuelgan los dos banners de estado de `GroupDetailView` (:136 y :138), así que el
+    /// rechazado se quedaba sin cartel y —porque `discardRejectedGroup` solo se llama desde ese
+    /// banner— sin salida.
     var currentUserMember: SplitMember? {
-        members.first { $0.isCurrentUser }
+        GroupExpenseService.resolveCurrentUserMember(from: members)
     }
 
     var activeMembers: [SplitMember] {
