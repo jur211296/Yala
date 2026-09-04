@@ -22,6 +22,7 @@
 8. [Verificación: antes y después](#8-verificación-antes-y-después)
 9. [Qué queda pendiente y por qué](#9-qué-queda-pendiente-y-por-qué)
 10. [Cómo revisar el preview (pasos para Jürgen)](#10-cómo-revisar-el-preview)
+11. [Rediseño (2026-09-04)](#11-rediseño-2026-09-04-de-auditar-a-rehacer-la-home)
 
 ---
 
@@ -335,3 +336,82 @@ verificó hasta donde esta sesión pudo llegar:
    con texto claro; y `https://yala-kwy4wozwi-jur211296s-projects.vercel.app/invite?m=%ZZ` ya no da error.
 9. Si algo no convence (el tono `#818CF8` del acento, el tema del sistema por defecto), son una línea cada uno:
    `--accent` en `global.css` y el script del `<body>` en `Layout.astro`.
+
+---
+
+## 11. Rediseño (2026-09-04): de auditar a rehacer la home
+
+Tras la auditoría, Jürgen pidió una propuesta de rediseño: menos «landing hecha con IA», más producto con
+criterio. Se trabajó así:
+
+1. **Diagnóstico del look plantilla**: aurora con blobs, cards de cristal, texto en degradado, bento de 10
+   iconos, comparativa ✗/✓, marquesina de capturas, cinco acentos a la vez.
+2. **Dos direcciones en un canvas** (A · sobrio editorial, claro y serif; B · cálido con color local, oscuro
+   y bloques de color), ambas con la misma estructura nueva y el hero interactivo funcionando. Jürgen eligió
+   **B**, con dos correcciones: el indigo vuelve a ser el color principal (botones y Pro) y el rosa se queda
+   en un solo golpe («hiciste.»); el crema/ámbar se sustituye por **teal profundo** en los dos temas.
+3. **Revisión adversarial con tres lentes sin contexto** (una persona de Lima que quiere «controlar sus
+   gastos», una de Madrid escéptica con la privacidad, un diseñador de producto). Se cruzaron, se refutó lo
+   que no se sostenía y se incorporó lo que las tres vieron por separado (§11.2).
+
+### 11.1 Qué cambia para quien entra en la web
+
+- **Hero que enseña el producto**: una caja donde el visitante escribe un gasto —«gasté 24 soles en pizza
+  con amigos»— y ve aparecer el registro como en la app (monto, categoría, cuenta). Es un parser de ~40
+  líneas en el navegador, sin red; la app real usa su propio motor. Debajo: «Yala es la app para anotar
+  gastos en lo que tarda el vuelto», el botón de descarga y dos líneas de hechos («Gratis. Sin registro. No
+  se conecta a tu banco.» · «Solo iPhone, iOS 26 o superior»).
+- **Orden que cuenta el bucle**: Anota → Entiende → Pregunta (Yala IA, Pro) → Comparte (Grupos, Beta) →
+  Privacidad → Por qué existe Yala → Planes → Dudas → cierre.
+- **Anota**: tres formas con la captura real; incluye la que faltaba y más preguntan en Perú: compartir a Yala
+  la captura de Yape/Plin o del estado de cuenta con varios movimientos (extensión de compartir `YalaShare`;
+  lectura de varias transacciones por imagen, strings `image.hintBankScreenshots` / `image.hintMultiple`).
+- **Entiende**: un número (salud financiera 99/100), −49 % de gasto vs. el mes pasado, 30 movimientos — todas
+  de la misma captura, sin mezclar meses.
+- **Yala IA** como conversación en texto (cifras de la captura real), nota corta sin proveedor y enlace a
+  Privacidad — decisión del owner.
+- **Grupos** con un caso concreto (Viaje a Cusco, quién debe a quién), marcado como ejemplo.
+- **Privacidad en tres frases**, coherentes con la FAQ (los tipos de cambio también salen).
+- **«Por qué existe Yala» firmado**: Jürgen · Lima, Perú, y «En la App Store desde marzo de 2026» (fecha
+  medida en la App Store: `releaseDate 2026-03-03`).
+- **Planes** con lo que dos lentes preguntaron: 1 mes de prueba (StoreKit `introductoryOffer P1M free`) y
+  «si dejas Pro conservas tus datos; solo se apagan las funciones Pro».
+- **Seis dudas** en vez de nueve, incluidas Yape/Plin/tarjeta, «¿solo iPhone?» y «¿y si dejo de pagar Pro?».
+- **Móvil**: botón «Descargar gratis» fijo abajo cuando el del hero sale de pantalla.
+- **Sistema visual**: fondo sólido (slate de marca / casi blanco), titulares en Bricolage Grotesque, indigo
+  como único color de acción, teal para los dos bloques de producto, rosa solo en «hiciste.». Sin aurora, sin
+  cristal, sin degradados, sin iconos decorativos, sin marquesina.
+
+### 11.2 Lo que la revisión adversarial cambió (y lo que se refutó)
+
+| Hallazgo (lentes) | Qué se hizo |
+|---|---|
+| «¿Y mi Yape/Plin/tarjeta?» (Lima #1) | Forma 2 de anotar + FAQ 1, con la función real de compartir capturas |
+| «¿A quién manda la IA mis datos?» (Lima, Madrid) | Nota corta + enlace a Privacidad; el owner decidió no nombrar al proveedor en la home |
+| «¿Hay Android? ¿qué iPhone?» (las dos personas) | «Solo iPhone, iOS 26 o superior» bajo el botón y en FAQ |
+| «¿Qué pasa si dejo Pro? ¿hay prueba?» (las dos) | Línea bajo el precio + FAQ 6, verificado en StoreKit |
+| «¿Quién más la usa?» (las tres) | Sin cifras (4 valoraciones hoy); «En la App Store desde marzo de 2026» + contacto en el pie |
+| El hero no dice qué es en 3 s (las tres) | Subtítulo explicativo justo bajo «Ya la hiciste.» |
+| «Sin tarjeta · sin cuenta · sin banco» se lee como «no maneja cuentas» (dos) | «Gratis. Sin registro. No se conecta a tu banco.» |
+| Cifras que se contradicen (dos) | Una captura por sección; fuera «está en riesgo» junto a «99» |
+| «Ninguna es un formulario» junto a un formulario (diseñador) | «Ninguna toma más de diez segundos» |
+| Ámbar le gana al indigo; cinco colores (diseñador + owner) | Teal profundo en los dos bloques; indigo único color de acción |
+| Kickers numerados, chip repetido, teléfono saliente ×2 (diseñador) | Sin números; input ya relleno y tres chips distintos; teléfonos dentro del bloque en móvil |
+| Contrastes en texto pequeño (diseñador) | Tokens `--v3-*` con ratios anotados; axe 0/0 |
+| Refutado: «en España "ya la hiciste" es "la has liado"» | Es la marca y el mercado principal es Perú; el subtítulo lo desambigua |
+| Refutado: «página de ancho fijo» | Era la maqueta; la implementación es fluida (medido a 390 px: sin desbordes) |
+
+### 11.3 Verificación del rediseño
+
+| Comprobación | Resultado |
+|---|---|
+| `npm run build` | ✓ · paridad i18n de las 84 claves nuevas × 6 = 504, 0 `undefined` |
+| axe-core 4.10 (contenido visible, transiciones congeladas) · oscuro / claro | **0 / 0 violaciones** |
+| Lighthouse móvil (build estático local) | **92** / 100 / 100 / 100 · FCP 0,9 s · CLS 0,002 · LCP 3,4 s (imagen hero, pendiente §9.4) |
+| Móvil real a 390 px (Chrome) | `scrollWidth` 382, ningún elemento desborda; H1 44–56 px; una columna |
+| Fuentes cargadas | Bricolage Grotesque + Inter (Google Fonts, no bloqueantes) |
+| Prueba en vivo | «gasté 24 soles en pizza con amigos» → Pizza con amigos · Restaurantes · Efectivo · S/ 24.00 |
+
+**Lo que no se hizo y por qué:** capturas nuevas del simulador (Jürgen lo ofreció; las actuales bastan si
+cada sección usa una sola) — queda como opción si se quiere un nombre de usuario distinto o cifras únicas en
+toda la página; y el vídeo demo, la prueba social y el resto de §9 siguen igual.
