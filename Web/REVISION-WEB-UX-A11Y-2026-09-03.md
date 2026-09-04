@@ -7,7 +7,7 @@
 > que se indica; lo demás va marcado como inferencia o hipótesis.
 >
 > - **PR:** https://github.com/jur211296/Yala/pull/62
-> - **Preview de Vercel (con el rediseño, 2026-09-04):** https://yala-pu9mi3md5-jur211296s-projects.vercel.app
+> - **Preview de Vercel (con el rediseño, 2026-09-04):** https://yala-k888dmkhz-jur211296s-projects.vercel.app
 > - **Producción (sin tocar):** https://yala-app.pe
 
 ## Índice
@@ -315,7 +315,7 @@ verificó hasta donde esta sesión pudo llegar:
 
 ## 10. Cómo revisar el preview
 
-1. Abre **https://yala-pu9mi3md5-jur211296s-projects.vercel.app** en el Mac. Debe verse la home en español con dos botones en el hero.
+1. Abre **https://yala-k888dmkhz-jur211296s-projects.vercel.app** en el Mac. Debe verse la home en español con dos botones en el hero.
 2. Pulsa el icono de sol (arriba a la derecha) para pasar a **modo claro**: fíjate en el badge «Pro» de la
    sección Yala IA, en «Con Yala» y en «Lo que SÍ hacemos» — antes eran cian casi blanco; ahora se leen.
 3. Baja hasta la galería y pulsa **«Pausar galería»**: se detiene y puedes arrastrarla. Vuelve a pulsar para
@@ -323,17 +323,17 @@ verificó hasta donde esta sesión pudo llegar:
 4. Pulsa **Tab** una vez desde el principio de la página: aparece «Saltar al contenido» arriba a la izquierda.
    Sigue con Tab: cada botón y enlace muestra un anillo de foco.
 5. Prueba el idioma: en Terminal,
-   `curl -sI -H "Accept-Language: en-US,en;q=0.9" https://yala-pu9mi3md5-jur211296s-projects.vercel.app/ | head -3` → debe responder `307`/`308` con
-   `location: /en/`. Sin cabecera → `200` (español). Y `curl -sI https://yala-pu9mi3md5-jur211296s-projects.vercel.app/privacy_content | head -3` →
+   `curl -sI -H "Accept-Language: en-US,en;q=0.9" https://yala-k888dmkhz-jur211296s-projects.vercel.app/ | head -3` → debe responder `307`/`308` con
+   `location: /en/`. Sin cabecera → `200` (español). Y `curl -sI https://yala-k888dmkhz-jur211296s-projects.vercel.app/privacy_content | head -3` →
    `308` a `/privacy`.
-6. Cabeceras: `curl -sI https://yala-pu9mi3md5-jur211296s-projects.vercel.app/ | grep -iE "x-content|referrer|x-frame|permissions"` → cuatro líneas.
+6. Cabeceras: `curl -sI https://yala-k888dmkhz-jur211296s-projects.vercel.app/ | grep -iE "x-content|referrer|x-frame|permissions"` → cuatro líneas.
 7. En el **iPhone**, abre el preview en Safari: arriba debe aparecer el banner nativo de Yala («Abrir» o «Ver»).
    Nota: el preview **pide login de Vercel** (protección SSO): entra una vez con tu cuenta y el resto de pasos
    funcionan en ese navegador. Los `curl` de los pasos 5 y 6 necesitan la cookie de sesión, así que hazlos desde
    las DevTools (pestaña Network, recargando con «Disable cache») o directamente tras el merge contra
    `https://yala-app.pe`.
-8. Invitación: `https://yala-pu9mi3md5-jur211296s-projects.vercel.app/invite?n=Viaje%20a%20Cusco&c=8B5CF6&m=Ana,Luis&u=Camila&i=airplane` — chips
-   con texto claro; y `https://yala-pu9mi3md5-jur211296s-projects.vercel.app/invite?m=%ZZ` ya no da error.
+8. Invitación: `https://yala-k888dmkhz-jur211296s-projects.vercel.app/invite?n=Viaje%20a%20Cusco&c=8B5CF6&m=Ana,Luis&u=Camila&i=airplane` — chips
+   con texto claro; y `https://yala-k888dmkhz-jur211296s-projects.vercel.app/invite?m=%ZZ` ya no da error.
 9. Si algo no convence (el tono `#818CF8` del acento, el tema del sistema por defecto), son una línea cada uno:
    `--accent` en `global.css` y el script del `<body>` en `Layout.astro`.
 
@@ -415,3 +415,38 @@ criterio. Se trabajó así:
 **Lo que no se hizo y por qué:** capturas nuevas del simulador (Jürgen lo ofreció; las actuales bastan si
 cada sección usa una sola) — queda como opción si se quiere un nombre de usuario distinto o cifras únicas en
 toda la página; y el vídeo demo, la prueba social y el resto de §9 siguen igual.
+
+### 11.4 Capturas nuevas del simulador (2026-09-04) y lo que corrigieron
+
+Jürgen ofreció el simulador; se rehízo el set entero (ES y EN) con semilla determinista, usuaria
+**Camila**, período **Últimos 30 días**. Receta y ficheros: `Web/Screenshots/v3-2026-09-04/README.md`.
+
+**Dos afirmaciones de la web resultaron falsas al medirlas en la app**, y las dos se corrigieron:
+
+1. **«Escríbelo: "24 en pizza" basta: monto, categoría y cuenta quedan puestos.»** La pantalla de nuevo
+   registro **no** interpreta lenguaje natural libre — comprobado escribiendo «Taxi al aeropuerto» en la
+   descripción: el monto se queda en 0.00. Lo que ofrece es `@cuenta !categoría #etiqueta`. El copy pasa a
+   describir eso. Y la caja interactiva del hero, que sí parsea una frase entera, declara ahora lo que es:
+   **Yala IA, función Pro** (el lenguaje libre vive en Yala IA y en voz, ambas Pro).
+2. **El saludo «Hola, Camila» del hero** no existe en la app actual: `panel.greeting` está en `L10n` y no
+   lo usa ningún view. La captura anterior venía de una versión previa; el alt se reescribió sin él.
+
+**Las cifras del copy ahora salen de la captura que tienen al lado** (antes mezclaban tres capturas y se
+contradecían): salud financiera **95**/100, **27 movimientos** en 30 días, **S/ 66.55** de gasto diario
+medio, gastos S/ 2,063; y las deudas del grupo son las tres filas que muestra la pantalla Balances
+(Beto→Ana S/ 30 · Ana→Camila S/ 80 · Beto→Camila S/ 110).
+
+**Dos límites en inglés, documentados y no disimulados:** los nombres de los gastos del grupo y el del
+grupo son datos de la semilla, en español (son datos de usuario, no interfaz); y la captura de grupo en EN
+usa la pestaña **Gastos** en vez de **Balances**, porque en Balances el miembro actual sale como «Tú» y el
+nombre del perfil no se propaga a esa fila sin volver a sembrar.
+
+**Medido tras el cambio:** imágenes de 860 → 620 px de ancho (1,0 MB las ocho) · Lighthouse móvil
+**95**/100/100/100 · LCP 3,4 s → **2,9 s** · CLS 0,001 · axe **0 violaciones** en oscuro y claro.
+
+### 11.5 Ajuste de ritmo: un solo bloque teal
+
+La primera versión implementada puso los dos bloques de producto («Anota» y «Entiende») en teal, seguidos
+y con la misma composición. Jürgen lo señaló: no era ritmo, era repetición, y en móvil eran dos torres de
+~1000 px. **«Entiende» pasó a sección abierta**, así la página alterna bloque → abierta → bloque indigo →
+abierta, y el teal vuelve a ser un acento. En móvil el bloque lleva menos padding y el teléfono más pequeño.
