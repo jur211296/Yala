@@ -17,6 +17,7 @@ const {
 
 const site = 'https://yala-app.pe';
 const APP_STORE_ID = '6758253109';
+const appStoreUrl = `https://apps.apple.com/pe/app/yala-finanzas-sin-esfuerzo/id${APP_STORE_ID}`;
 
 // hreflang: cada página tiene una gemela por idioma con la misma ruta base
 // (`/`, `/privacy`, `/terms`, `/support`). ES vive en la raíz; el resto bajo `/xx/`.
@@ -70,13 +71,58 @@ const ogLocale = ({ es: 'es_PE', en: 'en_US', de: 'de_DE', fr: 'fr_FR', it: 'it_
 		<!-- Marca `js` cuanto antes: el scroll-reveal solo oculta contenido si hay JS que luego lo muestre -->
 		<script is:inline>document.documentElement.classList.add('js');</script>
 
-		<!-- Inter + Bricolage Grotesque (Google Fonts) — carga no bloqueante: la hoja entra como `print` y se activa al cargar -->
-		<link rel="preconnect" href="https://fonts.googleapis.com">
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-		<noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&display=swap" rel="stylesheet"></noscript>
+		<!-- Fuentes propias, servidas desde este dominio (`public/fonts/`). La hoja entra como `print` y se
+		     activa al cargar: así las caras se piden DESPUÉS del primer pintado y no le quitan ancho de
+		     banda a la imagen del hero — medido el 2026-09-04, meterlas en el CSS principal subía el LCP
+		     de 2,9 s a 5,2 s. Con `font-display: swap` el texto se lee desde el primer momento. -->
+		<link rel="preload" href="/fonts/bricolage-800-latin.woff2" as="font" type="font/woff2" crossorigin>
+		<link rel="stylesheet" href="/fonts/fonts.css" media="print" onload="this.media='all'">
+		<noscript><link rel="stylesheet" href="/fonts/fonts.css"></noscript>
 
 		<slot name="head" />
+
+		<!-- Datos estructurados: qué es Yala, quién la hace y cuánto cuesta, en el formato que leen
+		     Google y los lectores de IA. Sin `aggregateRating`: la nota es real pero se apoya en muy
+		     pocas valoraciones (decisión del owner, 2026-09-04); se añade cuando haya volumen. -->
+		<script type="application/ld+json" set:html={JSON.stringify({
+			'@context': 'https://schema.org',
+			'@graph': [
+				{
+					'@type': 'Organization',
+					'@id': `${site}/#organization`,
+					name: 'Yala',
+					url: site,
+					logo: `${site}/icon-192.png`,
+					email: 'admin@yala-app.pe',
+					foundingLocation: { '@type': 'Place', address: { '@type': 'PostalAddress', addressLocality: 'Lima', addressCountry: 'PE' } },
+				},
+				{
+					'@type': 'WebSite',
+					'@id': `${site}/#website`,
+					url: site,
+					name: 'Yala',
+					inLanguage: langCodes,
+					publisher: { '@id': `${site}/#organization` },
+				},
+				{
+					'@type': 'MobileApplication',
+					'@id': `${site}/#app`,
+					name: 'Yala',
+					applicationCategory: 'FinanceApplication',
+					operatingSystem: 'iOS 26.0 or later',
+					url: appStoreUrl,
+					installUrl: appStoreUrl,
+					publisher: { '@id': `${site}/#organization` },
+					inLanguage: langCodes,
+					datePublished: '2026-03-03',
+					description,
+					offers: [
+						{ '@type': 'Offer', name: 'Yala Gratis', price: '0', priceCurrency: 'PEN', category: 'free' },
+						{ '@type': 'Offer', name: 'Yala Pro', price: '12.90', priceCurrency: 'PEN', category: 'subscription' },
+					],
+				},
+			],
+		})} />
 
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>

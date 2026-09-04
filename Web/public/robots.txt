@@ -1,4 +1,7 @@
 User-agent: *
 Allow: /
 
+# Los rastreadores de IA son bienvenidos: la web es material público y queremos que la lean bien.
+# El resumen en texto plano, para quien prefiera leerlo así, está en /llms.txt
+
 Sitemap: https://yala-app.pe/sitemap-index.xml
