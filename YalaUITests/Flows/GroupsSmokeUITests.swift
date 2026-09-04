@@ -212,9 +212,7 @@ final class GroupsSmokeUITests: XCTestCase {
         let app = launch()
 
         // Arranca en el tab Panel (default). El FAB del Panel despliega su menú de opciones.
-        let fab = app.buttons["fab_new_transaction"]
-        XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció el FAB del Panel.")
-        fab.tap()
+        app.revealPanelFAB().tap()
 
         let groupOption = app.buttons["panel_fab_group"]
         XCTAssertTrue(groupOption.waitForExistence(timeout: 5), "No apareció la opción 'Grupo' del FAB del Panel.")

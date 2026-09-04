@@ -23,8 +23,7 @@ final class TransactionsCrudUITests: XCTestCase {
         app.launchForUITest()
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
-        let fab = app.buttons["fab_new_transaction"]
-        XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció el FAB de nueva transacción.")
+        let fab = app.revealPanelFAB()
         fab.tap()
         // El FAB "+" expande un menú (voz/imagen/manual); "manual" abre el form.
         let manual = app.buttons["fab_manual"]
@@ -45,7 +44,7 @@ final class TransactionsCrudUITests: XCTestCase {
         app.launchForUITest()
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
-        app.buttons["fab_new_transaction"].tap()
+        app.revealPanelFAB().tap()
         let manual = app.buttons["fab_manual"]
         XCTAssertTrue(manual.waitForExistence(timeout: 5), "No se expandió el menú del FAB (fab_manual).")
         manual.tap()

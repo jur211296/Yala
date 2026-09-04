@@ -27,9 +27,7 @@ final class VoiceInputCurrencyExamplesUITests: XCTestCase {
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
         // Abrir el menú del FAB y elegir voz.
-        let fab = app.buttons["fab_new_transaction"]
-        XCTAssertTrue(fab.waitForExistence(timeout: 5), "No apareció el FAB.")
-        fab.tap()
+        app.revealPanelFAB().tap()
 
         let voice = app.buttons["fab_voice"]
         XCTAssertTrue(voice.waitForExistence(timeout: 5), "El menú del FAB no ofreció voz (fab_voice).")

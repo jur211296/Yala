@@ -24,7 +24,7 @@ final class QuickActionsFavoritesUITests: XCTestCase {
         app.launchForUITest()
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
-        app.buttons["fab_new_transaction"].tap()
+        app.revealPanelFAB().tap()
         let manual = app.buttons["fab_manual"]
         XCTAssertTrue(manual.waitForExistence(timeout: 5), "No se expandió el menú del FAB (fab_manual).")
         manual.tap()
@@ -53,7 +53,7 @@ final class QuickActionsFavoritesUITests: XCTestCase {
         app.launchForUITest()
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
-        app.buttons["fab_new_transaction"].tap()
+        app.revealPanelFAB().tap()
         let manual = app.buttons["fab_manual"]
         XCTAssertTrue(manual.waitForExistence(timeout: 5), "No se expandió el menú del FAB (fab_manual).")
         manual.tap()

@@ -66,33 +66,35 @@ final class InboxNewItemsModalUITests: XCTestCase {
         //
         // Así que se afirma la propiedad de verdad: el Panel vuelve a responder. Si el cover queda
         // pegado, ningún reintento consigue nada y esto es rojo — que es exactamente el bug 2.0.5.
-        let fab = app.buttons["fab_new_transaction"]
+        // Se tapea la píldora `panel_action_new` de la fila del hero, NO el FAB flotante. Desde
+        // a4445a26 (2026-09-02) el flotante no está montado con el Panel arriba del todo, y aquí
+        // no se puede bajar a buscarlo: el scroll es un GESTO, y si el cover se come los gestos
+        // —que es exactamente el bug que este test caza— el rojo saldría como «no apareció el
+        // FAB», culpando al rediseño en vez de al cover. La píldora está visible desde el primer
+        // fotograma y abre el formulario directamente, sin menú intermedio, así que mide el tap
+        // y solo el tap. Un cambio de vehículo, no de propiedad.
+        let nuevoRegistro = app.buttons["panel_action_new"]
         XCTAssertTrue(
-            fab.waitForExistence(timeout: 30),
+            nuevoRegistro.waitForExistence(timeout: 30),
             "No se descubrió el Panel tras cerrar el modal."
         )
         // El tap se REINTENTA, y esa es la parte que importa: `allowsHitTesting(false)` impide que
         // el backdrop capture el tap para sí, pero NO hace que el tap atraviese hasta el Panel —
         // mientras el cover sigue montado él es la vista presentada y se lo come. Así que un único
-        // tap inmediato se PIERDE (medido: `fab_new_transaction` ya existe 1,9 s tras el dismiss,
-        // pero el menú no abre; con el tap único el caso falla incluso esperando 120 s, porque no
-        // hay nada que esperar). Reintentar hasta que responda afirma la propiedad de verdad —el
-        // Panel vuelve a estar vivo— sin cronometrar el desmontaje.
-        let manual = app.buttons["fab_manual"]
+        // tap inmediato se PIERDE (medido: el Panel ya se resuelve 1,9 s tras el dismiss, pero no
+        // responde; con el tap único el caso falla incluso esperando 120 s, porque no hay nada que
+        // esperar). Reintentar hasta que responda afirma la propiedad de verdad —el Panel vuelve a
+        // estar vivo— sin cronometrar el desmontaje.
+        let amount = app.textFields["new_transaction_amount"]
         var responded = false
         for _ in 0..<10 {
-            if manual.exists { responded = true; break }
-            fab.tap()
-            if manual.waitForExistence(timeout: 4) { responded = true; break }
+            if amount.exists { responded = true; break }
+            nuevoRegistro.tap()
+            if amount.waitForExistence(timeout: 4) { responded = true; break }
         }
         XCTAssertTrue(
             responded,
             "El Panel no responde a NINGÚN tap tras cerrar el modal (cover pegado — bug 2.0.5)."
-        )
-        manual.tap()
-        XCTAssertTrue(
-            app.textFields["new_transaction_amount"].waitForExistence(timeout: 15),
-            "La cadena de presentación quedó muerta tras cerrar el modal: el formulario no se montó."
         )
     }
 }

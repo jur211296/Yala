@@ -104,6 +104,38 @@ extension XCUIApplication {
             .waitForExistence(timeout: timeout)
     }
 
+    /// Baja por el Panel hasta que el FAB flotante sea alcanzable, y lo devuelve.
+    ///
+    /// Desde `a4445a26` (2026-09-02) el FAB NO está montado con el Panel arriba del todo: las
+    /// acciones bajaron al flujo, viven en la fila del hero (`panel_quick_actions`) y los
+    /// flotantes solo entran cuando el scroll se la lleva — `PanelView.swift:591`
+    /// (`if showFloatingActions`), con umbrales 180/150 e histéresis (`:63-65`, `:543-548`).
+    /// Un `waitForExistence` sobre `fab_new_transaction` nada más arrancar espera por un nodo
+    /// que, por diseño, todavía no existe, y agota el timeout entero antes de rendirse.
+    ///
+    /// Se BAJA hasta el flotante en vez de cambiar de camino a la píldora `panel_action_new`
+    /// porque el MENÚ (voz / imagen / manual / grupo) sigue siendo exclusivo del flotante: la
+    /// fila del hero lleva a cada entrada directamente, sin desplegarlo. Cambiar de camino
+    /// dejaría sin cubrir justo lo que estas suites cubren.
+    ///
+    /// Se comprueba `isHittable` y no `exists`: el nodo puede estar en el árbol y no tener
+    /// punto de impacto, y entonces el tap se sintetiza en `{-1, -1}` y se pierde en silencio
+    /// — el rojo mudo que documenta `openProfile` más abajo.
+    @discardableResult
+    func revealPanelFAB(maxSwipes: Int = 14, timeout: TimeInterval = 10) -> XCUIElement {
+        let fab = buttons["fab_new_transaction"]
+        var intentos = 0
+        while !fab.isHittable && intentos < maxSwipes {
+            swipeUp()
+            intentos += 1
+        }
+        XCTAssertTrue(
+            fab.waitForExistence(timeout: timeout),
+            "No apareció el FAB del Panel (fab_new_transaction) tras \(intentos) scrolls. Si el Panel cambió de umbral, mira `showFloatingActions` en PanelView."
+        )
+        return fab
+    }
+
     // MARK: - Navegación reutilizable
 
     /// Abre el sheet de Perfil desde el avatar del toolbar del Panel.
