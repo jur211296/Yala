@@ -2,7 +2,7 @@
 id: secondary-guest-exit-lock-and-outbox
 status: in-progress
 created: 2026-08-12
-updated: 2026-08-26
+updated: 2026-09-03
 source: YalaWiki/Bugs/secundaria-salida-de-la-invitada-bloqueo-permanente-y-outbox-de-grupos.md
 ---
 

@@ -1,8 +1,8 @@
 ---
 id: guest-decline-has-no-screen
-status: in-progress
+status: qa
 created: 2026-08-12
-updated: 2026-08-26
+updated: 2026-09-04
 source: YalaWiki/Bugs/grupos-invitado-el-no-no-tiene-pantalla.md
 ---
 
@@ -266,3 +266,29 @@ Batería del gateway: **322 pasan** (321 + este golden), 1 rojo preexistente con
 **Falta producción**, y hoy no puedo aplicarla: el acceso de Supabase pasó a la organización de
 staging, así que el proyecto de producción ya no es visible desde aquí. El fichero y su bloque de
 verificación están listos para aplicarse tal cual.
+
+### PASA A QA · 2026-09-04 — el bloqueo declarado arriba estaba caducado, y al revés
+
+El párrafo anterior («falta producción, el acceso de Supabase pasó a la organización de staging»)
+**dejó de ser cierto unos diez minutos después de escribirse** y nadie volvió a tocar el ticket.
+Medido hoy, 2026-09-04, desde esta sesión:
+
+- La única organización visible es la de **producción**, y su único proyecto es
+  `yala-modo-nube-production` (`kefvaiymtgytemwbltlz`, ACTIVE_HEALTHY). Lo invisible hoy es staging:
+  la frase de arriba describe el mundo al revés.
+- **`g13_02` está aplicada en producción.** `pg_policy` sobre `public.group_members` devuelve
+  `group_members_select_own_rejected` con las DOS condiciones —`user_id = auth.uid()` **AND**
+  `status = 'rejected'`—, que es exactamente la decisión acotada que se aprobó. Y
+  `group_members_select` sigue siendo `is_group_member(group_id)`: el oráculo continúa cerrado.
+- El fichero de promoción existe en el árbol con sello del 2026-09-03:
+  `docs/modo-nube/briefs/prod-promo-sql/20260903213117_g13_02_rejected_member_sees_own_row.sql`.
+
+⇒ **No queda trabajo de servidor ni de desarrollo.** Lo único pendiente es que el cliente iOS con el
+banner de rechazo se publique y que el recorrido se mire en la tanda de QA. Por eso el ticket sale de
+`in-progress`: no esperaba código, esperaba una verificación que ya solo puede hacerse en la app
+publicada.
+
+**Cuidado al retomarlo:** las coordenadas de `GroupDetailView` que cita este ticket (`:112` y
+`:624-660`) están desplazadas +26 líneas por el propio fix que lo cerró — hoy son `:138` y
+`:648-685`. Y el «322 pasan» del gateway es de aquel día: hoy la batería tiene 326 tests. Re-mide,
+no copies.

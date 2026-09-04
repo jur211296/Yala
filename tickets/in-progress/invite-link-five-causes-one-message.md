@@ -2,7 +2,7 @@
 id: invite-link-five-causes-one-message
 status: in-progress
 created: 2026-08-12
-updated: 2026-08-26
+updated: 2026-09-03
 source: YalaWiki/Bugs/grupos-enlace-de-invitacion-cinco-causas-un-solo-mensaje.md
 ---
 

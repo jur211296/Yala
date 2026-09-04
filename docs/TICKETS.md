@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (97)
+## Index (98)
 
 | id | status | path |
 |----|--------|------|
@@ -43,7 +43,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | canarios-y-breadcrumbs-sin-emisor | backlog | tickets/backlog/canarios-y-breadcrumbs-sin-emisor.md |
 | cashflow-spend-prediction | backlog | tickets/backlog/cashflow-spend-prediction.md |
 | ci-suite-simulador-duplicada-y-allowlist-incompleta | done | tickets/done/ci-suite-simulador-duplicada-y-allowlist-incompleta.md |
-| ci-verde-con-la-suite-en-rojo | in-progress | tickets/in-progress/ci-verde-con-la-suite-en-rojo.md |
+| ci-verde-con-la-suite-en-rojo | done | tickets/done/ci-verde-con-la-suite-en-rojo.md |
+| ci-warns-but-does-not-block | backlog | tickets/backlog/ci-warns-but-does-not-block.md |
 | cloud-fx-rates-blob-two-faces | qa | tickets/qa/cloud-fx-rates-blob-two-faces.md |
 | cloud-tx-epoch-orphan-relations | backlog | tickets/backlog/cloud-tx-epoch-orphan-relations.md |
 | creategroup-throw-after-commit-loses-owner | backlog | tickets/backlog/creategroup-throw-after-commit-loses-owner.md |
@@ -83,7 +84,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-settlement-reminder | backlog | tickets/backlog/groups-settlement-reminder.md |
 | groups-shareable-summary | backlog | tickets/backlog/groups-shareable-summary.md |
 | groups-tab-missing-panel-perf | backlog | tickets/backlog/groups-tab-missing-panel-perf.md |
-| guest-decline-has-no-screen | in-progress | tickets/in-progress/guest-decline-has-no-screen.md |
+| guest-decline-has-no-screen | qa | tickets/qa/guest-decline-has-no-screen.md |
 | guest-journey-dead-screens | in-progress | tickets/in-progress/guest-journey-dead-screens.md |
 | history-token-guard-echo-blind-spot | backlog | tickets/backlog/history-token-guard-echo-blind-spot.md |
 | inbox-convert-draft-to-group-expense | done | tickets/done/inbox-convert-draft-to-group-expense.md |
@@ -325,25 +326,25 @@ Jurgen 2026-08-26: `groups-cloud-mode-hardening-v1`, `groups-cloud-identity-loss
 | Bugs/crash-inbox-convertir-a-gasto-grupo-draft-borrado.md | tickets/done/inbox-crash-convert-to-group-expense.md |
 | Bugs/groups-notif-actualizo-atribuye-al-pagador-no-al-autor.md | tickets/done/group-notif-credits-payer-not-editor.md |
 | Bugs/grupos-enlace-de-invitacion-cinco-causas-un-solo-mensaje.md | tickets/in-progress/invite-link-five-causes-one-message.md |
-| Bugs/grupos-invitado-el-no-no-tiene-pantalla.md | tickets/in-progress/guest-decline-has-no-screen.md |
+| Bugs/grupos-invitado-el-no-no-tiene-pantalla.md | tickets/qa/guest-decline-has-no-screen.md |
 | Bugs/grupos-recorrido-del-invitado-codigo-muerto-y-docblock-caducado.md | tickets/in-progress/guest-journey-dead-screens.md |
 | Bugs/ok_applepay-shortcut-ios27-warm-launch-datos-vacios.md | tickets/qa/applepay-shortcut-warm-launch-empty-data.md |
 | Bugs/ok_siri-intent-dual-container-refactor.md | tickets/qa/siri-intent-dual-container.md |
-| Bugs/prefs-cinco-keys-synced-suben-y-no-vuelven.md | tickets/in-progress/prefs-synced-keys-upload-not-download.md |
+| Bugs/prefs-cinco-keys-synced-suben-y-no-vuelven.md | tickets/qa/prefs-synced-keys-upload-not-download.md |
 | Bugs/qa_cloud-fx-rates-blob-dos-caras.md | tickets/qa/cloud-fx-rates-blob-two-faces.md |
 | Bugs/qa_cloud-tx-epoca-relaciones-huerfanas.md | tickets/backlog/cloud-tx-epoch-orphan-relations.md |
 | Bugs/qa_groups-aprobacion-no-retira-banner.md | tickets/done/groups-approval-banner-stays.md |
-| Bugs/qa_groups-join-intent-reconciler.md | tickets/qa/groups-join-intent-reconciler.md |
+| Bugs/qa_groups-join-intent-reconciler.md | tickets/blocked/groups-join-intent-reconciler.md |
 | Bugs/qa_groups-tab-no-perf-patterns.md | tickets/backlog/groups-tab-missing-panel-perf.md |
 | Bugs/qa_groups-tx-fantasma-al-borrar-gasto-de-grupo.md | tickets/done/groups-ghost-tx-on-delete.md |
 | Bugs/qa_invite-backend-mudo-config-stale.md | tickets/qa/invite-backend-stale-config.md |
 | Bugs/qa_pagos-planificados-notifs-incoherentes-y-dedup-sin-entrega.md | tickets/qa/scheduled-payments-notif-dedup.md |
 | Bugs/qa_storekit-appgroup-siri-pro-gate.md | tickets/qa/storekit-appgroup-siri-pro-gate.md |
-| Bugs/qa_welcome-copy-acusa-al-dueno-de-traer-datos-ajenos.md | tickets/in-progress/welcome-copy-blames-owner.md |
+| Bugs/qa_welcome-copy-acusa-al-dueno-de-traer-datos-ajenos.md | tickets/qa/welcome-copy-blames-owner.md |
 | Bugs/qa_welcome-empiezo-de-cero-borra-antes-de-preguntar-y-falla-mudo.md | tickets/qa/welcome-start-fresh-wipes-before-ask.md |
 | Bugs/qa_widget-snapshot-sin-sello-la-visita-pisa-los-datos-del-dueno.md | tickets/qa/widget-snapshot-visitor-overwrites-owner.md |
 | Bugs/reentrada-la-vuelta-cuenta-como-instalacion-nueva.md | tickets/in-progress/reentry-counts-as-fresh-install.md |
-| Bugs/secundaria-canal-apagado-la-visita-borra-los-grupos-del-dueno.md | tickets/in-progress/secondary-groups-off-wipes-owner.md |
+| Bugs/secundaria-canal-apagado-la-visita-borra-los-grupos-del-dueno.md | tickets/qa/secondary-groups-off-wipes-owner.md |
 | Bugs/secundaria-la-visita-escribe-en-el-dominio-del-dueno.md | tickets/in-progress/secondary-visitor-writes-owner-domain.md |
 | Bugs/secundaria-salida-de-la-invitada-bloqueo-permanente-y-outbox-de-grupos.md | tickets/in-progress/secondary-guest-exit-lock-and-outbox.md |
 | Bugs/tf-suscripcion-exito-sin-pro.md | tickets/done/subscription-success-without-pro.md |
@@ -363,7 +364,7 @@ Jurgen 2026-08-26: `groups-cloud-mode-hardening-v1`, `groups-cloud-identity-loss
 | Backlog/insights-calculator-iconlookup-precomputed.md | tickets/backlog/insights-precomputed-icon-lookup.md |
 | Backlog/p20-13_records-standalone-discrepancy.md | tickets/backlog/records-standalone-amount-discrepancy.md |
 | Backlog/p20-15_comparativa-kpi-vs-curva-descuadre.md | tickets/done/trends-comparison-kpi-vs-curve.md |
-| Backlog/qa_apppreferences-lavado-general.md | tickets/qa/apppreferences-rewritten-on-launch.md |
+| Backlog/qa_apppreferences-lavado-general.md | tickets/blocked/apppreferences-rewritten-on-launch.md |
 | Backlog/qa_groups-endurecimiento-modo-nube-v1.md | tickets/discarded/groups-cloud-mode-hardening-v1.md |
 | Backlog/qa_grupos-nube-perdida-identidad-y-migracion.md | tickets/discarded/groups-cloud-identity-loss-on-migrate.md |
 | Backlog/qa_handover-dispositivo-grupos-fuga.md | tickets/discarded/device-handover-groups-leak.md |
@@ -381,4 +382,4 @@ Jurgen 2026-08-26: `groups-cloud-mode-hardening-v1`, `groups-cloud-identity-loss
 | Ideas/Tracking de ahorros.md | tickets/backlog/savings-tracking.md |
 | Ideas/Tracking de deudas.md | tickets/backlog/debt-tracking.md |
 | Backlog/modo-nube/qa_MODO-NUBE-SPEC-CONSENT-GRUPOS.md | tickets/qa/groups-consent-door-spec.md |
-| Backlog/modo-nube/qa_rescate-pull-grupos-descartados.md | tickets/qa/rescue-discarded-groups-pull.md |
+| Backlog/modo-nube/qa_rescate-pull-grupos-descartados.md | tickets/discarded/rescue-discarded-groups-pull.md |

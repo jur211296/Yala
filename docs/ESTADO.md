@@ -5,40 +5,50 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-04 (Lima)
 
-**Rama** `2.1` · HEAD `953bf25b` — merge del PR #62, la web. TestFlight build **12** (CPV 12).
-**Subida Yala (TF/store) = solo Mini.** **`yala-app.pe` sirve la web nueva desde hoy.**
+**Rama** `2.1` · HEAD `d39d5740` — «el Panel de un usuario nuevo arranca con cuatro secciones y
+cuatro widgets». TestFlight build **12** (CPV 12). **Subida Yala (TF/store) = solo Mini.**
+**`yala-app.pe` sirve la web nueva desde hoy** (PR #62 mergeado; detalle en
+`Web/REVISION-WEB-UX-A11Y-2026-09-03.md`).
 
 ## El día, en dos líneas
 
-Por la mañana, el CI: llevaba día y medio sin ejecutar un solo test; se arregló, y al quitar la venda
-aparecieron 16 XCUITest en rojo —ninguno un bug de la app— más el que sí lo era: a quien se une a un
-grupo por enlace, la app no le reconocía hasta reiniciarla. Por la tarde, la web: auditada, rediseñada
-y **desplegada en producción**.
+El CI llevaba día y medio sin ejecutar un test; se arregló y salieron 16 XCUITest en rojo —ninguno
+bug de la app— más el de identidad del recién llegado a un grupo. Luego la web, desplegada; y el
+Panel, que para quien instale ahora arranca con cuatro secciones y cuatro widgets.
 
 ## Te espera a ti
 
-1. **Publicar la app.** Sin cambios desde ayer: los dos avisos de Grupos están completos en servidor
-   y en los dos entornos; falta el cliente iOS. Ahora además llevaría el fix de identidad.
-2. **La tanda de QA: 20 tickets en 4 montajes.** Guion en **`qa/guion-tanda.md`**, sin tocar.
-3. **Dos decisiones de la web** (informe `Web/REVISION-WEB-UX-A11Y-2026-09-03.md` §9): el **texto legal
-   de Grupos** —la web dice «vía iCloud, no por servidores nuestros» y el backend propio está al 100 %
-   en prod— que dijiste revisar al lanzar 2.1; y si Vercel debe desplegar solo al mergear (hoy su rama
-   de producción es `1.0`, así que **no**: el despliegue de hoy fue por CLI).
+1. **Publicar la app.** Los dos avisos de Grupos están completos en servidor y en los dos entornos;
+   falta el cliente iOS. Ahora llevaría además el fix de identidad y los predeterminados del Panel.
+2. **La tanda de QA: 22 tickets en 4 montajes.** Guion en **`qa/guion-tanda.md`**, sin tocar. El
+   nº 22 es `guest-decline-has-no-screen`, que entró hoy: servidor listo y verificado en producción,
+   falta verlo en la app publicada.
+3. **Dos decisiones de la web** (§9 del informe): el **texto legal de Grupos** —dice «vía iCloud, no
+   por servidores nuestros» y el backend propio está al 100 % en prod— y si Vercel debe desplegar al
+   mergear (hoy su rama de producción es `1.0`).
 
 ## Abiertos, por prioridad
 
-- **`panel-defaults-four-sections-four-widgets`** — **implementado y en `qa`**. El Panel de un
-  usuario nuevo pasa de 7 secciones y 9 widgets a 4 y 4. Los predeterminados se resuelven también en
-  LECTURA, así que el arranque es correcto desde el primer frame; «Restablecer» pasa a devolver el
-  curado. Unitarios 6029/0 y verificado en pantalla. Falta tu mirada en la tanda.
-- **`group-joiner-flag-consumers-still-narrow`** (high) — el recién llegado ya se ve
-  reconocido, pero su gasto no llega a su cuenta personal hasta un arranque posterior, y aterriza en
-  la cuenta «Grupos» en vez de la real. Trece consumidores del flag siguen estrechos. El ticket trae
-  la vía fácil y por qué es peligrosa.
-- **`ci-verde-con-la-suite-en-rojo`** — pasos 1 y 2 hechos y documentados; **3 y 4 siguen fuera de
-  alcance por decisión**. Queda sin diagnosticar por qué `systemsetup` aplicaba la zona 3 de 9 veces.
-- **`invite-link-five-causes-one-message`** — sin tocar hoy. Piezas 2, 3 y 4 son código.
+Revisados los 7 `in-progress` uno a uno el 2026-09-04, verificando contra el árbol lo que cada
+ticket afirma. Hallazgo: **ninguno esperaba una decisión tuya** — la tanda del 3-sep las cerró
+todas. Dos salieron de `in-progress` en ese saneamiento; **quedan 5, y los 5 esperan código**.
+
+- **`group-joiner-flag-consumers-still-narrow`** (high, en `backlog`) — al recién llegado ya se le
+  reconoce, pero su gasto no llega a su cuenta personal hasta un arranque posterior y aterriza en la
+  cuenta «Grupos». Trece consumidores del flag siguen estrechos.
+- **`guest-journey-dead-screens`** — decidido el 12-ago, medido, y su freno era «no abrir un borrado
+  de 10 ficheros de noche»: esa sesión cerró hace 23 días. **Dos de sus seis piezas ya están hechas
+  y el ticket no lo registra** (el docblock se corrigió en `cd87cf3a`; el `if` vacío ya no existe).
+- **`invite-link-five-causes-one-message`** — piezas 2, 3 y 4 son código. Sin tocar.
+- **`secondary-visitor-writes-owner-domain`** y **`secondary-guest-exit-lock-and-outbox`** — las
+  decisiones del 3-sep están tomadas y **el código aprobado no está escrito**. Alcance real hoy: cero
+  (SECONDARY_SESSION al 0 % en prod), pero bloquean el encendido.
+- **`reentry-counts-as-fresh-install`** — parado por falta de tiempo, no por bloqueo. Su área lleva
+  22 días sin un commit.
 - Los **2 de `blocked`** esperan **hardware**, no trabajo.
+
+**Al retomar cualquiera: las coordenadas de los tickets están sistemáticamente caducadas** (en uno,
+14 de ~20, y dos aterrizan hoy en código no relacionado). Greppea, no abras la línea citada.
 
 ## Release 2.1 (sin cambios)
 
@@ -46,22 +56,23 @@ y **desplegada en producción**.
 100 · CLOUD_ONBOARDING_CHOICE 0 · SECONDARY_SESSION 0. Cola C: 9 ACs owner/device, no corrida; D-R1
 sigue sin `ok_`. **Cero `ok_` inventado.**
 
-## La web, cerrada hoy
-
-PR #62 mergeado y **`yala-app.pe` desplegado**: auditoría + rediseño de la home. Lo que hay que saber
-sin abrir nada: el idioma del visitante **ya se respeta** (hasta hoy todos aterrizaban en español),
-accesibilidad AA en los dos temas, capturas nuevas del simulador y fuentes propias (fuera Google).
-Al medir la app para el copy aparecieron **dos afirmaciones falsas** que la web llevaba tiempo
-diciendo, ya corregidas. Todo —hallazgos, método, cifras y lo que quedó fuera— en
-**`Web/REVISION-WEB-UX-A11Y-2026-09-03.md`**.
-
 ## Board
 
-100 tickets · backlog 50 · in-progress 7 · qa 20 · blocked 2 · done 16 · discarded 5.
-`qa` significa «esperando la tanda», no «cerrado».
+98 tickets · backlog 50 · in-progress 5 · qa 22 · blocked 2 · done 14 · discarded 5. Índice cuadrado
+(98 filas = 98 ficheros, status y ruta de cada fila comprobados contra el disco). `qa` significa
+«esperando la tanda», no «cerrado».
 
-**Lo que cambió en la red, y conviene saberlo:** el gate corría los XCUITest «de las áreas tocadas»
-y 30 de las 59 áreas no cubrían el código del que dependen — por eso dio verde sobre el rediseño del
-Panel que rompió siete suites. Corregido. Y las suites de Grupos estaban en verde por estado
-pegajoso: un alert que solo sale la primera vez y cuya preferencia sobrevive entre corridas. Habrían
-caído en un CI limpio.
+**Saneado el 2026-09-04.** `ci-verde-con-la-suite-en-rojo` → `done`: su alcance —el que tú fijaste,
+hasta el paso 2— está completo y verificado; lo que quedaba fuera vive ahora en
+`ci-warns-but-does-not-block` (backlog), incluido el dato que manda el orden: **no existe ningún pase
+nocturno**, así que sacar la suite de UI del push la dejaría sin corrida automática.
+`guest-decline-has-no-screen` → `qa`: su bloqueo declarado («falta aplicar a producción, no la veo
+desde aquí») estaba **caducado y al revés** — medido hoy contra el servidor, `g13_02` está aplicada
+en producción con las dos condiciones de la policy, y lo invisible es staging. Solo falta publicar el
+cliente y mirarlo en la tanda. Y **el «sin rutas rotas» de ayer era falso**: el mapa de origen tenía
+6 punteros a ubicaciones antiguas; corregidos.
+
+**Del Panel, lo que vuelve a morder:** «aún no hay preferencias» se renderizaba como «enséñalo todo»,
+así que los predeterminados se resuelven ahora también en LECTURA, no solo al sembrar. Y el área
+`panel-dashboard-logic` cubría 20 ficheros de vistas pero ninguno de los que definen los
+predeterminados: tocarlos no disparaba ni un XCUITest. Corregido.

@@ -1,6 +1,6 @@
 ---
 id: ci-verde-con-la-suite-en-rojo
-status: in-progress
+status: done
 priority: high
 area: platform
 created: 2026-09-02
@@ -509,3 +509,34 @@ disco lleno de la Lista Negra y estuvo a punto de irse por ahí, pero el error c
 faltaba el runner, borrado al liberar espacio y no reconstruido porque `xcodebuild build` no compila
 los targets de test. Y una medida de disco recién liberado no es fiable: tras `simctl erase`, APFS
 tardó en reclamar y los «12 GiB» por los que casi se para el trabajo eran 34.
+
+---
+
+## CERRADO · 2026-09-04 — el alcance acordado está completo y verificado
+
+Cerrado por el owner con el alcance que él mismo fijó: **hasta el paso 2**. No se cierra por
+cansancio ni por caducidad; se cierra porque lo acordado está hecho y medido en el árbol.
+
+**Verificado en esta sesión, contra el árbol de hoy (no contra lo que este ticket afirma):**
+
+- El mecanismo de zona horaria es el aprobado el 2026-09-03: `TEST_RUNNER_TZ: America/Lima` en el
+  `env:` del job `tests` (`qa.yml:172-173`), a nivel de job y no de paso. El paso `systemsetup` ya no
+  existe: su único rastro es un comentario histórico en `:164`.
+- `wipeAllModels` cubre los **31** modelos del schema (`TestHelpers.swift:149-161`), que son
+  exactamente los 31 de `SwiftDataConfiguration.swift:56-88`, y está pinneado por
+  `WipeAllModelsCoverageTests`.
+- El resto de afirmaciones técnicas del ticket se comprobaron una a una y se sostienen.
+
+**Lo que este ticket decía de sí mismo y NO era cierto** (queda escrito, porque es el patrón que el
+`CLAUDE.md` advierte y este ticket lo cometió sobre su propio arreglo):
+
+- Las coordenadas `175/197/215` del encabezado están caducadas. Hoy los tres `continue-on-error`
+  están en **201, 223 y 241**: el propio commit de este ticket (`815385b3`) desplazó el fichero 26
+  líneas y el encabezado no se re-midió. **Citaba líneas de un árbol anterior a su propio commit.**
+- Dos cifras del hallazgo del índice de cobertura son incorrectas (`FABStackView` estaba ya en 4
+  áreas, no en 0; el commit tocó 56 áreas, no 30). La conclusión aguanta; los números no.
+
+**Dónde sigue el trabajo:** `tickets/backlog/ci-warns-but-does-not-block.md`, que recoge los pasos 3
+y 4 con sus prerequisitos medidos —incluido el que importa: **no existe ningún pase nocturno**, así
+que sacar la suite de UI del push la dejaría sin corrida automática— y los cuatro residuales menores.
+Nada de lo que quedaba abierto se pierde con este cierre.

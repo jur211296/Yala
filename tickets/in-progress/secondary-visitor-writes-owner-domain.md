@@ -2,7 +2,7 @@
 id: secondary-visitor-writes-owner-domain
 status: in-progress
 created: 2026-08-12
-updated: 2026-08-26
+updated: 2026-09-03
 source: YalaWiki/Bugs/secundaria-la-visita-escribe-en-el-dominio-del-dueno.md
 ---
 
