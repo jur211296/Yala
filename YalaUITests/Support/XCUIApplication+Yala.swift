@@ -33,6 +33,7 @@ extension XCUIApplication {
         groupsEducativo: Bool = false,
         secondarySession: Bool = false,
         inviteOnboarding: Bool = false,
+        icloudIdentity: Bool = false,
         joinPhase: String? = nil,
         joinSoftTimeout: String? = nil,
         extraArguments: [String] = []
@@ -79,6 +80,11 @@ extension XCUIApplication {
         // VERDE que prueba la rama del dueño creyendo probar la de la invitada.
         if secondarySession { args.append("-uitest-secondary-session") }
         if inviteOnboarding { args.append("-uitest-invite-onboarding") }
+        // Siembra la identidad iCloud de Grupos. Va NOMBRADO, no por `extraArguments:`, por la
+        // misma razón que sus vecinos y con una de propina: este seam decide QUIÉN ERES, así que un
+        // typo que lo dejara fuera no da rojo — da un VERDE que prueba el camino del flag creyendo
+        // probar el de la identidad resuelta.
+        if icloudIdentity { args.append("-uitest-icloud-identity") }
         if let joinPhase {
             args.append("-uitest-join-phase")
             args.append(joinPhase)

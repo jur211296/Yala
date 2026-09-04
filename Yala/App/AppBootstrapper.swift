@@ -650,6 +650,13 @@ final class AppBootstrapper {
                 SessionState.shared.onboardingMode = .full
             }
             UserDefaults.standard.removeObject(forKey: OnboardingMode.userDefaultsKey)
+            //  · identidad iCloud sembrada por `-uitest-icloud-identity`: se PERSISTE en defaults,
+            //    así que sin esto una corrida con el arg dejaba al siguiente XCUITest resolviendo
+            //    identidad contra un member que no es suyo. Es la trampa que `.claude/rules/
+            //    testing.md` documenta como «un seam de QA que persiste pone rojos a los tests de
+            //    otro target», y este seam decide QUIÉN ERES: contaminarlo es de los caros.
+            GroupICloudIdentitySeed.forgetPersisted()
+            GroupUserIdentityService.shared.clearCache()
             //  · Remote-config (DIFERIDOS #34): el snapshot/toggle de una corrida manual en el
             //    mismo sim es estado pegajoso de la MISMA clase (los getters ya cortan bajo
             //    uitest — esto es limpieza de cinturón para corridas manuales posteriores).
@@ -700,6 +707,12 @@ final class AppBootstrapper {
         // Modo solo-grupos determinista: onboarding saltado (arriba) + onboardingMode=.groupInvite
         // + tab Grupos seleccionado. El init de SessionState no deriva el tab, así que se
         // setea explícitamente (idempotente; no-op en release vía hasArg).
+        // Identidad iCloud sembrada: síncrona y sin red. Va ANTES de cualquier resolución para que
+        // el primer render ya vea la identidad — si llegara después, el test mediría la ventana en
+        // vez del comportamiento.
+        if UITestHooks.seedICloudIdentity {
+            GroupICloudIdentitySeed.adopt(UITestHooks.uitestICloudRecordName)
+        }
         if UITestHooks.forceGroupInvite {
             OnboardingMode.setCurrent(.groupInvite)
             SessionState.shared.onboardingMode = .groupInvite
@@ -732,6 +745,7 @@ final class AppBootstrapper {
         // —`removeUserPreferenceKeys` excluye esta key a propósito— así que una sola corrida
         // dejaba Grupos adoptado para siempre en el simulador, también en arranques manuales.
         UITestEphemeralDefaults.applyGroupsBetaUnlocked()
+        UITestEphemeralDefaults.applyGroupsNotificationPromptSeen()
 
         // Centinela del seed de categorías: purga de lo que dejaron las corridas ANTERIORES. Que
         // esta corrida no lo vuelva a escribir lo garantiza el namespacing por store de

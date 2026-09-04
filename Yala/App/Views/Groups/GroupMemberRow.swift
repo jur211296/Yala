@@ -71,6 +71,7 @@ struct GroupMemberRow: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel(L10n.Groups.Member.approve)
+                        .accessibilityIdentifier("group_member_approve_\(member.displayName)")
 
                         Button(action: onReject) {
                             Image(systemName: "xmark.circle.fill")
@@ -81,6 +82,7 @@ struct GroupMemberRow: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel(L10n.Groups.Member.reject)
+                        .accessibilityIdentifier("group_member_reject_\(member.displayName)")
                     }
                 } else if member.isActive {
                     Menu {
@@ -103,6 +105,10 @@ struct GroupMemberRow: View {
                             .contentShape(Rectangle())
                     }
                     .accessibilityLabel(L10n.Groups.Member.actions)
+                    // El id lleva el nombre dentro para poder afirmar de QUIÉN es el control. Es lo
+                    // que permite el test de la auto-expulsión: que exista el de otro miembro y NO
+                    // exista el propio. Sin nombre solo se podría contar, y contar no dice de quién.
+                    .accessibilityIdentifier("group_member_actions_\(member.displayName)")
                 }
             }
         }

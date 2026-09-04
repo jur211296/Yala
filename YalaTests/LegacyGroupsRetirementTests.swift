@@ -617,7 +617,10 @@ struct LegacyGroupsRetirementWiringTests {
         let code = Self.codeLines(try Self.source("Yala/Seed/DevSeedGroups.swift"))
         let constructions = code.filter { $0.contains("SplitGroup(") }.count
         let marks = code.filter { $0.contains("isBackendGroup = true") }.count
-        #expect(constructions == 3, "Cambió el número de grupos del seed; revisa que todos sigan siendo backend.")
+        // 4 desde el 2026-09-04: `createAsBackendJoiner` (perfil `grupos-sin-flag`) suma el suyo, y
+        // nace backend como los otros tres. El conteo es fijo A PROPÓSITO — obliga a mirar la marca
+        // cada vez que alguien añade un grupo al seed, que es justo lo que este pin protege.
+        #expect(constructions == 4, "Cambió el número de grupos del seed; revisa que todos sigan siendo backend.")
         #expect(marks == constructions,
                 "Un grupo del seed volvió a nacer legacy: la retirada lo oculta y los XCUITest de Grupos se quedan sin datos.")
     }

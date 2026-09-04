@@ -98,6 +98,29 @@ enum UITestEphemeralDefaults {
     ///
     /// El dominio de REGISTRO (volátil) es además lo que hace que `GroupsDomainAdoptionMarker`
     /// —que escribe la adopción al entrar al tab— vea la key ya puesta y NO persista nada.
+    /// El prompt de notificaciones de Grupos, dado por visto para ESTE proceso.
+    ///
+    /// Sale la primera vez que hay grupos activos y es un `.alert`, así que TAPA la pantalla y se
+    /// come los taps de cualquier suite de Grupos. Hasta ahora nadie lo sufría por una razón
+    /// incómoda: `hasSeenGroupsNotificationPrompt` SOBREVIVE entre corridas, así que en una máquina
+    /// de siempre ya está puesta y el alert no aparece — las suites estaban en verde gracias a
+    /// estado pegajoso, y saltan en cuanto alguien resetea el simulador o corre en una máquina
+    /// limpia. Medido el 2026-09-04 al escribir `GroupMembersAdminUITests`.
+    ///
+    /// No se puede descartar desde el test: los botones de un `.alert` de SwiftUI NO propagan
+    /// `accessibilityIdentifier` — verificado en el árbol de runtime, salen con el campo vacío —, y
+    /// targetearlos por su texto está prohibido por las convenciones. Así que se apaga en origen.
+    ///
+    /// Dominio de REGISTRO (volátil) y purga de la key persistida, como sus vecinos: un seam que
+    /// deje esto escrito en disco convertiría el problema en permanente para las corridas manuales.
+    static func applyGroupsNotificationPromptSeen(
+        to defaults: UserDefaults = .standard,
+        volatileApply: VolatileApply = liveVolatileApply
+    ) {
+        defaults.removeObject(forKey: AppPreferences.Keys.hasSeenGroupsNotificationPrompt)
+        volatileApply(defaults, [AppPreferences.Keys.hasSeenGroupsNotificationPrompt: true])
+    }
+
     static func applyGroupsBetaUnlocked(
         to defaults: UserDefaults = .standard,
         volatileApply: VolatileApply = liveVolatileApply

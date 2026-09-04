@@ -90,6 +90,27 @@ final class UITestHooks {
     /// JWT mandaría credenciales basura a un backend real. Solo DEBUG (inerte en release vía `hasArg`).
     nonisolated static var fakeCloudSession: Bool { hasArg("-uitest-fake-cloud-session") }
 
+    /// `-uitest-icloud-identity`: siembra la identidad iCloud de Grupos con un recordName fijo
+    /// (`uitestICloudRecordName`), síncrono y SIN red — `GroupICloudIdentitySeed.adopt` no toca
+    /// CloudKit.
+    ///
+    /// Existe porque sin él NINGÚN XCUITest puede ejercitar la resolución de identidad, que es la
+    /// que decide si la app te reconoce como miembro. Las dos fuentes están apagadas bajo test a
+    /// propósito: `CloudAuthService.currentUserID` es nil incluso con `-uitest-fake-cloud-session`
+    /// (para que el tráfico HTTP siga en cero) y el fetch real de `seedIfNeededBestEffort` falla en
+    /// un simulador sin cuenta iCloud. ⇒ el resolvedor caía siempre al primer criterio, el flag, y
+    /// como los seeds lo siembran a mano la suite entera era ciega al estado que SÍ ocurre en
+    /// producción: «mi member llegó por el pull y el flag no está puesto».
+    ///
+    /// Es ORTOGONAL a `-uitest-fake-cloud-session`: aquel finge el predicado de sesión, este siembra
+    /// una identidad. No fuerza ningún predicado de la lógica bajo prueba — el resolvedor sigue
+    /// decidiendo entero, que es lo que hace que el test pueda ponerse rojo.
+    nonisolated static var seedICloudIdentity: Bool { hasArg("-uitest-icloud-identity") }
+
+    /// El recordName que siembra `-uitest-icloud-identity`. Mismo literal que usan los perfiles de
+    /// `DevSeedGroups` para el member propio, que es lo que hace que casen.
+    nonisolated static let uitestICloudRecordName = "uitest-current-user"
+
     /// `-uitest-secondary-session`: monta el proceso como **sesión secundaria M1 OPERATIVA** — la invitada
     /// que ya relanzó y está usando el móvil de otra persona. Enciende `SecondarySessionStore.isActive()`
     /// por el dominio VOLÁTIL de `UserDefaults` y declara el testigo del mount; el porqué de que hagan

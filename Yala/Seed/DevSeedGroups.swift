@@ -343,6 +343,62 @@ enum DevSeedGroups {
         }
     }
 
+    /// Grupo del canal backend donde el member propio llegó POR EL PULL: sin `isCurrentUser`.
+    ///
+    /// Es el estado que de verdad ocurre en producción y que ningún otro perfil reproduce, porque
+    /// todos siembran el flag a mano (`create` :46 y :121, `createAsInvitee` :302). Sin él, la suite
+    /// de UI no puede distinguir «la app me reconoce» de «la app da por hecho que soy yo», que es
+    /// justo lo que hay que probar de la resolución de identidad.
+    ///
+    /// Cómo se reconoce al usuario aquí: por `cloudKitUserRecordID`, que
+    /// `-uitest-icloud-identity` siembra con este mismo literal. El flag se deja APAGADO a
+    /// propósito — encenderlo devolvería la ceguera.
+    ///
+    /// El usuario es ADMIN para poder ejercitar las acciones de administración, y hay un miembro
+    /// PENDIENTE para que esas acciones tengan sobre quién actuar.
+    static func createAsBackendJoiner(in context: ModelContext) {
+        let group = SplitGroup(
+            name: "Viaje a Cusco",
+            iconName: "airplane",
+            currencyCode: "PEN",
+            isOwner: false
+        )
+        group.isBackendGroup = true
+        context.insert(group)
+        let zoneID = group.cloudKitZoneID
+        // Sin esto el token `seeded-first` del deep link no resuelve y los tests de este perfil
+        // mueren antes de llegar a la pantalla — el rojo dice «no se abrió el detalle» y no menciona
+        // el fixture. Mismo motivo y misma forma que en `create(in:)`.
+        if UITestHooks.isActive {
+            UserDefaults.standard.set(group.id.uuidString, forKey: UITestHooks.seededGroupIDKey)
+        }
+
+        // Ana es la dueña. Yo soy admin, y mi fila viene del pull: identidad por recordName y
+        // `isCurrentUser` APAGADO — el corazón de este perfil.
+        let ana = SplitMember(
+            groupZoneID: zoneID, displayName: "Ana",
+            cloudKitUserRecordID: "uitest-member-ana",
+            role: "admin", status: .active, isGroupOwner: true
+        )
+        let me = SplitMember(
+            groupZoneID: zoneID, displayName: "Tú",
+            cloudKitUserRecordID: "uitest-current-user",
+            role: "admin", status: .active
+        )
+        let pendiente = SplitMember(
+            groupZoneID: zoneID, displayName: "Carla",
+            cloudKitUserRecordID: "uitest-member-carla",
+            status: .pendingApproval
+        )
+        for m in [ana, me, pendiente] { context.insert(m) }
+
+        do {
+            try context.save()
+        } catch {
+            print("DevSeedGroups: createAsBackendJoiner save error: \(error)")
+        }
+    }
+
     /// Borra TODOS los modelos de grupos (Split* + GroupBridgePreference) del store local.
     /// Lo usa el reset del modo uitest: `DataWipeService.wipeAllUserData` los preserva a
     /// propósito (decisión de producto — los grupos son compartidos vía CloudKit y el

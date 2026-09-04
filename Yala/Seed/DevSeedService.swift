@@ -25,6 +25,13 @@ enum DevSeedProfile: String {
     /// (`hasGroups && !hasOutstandingDebt`), sin los seams `-uitest-groups-batch-*` que la cortocircuitan.
     /// Ver `DevSeedGroups.createSettled`.
     case gruposSaldado = "grupos-saldado"
+
+    /// Grupo del canal backend con el member propio SIN `isCurrentUser`, que es como llega de
+    /// verdad: `GroupsSyncClient.applyMember` nunca escribe ese flag y `refreshCurrentUserFlags`
+    /// solo corre en el arranque. Los otros perfiles lo siembran a mano, así que ninguno podía
+    /// ejercitar la resolución de identidad — la app te reconoce por `cloudKitUserRecordID`, que
+    /// `-uitest-icloud-identity` siembra con el mismo literal.
+    case gruposSinFlag = "grupos-sin-flag"
     /// SOLO-GRUPOS PURO (escenario 5a legado): siembra únicamente grupos, SIN nada de vida
     /// personal (cuentas, transacciones, presupuestos, tags…). Representa fielmente al usuario
     /// `.groupInvite` que sólo usa Grupos. Pensado para combinar con `-uitest-group-invite` en
@@ -40,11 +47,13 @@ enum DevSeedProfile: String {
     case deadPointer = "dead-pointer"
 
     /// Días de historial de transacciones a generar (escala el volumen).
-    /// `minimal`/`grupos`/`gruposInvitado`/`gruposSaldado`/`soloGrupos`/`deadPointer` (~1 semana) son rápidos para XCUITests.
+    /// `minimal`/`grupos`/`gruposInvitado`/`gruposSaldado`/`soloGrupos`/`deadPointer`/`gruposSinFlag`
+    /// (~1 semana) son rápidos para XCUITests.
     /// `realista`/`pesado` para escenarios ricos / performance (arranque más lento, riesgo watchdog).
     var daysBack: Int {
         switch self {
-        case .minimal, .grupos, .gruposInvitado, .gruposSaldado, .soloGrupos, .deadPointer: return 7
+        case .minimal, .grupos, .gruposInvitado, .gruposSaldado, .soloGrupos, .deadPointer,
+             .gruposSinFlag: return 7
         case .realista: return 730
         case .pesado: return 3650
         }
@@ -53,6 +62,7 @@ enum DevSeedProfile: String {
     /// Si además siembra un grupo de gastos compartidos (DevSeedGroups).
     var seedsGroups: Bool {
         self == .grupos || self == .gruposInvitado || self == .gruposSaldado || self == .soloGrupos
+            || self == .gruposSinFlag
     }
 
     /// Si siembra vida personal (cuentas, transacciones, presupuestos, tags, pagos, drafts).
@@ -185,6 +195,7 @@ final class DevSeedService {
             updateStep("Grupos de prueba", progress: 0.97)
             switch profile {
             case .gruposInvitado: DevSeedGroups.createAsInvitee(in: context)
+            case .gruposSinFlag:  DevSeedGroups.createAsBackendJoiner(in: context)
             case .gruposSaldado:  DevSeedGroups.createSettled(in: context)
             default:              DevSeedGroups.create(in: context)
             }

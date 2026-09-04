@@ -663,9 +663,9 @@ struct UITestSeamPersistenceIsolationTests {
 
         let porDefecto = source.components(separatedBy: "volatileApply: VolatileApply = liveVolatileApply").count - 1
         #expect(
-            porDefecto == 3,
+            porDefecto == 4,
             """
-            Se esperaban 3 seams con `liveVolatileApply` por defecto (adopción de Grupos, onboarding y sesión secundaria) y hay \(porDefecto). \
+            Se esperaban 4 seams con `liveVolatileApply` por defecto (adopción de Grupos, onboarding, sesión secundaria y el prompt de notificaciones de Grupos) y hay \(porDefecto). \
             O se renombró el mecanismo, o alguno dejó de usarlo: en los dos casos el pin dejó de comprobar nada.
             """
         )
