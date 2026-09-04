@@ -70,11 +70,11 @@ const ogLocale = ({ es: 'es_PE', en: 'en_US', de: 'de_DE', fr: 'fr_FR', it: 'it_
 		<!-- Marca `js` cuanto antes: el scroll-reveal solo oculta contenido si hay JS que luego lo muestre -->
 		<script is:inline>document.documentElement.classList.add('js');</script>
 
-		<!-- Inter (Google Fonts) — carga no bloqueante: la hoja entra como `print` y se activa al cargar -->
+		<!-- Inter + Bricolage Grotesque (Google Fonts) — carga no bloqueante: la hoja entra como `print` y se activa al cargar -->
 		<link rel="preconnect" href="https://fonts.googleapis.com">
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-		<noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+		<noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&display=swap" rel="stylesheet"></noscript>
 
 		<slot name="head" />
 
@@ -90,7 +90,6 @@ const ogLocale = ({ es: 'es_PE', en: 'en_US', de: 'de_DE', fr: 'fr_FR', it: 'it_
 				if (light) document.body.classList.add('light');
 			} catch (e) {}
 		</script>
-		<div class="aurora-bg" aria-hidden="true"></div>
 		<slot />
 	</body>
 </html>

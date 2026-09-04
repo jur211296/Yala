@@ -16,44 +16,44 @@ const langUrls = Object.keys(languages).map(l => ({
   active: l === lang,
 }));
 
+const homeUrl = lang === 'es' ? '/' : `/${lang}/`;
 const privacyUrl = lang === 'es' ? '/privacy' : `/${lang}/privacy`;
 const termsUrl = lang === 'es' ? '/terms' : `/${lang}/terms`;
 const supportUrl = lang === 'es' ? '/support' : `/${lang}/support`;
+const APP_STORE = 'https://apps.apple.com/pe/app/yala-finanzas-sin-esfuerzo/id6758253109';
 
-// Screenshots 2.0 — idioma-aware con fallback a ES (raw en/ no tiene panel-hero/stats-tendencias)
+// Capturas 2.0 — idioma-aware con fallback a ES (raw en/ no tiene panel-hero)
 const imgLang = lang === 'es' ? 'es' : 'en';
 const SS = '/images/screenshots/v2';
 const mock = (name: string, esOnly = false) => `${SS}/mockups/${name}-${esOnly ? 'es' : imgLang}.jpg`;
-const galleryItems = [
-  { slug: '01-hero' }, { slug: '02-yala-ia' }, { slug: '03-grupos' }, { slug: '04-registro' },
-  { slug: '05-score' }, { slug: '06-presupuestos' }, { slug: '07-flujo-caja' },
-  { slug: '08-distribucion' }, { slug: '09-temas' }, { slug: '10-privacidad' },
-].map(g => ({ ...g, src: `${SS}/gallery/${g.slug}-${imgLang}.jpg` }));
+
+const navLinks = [
+  { href: '#anota', label: t.v3NavAnota },
+  { href: '#yala-ia', label: t.navYalaAI },
+  { href: '#grupos', label: t.navGroups },
+  { href: '#privacy', label: t.navPrivacy },
+  { href: '#pricing', label: t.navPricing },
+];
 ---
 
 <a href="#main" class="skip-link">{t.a11ySkip}</a>
 
 <!-- Header -->
 <header class="fixed top-0 left-0 right-0 z-50 header-blur" style="background: var(--header-bg); border-bottom: 1px solid var(--border-color);">
-  <div class="container-wide">
+  <div class="v3-wrap">
     <nav class="flex items-center justify-between h-16">
-      <a href={lang === 'es' ? '/' : `/${lang}/`} class="flex items-center">
+      <a href={homeUrl} class="flex items-center">
         <img src="/images/logo.png" alt="Yala" class="h-9 logo-dark" width="1200" height="400" style="width:auto" />
         <img src="/images/logo-light.png" alt="Yala" class="h-9 logo-light" width="1200" height="400" style="width:auto" />
       </a>
 
-      <div class="hidden md:flex items-center gap-6">
-        <a href="#why" class="text-sm text-neutral-400 hover:text-white transition-colors">{t.navWhy}</a>
-        <a href="#features" class="text-sm text-neutral-400 hover:text-white transition-colors">{t.navFeatures}</a>
-        <a href="#yala-ia" class="text-sm text-neutral-400 hover:text-yala-cyan transition-colors">{t.navYalaAI}</a>
-        <a href="#grupos" class="text-sm text-neutral-400 hover:text-yala-cyan transition-colors">{t.navGroups}</a>
-        <a href="#how" class="text-sm text-neutral-400 hover:text-white transition-colors">{t.navHow}</a>
-        <a href="#privacy" class="text-sm text-neutral-400 hover:text-white transition-colors">{t.navPrivacy}</a>
-        <a href="#pricing" class="text-sm text-neutral-400 hover:text-white transition-colors">{t.navPricing}</a>
+      <div class="hidden md:flex items-center gap-7">
+        {navLinks.map(({ href, label }) => (
+          <a href={href} class="text-sm v3-navlink transition-colors">{label}</a>
+        ))}
       </div>
 
       <div class="flex items-center gap-3">
-        <!-- Mobile Menu Toggle -->
         <button id="mobile-menu-toggle" class="md:hidden w-9 h-9 rounded-full flex items-center justify-center border border-neutral-700 hover:border-neutral-500 transition-colors" style="background: var(--bg-card);" aria-label={t.a11yMenu} aria-expanded="false" aria-controls="mobile-menu">
           <svg aria-hidden="true" class="w-4 h-4 text-neutral-400 hamburger-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
@@ -63,7 +63,6 @@ const galleryItems = [
           </svg>
         </button>
 
-        <!-- Language Selector -->
         <div class="relative">
           <button id="lang-toggle" class="flex items-center gap-1.5 text-sm text-neutral-400 hover:text-white px-3 py-2 rounded-full border border-neutral-700 hover:border-neutral-500 transition-colors" aria-haspopup="true" aria-expanded="false" aria-controls="lang-menu">
             <span class="sr-only">{t.a11yLanguage}: </span><span class="uppercase font-medium">{lang}</span>
@@ -80,7 +79,6 @@ const galleryItems = [
           </div>
         </div>
 
-        <!-- Theme Toggle -->
         <button id="theme-toggle" class="w-9 h-9 rounded-full flex items-center justify-center border border-neutral-700 hover:border-neutral-500 transition-colors" style="background: var(--bg-card);" aria-label={t.a11yTheme} aria-pressed="false">
           <svg aria-hidden="true" class="w-4 h-4 text-neutral-400 icon-sun" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
@@ -90,7 +88,7 @@ const galleryItems = [
           </svg>
         </button>
 
-        <a href="https://apps.apple.com/pe/app/yala-finanzas-sin-esfuerzo/id6758253109" target="_blank" rel="noopener" class="hidden sm:inline-flex btn-primary text-sm">
+        <a href={APP_STORE} target="_blank" rel="noopener" class="hidden sm:inline-flex btn-primary text-sm">
           {t.navDownload}<span class="sr-only"> ({t.a11yNewTab})</span>
         </a>
       </div>
@@ -100,933 +98,267 @@ const galleryItems = [
 
 <!-- Mobile Navigation Menu -->
 <div id="mobile-menu" class="fixed inset-x-0 top-16 z-40 hidden md:hidden" style="background: var(--header-bg); border-bottom: 1px solid var(--border-color); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);">
-  <div class="container-wide py-4 flex flex-col gap-3">
-    <a href="#why" class="text-sm text-neutral-400 hover:text-white transition-colors py-2 mobile-nav-link">{t.navWhy}</a>
-    <a href="#features" class="text-sm text-neutral-400 hover:text-white transition-colors py-2 mobile-nav-link">{t.navFeatures}</a>
-    <a href="#yala-ia" class="text-sm text-neutral-400 hover:text-yala-cyan transition-colors py-2 mobile-nav-link">{t.navYalaAI}</a>
-    <a href="#grupos" class="text-sm text-neutral-400 hover:text-yala-cyan transition-colors py-2 mobile-nav-link">{t.navGroups}</a>
-    <a href="#how" class="text-sm text-neutral-400 hover:text-white transition-colors py-2 mobile-nav-link">{t.navHow}</a>
-    <a href="#privacy" class="text-sm text-neutral-400 hover:text-white transition-colors py-2 mobile-nav-link">{t.navPrivacy}</a>
-    <a href="#pricing" class="text-sm text-neutral-400 hover:text-white transition-colors py-2 mobile-nav-link">{t.navPricing}</a>
-    <a href="https://apps.apple.com/pe/app/yala-finanzas-sin-esfuerzo/id6758253109" target="_blank" rel="noopener" class="btn-primary text-sm text-center mt-2">{t.navDownload}<span class="sr-only"> ({t.a11yNewTab})</span></a>
+  <div class="v3-wrap py-4 flex flex-col gap-3">
+    {navLinks.map(({ href, label }) => (
+      <a href={href} class="text-sm v3-navlink transition-colors py-2 mobile-nav-link">{label}</a>
+    ))}
+    <a href={APP_STORE} target="_blank" rel="noopener" class="btn-primary text-sm text-center mt-2">{t.navDownload}<span class="sr-only"> ({t.a11yNewTab})</span></a>
   </div>
 </div>
 
 <main id="main" class="pt-16">
 
-  <!-- HERO SECTION -->
-  <section class="container-wide py-20 md:py-32">
-    <div class="max-w-4xl mx-auto text-center space-y-8 animate-on-scroll">
-      <!-- Tagline Badge -->
-      <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full border border-yala-cyan/30 bg-yala-cyan/5">
-        <span class="text-sm font-medium text-yala-cyan">{t.heroTagline}</span>
-        <span class="w-1 h-1 rounded-full bg-yala-cyan/50"></span>
-        <span class="text-sm font-medium text-accent">{t.heroBadgeAccent}</span>
+  <!-- HERO -->
+  <section class="v3-wrap pt-14 pb-16 md:pt-16 md:pb-24">
+    <p class="v3-kicker">{t.v3Kicker}</p>
+    <h1 class="v3-disp v3-h1 mt-4">{t.v3H1a} <span class="v3-pink">{t.v3H1b}</span></h1>
+
+    <div class="grid md:grid-cols-[1fr_360px] gap-10 md:gap-16 items-start mt-8 md:mt-10">
+      <div class="flex flex-col gap-6 max-w-2xl">
+        <p class="v3-lede text-xl md:text-2xl">{t.v3Sub}</p>
+
+        <!-- Prueba en vivo: el visitante escribe un gasto y ve cómo lo entiende Yala -->
+        <div class="flex flex-col gap-3">
+          <label for="demo-input" class="sr-only">{t.v3DemoPlaceholder}</label>
+          <input id="demo-input" class="v3-input" type="text" autocomplete="off" spellcheck="false"
+            placeholder={t.v3DemoPlaceholder} value={t.v3DemoStart}
+            data-currency={t.v3DemoCurrency} data-account={t.v3DemoAccount} data-today={t.v3DemoToday} data-fallback={t.v3DemoFallback} data-lang={lang} />
+          <div class="flex flex-wrap gap-2">
+            <button type="button" class="v3-chip demo-example">{t.v3DemoEx1}</button>
+            <button type="button" class="v3-chip demo-example">{t.v3DemoEx2}</button>
+            <button type="button" class="v3-chip demo-example">{t.v3DemoEx3}</button>
+          </div>
+          <div id="demo-card" class="v3-card flex items-center justify-between gap-4" role="status" aria-live="polite">
+            <div class="flex items-center gap-3.5 min-w-0">
+              <div class="w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center v3-card-icon">
+                <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+              </div>
+              <div class="min-w-0">
+                <div id="demo-note" class="font-semibold truncate"></div>
+                <div id="demo-meta" class="text-sm v3-card-meta mt-0.5"></div>
+              </div>
+            </div>
+            <div id="demo-amount" class="v3-disp text-2xl flex-shrink-0"></div>
+          </div>
+          <p class="text-sm v3-muted">{t.v3DemoNote}</p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row sm:items-center gap-4 mt-1" id="hero-cta">
+          <a href={APP_STORE} target="_blank" rel="noopener" class="btn-primary inline-flex items-center justify-center gap-2 text-base">
+            <svg aria-hidden="true" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+            </svg>
+            {t.heroAppStore}<span class="sr-only"> ({t.a11yNewTab})</span>
+          </a>
+          <p class="text-sm v3-muted leading-relaxed">{t.v3CtaNote}<br />{t.v3Platform}</p>
+        </div>
       </div>
 
-      <!-- Main Headline -->
-      <h1 class="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tighter leading-[1.1]">
-        <span class="text-white">{t.heroTitle}</span>
-        <br />
-        <span class="text-gradient">{t.heroTitleAccent}</span>
-      </h1>
-
-      <!-- Subtitle -->
-      <p class="text-lg sm:text-xl text-neutral-400 max-w-2xl mx-auto leading-relaxed whitespace-pre-line">
-        {t.heroSubtitle}
-      </p>
-
-      <!-- CTAs -->
-      <div class="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-        <a href="https://apps.apple.com/pe/app/yala-finanzas-sin-esfuerzo/id6758253109" target="_blank" rel="noopener" class="btn-primary inline-flex items-center justify-center gap-2">
-          <svg aria-hidden="true" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-          </svg>
-          {t.heroAppStore}<span class="sr-only"> ({t.a11yNewTab})</span>
-        </a>
-        <a href="#how" class="btn-ghost inline-flex items-center justify-center gap-2 border border-neutral-700 hover:border-neutral-500">
-          {t.heroLearnMore}
-          <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-          </svg>
-        </a>
-      </div>
-
-      <!-- Trust Badges -->
-      <p class="text-sm text-neutral-500 pt-4">{t.heroTrust}</p>
-    </div>
-
-    <!-- Hero Screenshot - Panel Principal -->
-    <div class="mt-16 flex justify-center device-glow">
-      <div class="animate-float">
-        <div id="hero-device" class="w-64 sm:w-72 md:w-80 iphone-mockup hero-tilt">
+      <div class="flex justify-center md:justify-end">
+        <div class="v3-phone w-64 sm:w-72">
           <img src={mock('panel-hero', true)} alt={t.altHero} width="860" height="1869" loading="eager" fetchpriority="high" decoding="async" />
         </div>
       </div>
     </div>
   </section>
 
-  <!--
-    ============================================
-    VIDEO DEMO SECTION - COMENTADO PARA USO FUTURO
-    Descomentar cuando tengamos el video de demo listo.
-    Esta sección irá después del Hero y antes de Why Yala.
-    Tiene fondo var(--bg-secondary) para alternar con las demás secciones.
-    ============================================
-
-  <section class="py-20 md:py-28" style="background: var(--bg-secondary);">
-    <div class="container-wide">
-      <div class="text-center mb-12 animate-on-scroll">
-        <h2 class="text-3xl sm:text-4xl font-bold mb-4">{t.videoTitle}</h2>
-        <p class="text-neutral-400 text-lg max-w-2xl mx-auto">{t.videoSubtitle}</p>
+  <!-- ANOTA -->
+  <section id="anota" class="v3-wrap pb-16 md:pb-24 scroll-mt-20">
+    <div class="v3-panel v3-panel-teal grid md:grid-cols-[1fr_300px] gap-10 md:gap-14 items-center">
+      <div>
+        <p class="v3-kicker v3-kicker-onteal">{t.v3AnotaKicker}</p>
+        <h2 class="v3-disp v3-h2 mt-3">{t.v3AnotaTitle}</h2>
+        <div class="grid sm:grid-cols-3 gap-6 mt-9">
+          <div class="v3-item-onteal">
+            <h3 class="font-bold text-lg">{t.v3Anota1T}</h3>
+            <p class="mt-1.5 leading-relaxed v3-onteal-2">{t.v3Anota1D}</p>
+          </div>
+          <div class="v3-item-onteal">
+            <h3 class="font-bold text-lg">{t.v3Anota2T} <span class="v3-pro-inline">PRO</span></h3>
+            <p class="mt-1.5 leading-relaxed v3-onteal-2">{t.v3Anota2D}</p>
+          </div>
+          <div class="v3-item-onteal">
+            <h3 class="font-bold text-lg">{t.v3Anota3T} <span class="v3-pro-inline">PRO</span></h3>
+            <p class="mt-1.5 leading-relaxed v3-onteal-2">{t.v3Anota3D}</p>
+          </div>
+        </div>
+        <p class="mt-8 text-sm v3-onteal-2">{t.v3AnotaImport}</p>
       </div>
-
-      <div class="max-w-3xl mx-auto animate-on-scroll stagger-1">
-        <div class="aspect-video rounded-2xl bg-gradient-to-br from-neutral-800 to-neutral-900 border border-neutral-700 flex items-center justify-center">
-          <div class="text-center space-y-4">
-            <div class="w-20 h-20 mx-auto rounded-full bg-yala-indigo/20 flex items-center justify-center">
-              <svg aria-hidden="true" class="w-10 h-10 text-yala-indigo" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z"/>
-              </svg>
-            </div>
-            <p class="text-neutral-500 text-sm">Video demo placeholder (45-60s)</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-  -->
-
-  <!-- WHY YALA SECTION -->
-  <section id="why" class="py-20 md:py-28" style="background: var(--bg-secondary);">
-    <div class="container-wide">
-    <div class="max-w-3xl mx-auto text-center animate-on-scroll">
-      <h2 class="text-3xl sm:text-4xl font-bold mb-8">{t.whyTitle}</h2>
-      <div class="space-y-6 text-lg text-neutral-400 leading-relaxed">
-        <p>{t.whyText1}</p>
-        <p>{t.whyText2}</p>
-        <p class="text-neutral-300 font-medium">{t.whyText3}</p>
-      </div>
-    </div>
-    </div>
-  </section>
-
-  <!-- PROBLEM SECTION -->
-  <section class="container-wide py-20 md:py-28">
-      <h2 class="text-3xl sm:text-4xl font-bold text-center mb-16 animate-on-scroll">{t.problemTitle}</h2>
-
-      <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-        <!-- Problem Card 1 -->
-        <div class="card p-8 animate-on-scroll stagger-1">
-          <div class="w-14 h-14 rounded-2xl bg-nature-essential/10 flex items-center justify-center mb-6">
-            <svg aria-hidden="true" class="w-7 h-7 text-nature-essential" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-            </svg>
-          </div>
-          <h3 class="text-xl font-semibold mb-3">{t.problemCard1Title}</h3>
-          <p class="text-neutral-400 leading-relaxed">{t.problemCard1Desc}</p>
-        </div>
-
-        <!-- Problem Card 2 -->
-        <div class="card p-8 animate-on-scroll stagger-2">
-          <div class="w-14 h-14 rounded-2xl bg-yala-pink/10 flex items-center justify-center mb-6">
-            <svg aria-hidden="true" class="w-7 h-7 text-yala-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-          </div>
-          <h3 class="text-xl font-semibold mb-3">{t.problemCard2Title}</h3>
-          <p class="text-neutral-400 leading-relaxed">{t.problemCard2Desc}</p>
-        </div>
-
-        <!-- Problem Card 3 -->
-        <div class="card p-8 animate-on-scroll stagger-3">
-          <div class="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-6">
-            <svg aria-hidden="true" class="w-7 h-7 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M3 14h18M3 6h18M3 18h18M9 6v12M15 6v12"/>
-            </svg>
-          </div>
-          <h3 class="text-xl font-semibold mb-3">{t.problemCard3Title}</h3>
-          <p class="text-neutral-400 leading-relaxed">{t.problemCard3Desc}</p>
-        </div>
-      </div>
-
-      <p class="text-center text-neutral-500 mt-12 text-lg animate-on-scroll">{t.problemConclusion}</p>
-  </section>
-
-  <!-- DIFFERENCE SECTION -->
-  <section class="py-20 md:py-28" style="background: var(--bg-secondary);">
-    <div class="container-wide">
-    <h2 class="text-3xl sm:text-4xl font-bold text-center mb-16 animate-on-scroll">{t.differenceTitle}</h2>
-
-    <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-      <!-- Other Apps -->
-      <div class="card p-8 border-neutral-700/50 animate-on-scroll stagger-1">
-        <h3 class="text-lg font-semibold text-neutral-500 mb-6">{t.differenceOthers}</h3>
-        <ul class="space-y-4">
-          <li class="flex items-start gap-3">
-            <svg aria-hidden="true" class="w-5 h-5 text-neutral-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-            <span class="text-neutral-500">{t.differenceOther1}</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <svg aria-hidden="true" class="w-5 h-5 text-neutral-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-            <span class="text-neutral-500">{t.differenceOther2}</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <svg aria-hidden="true" class="w-5 h-5 text-neutral-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-            <span class="text-neutral-500">{t.differenceOther3}</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <svg aria-hidden="true" class="w-5 h-5 text-neutral-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-            <span class="text-neutral-500">{t.differenceOther4}</span>
-          </li>
-        </ul>
-      </div>
-
-      <!-- With Yala -->
-      <div class="card-glow p-8 border-yala-indigo/30 animate-on-scroll stagger-2">
-        <h3 class="text-lg font-semibold text-accent-teal mb-6">{t.differenceYala}</h3>
-        <ul class="space-y-4">
-          <li class="flex items-start gap-3">
-            <svg aria-hidden="true" class="w-5 h-5 text-yala-teal mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-            </svg>
-            <span class="text-neutral-200">{t.differenceYala1}</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <svg aria-hidden="true" class="w-5 h-5 text-yala-teal mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-            </svg>
-            <span class="text-neutral-200">{t.differenceYala2}</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <svg aria-hidden="true" class="w-5 h-5 text-yala-teal mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-            </svg>
-            <span class="text-neutral-200">{t.differenceYala3}</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <svg aria-hidden="true" class="w-5 h-5 text-yala-teal mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-            </svg>
-            <span class="text-neutral-200">{t.differenceYala4}</span>
-          </li>
-        </ul>
-      </div>
-    </div>
-    </div>
-  </section>
-
-  <!-- FEATURES SECTION (Bento Grid) -->
-  <section id="features" class="container-wide py-20 md:py-28">
-      <div class="text-center mb-16 animate-on-scroll">
-        <h2 class="text-3xl sm:text-4xl font-bold mb-4">{t.featuresTitle}</h2>
-        <p class="text-neutral-400 text-lg max-w-2xl mx-auto">{t.featuresSubtitle}</p>
-      </div>
-
-      <!-- 2.0 Stars: Yala IA + Grupos -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto mb-6">
-        <div class="glass-card card-glow p-8 flex flex-col min-h-[200px] border-yala-cyan/30 animate-on-scroll stagger-1">
-          <div class="flex items-center justify-between mb-6">
-            <div class="w-14 h-14 rounded-2xl bg-yala-cyan/20 flex items-center justify-center">
-              <svg aria-hidden="true" class="w-7 h-7 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
-              </svg>
-            </div>
-            <span class="text-xs font-bold px-3 py-1 rounded-full bg-yala-cyan/15 text-yala-cyan border border-yala-cyan/30">{t.yalaaiBadge}</span>
-          </div>
-          <h3 class="text-2xl font-semibold mb-3">{t.featureAITitle}</h3>
-          <p class="text-neutral-400 leading-relaxed">{t.featureAIDesc}</p>
-        </div>
-        <div class="glass-card card-glow p-8 flex flex-col min-h-[200px] border-nature-priority/30 animate-on-scroll stagger-2">
-          <div class="flex items-center justify-between mb-6">
-            <div class="w-14 h-14 rounded-2xl bg-nature-priority/20 flex items-center justify-center">
-              <svg aria-hidden="true" class="w-7 h-7 text-nature-priority" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/>
-              </svg>
-            </div>
-            <span class="text-xs font-bold px-3 py-1 rounded-full bg-nature-priority/15 text-accent-violet border border-nature-priority/30">{t.groupsBadge}</span>
-          </div>
-          <h3 class="text-2xl font-semibold mb-3">{t.featureGroupsTitle}</h3>
-          <p class="text-neutral-400 leading-relaxed">{t.featureGroupsDesc}</p>
-        </div>
-      </div>
-
-      <!-- 2 Large Cards Top Row -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto mb-6">
-        <!-- Feature 1 - Captura Inteligente (Large) -->
-        <div class="card-glow p-8 flex flex-col min-h-[200px] animate-on-scroll stagger-1">
-          <div class="w-14 h-14 rounded-2xl bg-yala-indigo/20 flex items-center justify-center mb-6">
-            <svg aria-hidden="true" class="w-7 h-7 text-yala-indigo" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
-            </svg>
-          </div>
-          <h3 class="text-2xl font-semibold mb-3">{t.feature1Title}</h3>
-          <p class="text-neutral-400 leading-relaxed">{t.feature1Desc}</p>
-        </div>
-
-        <!-- Feature 2 - Voz (Large) -->
-        <div class="card-glow p-8 flex flex-col min-h-[200px] animate-on-scroll stagger-2">
-          <div class="w-14 h-14 rounded-2xl bg-yala-cyan/20 flex items-center justify-center mb-6">
-            <svg aria-hidden="true" class="w-7 h-7 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
-            </svg>
-          </div>
-          <h3 class="text-2xl font-semibold mb-3">{t.feature2Title}</h3>
-          <p class="text-neutral-400 leading-relaxed">{t.feature2Desc}</p>
-        </div>
-      </div>
-
-      <!-- 4 Small Cards Bottom Row -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto">
-        <!-- Feature 3 - Importa -->
-        <div class="card p-6 animate-on-scroll stagger-3">
-          <div class="w-12 h-12 rounded-xl bg-yala-teal/20 flex items-center justify-center mb-4">
-            <svg aria-hidden="true" class="w-6 h-6 text-yala-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-            </svg>
-          </div>
-          <h3 class="font-semibold mb-1">{t.feature3Title}</h3>
-          <p class="text-neutral-400 text-sm">{t.feature3Desc}</p>
-        </div>
-
-        <!-- Feature 4 - Atajos Siri -->
-        <div class="card p-6 animate-on-scroll stagger-4">
-          <div class="w-12 h-12 rounded-xl bg-nature-priority/20 flex items-center justify-center mb-4">
-            <svg aria-hidden="true" class="w-6 h-6 text-nature-priority" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-            </svg>
-          </div>
-          <h3 class="font-semibold mb-1">{t.feature4Title}</h3>
-          <p class="text-neutral-400 text-sm">{t.feature4Desc}</p>
-        </div>
-
-        <!-- Feature 5 - Widgets iOS -->
-        <div class="card p-6 animate-on-scroll stagger-5">
-          <div class="w-12 h-12 rounded-xl bg-yala-pink/20 flex items-center justify-center mb-4">
-            <svg aria-hidden="true" class="w-6 h-6 text-yala-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
-            </svg>
-          </div>
-          <h3 class="font-semibold mb-1">{t.feature5Title}</h3>
-          <p class="text-neutral-400 text-sm">{t.feature5Desc}</p>
-        </div>
-
-        <!-- Feature 6 - Notificaciones inteligentes -->
-        <div class="card p-6 animate-on-scroll stagger-5">
-          <div class="w-12 h-12 rounded-xl bg-nature-essential/20 flex items-center justify-center mb-4">
-            <svg aria-hidden="true" class="w-6 h-6 text-nature-essential" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-            </svg>
-          </div>
-          <h3 class="font-semibold mb-1">{t.feature6Title}</h3>
-          <p class="text-neutral-400 text-sm">{t.feature6Desc}</p>
-        </div>
-      </div>
-
-      <!-- 4 More Small Cards Third Row -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto mt-4">
-        <!-- Feature 7 - Multi-cuenta -->
-        <div class="card p-6 animate-on-scroll stagger-1">
-          <div class="w-12 h-12 rounded-xl bg-yala-pink/20 flex items-center justify-center mb-4">
-            <svg aria-hidden="true" class="w-6 h-6 text-yala-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
-            </svg>
-          </div>
-          <h3 class="font-semibold mb-1">{t.feature7Title}</h3>
-          <p class="text-neutral-400 text-sm">{t.feature7Desc}</p>
-        </div>
-
-        <!-- Feature 8 - 48+ divisas -->
-        <div class="card p-6 animate-on-scroll stagger-2">
-          <div class="w-12 h-12 rounded-xl bg-nature-essential/20 flex items-center justify-center mb-4">
-            <svg aria-hidden="true" class="w-6 h-6 text-nature-essential" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-          </div>
-          <h3 class="font-semibold mb-1">{t.feature8Title}</h3>
-          <p class="text-neutral-400 text-sm">{t.feature8Desc}</p>
-        </div>
-
-        <!-- Feature 9 - Exporta -->
-        <div class="card p-6 animate-on-scroll stagger-3">
-          <div class="w-12 h-12 rounded-xl bg-yala-teal/20 flex items-center justify-center mb-4">
-            <svg aria-hidden="true" class="w-6 h-6 text-yala-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-            </svg>
-          </div>
-          <h3 class="font-semibold mb-1">{t.feature9Title}</h3>
-          <p class="text-neutral-400 text-sm">{t.feature9Desc}</p>
-        </div>
-
-        <!-- Feature 10 - iCloud Sync -->
-        <div class="card p-6 animate-on-scroll stagger-4">
-          <div class="w-12 h-12 rounded-xl bg-yala-indigo/20 flex items-center justify-center mb-4">
-            <svg aria-hidden="true" class="w-6 h-6 text-yala-indigo" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/>
-            </svg>
-          </div>
-          <h3 class="font-semibold mb-1">{t.feature10Title}</h3>
-          <p class="text-neutral-400 text-sm">{t.feature10Desc}</p>
-        </div>
-      </div>
-  </section>
-
-  <!-- YALA IA SECTION -->
-  <section id="yala-ia" class="py-20 md:py-28" style="background: var(--bg-secondary);">
-    <div class="container-wide">
-      <div class="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
-        <div class="animate-on-scroll">
-          <span class="inline-flex items-center gap-2 mb-5 text-xs font-bold px-3 py-1.5 rounded-full bg-yala-cyan/15 text-yala-cyan border border-yala-cyan/30">
-            <svg aria-hidden="true" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
-            {t.yalaaiBadge}
-          </span>
-          <h2 class="text-3xl sm:text-4xl font-bold mb-3">{t.yalaaiTitle}</h2>
-          <p class="text-xl text-accent font-semibold mb-8">{t.yalaaiSubtitle}</p>
-          <ul class="space-y-4">
-            <li class="flex items-start gap-3">
-              <svg aria-hidden="true" class="w-5 h-5 text-yala-cyan flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-              <span class="text-neutral-300">{t.yalaaiBullet1}</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <svg aria-hidden="true" class="w-5 h-5 text-yala-cyan flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-              <span class="text-neutral-300">{t.yalaaiBullet2}</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <svg aria-hidden="true" class="w-5 h-5 text-yala-cyan flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-              <span class="text-neutral-300">{t.yalaaiBullet3}</span>
-            </li>
-          </ul>
-          <p class="mt-8 text-sm text-neutral-500 leading-relaxed">
-            {t.yalaaiNote} <a href={privacyUrl} class="text-accent-teal hover:text-yala-indigo underline underline-offset-2 transition-colors">{t.navPrivacy}</a>
-          </p>
-        </div>
-        <div class="animate-on-scroll stagger-2 flex justify-center device-glow">
-          <div class="w-60 sm:w-64 md:w-72 iphone-mockup">
-            <img src={mock('chat-analisis')} alt={t.altAI} width="860" height="1869" loading="lazy" decoding="async" />
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- GRUPOS SECTION -->
-  <section id="grupos" class="py-20 md:py-28">
-    <div class="container-wide">
-      <div class="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
-        <div class="animate-on-scroll stagger-2 flex justify-center device-glow md:order-1 order-2">
-          <div class="w-60 sm:w-64 md:w-72 iphone-mockup">
-            <img src={mock('grupos-lista')} alt={t.altGroups} width="860" height="1869" loading="lazy" decoding="async" />
-          </div>
-        </div>
-        <div class="animate-on-scroll md:order-2 order-1">
-          <span class="inline-flex items-center gap-2 mb-5 text-xs font-bold px-3 py-1.5 rounded-full bg-nature-priority/15 text-accent-violet border border-nature-priority/30">
-            <svg aria-hidden="true" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87m-4-12a4 4 0 010 7.75M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 100-7.75 4 4 0 000 7.75z"/></svg>
-            {t.groupsBadge}
-          </span>
-          <h2 class="text-3xl sm:text-4xl font-bold mb-3">{t.groupsTitle}</h2>
-          <p class="text-xl text-accent font-semibold mb-8">{t.groupsSubtitle}</p>
-          <ul class="space-y-4">
-            <li class="flex items-start gap-3">
-              <svg aria-hidden="true" class="w-5 h-5 text-nature-priority flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-              <span class="text-neutral-300">{t.groupsBullet1}</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <svg aria-hidden="true" class="w-5 h-5 text-nature-priority flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-              <span class="text-neutral-300">{t.groupsBullet2}</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <svg aria-hidden="true" class="w-5 h-5 text-nature-priority flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-              <span class="text-neutral-300">{t.groupsBullet3}</span>
-            </li>
-          </ul>
-          <p class="mt-8 text-sm text-neutral-500 leading-relaxed">
-            {t.groupsNote} <a href={privacyUrl} class="text-accent-violet hover:text-yala-indigo underline underline-offset-2 transition-colors">{t.navPrivacy}</a>
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- HOW IT WORKS -->
-  <section id="how" class="py-20 md:py-28" style="background: var(--bg-secondary);">
-    <div class="container-wide">
-    <div class="text-center mb-16 animate-on-scroll">
-      <h2 class="text-3xl sm:text-4xl font-bold mb-4">{t.howTitle}</h2>
-      <p class="text-neutral-400 text-lg">{t.howSubtitle}</p>
-    </div>
-
-    <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-      <!-- Step 1: Registra -->
-      <div class="text-center animate-on-scroll stagger-1">
-        <div class="w-16 h-16 rounded-full bg-yala-indigo flex items-center justify-center mx-auto mb-6 text-2xl font-bold step-number">1</div>
-        <h3 class="text-xl font-semibold mb-3">{t.howStep1Title}</h3>
-        <p class="text-neutral-400 mb-6">{t.howStep1Desc}</p>
-        <div class="w-40 mx-auto iphone-mockup-sm">
+      <div class="flex justify-center md:justify-end">
+        <div class="v3-phone w-60 sm:w-64 md:-my-24">
           <img src={mock('nuevo-registro')} alt={t.altStep1} width="860" height="1869" loading="lazy" decoding="async" />
         </div>
       </div>
-
-      <!-- Step 2: Organiza -->
-      <div class="text-center animate-on-scroll stagger-2">
-        <div class="w-16 h-16 rounded-full bg-yala-indigo flex items-center justify-center mx-auto mb-6 text-2xl font-bold step-number">2</div>
-        <h3 class="text-xl font-semibold mb-3">{t.howStep2Title}</h3>
-        <p class="text-neutral-400 mb-6">{t.howStep2Desc}</p>
-        <div class="w-40 mx-auto iphone-mockup-sm">
-          <img src={mock('panel-distribucion')} alt={t.altStep2} width="860" height="1869" loading="lazy" decoding="async" />
-        </div>
-      </div>
-
-      <!-- Step 3: Entiende -->
-      <div class="text-center animate-on-scroll stagger-3">
-        <div class="w-16 h-16 rounded-full bg-yala-indigo flex items-center justify-center mx-auto mb-6 text-2xl font-bold step-number">3</div>
-        <h3 class="text-xl font-semibold mb-3">{t.howStep3Title}</h3>
-        <p class="text-neutral-400 mb-6">{t.howStep3Desc}</p>
-        <div class="w-40 mx-auto iphone-mockup-sm">
-          <img src={mock('stats-tendencias', true)} alt={t.altStep3} width="860" height="1869" loading="lazy" decoding="async" />
-        </div>
-      </div>
-    </div>
     </div>
   </section>
 
-  <!-- ANALYTICS SECTION -->
-  <section class="container-wide py-20 md:py-28">
-      <div class="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
-        <div class="animate-on-scroll">
-          <h2 class="text-3xl sm:text-4xl font-bold mb-2">{t.analyticsTitle}</h2>
-          <p class="text-2xl sm:text-3xl font-bold text-gradient mb-8">{t.analyticsSubtitle}</p>
-
-          <ul class="space-y-4">
-            <li class="flex items-center gap-3">
-              <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-              </svg>
-              <span class="text-neutral-300">{t.analyticsBullet1}</span>
-            </li>
-            <li class="flex items-center gap-3">
-              <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-              </svg>
-              <span class="text-neutral-300">{t.analyticsBullet2}</span>
-            </li>
-            <li class="flex items-center gap-3">
-              <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-              </svg>
-              <span class="text-neutral-300">{t.analyticsBullet3}</span>
-            </li>
-          </ul>
-        </div>
-
-        <!-- Analytics Screenshot - Estadísticas -->
-        <div class="animate-on-scroll stagger-2 device-glow">
-          <div class="max-w-xs mx-auto iphone-mockup">
-            <img src={mock('stats-resumen')} alt={t.altAnalytics} width="860" height="1869" loading="lazy" decoding="async" />
-          </div>
+  <!-- ENTIENDE -->
+  <section id="entiende" class="v3-wrap pb-16 md:pb-24 scroll-mt-20">
+    <div class="v3-panel v3-panel-teal grid md:grid-cols-[1fr_320px] gap-10 md:gap-14 items-center">
+      <div>
+        <p class="v3-kicker v3-kicker-onteal">{t.v3EntiendeKicker}</p>
+        <h2 class="v3-disp v3-h2 mt-3">{t.v3EntiendeTitle}</h2>
+        <p class="v3-lede v3-onteal-2 mt-5">{t.v3EntiendeLede}</p>
+        <dl class="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-9">
+          <div><dd class="v3-disp text-4xl md:text-5xl">{t.v3Stat1}</dd><dt class="text-sm v3-onteal-2 mt-1">{t.v3Stat1L}</dt></div>
+          <div><dd class="v3-disp text-4xl md:text-5xl">{t.v3Stat2}</dd><dt class="text-sm v3-onteal-2 mt-1">{t.v3Stat2L}</dt></div>
+          <div><dd class="v3-disp text-4xl md:text-5xl">{t.v3Stat3}</dd><dt class="text-sm v3-onteal-2 mt-1">{t.v3Stat3L}</dt></div>
+        </dl>
+        <p class="mt-6 text-xs v3-onteal-2">{t.v3StatsCaption}</p>
+      </div>
+      <div class="flex justify-center md:justify-end">
+        <div class="v3-phone w-60 sm:w-64 md:-my-24">
+          <img src={mock('stats-resumen')} alt={t.altAnalytics} width="860" height="1869" loading="lazy" decoding="async" />
         </div>
       </div>
-  </section>
-
-  <!-- GALLERY SECTION -->
-  <section class="py-20 md:py-28 overflow-hidden">
-    <div class="container-wide">
-      <div class="text-center mb-12 animate-on-scroll">
-        <h2 class="text-3xl sm:text-4xl font-bold mb-4">{t.galleryTitle}</h2>
-        <p class="text-neutral-400 text-lg max-w-2xl mx-auto">{t.gallerySubtitle}</p>
-      </div>
-    </div>
-    <div id="gallery-marquee" class="gallery-marquee">
-      <div class="gallery-track py-2">
-        {[...galleryItems, ...galleryItems].map((g, i) => (
-          <img
-            src={g.src}
-            alt=""
-            aria-hidden="true"
-            loading="lazy"
-            decoding="async"
-            width="700"
-            height="1521"
-            class="h-[400px] sm:h-[460px] w-auto rounded-3xl border border-white/10 shadow-2xl flex-shrink-0"
-          />
-        ))}
-      </div>
-    </div>
-    <div class="container-wide mt-8 text-center">
-      <button id="gallery-toggle" type="button" class="gallery-toggle" aria-pressed="false" data-label-pause={t.galleryPause} data-label-play={t.galleryPlay}>
-        <svg aria-hidden="true" class="w-4 h-4 gallery-icon-pause" fill="currentColor" viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
-        <svg aria-hidden="true" class="w-4 h-4 gallery-icon-play hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-        <span class="gallery-toggle-label">{t.galleryPause}</span>
-      </button>
     </div>
   </section>
 
-  <!-- PRIVACY SECTION -->
-  <section id="privacy" class="py-20 md:py-28" style="background: var(--bg-secondary);">
-    <div class="container-wide">
-    <div class="text-center mb-16 animate-on-scroll">
-      <h2 class="text-3xl sm:text-4xl font-bold mb-2">{t.privacyTitle}</h2>
-      <p class="text-xl text-neutral-400">{t.privacySubtitle}</p>
+  <!-- YALA IA -->
+  <section id="yala-ia" class="v3-wrap pb-16 md:pb-24 scroll-mt-20">
+    <div class="v3-panel v3-panel-indigo grid md:grid-cols-2 gap-10 md:gap-14 items-start">
+      <div>
+        <p class="v3-kicker v3-kicker-onindigo">{t.v3IAKicker} <span class="v3-tag v3-tag-onindigo ml-2">PRO</span></p>
+        <h2 class="v3-disp v3-h2 mt-3">{t.v3IATitle}</h2>
+        <p class="v3-lede v3-onindigo-2 mt-5">{t.v3IALede}</p>
+        <p class="mt-7 text-sm v3-onindigo-2 leading-relaxed max-w-md">{t.v3IANote} <a href={privacyUrl} class="v3-link-onindigo">{t.v3IALink}</a>.</p>
+      </div>
+      <div class="flex flex-col gap-3 md:pt-2">
+        <p class="v3-bubble-u">{t.v3ChatU1}</p>
+        <p class="v3-bubble-a">{t.v3ChatA1}</p>
+        <p class="v3-bubble-u">{t.v3ChatU2}</p>
+        <p class="v3-bubble-a">{t.v3ChatA2}</p>
+      </div>
     </div>
+  </section>
 
-    <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-      <!-- What we DON'T do -->
-      <div class="card p-8 animate-on-scroll stagger-1">
-        <h3 class="text-lg font-semibold text-accent-pink mb-6">{t.privacyNotTitle}</h3>
-        <ul class="space-y-4">
-          <li class="flex items-center gap-3">
-            <svg aria-hidden="true" class="w-5 h-5 text-yala-pink flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-            <span class="text-neutral-400">{t.privacyNot1}</span>
-          </li>
-          <li class="flex items-center gap-3">
-            <svg aria-hidden="true" class="w-5 h-5 text-yala-pink flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-            <span class="text-neutral-400">{t.privacyNot2}</span>
-          </li>
-          <li class="flex items-center gap-3">
-            <svg aria-hidden="true" class="w-5 h-5 text-yala-pink flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-            <span class="text-neutral-400">{t.privacyNot3}</span>
-          </li>
-          <li class="flex items-center gap-3">
-            <svg aria-hidden="true" class="w-5 h-5 text-yala-pink flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-            <span class="text-neutral-400">{t.privacyNot4}</span>
-          </li>
+  <!-- GRUPOS -->
+  <section id="grupos" class="v3-wrap pb-16 md:pb-24 scroll-mt-20">
+    <div class="grid md:grid-cols-[300px_1fr] gap-10 md:gap-16 items-center">
+      <div class="flex justify-center md:justify-start order-2 md:order-1">
+        <div class="v3-phone w-60 sm:w-64 md:w-[280px]">
+          <img src={mock('grupos-lista')} alt={t.altGroups} width="860" height="1869" loading="lazy" decoding="async" />
+        </div>
+      </div>
+      <div class="order-1 md:order-2">
+        <p class="v3-kicker">{t.v3GruposKicker} <span class="v3-tag ml-2">BETA</span></p>
+        <h2 class="v3-disp v3-h2 mt-3">{t.v3GruposTitle}</h2>
+        <p class="v3-lede mt-5">{t.v3GruposLede}</p>
+        <ul class="mt-8 max-w-xl v3-rows">
+          <li class="v3-row"><span>{t.v3Grupo1}</span><span class="font-semibold v3-strong">{t.v3Grupo1A}</span></li>
+          <li class="v3-row"><span>{t.v3Grupo2}</span><span class="font-semibold v3-strong">{t.v3Grupo2A}</span></li>
+          <li class="v3-row v3-row-teal"><span>{t.v3Grupo3}</span><span class="font-semibold">{t.v3Grupo3A}</span></li>
         </ul>
-      </div>
-
-      <!-- What we DO -->
-      <div class="card-glow p-8 border-yala-teal/30 animate-on-scroll stagger-2">
-        <h3 class="text-lg font-semibold text-accent-teal mb-6">{t.privacyYesTitle}</h3>
-        <ul class="space-y-4">
-          <li class="flex items-center gap-3">
-            <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-            </svg>
-            <span class="text-neutral-300">{t.privacyYes1}</span>
-          </li>
-          <li class="flex items-center gap-3">
-            <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-            </svg>
-            <span class="text-neutral-300">{t.privacyYes2}</span>
-          </li>
-          <li class="flex items-center gap-3">
-            <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-            </svg>
-            <span class="text-neutral-300">{t.privacyYes3}</span>
-          </li>
-          <li class="flex items-center gap-3">
-            <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-            </svg>
-            <span class="text-neutral-300">{t.privacyYes4}</span>
-          </li>
-        </ul>
-        <div class="mt-6 pt-6 border-t border-neutral-700">
-          <span class="inline-flex items-center gap-2 text-sm font-medium text-yala-teal">
-            <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-            </svg>
-            {t.privacyBadge}
-          </span>
-        </div>
-      </div>
-    </div>
-    </div>
-  </section>
-
-  <!-- PRICING SECTION -->
-  <section id="pricing" class="container-wide py-20 md:py-28">
-      <div class="text-center mb-16 animate-on-scroll">
-        <h2 class="text-3xl sm:text-4xl font-bold mb-2">{t.pricingTitle}</h2>
-        <p class="text-xl text-neutral-400">{t.pricingSubtitle}</p>
-      </div>
-
-      <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch">
-        <!-- Free Plan -->
-        <div class="card p-8 animate-on-scroll stagger-1 flex flex-col">
-          <h3 class="text-2xl font-bold mb-2">{t.pricingFreeTitle}</h3>
-          <div class="flex items-baseline gap-1 mb-6">
-            <span class="text-4xl font-bold">{t.pricingFreePrice}</span>
-            <span class="text-neutral-500">{t.pricingFreePeriod}</span>
-          </div>
-          <ul class="space-y-3 mb-8 flex-1">
-            <li class="flex items-center gap-3">
-              <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-              </svg>
-              <span class="text-neutral-400">{t.pricingFree1}</span>
-            </li>
-            <li class="flex items-center gap-3">
-              <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-              </svg>
-              <span class="text-neutral-400">{t.pricingFree2}</span>
-            </li>
-            <li class="flex items-center gap-3">
-              <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-              </svg>
-              <span class="text-neutral-400">{t.pricingFree3}</span>
-            </li>
-            <li class="flex items-center gap-3">
-              <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-              </svg>
-              <span class="text-neutral-400">{t.pricingFree4}</span>
-            </li>
-            <li class="flex items-center gap-3">
-              <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-              </svg>
-              <span class="text-neutral-400">{t.pricingFree5}</span>
-            </li>
-            <li class="flex items-center gap-3">
-              <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-              </svg>
-              <span class="text-neutral-400">{t.pricingFree6}</span>
-            </li>
-            <li class="flex items-center gap-3">
-              <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-              </svg>
-              <span class="text-neutral-400">{t.pricingFree7}</span>
-            </li>
-            <li class="flex items-center gap-3">
-              <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-              </svg>
-              <span class="text-neutral-400">{t.pricingFree8}</span>
-            </li>
-          </ul>
-          <a href="https://apps.apple.com/pe/app/yala-finanzas-sin-esfuerzo/id6758253109" target="_blank" rel="noopener" class="btn-secondary w-full text-center">{t.pricingFreeCta}<span class="sr-only"> ({t.a11yNewTab})</span></a>
-        </div>
-
-        <!-- Pro Plan -->
-        <div class="card-glow p-8 border-yala-indigo/50 relative overflow-hidden animate-on-scroll stagger-2 flex flex-col">
-          <div class="absolute top-0 right-0 ribbon-pro text-xs font-bold px-4 py-1 rounded-bl-xl" aria-hidden="true">PRO</div>
-          <h3 class="text-2xl font-bold mb-2">{t.pricingProTitle}</h3>
-          <div class="flex items-baseline gap-1 mb-1">
-            <span class="text-4xl font-bold text-gradient">{t.pricingProPrice}</span>
-            <span class="text-neutral-500">{t.pricingProPeriod}</span>
-          </div>
-          <p class="text-sm text-neutral-500 mb-6">{t.pricingProAnnual}</p>
-          <ul class="space-y-3 mb-8 flex-1">
-            <li class="flex items-center gap-3">
-              <span class="text-sm text-neutral-400 italic">{t.pricingPro0}</span>
-            </li>
-            <li class="flex items-center gap-3">
-              <svg aria-hidden="true" class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-              </svg>
-              <span class="text-neutral-300">{t.pricingPro1}</span>
-            </li>
-            <li class="flex items-center gap-3">
-              <svg aria-hidden="true" class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-              </svg>
-              <span class="text-neutral-300">{t.pricingPro2}</span>
-            </li>
-            <li class="flex items-center gap-3">
-              <svg aria-hidden="true" class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-              </svg>
-              <span class="text-neutral-300">{t.pricingPro3}</span>
-            </li>
-            <li class="flex items-center gap-3">
-              <svg aria-hidden="true" class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-              </svg>
-              <span class="text-neutral-300">{t.pricingPro4}</span>
-            </li>
-            <li class="flex items-center gap-3">
-              <svg aria-hidden="true" class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-              </svg>
-              <span class="text-neutral-300">{t.pricingPro5}</span>
-            </li>
-            <li class="flex items-center gap-3">
-              <svg aria-hidden="true" class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-              </svg>
-              <span class="text-neutral-300">{t.pricingPro6}</span>
-            </li>
-            <li class="flex items-center gap-3">
-              <svg aria-hidden="true" class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-              </svg>
-              <span class="text-neutral-300">{t.pricingPro7}</span>
-            </li>
-            <li class="flex items-center gap-3">
-              <svg aria-hidden="true" class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-              </svg>
-              <span class="text-neutral-300">{t.pricingPro8}</span>
-            </li>
-          </ul>
-          <a href="https://apps.apple.com/pe/app/yala-finanzas-sin-esfuerzo/id6758253109" target="_blank" rel="noopener" class="btn-primary w-full text-center">{t.pricingProCta}<span class="sr-only"> ({t.a11yNewTab})</span></a>
-        </div>
-      </div>
-  </section>
-
-  <!-- FAQ SECTION -->
-  <section class="py-20 md:py-28" style="background: var(--bg-secondary);">
-    <div class="container-wide">
-      <h2 class="text-3xl sm:text-4xl font-bold text-center mb-16 animate-on-scroll">{t.faqTitle}</h2>
-
-      <div class="max-w-3xl mx-auto space-y-4">
-        <!-- FAQ Items -->
-        <details class="card group animate-on-scroll stagger-1">
-          <summary class="p-6 cursor-pointer flex items-center justify-between font-semibold list-none">
-            {t.faq1Q}
-            <svg aria-hidden="true" class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-            </svg>
-          </summary>
-          <p class="px-6 pb-6 text-neutral-400 -mt-2">{t.faq1A}</p>
-        </details>
-
-        <details class="card group animate-on-scroll stagger-2">
-          <summary class="p-6 cursor-pointer flex items-center justify-between font-semibold list-none">
-            {t.faq2Q}
-            <svg aria-hidden="true" class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-            </svg>
-          </summary>
-          <p class="px-6 pb-6 text-neutral-400 -mt-2">{t.faq2A}</p>
-        </details>
-
-        <details class="card group animate-on-scroll stagger-3">
-          <summary class="p-6 cursor-pointer flex items-center justify-between font-semibold list-none">
-            {t.faq3Q}
-            <svg aria-hidden="true" class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-            </svg>
-          </summary>
-          <p class="px-6 pb-6 text-neutral-400 -mt-2">{t.faq3A}</p>
-        </details>
-
-        <details class="card group animate-on-scroll stagger-4">
-          <summary class="p-6 cursor-pointer flex items-center justify-between font-semibold list-none">
-            {t.faq4Q}
-            <svg aria-hidden="true" class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-            </svg>
-          </summary>
-          <p class="px-6 pb-6 text-neutral-400 -mt-2">{t.faq4A}</p>
-        </details>
-
-        <details class="card group animate-on-scroll stagger-5">
-          <summary class="p-6 cursor-pointer flex items-center justify-between font-semibold list-none">
-            {t.faq5Q}
-            <svg aria-hidden="true" class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-            </svg>
-          </summary>
-          <p class="px-6 pb-6 text-neutral-400 -mt-2">{t.faq5A}</p>
-        </details>
-
-        <details class="card group animate-on-scroll">
-          <summary class="p-6 cursor-pointer flex items-center justify-between font-semibold list-none">
-            {t.faq6Q}
-            <svg aria-hidden="true" class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-            </svg>
-          </summary>
-          <p class="px-6 pb-6 text-neutral-400 -mt-2">{t.faq6A}</p>
-        </details>
-
-        <details class="card group animate-on-scroll">
-          <summary class="p-6 cursor-pointer flex items-center justify-between font-semibold list-none">
-            {t.faq7Q}
-            <svg aria-hidden="true" class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-            </svg>
-          </summary>
-          <p class="px-6 pb-6 text-neutral-400 -mt-2">{t.faq7A}</p>
-        </details>
-
-        <details class="card group animate-on-scroll">
-          <summary class="p-6 cursor-pointer flex items-center justify-between font-semibold list-none">
-            {t.faq8Q}
-            <svg aria-hidden="true" class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-            </svg>
-          </summary>
-          <p class="px-6 pb-6 text-neutral-400 -mt-2">{t.faq8A}</p>
-        </details>
-
-        <details class="card group animate-on-scroll">
-          <summary class="p-6 cursor-pointer flex items-center justify-between font-semibold list-none">
-            {t.faq9Q}
-            <svg aria-hidden="true" class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-            </svg>
-          </summary>
-          <p class="px-6 pb-6 text-neutral-400 -mt-2">{t.faq9A}</p>
-        </details>
+        <p class="mt-3.5 text-sm v3-muted">{t.v3GruposNote}</p>
       </div>
     </div>
   </section>
 
-  <!-- CTA SECTION -->
-  <section class="py-20 md:py-28 cta-section">
-    <div class="container-wide text-center">
-      <div class="max-w-2xl mx-auto animate-on-scroll">
-        <h2 class="text-4xl sm:text-5xl font-bold mb-2">
-          <span class="text-gradient">{t.ctaTitle}</span>
-        </h2>
-        <p class="text-2xl text-neutral-300 mb-8">{t.ctaSubtitle}</p>
-        <a href="https://apps.apple.com/pe/app/yala-finanzas-sin-esfuerzo/id6758253109" target="_blank" rel="noopener" class="btn-primary inline-flex items-center gap-2 text-lg px-8 py-4">
-          <svg aria-hidden="true" class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-          </svg>
-          {t.ctaCta}<span class="sr-only"> ({t.a11yNewTab})</span>
-        </a>
-        <p class="text-sm text-neutral-500 mt-6">{t.ctaTrust}</p>
+  <!-- PRIVACIDAD -->
+  <section id="privacy" class="v3-wrap pb-16 md:pb-24 scroll-mt-20">
+    <div class="grid md:grid-cols-2 gap-8 md:gap-16">
+      <div>
+        <p class="v3-kicker">{t.v3PrivKicker}</p>
+        <h2 class="v3-disp v3-h2 mt-3">{t.v3PrivTitle}</h2>
       </div>
+      <div class="flex flex-col gap-5 text-lg leading-relaxed md:pt-10">
+        <p>{t.v3Priv1}</p>
+        <p>{t.v3Priv2}</p>
+        <p>{t.v3Priv3} <a href={privacyUrl} class="v3-link">{t.footerPrivacy}</a>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- POR QUÉ YALA -->
+  <section class="v3-wrap pb-16 md:pb-24">
+    <div class="v3-panel v3-panel-surface max-w-3xl">
+      <p class="v3-kicker">{t.v3WhyKicker}</p>
+      <blockquote class="v3-disp v3-quote mt-5">{t.v3WhyText}</blockquote>
+      <div class="flex items-center gap-3.5 mt-7">
+        <div class="w-11 h-11 rounded-full flex items-center justify-center font-bold v3-avatar" aria-hidden="true">J</div>
+        <div>
+          <div class="font-semibold">{t.v3WhyName}</div>
+          <div class="text-sm v3-muted">{t.v3WhyRole}</div>
+        </div>
+      </div>
+      <p class="mt-6 text-sm v3-muted">{t.v3Since}</p>
+    </div>
+  </section>
+
+  <!-- PLANES -->
+  <section id="pricing" class="v3-wrap pb-16 md:pb-24 scroll-mt-20">
+    <p class="v3-kicker">{t.v3PlansKicker}</p>
+    <h2 class="v3-disp v3-h2 mt-3">{t.v3PlansTitle}</h2>
+    <div class="grid md:grid-cols-2 gap-5 mt-9">
+      <div class="v3-panel v3-panel-surface p-8 md:p-9">
+        <div class="flex justify-between items-baseline gap-4">
+          <h3 class="text-xl font-semibold">{t.pricingFreeTitle}</h3>
+          <span class="v3-disp text-3xl">{t.pricingFreePrice}</span>
+        </div>
+        <p class="mt-3.5 leading-relaxed v3-muted">{t.v3FreeDesc}</p>
+      </div>
+      <div class="v3-panel v3-panel-indigo p-8 md:p-9">
+        <div class="flex justify-between items-baseline gap-4 flex-wrap">
+          <h3 class="text-xl font-semibold">{t.pricingProTitle}</h3>
+          <span class="v3-disp text-3xl">{t.pricingProPrice}<span class="text-base font-medium tracking-normal v3-onindigo-2" style="font-family: Inter, sans-serif;"> {t.pricingProPeriod}</span></span>
+        </div>
+        <p class="text-sm v3-onindigo-2 mt-1">{t.pricingProAnnual}</p>
+        <p class="mt-3.5 leading-relaxed v3-onindigo-2">{t.v3ProDesc}</p>
+        <p class="mt-5 text-sm v3-onindigo-2 leading-relaxed border-t border-white/20 pt-4">{t.v3Trial}</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="v3-wrap pb-16 md:pb-24">
+    <p class="v3-kicker mb-5">{t.v3FaqKicker}</p>
+    <dl class="v3-faq-list">
+      <div class="v3-faq"><dt class="font-semibold">{t.v3Faq1Q}</dt><dd class="v3-muted leading-relaxed">{t.v3Faq1A}</dd></div>
+      <div class="v3-faq"><dt class="font-semibold">{t.v3Faq2Q}</dt><dd class="v3-muted leading-relaxed">{t.v3Faq2A}</dd></div>
+      <div class="v3-faq"><dt class="font-semibold">{t.v3Faq3Q}</dt><dd class="v3-muted leading-relaxed">{t.v3Faq3A}</dd></div>
+      <div class="v3-faq"><dt class="font-semibold">{t.v3Faq4Q}</dt><dd class="v3-muted leading-relaxed">{t.v3Faq4A}</dd></div>
+      <div class="v3-faq"><dt class="font-semibold">{t.v3Faq5Q}</dt><dd class="v3-muted leading-relaxed">{t.v3Faq5A}</dd></div>
+      <div class="v3-faq"><dt class="font-semibold">{t.v3Faq6Q}</dt><dd class="v3-muted leading-relaxed">{t.v3Faq6A}</dd></div>
+    </dl>
+    <p class="mt-6 text-sm v3-muted"><a href={supportUrl} class="v3-link">{t.footerHelp}</a></p>
+  </section>
+
+  <!-- CTA -->
+  <section class="v3-wrap pb-20 md:pb-28 text-center">
+    <h2 class="v3-disp v3-h1">{t.v3H1a} <span class="v3-pink">{t.v3H1b}</span></h2>
+    <div class="mt-8 flex flex-col items-center gap-4">
+      <a href={APP_STORE} target="_blank" rel="noopener" class="btn-primary inline-flex items-center gap-2 text-lg px-8 py-4">
+        <svg aria-hidden="true" class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+        </svg>
+        {t.ctaCta}<span class="sr-only"> ({t.a11yNewTab})</span>
+      </a>
+      <p class="text-sm v3-muted">{t.v3CtaNote}</p>
     </div>
   </section>
 </main>
 
 <!-- FOOTER -->
-<footer class="py-12 border-t" style="border-color: var(--border-color);">
-  <div class="container-wide">
-    <div class="flex flex-col md:flex-row items-center justify-between gap-6">
-      <div class="flex items-center gap-6">
-        <img src="/images/logo.png" alt="Yala" class="h-6 logo-dark" width="1200" height="400" style="width:auto" />
-        <img src="/images/logo-light.png" alt="Yala" class="h-6 logo-light" width="1200" height="400" style="width:auto" />
-        <span class="text-neutral-500 text-sm">© 2026 Yala</span>
-      </div>
-
-      <div class="flex items-center gap-6 text-sm">
-        <a href={privacyUrl} class="text-neutral-500 hover:text-white transition-colors">{t.footerPrivacy}</a>
-        <a href={termsUrl} class="text-neutral-500 hover:text-white transition-colors">{t.footerTerms}</a>
-        <a href={supportUrl} class="text-neutral-500 hover:text-white transition-colors">{t.footerHelp}</a>
-        <a href="mailto:admin@yala-app.pe" class="text-neutral-500 hover:text-white transition-colors">{t.footerContact}</a>
-      </div>
-
-      <p class="text-neutral-500 text-sm">{t.footerMadeIn}</p>
+<footer class="py-10 border-t" style="border-color: var(--border-color);">
+  <div class="v3-wrap flex flex-col md:flex-row items-center justify-between gap-5 text-sm v3-muted">
+    <div class="flex items-center gap-5">
+      <img src="/images/logo.png" alt="Yala" class="h-6 logo-dark" width="1200" height="400" style="width:auto" />
+      <img src="/images/logo-light.png" alt="Yala" class="h-6 logo-light" width="1200" height="400" style="width:auto" />
+      <span>© 2026 Yala</span>
+    </div>
+    <div class="flex flex-wrap justify-center items-center gap-5">
+      <a href={privacyUrl} class="v3-navlink">{t.footerPrivacy}</a>
+      <a href={termsUrl} class="v3-navlink">{t.footerTerms}</a>
+      <a href={supportUrl} class="v3-navlink">{t.footerHelp}</a>
+      <a href="mailto:admin@yala-app.pe" class="v3-navlink">{t.footerContact}</a>
     </div>
   </div>
 </footer>
+
+<!-- CTA fijo en móvil: aparece cuando el botón del hero sale de la pantalla -->
+<div id="sticky-cta" class="v3-sticky md:hidden" hidden>
+  <a href={APP_STORE} target="_blank" rel="noopener" class="btn-primary block w-full text-center">{t.v3StickyCta}<span class="sr-only"> ({t.a11yNewTab})</span></a>
+</div>
 
 <!-- Scripts -->
 <script>
@@ -1049,12 +381,9 @@ const galleryItems = [
   }
 
   reflectTheme(document.body.classList.contains('light'));
+  themeToggle?.addEventListener('click', () => setTheme(!document.body.classList.contains('light')));
 
-  themeToggle?.addEventListener('click', () => {
-    setTheme(!document.body.classList.contains('light'));
-  });
-
-  // Language Menu Toggle
+  // Language Menu
   const langToggle = document.getElementById('lang-toggle');
   const langMenu = document.getElementById('lang-menu');
 
@@ -1077,7 +406,7 @@ const galleryItems = [
     });
   });
 
-  // Mobile Menu Toggle
+  // Mobile Menu
   const mobileToggle = document.getElementById('mobile-menu-toggle');
   const mobileMenu = document.getElementById('mobile-menu');
   const hamburgerIcon = document.querySelector('.hamburger-icon');
@@ -1094,61 +423,96 @@ const galleryItems = [
     e.stopPropagation();
     setMobileMenu(mobileMenu?.classList.contains('hidden') ?? false);
   });
-
-  // Close mobile menu when clicking a nav link
-  document.querySelectorAll('.mobile-nav-link').forEach(link => {
-    link.addEventListener('click', () => setMobileMenu(false));
-  });
-
-  // Close menus when clicking outside
+  document.querySelectorAll('.mobile-nav-link').forEach(link => link.addEventListener('click', () => setMobileMenu(false)));
   document.addEventListener('click', (e) => {
     setLangMenu(false);
-    if (!mobileMenu?.contains(e.target as Node) && !mobileToggle?.contains(e.target as Node)) {
-      setMobileMenu(false);
-    }
+    if (!mobileMenu?.contains(e.target as Node) && !mobileToggle?.contains(e.target as Node)) setMobileMenu(false);
   });
-
-  // Escape cierra cualquier menú abierto y devuelve el foco a su botón
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     if (langMenu && !langMenu.classList.contains('hidden')) { setLangMenu(false); langToggle?.focus(); }
     if (mobileMenu && !mobileMenu.classList.contains('hidden')) { setMobileMenu(false); mobileToggle?.focus(); }
   });
 
-  // Scroll Animations
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('is-visible');
-      }
+  // Prueba en vivo del hero: un parser mínimo, sin red, que imita cómo Yala entiende una frase.
+  // Es una demostración: la app real usa su propio motor (y con Pro, IA). Nada de esto sale del navegador.
+  const demoInput = document.getElementById('demo-input') as HTMLInputElement | null;
+  const demoCard = document.getElementById('demo-card');
+  const demoNote = document.getElementById('demo-note');
+  const demoMeta = document.getElementById('demo-meta');
+  const demoAmount = document.getElementById('demo-amount');
+
+  const CATEGORY_LABELS: Record<string, Record<string, string>> = {
+    es: { food: 'Restaurantes', transport: 'Transporte', grocery: 'Supermercado', utilities: 'Servicios', subs: 'Suscripciones', health: 'Salud', shopping: 'Compras', home: 'Hogar', other: 'Otros' },
+    en: { food: 'Restaurants', transport: 'Transport', grocery: 'Groceries', utilities: 'Utilities', subs: 'Subscriptions', health: 'Health', shopping: 'Shopping', home: 'Home', other: 'Other' },
+    de: { food: 'Restaurants', transport: 'Verkehr', grocery: 'Supermarkt', utilities: 'Nebenkosten', subs: 'Abos', health: 'Gesundheit', shopping: 'Einkäufe', home: 'Wohnen', other: 'Sonstiges' },
+    fr: { food: 'Restaurants', transport: 'Transport', grocery: 'Courses', utilities: 'Factures', subs: 'Abonnements', health: 'Santé', shopping: 'Achats', home: 'Logement', other: 'Autres' },
+    it: { food: 'Ristoranti', transport: 'Trasporti', grocery: 'Spesa', utilities: 'Bollette', subs: 'Abbonamenti', health: 'Salute', shopping: 'Acquisti', home: 'Casa', other: 'Altro' },
+    pt: { food: 'Restaurantes', transport: 'Transporte', grocery: 'Supermercado', utilities: 'Contas', subs: 'Assinaturas', health: 'Saúde', shopping: 'Compras', home: 'Casa', other: 'Outros' },
+  };
+  const CATEGORY_RULES: Array<[RegExp, string]> = [
+    [/pizza|restaur|almuerzo|cena|desayuno|comida|pollo|chifa|caf[eé]|men[uú]|lunch|dinner|burger|sushi|essen|d[ée]jeuner|d[îi]ner|pranzo|jantar|almo[cç]o/i, 'food'],
+    [/taxi|uber|cabify|bus|combi|gasolina|pasaje|aeropuerto|airport|flughafen|a[eé]roport|aeroporto|train|tren|zug|metro|didi/i, 'transport'],
+    [/s[uú]per|mercado|plaza vea|wong|tottus|bodega|verdura|fruta|grocer|supermar|courses|spesa|mercadona|lidl|aldi|rewe/i, 'grocery'],
+    [/luz|agua|internet|recibo|celular|claro|movistar|electric|strom|facture|bolletta|conta de|gas\b|wifi/i, 'utilities'],
+    [/netflix|spotify|suscrip|subscri|abo\b|abbonam|assinat|disney|youtube|icloud/i, 'subs'],
+    [/farmacia|m[eé]dic|doctor|cl[ií]nica|dentist|pharma|apotheke|arzt|sant[eé]|salute/i, 'health'],
+    [/ropa|zapat|tienda|regalo|amazon|shop|kleidung|v[êe]tement|scarpe|roupa|presente/i, 'shopping'],
+    [/alquiler|arriendo|rent\b|miete|loyer|affitto|aluguel|hogar|casa\b/i, 'home'],
+  ];
+
+  function parseExpense(text: string) {
+    const m = text.match(/(\d+(?:[.,]\d{1,2})?)/);
+    if (!m) return null;
+    const amount = parseFloat(m[1].replace(',', '.'));
+    const lang = demoInput?.dataset.lang ?? 'es';
+    const labels = CATEGORY_LABELS[lang] ?? CATEGORY_LABELS.es;
+    let currency = demoInput?.dataset.currency ?? 'S/';
+    if (/d[oó]lar|dollar|\$|usd/i.test(text)) currency = '$';
+    else if (/euro|€/i.test(text)) currency = '€';
+    else if (/soles?\b|\bS\//i.test(text)) currency = 'S/';
+    const category = labels[(CATEGORY_RULES.find(([re]) => re.test(text)) ?? [null, 'other'])[1]];
+    let note = text
+      .replace(/^\s*(gast[eé]|pagu[eé]|compr[eé]|spent|paid|ausgegeben|d[ée]pens[ée]|speso|pagato|gastei|paguei)\s+/i, '')
+      .replace(m[0], '')
+      .replace(/\s*(soles?|d[oó]lares?|dollars?|euros?|usd|\$|€|eur)\s*/i, ' ')
+      .replace(/\s+(ausgegeben|dépensé)\s*$/i, '')
+      .replace(/^\s*(en|de|por|un|una|el|la|al|on|for|at|f[üu]r|pour|di|per|na|no|em)\s+/i, '')
+      .replace(/\s+/g, ' ').trim();
+    note = note ? note.charAt(0).toUpperCase() + note.slice(1) : (demoInput?.dataset.fallback ?? '');
+    const formatted = amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return { amount: `${currency} ${formatted}`, category, note };
+  }
+
+  function renderDemo() {
+    if (!demoInput || !demoCard || !demoNote || !demoMeta || !demoAmount) return;
+    const r = parseExpense(demoInput.value);
+    demoCard.hidden = !r;
+    if (!r) return;
+    demoNote.textContent = r.note;
+    demoMeta.textContent = `${r.category} · ${demoInput.dataset.account} · ${demoInput.dataset.today}`;
+    demoAmount.textContent = r.amount;
+  }
+
+  demoInput?.addEventListener('input', renderDemo);
+  document.querySelectorAll<HTMLButtonElement>('.demo-example').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!demoInput) return;
+      demoInput.value = btn.textContent?.trim() ?? '';
+      renderDemo();
+      demoInput.focus();
     });
-  }, { threshold: 0.1 });
-
-  document.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
-
-  // Galería: pausa real (WCAG 2.2.2). El hover ya pausaba, pero en táctil no hay hover.
-  const gallery = document.getElementById('gallery-marquee');
-  const galleryToggle = document.getElementById('gallery-toggle');
-  const galleryLabel = galleryToggle?.querySelector('.gallery-toggle-label');
-  galleryToggle?.addEventListener('click', () => {
-    const paused = gallery?.classList.toggle('is-paused') ?? false;
-    galleryToggle.setAttribute('aria-pressed', String(paused));
-    galleryToggle.querySelector('.gallery-icon-pause')?.classList.toggle('hidden', paused);
-    galleryToggle.querySelector('.gallery-icon-play')?.classList.toggle('hidden', !paused);
-    if (galleryLabel) galleryLabel.textContent = paused ? (galleryToggle.dataset.labelPlay ?? '') : (galleryToggle.dataset.labelPause ?? '');
   });
+  renderDemo();
 
-  // Hero device tilt (cursor-driven) — desktop only, respects reduced-motion
-  const heroDevice = document.getElementById('hero-device');
-  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const finePointer = window.matchMedia('(pointer: fine)').matches;
-  if (heroDevice && !prefersReduced && finePointer) {
-    const maxTilt = 5;
-    window.addEventListener('mousemove', (e) => {
-      const dx = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
-      const dy = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
-      heroDevice.style.setProperty('--tiltY', `${(dx * maxTilt).toFixed(2)}deg`);
-      heroDevice.style.setProperty('--tiltX', `${(-dy * maxTilt).toFixed(2)}deg`);
-    }, { passive: true });
+  // CTA fijo en móvil: solo cuando el botón del hero ya no se ve
+  const heroCta = document.getElementById('hero-cta');
+  const stickyCta = document.getElementById('sticky-cta');
+  if (heroCta && stickyCta && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      const heroVisible = entries.some(e => e.isIntersecting);
+      stickyCta.hidden = heroVisible || window.scrollY < 200;
+    }, { threshold: 0 });
+    io.observe(heroCta);
   }
 </script>
