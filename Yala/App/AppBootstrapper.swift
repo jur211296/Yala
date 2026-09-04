@@ -635,6 +635,21 @@ final class AppBootstrapper {
             //  · usageFocus (D1): un `.groupsOnly` de una corrida previa reduciría la shell a
             //    solo-Grupos y contaminaría los tests que esperan la app completa (stale ≠ nil).
             UserDefaults.standard.removeObject(forKey: AppPreferences.Keys.usageFocus)
+            //  · onboardingMode (`-uitest-group-invite`): el hook de más abajo hace
+            //    `OnboardingMode.setCurrent(.groupInvite)`, que PERSISTE. Sin reponerlo aquí, la
+            //    corrida siguiente arranca en modo solo-Grupos y apaga secciones enteras —
+            //    `organizacionSection` y `preferenciasSection` de ProfileView (:328-330, :843), y el
+            //    educativo de GroupsContainerView—, así que el rojo sale en un test que no pidió
+            //    nada de eso y culpa a la pantalla. Es exactamente la clase de `expensesOnlyMode`
+            //    de arriba: una key que sobrevive al proceso y contamina al vecino.
+            //    ORDEN: la memoria ANTES del borrado. El `didSet` de `SessionState.onboardingMode`
+            //    re-persiste vía `OnboardingMode.setCurrent`, así que al revés dejaría la key
+            //    materializada con "full" justo después de quitarla — el mismo orden, y por el
+            //    mismo motivo, que documenta `DataWipeService.clearHandoverOnboardingMode`.
+            if SessionState.shared.onboardingMode != .full {
+                SessionState.shared.onboardingMode = .full
+            }
+            UserDefaults.standard.removeObject(forKey: OnboardingMode.userDefaultsKey)
             //  · Remote-config (DIFERIDOS #34): el snapshot/toggle de una corrida manual en el
             //    mismo sim es estado pegajoso de la MISMA clase (los getters ya cortan bajo
             //    uitest — esto es limpieza de cinturón para corridas manuales posteriores).

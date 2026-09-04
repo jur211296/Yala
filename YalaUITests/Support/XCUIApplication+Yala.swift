@@ -89,6 +89,17 @@ extension XCUIApplication {
         }
         // Args crudos adicionales (aditivo — p.ej. "-uitest-cloud-chooser").
         args.append(contentsOf: extraArguments)
+        // Idioma FIJO para toda la suite. Los seeds nombran sus datos con copy localizado
+        // (`DevSeedAccounts.swift:22`/`:31` → `L10n.DevSeed.accountMain`/`accountSavings`), y hay
+        // tests que seleccionan filas por un identificador que lleva ese nombre dentro
+        // (`accounts_row_<nombre>`, AccountsSettingsListView.swift:197). Sin override, `L10n` cae en
+        // `Locale.preferredLanguages.first` = el idioma del DISPOSITIVO: en la Mac del owner es
+        // es-PE y pasa; en un runner en inglés el identificador no casa y el rojo culpa a la fila.
+        // Mismo remedio que `TEST_RUNNER_TZ` en qa.yml, y por la misma razón: la suite se escribió y
+        // se verificó en un idioma, así que se declara en vez de heredarlo del entorno.
+        // Los CUATRO elementos son necesarios y el valor de `-AppleLanguages` va entre paréntesis
+        // porque es un array serializado; sin ellos el argumento se ignora EN SILENCIO.
+        args += ["-AppleLanguages", "(es)", "-AppleLocale", "es_PE"]
         launchArguments = args
         launch()
         return self
