@@ -714,7 +714,7 @@ final class PanelViewModel {
                 config.isVisible = true
                 return config
             }
-            return WidgetConfig(id: UUID(), type: type, isVisible: true, size: .medium)
+            return WidgetConfig(id: UUID(), type: type, isVisible: true, size: PanelDefaults.size(for: type))
         }
     }
 
@@ -777,7 +777,7 @@ final class PanelViewModel {
     func isWidgetVisible(_ type: WidgetType) -> Bool {
         guard let prefs = appPreferences else { return true }
         let section = type.panelSection
-        if prefs.panelSectionsHidden.contains(section.rawValue) { return false }
+        if prefs.resolvedSectionsHidden.contains(section.rawValue) { return false }
         let hidden = draftHidden[section] ?? prefs.hidden(for: section)
         return !hidden.contains(type.rawValue)
     }
@@ -791,10 +791,15 @@ final class PanelViewModel {
     // MARK: - Widget Size (P20-11)
 
     /// Current `.medium` / `.large` size for a widget type.
-    /// Falls back to `.medium` when the widget isn't yet stored (first launch
-    /// pre-injection, or widget type introduced after last save).
+    /// Cae al tamaño de `PanelDefaults` cuando el widget aún no está guardado
+    /// (primer arranque antes de la inyección, o tipo añadido después del último
+    /// guardado).
+    ///
+    /// Antes caía a `.medium` fijo, que para `trend` **no es un tamaño legal**
+    /// (`supportedSizes == [.small, .large]`): el picker recibía un valor imposible
+    /// y no seleccionaba ninguna opción. `PanelDefaults.size(for:)` sanea.
     func widgetSize(_ type: WidgetType) -> WidgetSize {
-        widgetConfigs.first(where: { $0.type == type })?.size ?? .medium
+        widgetConfigs.first(where: { $0.type == type })?.size ?? PanelDefaults.size(for: type)
     }
 
     /// Updates the `.medium` / `.large` size for a widget type. Persists via
@@ -812,6 +817,13 @@ final class PanelViewModel {
     /// al tamaño más pequeño disponible que no sea small.
     func setWidgetSize(_ type: WidgetType, size: WidgetSize) {
         guard type.supportsSize else { return }
+        // Fija los predeterminados antes de tocar el almacén de tamaños. Sin esto, un
+        // cambio de tamaño durante la ventana pre-siembra crea el blob legacy
+        // `panel_widget_configs_v1`, y su sola PRESENCIA desvía a
+        // `PanelPreferencesMigration` por la rama de ACTUALIZACIÓN — que bucketiza ese
+        // blob y no escribe `panelSectionsHidden` jamás. El usuario nuevo se quedaba
+        // sin el curado de secciones por haber tocado un selector de tamaño.
+        appPreferences?.materializePanelDefaultsIfNeeded()
         guard let idx = widgetConfigs.firstIndex(where: { $0.type == type }) else { return }
         guard widgetConfigs[idx].size != size else { return }
         var updated = widgetConfigs
@@ -907,16 +919,50 @@ final class PanelViewModel {
         scheduleSectionWrite(for: kind)
     }
 
-    /// Clears section's Order + Hidden so `activeWidgets(in:)` falls back to
-    /// `WidgetType.defaultWidgets(in:)`. Cancels any pending debounce, clears draft,
-    /// and writes synchronously — the user expects "Restablecer" to take effect now.
+    /// Restablece una sección a los predeterminados curados de `PanelDefaults`:
+    /// orden, widgets ocultos y tamaños. Cancela el guardado pendiente, limpia el
+    /// borrador y escribe de forma síncrona — el usuario espera que «Restablecer»
+    /// surta efecto ya.
+    ///
+    /// Hasta ahora escribía `[]` en las dos listas, lo que hacía caer el render al
+    /// auto-sanado de `buildOrderedRawWidgets` y **encendía todos** los widgets de la
+    /// sección. Coincidía con los predeterminados solo mientras estos fueron «casi
+    /// todo visible»; con el curado de cuatro widgets, ese botón los deshacía.
+    ///
+    /// Punto de entrada único: lo usan tanto el botón del sheet de preferencias de
+    /// sección como el «Restablecer widgets de X» del sheet de configuración, que
+    /// antes duplicaba el cuerpo sin cancelar el debounce ni limpiar el borrador.
     func resetSectionPreferences(_ kind: PanelSectionKind) {
         pendingSectionWrites[kind]?.cancel()
         pendingSectionWrites[kind] = nil
         draftOrder[kind] = nil
         draftHidden[kind] = nil
-        appPreferences?.setOrder([], for: kind)
-        appPreferences?.setHidden([], for: kind)
+        appPreferences?.applyDefaults(for: kind)
+        applyDefaultSizes(in: kind)
+    }
+
+    /// Devuelve los widgets de una sección a su tamaño de `PanelDefaults`.
+    ///
+    /// Un solo `save()` para toda la sección. Salta el pair-sync de Planificación a
+    /// propósito: los tamaños curados ya cumplen su invariante («ambos pequeños o
+    /// ninguno»), y dejarlo actuar dispararía escrituras cruzadas mientras el array
+    /// se está reescribiendo entero.
+    private func applyDefaultSizes(in kind: PanelSectionKind) {
+        let types = Set(WidgetType.defaultWidgets(in: kind))
+        guard !types.isEmpty else { return }
+
+        var updated = widgetConfigs
+        var changed = false
+        for index in updated.indices where types.contains(updated[index].type) {
+            let target = PanelDefaults.size(for: updated[index].type)
+            guard updated[index].size != target else { continue }
+            updated[index].size = target
+            changed = true
+        }
+
+        guard changed else { return }
+        widgetConfigs = updated
+        widgetConfig.save()
     }
 
     /// Flushes all pending debounced writes synchronously. Called from sheet

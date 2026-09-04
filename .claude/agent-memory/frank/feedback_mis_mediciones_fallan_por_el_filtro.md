@@ -116,3 +116,25 @@ verificable que una del código, y cuesta lo mismo: leer el error entero.
 - **Una medida de disco recién liberado no es fiable de inmediato.** Tras `simctl erase` o borrar
   DerivedData, APFS tarda en reflejarlo: vuelve a medir antes de decidir nada, y desde luego antes
   de decirle a Jürgen que hay que parar.
+
+## Noveno caso (2026-09-04): revisar un diff que sigue moviéndose
+
+Lancé una review adversarial de 98 agentes sobre un cambio **sin commitear y que seguí editando
+mientras corría**. Resultado: los hallazgos de la primera fase describían código que ya no existía, y
+los refutadores de la segunda —que arrancaron una hora después— citaban **mi propio arreglo** para
+refutarlos. Cinco «altas» sonaban a bugs vivos y estaban cerradas antes de que se escribieran.
+
+No invalidó la review: el hallazgo de fondo era real y lo arreglé yo mismo por auto-revisión antes de
+que llegara. Pero costó una lectura larga separar «esto sigue vivo» de «esto ya lo cerré», y el
+riesgo de la confusión inversa —dar por cerrado algo que no lo estaba— era el mismo.
+
+**How to apply:** una review sobre un diff se lanza contra un árbol **congelado**. O commiteas primero
+(en rama, si hace falta), o paras de editar hasta que vuelva, o le pasas el `git stash`/hash exacto que
+debe mirar. Y al leer sus resultados, lo primero es fechar cada hallazgo contra el árbol de AHORA, no
+contra el de cuando se escribió — la misma regla de la casa de «cita la línea del árbol en el que
+estás», aplicada al revés.
+
+**Corolario que sí es nuevo:** los tres refutadores por hallazgo hicieron su trabajo *demasiado* bien
+— 85 de 93 refutados. Cuando la tasa de refutación es tan alta, la señal no es «el código está
+limpio»: es que el revisor de la primera fase estaba mirando otra cosa. La tasa de refutación es un
+diagnóstico del montaje, no del código.

@@ -323,7 +323,7 @@ struct PanelView: View {
             )
             // Seed BEFORE the first calculation so hidden sections don't do
             // work on app launch.
-            viewModel.hiddenSections = Self.parseHiddenSections(appPreferences.panelSectionsHidden)
+            viewModel.hiddenSections = Self.parseHiddenSections(appPreferences.resolvedSectionsHidden)
             Task { TransferMigrationService.migratePositiveTransfersIfNeeded(in: modelContext) }
             viewModel.syncFromSessionState(sessionState)
             reconcileAccountsSortOrder()
@@ -361,7 +361,13 @@ struct PanelView: View {
             // sync cross-device con el Panel ya montado.
             viewModel.recalculateData()
         }
-        .onChange(of: appPreferences.panelSectionsHidden) { oldValue, newValue in
+        // Observa el valor RESUELTO, no la lista cruda: así el disparo cubre los dos
+        // eventos que cambian lo que se ve —que se escriba la lista, y que el
+        // centinela de siembra se encienda—. Con la lista cruda, un usuario cuya
+        // configuración remota resulte ser «ninguna sección oculta» no dispararía
+        // nada (el `didSet` corta al comparar `[]` con `[]`) y se quedaría viendo el
+        // curado hasta reiniciar la app.
+        .onChange(of: appPreferences.resolvedSectionsHidden) { oldValue, newValue in
             let next = Self.parseHiddenSections(newValue)
             guard viewModel.hiddenSections != next else { return }
             let previous = viewModel.hiddenSections

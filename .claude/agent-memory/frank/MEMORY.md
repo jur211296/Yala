@@ -7,6 +7,7 @@
 - [El tablero antes que el bug](feedback_el_tablero_antes_que_el_bug.md) — prefiere sanear el board antes que atacar producción; y en docs, el bloque entero en un commit, no troceado.
 - [Tarjetas blancas: identidad](feedback_tarjetas_blancas_identidad.md) — cuándo un cambio visual toca identidad y no es polish.
 - [Alcance mínimo, salvo incoherencia](feedback_alcance_minimo_salvo_incoherencia.md) — escoge lo mínimo, pero amplía si el propio cambio se contradice ante el usuario.
+- [Autónomo es hasta el final](feedback_autonomo_hasta_el_final.md) — decide en bloque y suelta la ejecución; los rojos y el entorno también son míos.
 - [Prefiere lo limpio a lo defensivo](feedback_prefiere_lo_limpio_a_lo_defensivo.md) — retira el mecanismo que falla en vez de apuntalarlo; nombra siempre qué se pierde al limpiar.
 
 ## Cómo mido y cómo entrego

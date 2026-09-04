@@ -696,7 +696,54 @@ final class AppPreferences {
     // Secciones sin claves persistidas (`health`, `latestRecords`, `tools`)
     // retornan `[]` en getters y son no-op en setters.
 
+    /// True mientras la siembra de predeterminados NO ha corrido en este dispositivo.
+    ///
+    /// El discriminador es el centinela, **nunca** «la lista está vacía»: una lista
+    /// vacía es un estado legítimo del usuario (ningún widget oculto en esa sección,
+    /// o ninguna sección oculta) y confundir ambas cosas le impondría el curado a
+    /// quien deliberadamente lo quiere todo a la vista.
+    private var isAwaitingDefaultsSeed: Bool {
+        guard !panelPrefsMigratedV2 else { return false }
+        return !hasAnyPanelPreference
+    }
+
+    /// True si hay CUALQUIER preferencia del Panel con contenido.
+    ///
+    /// Segundo término del guard, y no es redundante: entre el `init` y el hook
+    /// post-sync, `applyRemoteValues()` puede haber bajado ya la configuración real de
+    /// un usuario existente mientras el centinela sigue apagado. Sin esta condición,
+    /// la resolución en lectura le taparía su propio Panel con el curado — y peor: su
+    /// primera edición lo materializaría encima, pisándoselo en todos sus dispositivos.
+    ///
+    /// Nótese que esto NO reintroduce el discriminador «lista vacía»: quien ya pasó por
+    /// la siembra sale por el `guard` de arriba, así que un usuario que deliberadamente
+    /// no oculta nada sigue viéndolo todo.
+    private var hasAnyPanelPreference: Bool {
+        !panelTendenciasOrder.isEmpty || !panelTendenciasHidden.isEmpty
+            || !panelDistribucionOrder.isEmpty || !panelDistribucionHidden.isEmpty
+            || !panelPlanificacionOrder.isEmpty || !panelPlanificacionHidden.isEmpty
+            || !panelSectionsHidden.isEmpty || !panelSectionsOrder.isEmpty
+    }
+
+    /// Secciones ocultas, resueltas.
+    ///
+    /// La siembra puede tardar hasta 15 s en un arranque con iCloud (espera a que el
+    /// sync se asiente antes de decidir; ver `PanelPreferencesMigration`). Sin esto,
+    /// durante esa ventana «no hay preferencias» se renderizaba como «enséñalo todo»
+    /// y el Panel se encogía a la vista del usuario en cuanto la siembra aterrizaba.
+    /// Resolviendo también en LECTURA, el arranque es correcto desde el primer frame
+    /// en los cuatro caminos (instalación con y sin iCloud, borrado remoto y
+    /// restauración).
+    ///
+    /// Mismo patrón que `resolvedReorderableSections`, unas líneas más abajo.
+    var resolvedSectionsHidden: [String] {
+        isAwaitingDefaultsSeed ? PanelDefaults.hiddenSectionRawValues : panelSectionsHidden
+    }
+
     func order(for kind: PanelSectionKind) -> [String] {
+        if isAwaitingDefaultsSeed, let defaults = PanelDefaults.section(kind) {
+            return defaults.order.map(\.rawValue)
+        }
         switch kind {
         case .tendencias:    return panelTendenciasOrder
         case .distribucion:  return panelDistribucionOrder
@@ -706,6 +753,9 @@ final class AppPreferences {
     }
 
     func hidden(for kind: PanelSectionKind) -> [String] {
+        if isAwaitingDefaultsSeed, let defaults = PanelDefaults.section(kind) {
+            return defaults.hidden.map(\.rawValue)
+        }
         switch kind {
         case .tendencias:    return panelTendenciasHidden
         case .distribucion:  return panelDistribucionHidden
@@ -714,7 +764,24 @@ final class AppPreferences {
         }
     }
 
+    /// Fija los predeterminados en disco y da por terminada la fase «sin sembrar».
+    ///
+    /// Hace falta porque la resolución en lectura se apoya en el centinela: si el
+    /// usuario edita el Panel ANTES de que la siembra corra —posible en el arranque
+    /// con iCloud, que espera al sync—, su cambio se escribiría pero la lectura
+    /// seguiría devolviendo el curado y el interruptor volvería solo a su sitio. Al
+    /// materializar, lo que el usuario acaba de tocar pasa a ser la verdad.
+    ///
+    /// Enciende el centinela ANTES de sembrar, y no al revés: `setupDefaultsForNewUser`
+    /// escribe a través de `setOrder`/`setHidden`, que vuelven a llamar aquí.
+    func materializePanelDefaultsIfNeeded() {
+        guard isAwaitingDefaultsSeed else { return }
+        panelPrefsMigratedV2 = true
+        setupDefaultsForNewUser()
+    }
+
     func setOrder(_ value: [String], for kind: PanelSectionKind) {
+        materializePanelDefaultsIfNeeded()
         switch kind {
         case .tendencias:    panelTendenciasOrder    = value
         case .distribucion:  panelDistribucionOrder  = value
@@ -724,6 +791,7 @@ final class AppPreferences {
     }
 
     func setHidden(_ value: [String], for kind: PanelSectionKind) {
+        materializePanelDefaultsIfNeeded()
         switch kind {
         case .tendencias:    panelTendenciasHidden    = value
         case .distribucion:  panelDistribucionHidden  = value
@@ -749,6 +817,7 @@ final class AppPreferences {
     }
 
     func movePanelSection(from source: IndexSet, to destination: Int) {
+        materializePanelDefaultsIfNeeded()
         var updated = resolvedReorderableSections.map(\.rawValue)
         let original = updated
         updated.move(fromOffsets: source, toOffset: destination)
@@ -757,6 +826,10 @@ final class AppPreferences {
     }
 
     func resetPanelSectionsOrder() {
+        // Materializa igual que los demás escritores: `panelSectionsOrder` cuenta para
+        // `hasAnyPanelPreference`, así que tocarlo sin fijar antes los predeterminados
+        // apagaría la resolución en lectura y devolvería el Panel a «enséñalo todo».
+        materializePanelDefaultsIfNeeded()
         panelSectionsOrder = []
     }
 
@@ -779,52 +852,42 @@ final class AppPreferences {
         return hiddenCount >= total
     }
 
-    /// P20-11: opinionated first-launch defaults for Panel 2.0. Seeds the
-    /// per-section order/hidden preferences so an install fresh lands on a
-    /// "rich but not saturated" Panel.
+    /// Persiste los predeterminados de `PanelDefaults`: orden y ocultos por sección,
+    /// más las secciones que nacen ocultas.
     ///
-    /// Invoked by `PanelPreferencesMigration.runIfNeeded` when it detects
-    /// the install is truly fresh (no legacy `panel_widget_configs_v1` blob
-    /// AND `panelPrefsMigratedV2 == false`). Not called during upgrades —
-    /// those preserve whatever the user had.
+    /// La invoca `PanelPreferencesMigration.runIfNeeded` cuando detecta que la
+    /// instalación es fresca de verdad (sin blob legacy `panel_widget_configs_v1` y
+    /// con `panelPrefsMigratedV2 == false`). NO corre al actualizar: ahí se preserva
+    /// lo que el usuario tuviera.
     ///
-    /// Uses `WidgetType.rawValue` (Spanish identifiers like "tendencia_saldo")
-    /// — the persisted format the per-section lists serialize to.
+    /// **No es la fuente de verdad, solo su escritura.** La tabla vive en
+    /// `PanelDefaults` y se aplica también en LECTURA mientras el centinela está
+    /// apagado, así que el Panel es correcto aunque esta función aún no haya corrido.
+    /// Los tamaños van por otro almacén (`WidgetConfigManager`) y no se tocan aquí.
     func setupDefaultsForNewUser() {
-        // Tendencias: [trend | weekdayBar] paired small + cashFlow medium.
-        panelTendenciasOrder = [
-            WidgetType.trend.rawValue,
-            WidgetType.weekdayBar.rawValue,
-            WidgetType.cashFlow.rawValue,
-        ]
-        panelTendenciasHidden = []
+        for kind in PanelSectionKind.allCases {
+            guard let defaults = PanelDefaults.section(kind) else { continue }
+            setOrder(defaults.order.map(\.rawValue), for: kind)
+            setHidden(defaults.hidden.map(\.rawValue), for: kind)
+        }
+        panelSectionsHidden = PanelDefaults.hiddenSectionRawValues
+        panelSectionsOrder = PanelDefaults.sectionsOrder.map(\.rawValue)
+    }
 
-        // Distribución: [categoriesPie | subcategoriesPie] paired small +
-        // expensesByNeed medium. Top categorías/Top subcategorías/Etiquetas
-        // ocultos por default.
-        panelDistribucionOrder = [
-            WidgetType.categoriesPie.rawValue,
-            WidgetType.subcategoriesPie.rawValue,
-            WidgetType.expensesByNeed.rawValue,
-            WidgetType.topSpending.rawValue,
-            WidgetType.topSubcategories.rawValue,
-            WidgetType.tagsPie.rawValue,
-        ]
-        panelDistribucionHidden = [
-            WidgetType.topSpending.rawValue,
-            WidgetType.topSubcategories.rawValue,
-            WidgetType.tagsPie.rawValue,
-        ]
-
-        // Planificación: [scheduledPayments | budgets] paired small.
-        panelPlanificacionOrder = [
-            WidgetType.scheduledPayments.rawValue,
-            WidgetType.budgets.rawValue,
-        ]
-        panelPlanificacionHidden = []
-
-        // All sections visible by default.
-        panelSectionsHidden = []
+    /// Restablece los predeterminados de UNA sección: orden y ocultos vuelven a la
+    /// tabla curada.
+    ///
+    /// Antes de esto, «Restablecer» escribía `[]` en ambas listas y el render caía al
+    /// auto-sanado de `buildOrderedRawWidgets`, que **enciende todos** los widgets de
+    /// la sección. O sea: el botón hacía lo contrario de lo que promete su nombre, y
+    /// deshacía los predeterminados en vez de restaurarlos. Coincidía con el curado
+    /// por casualidad, mientras el curado fue «casi todo visible».
+    ///
+    /// No toca tamaños: viven en otro almacén y los restaura `PanelViewModel`.
+    func applyDefaults(for kind: PanelSectionKind) {
+        guard let defaults = PanelDefaults.section(kind) else { return }
+        setOrder(defaults.order.map(\.rawValue), for: kind)
+        setHidden(defaults.hidden.map(\.rawValue), for: kind)
     }
 
     // MARK: - Init
@@ -1336,6 +1399,21 @@ final class AppPreferences {
         static let panelSectionsOrder = "panelSectionsOrder"
         static let moreSectionOrder = "moreSectionOrder"
         static let panelPrefsMigratedV2 = "panelPrefsMigratedV2"
+
+        /// Todo lo que define «lo que ve un usuario nuevo» en el Panel: el centinela
+        /// de siembra y las ocho claves que escribe.
+        ///
+        /// Lo consume el bloque de limpieza de `-uitest-reset`. Sin borrarlo, el
+        /// centinela —que es monotónico— sobrevive entre corridas y la siembra no
+        /// vuelve a ejecutarse: un XCUITest de los predeterminados mediría lo que dejó
+        /// la corrida anterior. Si se añade una clave del Panel, va también aquí.
+        static let panelDefaultsUITestResetKeys: [String] = [
+            panelPrefsMigratedV2,
+            panelTendenciasOrder, panelTendenciasHidden,
+            panelDistribucionOrder, panelDistribucionHidden,
+            panelPlanificacionOrder, panelPlanificacionHidden,
+            panelSectionsHidden, panelSectionsOrder,
+        ]
         /// Marca que la regen de UUIDs (Tag.id + Account/Subcategory.shortcutID) corrió.
         /// Se setea en el primer save exitoso independiente del race del backfill CSV.
         /// Evita que `regenerateAllUUIDs` blow away Tag.id cada launch si el CSV

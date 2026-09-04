@@ -96,7 +96,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | only-testing-filters-may-be-silently-empty | backlog | tickets/backlog/only-testing-filters-may-be-silently-empty.md |
 | orphan-alerts-behind-fullscreen-covers | backlog | tickets/backlog/orphan-alerts-behind-fullscreen-covers.md |
 | panel-accounts-redesign | backlog | tickets/backlog/panel-accounts-redesign.md |
-| panel-defaults-four-sections-four-widgets | backlog | tickets/backlog/panel-defaults-four-sections-four-widgets.md |
+| panel-defaults-four-sections-four-widgets | qa | tickets/qa/panel-defaults-four-sections-four-widgets.md |
 | prefs-domain-per-secondary-session | qa | tickets/qa/prefs-domain-per-secondary-session.md |
 | prefs-synced-keys-upload-not-download | qa | tickets/qa/prefs-synced-keys-upload-not-download.md |
 | push-client-ignores-yala-kind | backlog | tickets/backlog/push-client-ignores-yala-kind.md |

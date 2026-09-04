@@ -133,11 +133,25 @@ struct PanelSectionsConfigView: View {
     @ViewBuilder
     private func row(for kind: PanelSectionKind) -> some View {
         let binding = Binding<Bool>(
-            get: { !appPreferences.panelSectionsHidden.contains(kind.rawValue) },
+            // Lee el valor RESUELTO para que el interruptor coincida con lo que el
+            // Panel está pintando también antes de que la siembra haya corrido.
+            get: { !appPreferences.resolvedSectionsHidden.contains(kind.rawValue) },
             set: { isVisible in
-                var set = Set(appPreferences.panelSectionsHidden)
-                if isVisible { set.remove(kind.rawValue) } else { set.insert(kind.rawValue) }
-                appPreferences.panelSectionsHidden = Array(set)
+                // Antes de la primera edición hay que fijar los predeterminados: la
+                // lectura los resuelve mientras el centinela está apagado, así que sin
+                // esto el cambio se escribiría y el interruptor volvería solo a su sitio.
+                appPreferences.materializePanelDefaultsIfNeeded()
+                var hidden = Set(appPreferences.resolvedSectionsHidden)
+                if isVisible { hidden.remove(kind.rawValue) } else { hidden.insert(kind.rawValue) }
+                // Orden canónico: dos secuencias de toggles que dejan el mismo
+                // conjunto producen el mismo array. Con `Array(set)` el orden era
+                // aleatorio y el `didSet` —que compara arrays— escribía y empujaba a
+                // iCloud KV en cambios que no cambiaban nada. Daba igual mientras la
+                // lista estaba casi siempre vacía; con tres secciones ocultas de
+                // fábrica, ya no.
+                appPreferences.panelSectionsHidden = PanelSectionKind.allCases
+                    .map(\.rawValue)
+                    .filter { hidden.contains($0) }
             }
         )
 
@@ -162,10 +176,11 @@ struct PanelSectionsConfigView: View {
                 if isEmpty {
                     Spacer(minLength: 0)
                     Button {
-                        // Clears per-section Order + Hidden so `activeWidgets(in:)`
-                        // falls back to the epic's default set (reappears in Panel).
-                        appPreferences.setOrder([], for: kind)
-                        appPreferences.setHidden([], for: kind)
+                        // Punto de entrada único con el botón del sheet de
+                        // preferencias de sección. Antes duplicaba aquí el cuerpo del
+                        // reset —escribiendo `[]`, que enciende TODOS los widgets— y
+                        // además sin cancelar el guardado pendiente.
+                        appPreferences.applyDefaults(for: kind)
                     } label: {
                         Image(systemName: "arrow.counterclockwise")
                             .font(DS.Typography.body).fontWeight(.medium)

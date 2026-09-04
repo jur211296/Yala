@@ -245,32 +245,48 @@ struct PanelSectionPreferencesTests {
         #expect(vm.isWidgetVisible(.scheduledPayments) == true)
     }
 
-    // MARK: - 10. Reset cancels pending debounce and writes defaults synchronously
+    // MARK: - 10. Reset cancela el debounce y escribe los predeterminados CURADOS
 
-    @Test func resetSectionPreferences_cancelsPendingAndWritesDefaults() async throws {
+    @Test func resetSectionPreferences_cancelsPendingAndWritesCuratedDefaults() async throws {
         let defaults = Self.makeSuite()
         let prefs = AppPreferences(defaults: defaults)
         prefs.panelTendenciasOrder = ["flujo_efectivo", "tendencia_saldo"]
         prefs.panelTendenciasHidden = ["tendencia_saldo"]
         let vm = Self.makeVM(with: prefs)
 
-        // Start a debounced hide that should NOT commit because reset will cancel it.
+        // Un ocultado con debounce en marcha que el reset debe cancelar.
         vm.setWidgetHidden(.cashFlow, hidden: true)
         vm.resetSectionPreferences(.tendencias)
 
-        // Synchronously: order + hidden cleared.
-        #expect(prefs.panelTendenciasOrder == [])
-        #expect(prefs.panelTendenciasHidden == [])
+        // Síncronamente: las dos listas quedan en el CURADO, no vacías.
+        // Escribir `[]` hacía caer el render al auto-sanado, que enciende TODOS los
+        // widgets de la sección — o sea, «Restablecer» deshacía los predeterminados.
+        #expect(prefs.panelTendenciasOrder == [
+            "tendencia_saldo", "gasto_por_dia", "flujo_efectivo",
+        ])
+        #expect(prefs.panelTendenciasHidden == ["gasto_por_dia", "flujo_efectivo"])
 
-        // Wait past the debounce window to ensure the cancelled Task never fires.
+        // Pasada la ventana del debounce, la tarea cancelada no revive.
         try await Task.sleep(for: .milliseconds(350))
-        #expect(prefs.panelTendenciasHidden == [])
+        #expect(prefs.panelTendenciasHidden == ["gasto_por_dia", "flujo_efectivo"])
 
-        // activeWidgets falls back to section defaults.
-        let types = vm.activeWidgets(in: .tendencias).map(\.type.rawValue)
-        #expect(Set(types) == Set([
-            "tendencia_saldo", "flujo_efectivo", "gasto_por_dia",
-        ]))
+        // Y lo que se ve es solo la gráfica de Tendencias.
+        #expect(vm.activeWidgets(in: .tendencias).map(\.type) == [.trend])
+    }
+
+    // MARK: - 10b. El reset también devuelve los TAMAÑOS de fábrica
+
+    @Test func resetSectionPreferences_restauraTamanos() {
+        let defaults = Self.makeSuite()
+        let prefs = AppPreferences(defaults: defaults)
+        let vm = Self.makeVM(with: prefs)
+
+        vm.setWidgetSize(.trend, size: .small)
+        #expect(vm.widgetSize(.trend) == .small)
+
+        vm.resetSectionPreferences(.tendencias)
+        #expect(vm.widgetSize(.trend) == PanelDefaults.size(for: .trend))
+        #expect(vm.widgetSize(.trend) == .large)
     }
 
     // MARK: - P20-11: hasAnyVisibleWidget drives auto-hide

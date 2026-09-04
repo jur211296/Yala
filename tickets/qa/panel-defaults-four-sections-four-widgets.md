@@ -1,9 +1,10 @@
 ---
 id: panel-defaults-four-sections-four-widgets
-status: backlog
+status: qa
 priority: high
 area: panel
 created: 2026-09-04
+updated: 2026-09-04
 source: encargo del owner 2026-09-04 — investigación medida en 2.1 @ 070d76b1 (7 lentes + 14 refutadores)
 ---
 
@@ -352,3 +353,60 @@ Ninguno. No se toca SwiftData: todo son preferencias en `UserDefaults` + iCloud 
   recibe los predeterminados, aunque la decisión 1 diga «solo instalaciones nuevas». El código no
   distingue ese caso; con el incremento 2 ya no parpadea, pero sigue siendo un cambio para alguien
   que no es nuevo.
+
+---
+
+## Lo implementado (2026-09-04)
+
+Los 6 incrementos, más cuatro piezas que el plan no preveía y que salieron de la revisión
+adversarial y de la auto-revisión. Todas son del mismo tipo: **el plan trataba los predeterminados
+como un problema de escritura, y la mitad de los agujeros estaban en la lectura y en la primera
+edición.**
+
+### Lo que salió y no estaba en el plan
+
+1. **La primera edición del usuario se perdía.** Con los predeterminados resueltos en lectura, quien
+   tocara un interruptor antes de que la siembra corriera veía su cambio escribirse… y rebotar 200 ms
+   después, porque la lectura seguía devolviendo el curado. Peor: la escritura ya había salido a
+   iCloud. Se cierra con `materializePanelDefaultsIfNeeded()`, invocado desde **los seis** caminos de
+   escritura (orden, ocultos, tamaño, toggle de sección, reordenar y restablecer el orden).
+2. **La resolución en lectura podía tapar configuración real.** Entre el arranque y el hook post-sync,
+   un usuario existente puede tener ya sus preferencias bajadas de iCloud con el centinela aún
+   apagado: se le habría enseñado el curado, y su primera edición lo habría materializado encima,
+   pisándoselo en todos sus dispositivos. El guard lleva ahora un segundo término
+   (`hasAnyPanelPreference`) que **no** reintroduce el discriminador «lista vacía»: quien ya pasó por
+   la siembra sale por el primero.
+3. **Tocar un tamaño desviaba la migración entera.** Cambiar el tamaño de un widget antes de la
+   siembra crea el almacén legacy, y su sola presencia manda a `PanelPreferencesMigration` por la
+   rama de ACTUALIZACIÓN — que nunca escribe `panelSectionsHidden`. El usuario nuevo se quedaba sin
+   el curado de secciones por haber tocado un selector.
+4. **El XCUITest habría sido un test mentiroso.** `-uitest-reset` no limpiaba el centinela de siembra,
+   que es monotónico: la corrida medía lo que dejó la anterior. Se limpia ahora en sus **tres**
+   superficies (UserDefaults, dominio de sesión e iCloud KV) y se siembra a mano. El iKV va por
+   `OwnerKeyValueStore`, y `AppBootstrapper` queda declarado como el **noveno** escritor conocido de
+   esa puerta, con su porqué.
+
+### Lo verificado
+
+- **Suite unitaria completa: 6029 pasan, 0 fallan.** 16 pines nuevos en `PanelDefaultsTests`, más los
+  reescritos en `PanelPreferencesMigrationTests` y `PanelSectionPreferencesTests`.
+- **Prueba de mutación** sobre la pieza central: desactivar la resolución en lectura pone rojos
+  exactamente los 4 tests que dicen cubrirla. No son tests tautológicos.
+- **Dos tests se corrigieron por tautológicos** al revisarlos: uno medía `PanelDefaults` contra sí
+  mismo en vez de contra lo persistido; el otro comprobaba una postcondición que la función ya
+  garantiza por construcción.
+- **En pantalla** (iPhone 17 Pro, instalación limpia): Tendencias con la gráfica a ancho completo,
+  Planificación con Planificados y Presupuestos emparejados en una fila pequeña, Últimos registros al
+  final, y ni rastro de Distribución ni Herramientas.
+- **Revisión adversarial**: 5 lentes, 98 agentes, 93 hallazgos con 3 refutadores cada uno. Los que
+  sobrevivieron son los cuatro de arriba, ya cerrados.
+
+### Residual honesto
+
+- El **cohorte de usuarios existentes que nunca tocó el selector de tamaño** recibe la gráfica de
+  Tendencias en grande. Es la decisión 4 del owner, tomada a sabiendas.
+- **Una restauración en móvil nuevo desde una copia de 1.x** sigue cayendo en la rama de instalación
+  nueva. Con el arreglo ya no parpadea, pero recibe los predeterminados sin ser un usuario nuevo.
+- **`DataWipeService` no borra las claves del Panel del iCloud KV**, solo de UserDefaults: tras un
+  borrado de datos, el siguiente arranque puede detectar las claves del usuario anterior y saltarse
+  la siembra. Es anterior a este ticket y no se toca aquí.

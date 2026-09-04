@@ -55,7 +55,10 @@ enum PanelPreferencesMigration {
             // Cuando se invoca desde `AppPreferences.init` (deferFreshSeed=true) DIFERIMOS el seed
             // SIN marcar el sentinel: AppBootstrapper re-invoca esto tras `iCloudFirstImportCompleted`
             // (gateado por MigrationGateLogic), cuando iKV ya está asentado y la decisión es segura.
-            if deferFreshSeed {
+            if freshSeedDecision(
+                deferRequested: deferFreshSeed,
+                isICloudAvailable: SwiftDataConfiguration.isICloudAvailable()
+            ) == .deferToPostSyncHook {
                 #if DEBUG
                 print("PanelPreferencesMigration: fresh path → defer seed hasta post-sync hook")
                 #endif
@@ -105,6 +108,37 @@ enum PanelPreferencesMigration {
         #if DEBUG
         print("PanelPreferencesMigration: upgrade path → \(orders.mapValues(\.count))")
         #endif
+    }
+
+    // MARK: - Decisión de siembra (pura)
+
+    enum FreshSeedDecision: Equatable {
+        /// Sembrar ahora mismo: la respuesta «no hay nada remoto» es de fiar.
+        case seedNow
+        /// Esperar al hook post-sync del paso 8.5 del bootstrap.
+        case deferToPostSyncHook
+    }
+
+    /// Decide si la siembra de una instalación fresca puede correr ya o hay que
+    /// diferirla.
+    ///
+    /// Está extraída y es pura porque el camino real no se puede aislar en un test:
+    /// `hasRemotePanelPreferences()` lee el `NSUbiquitousKeyValueStore` GLOBAL del
+    /// proceso —no el dominio inyectado—, así que cualquier test que haya escrito una
+    /// preferencia sincronizada antes lo contamina. Mismo motivo por el que el test
+    /// de la siembra llama a `setupDefaultsForNewUser()` a mano.
+    ///
+    /// **Sin cuenta iCloud no hay iKV del que puedan bajar preferencias**, así que
+    /// «no encuentro nada remoto» deja de ser ambiguo: es una instalación fresca de
+    /// verdad y sembrar no puede pisar nada. Es el mismo predicado con el que
+    /// `MigrationGateLogic.shouldWaitForCloudKit` decide `.runNow`; hasta ahora esta
+    /// rama esperaba igualmente hasta 15 s a un hook que en su caso no traería nada.
+    static func freshSeedDecision(
+        deferRequested: Bool,
+        isICloudAvailable: Bool
+    ) -> FreshSeedDecision {
+        guard deferRequested else { return .seedNow }
+        return isICloudAvailable ? .deferToPostSyncHook : .seedNow
     }
 
     /// Synced per-section keys that carry the user's Panel 2.0 configuration.

@@ -116,28 +116,28 @@ struct PanelPreferencesMigrationTests {
         #expect(prefs.panelPrefsMigratedV2 == true)
     }
 
-    // MARK: - fresh install seeds opinionated PP2-07 defaults
+    // MARK: - fresh install siembra los predeterminados curados
 
-    @Test func freshInstall_seedsPP2_07Defaults() {
+    @Test func freshInstall_seedsCuratedDefaults() {
         let defaults = Self.makeSuite()
         let prefs = AppPreferences(defaults: defaults)
-        // `init` invoca `runIfNeeded(deferFreshSeed: true)`, que DIFIERE el seed fresco para
-        // no clobbear config remota que llega por sync (commit 03400411). El seed real corre
-        // en el "safe point" (post-sync o sin iCloud) vía `setupDefaultsForNewUser`. Lo
-        // ejercitamos directo: verifica los valores PP2-07 sin depender del read del iKV
-        // global (`hasRemotePanelPreferences`) que el path de migración consulta primero.
-        // (El sentinel `panelPrefsMigratedV2` lo cubren migration_runsOnce / guardedBySentinel.)
+        // `init` invoca `runIfNeeded(deferFreshSeed: true)`. Sin cuenta iCloud la
+        // siembra ya no se difiere (no hay iKV del que puedan bajar preferencias),
+        // así que en el simulador esto siembra dentro del propio `init`. Lo
+        // llamamos igualmente a mano para que el test siga siendo válido en un
+        // entorno CON cuenta, donde el seed real corre en el hook post-sync.
         prefs.setupDefaultsForNewUser()
 
-        // Tendencias: [trend | weekdayBar] paired small + cashFlow medium.
-        // Todos visibles.
+        // Tendencias: solo la gráfica de Tendencias. Promedio diario y Flujo de
+        // efectivo van en el ORDEN (para poder recuperarlos) pero nacen apagados.
         #expect(prefs.panelTendenciasOrder == [
             "tendencia_saldo", "gasto_por_dia", "flujo_efectivo",
         ])
-        #expect(prefs.panelTendenciasHidden == [])
+        #expect(prefs.panelTendenciasHidden == ["gasto_por_dia", "flujo_efectivo"])
 
-        // Distribución: [categoriesPie | subcategoriesPie] paired small +
-        // expensesByNeed medium; top categorías/sub/etiquetas ocultos.
+        // Distribución conserva su reparto interno aunque la sección nazca oculta:
+        // así `isSectionEffectivelyEmpty` sigue siendo falso y el botón
+        // «Restablecer widgets de Distribución» no aparece.
         #expect(prefs.panelDistribucionOrder == [
             "categorias_torta", "subcategorias_torta", "gastos_por_naturaleza",
             "categorias_principales", "subcategorias_principales", "distribucion_por_etiquetas",
@@ -146,32 +146,88 @@ struct PanelPreferencesMigrationTests {
             "categorias_principales", "subcategorias_principales", "distribucion_por_etiquetas",
         ])
 
-        // Planificación: [scheduledPayments | budgets] paired small.
+        // Planificación: Pagos planificados + Presupuestos, ambos visibles.
         #expect(prefs.panelPlanificacionOrder == [
             "pagos_planificados", "presupuestos",
         ])
         #expect(prefs.panelPlanificacionHidden == [])
 
-        #expect(prefs.panelSectionsHidden == [])
+        // Tres secciones nacen ocultas.
+        #expect(prefs.panelSectionsHidden == ["health", "distribucion", "tools"])
+        #expect(prefs.panelSectionsOrder == [])
+    }
+
+    // MARK: - El encargo, en una sola aserción de alto nivel
+
+    /// Pin del contrato de producto: un usuario nuevo ve CUATRO secciones y CUATRO
+    /// widgets. Si alguien cambia la tabla de `PanelDefaults` sin querer, cae aquí y
+    /// no en un test de bajo nivel que no dice qué se rompió.
+    @Test func freshInstall_muestraCuatroSeccionesYCuatroWidgets() {
+        let defaults = Self.makeSuite()
+        let prefs = AppPreferences(defaults: defaults)
+        prefs.setupDefaultsForNewUser()
+        // Enciende el centinela: sin esto la lectura RESUELVE desde la tabla y el test
+        // mediría `PanelDefaults` consigo mismo en vez de lo que la siembra persistió.
+        prefs.panelPrefsMigratedV2 = true
+
+        let visibleSections = PanelSectionKind.allCases.filter {
+            !prefs.resolvedSectionsHidden.contains($0.rawValue)
+        }
+        #expect(visibleSections == [.accounts, .tendencias, .planificacion, .latestRecords])
+
+        let vm = PanelViewModel()
+        vm.setAppPreferences(prefs)
+        let visibleWidgets = visibleSections.flatMap { vm.activeWidgets(in: $0).map(\.type) }
+        #expect(visibleWidgets == [.trend, .scheduledPayments, .budgets, .latestRecords])
     }
 
     // MARK: - setupDefaultsForNewUser — idempotent across call sites
 
-    @Test func setupDefaultsForNewUser_overwritesWithOpinionatedDefaults() {
+    @Test func setupDefaultsForNewUser_overwritesWithCuratedDefaults() {
         let defaults = Self.makeSuite()
         defaults.set(true, forKey: AppPreferences.Keys.panelPrefsMigratedV2)
         let prefs = AppPreferences(defaults: defaults)
 
-        // Seed some custom state first to confirm setupDefaults overwrites it.
+        // Estado custom previo, para confirmar que el seed lo sobrescribe.
         prefs.panelTendenciasOrder = ["flujo_efectivo"]
         prefs.panelTendenciasHidden = []
+        prefs.panelSectionsHidden = []
 
         prefs.setupDefaultsForNewUser()
 
         #expect(prefs.panelTendenciasOrder.first == "tendencia_saldo")
-        // weekdayBar visible por default → hidden lista vacía.
-        #expect(prefs.panelTendenciasHidden.isEmpty)
+        #expect(prefs.panelTendenciasHidden == ["gasto_por_dia", "flujo_efectivo"])
         #expect(prefs.panelDistribucionHidden.contains("categorias_principales"))
+        #expect(prefs.panelSectionsHidden == ["health", "distribucion", "tools"])
+    }
+
+    // MARK: - Sin cuenta iCloud el seed NO se difiere
+
+    /// Antes, una instalación sin cuenta iCloud esperaba igualmente al hook post-sync
+    /// del paso 8.5 del bootstrap — hasta 15 s a por una señal que en su caso no iba a
+    /// llegar. Sin cuenta no hay iKV del que bajar nada, así que la ambigüedad que
+    /// motivaba el diferido no existe.
+    ///
+    /// Se prueba la decisión PURA y no el camino completo a propósito:
+    /// `hasRemotePanelPreferences()` lee el `NSUbiquitousKeyValueStore` global del
+    /// proceso, que cualquier test anterior que escriba una preferencia sincronizada
+    /// contamina. Un test de integración aquí daría verde o rojo según el ORDEN de la
+    /// suite, que es peor que no tenerlo.
+    @Test func freshSeedDecision_matriz() {
+        // Sin cuenta iCloud: sembrar ya, aunque el llamador pidiera diferir.
+        #expect(PanelPreferencesMigration.freshSeedDecision(
+            deferRequested: true, isICloudAvailable: false) == .seedNow)
+
+        // Con cuenta iCloud: diferir, que es lo que evita pisar la configuración que
+        // aún puede estar bajando.
+        #expect(PanelPreferencesMigration.freshSeedDecision(
+            deferRequested: true, isICloudAvailable: true) == .deferToPostSyncHook)
+
+        // Llamado desde el punto seguro (el hook), nunca se difiere.
+        #expect(PanelPreferencesMigration.freshSeedDecision(
+            deferRequested: false, isICloudAvailable: true) == .seedNow)
+        #expect(PanelPreferencesMigration.freshSeedDecision(
+            deferRequested: false, isICloudAvailable: false) == .seedNow)
     }
 
     // MARK: - upgrade path — does not trigger setupDefaults

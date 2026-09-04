@@ -680,6 +680,33 @@ final class AppBootstrapper {
             //    state de re-entrada donde debe salir el de alta, en verde y sin haberlo ejercitado. Y lo
             //    heredaría también un arranque manual del simulador.
             UserDefaults.standard.removeObject(forKey: GroupsSessionHistoryMarker.key)
+            //  · Predeterminados del Panel: el centinela de siembra es MONOTÓNICO y de la
+            //    misma clase pegajosa. Una sola corrida lo deja armado y, desde ahí, la
+            //    siembra no vuelve a ejecutarse nunca: un test de «lo que ve un usuario
+            //    nuevo» pasaría a medir lo que dejó la corrida ANTERIOR, en verde y sin
+            //    haber ejercitado nada. Se limpian el centinela y las ocho claves que
+            //    escribe, o el estado sobreviviente enmascara al que se quiere probar.
+            //    Hay que barrer las TRES superficies. El iKV del simulador es la que
+            //    más engaña: `PanelPreferencesMigration` decide «usuario existente en
+            //    device nuevo» por la sola PRESENCIA de estas claves ahí, así que una
+            //    corrida anterior que las empujó hace que la siguiente se salte la
+            //    siembra y marque el centinela sin sembrar — dejando el Panel con TODO
+            //    visible y un test de predeterminados en rojo por contaminación.
+            //    El iKV va por `OwnerKeyValueStore`, nunca crudo: en sesión secundaria
+            //    ese store es el del DUEÑO y la puerta es quien lo impide.
+            for key in AppPreferences.Keys.panelDefaultsUITestResetKeys {
+                UserDefaults.standard.removeObject(forKey: key)
+                SessionDefaults.current.removeObject(forKey: key)
+                OwnerKeyValueStore.shared.removeObject(forKey: key)
+            }
+            //    Y borrar no basta: `appPreferences` es propiedad almacenada de este
+            //    bootstrapper, así que ya está construido —y con los valores viejos en
+            //    memoria— cuando esto corre. Se siembra aquí, a mano, en vez de dejarlo
+            //    al paso 8.5: así el estado de partida es el de una instalación recién
+            //    hecha pase lo que pase con el iKV, que es lo único que hace honesto a
+            //    un test de «lo que ve un usuario nuevo».
+            appPreferences.setupDefaultsForNewUser()
+            appPreferences.panelPrefsMigratedV2 = true
         }
         // M4 · sesión secundaria (M1) determinista, EFÍMERA y sin rastro en disco. Va la PRIMERA de las
         // incondicionales porque no es un estado más: decide el MODO EFECTIVO de todo el proceso

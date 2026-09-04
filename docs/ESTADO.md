@@ -27,10 +27,10 @@ y **desplegada en producción**.
 
 ## Abiertos, por prioridad
 
-- **`panel-defaults-four-sections-four-widgets`** (nuevo, high) — **el siguiente**, por encargo del
-  owner del 2026-09-04. El Panel de un usuario nuevo pasa de 7 secciones y 9 widgets a 4 y 4.
-  Investigado y con las cuatro decisiones tomadas; el riesgo a resolver es el parpadeo de hasta 15 s
-  al arrancar con iCloud, en que el Panel se pinta entero antes de encogerse. Sin código escrito.
+- **`panel-defaults-four-sections-four-widgets`** — **implementado y en `qa`**. El Panel de un
+  usuario nuevo pasa de 7 secciones y 9 widgets a 4 y 4. Los predeterminados se resuelven también en
+  LECTURA, así que el arranque es correcto desde el primer frame; «Restablecer» pasa a devolver el
+  curado. Unitarios 6029/0 y verificado en pantalla. Falta tu mirada en la tanda.
 - **`group-joiner-flag-consumers-still-narrow`** (high) — el recién llegado ya se ve
   reconocido, pero su gasto no llega a su cuenta personal hasta un arranque posterior, y aterriza en
   la cuenta «Grupos» en vez de la real. Trece consumidores del flag siguen estrechos. El ticket trae

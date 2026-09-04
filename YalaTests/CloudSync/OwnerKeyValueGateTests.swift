@@ -199,10 +199,10 @@ struct OwnerKeyValueWiringTests {
             """)
     }
 
-    /// El conteo por escritor, molde `AttestWiringTests`. Son los OCHO medidos el 2026-08-12 — los
+    /// El conteo por escritor, molde `AttestWiringTests`. Eran los OCHO medidos el 2026-08-12 —los
     /// seis del ticket más el override de idioma y el flip del interruptor de notificaciones, que
-    /// habían entrado sin que nadie los viera.
-    @Test("los escritores del iCloud KV pasan por la puerta, y son los ocho conocidos")
+    /// habían entrado sin que nadie los viera— y desde el 2026-09-04 son NUEVE.
+    @Test("los escritores del iCloud KV pasan por la puerta, y son los conocidos")
     func everyWriterGoesThroughTheGate() {
         var writers: Set<String> = []
         for folder in ["Yala", "YalaWidgets", "YalaShare"] {
@@ -220,6 +220,12 @@ struct OwnerKeyValueWiringTests {
             "DataWipeService.swift",                  // handover del onboardingMode
             "CloudBeacon.swift",                      // el faro del Modo Nube
             "ScheduledPaymentNotificationService.swift",  // flip del maestro (8ª vía, tampoco estaba)
+            // 9ª vía (2026-09-04): el bloque de `-uitest-reset` borra del iKV las claves de
+            // los predeterminados del Panel. Va por la puerta y solo bajo `-uitest`; sin ese
+            // borrado, `hasRemotePanelPreferences()` ve las claves de la corrida anterior,
+            // clasifica al simulador como «usuario existente» y salta la siembra — el test
+            // de predeterminados mediría entonces lo que dejó la corrida previa.
+            "AppBootstrapper.swift",
         ]
         #expect(writers == esperados, """
             Cambió el conjunto de ficheros que escriben el iCloud KV (hoy: \(writers.sorted())).
