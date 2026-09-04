@@ -24,8 +24,9 @@ const APP_STORE = 'https://apps.apple.com/pe/app/yala-finanzas-sin-esfuerzo/id67
 
 // Capturas 2.0 — idioma-aware con fallback a ES (raw en/ no tiene panel-hero)
 const imgLang = lang === 'es' ? 'es' : 'en';
-const SS = '/images/screenshots/v2';
-const mock = (name: string, esOnly = false) => `${SS}/mockups/${name}-${esOnly ? 'es' : imgLang}.jpg`;
+// Capturas v3 (simulador, 2026-09-04): 620×1348, una por idioma. Ver Web/Screenshots/v3-2026-09-04/.
+const SS = '/images/screenshots/v3';
+const mock = (name: string) => `${SS}/${name}-${imgLang}.jpg`;
 
 const navLinks = [
   { href: '#anota', label: t.v3NavAnota },
@@ -156,7 +157,7 @@ const navLinks = [
 
       <div class="flex justify-center md:justify-end">
         <div class="v3-phone w-64 sm:w-72">
-          <img src={mock('panel-hero', true)} alt={t.altHero} width="860" height="1869" loading="eager" fetchpriority="high" decoding="async" />
+          <img src={mock('panel-hero')} alt={t.altHero} width="620" height="1348" loading="eager" fetchpriority="high" decoding="async" />
         </div>
       </div>
     </div>
@@ -186,7 +187,7 @@ const navLinks = [
       </div>
       <div class="flex justify-center md:justify-end">
         <div class="v3-phone w-44 sm:w-56 md:w-64 md:-my-24">
-          <img src={mock('nuevo-registro')} alt={t.altStep1} width="860" height="1869" loading="lazy" decoding="async" />
+          <img src={mock('nuevo-registro')} alt={t.altStep1} width="620" height="1348" loading="lazy" decoding="async" />
         </div>
       </div>
     </div>
@@ -208,7 +209,7 @@ const navLinks = [
       </div>
       <div class="flex justify-center md:justify-end">
         <div class="v3-phone w-52 sm:w-64 md:w-[280px]">
-          <img src={mock('stats-resumen')} alt={t.altAnalytics} width="860" height="1869" loading="lazy" decoding="async" />
+          <img src={mock('stats-resumen')} alt={t.altAnalytics} width="620" height="1348" loading="lazy" decoding="async" />
         </div>
       </div>
     </div>
@@ -237,7 +238,7 @@ const navLinks = [
     <div class="grid md:grid-cols-[300px_1fr] gap-10 md:gap-16 items-center">
       <div class="flex justify-center md:justify-start order-2 md:order-1">
         <div class="v3-phone w-60 sm:w-64 md:w-[280px]">
-          <img src={mock('grupos-lista')} alt={t.altGroups} width="860" height="1869" loading="lazy" decoding="async" />
+          <img src={mock('grupos')} alt={t.altGroups} width="620" height="1348" loading="lazy" decoding="async" />
         </div>
       </div>
       <div class="order-1 md:order-2">
