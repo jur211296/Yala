@@ -82,3 +82,37 @@ resolvería.
 
 Relacionado: [[trailer-de-commit-nunca-en-yala]] (el mismo error, cometido por otra sesión, es lo
 que casi tumba una regla del owner).
+
+**La décima, y es la inversa de todas las anteriores: culpar al ENTORNO sin leer el error.** El
+2026-09-04, un `xcodebuild test-without-building` falló con `TEST EXECUTE FAILED` y sin una sola
+línea de `Executed`. Encajaba a la perfección con el síntoma que el `CLAUDE.md` documenta —XCUITest
+que no llegan a lanzar, disco lleno, once días de diagnóstico— y el disco venía bajando de verdad:
+23,9 → 12 GiB en la sesión. Ya se lo había medio anunciado a Jürgen como causa cuando leí el error
+COMPLETO en vez del que había pasado por mi propio `grep`:
+
+```
+Cannot launch simulated executable: no file found at .ddp/…/YalaUITests-Runner.app
+```
+
+Yo había borrado `.ddp` para liberar espacio, y el paso 1 del gate usa `xcodebuild build`, que
+compila la app pero **no** los targets de test. Causa mía, de procedimiento, a un `build-for-testing`
+de distancia. Mi `grep` filtraba por `Executed|RequestDenied|failed to launch` y el error no decía
+ninguna de las tres.
+
+**Y la coda, que es lo que casi me hace parar el trabajo:** informé a Jürgen de que el disco estaba
+en 12 GiB y de que la autonomía se acababa ahí. Al ir a medir qué borrar, `df` daba **34 GiB**. APFS
+había tardado en reclamar el espacio del `simctl erase` y del `.ddp` que yo mismo había borrado
+minutos antes. Las lecturas eran ciertas y transitorias a la vez.
+
+**Why:** «antes de culpar al código, mira el entorno» es la regla del repo, y de tanto tenerla a mano
+la apliqué como conclusión en vez de como hipótesis. Una hipótesis del entorno es igual de
+verificable que una del código, y cuesta lo mismo: leer el error entero.
+
+**How to apply:**
+- **Antes de culpar al entorno, lee el error sin filtrar.** `tail -30` del log crudo antes que
+  cualquier `grep` propio. El fallo que buscas casi nunca usa las palabras que tú elegiste.
+- **Un `TEST EXECUTE FAILED` sin conteo no es un test en rojo: es que no arrancó.** Son dos
+  diagnósticos distintos y se parecen en el veredicto.
+- **Una medida de disco recién liberado no es fiable de inmediato.** Tras `simctl erase` o borrar
+  DerivedData, APFS tarda en reflejarlo: vuelve a medir antes de decidir nada, y desde luego antes
+  de decirle a Jürgen que hay que parar.
