@@ -82,12 +82,11 @@ const ogLocale = ({ es: 'es_PE', en: 'en_US', de: 'de_DE', fr: 'fr_FR', it: 'it_
 		<title>{title}</title>
 	</head>
 	<body>
-		<!-- Tema antes del primer pintado: evita el flash oscuro→claro. Elegido por el usuario, o el del sistema. -->
+		<!-- Tema antes del primer pintado: oscuro por defecto (decisión del owner), claro solo si el
+		     visitante lo eligió aquí. Va antes del contenido para que no haya flash. -->
 		<script is:inline>
 			try {
-				var saved = localStorage.getItem('theme');
-				var light = saved ? saved === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
-				if (light) document.body.classList.add('light');
+				if (localStorage.getItem('theme') === 'light') document.body.classList.add('light');
 			} catch (e) {}
 		</script>
 		<slot />
