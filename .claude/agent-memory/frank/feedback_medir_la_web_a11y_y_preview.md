@@ -28,6 +28,16 @@ metadata:
 lee vacío porque su stdin ya se consumió. Me borró el `<script>` entero de `HomePage.astro` y solo lo vi
 porque conté `<script>` después. Para inyectar bloques largos: `cat >> fichero <<'X'` o el tool `Write`.
 
+**Dos más, del 4-sep, al renderizar la web con Chrome sin cabeza para enseñársela a Jürgen:**
+
+5. **`serve -s` reescribe TODO lo que no conoce a `index.html`**, y su *clean URLs* convierte `/x.html` en
+   `/x` antes de buscar el fichero: mis copias «oscuro/claro» servían siempre la home real, y el tema
+   «forzado» nunca cambiaba. Para renders con variantes, `python3 -m http.server` en otro puerto (sin
+   reescrituras) y nombres únicos por corrida. El headless además **prefiere tema claro** y **no baja de
+   ~500 px de ancho** (un `--window-size=390` recorta, no emula); para móvil, la captura de página entera de
+   Lighthouse (`fullPageScreenshot.screenshot.data`, 412 px) o un iframe de 390 px en la extensión.
+6. **`SendUserFile` rechaza (400) una imagen muy alta** (412×9458): partirla en columnas antes de enviarla.
+
 **Why:** cada una me costó una vuelta y las dos primeras habrían dejado pasar 16 fallos de contraste con un
 informe que decía «0 violaciones».
 
