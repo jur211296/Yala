@@ -1,51 +1,49 @@
 ---
-updated: 2026-09-03
+updated: 2026-09-04
 tags: [now, punto-de-retomada]
 ---
 
-# NOW — 2026-09-03 (Lima)
+# NOW — 2026-09-04 (Lima)
 
-**Rama** `2.1` · HEAD `b65a688f` — «g13_03 aplicada y verificada en producción».
-TestFlight build **12** (CPV 12). **Subida Yala (TF/store) = solo Mini.**
-Gateway de producción: desplegado hoy (`47d0e724`, 21:35 UTC).
+**Rama** `2.1` · HEAD `a8096ba5` — «la pantalla donde se expulsa gente pasa de cero cobertura a
+tener red». TestFlight build **12** (CPV 12). **Subida Yala (TF/store) = solo Mini.**
 
 ## La sesión, en una línea
 
-Cuatro arreglos de cosas que contaban mal o borraban datos —el 1:1 de divisas, el último día de los
-períodos cerrados, la visita que se llevaba los grupos del dueño— y dos de Grupos que dejaban al
-usuario sin explicación.
+El CI llevaba día y medio sin ejecutar un solo test; se arregló, y al quitar la venda aparecieron
+16 XCUITest en rojo —ninguno un bug de la app— más el que sí lo era: a quien se une a un grupo por
+enlace, la app no le reconocía hasta reiniciarla.
 
 ## Te espera a ti
 
-1. **Publicar la app.** Los dos avisos de Grupos (rechazo y grupo borrado) están completos en servidor
-   y en los dos entornos; lo único que falta para que lleguen a la gente es el cliente iOS.
-2. **La tanda de QA: 20 tickets en 4 montajes.** Guion en **`qa/guion-tanda.md`**. Siete comparten los
-   mismos dos teléfonos, así que montar eso una vez vale por siete.
+1. **Publicar la app.** Sin cambios desde ayer: los dos avisos de Grupos están completos en servidor
+   y en los dos entornos; falta el cliente iOS. Ahora además llevaría el fix de identidad.
+2. **La tanda de QA: 20 tickets en 4 montajes.** Guion en **`qa/guion-tanda.md`**, sin tocar.
 
 ## Abiertos, por prioridad
 
-- **`invite-link-five-causes-one-message`** — pieza 1 hecha; **2, 3 y 4 son código** y nunca estuvieron
-  bloqueadas. La 2 (que el nombre del grupo viaje del enlace a la pantalla) es la mayor.
-- **Los 7 de `in-progress` ya no esperan criterio**: las cuatro decisiones que los bloqueaban se
-  tomaron hoy y están escritas en sus tickets. Lo que queda es código.
-- **`ci-verde-con-la-suite-en-rojo`** — pasos 1 y 2 hechos; 3 y 4 fuera de alcance por decisión.
+- **`group-joiner-flag-consumers-still-narrow`** (nuevo, high) — el recién llegado ya se ve
+  reconocido, pero su gasto no llega a su cuenta personal hasta un arranque posterior, y aterriza en
+  la cuenta «Grupos» en vez de la real. Trece consumidores del flag siguen estrechos. El ticket trae
+  la vía fácil y por qué es peligrosa.
+- **`ci-verde-con-la-suite-en-rojo`** — pasos 1 y 2 hechos y documentados; **3 y 4 siguen fuera de
+  alcance por decisión**. Queda sin diagnosticar por qué `systemsetup` aplicaba la zona 3 de 9 veces.
+- **`invite-link-five-causes-one-message`** — sin tocar hoy. Piezas 2, 3 y 4 son código.
 - Los **2 de `blocked`** esperan **hardware**, no trabajo.
 
 ## Release 2.1 (sin cambios)
 
-2.0.5 no se lanza; release = 2.1. A7 y M5: **HOLD, no flip**. Prod: CLOUD_MODE 100 · GROUPS_BACKEND 100
-· CLOUD_ONBOARDING_CHOICE 0 · SECONDARY_SESSION 0. Cola C: 9 ACs owner/device, no corrida; D-R1 sigue
-sin `ok_`. **Cero `ok_` inventado.**
+2.0.5 no se lanza; release = 2.1. A7 y M5: **HOLD, no flip**. Prod: CLOUD_MODE 100 · GROUPS_BACKEND
+100 · CLOUD_ONBOARDING_CHOICE 0 · SECONDARY_SESSION 0. Cola C: 9 ACs owner/device, no corrida; D-R1
+sigue sin `ok_`. **Cero `ok_` inventado.**
 
 ## Board
 
-95 tickets · backlog 48 · in-progress 7 · qa 20 · blocked 2 · done 13 · discarded 5. Índice cuadrado
-(95 filas = 95 ficheros, verificado por diff). `qa` significa «esperando la tanda», no «cerrado».
+96 tickets · backlog 49 · in-progress 7 · qa 20 · blocked 2 · done 13 · discarded 5. Índice cuadrado
+(96 filas = 96 ficheros). `qa` significa «esperando la tanda», no «cerrado».
 
-Migraciones aplicadas hoy en **los dos entornos**: `g13_02` (el rechazado ve su propia fila) y `g13_03`
-(el grupo borrado deja de confundirse con un enlace inválido), con su gemelo en `prod-promo-sql/`.
-
-**Método, lo que más se repitió:** cinco veces un cero mío vino del FILTRO y no del código, y una sexta
-busqué en el sitio equivocado —el repo en vez de la base de datos— y reporté como bloqueo algo que
-llevaba horas hecho. Antes de reportar una ausencia: control positivo; y si es estado del servidor, se
-mide contra el servidor.
+**Lo que cambió en la red, y conviene saberlo:** el gate corría los XCUITest «de las áreas tocadas»
+y 30 de las 59 áreas no cubrían el código del que dependen — por eso dio verde sobre el rediseño del
+Panel que rompió siete suites. Corregido. Y las suites de Grupos estaban en verde por estado
+pegajoso: un alert que solo sale la primera vez y cuya preferencia sobrevive entre corridas. Habrían
+caído en un CI limpio.

@@ -16,9 +16,9 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (21 entradas)
+## Índice (23 entradas)
 
-> **No hace falta leer este fichero entero** — son 187 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 191 KB. Localiza la entrada
 > aquí y salta a ella.
 
 - `—` [Sync de Grupos (CKSyncEngine) NO debe arrancar/`save()` sobre el `mainContext` compartido antes](#sync-de-grupos-cksyncengine-no-debe-arrancarsave-sobre-el-maincontext-compartido-antes)
@@ -31,9 +31,11 @@
 - `—` [Un gate de feature NO puede decidir SI se PARSEA la entrada: solo QUÉ hacer con ella. Y «byte-i](#un-gate-de-feature-no-puede-decidir-si-se-parsea-la-entrada-solo-qu-hacer-con-ella-y-byte-i)
 - `—` [CARGAR una preferencia no puede ESCRIBIRLA — y el eco de eso convertía al receptor en autor LWW](#cargar-una-preferencia-no-puede-escribirla--y-el-eco-de-eso-converta-al-receptor-en-autor-lww)
 - `—` [Un pipe de observación puede FABRICAR la ausencia de una señal, y si imita un modo de fallo](#un-pipe-de-observacin-puede-fabricar-la-ausencia-de-una-seal-y-si-imita-un-modo-de-fallo)
+- `—` [Una medida de disco recién liberado NO es fiable: APFS tarda en reclamar, y el número intermedio pue](#una-medida-de-disco-recin-liberado-no-es-fiable-apfs-tarda-en-reclamar-y-el-nmero-intermedio-puede-parar-una-sesin)
 - `—` [Un borrado tiene DOS mitades y el camino remoto solo copió una: la fila del grupo se borra, el](#un-borrado-tiene-dos-mitades-y-el-camino-remoto-solo-copi-una-la-fila-del-grupo-se-borra-el)
 - `—` [El dominio Grupos pertenece al Apple ID, no al humano: toda frontera de «otro usuario en este d](#el-dominio-grupos-pertenece-al-apple-id-no-al-humano-toda-frontera-de-otro-usuario-en-este-d)
 - `—` [`exists` NO implica alcanzable: con un sheet presentado, la vista de fondo sigue ENTERA en el á](#exists-no-implica-alcanzable-con-un-sheet-presentado-la-vista-de-fondo-sigue-entera-en-el)
+- `—` [`accessibilityIdentifier` NO se propaga dentro de un `.alert` de SwiftUI: el botón existe en pantall](#accessibilityidentifier-no-se-propaga-dentro-de-un-alert-de-swiftui-el-botn-existe-en-pantalla-y-el-id-llega-vaco-al-rbol)
 - `—` [`xcodebuild test` REINSTALA la app del simulador: el QA que corres después del gate no mira tu](#xcodebuild-test-reinstala-la-app-del-simulador-el-qa-que-corres-despus-del-gate-no-mira-tu)
 - `—` [El árbol de accesibilidad del simulador se degrada tras muchos ciclos launch/stop y solo lo cura](#el-rbol-de-accesibilidad-del-simulador-se-degrada-tras-muchos-ciclos-launchstop-y-solo-lo-cura)
 - `2026-09-02` [Un helper de aislamiento puede vaciar 22 de 31 modelos y llamarse a sí mismo «borra todas las instan](#un-helper-de-aislamiento-puede-vaciar-22-de-31-modelos-y-llamarse-a-s-mismo-borra-todas-las-instancias-2026-09-02)
@@ -340,3 +342,56 @@
   - **El arreglo real: medir cada FUENTE por separado, no la unión.** La red era `PrefSyncKey ∪ synced:true`; comprobar que la unión no está vacía no prueba nada, porque una mitad la puede llenar sola. Ahora cada mitad tiene su propia aserción con su propio mínimo, así que si el escáner de `AppPreferences` deja de leer, salta — antes habría seguido verde mientras `PrefSyncKey` sostuviera el conteo, y `everyNetKeyIsClassified` habría declarado completitud sobre media fuente.
   - **La regla general, y aplica a todo escáner con control positivo:** el testigo del control tiene que ser algo que exista **por diseño**, no por defecto. Si eliges como testigo una anomalía —una key mal clasificada, un fichero que sobra, un caso pendiente de migrar—, el día que alguien haga su trabajo y la anomalía desaparezca, tu control se apaga sin avisar. Y ese día nadie estará mirando el control: estará mirando el fix.
   - Pin: `YalaTests/CloudSync/SessionPreferenceKeysTests.swift` (`netIsNotEmpty`, con `syncedTrueKeys()` extraída para poder medir esa mitad a solas).
+
+### `accessibilityIdentifier` NO se propaga dentro de un `.alert` de SwiftUI: el botón existe en pantalla y el id llega VACÍO al árbol
+
+**2026-09-04**, escribiendo `GroupMembersAdminUITests`. Un `.alert` de Grupos tapaba la pantalla y
+había que descartarlo desde el test. Como las convenciones prohíben targetear texto localizado, se
+le puso `.accessibilityIdentifier("groups_notifications_prompt_cancel")` al botón de descartar.
+
+El test seguía fallando con **`Failed to tap`** sobre un botón perfectamente visible en la captura
+— un error que suena a «está tapado» y manda a buscar por el lado equivocado (animaciones,
+hit-testing, `waitForHittable`). Tres iteraciones perdidas por ahí.
+
+Lo cerró **mirar el árbol de runtime** (`snapshot_ui`), que lo dijo en una línea:
+
+```
+e92|tap|button|Cancelar||          ← identificador VACÍO
+e33|tap|button|Viaje a Cusco…||group_card   ← éste sí lo tiene
+```
+
+El modificador se aplica sin error y SwiftUI lo ignora: los `Button` dentro del closure de un
+`.alert` no lo llevan al árbol de accesibilidad. No estaba tapado — **no existía por ese
+identificador**.
+
+- **Qué hacer en su lugar:** apagar el alert en origen para la suite (aquí,
+  `UITestEphemeralDefaults.applyGroupsNotificationPromptSeen`, dominio volátil) en vez de pelearse
+  con él desde el test. Si de verdad hay que tocarlo, no queda más que el label — y entonces el
+  idioma tiene que estar fijado (`-AppleLanguages`), no heredado.
+- **Y retirar el identificador que no funciona.** Dejarlo es peor que no ponerlo: el siguiente lo
+  lee, da por hecho que la pantalla es targeteable por ahí, y repite las tres iteraciones.
+- **Regla de método, que es la que más valió:** cuando un id no case, mira el ÁRBOL antes de tocar
+  el test. Ya estaba escrita en `.claude/rules/testing.md` para el caso del contenedor que pisa a
+  sus hijos; este es la otra mitad de la misma familia.
+
+### Una medida de disco recién liberado NO es fiable: APFS tarda en reclamar, y el número intermedio puede parar una sesión
+
+**2026-09-04.** Tras `simctl erase` de un simulador (7,1 GB) y borrar un `DerivedData` de 2,4 GB,
+`df` seguía dando **12 GiB libres**. Con el umbral del repo en 25 GB, eso se leyó como «el entorno
+está degradado, el trabajo autónomo se para aquí» y así se le comunicó al owner. Minutos después,
+al ir a medir qué más se podía borrar, `df` daba **34 GiB**: APFS había reclamado el espacio de lo
+que uno mismo acababa de liberar.
+
+Las dos lecturas eran ciertas y transitorias a la vez, y la conclusión que salió de la primera era
+falsa.
+
+- **Antes de decidir por un número de disco —y desde luego antes de reportarlo—, vuelve a medir.**
+  Especialmente si tú mismo acabas de borrar algo.
+- **Corolario más general, y el error de fondo:** «antes de culpar al código, mira el entorno» es la
+  regla del repo, y de tenerla tan a mano se aplicó como CONCLUSIÓN en vez de como hipótesis. Una
+  hipótesis del entorno es igual de verificable que una del código y cuesta lo mismo comprobarla.
+  Ese mismo día, un `TEST EXECUTE FAILED` sin una sola línea de `Executed` se atribuyó al disco
+  cuando el error completo decía que faltaba el runner de UITests, borrado al liberar espacio y no
+  reconstruido porque `xcodebuild build` no compila los targets de test (hace falta
+  `build-for-testing`). **Un `TEST EXECUTE FAILED` sin conteo no es un test en rojo: es que no
+  arrancó.**
