@@ -1,0 +1,17 @@
+---
+import Layout from '../layouts/Layout.astro';
+// Una sola 404 para todos los idiomas: Vercel no sabe el idioma del visitante al fallar la ruta.
+---
+
+<Layout title="Página no encontrada — Yala" description="Esta página no existe. Vuelve al inicio de Yala." lang="es">
+  <main id="main" class="min-h-screen flex flex-col items-center justify-center text-center px-6 py-24">
+    <p class="text-sm font-semibold tracking-wide text-accent mb-4">404</p>
+    <h1 class="text-4xl sm:text-5xl font-bold tracking-tighter mb-4">Esta página no existe.</h1>
+    <p class="text-lg text-neutral-400 max-w-md mb-2">Puede que el enlace esté roto o que la página se haya movido.</p>
+    <p class="text-lg text-neutral-400 max-w-md mb-10" lang="en">This page doesn't exist. The link may be broken or the page may have moved.</p>
+    <div class="flex flex-col sm:flex-row gap-4">
+      <a href="/" class="btn-primary">Volver al inicio</a>
+      <a href="/en/" class="btn-secondary" lang="en" hreflang="en">Go to the English site</a>
+    </div>
+  </main>
+</Layout>

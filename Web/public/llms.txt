@@ -1,0 +1,46 @@
+# Yala
+
+> App de finanzas personales para iPhone (iOS 26 o superior). Anota gastos e ingresos, presupuestos con
+> alertas, pagos planificados, widgets, 48 divisas, importación y exportación en CSV/Excel. Con Yala Pro:
+> lectura de capturas y recibos, dictado por voz, el asistente Yala IA y reportes avanzados. Los datos
+> viven en el iPhone del usuario y en su iCloud personal; Yala no se conecta a bancos ni pide credenciales.
+> Hecha en Lima, Perú. En la App Store desde marzo de 2026.
+
+## Qué es y qué no es
+
+- **Es** una app de registro y visualización de finanzas personales, gratuita con una suscripción opcional
+  (Yala Pro, S/ 12.90 al mes o S/ 99.90 al año en Perú; el precio se localiza por país en la App Store).
+  Un mes de prueba gratis; al dejar Pro no se pierden datos, solo se apagan las funciones Pro.
+- **No es** asesoría financiera, ni un agregador bancario: no se conecta a bancos ni pide credenciales.
+- **Plataformas:** solo iPhone, iOS 26 o superior. No hay Android ni versión web.
+
+## Cómo se anotan los gastos
+
+- **A mano**, escribiendo la descripción y el monto; con `@cuenta`, `!categoría` y `#etiqueta` se completa
+  sin salir del teclado. También con un atajo de Siri.
+- **Compartiendo una captura** (Pro): un comprobante de pago, o la captura de un estado de cuenta con
+  varios movimientos, se comparte a Yala desde el menú de compartir y los lee todos de una vez.
+- **Dictando o fotografiando el recibo** (Pro).
+- **Importando** un CSV o Excel del banco.
+- **Pidiéndoselo a Yala IA** en lenguaje natural (Pro), p. ej. «registra 24 soles de pizza con amigos».
+
+## Privacidad
+
+- Los datos viven en el iPhone y en el iCloud personal del usuario. No hay cuenta ni contraseña de Yala.
+- Solo sale información del teléfono cuando el usuario activa Yala IA, la voz o la foto —se le avisa
+  antes— y para consultar tipos de cambio.
+- Grupos comparte gastos, saldos y el nombre con los demás miembros del grupo.
+- Detalle: /privacy · Términos: /terms
+
+## Páginas
+
+- [Inicio](https://yala-app.pe/): qué hace la app, planes y dudas frecuentes. También en
+  /en/, /de/, /fr/, /it/ y /pt/.
+- [Privacidad](https://yala-app.pe/privacy): qué datos se guardan, dónde y qué sale del dispositivo.
+- [Términos](https://yala-app.pe/terms): condiciones de uso y suscripciones.
+- [Ayuda](https://yala-app.pe/support): primeros pasos, cuentas, importación y contacto.
+- [App Store](https://apps.apple.com/pe/app/yala-finanzas-sin-esfuerzo/id6758253109)
+
+## Contacto
+
+admin@yala-app.pe
