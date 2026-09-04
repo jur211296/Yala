@@ -158,15 +158,15 @@ struct FreshStartWipeAlertTests {
 
     /// Canario FUERA de `#if DEBUG`, misma familia que `attestKeyDiscardedAfterAssertFailure`: sin él
     /// este fallo es invisible en producción, que es exactamente como lleva vivo lo que lleve.
-    @Test("el fallo del wipe emite canario en los DOS alerts que borran")
+    @Test("el fallo del wipe emite canario en el alert que borra")
     func wipeFailure_emitsCanaryInBothWipingAlerts() throws {
         let alerts = try Self.code(Self.alertsPath)
 
         let emisiones = alerts.components(separatedBy: ".freshStartWipeFailed").count - 1
-        #expect(emisiones == 2, """
-            Se esperaban 2 emisiones de `.freshStartWipeFailed` (el alert de «empiezo de cero» y el \
-            «Empezar de cero» de la oferta de restaurar: los DOS wipes del fichero), y hay \
-            \(emisiones). El conteo es lo que hace que esto envejezca bien — un tercer camino que \
+        #expect(emisiones == 1, """
+            Se esperaba 1 emisión de `.freshStartWipeFailed` (el alert de «empiezo de cero», el ÚNICO \
+            wipe que queda en el fichero desde que se podó la oferta de restaurar), y hay \
+            \(emisiones). El conteo es lo que hace que esto envejezca bien — un segundo camino que \
             borre rompe el test y obliga a decidir, en vez de aparecer mudo.
             """)
 

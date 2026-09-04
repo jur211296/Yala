@@ -9,9 +9,10 @@
 //  persists a serializable proxy in UserDefaults. On the next ready window
 //  the buffer drains via the gate.
 //
-//  Not every intent is serializable (`.presentGroupInviteOnboarding(CKShare.Metadata)`
-//  is not — CKShare.Metadata is opaque). For those, we persist only what
-//  identifies the path (the share URL string) and re-resolve at drain time.
+//  Not every intent is serializable (`.requestAIConsent(PendingAIInput)` is not —
+//  its payload holds live runtime objects). Those have no proxy: `serialize`
+//  returns nil and the gate drops them with its canary. When a payload DOES have a
+//  stable identity, it gets its own case (`.navigateGroupDetail(groupID:)`).
 //
 
 import Foundation

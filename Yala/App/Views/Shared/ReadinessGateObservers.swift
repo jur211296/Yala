@@ -23,12 +23,10 @@ private struct ReadinessGateObserversModifier: ViewModifier {
     let showFreshStartWipeFailedAlert: Bool
     let showRemoteWipeAlert: Bool
     let showICloudRestartAlert: Bool
-    let showRestoreOffer: Bool
     let hasActiveInviteError: Bool
     let hasActiveGroupSyncError: Bool
     let activeInboxNotification: PendingInboxNotification
     let showGroupInviteOnboarding: Bool
-    let showGroupReconnect: Bool
     let showGroupsConsent: Bool
     let showGroupsSignIn: Bool
     let showGroupsOrganizerName: Bool
@@ -65,7 +63,6 @@ private struct ReadinessGateObserversModifier: ViewModifier {
     private func groupObservers(_ content: some View) -> some View {
         content
             .onChange(of: showGroupInviteOnboarding) { _, _ in recompute() }
-            .onChange(of: showGroupReconnect) { _, _ in recompute() }
             .onChange(of: showGroupsConsent) { _, _ in recompute() }
             .onChange(of: showGroupsSignIn) { _, _ in recompute() }
             .onChange(of: showGroupsOrganizerName) { _, _ in recompute() }
@@ -83,7 +80,6 @@ private struct ReadinessGateObserversModifier: ViewModifier {
             .onChange(of: showFreshStartWipeFailedAlert) { _, _ in recompute() }
             .onChange(of: showRemoteWipeAlert) { _, _ in recompute() }
             .onChange(of: showICloudRestartAlert) { _, _ in recompute() }
-            .onChange(of: showRestoreOffer) { _, _ in recompute() }
             .onChange(of: hasActiveInviteError) { _, _ in recompute() }
             .onChange(of: hasActiveGroupSyncError) { _, _ in recompute() }
             .onChange(of: activeInboxNotification) { _, _ in recompute() }
@@ -105,12 +101,10 @@ extension View {
         showFreshStartWipeFailedAlert: Bool,
         showRemoteWipeAlert: Bool,
         showICloudRestartAlert: Bool,
-        showRestoreOffer: Bool,
         hasActiveInviteError: Bool,
         hasActiveGroupSyncError: Bool,
         activeInboxNotification: PendingInboxNotification,
         showGroupInviteOnboarding: Bool,
-        showGroupReconnect: Bool,
         showGroupsConsent: Bool,
         showGroupsSignIn: Bool,
         showGroupsOrganizerName: Bool,
@@ -135,12 +129,10 @@ extension View {
             showFreshStartWipeFailedAlert: showFreshStartWipeFailedAlert,
             showRemoteWipeAlert: showRemoteWipeAlert,
             showICloudRestartAlert: showICloudRestartAlert,
-            showRestoreOffer: showRestoreOffer,
             hasActiveInviteError: hasActiveInviteError,
             hasActiveGroupSyncError: hasActiveGroupSyncError,
             activeInboxNotification: activeInboxNotification,
             showGroupInviteOnboarding: showGroupInviteOnboarding,
-            showGroupReconnect: showGroupReconnect,
             showGroupsConsent: showGroupsConsent,
             showGroupsSignIn: showGroupsSignIn,
             showGroupsOrganizerName: showGroupsOrganizerName,

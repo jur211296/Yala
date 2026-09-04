@@ -4135,10 +4135,6 @@
 "welcome.hero.cards.more.body" = "Lassen Sie es uns gemeinsam entdecken.";
 
 // MARK: - Welcome Detected Data (alert post-Hero cuando iCloud tiene data residual)
-"welcome.offerRestore.title" = "Wir haben Ihr Konto gefunden";
-"welcome.offerRestore.message" = "Sie haben Daten in iCloud. Vor dem Beitritt zur Gruppe laden?";
-"welcome.offerRestore.loadData" = "Meine Daten laden";
-"welcome.offerRestore.startFresh" = "Neu beginnen";
 
 
 // MARK: FreshStart (segunda barrera)

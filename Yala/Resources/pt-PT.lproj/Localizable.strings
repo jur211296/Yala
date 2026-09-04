@@ -183,10 +183,6 @@
 "welcome.hero.cards.more.body" = "Vamos descobrir juntos.";
 
 // MARK: - Welcome Detected Data (alert post-Hero cuando iCloud tiene data residual)
-"welcome.offerRestore.title" = "Encontrámos a tua conta";
-"welcome.offerRestore.message" = "Tens dados no iCloud. Carregar antes de entrares no grupo?";
-"welcome.offerRestore.loadData" = "Carregar os meus dados";
-"welcome.offerRestore.startFresh" = "Começar do zero";
 "groups.member.activeCount" = "%d membros ativos";
 "groups.member.pendingCount" = "%d pedidos pendentes";
 "groups.member.pendingRequestsCount" = "%d pedidos";

@@ -11,7 +11,7 @@
 //  `SplitGroup` local ya existía — pero la zona compartida tarda ≥60s en bajar
 //  (ventana export-only) y no había reconciliador posterior: el member jamás
 //  nacía y el owner nunca recibía la solicitud. El intent persistente permite a
-//  `GroupJoinReconciler` reintentarlo en accept/remoteInsert/boot/foreground.
+//  `GroupJoinReconciler` reintentarlo en accept/boot/foreground.
 //
 //  Persistencia: JSON-encoded `[String: PendingJoinEntry]` (keyed por zoneName)
 //  en UserDefaults. Multi-entry: dos accepts en sucesión son legítimos y el

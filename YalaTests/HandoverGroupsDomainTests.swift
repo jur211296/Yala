@@ -517,22 +517,24 @@ struct HandoverGroupsWiringTests {
         try String(contentsOf: repoRoot.appendingPathComponent(path), encoding: .utf8)
     }
 
-    /// Los DOS caminos de «empiezo de cero» del Welcome purgan el dominio Grupos: el alert de
-    /// fresh-start y «Empezar de cero» de la oferta de restore. Los otros 3 call-sites de
+    /// El camino de «empiezo de cero» del Welcome purga el dominio Grupos. Los otros 3 call-sites de
     /// `wipeAllUserData` (Ajustes, wipe remoto, reset de XCUITest) NO deben purgarlo — ahí es el
     /// mismo usuario y el copy promete que sus grupos se conservan.
     ///
-    /// **C2 movió los dos alerts de `ContentView` a `ShellDataAlertsModifier`**, y no por gusto: con ellos
+    /// **C2 movió el alert de `ContentView` a `ShellDataAlertsModifier`**, y no por gusto: con él
     /// inline el getter de `ContentView.body` tardaba 591 s en type-checkear y la compilación moría. El
     /// escáner apunta al fichero nuevo; los cuerpos son literales, no cambió ninguna decisión.
+    ///
+    /// Eran DOS caminos hasta que se podó la oferta de restaurar del recorrido del invitado: ese
+    /// «Empezar de cero» era el segundo, y con él se fue su purga.
     @Test func bothFreshStartPaths_purgeTheGroupsDomain() throws {
         let src = try Self.source("Yala/App/Views/Shared/ShellDataAlertsModifier.swift")
-        #expect(src.components(separatedBy: "DataWipeService.wipeLocalGroupsDomain(in: modelContext)").count - 1 == 2)
+        #expect(src.components(separatedBy: "DataWipeService.wipeLocalGroupsDomain(in: modelContext)").count - 1 == 1)
         // Y no se quedaron también en `ContentView`: dos copias del mismo alert es la regla (4) de
         // Presentaciones (dos anchors ante el mismo flujo) con un wipe destructivo detrás.
         let contentView = try Self.source("Yala/App/ContentView.swift")
         #expect(!contentView.contains("DataWipeService.wipeLocalGroupsDomain(in: modelContext)"), """
-            los alerts de fresh-start volvieron a `ContentView` sin salir de `ShellDataAlertsModifier`: hay
+            el alert de fresh-start volvió a `ContentView` sin salir de `ShellDataAlertsModifier`: hay
             DOS presentaciones del mismo alert destructivo colgando del mismo anchor.
             """)
     }

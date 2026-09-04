@@ -3,7 +3,7 @@
 //  Yala
 //
 //  Los cuatro alerts de DATOS del shell — wipe remoto detectado, cambio de cuenta iCloud, «empiezo de cero»
-//  del Welcome y la oferta de restaurar de un returning user con un link de invitación.
+//  del Welcome y el aviso de que ese borrado falló.
 //
 //  **Extraídos del `body` de `ContentView` por PRESUPUESTO DEL TYPE-CHECKER, y la cifra está medida:** con
 //  ellos dentro, el getter de `body` tardaba **591 s** en type-checkear
@@ -13,9 +13,8 @@
 //  saturada, y cualquier cosa que se le añada la tumba.
 //
 //  **Movimiento MECÁNICO: no cambia una sola decisión.** Los cuerpos de los cuatro alerts son literales a
-//  los que había en `ContentView`, incluidos sus comentarios; lo único nuevo son los `@Binding` y los dos
-//  closures (`onCancelWipeGrace`, `onReEmitInviteAfterRestore`) que reemplazan accesos directos a estado
-//  privado de la vista.
+//  los que había en `ContentView`, incluidos sus comentarios; lo único nuevo son los `@Binding` y el
+//  closure `onCancelWipeGrace`, que reemplaza un acceso directo a estado privado de la vista.
 //
 
 import SwiftData
@@ -30,19 +29,16 @@ struct ShellDataAlertsModifier: ViewModifier {
     /// El wipe de cualquiera de los DOS caminos de «empiezo de cero» lanzó. Se presenta en vez de
     /// navegar al onboarding: la app llevaba mintiendo sobre un borrado que no ocurrió.
     @Binding var showFreshStartWipeFailedAlert: Bool
-    @Binding var showRestoreOffer: Bool
     @Binding var hasCompletedOnboarding: Bool
     @Binding var hasExistingData: Bool
     @Binding var hasPersonalData: Bool
     @Binding var showWelcomeFlow: Bool
     @Binding var showOnboarding: Bool
-    @Binding var showWelcomeRestore: Bool
     @Binding var welcomeFlowInitialStep: WelcomeFlowStep
     /// El `wipeGraceTask` es `@State` privado de `ContentView` y no puede viajar por `@Binding`: los dos
     /// wipes DELIBERADOS tienen que cancelar esa gracia antes de bajar `hasPersonalData`, o el true→false
     /// se lee como wipe REMOTO y apila un alert sobre el onboarding que ellos mismos están abriendo.
     var onCancelWipeGrace: () -> Void
-    var onReEmitInviteAfterRestore: () -> Void
 
     func body(content: Content) -> some View {
         content
@@ -140,14 +136,15 @@ struct ShellDataAlertsModifier: ViewModifier {
                 // otras dos vías (Restaurar, Vengo por un grupo) a un toque. Mandarlo al Hero le
                 // cobraría un paso extra por haber preguntado.
                 //
-                // El molde no es nuevo: el alert de `showRestoreOffer`, treinta líneas más abajo en
-                // este mismo fichero, ya reabre el Chooser así —con su `if !hasCompletedOnboarding`—
-                // desde que alguien se topó con esto en aquel camino. Este se quedó sin ello.
+                // El molde se repite en el alert de «el wipe falló», al final de este mismo fichero:
+                // también reabre el Chooser, y con el mismo `if !hasCompletedOnboarding`. Este se
+                // quedó sin ello hasta que la traza de arriba explicó por qué hacía falta.
                 Button(L10n.Action.cancel, role: .cancel) {
                     showFreshStartWipeAlert = false
-                    // El guard es del precedente y no es decorativo: si el onboarding ya está
-                    // completo, este alert vino de un camino donde el Welcome NO estaba montado, y
-                    // reabrirlo le plantaría el flujo de bienvenida a alguien que ya usa la app.
+                    // El guard no es decorativo, y es el mismo que el del alert de abajo: si el
+                    // onboarding ya está completo, este alert vino de un camino donde el Welcome NO
+                    // estaba montado, y reabrirlo le plantaría el flujo de bienvenida a alguien que
+                    // ya usa la app.
                     if !hasCompletedOnboarding {
                         welcomeFlowInitialStep = .chooser
                         showWelcomeFlow = true
@@ -157,57 +154,8 @@ struct ShellDataAlertsModifier: ViewModifier {
             } message: {
                 Text(L10n.Welcome.FreshStart.alertMessage)
             }
-            // Parte F: oferta para un returning user con datos al abrir un link de invitación.
-            .alert(L10n.Welcome.OfferRestore.title, isPresented: $showRestoreOffer) {
-                Button(L10n.Welcome.OfferRestore.loadData) {
-                    // Cargar datos: el intent de invitación lo conserva su propio store; tras
-                    // restaurar se re-emite (reEmitInviteAfterRestore en onContinue/onComplete).
-                    showRestoreOffer = false
-                    showWelcomeRestore = true
-                }
-                Button(L10n.Welcome.OfferRestore.startFresh, role: .destructive) {
-                    // Empezar de cero: wipe CON señal (lastWipeTimestamp) para que el re-emit
-                    // vea wipe>onboarding → mini-onboarding de grupos (no vuelve a ofrecer).
-                    showRestoreOffer = false
-                    do {
-                        try DataWipeService.wipeAllUserData(in: modelContext)
-                        // Misma frontera de usuario que el alert de arriba (ver su nota): esto también
-                        // es «empiezo de cero», no un vaciado del mismo usuario. Residual conocido de
-                        // ESTE camino: la invitación abre el dominio Grupos (`groupsBetaUnlocked`) en
-                        // cuanto se acepta el enlace, así que el gate del bridge queda abierto y un
-                        // re-fetch de las zonas del Apple ID puede devolver los grupos del usuario
-                        // anterior. Cerrarlo exige el sello de corpus (diferido en el ticket).
-                        try DataWipeService.wipeLocalGroupsDomain(in: modelContext)
-                        hasExistingData = false
-                        // Mismo racional que el fresh-start de arriba: wipe deliberado ⇒ cancelar la
-                        // gracia antes de bajar la señal personal.
-                        onCancelWipeGrace()
-                        hasPersonalData = false
-                        // Igual que el alert de arriba: seguir adelante solo si el borrado ocurrió.
-                        // El re-emit de la invitación asume un corpus limpio (mira wipe>onboarding
-                        // para no volver a ofrecer restaurar), así que dispararlo tras un wipe que
-                        // lanzó deja al invitado en el mini-onboarding con los datos del anterior.
-                        onReEmitInviteAfterRestore()
-                    } catch {
-                        MetricsService.canary(.freshStartWipeFailed, detail: "offerRestore")
-                        showFreshStartWipeFailedAlert = true
-                    }
-                }
-                Button(L10n.Action.cancel, role: .cancel) {
-                    showRestoreOffer = false
-                    // Decisión consciente: volver al Chooser (el invite sigue en el store).
-                    if !hasCompletedOnboarding {
-                        welcomeFlowInitialStep = .chooser
-                        showWelcomeFlow = true
-                    }
-                }
-            } message: {
-                Text(L10n.Welcome.OfferRestore.message)
-            }
-            // El wipe lanzó. Un solo alert para los DOS caminos que borran: lo que la persona
-            // necesita saber es idéntico —sus datos siguen aquí y no la hemos movido de sitio— y el
-            // canario ya distingue de cuál vino. Sin acción destructiva: el reintento es cerrar y
-            // volver a abrir, porque un segundo wipe sobre el mismo store fallaría igual.
+            // El wipe lanzó. Sin acción destructiva: el reintento es cerrar y volver a abrir, porque
+            // un segundo wipe sobre el mismo store fallaría igual.
             .alert(
                 L10n.Welcome.FreshStart.failedTitle,
                 isPresented: $showFreshStartWipeFailedAlert

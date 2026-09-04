@@ -9,7 +9,7 @@
 //  Contexto (bug 2026-07-11): el member del invitado solo se creaba si el
 //  SplitGroup local ya existía al momento del accept — una carrera perdida casi
 //  siempre por la ventana export-only (≥60s). Estas decisiones gobiernan el
-//  reintento persistente en accept/remoteInsert/boot/foreground.
+//  reintento persistente en accept/boot/foreground.
 //
 
 import Foundation

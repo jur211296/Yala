@@ -73,7 +73,6 @@ struct ContentView: View {
     /// Metadata branded del invite (nombre/icono/color del grupo) para
     /// personalizar el welcome de `GroupInviteOnboardingView`.
     @State private var pendingInviteMetadata: InviteMetadata?
-    @State private var showGroupReconnect: Bool = false
     /// G4-invites (A2): sheets del flujo backend sign-in → consent → join, drenados de
     /// `.presentGroupsConsent` / `.presentGroupsSignIn`. DARK: con `groupsBackendEnabled`
     /// OFF los intents jamás se submitean.
@@ -109,14 +108,8 @@ struct ContentView: View {
     /// D1: red visual del cover de retención. Sincronizada desde la condición viva
     /// (`groupsRetentionPending && !isWipingData`) por `syncGroupsRetentionCover()`.
     @State private var showGroupsRetentionCover: Bool = false
-    /// Parte F: oferta "cargar tus datos antes de unirte" cuando un returning user
-    /// con datos en iCloud (sin wipe) abre un link de invitación.
-    @State private var showRestoreOffer: Bool = false
-    @State private var pendingOfferInvite: InviteMetadata?
     /// Inbox alert payload, driven by .contentView drain of .showInboxAlert.
     @State private var activeInboxNotification: PendingInboxNotification = .init()
-    /// Group reconnect invite (metadata + mode), carried by .presentGroupReconnect intent.
-    @State private var pendingReconnectInvite: InviteMetadata?
     /// Invite error detail, carried by .showInviteError intent.
     @State private var activeInviteError: String?
     /// Group bridge/sync error message, carried by .showGroupSyncError intent (P0-1).
@@ -283,16 +276,13 @@ struct ContentView: View {
             showICloudRestartAlert: $showICloudRestartAlert,
             showFreshStartWipeAlert: $showFreshStartWipeAlert,
             showFreshStartWipeFailedAlert: $showFreshStartWipeFailedAlert,
-            showRestoreOffer: $showRestoreOffer,
             hasCompletedOnboarding: $hasCompletedOnboarding,
             hasExistingData: $hasExistingData,
             hasPersonalData: $hasPersonalData,
             showWelcomeFlow: $showWelcomeFlow,
             showOnboarding: $showOnboarding,
-            showWelcomeRestore: $showWelcomeRestore,
             welcomeFlowInitialStep: $welcomeFlowInitialStep,
-            onCancelWipeGrace: { wipeGraceTask?.cancel(); wipeGraceTask = nil },
-            onReEmitInviteAfterRestore: { reEmitInviteAfterRestore() }
+            onCancelWipeGrace: { wipeGraceTask?.cancel(); wipeGraceTask = nil }
         ))
         .fullScreenCover(isPresented: $showLanguageSelection) { languageSelectionCover }
         .fullScreenCover(isPresented: $showInviteRecovery) { inviteRecoveryCover }
@@ -361,13 +351,9 @@ struct ContentView: View {
         .modifier(GroupInviteModifier(
             showGroupInviteOnboarding: $showGroupInviteOnboarding,
             pendingInviteMetadata: $pendingInviteMetadata,
-            showGroupReconnect: $showGroupReconnect,
             hasCompletedOnboarding: $hasCompletedOnboarding,
-            pendingReconnectInvite: $pendingReconnectInvite,
             activeInviteError: $activeInviteError,
-            activeGroupSyncError: $activeGroupSyncError,
-            showWelcomeFlow: $showWelcomeFlow,
-            welcomeFlowInitialStep: $welcomeFlowInitialStep
+            activeGroupSyncError: $activeGroupSyncError
         ))
         .onChange(of: showOnboarding) { oldValue, newValue in
             // Replaces unreliable fullScreenCover onDismiss for post-onboarding flow.
@@ -581,12 +567,10 @@ struct ContentView: View {
             showFreshStartWipeFailedAlert: showFreshStartWipeFailedAlert,
             showRemoteWipeAlert: showRemoteWipeAlert,
             showICloudRestartAlert: showICloudRestartAlert,
-            showRestoreOffer: showRestoreOffer,
             hasActiveInviteError: activeInviteError != nil,
             hasActiveGroupSyncError: activeGroupSyncError != nil,
             activeInboxNotification: activeInboxNotification,
             showGroupInviteOnboarding: showGroupInviteOnboarding,
-            showGroupReconnect: showGroupReconnect,
             showGroupsConsent: showGroupsConsent,
             showGroupsSignIn: showGroupsSignIn,
             showGroupsOrganizerName: showGroupsOrganizerName,
@@ -831,12 +815,10 @@ struct ContentView: View {
             showFreshStartWipeFailedAlert: showFreshStartWipeFailedAlert,
             showRemoteWipeAlert: showRemoteWipeAlert,
             showICloudRestartAlert: showICloudRestartAlert,
-            showRestoreOffer: showRestoreOffer,
             hasActiveInviteError: activeInviteError != nil,
             hasActiveGroupSyncError: activeGroupSyncError != nil,
             hasActiveInboxAlert: !activeInboxNotification.isEmpty,
             showGroupInviteOnboarding: showGroupInviteOnboarding,
-            showGroupReconnect: showGroupReconnect,
             showGroupsConsent: showGroupsConsent,
             showGroupsSignIn: showGroupsSignIn,
             showGroupsOrganizerName: showGroupsOrganizerName,
@@ -875,9 +857,9 @@ struct ContentView: View {
                 // Throttle telemetry: only fire for non-trivial blockers (skip splash/lock
                 // which are common boot states; surface user-visible modals only).
                 let surfacedBlockers: Set<String> = [
-                    "activeInboxAlert", "groupInviteOnboarding", "groupReconnect",
+                    "activeInboxAlert", "groupInviteOnboarding",
                     "fullModeActivation", "remoteWipeAlert", "iCloudRestartAlert",
-                    "freshStartWipeAlert", "restoreOffer", "inviteError",
+                    "freshStartWipeAlert", "inviteError",
                     "groupSyncError"
                 ]
                 if surfacedBlockers.contains(blocker) {
@@ -891,7 +873,7 @@ struct ContentView: View {
     /// drain — handler may enqueue new intents, they process next tick.
     @MainActor
     private func drainContentViewIntents() {
-        // B4-04: un intent que supersede la cadena welcome (group invite/reconnect)
+        // B4-04: un intent que supersede la cadena welcome (los sheets del invite backend)
         // está diseñado para REEMPLAZARLA, no apilarse. El cover del WelcomeFlow
         // bloquea el readiness que necesita drenar ese intent → deadlock: el welcome
         // bloquea el propio intent que lo cerraría. Si la cadena welcome es el ÚNICO
@@ -918,15 +900,6 @@ struct ContentView: View {
         case .presentWhatsNew(let features, let version):
             whatsNewData = (features: features, version: version)
             showWhatsNew = true
-        case .presentGroupInviteOnboarding(let invite):
-            pendingInviteMetadata = invite
-            showGroupInviteOnboarding = true
-        case .presentGroupReconnect(let invite):
-            pendingReconnectInvite = invite
-            showGroupReconnect = true
-        case .offerRestoreBeforeInvite(let invite):
-            pendingOfferInvite = invite
-            showRestoreOffer = true
         case .showInviteError(let detail):
             activeInviteError = detail
         case .showGroupSyncError(let message):
@@ -1321,7 +1294,7 @@ struct ContentView: View {
     /// Parte F: tras restaurar/onboarding desde la oferta de invitación se re-emitía el invite retenido en
     /// `PendingInviteStore`. **La Fase 3 se llevó ese store con el canal CKShare**, y el canal backend no lo
     /// necesita: su intención vive en `GroupBackendInviteEntryHandler.persistIntent` y la retoma
-    /// `GroupJoinReconciler` en sus cuatro triggers. Se conserva el hook por sus call-sites y para no
+    /// `GroupJoinReconciler` en sus tres triggers. Se conserva el hook por sus call-sites y para no
     /// cambiar el flujo de la oferta de restauración en este commit.
     private func reEmitInviteAfterRestore() {
         Task { @MainActor in
@@ -1960,72 +1933,11 @@ fileprivate extension Binding where Value == Bool {
 /// Extracted to a ViewModifier to avoid type-checker complexity in ContentView body.
 private struct GroupInviteModifier: ViewModifier {
 
-    /// Handler del CTA de GroupReconnectView según el mode del invite. Cada mode dispara
-    /// una acción distinta: archived no debe llegar acá (CTA es solo dismiss); alreadyMember/
-    /// pendingDuplicate solo navegan; los retry modes (rejected/left/removed) aceptan el
-    /// share + reactivan al member como pending.
-    ///
-    /// **Fase 3 — las dos ramas que ACEPTABAN el share perdieron su acción.** `acceptAndSettle` llamaba a
-    /// `SplitSyncManager.acceptShare`, que murió con el transporte: no hay forma de aceptar un CKShare, así
-    /// que `standardReconnect` y los tres retry modes informan en vez de navegar a un grupo que nunca va a
-    /// llegar. Las que solo navegan (`alreadyMember`, `pendingDuplicate`) no cambian: su grupo ya es local.
-    @MainActor
-    static func handleReconnectJoin(invite: InviteMetadata) async {
-        let metadata = invite.shareMetadata
-        let zoneName = metadata.share.recordID.zoneID.zoneName
-
-        switch invite.mode {
-        case .archived, .deletedForAll:
-            // .deletedForAll (FU-02): el CTA solo dismissa, nunca llega aquí. Defensa-en-profundidad.
-            return
-
-        case .alreadyMember:
-            if let group = GroupService.shared.group(for: zoneName) {
-                RouterEntryGate.shared.submit(.navigate(.groupDetail(groupID: group.id.uuidString)))
-            } else {
-                RouterEntryGate.shared.submit(.navigate(.groups))
-            }
-
-        case .pendingDuplicate:
-            RouterEntryGate.shared.submit(.navigate(.groups))
-
-        case .rejectedRetry, .leftRetry, .removedRetry:
-            // El grupo puede seguir siendo local (el usuario fue miembro): reactivar su member sigue
-            // teniendo sentido y es puramente local. Lo que ya no ocurre es el accept del share.
-            if let group = GroupService.shared.group(for: zoneName) {
-                do {
-                    _ = try await GroupService.shared.ensureCurrentUserMemberExists(in: group, reactivateInactive: true)
-                    RouterEntryGate.shared.submit(.navigate(.groups))
-                    return
-                } catch {
-                    #if DEBUG
-                    print("ContentView: ensureCurrentUserMemberExists retry failed: \(error)")
-                    #endif
-                }
-            }
-            RouterEntryGate.shared.submit(.showInviteError(
-                String(localized: "groups.invite.linkInvalidDetail")
-            ))
-
-        case .standardReconnect:
-            // Sin canal que acepte el share, navegar a Grupos dejaría al usuario mirando una lista donde
-            // su grupo nunca aparece. Mismo criterio y mismo copy que la rama `.ckShare` del router de
-            // canal (`AppBootstrapper.handleInviteLink`).
-            RouterEntryGate.shared.submit(.showInviteError(
-                String(localized: "groups.invite.linkInvalidDetail")
-            ))
-        }
-    }
-
     @Binding var showGroupInviteOnboarding: Bool
     @Binding var pendingInviteMetadata: InviteMetadata?
-    @Binding var showGroupReconnect: Bool
     @Binding var hasCompletedOnboarding: Bool
-    @Binding var pendingReconnectInvite: InviteMetadata?
     @Binding var activeInviteError: String?
     @Binding var activeGroupSyncError: String?
-    @Binding var showWelcomeFlow: Bool
-    @Binding var welcomeFlowInitialStep: WelcomeFlowStep
 
     func body(content: Content) -> some View {
         content
@@ -2066,35 +1978,6 @@ private struct GroupInviteModifier: ViewModifier {
                     pendingInviteMetadata = nil
                 }
                 .environment(SessionState.shared)
-            }
-            .sheet(isPresented: $showGroupReconnect, onDismiss: {
-                // Consumo del invite pendiente al cerrar el reconnect (X / swipe / CTA).
-                // Incondicional y antes de reabrir welcome → no re-emerge.
-                pendingReconnectInvite = nil
-                // Pre-onboarding: user llegó al sheet vía Chooser → InviteRecoveryView →
-                // handleInviteLink. Cualquier dismiss (X, swipe down, CTA) sin reabrir
-                // Chooser deja pantalla vacía.
-                if !hasCompletedOnboarding && !showWelcomeFlow {
-                    welcomeFlowInitialStep = .chooser
-                    showWelcomeFlow = true
-                }
-            }) {
-                if let invite = pendingReconnectInvite {
-                    GroupReconnectView(
-                        invite: invite,
-                        onJoin: {
-                            let captured = invite
-                            showGroupReconnect = false
-                            Task { @MainActor in
-                                await Self.handleReconnectJoin(invite: captured)
-                            }
-                        },
-                        onDismiss: {
-                            showGroupReconnect = false
-                        }
-                    )
-                    .environment(SessionState.shared)
-                }
             }
     }
 }

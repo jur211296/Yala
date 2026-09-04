@@ -1358,7 +1358,7 @@ struct GroupsSyncClientTests {
     /// dentro del grupo desaparece porque lo pinta el status local— y el banner de tab
     /// `groups.invite.waitingApproval.banner` se quedaba puesto PARA SIEMPRE: este canal no tenía quién
     /// observase el member tras el pull (no llama al reconciliador) y el intent ya estaba limpio, así que sus
-    /// cuatro triggers salían por `guard !entries.isEmpty`.
+    /// triggers salían por `guard !entries.isEmpty`.
     @Test func apply_member_ownApproval_retiresPendingApprovalPhase() throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)

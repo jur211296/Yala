@@ -1183,6 +1183,12 @@ revertir el cambio — y el diagnóstico se hace con el flag, no adivinando qué
   afirma que SIN el arg sigue desmontado.
 - **`BudgetAlertsConfigUITests` falló en la tanda de 11 y pasa aislado**, con mis cambios y sin ellos:
   contención de la tanda, no regresión. Anotado para no volver a perseguirlo.
+  - **Re-verificado el 2026-09-04 (Frank), en una tanda de 33 suites:** vuelve a fallar en tanda
+    (`test_enablingAlertsRevealsThresholds`, «No aparecieron los chips de umbral») y vuelve a pasar
+    aislado, 2/2 en verde. Descartado que lo causara el borrado del recorrido del invitado de aquella
+    sesión: su diff sobre la matriz de readiness es puramente sustractivo —quita los bloqueadores
+    `restoreOffer` y `groupReconnect` y no añade ninguno—, y menos bloqueadores no pueden hacer que
+    un chip deje de aparecer. La hipótesis de contención sigue viva.
 - **Sin pin automático: el copy nuevo.** No existe test de tono (`LSFallbackTests` y
   `LocalizationContentRules` siguen sin existir), así que las 11 keys × 16 locales las revisa un humano
   contra BRAND-VOICE o no las revisa nadie.

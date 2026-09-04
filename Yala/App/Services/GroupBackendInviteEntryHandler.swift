@@ -25,7 +25,6 @@ enum GroupBackendInviteEntryHandler {
         case universalLink   // tap de un universal link (warm, initialized)
         case boot            // reconciler trigger boot
         case foreground      // reconciler trigger foreground
-        case remoteInsert    // reconciler trigger remoteInsert
         /// CTA del propio GroupInviteOnboardingView (join tap / retry) — JAMÁS re-presenta onboarding.
         case userAction
         /// Continuación post sign-in/consent desde los sheets de ContentView (A2).

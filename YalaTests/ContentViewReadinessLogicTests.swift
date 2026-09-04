@@ -30,12 +30,10 @@ struct ContentViewReadinessLogicTests {
         showFreshStartWipeFailedAlert: Bool = false,
         showRemoteWipeAlert: Bool = false,
         showICloudRestartAlert: Bool = false,
-        showRestoreOffer: Bool = false,
         hasActiveInviteError: Bool = false,
         hasActiveGroupSyncError: Bool = false,
         hasActiveInboxAlert: Bool = false,
         showGroupInviteOnboarding: Bool = false,
-        showGroupReconnect: Bool = false,
         showGroupsConsent: Bool = false,
         showGroupsSignIn: Bool = false,
         showGroupsOrganizerName: Bool = false,
@@ -61,10 +59,9 @@ struct ContentViewReadinessLogicTests {
             showFreshStartWipeAlert: showFreshStartWipeAlert,
             showFreshStartWipeFailedAlert: showFreshStartWipeFailedAlert,
             showRemoteWipeAlert: showRemoteWipeAlert, showICloudRestartAlert: showICloudRestartAlert,
-            showRestoreOffer: showRestoreOffer, hasActiveInviteError: hasActiveInviteError,
+            hasActiveInviteError: hasActiveInviteError,
             hasActiveGroupSyncError: hasActiveGroupSyncError,
             hasActiveInboxAlert: hasActiveInboxAlert, showGroupInviteOnboarding: showGroupInviteOnboarding,
-            showGroupReconnect: showGroupReconnect,
             showGroupsConsent: showGroupsConsent, showGroupsSignIn: showGroupsSignIn,
             showGroupsOrganizerName: showGroupsOrganizerName,
             showGroupsEducational: showGroupsEducational,
@@ -283,19 +280,11 @@ struct ContentViewReadinessLogicTests {
         #expect(ContentViewReadinessLogic.blocker(state: make(showGroupInviteOnboarding: true)) == "groupInviteOnboarding")
     }
 
-    @Test func groupReconnect_blocks() {
-        #expect(ContentViewReadinessLogic.blocker(state: make(showGroupReconnect: true)) == "groupReconnect")
-    }
-
     @Test func activeInboxAlert_blocks_rootCauseOfBug() {
         #expect(ContentViewReadinessLogic.blocker(state: make(hasActiveInboxAlert: true)) == "activeInboxAlert")
     }
 
     // MARK: - Blockers añadidos tras el bug del paywall (matriz completa)
-
-    @Test func restoreOffer_blocks() {
-        #expect(ContentViewReadinessLogic.blocker(state: make(showRestoreOffer: true)) == "restoreOffer")
-    }
 
     @Test func inviteError_blocks() {
         #expect(ContentViewReadinessLogic.blocker(state: make(hasActiveInviteError: true)) == "inviteError")
@@ -350,8 +339,8 @@ struct ContentViewReadinessLogicTests {
             showOnboarding: true, showWelcomeFlow: true, showLanguageSelection: true,
             showWelcomeRestore: true, showInviteRecovery: true, showFreshStartWipeAlert: true,
             showRemoteWipeAlert: true, showICloudRestartAlert: true,
-            showRestoreOffer: true, hasActiveInviteError: true, hasActiveGroupSyncError: true,
-            hasActiveInboxAlert: true, showGroupInviteOnboarding: true, showGroupReconnect: true,
+            hasActiveInviteError: true, hasActiveGroupSyncError: true,
+            hasActiveInboxAlert: true, showGroupInviteOnboarding: true,
             showFullModeActivation: true, showProTrialOffer: true, showWhatsNew: true,
             showSyncSettingsSheet: true
         )

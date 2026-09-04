@@ -15,8 +15,8 @@ nonisolated enum GroupBackendInviteEntryLogic {
 
     /// El siguiente paso del flujo encadenado. Cada llamada re-evalúa condiciones VIVAS (no one-shots
     /// quemados en el productor — regla del repo): sin sesión → sign-in; con sesión sin consent →
-    /// consent; usuario FRESCO (sin onboarding) → invite onboarding (captura el nombre ANTES del join,
-    /// paridad con `inviteRouteDecision.acceptAndShowInviteOnboarding`); listo → join.
+    /// consent; usuario FRESCO (sin onboarding) → invite onboarding (captura el nombre ANTES del join);
+    /// listo → join.
     enum Step: Equatable {
         case presentSignIn
         case presentConsent

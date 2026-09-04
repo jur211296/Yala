@@ -59,14 +59,12 @@ struct ShellReadinessState: Equatable {
     let showFreshStartWipeFailedAlert: Bool
     let showRemoteWipeAlert: Bool
     let showICloudRestartAlert: Bool
-    let showRestoreOffer: Bool
     let hasActiveInviteError: Bool
     let hasActiveGroupSyncError: Bool
 
     // Active modal payloads (block readiness while presented)
     let hasActiveInboxAlert: Bool
     let showGroupInviteOnboarding: Bool
-    let showGroupReconnect: Bool
     /// G4-invites (A2): sheets del flujo backend sign-in → consent → join. Mismo anchor
     /// que todo lo demás — mientras uno está arriba, el drain se retiene (peek-first).
     let showGroupsConsent: Bool
@@ -133,7 +131,6 @@ enum ContentViewReadinessLogic {
         if state.showICloudRestartAlert { return "iCloudRestartAlert" }
         if state.showFreshStartWipeAlert { return "freshStartWipeAlert" }
         if state.showFreshStartWipeFailedAlert { return "freshStartWipeFailedAlert" }
-        if state.showRestoreOffer { return "restoreOffer" }
         if state.hasActiveInviteError { return "inviteError" }
         if state.hasActiveGroupSyncError { return "groupSyncError" }
 
@@ -148,7 +145,6 @@ enum ContentViewReadinessLogic {
 
         // Group flows (modal sheets/covers).
         if state.showGroupInviteOnboarding { return "groupInviteOnboarding" }
-        if state.showGroupReconnect { return "groupReconnect" }
         if state.showGroupsConsent { return "groupsConsent" }
         if state.showGroupsSignIn { return "groupsSignIn" }
         if state.showGroupsOrganizerName { return "groupsOrganizerName" }
@@ -216,12 +212,10 @@ extension ShellReadinessState {
             showFreshStartWipeFailedAlert: showFreshStartWipeFailedAlert,
             showRemoteWipeAlert: showRemoteWipeAlert,
             showICloudRestartAlert: showICloudRestartAlert,
-            showRestoreOffer: showRestoreOffer,
             hasActiveInviteError: hasActiveInviteError,
             hasActiveGroupSyncError: hasActiveGroupSyncError,
             hasActiveInboxAlert: hasActiveInboxAlert,
             showGroupInviteOnboarding: showGroupInviteOnboarding,
-            showGroupReconnect: showGroupReconnect,
             showGroupsConsent: showGroupsConsent,
             showGroupsSignIn: showGroupsSignIn,
             showGroupsOrganizerName: showGroupsOrganizerName,

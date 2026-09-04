@@ -16,8 +16,9 @@
 //  quedaba en `screenHash 1njjbcs`, `count 6`, **cero targets**.
 //
 //  El fix devuelve al Chooser explícitamente en vez de confiar en que quede algo montado debajo, con
-//  el guard `if !hasCompletedOnboarding` que el alert vecino (`showRestoreOffer`) ya usaba para lo
-//  mismo desde antes.
+//  un guard `if !hasCompletedOnboarding` que el alert de «el wipe falló» comparte: si el onboarding ya
+//  está completo, el alert vino de un camino donde el Welcome NO estaba montado y reabrirlo le
+//  plantaría el flujo de bienvenida a alguien que ya usa la app.
 //
 //  Es un camino de PRODUCCIÓN: lo pisa cualquiera que reinstale o vuelva teniendo datos locales. No
 //  depende de ningún flag — ni Grupos, ni nube, ni sesión secundaria.

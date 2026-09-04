@@ -8,8 +8,7 @@
 //
 //  Reemplaza el one-shot silencioso de `acceptShare` (`if let group { ensure }`
 //  — bug 2026-07-11: si la zona no había bajado, el member jamás nacía y el
-//  owner nunca recibía la solicitud). Triggers: acceptShare (user-tap),
-//  remoteInsert (processPendingRemoteChanges, post-fetch), boot
+//  owner nunca recibía la solicitud). Triggers: acceptShare (user-tap), boot
 //  (AppBootstrapper, gated por quiescencia) y foreground (ContentView .active).
 //
 //  Decisiones en `GroupJoinReconcileLogic` (pure, testeable). Logs fuera de
@@ -25,7 +24,7 @@ import SwiftData
 enum GroupJoinReconciler {
 
     enum Trigger: String {
-        case acceptShare, remoteInsert, boot, foreground
+        case acceptShare, boot, foreground
     }
 
     private static let logger = Logger(subsystem: "com.yala", category: "SplitSync")
@@ -192,7 +191,6 @@ enum GroupJoinReconciler {
         case .acceptShare: return .userAction
         case .foreground: return .foreground
         case .boot: return .boot
-        case .remoteInsert: return .remoteInsert
         }
     }
 
@@ -289,7 +287,7 @@ enum GroupJoinReconciler {
     /// y `isCurrentUser` apagado —`applyMember` NUNCA lo setea— así que los dos criterios viejos fallaban
     /// los dos. El contexto se resuelve como en `backendCurrentUserMember` (inyectado o el del `SplitGroup`
     /// local) porque la rama sin contexto delegaba en `GroupService.currentUserMember(zoneID:)`, que mira
-    /// SOLO `isCurrentUser`: dos de los cuatro triggers de producción (`.foreground` y el `.acceptShare` de
+    /// SOLO `isCurrentUser`: dos de los tres triggers de producción (`.foreground` y el `.acceptShare` de
     /// la UI) entran por ahí, y sin unificar el re-cableo no los alcanzaría.
     private static func currentUserMemberExists(zoneName: String, context providedContext: ModelContext?) -> Bool {
         guard let context = providedContext

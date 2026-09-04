@@ -24,56 +24,31 @@ enum CKShareCustomKey {
     static let isHiddenForAll = "isHiddenForAll"
 }
 
-/// Mode del banner de reconnect según el estado del invite + membresía actual.
-/// Drives copy + CTA en GroupReconnectView.
-enum ReconnectMode: String, Equatable, Sendable {
-    /// Invitación normal de un user con onboarding completo (path por defecto).
-    case standardReconnect
-    /// Grupo archivado por el owner — no acepta nuevos miembros.
-    case archived
-    /// Yo ya soy miembro `.active` (mismo Apple ID en otro device, retap link).
-    case alreadyMember
-    /// Yo ya envié solicitud, está pendiente de aprobación admin.
-    case pendingDuplicate
-    /// Admin me rechazó antes — ofrecer volver a pedir.
-    case rejectedRetry
-    /// Yo abandoné voluntariamente — ofrecer volver a pedir.
-    case leftRetry
-    /// Admin me removió — ofrecer volver a pedir.
-    case removedRetry
-    /// FU-02: grupo eliminado por owner — invisible para todos, CTA "Entendido" sin acceptShare.
-    case deletedForAll
-}
-
 /// Invite metadata carried by group invite intents. CKShare.Metadata is NOT
-/// Equatable; comparison delegates to the share record ID + mode.
+/// Equatable; comparison delegates to the share record ID.
 struct InviteMetadata: Equatable {
     let groupName: String?
     let groupIcon: String?
     let groupColor: String?
     let groupMembers: [String]?
     let shareMetadata: CKShare.Metadata
-    /// Mode del reconnect — default `.standardReconnect` para call-sites pre-existentes.
-    let mode: ReconnectMode
 
     init(
         groupName: String?,
         groupIcon: String?,
         groupColor: String?,
         groupMembers: [String]?,
-        shareMetadata: CKShare.Metadata,
-        mode: ReconnectMode = .standardReconnect
+        shareMetadata: CKShare.Metadata
     ) {
         self.groupName = groupName
         self.groupIcon = groupIcon
         self.groupColor = groupColor
         self.groupMembers = groupMembers
         self.shareMetadata = shareMetadata
-        self.mode = mode
     }
 
     static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.shareMetadata.share.recordID == rhs.shareMetadata.share.recordID && lhs.mode == rhs.mode
+        lhs.shareMetadata.share.recordID == rhs.shareMetadata.share.recordID
     }
 }
 
@@ -102,12 +77,6 @@ enum RouterIntent: Identifiable, Equatable {
     case requestAppStoreReview
 
     // C) Groups & invites
-    case presentGroupInviteOnboarding(InviteMetadata)
-    case presentGroupReconnect(InviteMetadata)
-    /// Returning user con datos en iCloud (sin wipe) que abre un link de invitación →
-    /// ofrecer cargar sus datos antes de unirse al grupo (Parte F). El invite queda
-    /// retenido en `PendingInviteStore` y se re-emite tras restaurar / empezar de cero.
-    case offerRestoreBeforeInvite(InviteMetadata)
     case showInviteError(String)
     case showGroupSyncError(String)
     case presentFullModeActivation
@@ -159,7 +128,6 @@ extension RouterIntent {
     var handler: AppRouter.ConsumerID {
         switch self {
         case .showInboxAlert, .presentTrialOffer, .presentWhatsNew,
-             .presentGroupInviteOnboarding, .presentGroupReconnect, .offerRestoreBeforeInvite,
              .presentGroupsConsent, .presentGroupsSignIn, .presentGroupBackendInviteOnboarding,
              .presentGroupsOrganizerStep,
              .showInviteError,
@@ -198,7 +166,6 @@ extension RouterIntent {
              .presentVoiceEntry, .presentImageEntry, .presentUpgradeSheet,
              .presentMilestoneUpgrade,
              .presentFullModeActivation, .navigate,
-             .presentGroupInviteOnboarding, .presentGroupReconnect, .offerRestoreBeforeInvite,
              .presentGroupsConsent, .presentGroupsSignIn, .presentGroupBackendInviteOnboarding,
              .presentGroupsOrganizerStep,
              .presentTrialOffer, .autoOpenBudgetEditor, .autoOpenScheduledEditor:
@@ -240,12 +207,6 @@ extension RouterIntent {
             return "milestone:\(n)"
         case .requestAppStoreReview:
             return "appReview"
-        case .presentGroupInviteOnboarding:
-            return "groupInviteOnboarding"
-        case .presentGroupReconnect:
-            return "groupReconnect"
-        case .offerRestoreBeforeInvite:
-            return "offerRestoreBeforeInvite"
         case .showInviteError(let detail):
             return "inviteError:\(detail.hashValue)"
         case .showGroupSyncError(let detail):
@@ -296,15 +257,14 @@ extension RouterIntent {
     /// pendiente, de modo que su drain (y presentación) pase el readiness gate
     /// — sin esto el cover del WelcomeFlow bloquea el propio intent que lo
     /// reemplazaría (deadlock B4-04).
-    /// G3 · `.presentGroupsOrganizerStep` **NO está aquí, y es deliberado**: los otros seis llegan de fuera
+    /// G3 · `.presentGroupsOrganizerStep` **NO está aquí, y es deliberado**: los otros tres llegan de fuera
     /// (un link, una notificación) y se encuentran el Welcome montado por delante; este lo emite el propio
     /// Welcome al salir por su portal, que cierra `showWelcomeFlow` en la MISMA vuelta. Marcarlo como
     /// superseding le daría permiso para tumbar la cadena welcome en cualquier otro momento —por ejemplo,
     /// si el usuario relanza a mitad de la rama— en vez de esperar su turno, que es lo correcto.
     var supersedesWelcomeChain: Bool {
         switch self {
-        case .presentGroupInviteOnboarding, .presentGroupReconnect, .offerRestoreBeforeInvite,
-             .presentGroupsConsent, .presentGroupsSignIn, .presentGroupBackendInviteOnboarding:
+        case .presentGroupsConsent, .presentGroupsSignIn, .presentGroupBackendInviteOnboarding:
             return true
         default:
             return false

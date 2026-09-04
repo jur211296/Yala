@@ -109,7 +109,7 @@ enum GroupInviteOnboardingLogic {
     /// (`GroupJoinReconciler.reconcile` no tiene call-site en `GroupsSyncClient` — sus triggers vivos son
     /// boot / foreground / acceptShare) ni mira el member. Y el reconciliador tampoco lo habría salvado:
     /// `reconcileBackendEntry` dispara `.correctAndClear` con el member presente AUNQUE esté `pendingApproval`
-    /// ⇒ el intent ya está limpio cuando llega la aprobación ⇒ los cuatro triggers salen por su
+    /// ⇒ el intent ya está limpio cuando llega la aprobación ⇒ los tres triggers salen por su
     /// `guard !entries.isEmpty`. La fase se quedaba sin nadie que la moviera.
     ///
     /// **Precondición del caller**: el status que va a publicar es el del member del USUARIO ACTUAL,

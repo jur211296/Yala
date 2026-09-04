@@ -2127,57 +2127,6 @@ final class AppBootstrapper {
         }
     }
 
-    /// A12: Decisión de routing para un share aceptado. Pure function — testeable.
-    ///
-    /// **HUÉRFANA en producción desde la Fase 3**, declarado: su consumidor era `CKShareEntryHandler`, que
-    /// murió con el transporte. Se conserva porque `ReconnectMode` y su tabla siguen describiendo la UI de
-    /// reconexión que el canal backend usa, y podarla es decisión de producto, no del compilador.
-    enum InviteRouteDecision: Equatable {
-        /// Invitado nuevo (sin onboarding completo y NO mid-invite): acepta eagerly + muestra invite onboarding.
-        case acceptAndShowInviteOnboarding
-        /// Todos los demás casos: muestra reconnect con el mode apropiado.
-        case showReconnect(mode: ReconnectMode)
-        /// Parte F: returning user con datos en iCloud (sin wipe) → ofrecer cargar
-        /// sus datos antes de unirse al grupo.
-        case offerRestoreThenInvite
-    }
-
-    /// Decide el routing tras leer metadata del share + estado local del grupo.
-    /// Orden de evaluación: isHiddenForAll > isArchived > !hasCompletedOnboarding > member status > default.
-    ///
-    /// Fresh users (no completaron onboarding) priorizan el invite onboarding silencioso
-    /// — `detectFinalStep` cubre todos los memberStatus (pending → step 3, active → step 2,
-    /// rejected → reactivate via `ensureCurrentUserMemberExists`). Si memberStatus ganara,
-    /// el user quedaría en `GroupReconnectView` con CTA "Volver al inicio" → Chooser, sin
-    /// llegar nunca al tab Grupos.
-    static func inviteRouteDecision(
-        hasCompletedOnboarding: Bool,
-        onboardingMode: OnboardingMode,
-        isHiddenForAll: Bool = false,
-        isArchived: Bool = false,
-        currentMemberStatus: SplitMemberStatus? = nil,
-        hasReturningSignal: Bool = false
-    ) -> InviteRouteDecision {
-        if isHiddenForAll { return .showReconnect(mode: .deletedForAll) }
-        if isArchived { return .showReconnect(mode: .archived) }
-        if !hasCompletedOnboarding && onboardingMode != .groupInvite {
-            // Parte F: returning user con datos en iCloud (sin wipe) → ofrecer cargar
-            // antes de unirse. Sin señal → invite onboarding directo (modo solo-grupos).
-            if hasReturningSignal { return .offerRestoreThenInvite }
-            return .acceptAndShowInviteOnboarding
-        }
-        if let status = currentMemberStatus {
-            switch status {
-            case .active: return .showReconnect(mode: .alreadyMember)
-            case .pendingApproval: return .showReconnect(mode: .pendingDuplicate)
-            case .rejected: return .showReconnect(mode: .rejectedRetry)
-            case .left: return .showReconnect(mode: .leftRetry)
-            case .removed: return .showReconnect(mode: .removedRetry)
-            }
-        }
-        return .showReconnect(mode: .standardReconnect)
-    }
-
     /// `true` si el error de fetch/accept del share es transitorio (red) y vale la
     /// pena reintentar — vs permanente (share borrado, sin permiso, link inválido),
     /// donde se limpia el store. Espejo de la filosofía de `PendingLeaveShareTracker`

@@ -138,3 +138,28 @@ estás», aplicada al revés.
 — 85 de 93 refutados. Cuando la tasa de refutación es tan alta, la señal no es «el código está
 limpio»: es que el revisor de la primera fase estaba mirando otra cosa. La tasa de refutación es un
 diagnóstico del montaje, no del código.
+
+## Undécimo (2026-09-04): la key de l10n vive en DOS formas y mi grep sólo conocía una
+
+Verificando un borrado, comprobé si el copy `welcome.invite.back` había sobrevivido con
+`grep "welcome.invite.back" WelcomeBackButton.swift`. Cero resultados. **Llegué a escribir
+«DESAPARECIÓ» y a dar la alarma.** El fichero ni siquiera estaba en el diff: la línea 29 sigue
+diciendo `.accessibilityLabel(L10n.Welcome.Invite.back)` — el **accessor generado**, no el literal.
+
+Es el mismo caso que este repo ya documenta al revés en `guest-journey-dead-screens`: allí un grep
+de la key la dio por muerta sin ver que un `accessibilityLabel` la usaba. La forma exacta del error
+tiene dos caras y las dos muerden:
+
+- buscar el **literal** `"grupo.la.key"` no ve `L10n.Grupo.La.key`;
+- buscar el **accessor** `L10n.Grupo.La.key` no ve `String(localized: "grupo.la.key")`, que es como
+  la usa `GroupBackendInviteEntryHandler` para reutilizar copy de otra pantalla.
+
+**How to apply:** para decidir si una key de l10n está viva o muerta hay que buscar **las dos
+formas**, y además `accessibilityLabel`/`accessibilityIdentifier`. Y antes de reportar que algo
+«desapareció» en un borrado, mira si el fichero está siquiera en `git diff --stat`: si no lo está,
+el que falla es tu grep, no el borrado.
+
+**El dato de la sesión, que es lo que hay que retener:** tres mediciones mías fallaron el mismo día
+por la misma familia (el conteo de filas con mayúsculas, un `cut` que no resolvía dentro de un
+subshell y ésta). Ninguna llegó a Jürgen como error porque las tres las cacé con control positivo.
+**El control positivo no es ceremonia: es lo único que me separa de reportar tres falsedades.**

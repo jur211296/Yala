@@ -88,8 +88,11 @@ final class GroupJoinIntentTracker {
         case .pendingApproval:
             phase = .pendingApproval
         case .rejected, .left, .removed:
-            // Estados terminales del member: no son fases del join — la UI de
-            // reconnect los maneja. El tracker vuelve a idle.
+            // Estados terminales del member: no son fases del join. El tracker vuelve a
+            // idle. **Nadie los recoge hoy**: la UI de reconexión que los manejaba se podó
+            // con el recorrido muerto del invitado, así que un miembro rechazado/removido que
+            // vuelve a tocar el link se queda sin salida — es el bug abierto
+            // `tickets/backlog/rejected-member-cold-tap-does-nothing.md`.
             clear()
         }
     }

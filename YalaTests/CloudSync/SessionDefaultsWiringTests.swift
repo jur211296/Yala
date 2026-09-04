@@ -74,7 +74,6 @@ struct SessionDefaultsWiringTests {
         "Yala/App/ContentView.swift",
         "Yala/App/Theme/ViewModifiers.swift",
         "Yala/App/Views/Shared/ContextualGuideBanner.swift",
-        "Yala/App/Views/Groups/GroupReconnectView.swift",
     ]
 
     // MARK: 0 · El control del instrumento
@@ -145,8 +144,8 @@ struct SessionDefaultsWiringTests {
             declarations += code(path).components(separatedBy: "@AppStorage").count - 1
             declarations += code(path).components(separatedBy: "= AppStorage(wrappedValue:").count - 1
         }
-        #expect(declarations == 11, """
-                hay \(declarations) usos de `@AppStorage`, se esperaban 11. Uno nuevo hereda el store \
+        #expect(declarations == 10, """
+                hay \(declarations) usos de `@AppStorage`, se esperaban 10. Uno nuevo hereda el store \
                 de la raíz automáticamente: comprueba que su key esté clasificada en \
                 `SessionPreferenceKeys` y actualiza este conteo.
                 """)
