@@ -302,7 +302,8 @@ body.light .bg-yala-cyan\/5 { background-color: rgba(0, 194, 203, 0.05) !importa
 .v3-link { color: var(--v3-link); text-decoration: underline; text-underline-offset: 3px; }
 .v3-link:hover { color: var(--v3-fg); }
 
-.v3-panel { border-radius: 1.75rem; padding: 2rem; }
+.v3-panel { border-radius: 1.5rem; padding: 1.5rem; }
+@media (min-width: 640px) { .v3-panel { border-radius: 1.75rem; padding: 2rem; } }
 @media (min-width: 768px) { .v3-panel { padding: 3.5rem; } }
 .v3-panel-teal { background: var(--v3-teal-bg); color: var(--v3-teal-fg); }
 .v3-panel-indigo { background: var(--v3-indigo-bg); color: var(--v3-indigo-fg); }

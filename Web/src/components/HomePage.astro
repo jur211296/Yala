@@ -168,7 +168,7 @@ const navLinks = [
       <div>
         <p class="v3-kicker v3-kicker-onteal">{t.v3AnotaKicker}</p>
         <h2 class="v3-disp v3-h2 mt-3">{t.v3AnotaTitle}</h2>
-        <div class="grid sm:grid-cols-3 gap-6 mt-9">
+        <div class="grid sm:grid-cols-3 gap-4 sm:gap-6 mt-7 md:mt-9">
           <div class="v3-item-onteal">
             <h3 class="font-bold text-lg">{t.v3Anota1T}</h3>
             <p class="mt-1.5 leading-relaxed v3-onteal-2">{t.v3Anota1D}</p>
@@ -185,29 +185,29 @@ const navLinks = [
         <p class="mt-8 text-sm v3-onteal-2">{t.v3AnotaImport}</p>
       </div>
       <div class="flex justify-center md:justify-end">
-        <div class="v3-phone w-60 sm:w-64 md:-my-24">
+        <div class="v3-phone w-44 sm:w-56 md:w-64 md:-my-24">
           <img src={mock('nuevo-registro')} alt={t.altStep1} width="860" height="1869" loading="lazy" decoding="async" />
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ENTIENDE -->
+  <!-- ENTIENDE — sección abierta: alterna con el bloque teal de arriba -->
   <section id="entiende" class="v3-wrap pb-16 md:pb-24 scroll-mt-20">
-    <div class="v3-panel v3-panel-teal grid md:grid-cols-[1fr_320px] gap-10 md:gap-14 items-center">
+    <div class="grid md:grid-cols-[1fr_300px] gap-10 md:gap-16 items-center">
       <div>
-        <p class="v3-kicker v3-kicker-onteal">{t.v3EntiendeKicker}</p>
+        <p class="v3-kicker">{t.v3EntiendeKicker}</p>
         <h2 class="v3-disp v3-h2 mt-3">{t.v3EntiendeTitle}</h2>
-        <p class="v3-lede v3-onteal-2 mt-5">{t.v3EntiendeLede}</p>
-        <dl class="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-9">
-          <div><dd class="v3-disp text-4xl md:text-5xl">{t.v3Stat1}</dd><dt class="text-sm v3-onteal-2 mt-1">{t.v3Stat1L}</dt></div>
-          <div><dd class="v3-disp text-4xl md:text-5xl">{t.v3Stat2}</dd><dt class="text-sm v3-onteal-2 mt-1">{t.v3Stat2L}</dt></div>
-          <div><dd class="v3-disp text-4xl md:text-5xl">{t.v3Stat3}</dd><dt class="text-sm v3-onteal-2 mt-1">{t.v3Stat3L}</dt></div>
+        <p class="v3-lede mt-5">{t.v3EntiendeLede}</p>
+        <dl class="grid grid-cols-3 gap-4 sm:gap-6 mt-9">
+          <div><dd class="v3-disp text-3xl sm:text-4xl md:text-5xl">{t.v3Stat1}</dd><dt class="text-sm v3-muted mt-1">{t.v3Stat1L}</dt></div>
+          <div><dd class="v3-disp text-3xl sm:text-4xl md:text-5xl">{t.v3Stat2}</dd><dt class="text-sm v3-muted mt-1">{t.v3Stat2L}</dt></div>
+          <div><dd class="v3-disp text-3xl sm:text-4xl md:text-5xl">{t.v3Stat3}</dd><dt class="text-sm v3-muted mt-1">{t.v3Stat3L}</dt></div>
         </dl>
-        <p class="mt-6 text-xs v3-onteal-2">{t.v3StatsCaption}</p>
+        <p class="mt-6 text-xs v3-muted">{t.v3StatsCaption}</p>
       </div>
       <div class="flex justify-center md:justify-end">
-        <div class="v3-phone w-60 sm:w-64 md:-my-24">
+        <div class="v3-phone w-52 sm:w-64 md:w-[280px]">
           <img src={mock('stats-resumen')} alt={t.altAnalytics} width="860" height="1869" loading="lazy" decoding="async" />
         </div>
       </div>
