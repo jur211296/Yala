@@ -7,7 +7,7 @@
 > que se indica; lo demás va marcado como inferencia o hipótesis.
 >
 > - **PR:** https://github.com/jur211296/Yala/pull/62
-> - **Preview de Vercel:** https://yala-kwy4wozwi-jur211296s-projects.vercel.app
+> - **Preview de Vercel (con el rediseño, 2026-09-04):** https://yala-pu9mi3md5-jur211296s-projects.vercel.app
 > - **Producción (sin tocar):** https://yala-app.pe
 
 ## Índice
@@ -315,7 +315,7 @@ verificó hasta donde esta sesión pudo llegar:
 
 ## 10. Cómo revisar el preview
 
-1. Abre **https://yala-kwy4wozwi-jur211296s-projects.vercel.app** en el Mac. Debe verse la home en español con dos botones en el hero.
+1. Abre **https://yala-pu9mi3md5-jur211296s-projects.vercel.app** en el Mac. Debe verse la home en español con dos botones en el hero.
 2. Pulsa el icono de sol (arriba a la derecha) para pasar a **modo claro**: fíjate en el badge «Pro» de la
    sección Yala IA, en «Con Yala» y en «Lo que SÍ hacemos» — antes eran cian casi blanco; ahora se leen.
 3. Baja hasta la galería y pulsa **«Pausar galería»**: se detiene y puedes arrastrarla. Vuelve a pulsar para
@@ -323,17 +323,17 @@ verificó hasta donde esta sesión pudo llegar:
 4. Pulsa **Tab** una vez desde el principio de la página: aparece «Saltar al contenido» arriba a la izquierda.
    Sigue con Tab: cada botón y enlace muestra un anillo de foco.
 5. Prueba el idioma: en Terminal,
-   `curl -sI -H "Accept-Language: en-US,en;q=0.9" https://yala-kwy4wozwi-jur211296s-projects.vercel.app/ | head -3` → debe responder `307`/`308` con
-   `location: /en/`. Sin cabecera → `200` (español). Y `curl -sI https://yala-kwy4wozwi-jur211296s-projects.vercel.app/privacy_content | head -3` →
+   `curl -sI -H "Accept-Language: en-US,en;q=0.9" https://yala-pu9mi3md5-jur211296s-projects.vercel.app/ | head -3` → debe responder `307`/`308` con
+   `location: /en/`. Sin cabecera → `200` (español). Y `curl -sI https://yala-pu9mi3md5-jur211296s-projects.vercel.app/privacy_content | head -3` →
    `308` a `/privacy`.
-6. Cabeceras: `curl -sI https://yala-kwy4wozwi-jur211296s-projects.vercel.app/ | grep -iE "x-content|referrer|x-frame|permissions"` → cuatro líneas.
+6. Cabeceras: `curl -sI https://yala-pu9mi3md5-jur211296s-projects.vercel.app/ | grep -iE "x-content|referrer|x-frame|permissions"` → cuatro líneas.
 7. En el **iPhone**, abre el preview en Safari: arriba debe aparecer el banner nativo de Yala («Abrir» o «Ver»).
    Nota: el preview **pide login de Vercel** (protección SSO): entra una vez con tu cuenta y el resto de pasos
    funcionan en ese navegador. Los `curl` de los pasos 5 y 6 necesitan la cookie de sesión, así que hazlos desde
    las DevTools (pestaña Network, recargando con «Disable cache») o directamente tras el merge contra
    `https://yala-app.pe`.
-8. Invitación: `https://yala-kwy4wozwi-jur211296s-projects.vercel.app/invite?n=Viaje%20a%20Cusco&c=8B5CF6&m=Ana,Luis&u=Camila&i=airplane` — chips
-   con texto claro; y `https://yala-kwy4wozwi-jur211296s-projects.vercel.app/invite?m=%ZZ` ya no da error.
+8. Invitación: `https://yala-pu9mi3md5-jur211296s-projects.vercel.app/invite?n=Viaje%20a%20Cusco&c=8B5CF6&m=Ana,Luis&u=Camila&i=airplane` — chips
+   con texto claro; y `https://yala-pu9mi3md5-jur211296s-projects.vercel.app/invite?m=%ZZ` ya no da error.
 9. Si algo no convence (el tono `#818CF8` del acento, el tema del sistema por defecto), son una línea cada uno:
    `--accent` en `global.css` y el script del `<body>` en `Layout.astro`.
 
