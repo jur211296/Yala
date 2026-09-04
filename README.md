@@ -18,7 +18,7 @@
 | ¿Cómo arranco de cero en otra máquina? | [`docs/HANDOFF.md`](./docs/HANDOFF.md) |
 
 > **Ficheros de más de 60 KB** — `✓` = lleva índice arriba, entra por ahí:
-> ✓ `docs/DECISIONS.md` (243 KB) · ✓ `.claude/worktrees/elastic-ritchie-9f2188/docs/DECISIONS.md` (243 KB) · ✓ `docs/aprendizajes-tecnicos.md` (192 KB) · ✓ `.claude/worktrees/elastic-ritchie-9f2188/docs/aprendizajes-tecnicos.md` (192 KB) · ✓ `qa/cloud/README.md` (120 KB) · ✓ `.claude/worktrees/elastic-ritchie-9f2188/qa/cloud/README.md` (120 KB) · ✓ `docs/modo-nube/MODO-NUBE-DIFERIDOS.md` (113 KB) · ✓ `.claude/worktrees/elastic-ritchie-9f2188/docs/modo-nube/MODO-NUBE-DIFERIDOS.md` (113 KB) · ✓ `tickets/qa/groups-consent-door-spec.md` (96 KB) · ✓ `.claude/worktrees/elastic-ritchie-9f2188/tickets/qa/groups-consent-door-spec.md` (96 KB) · ✓ `docs/audit/AUDIT-UI-patterns.md` (94 KB) · ✓ `.claude/worktrees/elastic-ritchie-9f2188/docs/audit/AUDIT-UI-patterns.md` (94 KB)
+> ✓ `docs/DECISIONS.md` (243 KB) · ✓ `.claude/worktrees/elastic-ritchie-9f2188/docs/DECISIONS.md` (243 KB) · ✓ `docs/aprendizajes-tecnicos.md` (196 KB) · ✓ `.claude/worktrees/elastic-ritchie-9f2188/docs/aprendizajes-tecnicos.md` (192 KB) · ✓ `qa/cloud/README.md` (120 KB) · ✓ `.claude/worktrees/elastic-ritchie-9f2188/qa/cloud/README.md` (120 KB) · ✓ `docs/modo-nube/MODO-NUBE-DIFERIDOS.md` (113 KB) · ✓ `.claude/worktrees/elastic-ritchie-9f2188/docs/modo-nube/MODO-NUBE-DIFERIDOS.md` (113 KB) · ✓ `tickets/qa/groups-consent-door-spec.md` (96 KB) · ✓ `.claude/worktrees/elastic-ritchie-9f2188/tickets/qa/groups-consent-door-spec.md` (96 KB) · ✓ `docs/audit/AUDIT-UI-patterns.md` (94 KB) · ✓ `.claude/worktrees/elastic-ritchie-9f2188/docs/audit/AUDIT-UI-patterns.md` (94 KB)
 
 <!-- INDICE:fin -->
 

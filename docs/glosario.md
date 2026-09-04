@@ -37,10 +37,10 @@
 
 <!-- GLOSARIO:generado:inicio - no editar a mano -->
 
-## Dónde se decide cada término (149)
+## Dónde se decide cada término (154)
 
 > **No leas este bloque entero** — está ordenado alfabéticamente para buscar dentro
-> (`grep -i termino docs/glosario.md`), no para leerse. Sale de las 81 decisiones del
+> (`grep -i termino docs/glosario.md`), no para leerse. Sale de las 82 decisiones del
 > repo con `python3 scripts/glosario.py --repo . --apply`, así que **no se edita a mano**:
 > lo que escribas aquí se pierde en la siguiente regeneración. La parte que se mantiene
 > a mano es la de arriba. Un término marcado *(histórico)* solo vive en decisiones
@@ -75,6 +75,7 @@
 - **CSVMirrorCodec** — [2026-05-25](docs/DECISIONS.md#2026-05-25-csv-mirror-pico--budget-filters--transactioniteminboxdraft-tags-resilientes-a-cloudkit-lazy-hydration), [2026-07-01](docs/DECISIONS.md#2026-07-01-groups--pagos-planificados-de-grupo-gasto-compartido-recurrente)
 - **CTA** — [2026-05-05](docs/DECISIONS.md#2026-05-05-a0-bridge-v20--completa-items-p0p1-diferidos), [2026-05-08](docs/DECISIONS.md#2026-05-08-fix-subcategoras-vacas-en-grupos--fullmodeactivation-rediseado), [2026-05-10](docs/DECISIONS.md#2026-05-1005-11-onboarding-restyle--5-iteraciones-de-qa-visual-iter1-iter5), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-cierre-ltimas-5-entradas-de-la-fase-205)
 - **DARK** — [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-cierre-ltimas-5-entradas-de-la-fase-205)
+- **DateAlignmentHelper** — [2026-07-06](docs/DECISIONS.md#2026-07-06-stats--comparativa-kpi-perodo-anterior-alineado-a-la-curva-mtd-vs-mtd-p20-15-completo)
 - **DESPUÉS** — [2026-04-09](docs/DECISIONS.md#gc-12-permisos-de-grupo-y-flujo-de-invitacin-2026-04-09), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-cierre-ltimas-5-entradas-de-la-fase-205)
 - **DevSeedGroups** — [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-cierre-ltimas-5-entradas-de-la-fase-205)
 - **DISK** — [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-cierre-ltimas-5-entradas-de-la-fase-205)
@@ -119,6 +120,7 @@
 - **MainTabView** — [2026-04-21](docs/DECISIONS.md#2026-04-21-sync-status-banner-global-vs-toolbar-indicator), [2026-05-07](docs/DECISIONS.md#2026-05-07-a4-v32--fix-p0-2-nudge-dormant-sin-grupos--6-welcome-hero-residual-tras-reinstall)
 - **ModelContainer** — [2026-02-02](docs/DECISIONS.md#2026-02-02-icloud-sync-integracin-nativa-swiftdata--cloudkit), [2026-07-04](docs/DECISIONS.md#2026-07-04-apple-pay--el-intent-deja-de-tocar-swiftdata-patrn-de-cola-app-group)
 - **ModelContext** — [2026-06-19](docs/DECISIONS.md#2026-06-1906-22-groups--saga-del-crash-loop-de-sync-en-restore-de-icloud-5-intentos-cerrada-en-build-32), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
+- **.month** — [2026-07-06](docs/DECISIONS.md#2026-07-06-stats--comparativa-kpi-perodo-anterior-alineado-a-la-curva-mtd-vs-mtd-p20-15-completo)
 - **MTD** — [2026-08-26](docs/DECISIONS.md#2026-08-26-balance-en-distribucin-stock-panel-no-se-toca), [2026-07-06](docs/DECISIONS.md#2026-07-06-stats--comparativa-kpi-perodo-anterior-alineado-a-la-curva-mtd-vs-mtd-p20-15-completo)
 - **NECESITA** — [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-cierre-ltimas-5-entradas-de-la-fase-205)
 - **NewTransactionView** — [2026-04-28](docs/DECISIONS.md#2026-04-28-3-fixes-runtime-post-qa-chat-registrar-transacciones), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
@@ -180,6 +182,8 @@
 - **TC** — [2026-08-26](docs/DECISIONS.md#2026-08-26-balance-en-distribucin-stock-panel-no-se-toca), [2026-03-25](docs/DECISIONS.md#2026-03-25-mindset-onboarding-cuenta-nica--patrimonial-separadas--cashflow)
 - **TelemetryDeck** — [2026-07-02](docs/DECISIONS.md#2026-07-02-incidente-prod--sync-de-grupos-muerto-4-das-por-campo-sin-deploy-de-schema--hardening), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
 - **TestFlight** — [2026-05-26](docs/DECISIONS.md#2026-05-26-refactor-robusto-del-subsistema-de-routing-f0-f11), [2026-06-24](docs/DECISIONS.md#2026-06-24-rediseo-welcome--restore--onboarding--invitaciones-6-commits), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
+- **.thisMonth** — [2026-07-06](docs/DECISIONS.md#2026-07-06-stats--comparativa-kpi-perodo-anterior-alineado-a-la-curva-mtd-vs-mtd-p20-15-completo)
+- **.thisWeek** — [2026-07-06](docs/DECISIONS.md#2026-07-06-stats--comparativa-kpi-perodo-anterior-alineado-a-la-curva-mtd-vs-mtd-p20-15-completo)
 - **TransactionItem** — [2026-05-05](docs/DECISIONS.md#2026-05-05-a0-bridge--rediseo-completo-del-bridge-splitexpense--transactionitem-modelo-m5), [2026-05-25](docs/DECISIONS.md#2026-05-25-csv-mirror-pico--budget-filters--transactioniteminboxdraft-tags-resilientes-a-cloudkit-lazy-hydration)
 - **try?** — [2026-05-04](docs/DECISIONS.md#2026-05-04-groups-pulido-final--subset-2-a9a10a12a13), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-cierre-ltimas-5-entradas-de-la-fase-205)
 - **TTL** — [2026-06-08](docs/DECISIONS.md#2026-06-08-fix-invite-drop--persistencia-de-invite-pendiente), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
@@ -191,6 +195,7 @@
 - **UserDefaults** — [2026-01-30](docs/DECISIONS.md#2026-01-30-widget-de-tipo-de-cambio-single-source-of-truth), [2026-04-16](docs/DECISIONS.md#2026-04-1604-20-pico-panel-20-p20-01p20-11), [2026-04-27](docs/DECISIONS.md#2026-04-27-chat--registrar-transacciones-opcin-c-hbrida), [2026-06-08](docs/DECISIONS.md#2026-06-08-fix-invite-drop--persistencia-de-invite-pendiente), [2026-07-04](docs/DECISIONS.md#2026-07-04-apple-pay--el-intent-deja-de-tocar-swiftdata-patrn-de-cola-app-group), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
 - **UUID** — [2026-05-25](docs/DECISIONS.md#2026-05-25-transfer-pair-integrity--pico-de-6-commits), [2026-05-26](docs/DECISIONS.md#2026-05-26-fix-migracin-shortcutidtagid-colapsado-v2), [2026-06-19](docs/DECISIONS.md#2026-06-19-fix-identity-uuids-colapsados-tras-restore-lento-de-icloud-tagidaccountshortcutidsubcategoryshortcutid), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
 - **UX** — [2026-04-21](docs/DECISIONS.md#2026-04-21-sync-status-banner-global-vs-toolbar-indicator), [2026-01-30](docs/DECISIONS.md#2026-01-30-widget-de-tipo-de-cambio-single-source-of-truth), [2026-05-08](docs/DECISIONS.md#2026-05-08-groups-pulido--sprint-pulido-2-9-bugs-ux--sprint-pulido-3-cierre-diferidos), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22)
+- **VACIABA** — [2026-07-06](docs/DECISIONS.md#2026-07-06-stats--comparativa-kpi-perodo-anterior-alineado-a-la-curva-mtd-vs-mtd-p20-15-completo)
 - **VERDE** — [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-fase-205--36-entradas-2026-07-08--2026-07-22), [2026-07-24](docs/DECISIONS.md#tanda-2026-07-24-cierre-ltimas-5-entradas-de-la-fase-205)
 - **WeekdayBarChart** — [2026-04-16](docs/DECISIONS.md#2026-04-1604-20-pico-panel-20-p20-01p20-11), [2026-04-24](docs/DECISIONS.md#2026-04-24-pp2-06c-widgets-small-chart-based)
 - **WelcomeFlowContainer** — [2026-05-07](docs/DECISIONS.md#2026-05-07-a4-v32--welcome-hero--chooser-fix-unificado-sprint-221-polish-visual), [2026-05-09](docs/DECISIONS.md#2026-05-09-onboarding-completo-restyling--welcome-herochooser--yala-ai--8-steps)

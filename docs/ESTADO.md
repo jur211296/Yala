@@ -5,20 +5,25 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-04 (Lima)
 
-**Rama** `2.1` · HEAD `a8096ba5` — «la pantalla donde se expulsa gente pasa de cero cobertura a
-tener red». TestFlight build **12** (CPV 12). **Subida Yala (TF/store) = solo Mini.**
+**Rama** `2.1` · HEAD `953bf25b` — merge del PR #62, la web. TestFlight build **12** (CPV 12).
+**Subida Yala (TF/store) = solo Mini.** **`yala-app.pe` sirve la web nueva desde hoy.**
 
-## La sesión, en una línea
+## El día, en dos líneas
 
-El CI llevaba día y medio sin ejecutar un solo test; se arregló, y al quitar la venda aparecieron
-16 XCUITest en rojo —ninguno un bug de la app— más el que sí lo era: a quien se une a un grupo por
-enlace, la app no le reconocía hasta reiniciarla.
+Por la mañana, el CI: llevaba día y medio sin ejecutar un solo test; se arregló, y al quitar la venda
+aparecieron 16 XCUITest en rojo —ninguno un bug de la app— más el que sí lo era: a quien se une a un
+grupo por enlace, la app no le reconocía hasta reiniciarla. Por la tarde, la web: auditada, rediseñada
+y **desplegada en producción**.
 
 ## Te espera a ti
 
 1. **Publicar la app.** Sin cambios desde ayer: los dos avisos de Grupos están completos en servidor
    y en los dos entornos; falta el cliente iOS. Ahora además llevaría el fix de identidad.
 2. **La tanda de QA: 20 tickets en 4 montajes.** Guion en **`qa/guion-tanda.md`**, sin tocar.
+3. **Dos decisiones de la web** (informe `Web/REVISION-WEB-UX-A11Y-2026-09-03.md` §9): el **texto legal
+   de Grupos** —la web dice «vía iCloud, no por servidores nuestros» y el backend propio está al 100 %
+   en prod— que dijiste revisar al lanzar 2.1; y si Vercel debe desplegar solo al mergear (hoy su rama
+   de producción es `1.0`, así que **no**: el despliegue de hoy fue por CLI).
 
 ## Abiertos, por prioridad
 
@@ -41,10 +46,19 @@ enlace, la app no le reconocía hasta reiniciarla.
 100 · CLOUD_ONBOARDING_CHOICE 0 · SECONDARY_SESSION 0. Cola C: 9 ACs owner/device, no corrida; D-R1
 sigue sin `ok_`. **Cero `ok_` inventado.**
 
+## La web, cerrada hoy
+
+PR #62 mergeado y **`yala-app.pe` desplegado**: auditoría + rediseño de la home. Lo que hay que saber
+sin abrir nada: el idioma del visitante **ya se respeta** (hasta hoy todos aterrizaban en español),
+accesibilidad AA en los dos temas, capturas nuevas del simulador y fuentes propias (fuera Google).
+Al medir la app para el copy aparecieron **dos afirmaciones falsas** que la web llevaba tiempo
+diciendo, ya corregidas. Todo —hallazgos, método, cifras y lo que quedó fuera— en
+**`Web/REVISION-WEB-UX-A11Y-2026-09-03.md`**.
+
 ## Board
 
-97 tickets · backlog 50 · in-progress 7 · qa 20 · blocked 2 · done 13 · discarded 5. Índice cuadrado
-(97 filas = 97 ficheros). `qa` significa «esperando la tanda», no «cerrado».
+100 tickets · backlog 50 · in-progress 7 · qa 20 · blocked 2 · done 16 · discarded 5.
+`qa` significa «esperando la tanda», no «cerrado».
 
 **Lo que cambió en la red, y conviene saberlo:** el gate corría los XCUITest «de las áreas tocadas»
 y 30 de las 59 áreas no cubrían el código del que dependen — por eso dio verde sobre el rediseño del
