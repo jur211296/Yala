@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import type { Language } from '../i18n/translations';
+import { languages } from '../i18n/translations';
 
 interface Props {
 	title: string;
@@ -13,6 +14,24 @@ const {
 	description = "Tu centro de control financiero con Yala IA y gastos compartidos. Registra en segundos, entiende en minutos.",
 	lang = 'es'
 } = Astro.props;
+
+const site = 'https://yala-app.pe';
+const APP_STORE_ID = '6758253109';
+
+// hreflang: cada página tiene una gemela por idioma con la misma ruta base
+// (`/`, `/privacy`, `/terms`, `/support`). ES vive en la raíz; el resto bajo `/xx/`.
+const rawPath = Astro.url.pathname.replace(/\/+$/, '') || '/';
+const langCodes = Object.keys(languages) as Language[];
+const basePath = rawPath.replace(new RegExp(`^/(${langCodes.join('|')})(?=/|$)`), '') || '/';
+const knownBases = ['/', '/privacy', '/terms', '/support'];
+// Con barra final, igual que las URLs del sitemap (Astro las emite así): canonical y sitemap deben coincidir.
+const localizedUrl = (l: Language) =>
+	site + (l === 'es' ? basePath : `/${l}${basePath === '/' ? '' : basePath}`) + (basePath === '/' && l === 'es' ? '' : '/');
+const alternates = knownBases.includes(basePath)
+	? langCodes.map((l) => ({ l, href: localizedUrl(l) }))
+	: [];
+const canonical = knownBases.includes(basePath) ? localizedUrl(lang) : site + rawPath;
+const ogLocale = ({ es: 'es_PE', en: 'en_US', de: 'de_DE', fr: 'fr_FR', it: 'it_IT', pt: 'pt_BR' } as const)[lang];
 ---
 
 <!doctype html>
@@ -21,26 +40,56 @@ const {
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta name="description" content={description} />
+		<meta name="theme-color" content="#0F172A" />
+		<link rel="canonical" href={canonical} />
+		{alternates.map(({ l, href }) => <link rel="alternate" hreflang={l} href={href} />)}
+		{alternates.length > 0 && <link rel="alternate" hreflang="x-default" href={localizedUrl('es')} />}
 
-		<!-- Open Graph -->
+		<!-- Smart App Banner (Safari iOS): abre o descarga la app sin salir de la web -->
+		<meta name="apple-itunes-app" content={`app-id=${APP_STORE_ID}`} />
+
+		<!-- Open Graph / Twitter: las URLs de imagen deben ser absolutas para que WhatsApp, iMessage y X las rendericen -->
 		<meta property="og:title" content={title} />
 		<meta property="og:description" content={description} />
 		<meta property="og:type" content="website" />
-		<meta property="og:image" content="/og-image.png" />
+		<meta property="og:site_name" content="Yala" />
+		<meta property="og:locale" content={ogLocale} />
+		<meta property="og:url" content={canonical} />
+		<meta property="og:image" content={`${site}/og-image.png`} />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={description} />
+		<meta name="twitter:image" content={`${site}/og-image.png`} />
 
 		<!-- Favicon -->
 		<link rel="icon" type="image/png" href="/favicon.png" />
 		<link rel="apple-touch-icon" href="/favicon.png" />
 
-		<!-- Geist Font -->
+		<!-- Marca `js` cuanto antes: el scroll-reveal solo oculta contenido si hay JS que luego lo muestre -->
+		<script is:inline>document.documentElement.classList.add('js');</script>
+
+		<!-- Inter (Google Fonts) — carga no bloqueante: la hoja entra como `print` y se activa al cargar -->
 		<link rel="preconnect" href="https://fonts.googleapis.com">
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+		<noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+
+		<slot name="head" />
 
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
 	</head>
 	<body>
+		<!-- Tema antes del primer pintado: evita el flash oscuro→claro. Elegido por el usuario, o el del sistema. -->
+		<script is:inline>
+			try {
+				var saved = localStorage.getItem('theme');
+				var light = saved ? saved === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
+				if (light) document.body.classList.add('light');
+			} catch (e) {}
+		</script>
 		<div class="aurora-bg" aria-hidden="true"></div>
 		<slot />
 	</body>

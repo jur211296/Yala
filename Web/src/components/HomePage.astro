@@ -31,13 +31,15 @@ const galleryItems = [
 ].map(g => ({ ...g, src: `${SS}/gallery/${g.slug}-${imgLang}.jpg` }));
 ---
 
+<a href="#main" class="skip-link">{t.a11ySkip}</a>
+
 <!-- Header -->
 <header class="fixed top-0 left-0 right-0 z-50 header-blur" style="background: var(--header-bg); border-bottom: 1px solid var(--border-color);">
   <div class="container-wide">
     <nav class="flex items-center justify-between h-16">
       <a href={lang === 'es' ? '/' : `/${lang}/`} class="flex items-center">
-        <img src="/images/logo.png" alt="Yala" class="h-9 logo-dark" />
-        <img src="/images/logo-light.png" alt="Yala" class="h-9 logo-light" />
+        <img src="/images/logo.png" alt="Yala" class="h-9 logo-dark" width="1200" height="400" style="width:auto" />
+        <img src="/images/logo-light.png" alt="Yala" class="h-9 logo-light" width="1200" height="400" style="width:auto" />
       </a>
 
       <div class="hidden md:flex items-center gap-6">
@@ -52,26 +54,26 @@ const galleryItems = [
 
       <div class="flex items-center gap-3">
         <!-- Mobile Menu Toggle -->
-        <button id="mobile-menu-toggle" class="md:hidden w-9 h-9 rounded-full flex items-center justify-center border border-neutral-700 hover:border-neutral-500 transition-colors" style="background: var(--bg-card);" aria-label="Menu">
-          <svg class="w-4 h-4 text-neutral-400 hamburger-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button id="mobile-menu-toggle" class="md:hidden w-9 h-9 rounded-full flex items-center justify-center border border-neutral-700 hover:border-neutral-500 transition-colors" style="background: var(--bg-card);" aria-label={t.a11yMenu} aria-expanded="false" aria-controls="mobile-menu">
+          <svg aria-hidden="true" class="w-4 h-4 text-neutral-400 hamburger-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
           </svg>
-          <svg class="w-4 h-4 text-neutral-400 close-icon hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" class="w-4 h-4 text-neutral-400 close-icon hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
           </svg>
         </button>
 
         <!-- Language Selector -->
         <div class="relative">
-          <button id="lang-toggle" class="flex items-center gap-1.5 text-sm text-neutral-400 hover:text-white px-3 py-2 rounded-full border border-neutral-700 hover:border-neutral-500 transition-colors">
-            <span class="uppercase font-medium">{lang}</span>
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button id="lang-toggle" class="flex items-center gap-1.5 text-sm text-neutral-400 hover:text-white px-3 py-2 rounded-full border border-neutral-700 hover:border-neutral-500 transition-colors" aria-haspopup="true" aria-expanded="false" aria-controls="lang-menu">
+            <span class="sr-only">{t.a11yLanguage}: </span><span class="uppercase font-medium">{lang}</span>
+            <svg aria-hidden="true" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
             </svg>
           </button>
           <div id="lang-menu" class="hidden absolute right-0 mt-2 py-2 w-36 rounded-xl shadow-xl z-50" style="background: var(--bg-card); border: 1px solid var(--border-color);">
             {langUrls.map(({ code, name, url, active }) => (
-              <a href={url} class={`block px-4 py-2 text-sm transition-colors ${active ? 'text-yala-cyan font-medium' : 'text-neutral-400 hover:text-white hover:bg-neutral-800/50'}`}>
+              <a href={url} lang={code} hreflang={code} data-lang={code} aria-current={active ? 'true' : undefined} class={`lang-option block px-4 py-2 text-sm transition-colors ${active ? 'text-accent-teal font-medium' : 'text-neutral-400 hover:text-white hover:bg-neutral-800/50'}`}>
                 {name}
               </a>
             ))}
@@ -79,17 +81,17 @@ const galleryItems = [
         </div>
 
         <!-- Theme Toggle -->
-        <button id="theme-toggle" class="w-9 h-9 rounded-full flex items-center justify-center border border-neutral-700 hover:border-neutral-500 transition-colors" style="background: var(--bg-card);" aria-label="Toggle theme">
-          <svg class="w-4 h-4 text-neutral-400 icon-sun" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button id="theme-toggle" class="w-9 h-9 rounded-full flex items-center justify-center border border-neutral-700 hover:border-neutral-500 transition-colors" style="background: var(--bg-card);" aria-label={t.a11yTheme} aria-pressed="false">
+          <svg aria-hidden="true" class="w-4 h-4 text-neutral-400 icon-sun" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
           </svg>
-          <svg class="w-4 h-4 text-neutral-400 icon-moon hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" class="w-4 h-4 text-neutral-400 icon-moon hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
           </svg>
         </button>
 
         <a href="https://apps.apple.com/pe/app/yala-finanzas-sin-esfuerzo/id6758253109" target="_blank" rel="noopener" class="hidden sm:inline-flex btn-primary text-sm">
-          {t.navDownload}
+          {t.navDownload}<span class="sr-only"> ({t.a11yNewTab})</span>
         </a>
       </div>
     </nav>
@@ -106,11 +108,11 @@ const galleryItems = [
     <a href="#how" class="text-sm text-neutral-400 hover:text-white transition-colors py-2 mobile-nav-link">{t.navHow}</a>
     <a href="#privacy" class="text-sm text-neutral-400 hover:text-white transition-colors py-2 mobile-nav-link">{t.navPrivacy}</a>
     <a href="#pricing" class="text-sm text-neutral-400 hover:text-white transition-colors py-2 mobile-nav-link">{t.navPricing}</a>
-    <a href="https://apps.apple.com/pe/app/yala-finanzas-sin-esfuerzo/id6758253109" target="_blank" rel="noopener" class="btn-primary text-sm text-center mt-2">{t.navDownload}</a>
+    <a href="https://apps.apple.com/pe/app/yala-finanzas-sin-esfuerzo/id6758253109" target="_blank" rel="noopener" class="btn-primary text-sm text-center mt-2">{t.navDownload}<span class="sr-only"> ({t.a11yNewTab})</span></a>
   </div>
 </div>
 
-<main class="pt-16">
+<main id="main" class="pt-16">
 
   <!-- HERO SECTION -->
   <section class="container-wide py-20 md:py-32">
@@ -119,7 +121,7 @@ const galleryItems = [
       <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full border border-yala-cyan/30 bg-yala-cyan/5">
         <span class="text-sm font-medium text-yala-cyan">{t.heroTagline}</span>
         <span class="w-1 h-1 rounded-full bg-yala-cyan/50"></span>
-        <span class="text-sm font-medium text-gradient">{t.heroBadgeAccent}</span>
+        <span class="text-sm font-medium text-accent">{t.heroBadgeAccent}</span>
       </div>
 
       <!-- Main Headline -->
@@ -137,10 +139,16 @@ const galleryItems = [
       <!-- CTAs -->
       <div class="flex flex-col sm:flex-row gap-4 justify-center pt-4">
         <a href="https://apps.apple.com/pe/app/yala-finanzas-sin-esfuerzo/id6758253109" target="_blank" rel="noopener" class="btn-primary inline-flex items-center justify-center gap-2">
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+          <svg aria-hidden="true" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
             <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
           </svg>
-          {t.heroAppStore}
+          {t.heroAppStore}<span class="sr-only"> ({t.a11yNewTab})</span>
+        </a>
+        <a href="#how" class="btn-ghost inline-flex items-center justify-center gap-2 border border-neutral-700 hover:border-neutral-500">
+          {t.heroLearnMore}
+          <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
         </a>
       </div>
 
@@ -152,7 +160,7 @@ const galleryItems = [
     <div class="mt-16 flex justify-center device-glow">
       <div class="animate-float">
         <div id="hero-device" class="w-64 sm:w-72 md:w-80 iphone-mockup hero-tilt">
-          <img src={mock('panel-hero', true)} alt="Yala — Panel principal" loading="eager" />
+          <img src={mock('panel-hero', true)} alt={t.altHero} width="860" height="1869" loading="eager" fetchpriority="high" decoding="async" />
         </div>
       </div>
     </div>
@@ -177,7 +185,7 @@ const galleryItems = [
         <div class="aspect-video rounded-2xl bg-gradient-to-br from-neutral-800 to-neutral-900 border border-neutral-700 flex items-center justify-center">
           <div class="text-center space-y-4">
             <div class="w-20 h-20 mx-auto rounded-full bg-yala-indigo/20 flex items-center justify-center">
-              <svg class="w-10 h-10 text-yala-indigo" fill="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" class="w-10 h-10 text-yala-indigo" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z"/>
               </svg>
             </div>
@@ -211,7 +219,7 @@ const galleryItems = [
         <!-- Problem Card 1 -->
         <div class="card p-8 animate-on-scroll stagger-1">
           <div class="w-14 h-14 rounded-2xl bg-nature-essential/10 flex items-center justify-center mb-6">
-            <svg class="w-7 h-7 text-nature-essential" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-7 h-7 text-nature-essential" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
             </svg>
           </div>
@@ -222,7 +230,7 @@ const galleryItems = [
         <!-- Problem Card 2 -->
         <div class="card p-8 animate-on-scroll stagger-2">
           <div class="w-14 h-14 rounded-2xl bg-yala-pink/10 flex items-center justify-center mb-6">
-            <svg class="w-7 h-7 text-yala-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-7 h-7 text-yala-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
           </div>
@@ -233,7 +241,7 @@ const galleryItems = [
         <!-- Problem Card 3 -->
         <div class="card p-8 animate-on-scroll stagger-3">
           <div class="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-6">
-            <svg class="w-7 h-7 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-7 h-7 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M3 14h18M3 6h18M3 18h18M9 6v12M15 6v12"/>
             </svg>
           </div>
@@ -256,25 +264,25 @@ const galleryItems = [
         <h3 class="text-lg font-semibold text-neutral-500 mb-6">{t.differenceOthers}</h3>
         <ul class="space-y-4">
           <li class="flex items-start gap-3">
-            <svg class="w-5 h-5 text-neutral-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-5 h-5 text-neutral-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
             <span class="text-neutral-500">{t.differenceOther1}</span>
           </li>
           <li class="flex items-start gap-3">
-            <svg class="w-5 h-5 text-neutral-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-5 h-5 text-neutral-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
             <span class="text-neutral-500">{t.differenceOther2}</span>
           </li>
           <li class="flex items-start gap-3">
-            <svg class="w-5 h-5 text-neutral-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-5 h-5 text-neutral-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
             <span class="text-neutral-500">{t.differenceOther3}</span>
           </li>
           <li class="flex items-start gap-3">
-            <svg class="w-5 h-5 text-neutral-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-5 h-5 text-neutral-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
             <span class="text-neutral-500">{t.differenceOther4}</span>
@@ -284,28 +292,28 @@ const galleryItems = [
 
       <!-- With Yala -->
       <div class="card-glow p-8 border-yala-indigo/30 animate-on-scroll stagger-2">
-        <h3 class="text-lg font-semibold text-yala-cyan mb-6">{t.differenceYala}</h3>
+        <h3 class="text-lg font-semibold text-accent-teal mb-6">{t.differenceYala}</h3>
         <ul class="space-y-4">
           <li class="flex items-start gap-3">
-            <svg class="w-5 h-5 text-yala-teal mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-5 h-5 text-yala-teal mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
             </svg>
             <span class="text-neutral-200">{t.differenceYala1}</span>
           </li>
           <li class="flex items-start gap-3">
-            <svg class="w-5 h-5 text-yala-teal mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-5 h-5 text-yala-teal mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
             </svg>
             <span class="text-neutral-200">{t.differenceYala2}</span>
           </li>
           <li class="flex items-start gap-3">
-            <svg class="w-5 h-5 text-yala-teal mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-5 h-5 text-yala-teal mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
             </svg>
             <span class="text-neutral-200">{t.differenceYala3}</span>
           </li>
           <li class="flex items-start gap-3">
-            <svg class="w-5 h-5 text-yala-teal mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-5 h-5 text-yala-teal mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
             </svg>
             <span class="text-neutral-200">{t.differenceYala4}</span>
@@ -328,7 +336,7 @@ const galleryItems = [
         <div class="glass-card card-glow p-8 flex flex-col min-h-[200px] border-yala-cyan/30 animate-on-scroll stagger-1">
           <div class="flex items-center justify-between mb-6">
             <div class="w-14 h-14 rounded-2xl bg-yala-cyan/20 flex items-center justify-center">
-              <svg class="w-7 h-7 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" class="w-7 h-7 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
               </svg>
             </div>
@@ -340,11 +348,11 @@ const galleryItems = [
         <div class="glass-card card-glow p-8 flex flex-col min-h-[200px] border-nature-priority/30 animate-on-scroll stagger-2">
           <div class="flex items-center justify-between mb-6">
             <div class="w-14 h-14 rounded-2xl bg-nature-priority/20 flex items-center justify-center">
-              <svg class="w-7 h-7 text-nature-priority" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" class="w-7 h-7 text-nature-priority" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/>
               </svg>
             </div>
-            <span class="text-xs font-bold px-3 py-1 rounded-full bg-nature-priority/15 text-nature-priority border border-nature-priority/30">{t.groupsBadge}</span>
+            <span class="text-xs font-bold px-3 py-1 rounded-full bg-nature-priority/15 text-accent-violet border border-nature-priority/30">{t.groupsBadge}</span>
           </div>
           <h3 class="text-2xl font-semibold mb-3">{t.featureGroupsTitle}</h3>
           <p class="text-neutral-400 leading-relaxed">{t.featureGroupsDesc}</p>
@@ -356,7 +364,7 @@ const galleryItems = [
         <!-- Feature 1 - Captura Inteligente (Large) -->
         <div class="card-glow p-8 flex flex-col min-h-[200px] animate-on-scroll stagger-1">
           <div class="w-14 h-14 rounded-2xl bg-yala-indigo/20 flex items-center justify-center mb-6">
-            <svg class="w-7 h-7 text-yala-indigo" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-7 h-7 text-yala-indigo" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
             </svg>
@@ -368,7 +376,7 @@ const galleryItems = [
         <!-- Feature 2 - Voz (Large) -->
         <div class="card-glow p-8 flex flex-col min-h-[200px] animate-on-scroll stagger-2">
           <div class="w-14 h-14 rounded-2xl bg-yala-cyan/20 flex items-center justify-center mb-6">
-            <svg class="w-7 h-7 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-7 h-7 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
             </svg>
           </div>
@@ -382,7 +390,7 @@ const galleryItems = [
         <!-- Feature 3 - Importa -->
         <div class="card p-6 animate-on-scroll stagger-3">
           <div class="w-12 h-12 rounded-xl bg-yala-teal/20 flex items-center justify-center mb-4">
-            <svg class="w-6 h-6 text-yala-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-6 h-6 text-yala-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
             </svg>
           </div>
@@ -393,7 +401,7 @@ const galleryItems = [
         <!-- Feature 4 - Atajos Siri -->
         <div class="card p-6 animate-on-scroll stagger-4">
           <div class="w-12 h-12 rounded-xl bg-nature-priority/20 flex items-center justify-center mb-4">
-            <svg class="w-6 h-6 text-nature-priority" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-6 h-6 text-nature-priority" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/>
             </svg>
           </div>
@@ -404,7 +412,7 @@ const galleryItems = [
         <!-- Feature 5 - Widgets iOS -->
         <div class="card p-6 animate-on-scroll stagger-5">
           <div class="w-12 h-12 rounded-xl bg-yala-pink/20 flex items-center justify-center mb-4">
-            <svg class="w-6 h-6 text-yala-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-6 h-6 text-yala-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
             </svg>
           </div>
@@ -415,7 +423,7 @@ const galleryItems = [
         <!-- Feature 6 - Notificaciones inteligentes -->
         <div class="card p-6 animate-on-scroll stagger-5">
           <div class="w-12 h-12 rounded-xl bg-nature-essential/20 flex items-center justify-center mb-4">
-            <svg class="w-6 h-6 text-nature-essential" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-6 h-6 text-nature-essential" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
             </svg>
           </div>
@@ -429,7 +437,7 @@ const galleryItems = [
         <!-- Feature 7 - Multi-cuenta -->
         <div class="card p-6 animate-on-scroll stagger-1">
           <div class="w-12 h-12 rounded-xl bg-yala-pink/20 flex items-center justify-center mb-4">
-            <svg class="w-6 h-6 text-yala-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-6 h-6 text-yala-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
             </svg>
           </div>
@@ -440,7 +448,7 @@ const galleryItems = [
         <!-- Feature 8 - 48+ divisas -->
         <div class="card p-6 animate-on-scroll stagger-2">
           <div class="w-12 h-12 rounded-xl bg-nature-essential/20 flex items-center justify-center mb-4">
-            <svg class="w-6 h-6 text-nature-essential" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-6 h-6 text-nature-essential" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
           </div>
@@ -451,7 +459,7 @@ const galleryItems = [
         <!-- Feature 9 - Exporta -->
         <div class="card p-6 animate-on-scroll stagger-3">
           <div class="w-12 h-12 rounded-xl bg-yala-teal/20 flex items-center justify-center mb-4">
-            <svg class="w-6 h-6 text-yala-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-6 h-6 text-yala-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
             </svg>
           </div>
@@ -462,7 +470,7 @@ const galleryItems = [
         <!-- Feature 10 - iCloud Sync -->
         <div class="card p-6 animate-on-scroll stagger-4">
           <div class="w-12 h-12 rounded-xl bg-yala-indigo/20 flex items-center justify-center mb-4">
-            <svg class="w-6 h-6 text-yala-indigo" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-6 h-6 text-yala-indigo" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/>
             </svg>
           </div>
@@ -478,32 +486,32 @@ const galleryItems = [
       <div class="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
         <div class="animate-on-scroll">
           <span class="inline-flex items-center gap-2 mb-5 text-xs font-bold px-3 py-1.5 rounded-full bg-yala-cyan/15 text-yala-cyan border border-yala-cyan/30">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+            <svg aria-hidden="true" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
             {t.yalaaiBadge}
           </span>
           <h2 class="text-3xl sm:text-4xl font-bold mb-3">{t.yalaaiTitle}</h2>
-          <p class="text-xl text-gradient font-semibold mb-8">{t.yalaaiSubtitle}</p>
+          <p class="text-xl text-accent font-semibold mb-8">{t.yalaaiSubtitle}</p>
           <ul class="space-y-4">
             <li class="flex items-start gap-3">
-              <svg class="w-5 h-5 text-yala-cyan flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              <svg aria-hidden="true" class="w-5 h-5 text-yala-cyan flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
               <span class="text-neutral-300">{t.yalaaiBullet1}</span>
             </li>
             <li class="flex items-start gap-3">
-              <svg class="w-5 h-5 text-yala-cyan flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              <svg aria-hidden="true" class="w-5 h-5 text-yala-cyan flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
               <span class="text-neutral-300">{t.yalaaiBullet2}</span>
             </li>
             <li class="flex items-start gap-3">
-              <svg class="w-5 h-5 text-yala-cyan flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              <svg aria-hidden="true" class="w-5 h-5 text-yala-cyan flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
               <span class="text-neutral-300">{t.yalaaiBullet3}</span>
             </li>
           </ul>
           <p class="mt-8 text-sm text-neutral-500 leading-relaxed">
-            {t.yalaaiNote} <a href={privacyUrl} class="text-yala-cyan hover:text-yala-indigo underline underline-offset-2 transition-colors">{t.navPrivacy}</a>
+            {t.yalaaiNote} <a href={privacyUrl} class="text-accent-teal hover:text-yala-indigo underline underline-offset-2 transition-colors">{t.navPrivacy}</a>
           </p>
         </div>
         <div class="animate-on-scroll stagger-2 flex justify-center device-glow">
           <div class="w-60 sm:w-64 md:w-72 iphone-mockup">
-            <img src={mock('chat-analisis')} alt="Yala IA — chat" loading="lazy" />
+            <img src={mock('chat-analisis')} alt={t.altAI} width="860" height="1869" loading="lazy" decoding="async" />
           </div>
         </div>
       </div>
@@ -516,32 +524,32 @@ const galleryItems = [
       <div class="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
         <div class="animate-on-scroll stagger-2 flex justify-center device-glow md:order-1 order-2">
           <div class="w-60 sm:w-64 md:w-72 iphone-mockup">
-            <img src={mock('grupos-lista')} alt="Yala — Grupos" loading="lazy" />
+            <img src={mock('grupos-lista')} alt={t.altGroups} width="860" height="1869" loading="lazy" decoding="async" />
           </div>
         </div>
         <div class="animate-on-scroll md:order-2 order-1">
-          <span class="inline-flex items-center gap-2 mb-5 text-xs font-bold px-3 py-1.5 rounded-full bg-nature-priority/15 text-nature-priority border border-nature-priority/30">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87m-4-12a4 4 0 010 7.75M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 100-7.75 4 4 0 000 7.75z"/></svg>
+          <span class="inline-flex items-center gap-2 mb-5 text-xs font-bold px-3 py-1.5 rounded-full bg-nature-priority/15 text-accent-violet border border-nature-priority/30">
+            <svg aria-hidden="true" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87m-4-12a4 4 0 010 7.75M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 100-7.75 4 4 0 000 7.75z"/></svg>
             {t.groupsBadge}
           </span>
           <h2 class="text-3xl sm:text-4xl font-bold mb-3">{t.groupsTitle}</h2>
-          <p class="text-xl text-gradient font-semibold mb-8">{t.groupsSubtitle}</p>
+          <p class="text-xl text-accent font-semibold mb-8">{t.groupsSubtitle}</p>
           <ul class="space-y-4">
             <li class="flex items-start gap-3">
-              <svg class="w-5 h-5 text-nature-priority flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              <svg aria-hidden="true" class="w-5 h-5 text-nature-priority flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
               <span class="text-neutral-300">{t.groupsBullet1}</span>
             </li>
             <li class="flex items-start gap-3">
-              <svg class="w-5 h-5 text-nature-priority flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              <svg aria-hidden="true" class="w-5 h-5 text-nature-priority flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
               <span class="text-neutral-300">{t.groupsBullet2}</span>
             </li>
             <li class="flex items-start gap-3">
-              <svg class="w-5 h-5 text-nature-priority flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              <svg aria-hidden="true" class="w-5 h-5 text-nature-priority flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
               <span class="text-neutral-300">{t.groupsBullet3}</span>
             </li>
           </ul>
           <p class="mt-8 text-sm text-neutral-500 leading-relaxed">
-            {t.groupsNote} <a href={privacyUrl} class="text-nature-priority hover:text-yala-indigo underline underline-offset-2 transition-colors">{t.navPrivacy}</a>
+            {t.groupsNote} <a href={privacyUrl} class="text-accent-violet hover:text-yala-indigo underline underline-offset-2 transition-colors">{t.navPrivacy}</a>
           </p>
         </div>
       </div>
@@ -563,7 +571,7 @@ const galleryItems = [
         <h3 class="text-xl font-semibold mb-3">{t.howStep1Title}</h3>
         <p class="text-neutral-400 mb-6">{t.howStep1Desc}</p>
         <div class="w-40 mx-auto iphone-mockup-sm">
-          <img src={mock('nuevo-registro')} alt="Registrar gastos" loading="lazy" />
+          <img src={mock('nuevo-registro')} alt={t.altStep1} width="860" height="1869" loading="lazy" decoding="async" />
         </div>
       </div>
 
@@ -573,7 +581,7 @@ const galleryItems = [
         <h3 class="text-xl font-semibold mb-3">{t.howStep2Title}</h3>
         <p class="text-neutral-400 mb-6">{t.howStep2Desc}</p>
         <div class="w-40 mx-auto iphone-mockup-sm">
-          <img src={mock('panel-distribucion')} alt="Categorías organizadas" loading="lazy" />
+          <img src={mock('panel-distribucion')} alt={t.altStep2} width="860" height="1869" loading="lazy" decoding="async" />
         </div>
       </div>
 
@@ -583,7 +591,7 @@ const galleryItems = [
         <h3 class="text-xl font-semibold mb-3">{t.howStep3Title}</h3>
         <p class="text-neutral-400 mb-6">{t.howStep3Desc}</p>
         <div class="w-40 mx-auto iphone-mockup-sm">
-          <img src={mock('stats-tendencias', true)} alt="Gráficos y tendencias" loading="lazy" />
+          <img src={mock('stats-tendencias', true)} alt={t.altStep3} width="860" height="1869" loading="lazy" decoding="async" />
         </div>
       </div>
     </div>
@@ -599,19 +607,19 @@ const galleryItems = [
 
           <ul class="space-y-4">
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-300">{t.analyticsBullet1}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-300">{t.analyticsBullet2}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-300">{t.analyticsBullet3}</span>
@@ -622,7 +630,7 @@ const galleryItems = [
         <!-- Analytics Screenshot - Estadísticas -->
         <div class="animate-on-scroll stagger-2 device-glow">
           <div class="max-w-xs mx-auto iphone-mockup">
-            <img src={mock('stats-resumen')} alt="Estadísticas y análisis" loading="lazy" />
+            <img src={mock('stats-resumen')} alt={t.altAnalytics} width="860" height="1869" loading="lazy" decoding="async" />
           </div>
         </div>
       </div>
@@ -636,7 +644,7 @@ const galleryItems = [
         <p class="text-neutral-400 text-lg max-w-2xl mx-auto">{t.gallerySubtitle}</p>
       </div>
     </div>
-    <div class="gallery-marquee" tabindex="0" role="group" aria-label={t.galleryTitle}>
+    <div id="gallery-marquee" class="gallery-marquee">
       <div class="gallery-track py-2">
         {[...galleryItems, ...galleryItems].map((g, i) => (
           <img
@@ -644,10 +652,20 @@ const galleryItems = [
             alt=""
             aria-hidden="true"
             loading="lazy"
+            decoding="async"
+            width="700"
+            height="1521"
             class="h-[400px] sm:h-[460px] w-auto rounded-3xl border border-white/10 shadow-2xl flex-shrink-0"
           />
         ))}
       </div>
+    </div>
+    <div class="container-wide mt-8 text-center">
+      <button id="gallery-toggle" type="button" class="gallery-toggle" aria-pressed="false" data-label-pause={t.galleryPause} data-label-play={t.galleryPlay}>
+        <svg aria-hidden="true" class="w-4 h-4 gallery-icon-pause" fill="currentColor" viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+        <svg aria-hidden="true" class="w-4 h-4 gallery-icon-play hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        <span class="gallery-toggle-label">{t.galleryPause}</span>
+      </button>
     </div>
   </section>
 
@@ -662,28 +680,28 @@ const galleryItems = [
     <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
       <!-- What we DON'T do -->
       <div class="card p-8 animate-on-scroll stagger-1">
-        <h3 class="text-lg font-semibold text-yala-pink mb-6">{t.privacyNotTitle}</h3>
+        <h3 class="text-lg font-semibold text-accent-pink mb-6">{t.privacyNotTitle}</h3>
         <ul class="space-y-4">
           <li class="flex items-center gap-3">
-            <svg class="w-5 h-5 text-yala-pink flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-5 h-5 text-yala-pink flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
             <span class="text-neutral-400">{t.privacyNot1}</span>
           </li>
           <li class="flex items-center gap-3">
-            <svg class="w-5 h-5 text-yala-pink flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-5 h-5 text-yala-pink flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
             <span class="text-neutral-400">{t.privacyNot2}</span>
           </li>
           <li class="flex items-center gap-3">
-            <svg class="w-5 h-5 text-yala-pink flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-5 h-5 text-yala-pink flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
             <span class="text-neutral-400">{t.privacyNot3}</span>
           </li>
           <li class="flex items-center gap-3">
-            <svg class="w-5 h-5 text-yala-pink flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-5 h-5 text-yala-pink flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
             <span class="text-neutral-400">{t.privacyNot4}</span>
@@ -693,28 +711,28 @@ const galleryItems = [
 
       <!-- What we DO -->
       <div class="card-glow p-8 border-yala-teal/30 animate-on-scroll stagger-2">
-        <h3 class="text-lg font-semibold text-yala-teal mb-6">{t.privacyYesTitle}</h3>
+        <h3 class="text-lg font-semibold text-accent-teal mb-6">{t.privacyYesTitle}</h3>
         <ul class="space-y-4">
           <li class="flex items-center gap-3">
-            <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
             </svg>
             <span class="text-neutral-300">{t.privacyYes1}</span>
           </li>
           <li class="flex items-center gap-3">
-            <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
             </svg>
             <span class="text-neutral-300">{t.privacyYes2}</span>
           </li>
           <li class="flex items-center gap-3">
-            <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
             </svg>
             <span class="text-neutral-300">{t.privacyYes3}</span>
           </li>
           <li class="flex items-center gap-3">
-            <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
             </svg>
             <span class="text-neutral-300">{t.privacyYes4}</span>
@@ -722,7 +740,7 @@ const galleryItems = [
         </ul>
         <div class="mt-6 pt-6 border-t border-neutral-700">
           <span class="inline-flex items-center gap-2 text-sm font-medium text-yala-teal">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
             </svg>
             {t.privacyBadge}
@@ -750,60 +768,60 @@ const galleryItems = [
           </div>
           <ul class="space-y-3 mb-8 flex-1">
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-400">{t.pricingFree1}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-400">{t.pricingFree2}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-400">{t.pricingFree3}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-400">{t.pricingFree4}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-400">{t.pricingFree5}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-400">{t.pricingFree6}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-400">{t.pricingFree7}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-400">{t.pricingFree8}</span>
             </li>
           </ul>
-          <a href="https://apps.apple.com/pe/app/yala-finanzas-sin-esfuerzo/id6758253109" target="_blank" rel="noopener" class="btn-secondary w-full text-center">{t.pricingFreeCta}</a>
+          <a href="https://apps.apple.com/pe/app/yala-finanzas-sin-esfuerzo/id6758253109" target="_blank" rel="noopener" class="btn-secondary w-full text-center">{t.pricingFreeCta}<span class="sr-only"> ({t.a11yNewTab})</span></a>
         </div>
 
         <!-- Pro Plan -->
         <div class="card-glow p-8 border-yala-indigo/50 relative overflow-hidden animate-on-scroll stagger-2 flex flex-col">
-          <div class="absolute top-0 right-0 bg-yala-indigo text-white text-xs font-bold px-4 py-1 rounded-bl-xl">PRO</div>
+          <div class="absolute top-0 right-0 ribbon-pro text-xs font-bold px-4 py-1 rounded-bl-xl" aria-hidden="true">PRO</div>
           <h3 class="text-2xl font-bold mb-2">{t.pricingProTitle}</h3>
           <div class="flex items-baseline gap-1 mb-1">
             <span class="text-4xl font-bold text-gradient">{t.pricingProPrice}</span>
@@ -815,55 +833,55 @@ const galleryItems = [
               <span class="text-sm text-neutral-400 italic">{t.pricingPro0}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-300">{t.pricingPro1}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-300">{t.pricingPro2}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-300">{t.pricingPro3}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-300">{t.pricingPro4}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-300">{t.pricingPro5}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-300">{t.pricingPro6}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-300">{t.pricingPro7}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-300">{t.pricingPro8}</span>
             </li>
           </ul>
-          <a href="https://apps.apple.com/pe/app/yala-finanzas-sin-esfuerzo/id6758253109" target="_blank" rel="noopener" class="btn-primary w-full text-center">{t.pricingProCta}</a>
+          <a href="https://apps.apple.com/pe/app/yala-finanzas-sin-esfuerzo/id6758253109" target="_blank" rel="noopener" class="btn-primary w-full text-center">{t.pricingProCta}<span class="sr-only"> ({t.a11yNewTab})</span></a>
         </div>
       </div>
   </section>
@@ -878,7 +896,7 @@ const galleryItems = [
         <details class="card group animate-on-scroll stagger-1">
           <summary class="p-6 cursor-pointer flex items-center justify-between font-semibold list-none">
             {t.faq1Q}
-            <svg class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
             </svg>
           </summary>
@@ -888,7 +906,7 @@ const galleryItems = [
         <details class="card group animate-on-scroll stagger-2">
           <summary class="p-6 cursor-pointer flex items-center justify-between font-semibold list-none">
             {t.faq2Q}
-            <svg class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
             </svg>
           </summary>
@@ -898,7 +916,7 @@ const galleryItems = [
         <details class="card group animate-on-scroll stagger-3">
           <summary class="p-6 cursor-pointer flex items-center justify-between font-semibold list-none">
             {t.faq3Q}
-            <svg class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
             </svg>
           </summary>
@@ -908,7 +926,7 @@ const galleryItems = [
         <details class="card group animate-on-scroll stagger-4">
           <summary class="p-6 cursor-pointer flex items-center justify-between font-semibold list-none">
             {t.faq4Q}
-            <svg class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
             </svg>
           </summary>
@@ -918,7 +936,7 @@ const galleryItems = [
         <details class="card group animate-on-scroll stagger-5">
           <summary class="p-6 cursor-pointer flex items-center justify-between font-semibold list-none">
             {t.faq5Q}
-            <svg class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
             </svg>
           </summary>
@@ -928,7 +946,7 @@ const galleryItems = [
         <details class="card group animate-on-scroll">
           <summary class="p-6 cursor-pointer flex items-center justify-between font-semibold list-none">
             {t.faq6Q}
-            <svg class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
             </svg>
           </summary>
@@ -938,7 +956,7 @@ const galleryItems = [
         <details class="card group animate-on-scroll">
           <summary class="p-6 cursor-pointer flex items-center justify-between font-semibold list-none">
             {t.faq7Q}
-            <svg class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
             </svg>
           </summary>
@@ -948,7 +966,7 @@ const galleryItems = [
         <details class="card group animate-on-scroll">
           <summary class="p-6 cursor-pointer flex items-center justify-between font-semibold list-none">
             {t.faq8Q}
-            <svg class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
             </svg>
           </summary>
@@ -958,7 +976,7 @@ const galleryItems = [
         <details class="card group animate-on-scroll">
           <summary class="p-6 cursor-pointer flex items-center justify-between font-semibold list-none">
             {t.faq9Q}
-            <svg class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
             </svg>
           </summary>
@@ -977,10 +995,10 @@ const galleryItems = [
         </h2>
         <p class="text-2xl text-neutral-300 mb-8">{t.ctaSubtitle}</p>
         <a href="https://apps.apple.com/pe/app/yala-finanzas-sin-esfuerzo/id6758253109" target="_blank" rel="noopener" class="btn-primary inline-flex items-center gap-2 text-lg px-8 py-4">
-          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+          <svg aria-hidden="true" class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
             <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
           </svg>
-          {t.ctaCta}
+          {t.ctaCta}<span class="sr-only"> ({t.a11yNewTab})</span>
         </a>
         <p class="text-sm text-neutral-500 mt-6">{t.ctaTrust}</p>
       </div>
@@ -993,8 +1011,8 @@ const galleryItems = [
   <div class="container-wide">
     <div class="flex flex-col md:flex-row items-center justify-between gap-6">
       <div class="flex items-center gap-6">
-        <img src="/images/logo.png" alt="Yala" class="h-6 logo-dark" />
-        <img src="/images/logo-light.png" alt="Yala" class="h-6 logo-light" />
+        <img src="/images/logo.png" alt="Yala" class="h-6 logo-dark" width="1200" height="400" style="width:auto" />
+        <img src="/images/logo-light.png" alt="Yala" class="h-6 logo-light" width="1200" height="400" style="width:auto" />
         <span class="text-neutral-500 text-sm">© 2026 Yala</span>
       </div>
 
@@ -1012,21 +1030,25 @@ const galleryItems = [
 
 <!-- Scripts -->
 <script>
-  // Theme Toggle
+  // Theme Toggle — el estado inicial (body.light) lo pone un script inline en Layout.astro
+  // antes del primer pintado; aquí solo se sincronizan icono y botón.
   const themeToggle = document.getElementById('theme-toggle');
   const sunIcon = document.querySelector('.icon-sun');
   const moonIcon = document.querySelector('.icon-moon');
 
-  function setTheme(isLight: boolean) {
-    document.body.classList.toggle('light', isLight);
+  function reflectTheme(isLight: boolean) {
     sunIcon?.classList.toggle('hidden', isLight);
     moonIcon?.classList.toggle('hidden', !isLight);
-    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    themeToggle?.setAttribute('aria-pressed', String(isLight));
   }
 
-  // Initialize theme - dark mode by default, only light if user explicitly chose it
-  const savedTheme = localStorage.getItem('theme');
-  setTheme(savedTheme === 'light');
+  function setTheme(isLight: boolean) {
+    document.body.classList.toggle('light', isLight);
+    reflectTheme(isLight);
+    try { localStorage.setItem('theme', isLight ? 'light' : 'dark'); } catch { /* almacenamiento bloqueado: el tema vive solo en esta visita */ }
+  }
+
+  reflectTheme(document.body.classList.contains('light'));
 
   themeToggle?.addEventListener('click', () => {
     setTheme(!document.body.classList.contains('light'));
@@ -1036,13 +1058,23 @@ const galleryItems = [
   const langToggle = document.getElementById('lang-toggle');
   const langMenu = document.getElementById('lang-menu');
 
+  function setLangMenu(open: boolean) {
+    langMenu?.classList.toggle('hidden', !open);
+    langToggle?.setAttribute('aria-expanded', String(open));
+  }
+
   langToggle?.addEventListener('click', (e) => {
     e.stopPropagation();
-    langMenu?.classList.toggle('hidden');
+    setLangMenu(langMenu?.classList.contains('hidden') ?? false);
   });
 
-  document.addEventListener('click', () => {
-    langMenu?.classList.add('hidden');
+  // Elegir idioma a mano fija la cookie `lang`: la redirección por Accept-Language de vercel.json
+  // solo actúa cuando esa cookie falta, así la elección explícita gana al idioma del navegador.
+  document.querySelectorAll<HTMLAnchorElement>('.lang-option').forEach(link => {
+    link.addEventListener('click', () => {
+      const code = link.dataset.lang;
+      if (code) document.cookie = `lang=${code}; path=/; max-age=31536000; SameSite=Lax`;
+    });
   });
 
   // Mobile Menu Toggle
@@ -1051,30 +1083,36 @@ const galleryItems = [
   const hamburgerIcon = document.querySelector('.hamburger-icon');
   const closeIcon = document.querySelector('.close-icon');
 
+  function setMobileMenu(open: boolean) {
+    mobileMenu?.classList.toggle('hidden', !open);
+    hamburgerIcon?.classList.toggle('hidden', open);
+    closeIcon?.classList.toggle('hidden', !open);
+    mobileToggle?.setAttribute('aria-expanded', String(open));
+  }
+
   mobileToggle?.addEventListener('click', (e) => {
     e.stopPropagation();
-    const isOpen = !mobileMenu?.classList.contains('hidden');
-    mobileMenu?.classList.toggle('hidden');
-    hamburgerIcon?.classList.toggle('hidden', !isOpen);
-    closeIcon?.classList.toggle('hidden', isOpen);
+    setMobileMenu(mobileMenu?.classList.contains('hidden') ?? false);
   });
 
   // Close mobile menu when clicking a nav link
   document.querySelectorAll('.mobile-nav-link').forEach(link => {
-    link.addEventListener('click', () => {
-      mobileMenu?.classList.add('hidden');
-      hamburgerIcon?.classList.remove('hidden');
-      closeIcon?.classList.add('hidden');
-    });
+    link.addEventListener('click', () => setMobileMenu(false));
   });
 
-  // Close mobile menu when clicking outside
+  // Close menus when clicking outside
   document.addEventListener('click', (e) => {
+    setLangMenu(false);
     if (!mobileMenu?.contains(e.target as Node) && !mobileToggle?.contains(e.target as Node)) {
-      mobileMenu?.classList.add('hidden');
-      hamburgerIcon?.classList.remove('hidden');
-      closeIcon?.classList.add('hidden');
+      setMobileMenu(false);
     }
+  });
+
+  // Escape cierra cualquier menú abierto y devuelve el foco a su botón
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (langMenu && !langMenu.classList.contains('hidden')) { setLangMenu(false); langToggle?.focus(); }
+    if (mobileMenu && !mobileMenu.classList.contains('hidden')) { setMobileMenu(false); mobileToggle?.focus(); }
   });
 
   // Scroll Animations
@@ -1087,6 +1125,18 @@ const galleryItems = [
   }, { threshold: 0.1 });
 
   document.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
+
+  // Galería: pausa real (WCAG 2.2.2). El hover ya pausaba, pero en táctil no hay hover.
+  const gallery = document.getElementById('gallery-marquee');
+  const galleryToggle = document.getElementById('gallery-toggle');
+  const galleryLabel = galleryToggle?.querySelector('.gallery-toggle-label');
+  galleryToggle?.addEventListener('click', () => {
+    const paused = gallery?.classList.toggle('is-paused') ?? false;
+    galleryToggle.setAttribute('aria-pressed', String(paused));
+    galleryToggle.querySelector('.gallery-icon-pause')?.classList.toggle('hidden', paused);
+    galleryToggle.querySelector('.gallery-icon-play')?.classList.toggle('hidden', !paused);
+    if (galleryLabel) galleryLabel.textContent = paused ? (galleryToggle.dataset.labelPlay ?? '') : (galleryToggle.dataset.labelPause ?? '');
+  });
 
   // Hero device tilt (cursor-driven) — desktop only, respects reduced-motion
   const heroDevice = document.getElementById('hero-device');

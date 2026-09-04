@@ -107,6 +107,14 @@
     color: #FFFFFF !important;
   }
 
+  /* Cinta PRO del plan: blanco sobre indigo-600 (6.0:1). El indigo de marca daba 4.46:1 con 12px
+     y en claro el override de .text-white oscurecía el texto (3.99:1). Es decorativa: el título
+     de la card ya dice "Yala Pro". */
+  .ribbon-pro {
+    background: #4F46E5;
+    color: #FFFFFF !important;
+  }
+
   /* CTA Section */
   .cta-section {
     background: linear-gradient(to bottom right, #0F172A, #1E293B, #0F172A);
@@ -117,9 +125,14 @@
   }
 
   .btn-secondary {
-    @apply px-6 py-3 rounded-xl font-semibold;
-    @apply border-2 border-yala-indigo text-yala-indigo;
-    @apply hover:bg-yala-indigo hover:text-white transition-all duration-300;
+    @apply px-6 py-3 rounded-xl font-semibold border-2 transition-all duration-300;
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .btn-secondary:hover {
+    background: var(--accent);
+    color: #FFFFFF;
   }
 
   .btn-ghost {
@@ -224,10 +237,15 @@
 /* Scroll animations */
 @layer utilities {
   .animate-on-scroll {
+    transition: opacity 0.7s ease-out, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), filter 0.7s ease-out;
+  }
+
+  /* El estado oculto solo existe cuando hay JS que luego lo revele (html.js lo pone Layout.astro).
+     Sin JS —o si el script falla— la página se ve entera. */
+  html.js .animate-on-scroll:not(.is-visible) {
     opacity: 0;
     transform: translateY(24px);
     filter: blur(6px);
-    transition: opacity 0.7s ease-out, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), filter 0.7s ease-out;
   }
 
   .animate-on-scroll.is-visible {
@@ -306,6 +324,14 @@
   --yala-cyan: #00F3FF;
   --yala-pink: #FF0080;
   --yala-teal: #00C2CB;
+
+  /* Acentos de TEXTO con contraste AA (≥ 4.5:1) sobre fondo y cards.
+     Los colores de marca puros se reservan para texto grande, iconos y bordes. */
+  --accent: #818CF8;        /* indigo · 5.98:1 fondo · 4.83:1 card */
+  --accent-teal: #00F3FF;   /* cyan · 12.98:1 fondo */
+  --accent-pink: #FF5CA8;   /* 6.25:1 fondo · 5.04:1 card */
+  --accent-violet: #A78BFA; /* 6.56:1 fondo · 5.29:1 card */
+  --focus-ring: #818CF8;
 }
 
 body.light {
@@ -318,7 +344,41 @@ body.light {
   --text-secondary: #334155;
   --text-muted: #475569;
   --header-bg: rgba(250, 250, 252, 0.75);
+
+  --accent: #4F46E5;        /* 6.03:1 fondo · 6.29:1 card */
+  --accent-teal: #0B6E74;   /* 5.76:1 fondo · 5.22:1 chip cyan/15 */
+  --accent-pink: #C4006A;   /* 5.67:1 fondo */
+  --accent-violet: #6D28D9; /* 6.82:1 fondo · 6.18:1 chip */
+  --focus-ring: #4F46E5;
 }
+
+/* Clases de acento para texto pequeño/mediano (badges, subtítulos, títulos de card, enlaces) */
+.text-accent { color: var(--accent) !important; }
+.text-accent-teal { color: var(--accent-teal) !important; }
+.text-accent-pink { color: var(--accent-pink) !important; }
+.text-accent-violet { color: var(--accent-violet) !important; }
+
+/* Foco visible y consistente (WCAG 2.4.7): anillo de 2px separado del elemento */
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Skip link (WCAG 2.4.1): invisible hasta que recibe foco con teclado */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 1rem;
+  z-index: 100;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--accent);
+  color: #FFFFFF;
+  font-weight: 600;
+  transition: top 0.15s ease-out;
+}
+.skip-link:focus { top: 1rem; }
 
 /* Light mode specific overrides for better contrast */
 body.light .text-neutral-400 {
@@ -346,9 +406,27 @@ body.light .text-gradient {
   color: #6366F1 !important;
 }
 
-/* Light mode: cyan badge should be teal for better contrast */
-body.light .text-yala-cyan {
-  color: #00C2CB !important;
+/* Light mode: los colores de marca sobre fondo claro no llegan a 3:1 (cyan 1.3:1, teal 2.1:1).
+   Se sustituyen por sus variantes oscuras, tanto en texto como en iconos. */
+body.light .text-yala-cyan,
+body.light .text-yala-teal {
+  color: #0B6E74 !important;
+}
+
+body.light .text-yala-indigo {
+  color: #4F46E5 !important;
+}
+
+body.light .text-yala-pink {
+  color: #C4006A !important;
+}
+
+body.light .text-nature-priority {
+  color: #6D28D9 !important;
+}
+
+body.light .hover\:text-yala-indigo:hover {
+  color: #4F46E5 !important;
 }
 
 body.light .border-yala-cyan\/30 {
@@ -523,7 +601,31 @@ body.light .aurora-bg::after { opacity: 0.4; }
   animation: gallery-scroll 60s linear infinite;
 }
 .gallery-marquee:hover .gallery-track,
-.gallery-marquee:focus-within .gallery-track { animation-play-state: paused; }
+.gallery-marquee:focus-within .gallery-track,
+.gallery-marquee.is-paused .gallery-track { animation-play-state: paused; }
+
+/* Con la galería pausada se puede recorrer a mano */
+.gallery-marquee.is-paused {
+  overflow-x: auto;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.gallery-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: border-color 0.2s, color 0.2s;
+}
+.gallery-toggle:hover { border-color: var(--border-hover); color: var(--text-primary); }
 
 @keyframes gallery-scroll {
   from { transform: translateX(0); }
@@ -532,6 +634,7 @@ body.light .aurora-bg::after { opacity: 0.4; }
 
 /* Reduced motion — disable all decorative animation, restore manual scroll */
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
   .aurora-bg::before,
   .aurora-bg::after { animation: none; }
   .animate-on-scroll {
@@ -548,5 +651,6 @@ body.light .aurora-bg::after { opacity: 0.4; }
     -webkit-mask-image: none;
     mask-image: none;
   }
+  .gallery-toggle { display: none; }
   .glass-card::after { display: none; }
 }
