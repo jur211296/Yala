@@ -1,6 +1,6 @@
 ---
 id: group-joiner-flag-consumers-still-narrow
-status: backlog
+status: qa
 priority: high
 area: groups
 created: 2026-09-04
@@ -104,3 +104,80 @@ encuentra a nadie y el aviso no sale.
 **Al alinearlo, ojo con el `#Predicate`:** `resolveCurrentUserMember` no es traducible a SwiftData
 tal cual (lee estado de sesión y de iCloud), así que aquí no vale sustituir la línea. Hay que traer
 los members y resolver en memoria, o resolver el id ANTES y meterlo en el predicado como valor.
+
+---
+
+## RESUELTO · 2026-09-05
+
+### La pregunta que estaba «No medido», medida
+
+**El gateway NO enmascara la identidad del joiner mientras está `pendingApproval`.** Medido contra
+el repo, no inferido:
+
+- `supabase-groups-staging.ddl:73-75` — `is_group_member()` incluye `status in ('active','pendingApproval')`,
+  y `group_members_select` (`:153`) usa ese helper. Un pendiente SÍ lee las filas de members de su grupo,
+  la suya incluida.
+- `group_capability_manifest.json` — `group_members` declara `sync_id_source: "member_key"` y la columna
+  `user_id` como `safe: true`. El `member_key` es la IDENTIDAD de la fila, así que viaja siempre: aunque
+  `user_id` faltara, la rama por `sub` seguiría resolviendo.
+- `supabase-groups-staging.ddl:130` — «`member_key` = sub para nuevos».
+- `GroupsSyncClient.applyMember` escribe los dos (`model.memberKey = memberKey`, `model.userID` desde
+  `user_id`).
+
+⇒ La rama por `sub` de `selectCurrentUserMember` resuelve al recién llegado. **La vía «consumidor a
+consumidor» no se cierra en falso**, que era el riesgo que esta sección señalaba.
+
+### La vía elegida: consumidor a consumidor
+
+**No** se le dio a `refreshCurrentUserFlags` un segundo call-site. Ese era el vector de mayor daño de la
+tanda —device-wide, con `save()` dentro del camino de sync y arrastrando el backfill heurístico que
+adjudica identidad por coincidencia de `displayName`— y no hacía falta: el resolvedor canónico ya sabe
+resolver sin el flag. Lo que faltaba era que los consumidores lo llamaran.
+
+Pieza nueva: **`GroupExpenseService.resolveCurrentUserMember(inZone:context:)`**. Existe porque el
+criterio canónico NO es traducible a `#Predicate` (lee estado de sesión y de iCloud), y esa es la razón
+por la que trece sitios escribieron el predicado estrecho en vez de la resolución buena. Trae los members
+de UNA zona y resuelve en memoria. Es una lectura: no escribe, no bumpea `dataVersion`, no toca el backfill.
+
+### Los catorce, alineados
+
+| Consumidor | Qué deja de estar roto |
+|---|---|
+| `GroupTransactionBridge` · `bridgeExpense` y `bridgeSettlement` | **El del dinero.** El gasto se puentea en el mismo gesto que lo crea, con la cuenta real del formulario, en vez de esperar a `GroupsPendingBridgeResume` en un arranque posterior (que corre con `accountForCurrentUser: nil` y aterriza en la cuenta virtual «Grupos») |
+| `GroupExpenseViewModel` · `currentUserMemberID`, prefill de «Pagado por» | «Pagado por» viene puesto en mí; `isCaseA` enciende y se me ofrece mi cuenta |
+| `GroupsViewModel` · balance de la tarjeta, deudas, resumen global | La tarjeta deja de contradecirse consigo misma |
+| `GroupsExportBuilder` | El CSV marca cuál soy yo |
+| `ScheduledPaymentDraftService` | El borrador del pago programado se crea |
+| `GroupService` · `batchFacts`, `batchHasOutstandingDebt`, `eligibleGroupsForExpense`, `currentUserMember(zoneID:)`, `updateCurrentUserDisplayName`, resumen de borrado de cuenta | El grupo aparece al convertir un borrador del Inbox; el nombre elegido en el onboarding llega al grupo recién unido |
+| `GroupNotificationService` (el nº14) | **Los avisos de grupo dejan de descartarse enteros y en silencio** |
+| `AppBootstrapper` · removed-self cleanup | A quien expulsan antes de su siguiente arranque se le limpia el grupo |
+
+Dos ampliaciones sobre la tabla original del ticket, las dos por incoherencia interna del propio cambio:
+
+- **`GroupService.batchFacts` (`activeCoMembers`)** no estaba listado, pero vive en la MISMA función que
+  `batchHasOutstandingDebt`, que sí: alinear uno solo dejaba a la función contando al usuario como su
+  propio co-member —y como heredero elegible de sí mismo— mientras la línea de al lado ya lo reconocía.
+- **`AppBootstrapper`** y **`GroupService.currentUserMember(zoneID:)`** tampoco estaban. El segundo es el
+  helper que `GroupNotificationService` declara espejar; alinear el nº14 sin él rompía esa simetría.
+
+### La excepción, declarada
+
+`GroupService.ensureCurrentUserMemberExists` conserva el flag pelado **a propósito**: no consume la
+identidad, la ESTABLECE (write-side del canal CloudKit). Alinearla estamparía un `cloudKitUserRecordID`
+de iCloud sobre un member resuelto por `sub`, que es justo la contaminación entre canales que el propio
+`GroupService` protege con un guard. Queda declarada en el allowlist del escáner, con motivo y con un
+test que avisa si la excepción muere.
+
+### La red
+
+`YalaTests/GroupJoinerIdentityConsumerTests.swift`. Source-scan, por el mismo motivo que
+`GroupDetailIdentityConsumerTests`: el fallo no es de cálculo —`GroupIdentityResolutionAlignmentTests` ya
+cubre el criterio— sino de **cableado**, y un consumidor desconectado del canónico no lo ve ningún test de
+comportamiento. Prohíbe la forma concreta en que el bug vuelve (`isCurrentUser == true` dentro de un
+predicado), no solo exige la buena. El escáner ignora comentarios a propósito: varios de estos ficheros
+citan el patrón viejo para explicar por qué se retiró, y sin ese filtro el atajo para ponerlo verde sería
+borrar la explicación.
+
+Cazó un consumidor que la tabla del ticket no listaba (`ensureCurrentUserMemberExists`) la primera vez que
+corrió.
+

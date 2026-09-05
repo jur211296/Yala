@@ -42,9 +42,14 @@ los 4 esperan código**.
   vez. El guardián del servidor está escrito para evitarlo y su propio comentario lo promete, pero
   filtra el caso `active` y deja pasar el `pendingApproval`. Es de servidor: migración + Worker +
   promoción, con su verificación en staging.
-- **`group-joiner-flag-consumers-still-narrow`** (high, en `backlog`) — al recién llegado ya se le
-  reconoce, pero su gasto no llega a su cuenta personal hasta un arranque posterior y aterriza en la
-  cuenta «Grupos». Trece consumidores del flag siguen estrechos.
+- ~~**`group-joiner-flag-consumers-still-narrow`**~~ — **código hecho el 5-sep, pasa a `qa`.** Los
+  catorce consumidores resuelven identidad por el canónico: el gasto del recién llegado aterriza en su
+  cuenta real en el mismo gesto que lo crea, y sus avisos de grupo dejan de descartarse en silencio.
+  Verificado con test de comportamiento y control positivo (revertido el fix, se pone rojo). Falta el
+  device-QA de dos teléfonos, que es el mismo montaje que pide
+  `groups-equal-split-shows-not-participating-on-peer`: **B se une por enlace y NO relanza la app**
+  antes de que A cree el gasto. Residual cosmético en
+  `joiner-flag-residuals-cosmetic-and-service-guard` (badges «(tú)», `low`).
 - **`invite-link-five-causes-one-message`** — piezas 2, 3 y 4 son código. Sin tocar. Su pieza 2
   (cablear `branded`) se dejó aquí a propósito al podar el recorrido del invitado: la medición a
   fondo vive en este ticket y duplicarla era la forma segura de divergir.
