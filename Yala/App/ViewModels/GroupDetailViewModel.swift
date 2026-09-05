@@ -476,7 +476,20 @@ final class GroupDetailViewModel {
                         client: GroupsMembershipClient(attestProvider: AttestSessionProvider.live))
                 ).createInviteLink(for: group, inviterName: currentInviterName, members: activeMembers)
             } else {
-                surfaceActionError(L10n.Groups.Errors.inviteFailed)
+                // Copy POR CAUSA (`GroupInviteLinkCreationLogic`): este `else` cubre dos bloqueos de
+                // naturaleza opuesta y hasta hoy los dos decían «revisa tu conexión». Idéntico en
+                // `GroupMembersView.createShareLink`, la otra superficie que acuña enlace.
+                let message = switch GroupInviteLinkCreationLogic.blocker(
+                    backendEnabled: CloudSyncFlags.groupsBackendEnabled,
+                    isBackendGroup: group.isBackendGroup
+                ) {
+                case .legacyGroup: L10n.Groups.Errors.inviteLegacyGroup
+                case .channelOff: L10n.Groups.Errors.inviteChannelOff
+                // No alcanzable: este `else` es la negación exacta del guard que la logic evalúa.
+                // El copy de red es el fallback correcto si algún día dejan de ser el mismo predicado.
+                case nil: L10n.Groups.Errors.inviteFailed
+                }
+                surfaceActionError(message)
                 isCreatingShare = false
                 return
             }

@@ -1,8 +1,8 @@
 ---
 id: invite-link-five-causes-one-message
-status: in-progress
+status: qa
 created: 2026-08-12
-updated: 2026-09-03
+updated: 2026-09-05
 source: YalaWiki/Bugs/grupos-enlace-de-invitacion-cinco-causas-un-solo-mensaje.md
 ---
 
@@ -240,3 +240,101 @@ grupo fue eliminado — eso llega con la próxima versión del cliente. Neutro-p
 una regresión.
 
 Piezas **2, 3 y 4 siguen abiertas** y nunca estuvieron bloqueadas: son código.
+
+---
+
+## Piezas 2, 3 y 4 · IMPLEMENTADAS · 2026-09-05
+
+Las tres eran código y ninguna estuvo bloqueada. Con esto el ticket queda **cerrado**: pieza 1 en
+producción (3-sep), pieza 5 desde el 12-ago, y estas tres hoy.
+
+### Qué cambia para quien usa la app
+
+1. **El nombre del grupo ya no se pierde entre la web y la app.** Tocas el enlace que te pasaron: la
+   web te enseña «Viaje a Cusco», y la app te recibía con «Te invitaron a un grupo» y el color del
+   tema. Ahora te recibe con **el nombre, el icono y el color del grupo**, también si llegas con la
+   app cerrada — que es como llega casi todo el mundo.
+2. **Un enlace de invitación que no traiga el parámetro cosmético ya no muere en silencio.** Antes,
+   una forma perfectamente legible del enlace abría Yala y no pasaba nada.
+3. **El botón de compartir enlace deja de culpar a tu conexión cuando el problema es otro.** Si el
+   grupo es de la versión anterior de Yala, te lo dice y te propone lo único que funciona (crear un
+   grupo nuevo) en vez de mandarte a reintentar para siempre.
+
+### Pieza 2 · cablear `branded` — HECHA, y salió más barata de lo que el ticket estimaba
+
+La medición del 12-ago decía «no es un cable suelto: cuesta tres piezas, y una es hacer
+`shareMetadata` opcional». **Re-medido hoy, la premisa cara ya no se sostiene:**
+
+> `grep -rn "InviteMetadata(" --include="*.swift" .` → **CERO productores en todo el árbol.**
+
+Nadie construía `InviteMetadata`. Era un tipo muerto que arrastraba un `CKShare.Metadata` del canal
+que la Fase 3 borró, y esa exigencia era justo lo que dejaba `welcomeWithGroup` inalcanzable. ⇒ no
+había que hacerlo opcional ni añadir un segundo parámetro: había que **retirarlo** y poner en su
+sitio `InviteLinkService.BrandedMetadata`, que es lo que de verdad viaja en el enlace.
+
+La otra corrección a la lectura de agosto: la marca **no viaja en el payload del intent**, viaja en
+`PendingJoinEntry`. El ticket ya lo apuntaba como «mejor» y medirlo lo confirma: el camino caliente
+(tap con la app abierta) es la MINORÍA; el dominante es el frío, donde `enterBackendInvite` persiste
+y retorna, y el intent de router no existe todavía. `persistIntent` es el choke point de los dos.
+
+- `InviteLinkService.BrandedMetadata.hasBranding` — y **no vale `== .empty`**: `extractMetadata`
+  sobre `…&m=` devuelve `members: []`, distinto de `.empty` y sin embargo sin nada que pintar.
+- `PendingJoinEntry.branded` (Codable opcional, back-compat con el JSON ya persistido).
+- `persistIntent(…, branded:)` **preserva la marca buena** si el tap nuevo no trae ninguna — un
+  re-tap sobre la forma mínima, que la pieza 3 acaba de dejar entrar, no debe borrar el nombre.
+- `AppBootstrapper` extrae la marca UNA vez y alimenta las tres ramas que persisten, la fría
+  incluida (antes ni siquiera la calculaba ahí).
+- El drain lee `PendingJoinStore.entry(zoneName:)?.branded` en lugar de poner `nil`.
+
+### Pieza 3 · la puerta acepta lo que el parser lee — HECHA
+
+`isInviteLink` pasa a `(hasShareParam || hasBackendPair)`. El pin no afirma «acepta esta URL» sino
+la **propiedad**: todo lo que `extractBackendInvite` lee, la puerta lo deja pasar — con control
+positivo por caso, para que un parser roto no deje las aserciones pasando en vacío.
+
+**Residual, medido y con ticket:** el AASA sigue exigiendo `s`, así que el universal link mínimo lo
+abre Safari. Cubre las otras dos vías (custom scheme y paste manual). Es despliegue web y depende de
+la decisión de Vercel abierta en §9 del informe → `tickets/backlog/invite-aasa-requires-s-param.md`.
+
+### Pieza 4 · copy por causa — HECHA, con la corrección del propio ticket
+
+El ticket ya avisaba de que el `else` cubre **dos** causas, no una, y de que hay **dos** superficies.
+Las dos cosas se sostienen contra este árbol. `GroupInviteLinkCreationLogic` clasifica:
+
+| Causa | Naturaleza | Copy |
+|---|---|---|
+| Grupo de la era CloudKit (`!isBackendGroup`) | **Permanente** | `groups.errors.inviteLegacyGroup` (nuevo) |
+| Canal apagado (`!groupsBackendEnabled`) | Transitoria | `groups.errors.inviteChannelOff` (nuevo) |
+| Fallo del RPC | Red | `groups.errors.inviteFailed` (el de siempre, ahora bien usado) |
+
+Con las dos caídas gana la permanente: si el canal vuelve mañana, ese grupo sigue sin poder emitir
+enlace. Que sea permanente **está medido, no supuesto**: `migrate_group` está revocada y no tiene
+endpoint en el cliente, así que no hay ninguna vía por la que un grupo legacy emita un enlace.
+
+Copy nuevo en los 16 locales (es-AR con voseo, como su vecino `inviteFailed`).
+
+### Verificación
+
+Build ×2 verde. **Los 8 pines nuevos verificados por MUTACIÓN** — se revirtió cada pieza y se exigió
+rojo. De ahí salió una corrección que importa más que el resto:
+
+> `networkCopyStaysInTheCatchOnly` **contaba** usos de `inviteFailed` (`== 2`), y devolver el `else`
+> a `surfaceActionError(inviteFailed)` deja exactamente 2 igual ⇒ **pasaba en verde con el bug
+> puesto**, que es justo el fallo que su nombre promete detectar. Reescrito para comprobar **dónde**
+> aparece el copy —aislando el bloque del `else`— y re-verificado por mutación: ahora sí cae.
+
+Un test que cuenta cuando debería localizar es la familia del `makeTx` sin `category:` de
+`.claude/rules/testing.md`: verde con la regla buena y con la mala.
+
+### Qué falta ver en el simulador o en un device
+
+Todo el ticket está implementado; lo que queda es MIRARLO, y son tres cosas cortas:
+
+1. **El nombre del grupo en la bienvenida.** Tapear un enlace con cosméticos (`&n=`, `&i=`, `&c=`)
+   siendo invitado fresco y comprobar que el título dice «Te invitaron al grupo <nombre>» con el
+   icono y el color del grupo, no el genérico. **La precondición que hace falta cuidar: hacerlo con
+   la app CERRADA**, que es el camino que este ticket arregla y el que antes ni extraía la marca.
+2. **El re-tap no borra la marca.** Tapear primero el enlace completo y después la forma mínima
+   (`?g=..&t=..`): el nombre debe seguir ahí.
+3. **Los dos copies nuevos del botón de compartir enlace.** El de grupo legacy necesita un grupo de
+   la era CloudKit (`isBackendGroup == false`); el del canal apagado, `groupsBackendEnabled` en OFF.

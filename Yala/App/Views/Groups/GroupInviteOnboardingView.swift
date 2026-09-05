@@ -25,13 +25,18 @@ struct GroupInviteOnboardingView: View {
 
     private var tracker: GroupJoinIntentTracker { .shared }
 
-    /// #22: metadata branded del invite (nombre/icono/color del grupo) para
-    /// personalizar el banner. Si nil → fallback al copy/visual genérico.
-    let inviteMetadata: InviteMetadata?
+    /// #22: marca del invite (nombre/icono/color del grupo) para personalizar el banner. Si nil o sin
+    /// nada que pintar → fallback al copy/visual genérico.
+    ///
+    /// El tipo es `InviteLinkService.BrandedMetadata` —lo que de verdad viaja en el enlace— y no el
+    /// antiguo `InviteMetadata`, que exigía un `CKShare.Metadata` del canal que la Fase 3 borró y por eso
+    /// llegaba SIEMPRE `nil`: el copy `welcomeWithGroup` y estos dos computed llevaban meses siendo código
+    /// vivo sin camino alcanzable.
+    let inviteMetadata: InviteLinkService.BrandedMetadata?
     var onComplete: (GroupInviteOnboardingOutcome) -> Void
 
     init(
-        inviteMetadata: InviteMetadata? = nil,
+        inviteMetadata: InviteLinkService.BrandedMetadata? = nil,
         onComplete: @escaping (GroupInviteOnboardingOutcome) -> Void
     ) {
         self.inviteMetadata = inviteMetadata
@@ -438,21 +443,21 @@ struct GroupInviteOnboardingView: View {
     }
 
     private var groupColor: Color {
-        if let hex = inviteMetadata?.groupColor, !hex.isEmpty {
+        if let hex = inviteMetadata?.color, !hex.isEmpty {
             return Color(hex: hex)
         }
         return theme.accent
     }
 
     private var groupIcon: String {
-        if let icon = inviteMetadata?.groupIcon, !icon.isEmpty {
+        if let icon = inviteMetadata?.icon, !icon.isEmpty {
             return icon
         }
         return "person.2.fill"
     }
 
     private var welcomeTitle: String {
-        if let name = inviteMetadata?.groupName, !name.isEmpty {
+        if let name = inviteMetadata?.name, !name.isEmpty {
             return L10n.Groups.Invite.welcomeWithGroup(name)
         }
         return L10n.Groups.Invite.welcome

@@ -5,82 +5,62 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-05 (Lima)
 
-**Rama** `2.1` · HEAD al día tras el borrado del recorrido muerto y el arreglo del rechazado. TestFlight build **12** (CPV 12). **Subida Yala (TF/store) = solo Mini.**
-**`yala-app.pe` sirve la web nueva desde hoy** (PR #62 mergeado; detalle en
-`Web/REVISION-WEB-UX-A11Y-2026-09-03.md`).
+**Rama** `2.1` · HEAD al día — el enlace de invitación ya no pierde el nombre del grupo, y la visita
+en el móvil de otra persona ya no deja huella en el Yala del dueño.
+TestFlight build **12** (CPV 12). **Subida Yala (TF/store) = solo Mini.** `yala-app.pe` sirve la web
+nueva desde el 4-sep.
 
-## Lo de esta madrugada (2026-09-05)
+## Esta sesión, en una línea
 
-**`secondary-visitor-writes-owner-domain` pasa a `qa`: sus dos decisiones del 3-sep están en
-código.** Para el usuario: quien entra de visita hace su onboarding sin marcar el del dueño (antes
-la marca se escribía en el cajón de él y se leía del de ella, así que la pantalla de bienvenida
-podía reabrírsele), y el permiso de Grupos del dueño ya no se borra al entrar una visita — se
-guarda a un lado y se le devuelve al salir, que es lo que además nos conserva la prueba de su
-consentimiento.
+**`secondary-visitor-writes-owner-domain` pasa a `qa`** (PR #66): quien entra de visita en el móvil de
+otra persona termina su onboarding sin marcar el del dueño —antes la marca se escribía en el cajón de
+él y se leía del de ella, y la pantalla de bienvenida podía reabrírsele— y el permiso de Grupos del
+dueño ya no se borra al entrar una visita: se guarda a un lado y se le devuelve al salir, con lo que
+además conservamos el registro de su consentimiento.
 
-Dos cosas que el ticket daba por sabidas y no lo eran: los lectores de esa marca no eran los tres
-que nombraba sino **siete**, en seis ficheros, y **el escáner de conteo no habría visto el bug** —
-la key se nombraba en 26 sitios antes y en 26 después; lo que cambió es contra qué dominio hablan.
-Por eso la red nueva censa el DOMINIO, no el número.
+Dos cosas que el ticket daba por sabidas y no lo eran: los lectores de esa marca no eran los tres que
+nombraba sino **siete**, en seis ficheros; y **el escáner de conteo no habría visto el bug** —26 sitios
+antes, 26 después—, así que la red nueva censa el DOMINIO, no el número. Salen dos residuales a
+`backlog` con su medición, uno de ellos hallazgo nuevo:
+`secondary-entry-healing-writes-owner-not-session`, donde el kill-recovery de la entrada repara los
+flags en el dominio del dueño mientras la siembra ya copió el valor viejo al cajón.
 
-**Lo que sale de ahí, medido y con ticket propio:** `welcome-privacy-branch-has-no-secondary-door`
-(ya no es un bug de datos, es qué se le enseña a quien está de visita) y
-`secondary-entry-healing-writes-owner-not-session` — **hallazgo nuevo**: el kill-recovery de la
-entrada repara los flags en el dominio del dueño mientras la siembra ya copió el valor viejo al
-cajón, así que la curación que existe para impedir el Welcome sobre store vacío hoy no lo impide.
+Nada de esto está visto en un teléfono todavía. Alcance real en producción: cero.
 
-Verificación: 6046 unit en 609 suites, 20 XCUITest en 6 suites, **4 mutaciones a exit 65**. Nada de
-esto está visto en un teléfono todavía.
+## La sesión anterior, en una línea
 
-## El día anterior, en dos líneas
-
-El CI llevaba día y medio sin ejecutar un test; se arregló y salieron 16 XCUITest en rojo —ninguno
-bug de la app— más el de identidad del recién llegado a un grupo. Luego la web, desplegada; y el
-Panel, que para quien instale ahora arranca con cuatro secciones y cuatro widgets.
+El enlace de invitación queda cerrado del todo (PR #65): quien lo toca ve el nombre del grupo que la
+web acababa de enseñarle —también con la app cerrada—, un enlace sin el parámetro cosmético deja de
+morir en silencio, y el botón de compartir ya no culpa a tu conexión cuando el fallo es permanente.
 
 ## Te espera a ti
 
 1. **Publicar la app.** Los dos avisos de Grupos están completos en servidor y en los dos entornos;
-   falta el cliente iOS. Ahora llevaría además el fix de identidad y los predeterminados del Panel.
-2. **La tanda de QA: 24 tickets en 4 montajes.** Guion en **`qa/guion-tanda.md`**, sin tocar. Dos
-   entraron hoy y ninguno está en el guion: `guest-decline-has-no-screen` (servidor listo y verificado
-   en producción, falta verlo en la app publicada) y `rejected-member-cold-tap-does-nothing`, cuyo
-   device-QA son cinco minutos: ser rechazado, matar la app, tapear un enlace nuevo, y comprobar que
-   al admin le llega la solicitud **una sola vez**. El tercero,
-   `groups-equal-split-shows-not-participating-on-peer`, necesita la precondición correcta: **B se une
-   por enlace y NO relanza la app** antes de que A cree el gasto — sin eso no reproduce.
+   falta el cliente iOS. Ahora llevaría además el fix de identidad del recién llegado y los
+   predeterminados del Panel.
+2. **La tanda de QA: 27 tickets en 4 montajes.** Guion en **`qa/guion-tanda.md`**, sin tocar. El
+   montaje de dos teléfonos cubre ahora TRES de golpe —`group-joiner-flag-consumers-still-narrow`,
+   `groups-equal-split-shows-not-participating-on-peer` y `rejoin-tap-renotifies-admins`— con una
+   precondición frágil: **B se une por enlace y NO relanza la app** antes de que A cree el gasto. Si
+   B relanza, ninguno reproduce. Entra hoy `invite-link-five-causes-one-message`, y su parte visual
+   cabe en el mismo montaje: tapear el enlace **con la app cerrada** y ver el nombre del grupo en la
+   bienvenida.
 3. **Dos decisiones de la web** (§9 del informe): el **texto legal de Grupos** —dice «vía iCloud, no
    por servidores nuestros» y el backend propio está al 100 % en prod— y si Vercel debe desplegar al
    mergear (hoy su rama de producción es `1.0`).
 
-## Abiertos, por prioridad
+## Abiertos
 
-Revisados los 7 `in-progress` uno a uno el 2026-09-04, verificando contra el árbol lo que cada
-ticket afirma. Hallazgo: **ninguno esperaba una decisión tuya** — la tanda del 3-sep las cerró
-todas. Tres salieron ese día (dos en el saneamiento, `guest-journey` al ejecutarse); **quedan 4, y
-los 4 esperan código**.
+Los 2 de `in-progress` esperan **código**, ninguno una decisión tuya:
 
-- **`rejoin-tap-renotifies-admins`** (medium, nuevo) — **vivo en producción.** Quien ya tiene una
-  solicitud pendiente y vuelve a tocar su enlace hace que al admin le llegue otra notificación, cada
-  vez. El guardián del servidor está escrito para evitarlo y su propio comentario lo promete, pero
-  filtra el caso `active` y deja pasar el `pendingApproval`. Es de servidor: migración + Worker +
-  promoción, con su verificación en staging.
-- **`group-joiner-flag-consumers-still-narrow`** (high, en `backlog`) — al recién llegado ya se le
-  reconoce, pero su gasto no llega a su cuenta personal hasta un arranque posterior y aterriza en la
-  cuenta «Grupos». Trece consumidores del flag siguen estrechos.
-- **`invite-link-five-causes-one-message`** — piezas 2, 3 y 4 son código. Sin tocar. Su pieza 2
-  (cablear `branded`) se dejó aquí a propósito al podar el recorrido del invitado: la medición a
-  fondo vive en este ticket y duplicarla era la forma segura de divergir.
-- **`secondary-guest-exit-lock-and-outbox`** — la decisión del 3-sep está tomada y **el código
-  aprobado no está escrito**. Alcance real hoy: cero (SECONDARY_SESSION al 0 % en prod), pero
-  bloquea el encendido. Su hermano `secondary-visitor-writes-owner-domain` salió a `qa` esta
-  madrugada (abajo).
-- **`reentry-counts-as-fresh-install`** — parado por falta de tiempo, no por bloqueo. Su área lleva
-  22 días sin un commit.
-- Los **2 de `blocked`** esperan **hardware**, no trabajo.
+- **`secondary-guest-exit-lock-and-outbox`** — decidido el 3-sep, **el código aprobado no está
+  escrito**. Alcance real cero hoy (SECONDARY_SESSION al 0 %), pero bloquea el encendido. Su hermano
+  `secondary-visitor-writes-owner-domain` salió a `qa` esta madrugada y ya no está aquí.
+- **`reentry-counts-as-fresh-install`** — parado por falta de tiempo, no por bloqueo.
+- Los **2 de `blocked`** esperan **hardware**.
 
-**Al retomar cualquiera: las coordenadas de los tickets están sistemáticamente caducadas** (en uno,
-14 de ~20, y dos aterrizan hoy en código no relacionado). Greppea, no abras la línea citada.
+**Al retomar cualquiera: las coordenadas de los tickets están sistemáticamente caducadas.** Greppea,
+no abras la línea citada.
 
 ## Release 2.1 (sin cambios)
 
@@ -90,38 +70,11 @@ sigue sin `ok_`. **Cero `ok_` inventado.**
 
 ## Board
 
-102 tickets · backlog 51 · in-progress 3 · qa 25 · blocked 2 · done 16 · discarded 5. Índice cuadrado
-(102 filas = 102 ficheros; status y ruta de cada fila comprobados contra el disco tras los dos altas
-y el movido de esta madrugada). `qa` significa
-«esperando la tanda», no «cerrado».
+107 tickets · backlog 54 · in-progress 2 · qa 28 · blocked 2 · done 16 · discarded 5. Índice cuadrado
+(107 filas = 107 ficheros, verificado contra el disco). `qa` significa «esperando la tanda», no
+«cerrado».
 
-**Arreglado el rechazado que tapeaba en frío, y pasa a la tanda (`qa`).** A quien rechazaron de un
-grupo, tapear un enlace nuevo con la app cerrada ya vuelve a pedirle la entrada — antes no hacía nada
-y así se quedaba. El arreglo obvio no valía: se auto-anulaba, y su versión ingenua habría mandado
-solicitudes fantasma al admin en cada arranque. La pieza que lo cierra es que «acaba de tapear» vive
-en memoria del proceso y nunca en disco. **Falta verlo en un teléfono**: la cadena está medida en
-código y fijada por tests (verificados por mutación), no observada. Alcance real: sólo `rejected` —
-a `left` y `removed` el servidor no les baja la fila, a propósito.
-
-**Cerrado el recorrido muerto del invitado (`4f01484e` + el commit del pin).** Para el usuario no
-cambia nada: era código que ningún camino podía alcanzar. Se fueron `GroupReconnectView` con sus
-ocho modos, tres intents sin emisor, el alert de «oferta de restaurar» y el trigger `.remoteInsert`
-—41 ficheros, −821 líneas—. Lo que **no** se fue, y es lo que hay que recordar: el copy
-`groups.reconnect.*` en los 16 locales, porque producción lo usa por la key cruda y porque es el
-texto que necesita el bug de arriba. `groups-reconnect-prune-or-rewire` se cierra con él: preguntaba
-podar-o-recablear y la respuesta ya está ejecutada.
-
-**Saneado el 2026-09-04.** `ci-verde-con-la-suite-en-rojo` → `done`: su alcance —el que tú fijaste,
-hasta el paso 2— está completo y verificado; lo que quedaba fuera vive ahora en
-`ci-warns-but-does-not-block` (backlog), incluido el dato que manda el orden: **no existe ningún pase
-nocturno**, así que sacar la suite de UI del push la dejaría sin corrida automática.
-`guest-decline-has-no-screen` → `qa`: su bloqueo declarado («falta aplicar a producción, no la veo
-desde aquí») estaba **caducado y al revés** — medido hoy contra el servidor, `g13_02` está aplicada
-en producción con las dos condiciones de la policy, y lo invisible es staging. Solo falta publicar el
-cliente y mirarlo en la tanda. Y **el «sin rutas rotas» de ayer era falso**: el mapa de origen tenía
-6 punteros a ubicaciones antiguas; corregidos.
-
-**Del Panel, lo que vuelve a morder:** «aún no hay preferencias» se renderizaba como «enséñalo todo»,
-así que los predeterminados se resuelven ahora también en LECTURA, no solo al sembrar. Y el área
-`panel-dashboard-logic` cubría 20 ficheros de vistas pero ninguno de los que definen los
-predeterminados: tocarlos no disparaba ni un XCUITest. Corregido.
+**El verde del CI no dice que los XCUITest pasaran:** su paso de UI es *advisory*, así que el job sale
+`success` con 12 fallos dentro. Son 4 tests, **los mismos que ya fallan en `2.1`** sin cambio alguno —
+comparados run a run. Uno tiene causa escrita hoy en `uitest-compara-fechas-sin-fijar-locale`: compara
+una fecha contra un literal en inglés y acusa de un bug que no existe.

@@ -4766,3 +4766,9 @@
 
 /* Panel quick actions — short label for the AI assistant pill (IA/AI/KI per locale) */
 "panel.aiPill" = "IA";
+
+/* Share-link button: group predates the backend channel — permanent, no link is possible */
+"groups.errors.inviteLegacyGroup" = "Este grupo é de uma versão anterior do Yala e não aceita ligações de convite. Para convidar por ligação, cria um grupo novo.";
+
+/* Share-link button: groups channel is off right now — transient, retry later (NOT the user's connection) */
+"groups.errors.inviteChannelOff" = "Não conseguimos criar ligações de convite agora. Tenta de novo daqui a pouco.";

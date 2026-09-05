@@ -111,8 +111,10 @@ enum GroupBackendInviteEntryHandler {
     ) async {
         // 1. Adopta el dominio Grupos: aceptar una invitación ES el acto deliberado.
         UserDefaults.standard.set(true, forKey: AppPreferences.Keys.groupsBetaUnlocked)
-        // 2. Persiste el intent ANTES de cualquier await.
-        persistIntent(groupID: groupID, token: token)
+        // 2. Persiste el intent ANTES de cualquier await. `branded` va con él: hasta el 2026-09-05 este
+        // parámetro estaba en la firma y el cuerpo no lo mencionaba ni una vez, así que el nombre del
+        // grupo que la web acababa de enseñar se tiraba y el invitado veía un título genérico.
+        persistIntent(groupID: groupID, token: token, branded: branded)
         // `canaryOnce` con la MISMA clave que `AppBootstrapper.persistBackendInviteIntent`: el camino
         // del flag OFF persiste el intent allí y re-entra aquí, y con `canary` a secas un solo tap
         // emitía dos eventos. Las dos claves tienen que seguir siendo el `groupID`.
@@ -125,7 +127,17 @@ enum GroupBackendInviteEntryHandler {
     /// capturados (silent-setup) en un re-tap. G6-2: captura el `legacyMemberKey` del device (member local del
     /// grupo migrado) para un RE-JOIN — `SplitSyncManager` da el grupo + su `ModelContext` (persistIntent no
     /// tiene contexto propio); si el grupo no está local aún, preserva el ya capturado en un re-tap.
-    static func persistIntent(groupID: String, token: String) {
+    ///
+    /// `branded` (2026-09-05): la marca del grupo que viaja en el enlace. Se PRESERVA la ya capturada
+    /// cuando el tap nuevo no trae ninguna (`hasBranding == false`) — un re-tap sobre la forma mínima
+    /// `?g=..&t=..`, que la puerta ya acepta, no debe borrar el nombre que el primer tap sí traía. Es
+    /// el mismo criterio que ya rige para `displayName`/`legacyMemberKey` aquí abajo.
+    /// PII: el nombre del grupo es dato del usuario — se persiste local y JAMÁS se loguea.
+    static func persistIntent(
+        groupID: String,
+        token: String,
+        branded: InviteLinkService.BrandedMetadata = .empty
+    ) {
         // El tap se ARMA aquí y no en cada llamador porque este es el choke point: sus dos llamadores
         // (`handle`, warm; `AppBootstrapper.persistBackendInviteIntent`, frío) son ambos un tap de enlace.
         // Tapear ES la petición: sin esta señal el camino en frío de quien fue RECHAZADO se comía el
@@ -145,7 +157,8 @@ enum GroupBackendInviteEntryHandler {
             regionFallbackCurrency: existing?.regionFallbackCurrency,
             backendGroupID: groupID,
             inviteToken: token,
-            legacyMemberKey: legacyMemberKey ?? existing?.legacyMemberKey
+            legacyMemberKey: legacyMemberKey ?? existing?.legacyMemberKey,
+            branded: branded.hasBranding ? branded : existing?.branded
         ))
     }
 

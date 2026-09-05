@@ -199,12 +199,17 @@ export async function handleGroupsRpc(c: Ctx): Promise<Response> {
  *
  * **El `group_id` se lee del RETORNO, no de `args`, y no es un detalle.** `PARAM_ALLOWLIST.join_group`
  * es `{p_token, p_display_name, p_legacy_member_key}`: no lleva group id, porque quien se une sólo
- * tiene el token del enlace. Las tres ramas del RPC devuelven `{group_id, member_key, status}`
- * (`supabase-groups-staging.ddl:483,:494,:509,:523`), y ahí sí está.
+ * tiene el token del enlace. Las CUATRO ramas del RPC devuelven `{group_id, member_key, status}`
+ * (`supabase-groups-staging.ddl:483,:494,:509,:523` — decía «tres» y enumeraba cuatro), y ahí sí está.
  *
- * **Y el `status` decide si hay algo que avisar.** La rama «ya eras miembro» de `join_group`
- * (`ddl:492-495`) devuelve `status:'active'` SIN haber cambiado nada: notificar ahí spamearía a los
- * admins cada vez que alguien reabre el enlace. Sólo se avisa de transiciones reales.
+ * **Y quien decide si hay algo que avisar es `changed`, no el `status`.** Este docstring dijo lo
+ * contrario hasta el 2026-09-04, y la diferencia era un bug vivo en producción: afirmaba que la rama
+ * «ya eras miembro» (`ddl:492-495`) devuelve `status:'active'`, cuando lo que devuelve es
+ * `v_row.status` — el estado que la persona YA tenía, que igual de bien puede ser `pendingApproval`.
+ * El filtro por `status` tapaba entonces al miembro activo que reabre el enlace, y dejaba pasar al que
+ * espera aprobación y vuelve a tocarlo: una notificación al admin por tap, para nada. `changed`
+ * (g13_04) es el RPC distinguiendo la transición real del no-op, que es lo único que el Worker no
+ * puede deducir por su cuenta. Sólo se avisa de transiciones reales — ahora de verdad.
  */
 export function notifyMembershipChange(
   c: Context<{ Bindings: Env }>,
@@ -243,6 +248,18 @@ export function notifyMembershipChange(
   // un re-tap del enlace de alguien ya activo no es noticia para nadie.
   if (fn === "join_group") {
     if (status !== "pendingApproval") return;
+    // **El `status` NO basta, y creerlo costó ruido en producción** (`rejoin-tap-renotifies-admins`).
+    // Vale `pendingApproval` en dos situaciones que el filtro de arriba no distingue: la de quien
+    // acaba de solicitar entrada, y la de quien YA la había solicitado y vuelve a tocar el enlace
+    // —porque se lo reenvían, o porque duda de si se envió—. La segunda no cambia nada en la BD, y
+    // aun así despertaba al admin una vez por tap. `changed` (g13_04) es el RPC diciendo cuál de las
+    // dos fue: `false` sólo en su rama no-op «sigues como estabas».
+    //
+    // **La AUSENCIA del campo se trata como «avisa», a propósito.** El despliegue no es atómico: si
+    // este Worker sale antes que la migración, exigir `changed === true` dejaría a los admins sin
+    // enterarse de NINGUNA solicitud —un fallo peor y más silencioso que el ruido que arregla—.
+    // Fail-open aquí significa, como mucho, seguir con el comportamiento de hoy hasta que el SQL entre.
+    if (body.changed === false) return;
     waitUntil(
       fanOutGroupPush(c.env, auth, [groupId], null, { kind: "admins" }, "notifications.groups.remotePendingRequest"),
     );

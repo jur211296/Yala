@@ -9,7 +9,6 @@
 //  collision with Apple's AppIntents.AppIntent protocol.
 //
 
-import CloudKit
 import Foundation
 
 /// Feature keys for upgrade prompts routed via `.presentUpgradeSheet`.
@@ -24,33 +23,11 @@ enum CKShareCustomKey {
     static let isHiddenForAll = "isHiddenForAll"
 }
 
-/// Invite metadata carried by group invite intents. CKShare.Metadata is NOT
-/// Equatable; comparison delegates to the share record ID.
-struct InviteMetadata: Equatable {
-    let groupName: String?
-    let groupIcon: String?
-    let groupColor: String?
-    let groupMembers: [String]?
-    let shareMetadata: CKShare.Metadata
-
-    init(
-        groupName: String?,
-        groupIcon: String?,
-        groupColor: String?,
-        groupMembers: [String]?,
-        shareMetadata: CKShare.Metadata
-    ) {
-        self.groupName = groupName
-        self.groupIcon = groupIcon
-        self.groupColor = groupColor
-        self.groupMembers = groupMembers
-        self.shareMetadata = shareMetadata
-    }
-
-    static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.shareMetadata.share.recordID == rhs.shareMetadata.share.recordID
-    }
-}
+// `InviteMetadata` se BORRÓ el 2026-09-05 (medido: CERO productores en todo el árbol — nadie escribía
+// `InviteMetadata(`). Exigía un `CKShare.Metadata` no-opcional, o sea del canal que la Fase 3 borró, así
+// que su único consumidor —`GroupInviteOnboardingView`— lo recibía siempre `nil` y pintaba el visual
+// genérico aunque el enlace trajera el nombre del grupo. Su relevo es `InviteLinkService.BrandedMetadata`,
+// que es lo que de verdad viaja en el enlace y además persiste con el join intent.
 
 /// Routed app-level intent. Fully self-contained — does not leak internal
 /// state into callers. Each case declares its consumer (`handler`), priority

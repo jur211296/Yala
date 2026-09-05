@@ -70,9 +70,10 @@ struct ContentView: View {
     @AppStorage("lastSeenAppVersion") private var lastSeenAppVersion: String = ""
     @State private var isInitialCheckDone: Bool = false
     @State private var showGroupInviteOnboarding: Bool = false
-    /// Metadata branded del invite (nombre/icono/color del grupo) para
-    /// personalizar el welcome de `GroupInviteOnboardingView`.
-    @State private var pendingInviteMetadata: InviteMetadata?
+    /// Marca del invite (nombre/icono/color del grupo) para personalizar el welcome de
+    /// `GroupInviteOnboardingView`. La FUENTE es `PendingJoinStore` — ver el drain de
+    /// `.presentGroupBackendInviteOnboarding`.
+    @State private var pendingInviteMetadata: InviteLinkService.BrandedMetadata?
     /// G4-invites (A2): sheets del flujo backend sign-in → consent → join, drenados de
     /// `.presentGroupsConsent` / `.presentGroupsSignIn`. DARK: con `groupsBackendEnabled`
     /// OFF los intents jamás se submitean.
@@ -931,7 +932,13 @@ struct ContentView: View {
             // un cover; si el onboarding YA se completó mientras tanto, no re-presentar —
             // continuar el flujo directo (join).
             if !hasCompletedOnboarding {
-                pendingInviteMetadata = nil  // backend: sin CKShare metadata — visual genérico
+                // La marca sale del intent PERSISTIDO, no del payload: es lo que hace que también la
+                // tenga el invitado que llegó desde la web con la app cerrada, que es el caso normal.
+                // Antes esta línea era `= nil` con el comentario «backend: sin CKShare metadata — visual
+                // genérico»: cierto entonces (el tipo exigía un `CKShare.Metadata` que el canal backend
+                // no tiene) y por eso el nombre del grupo no llegaba nunca. `nil` sigue siendo el
+                // fallback correcto — un enlace sin cosméticos pinta el visual genérico.
+                pendingInviteMetadata = PendingJoinStore.entry(zoneName: zone)?.branded
                 showGroupInviteOnboarding = true
             } else {
                 Task { @MainActor in
@@ -1950,7 +1957,7 @@ fileprivate extension Binding where Value == Bool {
 private struct GroupInviteModifier: ViewModifier {
 
     @Binding var showGroupInviteOnboarding: Bool
-    @Binding var pendingInviteMetadata: InviteMetadata?
+    @Binding var pendingInviteMetadata: InviteLinkService.BrandedMetadata?
     @Binding var hasCompletedOnboarding: Bool
     @Binding var activeInviteError: String?
     @Binding var activeGroupSyncError: String?
