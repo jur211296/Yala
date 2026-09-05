@@ -23,7 +23,9 @@ Panel, que para quien instale ahora arranca con cuatro secciones y cuatro widget
    entraron hoy y ninguno está en el guion: `guest-decline-has-no-screen` (servidor listo y verificado
    en producción, falta verlo en la app publicada) y `rejected-member-cold-tap-does-nothing`, cuyo
    device-QA son cinco minutos: ser rechazado, matar la app, tapear un enlace nuevo, y comprobar que
-   al admin le llega la solicitud **una sola vez**. El tercero,
+   al admin le llega la solicitud **una sola vez**. **En el mismo montaje entra ahora
+   `rejoin-tap-renotifies-admins`** (servidor ya en producción): con la solicitud pendiente, tocar el
+   enlace tres veces más y comprobar que al admin **no le llega nada nuevo**. El tercero,
    `groups-equal-split-shows-not-participating-on-peer`, necesita la precondición correcta: **B se une
    por enlace y NO relanza la app** antes de que A cree el gasto — sin eso no reproduce.
 3. **Dos decisiones de la web** (§9 del informe): el **texto legal de Grupos** —dice «vía iCloud, no
@@ -35,19 +37,18 @@ Panel, que para quien instale ahora arranca con cuatro secciones y cuatro widget
 Revisados los 7 `in-progress` uno a uno el 2026-09-04, verificando contra el árbol lo que cada
 ticket afirma. Hallazgo: **ninguno esperaba una decisión tuya** — la tanda del 3-sep las cerró
 todas. Tres salieron ese día (dos en el saneamiento, `guest-journey` al ejecutarse); **quedan 4, y
-los 4 esperan código**.
+los 4 esperan código**. De los dos de `backlog` que se listaban aquí,
+**`rejoin-tap-renotifies-admins` se cerró la noche del 4-sep** —migración + Worker, los dos en
+producción— y pasa a `qa/`; queda el otro.
 
-- **`rejoin-tap-renotifies-admins`** (medium, nuevo) — **vivo en producción.** Quien ya tiene una
-  solicitud pendiente y vuelve a tocar su enlace hace que al admin le llegue otra notificación, cada
-  vez. El guardián del servidor está escrito para evitarlo y su propio comentario lo promete, pero
-  filtra el caso `active` y deja pasar el `pendingApproval`. Es de servidor: migración + Worker +
-  promoción, con su verificación en staging.
-- ~~**`group-joiner-flag-consumers-still-narrow`**~~ — **código hecho el 5-sep, pasa a `qa`.** Los
-  catorce consumidores resuelven identidad por el canónico: el gasto del recién llegado aterriza en su
-  cuenta real en el mismo gesto que lo crea, y sus avisos de grupo dejan de descartarse en silencio.
-  Verificado con test de comportamiento y control positivo (revertido el fix, se pone rojo). Falta el
-  device-QA de dos teléfonos, que es el mismo montaje que pide
-  `groups-equal-split-shows-not-participating-on-peer`: **B se une por enlace y NO relanza la app**
+- ~~**`group-joiner-flag-consumers-still-narrow`**~~ — **arreglado la noche del 4-sep, pasa a `qa`.**
+  Los catorce consumidores resuelven identidad por el canónico, así que el gasto del recién llegado
+  aterriza en su cuenta REAL en el mismo gesto que lo crea —no en la genérica «Grupos» y sin esperar
+  a otro arranque—, «Pagado por» viene puesto, el saldo de la tarjeta sale, y sus avisos de grupo
+  dejan de descartarse en silencio. Se descartó la vía de una línea (segundo call-site de
+  `refreshCurrentUserFlags`): es device-wide y arrastra un backfill que adjudica identidad por nombre
+  visible. Falta el device-QA de dos teléfonos, **el mismo montaje que
+  `groups-equal-split-shows-not-participating-on-peer`**: B se une por enlace y NO relanza la app
   antes de que A cree el gasto. Residual cosmético en
   `joiner-flag-residuals-cosmetic-and-service-guard` (badges «(tú)», `low`).
 - **`invite-link-five-causes-one-message`** — piezas 2, 3 y 4 son código. Sin tocar. Su pieza 2
@@ -71,9 +72,36 @@ sigue sin `ok_`. **Cero `ok_` inventado.**
 
 ## Board
 
-100 tickets · backlog 49 · in-progress 4 · qa 24 · blocked 2 · done 16 · discarded 5. Índice cuadrado
-(100 filas = 100 ficheros, status y ruta de cada fila comprobados contra el disco). `qa` significa
+103 tickets · backlog 50 · in-progress 4 · qa 26 · blocked 2 · done 16 · discarded 5. Índice cuadrado
+(103 filas = 103 ficheros, status y ruta de cada fila comprobados contra el disco). `qa` significa
 «esperando la tanda», no «cerrado».
+
+**Entran dos, los dos residuales del arreglo del recién llegado y ninguno bloqueante.**
+`joiner-flag-residuals-cosmetic-and-service-guard` (`low`): los badges «(tú)» de la lista de
+miembros, del selector de reparto y de «quién pagó» siguen leyendo el flag a pelo, y con ellos la red
+de servidor que impide echarte de tu propio grupo — esa no es cosmética, pero hoy es inalcanzable
+porque la vista ya calcula bien quién eres. Y `edgecases-extreme-minimum-flaky-under-load` (`low`):
+`test_extremeMinimumAmountSaves` falló corriendo en un lote de cinco suites y **pasó solo**; queda
+escrito con su evidencia en vez de perderse, porque es una transacción personal y no toca ninguna
+ruta de Grupos.
+
+**Entra uno nuevo: `ci-no-corre-la-suite-del-gateway`.** Salió al abrir el PR de arriba y el dato es
+incómodo: el CI **no ejecuta ni un test del gateway** —no hay un solo `vitest` en `qa.yml`— así que
+los tres tests que protegen el arreglo de este ticket salieron verdes sin correr. Y el filtro está al
+revés: tocar `qa/coverage-index.json` o `encargos/` sí arranca los ~100 min de simulador, que ahí no
+compilan nada. El arreglo son dos piezas baratas (un job de Ubuntu con `npm test`, y dos rutas más en
+la allowlist).
+
+**Arreglado el re-tap que renotificaba al admin, y pasa a la tanda (`qa`).** Quien esperaba aprobación
+y volvía a tocar su enlace despertaba al admin una vez por tap. El guardián del servidor lo prometía y
+no lo cumplía: decidía por `status`, que es **ambiguo** —vale `pendingApproval` para el alta nueva y
+para el no-op—, así que tapaba el caso `active` y dejaba pasar justo el del re-tap. Ahora el RPC dice
+si hubo transición real (`changed`, g13_04). `rebound` no servía: dos ramas que sí son transiciones
+también lo traen `false`. **Migración y Worker, los dos en producción** (`89823cc3`), medido contra el
+motor real en transacción revertida. **Dos residuos deliberados:** la BD de **staging no lleva
+g13_04** —no hay credencial de DDL accesible, sólo JWTs de usuario— y su Worker tampoco se desplegó,
+porque arrastra dos commits ajenos; el drift es inocuo (los goldens no miran el campo y se comprobó
+que pasan sin él). El conteo de push en un teléfono sigue siendo tuyo.
 
 **Arreglado el rechazado que tapeaba en frío, y pasa a la tanda (`qa`).** A quien rechazaron de un
 grupo, tapear un enlace nuevo con la app cerrada ya vuelve a pedirle la entrada — antes no hacía nada
