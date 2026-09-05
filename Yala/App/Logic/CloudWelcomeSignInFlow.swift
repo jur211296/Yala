@@ -65,6 +65,11 @@ nonisolated enum CloudWelcomeSignInPhase: Equatable {
     case providerMismatch(knownProvider: String?)
     /// Fallo de red/sesión del `exists` o de la máquina.
     case error(retryable: Bool)
+    /// La cuenta existe pero el backend no la deja entrar (403 en el claim). Caso propio y no un
+    /// `.error(retryable: false)`: ése comparte copy con el fallo de red —icono de wifi incluido— y
+    /// **el problema no es la conexión**. Sin botón de reintentar: esperar no despierta una cuenta
+    /// suspendida (ticket `reentry-counts-as-fresh-install` §3).
+    case accountBlocked
 }
 
 nonisolated enum CloudWelcomeSignInFlow {
@@ -89,7 +94,33 @@ nonisolated enum CloudWelcomeSignInFlow {
     /// Mapea el `uiState` del CloudMigrationController a la fase de pantalla
     /// mientras el adopt corre. Estados que "no deberían ocurrir aquí" degradan
     /// a `.error` (defensivo, nunca trap).
-    static func phase(for uiState: CloudMigrationUIState) -> CloudWelcomeSignInPhase {
+    ///
+    /// `claimBlocker` GANA sobre el progreso, y por eso se mira primero: un claim aparcado por 403
+    /// deja el journal en `claimingMigration` —una fase transicional perfectamente normal— así que el
+    /// `uiState` sigue diciendo `.migrating` y la pantalla se quedaba en «Conectando con tu cuenta…»
+    /// indefinidamente, con el auto-resume gastando sus tres intentos y ofreciendo luego un botón de
+    /// reintentar sobre algo que reintentar no arregla.
+    ///
+    /// **No gana sobre los terminales de éxito**: si el adopt llegó a `needsRelaunch`/`cloudActive`,
+    /// un bloqueo viejo de un intento anterior no debe tapar un final que ya ocurrió.
+    static func phase(
+        for uiState: CloudMigrationUIState,
+        claimBlocker: ClaimBlocker? = nil
+    ) -> CloudWelcomeSignInPhase {
+        if let claimBlocker {
+            switch uiState {
+            case .needsRelaunch, .cloudActive:
+                break                          // ya terminó: el bloqueo es de un intento superado
+            case .idle, .migrating, .reverting, .waitingForLeader, .failed:
+                switch claimBlocker {
+                case .accountUnavailable:
+                    return .accountBlocked
+                case .sessionExpired:
+                    // La sesión se puede rehacer entrando otra vez — reintentar aquí SÍ tiene sentido.
+                    return .error(retryable: true)
+                }
+            }
+        }
         switch uiState {
         case .idle:
             // Pre-arranque de la máquina (fases consent/authenticating no-durables).
@@ -159,8 +190,10 @@ nonisolated enum BornCloudSignUpFlow {
         case .sessionExpired:
             return .releaseSessionAndShowError
         case .accountUnavailable:
-            // 403 = cuenta suspendida. Reintentar no la despierta: error SIN botón de retry.
-            return .show(.error(retryable: false))
+            // 403 = cuenta suspendida. Reintentar no la despierta, y el copy genérico de `.error`
+            // culpa a la conexión: pantalla propia (la MISMA que ve el adopt desde §3 del ticket
+            // `reentry-counts-as-fresh-install` — las dos puertas cuentan por fin lo mismo).
+            return .show(.accountBlocked)
         case .transient:
             // El claim es idempotente por contrato (§f.1: el re-claim del MISMO device colapsa a
             // `created`), así que reintentar es seguro.

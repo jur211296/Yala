@@ -22,7 +22,9 @@
 //   - Contrato especial `.disableMirrorAndRelaunch` (cruza el process boundary): en `resume()` se
 //     resuelve por OBSERVACIÓN (`isMirrorConfirmedOff`), no por re-ejecución ciega → sin relaunch-loop.
 //   - `ClaimOutcome` no-success (sessionExpired/accountUnavailable/transient) → stop SIN evento, JAMÁS
-//     `fatalError` (un 401 recuperable no debe producir un rollback espurio).
+//     `fatalError` (un 401 recuperable no debe producir un rollback espurio). Lo que SÍ se registra es
+//     la CAUSA, en `lastClaimBlocker` y fuera del journal: sin ella los tres se veían iguales desde la
+//     pantalla del adopt, que dejaba «Conectando con tu cuenta…» puesta también ante un 403.
 //
 //  DARK: NADA de producción instancia este runner ni lee el journal (la UI de migración llega en I14;
 //  el panel DEBUG en w7). Solo lo ejercitan los tests de este ciclo.
@@ -40,6 +42,20 @@ enum VerifyProbe: Equatable {
     case mismatch
     case networkTimeout
     case newDeltaDetected
+}
+
+/// Por qué se aparcó un claim cuando la causa **no es la red**. Es el hecho que separa «no te llega la
+/// conexión» de «tu cuenta no está disponible», dos cosas que hasta ahora se veían como la misma barra
+/// «Conectando con tu cuenta…» con su botón de reintentar (ticket `reentry-counts-as-fresh-install` §3).
+///
+/// No es un `MigrationEvent`: el docblock del runner prohíbe alimentar `fatalError` desde un no-success
+/// del claim —haría un rollback espurio— y aquí no hay nada que revertir, porque sin claim otorgado no
+/// se creó nada. Es el mismo molde que `cutoverBlocker`: un hecho que solo elige el copy honesto.
+nonisolated enum ClaimBlocker: Equatable {
+    /// 403 — la cuenta no está disponible (suspendida). Reintentar no la despierta.
+    case accountUnavailable
+    /// 401 — la sesión ya no vale. Hay que volver a entrar, no reintentar.
+    case sessionExpired
 }
 
 /// Resultado de un paso del uploader del snapshot (w4). `pageConfirmed` avanza el cursor sin cambiar de
@@ -190,6 +206,14 @@ final class MigrationRunner {
     /// largos (red, quiescencia) — una doble invocación (double-tap del panel w7) intercalaría en cada
     /// suspensión (doble POST de claim, doble backfill). A lo sumo UNA en vuelo; las demás no-op.
     private var isRunning = false
+
+    /// Por qué se aparcó el ÚLTIMO claim, cuando la causa no fue la red (`nil` = ninguna, o red).
+    ///
+    /// En memoria a propósito, y no journaleado: describe el INTENTO —no el estado durable de la
+    /// migración, que sigue siendo `claimingMigration` retomable— y cada claim nuevo lo repone o lo
+    /// limpia. Lo lee `CloudMigrationController.refresh()` para que la pantalla de adopt deje de
+    /// enseñar «Conectando con tu cuenta…» ante un fallo que esperar no arregla.
+    private(set) var lastClaimBlocker: ClaimBlocker?
 
     init(
         context: ModelContext,
@@ -532,15 +556,20 @@ final class MigrationRunner {
         }
         switch await executor.performClaim() {
         case let .success(claimState):
+            lastClaimBlocker = nil
             try await handle(.claimResult(claimState, sameDeviceReclaim: false))
             return true
         case .sessionExpired:
+            lastClaimBlocker = .sessionExpired
             CloudSyncBreadcrumb.migrationClaimNoSuccess(reason: "sessionExpired")
             return false
         case .accountUnavailable:
+            lastClaimBlocker = .accountUnavailable
             CloudSyncBreadcrumb.migrationAccountUnavailable()
             return false
         case .transient:
+            // La red SÍ se reintenta: no es un bloqueo de cuenta y no debe apagar la barra de progreso.
+            lastClaimBlocker = nil
             CloudSyncBreadcrumb.migrationClaimNoSuccess(reason: "transient")
             return false
         }
@@ -893,22 +922,28 @@ final class MigrationRunner {
         guard try loadState().readPhase().phase == .waitingForLeader else { return }
         switch await executor.performClaim() {
         case .success(.existingStable):
+            lastClaimBlocker = nil
             try await handle(.leaderCompleted)             // → notStarted + adoptBackendAccount
         case .success(.claimingInProgress):
+            lastClaimBlocker = nil
             return                                         // sigue esperando, sin evento
         case .success(.created):
+            lastClaimBlocker = nil
             // El líder se esfumó → re-claim. TRADUCIR a leaderVanished y REUSAR el resultado ya obtenido
             // (sin 2º POST). `sameDeviceReclaim: false` — ver doc de `driveClaim` (para `.created` la
             // máquina lo ignora de todas formas).
             try await handle(.leaderVanished)              // → claimingMigration
             try await handle(.claimResult(.created, sameDeviceReclaim: false))
         case .sessionExpired:
+            lastClaimBlocker = .sessionExpired
             CloudSyncBreadcrumb.migrationClaimNoSuccess(reason: "sessionExpired")
             return
         case .accountUnavailable:
+            lastClaimBlocker = .accountUnavailable
             CloudSyncBreadcrumb.migrationAccountUnavailable()
             return
         case .transient:
+            lastClaimBlocker = nil
             CloudSyncBreadcrumb.migrationClaimNoSuccess(reason: "transient")
             return                                         // red del poll → sin evento (reintento posterior)
         }

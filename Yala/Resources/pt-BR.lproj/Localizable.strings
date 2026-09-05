@@ -5502,3 +5502,8 @@
 
 /* Share-link button: groups channel is off right now — transient, retry later (NOT the user's connection) */
 "groups.errors.inviteChannelOff" = "Não conseguimos criar links de convite agora. Tente de novo daqui a pouco.";
+
+/* Adopt/sign-up blocked: HTTP 403 on account claim — the account exists but the backend refuses access */
+"welcome.cloud.accountBlockedTitle" = "Sua conta não está disponível";
+/* Body for the blocked-account screen; explicitly rules out a network problem */
+"welcome.cloud.accountBlockedBody" = "Não é a sua conexão: no momento não conseguimos dar acesso a esta conta. Escreva para %@ e vamos verificar junto com você.";
