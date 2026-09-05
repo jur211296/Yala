@@ -1,15 +1,38 @@
 ---
-updated: 2026-09-04
+updated: 2026-09-05
 tags: [now, punto-de-retomada]
 ---
 
-# NOW — 2026-09-04 (Lima)
+# NOW — 2026-09-05 (Lima)
 
 **Rama** `2.1` · HEAD al día tras el borrado del recorrido muerto y el arreglo del rechazado. TestFlight build **12** (CPV 12). **Subida Yala (TF/store) = solo Mini.**
 **`yala-app.pe` sirve la web nueva desde hoy** (PR #62 mergeado; detalle en
 `Web/REVISION-WEB-UX-A11Y-2026-09-03.md`).
 
-## El día, en dos líneas
+## Lo de esta madrugada (2026-09-05)
+
+**`secondary-visitor-writes-owner-domain` pasa a `qa`: sus dos decisiones del 3-sep están en
+código.** Para el usuario: quien entra de visita hace su onboarding sin marcar el del dueño (antes
+la marca se escribía en el cajón de él y se leía del de ella, así que la pantalla de bienvenida
+podía reabrírsele), y el permiso de Grupos del dueño ya no se borra al entrar una visita — se
+guarda a un lado y se le devuelve al salir, que es lo que además nos conserva la prueba de su
+consentimiento.
+
+Dos cosas que el ticket daba por sabidas y no lo eran: los lectores de esa marca no eran los tres
+que nombraba sino **siete**, en seis ficheros, y **el escáner de conteo no habría visto el bug** —
+la key se nombraba en 26 sitios antes y en 26 después; lo que cambió es contra qué dominio hablan.
+Por eso la red nueva censa el DOMINIO, no el número.
+
+**Lo que sale de ahí, medido y con ticket propio:** `welcome-privacy-branch-has-no-secondary-door`
+(ya no es un bug de datos, es qué se le enseña a quien está de visita) y
+`secondary-entry-healing-writes-owner-not-session` — **hallazgo nuevo**: el kill-recovery de la
+entrada repara los flags en el dominio del dueño mientras la siembra ya copió el valor viejo al
+cajón, así que la curación que existe para impedir el Welcome sobre store vacío hoy no lo impide.
+
+Verificación: 6046 unit en 609 suites, 20 XCUITest en 6 suites, **4 mutaciones a exit 65**. Nada de
+esto está visto en un teléfono todavía.
+
+## El día anterior, en dos líneas
 
 El CI llevaba día y medio sin ejecutar un test; se arregló y salieron 16 XCUITest en rojo —ninguno
 bug de la app— más el de identidad del recién llegado a un grupo. Luego la web, desplegada; y el
@@ -48,9 +71,10 @@ los 4 esperan código**.
 - **`invite-link-five-causes-one-message`** — piezas 2, 3 y 4 son código. Sin tocar. Su pieza 2
   (cablear `branded`) se dejó aquí a propósito al podar el recorrido del invitado: la medición a
   fondo vive en este ticket y duplicarla era la forma segura de divergir.
-- **`secondary-visitor-writes-owner-domain`** y **`secondary-guest-exit-lock-and-outbox`** — las
-  decisiones del 3-sep están tomadas y **el código aprobado no está escrito**. Alcance real hoy: cero
-  (SECONDARY_SESSION al 0 % en prod), pero bloquean el encendido.
+- **`secondary-guest-exit-lock-and-outbox`** — la decisión del 3-sep está tomada y **el código
+  aprobado no está escrito**. Alcance real hoy: cero (SECONDARY_SESSION al 0 % en prod), pero
+  bloquea el encendido. Su hermano `secondary-visitor-writes-owner-domain` salió a `qa` esta
+  madrugada (abajo).
 - **`reentry-counts-as-fresh-install`** — parado por falta de tiempo, no por bloqueo. Su área lleva
   22 días sin un commit.
 - Los **2 de `blocked`** esperan **hardware**, no trabajo.
@@ -66,8 +90,9 @@ sigue sin `ok_`. **Cero `ok_` inventado.**
 
 ## Board
 
-100 tickets · backlog 49 · in-progress 4 · qa 24 · blocked 2 · done 16 · discarded 5. Índice cuadrado
-(100 filas = 100 ficheros, status y ruta de cada fila comprobados contra el disco). `qa` significa
+102 tickets · backlog 51 · in-progress 3 · qa 25 · blocked 2 · done 16 · discarded 5. Índice cuadrado
+(102 filas = 102 ficheros; status y ruta de cada fila comprobados contra el disco tras los dos altas
+y el movido de esta madrugada). `qa` significa
 «esperando la tanda», no «cerrado».
 
 **Arreglado el rechazado que tapeaba en frío, y pasa a la tanda (`qa`).** A quien rechazaron de un

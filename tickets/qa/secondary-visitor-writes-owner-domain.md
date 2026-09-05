@@ -1,8 +1,8 @@
 ---
 id: secondary-visitor-writes-owner-domain
-status: in-progress
+status: qa
 created: 2026-08-12
-updated: 2026-09-03
+updated: 2026-09-05
 source: YalaWiki/Bugs/secundaria-la-visita-escribe-en-el-dominio-del-dueno.md
 ---
 
@@ -468,3 +468,126 @@ append-only por diseño (C1, 2026-08-11).
 Con esto **no quedan decisiones pendientes aquí**: lo que sigue abierto es código. La rama «privacidad
 total» del Welcome (`WelcomeFlowContainer.swift:289-293`) es diseño de producto y sigue sin decidirse,
 pero no bloquea a las dos de arriba.
+
+---
+
+# IMPLEMENTADO · 2026-09-05 — las dos decisiones del 3-sep, en código
+
+Las dos decisiones que este ticket dejó tomadas y sin escribir están hechas y verdes. Lo que queda
+del ticket es **device-QA**, no código: por eso pasa a `qa/`.
+
+Commits: `258a90c3` (la key al cajón) · `833b9f40` (custodia del consent).
+
+## Decisión 1 · `hasCompletedOnboarding` vive en el cajón de cada sesión
+
+**Y el inventario del ticket se quedaba corto otra vez.** Decía «un escritor y cuatro lectores»;
+medidos contra el árbol eran **tres escritores y siete lectores** en `.standard`, repartidos por
+seis ficheros:
+
+| Rol | Coordenada | Qué pregunta o afirma | Dónde acabó |
+|---|---|---|---|
+| Escritor | `OnboardingView.swift` · `completeOnboarding` | «esta persona terminó su onboarding» | **cajón** |
+| Escritor | `ContentView.swift` · `completeOnboardingAsRestoreSkip` | lo mismo, por el camino de restauración | **cajón** |
+| Escritor | `ContentView.swift` · `onSecondaryEntryFlagsMarked` | la ventana de ENTRADA | **se queda en `.standard`** |
+| Lector ×3 | `AppBootstrapper.swift` (`:1050`, `:2446`, `:2461`) | alert de restart · seed de avisos · imagen compartida | **cajón** |
+| Lector | `ContentView.swift` · el gate del organizador | «¿ya vio un educativo de Grupos?» | **cajón** |
+| Lector | `GroupsContainerView.swift` | el gemelo del anterior | **cajón** |
+| Lector | `RouterEntryGate.swift` · `readinessProvider` | readiness del router | **cajón** |
+| Lector | `GroupBackendInviteEntryHandler.swift` | routing del invitado fresco | **cajón** |
+
+Los cuatro lectores que el ticket no nombraba **no eran opcionales**: la propia regla que este
+ticket puso («escritor y lectores viajan en el mismo commit») los obliga, y dos de ellos —el gate
+del organizador y su gemelo del tab— tienen escrito en el código que si discrepan «el tab anunciaría
+"ver cómo funciona" y el tap no presentaría nada».
+
+**El único `.standard` que queda tiene ahora su porqué en el código**: corre en la ventana de
+entrada, con el descriptor recién activado y el cajón todavía sin existir, y es de ahí de donde
+`SessionDefaults.seededDeviceKeys` copia al nacer el cajón. Bajarlo deja a la visita en el Welcome
+sobre un store secundario vacío.
+
+**Y `GroupsOrganizerOnboarding` ya estaba en el cajón** sin que nadie lo hubiera anotado: escribe
+por `writer.setLocal` → `PreferenceSyncService.local`, que es computed sobre la puerta desde
+`35c1a016`. Era el lector de `ContentView` el que preguntaba por otra persona justo después.
+
+### La red: por qué el escáner de grafías NO habría visto esto
+
+**Antes del fix la key se nombraba en 26 sitios; después se nombra en 26.** El conteo por grafías
+—que es la red que este ticket pedía en su criterio de hecho— habría pasado en verde con el bug
+dentro, porque lo que cambió no fue cuántos sitios son sino **contra qué dominio hablan**.
+
+⇒ la key entra en el `watched` (conteo 26, desglose por fichero al lado) **y** se añade una suite
+que censa el DOMINIO fichero por fichero: 10 sitios en el cajón, 1 en el del dueño. La mutación de
+devolver un solo lector a `.standard` pone en rojo los dos tests, por los dos lados.
+
+De paso, `watchedKeysAreClassified` exigía que toda key vigilada estuviera en `person`. Era la
+exigencia equivocada y habría impedido meter ésta en el `watched`: `hasCompletedOnboarding` es del
+TELÉFONO en las fronteras —por eso está en `deviceExceptions`— y aun así es la más dispersa del
+árbol. Pasa a exigir que esté **clasificada**, que es lo que el inventario pide de verdad.
+
+## Decisión 2 · el consent legacy se custodia y se repone
+
+`GroupsConsentState.custodyOwnerRecord(in:)` / `restoreOwnerRecord(in:)`, con el slot
+`groups.consent.owner.custody` que **nadie más lee** — `readSnapshot()` no lo mira, así que una
+custodia viva no le presta a la visita un permiso que no dio.
+
+Tres cosas que el ticket no traía y que la implementación tuvo que resolver:
+
+1. **Se custodian las TRES keys, no las dos legacy.** El ticket dejaba fuera el snapshot SELLADO
+   porque `GroupsConsentRegistrar.handleSignIn` lo repone en cada arranque. **Medido: ese camino es
+   no-op sin sesión Yala viva** (`refreshFromServer` sale por su primer `guard`), y Grupos va al
+   100 % sin exigir Modo Nube ⇒ el dueño que cerró sesión perdía su snapshot con el síntoma
+   idéntico al del legacy. Custodiar media frontera con el mismo mecanismo habría dejado el arreglo
+   contradiciéndose ante la misma persona.
+2. **El orden es el mecanismo entero**: custodiar va JUSTO ANTES de `purge()` en la entrada (que es
+   quien borra) y reponer va DESPUÉS de `purge()` en la salida (que se lleva lo de la visita).
+   Invertir cualquiera de los dos da exit 65.
+3. **La idempotencia va por PRESENCIA del slot.** La frontera se re-ejecuta entera tras un kill, y
+   para entonces lo que hay en las tres keys puede ser ya de la visita: sobrescribir la custodia con
+   eso perdería el registro del dueño por el camino que existe para conservarlo.
+
+El `clear()` de `SecondarySessionBoundaryPurge` **NO se retira**: custodiar y borrar son las dos
+mitades, no alternativas — sin el `clear()` la visita hereda el consent legacy sin sello. Un
+source-scan lo fija por si alguien lee la custodia como su sustituto.
+
+## Documentación caducada corregida por el camino
+
+`GroupsConsentState` y `GroupsConsentDecisionLogic` sostenían su argumento de seguridad sobre una
+premisa falsa: «no existe ningún dominio de `UserDefaults` por sesión (`PreferenceSyncService.local`
+es `.standard` hardcodeado)». Caducó el 2026-08-26. La conclusión no cambia —quien no pasa por la
+puerta es `GroupsConsentState`, que sigue en `.standard` a pelo— pero el motivo escrito era falso.
+La regla de `.claude/rules/swiftdata-cloudkit.md` **ya estaba corregida desde el 13-ago**: eran los
+dos ficheros de código los que se habían quedado atrás, que es el reparto contrario al habitual.
+
+## Verificación
+
+- Build ×2 (`Yala` y `Yala Dev`): SUCCEEDED, **cero warnings nuevos** en los ficheros tocados.
+- Unit: **6046 tests en 609 suites**, verde, cero issues (`-parallel-testing-enabled NO`).
+- XCUITest: **20 tests en 6 suites** (OnboardingFlow · OnboardingGroupsOnlyGuard · DeeplinkRouting ·
+  PaywallInboxAlertRouting · GroupsSmoke · SecondaryCurrencyPrompt), verde. En XCUITest la puerta
+  devuelve el dominio del dueño (`isUITesting`), así que estos cambios son no-op ahí — **comprobado,
+  no supuesto**.
+- **Mutación, 4 verificadas a exit 65**: (1) un lector vuelve a `.standard`; (2) la custodia corre
+  después de la purga; (3) sin el guard de idempotencia por presencia; (4) la reposición deja de
+  retirar lo que el dueño no tenía.
+- `qa/coverage-index.json`: 11 áreas re-selladas (solo aquellas cuya cobertura declarada se ejecutó
+  hoy); `validate-coverage.sh` → OK, backlog determinista 0.
+
+## Lo que queda de este ticket: device-QA, y sale del código
+
+**Pendiente de verificar en device** (staging, donde el percent está al 100): entrar de visita,
+completar el onboarding privado y comprobar que el Welcome no se reabre; salir y comprobar que el
+dueño recupera el permiso de Grupos sin volver a ver su pantalla. El caso que más importa es el del
+dueño **sin sesión Yala viva**, que es el único que no se auto-repara por servidor.
+
+**Extraído a tickets propios, con su medición:**
+
+- [[welcome-privacy-branch-has-no-secondary-door]] — la vía 2. Ya no es un bug de datos: con el
+  cajón y con `258a90c3`, la rama no daña. Lo que queda es la pregunta de producto («qué se le
+  enseña») más el seed de categorías que se promete y no se hace.
+- [[secondary-entry-healing-writes-owner-not-session]] — **hallazgo nuevo de esta sesión**, y de la
+  misma familia: el kill-recovery de la entrada repara los flags en `.standard` mientras la siembra
+  ya copió el valor viejo al cajón con su sentinel puesto ⇒ el healing existe para impedir el
+  Welcome sobre store vacío y hoy no lo impide. Es la vía 5 vista desde el otro lado.
+
+**Sigue donde estaba**: la vía 4 en [[secondary-groups-off-wipes-owner]] (código hecho, device-QA
+pendiente).

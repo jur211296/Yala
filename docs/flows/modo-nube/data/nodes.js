@@ -1895,11 +1895,12 @@ window.ATLAS_NODES = {
       { t: "PersonalContainerSwap.swift:84-89", d: "los tres stores son UN solo `ModelContainer` con tres configuraciones — por eso un `FetchDescriptor<SplitGroup>` desde el contexto personal alcanza el store de grupos montado" },
       { t: "CloudSyncFlags.swift:246-251", d: "`storageMode` devuelve `.cloud` en cuanto hay descriptor, sin mirar la key persistida" },
       { t: "PreferenceSyncService.swift:34-49", d: "`PrefsSyncBehavior.resolve`: la secundaria gana primero y da `.localOnly`, que corta iKV y outbox" },
-      { t: "PreferenceSyncService.swift:78", d: "`private let local = UserDefaults.standard` — HARDCODEADO: `.localOnly` corta la PROPAGACIÓN, jamás la escritura local" },
-      { t: "PreferenceSyncService.swift:162-173", d: "y se ve en el cuerpo: `local.set(...)` está en la línea 163, FUERA del switch de comportamiento" }
+      { t: "PreferenceSyncService.swift:87", d: "`private var local: UserDefaults { SessionDefaults.current }` — COMPUTED desde `35c1a016`: resuelve el cajón de la sesión en cada llamada. Era `private let local = UserDefaults.standard` hasta el 2026-08-26" },
+      { t: "PreferenceSyncService.swift:162-173", d: "el `local.set(...)` sigue FUERA del switch de comportamiento — `.localOnly` corta la PROPAGACIÓN, jamás la escritura local. Lo que cambió es DÓNDE cae esa escritura local" }
     ],
     notes: [
-      "MEDIDO: no existe ningún dominio de `UserDefaults` por sesión. La frontera de preferencias no la da un contenedor separado, la dan guards uno a uno — y por eso se pueden contar (ver `degradado-ajustesdueno`) y por eso se puede medir cuáles faltan.",
+      "⚠︎ CADUCADO, corregido el 2026-09-05. Este nodo decía: «MEDIDO: no existe ningún dominio de `UserDefaults` por sesión. La frontera de preferencias no la da un contenedor separado, la dan guards uno a uno». Dejó de ser cierto el 2026-08-26: `SessionDefaults` es la puerta (`.standard` para el dueño, el suite `yala.session.<sub>` para la visita) y `SessionPreferenceKeys` el inventario de qué va a cada lado. La frontera SÍ la da hoy un contenedor separado, y los guards uno a uno son la excepción, no la regla.",
+      "Lo que la puerta NO cubre, y por eso el sello sigue haciendo falta: `GroupsConsentState.defaults` es `.standard` a pelo. Su daño en las fronteras se cerró el 2026-09-05 custodiando el consent del dueño en vez de borrarlo (`groups.consent.owner.custody`).",
       "⚠︎ El nodo `degradado-ajustesdueno` dice que «con el canal apagado el tab Grupos se filtra». Es cierto para el TAB (`TabBarConfiguration.swift:126-128`) y NO para el STORE: el archivo del dueño sigue montado en el mismo container, así que cualquier código que haga `FetchDescriptor<SplitGroup>()` lee sus grupos — y cualquiera que los borre, los borra.",
       "El Keychain sí es propio: la sesión Yala de la invitada vive ahí y sobrevive al relevo, que es la razón por la que el «empiezo de cero» del Welcome mata el outbox de Grupos y CONSERVA su cursor."
     ]
