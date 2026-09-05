@@ -42,3 +42,31 @@ instrucciones en las claves `_1_`…`_6_`: leerlas cuesta menos que adivinar el 
 **El canal tiene vuelta:** la sesión corre en tmux con nombre `repo--slug`, así que Frank puede
 contestar con `tmux send-keys`. Eso hace que valga la pena que el mensaje diga qué se necesita, no
 solo qué pasó. Relacionado: [[push-solo-lo-de-la-sesion]].
+
+## Confirmado el 2026-09-05 por segunda vez, y con el coste: dupliqué el aviso
+
+En el PR #66 mandé `--avisar artefacto-pr --texto "..."` a mano porque el encargo lo pedía. El log
+lo dice todo: **06:57:59 el hook, 06:59:06 el mío**. Dos avisos del mismo PR a Frank con 67 s de
+diferencia. El antirrebote de 10 min no los para porque el motivo se compone distinto según el
+camino. ⇒ ante un encargo que pida avisar de un PR, `tail -5 envios.log` PRIMERO; si ya está, no
+mandes nada y di que el hook lo cubrió.
+
+## `--avisar` sí envía, y su trampa NO es la del `<motivo>` a secas
+
+`--avisar <motivo> --texto "..."` entra por `modo_avisar` y **sí manda** (`ENVIADO … HTTP 200`);
+lo que no envía es `<motivo>` a secas, que es lo que dice arriba. Los dos caminos existen y se
+parecen; el que compone un texto propio es el de `--avisar`.
+
+## Y la trampa que costó un descarte: la palabra «prueba» dentro del texto
+
+`RX_PRUEBA = re.compile(r"\bPRUEBA\b", re.IGNORECASE)` corre sobre el **cuerpo entero**, no sobre
+una marca. Mi aviso decía «conservamos la prueba de su consentimiento» y la puerta lo descartó
+como si fuera un aviso de test: `DESCARTADO … — prueba`, sin enviar nada.
+
+**Why:** es la familia exacta de [[hook-secretos-disparador-substring]] — un disparador que casa
+por contenido y no por intención. Y aquí el fallo es silencioso en la dirección cara: el script
+imprime el descarte, pero si no lees esa línea crees que avisaste.
+
+**How to apply:** evita la palabra «prueba» (y «PRUEBA», «pruebas») en el cuerpo de un aviso —
+usa «registro», «evidencia», «comprobación», «tests». Y **lee siempre la última línea del script**:
+`ENVIADO … HTTP 200` o `DESCARTADO … — <razón>` son lo único que distingue haber avisado de creerlo.

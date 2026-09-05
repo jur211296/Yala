@@ -360,9 +360,15 @@ struct GroupsGateWiringTests {
             """)
         // La lectura que NO puede volver al `@AppStorage`: cuando la card B escribe el trío y re-submitea,
         // el espejo observable puede no haberse refrescado y la cadena repetiría el alta.
-        #expect(code.contains("hasCompletedSetup: UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)"), """
-            el router volvió a decidir el alta con el `@AppStorage`. Se refresca por notificación, así que \
-            dentro de la misma vuelta puede seguir diciendo `false` y `.presentName` se ejecutaría dos veces.
+        //
+        // Y va contra el CAJÓN de la sesión desde 2026-09-05, no contra `.standard`: quien escribe ese
+        // trío es `GroupsOrganizerOnboarding`, que ya iba por la puerta (`writer.setLocal`). Leerlo del
+        // dominio del dueño preguntaba por otra persona justo después de escribir en el de ésta.
+        #expect(code.contains("hasCompletedSetup: SessionDefaults.current.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)"), """
+            el router volvió a decidir el alta con el `@AppStorage`, o con el dominio del dueño. El espejo \
+            observable se refresca por notificación, así que dentro de la misma vuelta puede seguir diciendo \
+            `false` y `.presentName` se ejecutaría dos veces; y `.standard` responde por la dueña cuando \
+            quien está dando el alta es la visita.
             """)
     }
 

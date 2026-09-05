@@ -264,6 +264,16 @@ struct SessionPreferenceKeysSpellingTests {
         // SessionState×3 · DataWipeService×1
         KeySpelling(key: "customPeriodStart", spellings: ["\"customPeriodStart\""], expectedSites: 4),
         KeySpelling(key: "customPeriodEnd", spellings: ["\"customPeriodEnd\""], expectedSites: 4),
+        // La key MÁS dispersa del árbol, y la que obligó a escribir la suite de DOMINIO de abajo
+        // (decisión del owner 2026-09-03: entra en el `watched` en el MISMO commit que su fix).
+        // AppBootstrapper×3 · ContentView×4 · AppPreferences×3 · SwiftDataConfiguration×3 ·
+        // GroupsOrganizerOnboarding×2 · UITestEphemeralDefaults×2 · CloudSessionSignOut×1 ·
+        // DataWipeService×1 · GroupBackendInviteEntryHandler×1 · GroupsContainerView×1 ·
+        // OnboardingView×1 · PreferenceSyncService×1 · ReviewPromptService×1 · RouterEntryGate×1 ·
+        // SessionDefaults×1
+        KeySpelling(key: "hasCompletedOnboarding",
+                    spellings: ["\"hasCompletedOnboarding\"", "Keys.hasCompletedOnboarding"],
+                    expectedSites: 26),
     ]
 
     /// Cuenta ocurrencias de una grafía en el CÓDIGO (sin comentarios) de todo `Yala/`, **excluyendo
@@ -290,12 +300,125 @@ struct SessionPreferenceKeysSpellingTests {
         }
     }
 
-    @Test("toda key vigilada está clasificada como de la persona")
+    @Test("toda key vigilada está CLASIFICADA — de la persona, o excepción con su porqué")
     func watchedKeysAreClassified() {
+        // Hasta 2026-09-05 esto exigía `person`, y era la exigencia equivocada: lo que el inventario
+        // pide de una key vigilada no es que sea de la persona, sino que ALGUIEN haya decidido de qué
+        // lado va y lo haya escrito. `hasCompletedOnboarding` es la prueba: es del TELÉFONO en las
+        // fronteras —por eso está en `deviceExceptions`— y aun así es la más dispersa del árbol y la
+        // que más falta hacía vigilar. Exigir `person` habría dejado fuera del `watched` justo a la
+        // que rompió, que es el molde de «el escáner mira el inventario equivocado».
         for w in Self.watched {
-            #expect(SessionPreferenceKeys.person.contains(w.key),
-                    "`\(w.key)` se vigila pero no está en el inventario")
+            let clasificada = SessionPreferenceKeys.belongsToPerson(w.key)
+                || SessionPreferenceKeys.deviceExceptions[w.key] != nil
+            #expect(clasificada, "`\(w.key)` se vigila pero no está clasificada en el inventario")
         }
+    }
+}
+
+// MARK: - El DOMINIO, que el conteo de grafías no mide
+
+/// Los sitios de una key, agrupados por el dominio contra el que la nombran.
+private struct DomainCensus {
+    /// Fichero (nombre, sin ruta) → nº de líneas que nombran la key contra `SessionDefaults.current`.
+    var cajon: [String: Int] = [:]
+    /// Ídem contra `UserDefaults.standard`.
+    var owner: [String: Int] = [:]
+
+    var cajonTotal: Int { cajon.values.reduce(0, +) }
+    var ownerTotal: Int { owner.values.reduce(0, +) }
+}
+
+/// Censa, línea a línea y sobre el CÓDIGO (sin comentarios), en qué dominio se nombra `key`.
+///
+/// Sólo clasifica las líneas que nombran el dominio EN LA MISMA LÍNEA. Las que lo reciben por
+/// parámetro (`defaults.set(…)` en las fronteras, `local.bool(…)` en `PreferenceSyncService`) quedan
+/// fuera a propósito: ahí el dominio lo decide el llamador, que es el mismo invariante que
+/// `SessionPreferenceKeysWipeScanTests` fija para `DataWipeService`.
+private func domainCensus(of key: String) -> DomainCensus {
+    var out = DomainCensus()
+    for url in sourceFiles(in: "Yala") where url.lastPathComponent != "SessionPreferenceKeys.swift" {
+        let name = url.lastPathComponent
+        for line in code(url).split(separator: "\n", omittingEmptySubsequences: false) where line.contains(key) {
+            if line.contains("SessionDefaults.current") {
+                out.cajon[name, default: 0] += 1
+            } else if line.contains("UserDefaults.standard") {
+                out.owner[name, default: 0] += 1
+            }
+        }
+    }
+    return out
+}
+
+@Suite("SessionPreferenceKeys · `hasCompletedOnboarding`, por DOMINIO")
+struct HasCompletedOnboardingDomainTests {
+
+    /// **Por qué esta suite existe y no bastaba con meter la key en el `watched`.**
+    ///
+    /// El defecto que cerró el commit de 2026-09-05 era un par ESCRITOR/LECTOR partido entre los dos
+    /// dominios: `OnboardingView` escribía en el del dueño y los lectores del cajón no lo veían, así
+    /// que la visita terminaba su onboarding, su flag seguía en `false` y el Welcome podía
+    /// reabrírsele. El escáner de grafías **no lo habría visto jamás**: antes del fix la key se
+    /// nombraba en 26 sitios y después del fix se nombra en 26 sitios. Lo que cambió no fue cuántos
+    /// son, sino **contra qué dominio hablan** — y eso es lo que se mide aquí.
+    ///
+    /// Es la vía 7 del ticket aplicada un nivel más arriba: «el inventario que el escáner mira tiene
+    /// que ser el inventario que la función escribe».
+    private static let cajonEsperado: [String: Int] = [
+        "AppBootstrapper.swift": 3,                  // restart-alert · seed de avisos · imagen compartida
+        "ContentView.swift": 2,                      // gate del organizador · el skip de restauración
+        "RouterEntryGate.swift": 1,                  // readiness del router
+        "GroupBackendInviteEntryHandler.swift": 1,   // routing del invitado fresco
+        "ReviewPromptService.swift": 1,              // ya iba por la puerta desde F4
+        "GroupsContainerView.swift": 1,              // gemelo del gate del organizador
+        "OnboardingView.swift": 1,                   // EL escritor
+    ]
+
+    /// El único que NOMBRA `UserDefaults.standard` en la misma línea, y su porqué: corre en la ventana
+    /// de ENTRADA, con el descriptor recién activado y el cajón todavía sin existir, y es de ahí de
+    /// donde la siembra COPIA (`SessionDefaults.seededDeviceKeys`). Bajarlo al cajón deja a la visita
+    /// arrancando en el Welcome sobre un store secundario vacío — el brick que el mount prohíbe.
+    ///
+    /// **Lo que este censo NO ve, y hay que decirlo aquí para que nadie lea de más:** los sitios que
+    /// reciben el dominio por PARÁMETRO. Son tres y todos escriben en el del dueño a propósito — el
+    /// healing y el reset de las dos fronteras (`SwiftDataConfiguration`, parámetro `defaults`) y
+    /// `CloudSessionSignOut.resetOnboardingFlagsPreservingData`, que además es inalcanzable en
+    /// secundaria porque `CloudSignOutFlowLogic.path` resuelve `.secondaryCloudSignOut` primero. La
+    /// ceguera es la misma que `SessionPreferenceKeysWipeScanTests` documenta para `DataWipeService`:
+    /// ahí el dominio lo decide el llamador, y esa decisión se fija en el llamador, no aquí.
+    private static let ownerEsperado: [String: Int] = ["ContentView.swift": 1]
+
+    @Test("el censo por dominio encuentra algo (control del instrumento)")
+    func censusIsNotEmpty() {
+        // Sin este control, un escáner que no lee el árbol declararía la tabla perfecta sobre el
+        // conjunto vacío. Es el mismo control positivo que `netIsNotEmpty` hace arriba.
+        let censo = domainCensus(of: "hasCompletedOnboarding")
+        #expect(censo.cajonTotal + censo.ownerTotal >= 10,
+                "el censo salió con \(censo.cajonTotal + censo.ownerTotal) sitios; no está leyendo el árbol")
+    }
+
+    @Test("los consumidores in-session nombran el CAJÓN, fichero por fichero")
+    func inSessionConsumersUseTheSessionDomain() {
+        let censo = domainCensus(of: "hasCompletedOnboarding")
+        #expect(censo.cajon == Self.cajonEsperado, """
+            el reparto por dominio cambió.
+            Encontrado: \(censo.cajon.sorted { $0.key < $1.key })
+            Esperado:   \(Self.cajonEsperado.sorted { $0.key < $1.key })
+            Si añadiste un consumidor, decide su dominio y actualiza la tabla. Si MOVISTE uno a
+            `.standard`, comprueba primero que no estás partiendo el par escritor/lector otra vez.
+            """)
+    }
+
+    @Test("sólo la ventana de ENTRADA NOMBRA el dominio del dueño")
+    func onlyTheEntryWindowWritesTheOwnerDomain() {
+        let censo = domainCensus(of: "hasCompletedOnboarding")
+        #expect(censo.owner == Self.ownerEsperado, """
+            hay \(censo.ownerTotal) sitios nombrando `UserDefaults.standard` con esta key: \
+            \(censo.owner.sorted { $0.key < $1.key }). El único legítimo es la ventana de entrada de la
+            sesión secundaria, de donde la siembra del cajón COPIA el valor. Cualquier otro parte el par
+            escritor/lector y devuelve el bug de 2026-09-03. (Los que reciben el dominio por parámetro
+            no salen aquí: ver la nota de `ownerEsperado`.)
+            """)
     }
 }
 

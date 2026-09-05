@@ -77,7 +77,10 @@ enum GroupBackendInviteEntryHandler {
     /// Señal de routing del invitado fresco (paso 6 §A1 / A2): sin onboarding → invite onboarding
     /// primero (captura el nombre antes del join).
     static var hasCompletedOnboardingProvider: @MainActor () -> Bool = {
-        UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
+        // El CAJÓN de esta sesión, igual que `profileNameProvider` justo debajo: las dos deciden lo
+        // mismo —si a quien toca el enlace hay que pedirle antes su nombre— y leerlas de dos dominios
+        // distintos daba un invitado «ya onboardeado» (por la dueña) al que nadie le había preguntado.
+        SessionDefaults.current.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
     }
     static var profileNameProvider: @MainActor () -> String = {
         SessionDefaults.current.string(forKey: "userName") ?? ""

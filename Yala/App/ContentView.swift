@@ -989,11 +989,15 @@ struct ContentView: View {
                 hasCompletedSetup: hasCompletedOnboarding),
             hasSession: CloudAuthService.shared.hasSession,
             isConsented: GroupsConsentState.isAccepted,
-            // Se lee de `UserDefaults` y NO del `@AppStorage` a propósito: cuando la card B escribe el trío
+            // Se lee del `UserDefaults` y NO del `@AppStorage` a propósito: cuando la card B escribe el trío
             // unas líneas más abajo y re-submitea para que la máquina re-decida, el espejo observable puede
             // no haberse refrescado todavía (se actualiza por notificación) y la cadena volvería a
-            // `.presentName` — un alta repetida. `UserDefaults` es la verdad inmediata.
-            hasCompletedSetup: UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding),
+            // `.presentName` — un alta repetida. El `UserDefaults` es la verdad inmediata.
+            // Y es el CAJÓN de esta sesión (decisión del owner 2026-09-03), no `.standard`: quien escribe
+            // ese trío unas líneas más abajo es `GroupsOrganizerOnboarding`, que ya va por la puerta
+            // (`writer.setLocal` → `PreferenceSyncService.local`). Leerlo de `.standard` preguntaba por la
+            // dueña justo después de haber escrito en el cajón de la visita.
+            hasCompletedSetup: SessionDefaults.current.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding),
             entry: pendingGroupsOnlyPayload == nil ? .organizer : .onboardingCard
         ) {
         case .presentEducational:
@@ -1561,6 +1565,22 @@ private struct WelcomeFlowModifier: ViewModifier {
                         // M1 (D1, decisión owner): flags SÍ, trial NO (la invitada no recibe
                         // la oferta del device del dueño) ni markAsNewInstall (el checklist
                         // es estado device-global del dueño).
+                        //
+                        // **Y ÉSTA se queda en `.standard` cuando sus vecinas bajaron al cajón**
+                        // (2026-09-05), porque es la única que corre en la ventana de ENTRADA: el
+                        // descriptor acaba de activarse y el cajón todavía no existe — lo crea y lo
+                        // siembra `performSecondaryEntryTasksIfNeeded` en el arranque siguiente,
+                        // COPIANDO de aquí (`SessionDefaults.seededDeviceKeys`). Escribirlo en el
+                        // cajón lo dejaría fuera de esa herencia y la visita arrancaría en el Welcome
+                        // sobre un store secundario vacío, que es el brick que el mount prohíbe.
+                        //
+                        // Eso vale para la entrada PRIMERA, que es la que importa. En una RE-entrada
+                        // in-session —el Welcome se le reabre a la visita tras un «vaciar mis datos»,
+                        // y `SecondarySlotOccupancyLogic` deja pasar a la MISMA cuenta— la raíz ya se
+                        // montó con descriptor, así que la línea de abajo va al cajón y ésta al dueño.
+                        // Ahí ya no hereda nadie (el sentinel de la siembra está puesto) y el `true`
+                        // que queda en `.standard` se lo lleva el reset de la salida. Inocuo, pero no
+                        // es el caso que este comentario justifica.
                         UserDefaults.standard.set(true, forKey: AppPreferences.Keys.hasCompletedOnboarding)
                         hasCompletedOnboarding = true
                     },
@@ -1918,7 +1938,11 @@ fileprivate func completeOnboardingAsRestoreSkip() {
     if !FeatureGateService.shared.isProUser {
         SessionState.shared.needsPostOnboardingTrial = true
     }
-    UserDefaults.standard.set(true, forKey: AppPreferences.Keys.hasCompletedOnboarding)
+    // El CAJÓN de esta sesión, por el mismo motivo que su gemelo de `OnboardingView.completeOnboarding`
+    // (decisión del owner 2026-09-03): es el MISMO hecho —«esta persona ya no tiene onboarding
+    // pendiente»— escrito por el otro camino, el de la restauración. Fuera de sesión secundaria la
+    // puerta devuelve `.standard` y esto es byte-idéntico a lo de antes.
+    SessionDefaults.current.set(true, forKey: AppPreferences.Keys.hasCompletedOnboarding)
     SetupChecklistManager.shared.markAsNewInstall()
 }
 

@@ -23,7 +23,8 @@
 - [Web: lo que Jürgen decidió, y lo que no](project_web_pr62_espera_a_jurgen.md) — PR #62 mergeado el 4-sep; siguen abiertas dos suyas: legal de Grupos y autoalojar fuentes.
 
 ## Entorno y herramientas
-- [Avisar a Frank: lo hace el hook, no tú](reference_avisar_a_frank_webhook.md) — `<motivo>` a secas NO envía (sale 0 en silencio); el hook ya manda PR y rojos solo.
+- [El sello del gate ancla en HEAD](reference_gate_sello_ancla_en_head.md) — una tanda de commits obliga a re-sellar entre ellos; mergear `2.1` obliga a re-correr el gate entero.
+- [Avisar a Frank: lo hace el hook, no tú](reference_avisar_a_frank_webhook.md) — el hook ya manda PR y rojos solo (dupliqué el 5-sep); la palabra «prueba» en el texto lo descarta.
 - [Verificar el backend: MCP ve solo prod](reference_verificar_backend_yala.md) — no hay DDL de staging; el sandbox transaccional prueba contra el motor real sin dejar rastro.
 - [El hook de secretos está desactivado](hook_secretos_disparador_substring.md) — retirado del push el 2026-09-01 (ADR-009); nada escanea hoy. Su trampa del substring, si vuelve.
 - [El hook de /cerrar salta con «cerramos»](hook_cerrar_disparador_substring.md) — verifica la premisa contra su mensaje: cerrar un ticket no es cerrar la sesión, y el bloque de disco es irreversible.
