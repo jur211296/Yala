@@ -465,6 +465,9 @@ struct GroupMembersView: View {
             // ENTERO —flag + zona backend— y su rama negativa informa: un grupo legacy no se puede invitar
             // por ninguna vía, y dejar el botón mudo sería el apagón silencioso que la re-medición marca
             // como peor modo de fallo (§S5.2).
+            // Qué dice esa rama lo decide `GroupInviteLinkCreationLogic`: las DOS causas que cubre el
+            // `else` (grupo legacy, permanente · canal apagado, transitorio) piden consejos opuestos, y
+            // ninguna de las dos es la conexión del admin.
             if CloudSyncFlags.groupsBackendEnabled && group.isBackendGroup {
                 // C4: grupo backend → invite por TOKEN RPC (link ya branded). Cache in-VM (`shareURL != nil`,
                 // arriba) conservado. Nota A1: el flag cubre "no emitir hasta que el parser esté desplegado".
@@ -476,7 +479,16 @@ struct GroupMembersView: View {
                 ).createInviteLink(for: group, inviterName: inviterName, members: viewModel.activeMembers)
             } else {
                 isCreatingShare = false
-                shareErrorMessage = L10n.Groups.Errors.inviteFailed
+                shareErrorMessage = switch GroupInviteLinkCreationLogic.blocker(
+                    backendEnabled: CloudSyncFlags.groupsBackendEnabled,
+                    isBackendGroup: group.isBackendGroup
+                ) {
+                case .legacyGroup: L10n.Groups.Errors.inviteLegacyGroup
+                case .channelOff: L10n.Groups.Errors.inviteChannelOff
+                // No alcanzable: este `else` es la negación exacta del guard que la logic evalúa.
+                // El copy de red es el fallback correcto si algún día dejan de ser el mismo predicado.
+                case nil: L10n.Groups.Errors.inviteFailed
+                }
                 showShareError = true
                 return
             }
