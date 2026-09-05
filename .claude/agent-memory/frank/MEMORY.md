@@ -12,6 +12,7 @@
 
 ## Cómo mido y cómo entrego
 - [Mis mediciones fallan por el filtro](feedback_mis_mediciones_fallan_por_el_filtro.md) — control positivo siempre, también en los greps de auditoría: un «cero» suele ser el filtro, no el código.
+- [Revertir sin commit destruye](feedback_revertir_sin_commit_destruye.md) — en árbol sucio `git checkout -- <f>` borra el trabajo; los mutantes se revierten con `cp`.
 - [Nunca el trailer Co-Authored-By](feedback_trailer_commit_medido.md) — regla del owner ratificada el 2026-09-02 sobre medición; anula el default del system prompt.
 - [Generar y persistir en un solo gesto](feedback_generar_y_persistir_credenciales.md) — una credencial nunca vive solo en pantalla; y verifica si una rotación se aplicó antes de rehacerla.
 - [Medir la web: axe, Lighthouse, preview](feedback_medir_la_web_a11y_y_preview.md) — axe ciego con opacity 0; transiciones congeladas; preview con SSO se verifica por config.json; heredoc suelto en zsh imprime.
@@ -21,6 +22,7 @@
 - [La identidad del recién llegado a un grupo](project_identidad_del_joiner_en_grupos.md) — cerrada en código el 4 y 5-sep; falta device-QA de dos teléfonos, y NO se reabre la vía del refresh.
 - [Decisiones que esperan a Jürgen](project_decisiones_que_esperan_a_jurgen.md) — lo parado espera respuesta suya, no código; verifica antes de citarlas, caducan.
 - [Web: lo que Jürgen decidió, y lo que no](project_web_pr62_espera_a_jurgen.md) — PR #62 mergeado el 4-sep; siguen abiertas dos suyas: legal de Grupos y autoalojar fuentes.
+- [Hipótesis de la Lista Negra, re-comprobadas](project_hipotesis_lista_negra_recomprobadas.md) — el runner de XCUITest SÍ corre en local (5-sep); el coverage-index dice lo contrario.
 
 ## Entorno y herramientas
 - [El sello del gate ancla en HEAD](reference_gate_sello_ancla_en_head.md) — una tanda de commits obliga a re-sellar entre ellos; mergear `2.1` obliga a re-correr el gate entero.

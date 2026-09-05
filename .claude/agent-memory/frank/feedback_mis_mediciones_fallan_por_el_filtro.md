@@ -211,3 +211,30 @@ código, no, y ahí el fallo es más silencioso porque «cero coincidencias» se
 antes de escribir «limpio» — dos líneas y un `grep -c`. Si la sonda no da 1, lo que está roto es el
 filtro, no el código. Y para los que sí dan resultados, mira **una** coincidencia entera antes de
 creértela: los tres de arriba se veían venir leyendo la línea completa.
+
+---
+
+**Decimotercero (2026-09-05): el build INCREMENTAL da cero warnings porque no compiló nada.** Tras
+tocar cuatro ficheros corrí `xcodebuild build | grep -c "warning:"` sobre la scheme Dev y salió **0**.
+Iba a escribir «cero warnings nuevos» en el informe del gate. El build anterior ya había dejado todo
+compilado, así que ese cero no decía nada del código: decía que no hubo compilación. El control
+positivo lo delató al instante — *warnings totales de la corrida* también era 0, y un build real de
+este repo siempre trae nueve.
+
+**Why:** es la familia del universo vacío (el caso nº 9), no la del filtro roto. El grep estaba
+perfecto; lo que no había era nada que filtrar. Y aquí duele especialmente porque el paso 1 del gate
+existe justo para eso, así que un cero falso convierte el gate en un sello de goma.
+
+**How to apply:** para medir warnings de tus ficheros, **fuerza la recompilación** (`touch` de los
+ficheros tocados, o `-derivedDataPath` limpio) y **verifica que recompiló** antes de leer el número:
+`grep -c "<TuFichero>.swift"` sobre la salida tiene que dar >0, y el total de warnings de la corrida
+tiene que parecerse al baseline conocido. Un `BUILD SUCCEEDED` instantáneo es la señal de que estás a
+punto de medir el vacío.
+
+**Y la nota buena del mismo día: el conteo de suites me salvó otra vez.** Pedí 18 filtros
+`-only-testing` y la línea dijo `139 tests in 16 suites`. Dos de mis filtros eran nombres de FICHERO
+(`RelaunchNetLogicTests`, `SessionPreferenceKeysTests`) y ningún struct se llama así — el caso nº 6 de
+esta ficha, repetido. La diferencia es que esta vez lo cacé en el sitio, porque comparar *pedidas
+contra arrancadas* ya es reflejo. Los 8 structs reales (`RelaunchNetVerdictTests`,
+`SessionPreferenceKeysNetTests`, …) dieron 32 tests más. **`.claude/rules/testing.md` L103 ya lo
+documenta**: resuelve los nombres con `grep -n "@Suite" <fichero>`, nunca por el nombre del fichero.
