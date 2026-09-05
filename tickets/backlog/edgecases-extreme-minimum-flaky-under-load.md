@@ -39,6 +39,13 @@ que su timeout. No se midió cuál es ese timeout ni si es el mismo patrón que 
 libres, por encima del umbral, así que el disco NO lo explica esa vez — pero es lo primero que se
 descarta si reaparece.
 
+## Segunda medición, el mismo día
+
+Re-corrido **el lote entero de cinco suites** tras el arreglo de la review adversarial: **19 tests, 0
+fallos**, `test_extremeMinimumAmountSaves` incluido. O sea, en el mismo montaje que lo tumbó una vez,
+pasó a la siguiente. Va **1 fallo de 2 corridas del lote**, más 1 de 1 en aislamiento — muestra
+demasiado pequeña para concluir nada salvo que no es determinista.
+
 ## Qué haría falta
 
 Reproducirlo: correr el mismo lote de cinco suites unas cuantas veces y contar. Un fallo de 1 en N no

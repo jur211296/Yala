@@ -38,6 +38,28 @@ llegado. El guard de `GroupService` es la RED por debajo — y una red que no re
 de ser red. Si algún día otra superficie llama a `removeMember` sin pasar por esa vista, se podría
 auto-expulsar. Vale la pena alinearlo aunque hoy no se pueda disparar.
 
+## Y un tercero, que sí se intentó y se DESHIZO · 2026-09-05
+
+**`AppBootstrapper`, el cleanup de «me expulsaron del grupo».** Se alineó con el resolvedor canónico y
+la review adversarial de la misma sesión lo tumbó: la pregunta que ese guard hace es **por fila**
+(«¿existe una fila mía expulsada?») y el resolvedor singular contesta otra («¿la fila canónica de la
+zona está expulsada?»). En una zona con dos filas del mismo humano divergen, y aquí divergir cuesta
+caro en las dos direcciones:
+
+- canónica `active` + gemela `removed` ⇒ el cleanup legítimo deja de correr (lo que ya pasa hoy);
+- canónica `removed` + gemela `active` ⇒ `performRemovedSelfCleanup` **borra el grupo** con sus
+  gastos, shares y liquidaciones, y emite tombstones al backend. Sobre un grupo al que el usuario
+  acaba de re-unirse.
+
+Se revirtió al `#Predicate` original, con el motivo escrito junto a la línea y declarado en el
+allowlist de `GroupJoinerIdentityConsumerTests`.
+
+**Para alinearlo bien ya existe media pieza:** `GroupExpenseService.resolveAllCurrentUserMembers`
+(la variante plural, creada el 5-sep para `updateCurrentUserDisplayName`) contesta la pregunta por
+fila. Lo que falta es la otra mitad, y **es una decisión, no código**: qué hacer cuando una fila mía
+está expulsada y otra activa. Borrar el grupo es irreversible; no borrarlo deja el grupo puesto. Esa
+la toma Jürgen.
+
 ## Por qué NO se hizo junto con el resto
 
 Alcance. El ticket padre pedía los consumidores con consecuencia sobre el dinero, el saldo y los

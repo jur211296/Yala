@@ -273,8 +273,13 @@ final class GroupExpenseViewModel {
         self.selectableMemberIDs = Set(members.filter(\.isActive).map { $0.id.uuidString })
         // Prefill de «Pagado por». Con el flag pelado abría EN BLANCO para quien se acaba de unir
         // (`isCurrentUser` aún sin encender) — el caso más común es justo que pague él.
-        self.paidByMemberID = GroupExpenseService.resolveCurrentUserMember(from: members)
-            .flatMap { $0.isActive ? $0.id.uuidString : nil } ?? ""
+        //
+        // Se resuelve SOBRE LOS ACTIVOS, no se resuelve y luego se filtra: son cosas distintas cuando
+        // hay dos filas mías y la más antigua está inactiva. El original (`first { flag && isActive }`)
+        // buscaba una que cumpliera LAS DOS; resolver primero devolvería la inactiva y el prefill
+        // saldría vacío — exactamente el síntoma que este arreglo viene a quitar.
+        self.paidByMemberID = GroupExpenseService
+            .resolveCurrentUserMember(from: members.filter(\.isActive))?.id.uuidString ?? ""
         self.selectedMemberIDs = selectableMemberIDs
     }
 

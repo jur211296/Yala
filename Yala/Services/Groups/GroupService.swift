@@ -926,8 +926,11 @@ final class GroupService {
         return member
     }
 
-    /// A13: Updates the current user's `displayName` across all groups they belong to,
-    /// and enqueues sync for each updated SplitMember. Called after the user finishes
+    /// A13: Updates the current user's `displayName` across all groups they belong to.
+    /// NO encola sync: `SplitMember` es pull-only en el canal vivo (`GroupsSyncClient`: «SplitMember
+    /// (pull-only) y cualquier otro: sin emisión») y el `enqueueSave` de CloudKit que esta línea
+    /// prometía murió con `SplitSyncManager`. El cambio se queda local; el displayName del canal
+    /// backend lo corrige el servidor por su propia vía. Called after the user finishes
     /// their initial onboarding (e.g. `GroupInviteOnboardingView.performSilentSetup`)
     /// or as part of boot-time reconciliation if a previous attempt was interrupted.
     /// - Parameter newName: the user's chosen display name (will be trimmed).
@@ -945,9 +948,15 @@ final class GroupService {
         //
         // Es una LECTURA: agrupa los members que ya están en el store y elige uno por zona. Nada que ver
         // con `refreshCurrentUserFlags`, que además escribe y arrastra su backfill por `displayName`.
+        // La variante PLURAL, y aquí importa cuál se usa. Esta función pregunta «¿cuáles son mis
+        // filas?», no «¿cuál es mi miembro?»: el fetch viejo (`isCurrentUser == true`, sin zona)
+        // devolvía TODAS las marcadas, y el resolvedor singular devuelve UNA por zona. Con el singular,
+        // el gemelo de una zona migrada se quedaba con el nombre viejo para siempre — y como el filtro
+        // de trabajo es justo `displayName != trimmed`, la función volvería a entrar en cada arranque
+        // sin converger nunca. El plural añade lo que el flag pelado no veía (la fila born-backend del
+        // recién llegado) sin quitar nada de lo que sí veía.
         let allMembers = try context.fetch(FetchDescriptor<SplitMember>())
-        let myMembers = Dictionary(grouping: allMembers, by: \.groupZoneID)
-            .compactMap { GroupExpenseService.resolveCurrentUserMember(from: $0.value) }
+        let myMembers = GroupExpenseService.resolveAllCurrentUserMembers(from: allMembers)
         let pending = myMembers.filter { $0.displayName != trimmed }
         guard !pending.isEmpty else { return }
 

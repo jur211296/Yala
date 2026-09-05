@@ -69,7 +69,6 @@ struct GroupJoinerIdentityConsumerTests {
         ("Yala/App/Services/ScheduledPaymentDraftService.swift", "groupGateDecision"),
         ("Yala/Services/Groups/GroupService.swift", "func currentUserMember"),
         ("Yala/Services/Groups/GroupNotificationService.swift", "func currentMemberID"),
-        ("Yala/App/AppBootstrapper.swift", "performRemovedSelfCleanup"),
     ]
 
     /// La ÚNICA excepción, declarada y con motivo. `ensureCurrentUserMemberExists` no consume la
@@ -86,7 +85,22 @@ struct GroupJoinerIdentityConsumerTests {
     /// lo que convierte un escáner en un sello de goma.
     private static let excepciones: [(ruta: String, fragmento: String)] = [
         ("Yala/Services/Groups/GroupService.swift",
-         "if let legacy = members.first(where: { $0.isCurrentUser }) {")
+         "if let legacy = members.first(where: { $0.isCurrentUser }) {"),
+        // La SEGUNDA excepción, y ésta se alineó y luego se DESHIZO — conviene que quede escrito por
+        // qué, o alguien la volverá a alinear con la mejor intención.
+        //
+        // El guard de removed-self de `AppBootstrapper` contesta «¿existe una fila MÍA expulsada?»,
+        // que es POR FILA. El resolvedor singular contesta «¿la fila CANÓNICA está expulsada?». En una
+        // zona con dos filas mías las dos preguntas divergen, y aquí divergir cuesta un borrado:
+        // `performRemovedSelfCleanup` elimina el grupo con sus gastos, shares y liquidaciones, y emite
+        // tombstones al backend. Con la canónica `removed` y la gemela `active` —un re-join que estrena
+        // `member_key`— se nukearía el grupo al que el usuario acaba de volver.
+        //
+        // Alinearlo de verdad pide `resolveAllCurrentUserMembers` MÁS una decisión de producto que
+        // nadie ha tomado: qué hacer cuando una fila mía está expulsada y otra activa. Vive en
+        // `tickets/backlog/joiner-flag-residuals-cosmetic-and-service-guard.md`.
+        ("Yala/App/AppBootstrapper.swift",
+         "predicate: #Predicate { $0.isCurrentUser == true && $0.status == removedRaw }")
     ]
 
     @Test("ningún consumidor resuelve identidad con el flag pelado")

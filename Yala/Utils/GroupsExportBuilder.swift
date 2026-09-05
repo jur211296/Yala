@@ -175,8 +175,9 @@ enum GroupsExportBuilder {
                     .filter { $0.isCurrentUser && $0.isActive }
                     .map { $0.id.uuidString }
             )
-            if let resolved = GroupExpenseService.resolveCurrentUserMember(from: bundle.members),
-               resolved.isActive {
+            // Resolver sobre los ACTIVOS — gemelo del de `GroupsViewModel.currentUserMemberIDs`.
+            if let resolved = GroupExpenseService.resolveCurrentUserMember(
+                from: bundle.members.filter(\.isActive)) {
                 myMemberIDs.insert(resolved.id.uuidString)
             }
 

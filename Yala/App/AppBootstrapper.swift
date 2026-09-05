@@ -1483,29 +1483,29 @@ final class AppBootstrapper {
         // 2) Removed-self: current user con status=.removed → flow simétrico a leaveGroup.
         do {
             let removedRaw = SplitMemberStatus.removed.rawValue
-            // Identidad RESUELTA. El `#Predicate` que había aquí exigía `isCurrentUser == true`, que el
-            // pull backend nunca enciende: a quien acababa de entrar a un grupo y era expulsado antes del
-            // arranque siguiente NO se le corría el cleanup, y el grupo se le quedaba puesto.
+            // El flag PELADO aquí es deliberado, y es una excepción a la alineación del 2026-09-05.
             //
-            // Se filtra primero por status —lo único que SwiftData sí puede traducir— y solo las zonas con
-            // algún member expulsado pagan la resolución, que es en memoria porque el criterio canónico lee
-            // estado de sesión e iCloud. Sin expulsados (el caso normal) esto es un fetch y nada más.
-            let removedAnywhere = try context.fetch(FetchDescriptor<SplitMember>(
-                predicate: #Predicate { $0.status == removedRaw }
+            // La pregunta que este guard tiene que contestar es «¿existe una fila MÍA expulsada?», que es
+            // POR FILA. La resolución canónica contesta otra: «¿la fila CANÓNICA de la zona (la de
+            // `joinedAt` más antiguo) está expulsada?». En una zona con dos filas del mismo humano —el
+            // caso migrado que `GroupsViewModel` y `GroupsExportBuilder` tratan explícitamente— las dos
+            // preguntas divergen, y aquí divergir sale carísimo en las DOS direcciones:
+            //
+            //  - canónica `active` + gemela `removed` ⇒ el cleanup legítimo deja de correr;
+            //  - canónica `removed` + gemela `active` (un re-join que estrena `member_key`) ⇒ se dispara
+            //    `performRemovedSelfCleanup` sobre el grupo al que el usuario ACABA de volver, y eso
+            //    borra sus gastos, sus shares y sus liquidaciones, con tombstones al backend.
+            //
+            // Alinear esto de verdad pide resolver TODAS mis filas de la zona, no una, y eso es un
+            // consumidor nuevo del resolvedor que no existe todavía. Queda en
+            // `tickets/backlog/joiner-flag-residuals-cosmetic-and-service-guard.md`: el precio de dejarlo
+            // es que a quien expulsan antes de su siguiente arranque no se le limpia el grupo — molesto,
+            // recuperable y silencioso. El precio de equivocarse al alinearlo es un borrado.
+            let removedSelfMembers = try context.fetch(FetchDescriptor<SplitMember>(
+                predicate: #Predicate { $0.isCurrentUser == true && $0.status == removedRaw }
             ))
-            for zoneName in Set(removedAnywhere.map(\.groupZoneID)) {
-                let me: SplitMember?
-                do {
-                    me = try GroupExpenseService.resolveCurrentUserMember(
-                        inZone: zoneName, context: context)
-                } catch {
-                    #if DEBUG
-                    logger.error("freezeOrphanedGroups: removed-self resolve failed for \(zoneName, privacy: .public): \(error.localizedDescription, privacy: .public)")
-                    #endif
-                    continue
-                }
-                guard me?.status == removedRaw else { continue }
-                await GroupService.shared.performRemovedSelfCleanup(zoneName: zoneName)
+            for member in removedSelfMembers {
+                await GroupService.shared.performRemovedSelfCleanup(zoneName: member.groupZoneID)
             }
         } catch {
             #if DEBUG

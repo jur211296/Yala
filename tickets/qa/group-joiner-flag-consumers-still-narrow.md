@@ -181,3 +181,43 @@ borrar la explicación.
 Cazó un consumidor que la tabla del ticket no listaba (`ensureCurrentUserMemberExists`) la primera vez que
 corrió.
 
+---
+
+## La review adversarial, y lo que cazó · 2026-09-05
+
+Dos lentes independientes sobre el commit ya congelado: una de **corrección del bridge y del dinero**,
+otra de **cambios de comportamiento no buscados**. Cazaron cuatro cosas reales, y las cuatro comparten
+la misma raíz: **la alineación de identidad no es mecánica.** El flag pelado y el resolvedor canónico
+contestan preguntas distintas en dos ejes —el resolvedor devuelve UNA fila por zona y no filtra por
+estado— y hay consumidores para los que esas dos diferencias importan.
+
+| Lo que se rompía | Arreglo |
+|---|---|
+| **El pago programado del pendiente se APAGABA.** El gate solo distingue «existe» de «activo», y su rama de no-activo escribe `payment.isActive = false` sin que nadie lo re-encienda. Antes el member del pendiente no se resolvía y el gate reintentaba; al resolverlo, le habría apagado el pago — empeorando justo al usuario que este ticket viene a atender | Un `pendingApproval` se pasa como AUSENTE. El propio comentario del gate dice a quién quiere pausar: «removido/salido» |
+| **`AppBootstrapper` podía BORRAR un grupo.** Su guard pasó de «¿existe una fila mía expulsada?» (por fila) a «¿la canónica está expulsada?». Con la canónica `removed` y la gemela `active` —un re-join que estrena `member_key`— `performRemovedSelfCleanup` nukea el grupo con sus gastos y emite tombstones | **Revertido.** No estaba en la tabla de trece: lo añadí por iniciativa propia y no salió gratis. Residual documentado |
+| **El nombre del onboarding no llegaba al gemelo.** El singular colapsa a una fila por zona; el fetch viejo devolvía todas las marcadas. Y como el filtro de trabajo es `displayName != nuevo`, la función reentraba en cada arranque sin converger | Variante **plural** nueva, `resolveAllCurrentUserMembers`, para los consumidores que preguntan por fila |
+| **El prefill podía abrir en blanco.** `resolver-y-filtrar` ≠ `buscar-la-que-cumple-ambas`: con dos filas mías y la más antigua inactiva, lo primero devuelve la inactiva | Resolver **sobre los activos**. Mismo arreglo en los dos Set aditivos |
+
+Y una mejora menor de la lente del bridge: el fetch del helper va **ordenado por `joinedAt`**. El
+desempate de `min(by:)` ante empate exacto devuelve el primero del array, y los demás consumidores
+canónicos resuelven sobre el array ya ordenado de `fetchMembers`. Sin ordenar, dos filas empatadas al
+milisegundo bastaban para que el formulario marcara como pagador una fila y el bridge resolviera otra.
+
+### Lo que la review dijo y NO se aceptó
+
+- **«El cambio puede flipar la atribución con dos filas marcadas.»** Al revés: el código viejo hacía
+  `.first` **sin `sortBy`** —lo decidía el orden del store, y podía cambiar entre arranques—, y el
+  nuevo es determinista y coincide con el criterio que ya usan los demás. Reduce la divergencia.
+- **`bridgeOpeningBalance` borra las TX antes de decidir si participo** (`:607-624`), y el docblock de
+  `updateCurrentUserDisplayName` prometía un `enqueueSave` que murió con `SplitSyncManager`. Las dos
+  son **preexistentes**. El docblock se corrigió porque miente sobre la función que este cambio toca y
+  es justo la frase que un revisor usaría para juzgar el riesgo; lo de `bridgeOpeningBalance` no se
+  toca: es lógica de dinero que nadie pidió cambiar.
+
+### La crítica que más valía
+
+«Los tests validan que el cambio se aplicó, no lo que el cambio hace.» Cierto: el source-scan protege
+el cableado y no habría visto ninguno de los cuatro fallos de arriba. De ahí sale
+`YalaTests/GroupJoinerConsumerBehaviourTests` — cuatro tests de comportamiento, cada uno con su
+control en la dirección contraria (al pendiente no se le pausa **y** al expulsado sí).
+

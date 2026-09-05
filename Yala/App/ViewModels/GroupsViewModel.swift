@@ -180,8 +180,11 @@ final class GroupsViewModel {
             // el usuario no contaba en el resumen global aunque la tarjeta del grupo ya lo reconociera.
             // AÑADE, no sustituye: en una zona migrada el mismo humano puede tener su member CloudKit
             // legacy Y el backend, y quedarse solo con el canónico borraría del resumen el saldo del otro.
-            if let resolved = GroupExpenseService.resolveCurrentUserMember(from: members),
-               resolved.isActive {
+            // Resolver SOBRE LOS ACTIVOS, no resolver y filtrar: con dos filas mías y la más antigua
+            // inactiva, lo segundo devuelve la inactiva y el fix no dispara en la zona migrada que este
+            // comentario invoca.
+            if let resolved = GroupExpenseService.resolveCurrentUserMember(
+                from: members.filter(\.isActive)) {
                 currentUserMemberIDs.insert(resolved.id.uuidString)
             }
         }
