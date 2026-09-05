@@ -489,11 +489,18 @@ seis ficheros:
 | Escritor | `OnboardingView.swift` · `completeOnboarding` | «esta persona terminó su onboarding» | **cajón** |
 | Escritor | `ContentView.swift` · `completeOnboardingAsRestoreSkip` | lo mismo, por el camino de restauración | **cajón** |
 | Escritor | `ContentView.swift` · `onSecondaryEntryFlagsMarked` | la ventana de ENTRADA | **se queda en `.standard`** |
-| Lector ×3 | `AppBootstrapper.swift` (`:1050`, `:2446`, `:2461`) | alert de restart · seed de avisos · imagen compartida | **cajón** |
+| Lector ×3 | `AppBootstrapper` · `checkForICloudMismatch` · `seedDefaultNotifications` · `checkForPendingSharedImage` | alert de restart · seed de avisos · imagen compartida | **cajón** |
 | Lector | `ContentView.swift` · el gate del organizador | «¿ya vio un educativo de Grupos?» | **cajón** |
 | Lector | `GroupsContainerView.swift` | el gemelo del anterior | **cajón** |
 | Lector | `RouterEntryGate.swift` · `readinessProvider` | readiness del router | **cajón** |
 | Lector | `GroupBackendInviteEntryHandler.swift` | routing del invitado fresco | **cajón** |
+
+**Y las coordenadas de esta tabla se escribieron por NOMBRE de función a propósito.** La primera
+versión citaba `AppBootstrapper.swift:1050 / :2446 / :2461` — que eran las líneas del árbol de ANTES
+del commit; los comentarios que el propio commit añade las desplazaron a `:1053 / :2484 / :2502`
+antes de que el ticket llegara a leerse. Es exactamente el defecto que el `CLAUDE.md` de este repo
+persigue («tres coordenadas de un informe apuntaban a líneas anteriores al propio commit que las
+medía»), cometido en el ticket que lo cita. Los nombres de función no se desplazan.
 
 Los cuatro lectores que el ticket no nombraba **no eran opcionales**: la propia regla que este
 ticket puso («escritor y lectores viajan en el mismo commit») los obliga, y dos de ellos —el gate
