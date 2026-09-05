@@ -238,3 +238,39 @@ esta ficha, repetido. La diferencia es que esta vez lo cacé en el sitio, porque
 contra arrancadas* ya es reflejo. Los 8 structs reales (`RelaunchNetVerdictTests`,
 `SessionPreferenceKeysNetTests`, …) dieron 32 tests más. **`.claude/rules/testing.md` L103 ya lo
 documenta**: resuelve los nombres con `grep -n "@Suite" <fichero>`, nunca por el nombre del fichero.
+
+---
+
+## Decimocuarto (2026-09-05): incumplí L103 el mismo día que la cité, y lo cazó el CI
+
+En el gate corrí `-only-testing:YalaTests/SignOutWipeHookTests`. Ese fichero declara **TRES**
+suites (`SignOutWipeHookTests`, `GroupsOnlySignOutWipeHookTests`, `SignOutNotificationWiringTests`)
+y solo corrió la primera. La tercera —la de source-scan del cableado— tenía un conteo que mi cambio
+rompía, **determinista, 3 de 3 iteraciones en CI**. Declaré el gate en verde con un rojo dentro.
+
+Lo doloroso: horas antes, en esta misma sesión, había **leído y citado** `.claude/rules/testing.md`
+L103, que lo dice literalmente —«la segunda suite de un fichero suele ser justamente la de
+source-scan del cableado, la que más te interesa cuando tocas producción»— y aun así resolví los
+filtros por nombre de fichero. Y el conteo de suites tampoco me salvó: cuadró (12 pedidas, 12
+arrancadas), porque **el error no fue pedir de más sino no saber qué había que pedir**.
+
+**Why:** el conteo pedidas-vs-arrancadas detecta filtros que no expanden; **no** detecta suites que
+nunca pediste. Son dos huecos distintos y yo solo tenía red para uno.
+
+**How to apply:** al acotar el gate por suites, el universo no se arma a mano. Se deriva:
+
+    # 1. qué ficheros de test mencionan cada fuente tocada
+    grep -rl "<Fuente>.swift" YalaTests/
+    # 2. TODAS las suites de esos ficheros, por tipo y no por fichero
+    grep -h "^struct " <esos ficheros> | sed 's/struct \([A-Za-z0-9_]*\).*/\1/' | sort -u
+    # 3. filtros en ARRAY, y al final: filtros pedidos == suites arrancadas
+
+Aplicado después del rojo: 7 ficheros → **21 suites** (yo había corrido 12) → 168 tests, 21 de 21.
+
+**Y el corolario sobre el CI, que es la otra mitad:** el paso que lo cazó estaba marcado
+`continue-on-error: true` y su estado decía **`success`**. El rojo solo aparece bajando el log del
+job (`gh api repos/<o>/<r>/actions/jobs/<id>/logs`) y leyendo `Test run with N tests in M suites
+failed`. Es el caso nº 4 de esta ficha, vivo y coleando: **en este repo el estado de un paso del CI
+no es su resultado, nunca**. Y para clasificar lo que salga, `-retry-tests-on-failure` reintenta la
+corrida entera: contar **en cuántas de las N iteraciones falló cada test** separa lo determinista
+(mío, 3/3) de lo flaky (los spikes R3, 2/3 y 1/3) sin tener que suponerlo.
