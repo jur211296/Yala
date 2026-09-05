@@ -211,3 +211,24 @@ código, no, y ahí el fallo es más silencioso porque «cero coincidencias» se
 antes de escribir «limpio» — dos líneas y un `grep -c`. Si la sonda no da 1, lo que está roto es el
 filtro, no el código. Y para los que sí dan resultados, mira **una** coincidencia entera antes de
 creértela: los tres de arriba se veían venir leyendo la línea completa.
+
+## La otra mitad: cómo se contesta «¿este warning es MÍO?» sin inferirlo (2026-09-05)
+
+El gate exige «cero warnings nuevos en los archivos tocados», y un build incremental **solo reporta
+lo que recompiló** ⇒ un warning viejo aparece por primera vez el día que tu cambio obliga a
+recompilar ese fichero. Ese día parece tuyo. Y si tu diff añade o quita líneas, ni siquiera el
+número de línea casa con el del original.
+
+**La forma barata de medirlo, en vez de razonarlo:** copiar a un scratchpad los `.swift` de
+producción que tocaste, `git checkout HEAD --` sobre ellos, **mover fuera los ficheros nuevos**
+(no existen en HEAD y romperían el build), compilar, y restaurar las copias. Tres minutos.
+
+El 2026-09-05 así se demostró que el warning de `ContentView` era preexistente: HEAD lo tenía en la
+línea 1551 y mi árbol lo enseñaba en la 1549 — desplazado exactamente por las dos líneas que quitaba
+mi diff. Sin esa corrida habría escrito «es preexistente» como inferencia, que es justo lo que el
+`CLAUDE.md` pide distinguir.
+
+**Y el que sí era mío, en la misma corrida:** un `enum` nuevo sin `nonisolated` bajo
+`SWIFT_DEFAULT_ACTOR_ISOLATION=MainActor` da *«main actor-isolated conformance … cannot be used in
+nonisolated context; this is an error in the Swift 6 language mode»* en cuanto un `enum nonisolated`
+lo compara. Todo tipo nuevo de la capa `Logic` nace `nonisolated`, como sus 130 hermanos.
