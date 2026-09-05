@@ -701,11 +701,9 @@ struct ContentView: View {
             onGroupsOnlyComplete: { startGroupsOnlyBranch(payload: $0) }
         ) {
             // Set flag BEFORE dismiss — onChange picks it up reliably
-            if !FeatureGateService.shared.isProUser {
-                SessionState.shared.needsPostOnboardingTrial = true
-            }
+            // El alta REAL: aquí sí van los dos efectos de primera vez (ver `EntryOnboardingEffects`).
+            applyEntryOnboardingEffects(.freshInstall)
             hasCompletedOnboarding = true
-            SetupChecklistManager.shared.markAsNewInstall()
             showOnboarding = false
             prefilledOnboardingData = nil
             reEmitInviteAfterRestore()
@@ -1932,18 +1930,31 @@ fileprivate func runRelaunchNetVerifyLoop(
 
 // MARK: - Helpers (file-private SSOT)
 
-/// Side-effect de `WelcomeRestoreView.onCompleteSkipAll` (rama fullyPrefilled):
-/// setea trial pendiente, completion flag y new-install marker.
-fileprivate func completeOnboardingAsRestoreSkip() {
-    if !FeatureGateService.shared.isProUser {
+/// Los dos efectos de "primera vez" —oferta de prueba y marcador del checklist— aplicados según
+/// CÓMO se entró (`EntryOnboardingEffects`, que es donde vive el criterio y sus tests).
+fileprivate func applyEntryOnboardingEffects(_ kind: AppEntryKind) {
+    if EntryOnboardingEffects.armsTrialOffer(kind, isProUser: FeatureGateService.shared.isProUser) {
         SessionState.shared.needsPostOnboardingTrial = true
     }
+    if EntryOnboardingEffects.marksNewInstall(kind) {
+        SetupChecklistManager.shared.markAsNewInstall()
+    }
+}
+
+/// Side-effect de `WelcomeRestoreView.onCompleteSkipAll` (rama fullyPrefilled) y del arranque del
+/// adopt: marca el onboarding como completado.
+///
+/// **Es una RE-ENTRADA**, así que NO arma la oferta de prueba ni el marcador de instalación nueva
+/// (`EntryOnboardingEffects`): sus tres callsites son gente que ya tenía cuenta —restauró de iCloud,
+/// era "solo grupos", o está adoptando su cuenta del Modo Nube— y los dos efectos aterrizaban justo
+/// en la ventana en la que la app se ve vacía porque sus datos todavía están bajando.
+fileprivate func completeOnboardingAsRestoreSkip() {
+    applyEntryOnboardingEffects(.reentry)
     // El CAJÓN de esta sesión, por el mismo motivo que su gemelo de `OnboardingView.completeOnboarding`
     // (decisión del owner 2026-09-03): es el MISMO hecho —«esta persona ya no tiene onboarding
     // pendiente»— escrito por el otro camino, el de la restauración. Fuera de sesión secundaria la
     // puerta devuelve `.standard` y esto es byte-idéntico a lo de antes.
     SessionDefaults.current.set(true, forKey: AppPreferences.Keys.hasCompletedOnboarding)
-    SetupChecklistManager.shared.markAsNewInstall()
 }
 
 /// Binding gate: el flag solo se refleja `true` si `inhibitor == false`.

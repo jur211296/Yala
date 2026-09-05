@@ -5503,6 +5503,10 @@
 /* Share-link button: groups channel is off right now — transient, retry later (NOT the user's connection) */
 "groups.errors.inviteChannelOff" = "Wir können gerade keine Einladungslinks erstellen. Versuche es in Kürze noch einmal.";
 
+/* Adopt/sign-up blocked: HTTP 403 on account claim — the account exists but the backend refuses access */
+"welcome.cloud.accountBlockedTitle" = "Dein Konto ist nicht verfügbar";
+/* Body for the blocked-account screen; explicitly rules out a network problem */
+"welcome.cloud.accountBlockedBody" = "Es liegt nicht an deiner Verbindung: Wir können dir gerade keinen Zugriff auf dieses Konto geben. Schreib uns an %@, und wir schauen es uns gemeinsam an.";
 /* Extra warning appended to the sign-out blocked alert during a guest (secondary) session, where leaving anyway is offered */
 "settings.signOutSecondaryLossWarning" = "Wenn du jetzt gehst, erreichen diese Änderungen dein Konto nicht.";
 

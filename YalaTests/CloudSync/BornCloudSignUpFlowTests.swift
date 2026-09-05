@@ -105,10 +105,13 @@ struct BornCloudSignUpFlowTableTests {
                 == .releaseSessionAndShowError)
     }
 
-    @Test("403 no es reintentable (la cuenta está suspendida) y 5xx sí (el claim es idempotente)")
+    @Test("403 lleva a la pantalla de cuenta bloqueada (no al error de red) y 5xx sí es reintentable")
     func errorRetryability_matchesTheCause() {
+        // Pantalla PROPIA y no `.error(retryable: false)`: ésa comparte icono de wifi y un cuerpo que
+        // empieza por «Revisa tu conexión», y ante un 403 la conexión está perfectamente bien
+        // (ticket `reentry-counts-as-fresh-install` §3 — el adopt llega a esta misma pantalla).
         #expect(BornCloudSignUpFlow.step(for: .accountUnavailable(detail: "403"))
-                == .show(.error(retryable: false)))
+                == .show(.accountBlocked))
         #expect(BornCloudSignUpFlow.step(for: .transient(detail: "500"))
                 == .show(.error(retryable: true)))
     }

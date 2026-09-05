@@ -203,7 +203,9 @@ struct WelcomeCloudSignInView: View {
     private var canGoBack: Bool {
         switch phase {
         // `.providerMismatch`: sesión ya soltada y sin claim — nada comprometido.
-        case .intro, .notFound, .blockedForeignData, .error, .providerMismatch: true
+        // `.accountBlocked`: el claim fue RECHAZADO (403) — tampoco se creó nada, y sin retry ni
+        // salida sería un callejón (mismo criterio que `.blockedForeignData`).
+        case .intro, .notFound, .blockedForeignData, .error, .providerMismatch, .accountBlocked: true
         // `.creating`: el claim está en vuelo y puede CREAR la cuenta server-side — salir a mitad
         // dejaría al usuario sin saber si se dio de alta. Mismo criterio que `.checking`.
         // `.bornCloudReady` es terminal como `.relaunch`: la cuenta está creada y el par escrito.
@@ -295,6 +297,15 @@ struct WelcomeCloudSignInView: View {
                     .accessibilityIdentifier("welcome_cloud_retry")
                 }
             }
+        case .accountBlocked:
+            // Icono de CUENTA y no de wifi: el 403 llega con la conexión perfectamente sana, y el copy
+            // de `.error` —que empieza por «Revisa tu conexión»— mandaba a la gente a mirar su router.
+            // Sin botón de reintentar a propósito: esperar no despierta una cuenta bloqueada.
+            messageContent(
+                icon: "person.crop.circle.badge.xmark",
+                title: L10n.Welcome.Cloud.accountBlockedTitle,
+                body: L10n.Welcome.Cloud.accountBlockedBody(AppConstants.supportEmail))
+                .accessibilityIdentifier("welcome_cloud_account_blocked")
         }
     }
 
@@ -844,10 +855,16 @@ struct WelcomeCloudSignInView: View {
         }
         while true {
             controller.refresh()
-            let next = CloudWelcomeSignInFlow.phase(for: controller.uiState)
+            let next = CloudWelcomeSignInFlow.phase(
+                for: controller.uiState,
+                claimBlocker: controller.claimBlocker)
             phase = next
             switch next {
             case .relaunch, .error:
+                return
+            case .accountBlocked:
+                // Terminal: el poll para. Seguir tickeando solo repetiría un claim que el backend ya
+                // rechazó, y el auto-resume gastaría sus intentos contra una puerta cerrada.
                 return
             case .waitingLeader:
                 return

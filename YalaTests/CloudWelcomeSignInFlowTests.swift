@@ -79,6 +79,60 @@ struct CloudWelcomeSignInFlowPhaseTests {
     }
 }
 
+// MARK: - §3 del ticket `reentry-counts-as-fresh-install` · el claim aparcado por cuenta, no por red
+
+/// Antes de esto, un 403 en el claim del adopt dejaba el journal en `claimingMigration` —fase
+/// transicional perfectamente normal— así que el `uiState` seguía diciendo `.migrating` y la pantalla
+/// se quedaba en «Conectando con tu cuenta…» para siempre, con el auto-resume gastando sus tres
+/// intentos y ofreciendo después un botón de reintentar que no podía funcionar.
+@Suite("Welcome sign-in nube — el claim bloqueado gana sobre el progreso")
+struct CloudWelcomeSignInFlowClaimBlockerTests {
+
+    private let midAdopt = CloudMigrationUIState.migrating(
+        MigrationUIStep(fraction: 0.22, phase: .claimingMigration))
+
+    @Test("403 a mitad del adopt → pantalla de cuenta bloqueada, no «Conectando…»")
+    func accountUnavailable_beatsProgress() {
+        #expect(CloudWelcomeSignInFlow.phase(for: midAdopt, claimBlocker: .accountUnavailable)
+                == .accountBlocked)
+    }
+
+    @Test("Sin bloqueo, el mismo uiState sigue siendo progreso (control del test de arriba)")
+    func noBlocker_staysAdopting() {
+        #expect(CloudWelcomeSignInFlow.phase(for: midAdopt, claimBlocker: nil)
+                == .adopting(fraction: 0.22))
+    }
+
+    @Test("401 sí es reintentable: volver a entrar rehace la sesión")
+    func sessionExpired_isRetryable() {
+        #expect(CloudWelcomeSignInFlow.phase(for: midAdopt, claimBlocker: .sessionExpired)
+                == .error(retryable: true))
+    }
+
+    /// La red NO produce blocker (el runner lo deja en `nil` ante `transient`), así que la barra de
+    /// progreso se queda donde estaba y el auto-resume hace su trabajo. Este test fija el contrato
+    /// desde el lado de la pantalla: si algún día `transient` empezara a marcar blocker, aquí se ve.
+    @Test("Un adopt esperando por red no se convierte en pantalla de fallo")
+    func networkParked_staysAdopting() {
+        #expect(CloudWelcomeSignInFlow.phase(for: .idle, claimBlocker: nil)
+                == .adopting(fraction: 0))
+    }
+
+    @Test("Un bloqueo de un intento viejo NO tapa un adopt que ya terminó")
+    func terminalsWin_overStaleBlocker() {
+        #expect(CloudWelcomeSignInFlow.phase(for: .needsRelaunch(.toCloud),
+                                             claimBlocker: .accountUnavailable) == .relaunch)
+        #expect(CloudWelcomeSignInFlow.phase(for: .cloudActive,
+                                             claimBlocker: .accountUnavailable) == .relaunch)
+    }
+
+    @Test("El seguidor que espera a otro device también reporta el bloqueo (mismo POST, mismo 403)")
+    func waitingForLeader_reportsBlocker() {
+        #expect(CloudWelcomeSignInFlow.phase(for: .waitingForLeader,
+                                             claimBlocker: .accountUnavailable) == .accountBlocked)
+    }
+}
+
 // MARK: - H-2026-07-17-5 · detector de adopt aparcado
 
 @Suite("Welcome adopt — auto-resume del drive aparcado (H-2026-07-17-5)")
