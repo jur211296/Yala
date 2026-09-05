@@ -1,8 +1,8 @@
 ---
 id: secondary-visitor-writes-owner-domain
-status: in-progress
+status: qa
 created: 2026-08-12
-updated: 2026-09-03
+updated: 2026-09-05
 source: YalaWiki/Bugs/secundaria-la-visita-escribe-en-el-dominio-del-dueno.md
 ---
 
@@ -468,3 +468,224 @@ append-only por diseño (C1, 2026-08-11).
 Con esto **no quedan decisiones pendientes aquí**: lo que sigue abierto es código. La rama «privacidad
 total» del Welcome (`WelcomeFlowContainer.swift:289-293`) es diseño de producto y sigue sin decidirse,
 pero no bloquea a las dos de arriba.
+
+---
+
+# IMPLEMENTADO · 2026-09-05 — las dos decisiones del 3-sep, en código
+
+Las dos decisiones que este ticket dejó tomadas y sin escribir están hechas y verdes. Lo que queda
+del ticket es **device-QA**, no código: por eso pasa a `qa/`.
+
+Commits: `258a90c3` (la key al cajón) · `833b9f40` (custodia del consent).
+
+## Decisión 1 · `hasCompletedOnboarding` vive en el cajón de cada sesión
+
+**Y el inventario del ticket se quedaba corto otra vez.** Decía «un escritor y cuatro lectores»;
+medidos contra el árbol eran **tres escritores y siete lectores** en `.standard`, repartidos por
+seis ficheros:
+
+| Rol | Coordenada | Qué pregunta o afirma | Dónde acabó |
+|---|---|---|---|
+| Escritor | `OnboardingView.swift` · `completeOnboarding` | «esta persona terminó su onboarding» | **cajón** |
+| Escritor | `ContentView.swift` · `completeOnboardingAsRestoreSkip` | lo mismo, por el camino de restauración | **cajón** |
+| Escritor | `ContentView.swift` · `onSecondaryEntryFlagsMarked` | la ventana de ENTRADA | **se queda en `.standard`** |
+| Lector ×3 | `AppBootstrapper` · `checkForICloudMismatch` · `seedDefaultNotifications` · `checkForPendingSharedImage` | alert de restart · seed de avisos · imagen compartida | **cajón** |
+| Lector | `ContentView.swift` · el gate del organizador | «¿ya vio un educativo de Grupos?» | **cajón** |
+| Lector | `GroupsContainerView.swift` | el gemelo del anterior | **cajón** |
+| Lector | `RouterEntryGate.swift` · `readinessProvider` | readiness del router | **cajón** |
+| Lector | `GroupBackendInviteEntryHandler.swift` | routing del invitado fresco | **cajón** |
+
+**Y las coordenadas de esta tabla se escribieron por NOMBRE de función a propósito.** La primera
+versión citaba `AppBootstrapper.swift:1050 / :2446 / :2461` — que eran las líneas del árbol de ANTES
+del commit; los comentarios que el propio commit añade las desplazaron a `:1053 / :2484 / :2502`
+antes de que el ticket llegara a leerse. Es exactamente el defecto que el `CLAUDE.md` de este repo
+persigue («tres coordenadas de un informe apuntaban a líneas anteriores al propio commit que las
+medía»), cometido en el ticket que lo cita. Los nombres de función no se desplazan.
+
+Los cuatro lectores que el ticket no nombraba **no eran opcionales**: la propia regla que este
+ticket puso («escritor y lectores viajan en el mismo commit») los obliga, y dos de ellos —el gate
+del organizador y su gemelo del tab— tienen escrito en el código que si discrepan «el tab anunciaría
+"ver cómo funciona" y el tap no presentaría nada».
+
+**El único `.standard` que queda tiene ahora su porqué en el código**: corre en la ventana de
+entrada, con el descriptor recién activado y el cajón todavía sin existir, y es de ahí de donde
+`SessionDefaults.seededDeviceKeys` copia al nacer el cajón. Bajarlo deja a la visita en el Welcome
+sobre un store secundario vacío.
+
+**Y `GroupsOrganizerOnboarding` ya estaba en el cajón** sin que nadie lo hubiera anotado: escribe
+por `writer.setLocal` → `PreferenceSyncService.local`, que es computed sobre la puerta desde
+`35c1a016`. Era el lector de `ContentView` el que preguntaba por otra persona justo después.
+
+### La red: por qué el escáner de grafías NO habría visto esto
+
+**Antes del fix la key se nombraba en 26 sitios; después se nombra en 26.** El conteo por grafías
+—que es la red que este ticket pedía en su criterio de hecho— habría pasado en verde con el bug
+dentro, porque lo que cambió no fue cuántos sitios son sino **contra qué dominio hablan**.
+
+⇒ la key entra en el `watched` (conteo 26, desglose por fichero al lado) **y** se añade una suite
+que censa el DOMINIO fichero por fichero: 10 sitios en el cajón, 1 en el del dueño. La mutación de
+devolver un solo lector a `.standard` pone en rojo los dos tests, por los dos lados.
+
+De paso, `watchedKeysAreClassified` exigía que toda key vigilada estuviera en `person`. Era la
+exigencia equivocada y habría impedido meter ésta en el `watched`: `hasCompletedOnboarding` es del
+TELÉFONO en las fronteras —por eso está en `deviceExceptions`— y aun así es la más dispersa del
+árbol. Pasa a exigir que esté **clasificada**, que es lo que el inventario pide de verdad.
+
+## Decisión 2 · el consent legacy se custodia y se repone
+
+`GroupsConsentState.custodyOwnerRecord(in:)` / `restoreOwnerRecord(in:)`, con el slot
+`groups.consent.owner.custody` que **nadie más lee** — `readSnapshot()` no lo mira, así que una
+custodia viva no le presta a la visita un permiso que no dio.
+
+Tres cosas que el ticket no traía y que la implementación tuvo que resolver:
+
+1. **Se custodian las TRES keys, no las dos legacy.** El ticket dejaba fuera el snapshot SELLADO
+   porque `GroupsConsentRegistrar.handleSignIn` lo repone en cada arranque. **Medido: ese camino es
+   no-op sin sesión Yala viva** (`refreshFromServer` sale por su primer `guard`), y Grupos va al
+   100 % sin exigir Modo Nube ⇒ el dueño que cerró sesión perdía su snapshot con el síntoma
+   idéntico al del legacy. Custodiar media frontera con el mismo mecanismo habría dejado el arreglo
+   contradiciéndose ante la misma persona.
+2. **El orden es el mecanismo entero**: custodiar va JUSTO ANTES de `purge()` en la entrada (que es
+   quien borra) y reponer va DESPUÉS de `purge()` en la salida (que se lleva lo de la visita).
+   Invertir cualquiera de los dos da exit 65.
+3. **La idempotencia va por PRESENCIA del slot.** La frontera se re-ejecuta entera tras un kill, y
+   para entonces lo que hay en las tres keys puede ser ya de la visita: sobrescribir la custodia con
+   eso perdería el registro del dueño por el camino que existe para conservarlo.
+
+El `clear()` de `SecondarySessionBoundaryPurge` **NO se retira**: custodiar y borrar son las dos
+mitades, no alternativas — sin el `clear()` la visita hereda el consent legacy sin sello. Un
+source-scan lo fija por si alguien lee la custodia como su sustituto.
+
+## Documentación caducada corregida por el camino
+
+`GroupsConsentState` y `GroupsConsentDecisionLogic` sostenían su argumento de seguridad sobre una
+premisa falsa: «no existe ningún dominio de `UserDefaults` por sesión (`PreferenceSyncService.local`
+es `.standard` hardcodeado)». Caducó el 2026-08-26. La conclusión no cambia —quien no pasa por la
+puerta es `GroupsConsentState`, que sigue en `.standard` a pelo— pero el motivo escrito era falso.
+La regla de `.claude/rules/swiftdata-cloudkit.md` **ya estaba corregida desde el 13-ago**: eran los
+dos ficheros de código los que se habían quedado atrás, que es el reparto contrario al habitual.
+
+## La revisión adversarial cazó un fallo mío, y era el mismo daño que la custodia impide
+
+Se corrió una revisión adversarial sobre el diff **congelado** (ya commiteado) atacando cuatro
+frentes: lectores desalineados, momento de resolución de la puerta, la custodia y su interacción con
+la siembra. Cada hallazgo se verificó contra el árbol antes de aceptarlo.
+
+### CONFIRMADO y arreglado · un kill entre reponer y desarmar dejaba al dueño SIN consent
+
+`restoreOwnerRecord` vaciaba el slot como primer efecto, y eso **rompía la kill-safety que el resto
+de `performSecondaryWipeIfArmed` declara**: «el arm se limpia AL FINAL, un kill a mitad reintenta el
+paso entero». Entre reponer y `clearWipeArm` hay ocho sentencias —incluido un `removePersistentDomain`
+y una escritura al App Group, todo pre-mount y bajo el watchdog de lanzamiento—. Un kill ahí:
+
+1. el arm sigue puesto, y `deleteFiles` devuelve `true` (los ficheros ya no están: no-op idempotente);
+2. `purge()` vuelve a borrar las tres keys **recién repuestas**;
+3. `restoreOwnerConsent` ya no encuentra slot ⇒ **el dueño se queda sin registro, permanentemente**.
+
+Es exactamente el daño que esta custodia existe para impedir, reintroducido por el mecanismo que la
+implementa. **Arreglado**: reponer y descartar son dos pasos, y el descarte (`discardOwnerCustody`)
+va pegado a `clearWipeArm` — los dos declaran lo mismo, que ya no hay nada que reintentar. Con eso
+el ciclo entero es re-ejecutable: cada reintento purga y repone.
+
+Pinneado con dos tests (`restoreIsRepeatable`, `killBetweenRestoreAndDisarmIsRecoverable`) y
+**mutación a exit 65 verificada**: devolver el `removeObject` al reponer falla en la aserción del
+daño real —`legacyAcceptedAt == 0`—, no en la forma.
+
+### CONFIRMADO y corregido · una afirmación mía que el escáner no puede respaldar
+
+Escribí, en el inventario y en el test, que «el único `.standard` que queda es la ventana de
+entrada». Es literalmente cierto sobre la GRAFÍA y engañoso sobre el hecho: quedan tres sitios más
+que escriben en el dominio del dueño y que `domainCensus` **no puede ver por diseño**, porque reciben
+el dominio por parámetro (el healing y el reset de las dos fronteras, y `CloudSessionSignOut`, éste
+además inalcanzable en secundaria por la precedencia de `CloudSignOutFlowLogic.path`). Es la misma
+ceguera que `SessionPreferenceKeysWipeScanTests` ya documenta para `DataWipeService`. Corregido en
+los dos sitios: ahora se dice qué mide el censo y qué queda fuera.
+
+### CONFIRMADO de forma independiente · el hallazgo del healing
+
+La revisión llegó por su cuenta al mismo defecto que esta sesión ya había extraído a
+[[secondary-entry-healing-writes-owner-not-session]]. Añade un matiz medido que el ticket recoge:
+**el brick ya existía desde el 26-ago** por la vía del `@AppStorage` de `ContentView:16`, así que
+este commit no lo empeora en el síntoma — lo que añade es que ahora ningún lector ve el valor sanado.
+
+### RESIDUALES nuevos, medidos y NO arreglados aquí
+
+- **Reponer el legacy del dueño puede pisar el intent de consent pendiente de la visita.** Con el
+  dueño en formato legacy, su siguiente sign-in entra en `adoptLegacyIfNeeded` y llama a
+  `GroupsConsentPendingIntent.arm`, que con otra cuenta **sobrescribe** el slot único. Si la visita
+  aceptó sin red, su intent desaparece. Daño acotado: ese intent ya era inerte en el móvil del dueño
+  (`resumeIfNeeded` con sub-mismatch ni intenta ni descarta) y sólo muerde si ella vuelve de visita.
+  Arreglarlo toca `GroupsConsentRegistrar`, otro fichero y otra frontera ⇒ fuera de alcance.
+- **Un slot varado envenena la custodia siguiente.** Con el descarte al final del wipe, la única vía
+  que queda es una salida que aborte para siempre en el guard de `deleteFiles`, o el tooling
+  `DEV_BUILD` de `CloudSyncDebugView`. La custodia es idempotente por presencia, así que la visita
+  siguiente no custodiaría nada y la salida repondría el registro viejo del dueño.
+- **La re-entrada in-session escribe el flag en dos dominios.** Tras un «vaciar mis datos» el Welcome
+  se le reabre a la visita y `SecondarySlotOccupancyLogic` deja pasar a la misma cuenta; ahí la raíz
+  ya se montó con descriptor, así que el `@AppStorage` va al cajón y la línea de al lado a `.standard`.
+  Inocuo hoy (el reset de la salida se lleva ese `true`), pero el comentario que lo justificaba
+  hablaba sólo de la entrada primera. Precisado en el código, sin cambiar comportamiento.
+
+## Verificación
+
+- Build ×2 (`Yala` y `Yala Dev`): SUCCEEDED, **cero warnings nuevos** en los ficheros tocados.
+- Unit: **6085 tests en 618 suites**, verde, cero issues (`-parallel-testing-enabled NO`).
+- XCUITest: **20 tests en 6 suites** sobre el árbol del merge (OnboardingFlow ·
+  OnboardingGroupsOnlyGuard · DeeplinkRouting · PaywallInboxAlertRouting · GroupsSmoke ·
+  SecondaryCurrencyPrompt) y **15 en 3 suites** re-corridas tras el arreglo de la custodia — las
+  otras tres no se repitieron porque ese arreglo no las toca, y la corrida entera de las 138 la hace
+  el CI. En XCUITest la puerta devuelve el dominio del dueño (`isUITesting`), así que estos cambios
+  son no-op ahí — **comprobado, no supuesto**.
+- **Mutación, 5 verificadas a exit 65**: (1) un lector vuelve a `.standard`; (2) la custodia corre
+  después de la purga; (3) sin el guard de idempotencia por presencia; (4) la reposición deja de
+  retirar lo que el dueño no tenía; (5) la reposición vuelve a consumir el slot ⇒ el dueño pierde
+  su consent tras un kill a mitad del wipe.
+- `qa/coverage-index.json`: **11 áreas re-selladas por esta sesión** —sólo aquellas cuya cobertura
+  declarada se ejecutó hoy—; el fichero tiene 17 con fecha de hoy porque el merge de `2.1` trajo las
+  seis del PR #65; `validate-coverage.sh` → OK, backlog determinista 0.
+
+## Los rojos del CI, clasificados (no heredados de un documento)
+
+El job `tests` del CI sale `success` con la suite de UI en rojo: sus tres pasos son
+`continue-on-error` a propósito y el gate duro es `coverage-index`. ⇒ **`tests: pass` no dice que los
+tests pasaran**, y el campo `conclusion` que devuelve `gh run view --json jobs` tampoco: con
+`continue-on-error` se pinta `success` pase lo que pase. Lo que hay que leer es el `outcome` real,
+que el propio workflow vuelca en su paso de aviso.
+
+Medido en este PR: `R_UNIT_PURE: success` · `R_UNIT_CONTEXT: success` · **`R_UI: failure`**.
+
+Los rojos, comparados **run a run** contra `2.1` sin una línea de este trabajo (run `33959280114`),
+no citados del ESTADO:
+
+| XCUITest | fallos en `2.1` | fallos aquí |
+|---|---|---|
+| `EdgeCasesUITests.test_extremeMinimumAmountSaves` | 3 | 3 |
+| `InboxConvertToGroupUITests.test_convertDraftToGroupExpense_preservesDraftDate` | 3 | 3 |
+| `QuickActionsFavoritesUITests.test_saveAsFavoriteFromTransactionAppearsInList` | 1 | 3 |
+| `TransactionsCrudUITests.test_createTransaction` | 3 | 3 |
+
+Denominadores: 127 pass + 10 fail = 137 en `2.1`; 126 + 12 = 138 aquí (un test más, del PR #65).
+Son **los mismos cuatro**, ninguno toca preferencias de sesión ni consent, y la diferencia de
+`QuickActionsFavorites` es un flaky que allí pasó al reintento y aquí agotó los tres.
+
+⇒ **preexistentes**. Uno tiene causa escrita en [[uitest-compara-fechas-sin-fijar-locale]].
+
+## Lo que queda de este ticket: device-QA, y sale del código
+
+**Pendiente de verificar en device** (staging, donde el percent está al 100): entrar de visita,
+completar el onboarding privado y comprobar que el Welcome no se reabre; salir y comprobar que el
+dueño recupera el permiso de Grupos sin volver a ver su pantalla. El caso que más importa es el del
+dueño **sin sesión Yala viva**, que es el único que no se auto-repara por servidor.
+
+**Extraído a tickets propios, con su medición:**
+
+- [[welcome-privacy-branch-has-no-secondary-door]] — la vía 2. Ya no es un bug de datos: con el
+  cajón y con `258a90c3`, la rama no daña. Lo que queda es la pregunta de producto («qué se le
+  enseña») más el seed de categorías que se promete y no se hace.
+- [[secondary-entry-healing-writes-owner-not-session]] — **hallazgo nuevo de esta sesión**, y de la
+  misma familia: el kill-recovery de la entrada repara los flags en `.standard` mientras la siembra
+  ya copió el valor viejo al cajón con su sentinel puesto ⇒ el healing existe para impedir el
+  Welcome sobre store vacío y hoy no lo impide. Es la vía 5 vista desde el otro lado.
+
+**Sigue donde estaba**: la vía 4 en [[secondary-groups-off-wipes-owner]] (código hecho, device-QA
+pendiente).

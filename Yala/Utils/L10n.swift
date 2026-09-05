@@ -4144,6 +4144,12 @@ enum L10n {
         static var signOutWorking: String { ls("settings.signOutWorking", comment: "") }
         static var signOutPendingTitle: String { ls("settings.signOutPendingTitle", comment: "") }
         static var signOutPendingMessage: String { ls("settings.signOutPendingMessage", comment: "") }
+        // Decisión del owner 2026-09-03 — la sesión de VISITA suma «salir igualmente» al aviso de
+        // bloqueo: está en el móvil de otra persona y hay que devolverlo, así que un cierre que no se
+        // puede completar la deja atrapada.
+        static var signOutSecondaryLossWarning: String { ls("settings.signOutSecondaryLossWarning", comment: "") }
+        static var signOutWaitButton: String { ls("settings.signOutWaitButton", comment: "") }
+        static var signOutExitAnywayButton: String { ls("settings.signOutExitAnywayButton", comment: "") }
         // D6 (§3.3.6): "Salir de Yala en este dispositivo" — salida del solo-grupos legado 5a
         // (group-invite SIN sesión backend). Invoca `.privateReset`: NO toca datos ni grupos.
         static var exitYala: String { ls("settings.exitYala", comment: "") }

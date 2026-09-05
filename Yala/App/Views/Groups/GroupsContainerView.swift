@@ -337,7 +337,10 @@ struct GroupsContainerView: View {
         GroupsOnboardingLogic.hasSeenAnyGroupsEducational(
             hasShownOnboarding: appPreferences.hasShownGroupsOnboarding,
             onboardingMode: sessionState.onboardingMode,
-            hasCompletedSetup: UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
+            // El CAJÓN de esta sesión, y con el MISMO dominio que su gemelo de `ContentView` (el gate del
+            // organizador): si discreparan, el tab anunciaría «ver cómo funciona» y el tap no presentaría
+            // nada — la divergencia que este helper existe para impedir.
+            hasCompletedSetup: SessionDefaults.current.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
         )
     }
 

@@ -385,3 +385,172 @@ struct SecondarySignOutPushesBothOutboxesTests {
             """)
     }
 }
+
+/// **Cuando la invitada se va y algo la bloquea, ya no se le dice siempre «revisa tu conexión».**
+///
+/// Las salidas de bloqueo del camino secundario emitían SIEMPRE `reason: .permanent`, y el `reason`
+/// verdadero venía ya clasificado desde los dos push-all: el consumidor lo descartaba. Consecuencia:
+/// un corte de red de dos segundos le decía que revisara la conexión, el presupuesto de 45 s de
+/// `GroupsSignOutRetryDecision` no la alcanzaba, y `waitingForPending` no se encendía nunca ⇒ tampoco
+/// veía el caption de espera.
+///
+/// Y sobre eso, la decisión del owner del 2026-09-03: el aviso le ofrece **salir igualmente**, porque
+/// está en el móvil de otra persona y hay que devolverlo.
+///
+/// Source-scan por la misma razón que el suite hermano: `performSecondaryCloudSignOut` es privado y su
+/// camino exige runtime de red. Lo que hay que fijar es la ESTRUCTURA — que el reason se propague, que
+/// el bucle no envuelva el teardown, y que la salida forzada arme el wipe secundario y no otro.
+@Suite("Cerrar sesión — la visita distingue el bloqueo transitorio y puede salir igualmente")
+struct SecondarySignOutBlockClassificationTests {
+
+    private static func body(of marker: String, in source: String) throws -> String {
+        let start = try #require(source.range(of: marker))
+        var depth = 1
+        var out = ""
+        for ch in source[start.upperBound...] {
+            if ch == "{" { depth += 1 }
+            if ch == "}" { depth -= 1; if depth == 0 { break } }
+            out.append(ch)
+        }
+        return out
+    }
+
+    private static func source(_ relativePath: String) throws -> String {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()  // YalaTests/
+            .deletingLastPathComponent()  // repo root
+        return try String(contentsOf: root.appendingPathComponent(relativePath), encoding: .utf8)
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+    }
+
+    private static func secondaryBody() throws -> String {
+        try body(
+            of: "private func performSecondaryCloudSignOut(context: ModelContext) async {",
+            in: source("Yala/Services/CloudSync/CloudSessionSignOut.swift"))
+    }
+
+    // MARK: - El gate puro de la salida forzada
+
+    @Test("«salir igualmente» se ofrece SOLO en la sesión de visita y SOLO con algo pendiente")
+    func forcedExitGate() {
+        #expect(CloudSignOutFlowLogic.offersForcedSecondaryExit(
+            isSecondaryActive: true, pendingCount: 3))
+        // En el móvil propio no hay ningún teléfono que devolver: la salida no se ofrece, y el alert
+        // conserva su único botón de siempre.
+        #expect(!CloudSignOutFlowLogic.offersForcedSecondaryExit(
+            isSecondaryActive: false, pendingCount: 3))
+        // `pendingCount: 0` es el bloqueo que NO viene de datos sin subir (el guard sin controller):
+        // ofrecer "salir igualmente" ahí prometería descartar algo que no existe.
+        #expect(!CloudSignOutFlowLogic.offersForcedSecondaryExit(
+            isSecondaryActive: true, pendingCount: 0))
+        #expect(!CloudSignOutFlowLogic.offersForcedSecondaryExit(
+            isSecondaryActive: false, pendingCount: 0))
+    }
+
+    // MARK: - La clasificación del bloqueo (pieza 2)
+
+    @Test("el camino secundario decide con GroupsSignOutRetryDecision, no con `.permanent` fijo")
+    func secondaryClassifiesBlock() throws {
+        let secondary = try Self.secondaryBody()
+        #expect(secondary.contains("GroupsSignOutRetryDecision.decide("), """
+            El cierre de la sesión secundaria volvió a emitir el bloqueo sin clasificarlo. El `reason` \
+            llega ya clasificado desde los dos push-all: descartarlo es lo que hacía que un corte de red \
+            de dos segundos se presentara como «revisa tu conexión».
+            """)
+        #expect(secondary.contains("reason: .transient"), """
+            Ninguna salida del camino secundario emite ya `.transient` ⇒ el copy «Un momento más» y el \
+            caption de espera vuelven a ser inalcanzables para la invitada.
+            """)
+        #expect(secondary.contains("waitingForPending = true"), """
+            El camino secundario dejó de encender `waitingForPending`: durante los reintentos la persona \
+            mira un spinner mudo, que es el síntoma que H-2026-07-18-6 arregló en el otro camino.
+            """)
+    }
+
+    @Test("el bucle de reintento NO envuelve el teardown")
+    func retryLoopStopsBeforeTeardown() throws {
+        let secondary = try Self.secondaryBody()
+        let loop = try #require(secondary.range(of: "pushLoop: while true {"))
+        let breakOut = try #require(secondary.range(of: "break pushLoop"))
+        let teardown = try #require(secondary.range(of: "CloudSyncRuntime.shared?.teardownGuestSession()"))
+        #expect(breakOut.lowerBound < teardown.lowerBound)
+        #expect(loop.lowerBound < teardown.lowerBound, """
+            El teardown quedó DENTRO del bucle de reintento. Después de él no hay nada que drenar \
+            —`teardownGuestSession` deja el motor con `currentUserID = nil`, el mirror purgado y la \
+            cadencia cancelada—, así que reintentar ahí quema los 45 s del presupuesto para llegar al \
+            mismo bloqueo, con la persona esperando para devolver el móvil.
+            """)
+    }
+
+    @Test("la re-verificación posterior al teardown se queda en `.permanent` a propósito")
+    func postTeardownResidualStaysPermanent() throws {
+        let secondary = try Self.secondaryBody()
+        let teardown = try #require(secondary.range(of: "CloudSyncRuntime.shared?.teardownGuestSession()"))
+        let tail = String(secondary[teardown.upperBound...])
+        #expect(tail.contains("reason: .permanent"), """
+            El residual de S2 pasó a `.transient`. Es el único bloqueo del camino que NO es reintentable: \
+            los dos teardowns ya corrieron, así que ni un reintento interno ni el del usuario pueden \
+            drenar la fila que acaba de aparecer.
+            """)
+        #expect(!tail.contains("GroupsSignOutRetryDecision.decide("))
+    }
+
+    // MARK: - La salida forzada (pieza 3)
+
+    @Test("la salida forzada exige un bloqueo vivo Y una sesión secundaria")
+    func forcedExitIsGuarded() throws {
+        let forced = try Self.body(
+            of: "func exitSecondaryDiscardingPending() async {",
+            in: Self.source("Yala/Services/CloudSync/CloudSessionSignOut.swift"))
+        #expect(forced.contains("guard case .blocked = phase else { return }"), """
+            Sin el guard de fase, «salir igualmente» sería invocable sin que ningún bloqueo lo haya \
+            ofrecido: descartaría pendientes que el push-all todavía podía subir.
+            """)
+        #expect(forced.contains("guard SecondarySessionStore.isActive() else { return }"), """
+            Sin el guard de sesión, esta función armaría el wipe SECUNDARIO en un device que no está en \
+            sesión de visita.
+            """)
+    }
+
+    @Test("la salida forzada arma el wipe SECUNDARIO y no toca los archivos del dueño")
+    func forcedExitArmsSecondaryWipe() throws {
+        let forced = try Self.body(
+            of: "func exitSecondaryDiscardingPending() async {",
+            in: Self.source("Yala/Services/CloudSync/CloudSessionSignOut.swift"))
+        #expect(forced.contains("SecondarySessionStore.armWipe()"))
+        // `armSignOutWipe` es el del camino `.cloud`: borra los archivos del DUEÑO y devuelve el device
+        // a "recién instalado". Aquí sería catastrófico — la invitada se llevaría los datos del anfitrión.
+        #expect(!forced.contains("StorageModePersistence.armSignOutWipe()"), """
+            La salida forzada de la visita armó el wipe del camino `.cloud`: eso borra los archivos del \
+            DUEÑO del móvil, no los de la invitada.
+            """)
+        // Orden congelado: credenciales ANTES del arm (el arm es el disparador y va último).
+        let signOut = try #require(forced.range(of: "CloudAuthService.shared.signOut()"))
+        let arm = try #require(forced.range(of: "SecondarySessionStore.armWipe()"))
+        #expect(signOut.lowerBound < arm.lowerBound)
+        // Y sin push-all: los dos acaban de fallar, reintentarlos aquí es lo que la persona ya descartó.
+        #expect(!forced.contains("pushAllPendingForSignOut()"))
+        #expect(!forced.contains("pushAllPendingGroupsForSignOut("))
+    }
+
+    // MARK: - El cableado de la vista
+
+    @Test("el aviso decide por el `pendingCount` del bloqueo que está mostrando")
+    func profileViewWiresTheGate() throws {
+        let profile = try Self.source("Yala/App/Views/Profile/ProfileView.swift")
+        #expect(profile.contains("CloudSignOutFlowLogic.offersForcedSecondaryExit("), """
+            ProfileView dejó de consultar el gate: o esconde la salida a la invitada, o la ofrece en el \
+            móvil del dueño. Las dos son regresiones del mismo cableado.
+            """)
+        #expect(profile.contains("isSecondaryActive: SecondarySessionStore.isActive(), pendingCount: pending)"))
+        #expect(profile.contains("await CloudSessionSignOut.shared.exitSecondaryDiscardingPending()"))
+        // Los DOS alerts comparten los botones: si uno se quedara con el "OK" pelado, la invitada
+        // bloqueada por un transitorio seguiría sin salida.
+        #expect(profile.components(separatedBy: "signOutBlockedButtons").count - 1 >= 3, """
+            Los dos alerts de bloqueo dejaron de compartir sus botones. El transitorio es JUSTO el caso \
+            que más le pasa a la invitada: si ése se queda sin «salir igualmente», el fix no la alcanza.
+            """)
+    }
+}

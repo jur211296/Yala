@@ -5517,3 +5517,11 @@
 "welcome.cloud.accountBlockedTitle" = "Il tuo account non è disponibile";
 /* Body for the blocked-account screen; explicitly rules out a network problem */
 "welcome.cloud.accountBlockedBody" = "Non è la tua connessione: al momento non possiamo darti accesso a questo account. Scrivici a %@ e lo verifichiamo insieme.";
+/* Extra warning appended to the sign-out blocked alert during a guest (secondary) session, where leaving anyway is offered */
+"settings.signOutSecondaryLossWarning" = "Se esci adesso, quelle modifiche non arriveranno al tuo account.";
+
+/* Sign-out blocked alert, guest session: stay in the app and retry later */
+"settings.signOutWaitButton" = "Aspetta";
+
+/* Sign-out blocked alert, guest session: close the session accepting that unsent changes are lost */
+"settings.signOutExitAnywayButton" = "Esci comunque";

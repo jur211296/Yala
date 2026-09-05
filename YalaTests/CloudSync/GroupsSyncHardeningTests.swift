@@ -311,11 +311,15 @@ struct GroupsSyncHardeningTests {
         // El runtime PERSONAL se derriba en los 3 paths de sign-out que lo montan (privateReset/cloud/
         // secondary) + el cierre .cloud de ELIMINAR-CUENTA (G5-D1, belt idempotente — el service ya lo
         // derribó en su paso 2). El solo-grupos NO conoce el runtime personal.
-        #expect(teardowns == 4)
+        // +1 (2026-09-05): `exitSecondaryDiscardingPending`, la salida «salir igualmente» de la sesión de
+        // visita — mismo tail-end que el camino secundario, así que derriba lo mismo. Si algún día ese
+        // teardown se le cayera, la invitada se iría dejando el motor del DUEÑO apuntando a su cuenta.
+        #expect(teardowns == 5)
         // El canal de grupos se corta en los 5 paths de sign-out (privateReset/cloud/secondary/groupsOnly
         // + exitYala del split D2 `573c3b8e`, que corta el canal ANTES de purgar cursor+outbox de grupos)
-        // + los 2 cierres de eliminar-cuenta (closeLocalAfterAccountDeletion Cloud/GroupsOnly — belts).
-        #expect(groupsTeardowns == 7)
+        // + los 2 cierres de eliminar-cuenta (closeLocalAfterAccountDeletion Cloud/GroupsOnly — belts)
+        // + la salida forzada de la visita (2026-09-05, misma razón que arriba).
+        #expect(groupsTeardowns == 8)
     }
 
     /// M1 / D8 (G5-C): la purga de frontera de la sesión secundaria incluye el espejo App Group de GRUPOS
