@@ -371,11 +371,84 @@ describe("notifyMembershipChange — el emisor elige la audiencia (g8_03)", () =
       group_id: "g-1",
       member_key: "mk-1",
       status: "pendingApproval",
+      changed: true,
     });
     await Promise.all(pending);
 
     expect(calls.some((c) => c.url.includes("/rpc/get_group_admin_push_tokens"))).toBe(true);
     expect(calls.some((c) => c.url.includes("/rpc/get_group_push_tokens"))).toBe(false);
+  });
+
+  // ---------------------------------------------------------------------------------------------
+  // rejoin-tap-renotifies-admins · el `status` NO alcanza para decidir, y creerlo fue un bug vivo en
+  // producción: `pendingApproval` vale tanto para «acaba de solicitar» como para «ya lo había
+  // solicitado y vuelve a tocar el enlace». El segundo no cambia nada y despertaba al admin por tap.
+  // El discriminante es `changed` (g13_04). Estos tres casos son el contrato entero del gate.
+  // ---------------------------------------------------------------------------------------------
+  it("join_group de quien YA estaba pendiente y re-toca el enlace → no avisa a nadie (changed:false)", async () => {
+    const pem = await makePem();
+    const calls: Recorded[] = [];
+    stubFetch(() => APPLE_OK(), calls);
+
+    const pending: Promise<unknown>[] = [];
+    // La rama no-op del RPC devuelve el estado que la persona YA tenía. Con `pendingApproval` el
+    // filtro por status no lo distingue del alta nueva: sin `changed`, esto era un push al admin.
+    notifyMembershipChange(fakeCtx(makeFanoutEnv(pem), pending), AUTH, "join_group", {
+      group_id: "g-1",
+      member_key: "mk-1",
+      status: "pendingApproval",
+      changed: false,
+    });
+    await Promise.all(pending);
+
+    expect(calls.length).toBe(0);
+  });
+
+  it("join_group de un RECHAZADO que vuelve a entrar → SÍ avisa (changed:true, y este no hay que apagarlo)", async () => {
+    const pem = await makePem();
+    const calls: Recorded[] = [];
+    stubFetch((url) => {
+      if (url.includes("/rpc/")) return tokensResponse([]);
+      return APPLE_OK();
+    }, calls);
+
+    const pending: Promise<unknown>[] = [];
+    // Rama de re-activación (rejected/removed → pendingApproval): transición REAL. Es el caso que
+    // arregló `rejected-member-cold-tap-does-nothing`; gatearlo por `rebound` lo habría vuelto a
+    // romper, porque esta rama devuelve `rebound:false` igual que el no-op.
+    notifyMembershipChange(fakeCtx(makeFanoutEnv(pem), pending), AUTH, "join_group", {
+      group_id: "g-1",
+      member_key: "mk-1",
+      status: "pendingApproval",
+      rebound: false,
+      changed: true,
+    });
+    await Promise.all(pending);
+
+    expect(calls.some((c) => c.url.includes("/rpc/get_group_admin_push_tokens"))).toBe(true);
+  });
+
+  it("join_group SIN campo `changed` (servidor aún sin g13_04) → avisa igual: el fail-open es deliberado", async () => {
+    const pem = await makePem();
+    const calls: Recorded[] = [];
+    stubFetch((url) => {
+      if (url.includes("/rpc/")) return tokensResponse([]);
+      return APPLE_OK();
+    }, calls);
+
+    const pending: Promise<unknown>[] = [];
+    // El despliegue no es atómico. Si este Worker sale antes que la migración, exigir `changed===true`
+    // dejaría a los admins sin enterarse de NINGUNA solicitud — más grave y más silencioso que el
+    // ruido que arregla. Ausente ⇒ comportamiento de hoy. Este test PINNEA esa elección: si alguien
+    // endurece el gate a `changed !== true`, se entera aquí y no en producción.
+    notifyMembershipChange(fakeCtx(makeFanoutEnv(pem), pending), AUTH, "join_group", {
+      group_id: "g-1",
+      member_key: "mk-1",
+      status: "pendingApproval",
+    });
+    await Promise.all(pending);
+
+    expect(calls.some((c) => c.url.includes("/rpc/get_group_admin_push_tokens"))).toBe(true);
   });
 
   it("join_group de alguien YA activo → no avisa a nadie (re-tap del enlace no es noticia)", async () => {
