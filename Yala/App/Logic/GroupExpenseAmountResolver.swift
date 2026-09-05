@@ -14,6 +14,17 @@ enum PersonalShareStatus: Equatable {
     case youOwe(amount: Double)
     /// No participo en este gasto.
     case notIncluded
+    /// **No se sabe quién soy en este grupo** — la identidad local aún no resolvió.
+    ///
+    /// No es lo mismo que `notIncluded`, y confundirlos costó un bug de device: en el build 12 la
+    /// pantalla afirmaba «No participaste» a alguien que sí participaba, porque el llamador pasaba
+    /// `currentMemberID ?? ""` y el centinela vacío no casaba con nadie. La ignorancia entraba por
+    /// la misma puerta que el conocimiento y salía convertida en una frase categórica.
+    ///
+    /// Quien pinte este caso NO debe afirmar nada sobre la participación: se calla. Es preferible
+    /// una fila sin perspectiva personal a una que le diga a alguien que no participó en un gasto
+    /// que sí comparte — y que además contradice a lo que ve el otro teléfono.
+    case identityUnresolved
 }
 
 enum GroupExpenseAmountResolver {
@@ -28,8 +39,13 @@ enum GroupExpenseAmountResolver {
     static func resolve(
         expense: SplitExpense,
         share: SplitShare?,
-        currentMemberID: String
+        currentMemberID: String?
     ) -> PersonalShareStatus {
+        // Identidad sin resolver ⇒ no se afirma NADA. Antes los dos llamadores pasaban
+        // `currentMemberID ?? ""`, y ese centinela vacío no casa con ningún `paidByMemberID`, así
+        // que un no-saber se degradaba a «No participaste» — la frase que el device vio el
+        // 2026-08-28 en un gasto que el otro teléfono mostraba mitad y mitad.
+        guard let currentMemberID else { return .identityUnresolved }
         // El pagador SIEMPRE participa (modelo Splitwise), tenga o no `SplitShare` propio:
         // pagar algo cuya parte propia es 0 (otro lo devuelve todo) = prestar el total. Por eso
         // se evalúa el pagador ANTES del guard de `share`.

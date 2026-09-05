@@ -28,3 +28,24 @@ esta sesión:
   propio *antes* de mover el padre, en el mismo commit.
 
 Relacionado: [[decisiones-que-esperan-a-jurgen]], [[creo-que-no-es-aprobacion]].
+
+## Corolario (2026-09-04): acumula trabajo y prueba en bloque, no sobre la marcha
+
+Le ofrecí preparar la tanda de QA —dos tickets nuevos sin montaje en el guion— en vez de abrir otro
+ticket, con el argumento de que desbloquearía SU trabajo. Respondió: **«No podré hacer QA aún,
+prefiero avanzar tickets y después probar todo».**
+
+**Why:** su disponibilidad para el device-QA no va al ritmo de la sesión. Dos teléfonos y una tanda
+son un bloque de tiempo suyo que no se parte en trozos, así que dejarle cosas en `qa/` no le
+desbloquea nada hoy — sólo le llena la cola. Lo que sí le sirve es que la cola crezca con trabajo
+terminado y verificable.
+
+**How to apply:**
+- **No frenes por acumulación.** Que `qa/` crezca no es deuda que haya que pagar antes de seguir; es
+  el estado normal entre sus tandas. Ofrecer «preparo la tanda» como alternativa a avanzar es
+  ofrecerle trabajo que hoy no puede usar.
+- **Sí sigue valiendo dejar cada ticket listo para probarse**: montaje escrito, qué mirar, qué sería
+  un fallo. Lo que no vale es parar el avance para organizarlo.
+- Y como el device-QA llega tarde, **el peso de la verificación cae en los tests**: cuando el ticket
+  admita «device o repro», construye el repro. Un ticket que sólo se puede cerrar con dos teléfonos
+  se queda parado semanas.

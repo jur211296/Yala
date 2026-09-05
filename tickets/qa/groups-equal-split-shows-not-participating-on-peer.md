@@ -1,10 +1,10 @@
 ---
 id: groups-equal-split-shows-not-participating-on-peer
-status: backlog
+status: qa
 priority: high
 area: groups
 created: 2026-08-28
-updated: 2026-08-28
+updated: 2026-09-04
 ---
 
 # Un gasto que A dividió mitad y mitad puede verse en B como si B no hubiera participado, y solo se actualiza cuando B fuerza el cierre de la app
@@ -253,3 +253,102 @@ Ids citados sin afirmar su status: hay movimientos en vuelo y el índice se mide
 - [ ] Si se confirma que el estado correcto tarda en llegar, la pantalla no afirma «No participaste»
       mientras no lo sabe (copy por definir; leer `docs/planning/BRAND-VOICE.md`).
 - [ ] Device-QA en los dos teléfonos. No inventar PASS.
+
+---
+
+## CAUSA ESCRITA · 2026-09-04 — y explica las tres observaciones
+
+Investigado con cuatro hipótesis independientes y dos refutadores. **Dos hipótesis quedaron
+DESCARTADAS con evidencia** («el share no había llegado» y «la vista no refresca»); las otras dos
+convergieron en la misma causa sin hablarse.
+
+### La causa
+
+**En el build 12, la pantalla de grupo resolvía «quién soy yo» con el flag pelado.**
+
+Verificado contra el árbol del propio device (`f4cf3d2b`, «Build 12 para TestFlight de 2.1»):
+
+```
+$ git show f4cf3d2b:Yala/App/ViewModels/GroupDetailViewModel.swift | grep -A2 "var currentUserMember"
+    var currentUserMember: SplitMember? {
+        members.first { $0.isCurrentUser }
+$ git show f4cf3d2b:Yala/Services/Groups/GroupExpenseService.swift | grep -c resolveCurrentUserMember
+0          ← la primitiva canónica NO EXISTÍA
+```
+
+La cadena completa: `GroupsSyncClient.applyMember` **nunca** enciende `isCurrentUser`, y en
+producción el único que lo escribe es `refreshCurrentUserFlags`, cuyo único call-site está en el
+**arranque**. ⇒ B, que se unió por enlace y no había relanzado, tenía `currentMemberID == nil` ⇒
+`mySharesByExpense` vacío ⇒ el resolver recibía `share: nil` y `currentMemberID: ""` ⇒ `.notIncluded`
+⇒ **«No participaste»**.
+
+### Explica las tres, que es lo que este ticket exigía
+
+- **OBS 1 (falla):** identidad sin resolver en la primera apertura. El force-quit corrió el arranque,
+  el arranque encendió el flag, y el flag **se persiste** — por eso «solo entonces» se arregló.
+- **OBS 2 y 3 (PASS):** se revisaron DESPUÉS de esa relanzada, con el flag ya encendido. El ticket
+  anota ese dato cronológico, y es lo que las convierte de contraejemplos en confirmación.
+  ⚠️ **Honestidad sobre la fuerza de esto:** explicarlas por cronología es barato — cualquier
+  hipótesis cuyo remedio sea el arranque las explica igual. No discriminan; solo confirman que el
+  remedio fue duradero.
+
+### La corroboración que sí es fuerte, y estaba descartada en el ticket
+
+La OBS 1 dice también que **B no recibió ningún aviso**, y el owner lo apartó («no es el problema de
+este ticket»). Medido: `GroupNotificationService.swift:234` resuelve el miembro con el **mismo flag
+pelado**, y `GroupNotificationRecipientLogic.swift:67` hace `guard let me = currentMemberID else {
+return .skip }`. Identidad sin resolver ⇒ **notificación suprimida**.
+
+⇒ Los dos síntomas de la OBS 1 —la caption falsa y el aviso ausente— salen de **una sola raíz por
+dos rutas de código que no se llaman entre sí**. Eso es mucho más difícil de explicar por casualidad
+que la cronología. Ese consumidor **sigue estrecho hoy** y quedó anotado como el nº 14 en
+`group-joiner-flag-consumers-still-narrow`.
+
+### Estado hoy: la ruta de la OBS 1 está cerrada, pero estaba SIN RED
+
+`5ca4dd47` (2026-09-04, posterior al build del device) alineó justo ese consumidor:
+`GroupDetailViewModel.currentUserMember` pasó al resolvedor canónico. Los dos sitios que pintan la
+caption cuelgan de él, así que se arreglan los dos a la vez.
+
+**Pero el arreglo no tenía ningún test que lo atara al consumidor** — los que hay pinnean el
+resolvedor, así que reescribir `first { $0.isCurrentUser }` en el ViewModel los dejaba a todos
+verdes. Eso se cierra en este commit.
+
+### Lo implementado aquí
+
+1. **La pantalla ya no afirma lo que no sabe.** Era el AC que sobrevive al arreglo de identidad:
+   `PersonalShareStatus` gana `identityUnresolved`, el resolver acepta `String?`, y los dos
+   llamadores dejan de pasar `currentMemberID ?? ""` — ese centinela vacío convertía una ignorancia
+   en una frase categórica sobre el dinero de alguien. Con identidad sin resolver, la fila de
+   perspectiva **se calla**: sin copy nuevo, sin inventar texto.
+   ⚠️ Y de paso desmiente una garantía que este ticket daba por medida: «el pagador nunca cae en
+   `notIncluded`» era **falso bajo identidad nil**, porque con `""` la comparación fallaba también
+   para el pagador.
+2. **La red que faltaba:** `GroupDetailIdentityConsumerTests` (source-scan) pinnea que el detalle
+   resuelve por el canónico, que los llamadores no vuelven al centinela, y que los dos estados no se
+   fusionan. Verificado por mutación: devuelto el bug original, los dos tests caen.
+3. Tres tests del caso nuevo en `GroupExpenseAmountResolverTests`.
+
+### Lo que falta, y por qué esto está en `qa`
+
+**Un falsador que el owner puede contestar de memoria, y decide si la causa es correcta:**
+
+> En esa primera apertura del grupo en B, ¿estaba el botón «+» de añadir gasto? ¿Había banda de
+> balance en la cabecera? ¿Algún gasto decía «Tú pagaste»?
+
+Bajo identidad sin resolver, **ninguna de las tres cosas puede aparecer** (`canCurrentUserParticipate`
+y `headerBalance` devuelven nil/false, y la rama del pagador tampoco casa). Si B tenía el «+» a la
+vista, **esta causa está refutada** y el rival vivo es otro: un push partido en A (`pushChunkSize =
+50`), que también es estable-en-proceso y también lo repara relanzar.
+
+**Y el repro que pedía el ticket no era el repro:** le falta la precondición. No basta con que B
+tenga el grupo en segundo plano — hace falta que **B se haya unido por enlace y NO haya relanzado la
+app** antes de que A cree el gasto. Ese es el único estado que producía la OBS 1.
+
+### Dos reservas que no cierra este commit
+
+1. **El kill remoto la resucita.** Con `groups=0`, `currentUserID` vuelve a nil y el resolvedor es
+   byte-idéntico al flag pelado. Está pinneado a propósito, pero es una palanca de operación.
+2. **La vecindad sigue rota y un QA la puede confundir con una recaída:** para alguien sin flag, el
+   saldo de la tarjeta del grupo sale vacío y «Pagado por» no viene puesto. Son los consumidores de
+   `group-joiner-flag-consumers-still-narrow`, misma pantalla y otro ticket.

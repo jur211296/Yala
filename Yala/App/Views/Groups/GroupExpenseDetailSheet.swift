@@ -104,7 +104,7 @@ struct GroupExpenseDetailSheet: View {
         GroupExpenseAmountResolver.resolve(
             expense: expense,
             share: share,
-            currentMemberID: currentMemberID ?? ""
+            currentMemberID: currentMemberID
         )
     }
 
@@ -286,6 +286,11 @@ struct GroupExpenseDetailSheet: View {
                 label: L10n.Split.yourPortion,
                 value: L10n.Groups.Expense.notIncluded
             )
+        case .identityUnresolved:
+            // No se sabe todavía quién soy en este grupo ⇒ la fila de «tu parte» NO se pinta.
+            // Callarse es correcto; afirmar «No participaste» sin saberlo es el bug de device del
+            // 2026-08-28, donde los dos teléfonos contaban el mismo gasto de forma distinta.
+            EmptyView()
         }
     }
 

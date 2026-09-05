@@ -36,7 +36,10 @@ struct GroupExpenseAmountView: View {
                     font: DS.Typography.headline, secondaryFont: DS.Typography.caption,
                     tint: .color(Color.hotPink)
                 )
-            case .notIncluded:
+            case .notIncluded, .identityUnresolved:
+                // `identityUnresolved`: sin identidad resuelta no se afirma nada sobre la
+                // participación. Comparte el EmptyView con `notIncluded`, pero por un motivo
+                // distinto — aquí no es que no participe, es que aún no se sabe.
                 EmptyView()
             }
         }
@@ -47,6 +50,8 @@ struct GroupExpenseAmountView: View {
         case .youAreOwed: return L10n.Groups.Expense.youAreOwed
         case .youOwe: return L10n.Groups.Expense.youOwe
         case .notIncluded: return L10n.Groups.Expense.notIncluded
+        // Sin caption: la fila no pinta texto de perspectiva mientras no se sepa quién soy.
+        case .identityUnresolved: return ""
         }
     }
 }

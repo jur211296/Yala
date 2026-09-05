@@ -68,3 +68,39 @@ adjudicación es a otra persona.
 - Si el gateway enmascara `user_id` en la propia fila mientras está `pendingApproval`. Si lo
   hiciera, la rama por `sub` no resolvería justo en el caso del recién llegado, y cualquier arreglo
   por esa vía se cerraría en falso. Se comprueba contra el servidor, no contra el repo.
+
+---
+
+## CONSUMIDOR Nº 14, no listado · medido el 2026-09-04
+
+Investigando `groups-equal-split-shows-not-participating-on-peer` apareció un consumidor estrecho
+que **no está en la tabla de trece de este ticket** (verificado: `grep -c GroupNotificationService`
+sobre este fichero → 0):
+
+**`Yala/Services/Groups/GroupNotificationService.swift:234`** resuelve el miembro propio con el flag
+PELADO dentro de un `#Predicate`:
+
+```swift
+predicate: #Predicate { $0.groupZoneID == zoneName && $0.isCurrentUser == true }
+```
+
+y `Yala/App/Logic/GroupNotificationRecipientLogic.swift:67` abre con
+`guard let me = currentMemberID else { return .skip }`.
+
+⇒ **Sin identidad resuelta, las notificaciones de grupo se suprimen enteras.** No fallan ruidosamente:
+se descartan con un `.skip` conservador, que es exactamente el modo de fallo más difícil de notar.
+
+**Por qué importa más de lo que parece:** este consumidor da la corroboración independiente de la
+causa del otro ticket. En la observación de device del 2026-08-28, B vio «No participaste» **y
+además no recibió ningún aviso**. El owner separó las dos cosas («no es el problema de este
+ticket»), y resultan ser **el mismo problema por dos rutas de código que no se llaman entre sí**: la
+caption y la notificación cuelgan las dos de la identidad local, y las dos fallaron a la vez.
+
+Su docblock (`:226`) dice «`isCurrentUser` is refreshed by `refreshCurrentUserFlags` (awaited) right
+before this runs». Esa premisa es la que hay que comprobar al alinearlo: si el refresh se saltó
+—`AppBootstrapper:521-524` lo salta entero cuando el import no está quiescente— el predicado no
+encuentra a nadie y el aviso no sale.
+
+**Al alinearlo, ojo con el `#Predicate`:** `resolveCurrentUserMember` no es traducible a SwiftData
+tal cual (lee estado de sesión y de iCloud), así que aquí no vale sustituir la línea. Hay que traer
+los members y resolver en memoria, o resolver el id ANTES y meterlo en el predicado como valor.

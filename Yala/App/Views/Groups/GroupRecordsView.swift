@@ -234,7 +234,7 @@ struct GroupRecordsView: View {
         let status = GroupExpenseAmountResolver.resolve(
             expense: expense,
             share: mySharesByExpense[expense.id],
-            currentMemberID: currentMemberID ?? ""
+            currentMemberID: currentMemberID
         )
 
         return HStack(spacing: DS.ListRow.spacing) {
