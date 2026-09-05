@@ -48,3 +48,21 @@ contradice una regla que el owner llamó inquebrantable, **eso no se resuelve so
 la medición y decide él** — que es como se resolvió esta.
 
 Relacionado: [[jurgen-levanta-sus-reglas]].
+
+## El hook que refuerza esta regla NO corre en Yala (medido el 2026-09-05)
+
+El `CLAUDE.md` global dice que la regla «no depende de acordarse: un hook `commit-msg` global lo
+rechaza (ADR-013)». **En este repo eso no se cumple.** Medido:
+
+    git config --global core.hooksPath  →  /Users/jur/.claude/git-hooks   (ahí vive commit-msg)
+    git config --local  core.hooksPath  →  .githooks                      (ahí solo hay pre-commit)
+
+El local gana, así que en Yala **nada revisa el mensaje del commit**. El `pre-commit` de `.githooks`
+es otro: corre `qa/scripts/precommit-gate.sh`, que comprueba el sello del gate.
+
+**How to apply:** en Yala la regla se cumple porque yo la cumplo, no porque haya un candado. No des
+por bueno un «lo bloquea un hook» sin comprobar qué `hooksPath` manda en el repo donde estás — es la
+regla de la casa (mide antes de obedecer al documento) aplicada a un candado. Si algún día conviene
+cerrarlo de verdad, es decisión de Jürgen: mover el `commit-msg` a `.githooks/` o hacer que ese
+directorio herede del global.
+
