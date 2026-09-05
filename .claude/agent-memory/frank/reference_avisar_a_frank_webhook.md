@@ -17,6 +17,12 @@ sabe todo eso, elige el destino por el cwd y escribe el registro.
 
 - `--estado` → qué destinos hay, la sesión tmux de esta sesión y los últimos envíos.
 - `--dry-run <motivo>` → compone y dice si pasaría la puerta, sin enviar.
+- **`--avisar <motivo> --texto "…"` SÍ envía, y es el modo del cierre.** Lo encontré el 2026-09-05
+  leyendo el `main()` después de que esta ficha me dejara creyendo que no había forma manual. Su
+  docstring lo explica: el texto del cierre **no lo puede componer el hook** («qué se hizo» solo lo
+  sabe quien trabajó), así que entra por `--texto`, pasa por `sanear` (quita rutas, recorta) y sale.
+  Sin `--texto` se niega: «un aviso de cierre sin resumen no es una noticia». Medido: `ENVIADO
+  destino=frank motivo=cierre-resumen HTTP 200`.
 - **`<motivo>` a secas NO envía** — corregido el 2026-09-05, midiendo el log antes y después:
   `main()` solo desvía a `modo_manual` con `--dry-run` o `--probar`; sin flag cae al **modo hook**,
   que espera el JSON del evento por stdin, revienta al no encontrarlo y **sale 0 sin decir nada**.
@@ -70,3 +76,10 @@ imprime el descarte, pero si no lees esa línea crees que avisaste.
 **How to apply:** evita la palabra «prueba» (y «PRUEBA», «pruebas») en el cuerpo de un aviso —
 usa «registro», «evidencia», «comprobación», «tests». Y **lee siempre la última línea del script**:
 `ENVIADO … HTTP 200` o `DESCARTADO … — <razón>` son lo único que distingue haber avisado de creerlo.
+
+**Y el hook manda MÁS de lo que decía esta ficha.** El 2026-09-05, en una sola sesión, mandó solo
+`artefacto-pr` (48 s tras `gh pr create`) **y `artefacto-pr-mergeado`** (tras `gh pr merge`). Lo
+único que quedó por enviar fue el `cierre-resumen`, que es justo el que necesita texto humano. ⇒ la
+regla práctica: **de los artefactos se encarga el hook; el cierre lo mandas tú con `--avisar`.**
+Y en los dos casos, lo que se comprueba es el log, no la intención.
+
