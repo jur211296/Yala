@@ -295,3 +295,228 @@ struct SecondarySessionFlagWiringTests {
             """)
     }
 }
+
+
+// MARK: - El cliente: coalescencia y `force`
+
+/// **Comportamiento de `RemoteConfigClient.refreshIfDue`, que hasta el 2026-09-05 no tenía ninguno.**
+///
+/// Cinco source-scans (`GroupInviteChannelRoutingLogicTests`, `GroupCreateRoutingLogicTests`,
+/// `GroupsOrganizerBranchTests`, `GroupsGateLogicTests`) afirman que los call-sites pasan
+/// `force: true`, y ninguno ejercita QUÉ hace ese `force`: los cinco estaban verdes con el bug vivo
+/// —el `force` salía por el guard `inFlight` sin tocar la red— y seguirían verdes si el arreglo se
+/// hiciera mal. Esta suite es la red que faltaba.
+///
+/// Defaults AISLADOS y cliente propio: nunca `.standard`, nunca `RemoteConfigClient.shared`.
+@Suite("RemoteConfigClient — el `force` no se rinde ante un refresco en vuelo")
+@MainActor
+struct RemoteConfigClientRefreshTests {
+
+    private static let baseURL = URL(string: "https://config.test.invalid")!
+
+    private func makeClient(_ session: SyncHTTPSession, _ defaults: UserDefaults) -> RemoteConfigClient {
+        RemoteConfigClient(baseURL: Self.baseURL, urlSession: session, defaults: defaults)
+    }
+
+    /// **El bug, tal cual.** Recién instalado: el arranque deja un `GET /config` en vuelo y el
+    /// invitado tapea el enlace encima. El `force` del camino del invite salía por `guard !inFlight`
+    /// SIN tocar la red y volvía al instante; su call-site releía el flag —todavía apagado, porque
+    /// nadie escribió el snapshot— y le enseñaba «no pudimos abrir esta invitación» con el canal
+    /// perfectamente encendido.
+    ///
+    /// El aserto es el que el bug no puede pasar: **cuando el `force` vuelve, el snapshot YA existe**.
+    /// Un no-op vuelve con `nil` y falla aquí. Y `callCount == 1` fija la otra mitad: esperar, no
+    /// abrir una segunda petición idéntica.
+    @Test func force_waitsForTheInFlightFetch_insteadOfReturningEmptyHanded() async throws {
+        let defaults = makeIsolatedDefaults(prefix: "remoteconfig-force")
+        let session = GatedConfigSession(groupsPercent: 100)
+        let client = makeClient(session, defaults)
+
+        // Paso 14.56 del arranque: `refreshIfDue()` sin force. Queda suspendido dentro del transporte.
+        let boot = Task { @MainActor in await client.refreshIfDue() }
+        await session.waitUntilFirstRequestStarted()
+        #expect(CloudRemoteConfigStore.readSnapshot(defaults) == nil,
+                "precondición: el fetch del arranque está en vuelo y todavía no escribió nada")
+
+        // El tap del enlace, encima. Devuelve lo que su call-site leería justo después.
+        let forced = Task { @MainActor () -> RemoteFlagsSnapshot? in
+            await client.refreshIfDue(force: true)
+            return CloudRemoteConfigStore.readSnapshot(defaults)
+        }
+
+        session.release()
+        let visto = try #require(await forced.value, """
+            El `force` volvió con el snapshot todavía AUSENTE: se rindió ante el fetch en vuelo en \
+            vez de esperarlo. Su call-site relee `CloudSyncFlags.groupsBackendEnabled` en la línea \
+            siguiente, así que eso es exactamente la alerta falsa «Hubo un problema con el grupo» en \
+            el primer minuto del recién instalado.
+            """)
+        #expect(visto.groupsBackendRolloutPercent == 100)
+        #expect(session.callCount == 1, """
+            El `force` abrió una SEGUNDA petición en vez de reutilizar la respuesta del fetch que \
+            esperaba. Dos fetches simultáneos pueden escribir el snapshot fuera de orden (la \
+            respuesta más vieja aterriza la última) — es justo la carrera que esperar evita.
+            """)
+        await boot.value
+    }
+
+    /// La otra mitad del arreglo: si el fetch esperado NO trae config (no-200, red caída, decode
+    /// roto), el snapshot no avanza y conformarse cambiaría un fallo por otro — la misma alerta
+    /// falsa cada vez que el refresco del arranque falle. El `force` lanza entonces el suyo.
+    @Test func force_launchesItsOwnFetch_whenTheAwaitedOneFailed() async throws {
+        let defaults = makeIsolatedDefaults(prefix: "remoteconfig-force-retry")
+        let session = GatedConfigSession(groupsPercent: 100, statuses: [500, 200])
+        let client = makeClient(session, defaults)
+
+        let boot = Task { @MainActor in await client.refreshIfDue() }
+        await session.waitUntilFirstRequestStarted()
+
+        let forced = Task { @MainActor () -> RemoteFlagsSnapshot? in
+            await client.refreshIfDue(force: true)
+            return CloudRemoteConfigStore.readSnapshot(defaults)
+        }
+
+        session.release()
+        let visto = try #require(await forced.value, """
+            El fetch esperado devolvió 500 y el `force` se conformó con eso. El snapshot sigue \
+            ausente ⇒ fail-closed ⇒ la misma alerta falsa, ahora cada vez que el refresco del \
+            arranque falle.
+            """)
+        #expect(visto.groupsBackendRolloutPercent == 100)
+        #expect(session.callCount == 2, "el force tiene que haber pedido el suyo tras el 500 ajeno")
+        await boot.value
+    }
+
+    /// **Dos puertas despiertas a la vez.** El enlace de invitación y la puerta del Welcome pueden
+    /// forzar sobre el MISMO fetch del arranque; si ése falla, las dos despiertan a la vez y sin la
+    /// re-comprobación de `inFlight` cada una abriría la suya — N peticiones y N escrituras del
+    /// snapshot, que es justo la carrera que esperar existe para evitar. La segunda se engancha a la
+    /// del primero.
+    @Test func twoForcesWakingFromTheSameFailure_shareASingleRetry() async throws {
+        let defaults = makeIsolatedDefaults(prefix: "remoteconfig-force-fanout")
+        let session = GatedConfigSession(groupsPercent: 100, statuses: [500, 200])
+        let client = makeClient(session, defaults)
+
+        let boot = Task { @MainActor in await client.refreshIfDue() }
+        await session.waitUntilFirstRequestStarted()
+
+        let puertaA = Task { @MainActor in await client.refreshIfDue(force: true) }
+        let puertaB = Task { @MainActor in await client.refreshIfDue(force: true) }
+
+        session.release()
+        await boot.value
+        await puertaA.value
+        await puertaB.value
+
+        #expect(session.callCount == 2, """
+            Las dos puertas abrieron su propia petición tras el fallo compartido (\(session.callCount) \
+            en total, se esperaban 2: el fetch del arranque y UN reintento). La segunda tiene que \
+            engancharse al reintento de la primera, no lanzar el suyo.
+            """)
+        #expect(CloudRemoteConfigStore.readSnapshot(defaults)?.groupsBackendRolloutPercent == 100,
+                "las dos puertas acaban viendo la config, que es lo que fueron a buscar")
+    }
+
+    /// La regla vieja, INTACTA: un kick normal (boot, `onAppear`) que llega con un fetch en vuelo
+    /// sigue haciendo no-op. Es la coalescencia de la que depende que las cuatro entradas puedan
+    /// re-verificar el canal sin spamear la red.
+    @Test func normalKick_stillCoalescesWithTheInFlightFetch() async throws {
+        let defaults = makeIsolatedDefaults(prefix: "remoteconfig-coalesce")
+        let session = GatedConfigSession(groupsPercent: 100)
+        let client = makeClient(session, defaults)
+
+        let primero = Task { @MainActor in await client.refreshIfDue() }
+        await session.waitUntilFirstRequestStarted()
+
+        await client.refreshIfDue()      // segundo kick SIN force: vuelve al momento, sin pedir nada
+        #expect(session.callCount == 1, """
+            La coalescencia se perdió: un kick sin `force` abrió una segunda petición sobre el fetch \
+            en vuelo. El `force` es la excepción a esa regla, no su sustituto.
+            """)
+
+        session.release()
+        await primero.value
+        #expect(CloudRemoteConfigStore.readSnapshot(defaults)?.groupsBackendRolloutPercent == 100)
+    }
+
+    /// Sin nada en vuelo, `force` sigue saltando el min-interval de 6 h y un kick normal sigue
+    /// respetándolo. Es la semántica original del parámetro y ningún test la sostenía.
+    @Test func withoutAnythingInFlight_forceSkipsTheMinInterval_andAPlainKickDoesNot() async throws {
+        let defaults = makeIsolatedDefaults(prefix: "remoteconfig-mininterval")
+        let ahora = Date(timeIntervalSince1970: 1_800_000_000)
+        CloudRemoteConfigStore.writeSnapshot(
+            RemoteFlagsSnapshot(
+                cloudModeRolloutPercent: nil,
+                cloudOnboardingChoiceRolloutPercent: nil,
+                groupsBackendRolloutPercent: 0,
+                fetchedAt: ahora.addingTimeInterval(-60)),   // fetcheado hace un minuto
+            defaults: defaults)
+
+        let session = GatedConfigSession(groupsPercent: 100, gateFirstRequest: false)
+        let client = makeClient(session, defaults)
+
+        await client.refreshIfDue(now: ahora)
+        #expect(session.callCount == 0, "un kick normal con snapshot de hace un minuto no toca la red")
+        #expect(CloudRemoteConfigStore.readSnapshot(defaults)?.groupsBackendRolloutPercent == 0)
+
+        await client.refreshIfDue(force: true, now: ahora)
+        #expect(session.callCount == 1, "el `force` salta el min-interval: es la cohorte exacta del bug")
+        #expect(CloudRemoteConfigStore.readSnapshot(defaults)?.groupsBackendRolloutPercent == 100)
+    }
+}
+
+/// Sesión que SUSPENDE la primera petición hasta `release()` y responde las siguientes al momento —
+/// el molde exacto del bug: el fetch del arranque queda en vuelo mientras el tap del enlace fuerza el
+/// suyo. Determinista: `waitUntilFirstRequestStarted()` señala la entrada, sin sleeps ni timeouts.
+/// Molde de `GatedSession` (CloudSyncRuntimeTests): sus métodos corren en el actor del caller
+/// (MainActor en estos tests) → el estado mutable no se toca concurrentemente.
+private final class GatedConfigSession: SyncHTTPSession, @unchecked Sendable {
+    private let body: Data
+    /// Status HTTP por número de llamada; la última entrada se repite si hay más llamadas.
+    private let statuses: [Int]
+    private let gateFirstRequest: Bool
+    private(set) var callCount = 0
+    private var started = false
+    private var released = false
+    private var startedContinuation: CheckedContinuation<Void, Never>?
+    private var gateContinuation: CheckedContinuation<Void, Never>?
+
+    init(groupsPercent: Int, statuses: [Int] = [200], gateFirstRequest: Bool = true) {
+        self.body = Data(#"{"v":1,"flags":{"groupsBackendRolloutPercent":\#(groupsPercent)}}"#.utf8)
+        self.statuses = statuses
+        self.gateFirstRequest = gateFirstRequest
+    }
+
+    /// Suspende hasta que la PRIMERA petición haya entrado en `data(for:)` (el fetch está en vuelo).
+    func waitUntilFirstRequestStarted() async {
+        if started { return }
+        await withCheckedContinuation { startedContinuation = $0 }
+    }
+
+    /// Libera la petición retenida (el transporte «responde»).
+    func release() {
+        released = true
+        gateContinuation?.resume()
+        gateContinuation = nil
+    }
+
+    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        callCount += 1
+        let call = callCount
+        if call == 1 && gateFirstRequest {
+            started = true
+            startedContinuation?.resume()
+            startedContinuation = nil
+            if !released {
+                await withCheckedContinuation { gateContinuation = $0 }
+            }
+        }
+        let status = statuses[min(call - 1, statuses.count - 1)]
+        guard let url = request.url,
+              let response = HTTPURLResponse(url: url, statusCode: status,
+                                             httpVersion: nil, headerFields: nil) else {
+            throw URLError(.badServerResponse)
+        }
+        return (body, response)
+    }
+}

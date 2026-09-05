@@ -156,8 +156,9 @@ struct WelcomeGroupsGateView: View {
         }
 
         // El `.task` se cancela al desmontar el step, pero la CANCELACIÓN ES COOPERATIVA: `refreshIfDue`
-        // no la mira, así que sin este guard un usuario que tapea «volver» durante el refresh saldría del
-        // Welcome igual cuando la red conteste. Es el único punto de suspensión de la rama.
+        // solo la mira entre el fetch ajeno que espera y el suyo —nunca dentro de un fetch en curso—, así
+        // que sin este guard un usuario que tapea «volver» durante el refresh saldría del Welcome igual
+        // cuando la red conteste. Es el único punto de suspensión de la rama.
         guard !Task.isCancelled else { return }
 
         let verdict = GroupsOrganizerGateLogic.decide(

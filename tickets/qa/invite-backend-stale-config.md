@@ -147,10 +147,29 @@ para él; lo único que pasó es que la app no llegó a preguntarlo.
 - En **arranque en frío**, o con el enlace tapeado en los primeros segundos: ver la alerta de
   «no pudimos abrir esta invitación ahora» **NO es un hallazgo nuevo** — es este defecto, ya
   levantado. No abras otro ticket, no lo persigas: anótalo contra
-  **`tickets/backlog/invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo.md`**, que lleva la cadena
+  **`tickets/qa/invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo.md`**, que lleva la cadena
   completa con coordenadas.
 - Lo que **sí** hay que comprobar en ese caso: que la solicitud quedó guardada y el invitado acaba
   entrando sin pedir otro enlace. Si tampoco ocurre eso, **eso sí es un hallazgo nuevo**.
+
+### Actualización 2026-09-05 — el agujero está cerrado, y eso INVIERTE el criterio
+
+El defecto que describe todo el bloque de arriba ya está arreglado en `2.1`
+(`tickets/qa/invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo.md`, movido de `backlog` a `qa`):
+un `force` que llega con otro refresco en vuelo ahora **espera** a ese refresco en vez de rendirse.
+
+⇒ **Con un build que lleve ese fix, ver la alerta en arranque en frío ya NO es «este defecto, ya
+levantado»: es un FALLO.** Lo que hay que exigir en el caso (4) es lo que el criterio original
+pedía —**se une, sin mensaje de error**— también con el enlace tapeado en los primeros segundos.
+
+Sigue en pie la única razón legítima para ver la alerta ahí: que el servidor de verdad no conteste
+(el fetch esperado falla Y el reintento propio del `force` también). En ese caso el mensaje dice la
+verdad, y la comprobación de siempre —que la solicitud quedó guardada y el invitado acaba entrando—
+mantiene su valor.
+
+**Ojo con qué build corres.** Si la tanda se ejecuta sobre TestFlight **12** (CPV 12), ese build es
+ANTERIOR al fix y le aplica el criterio viejo. El criterio nuevo empieza en el primer build que
+incluya el commit de ese ticket.
 
 ## 2026-09-02 — receta de QA que SÍ sale en simulador
 
