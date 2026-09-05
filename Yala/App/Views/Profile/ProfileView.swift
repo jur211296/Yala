@@ -85,6 +85,10 @@ struct ProfileView: View {
     // H-2026-07-18-6: el bloqueo TRANSITORIO del sign-out solo-grupos usa un alert distinto
     // ("un momento más") — el permanente conserva el alert de conexión de siempre.
     @State private var showSignOutPendingAlert = false
+    // Decisión del owner 2026-09-03: en la sesión de VISITA los dos alerts de bloqueo suman «salir
+    // igualmente». Se fija junto al alert (no se recalcula al pintar) para que la salida forzada y el
+    // aviso que la anuncia decidan por el MISMO `pendingCount`, el del bloqueo que se está mostrando.
+    @State private var signOutBlockedOffersExit = false
     // D4: flags del patrón anti-carrera de las hojas de alcance — la acción corre en el `onDismiss` del
     // sheet (con la hoja YA fuera), no en el tap del botón (evita el race dismiss-hoja / transición-shell).
     @State private var pendingSignOut = false
@@ -92,7 +96,9 @@ struct ProfileView: View {
 
     private func syncSignOutUI(from phase: CloudSessionSignOut.Phase) {
         switch phase {
-        case .blocked(_, let reason):
+        case .blocked(let pending, let reason):
+            signOutBlockedOffersExit = CloudSignOutFlowLogic.offersForcedSecondaryExit(
+                isSecondaryActive: SecondarySessionStore.isActive(), pendingCount: pending)
             switch reason {
             case .transient: showSignOutPendingAlert = true
             case .permanent: showSignOutBlockedAlert = true
@@ -100,6 +106,39 @@ struct ProfileView: View {
         case .awaitingRelaunch: dismiss()
         case .idle, .working: break
         }
+    }
+
+    /// Botones de los DOS alerts de cierre bloqueado. Se comparten a propósito: la diferencia entre el
+    /// bloqueo transitorio y el permanente ya la lleva el título y el mensaje (H-2026-07-18-6), y las
+    /// salidas disponibles son las mismas en los dos casos.
+    ///
+    /// Fuera de la sesión de visita queda EXACTAMENTE el botón de siempre. Dentro, «Esperar» sustituye al
+    /// "OK" —que no decía qué pasaba si lo tocabas— y aparece «Salir igualmente», que cierra la sesión
+    /// aceptando la pérdida (decisión del owner 2026-09-03).
+    @ViewBuilder
+    private var signOutBlockedButtons: some View {
+        if signOutBlockedOffersExit {
+            Button(L10n.Settings.signOutExitAnywayButton, role: .destructive) {
+                Task { await CloudSessionSignOut.shared.exitSecondaryDiscardingPending() }
+            }
+            .accessibilityIdentifier("signout_blocked_exit_anyway")
+            Button(L10n.Settings.signOutWaitButton, role: .cancel) {
+                CloudSessionSignOut.shared.acknowledgeBlocked()
+            }
+            .accessibilityIdentifier("signout_blocked_wait")
+        } else {
+            Button(L10n.Common.ok, role: .cancel) {
+                CloudSessionSignOut.shared.acknowledgeBlocked()
+            }
+        }
+    }
+
+    /// El mensaje del alert, con el aviso de pérdida AÑADIDO solo cuando se ofrece la salida forzada.
+    /// Va aquí y no en una key propia por locale porque el texto base ya es correcto en los dos casos:
+    /// lo que cambia no es lo que pasó, sino que ahora hay una salida cuyo precio hay que nombrar.
+    private func signOutBlockedText(_ base: String) -> String {
+        guard signOutBlockedOffersExit else { return base }
+        return base + "\n\n" + L10n.Settings.signOutSecondaryLossWarning
     }
 
     /// D6 (§3.3.6): la hoja de alcance de sign-out se comparte entre "Cerrar sesión" y "Salir de Yala
@@ -422,21 +461,17 @@ struct ProfileView: View {
                     onConfirm: { pendingExitYalaGroups = true }))
             }
             .alert(L10n.Settings.signOutBlockedTitle, isPresented: $showSignOutBlockedAlert) {
-                Button(L10n.Common.ok, role: .cancel) {
-                    CloudSessionSignOut.shared.acknowledgeBlocked()
-                }
+                signOutBlockedButtons
             } message: {
-                Text(L10n.Settings.signOutBlockedMessage)
+                Text(signOutBlockedText(L10n.Settings.signOutBlockedMessage))
             }
             // H-2026-07-18-6: bloqueo TRANSITORIO (solo-grupos, tras agotar el retry interno) —
             // copy que invita a esperar, no a revisar la conexión. Solo un bool se pone a la vez
             // (rutas mutuamente excluyentes en `syncSignOutUI`).
             .alert(L10n.Settings.signOutPendingTitle, isPresented: $showSignOutPendingAlert) {
-                Button(L10n.Common.ok, role: .cancel) {
-                    CloudSessionSignOut.shared.acknowledgeBlocked()
-                }
+                signOutBlockedButtons
             } message: {
-                Text(L10n.Settings.signOutPendingMessage)
+                Text(signOutBlockedText(L10n.Settings.signOutPendingMessage))
             }
             .onChange(of: signOutCoordinator.phase) { _, newPhase in
                 syncSignOutUI(from: newPhase)

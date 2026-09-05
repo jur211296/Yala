@@ -5512,3 +5512,12 @@
 
 /* Share-link button: groups channel is off right now — transient, retry later (NOT the user's connection) */
 "groups.errors.inviteChannelOff" = "Non possiamo creare link di invito in questo momento. Riprova tra poco.";
+
+/* Extra warning appended to the sign-out blocked alert during a guest (secondary) session, where leaving anyway is offered */
+"settings.signOutSecondaryLossWarning" = "Se esci adesso, quelle modifiche non arriveranno al tuo account.";
+
+/* Sign-out blocked alert, guest session: stay in the app and retry later */
+"settings.signOutWaitButton" = "Aspetta";
+
+/* Sign-out blocked alert, guest session: close the session accepting that unsent changes are lost */
+"settings.signOutExitAnywayButton" = "Esci comunque";
