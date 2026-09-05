@@ -1,8 +1,8 @@
 ---
 id: invite-link-five-causes-one-message
-status: in-progress
+status: qa
 created: 2026-08-12
-updated: 2026-09-03
+updated: 2026-09-05
 source: YalaWiki/Bugs/grupos-enlace-de-invitacion-cinco-causas-un-solo-mensaje.md
 ---
 
@@ -325,3 +325,16 @@ rojo. De ahí salió una corrección que importa más que el resto:
 
 Un test que cuenta cuando debería localizar es la familia del `makeTx` sin `category:` de
 `.claude/rules/testing.md`: verde con la regla buena y con la mala.
+
+### Qué falta ver en el simulador o en un device
+
+Todo el ticket está implementado; lo que queda es MIRARLO, y son tres cosas cortas:
+
+1. **El nombre del grupo en la bienvenida.** Tapear un enlace con cosméticos (`&n=`, `&i=`, `&c=`)
+   siendo invitado fresco y comprobar que el título dice «Te invitaron al grupo <nombre>» con el
+   icono y el color del grupo, no el genérico. **La precondición que hace falta cuidar: hacerlo con
+   la app CERRADA**, que es el camino que este ticket arregla y el que antes ni extraía la marca.
+2. **El re-tap no borra la marca.** Tapear primero el enlace completo y después la forma mínima
+   (`?g=..&t=..`): el nombre debe seguir ahí.
+3. **Los dos copies nuevos del botón de compartir enlace.** El de grupo legacy necesita un grupo de
+   la era CloudKit (`isBackendGroup == false`); el del canal apagado, `groupsBackendEnabled` en OFF.
