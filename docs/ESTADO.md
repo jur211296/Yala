@@ -70,8 +70,8 @@ sigue sin `ok_`. **Cero `ok_` inventado.**
 
 ## Board
 
-107 tickets · backlog 54 · in-progress 2 · qa 28 · blocked 2 · done 16 · discarded 5. Índice cuadrado
-(107 filas = 107 ficheros, verificado contra el disco). `qa` significa «esperando la tanda», no
+108 tickets · backlog 55 · in-progress 2 · qa 28 · blocked 2 · done 16 · discarded 5. Índice cuadrado
+(108 filas = 108 ficheros, verificado contra el disco). `qa` significa «esperando la tanda», no
 «cerrado».
 
 **El verde del CI no dice que los XCUITest pasaran:** su paso de UI es *advisory*, así que el job sale

@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (107)
+## Index (108)
 
 | id | status | path |
 |----|--------|------|
@@ -132,6 +132,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | undercount-dias-intervalos-cerrados | qa | tickets/qa/undercount-dias-intervalos-cerrados.md |
 | update-banner-appstore-criteria | qa | tickets/qa/update-banner-appstore-criteria.md |
 | verify-dual-channel-zone-in-supabase | backlog | tickets/backlog/verify-dual-channel-zone-in-supabase.md |
+| web-domain-has-no-spf-dkim-dmarc | backlog | tickets/backlog/web-domain-has-no-spf-dkim-dmarc.md |
 | welcome-copy-blames-owner | qa | tickets/qa/welcome-copy-blames-owner.md |
 | welcome-fresh-start-alert-leaves-blank-screen | qa | tickets/qa/welcome-fresh-start-alert-leaves-blank-screen.md |
 | welcome-privacy-branch-has-no-secondary-door | backlog | tickets/backlog/welcome-privacy-branch-has-no-secondary-door.md |

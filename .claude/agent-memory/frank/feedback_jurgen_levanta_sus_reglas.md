@@ -29,4 +29,13 @@ claro —«el ahorro no son 100 minutos, son pasos»— y no solo no le molestó
 cambio y **ajustó el criterio** (excluyó `.claude/` de la allowlist de «solo documentación»,
 porque los hooks no rompen el build pero sí rompen cómo trabaja todo el mundo). ⇒ traer la
 contramedida temprano mejora su decisión; callársela para no incordiar habría producido una regla
-peor. Ver también [[creo-que-no-es-aprobacion]].
+peor.
+
+**Refinamiento del 2026-09-05, sobre esa misma exclusión.** Le pregunté si abría PR para dos
+ficheros de `.claude/agent-memory/frank/` y contestó «meterla directo sin pr». Encaja con el motivo
+original: lo que va por PR son hooks, rules y permisos —cambian cómo trabaja todo el mundo—, y la
+memoria de Frank solo cambia cómo trabaja Frank. **Anotado como lo que dijo ese día, no como norma:**
+no dijo «siempre». Si el diff de `.claude/` toca hooks, rules o permisos, sigue yendo por PR salvo
+que lo levante otra vez.
+
+Ver también [[creo-que-no-es-aprobacion]].
