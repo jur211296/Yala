@@ -65,9 +65,16 @@ sigue sin `ok_`. **Cero `ok_` inventado.**
 
 ## Board
 
-100 tickets · backlog 48 · in-progress 4 · qa 25 · blocked 2 · done 16 · discarded 5. Índice cuadrado
-(100 filas = 100 ficheros, status y ruta de cada fila comprobados contra el disco). `qa` significa
+101 tickets · backlog 49 · in-progress 4 · qa 25 · blocked 2 · done 16 · discarded 5. Índice cuadrado
+(101 filas = 101 ficheros, status y ruta de cada fila comprobados contra el disco). `qa` significa
 «esperando la tanda», no «cerrado».
+
+**Entra uno nuevo: `ci-no-corre-la-suite-del-gateway`.** Salió al abrir el PR de arriba y el dato es
+incómodo: el CI **no ejecuta ni un test del gateway** —no hay un solo `vitest` en `qa.yml`— así que
+los tres tests que protegen el arreglo de este ticket salieron verdes sin correr. Y el filtro está al
+revés: tocar `qa/coverage-index.json` o `encargos/` sí arranca los ~100 min de simulador, que ahí no
+compilan nada. El arreglo son dos piezas baratas (un job de Ubuntu con `npm test`, y dos rutas más en
+la allowlist).
 
 **Arreglado el re-tap que renotificaba al admin, y pasa a la tanda (`qa`).** Quien esperaba aprobación
 y volvía a tocar su enlace despertaba al admin una vez por tap. El guardián del servidor lo prometía y
