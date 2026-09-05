@@ -1483,11 +1483,29 @@ final class AppBootstrapper {
         // 2) Removed-self: current user con status=.removed → flow simétrico a leaveGroup.
         do {
             let removedRaw = SplitMemberStatus.removed.rawValue
-            let removedSelfMembers = try context.fetch(FetchDescriptor<SplitMember>(
-                predicate: #Predicate { $0.isCurrentUser == true && $0.status == removedRaw }
+            // Identidad RESUELTA. El `#Predicate` que había aquí exigía `isCurrentUser == true`, que el
+            // pull backend nunca enciende: a quien acababa de entrar a un grupo y era expulsado antes del
+            // arranque siguiente NO se le corría el cleanup, y el grupo se le quedaba puesto.
+            //
+            // Se filtra primero por status —lo único que SwiftData sí puede traducir— y solo las zonas con
+            // algún member expulsado pagan la resolución, que es en memoria porque el criterio canónico lee
+            // estado de sesión e iCloud. Sin expulsados (el caso normal) esto es un fetch y nada más.
+            let removedAnywhere = try context.fetch(FetchDescriptor<SplitMember>(
+                predicate: #Predicate { $0.status == removedRaw }
             ))
-            for member in removedSelfMembers {
-                await GroupService.shared.performRemovedSelfCleanup(zoneName: member.groupZoneID)
+            for zoneName in Set(removedAnywhere.map(\.groupZoneID)) {
+                let me: SplitMember?
+                do {
+                    me = try GroupExpenseService.resolveCurrentUserMember(
+                        inZone: zoneName, context: context)
+                } catch {
+                    #if DEBUG
+                    logger.error("freezeOrphanedGroups: removed-self resolve failed for \(zoneName, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                    #endif
+                    continue
+                }
+                guard me?.status == removedRaw else { continue }
+                await GroupService.shared.performRemovedSelfCleanup(zoneName: zoneName)
             }
         } catch {
             #if DEBUG

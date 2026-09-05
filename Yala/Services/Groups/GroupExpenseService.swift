@@ -686,6 +686,35 @@ final class GroupExpenseService {
         )
     }
 
+    /// La misma resolución canónica, para los consumidores que hasta ahora la escribían como un
+    /// `FetchDescriptor` con `isCurrentUser == true` metido en el `#Predicate`.
+    ///
+    /// Existe porque esa forma NO es convertible: `resolveCurrentUserMember(from:)` lee estado de
+    /// sesión (`sub`) y de iCloud (`recordName`), y SwiftData no puede traducir eso a SQL. Sustituir
+    /// la línea dentro del predicado es imposible, así que cada consumidor tenía que acordarse de
+    /// traerse los members de la zona y resolver en memoria — y ninguno se acordó. El resultado era
+    /// que al recién llegado a un grupo, cuyo `SplitMember` baja del pull con `isCurrentUser`
+    /// APAGADO (`GroupsSyncClient.applyMember` nunca lo escribe, y `refreshCurrentUserFlags` solo
+    /// corre en el arranque), estos consumidores lo daban por no-miembro: su gasto no llegaba a sus
+    /// cuentas, su saldo salía vacío y sus avisos de grupo se descartaban en silencio.
+    ///
+    /// El fetch trae los members de UNA zona (2-10 filas en la práctica), no los del dispositivo:
+    /// esto NO es el `refreshCurrentUserFlags` device-wide, no escribe nada y no arrastra su
+    /// backfill heurístico por `displayName`. Es una lectura.
+    ///
+    /// Propaga el error del fetch en vez de tragárselo: los callers no coinciden en qué hacer con él
+    /// (`ScheduledPaymentDraftService` reintenta, `GroupNotificationService` evita envenenar su
+    /// caché), y decidirlo aquí les quitaría esa distinción.
+    static func resolveCurrentUserMember(
+        inZone zoneID: String,
+        context: ModelContext
+    ) throws -> SplitMember? {
+        let members = try context.fetch(FetchDescriptor<SplitMember>(
+            predicate: #Predicate { $0.groupZoneID == zoneID }
+        ))
+        return resolveCurrentUserMember(from: members)
+    }
+
     private func validateCurrentUserCanWrite(in group: SplitGroup) throws {
         try validateGroupIsWritable(group)
         let members = try GroupService.shared.fetchMembers(for: group)

@@ -151,8 +151,12 @@ final class GroupExpenseViewModel {
     // MARK: - M6 computed
 
     /// MemberID del current user en este grupo. `nil` si no está como miembro (caso edge raro).
+    ///
+    /// Identidad RESUELTA, no el flag pelado: el `SplitMember` del recién llegado por enlace baja del
+    /// pull con `isCurrentUser` APAGADO hasta el arranque siguiente, y con el flag a pelo `isCaseA`
+    /// salía `false` aunque el gasto lo pagara él ⇒ el formulario no le ofrecía elegir su cuenta real.
     var currentUserMemberID: String? {
-        members.first(where: { $0.isCurrentUser })?.id.uuidString
+        GroupExpenseService.resolveCurrentUserMember(from: members)?.id.uuidString
     }
 
     /// Form puede abrirse: current user resuelto como miembro del grupo.
@@ -267,7 +271,10 @@ final class GroupExpenseViewModel {
         self.currencyCode = group.currencyCode
         self.splitType = SplitType(rawValue: group.defaultSplitType) ?? .equal
         self.selectableMemberIDs = Set(members.filter(\.isActive).map { $0.id.uuidString })
-        self.paidByMemberID = members.first(where: { $0.isCurrentUser && $0.isActive })?.id.uuidString ?? ""
+        // Prefill de «Pagado por». Con el flag pelado abría EN BLANCO para quien se acaba de unir
+        // (`isCurrentUser` aún sin encender) — el caso más común es justo que pague él.
+        self.paidByMemberID = GroupExpenseService.resolveCurrentUserMember(from: members)
+            .flatMap { $0.isActive ? $0.id.uuidString : nil } ?? ""
         self.selectedMemberIDs = selectableMemberIDs
     }
 

@@ -195,9 +195,9 @@ struct ScheduledPaymentDraftService {
 
         let member: SplitMember?
         do {
-            var d = FetchDescriptor<SplitMember>(predicate: #Predicate { $0.groupZoneID == zone && $0.isCurrentUser == true })
-            d.fetchLimit = 1
-            member = try context.fetch(d).first
+            // Identidad RESUELTA: con el flag pelado, al recién llegado el gate lo trataba como
+            // no-miembro y el borrador del pago programado del grupo no se creaba nunca.
+            member = try GroupExpenseService.resolveCurrentUserMember(inZone: zone, context: context)
         } catch {
             #if DEBUG
             print("ScheduledPaymentDraftService: Error fetching member for gate: \(error)")

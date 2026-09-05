@@ -176,6 +176,14 @@ final class GroupsViewModel {
             for member in members where member.isCurrentUser && member.isActive {
                 currentUserMemberIDs.insert(member.id.uuidString)
             }
+            // Ventana temprana (recién llegado por enlace: el pull no enciende `isCurrentUser`): sin esto
+            // el usuario no contaba en el resumen global aunque la tarjeta del grupo ya lo reconociera.
+            // AÑADE, no sustituye: en una zona migrada el mismo humano puede tener su member CloudKit
+            // legacy Y el backend, y quedarse solo con el canónico borraría del resumen el saldo del otro.
+            if let resolved = GroupExpenseService.resolveCurrentUserMember(from: members),
+               resolved.isActive {
+                currentUserMemberIDs.insert(resolved.id.uuidString)
+            }
         }
 
         if newBalancesByGroup != balancesByGroup { balancesByGroup = newBalancesByGroup }
@@ -253,9 +261,11 @@ final class GroupsViewModel {
 
     /// Get the current user's net balance for a specific group.
     func currentUserBalance(for group: SplitGroup) -> MemberBalance? {
+        // Identidad RESUELTA: con el flag pelado, la tarjeta del grupo se contradecía sola — su
+        // `currentMemberStatus` (ya canónico) reconocía al recién llegado mientras su saldo salía vacío.
         guard let balances = balancesByGroup[group.cloudKitZoneID],
               let members = membersByGroup[group.cloudKitZoneID],
-              let currentMember = members.first(where: { $0.isCurrentUser }) else {
+              let currentMember = GroupExpenseService.resolveCurrentUserMember(from: members) else {
             return nil
         }
         let memberID = currentMember.id.uuidString
@@ -302,7 +312,10 @@ final class GroupsViewModel {
         convertTo: String? = nil,
         converter: CurrencyConverting? = nil
     ) -> [DebtRow] {
-        guard let currentMember = members.first(where: { $0.isCurrentUser }) else {
+        // Identidad RESUELTA, gemela de `currentUserBalance(for:)`: sin ella el recién llegado veía la
+        // lista de deudas vacía. Sigue siendo pure-logic para el test: sin sesión ni `recordName` los dos
+        // fallbacks no matchean nada y la resolución es byte-idéntica al `first { $0.isCurrentUser }`.
+        guard let currentMember = GroupExpenseService.resolveCurrentUserMember(from: members) else {
             return []
         }
         let currentMemberID = currentMember.id.uuidString

@@ -776,7 +776,11 @@ final class GroupService {
     private func batchFacts(_ group: SplitGroup) throws -> GroupBatchLeaveLogic.GroupFacts {
         let context = try requireContext()
         let members = try fetchMembers(for: group, context: context)
-        let activeCoMembers = members.filter { $0.isActive && !$0.isCurrentUser }
+        // Identidad RESUELTA para «quién soy yo»: con el flag pelado, al recién llegado se le contaba
+        // como su propio co-member (y como heredero elegible de sí mismo) mientras
+        // `batchHasOutstandingDebt`, aquí abajo, sí lo reconocía. La misma función se contradecía.
+        let meID = GroupExpenseService.resolveCurrentUserMember(from: members)?.id.uuidString
+        let activeCoMembers = members.filter { $0.isActive && $0.id.uuidString != meID }
         let eligibleHeirs = activeCoMembers.filter { $0.userID != nil }
         return GroupBatchLeaveLogic.GroupFacts(
             isOwner: group.isOwner,
@@ -794,7 +798,7 @@ final class GroupService {
         let expenseCount = try context.fetchCount(
             FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.groupZoneID == zoneID }))
         guard expenseCount > 0 else { return false }
-        guard let me = members.first(where: { $0.isCurrentUser }) else { return false }
+        guard let me = GroupExpenseService.resolveCurrentUserMember(from: members) else { return false }
         let expenses = try GroupExpenseService.shared.fetchExpenses(for: group)
         let shares = try GroupExpenseService.shared.fetchAllShares(for: group)
         let settlements = try GroupExpenseService.shared.fetchSettlements(for: group)
@@ -933,10 +937,17 @@ final class GroupService {
         guard !trimmed.isEmpty else { return }
         let context = try requireContext()
 
-        let memberDescriptor = FetchDescriptor<SplitMember>(
-            predicate: #Predicate { $0.isCurrentUser == true }
-        )
-        let myMembers = try context.fetch(memberDescriptor)
+        // Identidad RESUELTA, zona por zona. Este consumidor era el único DEVICE-WIDE del flag pelado
+        // (`isCurrentUser == true` sin zona), y por eso al recién llegado su nombre elegido en el
+        // onboarding no llegaba al grupo al que acababa de entrar: su member baja del pull con el flag
+        // apagado. Se resuelve por zona en memoria en vez de en el `#Predicate` porque el criterio
+        // canónico lee estado de sesión y de iCloud, intraducible a SwiftData.
+        //
+        // Es una LECTURA: agrupa los members que ya están en el store y elige uno por zona. Nada que ver
+        // con `refreshCurrentUserFlags`, que además escribe y arrastra su backfill por `displayName`.
+        let allMembers = try context.fetch(FetchDescriptor<SplitMember>())
+        let myMembers = Dictionary(grouping: allMembers, by: \.groupZoneID)
+            .compactMap { GroupExpenseService.resolveCurrentUserMember(from: $0.value) }
         let pending = myMembers.filter { $0.displayName != trimmed }
         guard !pending.isEmpty else { return }
 
@@ -1291,7 +1302,9 @@ final class GroupService {
         let groups = try context.fetch(FetchDescriptor<SplitGroup>(sortBy: [SortDescriptor(\.name)]))
         return try groups.filter { group in
             let members = try fetchMembers(for: group, context: context)
-            let status = members.first(where: { $0.isCurrentUser })?.memberStatus
+            // Identidad RESUELTA: sin ella el grupo del recién llegado no salía al convertir un borrador
+            // del Inbox en gasto compartido, aunque el tab Grupos ya lo listara como suyo.
+            let status = GroupExpenseService.resolveCurrentUserMember(from: members)?.memberStatus
             return GroupExpenseEligibilityLogic.canCreateExpense(
                 currentMemberStatus: status,
                 isArchived: group.isArchived,
@@ -1358,13 +1371,10 @@ final class GroupService {
     /// duplicados). Reusado por `currentMemberStatus(zoneName:)` y por callsites del bridge.
     func currentUserMember(zoneID: String) -> SplitMember? {
         guard let context = modelContext else { return nil }
-        var descriptor = FetchDescriptor<SplitMember>(
-            predicate: #Predicate { $0.groupZoneID == zoneID && $0.isCurrentUser == true },
-            sortBy: [SortDescriptor(\.joinedAt, order: .forward)]
-        )
-        descriptor.fetchLimit = 1
         do {
-            return try context.fetch(descriptor).first
+            // Identidad RESUELTA. El desempate por `joinedAt` más antiguo lo conserva la resolución
+            // canónica; lo que se retira es exigir `isCurrentUser`, que el pull backend nunca enciende.
+            return try GroupExpenseService.resolveCurrentUserMember(inZone: zoneID, context: context)
         } catch {
             logger.error("currentUserMember(zoneID:) fetch failed for \(zoneID, privacy: .public): \(error.localizedDescription, privacy: .public)")
             return nil
@@ -1415,11 +1425,8 @@ final class GroupService {
                 // Member del usuario actual en esta zona (canonical: oldest joinedAt), INLINE contra el
                 // `context` pasado. No resuelto (isCurrentUser aún sin asentar) ⇒ salta → sub-conteo, jamás
                 // sobre-aviso.
-                var meDesc = FetchDescriptor<SplitMember>(
-                    predicate: #Predicate { $0.groupZoneID == zoneID && $0.isCurrentUser == true },
-                    sortBy: [SortDescriptor(\.joinedAt, order: .forward)])
-                meDesc.fetchLimit = 1
-                guard let me = try context.fetch(meDesc).first else { continue }
+                guard let me = try GroupExpenseService.resolveCurrentUserMember(
+                    inZone: zoneID, context: context) else { continue }
                 let myMemberID = me.id.uuidString
 
                 // Early exit O(1): grupo sin gastos ⇒ sin deuda posible (delega a SQL COUNT).

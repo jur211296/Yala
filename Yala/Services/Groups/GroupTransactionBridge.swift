@@ -189,14 +189,21 @@ final class GroupTransactionBridge {
         // Find current user's member in this group.
         // pending/rejected members no triguean bridge.
         let zoneID = group.cloudKitZoneID
-        let memberDescriptor = FetchDescriptor<SplitMember>(
-            predicate: #Predicate { $0.groupZoneID == zoneID && $0.isCurrentUser == true }
-        )
-        // NO atendido: `isCurrentUser` es device-local (`CKRecordTranslator` nunca lo escribe) y lo marca
-        // `refreshCurrentUserFlags`, que en una reinstalación o un 2º device puede tardar —o fallar si el
-        // fetch de identidad a CKContainer no resuelve—. Un `pendingApproval` que el admin acepta después
-        // cae aquí igual. En los dos casos el gasto SÍ tendrá que puentearse cuando el estado se resuelva.
-        guard let currentMember = try context.fetch(memberDescriptor).first,
+        // Identidad RESUELTA, no el flag pelado. Con el `#Predicate` sobre `isCurrentUser == true` que
+        // había aquí, al recién llegado a un grupo del canal backend NO se le encontraba: su `SplitMember`
+        // baja del pull con el flag apagado y solo lo enciende `refreshCurrentUserFlags` en el arranque
+        // SIGUIENTE. Consecuencia con dinero de por medio: su gasto no llegaba a sus cuentas personales
+        // hasta relanzar la app, y al repescarlo `GroupsPendingBridgeResume` (que corre con
+        // `accountForCurrentUser: nil`) aterrizaba en la cuenta virtual «Grupos» en vez de en la cuenta
+        // real que había elegido en el formulario. Resolviendo aquí, el gasto se puentea en el mismo
+        // gesto que lo crea y conserva su cuenta.
+        //
+        // NO atendido cuando tampoco resuelve así: ninguna de las tres identidades está disponible
+        // todavía (primer arranque sin sesión ni recordName). Un `pendingApproval` que el admin acepta
+        // después cae aquí igual. En los dos casos el gasto SÍ tendrá que puentearse cuando el estado se
+        // resuelva, y devolver `false` es lo que mantiene viva la intención de `GroupsPendingBridgeIntent`.
+        guard let currentMember = try GroupExpenseService.resolveCurrentUserMember(
+                  inZone: zoneID, context: context),
               currentMember.isActive else { return false }
         let currentMemberID = currentMember.id.uuidString
 
@@ -1044,10 +1051,11 @@ final class GroupTransactionBridge {
         // Find current user.
         // pending/rejected members no triguean bridge.
         let zoneID = group.cloudKitZoneID
-        let memberDescriptor = FetchDescriptor<SplitMember>(
-            predicate: #Predicate { $0.groupZoneID == zoneID && $0.isCurrentUser == true }
-        )
-        guard let currentMember = try context.fetch(memberDescriptor).first,
+        // Identidad RESUELTA — gemelo del de `bridgeExpense`, mismo racional: con el flag pelado, a quien
+        // acaba de entrar al grupo no se le reconoce como parte de la liquidación hasta el arranque
+        // siguiente, y su cobro o su pago no llega a sus cuentas.
+        guard let currentMember = try GroupExpenseService.resolveCurrentUserMember(
+                  inZone: zoneID, context: context),
               currentMember.isActive else { return false }
         let currentMemberID = currentMember.id.uuidString
 
