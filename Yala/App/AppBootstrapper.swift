@@ -2081,8 +2081,15 @@ final class AppBootstrapper {
             // boot/foreground con el flag ya encendido. `force: true` NO es cosmético — sin él
             // `refreshIfDue` es un no-op en el caso EXACTO del bug («fetcheé hace menos de 6 h»);
             // y es acción de usuario con intención explícita, no un poll, así que no toca
-            // `refreshMinInterval` para nadie más. El spam queda acotado por el guard `inFlight`
-            // del cliente y porque esta rama exige link backend Y flag OFF.
+            // `refreshMinInterval` para nadie más. El spam sigue acotado —un `force` que llega con
+            // otro fetch en vuelo ESPERA a ése en lugar de abrir uno nuevo— y porque esta rama exige
+            // link backend Y flag OFF.
+            //
+            // Que ese await ESPERE al fetch del arranque es justo lo que hace que la re-entrada de
+            // abajo lea un flag ya decidido. Cuando el `force` se rendía ante el en-vuelo (el guard
+            // `inFlight` de `refreshIfDue`, hasta el 2026-09-05), este camino no tocaba la red y la
+            // re-lectura caía en `.backendUnavailable`: el recién instalado veía «no pudimos abrir
+            // esta invitación» con el canal encendido, y en su primer minuto con el producto.
             persistBackendInviteIntent(
                 groupID: backendInvite.groupID, token: backendInvite.token, branded: branded)
             logger.notice("Invite: backend link with flag OFF → forcing remote-config refresh")
