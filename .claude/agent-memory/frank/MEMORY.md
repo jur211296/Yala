@@ -18,10 +18,12 @@
 - [Capturas del simulador para la web](feedback_capturas_simulador_para_la_web.md) — receta y trampas: Secrets.xcconfig, nombre efímero, categorías sembradas, `sips -Z` escala el lado largo.
 
 ## Estado del trabajo
+- [La identidad del recién llegado a un grupo](project_identidad_del_joiner_en_grupos.md) — cerrada en código el 4 y 5-sep; falta device-QA de dos teléfonos, y NO se reabre la vía del refresh.
 - [Decisiones que esperan a Jürgen](project_decisiones_que_esperan_a_jurgen.md) — lo parado espera respuesta suya, no código; verifica antes de citarlas, caducan.
-- [Web PR #62 espera a Jürgen](project_web_pr62_espera_a_jurgen.md) — revisión web 2026-09-03: mergear, y 4 decisiones (legal Grupos, fuentes, tono acento, tema sistema).
+- [Web: lo que Jürgen decidió, y lo que no](project_web_pr62_espera_a_jurgen.md) — PR #62 mergeado el 4-sep; siguen abiertas dos suyas: legal de Grupos y autoalojar fuentes.
 
 ## Entorno y herramientas
+- [Avisar a Frank: con el script, no a mano](reference_avisar_a_frank_webhook.md) — `avisar_grok.py <motivo>`; el POST propio da 401 y el hook ya avisa solo de build/tests.
 - [Verificar el backend: MCP ve solo prod](reference_verificar_backend_yala.md) — no hay DDL de staging; el sandbox transaccional prueba contra el motor real sin dejar rastro.
 - [El hook de secretos está desactivado](hook_secretos_disparador_substring.md) — retirado del push el 2026-09-01 (ADR-009); nada escanea hoy. Su trampa del substring, si vuelve.
 - [El hook de /cerrar salta con «cerramos»](hook_cerrar_disparador_substring.md) — verifica la premisa contra su mensaje: cerrar un ticket no es cerrar la sesión, y el bloque de disco es irreversible.

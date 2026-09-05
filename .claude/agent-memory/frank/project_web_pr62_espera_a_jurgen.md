@@ -1,12 +1,14 @@
 ---
 name: web-pr62-espera-a-jurgen
-description: Revisión + rediseño de la web (PR #62, preview Vercel, 2026-09-03/04) — qué espera de Jürgen, qué decidió él y qué dejé sin tocar a propósito
+description: Revisión + rediseño de la web (PR #62, MERGEADO el 2026-09-04) — qué decidió Jürgen, y las dos decisiones suyas que siguen abiertas (legal de Grupos, autoalojar fuentes)
 metadata:
   type: project
 ---
 
-**El PR #62 (`encargo/2026-09-03-revision-web-ux-a11y-preview`) espera a Jürgen: revisar el preview y
-mergear.** Contiene la auditoría (3-sep) y el **rediseño de la home** (4-sep). Informe formal en
+**El PR #62 ya está MERGEADO** (2026-09-04 15:43; `yala-app.pe` sirve la web nueva). Lo que queda vivo
+de esta ficha son sus decisiones y los dos pendientes del final, no el PR.
+
+El PR (`encargo/2026-09-03-revision-web-ux-a11y-preview`) contenía la auditoría (3-sep) y el **rediseño de la home** (4-sep). Informe formal en
 `Web/REVISION-WEB-UX-A11Y-2026-09-03.md` (§11 = rediseño). Preview con SSO:
 `https://yala-54tv7bb0p-jur211296s-projects.vercel.app`. Canvas de las dos direcciones:
 `https://claude.ai/code/artifact/838b792c-e494-444a-ae1a-237e505e7bfb` (él no pudo abrirlo; le sirvieron
