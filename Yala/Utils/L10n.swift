@@ -1976,8 +1976,16 @@ enum L10n {
             static var pendingApproval: String { ls("groups.errors.pendingApproval", comment: "") }
             /// Acción de grupo que necesita el sync pero el primer import de iCloud no se asentó.
             static var syncPreparing: String { ls("groups.errors.syncPreparing", comment: "") }
-            /// Falló la generación del enlace de invitación.
+            /// Falló la generación del enlace de invitación **por RED** («revisa tu conexión»). Es el
+            /// `catch` del RPC y solo eso: los dos bloqueos previos tienen copy propio abajo, porque
+            /// culpar a la conexión cuando el fallo es permanente manda al admin a reintentar para
+            /// siempre. Ver `GroupInviteLinkCreationLogic`.
             static var inviteFailed: String { ls("groups.errors.inviteFailed", comment: "") }
+            /// Bloqueo PERMANENTE: el grupo es de la era CloudKit y no admite enlaces por ninguna vía.
+            static var inviteLegacyGroup: String { ls("groups.errors.inviteLegacyGroup", comment: "") }
+            /// Bloqueo TRANSITORIO: el canal de grupos está apagado ahora mismo (kill remoto o
+            /// snapshot de remote-config ausente). Reintentar más tarde sí tiene sentido.
+            static var inviteChannelOff: String { ls("groups.errors.inviteChannelOff", comment: "") }
             /// Fallo genérico de una acción de grupo (eliminar gasto, liquidar, aprobar/rechazar).
             static var actionFailed: String { ls("groups.errors.actionFailed", comment: "") }
             /// El usuario elige "Solo grupos" sin cuenta iCloud activa (grupos exige iCloud).

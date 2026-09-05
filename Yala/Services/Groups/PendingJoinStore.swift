@@ -54,6 +54,20 @@ struct PendingJoinEntry: Codable, Equatable {
     /// back-compat (decodeIfPresent sintetizado): JSON viejo sin este campo decodifica a `nil`.
     var legacyMemberKey: String?
 
+    /// Marca del grupo que VIAJA en el propio enlace (params `n`/`i`/`c`/`m`): nombre, icono y color con
+    /// los que la web ya recibió al invitado. `GroupInviteOnboardingView` la pinta.
+    ///
+    /// **Por qué vive aquí y no en el payload del intent.** El caso dominante es el ARRANQUE EN FRÍO —el
+    /// invitado llega desde la web con la app cerrada—, y ahí no hay intent de router que transporte
+    /// nada: `AppBootstrapper.enterBackendInvite` persiste y RETORNA, y quien completa el flujo es el
+    /// reconciler en el boot siguiente. Colgar la marca del intent la habría cableado solo para el tap
+    /// caliente, que es la minoría. `persistIntent` es el choke point de los dos caminos ⇒ la marca entra
+    /// por un solo sitio y el drain la lee de aquí.
+    ///
+    /// Opcional Codable back-compat (decodeIfPresent sintetizado): un JSON persistido por la versión
+    /// anterior decodifica a `nil` y la vista cae a su visual genérico, exactamente como hacía antes.
+    var branded: InviteLinkService.BrandedMetadata?
+
     /// `true` si esta entry es un join backend por token (contrato C3). El discriminador
     /// backend↔CloudKit del reconciler tiene PRIORIDAD sobre el flag (R5).
     var isBackendJoin: Bool { inviteToken != nil }
@@ -66,7 +80,8 @@ struct PendingJoinEntry: Codable, Equatable {
         createdAt: Date = .now,
         backendGroupID: String? = nil,
         inviteToken: String? = nil,
-        legacyMemberKey: String? = nil
+        legacyMemberKey: String? = nil,
+        branded: InviteLinkService.BrandedMetadata? = nil
     ) {
         self.zoneName = zoneName
         self.zoneOwnerName = zoneOwnerName
@@ -76,6 +91,7 @@ struct PendingJoinEntry: Codable, Equatable {
         self.backendGroupID = backendGroupID
         self.inviteToken = inviteToken
         self.legacyMemberKey = legacyMemberKey
+        self.branded = branded
     }
 }
 

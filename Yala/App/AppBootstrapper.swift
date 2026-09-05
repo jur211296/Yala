@@ -2040,6 +2040,11 @@ final class AppBootstrapper {
     /// `didRefreshFlags` solo lo pone a `true` la continuación de `.refreshFlagsThenRetry`.
     private func handleInviteLink(_ url: URL, didRefreshFlags: Bool) {
         let backendInvite = InviteLinkService.extractBackendInvite(from: url)
+        // La marca del grupo (`n`/`i`/`c`/`m`) se extrae UNA vez y acompaña a TODAS las ramas que
+        // persisten el intent, no solo a la caliente. Antes solo la calculaba `enterBackendInvite` en su
+        // rama inicializada — y era justo la minoría de los casos: el invitado típico llega desde la web
+        // con la app cerrada, que cae en el `!isInitialized` de abajo.
+        let branded = InviteLinkService.extractMetadata(from: url)
 
         switch GroupInviteChannelRoutingLogic.route(
             isBackendLink: backendInvite != nil,
@@ -2067,7 +2072,7 @@ final class AppBootstrapper {
             // `route` devuelve `.backend` solo con `isBackendLink == true` ⇒ el guard no es
             // alcanzable; está por no forzar el unwrap (regla inviolable del repo).
             guard let backendInvite else { return }
-            enterBackendInvite(groupID: backendInvite.groupID, token: backendInvite.token, url: url)
+            enterBackendInvite(groupID: backendInvite.groupID, token: backendInvite.token, branded: branded)
 
         case .refreshFlagsThenRetry:
             guard let backendInvite else { return }
@@ -2078,7 +2083,8 @@ final class AppBootstrapper {
             // y es acción de usuario con intención explícita, no un poll, así que no toca
             // `refreshMinInterval` para nadie más. El spam queda acotado por el guard `inFlight`
             // del cliente y porque esta rama exige link backend Y flag OFF.
-            persistBackendInviteIntent(groupID: backendInvite.groupID, token: backendInvite.token)
+            persistBackendInviteIntent(
+                groupID: backendInvite.groupID, token: backendInvite.token, branded: branded)
             logger.notice("Invite: backend link with flag OFF → forcing remote-config refresh")
             Task { @MainActor in
                 await RemoteConfigClient.shared.refreshIfDue(force: true)
@@ -2089,7 +2095,8 @@ final class AppBootstrapper {
             guard let backendInvite else { return }
             // Idempotente (upsert que preserva displayName/currency): cubre el caso de que esta rama
             // se alcance sin haber pasado por la anterior.
-            persistBackendInviteIntent(groupID: backendInvite.groupID, token: backendInvite.token)
+            persistBackendInviteIntent(
+                groupID: backendInvite.groupID, token: backendInvite.token, branded: branded)
             logger.error("Invite: backend link but channel still OFF after refresh — intent kept, informing user")
             MetricsService.canary(.groupJoinIntentDeferred, detail: "backendChannelOff")
             // `.showGroupSyncError` y NO `.showInviteError`: el título de ese último está hardcodeado
@@ -2108,9 +2115,13 @@ final class AppBootstrapper {
     /// OFF). La adopción va aquí y no solo en `handle` porque el reconciler completa el join vía
     /// `drive`, que no lo toca: sin esto el invitado entraría al grupo y, en un dispositivo sellado
     /// por «empiezo de cero», sus gastos no llegarían nunca a su Panel.
-    private func persistBackendInviteIntent(groupID: String, token: String) {
+    private func persistBackendInviteIntent(
+        groupID: String,
+        token: String,
+        branded: InviteLinkService.BrandedMetadata = .empty
+    ) {
         UserDefaults.standard.set(true, forKey: AppPreferences.Keys.groupsBetaUnlocked)
-        GroupBackendInviteEntryHandler.persistIntent(groupID: groupID, token: token)
+        GroupBackendInviteEntryHandler.persistIntent(groupID: groupID, token: token, branded: branded)
         // `canaryOnce` y NO `canary`: el camino `.refreshFlagsThenRetry` persiste el intent y DESPUÉS
         // re-entra en `handleInviteLink`, así que un solo tap pasaba por aquí y luego por el emisor de
         // `GroupBackendInviteEntryHandler.handle` — DOS eventos por una sola intención, y justo en la
@@ -2122,19 +2133,24 @@ final class AppBootstrapper {
     }
 
     /// Canal backend con el flag ON (comportamiento previo de la rama C2, sin cambios).
-    private func enterBackendInvite(groupID: String, token: String, url: URL) {
+    private func enterBackendInvite(
+        groupID: String,
+        token: String,
+        branded: InviteLinkService.BrandedMetadata
+    ) {
         if !isInitialized {
             // R4: persistir el intent backend y RETORNAR — el trigger boot del reconciler lo completa
             // (el link backend JAMÁS cae al deferral CKShare del camino CKShare). M1: alineado con el
             // warm handle() — desbloquea beta, o el invitado cold-launch quedaría detrás del beta gate
             // sin ver su grupo.
-            persistBackendInviteIntent(groupID: groupID, token: token)
+            // La marca viaja CON el intent: este es el camino del invitado que llega desde la web con la
+            // app cerrada —el caso dominante— y hasta hoy era el único que ni siquiera la extraía.
+            persistBackendInviteIntent(groupID: groupID, token: token, branded: branded)
             #if DEBUG
             print("AppBootstrapper: Deferring BACKEND invite (persisted) — not yet initialized")
             #endif
             return
         }
-        let branded = InviteLinkService.extractMetadata(from: url)
         Task { @MainActor in
             await GroupBackendInviteEntryHandler.handle(
                 groupID: groupID,

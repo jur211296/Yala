@@ -191,3 +191,23 @@ vez de comprobar que estuviera el que importa.
   `docs/ESTADO.md`, `docs/TICKETS.md` y `qa/coverage-index.json`, nunca en código. `TICKETS.md` se
   resuelve **regenerando la tabla desde el disco**, que es determinista; los otros dos, a mano
   conservando las dos aportaciones.
+
+---
+
+**El grep de una AUDITORÍA es un instrumento y también necesita control positivo — 2026-09-05, tres
+veces en una sola sesión.** Los conteos de tests ya los verifico; los greps con los que *audito* el
+código, no, y ahí el fallo es más silencioso porque «cero coincidencias» se lee como «está limpio»:
+
+1. **`grep -E "try\?"` sobre el diff dio 5 falsos positivos**: «en**try?**» contiene `try?` como
+   substring. Es la misma trampa del hook de secretos ([[hook-secretos-disparador-substring]]).
+   Frontera de palabra: `[^A-Za-z]try[?]`.
+2. **`grep -E "error:"` sobre un log de xcodebuild «encontró errores»** que eran el texto
+   `classify(error: ...)` de un `#expect`. Me hizo dar por muerta una corrida de XCUITest que seguía
+   viva, y por poco la doy por rota.
+3. **`[a-z0-9-]+` no casó un id de ticket con mayúsculas** (`rojo-heroBuckets-…`), así que el
+   validador del índice inventó un huérfano que no existía.
+
+**How to apply:** cuando un barrido de auditoría dé **cero**, pásale una sonda con el defecto dentro
+antes de escribir «limpio» — dos líneas y un `grep -c`. Si la sonda no da 1, lo que está roto es el
+filtro, no el código. Y para los que sí dan resultados, mira **una** coincidencia entera antes de
+creértela: los tres de arriba se veían venir leyendo la línea completa.
