@@ -630,16 +630,45 @@ este commit no lo empeora en el síntoma — lo que añade es que ahora ningún 
 
 - Build ×2 (`Yala` y `Yala Dev`): SUCCEEDED, **cero warnings nuevos** en los ficheros tocados.
 - Unit: **6085 tests en 618 suites**, verde, cero issues (`-parallel-testing-enabled NO`).
-- XCUITest: **20 tests en 6 suites** (OnboardingFlow · OnboardingGroupsOnlyGuard · DeeplinkRouting ·
-  PaywallInboxAlertRouting · GroupsSmoke · SecondaryCurrencyPrompt), verde. En XCUITest la puerta
-  devuelve el dominio del dueño (`isUITesting`), así que estos cambios son no-op ahí — **comprobado,
-  no supuesto**.
+- XCUITest: **20 tests en 6 suites** sobre el árbol del merge (OnboardingFlow ·
+  OnboardingGroupsOnlyGuard · DeeplinkRouting · PaywallInboxAlertRouting · GroupsSmoke ·
+  SecondaryCurrencyPrompt) y **15 en 3 suites** re-corridas tras el arreglo de la custodia — las
+  otras tres no se repitieron porque ese arreglo no las toca, y la corrida entera de las 138 la hace
+  el CI. En XCUITest la puerta devuelve el dominio del dueño (`isUITesting`), así que estos cambios
+  son no-op ahí — **comprobado, no supuesto**.
 - **Mutación, 5 verificadas a exit 65**: (1) un lector vuelve a `.standard`; (2) la custodia corre
   después de la purga; (3) sin el guard de idempotencia por presencia; (4) la reposición deja de
   retirar lo que el dueño no tenía; (5) la reposición vuelve a consumir el slot ⇒ el dueño pierde
   su consent tras un kill a mitad del wipe.
-- `qa/coverage-index.json`: 11 áreas re-selladas (solo aquellas cuya cobertura declarada se ejecutó
-  hoy); `validate-coverage.sh` → OK, backlog determinista 0.
+- `qa/coverage-index.json`: **11 áreas re-selladas por esta sesión** —sólo aquellas cuya cobertura
+  declarada se ejecutó hoy—; el fichero tiene 17 con fecha de hoy porque el merge de `2.1` trajo las
+  seis del PR #65; `validate-coverage.sh` → OK, backlog determinista 0.
+
+## Los rojos del CI, clasificados (no heredados de un documento)
+
+El job `tests` del CI sale `success` con la suite de UI en rojo: sus tres pasos son
+`continue-on-error` a propósito y el gate duro es `coverage-index`. ⇒ **`tests: pass` no dice que los
+tests pasaran**, y el campo `conclusion` que devuelve `gh run view --json jobs` tampoco: con
+`continue-on-error` se pinta `success` pase lo que pase. Lo que hay que leer es el `outcome` real,
+que el propio workflow vuelca en su paso de aviso.
+
+Medido en este PR: `R_UNIT_PURE: success` · `R_UNIT_CONTEXT: success` · **`R_UI: failure`**.
+
+Los rojos, comparados **run a run** contra `2.1` sin una línea de este trabajo (run `33959280114`),
+no citados del ESTADO:
+
+| XCUITest | fallos en `2.1` | fallos aquí |
+|---|---|---|
+| `EdgeCasesUITests.test_extremeMinimumAmountSaves` | 3 | 3 |
+| `InboxConvertToGroupUITests.test_convertDraftToGroupExpense_preservesDraftDate` | 3 | 3 |
+| `QuickActionsFavoritesUITests.test_saveAsFavoriteFromTransactionAppearsInList` | 1 | 3 |
+| `TransactionsCrudUITests.test_createTransaction` | 3 | 3 |
+
+Denominadores: 127 pass + 10 fail = 137 en `2.1`; 126 + 12 = 138 aquí (un test más, del PR #65).
+Son **los mismos cuatro**, ninguno toca preferencias de sesión ni consent, y la diferencia de
+`QuickActionsFavorites` es un flaky que allí pasó al reintento y aquí agotó los tres.
+
+⇒ **preexistentes**. Uno tiene causa escrita en [[uitest-compara-fechas-sin-fijar-locale]].
 
 ## Lo que queda de este ticket: device-QA, y sale del código
 
