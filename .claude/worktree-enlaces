@@ -1,8 +1,14 @@
 # Rutas que .gitignore deja fuera y que un worktree necesita igualmente.
 # Una por linea, relativa a la raiz del repo. Se enlazan al arbol principal.
 #
-# .planning/ esta en .gitignore:47 y es donde vive parte del estado de Yala
+# .planning/ esta en .gitignore:51 y es donde vive parte del estado de Yala
 # (los tickets si viajan: estan versionados).
 # node_modules NO se enlaza a proposito: dos npm sobre el mismo arbol se pisan.
 # Si un encargo toca gateway/ o Web/, que instale en su worktree.
 .planning
+# Secrets.xcconfig esta en .gitignore:28 y es baseConfigurationReference de las 4
+# build configurations. Hoy no define ninguna clave -- viven en el Worker desde el
+# 2026-06-15 -- y medido, el build sale identico sin el. Se enlaza por dos razones:
+# no copiarlo a mano en cada worktree, y que el dia que vuelva a tener una clave un
+# worktree sin enlace compile en silencio sin ella.
+Secrets.xcconfig
