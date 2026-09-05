@@ -26,7 +26,10 @@ final class RouterEntryGate {
     /// + `AppBootstrapper.shared.isInitialized`.
     /// `@MainActor () -> ...` declares the isolation matches the caller (Swift 6 ready).
     var readinessProvider: @MainActor () -> (hasCompletedOnboarding: Bool, isBootstrapInitialized: Bool) = {
-        let onboardingDone = UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
+        // El CAJÓN de esta sesión (decisión del owner 2026-09-03): el readiness del router pregunta por
+        // la persona que está usando la app, no por el teléfono. Con `.standard` un intent de la visita
+        // se aceptaba o se difería según el onboarding de la DUEÑA.
+        let onboardingDone = SessionDefaults.current.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
         let bootstrapped = AppBootstrapper.shared.isInitialized
         return (onboardingDone, bootstrapped)
     }

@@ -1,8 +1,8 @@
 ---
 id: reentry-counts-as-fresh-install
-status: in-progress
+status: qa
 created: 2026-08-12
-updated: 2026-08-26
+updated: 2026-09-05
 source: YalaWiki/Bugs/reentrada-la-vuelta-cuenta-como-instalacion-nueva.md
 ---
 
@@ -138,14 +138,78 @@ divergen. Coste: un parámetro en el init de `MainTabView`, con default `false`.
 Pin: `SecondaryHydrationLogicTests` (3, reescrito). **Mutación a exit 65**: devolver el gate viejo
 deja `returningOwnerIsCovered` en rojo. Gate: build ×2, 9 unit en 3 suites, índice OK.
 
+## Implementación · piezas 2 y 3 (2026-09-05)
+
+### El hueco de la pieza 2, MEDIDO: `autoDetect` NO repara el checklist
+
+`SetupChecklistManager.autoDetect(transactionCount:budgetCount:scheduledCount:)` completa **3 de los 7**
+pasos (`firstExpense`, `firstBudget`, `scheduledPayment` — los únicos que dejan rastro en SwiftData). Los
+otros cuatro son gestos sin dato que los revele. Y el **primero de la lista** por orden de declaración
+(= orden de `allCases` = orden de UI) es `exploreSettings`, que no es de los auto-detectables: con el
+bloqueo secuencial resulta ser el único paso desbloqueado ⇒ quien vuelve ve «Configura tu Yala · 3/7 ·
+Explora los ajustes» sobre una app que lleva usando años. **La pieza NO baja a cosmética.**
+
+### 2 · el arreglo: la re-entrada deja de armar los dos efectos del alta
+
+`completeOnboardingAsRestoreSkip()` tenía tres efectos y **sus tres call-sites son re-entradas**:
+`RestoreRouter.decide == .directToApp`, `== .groupsOnly` (los dos, restaurar desde iCloud) y
+`onAdoptStarted` (SIWA → exists → adopt). Ninguno es una instalación nueva — el alta real llama a
+`markAsNewInstall()` por su cuenta, en el `onComplete` del onboarding de pasos.
+
+La regla vive ahora en `Yala/App/Logic/EntryOnboardingEffects.swift` (`AppEntryKind.freshInstall` /
+`.reentry`) y la consumen **los dos** caminos a través de `applyEntryOnboardingEffects(_:)`. Que la lea
+también el alta no es adorno: con un solo consumidor el enum sería decorativo y la mutación no se vería.
+
+Las claves `setup.*` **no viajan** en el espejo de prefs ni en ningún mirror (medido), así que en un
+móvil recién instalado `setup.isNewInstall` no existe ⇒ `isExistingUser == true` ⇒ la card no se muestra.
+Es el mismo trato que ya recibía quien actualizó desde una versión anterior al checklist.
+
+**La oferta Pro no se pierde**: quien vuelve y no es Pro la sigue recibiendo por el canal de los usuarios
+existentes (`ProUpsellService.shouldShowPeriodicBanner`, cooldown de 5 días y tope de 4/mes). Lo que se
+retira es la oferta *de alta*, que prometía un estreno a quien lleva meses dentro.
+
+### 3 · el 403 deja de disfrazarse de problema de red
+
+No por un evento de la máquina: el docblock del propio runner prohíbe alimentar `fatalError` desde un
+no-success del claim (haría un rollback espurio) y aquí no hay nada que revertir, porque sin claim
+otorgado no se creó nada. Se sigue el molde de `cutoverBlocker` — un hecho que solo elige copy:
+
+1. `MigrationRunner.lastClaimBlocker` (en memoria, fuera del journal) registra la causa en los **dos**
+   consumidores de `performClaim` (`driveClaim` y `pollLeaderInternal`); un claim otorgado la limpia.
+   `transient` NO marca: la red sí se reintenta y no debe apagar la barra de progreso.
+2. `CloudMigrationController.claimBlocker` lo expone, leído en `refresh()` vía `_runner?` y **nunca** por
+   la property lazy `runner` — ésa construiría executor y clients desde el `init`.
+3. `CloudWelcomeSignInFlow.phase(for:claimBlocker:)` lo antepone al progreso, salvo sobre los terminales
+   de éxito (un bloqueo de un intento viejo no debe tapar un adopt que ya terminó).
+4. Fase de pantalla propia `.accountBlocked`, con icono de cuenta y copy que descarta la conexión de
+   forma explícita. `.error(retryable: false)` no servía: comparte icono de wifi y un cuerpo que empieza
+   por «Revisa tu conexión», así que mandaba a mirar el router ante una cuenta bloqueada.
+
+**Todas las instancias del patrón**: el alta born-cloud tenía el mismo disfraz (`BornCloudSignUpFlow`
+mapeaba el 403 a `.error(retryable: false)`) y pasa a la misma pantalla. Las dos puertas cuentan por fin
+lo mismo. Copy nuevo en los 16 locales (`welcome.cloud.accountBlockedTitle` / `Body`, con el correo de
+soporte por parámetro) e identifier `welcome_cloud_account_blocked`.
+
+`canGoBack` incluye `.accountBlocked`: el claim fue rechazado, no hay nada comprometido, y una terminal
+sin retry **ni** salida sería un callejón.
+
+### Verificación
+
+Build ×2 verde. 102 unit en 7 suites de las áreas tocadas. **Mutantes a exit 65**: devolver `true`
+incondicional en las dos funciones de `EntryOnboardingEffects` deja 4 rojos; ignorar el `claimBlocker` en
+`phase(for:)` deja 3. Pines nuevos: `EntryOnboardingEffectsTests` (6),
+`CloudWelcomeSignInFlowClaimBlockerTests` (6), `MigrationRunnerTests` (2),
+`SetupChecklistManagerTests` (2), y `BornCloudSignUpFlowTableTests` actualizado.
+
+**Lo que NO se ha visto correr:** llegar a `.accountBlocked` exige un 403 real del backend y un sign-in
+real con SIWA — el simulador no firma. La cobertura es unit + el identifier puesto para que el device-QA
+pueda anclarse sin recompilar (mismo criterio que `welcome_cloud_blocked_foreign_data`).
+
 ## Piezas que siguen abiertas
 
-- **2 · checklist + oferta de prueba en la vuelta.** El ticket pide medir `SetupChecklistManager.autoDetect`
-  antes de tocar nada, y ese hueco **sigue sin medir**: no me dio la noche. Si repara el checklist tras
-  el primer pull, esta pieza baja a cosmética y solo queda la oferta de prueba.
-- **3 · evento explícito en `performClaim`.** No tocada.
-- **4 · kill-switch y docblocks.** No tocada. El §5 (el relanzamiento cero que llegó al alta y no a la
-  re-entrada) es además una OPORTUNIDAD de producto, no un bug: si el motor arrancara en sesión como
-  en el alta, la re-entrada podría dejar de pagar su relanzamiento. Eso es diseño, no fix.
+- **4 · kill-switch y docblocks**, más el §5 (relanzamiento cero en la re-entrada, que es OPORTUNIDAD de
+  producto y no un defecto) y el §6 (el belt que se justifica con una premisa falsa). Ninguna se tocó:
+  el §4 pide una decisión de producto sobre el kill-switch y los otros dos son diseño y comentario.
+  Salen a su propio ticket: `tickets/backlog/reentry-killswitch-closes-both-doors.md`.
 
 migrated from YalaWiki Bugs/reentrada-la-vuelta-cuenta-como-instalacion-nueva.md @ 1934e8ad

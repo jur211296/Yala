@@ -4144,6 +4144,12 @@ enum L10n {
         static var signOutWorking: String { ls("settings.signOutWorking", comment: "") }
         static var signOutPendingTitle: String { ls("settings.signOutPendingTitle", comment: "") }
         static var signOutPendingMessage: String { ls("settings.signOutPendingMessage", comment: "") }
+        // Decisión del owner 2026-09-03 — la sesión de VISITA suma «salir igualmente» al aviso de
+        // bloqueo: está en el móvil de otra persona y hay que devolverlo, así que un cierre que no se
+        // puede completar la deja atrapada.
+        static var signOutSecondaryLossWarning: String { ls("settings.signOutSecondaryLossWarning", comment: "") }
+        static var signOutWaitButton: String { ls("settings.signOutWaitButton", comment: "") }
+        static var signOutExitAnywayButton: String { ls("settings.signOutExitAnywayButton", comment: "") }
         // D6 (§3.3.6): "Salir de Yala en este dispositivo" — salida del solo-grupos legado 5a
         // (group-invite SIN sesión backend). Invoca `.privateReset`: NO toca datos ni grupos.
         static var exitYala: String { ls("settings.exitYala", comment: "") }
@@ -5003,6 +5009,14 @@ enum L10n {
             static var blockedBack: String { ls("welcome.cloud.blockedBack", comment: "") }
             static var errorTitle: String { ls("welcome.cloud.errorTitle", comment: "") }
             static var errorBody: String { ls("welcome.cloud.errorBody", comment: "") }
+            /// 403 en el claim: la cuenta existe pero el backend no deja entrar. Copy PROPIO —el de
+            /// `error*` culpa a la conexión, y aquí la conexión está perfectamente bien.
+            static var accountBlockedTitle: String { ls("welcome.cloud.accountBlockedTitle", comment: "") }
+            /// Body con el correo de soporte (`AppConstants.supportEmail`): esta pantalla vive FUERA de
+            /// la app, así que el formulario de Perfil no está a mano y el correo es lo único accionable.
+            static func accountBlockedBody(_ supportEmail: String) -> String {
+                String(format: ls("welcome.cloud.accountBlockedBody", comment: ""), supportEmail)
+            }
             static var retry: String { ls("welcome.cloud.retry", comment: "") }
             static var waitingTitle: String { ls("welcome.cloud.waitingTitle", comment: "") }
             static var waitingBody: String { ls("welcome.cloud.waitingBody", comment: "") }

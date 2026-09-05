@@ -211,3 +211,103 @@ código, no, y ahí el fallo es más silencioso porque «cero coincidencias» se
 antes de escribir «limpio» — dos líneas y un `grep -c`. Si la sonda no da 1, lo que está roto es el
 filtro, no el código. Y para los que sí dan resultados, mira **una** coincidencia entera antes de
 creértela: los tres de arriba se veían venir leyendo la línea completa.
+
+---
+
+**Decimotercero (2026-09-05): el build INCREMENTAL da cero warnings porque no compiló nada.** Tras
+tocar cuatro ficheros corrí `xcodebuild build | grep -c "warning:"` sobre la scheme Dev y salió **0**.
+Iba a escribir «cero warnings nuevos» en el informe del gate. El build anterior ya había dejado todo
+compilado, así que ese cero no decía nada del código: decía que no hubo compilación. El control
+positivo lo delató al instante — *warnings totales de la corrida* también era 0, y un build real de
+este repo siempre trae nueve.
+
+**Why:** es la familia del universo vacío (el caso nº 9), no la del filtro roto. El grep estaba
+perfecto; lo que no había era nada que filtrar. Y aquí duele especialmente porque el paso 1 del gate
+existe justo para eso, así que un cero falso convierte el gate en un sello de goma.
+
+**How to apply:** para medir warnings de tus ficheros, **fuerza la recompilación** (`touch` de los
+ficheros tocados, o `-derivedDataPath` limpio) y **verifica que recompiló** antes de leer el número:
+`grep -c "<TuFichero>.swift"` sobre la salida tiene que dar >0, y el total de warnings de la corrida
+tiene que parecerse al baseline conocido. Un `BUILD SUCCEEDED` instantáneo es la señal de que estás a
+punto de medir el vacío.
+
+**Y la nota buena del mismo día: el conteo de suites me salvó otra vez.** Pedí 18 filtros
+`-only-testing` y la línea dijo `139 tests in 16 suites`. Dos de mis filtros eran nombres de FICHERO
+(`RelaunchNetLogicTests`, `SessionPreferenceKeysTests`) y ningún struct se llama así — el caso nº 6 de
+esta ficha, repetido. La diferencia es que esta vez lo cacé en el sitio, porque comparar *pedidas
+contra arrancadas* ya es reflejo. Los 8 structs reales (`RelaunchNetVerdictTests`,
+`SessionPreferenceKeysNetTests`, …) dieron 32 tests más. **`.claude/rules/testing.md` L103 ya lo
+documenta**: resuelve los nombres con `grep -n "@Suite" <fichero>`, nunca por el nombre del fichero.
+
+---
+
+## Decimocuarto (2026-09-05): incumplí L103 el mismo día que la cité, y lo cazó el CI
+
+En el gate corrí `-only-testing:YalaTests/SignOutWipeHookTests`. Ese fichero declara **TRES**
+suites (`SignOutWipeHookTests`, `GroupsOnlySignOutWipeHookTests`, `SignOutNotificationWiringTests`)
+y solo corrió la primera. La tercera —la de source-scan del cableado— tenía un conteo que mi cambio
+rompía, **determinista, 3 de 3 iteraciones en CI**. Declaré el gate en verde con un rojo dentro.
+
+Lo doloroso: horas antes, en esta misma sesión, había **leído y citado** `.claude/rules/testing.md`
+L103, que lo dice literalmente —«la segunda suite de un fichero suele ser justamente la de
+source-scan del cableado, la que más te interesa cuando tocas producción»— y aun así resolví los
+filtros por nombre de fichero. Y el conteo de suites tampoco me salvó: cuadró (12 pedidas, 12
+arrancadas), porque **el error no fue pedir de más sino no saber qué había que pedir**.
+
+**Why:** el conteo pedidas-vs-arrancadas detecta filtros que no expanden; **no** detecta suites que
+nunca pediste. Son dos huecos distintos y yo solo tenía red para uno.
+
+**How to apply:** al acotar el gate por suites, el universo no se arma a mano. Se deriva:
+
+    # 1. qué ficheros de test mencionan cada fuente tocada
+    grep -rl "<Fuente>.swift" YalaTests/
+    # 2. TODAS las suites de esos ficheros, por tipo y no por fichero
+    grep -h "^struct " <esos ficheros> | sed 's/struct \([A-Za-z0-9_]*\).*/\1/' | sort -u
+    # 3. filtros en ARRAY, y al final: filtros pedidos == suites arrancadas
+
+Aplicado después del rojo: 7 ficheros → **21 suites** (yo había corrido 12) → 168 tests, 21 de 21.
+
+**Y el corolario sobre el CI, que es la otra mitad:** el paso que lo cazó estaba marcado
+`continue-on-error: true` y su estado decía **`success`**. El rojo solo aparece bajando el log del
+job (`gh api repos/<o>/<r>/actions/jobs/<id>/logs`) y leyendo `Test run with N tests in M suites
+failed`. Es el caso nº 4 de esta ficha, vivo y coleando: **en este repo el estado de un paso del CI
+no es su resultado, nunca**. Y para clasificar lo que salga, `-retry-tests-on-failure` reintenta la
+corrida entera: contar **en cuántas de las N iteraciones falló cada test** separa lo determinista
+(mío, 3/3) de lo flaky (los spikes R3, 2/3 y 1/3) sin tener que suponerlo.
+
+## La otra mitad: cómo se contesta «¿este warning es MÍO?» sin inferirlo (2026-09-05)
+
+El gate exige «cero warnings nuevos en los archivos tocados», y un build incremental **solo reporta
+lo que recompiló** ⇒ un warning viejo aparece por primera vez el día que tu cambio obliga a
+recompilar ese fichero. Ese día parece tuyo. Y si tu diff añade o quita líneas, ni siquiera el
+número de línea casa con el del original.
+
+**La forma barata de medirlo, en vez de razonarlo:** copiar a un scratchpad los `.swift` de
+producción que tocaste, `git checkout HEAD --` sobre ellos, **mover fuera los ficheros nuevos**
+(no existen en HEAD y romperían el build), compilar, y restaurar las copias. Tres minutos.
+
+El 2026-09-05 así se demostró que el warning de `ContentView` era preexistente: HEAD lo tenía en la
+línea 1551 y mi árbol lo enseñaba en la 1549 — desplazado exactamente por las dos líneas que quitaba
+mi diff. Sin esa corrida habría escrito «es preexistente» como inferencia, que es justo lo que el
+`CLAUDE.md` pide distinguir.
+
+**Y el que sí era mío, en la misma corrida:** un `enum` nuevo sin `nonisolated` bajo
+`SWIFT_DEFAULT_ACTOR_ISOLATION=MainActor` da *«main actor-isolated conformance … cannot be used in
+nonisolated context; this is an error in the Swift 6 language mode»* en cuanto un `enum nonisolated`
+lo compara. Todo tipo nuevo de la capa `Logic` nace `nonisolated`, como sus 130 hermanos.
+
+**Es la cara complementaria del caso decimotercero de arriba:** allí el build incremental no compiló nada y el cero era falso; aquí sí compiló, y lo que engaña es lo contrario — un warning que llevaba meses ahí aparece por primera vez.
+
+
+## Decimoquinto (2026-09-05): `gh pr merge --auto` no difiere nada en este repo
+
+Acababa de escribir en el PR «espero a que termine el CI antes de mergear» y llamé a
+`gh pr merge 68 --merge --auto` creyendo que dejaba el merge ARMADO. El PR salió `MERGED` en el acto.
+
+**Why:** `--auto` solo espera si hay **checks requeridos** por branch protection. `jur211296/Yala` no
+tiene ninguno ⇒ no hay nada que esperar y GitHub mergea. La salida del comando fue **vacía**, así que
+tampoco avisó: lo delató `gh pr view --json state`.
+
+**How to apply:** en este repo `--auto` == merge inmediato. Para esperar de verdad a un run hay que
+sondear (`gh run watch <id>`) y mergear después. Y como siempre: **el estado se comprueba, no se
+supone** — un comando que no imprime nada no ha confirmado nada.

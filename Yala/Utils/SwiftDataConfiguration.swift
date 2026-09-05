@@ -875,7 +875,9 @@ extension SwiftDataConfiguration {
         // llamada ocurre dentro del cuerpo, que ya está en el actor.
         republishWidgetSeal: @MainActor (UserDefaults) -> Void = {
             WidgetDataCache.republishActiveSeal($0)
-        }
+        },
+        restoreOwnerConsent: (UserDefaults) -> Void = { GroupsConsentState.restoreOwnerRecord(in: $0) },
+        discardOwnerCustody: (UserDefaults) -> Void = { GroupsConsentState.discardOwnerCustody(in: $0) }
     ) {
         guard SecondarySessionStore.isWipeArmed(defaults) else { return }
 
@@ -888,6 +890,17 @@ extension SwiftDataConfiguration {
 
         purge()
         cancelNotifications()
+
+        // 2.5) El consent de Grupos del DUEÑO vuelve a su sitio (decisión del owner 2026-09-03).
+        // DESPUÉS de `purge()` y no antes: esa purga incluye `GroupsConsentState.clear()`, que aquí se
+        // lleva lo que aceptara la VISITA — reponer primero y purgar después borraría justo lo que
+        // acabamos de devolver. Lo suyo no se pierde: su registro vive en su cuenta, append-only, y
+        // `refreshFromServer` se lo devuelve en su propio teléfono.
+        //
+        // **Repone pero NO retira el slot**, que es lo que la deja dentro de la kill-safety de esta
+        // función: si el arranque muere entre aquí y `clearWipeArm`, el reintento del boot siguiente
+        // vuelve a purgar y vuelve a reponer. El slot se retira abajo, con el desarme.
+        restoreOwnerConsent(defaults)
 
         // 2.75) El CAJÓN de preferencias de la visita (M1). Va AQUÍ y no una línea más abajo, y el
         // orden es el fix entero: `SecondarySessionStore.clear` borra el `userIDKey`, y sin `sub` no
@@ -931,6 +944,11 @@ extension SwiftDataConfiguration {
         defaults.set(false, forKey: "hasShownWelcomeChooser")
         defaults.set(false, forKey: AppPreferences.Keys.hasShownYalaAIOnboarding)
 
+        // La custodia del consent se retira AQUÍ y no al reponerla: hasta esta línea el wipe podía
+        // morir y reintentarse, y el slot era lo único capaz de devolverle al dueño su registro. Va
+        // pegado a `clearWipeArm` a propósito — los dos declaran lo mismo, que ya no hay nada que
+        // reintentar.
+        discardOwnerCustody(defaults)
         SecondarySessionStore.clearWipeArm(defaults)
         CloudSyncBreadcrumb.secondaryWipeExecuted()
     }
@@ -971,7 +989,8 @@ extension SwiftDataConfiguration {
         // llamada ocurre dentro del cuerpo, que ya está en el actor.
         republishWidgetSeal: @MainActor (UserDefaults) -> Void = {
             WidgetDataCache.republishActiveSeal($0)
-        }
+        },
+        custodyOwnerConsent: (UserDefaults) -> Void = { GroupsConsentState.custodyOwnerRecord(in: $0) }
     ) {
         guard SecondarySessionStore.isActive(defaults) else { return }
 
@@ -994,6 +1013,14 @@ extension SwiftDataConfiguration {
         republishWidgetSeal(defaults)
 
         guard !SecondarySessionStore.isEntryPurgeDone(defaults) else { return }
+
+        // El consent de Grupos del dueño, a CUSTODIA antes de que la purga se lo lleve (decisión del
+        // owner 2026-09-03). La purga TIENE que retirarlo —el consent legacy va sin sello y
+        // `GroupsConsentDecisionLogic` lo da por bueno para cualquiera, así que sin retirarlo la visita
+        // hereda un permiso que no dio— pero borrarlo le hacía volver a ver una pantalla que ya aceptó y
+        // nos costaba la prueba de ese consentimiento. Va JUSTO ANTES de `purge()`: al revés custodiaría
+        // un dominio ya vacío. Se repone en la frontera de salida, paso 2.5 del wipe.
+        custodyOwnerConsent(defaults)
 
         purge()
         cancelNotifications()

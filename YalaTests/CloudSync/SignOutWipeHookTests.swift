@@ -448,12 +448,18 @@ struct SignOutNotificationWiringTests {
     /// terminal, que puede durar minutos o para siempre (el usuario puede no volver a abrir la app);
     /// añadirla a `performPrivateReset` o a un camino solo-grupos borraría recordatorios vivos y
     /// vaciaría el widget de un store que sobrevive.
-    /// 4 ocurrencias = 1 definición + 3 call-sites (cloud / secundario / cierre post-borrado de cuenta).
+    /// 5 ocurrencias = 1 definición + 4 call-sites (cloud / secundario / salida forzada de la visita /
+    /// cierre post-borrado de cuenta).
+    ///
+    /// El cuarto entró el 2026-09-05 con `exitSecondaryDiscardingPending`, el «salir igualmente» de la
+    /// sesión de visita. Cuenta como camino armado por la misma razón que su hermano: arma el wipe
+    /// secundario, así que sin esta capa las notificaciones de la invitada seguirían sonando y el widget
+    /// seguiría pintando sus saldos durante todo el cover terminal — en el móvil de OTRA persona.
     @Test func inSessionLayer_wiredOnlyOnArmedPersonalWipePaths() throws {
         let src = try Self.source("Yala/Services/CloudSync/CloudSessionSignOut.swift")
-        #expect(src.components(separatedBy: "clearLocalSurfacesForArmedWipe()").count - 1 == 4)
+        #expect(src.components(separatedBy: "clearLocalSurfacesForArmedWipe()").count - 1 == 5)
         // El widget vive en el mismo helper A PROPÓSITO: es la otra superficie del SISTEMA que sigue
-        // mostrando la cuenta cerrada hasta el relanzamiento, y comparte los 3 call-sites exactos.
+        // mostrando la cuenta cerrada hasta el relanzamiento, y comparte los 4 call-sites exactos.
         #expect(src.components(separatedBy: "WidgetDataCache.clearCache()").count - 1 == 1)
         // El clear selectivo de grupos vive en el cierre solo-grupos, donde hay `await` disponible
         // (el boot-hook solo puede encolarlo en un Task que el arm ya limpiado no respalda).

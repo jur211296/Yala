@@ -1047,7 +1047,10 @@ final class AppBootstrapper {
             // Original guard preserved: don't surface the restart alert while
             // the user is still mid-onboarding (the alert was originally gated
             // by `hasCompletedOnboarding` in the ContentView observer).
-            if UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding) {
+            // El CAJÓN de esta sesión (decisión del owner 2026-09-03): la pregunta es «¿la persona que
+            // está usando la app AHORA sigue a mitad de su onboarding?», y desde que el escritor bajó
+            // al cajón, `.standard` respondía por la dueña aunque quien mire la pantalla sea la visita.
+            if SessionDefaults.current.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding) {
                 RouterEntryGate.shared.submit(.iCloudMismatch)
             }
         }
@@ -2484,7 +2487,8 @@ final class AppBootstrapper {
 
     private func seedDefaultNotifications(context: ModelContext) {
         // Only seed for existing users who completed onboarding before notification feature
-        guard UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") else { return }
+        // El CAJÓN de esta sesión: las notificaciones se siembran en el store de quien está dentro.
+        guard SessionDefaults.current.bool(forKey: "hasCompletedOnboarding") else { return }
         NotificationService.shared.seedDefaultNotificationsIfNeeded(context: context)
     }
 
@@ -2499,7 +2503,10 @@ final class AppBootstrapper {
         let willReEmit = SharedImageRecoveryGate.shouldReEmit(
             hasPendingImage: pending != nil,
             isInitialized: isInitialized,
-            hasCompletedOnboarding: UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
+            // El CAJÓN de esta sesión: es el mismo readiness gate que `RouterEntryGate` evalúa, y los
+            // dos tienen que responder por la misma persona o la imagen se re-emite contra un gate
+            // que la va a diferir.
+            hasCompletedOnboarding: SessionDefaults.current.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
         )
         SharedImageBreadcrumb.checked(site: site, found: pending != nil, willReEmit: willReEmit)
         guard willReEmit, let firstImageURL = pending else { return }

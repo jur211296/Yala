@@ -987,6 +987,53 @@ struct MigrationRunnerTests {
         }
     }
 
+    // MARK: - 10b. …pero la CAUSA no se pierde (ticket `reentry-counts-as-fresh-install` §3)
+
+    /// El journal se queda igual en los tres casos (test de arriba), y por eso la pantalla del adopt
+    /// no podía distinguirlos: los tres se veían como «Conectando con tu cuenta…». `lastClaimBlocker`
+    /// es lo que separa «no te llega la red» (se reintenta) de «tu cuenta no está disponible» (no).
+    @Test func claimNoSuccess_recordsTheBlocker_onlyWhenItIsNotTheNetwork() async throws {
+        let cases: [(ClaimOutcome, ClaimBlocker?)] = [
+            (.accountUnavailable(detail: "403"), .accountUnavailable),
+            (.sessionExpired(detail: "401"), .sessionExpired),
+            (.transient(detail: "5xx"), nil),        // la red NO bloquea: sigue el progreso y el auto-resume
+        ]
+        for (outcome, expected) in cases {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            fake.claimOutcomes = [outcome]
+            try seedJournal(context, phase: .claimingMigration, leaderDeviceID: deviceID)
+
+            let runner = makeRunner(context, fake)
+            await runner.resume()
+
+            #expect(runner.lastClaimBlocker == expected, "blocker esperado para \(outcome)")
+            // Y el journal sigue intacto: esto NO es un terminal de fallo, solo una causa registrada.
+            #expect(try journal(context).readPhase().phase == .claimingMigration)
+        }
+    }
+
+    /// Un claim que sale bien LIMPIA el bloqueo del intento anterior — misma instancia de runner, que
+    /// es lo que hay en producción (el controller lo crea una vez, lazy).
+    @Test func claimSuccess_clearsAPreviousBlocker() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.accountUnavailable(detail: "403")]
+        try seedJournal(context, phase: .claimingMigration, leaderDeviceID: deviceID)
+
+        let runner = makeRunner(context, fake)
+        await runner.resume()
+        #expect(runner.lastClaimBlocker == .accountUnavailable)
+
+        // La cuenta se reactiva y el usuario reintenta: el mismo runner vuelve a claimear.
+        fake.claimOutcomes = [.success(.created)]
+        fake.uploadOutcomes = [.transient]
+        await runner.resume()
+        #expect(runner.lastClaimBlocker == nil, "un claim otorgado deja de bloquear la pantalla")
+    }
+
     // MARK: - 11. Reversa (§h, I11-2) — driving del runner
 
     /// Camino feliz completo de la reversa desde `done`: secuencia exacta de efectos + reverseOriginRaw

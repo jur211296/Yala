@@ -1,8 +1,8 @@
 ---
 id: secondary-guest-exit-lock-and-outbox
-status: in-progress
+status: qa
 created: 2026-08-12
-updated: 2026-09-03
+updated: 2026-09-05
 source: YalaWiki/Bugs/secundaria-salida-de-la-invitada-bloqueo-permanente-y-outbox-de-grupos.md
 ---
 
@@ -165,3 +165,68 @@ hidratación (`d10adddd`).
 La pieza 2 (clasificar el error de salida en vez de decir siempre «revisa tu conexión») no dependía de
 esta decisión y sigue siendo código pendiente — con el aviso del ticket: hay que mirar la tabla de
 reintentos entera, no solo las tres líneas.
+
+---
+
+## Implementación · piezas 2 y 3 (2026-09-05)
+
+**La pieza 1 ya estaba, y se re-midió antes de tocar nada**: el camino secundario empuja los dos
+outboxes desde el 12-ago y la re-verificación de S2 suma los dos conteos. No se reimplementó.
+
+### Pieza 2 · el bloqueo se clasifica
+
+El `reason` **ya venía clasificado** desde los dos push-all (`.transient` al agotar el tope de
+iteraciones, `.permanent` sin runtime) y este camino lo tiraba con un `case .blocked(let pending, _)`
+para escribir `.permanent` a mano. Por eso a la invitada no la alcanzaban ninguna de las tres cosas
+que §2 listaba: ni el copy «Un momento más», ni el presupuesto de 45 s, ni el caption de espera.
+
+Ahora el camino reusa el retry interno del solo-grupos (`GroupsSignOutRetryDecision`, mismo
+presupuesto), y el bucle envuelve **solo los dos push-all**. El teardown queda fuera a propósito —
+misma separación que `attemptGroupsOnlyClose`/`finalizeGroupsOnlyClose`—: medido en
+`CloudSyncRuntime.teardownGuestSession`, después de él el motor queda con `currentUserID = nil`, el
+mirror purgado y la cadencia cancelada, así que reintentar ahí quemaría el presupuesto entero para
+llegar al mismo bloqueo.
+
+**El residual S2 posterior al teardown sigue siendo `.permanent`, y eso es deliberado** (fijado por
+test): es el único bloqueo del camino que no puede curarse esperando.
+
+**El caption ya la alcanza sin tocar la vista**: la invitada resuelve `.plainSignOut`, que es una de
+las dos filas donde `signOutWorkingCaption` está insertado, y `syncSignOutUI` rutea por `reason` sin
+mirar el camino.
+
+### Pieza 3 · el aviso propio, con salida
+
+Los **dos** alerts de bloqueo (el transitorio y el permanente) suman en sesión de visita un
+«Salir igualmente» destructivo, y su «OK» pasa a «Esperar»; el mensaje gana una línea que nombra el
+precio («Si sales ahora, esos cambios no llegarán a tu cuenta»). Que lo ganen los dos no es
+casualidad: **el transitorio es justo el que más le va a pasar**, y dejarlo sin salida habría dejado
+el fix a medias.
+
+Detrás va `CloudSessionSignOut.exitSecondaryDiscardingPending()`, con el tail-end idéntico al camino
+normal —mismos teardowns, mismo orden, credenciales antes del arm— y sin push-all. Dos guards lo
+sellan: sin un `.blocked` vivo no hay nada que forzar, y fuera de una sesión secundaria armaría el
+wipe equivocado.
+
+El gate es puro y vive con su familia: `CloudSignOutFlowLogic.offersForcedSecondaryExit`. Su segundo
+término (`pendingCount > 0`) evita ofrecer «salir igualmente» en el bloqueo que **no** viene de datos
+sin subir —el guard sin `CloudMigrationController`, que emite `pendingCount: 0`—, donde prometería
+descartar algo que no existe.
+
+### Lo que NO se tocó, y por qué
+
+- **El camino `.cloud` conserva su re-mapeo a `.permanent`.** Es deliberado y está anotado en su
+  propio comentario, y la justificación de producto de la pieza 3 no le aplica: el dueño en su propio
+  móvil no tiene ningún teléfono que devolver. **Si se quiere cambiar, es decisión aparte.**
+- **La pieza 4** (el swap sin reiniciar) sigue siendo completitud del recorrido, no un defecto.
+
+### Verificación
+
+`SecondarySignOutBlockClassificationTests` — 7 tests: la tabla del gate, cuatro source-scan de la
+estructura (que el `reason` se propague, que el bucle no envuelva el teardown, que el residual siga
+`.permanent`, que la salida forzada arme el wipe secundario y no el del dueño) y el cableado de la
+vista. **3 mutantes verificados**, cada uno cayendo solo en su test.
+
+Las 3 claves nuevas están en los 16 locales sin placeholders.
+
+**Falta el device-QA**: el recorrido real de la invitada bloqueada con red degradada necesita dos
+cuentas y entra en el montaje de dos teléfonos de la tanda.

@@ -339,7 +339,10 @@ final class CloudSessionSignOut {
     /// `.awaitingRelaunch` ⇒ el cover durable C1 y el blocker de la matriz funcionan sin cambios.
     private func performSecondaryCloudSignOut(context: ModelContext) async {
         phase = .working
+        waitingForPending = false
         CloudSyncBreadcrumb.signOutStarted(path: "secondary")
+        // Salir por CUALQUIER camino apaga el caption de espera (regla del @Observable).
+        defer { waitingForPending = false }
 
         guard let controller = CloudMigrationController.shared else {
             phase = .blocked(pendingCount: 0, reason: .permanent)
@@ -347,16 +350,36 @@ final class CloudSessionSignOut {
             return
         }
 
-        // Secundaria (M1) conserva su alert de siempre: `reason: .permanent` (byte-idéntico).
-        switch await controller.pushAllPendingForSignOut() {
-        case .blocked(let pending, _):
-            phase = .blocked(pendingCount: pending, reason: .permanent)
-            CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
-        case .drained:
-            // Push-all de GRUPOS, igual que el camino `.cloud` y por la misma razón: el wipe de arranque
-            // borra `YalaGroups-Secondary` y `YalaSyncMeta-Secondary` —donde vive `GroupSyncOutbox`— y la
-            // purga de frontera se lleva además el espejo del App Group, que era la red de rehidratación.
-            // Sin esto, los últimos gastos de grupo de la invitada se quedaban sin subir y su copia local
+        // RETRY INTERNO CON PRESUPUESTO GLOBAL — el mismo mecanismo y el mismo presupuesto que el path
+        // solo-grupos (H-2026-07-18-6), que hasta ahora este camino no alcanzaba. Las salidas de bloqueo
+        // de la sesión secundaria emitían SIEMPRE `reason: .permanent`, y el `reason` verdadero venía ya
+        // clasificado desde los dos push-all: este consumidor lo descartaba con un `case .blocked(_, _)`.
+        // Consecuencia medida: a la invitada un corte de red de dos segundos le decía «revisa tu conexión»
+        // —sin el «un momento más» que sí existe para el mismo bloqueo en el otro camino— y sin encender
+        // nunca `waitingForPending`, así que tampoco veía el caption de espera.
+        //
+        // Por qué el bucle envuelve SOLO los dos push-all: los dos corren con la generación INTACTA, que
+        // es lo que hace útil reintentarlos. El teardown queda deliberadamente FUERA — misma separación
+        // que `attemptGroupsOnlyClose`/`finalizeGroupsOnlyClose` — porque después de él no hay nada que
+        // drenar: `teardownGuestSession` deja el motor personal con `currentUserID = nil`, el mirror
+        // purgado y la cadencia cancelada, y `teardownForSignOut` sube la generación del canal de grupos.
+        // Reintentar ahí quemaría el presupuesto entero para llegar al mismo bloqueo.
+        //
+        // Y esto NO cambia el camino `.cloud`: su re-mapeo a `.permanent` es deliberado y está anotado en
+        // su propio comentario. Lo que justifica el trato distinto aquí es de producto y está escrito en
+        // la decisión del 2026-09-03: la invitada está en el móvil de OTRA persona y ese móvil hay que
+        // devolverlo, así que un cierre que se presenta como irreparable cuando solo hacía falta esperar
+        // dos segundos es el peor final posible de esta sesión.
+        let budget = GroupsSignOutRetryDecision.budgetSeconds
+        var retryClockStart: Date?
+
+        pushLoop: while true {
+            // 1) Push-all PERSONAL, y 2) push-all de GRUPOS — mismo orden que el camino `.cloud`.
+            //
+            // El de grupos existe por la misma razón que allí: el wipe de arranque borra
+            // `YalaGroups-Secondary` y `YalaSyncMeta-Secondary` —donde vive `GroupSyncOutbox`— y la purga
+            // de frontera se lleva además el espejo del App Group, que era la red de rehidratación. Sin
+            // esto, los últimos gastos de grupo de la invitada se quedaban sin subir y su copia local
             // moría con la sesión.
             //
             // El comentario que ocupaba estas líneas decía que «en secundaria el canal ni corre» y era
@@ -364,35 +387,98 @@ final class CloudSessionSignOut {
             // corre el canal sobre su propio store (`GroupsSyncClient.swift`, y el mount de
             // `YalaGroups-Secondary` en `SwiftDataConfiguration.decide`). Justificaba no empujar
             // precisamente en la configuración en la que este archivo existe.
-            switch await pushAllPendingGroupsForSignOut(context: context) {
-            case .blocked(let pending, _):
-                phase = .blocked(pendingCount: pending, reason: .permanent)
-                CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
-                return
+            var verdict = await controller.pushAllPendingForSignOut()
+            if case .drained = verdict {
+                verdict = await pushAllPendingGroupsForSignOut(context: context)
+            }
+
+            switch verdict {
             case .drained:
-                break
+                break pushLoop
+            case .blocked(let pending, let reason):
+                let elapsed = retryClockStart.map { Date().timeIntervalSince($0) } ?? 0
+                switch GroupsSignOutRetryDecision.decide(
+                    elapsedSeconds: elapsed, budgetSeconds: budget, reason: reason
+                ) {
+                case .surfacePermanent:
+                    phase = .blocked(pendingCount: pending, reason: .permanent)
+                    CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
+                    return
+                case .surfaceTransient:
+                    phase = .blocked(pendingCount: pending, reason: .transient)
+                    CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
+                    return
+                case .retryAfter(let seconds):
+                    if retryClockStart == nil { retryClockStart = Date() }
+                    waitingForPending = true
+                    do {
+                        try await Task.sleep(for: .seconds(seconds))
+                    } catch {
+                        // Cancelación del caller → fail-closed transitorio (reintentable).
+                        phase = .blocked(pendingCount: pending, reason: .transient)
+                        return
+                    }
+                    continue pushLoop
+                }
             }
-            CloudSyncRuntime.shared?.teardownGuestSession()
-            // B2: canal de Grupos→backend — loop fuera + espejo purgado. El teardown es idempotente y la
-            // purga del espejo es red M1 obligatoria.
-            GroupsSyncClient.shared.teardownForSignOut()
-            await PushTokenSignOutSeam.clearForSignOut()  // G8-2: desregistro best-effort del push token
-            // S2: re-verificar AMBOS outboxes con la sesión AÚN viva (mismo racional que el camino
-            // `.cloud`): si un save concurrente encoló filas durante el push-all, se bloquea mientras
-            // reintentar todavía sirve de algo.
-            let residual = controller.livePendingUploadCount()
-                + Self.liveGroupsPendingCount(context: context)
-            guard residual == 0 else {
-                phase = .blocked(pendingCount: residual, reason: .permanent)
-                CloudSyncBreadcrumb.signOutPushBlocked(pending: residual)
-                return
-            }
-            await CloudAuthService.shared.signOut()
-            SecondarySessionStore.armWipe()
-            CloudSyncBreadcrumb.signOutWipeArmed()
-            clearLocalSurfacesForArmedWipe()
-            phase = .awaitingRelaunch
         }
+
+        CloudSyncRuntime.shared?.teardownGuestSession()
+        // B2: canal de Grupos→backend — loop fuera + espejo purgado. El teardown es idempotente y la
+        // purga del espejo es red M1 obligatoria.
+        GroupsSyncClient.shared.teardownForSignOut()
+        await PushTokenSignOutSeam.clearForSignOut()  // G8-2: desregistro best-effort del push token
+        // S2: re-verificar AMBOS outboxes con la sesión AÚN viva (mismo racional que el camino
+        // `.cloud`): si un save concurrente encoló filas durante el push-all, se bloquea mientras
+        // reintentar todavía sirve de algo.
+        //
+        // Éste SÍ se queda en `.permanent`, y no por inercia: los dos teardowns ya corrieron, así que un
+        // reintento —interno o del usuario— no puede drenar la fila que acaba de aparecer. Es la
+        // definición de `.permanent` («no curable sin acción del usuario»), y gastar aquí los 45 s del
+        // presupuesto solo retrasaría el mismo desenlace con la persona esperando para devolver el móvil.
+        let residual = controller.livePendingUploadCount()
+            + Self.liveGroupsPendingCount(context: context)
+        guard residual == 0 else {
+            phase = .blocked(pendingCount: residual, reason: .permanent)
+            CloudSyncBreadcrumb.signOutPushBlocked(pending: residual)
+            return
+        }
+        await CloudAuthService.shared.signOut()
+        SecondarySessionStore.armWipe()
+        CloudSyncBreadcrumb.signOutWipeArmed()
+        clearLocalSurfacesForArmedWipe()
+        phase = .awaitingRelaunch
+    }
+
+    /// Salida FORZADA de la sesión de visita, aceptando que lo que no subió se pierde.
+    /// **Decisión del owner 2026-09-03**, y la razón es de producto, no técnica: la invitada está en el
+    /// móvil de OTRA persona y ese móvil hay que devolverlo. Un cierre que no se puede completar la deja
+    /// atrapada, y con mala red ése es un final peor que perder un gasto. En el móvil propio la misma
+    /// salida no tiene justificación —nadie espera a que devuelvas nada— y por eso `.cloud` no la ofrece.
+    ///
+    /// Solo es alcanzable desde el aviso de bloqueo, que a su vez solo aparece tras agotar el presupuesto
+    /// de reintentos de `performSecondaryCloudSignOut`. Los dos guards lo sellan: sin un `.blocked` vivo no
+    /// hay nada que forzar, y fuera de una sesión secundaria esto armaría el wipe equivocado.
+    ///
+    /// El tail-end es el MISMO del camino normal y en el MISMO orden (teardowns → credenciales → arm →
+    /// superficies locales), sin el push-all ni la re-verificación: los dos acaban de fallar. Lo que NO
+    /// se toca sigue igual que allí —los archivos del dueño, sus keys `storageMode`/`mirrorOffArmed`— y
+    /// los flags de onboarding los resetea el boot wipe, no esta función.
+    func exitSecondaryDiscardingPending() async {
+        guard case .blocked = phase else { return }
+        guard SecondarySessionStore.isActive() else { return }
+        phase = .working
+        waitingForPending = false
+        CloudSyncBreadcrumb.signOutStarted(path: "secondary-forced")
+
+        CloudSyncRuntime.shared?.teardownGuestSession()
+        GroupsSyncClient.shared.teardownForSignOut()
+        await PushTokenSignOutSeam.clearForSignOut()  // G8-2: desregistro best-effort del push token
+        await CloudAuthService.shared.signOut()
+        SecondarySessionStore.armWipe()
+        CloudSyncBreadcrumb.signOutWipeArmed()
+        clearLocalSurfacesForArmedWipe()
+        phase = .awaitingRelaunch
     }
 
     // MARK: - Camino solo-grupos (G5-B) — cierra la sesión de grupos, datos personales intactos

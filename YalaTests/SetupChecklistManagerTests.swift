@@ -310,4 +310,33 @@ struct SetupChecklistManagerTests {
         manager.markCompleted(.exploreSettings)
         #expect(manager.currentStep?.id == .tryVoiceInput)
     }
+
+    // MARK: - Re-entrada (ticket `reentry-counts-as-fresh-install`, pieza 2)
+
+    /// El hueco que el ticket pedía medir: **`autoDetect` NO repara el checklist de quien vuelve.**
+    /// Con TODOS sus datos ya bajados (transacciones, presupuestos y pagos programados), auto-detecta
+    /// 3 de los 7 pasos; los otros cuatro son gestos sin rastro en SwiftData. Por eso el arreglo de la
+    /// pieza 2 tuvo que ser no marcar la instalación como nueva (`EntryOnboardingEffects`) en vez de
+    /// confiar en la auto-detección.
+    @MainActor @Test func autoDetect_doesNotRepairChecklistForReturningUser() {
+        let manager = freshManager()
+        manager.autoDetect(transactionCount: 900, budgetCount: 12, scheduledCount: 30)
+
+        #expect(manager.completedCount == 3)
+        #expect(manager.totalCount == 7)
+        #expect(manager.isAllComplete == false)
+        // Y lo que de verdad ve el usuario que vuelve: la card, pidiéndole que explore los ajustes.
+        #expect(manager.shouldShow == true)
+        #expect(manager.currentStep?.id == .exploreSettings)
+    }
+
+    /// La consecuencia del fix: sin el marcador de instalación nueva —que la re-entrada ya no
+    /// escribe— la card no se muestra, que es el mismo trato que recibe quien actualizó desde una
+    /// versión anterior al checklist.
+    @MainActor @Test func shouldShow_isFalse_withoutNewInstallMarker() {
+        let manager = freshManager()
+        UserDefaults.standard.removeObject(forKey: "setup.isNewInstall")
+        #expect(manager.shouldShow == false)
+        manager.markAsNewInstall()   // repone el estado que el resto del suite asume
+    }
 }

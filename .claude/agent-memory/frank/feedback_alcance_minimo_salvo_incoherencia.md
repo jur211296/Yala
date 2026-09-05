@@ -49,3 +49,34 @@ que parece homogéneo.
   no lo toques sin que te lo pidan: documenta y sigue.
 - Cuando revierta uno así, **el motivo va escrito en la línea y declarado en el allowlist del
   escáner** — si no, el siguiente lo vuelve a alinear con la mejor intención.
+
+## La otra cara, el mismo día (PR #66) — RATIFICADA por Jürgen el 2026-09-05
+
+Horas después del caso de arriba amplié dos veces. Se lo conté al cerrar, con las dos cifras y el
+criterio, y contestó: **«sí, ampliar así está bien».** No es una suposición mía: es la regla.
+
+1. La decisión decía «el escritor de `OnboardingView` y los TRES lectores de `AppBootstrapper`».
+   Medidos: tres escritores y siete lectores. **Bajé los diez.**
+2. La decisión decía «las DOS keys legacy se custodian». Medido: el registro sellado se pierde
+   igual cuando el dueño no tiene sesión viva. **Custodié las tres.**
+
+**Por qué esto no es el error del PR #64, que es la pregunta que importa.** Allí amplié a *otros
+objetos* que el ticket no listaba (consumidores distintos, uno destructivo). Aquí amplié al **resto
+del mismo objeto que la decisión nombra**: la misma key, la misma frontera. La diferencia práctica:
+
+- ampliar a otro objeto es **añadir superficie** ⇒ pregunta «¿qué destruyo si me equivoco?»;
+- completar el objeto nombrado es **no dejarlo a medias** ⇒ la pregunta es la contraria: «¿qué pasa
+  si me quedo en la letra?». En los dos casos, la respuesta era **el mismo defecto que la decisión
+  viene a cerrar, vivo en la otra mitad** — un par escritor/lector partido, un dueño sin su registro.
+
+**How to apply:** cuando la cifra de una decisión del owner no case con lo medido, la cifra es del
+ticket y el ticket ya se equivocó otras veces; lo que manda es **el hecho que la decisión describe**.
+Amplía hasta cubrirlo entero, escribe en el commit que la cifra no casaba y por qué, y **deja fuera
+todo lo que sea otro objeto** aunque el patrón se parezca. Y si al ampliar el alcance crece de verdad
+—otro fichero, otra frontera—, eso ya no es completar: es el caso de arriba.
+
+**Y no hace falta preguntárselo cada vez.** Con la ratificación del 5-sep, completar el objeto que
+su decisión nombra es lo que espera por defecto; lo que sigue siendo suyo es ampliar a otro objeto.
+La obligación que queda es de transparencia, no de permiso: **la cifra que no casaba y el porqué van
+escritos en el commit**, para que pueda contradecirme leyendo el diff en vez de teniendo que
+reconstruir lo que medí.

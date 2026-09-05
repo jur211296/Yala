@@ -52,7 +52,7 @@ de uno de entrega.
 
 ---
 
-## Grupo B · Móvil prestado (4 tickets)
+## Grupo B · Móvil prestado (5 tickets)
 
 **Montaje único**: un aparato, dos cuentas — la del dueño y una visita que entra con la suya.
 `SECONDARY_SESSION` está al **0 %** en producción, así que hay que abrir el recorrido a mano.
@@ -63,6 +63,7 @@ de uno de entrega.
 | `prefs-domain-per-secondary-session` | Los ajustes de la visita no pisan los del dueño |
 | `widget-snapshot-visitor-overwrites-owner` | El widget no se queda con los números de la visita |
 | `groups-consent-door-spec` | El consent de Grupos viaja con la cuenta, no con el aparato |
+| `secondary-guest-exit-lock-and-outbox` | La visita **se puede ir**: con red degradada y un gasto de grupo sin subir, el aviso ofrece «Esperar» y «Salir igualmente» en vez de culpar a la conexión. **Precondición**: degradar la red DESPUÉS de crear el gasto y ANTES de tocar «Cerrar sesión» |
 
 ---
 

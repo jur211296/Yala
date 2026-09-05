@@ -127,6 +127,20 @@ nonisolated enum CloudSignOutFlowLogic {
         case permanent
     }
 
+    /// ¿El aviso de cierre bloqueado debe ofrecer «salir igualmente»? (decisión del owner 2026-09-03).
+    ///
+    /// **Solo en la sesión de VISITA**, y la razón es de producto: la invitada está en el móvil de otra
+    /// persona y ese móvil hay que devolverlo, así que un cierre que no se puede completar la deja
+    /// atrapada — con mala red, un final peor que perder un gasto. En el móvil propio no existe esa
+    /// presión y perder un cambio sería gratis, así que ahí el aviso conserva su única salida.
+    ///
+    /// `pendingCount > 0` es el segundo término y no es decorativo: no todo `.blocked` viene de datos sin
+    /// subir. El guard sin `CloudMigrationController` emite `pendingCount: 0`, y ofrecer ahí «salir
+    /// igualmente» prometería descartar algo que no existe mientras el cierre falla por otro motivo.
+    static func offersForcedSecondaryExit(isSecondaryActive: Bool, pendingCount: Int) -> Bool {
+        isSecondaryActive && pendingCount > 0
+    }
+
     /// Clasifica el outcome crudo de un ciclo de cadencia como transitorio o permanente
     /// (H-2026-07-18-6). Base del retry interno del sign-out solo-grupos.
     static func classify(_ outcome: SyncCadencePolicy.CadenceOutcome) -> BlockReason {

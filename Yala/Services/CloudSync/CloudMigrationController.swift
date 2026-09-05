@@ -198,6 +198,12 @@ final class CloudMigrationController {
     /// se mostraba como un 89 % mudo, sin decir a qué se esperaba.
     var isWaitingICloudExport: Bool { journaledPhase == .cutover(.markerWritten) }
 
+    /// El claim se aparcó por una causa que NO es la red (`MigrationRunner.lastClaimBlocker`). Mismo
+    /// molde que `cutoverBlocker`: la pantalla elige con esto un copy honesto —«tu cuenta no está
+    /// disponible»— en vez de dejar puesta la barra «Conectando con tu cuenta…» con un botón de
+    /// reintentar que no puede funcionar. `nil` = nada aparcado, o aparcado por red (sí se reintenta).
+    private(set) var claimBlocker: ClaimBlocker?
+
     /// Banner S11 (D5): el runtime del dominio se detuvo por sesión expirada con cambios pendientes.
     private(set) var syncNeedsSignIn = false
     private(set) var pendingUploadCount = 0
@@ -574,6 +580,11 @@ final class CloudMigrationController {
             phase: phase,
             mirrorOffArmed: mirrorOffArmed,
             mountedDecision: mountedDecision)
+
+        // `_runner` y NO `runner`: la property lazy CONSTRUIRÍA el runner y su executor (red, sesión,
+        // clients) — `refresh()` corre desde el `init` y desde el poll de la pantalla de adopt, y no
+        // es sitio para eso. Sin runner vivo no hay claim aparcado que reportar.
+        claimBlocker = _runner?.lastClaimBlocker
 
         refreshSyncBanner()
     }

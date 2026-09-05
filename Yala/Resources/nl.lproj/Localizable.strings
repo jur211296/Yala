@@ -5514,3 +5514,16 @@
 
 /* Share-link button: groups channel is off right now — transient, retry later (NOT the user's connection) */
 "groups.errors.inviteChannelOff" = "We kunnen nu geen uitnodigingslinks maken. Probeer het straks opnieuw.";
+
+/* Adopt/sign-up blocked: HTTP 403 on account claim — the account exists but the backend refuses access */
+"welcome.cloud.accountBlockedTitle" = "Je account is niet beschikbaar";
+/* Body for the blocked-account screen; explicitly rules out a network problem */
+"welcome.cloud.accountBlockedBody" = "Het ligt niet aan je verbinding: we kunnen je nu geen toegang geven tot dit account. Mail ons op %@ en we kijken er samen naar.";
+/* Extra warning appended to the sign-out blocked alert during a guest (secondary) session, where leaving anyway is offered */
+"settings.signOutSecondaryLossWarning" = "Als je nu weggaat, bereiken die wijzigingen je account niet.";
+
+/* Sign-out blocked alert, guest session: stay in the app and retry later */
+"settings.signOutWaitButton" = "Wachten";
+
+/* Sign-out blocked alert, guest session: close the session accepting that unsent changes are lost */
+"settings.signOutExitAnywayButton" = "Toch weggaan";
