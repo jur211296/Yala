@@ -298,3 +298,16 @@ lo compara. Todo tipo nuevo de la capa `Logic` nace `nonisolated`, como sus 130 
 
 **Es la cara complementaria del caso decimotercero de arriba:** allí el build incremental no compiló nada y el cero era falso; aquí sí compiló, y lo que engaña es lo contrario — un warning que llevaba meses ahí aparece por primera vez.
 
+
+## Decimoquinto (2026-09-05): `gh pr merge --auto` no difiere nada en este repo
+
+Acababa de escribir en el PR «espero a que termine el CI antes de mergear» y llamé a
+`gh pr merge 68 --merge --auto` creyendo que dejaba el merge ARMADO. El PR salió `MERGED` en el acto.
+
+**Why:** `--auto` solo espera si hay **checks requeridos** por branch protection. `jur211296/Yala` no
+tiene ninguno ⇒ no hay nada que esperar y GitHub mergea. La salida del comando fue **vacía**, así que
+tampoco avisó: lo delató `gh pr view --json state`.
+
+**How to apply:** en este repo `--auto` == merge inmediato. Para esperar de verdad a un run hay que
+sondear (`gh run watch <id>`) y mergear después. Y como siempre: **el estado se comprueba, no se
+supone** — un comando que no imprime nada no ha confirmado nada.
