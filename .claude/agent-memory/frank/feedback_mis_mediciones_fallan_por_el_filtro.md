@@ -1,6 +1,6 @@
 ---
 name: mis-mediciones-fallan-por-el-filtro
-description: Mis errores de medición se repiten con la misma forma — el filtro descarta justo lo que busco y la ausencia se lee como resultado. Doce casos entre el 2026-09-02 y el 2026-09-05, incluido un CI "en verde" cuyo check clave no existía.
+description: Mis errores de medición se repiten con la misma forma — el filtro descarta justo lo que busco y la ausencia se lee como resultado. Doce casos entre el 2026-09-02 y el 2026-09-05, un CI "en verde" cuyo check clave no existía, y la variante cara: la afirmación falsa la escribí yo.
 metadata:
   type: feedback
 ---
@@ -330,3 +330,23 @@ del run. Si el log trae `error:` de compilación, el mutante está mal escrito: 
 bueno del 2026-09-05 fue sustituir el bloque ENTERO por la forma vieja (`guard inFlight == nil else
 { return }`), no editar una línea por dentro.
 
+
+## La variante cara: la afirmación la escribo yo (2026-09-05)
+
+Los doce casos de arriba son filtros que fallan. Éste es el que va en dirección contraria: **el
+dato falso lo produje yo escribiendo prosa**, y sólo lo cacé porque lo medí antes de commitear.
+
+Metiendo `Secrets.xcconfig` en `.claude/worktree-enlaces` escribí, como justificación, «sin él el
+primer build del worktree falla». Sonaba obvio: es `baseConfigurationReference` de las 4 build
+configurations. Medido: el fichero tiene **cero claves activas** (viven en el Worker desde el
+2026-06-15) y `xcodebuild -showBuildSettings` devuelve **636 líneas idénticas con y sin él**. Habría
+commiteado una falsedad dentro del fichero de instrucciones que otros van a leer — la clase de
+documento que en este repo envejece mal y luego dirige el trabajo de alguien.
+
+**How to apply:** una frase con «falla», «rompe», «hace falta para» o una cifra es una afirmación
+verificable **aunque la esté escribiendo yo, y aunque sea el motivo del cambio que me pidieron**.
+Antes de commitear un comentario o una descripción de PR, mido las afirmaciones fuertes que
+contiene; y si la medición las tumba, el cambio suele seguir valiendo la pena por otra razón —
+aquí, evitar la copia manual y cubrir el día que vuelva a haber una clave, cuando un worktree sin
+enlace compilaría en silencio sin ella. Escribir la razón verdadera es más útil que la razón
+impactante. Relacionado: [[revertir-sin-commit-destruye]].
