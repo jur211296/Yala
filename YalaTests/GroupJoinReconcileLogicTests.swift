@@ -41,32 +41,103 @@ struct GroupJoinReconcileLogicTests {
     // MARK: - decideBackend (G4-invites, tabla)
 
     @Test func decideBackend_flagOff_skipsRegardlessOfState() {
-        // R5: prioridad sobre el flag — jamás cae al camino CloudKit.
+        // R5: prioridad sobre el flag — jamás cae al camino CloudKit. Ni siquiera un tap con member
+        // terminal lo levanta: el flag manda.
         #expect(GroupJoinReconcileLogic.decideBackend(
-            flagEnabled: false, hasSession: true, isConsented: true, memberLocallyPresent: false) == .skipFlagOff)
+            flagEnabled: false, hasSession: true, isConsented: true, memberLocallyPresent: false,
+            memberInTerminalState: false, userTappedInviteThisLaunch: false) == .skipFlagOff)
         #expect(GroupJoinReconcileLogic.decideBackend(
-            flagEnabled: false, hasSession: false, isConsented: false, memberLocallyPresent: true) == .skipFlagOff)
+            flagEnabled: false, hasSession: false, isConsented: false, memberLocallyPresent: true,
+            memberInTerminalState: true, userTappedInviteThisLaunch: true) == .skipFlagOff)
     }
 
     @Test func decideBackend_memberPresent_correctsAndClears() {
         // Member local ya materializó (pull) → limpia intent (gana sobre sesión/consent).
         #expect(GroupJoinReconcileLogic.decideBackend(
-            flagEnabled: true, hasSession: false, isConsented: false, memberLocallyPresent: true) == .correctAndClear)
+            flagEnabled: true, hasSession: false, isConsented: false, memberLocallyPresent: true,
+            memberInTerminalState: false, userTappedInviteThisLaunch: false) == .correctAndClear)
     }
 
     @Test func decideBackend_noSession_presentsSignIn() {
         #expect(GroupJoinReconcileLogic.decideBackend(
-            flagEnabled: true, hasSession: false, isConsented: false, memberLocallyPresent: false) == .presentSignIn)
+            flagEnabled: true, hasSession: false, isConsented: false, memberLocallyPresent: false,
+            memberInTerminalState: false, userTappedInviteThisLaunch: false) == .presentSignIn)
     }
 
     @Test func decideBackend_sessionNoConsent_presentsConsent() {
         #expect(GroupJoinReconcileLogic.decideBackend(
-            flagEnabled: true, hasSession: true, isConsented: false, memberLocallyPresent: false) == .presentConsent)
+            flagEnabled: true, hasSession: true, isConsented: false, memberLocallyPresent: false,
+            memberInTerminalState: false, userTappedInviteThisLaunch: false) == .presentConsent)
     }
 
     @Test func decideBackend_ready_joins() {
         #expect(GroupJoinReconcileLogic.decideBackend(
-            flagEnabled: true, hasSession: true, isConsented: true, memberLocallyPresent: false) == .join)
+            flagEnabled: true, hasSession: true, isConsented: true, memberLocallyPresent: false,
+            memberInTerminalState: false, userTappedInviteThisLaunch: false) == .join)
+    }
+
+    // MARK: - isTerminal (residuo local vs membresía viva)
+
+    @Test func isTerminal_coversEveryStatus() {
+        // `rejected` es el ÚNICO que baja hoy del pull (el gateway excluye `removed` a propósito y `left`
+        // tampoco viaja); los otros dos van por completitud del switch exhaustivo.
+        #expect(GroupJoinReconcileLogic.isTerminal(.rejected))
+        #expect(GroupJoinReconcileLogic.isTerminal(.left))
+        #expect(GroupJoinReconcileLogic.isTerminal(.removed))
+        #expect(!GroupJoinReconcileLogic.isTerminal(.active))
+        #expect(!GroupJoinReconcileLogic.isTerminal(.pendingApproval))
+        // Y el switch cubre el enum entero: si alguien añade un estado, esta cuenta lo delata además del
+        // error de compilación en `isTerminal`.
+        #expect(SplitMemberStatus.allCases.count == 5)
+    }
+
+    // MARK: - decideBackend × (status del member, tap de enlace en este arranque)
+
+    /// EL bug: rechazado + enlace NUEVO tapeado → el residuo local deja de ganar y la decisión sigue por
+    /// la cadena sesión → consent → join. Con la app cerrada esto era `.correctAndClear` y el intent se
+    /// borraba sin llamar jamás a `join_group`.
+    @Test func decideBackend_rejectedMemberPlusTap_fallsThroughToJoin() {
+        #expect(GroupJoinReconcileLogic.decideBackend(
+            flagEnabled: true, hasSession: true, isConsented: true, memberLocallyPresent: true,
+            memberInTerminalState: GroupJoinReconcileLogic.isTerminal(.rejected),
+            userTappedInviteThisLaunch: true) == .join)
+        // La cadena completa, no solo su último eslabón: sin sesión y sin consent el residuo terminal
+        // tampoco corta, presenta lo que toca.
+        #expect(GroupJoinReconcileLogic.decideBackend(
+            flagEnabled: true, hasSession: false, isConsented: false, memberLocallyPresent: true,
+            memberInTerminalState: true, userTappedInviteThisLaunch: true) == .presentSignIn)
+        #expect(GroupJoinReconcileLogic.decideBackend(
+            flagEnabled: true, hasSession: true, isConsented: false, memberLocallyPresent: true,
+            memberInTerminalState: true, userTappedInviteThisLaunch: true) == .presentConsent)
+    }
+
+    /// Anti-fantasma: rechazado SIN tap en este arranque (un boot cualquiera dentro de los 7 días del
+    /// intent) → NO se re-solicita nada. Es la razón entera de que la señal viva en memoria.
+    @Test func decideBackend_rejectedMemberWithoutTap_correctsAndClears() {
+        #expect(GroupJoinReconcileLogic.decideBackend(
+            flagEnabled: true, hasSession: true, isConsented: true, memberLocallyPresent: true,
+            memberInTerminalState: GroupJoinReconcileLogic.isTerminal(.rejected),
+            userTappedInviteThisLaunch: false) == .correctAndClear)
+    }
+
+    /// Un member VIVO no se toca aunque haya tap: la solicitud ya está en pie (`pendingApproval`) o la
+    /// persona ya está dentro (`active`). Re-solicitar ahí sería ruido para el admin.
+    @Test func decideBackend_liveMemberWithTap_correctsAndClears() {
+        for status in [SplitMemberStatus.pendingApproval, .active] {
+            #expect(GroupJoinReconcileLogic.decideBackend(
+                flagEnabled: true, hasSession: true, isConsented: true, memberLocallyPresent: true,
+                memberInTerminalState: GroupJoinReconcileLogic.isTerminal(status),
+                userTappedInviteThisLaunch: true) == .correctAndClear)
+        }
+    }
+
+    /// Sin member local no hay residuo que discutir: el tap es irrelevante para la decisión.
+    @Test func decideBackend_noMember_tapIsIrrelevant() {
+        for tapped in [true, false] {
+            #expect(GroupJoinReconcileLogic.decideBackend(
+                flagEnabled: true, hasSession: true, isConsented: true, memberLocallyPresent: false,
+                memberInTerminalState: false, userTappedInviteThisLaunch: tapped) == .join)
+        }
     }
 
     @Test func shouldClearBackendIntent_onlyWhenMemberPresent() {

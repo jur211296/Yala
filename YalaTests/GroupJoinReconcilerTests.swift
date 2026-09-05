@@ -236,9 +236,13 @@ struct GroupJoinReconcilerTests {
         let found = GroupJoinReconciler.backendCurrentUserMember(zoneName: zoneName, context: context)
         #expect(found?.id == member.id)
         // …y con esa presencia decideBackend cae en correctAndClear (intent limpiable + corrección R1).
+        // `pendingApproval` NO es terminal: aunque hubiera un tap de enlace vivo, la solicitud ya está en
+        // pie y la decisión sigue siendo limpiar el intent. Esto no fijaba el bug del rechazo.
         #expect(GroupJoinReconcileLogic.decideBackend(
             flagEnabled: true, hasSession: true, isConsented: true,
-            memberLocallyPresent: found != nil) == .correctAndClear)
+            memberLocallyPresent: found != nil,
+            memberInTerminalState: GroupJoinReconcileLogic.isTerminal(.pendingApproval),
+            userTappedInviteThisLaunch: true) == .correctAndClear)
 
         // Contraste (el bug S1 exacto): un check que exija isCurrentUser NO ve este member.
         #expect(found?.isCurrentUser == false)
@@ -262,5 +266,114 @@ struct GroupJoinReconcilerTests {
         defer { GroupJoinReconciler.backendUserIDProvider = previous }
 
         #expect(GroupJoinReconciler.backendCurrentUserMember(zoneName: zoneName, context: context) == nil)
+    }
+
+    // MARK: - Re-solicitud en silencio tras un RECHAZO (member terminal + tap de enlace)
+
+    /// Caja de conteo del `join_group` (todo corre en el main actor).
+    final class JoinCounter {
+        var calls = 0
+        var displayNameCorrections = 0
+    }
+
+    /// Monta el mundo del bug: canal ON, intent BACKEND vivo y un `SplitMember` local del current user
+    /// en `rejected` (justo lo que baja el pull desde g13_02). Devuelve el contador y el cleanup.
+    private func makeRejectedBackendWorld(
+        context: ModelContext,
+        groupID: String,
+        sub: String
+    ) throws -> (JoinCounter, () -> Void) {
+        let counter = JoinCounter()
+        let savedJoin = GroupBackendInviteEntryHandler.joinProvider
+        let savedUpdate = GroupBackendInviteEntryHandler.updateDisplayNameProvider
+        let savedSession = GroupBackendInviteEntryHandler.hasSessionProvider
+        let savedConsent = GroupBackendInviteEntryHandler.isConsentedProvider
+        let savedOnboarding = GroupBackendInviteEntryHandler.hasCompletedOnboardingProvider
+        let savedUserID = GroupJoinReconciler.backendUserIDProvider
+
+        CloudSyncFlags.groupsBackendEnabled = true
+        GroupBackendInviteEntryHandler.clearInviteTapArms()
+        GroupBackendInviteEntryHandler.hasSessionProvider = { true }
+        GroupBackendInviteEntryHandler.isConsentedProvider = { true }
+        GroupBackendInviteEntryHandler.hasCompletedOnboardingProvider = { true }
+        GroupBackendInviteEntryHandler.joinProvider = { _, _, _ in
+            counter.calls += 1
+            return JoinGroupResult(groupID: groupID, memberKey: sub, status: "pendingApproval", rebound: false)
+        }
+        GroupBackendInviteEntryHandler.updateDisplayNameProvider = { _, _ in
+            counter.displayNameCorrections += 1
+            return UpdateDisplayNameResult(groupID: groupID, memberKey: sub, displayName: "")
+        }
+        GroupJoinReconciler.backendUserIDProvider = { sub }
+
+        // Member RESIDUAL del rechazo, tal como lo materializa `GroupsSyncClient.applyMember`.
+        let member = SplitMember()
+        member.id = GroupBackendIdentityLogic.deterministicMemberID(groupID: groupID, memberKey: sub)
+        member.groupZoneID = groupID
+        member.memberKey = sub
+        member.userID = sub
+        member.displayName = "Pia"
+        member.status = SplitMemberStatus.rejected.rawValue
+        context.insert(member)
+        try context.save()
+
+        return (counter, {
+            GroupBackendInviteEntryHandler.joinProvider = savedJoin
+            GroupBackendInviteEntryHandler.updateDisplayNameProvider = savedUpdate
+            GroupBackendInviteEntryHandler.hasSessionProvider = savedSession
+            GroupBackendInviteEntryHandler.isConsentedProvider = savedConsent
+            GroupBackendInviteEntryHandler.hasCompletedOnboardingProvider = savedOnboarding
+            GroupJoinReconciler.backendUserIDProvider = savedUserID
+            GroupBackendInviteEntryHandler.clearInviteTapArms()
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
+        })
+    }
+
+    /// ANTI-FANTASMA — el test que decide si el arreglo vale. Intent backend vivo + member local
+    /// `rejected` + NINGÚN tap en este arranque (un boot cualquiera dentro de los 7 días del intent):
+    /// `join_group` NO se dispara ni una vez. Si esta señal se persistiera, aquí le llegaría al admin una
+    /// solicitud que nadie pidió.
+    @Test func rejectedMember_withoutTap_neverRequestsJoinAgain() async throws {
+        let cleanup = makeEnvironment(); defer { cleanup() }
+        let context = try makeTestContext()
+        let groupID = "SplitGroup-\(UUID().uuidString)"
+        let sub = "bbbb1111-2222-3333-4444-555566667777"
+        let (counter, tearDown) = try makeRejectedBackendWorld(context: context, groupID: groupID, sub: sub)
+        defer { tearDown() }
+
+        // Intent persistido a mano: SIN pasar por `persistIntent`, que es quien arma el tap.
+        PendingJoinStore.save(PendingJoinEntry(
+            zoneName: groupID, zoneOwnerName: "",
+            backendGroupID: groupID, inviteToken: "tok"))
+
+        await GroupJoinReconciler.reconcile(trigger: .boot, context: context)
+        await GroupJoinReconciler.reconcile(trigger: .foreground, context: context)
+
+        #expect(counter.calls == 0)
+        // Y el camino tomado es el de siempre: el intent se consume como `correctAndClear`.
+        #expect(PendingJoinStore.entry(zoneName: groupID) == nil)
+    }
+
+    /// El gemelo: con el tap de enlace de ESTE arranque (lo arma `persistIntent`, el choke point de los
+    /// dos caminos de tap), el join SÍ sale — y UNA sola vez aunque boot y foreground corran seguidos,
+    /// porque el consumo vive en `attemptJoin`, el único call-site del RPC.
+    @Test func rejectedMember_withTap_requestsJoinExactlyOnce() async throws {
+        let cleanup = makeEnvironment(); defer { cleanup() }
+        let context = try makeTestContext()
+        let groupID = "SplitGroup-\(UUID().uuidString)"
+        let sub = "cccc1111-2222-3333-4444-555566667777"
+        let (counter, tearDown) = try makeRejectedBackendWorld(context: context, groupID: groupID, sub: sub)
+        defer { tearDown() }
+
+        // Tapear el enlace nuevo: persiste el intent Y arma la señal en memoria.
+        GroupBackendInviteEntryHandler.persistIntent(groupID: groupID, token: "tok")
+        #expect(GroupBackendInviteEntryHandler.isInviteTapArmed(groupID: groupID))
+
+        await GroupJoinReconciler.reconcile(trigger: .boot, context: context)
+        await GroupJoinReconciler.reconcile(trigger: .foreground, context: context)
+
+        #expect(counter.calls == 1)
+        // El tap quedó gastado: el segundo trigger ya no lo tenía.
+        #expect(!GroupBackendInviteEntryHandler.isInviteTapArmed(groupID: groupID))
     }
 }

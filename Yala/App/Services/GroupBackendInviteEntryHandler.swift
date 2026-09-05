@@ -33,6 +33,43 @@ enum GroupBackendInviteEntryHandler {
 
     private static let logger = Logger(subsystem: "com.yala", category: "SplitSync")
 
+    // MARK: - Señal «acaba de tapear un enlace» (memoria del PROCESO, jamás disco)
+
+    /// Grupos cuyo enlace de invitación se tapeó EN ESTE ARRANQUE. Molde de
+    /// `MetricsService.trackedOnceKeys`: `private static var` bajo el aislamiento del enum.
+    ///
+    /// **Que NO se persista es el mecanismo, no un detalle de implementación.** El join intent vive 7
+    /// días en `PendingJoinStore`; si esta señal viajara con él, un arranque cualquiera —sin que nadie
+    /// tapeara nada— re-solicitaría la entrada al grupo y al admin le llegaría una solicitud fantasma de
+    /// alguien a quien ya rechazó. En memoria, «tapeó» solo puede ser verdad si tapeó.
+    private static var tapArmedGroupIDs: Set<String> = []
+
+    /// Marca que este arranque vio un tap de enlace para `groupID`. Lo llama `persistIntent`, que es el
+    /// choke point de los DOS caminos de tap: el warm (`handle`) y el frío
+    /// (`AppBootstrapper.persistBackendInviteIntent`, que cubre el cold launch y el flag OFF).
+    static func armInviteTap(groupID: String) {
+        tapArmedGroupIDs.insert(groupID)
+    }
+
+    /// PEEK — no consume. La DECISIÓN (`GroupJoinReconcileLogic.decideBackend`) puede correr varias veces
+    /// en un arranque (boot y foreground); ninguna de ellas es el efecto, así que ninguna gasta el tap.
+    static func isInviteTapArmed(groupID: String) -> Bool {
+        tapArmedGroupIDs.contains(groupID)
+    }
+
+    /// Consume el tap. Lo gasta el ÚNICO sitio donde ocurre el efecto (`attemptJoin`, justo antes del
+    /// RPC), de modo que un tap valga a lo sumo un `join_group` aunque boot y foreground corran en el
+    /// mismo arranque.
+    static func consumeInviteTapArm(groupID: String) {
+        tapArmedGroupIDs.remove(groupID)
+    }
+
+    /// Fronteras de sesión y wipe (`AppRouter.resetAll`, `SecondarySessionBoundaryPurge`): un arm puesto
+    /// por la persona A jamás debe gastarse con la sesión de la persona B.
+    static func clearInviteTapArms() {
+        tapArmedGroupIDs.removeAll()
+    }
+
     // MARK: - Dependencias inyectables (default = cadena real de producción)
 
     static var hasSessionProvider: @MainActor () -> Bool = { CloudAuthService.shared.hasSession }
@@ -86,6 +123,12 @@ enum GroupBackendInviteEntryHandler {
     /// grupo migrado) para un RE-JOIN — `SplitSyncManager` da el grupo + su `ModelContext` (persistIntent no
     /// tiene contexto propio); si el grupo no está local aún, preserva el ya capturado en un re-tap.
     static func persistIntent(groupID: String, token: String) {
+        // El tap se ARMA aquí y no en cada llamador porque este es el choke point: sus dos llamadores
+        // (`handle`, warm; `AppBootstrapper.persistBackendInviteIntent`, frío) son ambos un tap de enlace.
+        // Tapear ES la petición: sin esta señal el camino en frío de quien fue RECHAZADO se comía el
+        // intent en `.correctAndClear` —el member residual `rejected` sigue local— y nunca llamaba a
+        // `join_group`, así que el enlace nuevo no hacía nada con la app cerrada.
+        armInviteTap(groupID: groupID)
         let existing = PendingJoinStore.entry(zoneName: groupID)
         var legacyMemberKey: String?
         if let group = GroupService.shared.group(for: groupID),
@@ -256,6 +299,12 @@ enum GroupBackendInviteEntryHandler {
             profileName: profileNameProvider(),
             defaultName: L10n.Profile.defaultName
         )
+        // CONSUMO del tap, justo antes del RPC: este es el único call-site de `join_group`, así que
+        // gastarlo aquí garantiza a lo sumo un join por tap aunque boot y foreground corran en el mismo
+        // arranque. Consumir ANTES del await obliga a la simetría de abajo: toda rama que CONSERVA el
+        // intent RE-ARMA el tap, o un fallo de red se convertiría en pérdida silenciosa (arm gastado,
+        // RPC fallido, reconciler que ya no reintenta nunca).
+        consumeInviteTapArm(groupID: groupID)
         do {
             let result = try await joinProvider(token, displayName, legacyMemberKey)
             // C6: canario de rebind legacy (solo si se ENVIÓ legacyMemberKey y no matcheó).
@@ -267,6 +316,9 @@ enum GroupBackendInviteEntryHandler {
             handleJoinError(groupID: groupID, error: error, source: source)
         } catch {
             // No-GroupsRPCError → tratar como transient (conserva el intent, reintenta el reconciler).
+            // Y si conserva el intent, re-arma el tap: misma simetría que las tres ramas retryables de
+            // `handleJoinError`.
+            armInviteTap(groupID: groupID)
             logger.error("BackendInvite[\(source.rawValue, privacy: .public)]: join threw non-RPC error for \(groupID, privacy: .public): \(error.localizedDescription, privacy: .public)")
         }
     }
@@ -290,10 +342,14 @@ enum GroupBackendInviteEntryHandler {
         switch kind {
         case .sessionRequired:
             // Sesión cayó a mitad → re-presentar sign-in; intent conservado, reconciler reintenta.
+            // Intent conservado ⇒ tap RE-ARMADO (simetría exacta): sin esto el reintento volvería a
+            // decidir `.correctAndClear` con el member residual y el join no saldría nunca.
+            armInviteTap(groupID: groupID)
             RouterEntryGate.shared.submit(.presentGroupsSignIn(pendingJoin: groupID))
             logger.notice("BackendInvite[\(source.rawValue, privacy: .public)]: session required for \(groupID, privacy: .public) → present sign-in")
         case .transient:
-            // Sin alerta; conserva intent (el reconciler reintenta).
+            // Sin alerta; conserva intent (el reconciler reintenta) ⇒ tap RE-ARMADO.
+            armInviteTap(groupID: groupID)
             logger.notice("BackendInvite[\(source.rawValue, privacy: .public)]: transient join error for \(groupID, privacy: .public) → retry later")
         case .channelDisabled:
             // El kill-switch server-side apagó el canal (el device tenía el percent viejo cacheado: hasta
@@ -304,6 +360,8 @@ enum GroupBackendInviteEntryHandler {
             // completa solo cuando el canal vuelva. Y `.showGroupSyncError`, NUNCA `.showInviteError`,
             // cuyo título está hardcodeado a «Enlace no válido» y aquí sería FALSO — el enlace es
             // perfecto, lo que está apagado es el canal.
+            // Intent CONSERVADO ⇒ tap RE-ARMADO, para que el join salga cuando el canal vuelva.
+            armInviteTap(groupID: groupID)
             MetricsService.canary(.groupJoinIntentDeferred, detail: "backendChannelOff")
             RouterEntryGate.shared.submit(.showGroupSyncError(
                 String(localized: "groups.invite.channelUnavailable")

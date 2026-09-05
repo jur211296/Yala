@@ -121,12 +121,23 @@ enum GroupJoinReconciler {
         // CloudKit `memberLocallyPresent` sería false para siempre: intent nunca limpiado, corrección R1
         // nunca corrida, y falso `groupJoinIntentExpired` a los 7 días).
         let backendMember = backendCurrentUserMember(zoneName: entry.zoneName, context: providedContext)
+        // Re-solicitud en silencio: un member local en estado TERMINAL (hoy solo `rejected` baja del pull)
+        // es un residuo, no una membresía viva, y sin esto ganaba a la cadena sesión/consent/join — el
+        // intent se limpiaba sin llamar nunca al RPC y el enlace nuevo no hacía nada en frío.
+        let memberInTerminalState = backendMember.map {
+            GroupJoinReconcileLogic.isTerminal($0.memberStatus)
+        } ?? false
+        // PEEK, no consumo: aquí se DECIDE. El tap se gasta donde ocurre el efecto (`attemptJoin`), o
+        // boot y foreground del mismo arranque se lo comerían antes de que el join llegue a salir.
+        let userTappedInviteThisLaunch = GroupBackendInviteEntryHandler.isInviteTapArmed(groupID: groupID)
 
         switch GroupJoinReconcileLogic.decideBackend(
             flagEnabled: CloudSyncFlags.groupsBackendEnabled,
             hasSession: CloudAuthService.shared.hasSession,
             isConsented: GroupsConsentState.isAccepted,
-            memberLocallyPresent: backendMember != nil
+            memberLocallyPresent: backendMember != nil,
+            memberInTerminalState: memberInTerminalState,
+            userTappedInviteThisLaunch: userTappedInviteThisLaunch
         ) {
         case .skipFlagOff:
             // R5: flag rolled back — conservar hasta TTL, jamás procesar por CloudKit.
@@ -146,7 +157,13 @@ enum GroupJoinReconciler {
                 GroupJoinIntentTracker.shared.rehydrate(zoneName: entry.zoneName)
                 GroupJoinIntentTracker.shared.noteMemberResolved(zoneName: entry.zoneName, status: status)
             }
-            MetricsService.canary(.groupJoinIntentReconciled, detail: "\(trigger.rawValue)|backendMemberPresent")
+            // El detail distingue el member VIVO del residuo TERMINAL. Con un member `rejected` (o
+            // `left`/`removed`) no se reconcilió ningún join —no lo hubo—, y emitir el mismo evento que
+            // un join real metía en la serie entradas que jamás ocurrieron: el canario mentía.
+            MetricsService.canary(
+                .groupJoinIntentReconciled,
+                detail: "\(trigger.rawValue)|\(memberInTerminalState ? "backendMemberTerminal" : "backendMemberPresent")"
+            )
             logger.notice("JoinReconcile[\(trigger.rawValue, privacy: .public)]: backend member present for \(entry.zoneName, privacy: .public) → intent cleared")
 
         case .presentSignIn, .presentConsent, .join:

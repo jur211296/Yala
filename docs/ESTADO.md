@@ -5,8 +5,7 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-04 (Lima)
 
-**Rama** `2.1` · HEAD `d39d5740` — «el Panel de un usuario nuevo arranca con cuatro secciones y
-cuatro widgets». TestFlight build **12** (CPV 12). **Subida Yala (TF/store) = solo Mini.**
+**Rama** `2.1` · HEAD al día tras el borrado del recorrido muerto y el arreglo del rechazado. TestFlight build **12** (CPV 12). **Subida Yala (TF/store) = solo Mini.**
 **`yala-app.pe` sirve la web nueva desde hoy** (PR #62 mergeado; detalle en
 `Web/REVISION-WEB-UX-A11Y-2026-09-03.md`).
 
@@ -20,9 +19,11 @@ Panel, que para quien instale ahora arranca con cuatro secciones y cuatro widget
 
 1. **Publicar la app.** Los dos avisos de Grupos están completos en servidor y en los dos entornos;
    falta el cliente iOS. Ahora llevaría además el fix de identidad y los predeterminados del Panel.
-2. **La tanda de QA: 22 tickets en 4 montajes.** Guion en **`qa/guion-tanda.md`**, sin tocar. El
-   nº 22 es `guest-decline-has-no-screen`, que entró hoy: servidor listo y verificado en producción,
-   falta verlo en la app publicada.
+2. **La tanda de QA: 23 tickets en 4 montajes.** Guion en **`qa/guion-tanda.md`**, sin tocar. Dos
+   entraron hoy y ninguno está en el guion: `guest-decline-has-no-screen` (servidor listo y verificado
+   en producción, falta verlo en la app publicada) y `rejected-member-cold-tap-does-nothing`, cuyo
+   device-QA son cinco minutos: ser rechazado, matar la app, tapear un enlace nuevo, y comprobar que
+   al admin le llega la solicitud **una sola vez**.
 3. **Dos decisiones de la web** (§9 del informe): el **texto legal de Grupos** —dice «vía iCloud, no
    por servidores nuestros» y el backend propio está al 100 % en prod— y si Vercel debe desplegar al
    mergear (hoy su rama de producción es `1.0`).
@@ -34,13 +35,11 @@ ticket afirma. Hallazgo: **ninguno esperaba una decisión tuya** — la tanda de
 todas. Tres salieron ese día (dos en el saneamiento, `guest-journey` al ejecutarse); **quedan 4, y
 los 4 esperan código**.
 
-- **`rejected-member-cold-tap-does-nothing`** (high, nuevo) — **lo más caro que hay abierto.** A
-  quien rechazaron de un grupo, tapear un enlace nuevo **con la app cerrada** no le hace nada, y así
-  se queda: no es una carrera, es el estado estable. Con la app abierta funciona, así que depende de
-  algo que la persona no controla. **Es una regresión de `g13_02`**, que está al 100 % en producción
-  desde el 3-sep: al conservar la fila del rechazado para poder avisarle, se activó un camino que ya
-  estaba roto. La cadena está medida en código, **no en un teléfono**: empieza por el device-QA de
-  cinco minutos que la confirme.
+- **`rejoin-tap-renotifies-admins`** (medium, nuevo) — **vivo en producción.** Quien ya tiene una
+  solicitud pendiente y vuelve a tocar su enlace hace que al admin le llegue otra notificación, cada
+  vez. El guardián del servidor está escrito para evitarlo y su propio comentario lo promete, pero
+  filtra el caso `active` y deja pasar el `pendingApproval`. Es de servidor: migración + Worker +
+  promoción, con su verificación en staging.
 - **`group-joiner-flag-consumers-still-narrow`** (high, en `backlog`) — al recién llegado ya se le
   reconoce, pero su gasto no llega a su cuenta personal hasta un arranque posterior y aterriza en la
   cuenta «Grupos». Trece consumidores del flag siguen estrechos.
@@ -65,9 +64,17 @@ sigue sin `ok_`. **Cero `ok_` inventado.**
 
 ## Board
 
-99 tickets · backlog 50 · in-progress 4 · qa 22 · blocked 2 · done 16 · discarded 5. Índice cuadrado
-(99 filas = 99 ficheros, status y ruta de cada fila comprobados contra el disco). `qa` significa
+100 tickets · backlog 50 · in-progress 4 · qa 23 · blocked 2 · done 16 · discarded 5. Índice cuadrado
+(100 filas = 100 ficheros, status y ruta de cada fila comprobados contra el disco). `qa` significa
 «esperando la tanda», no «cerrado».
+
+**Arreglado el rechazado que tapeaba en frío, y pasa a la tanda (`qa`).** A quien rechazaron de un
+grupo, tapear un enlace nuevo con la app cerrada ya vuelve a pedirle la entrada — antes no hacía nada
+y así se quedaba. El arreglo obvio no valía: se auto-anulaba, y su versión ingenua habría mandado
+solicitudes fantasma al admin en cada arranque. La pieza que lo cierra es que «acaba de tapear» vive
+en memoria del proceso y nunca en disco. **Falta verlo en un teléfono**: la cadena está medida en
+código y fijada por tests (verificados por mutación), no observada. Alcance real: sólo `rejected` —
+a `left` y `removed` el servidor no les baja la fila, a propósito.
 
 **Cerrado el recorrido muerto del invitado (`4f01484e` + el commit del pin).** Para el usuario no
 cambia nada: era código que ningún camino podía alcanzar. Se fueron `GroupReconnectView` con sus

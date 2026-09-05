@@ -1,6 +1,6 @@
 ---
 id: rejected-member-cold-tap-does-nothing
-status: backlog
+status: qa
 priority: high
 area: groups
 created: 2026-09-04
@@ -115,3 +115,66 @@ No se ejecutó en dispositivo. Que el enlace en frío llegue siempre antes de `i
 `AppBootstrapper.swift:223` y de que `isInitialized = true` está en `:564`. Un device-QA de cinco
 minutos —ser `rejected`, matar la app, tapear el enlace— lo confirma o lo tumba, y es el primer
 paso recomendado al abrir este ticket.
+
+---
+
+## ARREGLADO · 2026-09-04 — pasa a QA, falta verlo en un teléfono
+
+**Decisión del owner: re-solicitar en silencio.** Tapear el enlace ES la petición, así que el camino
+en frío pasa a comportarse como el caliente. Sin pantallas nuevas, sin copy nuevo, sin tocar el
+servidor.
+
+### El arreglo obvio no servía, y por eso el diseño tiene una pieza más
+
+Que `decideBackend` mirara el estado **se auto-anula**: `memberLocallyPresent` y el estado se leen de
+la fila LOCAL, que sólo refresca el pull. Tras un join correcto la fila sigue diciendo `rejected`
+hasta la siguiente bajada, así que la pasada siguiente decidiría lo mismo otra vez.
+
+Y al revés, el peligro simétrico: si el gate fuera sólo «member terminal ⇒ pedir entrada», el intent
+—que vive 7 días— re-solicitaría en cada arranque **sin que nadie tapee nada**, y el admin recibiría
+solicitudes fantasma de alguien a quien ya rechazó.
+
+⇒ Hace falta el bit «esta persona **acaba** de tapear», y **tiene que vivir en memoria del proceso**:
+
+- Un `Set` de groupIDs armado en `GroupBackendInviteEntryHandler.persistIntent`, que es el choke point
+  de los dos taps (el warm por `handle`, el frío por `AppBootstrapper.persistBackendInviteIntent`).
+  Verificado: son sus únicos dos llamadores.
+- **Nunca se persiste.** Ése es el mecanismo, no un detalle: en cualquier arranque que no empiece con
+  un tap, el set está vacío y el intent guardado no puede pedir entrada por su cuenta.
+- Se **consume** en `attemptJoin`, justo antes del RPC y único call-site de `join_group` ⇒ un tap vale
+  como mucho una solicitud, aunque boot y foreground corran en el mismo arranque.
+- Y se **re-arma** en toda rama que conserve el intent (`.sessionRequired`, `.transient`,
+  `.channelDisabled` y el `catch` genérico). Sin esa simetría, un corte de red de dos segundos
+  convertía el tap en pérdida silenciosa: arm gastado, RPC fallido, reconciler que ya no reintenta.
+  Comprobado que la simetría es completa: las tres ramas que conservan re-arman, la que limpia no.
+
+### Alcance real: sólo `rejected`
+
+`left` y `removed` **nunca tienen fila local**. El servidor los excluye del pull a propósito
+(`gateway/src/groups/routes.ts:466-468`: «a quien EXPULSAN le sigue desapareciendo en silencio, que
+es una frontera deliberada»), y sin fila el tap entra por el camino de alta nueva, que ya funciona.
+`isTerminal` los cubre por completitud del switch, no porque sean alcanzables — y por eso **no se
+cableó su copy**: habría sido fabricar código inalcanzable, justo lo que se barrió esta mañana.
+
+### Verificado por mutación, no por su verde
+
+Revertido el gate a su forma original, el test cae con **`counter.calls → 0`** — cero llamadas a
+`join_group`, que es literalmente lo que le pasa hoy a la persona. Los dos tests cuentan el
+`joinProvider`: 0 sin tap, exactamente 1 con tap tras correr boot y foreground.
+
+El canario que mentía deja de mentir en este camino: con member terminal emite
+`|backendMemberTerminal` en vez de `|backendMemberPresent`. **Quedan otros emisores sin revisar** —
+`GroupsSyncClient` publica `backendPull|<status>` cuando la fase se mueve, así que un rechazo
+materializado por pull sigue entrando en la serie como «reconciled». Su detail lleva el status, así
+que el dashboard puede separarlo; decidir si se toca es aparte.
+
+### Lo que falta, y por qué esto está en `qa` y no en `done`
+
+**La cadena está medida en código y verificada por tests, pero nunca se ha visto en un teléfono.**
+El device-QA de cinco minutos sigue siendo el paso que la confirma: ser `rejected` en un grupo,
+matar la app, tapear un enlace nuevo, y comprobar que la solicitud llega al admin — **una sola vez**.
+
+### Un segundo bug salió de aquí
+
+Al medir el fan-out apareció que **un re-tap estando ya pendiente vuelve a notificar al admin, hoy,
+en producción**. Es del lado del servidor y va aparte: `tickets/backlog/rejoin-tap-renotifies-admins.md`.

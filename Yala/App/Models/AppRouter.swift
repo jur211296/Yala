@@ -155,6 +155,9 @@ final class AppRouter {
         DeferredIntentBuffer.shared.clear()
         PendingJoinStore.clearAll()
         GroupJoinIntentTracker.shared.clear()
+        // La señal en memoria «acabo de tapear un enlace» se va con el resto del estado de join: un arm
+        // superviviente autorizaría un `join_group` después del wipe, sin tap que lo respalde.
+        GroupBackendInviteEntryHandler.clearInviteTapArms()
     }
 
     // MARK: - Internals

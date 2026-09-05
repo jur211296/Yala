@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (99)
+## Index (100)
 
 | id | status | path |
 |----|--------|------|
@@ -101,7 +101,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | prefs-domain-per-secondary-session | qa | tickets/qa/prefs-domain-per-secondary-session.md |
 | prefs-synced-keys-upload-not-download | qa | tickets/qa/prefs-synced-keys-upload-not-download.md |
 | push-client-ignores-yala-kind | backlog | tickets/backlog/push-client-ignores-yala-kind.md |
-| rejected-member-cold-tap-does-nothing | backlog | tickets/backlog/rejected-member-cold-tap-does-nothing.md |
+| rejoin-tap-renotifies-admins | backlog | tickets/backlog/rejoin-tap-renotifies-admins.md |
+| rejected-member-cold-tap-does-nothing | qa | tickets/qa/rejected-member-cold-tap-does-nothing.md |
 | records-standalone-amount-discrepancy | backlog | tickets/backlog/records-standalone-amount-discrepancy.md |
 | reentry-counts-as-fresh-install | in-progress | tickets/in-progress/reentry-counts-as-fresh-install.md |
 | registros-calendario-cuenta-gastos-por-signo | qa | tickets/qa/registros-calendario-cuenta-gastos-por-signo.md |

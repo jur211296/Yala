@@ -47,5 +47,9 @@ enum SecondarySessionBoundaryPurge {
         PendingJoinStore.clearAll()
         GroupJoinIntentTracker.shared.clear()
         GroupsConsentState.clear()
+        // Y la señal EN MEMORIA del tap, que es el caso peligroso de verdad en esta frontera: un arm
+        // puesto por la persona A y consumido con la sesión de la persona B mandaría la solicitud de
+        // entrada al grupo de A con la cuenta de B.
+        GroupBackendInviteEntryHandler.clearInviteTapArms()
     }
 }

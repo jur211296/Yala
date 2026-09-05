@@ -63,14 +63,45 @@ enum GroupJoinReconcileLogic {
         case join
     }
 
+    /// Estado TERMINAL de una membresía: la persona ya NO está dentro del grupo y su fila local es un
+    /// residuo, no una membresía viva. Switch exhaustivo SIN `default` a propósito — un estado nuevo en
+    /// `SplitMemberStatus` debe romper aquí y obligar a decidir de qué lado cae.
+    ///
+    /// **Hoy solo `.rejected` llega hasta aquí, y conviene saberlo**: el pull del gateway lista
+    /// membresías con `status=in.(active,pendingApproval,rejected)` (`gateway/src/groups/routes.ts:468`,
+    /// que excluye `removed` a propósito y explica por qué en su comentario), y `left` tampoco baja ⇒ sus
+    /// filas locales no existen. Los otros dos están por COMPLETITUD del switch, no porque sean
+    /// alcanzables por este camino.
+    static func isTerminal(_ status: SplitMemberStatus) -> Bool {
+        switch status {
+        case .rejected, .left, .removed:
+            return true
+        case .active, .pendingApproval:
+            return false
+        }
+    }
+
+    /// Los dos últimos parámetros van SIN valor por defecto a propósito: un default es justo lo que dejó
+    /// vivir el bug que esta firma cierra (a quien rechazaron, tapear un enlace nuevo con la app cerrada
+    /// no le hacía nada nunca — `memberLocallyPresent` ganaba y el intent se borraba sin llamar jamás a
+    /// `join_group`). Que el compilador obligue a decidirlos en cada call-site.
+    ///
+    /// **Re-solicitud en silencio**: cuando el member local está en estado terminal Y la persona acaba de
+    /// tapear un enlace en ESTE arranque, el residuo deja de contar como «ya estás dentro» y la decisión
+    /// sigue por la cadena sesión → consent → join. Tapear el enlace ES la petición: el camino en frío se
+    /// comporta como el caliente, sin pantallas ni copy nuevos.
     static func decideBackend(
         flagEnabled: Bool,
         hasSession: Bool,
         isConsented: Bool,
-        memberLocallyPresent: Bool
+        memberLocallyPresent: Bool,
+        memberInTerminalState: Bool,
+        userTappedInviteThisLaunch: Bool
     ) -> BackendDecision {
         guard flagEnabled else { return .skipFlagOff }       // R5: prioridad sobre el flag
-        if memberLocallyPresent { return .correctAndClear }
+        if memberLocallyPresent, !(memberInTerminalState && userTappedInviteThisLaunch) {
+            return .correctAndClear
+        }
         if !hasSession { return .presentSignIn }
         if !isConsented { return .presentConsent }
         return .join
