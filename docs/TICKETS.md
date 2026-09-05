@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (100)
+## Index (101)
 
 | id | status | path |
 |----|--------|------|
@@ -42,6 +42,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | budget-tied-to-income-or-expense | backlog | tickets/backlog/budget-tied-to-income-or-expense.md |
 | canarios-y-breadcrumbs-sin-emisor | backlog | tickets/backlog/canarios-y-breadcrumbs-sin-emisor.md |
 | cashflow-spend-prediction | backlog | tickets/backlog/cashflow-spend-prediction.md |
+| ci-no-corre-la-suite-del-gateway | backlog | tickets/backlog/ci-no-corre-la-suite-del-gateway.md |
 | ci-suite-simulador-duplicada-y-allowlist-incompleta | done | tickets/done/ci-suite-simulador-duplicada-y-allowlist-incompleta.md |
 | ci-verde-con-la-suite-en-rojo | done | tickets/done/ci-verde-con-la-suite-en-rojo.md |
 | ci-warns-but-does-not-block | backlog | tickets/backlog/ci-warns-but-does-not-block.md |
@@ -101,7 +102,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | prefs-domain-per-secondary-session | qa | tickets/qa/prefs-domain-per-secondary-session.md |
 | prefs-synced-keys-upload-not-download | qa | tickets/qa/prefs-synced-keys-upload-not-download.md |
 | push-client-ignores-yala-kind | backlog | tickets/backlog/push-client-ignores-yala-kind.md |
-| rejoin-tap-renotifies-admins | backlog | tickets/backlog/rejoin-tap-renotifies-admins.md |
+| rejoin-tap-renotifies-admins | qa | tickets/qa/rejoin-tap-renotifies-admins.md |
 | rejected-member-cold-tap-does-nothing | qa | tickets/qa/rejected-member-cold-tap-does-nothing.md |
 | records-standalone-amount-discrepancy | backlog | tickets/backlog/records-standalone-amount-discrepancy.md |
 | reentry-counts-as-fresh-install | in-progress | tickets/in-progress/reentry-counts-as-fresh-install.md |

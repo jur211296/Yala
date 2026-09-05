@@ -40,6 +40,11 @@ a la luz por primera vez.
   desplegado): `/sync/pull?since=0&limit=1`, `/sync/merkle` y `/prefs/pull?since=0`.
 - **No se ha medido cuál de las tres se cuelga.** Es el siguiente paso obvio y cuesta tres `curl`.
 
+**Re-confirmado el 2026-09-04** (de paso, al correr la batería para `rejoin-tap-renotifies-admins`):
+sigue colgándose, `5017 ms`, y **falla idéntico contra `HEAD` limpio** — o sea que no lo introdujo el
+trabajo del 3-sep, sólo lo destapó. Sigue siendo el único rojo de la batería del gateway con las tres
+credenciales cargadas.
+
 ## Una hipótesis REFUTADA, para que nadie la repita
 
 Parecía que la cuenta de test B hubiera acumulado datos de meses y que `/sync/merkle` o el

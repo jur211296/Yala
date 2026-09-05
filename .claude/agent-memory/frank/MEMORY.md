@@ -22,5 +22,6 @@
 - [Web PR #62 espera a Jürgen](project_web_pr62_espera_a_jurgen.md) — revisión web 2026-09-03: mergear, y 4 decisiones (legal Grupos, fuentes, tono acento, tema sistema).
 
 ## Entorno y herramientas
+- [Verificar el backend: MCP ve solo prod](reference_verificar_backend_yala.md) — no hay DDL de staging; el sandbox transaccional prueba contra el motor real sin dejar rastro.
 - [El hook de secretos está desactivado](hook_secretos_disparador_substring.md) — retirado del push el 2026-09-01 (ADR-009); nada escanea hoy. Su trampa del substring, si vuelve.
 - [El hook de /cerrar salta con «cerramos»](hook_cerrar_disparador_substring.md) — verifica la premisa contra su mensaje: cerrar un ticket no es cerrar la sesión, y el bloque de disco es irreversible.
