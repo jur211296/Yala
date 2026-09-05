@@ -50,10 +50,10 @@ que parece homogéneo.
 - Cuando revierta uno así, **el motivo va escrito en la línea y declarado en el allowlist del
   escáner** — si no, el siguiente lo vuelve a alinear con la mejor intención.
 
-## La otra cara, el mismo día (PR #66) — y el criterio que las separa
+## La otra cara, el mismo día (PR #66) — RATIFICADA por Jürgen el 2026-09-05
 
-Horas después del caso de arriba amplié dos veces, y creo que las dos bien. **No lo ha confirmado
-todavía: si Jürgen dice lo contrario, manda él y esta sección se corrige.**
+Horas después del caso de arriba amplié dos veces. Se lo conté al cerrar, con las dos cifras y el
+criterio, y contestó: **«sí, ampliar así está bien».** No es una suposición mía: es la regla.
 
 1. La decisión decía «el escritor de `OnboardingView` y los TRES lectores de `AppBootstrapper`».
    Medidos: tres escritores y siete lectores. **Bajé los diez.**
@@ -74,3 +74,9 @@ ticket y el ticket ya se equivocó otras veces; lo que manda es **el hecho que l
 Amplía hasta cubrirlo entero, escribe en el commit que la cifra no casaba y por qué, y **deja fuera
 todo lo que sea otro objeto** aunque el patrón se parezca. Y si al ampliar el alcance crece de verdad
 —otro fichero, otra frontera—, eso ya no es completar: es el caso de arriba.
+
+**Y no hace falta preguntárselo cada vez.** Con la ratificación del 5-sep, completar el objeto que
+su decisión nombra es lo que espera por defecto; lo que sigue siendo suyo es ampliar a otro objeto.
+La obligación que queda es de transparencia, no de permiso: **la cifra que no casaba y el porqué van
+escritos en el commit**, para que pueda contradecirme leyendo el diff en vez de teniendo que
+reconstruir lo que medí.
