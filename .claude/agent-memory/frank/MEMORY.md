@@ -6,7 +6,7 @@
 - [Levanta sus propias reglas](feedback_jurgen_levanta_sus_reglas.md) — si te pide algo que un default tuyo prohíbe, se hace y se dice; y la medición que contradice su propuesta la quiere ANTES.
 - [El tablero antes que el bug](feedback_el_tablero_antes_que_el_bug.md) — prefiere sanear el board antes que atacar producción; y en docs, el bloque entero en un commit, no troceado.
 - [Tarjetas blancas: identidad](feedback_tarjetas_blancas_identidad.md) — cuándo un cambio visual toca identidad y no es polish.
-- [Alcance mínimo, salvo incoherencia](feedback_alcance_minimo_salvo_incoherencia.md) — escoge lo mínimo, pero amplía si el propio cambio se contradice ante el usuario.
+- [Alcance mínimo, salvo incoherencia](feedback_alcance_minimo_salvo_incoherencia.md) — él amplía si el cambio se contradice; y lo que el ticket no lista no lo toco yo, menos aún si borra datos.
 - [Autónomo es hasta el final](feedback_autonomo_hasta_el_final.md) — decide en bloque y suelta la ejecución; los rojos y el entorno también son míos.
 - [Prefiere lo limpio a lo defensivo](feedback_prefiere_lo_limpio_a_lo_defensivo.md) — retira el mecanismo que falla en vez de apuntalarlo; nombra siempre qué se pierde al limpiar.
 
@@ -18,10 +18,12 @@
 - [Capturas del simulador para la web](feedback_capturas_simulador_para_la_web.md) — receta y trampas: Secrets.xcconfig, nombre efímero, categorías sembradas, `sips -Z` escala el lado largo.
 
 ## Estado del trabajo
+- [La identidad del recién llegado a un grupo](project_identidad_del_joiner_en_grupos.md) — cerrada en código el 4 y 5-sep; falta device-QA de dos teléfonos, y NO se reabre la vía del refresh.
 - [Decisiones que esperan a Jürgen](project_decisiones_que_esperan_a_jurgen.md) — lo parado espera respuesta suya, no código; verifica antes de citarlas, caducan.
-- [Web PR #62 espera a Jürgen](project_web_pr62_espera_a_jurgen.md) — revisión web 2026-09-03: mergear, y 4 decisiones (legal Grupos, fuentes, tono acento, tema sistema).
+- [Web: lo que Jürgen decidió, y lo que no](project_web_pr62_espera_a_jurgen.md) — PR #62 mergeado el 4-sep; siguen abiertas dos suyas: legal de Grupos y autoalojar fuentes.
 
 ## Entorno y herramientas
-- [Los avisos a Grok son automáticos](hook_avisos_grok_automaticos.md) — el hook manda `artefacto-pr` y los rojos solo; POSTear a mano da 401 (destino y clave equivocados).
+- [Avisar a Frank: lo hace el hook, no tú](reference_avisar_a_frank_webhook.md) — `<motivo>` a secas NO envía (sale 0 en silencio); el hook ya manda PR y rojos solo.
+- [Verificar el backend: MCP ve solo prod](reference_verificar_backend_yala.md) — no hay DDL de staging; el sandbox transaccional prueba contra el motor real sin dejar rastro.
 - [El hook de secretos está desactivado](hook_secretos_disparador_substring.md) — retirado del push el 2026-09-01 (ADR-009); nada escanea hoy. Su trampa del substring, si vuelve.
 - [El hook de /cerrar salta con «cerramos»](hook_cerrar_disparador_substring.md) — verifica la premisa contra su mensaje: cerrar un ticket no es cerrar la sesión, y el bloque de disco es irreversible.

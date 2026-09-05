@@ -40,45 +40,46 @@ paths:
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice de reglas (30)
+## Índice de reglas (31)
 
-> Este fichero son **40 KB en 30 reglas largas**. No lo leas entero: localiza la regla
+> Este fichero son **44 KB en 31 reglas largas**. No lo leas entero: localiza la regla
 > aquí y lee **solo su tramo** con `sed -n '<linea>,<linea+N>p'`.
 > Los números de línea se desplazan al editar — regenera con
 > `python3 scripts/indexar_doc.py <fichero> --apply`.
 
 | Línea | Regla | Peso |
 |---|---|---|
-| `L89` | CloudKit compat | 119 B |
-| `L91` | Schema del container de GRUPOS — campo nuevo = deploy a Production en el MISMO PR | 1.1 KB |
-| `L93` | `#Predicate` GENÉRICO-PROTOCOLO crashea (`DataUtilities.swift:85`) — usa concreto por tipo | 1.8 KB |
-| `L95` | Acciones post-accept de un CKShare = intent PERSISTENTE reconciliable, nunca one-shot (bug Pia 2026-07-11) | 1.3 KB |
-| `L97` | Lazy M2M con CloudKit — CSV mirror | 1020 B |
-| `L99` | CSV mirror — stale ≠ nil al regenerar un UUID de identidad (commit `899c1c25`) | 1.4 KB |
-| `L101` | Sync de Grupos (CKSyncEngine) NO debe arrancar/`save()` sobre el `mainContext` compartido antes de que el primer import  | 403 B |
-| `L103` | Lo que el gate de quiescencia DIFIERE solo se recupera solo si es un evento de CloudKit. Si es una INTENCIÓN, el diferid | 425 B |
-| `L105` | El guard G6-3 es TAMBIÉN lo que impide avisos DUPLICADOS mientras los dos canales conviven (Fase 2, 2026-07-29). No lo d | 1.9 KB |
-| `L107` | [STALE, medido 2026-08-03 — el código que describe ya NO EXISTE: `applyRemoteRecordIfAbsent` y `GroupPullRescueGate` dan | 555 B |
-| `L109` | `DefaultHistoryToken` es POR-STORE, y un drain que ancla su high-water en el store equivocado queda ciego al suyo PARA S | 444 B |
-| `L111` | Un borrado tiene DOS mitades y el camino remoto solo copió una: la fila del grupo se borra, el PUENTE personal se queda  | 398 B |
-| `L113` | Un gate por ZONA calculado sobre filas VIVAS es la herramienta equivocada para un tombstone por FILA — y con un duplicad | 510 B |
-| `L117` | El par que apaga el mirror NO se puede hacer atómico ni invertir: se enforcea en el CONSUMIDOR (C-1, commit `246a6939`). | 1.9 KB |
-| `L119` | Un terminal de fallo DENTRO del cutover tiene que devolver el modo a `.icloud` como PRIMER efecto, o es peor que el limb | 1.1 KB |
-| `L121` | `isMarkerExported()` es necesaria-no-suficiente y su espera necesita TOPE: no hay API de cuota de iCloud. | 1.2 KB |
-| `L125` | El dominio Grupos pertenece al Apple ID, no al humano: toda frontera de «otro usuario en este device» tiene que SELLARLO | 429 B |
-| `L127` | Al ELIMINAR una función, lista lo que hacía ADEMÁS de lo que la sustituye — un guard no viaja solo con el camino que pro | 2.2 KB |
-| `L129` | El dominio de preferencias POR SESIÓN existe desde el 2026-08-13, y su parte difícil no fue el escritor sino el INVENTAR | 2.8 KB |
-| `L136` | Una caché compartida se protege con un SELLO COLGADO DEL DESCRIPTOR, no del propio dato — y ésa es la única diferencia e | 404 B |
-| `L138` | EXCEPCIÓN al punto anterior, y las tres trampas que trae (C-3, 2026-07-27, `612b21ee`) | 2.9 KB |
-| `L140` | `isCurrentUser` es un flag del canal CloudKit y en el BACKEND nace APAGADO para casi todo el mundo — toda resolución de  | 2.4 KB |
-| `L142` | Duplicar un canal duplica sus ESCRITURAS; sus OBSERVACIONES se quedan atrás, y eso no lo caza ningún test de un canal so | 2.5 KB |
-| `L144` | Una señal puede viajar en NEGATIVO — y entonces el `return` que no deja rastro es un bug de LECTURA, no de escritura (S4 | 372 B |
-| `L146` | Un gate de feature NO puede decidir SI se PARSEA la entrada: solo QUÉ hacer con ella. Y «byte-idéntico al camino viejo»  | 435 B |
-| `L148` | En una frontera de USUARIO el outbox de Grupos y su cursor tienen signos OPUESTOS: uno hay que matarlo y el otro hay que | 2.0 KB |
-| `L150` | El cursor del pull de Grupos (`GroupSyncCursor.groupCursorsJSON`) NO se resetea para «forzar una re-entrega» — es dañino | 1.4 KB |
-| `L152` | Un CONSENT no es una preferencia, y por eso el de Grupos SALIÓ del canal de prefs (C1, 2026-08-11). | 2.3 KB |
-| `L154` | `PreferenceSyncService.remove/set` propaga a la CUENTA, no al device — NUNCA limpiar un consent desde un camino con `.cl | 1.8 KB |
-| `L156` | CARGAR una preferencia no puede ESCRIBIRLA — y el eco de eso convertía al receptor en autor LWW de algo que no escribió  | 372 B |
+| `L90` | CloudKit compat | 119 B |
+| `L92` | Schema del container de GRUPOS — campo nuevo = deploy a Production en el MISMO PR | 1.1 KB |
+| `L94` | `#Predicate` GENÉRICO-PROTOCOLO crashea (`DataUtilities.swift:85`) — usa concreto por tipo | 1.8 KB |
+| `L96` | Acciones post-accept de un CKShare = intent PERSISTENTE reconciliable, nunca one-shot (bug Pia 2026-07-11) | 1.3 KB |
+| `L98` | Lazy M2M con CloudKit — CSV mirror | 1020 B |
+| `L100` | CSV mirror — stale ≠ nil al regenerar un UUID de identidad (commit `899c1c25`) | 1.4 KB |
+| `L102` | Sync de Grupos (CKSyncEngine) NO debe arrancar/`save()` sobre el `mainContext` compartido antes de que el primer import  | 403 B |
+| `L104` | Lo que el gate de quiescencia DIFIERE solo se recupera solo si es un evento de CloudKit. Si es una INTENCIÓN, el diferid | 425 B |
+| `L106` | El guard G6-3 es TAMBIÉN lo que impide avisos DUPLICADOS mientras los dos canales conviven (Fase 2, 2026-07-29). No lo d | 1.9 KB |
+| `L108` | [STALE, medido 2026-08-03 — el código que describe ya NO EXISTE: `applyRemoteRecordIfAbsent` y `GroupPullRescueGate` dan | 555 B |
+| `L110` | `DefaultHistoryToken` es POR-STORE, y un drain que ancla su high-water en el store equivocado queda ciego al suyo PARA S | 444 B |
+| `L112` | Un borrado tiene DOS mitades y el camino remoto solo copió una: la fila del grupo se borra, el PUENTE personal se queda  | 398 B |
+| `L114` | Un gate por ZONA calculado sobre filas VIVAS es la herramienta equivocada para un tombstone por FILA — y con un duplicad | 510 B |
+| `L118` | El par que apaga el mirror NO se puede hacer atómico ni invertir: se enforcea en el CONSUMIDOR (C-1, commit `246a6939`). | 1.9 KB |
+| `L120` | Un terminal de fallo DENTRO del cutover tiene que devolver el modo a `.icloud` como PRIMER efecto, o es peor que el limb | 1.1 KB |
+| `L122` | `isMarkerExported()` es necesaria-no-suficiente y su espera necesita TOPE: no hay API de cuota de iCloud. | 1.2 KB |
+| `L126` | El dominio Grupos pertenece al Apple ID, no al humano: toda frontera de «otro usuario en este device» tiene que SELLARLO | 429 B |
+| `L128` | Al ELIMINAR una función, lista lo que hacía ADEMÁS de lo que la sustituye — un guard no viaja solo con el camino que pro | 2.2 KB |
+| `L130` | El dominio de preferencias POR SESIÓN existe desde el 2026-08-13, y su parte difícil no fue el escritor sino el INVENTAR | 2.8 KB |
+| `L137` | Una caché compartida se protege con un SELLO COLGADO DEL DESCRIPTOR, no del propio dato — y ésa es la única diferencia e | 404 B |
+| `L139` | EXCEPCIÓN al punto anterior, y las tres trampas que trae (C-3, 2026-07-27, `612b21ee`) | 2.9 KB |
+| `L141` | `isCurrentUser` es un flag del canal CloudKit y en el BACKEND nace APAGADO para casi todo el mundo — toda resolución de  | 2.4 KB |
+| `L143` | Duplicar un canal duplica sus ESCRITURAS; sus OBSERVACIONES se quedan atrás, y eso no lo caza ningún test de un canal so | 2.5 KB |
+| `L145` | Una señal puede viajar en NEGATIVO — y entonces el `return` que no deja rastro es un bug de LECTURA, no de escritura (S4 | 372 B |
+| `L147` | Un gate de feature NO puede decidir SI se PARSEA la entrada: solo QUÉ hacer con ella. Y «byte-idéntico al camino viejo»  | 435 B |
+| `L149` | En una frontera de USUARIO el outbox de Grupos y su cursor tienen signos OPUESTOS: uno hay que matarlo y el otro hay que | 2.0 KB |
+| `L151` | El cursor del pull de Grupos (`GroupSyncCursor.groupCursorsJSON`) NO se resetea para «forzar una re-entrega» — es dañino | 1.4 KB |
+| `L153` | Un CONSENT no es una preferencia, y por eso el de Grupos SALIÓ del canal de prefs (C1, 2026-08-11). | 2.3 KB |
+| `L155` | `PreferenceSyncService.remove/set` propaga a la CUENTA, no al device — NUNCA limpiar un consent desde un camino con `.cl | 1.8 KB |
+| `L157` | CARGAR una preferencia no puede ESCRIBIRLA — y el eco de eso convertía al receptor en autor LWW de algo que no escribió  | 373 B |
+| `L159` | El resolvedor canónico de identidad NO es un reemplazo mecánico del flag: contesta otra pregunta en DOS ejes (2026-09-05 | 3.7 KB |
 
 <!-- INDICE:fin -->
 
@@ -154,3 +155,5 @@ paths:
 - **`PreferenceSyncService.remove/set` propaga a la CUENTA, no al device — NUNCA limpiar un consent desde un camino con `.cloud` VIVO (commit `bdbc46d1`):** el service ramifica por `behavior`, que es **computed y se resuelve en CADA llamada** (`CloudSyncFlags.storageMode` + descriptor secundario): `.icloud` → local + iKV; `.cloud` → `enqueuePref(.int(0))` al outbox de prefs, que **SUBE al backend**; secundaria M1 → `.localOnly`. Para la familia `intPresence` un `0` **ES** "no aceptado" (`isAccepted` es `> 0`) y el wire de prefs **no tiene tombstone**, así que ese `0` pisa por LWW el epoch de aceptación en `user_preferences`: borra el **registro GDPR de una cuenta que sigue VIVA** y lo propaga a sus otros devices. Un sign-out es "hasta luego", no una retirada de consentimiento — el precedente del repo es append-only (`cloudConsentAcceptedAt` no lo borra NINGÚN camino). ⇒ el olvido del consent en un cierre va **donde el modo persistido ya es `.icloud`**: hoy el boot-hook `performSignOutWipeIfArmed`, DESPUÉS de `StorageModePersistence.write(.icloud)` (rama sin backend) y ANTES de `resetPrefs()` (que podría barrer la key que gatea el clear, dejándolo mudo en silencio). Pinneado en AMBAS direcciones: `SignOutNotificationWiringTests.inSessionConsentClears_neverOnCloudModePaths` resuelve la función contenedora y **nombra al culpable** si alguien cuela el clear en un camino `.cloud`, y `modeAtClear` en `SignOutWipeHookTests` captura el modo **DENTRO** de la closure — leerlo tras el return no prueba nada del instante del clear (un mutante que mueva el `write(.icloud)` por debajo quedaría verde). **Corolario general:** todo `set`/`remove` de prefs en un camino de cierre o de frontera de cuenta debe preguntarse en qué rama de `behavior` caerá **en ese instante**, no en cuál cae "normalmente".
 
 - **CARGAR una preferencia no puede ESCRIBIRLA — y el eco de eso convertía al receptor en autor LWW de algo que no escribió (`05c44cf4`, 2026-08-05).** — el caso entero (4 KB): [CARGAR una preferencia no puede ESCRIBIRLA — y el …](../../docs/aprendizajes-tecnicos.md#cargar-una-preferencia-no-puede-escribirla--y-el-eco-de-eso-converta-al-receptor-en-autor-lww)
+
+- **El resolvedor canónico de identidad NO es un reemplazo mecánico del flag: contesta otra pregunta en DOS ejes (2026-09-05, PR #64).** Alinear los catorce consumidores estrechos de `isCurrentUser` con `GroupExpenseService.resolveCurrentUserMember` (la regla `L140` de arriba, aplicada al resto) introdujo **cuatro cambios de comportamiento que nadie pidió**, y los cuatro salen de las mismas dos diferencias: el resolvedor **(a) colapsa a UNA fila por zona** (`min(by: joinedAt)`) donde el `#Predicate` devolvía TODAS las marcadas, y **(b) no filtra por estado** — puede devolver un member `pendingApproval`, `left` o `removed`. ⇒ **antes de sustituir, pregunta cuál de las dos formas necesita el consumidor.** Los cuatro casos, porque cada uno enseña una forma distinta de equivocarse: **(1) Un consumidor que solo distingue «existe / está activo» convierte (b) en daño.** El gate de `ScheduledPaymentDraftService` pausa al no-activo escribiendo `payment.isActive = false`, persistente y sin re-encendido: resolver la identidad le APAGABA el pago recurrente a quien espera aprobación — el usuario que el arreglo venía a atender. Un `pendingApproval` es el mismo «todavía no se sabe» que su `.retryLater` ya cubría, no el «removido/salido» que su propio comentario dice querer pausar. **(2) Una pregunta POR FILA no se contesta con la canónica, y aquí el precio es un borrado.** El guard removed-self de `AppBootstrapper` pregunta «¿existe una fila mía expulsada?»; el resolvedor contesta «¿la canónica lo está?». Con dos filas del mismo humano divergen en las dos direcciones, y la mala dispara `performRemovedSelfCleanup` —que borra el `SplitGroup`, cascadea gastos/shares/liquidaciones y **emite tombstones al backend**— sobre un grupo al que el usuario acaba de re-unirse (un re-join estrena `member_key` ⇒ la fila vieja `removed` sobrevive junto a la nueva `active`). Quedó SIN alinear a propósito, con el motivo escrito en la línea. **(3) Colapsar donde había que unir deja al gemelo huérfano PARA SIEMPRE.** `updateCurrentUserDisplayName` renombraba solo la canónica; como su filtro de trabajo es `displayName != nuevo`, reentraba en cada arranque sin converger nunca. Para eso existe la variante **plural** `resolveAllCurrentUserMembers` (mismos tres criterios en OR en vez de en cascada) — úsala cuando la pregunta sea «¿cuáles son mis filas?». **(4) `resolver-y-filtrar` ≠ `buscar-la-que-cumple-ambas`.** `first { isCurrentUser && isActive }` escanea hasta encontrar una que cumpla las dos; resolver y luego filtrar por `isActive` devuelve la canónica y la descarta, dando «no hay nadie» cuando sí lo hay. Con dos filas mías y la más antigua inactiva, eso reabría el formulario EN BLANCO — el síntoma exacto que el arreglo quitaba. La forma correcta es `resolveCurrentUserMember(from: members.filter(\.isActive))`. **Y un detalle del helper por zona:** su fetch va `sortBy: joinedAt` porque ante empate exacto `min(by:)` devuelve el primero DEL ARRAY, y los demás consumidores canónicos resuelven sobre el array ya ordenado de `GroupService.fetchMembers` — sin ordenar, dos filas empatadas al milisegundo bastan para que el formulario marque un pagador y el bridge resuelva otro. **Corolario de verificación, y es el que más costó:** un **source-scan de cableado** (¿este fichero llama al resolvedor?) prueba que el cambio se APLICÓ, no lo que HACE. Ninguno de los cuatro fallos de arriba se ve en un grep; los cuatro los cazó una review adversarial por lentes y los pinnea ahora `YalaTests/GroupJoinerConsumerBehaviourTests` con su control en la dirección contraria (al pendiente no se le pausa **y** al expulsado sí). Un escáner es una red contra la regresión del cableado, nunca la red del comportamiento.

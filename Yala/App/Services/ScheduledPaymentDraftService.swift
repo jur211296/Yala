@@ -195,9 +195,19 @@ struct ScheduledPaymentDraftService {
 
         let member: SplitMember?
         do {
-            var d = FetchDescriptor<SplitMember>(predicate: #Predicate { $0.groupZoneID == zone && $0.isCurrentUser == true })
-            d.fetchLimit = 1
-            member = try context.fetch(d).first
+            // Identidad RESUELTA: con el flag pelado, al recién llegado el gate lo trataba como
+            // no-miembro y el borrador del pago programado del grupo no se creaba nunca.
+            let resolved = try GroupExpenseService.resolveCurrentUserMember(inZone: zone, context: context)
+            // Un `pendingApproval` se pasa como AUSENTE a propósito. El gate solo distingue «existe» de
+            // «está activo», y su rama de no-activo es `.pause`, que escribe `payment.isActive = false`:
+            // apagar el pago recurrente de alguien a quien el admin todavía no ha contestado, y que nadie
+            // vuelve a encender cuando lo aprueban. El comentario del propio gate dice qué quiere pausar
+            // —«removido/salido»— y un pendiente no es ninguno de los dos: es el mismo «todavía no se
+            // sabe» que `.retryLater` ya cubre.
+            //
+            // Sin esto, resolver la identidad EMPEORABA justo al usuario que vino a arreglar: antes su
+            // member no se resolvía y el gate reintentaba; ahora se resuelve y le apagaría el pago.
+            member = (resolved?.isPendingApproval == true) ? nil : resolved
         } catch {
             #if DEBUG
             print("ScheduledPaymentDraftService: Error fetching member for gate: \(error)")

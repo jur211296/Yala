@@ -1483,6 +1483,24 @@ final class AppBootstrapper {
         // 2) Removed-self: current user con status=.removed → flow simétrico a leaveGroup.
         do {
             let removedRaw = SplitMemberStatus.removed.rawValue
+            // El flag PELADO aquí es deliberado, y es una excepción a la alineación del 2026-09-05.
+            //
+            // La pregunta que este guard tiene que contestar es «¿existe una fila MÍA expulsada?», que es
+            // POR FILA. La resolución canónica contesta otra: «¿la fila CANÓNICA de la zona (la de
+            // `joinedAt` más antiguo) está expulsada?». En una zona con dos filas del mismo humano —el
+            // caso migrado que `GroupsViewModel` y `GroupsExportBuilder` tratan explícitamente— las dos
+            // preguntas divergen, y aquí divergir sale carísimo en las DOS direcciones:
+            //
+            //  - canónica `active` + gemela `removed` ⇒ el cleanup legítimo deja de correr;
+            //  - canónica `removed` + gemela `active` (un re-join que estrena `member_key`) ⇒ se dispara
+            //    `performRemovedSelfCleanup` sobre el grupo al que el usuario ACABA de volver, y eso
+            //    borra sus gastos, sus shares y sus liquidaciones, con tombstones al backend.
+            //
+            // Alinear esto de verdad pide resolver TODAS mis filas de la zona, no una, y eso es un
+            // consumidor nuevo del resolvedor que no existe todavía. Queda en
+            // `tickets/backlog/joiner-flag-residuals-cosmetic-and-service-guard.md`: el precio de dejarlo
+            // es que a quien expulsan antes de su siguiente arranque no se le limpia el grupo — molesto,
+            // recuperable y silencioso. El precio de equivocarse al alinearlo es un borrado.
             let removedSelfMembers = try context.fetch(FetchDescriptor<SplitMember>(
                 predicate: #Predicate { $0.isCurrentUser == true && $0.status == removedRaw }
             ))
