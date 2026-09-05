@@ -93,7 +93,8 @@ transición real. Y 3→4 es el criterio de éxito literal: una solicitud, un av
   **exactamente** el test del re-tap y ninguno más. Un test que pasa con y sin el fix no prueba nada.
 - **`gateway/test/push.fanout.unit.test.ts`: 21 verdes** (18 + 3 nuevos — `changed:false` calla,
   el rechazado que reentra avisa, campo ausente avisa).
-- **Batería del gateway con las tres credenciales cargadas: 331 tests, 1 rojo**, que es
+- **Batería del gateway con las tres credenciales cargadas: 329 tests — 326 verdes, 2 skipped y
+  1 rojo**, que es
   `account-goldens-freeze-read-test-times-out` — **preexistente demostrado** (falla idéntico contra
   `HEAD` limpio, sin estos cambios).
 - **Los 25 goldens de Grupos, verdes contra staging** con el Worker nuevo y la BD de staging **sin**
