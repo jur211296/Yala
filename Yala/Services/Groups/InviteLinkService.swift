@@ -207,6 +207,19 @@ enum InviteLinkService {
         let members: [String]?
 
         nonisolated static let empty = BrandedMetadata(name: nil, icon: nil, color: nil, members: nil)
+
+        /// `true` si hay algo que PINTAR: los tres campos que `GroupInviteOnboardingView` consume
+        /// (`name`/`icon`/`color`). `members` queda fuera a propósito — ninguna vista lo lee hoy, así
+        /// que una marca con solo `m` no es marca.
+        ///
+        /// Existe para una decisión concreta: al re-tapear, `persistIntent` **conserva la marca ya
+        /// capturada si la nueva no trae nada**. Sin eso, un segundo tap sobre la forma mínima
+        /// (`?g=..&t=..`, que la puerta ya acepta) borraría el nombre del grupo que el primer tap sí
+        /// traía. Y NO vale `== .empty`: `extractMetadata` sobre `…&m=` devuelve `members: []`, que no
+        /// es igual a `.empty` y sin embargo tampoco es marca.
+        var hasBranding: Bool {
+            name?.isEmpty == false || icon?.isEmpty == false || color?.isEmpty == false
+        }
     }
 
     /// Extrae metadata del grupo desde un invite URL branded (params n, i, c, m).
@@ -227,13 +240,33 @@ enum InviteLinkService {
     // MARK: - Check
 
     /// Verifica si una URL es un invite link de Yala (universal link en cualquier host alterno o custom scheme).
+    ///
+    /// **Acepta lo mismo que `extractBackendInvite` sabe leer, y ese acoplamiento es el punto.** Esta
+    /// función es la PUERTA —las tres entradas (`YalaAppDelegate.application(_:continue:)`,
+    /// `AppBootstrapper.handleIncomingURL`, `InviteRecoveryView`) gatean por ella— y el parser es quien
+    /// decide qué es un invite. Mientras exigió `s`, la forma mínima `…/invite?g=..&t=..` —que el parser
+    /// lee perfectamente, y que es justo lo que `invite.astro` maneja por el camino custom-scheme— no
+    /// llegaba a `handleInviteLink`: caía al `switch url.host` de `handleIncomingURL` y moría en su
+    /// `default`, **sin una sola línea de UI**. Ese apagón mudo es el peor modo de fallo de este
+    /// subsistema y ya se pagó una vez (§S5.2).
+    ///
+    /// Hoy `buildBackendInviteURL` siempre emite `s`, así que la estrechez era INOCUA; deja de serlo en
+    /// cuanto alguien emita el enlace mínimo. ⇒ el criterio es «lo que el parser lee», no «lo que el
+    /// productor de hoy escribe».
+    ///
+    /// **Residual medido (2026-09-05):** el AASA (`Web/public/.well-known/apple-app-site-association`)
+    /// sigue con `"?": { "s": "*" }`, así que un universal link SIN `s` lo abre Safari y no la app. Esto
+    /// cubre las otras dos vías —custom scheme y paste manual en `InviteRecoveryView`—; el AASA es
+    /// despliegue web y va aparte (`invite-aasa-requires-s-param` en backlog).
     static func isInviteLink(_ url: URL) -> Bool {
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return false }
-        let hasShareParam = components.queryItems?.contains(where: { $0.name == "s" }) == true
+        let items = components.queryItems ?? []
+        let hasShareParam = items.contains { $0.name == "s" }
+        let hasBackendPair = backendPair(from: items) != nil
         let isUniversalLink = alternateHosts.contains(components.host ?? "")
             && components.path == path
         let isCustomSchemeInvite = components.host == "invite"
-        return (isUniversalLink || isCustomSchemeInvite) && hasShareParam
+        return (isUniversalLink || isCustomSchemeInvite) && (hasShareParam || hasBackendPair)
     }
 
     // MARK: - Fetch Share Metadata
