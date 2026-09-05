@@ -16,11 +16,15 @@
 //  2. **Versión aceptada por debajo de la última SUSTANTIVA → NO aceptado** (§8). Es la comparación que
 //     hasta C1 no existía: la versión se persistía y no la miraba nadie.
 //
-//  3. **Un sello que CONTRADICE al `sub` vivo → NO aceptado.** No hay ningún dominio de `UserDefaults` por
-//     sesión (`PreferenceSyncService.local` es `.standard` hardcodeado), así que la caché de una VISITA
-//     M1 cae en el dominio del DUEÑO. La seguridad viene del sello, **no de una purga** — que es
-//     exactamente por qué `AccountEntitlementStore` es seguro. Un snapshot de la cuenta A jamás vale como
-//     consent de la cuenta B.
+//  3. **Un sello que CONTRADICE al `sub` vivo → NO aceptado.** `GroupsConsentState` escribe en
+//     `.standard` a pelo —no pasa por `SessionDefaults`— así que la caché de una VISITA M1 cae en el
+//     dominio del DUEÑO. La seguridad viene del sello, **no de una purga** — que es exactamente por qué
+//     `AccountEntitlementStore` es seguro. Un snapshot de la cuenta A jamás vale como consent de la B.
+//
+//     *(Corregido el 2026-09-05: esta nota decía «no hay ningún dominio de `UserDefaults` por sesión
+//     (`PreferenceSyncService.local` es `.standard` hardcodeado)». Caducó el 2026-08-26 — la puerta
+//     existe y ese servicio la usa. La conclusión no cambia porque quien no pasa por la puerta es
+//     `GroupsConsentState`, pero el motivo escrito era falso.)*
 //
 //  ## La asimetría deliberada: solo un sello que contradice invalida
 //

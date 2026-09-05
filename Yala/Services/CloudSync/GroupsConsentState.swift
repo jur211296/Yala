@@ -16,10 +16,15 @@
 //
 //  ## La forma de la caché: el `userID` va DENTRO
 //
-//  Molde `AccountEntitlementStore`, y su seguridad —medido— **no viene de la purga sino del sello**: no
-//  existe ningún dominio de `UserDefaults` por sesión (`PreferenceSyncService.local` es `.standard`
-//  hardcodeado), así que la caché de una sesión de VISITA (M1) cae siempre en el dominio del dueño. Un
+//  Molde `AccountEntitlementStore`, y su seguridad —medido— **no viene de la purga sino del sello**: un
 //  snapshot cuyo sello no casa con el `sub` vivo se ignora, corra o no corra ninguna purga.
+//
+//  **Corrección de 2026-09-05**: la frase que justificaba esto decía «no existe ningún dominio de
+//  `UserDefaults` por sesión (`PreferenceSyncService.local` es `.standard` hardcodeado)». Eso CADUCÓ
+//  el 2026-08-26 — `SessionDefaults` existe y `PreferenceSyncService.local` es hoy una computed que
+//  resuelve la puerta. Lo que sigue siendo verdad, y por eso el sello sigue haciendo falta, es que
+//  **este fichero NO pasa por la puerta**: `defaults` de aquí abajo es `.standard` a pelo, así que la
+//  caché de una visita cae en el dominio del dueño igual que antes. Ver la CUSTODIA, más abajo.
 //
 //  ## Append-only: aquí ya no se puede borrar nada remoto
 //
@@ -51,6 +56,22 @@ struct GroupsConsentSnapshot: Codable, Equatable, Sendable {
     var textVersion: Int
     /// La hora de la ACEPTACIÓN. Jamás la del reintento que consiguió red.
     var acceptedAt: Date
+}
+
+/// El consent local del DUEÑO, dormido mientras hay una visita usando el teléfono.
+///
+/// `Codable` y no un diccionario suelto para que un formato que cambie falle al decodificar en vez de
+/// reponer basura sobre el consent del dueño. Fuera del enum a propósito: `GroupsConsentState` es
+/// `@MainActor` y las dos funciones de custodia son `nonisolated` —las llaman los hooks de frontera,
+/// que corren pre-mount— así que su tipo tampoco puede estar aislado.
+nonisolated struct GroupsConsentCustody: Codable, Equatable, Sendable {
+    var snapshot: Data?
+    var legacyAcceptedAt: Int?
+    var legacyTextVersion: Int?
+
+    /// Sin nada dentro no se custodia: un slot vacío haría que la reposición RETIRARA las tres keys
+    /// del dueño al salir, que es justo el daño que esto viene a impedir.
+    var isEmpty: Bool { snapshot == nil && legacyAcceptedAt == nil && legacyTextVersion == nil }
 }
 
 @MainActor
@@ -151,4 +172,102 @@ enum GroupsConsentState {
         defaults.data(forKey: snapshotKey) != nil
             || defaults.object(forKey: legacyAcceptedAtKey) != nil
     }
+
+    // MARK: - Custodia del registro del DUEÑO en las fronteras de la sesión secundaria
+
+    /// El slot donde duerme el consent local del dueño mientras hay una visita dentro.
+    ///
+    /// **Nadie lo lee salvo la reposición**, y eso es la mitad del diseño: `readSnapshot()` no lo
+    /// mira, así que la visita no puede heredar por accidente un consent que no dio. Vive en el
+    /// dominio del dueño, que es donde estaban las keys que guarda.
+    nonisolated static let ownerCustodyKey = "groups.consent.owner.custody"
+
+    /// Guarda el consent local del dueño en el slot. Idempotente por PRESENCIA del slot; devuelve
+    /// `true` si había algo que custodiar.
+    ///
+    /// **No borra nada**: quien retira las tres keys es el `clear()` de `SecondarySessionBoundaryPurge`,
+    /// que corre inmediatamente después. Esta función va justo ANTES de esa purga y ese orden es el
+    /// mecanismo entero — invertirlo custodia un dominio ya vacío. Pinneado en
+    /// `GroupsConsentCustodyTests`.
+    ///
+    /// **Por qué custodiar y no borrar** (decisión del owner, 2026-09-03): la frontera de entrada
+    /// TIENE que retirar el consent del dueño —el legacy va sin sello y `GroupsConsentDecisionLogic`
+    /// lo da por bueno para cualquiera, así que sin retirarlo la visita hereda un permiso que no
+    /// dio—, pero borrarlo tiene dos costes que el `clear()` a secas pagaba enteros: el dueño vuelve
+    /// a ver una pantalla de permiso que ya aceptó, y como responsables del tratamiento perdemos la
+    /// prueba de ese consentimiento. El repo ya tiene precedente en esta dirección: el registro de
+    /// `groups_consents` es append-only por diseño (C1).
+    ///
+    /// **Custodia las TRES keys, no sólo las dos legacy.** El ticket sólo nombraba las legacy porque
+    /// para el snapshot SELLADO `GroupsConsentRegistrar.handleSignIn` lo repone en cada arranque. Pero
+    /// medido: ese camino es no-op sin sesión Yala viva (`refreshFromServer` sale por su primer
+    /// `guard`), y Grupos va al 100 % SIN exigir Modo Nube ⇒ el dueño que cerró sesión pierde su
+    /// snapshot con el mismo síntoma exacto que el del legacy. Cubrir media frontera con el mismo
+    /// mecanismo habría dejado el arreglo contradiciéndose ante la misma persona.
+    ///
+    /// **La idempotencia va por presencia y no por contenido**: la frontera se re-ejecuta entera tras
+    /// un kill a mitad, y para entonces lo que hay en las tres keys puede ser ya de la visita.
+    /// Sobrescribir la custodia con eso sería perder el registro del dueño por el camino que existe
+    /// para conservarlo.
+    @discardableResult
+    nonisolated static func custodyOwnerRecord(in defaults: UserDefaults) -> Bool {
+        guard defaults.data(forKey: ownerCustodyKey) == nil else { return false }
+        let record = GroupsConsentCustody(
+            snapshot: defaults.data(forKey: snapshotKey),
+            legacyAcceptedAt: defaults.object(forKey: legacyAcceptedAtKey) == nil
+                ? nil : defaults.integer(forKey: legacyAcceptedAtKey),
+            legacyTextVersion: defaults.object(forKey: legacyTextVersionKey) == nil
+                ? nil : defaults.integer(forKey: legacyTextVersionKey))
+        guard !record.isEmpty else { return false }
+        do {
+            defaults.set(try JSONEncoder().encode(record), forKey: ownerCustodyKey)
+            return true
+        } catch {
+            // Fallo ABIERTO a propósito: sin custodia, el `clear()` de la purga hace lo de siempre
+            // (borrar), que es el comportamiento de hoy. Custodiar a medias —retirar sin poder
+            // reponer— sería peor que no custodiar.
+            #if DEBUG
+            print("GroupsConsentState: no se pudo custodiar el consent del dueño: \(error)")
+            #endif
+            return false
+        }
+    }
+
+    /// Repone el consent custodiado y vacía el slot. Devuelve `true` si repuso algo.
+    ///
+    /// **PISA lo que haya**, y es lo correcto en el punto donde corre: la frontera de SALIDA, después
+    /// de que la purga se haya llevado lo de la visita. Lo que ella aceptó no se pierde —el registro
+    /// vive en su cuenta, append-only, y `refreshFromServer` se lo devuelve en su propio teléfono.
+    ///
+    /// El slot se vacía SIEMPRE, también si el JSON no se puede leer: un slot ilegible no repone
+    /// nada y dejarlo atascaría la custodia de la visita siguiente.
+    @discardableResult
+    nonisolated static func restoreOwnerRecord(in defaults: UserDefaults) -> Bool {
+        guard let data = defaults.data(forKey: ownerCustodyKey) else { return false }
+        defaults.removeObject(forKey: ownerCustodyKey)
+        let record: GroupsConsentCustody
+        do {
+            record = try JSONDecoder().decode(GroupsConsentCustody.self, from: data)
+        } catch {
+            #if DEBUG
+            print("GroupsConsentState: custodia ilegible, se descarta: \(error)")
+            #endif
+            return false
+        }
+        apply(record.snapshot, forKey: snapshotKey, in: defaults)
+        apply(record.legacyAcceptedAt, forKey: legacyAcceptedAtKey, in: defaults)
+        apply(record.legacyTextVersion, forKey: legacyTextVersionKey, in: defaults)
+        return true
+    }
+
+    /// Escribe el valor custodiado, o RETIRA la key si el dueño no la tenía. La segunda mitad no es
+    /// cosmética: reponer sólo lo que había dejaría en pie lo que escribió la visita.
+    private nonisolated static func apply(_ value: Data?, forKey key: String, in defaults: UserDefaults) {
+        if let value { defaults.set(value, forKey: key) } else { defaults.removeObject(forKey: key) }
+    }
+
+    private nonisolated static func apply(_ value: Int?, forKey key: String, in defaults: UserDefaults) {
+        if let value { defaults.set(value, forKey: key) } else { defaults.removeObject(forKey: key) }
+    }
+
 }
