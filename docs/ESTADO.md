@@ -23,7 +23,9 @@ Panel, que para quien instale ahora arranca con cuatro secciones y cuatro widget
    entraron hoy y ninguno está en el guion: `guest-decline-has-no-screen` (servidor listo y verificado
    en producción, falta verlo en la app publicada) y `rejected-member-cold-tap-does-nothing`, cuyo
    device-QA son cinco minutos: ser rechazado, matar la app, tapear un enlace nuevo, y comprobar que
-   al admin le llega la solicitud **una sola vez**. El tercero,
+   al admin le llega la solicitud **una sola vez**. **En el mismo montaje entra ahora
+   `rejoin-tap-renotifies-admins`** (servidor ya en producción): con la solicitud pendiente, tocar el
+   enlace tres veces más y comprobar que al admin **no le llega nada nuevo**. El tercero,
    `groups-equal-split-shows-not-participating-on-peer`, necesita la precondición correcta: **B se une
    por enlace y NO relanza la app** antes de que A cree el gasto — sin eso no reproduce.
 3. **Dos decisiones de la web** (§9 del informe): el **texto legal de Grupos** —dice «vía iCloud, no
@@ -35,13 +37,10 @@ Panel, que para quien instale ahora arranca con cuatro secciones y cuatro widget
 Revisados los 7 `in-progress` uno a uno el 2026-09-04, verificando contra el árbol lo que cada
 ticket afirma. Hallazgo: **ninguno esperaba una decisión tuya** — la tanda del 3-sep las cerró
 todas. Tres salieron ese día (dos en el saneamiento, `guest-journey` al ejecutarse); **quedan 4, y
-los 4 esperan código**.
+los 4 esperan código**. De los dos de `backlog` que se listaban aquí,
+**`rejoin-tap-renotifies-admins` se cerró la noche del 4-sep** —migración + Worker, los dos en
+producción— y pasa a `qa/`; queda el otro.
 
-- **`rejoin-tap-renotifies-admins`** (medium, nuevo) — **vivo en producción.** Quien ya tiene una
-  solicitud pendiente y vuelve a tocar su enlace hace que al admin le llegue otra notificación, cada
-  vez. El guardián del servidor está escrito para evitarlo y su propio comentario lo promete, pero
-  filtra el caso `active` y deja pasar el `pendingApproval`. Es de servidor: migración + Worker +
-  promoción, con su verificación en staging.
 - **`group-joiner-flag-consumers-still-narrow`** (high, en `backlog`) — al recién llegado ya se le
   reconoce, pero su gasto no llega a su cuenta personal hasta un arranque posterior y aterriza en la
   cuenta «Grupos». Trece consumidores del flag siguen estrechos.
@@ -66,9 +65,20 @@ sigue sin `ok_`. **Cero `ok_` inventado.**
 
 ## Board
 
-100 tickets · backlog 49 · in-progress 4 · qa 24 · blocked 2 · done 16 · discarded 5. Índice cuadrado
+100 tickets · backlog 48 · in-progress 4 · qa 25 · blocked 2 · done 16 · discarded 5. Índice cuadrado
 (100 filas = 100 ficheros, status y ruta de cada fila comprobados contra el disco). `qa` significa
 «esperando la tanda», no «cerrado».
+
+**Arreglado el re-tap que renotificaba al admin, y pasa a la tanda (`qa`).** Quien esperaba aprobación
+y volvía a tocar su enlace despertaba al admin una vez por tap. El guardián del servidor lo prometía y
+no lo cumplía: decidía por `status`, que es **ambiguo** —vale `pendingApproval` para el alta nueva y
+para el no-op—, así que tapaba el caso `active` y dejaba pasar justo el del re-tap. Ahora el RPC dice
+si hubo transición real (`changed`, g13_04). `rebound` no servía: dos ramas que sí son transiciones
+también lo traen `false`. **Migración y Worker, los dos en producción** (`89823cc3`), medido contra el
+motor real en transacción revertida. **Dos residuos deliberados:** la BD de **staging no lleva
+g13_04** —no hay credencial de DDL accesible, sólo JWTs de usuario— y su Worker tampoco se desplegó,
+porque arrastra dos commits ajenos; el drift es inocuo (los goldens no miran el campo y se comprobó
+que pasan sin él). El conteo de push en un teléfono sigue siendo tuyo.
 
 **Arreglado el rechazado que tapeaba en frío, y pasa a la tanda (`qa`).** A quien rechazaron de un
 grupo, tapear un enlace nuevo con la app cerrada ya vuelve a pedirle la entrada — antes no hacía nada
