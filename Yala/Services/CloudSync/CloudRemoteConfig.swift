@@ -235,7 +235,7 @@ final class RemoteConfigClient {
     private let baseURL: URL
     private let urlSession: SyncHTTPSession
     private let defaults: UserDefaults
-    private var inFlight = false
+    private var inFlight: Task<Bool, Never>?
 
     init(
         baseURL: URL = ProxyConfig.baseURL,
@@ -247,17 +247,76 @@ final class RemoteConfigClient {
         self.defaults = defaults
     }
 
-    /// Re-fetchea si venció el min-interval (o nunca se fetcheó). Idempotente y coalescente
-    /// (un fetch en vuelo hace no-op del siguiente kick). `force` salta el min-interval
-    /// (panel DEBUG); `now` inyectado se usa para el gate Y como `fetchedAt` del snapshot.
+    /// Re-fetchea si venció el min-interval (o nunca se fetcheó). `now` inyectado se usa para el
+    /// gate Y como `fetchedAt` del snapshot.
+    ///
+    /// **La coalescencia tiene dos reglas, no una.** Un kick normal (boot, `onAppear`) que llega con
+    /// un fetch en vuelo hace no-op: el que está en curso ya trae la respuesta del server. Un
+    /// `force` **espera** a ese fetch en vez de rendirse ante él, porque su call-site lee el flag
+    /// JUSTO DESPUÉS y rendirse significa decidir con el snapshot viejo. `force` salta además el
+    /// min-interval, como siempre.
+    ///
+    /// Límite conocido y aceptado: el fetch que se espera pudo salir sin
+    /// `reloadIgnoringLocalCacheData`, así que su respuesta puede venir de la caché HTTP del
+    /// endpoint (`max-age=300`). El caso que este camino protege —teléfono recién instalado— no
+    /// tiene caché que reutilizar, y pedir por segunda vez lo mismo reintroduce el tráfico y la
+    /// carrera de escrituras que esperar evita.
+    ///
+    /// **El fetch vive en una Task NO estructurada, y eso es deliberado.** Antes corría dentro del
+    /// árbol del caller, así que desmontar la vista que lo lanzó cancelaba la petición; ahora no.
+    /// Es el precio de poder compartirlo: si el caller que lo arrancó pudiera matarlo, un `force`
+    /// que está esperando esa misma respuesta se quedaría sin ella por culpa de otro. Lo que cambia
+    /// es que el frame que espera se suelta al completar el fetch (tope: el timeout de `URLSession`)
+    /// en vez de al instante; ningún call-site ACTÚA por eso — todos comprueban `Task.isCancelled`
+    /// después—, y el snapshot se escribe igual, que es lo que queremos.
     func refreshIfDue(force: Bool = false, now: Date = .now) async {
         guard CloudBackendConfig.isConfigured else { return } // sin backend no hay a quién preguntar
-        guard !inFlight else { return }
+
+        if let running = inFlight {
+            guard force else { return }                    // kick normal: coalesce, igual que antes
+            // Esperar al que está en curso le da al que forzó exactamente lo que pedía —la respuesta
+            // más fresca del server— sin una segunda petición y sin dos escrituras del snapshot que
+            // puedan aterrizar fuera de orden. Rendirse aquí ERA el bug del recién instalado: el boot
+            // deja un fetch en vuelo, el invitado tapea el enlace encima, el `force` salía sin tocar
+            // nada, y la re-lectura del flag —todavía apagado, porque nadie escribió el snapshot— le
+            // enseñaba «no pudimos abrir esta invitación» con el canal perfectamente encendido.
+            if await running.value { return }
+            // El fetch esperado NO trajo config (no-200, red caída, decode roto): el snapshot no
+            // avanzó, y conformarse cambiaría un fallo por otro —la misma alerta falsa cada vez que
+            // el refresco del arranque falle—. El `force` sigue adelante con el suyo.
+            //
+            // Salvo que ya no haga falta: esperar al de otro ALARGA la ventana de cancelación que
+            // documenta `WelcomeGroupsGateView.evaluate`, y encadenar una segunda petición cuando el
+            // caller ya se fue (step desmontado, sheet cerrado) no le sirve a nadie.
+            guard !Task.isCancelled else { return }
+            // Y si mientras esperábamos otro `force` ya arrancó el suyo, esperamos a ÉSE en vez de
+            // abrir un tercero: dos puertas pueden estar despiertas a la vez (el enlace de invitación
+            // y la del Welcome), y N forces reaccionando al MISMO fallo abrirían N peticiones y N
+            // escrituras del snapshot — exactamente la carrera que esperar existe para evitar. Si ése
+            // también falla nos conformamos: dos fallos seguidos ya no son una ventana, es el server.
+            //
+            // Una sola re-comprobación y NO un bucle: `running` puede seguir en `inFlight` hasta que su
+            // creador reanude su `defer`, y girar sobre una task ya terminada no cedería el MainActor.
+            if let siguiente = inFlight, siguiente != running {
+                _ = await siguiente.value
+                return
+            }
+        }
+
         let last = CloudRemoteConfigStore.readSnapshot(defaults)?.fetchedAt
         guard force || RemoteFlagDecisionLogic.shouldRefresh(lastFetchedAt: last, now: now) else { return }
-        inFlight = true
-        defer { inFlight = false }
 
+        let task = Task { @MainActor [self] in await performFetch(force: force, now: now) }
+        inFlight = task
+        // Por IDENTIDAD y no `nil` a secas: si mientras corría éste otro `force` arrancó el suyo (solo
+        // ocurre tras un fallo), `inFlight` ya apunta a ESE y borrarlo perdería su coalescencia.
+        defer { if inFlight == task { inFlight = nil } }
+        _ = await task.value
+    }
+
+    /// El fetch en sí. Devuelve `true` SOLO si escribió snapshot (200 + decode), y esa es la señal
+    /// que necesita un `force` que esperó: saber si ya tiene su respuesta o si le toca reintentar.
+    private func performFetch(force: Bool, now: Date) async -> Bool {
         var request = URLRequest(url: baseURL.appendingPathComponent("config"))
         request.httpMethod = "GET"
         if force {
@@ -270,7 +329,7 @@ final class RemoteConfigClient {
             guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
                 let status = (response as? HTTPURLResponse)?.statusCode ?? -1
                 RemoteConfigBreadcrumb.fetchFailed(reason: "status_\(status)")
-                return
+                return false
             }
             let wire = try JSONDecoder().decode(RemoteConfigWireResponse.self, from: data)
             let snapshot = RemoteFlagsSnapshot(
@@ -283,10 +342,12 @@ final class RemoteConfigClient {
             )
             CloudRemoteConfigStore.writeSnapshot(snapshot, defaults: defaults)
             RemoteConfigBreadcrumb.fetched(snapshot)
+            return true
         } catch {
             // Fallo de red/decode = benigno por diseño (last-cached-wins, default fail-closed);
             // jamás `try?` silenciado — el breadcrumb lo hace observable en Console.app.
             RemoteConfigBreadcrumb.fetchFailed(reason: String(describing: type(of: error)))
+            return false
         }
     }
 }

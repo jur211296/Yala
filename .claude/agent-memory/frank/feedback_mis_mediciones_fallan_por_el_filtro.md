@@ -311,3 +311,22 @@ tampoco avisó: lo delató `gh pr view --json state`.
 **How to apply:** en este repo `--auto` == merge inmediato. Para esperar de verdad a un run hay que
 sondear (`gh run watch <id>`) y mergear después. Y como siempre: **el estado se comprueba, no se
 supone** — un comando que no imprime nada no ha confirmado nada.
+
+## Decimosexto (2026-09-05): el MUTANTE del control positivo también hay que medirlo
+
+Verificando un fix con control positivo, reintroduje el bug sustituyendo un `guard force else
+{ return }` por un `return` a secas. El log salió `TEST FAILED`, exit 65 — el mutante «cazado». Falso:
+Swift parseó `return` + la línea siguiente como `return (if ...)` y lo que falló fue **la
+compilación**, no ningún aserto. Un mutante que no compila da exactamente el mismo veredicto que uno
+detectado, y mi grep (`✘|TEST FAILED`) no distingue las dos cosas.
+
+**Why:** es la familia del universo vacío otra vez, en el sitio donde más duele: el control positivo
+es justo el instrumento que existe para no fiarme del verde, así que un control positivo mal medido
+me deja creyendo que tengo red donde no la hay.
+
+**How to apply:** un mutante solo vale si **compila** y falla **en el aserto**. Exige ver el nombre
+del test en rojo (`✘ Test <nombre> ... recorded an issue`) y el mensaje del `#expect`, no el veredicto
+del run. Si el log trae `error:` de compilación, el mutante está mal escrito: reescríbelo. El mutante
+bueno del 2026-09-05 fue sustituir el bloque ENTERO por la forma vieja (`guard inFlight == nil else
+{ return }`), no editar una línea por dentro.
+
