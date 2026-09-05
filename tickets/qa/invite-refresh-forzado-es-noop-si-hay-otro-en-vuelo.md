@@ -1,10 +1,10 @@
 ---
 id: invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo
-status: backlog
+status: qa
 priority: high
 area: grupos
 created: 2026-09-02
-updated: 2026-09-02
+updated: 2026-09-05
 ---
 
 # El refresco forzado de la invitación no hace nada si ya hay otro en vuelo
@@ -176,3 +176,75 @@ una sesión que se quede suspendida, un `refreshIfDue()` sin `force` que la deje
 Todas contra `2.1` @ `553b91c9`. Las tres pistas de partida sobrevivieron sin derivar:
 `CloudRemoteConfig.swift:255` / `:257`, `AppBootstrapper.swift:298` y `AppBootstrapper.swift:2010-2011`
 están donde decía la pista. Las demás coordenadas de este ticket son medición propia de hoy.
+
+---
+
+## Hecho — 2026-09-05
+
+**Opción B, la recomendada por el propio ticket.** `RemoteConfigClient.inFlight` deja de ser un `Bool`
+y pasa a ser el handle de la task (`Task<Bool, Never>?`, molde `GroupsSaveSyncTrigger`). Con eso, el
+guard de coalescencia cambia de una regla a dos:
+
+- **Kick normal** (boot, `onAppear`) con un fetch en vuelo → no-op, exactamente como antes. Esa es la
+  coalescencia de la que dependen las cuatro entradas para re-verificar el canal sin spamear la red, y
+  no se toca.
+- **`force`** con un fetch en vuelo → **espera** a ese fetch y reutiliza su resultado. Sin segunda
+  petición y sin dos escrituras del snapshot que puedan aterrizar fuera de orden.
+
+Las dos cosas que el ticket exigía cubrir, cubiertas:
+
+1. **Si el fetch esperado falla** (no-200, red caída, decode roto) el snapshot no avanza, así que el
+   `force` lanza el suyo. `performFetch` se extrajo para devolver `Bool` —`true` solo si escribió
+   snapshot— y esa es la señal, en vez de comparar `fetchedAt` (que con `now` inyectado no distingue).
+2. **La cancelación, decidida a propósito.** Esperar al de otro ALARGA la ventana cooperativa que
+   documenta `WelcomeGroupsGateView.evaluate`, así que entre el fetch ajeno y el propio hay un
+   `guard !Task.isCancelled`: si el caller ya se fue (step desmontado, sheet cerrado), no se encadena
+   una segunda petición. Dentro de un fetch en curso la cancelación sigue sin mirarse, como siempre.
+
+La limpieza de `inFlight` es **por identidad** (`if inFlight == task`), no `nil` a secas: si mientras
+corría el nuestro otro `force` arrancó el suyo, borrarlo perdería su coalescencia.
+
+**Las otras tres puertas heredan el arreglo sin tocarlas** — `WelcomeGroupsGateView.swift`,
+`GroupsContainerView.requestCreateGroup` y `CloudSyncDebugView` pasan `force: true` y confiaban en lo
+mismo. Ningún call-site cambió.
+
+**Límite conocido y aceptado, escrito en el docblock:** el fetch que se espera pudo salir sin
+`reloadIgnoringLocalCacheData`, así que su respuesta puede venir de la caché HTTP del endpoint
+(`max-age=300`). El caso que este camino protege —teléfono recién instalado— no tiene caché que
+reutilizar, y pedir por segunda vez lo mismo reintroduce el tráfico y la carrera que esperar evita.
+
+### La suite que faltaba, y su control positivo
+
+`YalaTests/CloudSync/CloudRemoteConfigTests.swift` gana `RemoteConfigClientRefreshTests` (4 tests):
+**los primeros de COMPORTAMIENTO que tiene este cliente**. Los cinco source-scans que el ticket
+enumera seguían verdes con el bug vivo porque comprueban el literal `force: true` en el fuente, no lo
+que hace. Stub `GatedConfigSession` (molde de `GatedSession` en `CloudSyncRuntimeTests`): retiene la
+primera petición, sin sleeps ni timeouts.
+
+El aserto central es el que el bug no puede pasar: **cuando el `force` vuelve, el snapshot ya existe**.
+Un no-op vuelve con `nil`.
+
+**Mutante verificado a exit 65.** Reponer `guard inFlight == nil else { return }` deja en rojo los dos
+tests del fix —`forced.value → nil`, o sea el `force` volviendo con el snapshot AUSENTE, que es el
+síntoma— y en verde los dos de no-regresión (coalescencia del kick normal, salto del min-interval sin
+nada en vuelo). El primer intento de mutante NO valía: rompía la compilación en vez del aserto, y el
+filtro del log lo daba por «rojo» igual — el control positivo también se mide.
+
+### Documentación que quedó falsa y se corrigió
+
+Dos comentarios afirmaban la semántica vieja y habrían divergido:
+`AppBootstrapper` («el spam queda acotado por el guard `inFlight`») y `WelcomeGroupsGateView`
+(«`refreshIfDue` no mira la cancelación»).
+
+## Qué falta ver
+
+El fix se demuestra por test, no por pantalla. Lo que **no** cubre ningún test y cabe en el montaje de
+dos teléfonos del guion de la tanda:
+
+1. **El caso (4) de `invite-backend-stale-config`, que este ticket desbloquea:** teléfono recién
+   instalado (o app borrada y reinstalada), red lenta si se puede, y **tapear el enlace de invitación
+   nada más abrir** — antes de que termine el refresco del arranque. Debe entrar al grupo, **sin** la
+   alerta «Hubo un problema con el grupo».
+2. Ese mismo ticket dejaba el caso (4) sin poder clasificar: la alerta era indistinguible del canal
+   apagado de verdad. Con esto ya se puede dar por PASS o FAIL mirando la pantalla, sin ir a buscar el
+   breadcrumb `remoteConfig fetched` / `fetchFailed` en Console.
