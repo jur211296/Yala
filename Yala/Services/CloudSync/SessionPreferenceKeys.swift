@@ -194,9 +194,16 @@ nonisolated enum SessionPreferenceKeys {
     /// Welcome sobre un store vacío.
     static let deviceExceptions: [String: String] = [
         "hasCompletedOnboarding":
-            "Del TELÉFONO: dice si esta instalación ya pasó el onboarding. El cajón la SIEMBRA con el "
-            + "valor del dueño (`SessionDefaults.seededDeviceKeys`); sin ella, la visita arranca en el "
-            + "Welcome sobre un store secundario vacío, que es el brick que el mount prohíbe.",
+            "Del TELÉFONO en las FRONTERAS y de la SESIÓN dentro de ellas, y esa distinción es el fix de "
+            + "2026-09-05. Las fronteras la escriben en `.standard` a propósito —la entrada la marca "
+            + "(`ContentView.onSecondaryEntryFlagsMarked`), la siembra la hereda de ahí "
+            + "(`SessionDefaults.seededDeviceKeys`) y la salida la resetea— porque sin ella la visita "
+            + "arranca en el Welcome sobre un store secundario vacío, que es el brick que el mount "
+            + "prohíbe. Pero DENTRO de la sesión el par estaba PARTIDO: el escritor del onboarding iba a "
+            + "`.standard` y los lectores del cajón no lo veían, así que la visita terminaba su "
+            + "onboarding y el Welcome podía reabrírsele. Sus 11 consumidores in-session van al cajón; el "
+            + "único `.standard` que queda es la ventana de entrada. Pinneado por dominio, no por "
+            + "conteo: el escáner de grafías no vio nada porque los 26 sitios siguieron siendo 26.",
         "hasShownWelcomeChooser":
             "Del TELÉFONO, y va en PAR con la anterior: es la segunda que el healing de entrada escribe "
             + "(`SwiftDataConfiguration.swift:916-917`) y la segunda que la siembra copia.",
