@@ -51,7 +51,11 @@ tests y no miraba el resultado; aquí directamente no los ejecuta.
   `docs/*|tickets/*|marketing/*|Web/*|.claude/*` + `README/CLAUDE/LICENSE` + `gateway/*|qa/cloud/*`.
   **`qa/coverage-index.json` y `encargos/*` no están**, así que caen en el `*)` y disparan la suite.
 - Coste de esa suite, del ticket hermano ya cerrado: **97-102 minutos** por corrida.
-- La suite del gateway tarda **~4 minutos** offline (253 tests) y ~4 min más con red.
+- **La suite offline del gateway tarda 2 segundos de reloj** (`npm test` entero, incluido el
+  `sync:manifest`: 253 tests, 76 skipped, `Duration 1.47s`). Con las credenciales de staging
+  cargadas sube a **231 s** (322 tests) porque habla con la red.
+- ⇒ La desproporción es el argumento: **253 tests por 2 segundos de Ubuntu** frente a ~100 minutos
+  de macOS que hoy se gastan por editar un JSON de índice.
 
 ## Por dónde seguir
 
