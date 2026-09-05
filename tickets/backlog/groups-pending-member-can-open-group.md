@@ -142,3 +142,43 @@ y **no hay PASS** que anotar.
   copy de la espera. **Lectura obligada antes de diseñar nada aquí.**
 - `tickets/qa/groups-join-intent-reconciler.md` — el alta que no nacía. Otro defecto, no este.
 - Sesión de la corrida: `docs/sessions/2026-08-28-device-qa-approval-banner.md`.
+
+---
+
+## MEDIDO · 2026-09-04 — qué ve B dentro: el cascarón, no los gastos. NO es fuga de datos
+
+El ticket dejaba explícitamente abierto «no consta reportado qué vio B exactamente dentro del grupo
+(¿roster? ¿gastos? ¿saldos?)». Consta ya, medido **contra la base de datos de producción**
+(`yala-modo-nube-production`), sin necesidad de repetir el device-QA:
+
+Las políticas de lectura del grupo se parten en dos, y el corte cae justo en el sitio correcto:
+
+| Tabla | Policy | ¿Pasa un `pendingApproval`? |
+|---|---|---|
+| `split_groups` (nombre, icono, color) | `is_group_member(group_id)` | **Sí** |
+| `split_expenses` (los gastos) | `is_group_writer(group_id)` | **No** |
+| `split_shares` (los repartos) | `is_group_writer(group_id)` | **No** |
+| `split_settlements` (los saldos) | `is_group_writer(group_id)` | **No** |
+
+Porque las dos funciones NO son sinónimas, y es deliberado:
+
+- `is_group_member` → `status in ('active','pendingApproval')`
+- `is_group_writer` → `status = 'active'`
+
+Y los cinco RPCs lectores (`groups_pull_rows_*`) son `LANGUAGE sql STABLE` **sin `SECURITY DEFINER`**,
+así que corren con los permisos de quien invoca y la RLS de cada tabla sí les aplica. No hay puerta
+trasera por ahí.
+
+⇒ **B entra a un grupo VACÍO**: ve el nombre y el icono porque su ficha sí le baja, y ni un solo
+gasto. Coincide con lo que ya observaba `guest-decline-has-no-screen` («veo el grupo y veo quién está
+dentro, pero ni un solo gasto»).
+
+**Qué cambia esto para el ticket:** el defecto es de EXPERIENCIA, no de seguridad — a nadie se le
+enseñan datos que no debería ver. Lo que pasa es que la app deja entrar a una pantalla que no tiene
+nada que contar y no explica por qué está vacía. Sigue siendo un «esto está mal» legítimo, pero no
+es una urgencia de privacidad y no hace falta tratarlo como tal.
+
+**Lo que sigue sin medirse:** si B podía TOCAR algo dentro (botones de añadir gasto, invitar,
+ajustes). La lectura está cerrada; la escritura no se comprobó aquí — `is_group_writer` gobierna
+también los `insert`/`update`, así que el servidor la rechazaría, pero si el cliente le pinta los
+botones, el fallo que verá es un error crudo, no una puerta cerrada con explicación.
