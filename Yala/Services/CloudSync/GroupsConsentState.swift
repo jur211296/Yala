@@ -233,24 +233,31 @@ enum GroupsConsentState {
         }
     }
 
-    /// Repone el consent custodiado y vacía el slot. Devuelve `true` si repuso algo.
+    /// Repone el consent custodiado. Devuelve `true` si repuso algo.
     ///
     /// **PISA lo que haya**, y es lo correcto en el punto donde corre: la frontera de SALIDA, después
     /// de que la purga se haya llevado lo de la visita. Lo que ella aceptó no se pierde —el registro
     /// vive en su cuenta, append-only, y `refreshFromServer` se lo devuelve en su propio teléfono.
     ///
-    /// El slot se vacía SIEMPRE, también si el JSON no se puede leer: un slot ilegible no repone
-    /// nada y dejarlo atascaría la custodia de la visita siguiente.
+    /// **NO vacía el slot, y eso es lo que la hace re-ejecutable — que aquí no es un lujo.** El wipe
+    /// de salida declara su kill-safety en que el arm se limpia AL FINAL: un kill a mitad reintenta el
+    /// paso entero en el arranque siguiente. Consumir el slot al reponer rompía justo ese contrato —
+    /// tras un kill entre esta línea y `clearWipeArm` (ocho sentencias, con un `removePersistentDomain`
+    /// y una escritura al App Group por medio, todo pre-mount y bajo el watchdog de lanzamiento) el
+    /// reintento volvía a purgar el consent recién repuesto y ya no tenía con qué reponerlo: el dueño
+    /// se quedaba SIN registro, permanentemente, que es exactamente el daño que esta custodia existe
+    /// para impedir. Lo cazó una revisión adversarial del propio commit que la introdujo.
+    ///
+    /// El slot lo retira `discardOwnerCustody`, al final del wipe y junto al desarme.
     @discardableResult
     nonisolated static func restoreOwnerRecord(in defaults: UserDefaults) -> Bool {
         guard let data = defaults.data(forKey: ownerCustodyKey) else { return false }
-        defaults.removeObject(forKey: ownerCustodyKey)
         let record: GroupsConsentCustody
         do {
             record = try JSONDecoder().decode(GroupsConsentCustody.self, from: data)
         } catch {
             #if DEBUG
-            print("GroupsConsentState: custodia ilegible, se descarta: \(error)")
+            print("GroupsConsentState: custodia ilegible, no repone nada: \(error)")
             #endif
             return false
         }
@@ -258,6 +265,14 @@ enum GroupsConsentState {
         apply(record.legacyAcceptedAt, forKey: legacyAcceptedAtKey, in: defaults)
         apply(record.legacyTextVersion, forKey: legacyTextVersionKey, in: defaults)
         return true
+    }
+
+    /// Retira el slot. Va AL FINAL del wipe de salida, en la misma ventana que `clearWipeArm`: hasta
+    /// que el wipe entero no ha terminado, el slot es lo único que puede reponer el consent del dueño
+    /// si el arranque muere a mitad. Idempotente, y también limpia un slot ilegible —que no repone
+    /// nada y atascaría la custodia de la visita siguiente.
+    nonisolated static func discardOwnerCustody(in defaults: UserDefaults) {
+        defaults.removeObject(forKey: ownerCustodyKey)
     }
 
     /// Escribe el valor custodiado, o RETIRA la key si el dueño no la tenía. La segunda mitad no es

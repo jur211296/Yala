@@ -58,8 +58,29 @@ struct GroupsConsentCustodyUnitTests {
         #expect(GroupsConsentState.restoreOwnerRecord(in: d))
         #expect(d.integer(forKey: GroupsConsentState.legacyAcceptedAtKey) == 1_700_000_000)
         #expect(d.integer(forKey: GroupsConsentState.legacyTextVersionKey) == 1)
-        // Y el slot queda vacío: la visita siguiente custodia lo que encuentre entonces.
+        // El slot SIGUE ahí: lo retira `discardOwnerCustody` al final del wipe. Ver el test de
+        // kill-safety más abajo, que es la razón entera de que reponer y descartar sean dos pasos.
+        #expect(d.data(forKey: GroupsConsentState.ownerCustodyKey) != nil)
+
+        GroupsConsentState.discardOwnerCustody(in: d)
         #expect(d.data(forKey: GroupsConsentState.ownerCustodyKey) == nil)
+    }
+
+    @Test("reponer es RE-EJECUTABLE: dos veces seguidas dan el mismo resultado")
+    func restoreIsRepeatable() {
+        // Es lo que mete la reposición dentro de la kill-safety del wipe de salida, que declara que
+        // un arranque muerto a mitad se reintenta entero. Antes de separar «reponer» de «descartar»,
+        // el segundo intento encontraba el slot ya consumido y el dueño se quedaba sin registro.
+        let d = legacyDefaults(prefix: "consent.custody.repeat")
+        #expect(GroupsConsentState.custodyOwnerRecord(in: d))
+
+        for _ in 0..<2 {
+            // Cada reintento del boot vuelve a purgar antes de reponer.
+            d.removeObject(forKey: GroupsConsentState.legacyAcceptedAtKey)
+            d.removeObject(forKey: GroupsConsentState.legacyTextVersionKey)
+            #expect(GroupsConsentState.restoreOwnerRecord(in: d))
+            #expect(d.integer(forKey: GroupsConsentState.legacyAcceptedAtKey) == 1_700_000_000)
+        }
     }
 
     @Test("custodia también el snapshot SELLADO, que es la mitad que el ticket no pedía")
@@ -122,13 +143,15 @@ struct GroupsConsentCustodyUnitTests {
         #expect(d.data(forKey: GroupsConsentState.snapshotKey) != nil, "la salida borró algo sin custodia")
     }
 
-    @Test("un slot ilegible no repone nada y NO se queda atascado")
+    @Test("un slot ilegible no repone nada, y el descarte del final lo limpia igual")
     func unreadableCustodyIsDiscarded() {
         let d = makeIsolatedDefaults(prefix: "consent.custody.corrupt")
         d.set(Data([0x00, 0x01]), forKey: GroupsConsentState.ownerCustodyKey)
         #expect(GroupsConsentState.restoreOwnerRecord(in: d) == false)
-        #expect(d.data(forKey: GroupsConsentState.ownerCustodyKey) == nil,
-                "un slot ilegible atascaría la custodia de la visita siguiente")
+        // Sigue ahí tras reponer —como cualquier otro slot— y se va con el desarme. Dejarlo
+        // atascaría la custodia de la visita siguiente, que es idempotente por presencia.
+        GroupsConsentState.discardOwnerCustody(in: d)
+        #expect(d.data(forKey: GroupsConsentState.ownerCustodyKey) == nil)
     }
 
     // `@MainActor` porque `readSnapshot()` lo está (el target compila con
@@ -152,6 +175,17 @@ struct GroupsConsentCustodyUnitTests {
 }
 
 // MARK: - El ORDEN en las dos fronteras
+
+/// Lo que `SecondarySessionBoundaryPurge.purge()` le hace al consent LOCAL, sobre un `UserDefaults`
+/// aislado. No se llama a `GroupsConsentState.clear()` porque escribe en su `defaults` estático y
+/// estos tests no pueden tocarlo; lo que se está probando aquí es el ORDEN de la frontera y su
+/// recuperabilidad, no la implementación del borrado. Que ese `clear()` siga en la purga lo fija su
+/// propio source-scan, al final de este fichero.
+private func purgaLocalDelConsent(_ d: UserDefaults) {
+    d.removeObject(forKey: GroupsConsentState.snapshotKey)
+    d.removeObject(forKey: GroupsConsentState.legacyAcceptedAtKey)
+    d.removeObject(forKey: GroupsConsentState.legacyTextVersionKey)
+}
 
 @Suite("Fronteras M1 · el consent del dueño va a custodia y vuelve")
 struct GroupsConsentBoundaryOrderTests {
@@ -195,6 +229,76 @@ struct GroupsConsentBoundaryOrderTests {
         #expect(custodias == 0)
     }
 
+    @Test("SALIDA: un kill entre reponer y desarmar NO deja al dueño sin consent")
+    func killBetweenRestoreAndDisarmIsRecoverable() {
+        // El fallo que este test fija, cazado por una revisión adversarial del commit que introdujo la
+        // custodia: `restoreOwnerRecord` vaciaba el slot como primer efecto, así que rompía la
+        // kill-safety que el resto del wipe declara («el arm se limpia AL FINAL, un kill reintenta
+        // entero»). Con el slot consumido, el reintento volvía a purgar el consent recién repuesto y
+        // no tenía con qué reponerlo: el dueño se quedaba SIN registro, permanentemente.
+        //
+        // Se simula el kill parando el wipe justo después de reponer, y se comprueba que el arranque
+        // siguiente lo termina bien.
+        let d = makeIsolatedDefaults(prefix: "consent.boundary.kill")
+        SecondarySessionStore.activate(userID: "guest-1", d)
+        SecondarySessionStore.markEntryPurgeDone(d)
+        SecondarySessionStore.armWipe(d)
+        d.set(1_700_000_000, forKey: GroupsConsentState.legacyAcceptedAtKey)
+        GroupsConsentState.custodyOwnerRecord(in: d)
+        d.removeObject(forKey: GroupsConsentState.legacyAcceptedAtKey)   // lo que hace la purga de entrada
+
+        // Boot 1: muere justo después de reponer — ni descarte ni desarme.
+        SwiftDataConfiguration.performSecondaryWipeIfArmed(
+            defaults: d,
+            deleteFiles: { _, _ in true },
+            purge: { purgaLocalDelConsent(d) },
+            cancelNotifications: {},
+            destroySessionDomain: { _ in },
+            republishWidgetSeal: { _ in },
+            restoreOwnerConsent: { GroupsConsentState.restoreOwnerRecord(in: $0) },
+            discardOwnerCustody: { _ in /* el kill: no llega a correr */ })
+        #expect(d.data(forKey: GroupsConsentState.ownerCustodyKey) != nil,
+                "el slot se consumió al reponer: un reintento se queda sin nada que devolver")
+
+        // Boot 2: el reintento vuelve a purgar y tiene que volver a reponer.
+        SecondarySessionStore.armWipe(d)
+        SwiftDataConfiguration.performSecondaryWipeIfArmed(
+            defaults: d,
+            deleteFiles: { _, _ in true },
+            purge: { purgaLocalDelConsent(d) },
+            cancelNotifications: {},
+            destroySessionDomain: { _ in },
+            republishWidgetSeal: { _ in },
+            restoreOwnerConsent: { GroupsConsentState.restoreOwnerRecord(in: $0) },
+            discardOwnerCustody: { GroupsConsentState.discardOwnerCustody(in: $0) })
+
+        #expect(d.integer(forKey: GroupsConsentState.legacyAcceptedAtKey) == 1_700_000_000,
+                "el dueño se quedó sin su consent tras un kill a mitad del wipe")
+        #expect(d.data(forKey: GroupsConsentState.ownerCustodyKey) == nil, "el slot quedó varado")
+    }
+
+    @Test("SALIDA: el descarte del slot va con el DESARME, no con la reposición")
+    func custodyIsDiscardedWithTheDisarm() {
+        let d = makeIsolatedDefaults(prefix: "consent.boundary.discard")
+        SecondarySessionStore.activate(userID: "guest-1", d)
+        SecondarySessionStore.markEntryPurgeDone(d)
+        SecondarySessionStore.armWipe(d)
+
+        var pasos: [String] = []
+        SwiftDataConfiguration.performSecondaryWipeIfArmed(
+            defaults: d,
+            deleteFiles: { _, _ in true },
+            purge: { pasos.append("purge") },
+            cancelNotifications: {},
+            destroySessionDomain: { _ in },
+            republishWidgetSeal: { _ in },
+            restoreOwnerConsent: { _ in pasos.append("restore") },
+            discardOwnerCustody: { _ in pasos.append("discard") })
+
+        #expect(pasos == ["purge", "restore", "discard"], "el orden del wipe cambió: \(pasos)")
+        #expect(SecondarySessionStore.isWipeArmed(d) == false, "el desarme no corrió tras el descarte")
+    }
+
     @Test("SALIDA: se repone DESPUÉS de la purga")
     func exitRestoresAfterPurging() {
         // Al revés, el `clear()` que la purga hace en esta frontera —para llevarse el consent de la
@@ -212,7 +316,8 @@ struct GroupsConsentBoundaryOrderTests {
             cancelNotifications: {},
             destroySessionDomain: { _ in },
             republishWidgetSeal: { _ in },
-            restoreOwnerConsent: { _ in pasos.append("restore") })
+            restoreOwnerConsent: { _ in pasos.append("restore") },
+            discardOwnerCustody: { _ in })
 
         #expect(pasos == ["purge", "restore"], "el orden de la frontera de salida cambió: \(pasos)")
     }
@@ -234,7 +339,8 @@ struct GroupsConsentBoundaryOrderTests {
             cancelNotifications: {},
             destroySessionDomain: { _ in },
             republishWidgetSeal: { _ in },
-            restoreOwnerConsent: { _ in repuso = true })
+            restoreOwnerConsent: { _ in repuso = true },
+            discardOwnerCustody: { _ in })
 
         #expect(repuso == false)
         #expect(SecondarySessionStore.isWipeArmed(d), "el arm se perdió: el reintento no correría")

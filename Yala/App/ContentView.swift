@@ -1573,6 +1573,14 @@ private struct WelcomeFlowModifier: ViewModifier {
                         // COPIANDO de aquí (`SessionDefaults.seededDeviceKeys`). Escribirlo en el
                         // cajón lo dejaría fuera de esa herencia y la visita arrancaría en el Welcome
                         // sobre un store secundario vacío, que es el brick que el mount prohíbe.
+                        //
+                        // Eso vale para la entrada PRIMERA, que es la que importa. En una RE-entrada
+                        // in-session —el Welcome se le reabre a la visita tras un «vaciar mis datos»,
+                        // y `SecondarySlotOccupancyLogic` deja pasar a la MISMA cuenta— la raíz ya se
+                        // montó con descriptor, así que la línea de abajo va al cajón y ésta al dueño.
+                        // Ahí ya no hereda nadie (el sentinel de la siembra está puesto) y el `true`
+                        // que queda en `.standard` se lo lleva el reset de la salida. Inocuo, pero no
+                        // es el caso que este comentario justifica.
                         UserDefaults.standard.set(true, forKey: AppPreferences.Keys.hasCompletedOnboarding)
                         hasCompletedOnboarding = true
                     },

@@ -374,10 +374,18 @@ struct HasCompletedOnboardingDomainTests {
         "OnboardingView.swift": 1,                   // EL escritor
     ]
 
-    /// El ÚNICO `.standard` que queda, y su porqué. Corre en la ventana de ENTRADA, con el descriptor
-    /// recién activado y el cajón todavía sin existir: es de ahí de donde la siembra COPIA
-    /// (`SessionDefaults.seededDeviceKeys`). Bajarlo al cajón deja a la visita arrancando en el
-    /// Welcome sobre un store secundario vacío — el brick que el mount prohíbe.
+    /// El único que NOMBRA `UserDefaults.standard` en la misma línea, y su porqué: corre en la ventana
+    /// de ENTRADA, con el descriptor recién activado y el cajón todavía sin existir, y es de ahí de
+    /// donde la siembra COPIA (`SessionDefaults.seededDeviceKeys`). Bajarlo al cajón deja a la visita
+    /// arrancando en el Welcome sobre un store secundario vacío — el brick que el mount prohíbe.
+    ///
+    /// **Lo que este censo NO ve, y hay que decirlo aquí para que nadie lea de más:** los sitios que
+    /// reciben el dominio por PARÁMETRO. Son tres y todos escriben en el del dueño a propósito — el
+    /// healing y el reset de las dos fronteras (`SwiftDataConfiguration`, parámetro `defaults`) y
+    /// `CloudSessionSignOut.resetOnboardingFlagsPreservingData`, que además es inalcanzable en
+    /// secundaria porque `CloudSignOutFlowLogic.path` resuelve `.secondaryCloudSignOut` primero. La
+    /// ceguera es la misma que `SessionPreferenceKeysWipeScanTests` documenta para `DataWipeService`:
+    /// ahí el dominio lo decide el llamador, y esa decisión se fija en el llamador, no aquí.
     private static let ownerEsperado: [String: Int] = ["ContentView.swift": 1]
 
     @Test("el censo por dominio encuentra algo (control del instrumento)")
@@ -401,14 +409,15 @@ struct HasCompletedOnboardingDomainTests {
             """)
     }
 
-    @Test("sólo la ventana de ENTRADA nombra el dominio del dueño")
+    @Test("sólo la ventana de ENTRADA NOMBRA el dominio del dueño")
     func onlyTheEntryWindowWritesTheOwnerDomain() {
         let censo = domainCensus(of: "hasCompletedOnboarding")
         #expect(censo.owner == Self.ownerEsperado, """
             hay \(censo.ownerTotal) sitios nombrando `UserDefaults.standard` con esta key: \
             \(censo.owner.sorted { $0.key < $1.key }). El único legítimo es la ventana de entrada de la
             sesión secundaria, de donde la siembra del cajón COPIA el valor. Cualquier otro parte el par
-            escritor/lector y devuelve el bug de 2026-09-03.
+            escritor/lector y devuelve el bug de 2026-09-03. (Los que reciben el dominio por parámetro
+            no salen aquí: ver la nota de `ownerEsperado`.)
             """)
     }
 }

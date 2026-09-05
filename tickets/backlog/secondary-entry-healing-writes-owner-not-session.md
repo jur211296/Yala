@@ -57,6 +57,15 @@ entre los dos dominios— aplicado a la FRONTERA en vez de al onboarding, y por 
 allí el owner decidió el dominio de la key *dentro* de la sesión; esto pregunta por el de la
 *reparación*, que es una decisión distinta.
 
+## Confirmado de forma independiente el mismo día
+
+Una revisión adversarial del PR #66, que no había leído este ticket, llegó a la misma cadena por su
+cuenta y la clasificó como su segundo hallazgo más grave. Añade un matiz medido que conviene tener
+aquí: **el brick ya existía desde el 26-ago** por la vía del `@AppStorage` de `ContentView:16`, que
+lee el cajón desde que existe la puerta. El commit `258a90c3` no lo empeora en el síntoma —el
+Welcome se decide por ese lector— pero sí retira los últimos lectores que veían el valor sanado, así
+que el healing pasa de «medio muerto» a **write-only**.
+
 ## Lo NO medido
 
 - Si el re-sign-in desde ese Welcome cae de verdad en el adopt clásico **hoy** (el docblock lo

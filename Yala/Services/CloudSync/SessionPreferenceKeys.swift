@@ -201,9 +201,12 @@ nonisolated enum SessionPreferenceKeys {
             + "arranca en el Welcome sobre un store secundario vacío, que es el brick que el mount "
             + "prohíbe. Pero DENTRO de la sesión el par estaba PARTIDO: el escritor del onboarding iba a "
             + "`.standard` y los lectores del cajón no lo veían, así que la visita terminaba su "
-            + "onboarding y el Welcome podía reabrírsele. Sus 11 consumidores in-session van al cajón; el "
-            + "único `.standard` que queda es la ventana de entrada. Pinneado por dominio, no por "
-            + "conteo: el escáner de grafías no vio nada porque los 26 sitios siguieron siendo 26.",
+            + "onboarding y el Welcome podía reabrírsele. Sus 11 consumidores in-session van al cajón. "
+            + "Los que siguen en el del dueño son las TRES FRONTERAS —la ventana de entrada, el healing "
+            + "de `performSecondaryEntryTasksIfNeeded` y el reset de `performSecondaryWipeIfArmed`— más "
+            + "`CloudSessionSignOut`, inalcanzable en secundaria por precedencia de `path`. Pinneado por "
+            + "dominio, no por conteo: el escáner de grafías no vio nada porque los 26 sitios siguieron "
+            + "siendo 26.",
         "hasShownWelcomeChooser":
             "Del TELÉFONO, y va en PAR con la anterior: es la segunda que el healing de entrada escribe "
             + "(`SwiftDataConfiguration.swift:916-917`) y la segunda que la siembra copia.",

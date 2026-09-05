@@ -558,17 +558,79 @@ puerta es `GroupsConsentState`, que sigue en `.standard` a pelo— pero el motiv
 La regla de `.claude/rules/swiftdata-cloudkit.md` **ya estaba corregida desde el 13-ago**: eran los
 dos ficheros de código los que se habían quedado atrás, que es el reparto contrario al habitual.
 
+## La revisión adversarial cazó un fallo mío, y era el mismo daño que la custodia impide
+
+Se corrió una revisión adversarial sobre el diff **congelado** (ya commiteado) atacando cuatro
+frentes: lectores desalineados, momento de resolución de la puerta, la custodia y su interacción con
+la siembra. Cada hallazgo se verificó contra el árbol antes de aceptarlo.
+
+### CONFIRMADO y arreglado · un kill entre reponer y desarmar dejaba al dueño SIN consent
+
+`restoreOwnerRecord` vaciaba el slot como primer efecto, y eso **rompía la kill-safety que el resto
+de `performSecondaryWipeIfArmed` declara**: «el arm se limpia AL FINAL, un kill a mitad reintenta el
+paso entero». Entre reponer y `clearWipeArm` hay ocho sentencias —incluido un `removePersistentDomain`
+y una escritura al App Group, todo pre-mount y bajo el watchdog de lanzamiento—. Un kill ahí:
+
+1. el arm sigue puesto, y `deleteFiles` devuelve `true` (los ficheros ya no están: no-op idempotente);
+2. `purge()` vuelve a borrar las tres keys **recién repuestas**;
+3. `restoreOwnerConsent` ya no encuentra slot ⇒ **el dueño se queda sin registro, permanentemente**.
+
+Es exactamente el daño que esta custodia existe para impedir, reintroducido por el mecanismo que la
+implementa. **Arreglado**: reponer y descartar son dos pasos, y el descarte (`discardOwnerCustody`)
+va pegado a `clearWipeArm` — los dos declaran lo mismo, que ya no hay nada que reintentar. Con eso
+el ciclo entero es re-ejecutable: cada reintento purga y repone.
+
+Pinneado con dos tests (`restoreIsRepeatable`, `killBetweenRestoreAndDisarmIsRecoverable`) y
+**mutación a exit 65 verificada**: devolver el `removeObject` al reponer falla en la aserción del
+daño real —`legacyAcceptedAt == 0`—, no en la forma.
+
+### CONFIRMADO y corregido · una afirmación mía que el escáner no puede respaldar
+
+Escribí, en el inventario y en el test, que «el único `.standard` que queda es la ventana de
+entrada». Es literalmente cierto sobre la GRAFÍA y engañoso sobre el hecho: quedan tres sitios más
+que escriben en el dominio del dueño y que `domainCensus` **no puede ver por diseño**, porque reciben
+el dominio por parámetro (el healing y el reset de las dos fronteras, y `CloudSessionSignOut`, éste
+además inalcanzable en secundaria por la precedencia de `CloudSignOutFlowLogic.path`). Es la misma
+ceguera que `SessionPreferenceKeysWipeScanTests` ya documenta para `DataWipeService`. Corregido en
+los dos sitios: ahora se dice qué mide el censo y qué queda fuera.
+
+### CONFIRMADO de forma independiente · el hallazgo del healing
+
+La revisión llegó por su cuenta al mismo defecto que esta sesión ya había extraído a
+[[secondary-entry-healing-writes-owner-not-session]]. Añade un matiz medido que el ticket recoge:
+**el brick ya existía desde el 26-ago** por la vía del `@AppStorage` de `ContentView:16`, así que
+este commit no lo empeora en el síntoma — lo que añade es que ahora ningún lector ve el valor sanado.
+
+### RESIDUALES nuevos, medidos y NO arreglados aquí
+
+- **Reponer el legacy del dueño puede pisar el intent de consent pendiente de la visita.** Con el
+  dueño en formato legacy, su siguiente sign-in entra en `adoptLegacyIfNeeded` y llama a
+  `GroupsConsentPendingIntent.arm`, que con otra cuenta **sobrescribe** el slot único. Si la visita
+  aceptó sin red, su intent desaparece. Daño acotado: ese intent ya era inerte en el móvil del dueño
+  (`resumeIfNeeded` con sub-mismatch ni intenta ni descarta) y sólo muerde si ella vuelve de visita.
+  Arreglarlo toca `GroupsConsentRegistrar`, otro fichero y otra frontera ⇒ fuera de alcance.
+- **Un slot varado envenena la custodia siguiente.** Con el descarte al final del wipe, la única vía
+  que queda es una salida que aborte para siempre en el guard de `deleteFiles`, o el tooling
+  `DEV_BUILD` de `CloudSyncDebugView`. La custodia es idempotente por presencia, así que la visita
+  siguiente no custodiaría nada y la salida repondría el registro viejo del dueño.
+- **La re-entrada in-session escribe el flag en dos dominios.** Tras un «vaciar mis datos» el Welcome
+  se le reabre a la visita y `SecondarySlotOccupancyLogic` deja pasar a la misma cuenta; ahí la raíz
+  ya se montó con descriptor, así que el `@AppStorage` va al cajón y la línea de al lado a `.standard`.
+  Inocuo hoy (el reset de la salida se lleva ese `true`), pero el comentario que lo justificaba
+  hablaba sólo de la entrada primera. Precisado en el código, sin cambiar comportamiento.
+
 ## Verificación
 
 - Build ×2 (`Yala` y `Yala Dev`): SUCCEEDED, **cero warnings nuevos** en los ficheros tocados.
-- Unit: **6046 tests en 609 suites**, verde, cero issues (`-parallel-testing-enabled NO`).
+- Unit: **6085 tests en 618 suites**, verde, cero issues (`-parallel-testing-enabled NO`).
 - XCUITest: **20 tests en 6 suites** (OnboardingFlow · OnboardingGroupsOnlyGuard · DeeplinkRouting ·
   PaywallInboxAlertRouting · GroupsSmoke · SecondaryCurrencyPrompt), verde. En XCUITest la puerta
   devuelve el dominio del dueño (`isUITesting`), así que estos cambios son no-op ahí — **comprobado,
   no supuesto**.
-- **Mutación, 4 verificadas a exit 65**: (1) un lector vuelve a `.standard`; (2) la custodia corre
+- **Mutación, 5 verificadas a exit 65**: (1) un lector vuelve a `.standard`; (2) la custodia corre
   después de la purga; (3) sin el guard de idempotencia por presencia; (4) la reposición deja de
-  retirar lo que el dueño no tenía.
+  retirar lo que el dueño no tenía; (5) la reposición vuelve a consumir el slot ⇒ el dueño pierde
+  su consent tras un kill a mitad del wipe.
 - `qa/coverage-index.json`: 11 áreas re-selladas (solo aquellas cuya cobertura declarada se ejecutó
   hoy); `validate-coverage.sh` → OK, backlog determinista 0.
 
