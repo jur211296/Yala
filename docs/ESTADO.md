@@ -41,9 +41,16 @@ los 4 esperan código**. De los dos de `backlog` que se listaban aquí,
 **`rejoin-tap-renotifies-admins` se cerró la noche del 4-sep** —migración + Worker, los dos en
 producción— y pasa a `qa/`; queda el otro.
 
-- **`group-joiner-flag-consumers-still-narrow`** (high, en `backlog`) — al recién llegado ya se le
-  reconoce, pero su gasto no llega a su cuenta personal hasta un arranque posterior y aterriza en la
-  cuenta «Grupos». Trece consumidores del flag siguen estrechos.
+- ~~**`group-joiner-flag-consumers-still-narrow`**~~ — **arreglado la noche del 4-sep, pasa a `qa`.**
+  Los catorce consumidores resuelven identidad por el canónico, así que el gasto del recién llegado
+  aterriza en su cuenta REAL en el mismo gesto que lo crea —no en la genérica «Grupos» y sin esperar
+  a otro arranque—, «Pagado por» viene puesto, el saldo de la tarjeta sale, y sus avisos de grupo
+  dejan de descartarse en silencio. Se descartó la vía de una línea (segundo call-site de
+  `refreshCurrentUserFlags`): es device-wide y arrastra un backfill que adjudica identidad por nombre
+  visible. Falta el device-QA de dos teléfonos, **el mismo montaje que
+  `groups-equal-split-shows-not-participating-on-peer`**: B se une por enlace y NO relanza la app
+  antes de que A cree el gasto. Residual cosmético en
+  `joiner-flag-residuals-cosmetic-and-service-guard` (badges «(tú)», `low`).
 - **`invite-link-five-causes-one-message`** — piezas 2, 3 y 4 son código. Sin tocar. Su pieza 2
   (cablear `branded`) se dejó aquí a propósito al podar el recorrido del invitado: la medición a
   fondo vive en este ticket y duplicarla era la forma segura de divergir.
@@ -65,9 +72,18 @@ sigue sin `ok_`. **Cero `ok_` inventado.**
 
 ## Board
 
-101 tickets · backlog 49 · in-progress 4 · qa 25 · blocked 2 · done 16 · discarded 5. Índice cuadrado
-(101 filas = 101 ficheros, status y ruta de cada fila comprobados contra el disco). `qa` significa
+103 tickets · backlog 50 · in-progress 4 · qa 26 · blocked 2 · done 16 · discarded 5. Índice cuadrado
+(103 filas = 103 ficheros, status y ruta de cada fila comprobados contra el disco). `qa` significa
 «esperando la tanda», no «cerrado».
+
+**Entran dos, los dos residuales del arreglo del recién llegado y ninguno bloqueante.**
+`joiner-flag-residuals-cosmetic-and-service-guard` (`low`): los badges «(tú)» de la lista de
+miembros, del selector de reparto y de «quién pagó» siguen leyendo el flag a pelo, y con ellos la red
+de servidor que impide echarte de tu propio grupo — esa no es cosmética, pero hoy es inalcanzable
+porque la vista ya calcula bien quién eres. Y `edgecases-extreme-minimum-flaky-under-load` (`low`):
+`test_extremeMinimumAmountSaves` falló corriendo en un lote de cinco suites y **pasó solo**; queda
+escrito con su evidencia en vez de perderse, porque es una transacción personal y no toca ninguna
+ruta de Grupos.
 
 **Entra uno nuevo: `ci-no-corre-la-suite-del-gateway`.** Salió al abrir el PR de arriba y el dato es
 incómodo: el CI **no ejecuta ni un test del gateway** —no hay un solo `vitest` en `qa.yml`— así que

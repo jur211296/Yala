@@ -686,6 +686,67 @@ final class GroupExpenseService {
         )
     }
 
+    /// TODAS mis filas de una zona, sin colapsar. La variante PLURAL de la resolución canónica.
+    ///
+    /// Existe porque no todos los consumidores preguntan lo mismo. La mayoría pregunta «¿cuál es mi
+    /// miembro?» y `resolveCurrentUserMember` contesta con UNO —desempatando por `joinedAt`— para que
+    /// el write-side y el read-side no puedan elegir filas distintas. Pero un par de sitios preguntan
+    /// «¿cuáles son mis filas?», que es POR FILA, y ahí colapsar no es un detalle: en una zona migrada
+    /// el mismo humano tiene su member CloudKit legacy Y el born-backend, y quedarse con uno deja al
+    /// otro sin tocar para siempre.
+    ///
+    /// Mismos tres criterios que `selectCurrentUserMember`, en OR en vez de en cascada. Nunca devuelve
+    /// una fila que no sea mía: los dos fallbacks exigen identidad exacta y no vacía.
+    static func resolveAllCurrentUserMembers(from members: [SplitMember]) -> [SplitMember] {
+        let cachedRecordName = GroupUserIdentityService.shared.cachedRecordName
+        let currentUserID = CloudSyncFlags.groupsBackendEnabled
+            ? CloudAuthService.shared.currentUserID : nil
+        return members.filter { member in
+            if member.isCurrentUser { return true }
+            if GroupJoinReconcileLogic.backendMemberMatchesCurrentUser(
+                memberUserID: member.userID, memberKey: member.memberKey,
+                currentUserID: currentUserID) { return true }
+            if let recordName = cachedRecordName, !recordName.isEmpty,
+               member.cloudKitUserRecordID == recordName { return true }
+            return false
+        }
+    }
+
+    /// La misma resolución canónica, para los consumidores que hasta ahora la escribían como un
+    /// `FetchDescriptor` con `isCurrentUser == true` metido en el `#Predicate`.
+    ///
+    /// Existe porque esa forma NO es convertible: `resolveCurrentUserMember(from:)` lee estado de
+    /// sesión (`sub`) y de iCloud (`recordName`), y SwiftData no puede traducir eso a SQL. Sustituir
+    /// la línea dentro del predicado es imposible, así que cada consumidor tenía que acordarse de
+    /// traerse los members de la zona y resolver en memoria — y ninguno se acordó. El resultado era
+    /// que al recién llegado a un grupo, cuyo `SplitMember` baja del pull con `isCurrentUser`
+    /// APAGADO (`GroupsSyncClient.applyMember` nunca lo escribe, y `refreshCurrentUserFlags` solo
+    /// corre en el arranque), estos consumidores lo daban por no-miembro: su gasto no llegaba a sus
+    /// cuentas, su saldo salía vacío y sus avisos de grupo se descartaban en silencio.
+    ///
+    /// El fetch trae los members de UNA zona (2-10 filas en la práctica), no los del dispositivo:
+    /// esto NO es el `refreshCurrentUserFlags` device-wide, no escribe nada y no arrastra su
+    /// backfill heurístico por `displayName`. Es una lectura.
+    ///
+    /// Propaga el error del fetch en vez de tragárselo: los callers no coinciden en qué hacer con él
+    /// (`ScheduledPaymentDraftService` reintenta, `GroupNotificationService` evita envenenar su
+    /// caché), y decidirlo aquí les quitaría esa distinción.
+    static func resolveCurrentUserMember(
+        inZone zoneID: String,
+        context: ModelContext
+    ) throws -> SplitMember? {
+        // `sortBy` explícito: el desempate de `selectCurrentUserMember` es `min(by: joinedAt)`, y ante
+        // un empate exacto `min` devuelve el primero DEL ARRAY. Sin ordenar, ese primero lo decidía el
+        // orden del store, mientras los demás consumidores canónicos resuelven sobre el array ya
+        // ordenado de `GroupService.fetchMembers`. Con dos filas mías empatadas al milisegundo, eso
+        // bastaba para que el formulario marcara como pagador una fila y el bridge resolviera la otra.
+        let members = try context.fetch(FetchDescriptor<SplitMember>(
+            predicate: #Predicate { $0.groupZoneID == zoneID },
+            sortBy: [SortDescriptor(\.joinedAt, order: .forward)]
+        ))
+        return resolveCurrentUserMember(from: members)
+    }
+
     private func validateCurrentUserCanWrite(in group: SplitGroup) throws {
         try validateGroupIsWritable(group)
         let members = try GroupService.shared.fetchMembers(for: group)

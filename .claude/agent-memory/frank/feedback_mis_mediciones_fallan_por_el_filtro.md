@@ -1,6 +1,6 @@
 ---
 name: mis-mediciones-fallan-por-el-filtro
-description: Mis errores de medición se repiten con la misma forma — el filtro descarta justo lo que busco y la ausencia se lee como resultado. Ocho casos en dos sesiones (2026-09-02).
+description: Mis errores de medición se repiten con la misma forma — el filtro descarta justo lo que busco y la ausencia se lee como resultado. Doce casos entre el 2026-09-02 y el 2026-09-05, incluido un CI "en verde" cuyo check clave no existía.
 metadata:
   type: feedback
 ---
@@ -163,3 +163,31 @@ el que falla es tu grep, no el borrado.
 por la misma familia (el conteo de filas con mayúsculas, un `cut` que no resolvía dentro de un
 subshell y ésta). Ninguna llegó a Jürgen como error porque las tres las cacé con control positivo.
 **El control positivo no es ceremonia: es lo único que me separa de reportar tres falsedades.**
+
+## Duodécimo (2026-09-05): «todos los checks en verde» cuando el check que importa NO EXISTE
+
+Abrí el PR #64 y armé un monitor con el patrón canónico: *emite cuando ningún check siga en
+`pending`, entonces para*. A los pocos minutos dijo **`CI TERMINADO: Vercel=pass, Vercel Preview
+Comments=pass`**. Los dos verdes, cero pendientes, condición de parada cumplida. Y la suite de QA
+—la que compila la app y corre 6000 tests— **no había arrancado siquiera**.
+
+La causa estaba a una consulta: el PR nacía `mergeable=CONFLICTING / mergeStateStatus=DIRTY` porque
+`2.1` había avanzado mientras yo trabajaba. **GitHub no dispara `pull_request` cuando no puede
+construir el merge de prueba**, así que el workflow no existía como check — y «no existe» y «pasó»
+se ven idénticos si sólo cuentas los que hay.
+
+Es el error nº 4 otra vez (numerador sin denominador) con ropa nueva: conté los checks presentes en
+vez de comprobar que estuviera el que importa.
+
+**How to apply:**
+- **Antes de esperar un CI, comprueba que existe.** `gh run list --branch <rama>` — si no hay un run
+  para tu rama, no hay nada que esperar y el monitor te va a mentir.
+- **Un monitor de checks necesita una lista ESPERADA, no sólo la observada.** La condición correcta
+  es «los checks que espero están todos presentes y ninguno pendiente», no «los presentes no están
+  pendientes».
+- **`gh pr view --json mergeable,mergeStateStatus` es lo primero que se mira cuando el CI no
+  arranca.** `DIRTY` explica el silencio entero y se arregla mergeando `2.1` en la rama.
+- **En Yala, el conflicto al mergear `2.1` es lo esperable, no la excepción** (ADR-008): choca en
+  `docs/ESTADO.md`, `docs/TICKETS.md` y `qa/coverage-index.json`, nunca en código. `TICKETS.md` se
+  resuelve **regenerando la tabla desde el disco**, que es determinista; los otros dos, a mano
+  conservando las dos aportaciones.

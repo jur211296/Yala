@@ -168,12 +168,18 @@ enum GroupsExportBuilder {
                 nameByMemberID[memberID] ?? memberID
             }
 
-            // "Mis members" = molde EXACTO de GroupsViewModel.currentUserMemberIDs.
-            let myMemberIDs = Set(
+            // "Mis members" = molde EXACTO de GroupsViewModel.currentUserMemberIDs, resolución canónica
+            // incluida: sin ella el CSV del recién llegado no marcaba ninguna fila como suya.
+            var myMemberIDs = Set(
                 bundle.members
                     .filter { $0.isCurrentUser && $0.isActive }
                     .map { $0.id.uuidString }
             )
+            // Resolver sobre los ACTIVOS — gemelo del de `GroupsViewModel.currentUserMemberIDs`.
+            if let resolved = GroupExpenseService.resolveCurrentUserMember(
+                from: bundle.members.filter(\.isActive)) {
+                myMemberIDs.insert(resolved.id.uuidString)
+            }
 
             let sharesByExpense = Dictionary(grouping: bundle.shares, by: \.expenseID)
 

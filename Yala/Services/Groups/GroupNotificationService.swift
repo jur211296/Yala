@@ -223,19 +223,26 @@ final class GroupNotificationService {
     }
 
     /// Resolves the current user's SplitMember id (uuidString) for a zone, cached per zone.
-    /// `isCurrentUser` is refreshed by `refreshCurrentUserFlags` (awaited) right before this runs.
-    /// Canonical resolution (oldest `joinedAt`, limit 1) mirrors `GroupService.currentUserMember`
-    /// — deterministic if sync ever delivered duplicate `isCurrentUser` members for a zone.
+    /// Canonical resolution (`GroupExpenseService.resolveCurrentUserMember`, oldest `joinedAt`), the same
+    /// one `GroupService.currentUserMember` uses.
+    ///
+    /// La premisa que este docblock afirmaba —«`isCurrentUser` lo refresca `refreshCurrentUserFlags`
+    /// justo antes de esto»— era FALSA en el caso que más importa: `AppBootstrapper` salta el refresh
+    /// entero cuando el import no está quiescente, y el pull backend nunca enciende el flag. Con el
+    /// `#Predicate` sobre `isCurrentUser == true` que había aquí, el fetch no encontraba a nadie,
+    /// `GroupNotificationRecipientLogic` devolvía `.skip` y **los avisos de grupo del recién llegado se
+    /// descartaban enteros** — en silencio, que es el modo de fallo más difícil de notar. Es la segunda
+    /// ruta, independiente de la caption de la pantalla, por la que un mismo usuario veía a la vez «No
+    /// participaste» y ningún aviso.
+    ///
+    /// El criterio canónico NO es traducible a `#Predicate` (lee estado de sesión y de iCloud), así que
+    /// se traen los members de la zona y se resuelve en memoria.
     private func currentMemberID(inZone zoneName: String, cache: inout [String: String?]) -> String? {
         if let cached = cache[zoneName] { return cached }
         guard let modelContext else { return nil }
         do {
-            var descriptor = FetchDescriptor<SplitMember>(
-                predicate: #Predicate { $0.groupZoneID == zoneName && $0.isCurrentUser == true },
-                sortBy: [SortDescriptor(\.joinedAt, order: .forward)]
-            )
-            descriptor.fetchLimit = 1
-            let result = try modelContext.fetch(descriptor).first?.id.uuidString
+            let result = try GroupExpenseService.resolveCurrentUserMember(
+                inZone: zoneName, context: modelContext)?.id.uuidString
             cache[zoneName] = result   // cachea solo un resultado exitoso (incl. nil legítimo)
             return result
         } catch {
