@@ -19,11 +19,13 @@ Panel, que para quien instale ahora arranca con cuatro secciones y cuatro widget
 
 1. **Publicar la app.** Los dos avisos de Grupos están completos en servidor y en los dos entornos;
    falta el cliente iOS. Ahora llevaría además el fix de identidad y los predeterminados del Panel.
-2. **La tanda de QA: 23 tickets en 4 montajes.** Guion en **`qa/guion-tanda.md`**, sin tocar. Dos
+2. **La tanda de QA: 24 tickets en 4 montajes.** Guion en **`qa/guion-tanda.md`**, sin tocar. Dos
    entraron hoy y ninguno está en el guion: `guest-decline-has-no-screen` (servidor listo y verificado
    en producción, falta verlo en la app publicada) y `rejected-member-cold-tap-does-nothing`, cuyo
    device-QA son cinco minutos: ser rechazado, matar la app, tapear un enlace nuevo, y comprobar que
-   al admin le llega la solicitud **una sola vez**.
+   al admin le llega la solicitud **una sola vez**. El tercero,
+   `groups-equal-split-shows-not-participating-on-peer`, necesita la precondición correcta: **B se une
+   por enlace y NO relanza la app** antes de que A cree el gasto — sin eso no reproduce.
 3. **Dos decisiones de la web** (§9 del informe): el **texto legal de Grupos** —dice «vía iCloud, no
    por servidores nuestros» y el backend propio está al 100 % en prod— y si Vercel debe desplegar al
    mergear (hoy su rama de producción es `1.0`).
@@ -64,7 +66,7 @@ sigue sin `ok_`. **Cero `ok_` inventado.**
 
 ## Board
 
-100 tickets · backlog 50 · in-progress 4 · qa 23 · blocked 2 · done 16 · discarded 5. Índice cuadrado
+100 tickets · backlog 49 · in-progress 4 · qa 24 · blocked 2 · done 16 · discarded 5. Índice cuadrado
 (100 filas = 100 ficheros, status y ruta de cada fila comprobados contra el disco). `qa` significa
 «esperando la tanda», no «cerrado».
 
