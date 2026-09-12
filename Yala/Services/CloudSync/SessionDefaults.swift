@@ -2,83 +2,32 @@
 //  SessionDefaults.swift
 //  Yala
 //
-//  **La ÚNICA puerta que decide EN QUÉ dominio de `UserDefaults` escribe la app.**
+//  **El CAJÓN de preferencias de una sesión secundaria (M1). La PUERTA que lo elegía ya no existe.**
 //
-//  Es la mitad que le faltaba a la frontera M1. La otra —el iCloud KV— se cerró el 2026-08-12 en
-//  `25a36be2` con `OwnerKeyValueStore`, y este fichero es su gemelo: mismo problema visto desde el
-//  almacén LOCAL del teléfono. Cuando alguien entra a Yala con su cuenta en el móvil de otra persona
-//  (sesión secundaria), hoy escribe sus preferencias en el cajón del dueño: al devolver el móvil, el
-//  dueño se encuentra su nombre y su divisa cambiados, su barra de pestañas como la dejó la visita, y
-//  su permiso de Grupos retirado. Sus datos financieros sí están a salvo —viven en un store aparte—;
-//  lo que se estropea es la configuración.
+//  Hasta el 2026-09-12 este fichero decidía en qué dominio de `UserDefaults` escribía la app: `.standard`
+//  para el dueño del teléfono, o `yala.session.<sub>` mientras hubiera una invitada dentro. Esa puerta
+//  —`current`, `resolve(owner:isTestEnvironment:)` y `sessionSuite(...)`— se retiró porque **en
+//  producción nunca llegó a actuar**: la entrada a sesión secundaria jamás se encendió, así que resolvía
+//  a `.standard` para el 100 % del parque. En el mismo cambio se apagó el encendido compilado de esa
+//  entrada (`CloudSyncFlags.secondarySessionCompiledDefault`), porque retirar el aislamiento dejando
+//  abierta la entrada convierte un rollout en una fuga.
 //
-//  **Por qué una puerta y no un guard por escritor** (decisión del owner, 2026-08-13, misma razón que
-//  `OwnerKeyValueStore`): «acordarse en N sitios» ya falló tres veces en esta frontera, y aquí los
-//  sitios son 307 `UserDefaults.standard` repartidos por 86 ficheros. Un sitio que decide, y un
-//  source-scan con conteo que impide que exista un camino nuevo.
+//  **Lo que queda vivo aquí es el cajón en sí** —crearlo, cachearlo, sembrarlo y destruirlo— y sus dos
+//  únicos consumidores son los hooks de frontera de `SwiftDataConfiguration`. Todo esto cae con M1 en
+//  `shell-derives-from-two-session-axes`.
 //
-//  **El riesgo de este cambio NO está en el escritor, está en los LECTORES.** Un escritor movido al
-//  cajón de la visita con su lector todavía en `.standard` produce una app incoherente durante toda
-//  la visita —ella toca un ajuste y no pasa nada, o ve preferencias del dueño mezcladas con las
-//  suyas—, que es PEOR que el bug actual. De ahí la regla de fase: escritor y lectores de una key
-//  viajan en el MISMO commit.
+//  **Las dos lecciones que sobreviven al borrado, porque se pagaron con incidentes:**
 //
-//  ## El contrato, y por qué cada cláusula existe
+//  1. **Instancia CACHEADA por nombre de suite.** Dos `UserDefaults(suiteName: X)` son objetos DISTINTOS
+//     y `NotificationCenter.addObserver(object:)` filtra por identidad del emisor, así que construir el
+//     suite inline deja observers que no disparan nunca, **en silencio**. Sigue vigente para `suite(named:)`.
+//  2. **Escritor y lectores de una key viajan en el MISMO commit.** Un escritor movido de dominio con su
+//     lector atrás produce una app incoherente, que es peor que el bug que se arreglaba. La regla vale
+//     para cualquier cambio de dominio, no solo para el que ya no existe.
 //
-//  1. **Instancia CACHEADA por nombre de suite.** Dos `UserDefaults(suiteName: X)` son objetos
-//     DISTINTOS, y `NotificationCenter.addObserver(object:)` filtra por identidad del emisor:
-//     `AppPreferences.registerObservers()` se registra con `object: defaults`
-//     (`AppPreferences.swift:894`), así que construir el suite inline en cada llamada dejaría a
-//     `AppPreferences` sin recargar NUNCA — en silencio, durante toda la sesión secundaria. Es
-//     exactamente la lección que `OwnerKeyValueStore.notificationSource` (`:155-162`) existe para
-//     documentar, en su versión local.
-//  2. **Nombre resuelto POR LLAMADA, jamás capturado en un `let`.** Lo exige la ventana de entrada:
-//     `SecondaryEntryLogic.begin` activa el descriptor CON EL PROCESO DEL DUEÑO VIVO
-//     (`WelcomeCloudSignInView.swift:801-805`) y el relanzamiento llega después (`:812`). En esos
-//     segundos se escribe el registro de consentimiento RGPD de la invitada (`:810`). Una resolución
-//     capturada al arranque lo dejaría en el cajón del dueño. El repo ya depende de esta propiedad:
-//     el comentario de `:806-809` declara que ese orden ES el fix porque `PrefsSyncBehavior.resolve`
-//     pregunta por el descriptor vivo en cada llamada.
-//  3. **Los LECTORES se congelan al arranque, y eso es deliberado.** `AppPreferences` toma su store
-//     una vez. Un lector reactivo sería daño NUEVO: si re-apunta durante la ventana de entrada, los
-//     lectores del árbol vivo del dueño leerían un cajón todavía vacío, `hasCompletedOnboarding`
-//     daría `false` y se montaría la cadena Welcome debajo del cover de relanzamiento — el brick que
-//     `SwiftDataConfiguration.swift:803` dice que jamás debe ocurrir in-session.
-//
-//  ## La excepción de entorno de test
-//
-//  Bajo `isRunningTests` Y bajo `isUITesting` la puerta devuelve el dominio del dueño. No es
-//  comodidad: `AppBootstrapper.swift:658` planta el descriptor en los XCUITest, pero lo hace en el
-//  dominio VOLÁTIL (`UITestEphemeralDefaults.applySecondarySession` → `volatileApply`, sin rastro en
-//  disco) mientras que un suite SÍ persistiría; y los dos anclajes del ciclo de vida están apagados
-//  en ambos entornos (`SwiftDataConfiguration.swift:811` y `:888`). Sin la excepción nacería un cajón
-//  que nadie siembra, nadie destruye y ninguna purga alcanza — el precedente exacto de
-//  `groupsDomainSealedForFreshStart`, que dejó 14 tests rojos «hasta que alguien borre el simulador».
-//  Los tests ejercitan la puerta por el parámetro `isTestEnvironment`, molde de las variantes
-//  inyectables de `SwiftDataConfiguration`.
-//
-//  **La excepción cubre las TRES operaciones, no solo la resolución**, y eso no es simetría
-//  cosmética. Resolver a `.standard` mientras la siembra sigue creando el suite deja en el disco del
-//  simulador un cajón que la puerta declara inexistente: nadie lo lee, nadie lo destruye, y el
-//  sentinel de siembra que hay dentro sobrevive entre corridas. Es la misma basura que se quería
-//  evitar, entrando por la puerta de al lado — y se vio en cuanto los hooks de frontera empezaron a
-//  llamar a la siembra con su `userID` fijo de test.
-//
-//  ## Fallo cerrado, y por qué se degrada en vez de brickear
-//
-//  Si el suite no se puede abrir, la puerta devuelve el dominio del dueño y deja un canario. Devolver
-//  un store vacío dejaría a la app sin preferencias y sin onboarding completado: un brick es peor que
-//  el bug que este fichero cierra. La degradación es al comportamiento de HOY, y es observable.
-//
-
 import Foundation
 
-/// **`nonisolated`, como `SecondarySessionStore`**, y no por copiar al vecino: el target `YalaTests`
-/// NO lleva `SWIFT_DEFAULT_ACTOR_ISOLATION`, así que sus tests son `nonisolated` y son ellos quienes
-/// ejercitan los dos hooks de frontera. Todo lo que esta puerta consume son constantes inmutables
-/// (`isRunningTests`, `isUITesting`, `AppPreferences.Keys`), marcadas `nonisolated` en su origen —
-/// que es donde corresponde, porque un `static let` de un `Bool` o de un `String` no necesita actor.
-nonisolated enum SessionDefaults {
+enum SessionDefaults {
 
     // MARK: - El nombre del dominio
 
@@ -98,61 +47,13 @@ nonisolated enum SessionDefaults {
         return suitePrefix + sanitized
     }
 
-    // MARK: - La puerta
+    // MARK: - La puerta RETIRADA
 
-    /// El dominio en el que la app debe escribir AHORA. Computed a propósito (cláusula 2).
-    ///
-    /// **Sí, resuelve en CADA acceso, y no, no se cachea.** Fuera de sesión secundaria —el 99,9 % del
-    /// tiempo— el coste es un `string(forKey:)` sobre `.standard`, que CFPreferences sirve de memoria;
-    /// dentro de sesión, además, un lookup en un diccionario. Se llama desde sitios calientes
-    /// (`YalaFormatterStatic` formatea cada importe de la pantalla) y aun así es ruido frente al
-    /// trabajo de formatear.
-    ///
-    /// Si alguien viene a «optimizar» esto guardando el resultado en un `static let` o en un flag
-    /// «¿hay sesión?» calculado una vez: **eso es exactamente el mutante que la cláusula 2 prohíbe**, y
-    /// lo que rompe es la ventana de entrada —el descriptor se activa con el proceso del dueño vivo y
-    /// el consentimiento RGPD de la invitada se escribe en esos segundos—. El pin es
-    /// `SessionDefaultsGateTests.resolutionHappensPerCall`, y el mutante da exit 65.
-    static var current: UserDefaults { resolve() }
-
-    /// Variante inyectable — `owner` para tests con `UserDefaults` aislado, `isTestEnvironment` para
-    /// poder ejercitar la puerta desde la suite (donde por defecto está desactivada).
-    ///
-    /// El default de `isTestEnvironment` se evalúa EN CADA LLAMADA, igual que el resto de la
-    /// resolución: nada aquí puede quedar capturado.
-    static func resolve(
-        owner: UserDefaults = .standard,
-        isTestEnvironment: Bool = SwiftDataConfiguration.isRunningTests || SwiftDataConfiguration.isUITesting
-    ) -> UserDefaults {
-        guard !isTestEnvironment else { return owner }
-        guard let userID = SecondarySessionStore.activeUserID(owner) else { return owner }
-        guard let name = suiteName(forUserID: userID) else {
-            CloudSyncBreadcrumb.sessionDomainUnavailable(reason: "userID sin caracteres utilizables")
-            return owner
-        }
-        guard let suite = suite(named: name) else {
-            CloudSyncBreadcrumb.sessionDomainUnavailable(reason: "UserDefaults(suiteName:) devolvió nil")
-            return owner
-        }
-        return suite
-    }
-
-    /// El cajón de la visita **o `nil` si no hay sesión secundaria**, para quien no tenga a
-    /// `.standard` como fallback.
-    ///
-    /// Existe por `LanguageManager`, que es el único consumidor cuyo dominio normal **no** es
-    /// `.standard` sino el suite del App Group (`L10n.swift:38-40`). Ahí `current` no sirve: devolvería
-    /// `.standard` fuera de sesión y le cambiaría el almacén al 99 % de los usuarios. Con esto, el
-    /// idioma cae en el cajón durante la visita y en el App Group el resto del tiempo.
-    static func sessionSuite(
-        owner: UserDefaults = .standard,
-        isTestEnvironment: Bool = SwiftDataConfiguration.isRunningTests || SwiftDataConfiguration.isUITesting
-    ) -> UserDefaults? {
-        guard !isTestEnvironment else { return nil }
-        guard let userID = SecondarySessionStore.activeUserID(owner),
-              let name = suiteName(forUserID: userID) else { return nil }
-        return suite(named: name)
-    }
+    // `current`, `resolve(owner:isTestEnvironment:)` y `sessionSuite(owner:isTestEnvironment:)` se
+    // retiraron el 2026-09-12: eran el dominio por sesión que leían 49 ficheros en 155 líneas, y los tres
+    // resolvían a `.standard` para el 100 % del parque (el descriptor nunca pudo activarse en
+    // producción). Lo que queda debajo es el cajón en sí, que todavía usan los dos hooks de M1 en
+    // `SwiftDataConfiguration`, y cae con ellos.
 
     // MARK: - La caché (cláusula 1)
 

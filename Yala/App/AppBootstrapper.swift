@@ -37,7 +37,7 @@ final class AppBootstrapper {
     let budgetAlertService = BudgetAlertService.shared
     /// M1: la puerta de dominio decide si estas 76 properties viven en el cajón del dueño o en el de
     /// la visita. Es el ÚNICO constructor de producción — el resto son `#Preview`.
-    let appPreferences = AppPreferences(defaults: SessionDefaults.current)
+    let appPreferences = AppPreferences(defaults: UserDefaults.standard)
 
     // MARK: - Panel Action (Control Center / widgets)
 
@@ -587,7 +587,7 @@ final class AppBootstrapper {
             // que el Welcome dedujo sin `kind` en la respuesta.
             GroupsAssociationRegistrar.syncFromLiveSessionIfNeeded(
                 deviceState: CloudIdentityRoutingLogic.deviceState(
-                    hasCompletedOnboarding: SessionDefaults.current.bool(
+                    hasCompletedOnboarding: UserDefaults.standard.bool(
                         forKey: AppPreferences.Keys.hasCompletedOnboarding),
                     storageMode: StorageModePersistence.read(),
                     onboardingMode: OnboardingMode.current()),
@@ -684,7 +684,7 @@ final class AppBootstrapper {
             //    en SessionState (leída de UserDefaults en su init, antes de este reset).
             //  · `seededGroupIDKey` stale apuntaría a un grupo ya borrado (stale ≠ nil) → el
             //    token `seeded-first` del deep link rutearía a un grupo fantasma.
-            SessionDefaults.current.removeObject(forKey: AppPreferences.Keys.expensesOnlyMode)
+            UserDefaults.standard.removeObject(forKey: AppPreferences.Keys.expensesOnlyMode)
             SessionState.shared.isExpensesOnlyMode = false
             UserDefaults.standard.removeObject(forKey: UITestHooks.seededGroupIDKey)
             //  · usageFocus (D1): un `.groupsOnly` de una corrida previa reduciría la shell a
@@ -759,7 +759,7 @@ final class AppBootstrapper {
             //    ese store es el del DUEÑO y la puerta es quien lo impide.
             for key in AppPreferences.Keys.panelDefaultsUITestResetKeys {
                 UserDefaults.standard.removeObject(forKey: key)
-                SessionDefaults.current.removeObject(forKey: key)
+                UserDefaults.standard.removeObject(forKey: key)
                 OwnerKeyValueStore.shared.removeObject(forKey: key)
             }
             //    Y borrar no basta: `appPreferences` es propiedad almacenada de este
@@ -914,7 +914,7 @@ final class AppBootstrapper {
             // gráfico del Panel no monta (empty state). Mismo patrón que skip-onboarding
             // re-setea flags tras el wipe. USD+EUR basta: el seed ya escribe esas tasas.
             // Ticket: Bugs/qa_cloud-fx-rates-blob-dos-caras.md (F1 Mini QA).
-            Self.restoreUITestSecondaryCurrencies(into: SessionDefaults.current)
+            Self.restoreUITestSecondaryCurrencies(into: UserDefaults.standard)
             SessionState.shared.needsExchangeRateWidgetRefresh = true
         }
         // Seed desync AISLADO (excluyente con `-uitest-seed`): 4 TX con signo↔categoría
@@ -1130,10 +1130,11 @@ final class AppBootstrapper {
             // Original guard preserved: don't surface the restart alert while
             // the user is still mid-onboarding (the alert was originally gated
             // by `hasCompletedOnboarding` in the ContentView observer).
-            // El CAJÓN de esta sesión (decisión del owner 2026-09-03): la pregunta es «¿la persona que
+            // Hasta el 2026-09-12 esto iba al CAJÓN de la sesión (decisión del owner 2026-09-03); hoy hay un
+            // solo dominio y la línea lee `.standard`. La pregunta que motivó aquello: «¿la persona que
             // está usando la app AHORA sigue a mitad de su onboarding?», y desde que el escritor bajó
             // al cajón, `.standard` respondía por la dueña aunque quien mire la pantalla sea la visita.
-            if SessionDefaults.current.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding) {
+            if UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding) {
                 RouterEntryGate.shared.submit(.iCloudMismatch)
             }
         }
@@ -1611,7 +1612,7 @@ final class AppBootstrapper {
     /// Idempotent — `updateCurrentUserDisplayName` is a no-op when nothing differs.
     @MainActor
     func reconcileCurrentUserDisplayNameIfNeeded() async {
-        let realName = (SessionDefaults.current.string(forKey: AppPreferences.Keys.userName) ?? "")
+        let realName = (UserDefaults.standard.string(forKey: AppPreferences.Keys.userName) ?? "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
         guard !realName.isEmpty else { return }
 
@@ -1817,7 +1818,7 @@ final class AppBootstrapper {
                 RouterEntryGate.shared.submit(.presentUpgradeSheet(.voice))
                 return
             }
-            if SessionDefaults.current.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) {
+            if UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) {
                 RouterEntryGate.shared.submit(.presentVoiceEntry)
             } else {
                 RouterEntryGate.shared.submit(.requestAIConsent(.voice))
@@ -1827,7 +1828,7 @@ final class AppBootstrapper {
                 RouterEntryGate.shared.submit(.presentUpgradeSheet(.image))
                 return
             }
-            if SessionDefaults.current.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) {
+            if UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) {
                 RouterEntryGate.shared.submit(.presentImageEntry)
             } else {
                 RouterEntryGate.shared.submit(.requestAIConsent(.image))
@@ -2471,9 +2472,9 @@ final class AppBootstrapper {
     private func resetProThemeIfNeeded() {
         guard !FeatureGateService.shared.isProUser else { return }
 
-        let currentTheme = AppTheme(rawValue: SessionDefaults.current.integer(forKey: "userTheme")) ?? .liquidGlass
+        let currentTheme = AppTheme(rawValue: UserDefaults.standard.integer(forKey: "userTheme")) ?? .liquidGlass
         if currentTheme.isPro {
-            SessionDefaults.current.set(AppTheme.liquidGlass.rawValue, forKey: "userTheme")
+            UserDefaults.standard.set(AppTheme.liquidGlass.rawValue, forKey: "userTheme")
             #if DEBUG
             print("AppBootstrapper: Reset Pro theme '\(currentTheme.label)' to Liquid Glass")
             #endif
@@ -2536,7 +2537,7 @@ final class AppBootstrapper {
         // Legacy Date-based watermark is dropped on migration — the first
         // post-upgrade check emits an alert for all real pending drafts
         // (no silent suppression).
-        SessionDefaults.current.removeObject(forKey: "lastInboxDraftCheckDate")
+        UserDefaults.standard.removeObject(forKey: "lastInboxDraftCheckDate")
 
         var processed = Set(loadProcessedInboxSignatures())
 
@@ -2598,8 +2599,9 @@ final class AppBootstrapper {
 
     private func seedDefaultNotifications(context: ModelContext) {
         // Only seed for existing users who completed onboarding before notification feature
-        // El CAJÓN de esta sesión: las notificaciones se siembran en el store de quien está dentro.
-        guard SessionDefaults.current.bool(forKey: "hasCompletedOnboarding") else { return }
+        // Hasta el 2026-09-12, el CAJÓN de la sesión: las notificaciones se siembran en el store de quien
+        // está dentro. Con un solo dominio, ese store es `.standard`.
+        guard UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") else { return }
         NotificationService.shared.seedDefaultNotificationsIfNeeded(context: context)
     }
 
@@ -2614,10 +2616,11 @@ final class AppBootstrapper {
         let willReEmit = SharedImageRecoveryGate.shouldReEmit(
             hasPendingImage: pending != nil,
             isInitialized: isInitialized,
-            // El CAJÓN de esta sesión: es el mismo readiness gate que `RouterEntryGate` evalúa, y los
+            // Hasta el 2026-09-12, el CAJÓN de la sesión: es el mismo readiness gate que `RouterEntryGate`
+            // evalúa, y los
             // dos tienen que responder por la misma persona o la imagen se re-emite contra un gate
             // que la va a diferir.
-            hasCompletedOnboarding: SessionDefaults.current.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
+            hasCompletedOnboarding: UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
         )
         SharedImageBreadcrumb.checked(site: site, found: pending != nil, willReEmit: willReEmit)
         guard willReEmit, let firstImageURL = pending else { return }
@@ -2634,7 +2637,7 @@ final class AppBootstrapper {
     private func enqueueSharedImage(_ url: URL) {
         sessionState.pendingSharedImageURL = url
         RouterEntryGate.shared.submit(.navigate(.panel))
-        if SessionDefaults.current.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) {
+        if UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) {
             RouterEntryGate.shared.submit(.presentSharedImage(url))
         } else {
             RouterEntryGate.shared.submit(.requestAIConsent(.image))

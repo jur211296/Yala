@@ -86,7 +86,7 @@ struct DateContextProvider {
         calendar: Calendar,
         formatter: DateFormatter
     ) -> String {
-        let stored = SessionDefaults.current.integer(forKey: AppPreferences.Keys.firstWeekday)
+        let stored = UserDefaults.standard.integer(forKey: AppPreferences.Keys.firstWeekday)
         let firstWeekday = (1...7).contains(stored) ? stored : defaultFirstWeekday
 
         let orderedWeekdays = Calendar.orderedWeekdays(firstWeekday: firstWeekday)

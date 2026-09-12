@@ -84,7 +84,7 @@ final class PreferenceSyncService {
     /// bootstrap, mucho antes de que la visita confirme su entrada; con un `let` se quedaría con el
     /// dominio del dueño para toda la vida del proceso, y en la ventana entre `activate` y el
     /// relanzamiento se escribe el consentimiento RGPD de la invitada.
-    private var local: UserDefaults { SessionDefaults.current }
+    private var local: UserDefaults { UserDefaults.standard }
     private var isObserverRegistered = false
 
     // MARK: - Modo Nube (I13) — cola durable de prefs para la rama `.cloud`

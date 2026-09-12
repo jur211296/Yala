@@ -18,8 +18,10 @@
 //  encontró una viva **a un tap de esta pantalla**: `OnboardingResetHelper.clearResidualPreferencesForFreshStart`
 //  —que `startFreshPrivateOnboarding` llama justo detrás del CTA— borraba `userName` y `defaultCurrencyCode`
 //  del `UserDefaults.standard` del DUEÑO. Su mitad iKV sí estaba protegida; la local se había quedado en el
-//  store crudo. Se cerró aquí (`SessionDefaults.current`) porque sin eso **este copy sería falso**: la
-//  pantalla promete que lo tuyo no se mezcla con lo suyo y un tap después le borraba el nombre. Lo que
+//  store crudo. Se cerró con la puerta de dominio por sesión porque sin eso **este copy sería falso**: la
+//  pantalla promete que lo tuyo no se mezcla con lo suyo y un tap después le borraba el nombre. **Esa
+//  puerta se retiró el 2026-09-12**, y con ella el riesgo: en el mismo cambio se apagó el encendido
+//  compilado de la entrada a sesión secundaria, así que ya no hay visita que pueda llegar hasta aquí. Lo que
 //  queda abierto en esta frontera —el prellenado que LEE del dueño, y el centinela de notificaciones— no
 //  contradice el copy y vive en `secondary-onboarding-still-crosses-owner-domain`.
 //

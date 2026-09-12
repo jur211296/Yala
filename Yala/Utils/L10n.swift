@@ -36,19 +36,21 @@ enum LanguageManager {
     /// App Group suite — compartido con widgets, share extension y procesos hermanos.
     /// Si por alguna razón el suite no está disponible, fallback a `UserDefaults.standard`.
     ///
-    /// **M1 (D2, decisión del owner): en sesión secundaria manda el cajón de la visita.** Éste es el
-    /// único consumidor cuyo dominio normal NO es `.standard`, así que ninguno de los otros cuatro lo
-    /// alcanza: sin este desvío, la visita cambia el idioma y **el dueño recupera su móvil con la app
-    /// en otro idioma**. Va contra el App Group a propósito y no contra `.standard`: ahí es donde lo
-    /// leen los procesos hermanos —widget y share extension—, que son del dueño y no saben nada de
-    /// sesiones; dejarles el idioma de ella sería el mismo daño por la puerta de al lado.
+    /// **El App Group a propósito, y NO `.standard`:** ahí es donde leen el idioma los procesos
+    /// hermanos —widget y share extension—. Éste es el único consumidor de preferencias cuyo dominio
+    /// normal no es `.standard`, y por eso cualquier barrido que trate «el dominio local» como
+    /// sinónimo de `.standard` se lo salta o se lo cambia a todo el mundo.
     ///
-    /// Y el motivo de peso no es el bug sino su VERIFICACIÓN: el criterio E2E del ticket manda
-    /// comprobar el idioma, y ese paso **puede salir verde sin estar arreglado**, porque
-    /// `applyRemoteValues` se lo restaura al dueño desde su iCloud KV intacto. Un test que pasa por la
-    /// razón equivocada es la familia de fallo que este repo ya ha pagado varias veces.
+    /// **Hasta el 2026-09-12 aquí había un desvío al cajón de preferencias de la sesión secundaria**,
+    /// para que la invitada no le dejara al dueño el móvil en otro idioma. Se retiró con la puerta
+    /// entera: sin sesiones secundarias no hay dos idiomas que separar. **Se borró la línea en vez de
+    /// sustituirla por `.standard`**, que es la trampa evidente de ese barrido — habría cambiado el
+    /// almacén del idioma al 100 % de los usuarios y roto widget y share extension a la vez.
+    ///
+    /// La lección de verificación que dejó, porque sigue valiendo: un E2E que compruebe el idioma
+    /// **puede salir verde sin estar arreglado**, porque `applyRemoteValues` lo restaura desde el
+    /// iCloud KV. Un test que pasa por la razón equivocada es una familia de fallo ya pagada aquí.
     static var sharedDefaults: UserDefaults {
-        if let session = SessionDefaults.sessionSuite() { return session }
         return UserDefaults(suiteName: SharedContainerService.appGroupIdentifier) ?? .standard
     }
 

@@ -146,7 +146,8 @@ paths:
 > entra con su cuenta, y luego el dueño restaura.
 >
 > **Pero el código de M1 SIGUE VIVO — medido hoy en este árbol, no supuesto:** `SecondarySessionStore`
-> aparece en **65 ficheros** (44 de ellos en `Yala/`) y `SessionDefaults` en **60**. Lo retira el ticket
+> aparece en **72 ficheros** (47 de ellos en `Yala/`) y `SessionDefaults` en **15** (12 en `Yala/`) — era 60
+> hasta el 2026-09-12, cuando se retiró su puerta de dominio y con ella 155 lecturas. Lo retira el ticket
 > `shell-derives-from-two-session-axes` (paso 12 del rediseño), y hasta entonces estas reglas describen
 > **comportamiento vigente**: si tocas preferencias, fronteras de cuenta o el cierre de sesión, se
 > aplican tal cual. Lo único que cambia hoy es cómo se NOMBRA: donde estos párrafos dicen «la visita» o

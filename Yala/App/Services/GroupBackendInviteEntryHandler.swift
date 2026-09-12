@@ -78,11 +78,10 @@ enum GroupBackendInviteEntryHandler {
     // MARK: - Los cuatro términos de la puerta del neutro (`GroupInviteNeutralGateLogic`)
 
     /// El término que separa esta puerta de la del organizador: ¿hay una sesión privada viva debajo? Lo
-    /// **CABLEA `ContentView`** y este tipo no nombra la key, y no es ceremonia: el par escritor/lector de
-    /// `hasCompletedOnboarding` vive en el CAJÓN de la sesión (`SessionDefaults.current`), no en el
-    /// dominio del dueño, y nombrarla aquí a pelo devolvería el defecto de 2026-09-03 —la visita termina
-    /// su onboarding y el lector del dueño sigue viendo `false`—. Lo fija
-    /// `HasCompletedOnboardingDomainTests`, que enumera fichero por fichero quién puede nombrarla.
+    /// **CABLEA `ContentView`** y este tipo no nombra la key. Nació de un defecto de 2026-09-03 —un par
+    /// escritor/lector partido entre dos dominios de preferencias, que dejaba a un lector viendo `false`
+    /// sobre un onboarding ya terminado—. El dominio por sesión se retiró el 2026-09-12 y ese reparto ya
+    /// no puede partirse, pero el cableado se conserva: un solo sitio nombra la key.
     ///
     /// El default sin cablear es `false`, y es el lado PROTECTOR: «no hay sesión privada viva» deja que
     /// los otros dos términos decidan, mientras que un `true` apagaría la puerta entera.
@@ -129,7 +128,7 @@ enum GroupBackendInviteEntryHandler {
     // retirarlo: el seam que permitía a un test fingir «usuario fresco» — los tests montan ahora el hecho
     // real, un intent confirmado o sin confirmar, que además es lo que corre en device.
     static var profileNameProvider: @MainActor () -> String = {
-        SessionDefaults.current.string(forKey: "userName") ?? ""
+        UserDefaults.standard.string(forKey: "userName") ?? ""
     }
     /// `join_group` RPC. Default = servicio real (gate `groupsBackendEnabled && hasSession`).
     static var joinProvider: @MainActor (_ token: String, _ displayName: String, _ legacyMemberKey: String?) async throws -> JoinGroupResult = {

@@ -39,21 +39,21 @@ final class ChatAssistantService {
     // MARK: - Daily Counter
 
     var questionsToday: Int {
-        let lastDate = SessionDefaults.current.string(forKey: "chatLastQuestionDate") ?? ""
+        let lastDate = UserDefaults.standard.string(forKey: "chatLastQuestionDate") ?? ""
         let todayStr = Self.todayString()
         if lastDate != todayStr { return 0 }
-        return SessionDefaults.current.integer(forKey: "chatQuestionsToday")
+        return UserDefaults.standard.integer(forKey: "chatQuestionsToday")
     }
 
     private func incrementDailyCounter() {
         let todayStr = Self.todayString()
-        let lastDate = SessionDefaults.current.string(forKey: "chatLastQuestionDate") ?? ""
+        let lastDate = UserDefaults.standard.string(forKey: "chatLastQuestionDate") ?? ""
         if lastDate != todayStr {
-            SessionDefaults.current.set(todayStr, forKey: "chatLastQuestionDate")
-            SessionDefaults.current.set(1, forKey: "chatQuestionsToday")
+            UserDefaults.standard.set(todayStr, forKey: "chatLastQuestionDate")
+            UserDefaults.standard.set(1, forKey: "chatQuestionsToday")
         } else {
-            let current = SessionDefaults.current.integer(forKey: "chatQuestionsToday")
-            SessionDefaults.current.set(current + 1, forKey: "chatQuestionsToday")
+            let current = UserDefaults.standard.integer(forKey: "chatQuestionsToday")
+            UserDefaults.standard.set(current + 1, forKey: "chatQuestionsToday")
         }
     }
 

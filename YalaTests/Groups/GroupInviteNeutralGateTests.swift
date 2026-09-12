@@ -462,7 +462,7 @@ struct GroupInviteNeutralGateWiringTests {
                 "sin este cableado la puerta no ve el corpus y solo caza el caso del espejo")
         #expect(code.contains("GroupBackendInviteEntryHandler.hasCompletedPersonalOnboardingProvider"),
                 "sin este cableado la puerta no sabe distinguir al dueño del recién llegado")
-        #expect(code.contains("SessionDefaults.current.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)"),
+        #expect(code.contains("UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)"),
                 "el término del onboarding tiene que salir del CAJÓN de la sesión, no del dominio del dueño")
     }
 

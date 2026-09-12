@@ -30,18 +30,19 @@ struct GroupInviteOnboardingView: View {
     /// ¿Esta persona ya tiene cuenta en este device? Decide **qué escribe el CTA**, no qué se muestra: la
     /// hoja es la misma para todos desde 2026-09-05 (ver el encabezado de `GroupsGateLogic`).
     ///
-    /// El CAJÓN de esta sesión y no `.standard` (decisión del owner, 2026-09-03): con `.standard` la
+    /// Hasta el 2026-09-12 esto iba al CAJÓN de la sesión y no a `.standard` (decisión del owner,
+    /// 2026-09-03); hoy hay un solo dominio. Aquello existía porque con `.standard` la
     /// pregunta la respondería la DUEÑA del teléfono, y a la visita se le haría el alta o no según el
     /// onboarding de otra persona.
     private var hasCompletedOnboarding: Bool {
-        SessionDefaults.current.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
+        UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
     }
 
     /// Nombre del perfil de ESTA sesión. Mismo dominio y misma clave que
     /// `GroupBackendInviteEntryHandler.profileNameProvider`, que es quien lo usa de fallback en el join:
     /// leerlos de dominios distintos daría un prellenado que no es el que acabaría enviándose.
     private var profileName: String {
-        SessionDefaults.current.string(forKey: AppPreferences.Keys.userName) ?? ""
+        UserDefaults.standard.string(forKey: AppPreferences.Keys.userName) ?? ""
     }
 
     /// #22: marca del invite (nombre/icono/color del grupo) para personalizar el banner. Si nil o sin
@@ -533,7 +534,7 @@ struct GroupInviteOnboardingView: View {
         // .groupInvite` — un proxy que además tapaba el educativo a quien entraba por la card «Solo
         // grupos», que era justo quien menos contexto tenía. Sin esta línea, el invitado vería el educativo
         // general del tab justo después del suyo.
-        SessionDefaults.current.set(true, forKey: AppPreferences.Keys.hasShownGroupsOnboarding)
+        UserDefaults.standard.set(true, forKey: AppPreferences.Keys.hasShownGroupsOnboarding)
 
         // 2. Save user name
         sync.set(string: effectiveName, forKey: AppPreferences.Keys.userName)

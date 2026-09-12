@@ -493,9 +493,20 @@ nonisolated enum CloudSyncFlags {
     }
 
     /// Encendido COMPILADO de la capacidad (la palanca de release del binario; el percent remoto es
-    /// el rollout Y el kill). `true` desde el chip M2 — ver el porqué de que eso NO encienda nada en
-    /// producción en el docblock de arriba.
-    private static let secondarySessionCompiledDefault = true
+    /// el rollout Y el kill). Estuvo en `true` desde el chip M2.
+    ///
+    /// **A `false` desde el 2026-09-12, y es una precondición del cambio de ese día, no una preferencia:**
+    /// ese mismo día se retiró la puerta de dominio por sesión —lo que aislaba las preferencias de la
+    /// invitada del `UserDefaults` del dueño— porque en producción nunca llegó a actuar. Pero el apagado
+    /// de la ENTRADA vivía solo en el percent remoto (`SECONDARY_SESSION_ROLLOUT_PERCENT`), que es un
+    /// valor de servidor: **staging sirve 100**, así que un build DEV podía abrir la entrada sin
+    /// recompilar, y en producción bastaría subir el percent. Con el aislamiento fuera, eso deja de ser
+    /// un rollout y pasa a ser una fuga: la invitada escribiría su nombre y su divisa encima de los del
+    /// dueño. Apagarlo aquí es local y no depende de nadie.
+    ///
+    /// M1 se retira entera en `shell-derives-from-two-session-axes`; esto solo adelanta el cierre de su
+    /// puerta de entrada para que las dos mitades no queden nunca desparejadas.
+    private static let secondarySessionCompiledDefault = false
     static let debugSecondarySessionEnabledKey = "cloudSync.debug.secondarySessionEnabled"
     nonisolated(unsafe) private static var secondarySessionEnabledTestOverride: Bool?
 

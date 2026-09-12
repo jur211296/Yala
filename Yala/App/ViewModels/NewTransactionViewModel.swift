@@ -561,8 +561,8 @@ final class NewTransactionViewModel {
 
             // Track new transaction count for notification primer
             if isNewTransaction {
-                let count = SessionDefaults.current.integer(forKey: "transactionsSavedCount") + 1
-                SessionDefaults.current.set(count, forKey: "transactionsSavedCount")
+                let count = UserDefaults.standard.integer(forKey: "transactionsSavedCount") + 1
+                UserDefaults.standard.set(count, forKey: "transactionsSavedCount")
 
                 // Check if we should prompt for App Store review
                 if ReviewPromptService.shouldPrompt(transactionCount: count) {
@@ -962,10 +962,10 @@ final class NewTransactionViewModel {
     // MARK: - Notification Primer
 
     func checkNotificationPrimer() async {
-        let count = SessionDefaults.current.integer(forKey: "transactionsSavedCount")
-        guard count >= 3, !SessionDefaults.current.bool(forKey: "hasSeenNotificationPrimer") else { return }
+        let count = UserDefaults.standard.integer(forKey: "transactionsSavedCount")
+        guard count >= 3, !UserDefaults.standard.bool(forKey: "hasSeenNotificationPrimer") else { return }
         let status = await NotificationService.shared.checkPermissionStatus()
-        SessionDefaults.current.set(true, forKey: "hasSeenNotificationPrimer")
+        UserDefaults.standard.set(true, forKey: "hasSeenNotificationPrimer")
         if status == .notDetermined {
             showNotificationPrimer = true
         }
@@ -1021,9 +1021,9 @@ final class NewTransactionViewModel {
         self.amountString = AmountInputHelper.formatWithGrouping(amount)
 
         // Save last used preferences
-        SessionDefaults.current.set(splitType.rawValue, forKey: "lastSplitType")
+        UserDefaults.standard.set(splitType.rawValue, forKey: "lastSplitType")
         if splitType == .percentage {
-            SessionDefaults.current.set(myValue, forKey: "lastSplitPercentage")
+            UserDefaults.standard.set(myValue, forKey: "lastSplitPercentage")
         }
     }
 

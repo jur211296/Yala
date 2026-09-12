@@ -1022,11 +1022,11 @@ struct NewTransactionView: View {
                 // Prefill total from current amount for new splits
                 splitFieldState.prefillTotal(viewModel.amount)
                 // Apply last used defaults
-                if let lastType = SessionDefaults.current.string(forKey: "lastSplitType"),
+                if let lastType = UserDefaults.standard.string(forKey: "lastSplitType"),
                    let type = SplitType(rawValue: lastType) {
                     splitFieldState.splitType = type
                     if type == .percentage {
-                        let lastPct = SessionDefaults.current.double(forKey: "lastSplitPercentage")
+                        let lastPct = UserDefaults.standard.double(forKey: "lastSplitPercentage")
                         if lastPct > 0 {
                             splitFieldState.percentageText = lastPct == lastPct.rounded()
                                 ? String(Int(lastPct))

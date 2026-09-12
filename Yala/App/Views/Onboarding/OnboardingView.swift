@@ -1784,15 +1784,13 @@ struct OnboardingView: View {
         // KPI registros/día (alta local — onboarding completo)
         MetricsService.localRegistrationCompleted(mode: mode.rawValue)
 
-        // El CAJÓN de esta sesión, no el dominio del dueño (decisión del owner 2026-09-03).
-        // El par estaba PARTIDO: esto escribía en `.standard` mientras su lector de `ContentView:16`
-        // ya leía del cajón por `.defaultAppStorage(SessionDefaults.current)`. En sesión secundaria
-        // eso significa que la visita terminaba su onboarding, su flag seguía en `false` y el Welcome
-        // podía reabrírsele — y de paso la dueña recibía una escritura que no es suya. La key sigue
-        // siendo de DISPOSITIVO en el inventario (las FRONTERAS la gestionan en `.standard`: la
-        // entrada la marca, la siembra la hereda y la salida la resetea); lo que baja al cajón es lo
-        // que ocurre DENTRO de la sesión. Ver `SessionPreferenceKeys.deviceExceptions`.
-        SessionDefaults.current.set(true, forKey: "hasCompletedOnboarding")
+        // Escritor y lector de esta key tienen que hablar contra el MISMO dominio — la lección de un
+        // defecto de 2026-09-03, cuando esto escribía en un dominio y su lector de `ContentView` leía de
+        // otro: el usuario terminaba su onboarding, el flag seguía en `false` y el Welcome podía
+        // reabrírsele. Desde el 2026-09-12 hay un único dominio (`UserDefaults.standard`) y la forma de
+        // fallar ya no existe, pero la regla de escribir donde se lee se conserva. La key es de
+        // DISPOSITIVO en el inventario; ver `SessionPreferenceKeys.deviceExceptions`.
+        UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
 
         PreferenceSyncService.shared.signalOnboardingCompleted()
 

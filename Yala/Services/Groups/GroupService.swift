@@ -1548,7 +1548,7 @@ final class GroupService {
     // MARK: - User Display Name
 
     private func currentUserDisplayName() -> String {
-        let name = SessionDefaults.current.string(forKey: "userName") ?? ""
+        let name = UserDefaults.standard.string(forKey: "userName") ?? ""
         return name.isEmpty ? L10n.Profile.defaultName : name
     }
 

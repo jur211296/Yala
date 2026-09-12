@@ -111,3 +111,47 @@ Preguntadas una a una antes de soltar la cola autónoma. **Mandan sobre lo escri
   dejó en pie porque retirar un guard M1 era ampliar a otro objeto; cae con M1 en este barrido (su
   `showOnboarding = false` solo servía a la card). Lo pinnea
   `GroupsOrganizerBranchTests.organizerFlowStopsUnderASecondarySession`: retíralos juntos.
+
+## Decisiones de Jürgen (2026-09-12, tras el mapa del alcance real)
+
+Preguntadas con la medición delante. **Mandan sobre todo lo escrito arriba**, incluidas las del 9-sep
+en lo que las contradigan.
+
+- **El eje «¿hay sesión privada?» se escribe como MARCA POSITIVA persistida, con backfill de un
+  arranque.** Es el punto que hacía el ticket inejecutable: hoy ese eje no tiene fuente propia — las
+  seis veces que `hasPrivateSession` aparece en producción se construye como
+  `!SessionState.shared.isGroupInviteMode`, o sea a partir del flag que este ticket borra, y dos tests
+  pinnean ese literal (`CloudSignOutFlowLogicTests:679` y `:683`). Se descartó derivarlo de la
+  presencia del store en disco: un gate derivado de una AUSENCIA falla abierto, y si el fichero falta
+  por un fallo de montaje la app trataría a un usuario con vida personal como si solo hubiera venido
+  por un grupo. **El backfill NO contradice la derogación del punto 7**: aquella retiraba estados
+  legacy muertos (`groupInvite`/`groupsOnly`); esto escribe por primera vez la celda NORMAL del modelo
+  nuevo, que es la de casi todo el parque. Sin él, todo el mundo despierta sin marca.
+- **Dos entregas, no una.** El tercio mecánico —retirar el dominio de preferencias por sesión— sale
+  en su propio PR porque es un no-op **demostrable** en producción, y separarlo hace que un rojo del
+  gate diga de qué mitad viene. No deja la app medio migrada, que es lo que protegía la decisión del
+  9-sep: en producción no cambia un byte. El resto (M1 + `OnboardingMode` + `SessionShape`) va junto.
+- **`StorageMode` se ACOTA: sale de este ticket.** `SessionShape` lo sustituye solo como entrada de la
+  UI; el motor de Modo Nube sigue leyendo su modo persistido. Motivo medido: no es dark —el gateway
+  sirve `CLOUD_MODE_ROLLOUT_PERCENT=100` en producción y un alta born-cloud escribe `.cloud` hoy— y es
+  el SSOT del mount, la autoridad de quiescencia y los gates de arranque. Retirarlo de verdad es varias
+  veces el tamaño del resto del ticket.
+- **El cambio de Apple ID (§6) sale a ticket propio**:
+  `apple-id-change-should-close-the-private-session`. No comparte código con el barrido y es el cambio
+  de comportamiento más caro de la cola.
+
+### Premisas del ticket que NO se sostienen (medidas el 2026-09-12 en `ad2c9d0f`)
+
+- **El alcance está subestimado ~4×.** «19 vistas y 14 ficheros de servicio» son hoy **115 ficheros de
+  producción** más **46 de tests**, más gateway, 16 locales, `qa/coverage-index.json` y una línea del
+  `pbxproj`. (Medido con `git grep`: `grep -r` desde la raíz miente, porque hay un worktree vivo
+  DENTRO del árbol, en `.claude/worktrees/`.)
+- **`Yala/Utils/CloudSyncFlags.swift` no existe**: está en `Yala/Services/CloudSync/CloudSyncFlags.swift`.
+- **`GroupsRetentionView` ya no existe** — la borró el paso 9, así que su escritura de
+  `UsageFocus.groupsOnly` (que este ticket listaba como hallazgo pendiente) está resuelta. Hoy no
+  queda **ni un escritor** de `.groupsOnly`: la única asignación viva es `FullModeActivationView:534`
+  poniendo `.full`, que es no-op permanente.
+- **`SessionState` ya está ocupado**: hay un tipo con ese nombre de 815 líneas que es otra cosa
+  (notificaciones de inbox, deep links de widgets). `SessionShape` necesita otro sitio.
+- **`SessionDefaults` NO es una pieza de M1 que se retire sin más.** Aparecía en 63 ficheros porque era
+  la puerta que decidía el dominio de TODAS las preferencias. Lo retira el PR mecánico de arriba.

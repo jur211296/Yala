@@ -186,17 +186,31 @@ struct CloudRemoteConfigTests {
         #expect(!CloudSyncFlags.secondarySessionEntryAvailable)
     }
 
-    /// La capacidad COMPILADA nace en `true` (palanca de release del binario) y aun así la entrada es
-    /// DARK en producción, porque el percent la decide. Es el patrón de `bornCloudChoiceEnabled`.
-    @Test func secondaryEntry_compiledCapabilityIsOn_butTheRolloutDecides() {
+    /// **La capacidad COMPILADA está APAGADA desde el 2026-09-12, y el sentido de este test se invirtió
+    /// con ella.** Nació en `true` (palanca de release del binario, chip M2) para que el flip del percent
+    /// encendiera M1 sin recompilar. Ese día se retiró la puerta de dominio por sesión —lo que aislaba
+    /// las preferencias de la invitada del `UserDefaults` del dueño— y con el aislamiento fuera, dejar la
+    /// entrada a merced de un valor de servidor deja de ser un rollout y pasa a ser una fuga: staging
+    /// sirve el percent al 100, así que un build DEV la abriría sin recompilar.
+    ///
+    /// Lo que este test fija ahora es el apagado LOCAL, que no depende de nadie. M1 se retira entera en
+    /// `shell-derives-from-two-session-axes`; hasta entonces esto es lo que impide que las dos mitades
+    /// queden desparejadas.
+    @Test func secondaryEntry_compiledCapabilityIsOff_soNoRolloutCanOpenIt() {
         CloudSyncFlags._testResetSecondarySessionEnabledOverride()
         defer { CloudRemoteFlags._testResetOverrides() }
-        #expect(CloudSyncFlags.secondarySessionEnabled, """
-            La capacidad compilada volvió a `false`: el flip del percent (chip M5) dejaría de encender \
-            nada y encender M1 volvería a exigir recompilar, que es el bug que M2 arregla.
+        #expect(!CloudSyncFlags.secondarySessionEnabled, """
+            La capacidad compilada volvió a `true`. Con la puerta de dominio por sesión ya retirada, eso \
+            deja la entrada a sesión secundaria abierta desde el servidor —staging sirve 100— y la \
+            invitada escribiría su nombre y su divisa encima de los del dueño.
             """)
-        CloudRemoteFlags._testSetOverrides(cloudMode: true, secondarySession: false)
-        #expect(!CloudSyncFlags.secondarySessionEntryAvailable)
+        // Y el percent no puede reabrirla: con la capacidad apagada, el compuesto es `false` sirva lo
+        // que sirva el Worker. Control en la dirección contraria del apagado.
+        CloudRemoteFlags._testSetOverrides(cloudMode: true, secondarySession: true)
+        #expect(!CloudSyncFlags.secondarySessionEntryAvailable, """
+            El percent remoto reabrió la entrada pese al apagado compilado: el kill-switch local no está \
+            en el camino del compuesto.
+            """)
     }
 
     /// **FAIL-CLOSED en fresh install, hasta la celda del guard.** Sin snapshot (producción antes del

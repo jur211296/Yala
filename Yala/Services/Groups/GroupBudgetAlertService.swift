@@ -55,7 +55,7 @@ final class GroupBudgetAlertService {
         // Gate 1 — el toggle de avisos de presupuesto. Se REUSA el del presupuesto personal en vez de
         // inventar uno nuevo: para el usuario esto es «avisos de presupuesto», y un ajuste más que
         // nadie pidió es un ajuste más que mantener.
-        guard SessionDefaults.current.bool(forKey: AppPreferences.Keys.budgetAlertsEnabled) else { return }
+        guard UserDefaults.standard.bool(forKey: AppPreferences.Keys.budgetAlertsEnabled) else { return }
 
         guard !isChecking else { return }
         isChecking = true

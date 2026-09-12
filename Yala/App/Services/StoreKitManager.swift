@@ -382,7 +382,7 @@ final class StoreKitManager {
         }
 
         if nowProUser && !wasAlreadyPro {
-            SessionDefaults.current.set(true, forKey: "chatFABVisible")
+            UserDefaults.standard.set(true, forKey: "chatFABVisible")
         }
 
         // Track for downgrade detection
@@ -569,7 +569,7 @@ final class StoreKitManager {
             UserDefaults.standard.removeObject(forKey: Self.devForceFreeTierKey)
             isProUser = true
             wasProUser = true
-            SessionDefaults.current.set(true, forKey: "chatFABVisible")
+            UserDefaults.standard.set(true, forKey: "chatFABVisible")
         } else {
             devForceFreeTier = true
             UserDefaults.standard.set(true, forKey: Self.devForceFreeTierKey)
@@ -613,7 +613,7 @@ final class StoreKitManager {
         UserDefaults.standard.removeObject(forKey: Self.devForceProTierKey)
         UserDefaults.standard.removeObject(forKey: Self.devForceFreeTierKey)
         UserDefaults.standard.removeObject(forKey: wasProUserKey)
-        SessionDefaults.current.removeObject(forKey: "chatFABVisible")
+        UserDefaults.standard.removeObject(forKey: "chatFABVisible")
 
         // El gate Pro de QuickExpenseIntent lee el App Group, no `isProUser` — sin esto los
         // intents verían el estado del launch anterior (paridad con el toggle que sustituye).

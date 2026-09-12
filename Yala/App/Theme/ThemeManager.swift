@@ -41,23 +41,23 @@ final class ThemeManager {
 
     /// The user's persisted theme choice (stored property so @Observable tracks it)
     var userChoice: AppTheme = {
-        let defaults = SessionDefaults.current
+        let defaults = UserDefaults.standard
         if defaults.object(forKey: "userTheme") == nil {
             return .liquidGlass
         }
         return AppTheme(rawValue: defaults.integer(forKey: "userTheme")) ?? .liquidGlass
     }() {
         didSet {
-            SessionDefaults.current.set(userChoice.rawValue, forKey: "userTheme")
+            UserDefaults.standard.set(userChoice.rawValue, forKey: "userTheme")
         }
     }
 
     /// Gradient color variant for the Translucent theme
     var translucentVariant: TranslucentVariant = TranslucentVariant(
-        rawValue: SessionDefaults.current.integer(forKey: "translucentVariant")
+        rawValue: UserDefaults.standard.integer(forKey: "translucentVariant")
     ) ?? .indigo {
         didSet {
-            SessionDefaults.current.set(translucentVariant.rawValue, forKey: "translucentVariant")
+            UserDefaults.standard.set(translucentVariant.rawValue, forKey: "translucentVariant")
         }
     }
 

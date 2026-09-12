@@ -74,7 +74,7 @@ final class GroupSettlementReminderService {
 
     func checkPendingSettlementsAndNotify(now: Date = .now) async {
         // Gate 1 — el toggle propio (default false: nadie recibe esto sin encenderlo).
-        guard SessionDefaults.current.bool(forKey: AppPreferences.Keys.groupSettlementRemindersEnabled) else { return }
+        guard UserDefaults.standard.bool(forKey: AppPreferences.Keys.groupSettlementRemindersEnabled) else { return }
 
         guard !isChecking else { return }
         isChecking = true

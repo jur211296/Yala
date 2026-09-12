@@ -99,10 +99,10 @@ final class NudgeService {
         resetWeeklyCountIfNeeded()
         resetMonthlyCountIfNeeded()
 
-        let weekly = SessionDefaults.current.integer(forKey: Keys.weeklyShownCount)
+        let weekly = UserDefaults.standard.integer(forKey: Keys.weeklyShownCount)
         guard weekly < Self.maxPerWeek else { return false }
 
-        let monthly = SessionDefaults.current.integer(forKey: Keys.monthlyShownCount)
+        let monthly = UserDefaults.standard.integer(forKey: Keys.monthlyShownCount)
         guard monthly < Self.maxPerMonth else { return false }
 
         return true
@@ -113,19 +113,19 @@ final class NudgeService {
     private func recordShown() {
         shownThisSession = true
         evaluatedThisSession = true
-        SessionDefaults.current.set(Date.now, forKey: Keys.lastShownDate)
+        UserDefaults.standard.set(Date.now, forKey: Keys.lastShownDate)
 
         resetWeeklyCountIfNeeded()
-        let weeklyCount = SessionDefaults.current.integer(forKey: Keys.weeklyShownCount) + 1
-        SessionDefaults.current.set(weeklyCount, forKey: Keys.weeklyShownCount)
+        let weeklyCount = UserDefaults.standard.integer(forKey: Keys.weeklyShownCount) + 1
+        UserDefaults.standard.set(weeklyCount, forKey: Keys.weeklyShownCount)
 
         resetMonthlyCountIfNeeded()
-        let monthlyCount = SessionDefaults.current.integer(forKey: Keys.monthlyShownCount) + 1
-        SessionDefaults.current.set(monthlyCount, forKey: Keys.monthlyShownCount)
+        let monthlyCount = UserDefaults.standard.integer(forKey: Keys.monthlyShownCount) + 1
+        UserDefaults.standard.set(monthlyCount, forKey: Keys.monthlyShownCount)
     }
 
     func recordInteracted(_ nudge: NudgeType) {
-        SessionDefaults.current.set(true, forKey: Keys.interacted(nudge))
+        UserDefaults.standard.set(true, forKey: Keys.interacted(nudge))
         clearCurrentNudge()
     }
 
@@ -142,8 +142,8 @@ final class NudgeService {
 
     /// Record when user first joins a group (for timing gates).
     func recordGroupJoinIfNeeded() {
-        guard SessionDefaults.current.object(forKey: Keys.firstGroupJoinDate) == nil else { return }
-        SessionDefaults.current.set(Date.now, forKey: Keys.firstGroupJoinDate)
+        guard UserDefaults.standard.object(forKey: Keys.firstGroupJoinDate) == nil else { return }
+        UserDefaults.standard.set(Date.now, forKey: Keys.firstGroupJoinDate)
     }
 
     // MARK: - Testing Support
@@ -155,7 +155,7 @@ final class NudgeService {
         currentNudgeMessage = nil
         modelContext = nil
 
-        let defaults = SessionDefaults.current
+        let defaults = UserDefaults.standard
         defaults.removeObject(forKey: Keys.lastShownDate)
         defaults.removeObject(forKey: Keys.weeklyResetDate)
         defaults.removeObject(forKey: Keys.weeklyShownCount)
@@ -171,43 +171,43 @@ final class NudgeService {
 
     private func resetWeeklyCountIfNeeded() {
         let calendar = Calendar.current
-        if let resetDate = SessionDefaults.current.object(forKey: Keys.weeklyResetDate) as? Date {
+        if let resetDate = UserDefaults.standard.object(forKey: Keys.weeklyResetDate) as? Date {
             if !calendar.isDate(resetDate, equalTo: .now, toGranularity: .weekOfYear) {
-                SessionDefaults.current.set(0, forKey: Keys.weeklyShownCount)
-                SessionDefaults.current.set(Date.now, forKey: Keys.weeklyResetDate)
+                UserDefaults.standard.set(0, forKey: Keys.weeklyShownCount)
+                UserDefaults.standard.set(Date.now, forKey: Keys.weeklyResetDate)
             }
         } else {
-            SessionDefaults.current.set(Date.now, forKey: Keys.weeklyResetDate)
+            UserDefaults.standard.set(Date.now, forKey: Keys.weeklyResetDate)
         }
     }
 
     private func resetMonthlyCountIfNeeded() {
         let calendar = Calendar.current
-        if let resetDate = SessionDefaults.current.object(forKey: Keys.monthlyResetDate) as? Date {
+        if let resetDate = UserDefaults.standard.object(forKey: Keys.monthlyResetDate) as? Date {
             if !calendar.isDate(resetDate, equalTo: .now, toGranularity: .month) {
-                SessionDefaults.current.set(0, forKey: Keys.monthlyShownCount)
-                SessionDefaults.current.set(Date.now, forKey: Keys.monthlyResetDate)
+                UserDefaults.standard.set(0, forKey: Keys.monthlyShownCount)
+                UserDefaults.standard.set(Date.now, forKey: Keys.monthlyResetDate)
                 for nudge in NudgeType.allCases {
-                    SessionDefaults.current.removeObject(forKey: Keys.interacted(nudge))
+                    UserDefaults.standard.removeObject(forKey: Keys.interacted(nudge))
                 }
             }
         } else {
-            SessionDefaults.current.set(Date.now, forKey: Keys.monthlyResetDate)
+            UserDefaults.standard.set(Date.now, forKey: Keys.monthlyResetDate)
         }
     }
 
     // MARK: - Private — Helpers
 
     private func isInteracted(_ nudge: NudgeType) -> Bool {
-        SessionDefaults.current.bool(forKey: Keys.interacted(nudge))
+        UserDefaults.standard.bool(forKey: Keys.interacted(nudge))
     }
 
     private func weeksSinceFirstGroupJoin() -> Int {
         let joinDate: Date
-        if let stored = SessionDefaults.current.object(forKey: Keys.firstGroupJoinDate) as? Date {
+        if let stored = UserDefaults.standard.object(forKey: Keys.firstGroupJoinDate) as? Date {
             joinDate = stored
         } else if let oldest = oldestGroupCreatedAt() {
-            SessionDefaults.current.set(oldest, forKey: Keys.firstGroupJoinDate)
+            UserDefaults.standard.set(oldest, forKey: Keys.firstGroupJoinDate)
             joinDate = oldest
         } else {
             return 0

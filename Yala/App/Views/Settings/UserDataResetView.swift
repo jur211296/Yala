@@ -219,7 +219,7 @@ struct UserDataResetView: View {
     /// `DataWipeService.removeUserPreferenceKeys`; el vaciado remoto (otro dispositivo) no pasa por aquí.
     private func applyWipeLanding(_ landing: DestructiveScopeLogic.WipeLanding) {
         // El mismo dominio que acaba de barrer el wipe (el de quien pulsa, M1 incluida).
-        let defaults = SessionDefaults.current
+        let defaults = UserDefaults.standard
         switch landing {
         case .personalOnboarding:
             // `presentNextOnboardingScreen` salta al onboarding personal cuando el chooser ya se vio.

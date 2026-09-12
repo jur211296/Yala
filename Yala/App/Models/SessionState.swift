@@ -95,13 +95,13 @@ class SessionState {
         didSet {
             // Persist custom range
             if let range = customDateRange {
-                SessionDefaults.current.set(
+                UserDefaults.standard.set(
                     range.start.timeIntervalSince1970, forKey: "customPeriodStart")
-                SessionDefaults.current.set(
+                UserDefaults.standard.set(
                     range.end.timeIntervalSince1970, forKey: "customPeriodEnd")
             } else {
-                SessionDefaults.current.removeObject(forKey: "customPeriodStart")
-                SessionDefaults.current.removeObject(forKey: "customPeriodEnd")
+                UserDefaults.standard.removeObject(forKey: "customPeriodStart")
+                UserDefaults.standard.removeObject(forKey: "customPeriodEnd")
             }
             // Update filter if currently on custom period
             if selectedPeriod == .custom {
@@ -125,10 +125,10 @@ class SessionState {
 
     /// User's financial mindset chosen during onboarding: "cashFlow" (Día a día) or "patrimonial" (Control total).
     /// Affects educational UI (balance calculator variants, tips) but NOT features or calculations.
-    var financialMindset: String = SessionDefaults.current.string(forKey: AppPreferences.Keys.financialMindset) ?? "cashFlow" {
+    var financialMindset: String = UserDefaults.standard.string(forKey: AppPreferences.Keys.financialMindset) ?? "cashFlow" {
         didSet {
             guard oldValue != financialMindset else { return }
-            SessionDefaults.current.set(financialMindset, forKey: AppPreferences.Keys.financialMindset)
+            UserDefaults.standard.set(financialMindset, forKey: AppPreferences.Keys.financialMindset)
         }
     }
 
@@ -146,12 +146,12 @@ class SessionState {
     /// ⇒ **publica quien DECIDE**: `PersonalizationSettingsView` (toggle de Ajustes) y
     /// `OnboardingView`. Un punto de intención nuevo tiene que hacer lo mismo; hasta 2026-08-05
     /// llegaba a iCloud de rebote por `AppPreferences.loadFromDefaults`, que ya no re-persiste.
-    var isExpensesOnlyMode: Bool = SessionDefaults.current.bool(forKey: AppPreferences.Keys.expensesOnlyMode) {
+    var isExpensesOnlyMode: Bool = UserDefaults.standard.bool(forKey: AppPreferences.Keys.expensesOnlyMode) {
         didSet {
             // No-op guard avoids spurious UserDefaults writes (which materialize the key
             // on fresh installs) and WidgetCenter reloads when callers reassign the same value.
             guard oldValue != isExpensesOnlyMode else { return }
-            SessionDefaults.current.set(isExpensesOnlyMode, forKey: AppPreferences.Keys.expensesOnlyMode)
+            UserDefaults.standard.set(isExpensesOnlyMode, forKey: AppPreferences.Keys.expensesOnlyMode)
             if let appGroup = UserDefaults(suiteName: SharedContainerService.appGroupIdentifier) {
                 appGroup.set(isExpensesOnlyMode, forKey: AppPreferences.Keys.expensesOnlyMode)
             }
@@ -501,8 +501,8 @@ class SessionState {
     /// Flag set by OnboardingView completion to trigger trial offer after fullScreenCover dismisses.
     /// Persisted in UserDefaults so it survives app kill during the dismiss animation window.
     /// Consumption routed via AppRouter.enqueue(.presentTrialOffer); the flag itself remains here.
-    var needsPostOnboardingTrial: Bool = SessionDefaults.current.bool(forKey: "needsPostOnboardingTrial") {
-        didSet { SessionDefaults.current.set(needsPostOnboardingTrial, forKey: "needsPostOnboardingTrial") }
+    var needsPostOnboardingTrial: Bool = UserDefaults.standard.bool(forKey: "needsPostOnboardingTrial") {
+        didSet { UserDefaults.standard.set(needsPostOnboardingTrial, forKey: "needsPostOnboardingTrial") }
     }
 
     // MARK: - Splash State
@@ -573,9 +573,9 @@ class SessionState {
             let key = "chat_draft_saved_signal"
             if let signal = chatDraftSavedSignal,
                let data = try? JSONEncoder().encode(signal) {
-                SessionDefaults.current.set(data, forKey: key)
+                UserDefaults.standard.set(data, forKey: key)
             } else {
-                SessionDefaults.current.removeObject(forKey: key)
+                UserDefaults.standard.removeObject(forKey: key)
             }
         }
     }
@@ -583,7 +583,7 @@ class SessionState {
     /// Restaura el signal desde UserDefaults si existe — llamado por ChatVM en setContext.
     func restoreChatDraftSavedSignalIfNeeded() {
         guard chatDraftSavedSignal == nil else { return }
-        guard let data = SessionDefaults.current.data(forKey: "chat_draft_saved_signal"),
+        guard let data = UserDefaults.standard.data(forKey: "chat_draft_saved_signal"),
               let signal = try? JSONDecoder().decode(ChatDraftSavedSignal.self, from: data)
         else { return }
         chatDraftSavedSignal = signal  // re-publica → ChatSheetView observa via .onChange si está abierto
@@ -774,7 +774,7 @@ class SessionState {
 
     init() {
         // Load default period from AppStorage or fallback to .allTime
-        if let rawValue = SessionDefaults.current.string(forKey: "defaultPeriod"),
+        if let rawValue = UserDefaults.standard.string(forKey: "defaultPeriod"),
             let period = DetailPeriod(rawValue: rawValue)
         {
             self.selectedPeriod = period
@@ -783,8 +783,8 @@ class SessionState {
         }
 
         // Load persisted custom date range
-        let startTimestamp = SessionDefaults.current.double(forKey: "customPeriodStart")
-        let endTimestamp = SessionDefaults.current.double(forKey: "customPeriodEnd")
+        let startTimestamp = UserDefaults.standard.double(forKey: "customPeriodStart")
+        let endTimestamp = UserDefaults.standard.double(forKey: "customPeriodEnd")
         if startTimestamp > 0 && endTimestamp > 0 {
             let start = Date(timeIntervalSince1970: startTimestamp)
             let end = Date(timeIntervalSince1970: endTimestamp)

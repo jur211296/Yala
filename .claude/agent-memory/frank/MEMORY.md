@@ -42,6 +42,7 @@
 - [La corrección de la lente reintroduce el bug](feedback_la_correccion_de_la_lente_reintroduce_el_bug.md) — el 10-sep, dos veces en el mismo predicado; lo que escribes DESPUÉS de la review no está revisado.
 - [El ancla que no existe](feedback_el_ancla_que_no_existe.md) — antes de diseñar un «vuelve a enlazarse», comprueba que el objeto TIENE identidad serializable; si no, el ticket pide algo imposible.
 - [La review y los mutantes no comparten árbol](feedback_la_review_y_los_mutantes_no_comparten_arbol.md) — una lente leyó un fichero MUTADO; y un script de parche escrito no es un script aplicado.
+- [Mi refutación falla ABIERTO](feedback_mi_refutacion_falla_abierto.md) — 33 de 45 hallazgos salieron «refutados» sin que nadie los juzgara; con `agents_error > 0`, lee el journal.
 - [La review adversarial caza lo MÍO](feedback_review_adversarial_caza_lo_mio.md) — 8 el 7-sep, 7 el 8-sep; puede refutar la PREMISA del ticket, y un camino muerto que revives trae sus bugs intactos.
 - [La rule de área es una lente más](feedback_la_rule_de_area_es_una_lente_mas.md) — leerla CONTRA el diff: cazó lo que las tres lentes no vieron el 8-sep y otras dos cosas el 10-sep.
 - [Las lentes se contradicen entre sí](feedback_lentes_adversariales_se_contradicen.md) — cuando dos discrepan, mídelo; y la CORRECCIÓN de una lente también puede venir incompleta.
@@ -69,6 +70,7 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build incremental; dos míos iban al commit el 10-sep.
 
 ## Estado del trabajo
+- [El paso 12 estaba roto: el eje 1 no tenía fuente](project_paso12_dominio_preferencias.md) — PR #149 entrega el tercio mecánico; 4 decisiones del 12-sep; el flag de M1 estaba en `true`, no en `false`.
 - [El simulador se pide por turno, y la segunda espera](project_cola_del_simulador.md) — PR #147; la review cazó DOS llaves maestras mías; tener el turno NO es tener el simulador; deja 4 tickets.
 - [La cuenta de grupos ya se suelta con la nube en pausa](project_killswitch_puerta_grupos.md) — PR #146; el predicado del ticket era el equivocado; device-QA SÍ simulable; deja un `high`.
 - [Los 7 XCUITest del Welcome estaban SANOS](project_siete_xcuitest_welcome_falso_positivo.md) — `discarded` con 3 mediciones (PR #145); queda el centinela del simulador y un `high` esperando decisión de Jürgen.

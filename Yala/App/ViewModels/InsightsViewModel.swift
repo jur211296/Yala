@@ -73,7 +73,7 @@ final class InsightsViewModel {
         // El toggle "incluir transacciones de grupos en estadísticas" filtra las TX
         // bridgeadas y por tanto es un input del cálculo — debe entrar en la firma
         // del gate, o cambiarlo no invalidaría el cache y dejaría insightData stale.
-        let includeBridgedGroupTx = (SessionDefaults.current.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
+        let includeBridgedGroupTx = (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
 
         var hasher = Hasher()
         hasher.combine(SessionState.shared.dataVersion)
@@ -125,7 +125,7 @@ final class InsightsViewModel {
         preferredCurrencyCode: String,
         adjustment: GroupBridgeStatsAdjustment = .none
     ) {
-        let includeBridgedGroupTx = (SessionDefaults.current.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
+        let includeBridgedGroupTx = (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
         let newScore = FinancialScoreCalculator.calculate(
             transactions: transactions,
             budgets: budgets,
@@ -209,7 +209,7 @@ final class InsightsViewModel {
 
         // Check prerequisites
         let isPro = FeatureGateService.shared.canAccess(.smartInsightsAI)
-        let hasConsent = SessionDefaults.current.bool(forKey: AppPreferences.Keys.aiInsightsConsentAccepted)
+        let hasConsent = UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiInsightsConsentAccepted)
         let isOnline = NetworkMonitor.shared.isConnected
 
         guard isPro, hasConsent, isOnline else {

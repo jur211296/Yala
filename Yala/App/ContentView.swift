@@ -1012,11 +1012,12 @@ struct ContentView: View {
             // la cadena volvería a `.presentName` — un alta repetida. El `UserDefaults` es la verdad
             // inmediata. (El caso medido era la card «Solo grupos», que escribía el trío en esta misma
             // función y re-submitía; se retiró el 2026-09-10 y la lectura se queda.)
-            // Y es el CAJÓN de esta sesión (decisión del owner 2026-09-03), no `.standard`: quien escribe
+            // Hasta el 2026-09-12 esto iba al CAJÓN de la sesión y no a `.standard` (decisión del owner
+            // 2026-09-03); hoy hay un solo dominio. Aquel reparto existía porque quien escribe
             // ese trío es `GroupsOrganizerOnboarding`, que ya va por la puerta
             // (`writer.setLocal` → `PreferenceSyncService.local`). Leerlo de `.standard` preguntaba por la
             // dueña justo después de haber escrito en el cajón de la visita.
-            hasCompletedSetup: SessionDefaults.current.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
+            hasCompletedSetup: UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
         ) {
         case .presentEducational:
             showGroupsEducational = true
@@ -1306,13 +1307,12 @@ struct ContentView: View {
         // puerta actúa no es alcanzable: el neutro durable borra el corpus y una instalación fresca no lo
         // tiene.
         GroupBackendInviteEntryHandler.hasLocalDataProvider = { checkHasExistingData() }
-        // **Y el término que distingue «sesión privada viva» de «Welcome visible», por el CAJÓN.** El par
-        // escritor/lector de esta key vive en `SessionDefaults.current` y no en el dominio del dueño: en
-        // una sesión de visita, la pregunta «¿el alta de quién?» la contesta quien está usando la app.
-        // Leerla con `.standard` desde el handler devolvería el defecto de 2026-09-03, y por eso la key no
-        // se nombra allí — `HasCompletedOnboardingDomainTests` enumera quién puede.
+        // **Y el término que distingue «sesión privada viva» de «Welcome visible».** Lo cablea aquí y el
+        // handler no nombra la key: así el handler no puede elegir dominio por su cuenta.
+        // (Hasta el 2026-09-12 el par vivía en un dominio por sesión y separarlos era obligatorio; hoy hay
+        // un único dominio y el cableado se conserva porque la forma sigue siendo la correcta.)
         GroupBackendInviteEntryHandler.hasCompletedPersonalOnboardingProvider = {
-            SessionDefaults.current.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
+            UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
         }
 
         // GC-08: If group invite onboarding is pending, skip normal flow entirely.
@@ -2373,11 +2373,11 @@ fileprivate func applyEntryOnboardingEffects(_ kind: AppEntryKind) {
 /// en la ventana en la que la app se ve vacía porque sus datos todavía están bajando.
 fileprivate func completeOnboardingAsRestoreSkip() {
     applyEntryOnboardingEffects(.reentry)
-    // El CAJÓN de esta sesión, por el mismo motivo que su gemelo de `OnboardingView.completeOnboarding`
+    // Hasta el 2026-09-12, el CAJÓN de la sesión, por el mismo motivo que su gemelo de `OnboardingView.completeOnboarding`
     // (decisión del owner 2026-09-03): es el MISMO hecho —«esta persona ya no tiene onboarding
     // pendiente»— escrito por el otro camino, el de la restauración. Fuera de sesión secundaria la
     // puerta devuelve `.standard` y esto es byte-idéntico a lo de antes.
-    SessionDefaults.current.set(true, forKey: AppPreferences.Keys.hasCompletedOnboarding)
+    UserDefaults.standard.set(true, forKey: AppPreferences.Keys.hasCompletedOnboarding)
 }
 
 /// Binding gate: el flag solo se refleja `true` si `inhibitor == false`.

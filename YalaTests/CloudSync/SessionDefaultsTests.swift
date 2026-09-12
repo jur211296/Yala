@@ -2,12 +2,14 @@
 //  SessionDefaultsTests.swift
 //  YalaTests / CloudSync
 //
-//  La puerta de dominio de preferencias por sesión (M1) y su ciclo de vida completo.
+//  El cajón de preferencias por sesión (M1) y su ciclo de vida.
 //
-//  Cubre las tres cláusulas del contrato de `SessionDefaults` —instancia cacheada, resolución por
-//  llamada, degradación observable— y los dos anclajes del ciclo de vida: la siembra de la ENTRADA
-//  (aditiva, con sentinel leído DEL CAJÓN) y la destrucción de la SALIDA (antes de que `clear` se
-//  lleve el `sub` con el que se compone el nombre).
+//  **La PUERTA ya no existe** (2026-09-12): `current`, `resolve` y `sessionSuite` se retiraron con el
+//  dominio por sesión, así que aquí no queda nada que cubra las cláusulas 2 y 3 del contrato viejo.
+//  Lo que sigue cubierto es la cláusula 1 —instancia cacheada por nombre de suite, que es lo que
+//  mantiene vivos los observers registrados con `object:`— y los dos anclajes del ciclo de vida: la
+//  siembra de la ENTRADA (aditiva, con sentinel leído DEL CAJÓN) y la destrucción de la SALIDA (antes
+//  de que `clear` se lleve el `sub` con el que se compone el nombre). Todo esto cae con M1.
 //
 //  **Suite serializada a propósito**: `SessionDefaults` cachea instancias en estado estático, y dos
 //  tests concurrentes sobre el mismo nombre de suite se pisarían.
@@ -45,54 +47,10 @@ private func withSessionSuite(_ userID: String, _ body: (UserDefaults) throws ->
     try body(suite)
 }
 
-// MARK: - La puerta
+// MARK: - El cajón bajo entorno de test
 
-@Suite("SessionDefaults · la puerta", .serialized)
+@Suite("SessionDefaults · el cajón y su entorno de test", .serialized)
 struct SessionDefaultsGateTests {
-
-    @Test("sin sesión secundaria, el dominio es el del dueño")
-    func ownerWhenNoSecondary() {
-        let owner = makeIsolatedDefaults(prefix: "sd.owner")
-        #expect(SessionDefaults.resolve(owner: owner, isTestEnvironment: false) === owner)
-    }
-
-    @Test("con sesión secundaria, el dominio es el cajón de la visita")
-    func suiteWhenSecondary() {
-        let userID = freshUserID("guest")
-        let owner = makeIsolatedDefaults(prefix: "sd.guest")
-        SecondarySessionStore.activate(userID: userID, owner)
-        defer { liveDestroy(userID) }
-
-        let resolved = SessionDefaults.resolve(owner: owner, isTestEnvironment: false)
-        #expect(resolved !== owner)
-        // Y es EL cajón, no uno cualquiera: lo escrito por la puerta se lee por el nombre.
-        resolved.set("Ana", forKey: "userName")
-        let name = try! #require(SessionDefaults.suiteName(forUserID: userID))
-        #expect(name == "yala.session.\(userID)")
-        #expect(UserDefaults(suiteName: name)?.string(forKey: "userName") == "Ana")
-        // Y el dueño NO se enteró.
-        #expect(owner.string(forKey: "userName") == nil)
-    }
-
-    @Test("en entorno de test la puerta devuelve el dominio del dueño aunque haya descriptor")
-    func testEnvironmentBypassesSuite() {
-        // Ver la cabecera de `SessionDefaults`: bajo XCUITest el descriptor se planta en el dominio
-        // VOLÁTIL, pero un suite persistiría en disco y ninguno de los dos anclajes del ciclo de vida
-        // corre ahí (`SwiftDataConfiguration:811` y `:888`) ⇒ cajón huérfano que ninguna purga
-        // alcanza. Es el precedente `groupsDomainSealedForFreshStart`.
-        let owner = makeIsolatedDefaults(prefix: "sd.testenv")
-        SecondarySessionStore.activate(userID: freshUserID("guest"), owner)
-        #expect(SessionDefaults.resolve(owner: owner, isTestEnvironment: true) === owner)
-    }
-
-    @Test("un userID sin caracteres utilizables DEGRADA al dueño, no brickea")
-    func unusableUserIDDegrades() {
-        let owner = makeIsolatedDefaults(prefix: "sd.bad")
-        // `activate` rechaza el vacío, así que el caso llega por un sub de solo símbolos.
-        SecondarySessionStore.activate(userID: "///", owner)
-        #expect(SessionDefaults.suiteName(forUserID: "///") == nil)
-        #expect(SessionDefaults.resolve(owner: owner, isTestEnvironment: false) === owner)
-    }
 
     @Test("en entorno de test la SIEMBRA y la DESTRUCCIÓN también son no-op")
     func testEnvironmentBypassesLifecycle() {
@@ -113,19 +71,20 @@ struct SessionDefaultsGateTests {
     // MARK: Cláusula 1 — instancia cacheada
 
     @Test("dos resoluciones del mismo cajón devuelven LA MISMA instancia")
-    func suiteInstanceIsCached() {
+    func suiteInstanceIsCached() throws {
         let userID = freshUserID("guest")
         let owner = makeIsolatedDefaults(prefix: "sd.cache")
         SecondarySessionStore.activate(userID: userID, owner)
         defer { liveDestroy(userID) }
 
-        let a = SessionDefaults.resolve(owner: owner, isTestEnvironment: false)
-        let b = SessionDefaults.resolve(owner: owner, isTestEnvironment: false)
+        let name = try #require(SessionDefaults.suiteName(forUserID: userID))
+        let a = SessionDefaults.suite(named: name)
+        let b = SessionDefaults.suite(named: name)
         #expect(a === b)
     }
 
     @Test("un observer con `object:` sobre el cajón VE las escrituras de la puerta")
-    func cachedInstanceKeepsObserversAlive() async {
+    func cachedInstanceKeepsObserversAlive() async throws {
         // La prueba que un source-scan no puede ver, y el porqué de la cláusula 1:
         // `NotificationCenter.addObserver(object:)` filtra por IDENTIDAD del emisor. Con la puerta
         // construyendo el suite inline, este observer no dispararía nunca y `AppPreferences`
@@ -142,7 +101,8 @@ struct SessionDefaultsGateTests {
         // aterrizar en la MISMA dirección ⇒ el filtro por identidad casa por accidente y el mutante
         // pasa en verde. Medido con sonda: con las dos instancias vivas, un observer sobre A NO ve
         // la escritura de B (y el control positivo, A→A, sí dispara).
-        let observedStore = SessionDefaults.resolve(owner: owner, isTestEnvironment: false)
+        let suiteName = try #require(SessionDefaults.suiteName(forUserID: userID))
+        let observedStore = try #require(SessionDefaults.suite(named: suiteName))
         let observed = Fired()
         let token = NotificationCenter.default.addObserver(
             forName: UserDefaults.didChangeNotification,
@@ -150,27 +110,10 @@ struct SessionDefaultsGateTests {
             queue: nil) { _ in observed.fire() }
         defer { NotificationCenter.default.removeObserver(token) }
 
-        SessionDefaults.resolve(owner: owner, isTestEnvironment: false).set("Ana", forKey: "userName")
+        try #require(SessionDefaults.suite(named: suiteName)).set("Ana", forKey: "userName")
         // La notificación se entrega en el runloop; un tick basta.
         try? await Task.sleep(for: .milliseconds(50))
         #expect(observed.value)
-    }
-
-    // MARK: Cláusula 2 — resolución POR LLAMADA
-
-    @Test("activar el descriptor con el proceso vivo cambia el dominio en la SIGUIENTE llamada")
-    func resolutionHappensPerCall() {
-        // La ventana de entrada: `SecondaryEntryLogic.begin` activa el descriptor con el proceso del
-        // DUEÑO todavía vivo (`WelcomeCloudSignInView:801-805`) y el relanzamiento llega después
-        // (`:812`). En esos segundos se escribe el consentimiento RGPD de la invitada (`:810`). Con
-        // la resolución capturada en un `let`, ese registro caería en el cajón del dueño.
-        let userID = freshUserID("guest")
-        let owner = makeIsolatedDefaults(prefix: "sd.percall")
-        defer { liveDestroy(userID) }
-
-        #expect(SessionDefaults.resolve(owner: owner, isTestEnvironment: false) === owner)
-        SecondarySessionStore.activate(userID: userID, owner)
-        #expect(SessionDefaults.resolve(owner: owner, isTestEnvironment: false) !== owner)
     }
 }
 

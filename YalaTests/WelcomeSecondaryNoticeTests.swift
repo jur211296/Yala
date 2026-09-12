@@ -222,18 +222,19 @@ struct WelcomeSecondaryNoticeWiringTests {
 
     // MARK: - Lo que hay un tap después del CTA
 
-    @Test("MUTACIÓN: el «empezar de cero» del CTA limpia el CAJÓN, no el dominio del dueño")
+    @Test("MUTACIÓN: el «empezar de cero» del CTA limpia el dominio local Y el iCloud KV")
     func theFreshStartClearsTheSessionDomain() throws {
         let src = try Self.code("Yala/App/Logic/OnboardingResetHelper.swift")
         let body = try #require(Self.bodyOf("static func clearResidualPreferencesForFreshStart() {", in: src),
                                 "`clearResidualPreferencesForFreshStart` desapareció o cambió de firma")
 
-        #expect(body.contains("let local = SessionDefaults.current"), """
-            el barrido de «empezar de cero» volvió al `UserDefaults` crudo. Está a UN TAP del CTA de \
+        #expect(body.contains("let local = UserDefaults.standard"), """
+            el barrido de «empezar de cero» ya no nombra su dominio local. Está a UN TAP del CTA de \
             `WelcomeSecondaryNoticeView` —`onSelectPrivateAccount` → `startFreshPrivateOnboarding` → aquí— \
-            y la visita entra SIEMPRE por su rama, porque `hasExistingData` mide el store de la invitada, \
-            que nace vacío. Con `.standard` le borra al dueño `userName` y `defaultCurrencyCode`, y para \
-            un dueño SIN iCloud no hay reposición posible. Sin esto, el copy de esa pantalla —«lo tuyo no \
+            y tiene que barrer las DOS mitades: el dominio local y el iCloud KV. Hasta el 2026-09-12 la \
+            mitad local iba al cajón de la sesión para no borrarle al dueño `userName` y \
+            `defaultCurrencyCode`; retirada la puerta, el único dominio es `.standard` y lo que este \
+            escaneo fija es que la línea siga existiendo. Sin esto, el copy de esa pantalla —«lo tuyo no \
             se mezcla con lo suyo»— es falso en la pantalla siguiente.
             """)
         #expect(body.contains("OwnerKeyValueStore.shared"), """

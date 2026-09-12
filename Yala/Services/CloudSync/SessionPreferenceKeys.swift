@@ -73,6 +73,12 @@ nonisolated enum SessionPreferenceKeys {
         // — Identidad y dinero
         "userName", "userProfileIcon", "defaultCurrencyCode", "secondaryCurrencies",
         "currencyDisplayFormat", "decimalPlaces", "firstWeekday", "defaultPeriod",
+        // — Las dos que la puerta de dominio por sesión ocultaba, y que aparecieron al retirarla
+        //   (2026-09-12). No se escribían contra `UserDefaults.standard`, así que el escáner de
+        //   literales —que solo mira esas líneas— no las veía y nunca exigió clasificarlas. Son de la
+        //   persona sin discusión (el formato de sus importes y la variante de su tema), y
+        //   `DataWipeService` ya las borraba (`:688` y `:701`): lo que faltaba era decirlo aquí.
+        "useRoundedAmounts", "translucentVariant",
         // — El PAR de `defaultPeriod`: el rango del período `.custom`. Un período personalizado en el
         //   cajón con sus fechas en el dominio del dueño es un período sin fechas.
         "customPeriodStart", "customPeriodEnd",
