@@ -1,55 +1,56 @@
 ---
-updated: 2026-09-12
+updated: 2026-09-13
 tags: [now, punto-de-retomada]
 ---
 
-# NOW — 2026-09-12 (Lima)
+# NOW — 2026-09-13 (Lima)
 
-**Rama** `2.1` — Merge #150: **el eje «¿hay sesión privada?» ya tiene fuente propia.**
+**Rama** `2.1` — Merge #151: **la sesión de visita ya no existe y la shell sale de un solo eje.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#150 · el paso 12, PR-A: el eje 1)
+## Esta sesión (#151 · el paso 12, PR-B: el barrido)
 
-**Lo que desbloquea el paso 12.** El eje 1 se construía nueve veces como
-`!SessionState.shared.isGroupInviteMode`, o sea a partir del flag que el propio ticket borra. Ahora hay
-una marca positiva persistida (`PrivateSessionMark`) con backfill de un arranque, tu decisión del 12-sep.
-**Para el usuario no cambia nada visible**: cambia de dónde sale la respuesta a «¿esta persona tiene vida
-personal en este teléfono?», de la que cuelgan qué se borra al cerrar sesión, si «Vaciar datos» avisa a
-los demás dispositivos del Apple ID y si al eliminar la cuenta de grupos sobrevive lo personal.
+**La sesión de visita (M1) ya no existe, y la shell tiene una sola fuente.** Para quien usa Yala no
+cambia nada visible: cambia de dónde sale la respuesta a «¿esta persona tiene vida personal en este
+teléfono?». `ShellModeLogic.effective` pasa de tres flags a **un solo término**, el eje 1
+(`PrivateSessionMark`). Prestar el móvil sigue teniendo camino, el que ya existía: cierras sesión, la
+otra persona entra con la suya, y luego restauras.
 
-**El eje eran NUEVE constructores, no los 6 del encargo.** Los otros tres son las funciones de
-`DestructiveScopeLogic` que recibían el mismo eje bajo el nombre viejo. Aprobado antes de tocar nada:
-dejarlas habría partido el eje en dos nombres justo antes del barrido.
+**En producción es byte-neutro y está medido**: el encendido compilado estaba en `false` desde el
+12-sep, el percent de producción en 0 y el flag remoto era fail-closed ⇒ `isActive()` era constante
+`false` en Release. Lo que se borra es andamiaje: **26 ficheros**, el percent del gateway y los dos
+flags de onboarding (`OnboardingMode`, `UsageFocus`). La única pieza que no es un borrado es
+`SecondarySessionRetirement`, una purga one-shot del arranque —kill-safe **y** failure-safe— que limpia
+lo que la visita pudo dejar en disco.
 
-**Dos lecturas con direcciones de fallo OPUESTAS, y es el corazón del PR.** `hasPrivateSession`
-(ausente ⇒ `true`, conserva de más) y `confirmedPrivateSession` (ausente ⇒ `false`). No hay un default
-que sirva para las dos preguntas: la señal de vaciado a los demás dispositivos del Apple ID, al fallar
-hacia `true`, vacía el iPad del dueño — el daño que la review del paso 9 ya había cazado una vez.
+**La review adversarial cazó cinco defectos y los cinco eran míos.** El peor: el backfill se apoyaba en
+una premisa tuya —«no hay usuarios solo-grupos»— que la lente midió y era **falsa**
+(`GROUPS_BACKEND_ROLLOUT_PERCENT = "100"` en producción). Te la llevé y elegiste derivarlo de la marca
+del mount neutro. Sin eso, a un teléfono solo-grupos se le habría escrito «tiene vida personal» para
+siempre.
 
-**La review adversarial cazó SEIS defectos, y los seis eran míos.** Dos que importan: el seam de uitest
-envenenaba el simulador **de forma permanente** —elegí el prefijo `cloudSync.` para que la marca
-sobreviviera a «Vaciar datos» y con eso la dejé fuera del único barrido que la limpia entre corridas—, y
-el backfill **resucitaba la marca que el cierre de sesión acababa de borrar** en el mismo arranque, con
-lo que la ausencia no existía nunca y el default estricto no protegía nada.
+**Y el día se fue en ocho XCUITest rojos que NO eran el código: era el simulador.** Una key pegada
+(`cloudSync.groupsOnlyNeutralMount`) hacía que el backfill apagara el eje en cada arranque. Tres
+hipótesis medidas y caídas antes de dar con ello; lo zanjó `simctl erase` en tres minutos. **La lección
+queda escrita**: cuando un `removeObject` no tiene efecto y la key no está en ningún dominio
+enumerable, no hay escritor que buscar — es el simulador, y el `erase` va primero, no al final.
 
-**Y se cayó una afirmación de mi propia cabecera:** la marca no viaja por el iCloud-KV, pero su SEMILLA
-sí puede venir de ahí — el backfill no tiene más fuente que `onboardingMode`. Es una limitación heredada
-de la migración, ahora escrita en el código en vez de prometida.
+**Verificado:** build ×2 con **cero warnings nuevos** (base 13 → PR 9, cuatro cerrados) · **6764 unit
+en 689 suites, 0 fallos** · **30 XCUITest en 10 suites, 0 fallos** con el centinela en 0 · gateway 271
+tests · audit limpio · ratchet OK.
 
-**Verificado:** build ×2 sin warnings nuevos —medido contra un worktree del árbol base con DerivedData
-limpio, porque el primer intento fue incremental y dio un cero falso— · **6976 unit, 0 fallos** · 32
-XCUITest en 10 suites con el centinela en 0 · audit limpio · CI en verde · **10 mutantes que caen**.
+**Lo que falta y es tuyo:** el device-QA de la retirada **NO es simulable** (pide un build DEV contra
+staging; el parque de TestFlight no pudo crear esos archivos). Y deja **cinco tickets** en el backlog,
+todos de hallazgos de camino — el más llamativo: el grep de símbolos retirados da cero, pero **94
+líneas de prosa** siguen hablando de la visita.
 
-**Lo que falta y es tuyo:** el device-QA del eje **NO es simulable** (sin sesión de nube en el simulador;
-las dos celdas que importan piden dos dispositivos del mismo Apple ID). Y el **PR-B** —barrido de M1 y
-retirada de `OnboardingMode`— queda desbloqueado, con lo que hereda ya medido dentro del ticket.
+## Las de antes (#150 · #149)
 
-## La anterior (#149 · un solo dominio de preferencias)
-
-Se retiró la puerta que elegía en qué `UserDefaults` escribía la app —resolvía al mismo sitio para el
-100 % del parque— y sus 155 lecturas pasaron a `.standard`. Y se apagó el encendido compilado de la
-entrada a sesión secundaria: yo había afirmado que ese flag estaba en `false` y estaba en `true`, con lo
-que el aislamiento retirado lo convertía en una fuga. Lo cazó la review.
+El eje 1 ganó fuente propia: una marca positiva persistida (`PrivateSessionMark`) con dos lecturas de
+direcciones de fallo OPUESTAS, que es lo que hacía ejecutable el barrido del #151. Su device-QA sigue
+pendiente y **NO es simulable** (pide dos dispositivos del mismo Apple ID). Y antes, el #149 retiró la
+puerta que elegía en qué `UserDefaults` escribía la app — resolvía al mismo sitio para el 100 % del
+parque.
 
 ## Las de antes (#147 · la cola del simulador)
 
@@ -83,6 +84,14 @@ formatos —una presentación 16:9 por escenas y clips 9:16 por función— sobr
    las dos celdas que deciden datos hay que verlas en device con dos teléfonos del mismo Apple ID:
    **cerrar sesión en «equipo»** (privada + cuenta de grupos) y **eliminar la cuenta de grupos sin
    sesión privada**. Lo que hay que mirar es que la hoja prometa exactamente lo que el borrado hace.
+
+0-ter. **Device-QA de la RETIRADA de la visita (#151), y NO es simulable.** Hay que verlo en un
+   teléfono que SÍ llegó a tener una sesión de visita, o sea un build **DEV contra staging** — el parque
+   de TestFlight nunca pudo crear esos archivos, así que en el simulador no hay ni un
+   `YalaModel-Secondary` que borrar. Lo que se comprueba: que al actualizar desaparezcan los tres stores
+   `-Secondary` y el cajón `yala.session.*`, y que el widget deje de pintar los saldos de la otra
+   persona. **Y lo que la retirada NO alcanza, con ticket propio**: la sesión de nube que la visita
+   dejara en el Keychain sobrevive (`secondary-session-retirement-leaves-the-guest-cloud-session`).
 
 
 1. **Cierra sesión en el iPhone y recrea los grupos de prueba.** Es lo ÚNICO que falta para el device-QA
@@ -155,17 +164,15 @@ formatos —una presentación 16:9 por escenas y clips 9:16 por función— sobr
 
 ## Siguiente
 
-**El PR-B del paso 12** (`shell-derives-from-two-session-axes`): M1 entera + `OnboardingMode` +
-`SessionShape`. **Ya no hay nada que diseñar antes**: el eje 1 tiene su marca y su backfill desde el #150,
-así que el barrido puede borrar el flag sin dejar decisiones colgando. `StorageMode` queda fuera por
-decisión tuya, y el cambio de Apple ID ya tiene ticket propio.
+**El rediseño de sesiones llega al final de su lista.** El paso 12 está cerrado con el #151: la shell
+deriva de un solo eje y M1 no existe. Lo que queda del ADR son los device-QA acumulados, que son tuyos
+y en su mayoría **no son simulables**.
 
-Lo que el PR-A dejó **medido** para que el PR-B no lo redescubra, dentro del ticket:
-`CloudIdentityRoutingLogic.deviceState` es una segunda fuente del mismo eje ·
-`ProfileView.isExportEnabled` se queda en el flag a propósito · y el flag y la marca divergen hoy en el
-vaciado remoto, cosa que se cierra sola al retirar el flag.
+**Lo primero de la cola técnica es el board de testing**, que lleva dos noches diciendo lo mismo: los
+cuatro de `nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo` siguen rojos y ya no se sostienen como
+«flaky de runner frío» (ver Bloqueo).
 
-**El board: 331 en disco = 331 en `docs/TICKETS.md`**, cero desajustes de estado.
+**El board: 336 en disco = 336 en `docs/TICKETS.md`**, cero desajustes de estado.
 
 ## Bloqueo
 
