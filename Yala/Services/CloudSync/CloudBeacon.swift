@@ -49,10 +49,8 @@ final class CloudBeacon {
 
     private let store: BeaconKeyValueStore
 
-    /// Producción: la PUERTA del iCloud-KV, no el store crudo. El faro es la vía 3 del ticket de la
-    /// frontera M1: escrito desde una sesión secundaria, encaminaría los OTROS dispositivos del dueño
-    /// a la cuenta de la invitada. Su hermano `MigrationWorkExecutor` ya suprimía el faro en
-    /// secundaria a mano; aquí lo hace el store. Inyectable en tests.
+    /// Producción: la fachada del iCloud-KV, no el store crudo — un solo sitio nombra
+    /// `NSUbiquitousKeyValueStore` en todo el árbol. Inyectable en tests.
     init(store: BeaconKeyValueStore = OwnerKeyValueStore.shared) {
         self.store = store
     }

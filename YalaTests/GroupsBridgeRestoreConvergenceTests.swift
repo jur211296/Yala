@@ -158,7 +158,7 @@ struct GroupsBridgeRestoreConvergenceBehaviourTests {
 
     /// La etapa solo-grupos: el bridge crea su par virtual en la cuenta de sistema «Grupos».
     private func bridgeAsGroupsOnly(_ context: ModelContext, _ expense: SplitExpense, _ f: Fixture) throws {
-        SessionState.shared.onboardingMode = .groupInvite
+        SessionState.shared.hasPrivateSession = false
         try GroupTransactionBridge.shared.bridgeExpense(expense, in: f.group, shouldSave: false)
         try context.save()
     }
@@ -188,16 +188,16 @@ struct GroupsBridgeRestoreConvergenceBehaviourTests {
         rows.filter { $0.amount < 0 }.map(\.amount).reduce(0, +)
     }
 
-    /// El entorno del bridge: su contexto, el modo de sesión y la intención durable en defaults aislados. Todo
+    /// El entorno del bridge: su contexto, el eje de sesión privada y la intención durable en defaults aislados. Todo
     /// se restaura al salir: son singletons que comparten las demás suites.
     private func withEnvironment(_ context: ModelContext, _ body: (UserDefaults) throws -> Void) rethrows {
         GroupTransactionBridge.shared.setContext(context)
-        let previousMode = SessionState.shared.onboardingMode
+        let previousPrivateSession = SessionState.shared.hasPrivateSession
         let previousIntentDefaults = GroupsPendingBridgeIntent.defaults
         GroupsPendingBridgeIntent.defaults = makeIsolatedDefaults()
         BridgeModeResolver.shared.invalidateCache(forZoneID: nil)
         defer {
-            SessionState.shared.onboardingMode = previousMode
+            SessionState.shared.hasPrivateSession = previousPrivateSession
             GroupsPendingBridgeIntent.defaults = previousIntentDefaults
             BridgeModeResolver.shared.invalidateCache(forZoneID: nil)
         }
@@ -219,7 +219,7 @@ struct GroupsBridgeRestoreConvergenceBehaviourTests {
             // Control del escenario: sin converger, el gasto se cuenta como gasto dos veces (-90 y -30).
             #expect(spending(try txs(context, expenseID: expense.id)) == -120, "el fixture no reproduce el duplicado")
 
-            SessionState.shared.onboardingMode = .completed
+            SessionState.shared.hasPrivateSession = true
             GroupsBridgeRestoreConvergenceStore.markPending(defaults)
             GroupsBridgeRestoreConvergence.convergeIfPending(context: context, defaults: defaults)
 
@@ -237,11 +237,11 @@ struct GroupsBridgeRestoreConvergenceBehaviourTests {
         }
     }
 
-    /// El control del orden, con el mismo escenario. En `.groupInvite` la convergencia no toca nada y deja la
+    /// El control del orden, con el mismo escenario. Sin sesión privada la convergencia no toca nada y deja la
     /// intención puesta; y el mismo re-puenteo SIN esa guarda borra la transacción real restaurada. Es la razón de
     /// que `commitPlan` ponga `.completeActivation` delante y de que la convergencia espere al modo.
     @Test("en solo-grupos la convergencia espera, porque re-puentear ahí BORRA la real restaurada")
-    func groupInviteMode_waits_becauseTheBridgeWouldDeleteTheRealTransaction() throws {
+    func groupsOnlySession_waits_becauseTheBridgeWouldDeleteTheRealTransaction() throws {
         let dir = try freshDir()
         defer { cleanup(dir) }
         let context = try makeContext(dir)
@@ -275,7 +275,7 @@ struct GroupsBridgeRestoreConvergenceBehaviourTests {
             _ = try insertRestoredRealTransaction(context, f, for: expense)
             let before = Set(try txs(context, expenseID: expense.id).map(\.persistentModelID))
 
-            SessionState.shared.onboardingMode = .completed
+            SessionState.shared.hasPrivateSession = true
             GroupsBridgeRestoreConvergence.convergeIfPending(context: context, defaults: defaults)
 
             #expect(Set(try txs(context, expenseID: expense.id).map(\.persistentModelID)) == before)
@@ -291,7 +291,7 @@ struct GroupsBridgeRestoreConvergenceBehaviourTests {
         let context = try makeContext(dir)
         let f = try makeFixture(context)
         try withEnvironment(context) { defaults in
-            SessionState.shared.onboardingMode = .completed
+            SessionState.shared.hasPrivateSession = true
             let system = try GroupBridgeSystemEntities.ensureSystemAccount(currencyCode: "USD", context: context)
             let t0 = Date(timeIntervalSince1970: 1_700_000_000)
             func leg(_ settlementID: String, _ account: Account, _ amount: Double,
@@ -329,7 +329,7 @@ struct GroupsBridgeRestoreConvergenceBehaviourTests {
         let context = try makeContext(dir)
         _ = try makeFixture(context)
         try withEnvironment(context) { defaults in
-            SessionState.shared.onboardingMode = .completed
+            SessionState.shared.hasPrivateSession = true
             let flat = SplitGroup(name: "Piso", currencyCode: "USD")
             context.insert(flat)
             let luis = SplitMember(groupZoneID: flat.cloudKitZoneID, displayName: "Luis")

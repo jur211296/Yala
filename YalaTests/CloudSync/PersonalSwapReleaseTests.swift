@@ -117,10 +117,9 @@ struct PersonalSwapScopeTests {
         }
     }
 
-    @Test("los dos mounts de modo nube y el neutro admiten swap; los dos con mirror NO")
+    @Test("el mount de modo nube y el neutro admiten swap; los dos con mirror NO")
     func explicitTable() {
         #expect(PersonalSwapReleaseLogic.mountAdmitsSwap(mountedDecision: .cloudMirrorOff))
-        #expect(PersonalSwapReleaseLogic.mountAdmitsSwap(mountedDecision: .secondaryCloudSession))
         #expect(PersonalSwapReleaseLogic.mountAdmitsSwap(mountedDecision: .neutralNoMirror))
         #expect(PersonalSwapReleaseLogic.mountAdmitsSwap(mountedDecision: .iCloudMirror) == false)
         // `localNoMirror` cae del lado NO por una medición y no por su nombre: la auditoría R1(c) midió
@@ -174,15 +173,11 @@ struct NeutralDurableMountTests {
         }
     }
 
-    /// Defensa en profundidad, igual que su gemelo de R2: los dos invariantes duros (M1 y SERIO-1) ganan al
-    /// término nuevo aunque alguien deje la marca puesta por descuido. En particular, un device a mitad del
+    /// Defensa en profundidad, igual que su gemelo de R2: el invariante duro (SERIO-1) gana al término
+    /// nuevo aunque alguien deje la marca puesta por descuido. En particular, un device a mitad del
     /// cutover —`.cloud` + armado— jamás cae en la rama neutra.
-    @Test("precedencia: la sesión secundaria y el par `.cloud` ARMADO ganan al neutro durable")
+    @Test("precedencia: el par `.cloud` ARMADO gana al neutro durable")
     func hardInvariantsWinOverNeutralDurable() {
-        #expect(SwiftDataConfiguration.personalStoreDecision(
-            storageMode: .icloud, mirrorOffArmed: false, iCloudAvailable: true,
-            secondarySessionActive: true,
-            freshInstall: false, neutralDurable: true) == .secondaryCloudSession)
         #expect(SwiftDataConfiguration.personalStoreDecision(
             storageMode: .cloud, mirrorOffArmed: true, iCloudAvailable: true,
             freshInstall: false, neutralDurable: true) == .cloudMirrorOff)

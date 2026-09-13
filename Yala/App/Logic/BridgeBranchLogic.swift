@@ -15,23 +15,24 @@ enum BridgeBranchLogic {
 
     /// Path a ejecutar en Caso A (current user es payer del expense).
     enum CaseAPath: Equatable {
-        /// Mode `.groupInvite`: fallback M5 (TX1 virtual -myShare + TX2 virtual +totalAmount).
-        case groupInviteVirtualPair
+        /// Sin vida personal en este teléfono: no hay cuentas donde poner el gasto, así que el par es
+        /// virtual entero (TX1 virtual -myShare + TX2 virtual +totalAmount).
+        case virtualPairWithoutAccounts
         /// Bridge effective OFF: solo TX virtual -myShare (idéntico a Caso B).
         case optoutVirtualOnly
-        /// Mode `.full/.completed` + bridge effective ON: TX real cuenta personal + TX virtual lent.
+        /// Con vida personal + bridge effective ON: TX real en cuenta personal + TX virtual lent.
         case fullPair
     }
 
     /// Resuelve el path para Caso A.
     /// - Parameters:
-    ///   - isGroupInviteMode: `SessionState.onboardingMode == .groupInvite`.
+    ///   - isGroupsOnlySession: no hay sesión privada en este dispositivo (`PrivateSessionMark`).
     ///   - effectiveBridgeEnabled: resultado de `BridgeResolverLogic.computeEffective`.
     static func decideCaseAPath(
-        isGroupInviteMode: Bool,
+        isGroupsOnlySession: Bool,
         effectiveBridgeEnabled: Bool
     ) -> CaseAPath {
-        if isGroupInviteMode { return .groupInviteVirtualPair }
+        if isGroupsOnlySession { return .virtualPairWithoutAccounts }
         if !effectiveBridgeEnabled { return .optoutVirtualOnly }
         return .fullPair
     }

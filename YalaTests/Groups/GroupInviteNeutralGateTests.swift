@@ -8,7 +8,7 @@
 //
 //  Cuatro mitades, y ninguna cubre a las otras:
 //    1. LA DECISIÓN — la tabla completa de `GroupInviteNeutralGateLogic`, con los dos términos que la
-//       separan de la puerta del organizador (sesión privada viva, sesión de visita).
+//       separan de la puerta del organizador (sesión privada viva).
 //    2. EL ENCAMINAMIENTO — que `drive` DESVÍE en vez de seguir, y que no escriba nada por el camino.
 //       Es la mitad que hay que poder poner roja quitando el desvío.
 //    3. LA DURABILIDAD — que la invitación sobreviva al borrado. El intent muere en el propio wipe
@@ -36,7 +36,6 @@ struct GroupInviteNeutralGateLogicTests {
     @Test("store con espejo y sin sesión privada ⇒ vuelta al neutro, incluso vacío")
     func mirroredEmptyStore_returnsToNeutral() {
         #expect(Gate.decide(hasCompletedPersonalOnboarding: false,
-                            isSecondarySession: false,
                             hasExistingData: false,
                             mountAttachesMirror: true) == .returnsToNeutral)
     }
@@ -45,7 +44,6 @@ struct GroupInviteNeutralGateLogicTests {
     @Test("corpus sin espejo ⇒ vuelta al neutro")
     func localCorpusWithoutMirror_returnsToNeutral() {
         #expect(Gate.decide(hasCompletedPersonalOnboarding: false,
-                            isSecondarySession: false,
                             hasExistingData: true,
                             mountAttachesMirror: false) == .returnsToNeutral)
     }
@@ -56,7 +54,6 @@ struct GroupInviteNeutralGateLogicTests {
     @Test("teléfono neutro ⇒ sigue, sin una sola pantalla de más")
     func freshDevice_proceeds() {
         #expect(Gate.decide(hasCompletedPersonalOnboarding: false,
-                            isSecondarySession: false,
                             hasExistingData: false,
                             mountAttachesMirror: false) == .proceed)
     }
@@ -70,46 +67,26 @@ struct GroupInviteNeutralGateLogicTests {
         for hasData in [true, false] {
             for mirror in [true, false] {
                 #expect(Gate.decide(hasCompletedPersonalOnboarding: true,
-                                    isSecondarySession: false,
-                                    hasExistingData: hasData,
+                                            hasExistingData: hasData,
                                     mountAttachesMirror: mirror) == .proceed,
                         "corpus=\(hasData) espejo=\(mirror): la fila C de la matriz dice asociar, no borrar")
             }
         }
     }
 
-    /// La sesión de VISITA queda fuera: su mount ya aísla (`YalaModel-Secondary`, sin espejo) y su celda
-    /// de cierre (`.secondaryCloudSignOut`) no borra por archivos, así que interponer aquí sería mandar a
-    /// la invitada a una pantalla que no puede hacer nada.
-    @Test("en sesión de visita NUNCA se vuelve al neutro")
-    func secondarySession_alwaysProceeds() {
-        for hasData in [true, false] {
-            for mirror in [true, false] {
-                #expect(Gate.decide(hasCompletedPersonalOnboarding: false,
-                                    isSecondarySession: true,
-                                    hasExistingData: hasData,
-                                    mountAttachesMirror: mirror) == .proceed,
-                        "corpus=\(hasData) espejo=\(mirror)")
-            }
-        }
-    }
-
-    /// La tabla ENTERA, 16 celdas, contra la regla dicha de otra forma. Lo que caza que una implementación
+    /// La tabla ENTERA, 8 celdas, contra la regla dicha de otra forma. Lo que caza que una implementación
     /// futura reordene los guards y cambie una celda sin que ninguna de las de arriba lo note.
-    @Test("las 16 celdas, contra el predicado dicho al revés")
+    @Test("las 8 celdas, contra el predicado dicho al revés")
     func fullTruthTable() {
         for onboarded in [true, false] {
-            for secondary in [true, false] {
-                for hasData in [true, false] {
-                    for mirror in [true, false] {
-                        let esperado: Gate.Decision =
-                            (!onboarded && !secondary && (hasData || mirror)) ? .returnsToNeutral : .proceed
-                        #expect(Gate.decide(hasCompletedPersonalOnboarding: onboarded,
-                                            isSecondarySession: secondary,
-                                            hasExistingData: hasData,
-                                            mountAttachesMirror: mirror) == esperado,
-                                "onboarded=\(onboarded) secundaria=\(secondary) corpus=\(hasData) espejo=\(mirror)")
-                    }
+            for hasData in [true, false] {
+                for mirror in [true, false] {
+                    let esperado: Gate.Decision =
+                        (!onboarded && (hasData || mirror)) ? .returnsToNeutral : .proceed
+                    #expect(Gate.decide(hasCompletedPersonalOnboarding: onboarded,
+                                        hasExistingData: hasData,
+                                        mountAttachesMirror: mirror) == esperado,
+                            "onboarded=\(onboarded) corpus=\(hasData) espejo=\(mirror)")
                 }
             }
         }
@@ -140,7 +117,6 @@ struct GroupInviteNeutralGateRoutingTests {
         let savedProfile = GroupBackendInviteEntryHandler.profileNameProvider
         let savedMirror = GroupBackendInviteEntryHandler.mountAttachesMirrorProvider
         let savedOnboarded = GroupBackendInviteEntryHandler.hasCompletedPersonalOnboardingProvider
-        let savedSecondary = GroupBackendInviteEntryHandler.isSecondarySessionProvider
         let savedData = GroupBackendInviteEntryHandler.hasLocalDataProvider
         let savedReadiness = RouterEntryGate.shared.readinessProvider
         let savedFlag = CloudSyncFlags.groupsBackendEnabled
@@ -150,7 +126,6 @@ struct GroupInviteNeutralGateRoutingTests {
         GroupBackendInviteEntryHandler.profileNameProvider = { "Pia" }
         GroupBackendInviteEntryHandler.mountAttachesMirrorProvider = { mirror }
         GroupBackendInviteEntryHandler.hasCompletedPersonalOnboardingProvider = { onboarded }
-        GroupBackendInviteEntryHandler.isSecondarySessionProvider = { false }
         GroupBackendInviteEntryHandler.hasLocalDataProvider = { hasData }
         GroupBackendInviteEntryHandler.joinProvider = { _, _, _ in
             joinSpy()
@@ -169,7 +144,6 @@ struct GroupInviteNeutralGateRoutingTests {
             GroupBackendInviteEntryHandler.profileNameProvider = savedProfile
             GroupBackendInviteEntryHandler.mountAttachesMirrorProvider = savedMirror
             GroupBackendInviteEntryHandler.hasCompletedPersonalOnboardingProvider = savedOnboarded
-            GroupBackendInviteEntryHandler.isSecondarySessionProvider = savedSecondary
             GroupBackendInviteEntryHandler.hasLocalDataProvider = savedData
             RouterEntryGate.shared.readinessProvider = savedReadiness
             CloudSyncFlags.groupsBackendEnabled = savedFlag
@@ -582,16 +556,6 @@ struct GroupInviteNeutralGateWiringTests {
         let container = try Self.source("Yala/App/Views/Onboarding/WelcomeFlowContainer.swift")
         #expect(container.contains(".onChange(of: initialStep)"),
                 "el step inicial vuelve a ignorarse con el cover ya montado")
-    }
-
-    /// La CUARTA superficie de join, y la única que no muere sola: el sobre existe para sobrevivir a un
-    /// borrado, así que la frontera de la visita tiene que nombrarlo. Sin esto, un sobre escrito antes de
-    /// la frontera se repondría en el siguiente boot-wipe con el tap armado.
-    @Test("la frontera de la sesión de visita barre también el sobre")
-    func theSecondaryBoundaryClearsTheEnvelope() throws {
-        let code = try Self.source("Yala/Services/CloudSync/SecondarySessionBoundaryPurge.swift")
-        #expect(code.contains("GroupInviteResumeStore.clear()"),
-                "el sobre cruza la frontera de la visita y se repone bajo la cuenta equivocada")
     }
 
     /// Bajo `-uitest` la puerta SÍ es alcanzable (el seam del mount lo permite) pero el hook que consume el

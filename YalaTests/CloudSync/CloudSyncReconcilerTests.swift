@@ -269,9 +269,9 @@ struct CloudSyncReconcilerTests {
         #expect(aliveTxs(context).count == 4)
     }
 
-    // MARK: - #7 `.groupInvite` M5 (2 virtuales, una positiva) → NO dispara
+    // MARK: - #7 solo-grupos M5 (2 virtuales, una positiva) → NO dispara
 
-    @Test func split_groupInviteM5_twoVirtuals_neverFires() throws {
+    @Test func split_soloGruposM5_twoVirtuals_neverFires() throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
 

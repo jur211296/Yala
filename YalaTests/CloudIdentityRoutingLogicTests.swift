@@ -286,22 +286,22 @@ struct CloudIdentityRoutingLogicTests {
 
     /// Una fila por estado de la matriz de escenarios. El que carga el peso es **F**: en solo-grupos el
     /// `storageMode` sigue siendo `.icloud` porque la mini-app de Grupos jamás lo toca, así que sin mirar
-    /// `onboardingMode` esa persona pasaría por «tiene sesión privada» y la puerta de Grupos le
+    /// el eje de sesión privada esa persona pasaría por «tiene sesión privada» y la puerta de Grupos le
     /// bloquearía su propia cuenta.
     @Test("el eje de sesión privada, estado por estado de la matriz")
     func ejeDerivadoDeLosEstadosDelMovil() {
         // A/B · instalación fresca, o Welcome visible con store montado.
         #expect(Logic.deviceState(
-            hasCompletedOnboarding: false, storageMode: .icloud, onboardingMode: .full) == .fresh)
+            hasCompletedOnboarding: false, storageMode: .icloud, hasPrivateSession: true) == .fresh)
         // C/D · sesión privada, con o sin cuenta de grupos asociada.
         #expect(Logic.deviceState(
-            hasCompletedOnboarding: true, storageMode: .icloud, onboardingMode: .full) == .privateSession)
+            hasCompletedOnboarding: true, storageMode: .icloud, hasPrivateSession: true) == .privateSession)
         // E · nube completa: la casilla «privada + nube completa» no existe (ADR §2).
         #expect(Logic.deviceState(
-            hasCompletedOnboarding: true, storageMode: .cloud, onboardingMode: .full) == .cloudComplete)
+            hasCompletedOnboarding: true, storageMode: .cloud, hasPrivateSession: true) == .cloudComplete)
         // F · solo grupos. El `storageMode` MIENTE aquí, y es el caso que este término existe para cazar.
         #expect(Logic.deviceState(
-            hasCompletedOnboarding: true, storageMode: .icloud, onboardingMode: .groupInvite)
+            hasCompletedOnboarding: true, storageMode: .icloud, hasPrivateSession: false)
             == .cloudGroupsOnly,
             """
             Una persona en solo-grupos quedó clasificada como otra cosa. Si sale `privateSession`, volver a \
@@ -310,7 +310,7 @@ struct CloudIdentityRoutingLogicTests {
             """)
         // «Activé Yala completo desde solo-grupos» y lo personal se quedó en iCloud: sí hay privada.
         #expect(Logic.deviceState(
-            hasCompletedOnboarding: true, storageMode: .icloud, onboardingMode: .completed)
+            hasCompletedOnboarding: true, storageMode: .icloud, hasPrivateSession: true)
             == .privateSession)
     }
 

@@ -16,10 +16,10 @@ struct NotificationsSettingsView: View {
 
     @State private var viewModel = NotificationsSettingsViewModel()
 
-    private var isGroupInviteMode: Bool { SessionState.shared.isGroupInviteMode }
+    private var isGroupsOnlyShell: Bool { !SessionState.shared.hasPrivateSession }
 
     /// En solo-grupos solo la notificación de grupos (event-driven); el resto son
-    /// recordatorios/reportes/pagos personales. Regla en `GroupInviteVisibilityPolicy`.
+    /// recordatorios/reportes/pagos personales. Regla en `GroupsOnlyVisibilityPolicy`.
     /// El maestro de avisos de Grupos (`NotificationItem` de tipo `.groups`).
     ///
     /// **Mismo criterio que el gate del servicio** (`GroupSettlementReminderService`
@@ -34,8 +34,8 @@ struct NotificationsSettingsView: View {
     }
 
     private var visibleNotifications: [NotificationItem] {
-        let visibleTypes = Set(GroupInviteVisibilityPolicy.visibleNotificationTypes(
-            NotificationType.allCases, isGroupInvite: isGroupInviteMode))
+        let visibleTypes = Set(GroupsOnlyVisibilityPolicy.visibleNotificationTypes(
+            NotificationType.allCases, isGroupsOnlyShell: isGroupsOnlyShell))
         return viewModel.notifications.filter { visibleTypes.contains($0.notificationType) }
     }
 
@@ -45,7 +45,7 @@ struct NotificationsSettingsView: View {
                     // Notificaciones configurables con budgetAlerts integrado.
                     // En solo-grupos se filtra a la notif de grupos (sin budgetAlerts ni "+").
                     if visibleNotifications.isEmpty {
-                        if !isGroupInviteMode {
+                        if !isGroupsOnlyShell {
                             // Solo mostrar estas secciones cuando no hay otras notificaciones
                             settlementRemindersSection
                             budgetAlertsSection
@@ -69,7 +69,7 @@ struct NotificationsSettingsView: View {
                     dismiss()
                 }
             }
-            if !isGroupInviteMode {
+            if !isGroupsOnlyShell {
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaToolbarButton(systemName: "plus", label: L10n.Action.add) {
                         viewModel.isCreatingNew = true
@@ -177,7 +177,7 @@ struct NotificationsSettingsView: View {
             settlementRemindersSection
 
             // Alertas de presupuesto: finanzas personales — ocultas en solo-grupos.
-            if !isGroupInviteMode {
+            if !isGroupsOnlyShell {
                 budgetAlertsSection
             }
         }

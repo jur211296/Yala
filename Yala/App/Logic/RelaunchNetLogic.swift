@@ -69,8 +69,7 @@ enum RelaunchNetLogic {
     /// `WelcomePendingDestinationStore` persiste vale exactamente igual: se escribe en la MISMA vuelta
     /// que monta el terminal (`WelcomeFlowContainer.leaveWelcome` → `onNeedsMirrorRelaunch` →
     /// `goTo(.mirrorRelaunch)`) y solo se retira al consumirlo el arranque siguiente ⇒ «hay destino
-    /// pendiente» ≡ «el terminal está puesto». Es el molde de `secondaryEntryArmedUnmounted`: armado y
-    /// no consumido.
+    /// pendiente» ≡ «el terminal está puesto»: armado y no consumido.
     ///
     /// **Y por qué el `.relaunch` de `WelcomeCloudSignInView` NO entra**, que es la otra mitad de la
     /// medición: (a) su fase es `@State private` de la vista, así que no hay nada que este call-site
@@ -86,12 +85,9 @@ enum RelaunchNetLogic {
     static func shouldExitOnBackground(
         scenePhase: ScenePhase,
         signOutPhase: CloudSessionSignOut.Phase,
-        secondaryEntryArmedUnmounted: Bool,
         welcomeMirrorRelaunchArmed: Bool
     ) -> Bool {
         scenePhase == .background
-            && (signOutPhase == .awaitingRelaunch
-                || secondaryEntryArmedUnmounted
-                || welcomeMirrorRelaunchArmed)
+            && (signOutPhase == .awaitingRelaunch || welcomeMirrorRelaunchArmed)
     }
 }

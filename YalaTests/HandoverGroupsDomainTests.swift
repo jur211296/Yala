@@ -192,89 +192,49 @@ struct HandoverGroupsDomainTests {
         #expect(defaults.bool(forKey: AppPreferences.Keys.groupsBetaUnlocked) == true)
     }
 
-    // MARK: - El sello y el iCloud KV (el segundo término de `isDomainOpen`)
+    // MARK: - El eje 1 y el relevo de humano (el segundo término de `isDomainOpen`)
 
-    /// **El escenario completo del bug**, y la razón de que borrar la copia local no bastara: el humano
-    /// anterior entró por invitación (o por el alta solo-grupos) ⇒ `onboardingMode = .groupInvite` vive
-    /// también en el iCloud KV del Apple ID, con merge never-downgrade. Sin esta mitad, el siguiente
-    /// merge re-imponía el `.groupInvite` remoto, `isDomainOpen` volvía a dar `true` por su SEGUNDO
-    /// término y el sello quedaba neutralizado sin ningún acto deliberado del usuario nuevo.
-    @Test func wipeLocalGroupsDomain_clearsTheRemoteOnboardingMode_soTheSealSurvivesTheNextMerge() throws {
+    /// **El escenario completo del bug**, dicho con el eje nuevo: el humano anterior no tenía sesión
+    /// privada en este teléfono (entró por invitación o por el alta solo-grupos), así que
+    /// `isDomainOpen` daba `true` por su SEGUNDO término y el sello quedaba neutralizado sin ningún
+    /// acto deliberado del usuario nuevo. El relevo borra la marca, y con ella ese término.
+    @Test func wipeLocalGroupsDomain_clearsThePrivateSessionMark_soTheSealSurvives() throws {
         let context = try makeTestContext()
         let defaults = makeIsolatedDefaults()
-        let iKV = RecordingKVStore()
-        let previousMode = SessionState.shared.onboardingMode
-        defer { SessionState.shared.onboardingMode = previousMode }
-
-        let key = OnboardingMode.userDefaultsKey
-        defaults.set(OnboardingMode.groupInvite.rawValue, forKey: key)
-        iKV.setString(OnboardingMode.groupInvite.rawValue, forKey: key)
-        SessionState.shared.onboardingMode = .groupInvite
+        PrivateSessionMark.set(false, defaults)
 
         try DataWipeService.wipeLocalGroupsDomain(
-            in: context, defaults: defaults, iKV: iKV, resetSyncState: {})
+            in: context, defaults: defaults, resetSyncState: {})
 
-        // 1. Vacío, NUNCA `removeObject`: es lo que hace `.skip` al merge sin quitarle el modo a los
-        //    otros dispositivos del mismo Apple ID.
-        #expect(iKV.string(forKey: key) == "")
-        #expect(defaults.string(forKey: key) == nil)
+        // 1. La marca vuelve a AUSENTE, que es como nace un teléfono recién instalado.
+        #expect(PrivateSessionMark.raw(defaults) == nil)
 
-        // 2. El merge siguiente ya no re-impone nada.
-        let remote = PrefValue.string(iKV.string(forKey: key) ?? "")
-        let local = defaults.string(forKey: key).map { PrefValue.string($0) }
-        #expect(PreferenceMergeLogic.decide(key: .onboardingMode, remote: remote, local: local) == .skip)
-
-        // 3. Y con el modo de vuelta en `.full`, el sello vuelve a cortar el bridge.
-        let merged = OnboardingMode(rawValue: defaults.string(forKey: key) ?? "") ?? .full
+        // 2. Y con la marca ausente el sello vuelve a cortar el bridge: la lectura por defecto cae
+        //    del lado conservador (`true`), así que el segundo término ya no abre la puerta.
         #expect(GroupsDomainAdoptionLogic.isDomainOpen(
             isUnlocked: defaults.bool(forKey: AppPreferences.Keys.groupsBetaUnlocked),
-            isGroupInviteMode: merged == .groupInvite) == false)
+            hasPrivateSession: PrivateSessionMark.hasPrivateSession(defaults)) == false)
         #expect(GroupsDomainAdoptionLogic.isBridgeAllowed(
             sealedForFreshStart: defaults.bool(forKey: AppPreferences.Keys.groupsDomainSealedForFreshStart),
             isUnlocked: defaults.bool(forKey: AppPreferences.Keys.groupsBetaUnlocked),
-            isGroupInviteMode: merged == .groupInvite) == false)
+            hasPrivateSession: PrivateSessionMark.hasPrivateSession(defaults)) == false)
     }
 
-    /// La otra mitad, que ningún barrido de `UserDefaults` cubre: el proceso VIVO. `SessionState` leyó el
-    /// modo al arrancar, así que sin reasignarlo la app sigue en `.groupInvite` —shell reducida y bridge
-    /// del humano anterior— hasta el próximo lanzamiento.
-    @Test func wipeLocalGroupsDomain_resetsTheOnboardingModeInMemory() throws {
-        let context = try makeTestContext()
-        let previousMode = SessionState.shared.onboardingMode
-        defer { SessionState.shared.onboardingMode = previousMode }
-        SessionState.shared.onboardingMode = .groupInvite
-
-        try DataWipeService.wipeLocalGroupsDomain(
-            in: context, defaults: makeIsolatedDefaults(), iKV: RecordingKVStore(), resetSyncState: {})
-
-        #expect(SessionState.shared.onboardingMode == .full)
-        #expect(SessionState.shared.isGroupInviteMode == false)
-    }
-
-    /// **La invariante del camino**: al iKV va UNA sola key. Escribir cualquier otra desde aquí propaga a
-    /// la CUENTA —no al dispositivo— y este camino solo declara el relevo de humano en ESTE dispositivo.
-    /// Un `removeObject` tampoco vale: borraría el valor para los demás devices del Apple ID.
-    @Test func wipeLocalGroupsDomain_touchesOnlyTheOnboardingModeKeyInTheIKV() throws {
+    /// **La invariante del camino**: al iKV del Apple ID no va NADA. Lo que se escriba o se borre ahí
+    /// viaja a TODOS los dispositivos de esa persona, y este camino solo declara el relevo de humano
+    /// en ESTE dispositivo. Antes iba una sola key —el flag de onboarding, que sí viajaba— y desde que
+    /// el eje es un hecho del dispositivo la lista correcta está VACÍA.
+    @Test func wipeLocalGroupsDomain_touchesNothingInTheIKV() throws {
         let context = try makeTestContext()
         let iKV = RecordingKVStore()
 
         try DataWipeService.wipeLocalGroupsDomain(
-            in: context, defaults: makeIsolatedDefaults(), iKV: iKV, resetSyncState: {})
+            in: context, defaults: makeIsolatedDefaults(), resetSyncState: {})
 
-        #expect(iKV.writtenKeys == [OnboardingMode.userDefaultsKey])
+        #expect(iKV.writtenKeys.isEmpty)
         #expect(iKV.removedKeys.isEmpty)
     }
 
-    /// No-regresión: fuera del handover, `.groupInvite` remoto sigue GANANDO al `.full` local — un
-    /// usuario legítimo que estrena un segundo dispositivo tiene que seguir recibiendo su modo.
-    @Test func remoteGroupInvite_withoutAHandover_stillWinsOverLocalFull() {
-        let decision = PreferenceMergeLogic.decide(
-            key: .onboardingMode,
-            remote: .string(OnboardingMode.groupInvite.rawValue),
-            local: .string(OnboardingMode.full.rawValue))
-
-        #expect(decision.write == .set(.string(OnboardingMode.groupInvite.rawValue)))
-    }
 
     /// El sello es lo que hace que el bridge se cierre; sin él el bridge sigue abierto.
     @Test func wipeLocalGroupsDomain_sealsTheDomainForTheIncomingUser() throws {
@@ -291,10 +251,10 @@ struct HandoverGroupsDomainTests {
     // MARK: - Gate de dominio (pure logic)
 
     @Test func isDomainOpen_onlyWithADeliberateActOnThisDevice() {
-        #expect(GroupsDomainAdoptionLogic.isDomainOpen(isUnlocked: false, isGroupInviteMode: false) == false)
-        #expect(GroupsDomainAdoptionLogic.isDomainOpen(isUnlocked: true, isGroupInviteMode: false) == true)
-        #expect(GroupsDomainAdoptionLogic.isDomainOpen(isUnlocked: false, isGroupInviteMode: true) == true)
-        #expect(GroupsDomainAdoptionLogic.isDomainOpen(isUnlocked: true, isGroupInviteMode: true) == true)
+        #expect(GroupsDomainAdoptionLogic.isDomainOpen(isUnlocked: false, hasPrivateSession: true) == false)
+        #expect(GroupsDomainAdoptionLogic.isDomainOpen(isUnlocked: true, hasPrivateSession: true) == true)
+        #expect(GroupsDomainAdoptionLogic.isDomainOpen(isUnlocked: false, hasPrivateSession: false) == true)
+        #expect(GroupsDomainAdoptionLogic.isDomainOpen(isUnlocked: true, hasPrivateSession: false) == true)
     }
 
     /// **El test que impide el falso negativo**: sin sello el bridge está SIEMPRE permitido, incluido
@@ -304,10 +264,10 @@ struct HandoverGroupsDomainTests {
     /// implementación; en producción no habría habido quien avisara).
     @Test func isBridgeAllowed_withoutSeal_alwaysPermits() {
         for unlocked in [true, false] {
-            for invite in [true, false] {
+            for privada in [true, false] {
                 #expect(
                     GroupsDomainAdoptionLogic.isBridgeAllowed(
-                        sealedForFreshStart: false, isUnlocked: unlocked, isGroupInviteMode: invite)
+                        sealedForFreshStart: false, isUnlocked: unlocked, hasPrivateSession: privada)
                         == true)
             }
         }
@@ -318,13 +278,13 @@ struct HandoverGroupsDomainTests {
     @Test func isBridgeAllowed_withSeal_followsTheGroupsDoor() {
         #expect(
             GroupsDomainAdoptionLogic.isBridgeAllowed(
-                sealedForFreshStart: true, isUnlocked: false, isGroupInviteMode: false) == false)
+                sealedForFreshStart: true, isUnlocked: false, hasPrivateSession: true) == false)
         #expect(
             GroupsDomainAdoptionLogic.isBridgeAllowed(
-                sealedForFreshStart: true, isUnlocked: true, isGroupInviteMode: false) == true)
+                sealedForFreshStart: true, isUnlocked: true, hasPrivateSession: true) == true)
         #expect(
             GroupsDomainAdoptionLogic.isBridgeAllowed(
-                sealedForFreshStart: true, isUnlocked: false, isGroupInviteMode: true) == true)
+                sealedForFreshStart: true, isUnlocked: false, hasPrivateSession: false) == true)
     }
 
     /// El sello NO es una preferencia de usuario: el wipe normal («Vaciar datos») no debe borrarlo —
@@ -352,12 +312,12 @@ struct HandoverGroupsDomainTests {
     /// La rama sellada se cubre en `isBridgeAllowed_withSeal_followsTheGroupsDoor` (pure logic), en el
     /// source-scan del seam, y end-to-end en simulador.
     ///
-    /// `SessionState.shared.onboardingMode` sí es un singleton compartido: se fija y se restaura en el
+    /// `SessionState.shared.hasPrivateSession` sí es un singleton compartido: se fija y se restaura en el
     /// `defer` (la suite es `.serialized`). `UserDefaults.standard` no se toca en ningún punto.
     @Test func isDomainOpenForBridge_underTestRunner_ignoresTheSeal() {
-        let previousMode = SessionState.shared.onboardingMode
-        defer { SessionState.shared.onboardingMode = previousMode }
-        SessionState.shared.onboardingMode = .full
+        let previousPrivateSession = SessionState.shared.hasPrivateSession
+        defer { SessionState.shared.hasPrivateSession = previousPrivateSession }
+        SessionState.shared.hasPrivateSession = true
         let defaults = makeIsolatedDefaults()
 
         #expect(GroupTransactionBridge.isDomainOpenForBridge(defaults: defaults) == true)
@@ -414,80 +374,11 @@ struct HandoverGroupsDomainTests {
         #expect(cursors.first?.groupCursorsJSON == "{\"g1\":5}")
     }
 
-    // MARK: - Cinturón fail-closed: la visita no borra el archivo del dueño
+    // MARK: - El wipe borra, y eso hay que pinearlo
 
-    /// `secondary-groups-off-wipes-owner`. El mount ya evita que la visita monte el archivo del dueño,
-    /// pero queda la VENTANA DE ENTRADA: el descriptor ya dice «secundaria» y el proceso vivo arrancó
-    /// antes, con el store del DUEÑO montado. Lo arbitra `groupsStoreMounted`, el testigo del mount de
-    /// GRUPOS, cuyo default `.primary` es el valor conservador. Si «Empiezo de cero» corre en esa
-    /// ventana, borra los grupos del dueño sin vuelta atrás — este store va con `cloudKitDatabase: .none`.
-    ///
-    /// Aislamiento: la sesión secundaria se activa en un dominio de preferencias PROPIO y ese mismo
-    /// dominio se le pasa al wipe. Ningún seam global (`_testSetActiveOverride`,
-    /// `_testSetSecondaryStoreMounted`) hace falta, así que este test no puede filtrarse a las suites
-    /// que se interleavan con esta — la lección de la cabecera de este archivo.
-    @Test func wipeLocalGroupsDomain_refusesAndKeepsRows_whenSecondaryActiveButOwnerStoreMounted() throws {
-        let context = try makeTestContext()
-        try seedGroupsDomain(in: context)
-
-        let defaults = makeIsolatedDefaults()
-        SecondarySessionStore.activate(userID: "visitante-uid", defaults)
-        // `secondaryStoreMounted` es `false` por defecto en el host de tests = exactamente la ventana
-        // de entrada que se quiere pinear. No se toca.
-
-        // `do/catch` y no `#expect(throws:)`: el macro expande su closure en un contexto NONISOLATED,
-        // y `wipeLocalGroupsDomain` es `@MainActor` ⇒ no compila desde esta suite (que sí lo es).
-        var thrown: Error?
-        do {
-            try DataWipeService.wipeLocalGroupsDomain(
-                in: context, defaults: defaults, resetSyncState: {})
-        } catch {
-            thrown = error
-        }
-        guard case .some(GroupsWipeGuardError.mountedStoreBelongsToOwner) = thrown else {
-            Issue.record("Esperaba el cinturón fail-closed; llegó: \(String(describing: thrown))")
-            return
-        }
-
-        // Lo que de verdad importa no es el throw, sino que las filas SIGAN ahí: un guard que lanzara
-        // después de borrar dejaría este test en verde y al dueño sin grupos.
-        #expect(try context.fetchCount(FetchDescriptor<SplitGroup>()) == 1)
-        #expect(try context.fetchCount(FetchDescriptor<SplitMember>()) == 1)
-        #expect(try context.fetchCount(FetchDescriptor<SplitExpense>()) == 1)
-        #expect(try context.fetchCount(FetchDescriptor<SplitShare>()) == 1)
-        #expect(try context.fetchCount(FetchDescriptor<SplitSettlement>()) == 1)
-        #expect(try context.fetchCount(FetchDescriptor<GroupBridgePreference>()) == 1)
-    }
-
-    /// La otra celda del cinturón, y la que impide que el guard sea un candado permanente: la visita
-    /// YA relanzada, operativa sobre SU propio `YalaGroups-Secondary`, tiene todo el derecho a vaciar
-    /// sus datos. Sin este test, un guard que se negara siempre que hay sesión secundaria pasaría los
-    /// otros dos y rompería «Empiezo de cero» para toda visita.
-    ///
-    /// Este es además el recorrido DOMINANTE del ticket (la visita tocando «Vaciar mis datos» en su
-    /// sesión), y es justo el que la primera versión del cinturón no distinguía: se apoyaba en
-    /// `secondaryStoreMounted` —testigo del mount PERSONAL, `true` en toda secundaria relanzada— así
-    /// que no discriminaba entre este caso y el de arriba. Lo cazó la review adversarial.
-    @Test func wipeLocalGroupsDomain_wipes_whenSecondaryIsOperatingOnItsOwnStore() throws {
-        let context = try makeTestContext()
-        try seedGroupsDomain(in: context)
-
-        let defaults = makeIsolatedDefaults()
-        SecondarySessionStore.activate(userID: "visitante-uid", defaults)
-        SwiftDataConfiguration._testSetGroupsStoreMounted(.secondary)
-        defer { SwiftDataConfiguration._testSetGroupsStoreMounted(.primary) }
-
-        try DataWipeService.wipeLocalGroupsDomain(
-            in: context, defaults: defaults, resetSyncState: {})
-
-        #expect(try context.fetchCount(FetchDescriptor<SplitGroup>()) == 0)
-        #expect(try context.fetchCount(FetchDescriptor<GroupBridgePreference>()) == 0)
-    }
-
-    /// Control positivo, y no es decorativo: sin él, un guard demasiado agresivo —que se negara SIEMPRE—
-    /// dejaría el test de arriba en verde y rompería «Empiezo de cero» para todo el mundo. Sin sesión
-    /// secundaria en el dominio, el wipe debe borrar como siempre.
-    @Test func wipeLocalGroupsDomain_stillWipes_whenNoSecondarySession() throws {
+    /// El caso normal, y no es decorativo: un guard demasiado agresivo —que se negara SIEMPRE— rompería
+    /// «Empiezo de cero» para todo el mundo sin que nada más lo destapara.
+    @Test func wipeLocalGroupsDomain_wipesTheGroupsDomain() throws {
         let context = try makeTestContext()
         try seedGroupsDomain(in: context)
 
@@ -597,20 +488,23 @@ struct HandoverGroupsWiringTests {
     ///     (§2.7 decía «repuntar el default a `CloudSessionSignOut.purgeGroupsSyncState`»): esa función
     ///     borra outbox **y** cursor, y su propio docblock acota su uso a «tras el teardown (generación
     ///     cortada)», precondición que este camino no cumple.
-    /// El default del seam del iKV tiene que ser el store REAL, y el wipe tiene que llamarlo. Los tests
-    /// de comportamiento inyectan su doble, así que un default cambiado por un no-op —o la llamada
-    /// borrada de `wipeLocalGroupsDomain`— dejaría el bug entero de vuelta con la suite en verde.
-    @Test func handoverWipe_clearsTheOnboardingModeThroughTheRealIKV() throws {
+    /// El wipe tiene que llamar al borrado del eje 1 y **no puede tocar el iCloud-KV**.
+    ///
+    /// El seam del iKV se retiró de la firma el 2026-09-13: el eje nuevo no viaja, así que el parámetro
+    /// se había quedado sin un solo lector en el cuerpo — una inyección viva hacia el KV del Apple ID que
+    /// alguien podía volver a cablear sin releer por qué se quitó. Lo que el test prohíbe ahora es más
+    /// fuerte que antes: que la función vuelva a tener por dónde escribir ahí.
+    @Test func handoverWipe_clearsThePrivateSessionMark_andWritesNothingToTheIKV() throws {
         let src = try Self.source("Yala/Utils/DataWipeService.swift")
-        // 2026-08-12 · el default pasó de `NSUbiquitousKeyValueStore.default` a `OwnerKeyValueStore.shared`
-        // con la frontera M1 del iCloud KV. El invariante NO se relaja: la puerta escribe en el store real
-        // salvo con una sesión secundaria viva, que es justo el caso en que este barrido tocaría el modo
-        // de onboarding del DUEÑO. Lo que el test sigue prohibiendo es un default que no llegue a iCloud.
-        #expect(src.contains("iKV: BeaconKeyValueStore = OwnerKeyValueStore.shared"))
-        #expect(src.contains("clearHandoverOnboardingMode(from: defaults, iKV: iKV)"))
-        // El vacío es lo que hace `.skip` al merge never-downgrade; un `removeObject` sobre esta key
-        // borraría el modo para los demás dispositivos del Apple ID.
-        #expect(src.contains("iKV.setString(\"\", forKey: OnboardingMode.userDefaultsKey)"))
+        #expect(!src.contains("iKV: BeaconKeyValueStore"), """
+            `wipeLocalGroupsDomain` volvió a aceptar un store del iCloud-KV. El relevo de humano es un
+            hecho de ESTE teléfono: lo que se escriba ahí viaja a todos los dispositivos de la persona.
+            """)
+        #expect(src.contains("clearHandoverPrivateSessionMark(from: defaults)"))
+        // El eje 1 es un hecho del DISPOSITIVO y no viaja: escribirlo al iKV se lo impondría a los demás
+        // dispositivos del Apple ID, que es justo el daño que el modelo nuevo evita.
+        #expect(!src.contains("forKey: PrivateSessionMark.userDefaultsKey)"),
+                "La marca no se escribe ni se borra en el iCloud-KV: nunca viaja.")
     }
 
     @Test func wipeSeam_purgesTheAppGroupMirror_andNeverReusesTheSignOutPurge() throws {

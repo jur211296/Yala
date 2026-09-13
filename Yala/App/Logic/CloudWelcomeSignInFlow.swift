@@ -62,18 +62,6 @@ nonisolated enum CloudWelcomeSignInPhase: Equatable {
     /// fases en una obliga al callback único a adivinar cuál de las dos precondiciones tiene delante, que
     /// es exactamente lo que no puede hacer.
     case reentryReady
-    /// M1: confirmación explícita ANTES de escribir nada de la sesión secundaria
-    /// ("entrarás con tu cuenta; los datos del dueño no se tocan").
-    case secondaryConfirm
-    /// M1: descriptor + claim armados — TERMINAL: "Cierra y reabre Yala" (el boot
-    /// monta el store secundario).
-    ///
-    /// **SÍ auto-exita en background**, por el término `secondaryEntryArmedUnmounted` de
-    /// `RelaunchNetLogic` —descriptor activo con el store secundario sin montar, que es estado durable—,
-    /// y por eso su copy es la variante auto-exit. Hasta el 2026-08-10 esta línea decía «sin auto-kill,
-    /// igual que `.relaunch`» y llevaba siendo FALSA desde el fix de la carrera de anchors: es
-    /// exactamente la clase de comentario que MIDE mal y hace perder una vuelta de diagnóstico.
-    case relaunchSecondary
     /// El Apple ID firmado no tiene cuenta Yala en la nube.
     case notFound
     /// R9 (sesión 2 Google): sin cuenta para ESTE sub, pero el faro del device dice que la

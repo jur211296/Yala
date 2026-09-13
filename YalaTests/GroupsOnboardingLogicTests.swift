@@ -3,7 +3,7 @@
 //  YalaTests
 //
 //  Pure-logic tests para `GroupsOnboardingLogic.shouldShow`:
-//  verifica el AND-gating de los 3 blockers (flag persistida, modo `.groupInvite`,
+//  verifica el AND-gating de los 3 blockers (flag persistida, sesión solo-grupos,
 //  deeplink a grupo específico pendiente).
 //
 //  Sin SwiftUI, sin SwiftData, sin singletons, sin `makeTestContext()` — evita
@@ -41,54 +41,52 @@ struct GroupsOnboardingLogicTests {
     }
 }
 
-// MARK: - C2 · el hecho REAL que sustituye al corte por `.groupInvite`
+// MARK: - C2 · el hecho REAL que sustituye al corte por «entró por un grupo»
 
-/// **La tabla que cierra el punto 2 del chip.** El corte `onboardingMode == .groupInvite` era un proxy y
-/// estaba mal en la dirección cara: `.groupInvite` es también lo que escribía la card «Solo grupos», así
-/// que suprimía el educativo justo para quien entraba por la puerta que menos contexto daba — y que además
-/// no pedía ni sesión ni consent. Son dos estados distintos y estaban colapsados en uno falso.
+/// **La tabla que cierra el punto 2 del chip.** El corte por «esta persona entró por un grupo» era un
+/// proxy y estaba mal en la dirección cara: lo mismo escribía la card «Solo grupos», así que suprimía el
+/// educativo justo para quien entraba por la puerta que menos contexto daba — y que además no pedía ni
+/// sesión ni consent. Son dos estados distintos y estaban colapsados en uno falso.
 @Suite("GroupsOnboardingLogic · «ya vio un educativo de Grupos» (C2)")
 struct GroupsEducationalSeenTests {
 
-    private func seen(_ shown: Bool, _ mode: OnboardingMode, _ setup: Bool) -> Bool {
+    private func seen(_ shown: Bool, _ hasPrivateSession: Bool, _ setup: Bool) -> Bool {
         GroupsOnboardingLogic.hasSeenAnyGroupsEducational(
-            hasShownOnboarding: shown, onboardingMode: mode, hasCompletedSetup: setup)
+            hasShownOnboarding: shown, hasPrivateSession: hasPrivateSession, hasCompletedSetup: setup)
     }
 
-    /// La marca directa manda, en cualquier modo. La ponen los DOS educativos: el general
+    /// La marca directa manda, haya o no sesión privada. La ponen los DOS educativos: el general
     /// (`GroupsOnboardingView`) y el del invitado (`GroupInviteOnboardingView`).
     @Test func laMarcaDirectaManda() {
-        for mode in [OnboardingMode.full, .groupInvite, .completed] {
+        for privada in [true, false] {
             for setup in [false, true] {
-                #expect(seen(true, mode, setup) == true)
+                #expect(seen(true, privada, setup) == true)
             }
         }
     }
 
-    /// **LA CELDA DEL CHIP.** Modo Grupos pero SIN alta completada: es exactamente el estado en el que la
-    /// card «Solo grupos» dejaba al usuario antes de C2, y donde el corte viejo le tapaba el educativo. Hoy
-    /// ese estado ya no lo produce nadie —la card no escribe el modo hasta el final— pero la tabla lo fija:
-    /// si alguien devuelve el corte por modo, esta celda cae.
-    @Test func modoGruposSinAlta_noEsEvidenciaDeHaberVistoNada() {
-        #expect(seen(false, .groupInvite, false) == false, """
-            volvió el corte por `onboardingMode == .groupInvite`: suprime el educativo a quien está en modo \
-            Grupos sin haber completado ningún alta, que es justo quien menos contexto tiene.
+    /// **LA CELDA DEL CHIP.** Sesión solo-grupos pero SIN alta completada: es exactamente el estado en el
+    /// que la card «Solo grupos» dejaba al usuario antes de C2, y donde el corte viejo le tapaba el
+    /// educativo. Hoy ese estado ya no lo produce nadie —la card no declara la sesión hasta el final— pero
+    /// la tabla lo fija: si alguien devuelve el corte por sesión, esta celda cae.
+    @Test func sesiónSoloGruposSinAlta_noEsEvidenciaDeHaberVistoNada() {
+        #expect(seen(false, false, false) == false, """
+            volvió el corte por «no tiene sesión privada»: suprime el educativo a quien está en solo-grupos \
+            sin haber completado ningún alta, que es justo quien menos contexto tiene.
             """)
     }
 
-    /// El término LEGACY, y su única razón de existir: quien completó su alta en modo Grupos ANTES de C2
-    /// vio su educativo y no dejó marca. Sin esto, actualizar la app se lo volvería a presentar.
-    @Test func modoGruposConAltaCompletada_esElParqueAnteriorAC2() {
-        #expect(seen(false, .groupInvite, true) == true)
+    /// El término LEGACY, y su única razón de existir: quien completó su alta solo-grupos ANTES de C2 vio
+    /// su educativo y no dejó marca. Sin esto, actualizar la app se lo volvería a presentar.
+    @Test func sesiónSoloGruposConAltaCompletada_esElParqueAnteriorAC2() {
+        #expect(seen(false, false, true) == true)
     }
 
-    /// Los modos que no son Grupos no derivan nada del alta: un usuario de Yala completo que nunca abrió
-    /// el tab tiene que ver el educativo la primera vez.
-    @Test func otrosModos_noDerivanNadaDelAlta() {
-        for mode in [OnboardingMode.full, .completed] {
-            #expect(seen(false, mode, true) == false)
-            #expect(seen(false, mode, false) == false)
-        }
+    /// Con sesión privada no se deriva nada del alta: un usuario de Yala completo que nunca abrió el tab
+    /// tiene que ver el educativo la primera vez.
+    @Test func conSesiónPrivada_noSeDerivaNadaDelAlta() {
+        #expect(seen(false, true, true) == false)
+        #expect(seen(false, true, false) == false)
     }
 }
 

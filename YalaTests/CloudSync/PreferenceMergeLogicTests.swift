@@ -151,48 +151,6 @@ struct PreferenceMergeLogicTests {
         #expect(d == .skip)
     }
 
-    // MARK: - onboardingMode: never-downgrade (TODOS los pares de rank)
-
-    @Test func onboarding_neverDowngrade_allRankPairs() {
-        let modes: [OnboardingMode] = [.full, .groupInvite, .completed]  // ranks 0,1,2
-        for localMode in modes {
-            for remoteMode in modes {
-                let d = PreferenceMergeLogic.decide(
-                    key: .onboardingMode,
-                    remote: .string(remoteMode.rawValue),
-                    local: .string(localMode.rawValue)
-                )
-                if remoteMode.rank > localMode.rank {
-                    #expect(d.write == .set(.string(remoteMode.rawValue)),
-                            "remote \(remoteMode) (rank \(remoteMode.rank)) debe ganar sobre local \(localMode)")
-                } else {
-                    #expect(d.write == .skip,
-                            "remote \(remoteMode) NO debe pisar local \(localMode) (rank >=)")
-                }
-                #expect(d.signal == nil)
-            }
-        }
-    }
-
-    @Test func onboarding_localAbsentTreatedAsFull() {
-        // local nil → .full (rank 0). completed (2) gana; full (0) no.
-        let win = PreferenceMergeLogic.decide(
-            key: .onboardingMode, remote: .string(OnboardingMode.completed.rawValue), local: nil)
-        #expect(win.write == .set(.string(OnboardingMode.completed.rawValue)))
-        let lose = PreferenceMergeLogic.decide(
-            key: .onboardingMode, remote: .string(OnboardingMode.full.rawValue), local: nil)
-        #expect(lose.write == .skip)
-    }
-
-    @Test func onboarding_invalidOrEmptyRemote_skips() {
-        #expect(PreferenceMergeLogic.decide(
-            key: .onboardingMode, remote: .string(""), local: nil).write == .skip)
-        #expect(PreferenceMergeLogic.decide(
-            key: .onboardingMode, remote: .string("garbage"), local: nil).write == .skip)
-        #expect(PreferenceMergeLogic.decide(
-            key: .onboardingMode, remote: nil, local: .string("full")).write == .skip)
-    }
-
     // MARK: - appLanguageOverride: suite + remove-on-empty + señal language
 
     @Test func appLanguage_setValue_differs_setsAndSignalsLanguage() {
@@ -235,43 +193,18 @@ struct PreferenceMergeLogicTests {
         // en el iCloud KV del Apple ID sin llegar nunca a Yala. Ahora el registro vive en la cuenta
         // (`groups_consents`) y la copia local es un snapshot sellado (`GroupsConsentState`).
         // +1 el 2026-09-07 = groupSettlementRemindersEnabled (nudge de deuda parada, .boolPresence).
-        #expect(PrefSyncKey.allCases.count == 38)
+        // −2 el 2026-09-13 = las dos del modelo viejo de sesiones. No fue limpieza tampoco: describían
+        // el DISPOSITIVO y no a la persona, y viajar por este canal era el mecanismo por el que un móvil
+        // le recortaba la shell a otro del mismo Apple ID.
+        #expect(PrefSyncKey.allCases.count == 36)
         // Y no pueden volver por la puerta de atrás: el canal de prefs no debe transportar este consent.
         #expect(!PrefSyncKey.allCases.contains { $0.rawValue.hasPrefix("groupsConsent") })
-    }
-
-    // MARK: - usageFocus (D1): LWW simple, NUNCA never-downgrade
-
-    @Test func usageFocus_family_isStringGuardNonEmpty() {
-        #expect(PrefSyncKey.usageFocus.family == .stringGuardNonEmpty)
-        #expect(PrefSyncKey.usageFocus.kind == .string)
-        #expect(PrefSyncKey.usageFocus.signal == nil)
-    }
-
-    @Test func usageFocus_remoteGroupsOnly_differs_sets() {
-        let d = PreferenceMergeLogic.decide(
-            key: .usageFocus, remote: .string("groupsOnly"), local: .string("full"))
-        #expect(d == Decision(write: .set(.string("groupsOnly")), signal: nil))
-    }
-
-    @Test func usageFocus_remoteEqual_skips() {
-        let d = PreferenceMergeLogic.decide(
-            key: .usageFocus, remote: .string("full"), local: .string("full"))
-        #expect(d == .skip)
-    }
-
-    @Test func usageFocus_remoteAbsent_skips() {
-        // LWW simple: sin remoto no aplica (no never-downgrade que fuerce nada).
-        let d = PreferenceMergeLogic.decide(
-            key: .usageFocus, remote: nil, local: .string("groupsOnly"))
-        #expect(d == .skip)
     }
 
     @Test func taxonomy_kindMatchesFamily() {
         for key in PrefSyncKey.allCases {
             switch key.family {
-            case .stringGuardNonEmpty, .panelPresenceEmptyValid,
-                 .onboardingModeNeverDowngrade, .appLanguageOverride:
+            case .stringGuardNonEmpty, .panelPresenceEmptyValid, .appLanguageOverride:
                 #expect(key.kind == .string, "\(key) debe ser .string")
             case .boolPresence:
                 #expect(key.kind == .bool, "\(key) debe ser .bool")

@@ -372,11 +372,6 @@ private func defaultCategorySeedDefinitions() -> [CategorySeedDefinition] {
 /// - No debe llamarse manualmente desde otros puntos sin revisar impacto.
 func seedCategoriesIfNeeded(in modelContext: ModelContext) {
 
-    // M1 belt: en sesión SECUNDARIA jamás sembrar — el store se hidrata por pull del backend;
-    // un seed pre-pull crearía categorías default que colisionarían con las de la cuenta
-    // (el flag `seedCategoriesExecuted` ya lo impide en la práctica, esto es cinturón).
-    if SecondarySessionStore.isActive() { return }
-
     // 0. Flag guard — prevents TOCTOU race with CloudKit sync.
     //    El centinela va por `CategorySeedSentinel`, que lo namespacea por STORE: bajo `-uitest`
     //    los datos viven en otro container y `UserDefaults.standard` es el mismo, así que una key
@@ -587,10 +582,6 @@ func seedSystemGroupCategoriesIfNeeded(
     in modelContext: ModelContext,
     defaults: UserDefaults = .standard
 ) {
-    // M1 belt: jamás sembrar en sesión secundaria (el store se hidrata por pull; Grupos
-    // ni siquiera arranca en secundaria).
-    if SecondarySessionStore.isActive() { return }
-
     // V2: re-corre el backfill defensive del iconName para usuarios que sembraron
     // las categorías sistema con el icono inválido previo ("Cobros de grupos" con
     // person.2.crop.circle.fill.badge.plus, que no renderiza). El guard por flag V1

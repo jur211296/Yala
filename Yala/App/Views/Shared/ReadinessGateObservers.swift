@@ -18,7 +18,6 @@ private struct ReadinessGateObserversModifier: ViewModifier {
     let showInviteRecovery: Bool
     let showWelcomeCloudSignIn: Bool
     let showSignOutRelaunch: Bool
-    let secondaryEntryRelaunch: Bool
     let showFreshStartWipeAlert: Bool
     let showFreshStartWipeFailedAlert: Bool
     let showLateICloudNotice: Bool
@@ -60,7 +59,6 @@ private struct ReadinessGateObserversModifier: ViewModifier {
             .onChange(of: showInviteRecovery) { _, _ in recompute() }
             .onChange(of: showWelcomeCloudSignIn) { _, _ in recompute() }
             .onChange(of: showSignOutRelaunch) { _, _ in recompute() }
-            .onChange(of: secondaryEntryRelaunch) { _, _ in recompute() }
     }
 
     private func groupObservers(_ content: some View) -> some View {
@@ -101,7 +99,6 @@ extension View {
         showInviteRecovery: Bool,
         showWelcomeCloudSignIn: Bool,
         showSignOutRelaunch: Bool,
-        secondaryEntryRelaunch: Bool,
         showFreshStartWipeAlert: Bool,
         showFreshStartWipeFailedAlert: Bool,
         showLateICloudNotice: Bool,
@@ -131,7 +128,6 @@ extension View {
             showInviteRecovery: showInviteRecovery,
             showWelcomeCloudSignIn: showWelcomeCloudSignIn,
             showSignOutRelaunch: showSignOutRelaunch,
-            secondaryEntryRelaunch: secondaryEntryRelaunch,
             showFreshStartWipeAlert: showFreshStartWipeAlert,
             showFreshStartWipeFailedAlert: showFreshStartWipeFailedAlert,
             showLateICloudNotice: showLateICloudNotice,

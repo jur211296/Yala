@@ -42,8 +42,9 @@ final class UITestHooks {
     /// SIN marcar onboarding completado. Para testear el flujo de onboarding aislado.
     nonisolated static var startAtOnboarding: Bool { hasArg("-uitest-onboarding") }
 
-    /// `-uitest-group-invite`: arranca en modo solo-grupos (`OnboardingMode.groupInvite`),
-    /// con onboarding saltado y el tab Grupos seleccionado. Para testear el Perfil reducido.
+    /// `-uitest-group-invite`: arranca en modo solo-grupos (el eje 1 apagado — no hay sesión privada
+    /// en este dispositivo), con onboarding saltado y el tab Grupos seleccionado. Para testear el
+    /// Perfil reducido.
     nonisolated static var forceGroupInvite: Bool { hasArg("-uitest-group-invite") }
 
     /// `-uitest-cloud-chooser`: destapa las cards de sign-in cloud (Apple/Google) del
@@ -131,23 +132,6 @@ final class UITestHooks {
     /// `DevSeedGroups` para el member propio, que es lo que hace que casen.
     nonisolated static let uitestICloudRecordName = "uitest-current-user"
 
-    /// `-uitest-secondary-session`: monta el proceso como **sesión secundaria M1 OPERATIVA** — la invitada
-    /// que ya relanzó y está usando el móvil de otra persona. Enciende `SecondarySessionStore.isActive()`
-    /// por el dominio VOLÁTIL de `UserDefaults` y declara el testigo del mount; el porqué de que hagan
-    /// falta las dos mitades (y de que el descriptor JAMÁS se persista) está en
-    /// `UITestEphemeralDefaults.applySecondarySession`.
-    ///
-    /// **No es ortogonal a los otros seams de nube, es de otro eje:** `-uitest-fake-cloud-session` finge la
-    /// sesión de backend del usuario de ESTE móvil; éste dice de QUIÉN es la sesión. Combinarlos es
-    /// legítimo (la invitada tiene su propia cuenta), y de hecho es lo que hace el XCUITest de la puerta.
-    ///
-    /// **Blast radius querido y medido**, porque es lo que reproduce el estado real: el modo EFECTIVO del
-    /// proceso pasa a `.cloud` (`CloudSyncFlags.storageMode`), el seed de categorías se salta
-    /// (`CategorySeed`), `OnboardingMode.setCurrent` y `GroupsDomainAdoptionMarker.recordEntry` son no-op
-    /// (los guards del chip M1) y la fila iCloud del Perfil desaparece. Solo DEBUG (inerte en release vía
-    /// `hasArg`).
-    nonisolated static var secondarySession: Bool { hasArg("-uitest-secondary-session") }
-
     /// `-uitest-groups-consent`: da por aceptado el consent de Grupos (§C5) sembrando sus dos keys de
     /// `UserDefaults` desde `AppBootstrapper`, SIN pasar por `GroupsConsentState.register()` —ese camino
     /// escribe por `PreferenceSyncService` (iKV en `.icloud`, outbox en `.cloud`) y un XCUITest no debe
@@ -179,8 +163,7 @@ final class UITestHooks {
     /// `SwiftDataConfiguration.personalConfiguration` sale por su rama `YalaModel-UITest` —con
     /// `cloudKitDatabase: .none`— **antes** de llamar a `capturePersonalStoreMountedDecisionOnce`, así que
     /// `personalStoreMountedDecision` se queda en el default de su declaración, que es `.iCloudMirror`. La
-    /// consecuencia ya estaba escrita para su hermano (`UITestEphemeralDefaults.applySecondarySession`,
-    /// «`capturePersonalStoreMountedDecisionOnce` tampoco corre»); aquí muerde en el otro sentido.
+    /// consecuencia muerde aquí en el sentido contrario al que parece.
     ///
     /// Por eso el default de este seam es **`false`, que es la VERDAD del host de test** (ese store no
     /// espeja), y no una inversión: sin él, la puerta leería `true` en toda corrida y ningún XCUITest

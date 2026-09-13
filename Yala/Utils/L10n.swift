@@ -71,9 +71,11 @@ enum LanguageManager {
         set {
             guard newValue != sharedDefaults.string(forKey: overrideKey) else { return }
             sharedDefaults.set(newValue, forKey: overrideKey)
-            // La PUERTA, no el store crudo. En sesión secundaria el iCloud KV es el del DUEÑO: el
-            // idioma que elija la invitada le cambiaría la app en todos sus dispositivos. Esta era
-            // la SÉPTIMA vía de la frontera M1 y no estaba en ningún inventario (2026-08-12).
+            // La FACHADA, no el store crudo. El motivo ya no es un guard —desde la retirada de la
+            // sesión de visita solo hay una identidad sobre este KV— sino el CONTEO: esta escritura
+            // fue la SÉPTIMA vía al iCloud-KV del Apple ID y no figuraba en ningún inventario
+            // (2026-08-12). Lo que impide que aparezca una novena es que haya UN solo sitio que
+            // nombrar, y eso lo cuenta `OwnerKeyValueWiringTests`.
             let iKV = OwnerKeyValueStore.shared
             if let value = newValue {
                 iKV.setString(value, forKey: overrideKey)
@@ -165,8 +167,8 @@ enum LanguageManager {
            let alias = SupportedLocale(rawValue: current),
            let canonical = aliasRemap[alias] {
             suite.set(canonical.code, forKey: overrideKey)
-            // Misma frontera que el setter de arriba: el remap de alias es una escritura al iCloud
-            // KV del Apple ID, y en secundaria ese Apple ID es el del dueño.
+            // Mismo motivo que el setter de arriba: el remap de alias es una escritura al iCloud-KV
+            // del Apple ID, y va por la fachada para que siga siendo contable.
             OwnerKeyValueStore.shared.setString(canonical.code, forKey: overrideKey)
             OwnerKeyValueStore.shared.synchronize()
 
@@ -1974,7 +1976,7 @@ enum L10n {
             static var deactivationOptionDelete: String { ls("groups.bridge.deactivationOptionDelete", comment: "") }
             static var importing: String { ls("groups.bridge.importing", comment: "") }
             static var importError: String { ls("groups.bridge.importError", comment: "") }
-            // Upsell para .groupInvite users
+            // Upsell para sesiones solo-grupos
             static var upsellGroupInviteSettlement: String { ls("groups.bridge.upsellGroupInviteSettlement", comment: "") }
             // Opt-out alert (F2c)
             static var optoutAlertTitle: String { ls("groups.bridge.optoutAlertTitle", comment: "") }
@@ -4381,7 +4383,6 @@ enum L10n {
         // Decisión del owner 2026-09-03 — la sesión de VISITA suma «salir igualmente» al aviso de
         // bloqueo: está en el móvil de otra persona y hay que devolverlo, así que un cierre que no se
         // puede completar la deja atrapada.
-        static var signOutSecondaryLossWarning: String { ls("settings.signOutSecondaryLossWarning", comment: "") }
         static var signOutWaitButton: String { ls("settings.signOutWaitButton", comment: "") }
         static var signOutExitAnywayButton: String { ls("settings.signOutExitAnywayButton", comment: "") }
         // Paso 9 (2026-09-11): «Salir de Yala en este dispositivo» y «Cerrar sesión de grupos» RETIRADAS —
@@ -4473,14 +4474,11 @@ enum L10n {
         static var signOutScopeCloudPrivate: String { ls("settings.signOutScopeCloudPrivate", comment: "") }
         static var signOutScopeDeviceCloud: String { ls("settings.signOutScopeDeviceCloud", comment: "") }
         static var signOutScopeCloudCloud: String { ls("settings.signOutScopeCloudCloud", comment: "") }
-        static var signOutScopeDeviceSecondary: String { ls("settings.signOutScopeDeviceSecondary", comment: "") }
-        static var signOutScopeCloudSecondary: String { ls("settings.signOutScopeCloudSecondary", comment: "") }
         static var signOutScopeDeviceNoCopy: String { ls("settings.signOutScopeDeviceNoCopy", comment: "") }
         static var signOutScopeCloudNoCopy: String { ls("settings.signOutScopeCloudNoCopy", comment: "") }
         static var signOutNoCopyWarning: String { ls("settings.signOutNoCopyWarning", comment: "") }
         static var signOutScopeConservationPrivate: String { ls("settings.signOutScopeConservationPrivate", comment: "") }
         static var signOutScopeConservationCloud: String { ls("settings.signOutScopeConservationCloud", comment: "") }
-        static var signOutScopeConservationSecondary: String { ls("settings.signOutScopeConservationSecondary", comment: "") }
         static var signOutScopeConservationGroups: String { ls("settings.signOutScopeConservationGroups", comment: "") }
         static var signOutScopeConservationPrivateWithGroups: String { ls("settings.signOutScopeConservationPrivateWithGroups", comment: "") }
 
@@ -5128,23 +5126,6 @@ enum L10n {
             // sobrevive (16 locales).
         }
 
-        /// Aviso de la rama PRIVADA en sesión secundaria (2026-09-06): la visita entra al onboarding
-        /// sabiendo que está en el móvil de otra persona. Informa y sigue — «encauzar, no bloquear».
-        enum Private {
-            /// Copy PROPIO y no el de `welcome.groups.secondary*`, aunque nombren el mismo hecho: allí
-            /// el camino se acaba («vuelve desde tu dispositivo») y aquí continúa, así que la de Grupos
-            /// tiene que sonar a «no puedes» justo donde ésta suena a «puedes, y esto es lo que pasa».
-            /// Compartir la key ataría las dos pantallas a evolucionar juntas para siempre.
-            static var secondaryTitle: String { ls("welcome.private.secondaryTitle", comment: "") }
-            /// «Solo en este dispositivo» es un hecho MEDIDO, no una cautela: el store de la sesión
-            /// secundaria se monta con `cloudKitDatabase: .none` y no se espeja a ninguna CloudKit —
-            /// ni a la del dueño ni a la de la visita.
-            static var secondaryBody: String { ls("welcome.private.secondaryBody", comment: "") }
-            /// El CTA CONTINÚA (a diferencia del `gateBack` de las tres pantallas de bloqueo de Grupos,
-            /// cuyo único botón es volver). Esa es la diferencia entera entre informar y bloquear.
-            static var secondaryCta: String { ls("welcome.private.secondaryCta", comment: "") }
-        }
-
         /// **Paso 4 del rediseño de sesiones · la puerta de iCloud de la rama privada** (ADR §9) y el
         /// aviso del espejo que se adjunta tarde.
         ///
@@ -5227,11 +5208,6 @@ enum L10n {
             /// «enlace no válido» — aquí no hay ningún enlace y el usuario no ha hecho nada mal.
             static var channelOffTitle: String { ls("welcome.groups.channelOffTitle", comment: "") }
             static var channelOffBody: String { ls("welcome.groups.channelOffBody", comment: "") }
-            /// C3 · sesión secundaria M1 viva. Copy PROPIO y no el de datos ajenos (`welcome.cloud.blocked*`)
-            /// porque el hecho es otro —«estás de visita»— y aquí sí hay salida: cerrar la sesión de
-            /// invitado y volver desde el dispositivo propio.
-            static var secondaryTitle: String { ls("welcome.groups.secondaryTitle", comment: "") }
-            static var secondaryBody: String { ls("welcome.groups.secondaryBody", comment: "") }
             /// **La vuelta al neutro (2026-09-11).** Sustituye a `existingData*`, que era el copy de un
             /// BLOQUEO —«Aquí ya hay datos guardados … crea el grupo desde la app que ya usas»— dicho a la
             /// dueña de esos datos, y con «la app que ya usas» siendo ÉSTA. Ahora la app no bloquea: deja
@@ -5383,11 +5359,7 @@ enum L10n {
             static var waitingTitle: String { ls("welcome.cloud.waitingTitle", comment: "") }
             static var waitingBody: String { ls("welcome.cloud.waitingBody", comment: "") }
             static var continueToApp: String { ls("welcome.cloud.continueToApp", comment: "") }
-            // M1 — sesión secundaria (confirmación explícita antes de armar).
-            static var secondaryConfirmTitle: String { ls("welcome.cloud.secondaryConfirmTitle", comment: "") }
-            static var secondaryConfirmBody: String { ls("welcome.cloud.secondaryConfirmBody", comment: "") }
-            static var secondaryConfirmCta: String { ls("welcome.cloud.secondaryConfirmCta", comment: "") }
-            static var secondaryHydrationBanner: String { ls("welcome.cloud.secondaryHydrationBanner", comment: "") }
+            static var hydrationBanner: String { ls("welcome.cloud.hydrationBanner", comment: "") }
         }
 
         enum Restore {

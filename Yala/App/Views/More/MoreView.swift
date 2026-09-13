@@ -49,16 +49,15 @@ enum MoreSectionKind: String, CaseIterable, Identifiable {
 struct MoreView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(SessionState.self) private var sessionState
     @State private var showProfile = false
     @State private var showEditor = false
 
-    /// GC-08 + D1: en shell reducida (group-invite O usageFocus == .groupsOnly) solo Grupos es
-    /// accesible; el dashboard personal se oculta y se muestra el CTA «Activar Yala completo».
-    /// Reactivo a `usageFocus` vía `appPreferences` (NO el point-read de SessionState).
+    /// GC-08: sin sesión privada en este teléfono solo Grupos es accesible; el dashboard personal se
+    /// oculta y se muestra el CTA «Activar Yala completo». Reactivo por el espejo observable del eje.
     private var isGroupsFocusedShell: Bool {
         ShellModeLogic.effective(
-            onboardingMode: SessionState.shared.onboardingMode,
-            usageFocus: appPreferences.usageFocus) == .groupsFocused
+            hasPrivateSession: sessionState.hasPrivateSession) == .groupsFocused
     }
 
     private let gridColumns = [

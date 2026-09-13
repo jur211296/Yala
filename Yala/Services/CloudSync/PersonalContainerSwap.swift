@@ -70,14 +70,13 @@ final class PersonalContainerHost {
     /// en `YalaApp.sharedModelContainer`; se movió aquí entero para que el remonte del swap use
     /// literalmente el mismo camino que el arranque y no una copia que pueda divergir.
     ///
-    /// El orden de los cuatro hooks NO se toca (M1 primero desarma la secundaria, luego el wipe personal,
-    /// luego el de grupos, luego las tareas de entrada M1), y `personalConfiguration` se evalúa ANTES de
+    /// El orden de los hooks NO se toca (la retirada de la sesión de visita primero, luego el wipe
+    /// personal, luego el de grupos), y `personalConfiguration` se evalúa ANTES de
     /// `markContainerCloudKitState` porque es su evaluación la que CAPTURA el testigo del mount.
     static func makeContainer() throws -> ModelContainer {
-        SwiftDataConfiguration.performSecondaryWipeIfArmed()
+        SecondarySessionRetirement.purgeIfNeeded()
         SwiftDataConfiguration.performSignOutWipeIfArmed()
         SwiftDataConfiguration.performGroupsOnlySignOutWipeIfArmed()
-        SwiftDataConfiguration.performSecondaryEntryTasksIfNeeded()
         let personalConfiguration = SwiftDataConfiguration.personalConfiguration
         SwiftDataConfiguration.markContainerCloudKitState(
             decision: SwiftDataConfiguration.personalStoreMountedDecision)
@@ -227,6 +226,10 @@ enum PersonalContainerSwap {
 
         // (5) El mismo wipe que el boot. Deja el device recién instalado Y arma el neutro durable.
         SwiftDataConfiguration.performSignOutWipeIfArmed()
+        // Ese wipe borra la marca del eje 1, y aquí el proceso SIGUE VIVO: sin este refresco el espejo
+        // observable se queda con el valor de la sesión que acaba de cerrarse. En el arranque el mismo
+        // desajuste lo cierra `AppBootstrapper`; éste es el camino que no relanza.
+        SessionState.shared.refreshPrivateSessionMirror()
 
         // (6) Remonte. La captura del testigo se reabre ANTES de evaluar `personalConfiguration`: sin esto
         // el testigo se quedaría en `.cloudMirrorOff` y «Restaurar de iCloud» no pediría reabrir la app.

@@ -117,6 +117,7 @@
 - [Hipótesis de la Lista Negra, re-comprobadas](project_hipotesis_lista_negra_recomprobadas.md) — el runner de XCUITest; el CI y sus pasos ADVISORY; y el snapshot de Time Machine que hace inútil liberar disco.
 
 ## Entorno y herramientas
+- [`removeObject` sin efecto = es el simulador](feedback_simulador_preferencias_fuera_del_contenedor.md) — `simctl erase` va PRIMERO; una key pegada me costó un día y ocho XCUITest.
 - [El sello del gate ancla en HEAD](reference_gate_sello_ancla_en_head.md) — una tanda de commits obliga a re-sellar entre ellos; mergear `2.1` obliga a re-correr el gate entero.
 - [Avisar a Frank: lo hace el hook, no tú](reference_avisar_a_frank_webhook.md) — el hook manda PR y rojos solo; «prueba» en el texto lo descarta; `--dry-run` NO enseña tu `--texto` y a los 600 caracteres recorta.
 - [El aviso de cierre necesita el cwd del repo](reference_aviso_cierre_necesita_cwd.md) — tras retirar el worktree va a Dan y se descarta en silencio; lee la línea ENVIADO.

@@ -128,7 +128,7 @@ enum CloudSyncReconciler {
     /// Firma de violación (conservadora): para el mismo `splitExpenseID` existen A LA VEZ
     /// (i) ≥1 TX REAL (`account?.isSystemAccount == false`) y (ii) ≥1 TX VIRTUAL NEGATIVA
     /// (`isSystemAccount == true && amount < 0`). La virtual POSITIVA `+lent` es parte de la forma ON,
-    /// no violación; el par M5 `.groupInvite` (2 virtuales, una positiva) jamás dispara.
+    /// no violación; el par M5 de una sesión solo-grupos (2 virtuales, una positiva) jamás dispara.
     ///
     /// **REGLA INTERINA (review I8f-2, anclada al DATO, no a la preferencia): cuando ambas formas están
     /// presentes gana SIEMPRE la representación REAL** → se podan las virtuales NEGATIVAS y {real, +lent}

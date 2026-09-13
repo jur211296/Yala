@@ -23,7 +23,7 @@ struct PrivateSessionMarkTests {
 
     /// Suite propio por test: la marca vive en `UserDefaults` y dos tests compartiendo dominio se
     /// pisan el estado. `removePersistentDomain` se llama sobre la instancia del PROPIO suite —
-    /// hacerlo desde otro dominio deja residuos (medido en este repo, ver `SessionDefaults`).
+    /// hacerlo desde otro dominio deja residuos (medido en este repo).
     private final class Fixture {
         let name: String
         let defaults: UserDefaults
@@ -102,16 +102,39 @@ struct PrivateSessionMarkTests {
 
     // MARK: - El backfill de un arranque
 
-    @Test("el backfill escribe la celda del parque existente", arguments: [true, false])
-    func backfillWritesTheLegacyCell(_ legacyIsGroupsOnly: Bool) {
+    @Test("el backfill escribe la celda del parque existente")
+    func backfillWritesTheLegacyCell() {
         let f = Fixture()
         let d = f.defaults
 
-        let escribio = PrivateSessionMark.backfillIfNeeded(legacyIsGroupsOnly: legacyIsGroupsOnly, hasCompletedOnboarding: true, d)
+        let escribio = PrivateSessionMark.backfillIfNeeded(hasGroupsOnlyNeutralMount: false, hasCompletedOnboarding: true, d)
         #expect(escribio == true)
-        #expect(PrivateSessionMark.raw(d) == !legacyIsGroupsOnly, """
-            un dispositivo que hoy está en `.groupInvite` despierta SIN sesión privada; todos los
-            demás —la celda normal, que es casi todo el parque— despiertan CON ella.
+        #expect(PrivateSessionMark.raw(d) == true, """
+            todo dispositivo con el alta completada despierta CON sesión privada: es la celda normal,
+            que es casi todo el parque.
+            """)
+    }
+
+    /// **La celda que el backfill NO puede confundir, y que costó un hallazgo de review.**
+    ///
+    /// La primera versión escribía `true` sin preguntar nada, apoyada en que «no hay usuarios
+    /// solo-grupos». La medición lo refutó: Grupos está compilado en `true` y su percent de producción
+    /// en 100, y un alta solo-grupos deja `hasCompletedOnboarding = true` ⇒ cumplía el gate. A ese
+    /// teléfono se le habría escrito «tiene vida personal» de forma permanente: app entera sobre un
+    /// store vacío, el cierre de sesión esperando un export de iCloud que no existe, y «Vaciar datos»
+    /// ordenando el vaciado a los demás dispositivos del Apple ID.
+    @Test("MUTACIÓN: un teléfono solo-grupos NO estrena la marca en `true`")
+    func backfillDoesNotClaimPrivateLifeOnAGroupsOnlyDevice() {
+        let f = Fixture()
+        let d = f.defaults
+
+        let escribio = PrivateSessionMark.backfillIfNeeded(
+            hasGroupsOnlyNeutralMount: true, hasCompletedOnboarding: true, d)
+
+        #expect(escribio == true, "el backfill tiene que pronunciarse también sobre esta celda")
+        #expect(PrivateSessionMark.raw(d) == false, """
+            se le escribió «tiene sesión privada» a un teléfono que solo usa Grupos. Con eso, «Vaciar
+            datos» ordena el vaciado a los demás dispositivos de su Apple ID.
             """)
     }
 
@@ -123,14 +146,14 @@ struct PrivateSessionMarkTests {
         // Un solo-grupos que ya tiene su marca escrita a `false`.
         PrivateSessionMark.set(false, d)
 
-        // Un arranque posterior en el que el flag legacy dice lo contrario — pasa de verdad: el
-        // `onboardingMode` viaja por el iCloud-KV del Apple ID y otro dispositivo puede moverlo.
-        let escribio = PrivateSessionMark.backfillIfNeeded(legacyIsGroupsOnly: false, hasCompletedOnboarding: true, d)
+        // Un arranque posterior: el backfill escribe SIEMPRE `true`, así que sin el guard por
+        // presencia le daría la vuelta a una marca que ya dice lo contrario.
+        let escribio = PrivateSessionMark.backfillIfNeeded(hasGroupsOnlyNeutralMount: false, hasCompletedOnboarding: true, d)
 
         #expect(escribio == false, "el backfill volvió a escribir sobre una marca que ya existía")
         #expect(PrivateSessionMark.raw(d) == false, """
             con el guard por VALOR (`raw != true`) en vez de por PRESENCIA, este backfill habría
-            pisado la marca del dispositivo con un flag movido desde fuera. La marca es local.
+            pisado la marca de una entrada solo-grupos. La marca es local y no se re-deriva.
             """)
     }
 
@@ -144,10 +167,9 @@ struct PrivateSessionMarkTests {
         PrivateSessionMark.set(false, d)
         PrivateSessionMark.clear(d)
 
-        // El arranque siguiente. Sin el gate, aquí se escribía `true` —el flag legacy también se fue,
-        // así que `legacyIsGroupsOnly` es `false`— y la marca revivía en el mismo lanzamiento.
-        let escribio = PrivateSessionMark.backfillIfNeeded(
-            legacyIsGroupsOnly: false, hasCompletedOnboarding: false, d)
+        // El arranque siguiente. Sin el gate, aquí se escribía `true` y la marca revivía en el mismo
+        // lanzamiento.
+        let escribio = PrivateSessionMark.backfillIfNeeded(hasGroupsOnlyNeutralMount: false, hasCompletedOnboarding: false, d)
 
         #expect(escribio == false)
         #expect(PrivateSessionMark.raw(d) == nil, """
@@ -164,11 +186,10 @@ struct PrivateSessionMarkTests {
         let f = Fixture()
         let d = f.defaults
 
-        // Celda A: nadie se ha dado de alta todavía. `onboardingMode` ausente cae a `.full`, así que
-        // sin el gate el backfill se convertía en el PRIMER escritor de la marca — contradiciendo el
-        // invariante del tipo, que dice que se escribe cuando la sesión privada NACE.
-        #expect(PrivateSessionMark.backfillIfNeeded(
-            legacyIsGroupsOnly: false, hasCompletedOnboarding: false, d) == false)
+        // Celda A: nadie se ha dado de alta todavía. Sin el gate el backfill se convertía en el PRIMER
+        // escritor de la marca — contradiciendo el invariante del tipo, que dice que se escribe cuando
+        // la sesión privada NACE.
+        #expect(PrivateSessionMark.backfillIfNeeded(hasGroupsOnlyNeutralMount: false, hasCompletedOnboarding: false, d) == false)
         #expect(PrivateSessionMark.raw(d) == nil)
         // Y quien lea mientras tanto sigue protegido por el default conservador.
         #expect(PrivateSessionMark.hasPrivateSession(d) == true)
@@ -179,85 +200,10 @@ struct PrivateSessionMarkTests {
         let f = Fixture()
         let d = f.defaults
 
-        #expect(PrivateSessionMark.backfillIfNeeded(
-            legacyIsGroupsOnly: true, hasCompletedOnboarding: true, d) == true)
-        #expect(PrivateSessionMark.raw(d) == false, """
+        #expect(PrivateSessionMark.backfillIfNeeded(hasGroupsOnlyNeutralMount: false, hasCompletedOnboarding: true, d) == true)
+        #expect(PrivateSessionMark.raw(d) == true, """
             el gate de `hasCompletedOnboarding` se comió también el caso que el backfill existe para
             cubrir. Sin esta aserción, poner `guard false` arriba dejaría los otros dos tests verdes.
-            """)
-    }
-
-    // MARK: - La frontera de M1 (la visita no se pronuncia sobre la sesión privada del dueño)
-
-    @Test("MUTACIÓN: en sesión secundaria `set` NO escribe la marca del dueño")
-    func secondarySessionCannotWriteTheOwnersMark() {
-        let f = Fixture()
-        let d = f.defaults
-
-        PrivateSessionMark.set(true, d)                       // el dueño, con su vida personal
-        SecondarySessionStore.activate(userID: "sub-visita", d)
-        // Control del instrumento: `isActive` mira primero un override GLOBAL de tests. Si otro
-        // fichero lo dejó puesto, este test mediría otra cosa y pasaría verde sin guard.
-        #expect(SecondarySessionStore.isActive(d) == true, "el override global de M1 está pisando el fixture")
-
-        PrivateSessionMark.set(false, d)
-
-        #expect(PrivateSessionMark.raw(d) == true, """
-            la key vive en el `UserDefaults.standard` que la visita COMPARTE con el dueño: un `false`
-            escrito desde la sesión secundaria le diría al dueño que no tiene vida personal, y con eso
-            su «Cerrar sesión» borraría sin esperar al export de iCloud.
-            """)
-    }
-
-    @Test("MUTACIÓN: en sesión secundaria el backfill tampoco escribe")
-    func secondarySessionCannotBackfill() {
-        let f = Fixture()
-        let d = f.defaults
-
-        SecondarySessionStore.activate(userID: "sub-visita", d)
-        #expect(SecondarySessionStore.isActive(d) == true, "el override global de M1 está pisando el fixture")
-
-        #expect(PrivateSessionMark.backfillIfNeeded(legacyIsGroupsOnly: true, hasCompletedOnboarding: true, d) == false)
-        #expect(PrivateSessionMark.raw(d) == nil, """
-            el backfill entra por `set`, así que hereda su guard. Sin él, el primer arranque de una
-            visita sellaría la celda del dueño a partir del flag que la visita tiene en memoria.
-            """)
-    }
-
-    @Test("MUTACIÓN: en sesión secundaria las LECTURAS no contestan por el dueño")
-    func secondarySessionReadsAreAboutTheVisitorNotTheOwner() {
-        let f = Fixture()
-        let d = f.defaults
-
-        PrivateSessionMark.set(true, d)                       // el dueño, con su vida personal
-        SecondarySessionStore.activate(userID: "sub-visita", d)
-        #expect(SecondarySessionStore.isActive(d) == true, "el override global de M1 está pisando el fixture")
-
-        #expect(PrivateSessionMark.hasPrivateSession(d) == false, """
-            la visita leía la marca del DUEÑO. Con `true`, su «Vaciar datos» enseña la hoja completa
-            —que nombra un corpus personal que su wipe no toca, porque solo borra los archivos
-            `-Secondary`— y aterriza en el onboarding personal de otra persona.
-            """)
-        #expect(PrivateSessionMark.confirmedPrivateSession(d) == false)
-
-        // Y la marca del dueño sigue intacta debajo: esto es un corte de LECTURA, no un borrado.
-        #expect(PrivateSessionMark.raw(d) == true)
-    }
-
-    @Test("el guard de M1 NO alcanza a `clear`, y es deliberado")
-    func secondarySessionDoesNotBlockClear() {
-        let f = Fixture()
-        let d = f.defaults
-
-        PrivateSessionMark.set(true, d)
-        SecondarySessionStore.activate(userID: "sub-visita", d)
-
-        PrivateSessionMark.clear(d)
-
-        #expect(PrivateSessionMark.raw(d) == nil, """
-            borrar deja las dos lecturas en su lado conservador, así que no hay dirección en la que
-            este camino pueda hacer daño — y el boot-wipe pre-mount corre sin saber de qué sesión
-            viene. Un guard aquí dejaría marcas vivas tras un cierre.
             """)
     }
 }
@@ -310,9 +256,9 @@ struct PrivateSessionMarkWiringTests {
     }
 
     /// **Las dos muertes de la marca, pinneadas.** Sus vecinas literales en los dos ficheros ya lo
-    /// están (`clearGroupsOnlyNeutralMount`, `clearPrivateChoseWithoutICloud`,
-    /// `clearHandoverOnboardingMode`); sin esto, un mutante que borrara cualquiera de las dos líneas
-    /// salía verde y la persona siguiente heredaba el eje del humano anterior.
+    /// están (`clearGroupsOnlyNeutralMount`, `clearPrivateChoseWithoutICloud`); sin esto, un mutante
+    /// que borrara cualquiera de las dos líneas salía verde y la persona siguiente heredaba el eje del
+    /// humano anterior.
     @Test("MUTACIÓN: la marca muere en los dos sitios que devuelven el teléfono a recién instalado")
     func theMarkDiesInBothHandoverPaths() throws {
         let boot = try Self.code("Yala/Utils/SwiftDataConfiguration.swift")
@@ -323,10 +269,6 @@ struct PrivateSessionMarkWiringTests {
 
         let wipe = try Self.code("Yala/Utils/DataWipeService.swift")
         #expect(wipe.contains("PrivateSessionMark.clear(defaults)"), "el relevo de humano dejó de limpiar el eje")
-        #expect(wipe.contains("if !SecondarySessionStore.isActive(defaults) {"), """
-            el `clear` del relevo perdió su guard de M1. Ese camino es IN-SESSION y su cinturón deja
-            pasar a una visita operativa: sin el guard, la visita borra la marca del DUEÑO.
-            """)
     }
 
     /// La pantalla de vaciar decide el TEXTO y el ALCANCE con el mismo eje, o promete un borrado
@@ -335,11 +277,10 @@ struct PrivateSessionMarkWiringTests {
     func theWipeCopyReadsTheSameAxisAsItsScope() throws {
         let vista = try Self.code("Yala/App/Views/Settings/UserDataResetView.swift")
         #expect(vista.contains("PrivateSessionMark.hasPrivateSession()\n                                        ? L10n.Settings.resetDataDescription"), """
-            la descripción de la pantalla volvió a leer el flag viejo mientras el alcance lee la marca.
-            Divergen justo en el caso del eje: un `.groupInvite` llegado por el iCloud-KV a un teléfono
-            privado leía «solo tu perfil y tus preferencias» sobre un `.wipeDataFull`.
+            la descripción de la pantalla volvió a leer otra cosa mientras el alcance lee la marca.
+            Divergen justo en el caso del eje: una sesión solo-grupos leía «solo tu perfil y tus
+            preferencias» sobre un `.wipeDataFull`.
             """)
-        #expect(!vista.contains("sessionState.isGroupInviteMode\n                                        ?"))
     }
 
     /// El contrato del propio tipo: si alguien colapsa los dos defaults, el eje pierde una de sus dos
@@ -351,38 +292,70 @@ struct PrivateSessionMarkWiringTests {
         #expect(marca.contains("raw(defaults) ?? false"), "`confirmedPrivateSession` perdió su default estricto")
     }
 
-    /// El backfill es lo único que escribe la marca del parque existente, y su entrada tiene que ser el
-    /// `onboardingMode` LOCAL. Leerlo tras `PreferenceSyncService.bootstrap()` lo backfillearía con un
-    /// valor mergeado del iCloud-KV del Apple ID — o sea, con el estado de OTRO dispositivo.
+    /// El backfill es lo único que escribe la marca del parque existente, y su entrada —el alta
+    /// completada— tiene que leerse LOCAL. Correrlo tras `PreferenceSyncService.bootstrap()` lo dejaría
+    /// decidiendo con un valor mergeado del iCloud-KV del Apple ID, o sea con el estado de OTRO
+    /// dispositivo.
     @Test("MUTACIÓN: el backfill corre ANTES del merge del iCloud-KV")
     func backfillRunsBeforeTheKeyValueMerge() throws {
         let boot = try Self.code("Yala/App/AppBootstrapper.swift")
         let backfill = try #require(boot.range(of: "PrivateSessionMark.backfillIfNeeded("))
         let merge = try #require(boot.range(of: "PreferenceSyncService.shared.bootstrap()"))
         #expect(backfill.lowerBound < merge.lowerBound, """
-            el backfill quedó DESPUÉS del merge del iCloud-KV: a partir de ahí `OnboardingMode.current()`
-            puede traer el `.groupInvite` de otro dispositivo del mismo Apple ID, y la marca —que es
-            LOCAL por diseño— nacería describiendo un teléfono que no es éste.
+            el backfill quedó DESPUÉS del merge del iCloud-KV: a partir de ahí decide con lo que traiga
+            otro dispositivo del mismo Apple ID, y la marca —que es LOCAL por diseño— nacería
+            describiendo un teléfono que no es éste.
             """)
     }
 
-    /// **El seam que envenena el simulador.** `PrivateSessionMark.set(false)` de
-    /// `-uitest-group-invite` escribe en el dominio PERSISTENTE, y el prefijo `cloudSync.` —elegido
-    /// para que la marca sobreviva a «Vaciar datos»— la deja fuera de `removeUserPreferenceKeys`, así
-    /// que nada más en el árbol la borra. Sin la purga del bloque de `-uitest-reset`, la corrida
-    /// siguiente arranca creyendo que no hay sesión privada, y el arranque MANUAL de Yala Dev en ese
-    /// simulador queda igual — que es la víctima que nadie mira.
+    /// **El seam que envenena el simulador.** El seam `-uitest-group-invite` apaga el eje en el dominio
+    /// PERSISTENTE, y el prefijo `cloudSync.` —elegido para que la marca sobreviva a «Vaciar datos»— la
+    /// deja fuera de `removeUserPreferenceKeys`, así que nada más en el árbol la borra. Sin la purga del
+    /// bloque de `-uitest-reset`, la corrida siguiente arranca creyendo que no hay sesión privada, y el
+    /// arranque MANUAL de Yala Dev en ese simulador queda igual — que es la víctima que nadie mira.
     @Test("MUTACIÓN: el bloque de `-uitest-reset` purga la marca, y ANTES de que el seam la escriba")
     func theUITestResetPurgesTheMark() throws {
         let boot = try Self.code("Yala/App/AppBootstrapper.swift")
         let purga = try #require(boot.range(of: "PrivateSessionMark.clear()"), """
-            el bloque de `-uitest-reset` no purga el eje 1. Su vecina `onboardingMode` sí se repone
-            ahí, y ésta es peor: el barrido de preferencias excluye `cloudSync.*` a propósito.
+            el bloque de `-uitest-reset` no purga el eje 1, y el barrido de preferencias excluye
+            `cloudSync.*` a propósito: sin esta línea, nada en el árbol la borra.
             """)
-        let seam = try #require(boot.range(of: "PrivateSessionMark.set(false)"))
+        let seam = try #require(boot.range(of: "SessionState.shared.hasPrivateSession = false"))
         #expect(purga.lowerBound < seam.lowerBound, """
             la purga quedó DESPUÉS del seam: borraría la marca que el propio `-uitest-group-invite`
             acaba de sembrar y esa corrida arrancaría sin la celda que pidió.
+            """)
+    }
+
+    /// **La PAREJA de la purga de arriba.**
+    /// El backfill del arranque no escribe el eje de la nada: lo DERIVA de
+    /// `cloudSync.groupsOnlyNeutralMount`. Esa marca la arman «Activar Yala completo» y las dos altas
+    /// solo-grupos, lleva el mismo prefijo `cloudSync.` que la excluye del barrido de preferencias, y
+    /// hasta este arreglo **no la borraba nadie**: una corrida que la armara dejaba a todas las
+    /// siguientes —y al arranque manual del simulador— con la shell reducida a Grupos.
+    ///
+    /// Medido con una sonda en el arranque: `BACKFILL entrada raw=nil neutral=true` ⇒ escribe `false`.
+    /// Esa es exactamente la contaminación que tumbó ocho XCUITest de tres suites el 2026-09-13 y costó
+    /// un día: la copia que los tumbaba vivía en un rincón del simulador que ni `removeObject` ni
+    /// `simctl uninstall` alcanzan (lo zanjó `simctl erase`), pero la que SÍ se puede cerrar desde el
+    /// código es ésta, y hasta ese día no la borraba nadie.
+    @Test("MUTACIÓN: el bloque de `-uitest-reset` purga también la marca del mount neutro")
+    func theUITestResetPurgesTheNeutralMountMark() throws {
+        let boot = try Self.code("Yala/App/AppBootstrapper.swift")
+        let purga = try #require(boot.range(of: "StorageModePersistence.clearGroupsOnlyNeutralMount()"), """
+            el bloque de `-uitest-reset` no purga el mount neutro. Limpiar el eje sin limpiar su FUENTE
+            es peor que no limpiar ninguno: el backfill lo vuelve a derivar en el arranque siguiente.
+            """)
+        // Acotada al bloque: entre la purga del eje y la del desasociar a medias, que son sus vecinas.
+        // Un `contains` a secas dejaría pasar la línea puesta en cualquier otra función del fichero, y
+        // fuera del `if UITestHooks.shouldReset` no purga nada.
+        let reset = try #require(boot.range(of: "if UITestHooks.shouldReset {"))
+        let eje = try #require(boot.range(of: "PrivateSessionMark.clear()"))
+        let detach = try #require(boot.range(of: "GroupsDetachPendingPurge.clear()"))
+        #expect(reset.upperBound < purga.lowerBound, "la purga quedó FUERA del bloque de `-uitest-reset`")
+        #expect(eje.upperBound < purga.lowerBound && purga.upperBound < detach.lowerBound, """
+            la purga del mount neutro salió de entre sus dos vecinas del bloque de reset. Van juntas
+            porque son la misma familia: keys `cloudSync.*` que ningún barrido toca.
             """)
     }
 
@@ -410,14 +383,116 @@ struct PrivateSessionMarkWiringTests {
     /// y la aserción de arriba pasaría verde sin medir nada — la familia de «Executed 0 tests».
     @Test("control: el escáner de producción encuentra algo")
     func theProductionScannerActuallyFindsThings() {
-        #expect(Self.countInProduction("PrivateSessionMark.hasPrivateSession()") == 9, """
-            el eje 1 tiene NUEVE consumidores de la lectura conservadora. Si este número cambia, hay un
+        #expect(Self.countInProduction("PrivateSessionMark.hasPrivateSession()") == 16, """
+            el eje 1 tiene DIECISÉIS consumidores de la lectura conservadora. Si este número cambia, hay un
             constructor nuevo y hay que decidir con qué lectura contesta — y si el consumidor nuevo
             alcanza datos de FUERA de este teléfono, la lectura que le toca es la otra.
+
+            Eran nueve hasta el 2026-09-13: el barrido del paso 12 tradujo a este eje los consumidores
+            que preguntaban por el flag de onboarding, y la review añadió el decimosexto
+            (`SessionState.refreshPrivateSessionMirror`, que relee la marca para poner el espejo al día).
+            Ninguno de los siete nuevos alcanza datos fuera del teléfono — son routing, copy, alcance de
+            borrado y el propio refresco, todos del lado que conserva de más.
             """)
-        #expect(Self.countInProduction("PrivateSessionMark.set(") == 9, """
-            el eje 1 se escribe en NUEVE puntos. Un décimo es un alta o una baja nueva: decide de qué
-            lado va, y corrige el conteo de la cabecera de `PrivateSessionMark`.
+    }
+
+    /// **El eje se escribe por UN solo sitio, y eso es el invariante — no el número.**
+    ///
+    /// `PrivateSessionMark.set(` aparece exactamente una vez en producción: dentro del `didSet` de
+    /// `SessionState.hasPrivateSession`. Los OCHO puntos donde la sesión privada nace o muere asignan a
+    /// esa propiedad, que persiste Y refresca la shell en el mismo render.
+    ///
+    /// **Un `set` directo sería el bug**: persiste el dato y no mueve la interfaz, así que la pestaña
+    /// reducida a Grupos se quedaría puesta hasta el arranque siguiente. Hubo dos hasta el 2026-09-13 y
+    /// se unificaron al medir esto.
+    @Test("MUTACIÓN: un solo escritor de la marca, y ocho gestos que pasan por el espejo")
+    func theMarkHasExactlyOneWriter() {
+        #expect(Self.countInProduction("PrivateSessionMark.set(") == 1, """
+            apareció un segundo escritor directo de la marca. Si es un alta o una baja nueva, va por
+            `SessionState.hasPrivateSession` — si no, persiste el eje sin refrescar la shell.
             """)
+        #expect(Self.countInProduction(".hasPrivateSession = ") == 8, """
+            el eje se enciende o se apaga en OCHO sitios. Un noveno gesto es un alta o una baja nueva:
+            decide de qué lado va y corrige el conteo de la cabecera de `PrivateSessionMark`.
+
+            El punto del literal NO es cosmético: sin él, `let hasPrivateSession = …` de un lector local
+            entraría en el conteo y este número mediría dos cosas distintas a la vez.
+            """)
+    }
+}
+
+// MARK: - El espejo observable del eje
+
+/// **El espejo (`SessionState.hasPrivateSession`) y la marca pueden divergir, y estos casos son lo único
+/// que lo impide.** El espejo se inicializa UNA vez, en el init del singleton, que corre en el prólogo de
+/// `YalaApp` — antes de los hooks pre-mount. Y la marca tiene tres MUERTES que no pasan por el embudo
+/// (`PrivateSessionMark.clear`): el boot-wipe de todo cierre de sesión, su gemelo del swap in-session y el
+/// relevo de humano de «Empiezo de cero».
+///
+/// Lo cazó una review adversarial el 2026-09-13, no un síntoma: sin el refresco, el espejo se queda con el
+/// valor de la persona ANTERIOR durante todo el proceso, y la app queda con dos fuentes que se contradicen
+/// —la shell diciendo «solo grupos» y las dieciséis lecturas conservadoras diciendo «hay sesión privada»—.
+/// En el relevo de humano eso neutraliza el sello que ese mismo camino acaba de escribir.
+@Suite("El eje 1 · el espejo observable", .serialized)
+@MainActor
+struct PrivateSessionMirrorTests {
+
+    @Test("refrescar pone el espejo al día cuando la marca cambió por fuera")
+    func refreshPicksUpAnExternalChange() {
+        let estado = SessionState.shared
+        let previo = estado.hasPrivateSession
+        defer {
+            PrivateSessionMark.set(previo)
+            estado.refreshPrivateSessionMirror()
+        }
+
+        estado.hasPrivateSession = true
+        PrivateSessionMark.set(false)   // una muerte/escritura por fuera del embudo
+        #expect(estado.hasPrivateSession == true, "premisa: el espejo todavía no se ha enterado")
+
+        estado.refreshPrivateSessionMirror()
+        #expect(estado.hasPrivateSession == false)
+    }
+
+    /// **LA ASERCIÓN QUE CARGA EL PESO.** Refrescar NO puede persistir: el `didSet` es el único escritor
+    /// de la marca, así que sin la bandera de reentrada el refresco volvería a escribir justo lo que el
+    /// `clear()` acaba de borrar. Y la AUSENCIA es lo que hace estricto a `confirmedPrivateSession` — con
+    /// ella resucitada, «Vaciar datos» puede ordenar el vaciado a los demás dispositivos del Apple ID en
+    /// un teléfono que acaba de volver a «recién instalado».
+    @Test("MUTACIÓN: refrescar tras un `clear` NO resucita la marca")
+    func refreshDoesNotResurrectTheMark() {
+        let estado = SessionState.shared
+        let previo = PrivateSessionMark.raw()
+        defer {
+            if let previo { PrivateSessionMark.set(previo) } else { PrivateSessionMark.clear() }
+            estado.refreshPrivateSessionMirror()
+        }
+
+        estado.hasPrivateSession = false      // el espejo dice «solo grupos»
+        PrivateSessionMark.clear()            // el relevo de humano: la marca queda AUSENTE
+        #expect(PrivateSessionMark.raw() == nil, "premisa: la marca está ausente")
+
+        estado.refreshPrivateSessionMirror()
+
+        #expect(PrivateSessionMark.raw() == nil, """
+            el refresco PERSISTIÓ el valor del espejo y la ausencia desapareció. Con eso, el default
+            estricto deja de proteger y el teléfono no queda como recién instalado.
+            """)
+        #expect(estado.hasPrivateSession == true, """
+            y el espejo tiene que quedar en el default conservador de la marca ausente, no en el valor
+            del humano anterior.
+            """)
+    }
+
+    @Test("refrescar cuando ya coinciden es un no-op")
+    func refreshIsANoOpWhenAlreadyInSync() {
+        let estado = SessionState.shared
+        let previo = estado.hasPrivateSession
+        defer { estado.hasPrivateSession = previo }
+
+        estado.hasPrivateSession = true
+        estado.refreshPrivateSessionMirror()
+        #expect(estado.hasPrivateSession == true)
+        #expect(PrivateSessionMark.raw() == true)
     }
 }

@@ -26,7 +26,7 @@
 //  bug. Lo único que fija ese orden es un **source-scan** del call-site
 //  (`GroupCreateRoutingWiringTests`, molde `GroupsOrganizerBranchTests`).
 //
-//  **Al bloquear, CERO escrituras**: `.channelOff` no persiste `onboardingMode`, ni
+//  **Al bloquear, CERO escrituras**: `.channelOff` no persiste la marca del eje 1, ni
 //  `groupsBetaUnlocked`, ni `hasCompletedOnboarding` — molde literal de
 //  `GroupsOrganizerGateLogic.Decision.blockedChannelOff`, con cuyo copy comparte además el texto
 //  («ahora mismo no podemos abrirte grupos»): describe un estado transitorio y no culpa al usuario.

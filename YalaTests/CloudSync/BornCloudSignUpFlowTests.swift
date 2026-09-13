@@ -394,4 +394,52 @@ struct BornCloudSignUpOrderWiringTests {
         // Y el container ya no tiene el stub de A4 (borrado, no silenciado).
         #expect(!(try Self.codeOnly(Self.containerPath)).contains("showBornCloudPendingAlert"))
     }
+
+    /// **El hueco que dejó el barrido de M1, y lo escribe la lente que lo midió.** Retirar la entrada
+    /// `.groupInvite` dejó al eje 1 (`PrivateSessionMark`) con ocho escritores repartidos por siete
+    /// ficheros (medido con `git grep 'hasPrivateSession = ' -- Yala/`, sin contar el refresco del
+    /// espejo), y la celda del alta born-cloud —sin sesión privada todavía, cuenta en la nube recién
+    /// creada— **no es ninguno de ellos**: se contesta por REBOTE, mandando a la persona al onboarding
+    /// normal, que al terminar es quien enciende el eje. Esa cadena no la fijaba nada.
+    ///
+    /// Las tres aserciones son las tres formas de romperla, y ninguna las ve el compilador:
+    /// mandar el alta a la app en vez de al onboarding; marcar el eje aquí (que lo dejaría encendido
+    /// para quien abandone el onboarding a medias); y que el onboarding deje de encenderlo.
+    @Test("el alta born-cloud contesta el eje 1 por REBOTE al onboarding, y no antes")
+    func bornCloudTerminal_reboundsToOnboarding_whichLightsTheAxis() throws {
+        let src = try Self.source("Yala/App/ContentView.swift")
+        let completed = try Self.body(of: "onBornCloudCompleted: {", in: src)
+
+        #expect(completed.contains("showOnboarding = true"), """
+            El alta terminó SIN relanzamiento y sin onboarding hecho: si no se presenta el onboarding,
+            esta persona entra a la app sin cuenta local, sin categorías y con el eje 1 apagado.
+            """)
+        #expect(!completed.contains("hasPrivateSession"), """
+            El eje NO se enciende aquí. El alta en la nube todavía no ha creado ninguna vida personal en
+            este teléfono: quien abandone el onboarding a mitad se quedaría marcado como si la tuviera, y
+            de ese eje cuelga qué se borra al cerrar sesión.
+            """)
+        #expect(!completed.contains("hasCompletedOnboarding = true"), """
+            Marcarlo aquí se salta el onboarding real y con él el seed — es el mismo daño que el
+            docblock de este callback explica para la re-entrada, en la dirección contraria.
+            """)
+
+        // La otra mitad del rebote: el onboarding SÍ enciende el eje al completarse.
+        let cover = try Self.body(of: "private var onboardingCover: some View {", in: src)
+        #expect(cover.contains("SessionState.shared.hasPrivateSession = true"), """
+            Sin esto el rebote no contesta nada: la persona sale del onboarding con el eje apagado y la
+            shell reducida a Grupos.
+            """)
+    }
+
+    /// **Las dos terminales son la MISMA pantalla y su único diferencia es a dónde van.** Por eso el
+    /// intercambio es gratis de escribir e invisible en la suite: mandar la re-entrada al onboarding
+    /// le re-siembra categorías sobre una cuenta que ya las tiene, y mandar el alta a la app la deja
+    /// sin onboarding. Ningún test tocaba esto antes del 2026-09-13 — medido con `git grep`.
+    @Test("cada terminal de «listo» va a su salida: el alta al onboarding, la re-entrada a la app")
+    func readyTerminals_areNotSwapped() throws {
+        let src = try Self.codeOnly(Self.viewPath)
+        #expect(src.contains(#"readyContent(id: "welcome_born_cloud_ready", action: onBornCloudCompleted)"#))
+        #expect(src.contains(#"readyContent(id: "welcome_reentry_ready", action: onFinishedToApp)"#))
+    }
 }

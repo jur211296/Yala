@@ -53,14 +53,7 @@ struct StorageSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: DS.Spacing.xl) {
-                // M1 belt: en sesión secundaria esta pantalla no aplica (describe/opera la migración
-                // del DUEÑO) — la fila de ProfileView ya la oculta; esto degrada un acceso directo.
-                if SecondarySessionStore.isActive() {
-                    Text(L10n.Storage.Errors.generic)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, DS.Spacing.lg)
-                } else if let controller {
+                if let controller {
                     content(controller)
                 } else {
                     Text(L10n.Storage.Errors.generic)

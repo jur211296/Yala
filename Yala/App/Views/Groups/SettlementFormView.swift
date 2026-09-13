@@ -113,7 +113,7 @@ struct SettlementFormView: View {
                     // Amount
                     amountSection
 
-                    // A0-Bridge: cuenta de origen (oculto para .groupInvite)
+                    // A0-Bridge: cuenta de origen (oculto en una sesión solo-grupos)
                     accountSection
 
                     // Details
@@ -202,7 +202,7 @@ struct SettlementFormView: View {
 
     @ViewBuilder
     private var accountSection: some View {
-        if !sessionState.isGroupInviteMode && bridgeEnabled {
+        if sessionState.hasPrivateSession && bridgeEnabled {
             SectionBox(title: L10n.Groups.Settlement.fromAccount) {
                 Button {
                     showAccountSelector = true
@@ -336,8 +336,8 @@ struct SettlementFormView: View {
 
         do {
             // A0-Bridge: Caso C proactivo — para .full/.completed + bridge ON pasamos cuenta
-            // seleccionada; para .groupInvite o bridge OFF no aplica (solo TX virtual).
-            let accountToPass = (sessionState.isGroupInviteMode || !bridgeEnabled) ? nil : selectedAccount
+            // seleccionada; en una sesión solo-grupos o con el bridge OFF no aplica (solo TX virtual).
+            let accountToPass = (!sessionState.hasPrivateSession || !bridgeEnabled) ? nil : selectedAccount
 
             let settlement = try GroupExpenseService.shared.createSettlement(
                 in: group,
@@ -368,7 +368,7 @@ struct SettlementFormView: View {
                 fromMemberID: debt.fromMemberID,
                 toMemberID: debt.toMemberID
             )
-            if !sessionState.isGroupInviteMode,
+            if sessionState.hasPrivateSession,
                let bridgeCase,
                BridgeOptOutAlertLogic.shouldShowAlert(case: bridgeCase, bridgeEffectivelyEnabled: bridgeEnabled) {
                 pendingOptInSettlementID = settlement.id.uuidString

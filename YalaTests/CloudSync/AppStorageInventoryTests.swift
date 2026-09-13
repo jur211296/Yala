@@ -11,12 +11,19 @@
 //  comprobaban que un consumidor llamara a un símbolo que hoy no está. Éste NO: cuenta declaraciones de
 //  `@AppStorage`, que siguen existiendo y siguen teniendo una consecuencia.
 //
-//  **Lo que la retirada SÍ le cambió es el porqué.** Antes, un `@AppStorage` nuevo heredaba el store de
-//  la raíz (`YalaApp` fijaba `.defaultAppStorage`) y por eso había que clasificarlo. Hoy todos leen
-//  `UserDefaults.standard` directamente, así que lo que el conteo protege es el inventario de
-//  `SessionPreferenceKeys`: una key nueva sin clasificar deja un hueco en lo que el barrido de datos
-//  del usuario conoce. Cuando `SessionPreferenceKeys` caiga con el resto de M1, este test se re-decide
-//  con él — no antes, y no en silencio.
+//  **Lo que la retirada SÍ le cambió es el porqué, y este párrafo ES esa re-decisión** (2026-09-13, el
+//  barrido de M1). El texto anterior decía: «lo que el conteo protege es el inventario de
+//  `SessionPreferenceKeys` … cuando caiga con el resto de M1, este test se re-decide con él — no antes,
+//  y no en silencio». Cayó. Y el test habría seguido VERDE midiendo un propósito inexistente, con un
+//  mensaje de fallo que mandaba a clasificar la key en un tipo borrado: exactamente el «en silencio»
+//  que esa frase quería evitar. Lo cazó una review adversarial leyendo este docblock contra el diff.
+//
+//  **Lo que el conteo protege HOY.** Un `@AppStorage` es una key de `UserDefaults.standard` escrita
+//  desde una vista, fuera de `AppPreferences` — o sea, fuera del sitio donde el barrido de datos del
+//  usuario sabe mirar (`DataWipeService.removeUserPreferenceKeys` es una lista LITERAL). Una key nueva
+//  ahí sobrevive a «Vaciar datos» y al relevo de humano sin que nadie lo decida. El conteo obliga a
+//  pronunciarse: o la key entra en esa lista, o se declara a conciencia que es de DISPOSITIVO y
+//  sobrevive a propósito.
 //
 
 import Foundation
@@ -68,8 +75,9 @@ struct AppStorageInventoryTests {
         }
         #expect(declarations == 10, """
                 hay \(declarations) usos de `@AppStorage`, se esperaban 10. Todos leen \
-                `UserDefaults.standard`: comprueba que la key del nuevo esté clasificada en \
-                `SessionPreferenceKeys` y actualiza este conteo.
+                `UserDefaults.standard` desde una vista, fuera de `AppPreferences`: decide si la key del \
+                nuevo entra en la lista de `DataWipeService.removeUserPreferenceKeys` —o si sobrevive al \
+                borrado a propósito, por ser de dispositivo— y actualiza este conteo.
                 """)
     }
 }

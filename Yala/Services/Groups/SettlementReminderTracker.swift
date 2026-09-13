@@ -8,10 +8,8 @@
 //  **Vive en `.standard`, igual que las otras dos familias de keys del dominio de Grupos**
 //  (`GroupNotifications.lastNotified.*` y `groupPrefs_*`), y esa alineación es funcional, no estética:
 //  quien las barre es `DataWipeService.removeGroupsDomainPreferenceKeys`, cuyo `defaults` **es
-//  `.standard` por defecto y su único call-site no lo pasa**. Un tracker en el cajón de sesión
-//  quedaría fuera de ese barrido — y, peor, el barrido lanzado por la visita borraría las entradas del
-//  DUEÑO sin tocar ninguna suya. Si algún día `wipeLocalGroupsDomain` se cablea a `SessionDefaults`
-//  como ya se hizo con `removeUserPreferenceKeys`, este fichero se mueve con él, no antes.
+//  `.standard` por defecto y su único call-site no lo pasa**. Un tracker en otro dominio quedaría
+//  fuera de ese barrido.
 //
 //  El aislamiento entre personas no se pierde por compartir dominio: la key lleva dentro el `Debt.id`
 //  (`deudor-acreedor-divisa`) y `dueReminders` solo mira deudas cuyo deudor soy yo, así que los

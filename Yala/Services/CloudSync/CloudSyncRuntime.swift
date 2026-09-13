@@ -226,17 +226,7 @@ final class CloudSyncRuntime {
     /// (`SwiftDataConfiguration.personalStoreMountedDecision`) dice qué montó ESTE proceso, y escribir el par
     /// en caliente no remonta nada. Ver `MigrationRuntimeGate.isPersonalMountMismatch` para el porqué
     /// completo.
-    /// Va DESPUÉS del guard M1 a propósito: la ventana de entrada de la secundaria satisface las dos
-    /// condiciones y su canario es el que dice la verdad de ese caso.
     static func canRunDomain() -> Bool {
-        if SecondarySessionStore.isActive() && !SwiftDataConfiguration.secondaryStoreMounted {
-            CloudSyncBreadcrumb.runtimeBlockedByMountMismatch()
-            if !mountMismatchCanaryFired {
-                mountMismatchCanaryFired = true
-                MetricsService.cloudSecondaryMountMismatchBlocked()
-            }
-            return false
-        }
         guard CloudSyncFlags.storageMode == .cloud else { return false }
         let phase = MigrationPhaseStore.shared.currentPhase
         // C-1: `.cloud` + mirror-off SIN armar = el mirror de CloudKit sigue montado. Es legítimo mientras el
@@ -268,9 +258,6 @@ final class CloudSyncRuntime {
                                            personalMountMismatch: personalMountMismatch)
     }
 
-    /// Canario D3 una-vez-por-proceso (el guard se consulta en cada becameActive — sin dedup
-    /// spamearía; el breadcrumb local sí suena cada vez, es barato y secuencia el diagnóstico).
-    nonisolated(unsafe) private static var mountMismatchCanaryFired = false
     /// C-1: dedup del canario del par de storage — `canRunDomain()` se consulta en cada `becameActive`, así
     /// que sin esto spamearía. El breadcrumb local sí suena cada vez (es barato y secuencia el diagnóstico).
     nonisolated(unsafe) private static var pairViolationCanaryFired = false
@@ -601,11 +588,7 @@ final class CloudSyncRuntime {
         //      (guard espejo: syncRuntimeEnabled && canRunDomain()) — un solo loop cadenciado, sin dos
         //      fetchHistory del mismo container sin coordinación. Flag OFF (SIEMPRE en producción esta
         //      fase) = byte-idéntico: ni await ni llamada.
-        //      M1 / D8 (G5-C): el guard de secundaria YA NO aplica. Con el flag ON la invitada corre grupos
-        //      en SU ciclo (sobre `YalaGroups-Secondary` bajo su `sub`) — el piggyback DEBE alcanzarla, no
-        //      excluirla. Este runtime solo cadencia en secundaria cuando `canRunDomain()` es true, y su
-        //      guard de mount-mismatch (`isActive && !secondaryStoreMounted`) ya congela la ventana de
-        //      entrada (proceso viejo con el store del dueño montado). El resultado del ciclo de Grupos NO
+        //      El resultado del ciclo de Grupos NO
         //      contamina la cadencia personal (canal aparte con su propio dead-letter/backoff interno; el
         //      outcome se descarta a propósito).
         if CloudSyncFlags.groupsBackendEnabled {
@@ -675,10 +658,6 @@ final class CloudSyncRuntime {
         // backend mientras las escrituras van a iKV = split-brain (y los markers de test de staging
         // pisarían prefs reales del user de spike). El sync de prefs solo existe en `.cloud`.
         guard CloudSyncFlags.storageMode == .cloud else { return }
-        // M1 (decisión 7): en sesión SECUNDARIA el paso 5.5 NO corre — ni push (el outbox local no
-        // recibe prefs de la invitada, behavior localOnly) ni pull (pisaría las prefs device-local
-        // del dueño con las de la cuenta entrante). Espeja `PrefsSyncBehavior.resolve`.
-        guard !SecondarySessionStore.isActive() else { return }
         guard let prefsClient, let prefsOutbox, let userID = session.currentUserID else { return }
 
         // Push: subir las entries del owner actual (owner-scoping M1).

@@ -57,11 +57,13 @@ struct TestProcessGuardTests {
         }
     }
 
-    /// Las CUATRO, no una. Si alguien recorta la lista, el espejo vuelve a filtrar por la que falte.
-    /// La cuarta (`widget_session_seal`) la publican las fronteras M1, no `saveSnapshot`.
-    @Test func protege_lasCuatroClavesDelEspejoDelWidget() {
+    /// Las TRES, no una. Si alguien recorta la lista, el espejo vuelve a filtrar por la que falte.
+    ///
+    /// **Eran cuatro hasta el 2026-09-13**: la cuarta era el sello de identidad de sesión del snapshot,
+    /// que lo publicaban las fronteras de la sesión de visita. Se fue con ella.
+    @Test func protege_lasTresClavesDelEspejoDelWidget() {
         #expect(Set(TestProcessGuard.protectedKeys) == [
-            "widget_data_cache", "firstWeekday", "defaultPeriod", "widget_session_seal",
+            "widget_data_cache", "firstWeekday", "defaultPeriod",
         ])
     }
 

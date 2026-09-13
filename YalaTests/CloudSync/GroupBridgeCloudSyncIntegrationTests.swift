@@ -99,17 +99,17 @@ struct GroupBridgeCloudSyncIntegrationTests {
         return Fixture(group: group, me: me, ana: ana, account: account)
     }
 
-    /// Inyecta el contexto al bridge y fija el modo de onboarding a `.full` (Caso A real
-    /// exige != .groupInvite), restaurando SIEMPRE: `onboardingMode` PERSISTE en
-    /// UserDefaults del host vía didSet → OnboardingMode.setCurrent. El cache del
-    /// BridgeModeResolver no tiene _testReset — se invalida entero en setup Y defer.
+    /// Inyecta el contexto al bridge y declara que hay sesión privada (el Caso A real la
+    /// exige), restaurando SIEMPRE: `hasPrivateSession` PERSISTE en UserDefaults del host
+    /// vía didSet → `PrivateSessionMark.set`. El cache del BridgeModeResolver no tiene
+    /// _testReset — se invalida entero en setup Y defer.
     private func withBridgeEnvironment(_ context: ModelContext, _ body: () throws -> Void) rethrows {
         GroupTransactionBridge.shared.setContext(context)
-        let previousMode = SessionState.shared.onboardingMode
-        SessionState.shared.onboardingMode = .full
+        let previousPrivateSession = SessionState.shared.hasPrivateSession
+        SessionState.shared.hasPrivateSession = true
         BridgeModeResolver.shared.invalidateCache(forZoneID: nil)
         defer {
-            SessionState.shared.onboardingMode = previousMode
+            SessionState.shared.hasPrivateSession = previousPrivateSession
             BridgeModeResolver.shared.invalidateCache(forZoneID: nil)
         }
         try body()

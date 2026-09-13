@@ -24,24 +24,17 @@ extension Notification.Name {
     static let iCloudMismatchDetected = Notification.Name("iCloudMismatchDetected")
 }
 
-// MARK: - Comportamiento de sync de prefs (M1 Inc 4)
+// MARK: - Comportamiento de sync de prefs
 
-/// Resolver PURO del comportamiento de las 37 keys sincronizadas. Tres modos — el tercero existe
-/// porque en sesión SECUNDARIA el modo EFECTIVO es `.cloud` (getter descriptor-aware) pero la
-/// decisión 7 del diseño M1 apaga el sync de prefs: sin `localOnly`, la rama `.icloud` escribiría
-/// las prefs de la invitada al iCloud KV del DUEÑO (propagándolas a sus otros devices) y la rama
-/// `.cloud` las encolaría a su outbox (subiendo los VALORES del dueño a la cuenta de la invitada).
+/// Resolver PURO del comportamiento de las keys sincronizadas: a dónde va una preferencia según
+/// dónde vivan los datos de esta sesión.
 nonisolated enum PrefsSyncBehavior: Equatable {
     /// `.icloud`: dual-write local+iKV, apply desde iKV (comportamiento de HOY).
     case icloudKeyValue
     /// `.cloud`: local + outbox durable — el backend es la fuente (I13).
     case cloudOutbox
-    /// Sesión secundaria (M1): SOLO UserDefaults local — ni iKV ni outbox, en ninguna dirección.
-    case localOnly
 
-    /// La secundaria gana PRIMERO (el `storageMode` que llega aquí ya es el EFECTIVO).
-    static func resolve(storageMode: StorageMode, secondarySessionActive: Bool) -> PrefsSyncBehavior {
-        if secondarySessionActive { return .localOnly }
+    static func resolve(storageMode: StorageMode) -> PrefsSyncBehavior {
         switch storageMode {
         case .icloud: return .icloudKeyValue
         case .cloud: return .cloudOutbox
@@ -74,11 +67,6 @@ final class PreferenceSyncService {
     /// Key for notification userInfo
     static let onboardingAlreadyDoneKey = "onboardingAlreadyDone"
 
-    /// **La puerta**, no el store crudo (`OwnerKeyValueStore`): en sesión secundaria el iCloud KV es
-    /// el del DUEÑO del dispositivo. El `switch behavior` de los `set`/`remove` ya salta la rama
-    /// `.icloudKeyValue` en `.localOnly`, pero los DOS señalizadores de wipe/onboarding viven FUERA
-    /// de ese switch y escribían directo — que es la vía 1 del ticket. Con la puerta, el guard deja
-    /// de depender de que cada método se acuerde.
     private let iKV: OwnerKeyValueWriting = OwnerKeyValueStore.shared
     /// M1: resuelto POR LLAMADA y jamás capturado. Este servicio es un singleton construido en el
     /// bootstrap, mucho antes de que la visita confirme su entrada; con un `let` se quedaría con el
@@ -98,14 +86,9 @@ final class PreferenceSyncService {
     /// defecto la sesión viva de `CloudAuthService`. Solo se consulta en la rama `.cloud`.
     var cloudUserIDProvider: () -> String? = { CloudAuthService.shared.currentUserID }
 
-    /// Sesión secundaria activa (M1 Inc 4). Inyectable para tests.
-    var secondarySessionActiveProvider: () -> Bool = { SecondarySessionStore.isActive() }
-
     /// Comportamiento resuelto de las 37 keys (ver `PrefsSyncBehavior`).
     private var behavior: PrefsSyncBehavior {
-        PrefsSyncBehavior.resolve(
-            storageMode: CloudSyncFlags.storageMode,
-            secondarySessionActive: secondarySessionActiveProvider())
+        PrefsSyncBehavior.resolve(storageMode: CloudSyncFlags.storageMode)
     }
 
     private init() {}
@@ -139,17 +122,11 @@ final class PreferenceSyncService {
             // (que conoce la fase journaleada — el gate LÍDER-only) y redundantemente aquí (por si el
             // configure corrió ANTES de que la sesión nube tuviera userID). Idempotente por sentinel.
             drainiKVToOutboxOnceIfNeeded()
-        case .localOnly:
-            // M1 secundaria: prefs device-local puras — nada que traer ni drenar.
-            break
         }
 
         // Offline catch-up: process any wipe/onboarding signals that arrived while app was closed
-        // (WipeKeys viven en iKV en AMBOS modos v1). En SECUNDARIA se saltan: el iKV es del DUEÑO —
-        // una señal de wipe de SUS otros devices jamás debe operar la sesión de la invitada.
-        if behavior != .localOnly {
-            checkForRemoteWipeSignal()
-        }
+        // (WipeKeys viven en iKV en AMBOS modos v1).
+        checkForRemoteWipeSignal()
 
         guard !isObserverRegistered else { return }
         isObserverRegistered = true
@@ -179,8 +156,6 @@ final class PreferenceSyncService {
             iKV.synchronize()
         case .cloudOutbox:
             enqueuePref(key: key, value: .string(value))
-        case .localOnly:
-            break
         }
     }
 
@@ -192,8 +167,6 @@ final class PreferenceSyncService {
             iKV.synchronize()
         case .cloudOutbox:
             enqueuePref(key: key, value: .bool(value))
-        case .localOnly:
-            break
         }
     }
 
@@ -205,19 +178,16 @@ final class PreferenceSyncService {
             iKV.synchronize()
         case .cloudOutbox:
             enqueuePref(key: key, value: .int(value))
-        case .localOnly:
-            break
         }
     }
 
     /// Elimina una pref (G5-B — limpieza del consent de grupos en el sign-out solo-grupos). Cubre las
-    /// 3 ramas de `PrefsSyncBehavior` para que el borrado no reviva:
+    /// dos ramas de `PrefsSyncBehavior` para que el borrado no reviva:
     ///  - `.icloudKeyValue`: `removeObject` local + iKV + `synchronize()` — CR-2: sin limpiar el iKV,
     ///    `applyRemoteValues()` del próximo boot RESUCITARÍA el consent (el iKV es la fuente en `.icloud`).
     ///  - `.cloudOutbox`: `removeObject` local + encola el valor CLEARED al outbox. El wire de prefs no
     ///    tiene tombstone; las únicas keys que se borran hoy son `intPresence` (consent), donde `0` ≡
     ///    ausencia (`isAccepted` es `> 0`) → encolar `.int(0)` limpia la fuente backend de forma honesta.
-    ///  - `.localOnly` (secundaria): solo local — ni iKV ni outbox tocan la cuenta ajena.
     func remove(forKey key: String) {
         local.removeObject(forKey: key)
         switch behavior {
@@ -226,8 +196,6 @@ final class PreferenceSyncService {
             iKV.synchronize()
         case .cloudOutbox:
             enqueuePref(key: key, value: .int(0))
-        case .localOnly:
-            break
         }
     }
 
@@ -470,9 +438,6 @@ final class PreferenceSyncService {
             SessionState.shared.financialMindset = mindset
         }
 
-        // onboardingMode (never-downgrade already applied above)
-        SessionState.shared.onboardingMode = OnboardingMode.current()
-
         // Trigger UI refresh when formatting preferences change remotely
         if formattingChanged {
             SessionState.shared.formattingVersion += 1
@@ -589,16 +554,12 @@ final class PreferenceSyncService {
         Task { @MainActor in
             // En `.cloud` las 37 keys NO vienen de iKV (el backend es la fuente) → solo se procesan las
             // señales wipe/onboarding, que SÍ viven en iKV en ambos modos v1. En `.icloud`, ambos.
-            // En SECUNDARIA (localOnly), NADA: el iKV es del DUEÑO — ni valores ni señales de wipe
-            // deben operar la sesión de la invitada.
             switch self.behavior {
             case .icloudKeyValue:
                 self.applyRemoteValues()
                 self.checkForRemoteWipeSignal()
             case .cloudOutbox:
                 self.checkForRemoteWipeSignal()
-            case .localOnly:
-                return
             }
 
             #if DEBUG

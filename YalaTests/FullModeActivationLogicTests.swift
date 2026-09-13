@@ -3,7 +3,7 @@
 //  YalaTests
 //
 //  Tests pure-logic para los helpers que usa `FullModeActivationView` al
-//  reusar `OnboardingView` para activar Yala completo desde modo `.groupInvite`.
+//  reusar `OnboardingView` para activar Yala completo desde una sesión solo-grupos.
 //  Sin SwiftData ni UI — verificación end-to-end del flow vía Device QA C2-01.
 //
 

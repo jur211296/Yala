@@ -16,12 +16,17 @@
 //    2. Strings del Panel donde "" es estado VÁLIDO (8) — por presencia; "" se escribe.
 //    3. Bools por presencia (10) — presente → set incondicional (paridad exacta: hoy NO hay diff-check).
 //    4. Ints por presencia (3) — presente y distinto → set (+ señal de formato/weekday).
-//    + `onboardingMode`: never-downgrade por `OnboardingMode.rank` (NO LWW).
 //    + `appLanguageOverride`: destino App Group suite, vacío = removeObject, señal `.language`.
 //
 //  `nonisolated`: lógica pura sin relación con el main actor (se testea directa; el service la invoca
-//  desde `@MainActor`). `OnboardingMode(rawValue:)` es un init sintetizado nonisolated (no se llama a
-//  `OnboardingMode.current()`, que leería UserDefaults — la fuente local llega por parámetro).
+//  desde `@MainActor`).
+//
+//  **Aquí vivió una familia de merge NEVER-DOWNGRADE hasta el 2026-09-13, y su retirada cierra un daño
+//  que costó caro:** el flag que decidía la shell viajaba por este canal y se resolvía por rango, así que
+//  el valor de OTRO dispositivo del mismo Apple ID le ganaba al de éste y le recortaba la shell al dueño,
+//  sin vuelta atrás por el canal. El eje que decide la shell es hoy un hecho del DISPOSITIVO (`PrivateSessionMark`) y por
+//  definición no viaja. La lección que queda: **antes de sincronizar una preferencia, pregunta de quién
+//  es el hecho** — si describe el teléfono y no a la persona, no va al canal.
 //
 
 import Foundation
@@ -38,8 +43,6 @@ nonisolated enum PrefFamily {
     case boolPresence
     /// Ints por presencia (3). Aplica si remoto presente y distinto.
     case intPresence
-    /// `onboardingMode`: never-downgrade por rank (NO LWW).
-    case onboardingModeNeverDowngrade
     /// `appLanguageOverride`: destino App Group suite; vacío = remove; señal `.language`.
     case appLanguageOverride
 }
@@ -62,9 +65,10 @@ nonisolated enum PrefSideSignal {
 /// Las keys sincronizadas cross-device (SSOT único: el service itera `allCases`). `rawValue` = la key
 /// EXACTA de UserDefaults / iKV / backend (no renombrar: rompería la persistencia y el matching).
 ///
-/// El orden de los cases NO importa para el merge (cada key es independiente). El conteo actual es **38**
-/// (34 hasta I13; I14 P5 añadió `cloudConsentAcceptedAt` + `cloudConsentTextVersion`; D1 añadió
-/// `usageFocus`; y C1 SACÓ las dos del consent de Grupos — ver el bloque de abajo).
+/// El orden de los cases NO importa para el merge (cada key es independiente). El conteo actual es **36**
+/// (34 hasta I13; I14 P5 añadió `cloudConsentAcceptedAt` + `cloudConsentTextVersion`; C1 SACÓ las dos del
+/// consent de Grupos — ver el bloque de abajo; y el barrido del 2026-09-13 se llevó las dos del modelo
+/// viejo de sesiones, que describían el dispositivo y no a la persona).
 nonisolated enum PrefSyncKey: String, CaseIterable {
     // Strings guard no-vacío (12)
     case defaultCurrencyCode
@@ -79,11 +83,6 @@ nonisolated enum PrefSyncKey: String, CaseIterable {
     case insightsTone
     case insightsFocus
     case financialMindset
-    // D1 (retención): foco de presentación de la shell (full|groupsOnly). LWW simple —
-    // NUNCA never-downgrade (es preferencia de presentación, no estado de ciclo de vida).
-    case usageFocus
-    // Merge especial: never-downgrade por rank
-    case onboardingMode
     // Merge especial: App Group suite + remove-on-empty + languageDidChange
     case appLanguageOverride
     // Strings del Panel donde "" es válido (8)
@@ -130,11 +129,8 @@ nonisolated enum PrefSyncKey: String, CaseIterable {
         switch self {
         case .defaultCurrencyCode, .userName, .defaultPeriod, .secondaryCurrencies,
              .userProfileIcon, .currencyDisplayFormat, .voiceLanguage, .autoFocusField,
-             .accountsSortOrderNames, .insightsTone, .insightsFocus, .financialMindset,
-             .usageFocus:
+             .accountsSortOrderNames, .insightsTone, .insightsFocus, .financialMindset:
             return .stringGuardNonEmpty
-        case .onboardingMode:
-            return .onboardingModeNeverDowngrade
         case .appLanguageOverride:
             return .appLanguageOverride
         case .panelTendenciasOrder, .panelTendenciasHidden,
@@ -156,8 +152,7 @@ nonisolated enum PrefSyncKey: String, CaseIterable {
     /// El tipo (para el codec TEXT del pull/outbox). Deriva de la familia.
     var kind: PrefKind {
         switch family {
-        case .stringGuardNonEmpty, .panelPresenceEmptyValid,
-             .onboardingModeNeverDowngrade, .appLanguageOverride:
+        case .stringGuardNonEmpty, .panelPresenceEmptyValid, .appLanguageOverride:
             return .string
         case .boolPresence:
             return .bool
@@ -235,15 +230,6 @@ nonisolated enum PreferenceMergeLogic {
             let l = local?.intValue ?? 0
             if l != r {
                 return PrefMergeDecision(write: .set(.int(r)), signal: key.signal)
-            }
-            return .skip
-
-        case .onboardingModeNeverDowngrade:
-            guard let r = remote.stringValue, !r.isEmpty,
-                  let remoteMode = OnboardingMode(rawValue: r) else { return .skip }
-            let localMode = OnboardingMode(rawValue: local?.stringValue ?? "") ?? .full
-            if remoteMode.rank > localMode.rank {
-                return PrefMergeDecision(write: .set(.string(r)), signal: nil)
             }
             return .skip
 

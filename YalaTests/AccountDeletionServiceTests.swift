@@ -48,7 +48,6 @@ struct AccountDeletionServiceTests {
             revokeGoogle: { c.events.append("google") },
             closeLocalCloud: { c.events.append("closeCloud") },
             closeLocalGroupsOnly: { _ in c.events.append("closeGroupsOnly"); return c.closeGroupsResult },
-            releaseGroupsOnlyOnboardingMode: { c.events.append("releaseGroupsOnlyMode") },
             clearCloudBeacon: { c.events.append("clearBeacon") },
             deleteCloudKitMarker: { _ in
                 c.events.append("deleteMarker")
@@ -111,11 +110,8 @@ struct AccountDeletionServiceTests {
 
         await sut.deleteAccount(context: ctx)
 
-        // Y antes de cerrar suelta su `.groupInvite` del iCloud KV: sin eso, la vida siguiente de este teléfono
-        // nacía solo-grupos (review adversarial del paso 9). Los tests de la nube fijan que allí no se llama.
         #expect(c.events == [
-            "forget", "teardown", "delete", "clearBeacon", "deleteMarker", "siwa", "google",
-            "releaseGroupsOnlyMode", "closeCloud",
+            "forget", "teardown", "delete", "clearBeacon", "deleteMarker", "siwa", "google", "closeCloud",
         ])
         #expect(!c.events.contains("closeGroupsOnly"))
         #expect(sut.phase == .awaitingRelaunch)
@@ -290,17 +286,13 @@ struct AccountDeletionServiceTests {
 @Suite
 struct AccountDeletionRowLogicTests {
 
-    /// Paso 9: ya no depende del modo de onboarding — un solo-grupos con sesión TIENE cuenta y la App Store
-    /// (5.1.1 v) exige poder borrarla. La visibilidad en group-invite la cubre `SessionExitsPerCellUITests`.
-    @Test func shows_withLiveSession_outsideSecondary() {
-        #expect(AccountDeletionRowLogic.shouldShow(hasSession: true, secondaryActive: false))
+    /// Paso 9: ya no depende del modo de onboarding — quien solo usa Grupos y tiene sesión TIENE cuenta,
+    /// y la App Store (5.1.1 v) exige poder borrarla.
+    @Test func shows_withLiveSession() {
+        #expect(AccountDeletionRowLogic.shouldShow(hasSession: true))
     }
 
     @Test func hidden_withoutSession() {
-        #expect(!AccountDeletionRowLogic.shouldShow(hasSession: false, secondaryActive: false))
-    }
-
-    @Test func hidden_inSecondarySession() {
-        #expect(!AccountDeletionRowLogic.shouldShow(hasSession: true, secondaryActive: true))
+        #expect(!AccountDeletionRowLogic.shouldShow(hasSession: false))
     }
 }

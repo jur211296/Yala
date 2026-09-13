@@ -44,7 +44,7 @@ enum DevSeedProfile: String {
     case gruposPendiente = "grupos-pendiente"
     /// SOLO-GRUPOS PURO (escenario 5a legado): siembra únicamente grupos, SIN nada de vida
     /// personal (cuentas, transacciones, presupuestos, tags…). Representa fielmente al usuario
-    /// `.groupInvite` que sólo usa Grupos. Pensado para combinar con `-uitest-group-invite` en
+    /// de una sesión solo-grupos. Pensado para combinar con `-uitest-group-invite` en
     /// device-QA (p.ej. verificar la salida "Salir de Yala" y el export de grupos de D6, que en
     /// solo-grupos gatea por `hasExportableGroups`, no por transacciones). Usa el dataset owner
     /// rico de `DevSeedGroups.create` (2 grupos multi-moneda); para la perspectiva invitado/deudor

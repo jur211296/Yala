@@ -315,7 +315,7 @@ struct GroupsDetachHistoryReplayTests {
         let cursorsBefore = try seedPullCursors(context, client, json: #"{"zona-1":5}"#)
 
         try DataWipeService.wipeLocalGroupsDomain(
-            in: context, defaults: defaults, iKV: MemoryKVStore(), resetSyncState: {})
+            in: context, defaults: defaults, resetSyncState: {})
 
         #expect(try client.loadOrCreateCursor(context).groupCursorsJSON == cursorsBefore,
                 "el handover conserva el cursor del pull ENTERO (regla 2.7): es la barrera del corpus")

@@ -14,11 +14,11 @@ import Testing
 @Suite(.serialized)
 struct UserSegmentServiceTests {
 
-    // MARK: - Invited (groupInvite always wins)
+    // MARK: - Invited (sin sesión privada en este dispositivo, siempre gana)
 
-    @Test func classify_groupInvite_alwaysInvited() {
+    @Test func classify_sinSesiónPrivada_alwaysInvited() {
         let result = UserSegment.classify(
-            onboardingMode: .groupInvite,
+            hasPrivateSession: false,
             totalTransactions: 200,
             avgDaysBetweenSessions: 1,
             usesAdvancedFeatures: true
@@ -26,9 +26,9 @@ struct UserSegmentServiceTests {
         #expect(result == .invited)
     }
 
-    @Test func classify_groupInvite_zeroTransactions() {
+    @Test func classify_sinSesiónPrivada_zeroTransactions() {
         let result = UserSegment.classify(
-            onboardingMode: .groupInvite,
+            hasPrivateSession: false,
             totalTransactions: 0,
             avgDaysBetweenSessions: 0,
             usesAdvancedFeatures: false
@@ -40,7 +40,7 @@ struct UserSegmentServiceTests {
 
     @Test func classify_dormant_zeroTransactions() {
         let result = UserSegment.classify(
-            onboardingMode: .full,
+            hasPrivateSession: true,
             totalTransactions: 0,
             avgDaysBetweenSessions: 0,
             usesAdvancedFeatures: false
@@ -50,7 +50,7 @@ struct UserSegmentServiceTests {
 
     @Test func classify_dormant_fourTransactions() {
         let result = UserSegment.classify(
-            onboardingMode: .full,
+            hasPrivateSession: true,
             totalTransactions: 4,
             avgDaysBetweenSessions: 3,
             usesAdvancedFeatures: false
@@ -58,9 +58,9 @@ struct UserSegmentServiceTests {
         #expect(result == .dormant)
     }
 
-    @Test func classify_dormant_completedMode() {
+    @Test func classify_dormant_twoTransactions() {
         let result = UserSegment.classify(
-            onboardingMode: .completed,
+            hasPrivateSession: true,
             totalTransactions: 2,
             avgDaysBetweenSessions: 10,
             usesAdvancedFeatures: false
@@ -72,7 +72,7 @@ struct UserSegmentServiceTests {
 
     @Test func classify_sporadic_fiveTransactions() {
         let result = UserSegment.classify(
-            onboardingMode: .full,
+            hasPrivateSession: true,
             totalTransactions: 5,
             avgDaysBetweenSessions: 10,
             usesAdvancedFeatures: false
@@ -82,7 +82,7 @@ struct UserSegmentServiceTests {
 
     @Test func classify_sporadic_thirtyTransactions_irregularSessions() {
         let result = UserSegment.classify(
-            onboardingMode: .full,
+            hasPrivateSession: true,
             totalTransactions: 30,
             avgDaysBetweenSessions: 8,
             usesAdvancedFeatures: false
@@ -92,7 +92,7 @@ struct UserSegmentServiceTests {
 
     @Test func classify_sporadic_twentyTransactions_regularSessions() {
         let result = UserSegment.classify(
-            onboardingMode: .completed,
+            hasPrivateSession: true,
             totalTransactions: 20,
             avgDaysBetweenSessions: 3,
             usesAdvancedFeatures: false
@@ -104,7 +104,7 @@ struct UserSegmentServiceTests {
 
     @Test func classify_active_thirtyOneTransactions_regularSessions() {
         let result = UserSegment.classify(
-            onboardingMode: .full,
+            hasPrivateSession: true,
             totalTransactions: 31,
             avgDaysBetweenSessions: 5,
             usesAdvancedFeatures: false
@@ -114,7 +114,7 @@ struct UserSegmentServiceTests {
 
     @Test func classify_active_hundredTransactions_noAdvancedFeatures() {
         let result = UserSegment.classify(
-            onboardingMode: .full,
+            hasPrivateSession: true,
             totalTransactions: 100,
             avgDaysBetweenSessions: 2,
             usesAdvancedFeatures: false
@@ -124,7 +124,7 @@ struct UserSegmentServiceTests {
 
     @Test func classify_active_boundarySevenDays() {
         let result = UserSegment.classify(
-            onboardingMode: .full,
+            hasPrivateSession: true,
             totalTransactions: 50,
             avgDaysBetweenSessions: 7,
             usesAdvancedFeatures: false
@@ -136,7 +136,7 @@ struct UserSegmentServiceTests {
 
     @Test func classify_powerUser_manyTransactions_advancedFeatures() {
         let result = UserSegment.classify(
-            onboardingMode: .full,
+            hasPrivateSession: true,
             totalTransactions: 101,
             avgDaysBetweenSessions: 2,
             usesAdvancedFeatures: true
@@ -144,9 +144,9 @@ struct UserSegmentServiceTests {
         #expect(result == .powerUser)
     }
 
-    @Test func classify_powerUser_completedMode() {
+    @Test func classify_powerUser_manyTransactions() {
         let result = UserSegment.classify(
-            onboardingMode: .completed,
+            hasPrivateSession: true,
             totalTransactions: 150,
             avgDaysBetweenSessions: 1,
             usesAdvancedFeatures: true
@@ -157,7 +157,7 @@ struct UserSegmentServiceTests {
     @Test func classify_notPowerUser_advancedButFewTransactions() {
         // Advanced features but only 50 tx → active (not power)
         let result = UserSegment.classify(
-            onboardingMode: .full,
+            hasPrivateSession: true,
             totalTransactions: 50,
             avgDaysBetweenSessions: 2,
             usesAdvancedFeatures: true
@@ -168,7 +168,7 @@ struct UserSegmentServiceTests {
     @Test func classify_notPowerUser_manyTransactionsNoAdvanced() {
         // 101 tx but no advanced features → active (not power)
         let result = UserSegment.classify(
-            onboardingMode: .full,
+            hasPrivateSession: true,
             totalTransactions: 101,
             avgDaysBetweenSessions: 3,
             usesAdvancedFeatures: false
@@ -180,7 +180,7 @@ struct UserSegmentServiceTests {
 
     @Test func classify_sporadic_exactlyFiveTransactions_highGap() {
         let result = UserSegment.classify(
-            onboardingMode: .full,
+            hasPrivateSession: true,
             totalTransactions: 5,
             avgDaysBetweenSessions: 30,
             usesAdvancedFeatures: false
@@ -191,7 +191,7 @@ struct UserSegmentServiceTests {
     @Test func classify_active_irregularSessions_manyTransactions() {
         // >30 tx but avg >7 days → sporadic
         let result = UserSegment.classify(
-            onboardingMode: .full,
+            hasPrivateSession: true,
             totalTransactions: 50,
             avgDaysBetweenSessions: 8,
             usesAdvancedFeatures: false

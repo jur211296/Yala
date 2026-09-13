@@ -17,7 +17,7 @@
 //
 //  El CTA llama a `GroupsOrganizerOnboarding.completeSetup`, su ÚNICO call-site de producción: para
 //  llegar hasta aquí ya se pasó la puerta (`GroupsOrganizerGateLogic`), el sign-in y el consent, que es
-//  justo lo que el orden del chip exige antes de tocar `onboardingMode`.
+//  justo lo que el orden del chip exige antes de tocar el eje 1.
 //
 
 import SwiftData

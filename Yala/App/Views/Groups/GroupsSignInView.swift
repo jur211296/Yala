@@ -236,12 +236,11 @@ extension GroupsSignInView {
             discovery: discovery,
             deviceState: CloudIdentityRoutingLogic.deviceState(
                 // Por el espejo observable y no por `UserDefaults.standard`: es lo que piden las rules
-                // de área para una vista, y además `hasCompletedOnboarding` tiene su nº de sitios
-                // CLAVADO por `SessionPreferenceKeysTests.spellingCountsMatch` (26) — un lector nuevo a
-                // pelo lo rompe, y con razón: esa key es la más dispersa del árbol.
+                // de área para una vista, y `hasCompletedOnboarding` es la key más dispersa del árbol —
+                // un lector nuevo a pelo la dispersa un poco más.
                 hasCompletedOnboarding: appPreferences.hasCompletedOnboarding,
                 storageMode: StorageModePersistence.read(),
-                onboardingMode: OnboardingMode.current()),
+                hasPrivateSession: PrivateSessionMark.hasPrivateSession()),
             // Paso 10 · desde aquí SÍ se puede contestar: la asociación es estado propio y persistido.
             // La tabla solo lo mira en la puerta de Ajustes, así que por ésta no cambia ningún destino —
             // se pasa igual porque el parámetro no tiene default a propósito y porque el día que la

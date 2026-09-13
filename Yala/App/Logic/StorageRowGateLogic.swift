@@ -46,8 +46,7 @@
 //  —con la MISMA lectura que pinta la sección, que es lo que impide que vuelvan a separarse— es
 //  `GroupsAssociationPresence.offersDetach`. El porqué entero está en su cabecera.
 //
-//  **Los dos guards de arriba siguen mandando sobre este término, y es a propósito:**
-//   - `isSecondaryActive` — la fila describe/opera al DUEÑO, y una invitada no suelta su cuenta.
+//  **El guard de arriba sigue mandando sobre este término, y es a propósito:**
 //   - `isConfigured` — sin backend configurado `CloudMigrationController.shared` es `nil` y la pantalla
 //     degrada al mensaje genérico SIN montar la sección de grupos: abrir ahí sería una puerta a nada.
 //
@@ -61,28 +60,8 @@ import Foundation
 
 nonisolated enum StorageRowGateLogic {
 
-    /// **CHIP M3 · la única llave del panel DEBUG en sesión secundaria, y solo en builds DEV.**
-    ///
-    /// El `#if` vive AQUÍ y en ningún otro sitio para que la puerta sea una expresión medible: en un
-    /// binario de producción esta constante es `false` literal ⇒ la tabla de abajo se comporta byte-idéntica
-    /// a antes de M3, y un source-scan puede afirmar que ProfileView pasa ESTO y no un `true` a mano.
-    ///
-    /// Lo que desbloquea: `StorageSettingsView` ya degrada su contenido en secundaria (pinta el aviso en vez
-    /// de la migración del dueño) pero su `cloudDebugPanel` cuelga FUERA de ese `if`, así que llegar a la
-    /// fila es llegar al panel — y el panel es la única salida por producto de una sesión FAKE (`guest-debug`
-    /// no tiene sesión de backend con la que drenar un sign-out secundario). Sin esto, M1-4 dejaba el QA de
-    /// sim soft-lockeado: descriptor puesto, panel inalcanzable y solo lldb para salir.
-    static let devPanelOverrideAvailable: Bool = {
-        #if DEV_BUILD
-        return true
-        #else
-        return false
-        #endif
-    }()
-
     /// - Parameters:
     ///   - isConfigured: backend configurado (`CloudBackendConfig.isConfigured`).
-    ///   - isSecondaryActive: sesión secundaria M1 (la fila describe la migración del DUEÑO).
     ///   - remoteEnabled: flag remoto `CloudRemoteFlags.cloudModeEnabled`.
     ///   - isEngaged: el usuario ya está dentro (modo persistido `.cloud` o
     ///     `CloudMigrationController.uiState` más allá de `.idle` — journal transicional,
@@ -91,22 +70,12 @@ nonisolated enum StorageRowGateLogic {
     ///     (`GroupsAssociationPresence.offersDetach`). Ver «El tercer término» en la cabecera: el criterio
     ///     es el gesto que hay detrás, no el registro persistido, y por eso el nombre dice «to detach».
     ///     Default `false` ⇒ la tabla 2⁴ anterior sigue midiendo lo mismo donde no aplica.
-    ///   - devPanelOverride: M3 · `devPanelOverrideAvailable` en el call-site de producción. **Solo abre la
-    ///     celda de secundaria** y no toca ninguna otra: en un build DEV con sesión secundaria la fila es
-    ///     visible SIN mirar `isConfigured`, `remoteEnabled` ni `isEngaged`, porque los tres describen la
-    ///     migración del DUEÑO y aquí la fila no es su panel de gestión — es la puerta de servicio al panel
-    ///     DEBUG. Default `false` ⇒ la tabla 2⁵ de `StorageRowGateLogicTests` sigue midiendo lo mismo.
     static func isVisible(
         isConfigured: Bool,
-        isSecondaryActive: Bool,
         remoteEnabled: Bool,
         isEngaged: Bool,
-        hasGroupsAccountToDetach: Bool = false,
-        devPanelOverride: Bool = false
+        hasGroupsAccountToDetach: Bool = false
     ) -> Bool {
-        // El override se resuelve ANTES que `isConfigured` a propósito: el panel sirve para manipular el
-        // descriptor y armar el wipe secundario, cosas que no dependen de que el backend esté configurado.
-        if isSecondaryActive { return devPanelOverride }
         guard isConfigured else { return false }
         return remoteEnabled || isEngaged || hasGroupsAccountToDetach
     }

@@ -420,12 +420,6 @@ extension DestructiveScopeSheet.Config {
             case .cloud:  return L10n.Settings.signOutScopeCloudCloud
             case .groups: return L10n.Settings.scopeForgetGroups
             }
-        case .signOutSecondary:
-            switch location {
-            case .device: return L10n.Settings.signOutScopeDeviceSecondary
-            case .cloud:  return L10n.Settings.signOutScopeCloudSecondary
-            case .groups: return L10n.Settings.scopeUntouchedShort
-            }
         }
     }
 
@@ -436,7 +430,7 @@ extension DestructiveScopeSheet.Config {
         case .deleteAccountCloud, .deleteAccountGroupsOnly, .deleteAccountGroupsOnlyNoPrivate:
             return L10n.Settings.deleteAccountConfirmTitle
         case .signOutPrivate, .signOutPrivateNoCopy, .signOutPrivateWithGroups, .signOutPrivateWithGroupsNoCopy,
-             .signOutCloud, .signOutGroupsOnly, .signOutSecondary:
+             .signOutCloud, .signOutGroupsOnly:
             return L10n.Settings.signOutConfirmTitle
         }
     }
@@ -448,7 +442,7 @@ extension DestructiveScopeSheet.Config {
         case .deleteAccountCloud, .deleteAccountGroupsOnly, .deleteAccountGroupsOnlyNoPrivate:
             return L10n.Settings.deleteAccountContinue
         case .signOutPrivate, .signOutPrivateNoCopy, .signOutPrivateWithGroups, .signOutPrivateWithGroupsNoCopy,
-             .signOutCloud, .signOutGroupsOnly, .signOutSecondary:
+             .signOutCloud, .signOutGroupsOnly:
             return L10n.Settings.signOutConfirmAction
         }
     }
@@ -470,7 +464,6 @@ extension DestructiveScopeSheet.Config {
         case .signOutPrivateWithGroupsNoCopy: suffix = "signout_private_with_groups_no_copy"
         case .signOutCloud: suffix = "signout_cloud"
         case .signOutGroupsOnly: suffix = "signout_groups_only"
-        case .signOutSecondary: suffix = "signout_secondary"
         }
         return "destructive_scope_sheet_\(suffix)"
     }
@@ -490,7 +483,6 @@ extension DestructiveScopeSheet.Config {
         case .signOutPrivate:           return L10n.Settings.signOutScopeConservationPrivate
         case .signOutPrivateWithGroups: return L10n.Settings.signOutScopeConservationPrivateWithGroups
         case .signOutCloud:             return L10n.Settings.signOutScopeConservationCloud
-        case .signOutSecondary:         return L10n.Settings.signOutScopeConservationSecondary
         case .signOutGroupsOnly:        return L10n.Settings.signOutScopeConservationGroups
         // Operaciones sin nota de conservación (`hasConservationNote == false`): nunca se llama. Los cierres
         // sin copia no prometen vuelta atrás porque no la hay.

@@ -33,23 +33,21 @@ private typealias Destination = WelcomeMirrorRelaunchLogic.Destination
 @Suite("R2 · el predicado de instalación fresca")
 struct NeutralMountFreshPredicateTests {
 
-    /// Las cuatro señales en su estado de "device recién instalado". Cada test de abajo apaga UNA.
+    /// Las señales en su estado de "device recién instalado". Cada test de abajo apaga UNA.
     private func fresh(
         fileExists: Bool = false,
         mode: StorageMode = .icloud,
         armed: Bool = false,
-        secondary: Bool = false,
         chooserSeen: Bool = false
     ) -> Bool {
         SwiftDataConfiguration.isFreshInstallForNeutralMount(
             personalStoreFileExists: fileExists,
             persistedMode: mode,
             mirrorOffArmed: armed,
-            secondarySessionActive: secondary,
             hasShownWelcomeChooser: chooserSeen)
     }
 
-    @Test("las cuatro señales vírgenes ⇒ fresh")
+    @Test("las señales vírgenes ⇒ fresh")
     func allVirginSignals_areFresh() {
         #expect(fresh())
     }
@@ -61,12 +59,9 @@ struct NeutralMountFreshPredicateTests {
         // el resto de combinaciones para que el término no pueda "colarse" por otra puerta.
         for mode in [StorageMode.icloud, .cloud] {
             for armed in [true, false] {
-                for secondary in [true, false] {
-                    for seen in [true, false] {
-                        #expect(!fresh(fileExists: true, mode: mode, armed: armed,
-                                       secondary: secondary, chooserSeen: seen),
-                                "archivo presente ⇒ jamás fresh (mode=\(mode) armed=\(armed))")
-                    }
+                for seen in [true, false] {
+                    #expect(!fresh(fileExists: true, mode: mode, armed: armed, chooserSeen: seen),
+                            "archivo presente ⇒ jamás fresh (mode=\(mode) armed=\(armed))")
                 }
             }
         }
@@ -77,11 +72,6 @@ struct NeutralMountFreshPredicateTests {
         #expect(!fresh(mode: .cloud))            // modo nube persistido
         #expect(!fresh(armed: true))             // mirror-off armado a medias
         #expect(!fresh(mode: .cloud, armed: true))
-    }
-
-    @Test("con descriptor de sesión secundaria NO es fresh")
-    func secondarySession_isNotFresh() {
-        #expect(!fresh(secondary: true))
     }
 
     @Test("con el chooser ya visto NO es fresh — el neutro dura UN arranque")
@@ -120,7 +110,7 @@ struct NeutralMountFreshPredicateTests {
 @Suite("R2 · la quinta salida de `personalStoreDecision`")
 struct NeutralMountDecisionTests {
 
-    @Test("fresh + sin par + sin secundaria ⇒ mount NEUTRO")
+    @Test("fresh + sin par ⇒ mount NEUTRO")
     func freshDevice_mountsNeutral() {
         for iCloud in [true, false] {
             #expect(SwiftDataConfiguration.personalStoreDecision(
@@ -130,14 +120,10 @@ struct NeutralMountDecisionTests {
         }
     }
 
-    @Test("precedencia: la sesión secundaria y el par `.cloud` ARMADO ganan al término de fresh")
+    @Test("precedencia: el par `.cloud` ARMADO gana al término de fresh")
     func freshDoesNotOverrideTheHardInvariants() {
-        // `isFreshInstallForNeutralMount` ya excluye los dos casos, así que esto es defensa en profundidad:
-        // si alguien ensancha el predicado, las dos ramas que protegen invariantes duros (M1 y SERIO-1)
-        // siguen ganando y ninguna sesión secundaria acaba montando el archivo del dueño.
-        #expect(SwiftDataConfiguration.personalStoreDecision(
-            storageMode: .icloud, mirrorOffArmed: false, iCloudAvailable: true,
-            secondarySessionActive: true, freshInstall: true, neutralDurable: false) == .secondaryCloudSession)
+        // `isFreshInstallForNeutralMount` ya excluye el caso, así que esto es defensa en profundidad: si
+        // alguien ensancha el predicado, la rama que protege el invariante duro (SERIO-1) sigue ganando.
         #expect(SwiftDataConfiguration.personalStoreDecision(
             storageMode: .cloud, mirrorOffArmed: true, iCloudAvailable: true,
             freshInstall: true, neutralDurable: false) == .cloudMirrorOff)
@@ -228,10 +214,10 @@ struct WelcomeMirrorRelaunchLogicTests {
 
     @Test("los mounts de MODO NUBE no piden relanzar aunque tampoco lleven mirror")
     func cloudModeMounts_neverAskForIt() {
-        // `cloudMirrorOff` y `secondaryCloudSession` también son `!attachesCloudKitMirror`, así que un
-        // predicado escrito sobre el EJE en vez de sobre la decisión les ofrecería un «reabre la app para
-        // encender iCloud» que en modo nube es sencillamente falso.
-        for mount in [Decision.cloudMirrorOff, .secondaryCloudSession] {
+        // `cloudMirrorOff` también es `!attachesCloudKitMirror`, así que un predicado escrito sobre el EJE
+        // en vez de sobre la decisión le ofrecería un «reabre la app para encender iCloud» que en modo
+        // nube es sencillamente falso.
+        for mount in [Decision.cloudMirrorOff] {
             #expect(mount.attachesCloudKitMirror == false, "premisa del test")
             for destination in Destination.allCases {
                 #expect(!WelcomeMirrorRelaunchLogic.shouldRelaunch(
@@ -353,55 +339,6 @@ struct NeutralMountWiringTests {
         #expect(config.contains("freshInstall: isFreshInstallForNeutralMount()"), """
             La decisión tiene que recibir el predicado REAL. Cablearlo a `false` deja la quinta salida como
             código muerto con sus tablas en verde; cablearlo a `true` monta neutro a TODO el parque.
-            """)
-    }
-
-    // MARK: - Cableado del mount de GRUPOS (`secondary-groups-off-wipes-owner`)
-
-    /// La lógica pura de `GroupsStoreDecision` tiene su tabla en `StorageModePersistenceTests`, y esa
-    /// tabla puede quedarse verde para siempre **mientras nadie la invoca bien** — el mismo agujero que
-    /// justifica esta suite entera. La rama de producción de `groupsConfiguration` es INALCANZABLE
-    /// desde unit tests (corta antes en `isRunningTests`), así que el source-scan es la única red.
-    ///
-    /// La mutación concreta que esto cierra, y que dejaba los ~5970 tests en verde: envolver el switch
-    /// en `if CloudSyncFlags.groupsBackendEnabled { … } else { return ModelConfiguration(groupsDatabaseName, …) }`.
-    /// Reintroduce el bug ENTERO sin tocar la firma de `decide`: la visita vuelve a montar el archivo
-    /// del DUEÑO y «Empiezo de cero» se lo borra sin vuelta atrás (este store va con
-    /// `cloudKitDatabase: .none`; no hay mirror que lo reponga).
-    @Test("El mount de grupos pregunta por la SESIÓN, y por nada más")
-    func groupsConfiguration_asksOnlyTheSession() throws {
-        let src = try Self.source("Yala/Utils/SwiftDataConfiguration.swift")
-        let config = try Self.body(of: "static var groupsConfiguration: ModelConfiguration {", in: src)
-
-        #expect(config.contains("GroupsStoreDecision.decide("), """
-            El mount tiene que delegar en la decisión pura, no reimplementarla aquí.
-            """)
-        #expect(config.contains("secondaryActive: SecondarySessionStore.isActive()"), """
-            La decisión tiene que recibir el predicado REAL de sesión secundaria.
-            """)
-        #expect(!config.contains("groupsBackendEnabled"), """
-            El flag del canal NO puede volver a decidir QUÉ archivo se monta: mientras lo hizo, la visita
-            montaba `YalaGroups` (el del dueño) con el canal apagado y «Empiezo de cero» se lo llevaba por
-            delante. El flag gatea quién SINCRONIZA, que es otro eje.
-            """)
-    }
-
-    /// El cinturón fail-closed de `wipeLocalGroupsDomain` lee `groupsStoreMounted` para saber si el
-    /// archivo montado es el de esta sesión. Si el mount deja de escribirlo, el testigo se queda en su
-    /// default `.primary` y el guard pasa a negarse SIEMPRE con sesión secundaria activa: la visita no
-    /// podría completar «Empiezo de cero» nunca. Es el fallo opuesto y también rompe a un usuario.
-    @Test("El mount de grupos deja constancia de lo que montó")
-    func groupsConfiguration_recordsWhatItMounted() throws {
-        let src = try Self.source("Yala/Utils/SwiftDataConfiguration.swift")
-        let config = try Self.body(of: "static var groupsConfiguration: ModelConfiguration {", in: src)
-
-        #expect(config.contains("groupsStoreMounted = decision"), """
-            Sin el testigo, el cinturón de `DataWipeService.wipeLocalGroupsDomain` se queda ciego.
-            """)
-        let decide = try #require(config.range(of: "GroupsStoreDecision.decide("))
-        let witness = try #require(config.range(of: "groupsStoreMounted = decision"))
-        #expect(decide.lowerBound < witness.lowerBound, """
-            Decidir va antes de registrar: al revés se registraría una decisión que no es la que se montó.
             """)
     }
 

@@ -64,8 +64,8 @@ enum GroupBackendInviteEntryHandler {
         tapArmedGroupIDs.remove(groupID)
     }
 
-    /// Fronteras de sesión y wipe (`AppRouter.resetAll`, `SecondarySessionBoundaryPurge`): un arm puesto
-    /// por la persona A jamás debe gastarse con la sesión de la persona B.
+    /// Fronteras de sesión y wipe (`AppRouter.resetAll`): un arm puesto por la persona A jamás debe
+    /// gastarse con la sesión de la persona B.
     static func clearInviteTapArms() {
         tapArmedGroupIDs.removeAll()
     }
@@ -86,7 +86,6 @@ enum GroupBackendInviteEntryHandler {
     /// El default sin cablear es `false`, y es el lado PROTECTOR: «no hay sesión privada viva» deja que
     /// los otros dos términos decidan, mientras que un `true` apagaría la puerta entera.
     static var hasCompletedPersonalOnboardingProvider: @MainActor () -> Bool = { false }
-    static var isSecondarySessionProvider: @MainActor () -> Bool = { SecondarySessionStore.isActive() }
     /// **El único término que no puede medirse desde aquí, y por eso lo CABLEA `ContentView`.** Contar
     /// filas pide un `ModelContext` y este tipo no tiene ninguno; el closure que se instala es el MISMO
     /// que alimenta al guard cross-cuenta y a la puerta del organizador (`hasLocalDataNow`), así que los
@@ -111,12 +110,11 @@ enum GroupBackendInviteEntryHandler {
         return CloudSessionSignOut.personalMountAttachesMirror
     }
 
-    /// El veredicto de la puerta con los cuatro términos VIVOS. Internal para que el test pueda
+    /// El veredicto de la puerta con los tres términos VIVOS. Internal para que el test pueda
     /// llamarla con los providers fingidos sin tocar `drive`.
     static func neutralGateDecision() -> GroupInviteNeutralGateLogic.Decision {
         GroupInviteNeutralGateLogic.decide(
             hasCompletedPersonalOnboarding: hasCompletedPersonalOnboardingProvider(),
-            isSecondarySession: isSecondarySessionProvider(),
             hasExistingData: hasLocalDataProvider(),
             mountAttachesMirror: mountAttachesMirrorProvider())
     }

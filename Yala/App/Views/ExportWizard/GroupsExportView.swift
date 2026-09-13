@@ -2,8 +2,8 @@
 //  GroupsExportView.swift
 //  Yala
 //
-//  D6 (§3.3.6): salida de export para el modo solo-grupos legado (`OnboardingMode.groupInvite`).
-//  Ese usuario no tiene transacciones personales, así que el wizard personal —que EXIGE
+//  D6 (§3.3.6): salida de export para quien usa Yala SOLO para grupos (sin sesión privada en este
+//  dispositivo). Ese usuario no tiene transacciones personales, así que el wizard personal —que EXIGE
 //  seleccionar al menos una cuenta para avanzar (`ExportFiltersStepView.isValid`)— queda
 //  inutilizable. Aquí exporta DIRECTAMENTE el CSV de sus grupos (gastos, pagos y su balance)
 //  vía `GroupsExportBuilder`, sin pasar por los filtros/columnas de transacciones personales.

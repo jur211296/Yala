@@ -4,7 +4,7 @@
 //
 //  Pinnea la matemática de neteo "mi parte" del SSOT `GroupBridgeStatsAdjustment`: la pata REAL
 //  Caso A se ajusta a `-myShare` (= real + Σ patas de préstamo) y las patas de préstamo se
-//  suprimen; Caso B / groupInvite / saldos iniciales / settlements / TX personales quedan intactos.
+//  suprimen; Caso B / solo-grupos / saldos iniciales / settlements / TX personales quedan intactos.
 //
 //  Requiere `ModelContext` porque el helper lee relaciones `@Model` (`account`/`subcategory`) y
 //  keyea por `persistentModelID`. `@Suite(.serialized)` por el reuso per-file de `makeTestContext`.
@@ -129,9 +129,9 @@ struct GroupBridgeStatsAdjustmentTests {
         #expect(adj.incomeAwarePreferred(virtual) == -100)
     }
 
-    // MARK: - groupInvite (TX1 -myShare + TX2 +total loanToGroups)
+    // MARK: - solo-grupos (TX1 -myShare + TX2 +total loanToGroups)
 
-    @Test func groupInvite_pair_tx1Unchanged_tx2Suppressed() throws {
+    @Test func sesiónSoloGrupos_pair_tx1Unchanged_tx2Suppressed() throws {
         let ctx = try makeTestContext()
         let eid = UUID().uuidString
         let userCat = makeTestCategory(context: ctx, name: "Comida")

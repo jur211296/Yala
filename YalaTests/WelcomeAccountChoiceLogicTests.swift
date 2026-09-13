@@ -147,7 +147,6 @@ struct WelcomeNewBranchRouteTests {
     func beaconLinked_routesToCloudSignIn_evenWithBothCardsVisible() {
         let route = WelcomeNewBranchRouter.route(
             beacon: makeBeacon(linked: true, provider: "apple"),
-            isSecondarySessionActive: false,
             cloudEntryAvailable: true,
             options: bothOptions)
         #expect(route == .cloudSignIn(accountProvider: .apple))
@@ -157,7 +156,6 @@ struct WelcomeNewBranchRouteTests {
     func beaconLinked_google_routesWithGoogleProvider() {
         let route = WelcomeNewBranchRouter.route(
             beacon: makeBeacon(linked: true, provider: "google"),
-            isSecondarySessionActive: false,
             cloudEntryAvailable: true,
             options: bothOptions)
         #expect(route == .cloudSignIn(accountProvider: .google))
@@ -171,32 +169,13 @@ struct WelcomeNewBranchRouteTests {
     func beaconLinked_unknownProvider_carriesNil_andSignsInWithApple() {
         #expect(WelcomeNewBranchRouter.route(
             beacon: makeBeacon(linked: true, provider: nil),
-            isSecondarySessionActive: false,
             cloudEntryAvailable: true,
             options: bothOptions) == .cloudSignIn(accountProvider: nil))
         #expect(WelcomeNewBranchRouter.route(
             beacon: makeBeacon(linked: true, provider: "microsoft"),
-            isSecondarySessionActive: false,
             cloudEntryAvailable: true,
             options: bothOptions) == .cloudSignIn(accountProvider: nil))
         #expect(WelcomeAccountChoiceLogic.signInProvider(forBeaconAccount: nil) == .apple)
-    }
-
-    /// **La visita nunca lee el faro del dueño** (criterio de `WelcomeRestorePauseLogic`): con una sesión
-    /// secundaria viva, el faro del iCloud-KV es el del dueño del teléfono. Encaminarla —y decirle «este Apple ID
-    /// ya tiene una cuenta de Yala creada con Apple»— le contaría la cuenta de otra persona (lente A de la review).
-    @Test("en sesión secundaria el faro (del dueño) no encamina; el control sin visita, sí")
-    func secondarySession_ignoresTheOwnersBeacon() {
-        #expect(WelcomeNewBranchRouter.route(
-            beacon: makeBeacon(linked: true, provider: "apple"),
-            isSecondarySessionActive: true,
-            cloudEntryAvailable: true,
-            options: bothOptions) == .chooser)
-        #expect(WelcomeNewBranchRouter.route(
-            beacon: makeBeacon(linked: true, provider: "apple"),
-            isSecondarySessionActive: false,
-            cloudEntryAvailable: true,
-            options: bothOptions) == .cloudSignIn(accountProvider: .apple))
     }
 
     @Test("faro presente con la entrada nube NO disponible (kill remoto / sin backend / uitest) ⇒ no encamina")
@@ -206,7 +185,6 @@ struct WelcomeNewBranchRouteTests {
         // de "Ya tengo cuenta", ampliado a este camino — no un descuido.
         #expect(WelcomeNewBranchRouter.route(
             beacon: makeBeacon(linked: true, provider: "apple"),
-            isSecondarySessionActive: false,
             cloudEntryAvailable: false,
             options: [.privateAccount]) == .single(.privateAccount))
     }
@@ -215,7 +193,6 @@ struct WelcomeNewBranchRouteTests {
     func beaconAbsent_bothOptions_showsChooser() {
         #expect(WelcomeNewBranchRouter.route(
             beacon: makeBeacon(linked: false, provider: nil),
-            isSecondarySessionActive: false,
             cloudEntryAvailable: true,
             options: bothOptions) == .chooser)
     }
@@ -233,7 +210,6 @@ struct WelcomeNewBranchRouteTests {
         #expect(options == [.privateAccount])
         #expect(WelcomeNewBranchRouter.route(
             beacon: makeBeacon(linked: false, provider: nil),
-            isSecondarySessionActive: false,
             cloudEntryAvailable: true,
             options: options) == .single(.privateAccount))
     }
@@ -292,8 +268,6 @@ struct WelcomeNewChooserWiringTests {
         #expect(body.contains("beacon: CloudBeacon()"),
                 "el faro REAL: leerlo de otro sitio (o no leerlo) reabre A26")
         #expect(body.contains("cloudEntryAvailable: cloudEntryAvailable"))
-        #expect(body.contains("isSecondarySessionActive: SecondarySessionStore.isActive()"),
-                "sin él, la visita leería el faro del DUEÑO y el destino le hablaría de su cuenta")
     }
 
     @Test("`visibleNewOptions` cablea la constante COMPILADA y el sub-flag remoto de la elección")
@@ -377,13 +351,6 @@ struct WelcomeNewChooserWiringTests {
         #expect(signIn.contains("let firmadoCon = provider"))
     }
 
-    /// Lente A: con una sesión secundaria viva, el faro es del dueño del teléfono.
-    @Test("en sesión secundaria el mismatch no lee el faro del dueño")
-    func signInFlow_mismatchIgnoresTheOwnersBeacon() throws {
-        let signIn = try Self.body(of: "private func runSignInFlow() async {", in: try Self.source(Self.signInViewPath))
-        #expect(signIn.contains("beaconLinked: beacon.isCloudAccountLinked && !SecondarySessionStore.isActive()"))
-    }
-
     /// Lente A: «Iniciar sesión con…» suelta una sesión viva, respeta el consentimiento y, si se cancela,
     /// vuelve a la pantalla de las dos salidas en vez de al intro.
     @Test("«Iniciar sesión con…» del mismatch: suelta la sesión, respeta el consentimiento y vuelve si se cancela")
@@ -439,36 +406,20 @@ struct WelcomeRestorePauseLogicTests {
     func table() {
         // El caso que motiva el chip: cuenta nube + kill puesto ⇒ «la nube está en pausa».
         #expect(WelcomeRestorePauseLogic.isCloudPaused(
-            beaconLinked: true, remoteCloudEnabled: false, isSecondaryActive: false))
+            beaconLinked: true, remoteCloudEnabled: false))
 
         // Sin faro no hay nada que prometer: este Apple ID no tiene cuenta nube, así que una búsqueda
         // vacía SÍ significa "no hay datos" y el copy honesto es el de siempre.
         #expect(!WelcomeRestorePauseLogic.isCloudPaused(
-            beaconLinked: false, remoteCloudEnabled: false, isSecondaryActive: false))
+            beaconLinked: false, remoteCloudEnabled: false))
 
         // Con la nube encendida el vacío tampoco se explica por una pausa. Y además este usuario no
         // llega aquí: con el kill apagado tiene sus cards de sign-in.
         #expect(!WelcomeRestorePauseLogic.isCloudPaused(
-            beaconLinked: true, remoteCloudEnabled: true, isSecondaryActive: false))
+            beaconLinked: true, remoteCloudEnabled: true))
 
         #expect(!WelcomeRestorePauseLogic.isCloudPaused(
-            beaconLinked: false, remoteCloudEnabled: true, isSecondaryActive: false))
-    }
-
-    /// **La visita NUNCA lee el faro del dueño.** El faro vive en el iCloud-KV del Apple ID del
-    /// teléfono y las lecturas de `OwnerKeyValueStore` no están bloqueadas, así que sin este término
-    /// una invitada en sesión secundaria —cuyo store va sin CloudKit y por tanto SIEMPRE da búsqueda
-    /// vacía— leería «tus datos están a salvo en tu cuenta» sobre la cuenta de otra persona.
-    @Test("En sesión secundaria el aviso no aparece, aunque el faro del dueño esté encendido")
-    func secondarySessionNeverSeesTheOwnersBeacon() {
-        // Exactamente el estado que dispararía el aviso, más la visita: gana la visita.
-        #expect(!WelcomeRestorePauseLogic.isCloudPaused(
-            beaconLinked: true, remoteCloudEnabled: false, isSecondaryActive: true))
-
-        // Y el control en la otra dirección, para que el término no sea un `false` constante:
-        // mismo par de entradas sin visita ⇒ sí avisa.
-        #expect(WelcomeRestorePauseLogic.isCloudPaused(
-            beaconLinked: true, remoteCloudEnabled: false, isSecondaryActive: false))
+            beaconLinked: false, remoteCloudEnabled: true))
     }
 
     /// **El término que hace útil al botón «Reintentar», y el que alguien retiraría por limpieza.**
@@ -523,7 +474,7 @@ struct WelcomeRestorePauseLogicTests {
                 let cards = WelcomeAccountChoiceLogic.visibleExistingOptions(
                     isConfigured: true, isUITest: false, remoteCloudEnabled: remote)
                 let paused = WelcomeRestorePauseLogic.isCloudPaused(
-                    beaconLinked: beaconLinked, remoteCloudEnabled: remote, isSecondaryActive: false)
+                    beaconLinked: beaconLinked, remoteCloudEnabled: remote)
                 if paused {
                     #expect(!cards.contains(.cloudSignIn),
                             "el aviso de pausa no puede convivir con la card de sign-in")

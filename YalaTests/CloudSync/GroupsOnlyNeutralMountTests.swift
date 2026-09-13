@@ -80,13 +80,8 @@ struct GroupsOnlyNeutralDurableTests {
             """)
     }
 
-    @Test("la precedencia dura no se toca: la sesión secundaria y el par .cloud siguen ganando")
+    @Test("la precedencia dura no se toca: el par .cloud sigue ganando")
     func hardPrecedenceSurvives() {
-        #expect(SwiftDataConfiguration.personalStoreDecision(
-            storageMode: .icloud, mirrorOffArmed: false, iCloudAvailable: true,
-            secondarySessionActive: true, freshInstall: false,
-            neutralDurable: true) == .secondaryCloudSession)
-
         #expect(SwiftDataConfiguration.personalStoreDecision(
             storageMode: .cloud, mirrorOffArmed: true, iCloudAvailable: true,
             freshInstall: false, neutralDurable: true) == .cloudMirrorOff)
@@ -145,58 +140,16 @@ struct GroupsOnlyNeutralMountAdapterTests {
     }
 }
 
-// MARK: - (A-ter) La frontera M1, ahora con tabla en vez de source-scan
-
-/// El guard vive DENTRO del escritor (`…IfPrimary`) justamente para poder probarse así: cuando estaba
-/// repetido en tres `if` de vistas SwiftUI, su única red era un `contains` de fichero — que no distingue
-/// `if !isActive()` de `if isActive()`, ni ve un guard borrado.
-@Suite("R5 · la frontera M1 del neutro solo-grupos")
-struct GroupsOnlyNeutralMountSecondaryBoundaryTests {
-
-    @Test("en sesión secundaria NO se arma: el `UserDefaults` es el del DUEÑO")
-    func doesNotArmInSecondarySession() {
-        let d = makeIsolatedDefaults(prefix: "r5.m1.arm")
-        StorageModePersistence.armGroupsOnlyNeutralMountIfPrimary(d, isSecondary: true)
-        #expect(StorageModePersistence.isGroupsOnlyNeutralMountArmed(d) == false, """
-            armar en secundaria le apagaría el espejo de iCloud al dueño del teléfono por una sesión que \
-            no es suya.
-            """)
-        StorageModePersistence.armGroupsOnlyNeutralMountIfPrimary(d, isSecondary: false)
-        #expect(StorageModePersistence.isGroupsOnlyNeutralMountArmed(d), "control positivo")
-    }
-
-    @Test("y tampoco se DESARMA: quien no arma, no desarma")
-    func doesNotClearInSecondarySession() {
-        let d = makeIsolatedDefaults(prefix: "r5.m1.clear")
-        StorageModePersistence.armGroupsOnlyNeutralMount(d)
-        StorageModePersistence.clearGroupsOnlyNeutralMountIfPrimary(d, isSecondary: true)
-        #expect(StorageModePersistence.isGroupsOnlyNeutralMountArmed(d), """
-            desarmar en secundaria le devolvería el espejo al dueño solo-grupos en su próximo arranque — \
-            o sea le causaría el bug de este ticket desde la sesión de otra persona.
-            """)
-        StorageModePersistence.clearGroupsOnlyNeutralMountIfPrimary(d, isSecondary: false)
-        #expect(StorageModePersistence.isGroupsOnlyNeutralMountArmed(d) == false, "control positivo")
-    }
-}
-
 // MARK: - (B) Los dos NO-debe
 
 @Suite("R5 · a quién NO debe alcanzar el neutro de solo-grupos")
 struct GroupsOnlyNeutralMountBoundariesTests {
 
-    /// **El daño CONTRARIO, y es el que casi cuesta el diseño equivocado.** `RestoreRouter.decide`
-    /// devuelve `.groupsOnly` en cuanto el `onboardingMode` restaurado sea `.groupInvite` — y ese modo
-    /// viaja por iKV con merge never-downgrade, así que un device que restaura de iCloud puede heredarlo
-    /// con el mirror ya adjunto y su histórico bajado. Si el neutro se DERIVARA del modo, a esa persona se
-    /// le apagaría el espejo en el arranque siguiente.
-    @Test("restaurar de iCloud deja `.groupInvite` y aun así CONSERVA su espejo")
+    /// **El daño CONTRARIO, y es el que casi cuesta el diseño equivocado.** Quien restaura de iCloud
+    /// puede acabar en una sesión solo-grupos con el mirror ya adjunto y su histórico bajado. Si el
+    /// neutro se DERIVARA de eso, a esa persona se le apagaría el espejo en el arranque siguiente.
+    @Test("restaurar de iCloud en una sesión solo-grupos CONSERVA su espejo")
     func restoredGroupsOnlyUser_keepsMirror() {
-        #expect(RestoreRouter.decide(
-            onboardingMode: .groupInvite, isFullyPrefilled: true) == .groupsOnly, """
-            premisa del caso: el modo restaurado manda sobre el resumen, así que este device queda en
-            `.groupInvite` sin haber hecho jamás un alta solo-grupos en él.
-            """)
-
         // Lo que lo salva es que la marca es un hecho de ESTE device y el restore no la arma nunca.
         #expect(SwiftDataConfiguration.personalStoreDecision(
             storageMode: .icloud, mirrorOffArmed: false, iCloudAvailable: true,
@@ -286,7 +239,7 @@ struct GroupsOnlyNeutralMountWiringTests {
     @Test("el alta del ORGANIZADOR arma la marca")
     func organizerSetupArmsTheMark() throws {
         let src = try source("Yala/Services/Groups/GroupsOrganizerOnboarding.swift")
-        #expect(src.contains("StorageModePersistence.armGroupsOnlyNeutralMountIfPrimary("), """
+        #expect(src.contains("StorageModePersistence.armGroupsOnlyNeutralMount("), """
             sin esta llamada el arranque siguiente adjunta el espejo — es el bug del ticket, entero.
             """)
     }
@@ -294,7 +247,7 @@ struct GroupsOnlyNeutralMountWiringTests {
     @Test("el alta por INVITACIÓN arma la marca, y solo en la rama del alta")
     func inviteSetupArmsTheMark() throws {
         let src = try source("Yala/App/Views/Groups/GroupInviteOnboardingView.swift")
-        #expect(src.contains("StorageModePersistence.armGroupsOnlyNeutralMountIfPrimary("))
+        #expect(src.contains("StorageModePersistence.armGroupsOnlyNeutralMount("))
 
         // `performJoinOnlySetup` es la otra rama de `handleJoinTap()`: corre cuando el device YA tiene
         // onboarding, o sea el caso «privada + grupos asociados» del ADR §2, donde el espejo se queda.
@@ -315,7 +268,7 @@ struct GroupsOnlyNeutralMountWiringTests {
     @Test("«Activar Yala completo» LEVANTA la marca")
     func fullActivationClearsTheMark() throws {
         let src = try source("Yala/App/Views/Groups/FullModeActivationView.swift")
-        #expect(src.contains("StorageModePersistence.clearGroupsOnlyNeutralMountIfPrimary("), """
+        #expect(src.contains("StorageModePersistence.clearGroupsOnlyNeutralMount("), """
             sin esto el device se queda montando neutro para siempre y quien acaba de activar Yala
             completo no sincroniza nada.
             """)
@@ -331,7 +284,7 @@ struct GroupsOnlyNeutralMountWiringTests {
         let end = try #require(after.range(of: "WelcomePendingDestinationStore.set(destination)"))
         let body = String(after[..<end.upperBound])
 
-        #expect(body.contains("StorageModePersistence.clearGroupsOnlyNeutralMountIfPrimary("), """
+        #expect(body.contains("StorageModePersistence.clearGroupsOnlyNeutralMount("), """
             sin el desarme aquí, un device solo-grupos que pide restaurar gira para siempre: marca puesta
             ⇒ mount neutro ⇒ «reabre Yala» ⇒ mount neutro otra vez.
             """)

@@ -11,10 +11,8 @@
 //  drena contra el store SIGUIENTE (`ApplePayDraftService`/`SiriDraftService`/recuperación de
 //  imágenes no distinguen owner) y crea borradores con montos y comercios de la cuenta anterior.
 //
-//  Dos llamadores, misma razón, un solo SSOT:
-//  - `SecondarySessionBoundaryPurge.purge()` — fronteras de la sesión secundaria M1 (entrada y salida).
-//  - `SwiftDataConfiguration.performSignOutWipeIfArmed` — boot-cleanup del sign-out en `.cloud`
-//    (y del cierre local tras borrar la cuenta). Corre PRE-MOUNT, antes de que nadie drene nada.
+//  Un llamador: `SwiftDataConfiguration.performSignOutWipeIfArmed` — boot-cleanup del sign-out en
+//  `.cloud` (y del cierre local tras borrar la cuenta). Corre PRE-MOUNT, antes de que nadie drene nada.
 //
 //  COSTE ACEPTADO: purgar es DESTRUCTIVO para el propio usuario en un caso soportado — el sign-out
 //  `.cloud` conserva el claim-store, así que la MISMA cuenta puede re-entrar por adopt, y un pago de
@@ -27,8 +25,7 @@
 //  NO es una enumeración exhaustiva del App Group. Fuera quedan, a propósito, las superficies de ámbito
 //  DEVICE (`isProUser` sigue a la suscripción del Apple ID, `pendingControlAction` es transient, el
 //  override de idioma es preferencia de device) y las del dominio GRUPOS — ver el doc-comment de
-//  `DataWipeService.removeUserPreferenceKeys` y el de `SecondarySessionBoundaryPurge.purge()`, que sí
-//  las barre porque en M1 la frontera cruza identidades. Que este helper no las incluya NO significa
+//  `DataWipeService.removeUserPreferenceKeys`. Que este helper no las incluya NO significa
 //  que sobrevivan al sign-out `.cloud`: `PendingJoinStore`/`GroupJoinIntentTracker` mueren ahí dentro de
 //  `DataWipeService.resetForSignOutWipe` (vía `AppRouter.resetAll`) y el consent lo limpia el propio
 //  `performSignOutWipeIfArmed` tras escribir `.icloud`. (Corrección 2026-07-21: este comentario decía

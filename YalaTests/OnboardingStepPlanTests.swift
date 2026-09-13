@@ -105,49 +105,6 @@ struct OnboardingStepPlanTests {
         #expect(skip == [.name, .accounts, .accountType, .balance])
     }
 
-    // MARK: - skippedSteps: sesión secundaria (la visita en el móvil de otra persona)
-
-    @Test func skippedSteps_secondarySession_skipsCategories() {
-        // El seed no puede correr en visita (cinturón M1 en `seedCategoriesIfNeeded`), así que el paso
-        // que lo ofrece no se enseña. Todo lo demás del onboarding sigue en pie: la visita da su
-        // nombre, elige propósito, crea su cuenta y pone su saldo.
-        let skip = OnboardingStepPlan.skippedSteps(
-            prefilledUserName: nil, prefilledAccountsCount: 0,
-            prefilledCurrencyCode: nil, prefilledCategoriesCount: 0,
-            hasPrefill: false, expensesOnly: false, dayToDay: false,
-            isSecondarySession: true
-        )
-        #expect(skip == [.categories])
-        #expect(OnboardingStepPlan.effectiveSteps(skipping: skip) == [
-            .name, .purpose, .accounts, .accountType, .currencyName, .balance, .confirmation
-        ])
-    }
-
-    @Test func skippedSteps_secondarySession_defaultsToFalse_unchanged() {
-        // El parámetro con default `false` no altera a los callsites que no lo pasan. Es lo que hace
-        // seguro tener default aquí — el término solo AÑADE un skip, nunca invierte un veredicto.
-        let skip = OnboardingStepPlan.skippedSteps(
-            prefilledUserName: nil, prefilledAccountsCount: 0,
-            prefilledCurrencyCode: nil, prefilledCategoriesCount: 0,
-            hasPrefill: false, expensesOnly: false, dayToDay: true
-        )
-        #expect(skip == [.accountType])
-        #expect(!skip.contains(.categories))
-    }
-
-    @Test func skippedSteps_secondarySession_combinesWithUsageModeAndPrefill() {
-        // No es un modo de uso: es un estado del dispositivo que se SUMA a cualquiera de ellos. Con
-        // expensesOnly (que ya salta cuentas/tipo/saldo) el skip debe contener las cuatro cosas.
-        let skip = OnboardingStepPlan.skippedSteps(
-            prefilledUserName: "Pia", prefilledAccountsCount: 0,
-            prefilledCurrencyCode: nil, prefilledCategoriesCount: 0,
-            hasPrefill: true, expensesOnly: true, dayToDay: false,
-            isSecondarySession: true
-        )
-        #expect(skip == [.name, .accounts, .accountType, .balance, .categories])
-        #expect(OnboardingStepPlan.firstStep(skipping: skip) == .purpose)
-    }
-
     // MARK: - effectiveSteps orden
 
     @Test func effectiveSteps_noSkip_isFullOrderedList() {

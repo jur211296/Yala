@@ -14,7 +14,6 @@ interface ConfigBody {
     cloudModeRolloutPercent: number;
     cloudOnboardingChoiceRolloutPercent: number;
     groupsBackendRolloutPercent: number;
-    secondarySessionRolloutPercent: number;
   };
   forceUpdate: {
     minSupportedBuild: number;
@@ -26,12 +25,11 @@ function getConfig(env: Record<string, string>): Response | Promise<Response> {
 }
 
 describe("GET /config — shape y semántica fail-closed", () => {
-  it("golden del shape: v=1 + los 4 percents + forceUpdate, con valores parseados del env", async () => {
+  it("golden del shape: v=1 + los 3 percents + forceUpdate, con valores parseados del env", async () => {
     const res = await getConfig({
       CLOUD_MODE_ROLLOUT_PERCENT: "25",
       CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT: "0",
       GROUPS_BACKEND_ROLLOUT_PERCENT: "100",
-      SECONDARY_SESSION_ROLLOUT_PERCENT: "50",
       MIN_SUPPORTED_BUILD: "137",
     });
     expect(res.status).toBe(200);
@@ -42,7 +40,6 @@ describe("GET /config — shape y semántica fail-closed", () => {
         cloudModeRolloutPercent: 25,
         cloudOnboardingChoiceRolloutPercent: 0,
         groupsBackendRolloutPercent: 100,
-        secondarySessionRolloutPercent: 50,
       },
       forceUpdate: {
         minSupportedBuild: 137,
@@ -50,31 +47,12 @@ describe("GET /config — shape y semántica fail-closed", () => {
     });
   });
 
-  it("vars AUSENTES → 0 en los 4 percents + minSupportedBuild (fail-closed: nada enciende)", async () => {
+  it("vars AUSENTES → 0 en los 3 percents + minSupportedBuild (fail-closed: nada enciende)", async () => {
     const body = (await (await getConfig({})).json()) as ConfigBody;
     expect(body.flags.cloudModeRolloutPercent).toBe(0);
     expect(body.flags.cloudOnboardingChoiceRolloutPercent).toBe(0);
     expect(body.flags.groupsBackendRolloutPercent).toBe(0);
-    expect(body.flags.secondarySessionRolloutPercent).toBe(0);
     expect(body.forceUpdate.minSupportedBuild).toBe(0);
-  });
-
-  // El percent de la sesión secundaria es INDEPENDIENTE de los otros tres: hasta el chip M2 el feature
-  // tomaba prestado el kill-switch de CLOUD_MODE, y el bug que eso escondía es que no había forma de
-  // encenderlo sin encender también las superficies de alta. Este test es lo que impide volver a
-  // atarlos: los dos valores se mueven por separado en la misma respuesta.
-  it("el percent de la secundaria NO está atado al de CLOUD_MODE", async () => {
-    const body = (await (
-      await getConfig({ CLOUD_MODE_ROLLOUT_PERCENT: "100", SECONDARY_SESSION_ROLLOUT_PERCENT: "0" })
-    ).json()) as ConfigBody;
-    expect(body.flags.cloudModeRolloutPercent).toBe(100);
-    expect(body.flags.secondarySessionRolloutPercent).toBe(0);
-
-    const inverso = (await (
-      await getConfig({ CLOUD_MODE_ROLLOUT_PERCENT: "0", SECONDARY_SESSION_ROLLOUT_PERCENT: "100" })
-    ).json()) as ConfigBody;
-    expect(inverso.flags.cloudModeRolloutPercent).toBe(0);
-    expect(inverso.flags.secondarySessionRolloutPercent).toBe(100);
   });
 
   it("MIN_SUPPORTED_BUILD inválido → 0; número grande se PRESERVA (sin clamp, ≠ percents)", async () => {
@@ -172,10 +150,6 @@ function varIn(header: string, key: string): string | undefined {
  * después se borró—, así que el siguiente `npm run deploy:production` hecho por CUALQUIER otro motivo
  * habría apagado la card «Tu cuenta en la nube» del Welcome en todo el parque sin decisión de nadie.
  * Un rollout es un acto deliberado que rompe un test, no un efecto colateral de un deploy.
- *
- * `SECONDARY_SESSION_ROLLOUT_PERCENT` queda FUERA a propósito (decisión de Jürgen, 2026-09-09): el
- * ticket 12 retira M1 entera y no se quiere tocar este test dos veces. Coste aceptado y dicho: durante
- * los pasos 1-11 del rediseño nadie vigila ese percent.
  *
  * LÍMITE CONOCIDO: esto fija el REPO, no el gateway. Un cambio hecho a mano desde el dashboard de
  * Cloudflare no lo ve nadie aquí (el test es determinista y sin red a propósito, para correr sin

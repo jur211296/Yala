@@ -79,12 +79,15 @@ struct UserDataResetView: View {
                                 Text(L10n.Settings.resetAllData)
                                     .font(DS.Typography.title)
 
-                                // El MISMO eje que `scopeOperation`, y tiene que serlo: este texto
-                                // describe el alcance que la hoja va a ejecutar. Leyendo
-                                // `isGroupInviteMode` divergían justo en el caso que el eje 1 existe
-                                // para cubrir —un `.groupInvite` llegado por el iCloud-KV a un
-                                // teléfono privado— y la pantalla prometía «solo tu perfil y tus
-                                // preferencias» sobre un `.wipeDataFull`.
+                                // **Este texto lee UN término y `scopeOperation` lee DOS, así que NO
+                                // son el mismo eje** — medido en la review del 2026-09-13, que tumbó un
+                                // comentario anterior donde yo afirmaba lo contrario. La celda donde
+                                // divergen: sin sesión privada y con el store espejando a iCloud, la
+                                // hoja ejecuta un borrado COMPLETO (sale a iCloud y a los demás
+                                // dispositivos del Apple ID) mientras este párrafo promete «tu perfil y
+                                // tus preferencias». El defecto es anterior a este PR y no se arregla
+                                // aquí porque cambia lo que lee una pantalla, no el barrido: tiene
+                                // ticket propio (`wipe-copy-reads-one-axis-while-the-sheet-reads-two`).
                                 Text(
                                     PrivateSessionMark.hasPrivateSession()
                                         ? L10n.Settings.resetDataDescription
@@ -231,13 +234,13 @@ struct UserDataResetView: View {
             // `presentNextOnboardingScreen` salta al onboarding personal cuando el chooser ya se vio.
             defaults.set(true, forKey: "hasShownWelcomeChooser")
         case .groupsShell:
-            // Solo grupos: la app sigue enseñando los grupos. Se reponen el modo y el onboarding que el
-            // barrido quitó; el perfil y las preferencias, que es lo que se vaciaba, quedan restablecidos.
-            sessionState.onboardingMode = .groupInvite
-            // Eje 1: idempotente por diseño. La marca SOBREVIVE al vaciado —vaciar no cambia quién
-            // eres— pero se repone junto al modo para que las dos cuenten lo mismo si algún camino
-            // futuro la barre.
-            PrivateSessionMark.set(false)
+            // Solo grupos: la app sigue enseñando los grupos. Se repone el onboarding que el barrido
+            // quitó; el perfil y las preferencias, que es lo que se vaciaba, quedan restablecidos.
+            //
+            // El eje 1 se repone aunque sea idempotente por diseño: la marca SOBREVIVE al vaciado
+            // —vaciar no cambia quién eres— y reafirmarla aquí deja el estado en memoria y el
+            // persistido contando lo mismo si algún camino futuro llegara a barrerla.
+            sessionState.hasPrivateSession = false
             defaults.set(true, forKey: "hasShownWelcomeChooser")
             defaults.set(true, forKey: AppPreferences.Keys.hasCompletedOnboarding)
             sessionState.selectMainTab(.groups)
@@ -248,8 +251,8 @@ struct UserDataResetView: View {
     private func handleWipeAllData() async {
         isProcessing = true
 
-        // Paso 9 · a dónde aterriza la app se decide ANTES del wipe: el barrido de preferencias borra
-        // `onboardingMode`, y después ya no se sabría si esto era un solo-grupos.
+        // Paso 9 · a dónde aterriza la app se decide ANTES del wipe, con el eje 1 leído sobre el
+        // teléfono todavía intacto.
         let landing = DestructiveScopeLogic.wipeLanding(
             hasPrivateSession: PrivateSessionMark.hasPrivateSession())
         // Y si avisa a los demás dispositivos del Apple ID: solo una sesión privada (ver la decisión pura).

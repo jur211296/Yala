@@ -32,8 +32,6 @@ struct FullModeActivationView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
-    /// D1: al activar Yala completo desde «Solo mis grupos» hay que resetear el foco de la shell
-    /// (si no, `usageFocus == .groupsOnly` residual mantendría la app reducida pese al onboarding).
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -57,9 +55,8 @@ struct FullModeActivationView: View {
         self.performICloudZoneWipe = performICloudZoneWipe
         self.onComplete = onComplete
         let resume = FullModeActivationResumeStore.peek()
-        let isGroupsOnly = SessionState.shared.isGroupInviteMode
+        let isGroupsOnly = !SessionState.shared.hasPrivateSession
         _screen = State(initialValue: FullModeActivationFlowLogic.initialScreen(
-            isSecondarySession: SecondarySessionStore.isActive(),
             isGroupsOnlySession: isGroupsOnly,
             resume: resume,
             isLegacyMirroredInstall: FullModeActivationFlowLogic.isLegacyMirroredInstall(
@@ -250,7 +247,7 @@ struct FullModeActivationView: View {
         appPreferences.hasShownWelcomeChooser = true
         // Y se levanta el neutro solo-grupos: **esta es la rama privada**, que es la que el ticket pedía que se
         // lo llevara (antes lo levantaba la activación entera, sin preguntar nada).
-        StorageModePersistence.clearGroupsOnlyNeutralMountIfPrimary()
+        StorageModePersistence.clearGroupsOnlyNeutralMount()
         go(to: .relaunch)
     }
 
@@ -271,15 +268,15 @@ struct FullModeActivationView: View {
         guard !isRunningPlan else { return }
         switch FullModeActivationFlowLogic.cancelEffect(
             resume: FullModeActivationResumeStore.peek(),
-            isGroupsOnlySession: sessionState.isGroupInviteMode) {
+            isGroupsOnlySession: !sessionState.hasPrivateSession) {
         case .nothing, .keepPending:
             break
         case .revertToGroupsOnly:
             // El escritor de la marca retira también la reanudación: volver a solo-grupos es eso entero.
-            StorageModePersistence.armGroupsOnlyNeutralMountIfPrimary()
-            FullModeActivationResumeStore.clearIfPrimary()
+            StorageModePersistence.armGroupsOnlyNeutralMount()
+            FullModeActivationResumeStore.clear()
         case .dropStaleMark:
-            FullModeActivationResumeStore.clearIfPrimary()
+            FullModeActivationResumeStore.clear()
         }
         onComplete()
     }
@@ -493,7 +490,7 @@ struct FullModeActivationView: View {
         // reanudaría A CIEGAS —con el borrado local incluido— sobre el corpus que la persona acaba de crear o de
         // restaurar, y la mandaría al Welcome. A estas alturas la persona ya eligió dónde viven sus datos, que es
         // lo que deja sin efecto una petición de borrado anterior.
-        StorageModePersistence.clearICloudCorpusWipeArmIfPrimary()
+        StorageModePersistence.clearICloudCorpusWipeArm()
         // **Se levanta el neutro durable de solo-grupos** (paso 5 del rediseño). Activar Yala completo ES
         // «ya elegí dónde viven mis datos personales», y desde el paso 8 esto solo se alcanza DESPUÉS de haberlo
         // elegido: la rama privada ya lo levantó antes de relanzar, y en la de nube hace falta igual —con
@@ -505,38 +502,17 @@ struct FullModeActivationView: View {
         // secundaria ocurre en memoria, ver el guard de abajo), desarmar aquí le devolvería el espejo al
         // dueño en su próximo arranque — o sea le causaría el bug de este ticket desde la sesión de otra
         // persona. La simetría es la regla: quien no arma, no desarma.
-        StorageModePersistence.clearGroupsOnlyNeutralMountIfPrimary()
+        StorageModePersistence.clearGroupsOnlyNeutralMount()
 
-        let sync = PreferenceSyncService.shared
-        // M1 · frontera de cuenta. Este `set` escribe la key del modo por `PreferenceSyncService`
-        // —que en `.localOnly` (sesión secundaria) sigue escribiendo el ESPEJO LOCAL, que desde el
-        // 2026-09-12 es `UserDefaults.standard` para todos— así que el guard de
-        // `OnboardingMode.setCurrent` no lo cubre: va aquí, en el escritor. `.completed` es rank 2 y el
-        // merge es never-downgrade ⇒
-        // escribirlo desde la sesión de la invitada deja al dueño una shell escalada que su
-        // `.groupInvite` del iKV ya no puede recuperar, y el wipe de salida no repone la key.
-        // La activación SÍ ocurre en memoria: la invitada ve su shell completa durante su sesión.
-        //
-        // Paso 8 · y es la activación quien escribe `.completed` también tras RESTAURAR: `RestoreRouter.decide`
-        // lee el modo local, que es `.groupInvite`, y devolvería al usuario a solo-grupos.
-        if !SecondarySessionStore.isActive() {
-            sync.set(string: OnboardingMode.completed.rawValue, forKey: OnboardingMode.userDefaultsKey)
-        }
-        sessionState.onboardingMode = .completed
-        // Eje 1: «Activar Yala completo» es el nacimiento de la sesión privada de un solo-grupos
-        // (F → D). Va con el modo y NO dentro del `if` de arriba: el guard de M1 lo lleva dentro
-        // `PrivateSessionMark.set`, que es donde tiene que estar.
-        PrivateSessionMark.set(true)
-        // La reanudación, fuera — DESPUÉS del modo, a propósito: un kill entre las dos escrituras deja
-        // `.completed` con la marca puesta, y el arranque la retira sola (`resolveAtBoot`, fuera de solo-grupos).
+        // El eje 1: «Activar Yala completo» es el nacimiento de la sesión privada de un solo-grupos
+        // (F → D). Asignar al espejo observable PERSISTE la marca y además des-reduce la shell, que es
+        // por qué esta línea va ANTES de `selectMainTab(.panel)`: el guard GC-08 rechazaría `.panel`
+        // mientras el eje siga apagado.
+        sessionState.hasPrivateSession = true
+        // La reanudación, fuera — DESPUÉS de la marca, a propósito: un kill entre las dos escrituras deja
+        // la marca puesta, y el arranque retira la reanudación sola (`resolveAtBoot`, fuera de solo-grupos).
         // Al revés dejaría a quien ya guardó su onboarding en solo-grupos y sin nada que retome la activación.
-        FullModeActivationResumeStore.clearIfPrimary()
-
-        // D1: des-reducir la shell. DEBE ir ANTES de `selectMainTab(.panel)` — `effectiveShellMode`
-        // es `.groupsFocused` mientras `usageFocus == .groupsOnly` (independiente de onboardingMode),
-        // así que el guard GC-08 rechazaría `.panel` si el reset viniera después. No-op para
-        // group-invite (usageFocus ya `.full`, guard del didSet).
-        appPreferences.usageFocus = .full
+        FullModeActivationResumeStore.clear()
 
         UserDefaults.standard.set(
             TabBarConfiguration.default.toJSON(),

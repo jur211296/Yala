@@ -30,15 +30,15 @@ enum GroupsDomainAdoptionLogic {
     ///
     /// Dos términos, y los dos hacen falta: la adopción per-device
     /// (`AppPreferences.Keys.groupsBetaUnlocked`, escrita al entrar al tab, al aceptar una
-    /// invitación o en el alta solo-grupos) y el modo solo-grupos vivo
-    /// (`SessionState.isGroupInviteMode`, que ES una adopción: este dispositivo se dio de alta
-    /// PARA grupos). Quitar el segundo cerraría el bridge al invitado normal, que es la mayoría.
+    /// invitación o en el alta solo-grupos) y la ausencia de sesión privada (el eje 1: este
+    /// dispositivo se dio de alta PARA grupos, que ES una adopción). Quitar el segundo cerraría el
+    /// bridge al invitado normal, que es la mayoría.
     ///
     /// **No es un gate de visibilidad.** Solo lo consume `isBridgeAllowed`; colapsarlo a `true`
     /// deja `sealedForFreshStart` sin efecto observable y abre los 5 guards de
     /// `GroupTransactionBridge.isDomainOpenForBridge` a la vez.
-    static func isDomainOpen(isUnlocked: Bool, isGroupInviteMode: Bool) -> Bool {
-        isUnlocked || isGroupInviteMode
+    static func isDomainOpen(isUnlocked: Bool, hasPrivateSession: Bool) -> Bool {
+        isUnlocked || !hasPrivateSession
     }
 
     /// ¿Puede el bridge materializar gastos de grupo en el corpus PERSONAL de este dispositivo?
@@ -64,9 +64,9 @@ enum GroupsDomainAdoptionLogic {
     /// iCloud queda INERTE para la vida personal: nada de Panel, Inbox, presupuestos, reportes ni
     /// widgets.
     static func isBridgeAllowed(
-        sealedForFreshStart: Bool, isUnlocked: Bool, isGroupInviteMode: Bool
+        sealedForFreshStart: Bool, isUnlocked: Bool, hasPrivateSession: Bool
     ) -> Bool {
         guard sealedForFreshStart else { return true }
-        return isDomainOpen(isUnlocked: isUnlocked, isGroupInviteMode: isGroupInviteMode)
+        return isDomainOpen(isUnlocked: isUnlocked, hasPrivateSession: hasPrivateSession)
     }
 }

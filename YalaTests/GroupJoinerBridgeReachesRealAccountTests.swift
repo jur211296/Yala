@@ -112,11 +112,11 @@ struct GroupJoinerBridgeReachesRealAccountTests {
 
     private func conEntornoDeBridge(_ context: ModelContext, _ body: () throws -> Void) rethrows {
         GroupTransactionBridge.shared.setContext(context)
-        let modoPrevio = SessionState.shared.onboardingMode
-        SessionState.shared.onboardingMode = .full   // Caso A real exige != .groupInvite
+        let sesiónPrivadaPrevia = SessionState.shared.hasPrivateSession
+        SessionState.shared.hasPrivateSession = true   // Caso A real exige sesión privada
         BridgeModeResolver.shared.invalidateCache(forZoneID: nil)
         defer {
-            SessionState.shared.onboardingMode = modoPrevio
+            SessionState.shared.hasPrivateSession = sesiónPrivadaPrevia
             BridgeModeResolver.shared.invalidateCache(forZoneID: nil)
         }
         try body()

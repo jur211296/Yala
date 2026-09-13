@@ -92,41 +92,30 @@ struct TabBarConfiguration: Codable, Equatable {
 
     // MARK: - Mode-Aware Configurations (GC-08)
 
-    /// Fixed tab configuration for groupInvite users (only Groups tab).
-    /// Search and More are always shown by MainTabView independently.
-    static let groupInvite = TabBarConfiguration(activeTabs: [.groups])
+    /// Configuración fija de la shell de solo grupos (solo la pestaña Grupos).
+    /// Buscar y Más los muestra `MainTabView` por su cuenta.
+    static let groupsOnly = TabBarConfiguration(activeTabs: [.groups])
 
-    /// Returns the appropriate tab configuration for the given onboarding mode.
-    /// For groupInvite: fixed config (ignores stored JSON). For full/completed: stored config.
-    /// M1 / D8: en sesión SECUNDARIA el tab Grupos se FILTRA SOLO con el canal grupos→backend APAGADO —
-    /// ahí el CKSyncEngine de grupos está atado al Apple ID del OS (el DUEÑO) y la invitada vería SUS
-    /// grupos y montos. Con el flag ON (`groupsBackendEnabled`) la invitada ve el tab con los grupos de
-    /// SU cuenta (canal backend, store `YalaGroups-Secondary`) ⇒ NO se filtra.
-    /// D1 (retención): `reduceToGroupsOnly` fuerza la config fija `.groupInvite` (solo `[.groups]`)
-    /// cuando el usuario eligió «Solo mis grupos» (`usageFocus == .groupsOnly`), SIN tocar `onboardingMode`.
-    /// El caller pasa `effectiveShellMode == .groupsFocused` (que ya incluye el caso group-invite, por eso
-    /// es idempotente ahí). Todos los params explícitos (sin default) para que cada call-site decida.
+    /// La configuración de pestañas de esta sesión.
+    ///
+    /// `reduceToGroupsOnly` lo pasa el caller como `effectiveShellMode == .groupsFocused`, o sea el eje 1:
+    /// sin vida personal en el teléfono, la tab bar es solo Grupos y la configuración guardada no aplica.
+    ///
+    /// **Aquí hubo un filtro que quitaba la pestaña Grupos, y NO se tradujo al eje nuevo a propósito**
+    /// (review adversarial, 2026-09-13). Su condición era «hay una sesión de visita Y el canal está
+    /// apagado», y tenía sentido con ese sujeto: el motor de Grupos estaba atado al Apple ID del DUEÑO,
+    /// así que sin canal la invitada habría visto los grupos de él. Reescribirlo sobre el eje 1 lo
+    /// convertía en otra cosa —«esta persona solo usa Grupos Y el canal está apagado»— y ahí el daño se
+    /// invierte: bajar el kill-switch, o perder el snapshot de remote-config, le dejaba al DUEÑO de su
+    /// propio teléfono una app con «Más» y «Buscar» y ninguna pantalla de contenido. Sin canal sigue
+    /// viendo sus grupos locales, que es lo que pasaba antes del barrido.
+    ///
+    /// Params explícitos (sin default) para que cada call-site decida.
     static func forMode(
-        _ mode: OnboardingMode, stored: TabBarConfiguration,
-        secondarySessionActive: Bool, groupsBackendEnabled: Bool,
+        stored: TabBarConfiguration,
         reduceToGroupsOnly: Bool
     ) -> TabBarConfiguration {
-        var config: TabBarConfiguration
-        switch mode {
-        case .groupInvite:
-            config = .groupInvite
-        case .full, .completed:
-            config = stored
-        }
-        // D1: reduce a solo-Grupos igual que group-invite (usageFocus == .groupsOnly). Antes del filtro
-        // de secundaria para que la composición sea idéntica a la de un group-invite.
-        if reduceToGroupsOnly {
-            config = .groupInvite
-        }
-        if secondarySessionActive && !groupsBackendEnabled {
-            config.activeTabs.removeAll { $0 == .groups }
-        }
-        return config
+        reduceToGroupsOnly ? .groupsOnly : stored
     }
 
     /// Valida y corrige la configuración para asegurar que .panel esté siempre primero

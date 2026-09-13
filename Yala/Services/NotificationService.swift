@@ -395,7 +395,7 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     /// NO incluye `groupsOnlyWipeArmed`: en ese camino el store personal sobrevive y sus recordatorios
     /// siguen siendo válidos (misma asimetría deliberada que en los boot-hooks).
     private var isPersonalWipeArmed: Bool {
-        StorageModePersistence.isSignOutWipeArmed() || SecondarySessionStore.isWipeArmed()
+        StorageModePersistence.isSignOutWipeArmed()
     }
 
     /// Cancel all notifications

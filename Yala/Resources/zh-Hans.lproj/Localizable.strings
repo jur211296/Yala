@@ -4804,19 +4804,8 @@
 /* Secondary action in waiting-for-leader state */
 "welcome.cloud.continueToApp" = "继续使用应用";
 
-/* Sign-out confirm message for a secondary (guest) cloud session — guest data leaves the device, owner data untouched */
-
-/* Title of the secondary-session confirm step (guest entering own cloud account on someone else's device) */
-"welcome.cloud.secondaryConfirmTitle" = "使用你的账户登录";
-
-/* Body of the secondary-session confirm step */
-"welcome.cloud.secondaryConfirmBody" = "此设备上有他人的数据。你将使用自己的账户进入一个独立空间：只会看到你自己的数据，设备所有者的数据不会受影响。退出登录时，你的数据将从设备中移除。";
-
-/* CTA of the secondary-session confirm step */
-"welcome.cloud.secondaryConfirmCta" = "使用我的账户登录";
-
 /* Chip shown while the secondary (guest) session pulls its account data after relaunch */
-"welcome.cloud.secondaryHydrationBanner" = "正在下载你的数据…";
+"welcome.cloud.hydrationBanner" = "正在下载你的数据…";
 
 /* Title of the proactive gate shown in the Groups tab when the device has no iCloud account */
 "groups.icloud.gate.title" = "群组需要 iCloud";
@@ -5122,12 +5111,6 @@
 /* D4 Cerrar sesión (nube): fila cuenta de Yala */
 "settings.signOutScopeCloudCloud" = "你的数据将安全保存；我们会先上传待同步的更改";
 
-/* D4 Cerrar sesión (sesión secundaria): fila dispositivo */
-"settings.signOutScopeDeviceSecondary" = "你的数据将从此设备中移除（仍保留在你的账户中）";
-
-/* D4 Cerrar sesión (sesión secundaria): fila cuenta de Yala */
-"settings.signOutScopeCloudSecondary" = "你的数据仍安全地保存在你的账户中";
-
 
 
 
@@ -5138,9 +5121,6 @@
 
 /* D4 Cerrar sesión (nube): nota de conservación */
 "settings.signOutScopeConservationCloud" = "你可以随时重新登录并恢复全部数据。";
-
-/* D4 Cerrar sesión (secundaria): nota de conservación */
-"settings.signOutScopeConservationSecondary" = "此设备所有者的数据不受影响。";
 
 /* D4 Cerrar sesión de grupos / Salir (D2): nota de conservación */
 "settings.signOutScopeConservationGroups" = "想查看你的群组时，随时重新登录即可。";
@@ -5446,12 +5426,6 @@
 /* C2 · variante del CTA para quien nunca tuvo cuenta */
 "groups.onboarding.step3.createAccountCTA" = "创建我的账户";
 
-/* G3/C3 — the organizer branch is blocked because a secondary (guest) session is active: the setup would write six preferences into the OWNER's local mirror */
-"welcome.groups.secondaryTitle" = "你在这台设备上是访客";
-
-/* G3/C3 — body of the secondary-session block in the organizer gate */
-"welcome.groups.secondaryBody" = "这个会话在别人的设备上，所以你的第一个群组要在自己的设备上创建。请退出访客会话，然后在你的设备上重试。";
-
 /* Title of the alert shown when the fresh-start wipe throws */
 "welcome.freshStart.failedTitle" = "我们无法清除你的数据";
 
@@ -5480,8 +5454,6 @@
 "welcome.cloud.accountBlockedTitle" = "你的账户暂时无法使用";
 /* Body for the blocked-account screen; explicitly rules out a network problem */
 "welcome.cloud.accountBlockedBody" = "这不是网络问题：我们暂时无法让你访问这个账户。请写信到 %@，我们一起来看看。";
-/* Extra warning appended to the sign-out blocked alert during a guest (secondary) session, where leaving anyway is offered */
-"settings.signOutSecondaryLossWarning" = "如果现在退出，这些更改将不会同步到你的账户。";
 
 /* Sign-out blocked alert, guest session: stay in the app and retry later */
 "settings.signOutWaitButton" = "等待";
@@ -5531,15 +5503,6 @@
 
 /* Stats hero caption: the figure sums income and expense magnitudes (pie total), neither a net nor one side */
 "stats.hero.captionTotalPeriod" = "期间合计";
-
-/* Secondary session on the private branch: title of the notice shown after choosing the private account, before the onboarding */
-"welcome.private.secondaryTitle" = "你的数据和对方的分开保存";
-
-/* Secondary session on the private branch: body of the notice — the fact, the guarantee, and the measured detail that the secondary store is cloudKitDatabase .none */
-"welcome.private.secondaryBody" = "你正在别人的设备上使用 Yala。你在这里记录的内容只属于你，而且只保存在这台设备上：对方看不到，也不会同步到任何 iCloud。";
-
-/* Secondary session on the private branch: CTA that continues to the private onboarding (informs, does not block) */
-"welcome.private.secondaryCta" = "继续";
 
 /* Restore: el kill-switch remoto está puesto y el usuario nació en la nube — sus datos existen, la sincronización no está disponible ahora */
 "welcome.restore.cloudPausedTitle" = "Yala 云同步已暂停";

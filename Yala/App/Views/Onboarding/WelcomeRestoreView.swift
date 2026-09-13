@@ -179,8 +179,7 @@ struct WelcomeRestoreView: View {
 
         let paused = WelcomeRestorePauseLogic.isCloudPaused(
             beaconLinked: CloudBeacon().isCloudAccountLinked,
-            remoteCloudEnabled: CloudRemoteFlags.cloudModeEnabled,
-            isSecondaryActive: SecondarySessionStore.isActive())
+            remoteCloudEnabled: CloudRemoteFlags.cloudModeEnabled)
         if paused { RestoreBreadcrumb.cloudPaused() }
         state = paused ? .cloudPaused : .notFound
     }
@@ -221,8 +220,8 @@ struct WelcomeRestoreView: View {
             VStack(spacing: DS.Spacing.sm) {
                 YalaPrimaryButton(L10n.Welcome.Restore.continueAction) {
                     DS.Haptic.success()
-                    // El destino (directo / solo-grupos / onboarding) lo decide el
-                    // caller con RestoreRouter según el onboardingMode restaurado.
+                    // El destino (directo / onboarding) lo decide el caller con
+                    // RestoreRouter, según lo que traiga el resumen restaurado.
                     onContinueWithSummary(summary)
                 }
 

@@ -95,7 +95,6 @@ struct WelcomeCloudSignInView: View {
     /// M1 (D1): variante para la ENTRADA SECUNDARIA — marca los flags SIN trial pendiente
     /// (la invitada no recibe la oferta del device del dueño) ni `markAsNewInstall` (el
     /// checklist es estado device-global del dueño).
-    var onSecondaryEntryFlagsMarked: () -> Void
     /// Salida a la app (waitingLeader → "Continuar a la app").
     var onFinishedToApp: () -> Void
     /// R2: el alta born-cloud terminó **sin relanzamiento** (el mount ya era compatible) ⇒ cerrar este
@@ -293,8 +292,6 @@ struct WelcomeCloudSignInView: View {
     }
 
     /// Back solo en fases donde nada está comprometido; adopt en vuelo o relaunch = sin salida.
-    /// `.secondaryConfirm` usa su botón Cancelar propio (suelta la sesión SIWA — el back genérico
-    /// la dejaría colgada); `.relaunchSecondary` es terminal como `.relaunch`.
     private var canGoBack: Bool {
         switch phase {
         // `.providerMismatch`: sesión ya soltada y sin claim — nada comprometido.
@@ -307,7 +304,7 @@ struct WelcomeCloudSignInView: View {
         // `.reentryReady` lo es por la otra mitad del mismo hecho: la cuenta ya existía y es el ADOPT
         // el que terminó — el par está escrito y el motor corriendo, así que no hay a dónde volver.
         case .checking, .creating, .adopting, .waitingLeader, .relaunch, .bornCloudReady,
-             .reentryReady, .secondaryConfirm, .relaunchSecondary: false
+             .reentryReady: false
         }
     }
 
@@ -332,10 +329,6 @@ struct WelcomeCloudSignInView: View {
             bornCloudReadyContent
         case .reentryReady:
             reentryReadyContent
-        case .secondaryConfirm:
-            secondaryConfirmContent
-        case .relaunchSecondary:
-            secondaryRelaunchContent
         case .notFound:
             notFoundContent
         case .providerMismatch(let exits):
@@ -815,66 +808,6 @@ struct WelcomeCloudSignInView: View {
         .accessibilityIdentifier(id)
     }
 
-    private var secondaryConfirmContent: some View {
-        VStack(spacing: DS.Spacing.lg) {
-            messageContent(
-                icon: "person.2.badge.key",
-                title: L10n.Welcome.Cloud.secondaryConfirmTitle,
-                body: L10n.Welcome.Cloud.secondaryConfirmBody)
-            YalaPrimaryButton(L10n.Welcome.Cloud.secondaryConfirmCta) {
-                confirmSecondaryEntry()
-            }
-            .padding(.horizontal, DS.Spacing.xl)
-            .accessibilityIdentifier("welcome_cloud_secondary_confirm_cta")
-            Button(L10n.Common.cancel) {
-                // Suelta la sesión SIWA (no dejarla colgada) y vuelve al intro.
-                launchFlow {
-                    await CloudAuthService.shared.signOut()
-                    phase = .intro
-                }
-            }
-            .font(DS.Typography.subheadline)
-            .foregroundStyle(.white.opacity(0.8))
-            .accessibilityIdentifier("welcome_cloud_secondary_confirm_cancel")
-        }
-    }
-
-    private var secondaryRelaunchContent: some View {
-        VStack(spacing: DS.Spacing.lg) {
-            Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90")
-                .font(.system(size: 44))
-                .foregroundStyle(.white.opacity(0.8))
-                .accessibilityHidden(true)
-            Text(L10n.Storage.Relaunch.title)
-                .font(DS.Typography.title2)
-                .foregroundStyle(.white)
-                .multilineTextAlignment(.center)
-            // La ventana de ENTRADA secundaria auto-exita en background (ContentView) —
-            // el copy refleja que basta ir al inicio. El `.relaunch` del adopt (arriba)
-            // NO auto-exita y conserva `body`.
-            Text(L10n.Storage.Relaunch.bodyAutoExit)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.white.opacity(0.7))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, DS.Spacing.xl)
-        }
-        .accessibilityIdentifier("welcome_cloud_secondary_relaunch")
-    }
-
-    /// **Bloque [I]** · «Ya tengo cuenta» + no hay cuenta = una salida, no un callejón.
-    ///
-    /// Hasta hoy esta pantalla era un `messageContent` sin acción: el único modo de avanzar era la flecha
-    /// de atrás, volver al chooser y encontrar la card del alta por tu cuenta.
-    ///
-    /// **El botón lleva al CONSENTIMIENTO, no al chooser de proveedor** (decisión de Jürgen, 2026-09-09):
-    /// el método ya lo eligió al entrar, así que volver a preguntárselo sería repetirle un paso. Lo que no
-    /// se salta es el consentimiento — es el único paso que no se recorta. Y si quería otro proveedor,
-    /// retrocede: cerrar el consent lo deja en el intro del alta, con sus dos botones.
-    ///
-    /// La sesión ya se soltó (`signOut()` en la rama `.accountMissing`) y **se queda soltada**: dejarla
-    /// viva haría que un «atrás» + entrada por otra card la reusara —`ensureSignedIn` salta con
-    /// `hasSession`— y la persona entraría con una cuenta que no eligió. Lo que viaja al alta es el
-    /// proveedor, no la sesión.
     private var notFoundContent: some View {
         VStack(spacing: DS.Spacing.lg) {
             messageContent(
@@ -1023,12 +956,9 @@ struct WelcomeCloudSignInView: View {
             // limpió (`CloudIdentityDiscovery`), así que aquí se lee apagado y sale el `.notFound` honesto. Y
             // el mismatch que queda ya no es una pared: lleva sus dos salidas.
             let beacon = CloudBeacon()
-            // Con una sesión secundaria viva el faro es el del DUEÑO del teléfono: el mismatch le hablaría a la
-            // visita de la cuenta de otra persona («Tu cuenta de Yala se creó con Apple») y le ofrecería firmar
-            // con su Apple ID. Mismo criterio que `WelcomeRestorePauseLogic`: la visita nunca lee ese faro.
             let verdict = ProviderMismatchLogic.decide(
                 accountExists: false,
-                beaconLinked: beacon.isCloudAccountLinked && !SecondarySessionStore.isActive(),
+                beaconLinked: beacon.isCloudAccountLinked,
                 beaconAccountHash: beacon.accountHash,
                 beaconProvider: beacon.linkedProvider,
                 sessionSubHash: CloudBeacon.hash(userID),
@@ -1086,8 +1016,6 @@ struct WelcomeCloudSignInView: View {
             let decision = CrossAccountEntryGuardLogic.decide(
                 hasLocalData: hasLocalDataNow(),
                 sameAccountClaimExists: CloudClaimActionStore.shared.action(forUserID: userID) != nil,
-                accountExists: true,
-                secondarySessionEnabled: CloudSyncFlags.secondarySessionEntryAvailable,
                 // Se lee AQUÍ y no se cachea: el mirror puede asentar entre que se monta la pantalla y
                 // que el usuario firma, y con el import ya asentado sus filas dejan de ser «las que
                 // estoy bajando». Mismo criterio que `hasLocalDataNow`, que es un closure por eso mismo.
@@ -1099,19 +1027,6 @@ struct WelcomeCloudSignInView: View {
                 // escribirlo antes de saber la ruta era el bug del chip (caía en el iKV del dueño).
                 await CloudAuthService.shared.signOut()
                 phase = .blockedForeignData
-            case .proceedSecondarySession:
-                // M0: tampoco aquí — la escritura va en `confirmSecondaryEntry`, DESPUÉS del descriptor
-                // (es el único punto donde el behavior de prefs resuelve `.localOnly`).
-                //
-                // M1 belt: invariante estructural — durante el Welcome post sign-out la key
-                // PERSISTIDA es `.icloud` (el sign-out cloud siempre la resetea antes de llegar
-                // aquí). Si no lo es, hay estado corrupto: delatarlo temprano, jamás armar.
-                guard StorageModePersistence.read() == .icloud else {
-                    await CloudAuthService.shared.signOut()
-                    phase = .error(retryable: false)
-                    return
-                }
-                phase = .secondaryConfirm
             case .proceed:
                 // M0: la ruta ya se conoce y es la del PROPIO dueño ⇒ el epoch se escribe AQUÍ, antes de
                 // arrancar la máquina: el paso 5-bis de `adoptBackendAccount` re-emite el epoch
@@ -1128,61 +1043,6 @@ struct WelcomeCloudSignInView: View {
             }
         }
     }
-
-    /// M1: la invitada confirmó — arma la sesión secundaria EN ORDEN (claim → descriptor →
-    /// flags, kill-safety en `SecondaryEntryLogic`) y muestra el relaunch terminal. JAMÁS
-    /// adopt aquí (correría sobre el store del DUEÑO montado) ni signOut (el runtime necesita
-    /// la sesión SIWA post-relaunch).
-    private func confirmSecondaryEntry() {
-        guard let userID = CloudAuthService.shared.currentUserID else {
-            phase = .error(retryable: true)
-            return
-        }
-        // M1 · el slot es de UNA cuenta. Con el descriptor de OTRA invitada vivo, sus archivos
-        // `-Secondary` siguen en disco y `activate(userID:)` se limitaría a reescribir el nombre del
-        // ocupante: el boot montaría el corpus de ella bajo esta sesión. Se bloquea con la pantalla
-        // que ya dice ese hecho (`blockedForeignData`) y se suelta la sesión SIWA, igual que la otra
-        // salida bloqueada del guard — dejarla colgada es lo que `runSignInFlow` evita a mano.
-        // Va en la ENTRADA y JAMÁS en el mount, que honra el descriptor incondicionalmente.
-        if SecondarySlotOccupancyLogic.decide(
-            occupantUserID: SecondarySessionStore.activeUserID(),
-            enteringUserID: userID) == .occupiedByOther {
-            launchFlow {
-                await CloudAuthService.shared.signOut()
-                phase = .blockedForeignData
-            }
-            return
-        }
-        SecondaryEntryLogic.begin(
-            userID: userID,
-            recordClaim: { CloudClaimActionStore.shared.record(.routeReturningUser, forUserID: $0) },
-            activateDescriptor: { SecondarySessionStore.activate(userID: $0) },
-            markOnboardingFlags: onSecondaryEntryFlagsMarked)
-        // M0: DESPUÉS del descriptor, y ese orden ES el fix. `PrefsSyncBehavior.resolve` pregunta por el
-        // descriptor VIVO en CADA llamada, así que solo a partir de `activate` el epoch de la invitada
-        // resuelve `.localOnly` — ni el iKV del dueño ni el outbox de nadie. Un paso antes se propagaría
-        // a los otros devices del Apple ID del dueño.
-        persistConsentIfDue(at: .afterSecondaryDescriptor, routedBy: .proceedSecondarySession)
-
-        // El WIDGET, in-session y no solo en el hook de entrada. La purga de frontera
-        // (`SecondarySessionBoundaryPurge`) ya hace este mismo `clearCache()`, pero corre PRE-MOUNT: solo
-        // en el arranque siguiente. Entre esta línea y ese arranque el teléfono lo tiene la invitada, y el
-        // widget de la pantalla de inicio sigue pintando los saldos y los nombres de cuenta DEL DUEÑO —
-        // basta con que ella salga a la home para verlos. Es la simétrica de lo que la SALIDA ya hacía
-        // (`CloudSessionSignOut.clearLocalSurfacesForArmedWipe`), y la asimetría entre las dos era el único
-        // hueco vivo que quedaba de este ticket (medido 2026-08-14).
-        //
-        // El orden con `republishActiveSeal` importa poco —`clearCache` no toca la key del sello— pero se
-        // deja así para que se lea como lo que es: primero se retira lo del dueño, después se declara de
-        // quién será lo siguiente. El republish va DESPUÉS de `activate`, que ya ocurrió arriba: antes
-        // publicaría `nil` y el primer snapshot de la invitada se serviría como si fuera de él.
-        WidgetDataCache.clearCache()
-        WidgetDataCache.republishActiveSeal()
-
-        CloudSyncBreadcrumb.secondaryEntryArmed()
-        phase = .relaunchSecondary
-    }
-
     /// Deriva la fase de pantalla del uiState de la máquina cada segundo
     /// (molde del refresh de StorageSettingsView) hasta un estado terminal.
     /// H-2026-07-17-5: además DETECTA el drive aparcado (transient a mitad de página →

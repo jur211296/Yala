@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (330)
+## Index (335)
 
 | id | status | path |
 |---|---|---|
@@ -237,6 +237,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | la-nocturna-de-ui-no-ha-disparado-ni-una-vez | done | tickets/done/la-nocturna-de-ui-no-ha-disparado-ni-una-vez.md |
 | late-icloud-wipe-can-re-export-between-its-two-halves | backlog | tickets/backlog/late-icloud-wipe-can-re-export-between-its-two-halves.md |
 | live-anchor-breakdown-doubles-the-approximate-glyph | backlog | tickets/backlog/live-anchor-breakdown-doubles-the-approximate-glyph.md |
+| m1-prose-outlives-its-code-in-comments | backlog | tickets/backlog/m1-prose-outlives-its-code-in-comments.md |
 | merchant-memory-suggests-across-natures-in-three-more-places | backlog | tickets/backlog/merchant-memory-suggests-across-natures-in-three-more-places.md |
 | multi-currency-accounts | backlog | tickets/backlog/multi-currency-accounts.md |
 | needsrelaunch-hides-the-groups-section | backlog | tickets/backlog/needsrelaunch-hides-the-groups-section.md |
@@ -302,6 +303,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | secondary-groups-off-wipes-owner | discarded | tickets/discarded/secondary-groups-off-wipes-owner.md |
 | secondary-guest-exit-lock-and-outbox | discarded | tickets/discarded/secondary-guest-exit-lock-and-outbox.md |
 | secondary-onboarding-still-crosses-owner-domain | discarded | tickets/discarded/secondary-onboarding-still-crosses-owner-domain.md |
+| secondary-session-retirement-leaves-the-guest-cloud-session | backlog | tickets/backlog/secondary-session-retirement-leaves-the-guest-cloud-session.md |
 | secondary-visit-data-lost-on-signout-unannounced | discarded | tickets/discarded/secondary-visit-data-lost-on-signout-unannounced.md |
 | secondary-visitor-writes-owner-domain | discarded | tickets/discarded/secondary-visitor-writes-owner-domain.md |
 | seeds-de-grupos-no-escriben-userid-ni-memberkey | backlog | tickets/backlog/seeds-de-grupos-no-escriben-userid-ni-memberkey.md |
@@ -310,7 +312,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | session-redesign-web-and-store-copy | backlog | tickets/backlog/session-redesign-web-and-store-copy.md |
 | settings-migrate-to-cloud-adopts-silently-instead-of-migrating | backlog | tickets/backlog/settings-migrate-to-cloud-adopts-silently-instead-of-migrating.md |
 | shared-state-guard-misses-wipelocalgroupsdomain | backlog | tickets/backlog/shared-state-guard-misses-wipelocalgroupsdomain.md |
-| shell-derives-from-two-session-axes | backlog | tickets/backlog/shell-derives-from-two-session-axes.md |
+| shell-derives-from-two-session-axes | qa | tickets/qa/shell-derives-from-two-session-axes.md |
 | sign-out-wipe-abort-in-icloud-says-nothing | backlog | tickets/backlog/sign-out-wipe-abort-in-icloud-says-nothing.md |
 | sign-out-wipe-abort-loops-the-groups-gate | backlog | tickets/backlog/sign-out-wipe-abort-loops-the-groups-gate.md |
 | siri-ai-integration-ios-27 | backlog | tickets/backlog/siri-ai-integration-ios-27.md |
@@ -337,6 +339,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | uitest-seed-reseeds-the-corpus-without-reset | backlog | tickets/backlog/uitest-seed-reseeds-the-corpus-without-reset.md |
 | undercount-dias-intervalos-cerrados | done | tickets/done/undercount-dias-intervalos-cerrados.md |
 | unit-suite-nondeterministic-reds | done | tickets/done/unit-suite-nondeterministic-reds.md |
+| unit-test-suites-leave-orphan-userdefaults-domains | backlog | tickets/backlog/unit-test-suites-leave-orphan-userdefaults-domains.md |
 | update-banner-appstore-criteria | done | tickets/done/update-banner-appstore-criteria.md |
 | verify-dual-channel-zone-in-supabase | backlog | tickets/backlog/verify-dual-channel-zone-in-supabase.md |
 | vigilante-calla-si-no-puede-comprobar-la-nocturna | backlog | tickets/backlog/vigilante-calla-si-no-puede-comprobar-la-nocturna.md |
@@ -359,6 +362,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | widget-fallback-summary-uses-ten-rows | backlog | tickets/backlog/widget-fallback-summary-uses-ten-rows.md |
 | widget-period-balance-ignores-group-bridge-adjustment | backlog | tickets/backlog/widget-period-balance-ignores-group-bridge-adjustment.md |
 | widget-snapshot-visitor-overwrites-owner | discarded | tickets/discarded/widget-snapshot-visitor-overwrites-owner.md |
+| wipe-copy-reads-one-axis-while-the-sheet-reads-two | backlog | tickets/backlog/wipe-copy-reads-one-axis-while-the-sheet-reads-two.md |
 | wire-decoder-accepts-non-finite-money | backlog | tickets/backlog/wire-decoder-accepts-non-finite-money.md |
 | wrangler-prod-onboarding-choice-percent-drift | done | tickets/done/wrangler-prod-onboarding-choice-percent-drift.md |
 | yala-android | backlog | tickets/backlog/yala-android.md |

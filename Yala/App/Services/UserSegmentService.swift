@@ -70,14 +70,14 @@ final class UserSegmentService {
     /// Recalculate the user's segment based on current data.
     /// Call on app launch and when scene becomes active.
     func recalculate() {
-        let onboardingMode = SessionState.shared.onboardingMode
+        let hasPrivateSession = SessionState.shared.hasPrivateSession
 
         let totalTransactions = fetchTransactionCount()
         let avgDays = calculateAvgDaysBetweenSessions()
         let usesAdvanced = detectAdvancedFeatureUsage()
 
         currentSegment = UserSegment.classify(
-            onboardingMode: onboardingMode,
+            hasPrivateSession: hasPrivateSession,
             totalTransactions: totalTransactions,
             avgDaysBetweenSessions: avgDays,
             usesAdvancedFeatures: usesAdvanced

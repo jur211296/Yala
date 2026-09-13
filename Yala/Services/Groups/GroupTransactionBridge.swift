@@ -100,9 +100,9 @@ final class GroupTransactionBridge {
         let sealed = !SwiftDataConfiguration.isRunningTests
             && defaults.bool(forKey: AppPreferences.Keys.groupsDomainSealedForFreshStart)
         // **Paso 8 · con una activación privada de Yala completo a medias, la puerta está cerrada.** Entre el
-        // relanzamiento que adjunta el espejo y el final de la activación, el modo sigue en `.groupInvite` y el
-        // espejo puede estar bajando un corpus RESTAURADO: re-puentear en ese modo borra la transacción real de
-        // cada gasto y de cada liquidación (`createGroupInviteCaseAVirtualPair`, `bridgeSettlement`), o sea lo
+        // relanzamiento que adjunta el espejo y el final de la activación, la sesión sigue siendo solo-grupos y
+        // el espejo puede estar bajando un corpus RESTAURADO: re-puentear así borra la transacción real de
+        // cada gasto y de cada liquidación (`createGroupsOnlyCaseAVirtualPair`, `bridgeSettlement`), o sea lo
         // que la persona había clasificado en su vida anterior. Cerrar no pierde nada: lo no atendido queda en
         // `GroupsPendingBridgeIntent` y la activación converge al terminar. Mismo seam de tests que el sello.
         let activationInFlight = !SwiftDataConfiguration.isRunningTests
@@ -113,7 +113,7 @@ final class GroupTransactionBridge {
         return GroupsDomainAdoptionLogic.isBridgeAllowed(
             sealedForFreshStart: sealed,
             isUnlocked: defaults.bool(forKey: AppPreferences.Keys.groupsBetaUnlocked),
-            isGroupInviteMode: SessionState.shared.isGroupInviteMode
+            hasPrivateSession: SessionState.shared.hasPrivateSession
         )
     }
 
@@ -129,12 +129,12 @@ final class GroupTransactionBridge {
     /// - **TX virtual lent** (`+lentAmount` sistema "Préstamo a grupos"): siempre derivada,
     ///   delete+recreate. Skip si `lentAmount == 0` (yo solo en split).
     ///
-    /// **Caso A modo `.groupInvite`** (sin cuentas reales): fallback a M5 puro — TX1 virtual
+    /// **Caso A en sesión solo-grupos** (sin cuentas reales): fallback a M5 puro — TX1 virtual
     /// `-myShare` con subcat manual + TX2 virtual `+totalAmount` sistema. Sin TX cuenta real.
     ///
     /// **Caso B** (paga otro): TX1 virtual `-myShare` con subcat manual o nil. Sin cambios M5.
     ///
-    /// **Auto-match subcat**: si falla Y Caso B (o A groupInvite): draft con TX-puntero. En
+    /// **Auto-match subcat**: si falla Y Caso B (o A en solo-grupos): draft con TX-puntero. En
     /// Caso A `.full/.completed` la TX cuenta real se crea con subcat=nil + draft con puntero
     /// (path heredado M5 para subcat assignment via Inbox).
     ///
@@ -236,7 +236,7 @@ final class GroupTransactionBridge {
         let currentMemberID = currentMember.id.uuidString
 
         // Saldo inicial (deuda de apertura): bridge virtual-only, independiente del modo
-        // del bridge / `.groupInvite` / toggle ON-OFF. Va ANTES del `guard let myShare`
+        // del bridge, de la sesión solo-grupos y del toggle ON-OFF. Va ANTES del `guard let myShare`
         // porque el acreedor (es `paidByMemberID` pero NO tiene share propio) también debe
         // reflejar su +Z en la cuenta virtual.
         if expense.isOpeningBalance {
@@ -270,14 +270,14 @@ final class GroupTransactionBridge {
         }
 
         let expenseIDStr = expense.id.uuidString
-        let isGroupInvite = SessionState.shared.onboardingMode == .groupInvite
+        let isGroupsOnlySession = !SessionState.shared.hasPrivateSession
         let totalAmount = expense.amount
         let mySharedAmount = myShareRecord?.amount ?? 0
         let lentAmount = totalAmount - mySharedAmount
 
-        // Resolver decide si crear TX real para Caso A `.full/.completed`. Cuando OFF,
-        // redirige al path "virtual-only" idéntico al Caso B. Caso B y `.groupInvite`
-        // siempre virtual (no afectados por el modo del bridge).
+        // Resolver decide si crear TX real para el Caso A de quien tiene cuentas personales. Cuando OFF,
+        // redirige al path "virtual-only" idéntico al Caso B. El Caso B y una sesión solo-grupos son
+        // siempre virtuales (no afectados por el modo del bridge).
         let effectiveBridgeEnabled = BridgeModeResolver.shared.isBridgeEnabled(
             for: group, context: context
         )
@@ -367,10 +367,10 @@ final class GroupTransactionBridge {
             return true
         }
 
-        // Path Caso A modo .groupInvite: fallback M5 puro (TX1 virtual -myShare + TX2 virtual +totalAmount).
-        if isGroupInvite {
+        // Path Caso A sin cuentas personales: par virtual puro (TX1 -myShare + TX2 +totalAmount).
+        if isGroupsOnlySession {
             if let stale = existingRealTx { context.delete(stale) }
-            createGroupInviteCaseAVirtualPair(
+            createGroupsOnlyCaseAVirtualPair(
                 expense: expense,
                 preservedVirtual: preservedClassifiable,
                 myShareAmount: mySharedAmount,
@@ -841,9 +841,9 @@ final class GroupTransactionBridge {
         return newTx
     }
 
-    /// Caso A modo .groupInvite: M5 puro (TX1 virtual -myShare + TX2 virtual +totalAmount sistema).
+    /// Caso A en sesión solo-grupos: M5 puro (TX1 virtual -myShare + TX2 virtual +totalAmount sistema).
     /// TX1 reusa el upsert de Caso B → preserva la subcat manual / tags entre re-bridges.
-    private func createGroupInviteCaseAVirtualPair(
+    private func createGroupsOnlyCaseAVirtualPair(
         expense: SplitExpense,
         preservedVirtual: TransactionItem?,
         myShareAmount: Double,
@@ -1042,12 +1042,12 @@ final class GroupTransactionBridge {
     ///   + persiste defaultSettlementAccount preference.
     /// Si cuenta proveída es nil (form skipped): InboxDraft `groupSettlement` con
     ///   subcategory="Liquidación enviada", account=nil, splitSettlementID.
-    /// Si `userType == .groupInvite`: solo TX1 virtual; NO draft. UI muestra toast upsell.
+    /// Sin sesión privada (solo-grupos): solo TX1 virtual; NO draft. UI muestra toast upsell.
     ///
     /// **Caso D** (yo `to`, reactivo): TX1 virtual `-amount` con sistema "Cobro de préstamo" (expense).
     /// Si `.full|.completed`: InboxDraft `groupSettlement` con subcategory="Liquidación recibida",
     ///   amount=+amount, splitSettlementID. User finaliza desde Inbox para crear TX cuenta real.
-    /// Si `.groupInvite`: solo TX1 virtual; NO draft.
+    /// Si es solo-grupos: solo TX1 virtual; NO draft.
     ///
     /// Idempotency: delete + recreate (mismo patrón que bridgeExpense).
     ///
@@ -1118,7 +1118,7 @@ final class GroupTransactionBridge {
 
         let amount = settlement.amount
         let currencyCode = settlement.currencyCode
-        let userType = SessionState.shared.onboardingMode
+        let hasPrivateSession = SessionState.shared.hasPrivateSession
 
         // Caso C: si bridge OFF se omiten TX2 cuenta real + draft auto. La creación
         // queda diferida al alert opt-in del form que crea draft Inbox bajo demanda.
@@ -1152,8 +1152,8 @@ final class GroupTransactionBridge {
             context.insert(tx1)
             tx1.recalculatePreferredCurrency(context: context)
 
-            // TX2 cuenta real solo para .full/.completed Y bridge effective ON.
-            if userType != .groupInvite && effectiveBridgeEnabled {
+            // TX2 en cuenta real solo con vida personal en este teléfono Y bridge effective ON.
+            if hasPrivateSession && effectiveBridgeEnabled {
                 if let account = accountForCurrentUser {
                     let sentSubcat = try GroupBridgeSystemEntities.systemSubcategory(role: .settlementSent, context: context)
                     let tx2 = TransactionItem(
@@ -1217,9 +1217,9 @@ final class GroupTransactionBridge {
             context.insert(tx1)
             tx1.recalculatePreferredCurrency(context: context)
 
-            // Para .full/.completed: draft groupSettlement para asignar cuenta real.
+            // Con vida personal: draft groupSettlement para asignar cuenta real.
             // M6: NO defaults universales — sin preselect, user siempre elige cuenta.
-            if userType != .groupInvite {
+            if hasPrivateSession {
                 let receivedSubcat: Subcategory?
                 do {
                     receivedSubcat = try GroupBridgeSystemEntities.systemSubcategory(role: .settlementReceived, context: context)

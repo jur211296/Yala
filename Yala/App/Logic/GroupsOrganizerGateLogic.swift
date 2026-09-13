@@ -21,31 +21,12 @@
 //  el canal debería estar encendido, que es la misma regla que ya usa
 //  `GroupInviteChannelRoutingLogic` con un link backend.
 //
-//  **El segundo término es la enmienda del punto de control (spec M1-revival §6.1).** La rama reusa
-//  `GroupsSignInView`, que NO consulta el guard cross-cuenta (regla dura de su docblock). Sobre un
-//  device en sesión SECUNDARIA la rama firmaría a la invitada solo-grupos SOBRE el store personal del
-//  dueño: su bridge metería los gastos de ella en el Panel de él, y el trío del paso 7
-//  (`onboardingMode = .groupInvite`) viajaría al iKV del Apple ID del dueño por never-downgrade,
-//  contaminando sus otros devices. Aquí solo se BLOQUEA; ofrecer la sesión secundaria es de la ola M.
-//
-//  **El orden de los tres términos es load-bearing y no estético:** el canal va primero porque es el que
+//  **El orden de los términos es load-bearing y no estético:** el canal va primero porque es el que
 //  el `force` acaba de re-medir, y porque su copy («ahora mismo no puedo abrirte grupos») describe un
 //  estado transitorio, mientras que los otros dos describen estados del dispositivo. Invertirlos le
-//  diría a la invitada de una sesión secundaria que el problema es la conexión.
+//  diría que el problema es la conexión.
 //
-//  **El TERCER término (C3, 2026-08-12) es la sesión secundaria, y va DELANTE del estado del store.** No
-//  es una variante del segundo: en secundaria el detector de corpus mide el store de la INVITADA
-//  (`YalaModel-Secondary`), que en una sesión recién montada está VACÍO ⇒ `hasExistingData` da `false` y
-//  la puerta abría. Y detrás de la puerta el alta escribe SEIS preferencias por
-//  `PreferenceSyncService`, que en `.localOnly` sigue escribiendo el espejo local — o sea el
-//  `UserDefaults.standard` del DUEÑO —, incluida `groupsBetaUnlocked`, que **el wipe de salida no
-//  repone**: `removeGroupsDomainPreferenceKeys` tiene un único call-site, dentro del «empiezo de cero»
-//  del Welcome, así que cerrar la sesión de la invitada le deja al dueño el dominio Grupos adoptado.
-//  Se bloquea con copy PROPIO (`welcome.groups.secondary*`) y no reusando el de datos ajenos: el hecho
-//  es distinto —«estás de visita», no «hay datos de otro humano»— y la salida también, porque aquí sí
-//  la hay (cerrar la sesión de invitado y volver desde su propio dispositivo).
-//
-//  **El CUARTO término dejó de BLOQUEAR el 2026-09-11 (mitad 2 del paso 5 del rediseño).** Hasta ese día
+//  **El término de los DATOS dejó de BLOQUEAR el 2026-09-11 (mitad 2 del paso 5 del rediseño).** Hasta ese día
 //  `hasExistingData && !restoreInProgress` devolvía `.blockedForeignData`, una pantalla con un único
 //  botón «Volver» y un copy que ofrecía «crea el grupo desde la app que ya usas» — que es ÉSTA. Jürgen
 //  lo midió en su móvil el 2026-09-09 sobre su PROPIO corpus: la puerta bloqueaba al dueño de los datos
@@ -78,11 +59,8 @@ nonisolated enum GroupsOrganizerGateLogic {
         /// Canal encendido y el store de este arranque no tiene ni corpus ni espejo → seguir al sign-in.
         case proceed
         /// El canal de Grupos sigue apagado DESPUÉS del refresh forzado. Copy honesto, vuelta al step y
-        /// **cero escrituras** — ni `onboardingMode`, ni `groupsBetaUnlocked`, ni `hasCompletedOnboarding`.
+        /// **cero escrituras** — ni la marca del eje 1, ni `groupsBetaUnlocked`, ni `hasCompletedOnboarding`.
         case blockedChannelOff
-        /// C3 · sesión secundaria M1 viva: estás de visita en el móvil de otra persona. Copy propio y
-        /// **cero escrituras** — las seis del alta caerían en el `UserDefaults` del DUEÑO.
-        case blockedSecondarySession
         /// El store personal de ESTE arranque tiene corpus, o espeja a iCloud, o las dos cosas ⇒ antes de
         /// entrar a Grupos hay que devolver el dispositivo al neutro. **No es un bloqueo**: la rama sigue,
         /// con una pantalla en medio. Tampoco escribe nada por sí sola — quien borra es el cierre de sesión
@@ -93,9 +71,6 @@ nonisolated enum GroupsOrganizerGateLogic {
     /// - Parameters:
     ///   - channelEnabled: `CloudSyncFlags.groupsBackendEnabled` **leído después** del
     ///     `refreshIfDue(force: true)`. Leerlo antes es el no-op que el bug describe.
-    ///   - isSecondarySession: `SecondarySessionStore.isActive()`. C3 · va ANTES del estado del store
-    ///     porque el detector mide el store de la INVITADA, que puede estar vacío: sin este término la
-    ///     puerta abre justo en el caso que más caro sale.
     ///   - hasExistingData: el detector del guard cross-cuenta (`ContentView.checkHasExistingData`),
     ///     que cuenta también grupos y filas bridgeadas — un dueño anterior que venía de «Solo Grupos»
     ///     no tiene cuentas ni categorías propias y daría `false` con el detector estrecho.
@@ -105,11 +80,9 @@ nonisolated enum GroupsOrganizerGateLogic {
     ///     en silencio el medio bug que este término existe para cerrar (entrar a Grupos con el espejo
     ///     puesto y exportar los gastos del recién llegado al iCloud del dueño del teléfono).
     static func decide(channelEnabled: Bool,
-                       isSecondarySession: Bool,
                        hasExistingData: Bool,
                        mountAttachesMirror: Bool) -> Decision {
         guard channelEnabled else { return .blockedChannelOff }
-        guard !isSecondarySession else { return .blockedSecondarySession }
         // Los dos términos van en OR y cada uno cierra una mitad distinta del mismo daño:
         //  · `hasExistingData` — hay corpus de alguien debajo, y el alta de Grupos escribiría encima.
         //  · `mountAttachesMirror` — aunque el store esté VACÍO: con el espejo adjunto, lo que el recién

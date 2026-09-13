@@ -170,23 +170,12 @@ nonisolated enum WelcomeRestorePauseLogic {
     /// - Parameters:
     ///   - beaconLinked: `CloudBeacon.isCloudAccountLinked` — este Apple ID YA tiene cuenta nube.
     ///   - remoteCloudEnabled: `CloudRemoteFlags.cloudModeEnabled` — el kill-switch remoto.
-    ///   - isSecondaryActive: `SecondarySessionStore.isActive()` — hay una VISITA usando el device.
     ///
-    /// **El término M1 no es defensivo: sin él el mensaje habla de la cuenta de otra persona.** El faro
-    /// vive en el iCloud-KV del Apple ID, que es el del DUEÑO del teléfono, y `OwnerKeyValueStore` no
-    /// bloquea las lecturas a propósito. Una invitada en sesión secundaria monta con
-    /// `cloudKitDatabase: .none`, así que su búsqueda sale vacía SIEMPRE — y sin este término leería
-    /// «tus datos están a salvo en tu cuenta» sobre una cuenta que no es suya, enterándose de paso de
-    /// que el dueño del móvil tiene una. `.notFound` era inexacto para ella; esto habría sido peor,
-    /// porque afirma. La rama «Ya tengo cuenta» no tiene cinturón M1 propio (su hermana privada sí:
-    /// `WelcomeFlowContainer` la manda a `.privateSecondaryNotice`), así que se pone aquí.
     static func isCloudPaused(
         beaconLinked: Bool,
-        remoteCloudEnabled: Bool,
-        isSecondaryActive: Bool
+        remoteCloudEnabled: Bool
     ) -> Bool {
-        guard !isSecondaryActive else { return false }
-        return beaconLinked && !remoteCloudEnabled
+        beaconLinked && !remoteCloudEnabled
     }
 }
 
@@ -213,19 +202,13 @@ enum WelcomeNewOptionsGate {
 /// la decisión sigue siendo pura y vive arriba; esto solo la alimenta.
 @MainActor
 enum WelcomeNewBranchRouter {
-    /// `isSecondarySessionActive`: con una sesión secundaria viva, el faro que hay en el iCloud-KV es el del
-    /// DUEÑO del teléfono, así que no encamina a la visita. Mismo criterio que `WelcomeRestorePauseLogic` («la
-    /// visita NUNCA lee el faro del dueño»), y desde el paso 6 con más motivo: el destino le diría «Este Apple
-    /// ID ya tiene una cuenta de Yala creada con …» sobre la cuenta de otra persona. Sin default a propósito:
-    /// quien llame tiene que decidirlo.
     static func route(
         beacon: CloudBeacon,
-        isSecondarySessionActive: Bool,
         cloudEntryAvailable: Bool,
         options: [WelcomeAccountChoiceLogic.NewOption]
     ) -> WelcomeAccountChoiceLogic.NewBranchRoute {
         WelcomeAccountChoiceLogic.routeNewBranch(
-            beaconLinked: beacon.isCloudAccountLinked && !isSecondarySessionActive,
+            beaconLinked: beacon.isCloudAccountLinked,
             beaconProvider: beacon.linkedProvider,
             cloudEntryAvailable: cloudEntryAvailable,
             options: options)

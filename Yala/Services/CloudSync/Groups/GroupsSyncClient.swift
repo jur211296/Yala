@@ -301,23 +301,14 @@ final class GroupsSyncClient {
         // return del piggyback. Sin esto, en modo piggyback (personal cadencia) el context quedaría
         // sin fijar y `syncNowFromPush` devolvería siempre false.
         self.context = context
-        // B2 (cinturón del call-site de AppBootstrapper G2) — M1/D8 (G5-C): con el flag ON la sesión
-        // SECUNDARIA SÍ corre el canal de Grupos (loop + rehydrate) sobre SU store `YalaGroups-Secondary`
-        // y su `sub`; el rehydrate del espejo App Group filtra DURO por `userID` (owner-scoping) → las
-        // entries del dueño se ignoran. Con el flag OFF esta condición reproduce el guard de secundaria
-        // de antes (byte-idéntico: por el guard flag+sesión ya retornó, se conserva por simetría).
-        guard CloudSyncFlags.groupsBackendEnabled || !SecondarySessionStore.isActive() else { return }
-
-        // SSOT del (re)arranque del loop propio (incluye el guard D8 de mount-mismatch — hace seguro el
-        // call mid-session). El piggyback NO lo modela: `loopAlive==false` ⇒ shouldStart==true ⇒ el
-        // rehydrate corre y el early-return del piggyback decide después.
+        // SSOT del (re)arranque del loop propio — hace seguro el call mid-session. El piggyback NO lo
+        // modela: `loopAlive==false` ⇒ shouldStart==true ⇒ el rehydrate corre y el early-return del
+        // piggyback decide después.
         guard GroupsLoopRestartLogic.shouldStart(
             flagOn: CloudSyncFlags.groupsBackendEnabled,
             hasSession: sessionCheck(),
             stoppedUntilRelaunch: stoppedUntilRelaunch,
-            loopAlive: loopTask != nil,
-            secondaryActive: SecondarySessionStore.isActive(),
-            secondaryMounted: SwiftDataConfiguration.secondaryStoreMounted
+            loopAlive: loopTask != nil
         ) else { return }
 
         // Barrido del veneno YA ENCOLADO: un tombstone de `split_groups` de un build anterior al guard del

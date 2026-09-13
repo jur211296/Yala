@@ -61,7 +61,7 @@ final class GroupDetailViewModel {
 
     /// `[nombre normalizado de subcategoría: (icono, colorHex)]` de las subcategorías locales.
     /// Fallback self-contained para el icono del feed cuando NO hay bridge personal (device fresco
-    /// / re-onboardeado, no-participante, `.groupInvite`): casa `SplitExpense.subcategoryName` —
+    /// / re-onboardeado, no-participante, sesión solo-grupos): casa `SplitExpense.subcategoryName` —
     /// el nombre localizado del creador que viaja en el record — contra las subcategorías locales.
     /// SSOT compartida vía `GroupExpenseIconResolver.buildNameLookup`.
     private(set) var subcategoryNameLookup: [String: (iconName: String, colorHex: String)] = [:]

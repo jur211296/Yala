@@ -1019,7 +1019,7 @@ window.ATLAS_L10N = {
 
   "visita-shell": {
     copy: [
-      { key: "welcome.cloud.secondaryHydrationBanner", value: "Descargando tus datos…" },
+      { key: "welcome.cloud.hydrationBanner", value: "Descargando tus datos…" },
       { key: "storage.title", value: "Dónde viven tus datos" },
       { key: "storage.errors.generic", value: "Algo no salió bien. Inténtalo de nuevo." },
       { key: "settings.yalaAccountRowTitle", value: "Tu cuenta de Yala" }
@@ -1546,12 +1546,12 @@ window.ATLAS_L10N = {
 
   "reentry-vacio": {
     copy: [
-      { key: "welcome.cloud.secondaryHydrationBanner", value: "Descargando tus datos…", unreachable: true },
+      { key: "welcome.cloud.hydrationBanner", value: "Descargando tus datos…" },
       { key: "storage.title", value: "Dónde viven tus datos" },
       { key: "subscription.trialOffer.title", value: "Prueba Yala Pro gratis" }
     ],
     notes: [
-      "`welcome.cloud.secondaryHydrationBanner` va marcada `unreachable`: HOY EN PRODUCCIÓN ningún usuario puede verla. Su gate exige `SecondarySessionStore.isActive()` y los únicos dos escritores del descriptor son la rama `.proceedSecondarySession` (WelcomeCloudSignInView.swift:778), que exige `CloudSyncFlags.secondarySessionEntryAvailable` —percent 0 en producción y `absentDefault` false—, y el panel DEBUG (CloudSyncDebugView.swift:1004). NO es copy muerto: en DEV/staging al 100 % la invitada sí lo ve, y el seam `-uitest-secondary-session` lo enciende para XCUITest. El Atlas la cita a propósito: es el hallazgo del panel.",
+      "`welcome.cloud.hydrationBanner` YA NO va marcada `unreachable`, y ese cambio es del 2026-09-13: su gate exigía una sesión de visita —retirada con M1— y hoy pregunta por el MUNDO («se ve vacío + el motor está hidratando»), así que alcanza a quien cambia de móvil y entra con su cuenta, que es justo el caso de este nodo. La key se renombró con el banner.",
       "`storage.title` y `subscription.trialOffer.title` se añaden porque el panel entrecomilla las dos superficies que sí aparecen."
     ]
   },
