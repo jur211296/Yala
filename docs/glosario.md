@@ -61,14 +61,16 @@
   lo personal puede estar en privado o en la nube. *Nube completa* es jerga interna: la sesión en
   la nube que además absorbe lo personal. Quien usa solo grupos y activa Yala completo **elige**
   entre las dos (ADR 2026-09-09 «Sesiones — dos ejes», punto 8).
-- **visita · sesión secundaria · cuenta invitada** — *(retirado el 2026-09-09)* tres nombres para
-  «una sesión en la nube en un móvil cuya sesión privada es de otra persona». El ADR 2026-09-09
-  «Sesiones — dos ejes» lo saca del modelo: el dueño cierra sesión (lo local se borra) y la otra
-  persona entra con su cuenta. Sigue apareciendo en decisiones y tickets anteriores, y ahí es
-  histórico; el código que lo implementa (M1) sigue vivo hasta el ticket
-  `shell-derives-from-two-session-axes`. Las dos keys que aún lo dicen
-  (`welcome.groups.secondaryTitle` y `…Body`, en los 16 locales) se retiran con ese mismo barrido,
-  no antes.
+- **visita · sesión secundaria · cuenta invitada** — *(retirado del modelo el 2026-09-09; **del
+  código, el 2026-09-13**)* tres nombres para «una sesión en la nube en un móvil cuya sesión privada
+  es de otra persona». El ADR 2026-09-09 «Sesiones — dos ejes» lo sacó del modelo —el dueño cierra
+  sesión, lo local se borra, y la otra persona entra con su cuenta— y el PR-B del paso 12 se llevó su
+  implementación entera: tipos, store, percent del gateway y las 12 claves de copy en los 16 locales.
+  Sigue apareciendo en decisiones y tickets anteriores, y ahí es histórico.
+- **por dónde entró · qué usa** — *(retirados el 2026-09-13)* los dos flags que decidían la shell
+  antes del rediseño. Los sustituye **un solo eje**: ¿hay sesión privada en este teléfono? Se
+  persiste en el dispositivo y **no viaja** por el iCloud del Apple ID, que es lo que impide que la
+  shell de un móvil se la recorte otro.
 <!-- GLOSARIO:manual:fin -->
 
 <!-- GLOSARIO:generado:inicio - no editar a mano -->

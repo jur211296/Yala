@@ -30,15 +30,15 @@ struct FullModeActivationFlowLogicTests {
         userName: "Ana", accountsCount: 2, transactionsCount: 40, budgetsCount: 0,
         groupsCount: 0, primaryCurrencyCode: "PEN", categoriesCount: 12)
 
-    /// La primera pantalla, con los valores de una activación solo-grupos corriente por defecto: sesión
-    /// primaria, sin reanudación, sin espejo heredado y con las dos cards.
+    /// La primera pantalla, con los valores de una activación solo-grupos corriente por defecto: sin
+    /// reanudación, sin espejo heredado y con las dos cards.
     private static func screen(
-        secondary: Bool = false, groupsOnly: Bool = true,
+        groupsOnly: Bool = true,
         resume: FullModeActivationResumeStore.Step? = nil, legacy: Bool = false,
         // Literal y no `both`: un argumento por defecto se evalúa fuera del actor de la suite.
         options: [Option] = [.privateAccount, .cloudAccount]
     ) -> Logic.Screen {
-        Logic.initialScreen(isSecondarySession: secondary, isGroupsOnlySession: groupsOnly,
+        Logic.initialScreen(isGroupsOnlySession: groupsOnly,
                             resume: resume, isLegacyMirroredInstall: legacy, visibleOptions: options)
     }
 
@@ -79,9 +79,8 @@ struct FullModeActivationFlowLogicTests {
     /// El eje de sesión va ANTES que la reanudación (review adversarial): si otro dispositivo del mismo Apple ID
     /// terminó la activación, `.completed` llega por el iCloud-KV y la marca de ESTE abriría un onboarding a
     /// alguien ya completo — y su cancelación le armaría el neutro y le apagaría el espejo.
-    @Test("precedencia: secundaria > eje de sesión > reanudación > instalación antigua > gate")
+    @Test("precedencia: eje de sesión > reanudación > instalación antigua > gate")
     func precedence() {
-        #expect(Self.screen(secondary: true, resume: .privateOnboarding) == .legacyOnboarding)
         #expect(Self.screen(groupsOnly: false, resume: .restore) == .legacyOnboarding,
                 "una marca que sobrevive a su sesión no abre nada")
         #expect(Self.screen(resume: .restore, legacy: true) == .restore,
@@ -91,12 +90,11 @@ struct FullModeActivationFlowLogicTests {
                 "el bypass de una sola card no salta el aviso")
     }
 
-    /// Quien redujo la app a Grupos tras vaciar sus datos (`usageFocus`) ve la misma fila de Perfil, pero su
-    /// «dónde» ya está decidido: ofrecerle privado / nube sería ofrecerle una elección que no puede hacer.
-    @Test("fuera de solo-grupos (retención o sesión secundaria) se conserva el recorrido de antes")
+    /// Quien tiene sesión privada ve la misma fila de Perfil, pero su «dónde» ya está decidido: ofrecerle
+    /// privado / nube sería ofrecerle una elección que no puede hacer.
+    @Test("con sesión privada se conserva el recorrido de antes")
     func notGroupsOnly_keepsTheLegacyPath() {
         #expect(Self.screen(groupsOnly: false) == .legacyOnboarding)
-        #expect(Self.screen(secondary: true) == .legacyOnboarding)
     }
 
     /// Una sesión solo-grupos dada de alta antes del paso 5 ya espeja iCloud, y sobre ese store ninguna rama es
@@ -178,7 +176,7 @@ struct FullModeActivationFlowLogicTests {
         #expect(Logic.commitPlan(for: .freshPrivate) == [.persistOnboarding, .applyHistoryChoice, .completeActivation])
     }
 
-    /// Con el modo aún en `.groupInvite`, el bridge BORRA la transacción real de cada gasto que re-puentea: las
+    /// Sin sesión privada todavía, el bridge BORRA la transacción real de cada gasto que re-puentea: las
     /// que el usuario había clasificado en su vida anterior y acaban de volver de iCloud. Medido contra el bridge
     /// real en `GroupsBridgeRestoreConvergenceBehaviourTests`.
     @Test("restaurado: la activación va ANTES del re-puenteo, y no se pregunta por el historial")
@@ -186,7 +184,7 @@ struct FullModeActivationFlowLogicTests {
         for plan in [Logic.commitPlan(for: .restored(Self.summary)), Logic.restoredWithoutOnboardingPlan] {
             let complete = try #require(plan.firstIndex(of: .completeActivation))
             let converge = try #require(plan.firstIndex(of: .convergeGroupsBridge))
-            #expect(complete < converge, "re-puentear en `.groupInvite` borra las transacciones reales restauradas")
+            #expect(complete < converge, "re-puentear sin sesión privada borra las transacciones reales restauradas")
             #expect(!plan.contains(.promote))
             #expect(!plan.contains(.applyHistoryChoice), "tras restaurar gana lo restaurado: no hay pregunta")
         }
@@ -276,19 +274,6 @@ struct FullModeActivationResumeStoreTests {
         }
     }
 
-    @Test("en sesión secundaria el arranque no toca nada")
-    func boot_secondary_touchesNothing() {
-        for pending in Self.otherPendings + Self.activationDestinations.map(Optional.some) {
-            for current in Self.currents {
-                for groupsOnly in [true, false] {
-                    #expect(Store.resolveAtBoot(pending: pending, current: current,
-                                                isSecondarySession: true, isGroupsOnlySession: groupsOnly)
-                            == .nothing, "pending=\(String(describing: pending)) current=\(String(describing: current))")
-                }
-            }
-        }
-    }
-
     /// La kill-safety del relanzamiento: con un destino de la activación, se escribe la marca, se consume el
     /// destino (si no, `exit(0)` en cada paso a segundo plano) y se reabre la sheet. Sin destino, manda la
     /// marca: es lo que reabre la sheet tras un kill a mitad del onboarding reanudado. Los destinos del Welcome
@@ -298,7 +283,7 @@ struct FullModeActivationResumeStoreTests {
         for destination in Self.activationDestinations {
             for current in Self.currents {
                 #expect(Store.resolveAtBoot(pending: destination, current: current,
-                                            isSecondarySession: false, isGroupsOnlySession: true)
+                                            isGroupsOnlySession: true)
                         == .init(consumesPendingDestination: true, writesResume: Store.step(for: destination),
                                  clearsResume: false, presentsActivation: true))
             }
@@ -306,7 +291,7 @@ struct FullModeActivationResumeStoreTests {
         for pending in Self.otherPendings {
             for current in Self.currents {
                 #expect(Store.resolveAtBoot(pending: pending, current: current,
-                                            isSecondarySession: false, isGroupsOnlySession: true)
+                                            isGroupsOnlySession: true)
                         == .init(consumesPendingDestination: false, writesResume: nil,
                                  clearsResume: false, presentsActivation: current != nil),
                         "pending=\(String(describing: pending)) current=\(String(describing: current))")
@@ -321,7 +306,7 @@ struct FullModeActivationResumeStoreTests {
         for destination in Self.activationDestinations {
             for current in Self.currents {
                 #expect(Store.resolveAtBoot(pending: destination, current: current,
-                                            isSecondarySession: false, isGroupsOnlySession: false)
+                                            isGroupsOnlySession: false)
                         == .init(consumesPendingDestination: true, writesResume: nil,
                                  clearsResume: current != nil, presentsActivation: false))
             }
@@ -329,15 +314,15 @@ struct FullModeActivationResumeStoreTests {
         for pending in Self.otherPendings {
             for current in Self.currents {
                 #expect(Store.resolveAtBoot(pending: pending, current: current,
-                                            isSecondarySession: false, isGroupsOnlySession: false)
+                                            isGroupsOnlySession: false)
                         == .init(consumesPendingDestination: false, writesResume: nil,
                                  clearsResume: current != nil, presentsActivation: false))
             }
         }
     }
 
-    /// Lo que cierra el bridge: con esto en `true`, el modo sigue en `.groupInvite` y el espejo puede estar
-    /// bajando un corpus restaurado cuyas transacciones reales ese modo borraría al re-puentear.
+    /// Lo que cierra el bridge: con esto en `true`, la sesión sigue siendo solo-grupos y el espejo puede
+    /// estar bajando un corpus restaurado cuyas transacciones reales el bridge borraría al re-puentear.
     @Test("activación privada a medias: con su destino pedido o con su marca, y con nada más")
     func inFlight_table() {
         for destination in Self.activationDestinations {
@@ -362,18 +347,6 @@ struct FullModeActivationResumeStoreTests {
         #expect(Store.peek(defaults) == nil)
     }
 
-    /// La marca vive en el `UserDefaults` del DUEÑO: una sesión secundaria que cancelara o completara no puede
-    /// retirarle una activación que es suya.
-    @Test("retirar la marca respeta la frontera de la sesión secundaria")
-    func clearIfPrimary_respectsTheBoundary() {
-        let defaults = makeIsolatedDefaults()
-        Store.set(.restore, defaults: defaults)
-        Store.clearIfPrimary(defaults: defaults, isSecondary: true)
-        #expect(Store.peek(defaults) == .restore)
-        Store.clearIfPrimary(defaults: defaults, isSecondary: false)
-        #expect(Store.peek(defaults) == nil)
-    }
-
     /// Armar el neutro solo-grupos es EMPEZAR una sesión solo-grupos: la marca sobrevive a un cierre de sesión
     /// y a vaciar los datos, y sin esto quien vuelve por «Vengo por un grupo» retomaría una activación vieja.
     @Test("armar el neutro solo-grupos retira una activación a medias")
@@ -386,17 +359,14 @@ struct FullModeActivationResumeStoreTests {
     }
 
     /// El borrado de iCloud armado por la puerta privada NO puede sobrevivir a la activación: el arranque
-    /// siguiente lo reanudaría a ciegas, con el borrado local incluido, sobre el corpus recién elegido. Y en
-    /// sesión secundaria no se toca: el arm es del dueño.
-    @Test("retirar el borrado de iCloud armado respeta la frontera, y se lleva también su neutro")
-    func wipeArmClear_respectsTheBoundary() {
+    /// siguiente lo reanudaría a ciegas, con el borrado local incluido, sobre el corpus recién elegido.
+    @Test("retirar el borrado de iCloud armado se lleva también su neutro")
+    func wipeArmClear_alsoClearsItsNeutralMount() {
         let defaults = makeIsolatedDefaults()
         StorageModePersistence.armICloudCorpusWipe(defaults)
         #expect(StorageModePersistence.isICloudCorpusWipeArmed(defaults))
-        StorageModePersistence.clearICloudCorpusWipeArmIfPrimary(defaults, isSecondary: true)
-        #expect(StorageModePersistence.isICloudCorpusWipeArmed(defaults))
         #expect(StorageModePersistence.isNeutralMountArmed(defaults))
-        StorageModePersistence.clearICloudCorpusWipeArmIfPrimary(defaults, isSecondary: false)
+        StorageModePersistence.clearICloudCorpusWipeArm(defaults)
         #expect(!StorageModePersistence.isICloudCorpusWipeArmed(defaults))
         #expect(!StorageModePersistence.isNeutralMountArmed(defaults))
     }
@@ -490,9 +460,9 @@ struct FullModeActivationWiringTests {
                              before: "appPreferences.hasShownWelcomeChooser = true", in: proceed,
                              "sin el destino primero, un kill deja el espejo puesto sin nada que lo retome")
         try Self.expectOrder("appPreferences.hasShownWelcomeChooser = true",
-                             before: "StorageModePersistence.clearGroupsOnlyNeutralMountIfPrimary()", in: proceed,
+                             before: "StorageModePersistence.clearGroupsOnlyNeutralMount()", in: proceed,
                              "sin el anti-bucle, la marca R4 vuelve a montar neutro y «reabre Yala» no termina")
-        try Self.expectOrder("StorageModePersistence.clearGroupsOnlyNeutralMountIfPrimary()",
+        try Self.expectOrder("StorageModePersistence.clearGroupsOnlyNeutralMount()",
                              before: "go(to: .relaunch)", in: proceed, "el terminal va al final")
     }
 
@@ -505,7 +475,7 @@ struct FullModeActivationWiringTests {
         try Self.expectOrder("guard !isRunningPlan else { return }", before: "FullModeActivationFlowLogic.cancelEffect(",
                              in: cancel, "con el claim contestado, cerrar dejaría la cuenta completa sin nada detrás")
         #expect(cancel.contains("resume: FullModeActivationResumeStore.peek()"))
-        #expect(cancel.contains("isGroupsOnlySession: sessionState.isGroupInviteMode"))
+        #expect(cancel.contains("isGroupsOnlySession: !sessionState.hasPrivateSession"))
 
         let untouched = try Self.segment(from: "case .nothing, .keepPending:", to: "case .revertToGroupsOnly:", in: cancel)
         #expect(untouched.contains("break"))
@@ -513,11 +483,11 @@ struct FullModeActivationWiringTests {
         #expect(!untouched.contains("FullModeActivationResumeStore"), "su marca es lo que mantiene el bridge cerrado")
 
         let revert = try Self.segment(from: "case .revertToGroupsOnly:", to: "case .dropStaleMark:", in: cancel)
-        #expect(revert.contains("StorageModePersistence.armGroupsOnlyNeutralMountIfPrimary()"))
-        #expect(revert.contains("FullModeActivationResumeStore.clearIfPrimary()"))
+        #expect(revert.contains("StorageModePersistence.armGroupsOnlyNeutralMount()"))
+        #expect(revert.contains("FullModeActivationResumeStore.clear()"))
 
         let stale = try Self.segment(from: "case .dropStaleMark:", to: "onComplete()", in: cancel)
-        #expect(stale.contains("FullModeActivationResumeStore.clearIfPrimary()"))
+        #expect(stale.contains("FullModeActivationResumeStore.clear()"))
         #expect(!stale.contains("armGroupsOnlyNeutralMount"), "le apagaría el espejo a quien ya no es solo-grupos")
     }
 
@@ -548,20 +518,19 @@ struct FullModeActivationWiringTests {
         #expect(execute.contains("guard let promotion else { return }"), "sin promoción no se escribe el par `.cloud`")
     }
 
-    /// Las marcas que cambian el arranque siguiente salen ANTES del modo: con el borrado armado vivo y el modo ya
-    /// completo, ese arranque borraría a ciegas el corpus recién elegido. La reanudación sale DESPUÉS: un kill
-    /// en medio deja `.completed` con la marca, y el arranque la retira sola.
-    @Test("al completar: borrado y neutro fuera antes del modo; la reanudación, después")
+    /// Las marcas que cambian el arranque siguiente salen ANTES del eje: con el borrado armado vivo y la sesión
+    /// privada ya declarada, ese arranque borraría a ciegas el corpus recién elegido. La reanudación sale
+    /// DESPUÉS: un kill en medio deja el eje puesto con la marca, y el arranque la retira sola.
+    @Test("al completar: borrado y neutro fuera antes del eje; la reanudación, después")
     func completion_ordersTheMarksAroundTheMode() throws {
         let complete = try Self.body(of: "private func completeFullActivation() {", in: try Self.code(Self.view))
-        let mode = "sync.set(string: OnboardingMode.completed.rawValue"
-        try Self.expectOrder("StorageModePersistence.clearICloudCorpusWipeArmIfPrimary()", before: mode,
+        let eje = "sessionState.hasPrivateSession = true"
+        try Self.expectOrder("StorageModePersistence.clearICloudCorpusWipeArm()", before: eje,
                              in: complete, "el arranque siguiente reanudaría el borrado sobre el corpus nuevo")
-        try Self.expectOrder("StorageModePersistence.clearGroupsOnlyNeutralMountIfPrimary()", before: mode,
+        try Self.expectOrder("StorageModePersistence.clearGroupsOnlyNeutralMount()", before: eje,
                              in: complete, "el arranque siguiente montaría sin espejo a un usuario completo")
-        try Self.expectOrder(mode, before: "FullModeActivationResumeStore.clearIfPrimary()", in: complete,
+        try Self.expectOrder(eje, before: "FullModeActivationResumeStore.clear()", in: complete,
                              "un kill en medio dejaría solo-grupos sin nada que retome la activación")
-        #expect(complete.contains("if !SecondarySessionStore.isActive() {"), "el modo es del DUEÑO")
     }
 
     /// El prefill de la activación ES el nombre y la divisa de sus grupos: borrarlos al vaciar iCloud le quitaría
@@ -636,7 +605,7 @@ struct FullModeActivationWiringTests {
     @Test("el aviso del espejo tardío sale ANTES de reanudar un borrado si la sesión es solo-grupos")
     func lateMirror_skipsGroupsOnlyBeforeResumingAWipe() throws {
         let late = try Self.body(of: "private func runLateICloudMirrorCheck() async {", in: try Self.code(Self.contentView))
-        try Self.expectOrder("guard !SessionState.shared.isGroupInviteMode else { return }",
+        try Self.expectOrder("guard SessionState.shared.hasPrivateSession else { return }",
                              before: "isICloudCorpusWipeArmed()", in: late, "el guard va antes de mirar el arm")
     }
 
@@ -651,8 +620,7 @@ struct FullModeActivationWiringTests {
         let checks = try Self.body(of: "private func runReturningUserPostChecks() {", in: src)
         #expect(checks.contains("resumeFullModeActivationIfPending()"))
         let resume = try Self.body(of: "private func resumeFullModeActivationIfPending() {", in: src)
-        #expect(resume.contains("isSecondarySession: SecondarySessionStore.isActive()"), "la marca es del DUEÑO")
-        #expect(resume.contains("isGroupsOnlySession: SessionState.shared.isGroupInviteMode"),
+        #expect(resume.contains("isGroupsOnlySession: !SessionState.shared.hasPrivateSession"),
                 "sin el eje, una marca vieja abriría un onboarding a alguien ya completo")
         let write = try Self.segment(from: "if let step = resolution.writesResume {", to: "}", in: resume)
         #expect(write.contains("FullModeActivationResumeStore.set(step)"))
@@ -693,9 +661,9 @@ struct FullModeActivationWiringTests {
     func convergence_guardsBeforeWriting() throws {
         let src = try Self.code("Yala/Services/Groups/GroupsBridgeRestoreConvergence.swift")
         let converge = try Self.body(of: "static func convergeIfPending(", in: src)
-        try Self.expectOrder("guard !SessionState.shared.isGroupInviteMode else { return }",
+        try Self.expectOrder("guard SessionState.shared.hasPrivateSession else { return }",
                              before: "bridgeRemoteExpenses(ids:", in: converge,
-                             "en `.groupInvite` el bridge borra las transacciones reales que re-puentea")
+                             "sin sesión privada el bridge borra las transacciones reales que re-puentea")
         try Self.expectOrder("guard GroupTransactionBridge.isDomainOpenForBridge(defaults: defaults) else { return }",
                              before: "bridgeRemoteExpenses(ids:", in: converge, "el dominio cerrado no se toca")
         try Self.expectOrder("GroupsPendingBridgeIntent.arm(expenseIDs: unattended, settlementIDs: [], channel: .backend)",
@@ -733,11 +701,11 @@ struct FullModeActivationWiringTests {
         #expect(src.contains("offersFullActivationAfterGroupsEntry = offersFullActivation"))
         let onChange = try Self.body(of: ".onChange(of: hasCompletedOnboarding) {", in: src)
         try Self.expectOrder("offersFullActivationAfterGroupsEntry = false",
-                             before: "OnboardingMode.current() == .groupInvite", in: onChange,
+                             before: "!PrivateSessionMark.hasPrivateSession()", in: onChange,
                              "la oferta se consume una vez, se ofrezca o no")
-        try Self.expectOrder("OnboardingMode.current() == .groupInvite",
+        try Self.expectOrder("!PrivateSessionMark.hasPrivateSession()",
                              before: "RouterEntryGate.shared.submit(.presentFullModeActivation)", in: onChange,
-                             "sin comprobar el modo, la oferta abriría la activación en un modo sin chooser")
+                             "sin comprobar el eje, la oferta abriría la activación en una sesión sin chooser")
     }
 
     /// El criterio «ningún empujón lleva a un onboarding sin chooser» se cumple por construcción: todos los

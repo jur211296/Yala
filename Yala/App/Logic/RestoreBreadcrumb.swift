@@ -24,7 +24,7 @@ enum RestoreBreadcrumb {
         logger.notice("SETTLED phase=\(phase, privacy: .public)")
     }
 
-    /// Destino post-restore decidido por `RestoreRouter` (según onboardingMode).
+    /// Destino post-restore decidido por `RestoreRouter`.
     static func destination(_ dest: String) {
         logger.notice("DEST \(dest, privacy: .public)")
     }

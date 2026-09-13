@@ -4,11 +4,11 @@
 //
 //  EL EJE 1 del ADR 2026-09-09 «Sesiones — dos ejes»: ¿hay sesión privada en ESTE dispositivo?
 //
-//  POR QUÉ EXISTE. Hasta el 2026-09-12 este eje no tenía fuente propia: las nueve veces que la app
-//  lo necesitaba lo construía como `!SessionState.isGroupInviteMode`, o sea a partir de un flag de
-//  ONBOARDING («por dónde entró») que el rediseño retira. Derivar un eje del flag que va a morir es
-//  lo que hacía inejecutable el paso 12: al borrarlo, nueve decisiones de producto —incluida qué se
-//  borra al cerrar sesión— se quedaban sin fuente. Aquí el eje se PERSISTE.
+//  POR QUÉ EXISTE. Hasta el 2026-09-12 este eje no tenía fuente propia: las nueve veces que la app lo
+//  necesitaba lo derivaba de un flag de ONBOARDING —«por dónde entró esta persona»— que el rediseño
+//  retiró. Derivar un eje de un flag que va a morir es lo que hacía inejecutable el barrido: al
+//  borrarlo, nueve decisiones de producto —incluida qué se borra al cerrar sesión— se quedaban sin
+//  fuente. Aquí el eje se PERSISTE, y es un hecho del DISPOSITIVO.
 //
 //  POR QUÉ UNA MARCA POSITIVA Y NO LA PRESENCIA DEL STORE (decisión de Jürgen, 2026-09-12). La
 //  alternativa era derivarlo de si existe el archivo del store personal. **Un gate derivado de una
@@ -17,20 +17,11 @@
 //  un grupo, y le escondería sus cuentas. La marca se escribe cuando la sesión privada NACE.
 //
 //  DÓNDE VIVE, Y POR QUÉ NO VIAJA. `UserDefaults` local, con el prefijo `cloudSync.` que el barrido
-//  de preferencias excluye a propósito (ver abajo «la vida de la marca»). **Nunca al iCloud-KV**:
-//  `onboardingMode` sí viaja por el KV del Apple ID con merge never-downgrade, y por ahí un
-//  `.groupInvite` de OTRO dispositivo le recorta la shell al dueño de éste — el daño que
-//  `DataWipeService.clearHandoverOnboardingMode` documenta y tiene que reparar a mano. «¿Hay vida
-//  personal EN ESTE teléfono?» es un hecho del dispositivo, no del Apple ID.
-//
-//  **Y el límite de esa promesa, que hay que decir entero: vale para la marca ESCRITA, no para su
-//  semilla.** El backfill del parque existente no tiene más fuente que `onboardingMode`, que para
-//  entonces ya puede traer un valor mergeado del KV en un arranque anterior (`PreferenceSyncService`
-//  lo persiste en `UserDefaults` local), así que la primera marca de un dispositivo legacy puede
-//  heredar el modo de otro teléfono del mismo Apple ID. Es una limitación de la MIGRACIÓN, no del
-//  diseño, y muere con el flag: a partir de la primera escritura la marca ya no vuelve a derivarse
-//  de nada. Lo mismo vale para la rama `.groupsOnly` de restaurar (`ContentView`), cuyo destino lo
-//  decide `RestoreRouter` con ese mismo modo sincronizado.
+//  de preferencias excluye a propósito (ver abajo «la vida de la marca»). **Nunca al iCloud-KV**, y
+//  eso es lo que arregla: el flag que cumplía este papel antes sí viajaba por el KV del Apple ID con
+//  merge never-downgrade, así que el valor de OTRO dispositivo le recortaba la shell al dueño de éste
+//  y había que repararlo a mano en el relevo de humano. «¿Hay vida personal EN ESTE teléfono?» es un
+//  hecho del dispositivo, no del Apple ID.
 //
 //  El precedente del repo para un hecho de sesión persistido es `AccountKindStore` (el eje 2), y la
 //  diferencia con él importa: allí el dato describe la CUENTA, así que va SELLADO con el `userID` y
@@ -54,18 +45,24 @@
 //  falla.
 //
 //  LA VIDA DE LA MARCA. Tres reglas, y la de en medio es la que no se ve venir:
-//    · NACE / CAMBIA en los NUEVE `set` donde el modelo dice que la sesión privada empieza o deja
-//      de existir. Cinco la encienden —onboarding personal terminado, restaurar de iCloud a la app,
-//      adoptar una cuenta existente, activar Yala completo— y cuatro la apagan: las DOS puertas de
-//      entrada por grupo (invitación y organizador), la reposición tras vaciar en solo-grupos, y el
-//      seam de uitest. Si añades un décimo, el conteo de `PrivateSessionMarkWiringTests` se pone
-//      rojo y te obliga a decidir de qué lado va.
+//    · NACE / CAMBIA en los OCHO sitios donde el modelo dice que la sesión privada empieza o deja de
+//      existir. La encienden el onboarding personal terminado, restaurar de iCloud a la app y adoptar
+//      una cuenta existente (los tres en `ContentView`) y activar Yala completo; la apagan las DOS
+//      puertas de entrada por grupo (invitación y organizador), la reposición tras vaciar en
+//      solo-grupos y el seam de uitest.
+//
+//      **Los ocho pasan por `SessionState.hasPrivateSession`, y eso es un invariante, no un estilo.**
+//      Su `didSet` es el ÚNICO escritor de la marca en toda la app; asignar ahí persiste Y refresca la
+//      shell en el mismo render, mientras que un `set` directo haría lo primero y no lo segundo —
+//      dejando la pestaña de Grupos puesta hasta el arranque siguiente. Lo cuenta
+//      `PrivateSessionMarkTests`: si aparece un noveno, decide de qué lado va; si aparece un segundo
+//      escritor directo, es el bug que acaba de describirse.
 //    · SOBREVIVE a «Vaciar datos», local o remoto. Vaciar no cambia QUIÉN eres: un solo-grupos que
 //      vacía sigue siendo un solo-grupos. Por eso la key lleva el prefijo `cloudSync.`, que
 //      `DataWipeService.removeUserPreferenceKeys` excluye — no es un accidente de nombre.
 //    · MUERE en los dos sitios que devuelven el teléfono a «recién instalado»:
 //      `SwiftDataConfiguration.performSignOutWipeIfArmed` (todo cierre de sesión) y
-//      `DataWipeService.clearHandoverOnboardingMode` (el relevo de humano de «Empiezo de cero»).
+//      `DataWipeService.clearHandoverPrivateSessionMark` (el relevo de humano de «Empiezo de cero»).
 //
 //  ADR 2026-09-09 «Sesiones — dos ejes» §2 · ticket `shell-derives-from-two-session-axes`.
 //
@@ -86,8 +83,7 @@ nonisolated enum PrivateSessionMark {
     /// qué se espera antes de borrar y qué se le enseña a la persona. Su dirección de fallo es
     /// conservar de más.
     static func hasPrivateSession(_ defaults: UserDefaults = .standard) -> Bool {
-        if SecondarySessionStore.isActive(defaults) { return false }
-        return raw(defaults) ?? true
+        raw(defaults) ?? true
     }
 
     /// **¿Puedo AFIRMAR que esta sesión es privada?** Ausente ⇒ `false`.
@@ -95,22 +91,8 @@ nonisolated enum PrivateSessionMark {
     /// Para las decisiones que, al equivocarse hacia `true`, alcanzan datos que están FUERA de este
     /// teléfono. Hoy hay una: la señal de vaciado a los demás dispositivos del Apple ID.
     static func confirmedPrivateSession(_ defaults: UserDefaults = .standard) -> Bool {
-        if SecondarySessionStore.isActive(defaults) { return false }
-        return raw(defaults) ?? false
+        raw(defaults) ?? false
     }
-
-    // **Las dos lecturas cortan en M1 ANTES de mirar la marca, y no es simetría con `set`: es que la
-    // pregunta cambia de sujeto.** La marca vive en el `UserDefaults.standard` del DUEÑO —`set` tiene
-    // su guard justo para que la visita no la escriba—, así que leerla desde una sesión secundaria
-    // contesta «¿tiene el dueño vida personal?» cuando lo que se pregunta es «¿tiene ESTA sesión vida
-    // personal?». Y la respuesta de esa pregunta es `false` por definición del modelo: una sesión
-    // secundaria es una sesión en la nube en el móvil de otra persona.
-    //
-    // Sin este corte, la hoja de «Vaciar datos» de la visita pasaba de `.wipeDataGroupsOnly` a
-    // `.wipeDataFull` —prometiendo un corpus personal que su wipe no toca, porque solo borra los
-    // archivos `-Secondary`— y su aterrizaje, de la shell de grupos al onboarding personal del dueño.
-    // Antes del eje persistido eso no pasaba: la visita leía su `onboardingMode` EN MEMORIA, que sí
-    // era suyo.
 
     /// Lo persistido tal cual, sin default. `nil` = la marca no se ha escrito nunca en este
     /// dispositivo. Lo consume el backfill y los tests; producción elige una de las dos de arriba.
@@ -123,19 +105,13 @@ nonisolated enum PrivateSessionMark {
 
     /// La sesión privada nace (`true`) o deja de existir (`false`) en este dispositivo.
     ///
-    /// **Lleva el guard de M1 por el mismo motivo que `OnboardingMode.setCurrent`**, y aquí el daño
-    /// es peor: la key vive en el `UserDefaults.standard` que la visita COMPARTE con el dueño, así
-    /// que un `false` escrito desde una sesión secundaria le diría al dueño que no tiene vida
-    /// personal — y con eso su cierre de sesión dejaría de esperar al export de iCloud. La visita no
-    /// se pronuncia sobre la sesión privada de otro.
+    /// El embudo normal es `SessionState.hasPrivateSession`, que además refresca la shell; esto se
+    /// llama directo desde los caminos sin `SessionState` a mano (el seam de uitest, el boot).
     static func set(_ value: Bool, _ defaults: UserDefaults = .standard) {
-        guard !SecondarySessionStore.isActive(defaults) else { return }
         defaults.set(value, forKey: userDefaultsKey)
     }
 
-    /// El dispositivo vuelve a «recién instalado». Sin guard de M1 a propósito: borrar deja las dos
-    /// lecturas en su lado conservador (`hasPrivateSession` protege, `confirmedPrivateSession` no
-    /// avisa a nadie), así que no hay dirección en la que este camino pueda hacer daño.
+    /// El dispositivo vuelve a «recién instalado».
     static func clear(_ defaults: UserDefaults = .standard) {
         defaults.removeObject(forKey: userDefaultsKey)
     }
@@ -143,44 +119,48 @@ nonisolated enum PrivateSessionMark {
     // MARK: - Backfill
 
     /// **El backfill de un arranque** (decisión de Jürgen, 2026-09-12): escribe por primera vez la
-    /// celda NORMAL del modelo nuevo, que es la de casi todo el parque.
+    /// celda del modelo nuevo en el parque que venía de antes de que el eje existiera.
     ///
-    /// No contradice la derogación del punto 7 del ticket —aquélla retiraba estados legacy MUERTOS,
-    /// y quien tenga uno reinstala—: sin esto, TODO el mundo despertaría sin marca, y aunque el
-    /// default conservador los trataría bien, los dispositivos solo-grupos quedarían leídos como si
-    /// tuvieran vida personal en cuanto el PR-B retire el flag viejo.
+    /// **`hasCompletedOnboarding` es el gate, y no es cosmético: es lo que hace que la AUSENCIA exista
+    /// de verdad en producción.** Sin él, el backfill escribía una marca positiva en dos sitios donde no
+    /// hay nada que migrar y donde el modelo dice que NO hay sesión privada:
+    ///  - la instalación fresca (celda A), donde correría antes de que nadie se diera de alta y se
+    ///    convertiría en el primer escritor de la marca, contradiciendo el invariante de la cabecera
+    ///    («la marca se escribe cuando la sesión privada NACE»);
+    ///  - el arranque siguiente a un cierre de sesión (celda G), donde `performSignOutWipeIfArmed` acaba
+    ///    de llamar a `clear()` pre-mount y su `resetPrefs()` ha borrado el flag ⇒ el backfill
+    ///    resucitaría la marca en el mismo lanzamiento. Con eso el default estricto de
+    ///    `confirmedPrivateSession` sería inalcanzable: la ausencia duraría milisegundos y «Vaciar
+    ///    datos» podría ordenar a los demás dispositivos del Apple ID vaciarse en un teléfono que acaba
+    ///    de volver a «recién instalado».
     ///
-    /// **`hasCompletedOnboarding` es el gate, y no es cosmético: es lo que hace que la AUSENCIA
-    /// exista de verdad en producción.** Sin él, el backfill escribía una marca positiva en dos
-    /// sitios donde no hay nada que migrar y donde el modelo dice que NO hay sesión privada:
-    ///  - la instalación fresca (celda A), donde este método corría antes de que nadie se diera de
-    ///    alta y se convertía en el primer escritor de la marca, contradiciendo el invariante de la
-    ///    cabecera («la marca se escribe cuando la sesión privada NACE»);
-    ///  - el arranque siguiente a un cierre de sesión (celda G), donde `performSignOutWipeIfArmed`
-    ///    acaba de llamar a `clear()` pre-mount y su `resetPrefs()` ha borrado `onboardingMode` ⇒ el
-    ///    backfill leía `.full` y **resucitaba la marca en el mismo lanzamiento**. Con eso el default
-    ///    estricto de `confirmedPrivateSession` era inalcanzable: la ausencia duraba milisegundos y
-    ///    «Vaciar datos» podía ordenar a los demás dispositivos del Apple ID vaciarse en un teléfono
-    ///    que acababa de volver a «recién instalado».
+    /// **`hasGroupsOnlyNeutralMount` es quien distingue la celda, y llegó a este parámetro por una
+    /// premisa CAÍDA.** El diseño del 13-sep escribía `true` sin preguntar nada, apoyado en que no hay
+    /// usuarios solo-grupos porque Grupos «estuvo cerrado». La review adversarial lo midió y es falso:
+    /// `groupsBackendCompiledDefault` está en `true` y el percent de producción, en `100` — pequeño,
+    /// pero no vacío. Y un alta solo-grupos deja `hasCompletedOnboarding = true`, así que cumplía este
+    /// gate: se le habría escrito «tiene vida personal» de forma permanente, con la app entera sobre un
+    /// store vacío y la señal de vaciado saliendo hacia sus otros dispositivos.
+    ///
+    /// La señal que sí distingue es `StorageModePersistence.groupsOnlyNeutralMountKey`: la arman las DOS
+    /// altas solo-grupos, describe este dispositivo y lleva el prefijo `cloudSync.` que el barrido de
+    /// preferencias excluye ⇒ sobrevive a todo lo que borraba al flag. **Su límite, dicho entero:**
+    /// existe desde el 2026-09-10, así que un alta solo-grupos anterior a esa fecha no la tiene y cae
+    /// del lado conservador (`true`). Es el residual que queda, y es el barato de los dos.
     ///
     /// Ese mismo barrido borra `hasCompletedOnboarding` (`DataWipeService.removeUserPreferenceKeys`),
-    /// así que el gate es exacto: distingue «parque existente» de «dispositivo que empieza de cero»
-    /// sin necesitar ninguna marca propia.
+    /// así que el gate es exacto: distingue «parque existente» de «dispositivo que empieza de cero» sin
+    /// necesitar ninguna marca propia.
     ///
-    /// `legacyIsGroupsOnly` lo pasa el llamador desde el `onboardingMode` de `UserDefaults`. Ese
-    /// valor puede venir mergeado del iCloud-KV en un arranque anterior, y es la limitación heredada
-    /// que la cabecera declara: no hay otra fuente para el parque legacy.
-    ///
-    /// Idempotente por PRESENCIA de la key, no por su valor: una marca escrita a `false` por una
-    /// entrada solo-grupos no se puede re-derivar del flag en el arranque siguiente, o un flag que el
-    /// KV haya movido entretanto la pisaría.
+    /// Idempotente por PRESENCIA de la key, no por su valor: una marca escrita a `false` por una entrada
+    /// solo-grupos no se puede re-derivar en el arranque siguiente.
     @discardableResult
-    static func backfillIfNeeded(legacyIsGroupsOnly: Bool,
+    static func backfillIfNeeded(hasGroupsOnlyNeutralMount: Bool,
                                  hasCompletedOnboarding: Bool,
                                  _ defaults: UserDefaults = .standard) -> Bool {
         guard hasCompletedOnboarding else { return false }
         guard raw(defaults) == nil else { return false }
-        set(!legacyIsGroupsOnly, defaults)
+        set(!hasGroupsOnlyNeutralMount, defaults)
         return raw(defaults) != nil
     }
 }

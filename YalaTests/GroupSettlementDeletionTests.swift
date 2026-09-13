@@ -91,13 +91,13 @@ struct GroupSettlementDeletionTests {
         GroupExpenseService.shared.setContext(context)
         GroupService.shared.setContext(context)
         GroupTransactionBridge.shared.setContext(context)
-        let previousMode = SessionState.shared.onboardingMode
-        SessionState.shared.onboardingMode = .full
+        let previousPrivateSession = SessionState.shared.hasPrivateSession
+        SessionState.shared.hasPrivateSession = true
         BridgeModeResolver.shared.invalidateCache(forZoneID: nil)
         defer {
             GroupExpenseService.shared._testResetContext()
             GroupService.shared._testResetContext()
-            SessionState.shared.onboardingMode = previousMode
+            SessionState.shared.hasPrivateSession = previousPrivateSession
             BridgeModeResolver.shared.invalidateCache(forZoneID: nil)
         }
         try body()

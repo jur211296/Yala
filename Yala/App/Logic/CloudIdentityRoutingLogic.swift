@@ -249,7 +249,7 @@ nonisolated enum CloudIdentityRoutingLogic {
     ///   ya montado. Todavía no hay sesión de nada.
     /// - `storageMode == .cloud` ⇒ **E**: la nube completa ya absorbió lo personal (el ADR §2 dice que la
     ///   casilla «privada + nube completa» no existe).
-    /// - `onboardingMode == .groupInvite` ⇒ **F**: solo grupos. **Este término es el que no se puede
+    /// - `hasPrivateSession == false` ⇒ **F**: solo grupos. **Este término es el que no se puede
     ///   omitir**, y es el que se escapa a la vista: en F el `storageMode` sigue siendo `.icloud` —la
     ///   mini-app de Grupos jamás lo toca, es su regla dura— así que sin él una persona en F se
     ///   clasificaría como «tiene sesión privada» y la puerta de Grupos podría **bloquearle su propia
@@ -257,11 +257,11 @@ nonisolated enum CloudIdentityRoutingLogic {
     static func deviceState(
         hasCompletedOnboarding: Bool,
         storageMode: StorageMode,
-        onboardingMode: OnboardingMode
+        hasPrivateSession: Bool
     ) -> DeviceSessionState {
         guard hasCompletedOnboarding else { return .fresh }
         guard storageMode == .icloud else { return .cloudComplete }
-        return onboardingMode == .groupInvite ? .cloudGroupsOnly : .privateSession
+        return hasPrivateSession ? .privateSession : .cloudGroupsOnly
     }
 
     /// El resultado que ve la tabla, a partir de lo que contestó el backend.

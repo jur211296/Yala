@@ -4804,19 +4804,8 @@
 /* Secondary action in waiting-for-leader state */
 "welcome.cloud.continueToApp" = "アプリに進む";
 
-/* Sign-out confirm message for a secondary (guest) cloud session — guest data leaves the device, owner data untouched */
-
-/* Title of the secondary-session confirm step (guest entering own cloud account on someone else's device) */
-"welcome.cloud.secondaryConfirmTitle" = "自分のアカウントで入る";
-
-/* Body of the secondary-session confirm step */
-"welcome.cloud.secondaryConfirmBody" = "このデバイスには他の人のデータがあります。あなたは自分のアカウントで別の領域に入ります。表示されるのはあなたのデータだけで、所有者のデータには影響しません。サインアウトすると、あなたのデータはデバイスから削除されます。";
-
-/* CTA of the secondary-session confirm step */
-"welcome.cloud.secondaryConfirmCta" = "自分のアカウントで入る";
-
 /* Chip shown while the secondary (guest) session pulls its account data after relaunch */
-"welcome.cloud.secondaryHydrationBanner" = "データをダウンロード中…";
+"welcome.cloud.hydrationBanner" = "データをダウンロード中…";
 
 /* Title of the proactive gate shown in the Groups tab when the device has no iCloud account */
 "groups.icloud.gate.title" = "グループには iCloud が必要です";
@@ -5122,12 +5111,6 @@
 /* D4 Cerrar sesión (nube): fila cuenta de Yala */
 "settings.signOutScopeCloudCloud" = "データは安全に保存されます。まず保留中の変更をアップロードします";
 
-/* D4 Cerrar sesión (sesión secundaria): fila dispositivo */
-"settings.signOutScopeDeviceSecondary" = "このデバイスからデータが削除されます（アカウントには残ります）";
-
-/* D4 Cerrar sesión (sesión secundaria): fila cuenta de Yala */
-"settings.signOutScopeCloudSecondary" = "データはアカウントに安全に残ります";
-
 
 
 
@@ -5138,9 +5121,6 @@
 
 /* D4 Cerrar sesión (nube): nota de conservación */
 "settings.signOutScopeConservationCloud" = "いつでもまたサインインして、すべてを取り戻せます。";
-
-/* D4 Cerrar sesión (secundaria): nota de conservación */
-"settings.signOutScopeConservationSecondary" = "このデバイスの所有者のデータには影響しません。";
 
 /* D4 Cerrar sesión de grupos / Salir (D2): nota de conservación */
 "settings.signOutScopeConservationGroups" = "グループを見るには、いつでもまたサインインしてください。";
@@ -5446,12 +5426,6 @@
 /* C2 · variante del CTA para quien nunca tuvo cuenta */
 "groups.onboarding.step3.createAccountCTA" = "アカウントを作成";
 
-/* G3/C3 — the organizer branch is blocked because a secondary (guest) session is active: the setup would write six preferences into the OWNER's local mirror */
-"welcome.groups.secondaryTitle" = "ここではゲストとして使っています";
-
-/* G3/C3 — body of the secondary-session block in the organizer gate */
-"welcome.groups.secondaryBody" = "このセッションは他の人の端末のものです。最初のグループはあなた自身の端末で作成してください。ゲストセッションを終了して、そちらでもう一度お試しください。";
-
 /* Title of the alert shown when the fresh-start wipe throws */
 "welcome.freshStart.failedTitle" = "データを削除できませんでした";
 
@@ -5480,8 +5454,6 @@
 "welcome.cloud.accountBlockedTitle" = "アカウントを利用できません";
 /* Body for the blocked-account screen; explicitly rules out a network problem */
 "welcome.cloud.accountBlockedBody" = "通信の問題ではありません。今このアカウントにはアクセスできません。%@ までご連絡ください。一緒に確認します。";
-/* Extra warning appended to the sign-out blocked alert during a guest (secondary) session, where leaving anyway is offered */
-"settings.signOutSecondaryLossWarning" = "今すぐ終了すると、これらの変更はアカウントに反映されません。";
 
 /* Sign-out blocked alert, guest session: stay in the app and retry later */
 "settings.signOutWaitButton" = "待つ";
@@ -5531,15 +5503,6 @@
 
 /* Stats hero caption: the figure sums income and expense magnitudes (pie total), neither a net nor one side */
 "stats.hero.captionTotalPeriod" = "期間の合計";
-
-/* Secondary session on the private branch: title of the notice shown after choosing the private account, before the onboarding */
-"welcome.private.secondaryTitle" = "あなたのデータは分けて保存されます";
-
-/* Secondary session on the private branch: body of the notice — the fact, the guarantee, and the measured detail that the secondary store is cloudKitDatabase .none */
-"welcome.private.secondaryBody" = "他の人の端末で Yala を使っています。ここで記録したものはあなただけのもので、この端末にだけ保存されます。相手には見えず、どの iCloud にも同期されません。";
-
-/* Secondary session on the private branch: CTA that continues to the private onboarding (informs, does not block) */
-"welcome.private.secondaryCta" = "続ける";
 
 /* Restore: el kill-switch remoto está puesto y el usuario nació en la nube — sus datos existen, la sincronización no está disponible ahora */
 "welcome.restore.cloudPausedTitle" = "Yalaのクラウドは一時停止中です";

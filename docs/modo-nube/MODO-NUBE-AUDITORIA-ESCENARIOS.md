@@ -32,6 +32,15 @@ tags: [modo-nube, auditoria, escenarios]
 
 # Modo Nube — Auditoría de escenarios de usuario (branch 2.0.5)
 
+> **⚠️ Documento FECHADO (2026-07-27) y anclado a la 2.0.5: se lee como registro, no como mapa.** El
+> rediseño de sesiones (ADR 2026-09-09 «Sesiones — dos ejes») cambió el modelo por debajo, y su último
+> paso —el barrido del 2026-09-13— retiró los tres flags con los que esta auditoría clasifica: «por
+> dónde entró», «qué usa» y la sesión de visita. **Sus escenarios 5 y 6 ya no existen como celdas
+> distintas**: hoy hay UN eje para eso —¿hay sesión privada en este teléfono?— y la shell se deriva de
+> él. Las coordenadas de código que cita siguen siendo verificables contra el árbol de su fecha, no
+> contra el de hoy. El mapa vigente de escenarios es
+> `docs/sessions/2026-09-09-matriz-escenarios-sesiones.md`.
+
 > **Reencuadre del owner (2026-07-27, mismo día): el estado DARK NO es el problema** — es esperado y deliberado. La pregunta real que este informe debe contestar es **«el día que se enciendan los flags, ¿funcionará como espero?»**. Léelo con esa lente: lo que importa es qué hallazgos **sobreviven al encendido**, no que hoy nada sea alcanzable. Esa relectura, agrupada en A (código que no existe) / B (existe pero no cumple el objetivo) / C (bugs que el encendido estrena) / D (lo que sí cumple), y las **7 decisiones** que cierran las brechas, viven en [[MODO-NUBE-DECISIONES-ESCENARIOS]] — **ese documento es la SSOT y gana sobre este cuando difieran**.
 
 Auditoría de código, solo lectura, sobre `/Users/jur/Yala` branch `2.0.5`. Toda afirmación de

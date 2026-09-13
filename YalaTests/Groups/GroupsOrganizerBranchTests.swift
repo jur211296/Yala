@@ -72,12 +72,11 @@ private final class SpyPreferenceWriter: GroupsOrganizerPreferenceWriting {
 @Suite("G3 · la puerta de la rama organizador")
 struct GroupsOrganizerGateTests {
 
-    @Test("la tabla completa: canal × secundaria × estado del store")
+    @Test("la tabla completa: canal × estado del store")
     func fullTable() {
-        #expect(Gate.decide(channelEnabled: true, isSecondarySession: false, hasExistingData: false, mountAttachesMirror: false) == .proceed)
-        #expect(Gate.decide(channelEnabled: false, isSecondarySession: false, hasExistingData: false, mountAttachesMirror: false) == .blockedChannelOff)
-        #expect(Gate.decide(channelEnabled: true, isSecondarySession: true, hasExistingData: false, mountAttachesMirror: false) == .blockedSecondarySession)
-        #expect(Gate.decide(channelEnabled: true, isSecondarySession: false, hasExistingData: true, mountAttachesMirror: false) == .returnsToNeutral)
+        #expect(Gate.decide(channelEnabled: true, hasExistingData: false, mountAttachesMirror: false) == .proceed)
+        #expect(Gate.decide(channelEnabled: false, hasExistingData: false, mountAttachesMirror: false) == .blockedChannelOff)
+        #expect(Gate.decide(channelEnabled: true, hasExistingData: true, mountAttachesMirror: false) == .returnsToNeutral)
     }
 
     @Test("con el canal APAGADO gana el canal, aunque además haya que volver al neutro")
@@ -86,25 +85,7 @@ struct GroupsOrganizerGateTests {
         // fresco, y su copy describe algo TRANSITORIO («vuelve a intentarlo en un momento»). Y la vuelta al
         // neutro BORRA: ofrecérsela a quien no va a poder crear el grupo de todas formas sería cobrarle un
         // borrado por nada.
-        #expect(Gate.decide(channelEnabled: false, isSecondarySession: false, hasExistingData: true, mountAttachesMirror: true) == .blockedChannelOff)
-        #expect(Gate.decide(channelEnabled: false, isSecondarySession: true, hasExistingData: true, mountAttachesMirror: true) == .blockedChannelOff)
-    }
-
-    /// **C3 · la celda que carga el peso, y la razón por la que no basta con `hasExistingData`.**
-    ///
-    /// En sesión secundaria el detector de corpus mide el store de la INVITADA (`YalaModel-Secondary`),
-    /// que en una sesión recién montada está VACÍO ⇒ `hasExistingData` da `false`. Sin el término propio la
-    /// puerta abría justo ahí, y detrás el alta escribe SEIS preferencias que en `.localOnly` caen en el
-    /// `UserDefaults.standard` del DUEÑO — incluida `groupsBetaUnlocked`, que **nadie repone al salir**.
-    @Test("secundaria con el store de la invitada VACÍO: la celda que `hasExistingData` no ve")
-    func secondarySessionBlocksEvenWithAnEmptyGuestStore() {
-        #expect(Gate.decide(channelEnabled: true, isSecondarySession: true, hasExistingData: false, mountAttachesMirror: false)
-                == .blockedSecondarySession)
-        // Y va DELANTE del estado del store: si además hay corpus, el hecho que hay que contarle a la
-        // persona sigue siendo «estás de visita», y su salida es cerrar la sesión de invitado — no un
-        // borrado que además caería sobre datos que no son suyos.
-        #expect(Gate.decide(channelEnabled: true, isSecondarySession: true, hasExistingData: true, mountAttachesMirror: true)
-                == .blockedSecondarySession)
+        #expect(Gate.decide(channelEnabled: false, hasExistingData: true, mountAttachesMirror: true) == .blockedChannelOff)
     }
 
     /// **El medio bug que el detector de filas NO puede ver (2026-09-11).**
@@ -116,11 +97,11 @@ struct GroupsOrganizerGateTests {
     /// `.localNoMirror`, cuyo `.automatic` adjunta el espejo aunque no haya cuenta.
     @Test("store VACÍO pero con ESPEJO: también vuelve al neutro")
     func emptyStoreWithMirrorStillReturnsToNeutral() {
-        #expect(Gate.decide(channelEnabled: true, isSecondarySession: false,
+        #expect(Gate.decide(channelEnabled: true,
                             hasExistingData: false, mountAttachesMirror: true) == .returnsToNeutral)
         // Control negativo, que es lo que impide que el término se convierta en un «siempre borra»: sin
         // espejo y sin datos —el mount neutro de toda instalación fresca— se pasa sin tocar nada.
-        #expect(Gate.decide(channelEnabled: true, isSecondarySession: false,
+        #expect(Gate.decide(channelEnabled: true,
                             hasExistingData: false, mountAttachesMirror: false) == .proceed)
     }
 
@@ -136,35 +117,31 @@ struct GroupsOrganizerGateTests {
     @Test("D2 · restaurar ya no abre la puerta: el estado del store manda igual")
     func restoreNoLongerOpensTheGate() {
         // Un restore en curso implica espejo adjunto, así que la celda real es ésta.
-        #expect(Gate.decide(channelEnabled: true, isSecondarySession: false,
+        #expect(Gate.decide(channelEnabled: true,
                             hasExistingData: true, mountAttachesMirror: true) == .returnsToNeutral)
-        // Y los otros dos términos siguen mandando por encima, igual que antes.
-        #expect(Gate.decide(channelEnabled: false, isSecondarySession: false,
+        // Y el canal sigue mandando por encima, igual que antes.
+        #expect(Gate.decide(channelEnabled: false,
                             hasExistingData: true, mountAttachesMirror: true) == .blockedChannelOff)
-        #expect(Gate.decide(channelEnabled: true, isSecondarySession: true,
-                            hasExistingData: true, mountAttachesMirror: true) == .blockedSecondarySession)
     }
 
-    @Test("`proceed` exige las CUATRO condiciones — es la única celda que deja escribir")
-    func proceedNeedsAllFourTerms() {
+    @Test("`proceed` exige las TRES condiciones — es la única celda que deja escribir")
+    func proceedNeedsAllThreeTerms() {
         for channel in [true, false] {
-            for secondary in [true, false] {
-                for data in [true, false] {
-                    for mirror in [true, false] {
-                        let decision = Gate.decide(
-                            channelEnabled: channel, isSecondarySession: secondary,
-                            hasExistingData: data, mountAttachesMirror: mirror)
-                        // El store está limpio solo si no hay filas Y no hay espejo que exporte.
-                        let storeIsNeutral = !data && !mirror
-                        #expect((decision == .proceed) == (channel && !secondary && storeIsNeutral),
-                                "canal=\(channel) secundaria=\(secondary) datos=\(data) espejo=\(mirror) ⇒ \(decision)")
-                        // Y la otra mitad de la tabla, que es la que este ticket añade: con el canal
-                        // encendido y sin visita, todo store no-neutro vuelve al neutro. Sin esta línea el
-                        // mutante que devuelve `.blockedChannelOff` en la última rama seguiría verde.
-                        if channel && !secondary {
-                            #expect((decision == .returnsToNeutral) == !storeIsNeutral,
-                                    "canal=\(channel) datos=\(data) espejo=\(mirror) ⇒ \(decision)")
-                        }
+            for data in [true, false] {
+                for mirror in [true, false] {
+                    let decision = Gate.decide(
+                        channelEnabled: channel,
+                        hasExistingData: data, mountAttachesMirror: mirror)
+                    // El store está limpio solo si no hay filas Y no hay espejo que exporte.
+                    let storeIsNeutral = !data && !mirror
+                    #expect((decision == .proceed) == (channel && storeIsNeutral),
+                            "canal=\(channel) datos=\(data) espejo=\(mirror) ⇒ \(decision)")
+                    // Y la otra mitad de la tabla, que es la que este ticket añade: con el canal
+                    // encendido, todo store no-neutro vuelve al neutro. Sin esta línea el mutante que
+                    // devuelve `.blockedChannelOff` en la última rama seguiría verde.
+                    if channel {
+                        #expect((decision == .returnsToNeutral) == !storeIsNeutral,
+                                "canal=\(channel) datos=\(data) espejo=\(mirror) ⇒ \(decision)")
                     }
                 }
             }
@@ -190,19 +167,19 @@ struct GroupsOrganizerNoWriteTests {
         let defaults = makeIsolatedDefaults(prefix: "g3.gate.off")
         let writer = SpyPreferenceWriter(defaults: defaults)
 
-        let decision = Gate.decide(channelEnabled: false, isSecondarySession: false, hasExistingData: false, mountAttachesMirror: false)
+        let decision = Gate.decide(channelEnabled: false, hasExistingData: false, mountAttachesMirror: false)
         #expect(decision == .blockedChannelOff)
 
-        // La aserción que carga el peso: `onboardingMode` es never-downgrade cross-device, así que una
-        // escritura aquí viaja al iKV del Apple ID y NO VUELVE — el usuario se queda con la shell reducida
-        // a Grupos, propagada a sus otros dispositivos, y sin ningún grupo que enseñar.
+        // La aserción que carga el peso: `groupsBetaUnlocked` es per-device y permanente, y NADIE la
+        // repone — escribirla con la puerta cerrada deja el dominio Grupos adoptado para siempre en un
+        // teléfono que no llegó a crear ningún grupo.
         #expect(writer.writes.isEmpty, "la puerta no puede escribir: escribió \(writer.writes)")
         #expect(writtenKeysPresent(in: defaults).isEmpty,
                 "el store ganó keys del alta con la puerta cerrada: \(writtenKeysPresent(in: defaults))")
 
         // CONTROL POSITIVO. Sin esto la aserción de arriba se cumpliría igual con un inventario vacío, un
         // writer que no escribe o unas keys renombradas — la familia de «Executed 0 tests».
-        GroupsOrganizerOnboarding.writePreferences(displayName: "Ana", writer: writer, isSecondarySession: false, defaults: defaults)
+        GroupsOrganizerOnboarding.writePreferences(displayName: "Ana", writer: writer, defaults: defaults)
         #expect(Set(writer.writes) == Set(GroupsOrganizerOnboarding.writtenPreferenceKeys),
                 "el instrumento no detecta las escrituras del alta: \(writer.writes)")
         #expect(writtenKeysPresent(in: defaults).count == GroupsOrganizerOnboarding.writtenKeys.count)
@@ -211,83 +188,46 @@ struct GroupsOrganizerNoWriteTests {
     @Test("store no-neutro ⇒ vuelta al neutro Y ninguna preferencia del alta escrita")
     func neutralReturn_writesNothing() {
         // La decisión dejó de ser un bloqueo el 2026-09-11, pero **lo que no puede pasar sigue siendo lo
-        // mismo**: que el alta escriba antes de que el dispositivo esté listo. El trío que escribe el alta
-        // incluye `onboardingMode`, never-downgrade cross-device: si se escribiera aquí viajaría al iKV del
-        // Apple ID de este teléfono —que puede ser el del dueño de los datos— y no vuelve. La vuelta al
+        // mismo**: que el alta escriba antes de que el dispositivo esté listo. Lo que escribe el alta
+        // incluye `groupsBetaUnlocked`, per-device y permanente: si se escribiera aquí, el dominio Grupos
+        // quedaría adoptado en un teléfono que todavía es de otra persona, y nadie la repone. La vuelta al
         // neutro sí escribe, pero lo suyo (el arm del borrado) y por otra vía; esta tabla no toca nada.
         let defaults = makeIsolatedDefaults(prefix: "g3.gate.neutral")
         let writer = SpyPreferenceWriter(defaults: defaults)
 
-        #expect(Gate.decide(channelEnabled: true, isSecondarySession: false, hasExistingData: true, mountAttachesMirror: true) == .returnsToNeutral)
+        #expect(Gate.decide(channelEnabled: true, hasExistingData: true, mountAttachesMirror: true) == .returnsToNeutral)
         #expect(writer.writes.isEmpty)
         #expect(writtenKeysPresent(in: defaults).isEmpty)
     }
 
-    /// **C3 · la mitad que el escáner de M1 no cubría, y la más cara de las seis.**
-    ///
-    /// El guard vivía en UNA key (`onboardingMode`) porque el escáner de M1 buscaba los literales de ESA
-    /// key y C2 arregló exactamente lo que el escáner señalaba. Las otras cinco cruzaban igual: el
-    /// `local.set(...)` de `PreferenceSyncService.set(string:)` está FUERA del switch de behavior, así que
-    /// `.localOnly` no evita la escritura LOCAL — solo la propagación—, y `local` es `.standard`
-    /// hardcodeado, que en secundaria es el dominio del DUEÑO.
-    ///
-    /// La que más pesa no es el modo (irreversible por never-downgrade) sino `groupsBetaUnlocked`, porque
-    /// **nadie la repone**: `DataWipeService.removeGroupsDomainPreferenceKeys` tiene un único call-site,
-    /// dentro del «empiezo de cero» del Welcome ⇒ cerrar la sesión de la invitada le deja al dueño el
-    /// dominio Grupos adoptado para siempre.
-    @Test("sesión secundaria ⇒ el alta no escribe NINGUNA de las seis, y lo dice")
-    func secondarySession_writesNoneOfTheSixKeys() {
-        let defaults = makeIsolatedDefaults(prefix: "c3.alta.secundaria")
+    /// El neutro de solo-grupos es una decisión de MOUNT del device, y el alta es quien la arma: sin ella
+    /// el arranque siguiente adjunta el espejo sobre el store personal y baja el contenedor privado del
+    /// Apple ID del teléfono, que es el bug del ticket.
+    @Test("el alta arma el neutro de solo-grupos, y escribe su inventario entero")
+    func setupArmsTheGroupsOnlyNeutralMount() {
+        let defaults = makeIsolatedDefaults(prefix: "g3.alta.neutro")
         let writer = SpyPreferenceWriter(defaults: defaults)
 
-        let wrote = GroupsOrganizerOnboarding.writePreferences(
-            displayName: "Ana", writer: writer, isSecondarySession: true, defaults: defaults)
-
-        // El neutro de solo-grupos es una decisión de MOUNT del device, y en secundaria el device es del
-        // dueño: armarlo aquí le apagaría a él el espejo de iCloud en su próximo arranque. Va con el resto
-        // de escrituras, detrás del mismo guard.
-        #expect(StorageModePersistence.isGroupsOnlyNeutralMountArmed(defaults) == false, """
-            el alta armó el neutro de solo-grupos con la frontera M1 puesta: el dueño de este teléfono \
-            perdería el espejo de su iCloud por una sesión que no es suya.
-            """)
-
-        #expect(wrote == false, """
-            el alta dijo que había escrito con la frontera M1 puesta. El `Bool` no es cosmético: \
-            `completeSetup` lo usa para abortar los seeds y el aterrizaje, y un `true` aquí deja a la \
-            invitada en un shell de Grupos que ninguna preferencia sostiene.
-            """)
-        // Contar ESCRITURAS y no leer el estado final: cinco de las seis podrían re-escribir un valor que
-        // ya está y dejar el store idéntico, y el mutante pasaría en verde.
-        #expect(writer.writes.isEmpty, "el alta escribió \(writer.writes) en el dominio del DUEÑO")
-        #expect(writtenKeysPresent(in: defaults).isEmpty)
-
-        // CONTROL POSITIVO con el MISMO writer y el MISMO store: sin él, «no escribió nada» se cumpliría
-        // igual con un inventario vacío, un writer roto o unas keys renombradas.
-        let wroteNow = GroupsOrganizerOnboarding.writePreferences(
-            displayName: "Ana", writer: writer, isSecondarySession: false, defaults: defaults)
-        #expect(wroteNow)
-        // CONTROL POSITIVO del `#expect` de arriba: sin esto, aquella aserción se cumpliría igual con un
-        // arm que no escribe nunca o una key renombrada — la familia de «Executed 0 tests».
+        #expect(GroupsOrganizerOnboarding.writePreferences(
+            displayName: "Ana", writer: writer, defaults: defaults))
         #expect(StorageModePersistence.isGroupsOnlyNeutralMountArmed(defaults), """
-            sin la frontera puesta el alta TIENE que armar el neutro de solo-grupos: es lo que impide que \
-            el arranque siguiente adjunte el espejo y baje datos ajenos.
+            el alta TIENE que armar el neutro de solo-grupos: es lo que impide que el arranque siguiente \
+            adjunte el espejo y baje datos ajenos.
             """)
+        // Contar ESCRITURAS y no leer el estado final: podrían re-escribir un valor que ya está y dejar el
+        // store idéntico, y el mutante pasaría en verde.
         #expect(Set(writer.writes) == Set(GroupsOrganizerOnboarding.writtenPreferenceKeys),
                 "el instrumento no detecta las escrituras del alta: \(writer.writes)")
-        // Y son SEIS: el conteo es lo que hace que esto envejezca bien. Una séptima escritura nueva rompe
-        // el test y obliga a decidir si entra al inventario, en vez de aparecer en silencio.
-        #expect(GroupsOrganizerOnboarding.writtenKeys.count == 7)
     }
 
-    @Test("el alta escribe el trío completo, y el nombre vacío cae al nombre por defecto")
+    @Test("el alta escribe su inventario, y el nombre vacío cae al nombre por defecto")
     func setupWritesTheTrio() {
         let defaults = makeIsolatedDefaults(prefix: "g3.alta")
         let writer = SpyPreferenceWriter(defaults: defaults)
 
-        GroupsOrganizerOnboarding.writePreferences(displayName: "  ", writer: writer, isSecondarySession: false, defaults: defaults)
+        GroupsOrganizerOnboarding.writePreferences(displayName: "  ", writer: writer, defaults: defaults)
 
-        // El trío que hace la shell.
-        #expect(defaults.string(forKey: OnboardingMode.userDefaultsKey) == OnboardingMode.groupInvite.rawValue)
+        // El par que hace la shell.
         #expect(defaults.bool(forKey: AppPreferences.Keys.groupsBetaUnlocked))
         #expect(defaults.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding))
         // Nombre vacío ⇒ el default, igual que hacen las otras dos altas. Un botón deshabilitado aquí sería
@@ -301,7 +241,7 @@ struct GroupsOrganizerNoWriteTests {
         let defaults = makeIsolatedDefaults(prefix: "g3.alta.nombre")
         let writer = SpyPreferenceWriter(defaults: defaults)
 
-        GroupsOrganizerOnboarding.writePreferences(displayName: "  Ana  ", writer: writer, isSecondarySession: false, defaults: defaults)
+        GroupsOrganizerOnboarding.writePreferences(displayName: "  Ana  ", writer: writer, defaults: defaults)
         #expect(defaults.string(forKey: AppPreferences.Keys.userName) == "Ana")
     }
 
@@ -315,7 +255,7 @@ struct GroupsOrganizerNoWriteTests {
             let defaults = makeIsolatedDefaults(prefix: "g4.alta.divisa.\(region)")
             let writer = SpyPreferenceWriter(defaults: defaults)
 
-            GroupsOrganizerOnboarding.writePreferences(displayName: "Ana", writer: writer, regionCode: region, isSecondarySession: false, defaults: defaults)
+            GroupsOrganizerOnboarding.writePreferences(displayName: "Ana", writer: writer, regionCode: region, defaults: defaults)
 
             #expect(defaults.string(forKey: AppPreferences.Keys.defaultCurrencyCode) == expected.rawValue,
                     "región \(region) ⇒ esperaba \(expected.rawValue)")
@@ -335,7 +275,7 @@ struct GroupsOrganizerNoWriteTests {
         defaults.set(CurrencyCode.eur.rawValue, forKey: AppPreferences.Keys.defaultCurrencyCode)
         let writer = SpyPreferenceWriter(defaults: defaults)
 
-        GroupsOrganizerOnboarding.writePreferences(displayName: "Ana", writer: writer, regionCode: "US", isSecondarySession: false, defaults: defaults)
+        GroupsOrganizerOnboarding.writePreferences(displayName: "Ana", writer: writer, regionCode: "US", defaults: defaults)
 
         #expect(defaults.string(forKey: AppPreferences.Keys.defaultCurrencyCode) == CurrencyCode.eur.rawValue)
         // Contar la escritura, no solo mirar el estado final: re-escribir el MISMO valor dejaría el store
@@ -343,7 +283,7 @@ struct GroupsOrganizerNoWriteTests {
         #expect(!writer.writes.contains(AppPreferences.Keys.defaultCurrencyCode),
                 "el alta escribió la divisa encima de una existente: \(writer.writes)")
         // El resto del alta sí ocurre: el guard es de la divisa, no del alta entera.
-        #expect(defaults.string(forKey: OnboardingMode.userDefaultsKey) == OnboardingMode.groupInvite.rawValue)
+        #expect(defaults.bool(forKey: AppPreferences.Keys.groupsBetaUnlocked))
     }
 }
 
@@ -717,7 +657,7 @@ struct GroupsOrganizerWiringTests {
         #expect(entry.contains("guard CloudSessionSignOut.shared.phase == .idle else { return .unavailable }"), """
             con el coordinador ocupado, `signOut` vuelve mudo por su primer guard.
             """)
-        #expect(entry.contains("case .cloudSecureSignOut, .secondaryCloudSignOut:"), """
+        #expect(entry.contains("case .cloudSecureSignOut:"), """
             las dos celdas que NO borran por archivos tienen que salir por una pantalla con salida: el cierre
             de la nube haría un borrado distinto del que esta pantalla promete.
             """)
@@ -734,15 +674,14 @@ struct GroupsOrganizerWiringTests {
                 "la celda medida viaja como cinturón, para que un cambio entre medias no ejecute otro borrado")
     }
 
-    /// **El espejo del dispatch tiene que llevar los CINCO términos.** Es el duplicado deliberado que ya
+    /// **El espejo del dispatch tiene que llevar los mismos términos.** Es el duplicado deliberado que ya
     /// tiene `ProfileView.signOutRowPath`: si divergieran, la puerta prometería un borrado que el
     /// coordinador no va a hacer, y el `confirmedPath` lo convertiría en un `return` mudo.
-    @Test("MUTACIÓN: el espejo de la celda usa los mismos cinco términos que el dispatch")
+    @Test("MUTACIÓN: el espejo de la celda usa los mismos términos que el dispatch")
     func exitCellMirrorsTheDispatch() throws {
         let code = try Self.code(Self.gateView)
         let cell = try #require(Self.bodyOf("private static func exitCell() -> CloudSignOutFlowLogic.Path {", in: code))
         for termino in ["for: CloudSyncFlags.storageMode",
-                        "secondarySessionActive: SecondarySessionStore.isActive()",
                         "hasLiveSession: CloudAuthService.shared.hasSession",
                         "groupsBackendEnabled: CloudSyncFlags.groupsBackendCompiledCapability",
                         "hasPrivateSession: PrivateSessionMark.hasPrivateSession()"] {
@@ -876,7 +815,6 @@ struct GroupsOrganizerWiringTests {
         // Una familia de keys por pantalla, y cada una distinta de las demás.
         let porPantalla: [(String, String)] = [
             ("blockedChannelOff", "L10n.Welcome.Groups.channelOff"),
-            ("blockedSecondarySession", "L10n.Welcome.Groups.secondary"),
             ("confirmingNoBackup", "L10n.Welcome.Groups.neutralNoBackup"),
         ]
         // Una rama de `switch` no abre llaves, así que `bodyOf` no vale aquí: se corta desde el `case`
@@ -920,66 +858,15 @@ struct GroupsOrganizerWiringTests {
                 "el CTA del nombre es lo que escribe el trío")
     }
 
-    /// **C3 · el default del parámetro TIENE que ser el mecanismo real.**
-    ///
-    /// El guard es inyectable para poder afirmarlo sobre un valor y no sobre el `UserDefaults.standard` del
-    /// simulador (el override global de `isActive()` es estado de PROCESO y contaminaría a las suites que
-    /// corren en paralelo). El precio es que alguien puede cambiar el default por `false` y **los tres
-    /// tests de comportamiento siguen en VERDE**, porque los tres pasan el término explícito. Este escáner
-    /// es el que cae.
-    @Test("MUTACIÓN (c): el guard del alta lee el descriptor de verdad por default")
-    func setupGuardDefaultsToTheRealDescriptor() throws {
+    /// **C3 · `completeSetup` tiene que RESPETAR el veredicto del alta.** Sin el `guard`, los seeds y el
+    /// aterrizaje en el tab corren igual aunque las preferencias no se hayan escrito, y quien llega se
+    /// queda dentro de un shell de Grupos que ninguna preferencia sostiene.
+    @Test("MUTACIÓN (c): `completeSetup` aborta si el alta no escribió")
+    func completeSetupHonoursTheWriteVerdict() throws {
         let code = try Self.code("Yala/Services/Groups/GroupsOrganizerOnboarding.swift")
-        #expect(code.contains("isSecondarySession: Bool = SecondarySessionStore.isActive()"), """
-            el default del guard M1 dejó de ser el descriptor real. Con un `false` ahí, el alta vuelve a \
-            escribir sus seis preferencias en el `UserDefaults` del DUEÑO y los tests de comportamiento \
-            no lo ven: todos pasan el término a mano.
-            """)
-        #expect(code.contains("guard !isSecondarySession else { return false }"), """
-            el guard dejó de abortar el MÉTODO ENTERO. Proteger una de las seis escrituras y dejar las \
-            otras cinco es exactamente el bug que C3 arregla — y `groupsBetaUnlocked`, que es una de las \
-            cinco, no la repone nadie al cerrar la sesión.
-            """)
-        // Y `completeSetup` tiene que RESPETAR el veredicto: sin el `guard`, los seeds y el aterrizaje en
-        // el tab corren igual sobre el store del dueño.
         #expect(code.contains("guard writePreferences("), """
-            `completeSetup` ignora el resultado del alta: con la frontera M1 puesta seguiría sembrando \
-            categorías y aterrizando en el tab Grupos sin ninguna preferencia detrás.
-            """)
-    }
-
-    /// **C3 · el choke-point de la rama organizador, que es lo que hace que la respuesta sea honesta.**
-    ///
-    /// La puerta del Welcome comprueba por su cuenta; esto es la defensa en profundidad de detrás. Nació
-    /// por la card «Solo grupos» del onboarding, que no pasaba por esa puerta y se retiró el 2026-09-10
-    /// (ADR 2026-09-09 §7); se conserva hasta que M1 se retire entera. Lo que decide aquí es QUIÉN
-    /// pregunta y qué hace con el `no`: un `return` mudo dejaría un botón que no hace nada, y eso es el
-    /// «camino muerto» que el spec de la rama prohíbe.
-    @Test("MUTACIÓN (d): la rama entera se corta en secundaria, y manda a la PUERTA")
-    func organizerFlowStopsUnderASecondarySession() throws {
-        let content = try Self.code("Yala/App/ContentView.swift")
-        let advance = try #require(
-            Self.bodyOf("private func advanceGroupsOrganizerFlow() {", in: content),
-            "`advanceGroupsOrganizerFlow` desapareció o cambió de firma")
-
-        #expect(advance.contains("SecondarySessionStore.isActive()"), """
-            el choke-point de la rama organizador dejó de mirar el descriptor. Es la defensa en profundidad \
-            detrás de `WelcomeGroupsGateView`: sin ella, un avance que llegara con una sesión secundaria \
-            viva escribiría el alta en el dominio del DUEÑO.
-            """)
-        #expect(advance.contains("welcomeFlowInitialStep = .groupsGate"), """
-            el corte dejó de mandar a la PUERTA. Un `return` mudo es un botón que no hace nada; el spec de \
-            esta rama exige que ningún camino muera sin respuesta, y la puerta es la que sabe pintar este \
-            veredicto (`.blockedSecondarySession`).
-            """)
-    }
-
-    @Test("la puerta pregunta por el descriptor, no solo por el corpus")
-    func gateAsksForTheDescriptor() throws {
-        let code = try Self.code(Self.gateView)
-        #expect(code.contains("isSecondarySession: SecondarySessionStore.isActive()"), """
-            la puerta decide la celda de secundaria con otra cosa que el descriptor. `hasLocalDataNow` \
-            mide el store de la INVITADA, que en una sesión recién montada está VACÍO ⇒ daría vía libre.
+            `completeSetup` ignora el resultado del alta: seguiría sembrando categorías y aterrizando en \
+            el tab Grupos sin ninguna preferencia detrás.
             """)
     }
 

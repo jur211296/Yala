@@ -115,17 +115,32 @@ final class AppBootstrapper {
 
         // 0.0-bis. EL EJE 1, backfilleado una sola vez (ADR 2026-09-09 «Sesiones — dos ejes»).
         //
-        // **Va ANTES del paso 0, y ése es todo el punto.** `PreferenceSyncService.bootstrap()` mergea
-        // `onboardingMode` con el iCloud-KV del Apple ID (never-downgrade), así que leerlo DESPUÉS
-        // backfillearía la marca con un `.groupInvite` que puede venir de OTRO dispositivo —
-        // exactamente el viaje que `PrivateSessionMark` existe para no hacer. Aquí el valor es el
-        // local de este teléfono, que es el hecho que la marca describe.
+        // Quien ya tiene el onboarding hecho y todavía no tiene marca es el parque existente: se le
+        // escribe que SÍ tiene sesión privada. Sin esto, `confirmedPrivateSession` respondería «no puedo
+        // afirmarlo» para siempre en esos teléfonos y «Vaciar datos» dejaría de ordenar el vaciado a los
+        // demás dispositivos de su Apple ID — un apagón silencioso de una función que hoy existe.
+        //
+        // **Quién distingue la celda: la marca del mount neutro**, que arman las dos altas solo-grupos y
+        // que sobrevive al barrido de preferencias por su prefijo. La primera versión de esta línea
+        // escribía `true` sin preguntar, apoyada en que no hay usuarios solo-grupos; la review
+        // adversarial midió que Grupos está al 100 en producción y que un alta suya cumple el gate de
+        // abajo ⇒ se le habría escrito «tiene vida personal» para siempre. El porqué entero, con su
+        // residual, está en `PrivateSessionMark.backfillIfNeeded`.
         //
         // Idempotente por presencia de la key: a partir del segundo arranque es un no-op, y en una
-        // instalación fresca lo es también porque el alta escribe la marca antes que nadie la lea.
+        // instalación fresca no corre porque el gate del onboarding no se cumple.
         PrivateSessionMark.backfillIfNeeded(
-            legacyIsGroupsOnly: OnboardingMode.current() == .groupInvite,
+            hasGroupsOnlyNeutralMount: StorageModePersistence.isGroupsOnlyNeutralMountArmed(),
             hasCompletedOnboarding: UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding))
+
+        // 0.0-ter. Y el espejo del eje al día, DESPUÉS del backfill y de los hooks pre-mount.
+        //
+        // `SessionState.shared` se construye en el prólogo de `YalaApp`, antes de que corra nada de esto,
+        // así que en el arranque que consume un cierre de sesión armado el espejo se capturó con el valor
+        // de ANTES del boot-wipe. Hoy ese desajuste queda tapado —ese camino aterriza en el Welcome— pero
+        // es el que deja la shell y las lecturas persistidas contando cosas distintas, y lo cerró una
+        // review adversarial en vez de un síntoma. Es un no-op cuando coinciden.
+        sessionState.refreshPrivateSessionMirror()
 
         // 0. Sync preferences from iCloud (must be FIRST — other services read these)
         if !uiTestActive { PreferenceSyncService.shared.bootstrap() }
@@ -372,11 +387,8 @@ final class AppBootstrapper {
         // su propia condición ya contemplaba a la invitada.
         // G2 (DARK): NO-OP salvo con `groupsBackendEnabled` ON (jamás
         // en producción esta fase) — el guard interno retorna antes de tocar red o modelos.
-        // M1 / D8 (G5-C): con el flag ON la sesión secundaria SÍ arranca el canal backend (sus grupos, su
-        // sesión; el `currentUserIDProvider` = sub de la invitada + el espejo owner-scoped la aíslan).
-        // `startIfEligible` re-gatea por flag+sesión internamente; con flag OFF la condición reproduce el
-        // guard de secundaria de antes (byte-idéntico).
-        if !uiTestActive && (CloudSyncFlags.groupsBackendEnabled || !SecondarySessionStore.isActive()) {
+        // `startIfEligible` re-gatea por flag+sesión internamente.
+        if !uiTestActive {
             GroupsSyncClient.shared.startIfEligible(context: context)
         }
 
@@ -604,7 +616,7 @@ final class AppBootstrapper {
                     hasCompletedOnboarding: UserDefaults.standard.bool(
                         forKey: AppPreferences.Keys.hasCompletedOnboarding),
                     storageMode: StorageModePersistence.read(),
-                    onboardingMode: OnboardingMode.current()),
+                    hasPrivateSession: PrivateSessionMark.hasPrivateSession()),
                 identity: .live(CloudAuthService.shared),
                 kind: AccountKindService.shared.current,
                 store: GroupsAccountAssociation.shared)
@@ -701,25 +713,7 @@ final class AppBootstrapper {
             UserDefaults.standard.removeObject(forKey: AppPreferences.Keys.expensesOnlyMode)
             SessionState.shared.isExpensesOnlyMode = false
             UserDefaults.standard.removeObject(forKey: UITestHooks.seededGroupIDKey)
-            //  · usageFocus (D1): un `.groupsOnly` de una corrida previa reduciría la shell a
-            //    solo-Grupos y contaminaría los tests que esperan la app completa (stale ≠ nil).
-            UserDefaults.standard.removeObject(forKey: AppPreferences.Keys.usageFocus)
-            //  · onboardingMode (`-uitest-group-invite`): el hook de más abajo hace
-            //    `OnboardingMode.setCurrent(.groupInvite)`, que PERSISTE. Sin reponerlo aquí, la
-            //    corrida siguiente arranca en modo solo-Grupos y apaga secciones enteras —
-            //    `organizacionSection` y `preferenciasSection` de ProfileView (:328-330, :843), y el
-            //    educativo de GroupsContainerView—, así que el rojo sale en un test que no pidió
-            //    nada de eso y culpa a la pantalla. Es exactamente la clase de `expensesOnlyMode`
-            //    de arriba: una key que sobrevive al proceso y contamina al vecino.
-            //    ORDEN: la memoria ANTES del borrado. El `didSet` de `SessionState.onboardingMode`
-            //    re-persiste vía `OnboardingMode.setCurrent`, así que al revés dejaría la key
-            //    materializada con "full" justo después de quitarla — el mismo orden, y por el
-            //    mismo motivo, que documenta `DataWipeService.clearHandoverOnboardingMode`.
-            if SessionState.shared.onboardingMode != .full {
-                SessionState.shared.onboardingMode = .full
-            }
-            UserDefaults.standard.removeObject(forKey: OnboardingMode.userDefaultsKey)
-            //  · el EJE 1 (`-uitest-group-invite` escribe `PrivateSessionMark.set(false)` más abajo):
+            //  · el EJE 1 (`-uitest-group-invite` escribe la marca en `false` más abajo):
             //    misma clase que su vecina de arriba y PEOR, porque `cloudSync.*` está excluido del
             //    barrido de preferencias a propósito —para que la marca sobreviva a «Vaciar datos»—,
             //    así que sin esta línea NADA en el árbol la borra jamás. La corrida siguiente, aunque
@@ -727,6 +721,29 @@ final class AppBootstrapper {
             //    cerrar sesión y de vaciar cambian de celda, y el arranque MANUAL de Yala Dev en ese
             //    simulador queda igual de envenenado — la víctima que nadie mira.
             PrivateSessionMark.clear()
+            //  · y su PAREJA, la marca del mount neutro solo-grupos. Limpiar el eje sin limpiar esto es
+            //    peor que no limpiar ninguno de los dos, porque el backfill del arranque DERIVA el eje de
+            //    esta marca: una corrida que arme el mount neutro —«Activar Yala completo» y las dos altas
+            //    solo-grupos lo hacen— deja a las siguientes arrancando con la shell reducida a Grupos,
+            //    aunque pidan lo contrario. Ninguna corrida la quiere sembrada de entrada —no hay seam que
+            //    la escriba, `git grep`—: quien la necesita la arma durante el test, después de este bloque.
+            //
+            //    **Lo que costó, porque el número importa: un día entero y ocho XCUITest rojos.** El
+            //    2026-09-13 esta key se quedó pegada en el simulador de esta Mac y con ella el backfill
+            //    escribía `hasPrivateSession = false` en cada arranque: caían ocho tests de tres suites
+            //    que no tienen nada que ver con Grupos (el Perfil sin «Organización», sin tab «Más», y las
+            //    celdas de cierre C y D convertidas en la de solo-grupos). Medido en la sonda del arranque:
+            //    `BACKFILL entrada raw=nil neutral=true` ⇒ salida `false`. Lo zanjó un `simctl erase`: con
+            //    el simulador limpio las tres suites pasan sin tocar una línea de producción.
+            //
+            //    **Y la trampa que lo hizo tan caro, para el que venga:** esta línea NO alcanzaba aquella
+            //    copia. `removeObject` medía `antes=true despues=true`, la key no aparecía en ningún
+            //    dominio enumerable (`volatileDomainNames`, `persistentDomain(forName:)`) ni en el plist
+            //    del contenedor, y sin embargo `object(forKey:)` la devolvía. ⇒ **cuando un `removeObject`
+            //    no tenga efecto y la key no esté en ningún dominio, deja de buscar al escritor: es el
+            //    simulador, y la salida es `simctl erase`.** Esta línea cubre el caso normal —la copia que
+            //    sí vive en el contenedor de la app— que es el que se puede cerrar desde aquí.
+            StorageModePersistence.clearGroupsOnlyNeutralMount()
             //  · la marca de un desasociar a medias (`GroupsDetachPendingPurge`): la escribe el
             //    CÓDIGO DE PRODUCCIÓN cuando el borrado local falla, y el caso con `-uitest-fail-wipe`
             //    la deja armada a propósito. Sobrevive al wipe de SwiftData —no es una fila, es una
@@ -793,13 +810,6 @@ final class AppBootstrapper {
             appPreferences.setupDefaultsForNewUser()
             appPreferences.panelPrefsMigratedV2 = true
         }
-        // M4 · sesión secundaria (M1) determinista, EFÍMERA y sin rastro en disco. Va la PRIMERA de las
-        // incondicionales porque no es un estado más: decide el MODO EFECTIVO de todo el proceso
-        // (`CloudSyncFlags.storageMode` → `.cloud`) y con él la mitad de los gates que corren debajo.
-        // Incondicional —no solo cuando el arg viene— por la misma razón que sus dos vecinos: la purga
-        // tiene que correr en TODOS los launches, y aquí más, porque nadie más borra esa key (ni el
-        // bloque de reset de arriba ni `DataWipeService`, que excluye `cloudSync.*` a propósito).
-        UITestEphemeralDefaults.applySecondarySession(UITestHooks.secondarySession)
         // Estado Pro determinista según el launch arg, EFÍMERO y sin rastro en disco.
         // Va incondicional (no solo bajo `-uitest-reset`): también hay que fijar el estado
         // en los launches con `reset: false`, y la purga tiene que correr en TODOS.
@@ -816,9 +826,9 @@ final class AppBootstrapper {
         UITestEphemeralDefaults.applyOnboardingAlreadySeen(
             UITestHooks.skipOnboarding || UITestHooks.forceGroupInvite
         )
-        // Modo solo-grupos determinista: onboarding saltado (arriba) + onboardingMode=.groupInvite
-        // + tab Grupos seleccionado. El init de SessionState no deriva el tab, así que se
-        // setea explícitamente (idempotente; no-op en release vía hasArg).
+        // Modo solo-grupos determinista: onboarding saltado (arriba) + eje 1 apagado + tab Grupos
+        // seleccionado. El init de SessionState no deriva el tab, así que se setea explícitamente
+        // (idempotente; no-op en release vía hasArg).
         // Identidad iCloud sembrada: síncrona y sin red. Va ANTES de cualquier resolución para que
         // el primer render ya vea la identidad — si llegara después, el test mediría la ventana en
         // vez del comportamiento.
@@ -826,12 +836,10 @@ final class AppBootstrapper {
             GroupICloudIdentitySeed.adopt(UITestHooks.uitestICloudRecordName)
         }
         if UITestHooks.forceGroupInvite {
-            OnboardingMode.setCurrent(.groupInvite)
-            SessionState.shared.onboardingMode = .groupInvite
-            // Eje 1: el seam siembra la celda ENTERA, o el XCUITest solo-grupos correría con la marca
-            // que dejó la corrida anterior en ese simulador (o con el default conservador, que dice
-            // justo lo contrario de lo que el test quiere montar).
-            PrivateSessionMark.set(false)
+            // El seam siembra la celda ENTERA, o el XCUITest solo-grupos correría con la marca que dejó
+            // la corrida anterior en ese simulador (o con el default conservador, que dice justo lo
+            // contrario de lo que el test quiere montar).
+            SessionState.shared.hasPrivateSession = false
             SessionState.shared.selectedMainTab = .groups
         }
         // `-uitest-groups-consent`: consent de Grupos por sembrado DIRECTO de su snapshot local. NO se usa
@@ -1665,11 +1673,6 @@ final class AppBootstrapper {
         // (`AppGroupInboundPurge`, ver su header) para que no se materialicen en la cuenta
         // siguiente — no las conserva para drenarlas tras el relanzamiento.
         guard !StorageModePersistence.isSignOutWipeArmed() else { return }
-        // M1: mismo freeze para el wipe SECUNDARIO armado (store condenado) y para la
-        // VENTANA DE ENTRADA (descriptor activo con el store del DUEÑO montado — los drains
-        // materializarían pendientes en el store del dueño pre-relaunch).
-        guard !SecondarySessionStore.isWipeArmed() else { return }
-        if SecondarySessionStore.isActive() && !SwiftDataConfiguration.secondaryStoreMounted { return }
 
         // Warm start: ping diario (dedup por día UTC — solo el primero del día encola)
         // + drain del spool de canarios pendientes (offline previo / kill).
@@ -1691,11 +1694,9 @@ final class AppBootstrapper {
         // H-2026-07-18-4 (DARK): re-arranque del canal de Grupos → backend si su loop propio murió en
         // silencio (401 transitorio en la ventana de expiry → sessionExpired → break loop; el startIfEligible
         // solo corría en cold boot y NADA lo re-arrancaba hasta relaunch). Mismo gate que el call-site del
-        // cold boot (appLaunched paso G2). Idempotente por single-instance (loopTask != nil ⇒ no-op) y
-        // D8-safe por el guard de mount-mismatch de startIfEligible. Con el flag OFF es NO-OP TEMPRANO
-        // (startIfEligible retorna en su primer guard flag+sesión) → byte-idéntico a producción hoy.
-        if !UITestHooks.isActive
-            && (CloudSyncFlags.groupsBackendEnabled || !SecondarySessionStore.isActive()) {
+        // cold boot (appLaunched paso G2). Idempotente por single-instance (loopTask != nil ⇒ no-op).
+        // Con el flag OFF es NO-OP TEMPRANO (startIfEligible retorna en su primer guard flag+sesión).
+        if !UITestHooks.isActive {
             GroupsSyncClient.shared.startIfEligible(context: context, trigger: "foreground")
         }
 

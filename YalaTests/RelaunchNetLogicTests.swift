@@ -64,20 +64,12 @@ struct RelaunchExitOnBackgroundTests {
     func background_withSignOutAwaitingRelaunch_exits() {
         #expect(RelaunchNetLogic.shouldExitOnBackground(
             scenePhase: .background, signOutPhase: .awaitingRelaunch,
-            secondaryEntryArmedUnmounted: false, welcomeMirrorRelaunchArmed: false
-        ))
-    }
-
-    @Test
-    func background_withSecondaryEntryArmed_exits() {
-        #expect(RelaunchNetLogic.shouldExitOnBackground(
-            scenePhase: .background, signOutPhase: .idle,
-            secondaryEntryArmedUnmounted: true, welcomeMirrorRelaunchArmed: false
+            welcomeMirrorRelaunchArmed: false
         ))
     }
 
     /// **R0 · LA FILA NUEVA, y la MUTACIÓN del chip.** Quitar el término `welcomeMirrorRelaunchArmed` de
-    /// la disyunción pone rojo este test: los otros dos están APAGADOS a propósito, así que es el único
+    /// la disyunción pone rojo este test: el otro está APAGADO a propósito, así que es el único
     /// que puede sostener el `true`.
     ///
     /// Qué se pierde sin él: el usuario elige «restaurar de iCloud» en un fresh install, ve el terminal
@@ -88,7 +80,7 @@ struct RelaunchExitOnBackgroundTests {
     func background_withWelcomeMirrorRelaunchArmed_exits() {
         #expect(RelaunchNetLogic.shouldExitOnBackground(
             scenePhase: .background, signOutPhase: .idle,
-            secondaryEntryArmedUnmounted: false, welcomeMirrorRelaunchArmed: true
+            welcomeMirrorRelaunchArmed: true
         ))
     }
 
@@ -97,30 +89,27 @@ struct RelaunchExitOnBackgroundTests {
         for phase: CloudSessionSignOut.Phase in [.idle, .working, .blocked(pendingCount: 3, reason: .transient)] {
             #expect(!RelaunchNetLogic.shouldExitOnBackground(
                 scenePhase: .background, signOutPhase: phase,
-                secondaryEntryArmedUnmounted: false, welcomeMirrorRelaunchArmed: false
+                welcomeMirrorRelaunchArmed: false
             ))
         }
     }
 
-    /// **La tabla EXHAUSTIVA de los tres términos × las tres fases de escena.** Cada término suelto tenía
+    /// **La tabla EXHAUSTIVA de los dos términos × las tres fases de escena.** Cada término suelto tenía
     /// su test; lo que no había era la combinatoria, y es donde viven los dos errores que un `||` invita a
-    /// cometer: convertirlo en `&&` (que exigiría los tres a la vez y no dispararía casi nunca) y perder
+    /// cometer: convertirlo en `&&` (que exigiría los dos a la vez y no dispararía casi nunca) y perder
     /// el `scenePhase == .background`, que soltaría el `exit(0)` en primer plano.
-    @Test("los 3 términos × las 3 fases: solo `.background` con ALGO armado mata el proceso")
+    @Test("los 2 términos × las 3 fases: solo `.background` con ALGO armado mata el proceso")
     func fullTable() {
         let signOutPhases: [CloudSessionSignOut.Phase] = [.idle, .awaitingRelaunch]
         for scene: ScenePhase in [.background, .inactive, .active] {
             for signOut in signOutPhases {
-                for secondary in [false, true] {
-                    for welcome in [false, true] {
-                        let anythingArmed = signOut == .awaitingRelaunch || secondary || welcome
-                        let expected = scene == .background && anythingArmed
-                        #expect(RelaunchNetLogic.shouldExitOnBackground(
-                            scenePhase: scene, signOutPhase: signOut,
-                            secondaryEntryArmedUnmounted: secondary,
-                            welcomeMirrorRelaunchArmed: welcome
-                        ) == expected, "escena=\(scene) signOut=\(signOut) secundaria=\(secondary) welcome=\(welcome)")
-                    }
+                for welcome in [false, true] {
+                    let anythingArmed = signOut == .awaitingRelaunch || welcome
+                    let expected = scene == .background && anythingArmed
+                    #expect(RelaunchNetLogic.shouldExitOnBackground(
+                        scenePhase: scene, signOutPhase: signOut,
+                        welcomeMirrorRelaunchArmed: welcome
+                    ) == expected, "escena=\(scene) signOut=\(signOut) welcome=\(welcome)")
                 }
             }
         }
@@ -134,21 +123,17 @@ struct RelaunchExitOnBackgroundTests {
         for scene: ScenePhase in [.inactive, .active] {
             #expect(!RelaunchNetLogic.shouldExitOnBackground(
                 scenePhase: scene, signOutPhase: .awaitingRelaunch,
-                secondaryEntryArmedUnmounted: false, welcomeMirrorRelaunchArmed: false
+                welcomeMirrorRelaunchArmed: false
             ))
             #expect(!RelaunchNetLogic.shouldExitOnBackground(
                 scenePhase: scene, signOutPhase: .idle,
-                secondaryEntryArmedUnmounted: true, welcomeMirrorRelaunchArmed: false
+                welcomeMirrorRelaunchArmed: true
             ))
-            #expect(!RelaunchNetLogic.shouldExitOnBackground(
-                scenePhase: scene, signOutPhase: .idle,
-                secondaryEntryArmedUnmounted: false, welcomeMirrorRelaunchArmed: true
-            ))
-            // Y con los TRES armados: ningún acúmulo de condiciones compra el permiso de matar en
+            // Y con los DOS armados: ningún acúmulo de condiciones compra el permiso de matar en
             // foreground.
             #expect(!RelaunchNetLogic.shouldExitOnBackground(
                 scenePhase: scene, signOutPhase: .awaitingRelaunch,
-                secondaryEntryArmedUnmounted: true, welcomeMirrorRelaunchArmed: true
+                welcomeMirrorRelaunchArmed: true
             ))
         }
     }
@@ -172,7 +157,6 @@ struct WelcomeMirrorRelaunchArmedWitnessTests {
             #expect(WelcomePendingDestinationStore.peek(defaults) != nil)
             #expect(RelaunchNetLogic.shouldExitOnBackground(
                 scenePhase: .background, signOutPhase: .idle,
-                secondaryEntryArmedUnmounted: false,
                 welcomeMirrorRelaunchArmed: WelcomePendingDestinationStore.peek(defaults) != nil
             ), "destino=\(destination)")
         }
@@ -204,7 +188,7 @@ struct WelcomeMirrorRelaunchArmedWitnessTests {
     func noRelaunchLoopIsPossible() {
         #expect(!SwiftDataConfiguration.isFreshInstallForNeutralMount(
             personalStoreFileExists: false, persistedMode: .icloud, mirrorOffArmed: false,
-            secondarySessionActive: false, hasShownWelcomeChooser: true
+            hasShownWelcomeChooser: true
         ), "R2: el chooser visto cierra la ventana del mount neutro de fresh")
 
         #expect(!SwiftDataConfiguration.shouldMountNeutralDurable(

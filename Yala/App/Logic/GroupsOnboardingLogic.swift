@@ -3,8 +3,8 @@
 //  Yala
 //
 //  Pure decision logic para el onboarding informativo del tab Grupos. Decide si
-//  presentar el sheet en función del estado del user (flag persistida, modo de
-//  onboarding global y deeplinks pendientes).
+//  presentar el sheet en función del estado del user (flag persistida, el eje 1
+//  y deeplinks pendientes).
 //
 //  Extraído como pure-logic para tests sin SwiftData ni UI (sin flake R8 conocido
 //  por `makeTestContext()`).
@@ -18,8 +18,8 @@ enum GroupsOnboardingLogic {
 
     /// **C2 (2026-08-12) · el hecho REAL: «esta persona ya vio UN educativo de Grupos».**
     ///
-    /// Sustituye al corte `onboardingMode == .groupInvite` que vivía dentro de `shouldShow`. Aquel corte
-    /// era un proxy y estaba MAL en la dirección cara: `.groupInvite` es también lo que escribía la card
+    /// Sustituye al corte por «esta persona entró por un grupo» que vivía dentro de `shouldShow`. Aquel
+    /// corte era un proxy y estaba MAL en la dirección cara: lo mismo escribía la card
     /// «Solo grupos» del onboarding de 8 pasos, así que suprimía el educativo justo para quien entraba por
     /// la puerta que menos contexto daba —y que además no pedía ni sesión ni consent—. Son dos estados
     /// distintos («ya se lo contamos» vs. «está en modo Grupos») y estaban colapsados en uno falso.
@@ -29,18 +29,18 @@ enum GroupsOnboardingLogic {
     ///     escriben los DOS educativos: el general (`GroupsOnboardingView`, en el tab y en el cover de las
     ///     puertas A/B) y el del invitado (`GroupInviteOnboardingView`, contextual al link) — porque ESE
     ///     es el educativo del invitado, y esa es exactamente la sustitución que el chip pide.
-    ///   - onboardingMode / hasCompletedSetup: el término **LEGACY**, y solo eso. Quien completó su alta en
-    ///     modo Grupos ANTES de C2 vio su educativo y no dejó marca: sin este término, actualizar la app le
+    ///   - hasPrivateSession / hasCompletedSetup: el término **LEGACY**, y solo eso. Quien completó su alta
+    ///     en solo-grupos ANTES de C2 vio su educativo y no dejó marca: sin este término, actualizar la app le
     ///     presentaría un educativo que ya conoce. No hay migración que escribir — la evidencia ya está en
     ///     disco. Para todo alta POSTERIOR a C2 el término es redundante (la marca se pone en el educativo,
     ///     que va antes que el modo) y se puede retirar cuando el parque haya rotado.
     static func hasSeenAnyGroupsEducational(
         hasShownOnboarding: Bool,
-        onboardingMode: OnboardingMode,
+        hasPrivateSession: Bool,
         hasCompletedSetup: Bool
     ) -> Bool {
         if hasShownOnboarding { return true }
-        return onboardingMode == .groupInvite && hasCompletedSetup
+        return !hasPrivateSession && hasCompletedSetup
     }
 
     /// Decide si presentar el onboarding del tab Grupos. AND-gating: cualquier

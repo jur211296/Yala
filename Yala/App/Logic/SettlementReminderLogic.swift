@@ -34,7 +34,7 @@ import Foundation
 
 /// Un hecho que movió la cuenta entre dos miembros, ya reducido a su fecha.
 ///
-/// `nonisolated`, igual que `SessionDefaults` y por el mismo motivo: bajo
+/// `nonisolated` porque bajo
 /// `SWIFT_DEFAULT_ACTOR_ISOLATION=MainActor` un tipo sin anotar queda aislado al MainActor, y
 /// `GroupSettlementReminderService.activities` —que es pura y `nonisolated`— no podría ni construirlo.
 ///

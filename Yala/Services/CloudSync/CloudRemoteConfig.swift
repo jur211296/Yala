@@ -4,8 +4,8 @@
 //
 //  Remote-config del Modo Nube (DIFERIDOS #34, §j.1/§j.2): fetch de `GET /config` del gateway,
 //  cache local last-cached-wins y flags EFECTIVOS (`CloudRemoteFlags`) que gatean las superficies
-//  de ENTRADA (fila Almacenamiento para no-migrados, cards de sign-in nube del Welcome, entrada
-//  secundaria M1, composición de `groupsBackendEnabled`).
+//  de ENTRADA (fila Almacenamiento para no-migrados, cards de sign-in nube del Welcome, composición
+//  de `groupsBackendEnabled`).
 //
 //  Semántica ratificada por el owner (2026-07-17):
 //  - Kill-switch = corta solo la ENTRADA. Un usuario YA `.cloud` conserva runtime/outbox/reversa
@@ -20,8 +20,10 @@
 //  2026-07-31 y CLOUD_ONBOARDING_CHOICE medido el 2026-09-09—, así que las superficies de entrada que
 //  dependen del AND remoto están ABIERTAS. Este bloque decía «los tres percents en 0» y describía el
 //  estado de julio: `gateway/wrangler.toml` arrastró además un "0" desfasado en la elección nube hasta
-//  el 2026-09-10. El percent de la SESIÓN SECUNDARIA sí sigue en 0, y es lo que mantiene DARK esa
-//  entrada concreta. La ventana previa al primer fetch tampoco destapa nada: en prod `absentDefault` es
+//  el 2026-09-10. **Había un cuarto percent, el de la sesión de visita, y se retiró entero el
+//  2026-09-13 con su feature** (PR-B del paso 12): estuvo en 0 en producción toda su vida, así que su
+//  entrada nunca llegó a abrirse ahí.
+//  La ventana previa al primer fetch tampoco destapa nada: en prod `absentDefault` es
 //  `false` (fail-closed), así que hasta que hay snapshot en disco las entradas se comportan como si el
 //  percent fuera 0. En DEV el default ante cache AUSENTE es ON (staging sirve 100 ⇒ mismo valor tras el
 //  fetch) → QA/uitest byte-idénticos.
@@ -38,12 +40,6 @@ nonisolated struct RemoteFlagsSnapshot: Codable, Equatable {
     var cloudModeRolloutPercent: Int?
     var cloudOnboardingChoiceRolloutPercent: Int?
     var groupsBackendRolloutPercent: Int?
-    /// Entrada a la SESIÓN SECUNDARIA (M1). Optional CON DEFAULT, igual que `minSupportedBuild` y por
-    /// la misma razón: el snapshot cacheado en disco puede ser de un build anterior a este campo, y
-    /// **un snapshot viejo tiene que leerse como «percent ausente», jamás como error de decode** — si
-    /// no decodifica, `readSnapshot` lo trata como ausente y el device pierde TAMBIÉN los otros tres
-    /// percents hasta el siguiente fetch. Ausente ⇒ decide `absentDefault` (prod: fail-closed).
-    var secondarySessionRolloutPercent: Int? = nil
     /// Forzado de actualización (min-version): build por debajo del cual el cliente bloquea.
     /// Optional con default ⇒ snapshots viejos cacheados (sin este campo) decodifican a nil y los
     /// call-sites previos no rompen. Ausente/0 = desactivado (`ForceUpdateDecisionLogic` fail-open).
@@ -57,7 +53,6 @@ nonisolated struct RemoteConfigWireResponse: Codable {
         var cloudModeRolloutPercent: Int?
         var cloudOnboardingChoiceRolloutPercent: Int?
         var groupsBackendRolloutPercent: Int?
-        var secondarySessionRolloutPercent: Int?
     }
 
     struct ForceUpdate: Codable {
@@ -154,16 +149,6 @@ nonisolated enum CloudRemoteFlags {
         return decide(\.groupsBackendRolloutPercent)
     }
 
-    /// Percent PROPIO de la entrada a sesión secundaria (M1, chip M2). Hasta él, el compuesto
-    /// `CloudSyncFlags.secondarySessionEntryAvailable` tomaba prestado el kill-switch de
-    /// `cloudModeEnabled` — que no se puede mover sin mover también las superficies de alta. El AND
-    /// con `cloudModeEnabled` se CONSERVA: son dos palancas independientes y cualquiera mata la
-    /// entrada (doble kill-switch, gratis). Como el resto de su clase, gatea SOLO la ENTRADA.
-    static var secondarySessionEnabled: Bool {
-        if let override = secondarySessionEnabledTestOverride { return override }
-        return decide(\.secondarySessionRolloutPercent)
-    }
-
     /// Mirror NONISOLATED de `SwiftDataConfiguration.isRunningTests` (ese vive bajo el default
     /// actor MainActor y estos getters se leen desde cualquier actor). Misma señal canónica
     /// (`YALA_TEST_MODE=1` del TestAction) + el fallback de framework cargado; cacheado en `let`.
@@ -204,25 +189,21 @@ nonisolated enum CloudRemoteFlags {
     nonisolated(unsafe) private static var cloudModeEnabledTestOverride: Bool?
     nonisolated(unsafe) private static var cloudOnboardingChoiceEnabledTestOverride: Bool?
     nonisolated(unsafe) private static var groupsBackendEnabledTestOverride: Bool?
-    nonisolated(unsafe) private static var secondarySessionEnabledTestOverride: Bool?
 
     static func _testSetOverrides(
         cloudMode: Bool? = nil,
         onboardingChoice: Bool? = nil,
-        groupsBackend: Bool? = nil,
-        secondarySession: Bool? = nil
+        groupsBackend: Bool? = nil
     ) {
         cloudModeEnabledTestOverride = cloudMode
         cloudOnboardingChoiceEnabledTestOverride = onboardingChoice
         groupsBackendEnabledTestOverride = groupsBackend
-        secondarySessionEnabledTestOverride = secondarySession
     }
 
     static func _testResetOverrides() {
         cloudModeEnabledTestOverride = nil
         cloudOnboardingChoiceEnabledTestOverride = nil
         groupsBackendEnabledTestOverride = nil
-        secondarySessionEnabledTestOverride = nil
     }
 }
 
@@ -341,7 +322,6 @@ final class RemoteConfigClient {
                 cloudModeRolloutPercent: wire.flags?.cloudModeRolloutPercent,
                 cloudOnboardingChoiceRolloutPercent: wire.flags?.cloudOnboardingChoiceRolloutPercent,
                 groupsBackendRolloutPercent: wire.flags?.groupsBackendRolloutPercent,
-                secondarySessionRolloutPercent: wire.flags?.secondarySessionRolloutPercent,
                 minSupportedBuild: wire.forceUpdate?.minSupportedBuild,
                 fetchedAt: now
             )
@@ -368,10 +348,9 @@ nonisolated enum RemoteConfigBreadcrumb {
         let cloud = snapshot.cloudModeRolloutPercent.map(String.init) ?? "nil"
         let groups = snapshot.groupsBackendRolloutPercent.map(String.init) ?? "nil"
         let choice = snapshot.cloudOnboardingChoiceRolloutPercent.map(String.init) ?? "nil"
-        let secondary = snapshot.secondarySessionRolloutPercent.map(String.init) ?? "nil"
         let minBuild = snapshot.minSupportedBuild.map(String.init) ?? "nil"
         logger.notice(
-            "CloudSync remoteConfig fetched cloud=\(cloud, privacy: .public) choice=\(choice, privacy: .public) groups=\(groups, privacy: .public) secondary=\(secondary, privacy: .public) minBuild=\(minBuild, privacy: .public)"
+            "CloudSync remoteConfig fetched cloud=\(cloud, privacy: .public) choice=\(choice, privacy: .public) groups=\(groups, privacy: .public) minBuild=\(minBuild, privacy: .public)"
         )
     }
 

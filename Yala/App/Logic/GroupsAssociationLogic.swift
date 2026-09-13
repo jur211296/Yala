@@ -56,7 +56,7 @@ nonisolated enum GroupsAssociationLogic {
 
     /// - Parameters:
     ///   - deviceState: el MISMO eje que usa `CloudIdentityRoutingLogic`, derivado con su
-    ///     `deviceState(hasCompletedOnboarding:storageMode:onboardingMode:)`. No se re-deriva aquí a
+    ///     `deviceState(hasCompletedOnboarding:storageMode:hasPrivateSession:)`. No se re-deriva aquí a
     ///     propósito: dos derivaciones del mismo eje divergen, y la tabla de [I] es la autoridad.
     ///   - hasPersistedAssociation: hay un registro de asociación (local o llegado por iCloud-KV).
     ///   - hasLiveGroupsSession: `CloudAuthService.shared.hasSession`.

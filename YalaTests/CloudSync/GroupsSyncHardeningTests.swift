@@ -308,33 +308,23 @@ struct GroupsSyncHardeningTests {
             .appendingPathComponent("Yala/Services/CloudSync/CloudSessionSignOut.swift"), encoding: .utf8)
         let teardowns = source.components(separatedBy: "CloudSyncRuntime.shared?.teardownGuestSession()").count - 1
         let groupsTeardowns = source.components(separatedBy: "GroupsSyncClient.shared.teardownForSignOut()").count - 1
-        // El runtime PERSONAL se derriba en el tramo común de los cierres por archivos (paso 9), el `.cloud`
-        // y el secundario + el cierre .cloud de ELIMINAR-CUENTA (G5-D1, belt idempotente — el service ya lo
+        // El runtime PERSONAL se derriba en el tramo común de los cierres por archivos (paso 9), en el
+        // `.cloud` y en el cierre `.cloud` de ELIMINAR-CUENTA (G5-D1, belt idempotente — el service ya lo
         // derribó en su paso 2).
-        // +1 (2026-09-05): `exitSecondaryDiscardingPending`, la salida «salir igualmente» de la sesión de
-        // visita — mismo tail-end que el camino secundario, así que derriba lo mismo. Si algún día ese
-        // teardown se le cayera, la invitada se iría dejando el motor del DUEÑO apuntando a su cuenta.
-        #expect(teardowns == 5)
+        //
+        // **Eran 5 hasta el 2026-09-13**: los dos que faltan eran los caminos de salida de la sesión de
+        // visita, retirados con ella.
+        #expect(teardowns == 3)
         // El canal de grupos se corta en: el tramo común de los cierres por archivos (privada, «equipo» y
-        // solo grupos — paso 9, `finalizeSessionExit`), el `.cloud`, el secundario, la salida forzada de la
-        // visita y los 2 cierres de eliminar-cuenta (closeLocalAfterAccountDeletion Cloud/GroupsOnly — belts).
-        // Con el paso 9 se fueron `performPrivateReset` y «Salir de Yala» (`exitYalaOnThisDevice`).
-        // **+1 (2026-09-11, paso 10): `detachGroupsAccount`**, el desasociar de la fila de Ajustes. No es
-        // un cierre de sesión —no toca nada personal— pero corta el mismo canal y por la misma razón:
-        // después de él se borran las filas `Split*` localmente, y con el drain vivo esos deletes se
-        // traducirían a tombstones que borrarían los grupos **para todos los miembros**.
-        #expect(groupsTeardowns == 7)
-    }
-
-    /// M1 / D8 (G5-C): la purga de frontera de la sesión secundaria incluye el espejo App Group de GRUPOS
-    /// (`fieldsJSON` lleva montos del dueño → no debe sobrevivir la frontera). Source-scan (la purga usa el
-    /// App Group de producción, no ejecutable determinista en unit test); el mecanismo `purgeAll` lo cubre
-    /// `teardownForSignOut_stopsLoop_purgesMirror`.
-    @Test func boundaryPurge_wiresGroupsMirrorPurge() throws {
-        let source = try String(contentsOf: Self.repoRoot
-            .appendingPathComponent("Yala/Services/CloudSync/SecondarySessionBoundaryPurge.swift"),
-            encoding: .utf8)
-        #expect(source.contains("GroupsOutboxMirror()?.purgeAll()"))
+        // solo grupos — paso 9, `finalizeSessionExit`), el `.cloud`, los 2 cierres de eliminar-cuenta
+        // (closeLocalAfterAccountDeletion Cloud/GroupsOnly — belts) y el desasociar de la fila de Ajustes
+        // (paso 10, `detachGroupsAccount`). Ese último no es un cierre de sesión —no toca nada personal—
+        // pero corta el mismo canal y por la misma razón: después de él se borran las filas `Split*`
+        // localmente, y con el drain vivo esos deletes se traducirían a tombstones que borrarían los
+        // grupos **para todos los miembros**.
+        //
+        // **Eran 7 hasta el 2026-09-13**, por los mismos dos caminos de la visita.
+        #expect(groupsTeardowns == 5)
     }
 
     // MARK: - (8) Barrido de tombstones de `split_groups` YA ENCOLADOS (mitad hacia atrás del 2026-08-02)
@@ -807,11 +797,9 @@ struct GroupsSyncHardeningTests {
         let prevRuntime = CloudSyncFlags.syncRuntimeEnabled
         CloudSyncFlags.groupsBackendEnabled = true
         CloudSyncFlags.syncRuntimeEnabled = true   // storageMode `.icloud` ⇒ canRunDomain() false ⇒ loop propio
-        SecondarySessionStore._testSetActiveOverride(false)
         defer {
             CloudSyncFlags._testResetGroupsBackendEnabledOverride()
             CloudSyncFlags.syncRuntimeEnabled = prevRuntime
-            SecondarySessionStore._testSetActiveOverride(nil)
         }
 
         let dir = freshDir(); defer { cleanup(dir) }
@@ -840,11 +828,9 @@ struct GroupsSyncHardeningTests {
         let prevRuntime = CloudSyncFlags.syncRuntimeEnabled
         CloudSyncFlags.groupsBackendEnabled = true
         CloudSyncFlags.syncRuntimeEnabled = true
-        SecondarySessionStore._testSetActiveOverride(false)
         defer {
             CloudSyncFlags._testResetGroupsBackendEnabledOverride()
             CloudSyncFlags.syncRuntimeEnabled = prevRuntime
-            SecondarySessionStore._testSetActiveOverride(nil)
         }
 
         let dir = freshDir(); defer { cleanup(dir) }
@@ -871,13 +857,11 @@ struct GroupsSyncHardeningTests {
         // el host de tests. La premisa de este test es un device en modo nube YA RELANZADO (si no, el
         // personal NO cadenciaría y Grupos correría su loop propio — que es el test de al lado).
         SwiftDataConfiguration._testSetPersonalStoreMountedDecision(.cloudMirrorOff)
-        SecondarySessionStore._testSetActiveOverride(false)
         defer {
             CloudSyncFlags._testResetGroupsBackendEnabledOverride()
             CloudSyncFlags.syncRuntimeEnabled = prevRuntime
             CloudSyncFlags._testResetStorageModeOverride()
             SwiftDataConfiguration._testSetPersonalStoreMountedDecision(.iCloudMirror)
-            SecondarySessionStore._testSetActiveOverride(nil)
         }
 
         let dir = freshDir(); defer { cleanup(dir) }
@@ -894,11 +878,9 @@ struct GroupsSyncHardeningTests {
         CloudSyncFlags.groupsBackendEnabled = true
         CloudSyncFlags.syncRuntimeEnabled = true
         // storageMode default `.icloud` → canRunDomain() == false.
-        SecondarySessionStore._testSetActiveOverride(false)
         defer {
             CloudSyncFlags._testResetGroupsBackendEnabledOverride()
             CloudSyncFlags.syncRuntimeEnabled = prevRuntime
-            SecondarySessionStore._testSetActiveOverride(nil)
         }
 
         let dir = freshDir(); defer { cleanup(dir) }
@@ -914,114 +896,16 @@ struct GroupsSyncHardeningTests {
         #expect(stub.callCount >= 1)          // y cicló de verdad
     }
 
-    /// M1 / D8 (G5-C) — flag OFF: secundaria NI loop propio (guard del cliente) NI piggyback (guard del
-    /// paso 5.6). Byte-idéntico al mundo M1 pre-G5-C.
-    @Test func secondarySession_flagOff_neitherLoopNorPiggyback() async throws {
-        CloudSyncFlags.groupsBackendEnabled = false
-        SecondarySessionStore._testSetActiveOverride(true)
-        defer {
-            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
-            SecondarySessionStore._testSetActiveOverride(nil)
-        }
-
-        let dir = freshDir(); defer { cleanup(dir) }
-        let context = try makeContext(dir)
-        let client = makeClient(session: StubSession(emptyPageJSON), userID: nil)
-        client.startIfEligible(context: context)
-        #expect(client._testLoopTask == nil)  // ni loop (retorna en el guard de flag)
-
-        // Piggyback: el paso 5.6 NO invoca al runner con flag OFF.
-        let counter = Counter()
-        let runtime = makeRuntime(pullBody: emptyRuntimePullJSON)
-        runtime.groupsSyncCycleRunner = { _ in counter.count += 1 }
-        CloudSyncFlags.storageMode = .cloud
-        defer { CloudSyncFlags._testResetStorageModeOverride() }
-        _ = await runtime.syncCycle(context: context)
-        #expect(counter.count == 0)
-    }
-
-    /// M1 / D8 (G5-C) — flag ON: la secundaria OPERATIVA (store secundario MONTADO — post-relaunch) SÍ
-    /// participa. El loop propio arranca cuando el personal NO cadencia (`syncRuntimeEnabled` OFF en la
-    /// porción del loop — como la fase transicional) Y el piggyback del paso 5.6 alcanza a la invitada.
-    /// H-2026-07-18-4: antes este test dependía de `canRunDomain()==false` POR mount-mismatch para que el
-    /// loop propio arrancara — celda que el guard D8 de `startIfEligible` ahora bloquea ANTES (correcto:
-    /// la ventana de entrada jamás debe drenar; su celda vive en el test de mount-mismatch de abajo).
-    @Test func secondarySession_flagOn_runsLoopAndPiggyback() async throws {
-        let prevRuntime = CloudSyncFlags.syncRuntimeEnabled
-        CloudSyncFlags.groupsBackendEnabled = true
-        CloudSyncFlags.syncRuntimeEnabled = false  // personal no cadencia → Grupos corre loop PROPIO
-        SecondarySessionStore._testSetActiveOverride(true)
-        SwiftDataConfiguration._testSetSecondaryStoreMounted(true)  // secundaria OPERATIVA (D8 no bloquea)
-        defer {
-            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
-            CloudSyncFlags.syncRuntimeEnabled = prevRuntime
-            SecondarySessionStore._testSetActiveOverride(nil)
-            SwiftDataConfiguration._testSetSecondaryStoreMounted(false)
-        }
-
-        let dir = freshDir(); defer { cleanup(dir) }
-        let context = try makeContext(dir)
-        // 401 → el loop termina solo tras la primera vuelta (sin sleeps reales).
-        let stub = StubSession(emptyPageJSON, status: 401)
-        let client = makeClient(session: stub, userID: nil)
-        client.sleeper = { _ in }
-        client.startIfEligible(context: context)
-        let task = client._testLoopTask
-        #expect(task != nil)                  // loop PROPIO arrancó bajo la invitada
-        await task?.value
-        #expect(stub.callCount >= 1)          // y cicló de verdad
-
-        // Piggyback: el paso 5.6 SÍ invoca al runner en secundaria con flag ON (runtime restaurado —
-        // el gate del 5.6 es solo el flag, pero se conserva el entorno del test original).
-        CloudSyncFlags.syncRuntimeEnabled = prevRuntime
-        let counter = Counter()
-        let runtime = makeRuntime(pullBody: emptyRuntimePullJSON)
-        runtime.groupsSyncCycleRunner = { _ in counter.count += 1 }
-        CloudSyncFlags.storageMode = .cloud
-        defer { CloudSyncFlags._testResetStorageModeOverride() }
-        _ = await runtime.syncCycle(context: context)
-        #expect(counter.count == 1)
-    }
-
-    /// D8 (H-2026-07-18-4): VENTANA DE ENTRADA de la secundaria (descriptor activo, store del DUEÑO aún
-    /// montado — testigo secundario `false`) → el (re)arranque mid-session NO corre aunque todo lo demás
-    /// esté verde (flag ON, sesión viva, personal sin cadenciar — sin D8 el loop ARRANCARÍA, como prueba
-    /// el test de arriba). Pinnea el guard en el cliente real, no solo en la lógica pura.
-    @Test func secondarySession_flagOn_entryWindowMountMismatch_blocksOwnLoop() async throws {
-        let prevRuntime = CloudSyncFlags.syncRuntimeEnabled
-        CloudSyncFlags.groupsBackendEnabled = true
-        CloudSyncFlags.syncRuntimeEnabled = false  // sin piggyback → el ÚNICO blocker posible es D8
-        SecondarySessionStore._testSetActiveOverride(true)
-        SwiftDataConfiguration._testSetSecondaryStoreMounted(false)  // explícito: ventana de entrada
-        defer {
-            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
-            CloudSyncFlags.syncRuntimeEnabled = prevRuntime
-            SecondarySessionStore._testSetActiveOverride(nil)
-            SwiftDataConfiguration._testSetSecondaryStoreMounted(false)
-        }
-
-        let dir = freshDir(); defer { cleanup(dir) }
-        let context = try makeContext(dir)
-        let stub = StubSession(emptyPageJSON, status: 401)
-        let client = makeClient(session: stub, userID: nil)
-        client.startIfEligible(context: context, trigger: "foreground")
-
-        #expect(client._testLoopTask == nil)  // D8 bloqueó el (re)arranque mid-session
-        #expect(stub.callCount == 0)          // ni un request (el guard corta ANTES del rehydrate/ciclo)
-    }
-
     /// Paso 5.6: con flag ON (y no-secundaria) el performCycle del runtime personal invoca el ciclo de
     /// Grupos; con flag OFF NO lo invoca (byte-idéntico).
     @Test func runtimeCycle_invokesGroupsRunner_flagOnOnly() async throws {
         let prevRuntime = CloudSyncFlags.syncRuntimeEnabled
         CloudSyncFlags.syncRuntimeEnabled = true
         CloudSyncFlags.storageMode = .cloud
-        SecondarySessionStore._testSetActiveOverride(false)
         defer {
             CloudSyncFlags._testResetGroupsBackendEnabledOverride()
             CloudSyncFlags.syncRuntimeEnabled = prevRuntime
             CloudSyncFlags._testResetStorageModeOverride()
-            SecondarySessionStore._testSetActiveOverride(nil)
         }
 
         let dir = freshDir(); defer { cleanup(dir) }

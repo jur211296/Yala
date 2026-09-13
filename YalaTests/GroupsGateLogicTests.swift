@@ -297,10 +297,15 @@ struct GroupsGateWiringTests {
 
     // MARK: - LA MUTACIÓN CENTRAL: la card «Solo grupos» ya no escribe nada
 
-    /// La invariante entera del chip en una aserción. `completeGroupsOnlyOnboarding` escribía el trío en el
-    /// paso 8 del onboarding, sin sesión y sin consent; `onboardingMode = .groupInvite` es never-downgrade
-    /// cross-device, así que viajaba al iKV del Apple ID y **no volvía**.
-    @Test("MUTACIÓN (a): `completeGroupsOnlyOnboarding` no vuelve, y OnboardingView no escribe el trío")
+    /// La invariante entera del chip en una aserción. `completeGroupsOnlyOnboarding` escribía el trío en
+    /// el paso 8 del onboarding, sin sesión y sin consent — y el flag de modo de entonces era
+    /// never-downgrade cross-device, así que viajaba al iCloud-KV del Apple ID y **no volvía**.
+    ///
+    /// **El eje que hoy ocupa ese lugar no viaja** (es un hecho del dispositivo), así que la mitad
+    /// cross-device del daño ya no es posible. Lo que sigue en pie, y es lo que este caso protege, es la
+    /// otra: escribir el alta —el dominio de Grupos adoptado y el eje apagado— antes de saber si la ruta
+    /// es la buena, desde una pantalla que no tiene identidad en mano.
+    @Test("MUTACIÓN (a): `completeGroupsOnlyOnboarding` no vuelve, y OnboardingView no escribe el alta")
     func onboardingViewNoLongerWritesTheTrio() throws {
         let code = try Self.code(Self.onboardingView)
 
@@ -310,11 +315,12 @@ struct GroupsGateWiringTests {
             `hasCompletedOnboarding` sin sesión, sin consent y sin canal comprobado.
             """)
 
-        // Las tres escrituras del trío, nombradas una a una. El escáner es por SÍMBOLO y no por función,
-        // así que también caza a quien las devuelva desde una rama nueva con otro nombre.
-        #expect(!code.contains("OnboardingMode.groupInvite.rawValue"), """
-            OnboardingView volvió a empujar `.groupInvite` al canal sincronizado. Es never-downgrade \
-            cross-device: escrito antes de confirmar la ruta, se propaga y no vuelve.
+        // Las escrituras del alta, nombradas una a una. El escáner es por SÍMBOLO y no por función, así
+        // que también caza a quien las devuelva desde una rama nueva con otro nombre.
+        #expect(!code.contains("hasPrivateSession = false"), """
+            OnboardingView volvió a apagar el eje 1 por su cuenta. Quien lo apaga es el alta solo-grupos, \
+            al final de su cadena y con identidad en mano; desde aquí es una decisión tomada antes de \
+            saber por dónde va la ruta.
             """)
         #expect(!code.contains("AppPreferences.Keys.groupsBetaUnlocked"),
                 "OnboardingView volvió a desbloquear el dominio Grupos sin identidad")

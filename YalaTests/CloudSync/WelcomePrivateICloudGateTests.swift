@@ -373,8 +373,7 @@ struct ICloudPersonalCorpusProbeSeamTests {
           arguments: [(SwiftDataConfiguration.PersonalStoreDecision.iCloudMirror, true),
                       (.localNoMirror, true),
                       (.neutralNoMirror, false),
-                      (.cloudMirrorOff, false),
-                      (.secondaryCloudSession, false)])
+                      (.cloudMirrorOff, false)])
     func mirrorWillSync_derivesFromTheMountWitness(
         _ pair: (SwiftDataConfiguration.PersonalStoreDecision, Bool)
     ) {
@@ -596,23 +595,6 @@ struct WelcomePrivateICloudGateWiringTests {
         let src = try Self.source("Yala/App/ContentView.swift")
         let checks = try Self.body(of: "private func runReturningUserPostChecks() {", in: src)
         #expect(checks.contains("runLateICloudMirrorCheck()"))
-    }
-
-    /// **La frontera de cuenta.** Los testigos viven en `UserDefaults.standard` —el dominio del DUEÑO—
-    /// mientras `hasCompletedOnboarding` resuelve por `SessionDefaults`, que en una visita es el de la
-    /// invitada. Sin este guard, la visita recibía el aviso con las cifras del dueño y podía borrarle su
-    /// iCloud: destrucción cruzada de cuenta.
-    @Test("el aviso tardío NO corre en sesión secundaria")
-    func lateNotice_neverRunsInASecondarySession() throws {
-        let src = try Self.source("Yala/App/ContentView.swift")
-        let check = try Self.body(of: "private func runLateICloudMirrorCheck() async {", in: src)
-        let guardIdx = try #require(check.range(of: "SecondarySessionStore.isActive()"), """
-            los testigos son del dominio del DUEÑO y el corpus del Apple ID del dispositivo: sin guard, la
-            invitada decide sobre datos que no son suyos.
-            """)
-        let arm = try #require(check.range(of: "isICloudCorpusWipeArmed()"))
-        #expect(guardIdx.lowerBound < arm.lowerBound,
-                "el guard va ANTES que todo, incluido el reanudado del borrado")
     }
 
     /// **El borrado es UNO para los dos caminos, y no puede reusar solo la zona de CloudKit.** La puerta

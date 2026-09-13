@@ -30,21 +30,16 @@ nonisolated enum CloudConsentRegistrationLogic {
         /// `adoptBackendAccount` re-emite el epoch PERSISTIDO y, si no lo encuentra, cae al fallback
         /// `now()` — que es la hora de FIN del adopt, no la de la aceptación.
         case beforeAdopt
-        /// Sesión secundaria: DESPUÉS de `SecondarySessionStore.activate`. `PrefsSyncBehavior.resolve`
-        /// pregunta por el descriptor VIVO en cada llamada, así que solo a partir de ahí el epoch de la
-        /// invitada resuelve `.localOnly` en vez de caer en el iKV del Apple ID del dueño.
-        case afterSecondaryDescriptor
         /// Bloqueado: NUNCA. La sesión se descarta sin tocar nada del device y el registro GDPR real de
         /// esa cuenta vive en SU backend, escrito el día que la creó.
         case never
     }
 
-    /// La tabla. Total sobre las tres salidas del guard: añadir una cuarta obliga a decidir su destino
+    /// La tabla. Total sobre las salidas del guard: añadir una nueva obliga a decidir su destino
     /// aquí, no en la pantalla.
     static func placement(for decision: CrossAccountEntryGuardLogic.Decision) -> Placement {
         switch decision {
         case .proceed: .beforeAdopt
-        case .proceedSecondarySession: .afterSecondaryDescriptor
         case .blockedForeignData: .never
         }
     }

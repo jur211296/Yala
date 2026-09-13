@@ -53,7 +53,7 @@ struct GroupsDomainAdoptionTests {
         #expect(GroupsDomainAdoptionLogic.isBridgeAllowed(
             sealedForFreshStart: defaults.bool(forKey: sealKey),
             isUnlocked: defaults.bool(forKey: unlockedKey),
-            isGroupInviteMode: false) == false)
+            hasPrivateSession: true) == false)
 
         GroupsDomainAdoptionMarker.recordEntry(defaults)
 
@@ -61,7 +61,7 @@ struct GroupsDomainAdoptionTests {
         #expect(GroupsDomainAdoptionLogic.isBridgeAllowed(
             sealedForFreshStart: defaults.bool(forKey: sealKey),
             isUnlocked: defaults.bool(forKey: unlockedKey),
-            isGroupInviteMode: false) == true)
+            hasPrivateSession: true) == true)
     }
 
     /// El guard de `recordEntry` NO es una optimización: bajo `-uitest` el seam
@@ -102,14 +102,14 @@ struct GroupsDomainAdoptionTests {
         let defaults = makeIsolatedDefaults()
 
         #expect(GroupsDomainAdoptionLogic.isBridgeAllowed(
-            sealedForFreshStart: false, isUnlocked: false, isGroupInviteMode: false) == true)
+            sealedForFreshStart: false, isUnlocked: false, hasPrivateSession: true) == true)
 
         GroupsDomainAdoptionMarker.recordEntry(defaults)
 
         #expect(GroupsDomainAdoptionLogic.isBridgeAllowed(
             sealedForFreshStart: false,
             isUnlocked: defaults.bool(forKey: unlockedKey),
-            isGroupInviteMode: false) == true)
+            hasPrivateSession: true) == true)
     }
 
     // MARK: - Lo que hoy no puede pasar y a partir de G1 sí
@@ -124,18 +124,18 @@ struct GroupsDomainAdoptionTests {
     /// La mitad (1) es estructural y va por source-scan (`theGroupsTab_mountsItsContentUnconditionally`).
     @Test func withoutAdoption_theBridgeStaysClosedOnASealedDevice() {
         #expect(GroupsDomainAdoptionLogic.isDomainOpen(
-            isUnlocked: false, isGroupInviteMode: false) == false)
+            isUnlocked: false, hasPrivateSession: true) == false)
         #expect(GroupsDomainAdoptionLogic.isBridgeAllowed(
-            sealedForFreshStart: true, isUnlocked: false, isGroupInviteMode: false) == false)
+            sealedForFreshStart: true, isUnlocked: false, hasPrivateSession: true) == false)
     }
 
     /// `isDomainOpen` conserva sus DOS términos. Colapsarlo a `true` —la tentación obvia al retirar
     /// el gate— deja `sealedForFreshStart` sin efecto observable (es su único uso) y abre de golpe
     /// los 5 guards de `GroupTransactionBridge.isDomainOpenForBridge`.
     @Test func isDomainOpen_keepsBothTerms() {
-        #expect(GroupsDomainAdoptionLogic.isDomainOpen(isUnlocked: false, isGroupInviteMode: false) == false)
-        #expect(GroupsDomainAdoptionLogic.isDomainOpen(isUnlocked: true, isGroupInviteMode: false) == true)
-        #expect(GroupsDomainAdoptionLogic.isDomainOpen(isUnlocked: false, isGroupInviteMode: true) == true)
+        #expect(GroupsDomainAdoptionLogic.isDomainOpen(isUnlocked: false, hasPrivateSession: true) == false)
+        #expect(GroupsDomainAdoptionLogic.isDomainOpen(isUnlocked: true, hasPrivateSession: true) == true)
+        #expect(GroupsDomainAdoptionLogic.isDomainOpen(isUnlocked: false, hasPrivateSession: false) == true)
     }
 }
 

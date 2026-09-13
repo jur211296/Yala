@@ -43,7 +43,7 @@ final class GroupExpenseViewModel {
     var splitType: SplitType = .equal
 
     /// M6: Cuenta personal real para Caso A `.full/.completed`. `nil` cuando user aún no eligió,
-    /// está en modo `.groupInvite`, o no es Caso A. El form la resuelve via `AccountSelectorSheet`.
+    /// está en una sesión solo-grupos, o no es Caso A. El form la resuelve via `AccountSelectorSheet`.
     var selectedAccount: Account?
 
     // Per-participant state
@@ -169,14 +169,14 @@ final class GroupExpenseViewModel {
         return paidByMemberID == myID && !paidByMemberID.isEmpty
     }
 
-    /// User en modo `.groupInvite` no tiene cuentas reales — bridge fallback a M5 puro.
-    /// Default: lee `SessionState.shared`. Tests inyectan via `isGroupInviteOverride`.
-    var isGroupInviteMode: Bool {
-        isGroupInviteOverride ?? (SessionState.shared.onboardingMode == .groupInvite)
+    /// Una sesión solo-grupos no tiene cuentas reales — bridge fallback a M5 puro.
+    /// Default: lee `SessionState.shared`. Tests inyectan via `isGroupsOnlyOverride`.
+    var isGroupsOnlySession: Bool {
+        isGroupsOnlyOverride ?? !SessionState.shared.hasPrivateSession
     }
 
     /// Override solo para tests (pure-logic sin singletons). Producción: nil → lee SessionState.
-    var isGroupInviteOverride: Bool?
+    var isGroupsOnlyOverride: Bool?
 
     /// Override para tests. Producción: nil → lee resolver con context+prefs reales.
     var effectiveBridgeEnabledOverride: Bool?
@@ -193,7 +193,7 @@ final class GroupExpenseViewModel {
     /// el bridge effective está ON. Si OFF, el form NO pide cuenta (alert post-save F2c
     /// ofrece opt-in para crear draft Inbox).
     var isAccountRequired: Bool {
-        isCaseA && !isGroupInviteMode && effectiveBridgeEnabled
+        isCaseA && !isGroupsOnlySession && effectiveBridgeEnabled
     }
 
     /// Cuenta seleccionada compatible con la moneda actual del gasto.
@@ -429,7 +429,7 @@ final class GroupExpenseViewModel {
     /// Fetch TX cuenta real existente (`splitExpenseID == X && account.isSystemAccount == false`)
     /// y popula `selectedAccount`. Solo aplica si Caso A `.full/.completed`.
     private func resolveSelectedAccountForCaseA(expense: SplitExpense) {
-        guard isCaseA, !isGroupInviteMode, let ctx = modelContext else { return }
+        guard isCaseA, !isGroupsOnlySession, let ctx = modelContext else { return }
         let expenseIDStr = expense.id.uuidString
         let descriptor = FetchDescriptor<TransactionItem>(
             predicate: #Predicate { tx in

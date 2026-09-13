@@ -53,9 +53,9 @@ struct GroupExpenseViewModelEditAfterCreateTests {
         let lookup = Dictionary(members.map { ($0.id.uuidString, $0.displayName) }, uniquingKeysWith: { a, _ in a })
         let vm = GroupExpenseViewModel(group: group, members: members, memberNameLookup: lookup)
         vm.setContext(context)
-        // Caso A full-mode determinístico: no groupInvite + cuenta PEN compatible satisface
+        // Caso A full-mode determinístico: con sesión privada + cuenta PEN compatible satisface
         // isAccountRequired sin depender de SessionState/BridgeModeResolver globales.
-        vm.isGroupInviteOverride = false
+        vm.isGroupsOnlyOverride = false
         vm.amountString = "100"
         vm.expenseDescription = "Cena"
         vm.currencyCode = "PEN"

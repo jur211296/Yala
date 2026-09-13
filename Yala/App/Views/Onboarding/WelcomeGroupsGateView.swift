@@ -36,10 +36,10 @@
 //  agota, y el desarme del arm si el borrado aborta en `.icloud`.
 //
 //  **La celda se MIDE, no se supone.** En el Welcome lo normal es `.privateSignOut` —sin sesión en la nube
-//  y sin `.groupInvite`, con el modo en `.icloud`— y con `kind == .privateOnly` el tramo no sube grupos. Pero
+//  y CON sesión privada, con el modo en `.icloud`— y con `kind == .privateOnly` el tramo no sube grupos. Pero
 //  las otras dos celdas por archivos son alcanzables (una sesión de nube que sobrevive en el Keychain, un
-//  `.groupInvite` que llegó por el iKV) y las dos son correctas aquí: suben los grupos antes de borrar. Las
-//  que NO lo son —el cierre de la nube y el de la visita— hacen otro borrado, así que la puerta las mide
+//  dispositivo que ya venía en solo-grupos) y las dos son correctas aquí: suben los grupos antes de borrar.
+//  La que NO lo es —el cierre de la nube— hace otro borrado, así que la puerta lo mide
 //  ANTES y enseña una pantalla con salida en vez de arrancar.
 //
 //  **Lo que se lleva el store de Grupos, dicho con precisión:** `forgetsGroups = kind.pushesGroups ||
@@ -123,7 +123,6 @@ struct WelcomeGroupsGateView: View {
     private enum Phase: Equatable {
         case checking
         case blockedChannelOff
-        case blockedSecondarySession
         /// Sin copia en iCloud **con prueba**: segundo gesto antes de borrar.
         case confirmingNoBackup
         /// **La pregunta del invitado** (`purpose == .acceptInvite`). Un solo gesto que cubre los dos
@@ -191,7 +190,7 @@ struct WelcomeGroupsGateView: View {
     /// `body` porque el type-checker no resuelve `cond ? nil : método` sin anotación.
     private var backAction: (() -> Void)? {
         switch phase {
-        case .checking, .blockedChannelOff, .blockedSecondarySession, .confirmingNoBackup,
+        case .checking, .blockedChannelOff, .confirmingNoBackup,
              .confirmingInviteNeutral, .unavailable:
             return onBack
         case .returningToNeutral, .discardingUnconfirmed, .resumingExportWait:
@@ -217,15 +216,6 @@ struct WelcomeGroupsGateView: View {
                 title: L10n.Welcome.Groups.channelOffTitle,
                 body: L10n.Welcome.Groups.channelOffBody,
                 identifier: "welcome_groups_gate_channel_off")
-        case .blockedSecondarySession:
-            // C3 · estás de visita en el móvil de otra persona. Copy PROPIO: el hecho no es «hay
-            // datos de otro humano» sino «esta sesión no es de este dispositivo», y aquí sí hay
-            // salida (cerrar la sesión de invitado y volver desde el suyo).
-            blockedContent(
-                icon: "person.crop.circle.badge.clock",
-                title: L10n.Welcome.Groups.secondaryTitle,
-                body: L10n.Welcome.Groups.secondaryBody,
-                identifier: "welcome_groups_gate_secondary_session")
         case .unavailable:
             // Sin esta pantalla el camino era un progreso eterno sin botón: `signOut` tiene TRES `return`
             // mudos (fase no `.idle`, celda distinta de la confirmada, plan nulo) y ninguno toca la fase que
@@ -426,7 +416,7 @@ struct WelcomeGroupsGateView: View {
             await CloudSessionSignOut.shared.exitDiscardingUnconfirmed(context: modelContext)
         case .resumingExportWait:
             await CloudSessionSignOut.shared.resumeWaitingForExport(context: modelContext)
-        case .blockedChannelOff, .blockedSecondarySession, .confirmingNoBackup,
+        case .blockedChannelOff, .confirmingNoBackup,
              .confirmingInviteNeutral, .unavailable:
             return
         }
@@ -434,8 +424,8 @@ struct WelcomeGroupsGateView: View {
 
     /// El orden es el del spec y **no se puede reordenar**: primero se re-mide el canal (con `force`),
     /// después se decide. Esta función no escribe nada en `UserDefaults` — ni ella ni ninguna a la que
-    /// llame — y eso es la mitad del chip: `onboardingMode` es never-downgrade cross-device, así que una
-    /// escritura prematura viaja al iKV y no vuelve.
+    /// llame — y eso es la mitad del chip: el alta de solo-grupos se escribe cuando la ruta ya está
+    /// confirmada, nunca mientras se decide.
     private func evaluate() async {
         // **La rama del invitado no re-mide el canal, y no es un olvido.** El `force` existe porque la
         // card «Crear mi primer grupo» es la PRIMERA evidencia de que el canal debería estar encendido;
@@ -461,10 +451,6 @@ struct WelcomeGroupsGateView: View {
 
         let verdict = GroupsOrganizerGateLogic.decide(
             channelEnabled: CloudSyncFlags.groupsBackendEnabled,
-            // C3 · el descriptor, no el corpus: en secundaria el detector de abajo mide el store de la
-            // INVITADA (vacío en una sesión recién montada) y daría vía libre justo donde el alta escribe
-            // las seis preferencias en el `UserDefaults` del DUEÑO.
-            isSecondarySession: SecondarySessionStore.isActive(),
             hasExistingData: hasLocalDataNow(),
             // El EJE ANCHO, y se lee AQUÍ y no antes: es el testigo del mount de este proceso, que no
             // cambia, pero leerlo junto a los otros dos términos es lo que mantiene la puerta en un sitio.
@@ -475,8 +461,6 @@ struct WelcomeGroupsGateView: View {
             onProceed()
         case .blockedChannelOff:
             phase = .blockedChannelOff
-        case .blockedSecondarySession:
-            phase = .blockedSecondarySession
         case .returnsToNeutral:
             phase = neutralReturnEntryPhase()
         }
@@ -514,10 +498,9 @@ struct WelcomeGroupsGateView: View {
         case .privateSignOut, .privateWithGroupsSignOut, .groupsOnlySignOut:
             return .confirmingInviteNeutral(
                 withoutICloudCopy: CloudSessionSignOut.privateCopyChannel() == .none)
-        case .cloudSecureSignOut, .secondaryCloudSignOut:
-            // Los dos cierres que NO borran por archivos, igual que en la rama del organizador: uno haría
-            // un borrado distinto del que esta pantalla promete y el otro ni siquiera toca el store del
-            // dueño. La secundaria además ya la deja fuera la puerta, así que esto es el cinturón.
+        case .cloudSecureSignOut:
+            // El cierre de la nube NO borra por archivos: haría un borrado distinto del que esta pantalla
+            // promete.
             return .unavailable
         }
     }
@@ -583,20 +566,19 @@ struct WelcomeGroupsGateView: View {
             case .none:
                 return .confirmingNoBackup
             }
-        case .cloudSecureSignOut, .secondaryCloudSignOut:
-            // Los dos cierres que NO borran por archivos. El de la nube haría un borrado distinto del que
-            // esta pantalla promete, y el de la visita ni siquiera toca el store del dueño.
+        case .cloudSecureSignOut:
+            // El cierre de la nube NO borra por archivos: haría un borrado distinto del que esta pantalla
+            // promete.
             return .unavailable
         }
     }
 
     /// La celda de cierre de ESTE dispositivo. Espejo exacto del dispatch de `CloudSessionSignOut.signOut`,
-    /// con los cinco términos en el mismo orden: si divergieran, la puerta prometería un borrado que el
+    /// con sus términos en el mismo orden: si divergieran, la puerta prometería un borrado que el
     /// coordinador no va a hacer.
     private static func exitCell() -> CloudSignOutFlowLogic.Path {
         CloudSignOutFlowLogic.path(
             for: CloudSyncFlags.storageMode,
-            secondarySessionActive: SecondarySessionStore.isActive(),
             hasLiveSession: CloudAuthService.shared.hasSession,
             groupsBackendEnabled: CloudSyncFlags.groupsBackendCompiledCapability,
             hasPrivateSession: PrivateSessionMark.hasPrivateSession())

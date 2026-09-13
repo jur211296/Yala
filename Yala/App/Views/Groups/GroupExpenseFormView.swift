@@ -674,7 +674,7 @@ struct GroupExpenseFormView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: DS.Spacing.sm) {
                 // M6: chip cuenta personal real PRIMERO cuando aplica (Caso A `.full/.completed`).
-                // Si no aplica (Caso B / .groupInvite), los demás chips corren a la izquierda.
+                // Si no aplica (Caso B / sesión solo-grupos), los demás chips corren a la izquierda.
                 if viewModel.isAccountRequired {
                     SelectionChip(
                         icon: "creditcard",
@@ -826,13 +826,13 @@ struct GroupExpenseFormView: View {
         presentSuccess()
     }
 
-    /// Opt-out: Caso A + bridge effective OFF + creación (no edit). NO en `.groupInvite`: ahí el
+    /// Opt-out: Caso A + bridge effective OFF + creación (no edit). NO en una sesión solo-grupos: ahí el
     /// bridge es M5 puro (par virtual, sin TX real) y el invitado minimal no tiene cuentas
     /// personales donde registrar — consistente con `isAccountRequired` y el gate Caso C de
     /// `SettlementFormView`. Solo aplica en creación (`lastCreatedExpenseID != nil`).
     private var optInApplies: Bool {
         !viewModel.effectiveBridgeEnabled
-            && !viewModel.isGroupInviteMode
+            && !viewModel.isGroupsOnlySession
             && viewModel.isCaseA
             && viewModel.lastCreatedExpenseID != nil
     }

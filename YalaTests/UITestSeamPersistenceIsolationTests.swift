@@ -216,66 +216,6 @@ struct UITestSeamPersistenceIsolationTests {
         }
     }
 
-    // MARK: - Comportamiento · sesión secundaria (M4)
-
-    /// El seam más peligroso de los cuatro, y por eso el que más aserciones lleva: un descriptor que
-    /// llegara al dominio persistente **no lo borra NADIE** —el bloque de `-uitest-reset` no lo nombra y
-    /// `DataWipeService` excluye `cloudSync.*` a propósito— así que dejaría el simulador en sesión
-    /// secundaria para todas las suites siguientes y para cualquier arranque manual.
-    ///
-    /// La segunda mitad —el testigo del mount— no es cosmética: sin ella el par
-    /// `isActive() && !secondaryStoreMounted` es la VENTANA DE ENTRADA, que arma el cover terminal de
-    /// relanzamiento y TAPA la app entera. Un seam sin testigo compila, no deja rastro y hace imposible
-    /// el XCUITest que existe para justificarlo.
-    @Test func sesionSecundaria_sePoneEnMemoria_conTestigo_ySeBorraDelDisco() throws {
-        let store = try makeToyStore()
-        defer { store.defaults.removePersistentDomain(forName: store.suite) }
-        let key = SecondarySessionStore.userIDKey
-        let spy = VolatileApplySpy()
-        var testigo: Bool?
-
-        store.defaults.set("sesion-de-otra-corrida", forKey: key)
-
-        UITestEphemeralDefaults.applySecondarySession(
-            true, to: store.defaults, volatileApply: spy.function, setMountWitness: { testigo = $0 })
-
-        #expect(
-            spy.stringValue(key) == UITestEphemeralDefaults.secondarySessionUserID,
-            "El seam no dejó el descriptor puesto: `SecondarySessionStore.isActive()` seguiría en false y el XCUITest probaría la rama del DUEÑO creyendo probar la de la invitada."
-        )
-        #expect(
-            testigo == true,
-            "El seam no declaró el testigo del mount: el par `isActive() && !secondaryStoreMounted` es la VENTANA DE ENTRADA y el cover terminal taparía la app."
-        )
-        #expect(
-            store.persisted(key) == nil,
-            "«\(key)» sigue ESCRITA: nadie la borra después (ni el reset de uitest ni el wipe), así que ese simulador queda en sesión secundaria para siempre."
-        )
-    }
-
-    /// La rama que no enciende nada sigue purgando — y aquí importa más que en ningún otro seam, porque
-    /// es la ÚNICA limpieza del descriptor que existe en todo el árbol: cura los simuladores que ya
-    /// corrieron una versión anterior o una sesión de QA a mano con el panel DEBUG.
-    @Test func sesionSecundariaApagada_purgaElDescriptorYNoTocaElTestigo() throws {
-        let store = try makeToyStore()
-        defer { store.defaults.removePersistentDomain(forName: store.suite) }
-        let key = SecondarySessionStore.userIDKey
-        let spy = VolatileApplySpy()
-        var testigo: Bool?
-
-        store.defaults.set("guest-debug", forKey: key)
-
-        UITestEphemeralDefaults.applySecondarySession(
-            false, to: store.defaults, volatileApply: spy.function, setMountWitness: { testigo = $0 })
-
-        #expect(spy.calls == 0, "La rama apagada puso el descriptor en memoria: toda la suite correría como sesión secundaria.")
-        #expect(testigo == nil, "La rama apagada tocó el testigo del mount, que es estado GLOBAL de proceso y contamina a quien corra después.")
-        #expect(
-            store.persisted(key) == nil,
-            "«\(key)» sobrevivió a la purga: un simulador con el descriptor de una sesión de QA previa arranca TODOS los XCUITest en sesión secundaria."
-        )
-    }
-
     // MARK: - Comportamiento · el LAVADO del valor volátil
 
     /// `UserDefaults` que cuenta las escrituras por clave. Hace falta un contador y no una lectura
@@ -341,7 +281,6 @@ struct UITestSeamPersistenceIsolationTests {
             (AppPreferences.Keys.hasCompletedOnboarding, true, "Bool incondicional — la key del seam"),
             (AppPreferences.Keys.hasShownWelcomeChooser, true, "Bool incondicional — la otra key del seam"),
             (AppPreferences.Keys.defaultCurrencyCode, "USD", "enum String tras `if let` + parse"),
-            (AppPreferences.Keys.usageFocus, "groupsOnly", "enum String con fallback incondicional (reset-on-absent)"),
             (AppPreferences.Keys.userProfileIcon, "star", "String con `?? \"\"` incondicional"),
             (AppPreferences.Keys.decimalPlaces, 4, "Int tras `object != nil`"),
             (AppPreferences.Keys.firstWeekday, 1, "Int con rawValue (`.sunday`)"),
@@ -364,7 +303,6 @@ struct UITestSeamPersistenceIsolationTests {
         #expect(prefs.hasCompletedOnboarding == true)
         #expect(prefs.hasShownWelcomeChooser == true)
         #expect(prefs.defaultCurrencyCode == .usd)
-        #expect(prefs.usageFocus == .groupsOnly)
         #expect(prefs.userProfileIcon == "star")
         #expect(prefs.decimalPlaces == 4)
         #expect(prefs.firstWeekday == .sunday)
@@ -617,7 +555,6 @@ struct UITestSeamPersistenceIsolationTests {
             "UITestEphemeralDefaults.applyGroupsBetaUnlocked(",
             "UITestEphemeralDefaults.applyOnboardingAlreadySeen(",
             "UITestEphemeralDefaults.purgeCategorySeedSentinel(",
-            "UITestEphemeralDefaults.applySecondarySession(",
         ]
         for llamada in llamadas {
             let veces = body.components(separatedBy: llamada).count - 1
@@ -632,7 +569,6 @@ struct UITestSeamPersistenceIsolationTests {
             (AppPreferences.Keys.hasCompletedOnboarding, "abrir la app a mano tras un XCUITest se salta el onboarding"),
             (AppPreferences.Keys.hasShownWelcomeChooser, "abrir la app a mano tras un XCUITest se salta el Welcome Chooser"),
             (CategorySeedSentinel.productionKey, "el arranque manual siguiente se queda sin categorías"),
-            (SecondarySessionStore.userIDKey, "ese simulador queda en sesión secundaria para SIEMPRE — no la borra ni el reset de uitest ni el wipe, que excluye `cloudSync.*` a propósito"),
         ]
         for (key, consecuencia) in prohibidas {
             let veces = body.components(separatedBy: key).count - 1
@@ -663,18 +599,13 @@ struct UITestSeamPersistenceIsolationTests {
 
         let porDefecto = source.components(separatedBy: "volatileApply: VolatileApply = liveVolatileApply").count - 1
         #expect(
-            porDefecto == 4,
+            porDefecto == 3,
             """
-            Se esperaban 4 seams con `liveVolatileApply` por defecto (adopción de Grupos, onboarding, sesión secundaria y el prompt de notificaciones de Grupos) y hay \(porDefecto). \
+            Se esperaban 3 seams con `liveVolatileApply` por defecto (adopción de Grupos, onboarding y el prompt de notificaciones de Grupos) y hay \(porDefecto). \
             O se renombró el mecanismo, o alguno dejó de usarlo: en los dos casos el pin dejó de comprobar nada.
+
+            Eran 4 hasta el 2026-09-13: el cuarto sembraba la sesión de visita, retirada con M1.
             """
-        )
-        // La otra mitad del seam de M4, que un doble inyectado jamás vería: el testigo del mount tiene que
-        // salir por DEFECTO del setter real. Cambiarlo por un no-op deja los dos tests de comportamiento
-        // en VERDE (los dos inyectan su propia closure) y el cover terminal volvería a tapar la app.
-        #expect(
-            source.contains("setMountWitness: (Bool) -> Void = SwiftDataConfiguration._testSetSecondaryStoreMounted"),
-            "El seam de la sesión secundaria dejó de declarar el testigo del mount REAL por defecto: los XCUITest arrancarían en la VENTANA DE ENTRADA y el cover terminal taparía la app."
         )
         let registros = source.components(separatedBy: "register(defaults:").count - 1
         #expect(

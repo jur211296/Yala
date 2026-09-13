@@ -60,9 +60,6 @@ nonisolated enum DestructiveScopeLogic {
         case signOutCloud
         /// Solo grupos (F): los grupos siguen en la cuenta; el dispositivo vuelve a recién instalado.
         case signOutGroupsOnly
-        /// Sesión SECUNDARIA M1: borra los archivos `-Secondary`; los del dueño intactos. Se retira con M1
-        /// (paso 12 del rediseño).
-        case signOutSecondary
     }
 
     /// Etiqueta de la fila ☁️ — mata C2 de raíz (el copy no caduca por modo).
@@ -123,7 +120,7 @@ nonisolated enum DestructiveScopeLogic {
     static func cloudLabel(for operation: Operation, storageMode: StorageMode) -> CloudLabel {
         switch operation {
         case .deleteAccountCloud, .deleteAccountGroupsOnly, .deleteAccountGroupsOnlyNoPrivate,
-             .signOutGroupsOnly, .signOutSecondary:
+             .signOutGroupsOnly:
             return .cloudAccount
         case .wipeDataFull, .wipeDataGroupsOnly, .signOutPrivate, .signOutPrivateNoCopy,
              .signOutPrivateWithGroups, .signOutPrivateWithGroupsNoCopy, .signOutCloud:
@@ -145,10 +142,9 @@ nonisolated enum DestructiveScopeLogic {
     ///
     /// **`personalMountAttachesMirror` sube el scope de un solo-grupos cuyo store ESPEJA** (review adversarial
     /// del paso 9). «Vaciar datos» borra FILAS, y con el espejo montado esos borrados se exportan: salen de
-    /// iCloud y de todos los dispositivos del Apple ID. Pasa en una instalación anterior al paso 5, o con un
-    /// `.groupInvite` que llegó por el iCloud KV a un teléfono privado, y ahí la hoja de solo grupos decía
-    /// «No se tocan» sobre un borrado que cruzaba a todos los dispositivos. Con espejo, la hoja es la
-    /// completa, que lo nombra.
+    /// iCloud y de todos los dispositivos del Apple ID. Pasa, por ejemplo, en una instalación anterior al
+    /// paso 5, y ahí la hoja de solo grupos decía «No se tocan» sobre un borrado que cruzaba a todos los
+    /// dispositivos. Con espejo, la hoja es la completa, que lo nombra.
     static func wipeOperation(hasPrivateSession: Bool, personalMountAttachesMirror: Bool) -> Operation {
         !hasPrivateSession && !personalMountAttachesMirror ? .wipeDataGroupsOnly : .wipeDataFull
     }
@@ -196,8 +192,6 @@ nonisolated enum DestructiveScopeLogic {
             return hasICloudCopy ? .signOutPrivateWithGroups : .signOutPrivateWithGroupsNoCopy
         case .cloudSecureSignOut:
             return .signOutCloud
-        case .secondaryCloudSignOut:
-            return .signOutSecondary
         case .groupsOnlySignOut:
             return .signOutGroupsOnly
         }
@@ -373,17 +367,6 @@ nonisolated enum DestructiveScopeLogic {
                 extraLines: [],
                 secondaryActions: [])
 
-        case .signOutSecondary:
-            // M1: los datos de la sesión secundaria se eliminan del device (siguen en su cuenta); los del
-            // dueño intactos (lo dice la nota de conservación).
-            return Model(
-                rows: [.init(location: .device, tone: .neutral),
-                       .init(location: .cloud, tone: .preserved),
-                       .init(location: .groups, tone: .preserved)],
-                cloudLabel: cloudLabel,
-                hasConservationNote: true,
-                extraLines: [],
-                secondaryActions: [])
         }
     }
 

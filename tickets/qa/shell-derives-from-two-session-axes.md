@@ -1,9 +1,10 @@
 ---
 id: shell-derives-from-two-session-axes
-status: backlog
+status: qa
 priority: high
 area: "arquitectura, modo-nube, groups, settings"
 created: 2026-09-09
+updated: 2026-09-13
 source: "ADR 2026-09-09 «Sesiones — dos ejes» §2 y consecuencias"
 ---
 
@@ -220,3 +221,178 @@ mutantes que caen**: 4 sobre el diseño y 6 sobre las correcciones de la review.
   sobrevive a propósito, así que un dispositivo solo-grupos que recibe la señal conserva su eje (bien) con
   la shell completa (la decide `ShellModeLogic`, que aún lee el flag). Se cierra solo cuando el PR-B
   retire el flag; no hay nada que arreglar antes.
+
+## PR-B entregado (2026-09-13): el barrido
+
+**Qué cambia para quien usa Yala: nada visible.** Lo que cambia es de dónde sale la respuesta a «¿esta
+persona tiene vida personal en este teléfono?», que ahora es UNA y no tres, y que el código de la sesión
+de visita —dos humanos en un mismo iPhone— ya no existe.
+
+### La premisa que hizo el PR barato, y está medida
+
+`CloudSyncFlags.secondarySessionCompiledDefault` está en `false` desde el 2026-09-12, y la entrada
+componía además dos flags remotos con producción en 0 y `absentDefault` fail-closed. En un binario
+Release **nadie podía escribir el descriptor**, así que `SecondarySessionStore.isActive()` era constante
+`false`: los ~40 guards `!isActive()` ya estaban siempre abiertos y las ramas `if isActive()` ya eran
+código muerto. ⇒ **en producción, retirar M1 es byte-neutro.** Lo que se borra es andamiaje.
+
+### El hallazgo que cambió el diseño
+
+**`.groupInvite` no era un flag: eran cuatro preguntas en un enum de tres casos** — ¿hay vida personal
+aquí? · ¿qué sesión de nube hay? · ¿qué shell se pinta? · ¿qué pasos de onboarding faltan. Y era **el
+único camino vivo a la shell reducida de Grupos**: `AccountKind.groupsOnly` existe, está cacheado y
+sellado, pero ninguna superficie de shell lo lee — el alta solo-grupos «reusaba `.groupInvite`».
+Borrarlo sin sustituto le habría devuelto la app completa a toda la población solo-grupos.
+
+El sustituto no hubo que inventarlo: los cinco escritores del flag ya apagaban el eje 1 uno a uno, sin
+huérfanos. La shell pasa a `hasPrivateSession ? completa : grupos`, que es literalmente el §2 del ADR.
+Y la celda que podía romperse —nacida en la nube, sin sesión privada pero con la app entera— no se
+rompe: adoptar una cuenta y terminar el onboarding personal ENCIENDEN el eje.
+
+### Decisiones de Jürgen (2026-09-13)
+
+- **El backfill se deriva del mount neutro, y esta decisión se tomó DOS veces.** La primera versión
+  escribía `true` sin preguntar nada, apoyada en una premisa de Jürgen: «hoy NO existen usuarios en
+  producción que sean solo grupos — ha sido funcionalidad cerrada». **La review la refutó midiendo**:
+  `groupsBackendCompiledDefault` está en `true` y `GROUPS_BACKEND_ROLLOUT_PERCENT` vale `"100"` en el
+  bloque de producción del gateway, o sea que Grupos lleva tiempo abierto al parque entero. La medición
+  volvió a Jürgen y eligió la fuente que sí existe sin resucitar ningún símbolo:
+  `backfillIfNeeded(hasGroupsOnlyNeutralMount:hasCompletedOnboarding:)` escribe
+  `!hasGroupsOnlyNeutralMount`, leyendo `cloudSync.groupsOnlyNeutralMount`, que es la marca durable que
+  ya distingue una instalación solo-grupos. **Retirar el backfill del todo no valía**: el parque privado
+  (su iPhone, los testers) se quedaría sin marca para siempre, y con eso «Vaciar datos» dejaría de
+  ordenar el vaciado a los demás dispositivos de su Apple ID — un apagón silencioso de una función viva.
+- **El filtro de canal del tab bar se quita.** `forMode` llevaba un predicado por canal que estaba
+  MUERTO —nadie lo alcanzaba— y mi barrido lo dejó VIVO por accidente al cambiarle la entrada. Entre
+  apuntalarlo y retirarlo, Jürgen eligió retirarlo: `forMode(stored:reduceToGroupsOnly:)` tiene un solo
+  término. Lo que se pierde al limpiarlo, dicho: si algún día hace falta reducir la shell por canal y no
+  por eje, hay que volver a escribirlo.
+- **El banner de hidratación se queda, renombrado** (`CloudHydrationBanner`). El encargo pedía retirarlo
+  con M1; medido, desde el 2026-08-12 ya no es de la visita: es el aviso «tus datos están bajando» que
+  ve quien cambia de móvil y entra con su cuenta. Solo su primer término era de M1.
+- **Purga de retirada one-shot** (`SecondarySessionRetirement`): borra los tres archivos `-Secondary`,
+  las cuatro preferencias `cloudSync.secondary*`, las dos del modelo viejo de sesiones y los cajones
+  `yala.session.*`. Es la única pieza del PR que no es un borrado de código.
+- **En «Mi perfil», el botón de exportar se traduce al eje 1** sin cambiar comportamiento. El predicado
+  de contenido de verdad («¿hay algo que exportar?») queda para otro ticket.
+
+### Lo que la review adversarial cazó, y era MÍO
+
+Cinco defectos de código, los cinco de este PR, los cinco cubiertos por un mutante que cae:
+
+1. **El backfill se apoyaba en una premisa falsa** (arriba). El peor de los cinco: en un teléfono
+   solo-grupos habría encendido el eje 1 y le habría devuelto la app completa a quien no la tiene.
+2. **Un predicado muerto que mi barrido volvió VIVO** en el tab bar. Es la forma que el repo ya conoce:
+   quitar un efecto vuelve alcanzable código que nunca corrió, con sus bugs intactos.
+3. **La retirada se tragaba un fallo de borrado** y escribía la marca de «ya está» igual ⇒ el corpus de
+   otra persona se quedaba en el teléfono para siempre, porque nadie volvía a mirar. Ahora la marca solo
+   se escribe si los tres archivos se fueron, y si no, queda rastro y se reintenta.
+4. **Las superficies del App Group no se purgaban** mientras el sello que las protegía se retiraba en
+   este mismo PR ⇒ el widget del dueño seguiría pintando los saldos de la otra persona. Se purgan, y
+   **solo si hubo visita** — purgar a ciegas le borraría al 100 % del parque su cola de Apple Pay
+   pendiente.
+5. **El espejo observable se quedaba rancio** tras tres `clear()`: la marca persistida cambiaba y la
+   shell no se enteraba hasta el arranque siguiente.
+
+Dos cosas más que la review dejó, y no son código:
+
+- **Un mutante SOBREVIVIÓ en la primera pasada**: quitar el `guard !isRefreshingPrivateSessionMirror`
+  no ponía nada en rojo, porque escribí el refresco del espejo sin un solo test. Se escribió la suite
+  «El eje 1 · el espejo observable» (3 casos, en `YalaTests/CloudSync/PrivateSessionMarkTests.swift`) y
+  el mutante murió.
+- **Dos suites borradas que sostenían invariantes AJENOS se rescataron**, no se re-crearon:
+  `PersonalMountMismatchGuardTests` (uno de sus cuatro casos era de M1; los otros tres y su aserción de
+  cableado guardan la regla `L133`) y los dos casos de decodificación legacy del snapshot del widget,
+  que hoy viven en `WidgetSnapshotLegacyDecodeTests`. La lección va escrita en los dos ficheros: **al
+  borrar una suite, mira si alguno de sus casos sostiene un invariante ajeno** — se descubre leyendo los
+  casos, no el nombre del fichero.
+
+### Los ocho XCUITest rojos eran el SIMULADOR, y costaron un día
+
+Con las correcciones de la review puestas, el XCUITest de las áreas tocadas daba **ocho rojos en tres
+suites** ajenas a Grupos —el Perfil sin «Organización» y sin tab «Más», la sección «Grupos» de
+Almacenamiento sin montar, y las celdas de cierre C y D mostrando la hoja de solo-grupos—, con el
+centinela en 0. Los tres síntomas eran el mismo estado: **la app arrancaba con el eje 1 apagado.**
+
+**La causa, medida con una sonda en el arranque en vez de con hipótesis:**
+
+```
+INIT espejo=false raw=Optional(false)
+HOOK-RESET antes de clear raw=Optional(false) → tras clear raw=nil
+CLEAR neutral antes=true despues=true          ← removeObject SIN efecto
+BACKFILL entrada raw=nil neutral=true onboarding=true
+BACKFILL salida raw=Optional(false)            ← el backfill escribe false
+```
+
+`cloudSync.groupsOnlyNeutralMount` estaba pegada en el simulador, el backfill deriva el eje de ella y
+escribía `false` en cada arranque. **Lo zanjó `simctl erase`**: con el simulador limpio las tres suites
+pasan **sin tocar una línea de producción**.
+
+**Tres hipótesis caídas por el camino** (escritas para que nadie las repita): que fuera la purga que
+faltaba en `-uitest-reset` (la añadí, seguían los ocho); que fuera un plist de nivel dispositivo (lo
+borré, seguían); que fuera contaminación entre suites (`ProfileSettingsUITests` caía **en solitario**
+sobre un contenedor recién instalado).
+
+**Y la trampa que lo hizo caro, que es la lección:** `removeObject` no tenía efecto, la key no aparecía
+en NINGÚN dominio enumerable (`volatileDomainNames`, `persistentDomain(forName:)`) ni en el plist del
+contenedor, y aun así `object(forKey:)` la devolvía. ⇒ **cuando un `removeObject` no tiene efecto y la
+key no está en ningún dominio, deja de buscar al escritor: es el simulador.** Corolario operativo: antes
+de perseguir un rojo que huele a estado pegajoso, `simctl erase` cuesta tres minutos y descarta la mitad
+del espacio de búsqueda.
+
+**Lo que se queda del diagnóstico fallido, y por qué:** la purga de
+`StorageModePersistence.clearGroupsOnlyNeutralMount()` en el bloque de `-uitest-reset`, con su
+source-scan y su mutante. No fue la causa de estos rojos, pero cierra la MISMA contaminación en el sitio
+que el código sí alcanza —el contenedor de la app— y hasta ese día no la borraba nadie: la key lleva el
+prefijo `cloudSync.` que `removeUserPreferenceKeys` excluye a propósito.
+
+### Lo verificado
+
+- **Build ×2 sin warnings nuevos, y cierra CUATRO** — medido contra un worktree del árbol base con
+  DerivedData limpio en los dos lados (3,6 y 3,7 GB, 6.570 objetos). **Base 13 → PR 9**, contados sobre
+  los dos logs (`/tmp/warn-base.txt` y `/tmp/warn-pr.txt`, 2026-09-13 08:07 y 08:10), sin la línea de
+  `appintentsmetadataprocessor`, que no es del compilador. Tres de los que se
+  cierran eran `OwnerKeyValueStore.shared` leído fuera del main actor: la fachada lo era *por
+  inferencia*, a través de la closure que resolvía el descriptor de la visita, y al retirarla hubo que
+  declararlo.
+- **6751 unit en 686 suites, 0 fallos.** Los tres rojos que salieron eran míos y los tres tenían arreglo
+  de fondo: el barrido de «Vaciar datos» ya no borra la preferencia del modo viejo (eso vive en la
+  retirada one-shot, que corre antes de que nadie pueda vaciar), el pin del reset de XCUITest apuntaba
+  al literal viejo del seam, y el espejo del widget protege tres claves y no cuatro.
+- **30 XCUITest en 10 suites** (perfil reducido, welcome, activación de Yala completo, celdas de cierre,
+  asociación de cuenta, vaciado, «Tu cuenta de Yala»), con `Yala Dev` y el centinela en 0 — 117
+  muestreos, un solo runner.
+- **Los 13 tests del gateway en verde** tras retirar el percent de `wrangler.toml`, `env.ts` y
+  `config.ts`. Los 4 ficheros que fallan ahí son los goldens contra staging, que piden credenciales.
+- **Grep cero** de los símbolos retirados en `Yala/` y `YalaWidgets/`, comentarios y docblocks incluidos.
+
+### El eje, después del barrido
+
+- **OCHO altas/bajas, todas por `SessionState.hasPrivateSession`**, y **un solo escritor de la marca**
+  en toda la app (su `didSet`). Había dos `set` directos y eran un bug esperando: persisten el eje sin
+  refrescar la shell, así que la pestaña reducida se quedaría puesta hasta el arranque siguiente.
+- **15 consumidores de la lectura conservadora** (eran 9; los seis nuevos son los que preguntaban por el
+  flag) y **uno solo de la estricta**, que sigue siendo la señal de vaciado al Apple ID.
+
+### Lo que queda fuera, dicho con su número
+
+- **El Atlas de flujos** (`docs/flows/modo-nube/`) describe dos recorridos que ya no existen. Medido:
+  45 fallos de `check.mjs` en el árbol base, 55 tras el PR. Los 10 nuevos son nodos que citan las claves
+  retiradas; los 2 que sí se arreglaron eran el banner, que sobrevive. Retirar esos 30 paneles son dos
+  flujos enteros de los siete, con conteos declarados y storyboard: cirugía propia, y ya tenía ticket
+  —`flows-atlas-predates-session-redesign`—, que se actualizó con las dos mediciones.
+- **Device-QA**: el recorrido de la retirada en un teléfono que SÍ tuvo sesión de visita (un build DEV
+  contra staging) no es simulable aquí — en el simulador de esta Mac no hay ni un `YalaModel-Secondary`,
+  y el parque de TestFlight no pudo crearlos.
+- **Cuatro tickets nuevos**, de hallazgos que salieron de camino y no tocaba arreglar aquí:
+  · `wipe-copy-reads-one-axis-while-the-sheet-reads-two` — preexistente: el texto de «Vaciar mis datos»
+    lee un eje y la hoja lee dos, y en una celda la pantalla promete menos de lo que borra. El
+    comentario del código ya lo apunta.
+  · `secondary-session-retirement-leaves-the-guest-cloud-session` — la retirada limpia el contenedor,
+    no el Keychain; alcance DEV/QA por la misma premisa que abre este parte.
+  · `m1-prose-outlives-its-code-in-comments` — **el grep de SÍMBOLOS da cero, pero la PROSA no**: 94
+    líneas en 30 ficheros siguen hablando de «la visita». Este PR cerró las CINCO que él mismo
+    falsificó; el resto pide leerlas una a una y decidir entre reescribir en pasado o borrar.
+  · `unit-test-suites-leave-orphan-userdefaults-domains` — 45 ficheros de `YalaTests` crean un
+    `UserDefaults(suiteName:)` y solo 17 lo destruyen: cada corrida deja miles de `.plist` dentro del
+    simulador. Se vio leyendo el contenedor para diagnosticar el rojo de arriba.

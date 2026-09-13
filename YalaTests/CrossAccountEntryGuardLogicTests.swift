@@ -2,8 +2,8 @@
 //  CrossAccountEntryGuardLogicTests.swift
 //  YalaTests
 //
-//  Matriz COMPLETA del guard (16 combos). Con el flag OFF la tabla reproduce EXACTAMENTE
-//  la v1 (DARK); la salida secundaria existe SOLO en la celda (datos ajenos + exists + flag).
+//  Matriz COMPLETA del guard. Tres términos: datos locales, claim de la misma cuenta y
+//  restauración en curso.
 //
 
 import Foundation
@@ -11,18 +11,16 @@ import Testing
 
 @testable import Yala
 
-@Suite("Guard cross-cuenta del sign-in en Welcome (F0-C + M1)")
+@Suite("Guard cross-cuenta del sign-in en Welcome (F0-C)")
 struct CrossAccountEntryGuardLogicTests {
 
-    /// Atajo de la matriz histórica: los 16 combos de v1/M1 se afirman con la restauración APAGADA,
-    /// que es el estado de todo el mundo salvo la ventana de segundos del restore.
+    /// Atajo de la matriz histórica: los combos se afirman con la restauración APAGADA, que es el
+    /// estado de todo el mundo salvo la ventana de segundos del restore.
     private static func decide(
-        hasLocalData: Bool, sameAccountClaimExists: Bool,
-        accountExists: Bool, secondarySessionEnabled: Bool
+        hasLocalData: Bool, sameAccountClaimExists: Bool
     ) -> CrossAccountEntryGuardLogic.Decision {
         CrossAccountEntryGuardLogic.decide(
             hasLocalData: hasLocalData, sameAccountClaimExists: sameAccountClaimExists,
-            accountExists: accountExists, secondarySessionEnabled: secondarySessionEnabled,
             restoreInProgress: false)
     }
 
@@ -42,26 +40,10 @@ struct CrossAccountEntryGuardLogicTests {
     func ownerRestoringOwnData_isNotForeign() {
         #expect(CrossAccountEntryGuardLogic.decide(
             hasLocalData: true, sameAccountClaimExists: false,
-            accountExists: true, secondarySessionEnabled: false,
             restoreInProgress: true
         ) == .proceed, """
             El dueño que restaura de iCloud y vuelve atrás con el import a medias tiene BLOQUEADA la \
             entrada a su propia cuenta, y el texto le dice que estos datos son de otro.
-            """)
-    }
-
-    /// La celda que la sesión secundaria vuelve PEOR, y que el ticket no nombraba: con el feature
-    /// encendido (staging y `Yala Dev` al 100 %) la misma entrada da `.proceedSecondarySession` ⇒ el
-    /// dueño entraría como VISITA en su propio teléfono, con su corpus intacto pero invisible.
-    @Test("y tampoco lo mandan a la sesión secundaria de su propio móvil")
-    func ownerRestoringOwnData_isNotRoutedToSecondarySession() {
-        #expect(CrossAccountEntryGuardLogic.decide(
-            hasLocalData: true, sameAccountClaimExists: false,
-            accountExists: true, secondarySessionEnabled: true,
-            restoreInProgress: true
-        ) == .proceed, """
-            Con la sesión secundaria encendida, el dueño que está restaurando entra en su propio \
-            teléfono como si fuera una visita.
             """)
     }
 
@@ -76,76 +58,36 @@ struct CrossAccountEntryGuardLogicTests {
     func withoutTheSignal_theSameCellStillBlocks() {
         #expect(CrossAccountEntryGuardLogic.decide(
             hasLocalData: true, sameAccountClaimExists: false,
-            accountExists: true, secondarySessionEnabled: false,
             restoreInProgress: false
         ) == .blockedForeignData, """
             La señal dejó de ser el término que decide: sin restauración en curso, unas filas locales \
             sin claim son corpus de otro humano y el guard tiene que cerrar.
             """)
-        #expect(CrossAccountEntryGuardLogic.decide(
-            hasLocalData: true, sameAccountClaimExists: false,
-            accountExists: true, secondarySessionEnabled: true,
-            restoreInProgress: false
-        ) == .proceedSecondarySession,
-            "y con el feature encendido, la visita real sigue yendo a su sesión secundaria")
     }
 
     @Test
     func cleanDevice_proceeds_always() {
-        // Sin datos locales → adopt clásico, JAMÁS secundaria (aunque el flag esté ON:
-        // el device limpio no necesita aislamiento).
+        // Sin datos locales → adopt clásico, haya o no claim.
         for claim in [true, false] {
-            for exists in [true, false] {
-                for flag in [true, false] {
-                    #expect(Self.decide(
-                        hasLocalData: false, sameAccountClaimExists: claim,
-                        accountExists: exists, secondarySessionEnabled: flag
-                    ) == .proceed)
-                }
-            }
-        }
-    }
-
-    @Test
-    func localData_sameAccount_proceeds_evenWithFlagOn() {
-        // Re-entrada de la MISMA cuenta: el claim-store sobrevive el sign-out a propósito.
-        for exists in [true, false] {
-            for flag in [true, false] {
-                #expect(Self.decide(
-                    hasLocalData: true, sameAccountClaimExists: true,
-                    accountExists: exists, secondarySessionEnabled: flag
-                ) == .proceed)
-            }
-        }
-    }
-
-    @Test
-    func localData_foreignAccount_flagOff_blocks_exactlyAsV1() {
-        // DARK: con el flag apagado, la tabla es EXACTAMENTE la de v1 (caso Pia bloqueado).
-        for exists in [true, false] {
             #expect(Self.decide(
-                hasLocalData: true, sameAccountClaimExists: false,
-                accountExists: exists, secondarySessionEnabled: false
-            ) == .blockedForeignData)
+                hasLocalData: false, sameAccountClaimExists: claim
+            ) == .proceed)
         }
     }
 
     @Test
-    func localData_foreignAccount_flagOn_existsTrue_proceedsSecondary() {
-        // LA celda M1: datos ajenos + cuenta existente + feature encendido → secundaria.
+    func localData_sameAccount_proceeds() {
+        // Re-entrada de la MISMA cuenta: el claim-store sobrevive el sign-out a propósito.
         #expect(Self.decide(
-            hasLocalData: true, sameAccountClaimExists: false,
-            accountExists: true, secondarySessionEnabled: true
-        ) == .proceedSecondarySession)
+            hasLocalData: true, sameAccountClaimExists: true
+        ) == .proceed)
     }
 
     @Test
-    func localData_foreignAccount_flagOn_existsFalse_stillBlocks() {
-        // Sin cuenta existente NO hay secundaria (v1 solo returningUser — born-cloud de
-        // invitado diferido a v1.1, decisión 6): se bloquea como siempre.
+    func localData_foreignAccount_blocks() {
+        // El caso Pia: datos locales sin claim de esta cuenta ⇒ bloqueado.
         #expect(Self.decide(
-            hasLocalData: true, sameAccountClaimExists: false,
-            accountExists: false, secondarySessionEnabled: true
+            hasLocalData: true, sameAccountClaimExists: false
         ) == .blockedForeignData)
     }
 }
@@ -157,24 +99,21 @@ struct CrossAccountEntryGuardLogicTests {
 ///
 /// El gate nuevo lee el MUNDO y no el camino: se ve vacío + el motor está hidratando. Eso hace que el
 /// banner llegue a quien vuelve sin tener que enumerar por qué ruta llegó.
-@Suite("SecondaryHydrationLogic · visibilidad del banner")
-struct SecondaryHydrationLogicTests {
+@Suite("CloudHydrationLogic · visibilidad del banner")
+struct CloudHydrationLogicTests {
 
-    @Test("la invitada: su store SIEMPRE nace vacío, no hace falta mirar nada más")
-    func secondarySession() {
-        #expect(SecondaryHydrationLogic.showBanner(
-            secondaryActive: true, firstPullCompleted: false,
-            cloudEngineActive: false, storeLooksEmpty: false))
-        #expect(!SecondaryHydrationLogic.showBanner(
-            secondaryActive: true, firstPullCompleted: true,
-            cloudEngineActive: false, storeLooksEmpty: true))
+    /// El primer pull cerrado apaga el banner, mire lo que mire el resto.
+    @Test("con el primer pull cerrado no hay nada que explicar")
+    func firstPullCompleted_silencesTheBanner() {
+        #expect(!CloudHydrationLogic.showBanner(
+            firstPullCompleted: true, cloudEngineActive: true, storeLooksEmpty: true))
     }
 
     /// LA aserción del ticket de re-entrada: el dueño que acaba de adoptar y relanzar.
     @Test("el dueño que vuelve, con el store aún vacío y el motor sin cerrar su primer pull")
     func returningOwnerIsCovered() {
-        #expect(SecondaryHydrationLogic.showBanner(
-            secondaryActive: false, firstPullCompleted: false,
+        #expect(CloudHydrationLogic.showBanner(
+            firstPullCompleted: false,
             cloudEngineActive: true, storeLooksEmpty: true), """
             Quien vuelve en un móvil nuevo sigue viendo la app vacía SIN explicación: es el mismo \
             hecho que el banner ya cubría para la invitada, por la otra puerta.
@@ -185,12 +124,12 @@ struct SecondaryHydrationLogicTests {
     /// bajados (que no está esperando nada) y el que ni siquiera tiene motor de nube.
     @Test("no sale para quien ya tiene datos ni para quien no tiene motor")
     func noFalsePositives() {
-        #expect(!SecondaryHydrationLogic.showBanner(
-            secondaryActive: false, firstPullCompleted: false,
+        #expect(!CloudHydrationLogic.showBanner(
+            firstPullCompleted: false,
             cloudEngineActive: true, storeLooksEmpty: false),
             "con datos en pantalla, «descargando tus datos» es ruido")
-        #expect(!SecondaryHydrationLogic.showBanner(
-            secondaryActive: false, firstPullCompleted: false,
+        #expect(!CloudHydrationLogic.showBanner(
+            firstPullCompleted: false,
             cloudEngineActive: false, storeLooksEmpty: true),
             "sin motor de nube no hay ninguna descarga en curso que explicar")
     }
@@ -261,23 +200,5 @@ struct WelcomeCloudBlockedExitTests {
             El botón de vuelta perdió su `accessibilityIdentifier`: el device-QA se ancla a él (esta \
             fase exige un sign-in REAL y no hay XCUITest que la alcance).
             """)
-    }
-}
-
-@Suite("SecondaryEntryLogic · orden de escrituras (M1)")
-struct SecondaryEntryLogicTests {
-
-    @Test
-    func begin_executesStepsInOrder_claimDescriptorFlags() {
-        // El ORDEN es kill-safety: claim ANTES del descriptor (un descriptor sin claim
-        // bloquearía la hidratación en el guard P6; un claim huérfano es inerte) y flags
-        // al final (la ventana 2→3 la sana el healing del boot).
-        var events: [String] = []
-        SecondaryEntryLogic.begin(
-            userID: "guest-1",
-            recordClaim: { events.append("claim:\($0)") },
-            activateDescriptor: { events.append("descriptor:\($0)") },
-            markOnboardingFlags: { events.append("flags") })
-        #expect(events == ["claim:guest-1", "descriptor:guest-1", "flags"])
     }
 }

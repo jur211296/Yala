@@ -28,22 +28,15 @@ nonisolated enum CrossAccountEntryGuardLogic {
     enum Decision: Equatable {
         /// Device limpio o misma cuenta → continuar al adopt.
         case proceed
-        /// Datos locales de otra identidad, sin salida secundaria → BLOQUEADO. El caller
-        /// debe hacer `signOut()` antes de volver al chooser (no dejar sesión SIWA colgada).
+        /// Datos locales de otra identidad → BLOQUEADO. El caller debe hacer `signOut()` antes de
+        /// volver al chooser (no dejar sesión SIWA colgada).
         case blockedForeignData
-        /// M1: datos locales ajenos + cuenta EXISTENTE + feature encendido → sesión
-        /// secundaria (confirmación explícita → descriptor + claim → relaunch; JAMÁS
-        /// adopt pre-relaunch sobre el store del dueño).
-        case proceedSecondarySession
     }
 
     /// - Parameters:
     ///   - hasLocalData: hay corpus personal en el device (transacciones/cuentas).
     ///   - sameAccountClaimExists: el claim-store tiene registro para el userID que
     ///     acaba de firmar (⇒ este corpus ya fue reclamado por ESTA cuenta).
-    ///   - accountExists: `GET /account/exists == true` (la secundaria v1 solo soporta
-    ///     `returningUser` — born-cloud de invitado diferido a v1.1, decisión 6).
-    ///   - secondarySessionEnabled: `CloudSyncFlags.secondarySessionEntryAvailable`.
     ///   - restoreInProgress: ESTA sesión pidió restaurar de iCloud y ese import no ha terminado
     ///     (`ICloudRestoreSessionSignal.isRestoringNow`). **SIN valor por defecto a propósito**: un
     ///     default sería `false` y cualquier call-site nuevo heredaría el bug en silencio, que es la
@@ -52,8 +45,6 @@ nonisolated enum CrossAccountEntryGuardLogic {
     static func decide(
         hasLocalData: Bool,
         sameAccountClaimExists: Bool,
-        accountExists: Bool,
-        secondarySessionEnabled: Bool,
         restoreInProgress: Bool
     ) -> Decision {
         // Las filas que el propio dueño está bajando de SU iCloud ahora mismo no son «corpus
@@ -65,7 +56,6 @@ nonisolated enum CrossAccountEntryGuardLogic {
         // corrige es el TÉRMINO de los datos, no el veredicto. Todo lo demás del guard sigue mandando.
         guard hasLocalData, !restoreInProgress else { return .proceed }
         if sameAccountClaimExists { return .proceed }
-        if accountExists && secondarySessionEnabled { return .proceedSecondarySession }
         return .blockedForeignData
     }
 }

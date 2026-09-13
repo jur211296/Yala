@@ -444,12 +444,15 @@ struct SignOutNotificationWiringTests {
             .joined(separator: "\n")
     }
 
-    /// Los 3 wrappers que borran o abandonan el store PERSONAL cablean el barrido total.
-    @Test func bootHooks_wirePersonalNotificationCleanup() throws {
+    /// El wrapper que borra el store PERSONAL cablea el barrido total de avisos.
+    ///
+    /// **Era 3 hasta el 2026-09-13**: los otros dos eran las dos fronteras de la sesión de visita, que
+    /// cancelaban los avisos del dueño al entrar y los de la invitada al salir. Queda
+    /// `performSignOutWipeIfArmed`, que es el cierre de sesión de verdad.
+    @Test func bootHook_wiresPersonalNotificationCleanup() throws {
         let src = try Self.source("Yala/Utils/SwiftDataConfiguration.swift")
-        // performSignOutWipeIfArmed + performSecondaryWipeIfArmed (salida) + performSecondaryEntryTasksIfNeeded.
-        #expect(src.components(separatedBy: "NotificationService.shared.cancelAllNotifications()").count - 1 == 3)
-        #expect(src.components(separatedBy: "NotificationService.shared.clearDeliveredNotifications()").count - 1 == 3)
+        #expect(src.components(separatedBy: "NotificationService.shared.cancelAllNotifications()").count - 1 == 1)
+        #expect(src.components(separatedBy: "NotificationService.shared.clearDeliveredNotifications()").count - 1 == 1)
     }
 
     /// ASIMETRÍA del hook solo-grupos: ahí el store personal SOBREVIVE. El cuerpo de la función debe
@@ -461,7 +464,7 @@ struct SignOutNotificationWiringTests {
         let marker = "static func performGroupsOnlySignOutWipeIfArmed()"
         // Corte en el MARK, no en la firma siguiente: el doc-comment de `performSecondaryWipeIfArmed`
         // describe la purga M1 y nombrarla ahí pondría este test rojo sin bug alguno.
-        let nextMarker = "// MARK: - Sesión secundaria (M1)"
+        let nextMarker = "// MARK: - Retirada de la sesión secundaria (ADR 2026-09-09)"
         guard let start = src.range(of: marker), let end = src.range(of: nextMarker) else {
             Issue.record("No se localizaron los marcadores del hook solo-grupos — ¿se renombró?")
             return
@@ -481,17 +484,9 @@ struct SignOutNotificationWiringTests {
     /// todos los tests de comportamiento en verde — de ahí este scan.
     @Test func bootHooks_wireAppGroupInboundPurge_onlyWherePersonalStoreDies() throws {
         let src = try Self.source("Yala/Utils/SwiftDataConfiguration.swift")
-        // performSignOutWipeIfArmed cablea el helper compartido; los 2 hooks M1 lo obtienen dentro
-        // de `SecondarySessionBoundaryPurge.purge()` (su propio seam `purge:`, ya pinneado aparte).
+        // performSignOutWipeIfArmed cablea el helper compartido.
         #expect(src.contains("purgeInboundSurfaces: { AppGroupInboundPurge.purgeInboundSurfaces() }"))
         #expect(src.components(separatedBy: "AppGroupInboundPurge.purgeInboundSurfaces()").count - 1 == 1)
-        #expect(src.components(separatedBy: "SecondarySessionBoundaryPurge.purge()").count - 1 == 2)
-
-        // El SSOT compartido: si alguien inlinea las colas en un caller, esta invariante lo delata.
-        let purge = try Self.source("Yala/Services/CloudSync/SecondarySessionBoundaryPurge.swift")
-        #expect(purge.contains("AppGroupInboundPurge.purgeInboundSurfaces()"))
-        #expect(!purge.contains("ApplePayPendingStore"))
-        #expect(!purge.contains("SiriPendingStore"))
     }
 
     /// El contenido de la purga compartida. Perder una de estas superficies es invisible para los
@@ -524,7 +519,9 @@ struct SignOutNotificationWiringTests {
     @Test func inSessionLayer_wiredOnlyOnArmedPersonalWipePaths() throws {
         let src = try Self.source("Yala/Services/CloudSync/CloudSessionSignOut.swift")
         let code = Self.codeOnly(src)
-        #expect(code.components(separatedBy: "clearLocalSurfacesForArmedWipe()").count - 1 == 6)
+        // **Eran 6 hasta el 2026-09-13**: los dos que faltan son los caminos de salida de la sesión de
+        // visita. El conteo incluye la declaración de la propia función (3 call-sites + 1 `func`).
+        #expect(code.components(separatedBy: "clearLocalSurfacesForArmedWipe()").count - 1 == 4)
         // El widget vive en el mismo helper A PROPÓSITO: es la otra superficie del SISTEMA que sigue
         // mostrando la cuenta cerrada hasta el relanzamiento, y comparte sus call-sites exactos.
         #expect(code.components(separatedBy: "WidgetDataCache.clearCache()").count - 1 == 1)
@@ -561,11 +558,10 @@ struct SignOutNotificationWiringTests {
         // porque uno de ellos ES un comentario (`// MARK:`) y `codeOnly` se lo llevaría por delante.
         let code = Self.codeOnly(full)
         #expect(code.contains("clearGroupsConsent: { GroupsConsentState.clear() }"))
-        // 1 sola vez: los 2 hooks M1 lo obtienen dentro de `SecondarySessionBoundaryPurge.purge()`.
         #expect(code.components(separatedBy: "GroupsConsentState.clear()").count - 1 == 1)
 
         let marker = "static func performGroupsOnlySignOutWipeIfArmed()"
-        let nextMarker = "// MARK: - Sesión secundaria (M1)"
+        let nextMarker = "// MARK: - Retirada de la sesión secundaria (ADR 2026-09-09)"
         guard let start = full.range(of: marker), let end = full.range(of: nextMarker) else {
             Issue.record("No se localizaron los marcadores del hook solo-grupos — ¿se renombró?")
             return
@@ -606,8 +602,6 @@ struct SignOutNotificationWiringTests {
             searchStart = hit.upperBound
         }
 
-        let purge = Self.codeOnly(try Self.source("Yala/Services/CloudSync/SecondarySessionBoundaryPurge.swift"))
-        #expect(purge.contains("GroupsConsentState.clear()"))
     }
 
     /// **D-R1 paso 2: los paths de TEARDOWN leen la capacidad COMPILADA, nunca el getter compuesto.**
@@ -656,7 +650,7 @@ struct SignOutNotificationWiringTests {
         #expect(src.components(separatedBy: "guard !isPersonalWipeArmed else { return }").count - 1 == 1)
         #expect(src.components(separatedBy: "guard !isPersonalWipeArmed else { return false }").count - 1 == 1)
         #expect(src.components(separatedBy: "guard !isPersonalWipeArmed else { break }").count - 1 == 1)
-        #expect(src.contains("StorageModePersistence.isSignOutWipeArmed() || SecondarySessionStore.isWipeArmed()"))
+        #expect(src.contains("StorageModePersistence.isSignOutWipeArmed()"))
         // El camino solo-grupos conserva los recordatorios personales: su arm JAMÁS entra al guard.
         #expect(!src.contains("isGroupsOnlyWipeArmed"))
     }

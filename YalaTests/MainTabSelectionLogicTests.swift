@@ -4,7 +4,7 @@
 //
 //  Pure-logic tests for MainTabSelectionLogic.decide(requested:config:).
 //  Sin SwiftData, sin UI, sin singletons. Cubre tabs visibles, ocultos,
-//  cases especiales (.more / .search), config groupInvite y config malformada.
+//  cases especiales (.more / .search), config solo-grupos y config malformada.
 //
 
 import Foundation
@@ -68,22 +68,22 @@ struct MainTabSelectionLogicTests {
         #expect(decision.requiresDelay == false)
     }
 
-    // MARK: - Config groupInvite (solo .groups activo)
+    // MARK: - Config solo-grupos (solo .groups activo)
 
-    @Test func decide_groupInviteConfig_groupsDirect() {
-        let config = TabBarConfiguration.groupInvite
+    @Test func decide_groupsOnlyConfig_groupsDirect() {
+        let config = TabBarConfiguration.groupsOnly
         let decision = MainTabSelectionLogic.decide(requested: .groups, config: config)
         #expect(decision.selectedTab == .groups)
         #expect(decision.temporaryTab == nil)
         #expect(decision.requiresDelay == false)
     }
 
-    @Test func decide_groupInviteConfig_statisticsRequiresTemporary() {
-        // El helper, sin guard de modo, sí marca delay para tabs no permitidos
-        // en groupInvite. El guard real (no-op para tabs prohibidos) vive en
+    @Test func decide_groupsOnlyConfig_statisticsRequiresTemporary() {
+        // El helper, sin guard de sesión, sí marca delay para tabs no permitidos
+        // en solo-grupos. El guard real (no-op para tabs prohibidos) vive en
         // SessionState.selectMainTab — este test verifica que el helper se
         // mantiene puro y delega la decisión política al caller.
-        let config = TabBarConfiguration.groupInvite
+        let config = TabBarConfiguration.groupsOnly
         let decision = MainTabSelectionLogic.decide(requested: .statistics, config: config)
         #expect(decision.selectedTab == .statistics)
         #expect(decision.temporaryTab == .statistics)

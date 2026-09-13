@@ -31,6 +31,7 @@ struct ProfileView: View {
     @State private var viewModel = ProfileViewModel()
 
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(SessionState.self) private var sessionState
     private var effectiveColorfulIcons: Bool {
         theme.forcesMonochromeIcons ? false : appPreferences.colorfulIcons
     }
@@ -93,7 +94,6 @@ struct ProfileView: View {
     // Decisión del owner 2026-09-03: en la sesión de VISITA los dos alerts de bloqueo suman «salir
     // igualmente». Se fija junto al alert (no se recalcula al pintar) para que la salida forzada y el
     // aviso que la anuncia decidan por el MISMO `pendingCount`, el del bloqueo que se está mostrando.
-    @State private var signOutBlockedOffersExit = false
     // D4: flags del patrón anti-carrera de las hojas de alcance — la acción corre en el `onDismiss` del
     // sheet (con la hoja YA fuera), no en el tap del botón (evita el race dismiss-hoja / transición-shell).
     @State private var pendingSignOutScope: SignOutScope?
@@ -114,8 +114,6 @@ struct ProfileView: View {
     private func syncSignOutUI(from phase: CloudSessionSignOut.Phase) {
         switch phase {
         case .blocked(let pending, let reason):
-            signOutBlockedOffersExit = CloudSignOutFlowLogic.offersForcedSecondaryExit(
-                isSecondaryActive: SecondarySessionStore.isActive(), pendingCount: pending)
             signOutBlockedSessionExpired = (reason == .sessionExpired)
             if reason == .exportUnconfirmed { signOutExportPending = pending }
             presentSignOutBlock(reason)
@@ -172,33 +170,15 @@ struct ProfileView: View {
     /// bloqueo transitorio y el permanente ya la lleva el título y el mensaje (H-2026-07-18-6), y las
     /// salidas disponibles son las mismas en los dos casos.
     ///
-    /// Fuera de la sesión de visita queda EXACTAMENTE el botón de siempre. Dentro, «Esperar» sustituye al
-    /// "OK" —que no decía qué pasaba si lo tocabas— y aparece «Salir igualmente», que cierra la sesión
-    /// aceptando la pérdida (decisión del owner 2026-09-03).
+    /// **La salida forzada («salir igualmente, perdiendo lo que no subió») se retiró con la sesión de
+    /// visita, 2026-09-13**, y su motivo era suyo: la persona estaba en un móvil prestado que tenía que
+    /// devolver, así que un cierre imposible de completar la dejaba atrapada. En el móvil propio nadie
+    /// espera a que devuelvas nada, y perder un gasto por no esperar no tiene justificación.
     @ViewBuilder
     private var signOutBlockedButtons: some View {
-        if signOutBlockedOffersExit {
-            Button(L10n.Settings.signOutExitAnywayButton, role: .destructive) {
-                Task { await CloudSessionSignOut.shared.exitSecondaryDiscardingPending() }
-            }
-            .accessibilityIdentifier("signout_blocked_exit_anyway")
-            Button(L10n.Settings.signOutWaitButton, role: .cancel) {
-                CloudSessionSignOut.shared.acknowledgeBlocked()
-            }
-            .accessibilityIdentifier("signout_blocked_wait")
-        } else {
-            Button(L10n.Common.ok, role: .cancel) {
-                CloudSessionSignOut.shared.acknowledgeBlocked()
-            }
+        Button(L10n.Common.ok, role: .cancel) {
+            CloudSessionSignOut.shared.acknowledgeBlocked()
         }
-    }
-
-    /// El mensaje del alert, con el aviso de pérdida AÑADIDO solo cuando se ofrece la salida forzada.
-    /// Va aquí y no en una key propia por locale porque el texto base ya es correcto en los dos casos:
-    /// lo que cambia no es lo que pasó, sino que ahora hay una salida cuyo precio hay que nombrar.
-    private func signOutBlockedText(_ base: String) -> String {
-        guard signOutBlockedOffersExit else { return base }
-        return base + "\n\n" + L10n.Settings.signOutSecondaryLossWarning
     }
 
     /// Paso 9 · la hoja de «Cerrar sesión» para el camino que el coordinador va a recorrer. En las dos celdas
@@ -211,7 +191,7 @@ struct ProfileView: View {
         switch path {
         case .privateSignOut, .privateWithGroupsSignOut:
             hasICloudCopy = CloudSessionSignOut.privateCopyChannel() == .iCloud
-        case .cloudSecureSignOut, .secondaryCloudSignOut, .groupsOnlySignOut:
+        case .cloudSecureSignOut, .groupsOnlySignOut:
             hasICloudCopy = true
         }
         // La privada sin sesión que guarda grupos del canal backend los olvida al cerrar, y su hoja tiene que
@@ -237,7 +217,6 @@ struct ProfileView: View {
     private var signOutRowPath: CloudSignOutFlowLogic.Path {
         CloudSignOutFlowLogic.path(
             for: CloudSyncFlags.storageMode,
-            secondarySessionActive: SecondarySessionStore.isActive(),
             hasLiveSession: CloudAuthService.shared.hasSession,
             groupsBackendEnabled: CloudSyncFlags.groupsBackendCompiledCapability,
             hasPrivateSession: PrivateSessionMark.hasPrivateSession())
@@ -261,12 +240,12 @@ struct ProfileView: View {
 
     /// D6: gate de la fila "Exportar datos" — grupos en solo-grupos, transacciones en el resto.
     private var isExportEnabled: Bool {
-        isGroupInviteMode ? viewModel.hasExportableGroups : viewModel.hasTransactions
+        isGroupsOnlyShell ? viewModel.hasExportableGroups : viewModel.hasTransactions
     }
 
     /// Hint de accesibilidad cuando "Exportar datos" está deshabilitada (D6).
     private var exportDisabledHint: String {
-        isGroupInviteMode
+        isGroupsOnlyShell
             ? L10n.Accessibility.noGroupsToExport
             : L10n.Accessibility.noTransactionsToExport
     }
@@ -311,7 +290,7 @@ struct ProfileView: View {
     /// (seam D5, inerte en release). NO excluye group-invite: un group-invite CON sesión backend (D6,
     /// [FLAG]) SÍ tiene cuenta que explicar (su desenlace de borrado lo gatea `YalaAccountLogic`).
     private var showsYalaAccountRow: Bool {
-        deleteAccountRowHasSession && !SecondarySessionStore.isActive()
+        deleteAccountRowHasSession
     }
 
     /// §3.2: subtítulo dinámico de la fila "Dónde viven tus datos" — refleja el modo real.
@@ -345,34 +324,27 @@ struct ProfileView: View {
 
     /// GC-08: en modo solo-grupos el perfil se reduce a lo esencial de grupos +
     /// opciones universales; se ocultan las filas de finanzas personales.
-    private var isGroupInviteMode: Bool {
-        SessionState.shared.isGroupInviteMode
+    private var isGroupsOnlyShell: Bool {
+        !SessionState.shared.hasPrivateSession
     }
 
-    /// D1: shell reducida (group-invite O usageFocus == .groupsOnly). Oculta la sección
-    /// «Organización» (finanzas personales). Reactivo a `usageFocus` vía `appPreferences`.
-    /// NO afecta las filas de sesión/cuenta (ésas leen el eje 1, `PrivateSessionMark`) ni la de
-    /// export, que sigue en `isGroupInviteMode` — el eje de export es «qué hay que exportar», no
-    /// «hay vida personal», y lo barre el PR-B con el resto del flag.
+    /// Shell reducida a Grupos: oculta la sección «Organización» (finanzas personales).
+    /// Reactivo por el espejo observable del eje 1.
     private var isGroupsFocusedShell: Bool {
         ShellModeLogic.effective(
-            onboardingMode: SessionState.shared.onboardingMode,
-            usageFocus: appPreferences.usageFocus) == .groupsFocused
+            hasPrivateSession: sessionState.hasPrivateSession) == .groupsFocused
     }
 
-    /// D1 + G4: gatea la fila «Activar Yala completo». Es la MISMA pregunta que `isGroupsFocusedShell`
-    /// —«¿este dispositivo tiene la shell reducida a Grupos?»— y por eso la delega en vez de responderla
-    /// por su cuenta: leía `usageFocus` CRUDO, era el único de los 5 lectores de esa preferencia que no
-    /// pasaba por `ShellModeLogic.effective`, y como **ninguna** de las cuatro escrituras de
-    /// `onboardingMode = .groupInvite` escribe `usageFocus`, quien llegaba por invitación o por el alta
-    /// solo-grupos no veía la fila NUNCA. Mismo criterio que el CTA gemelo de `MoreView`.
+    /// Gatea la fila «Activar Yala completo». Es la MISMA pregunta que `isGroupsFocusedShell` y por eso
+    /// la delega en vez de responderla por su cuenta — cuando eran dos fuentes distintas, quien llegaba
+    /// por invitación no veía esta fila NUNCA. Mismo criterio que el CTA gemelo de `MoreView`.
     private var showsActivateFullRow: Bool {
         isGroupsFocusedShell
     }
 
     /// En solo-grupos no se muestra cromo Pro (no hay venta de Pro en ese modo).
     private var showsProBadge: Bool {
-        isProUser && !isGroupInviteMode
+        isProUser && !isGroupsOnlyShell
     }
 
     private var isVoiceLocked: Bool {
@@ -422,7 +394,7 @@ struct ProfileView: View {
 
                             // Sections
                             // Organización gestiona finanzas personales (cuentas, categorías,
-                            // presupuestos…): se omite en shell reducida (group-invite O usageFocus groupsOnly).
+                            // presupuestos…): se omite en la shell reducida a Grupos.
                             if !isGroupsFocusedShell {
                                 organizacionSection
                             }
@@ -560,7 +532,7 @@ struct ProfileView: View {
                 // Paso 9: una sesión caducada con grupos sin subir se arregla volviendo a entrar, no con la red.
                 Text(signOutBlockedSessionExpired
                      ? L10n.Groups.Errors.sessionExpired
-                     : signOutBlockedText(L10n.Settings.signOutBlockedMessage))
+                     : L10n.Settings.signOutBlockedMessage)
             }
             // H-2026-07-18-6: bloqueo TRANSITORIO (solo-grupos, tras agotar el retry interno) —
             // copy que invita a esperar, no a revisar la conexión. Solo un bool se pone a la vez
@@ -568,7 +540,7 @@ struct ProfileView: View {
             .alert(L10n.Settings.signOutPendingTitle, isPresented: $showSignOutPendingAlert) {
                 signOutBlockedButtons
             } message: {
-                Text(signOutBlockedText(L10n.Settings.signOutPendingMessage))
+                Text(L10n.Settings.signOutPendingMessage)
             }
             .onChange(of: signOutCoordinator.phase) { _, newPhase in
                 syncSignOutUI(from: newPhase)
@@ -744,7 +716,7 @@ struct ProfileView: View {
             // bloquearía la navegación de Settings. Suprimido como el resto de overlays
             // de primer uso (F1c). También en solo-grupos: varios anclajes apuntan a
             // filas (Cuentas, Categorías…) ocultas en ese modo.
-            guard !UITestHooks.isActive, !isGroupInviteMode else { return }
+            guard !UITestHooks.isActive, !isGroupsOnlyShell else { return }
             if !appPreferences.hasSeenSettingsTour {
                 do { try await Task.sleep(for: .seconds(0.8)) } catch { return }
                 if !appPreferences.hasSeenSettingsTour {
@@ -753,7 +725,7 @@ struct ProfileView: View {
             }
         }
         .task(id: appPreferences.hasSeenSettingsTour) {
-            guard !UITestHooks.isActive, !isGroupInviteMode else { return }
+            guard !UITestHooks.isActive, !isGroupsOnlyShell else { return }
             guard appPreferences.hasSeenSettingsTour else { return }
             // Re-check eligibility (covers race: subscribed before tours completed)
             ProTourManager.shared.triggerIfEligible()
@@ -898,10 +870,9 @@ struct ProfileView: View {
 
     // MARK: - Sections
 
-    /// D1 (retención) + G4: CTA «Activar Yala completo» para el usuario con la shell reducida
-    /// a Grupos. Abre el flujo guiado (FullModeActivationView vía router), que escribe las DOS
-    /// mitades —`onboardingMode = .completed` y `usageFocus = .full`— así que también des-reduce
-    /// la shell de quien llegó por invitación. Molde de `MoreView.activateFullYalaButton`.
+    /// CTA «Activar Yala completo» para quien tiene la shell reducida a Grupos. Abre el flujo guiado
+    /// (FullModeActivationView vía router), que enciende el eje 1 y con eso des-reduce la shell.
+    /// Molde de `MoreView.activateFullYalaButton`.
     private var activateFullYalaSection: some View {
         Button {
             RouterEntryGate.shared.submit(.presentFullModeActivation)
@@ -992,7 +963,7 @@ struct ProfileView: View {
             VStack(spacing: DS.Spacing.none) {
                 // Personalización (formato, calendario, modo solo-gastos…) es de
                 // finanzas personales: oculta en solo-grupos.
-                if !isGroupInviteMode {
+                if !isGroupsOnlyShell {
                     profileRow(
                         icon: "slider.horizontal.3", title: L10n.Settings.personalization,
                         iconColor: .indigo, destination: .personalization)
@@ -1007,7 +978,7 @@ struct ProfileView: View {
                 .accessibilityIdentifier("profile_notifications")
                 // Divisa/tasas e Icono de app: ocultos en solo-grupos (formato queda en
                 // defaults: 2 decimales + símbolo de la moneda del grupo).
-                if !isGroupInviteMode {
+                if !isGroupsOnlyShell {
                     SubsectionDivider()
                     profileRow(
                         icon: "dollarsign.circle.fill", title: L10n.Settings.currencyAndExchange,
@@ -1040,7 +1011,7 @@ struct ProfileView: View {
                 // el builder de grupos vive; el solo-grupos legado exporta directo, sin el wizard personal
                 // que exigiría seleccionar una cuenta). Primera fila ⇒ sin divisor arriba.
                 Button {
-                    activeSheet = isGroupInviteMode ? .groupsExport : .exportWizard
+                    activeSheet = isGroupsOnlyShell ? .groupsExport : .exportWizard
                 } label: {
                     settingsRowContent(
                         icon: "square.and.arrow.up.fill", title: L10n.Settings.exportData,
@@ -1055,7 +1026,7 @@ struct ProfileView: View {
                 .coachMarkAnchor("proExportExtended")
 
                 // Importar opera sobre transacciones personales: oculto en solo-grupos.
-                if !isGroupInviteMode {
+                if !isGroupsOnlyShell {
                     SubsectionDivider()
                     Button {
                         activeSheet = .importIntro
@@ -1083,11 +1054,8 @@ struct ProfileView: View {
                 // §3.2: "Dónde viven tus datos" (antes "Almacenamiento"; key `storage.title` renombrada).
                 // Modo Nube (I14): exige backend configurado, abierto en los dos schemes desde D-R1 paso 1
                 // ⇒ hoy en producción lo que mantiene la fila oculta es el flag remoto (percent 0), no
-                // `isConfigured`. M1: oculta en sesión SECUNDARIA. DIFERIDOS #34: el flag remoto gatea solo
-                // la ENTRADA — un usuario "engaged" conserva la fila SIEMPRE. Gate StorageRowGateLogic intacto.
-                // M3: en builds DEV la celda de secundaria se abre (`devPanelOverrideAvailable`, `false`
-                // literal en producción) porque detrás de esta fila vive el panel DEBUG, que es la única
-                // salida por producto de una sesión FAKE.
+                // `isConfigured`. DIFERIDOS #34: el flag remoto gatea solo la ENTRADA — un usuario
+                // "engaged" conserva la fila SIEMPRE.
                 // Paso 10 (2026-09-11): y una cuenta de grupos que soltar la conserva también. Detrás de
                 // esta fila vive la ÚNICA superficie desde la que se suelta esa cuenta, y Grupos va por su
                 // propio flag: sin este término, bajar el kill de la nube dejaba la cuenta puesta y sin
@@ -1097,13 +1065,11 @@ struct ProfileView: View {
                 // `StorageSettingsView` — abrir la fila no abre la migración.
                 if StorageRowGateLogic.isVisible(
                     isConfigured: CloudBackendConfig.isConfigured,
-                    isSecondaryActive: SecondarySessionStore.isActive(),
                     remoteEnabled: CloudRemoteFlags.cloudModeEnabled,
                     isEngaged: StorageModePersistence.read() == .cloud
                         || (CloudMigrationController.shared?.uiState ?? .idle) != .idle,
                     hasGroupsAccountToDetach: GroupsAssociationPresence.offersDetach(
-                        hasCompletedOnboarding: appPreferences.hasCompletedOnboarding),
-                    devPanelOverride: StorageRowGateLogic.devPanelOverrideAvailable
+                        hasCompletedOnboarding: appPreferences.hasCompletedOnboarding)
                 ) {
                     SubsectionDivider()
                     NavigationLink(value: ProfileDestination.storageMode) {
@@ -1144,7 +1110,7 @@ struct ProfileView: View {
                     destination: .faceIDProtectionGuide)
                     .accessibilityIdentifier("profile_security_faceid")
                 // Atajos de Siri: registran gastos personales — fuera de alcance en solo-grupos.
-                if !isGroupInviteMode {
+                if !isGroupsOnlyShell {
                     SubsectionDivider()
                     profileRow(
                         icon: "mic.badge.plus", title: String(localized: "settings.siriShortcuts"),
@@ -1163,7 +1129,7 @@ struct ProfileView: View {
                 .buttonStyle(.plain)
                 // Privacidad IA (chat) y Suscripción Pro: ligadas a finanzas personales.
                 // En solo-grupos el upgrade fluye por "Activar Yala completo".
-                if !isGroupInviteMode {
+                if !isGroupsOnlyShell {
                     SubsectionDivider()
                     profileRow(
                         icon: "hand.raised.fill", title: L10n.Settings.aiPrivacy,
@@ -1353,7 +1319,7 @@ struct ProfileView: View {
             VStack(spacing: DS.Spacing.none) {
                 // Tutoriales: el catálogo es de finanzas personales (no hay tutorial de
                 // grupos) → oculto en solo-grupos.
-                if !isGroupInviteMode {
+                if !isGroupsOnlyShell {
                     profileRow(
                         icon: "book.fill", title: L10n.Settings.tutorials,
                         iconColor: .electricIndigo, destination: .tips)

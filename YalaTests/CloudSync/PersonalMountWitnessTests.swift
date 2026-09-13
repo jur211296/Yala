@@ -40,7 +40,6 @@ struct PersonalMountWitnessTableTests {
             .iCloudMirror:          (attaches: true,  mirrors: true),
             .localNoMirror:         (attaches: true,  mirrors: false),
             .cloudMirrorOff:        (attaches: false, mirrors: false),
-            .secondaryCloudSession: (attaches: false, mirrors: false),
             // R2 · el mount neutro: `.none` EXPLÍCITO ⇒ no adjunta y no espeja. Que el eje B sea `false`
             // es lo que deja vivo el aviso de iCloud para un fresh install con cuenta disponible.
             .neutralNoMirror:       (attaches: false, mirrors: false),
@@ -59,7 +58,7 @@ struct PersonalMountWitnessTableTests {
     @Test("eje C (R9): qué mounts son de MODO NUBE")
     func axisC_cloudModeMounts() {
         let expected: [Decision: Bool] = [
-            .cloudMirrorOff: true, .secondaryCloudSession: true,
+            .cloudMirrorOff: true,
             .iCloudMirror: false, .localNoMirror: false,
             // R2 · el neutro NO es un mount de modo nube: es la AUSENCIA de elección. Decisión heredada de
             // R1 y la que hace que el aviso de iCloud le hable (§1.3 del spec).
@@ -134,18 +133,18 @@ struct PersonalMountWitnessParityTests {
     /// oráculo. Copiarlo al test es deliberado: comparar el mapeo nuevo contra el código nuevo no probaría
     /// nada, y el viejo ya no existe en el árbol.
     private func legacyCollapsedWitness(_ decision: Decision) -> StorageMode {
-        decision == .cloudMirrorOff || decision == .secondaryCloudSession ? .cloud : .icloud
+        decision == .cloudMirrorOff ? .cloud : .icloud
     }
 
-    /// Las cuatro decisiones que EXISTÍAN antes de R2 — las únicas para las que el testigo colapsado es un
+    /// Las decisiones que EXISTÍAN antes de R2 — las únicas para las que el testigo colapsado es un
     /// oráculo válido. `neutralNoMirror` queda fuera A PROPÓSITO y no por comodidad: el colapso viejo lo
     /// habría clasificado como `.icloud` (= mirror vivo), que es exactamente la mentira que R1 documentó y
     /// que dejaría al motor sin arrancar tras el alta. Que esta lista NO sea `allCases` es la afirmación.
     private static let preR2Decisions: [Decision] = [
-        .iCloudMirror, .localNoMirror, .cloudMirrorOff, .secondaryCloudSession,
+        .iCloudMirror, .localNoMirror, .cloudMirrorOff,
     ]
 
-    @Test("el eje A reproduce el testigo colapsado para las 4 decisiones PRE-R2")
+    @Test("el eje A reproduce el testigo colapsado para las decisiones PRE-R2")
     func axisA_matchesLegacyWitness() {
         // Los cuatro consumidores del testigo de mount comparaban contra `.icloud` (= mirror vivo) o contra
         // `.cloud` (= mirror apagado). El eje A tiene que dar exactamente eso, decisión por decisión: para
@@ -196,10 +195,7 @@ struct PersonalMountWitnessParityTests {
     @Test("con `freshInstall: false` la tabla de `personalStoreDecision` es la de siempre")
     func mountDecisionTable_unchangedForNonFreshDevices() {
         // Red de no-regresión: R2 añade UNA salida y la gatea por un predicado que TODO device con archivo
-        // de store falla. Con el término apagado, las cuatro decisiones de siempre salen intactas.
-        #expect(SwiftDataConfiguration.personalStoreDecision(
-            storageMode: .icloud, mirrorOffArmed: false, iCloudAvailable: true,
-            secondarySessionActive: true, freshInstall: false, neutralDurable: false) == .secondaryCloudSession)
+        // de store falla. Con el término apagado, las decisiones de siempre salen intactas.
         #expect(SwiftDataConfiguration.personalStoreDecision(
             storageMode: .cloud, mirrorOffArmed: true, iCloudAvailable: true,
             freshInstall: false, neutralDurable: false) == .cloudMirrorOff)
@@ -209,7 +205,10 @@ struct PersonalMountWitnessParityTests {
         #expect(SwiftDataConfiguration.personalStoreDecision(
             storageMode: .icloud, mirrorOffArmed: false, iCloudAvailable: false,
             freshInstall: false, neutralDurable: false) == .localNoMirror)
-        #expect(Decision.allCases.count == 5, "R2 añade el mount neutro, y ninguna más")
+        #expect(Decision.allCases.count == 4, """
+            R2 añadió el mount neutro y el barrido del 2026-09-13 se llevó el de la sesión de visita,
+            que era el archivo `-Secondary`. Cuatro, y ninguna más.
+            """)
     }
 }
 
@@ -238,7 +237,7 @@ struct ICloudRestartAdviceTests {
 
     @Test("R9: un mount de MODO NUBE es INERTE — tener iCloud no es un mismatch")
     func inert_onCloudModeMounts() {
-        for decision in [Decision.cloudMirrorOff, .secondaryCloudSession] {
+        for decision in [Decision.cloudMirrorOff] {
             for mirroring in [true, false] {
                 for available in [true, false] {
                     #expect(!SwiftDataConfiguration.shouldOfferICloudRestart(

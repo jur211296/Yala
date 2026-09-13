@@ -240,12 +240,12 @@ nonisolated enum StorageModePersistence {
     /// la razón de que el bug sea intermitente y no constante — el camino limpio de grupos tampoco marca
     /// el chooser, y eso es deliberado.
     ///
-    /// **Y por qué no se deriva de `onboardingMode == .groupInvite`, que parecería el eje del ADR §2.**
-    /// Porque ese modo viaja SINCRONIZADO por iKV con merge never-downgrade, así que un device que
-    /// **restaura de iCloud** puede heredarlo (`RestoreRouter.decide` → `.groupsOnly`) con el mirror ya
-    /// adjunto y su histórico bajado. Derivar de ahí le apagaría el espejo en el arranque siguiente, que
-    /// es el daño CONTRARIO al que este ticket arregla. La marca es un hecho de ESTE device: la escriben
-    /// las dos ALTAS solo-grupos y nadie más.
+    /// **Y por qué no se deriva del eje 1, que parecería el eje del ADR §2.** Cuando esto se midió, ese
+    /// eje era un flag de onboarding SINCRONIZADO por iKV con merge never-downgrade, así que un device que
+    /// **restauraba de iCloud** podía heredarlo con el mirror ya adjunto y su histórico bajado; derivar de
+    /// ahí le apagaba el espejo en el arranque siguiente, que es el daño CONTRARIO al que este ticket
+    /// arregla. Esta marca es otra cosa, y sigue siéndolo: un hecho de ESTE device, que escriben las dos
+    /// ALTAS solo-grupos y nadie más.
     ///
     /// **Quién la levanta** — las dos son necesarias, y la segunda es el anti-bucle que sustituye a la
     /// caducidad:
@@ -257,7 +257,7 @@ nonisolated enum StorageModePersistence {
     ///     rompe el predicado hermano poniendo `hasShownWelcomeChooser`, y por eso van juntos.
     ///
     /// **No hay migración para el parque instalado, y es una decisión** (Jürgen, 2026-09-10): armarla a
-    /// todo el que tenga `.groupInvite` alcanzaría a los restaurados del párrafo anterior. Quien ya está
+    /// todo el que esté en solo-grupos alcanzaría a los restaurados del párrafo anterior. Quien ya está
     /// afectado se cura al reinstalar.
     static let groupsOnlyNeutralMountKey = "cloudSync.groupsOnlyNeutralMount"
 
@@ -277,40 +277,6 @@ nonisolated enum StorageModePersistence {
 
     static func clearGroupsOnlyNeutralMount(_ defaults: UserDefaults = .standard) {
         defaults.removeObject(forKey: groupsOnlyNeutralMountKey)
-    }
-
-    /// **La frontera M1, DENTRO del escritor y no repetida en cada call-site.** Los tres sitios que tocan
-    /// esta marca —las dos altas y la activación de Yala completo— tienen que saltarse la escritura en
-    /// sesión secundaria, porque ahí el `UserDefaults` es el del DUEÑO y esto es una decisión de MOUNT de
-    /// su teléfono: armarla le apagaría el espejo de su iCloud, y desarmarla se lo devolvería, en los dos
-    /// casos por una sesión que no es suya.
-    ///
-    /// **Vive aquí y no en los tres `if` que había antes por una razón de VERIFICABILIDAD, no de estilo.**
-    /// Dos de esos tres call-sites son vistas SwiftUI, así que su único test posible era un source-scan de
-    /// un literal — y un scan así no distingue `if !SecondarySessionStore.isActive()` de `if
-    /// SecondarySessionStore.isActive()`: con el guard invertido, borrado o movido, el literal de la
-    /// llamada no cambia y la suite se queda verde mientras el daño sale a producción. Con el guard aquí,
-    /// `isSecondary` es un parámetro y la frontera se prueba con una tabla.
-    ///
-    /// El molde es el de `GroupsOrganizerOnboarding.writePreferences`, que ya recibe `isSecondarySession`
-    /// por parámetro por lo mismo.
-    static func armGroupsOnlyNeutralMountIfPrimary(
-        _ defaults: UserDefaults = .standard,
-        isSecondary: Bool = SecondarySessionStore.isActive()
-    ) {
-        guard !isSecondary else { return }
-        armGroupsOnlyNeutralMount(defaults)
-    }
-
-    /// El gemelo del anterior, y la simetría es la regla: **quien no arma, no desarma.** Un desarme sin
-    /// guard en secundaria le devolvería el espejo al dueño solo-grupos en su próximo arranque — o sea le
-    /// causaría el bug de este ticket desde la sesión de otra persona.
-    static func clearGroupsOnlyNeutralMountIfPrimary(
-        _ defaults: UserDefaults = .standard,
-        isSecondary: Bool = SecondarySessionStore.isActive()
-    ) {
-        guard !isSecondary else { return }
-        clearGroupsOnlyNeutralMount(defaults)
     }
 
     /// Marker "wipe de sesión SOLO-GRUPOS ARMADO" (G5-B, camino `groupsOnlySignOut`). Lo escribe el
@@ -370,17 +336,6 @@ nonisolated enum StorageModePersistence {
         clearNeutralMountArm(defaults)
     }
 
-    /// Paso 8 · el desarme desde la activación de Yala completo, con la frontera M1 DENTRO del escritor (molde
-    /// de `clearGroupsOnlyNeutralMountIfPrimary`): el arm vive en el `UserDefaults` del DUEÑO, y una sesión
-    /// secundaria que activara Yala completo no puede retirarle un borrado que él pidió.
-    static func clearICloudCorpusWipeArmIfPrimary(
-        _ defaults: UserDefaults = .standard,
-        isSecondary: Bool = SecondarySessionStore.isActive()
-    ) {
-        guard !isSecondary else { return }
-        clearICloudCorpusWipeArm(defaults)
-    }
-
     /// **Marker «este device eligió privado SIN poder preguntarle a iCloud» (estado K de la matriz).**
     ///
     /// Sin él, el bug de este ticket vuelve por la puerta de atrás y así lo encontró Jürgen el
@@ -436,11 +391,8 @@ nonisolated enum CloudSyncFlags {
     /// `var` (no `let`) solo para que los tests lo togglean con `defer { restore }`.
     static var syncRuntimeEnabled = true
 
-    /// SSOT del modo de almacenamiento EFECTIVO. Getter: override de tests > sesión secundaria
-    /// (M1: descriptor activo ⇒ `.cloud` — el store montado es el secundario, sincronizado por el
-    /// motor; la key PERSISTIDA `cloudSync.storageMode` conserva SIEMPRE el modo del DUEÑO y
-    /// durante una secundaria es `.icloud` por invariante estructural) > `StorageModePersistence.
-    /// read()`. Los consumidores que necesitan el modo PERSISTIDO del device (UI de migración del
+    /// SSOT del modo de almacenamiento EFECTIVO. Getter: override de tests > la key persistida.
+    /// Los consumidores que necesitan el modo PERSISTIDO del device (UI de migración del
     /// dueño, elegibilidad de reversa, panel DEBUG) leen `StorageModePersistence.read()` directo.
     /// HOY, sin override/descriptor/key, es SIEMPRE `.icloud` (DARK). El setter guarda un override
     /// EN MEMORIA → los tests que asignan `.cloud` con `defer { restore }` siguen funcionando
@@ -448,7 +400,6 @@ nonisolated enum CloudSyncFlags {
     static var storageMode: StorageMode {
         get {
             if let override = storageModeTestOverride { return override }
-            if SecondarySessionStore.isActive() { return .cloud }
             return StorageModePersistence.read()
         }
         set { storageModeTestOverride = newValue }
@@ -460,74 +411,6 @@ nonisolated enum CloudSyncFlags {
     /// test posterior quiere ejercitar la key persistida). Aislamiento explícito > coincidencia.
     static func _testResetStorageModeOverride() {
         storageModeTestOverride = nil
-    }
-
-    /// CAPACIDAD COMPILADA del feature "sesión secundaria" (M1 multi-cuenta). Gatea ÚNICAMENTE la
-    /// ENTRADA (la tercera salida de `CrossAccountEntryGuardLogic`) — el mount y el wipe honran el
-    /// descriptor (`SecondarySessionStore`) incondicionalmente, para que una sesión YA activa
-    /// jamás quede brickeada si el flag se apagara. En builds DEV, la key
-    /// `debugSecondarySessionEnabledKey` (panel DEBUG) sigue mandando: enciende la capacidad sin
-    /// recompilar (QA device).
-    ///
-    /// **Desde el chip M2 el ROLLOUT no vive aquí: vive en `secondarySessionEntryAvailable`**, que
-    /// compone esta capacidad con el percent remoto PROPIO (`CloudRemoteFlags.secondarySessionEnabled`).
-    /// Por eso el compilado pasa a `true` sin encender nada en producción — el patrón exacto de
-    /// `bornCloudChoiceEnabled` y de Grupos (D-R1): `SECONDARY_SESSION_ROLLOUT_PERCENT = "0"` en el
-    /// bloque de producción de `gateway/wrangler.toml` y `absentDefault` fail-closed antes del primer
-    /// fetch ⇒ la entrada nace DARK en prod y la palanca operativa de release es ese percent (chip M5).
-    /// A cambio, un build DEV contra staging —que sirve 100— puede ejercitar la entrada sin recompilar.
-    ///
-    /// No hay getter público de capacidad separado A PROPÓSITO: a diferencia de Grupos, aquí ningún
-    /// teardown consulta el flag (mount y wipe van por el descriptor), así que un
-    /// `secondarySessionCompiledCapability` nacería sin un solo call-site — la familia
-    /// `AppAttestClient.ensureRegistered()`. Setter = override en memoria (tests).
-    static var secondarySessionEnabled: Bool {
-        get {
-            if let override = secondarySessionEnabledTestOverride { return override }
-            #if DEV_BUILD
-            if UserDefaults.standard.bool(forKey: debugSecondarySessionEnabledKey) { return true }
-            #endif
-            return secondarySessionCompiledDefault
-        }
-        set { secondarySessionEnabledTestOverride = newValue }
-    }
-
-    /// Encendido COMPILADO de la capacidad (la palanca de release del binario; el percent remoto es
-    /// el rollout Y el kill). Estuvo en `true` desde el chip M2.
-    ///
-    /// **A `false` desde el 2026-09-12, y es una precondición del cambio de ese día, no una preferencia:**
-    /// ese mismo día se retiró la puerta de dominio por sesión —lo que aislaba las preferencias de la
-    /// invitada del `UserDefaults` del dueño— porque en producción nunca llegó a actuar. Pero el apagado
-    /// de la ENTRADA vivía solo en el percent remoto (`SECONDARY_SESSION_ROLLOUT_PERCENT`), que es un
-    /// valor de servidor: **staging sirve 100**, así que un build DEV podía abrir la entrada sin
-    /// recompilar, y en producción bastaría subir el percent. Con el aislamiento fuera, eso deja de ser
-    /// un rollout y pasa a ser una fuga: la invitada escribiría su nombre y su divisa encima de los del
-    /// dueño. Apagarlo aquí es local y no depende de nadie.
-    ///
-    /// M1 se retira entera en `shell-derives-from-two-session-axes`; esto solo adelanta el cierre de su
-    /// puerta de entrada para que las dos mitades no queden nunca desparejadas.
-    private static let secondarySessionCompiledDefault = false
-    static let debugSecondarySessionEnabledKey = "cloudSync.debug.secondarySessionEnabled"
-    nonisolated(unsafe) private static var secondarySessionEnabledTestOverride: Bool?
-
-    /// Solo tests: vuelve el getter a la lectura real (mismo racional que `_testResetStorageModeOverride`).
-    static func _testResetSecondarySessionEnabledOverride() {
-        secondarySessionEnabledTestOverride = nil
-    }
-
-    /// Composición completa del gate de ENTRADA secundaria: capacidad compilada, backend configurado
-    /// (sin auth no hay sesión nube), wiring del motor encendido y **DOS flags remotos** — el percent
-    /// PROPIO del feature (chip M2) y el kill-switch del Modo Nube. Los dos se conservan a propósito:
-    /// son palancas independientes y cualquiera corta la entrada, que es un kill-switch doble y gratis.
-    ///
-    /// Es una ENTRADA: el kill la corta, pero una secundaria YA ACTIVA no se toca — mount y wipe
-    /// honran el descriptor incondicionalmente. Eso es lo que hace barato usar el kill-switch.
-    /// Con el percent ausente (fresh install de producción antes del primer fetch) el término remoto
-    /// es `absentDefault` = `false` ⇒ `CrossAccountEntryGuardLogic` degrada la celda a
-    /// `blockedForeignData`: el usuario ve la pantalla honesta de hoy, jamás un error.
-    static var secondarySessionEntryAvailable: Bool {
-        secondarySessionEnabled && syncRuntimeEnabled && CloudBackendConfig.isConfigured
-            && CloudRemoteFlags.secondarySessionEnabled && CloudRemoteFlags.cloudModeEnabled
     }
 
     /// Gate del canal de sync de GRUPOS → backend (incremento G2). Cuando `true`,

@@ -100,12 +100,12 @@ enum GroupsBridgeRestoreConvergence {
     /// probado que el store personal está listo (la quiescencia del import).
     ///
     /// Dos condiciones antes de escribir, y las dos son de seguridad, no de rendimiento:
-    /// 1. **El modo ya no es solo-grupos.** En `.groupInvite` el bridge borra las transacciones reales que
+    /// 1. **Ya hay sesión privada.** En una sesión solo-grupos el bridge borra las transacciones reales que
     ///    re-puentea; si la app murió antes de completar la activación, se espera a que se complete.
     /// 2. **El bridge está abierto** (sello de «empiezo de cero» y activación a medias, fuera).
     static func convergeIfPending(context: ModelContext, defaults: UserDefaults = .standard) {
         guard GroupsBridgeRestoreConvergenceStore.isPending(defaults) else { return }
-        guard !SessionState.shared.isGroupInviteMode else { return }
+        guard SessionState.shared.hasPrivateSession else { return }
         guard GroupTransactionBridge.isDomainOpenForBridge(defaults: defaults) else { return }
         do {
             let expenseIDs = Set(try context.fetch(FetchDescriptor<SplitExpense>()).map(\.id))

@@ -22,7 +22,7 @@ nonisolated enum CloudSignOutFlowLogic {
     ///
     /// **Todas las salidas dejan el dispositivo como recién instalado por el mismo boot-wipe de
     /// archivos** (`armSignOutWipe` → `SwiftDataConfiguration.performSignOutWipeIfArmed`, que además
-    /// arma el neutro duradero) — salvo la visita M1, que borra solo sus archivos `-Secondary`.
+    /// arma el neutro duradero).
     enum Path: Equatable {
         /// Sesión PRIVADA sin cuenta en la nube (celda C). Espera a que el último cambio llegue a iCloud
         /// (`PrivateSignOutExportGateLogic`) → arma el borrado por ARCHIVOS del store personal + sync-meta →
@@ -37,11 +37,6 @@ nonisolated enum CloudSignOutFlowLogic {
         /// `.cloud` (celda E): push-all personal + grupos (bloquear si falla, jamás descartar) →
         /// signOut + teardown → armar `signOutWipeArmed` → relanzamiento asistido o swap sin relanzar.
         case cloudSecureSignOut
-        /// Sesión SECUNDARIA (M1): push-all verificado idéntico al camino `.cloud`, pero
-        /// arma `SecondarySessionStore.armWipe` (borra SOLO los archivos `-Secondary` en el
-        /// boot; los del dueño intactos) y JAMÁS `armSignOutWipe` ni el reset masivo de prefs.
-        /// Se retira con M1 (paso 12 del rediseño).
-        case secondaryCloudSignOut
         /// SIN sesión privada (celda F, con su sesión en la nube viva o ya caducada): push-all verificado del
         /// outbox de grupos → teardown del canal → cierra la sesión → arma el borrado personal + sync-meta +
         /// grupos → Welcome. Lo que hubiera en el store personal no era de una sesión privada.
@@ -49,16 +44,11 @@ nonisolated enum CloudSignOutFlowLogic {
     }
 
     /// Precedencia CONGELADA:
-    ///  1. `secondarySessionActive` — M1 gana SIEMPRE (ATOMICIDAD con el getter efectivo: en
-    ///     secundaria el modo EFECTIVO es `.cloud`; sin esta rama primero el sign-out de la
-    ///     invitada iría a `.cloudSecureSignOut` → `armSignOutWipe` → el boot borraría el
-    ///     `YalaModel` del DUEÑO).
-    ///  2. `.cloud` — lo personal vive en la cuenta y lo sincroniza el motor.
-    ///  3. `!hasPrivateSession` — solo grupos (F), con la sesión viva o caducada: sin vida personal que
-    ///     proteger, cierra borrando lo local. Incluye el «5a» legado (group-invite sin sesión), que antes
-    ///     tenía su propia salida y cuya hoja privada habría mentido.
-    ///  4. `groupsBackendEnabled && hasLiveSession` — privada con cuenta de grupos: el «equipo» (D).
-    ///  5. else — privada sin nube (C).
+    ///  1. `.cloud` — lo personal vive en la cuenta y lo sincroniza el motor.
+    ///  2. `!hasPrivateSession` — solo grupos (F), con la sesión viva o caducada: sin vida personal que
+    ///     proteger, cierra borrando lo local.
+    ///  3. `groupsBackendEnabled && hasLiveSession` — privada con cuenta de grupos: el «equipo» (D).
+    ///  4. else — privada sin nube (C).
     ///
     /// **La mecánica la decide `storageMode` y no el `kind` de la cuenta (paso 3).** El `kind` describe
     /// la CUENTA; qué hay que subir y qué se puede borrar lo decide dónde viven los datos EN ESTE
@@ -70,11 +60,9 @@ nonisolated enum CloudSignOutFlowLogic {
     /// parámetro por defecto a propósito: la vista y el coordinador tienen que pronunciarse los dos,
     /// o la hoja prometería otro borrado.
     static func path(for storageMode: StorageMode,
-                     secondarySessionActive: Bool,
                      hasLiveSession: Bool,
                      groupsBackendEnabled: Bool,
                      hasPrivateSession: Bool) -> Path {
-        if secondarySessionActive { return .secondaryCloudSignOut }
         if storageMode == .cloud { return .cloudSecureSignOut }
         if !hasPrivateSession { return .groupsOnlySignOut }
         if groupsBackendEnabled && hasLiveSession { return .privateWithGroupsSignOut }
@@ -99,15 +87,15 @@ nonisolated enum CloudSignOutFlowLogic {
         let waitsForExport: Bool
     }
 
-    /// El reparto de los tres cierres por archivos; `nil` para la nube y la visita, que tienen su camino.
+    /// El reparto de los tres cierres por archivos; `nil` para la nube, que tiene su propio camino.
     ///
     /// **Es la decisión que más datos protege del paso 9, y por eso es pura y va por tabla.** La review
     /// adversarial midió que invertir un solo término —C sin esperar al export, D sin subir sus grupos— no
     /// lo cazaba ningún test: los source-scans miraban el orden de las llamadas, no sus condiciones.
     ///  - C y D esperan, salvo que la persona haya confirmado con el segundo gesto que no hay copia.
-    ///  - F solo espera si su store ESPEJA (una instalación anterior al paso 5, o un `.groupInvite` que
-    ///    llegó por el iCloud KV a un teléfono privado): ahí borrar sin esperar podría llevarse cambios del
-    ///    Apple ID que aún no subieron. `confirmedWithoutICloudCopy` no le aplica: F no tiene hoja «sin copia».
+    ///  - F solo espera si su store ESPEJA (p. ej. una instalación anterior al paso 5): ahí borrar sin
+    ///    esperar podría llevarse cambios del Apple ID que aún no subieron.
+    ///    `confirmedWithoutICloudCopy` no le aplica: F no tiene hoja «sin copia».
     static func exitPlan(path: Path, confirmedWithoutICloudCopy: Bool, mountAttachesMirror: Bool) -> ExitPlan? {
         switch path {
         case .privateSignOut:
@@ -116,7 +104,7 @@ nonisolated enum CloudSignOutFlowLogic {
             return ExitPlan(kind: .privateWithGroups, waitsForExport: !confirmedWithoutICloudCopy)
         case .groupsOnlySignOut:
             return ExitPlan(kind: .groupsOnly, waitsForExport: mountAttachesMirror)
-        case .cloudSecureSignOut, .secondaryCloudSignOut:
+        case .cloudSecureSignOut:
             return nil
         }
     }
@@ -165,23 +153,6 @@ nonisolated enum CloudSignOutFlowLogic {
         /// la puso el gesto que lo enseña, así que su aviso **no puede llamar a `acknowledgeBlocked()`**:
         /// le borraría al cierre ajeno su fase y su `blockedExit`. Review adversarial del 2026-09-11.
         case detachBusy
-    }
-
-    /// ¿El aviso de cierre bloqueado debe ofrecer «salir igualmente»? (decisión del owner 2026-09-03).
-    ///
-    /// **Solo en la sesión de VISITA**, y la razón es de producto: la invitada está en el móvil de otra
-    /// persona y ese móvil hay que devolverlo, así que un cierre que no se puede completar la deja
-    /// atrapada — con mala red, un final peor que perder un gasto. En el móvil propio no existe esa
-    /// presión, así que los bloqueos de SUBIDA (push-all de la nube y de grupos) conservan su única
-    /// salida. La excepción del móvil propio es otra y va por su propio aviso: la espera del export de
-    /// iCloud en el cierre privado (`BlockReason.exportUnconfirmed`), que tras la espera normal sí
-    /// ofrece cerrar igualmente, contando lo que se pierde.
-    ///
-    /// `pendingCount > 0` es el segundo término y no es decorativo: no todo `.blocked` viene de datos sin
-    /// subir. El guard sin `CloudMigrationController` emite `pendingCount: 0`, y ofrecer ahí «salir
-    /// igualmente» prometería descartar algo que no existe mientras el cierre falla por otro motivo.
-    static func offersForcedSecondaryExit(isSecondaryActive: Bool, pendingCount: Int) -> Bool {
-        isSecondaryActive && pendingCount > 0
     }
 
     /// ¿Es seguro hacer `save()` sobre el contexto compartido AHORA? Es la puerta de quiescencia de los

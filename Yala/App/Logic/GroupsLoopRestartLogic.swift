@@ -26,23 +26,15 @@ nonisolated enum GroupsLoopRestartLogic {
     /// - `stoppedUntilRelaunch` — un 403 previo (cuenta no disponible) armó el stop de proceso (A5): no
     ///   re-arrancar en este proceso ni al foreground ni tras un sign-in.
     /// - `loopAlive` — el loop ya vive (`loopTask != nil`): single-instance, no duplicar.
-    /// - `secondaryActive` / `secondaryMounted` — GUARD D8 (mount-mismatch): en la VENTANA DE ENTRADA de
-    ///   la sesión secundaria (descriptor persistido pero el store del DUEÑO aún montado) un re-arranque
-    ///   drenaría/rehydrataría la History del dueño a la cuenta entrante. Bloquea si
-    ///   `secondaryActive && !secondaryMounted` (idéntico a `CloudSyncRuntime.canRunDomain`). El estado
-    ///   coherente (secundaria activa Y su store montado) NO bloquea.
     static func shouldStart(
         flagOn: Bool,
         hasSession: Bool,
         stoppedUntilRelaunch: Bool,
-        loopAlive: Bool,
-        secondaryActive: Bool,
-        secondaryMounted: Bool
+        loopAlive: Bool
     ) -> Bool {
         guard flagOn, hasSession else { return false }
         guard !stoppedUntilRelaunch else { return false }
         guard !loopAlive else { return false }
-        if secondaryActive && !secondaryMounted { return false }  // D8 mount-mismatch
         return true
     }
 }

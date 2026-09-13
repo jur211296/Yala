@@ -15,7 +15,7 @@ struct ThemeSettingsView: View {
 
     private let featureGate = FeatureGateService.shared
 
-    private var isGroupInviteMode: Bool { SessionState.shared.isGroupInviteMode }
+    private var isGroupsOnlyShell: Bool { !SessionState.shared.hasPrivateSession }
 
     /// Called after theme changes to dismiss the entire profile sheet
     var onThemeChanged: (() -> Void)?
@@ -54,7 +54,7 @@ struct ThemeSettingsView: View {
 
                     // Theme Grid
                     LazyVGrid(columns: columns, spacing: DS.Spacing.lg) {
-                        ForEach(GroupInviteVisibilityPolicy.selectableThemes(isGroupInvite: isGroupInviteMode)) { appTheme in
+                        ForEach(GroupsOnlyVisibilityPolicy.selectableThemes(isGroupsOnlyShell: isGroupsOnlyShell)) { appTheme in
                             themeCard(for: appTheme)
                         }
                     }

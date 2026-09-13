@@ -51,8 +51,7 @@ struct YalaAccountView: View {
             provider: rawProvider,
             storageMode: CloudSyncFlags.storageMode,
             canDeleteAccount: AccountDeletionRowLogic.shouldShow(
-                hasSession: UITestHooks.fakeBackendSession || CloudAuthService.shared.hasSession,
-                secondaryActive: SecondarySessionStore.isActive()),
+                hasSession: UITestHooks.fakeBackendSession || CloudAuthService.shared.hasSession),
             hasPrivateSession: PrivateSessionMark.hasPrivateSession())
     }
 

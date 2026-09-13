@@ -21,9 +21,9 @@
 //
 //  Contrato best-effort INTACTO (molde B1): jamás lanza ni bloquea el borrado. El par NO se limpia en
 //  skip/fallo (retry posible vía `.failed(.localClose)` del borrado — mismo matiz que SIWA); solo el
-//  disconnect exitoso lo limpia. Ciclo de vida del par: sobrevive el sign-out normal y la frontera M1
-//  (credencial del PROVIDER, no de la sesión — verificado 2026-07-16: ni `CloudSessionSignOut` ni
-//  `SecondarySessionBoundaryPurge` tocan `GoogleUserPairStore`/`com.yala.cloudauth`); re-sign-in lo
+//  disconnect exitoso lo limpia. Ciclo de vida del par: sobrevive el sign-out normal (credencial del
+//  PROVIDER, no de la sesión — verificado 2026-07-16: `CloudSessionSignOut` no toca
+//  `GoogleUserPairStore`/`com.yala.cloudauth`); re-sign-in lo
 //  sobreescribe (clear-before-write). Residual documentado (D1 del plan de sesión 1): post-reinstalación
 //  no hay sesión SDK restaurable ⇒ skip `no-sdk-session` — el grant queda vivo pero el token es inerte.
 //

@@ -140,8 +140,8 @@ struct GroupExpenseViewModelTests {
         vm.expenseDescription = "Dinner"
         // All members selected by default, split is equal by default.
         // M6: Caso A (Alice = current user = payer default) requiere cuenta personal.
-        // Override a `.groupInvite` para skip account requirement (test legacy semantics).
-        vm.isGroupInviteOverride = true
+        // Override a sesión solo-grupos para saltar la exigencia de cuenta (semántica legacy del test).
+        vm.isGroupsOnlyOverride = true
         #expect(vm.canSave == true)
     }
 

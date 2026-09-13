@@ -37,9 +37,8 @@ enum FullModeActivationFlowLogic {
         case restore
         /// Una instalación solo-grupos anterior al paso 5, con el espejo YA adjunto: hay que reinstalar.
         case reinstallNotice
-        /// El recorrido de antes, sin chooser. Lo conservan dos poblaciones que NO son solo-grupos y cuyo
-        /// «dónde» ya está decidido: la sesión secundaria (M1, se retira en el paso 12) y quien redujo la app
-        /// a Grupos tras vaciar sus datos (`usageFocus`, pantalla de retención; la retira el paso 9).
+        /// El recorrido de antes, sin chooser: para quien NO es solo-grupos y por tanto ya tiene decidido
+        /// dónde viven sus datos personales.
         case legacyOnboarding
     }
 
@@ -63,21 +62,18 @@ enum FullModeActivationFlowLogic {
     /// cancelación, encima, le armaba el mount neutro y le apagaba el espejo para siempre.
     ///
     /// - Parameters:
-    ///   - isSecondarySession: `SecondarySessionStore.isActive()`.
-    ///   - isGroupsOnlySession: `onboardingMode == .groupInvite`, el estado F de la matriz. La fila de Perfil y
-    ///     la card de «Más» también se enseñan a quien redujo la app a Grupos con `usageFocus`, y esa persona
-    ///     ya tiene su «dónde» decidido: ofrecerle privado / nube sería ofrecerle una elección que no puede hacer.
+    ///   - isGroupsOnlySession: no hay sesión privada en este dispositivo (`PrivateSessionMark`), el estado
+    ///     F de la matriz.
     ///   - resume: la marca de reanudación tras un relanzamiento (`FullModeActivationResumeStore`).
     ///   - isLegacyMirroredInstall: `isLegacyMirroredInstall(...)`, abajo.
     ///   - visibleOptions: el gate del chooser, el MISMO del Welcome (`WelcomeNewOptionsGate.live`).
     static func initialScreen(
-        isSecondarySession: Bool,
         isGroupsOnlySession: Bool,
         resume: FullModeActivationResumeStore.Step?,
         isLegacyMirroredInstall: Bool,
         visibleOptions: [Option]
     ) -> Screen {
-        guard !isSecondarySession, isGroupsOnlySession else { return .legacyOnboarding }
+        guard isGroupsOnlySession else { return .legacyOnboarding }
         switch resume {
         case .privateOnboarding: return .onboarding(.freshPrivate)
         case .restore: return .restore
@@ -171,7 +167,7 @@ enum FullModeActivationFlowLogic {
         case persistOnboarding
         /// La respuesta a «¿traemos tus gastos de grupo?».
         case applyHistoryChoice
-        /// Modo `.completed`, foco `.full`, barra de pestañas, y fuera las marcas de la activación.
+        /// Modo `.completed`, barra de pestañas, y fuera las marcas de la activación.
         case completeActivation
         /// Converger los gastos de grupo con el corpus restaurado (`GroupsBridgeRestoreConvergence`).
         case convergeGroupsBridge
@@ -186,9 +182,9 @@ enum FullModeActivationFlowLogic {
     ///   se escribe —con `.icloud` iría al iCloud-KV y nunca llegaría a la cuenta—, y es el mismo orden que el
     ///   alta born-cloud (`activateBornCloudStorage` se invoca «antes de sembrar nada»).
     /// - **Privado**: sin servidor que tocar; lo personal ya se sincroniza por el espejo de iCloud.
-    /// - **Restaurado**: la activación (modo `.completed`) va ANTES de converger, y no es un matiz: con el modo
-    ///   todavía en `.groupInvite` el bridge BORRA toda transacción real del gasto que re-puentea
-    ///   (`GroupTransactionBridge.createGroupInviteCaseAVirtualPair`), o sea las que el usuario había
+    /// - **Restaurado**: la activación (modo `.completed`) va ANTES de converger, y no es un matiz: con la
+    ///   sesión todavía en solo-grupos el bridge BORRA toda transacción real del gasto que re-puentea
+    ///   (`GroupTransactionBridge.createGroupsOnlyCaseAVirtualPair`), o sea las que el usuario había
     ///   clasificado en su vida anterior y acaban de volver de iCloud.
     static func commitPlan(for source: OnboardingSource) -> [CommitStep] {
         switch source {
@@ -322,12 +318,6 @@ enum FullModeActivationFlowLogic {
 /// (`RelaunchNetLogic.shouldExitOnBackground`), así que tiene que retirarse en cuanto el arranque siguiente lo
 /// lee. Si la activación viviera de él, pasar a segundo plano durante el onboarding reanudado mataría la app.
 /// Al consumirlo, el arranque lo convierte en esta marca, que no mata nada y sobrevive a un kill.
-///
-/// **La frontera M1 va DENTRO de los escritores de la vista** (`clearIfPrimary`), con el molde de
-/// `StorageModePersistence.armGroupsOnlyNeutralMountIfPrimary`: la marca vive en el `UserDefaults` del DUEÑO,
-/// y un guard repetido en cada call-site solo se puede comprobar con un source-scan que no distingue su
-/// polaridad. Aquí la polaridad es un parámetro y la prueba una tabla. El único que la ESCRIBE es el arranque,
-/// y ahí la frontera la decide `resolveAtBoot`, que con sesión secundaria no hace nada.
 nonisolated enum FullModeActivationResumeStore {
 
     enum Step: String, CaseIterable, Equatable {
@@ -349,14 +339,6 @@ nonisolated enum FullModeActivationResumeStore {
 
     static func clear(_ defaults: UserDefaults = .standard) {
         defaults.removeObject(forKey: key)
-    }
-
-    static func clearIfPrimary(
-        defaults: UserDefaults = .standard,
-        isSecondary: Bool = SecondarySessionStore.isActive()
-    ) {
-        guard !isSecondary else { return }
-        clear(defaults)
     }
 
     /// Qué destino del relanzamiento corresponde a cada paso, y al revés. Exhaustivo a propósito: un destino
@@ -381,8 +363,9 @@ nonisolated enum FullModeActivationResumeStore {
     }
 
     /// ¿Hay una activación privada a medias —con el relanzamiento pedido o ya hecho—? Mientras la haya, el
-    /// bridge no crea nada (`GroupTransactionBridge.isDomainOpenForBridge`): el modo sigue en `.groupInvite` y
-    /// el espejo ya puede estar bajando un corpus con transacciones reales, que ese modo borra al re-puentear.
+    /// bridge no crea nada (`GroupTransactionBridge.isDomainOpenForBridge`): la sesión sigue siendo
+    /// solo-grupos y el espejo ya puede estar bajando un corpus con transacciones reales, que esa sesión
+    /// borra al re-puentear.
     static func isPrivateActivationInFlight(
         pending: WelcomeMirrorRelaunchLogic.Destination?,
         current: Step?
@@ -415,10 +398,8 @@ nonisolated enum FullModeActivationResumeStore {
     static func resolveAtBoot(
         pending: WelcomeMirrorRelaunchLogic.Destination?,
         current: Step?,
-        isSecondarySession: Bool,
         isGroupsOnlySession: Bool
     ) -> BootResolution {
-        guard !isSecondarySession else { return .nothing }
         let pendingStep = pending.flatMap(step(for:))
         guard isGroupsOnlySession else {
             return BootResolution(consumesPendingDestination: pendingStep != nil, writesResume: nil,

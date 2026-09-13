@@ -109,7 +109,6 @@ enum MetricsCanary: String {
     case cloudConsentAccepted
     case cloudAccountUnavailable
     case cloudAccountReverting
-    case cloudSecondaryMountMismatchBlocked
     // C-1 — canal iCloud del cutover
     case cloudCutoverICloudBlocked
     case cloudCutoverMarkerWaived
@@ -388,10 +387,6 @@ extension MetricsService {
 
     static func routingIntentDeferred(intentID: String, reason: String) {
         canary(.routingIntentDeferred, detail: "\(intentID)|\(reason)")
-    }
-
-    static func cloudSecondaryMountMismatchBlocked() {
-        canary(.cloudSecondaryMountMismatchBlocked)
     }
 
     // MARK: C-1 — canal iCloud del cutover

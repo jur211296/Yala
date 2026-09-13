@@ -9,7 +9,7 @@
 import Foundation
 
 enum UserSegment: String {
-    /// onboardingMode == .groupInvite (no personal finance context)
+    /// Sin sesión privada en este dispositivo (sin contexto de finanzas personales).
     case invited
     /// Onboarding complete but <5 transactions
     case dormant
@@ -22,17 +22,17 @@ enum UserSegment: String {
 
     /// Pure classification function — testable without SwiftData context.
     /// - Parameters:
-    ///   - onboardingMode: Current onboarding mode
+    ///   - hasPrivateSession: el eje 1 — ¿hay sesión privada en este dispositivo?
     ///   - totalTransactions: Total personal TransactionItem count
     ///   - avgDaysBetweenSessions: Average days between app sessions (0 = first session)
     ///   - usesAdvancedFeatures: Whether user has budgets, used insights, or exported data
     static func classify(
-        onboardingMode: OnboardingMode,
+        hasPrivateSession: Bool,
         totalTransactions: Int,
         avgDaysBetweenSessions: Double,
         usesAdvancedFeatures: Bool
     ) -> UserSegment {
-        if onboardingMode == .groupInvite {
+        if !hasPrivateSession {
             return .invited
         }
 

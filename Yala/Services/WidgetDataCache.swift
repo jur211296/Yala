@@ -34,9 +34,9 @@ struct WidgetTransaction: Codable {
     /// que decodificar el MISMO payload, y en los discos de hoy hay snapshots sin esta clave. Un
     /// `Bool` a secas los rompería enteros.
     ///
-    /// Lo fija `WidgetSessionSealTests`, y con una salvedad que importa: **ese test solo alcanza a
-    /// ESTA copia**. El target `YalaTests` sincroniza el grupo `YalaTests` y compila `Yala`, no
-    /// `YalaWidgets` (`project.pbxproj`), así que su `decode(WidgetDataSnapshot.self, …)` resuelve
+    /// Lo fija `WidgetSnapshotLegacyDecodeTests`, y con una salvedad que importa: **ese test solo
+    /// alcanza a ESTA copia**. El target `YalaTests` sincroniza el grupo `YalaTests` y compila `Yala`,
+    /// no `YalaWidgets` (`project.pbxproj`), así que su `decode(WidgetDataSnapshot.self, …)` resuelve
     /// aquí. A la copia del widget —la que de verdad lee en producción— la vigila el source-scan
     /// de `ApproximateMarkSecondarySurfacesWiringTests`.
     let isExchangeRateProvisional: Bool?
@@ -171,8 +171,8 @@ struct WidgetPeriodSummary: Codable {
     /// gemela de `YalaWidgets` decodifican el mismo payload del App Group, y los snapshots ya
     /// escritos no traen estas claves. Con `Bool` a secas, decodificar uno de esos lanza
     /// `keyNotFound` y se pierde el snapshot ENTERO —no solo el campo—, porque la clave cuelga de
-    /// `thisMonthSummary`, que no es opcional. Lo fija `WidgetSessionSealTests` **para esta copia**;
-    /// la del widget, el source-scan (ver `isExchangeRateProvisional` arriba).
+    /// `thisMonthSummary`, que no es opcional. Lo fija `WidgetSnapshotLegacyDecodeTests` **para esta
+    /// copia**; la del widget, el source-scan (ver `isExchangeRateProvisional` arriba).
     let incomeIsApproximate: Bool?
     let expenseIsApproximate: Bool?
     let netCashFlowIsApproximate: Bool?
@@ -209,11 +209,6 @@ struct WidgetDataSnapshot: Codable {
     // Precalculated summaries for all periods (keyed by period rawValue)
     let periodSummaries: [String: WidgetPeriodSummary]
 
-    /// SELLO de identidad de la sesión que escribió este snapshot. `nil` = sesión del DUEÑO, que es lo que
-    /// decodifica también todo snapshot escrito antes de que este campo existiera — y es de quien era.
-    /// El lector (`WidgetDataService.loadSnapshot`) lo compara contra el sello ACTIVO del App Group; ver
-    /// `WidgetSessionSeal` para por qué la key activa cuelga del descriptor y no de esta escritura.
-    let sessionSeal: String?
 }
 
 // MARK: - WidgetDataCache
@@ -257,28 +252,11 @@ enum WidgetDataCache {
         WidgetCenter.shared.reloadAllTimelines()
     }
 
-    /// El predicado de la puerta, ESPEJO EXACTO de `NotificationService.isPersonalWipeArmed`: cubre el
-    /// cierre `.cloud` del dueño y la salida de la sesión secundaria M1. NO incluye `groupsOnlyWipeArmed`,
-    /// misma asimetría deliberada que allí — en ese camino el store personal sobrevive y lo que pinta el
-    /// widget sigue siendo legítimo.
+    /// El predicado de la puerta, ESPEJO EXACTO de `NotificationService.isPersonalWipeArmed`. NO incluye
+    /// `groupsOnlyWipeArmed`, misma asimetría deliberada que allí — en ese camino el store personal
+    /// sobrevive y lo que pinta el widget sigue siendo legítimo.
     static var isWipeArmed: Bool {
-        StorageModePersistence.isSignOutWipeArmed() || SecondarySessionStore.isWipeArmed()
-    }
-
-    /// Republica en el App Group el sello de la sesión VIVA, leyéndolo del DESCRIPTOR. Idempotente.
-    ///
-    /// El descriptor se resuelve POR LLAMADA y jamás se captura: la frontera de entrada lo activa con el
-    /// proceso del dueño todavía vivo, así que un valor cacheado publicaría el sello equivocado justo en la
-    /// ventana que este mecanismo existe para cubrir (misma cláusula que `SessionDefaults`).
-    ///
-    /// Los tres call-sites son las dos fronteras M1 y el commit point de la entrada; el de la SALIDA va
-    /// obligatoriamente DESPUÉS de `SecondarySessionStore.clear` — antes republicaría el sello de la
-    /// invitada sobre una sesión que ya no existe, que es exactamente el estado que el lector tiene que
-    /// poder rechazar.
-    static func republishActiveSeal(_ defaults: UserDefaults = .standard) {
-        WidgetSessionSeal.publish(
-            WidgetSessionSeal.seal(forUserID: SecondarySessionStore.activeUserID(defaults)),
-            in: sharedDefaults)
+        StorageModePersistence.isSignOutWipeArmed()
     }
 
     /// Clears the widget cache
@@ -523,9 +501,7 @@ enum WidgetDataCache {
             trendData: trendData,
             thisMonthSummary: thisMonthSummary,
             allTimeSummary: allTimeSummary,
-            periodSummaries: periodSummaries,
-            // Resuelto POR LLAMADA desde el descriptor vivo — nunca capturado. Ver `republishActiveSeal`.
-            sessionSeal: WidgetSessionSeal.seal(forUserID: SecondarySessionStore.activeUserID())
+            periodSummaries: periodSummaries
         )
     }
 

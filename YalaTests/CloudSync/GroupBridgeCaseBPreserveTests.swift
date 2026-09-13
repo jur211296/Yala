@@ -84,13 +84,13 @@ struct GroupBridgeCaseBPreserveTests {
                        userSubcat: userSubcat, matchSubcat: matchSubcat)
     }
 
-    private func withBridgeEnvironment(_ context: ModelContext, mode: OnboardingMode = .full, _ body: () throws -> Void) rethrows {
+    private func withBridgeEnvironment(_ context: ModelContext, hasPrivateSession: Bool = true, _ body: () throws -> Void) rethrows {
         GroupTransactionBridge.shared.setContext(context)
-        let previousMode = SessionState.shared.onboardingMode
-        SessionState.shared.onboardingMode = mode
+        let previousPrivateSession = SessionState.shared.hasPrivateSession
+        SessionState.shared.hasPrivateSession = hasPrivateSession
         BridgeModeResolver.shared.invalidateCache(forZoneID: nil)
         defer {
-            SessionState.shared.onboardingMode = previousMode
+            SessionState.shared.hasPrivateSession = previousPrivateSession
             BridgeModeResolver.shared.invalidateCache(forZoneID: nil)
         }
         try body()
@@ -316,15 +316,15 @@ struct GroupBridgeCaseBPreserveTests {
         }
     }
 
-    // MARK: - Test 3d: groupInvite preserva TX1 y regenera TX2
+    // MARK: - Test 3d: la sesión solo-grupos preserva TX1 y regenera TX2
 
-    @Test func transition_groupInvite_preservesMyShareTx_regeneratesLentTx() throws {
+    @Test func transition_sesiónSoloGrupos_preservesMyShareTx_regeneratesLentTx() throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         let f = try makeFixture(context)
 
-        try withBridgeEnvironment(context, mode: .groupInvite) {
-            // Caso A pago yo (pero groupInvite → par virtual TX1 -myShare + TX2 +total).
+        try withBridgeEnvironment(context, hasPrivateSession: false) {
+            // Caso A pago yo (pero solo-grupos → par virtual TX1 -myShare + TX2 +total).
             let expense = SplitExpense(
                 groupZoneID: f.group.cloudKitZoneID, amount: 90, currencyCode: "USD",
                 expenseDescription: "Cena", paidByMemberID: f.me.id.uuidString

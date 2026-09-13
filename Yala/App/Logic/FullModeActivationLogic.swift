@@ -12,7 +12,7 @@ import Foundation
 enum FullModeActivationLogic {
 
     /// Construye el `ICloudAccountSummary` que activa los skips correctos del
-    /// `OnboardingView` cuando un user `.groupInvite` activa Yala completo:
+    /// `OnboardingView` cuando una sesión solo-grupos activa Yala completo:
     /// - skip `.name` (ya tenemos `userName`)
     /// - skip `.currencyName` (ya tenemos moneda del grupo o de defaults)
     /// - skip `.categories` si el user ya las sembró vía Approach J

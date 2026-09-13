@@ -16,9 +16,9 @@
 //  2. **Versión aceptada por debajo de la última SUSTANTIVA → NO aceptado** (§8). Es la comparación que
 //     hasta C1 no existía: la versión se persistía y no la miraba nadie.
 //
-//  3. **Un sello que CONTRADICE al `sub` vivo → NO aceptado.** `GroupsConsentState` escribe en
-//     `.standard` a pelo —no pasa por `SessionDefaults`— así que la caché de una VISITA M1 cae en el
-//     dominio del DUEÑO. La seguridad viene del sello, **no de una purga** — que es exactamente por qué
+//  3. **Un sello que CONTRADICE al `sub` vivo → NO aceptado.** La caché de una cuenta cae en el
+//     `UserDefaults` del dispositivo, así que la seguridad viene del SELLO y **no de una purga** — que
+//     es exactamente por qué
 //     `AccountEntitlementStore` es seguro. Un snapshot de la cuenta A jamás vale como consent de la B.
 //
 //     *(Corregido el 2026-09-05: esta nota decía «no hay ningún dominio de `UserDefaults` por sesión

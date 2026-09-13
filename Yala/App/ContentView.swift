@@ -32,10 +32,6 @@ struct ContentView: View {
     // dos anchors ante el mismo observable tumbaban ambas cadenas. La presentación se
     // VERIFICA por onAppear del contenido real y se reintenta (SignOutRelaunchNetModifier).
     @State private var showSignOutRelaunchCover: Bool = false
-    /// M1: red DURABLE de la VENTANA DE ENTRADA secundaria (descriptor persistido, store del
-    /// DUEÑO montado, relaunch pendiente). El cover primario es la fase `.relaunchSecondary`
-    /// del welcome; si ese cover muere, este re-presenta (regla toolbar-muerta).
-    @State private var showSecondaryEntryRelaunchCover: Bool = false
     /// Forzado de actualización (min-version): red visual del cover terminal. La CONDICIÓN VIVA es
     /// `ForceUpdateGate.shared.isUpdateRequired` (blocker de la matriz); este @State es la red de
     /// presentación (molde showSignOutRelaunchCover). DARK en prod.
@@ -254,10 +250,11 @@ struct ContentView: View {
             // Paso 8 · la oferta de «Activar Yala completo» a quien vino a estrenar Yala por la nube y resultó
             // tener una cuenta de grupos. Se consume en la primera transición, sea cual sea, y solo se ofrece
             // si lo que quedó montado es de verdad solo-grupos: desde otro modo la activación no tiene chooser.
-            // El modo se lee del almacén y no de `SessionState`: el alta del organizador lo escribe ahí.
+            // El eje se lee de la marca persistida y no del espejo en memoria: el alta del organizador
+            // la escribe ahí antes de que esta transición ocurra.
             if newValue, offersFullActivationAfterGroupsEntry {
                 offersFullActivationAfterGroupsEntry = false
-                if OnboardingMode.current() == .groupInvite {
+                if !PrivateSessionMark.hasPrivateSession() {
                     RouterEntryGate.shared.submit(.presentFullModeActivation)
                 }
             }
@@ -356,10 +353,6 @@ struct ContentView: View {
         ))
         .modifier(SignOutRelaunchNetModifier(
             showRelaunchCover: $showSignOutRelaunchCover
-        ))
-        .modifier(SecondaryEntryRelaunchNetModifier(
-            showRelaunchCover: $showSecondaryEntryRelaunchCover,
-            welcomeCloudCoverVisible: showWelcomeCloudSignIn
         ))
         .modifier(ForceUpdateNetModifier(
             showCover: $showForceUpdateCover
@@ -565,9 +558,6 @@ struct ContentView: View {
             // cover es la red visual — si la presentación tarda/falla, el router queda contenido igual.
             showSignOutRelaunch: showSignOutRelaunchCover
                 || CloudSessionSignOut.shared.phase == .awaitingRelaunch,
-            // M1: la condición viva (statics) ES el blocker; el @State del cover es la red visual.
-            secondaryEntryRelaunch: showSecondaryEntryRelaunchCover
-                || (SecondarySessionStore.isActive() && !SwiftDataConfiguration.secondaryStoreMounted),
             showFreshStartWipeAlert: showFreshStartWipeAlert,
             showFreshStartWipeFailedAlert: showFreshStartWipeFailedAlert,
             showLateICloudNotice: lateICloudCorpus != nil,
@@ -640,26 +630,13 @@ struct ContentView: View {
         WelcomeRestoreView(
             onContinueWithSummary: { summary in
                 showWelcomeRestore = false
-                // Destino por onboardingMode restaurado (synced) — RestoreRouter.
-                let destination = RestoreRouter.decide(
-                    onboardingMode: OnboardingMode.current(),
-                    isFullyPrefilled: summary.isFullyPrefilled
-                )
+                let destination = RestoreRouter.decide(isFullyPrefilled: summary.isFullyPrefilled)
                 RestoreBreadcrumb.destination(String(describing: destination))
                 MetricsService.canary(.iCloudRestoreOutcome, detail: String(describing: destination))
                 switch destination {
-                case .groupsOnly:
-                    // El usuario era "solo grupos": no forzar onboarding personal.
-                    OnboardingMode.setCurrent(.groupInvite)
-                    SessionState.shared.onboardingMode = .groupInvite
-                    // Eje 1: lo restaurado son sus grupos, no una vida personal.
-                    PrivateSessionMark.set(false)
-                    completeOnboardingAsRestoreSkip()
-                    hasCompletedOnboarding = true
-                    reEmitInviteAfterRestore()
                 case .directToApp:
                     // Eje 1: el corpus personal bajó de iCloud y esta persona entra a usarlo.
-                    PrivateSessionMark.set(true)
+                    SessionState.shared.hasPrivateSession = true
                     completeOnboardingAsRestoreSkip()
                     hasCompletedOnboarding = true
                     reEmitInviteAfterRestore()
@@ -713,7 +690,7 @@ struct ContentView: View {
             // El alta REAL: aquí sí van los dos efectos de primera vez (ver `EntryOnboardingEffects`).
             applyEntryOnboardingEffects(.freshInstall)
             // Eje 1: el onboarding personal terminado ES el nacimiento de la sesión privada.
-            PrivateSessionMark.set(true)
+            SessionState.shared.hasPrivateSession = true
             hasCompletedOnboarding = true
             showOnboarding = false
             prefilledOnboardingData = nil
@@ -786,9 +763,6 @@ struct ContentView: View {
             // cover es la red visual — si la presentación tarda/falla, el router queda contenido igual.
             showSignOutRelaunch: showSignOutRelaunchCover
                 || CloudSessionSignOut.shared.phase == .awaitingRelaunch,
-            // M1: la condición viva (statics) ES el blocker; el @State del cover es la red visual.
-            secondaryEntryRelaunch: showSecondaryEntryRelaunchCover
-                || (SecondarySessionStore.isActive() && !SwiftDataConfiguration.secondaryStoreMounted),
             showFreshStartWipeAlert: showFreshStartWipeAlert,
             showFreshStartWipeFailedAlert: showFreshStartWipeFailedAlert,
             showLateICloudNotice: lateICloudCorpus != nil,
@@ -989,27 +963,12 @@ struct ContentView: View {
 
         // C3 · **la rama entera no existe en sesión secundaria.** La puerta del Welcome
         // (`WelcomeGroupsGateView`) ya lo comprueba por su cuenta, así que esto es defensa en profundidad,
-        // y así hay que leerlo. Nació por una segunda puerta que no pasaba por la del Welcome —la card
-        // «Solo grupos» del onboarding—, retirada el 2026-09-10 (ADR 2026-09-09 §7); el guard se queda
-        // hasta que M1 se retire entera. Sin él, un alta que llegara hasta aquí escribiría sus seis
-        // preferencias en el `UserDefaults.standard` del DUEÑO.
-        //
-        // Se manda a la PUERTA en vez de inventar aquí una superficie de bloqueo: es la que ya sabe pintar
-        // este veredicto, y así el usuario recibe la misma respuesta honesta viniendo por donde venga —un
-        // `return` mudo le dejaría un botón que no hace nada, que es el «camino muerto» que el spec prohíbe.
-        if SecondarySessionStore.isActive() {
-            groupsOrganizerFlowActive = false
-            showOnboarding = false
-            welcomeFlowInitialStep = .groupsGate(purpose: .createGroup)
-            showWelcomeFlow = true
-            return
-        }
         switch GroupsOrganizerFlowLogic.nextStep(
             // C2 · el PRIMER escalón. La señal es la misma que usa el tab (`GroupsOnboardingLogic`), con su
             // término legacy incluido: quien completó su alta en modo Grupos antes de C2 ya vio el suyo.
             hasSeenEducational: GroupsOnboardingLogic.hasSeenAnyGroupsEducational(
                 hasShownOnboarding: appPreferences.hasShownGroupsOnboarding,
-                onboardingMode: SessionState.shared.onboardingMode,
+                hasPrivateSession: SessionState.shared.hasPrivateSession,
                 hasCompletedSetup: hasCompletedOnboarding),
             hasSession: CloudAuthService.shared.hasSession,
             isConsented: GroupsConsentState.isAccepted,
@@ -1355,12 +1314,6 @@ struct ContentView: View {
     /// Corre en TODO arranque de returning user, y por eso los términos baratos van delante de la sonda.
     @MainActor
     private func runLateICloudMirrorCheck() async {
-        // **La sesión secundaria sale antes que nada** (review adversarial, 2026-09-10). Los testigos
-        // viven en `UserDefaults.standard` —el dominio del DUEÑO— mientras `hasCompletedOnboarding`
-        // resuelve por `SessionDefaults`, o sea el de la invitada: sin este guard, la visita recibía el
-        // aviso con las cifras del dueño y podía borrarle su iCloud. Es el mismo guard que
-        // `advanceGroupsOrganizerFlow` tiene, y por la misma frontera.
-        guard !SecondarySessionStore.isActive() else { return }
         // **Paso 8 · una sesión solo-grupos también sale antes que nada.** Este aviso es para quien YA tiene una
         // vida privada en este dispositivo, y un solo-grupos no la tiene. Lo que lo hace obligatorio es el
         // borrado de abajo: la puerta privada de «Activar Yala completo» arma el mismo borrado, y reanudarlo aquí
@@ -1368,7 +1321,7 @@ struct ContentView: View {
         // en solo-grupos el arm queda quieto; si vuelve a elegir privado, la puerta RE-MIDE. Y no sobrevive a la
         // activación: `FullModeActivationView.completeFullActivation` lo retira, porque para entonces la persona
         // ya eligió dónde viven sus datos y reanudarlo aquí, a ciegas, se llevaría el corpus que acaba de crear.
-        guard !SessionState.shared.isGroupInviteMode else { return }
+        guard SessionState.shared.hasPrivateSession else { return }
         // **Un borrado que quedó a medias manda sobre todo lo demás: no se pregunta otra vez, se termina.**
         // Aquí sí se reanuda a ciegas —al revés que en la puerta, que vuelve a medir— y la asimetría tiene
         // motivo: para cuando esto corre, el espejo ya mezcló los dos corpus en el store local, así que
@@ -1465,7 +1418,7 @@ struct ContentView: View {
     private func runReturningUserPostChecks() {
         resumeFullModeActivationIfPending()
         // GC-08: Skip trial/What's New for groupInvite users — they have no context yet
-        if !SessionState.shared.isGroupInviteMode {
+        if SessionState.shared.hasPrivateSession {
             if SessionState.shared.needsPostOnboardingTrial && !FeatureGateService.shared.isProUser {
                 // Flag limpiado en el drain (presentación real) — ver onChange(showOnboarding).
                 Task {
@@ -1497,13 +1450,12 @@ struct ContentView: View {
     /// orden —marca antes que consumir— es la kill-safety: un kill en medio deja las dos y el arranque siguiente
     /// repite lo mismo.
     private func resumeFullModeActivationIfPending() {
-        // La sesión secundaria y el eje de sesión los decide `resolveAtBoot`, con tabla: una activación solo se
-        // retoma si el dispositivo SIGUE en solo-grupos; si no, lo pendiente se retira sin reabrir nada.
+        // El eje de sesión lo decide `resolveAtBoot`, con tabla: una activación solo se retoma si el
+        // dispositivo SIGUE en solo-grupos; si no, lo pendiente se retira sin reabrir nada.
         let resolution = FullModeActivationResumeStore.resolveAtBoot(
             pending: WelcomePendingDestinationStore.peek(),
             current: FullModeActivationResumeStore.peek(),
-            isSecondarySession: SecondarySessionStore.isActive(),
-            isGroupsOnlySession: SessionState.shared.isGroupInviteMode)
+            isGroupsOnlySession: !SessionState.shared.hasPrivateSession)
         if let step = resolution.writesResume {
             FullModeActivationResumeStore.set(step)
         }
@@ -1797,7 +1749,7 @@ private struct WelcomeFlowModifier: ViewModifier {
                         // puesta ⇒ mount neutro ⇒ «reabre Yala» ⇒ mount neutro otra vez. Es el bucle que
                         // la caducidad por `hasShownWelcomeChooser` cierra para la marca hermana y que
                         // ésta, al no caducar, tiene que cerrar aquí.
-                        StorageModePersistence.clearGroupsOnlyNeutralMountIfPrimary()
+                        StorageModePersistence.clearGroupsOnlyNeutralMount()
                         if destination == .privateOnboarding {
                             OnboardingResetHelper.clearResidualPreferencesForFreshStart()
                         }
@@ -1910,7 +1862,7 @@ private struct WelcomeFlowModifier: ViewModifier {
                         CloudIdentityRoutingLogic.deviceState(
                             hasCompletedOnboarding: hasCompletedOnboarding,
                             storageMode: StorageModePersistence.read(),
-                            onboardingMode: OnboardingMode.current())
+                            hasPrivateSession: PrivateSessionMark.hasPrivateSession())
                     },
                     hasLocalDataNow: hasLocalDataNow,
                     onAdoptStarted: {
@@ -1919,31 +1871,8 @@ private struct WelcomeFlowModifier: ViewModifier {
                         // cuenta existente; un kill aterriza en MainTab con la card de
                         // Almacenamiento reflejando el estado real del adopt.
                         // Eje 1: adoptar una cuenta existente trae su vida personal a este dispositivo.
-                        PrivateSessionMark.set(true)
+                        SessionState.shared.hasPrivateSession = true
                         completeOnboardingAsRestoreSkip()
-                        hasCompletedOnboarding = true
-                    },
-                    onSecondaryEntryFlagsMarked: {
-                        // M1 (D1, decisión owner): flags SÍ, trial NO (la invitada no recibe
-                        // la oferta del device del dueño) ni markAsNewInstall (el checklist
-                        // es estado device-global del dueño).
-                        //
-                        // **Y ÉSTA se queda en `.standard` cuando sus vecinas bajaron al cajón**
-                        // (2026-09-05), porque es la única que corre en la ventana de ENTRADA: el
-                        // descriptor acaba de activarse y el cajón todavía no existe — lo crea y lo
-                        // siembra `performSecondaryEntryTasksIfNeeded` en el arranque siguiente,
-                        // COPIANDO de aquí (`SessionDefaults.seededDeviceKeys`). Escribirlo en el
-                        // cajón lo dejaría fuera de esa herencia y la visita arrancaría en el Welcome
-                        // sobre un store secundario vacío, que es el brick que el mount prohíbe.
-                        //
-                        // Eso vale para la entrada PRIMERA, que es la que importa. En una RE-entrada
-                        // in-session —el Welcome se le reabre a la visita tras un «vaciar mis datos»,
-                        // y `SecondarySlotOccupancyLogic` deja pasar a la MISMA cuenta— la raíz ya se
-                        // montó con descriptor, así que la línea de abajo va al cajón y ésta al dueño.
-                        // Ahí ya no hereda nadie (el sentinel de la siembra está puesto) y el `true`
-                        // que queda en `.standard` se lo lleva el reset de la salida. Inocuo, pero no
-                        // es el caso que este comentario justifica.
-                        UserDefaults.standard.set(true, forKey: AppPreferences.Keys.hasCompletedOnboarding)
                         hasCompletedOnboarding = true
                     },
                     onFinishedToApp: {
@@ -1978,11 +1907,9 @@ private struct WelcomeFlowModifier: ViewModifier {
                         // la corrección de dos defectos que las lentes adversariales cazaron:
                         //
                         // 1. `startGroupsOrganizerBranch()` se salta `GroupsOrganizerGateLogic`, que es
-                        //    quien comprueba el canal, la sesión secundaria y —lo que más pesa— los DATOS
-                        //    AJENOS. `advanceGroupsOrganizerFlow` solo mira la secundaria, así que por ahí
-                        //    un device con el corpus de otra persona llegaba al alta, y su final escribe
-                        //    `onboardingMode` en el iKV del Apple ID del dueño, que es never-downgrade y
-                        //    NO VUELVE.
+                        //    quien comprueba el canal, el espejo del mount y —lo que más pesa— los DATOS
+                        //    AJENOS. Por ahí un device con el corpus de otra persona llegaba al alta, y
+                        //    su final da de alta una sesión solo-grupos encima del corpus del dueño.
                         // 2. El `onDismiss` de respaldo de este cover se dispara igual —en el Welcome
                         //    `hasCompletedOnboarding` es `false` por construcción, así que el término que
                         //    salva a sus hermanos no puede salvar a este— y reabría el chooser encima,
@@ -2138,116 +2065,6 @@ private struct SignOutRelaunchNetModifier: ViewModifier {
             coverDidAppear: { coverDidAppear },
             setCover: { showRelaunchCover = $0 }
         )
-    }
-}
-
-// MARK: - Secondary entry relaunch net (M1, molde C1)
-
-/// Red DURABLE de la VENTANA DE ENTRADA secundaria (descriptor persistido, store del DUEÑO
-/// montado): el cover primario es la fase `.relaunchSecondary` DENTRO del welcome cloud cover;
-/// si ese cover muere por cualquier vía (con los flags de onboarding ya puestos, el onDismiss
-/// del container no reabre nada → la app quedaría usable sobre el store del dueño), este anchor
-/// re-presenta el cover terminal. `secondaryEntryRelaunch` es además blocker de la matriz.
-/// Mismo hardening de presentación efectiva que `SignOutRelaunchNetModifier` (la ENTRADA M1
-/// comparte la suposición refutada en device: "SwiftUI materializa la presentación pendiente
-/// al despejarse el anchor" — falso). Triggers propios (statics + señal del welcome cover);
-/// lo compartido es la decisión pura (`RelaunchNetLogic`) y el loop (`runRelaunchNetVerifyLoop`).
-private struct SecondaryEntryRelaunchNetModifier: ViewModifier {
-    @Binding var showRelaunchCover: Bool
-    /// El flag del welcome cloud cover — su caída con la ventana armada dispara la red.
-    let welcomeCloudCoverVisible: Bool
-
-    /// true SOLO cuando el onAppear del contenido real disparó (única prueba de presentación).
-    @State private var coverDidAppear = false
-    @State private var verifyTask: Task<Void, Never>?
-    @Environment(\.scenePhase) private var scenePhase
-
-    private var isArmedUnmounted: Bool {
-        SecondarySessionStore.isActive() && !SwiftDataConfiguration.secondaryStoreMounted
-    }
-
-    func body(content: Content) -> some View {
-        content
-            .onAppear {
-                if isArmedUnmounted { arm() }
-            }
-            .onChange(of: welcomeCloudCoverVisible) { _, visible in
-                if !visible && isArmedUnmounted { arm() }
-            }
-            // Ciclo FRESCO al volver a foreground (cap por-ciclo, no de por vida).
-            .onChange(of: scenePhase) { _, newScene in
-                if newScene == .active && isArmedUnmounted && !coverDidAppear
-                    && !welcomeCloudCoverVisible { arm() }
-            }
-            // M3 · CUARTO trigger, DEV-only: el descriptor cambió desde el panel DEBUG. Los otros tres
-            // esperan a un evento del ciclo de vida, y activar el descriptor no es ninguno — esa ventana
-            // (app navegable sobre el store del DUEÑO con la sesión ya armada) es el residual de M1-1.
-            .modifier(DevSecondaryDescriptorReevaluation(onSignal: reevaluate))
-            .fullScreenCover(
-                isPresented: $showRelaunchCover,
-                onDismiss: {
-                    // Terminal: si UIKit lo tumbara, re-presentar (regla toolbar-muerta).
-                    coverDidAppear = false
-                    if isArmedUnmounted { arm() }
-                }
-            ) {
-                SignOutRelaunchView()
-                    .onAppear {
-                        // Presentación REAL confirmada (idempotente). Jamás togglar un cover vivo.
-                        coverDidAppear = true
-                        verifyTask?.cancel()
-                        verifyTask = nil
-                    }
-            }
-    }
-
-    private func arm() {
-        showRelaunchCover = true
-        // Cancel-before-start: un solo verify loop vivo.
-        verifyTask?.cancel()
-        verifyTask = runRelaunchNetVerifyLoop(
-            net: "secondaryEntry",
-            armed: {
-                SecondarySessionStore.isActive()
-                    && !SwiftDataConfiguration.secondaryStoreMounted
-            },
-            coverDidAppear: { coverDidAppear },
-            setCover: { showRelaunchCover = $0 }
-        )
-    }
-
-    /// M3 · re-evaluación en los DOS sentidos, que es lo que la hace útil como herramienta de QA: los tres
-    /// triggers de arriba solo saben ARMAR, así que limpiar el descriptor desde el panel dejaría el cover
-    /// terminal puesto sobre una condición que ya no existe — y el panel que acaba de limpiarlo, detrás.
-    /// La condición que decide es la VIVA (statics), nunca un payload de la notificación.
-    private func reevaluate() {
-        if isArmedUnmounted {
-            arm()
-        } else {
-            verifyTask?.cancel()
-            verifyTask = nil
-            coverDidAppear = false
-            showRelaunchCover = false
-        }
-    }
-}
-
-/// M3 · el cuarto trigger del net secundario, aislado en su propio modifier para que el `#if` no viva en
-/// medio del `body` del net —donde una rama `#else` que se comiera un modifier real sería invisible en
-/// review— y para que un source-scan pueda afirmar el cableado. En producción esto es `content` y nada más.
-private struct DevSecondaryDescriptorReevaluation: ViewModifier {
-    let onSignal: () -> Void
-
-    func body(content: Content) -> some View {
-        #if DEV_BUILD
-        content.onReceive(
-            NotificationCenter.default.publisher(for: DevSecondaryDescriptorSignal.didChange)
-        ) { _ in
-            onSignal()
-        }
-        #else
-        content
-        #endif
     }
 }
 
@@ -2522,22 +2339,15 @@ struct MainTabView: View {
 
     /// Tabs to show: mode-aware config + temporary tab (if set and not already active)
     private var visibleTabs: [ConfigurableTab] {
-        let secondary = SecondarySessionStore.isActive()
-        // D1: reduce a solo-Grupos cuando el usuario eligió «Solo mis grupos» (usageFocus).
-        // Se lee `appPreferences.usageFocus` (reactivo) — NO `SessionState.effectiveShellMode`
-        // (point-read, no reaccionaría). Byte-idéntico con usageFocus=.full.
+        // El eje 1 se lee del espejo OBSERVABLE de `SessionState` y no de la marca persistida: esta
+        // propiedad se recalcula cuando SwiftUI observa un cambio, y un point-read no lo provocaría.
         let reduceToGroupsOnly = ShellModeLogic.effective(
-            onboardingMode: sessionState.onboardingMode,
-            usageFocus: appPreferences.usageFocus) == .groupsFocused
+            hasPrivateSession: sessionState.hasPrivateSession) == .groupsFocused
         let modeConfig = TabBarConfiguration.forMode(
-            sessionState.onboardingMode, stored: tabConfig, secondarySessionActive: secondary,
-            groupsBackendEnabled: CloudSyncFlags.groupsBackendEnabled,
+            stored: tabConfig,
             reduceToGroupsOnly: reduceToGroupsOnly)
         var tabs = modeConfig.activeTabs
-        // M1 / D8: el temporaryTab tampoco puede colar `.groups` en secundaria con el canal backend
-        // APAGADO (grupos = iCloud del dueño); con el flag ON la invitada ve sus propios grupos ⇒ se permite.
-        if let temp = sessionState.temporaryTab, !tabs.contains(temp),
-           !(secondary && temp == .groups && !CloudSyncFlags.groupsBackendEnabled) {
+        if let temp = sessionState.temporaryTab, !tabs.contains(temp) {
             tabs.append(temp)
         }
         return tabs
@@ -2604,7 +2414,7 @@ struct MainTabView: View {
             // es el MISMO detector que decide el alert del Welcome; pasárselo evita un segundo contador
             // de «hay datos», que es como divergen.
             .overlay(alignment: .top) {
-                SecondaryHydrationBanner(storeLooksEmpty: storeLooksEmpty)
+                CloudHydrationBanner(storeLooksEmpty: storeLooksEmpty)
             }
             .sheet(isPresented: $showDowngradeResolution) {
                 DowngradeResolutionSheet(

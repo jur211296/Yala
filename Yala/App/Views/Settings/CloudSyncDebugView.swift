@@ -592,7 +592,6 @@ struct CloudSyncDebugView: View {
                 pushCard
                 migrationCard
                 reverseCard
-                secondarySessionCard
                 spikeS7Card
                 #if DEBUG
                 // SPIKE R3 — quitar al cerrar R4. Gateado por el launch arg: sin `-spike-r3` el panel
@@ -962,83 +961,6 @@ struct CloudSyncDebugView: View {
             }
             actionButton("Enviar push de prueba (staging)", disabled: model.deviceTokenHex == nil) {
                 await model.sendTestPush()
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(DS.Spacing.lg)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
-        .padding(.horizontal, DS.Spacing.lg)
-    }
-
-    // MARK: - Sesión secundaria (M1)
-
-    /// Única vía de verificación EN SIM del mount/wipe/purga de la sesión secundaria (SIWA no corre
-    /// en sim — la entrada real es device-only). Botones idempotentes; JAMÁS un forzado destructivo
-    /// sobre los archivos del dueño (el wipe secundario solo borra `-Secondary`).
-    private var secondarySessionCard: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            Text("Sesión secundaria (M1)")
-                .font(DS.Typography.body.weight(.semibold))
-            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                row("Descriptor", SecondarySessionStore.activeUserID().map { "\($0.prefix(12))…" } ?? "inactivo")
-                row("Modo persistido (dueño)", StorageModePersistence.read().rawValue)
-                row("Modo efectivo", CloudSyncFlags.storageMode.rawValue)
-                row("Mount secundario (testigo)", SwiftDataConfiguration.secondaryStoreMounted ? "SÍ" : "no")
-                row("Entry purge done", SecondarySessionStore.isEntryPurgeDone() ? "sí" : "no")
-                row("Wipe secundario armado", SecondarySessionStore.isWipeArmed() ? "SÍ" : "no")
-                row("Key de entrada (debug)", UserDefaults.standard.bool(
-                    forKey: CloudSyncFlags.debugSecondarySessionEnabledKey) ? "ON" : "off")
-                // Desde el chip M2 la key DEBUG ya no es el único término: la capacidad compilada es
-                // `true` y el rollout lo decide el percent remoto PROPIO. Pintar solo la key mentiría
-                // en un build DEV (staging sirve el percent al 100 ⇒ la entrada está disponible con la
-                // key en off), y este panel es la superficie de observación del subsistema.
-                row("Entrada disponible (compuesto)",
-                    CloudSyncFlags.secondarySessionEntryAvailable ? "SÍ" : "no (DARK)")
-                row("Percent remoto (secundaria)", CloudRemoteConfigStore.readSnapshot()?
-                    .secondarySessionRolloutPercent.map(String.init) ?? "ausente")
-            }
-            actionButton("Toggle key de entrada (QA device sin recompilar)", disabled: false) {
-                let key = CloudSyncFlags.debugSecondarySessionEnabledKey
-                let next = !UserDefaults.standard.bool(forKey: key)
-                UserDefaults.standard.set(next, forKey: key)
-                model.lastMessage = "secondarySessionEnabled(debug)=\(next). Solo builds Dev. La ENTRADA "
-                    + "exige además el percent remoto propio + CLOUD_MODE; prod los sirve en 0 y 100."
-            }
-            actionButton("Activar descriptor FAKE (guest-debug) — relanzar monta -Secondary", disabled: false) {
-                SecondarySessionStore.activate(userID: "guest-debug")
-                // M3 · la señal va DESPUÉS de escribir el descriptor: el net re-evalúa la condición viva y
-                // el cover terminal aparece en esta misma vuelta, sin esperar a un foreground. Antes de esto
-                // la app quedaba navegable sobre el store del DUEÑO hasta la siguiente re-evaluación.
-                #if DEV_BUILD
-                DevSecondaryDescriptorSignal.post()
-                #endif
-                model.lastMessage = "Descriptor=guest-debug. El blocker se presenta YA (sin relanzar). "
-                    + "RELANZA para montar YalaModel-Secondary (testigo secundario=SÍ) y correr la purga "
-                    + "de entrada."
-            }
-            actionButton("Limpiar descriptor (deshace el fake SIN wipe)", disabled: false) {
-                SecondarySessionStore.clear()
-                SecondarySessionStore.clearEntryPurgeMark()
-                // La MISMA señal en el sentido contrario: sin ella el cover terminal se queda puesto sobre
-                // un descriptor que ya no existe, y el panel que acaba de borrarlo queda detrás — que es la
-                // otra mitad de «la sesión FAKE con salida».
-                #if DEV_BUILD
-                DevSecondaryDescriptorSignal.post()
-                #endif
-                model.lastMessage = "Descriptor limpiado y blocker retirado. RELANZA para volver al mount "
-                    + "del dueño (los archivos -Secondary Y el cajón de preferencias yala.session.* "
-                    + "quedan huérfanos inertes; usa el wipe para borrarlos)."
-            }
-            actionButton("Armar wipe secundario (borra -Secondary al relanzar)", disabled: false) {
-                SecondarySessionStore.armWipe()
-                model.lastMessage = "secondaryWipeArmed=true. RELANZA: el boot borra los archivos "
-                    + "-Secondary + purga + resetea flags de onboarding → Welcome. El YalaModel del "
-                    + "dueño y storageMode NO se tocan."
-            }
-            actionButton("Re-correr purga de entrada (limpia el marker)", disabled: false) {
-                SecondarySessionStore.clearEntryPurgeMark()
-                model.lastMessage = "entryPurgeDone limpiado — el próximo boot con descriptor re-purga."
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

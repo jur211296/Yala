@@ -31,11 +31,11 @@ struct DestructiveScopeLogicTests {
         #expect(DestructiveScopeLogic.cloudLabel(storageMode: .icloud) == .icloud)
     }
 
-    /// Borrar cuenta habla SIEMPRE de la cuenta de Yala; y en solo-grupos o en la visita lo que queda a salvo
+    /// Borrar cuenta habla SIEMPRE de la cuenta de Yala; y en solo-grupos lo que queda a salvo
     /// es la cuenta, no un iCloud que no guarda nada suyo. El resto sigue a `storageMode`.
     @Test func cloudLabelForOperation_accountOperationsAlwaysNameTheAccount() {
         let alwaysAccount: Set<String> = ["deleteAccountCloud", "deleteAccountGroupsOnly",
-                                          "deleteAccountGroupsOnlyNoPrivate", "signOutGroupsOnly", "signOutSecondary"]
+                                          "deleteAccountGroupsOnlyNoPrivate", "signOutGroupsOnly"]
         for op in Op.allCases {
             for mode in [StorageMode.icloud, .cloud] {
                 let expected: DestructiveScopeLogic.CloudLabel = alwaysAccount.contains("\(op)")
@@ -76,7 +76,6 @@ struct DestructiveScopeLogicTests {
             case .signOutPrivateWithGroupsNoCopy: return ([.destructive, .destructive, .neutral], false, [.noICloudCopy])
             case .signOutCloud:                   return ([.neutral, .preserved, .preserved], true, [])
             case .signOutGroupsOnly:              return ([.neutral, .preserved, .neutral], true, [])
-            case .signOutSecondary:               return ([.neutral, .preserved, .preserved], true, [])
             }
         }
         for op in Op.allCases {
@@ -163,7 +162,7 @@ struct DestructiveScopeLogicTests {
 
     // MARK: - Qué operación toca a cada celda
 
-    @Test func wipeOperation_groupInvite_isGroupsOnly_elseFull() {
+    @Test func wipeOperation_sinSesiónPrivada_isGroupsOnly_elseFull() {
         #expect(DestructiveScopeLogic.wipeOperation(hasPrivateSession: false, personalMountAttachesMirror: false)
                 == .wipeDataGroupsOnly)
         #expect(DestructiveScopeLogic.wipeOperation(hasPrivateSession: true, personalMountAttachesMirror: false)
@@ -196,8 +195,6 @@ struct DestructiveScopeLogicTests {
             (.cloudSecureSignOut, false, true, .signOutCloud),
             (.groupsOnlySignOut, true, false, .signOutGroupsOnly),
             (.groupsOnlySignOut, false, true, .signOutGroupsOnly),
-            (.secondaryCloudSignOut, true, false, .signOutSecondary),
-            (.secondaryCloudSignOut, false, true, .signOutSecondary),
         ]
         for (path, copy, forgets, op) in table {
             #expect(DestructiveScopeLogic.signOutOperation(path: path, hasICloudCopy: copy, forgetsBackendGroups: forgets)
@@ -271,12 +268,12 @@ struct SignOutRowIdentifiersTests {
         }
     }
 
-    @Test("la hoja destructiva nombra su escenario, y las doce operaciones dan ids únicos")
+    @Test("la hoja destructiva nombra su escenario, y las once operaciones dan ids únicos")
     func destructiveSheet_namesItsScenario() {
         let ids = DestructiveScopeLogic.Operation.allCases.map {
             DestructiveScopeSheet.Config.scenarioIdentifier(for: $0)
         }
-        #expect(ids.count == 12)
+        #expect(ids.count == 11)
         #expect(Set(ids).count == ids.count, "Dos operaciones comparten identifier de escenario: \(ids.sorted()).")
         #expect(ids.allSatisfy { $0.hasPrefix("destructive_scope_sheet_") })
     }

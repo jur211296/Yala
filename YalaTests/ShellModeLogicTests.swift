@@ -2,9 +2,10 @@
 //  ShellModeLogicTests.swift
 //  YalaTests
 //
-//  Pure-logic tests para ShellModeLogic.effective(onboardingMode:usageFocus:) — el
-//  derivador ÚNICO del modo de la shell (D1, retención «Seguir con mis grupos»).
-//  Tabla exhaustiva OnboardingMode × UsageFocus. Sin SwiftData, sin UI, sin singletons.
+//  Pure-logic tests para `ShellModeLogic.effective(hasPrivateSession:)` — el derivador ÚNICO del modo
+//  de la shell. Desde el 2026-09-13 la tabla tiene UN solo término, el eje 1 del ADR 2026-09-09: antes
+//  eran dos flags (el modo de onboarding y el foco de uso) y ninguno contestaba la pregunta real.
+//  Sin SwiftData, sin UI, sin singletons.
 //
 
 import Foundation
@@ -14,51 +15,25 @@ import Testing
 
 struct ShellModeLogicTests {
 
-    // MARK: - usageFocus == .full → byte-idéntico a isGroupInviteMode
-
-    @Test func full_full_isFull() {
-        #expect(ShellModeLogic.effective(onboardingMode: .full, usageFocus: .full) == .full)
+    @Test func conSesiónPrivada_esFull() {
+        #expect(ShellModeLogic.effective(hasPrivateSession: true) == .full)
     }
 
-    @Test func completed_full_isFull() {
-        #expect(ShellModeLogic.effective(onboardingMode: .completed, usageFocus: .full) == .full)
+    @Test func sinSesiónPrivada_esGroupsFocused() {
+        // Quien no tiene vida personal en este teléfono ve Yala reducida a Grupos.
+        #expect(ShellModeLogic.effective(hasPrivateSession: false) == .groupsFocused)
     }
 
-    @Test func groupInvite_full_isGroupsFocused() {
-        // groupInvite reduce SIEMPRE (byte-idéntico a isGroupInviteMode con usageFocus=.full).
-        #expect(ShellModeLogic.effective(onboardingMode: .groupInvite, usageFocus: .full) == .groupsFocused)
-    }
-
-    // MARK: - usageFocus == .groupsOnly → siempre reduce, sin importar onboardingMode
-
-    @Test func full_groupsOnly_isGroupsFocused() {
-        // El caso D1: un usuario full que eligió «Solo mis grupos».
-        #expect(ShellModeLogic.effective(onboardingMode: .full, usageFocus: .groupsOnly) == .groupsFocused)
-    }
-
-    @Test func completed_groupsOnly_isGroupsFocused() {
-        #expect(ShellModeLogic.effective(onboardingMode: .completed, usageFocus: .groupsOnly) == .groupsFocused)
-    }
-
-    @Test func groupInvite_groupsOnly_isGroupsFocused() {
-        #expect(ShellModeLogic.effective(onboardingMode: .groupInvite, usageFocus: .groupsOnly) == .groupsFocused)
-    }
-
-    // MARK: - Barrido de tabla completo (6 celdas)
-
+    /// La tabla entera, que hoy son dos celdas. El barrido existe para que añadir un término nuevo al
+    /// derivador obligue a declarar su celda aquí en vez de aparecer en silencio.
     @Test func fullTable() {
-        let cases: [(OnboardingMode, UsageFocus, ShellMode)] = [
-            (.full, .full, .full),
-            (.completed, .full, .full),
-            (.groupInvite, .full, .groupsFocused),
-            (.full, .groupsOnly, .groupsFocused),
-            (.completed, .groupsOnly, .groupsFocused),
-            (.groupInvite, .groupsOnly, .groupsFocused),
+        let cases: [(Bool, ShellMode)] = [
+            (true, .full),
+            (false, .groupsFocused),
         ]
-        for (mode, focus, expected) in cases {
-            #expect(
-                ShellModeLogic.effective(onboardingMode: mode, usageFocus: focus) == expected,
-                "onboardingMode=\(mode) usageFocus=\(focus) → esperado \(expected)")
+        for (hasPrivateSession, expected) in cases {
+            #expect(ShellModeLogic.effective(hasPrivateSession: hasPrivateSession) == expected,
+                    "hasPrivateSession=\(hasPrivateSession)")
         }
     }
 }

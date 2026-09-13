@@ -3,7 +3,7 @@
 //  YalaTests
 //
 //  Pure-logic del flujo de restore desde iCloud: gate del wipe (RestoreOfferGate),
-//  destino post-restore por onboardingMode (RestoreRouter) y fases de la pantalla
+//  destino post-restore según el prefill (RestoreRouter) y fases de la pantalla
 //  de progreso (OnboardingRestoreProgress). Sin contexto ni singletons.
 //
 
@@ -59,26 +59,13 @@ struct RestoreOfferGateTests {
 
 struct RestoreRouterTests {
 
-    @Test func groupInvite_goesToGroupsOnly() {
-        #expect(RestoreRouter.decide(onboardingMode: .groupInvite, isFullyPrefilled: false) == .groupsOnly)
+    @Test func fullyPrefilled_directToApp() {
+        #expect(RestoreRouter.decide(isFullyPrefilled: true) == .directToApp)
     }
 
-    @Test func groupInvite_ignoresPrefill() {
-        // groupInvite manda aunque esté fully prefilled.
-        #expect(RestoreRouter.decide(onboardingMode: .groupInvite, isFullyPrefilled: true) == .groupsOnly)
-    }
-
-    @Test func full_fullyPrefilled_directToApp() {
-        #expect(RestoreRouter.decide(onboardingMode: .full, isFullyPrefilled: true) == .directToApp)
-    }
-
-    @Test func full_notPrefilled_onboarding() {
-        // Caso Pia (si fuera .full sin cuentas) → onboarding rama B.
-        #expect(RestoreRouter.decide(onboardingMode: .full, isFullyPrefilled: false) == .onboarding)
-    }
-
-    @Test func completed_fullyPrefilled_directToApp() {
-        #expect(RestoreRouter.decide(onboardingMode: .completed, isFullyPrefilled: true) == .directToApp)
+    @Test func notPrefilled_onboarding() {
+        // Caso Pia (resumen restaurado sin cuentas) → onboarding rama B.
+        #expect(RestoreRouter.decide(isFullyPrefilled: false) == .onboarding)
     }
 }
 

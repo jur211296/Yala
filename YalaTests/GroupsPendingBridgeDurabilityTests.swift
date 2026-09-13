@@ -76,18 +76,18 @@ struct GroupsPendingBridgeDurabilityTests {
     /// Aísla TODO lo que el escenario toca fuera de SwiftData y devuelve el cleanup. Nunca
     /// `UserDefaults.standard`: el host de los unit tests es la propia app, así que un intent escrito ahí
     /// sobreviviría a la corrida y contaminaría al simulador.
-    private func makeIsolatedWorld(_ context: ModelContext, mode: OnboardingMode = .full) -> () -> Void {
+    private func makeIsolatedWorld(_ context: ModelContext, hasPrivateSession: Bool = true) -> () -> Void {
         let previousDefaults = GroupsPendingBridgeIntent.defaults
-        let previousMode = SessionState.shared.onboardingMode
+        let previousPrivateSession = SessionState.shared.hasPrivateSession
 
         GroupsPendingBridgeIntent.defaults = makeIsolatedDefaults(prefix: "pendingbridge")
         GroupTransactionBridge.shared.setContext(context)
-        SessionState.shared.onboardingMode = mode
+        SessionState.shared.hasPrivateSession = hasPrivateSession
         BridgeModeResolver.shared.invalidateCache(forZoneID: nil)
 
         return {
             GroupsPendingBridgeIntent.defaults = previousDefaults
-            SessionState.shared.onboardingMode = previousMode
+            SessionState.shared.hasPrivateSession = previousPrivateSession
             BridgeModeResolver.shared.invalidateCache(forZoneID: nil)
         }
     }

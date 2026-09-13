@@ -48,14 +48,6 @@ enum OnboardingStepPlan {
     /// Welcome Restore) con el modo de uso elegido por el usuario.
     /// `.purpose` y `.confirmation` nunca se saltan (tracking + resumen final).
     ///
-    /// - Parameter isSecondarySession: `SecondarySessionStore.isActive()` — la visita está usando la app
-    ///   en el móvil de otra persona. Salta `.categories` porque el seed **no puede correr** en ese
-    ///   estado: `seedCategoriesIfNeeded` retorna en su primera línea con el cinturón M1, así que el paso
-    ///   preguntaba «¿quieres estas categorías?», la visita decía que sí y el store quedaba vacío.
-    ///   Ofrecer lo que no se va a hacer es exactamente el tipo de detalle que le hace creer que la app
-    ///   está rota. Lleva `= false` —a diferencia de `restoreInProgress` en
-    ///   `GroupsOrganizerGateLogic.decide`, que lo prohíbe— porque aquí el término solo AÑADE un skip:
-    ///   un call-site que lo olvide se comporta como antes en vez de heredar un veredicto invertido.
     static func skippedSteps(
         prefilledUserName: String?,
         prefilledAccountsCount: Int,
@@ -63,17 +55,9 @@ enum OnboardingStepPlan {
         prefilledCategoriesCount: Int,
         hasPrefill: Bool,
         expensesOnly: Bool,
-        dayToDay: Bool,
-        isSecondarySession: Bool = false
+        dayToDay: Bool
     ) -> Set<OnboardingStep> {
         var skip: Set<OnboardingStep> = []
-
-        // Sesión secundaria: el seed no corre en visita, así que el paso no se enseña. Va FUERA de la
-        // cadena de modos de uso —y antes que ella— porque no es un modo: es un estado del dispositivo
-        // que se combina con cualquiera de los tres.
-        if isSecondarySession {
-            skip.insert(.categories)
-        }
 
         // Skips por modo de uso (elección única del usuario en `.purpose`).
         if expensesOnly {

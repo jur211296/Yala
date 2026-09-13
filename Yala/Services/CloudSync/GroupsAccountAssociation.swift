@@ -95,8 +95,7 @@ final class GroupsAccountAssociation {
 
     /// `iKV` va SIN valor por defecto a propósito: un `= OwnerKeyValueStore.shared` se evalúa en el
     /// contexto del LLAMADOR, que puede ser `nonisolated`, y eso deja un warning de aislamiento en cada
-    /// construcción. Producción usa `shared`; los tests inyectan su doble. Misma razón, y mismo remedio,
-    /// que documenta `DataWipeService.releaseGroupsOnlyOnboardingModeFromICloudKV`.
+    /// construcción. Producción usa `shared`; los tests inyectan su doble.
     init(iKV: BeaconKeyValueStore, defaults: UserDefaults = .standard) {
         self.iKV = iKV
         self.defaults = defaults
@@ -303,13 +302,6 @@ enum GroupsAssociationRegistrar {
         now: Date = .now
     ) {
         guard deviceState == .privateSession, identity.hasSession else { return }
-        // **Sesión secundaria: no se toca nada.** El espejo local va a `UserDefaults.standard`, que en una
-        // secundaria es el dominio del DUEÑO, y los tres ejes que componen `deviceState` también son
-        // suyos: sin este guard, la invitada escribía SU correo en la asociación del dueño y él se la
-        // encontraba al recuperar el móvil. Mismo guard, y por lo mismo, que `GroupsDomainAdoptionMarker`
-        // y `OnboardingMode.setCurrent`. La mitad del iCloud-KV ya la para `OwnerKeyValueStore`; ésta no
-        // la paraba nadie.
-        guard !SecondarySessionStore.isActive(defaults) else { return }
         // **Con el dominio sellado para un usuario nuevo, no se registra nada.** El «empiezo de cero» del
         // Welcome NO cierra la sesión en la nube —el JWT vive en su propio llavero y sobrevive al relevo,
         // y así está documentado en `DataWipeService.wipeLocalGroupsDomain`—, así que sin este guard el

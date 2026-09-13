@@ -6,8 +6,8 @@
 //
 //  Antes de C2 había tres tablas que se prometían paridad por docblock —`GroupsOrganizerFlowLogic` declara
 //  espejar a `GroupBackendInviteEntryLogic` «a propósito, y respeta su orden»— y una cuarta puerta, la card
-//  «Solo grupos» del onboarding de 8 pasos, que no pasaba por ninguna: escribía el trío (`userName`,
-//  `onboardingMode = .groupInvite` EMPUJADO AL iKV, `groupsBetaUnlocked`, `hasCompletedOnboarding`) sin
+//  «Solo grupos» del onboarding de 8 pasos, que no pasaba por ninguna: escribía el alta entera
+//  (`userName`, el eje 1 apagado, `groupsBetaUnlocked`, `hasCompletedOnboarding`) sin
 //  sesión, sin consent y sin canal comprobado. Tres funciones que se prometen paridad pasan a ser UNA con
 //  un parámetro, y la cuarta puerta entra por ella.
 //
@@ -17,11 +17,14 @@
 //
 //  ## La invariante que esta tabla existe para sostener
 //
-//  **Nada se persiste hasta saber quién es y a dónde va.** El nombre, el modo y el consent se escriben
-//  JUNTOS y al final, en `GroupsOrganizerOnboarding.completeSetup`. `onboardingMode = .groupInvite` es
-//  **never-downgrade cross-device** (rank 1 > 0, `PreferenceMergeLogic`) y viaja al iKV del Apple ID:
-//  escrito antes de confirmar la ruta, se propaga a los otros dispositivos de esa cuenta —donde el usuario
-//  ve una app recortada a Grupos y vacía— y **no vuelve**. Su única recuperación es restaurar por iCloud.
+//  **Nada se persiste hasta saber quién es y a dónde va.** El nombre, el eje 1 y el consent se escriben
+//  JUNTOS y al final, en `GroupsOrganizerOnboarding.completeSetup`. Escribirlos antes de confirmar la ruta
+//  deja a la persona con la app recortada a Grupos y sin grupo que enseñar.
+//
+//  **La lección que dejó la versión anterior de esta regla:** hasta el 2026-09-13 ese eje era un flag de
+//  onboarding sincronizado por el iKV del Apple ID con merge never-downgrade, así que una escritura
+//  prematura se propagaba a los OTROS dispositivos de esa cuenta y **no volvía** (única recuperación:
+//  restaurar por iCloud). Hoy el eje 1 es un hecho del DISPOSITIVO y no viaja, pero el orden no cambia.
 //
 //  ## El educativo NO va en todas, y eso es una MEDICIÓN, no un descuido
 //
@@ -50,18 +53,14 @@
 //  acababa significando «ya pasó por aquí». La pregunta real siempre fue la segunda, y ahora se pregunta
 //  directamente: `hasConfirmedInvite` (`PendingJoinEntry.inviteConfirmedAt`, sellado por
 //  `GroupBackendInviteEntryHandler.drive` cuando el paso viene de una acción de la persona). Es el mismo
-//  género de arreglo que `hasSeenEducational` frente a `onboardingMode == .groupInvite`, dos párrafos más
-//  arriba: sustituir un testigo prestado por el hecho que de verdad se quería medir.
+//  género de arreglo que `hasSeenEducational` frente al corte por «esta persona entró por un grupo», dos
+//  párrafos más arriba: sustituir un testigo prestado por el hecho que de verdad se quería medir.
 //
 //  Lo que NO cambia: `canPresentInviteOnboarding` sigue siendo el discriminador del CTA de la propia hoja,
 //  y el invitado fresco conserva su recorrido intacto. Lo que la hoja ESCRIBE sí depende de si la persona
 //  ya tenía cuenta —el alta completa le pisaría preferencias vivas, y `userName`, `defaultCurrencyCode` y
 //  `defaultPeriod` van por `PreferenceSyncService` ⇒ el daño le llega a sus otros dispositivos—, pero eso
-//  se decide en la vista, no aquí. **Ojo con leer la invariante de arriba de más:** por el camino de la
-//  hoja, `onboardingMode` NO viaja al iKV (`OnboardingMode.setCurrent` escribe `UserDefaults.standard` a
-//  secas); la escalada never-downgrade que este encabezado describe es la del ALTA del organizador
-//  (`GroupsOrganizerOnboarding`), que es quien la empuja con `setSynced`. Medido el 2026-09-05, después de
-//  escribirlo mal aquí mismo.
+//  se decide en la vista, no aquí.
 //
 //  ## Lo que esta tabla NO decide, y por qué no puede
 //
@@ -118,7 +117,7 @@ nonisolated enum GroupsGateLogic {
     ///   - entry: por dónde entró. Decide el terminal y si el educativo se antepone (ver la tabla del
     ///     encabezado: solo `.organizer`).
     ///   - hasSeenEducational: `AppPreferences.hasShownGroupsOnboarding`. **Es el hecho REAL que el corte
-    ///     por `onboardingMode == .groupInvite` quería expresar y expresaba mal**: aquel suprimía el
+    ///     por «esta persona entró por un grupo» quería expresar y expresaba mal**: aquel suprimía el
     ///     educativo justo para quien entraba por la card «Solo grupos», o sea la gente que menos contexto
     ///     tenía. Para el invitado la marca la pone `GroupInviteOnboardingView` al completarse, porque ESE
     ///     es su educativo. Son dos estados distintos y estaban colapsados en uno falso.

@@ -376,7 +376,7 @@ struct GroupsContainerView: View {
     private var hasSeenGroupsEducational: Bool {
         GroupsOnboardingLogic.hasSeenAnyGroupsEducational(
             hasShownOnboarding: appPreferences.hasShownGroupsOnboarding,
-            onboardingMode: sessionState.onboardingMode,
+            hasPrivateSession: sessionState.hasPrivateSession,
             // Hasta el 2026-09-12, el CAJÓN de la sesión, y con el MISMO dominio que su gemelo de
             // `ContentView` (el gate del
             // organizador): si discreparan, el tab anunciaría «ver cómo funciona» y el tap no presentaría

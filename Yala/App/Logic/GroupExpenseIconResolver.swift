@@ -13,8 +13,8 @@
 //       bridge personales murieron con el wipe → el mapa de bridges queda vacío pero el gasto
 //       de grupo sigue portando su `subcategoryName` (fue el bug device-QA H-2026-07-18-9:
 //       lista de gastos con iconos genéricos mientras Estadísticas clasificaba bien, porque
-//       Stats ya usaba este nombre). También sana a no-participantes y `.groupInvite`, que
-//       antes veían genérico SIEMPRE (no tienen bridge).
+//       Stats ya usaba este nombre). También sana a no-participantes y a las sesiones
+//       solo-grupos, que antes veían genérico SIEMPRE (no tienen bridge).
 //    3. Genérico: `fallbackIconName`, sin color (el callsite decide qué pintar — el feed usa
 //       el badge del tipo de división; Stats aplica su paleta de fallback determinística).
 //

@@ -959,9 +959,8 @@ inmediatamente tras el 4a de SIWA, ANTES del 4c cierre local; orden congelado de
   `disconnect` — paridad con el `revoke` de SIWA) dispara breadcrumb + canario TelemetryDeck
   `googleRevokeFailed`. Éxito ⇒ `clearPair()` + `googleDisconnected()`. Contrato best-effort: JAMÁS
   lanza ni bloquea el borrado.
-- **Ciclo de vida del par:** sobrevive el sign-out normal Y la frontera M1 — re-verificado con grep
-  2026-07-16 (sesión 3): ni los paths de `CloudSessionSignOut` ni
-  `SecondarySessionBoundaryPurge.purge()` referencian `GoogleUserPairStore`/`googleUserID`/
+- **Ciclo de vida del par:** sobrevive el sign-out normal — re-verificado con grep 2026-07-16
+  (sesión 3): los paths de `CloudSessionSignOut` no referencian `GoogleUserPairStore`/`googleUserID`/
   `com.yala.cloudauth` (su única vía a auth es `CloudAuthService.signOut()`, que hace `GIDSignIn.
   signOut()` LOCAL y NO borra el par — comentario H6 en el propio `signOut()`). El match doble hace
   el residuo inofensivo; re-sign-in lo sobreescribe (clear-before-write); el borrado exitoso lo

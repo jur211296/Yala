@@ -471,56 +471,16 @@ enum CloudSyncBreadcrumb {
     }
 
     /// Swap consumado: store vaciado, container nuevo montado y jerarquía reconstruida sin relanzar.
+    /// **La retirada de la sesión de visita NO pudo borrar algún archivo `-Secondary`.** No escribe su
+    /// marca, así que el arranque siguiente lo reintenta entero; esta línea es el único rastro de que
+    /// hubo un intento fallido. >0 sostenido = disco o permisos, y el corpus de otra persona sigue en
+    /// este teléfono.
+    nonisolated static func secondarySessionRetirementIncomplete() {
+        logger.error("SecondarySessionRetirement INCOMPLETE — store file deletion failed, will retry next launch")
+    }
+
     static func swapCompleted() {
         logger.notice("CloudSignOut swap COMPLETED — store vaciado y remontado en sesión; sin relanzamiento")
-    }
-
-    // MARK: Sesión secundaria (M1) — sin PII
-
-    /// BOOT: el wipe secundario armado se ejecutó (archivos `-Secondary` borrados, descriptor
-    /// limpiado, flags de onboarding reseteados → Welcome; los archivos del DUEÑO intactos).
-    static func secondaryWipeExecuted() {
-        logger.notice("CloudSecondary wipe executed at boot — secondary files deleted, owner intact")
-    }
-
-    /// BOOT: el wipe secundario ABORTÓ (borrado del archivo base `-Secondary` falló ≠ no-existe).
-    /// El arm y el descriptor persisten → reintento en el próximo boot (mientras tanto el mount
-    /// sigue siendo el secundario — sin riesgo para el dueño). >0 sostenido = disco/permisos.
-    static func secondaryWipeAborted(reason: String) {
-        logger.error("CloudSecondary wipe ABORTED reason=\(reason, privacy: .public)")
-    }
-
-    /// BOOT: la purga de ENTRADA de la sesión secundaria corrió (superficies App Group limpiadas,
-    /// notificaciones del dueño canceladas, healing de flags si un kill se comió la ventana 2→3).
-    static func secondaryEntryPurged() {
-        logger.notice("CloudSecondary entry purge executed — App Group surfaces cleared")
-    }
-
-    /// ENTRADA armada (M1): claim + descriptor + flags escritos en orden — la sesión secundaria
-    /// queda pendiente del relaunch (el boot siguiente monta el store `-Secondary`).
-    static func secondaryEntryArmed() {
-        logger.notice("CloudSecondary entry ARMED — descriptor persisted, awaiting relaunch")
-    }
-
-    /// ENTRADA (M1): el cajón de preferencias de la visita quedó sembrado con las keys de
-    /// DISPOSITIVO del dueño. Una vez por sesión secundaria (sentinel propio, leído DEL CAJÓN).
-    nonisolated static func sessionDomainSeeded() {
-        logger.notice("CloudSecondary session domain SEEDED — device keys copied from owner")
-    }
-
-    /// La puerta de dominio (`SessionDefaults`) no pudo abrir el cajón de la visita y DEGRADÓ al
-    /// dominio del dueño. Inalcanzable por diseño con `sub` de la nube (son UUID): si suena, la
-    /// sesión secundaria está escribiendo en el cajón del dueño — que es justo el bug que la puerta
-    /// cierra. La degradación es deliberada: devolver un store vacío brickearía la app.
-    nonisolated static func sessionDomainUnavailable(reason: String) {
-        logger.error("CloudSecondary session domain UNAVAILABLE reason=\(reason, privacy: .public) — degraded to owner domain")
-    }
-
-    /// BELT (M1): el efecto `.writeBeacon` se SUPRIMIÓ porque hay sesión secundaria activa —
-    /// el faro vive en el iCloud KV del DUEÑO. Inalcanzable por diseño; si suena, un path de
-    /// claim de migración corrió bajo la secundaria (bug — investigar).
-    static func secondaryBeaconWriteSuppressed() {
-        logger.error("CloudSecondary beacon write SUPPRESSED — migration claim path ran under secondary session (bug)")
     }
 
     /// Paso 6 del rediseño de sesiones: [I] PROBÓ que la cuenta del faro de iCloud-KV ya no existe y lo
@@ -529,14 +489,6 @@ enum CloudSyncBreadcrumb {
     /// (`BeaconOrphanLogic.Proof`), sin PII.
     static func beaconOrphanCleared(proof: String) {
         logger.notice("CloudBeacon orphan CLEARED proof=\(proof, privacy: .public)")
-    }
-
-    /// GUARD de mount-mismatch (M1, crítico): el runtime intentó arrancar con el descriptor
-    /// secundario activo pero el proceso montó el store del DUEÑO (ventana de entrada pre-relaunch)
-    /// → bloqueado. Sin el guard, el drain pushearía la History del dueño a la cuenta entrante.
-    /// Par del canario MetricsService `cloudSecondaryMountMismatchBlocked` (dedupeado por proceso).
-    static func runtimeBlockedByMountMismatch() {
-        logger.error("CloudSecondary runtime BLOCKED by mount-mismatch — descriptor active, owner store mounted (awaiting relaunch)")
     }
 
     /// Guard de recreación (§d.5 A1): la tabla `SyncQuarantine` se recreó vacía (testigo>0, count==0) →

@@ -38,13 +38,8 @@ final class TestProcessGuard: NSObject {
     /// ADEMÁS `DataWipeService.resetAllUserPreferences`, así que está protegida por los dos lados —
     /// el trait cubre a quien ejecuta el wipe, esto cubre a quien pasa por un ViewModel.
     ///
-    /// La CUARTA es el sello de sesión (`WidgetSessionSeal.activeSealKey`), y entra por la misma puerta
-    /// aunque su escritor sea otro: `WidgetDataCache.republishActiveSeal` lo publica desde las fronteras
-    /// M1, así que cualquier test que ejercite un hook de frontera con el seam REAL lo dejaría escrito.
-    /// Y su fuga es peor que la de las otras tres: un sello huérfano en el App Group del simulador hace
-    /// que el widget de un arranque MANUAL descarte su propio snapshot y se vea vacío sin explicación.
     nonisolated static let protectedKeys = [
-        "widget_data_cache", "firstWeekday", "defaultPeriod", WidgetSessionSeal.activeSealKey,
+        "widget_data_cache", "firstWeekday", "defaultPeriod",
     ]
 
     /// El estado capturado al cargar el bundle. `nonisolated(unsafe)` porque lo escribe una vez el

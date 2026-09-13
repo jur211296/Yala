@@ -57,7 +57,7 @@ enum GroupsAssociationPresence {
             deviceState: CloudIdentityRoutingLogic.deviceState(
                 hasCompletedOnboarding: hasCompletedOnboarding,
                 storageMode: StorageModePersistence.read(),
-                onboardingMode: OnboardingMode.current()),
+                hasPrivateSession: PrivateSessionMark.hasPrivateSession()),
             hasPersistedAssociation: GroupsAccountAssociation.shared.hasAssociation,
             hasLiveGroupsSession: CloudAuthService.shared.hasSession)
     }

@@ -380,36 +380,60 @@ class SessionState {
         globalFilters.dateInterval = selectedPeriod.dateInterval()
 
         // Reset navigation to initial state (important after data wipe)
-        // Mode-aware: shell reducida (group-invite O usageFocus == .groupsOnly) arranca en .groups
+        // Sin vida personal en este teléfono, la shell arranca en Grupos.
         selectedMainTab = isGroupsFocusedShell ? .groups : .panel
         selectedDetailTab = .insights
         selectedPlanningTab = .budgets
     }
 
-    // MARK: - Onboarding Mode
+    // MARK: - El eje 1 · ¿hay sesión privada en este teléfono?
 
-    /// Current onboarding mode — determines tab layout, bridge behavior, and UI gating.
-    /// Persisted in UserDefaults, synced via PreferenceSyncService with never-downgrade rule.
-    var onboardingMode: OnboardingMode = OnboardingMode.current() {
+    /// **El espejo OBSERVABLE del eje 1** (`PrivateSessionMark`), y el embudo de sus escrituras.
+    ///
+    /// La marca persistida es la verdad; esto es lo que permite que una vista SwiftUI REACCIONE cuando
+    /// el eje cambia en caliente —activar Yala completo, terminar el onboarding personal— sin que cada
+    /// pantalla tenga que hacer un point-read que nadie observa. Mismo molde que tenía el flag de
+    /// onboarding al que este eje sustituyó, y por el mismo motivo.
+    ///
+    /// **Asignar aquí ESCRIBE la marca**: los ocho sitios donde el modelo dice que la sesión privada
+    /// nace o deja de existir asignan a esta propiedad, y el `didSet` persiste. No hay dos gestos.
+    var hasPrivateSession: Bool = PrivateSessionMark.hasPrivateSession() {
         didSet {
-            OnboardingMode.setCurrent(onboardingMode)
+            guard !isRefreshingPrivateSessionMirror else { return }
+            PrivateSessionMark.set(hasPrivateSession)
         }
     }
 
-    /// Convenience: true when user arrived via group invitation and hasn't activated full mode
-    var isGroupInviteMode: Bool { onboardingMode == .groupInvite }
-
-    // MARK: - Shell Focus (D1 — retención «Seguir con mis grupos»)
-
-    /// Modo EFECTIVO de la shell (tab bar + visibilidad de secciones personales).
-    /// `.groupsFocused` si llegó por invitación O eligió «Solo mis grupos» (`usageFocus`).
+    /// Re-lee la marca y pone el espejo al día **sin persistir nada**.
     ///
-    /// Point-read de `UsageFocus.current()` — para call-sites IMPERATIVOS (`selectMainTab`,
-    /// `resetToDefaults`). Las VISTAS reactivas NO deben usar este computed (no reacciona a
-    /// cambios de `usageFocus`): computan `ShellModeLogic.effective(onboardingMode:usageFocus:)`
-    /// leyendo `AppPreferences.usageFocus` del `@Environment`.
+    /// **Por qué hace falta, y es un hallazgo de la review del 2026-09-13:** esta propiedad se
+    /// inicializa UNA vez, en el init del singleton, que ocurre en el prólogo de `YalaApp` — antes de
+    /// que los hooks pre-mount corran. Y la marca tiene tres MUERTES que no pasan por aquí
+    /// (`PrivateSessionMark.clear`): el boot-wipe de todo cierre de sesión, su gemelo del swap
+    /// in-session, y el relevo de humano de «Empiezo de cero». Sin este gesto, el espejo se queda con el
+    /// valor de la persona ANTERIOR durante todo el proceso, y la app queda con dos fuentes que se
+    /// contradicen: la shell diciendo «solo grupos» y las quince lecturas conservadoras diciendo «hay
+    /// sesión privada». En el relevo de humano eso neutraliza el sello que se acaba de escribir.
+    ///
+    /// **No puede hacerse asignando**, y por eso existe la bandera: el `didSet` es el único escritor de
+    /// la marca, así que una asignación volvería a persistir justo lo que se acaba de borrar y la
+    /// AUSENCIA —que es lo que hace estricto a `confirmedPrivateSession`— no existiría nunca.
+    func refreshPrivateSessionMirror() {
+        let persistido = PrivateSessionMark.hasPrivateSession()
+        guard persistido != hasPrivateSession else { return }
+        isRefreshingPrivateSessionMirror = true
+        hasPrivateSession = persistido
+        isRefreshingPrivateSessionMirror = false
+    }
+
+    @ObservationIgnored private var isRefreshingPrivateSessionMirror = false
+
+    // MARK: - Shell
+
+    /// Modo EFECTIVO de la shell (tab bar + visibilidad de secciones personales), derivado del eje 1:
+    /// sin vida personal en este teléfono, la app es solo Grupos.
     var effectiveShellMode: ShellMode {
-        ShellModeLogic.effective(onboardingMode: onboardingMode, usageFocus: UsageFocus.current())
+        ShellModeLogic.effective(hasPrivateSession: hasPrivateSession)
     }
 
     /// Conveniencia: `effectiveShellMode == .groupsFocused`.
@@ -628,11 +652,11 @@ class SessionState {
     /// runloop tick (50 ms) before assigning `selectedMainTab`. If the tab is
     /// already visible, assigns directly with no latency.
     ///
-    /// Honors GC-08 invariant: in `groupInvite` mode, only `.groups`, `.more`
-    /// and `.search` are reachable; other tabs are silently rejected.
+    /// Honors GC-08 invariant: en la shell de solo grupos únicamente `.groups`, `.more`
+    /// y `.search` son alcanzables; el resto se rechaza en silencio.
     func selectMainTab(_ tab: AppTab) {
-        // GC-08 + D1: en shell reducida (group-invite O usageFocus == .groupsOnly) solo
-        // `.groups`/`.more`/`.search` son alcanzables — consistente con `visibleTabs`.
+        // GC-08: en la shell reducida solo `.groups`/`.more`/`.search` son alcanzables —
+        // consistente con `visibleTabs`.
         if isGroupsFocusedShell {
             let allowed: Set<AppTab> = [.groups, .more, .search]
             guard allowed.contains(tab) else { return }
@@ -640,9 +664,7 @@ class SessionState {
 
         let stored = TabBarConfiguration.loadFromStandardDefaults()
         let config = TabBarConfiguration.forMode(
-            onboardingMode, stored: stored,
-            secondarySessionActive: SecondarySessionStore.isActive(),
-            groupsBackendEnabled: CloudSyncFlags.groupsBackendEnabled,
+            stored: stored,
             reduceToGroupsOnly: isGroupsFocusedShell)
         let decision = MainTabSelectionLogic.decide(requested: tab, config: config)
 

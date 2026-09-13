@@ -29,14 +29,6 @@
 //      B · Vengo por un grupo (crear o invitación) → **sin bloqueo**: vuelta al neutro (borra local,
 //      iCloud intacto, relanza) y sigue
 //
-//  ## El segundo término tampoco es cosmético: la sesión de VISITA queda fuera
-//
-//  En una sesión secundaria (M1, en retirada) el store montado es el de la invitada
-//  (`YalaModel-Secondary`, `cloudKitDatabase: .none`) ⇒ no hay espejo que cruce nada, y el aislamiento ya
-//  lo hace ese mount. Interponer aquí sería además un camino muerto: la celda de cierre de ese
-//  dispositivo es `.secondaryCloudSignOut`, que NO borra por archivos, así que la pantalla acabaría en su
-//  rama «no se puede» sin nada que ofrecer.
-//
 //  ## Los dos últimos son los de la puerta del organizador, y por lo mismo
 //
 //  `hasExistingData` (hay corpus de alguien debajo) **o** `mountAttachesMirror` (aunque el store esté
@@ -64,8 +56,6 @@ nonisolated enum GroupInviteNeutralGateLogic {
     ///     separa esta puerta de la del organizador**, y va PRIMERO porque es el que evita el daño más
     ///     caro: con la sesión privada viva, el que está delante es el dueño de esos datos y la invitación
     ///     va por asociación de cuenta (fila C de la matriz), nunca por un borrado.
-    ///   - isSecondarySession: `SecondarySessionStore.isActive()`. Ver el encabezado: el mount de la
-    ///     visita ya aísla, y su celda de cierre no borra por archivos.
     ///   - hasExistingData: el detector del guard cross-cuenta (`ContentView.checkHasExistingData`), que
     ///     cuenta también grupos y filas bridgeadas y **falla CERRADO** ante un error de fetch.
     ///   - mountAttachesMirror: `SwiftDataConfiguration.personalStoreMountedDecision.attachesCloudKitMirror`.
@@ -73,11 +63,9 @@ nonisolated enum GroupInviteNeutralGateLogic {
     ///     `false` y cualquier call-site nuevo heredaría en silencio justo el medio bug que este término
     ///     existe para cerrar.
     static func decide(hasCompletedPersonalOnboarding: Bool,
-                       isSecondarySession: Bool,
                        hasExistingData: Bool,
                        mountAttachesMirror: Bool) -> Decision {
         guard !hasCompletedPersonalOnboarding else { return .proceed }
-        guard !isSecondarySession else { return .proceed }
         return (hasExistingData || mountAttachesMirror) ? .returnsToNeutral : .proceed
     }
 }
@@ -200,10 +188,9 @@ enum GroupInviteResumeStore {
         return entry
     }
 
-    /// Retira el sobre sin leerlo. Lo llaman las fronteras que barren las demás superficies de join —la
-    /// entrada y la salida de la sesión de visita (`SecondarySessionBoundaryPurge`) y el abort del
-    /// boot-wipe—, por la misma razón que barren a sus hermanas: un intent que cruce una frontera de
-    /// persona se ejecutaría bajo la cuenta equivocada.
+    /// Retira el sobre sin leerlo. Lo llaman las fronteras que barren las demás superficies de join —hoy
+    /// el abort del boot-wipe—, por la misma razón que barren a sus hermanas: un intent que cruce una
+    /// frontera de persona se ejecutaría bajo la cuenta equivocada.
     static func clear() {
         defaults.removeObject(forKey: key)
     }

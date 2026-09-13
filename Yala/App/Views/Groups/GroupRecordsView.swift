@@ -14,7 +14,7 @@ struct GroupRecordsView: View {
     let memberNameLookup: [String: String]
     let currencyCode: String
     /// Per-user bridge: expense.id.uuidString → TX1 con subcat manual asignada por current user.
-    /// Si la entrada no existe (auto-match falló o user es .groupInvite), fallback al nombre y luego al splitTypeBadge.
+    /// Si la entrada no existe (auto-match falló o es una sesión solo-grupos), fallback al nombre y luego al splitTypeBadge.
     let txBridgeMap: [String: TransactionItem]
     /// `[nombre normalizado de subcategoría: (icono, colorHex)]` de las subcategorías locales.
     /// Fallback self-contained cuando no hay bridge: casa `SplitExpense.subcategoryName` del creador.

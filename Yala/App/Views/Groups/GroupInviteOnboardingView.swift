@@ -482,11 +482,11 @@ struct GroupInviteOnboardingView: View {
     /// | `userName` del perfil | **NO** | **CROSS-DEVICE.** `sync.set(string:)` empuja al iKV del Apple ID (o al outbox), así que unirte a un grupo te renombraría el perfil en TODOS tus dispositivos |
     /// | `defaultCurrencyCode` / `defaultPeriod` | **NO** | **CROSS-DEVICE**, por el mismo camino, y recalculados desde el grupo o la región: te cambia la moneda de la app por la del grupo al que acabas de entrar |
     /// | `updateCurrentUserDisplayName` | **NO** | DEVICE-WIDE dentro de Grupos: recorre TODOS tus members (`resolveAllCurrentUserMembers`), así que el nombre tecleado aquí te renombraría en tus otros grupos |
-    /// | `onboardingMode = .groupInvite` | **NO** | **Local a este device, y recuperable** (`FullModeActivationView`). La primera versión de esta tabla decía que escalaba al iKV con merge never-downgrade, y conviene saber que es FALSO por este camino: el `didSet` de `SessionState.onboardingMode` embuda en `OnboardingMode.setCurrent`, que escribe `UserDefaults.standard` a secas. Los dos que SÍ empujan esa key al iKV son `GroupsOrganizerOnboarding` y `FullModeActivationView`. Sigue fuera de aquí porque te deja la app recortada a Grupos sin haberlo pedido — pero el titular era otro, y repetirlo hacía creer que las cuentas existentes ya estaban protegidas de esa escalada |
+    /// | apagar el eje 1 (no hay sesión privada aquí) | **NO** | **Local a este device, y recuperable** (`FullModeActivationView`). Te dejaría la app recortada a Grupos sin haberlo pedido |
     /// | seeds de categorías/notificaciones + `save()` | **NO** | ya los tiene; correrlos es trabajo sobre un store vivo a cambio de nada |
     /// | `signalOnboardingCompleted` | **NO** | no hay alta nueva que anunciar a los otros dispositivos |
     /// | KPI `localRegistrationCompleted` | **NO** | contaría un registro por alguien que ya estaba registrado |
-    /// | `hasShownGroupsOnboarding` | **NO** | **la que cambió al medirla.** Marcarla APAGA el educativo de Grupos —tres pantallas— a quien nunca lo ha visto, per-device y para siempre: `hasSeenAnyGroupsEducational` es `hasShownOnboarding` OR (`onboardingMode == .groupInvite` AND alta hecha), y para un usuario `.full` de toda la vida el segundo término es falso ⇒ esta línea era la única que decidía. Esta hoja es UNA pantalla de bienvenida: hace de educativo para quien llega sin app, no para quien ya usa Yala y entra en Grupos por primera vez |
+    /// | `hasShownGroupsOnboarding` | **NO** | **la que cambió al medirla.** Marcarla APAGA el educativo de Grupos —tres pantallas— a quien nunca lo ha visto, per-device y para siempre: `hasSeenAnyGroupsEducational` es `hasShownOnboarding` OR (sin sesión privada AND alta hecha), y para quien ya tiene su vida personal aquí el segundo término es falso ⇒ esta línea era la única que decidía. Esta hoja es UNA pantalla de bienvenida: hace de educativo para quien llega sin app, no para quien ya usa Yala y entra en Grupos por primera vez |
     /// | nombre en el join intent | **SÍ** | es lo único que hace falta: `resolveJoinDisplayName` lo prefiere sobre el del perfil, así que el member de este grupo nace con él, y si ya existía lo corrige `correctDisplayNameIfNeeded` (R1) |
     private func performJoinOnlySetup() {
         let finalName = userName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -516,24 +516,20 @@ struct GroupInviteOnboardingView: View {
         // ADR §2, donde hay sesión privada viva— y ahí el espejo es exactamente lo que el usuario quiere.
         // Armarla en las dos ramas apagaría iCloud a quien acepta una invitación desde su Yala de siempre.
         //
-        // El guard de secundaria es propio: este método no tiene el de la cabecera que sí lleva su gemelo
-        // del organizador, y en una sesión secundaria el `UserDefaults` es el del DUEÑO — escribirle una
-        // decisión de mount le apagaría el espejo a él.
-        StorageModePersistence.armGroupsOnlyNeutralMountIfPrimary()
+        StorageModePersistence.armGroupsOnlyNeutralMount()
 
         let sync = PreferenceSyncService.shared
         let finalName = userName.trimmingCharacters(in: .whitespacesAndNewlines)
         let effectiveName = finalName.isEmpty ? L10n.Profile.defaultName : finalName
 
-        // 1. Set onboarding mode
-        sessionState.onboardingMode = .groupInvite
-        // Eje 1: esta persona vino por una invitación. No hay sesión privada en este dispositivo.
-        PrivateSessionMark.set(false)
+        // 1. El eje 1: esta persona vino por una invitación, no hay sesión privada en este dispositivo.
+        // Asignar al espejo observable persiste la marca y reduce la shell en el mismo render.
+        sessionState.hasPrivateSession = false
 
         // 1.5. C2 · **ESTA vista ES el educativo del invitado**, contextual al link y con la metadata del
         // grupo, así que al terminarla se marca el hecho real: «ya se le contó qué es un grupo». Antes,
-        // esa supresión la hacía `GroupsOnboardingLogic.shouldShow` cortando por `onboardingMode ==
-        // .groupInvite` — un proxy que además tapaba el educativo a quien entraba por la card «Solo
+        // esa supresión la hacía `GroupsOnboardingLogic.shouldShow` cortando por «esta persona entró por
+        // un grupo» — un proxy que además tapaba el educativo a quien entraba por la card «Solo
         // grupos», que era justo quien menos contexto tenía. Sin esta línea, el invitado vería el educativo
         // general del tab justo después del suyo.
         UserDefaults.standard.set(true, forKey: AppPreferences.Keys.hasShownGroupsOnboarding)

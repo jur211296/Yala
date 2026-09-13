@@ -4793,19 +4793,8 @@
 /* Secondary action in waiting-for-leader state */
 "welcome.cloud.continueToApp" = "Continuer vers l'app";
 
-/* Sign-out confirm message for a secondary (guest) cloud session — guest data leaves the device, owner data untouched */
-
-/* Title of the secondary-session confirm step (guest entering own cloud account on someone else's device) */
-"welcome.cloud.secondaryConfirmTitle" = "Entrer avec ton compte";
-
-/* Body of the secondary-session confirm step */
-"welcome.cloud.secondaryConfirmBody" = "Cet appareil contient les données de quelqu'un d'autre. Tu entreras avec ton propre compte dans un espace séparé : tu ne verras que tes données, et celles du propriétaire ne sont pas touchées. En te déconnectant, tes données seront retirées de l'appareil.";
-
-/* CTA of the secondary-session confirm step */
-"welcome.cloud.secondaryConfirmCta" = "Entrer avec mon compte";
-
 /* Chip shown while the secondary (guest) session pulls its account data after relaunch */
-"welcome.cloud.secondaryHydrationBanner" = "Téléchargement de tes données…";
+"welcome.cloud.hydrationBanner" = "Téléchargement de tes données…";
 
 /* Title of the proactive gate shown in the Groups tab when the device has no iCloud account */
 "groups.icloud.gate.title" = "Groupes a besoin d'iCloud";
@@ -5111,12 +5100,6 @@
 /* D4 Cerrar sesión (nube): fila cuenta de Yala */
 "settings.signOutScopeCloudCloud" = "Tes données restent en sécurité ; nous envoyons d'abord tes modifications en attente";
 
-/* D4 Cerrar sesión (sesión secundaria): fila dispositivo */
-"settings.signOutScopeDeviceSecondary" = "Tes données sont supprimées de cet appareil (elles restent dans ton compte)";
-
-/* D4 Cerrar sesión (sesión secundaria): fila cuenta de Yala */
-"settings.signOutScopeCloudSecondary" = "Tes données restent en sécurité dans ton compte";
-
 
 
 
@@ -5127,9 +5110,6 @@
 
 /* D4 Cerrar sesión (nube): nota de conservación */
 "settings.signOutScopeConservationCloud" = "Tu peux revenir quand tu veux et tout récupérer.";
-
-/* D4 Cerrar sesión (secundaria): nota de conservación */
-"settings.signOutScopeConservationSecondary" = "Les données du propriétaire de cet appareil ne sont pas touchées.";
 
 /* D4 Cerrar sesión de grupos / Salir (D2): nota de conservación */
 "settings.signOutScopeConservationGroups" = "Reconnecte-toi quand tu veux pour voir tes groupes.";
@@ -5435,12 +5415,6 @@
 /* C2 · variante del CTA para quien nunca tuvo cuenta */
 "groups.onboarding.step3.createAccountCTA" = "Créer mon compte";
 
-/* G3/C3 — the organizer branch is blocked because a secondary (guest) session is active: the setup would write six preferences into the OWNER's local mirror */
-"welcome.groups.secondaryTitle" = "Ici, tu es invité";
-
-/* G3/C3 — body of the secondary-session block in the organizer gate */
-"welcome.groups.secondaryBody" = "Cette session se trouve sur l'appareil de quelqu'un d'autre : ton premier groupe se crée depuis le tien. Ferme ta session invité et réessaie là-bas.";
-
 /* Title of the alert shown when the fresh-start wipe throws */
 "welcome.freshStart.failedTitle" = "Nous n'avons pas pu effacer tes données";
 
@@ -5469,8 +5443,6 @@
 "welcome.cloud.accountBlockedTitle" = "Ton compte n'est pas disponible";
 /* Body for the blocked-account screen; explicitly rules out a network problem */
 "welcome.cloud.accountBlockedBody" = "Ce n'est pas ta connexion : nous ne pouvons pas te donner accès à ce compte pour le moment. Écris-nous à %@ et on regarde ça avec toi.";
-/* Extra warning appended to the sign-out blocked alert during a guest (secondary) session, where leaving anyway is offered */
-"settings.signOutSecondaryLossWarning" = "Si tu pars maintenant, ces modifications n'arriveront pas sur ton compte.";
 
 /* Sign-out blocked alert, guest session: stay in the app and retry later */
 "settings.signOutWaitButton" = "Attendre";
@@ -5520,15 +5492,6 @@
 
 /* Stats hero caption: the figure sums income and expense magnitudes (pie total), neither a net nor one side */
 "stats.hero.captionTotalPeriod" = "Total de la période";
-
-/* Secondary session on the private branch: title of the notice shown after choosing the private account, before the onboarding */
-"welcome.private.secondaryTitle" = "Tes données restent séparées des siennes";
-
-/* Secondary session on the private branch: body of the notice — the fact, the guarantee, and the measured detail that the secondary store is cloudKitDatabase .none */
-"welcome.private.secondaryBody" = "Tu utilises Yala sur l'appareil de quelqu'un d'autre. Ce que tu notes ici n'appartient qu'à toi et reste sur cet appareil : l'autre personne ne le voit pas, et rien n'est synchronisé avec un iCloud.";
-
-/* Secondary session on the private branch: CTA that continues to the private onboarding (informs, does not block) */
-"welcome.private.secondaryCta" = "Continuer";
 
 /* Restore: el kill-switch remoto está puesto y el usuario nació en la nube — sus datos existen, la sincronización no está disponible ahora */
 "welcome.restore.cloudPausedTitle" = "Le cloud de Yala est en pause";

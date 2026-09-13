@@ -456,26 +456,6 @@ struct GroupsAssociationRegistrarTests {
         #expect(store.read() == nil)
     }
 
-    /// En sesión secundaria el espejo local cae en el `UserDefaults` del DUEÑO, y los tres ejes que
-    /// componen `deviceState` también son suyos: sin el guard, la invitada escribía SU correo en la
-    /// asociación del dueño. Mismo guard que `GroupsDomainAdoptionMarker` y `OnboardingMode.setCurrent`.
-    @MainActor
-    @Test("En sesión secundaria no se registra nada")
-    func noRegistraEnSecundaria() {
-        let defaults = isolatedDefaults()
-        SecondarySessionStore.activate(userID: "invitada", defaults)
-        defer { SecondarySessionStore.clear(defaults) }
-        let store = GroupsAccountAssociation(iKV: FakeKV(), defaults: defaults)
-
-        GroupsAssociationRegistrar.syncFromLiveSessionIfNeeded(
-            deviceState: .privateSession,
-            identity: .init(hasSession: true, sub: "de-la-invitada", provider: "google",
-                            email: "invitada@b.com"),
-            kind: .groupsOnly, store: store, defaults: defaults)
-
-        #expect(store.read() == nil)
-    }
-
     @MainActor
     @Test("Fuera de una sesión privada no hay nada que asociar")
     func soloEnSesionPrivada() {
@@ -637,7 +617,7 @@ struct GroupsAssociationWiringTests {
                 UNA sola key, porque lo que se escriba ahí viaja a TODOS los dispositivos del Apple ID— y
                 borrar la asociación le quitaría al dueño la suya en el iPad. La puerta al humano nuevo es
                 el SELLO, en `GroupsAccountAssociation`. Lo pinnea además, por comportamiento,
-                `HandoverGroupsDomainTests.wipeLocalGroupsDomain_touchesOnlyTheOnboardingModeKeyInTheIKV`.
+                `HandoverGroupsDomainTests.wipeLocalGroupsDomain_touchesNothingInTheIKV`.
                 """)
         }
     }

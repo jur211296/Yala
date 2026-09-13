@@ -65,7 +65,11 @@ struct DataWipeServiceTests {
         "insightsShowTexts",
         // Onboarding
         "hasCompletedOnboarding", "hasShownWelcomeChooser", "hasShownYalaAIOnboarding",
-        "onboardingMode", "sessionTimestamps", "secondaryCurrencies", "needsPostOnboardingTrial",
+        // `onboardingMode` salió de esta lista el 2026-09-13 con el flag que la escribía. Lo que quede
+        // de esa key en un teléfono del parque lo retira `SecondarySessionRetirement`, que corre UNA vez
+        // en el arranque — antes de que nadie pueda llegar a «Vaciar datos». La limpieza de lo legacy va
+        // en la retirada, no en un barrido que corre cada vez que alguien vacía sus datos.
+        "sessionTimestamps", "secondaryCurrencies", "needsPostOnboardingTrial",
         "lastKnownOnboardingTimestamp",
         // What's New / App Update
         "lastSeenAppVersion", "appUpdate.latestVersion", "appUpdate.lastChecked", "appUpdate.trackId",

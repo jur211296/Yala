@@ -11,12 +11,15 @@
 //  2026-09-10 (ADR 2026-09-09 §7).
 //
 //  **Qué es «el trío» y por qué el ORDEN de la rama es load-bearing.** Las tres escrituras que hacen la
-//  shell son `onboardingMode = .groupInvite`, `groupsBetaUnlocked = true` y `hasCompletedOnboarding = true`.
-//  La primera es **never-downgrade cross-device** (rank 1 > 0, `PreferenceMergeLogic`) y viaja al iKV del
-//  Apple ID: escrita antes de confirmar la puerta, no vuelve — se propaga a los otros dispositivos de ese
-//  Apple ID y deja al usuario con la shell reducida a Grupos y sin grupo que enseñar. Por eso este tipo se
+//  shell son el eje 1 apagado (`SessionState.hasPrivateSession = false`, que persiste `PrivateSessionMark`),
+//  `groupsBetaUnlocked = true` y `hasCompletedOnboarding = true`. Escritas antes de confirmar la puerta
+//  dejan al usuario con la shell reducida a Grupos y sin grupo que enseñar. Por eso este tipo se
 //  invoca DESPUÉS de `GroupsOrganizerGateLogic` y de la cadena sign-in → consent, nunca antes, y por eso
 //  un source-scan pinnea que tenga un solo call-site de producción.
+//
+//  **La lección de la versión anterior:** hasta el 2026-09-13 la primera escritura era un flag de
+//  onboarding never-downgrade que viajaba al iKV del Apple ID, así que además se propagaba a los otros
+//  dispositivos de esa cuenta y no volvía. Hoy el eje es local y ese daño no existe; el orden se mantiene.
 //
 //  **La divisa (G4) es la ÚNICA escritura CONDICIONAL del alta, y esa condición es el invariante.**
 //  `defaultCurrencyCode = CurrencyDefaults.detectCurrencyFromRegion()` sigue el precedente vivo de
@@ -88,26 +91,23 @@ enum GroupsOrganizerOnboarding {
     ///
     /// - Note: `defaultCurrencyCode` es la única CONDICIONAL (solo si está ausente), así que el control
     ///   positivo del test que compara contra este inventario tiene que correr sobre un store limpio.
-    /// Las SEIS que viajan por el canal de PREFERENCIAS (el `writer`). Se publican aparte de `writtenKeys`
-    /// porque el spy de los tests solo puede ver éstas: la séptima no pasa por el writer a propósito —no es
-    /// una preferencia del usuario, es la decisión de mount de este teléfono, y propagarla apagaría el
-    /// espejo en el otro device del mismo usuario.
+    /// Las CINCO que viajan por el canal de PREFERENCIAS (el `writer`). Se publican aparte de
+    /// `writtenKeys` porque el spy de los tests solo puede ver éstas: la sexta no pasa por el writer a
+    /// propósito —no es una preferencia del usuario, es la decisión de mount de este teléfono, y
+    /// propagarla apagaría el espejo en el otro device del mismo usuario.
     static let writtenPreferenceKeys: [String] = [
         AppPreferences.Keys.userName,
         AppPreferences.Keys.defaultPeriod,
         AppPreferences.Keys.defaultCurrencyCode,
-        OnboardingMode.userDefaultsKey,
         AppPreferences.Keys.groupsBetaUnlocked,
         AppPreferences.Keys.hasCompletedOnboarding
     ]
 
     static let writtenKeys: [String] = writtenPreferenceKeys + [
-        // 2026-09-10 · la séptima, y entra en el inventario A PROPÓSITO (el guard de
-        // `SecondaryOwnerDomainGuardsTests` obliga a decidirlo en vez de dejarla aparecer en silencio).
-        // No es una preferencia del usuario —es la decisión de MOUNT de este teléfono— pero comparte las
-        // dos propiedades que este inventario existe para vigilar: la escribe el alta, y tiene que ir
-        // DESPUÉS del guard de sesión secundaria. Dejarla fuera la habría vuelto invisible para las tres
-        // redes que se alimentan de aquí, incluido el bucle que comprueba ese orden.
+        // 2026-09-10 · la sexta, y entra en el inventario A PROPÓSITO: no es una preferencia del usuario
+        // —es la decisión de MOUNT de este teléfono— pero la escribe el alta, que es lo que este
+        // inventario existe para vigilar. Dejarla fuera la habría vuelto invisible para las redes que se
+        // alimentan de aquí.
         StorageModePersistence.groupsOnlyNeutralMountKey
     ]
 
@@ -118,47 +118,15 @@ enum GroupsOrganizerOnboarding {
     /// - Parameter regionCode: región ISO con la que se deriva la divisa. Default: la del dispositivo,
     ///   inyectable para tests deterministas (patrón canónico `now: Date = .now`; el mismo default que
     ///   `CurrencyDefaults.detectCurrencyFromRegion`, que es quien la traduce a divisa).
-    ///   - isSecondarySession: C3 · `SecondarySessionStore.isActive()` por default, evaluado EN LA LLAMADA.
-    ///     Va como parámetro y no leído por dentro para que el invariante sea afirmable sin tocar el
-    ///     `UserDefaults.standard` del simulador — el override global de `isActive()` es estado de PROCESO
-    ///     y contaminaría a las suites que corren en paralelo. Que el default siga siendo el mecanismo real
-    ///     lo pinnea un source-scan: cambiarlo por `false` dejaría los tests de comportamiento en verde.
-    ///
-    /// - Returns: `false` si el alta se abortó por la frontera M1. El caller **tiene que respetarlo**:
-    ///   seguir con los seeds y el aterrizaje dejaría al usuario en un shell de Grupos que ninguna
-    ///   preferencia sostiene.
     @discardableResult
     static func writePreferences(displayName: String,
                                  writer: any GroupsOrganizerPreferenceWriting,
                                  regionCode: String = Locale.current.region?.identifier ?? "",
-                                 isSecondarySession: Bool = SecondarySessionStore.isActive(),
                                  defaults: UserDefaults = .standard) -> Bool {
-        // **C3 · el guard subió de UNA key al MÉTODO ENTERO, y esa es la corrección.** Hasta C3 solo
-        // `onboardingMode` lo llevaba, porque el escáner de M1 buscaba los literales de ESA key y C2
-        // arregló exactamente lo que el escáner señalaba. Las otras CINCO cruzaban igual: `set(string:)` de
-        // `PreferenceSyncService` hace su `local.set(...)` FUERA del switch de behavior, así que
-        // `.localOnly` no evita la escritura local — solo la propagación—, y `local` es `.standard`
-        // hardcodeado, que en secundaria es el dominio del DUEÑO.
-        //
-        // La que más pesa no es el modo: es `groupsBetaUnlocked`, porque **nadie la repone al salir**.
-        // `DataWipeService.removeGroupsDomainPreferenceKeys` tiene UN call-site, dentro de
-        // `wipeLocalGroupsDomain` (el «empiezo de cero» del Welcome) ⇒ cerrar la sesión de la invitada le
-        // deja al dueño el dominio Grupos adoptado, que es justo lo que
-        // `recordEntry_isInertUnderASecondarySession` ya advierte por escrito para el OTRO escritor de esa
-        // misma key.
-        //
-        // Esto es defensa en profundidad y NO la respuesta al usuario: la rama entera se bloquea antes, en
-        // `GroupsOrganizerGateLogic` (`.blockedSecondarySession`), y su choke-point es
-        // `ContentView.advanceGroupsOrganizerFlow`. Aquí solo se garantiza que ninguna escritura sale.
-        guard !isSecondarySession else { return false }
-
         // **El neutro durable de la sesión solo-grupos** (paso 5 del rediseño). Sin esto, el arranque
         // SIGUIENTE monta `.iCloudMirror` sobre el store personal —el archivo ya existe, así que
         // `isFreshInstallForNeutralMount` deja de ser `true`— y se trae el contenedor privado del Apple ID
         // del teléfono, que es el bug del ticket.
-        //
-        // Va DENTRO del guard de secundaria (la cabecera de este método) como las otras seis: es una
-        // decisión de mount del DEVICE, y en secundaria el device es de otra persona.
         //
         // Local y no sincronizada a propósito: describe cómo monta ESTE teléfono, no qué eligió la
         // cuenta. Propagarla apagaría el espejo en el otro device del mismo usuario, que puede tener su
@@ -169,7 +137,7 @@ enum GroupsOrganizerOnboarding {
         // `.standard`, correr la suite dejaba la marca puesta y la app de ese simulador montaba neutro
         // para siempre — rompiendo cualquier QA visual posterior. Las siete llamadas de test pasan su
         // suite aislado, igual que ya hacen con el `writer`.
-        StorageModePersistence.armGroupsOnlyNeutralMountIfPrimary(defaults, isSecondary: isSecondarySession)
+        StorageModePersistence.armGroupsOnlyNeutralMount(defaults)
 
         let trimmed = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
         let effectiveName = trimmed.isEmpty ? L10n.Profile.defaultName : trimmed
@@ -187,18 +155,7 @@ enum GroupsOrganizerOnboarding {
             writer.setSynced(currency.rawValue, forKey: AppPreferences.Keys.defaultCurrencyCode)
         }
 
-        // Modo Solo Grupos: reusa `.groupInvite`. Push EXPLÍCITO al canal sincronizado (dual-write, mismo
-        // patrón que `FullModeActivationView`) — el `didSet` de `onboardingMode` solo escribe local, así
-        // que sin esto no hay paridad cross-device.
-        //
-        // **M1 · el `if !SecondarySessionStore.isActive()` que envolvía SOLO esta línea se retiró en C3**,
-        // absorbido por el `guard` de la cabecera. No es una relajación: es que proteger una de las seis
-        // escrituras y dejar las otras cinco era la mitad del bug — `.groupInvite` (rank 1) sobre el
-        // `.full` (rank 0) del dueño es irreversible por never-downgrade, pero `groupsBetaUnlocked` es
-        // PEOR, porque ni siquiera hay quien la reponga al cerrar la sesión.
-        writer.setSynced(OnboardingMode.groupInvite.rawValue, forKey: OnboardingMode.userDefaultsKey)
-
-        // Adopción explícita del dominio Grupos. `.groupInvite` ya la implica por el segundo término de
+        // Adopción explícita del dominio Grupos. El eje 1 apagado ya la implica por el segundo término de
         // `GroupsDomainAdoptionLogic.isDomainOpen`, pero ese término muere si el usuario activa Yala
         // completo más tarde; la key es per-device y permanente (mismo trato que la entrada por invitación).
         writer.setLocal(true, forKey: AppPreferences.Keys.groupsBetaUnlocked)
@@ -221,18 +178,15 @@ enum GroupsOrganizerOnboarding {
                               context: ModelContext,
                               writer: (any GroupsOrganizerPreferenceWriting)? = nil) {
         let sessionState = SessionState.shared
-        // C3 · si las preferencias no se escribieron (frontera M1), el alta NO ocurre: seguir con el modo
-        // en memoria, los seeds y el aterrizaje en el tab dejaría a la invitada dentro de un shell de
-        // Grupos que ninguna preferencia sostiene, y los seeds escribirían en el store del DUEÑO si el
-        // mount todavía es el suyo. El usuario ya recibió su respuesta en la puerta.
+        // Si las preferencias no se escribieron, el alta NO ocurre: seguir con los seeds y el aterrizaje
+        // en el tab dejaría al usuario dentro de un shell de Grupos que ninguna preferencia sostiene.
         guard writePreferences(displayName: displayName,
                                writer: writer ?? LiveGroupsOrganizerPreferenceWriter()) else { return }
 
-        // Espejo en memoria: el proceso vivo tiene que ver el modo nuevo YA (el tab bar se reduce a
-        // [.groups] en el mismo render), no en el próximo arranque.
-        sessionState.onboardingMode = .groupInvite
-        // Eje 1: el organizador viene a crear un grupo. No hay sesión privada en este dispositivo.
-        PrivateSessionMark.set(false)
+        // El eje 1: el organizador viene a crear un grupo, no hay sesión privada en este dispositivo.
+        // Asignar al espejo observable persiste la marca Y reduce el tab bar a [.groups] en el mismo
+        // render — el proceso vivo tiene que verlo YA, no en el próximo arranque.
+        sessionState.hasPrivateSession = false
         sessionState.selectedPeriod = .thisMonth
 
         // Seeds idénticos al camino del invitado: categorías personales (para tener subcategorías en los
@@ -256,7 +210,7 @@ enum GroupsOrganizerOnboarding {
         MetricsService.localRegistrationCompleted(mode: "groupsOrganizer")
         PreferenceSyncService.shared.signalOnboardingCompleted()
 
-        // Aterrizar en el tab Grupos: con `.groupInvite` el tab bar se reduce a [.groups] y el
+        // Aterrizar en el tab Grupos: sin sesión privada el tab bar se reduce a [.groups] y el
         // `selectedMainTab` persistido (.panel) no está montado (gotcha bde61bb2).
         sessionState.selectedMainTab = .groups
     }

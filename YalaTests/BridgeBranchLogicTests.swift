@@ -14,27 +14,27 @@ import Testing
 struct BridgeBranchLogicTests {
 
     @Test
-    func groupInvite_alwaysReturnsVirtualPair_regardlessOfEffective() {
-        // .groupInvite tiene prioridad sobre el opt-out: no hay cuentas reales en ese flow.
+    func sesiónSoloGrupos_alwaysReturnsVirtualPair_regardlessOfEffective() {
+        // La sesión solo-grupos tiene prioridad sobre el opt-out: no hay cuentas reales en ese flow.
         #expect(BridgeBranchLogic.decideCaseAPath(
-            isGroupInviteMode: true, effectiveBridgeEnabled: true
-        ) == .groupInviteVirtualPair)
+            isGroupsOnlySession: true, effectiveBridgeEnabled: true
+        ) == .virtualPairWithoutAccounts)
         #expect(BridgeBranchLogic.decideCaseAPath(
-            isGroupInviteMode: true, effectiveBridgeEnabled: false
-        ) == .groupInviteVirtualPair)
+            isGroupsOnlySession: true, effectiveBridgeEnabled: false
+        ) == .virtualPairWithoutAccounts)
     }
 
     @Test
-    func nonGroupInvite_effectiveOff_returnsOptoutVirtualOnly() {
+    func conSesiónPrivada_effectiveOff_returnsOptoutVirtualOnly() {
         #expect(BridgeBranchLogic.decideCaseAPath(
-            isGroupInviteMode: false, effectiveBridgeEnabled: false
+            isGroupsOnlySession: false, effectiveBridgeEnabled: false
         ) == .optoutVirtualOnly)
     }
 
     @Test
-    func nonGroupInvite_effectiveOn_returnsFullPair() {
+    func conSesiónPrivada_effectiveOn_returnsFullPair() {
         #expect(BridgeBranchLogic.decideCaseAPath(
-            isGroupInviteMode: false, effectiveBridgeEnabled: true
+            isGroupsOnlySession: false, effectiveBridgeEnabled: true
         ) == .fullPair)
     }
 

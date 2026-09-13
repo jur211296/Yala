@@ -179,8 +179,6 @@ struct YalaApp: App {
             if RelaunchNetLogic.shouldExitOnBackground(
                 scenePhase: newPhase,
                 signOutPhase: CloudSessionSignOut.shared.phase,
-                secondaryEntryArmedUnmounted: SecondarySessionStore.isActive()
-                    && !SwiftDataConfiguration.secondaryStoreMounted,
                 // R0 · `peek` y JAMÁS `consume`: retirar aquí el destino dejaría al usuario que pidió
                 // restaurar de iCloud aterrizando en el onboarding normal tras reabrir, con su elección
                 // perdida — que es exactamente el daño para el que R2 lo hizo durable. Lo consume el

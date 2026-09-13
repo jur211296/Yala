@@ -5,9 +5,8 @@
 //  CHIP M0 (ola M, §6.3 de MODO-NUBE-SPEC-M1-REVIVAL) — el consent del reentry se registraba ANTES de
 //  conocer la ruta, y el destino de esa escritura lo resuelve `PreferenceSyncService` en el INSTANTE de
 //  escribir: con el modo persistido del device, que durante el Welcome es el `.icloud` del DUEÑO. Un
-//  intento cross-cuenta que terminaba BLOQUEADO —que es lo que pasa HOY, con el flag de secundaria
-//  apagado— ya había dejado el epoch GDPR de otra persona en el iKV del dueño, y el paso 5-bis del
-//  cutover lo habría subido un día como consent SUYO.
+//  intento cross-cuenta que terminaba BLOQUEADO ya había dejado el epoch GDPR de otra persona en el iKV
+//  del dueño, y el paso 5-bis del cutover lo habría subido un día como consent SUYO.
 //
 //  Tres cosas se prueban aquí y ninguna cubre a las otras:
 //   1. La TABLA (`CloudConsentRegistrationLogic.placement`) — qué punto del flujo escribe, por ruta.
@@ -15,8 +14,7 @@
 //      del chip: cero en el camino bloqueado (hoy eran 2), una sola vez en las otras dos. Va sobre el
 //      seam del registrar porque `PreferenceSyncService` es un singleton con `local` hardcodeado a
 //      `.standard` (regla §prefs de `.claude/rules/swiftdata-cloudkit.md`).
-//   3. El source-scan del CABLEADO. Lo que decide es QUIÉN llama y en qué ORDEN —el epoch de la
-//      secundaria resuelve `.localOnly` solo DESPUÉS del descriptor—, y eso ningún test de
+//   3. El source-scan del CABLEADO. Lo que decide es QUIÉN llama y en qué ORDEN, y eso ningún test de
 //      comportamiento lo caza (familia `AttestWiringTests` / `GroupInviteChannelRoutingWiringTests`).
 //
 
@@ -74,11 +72,9 @@ struct CloudConsentRegistrationTests {
 
     // MARK: La tabla
 
-    @Test("la tabla: adopt escribe antes de la máquina, la secundaria tras el descriptor, el bloqueo nunca")
-    func placement_isTotalOverTheGuardsThreeOutcomes() {
+    @Test("la tabla: adopt escribe antes de la máquina, el bloqueo nunca")
+    func placement_isTotalOverTheGuardsOutcomes() {
         #expect(CloudConsentRegistrationLogic.placement(for: .proceed) == .beforeAdopt)
-        #expect(CloudConsentRegistrationLogic.placement(for: .proceedSecondarySession)
-                == .afterSecondaryDescriptor)
         #expect(CloudConsentRegistrationLogic.placement(for: .blockedForeignData) == .never)
     }
 
@@ -86,12 +82,11 @@ struct CloudConsentRegistrationTests {
 
     /// EL CRITERIO DEL CHIP. Se prueba el camino entero: los TRES puntos posibles, no solo el que la
     /// vista usa hoy — si mañana alguien añade una llamada en la rama bloqueada, esto no la deja pasar.
-    @Test("camino BLOQUEADO: cero escrituras, en cualquiera de los tres puntos (hoy eran 2)")
+    @Test("camino BLOQUEADO: cero escrituras, en cualquiera de los puntos (hoy eran 2)")
     func blockedRoute_neverWrites() {
         withSpy { spy in
             var pending = true
-            for point in [CloudConsentRegistrationLogic.Placement.beforeAdopt,
-                          .afterSecondaryDescriptor, .never] {
+            for point in [CloudConsentRegistrationLogic.Placement.beforeAdopt, .never] {
                 CloudConsentRegistrationLogic.persistIfDue(
                     at: point, routedBy: .blockedForeignData,
                     pending: &pending, persist: { CloudConsentRegistrar.register() })
@@ -113,9 +108,9 @@ struct CloudConsentRegistrationTests {
             var pending = true
 
             CloudConsentRegistrationLogic.persistIfDue(
-                at: .afterSecondaryDescriptor, routedBy: .proceed,
+                at: .never, routedBy: .proceed,
                 pending: &pending, persist: { CloudConsentRegistrar.register() })
-            #expect(spy.writes.isEmpty, "el punto de la secundaria no es el suyo")
+            #expect(spy.writes.isEmpty, "`.never` no es un punto de escritura")
 
             CloudConsentRegistrationLogic.persistIfDue(
                 at: .beforeAdopt, routedBy: .proceed,
@@ -133,31 +128,6 @@ struct CloudConsentRegistrationTests {
         }
     }
 
-    /// El orden es el fix: `PrefsSyncBehavior.resolve` pregunta por el descriptor VIVO en cada llamada,
-    /// así que escribir un paso antes de `SecondarySessionStore.activate` es escribir en el iKV del dueño.
-    @Test("ruta SECUNDARIA: nada antes del descriptor, una escritura después")
-    func secondaryRoute_writesOnlyAfterTheDescriptor() {
-        withSpy { spy in
-            var pending = true
-
-            CloudConsentRegistrationLogic.persistIfDue(
-                at: .beforeAdopt, routedBy: .proceedSecondarySession,
-                pending: &pending, persist: { CloudConsentRegistrar.register() })
-            #expect(spy.writes.isEmpty, """
-                Antes del descriptor el behavior de prefs es el del DUEÑO (`.icloudKeyValue`): el epoch
-                de la invitada se propagaría a los otros devices de su Apple ID.
-                """)
-            #expect(pending)
-
-            CloudConsentRegistrationLogic.persistIfDue(
-                at: .afterSecondaryDescriptor, routedBy: .proceedSecondarySession,
-                pending: &pending, persist: { CloudConsentRegistrar.register() })
-            #expect(spy.acceptedAtWrites == 1)
-            #expect(spy.writes.count == 2)
-            #expect(!pending)
-        }
-    }
-
     /// El alta born-cloud escribe en la PANTALLA (su ruta ya se conoce al aceptar y su claim la verifica),
     /// así que llega aquí sin pendiente: la variante A de §f.1 —`existing_stable` reencamina al
     /// returning-user y cae en el guard— no puede acabar escribiendo el epoch dos veces.
@@ -165,10 +135,8 @@ struct CloudConsentRegistrationTests {
     func bornCloud_doesNotWriteASecondTime() {
         withSpy { spy in
             var pending = false
-            for decision in [CrossAccountEntryGuardLogic.Decision.proceed,
-                             .proceedSecondarySession, .blockedForeignData] {
-                for point in [CloudConsentRegistrationLogic.Placement.beforeAdopt,
-                              .afterSecondaryDescriptor, .never] {
+            for decision in [CrossAccountEntryGuardLogic.Decision.proceed, .blockedForeignData] {
+                for point in [CloudConsentRegistrationLogic.Placement.beforeAdopt, .never] {
                     CloudConsentRegistrationLogic.persistIfDue(
                         at: point, routedBy: decision,
                         pending: &pending, persist: { CloudConsentRegistrar.register() })
@@ -302,27 +270,12 @@ struct CloudConsentRegistrationWiringTests {
 
         let calls = flow.components(separatedBy: "persistConsentIfDue(").count - 1
         #expect(calls == 1, """
-            El guard tiene tres salidas y solo UNA escribe. Una llamada de más en la rama bloqueada o en
-            la secundaria es exactamente el bug de M0 (la tabla la haría no-op, pero el call-site miente).
+            El guard tiene dos salidas y solo UNA escribe. Una llamada de más en la rama bloqueada es
+            exactamente el bug de M0 (la tabla la haría no-op, pero el call-site miente).
             """)
         let persist = try #require(flow.range(of: "persistConsentIfDue(at: .beforeAdopt"))
         let start = try #require(flow.range(of: "startAdoptWithExistingSession()"))
         #expect(persist.lowerBound < start.lowerBound)
     }
 
-    /// LA OTRA MUTACIÓN: subir la escritura por encima de `SecondaryEntryLogic.begin`. Compila, pasa la
-    /// tabla y vuelve a dejar el epoch de la invitada en el iKV del dueño — el descriptor es lo único
-    /// que hace que `PrefsSyncBehavior` resuelva `.localOnly`.
-    @Test("en la entrada secundaria la escritura va DESPUÉS del descriptor")
-    func secondaryEntry_writesAfterTheDescriptor() throws {
-        let src = try Self.code(Self.welcomePath)
-        let confirm = try Self.body(of: "private func confirmSecondaryEntry() {", in: src)
-        let begin = try #require(confirm.range(of: "SecondaryEntryLogic.begin("))
-        let persist = try #require(confirm.range(of: "persistConsentIfDue(at: .afterSecondaryDescriptor"))
-        #expect(begin.lowerBound < persist.lowerBound, """
-            `SecondaryEntryLogic.begin` es quien activa el descriptor, y `PrefsSyncBehavior.resolve` lo
-            consulta VIVO en cada llamada: una línea antes, el epoch de la invitada viaja al iKV del
-            Apple ID del dueño y se propaga a sus otros devices.
-            """)
-    }
 }

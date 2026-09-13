@@ -44,37 +44,11 @@ struct OnboardingView: View {
 
     private var expensesOnlyMode: Bool { selectedUsageMode == .expensesOnly }
 
-    /// La visita está usando Yala en el móvil de otra persona. Se lee del descriptor y no del corpus:
-    /// el store de la invitada está VACÍO en una sesión recién montada, así que contar filas diría que
-    /// no. Es el mismo predicado que consulta la puerta de la rama organizador del Welcome.
-    ///
-    /// No es `@State` ni observable a propósito: la sesión secundaria no empieza ni termina a mitad de
-    /// un onboarding — las dos fronteras exigen relanzamiento —, así que un valor vivo leído en el
-    /// render es exacto y no arrastra estado que pueda desincronizarse.
-    private var isSecondarySession: Bool { SecondarySessionStore.isActive() }
-
-    /// **Lo que de verdad va a pasar con las categorías**, que es lo único que el resumen puede contar y
-    /// lo único que `completeOnboarding` debe ejecutar. `loadSeedCategories` es la respuesta del usuario
-    /// a un paso que en visita **ni siquiera se muestra** (`OnboardingStepPlan.skippedSteps`), y su
-    /// default es `true`: sin este término, el onboarding en secundaria seguía llamando al seed, el seed
-    /// retornaba en su cinturón M1 y el store quedaba vacío tras haberlo prometido.
-    ///
-    /// Y arrastra un segundo arreglo que sale del mismo término: con `false`, la rama de abajo crea la
-    /// subcategoría «Ajuste de saldo» que el seed ya no va a traer. Sin ella,
-    /// `createOnboardingAccount` no encontraba dónde colgar el saldo inicial y **lo descartaba en
-    /// silencio** (`findBalanceAdjustmentSubcategory` → `nil` → el `print` de DEBUG y nada más), así que
-    /// la visita tecleaba «tengo 500» y su cuenta nacía en cero.
-    ///
-    /// **Y con eso `ensureBalanceAdjustmentSubcategoryExists` pasa a ser el ÚNICO sembrador que corre en
-    /// sesión secundaria — a propósito, y conviene que quede dicho aquí.** Los dos de `CategorySeed`
-    /// llevan cinturón M1 (`if SecondarySessionStore.isActive() { return }`) y éste no, así que quien lea
-    /// aquellos podría creer que la frontera está cerrada del todo: no lo está, y son **dos filas**
-    /// («Otros» + «Ajuste de saldo», con el mismo `isDefaultSeed`, color e icono que las del seed, así
-    /// que `CategoryDeduplicationService` las funde). Se acepta porque la alternativa es la que había:
-    /// perder el saldo inicial sin decir nada. Residual conocido: si la cuenta de la visita se hidrata
-    /// después por pull en OTRO idioma, `CloudSyncReconciler` funde la subcategoría pero no su categoría
-    /// padre, y le queda una «Otros» en el idioma del móvil prestado.
-    private var willSeedCategories: Bool { loadSeedCategories && !isSecondarySession }
+    /// Qué va a pasar de verdad con las categorías: es lo único que el resumen puede contar y lo único
+    /// que `completeOnboarding` debe ejecutar. Hoy coincide con la respuesta del usuario; se conserva
+    /// como concepto propio porque el resumen y la ejecución tienen que leer la MISMA fuente — cuando
+    /// fueron dos, el resumen prometía categorías que el seed no llegaba a crear.
+    private var willSeedCategories: Bool { loadSeedCategories }
 
     /// Definición movida a `OnboardingUsageMode` (pure-logic en
     /// `Yala/App/Logic/OnboardingPurposeSelectionLogic.swift`) para que la selección
@@ -163,11 +137,7 @@ struct OnboardingView: View {
             prefilledCategoriesCount: prefilledData?.categoriesCount ?? 0,
             hasPrefill: prefilledData != nil,
             expensesOnly: false,
-            dayToDay: false,
-            // Inocuo para el PRIMER paso —`.categories` es el 7º y `.purpose` no se salta nunca, así que
-            // jamás encabeza `effectiveSteps`— pero se pasa igual: dos llamadas a la misma SSOT con
-            // términos distintos es como divergen, y el yo-futuro leería la ausencia como un olvido.
-            isSecondarySession: SecondarySessionStore.isActive()
+            dayToDay: false
         )
         _currentStep = State(initialValue: OnboardingStepPlan.firstStep(skipping: initialSkip))
     }
@@ -209,7 +179,6 @@ struct OnboardingView: View {
             hasPrefill: prefilledData != nil,
             expensesOnly: expensesOnlyMode,
             dayToDay: selectedUsageMode == .dayToDay,
-            isSecondarySession: isSecondarySession
         )
     }
 
@@ -1216,20 +1185,14 @@ struct OnboardingView: View {
                 )
             }
 
-            // En visita la fila NO se pinta: el resumen cuenta lo que va a pasar, y ahí no va a pasar
-            // ninguna de las dos cosas. Con `willSeedCategories` habría dicho «categorías
-            // personalizadas», que es igual de falso — la visita no personalizó nada: nunca se le
-            // preguntó.
-            if !isSecondarySession {
-                rowDivider
-                confirmItem(
-                    icon: "folder.fill",
-                    color: .priorityNeed,
-                    value: loadSeedCategories
-                        ? L10n.Onboarding.categoriesDefault
-                        : L10n.Onboarding.categoriesCustom
-                )
-            }
+            rowDivider
+            confirmItem(
+                icon: "folder.fill",
+                color: .priorityNeed,
+                value: loadSeedCategories
+                    ? L10n.Onboarding.categoriesDefault
+                    : L10n.Onboarding.categoriesCustom
+            )
         }
         .background(cardFill)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
@@ -1788,8 +1751,7 @@ struct OnboardingView: View {
         // defecto de 2026-09-03, cuando esto escribía en un dominio y su lector de `ContentView` leía de
         // otro: el usuario terminaba su onboarding, el flag seguía en `false` y el Welcome podía
         // reabrírsele. Desde el 2026-09-12 hay un único dominio (`UserDefaults.standard`) y la forma de
-        // fallar ya no existe, pero la regla de escribir donde se lee se conserva. La key es de
-        // DISPOSITIVO en el inventario; ver `SessionPreferenceKeys.deviceExceptions`.
+        // fallar ya no existe, pero la regla de escribir donde se lee se conserva.
         UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
 
         PreferenceSyncService.shared.signalOnboardingCompleted()

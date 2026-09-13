@@ -44,7 +44,6 @@ enum WelcomeFlowStep: Equatable {
     /// La rama privada, en sesión secundaria: **informa y sigue**. No es una puerta como `.groupsGate` —no
     /// hay nada que impedir desde que el dominio de preferencias por sesión cerró las escrituras al dueño—
     /// sino el paso que faltaba para que la app no se contradijera según por dónde entres.
-    case privateSecondaryNotice
     /// Paso 4 del rediseño · **la puerta de la rama privada: le pregunta a iCloud qué hay ANTES de que
     /// nadie vea una pantalla de reinicio** (ADR §9). Es un step y no un alert por las mismas razones que
     /// `.groupsGate`, más una medida: un `.alert` del anchor de `ContentView` desmonta este cover entero.
@@ -240,19 +239,6 @@ struct WelcomeFlowContainer: View {
                     onBack: { goTo(.chooser) }
                 )
                 .transition(.opacity)
-            case .privateSecondaryNotice:
-                WelcomeSecondaryNoticeView(
-                    onContinue: {
-                        leaveWelcome(to: .privateOnboarding) { onSelectPrivateAccount() }
-                    },
-                    // Al step del que vino, que es el MISMO término que decidió si se mostraba: con dos
-                    // cards visibles el usuario pasó por el sub-chooser, y con bypass —el recorrido de
-                    // producción de hoy— nunca lo vio, así que devolverlo ahí sería enseñarle una pantalla
-                    // nueva al retroceder. Derivarlo de `visibleNewOptions` en vez de recordarlo en un
-                    // `@State` es lo que impide que las dos condiciones diverjan.
-                    onBack: { goTo(newBranchOriginStep) }
-                )
-                .transition(.opacity)
             case .privateICloudGate:
                 WelcomePrivateICloudGateView(
                     onProceed: {
@@ -263,8 +249,7 @@ struct WelcomeFlowContainer: View {
                     // escribir la traducción por segunda vez es como divergen dos caminos que deben acabar
                     // en la misma pantalla.
                     onRestore: { handleExistingOption(.restoreICloud) },
-                    // Cancelar → la elección privado / nube, que es de donde vino. Mismo término que usa
-                    // el aviso de sesión secundaria, y por el mismo motivo: con bypass nunca vio el
+                    // Cancelar → la elección privado / nube, que es de donde vino: con bypass nunca vio el
                     // sub-chooser, así que mandarlo ahí sería enseñarle una pantalla nueva al retroceder.
                     onBack: { goTo(newBranchOriginStep) },
                     performWipe: performICloudCorpusWipe
@@ -373,7 +358,6 @@ struct WelcomeFlowContainer: View {
     private func handleNewBranch() {
         switch WelcomeNewBranchRouter.route(
             beacon: CloudBeacon(),
-            isSecondarySessionActive: SecondarySessionStore.isActive(),
             cloudEntryAvailable: cloudEntryAvailable,
             options: visibleNewOptions
         ) {
@@ -386,17 +370,10 @@ struct WelcomeFlowContainer: View {
         }
     }
 
-    /// De dónde vino quien está en `.privateSecondaryNotice`, y por tanto a dónde lo devuelve su «volver».
+    /// De dónde vino quien está en la puerta de iCloud, y por tanto a dónde lo devuelve su «volver».
     /// Es el MISMO término que `handleNewBranch` usa para decidir si enseña el sub-chooser: con bypass no
-    /// hubo 2º nivel y el origen es el chooser de primer nivel.
-    ///
-    /// Se RE-DERIVA en el «volver» en vez de capturarse al entrar, y conviene ser exacto sobre lo que eso
-    /// compra y lo que cuesta: compra que no haya un segundo sitio donde escribir la condición —un `@State`
-    /// que alguien actualice mal manda al usuario a una pantalla que no vio—, y cuesta que un refresco de
-    /// remote-config entre el tap y el «volver» cambie la respuesta. Esa ventana es estrecha (min-interval
-    /// de 6 h, y el `.task` del container ya gastó el suyo al aparecer) y su peor caso es aterrizar en
-    /// `.newChooser` en vez de `.chooser`: una pantalla viva, no un camino muerto. El container ya asume
-    /// esa misma falta de live-update para las cards que pinta.
+    /// hubo 2º nivel y el origen es el chooser de primer nivel. Se RE-DERIVA en el «volver» en vez de
+    /// capturarse al entrar: así no hay un segundo sitio donde escribir la condición.
     private var newBranchOriginStep: WelcomeFlowStep {
         WelcomeAccountChoiceLogic.bypass(visibleNewOptions) == nil ? .newChooser : .chooser
     }
@@ -404,17 +381,6 @@ struct WelcomeFlowContainer: View {
     private func handleNewOption(_ option: WelcomeAccountChoiceLogic.NewOption) {
         switch option {
         case .privateAccount:
-            // **En sesión secundaria se informa ANTES de salir del cover.** Hasta el 2026-09-07 esta rama
-            // llevaba a la visita al onboarding privado sin decirle que estaba en el móvil de otra persona,
-            // mientras la rama de al lado sí se lo decía: la app se contradecía según por dónde entraras.
-            // El descriptor es el predicado canónico —el MISMO que consulta la puerta de la rama
-            // organizador— y no el corpus: `hasLocalDataNow` mide el store de la INVITADA, que en una
-            // sesión recién montada está VACÍO y daría vía libre justo en el caso que hay que atender.
-            // Informa y no bloquea: el step sale por este mismo portal en cuanto la visita continúa.
-            if SecondarySessionStore.isActive() {
-                goTo(.privateSecondaryNotice)
-                return
-            }
             // **Paso 4 · esta rama ya no sale directa por el portal: pasa por la puerta.** Hasta el
             // 2026-09-10 iba a `leaveWelcome(.privateOnboarding)`, y con el mount neutro eso persiste el
             // destino y **NO llama a `onSelectPrivateAccount`** — el único callback que consultaba «¿hay

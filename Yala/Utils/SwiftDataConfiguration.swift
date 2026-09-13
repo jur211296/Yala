@@ -214,10 +214,6 @@ enum SwiftDataConfiguration {
     /// esto `allCases`, `rawValue` y las conformances derivadas quedarían aisladas al MainActor por el
     /// `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` del target.
     nonisolated enum PersonalStoreDecision: String, Equatable, CaseIterable {
-        /// Sesión SECUNDARIA activa (M1) → `cloudKitDatabase: .none` sobre el archivo SECUNDARIO
-        /// (`YalaModel-Secondary`). Gana ANTES que todo — el archivo del dueño ni se lee ni se
-        /// escribe, y el mirror JAMÁS se adjunta al secundario.
-        case secondaryCloudSession
         /// `.cloud` + mirror-off ARMADO → `cloudKitDatabase: .none` sobre el MISMO archivo (mirror OFF).
         case cloudMirrorOff
         /// iCloud disponible → mirror `NSPersistentCloudKitContainer` (`.private`) — comportamiento de HOY.
@@ -226,7 +222,7 @@ enum SwiftDataConfiguration {
         /// "sin mirror" y es engañoso: ver `attachesCloudKitMirror`.
         case localNoMirror
         /// **R2 · el mount NEUTRO del relanzamiento cero.** Primer arranque de una instalación sin archivo
-        /// de store, sin par persistido, sin sesión secundaria y sin chooser visto (`isFreshInstallForNeutralMount`)
+        /// de store, sin par persistido y sin chooser visto (`isFreshInstallForNeutralMount`)
         /// → `cloudKitDatabase: .none` **EXPLÍCITO** sobre el archivo personal.
         ///
         /// Es byte-idéntico a `.cloudMirrorOff` como `ModelConfiguration` (mismo archivo, mismo schema,
@@ -242,8 +238,8 @@ enum SwiftDataConfiguration {
         case neutralNoMirror
     }
 
-    /// **R2 · el predicado PURO de «instalación fresca» que habilita el mount neutro.** Cuatro términos, y
-    /// los cuatro son señales PRE-MOUNT (se pueden leer antes de construir un solo `ModelContainer`):
+    /// **R2 · el predicado PURO de «instalación fresca» que habilita el mount neutro.** Tres términos, y
+    /// los tres son señales PRE-MOUNT (se pueden leer antes de construir un solo `ModelContainer`):
     ///
     ///  1. **No existe el archivo del store personal.** Es el término estructural del chip: todo device del
     ///     parque actual tiene archivo ⇒ **el camino nuevo le es inalcanzable por construcción**, y con él
@@ -251,9 +247,7 @@ enum SwiftDataConfiguration {
     ///     de `deleteStoreFiles`) para no capturar el testigo antes de tiempo.
     ///  2. **El par de storage está en su estado virgen** (`.icloud` sin armar). Un par a medias o `.cloud`
     ///     ya escrito significa que este device YA eligió, y quien decide entonces es la rama del par.
-    ///  3. **No hay descriptor de sesión secundaria.** Redundante con la precedencia de abajo y aun así
-    ///     explícito: si alguien reordena las ramas, el término sigue aquí.
-    ///  4. **El chooser del Welcome no se ha visto.** Es lo que hace que el neutro dure UN solo arranque:
+    ///  3. **El chooser del Welcome no se ha visto.** Es lo que hace que el neutro dure UN solo arranque:
     ///     en cuanto el usuario elige, el flag queda `true` y el arranque siguiente vuelve a la tabla
     ///     normal. Sin este término, un kill a mitad del Welcome con el archivo aún sin crear podría
     ///     re-montar neutro indefinidamente.
@@ -267,12 +261,10 @@ enum SwiftDataConfiguration {
         personalStoreFileExists: Bool,
         persistedMode: StorageMode,
         mirrorOffArmed: Bool,
-        secondarySessionActive: Bool,
         hasShownWelcomeChooser: Bool
     ) -> Bool {
         !personalStoreFileExists
             && persistedMode == .icloud && !mirrorOffArmed
-            && !secondarySessionActive
             && !hasShownWelcomeChooser
     }
 
@@ -346,17 +338,13 @@ enum SwiftDataConfiguration {
     /// —explicitar `.none`— es una decisión APARTE y no de este chip (cambiaría el comportamiento del parque
     /// sin iCloud) están en `PersonalStoreDecision.attachesCloudKitMirror`.
     ///
-    /// M1: `secondarySessionActive` (descriptor de `SecondarySessionStore`) gana ANTES que todo —
-    /// SIN acoplarse a `mirrorOffArmed` (ese par protege el kill-window del cutover de MIGRACIÓN;
-    /// la sesión secundaria no migra, adopta sobre un archivo propio que nunca tuvo mirror).
-    ///
     /// **R2 — `freshInstall` va SIN default a propósito** (molde del tercer término de
     /// `MigrationRuntimeGate.canRun`): la tabla de mounts es el sitio donde un descuido cuesta un store
     /// montado del revés, así que todo llamador está obligado por el compilador a pronunciarse sobre si
     /// este device es una instalación fresca. Su posición en la cadena tampoco es cosmética: va **DESPUÉS**
-    /// de la sesión secundaria y del par `.cloud`+armado —que protegen invariantes duros (M1 y SERIO-1)—
-    /// aunque `isFreshInstallForNeutralMount` ya los excluya. Las tres ramas son mutuamente excluyentes
-    /// hoy; el orden es lo que mantiene inofensivo un ensanchamiento futuro del predicado.
+    /// del par `.cloud`+armado —que protege un invariante duro (SERIO-1)— aunque
+    /// `isFreshInstallForNeutralMount` ya lo excluya. Las dos ramas son mutuamente excluyentes hoy; el
+    /// orden es lo que mantiene inofensivo un ensanchamiento futuro del predicado.
     ///
     /// **R4 — `neutralDurable` va SIN default por el mismo motivo que `freshInstall`**, y comparte rama con
     /// él: las dos son «este device todavía no ha elegido», con evidencias distintas (R2 lo prueba porque no
@@ -365,11 +353,9 @@ enum SwiftDataConfiguration {
     /// aunque alguien dejara la marca puesta por descuido.
     static func personalStoreDecision(
         storageMode: StorageMode, mirrorOffArmed: Bool, iCloudAvailable: Bool,
-        secondarySessionActive: Bool = false,
         freshInstall: Bool,
         neutralDurable: Bool
     ) -> PersonalStoreDecision {
-        if secondarySessionActive { return .secondaryCloudSession }
         if storageMode == .cloud && mirrorOffArmed { return .cloudMirrorOff }
         if freshInstall || neutralDurable { return .neutralNoMirror }
         return iCloudAvailable ? .iCloudMirror : .localNoMirror
@@ -382,7 +368,7 @@ enum SwiftDataConfiguration {
 /// COLAPSADAS en un `StorageMode` de dos valores. Son EJES DISTINTOS y por eso hacen falta las dos: un
 /// mount puede llevar el mirror ADJUNTO y aun así no espejar nada.
 ///
-/// El colapso viejo (`decision == .cloudMirrorOff || decision == .secondaryCloudSession ? .cloud : .icloud`)
+/// El colapso viejo (`decision == .cloudMirrorOff ? .cloud : .icloud`)
 /// no era solo impreciso: hacía imposible expresar un mount SIN mirror que no fuera ninguna de esas dos
 /// decisiones — que es exactamente el mount neutro que el relanzamiento cero necesita. Este chip NO lo
 /// introduce (R1 es DARK): solo deja el testigo capaz de decirlo.
@@ -413,7 +399,7 @@ extension SwiftDataConfiguration.PersonalStoreDecision {
             return true   // `.private(container)` explícito
         case .localNoMirror:
             return true   // `.automatic` — MEDIDO: adjunta aunque no haya cuenta
-        case .cloudMirrorOff, .secondaryCloudSession, .neutralNoMirror:
+        case .cloudMirrorOff, .neutralNoMirror:
             return false  // `.none` explícito
         }
     }
@@ -436,7 +422,7 @@ extension SwiftDataConfiguration.PersonalStoreDecision {
         switch self {
         case .iCloudMirror:
             return true
-        case .localNoMirror, .cloudMirrorOff, .secondaryCloudSession, .neutralNoMirror:
+        case .localNoMirror, .cloudMirrorOff, .neutralNoMirror:
             return false
         }
     }
@@ -463,7 +449,7 @@ extension SwiftDataConfiguration.PersonalStoreDecision {
     /// eje C con el eje A y dejaría al mount neutro sin ninguna superficie que lo delate.
     nonisolated var isCloudModeMount: Bool {
         switch self {
-        case .cloudMirrorOff, .secondaryCloudSession:
+        case .cloudMirrorOff:
             return true
         case .iCloudMirror, .localNoMirror, .neutralNoMirror:
             return false
@@ -472,37 +458,6 @@ extension SwiftDataConfiguration.PersonalStoreDecision {
 }
 
 extension SwiftDataConfiguration {
-
-    // MARK: - Groups store mount decision (M1 / D8 — G5-C)
-
-    /// Decisión PURA de qué store de GRUPOS montar. Simetría con `PersonalStoreDecision`, y BINARIA:
-    /// el store de grupos es SECUNDARIO **siempre que haya sesión secundaria activa**, esté encendido o
-    /// no el canal grupos→backend. Espeja `syncMetaConfiguration`, que también es obligatorio siempre.
-    ///
-    /// **Hasta el 2026-09-03 esto iba ANDeado con el flag del canal, y ahí vivía el bug**
-    /// (`secondary-groups-off-wipes-owner`): con el canal APAGADO la visita montaba `YalaGroups` —el
-    /// archivo del DUEÑO— bajo su propia sesión. La premisa que lo justificaba era que ese archivo
-    /// «queda inerte porque el tab está filtrado y el canal no corre», y **es falsa en un camino que sí
-    /// corre con el canal apagado**: «Empiezo de cero» llama a `DataWipeService.wipeLocalGroupsDomain`,
-    /// que borra las filas del store MONTADO — o sea, los grupos del dueño. Sin vuelta atrás: este store
-    /// va con `cloudKitDatabase: .none`, así que no hay mirror que los reponga y reinstalar era la única
-    /// recuperación.
-    ///
-    /// Ahora la invitada monta SIEMPRE su propio `YalaGroups-Secondary`. Con el canal apagado ese archivo
-    /// nace VACÍO y así se queda —sin canal no hay de dónde bajar sus grupos—, que es exactamente lo
-    /// correcto: ver vacío es preferible a ver, y poder borrar, los del dueño. El flag del canal deja de
-    /// participar en la decisión de MOUNT; sigue gateando quién SINCRONIZA
-    /// (`AppBootstrapper`/`GroupsSyncClient`), que es un eje distinto y no se toca aquí.
-    enum GroupsStoreDecision: Equatable {
-        case primary
-        case secondary
-
-        /// El flag del canal NO es parámetro a propósito: mientras lo fue, ANDearlo era el bug. Un
-        /// parámetro que no puede cambiar el resultado solo invita a volver a meterlo en la condición.
-        static func decide(secondaryActive: Bool) -> GroupsStoreDecision {
-            secondaryActive ? .secondary : .primary
-        }
-    }
 
     /// Testigo de QUÉ DECISIÓN de mount ejecutó realmente ESTE proceso sobre el store personal (NO lo
     /// persistido). Lo captura UNA sola vez, en la PRIMERA evaluación de `personalConfiguration` en el path
@@ -522,76 +477,20 @@ extension SwiftDataConfiguration {
     nonisolated(unsafe) static private(set) var personalStoreMountedDecision: PersonalStoreDecision = .iCloudMirror
     nonisolated(unsafe) private static var personalStoreMountedDecisionCaptured = false
 
-    /// Testigo M1: ¿ESTE proceso montó el store SECUNDARIO? Capturado junto al modo, misma
-    /// semántica una-sola-vez. Es el árbitro de la VENTANA DE ENTRADA (descriptor persistido pero
-    /// proceso viejo con el store del DUEÑO montado): el guard de mount-mismatch del runtime y el
-    /// blocker `secondaryEntryRelaunch` lo consultan — `SecondarySessionStore.isActive() && !este
-    /// testigo` ⇒ nada puede sincronizar ni presentarse hasta el relaunch. Default `false` (paths
-    /// test/uitest no lo capturan).
-    nonisolated(unsafe) static private(set) var secondaryStoreMounted = false
-
-    /// Solo tests: fuerza el testigo del mount secundario. El host de tests JAMÁS monta el store
-    /// secundario (default `false`), así que los tests del guard D8 de mount-mismatch
-    /// (`GroupsLoopRestartLogic` / `startIfEligible` mid-session) necesitan ambas celdas: secundaria
-    /// OPERATIVA (montado, post-relaunch) y VENTANA DE ENTRADA (no montado). Restaurar en `defer`
-    /// bajo `@Suite(.serialized)` (molde `SecondarySessionStore._testSetActiveOverride`).
-    static func _testSetSecondaryStoreMounted(_ value: Bool) {
-        secondaryStoreMounted = value
-    }
-
-    /// Testigo del mount de GRUPOS: qué archivo montó la ÚLTIMA evaluación de `groupsConfiguration`
-    /// en este proceso. Lo consume el cinturón fail-closed de `DataWipeService.wipeLocalGroupsDomain`,
-    /// que necesita responder «¿el archivo de grupos que voy a borrar es el de esta sesión?».
-    ///
-    /// **Hace falta uno propio: `secondaryStoreMounted` NO sirve para esto.** Aquel se deriva del mount
-    /// PERSONAL (`capturePersonalStoreMountedDecisionOnce`), así que en una sesión secundaria ya
-    /// relanzada vale `true` diga lo que diga la decisión de GRUPOS — un guard apoyado en él se apaga
-    /// justo en el recorrido más común del bug (la visita, ya operativa, toca «Vaciar mis datos»), y
-    /// sería ciego a cualquier reversión de `GroupsStoreDecision`. La primera versión de este fix se
-    /// apoyaba en él y prometía en un comentario una cobertura que no daba.
-    ///
-    /// **Se reescribe en CADA evaluación, no una sola vez**, al revés que su hermano personal. El swap
-    /// de persona vuelve a evaluar `groupsConfiguration` con el proceso vivo
-    /// (`PersonalContainerSwap.swift:87`), y un testigo one-shot se quedaría con el valor del arranque:
-    /// exactamente la mentira que `reopenPersonalStoreMountedDecisionCaptureForSwap` tuvo que ir a
-    /// arreglar para el personal. Reescribir es más simple que re-abrir y no puede desincronizarse.
-    ///
-    /// Default `.primary` = el valor CONSERVADOR: es el que hace que el cinturón se niegue a borrar si
-    /// nadie evaluó el mount todavía. Los paths de test y UITest cortan antes de la rama de producción
-    /// y por eso no lo tocan.
-    nonisolated(unsafe) static private(set) var groupsStoreMounted: GroupsStoreDecision = .primary
-
-    /// Solo tests: fuerza el testigo del mount de GRUPOS. El host de tests nunca llega a la rama de
-    /// producción de `groupsConfiguration` (corta en `isRunningTests`), así que sin este seam la celda
-    /// «visita operativa sobre SU propio archivo» —la que debe SÍ dejar borrar— no es alcanzable.
-    /// Restaurar en `defer` bajo `@Suite(.serialized)`.
-    static func _testSetGroupsStoreMounted(_ value: GroupsStoreDecision) {
-        groupsStoreMounted = value
-    }
-
     /// Solo tests: fuerza el testigo del mount PERSONAL. El host de tests nunca evalúa la rama de
     /// producción de `personalConfiguration` (corta antes en `isRunningTests`) ⇒ el testigo se queda en su
     /// default `.iCloudMirror` SIEMPRE, así que un test que quiera ejercitar un device ya relanzado en modo
     /// nube (el estado post-relanzamiento del born-cloud o del adopt) tiene que declararlo — es el mismo
     /// contrato I11-2 que hace fake-able `isMirrorConfirmedOff`. Restaurar en `defer` bajo
     /// `@Suite(.serialized)`: esto es estado GLOBAL DE PROCESO y dejarlo puesto contamina a las demás suites.
-    ///
-    /// **NO deriva `secondaryStoreMounted`, al revés que la captura de producción, y es a propósito:** la
-    /// VENTANA DE ENTRADA de la sesión secundaria (descriptor persistido + store del DUEÑO todavía montado)
-    /// es justo el estado que producción NO puede producir en un solo proceso, y es el que el guard M1 y su
-    /// canario existen para cubrir. Acoplar los dos seams lo volvería inexpresable.
     static func _testSetPersonalStoreMountedDecision(_ value: PersonalStoreDecision) {
         personalStoreMountedDecision = value
     }
 
-    /// El testigo secundario viaja con el personal y se DERIVA de la misma decisión: son la misma
-    /// observación (qué montó este proceso) y tenerlos como dos argumentos independientes permitía que
-    /// divergieran por descuido.
     private static func capturePersonalStoreMountedDecisionOnce(_ decision: PersonalStoreDecision) {
         guard !personalStoreMountedDecisionCaptured else { return }
         personalStoreMountedDecisionCaptured = true
         personalStoreMountedDecision = decision
-        secondaryStoreMounted = decision == .secondaryCloudSession
     }
 
     /// **R4: reabre la captura del testigo para el REMONTE in-process.** "Una sola vez" era exacto mientras
@@ -858,8 +757,6 @@ extension SwiftDataConfiguration {
         //
         // DESPUÉS del guard abort-S3 por el mismo racional que la cancelación de notificaciones: si el
         // archivo BASE no se pudo borrar, el store sobrevive y esas colas siguen siendo SUYAS.
-        // Simétrico con `performSecondaryWipeIfArmed`/`performSecondaryEntryTasksIfNeeded`, que ya
-        // purgan estas superficies en las fronteras M1 vía `SecondarySessionBoundaryPurge`.
         purgeInboundSurfaces()
 
         // #37 (A3 del review): retirar los sentinels del drenaje iKV→outbox — `removeUserPreferenceKeys`
@@ -934,214 +831,21 @@ extension SwiftDataConfiguration {
         CloudSyncBreadcrumb.signOutGroupsOnlyWipeExecuted()
     }
 
-    // MARK: - Sesión secundaria (M1) — hooks de frontera pre-mount
+    // MARK: - Retirada de la sesión secundaria (ADR 2026-09-09)
 
-    /// BOOT-CLEANUP de la SALIDA de la sesión secundaria. Molde de `performSignOutWipeIfArmed`
-    /// (incl. patrón S3 de abort) pero sobre los archivos `-Secondary` — **JAMÁS toca**
-    /// `storageMode`/`mirrorOffArmed`, los archivos del dueño ni `DataWipeService.resetForSignOutWipe`
-    /// (nukearía las prefs del DUEÑO, que sobreviven por decisión 7 del diseño M1).
+    /// Borra el trío SQLite de un store LEGACY por nombre. Lo consume `SecondarySessionRetirement`, que
+    /// es quien sabe qué nombres quedaron en disco: aquí ya no existe ningún tipo que los nombre.
     ///
-    /// Orden idempotente ante kill a mitad (el arm se limpia AL FINAL):
-    /// 1) los 3 archivos secundarios EN ORDEN — personal → sync-meta → GRUPOS (M1/D8: `YalaGroups-Secondary`
-    ///    con montos de la invitada; borrado INCONDICIONAL, no-op real si no existe [flag OFF] ⇒ byte-idéntico;
-    ///    el guard abort-S3 cubre los 3: fallo en el BASE de CUALQUIERA aborta, el arm y el descriptor
-    ///    persisten, el mount sigue siendo el secundario y el próximo boot reintenta) → 2) purga E2E-M1
-    ///    (incl. el espejo App Group de grupos) → 2.5) notificaciones de la INVITADA canceladas →
-    ///    2.75) el CAJÓN de preferencias de la visita (`yala.session.<sub>`), que va OBLIGATORIAMENTE
-    ///    antes del paso 3 porque ése borra el `sub` con el que se compone su nombre →
-    ///    3) descriptor + marker de entrada → 3.5) los 3 flags de
-    ///    onboarding a `false` (EN EL BOOT y jamás in-session: con el proceso vivo montaría la cadena Welcome
-    ///    DEBAJO del cover de relaunch — doble presentación mismo anchor, clase toolbar-muerta) → 4) desarmar.
-    ///
-    /// La cancelación del paso 2.5 es SIMÉTRICA a la de la ENTRADA (`performSecondaryEntryTasksIfNeeded`,
-    /// que cancela las del DUEÑO) y cierra un daño doble: sin ella los recordatorios de la invitada
-    /// sobreviven a la vuelta del dueño Y —peor— si dejó tantas como tenía él, la heurística de conteo
-    /// del reconciler (`AppBootstrapper.ensureNotificationsScheduled`: `pending.count < activeItems.count`)
-    /// resulta FALSA y las del dueño, canceladas al entrar la invitada, JAMÁS se restauran. Cancelar aquí
-    /// deja `pending == 0`, que es exactamente la condición que dispara la reprogramación en el mismo boot.
-    static func performSecondaryWipeIfArmed() {
-        guard !isRunningTests, !isUITesting else { return }
-        performSecondaryWipeIfArmed(
-            defaults: .standard,
-            deleteFiles: { deleteStoreFiles(named: $0, schema: $1) },
-            purge: { SecondarySessionBoundaryPurge.purge() },
-            cancelNotifications: {
-                NotificationService.shared.cancelAllNotifications()
-                NotificationService.shared.clearDeliveredNotifications()
-            })
-    }
-
-    /// Variante inyectable (tests del ORDEN sin archivos reales — el wrapper de producción
-    /// mantiene los guards de test/uitest).
-    static func performSecondaryWipeIfArmed(
-        defaults: UserDefaults,
-        deleteFiles: (String, Schema) -> Bool,
-        purge: () -> Void,
-        cancelNotifications: () -> Void = {},
-        destroySessionDomain: (String) -> Void = { SessionDefaults.destroySuite(forUserID: $0) },
-        // `@MainActor` en el TIPO y no solo en el cuerpo: la expresión por defecto de un parámetro se
-        // evalúa en contexto nonisolated aunque la función que lo declara sea MainActor, así que sin la
-        // anotación el default no compila (`WidgetDataCache` sí lo es). Formar la closure ahí es legal; la
-        // llamada ocurre dentro del cuerpo, que ya está en el actor.
-        republishWidgetSeal: @MainActor (UserDefaults) -> Void = {
-            WidgetDataCache.republishActiveSeal($0)
-        },
-        restoreOwnerConsent: (UserDefaults) -> Void = { GroupsConsentState.restoreOwnerRecord(in: $0) },
-        discardOwnerCustody: (UserDefaults) -> Void = { GroupsConsentState.discardOwnerCustody(in: $0) }
-    ) {
-        guard SecondarySessionStore.isWipeArmed(defaults) else { return }
-
-        guard deleteFiles(secondaryDatabaseName, personalSchema),
-              deleteFiles(secondarySyncMetaDatabaseName, syncMetaSchema),
-              deleteFiles(secondaryGroupsDatabaseName, groupsSchema) else {
-            CloudSyncBreadcrumb.secondaryWipeAborted(reason: "store file deletion failed")
-            return
-        }
-
-        purge()
-        cancelNotifications()
-
-        // 2.5) El consent de Grupos del DUEÑO vuelve a su sitio (decisión del owner 2026-09-03).
-        // DESPUÉS de `purge()` y no antes: esa purga incluye `GroupsConsentState.clear()`, que aquí se
-        // lleva lo que aceptara la VISITA — reponer primero y purgar después borraría justo lo que
-        // acabamos de devolver. Lo suyo no se pierde: su registro vive en su cuenta, append-only, y
-        // `refreshFromServer` se lo devuelve en su propio teléfono.
-        //
-        // **Repone pero NO retira el slot**, que es lo que la deja dentro de la kill-safety de esta
-        // función: si el arranque muere entre aquí y `clearWipeArm`, el reintento del boot siguiente
-        // vuelve a purgar y vuelve a reponer. El slot se retira abajo, con el desarme.
-        restoreOwnerConsent(defaults)
-
-        // 2.75) El CAJÓN de preferencias de la visita (M1). Va AQUÍ y no una línea más abajo, y el
-        // orden es el fix entero: `SecondarySessionStore.clear` borra el `userIDKey`, y sin `sub` no
-        // hay forma de componer el nombre del suite ⇒ el cajón quedaría HUÉRFANO PARA SIEMPRE en el
-        // móvil del dueño, con el nombre, la divisa y la barra de la invitada dentro. El `sub` se
-        // captura y se pasa EXPLÍCITO: resolver la puerta en este punto y borrar el dominio que
-        // devuelva arrasaría el `UserDefaults` entero del dueño. Ver `SessionDefaults.destroySuite`.
-        // Después del guard de abort a propósito: un wipe que aborta reintenta en el próximo boot y
-        // todavía necesita el cajón.
-        if let sessionUserID = SecondarySessionStore.activeUserID(defaults) {
-            destroySessionDomain(sessionUserID)
-        }
-
-        SecondarySessionStore.clear(defaults)
-        SecondarySessionStore.clearEntryPurgeMark(defaults)
-
-        // 3.25) El SELLO del widget, y este ORDEN es el mecanismo entero: la key del App Group espeja el
-        // DESCRIPTOR, así que solo a partir del `clear` de arriba `republish` resuelve `nil` y RETIRA el
-        // sello de la invitada. Ponerlo una línea antes lo re-publicaría y dejaría válido cualquier
-        // snapshot suyo que hubiera quedado en disco — que es justo lo que el lector tiene que rechazar.
-        //
-        // Es lo que hace la garantía independiente de que ninguna limpieza llegue a correr: la purga del
-        // paso 2 ya hace `clearCache()`, pero un `clearCache()` que no corra falla ABIERTO (el snapshot
-        // sigue sirviéndose) y un sello retirado falla CERRADO (el snapshot deja de casar). Por eso van los
-        // dos, y por eso éste cuelga del descriptor y no del snapshot.
-        republishWidgetSeal(defaults)
-
-        // **Estas tres SE QUEDAN, y con el dominio por sesión ya cableado hace falta decir por qué**
-        // (decisión del owner, 2026-08-13). El plan de la frontera las daba por «compensación» del
-        // daño de la visita y mandaba retirarlas al mover los consumidores. **Medido: no lo son.** Son
-        // el paso 3.5 declarado arriba —el device vuelve al Welcome tras la salida— y ya antes del
-        // cajón no compensaban nada: la invitada escribía `true` sobre el `true` que el dueño ya
-        // tenía, así que el `false` de aquí siempre fue el FLUJO y no la cura.
-        //
-        // Retirarlas es un cambio de PRODUCTO —¿el dueño vuelve al Welcome o directo a su app?— que ni
-        // el ticket ni el plan justifican, y que no se puede verificar sin saber si el Welcome hace
-        // falta para re-montar su sesión. Quien lo retome: la pregunta no es «¿siguen haciendo falta
-        // ahora que el cajón existe?» sino «¿qué necesita el dueño ver al recuperar su teléfono?».
-        // Pinneado por `SecondaryBoundaryHooksTests` (`:86-88`).
-        defaults.set(false, forKey: AppPreferences.Keys.hasCompletedOnboarding)
-        defaults.set(false, forKey: "hasShownWelcomeChooser")
-        defaults.set(false, forKey: AppPreferences.Keys.hasShownYalaAIOnboarding)
-
-        // La custodia del consent se retira AQUÍ y no al reponerla: hasta esta línea el wipe podía
-        // morir y reintentarse, y el slot era lo único capaz de devolverle al dueño su registro. Va
-        // pegado a `clearWipeArm` a propósito — los dos declaran lo mismo, que ya no hay nada que
-        // reintentar.
-        discardOwnerCustody(defaults)
-        SecondarySessionStore.clearWipeArm(defaults)
-        CloudSyncBreadcrumb.secondaryWipeExecuted()
-    }
-
-    /// Tareas de ENTRADA de la sesión secundaria (one-shot idempotente, pre-mount): purga las
-    /// superficies App Group del dueño (sus colas Apple Pay/Siri/imágenes no deben materializarse
-    /// en el store de la invitada), cancela sus notificaciones locales —pendientes Y entregadas: los
-    /// banners del dueño llevan sus montos y no debe verlos la invitada— (se reprograman
-    /// con sus boot-reconcilers cuando vuelva) y sana los flags de onboarding si un kill se comió
-    /// la ventana descriptor→flags de la entrada (sin el healing, el boot mostraría el Welcome
-    /// sobre el store secundario vacío y un re-sign-in caería en el adopt CLÁSICO, que escribe el
-    /// PAR global `.cloud`+`mirrorOffArmed` del dueño). Marker AL FINAL (kill a mitad ⇒ re-purga
-    /// completa, todo idempotente).
-    static func performSecondaryEntryTasksIfNeeded() {
-        guard !isRunningTests, !isUITesting else { return }
-        performSecondaryEntryTasksIfNeeded(
-            defaults: .standard,
-            purge: { SecondarySessionBoundaryPurge.purge() },
-            cancelNotifications: {
-                NotificationService.shared.cancelAllNotifications()
-                NotificationService.shared.clearDeliveredNotifications()
-            })
-    }
-
-    /// Variante inyectable (tests). El healing escribe DIRECTO el mínimo (no
-    /// `completeOnboardingAsRestoreSkip`, que es de ContentView y setea el trial): perder el
-    /// trial-offer en este camino de kill-recovery es aceptable — un brick no.
-    static func performSecondaryEntryTasksIfNeeded(
-        defaults: UserDefaults,
-        purge: () -> Void,
-        cancelNotifications: () -> Void,
-        seedSessionDomain: (UserDefaults, String) -> Void = {
-            SessionDefaults.seedDeviceKeysIfNeeded(from: $0, forUserID: $1)
-        },
-        // `@MainActor` en el TIPO y no solo en el cuerpo: la expresión por defecto de un parámetro se
-        // evalúa en contexto nonisolated aunque la función que lo declara sea MainActor, así que sin la
-        // anotación el default no compila (`WidgetDataCache` sí lo es). Formar la closure ahí es legal; la
-        // llamada ocurre dentro del cuerpo, que ya está en el actor.
-        republishWidgetSeal: @MainActor (UserDefaults) -> Void = {
-            WidgetDataCache.republishActiveSeal($0)
-        },
-        custodyOwnerConsent: (UserDefaults) -> Void = { GroupsConsentState.custodyOwnerRecord(in: $0) }
-    ) {
-        guard SecondarySessionStore.isActive(defaults) else { return }
-
-        // La SIEMBRA del cajón va ANTES del guard one-shot y tiene su propia condición de
-        // idempotencia (D3, decisión del owner): con un dominio de preferencias por sesión, sembrar
-        // deja de ser kill-recovery y pasa a ser el camino normal, así que colgarla de
-        // `entryPurgeDone` significaría que un kill entre la purga y la siembra deja el cajón vacío
-        // para siempre — y un cajón sin `hasCompletedOnboarding` es el brick del Welcome sobre store
-        // secundario vacío. Su guard lee DEL CAJÓN; ver `SessionDefaults.seedDeviceKeysIfNeeded`.
-        if let sessionUserID = SecondarySessionStore.activeUserID(defaults) {
-            seedSessionDomain(defaults, sessionUserID)
-        }
-
-        // El SELLO del widget, y va FUERA del guard one-shot por el mismo motivo que la siembra: no es
-        // kill-recovery, es el camino normal. La key vive en el App Group, que otras limpiezas barren
-        // (`DataWipeService.resetAllUserPreferences` ya se lleva tres keys de ahí), así que re-publicarla
-        // en CADA arranque de la sesión es lo que la hace auto-sanable; colgarla del marker significaría
-        // que una pérdida posterior no se repone nunca y el widget de la invitada dejaría de servirse a
-        // ella misma. Idempotente y ordenada detrás de `activeUserID`, que es de donde sale.
-        republishWidgetSeal(defaults)
-
-        guard !SecondarySessionStore.isEntryPurgeDone(defaults) else { return }
-
-        // El consent de Grupos del dueño, a CUSTODIA antes de que la purga se lo lleve (decisión del
-        // owner 2026-09-03). La purga TIENE que retirarlo —el consent legacy va sin sello y
-        // `GroupsConsentDecisionLogic` lo da por bueno para cualquiera, así que sin retirarlo la visita
-        // hereda un permiso que no dio— pero borrarlo le hacía volver a ver una pantalla que ya aceptó y
-        // nos costaba la prueba de ese consentimiento. Va JUSTO ANTES de `purge()`: al revés custodiaría
-        // un dominio ya vacío. Se repone en la frontera de salida, paso 2.5 del wipe.
-        custodyOwnerConsent(defaults)
-
-        purge()
-        cancelNotifications()
-
-        if !defaults.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding) {
-            defaults.set(true, forKey: AppPreferences.Keys.hasCompletedOnboarding)
-            defaults.set(true, forKey: "hasShownWelcomeChooser")
-        }
-
-        SecondarySessionStore.markEntryPurgeDone(defaults)
-        CloudSyncBreadcrumb.secondaryEntryPurged()
+    /// Usa el schema personal como PORTADOR y no porque los archivos lo tengan: la URL de una
+    /// `ModelConfiguration` se compone del nombre, no del schema —lo pinnea
+    /// `SecondarySessionRetirementTests.laURLNoDependeDelSchema`— y estos stores ya no tienen un schema
+    /// propio al que referirse.
+    /// Devuelve `false` **solo** si el archivo base existía y no se pudo borrar: que no exista es éxito,
+    /// y es el caso normal. Ese booleano es lo que impide que la retirada se dé por hecha sobre un disco
+    /// que todavía guarda el corpus de otra persona.
+    @discardableResult
+    static func deleteLegacyStoreFiles(named name: String) -> Bool {
+        deleteStoreFiles(named: name, schema: personalSchema)
     }
 
     /// Borra el trío de archivos SQLite de un store (base + -wal + -shm). La URL se deriva de una
@@ -1192,7 +896,6 @@ extension SwiftDataConfiguration {
             personalStoreFileExists: personalStoreFileExists(),
             persistedMode: StorageModePersistence.read(defaults),
             mirrorOffArmed: StorageModePersistence.isMirrorOffArmed(defaults),
-            secondarySessionActive: SecondarySessionStore.isActive(defaults),
             hasShownWelcomeChooser: defaults.bool(forKey: "hasShownWelcomeChooser"))
     }
 
@@ -1216,9 +919,9 @@ extension SwiftDataConfiguration {
     ///
     /// **R1: recibe la DECISIÓN de mount, no la disponibilidad de iCloud.** Antes se le pasaba
     /// `isICloudAvailable()`, que es una pregunta distinta: dice si HAY cuenta, no qué se montó. Para las
-    /// cuatro decisiones de hoy las dos formulaciones coinciden en las únicas celdas que su lector puede
-    /// alcanzar (`checkForICloudMismatch` corta en `storageMode == .cloud`, así que `cloudMirrorOff` y
-    /// `secondaryCloudSession` son inertes), y por eso el cambio es DARK. Deja de coincidir en cuanto exista
+    /// decisiones de hoy las dos formulaciones coinciden en las únicas celdas que su lector puede
+    /// alcanzar (`checkForICloudMismatch` corta en `storageMode == .cloud`, así que `cloudMirrorOff` es
+    /// inerte), y por eso el cambio es DARK. Deja de coincidir en cuanto exista
     /// un mount SIN mirror con cuenta iCloud disponible —el mount neutro del relanzamiento cero—: ahí la
     /// disponibilidad diría `true` y el aviso quedaría MUDO para siempre, dejando al device sin mirror y sin
     /// forma de enterarse.
@@ -1295,20 +998,16 @@ extension SwiftDataConfiguration {
         // ADEMÁS por el flag mirror-off-ARMADO (SERIO 1 — ver doc de
         // `personalStoreDecision`). DARK: nadie escribe `storageMode=.cloud` ni arma el flag en
         // producción hasta que el cutover de una migración real ejecute sus pasos.
-        // M1: el descriptor de sesión secundaria gana ANTES que todo (archivo propio, JAMÁS `.private`).
         // R2: el término `freshInstall`. Se evalúa ANTES de capturar el testigo y sin construir ningún
         // container (la URL sale de una `ModelConfiguration` efímera, patrón `deleteStoreFiles`).
         let decision = personalStoreDecision(
             storageMode: CloudSyncFlags.storageMode,
             mirrorOffArmed: StorageModePersistence.isMirrorOffArmed(),
             iCloudAvailable: isICloudAvailable(),
-            secondarySessionActive: SecondarySessionStore.isActive(),
             freshInstall: isFreshInstallForNeutralMount(),
             neutralDurable: shouldMountNeutralDurable())
         capturePersonalStoreMountedDecisionOnce(decision)
         switch decision {
-        case .secondaryCloudSession:
-            return ModelConfiguration(secondaryDatabaseName, schema: personalSchema, cloudKitDatabase: .none)
         case .cloudMirrorOff:
             return ModelConfiguration(databaseName, schema: personalSchema, cloudKitDatabase: .none)
         case .neutralNoMirror:
@@ -1326,19 +1025,6 @@ extension SwiftDataConfiguration {
         case .localNoMirror:
             return ModelConfiguration(databaseName, schema: personalSchema)
         }
-    }
-
-    /// M1 — nombres de los stores SECUNDARIOS (1 slot ⇒ nombre FIJO; el `userID` del descriptor
-    /// valida la identidad del ocupante). Derivados de `databaseName` ⇒ heredan la variante `-Dev`.
-    static var secondaryDatabaseName: String {
-        databaseName + "-Secondary"
-    }
-
-    /// El sync-meta secundario es OBLIGATORIO: cursor/journal/identidades/outbox de la cuenta
-    /// invitada jamás deben caer en el `YalaSyncMeta` del dueño (contaminación silenciosa de
-    /// Merkle y del journal de migración del dueño).
-    static var secondarySyncMetaDatabaseName: String {
-        syncMetaDatabaseName + "-Secondary"
     }
 
     /// Group data — local only (CKSyncEngine syncs via groups container).
@@ -1360,36 +1046,12 @@ extension SwiftDataConfiguration {
         // duplicadas por mismo `cloudKitZoneID`, resurrección de borrados, doble cuota).
         // Grupos sincroniza SOLO vía CKSyncEngine en `iCloud.com.jurgenschmidt.yala.groups`
         // (ver Services/Groups/). Espeja la decisión de las ramas de test/UITest de arriba.
-        //
-        // M1 / D8 (G5-C): en sesión secundaria la invitada monta su propio archivo
-        // `YalaGroups-Secondary`, con el canal encendido o apagado. Lectura DIRECTA de
-        // `SecondarySessionStore.isActive()` (NO `capturePersonalStore...`: ese testigo lo captura SOLO
-        // el mount personal). El porqué de que el flag ya no participe está en el docblock de
-        // `GroupsStoreDecision`: mientras participó, la visita montaba el archivo del DUEÑO y podía
-        // borrarlo desde «Empiezo de cero».
-        let decision = GroupsStoreDecision.decide(
-            secondaryActive: SecondarySessionStore.isActive())
-        // El testigo se escribe AQUÍ y no en el `case`: así no hay forma de añadir una rama nueva y
-        // olvidarlo. Lo lee el cinturón de `wipeLocalGroupsDomain` para saber si el archivo que va a
-        // borrar es el de esta sesión.
-        groupsStoreMounted = decision
-        switch decision {
-        case .secondary:
-            return ModelConfiguration(secondaryGroupsDatabaseName, schema: groupsSchema, cloudKitDatabase: .none)
-        case .primary:
-            return ModelConfiguration(groupsDatabaseName, schema: groupsSchema, cloudKitDatabase: .none)
-        }
+        return ModelConfiguration(groupsDatabaseName, schema: groupsSchema, cloudKitDatabase: .none)
     }
 
     /// Database name for groups store, derived from personal databaseName.
     static var groupsDatabaseName: String {
         databaseName.replacing("YalaModel", with: "YalaGroups")
-    }
-
-    /// M1 / D8 — nombre del store de GRUPOS SECUNDARIO (1 slot ⇒ nombre FIJO; el `userID` del descriptor
-    /// valida la identidad del ocupante). Derivado de `groupsDatabaseName` ⇒ hereda la variante `-Dev`.
-    static var secondaryGroupsDatabaseName: String {
-        groupsDatabaseName + "-Secondary"
     }
 
     /// Sync-meta store (Modo Nube, I2) — `SyncIdentity` local, NUNCA CloudKit.
@@ -1402,11 +1064,6 @@ extension SwiftDataConfiguration {
         }
         if isUITesting {
             return ModelConfiguration("YalaSyncMeta-UITest", schema: syncMetaSchema, isStoredInMemoryOnly: false, cloudKitDatabase: .none)
-        }
-        // M1: en sesión secundaria el sync-meta TAMBIÉN es un archivo propio — misma condición que
-        // el mount personal (ambas se evalúan una vez, al construir el container en el boot).
-        if SecondarySessionStore.isActive() {
-            return ModelConfiguration(secondarySyncMetaDatabaseName, schema: syncMetaSchema, cloudKitDatabase: .none)
         }
         return ModelConfiguration(syncMetaDatabaseName, schema: syncMetaSchema, cloudKitDatabase: .none)
     }
