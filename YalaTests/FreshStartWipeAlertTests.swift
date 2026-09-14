@@ -79,11 +79,24 @@ struct FreshStartWipeAlertTests {
             of: "private func startFreshPrivateOnboarding() {",
             in: Self.code(Self.contentViewPath))
 
+        // **El predicado es el fetch VIVO desde el 2026-09-14, no el snapshot.** Este test afirmaba
+        // `if hasExistingData`, y lo que de verdad protege es el ORDEN (la limpieza después del gate),
+        // no qué señal lee el gate. El cambio de señal fue una corrección: `WelcomeFlowModifier` recibe
+        // `hasExistingData` por VALOR, así que tras un borrado hecho desde la puerta de iCloud —que con
+        // el espejo adjunto no relanza— seguía valiendo el `true` de antes y levantaba este mismo alert
+        // sobre un store ya vacío. `hasLocalDataNow()` es el fetch que el propio docblock del modifier
+        // recomienda desde el review S5.
         let gate = try #require(
-            fresh.range(of: "if hasExistingData"),
+            fresh.range(of: "if hasLocalDataNow()"),
             """
-            `startFreshPrivateOnboarding` dejó de consultar `hasExistingData`: sin esa pregunta no \
-            hay alert que cancelar y el borrado de residuales es incondicional.
+            `startFreshPrivateOnboarding` dejó de consultar si hay datos: sin esa pregunta no \
+            hay alert que cancelar y el borrado de residuales es incondicional. Y si volvió al \
+            snapshot `hasExistingData`, el alert reaparece sobre un store recién vaciado.
+            """)
+        #expect(!fresh.contains("if hasExistingData"), """
+            el gate volvió al SNAPSHOT. Ese valor lo capturó el `body` y no se refresca sin una \
+            re-evaluación: tras el borrado de la puerta de iCloud miente, y este alert le pide a la \
+            persona borrar lo que acaba de borrar.
             """)
 
         if let clear = fresh.range(of: Self.clearCall) {

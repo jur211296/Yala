@@ -255,7 +255,16 @@ struct WelcomeFlowContainer: View {
                     // portal aquí: ese helper YA es el que traduce «restaurar» a su `Destination`, y
                     // escribir la traducción por segunda vez es como divergen dos caminos que deben acabar
                     // en la misma pantalla.
-                    onRestore: { handleExistingOption(.restoreICloud) },
+                    // **Y retira el arm del borrado antes de irse.** «Traer mis datos» es la voluntad
+                    // expresada DESPUÉS de haberlo pedido, que es el mismo criterio con el que
+                    // `presentNextOnboardingScreen` hace ganar al destino pendiente sobre el arm. Sin
+                    // esto, quien sale por aquí tras un borrado fallido restaura su histórico y el
+                    // arranque siguiente se lo borra entero sin preguntar: con el espejo ya adjunto esta
+                    // salida NO relanza, así que no hay destino pendiente que arrastre el arm consigo.
+                    onRestore: {
+                        StorageModePersistence.clearICloudCorpusWipeArm()
+                        handleExistingOption(.restoreICloud)
+                    },
                     // Cancelar → la elección privado / nube, que es de donde vino: con bypass nunca vio el
                     // sub-chooser, así que mandarlo ahí sería enseñarle una pantalla nueva al retroceder.
                     onBack: { goTo(newBranchOriginStep) },

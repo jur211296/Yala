@@ -909,6 +909,23 @@ struct WelcomeBackDestinationTests {
             .joined(separator: "\n")
     }
 
+    /// Cuerpo entre llaves balanceadas desde un marcador. Copia del helper de la suite de arriba —son
+    /// `private static` de otro tipo— y hace falta desde el 2026-09-14: `welcomeRestoreCover` pasó a
+    /// tener DOS llamadas a `returnToWelcomeChooser` con el mismo binding, así que un `contains` sobre el
+    /// fichero ya no identifica cuál de las dos lo cumple.
+    private static func bodyOf(_ marker: String, in source: String) -> String? {
+        guard let start = source.range(of: marker) else { return nil }
+        let chars = Array(source[start.upperBound...])
+        var depth = 1
+        var i = 0
+        while i < chars.count {
+            if chars[i] == "{" { depth += 1 }
+            if chars[i] == "}" { depth -= 1; if depth == 0 { break } }
+            i += 1
+        }
+        return String(chars[0..<min(i, chars.count)])
+    }
+
     @Test("el helper exige el step y no lo asume")
     func helperTakesAnExplicitStep() throws {
         let src = try Self.contentView()
@@ -928,8 +945,20 @@ struct WelcomeBackDestinationTests {
         #expect(src.contains("returnToWelcomeChooser(dismissing: $showInviteRecovery, step: .groupsChooser)"), """
             El «Atrás» de `InviteRecoveryView` volvió a subir al chooser de nivel 1.
             """)
-        #expect(src.contains("returnToWelcomeChooser(dismissing: $showWelcomeRestore, step: .chooser)"), """
+        // **Acotado al `onBack:`, y desde el 2026-09-14 hace falta.** `WelcomeRestoreView` tiene ahora DOS
+        // llamadas a este helper con el mismo binding: el «Atrás» (aquí) y el «Empezar desde cero», que
+        // desde ese día entra a `.privateICloudGate`. Un `contains` sobre el fichero entero deja de
+        // identificar CUÁL de los dos lo cumple: con los destinos intercambiados —el «Atrás» a la puerta
+        // y «Empezar desde cero» al chooser— el literal sigue apareciendo y el swap pasa. Es el molde de
+        // `expectAction` de `WelcomePrivateICloudGateWiringTests`, por el mismo motivo.
+        // Se acota primero al cover —`onBack: {` aparece en casi todas las vistas del Welcome y
+        // `range(of:)` se queda con la primera— y solo dentro de él se busca el callback.
+        let cover = try #require(Self.bodyOf("private var welcomeRestoreCover: some View {", in: src),
+                                 "no está `welcomeRestoreCover`")
+        let back = try #require(Self.bodyOf("onBack: {", in: cover), "no está el `onBack:` del restore")
+        #expect(back.contains("returnToWelcomeChooser(dismissing: $showWelcomeRestore, step: .chooser)"), """
             `WelcomeRestoreView` sí viene del chooser de nivel 1 — su destino no cambia.
+            Cuerpo leído: \(back)
             """)
     }
 }

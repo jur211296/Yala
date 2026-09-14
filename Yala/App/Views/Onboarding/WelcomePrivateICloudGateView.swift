@@ -478,7 +478,28 @@ struct WelcomePrivateICloudGateView: View {
     /// hecho que recuerdan es el mismo: *esta persona siguió adelante sin que pudiéramos comprobarlo*.
     private func continueWithoutValidating() {
         StorageModePersistence.markPrivateChoseWithoutICloud()
+        discardPendingWipe()
         onProceed()
+    }
+
+    /// **Toda salida de la puerta que no deja un borrado a medias retira el arm.**
+    ///
+    /// El arm existe para sobrevivir a un KILL con el borrado en vuelo, y solo a eso: mientras está
+    /// puesto, `ContentView.runLateICloudMirrorCheck` lo REANUDA A CIEGAS —borra la zona de CloudKit y
+    /// las filas locales, sin preguntar—. Que sobreviva a una salida deliberada es la diferencia entre
+    /// una red y una trampa.
+    ///
+    /// Hasta el 2026-09-14 nadie lo retiraba en estas salidas, y no mordía por un accidente: con el mount
+    /// neutro toda salida RELANZA y persiste un destino, y `presentNextOnboardingScreen` retira el arm
+    /// junto con él. **La puerta alcanzada con el espejo ya adjunto no relanza**, así que esa red no
+    /// existe ahí — y ese camino dejó de ser una esquina el día que «Restaurar → Empezar desde cero»
+    /// empezó a entrar por aquí. El desenlace medido: la persona sale por «Traer mis datos», restaura su
+    /// histórico, termina, y el arranque siguiente se lo borra entero sin una sola pregunta.
+    ///
+    /// **Desde `.wipeFailed` no se llega aquí**: ese fallo SÍ deja algo pendiente —se puede reintentar— y
+    /// su arm lo retira `leaveGate`, que es donde consta que la persona se va.
+    private func discardPendingWipe() {
+        StorageModePersistence.clearICloudCorpusWipeArm()
     }
 
     /// Salir de la puerta. **Retira el arm si el borrado FALLÓ, y solo entonces.**
@@ -561,6 +582,13 @@ struct WelcomePrivateICloudGateView: View {
                                                     outcome: outcome,
                                                     deviceHasData: deviceHasData) {
         case .proceed:
+            // **Acaba de medir que no queda nada que borrar, así que el arm se va con la medida.** Este
+            // es el desenlace de quien vuelve aquí tras un kill con el borrado a medias: si la zona ya
+            // se vació, dejar el arm puesto hace que `runLateICloudMirrorCheck` «reanude» el borrado en
+            // un arranque posterior y se lleve por delante lo que la persona haya creado desde entonces.
+            // Lo que se pierde al retirarlo está acotado y tiene ticket
+            // (`late-icloud-wipe-can-re-export-between-its-two-halves`): reaparición, nunca pérdida.
+            discardPendingWipe()
             onProceed()
         case .foundData(let corpus):
             phase = .found(corpus)
