@@ -232,7 +232,7 @@ struct PrivateSessionMarkWiringTests {
     /// dispositivos del Apple ID vaciarse— falla mal. Un refactor que las unifique «porque son la misma
     /// pregunta» no rompe ningún test de comportamiento: con la marca PUESTA las dos lecturas coinciden,
     /// así que toda la suite de `DestructiveScopeLogic` sigue verde. Lo único que lo caza es esto.
-    @Test("MUTACIÓN: solo la señal al Apple ID lee `confirmedPrivateSession`")
+    @Test("MUTACIÓN: el reparto de las dos lecturas del eje 1 en producción")
     func onlyTheAppleIDSignalReadsTheConfirmedFlavour() throws {
         let vista = try Self.code("Yala/App/Views/Settings/UserDataResetView.swift")
 
@@ -246,12 +246,27 @@ struct PrivateSessionMarkWiringTests {
             """)
         #expect(vista.contains("wipeLanding(\n            hasPrivateSession: PrivateSessionMark.hasPrivateSession()"))
 
-        // El conteo va sobre TODO `Yala/`, no sobre esta vista: un segundo consumidor en
+        // El conteo va sobre TODO `Yala/`, no sobre esta vista: un consumidor nuevo en
         // `ProfileView`, `CloudSessionSignOut` o `AccountDeletionService` es exactamente donde el
         // fallo alcanza datos de fuera, y medirlo aquí dentro lo habría dejado pasar en verde.
-        #expect(Self.countInProduction("PrivateSessionMark.confirmedPrivateSession()") == 1, """
-            `confirmedPrivateSession` tiene UN solo consumidor en toda la app. Si aparece un segundo,
-            decide a conciencia si su fallo también alcanza datos fuera de este teléfono.
+        //
+        // **El needle abre paréntesis y no dice `()`**, y eso cambió el 2026-09-14. Con `()` literal,
+        // un consumidor que pasara su propio `UserDefaults` —que es lo que hace el servicio de
+        // preferencias— no lo contaba nadie: se colaba un lector de la estricta sin pasar por esta
+        // decisión. El prefijo `PrivateSessionMark.` deja fuera la declaración del propio tipo.
+        #expect(Self.countInProduction("PrivateSessionMark.confirmedPrivateSession(") == 3, """
+            `confirmedPrivateSession` tiene TRES consumidores en toda la app, y los tres comparten el
+            SIGNO de su error: hacia `true` se BORRA, hacia `false` solo se conserva de más. Si aparece
+            un cuarto, decide a conciencia de qué lado cae — si equivocarse hacia `true` no destruye
+            nada, la lectura que le toca es `hasPrivateSession`, que falla conservando.
+
+            Era UNO hasta el 2026-09-14 (`UserDataResetView`: ¿esta sesión EMITE la señal de vaciado a
+            los demás dispositivos del Apple ID?). Los dos nuevos son el otro extremo de esa misma
+            señal —¿esta sesión la OBEDECE?—, uno en cada punto donde se decide: la detección
+            (`PreferenceSyncService.checkForRemoteWipeSignal`, que es quien pone el intent en la cola)
+            y el drenaje (`ContentView.handleRemoteWipeSignal`, que es quien borra las filas). Obedecer
+            de más en una sesión de la nube sube esos borrados a SU cuenta; en solo grupos borra el
+            perfil de quien tiene el teléfono prestado.
             """)
     }
 
@@ -383,7 +398,7 @@ struct PrivateSessionMarkWiringTests {
     /// y la aserción de arriba pasaría verde sin medir nada — la familia de «Executed 0 tests».
     @Test("control: el escáner de producción encuentra algo")
     func theProductionScannerActuallyFindsThings() {
-        #expect(Self.countInProduction("PrivateSessionMark.hasPrivateSession()") == 16, """
+        #expect(Self.countInProduction("PrivateSessionMark.hasPrivateSession(") == 16, """
             el eje 1 tiene DIECISÉIS consumidores de la lectura conservadora. Si este número cambia, hay un
             constructor nuevo y hay que decidir con qué lectura contesta — y si el consumidor nuevo
             alcanza datos de FUERA de este teléfono, la lectura que le toca es la otra.

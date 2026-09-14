@@ -1225,10 +1225,18 @@ struct ContentView: View {
 
     private func handleRemoteWipeSignal(onboardingAlreadyDone: Bool) {
         let remoteWipe = NSUbiquitousKeyValueStore.default.double(forKey: "lastWipeTimestamp")
+        // El eje de SESIÓN: solo una sesión privada obedece la señal del Apple ID. Una en la nube (E)
+        // subiría esos borrados a SU cuenta, y una solo-grupos (F) borraría el perfil de quien está
+        // usando el teléfono prestado. `confirmedPrivateSession` y NO `hasPrivateSession`: aquí el `true`
+        // BORRA filas, así que la marca ausente tiene que fallar cerrado (ver el docblock del predicado).
+        let sessionObeysWipeSignal = DestructiveScopeLogic.wipeSignalObeyedByThisSession(
+            confirmedPrivateSession: PrivateSessionMark.confirmedPrivateSession(),
+            storageMode: CloudSyncFlags.storageMode)
         let decision = RemoteWipeSignalDecider.decide(
             hasCompletedOnboarding: hasCompletedOnboarding,
             isWipingData: SessionState.shared.isWipingData,
-            hasRemoteWipeTimestamp: remoteWipe > 0
+            hasRemoteWipeTimestamp: remoteWipe > 0,
+            sessionObeysWipeSignal: sessionObeysWipeSignal
         )
 
         if decision.shouldMarkSignalsAsProcessed {

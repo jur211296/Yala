@@ -225,6 +225,56 @@ struct DestructiveScopeLogicTests {
         #expect(!DestructiveScopeLogic.wipeSignalsAppleIDDevices(confirmedPrivateSession: false, storageMode: .cloud))
     }
 
+    /// El otro extremo del mismo canal (ticket `remote-wipe-signal-honored-by-any-session`). El paso 9
+    /// cerró el emisor; el receptor obedecía la señal en cualquier celda. **La tabla es exhaustiva**
+    /// —`StorageMode` solo tiene dos casos— y cada fila nombra su celda del ADR 2026-09-09:
+    @Test func wipeSignal_onlyObeyedByAPrivateSession() {
+        // C · D — sesión privada, el store personal espeja a iCloud: sus datos SON los del Apple ID.
+        #expect(DestructiveScopeLogic.wipeSignalObeyedByThisSession(
+            confirmedPrivateSession: true, storageMode: .icloud))
+        // E — nube completa: obedecer subiría los borrados a SU cuenta.
+        #expect(!DestructiveScopeLogic.wipeSignalObeyedByThisSession(
+            confirmedPrivateSession: true, storageMode: .cloud))
+        // F — solo grupos (el móvil prestado): obedecer borra el perfil de quien lo está usando.
+        #expect(!DestructiveScopeLogic.wipeSignalObeyedByThisSession(
+            confirmedPrivateSession: false, storageMode: .icloud))
+        // Marca apagada Y cuenta en la nube: las dos razones a la vez, por si una tapara a la otra.
+        #expect(!DestructiveScopeLogic.wipeSignalObeyedByThisSession(
+            confirmedPrivateSession: false, storageMode: .cloud))
+    }
+
+    /// **Que el receptor DELEGUE en el emisor es el mecanismo, no un detalle de estilo**, y las ocho
+    /// aserciones de arriba no lo pinnean: inlinear el cuerpo (`confirmedPrivateSession && storageMode
+    /// == .icloud`) las deja las ocho en verde y deshace la única garantía de que las dos mitades del
+    /// canal no puedan divergir. Un receptor más ancho que su emisor borra filas que nadie quiso borrar,
+    /// y esa divergencia no la ve ningún test de comportamiento porque cada mitad seguiría siendo
+    /// correcta por su cuenta.
+    @Test("MUTACIÓN: el receptor delega en el emisor, no copia su cuerpo")
+    func theReceiverDelegatesInsteadOfCopying() throws {
+        let fuente = try String(
+            contentsOf: URL(fileURLWithPath: #filePath)
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+                .appendingPathComponent("Yala/App/Logic/DestructiveScopeLogic.swift"),
+            encoding: .utf8)
+        let codigo = fuente.split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("///") }
+            .joined(separator: " ")
+            .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+
+        #expect(codigo.contains(
+            "wipeSignalsAppleIDDevices(confirmedPrivateSession: confirmedPrivateSession, storageMode: storageMode)"), """
+            `wipeSignalObeyedByThisSession` dejó de delegar en `wipeSignalsAppleIDDevices`. Si copiaste
+            el cuerpo, deshazlo: son las dos mitades del mismo canal —¿los datos de este dispositivo son
+            los del Apple ID?— y dos cuerpos iguales que «siempre van juntos» divergen en el commit
+            siguiente, en silencio y hacia el lado que borra.
+            """)
+
+        // Control: el predicado compartido sigue teniendo UN solo cuerpo en el fichero.
+        #expect(codigo.components(separatedBy: "confirmedPrivateSession && storageMode == .icloud").count - 1 == 1,
+                "el predicado de la señal de vaciado dejó de tener un cuerpo único")
+    }
+
     // MARK: - A dónde lleva «Vaciar datos»
 
     @Test func wipeLanding_personalOnboarding_unlessGroupsOnly() {
