@@ -15,12 +15,12 @@ otra puerta.
 
 **How to apply:**
 
-- **La activación de Yala completo NO cambió**, y su asimetría está pinneada por test. Allí el borrado
-  es de ZONA (restricción del paso 8: `wipeAllUserData` resetea el onboarding y mandaría al Welcome a
-  quien está activando) y con el store espejando deja las filas importadas, que se re-exportan: un
-  borrado que no borra. Cerrarlo pide un borrador de **filas sin preferencias** que no existe —
-  `resetAllUserPreferences` toca router, ProTour, checklist y los espejos del App Group, no solo keys.
-  Ticket `activation-restore-start-fresh-keeps-the-imported-rows` (**high**).
+- ~~La activación de Yala completo NO cambió~~ — **CERRADO el 2026-09-14**, un día después, con su
+  propio PR. El borrador «filas sin preferencias» que este ticket daba por imposible costó un flag
+  (`wipeAllUserData(resetsPreferences:)`) y un enum de tres scopes; la activación tiene ahora su propia
+  puerta, `.restoreDiscardGate`, y el test que pinneaba la asimetría está INVERTIDO. Lo que de verdad
+  faltaba medir era otra cosa, y no estaba escrito en ningún sitio: sin reabrir el centinela del seed, la
+  persona termina sin ninguna categoría. Ver [[project_activacion_descarta_y_borra_de_verdad]].
 - **Y el «volver» de la puerta deja en la rama contraria** («Es mi primera vez» tras haber entrado por
   «Ya tengo una cuenta»). VISTO en simulador. Sin pérdida de datos; arreglarlo pide payload en el
   `case privateICloudGate`, que tiene pin literal. Ticket

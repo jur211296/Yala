@@ -159,6 +159,12 @@ ProTour, checklist, espejos del App Group). Otro objeto: ticket
 `activation-restore-start-fresh-keeps-the-imported-rows`. Aquí solo se actualiza el comentario, que
 si no queda apuntando a un ticket cerrado.
 
+> **CERRADO el 2026-09-14**, en el PR de ese ticket. El borrador existe
+> (`DataWipeService.wipeAllUserData(resetsPreferences:)` + `ICloudWipeScope.importedRows`) y la
+> activación tiene su propia puerta, `.restoreDiscardGate`. Lo que este párrafo daba por imposible
+> resultó costar un flag y un enum; lo que de verdad faltaba medir era otra cosa —que sin reabrir el
+> centinela del seed la persona termina sin ninguna categoría— y eso no estaba escrito en ningún sitio.
+
 **El AC nº2 se cumple igual**: al no tocar ese cableado, la sesión de grupos sigue intacta.
 
 ### Lo que se prueba, y por qué es source-scan
@@ -335,5 +341,6 @@ Apagar iCloud, instalación fresca, Restaurar → «Activa iCloud para continuar
 
 ### Lo que este device-QA NO cubre
 
-El recorrido desde «Activar Yala completo → privado → Restaurar»: ahí el botón **no cambia** en este PR,
-y su hueco tiene ticket propio (`activation-restore-start-fresh-keeps-the-imported-rows`).
+El recorrido desde «Activar Yala completo → privado → Restaurar»: ahí el botón **no cambia** en este PR.
+Su hueco lo cerró el suyo el 2026-09-14 (`activation-restore-start-fresh-keeps-the-imported-rows`), y su
+device-QA vive aparte: `tickets/qa/device-qa-activation-restore-start-fresh.md`.

@@ -434,9 +434,11 @@ struct HandoverGroupsWiringTests {
         return out
     }
 
-    /// **Los DOS caminos de «empiezo de cero» purgan el dominio Grupos, y son dos superficies distintas.**
-    /// Los otros 3 call-sites de `wipeAllUserData` (Ajustes, wipe remoto, reset de XCUITest) NO deben
-    /// purgarlo — ahí es el mismo usuario y el copy promete que sus grupos se conservan.
+    /// **Los dos caminos del HANDOVER purgan el dominio Grupos, y son dos superficies distintas.** Los
+    /// otros call-sites de `wipeAllUserData` (Ajustes, wipe remoto, reset de XCUITest, y desde el
+    /// 2026-09-14 el descarte de «Activar Yala completo → Restaurar») NO deben purgarlo — ahí es el mismo
+    /// usuario y el copy promete que sus grupos se conservan. Quién purga y quién no lo decide hoy
+    /// `ICloudWipeScope.purgesGroupsDomain`, y su tabla la fija `ActivationRestoreDiscardTests`.
     ///
     /// **C2 movió el alert de `ContentView` a `ShellDataAlertsModifier`**, y no por gusto: con él
     /// inline el getter de `ContentView.body` tardaba 591 s en type-checkear y la compilación moría. El
@@ -466,7 +468,7 @@ struct HandoverGroupsWiringTests {
         for (funcion, porque) in [
             ("private func performDeviceCorpusWipe() async -> String? {",
              "el borrado del teléfono tiene que llevarse el dominio y sellar en el mismo gesto"),
-            ("private func performICloudCorpusWipe(includingLocalRows: Bool = true) async -> String? {",
+            ("private func performICloudCorpusWipe(_ scope: ICloudWipeScope) async -> String? {",
              "la celda «iCloud con datos» deja los grupos vivos y el bridge abierto sin esto")] {
             let cuerpo = try Self.body(of: funcion, in: contentViewSource)
             #expect(cuerpo.contains("DataWipeService.wipeLocalGroupsDomain(in: modelContext)"),

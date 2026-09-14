@@ -607,9 +607,19 @@ struct WelcomePrivateICloudGateWiringTests {
             .joined(separator: "\n")
     }
 
-    /// Cuerpo entre llaves balanceadas a partir de un marcador, SIN líneas de comentario. Acotar al cuerpo
-    /// no es cosmético: un rango ancho comprobaría que el símbolo EXISTE en el fichero, no que se use
-    /// aquí, y contar la prosa haría que documentar el invariante lo «cumpliera».
+    /// Tramo entre dos marcadores, SIN líneas de comentario. Para leer un `case` de un `switch`, donde no
+    /// hay llaves que balancear: `call(of:)` devolvería siempre la primera llamada del fichero y dejaría
+    /// sin vigilar a la segunda puerta.
+    private static func segment(from start: String, to end: String, in source: String) throws -> String {
+        let a = try #require(source.range(of: start), "marcador no encontrado: \(start)")
+        let b = try #require(source.range(of: end, range: a.upperBound..<source.endIndex),
+                             "marcador de cierre no encontrado tras \(start): \(end)")
+        return source[a.upperBound..<b.lowerBound]
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+    }
+
     private static func body(of marker: String, in source: String) throws -> String {
         let start = try #require(source.range(of: marker), "marcador no encontrado: \(marker)")
         let chars = Array(source[start.upperBound...])
@@ -776,23 +786,50 @@ struct WelcomePrivateICloudGateWiringTests {
     /// monta la misma puerta desde una sesión solo-grupos, y ahí los datos del teléfono son de la persona
     /// que está activando: preguntarle si los borra —y peor, borrarlos— se llevaría justo el corpus que
     /// esa pantalla existe para conservar.
-    @Test("la activación de Yala completo NO pregunta por el corpus del teléfono")
+    ///
+    /// **Y recorre las DOS puertas, no la primera.** Desde el 2026-09-14 `FullModeActivationView` monta
+    /// esta vista dos veces —`.privateGate` y `.restoreDiscardGate`— y un `call(of:)` suelto solo lee la
+    /// de arriba: la segunda podría preguntar por el corpus del teléfono sin que nada se pusiera rojo.
+    @Test("la activación de Yala completo NO pregunta por el corpus del teléfono, en NINGUNA de sus dos puertas")
     func activationNeverAsksAboutTheDeviceCorpus() throws {
         let src = try Self.source("Yala/App/Views/Groups/FullModeActivationView.swift")
-        let gate = try Self.call(of: "WelcomePrivateICloudGateView(", in: src)
-        #expect(gate.contains("deviceCorpus: nil"), """
-            la activación empezó a preguntar por el corpus del teléfono: esos grupos y esas categorías son
-            de la MISMA persona que está activando, y la activación existe para conservarlos.
+        let code = try Self.code("Yala/App/Views/Groups/FullModeActivationView.swift")
+        #expect(code.components(separatedBy: "WelcomePrivateICloudGateView(").count - 1 == 2, """
+            la activación monta la puerta un número de veces distinto de dos. Si hay una más, este test no
+            la está mirando; si hay una menos, uno de los dos caminos perdió su puerta — y el de
+            «Restaurar → Empezar desde cero» sin ella no borra nada.
             """)
-        // **`performDeviceCorpusWipe` NO se afirma ausente aquí, y quitarlo es una corrección:** es un
-        // `private func` de `ContentView`, invisible desde este fichero, así que esa aserción no podía
-        // fallar nunca — para ponerla roja habría que escribir un identificador que no compila. Lo que sí
-        // se puede romper, y por tanto lo que se afirma, es que el borrado de la activación siga siendo el
-        // de ZONA.
-        #expect(gate.contains("performWipe: { await performICloudZoneWipe() }"), """
-            la activación cambió su borrado: el suyo es de ZONA (`includingLocalRows: false`), porque los
-            datos del teléfono son de la persona que está activando.
-            """)
+        // Cada puerta por su tramo del `switch`, y NO por `call(of:)`, que devuelve siempre la primera.
+        for (tramo, hasta, borrado, elOtro) in [
+            ("case .privateGate:", "case .restoreDiscardGate:",
+             "performWipe: { await performICloudZoneWipe() }",
+             "performICloudZoneAndImportedRowsWipe"),
+            ("case .restoreDiscardGate:", "case .relaunch:",
+             "performWipe: { await performICloudZoneAndImportedRowsWipe() }",
+             "performICloudZoneWipe()")] {
+            let gate = try Self.segment(from: tramo, to: hasta, in: src)
+            #expect(gate.contains("deviceCorpus: nil"), """
+                la puerta de `\(tramo)` empezó a preguntar por el corpus del teléfono: esos grupos y esas
+                categorías son de la MISMA persona que está activando, y la activación existe para
+                conservarlos. Con el espejo montado, además, su borrado por filas exportaría los deletes.
+                """)
+            #expect(gate.contains("clearsResidualPreferencesOnWipe: false"), """
+                la puerta de `\(tramo)` empezó a limpiar el nombre y la divisa: son el prefill de quien
+                está activando, no restos de otra persona (decisión de Jürgen, paso 8 y 2.3A).
+                """)
+            // **El borrado que toca, y la PROHIBICIÓN del otro.** Los dos son closures de la misma vista
+            // con el mismo tipo, así que intercambiarlos compila: `.privateGate` con el borrado de filas
+            // le vacía el teléfono a quien está activando, y `.restoreDiscardGate` con el de zona vuelve
+            // a dejar el corpus importado para que el espejo lo re-exporte, que es el bug entero.
+            #expect(gate.contains(borrado), """
+                la puerta de `\(tramo)` cambió su borrado. Tramo leído: \(gate)
+                """)
+            #expect(!gate.contains(elOtro), """
+                la puerta de `\(tramo)` está usando el borrado de la OTRA. Intercambiarlos compila y no
+                rompe ningún otro test: uno vacía el teléfono de quien activa, el otro deja el corpus
+                importado re-exportándose a iCloud.
+                """)
+        }
     }
 
     /// **F1 de la review · el borrado se saboteaba a sí mismo.** `wipeAllUserData` borra
@@ -1139,17 +1176,18 @@ struct WelcomePrivateICloudGateWiringTests {
         #expect(checks.contains("runLateICloudMirrorCheck()"))
     }
 
-    /// **El borrado es UNO para los dos caminos, y no puede reusar solo la zona de CloudKit.** La puerta
-    /// es alcanzable con el espejo ya adjunto, así que borrar solo la zona dejaría el corpus viejo entero
-    /// en el dispositivo.
+    /// **El borrado es UNO para todos los caminos, con su scope por call-site, y el del Welcome no puede
+    /// reusar solo la zona de CloudKit.** La puerta es alcanzable con el espejo ya adjunto, así que borrar
+    /// solo la zona dejaría el corpus viejo entero en el dispositivo. Este test describe el CUERPO
+    /// compartido; quién pide qué scope lo fijan los tests de cada consumidor.
     @Test("el borrado unificado toca la zona de iCloud Y el store local, y respeta la quiescencia")
     func wipe_clearsBothSides() throws {
         let src = try Self.source("Yala/App/ContentView.swift")
-        // Paso 8 · la firma ganó `includingLocalRows` (la activación de Yala completo borra solo la zona). Su
-        // DEFAULT es `true`, y es lo que mantiene este test con sentido: la puerta del Welcome y el aviso
-        // tardío la llaman sin argumento y siguen borrando los dos lados.
+        // Paso 8 · la firma lleva un SCOPE, y desde el 2026-09-14 son tres y no dos (`ICloudWipeScope`).
+        // Este test describe el cuerpo compartido: la zona siempre, y el borrado local detrás de su guard.
+        // Quién pide qué lo fijan los tests de cada consumidor.
         let wipe = try Self.body(
-            of: "private func performICloudCorpusWipe(includingLocalRows: Bool = true) async -> String? {",
+            of: "private func performICloudCorpusWipe(_ scope: ICloudWipeScope) async -> String? {",
             in: src)
         #expect(wipe.contains("ICloudPersonalCorpusProbe.wipe()"))
         #expect(wipe.contains("DataWipeService." + Self.wipeCall))
@@ -1172,20 +1210,29 @@ struct WelcomePrivateICloudGateWiringTests {
         // el ADR §6 lo deja fuera de todo borrado; esto no es un handover, es la misma persona limpiando
         // su propio histórico». Eso describe a UN consumidor —la activación de Yala completo— y esta
         // función tiene dos: el otro es el aviso del Welcome, donde «empiezo de cero» SÍ es la frontera de
-        // otro usuario en este dispositivo. El corte que los separa ya existía (`includingLocalRows`), así
-        // que la purga va dentro de él y la activación, que pasa `false`, sale antes de llegar.
+        // otro usuario en este dispositivo. El corte que los separa es el scope, así que la purga va dentro
+        // de `scope.purgesGroupsDomain` y los dos caminos de la activación salen antes de llegar.
         //
         // Sin esto quedaba sin sellar la celda «iCloud con datos ∧ teléfono con datos»: el aviso remoto
         // gana, su borrado se lleva lo personal, y los grupos de la etapa anterior se quedan vivos con el
         // bridge abierto ⇒ suben al iCloud del Apple ID en el arranque siguiente (criterio nº4 del ticket).
-        let compartido = String(wipe[wipe.startIndex..<(try #require(wipe.range(of: "guard includingLocalRows")).lowerBound)])
+        let compartido = String(wipe[wipe.startIndex..<(try #require(wipe.range(of: "guard scope.deletesLocalRows")).lowerBound)])
         #expect(!compartido.contains("wipeLocalGroupsDomain"), """
-            la purga del dominio se salió del guard de `includingLocalRows`: la activación de Yala completo
-            comparte esta función y ahí los grupos son de la MISMA persona que está activando.
+            la purga del dominio se salió del guard de `scope.deletesLocalRows`: los dos caminos de la
+            activación de Yala completo comparten esta función y ahí los grupos son de la MISMA persona que
+            está activando.
             """)
-        try Self.expectOrder("guard includingLocalRows",
+        try Self.expectOrder("guard scope.deletesLocalRows",
                              before: "DataWipeService.wipeLocalGroupsDomain(in: modelContext)", in: wipe,
                              "el corte va antes de la purga, o la activación se lleva los grupos por delante")
+        // **Y la purga tiene su PROPIO guard, no cuelga del de las filas.** `.importedRows` borra filas y
+        // NO purga Grupos: sin este término, «Restaurar → Empezar desde cero» dentro de la activación se
+        // llevaría por delante los grupos que la activación existe para conservar (decisión 2.2A).
+        #expect(wipe.contains("if scope.purgesGroupsDomain {"), """
+            la purga del dominio volvió a colgar solo del guard de las filas. Hay un scope que borra filas
+            SIN purgar Grupos (`.importedRows`), y sin su propio término se los lleva igual.
+            Cuerpo leído: \(wipe)
+            """)
         try Self.expectOrder("DataWipeService." + Self.wipeCall,
                              before: "DataWipeService.wipeLocalGroupsDomain(in: modelContext)", in: wipe,
                              "lo personal primero y el dominio después, como en el alert gemelo")
@@ -1268,7 +1315,10 @@ struct WelcomePrivateICloudGateWiringTests {
         let bloque = String(check[arm.lowerBound...])
         let hasta = bloque.range(of: "let watching")?.lowerBound ?? bloque.endIndex
         let rama = String(bloque[..<hasta])
-        #expect(rama.contains("performICloudCorpusWipe()"))
+        // **El scope de la reanudación a ciegas es `.handover`, y decirlo aquí importa:** este es el
+        // camino que NO vuelve a preguntar —la persona ya confirmó dos veces y lo que falta es acabar—,
+        // así que es el que más daño hace si su alcance cambia sin que nadie lo mire.
+        #expect(rama.contains("performICloudCorpusWipe(.handover)"))
         #expect(rama.contains("clearICloudCorpusWipeArm()"), """
             sin retirar el arm, el arranque siguiente vuelve a reanudar el mismo borrado, y el siguiente,
             y el siguiente.
@@ -1277,7 +1327,7 @@ struct WelcomePrivateICloudGateWiringTests {
         #expect(rama.contains("hasCompletedOnboarding = false"),
                 "el borrado se llevó el corpus: la persona tiene que volver al onboarding")
         // Y el corte ante el fallo: si el borrado no confirma, NO se retira nada.
-        #expect(rama.contains("guard await performICloudCorpusWipe() == nil else { return }"), """
+        #expect(rama.contains("guard await performICloudCorpusWipe(.handover) == nil else { return }"), """
             retirar los testigos tras un borrado fallido deja el corpus en iCloud y a nadie mirándolo.
             """)
     }

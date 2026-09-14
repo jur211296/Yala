@@ -154,26 +154,39 @@ struct RestoreStartFreshGateTests {
             """)
     }
 
-    /// **La otra mitad del par, y protege el daño CONTRARIO.** La activación de «Yala completo» comparte
-    /// esta vista y su botón NO puede pasar por la puerta todavía: allí el borrado es de ZONA
-    /// (`includingLocalRows: false`, restricción del paso 8 — `wipeAllUserData` resetea el onboarding y
-    /// mandaría al Welcome a quien está activando), y con el store espejando eso deja las filas
-    /// importadas, que se re-exportan a la zona recién creada. Un borrado que no borra.
+    /// **La otra mitad del par — y desde el 2026-09-14 las dos apuntan al mismo sitio.**
     ///
-    /// La asimetría es deliberada y tiene ticket propio
-    /// (`activation-restore-start-fresh-keeps-the-imported-rows`). Este test existe para que nadie la
-    /// «arregle» copiando el cableado del Welcome sin el borrador que falta.
-    @Test("la activación de Yala completo NO manda su «Empezar desde cero» a la puerta")
-    func activationKeepsItsOwnExit() throws {
+    /// Hasta ese día este test pinneaba la ASIMETRÍA: la activación de «Yala completo» comparte esta vista
+    /// y su botón no podía pasar por la puerta, porque allí el único borrado disponible era de ZONA y con
+    /// el store espejando eso dejaba las filas importadas re-exportándose. Faltaba un borrador que no
+    /// existía —filas personales sin tocar preferencias— y por eso tenía ticket propio
+    /// (`activation-restore-start-fresh-keeps-the-imported-rows`).
+    ///
+    /// Ese borrador ya existe (`ICloudWipeScope.importedRows`), así que el test se INVIERTE y ahora
+    /// protege el daño contrario: que nadie devuelva este botón al onboarding directo, que es el bug.
+    ///
+    /// **Y el destino es `.restoreDiscardGate`, no `.privateGate`**: aquélla borra solo la zona, y desde
+    /// aquí eso es exactamente el borrado que no borra.
+    @Test("la activación de Yala completo manda su «Empezar desde cero» a SU puerta, la que borra las filas")
+    func activationStartFreshGoesToItsDiscardGate() throws {
         let src = try Self.code("Yala/App/Views/Groups/FullModeActivationView.swift")
         let callback = try Self.body(of: "onStartFresh: {", in: src)
-        #expect(callback.contains("go(to: .onboarding(.freshPrivate))"), """
-            el botón de la activación sigue yendo a su onboarding personal.
+        #expect(callback.contains("go(to: .restoreDiscardGate)"), """
+            el botón volvió a su salida vieja. Sin la puerta no borra NADA: ni la zona de iCloud ni el
+            corpus que el espejo ya bajó, que se re-exporta a la zona recién creada — también al segundo
+            dispositivo del mismo Apple ID.
+            Cuerpo leído: \(callback)
             """)
+        // **`.privateGate` prohibido, y no es redundante con lo de arriba:** las dos son la misma vista y
+        // el swap compila. Con la puerta privada, el borrado que se ofrece es el de ZONA, así que la
+        // pantalla promete un borrado que deja las filas importadas intactas — el bug entero, con dos
+        // confirmaciones delante para hacerlo creíble.
         #expect(!callback.contains(".privateGate"), """
-            mandarlo a la puerta sin un borrador de filas-sin-preferencias hace que la puerta prometa un
-            borrado que no ocurre: borra la zona y el store, que espeja, la vuelve a llenar.
-            Ticket: activation-restore-start-fresh-keeps-the-imported-rows.
+            el botón apunta a la puerta PRIVADA, cuyo borrado es solo de zona: con el store espejando, eso
+            deja el corpus importado entero y el espejo lo vuelve a subir.
+            """)
+        #expect(!callback.contains(".onboarding("), """
+            el botón volvió a saltar directo al onboarding: eso es el bug original, sin borrar nada.
             """)
     }
 
@@ -194,7 +207,7 @@ struct RestoreStartFreshGateTests {
         let modifier = try Self.call(of: "WelcomeFlowModifier(", in: src)
         let wrapper = try Self.body(of: "performICloudCorpusWipe: {", in: modifier)
 
-        #expect(wrapper.contains("await performICloudCorpusWipe()"), """
+        #expect(wrapper.contains("await performICloudCorpusWipe(.handover)"), """
             el envoltorio dejó de llamar al borrado del CORPUS. Su hermana `performDeviceCorpusWipe` borra
             las filas del teléfono y NO toca la zona de iCloud: con ella, el espejo vuelve a bajar el
             corpus entero y además se bajan las dos señales diciendo que no hay datos.
@@ -219,7 +232,7 @@ struct RestoreStartFreshGateTests {
         // ese `true → false` sin la gracia cancelada levanta el alert de wipe remoto, que DESMONTA el
         // cover del Welcome. Es la corrección que su hermana `performDeviceCorpusWipe` ya lleva escrita.
         try Self.expectOrder("wipeGraceTask?.cancel()",
-                             before: "await performICloudCorpusWipe()", in: wrapper, """
+                             before: "await performICloudCorpusWipe(.handover)", in: wrapper, """
             la gracia del wipe remoto se cancela DESPUÉS del borrado: un borrado que lanza a media lista
             deja las filas borradas y la gracia viva, y el alert «te borraron los datos en otro
             dispositivo» desmonta el cover del Welcome.
@@ -302,8 +315,11 @@ struct RestoreStartFreshGateTests {
 
     /// **La primera confirmación se queda donde estaba, y en los DOS estados que afirman que hay datos.**
     /// Al llevar el botón a la puerta se podría haber retirado —la puerta vuelve a preguntar, con
-    /// cifras—, y sería un error: esta vista tiene dos consumidores, y al segundo (la activación) el
-    /// diálogo le es la ÚNICA confirmación de un gesto destructivo.
+    /// cifras—, y sería un error: esta vista tiene dos consumidores y en los dos el diálogo es la
+    /// PRIMERA confirmación de un gesto destructivo. Desde el 2026-09-14 el segundo (la activación)
+    /// también pasa por una puerta que vuelve a preguntar, así que ya no es la única — pero se suman
+    /// confirmaciones, no se restan, y retirarla dejaría el gesto con una sola en el camino más
+    /// destructivo de los dos.
     ///
     /// Los dos estados van ACOTADOS. La primera versión afirmaba el diálogo sobre el fichero entero, y
     /// esa aserción la cumplía `cloudPausedView` solo: cablear `.found` directo al callback dejaba el

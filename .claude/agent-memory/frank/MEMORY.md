@@ -1,33 +1,33 @@
 # Memoria de Frank — Yala
 
 ## Cómo trabaja Jürgen
-- [Sesión de rediseño](feedback_sesion_de_rediseno.md) — si el QA se vuelve producto, se sigue: acta en docs/sessions, cierre = ADR + tickets + descartes; «asume que lo desplegué» se mide igual.
-- [«Creo que» no es aprobación](feedback_creo_que_no_es_aprobacion.md) — si no reconoce el componente, explicar antes de borrar; sus respuestas firmes sí se ejecutan sin repreguntar.
+- [Sesión de rediseño](feedback_sesion_de_rediseno.md) — si el QA se vuelve producto, se sigue: acta en docs/sessions, cierre = ADR + tickets + descartes.
+- [«Creo que» no es aprobación](feedback_creo_que_no_es_aprobacion.md) — si no reconoce el componente, explicar antes de borrar.
 - [Push: solo lo de la sesión](feedback_push_solo_lo_de_la_sesion.md) — lo pendiente de otros se deja y lo sube su agente; el aviso del arranque es info, no tarea.
-- [Levanta sus propias reglas](feedback_jurgen_levanta_sus_reglas.md) — si te pide algo que un default tuyo prohíbe, se hace y se dice; y la medición que contradice su propuesta la quiere ANTES.
-- [El tablero antes que el bug](feedback_el_tablero_antes_que_el_bug.md) — prefiere sanear el board antes que atacar producción; y en docs, el bloque entero en un commit, no troceado.
-- [El cierre incluye TICKETS.md y ticket por hallazgo](feedback_cierre_board_tickets_y_hallazgos.md) — mandato 6-sep: índice = disco; lo que salga de camino no se queda en el PR.
+- [Levanta sus propias reglas](feedback_jurgen_levanta_sus_reglas.md) — si te pide algo que un default tuyo prohíbe, se hace y se dice.
+- [El tablero antes que el bug](feedback_el_tablero_antes_que_el_bug.md) — prefiere sanear el board antes que atacar producción.
+- [El cierre incluye TICKETS.md y ticket por hallazgo](feedback_cierre_board_tickets_y_hallazgos.md) — mandato 6-sep: índice = disco.
 - [Tarjetas blancas: identidad](feedback_tarjetas_blancas_identidad.md) — cuándo un cambio visual toca identidad y no es polish.
-- [Alcance mínimo, salvo incoherencia](feedback_alcance_minimo_salvo_incoherencia.md) — completar el objeto que su decisión nombra es lo esperado (ratificado 5-sep); ampliar a OTRO objeto, no. En un helper, el corte lo da la FIRMA.
+- [Alcance mínimo, salvo incoherencia](feedback_alcance_minimo_salvo_incoherencia.md) — completar el objeto que su decisión nombra es lo esperado (ratificado 5-sep).
 - [Autónomo es hasta el final](feedback_autonomo_hasta_el_final.md) — decide en bloque y suelta la ejecución; los rojos y el entorno también son míos.
-- [Prefiere lo limpio a lo defensivo](feedback_prefiere_lo_limpio_a_lo_defensivo.md) — retira el mecanismo que falla en vez de apuntalarlo; nombra siempre qué se pierde al limpiar.
+- [Prefiere lo limpio a lo defensivo](feedback_prefiere_lo_limpio_a_lo_defensivo.md) — retira el mecanismo que falla en vez de apuntalarlo.
 - [Cuándo la app pregunta al usuario](feedback_cuando_la_app_pregunta_al_usuario.md) — pregunta si la decisión mueve DATOS suyos; si solo cambia el recorrido, informa o calla.
 
 ## Cómo mido y cómo entrego
 - [El predicado del ticket no es el criterio](feedback_el_predicado_del_ticket_no_es_el_criterio.md) — mide con qué predicado decide la superficie que desbloqueas: el literal del ticket dejaba el bug vivo.
-- [La premisa del ENCARGO también se mide](feedback_la_premisa_del_encargo_tambien_se_mide.md) — hereda los errores del ticket; «no es simulable» infla la cola de Jürgen, y una BISECCIÓN sobre un sujeto que no cambió no bisecó nada.
-- [El barrido de QA rinde por lotes](feedback_el_barrido_qa_rinde_por_lotes.md) — agrupa por estado de simulador; dos números que comparas, mismo lanzamiento; el testigo aritmético gana a la captura.
-- [Instrumentar gana a razonar](feedback_instrumentar_gana_a_razonar.md) — a la tercera hipótesis caída, cuenta en vez de deducir; y lo que no se reproduce no se explica: se acota.
-- [El CI se verifica en LOCAL](feedback_el_ci_se_verifica_en_local.md) — el `run:` de un paso se extrae del YAML y se corre con matriz de escenarios; actionlint con control negativo; y el comentario con que justifiqué mi diseño era falso.
+- [La premisa del ENCARGO también se mide](feedback_la_premisa_del_encargo_tambien_se_mide.md) — hereda los errores del ticket.
+- [El barrido de QA rinde por lotes](feedback_el_barrido_qa_rinde_por_lotes.md) — agrupa por estado de simulador; dos números que comparas, mismo lanzamiento.
+- [Instrumentar gana a razonar](feedback_instrumentar_gana_a_razonar.md) — a la tercera hipótesis caída, cuenta en vez de deducir.
+- [El CI se verifica en LOCAL](feedback_el_ci_se_verifica_en_local.md) — el `run:` se extrae del YAML y se corre con matriz; actionlint con control negativo.
 - [El paso 3 del gate no detecta cero casos](feedback_gate_paso3_no_detecta_cero_casos.md) — XCUITest es XCTest: cuenta «Test Suite» y «Executed», no «Test run with».
-- [Mi docblock también es una premisa](feedback_mi_docblock_tambien_es_una_premisa.md) — describo la intención como si fuera el comportamiento; y «esto lo fija <suite>» exige que la suite TOQUE el fichero.
-- [El source-scan de dos literales no es una red](feedback_el_source_scan_de_dos_literales_no_es_una_red.md) — si el target es inalcanzable, fija el cuerpo ENTERO; vigila pasarelas, swaps y la rama no recorrida; tu literal lo lee otro escáner.
+- [Mi docblock también es una premisa](feedback_mi_docblock_tambien_es_una_premisa.md) — describo la intención como si fuera el comportamiento.
+- [El source-scan de dos literales no es una red](feedback_el_source_scan_de_dos_literales_no_es_una_red.md) — si el target es inalcanzable, fija el cuerpo ENTERO.
 - [El denominador de una resta es el número que se ve](feedback_el_denominador_de_una_resta_es_el_numero_que_se_ve.md) — numerador en magnitudes, denominador en lo que se muestra; y una decisión escrita gana a dos lentes que coinciden.
-- [La segunda capa no cubre lo que dice](feedback_la_segunda_capa_no_cubre_lo_que_dice.md) — mide el ALCANCE de cada defensa por separado; la que no llega suele además costar algo.
-- [La aserción que no puede fallar](feedback_la_asercion_que_no_puede_fallar.md) — el mutante valida el CASO, no cada `#expect`; ensucia la columna quieta; la MÁQUINA y el dominio que ENCOGE, tampoco.
+- [La segunda capa no cubre lo que dice](feedback_la_segunda_capa_no_cubre_lo_que_dice.md) — mide el ALCANCE de cada defensa por separado.
+- [La aserción que no puede fallar](feedback_la_asercion_que_no_puede_fallar.md) — el mutante valida el CASO, no cada `#expect`; ensucia la columna quieta.
 - [El pre-filtro tapa al criterio](feedback_el_prefiltro_tapa_al_criterio.md) — misma condición en el fetch y en la lógica: el mutante de la lógica sale VERDE. Me pasó dos veces el 8-sep.
-- [La tabla del ticket nombra un sitio por pantalla](feedback_la_tabla_del_ticket_nombra_un_sitio_por_pantalla.md) — 7 superficies eran 21; el mismo número marcado y exacto en la misma vista; los punteros a tickets en docblocks caducan.
-- [Ticket nuevo: busca el duplicado primero](feedback_ticket_nuevo_busca_el_duplicado_primero.md) — dos de tres ya existían el 10-sep, y el que existía era MEJOR; leer el motivo del descarte antes de reabrir.
+- [La tabla del ticket nombra un sitio por pantalla](feedback_la_tabla_del_ticket_nombra_un_sitio_por_pantalla.md) — 7 superficies eran 21.
+- [Ticket nuevo: busca el duplicado primero](feedback_ticket_nuevo_busca_el_duplicado_primero.md) — dos de tres ya existían el 10-sep, y el que existía era MEJOR.
 - [Ramas aparcadas tocan tu ticket](feedback_ramas_aparcadas_tocan_tu_ticket.md) — `git log --all -- 'tickets/*/<id>.md'` antes de diseñar: una rama sin PR le había escrito requisitos al paso 9.
 - [El mecanismo que existe se probó con OTRO corpus](feedback_el_mecanismo_existente_se_probo_con_otro_corpus.md) — reusar un barrido sobre un corpus nuevo puede destruir datos buenos; el AC dice QUÉ, no CÓMO.
 - [Mi arreglo abre un camino INALCANZABLE](feedback_mi_arreglo_abre_un_camino_inalcanzable.md) — quitar un efecto vuelve alcanzable código que nunca corrió, con sus bugs intactos; recorre el gesto como 2.ª pasada.
@@ -35,103 +35,107 @@
 - [Mi arreglo rompe la premisa de OTRO guard](feedback_mi_arreglo_rompe_la_premisa_de_otro_guard.md) — ensanchar un predicado, o abrir un CAMINO nuevo hacia él, deja mentirosos a guards que están a varios ficheros.
 - [El guard va DENTRO del escritor](feedback_el_guard_va_dentro_del_escritor.md) — repetido en vistas SwiftUI solo lo prueba un grep, y un grep no ve un guard invertido.
 - [Mi fix hereda la forma del bug](feedback_mi_fix_hereda_la_forma_del_bug.md) — el arreglo repite el error del bug; enuncia el bug en una frase y aplícasela al arreglo.
-- [El alert de SwiftUI compite con su propio botón](feedback_el_alert_de_swiftui_compite_con_su_propio_boton.md) — el `set` del binding corre al pulsar CUALQUIER botón; si la acción es async, pierde.
-- [Un gate derivado de una AUSENCIA falla abierto](feedback_un_gate_derivado_de_una_ausencia_falla_abierto.md) — la marca va POSITIVA; la puerta que nadie usa puede ser el camino del 2.º device; y un `as? CKError` fabrica la ausencia.
+- [El alert de SwiftUI compite con su propio botón](feedback_el_alert_de_swiftui_compite_con_su_propio_boton.md) — el `set` del binding corre al pulsar CUALQUIER botón.
+- [Un gate derivado de una AUSENCIA falla abierto](feedback_un_gate_derivado_de_una_ausencia_falla_abierto.md) — la marca va POSITIVA.
 - [Un timeout no distingue lento de colgado](feedback_un_timeout_no_distingue_lento_de_colgado.md) — 5010 ms clavados no son un cuelgue: súbelo y mide. Refutó un ticket entero.
 - [Un gate falla ABIERTO por su entrada](feedback_un_gate_falla_abierto_por_su_entrada.md) — lista vacía por error = «no hay»; y el snapshot se congela durante el `await`.
-- [El avisador que se rescata no vigila](feedback_el_avisador_que_se_rescata_no_vigila.md) — el respaldo ciega al vigilante; y `always()` en un job de aviso dispara al cancelar el run A MANO.
-- [La corrección de la lente reintroduce el bug](feedback_la_correccion_de_la_lente_reintroduce_el_bug.md) — el 10-sep, dos veces en el mismo predicado; lo que escribes DESPUÉS de la review no está revisado.
-- [El ancla que no existe](feedback_el_ancla_que_no_existe.md) — antes de diseñar un «vuelve a enlazarse», comprueba que el objeto TIENE identidad serializable; si no, el ticket pide algo imposible.
-- [La review y los mutantes no comparten árbol](feedback_la_review_y_los_mutantes_no_comparten_arbol.md) — una lente leyó un fichero MUTADO; y un script de parche escrito no es un script aplicado.
-- [Mi refutación falla ABIERTO](feedback_mi_refutacion_falla_abierto.md) — 33 de 45 hallazgos salieron «refutados» sin que nadie los juzgara; con `agents_error > 0`, lee el journal.
+- [El avisador que se rescata no vigila](feedback_el_avisador_que_se_rescata_no_vigila.md) — el respaldo ciega al vigilante.
+- [La corrección de la lente reintroduce el bug](feedback_la_correccion_de_la_lente_reintroduce_el_bug.md) — el 10-sep, dos veces en el mismo predicado.
+- [El ancla que no existe](feedback_el_ancla_que_no_existe.md) — antes de diseñar un «vuelve a enlazarse», comprueba que el objeto TIENE identidad serializable.
+- [La review y los mutantes no comparten árbol](feedback_la_review_y_los_mutantes_no_comparten_arbol.md) — una lente leyó un fichero MUTADO.
+- [Mi refutación falla ABIERTO](feedback_mi_refutacion_falla_abierto.md) — 33 de 45 hallazgos salieron «refutados» sin que nadie los juzgara.
 - [La review adversarial caza lo MÍO](feedback_review_adversarial_caza_lo_mio.md) — el 14-sep cazó que MI ARREGLO no arreglaba, con 5 mutantes y una captura del simulador ya en verde.
+- [El flag que conserva deja estado incoherente](feedback_el_flag_que_conserva_deja_estado_incoherente.md) — «conservar preferencias» ≠ «conservar estado de las filas»: el centinela del seed dejó al usuario sin categorías.
+- [Mi escritura dispara el `onChange` que evito](feedback_mi_escritura_dispara_el_onchange_que_evito.md) — cancelar antes de escribir no cancela nada.
 - [La rule de área es una lente más](feedback_la_rule_de_area_es_una_lente_mas.md) — leerla CONTRA el diff: cazó lo que las tres lentes no vieron el 8-sep y otras dos cosas el 10-sep.
-- [Las lentes se contradicen entre sí](feedback_lentes_adversariales_se_contradicen.md) — cuando dos discrepan, mídelo; y la CORRECCIÓN de una lente también puede venir incompleta.
-- [El test viejo CUELGA, no falla](feedback_el_test_viejo_cuelga_no_falla.md) — al mover un outcome de parada a reintento; y el inventario de tests del ticket se mide: eran 4, no 2.
-- [Mi arreglo deja el mecanismo sin productor](feedback_mi_arreglo_deja_el_mecanismo_sin_productor.md) — mide aguas arriba y aguas abajo; un ternario de un carácter borró mi distinción entera.
+- [Las lentes se contradicen entre sí](feedback_lentes_adversariales_se_contradicen.md) — cuando dos discrepan, mídelo.
+- [El test viejo CUELGA, no falla](feedback_el_test_viejo_cuelga_no_falla.md) — al mover un outcome de parada a reintento.
+- [Mi arreglo deja el mecanismo sin productor](feedback_mi_arreglo_deja_el_mecanismo_sin_productor.md) — mide aguas arriba y aguas abajo.
 - [El árbol base contesta «¿es mío?»](feedback_el_arbol_base_contesta_si_es_mio.md) — worktree desde HEAD zanja un rojo ajeno en 90 s; y devuelve el disco que se come.
 - [Un «rojo conocido» no exime de bisecar](feedback_rojo_conocido_no_exime_de_bisecar.md) — dos rojos idénticos en el log, causas opuestas: uno era mío y rompía guardar una transacción.
 - [XCUITest completo: por lotes](reference_xcuitest_completo_por_lotes.md) — `BUILD INTERRUPTED` no es veredicto; cuenta la cobertura por CLASE (61) y nunca en background.
 - [Dos corridas, un simulador](feedback_dos_corridas_un_simulador.md) — vigila la corrida ENTERA, no solo la foto de antes: un rojo CON línea de fallo tampoco es tuyo si otra corrida instaló su app encima.
 - [Bisecar un flaky miente](feedback_bisect_de_un_flaky_miente.md) — la correlación es azar; lo que zanja es la muestra IMPOSIBLE, y el rojo que se muda de test.
-- [El generador regenera lo que edito](feedback_el_generador_regenera_lo_que_edito.md) — re-corre el script DESPUÉS de editar a mano; dos locales se quedaron con el texto viejo.
+- [El generador regenera lo que edito](feedback_el_generador_regenera_lo_que_edito.md) — re-corre el script DESPUÉS de editar a mano.
 - [El mutante compilado zanja hipótesis](feedback_mutante_compilado_zanja_hipotesis.md) — si un ticket dice que no hay dato para elegir, recompila el código anterior y reproduce: ese es el dato.
 - [El orden del enum se ve fuera](feedback_el_orden_del_enum_se_ve_fuera.md) — un case nuevo en medio cambia el número del alert que se usa para diagnosticar; va al final.
-- [El testigo global miente en el host de test](feedback_el_testigo_global_miente_en_el_host_de_test.md) — mide qué vale bajo `-uitest` ANTES de cablearlo; y una purga que no cubre su caso es peor que ninguna.
+- [El testigo global miente en el host de test](feedback_el_testigo_global_miente_en_el_host_de_test.md) — mide qué vale bajo `-uitest` ANTES de cablearlo.
 - [El mecanismo que reuso trae sus precondiciones](feedback_el_mecanismo_que_reuso_trae_sus_precondiciones.md) — si no las cumples, entra por el COORDINADOR que sí las cumple, no adaptes el `arm*`.
 - [Una premisa corregida no reabre el camino](feedback_una_premisa_corregida_no_reabre_el_camino.md) — las razones de un `blocked` son una conjunción: se refutan TODAS, con su coordenada, antes de escribir.
-- [Mis mediciones fallan por el filtro](feedback_mis_mediciones_fallan_por_el_filtro.md) — control positivo siempre; el negativo va PRIMERO y en transacción fresca; y ojo con la exención que ciega al banco.
+- [Mis mediciones fallan por el filtro](feedback_mis_mediciones_fallan_por_el_filtro.md) — control positivo siempre; el negativo va PRIMERO y en transacción fresca.
+- [`head` retiene el veredicto de xcodebuild](feedback_head_retiene_el_veredicto_de_xcodebuild.md) — un `| head -N` no imprime nada hasta que el proceso muere: parece un teardown colgado y es el pipe.
 - [zsh no divide variables](feedback_zsh_no_divide_variables.md) — «SUCCEEDED» con cero tests; y el exit del wrapper es del `echo`, no de xcodebuild.
 - [Revertir sin commit destruye](feedback_revertir_sin_commit_destruye.md) — en árbol sucio `git checkout -- <f>` borra el trabajo; los mutantes se revierten con `cp`.
-- [Nunca el trailer Co-Authored-By](feedback_trailer_commit_medido.md) — desde el 9-sep un hook del repo bloquea el COMMIT; el cuerpo del PR sigue desnudo y ahí el grep es lo único que hay.
-- [Generar y persistir en un solo gesto](feedback_generar_y_persistir_credenciales.md) — una credencial nunca vive solo en pantalla; y verifica si una rotación se aplicó antes de rehacerla.
-- [Medir la web: axe, Lighthouse, preview](feedback_medir_la_web_a11y_y_preview.md) — axe ciego con opacity 0; transiciones congeladas; preview con SSO se verifica por config.json; heredoc suelto en zsh imprime.
-- [Capturas del simulador para la web](feedback_capturas_simulador_para_la_web.md) — receta y trampas: Secrets.xcconfig, nombre efímero, categorías sembradas, `sips -Z` escala el lado largo.
-- [El fixture hereda la anatomía de producción](feedback_el_fixture_hereda_la_anatomia_de_produccion.md) — no la deduzcas del ticket; el error se ve en el TOTAL, y el fixture tiene que ser DISCRIMINANTE.
-- [El reparador, tan re-ejecutable como el destructor](feedback_el_reparador_tan_reejecutable_como_el_destructor.md) — en un hook kill-safe, `consume()` mata lo que repara en la 2.ª pasada; y el sobre que sobrevive a un borrado necesita TTL y su frontera.
+- [Nunca el trailer Co-Authored-By](feedback_trailer_commit_medido.md) — desde el 9-sep un hook del repo bloquea el COMMIT.
+- [Generar y persistir en un solo gesto](feedback_generar_y_persistir_credenciales.md) — una credencial nunca vive solo en pantalla.
+- [Medir la web: axe, Lighthouse, preview](feedback_medir_la_web_a11y_y_preview.md) — axe ciego con opacity 0; preview con SSO se verifica por config.json.
+- [Capturas del simulador para la web](feedback_capturas_simulador_para_la_web.md) — receta y trampas: Secrets.xcconfig, nombre efímero, `sips -Z` escala el lado largo.
+- [El fixture hereda la anatomía de producción](feedback_el_fixture_hereda_la_anatomia_de_produccion.md) — no la deduzcas del ticket.
+- [El reparador, tan re-ejecutable como el destructor](feedback_el_reparador_tan_reejecutable_como_el_destructor.md) — en un hook kill-safe, `consume()` mata lo que repara en la 2.ª pasada.
 - [El estado paralelo al lado del step](feedback_el_estado_paralelo_al_lado_del_step.md) — «siempre va con aquello» se hereda en silencio: mételo DENTRO y que lo obligue el compilador. Cuéntalos, no lo afirmes.
-- [El prefijo que elegí tiene DOS efectos](feedback_el_prefijo_que_elegi_tiene_dos_efectos.md) — excluir una key de un barrido la excluye de todos; un seam de uitest la deja viva para siempre.
-- [El default seguro no es el mismo para todos](feedback_el_default_seguro_no_es_el_mismo_para_todos.md) — el consumidor que alcanza datos de FUERA invierte el default; dos lecturas nombradas, y comprueba que la ausencia existe.
-- [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build incremental; dos míos iban al commit el 10-sep.
+- [El prefijo que elegí tiene DOS efectos](feedback_el_prefijo_que_elegi_tiene_dos_efectos.md) — excluir una key de un barrido la excluye de todos.
+- [El default seguro no es el mismo para todos](feedback_el_default_seguro_no_es_el_mismo_para_todos.md) — el consumidor que alcanza datos de FUERA invierte el default.
+- [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build incremental.
 
 ## Estado del trabajo
-- [Un fallo pasajero al cerrar sesión en la nube ya se dice honesto](project_aviso_pasajero_cierre_nube.md) — PR #156; la premisa del ticket era FALSA y la review cazó dos defectos en MIS tests; device-QA NO simulable; deja 4 tickets.
-- [«Empezar desde cero» en Restaurar ya borra](project_restore_start_fresh_pasa_por_la_puerta.md) — PR #155; la review cazó 11 MÍOS y el 1.º era que el arreglo no arreglaba; device-QA NO simulable; deja 2 tickets.
-- [Un 403 de infra ya no es un veredicto de cuenta](project_403_infra_no_es_veredicto_de_cuenta.md) — PR #154; el sello queda SIN productor alcanzable y el cierre `.cloud` sigue colapsando en `.permanent` (decisión suya).
+- [«Empezar desde cero» en la activación ya borra de verdad](project_activacion_descarta_y_borra_de_verdad.md) — el hermano lo dio por imposible.
+- [Un fallo pasajero al cerrar sesión en la nube ya se dice honesto](project_aviso_pasajero_cierre_nube.md) — PR #156.
+- [«Empezar desde cero» en Restaurar ya borra](project_restore_start_fresh_pasa_por_la_puerta.md) — PR #155; la review cazó 11 MÍOS y el 1.º era que el arreglo no arreglaba.
+- [Un 403 de infra ya no es un veredicto de cuenta](project_403_infra_no_es_veredicto_de_cuenta.md) — PR #154.
 - [El eje 1 ya tiene fuente propia](project_eje1_marca_sesion_privada.md) — PR #150; eran 9 constructores y no 6; el barrido de M1 es el PR-B y el device-QA NO es simulable.
-- [El paso 12 estaba roto: el eje 1 no tenía fuente](project_paso12_dominio_preferencias.md) — PR #149 entrega el tercio mecánico; 4 decisiones del 12-sep; el flag de M1 estaba en `true`, no en `false`.
-- [El simulador se pide por turno, y la segunda espera](project_cola_del_simulador.md) — PR #147; la review cazó DOS llaves maestras mías; tener el turno NO es tener el simulador; deja 4 tickets.
-- [La cuenta de grupos ya se suelta con la nube en pausa](project_killswitch_puerta_grupos.md) — PR #146; el predicado del ticket era el equivocado; device-QA SÍ simulable; deja un `high`.
-- [Los 7 XCUITest del Welcome estaban SANOS](project_siete_xcuitest_welcome_falso_positivo.md) — `discarded` con 3 mediciones (PR #145); queda el centinela del simulador y un `high` esperando decisión de Jürgen.
-- [«Desasociar» ya no finge que soltó la cuenta](project_desasociar_no_finge_exito.md) — PR #144; la review fue en DOS vueltas y la 2.ª cazó 2 ALTAS de mi rediseño; el botón «Terminar» NO es simulable (falta seam).
-- [Aceptar una invitación en un teléfono prestado ya no cruza datos](project_puerta_neutro_del_invitado.md) — PR #143; la puerta del invitado NO es la del organizador y aquí se PREGUNTA; la review cazó 23 defectos MÍOS; device-QA NO simulable.
-- [La cuenta de grupos ya se ve y se suelta en Ajustes](project_asociacion_cuenta_de_grupos.md) — paso 10, PR #140; el «enlace dormido» del ticket era IMPOSIBLE (sin ancla) y se sustituyó; device-QA NO simulable; deja dos tickets `high`.
-- [«Vengo por un grupo» ya no bloquea al dueño](project_puerta_grupos_vuelve_al_neutro.md) — mitad 2, PR #139; el relanzamiento ya estaba decidido en la fila B; la INVITACIÓN queda fuera con ticket `high`; device-QA NO simulable.
-- [Paso 9: un verbo por sesión](project_paso9_un_verbo_por_sesion.md) — PR #138; M15 sobrevive y es hallazgo; el único rojo de XCUITest lo zanjó el árbol base; falta device-QA y NO es simulable.
-- [«Activar Yala completo» ya pregunta privado / nube](project_activacion_pregunta_donde_viven.md) — paso 8, PR #137; la review cazó 14 MÍOS; device-QA NO simulable (reinstalar antes); no reordenar «completo antes de converger».
-- [La card «Grupos» del propósito ya no existe](project_paso7_card_grupos_retirada.md) — paso 7, PR #136; la puerta B se fue entera; `organizerBranchHasOneEntry` saltará si el paso 10 añade entrada.
-- [El faro solo encamina: «Crear otra cuenta» y mismatch con dos salidas](project_faro_solo_encamina.md) — paso 6, PR #135; el huérfano se limpia con PRUEBA (Apple+Apple); device-QA pendiente; `restore-beacon…` NO cerrado.
-- [Una sesión solo-grupos ya no baja el iCloud del teléfono](project_neutro_durable_solo_grupos.md) — PR #134; la review cazó 12 defectos MÍOS, dos graves; la mitad 2 la paró Jürgen y falta device-QA NO simulable.
-- [«Primera vez → privado» ya valida iCloud antes de reiniciar](project_puerta_icloud_rama_privada.md) — PR #133; la review cazó 19 defectos MÍOS y el peor dejaba el bug vivo; falta device-QA y NO es simulable.
-- [«Volver a iCloud» ya está abierta a quien nació en la nube](project_reversa_abierta_a_born_cloud.md) — PR #132; la review cazó DOS defectos graves MÍOS; falta el device-QA de CloudKit y NO es simulable.
-- [Todo sign-in en la nube ya descubre el tipo de cuenta y rutea](project_bloque_identidad_nube_rutea.md) — bloque [I]; el Worker NO sirve `kind` todavía, así que 3 de los 4 device-QA no se distinguen hasta desplegarlo.
-- [La elección nube ya no se apaga sola en un deploy](project_percent_eleccion_nube_alineado_con_prod.md) — PR #128 desplegado y verificado; la card born-cloud SÍ se ve en prod, y deja una ventana abierta hasta el paso 12.
-- [Rediseño de sesiones: dos ejes](project_rediseno_sesiones_dos_ejes.md) — ADR 9-sep + 13 tickets con orden; M1 retirada y «en la nube» RATIFICADOS; la puerta «datos ajenos» bloqueó a Jürgen en device.
-- [Cambiar la divisa de una cuenta ya no deja su histórico atrás](project_divisa_de_una_cuenta_con_historico.md) — PR #118; la review cazó SEIS defectos del ARREGLO; deja 5 tickets y un device-QA con trampa.
-- [La familia FX, recorrida entera en simulador](project_seam_cuenta_divisa_ausente.md) — PR #114 y #115: 5 PASS, 2 parciales por red/seam; los dos fixtures que faltaban ya existen y dejan 4 tickets.
-- [El gasto de grupo ya lleva la incertidumbre de sus patas](project_marca_aproximado_gasto_de_grupo.md) — PR #113 cierra la familia del «≈»; falta device-QA y NO es simulable; deja 3 tickets, uno es una pantalla entera sin marca.
-- [El cambio masivo de cuenta ya no arrastra la divisa vieja](project_bulk_cuenta_divisa_vieja.md) — PR #110; el método se BORRÓ (cero llamadores en toda la historia) y el bloque bulk del servicio está muerto entero.
-- [Las filas que el chat selló con tasa falsa ya se curan](project_barrido_tasa_sellada_chat.md) — PR #108; el plan obvio (reabrir) DAÑABA; falta device-QA, sí simulable; deja 3 tickets.
-- [El chat ya guarda en la divisa de la cuenta](project_divisa_del_chat_vs_cuenta.md) — PR #107; el hueco grande que queda es editar la divisa de una CUENTA (**high**); falta device-QA, sí simulable.
-- [El borrador del chat ya no se contradice a sí mismo](project_signo_vs_subcategoria_chat.md) — PR #106; el ticket decía 1 sitio y eran 6; falta device-QA (sí simulable) y deja 2 tickets, uno **high** de proceso.
+- [El paso 12 estaba roto: el eje 1 no tenía fuente](project_paso12_dominio_preferencias.md) — PR #149 entrega el tercio mecánico; 4 decisiones del 12-sep.
+- [El simulador se pide por turno, y la segunda espera](project_cola_del_simulador.md) — PR #147; la review cazó DOS llaves maestras mías.
+- [La cuenta de grupos ya se suelta con la nube en pausa](project_killswitch_puerta_grupos.md) — PR #146; el predicado del ticket era el equivocado; device-QA SÍ simulable.
+- [Los 7 XCUITest del Welcome estaban SANOS](project_siete_xcuitest_welcome_falso_positivo.md) — `discarded` con 3 mediciones (PR #145).
+- [«Desasociar» ya no finge que soltó la cuenta](project_desasociar_no_finge_exito.md) — PR #144; la review fue en DOS vueltas y la 2.ª cazó 2 ALTAS de mi rediseño.
+- [Aceptar una invitación en un teléfono prestado ya no cruza datos](project_puerta_neutro_del_invitado.md) — PR #143.
+- [La cuenta de grupos ya se ve y se suelta en Ajustes](project_asociacion_cuenta_de_grupos.md) — paso 10, PR #140.
+- [«Vengo por un grupo» ya no bloquea al dueño](project_puerta_grupos_vuelve_al_neutro.md) — mitad 2, PR #139; el relanzamiento ya estaba decidido en la fila B.
+- [Paso 9: un verbo por sesión](project_paso9_un_verbo_por_sesion.md) — PR #138; M15 sobrevive y es hallazgo; el único rojo de XCUITest lo zanjó el árbol base.
+- [«Activar Yala completo» ya pregunta privado / nube](project_activacion_pregunta_donde_viven.md) — paso 8, PR #137; la review cazó 14 MÍOS.
+- [La card «Grupos» del propósito ya no existe](project_paso7_card_grupos_retirada.md) — paso 7, PR #136; la puerta B se fue entera.
+- [El faro solo encamina: «Crear otra cuenta» y mismatch con dos salidas](project_faro_solo_encamina.md) — paso 6, PR #135; el huérfano se limpia con PRUEBA (Apple+Apple).
+- [Una sesión solo-grupos ya no baja el iCloud del teléfono](project_neutro_durable_solo_grupos.md) — PR #134; la review cazó 12 defectos MÍOS, dos graves.
+- [«Primera vez → privado» ya valida iCloud antes de reiniciar](project_puerta_icloud_rama_privada.md) — PR #133; la review cazó 19 defectos MÍOS y el peor dejaba el bug vivo.
+- [«Volver a iCloud» ya está abierta a quien nació en la nube](project_reversa_abierta_a_born_cloud.md) — PR #132; la review cazó DOS defectos graves MÍOS.
+- [Todo sign-in en la nube ya descubre el tipo de cuenta y rutea](project_bloque_identidad_nube_rutea.md) — bloque [I].
+- [La elección nube ya no se apaga sola en un deploy](project_percent_eleccion_nube_alineado_con_prod.md) — PR #128 desplegado y verificado.
+- [Rediseño de sesiones: dos ejes](project_rediseno_sesiones_dos_ejes.md) — ADR 9-sep + 13 tickets con orden; M1 retirada y «en la nube» RATIFICADOS.
+- [Cambiar la divisa de una cuenta ya no deja su histórico atrás](project_divisa_de_una_cuenta_con_historico.md) — PR #118; la review cazó SEIS defectos del ARREGLO.
+- [La familia FX, recorrida entera en simulador](project_seam_cuenta_divisa_ausente.md) — PR #114 y #115: 5 PASS, 2 parciales por red/seam; deja 4 tickets.
+- [El gasto de grupo ya lleva la incertidumbre de sus patas](project_marca_aproximado_gasto_de_grupo.md) — PR #113 cierra la familia del «≈»; device-QA NO simulable.
+- [El cambio masivo de cuenta ya no arrastra la divisa vieja](project_bulk_cuenta_divisa_vieja.md) — PR #110; el método se BORRÓ (cero llamadores en toda la historia).
+- [Las filas que el chat selló con tasa falsa ya se curan](project_barrido_tasa_sellada_chat.md) — PR #108; el plan obvio (reabrir) DAÑABA; deja 3 tickets.
+- [El chat ya guarda en la divisa de la cuenta](project_divisa_del_chat_vs_cuenta.md) — PR #107; el hueco grande que queda es editar la divisa de una CUENTA (**high**).
+- [El borrador del chat ya no se contradice a sí mismo](project_signo_vs_subcategoria_chat.md) — PR #106; el ticket decía 1 sitio y eran 6; deja 2 tickets, uno **high**.
 - [El corpus viejo del chat ya se cura solo](project_barrido_signo_chat.md) — PR #103, acotado para no tocar lo importado por CSV; falta device-QA.
-- [El chat ya guarda la tasa que usó](project_chat_tasa_del_borrador.md) — PR #99; falta device-QA y NO es simulable; deja 4 tickets, uno **high**: el chat pierde el signo y el gasto SUMA al saldo.
-- [La cola del reparador de tasas ya tiene salida](project_cola_reparador_tasas.md) — PR #98; dos de los tres daños del ticket eran FALSOS (medido); falta device-QA y deja 3 tickets.
-- [Las escrituras a mano ya no sellan una tasa aproximada](project_fx_escrituras_a_mano.md) — PR #94; eran 14 y no 10, el device-QA NO es simulable, y el AC nº2 pedía algo que no procede.
-- [La ganancia cambiaria ya tiene número](project_fx_pnl_card.md) — PR #92; falta device-QA y NO es simulable (ningún seed es multi-divisa); el FIFO no se simplifica.
-- [El tope de gasto del grupo ya avisa](project_presupuesto_de_grupo.md) — PR #91 y g14_01 en prod; el ticket ya está en `qa/`, y quedan device-QA, tres migraciones de staging y el Worker.
+- [El chat ya guarda la tasa que usó](project_chat_tasa_del_borrador.md) — PR #99; deja 4 tickets, uno **high**: el chat pierde el signo y el gasto SUMA al saldo.
+- [La cola del reparador de tasas ya tiene salida](project_cola_reparador_tasas.md) — PR #98; dos de los tres daños del ticket eran FALSOS (medido); deja 3 tickets.
+- [Las escrituras a mano ya no sellan una tasa aproximada](project_fx_escrituras_a_mano.md) — PR #94; eran 14 y no 10, y el AC nº2 pedía algo que no procede.
+- [La ganancia cambiaria ya tiene número](project_fx_pnl_card.md) — PR #92; device-QA NO simulable (ningún seed es multi-divisa); el FIFO no se simplifica.
+- [El tope de gasto del grupo ya avisa](project_presupuesto_de_grupo.md) — PR #91 y g14_01 en prod; quedan device-QA, tres migraciones de staging y el Worker.
 - [El recordatorio de deuda ya avisa al deudor](project_recordatorio_liquidacion.md) — PR #89; falta device-QA y una decisión; NO se respeta `simplifyDebts` a propósito.
-- [El Panel ya suma las cuentas filtradas](project_panel_conjunto_de_cuentas.md) — PR #87; falta device-QA y quedan tres preexistentes con ticket propio.
+- [El Panel ya suma las cuentas filtradas](project_panel_conjunto_de_cuentas.md) — PR #87; quedan tres preexistentes con ticket propio.
 - [La frontera de la visita: SUPERADA](project_la_frontera_de_la_visita.md) — el ADR del 9-sep retira M1 y sus 12 tickets están descartados; no reabrir ninguno suelto.
 - [Salir del grupo: cerrado en código, abierto en decisión](project_salir_del_grupo_espera_decision.md) — PR #75; falta device-QA y qué se le ofrece al dueño con deuda.
 - [El archivado ya cierra la puerta](project_archivado_no_acepta_entradas.md) — g13_05 en prod; falta device-QA, y staging arrastra ya DOS migraciones por falta de credencial.
-- [La re-entrada: cerrada en código, abierta en decisión](project_reentrada_piezas_2_y_3.md) — piezas 2 y 3 hechas (PR #68); lo que queda es device-QA y una decisión suya sobre el kill-switch.
-- [La identidad del recién llegado a un grupo](project_identidad_del_joiner_en_grupos.md) — cerrada en código el 4 y 5-sep; falta device-QA de dos teléfonos, y NO se reabre la vía del refresh.
-- [Decisiones que esperan a Jürgen](project_decisiones_que_esperan_a_jurgen.md) — 19 contestadas el 6-sep; «¿queda alguna?» se responde LEYENDO los 94, no con grep; un residual «decisión aparte» en qa/ es huérfano → ticket.
+- [La re-entrada: cerrada en código, abierta en decisión](project_reentrada_piezas_2_y_3.md) — piezas 2 y 3 hechas (PR #68).
+- [La identidad del recién llegado a un grupo](project_identidad_del_joiner_en_grupos.md) — cerrada en código el 4 y 5-sep.
+- [Decisiones que esperan a Jürgen](project_decisiones_que_esperan_a_jurgen.md) — 19 contestadas el 6-sep; «¿queda alguna?» se responde LEYENDO los 94, no con grep.
 - [Web: lo que Jürgen decidió, y lo que no](project_web_pr62_espera_a_jurgen.md) — PR #62 mergeado el 4-sep; siguen abiertas dos suyas: legal de Grupos y autoalojar fuentes.
-- [El cron de Actions estuvo muerto y revivió](project_cron_de_actions_no_dispara.md) — disparó el 8-sep con 4h35 de retraso; ese retraso supera el margen del vigilante, que cantaría rojo falso.
-- [Hipótesis de la Lista Negra, re-comprobadas](project_hipotesis_lista_negra_recomprobadas.md) — el runner de XCUITest; el CI y sus pasos ADVISORY; y el snapshot de Time Machine que hace inútil liberar disco.
+- [El cron de Actions estuvo muerto y revivió](project_cron_de_actions_no_dispara.md) — disparó el 8-sep con 4h35 de retraso.
+- [Hipótesis de la Lista Negra, re-comprobadas](project_hipotesis_lista_negra_recomprobadas.md) — el runner de XCUITest; el CI y sus pasos ADVISORY.
 
 ## Entorno y herramientas
-- [`removeObject` sin efecto = es el simulador](feedback_simulador_preferencias_fuera_del_contenedor.md) — `simctl erase` va PRIMERO; una key pegada me costó un día y ocho XCUITest.
-- [El sello del gate ancla en HEAD](reference_gate_sello_ancla_en_head.md) — una tanda de commits obliga a re-sellar entre ellos; mergear `2.1` obliga a re-correr el gate entero.
-- [Avisar a Frank: lo hace el hook, no tú](reference_avisar_a_frank_webhook.md) — el hook manda PR y rojos solo; «prueba» en el texto lo descarta; `--dry-run` NO enseña tu `--texto` y a los 600 caracteres recorta.
+- [`removeObject` sin efecto = es el simulador](feedback_simulador_preferencias_fuera_del_contenedor.md) — `simctl erase` va PRIMERO.
+- [El sello del gate ancla en HEAD](reference_gate_sello_ancla_en_head.md) — una tanda de commits obliga a re-sellar entre ellos.
+- [Avisar a Frank: lo hace el hook, no tú](reference_avisar_a_frank_webhook.md) — el hook manda PR y rojos solo; «prueba» en el texto lo descarta.
 - [El aviso de cierre necesita el cwd del repo](reference_aviso_cierre_necesita_cwd.md) — tras retirar el worktree va a Dan y se descarta en silencio; lee la línea ENVIADO.
-- [Un campo Codable nuevo apaga los widgets](feedback_campo_codable_nuevo_apaga_el_widget.md) — el DTO del App Group está DUPLICADO y decodifica entero; y el target del widget no puede importar casi nada de `Yala/`.
-- [El acceso al backend se MIDE cada sesión](reference_verificar_backend_yala.md) — el 10-sep estaba invertido; `execute_sql` y `apply_migration` no comparten rol; sandbox transaccional para lo demás.
-- [Runbook de DDL en staging](reference_runbook_staging_ddl.md) — las tres migraciones en un solo sitio; su «falta la credencial» CADUCÓ el 10-sep; `wrangler` SÍ está autenticado.
-- [El hook de secretos está desactivado](hook_secretos_disparador_substring.md) — retirado del push el 2026-09-01 (ADR-009); nada escanea hoy. Su trampa del substring, si vuelve.
+- [Un campo Codable nuevo apaga los widgets](feedback_campo_codable_nuevo_apaga_el_widget.md) — el DTO del App Group está DUPLICADO y decodifica entero.
+- [El acceso al backend se MIDE cada sesión](reference_verificar_backend_yala.md) — el 10-sep estaba invertido; `execute_sql` y `apply_migration` no comparten rol.
+- [Runbook de DDL en staging](reference_runbook_staging_ddl.md) — las tres migraciones en un solo sitio; su «falta la credencial» CADUCÓ el 10-sep.
+- [El hook de secretos está desactivado](hook_secretos_disparador_substring.md) — retirado del push el 2026-09-01 (ADR-009).
 - [El hook de /cerrar salta con «cerramos»](hook_cerrar_disparador_substring.md) — verifica la premisa contra su mensaje: cerrar un ticket no es cerrar la sesión, y el bloque de disco es irreversible.
-- [DNS de yala-app.pe](reference_dns_yala_app_pe.md) — el correo autentica desde el 8-sep; qué leer en la cabecera además de los tres `pass`; subir la política tiene ticket y fecha.
+- [DNS de yala-app.pe](reference_dns_yala_app_pe.md) — el correo autentica desde el 8-sep; qué leer en la cabecera además de los tres `pass`.
 
-- [El disco: los GB están DENTRO del simulador](reference_disco_cache_simulador.md) — coresymbolicationd + containermanagerd ≈ 7,6 GB regenerables; `find -delete`, y vuelve a llenarse en la misma sesión.
+- [El disco: los GB están DENTRO del simulador](reference_disco_cache_simulador.md) — coresymbolicationd + containermanagerd ≈ 7,6 GB regenerables.
