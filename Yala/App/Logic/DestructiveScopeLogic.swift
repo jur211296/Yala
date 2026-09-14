@@ -33,7 +33,9 @@ nonisolated enum DestructiveScopeLogic {
     enum Operation: Equatable, CaseIterable {
         // MARK: Vaciar datos — «grupos, nunca»
         /// Privada o nube (C · D · E): la vida personal entera. En privada se borra también de iCloud, y
-        /// con él de cualquier dispositivo con ese Apple ID (la hoja lo nombra: decisión de Jürgen).
+        /// con ello de los dispositivos cuyos datos personales viven en ESE iCloud — que es lo que la hoja
+        /// nombra desde el 2026-09-14, y no «cualquier dispositivo con este Apple ID»: uno prestado o con
+        /// la cuenta de Yala ya no obedece la señal (`wipeSignalObeyedByThisSession`).
         case wipeDataFull
         /// Solo grupos (F) con un store que no espeja: perfil + preferencias. No hay vida personal que vaciar
         /// ni nada que viaje a otro dispositivo (`wipeOperation`).
@@ -141,10 +143,10 @@ nonisolated enum DestructiveScopeLogic {
     /// nombra todo lo que va a borrar antes de que nadie confirme.
     ///
     /// **`personalMountAttachesMirror` sube el scope de un solo-grupos cuyo store ESPEJA** (review adversarial
-    /// del paso 9). «Vaciar datos» borra FILAS, y con el espejo montado esos borrados se exportan: salen de
-    /// iCloud y de todos los dispositivos del Apple ID. Pasa, por ejemplo, en una instalación anterior al
-    /// paso 5, y ahí la hoja de solo grupos decía «No se tocan» sobre un borrado que cruzaba a todos los
-    /// dispositivos. Con espejo, la hoja es la completa, que lo nombra.
+    /// del paso 9). «Vaciar datos» borra FILAS, y con el espejo montado esos borrados se exportan: salen a
+    /// iCloud, y de ahí a los demás dispositivos que lean de ese mismo iCloud. Pasa, por ejemplo, en una
+    /// instalación anterior al paso 5, y ahí la hoja de solo grupos decía «No se tocan» sobre un borrado que
+    /// cruzaba a otros dispositivos. Con espejo, la hoja es la completa, cuya fila ☁️ nombra ese cruce.
     static func wipeOperation(hasPrivateSession: Bool, personalMountAttachesMirror: Bool) -> Operation {
         !hasPrivateSession && !personalMountAttachesMirror ? .wipeDataGroupsOnly : .wipeDataFull
     }
@@ -290,8 +292,12 @@ nonisolated enum DestructiveScopeLogic {
                        .init(location: .groups, tone: .preserved)],
                 cloudLabel: cloudLabel,
                 hasConservationNote: true,
-                // D9: en `.cloud` declarar el residual multi-device. `.icloud` → sin línea: su fila ☁️ ya
-                // nombra todos los dispositivos del Apple ID.
+                // D9: en `.cloud` declarar el residual multi-device. `.icloud` → sin línea, y la razón
+                // cambió el 2026-09-14: antes era que su fila ☁️ «ya nombra todos los dispositivos del
+                // Apple ID» — una promesa que dejó de cumplirse. Hoy esa fila ACOTA el alcance en su propio
+                // texto (`wipeScopeCloudICloudPersonal`), así que no hay promesa fuerte que matizar. Reponer
+                // aquí la línea se evaluó y se descartó (decisión de Jürgen, 2026-09-14): no afirma que en
+                // `.icloud` no exista residual alguno, solo que la hoja no lo declara.
                 extraLines: cloudLabel == .cloudAccount ? [.multiDeviceResidual] : [],
                 // "Exportar antes" SIEMPRE (red de seguridad §m.4); con deuda, "Ver mis grupos" va PRIMERO
                 // (protege a terceros: saldar antes de destruir); sin deuda y con grupos+flag (D10),

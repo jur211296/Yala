@@ -4451,8 +4451,11 @@ enum L10n {
         static var scopePersonalInICloud: String { ls("settings.scopePersonalInICloud", comment: "") }
         static var wipeScopeDevice: String { ls("settings.wipeScopeDevice", comment: "") }
         static var wipeScopeDeviceGroupsOnly: String { ls("settings.wipeScopeDeviceGroupsOnly", comment: "") }
-        /// Vaciar en privada: nombra los demás dispositivos del Apple ID (decisión de Jürgen, 2026-09-09).
-        static var wipeScopeCloudICloudAllDevices: String { ls("settings.wipeScopeCloudICloudAllDevices", comment: "") }
+        /// Vaciar en privada: el borrado sale de iCloud, así que alcanza a los dispositivos cuyos datos
+        /// personales viven en ESE iCloud — y a ningún otro. **No nombra el Apple ID** (decisión de Jürgen,
+        /// 2026-09-14): desde que la señal de vaciado solo la obedece un dispositivo con los datos de ese
+        /// iCloud, un iPad prestado o con la cuenta de Yala no la cumple, y prometerlo era falso.
+        static var wipeScopeCloudICloudPersonal: String { ls("settings.wipeScopeCloudICloudPersonal", comment: "") }
         static var wipeScopeCloudAccount: String { ls("settings.wipeScopeCloudAccount", comment: "") }
         static var wipeScopeGroups: String { ls("settings.wipeScopeGroups", comment: "") }
         static var wipeScopeConservation: String { ls("settings.wipeScopeConservation", comment: "") }

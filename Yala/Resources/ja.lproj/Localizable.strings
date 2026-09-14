@@ -5135,7 +5135,6 @@
 "settings.signOutExportPendingMessage" = "このデバイスでまだiCloudに届いていない変更：%d件。今サインアウトすると失われます。";
 "settings.signOutExportPendingMessageUnknown" = "最新の変更がiCloudに届いたことを確認できませんでした。今サインアウトすると失われる可能性があります。";
 "settings.signOutExportDiscardButton" = "それでもサインアウト";
-"settings.wipeScopeCloudICloudAllDevices" = "iCloudから削除され、このApple IDを使うiPad、Mac、その他すべてのデバイスからも消えます";
 
 
 
@@ -5927,3 +5926,6 @@
 
 /* Estado K de la puerta que VUELVE: iCloud apagado, no se borro nada, y como activarlo */
 "welcome.privateICloud.discardUnverifiedNoAccountBody" = "この iPhone は iCloud がオフなので、以前に何か保存したか確認できず、何も削除していません。「設定」でオンにしてもう一度お試しいただくか、前に戻って、好きなときに決められます。";
+
+/* Wipe sheet, cloud row when personal data lives in the user private iCloud: the deletion only reaches devices whose personal data lives in that same iCloud */
+"settings.wipeScopeCloudICloudPersonal" = "iCloudから削除されるため、あなたの個人データをそこに保存している他のデバイスからも消えます";

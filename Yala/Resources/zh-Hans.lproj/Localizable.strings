@@ -5135,7 +5135,6 @@
 "settings.signOutExportPendingMessage" = "此设备上尚未上传到 iCloud 的更改：%d 项。现在退出登录，这些更改将会丢失。";
 "settings.signOutExportPendingMessageUnknown" = "无法确认你最近的更改已上传到 iCloud。现在退出登录，这些更改可能会丢失。";
 "settings.signOutExportDiscardButton" = "仍然退出登录";
-"settings.wipeScopeCloudICloudAllDevices" = "将从 iCloud 删除，并从你的 iPad、Mac 以及使用此 Apple ID 的所有设备上消失";
 
 
 
@@ -5927,3 +5926,6 @@
 
 /* Estado K de la puerta que VUELVE: iCloud apagado, no se borro nada, y como activarlo */
 "welcome.privateICloud.discardUnverifiedNoAccountBody" = "这台手机没有开启 iCloud，所以我们无法确认你以前有没有保存过东西，也什么都没有删除。可以在「设置」里开启后再试一次，或者返回，想好了再决定。";
+
+/* Wipe sheet, cloud row when personal data lives in the user private iCloud: the deletion only reaches devices whose personal data lives in that same iCloud */
+"settings.wipeScopeCloudICloudPersonal" = "将从 iCloud 删除，因此也会从其他在此存放你个人数据的设备上消失";
