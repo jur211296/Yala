@@ -333,6 +333,17 @@ final class AppBootstrapper {
             observeTransactionsImportedFromSync()
         }
 
+        // 14.55-bis. ¿Sigue siendo el mismo Apple ID que montó esta sesión privada? (ADR §1).
+        //
+        // **En el arranque ADEMÁS del observer, y no solo en él**: `NSUbiquityIdentityDidChange` no se
+        // entrega a una app que no está corriendo, y cambiar de cuenta de iCloud es justo el gesto que
+        // suele hacerse con Yala cerrada. Sin esta línea, el cambio no se detectaría hasta el siguiente
+        // cambio de cuenta.
+        //
+        // Dentro del `if lifecycleObserversInstalled` NO, aunque lo parezca: esto no instala nada, es
+        // una comprobación, y su idempotencia la da su propio latch por proceso.
+        checkForAppleIDChange(trigger: "boot")
+
         // 14.55 B1 (SIWA revoke 5.1.1(v)): composición de PRODUCCIÓN del hook de canje — el ÚNICO punto
         // que instala el closure real (AJUSTE #2 del brief: CloudAuthService no depende de
         // CloudAccountClient; el default nil = no-op). Gateado como 14.6: desde D-R1 paso 1 el gate está
@@ -1121,6 +1132,110 @@ final class AppBootstrapper {
         ) { _ in
             MainActor.assumeIsolated {
                 AppBootstrapper.shared.checkForICloudMismatch()
+                // El cambio de Apple ID es OTRA pregunta y otro desenlace (ADR §1: la sesión privada es
+                // del Apple ID ⇒ se cierra, no se avisa). Comparte disparador con la de arriba y nada
+                // más: `checkForICloudMismatch` pregunta «¿monté sin espejo y ahora hay iCloud?», que
+                // puede ser cierta con la MISMA cuenta de siempre.
+                AppBootstrapper.shared.checkForAppleIDChange(trigger: "identity-notification")
+            }
+        }
+    }
+
+    // MARK: - Cambio de Apple ID → cierre de la sesión privada
+
+    /// Latch POR PROCESO. Dos trabajos: que el aviso salga una vez por lanzamiento (si la persona
+    /// elige «Ahora no», no vuelve a aparecer hasta el arranque siguiente — y si vuelve a su Apple ID
+    /// anterior, no vuelve a aparecer nunca, porque el predicado deja de disparar solo), y que dos
+    /// disparadores seguidos —el boot y la notificación— no encolen dos veces el mismo intent.
+    private var appleIDChangeHandledThisLaunch = false
+
+    /// **Hay una comprobación EN VUELO.** No es lo mismo que el latch de arriba y hacen falta los dos:
+    /// el latch se pone cuando ya se ha ofrecido el cierre, o sea DESPUÉS del `await` a CloudKit, así
+    /// que por sí solo no impide que el boot y la notificación —que llegan con milisegundos de
+    /// diferencia en el arranque justo después de cambiar de cuenta— pasen los dos su guard y salgan
+    /// los dos a la red. El daño no es solo el viaje duplicado: `AppRouter.enqueue` dedupea por `id`
+    /// mientras el intent está EN COLA, pero si el primero ya se drenó, el segundo monta un segundo
+    /// alert detrás del primero — dos alerts encadenados del mismo anchor, que es el molde de brick que
+    /// la rule de presentaciones describe.
+    private var appleIDChangeCheckInFlight = false
+
+    /// **El cierre por cambio de Apple ID ya se ofreció en este lanzamiento.** Lo lee el OTRO aviso
+    /// (`checkForICloudMismatch`), que a partir de ahí se calla: ver su guard. Es la mitad simétrica de
+    /// la regla de supersesión `appleIDChanged_supersedes_iCloudMismatch`, que solo puede tirar lo que
+    /// ya está EN COLA.
+    private var appleIDChangeOffered = false
+
+    /// **¿Sigue siendo el mismo Apple ID que montó esta sesión privada?**
+    ///
+    /// Corre en DOS sitios y en ninguno más: una vez en el arranque y en cada
+    /// `NSUbiquityIdentityDidChange`. **No cuelga de `handleBecameActive`**, y eso es la respuesta al
+    /// tercer criterio del ticket: ahí no hay ninguna señal de que la cuenta haya cambiado, así que
+    /// colgarlo de la vuelta a primer plano sería una ida a CloudKit por cada foreground para contestar
+    /// casi siempre lo mismo. El aviso del espejo tardío (`checkForICloudMismatch`) sí corre ahí, y se
+    /// queda como está: es local y no sale a la red.
+    ///
+    /// El veredicto es asíncrono porque la identidad la contesta CloudKit. Todo lo que puede salir mal
+    /// —sin red, sin cuenta, `notAuthenticated`— llega como `nil` y el predicado lo trata como «no sé»:
+    /// no cierra nada. El error caro de esta función es el falso positivo, que borra datos.
+    ///
+    /// **Dos residuales medidos, los dos del lado que no destruye.** (1) Un disparo que llegue con una
+    /// comprobación en vuelo se DESCARTA, no se encola: si el fetch del arranque tarda y la cuenta
+    /// cambia mientras, ese cambio se detecta en el arranque siguiente y no en éste. (2) El fetch no
+    /// lleva timeout ni se guarda su `Task`, así que un `userRecordID()` que se cuelgue deja la
+    /// comprobación apagada el resto del lanzamiento. En los dos casos el desenlace es «no se ofrece el
+    /// cierre todavía», que converge solo con el arranque siguiente; lo contrario —reintentar contra un
+    /// estado que no se pudo leer— es lo que lleva a cerrar sesiones por error.
+    func checkForAppleIDChange(trigger: String) {
+        guard !appleIDChangeHandledThisLaunch, !appleIDChangeCheckInFlight else { return }
+        // Los hosts de test no salen a CloudKit: ahí `personalConfiguration` ni siquiera monta el store
+        // de producción, así que preguntarle a la cuenta del simulador no diría nada de nadie.
+        guard !SwiftDataConfiguration.isRunningTests, !UITestHooks.isActive else { return }
+        // **Y no a mitad de una migración a la nube.** `CloudSyncFlags.storageMode` sigue siendo
+        // `.icloud` durante buena parte del cutover —el modo se persiste al final—, así que el término
+        // del predicado que excluye la nube todavía no protege: sin este guard, una migración en vuelo
+        // podría recibir la oferta de cerrar la sesión y borrar lo local justo mientras sube. Es el
+        // mismo guard con el que `ProfileView` inhibe su fila de cierre (`ProfileView.swift:1116`), y
+        // no va en el predicado puro porque no es un hecho del eje: es «ahora no es el momento».
+        guard (CloudMigrationController.shared?.uiState ?? .idle) == .idle else { return }
+
+        // Los tres términos LOCALES se leen antes de gastar una ida a la red: si esta celda no
+        // participa —no hay sesión privada confirmada, es solo-grupos, o lo personal vive en la nube—
+        // no hay nada que preguntar. **No es una copia de la condición**: es la mitad extraída del
+        // propio predicado, que `decide` vuelve a llamar con la respuesta del fetch.
+        guard AppleIDChangeCloseLogic.participates(
+            confirmedPrivateSession: PrivateSessionMark.confirmedPrivateSession(),
+            groupsOnlySessionArmed: StorageModePersistence.isGroupsOnlyNeutralMountArmed(),
+            storageMode: CloudSyncFlags.storageMode) else { return }
+
+        // El flag se pone ANTES de crear el `Task`, no dentro: dos llamadas en el mismo turno del
+        // main actor pasarían las dos el guard si la marca esperara a la primera suspensión.
+        appleIDChangeCheckInFlight = true
+        Task { @MainActor in
+            defer { appleIDChangeCheckInFlight = false }
+            let identity = await PrivateSessionAppleIDWitness.currentIdentity()
+            // Los términos se RE-LEEN después del `await`: entre el disparo y la respuesta de CloudKit
+            // la persona pudo cerrar sesión o activar Yala completo, y decidir con el snapshot de antes
+            // sería borrar sobre un estado que ya no existe.
+            let verdict = AppleIDChangeCloseLogic.decide(
+                confirmedPrivateSession: PrivateSessionMark.confirmedPrivateSession(),
+                groupsOnlySessionArmed: StorageModePersistence.isGroupsOnlyNeutralMountArmed(),
+                storageMode: CloudSyncFlags.storageMode,
+                witness: PrivateSessionAppleIDWitness.witness(),
+                currentIdentity: identity)
+            switch verdict {
+            case .seedWitness:
+                // Primera lectura de este dispositivo (el parque entero, el día que esto se estrena).
+                // Se guarda y no se molesta a nadie: una marca ausente no es prueba de un cambio.
+                if let identity { PrivateSessionAppleIDWitness.adopt(identity) }
+            case .offerClose:
+                appleIDChangeHandledThisLaunch = true
+                appleIDChangeOffered = true
+                #if DEBUG
+                print("AppBootstrapper: Apple ID cambiado (\(trigger)) — se ofrece cerrar la sesión privada")
+                #endif
+                RouterEntryGate.shared.submit(.appleIDChangedClosePrivate)
+            case .ignore:
+                break
             }
         }
     }
@@ -1147,6 +1262,19 @@ final class AppBootstrapper {
 
     private func checkForICloudMismatch() {
         guard !iCloudMismatchAlreadyDetected else { return }
+        // **Si ya se ofreció cerrar la sesión por cambio de Apple ID, este aviso MIENTE.** Su consejo es
+        // «cierra y vuelve a abrir la app para sincronizar tus datos», y con la cuenta cambiada eso
+        // sincronizaría el corpus del Apple ID anterior contra el NUEVO. Además serían dos `.alert`
+        // encadenados del mismo anchor, que es el molde de brick de la rule de presentaciones. La otra
+        // mitad —cuando el que llega tarde es éste— la cubre la regla de supersesión.
+        // Y también mientras la comprobación está EN VUELO: la ventana es el round-trip a CloudKit, y
+        // `handleBecameActive` llama aquí en el primer `.active` de todo arranque en frío — o sea, DENTRO
+        // de esa ventana. Sin este término el mismatch se encola, se drena y se presenta antes de que
+        // vuelva el fetch, y el aviso del cambio de cuenta se monta detrás: los dos `.alert` encadenados
+        // que la regla de presentaciones prohíbe, por el único orden que la supersesión no puede tirar.
+        // No se pierde nada: `iCloudMismatchAlreadyDetected` sigue en `false`, así que el foreground
+        // siguiente lo vuelve a ofrecer si el veredicto de identidad fue que no había cambio.
+        guard !appleIDChangeOffered, !appleIDChangeCheckInFlight else { return }
 
         // R1 (relanzamiento cero): la decisión vive en `SwiftDataConfiguration.shouldOfferICloudRestart`
         // (pura, testeable) e incluye el término R9. Sus dos primeros inputs son testigos de lo que ESTE

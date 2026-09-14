@@ -120,11 +120,13 @@ nonisolated enum PrivateSessionMark {
     /// llama directo desde los caminos sin `SessionState` a mano (el seam de uitest, el boot).
     static func set(_ value: Bool, _ defaults: UserDefaults = .standard) {
         defaults.set(value, forKey: userDefaultsKey)
+        if !value { PrivateSessionAppleIDWitness.clear(defaults) }
     }
 
     /// El dispositivo vuelve a «recién instalado».
     static func clear(_ defaults: UserDefaults = .standard) {
         defaults.removeObject(forKey: userDefaultsKey)
+        PrivateSessionAppleIDWitness.clear(defaults)
     }
 
     // MARK: - Backfill

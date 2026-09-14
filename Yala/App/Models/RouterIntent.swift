@@ -114,6 +114,11 @@ enum RouterIntent: Identifiable, Equatable {
     case iCloudMismatch
     case remoteWipe(skipOnboarding: Bool)
     case remoteOnboardingCompleted
+    /// **El Apple ID del teléfono cambió y la sesión privada era del anterior** (ADR §1: la sesión
+    /// privada es del Apple ID). Pide el cierre con confirmación; lo decide
+    /// `AppleIDChangeCloseLogic.decide`. Va al FINAL del bloque F y no en medio: el orden de este enum
+    /// se lee desde fuera.
+    case appleIDChangedClosePrivate
 
     // What's new (version bump)
     case presentWhatsNew(features: [WhatsNewFeature], version: String)
@@ -137,6 +142,7 @@ extension RouterIntent {
              .showGroupSyncError,
              .showGroupArchivedNotice,
              .iCloudMismatch, .remoteWipe, .remoteOnboardingCompleted,
+             .appleIDChangedClosePrivate,
              .presentFullModeActivation:
             return .contentView
 
@@ -164,7 +170,11 @@ extension RouterIntent {
         // prioridad la fija el MOMENTO, no la gravedad. Los dos contestan a un tap de enlace que el
         // usuario acaba de dar y cuya respuesta está esperando; si otra cosa se cuela delante, se queda
         // sin saber por qué no entró.
-        case .iCloudMismatch, .remoteWipe, .showInviteError, .showGroupArchivedNotice:
+        // `.appleIDChangedClosePrivate` va con `.remoteWipe` y no con el aviso de espejo tardío: hasta
+        // que se conteste, la app le está enseñando a quien cambió de Apple ID los datos personales del
+        // dueño anterior. No es un aviso que pueda esperar al arranque siguiente.
+        case .iCloudMismatch, .remoteWipe, .showInviteError, .showGroupArchivedNotice,
+             .appleIDChangedClosePrivate:
             return .critical
         case .showInboxAlert, .presentSharedImage, .presentDowngradeResolution,
              .presentTrialExpired, .requestAIConsent, .showGroupSyncError,
@@ -258,6 +268,8 @@ extension RouterIntent {
             return "remoteWipe"
         case .remoteOnboardingCompleted:
             return "remoteOnboardingCompleted"
+        case .appleIDChangedClosePrivate:
+            return "appleIDChangedClosePrivate"
         case .presentWhatsNew(_, let version):
             return "whatsNew:\(version)"
         }
@@ -268,7 +280,8 @@ extension RouterIntent {
     /// services. Critical alerts survive backgrounding.
     var isTransient: Bool {
         switch self {
-        case .remoteWipe, .iCloudMismatch, .remoteOnboardingCompleted:
+        case .remoteWipe, .iCloudMismatch, .remoteOnboardingCompleted,
+             .appleIDChangedClosePrivate:
             return false
         default:
             return true

@@ -23,6 +23,12 @@ private struct ReadinessGateObserversModifier: ViewModifier {
     let showLateICloudNotice: Bool
     let showRemoteWipeAlert: Bool
     let showICloudRestartAlert: Bool
+    /// El alert del cambio de Apple ID: bloquea el gate mientras está arriba, así que su transición
+    /// tiene que recomputar como las de sus vecinos.
+    let showAppleIDChangedAlert: Bool
+    /// La FASE del cierre de sesión, no un `@State`: su transición a `.working` y su salida tienen que
+    /// recomputar, o el gate se queda con la foto de antes del tap.
+    let isSignOutWorking: Bool
     let hasActiveInviteError: Bool
     let hasActiveGroupSyncError: Bool
     let activeInboxNotification: PendingInboxNotification
@@ -83,6 +89,8 @@ private struct ReadinessGateObserversModifier: ViewModifier {
             .onChange(of: showLateICloudNotice) { _, _ in recompute() }
             .onChange(of: showRemoteWipeAlert) { _, _ in recompute() }
             .onChange(of: showICloudRestartAlert) { _, _ in recompute() }
+            .onChange(of: showAppleIDChangedAlert) { _, _ in recompute() }
+            .onChange(of: isSignOutWorking) { _, _ in recompute() }
             .onChange(of: hasActiveInviteError) { _, _ in recompute() }
             .onChange(of: hasActiveGroupSyncError) { _, _ in recompute() }
             .onChange(of: activeInboxNotification) { _, _ in recompute() }
@@ -104,6 +112,8 @@ extension View {
         showLateICloudNotice: Bool,
         showRemoteWipeAlert: Bool,
         showICloudRestartAlert: Bool,
+        showAppleIDChangedAlert: Bool,
+        isSignOutWorking: Bool,
         hasActiveInviteError: Bool,
         hasActiveGroupSyncError: Bool,
         activeInboxNotification: PendingInboxNotification,
@@ -133,6 +143,8 @@ extension View {
             showLateICloudNotice: showLateICloudNotice,
             showRemoteWipeAlert: showRemoteWipeAlert,
             showICloudRestartAlert: showICloudRestartAlert,
+            showAppleIDChangedAlert: showAppleIDChangedAlert,
+            isSignOutWorking: isSignOutWorking,
             hasActiveInviteError: hasActiveInviteError,
             hasActiveGroupSyncError: hasActiveGroupSyncError,
             activeInboxNotification: activeInboxNotification,
