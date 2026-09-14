@@ -5,10 +5,46 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-14 (Lima)
 
-**Rama** `2.1` — Merge #155: **«Empezar desde cero» en Restaurar ya borra de verdad.** TestFlight build
+**Rama** `2.1` — Merge #156: **cerrar sesión en la nube deja de culpar a tu conexión.** TestFlight build
 **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#155 · «Empezar desde cero» en Restaurar ya borra)
+## Esta sesión (#156 · un fallo pasajero de grupos ya no dice «revisa tu conexión»)
+
+**Tienes una cuenta en la nube con grupos y cambios sin subir. Pulsas «Cerrar sesión», falla algo del
+lado del servidor —un 5xx, un cortafuegos, la red— y la app decía siempre lo mismo: «revisa tu conexión
+e inténtalo de nuevo».** Cuando el problema no es tu conexión, y esa es la mayoría de las veces, te
+mandaba a buscar un fallo que no existe sin decir lo único cierto: que esperes y lo vuelvas a intentar.
+Ahora ese caso tiene su aviso: **«Los últimos cambios de tus grupos no llegaron al servidor. Siguen
+guardados en este teléfono y no se pierden; inténtalo de nuevo en un rato.»** Sale **al momento**, sin
+hacerte esperar 45 s, y por el mismo aviso que el canal en pausa. Decisión tuya (opción 2), mismo
+criterio que el kill-switch el 13-sep.
+
+**La premisa del ticket era falsa, y se medía con un grep.** Decía que aquí se perdía el presupuesto de
+reintento de 45 s; este camino **nunca** consulta `GroupsSignOutRetryDecision` —llama al push-all
+directo; el presupuesto es de `pushGroupsForSignOut`, que usan los otros tres caminos—. No había
+reintento que perder: lo único roto era el aviso.
+
+**El ternario se fue y en su sitio hay un `switch` exhaustivo** (`cloudSignOutGroupsBlockReason`). No es
+cosmético: el ternario no obligaba a nadie a pronunciarse, y por eso el bug pudo nacer en silencio.
+Ahora el compilador no deja añadir un motivo sin decidir qué se enseña.
+
+**La review adversarial (4 lentes) cazó tres cosas mías, y dos estaban en MIS PROPIOS TESTS.** Un
+`#require` fijaba la etiqueta del `case` y no su cuerpo: el mutante que manda los cuatro motivos al
+aviso equivocado —«un momento más» ante un servidor caído— pasaba verde. Y una aserción comparaba los
+índices de dos literales distintos: no podía fallar nunca. La tercera, un docblock falso a 100 líneas
+del cambio que seguía afirmando el colapso que este PR retira. **Ocho mutantes, ocho muertos** — y uno
+sobrevivió a la primera vuelta: borrar el breadcrumb entero no rompía nada.
+
+**Device-QA NO simulable:** provocar un fallo pasajero del canal exige un servidor que falle, y no hay
+seam (34 launch args, ninguno lo hace). Guion en `tickets/qa/`.
+
+**Lo que este PR NO cierra, con ticket propio.** El paso 1 del mismo cierre —el push-all PERSONAL—
+descarta el motivo con `_`, y **es el que dispara primero** ante un corte de red con filas personales
+pendientes: `cloud-signout-collapses-the-personal-push-all-reason-into-permanent`. Y `.sessionExpired`
+sigue colapsado en el paso 2, porque su copy manda a «volver a iniciar sesión» a quien acaba de pedir lo
+contrario — decisión tuya: `cloud-signout-collapses-a-groups-session-expiry-into-permanent`.
+
+## Sesión anterior (#155 · «Empezar desde cero» en Restaurar ya borra)
 
 **Welcome → «Ya tengo una cuenta» → «Restaurar desde iCloud» → «Empezar desde cero» te decía «Esto creará
 una cuenta nueva sin tus datos previos» y no borraba nada.** Esa pantalla solo existe con el espejo de
@@ -47,90 +83,9 @@ grupos sigue intacta ahí**, que era el otro criterio del ticket.
 **Y un segundo ticket, `medium`, VISTO en simulador:** cancelar en la puerta te deja en «Es mi primera
 vez», aunque entraras por «Ya tengo una cuenta» (`private-icloud-gate-back-lands-on-the-wrong-branch`).
 
-## Las de antes (#154 · un 403 de infraestructura no es un veredicto sobre tu cuenta)
-
-**Cuando un proxy o un cortafuegos por delante del servidor devolvía un 403, el canal de Grupos lo leía
-como «esta cuenta ya no está disponible»**: apagaba el sync el resto de la vida de la app —ni volver a
-primer plano, ni un aviso push, ni entrar de nuevo lo curaban— y, si en ese momento intentabas cerrar
-sesión o soltar tu cuenta de grupos, te decía que revisaras tu conexión. Ahora reintenta como con
-cualquier fallo de red. El apagado deliberado del canal sigue igual que en #152: pausa, y vuelve solo.
-
-**No era un bug dormido: el canal está encendido en producción** (`GROUPS_BACKEND_ROLLOUT_PERCENT = 100`).
-
-**Tres cosas medidas que el ticket no sabía.** El gateway emite exactamente DOS 403 en todo
-`gateway/src/` y traduce lo upstream a 502, así que cualquier otro 403 viene de fuera del Worker. El
-sello `stoppedUntilRelaunch` **se queda sin productor alcanzable**: el 409 que lo armaría no lo emite
-`/groups/push` (`gateway/src/groups/routes.ts:12` dice que el freeze de la reversa no aplica a este
-canal). Y ese sello **solo existía en el modo loop-propio**: con el runtime personal cadenciando, el
-ciclo de grupos va de piggyback y su outcome se descarta.
-
-**Lo que este PR NO cierra, y tiene ticket `high`.** En el cierre de sesión de una cuenta `.cloud`,
-`CloudSessionSignOut` colapsa en `.permanent` todo veredicto de grupos que no sea `.channelPaused`, así
-que ahí un cortafuegos sigue saliendo como «revisa tu conexión». Cambiarlo movería también la red caída
-y los 5xx —otro objeto, y una decisión tuya—:
-`cloud-signout-collapses-every-groups-transient-into-permanent`.
-
-**La review adversarial cazó CUATRO defectos míos, y el peor no daba rojo: colgaba la corrida.** Dos
-tests de un fichero que el arreglo no tocaba sembraban un 403 sin envelope; con el fix eso es
-transitorio, el loop entra en backoff y su `await` no vuelve nunca. Eran **cuatro** los tests que
-pinneaban el comportamiento viejo, no los dos que decía el ticket: mi barrido del patrón se paró en el
-fichero equivocado. También escribí un docblock **falso** (el del párrafo anterior), dejé el camino
-nuevo sin rastro en los logs —ahora lleva breadcrumb propio— y puse diez aserciones que no podían fallar.
-
-**Dos mutantes compilados y corridos, no razonados:** colapsar las dos ramas muere con 6 fallos;
-arreglar solo el push y dejar el pull muere con 9, e incluye el sello permanente reapareciendo. Eso
-contesta lo que el ticket pedía blindar.
-
-**Sin device-QA, y no por falta de ganas:** provocar un 403 desde algo por delante del Worker no se
-puede ni en simulador ni en device sin un seam que hoy no existe.
-
-## Las de antes (#153 · el aviso de datos que se perdía por el relanzamiento)
-
-**Desde una sesión solo-grupos, elegir «Es mi primera vez → Tu cuenta en tu iCloud privado» montaba un
-onboarding de cero sin decir que aquí ya había datos**: los grupos y las categorías de la etapa anterior
-seguían dentro, y en el arranque siguiente subían al iCloud de tu cuenta de Apple. Ahora sale el aviso,
-con doble confirmación, y si confirmas el teléfono queda limpio de verdad — grupos incluidos, con el
-dominio **sellado** para que no vuelvan a colarse en tus cuentas.
-
-**El aviso se perdía por una premisa que dejó de ser cierta.** Con el store personal montado NEUTRO esa
-rama sale por el relanzamiento y nunca llega al callback que preguntaba «¿hay datos?». El comentario que
-lo justificaba —«el mount neutro exige que no haya archivo de store»— valía con los dos términos viejos
-del neutro; el tercero, el de una sesión solo-grupos, rompió la equivalencia: ahí el archivo existe, con
-datos dentro, y monta neutro igual.
-
-**La cadena que describía el ticket ya no existe** (`performPrivateReset` se fue con el paso 9), pero el
-hueco sí. El camino limpio que lo alcanza hoy es un **wipe remoto sobre un dispositivo solo-grupos**:
-`wipeAllUserData` deja vivos los grupos y repone los dos flags de onboarding.
-
-**El aviso se enciende SOLO con el mismo predicado que el relanzamiento, y eso no es simetría:** su
-borrado quita FILAS, y con el espejo montado los deletes se exportan — vaciarían el iCloud de la persona
-en todos sus dispositivos. El mount neutro es `cloudKitDatabase: .none` explícito.
-
-**La review adversarial cazó ONCE defectos y los once eran míos, cinco de ellos ALTA.** El peor no era el
-del párrafo de arriba: el arm que reusé **escalaba un borrado LOCAL a uno REMOTO** — un kill a mitad
-dejaba un testigo que `runLateICloudMirrorCheck` reanuda a ciegas borrando la zona de iCloud del Apple ID,
-sobre una pantalla cuyo copy promete que iCloud no se toca. Y el borrado **se saboteaba a sí mismo**: al
-tocar los flags de onboarding, el arranque consumía el destino del relanzamiento y montaba un segundo
-cover encima del terminal «reabre Yala». También cazó que el copy prometía lo que el código no cumple
-(«no se puede deshacer», «tus datos siguen intactos») y que **un solo token** reintroducía el ticket
-entero con la suite en verde.
-
-**Una afirmación del ticket, medida y falsa:** decía que el corpus de grupos «se re-descarga» tras la
-purga. Eso es del canal CloudKit, que ya no existe; con el backend **el cursor sobrevive a propósito** y
-no vuelve a bajar.
-
-**Verificado:** build ×2 con cero warnings nuevos —medidos contra un worktree del árbol base— · **6797
-unit en 691 suites**, 0 fallos · **25 XCUITest en 6 suites** con el centinela en 0 · audit limpio ·
-ratchet OK. Y **19 mutantes puestos, los 19 los mata su test.**
-
-**Lo que falta y es tuyo:** el device-QA **NO es simulable**, y el motivo está medido — la puerta sale de
-largo bajo `-uitest` (hermeticidad antes de la red) y ningún seed arma la marca del neutro solo-grupos.
-Guion de 9 pasos en `tickets/qa/device-qa-private-gate-device-corpus.md`. Deja **tres tickets**, los tres
-`medium`.
-
 ## Las de antes
 
-Los partes de los merges #144 a #152 viven en sus PR y en `git log`; aquí se quedan solo los dos últimos
+Los partes de los merges #144 a #154 viven en sus PR y en `git log`; aquí se quedan solo los dos últimos
 mientras su device-QA siga abierto.
 
 ## Marketing (Lola · #142 · el estudio de vídeo)
@@ -176,6 +131,14 @@ formatos —una presentación 16:9 por escenas y clips 9:16 por función— sobr
    comprobar que ya no encuentra nada. Dos pruebas nacen de la review y conviene no saltárselas: que tras
    borrar **no salga un tercer alert**, y que lo restaurado por «Traer mis datos» **siga ahí un par de
    arranques después**.
+
+0-sexies. **Device-QA del aviso pasajero al cerrar sesión (#156), y NO es simulable.** Hace falta que el
+   servidor falle de verdad: no hay seam que provoque un fallo del canal de grupos ni que pueble su
+   outbox en una sesión de nube. Montaje: cuenta en la nube con un gasto de grupo sin subir **y el
+   outbox personal vacío** —si quedan filas personales, bloquea el paso 1 y sale el aviso viejo, que es
+   otro ticket—, hacer que `/groups/push` devuelva 5xx, y cerrar sesión. Lo que se mira: que el aviso
+   salga **al momento** y diga «no llegaron al servidor», no «revisa tu conexión». Guion en
+   `tickets/qa/cloud-signout-collapses-every-groups-transient-into-permanent.md`.
 
 1. **Cierra sesión en el iPhone y recrea los grupos de prueba.** Es lo ÚNICO que falta para el device-QA
    del paso 3: el móvil apunta a la cuenta que borró el fresh start y cada llamada da 409/502. **Mira antes
