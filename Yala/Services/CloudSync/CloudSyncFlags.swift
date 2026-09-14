@@ -24,7 +24,13 @@ import Foundation
 /// - `.cloud`: el store personal lo sincroniza el propio motor Modo Nube (CKit apagado). La
 ///   quiescencia la manda el `SyncQuiescenceCoordinator` del motor. NO alcanzable en I9 — la
 ///   persistencia real del modo + su transición llegan en I10/I14.
-nonisolated enum StorageMode: String {
+///
+/// **`CaseIterable` NO es decorado**, y va con el mismo criterio que el de
+/// `CloudSignOutFlowLogic.BlockReason`: los tests que recorren «todos los modos» escribían el array a
+/// mano (`[StorageMode.icloud, .cloud]`), así que un modo nuevo quedaría fuera **en silencio** y con él
+/// la afirmación que esos tests hacen sobre el conjunto — p. ej. «exactamente una de las ocho celdas
+/// participa en el cierre por cambio de Apple ID» seguiría en verde midiendo solo dos tercios.
+nonisolated enum StorageMode: String, CaseIterable {
     case icloud
     case cloud
 }

@@ -55,6 +55,9 @@ struct ContentView: View {
     @State private var remoteWipeTask: Task<Void, Never>?
     @State private var showRemoteWipeAlert: Bool = false
     @State private var showICloudRestartAlert: Bool = false
+    /// **El Apple ID del teléfono cambió y la sesión privada era del anterior** (ADR §1). Lo enciende
+    /// el drain de `.appleIDChangedClosePrivate`; su alert vive en `ShellDataAlertsModifier`.
+    @State private var showAppleIDChangedAlert: Bool = false
     @State private var showFreshStartWipeAlert: Bool = false
     /// El wipe de «empiezo de cero» LANZÓ (cualquiera de los dos caminos que borran). Blocker de la
     /// matriz de readiness como sus hermanos: mientras esté puesto, nada del router presenta debajo.
@@ -324,6 +327,7 @@ struct ContentView: View {
         .modifier(ShellDataAlertsModifier(
             showRemoteWipeAlert: $showRemoteWipeAlert,
             showICloudRestartAlert: $showICloudRestartAlert,
+            showAppleIDChangedAlert: $showAppleIDChangedAlert,
             showFreshStartWipeAlert: $showFreshStartWipeAlert,
             showFreshStartWipeFailedAlert: $showFreshStartWipeFailedAlert,
             hasCompletedOnboarding: $hasCompletedOnboarding,
@@ -668,6 +672,10 @@ struct ContentView: View {
             showLateICloudNotice: lateICloudCorpus != nil,
             showRemoteWipeAlert: showRemoteWipeAlert,
             showICloudRestartAlert: showICloudRestartAlert,
+            showAppleIDChangedAlert: showAppleIDChangedAlert,
+            // Condición VIVA del dominio, no un `@State`: el alert baja su binding en el tap y el
+            // cierre sigue corriendo segundos después (regla 4 de Presentaciones).
+            isSignOutWorking: CloudSessionSignOut.shared.phase == .working,
             hasActiveInviteError: activeInviteError != nil,
             hasActiveGroupSyncError: activeGroupSyncError != nil,
             activeInboxNotification: activeInboxNotification,
@@ -905,6 +913,10 @@ struct ContentView: View {
             showLateICloudNotice: lateICloudCorpus != nil,
             showRemoteWipeAlert: showRemoteWipeAlert,
             showICloudRestartAlert: showICloudRestartAlert,
+            showAppleIDChangedAlert: showAppleIDChangedAlert,
+            // Condición VIVA del dominio, no un `@State`: el alert baja su binding en el tap y el
+            // cierre sigue corriendo segundos después (regla 4 de Presentaciones).
+            isSignOutWorking: CloudSessionSignOut.shared.phase == .working,
             hasActiveInviteError: activeInviteError != nil,
             hasActiveGroupSyncError: activeGroupSyncError != nil,
             hasActiveInboxAlert: !activeInboxNotification.isEmpty,
@@ -1013,6 +1025,8 @@ struct ContentView: View {
             activeGroupSyncError = message
         case .iCloudMismatch:
             showICloudRestartAlert = true
+        case .appleIDChangedClosePrivate:
+            showAppleIDChangedAlert = true
         case .remoteWipe(let skipOnboarding):
             handleRemoteWipeSignal(onboardingAlreadyDone: skipOnboarding)
         case .remoteOnboardingCompleted:

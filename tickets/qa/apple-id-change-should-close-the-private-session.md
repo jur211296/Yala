@@ -1,6 +1,6 @@
 ---
 id: apple-id-change-should-close-the-private-session
-status: backlog
+status: qa
 priority: high
 area: "modo-nube, sesiones, swiftdata"
 created: 2026-09-12
@@ -56,14 +56,46 @@ que el verbo único quiere cerrar. No se implementa hasta que esté contestada.
 
 ## Criterios de aceptación
 
-- [ ] Cambiar de Apple ID con sesión privada viva cierra la sesión privada: borra lo local por el
-      camino de ARCHIVOS (boot-wipe + relanzamiento) y devuelve la app al neutro.
-- [ ] Una sesión solo-grupos **no** recibe el aviso ni el cierre (el término `groupsOnlySessionArmed`
-      sobrevive, expresado en el eje nuevo).
-- [ ] La segunda llamada de `handleBecameActive` (`:1694`) no dispara el cierre repetidamente ni deja
-      un aviso perpetuo.
-- [ ] Unit sobre el predicado, con las celdas del ADR como casos.
-- [ ] Device-QA: **no es simulable** — hace falta cambiar la cuenta de iCloud del teléfono de verdad.
+- [x] Cambiar de Apple ID con sesión privada viva cierra la sesión privada: borra lo local por el
+      camino de ARCHIVOS (boot-wipe + relanzamiento) y devuelve la app al neutro. **Con confirmación**
+      (decisión 1B de Jürgen, 2026-09-14): el aviso ofrece «Cerrar sesión y quitarlos» / «Ahora no».
+- [x] Una sesión solo-grupos **no** recibe el aviso ni el cierre (`groupsOnlySessionArmed`, término 2
+      de `AppleIDChangeCloseLogic.participates`, con su caso y su mutante).
+- [x] `handleBecameActive` no dispara el cierre repetidamente ni deja un aviso perpetuo — **se cumple
+      por construcción**: la comprobación cuelga del arranque y del observer de identidad, y de nada
+      más. Lo fija un source-scan (`noCuelgaDelForeground`).
+- [x] Unit sobre el predicado, con las celdas del ADR como casos: 23 casos en tres suites, **6
+      mutantes verificados**.
+- [ ] Device-QA: **no es simulable** — guion en
+      `tickets/qa/device-qa-apple-id-change-closes-private-session.md`, con el control negativo (apagar
+      iCloud Drive NO debe disparar el aviso) y el recorrido del espejo con «Ahora no».
+
+## Entregado (2026-09-14, PR)
+
+**La premisa del ticket no se sostenía y eso cambió el trabajo entero.** `checkForICloudMismatch` no
+reaccionaba al cambio de cuenta: su predicado (`shouldOfferICloudRestart`) pregunta «¿monté sin espejo
+y ahora hay iCloud?», que puede ser cierta con la misma cuenta de siempre. Y **la app no guardaba
+ningún testigo del Apple ID con el que montó**, así que no había con qué comparar. No había nada que
+«alinear»: había que construir la detección.
+
+**La identidad se lee de `CKContainer.userRecordID()` del contenedor PERSONAL**
+(`PrivateSessionAppleIDWitness`), nunca de `ubiquityIdentityToken` — ese mide iCloud Drive, y con Drive
+apagado habría leído «cambiaste de cuenta» y borrado los datos de quien no cambió nada (rule de área
+L199). La notificación `NSUbiquityIdentityDidChange` se usa como disparador, jamás como veredicto.
+
+**El testigo muere DENTRO de `PrivateSessionMark`**, no en sus call-sites. La primera versión lo borraba
+solo en el boot-wipe, y la review midió el daño: el dueño que entrega su teléfono con «Empiezo de cero»
+dejaba su testigo puesto, y a la persona siguiente la app le ofrecía cerrar la sesión y borrarle SUS
+datos diciéndole que eran de la cuenta anterior.
+
+**Lo que la review adversarial cazó, y era mío:** ese testigo superviviente; el router liberándose en el
+instante exacto en que empieza el borrado (ahora lo retiene la condición viva
+`CloudSessionSignOut.phase == .working`); el cierre ejecutándose sin `confirmedPath`, que con
+`storageMode == .cloud` habría cerrado la CUENTA de Yala bajo un texto que habla de iCloud; y el aviso
+del espejo tardío encolándose con éste desde el mismo disparador — dos `.alert` encadenados del mismo
+anchor, cerrado por las dos mitades (regla de supersesión + guard en el emisor).
+
+**Deja dos tickets:** `apple-id-close-blocked-has-no-visible-outcome` (**high**) y el device-QA.
 
 ## Depende de
 

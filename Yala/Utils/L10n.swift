@@ -6919,6 +6919,13 @@ enum L10n {
         static var mismatchTitle: String { ls("icloud.mismatch.title", comment: "") }
         static var mismatchMessage: String { ls("icloud.mismatch.message", comment: "") }
         static var mismatchAction: String { ls("icloud.mismatch.action", comment: "") }
+        // El Apple ID del teléfono cambió y la sesión privada era del anterior (ADR 2026-09-09 §1).
+        // Vocabulario de USUARIO y no el interno: se habla de «tu cuenta de iCloud» y de dónde quedan
+        // los datos, nunca de «sesión privada» — ver `.claude/rules/l10n.md`.
+        static var appleIDChangedTitle: String { ls("icloud.appleIDChanged.title", comment: "") }
+        static var appleIDChangedMessage: String { ls("icloud.appleIDChanged.message", comment: "") }
+        static var appleIDChangedConfirm: String { ls("icloud.appleIDChanged.confirm", comment: "") }
+        static var appleIDChangedLater: String { ls("icloud.appleIDChanged.later", comment: "") }
     }
 
     // MARK: - Modo Nube (I14): almacenamiento / migración / consentimiento

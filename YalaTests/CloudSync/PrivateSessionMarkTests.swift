@@ -254,11 +254,11 @@ struct PrivateSessionMarkWiringTests {
         // un consumidor que pasara su propio `UserDefaults` —que es lo que hace el servicio de
         // preferencias— no lo contaba nadie: se colaba un lector de la estricta sin pasar por esta
         // decisión. El prefijo `PrivateSessionMark.` deja fuera la declaración del propio tipo.
-        #expect(Self.countInProduction("PrivateSessionMark.confirmedPrivateSession(") == 3, """
-            `confirmedPrivateSession` tiene TRES consumidores en toda la app, y los tres comparten el
-            SIGNO de su error: hacia `true` se BORRA, hacia `false` solo se conserva de más. Si aparece
-            un cuarto, decide a conciencia de qué lado cae — si equivocarse hacia `true` no destruye
-            nada, la lectura que le toca es `hasPrivateSession`, que falla conservando.
+        #expect(Self.countInProduction("PrivateSessionMark.confirmedPrivateSession(") == 5, """
+            `confirmedPrivateSession` tiene CINCO lecturas en toda la app, y todas comparten el SIGNO
+            de su error: hacia `true` se BORRA, hacia `false` solo se conserva de más. Si aparece una
+            más, decide a conciencia de qué lado cae — si equivocarse hacia `true` no destruye nada, la
+            lectura que le toca es `hasPrivateSession`, que falla conservando.
 
             Era UNO hasta el 2026-09-14 (`UserDataResetView`: ¿esta sesión EMITE la señal de vaciado a
             los demás dispositivos del Apple ID?). Los dos nuevos son el otro extremo de esa misma
@@ -267,6 +267,16 @@ struct PrivateSessionMarkWiringTests {
             y el drenaje (`ContentView.handleRemoteWipeSignal`, que es quien borra las filas). Obedecer
             de más en una sesión de la nube sube esos borrados a SU cuenta; en solo grupos borra el
             perfil de quien tiene el teléfono prestado.
+
+            Y desde el 2026-09-14 hay un consumidor más —el cierre de la sesión privada cuando cambia
+            el Apple ID del teléfono (`AppleIDChangeCloseLogic`)— que aporta **DOS** lecturas, no una,
+            y por eso el número sube de 3 a 5. Son dos instantes distintos del mismo cableado en
+            `AppBootstrapper.checkForAppleIDChange`: el pre-filtro que decide si merece la pena salir a
+            CloudKit, y la re-lectura DESPUÉS del `await`, que es la que decide de verdad. Contarlas
+            como una sola escondería justo la que importa: entre las dos cabe un cierre de sesión
+            entero, y decidir un borrado con el snapshot de antes del `await` es el bug que la segunda
+            existe para evitar. Su signo es el de la familia: `true` de más cierra la sesión de alguien
+            y le borra la copia local.
             """)
     }
 
@@ -398,8 +408,8 @@ struct PrivateSessionMarkWiringTests {
     /// y la aserción de arriba pasaría verde sin medir nada — la familia de «Executed 0 tests».
     @Test("control: el escáner de producción encuentra algo")
     func theProductionScannerActuallyFindsThings() {
-        #expect(Self.countInProduction("PrivateSessionMark.hasPrivateSession(") == 16, """
-            el eje 1 tiene DIECISÉIS consumidores de la lectura conservadora. Si este número cambia, hay un
+        #expect(Self.countInProduction("PrivateSessionMark.hasPrivateSession(") == 17, """
+            el eje 1 tiene DIECISIETE consumidores de la lectura conservadora. Si este número cambia, hay un
             constructor nuevo y hay que decidir con qué lectura contesta — y si el consumidor nuevo
             alcanza datos de FUERA de este teléfono, la lectura que le toca es la otra.
 
@@ -408,6 +418,15 @@ struct PrivateSessionMarkWiringTests {
             (`SessionState.refreshPrivateSessionMirror`, que relee la marca para poner el espejo al día).
             Ninguno de los siete nuevos alcanza datos fuera del teléfono — son routing, copy, alcance de
             borrado y el propio refresco, todos del lado que conserva de más.
+
+            El decimoséptimo llegó el 2026-09-14 con el cierre por cambio de Apple ID: el aviso resuelve
+            la celda EN EL TAP (`ShellDataAlertsModifier`, `CloudSignOutFlowLogic.path`) para pasarla
+            como `confirmedPath`, y ahí la lectura que toca es la ANCHA, igual que en los otros dos
+            call-sites de `path` — su `true` de más resuelve `.privateSignOut` y su `false` de más
+            resolvería `.groupsOnlySignOut`, que es el camino que además borra el store de GRUPOS. O
+            sea: aquí es el `false` el que destruye de más, que es la dirección contraria a la familia
+            de la lectura estricta. Ese mismo cierre aporta además DOS lecturas de la estricta, en el
+            cableado de `AppBootstrapper`; están contadas en el test de arriba y su signo es el opuesto.
             """)
     }
 

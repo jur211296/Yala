@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (367)
+## Index (369)
 
 | id | status | path |
 |---|---|---|
@@ -45,7 +45,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | adr-013-does-not-know-yala-has-its-own-commit-msg | backlog | tickets/backlog/adr-013-does-not-know-yala-has-its-own-commit-msg.md |
 | after-session-redesign-review-widgets-siri-applepay-and-web-copy | backlog | tickets/backlog/after-session-redesign-review-widgets-siri-applepay-and-web-copy.md |
 | ai-recommended-budgets | backlog | tickets/backlog/ai-recommended-budgets.md |
-| apple-id-change-should-close-the-private-session | backlog | tickets/backlog/apple-id-change-should-close-the-private-session.md |
+| apple-id-change-should-close-the-private-session | qa | tickets/qa/apple-id-change-should-close-the-private-session.md |
+| apple-id-close-blocked-has-no-visible-outcome | backlog | tickets/backlog/apple-id-close-blocked-has-no-visible-outcome.md |
 | apple-watch | backlog | tickets/backlog/apple-watch.md |
 | applepay-shortcut-warm-launch-empty-data | qa | tickets/qa/applepay-shortcut-warm-launch-empty-data.md |
 | apppreferences-rewritten-on-launch | blocked | tickets/blocked/apppreferences-rewritten-on-launch.md |
@@ -116,6 +117,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | detach-saves-the-personal-graph-outside-the-quiescence-window | backlog | tickets/backlog/detach-saves-the-personal-graph-outside-the-quiescence-window.md |
 | device-handover-groups-leak | discarded | tickets/discarded/device-handover-groups-leak.md |
 | device-qa-activation-restore-start-fresh | qa | tickets/qa/device-qa-activation-restore-start-fresh.md |
+| device-qa-apple-id-change-closes-private-session | qa | tickets/qa/device-qa-apple-id-change-closes-private-session.md |
 | device-qa-cloud-killswitch-groups-door | qa | tickets/qa/device-qa-cloud-killswitch-groups-door.md |
 | device-qa-groups-account-association | qa | tickets/qa/device-qa-groups-account-association.md |
 | device-qa-groups-invite-neutral-return | qa | tickets/qa/device-qa-groups-invite-neutral-return.md |

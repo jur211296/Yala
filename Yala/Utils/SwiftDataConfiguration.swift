@@ -673,6 +673,13 @@ extension SwiftDataConfiguration {
         // éste es el único sitio donde puede irse. Sin esto, la persona siguiente heredaría el eje
         // del humano anterior: un solo-grupos que se va dejaría a quien restaure su iCloud con la
         // marca en `false`, y su «Cerrar sesión» borraría sin esperar al export.
+        // Con el eje se va SU TESTIGO —con qué Apple ID nació la sesión privada que acaba de cerrarse—,
+        // y NO hace falta una línea aquí: el borrado vive DENTRO de `PrivateSessionMark.clear`. Se dice
+        // porque la primera versión sí ponía la línea, y tenerla en los call-sites es justo lo que dejó
+        // el testigo del dueño anterior vivo en el OTRO camino de muerte del eje (el relevo de humano de
+        // «Empiezo de cero», que no pasa por aquí). Sin ese borrado el cierre POR cambio de Apple ID no
+        // converge: el arranque siguiente compara la cuenta nueva contra el testigo del humano anterior y
+        // vuelve a pedir un cierre ya hecho.
         PrivateSessionMark.clear(defaults)
 
         // El consent de GRUPOS (§C5) es un registro de la CUENTA y `removeUserPreferenceKeys` no lo

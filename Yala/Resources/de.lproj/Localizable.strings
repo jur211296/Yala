@@ -5894,3 +5894,15 @@
 
 /* Sign-out blocked: the groups upload failed for a transient reason (network, 5xx, WAF) and this path does not retry */
 "groups.errors.uploadRetryLater" = "Deine letzten Gruppenänderungen haben den Server nicht erreicht. Sie bleiben auf diesem Telefon gespeichert und gehen nicht verloren – versuch es später noch einmal.";
+
+/* Alert: el Apple ID del telefono cambio y hay que cerrar la sesion privada */
+"icloud.appleIDChanged.title" = "Du hast dein iCloud-Konto gewechselt";
+
+/* Alert body: que pasa con los datos al cambiar de Apple ID */
+"icloud.appleIDChanged.message" = "Die Yala-Daten auf diesem Telefon gehören zum vorherigen iCloud-Konto und bleiben dort gespeichert. Um Yala auf diesem Telefon weiter zu nutzen, müssen sie von hier entfernt werden. Was dieses Konto nicht erreicht hat, kann nicht mehr hochgeladen werden.";
+
+/* Alert button: confirma el cierre de la sesion privada y el borrado local */
+"icloud.appleIDChanged.confirm" = "Abmelden und entfernen";
+
+/* Alert button: pospone el cierre hasta el proximo arranque */
+"icloud.appleIDChanged.later" = "Jetzt nicht";
