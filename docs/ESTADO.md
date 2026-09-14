@@ -5,10 +5,47 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-14 (Lima)
 
-**Rama** `2.1` — Merge #161: **Vaciar tus datos ya no promete borrarlos de todos tus dispositivos.**
+**Rama** `2.1` — Merge #162: **El aviso de datos borrados ya no le habla de iCloud a quien no lo tiene en juego.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#161 · vaciar tus datos ya no promete que se borran de todos tus dispositivos)
+## Esta sesión (#162 · el aviso de datos borrados ya no le habla de iCloud a quien no lo tiene en juego)
+
+**Vaciabas tus datos desde Ajustes y, cinco segundos después, Yala te decía que te los habían borrado
+«desde otro dispositivo», ofreciéndote empezar de cero.** Los habías borrado tú, en ese teléfono, hacía
+cinco segundos. Y el botón no era inocuo: te sacaba al onboarding por el camino genérico de degradación,
+sin el aterrizaje elegido que sí tienen los borrados orquestados. Ahora ese aviso solo sale en la sesión
+de la que habla — la que de verdad guarda sus datos en el iCloud de este Apple ID.
+
+**La premisa del ticket era falsa, y eso es lo que más valió de la sesión.** Decía que el problema estaba
+en el teléfono prestado con el espejo de iCloud montado. Medido: esa celda no lo ejercita por ninguno de
+los dos lados — un solo-grupos dado de alta desde el 10-sep monta **sin espejo**, así que nadie le baja
+las filas; y uno anterior a esa fecha sí tiene espejo, pero el backfill le escribe «tiene sesión privada»,
+así que el guard nuevo **no lo calla**. Ese caso lo cierra el eje, no esta línea. Quien sí llega es el
+aviso **auto-infligido** tras «Vaciar datos» en solo-grupos: ese camino es el único de los cinco borrados
+deliberados que no cancela la cuenta atrás, y el aterrizaje repone el onboarding a mano, así que la gracia
+arranca. Una hipótesis mía sobre el modo nube quedó **refutada**: el mecanismo existe (el canal de la
+cuenta borra filas por tombstone) pero esa celda está apagada en producción.
+
+**Cuatro líneas de código.** El guard reusa el predicado que ya gobierna el borrado por señal remota
+—tercera superficie del mismo eje— en vez de crear uno propio, y se lee **después** de los cinco segundos
+porque el aviso afirma un hecho sobre AHORA.
+
+**La review adversarial cazó dos defectos de MIS tests, y el primero importa:** la primera versión solo
+fijaba que el guard fuera pegado al encendido, así que **mover la lectura del eje por encima de la espera
+pasaba en verde**, con el eje decidido cinco segundos antes — el mutante que probé a mano había caído por
+accidente. Ahora la red fija el tramo entero. **7 mutantes, 7 muertos.** Y un defecto propio que destapó la
+corrida: mi lectura queda antes en el fichero que la del drenaje, y el escáner existente miraba solo la
+primera aparición — habría dejado al drenaje sin red sin ponerse rojo.
+
+Unit 225 en 20 suites, **XCUITest 74 en 31 clases** (las 31 que cruzan con lo tocado), centinela 0 en las
+cinco tandas. El rojo de `test_createTransaction` es el flaky ya conocido: se refutó repitiendo el **lote
+idéntico** (1 fallo → 0), y esa muestra contradice el punto 1 de su ticket. **Device-QA: no aplica** — no
+hay seam que haga desaparecer las filas del store bajo el proceso vivo.
+
+**Riesgo que aceptaste:** en esa celda también se calla un hueco transitorio real de CloudKit. Se pierde
+información, no datos.
+
+## Sesión anterior (#161 · vaciar tus datos ya no promete que se borran de todos tus dispositivos)
 
 **Ibas a «Vaciar datos» y la hoja de confirmación te decía, en la fila ☁️, que se borraban «también
 de tu iPad, tu Mac y cualquier dispositivo con este Apple ID».** Confirmabas, y en tu iPad —el que
@@ -46,54 +83,12 @@ estuve solo.
 **Device-QA: no aplica** — es una cadena de texto en una hoja que el XCUITest ya abre, y su
 contenido queda fijado por unit desde el camino de producción. **Sin decisiones nuevas para ti.**
 
-## Sesión anterior (#160 · «Empezar desde cero» sin iCloud vuelve a Restaurar y no promete nada)
-
-**Activabas Yala completo, en «Restaurar» tocabas «Empezar desde cero», y la app no conseguía mirar tu
-iCloud —red caída, o iCloud apagado en el teléfono—.** Te decía «Seguir así», te llevaba al onboarding, y
-tus datos viejos seguían enteros: un borrado que nunca ocurrió, anunciado como si hubiera ocurrido. Ahora
-te dice que no pudo mirar, que **no borró nada**, y te devuelve a la pantalla anterior con las dos
-opciones abiertas. Quien abre Yala por primera vez no ve ningún cambio: en el Welcome esa pantalla sigue
-dejando seguir, y tiene que hacerlo — allí no hay app detrás a la que volver.
-
-**El daño de detrás era el peor y no se veía.** Aquel «Seguir así» dejaba la app **apuntada** para el
-aviso del espejo tardío, cuyo botón de borrar se lleva las preferencias y **el dominio de Grupos**. O sea
-que quien activaba Yala completo justo para conservar sus grupos podía acabar sin ellos, arranques
-después, por una red que se cayó dos segundos.
-
-**La premisa del ticket era falsa y ensanchó el alcance.** Decía que el estado «sin cuenta de iCloud» era
-inalcanzable por ese camino. Medido: `WelcomeRestoreView` ofrece «Empezar desde cero» desde cuatro estados
-y **tres no afirman que haya datos** —`notFoundView`, `iCloudDisabledView` y `wipedView`—, que llaman
-directo sin diálogo. Y otro dato que zanja hipótesis futuras: **el chooser de la activación no tiene
-«Restaurar»**; a esa pantalla se llega por `onRestore` de la puerta privada (que exige haber encontrado
-datos) o por el resume.
-
-**La review adversarial (3 lentes) cazó SEIS defectos míos, tres con cambio de código, y el peor lo
-introdujo mi propia extensión del alcance:** llevar el «vuelve» al estado K creaba un **camino muerto de
-dos pantallas** — la puerta devolvía a Restaurar, y Restaurar con iCloud apagado solo ofrece «Abrir
-Ajustes» y «Empezar desde cero», que trae de vuelta aquí. Es el mismo camino muerto que una review
-anterior le había cazado a la fase de al lado, tres líneas más arriba en el mismo fichero. Hoy esa fase
-ofrece «Reintentar» y su cuerpo dice la causa. Los otros: el **chevron** salía sin retirar el arm del
-borrado, a dos centímetros de un botón que sí lo retiraba; el cuerpo compartido repetía el título y tiraba
-la causa; nadie miraba el copy por desenlace; nada fijaba el «sin default» del parámetro; y una errata en
-un accessor salía como clave cruda sin que la paridad la viera. **Y un séptimo lo cazó un mutante y era
-del test**: su tramo llegaba al final del cuerpo y se cumplía desde el `case` de al lado.
-
-**14 mutantes verificados**, suite unit completa (6869 en 698 suites) y XCUITest del área 13/13 con el
-centinela confirmando que estuve solo.
-
-**Device-QA no simulable** (`tickets/qa/device-qa-discard-gate-returns-to-restore-without-icloud.md`):
-`measure()` sale por `isUITesting` antes de la sonda y `ICloudPersonalCorpusProbe` no tiene seam. Cuatro
-recorridos, uno el control negativo del Welcome. Deja dos tickets `low`:
-`discard-gate-proceed-leaves-the-imported-rows-behind` (la rama que mide la zona vacía con filas ya
-importadas) y `welcome-discard-gate-says-carry-on-right-after-asking-to-wipe` (la misma puerta en el
-Welcome sigue diciendo «Puedes seguir»; ahí el mecanismo es correcto, es copy).
-
-**Y una consecuencia que espera decisión tuya:** con iCloud apagado, la rama privada de la activación ya
-no se puede terminar por «Empezar desde cero» sin encenderlo — antes seguía, mintiendo. La pantalla lo
-dice y ofrece el remedio, y cancelar sigue devolviendo a la app de grupos. Si prefieres que ahí siga
-adelante, es un valor en un call-site.
-
 ## Las de antes
+- **#160 · «Empezar desde cero» sin iCloud ya vuelve a Restaurar y no promete nada.** Si la app no
+  conseguía mirar tu iCloud te decía «Seguir así», te llevaba al onboarding y tus datos viejos seguían
+  enteros: un borrado anunciado que nunca ocurrió. Y te dejaba apuntado para el aviso del espejo tardío,
+  cuyo botón se lleva el dominio de Grupos — o sea que activar Yala completo para conservar los grupos
+  podía acabar sin ellos. Hoy dice que no pudo mirar, que no borró nada, y te devuelve atrás.
 - **#159 · cambiar el Apple ID del teléfono ya cierra la sesión privada.** La app no se enteraba del
   cambio de cuenta de iCloud y seguía enseñando los datos de la anterior; hoy lo detecta y pregunta.
   «Ahora no» no toca nada, y volver a tu cuenta anterior lo silencia solo. Deja vivo un ticket
@@ -269,12 +264,26 @@ señal, porque no tiene la marca del mount neutro y el backfill le escribe «tie
 (`remote-wipe-axis-misses-groups-only-installs-before-the-mount-mark` — mide primero si esa población
 existe). (2) La hoja de «Vaciar datos» sigue prometiendo que el borrado alcanza a **todos** tus
 dispositivos, y eso **no es computable desde el emisor**: el iCloud-KV no lleva inventario de sesiones
-(`wipe-sheet-still-promises-every-apple-id-device`, tres opciones escritas). (3) En el móvil prestado
-aparece ahora «Datos no disponibles» y su botón expulsa al onboarding
-(`wipe-alert-fires-on-a-session-that-no-longer-obeys-the-signal`). (4) Las 37 preferencias siguen cruzando
+(`wipe-sheet-still-promises-every-apple-id-device`, tres opciones escritas). (3) **CERRADO en #162**, y de paso se midió que la celda que lo motivaba no era la que disparaba:
+lo que salía era el aviso auto-infligido tras «Vaciar datos» en solo-grupos. (4) Las 37 preferencias siguen cruzando
 entre el dueño y quien usa el teléfono: el guard que lo impedía se retiró sobre una premisa que la celda
 solo-grupos contradice, y el propio fichero dice dónde reponerlo
 (`icloud-kv-prefs-cross-sessions-on-a-lent-phone`).
+
+**El #162 te deja uno `high` y es una decisión tuya.** El aviso de datos borrados se enciende desde una
+tarea de cinco segundos escribiendo estado de la vista directamente, en vez de pasar por la cola de avisos
+— y su hermano, el intent de la misma señal, sí pasa. Como ese flag además **bloquea la cola entera**, si
+el sistema descarta la presentación la app deja de mostrar cualquier aviso (bandeja, invitaciones, Pro)
+hasta que se la mata (`remote-wipe-alert-skips-the-router`). Es preexistente; el #162 solo estrecha quién
+llega. Con él van dos `medium`: la causa de fondo del caso que hoy tapa el eje
+(`wipe-data-does-not-cancel-the-remote-wipe-grace`) y la asimetría entre cómo leen el eje la shell y el
+aviso (`shell-and-wipe-alert-read-the-session-axis-differently`).
+
+**Y un hallazgo medido que no es decisión, es hecho:** widget, Siri y notificaciones locales cuelgan del
+**cierre de sesión**, no del borrado, así que un vaciado que llega por el espejo no las toca. En claro:
+**los recordatorios de pagos del dueño se siguen entregando, con sus montos, en el teléfono que prestó**, y
+su widget sigue pintando el saldo. Anotado con coordenadas en
+`after-session-redesign-review-widgets-siri-applepay-and-web-copy`, que hasta hoy era una lista sin medir.
 
 **Lo primero de la cola técnica sigue siendo el board de testing**: los cuatro de
 `nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo` llevan dos noches rojos y ya no se sostienen como
