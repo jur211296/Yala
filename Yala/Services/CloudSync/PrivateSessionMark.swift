@@ -35,10 +35,13 @@
 //    · `hasPrivateSession` (ausente ⇒ `true`) responde «¿hay vida personal que PROTEGER?». Fallar a
 //      `true` hace esperar de más y conservar de más, que es el lado barato.
 //    · `confirmedPrivateSession` (ausente ⇒ `false`) responde «¿puedo AFIRMAR que esta sesión es
-//      privada?». Su único cliente es `DestructiveScopeLogic.wipeSignalsAppleIDDevices`, que decide
-//      si «Vaciar datos» ORDENA a los demás dispositivos del Apple ID vaciarse también. Ahí `true`
-//      por ausencia vacía el iPad del dueño — exactamente el daño que la review adversarial del paso
-//      9 cazó y que `wipeSignalsAppleIDDevices` existe para impedir.
+//      privada?». La consumen las decisiones cuyo `true` equivocado BORRA, y hoy son las dos mitades
+//      de la señal de vaciado del Apple ID: si «Vaciar datos» la EMITE a los demás dispositivos
+//      (`DestructiveScopeLogic.wipeSignalsAppleIDDevices`) y si este dispositivo la OBEDECE
+//      (`wipeSignalObeyedByThisSession`, con un lector en cada extremo del canal). Ahí `true` por
+//      ausencia vacía el iPad del dueño, o vacía este teléfono por orden de otro — el daño que la
+//      review adversarial del paso 9 cazó en el emisor y el ticket
+//      `remote-wipe-signal-honored-by-any-session` cerró en el receptor.
 //
 //  Un solo default con un solo nombre habría metido ese segundo caso en la dirección equivocada sin
 //  que nada lo dijera. Por eso el tipo obliga a elegir, y el nombre de cada lectura dice hacia dónde
@@ -88,8 +91,16 @@ nonisolated enum PrivateSessionMark {
 
     /// **¿Puedo AFIRMAR que esta sesión es privada?** Ausente ⇒ `false`.
     ///
-    /// Para las decisiones que, al equivocarse hacia `true`, alcanzan datos que están FUERA de este
-    /// teléfono. Hoy hay una: la señal de vaciado a los demás dispositivos del Apple ID.
+    /// Para las decisiones que, al equivocarse hacia `true`, **BORRAN**. Hoy hay tres, y son las dos
+    /// mitades de un mismo canal: si la señal de vaciado SALE hacia los demás dispositivos del Apple ID,
+    /// y si este dispositivo la OBEDECE (dos lectores: donde se detecta y donde se drena).
+    ///
+    /// **El criterio se ensanchó el 2026-09-14, y conviene saber por qué.** Hasta entonces decía «alcanzan
+    /// datos que están FUERA de este teléfono», que describía al único cliente que había. Los dos nuevos no
+    /// siempre cumplen eso: obedecer de más en una sesión de la nube sube los borrados a SU cuenta —sí sale
+    /// fuera— pero en una solo-grupos sin espejo el borrado se queda aquí. Lo que comparten los tres es el
+    /// SIGNO del error, no su alcance: hacia `true` se destruye, hacia `false` solo se conserva de más.
+    /// Ese es el criterio para el cuarto que venga.
     static func confirmedPrivateSession(_ defaults: UserDefaults = .standard) -> Bool {
         raw(defaults) ?? false
     }
@@ -146,7 +157,15 @@ nonisolated enum PrivateSessionMark {
     /// altas solo-grupos, describe este dispositivo y lleva el prefijo `cloudSync.` que el barrido de
     /// preferencias excluye ⇒ sobrevive a todo lo que borraba al flag. **Su límite, dicho entero:**
     /// existe desde el 2026-09-10, así que un alta solo-grupos anterior a esa fecha no la tiene y cae
-    /// del lado conservador (`true`). Es el residual que queda, y es el barato de los dos.
+    /// del lado conservador (`true`).
+    ///
+    /// **Ese residual dejó de ser barato el 2026-09-14 y esta frase decía que lo era.** Se midió cuando el
+    /// único consumidor de la lectura estricta era el EMISOR, donde `true` de más solo significa emitir una
+    /// señal que nadie pidió. Desde que el RECEPTOR lee el mismo eje
+    /// (`DestructiveScopeLogic.wipeSignalObeyedByThisSession`), a esa población —un alta solo-grupos
+    /// anterior al 10-sep: marca ausente, `hasCompletedOnboarding == true`, backfill a `true`— se le sigue
+    /// vaciando el teléfono por orden de otro dispositivo, que es justo el bug que el receptor cierra para
+    /// todos los demás. Ticket: `remote-wipe-axis-misses-groups-only-installs-before-the-mount-mark`.
     ///
     /// Ese mismo barrido borra `hasCompletedOnboarding` (`DataWipeService.removeUserPreferenceKeys`),
     /// así que el gate es exacto: distingue «parque existente» de «dispositivo que empieza de cero» sin

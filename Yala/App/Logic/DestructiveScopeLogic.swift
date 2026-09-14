@@ -153,20 +153,63 @@ nonisolated enum DestructiveScopeLogic {
     /// sesión PRIVADA (C · D), que es la única cuyos datos son los del Apple ID.
     ///
     /// **La señal viaja por el iCloud KV del Apple ID** (`PreferenceSyncService.signalWipeInitiated` escribe
-    /// `lastWipeTimestamp`), y todo dispositivo con el onboarding hecho la obedece borrando FILAS — con el
-    /// espejo montado, eso borra además su iCloud. Emitida desde una sesión en la nube (E) o solo-grupos (F)
+    /// `lastWipeTimestamp`), y quien la recibe borra FILAS — con el espejo montado, eso borra además su
+    /// iCloud. **Desde el 2026-09-14 solo la obedece una sesión privada** (`wipeSignalObeyedByThisSession`,
+    /// abajo); hasta entonces la obedecía todo dispositivo con el onboarding hecho, que es el bug que ese
+    /// otro extremo cierra. Ojo al leer lo que sigue: describe por qué la señal no debe SALIR de E ni de F. Emitida desde una sesión en la nube (E) o solo-grupos (F)
     /// —la persona que usa el móvil prestado del dueño, el caso que el ADR 2026-09-09 hace normal— vaciaba
     /// el iPad privado del dueño y su iCloud. Lo medió la review adversarial del plan del paso 9. La nube ya
     /// propaga su vaciado por la cuenta (el motor sube los borrados); F no borra nada fuera de este teléfono.
-    /// **Y es el ÚNICO consumidor del eje 1 que lee `confirmedPrivateSession` y no `hasPrivateSession`**
-    /// (ADR 2026-09-09, eje 1). Los otros ocho, ante una marca ausente, fallan hacia «hay vida personal
-    /// que proteger» y con eso conservan o esperan de más — barato. Éste no: su `true` sale de este
-    /// teléfono y ordena a los DEMÁS dispositivos del Apple ID vaciarse, así que fallar hacia `true`
-    /// reintroduce exactamente el daño que esta función existe para impedir. Por eso su entrada es la
-    /// lectura que ante la ausencia responde `false`: sin marca no se afirma que la sesión sea privada,
-    /// y sin esa afirmación no se toca nada fuera de aquí.
+    /// **Lee `confirmedPrivateSession` y no `hasPrivateSession`** (ADR 2026-09-09, eje 1). Los dieciséis
+    /// consumidores de la lectura permisiva, ante una marca ausente, fallan hacia «hay vida personal que
+    /// proteger» y con eso conservan o esperan de más — barato. Los de la estricta, no: su `true`
+    /// equivocado BORRA. Aquí, además, el borrado sale de este teléfono y ordena a los DEMÁS dispositivos
+    /// del Apple ID vaciarse, así que fallar hacia `true` reintroduce exactamente el daño que esta función
+    /// existe para impedir. Por eso su entrada es la lectura que ante la ausencia responde `false`: sin
+    /// marca no se afirma que la sesión sea privada, y sin esa afirmación no se toca nada fuera de aquí.
+    ///
+    /// **Fue el ÚNICO consumidor de la estricta hasta el 2026-09-14**, y esa frase estaba escrita aquí.
+    /// Hoy son tres: éste y los dos extremos del receptor (`wipeSignalObeyedByThisSession`). El conteo
+    /// exacto lo fija `PrivateSessionMarkWiringTests`, que es donde hay que mirarlo — una prosa que cuenta
+    /// call-sites caduca sin avisar.
     static func wipeSignalsAppleIDDevices(confirmedPrivateSession: Bool, storageMode: StorageMode) -> Bool {
         confirmedPrivateSession && storageMode == .icloud
+    }
+
+    /// ¿ESTE dispositivo OBEDECE una señal de vaciado que le llega por el iCloud KV del Apple ID?
+    ///
+    /// **Es la otra mitad de `wipeSignalsAppleIDDevices`, y delega en ella a propósito.** Las dos
+    /// responden la MISMA pregunta —«¿los datos de este dispositivo son los del Apple ID?»— desde los dos
+    /// extremos del mismo canal. Copiar el cuerpo dejaba dos predicados que «siempre van juntos» libres de
+    /// divergir en el commit siguiente, y la divergencia que importa es silenciosa: un receptor más ancho
+    /// que su emisor borra filas que nadie quiso borrar. Delegando, el compilador los mantiene atados.
+    ///
+    /// **Qué arregla.** El paso 9 cerró el EMISOR: la señal solo SALE de una sesión privada. El receptor
+    /// seguía sin mirar qué sesión tiene — la obedecía todo dispositivo con el onboarding hecho
+    /// (`RemoteWipeSignalDecider`). Un iPad del mismo Apple ID con una sesión en la nube (E) borraba sus
+    /// filas y **el motor subía esos borrados a SU cuenta**; en solo-grupos (F) —el móvil prestado que el
+    /// ADR 2026-09-09 hace normal— borraba el perfil de quien lo está usando. En ninguna de las dos son
+    /// los datos del Apple ID de este teléfono los que la señal nombra.
+    ///
+    /// **Con una salvedad que este fichero ya documenta 40 líneas más arriba** (`wipeOperation`, el
+    /// término `personalMountAttachesMirror`): un solo-grupos anterior al paso 5 monta un store que SÍ
+    /// espeja, y ahí sus borrados sí salen al iCloud del Apple ID. Para esa población la frase de arriba
+    /// es falsa por los dos lados —ni el emisor ni el receptor consultan el mount— y el residual está
+    /// escrito en el ticket `remote-wipe-axis-misses-groups-only-installs-before-the-mount-mark`.
+    ///
+    /// **Por qué el emisor arreglado no basta, que es la pregunta obvia.** La señal la escribe la app del
+    /// OTRO dispositivo, y esa app puede ser una versión anterior al paso 9 que emita desde cualquier
+    /// celda. El timestamp tampoco dice de qué sesión salió: es un `Double` en el KV. El receptor decide
+    /// por SU propia sesión, nunca por confianza en quién emitió.
+    ///
+    /// **Falla CERRADO**, y por eso su entrada es `confirmedPrivateSession` —marca ausente ⇒ `false`— y no
+    /// `hasPrivateSession`: equivocarse hacia `true` BORRA filas, que es el lado caro. El parque existente
+    /// no se apaga por eso, y está medido: `AppBootstrapper` backfillea la marca en su paso 0.0-bis, que
+    /// corre ANTES de `PreferenceSyncService.bootstrap()` (paso 0), el primer sitio del ARRANQUE que mira
+    /// la señal. Los otros dos lectores no van por ahí —el pull-to-refresh del Panel y el observer del
+    /// iCloud-KV— y para cuando pueden disparar, la marca lleva asentada desde el boot.
+    static func wipeSignalObeyedByThisSession(confirmedPrivateSession: Bool, storageMode: StorageMode) -> Bool {
+        wipeSignalsAppleIDDevices(confirmedPrivateSession: confirmedPrivateSession, storageMode: storageMode)
     }
 
     /// Operación de la hoja de «Cerrar sesión» para el camino que el coordinador va a recorrer.

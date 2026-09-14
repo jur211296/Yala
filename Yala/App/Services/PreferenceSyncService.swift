@@ -503,14 +503,24 @@ final class PreferenceSyncService {
             // readiness gate would park it across the onboarding session and
             // process it post-onboarding, wiping the user's fresh data.
             let hasCompletedOnboarding = local.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
+            // El eje de SESIÓN, evaluado aquí y no solo en el drenaje: este es el punto donde la señal
+            // se DETECTA, y el `submit` de abajo es lo único que la hace viajar. Una sesión en la nube
+            // (E) o solo-grupos (F) ni siquiera pone el intent en la cola. La marca de arriba
+            // (`WipeKey.localWipe`) ya salió incondicionalmente, así que la señal queda procesada.
+            let sessionObeysWipeSignal = DestructiveScopeLogic.wipeSignalObeyedByThisSession(
+                confirmedPrivateSession: PrivateSessionMark.confirmedPrivateSession(local),
+                storageMode: CloudSyncFlags.storageMode)
             let decision = RemoteWipeSignalDecider.decide(
                 hasCompletedOnboarding: hasCompletedOnboarding,
                 isWipingData: SessionState.shared.isWipingData,
-                hasRemoteWipeTimestamp: remoteWipe > 0
+                hasRemoteWipeTimestamp: remoteWipe > 0,
+                sessionObeysWipeSignal: sessionObeysWipeSignal
             )
 
             #if DEBUG
-            print("PreferenceSyncService: Remote wipe detected (onboardingAlreadyDone=\(onboardingAlreadyDone), shouldProcess=\(decision.shouldProcess))")
+            // `sessionObeys` va en el log porque desde el eje de sesión un `shouldProcess=false` ya no
+            // dice por qué: puede ser una instalación sin estado local o una sesión que no obedece.
+            print("PreferenceSyncService: Remote wipe detected (onboardingAlreadyDone=\(onboardingAlreadyDone), shouldProcess=\(decision.shouldProcess), sessionObeys=\(sessionObeysWipeSignal))")
             #endif
 
             // Mid-onboarding silencing: mark BOTH timestamps so neither Caso A nor B
