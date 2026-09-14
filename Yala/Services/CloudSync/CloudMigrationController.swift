@@ -409,6 +409,11 @@ final class CloudMigrationController {
             if let verdict = CloudSignOutFlowLogic.pushAllVerdict(
                 livePendingCount: livePendingUploadCount(),
                 cycleOutcome: outcome,
+                // El motor PERSONAL no puede ver el kill de Grupos: habla con `/sync/push`, y ahí no hay
+                // kill-switch server-side —`CLOUD_MODE_ROLLOUT_PERCENT` se SIRVE como config y el cliente
+                // decide, no rechaza peticiones (medido en `gateway/src/`, 2026-09-13)—. Su 403 solo puede
+                // ser cuenta no disponible, que es exactamente lo que `.permanent` cuenta.
+                channelKilled: false,
                 iteration: iteration,
                 maxIterations: maxIterations
             ) {

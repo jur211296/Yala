@@ -822,6 +822,83 @@ struct GroupsSyncHardeningTests {
         await again?.value
     }
 
+    /// **El testigo del kill describe EL CICLO que acaba de correr, no la vida del proceso** — y eso es lo
+    /// que decide qué aviso ve quien intenta soltar su cuenta de grupos o cerrar sesión con cambios sin
+    /// subir (`CloudSignOutFlowLogic.classify(_:channelKilled:)`).
+    ///
+    /// La contraprueba es el **409 del freeze de la reversa**: produce el mismo `.accountUnavailable` que
+    /// el 403 **sin pasar por ninguna de las dos ramas que escriben el testigo**. Sin el reset al entrar en
+    /// el ciclo, una cuenta revirtiendo detrás de un kill anterior se anunciaría como «el canal está en
+    /// pausa» — que es falso, y encima invitaría a esperar algo que no va a llegar.
+    ///
+    /// Ticket `groups-killswitch-403-blocks-detach-forever`.
+    @Test func killWitness_describesTheCurrentCycle_notTheProcess() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try seedOutboxRow(context, hlc: "2026-09-13T00:00:00.000Z-0001-00000000000000aa")
+
+        // El MISMO cliente, dos vueltas: primero el kill, después la reversa. Las dos paran el push con
+        // `.accountUnavailable`, así que el outcome no las distingue — el testigo sí tiene que hacerlo.
+        let stub = SequenceStubSession(
+            [.init(data: Data(Self.killEnvelopeJSON.utf8), status: 403),
+             .init(data: Data(#"{"error":{"type":"yala_account_reverting"}}"#.utf8), status: 409)],
+            fallback: .init(data: Data("{}".utf8), status: 500))
+        let client = makeClient(session: stub, userID: nil)
+        client.sleeper = { _ in }
+
+        // Ciclo 1 — el kill: el push para en el 403 y el testigo queda ENCENDIDO.
+        let first = await client.syncCycleOnce(context: context)
+        #expect(first == .accountUnavailable)
+        #expect(client.stoppedByChannelKill(for: first) == true)
+
+        // Ciclo 2 — la reversa: mismo outcome, otro origen. El 409 no toca el testigo, así que solo el
+        // reset al entrar en el ciclo puede apagarlo. La fila sigue viva (el 403 no aplicó ni purgó nada),
+        // así que el push vuelve a pedir red de verdad.
+        #expect(try context.fetchCount(FetchDescriptor<GroupSyncOutbox>()) == 1)
+        let second = await client.syncCycleOnce(context: context)
+        #expect(second == .accountUnavailable)
+        #expect(stub.callCount == 2, "el segundo ciclo tiene que haber hablado con el gateway")
+        #expect(client.stoppedByChannelKill(for: second) == false,
+                "una cuenta revirtiendo no es el canal en pausa: el testigo del ciclo anterior no vale")
+    }
+
+    /// **El testigo exige el outcome, y con `.coalesced` no vale aunque esté encendido.** Es la lectura que
+    /// podía mentir: `syncCycleOnceCoalesced` devuelve `.coalesced` SIN correr ciclo cuando ya hay uno en
+    /// vuelo, así que su testigo describe el ciclo ajeno. Ligarlos en el cliente lo cierra sin que el
+    /// consumidor tenga que acordarse de la condición.
+    @Test func killWitness_meansNothingForACycleThatDidNotRun() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try seedOutboxRow(context, hlc: "2026-09-13T00:00:00.000Z-0003-00000000000000aa")
+
+        let stub = StubSession(Self.killEnvelopeJSON, status: 403)
+        let client = makeClient(session: stub, userID: nil)
+        client.sleeper = { _ in }
+        let killed = await client.syncCycleOnce(context: context)
+        #expect(client.stoppedByChannelKill(for: killed) == true)  // el ciclo que SÍ corrió
+
+        // El mismo testigo, preguntado por un ciclo que no corrió: no afirma nada.
+        #expect(client.stoppedByChannelKill(for: .coalesced) == false)
+        #expect(client.stoppedByChannelKill(for: .transient) == false)
+        #expect(client.stoppedByChannelKill(for: .sessionExpired) == false)
+        #expect(client.stoppedByChannelKill(for: .completed) == false)
+    }
+
+    /// El testigo distingue los DOS 403, que es lo único que le pide `classify`. Sin esta contraprueba,
+    /// «distinguir el kill» podría haberse implementado encendiéndolo en todo 403.
+    @Test func killWitness_isOffForTheAccountKindOf403() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try seedOutboxRow(context, hlc: "2026-09-13T00:00:00.000Z-0002-00000000000000aa")
+
+        let stub = StubSession(#"{"error":{"type":"yala_forbidden"}}"#, status: 403)
+        let client = makeClient(session: stub, userID: nil)
+        client.sleeper = { _ in }
+        let outcome = await client.syncCycleOnce(context: context)
+        #expect(outcome == .accountUnavailable)
+        #expect(client.stoppedByChannelKill(for: outcome) == false)
+    }
+
     /// Contraprueba: un 403 que NO es el kill (cuenta suspendida) SÍ sella el loop, como antes del cambio.
     /// Sin este test, «no sellar» podría haberse implementado borrando el sellado para los dos 403.
     @Test func accountUnavailable403_withoutKillCode_stillSealsLoop() async throws {

@@ -2145,6 +2145,13 @@ enum L10n {
             /// volver a iniciar sesión. Se separa de `leaveUnavailable` porque aquí el usuario SÍ
             /// tiene algo que hacer.
             static var sessionExpired: String { ls("groups.errors.sessionExpired", comment: "") }
+            /// El canal de Grupos está apagado a propósito (403 `yala_groups_disabled`) y quedan cambios
+            /// sin subir, así que el gesto que los necesitaba —cerrar sesión, o soltar la cuenta de
+            /// grupos— no pudo completarse. **Una sola key para las DOS pantallas**: el hecho que cuenta
+            /// es el mismo y sus títulos ya las distinguen («No pudimos cerrar tu sesión» / «No pudimos
+            /// soltar la cuenta»). Dice lo único cierto —el canal volverá— y no manda a revisar una
+            /// conexión que funciona. Ver `CloudSignOutFlowLogic.BlockReason.channelPaused`.
+            static var channelPaused: String { ls("groups.errors.channelPaused", comment: "") }
         }
 
         /// G6-3: grupo migrado a la nube de Yala (congelado en CloudKit) — banner/CTA/borrar copia.

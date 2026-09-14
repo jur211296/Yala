@@ -123,7 +123,12 @@ nonisolated enum CloudSignOutFlowLogic {
     /// asentada) de lo que NO se cura sin acción del usuario (sesión caída / cuenta no
     /// disponible). El sign-out solo-grupos reintenta internamente los transitorios y solo
     /// muestra un error cuando agota su presupuesto o el bloqueo es permanente.
-    enum BlockReason: Equatable {
+    /// `CaseIterable` **no es decorado**: `GroupsSignOutRetryDecision.decide` es una cadena de `if` y no un
+    /// `switch`, así que el compilador NO obliga a pronunciarse sobre un motivo nuevo — y su rama por
+    /// defecto es la peor de las dos: 45 s de espera y ~22 peticiones contra algo que no se cura. La red es
+    /// `GroupsSignOutRetryDecisionTests.everyReasonHasADecision`, que recorre `allCases` y se cae en cuanto
+    /// aparece uno sin decidir.
+    enum BlockReason: Equatable, CaseIterable {
         /// Curable esperando: red/HTTP/decode/save intermitente, ciclo coalescido, o el
         /// tope de iteraciones/quiescencia (aún drenando). Reintentable.
         case transient
@@ -153,6 +158,29 @@ nonisolated enum CloudSignOutFlowLogic {
         /// la puso el gesto que lo enseña, así que su aviso **no puede llamar a `acknowledgeBlocked()`**:
         /// le borraría al cierre ajeno su fase y su `blockedExit`. Review adversarial del 2026-09-11.
         case detachBusy
+        /// **El canal de Grupos está apagado A PROPÓSITO** (403 `yala_groups_disabled`, el kill-switch
+        /// server-side de `gateway/src/groups/killSwitch.ts`) y quedan cambios de grupos sin subir.
+        ///
+        /// Va aparte de `.permanent` porque el kill es una palanca de OPERACIÓN que alguien bajó por un
+        /// incidente y que se levanta con un deploy: no hay nada roto en la cuenta de quien lo sufre, y el
+        /// aviso de siempre —«no pudimos conectar, revisa tu conexión»— le manda a buscar un fallo que no
+        /// existe, sin nombrar lo único cierto, que es «vuelve en un rato». La distinción la trae el cliente
+        /// desde el borde donde lee el 403 (`GroupsSyncClient.stoppedByChannelKill(for:)`); aquí solo se
+        /// conserva.
+        ///
+        /// **Qué es el OTRO 403, medido el 2026-09-13 y no lo que parece.** El gateway emite exactamente dos
+        /// 403 en todo `gateway/src/`: éste y `yala_pro_required`, que es de la IA y nunca alcanza estas
+        /// rutas (`policy.ts` da límites de `sync` a los dos tiers). **No hay ningún 403 de «cuenta
+        /// suspendida» en `/groups/*`**, así que el que cae en `.permanent` viene de infraestructura — un
+        /// proxy o un WAF por delante del Worker. `GroupsMembershipClient` ya midió ese caso y lo trata como
+        /// TRANSITORIO con reintento, por escrito; el canal de sync lo trata como veredicto de cuenta y
+        /// además sella el loop. Esa asimetría es preexistente, no se toca aquí y tiene ticket:
+        /// `groups-sync-treats-an-infra-403-as-an-account-verdict`.
+        ///
+        /// **No se reintenta dentro del gesto, y es deliberado** (ver `GroupsSignOutRetryDecision.decide`).
+        /// Nada se ha escrito y nada se pierde: el outbox queda intacto y volver a pulsar cuando el canal
+        /// vuelva completa el gesto.
+        case channelPaused
     }
 
     /// ¿Es seguro hacer `save()` sobre el contexto compartido AHORA? Es la puerta de quiescencia de los
@@ -180,10 +208,23 @@ nonisolated enum CloudSignOutFlowLogic {
     /// Clasifica el outcome crudo de un ciclo de cadencia (H-2026-07-18-6). Base del retry interno del
     /// sign-out solo-grupos. La sesión caducada va aparte de la cuenta no disponible desde el paso 9: las dos
     /// son permanentes, pero solo la primera se arregla volviendo a entrar, y el aviso tiene que decirlo.
-    static func classify(_ outcome: SyncCadencePolicy.CadenceOutcome) -> BlockReason {
+    /// `channelKilled` es la mitad que `CadenceOutcome` no puede llevar: **si el 403 que paró el ciclo era
+    /// el del kill-switch**. El canal de Grupos devuelve `.accountUnavailable` para todo 403, venga del kill
+    /// o de la infraestructura, y esos dos no merecen el mismo aviso (ver `.channelPaused`). Lo contesta
+    /// `GroupsSyncClient.stoppedByChannelKill(for:)`, que liga el testigo al outcome del ciclo.
+    ///
+    /// **Sin valor por defecto a propósito.** Un `= false` lo heredaría en silencio todo call-site que no
+    /// se pronunciara, y el camino que este parámetro abre es justo el que nadie mira hasta que hay un
+    /// incidente. Quien no tenga la señal —el motor personal, cuyo 403 solo puede ser de cuenta— escribe
+    /// `channelKilled: false` y lo dice.
+    ///
+    /// Solo cuenta cuando el ciclo paró por un 403: con cualquier otro outcome el término se ignora, que es
+    /// lo que impide que un kill viejo tiña un fallo de red posterior.
+    static func classify(_ outcome: SyncCadencePolicy.CadenceOutcome,
+                         channelKilled: Bool) -> BlockReason {
         switch outcome {
         case .sessionExpired: return .sessionExpired
-        case .accountUnavailable: return .permanent
+        case .accountUnavailable: return channelKilled ? .channelPaused : .permanent
         case .transient, .completed, .coalesced: return .transient
         }
     }
@@ -206,13 +247,15 @@ nonisolated enum CloudSignOutFlowLogic {
     static func pushAllVerdict(
         livePendingCount: Int,
         cycleOutcome: SyncCadencePolicy.CadenceOutcome,
+        channelKilled: Bool,
         iteration: Int,
         maxIterations: Int
     ) -> PushAllVerdict? {
         if livePendingCount == 0 { return .drained }
         let cycleSucceeded = cycleOutcome == .completed || cycleOutcome == .coalesced
         if !cycleSucceeded || iteration >= maxIterations {
-            return .blocked(pendingCount: livePendingCount, reason: classify(cycleOutcome))
+            return .blocked(pendingCount: livePendingCount,
+                            reason: classify(cycleOutcome, channelKilled: channelKilled))
         }
         return nil
     }
@@ -238,7 +281,10 @@ nonisolated enum GroupsSignOutRetryDecision {
         case retryAfter(seconds: Double)
         /// Rendirse y mostrar el error transitorio ("un momento más") — presupuesto agotado.
         case surfaceTransient
-        /// Rendirse y mostrar el error permanente (sesión/cuenta) — inmediato, sin reintentar.
+        /// Rendirse y mostrar el motivo AL MOMENTO, sin reintentar: ningún reintento dentro del
+        /// presupuesto puede cambiar el veredicto. Cubre la sesión caducada, la cuenta no disponible y el
+        /// canal en pausa; **cuál de los tres es lo dice `reason`, que viaja aparte** — el caller lo
+        /// propaga tal cual a la fase, y colapsarlo ahí fue el bug que se cerró el 2026-09-13.
         case surfacePermanent
     }
 
@@ -248,7 +294,16 @@ nonisolated enum GroupsSignOutRetryDecision {
         reason: CloudSignOutFlowLogic.BlockReason
     ) -> Decision {
         // Sin sesión, esperar no sube nada: la sesión caducada se muestra al momento, como la permanente.
-        if reason == .permanent || reason == .sessionExpired { return .surfacePermanent }
+        //
+        // **El canal en pausa también, y es una decisión de producto, no un descuido** (2026-09-13). El
+        // kill-switch de Grupos es una palanca de operación que se levanta con un deploy: dentro de los
+        // 45 s del presupuesto no se va a mover. Reintentar gastaría ~22 peticiones contra un 403 seguro
+        // —en pleno incidente, que es lo contrario de lo que quiere quien bajó la palanca— y encima
+        // retrasaría 45 s un aviso que ya se puede dar. Lo que sigue siendo reintentable es el GESTO: no
+        // se escribió nada, el outbox queda intacto y volver a pulsar cuando el canal vuelva lo completa.
+        if reason == .permanent || reason == .sessionExpired || reason == .channelPaused {
+            return .surfacePermanent
+        }
         if elapsedSeconds < budgetSeconds { return .retryAfter(seconds: retryIntervalSeconds) }
         return .surfaceTransient
     }

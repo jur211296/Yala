@@ -340,10 +340,29 @@ struct WelcomeGroupsGateView: View {
                     }
                 }
             }
+        case .blocked(_, .channelPaused):
+            // **Tercer bloqueo alcanzable aquí, y el más fácil de contar mal** (2026-09-13). Los grupos
+            // están apagados a propósito en el servidor y quedan cambios sin subir. El título de abajo
+            // sigue siendo verdad —faltan cambios por subir— pero su cuerpo manda «vuelve a entrar con esa
+            // cuenta», y con el kill puesto **volver a entrar no sube nada**: el 403 no depende de la
+            // sesión. Es el mismo aviso mentiroso que el ticket cerró en Ajustes, por la cuarta celda.
+            //
+            // La puerta de arriba (`GroupsOrganizerGateLogic`) no lo atrapa antes porque lee el snapshot
+            // LOCAL de remote-config: mientras ese snapshot no refresque, la puerta deja pasar y el kill
+            // solo se conoce cuando el servidor contesta 403.
+            noticeShell(icon: "person.2.slash",
+                        title: L10n.Welcome.Groups.neutralBlockedTitle,
+                        body: L10n.Groups.Errors.channelPaused,
+                        identifier: "welcome_groups_gate_neutral_channel_paused") {
+                YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterBlock() }
+                    .accessibilityIdentifier("welcome_groups_gate_neutral_channel_paused_back")
+            }
         case .blocked:
             // El otro bloqueo alcanzable en esta celda: quedaron cambios de GRUPOS sin subir de una sesión
             // que caducó (`blockIfGroupsCannotUpload`). No se descartan nunca, así que la única salida
             // honesta es volver y entrar con esa cuenta. Sin esta rama la pantalla era un spinner eterno.
+            // **Con el canal en pausa NO se llega aquí**: ese motivo tiene su propia rama arriba, porque
+            // aquí el consejo de volver a entrar sería falso.
             noticeShell(icon: "arrow.trianglehead.2.clockwise.rotate.90",
                         title: L10n.Welcome.Groups.neutralBlockedTitle,
                         body: L10n.Welcome.Groups.neutralBlockedBody,
