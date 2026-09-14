@@ -318,3 +318,30 @@ exacto que el candado venía a impedir, entrando por la puerta de atrás:
 es «¿por dónde se ejecuta esto sin el candado puesto?», y hay que recorrer **todas** las ramas que
 conceden permiso — las de error incluidas. Un `except PermissionError: pass` es una concesión.
 
+
+## 2026-09-14 · once míos, y el primero era que MI ARREGLO NO ARREGLABA
+
+`restore-start-fresh-keeps-the-imported-corpus`. Tres lentes (flujo y kill-safety · presentaciones
+SwiftUI con `swiftui-ds.md` contra el diff · tests con `testing.md`). Cuando las lancé tenía: build
+verde, 6 tests propios, **5 mutantes ya verificados**, y el recorrido **visto en el simulador**.
+
+**El hallazgo nº1 fue que la pieza central del PR no hacía nada.** Bajaba dos `@State` para apagar un
+alert, y quien lo levanta recibe esa señal **por valor** (`let`, no `@Binding`) sin suspensión de por
+medio ⇒ seguía leyendo la copia vieja. Ficha aparte: [[el-consumidor-lee-una-copia]].
+
+**Lo que esto añade, y es lo caro:** ni el mutante ni la captura del simulador podían verlo. El mutante
+prueba que el test caza el cambio que hice; la captura prueba el camino feliz (allí no había datos, así
+que el alert no salía de todos modos). **Ninguno de los dos comprueba que el mecanismo tenga efecto** —
+y yo tenía los dos, así que llegué a la review más confiado de lo que tocaba.
+
+Los otros dos graves eran guards ajenos que mi camino nuevo dejaba inertes (ficha:
+[[mi-arreglo-rompe-la-premisa-de-otro-guard]], sección del 14-sep). Y la lente de tests encontró que
+**cuatro de mis aserciones no podían fallar como decían**: cambiar el borrado por el de OTRO objeto
+dejaba la suite verde con el ticket entero deshecho.
+
+**Y una que conviene fijar: una lente me impidió una regresión grave.** Mi primer diseño quitaba un
+guard de mount para que la puerta preguntara por el corpus del teléfono; el repo tenía escrito, en el
+propio test que lo pinnea, que con el espejo montado ese borrado por filas **exporta los deletes y vacía
+el iCloud de la persona en todos sus dispositivos**. La lente no lo dedujo: leyó el test. ⇒ **cuando
+vayas a quitar un guard, lee su TEST antes que su código** — el porqué suele estar en el mensaje de la
+aserción, no en el docblock.

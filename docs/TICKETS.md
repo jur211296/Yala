@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (347)
+## Index (349)
 
 | id | status | path |
 |---|---|---|
@@ -37,6 +37,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | account-form-as-medium-detent-sheet | backlog | tickets/backlog/account-form-as-medium-detent-sheet.md |
 | account-goldens-freeze-read-test-times-out | backlog | tickets/backlog/account-goldens-freeze-read-test-times-out.md |
 | accounts-need-more-visibility-in-the-ui | backlog | tickets/backlog/accounts-need-more-visibility-in-the-ui.md |
+| activation-restore-start-fresh-keeps-the-imported-rows | backlog | tickets/backlog/activation-restore-start-fresh-keeps-the-imported-rows.md |
 | adopt-terminal-claims-ready-without-checking-engine | backlog | tickets/backlog/adopt-terminal-claims-ready-without-checking-engine.md |
 | adr-013-does-not-know-yala-has-its-own-commit-msg | backlog | tickets/backlog/adr-013-does-not-know-yala-has-its-own-commit-msg.md |
 | after-session-redesign-review-widgets-siri-applepay-and-web-copy | backlog | tickets/backlog/after-session-redesign-review-widgets-siri-applepay-and-web-copy.md |
@@ -269,6 +270,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | private-exit-loses-unmaterialized-inbound-captures | backlog | tickets/backlog/private-exit-loses-unmaterialized-inbound-captures.md |
 | private-gate-device-notice-has-no-forward-exit | backlog | tickets/backlog/private-gate-device-notice-has-no-forward-exit.md |
 | private-gate-remote-wipe-can-strand-its-arm | backlog | tickets/backlog/private-gate-remote-wipe-can-strand-its-arm.md |
+| private-icloud-gate-back-lands-on-the-wrong-branch | backlog | tickets/backlog/private-icloud-gate-back-lands-on-the-wrong-branch.md |
 | private-sign-out-keeps-legacy-cloudkit-groups | backlog | tickets/backlog/private-sign-out-keeps-legacy-cloudkit-groups.md |
 | prompts-de-traduccion-corren-xcodebuild-sin-cola | backlog | tickets/backlog/prompts-de-traduccion-corren-xcodebuild-sin-cola.md |
 | push-client-ignores-yala-kind | backlog | tickets/backlog/push-client-ignores-yala-kind.md |
@@ -294,7 +296,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reparacion-de-tasas-no-avisa-al-panel | backlog | tickets/backlog/reparacion-de-tasas-no-avisa-al-panel.md |
 | rescue-discarded-groups-pull | discarded | tickets/discarded/rescue-discarded-groups-pull.md |
 | restore-beacon-outlives-account-deletion | backlog | tickets/backlog/restore-beacon-outlives-account-deletion.md |
-| restore-start-fresh-keeps-the-imported-corpus | backlog | tickets/backlog/restore-start-fresh-keeps-the-imported-corpus.md |
+| restore-start-fresh-keeps-the-imported-corpus | qa | tickets/qa/restore-start-fresh-keeps-the-imported-corpus.md |
 | retire-guest-vocabulary-for-session-terms | done | tickets/done/retire-guest-vocabulary-for-session-terms.md |
 | reverse-claim-rejection-has-no-way-out-in-the-client | backlog | tickets/backlog/reverse-claim-rejection-has-no-way-out-in-the-client.md |
 | reverse-cutover-cerrado-para-cuentas-born-cloud | qa | tickets/qa/reverse-cutover-cerrado-para-cuentas-born-cloud.md |

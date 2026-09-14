@@ -137,9 +137,18 @@ struct FullModeActivationView: View {
         case .restore:
             WelcomeRestoreView(
                 onContinueWithSummary: { summary in finishRestoreSearch(summary) },
-                // Mismo desenlace que en el Welcome: empezar de cero es el onboarding personal, sin restaurar.
-                // Lo que ese botón NO hace con lo ya importado es un defecto heredado del Welcome, con su
-                // ticket (`restore-start-fresh-keeps-the-imported-corpus`).
+                // **Aquí «empezar de cero» sigue siendo el onboarding personal a secas, y el Welcome ya
+                // no** (2026-09-14): allí este botón pasa por la puerta de iCloud, que mide y borra.
+                //
+                // El recorrido de la activación **no se puede cerrar con las piezas de hoy**. Su borrado
+                // es de ZONA (`performICloudZoneWipe`, `includingLocalRows: false`) por la restricción
+                // del paso 8: `wipeAllUserData` resetea `hasCompletedOnboarding`, el modo y el nombre, y
+                // mandaría al Welcome a quien está activando. Pero para llegar a `.restore` por aquí hubo
+                // relanzamiento, así que el store ESPEJA — borrar solo la zona deja las filas importadas,
+                // que se re-exportan a la zona recién creada. Un borrado que no borra.
+                //
+                // Cerrarlo pide un borrador que no existe (filas personales sin tocar preferencias):
+                // ticket `activation-restore-start-fresh-keeps-the-imported-rows`.
                 onStartFresh: { go(to: .onboarding(.freshPrivate)) },
                 onOpenSettings: { openSettings() },
                 onBack: { backFromRestore() })

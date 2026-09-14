@@ -361,7 +361,39 @@ struct ContentView: View {
             offersFullActivationAfterGroupsEntry: $offersFullActivationAfterGroupsEntry,
             hasExistingData: hasExistingData,
             hasLocalDataNow: { checkHasExistingData() },
-            performICloudCorpusWipe: { await performICloudCorpusWipe() },
+            // **Las dos señales de «hay datos» bajan aquí**: son `@State` de esta vista y
+            // `wipeAllUserData` no llama a `incrementDataVersion`, así que el `.onChange(of: dataVersion)`
+            // que las recomputa NO dispara. Los otros dos consumidores del mismo borrado ya lo compensan
+            // fuera (el `onWiped` del aviso tardío y el arm reanudado); **la puerta era el único que no**,
+            // y deja `storeLooksEmpty` mintiendo sobre un store recién vaciado.
+            //
+            // **Lo que este envoltorio NO es, aunque su primera versión lo dijera** (review adversarial,
+            // 2026-09-14): la defensa contra el alert de fresh-start. `WelcomeFlowModifier` recibe
+            // `hasExistingData` **por valor**, no por binding, así que escribir el `@State` de aquí no
+            // cambia el `let` que ya capturó el `body` — y entre esta línea y la lectura no hay ningún
+            // punto de suspensión que obligue a re-evaluarlo. Esa defensa es ahora el fetch VIVO de
+            // `startFreshPrivateOnboarding`, que es además lo que el docblock de `hasLocalDataNow` lleva
+            // pidiendo desde el review S5.
+            //
+            // **La gracia del wipe remoto se cancela ANTES del borrado, no después de que salga bien**, y
+            // es la corrección que su hermana `performDeviceCorpusWipe` ya lleva escrita:
+            // `wipeAllUserData` guarda por lotes, así que un borrado que lanza a media lista deja el
+            // `hasPersonalData` cayendo igual — y cancelar solo en la rama de éxito es justo al revés de
+            // donde hace falta. Sin eso, ese `true → false` se lee como «te borraron los datos en otro
+            // dispositivo» y levanta un alert que DESMONTA el cover del Welcome.
+            //
+            // `hasCompletedOnboarding` **no** se toca: lo borra `wipeAllUserData` por su cuenta, y
+            // forzarlo aquí dispararía el encaminamiento que `onboardingReset_doesNotHijackTheWelcome`
+            // vigila.
+            performICloudCorpusWipe: {
+                wipeGraceTask?.cancel()
+                wipeGraceTask = nil
+                let failure = await performICloudCorpusWipe()
+                guard failure == nil else { return failure }
+                hasExistingData = false
+                hasPersonalData = false
+                return nil
+            },
             performDeviceCorpusWipe: { await performDeviceCorpusWipe() },
             showGroupInviteOnboarding: showGroupInviteOnboarding
         ))
@@ -662,13 +694,45 @@ struct ContentView: View {
                 }
             },
             onStartFresh: {
-                // A4 v3.2 (#9b): clean slate también desde WelcomeRestoreView.
-                // Cubre paths .notFound/.error/.iCloudDisabled → "Empezar
-                // configuración" + confirmation dialog desde state .found.
-                OnboardingResetHelper.clearResidualPreferencesForFreshStart()
+                // **«Empezar desde cero» va a la PUERTA del paso 4, no al onboarding.** Hasta el
+                // 2026-09-14 este callback limpiaba dos preferencias y encendía `showOnboarding`:
+                // **no borraba nada**, ni la zona de iCloud ni lo que el espejo ya había importado.
+                // Como esta pantalla solo existe con el espejo adjunto
+                // (`WelcomeMirrorRelaunchLogic.requiresMirror(.restoreICloud)`), el corpus seguía
+                // bajando por debajo mientras la persona hacía su onboarding «de cero» — bajo un
+                // copy que le acababa de prometer «sin tus datos previos».
+                //
+                // La puerta hace lo que este botón prometía y no cumplía: pregunta a CloudKit,
+                // enseña las cifras y ofrece borrar (con segunda confirmación), restaurar o
+                // cancelar. **Y pregunta algo que esta pantalla no puede medir**: el resumen del
+                // restore cuenta FILAS DEL STORE (`ModelContext.iCloudAccountSummary`), así que un
+                // import que no terminó dentro del tope sale de aquí con las cifras en cero
+                // —`.notFound` sobre un corpus intacto—; la sonda de la puerta va a la zona.
+                //
+                // **La limpieza de residuales ya no corre aquí**, y es la regla de
+                // `welcome-start-fresh-wipes-before-ask`: se limpia cuando se BORRA, no cuando se
+                // pregunta. Aquel ticket exceptuó este call-site porque «el fresh-start ya estaba
+                // confirmado y no hay alert que cancelar» — la puerta lo desmiente. No se pierde en
+                // ninguna salida: si borra, limpia la puerta (`clearsResidualPreferencesOnWipe`); y
+                // si sigue de largo, limpian el portal del relanzamiento o
+                // `startFreshPrivateOnboarding`.
                 prefilledOnboardingData = nil
-                showWelcomeRestore = false
-                showOnboarding = true
+                // **Y la persona vuelve a estar ELIGIENDO**, así que el chooser deja de constar como
+                // visto. Lo cazó la review adversarial, y son DOS cosas distintas las que dependen de
+                // ello — molde de `onCreateAnotherAccount`, que baja el mismo flag por el primer motivo:
+                //
+                //  · **Un kill aquí ya no se salta la puerta.** Con el flag en `true`,
+                //    `presentNextOnboardingScreen` cae en su rama final y abre el onboarding privado
+                //    DIRECTO: sin chooser y sin validar iCloud, con el espejo adjunto y el corpus
+                //    intacto. O sea, este mismo bug por la puerta de atrás. Con el flag abajo vuelve al
+                //    Hero, que es de donde esta persona salió.
+                //  · **El neutro durable del borrado deja de ser inerte.** `armICloudCorpusWipe` arma
+                //    también `armNeutralMount`, y su predicado es `armado && !hasShownWelcomeChooser`.
+                //    A esta pantalla se llega con el flag YA marcado (lo pone `onSelectExistingOption`),
+                //    así que el segundo término lo anulaba: un kill durante el borrado montaba espejo en
+                //    el arranque siguiente y re-importaba justo lo que se estaba borrando.
+                hasShownWelcomeChooser = false
+                returnToWelcomeChooser(dismissing: $showWelcomeRestore, step: .privateICloudGate)
             },
             onOpenSettings: {
                 if let url = URL(string: UIApplication.openSettingsURLString) {
@@ -2076,7 +2140,15 @@ private struct WelcomeFlowModifier: ViewModifier {
         // el caso iCloud-con-data, pero falla en (1) sim sin iCloud, (2) timeout del fetch,
         // (3) CloudKit mirror sync que llega post-Hero. Si hay data al momento del tap,
         // pedir confirmation explícito antes de wipe.
-        if hasExistingData {
+        //
+        // **El fetch VIVO y no el snapshot `hasExistingData`** (review adversarial, 2026-09-14). Es el
+        // mismo motivo que el docblock de `hasLocalDataNow` lleva escrito desde el review S5 —«el mirror
+        // de iCloud puede estar re-importando en background durante el Welcome»— y ahora además hay un
+        // camino donde el snapshot está garantizado stale: la puerta de iCloud borra el corpus y sale sin
+        // relanzar (el mount ya espeja), así que este modifier sigue con el `let` que capturó el `body`
+        // ANTES del borrado. Con él, a quien acababa de confirmar el borrado dos veces le salía un tercer
+        // alert pidiéndole borrar lo que ya no existía — y su «Cancelar» lo dejaba plantado en el Welcome.
+        if hasLocalDataNow() {
             showFreshStartWipeAlert = true
             // welcomeFlow sigue visible hasta resolver el alert
         } else {

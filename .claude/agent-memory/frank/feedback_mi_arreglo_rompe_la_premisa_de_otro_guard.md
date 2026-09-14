@@ -34,3 +34,29 @@ docblock del sitio donde SÍ la cumplía, y omití el guard en el otro sitio, tr
 
 Relacionado: [[mi-fix-hereda-la-forma-del-bug]], [[mi-docblock-tambien-es-una-premisa]],
 [[la-correccion-de-la-lente-reintroduce-el-bug]].
+
+---
+
+## La variante del 2026-09-14: no ensanché el predicado — abrí un CAMINO donde su premisa no se cumple
+
+`restore-start-fresh-keeps-the-imported-corpus`. El predicado no cambió ni una letra; lo que cambió fue
+**por dónde se llega a él**, y dos guards a varios ficheros de distancia se volvieron inertes:
+
+- **El neutro durable del borrado.** `armICloudCorpusWipe` arma también `armNeutralMount`, cuyo
+  predicado es `armado && !hasShownWelcomeChooser`. El docblock lo justificaba así: «en la puerta nadie
+  ha marcado el chooser todavía — lo marcan las SALIDAS, no la puerta». Cierto por la entrada vieja;
+  falso por la mía, que llega **desde Restaurar**, donde el flag ya se marcó al entrar. Un kill durante
+  el borrado volvía a montar espejo y re-importaba justo lo que se estaba borrando.
+- **La retirada del arm.** Nadie la hacía en las salidas no destructivas de la puerta, y no mordía por
+  un **efecto colateral**: con el mount neutro toda salida RELANZA, persiste un destino, y
+  `presentNextOnboardingScreen` retira el arm junto con él. Mi camino llega con el espejo ya adjunto, así
+  que **no relanza** y esa red no existe. Consecuencia medida: salir por «Traer mis datos», restaurar el
+  histórico, terminar — y el arranque siguiente lo borraba entero, a ciegas.
+
+**Lo que añade a la ficha:** un guard no solo depende de la FORMA de su predicado, sino de **qué es
+cierto en el camino por el que se llega**. Al dar una entrada nueva a una pantalla existente, la
+pregunta es «¿qué daba por sentado quien la escribió sobre cómo se llega aquí?» — y eso suele estar en
+un docblock que empieza por «aquí todavía no…» o «en este punto ya…».
+
+**Y el olfato barato:** si una red funciona «porque el proceso muere» o «porque el arranque siguiente lo
+recalcula», tu camino nuevo la desactiva en cuanto no relance. Buscar el relanzamiento es un `grep`.
