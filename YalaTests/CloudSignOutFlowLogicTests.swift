@@ -160,8 +160,10 @@ struct CloudSignOutPushAllVerdictTests {
 
     @Test
     func pendingWithSessionOrAccountFailure_blocksPermanent() {
-        // La sesión caducada lleva su motivo propio desde el paso 9 (el aviso pide volver a entrar); el camino
-        // `.cloud` lo sigue mostrando como permanente porque re-mapea todo bloqueo a `.permanent`.
+        // La sesión caducada lleva su motivo propio desde el paso 9 (el aviso pide volver a entrar). El
+        // camino `.cloud` lo sigue mostrando como permanente, pero ya NO porque aplane todo: desde el
+        // 2026-09-14 traduce con `cloudSignOutGroupsBlockReason`, y ahí este motivo se colapsa a propósito
+        // (ticket `cloud-signout-collapses-a-groups-session-expiry-into-permanent`).
         #expect(CloudSignOutFlowLogic.pushAllVerdict(
             livePendingCount: 5, cycleOutcome: .sessionExpired, channelKilled: false, iteration: 1, maxIterations: 10
         ) == .blocked(pendingCount: 5, reason: .sessionExpired))
@@ -241,6 +243,70 @@ struct CloudSignOutClassifyTests {
     }
 }
 
+/// **El cierre en la NUBE traduce el veredicto de grupos, y hasta el 2026-09-14 lo aplanaba.** Todo lo que
+/// no fuera el canal en pausa salía como `.permanent` ⇒ «revisa tu conexión»: un corte de red acertaba, y
+/// un 5xx o el 403 de un cortafuegos mandaban a buscar un fallo que no existe, sin decir lo único que
+/// ayuda —que se cura esperando—. Ticket `cloud-signout-collapses-every-groups-transient-into-permanent`.
+@Suite("Cerrar sesión en la nube — el motivo del fallo de grupos se traduce, no se aplana")
+struct CloudSignOutGroupsReasonTests {
+
+    /// Lo pasajero se anuncia como pasajero. Es el caso del ticket, y el que el ternario viejo perdía:
+    /// devolver `.permanent` aquí es exactamente el bug que se cerró.
+    @Test
+    func transientBecomesRetryLater_notPermanent() {
+        #expect(CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(.transient) == .uploadRetryLater)
+    }
+
+    /// El kill-switch (2026-09-13) no se toca: sigue llegando con su copy propio.
+    @Test
+    func pausedChannelStillTravelsUntouched() {
+        #expect(CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(.channelPaused) == .channelPaused)
+    }
+
+    /// **Todo motivo tiene una traducción escrita.** El `switch` es exhaustivo, así que el compilador ya
+    /// obliga; esta tabla fija además QUÉ se decidió para cada uno, y se cae si alguien cambia una fila
+    /// creyendo que da igual. Los dos que siguen colapsando lo hacen a propósito.
+    @Test
+    func everyReasonHasATranslation() {
+        let esperado: [CloudSignOutFlowLogic.BlockReason: CloudSignOutFlowLogic.BlockReason] = [
+            .transient: .uploadRetryLater,
+            .channelPaused: .channelPaused,
+            .uploadRetryLater: .uploadRetryLater,
+            // Se quedan colapsados a propósito: el copy de la sesión caducada en mitad de un cierre de
+            // sesión es otra decisión de producto.
+            // Ticket `cloud-signout-collapses-a-groups-session-expiry-into-permanent`.
+            .permanent: .permanent,
+            .sessionExpired: .permanent,
+            // No los produce `classify`, así que este productor no puede emitirlos.
+            .exportUnconfirmed: .permanent,
+            .bridgeUnreadable: .permanent,
+            .detachBusy: .permanent,
+        ]
+        #expect(CloudSignOutFlowLogic.BlockReason.allCases.count == esperado.count, """
+            Hay un motivo de bloqueo sin traducción escrita para el cierre en la nube. Decídelo aquí: el
+            `switch` no te deja compilar sin hacerlo, pero sí te deja elegir mal en silencio.
+            """)
+        for motivo in CloudSignOutFlowLogic.BlockReason.allCases {
+            #expect(CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(motivo) == esperado[motivo])
+        }
+        // La tabla cubre TODO `allCases` y toda salida está en `allCases`, así que con ella verde la
+        // traducción es idempotente por construcción: `f(f(x)) == f(x)`. No hace falta un test aparte —
+        // el que había no podía fallar sin que fallara antes esta tabla.
+    }
+
+    /// **Cada motivo tiene su slug de log, y el que no lo tenga rompe aquí.** Sin esto, un motivo nuevo
+    /// puede llegar a los logs como el slug de otro y un incidente se lee al revés.
+    @Test
+    func everyReasonHasItsOwnBreadcrumbSlug() {
+        let slugs = CloudSignOutFlowLogic.BlockReason.allCases.map(\.breadcrumbSlug)
+        #expect(Set(slugs).count == CloudSignOutFlowLogic.BlockReason.allCases.count, """
+            Dos motivos comparten slug de log: en campo no se podrán distinguir.
+            """)
+        #expect(CloudSignOutFlowLogic.BlockReason.uploadRetryLater.breadcrumbSlug == "upload-retry-later")
+        #expect(CloudSignOutFlowLogic.BlockReason.channelPaused.breadcrumbSlug == "channel-paused")
+    }
+}
+
 @Suite("Cerrar sesión solo-grupos — decisión de retry con presupuesto (H-2026-07-18-6)")
 struct GroupsSignOutRetryDecisionTests {
 
@@ -292,6 +358,9 @@ struct GroupsSignOutRetryDecisionTests {
             .permanent: .surfacePermanent,
             .sessionExpired: .surfacePermanent,
             .channelPaused: .surfacePermanent,
+            // El fallo pasajero de la SUBIDA nace en el cierre de la nube, que no pasa por aquí. Si
+            // llegara, reintentar contradiría su propio aviso («inténtalo en un rato»), así que se muestra.
+            .uploadRetryLater: .surfacePermanent,
             // Se reintentan dentro del presupuesto: son los que sí se curan esperando.
             .transient: .retryAfter(seconds: GroupsSignOutRetryDecision.retryIntervalSeconds),
             // No los produce este camino, pero si llegaran, esperar tampoco arregla nada que sepamos —
@@ -540,6 +609,13 @@ struct PausedChannelReasonWiringTests {
 
     private static let signOutPath = "Yala/Services/CloudSync/CloudSessionSignOut.swift"
 
+    /// Colapsa todo espacio en blanco (saltos incluidos) a uno solo, para que un scan sobre varias líneas
+    /// no dé un rojo falso cuando el formateador reparta el código de otra forma. Lo que se fija sigue
+    /// siendo el ORDEN de los tokens, que es lo que aquí importa.
+    private static func squashed(_ text: String) -> String {
+        text.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+    }
+
     /// **Los marcadores llevan la llave de apertura, y no es cosmético.** `body(of:)` arranca su
     /// contador en `depth = 1` justo después del marcador: sin la `{`, el contador corre sobre texto que
     /// aún no ha abierto el cuerpo y el corte se come todo lo que sigue hasta cerrar el TIPO. Medido el
@@ -625,17 +701,97 @@ struct PausedChannelReasonWiringTests {
             """)
     }
 
-    /// La celda `.cloud` sufre el mismo kill-switch: su push de grupos habla con el mismo endpoint. Aquí el
-    /// resto de motivos SÍ se colapsa a propósito (su alert es una decisión propia), así que lo que se fija
-    /// es solo que el canal en pausa se salva de ese colapso.
-    @Test("el cierre de la nube deja pasar el canal en pausa")
-    func cloudSignOutLetsThePausedChannelThrough() throws {
+    /// La celda `.cloud` sufre el mismo kill-switch: su push de grupos habla con el mismo endpoint.
+    ///
+    /// **Desde el 2026-09-14 el paso 2 no aplana nada: delega en una función pura y exhaustiva**
+    /// (`cloudSignOutGroupsBlockReason`), y lo que aquí se fija es que SIGA delegando. El ternario que
+    /// había —`reason == .channelPaused ? .channelPaused : .permanent`— salvaba al canal en pausa y
+    /// convertía todo lo demás en «revisa tu conexión»: un 5xx y el 403 de un cortafuegos incluidos.
+    /// Lo que se decide en esa función lo cubre `CloudSignOutGroupsReasonTests`; lo que no puede cubrir
+    /// ninguna función pura es que el paso 2 la llame, que es esto.
+    @Test("el cierre de la nube traduce el motivo con la función pura, sin aplanarlo")
+    func cloudSignOutTranslatesTheReasonInsteadOfFlatteningIt() throws {
         let cloud = try Self.body(
             of: "private func performCloudSecureSignOut(context: ModelContext) async {",
             in: try Self.source(Self.signOutPath))
-        #expect(cloud.contains("reason: reason == .channelPaused ? .channelPaused : .permanent"), """
-            El cierre de la nube volvió a colapsar el canal en pausa: una cuenta `.cloud` con grupos sufre \
-            el kill-switch igual que la sesión privada del ticket.
+        let traduce = Self.squashed(cloud)
+        #expect(traduce.contains(Self.squashed("""
+            let shown = CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(reason)
+            """)), """
+            El paso 2 del cierre en la nube dejó de traducir el motivo del push-all de grupos. Con un \
+            literal o un ternario, un corte de red, un 5xx y un cortafuegos vuelven a salir los tres como \
+            «revisa tu conexión» — y el canal en pausa, como un problema de la cuenta.
+            """)
+        // Y lo traducido es lo que llega a la FASE, que es lo que la pantalla lee. Sin esta mitad, traducir
+        // a una variable y luego escribir `reason` pasaba verde con el bug entero vivo.
+        #expect(traduce.contains(Self.squashed("""
+            phase = .blocked(pendingCount: pending, reason: shown)
+            """)), """
+            El motivo traducido dejó de alimentar la fase del bloqueo.
+            """)
+        // **Y el motivo deja rastro en los logs, con el slug del motivo TRADUCIDO.** Sin esta aserción el
+        // breadcrumb se podía borrar entero sin romper nada —medido: el mutante sobrevivía— y en campo los
+        // tres desenlaces del bloqueo vuelven a ser indistinguibles, que es lo que impide comprobar si a
+        // alguien se le enseñó «revisa tu conexión» sobre un fallo que se cura esperando.
+        #expect(traduce.contains(Self.squashed("""
+            CloudSyncBreadcrumb.signOutGroupsBlocked(reason: shown.breadcrumbSlug)
+            """)), """
+            El cierre en la nube dejó de registrar POR QUÉ bloqueó el push-all de grupos.
+            """)
+        // El ternario nunca puede volver: es la forma exacta del bug, y su mutante es de un carácter.
+        #expect(!cloud.contains("? .channelPaused : .permanent"), """
+            Volvió el ternario que colapsaba el motivo en el cierre de la nube.
+            """)
+        // Los `.blocked` propios del camino son los CUATRO de sus guards (controller ausente, push-all
+        // personal, push-all de grupos y el residual). Un quinto puede ser una reescritura del motivo.
+        #expect(cloud.components(separatedBy: "phase = .blocked(").count - 1 == 4, """
+            Cambió el número de bloqueos del cierre en la nube: comprueba si alguno reescribe el motivo \
+            que viene del push-all de grupos.
+            """)
+    }
+
+    /// **El motivo nuevo tiene que LLEGAR a la pantalla, y eso no lo prueba la función pura.** Entre ella y
+    /// el aviso hay dos `switch` dentro de la vista: uno elige QUÉ alert sale y otro QUÉ dice. Si el
+    /// primero lo mandara al alert de «un momento más», el aviso prometería una espera de segundos ante un
+    /// servidor caído; si el segundo lo dejara en el genérico, volvería «revisa tu conexión» con todo lo
+    /// demás en verde. Ticket `cloud-signout-collapses-every-groups-transient-into-permanent`.
+    @Test("el aviso del cierre nombra el fallo pasajero de la subida, y por el alert que toca")
+    func theSignOutAlertNamesTheTransientUploadFailure() throws {
+        let profileFile = try Self.source("Yala/App/Views/Profile/ProfileView.swift")
+
+        let message = Self.squashed(
+            try Self.body(of: "private var signOutBlockedMessage: String {", in: profileFile))
+        #expect(message.contains(
+            Self.squashed("case .uploadRetryLater: return L10n.Groups.Errors.uploadRetryLater")), """
+            El aviso del cierre perdió el copy del fallo pasajero de la subida: vuelve a decirle a quien \
+            sufre un 5xx que revise una conexión que funciona.
+            """)
+
+        // Y sale por el alert del bloqueo, no por el de «un momento más» (que promete segundos).
+        //
+        // **La etiqueta del `case` va con su CUERPO en el mismo literal, y eso lo cazó una lente**
+        // (2026-09-14): comprobar solo la etiqueta deja pasar el mutante que cambia el cuerpo a
+        // `showSignOutPendingAlert = true` — con él los CUATRO motivos del bloqueo salen por el alert de
+        // «un momento más» y este test seguía verde. El fuente se normaliza antes (espacios y saltos a
+        // uno solo) para que partir la línea no dé un rojo falso.
+        let present = Self.squashed(try Self.body(
+            of: "private func presentSignOutBlock(_ reason: CloudSignOutFlowLogic.BlockReason) {",
+            in: profileFile))
+        #expect(present.contains(Self.squashed("""
+            case .permanent, .sessionExpired, .channelPaused, .uploadRetryLater:
+                showSignOutBlockedAlert = true
+            """)), """
+            El fallo pasajero de la subida dejó de entrar por el alert del bloqueo. Si se fue al de \
+            `.transient`, su título promete «un momento más» sobre algo que nadie ha reintentado.
+            """)
+        // Y la rama de `.transient` conserva la SUYA: el mutante que las une por el otro lado —meter
+        // `.uploadRetryLater` aquí— tiene que romper algo, y sin esta aserción no rompe nada.
+        #expect(present.contains(Self.squashed("case .transient: showSignOutPendingAlert = true")), """
+            La rama de `.transient` dejó de encender su propio aviso.
+            """)
+        #expect(!present.contains("default:"), """
+            Volvió el `default` a la elección del alert: un motivo nuevo vuelve a caer donde caiga sin que \
+            nada lo advierta.
             """)
     }
 

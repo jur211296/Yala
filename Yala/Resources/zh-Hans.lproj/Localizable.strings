@@ -5903,3 +5903,6 @@
 
 /* Private gate: retry a failed wipe (not a re-search) */
 "welcome.privateICloud.wipeRetry" = "再试一次";
+
+/* Sign-out blocked: the groups upload failed for a transient reason (network, 5xx, WAF) and this path does not retry */
+"groups.errors.uploadRetryLater" = "你最近的群组更改没有传到服务器。更改还在这台手机上，不会丢失，过一会儿再试试。";

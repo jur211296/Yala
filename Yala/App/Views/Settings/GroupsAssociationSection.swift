@@ -177,7 +177,10 @@ struct GroupsAssociationSection: View {
         // a este gesto —el desasociar no espera a iCloud—, y `nil` tampoco con el aviso presentado (el
         // binding lo enciende justo con el motivo puesto); los dos caen en el copy que no afirma ninguna
         // causa concreta, que es lo correcto si alguna vez llegaran.
-        case .transient, .exportUnconfirmed, .none:
+        // `.uploadRetryLater` tampoco llega: nace en el paso 2 del cierre en la NUBE y el desasociar va
+        // por `pushGroupsForSignOut`, que propaga lo que dice `classify` —y `classify` no lo produce—. Si
+        // algún día llegara, este copy no miente: es el mismo consejo con menos detalle.
+        case .transient, .exportUnconfirmed, .uploadRetryLater, .none:
             return L10n.Storage.Groups.detachBlockedTransient
         }
     }
