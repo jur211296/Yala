@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (336)
+## Index (345)
 
 | id | status | path |
 |---|---|---|
@@ -111,6 +111,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | device-qa-cloud-killswitch-groups-door | qa | tickets/qa/device-qa-cloud-killswitch-groups-door.md |
 | device-qa-groups-account-association | qa | tickets/qa/device-qa-groups-account-association.md |
 | device-qa-groups-invite-neutral-return | qa | tickets/qa/device-qa-groups-invite-neutral-return.md |
+| device-qa-private-gate-device-corpus | qa | tickets/qa/device-qa-private-gate-device-corpus.md |
 | diez-worktrees-comparten-un-simulador | done | tickets/done/diez-worktrees-comparten-un-simulador.md |
 | distribucion-recalcula-dos-veces-por-toque-y-sin-debounce | backlog | tickets/backlog/distribucion-recalcula-dos-veces-por-toque-y-sin-debounce.md |
 | distribution-balance-kpi-skips-fx | done | tickets/done/distribution-balance-kpi-skips-fx.md |
@@ -139,6 +140,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | financial-report-amounts-unmarked | backlog | tickets/backlog/financial-report-amounts-unmarked.md |
 | flows-atlas-predates-session-redesign | backlog | tickets/backlog/flows-atlas-predates-session-redesign.md |
 | forcesync-returns-ok-without-touching-the-network | backlog | tickets/backlog/forcesync-returns-ok-without-touching-the-network.md |
+| fresh-start-wipe-kills-unsent-group-writes-silently | backlog | tickets/backlog/fresh-start-wipe-kills-unsent-group-writes-silently.md |
 | full-activation-cloud-adopt-when-account-already-complete | backlog | tickets/backlog/full-activation-cloud-adopt-when-account-already-complete.md |
 | full-mode-activation-must-ask-where-personal-data-lives | qa | tickets/qa/full-mode-activation-must-ask-where-personal-data-lives.md |
 | fx-approximate-mark-missing-on-secondary-surfaces | qa | tickets/qa/fx-approximate-mark-missing-on-secondary-surfaces.md |
@@ -195,7 +197,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-leave-rpc-error-10 | qa | tickets/qa/groups-leave-rpc-error-10.md |
 | groups-log-expense-via-chat-voice | backlog | tickets/backlog/groups-log-expense-via-chat-voice.md |
 | groups-only-account-deletion-skips-export-wait | backlog | tickets/backlog/groups-only-account-deletion-skips-export-wait.md |
-| groups-only-private-restart-skips-the-wipe-alert | backlog | tickets/backlog/groups-only-private-restart-skips-the-wipe-alert.md |
+| groups-only-private-restart-skips-the-wipe-alert | qa | tickets/qa/groups-only-private-restart-skips-the-wipe-alert.md |
 | groups-only-second-launch-mounts-icloud-mirror | qa | tickets/qa/groups-only-second-launch-mounts-icloud-mirror.md |
 | groups-organizer-intent-is-lost-on-relaunch | backlog | tickets/backlog/groups-organizer-intent-is-lost-on-relaunch.md |
 | groups-outbox-rows-without-a-live-session-have-no-exit | backlog | tickets/backlog/groups-outbox-rows-without-a-live-session-have-no-exit.md |
@@ -263,6 +265,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | prefs-domain-per-secondary-session | discarded | tickets/discarded/prefs-domain-per-secondary-session.md |
 | prefs-synced-keys-upload-not-download | qa | tickets/qa/prefs-synced-keys-upload-not-download.md |
 | private-exit-loses-unmaterialized-inbound-captures | backlog | tickets/backlog/private-exit-loses-unmaterialized-inbound-captures.md |
+| private-gate-device-notice-has-no-forward-exit | backlog | tickets/backlog/private-gate-device-notice-has-no-forward-exit.md |
+| private-gate-remote-wipe-can-strand-its-arm | backlog | tickets/backlog/private-gate-remote-wipe-can-strand-its-arm.md |
 | private-sign-out-keeps-legacy-cloudkit-groups | backlog | tickets/backlog/private-sign-out-keeps-legacy-cloudkit-groups.md |
 | prompts-de-traduccion-corren-xcodebuild-sin-cola | backlog | tickets/backlog/prompts-de-traduccion-corren-xcodebuild-sin-cola.md |
 | push-client-ignores-yala-kind | backlog | tickets/backlog/push-client-ignores-yala-kind.md |

@@ -5871,3 +5871,24 @@
 
 /* Blocked sign-out/detach when the groups channel kill-switch is on (403 yala_groups_disabled): the channel is paused on purpose, nothing is lost */
 "groups.errors.channelPaused" = "C'est de notre côté : les groupes sont en pause. Tes modifications restent sur ce téléphone et rien n'est perdu ; réessaie dans un moment.";
+
+/* Private gate: the phone already holds data from a previous stage */
+"welcome.privateICloud.foundDeviceTitle" = "Ce téléphone a déjà des données";
+
+/* Private gate: body of the on-device data notice */
+"welcome.privateICloud.foundDeviceBody" = "Ce téléphone a déjà des données d'avant : ce qui était suivi dans Yala jusqu'ici. Si tu repars de zéro, elles sont retirées de ce téléphone pour que ton Yala démarre propre.";
+
+/* Private gate: second confirmation for the on-device wipe */
+"welcome.privateICloud.wipeDeviceConfirmBody" = "Tout ce qui est sur ce téléphone est retiré : dépenses, comptes, budgets, catégories et tes groupes. Aucune copie ne reste sur le téléphone.";
+
+/* Private gate: progress while wiping the on-device corpus */
+"welcome.privateICloud.wipingDevice" = "On supprime ce qu'il y avait sur ce téléphone…";
+
+/* Private gate: the on-device wipe failed */
+"welcome.privateICloud.wipeDeviceFailedBody" = "On n'a pas pu terminer. Une partie de tes données a peut-être déjà disparu et le reste est encore là. Réessaie ; si ça échoue encore, ferme Yala et rouvre-la.";
+
+/* Private gate: keep what the phone already has and go back to the chooser */
+"welcome.privateICloud.foundDeviceKeep" = "Laisser tel quel";
+
+/* Private gate: retry a failed wipe (not a re-search) */
+"welcome.privateICloud.wipeRetry" = "Réessayer";

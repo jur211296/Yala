@@ -53,6 +53,28 @@ struct WelcomePrivateICloudGateView: View {
     /// Borrar el corpus del iCloud de este Apple ID **y** lo que el espejo hubiera bajado ya. Devuelve
     /// `nil` si fue bien, o el motivo del fallo. Lo ejecuta `ContentView`.
     var performWipe: @MainActor () async -> String?
+    /// **El corpus que ya está EN EL TELÉFONO**, o `nil` para no preguntar por él. Sin default a
+    /// propósito: los dos sitios que montan esta puerta contestan cosas OPUESTAS y el compilador tiene que
+    /// obligarles a decirlo.
+    ///
+    ///  · El **Welcome** lo pasa: quien elige «Es mi primera vez» sobre un teléfono con datos —una etapa
+    ///    solo-grupos, un reinstall— tiene que verlos antes de que nada se borre. Ese aviso se perdía
+    ///    cuando el mount es neutro, porque el camino sale por el relanzamiento y nunca llega al
+    ///    `onSelectPrivateAccount` que lo levantaba.
+    ///  · La **activación de Yala completo** pasa `nil`, y no es un olvido: allí los datos del teléfono son
+    ///    de la misma persona que está activando —sus grupos, sus categorías— y borrárselos sería el daño
+    ///    contrario al que esta puerta existe para evitar.
+    var deviceCorpus: DeviceCorpus?
+
+    /// Las dos mitades del corpus local, juntas para que no puedan separarse: quien pregunta «¿hay datos?»
+    /// es quien tiene que saber borrarlos. `hasData` se evalúa VIVO (un snapshot no vale: el espejo puede
+    /// estar re-importando mientras el Welcome está en pantalla).
+    struct DeviceCorpus {
+        var hasData: @MainActor () -> Bool
+        /// Borra las filas del teléfono, purga el dominio de Grupos y escribe el sello del handover.
+        /// `nil` si fue bien, o el motivo del fallo.
+        var wipe: @MainActor () async -> String?
+    }
     /// Paso 8 · ¿el borrado limpia también el nombre y la divisa residuales? `true` en el Welcome, donde son
     /// restos de quien usó el dispositivo antes. **`false` en la activación de Yala completo**: allí son el
     /// prefill de la persona que está activando —su nombre y la divisa de sus grupos—, y borrarlos le quitaría
@@ -72,6 +94,20 @@ struct WelcomePrivateICloudGateView: View {
         case wipeFailed
         case noICloud
         case unreachable
+        // MARK: Las cuatro del corpus que ya está en el TELÉFONO
+        //
+        // Son fases propias y no un flag al lado de las de arriba **porque el flag se hereda en silencio**:
+        // es el defecto que la review le cazó al propósito de la puerta de Grupos cuando vivía en un
+        // `@State` paralelo al step. Aquí el dato viaja DENTRO del case y el compilador obliga a cada
+        // transición a decir con qué corpus trabaja.
+        //
+        // `iCloudUnverified` las recorre las cuatro porque decide el final del camino: si a iCloud no se
+        // le pudo preguntar, quien sigue adelante tiene que quedar bajo el mismo testigo que el estado K
+        // (`continueWithoutValidating`), o el aviso del espejo tardío se pierde.
+        case foundDevice(iCloudUnverified: Bool)
+        case confirmingDeviceWipe(iCloudUnverified: Bool)
+        case wipingDevice(iCloudUnverified: Bool)
+        case deviceWipeFailed(iCloudUnverified: Bool)
     }
 
     var body: some View {
@@ -111,6 +147,9 @@ struct WelcomePrivateICloudGateView: View {
     /// tropiezo del inferidor no da un error legible, da «failed to produce diagnostic».
     private var backAction: (() -> Void)? {
         if phase == .wiping { return nil }
+        // La misma regla para el borrado del teléfono: mientras hay algo destructivo en vuelo no hay
+        // marcha atrás que ofrecer. `if case` y no `==` porque la fase lleva su término dentro.
+        if case .wipingDevice = phase { return nil }
         return { leaveGate() }
     }
 
@@ -168,11 +207,93 @@ struct WelcomePrivateICloudGateView: View {
                 icon: "exclamationmark.icloud",
                 title: L10n.Welcome.PrivateICloud.wipeFailedTitle,
                 body: L10n.Welcome.PrivateICloud.wipeFailedBody,
-                primary: L10n.Welcome.Restore.retry,
+                // **`wipeRetry` y no `Restore.retry`**: aquél dice «Reintentar búsqueda», que en una
+                // pantalla de borrado fallido no significa nada. El de `.unreachable` se queda como está,
+                // porque ahí sí se vuelve a BUSCAR.
+                primary: L10n.Welcome.PrivateICloud.wipeRetry,
                 secondary: L10n.Welcome.PrivateICloud.wipeFailedBack,
                 identifier: "welcome_private_icloud_wipe_failed",
                 primaryAction: { phase = .wiping },
                 secondaryAction: leaveGate)
+        case .wipingDevice:
+            progressContent(text: L10n.Welcome.PrivateICloud.wipingDevice,
+                            identifier: "welcome_private_icloud_wiping_device")
+        case .foundDevice(let unverified):
+            foundDeviceContent(iCloudUnverified: unverified)
+        case .confirmingDeviceWipe(let unverified):
+            confirmDeviceContent(iCloudUnverified: unverified)
+        case .deviceWipeFailed(let unverified):
+            // Mismo molde que su gemela de iCloud y por la misma razón: el borrado falló, los datos siguen
+            // AQUÍ, y continuar sería mentirle. Lo que cambia es dónde están — el copy de arriba promete
+            // que siguen en iCloud, y aquí eso sería falso.
+            twoWayNoticeContent(
+                icon: "exclamationmark.triangle",
+                title: L10n.Welcome.PrivateICloud.wipeFailedTitle,
+                body: L10n.Welcome.PrivateICloud.wipeDeviceFailedBody,
+                primary: L10n.Welcome.PrivateICloud.wipeRetry,
+                secondary: L10n.Welcome.PrivateICloud.wipeFailedBack,
+                identifier: "welcome_private_icloud_wipe_failed_device",
+                primaryAction: { phase = .wipingDevice(iCloudUnverified: unverified) },
+                secondaryAction: leaveGate)
+        }
+    }
+
+    /// **El aviso que este ticket devuelve a su sitio: «aquí ya hay datos».**
+    ///
+    /// Sin cifras, a diferencia de su gemela de iCloud, y es deliberado: allí las cifras son el histórico
+    /// que la persona escribió y sostienen la decisión de traerlo de vuelta; aquí lo que hay son las
+    /// categorías que sembró la app y los grupos de la etapa anterior, y un «12 categorías» sugeriría un
+    /// trabajo propio que nadie hizo. Lo que importa decir es que hay algo y que empezar de cero se lo
+    /// lleva.
+    ///
+    /// **Reusa `noticeShell` en vez de repetir su cuerpo**, que es lo que la review pidió: las dos
+    /// pantallas nuevas eran cuarenta líneas calcadas de ese helper, y fue esa copia la que dejó los
+    /// identificadores escritos a mano y por tanto divergentes del molde del fichero.
+    ///
+    /// Dos salidas, la que no destruye arriba — el mismo orden que `foundContent` y por el mismo motivo.
+    /// **No hay tercera**: «traer mis datos» no existe aquí porque no hay nada que traer.
+    private func foundDeviceContent(iCloudUnverified: Bool) -> some View {
+        noticeShell(icon: "iphone.gen3",
+                    title: L10n.Welcome.PrivateICloud.foundDeviceTitle,
+                    body: L10n.Welcome.PrivateICloud.foundDeviceBody,
+                    identifier: "welcome_private_icloud_found_device") {
+            VStack(spacing: DS.Spacing.sm) {
+                // **«Dejarlo como está» y no «Mejor no»**: nadie le ha preguntado «¿seguro?» todavía —
+                // acaba de elegir «Es mi primera vez»— y el mismo label a una pantalla de distancia lleva
+                // a otro sitio (allí retrocede una fase; aquí sale de la puerta). Dos destinos con el
+                // mismo texto es como se pulsa el equivocado.
+                YalaPrimaryButton(L10n.Welcome.PrivateICloud.foundDeviceKeep) {
+                    leaveGate()
+                }
+                .accessibilityIdentifier("welcome_private_icloud_keep_device")
+
+                destructiveButton(L10n.Welcome.PrivateICloud.wipeAction,
+                                  identifier: "welcome_private_icloud_wipe_device") {
+                    phase = .confirmingDeviceWipe(iCloudUnverified: iCloudUnverified)
+                }
+            }
+        }
+    }
+
+    /// 2.ª confirmación del corpus del teléfono. Mismo título que la de iCloud —el texto de «Vaciar datos»
+    /// de Ajustes, que es donde ese copy ya vive— y cuerpo propio: el de arriba promete que lo borrado se
+    /// va «de iCloud», y en este camino iCloud no se toca.
+    private func confirmDeviceContent(iCloudUnverified: Bool) -> some View {
+        noticeShell(icon: "trash",
+                    title: L10n.Settings.wipeDataSecondConfirmTitle,
+                    body: L10n.Welcome.PrivateICloud.wipeDeviceConfirmBody,
+                    identifier: "welcome_private_icloud_confirm_device") {
+            VStack(spacing: DS.Spacing.sm) {
+                YalaPrimaryButton(L10n.Welcome.PrivateICloud.wipeConfirmKeep) {
+                    phase = .foundDevice(iCloudUnverified: iCloudUnverified)
+                }
+                .accessibilityIdentifier("welcome_private_icloud_confirm_keep_device")
+
+                destructiveButton(L10n.Settings.deleteAllDataAction,
+                                  identifier: "welcome_private_icloud_confirm_wipe_device") {
+                    phase = .wipingDevice(iCloudUnverified: iCloudUnverified)
+                }
+            }
         }
     }
 
@@ -376,10 +497,19 @@ struct WelcomePrivateICloudGateView: View {
     /// al device recién vaciado la única cosa que impide que el espejo se readjunte sobre el corpus del
     /// humano que se acaba de ir.
     private func leaveGate() {
-        if phase == .wipeFailed {
+        if phase == .wipeFailed || isDeviceWipeFailed {
             StorageModePersistence.clearICloudCorpusWipeArm()
         }
         onBack()
+    }
+
+    /// `if case` envuelto en una propiedad porque el `||` de arriba no admite pattern matching, y porque
+    /// el hecho —«el borrado que falló fue el del teléfono»— se lee mejor con nombre. Los dos fallos
+    /// retiran el arm por la misma razón: un borrado que no borró nada no deja ningún estado a medias que
+    /// proteger, solo una petición que quien se va acaba de retirar.
+    private var isDeviceWipeFailed: Bool {
+        if case .deviceWipeFailed = phase { return true }
+        return false
     }
 
     /// El trabajo de cada fase. Lo llama `.task(id: phase)`, así que la cancelación es real.
@@ -387,6 +517,7 @@ struct WelcomePrivateICloudGateView: View {
         switch phase {
         case .checking: await measure()
         case .wiping: await wipe()
+        case .wipingDevice(let unverified): await wipeDevice(iCloudUnverified: unverified)
         default: return
         }
     }
@@ -402,6 +533,12 @@ struct WelcomePrivateICloudGateView: View {
             onProceed()
             return
         }
+        // **Lo que ya está en el teléfono se cuenta DESPUÉS de la sonda, no antes, y el orden es lo que
+        // hace verdad la palabra «vivo».** Medirlo primero deja un muestreo de hace varios segundos —lo
+        // que tarde CloudKit— y en una sesión solo-grupos el canal sigue aplicando pulls durante ese rato:
+        // store vacío en t0 + iCloud vacío ⇒ se sale de largo ⇒ onboarding de cero encima de las filas que
+        // llegaron mientras se preguntaba. Es el bug de este ticket en una ventana estrecha, y cerrarla
+        // cuesta cuatro `fetchCount`.
         // **Aquí NO hay pre-filtro, y esa es la segunda corrección del mismo sitio.** El primer diseño
         // preguntaba `isICloudAvailable()`, que mide iCloud Drive; la review lo cambió por «¿este mount
         // espeja?» (`mirrorWillSync`) — y ese término apaga la puerta **justo en el caso principal del
@@ -418,12 +555,17 @@ struct WelcomePrivateICloudGateView: View {
         // «volver» mientras CloudKit contesta vería la pantalla cambiar bajo el dedo, o peor, saldría del
         // Welcome solo.
         guard !Task.isCancelled else { return }
+        let deviceHasData = deviceCorpus?.hasData() ?? false
 
-        switch WelcomePrivateICloudGateLogic.decide(skipValidation: false, outcome: outcome) {
+        switch WelcomePrivateICloudGateLogic.decide(skipValidation: false,
+                                                    outcome: outcome,
+                                                    deviceHasData: deviceHasData) {
         case .proceed:
             onProceed()
         case .foundData(let corpus):
             phase = .found(corpus)
+        case .foundDeviceData(let unverified):
+            phase = .foundDevice(iCloudUnverified: unverified)
         case .noICloud:
             phase = .noICloud
         case .unreachable:
@@ -453,6 +595,60 @@ struct WelcomePrivateICloudGateView: View {
         }
         StorageModePersistence.clearICloudCorpusWipeArm()
         onProceed()
+    }
+
+    /// Borrar lo que hay EN EL TELÉFONO.
+    ///
+    /// **NO arma `armICloudCorpusWipe`, y no es un olvido: armarlo era un defecto ALTA de la review.** Ese
+    /// testigo tiene DOS consumidores y solo uno hace lo que su docblock promete. `presentNextOnboardingScreen`
+    /// vuelve a esta puerta y re-mide, sí; pero `ContentView.runLateICloudMirrorCheck` lo **reanuda a
+    /// ciegas** con `performICloudCorpusWipe()`, que borra la ZONA de CloudKit del Apple ID. O sea: un kill
+    /// a mitad de un borrado LOCAL —confirmado dos veces sobre un copy que dice que iCloud no se toca—
+    /// acababa borrando el iCloud de la persona sin que nadie lo pidiera, y en un device solo-grupos ese
+    /// camino es el que corre (`hasCompletedOnboarding` ya es `true`, así que el arranque ni siquiera pasa
+    /// por la puerta).
+    ///
+    /// **Y la kill-safety no se pierde por quitarlo**, que es lo que hacía falta comprobar antes: si el
+    /// borrado muere a mitad, `wipeAllUserData` ya se llevó `hasCompletedOnboarding`, así que el arranque
+    /// siguiente enseña el Welcome; el mount sigue siendo neutro —lo sostiene la marca de la sesión
+    /// solo-grupos, que este camino no toca— y la puerta vuelve a medir cuando la persona vuelva a elegir
+    /// privado. Lo que se pierde es una pantalla, no datos.
+    ///
+    /// **iCloud no se toca aquí.** El aviso vino de las filas locales, así que pedirle a CloudKit que
+    /// borre una zona sería, en el caso normal de este camino —sin cuenta o sin red—, un fallo seguro que
+    /// dejaría a la persona en la pantalla de error sin haber nada que borrar allí.
+    ///
+    /// **Sin `guard !Task.isCancelled` después del borrado, y también es una corrección de la review:** el
+    /// propio `wipeAllUserData` borra `hasCompletedOnboarding`, lo que dispara el `onChange` de
+    /// `ContentView` y puede cancelar esta `.task` **con el borrado ya committeado**. Volver ahí dejaba el
+    /// corpus borrado y ninguna de sus consecuencias aplicadas: ni las prefs residuales, ni el testigo del
+    /// espejo tardío, ni la salida. Un borrado consumado tiene que terminar su trabajo.
+    ///
+    /// **El final se bifurca, y esa es la mitad que impide que el bug vuelva por detrás:** si a iCloud no
+    /// se le pudo preguntar, salir por `continueWithoutValidating` deja escrito el testigo del espejo
+    /// tardío. Sin él, el día que iCloud vuelva le bajaría el histórico del Apple ID encima del
+    /// onboarding recién hecho — que es este mismo ticket, con otro disfraz.
+    private func wipeDevice(iCloudUnverified: Bool) async {
+        // Sin corpus no hay borrado que hacer, y **el fallo seguro es NO seguir**: esta fase solo se
+        // alcanza desde un aviso que este mismo paquete produjo, así que llegar aquí sin él significa que
+        // algo se desconectó — y salir al onboarding diría que se borró algo que nadie borró.
+        guard let deviceCorpus else {
+            phase = .deviceWipeFailed(iCloudUnverified: iCloudUnverified)
+            return
+        }
+        let failure = await deviceCorpus.wipe()
+        guard failure == nil else {
+            phase = .deviceWipeFailed(iCloudUnverified: iCloudUnverified)
+            return
+        }
+        if clearsResidualPreferencesOnWipe {
+            OnboardingResetHelper.clearResidualPreferencesForFreshStart()
+        }
+        if iCloudUnverified {
+            continueWithoutValidating()
+        } else {
+            onProceed()
+        }
     }
 
     // MARK: - Cifras

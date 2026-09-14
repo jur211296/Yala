@@ -263,6 +263,19 @@ struct ContentView: View {
             // el wipe requiere re-onboarding completo, así que el chooser vuelve a presentarse.
             if !newValue {
                 prefilledOnboardingData = nil
+                // **Con el Welcome MONTADO, él manda, y sin este guard el borrado se sabotea a sí mismo.**
+                // `DataWipeService.wipeAllUserData` borra `hasCompletedOnboarding`, así que todo camino
+                // que borre desde dentro del cover dispara esta transición — y `presentNextOnboardingScreen`
+                // **CONSUME el destino del relanzamiento** (`WelcomePendingDestinationStore.consume()`) y
+                // enciende `showOnboarding`. Dos daños medidos en el camino de la puerta privada: una
+                // segunda presentación ante el mismo anchor que ya está mostrando el terminal «reabre Yala»
+                // (regla (4) de Presentaciones, la que puede tumbar ambas cadenas), y el relanzamiento
+                // DESARMADO —`RelaunchNetLogic.shouldExitOnBackground` se alimenta de que ese destino siga
+                // puesto—, con lo que el onboarding privado correría entero sobre un store sin espejo.
+                //
+                // Quien está dentro del Welcome ya tiene quien lo encamine: su propio portal. Este
+                // `onChange` existe para el wipe REMOTO, que llega con el cover bajado.
+                guard !showWelcomeFlow else { return }
                 presentNextOnboardingScreen()
             }
         }
@@ -349,6 +362,7 @@ struct ContentView: View {
             hasExistingData: hasExistingData,
             hasLocalDataNow: { checkHasExistingData() },
             performICloudCorpusWipe: { await performICloudCorpusWipe() },
+            performDeviceCorpusWipe: { await performDeviceCorpusWipe() },
             showGroupInviteOnboarding: showGroupInviteOnboarding
         ))
         .modifier(SignOutRelaunchNetModifier(
@@ -1401,15 +1415,80 @@ struct ContentView: View {
             MetricsService.canary(.freshStartWipeFailed, detail: "icloudCorpusWipe:\(failure)")
             return failure
         }
-        // Las filas locales solo si las hay. En la puerta con mount neutro no puede haberlas —el predicado
-        // de instalación fresca lo garantiza—, así que este paso es el que cubre el otro camino.
+        // Las filas locales solo si las hay. **Y sí puede haberlas con el mount neutro**: hasta el
+        // 2026-09-13 esta línea decía que el predicado de instalación fresca lo impedía, y el tercer
+        // término del neutro (`groupsOnlySessionArmed`) rompió esa equivalencia — una sesión solo-grupos
+        // monta neutro con el archivo del store lleno. La llamada siempre fue correcta; lo que era falso
+        // era el motivo.
         guard includingLocalRows, checkHasExistingData() else { return nil }
         do {
             try DataWipeService.wipeAllUserData(in: modelContext, broadcastSignal: false)
+            // **Y el dominio de Grupos, por la misma razón que en el borrado del teléfono.** Va DENTRO del
+            // guard de `includingLocalRows`, que es el corte que separa a los dos consumidores de esta
+            // función: el Welcome (handover — «empiezo de cero» es la frontera de otro usuario en este
+            // dispositivo) y la activación de Yala completo, que pasa `false` y sale antes porque ahí los
+            // grupos son de la misma persona que está activando.
+            //
+            // Sin esto, la celda «iCloud CON datos ∧ teléfono con datos» quedaba sin sellar: el aviso
+            // remoto gana al del teléfono (ofrece «traer mis datos», la salida que no destruye), su
+            // borrado se llevaba lo personal y dejaba los grupos vivos y el sello sin escribir ⇒ el bridge
+            // seguía abierto y el corpus de la etapa anterior subía al iCloud del Apple ID en el arranque
+            // siguiente. Es el criterio de aceptación nº4 del ticket, incumplido justo en la celda que la
+            // tabla cede al aviso de iCloud.
+            try DataWipeService.wipeLocalGroupsDomain(in: modelContext)
         } catch {
             MetricsService.canary(.freshStartWipeFailed, detail: "icloudCorpusWipeLocal")
             return "localWipeFailed"
         }
+        return nil
+    }
+
+    /// **Borrar lo que hay en ESTE TELÉFONO, sin tocar iCloud.** Es la mitad que le faltaba a la puerta
+    /// privada para el camino que este ticket arregla: quien elige «Es mi primera vez → privado» desde una
+    /// sesión solo-grupos tiene datos aquí y ninguno en su iCloud, así que el aviso lo levanta el corpus
+    /// local y el borrado no tiene ninguna zona que quitar.
+    ///
+    /// **No reusa `performICloudCorpusWipe`, y la diferencia es de producto, no de fontanería:** aquélla
+    /// la comparte la activación de Yala completo, donde purgar el dominio de Grupos sería el daño
+    /// contrario (esos grupos son de la misma persona que está activando). Aquí «empiezo de cero» es la
+    /// frontera de otro usuario en este dispositivo —el mismo criterio del alert de
+    /// `ShellDataAlertsModifier`— y por eso el dominio de Grupos se purga y se SELLA: sin el sello, el
+    /// bridge le mete al usuario nuevo los gastos del anterior en Panel, Inbox y presupuestos, y su corpus
+    /// acaba subiendo al iCloud del Apple ID en el arranque siguiente.
+    ///
+    /// Devuelve `nil` si fue bien, o el motivo del fallo — mismo contrato que su hermana, porque las dos
+    /// alimentan la misma pantalla de error.
+    private func performDeviceCorpusWipe() async -> String? {
+        // **Si el import está en vuelo, NO se borra.** Mismo gate y mismo motivo que su hermana: un
+        // `save()` durante un import de CloudKit dispara el SIGTRAP. En el camino de este ticket el mount
+        // es neutro y `mirrorWillSync()` es `false`, así que no cuesta nada; en el otro —la puerta
+        // alcanzada con el espejo ya adjunto— es lo que evita el crash.
+        if ICloudPersonalCorpusProbe.mirrorWillSync() {
+            guard await iCloudSyncService.shared.waitForImportQuiescence(timeout: 30) else {
+                return "importNotQuiescent"
+            }
+        }
+        guard !Task.isCancelled else { return "cancelled" }
+        // **La gracia se cancela ANTES de borrar, no después, y eso es una corrección de la review.**
+        // `wipeAllUserData` hace `save()` incrementales, así que un borrado que lanza a media lista deja
+        // igualmente el `hasPersonalData` en `true → false`; con la gracia viva eso se lee como wipe
+        // REMOTO y enciende su alert, que al colgar del anchor de `ContentView` **desmonta el cover del
+        // Welcome** (traza medida en `ShellDataAlertsModifier`) y deja la pantalla negra. La rama de éxito
+        // la cancelaba y la de fallo no: justo al revés de donde hace falta.
+        wipeGraceTask?.cancel()
+        wipeGraceTask = nil
+        do {
+            try DataWipeService.wipeAllUserData(in: modelContext, broadcastSignal: false)
+            // El handover: los grupos de la etapa anterior se van de este teléfono y el dominio queda
+            // SELLADO hasta que el usuario nuevo adopte Grupos. Va DESPUÉS del borrado personal y dentro
+            // del mismo `do`, como en el alert gemelo: si el primero lanza, el segundo no debe correr.
+            try DataWipeService.wipeLocalGroupsDomain(in: modelContext)
+        } catch {
+            MetricsService.canary(.freshStartWipeFailed, detail: "deviceCorpusWipe")
+            return "deviceWipeFailed"
+        }
+        hasExistingData = false
+        hasPersonalData = false
         return nil
     }
 
@@ -1635,6 +1714,10 @@ private struct WelcomeFlowModifier: ViewModifier {
     /// Paso 4: el borrado del corpus de iCloud, que vive en `ContentView` porque necesita el
     /// `modelContext`. Este modifier solo lo reenvía al container, y el container a la puerta.
     let performICloudCorpusWipe: @MainActor () async -> String?
+    /// Y el del corpus que ya está en el TELÉFONO, con su purga del dominio de Grupos y su sello. Mismo
+    /// reenvío, y separado del de arriba porque la activación de Yala completo comparte aquél y jamás
+    /// debe usar éste.
+    let performDeviceCorpusWipe: @MainActor () async -> String?
     let showGroupInviteOnboarding: Bool
 
     func body(content: Content) -> some View {
@@ -1737,9 +1820,21 @@ private struct WelcomeFlowModifier: ViewModifier {
                         //
                         // La limpieza de residuales del camino privado corre AQUÍ y no tras el
                         // relanzamiento: es la misma que hace `startFreshPrivateOnboarding` y tiene que
-                        // ocurrir antes de que el onboarding lea nada. El alert de datos existentes que
-                        // esa función también monta NO hace falta — el mount neutro exige que no haya
-                        // archivo de store, así que en este camino no puede haber datos que confirmar.
+                        // ocurrir antes de que el onboarding lea nada.
+                        //
+                        // **Lo que aquí NO se hace es preguntar por los datos, y hasta el 2026-09-13 este
+                        // comentario decía que no hacía falta.** Decía: «el mount neutro exige que no haya
+                        // archivo de store, así que en este camino no puede haber datos que confirmar».
+                        // Eso valía con los dos términos viejos del neutro; el tercero
+                        // (`groupsOnlySessionArmed`) rompió la equivalencia — una sesión solo-grupos tiene
+                        // archivo de store CON datos dentro (categorías sembradas, grupos, bridgeadas) y
+                        // monta neutro igual. El aviso se perdía entero: `proceed()` no corre en este
+                        // camino, así que no corría `startFreshPrivateOnboarding` ni con él el alert.
+                        //
+                        // El aviso vive ahora DELANTE, en la puerta privada
+                        // (`WelcomePrivateICloudGateView`, término `deviceCorpus`), que es un step del
+                        // mismo cover y puede pedir confirmación sin desmontar nada. Para cuando este
+                        // callback corre, la pregunta ya se hizo.
                         hasShownWelcomeChooser = true
                         // **El anti-bucle del neutro solo-grupos** (paso 5 del rediseño), y va JUNTO a la
                         // línea de arriba porque hace exactamente su mismo trabajo sobre el otro
@@ -1823,7 +1918,8 @@ private struct WelcomeFlowModifier: ViewModifier {
                     hasLocalDataNow: hasLocalDataNow,
                     // Paso 4: el borrado vive aquí porque necesita el `modelContext`. La puerta solo
                     // decide y enseña.
-                    performICloudCorpusWipe: { await performICloudCorpusWipe() }
+                    performICloudCorpusWipe: { await performICloudCorpusWipe() },
+                    performDeviceCorpusWipe: { await performDeviceCorpusWipe() }
                 )
                 .environment(SessionState.shared)
             }
