@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: qa
 created: 2026-09-07
-updated: 2026-09-11
+updated: 2026-09-14
 ---
 
 # Un rojo por corrida completa en el helper que guarda transacciones, y la víctima cambia
@@ -202,3 +202,27 @@ mensaje— y esta vez la víctima fue **`TransactionsCrudUITests.test_createTran
 **Y cómo usarla:** si este rojo aparece en un gate, la comprobación barata ya no es «re-córrelo a
 ver si se muda» —puede no mudarse—. Es **correr esa clase sola en un worktree desde el commit
 base**: dos corridas y 90 s zanjan de quién es.
+
+## Muestra del 2026-09-14 — el MISMO lote, dos corridas, resultados opuestos
+
+Apareció en el gate de `wipe-alert-fires-on-a-session-that-no-longer-obeys-the-signal`, con el aserto
+de siempre (`transaction_success_accept` — «el guardado no completó», `XCUIApplication+Yala.swift:220`).
+
+Lo que aporta esta muestra, y por qué contradice el punto 1 de arriba:
+
+| Corrida | Lote (idéntico, mismo orden) | Centinela | Resultado |
+|---|---|---|---|
+| 1.ª | GroupsSmoke · GroupsEmptyState · GroupPendingMemberDoor · GroupExpenseSuccess · TransactionsCrud | `0` (solo, 63 muestreos) | 18 tests, **1 fallo** (`test_createTransaction`, 36,1 s) |
+| aislada | solo `TransactionsCrudUITests` | `0` (solo, 17 muestreos) | 2 tests, **0 fallos** (52,7 s) |
+| 2.ª | el MISMO lote, mismo orden, mismo árbol | `0` (solo, 58 muestreos) | 18 tests, **0 fallos** |
+
+O sea: **no fue determinista para la clase ese día**. Con el lote entero repetido sin cambiar una
+línea, el rojo no volvió — así que la receta del final («correr la clase sola en un worktree base»)
+no era necesaria aquí: bastó repetir el LOTE. Las dos observaciones conviven si lo que decide es el
+estado del simulador acumulado dentro de la tanda, no la clase ni la rama.
+
+Dato de duración coherente con el patrón binario ya descrito: el fallo tardó **36,1 s** y el paso
+aislado **52,7 s**.
+
+**Recomendación práctica para un gate:** ante este aserto, repetir el lote completo antes de montar
+el worktree base. Si el rojo se va, es esto; si se queda, ya toca bisecar.

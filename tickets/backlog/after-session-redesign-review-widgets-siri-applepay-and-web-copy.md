@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "widgets, intents, web, marketing"
 created: 2026-09-09
+updated: 2026-09-14
 source: "ADR 2026-09-09 «Sesiones — dos ejes» — consecuencias; pedido por Jürgen para DESPUÉS del rediseño"
 ---
 
@@ -14,6 +15,32 @@ source: "ADR 2026-09-09 «Sesiones — dos ejes» — consecuencias; pedido por 
 Una lista de comprobación **posterior** a implementar el ADR de sesiones (últimos tickets:
 `shell-derives-from-two-session-axes`). Jürgen pidió dejarlo anotado y no mezclarlo con el rediseño.
 Nada de aquí se ha medido todavía; cada punto empieza por medir.
+
+## YA MEDIDO (2026-09-14): las tres puertas cuelgan del CIERRE DE SESIÓN, no del borrado
+
+Esto deja de ser «nada se ha medido todavía» para los tres puntos de abajo. Sale de la review
+adversarial de `wipe-alert-fires-on-a-session-that-no-longer-obeys-the-signal`, y el hallazgo es el
+mismo en las tres superficies: **se arman con `isSignOutWipeArmed()` o las llama solo el sign-out**, así
+que un borrado que llega por el ESPEJO de CloudKit —el caso del teléfono prestado cuyo dueño vacía desde
+otro dispositivo— no las toca.
+
+- **Widget**: `WidgetDataCache.clearCache()` tiene exactamente dos llamadores, los dos dentro de
+  `DataWipeService`; su puerta de suspensión lee `StorageModePersistence.isSignOutWipeArmed()`. ⇒ la
+  pantalla de inicio sigue pintando el saldo y los últimos movimientos del dueño hasta el próximo
+  arranque en frío o tarea de fondo.
+- **Siri**: `SiriIntentContextCache.clear()` tiene UN llamador, `AppGroupInboundPurge`, y esa purga
+  declara un solo llamador: `SwiftDataConfiguration.performSignOutWipeIfArmed`. ⇒ el snapshot del App
+  Group con las subcategorías del dueño sobrevive, y `QuickExpenseIntent` lo lee.
+- **Notificaciones locales**: `NotificationService.isPersonalWipeArmed` es otra vez
+  `isSignOutWipeArmed()`, y `cancelAllNotifications()` solo lo llaman tres caminos de cierre de sesión.
+  ⇒ **los recordatorios de pagos programados del dueño se siguen entregando, con sus montos**, en el
+  teléfono que le prestó.
+
+Atribución honesta: el botón «Empezar de cero» del aviso de vaciado remoto tampoco limpiaba ninguna de
+las tres (solo baja `hasCompletedOnboarding` y borra dos centinelas de semilla), así que el hueco es
+anterior y vale para las dos ramas. Lo que cambió el 2026-09-14 es que ese aviso ya no sale en esa
+celda, así que ahora hay **cero** señal dentro de la app frente a tres superficies que siguen
+afirmando.
 
 ## Dentro del repo (Frank)
 

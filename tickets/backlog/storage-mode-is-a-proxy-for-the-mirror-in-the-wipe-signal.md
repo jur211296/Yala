@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "sesiones, modo-nube"
 created: 2026-09-14
+updated: 2026-09-14
 source: "review adversarial de `remote-wipe-signal-honored-by-any-session`, lente de caminos y alcance"
 ---
 
@@ -40,6 +41,14 @@ produce un retraso, produce una pérdida.
 `.neutralNoMirror`, el mount de toda instalación fresca, y `.claude/rules/swiftdata-cloudkit.md` ya
 registra que usarlo como pre-filtro apagó una validación entera en el 100 % de su población. Y miente en
 los hosts de test, así que cualquier gate que lo lea necesita seam.
+
+## Y desde el 2026-09-14 la ventana también SILENCIA un aviso
+
+`wipe-alert-fires-on-a-session-that-no-longer-obeys-the-signal` puso el mismo eje delante del aviso
+«Tus datos fueron eliminados de iCloud». En la ventana del cutover la sesión ES privada y sus filas SÍ
+son las del Apple ID, pero el eje da `false` ⇒ el aviso **se calla en la única celda donde era verdad**.
+El daño es menor que el del borrado perdido —se pierde información, no datos— pero sale del mismo proxy
+y se cierra con la misma decisión.
 
 ## Criterios de aceptación
 

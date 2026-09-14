@@ -305,6 +305,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | rejected-member-cold-tap-does-nothing | qa | tickets/qa/rejected-member-cold-tap-does-nothing.md |
 | rejoin-tap-renotifies-admins | qa | tickets/qa/rejoin-tap-renotifies-admins.md |
 | remote-onboarding-signal-ignores-the-session-axis | backlog | tickets/backlog/remote-onboarding-signal-ignores-the-session-axis.md |
+| remote-wipe-alert-skips-the-router | backlog | tickets/backlog/remote-wipe-alert-skips-the-router.md |
 | remote-wipe-axis-misses-groups-only-installs-before-the-mount-mark | backlog | tickets/backlog/remote-wipe-axis-misses-groups-only-installs-before-the-mount-mark.md |
 | remote-wipe-receiver-has-no-behaviour-test | backlog | tickets/backlog/remote-wipe-receiver-has-no-behaviour-test.md |
 | remote-wipe-signal-honored-by-any-session | qa | tickets/qa/remote-wipe-signal-honored-by-any-session.md |
@@ -321,6 +322,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reverse-hidden-on-a-born-cloud-second-device | backlog | tickets/backlog/reverse-hidden-on-a-born-cloud-second-device.md |
 | reverse-upload-has-no-ceiling-and-no-exit | backlog | tickets/backlog/reverse-upload-has-no-ceiling-and-no-exit.md |
 | revert-card-copy-says-datos-regresan-a-quien-nunca-estuvo | backlog | tickets/backlog/revert-card-copy-says-datos-regresan-a-quien-nunca-estuvo.md |
+| rojo-heroBuckets-thisWeek-trailing-window | done | tickets/done/rojo-heroBuckets-thisWeek-trailing-window.md |
 | rojo-heroBuckets-thisWeek-trailing-window | done | tickets/done/rojo-heroBuckets-thisWeek-trailing-window.md |
 | rojo-xcuitest-runner-muere-tras-el-primer-caso | done | tickets/done/rojo-xcuitest-runner-muere-tras-el-primer-caso.md |
 | rules-testing-habla-de-ios-27-que-no-existe | backlog | tickets/backlog/rules-testing-habla-de-ios-27-que-no-existe.md |
@@ -343,6 +345,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | session-redesign-web-and-store-copy | backlog | tickets/backlog/session-redesign-web-and-store-copy.md |
 | settings-migrate-to-cloud-adopts-silently-instead-of-migrating | backlog | tickets/backlog/settings-migrate-to-cloud-adopts-silently-instead-of-migrating.md |
 | shared-state-guard-misses-wipelocalgroupsdomain | backlog | tickets/backlog/shared-state-guard-misses-wipelocalgroupsdomain.md |
+| shell-and-wipe-alert-read-the-session-axis-differently | backlog | tickets/backlog/shell-and-wipe-alert-read-the-session-axis-differently.md |
 | shell-derives-from-two-session-axes | qa | tickets/qa/shell-derives-from-two-session-axes.md |
 | sign-out-wipe-abort-in-icloud-says-nothing | backlog | tickets/backlog/sign-out-wipe-abort-in-icloud-says-nothing.md |
 | sign-out-wipe-abort-loops-the-groups-gate | backlog | tickets/backlog/sign-out-wipe-abort-loops-the-groups-gate.md |
@@ -397,8 +400,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | widget-fallback-summary-uses-ten-rows | backlog | tickets/backlog/widget-fallback-summary-uses-ten-rows.md |
 | widget-period-balance-ignores-group-bridge-adjustment | backlog | tickets/backlog/widget-period-balance-ignores-group-bridge-adjustment.md |
 | widget-snapshot-visitor-overwrites-owner | discarded | tickets/discarded/widget-snapshot-visitor-overwrites-owner.md |
-| wipe-alert-fires-on-a-session-that-no-longer-obeys-the-signal | backlog | tickets/backlog/wipe-alert-fires-on-a-session-that-no-longer-obeys-the-signal.md |
+| wipe-alert-fires-on-a-session-that-no-longer-obeys-the-signal | done | tickets/done/wipe-alert-fires-on-a-session-that-no-longer-obeys-the-signal.md |
 | wipe-copy-reads-one-axis-while-the-sheet-reads-two | backlog | tickets/backlog/wipe-copy-reads-one-axis-while-the-sheet-reads-two.md |
+| wipe-data-does-not-cancel-the-remote-wipe-grace | backlog | tickets/backlog/wipe-data-does-not-cancel-the-remote-wipe-grace.md |
 | wipe-sheet-still-promises-every-apple-id-device | done | tickets/done/wipe-sheet-still-promises-every-apple-id-device.md |
 | wire-decoder-accepts-non-finite-money | backlog | tickets/backlog/wire-decoder-accepts-non-finite-money.md |
 | wrangler-prod-onboarding-choice-percent-drift | done | tickets/done/wrangler-prod-onboarding-choice-percent-drift.md |
