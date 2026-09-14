@@ -44,7 +44,7 @@ struct WelcomePrivateICloudGateDecisionTests {
     @Test("iCloud con datos ⇒ se avisa con las cifras, y NO se sigue solo")
     func foundData_asks() {
         let found = corpus(transactions: 128, accounts: 3)
-        let decision = Gate.decide(skipValidation: false, outcome: .measured(found))
+        let decision = Gate.decide(skipValidation: false, outcome: .measured(found), deviceHasData: false)
         #expect(decision == .foundData(found))
         #expect(!Gate.advancesWithoutAsking(decision), """
             si esto avanzara solo, la pantalla de reinicio volvería a ser ciega y el onboarding se montaría
@@ -54,7 +54,7 @@ struct WelcomePrivateICloudGateDecisionTests {
 
     @Test("iCloud vacío ⇒ onboarding directo, sin aviso (fila «A · iCloud vacío» de la matriz)")
     func emptyICloud_proceeds() {
-        let decision = Gate.decide(skipValidation: false, outcome: .measured(.empty))
+        let decision = Gate.decide(skipValidation: false, outcome: .measured(.empty), deviceHasData: false)
         #expect(decision == .proceed)
         #expect(Gate.advancesWithoutAsking(decision))
     }
@@ -65,12 +65,12 @@ struct WelcomePrivateICloudGateDecisionTests {
           arguments: [corpus(transactions: 1), corpus(accounts: 1), corpus(categories: 1)])
     func anyCountTriggersTheNotice(_ c: ICloudPersonalCorpus) {
         #expect(c.hasAnyData)
-        #expect(Gate.decide(skipValidation: false, outcome: .measured(c)) == .foundData(c))
+        #expect(Gate.decide(skipValidation: false, outcome: .measured(c), deviceHasData: false) == .foundData(c))
     }
 
     @Test("sin cuenta de iCloud (estado K) ⇒ se informa y se sigue en local, jamás se bloquea")
     func noAccount_informsAndContinues() {
-        let decision = Gate.decide(skipValidation: false, outcome: .noAccount)
+        let decision = Gate.decide(skipValidation: false, outcome: .noAccount, deviceHasData: false)
         #expect(decision == .noICloud)
         // No avanza SOLO: la persona tiene que leer el aviso y tocar «seguir». Ahí es donde se escribe el
         // testigo del aviso tardío, así que colapsar esto con `.proceed` perdería las dos cosas.
@@ -82,7 +82,7 @@ struct WelcomePrivateICloudGateDecisionTests {
     /// conexión. Si esta fila cayera en `.proceed` o en `.noICloud`, el bug volvería con otro disfraz.
     @Test("la sonda falla ⇒ se ofrece reintentar, NI se sigue NI se trata como «sin iCloud»")
     func failure_offersRetry() {
-        let decision = Gate.decide(skipValidation: false, outcome: .failed("CKError"))
+        let decision = Gate.decide(skipValidation: false, outcome: .failed("CKError"), deviceHasData: false)
         #expect(decision == .unreachable("CKError"))
         #expect(decision != .proceed)
         #expect(decision != .noICloud)
@@ -96,9 +96,108 @@ struct WelcomePrivateICloudGateDecisionTests {
     @Test("bajo UITest la puerta no valida nada y sigue de largo",
           arguments: [ICloudProbeOutcome.noAccount,
                       .failed("boom"),
-                      .measured(corpus(transactions: 999, accounts: 9))])
-    func uiTest_skipsValidationWhateverTheProbeSays(_ outcome: ICloudProbeOutcome) {
-        #expect(Gate.decide(skipValidation: true, outcome: outcome) == .proceed)
+                      .measured(corpus(transactions: 999, accounts: 9))],
+          [false, true])
+    func uiTest_skipsValidationWhateverTheProbeSays(_ outcome: ICloudProbeOutcome,
+                                                   _ deviceHasData: Bool) {
+        // **El término del teléfono se barre en los DOS valores, y por eso el argumento es una matriz.**
+        // Con `true` fijo en `false` este test pasaría aunque el corpus local se colara por delante de la
+        // hermeticidad — y ese es justo el modo de fallo que rompería `WelcomeFreshStartAlertUITests`, que
+        // entra por aquí CON datos sembrados.
+        #expect(Gate.decide(skipValidation: true,
+                            outcome: outcome,
+                            deviceHasData: deviceHasData) == .proceed)
+    }
+}
+
+// MARK: - (A2) El corpus que ya está en el TELÉFONO
+
+/// **El hueco que este ticket cierra.** Una sesión solo-grupos monta el store personal neutro en todos sus
+/// arranques, así que «Primera vez → privado» sale por el relanzamiento y nunca llega al
+/// `onSelectPrivateAccount` que levantaba el alert de datos existentes. El aviso se perdía entero: ni
+/// alert, ni borrado, ni sello de handover — y el corpus de la etapa anterior subía al iCloud del Apple ID
+/// en el arranque siguiente.
+@Suite("Paso 5 · el corpus que ya está en el teléfono")
+struct WelcomePrivateGateDeviceCorpusTests {
+
+    @Test("iCloud vacío pero el teléfono con datos ⇒ se avisa, y NO se sigue solo")
+    func deviceData_asks() {
+        let decision = Gate.decide(skipValidation: false,
+                                   outcome: .measured(.empty),
+                                   deviceHasData: true)
+        #expect(decision == .foundDeviceData(iCloudUnverified: false))
+        #expect(!Gate.advancesWithoutAsking(decision), """
+            si esto avanzara solo volvería el bug entero: relanzamiento ciego, onboarding «de cero» montado
+            encima de los grupos y las categorías de la etapa anterior, y ese corpus subiendo a iCloud en
+            el arranque siguiente.
+            """)
+    }
+
+    /// **La fila que el estado K se comía.** Sin cuenta de iCloud la puerta informaba y seguía, y ese
+    /// «seguir» se llevaba por delante el aviso de lo que hay AQUÍ — que no necesita ninguna red para
+    /// contarse.
+    @Test("sin cuenta de iCloud, el corpus del teléfono gana al estado K")
+    func noAccount_withDeviceData_stillAsks() {
+        let decision = Gate.decide(skipValidation: false, outcome: .noAccount, deviceHasData: true)
+        #expect(decision == .foundDeviceData(iCloudUnverified: true))
+        #expect(decision != .noICloud)
+    }
+
+    /// Igual con la red caída: el remedio de `.unreachable` es reintentar CloudKit, y eso no dice nada de
+    /// las filas que ya están en el disco.
+    @Test("con la sonda caída, el corpus del teléfono gana a «reintentar»")
+    func failure_withDeviceData_stillAsks() {
+        let decision = Gate.decide(skipValidation: false,
+                                   outcome: .failed("CKError"),
+                                   deviceHasData: true)
+        #expect(decision == .foundDeviceData(iCloudUnverified: true))
+        #expect(decision != .unreachable("CKError"))
+    }
+
+    /// **`iCloudUnverified` es el término que impide que el bug vuelva por detrás.** Cuando a iCloud sí se
+    /// le pudo preguntar va en `false` y el camino termina en `onProceed`; cuando no, en `true` y termina
+    /// en `continueWithoutValidating`, que deja escrito el testigo del espejo tardío. Sin esa distinción,
+    /// quien borra lo suyo sin red se come el histórico del Apple ID el día que iCloud vuelva.
+    @Test("el término «no pudimos preguntar» viaja con la decisión",
+          arguments: [(ICloudProbeOutcome.measured(.empty), false),
+                      (.noAccount, true),
+                      (.failed("boom"), true)])
+    func unverifiedFlagFollowsTheProbe(_ outcome: ICloudProbeOutcome, _ expected: Bool) {
+        #expect(Gate.decide(skipValidation: false, outcome: outcome, deviceHasData: true)
+                == .foundDeviceData(iCloudUnverified: expected))
+    }
+
+    /// **El corpus REMOTO gana cuando los dos tienen datos**, y no es un empate resuelto a cara o cruz: el
+    /// aviso de iCloud es el único que ofrece «traer mis datos» —la salida que no destruye nada— y su
+    /// borrado ya se lleva las filas locales por delante. Avisar primero del teléfono escondería la única
+    /// salida reversible.
+    @Test("con datos en los dos sitios manda el aviso de iCloud")
+    func remoteWins() {
+        let found = corpus(transactions: 40, accounts: 2)
+        #expect(Gate.decide(skipValidation: false,
+                            outcome: .measured(found),
+                            deviceHasData: true) == .foundData(found))
+    }
+
+    /// El control negativo de toda la familia: sin datos en ninguno de los dos lados, la puerta sigue
+    /// haciendo lo de siempre. Si esto se pusiera rojo, el término nuevo estaría avisando a quien acaba de
+    /// instalar la app.
+    @Test("instalación fresca de verdad: ni aviso ni pantalla nueva")
+    func freshInstall_stillProceeds() {
+        let decision = Gate.decide(skipValidation: false,
+                                   outcome: .measured(.empty),
+                                   deviceHasData: false)
+        #expect(decision == .proceed)
+        #expect(Gate.advancesWithoutAsking(decision))
+    }
+
+    /// Y la otra mitad del control negativo: **ninguna decisión del corpus del teléfono avanza sola.** Es
+    /// el invariante que este ticket existe para restaurar, y se afirma sobre los dos valores del término
+    /// en vez de sobre uno.
+    @Test("ningún aviso del teléfono avanza sin que la persona lo diga",
+          arguments: [false, true])
+    func deviceNoticeNeverAdvancesAlone(_ unverified: Bool) {
+        #expect(!Gate.advancesWithoutAsking(.foundDeviceData(iCloudUnverified: unverified)))
     }
 }
 
@@ -389,11 +488,12 @@ struct ICloudPersonalCorpusProbeSeamTests {
     @Test("un escaneo truncado nunca se lee como «iCloud vacío»")
     func truncatedNeverReadsAsEmpty() {
         let cortado = corpus(truncated: true)
-        #expect(Gate.decide(skipValidation: false, outcome: .measured(cortado)) == .foundData(cortado))
+        #expect(Gate.decide(skipValidation: false, outcome: .measured(cortado), deviceHasData: false)
+                == .foundData(cortado))
         #expect(Gate.decideLateMirror(watching: true, iCloudAvailable: true,
                                       outcome: .measured(cortado)) == .ask(cortado))
         // Y el control en la dirección contraria: sin truncar, cero cifras SÍ es «vacío».
-        #expect(Gate.decide(skipValidation: false, outcome: .measured(.empty)) == .proceed)
+        #expect(Gate.decide(skipValidation: false, outcome: .measured(.empty), deviceHasData: false) == .proceed)
         #expect(Gate.decideLateMirror(watching: true, iCloudAvailable: true,
                                       outcome: .measured(.empty)) == .standDown)
     }
@@ -439,6 +539,69 @@ struct WelcomePrivateICloudGateWiringTests {
     /// que se está prohibiendo — sin este filtro, explicar el invariante lo incumple.
     private static func code(_ path: String) throws -> String {
         try source(path)
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+    }
+
+    /// Dos literales y su ORDEN. Comparar posiciones y no solo presencia es lo que separa «las dos líneas
+    /// están» de «la que protege va antes».
+    private static func expectOrder(_ first: String, before second: String, in source: String,
+                                    _ why: String,
+                                    sourceLocation: SourceLocation = #_sourceLocation) throws {
+        let a = try #require(source.range(of: first), "no está: \(first)")
+        let b = try #require(source.range(of: second), "no está: \(second)")
+        #expect(a.lowerBound < b.lowerBound, Comment(rawValue: why), sourceLocation: sourceLocation)
+    }
+
+    /// **El par identificador ↔ acción de un botón.** Acota al tramo que va del identificador hacia atrás
+    /// hasta su propio `Button`/`YalaPrimaryButton`/`destructiveButton`, que es donde vive la acción. Un
+    /// `contains` suelto sobre la función entera pasa con los dos botones INTERCAMBIADOS — mismo copy,
+    /// mismos identificadores, y el que conserva borrando.
+    private static func expectAction(in source: String, identifier: String, does action: String,
+                                     why: String,
+                                     sourceLocation: SourceLocation = #_sourceLocation) throws {
+        // **El cuerpo se SEGMENTA por abridores de botón, y no se mira «hacia atrás» desde el
+        // identificador.** Los dos moldes del fichero lo colocan en sitios opuestos: `YalaPrimaryButton`
+        // lo lleva como modificador DESPUÉS de su closure, y `destructiveButton` como argumento ANTES.
+        // Un tramo que solo mire hacia atrás deja fuera la acción del segundo, y el test falla sobre
+        // código correcto.
+        var segmentos: [String] = []
+        var actual = ""
+        for linea in source.split(separator: "\n", omittingEmptySubsequences: false) {
+            let esAbridor = linea.contains("YalaPrimaryButton(") || linea.contains("destructiveButton(")
+            if esAbridor, !actual.isEmpty {
+                segmentos.append(actual)
+                actual = ""
+            }
+            actual += linea + "\n"
+        }
+        segmentos.append(actual)
+        let bloque = try #require(segmentos.first(where: { $0.contains("\"\(identifier)\"") }),
+                                  "no está el identificador \(identifier)")
+        #expect(bloque.contains(action), Comment(rawValue: """
+            \(identifier) dejó de hacer `\(action)`. \(why).
+            Bloque leído: \(bloque)
+            """), sourceLocation: sourceLocation)
+    }
+
+    /// **Los argumentos de UNA llamada, por paréntesis balanceados.** `body(of:)` cuenta LLAVES, así que
+    /// sobre un marcador que abre un paréntesis —`WelcomePrivateICloudGateView(`— no acota la llamada:
+    /// para en el primer `}` desbalanceado, que es el del `switch` de más arriba, y devuelve 13 o 37
+    /// líneas del vecindario. Hoy no muerde porque los literales que se buscan son únicos, pero una
+    /// aserción positiva sobre un rango que no es el que dice es exactamente cómo un scan empieza a
+    /// cumplirse desde el `case` de al lado.
+    private static func call(of marker: String, in source: String) throws -> String {
+        let start = try #require(source.range(of: marker), "llamada no encontrada: \(marker)")
+        let chars = Array(source[start.upperBound...])
+        var depth = 1
+        var i = 0
+        while i < chars.count {
+            if chars[i] == "(" { depth += 1 }
+            if chars[i] == ")" { depth -= 1; if depth == 0 { break } }
+            i += 1
+        }
+        return String(chars[0..<min(i, chars.count)])
             .split(separator: "\n", omittingEmptySubsequences: false)
             .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
             .joined(separator: "\n")
@@ -536,7 +699,7 @@ struct WelcomePrivateICloudGateWiringTests {
         // `case .privateICloudGate:` no abre ninguna — recorrería hasta cerrar el `switch` entero y el
         // literal que se busca es IDÉNTICO al del step de al lado (`.privateSecondaryNotice`), así que el
         // test se cumpliría desde el vecino.
-        let step = try Self.body(of: "WelcomePrivateICloudGateView(", in: src)
+        let step = try Self.call(of: "WelcomePrivateICloudGateView(", in: src)
         #expect(step.contains("leaveWelcome(to: .privateOnboarding) { onSelectPrivateAccount() }"))
         #expect(step.contains("handleExistingOption(.restoreICloud)"), """
             la tercera salida del aviso («esto es mío, restauralo») tiene que reusar el helper que YA
@@ -546,6 +709,385 @@ struct WelcomePrivateICloudGateWiringTests {
         #expect(step.contains("performWipe: performICloudCorpusWipe"), """
             la puerta no borra: el borrado necesita el `modelContext` porque tiene que llevarse también
             las filas que el espejo hubiera bajado ya.
+            """)
+        // **El Welcome pregunta por el corpus del TELÉFONO, y la activación no.** Es el par que cierra el
+        // hueco de `groups-only-private-restart-skips-the-wipe-alert`: sin este término, la rama privada
+        // de un device solo-grupos sale por el relanzamiento sin que nadie haya mirado si aquí ya hay
+        // datos, y el aviso de datos existentes se pierde entero.
+        #expect(step.contains("deviceCorpus: deviceCorpusGate"), """
+            el Welcome dejó de preguntar por lo que ya hay en el teléfono: con el mount neutro esta rama
+            sale por el relanzamiento y NUNCA llega a `onSelectPrivateAccount`, que era quien levantaba el
+            alert de datos existentes.
+            """)
+        let gate = try Self.body(of: "private var deviceCorpusGate: WelcomePrivateICloudGateView.DeviceCorpus? {",
+                                 in: src)
+        #expect(gate.contains("wipe: { await performDeviceCorpusWipe() }"), """
+            el aviso sin su borrado es un camino muerto: la persona confirma dos veces y no se borra nada.
+            """)
+        #expect(gate.contains("hasData: { hasLocalDataNow() }"), """
+            el fetch tiene que ir VIVO: el espejo puede estar re-importando mientras esta pantalla está
+            montada, y un snapshot del arranque diría «no hay datos» sobre un store que se está llenando.
+            """)
+    }
+
+    /// **El término del teléfono se enciende SOLO cuando este camino se salta el alert, y son las dos
+    /// caras del mismo hueco.** Con `shouldRelaunch == false` el portal llama a `proceed()`, corre
+    /// `onSelectPrivateAccount` y el alert de `startFreshPrivateOnboarding` hace su trabajo: preguntar
+    /// aquí sería enseñar DOS avisos del mismo hecho.
+    ///
+    /// **Y la razón dura, que es la que este test protege de verdad** (`.claude/rules/swiftdata-cloudkit
+    /// .md`, «ARCHIVOS, nunca FILAS»): el borrado que cuelga del aviso quita FILAS, y con el espejo
+    /// montado los deletes se quedan en la History y se EXPORTAN — vaciarían el iCloud de la persona en
+    /// todos sus dispositivos. El mount neutro es `cloudKitDatabase: .none` explícito, así que en la
+    /// única celda donde este término se enciende no hay espejo que pueda exportar nada. Si alguien
+    /// ensancha el predicado, ese es el daño que aparece.
+    @Test("el aviso del teléfono va atado al MISMO predicado que el relanzamiento")
+    func deviceNoticeIsGatedByTheRelaunchPredicate() throws {
+        let src = try Self.code("Yala/App/Views/Onboarding/WelcomeFlowContainer.swift")
+        let gate = try Self.body(of: "private var deviceCorpusGate: WelcomePrivateICloudGateView.DeviceCorpus? {",
+                                 in: src)
+        #expect(gate.contains("WelcomeMirrorRelaunchLogic.shouldRelaunch("), """
+            sin este guard el aviso saldría también con el espejo MONTADO, y su borrado por filas
+            exportaría los deletes: el iCloud de la persona vaciado en todos sus dispositivos.
+            """)
+        #expect(gate.contains("destination: .privateOnboarding"))
+        #expect(gate.contains("mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision"), """
+            el predicado tiene que leer el testigo del mount de ESTE proceso, no una versión propia.
+            """)
+        #expect(gate.contains("else { return nil }"), """
+            fuera del mount neutro la puerta no puede recibir corpus: ahí el aviso ya lo da el alert.
+            """)
+        // La premisa que sostiene todo lo anterior, afirmada y no supuesta: el único mount que dispara el
+        // relanzamiento de esta rama es el neutro, y el neutro no adjunta espejo.
+        #expect(WelcomeMirrorRelaunchLogic.shouldRelaunch(
+            destination: .privateOnboarding, mountedDecision: .neutralNoMirror))
+        #expect(SwiftDataConfiguration.PersonalStoreDecision.neutralNoMirror.attachesCloudKitMirror == false)
+        // `allCases` y no una lista escrita a mano: un mount NUEVO tiene que caer en esta comprobación
+        // solo, o el día que alguien añada uno el aviso podría encenderse sobre un store que espeja.
+        for mount in SwiftDataConfiguration.PersonalStoreDecision.allCases where mount != .neutralNoMirror {
+            #expect(!WelcomeMirrorRelaunchLogic.shouldRelaunch(destination: .privateOnboarding,
+                                                              mountedDecision: mount), """
+                \(mount) dispararía el aviso del teléfono, y su borrado por filas exportaría los deletes.
+                """)
+        }
+    }
+
+    /// **La otra mitad del par, y la que protege el daño CONTRARIO.** La activación de «Yala completo»
+    /// monta la misma puerta desde una sesión solo-grupos, y ahí los datos del teléfono son de la persona
+    /// que está activando: preguntarle si los borra —y peor, borrarlos— se llevaría justo el corpus que
+    /// esa pantalla existe para conservar.
+    @Test("la activación de Yala completo NO pregunta por el corpus del teléfono")
+    func activationNeverAsksAboutTheDeviceCorpus() throws {
+        let src = try Self.source("Yala/App/Views/Groups/FullModeActivationView.swift")
+        let gate = try Self.call(of: "WelcomePrivateICloudGateView(", in: src)
+        #expect(gate.contains("deviceCorpus: nil"), """
+            la activación empezó a preguntar por el corpus del teléfono: esos grupos y esas categorías son
+            de la MISMA persona que está activando, y la activación existe para conservarlos.
+            """)
+        // **`performDeviceCorpusWipe` NO se afirma ausente aquí, y quitarlo es una corrección:** es un
+        // `private func` de `ContentView`, invisible desde este fichero, así que esa aserción no podía
+        // fallar nunca — para ponerla roja habría que escribir un identificador que no compila. Lo que sí
+        // se puede romper, y por tanto lo que se afirma, es que el borrado de la activación siga siendo el
+        // de ZONA.
+        #expect(gate.contains("performWipe: { await performICloudZoneWipe() }"), """
+            la activación cambió su borrado: el suyo es de ZONA (`includingLocalRows: false`), porque los
+            datos del teléfono son de la persona que está activando.
+            """)
+    }
+
+    /// **F1 de la review · el borrado se saboteaba a sí mismo.** `wipeAllUserData` borra
+    /// `hasCompletedOnboarding`, así que todo borrado hecho desde dentro del cover dispara el `onChange`
+    /// de `ContentView` — y ahí `presentNextOnboardingScreen` **consume el destino del relanzamiento** y
+    /// enciende `showOnboarding`. Dos daños: una segunda presentación ante el anchor que ya está mostrando
+    /// el terminal «reabre Yala», y el relanzamiento desarmado (`shouldExitOnBackground` vive de que ese
+    /// destino siga puesto), con lo que el onboarding privado correría entero sobre un store sin espejo.
+    @Test("con el Welcome montado, el arranque no encamina por su cuenta")
+    func onboardingReset_doesNotHijackTheWelcome() throws {
+        let src = try Self.code("Yala/App/ContentView.swift")
+        let cambio = try Self.body(of: ".onChange(of: hasCompletedOnboarding) { _, newValue in", in: src)
+        try Self.expectOrder("guard !showWelcomeFlow else { return }",
+                             before: "presentNextOnboardingScreen()", in: cambio, """
+            sin este guard, el borrado de la puerta privada consume su propio destino de relanzamiento y
+            monta el onboarding encima del terminal que acaba de abrir.
+            """)
+    }
+
+    /// **S1 de la review · el cable del MEDIO, que era el único que nadie vigilaba.** La decisión estaba
+    /// cerrada por sus tablas y el borrado por su scan, pero entre las dos hay una línea —`measure()`
+    /// consulta el corpus y se lo pasa a `decide`— que ningún test tocaba: cambiarla por `false` devolvía
+    /// el ticket entero, en verde. Es «la pasarela que nadie vigila» de `.claude/rules/testing.md`, y aquí
+    /// la pasarela ES el arreglo.
+    @Test("la puerta MIDE el corpus del teléfono y se lo pasa a la tabla")
+    func measureFeedsTheDeviceTermIntoTheDecision() throws {
+        let src = try Self.code("Yala/App/Views/Onboarding/WelcomePrivateICloudGateView.swift")
+        let measure = try Self.body(of: "private func measure() async {", in: src)
+        #expect(measure.contains("let deviceHasData = deviceCorpus?.hasData() ?? false"), """
+            `measure()` dejó de contar lo que hay en el teléfono: con ese término en `false` la puerta
+            vuelve a salir de largo y el aviso se pierde entero — el bug de este ticket, sin tocar la
+            tabla.
+            """)
+        #expect(measure.contains("deviceHasData: deviceHasData"), """
+            se mide pero no se pasa: la tabla decide con un término que nadie le dio.
+            """)
+        // El `?? false` importa en la dirección contraria: con `?? true`, la activación de Yala completo
+        // —que pasa `deviceCorpus: nil`— le enseñaría a quien está activando un aviso de datos cuyo único
+        // desenlace es el fallo, porque no hay corpus que borrar.
+        #expect(!measure.contains("?? true"), """
+            `?? true` le enseña el aviso a quien monta la puerta SIN corpus (la activación de Yala
+            completo), y ahí el único desenlace posible es la pantalla de error.
+            """)
+        // **Y el orden: se cuenta DESPUÉS de la sonda.** Medir antes deja un muestreo de hace segundos —lo
+        // que tarde CloudKit—, y en una sesión solo-grupos el canal sigue aplicando pulls durante ese rato:
+        // el aviso se perdería sobre las filas que llegaron mientras se preguntaba.
+        let sonda = try #require(measure.range(of: "await ICloudPersonalCorpusProbe.probe()"))
+        let medir = try #require(measure.range(of: "deviceCorpus?.hasData()"))
+        let decidir = try #require(measure.range(of: "WelcomePrivateICloudGateLogic.decide("))
+        #expect(sonda.lowerBound < medir.lowerBound, """
+            el conteo del teléfono volvió a hacerse antes del `await` de la sonda: deja de ser vivo, que es
+            lo que dos docblocks afirman de él.
+            """)
+        #expect(medir.lowerBound < decidir.lowerBound)
+        // **S2 · el fan-out del `case` nuevo.** La decisión puede salir perfecta y tirarse a la basura.
+        #expect(measure.contains("case .foundDeviceData(let unverified):"), """
+            el `switch` de `measure()` dejó de tratar el desenlace nuevo: se decide bien y no se pinta.
+            """)
+        #expect(measure.contains("phase = .foundDevice(iCloudUnverified: unverified)"), """
+            el término «no pudimos preguntar» se pierde al pintar la fase, y con él el testigo del espejo
+            tardío que depende de él.
+            """)
+    }
+
+    /// **S3 de la review · el emparejamiento botón ↔ acción, que un `contains` suelto no caza.** Los dos
+    /// mutantes que esto mata dan la misma pantalla, el mismo copy y los mismos identificadores: en uno,
+    /// «Dejarlo como está» mete a la persona en el onboarding encima de sus datos; en otro, el botón que
+    /// conserva BORRA. Es el punto (2) de `.claude/rules/testing.md`: fija el par, no la presencia.
+    @Test("cada botón de las pantallas del teléfono hace lo suyo, y no lo del de al lado")
+    func deviceScreens_pairEachButtonWithItsAction() throws {
+        let src = try Self.code("Yala/App/Views/Onboarding/WelcomePrivateICloudGateView.swift")
+
+        let aviso = try Self.body(of: "private func foundDeviceContent(iCloudUnverified: Bool) -> some View {",
+                                  in: src)
+        try Self.expectAction(in: aviso, identifier: "welcome_private_icloud_keep_device",
+                              does: "leaveGate()",
+                              why: "el botón que NO destruye acabó avanzando: es el bug del ticket con el aviso pintado por encima")
+        try Self.expectAction(in: aviso, identifier: "welcome_private_icloud_wipe_device",
+                              does: "phase = .confirmingDeviceWipe(iCloudUnverified: iCloudUnverified)",
+                              why: "el destructivo se saltó la segunda confirmación que el ADR exige")
+
+        let confirmar = try Self.body(of: "private func confirmDeviceContent(iCloudUnverified: Bool) -> some View {",
+                                      in: src)
+        try Self.expectAction(in: confirmar, identifier: "welcome_private_icloud_confirm_keep_device",
+                              does: "phase = .foundDevice(iCloudUnverified: iCloudUnverified)",
+                              why: "«Mejor no» BORRA")
+        try Self.expectAction(in: confirmar, identifier: "welcome_private_icloud_confirm_wipe_device",
+                              does: "phase = .wipingDevice(iCloudUnverified: iCloudUnverified)",
+                              why: "el segundo gesto dejó de lanzar el borrado")
+
+        // **S4 · `iCloudUnverified` cruza cinco saltos y ninguno estaba afirmado.** Un literal `false` en
+        // cualquiera de ellos pierde el testigo del espejo tardío sin que nada cante.
+        #expect(!src.contains("iCloudUnverified: false"), """
+            alguien clavó el término a `false` en el camino: el testigo del espejo tardío no se escribe, y
+            el histórico del Apple ID cae encima del onboarding el día que iCloud vuelva.
+            """)
+        #expect(!src.contains("iCloudUnverified: true"), """
+            clavarlo a `true` escribe el testigo a quien SÍ pudo preguntar: un aviso de espejo tardío
+            sobre un iCloud que ya se midió vacío.
+            """)
+    }
+
+    /// **S5 de la review · la fase que nadie ejecuta es una pantalla-trampa.** Sin su `case` en
+    /// `runPhase`, `.wipingDevice` cae en el `default: return`: spinner eterno **y sin botón de volver**
+    /// —lo oculta `backAction` en esa fase—, o sea la persona encerrada y nada borrado.
+    @Test("cada fase que trabaja tiene su rama en `runPhase`, y las que no trabajan no la tienen")
+    func runPhase_coversTheWorkingPhases() throws {
+        let src = try Self.code("Yala/App/Views/Onboarding/WelcomePrivateICloudGateView.swift")
+        let run = try Self.body(of: "private func runPhase() async {", in: src)
+        #expect(run.contains("case .checking: await measure()"))
+        #expect(run.contains("case .wiping: await wipe()"))
+        #expect(run.contains("case .wipingDevice(let unverified): await wipeDevice(iCloudUnverified: unverified)"), """
+            sin esta rama, `.wipingDevice` cae en el `default`: spinner eterno, sin «volver» (lo oculta
+            `backAction`) y sin haber borrado nada.
+            """)
+        // S7 · el «volver» tiene que desaparecer TAMBIÉN durante el borrado local.
+        let back = try Self.body(of: "private var backAction: (() -> Void)? {", in: src)
+        #expect(back.contains("if case .wipingDevice = phase { return nil }"), """
+            el «volver» reaparece con el borrado local en vuelo: es la otra mitad de la kill-safety.
+            """)
+        // S7 · y el arm del borrado de iCloud se retira también cuando el que falló fue el del teléfono.
+        let leave = try Self.body(of: "private func leaveGate() {", in: src)
+        #expect(leave.contains("isDeviceWipeFailed"), """
+            quien se va tras un borrado local fallido deja el arm puesto, y el arranque siguiente le pide
+            terminar un borrado que acaba de retirar.
+            """)
+        // S8 · el reintento de la pantalla de fallo LOCAL vuelve al borrado local, no al de la zona.
+        let contenido = try Self.body(of: "private var content: some View {", in: src)
+        #expect(contenido.contains("primaryAction: { phase = .wipingDevice(iCloudUnverified: unverified) }"), """
+            «volver a intentarlo» tras un fallo local dispara el borrado de la ZONA de CloudKit, que en
+            este camino —normalmente sin cuenta— falla seguro y además se lleva las filas locales.
+            """)
+    }
+
+    /// **A3 de la review · el arm del borrado de iCloud NO se arma aquí, y no es un detalle.** Ese testigo
+    /// tiene dos consumidores y uno lo reanuda a ciegas con `performICloudCorpusWipe()`, que borra la ZONA
+    /// del Apple ID: un kill a mitad de un borrado LOCAL acababa vaciando el iCloud de la persona sin que
+    /// nadie lo pidiera, sobre una pantalla cuyo copy promete que iCloud no se toca.
+    @Test("el borrado del teléfono no arma el testigo del borrado de iCloud")
+    func deviceWipe_neverArmsTheICloudWipe() throws {
+        let src = try Self.code("Yala/App/Views/Onboarding/WelcomePrivateICloudGateView.swift")
+        let wipe = try Self.body(of: "private func wipeDevice(iCloudUnverified: Bool) async {", in: src)
+        #expect(!wipe.contains("armICloudCorpusWipe"), """
+            armarlo aquí convierte un kill a mitad de un borrado LOCAL en un borrado REMOTO que nadie
+            confirmó: `runLateICloudMirrorCheck` lo reanuda con `performICloudCorpusWipe()`.
+            """)
+        #expect(!wipe.contains("clearICloudCorpusWipeArm"), """
+            si no se arma, desarmar aquí retiraría el arm de OTRO borrado —el de iCloud— que puede estar
+            legítimamente en pie.
+            """)
+        // Y el arm sigue vivo donde sí le toca: su camino de iCloud no se ha tocado.
+        let icloud = try Self.body(of: "private func wipe() async {", in: src)
+        #expect(icloud.contains("StorageModePersistence.armICloudCorpusWipe()"))
+    }
+
+    /// **A4 de la review · un borrado consumado termina su trabajo.** `wipeAllUserData` borra
+    /// `hasCompletedOnboarding`, lo que dispara el `onChange` de `ContentView` y puede cancelar esta
+    /// `.task` **con el borrado ya committeado**; volver ahí dejaba el corpus borrado y ninguna de sus
+    /// consecuencias aplicadas — ni las prefs residuales, ni el testigo, ni la salida.
+    @Test("tras borrar no hay punto de cancelación que se coma las consecuencias")
+    func deviceWipe_hasNoCancellationPointAfterTheDelete() throws {
+        let src = try Self.code("Yala/App/Views/Onboarding/WelcomePrivateICloudGateView.swift")
+        let wipe = try Self.body(of: "private func wipeDevice(iCloudUnverified: Bool) async {", in: src)
+        #expect(!wipe.contains("Task.isCancelled"), """
+            un `guard !Task.isCancelled` después del borrado deja el corpus borrado y sin sus
+            consecuencias: el propio `wipeAllUserData` puede cancelar esta task al tocar los flags de
+            onboarding.
+            """)
+    }
+
+    /// **S6 de la review · el borrado local tenía un solo `contains` y su hermano tiene siete.** Todo esto
+    /// pasaba en verde: quitar el gate de quiescencia (vuelve el SIGTRAP), descartar su veredicto,
+    /// invertir el orden de los dos borrados, tragarse el error del segundo, o devolver `nil` tras fallar
+    /// —el peor: la puerta cree que borró, sigue al onboarding y los datos están intactos—.
+    @Test("el borrado del teléfono respeta la quiescencia, el orden, el canario y su contrato de fallo")
+    func deviceCorpusWipe_hasTheSameNetAsItsSibling() throws {
+        let src = try Self.code("Yala/App/ContentView.swift")
+        let wipe = try Self.body(of: "private func performDeviceCorpusWipe() async -> String? {", in: src)
+        let linea = try #require(wipe.split(separator: "\n").first(where: { $0.contains("waitForImportQuiescence") }))
+        #expect(linea.contains("guard"), """
+            el veredicto de la quiescencia tiene que CORTAR el borrado: un `save()` de SwiftData durante
+            un import de CloudKit dispara el SIGTRAP, y con un corpus grande agotar el tope es el caso
+            NORMAL.
+            Línea: \(linea)
+            """)
+        try Self.expectOrder("DataWipeService." + Self.wipeCall,
+                             before: "DataWipeService.wipeLocalGroupsDomain(in: modelContext)", in: wipe,
+                             "lo personal primero y el dominio después, como en el alert gemelo")
+        // **La gracia del wipe remoto se cancela ANTES de borrar.** `wipeAllUserData` hace `save()`
+        // incrementales, así que un borrado que lanza a media lista baja igual la señal; con la gracia
+        // viva eso enciende el alert de «te borraron los datos», que desmonta el cover y deja la pantalla
+        // negra. Estaba solo en la rama de éxito, o sea justo al revés de donde hace falta.
+        try Self.expectOrder("wipeGraceTask?.cancel()", before: "DataWipeService." + Self.wipeCall, in: wipe,
+                             "cancelar la gracia después del borrado no protege la rama de FALLO")
+        #expect(wipe.contains("MetricsService.canary(.freshStartWipeFailed"), """
+            sin canario, este fallo vuelve a ser invisible en producción — que es para lo que se añadió en
+            su gemelo.
+            """)
+        let fallo = try #require(wipe.range(of: "} catch {"))
+        let cuerpo = String(wipe[fallo.upperBound...])
+        #expect(cuerpo.contains("return \"deviceWipeFailed\""), """
+            devolver `nil` tras fallar es el peor desenlace del fichero: la puerta cree que borró, sale al
+            onboarding, y los datos siguen enteros.
+            """)
+    }
+
+    /// **S9 de la review · el copy del teléfono no puede prometer iCloud.** Son claves propias
+    /// precisamente porque las de iCloud dicen otra cosa; cambiar la vista a las viejas —o los valores a
+    /// un texto que nombre iCloud— le diría a la persona que se borra de su cuenta algo que este camino
+    /// no toca.
+    @Test("el copy del aviso del teléfono habla del TELÉFONO, y jamás de iCloud")
+    func deviceCopy_neverPromisesICloud() throws {
+        let src = try Self.code("Yala/App/Views/Onboarding/WelcomePrivateICloudGateView.swift")
+        for (fase, clave) in [("private func foundDeviceContent(iCloudUnverified: Bool) -> some View {",
+                               "L10n.Welcome.PrivateICloud.foundDeviceBody"),
+                              ("private func confirmDeviceContent(iCloudUnverified: Bool) -> some View {",
+                               "L10n.Welcome.PrivateICloud.wipeDeviceConfirmBody")] {
+            let cuerpo = try Self.body(of: fase, in: src)
+            #expect(cuerpo.contains(clave), "la pantalla del teléfono volvió al copy de iCloud: \(clave)")
+        }
+        for locale in ["es-419", "en"] {
+            let strings = try Self.source("Yala/Resources/\(locale).lproj/Localizable.strings")
+            for clave in ["welcome.privateICloud.foundDeviceTitle", "welcome.privateICloud.foundDeviceBody",
+                          "welcome.privateICloud.wipeDeviceConfirmBody", "welcome.privateICloud.wipingDevice",
+                          "welcome.privateICloud.wipeDeviceFailedBody"] {
+                let linea = try #require(strings.split(separator: "\n").first(where: { $0.contains("\"\(clave)\"") }),
+                                         "falta \(clave) en \(locale)")
+                // **Se mira el VALOR, no la línea.** La propia clave lleva `privateICloud` dentro, así que
+                // una comparación sobre la línea entera se cumple siempre y este test no podría fallar
+                // nunca — la familia de «la aserción que no puede fallar».
+                let valor = try #require(linea.split(separator: "=").dropFirst().first,
+                                         "línea sin valor: \(linea)")
+                #expect(!valor.localizedCaseInsensitiveContains("iCloud"), """
+                    \(clave) [\(locale)] promete iCloud, y este camino no toca iCloud:
+                    \(linea)
+                    """)
+            }
+        }
+    }
+
+    /// **El orden kill-safe del borrado local, y su bifurcación final.** El arm va antes de la primera
+    /// escritura y se retira solo cuando el borrado confirma; y si a iCloud no se le pudo preguntar, la
+    /// salida es `continueWithoutValidating`, que deja escrito el testigo del espejo tardío. Sin esa
+    /// bifurcación, quien borra lo suyo sin red se come el histórico del Apple ID el día que iCloud vuelva
+    /// — este mismo bug, con otro disfraz.
+    @Test("el borrado del teléfono arma antes, desarma después y respeta el testigo tardío")
+    func deviceWipe_isKillSafeAndKeepsTheLateWitness() throws {
+        let src = try Self.source("Yala/App/Views/Onboarding/WelcomePrivateICloudGateView.swift")
+        let wipe = try Self.body(of: "private func wipeDevice(iCloudUnverified: Bool) async {", in: src)
+        // **El borrado va antes que sus consecuencias, y el fallo CORTA.** El arm ya no forma parte de
+        // este camino (ver `deviceWipe_neverArmsTheICloudWipe`), así que lo que queda por fijar es el
+        // orden entre el borrado, su veredicto y la salida.
+        let call = try #require(wipe.range(of: "await deviceCorpus.wipe()"))
+        let salida = try #require(wipe.range(of: "if iCloudUnverified {"))
+        #expect(call.lowerBound < salida.lowerBound, "la salida no puede preceder al borrado")
+        // El control de FLUJO, no solo las posiciones: sin el `return` de la rama de fallo, un borrado
+        // que lanzó avanza igual, y la persona acaba en el onboarding creyendo que se borró.
+        let fallo = try #require(wipe.range(of: "guard failure == nil else {"))
+        #expect(fallo.lowerBound < salida.lowerBound)
+        let cuerpoFallo = String(wipe[fallo.upperBound...]).prefix(while: { $0 != "}" })
+        #expect(cuerpoFallo.contains("phase = .deviceWipeFailed(iCloudUnverified: iCloudUnverified)"), """
+            un borrado que falla no puede seguir al onboarding: los datos siguen ahí y continuar sería
+            mentirle a la persona.
+            """)
+        #expect(cuerpoFallo.contains("return"))
+        // **Las dos ramas de la salida, EMPAREJADAS.** Un `contains("continueWithoutValidating()")` suelto
+        // sobrevive a invertirlas —el literal sigue ahí, en la rama equivocada— y esa inversión escribe el
+        // testigo del espejo tardío a quien SÍ pudo preguntar, y se lo niega a quien no pudo: el bug de
+        // este ticket por detrás, que es justo lo que el docblock de arriba dice que evita.
+        let bifurcacion = try #require(wipe.range(of: "if iCloudUnverified {"))
+        let ramaSi = String(wipe[bifurcacion.upperBound...]).prefix(while: { $0 != "}" })
+        #expect(ramaSi.contains("continueWithoutValidating()"), """
+            sin esta salida, quien borró lo suyo sin poder preguntarle a iCloud se queda sin el testigo del
+            espejo tardío, y el histórico del Apple ID le cae encima el día que iCloud vuelva.
+            Rama leída: \(ramaSi)
+            """)
+        let resto = String(wipe[bifurcacion.upperBound...])
+        let ramaNo = try #require(resto.range(of: "} else {")).upperBound
+        #expect(String(resto[ramaNo...]).prefix(while: { $0 != "}" }).contains("onProceed()"), """
+            la rama de quien SÍ pudo preguntarle a iCloud acabó escribiendo el testigo del espejo tardío:
+            un aviso sobre un iCloud que ya se midió vacío.
+            """)
+        // La rama del corpus ausente también CORTA: llegar aquí sin él significa que algo se desconectó, y
+        // salir al onboarding diría que se borró algo que nadie borró.
+        let sinCorpus = try #require(wipe.range(of: "guard let deviceCorpus else {"))
+        let cuerpoSinCorpus = String(wipe[sinCorpus.upperBound...]).prefix(while: { $0 != "}" })
+        #expect(cuerpoSinCorpus.contains("phase = .deviceWipeFailed"), """
+            sin corpus el camino avanza como si hubiera borrado: el fallo seguro es NO seguir.
+            """)
+        #expect(cuerpoSinCorpus.contains("return"))
+        // **Y NO toca CloudKit.** El aviso vino de las filas locales; pedir un borrado de zona sin cuenta
+        // —el caso normal de este camino— sería un fallo seguro sin nada que borrar allí.
+        #expect(!wipe.contains("ICloudPersonalCorpusProbe"), """
+            el borrado del teléfono empezó a hablar con CloudKit: en el caso normal de este camino no hay
+            cuenta, así que sería un fallo seguro y la persona se quedaría en la pantalla de error.
             """)
     }
 
@@ -625,10 +1167,28 @@ struct WelcomePrivateICloudGateWiringTests {
             caso NORMAL, y detrás viene un `save()` durante el import.
             Línea: \(linea)
             """)
-        #expect(!wipe.contains("wipeLocalGroupsDomain"), """
-            Grupos vive en OTRO contenedor de CloudKit y el ADR §6 lo deja fuera de todo borrado. Esto no
-            es un handover de dispositivo: es la misma persona limpiando su propio histórico.
+        // **La purga del dominio de Grupos SÍ va aquí desde el 2026-09-13, y solo del guard para abajo.**
+        // Hasta entonces este test la prohibía entera con este motivo: «Grupos vive en OTRO contenedor y
+        // el ADR §6 lo deja fuera de todo borrado; esto no es un handover, es la misma persona limpiando
+        // su propio histórico». Eso describe a UN consumidor —la activación de Yala completo— y esta
+        // función tiene dos: el otro es el aviso del Welcome, donde «empiezo de cero» SÍ es la frontera de
+        // otro usuario en este dispositivo. El corte que los separa ya existía (`includingLocalRows`), así
+        // que la purga va dentro de él y la activación, que pasa `false`, sale antes de llegar.
+        //
+        // Sin esto quedaba sin sellar la celda «iCloud con datos ∧ teléfono con datos»: el aviso remoto
+        // gana, su borrado se lleva lo personal, y los grupos de la etapa anterior se quedan vivos con el
+        // bridge abierto ⇒ suben al iCloud del Apple ID en el arranque siguiente (criterio nº4 del ticket).
+        let compartido = String(wipe[wipe.startIndex..<(try #require(wipe.range(of: "guard includingLocalRows")).lowerBound)])
+        #expect(!compartido.contains("wipeLocalGroupsDomain"), """
+            la purga del dominio se salió del guard de `includingLocalRows`: la activación de Yala completo
+            comparte esta función y ahí los grupos son de la MISMA persona que está activando.
             """)
+        try Self.expectOrder("guard includingLocalRows",
+                             before: "DataWipeService.wipeLocalGroupsDomain(in: modelContext)", in: wipe,
+                             "el corte va antes de la purga, o la activación se lleva los grupos por delante")
+        try Self.expectOrder("DataWipeService." + Self.wipeCall,
+                             before: "DataWipeService.wipeLocalGroupsDomain(in: modelContext)", in: wipe,
+                             "lo personal primero y el dominio después, como en el alert gemelo")
     }
 
     /// El orden kill-safe: **armar antes de la primera llamada, desarmar después de que confirme**. Al

@@ -105,6 +105,11 @@ struct WelcomeFlowContainer: View {
     /// y el borrado tiene que llevarse también las filas que el espejo hubiera bajado ya—; el container
     /// solo lo reenvía a la puerta.
     var performICloudCorpusWipe: @MainActor () async -> String?
+    /// El borrado del corpus que ya está en el TELÉFONO, con su purga del dominio de Grupos y su sello de
+    /// handover. Vive en `ContentView` por lo mismo que el de arriba, y es OTRO callback y no un
+    /// parámetro de aquél porque sus dos consumidores no coinciden: éste solo lo usa el Welcome, y la
+    /// activación de Yala completo —que comparte la puerta— jamás debe borrar lo local.
+    var performDeviceCorpusWipe: @MainActor () async -> String?
 
     @State private var step: WelcomeFlowStep = .hero
 
@@ -122,7 +127,8 @@ struct WelcomeFlowContainer: View {
         onGroupsGateNeutralReturnArmed: @escaping (WelcomeGroupsGateView.Purpose) -> Void,
         onGroupsGateInviteProceed: @escaping (String) -> Void,
         hasLocalDataNow: @escaping @MainActor @Sendable () -> Bool,
-        performICloudCorpusWipe: @escaping @MainActor () async -> String?
+        performICloudCorpusWipe: @escaping @MainActor () async -> String?,
+        performDeviceCorpusWipe: @escaping @MainActor () async -> String?
     ) {
         self.initialStep = initialStep
         self.onSelectBranch = onSelectBranch
@@ -136,6 +142,7 @@ struct WelcomeFlowContainer: View {
         self.onGroupsGateInviteProceed = onGroupsGateInviteProceed
         self.hasLocalDataNow = hasLocalDataNow
         self.performICloudCorpusWipe = performICloudCorpusWipe
+        self.performDeviceCorpusWipe = performDeviceCorpusWipe
         self._step = State(initialValue: initialStep)
     }
 
@@ -252,7 +259,17 @@ struct WelcomeFlowContainer: View {
                     // Cancelar → la elección privado / nube, que es de donde vino: con bypass nunca vio el
                     // sub-chooser, así que mandarlo ahí sería enseñarle una pantalla nueva al retroceder.
                     onBack: { goTo(newBranchOriginStep) },
-                    performWipe: performICloudCorpusWipe
+                    performWipe: performICloudCorpusWipe,
+                    // **El Welcome SÍ pregunta por el corpus del teléfono.** Es la otra mitad del aviso de
+                    // datos existentes: con el mount neutro, esta rama sale por el relanzamiento y nunca
+                    // llega al `onSelectPrivateAccount` que lo levantaba. El fetch va VIVO —el mismo
+                    // closure que alimenta el guard cross-cuenta— porque el espejo puede estar
+                    // re-importando mientras esta pantalla está montada.
+                    // Los dos RE-ENVUELTOS y no reenviados: pasar las properties directas convierte
+                    // valores de función no-Sendable y avisa (`may introduce data races`). Las closures
+                    // nuevas nacen ya en este contexto y no cruzan ninguna frontera — mismo remedio que
+                    // `hasLocalDataNow` en el step de la puerta de Grupos.
+                    deviceCorpus: deviceCorpusGate
                 )
                 .transition(.opacity)
             case .mirrorRelaunch:
@@ -368,6 +385,33 @@ struct WelcomeFlowContainer: View {
         case .chooser:
             goTo(.newChooser)
         }
+    }
+
+    /// **Preguntar por el corpus del teléfono, pero SOLO cuando este camino se va a saltar el alert.**
+    ///
+    /// El predicado es el MISMO que decide el relanzamiento, y eso no es una coincidencia que convenga
+    /// perder de vista — son las dos caras del hueco que este término cierra:
+    ///
+    ///  · **`shouldRelaunch == true`** (mount neutro): el portal sale por `onNeedsMirrorRelaunch` y
+    ///    `onSelectPrivateAccount` **no corre**, así que el alert de datos existentes de
+    ///    `startFreshPrivateOnboarding` no se levanta. Aquí hace falta este aviso, o no hay ninguno.
+    ///  · **`shouldRelaunch == false`**: el portal llama a `proceed()`, corre `onSelectPrivateAccount` y
+    ///    el alert de siempre hace su trabajo. Preguntar aquí sería enseñar DOS avisos del mismo hecho.
+    ///
+    /// **Y hay una segunda razón, más dura, que obliga a que sea este predicado y no otro**
+    /// (`.claude/rules/swiftdata-cloudkit.md`, «ARCHIVOS, nunca FILAS»): el borrado que cuelga de este
+    /// aviso quita FILAS. Con `NSPersistentCloudKitContainer` montado, los deletes se quedan en la History
+    /// y el espejo los EXPORTA — vaciaría el iCloud de la persona en todos sus dispositivos. Un mount
+    /// neutro es `cloudKitDatabase: .none` explícito: no hay espejo que pueda exportar nada, y es
+    /// exactamente el caso en el que este término se enciende. El daño no es teórico: con la red caída la
+    /// sonda devuelve `.failed`, el aviso saldría igual (es lo correcto: lo de aquí se cuenta sin red) y
+    /// el espejo exportaría los deletes en cuanto volviera la conexión.
+    private var deviceCorpusGate: WelcomePrivateICloudGateView.DeviceCorpus? {
+        guard WelcomeMirrorRelaunchLogic.shouldRelaunch(
+            destination: .privateOnboarding,
+            mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision) else { return nil }
+        return .init(hasData: { hasLocalDataNow() },
+                     wipe: { await performDeviceCorpusWipe() })
     }
 
     /// De dónde vino quien está en la puerta de iCloud, y por tanto a dónde lo devuelve su «volver».

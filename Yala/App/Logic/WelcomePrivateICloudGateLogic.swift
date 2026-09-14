@@ -27,16 +27,37 @@ import Foundation
 /// ¿Qué le enseña la puerta a quien acaba de elegir «privado»?
 nonisolated enum WelcomePrivateICloudGateLogic {
 
-    /// Los cuatro desenlaces. Ninguno es un camino muerto: los tres que no siguen adelante tienen salida
+    /// Los CINCO desenlaces. Ninguno es un camino muerto: los cuatro que no siguen adelante tienen salida
     /// visible, que es la mitad de lo que el ADR pide del Welcome entero.
     enum Decision: Equatable {
-        /// iCloud está vacío (o no hace falta preguntar). Sigue al onboarding **por el portal de
-        /// siempre**, con su relanzamiento si el mount es neutro. Es la fila «A · Primera vez → privado,
-        /// iCloud vacío» de la matriz: onboarding directo, sin aviso.
+        /// iCloud está vacío (o no hace falta preguntar) **y el teléfono tampoco tiene datos**. Sigue al
+        /// onboarding **por el portal de siempre**, con su relanzamiento si el mount es neutro. Es la fila
+        /// «A · Primera vez → privado, iCloud vacío» de la matriz: onboarding directo, sin aviso.
         case proceed
         /// Hay corpus en el iCloud de este Apple ID. Aviso con CIFRAS y **tres salidas** (borrar con
         /// segunda confirmación, restaurar, cancelar) — decisión de Jürgen del 2026-09-09.
         case foundData(ICloudPersonalCorpus)
+        /// **Hay datos EN ESTE TELÉFONO**, y en iCloud no (o no se pudo mirar). Aviso con doble
+        /// confirmación y sin «traer mis datos»: no hay nada que traer.
+        ///
+        /// Existe porque el aviso de datos previos se PERDÍA justo aquí. Una sesión solo-grupos monta el
+        /// store personal neutro en todos sus arranques (`shouldMountNeutralDurable`, tercer término), así
+        /// que «Primera vez → privado» sale por el relanzamiento —`WelcomeMirrorRelaunchLogic
+        /// .shouldRelaunch` da `true`— y ese camino **nunca llama a `onSelectPrivateAccount`**, que era el
+        /// único que consultaba «¿hay datos?» y levantaba el alert. Resultado medido: onboarding de cero
+        /// montado encima de los grupos y las categorías de la etapa anterior, sin decir una palabra, y el
+        /// corpus viejo subiendo al iCloud del Apple ID en el arranque siguiente.
+        ///
+        /// **El corpus REMOTO gana cuando los dos tienen datos**, y no es arbitrario: aquel aviso ofrece
+        /// «traer mis datos», que es la salida que no destruye nada, y su borrado se lleva por delante lo
+        /// local de todas formas (`ContentView.performICloudCorpusWipe`). Avisar primero del local
+        /// escondería la única salida reversible.
+        ///
+        /// `iCloudUnverified` viaja dentro porque decide lo que pasa DESPUÉS de borrar: si no se pudo
+        /// preguntarle a iCloud —sin cuenta, o sin red—, quien siga adelante tiene que quedar bajo el
+        /// mismo testigo que el estado K (`markPrivateChoseWithoutICloud`), o el aviso del espejo tardío
+        /// se pierde y el histórico del Apple ID le cae encima el día que iCloud vuelva.
+        case foundDeviceData(iCloudUnverified: Bool)
         /// Estado **K**: no hay iCloud en el dispositivo. No se puede validar ⇒ **se informa y se sigue en
         /// local**, jamás se bloquea. El ADR es explícito: no poder preguntar no es motivo para parar.
         case noICloud
@@ -59,15 +80,29 @@ nonisolated enum WelcomePrivateICloudGateLogic {
     /// `WelcomeFreshStartAlertUITests`, que entra por aquí. Su posición delante de todo es lo que
     /// garantiza esa identidad: cualquier otro orden haría que el simulador (sin cuenta iCloud) cayera en
     /// `noICloud` y viera una pantalla nueva.
-    static func decide(skipValidation: Bool, outcome: ICloudProbeOutcome) -> Decision {
+    ///
+    /// **`deviceHasData` va SIN valor por defecto**, y eso es lo que impide que el hueco vuelva: la puerta
+    /// la usan dos sitios con respuestas OPUESTAS —el Welcome pregunta por el corpus del teléfono, la
+    /// activación de Yala completo jamás (esos datos son de la misma persona y se conservan)—, así que el
+    /// compilador obliga a cada uno a pronunciarse en vez de heredar un default que solo le sirve a uno.
+    ///
+    /// **Y va DESPUÉS del corpus remoto, no antes.** Cuando los dos tienen datos gana el aviso de iCloud:
+    /// es el único que ofrece «traer mis datos», la salida que no destruye nada, y su borrado ya se lleva
+    /// las filas locales por delante.
+    static func decide(skipValidation: Bool,
+                       outcome: ICloudProbeOutcome,
+                       deviceHasData: Bool) -> Decision {
         guard !skipValidation else { return .proceed }
         switch outcome {
         case .noAccount:
-            return .noICloud
+            // El estado K **deja de ser terminal cuando el teléfono sí tiene datos**: no poder preguntarle
+            // a iCloud nunca bloquea, pero tampoco borra sin avisar lo que está aquí y se puede contar.
+            return deviceHasData ? .foundDeviceData(iCloudUnverified: true) : .noICloud
         case .failed(let reason):
-            return .unreachable(reason)
+            return deviceHasData ? .foundDeviceData(iCloudUnverified: true) : .unreachable(reason)
         case .measured(let corpus):
-            return corpus.hasAnyData ? .foundData(corpus) : .proceed
+            if corpus.hasAnyData { return .foundData(corpus) }
+            return deviceHasData ? .foundDeviceData(iCloudUnverified: false) : .proceed
         }
     }
 

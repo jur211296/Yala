@@ -408,23 +408,73 @@ struct HandoverGroupsWiringTests {
         try String(contentsOf: repoRoot.appendingPathComponent(path), encoding: .utf8)
     }
 
-    /// El camino de «empiezo de cero» del Welcome purga el dominio Grupos. Los otros 3 call-sites de
-    /// `wipeAllUserData` (Ajustes, wipe remoto, reset de XCUITest) NO deben purgarlo — ahí es el
-    /// mismo usuario y el copy promete que sus grupos se conservan.
+    /// Solo las líneas de CÓDIGO. Los scans que CUENTAN ocurrencias tienen que filtrar comentarios, o
+    /// documentar el invariante que el test cuenta lo pone en rojo sin que producción cambie — es la regla
+    /// de `.claude/rules/testing.md`, y este test cuenta.
+    private static func codeOnly(_ source: String) -> String {
+        source.split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+    }
+
+    /// El cuerpo de una función, por conteo de llaves desde su firma. Devuelve solo código.
+    private static func body(of signature: String, in source: String) throws -> String {
+        let code = codeOnly(source)
+        let start = try #require(code.range(of: signature), "no está la firma: \(signature)")
+        var depth = 0
+        var out = ""
+        for ch in code[start.upperBound...] {
+            if ch == "{" { depth += 1 }
+            if ch == "}" {
+                if depth == 0 { break }
+                depth -= 1
+            }
+            out.append(ch)
+        }
+        return out
+    }
+
+    /// **Los DOS caminos de «empiezo de cero» purgan el dominio Grupos, y son dos superficies distintas.**
+    /// Los otros 3 call-sites de `wipeAllUserData` (Ajustes, wipe remoto, reset de XCUITest) NO deben
+    /// purgarlo — ahí es el mismo usuario y el copy promete que sus grupos se conservan.
     ///
     /// **C2 movió el alert de `ContentView` a `ShellDataAlertsModifier`**, y no por gusto: con él
     /// inline el getter de `ContentView.body` tardaba 591 s en type-checkear y la compilación moría. El
     /// escáner apunta al fichero nuevo; los cuerpos son literales, no cambió ninguna decisión.
     ///
-    /// Eran DOS caminos hasta que se podó la oferta de restaurar del recorrido del invitado: ese
-    /// «Empezar de cero» era el segundo, y con él se fue su purga.
+    /// **El segundo camino llegó el 2026-09-13, y hasta entonces este test prohibía el literal en
+    /// `ContentView` ENTERO.** La prohibición era correcta por su motivo —dos copias del mismo ALERT es
+    /// la regla (4) de Presentaciones con un wipe destructivo detrás— pero medía otra cosa: el fichero,
+    /// no el alert. Con el mount neutro de una sesión solo-grupos, la rama privada sale por el
+    /// relanzamiento y el alert NUNCA se monta, así que su purga tampoco corría; el aviso vive ahora en la
+    /// puerta privada, que es un STEP del cover del Welcome, y su borrado
+    /// (`ContentView.performDeviceCorpusWipe`) necesita el mismo par. Lo que se conserva es lo que el test
+    /// quería decir: **una purga por superficie, y ningún alert duplicado**.
     @Test func bothFreshStartPaths_purgeTheGroupsDomain() throws {
-        let src = try Self.source("Yala/App/Views/Shared/ShellDataAlertsModifier.swift")
+        let src = Self.codeOnly(try Self.source("Yala/App/Views/Shared/ShellDataAlertsModifier.swift"))
         #expect(src.components(separatedBy: "DataWipeService.wipeLocalGroupsDomain(in: modelContext)").count - 1 == 1)
-        // Y no se quedaron también en `ContentView`: dos copias del mismo alert es la regla (4) de
-        // Presentaciones (dos anchors ante el mismo flujo) con un wipe destructivo detrás.
-        let contentView = try Self.source("Yala/App/ContentView.swift")
-        #expect(!contentView.contains("DataWipeService.wipeLocalGroupsDomain(in: modelContext)"), """
+
+        let contentViewSource = try Self.source("Yala/App/ContentView.swift")
+        let contentView = Self.codeOnly(contentViewSource)
+        #expect(contentView.components(separatedBy: "DataWipeService.wipeLocalGroupsDomain(in: modelContext)").count - 1 == 2, """
+            en `ContentView` la purga del dominio va EXACTAMENTE dos veces, una por cada celda del aviso de
+            la puerta privada: el borrado del TELÉFONO (`performDeviceCorpusWipe`) y el de iCloud cuando
+            además se lleva las filas locales (`performICloudCorpusWipe`, dentro de su guard). Menos
+            significa que una de las dos dejó de sellar el handover —y el corpus de la etapa anterior acaba
+            en el iCloud del Apple ID siguiente—; más, que hay un borrador suelto en el fichero.
+            """)
+        for (funcion, porque) in [
+            ("private func performDeviceCorpusWipe() async -> String? {",
+             "el borrado del teléfono tiene que llevarse el dominio y sellar en el mismo gesto"),
+            ("private func performICloudCorpusWipe(includingLocalRows: Bool = true) async -> String? {",
+             "la celda «iCloud con datos» deja los grupos vivos y el bridge abierto sin esto")] {
+            let cuerpo = try Self.body(of: funcion, in: contentViewSource)
+            #expect(cuerpo.contains("DataWipeService.wipeLocalGroupsDomain(in: modelContext)"),
+                    Comment(rawValue: "la purga se salió de `\(funcion)`: \(porque)."))
+        }
+        // Y el alert sigue sin duplicarse, que es lo que este test vigilaba de origen: la regla (4) de
+        // Presentaciones con un wipe destructivo detrás.
+        #expect(!contentView.contains(".alert(L10n.Welcome.FreshStart.alertTitle"), """
             el alert de fresh-start volvió a `ContentView` sin salir de `ShellDataAlertsModifier`: hay
             DOS presentaciones del mismo alert destructivo colgando del mismo anchor.
             """)

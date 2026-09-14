@@ -5196,6 +5196,42 @@ enum L10n {
                 String(format: ls("welcome.privateICloud.lateBody", comment: ""), counts)
             }
             static var lateKeep: String { ls("welcome.privateICloud.lateKeep", comment: "") }
+
+            // MARK: El corpus que ya está en el TELÉFONO
+            //
+            // Copy propio y no reusado del alert de «Empezar desde cero», aunque describan el mismo
+            // hecho: aquél es un `.alert` del anchor de `ContentView` y su texto está escrito para dos
+            // botones de sistema; éste es una pantalla con dos fases, progreso y error. Reusar sus
+            // claves ataría el copy de la puerta a un alert que puede cambiar por motivos que no son
+            // los suyos.
+            static var foundDeviceTitle: String {
+                ls("welcome.privateICloud.foundDeviceTitle", comment: "")
+            }
+            static var foundDeviceBody: String {
+                ls("welcome.privateICloud.foundDeviceBody", comment: "")
+            }
+            /// La 2.ª confirmación del borrado local. **No puede ser `wipeConfirmBody`**: aquél promete
+            /// que lo borrado se va «de iCloud», y en este camino iCloud no se toca.
+            static var wipeDeviceConfirmBody: String {
+                ls("welcome.privateICloud.wipeDeviceConfirmBody", comment: "")
+            }
+            static var wipingDevice: String { ls("welcome.privateICloud.wipingDevice", comment: "") }
+            /// La salida que NO destruye del aviso del teléfono. Clave propia y no `wipeConfirmKeep`
+            /// («Mejor no»): ese label responde a un «¿seguro?» que en esa pantalla todavía no se ha
+            /// hecho, y a una pantalla de distancia lleva a otro sitio — allí retrocede una fase, aquí
+            /// sale de la puerta.
+            static var foundDeviceKeep: String {
+                ls("welcome.privateICloud.foundDeviceKeep", comment: "")
+            }
+            /// Reintentar un BORRADO que falló. `Welcome.Restore.retry` dice «Reintentar búsqueda», que
+            /// aquí no significa nada: no hay ninguna búsqueda que repetir. Se usa en las dos fases de
+            /// fallo de borrado; `.unreachable` conserva aquél, porque ahí sí se vuelve a medir.
+            static var wipeRetry: String { ls("welcome.privateICloud.wipeRetry", comment: "") }
+            /// Y su fallo, por lo mismo: `wipeFailedBody` dice que los datos siguen en iCloud, que aquí
+            /// sería falso — siguen en el teléfono.
+            static var wipeDeviceFailedBody: String {
+                ls("welcome.privateICloud.wipeDeviceFailedBody", comment: "")
+            }
         }
 
         /// Step de dos caminos de «Vengo por un grupo» (G2 de Grupos-first). La card del chooser dejó de

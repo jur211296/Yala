@@ -117,6 +117,13 @@ struct FullModeActivationView: View {
                 // Re-envuelto y no reenviado: pasar la property directa convierte un valor de función
                 // no-Sendable y avisa (`may introduce data races`). Mismo remedio que `WelcomeFlowContainer`.
                 performWipe: { await performICloudZoneWipe() },
+                // **`nil` a propósito, y es la misma decisión que `clearsResidualPreferencesOnWipe: false`
+                // vista desde el otro lado.** En el Welcome, los datos que ya hay en el teléfono son de
+                // quien lo usó antes y hay que avisarlos antes de borrar nada. Aquí son de la persona que
+                // está activando —sus grupos, sus categorías, el corpus que la activación existe para
+                // conservar— así que ni se pregunta por ellos ni se borran: hacerlo sería el daño
+                // contrario al que la puerta protege.
+                deviceCorpus: nil,
                 clearsResidualPreferencesOnWipe: false)
         case .relaunch:
             WelcomeMirrorRelaunchView()

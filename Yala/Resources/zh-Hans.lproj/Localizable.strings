@@ -5882,3 +5882,24 @@
 
 /* Blocked sign-out/detach when the groups channel kill-switch is on (403 yala_groups_disabled): the channel is paused on purpose, nothing is lost */
 "groups.errors.channelPaused" = "这是我们这边的问题：群组暂时停用了。你的更改还在这台手机上，不会丢失，过一会儿再试试。";
+
+/* Private gate: the phone already holds data from a previous stage */
+"welcome.privateICloud.foundDeviceTitle" = "这台手机里已经有数据了";
+
+/* Private gate: body of the on-device data notice */
+"welcome.privateICloud.foundDeviceBody" = "这台手机里已有之前的数据：也就是一直记在 Yala 里的内容。重新开始会把它们从这台手机上清掉，让你的 Yala 从头开始。";
+
+/* Private gate: second confirmation for the on-device wipe */
+"welcome.privateICloud.wipeDeviceConfirmBody" = "这台手机上的内容会被全部清掉：支出、账户、预算、分类，还有你的群组。手机上不会留下副本。";
+
+/* Private gate: progress while wiping the on-device corpus */
+"welcome.privateICloud.wipingDevice" = "正在删除这台手机里的数据…";
+
+/* Private gate: the on-device wipe failed */
+"welcome.privateICloud.wipeDeviceFailedBody" = "没能完成。你的一部分数据可能已经清掉了，其余的还在。再试一次；如果又失败，关掉 Yala 再重新打开。";
+
+/* Private gate: keep what the phone already has and go back to the chooser */
+"welcome.privateICloud.foundDeviceKeep" = "保持原样";
+
+/* Private gate: retry a failed wipe (not a re-search) */
+"welcome.privateICloud.wipeRetry" = "再试一次";
