@@ -278,7 +278,13 @@ struct WelcomeFlowContainer: View {
                     // valores de función no-Sendable y avisa (`may introduce data races`). Las closures
                     // nuevas nacen ya en este contexto y no cruzan ninguna frontera — mismo remedio que
                     // `hasLocalDataNow` en el step de la puerta de Grupos.
-                    deviceCorpus: deviceCorpusGate
+                    deviceCorpus: deviceCorpusGate,
+                    // **En el Welcome se sigue**: quien llega aquí acaba de elegir «privado» y todavía no
+                    // ha pedido borrar nada, así que no hay ningún borrado que declarar. No poder
+                    // preguntarle a iCloud jamás bloquea (ADR §9) y sin esta salida la pantalla sería un
+                    // camino muerto: las otras dos ramas del chooser también necesitan red. El testigo
+                    // aplaza la validación al primer arranque en que se pueda hacer.
+                    unverifiedExit: .proceedWatchingTheMirror
                 )
                 .transition(.opacity)
             case .mirrorRelaunch:

@@ -134,7 +134,12 @@ struct FullModeActivationView: View {
                 // conservar— así que ni se pregunta por ellos ni se borran: hacerlo sería el daño
                 // contrario al que la puerta protege.
                 deviceCorpus: nil,
-                clearsResidualPreferencesOnWipe: false)
+                clearsResidualPreferencesOnWipe: false,
+                // **Aquí sí se sigue, y es la diferencia con la puerta de abajo.** Quien llega a esta
+                // pantalla acaba de elegir «privado» y no ha pedido borrar nada, así que no hay ningún
+                // borrado que declarar: no poder preguntarle a iCloud jamás bloquea (ADR §9), y el testigo
+                // deja el aviso pendiente para el primer arranque en que se pueda.
+                unverifiedExit: .proceedWatchingTheMirror)
         case .restoreDiscardGate:
             WelcomePrivateICloudGateView(
                 // **Ninguno de los dos relanza, y eso es lo que impide caer al Welcome.** Para estar aquí
@@ -175,7 +180,14 @@ struct FullModeActivationView: View {
                 deviceCorpus: nil,
                 // 2.3A (decisión de Jürgen, 2026-09-14): el nombre y la divisa son de quien está activando,
                 // no del corpus que descarta. Y son el prefill que el onboarding de detrás le ahorra escribir.
-                clearsResidualPreferencesOnWipe: false)
+                clearsResidualPreferencesOnWipe: false,
+                // **Sin respuesta de iCloud, esta puerta VUELVE a Restaurar** (decisión de Jürgen,
+                // 2026-09-14, opción (a)). La persona ya confirmó el borrado dos veces: seguir la dejaría
+                // en el onboarding con las filas importadas enteras en el teléfono, bajo un copy que le
+                // prometió lo contrario. Y el desenlace de arriba, además de no borrar, escribiría el
+                // testigo del espejo tardío — cuyo borrado es `.handover`, o sea que le purgaría el
+                // dominio de Grupos a quien está activando precisamente para conservarlos.
+                unverifiedExit: .returnWithoutClaimingAWipe)
         case .relaunch:
             WelcomeMirrorRelaunchView()
         case .consent:
