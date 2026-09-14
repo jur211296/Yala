@@ -5879,3 +5879,6 @@
 
 /* Aviso: el desasociar no puede correr con otro cierre de sesión en curso */
 "storage.groups.detachBusy" = "いまサインアウトの途中です。先にそれを終えてから、もう一度お試しください。";
+
+/* Blocked sign-out/detach when the groups channel kill-switch is on (403 yala_groups_disabled): the channel is paused on purpose, nothing is lost */
+"groups.errors.channelPaused" = "こちら側の問題です。グループは一時停止中ですが、変更はこの端末に残っていて失われません。しばらくしてからもう一度お試しください。";

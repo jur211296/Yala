@@ -107,14 +107,16 @@ struct ProfileView: View {
     @State private var showSignOutExportAlert = false
     /// Cuántos cambios no llegaron a iCloud en el bloqueo que se está mostrando (0 = no se pudo contar).
     @State private var signOutExportPending = 0
-    /// Paso 9 · el bloqueo es de una sesión CADUCADA con grupos sin subir: el aviso dice que hay que volver a
-    /// entrar, no que se revise la conexión.
-    @State private var signOutBlockedSessionExpired = false
+    /// Qué bloqueó el cierre, para elegir el mensaje del aviso. **Es el motivo entero y no un `Bool`**
+    /// desde el 2026-09-13: eran dos mensajes y son tres —sesión caducada, canal de Grupos en pausa, y el
+    /// resto—, así que un `Bool` ya no los separa. Solo lo leen los mensajes; qué alert se presenta lo
+    /// sigue decidiendo `presentSignOutBlock`.
+    @State private var signOutBlockedReason: CloudSignOutFlowLogic.BlockReason?
 
     private func syncSignOutUI(from phase: CloudSessionSignOut.Phase) {
         switch phase {
         case .blocked(let pending, let reason):
-            signOutBlockedSessionExpired = (reason == .sessionExpired)
+            signOutBlockedReason = reason
             if reason == .exportUnconfirmed { signOutExportPending = pending }
             presentSignOutBlock(reason)
         case .awaitingRelaunch: dismiss()
@@ -138,7 +140,17 @@ struct ProfileView: View {
             guard case .blocked(_, let live) = signOutCoordinator.phase, live == reason else { return }
             switch reason {
             case .transient: showSignOutPendingAlert = true
-            case .permanent, .sessionExpired: showSignOutBlockedAlert = true
+            // El canal de Grupos en pausa entra por el MISMO alert que los otros dos permanentes, con el
+            // mensaje que le toca (`signOutBlockedMessage`).
+            //
+            // **Y hereda el agujero que estos tres ya tenían, que NO es suyo y no se cierra aquí:** el
+            // desasociar de Ajustes escribe esta misma fase con estos mismos motivos, así que su bloqueo
+            // también enciende este aviso —«No pudimos cerrar tu sesión» a quien solo pidió soltar una
+            // cuenta de grupos—, encima del aviso propio de la sección. El corte de abajo solo cubre los
+            // dos motivos EXCLUSIVOS del desasociar; los compartidos no se pueden distinguir por el
+            // motivo, porque el discriminador correcto es el GESTO y el coordinador no lo publica.
+            // Ticket: `signout-alert-fires-on-detach-blocks-it-did-not-cause`.
+            case .permanent, .sessionExpired, .channelPaused: showSignOutBlockedAlert = true
             // **Los dos motivos del DESASOCIAR no encienden nada aquí, y no es teoría: llegaban.**
             // `phase` es un singleton observable y esta pantalla escucha sus cambios; la de
             // almacenamiento se abre DESDE aquí, así que sigue montada. Sin este corte, cada bloqueo del
@@ -164,6 +176,29 @@ struct ProfileView: View {
         }
         guard signOutCoordinator.phase == .idle, signOutScope == nil else { return }
         signOutScope = makeSignOutScope()
+    }
+
+    /// El mensaje del aviso de cierre bloqueado, por motivo. El título y las salidas son los mismos en
+    /// los tres; lo que cambia es qué pasó y qué puede hacer la persona:
+    ///  · **sesión caducada** (paso 9): se arregla volviendo a entrar, no mirando la red.
+    ///  · **canal de Grupos en pausa** (2026-09-13): no hay nada que arreglar —alguien bajó el
+    ///    kill-switch por un incidente—, así que el mensaje dice que vuelva en un rato y que no pierde
+    ///    nada. Con el genérico, a esa persona se le decía que revisara una conexión que funciona.
+    ///  · el resto: el genérico de siempre.
+    ///
+    /// `nil` no ocurre con el alert presentado (`syncSignOutUI` escribe el motivo antes de encenderlo);
+    /// cae al genérico por si acaso, que es el que no afirma una causa concreta.
+    /// **Exhaustivo a propósito: sin `default`.** Solo así el compilador obliga a que un motivo nuevo se
+    /// pronuncie aquí; el `switch` de `presentSignOutBlock` decide qué alert sale, no qué dice.
+    private var signOutBlockedMessage: String {
+        switch signOutBlockedReason {
+        case .sessionExpired: return L10n.Groups.Errors.sessionExpired
+        case .channelPaused: return L10n.Groups.Errors.channelPaused
+        // El genérico cubre lo que no tiene causa que nombrar. `.transient` y `.exportUnconfirmed` ni
+        // siquiera entran por este alert (tienen el suyo), y `nil` no ocurre con el aviso presentado.
+        case .permanent, .transient, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .none:
+            return L10n.Settings.signOutBlockedMessage
+        }
     }
 
     /// Botones de los DOS alerts de cierre bloqueado. Se comparten a propósito: la diferencia entre el
@@ -529,10 +564,7 @@ struct ProfileView: View {
             .alert(L10n.Settings.signOutBlockedTitle, isPresented: $showSignOutBlockedAlert) {
                 signOutBlockedButtons
             } message: {
-                // Paso 9: una sesión caducada con grupos sin subir se arregla volviendo a entrar, no con la red.
-                Text(signOutBlockedSessionExpired
-                     ? L10n.Groups.Errors.sessionExpired
-                     : L10n.Settings.signOutBlockedMessage)
+                Text(signOutBlockedMessage)
             }
             // H-2026-07-18-6: bloqueo TRANSITORIO (solo-grupos, tras agotar el retry interno) —
             // copy que invita a esperar, no a revisar la conexión. Solo un bool se pone a la vez

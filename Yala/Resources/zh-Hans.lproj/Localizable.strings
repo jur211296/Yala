@@ -5879,3 +5879,6 @@
 
 /* Aviso: el desasociar no puede correr con otro cierre de sesión en curso */
 "storage.groups.detachBusy" = "你正在退出登录。请先完成，然后再试一次。";
+
+/* Blocked sign-out/detach when the groups channel kill-switch is on (403 yala_groups_disabled): the channel is paused on purpose, nothing is lost */
+"groups.errors.channelPaused" = "这是我们这边的问题：群组暂时停用了。你的更改还在这台手机上，不会丢失，过一会儿再试试。";

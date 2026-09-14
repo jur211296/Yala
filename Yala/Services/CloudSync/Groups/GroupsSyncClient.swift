@@ -156,9 +156,9 @@ final class GroupsSyncClient {
     /// A5: un 403 (cuenta no disponible) → `stopUntilRelaunch`. Este flag impide re-arrancar el loop en el
     /// MISMO proceso (mirror de la semántica del personal `SyncCadencePolicy.stopUntilRelaunch`).
     private var stoppedUntilRelaunch = false
-    /// El ÚLTIMO 403 recibido venía del KILL-SWITCH del canal (`yala_groups_disabled`) y no de una cuenta
-    /// suspendida. Lo escriben los dos únicos sitios que leen un 403 —el push y el pull— en AMBAS ramas (no
-    /// solo cuando es el kill), para que nunca quede un valor viejo decidiendo la parada siguiente.
+    /// El ÚLTIMO 403 recibido venía del KILL-SWITCH del canal (`yala_groups_disabled`). Lo escriben los dos
+    /// únicos sitios que leen un 403 —el push y el pull— en AMBAS ramas (no solo cuando es el kill), para
+    /// que nunca quede un valor viejo decidiendo la parada siguiente.
     ///
     /// **Para qué existe, que es lo que no es obvio:** los dos 403 merecen la misma parada inmediata pero NO
     /// la misma permanencia. Una cuenta suspendida es un veredicto sobre la cuenta y `stoppedUntilRelaunch`
@@ -171,7 +171,29 @@ final class GroupsSyncClient {
     /// loop muere en esta vuelta y el próximo `startIfEligible` (cold boot, foreground o post-sign-in) lo
     /// vuelve a intentar. No es un bucle: es como mucho un request por vuelta a la app, y en cuanto el
     /// snapshot de remote-config refresque, el gate compuesto de `startIfEligible` lo apaga sin red.
+    ///
+    /// **Describe el ÚLTIMO ciclo, no la vida del proceso**, porque `syncCycleOnce` lo baja al entrar. Sin
+    /// ese reset sería un residuo, y hay un productor de `.accountUnavailable` que NO pasa por las dos
+    /// ramas del 403: el 409 `yala_account_reverting` del push. Con un kill anterior en el mismo proceso,
+    /// una cuenta revirtiendo se habría anunciado como «el canal está en pausa».
+    ///
+    /// **Sigue siendo `private`, y fuera se lee por `stoppedByChannelKill(for:)`** — ver allí.
     private var lastStopWasChannelKill = false
+
+    /// ¿Paró el ciclo que acaba de correr por el KILL-SWITCH del canal? Es la señal que el push-all previo
+    /// a cerrar sesión o a soltar la cuenta de grupos necesita para elegir el aviso
+    /// (`CloudSignOutFlowLogic.BlockReason.channelPaused`): con el kill puesto y cambios sin subir, el de
+    /// `.permanent` le decía a la persona que el problema era su cuenta.
+    ///
+    /// **Exige el outcome, y ése es todo el punto de que exista en vez de exponer el campo.** El testigo
+    /// solo significa algo cuando el ciclo paró por un 403; ligarlos aquí impide la única lectura que podía
+    /// mentir —`syncCycleOnceCoalesced` devuelve `.coalesced` SIN correr ciclo cuando ya hay uno en vuelo,
+    /// así que su testigo describe el ciclo AJENO— y deja el invariante en el mismo fichero que el campo,
+    /// que es donde el siguiente lector lo va a buscar. Con el campo expuesto, quien lo leyera suelto
+    /// tendría que acordarse de la condición, y acordarse no es una garantía.
+    func stoppedByChannelKill(for outcome: SyncCadencePolicy.CadenceOutcome) -> Bool {
+        outcome == .accountUnavailable && lastStopWasChannelKill
+    }
     /// Contador de transitorios consecutivos para el backoff exponencial (reset al `.completed`/stop).
     private var consecutiveTransients = 0
     /// Sleep INYECTABLE entre vueltas del loop (default `Task.sleep`) — los tests inyectan uno que no
@@ -359,8 +381,8 @@ final class GroupsSyncClient {
             case .stopUntilRelaunch:
                 // El kill-switch del canal para el loop pero NO lo sella: se levanta con un deploy, así que
                 // sellarlo obligaría a relanzar la app en cada device para recuperarse (ver
-                // `lastStopWasChannelKill`). Una cuenta suspendida sí se sella, como siempre.
-                if lastStopWasChannelKill {
+                // `lastStopWasChannelKill`). El OTRO 403 sí se sella, como siempre.
+                if stoppedByChannelKill(for: outcome) {
                     GroupsSyncBreadcrumb.groupsLoopStopped(reason: "channel-disabled")
                     break loop                           // RE-ARRANCABLE por el próximo startIfEligible
                 }
@@ -496,6 +518,10 @@ final class GroupsSyncClient {
         // Guardia de generación (MEDIA): capturada al entrar (el drain de abajo es SÍNCRONO — la
         // generación no puede cambiar entre la captura y su writeMirror), re-verificada tras cada await.
         let generation = teardownGeneration
+        // El testigo del kill describe ESTE ciclo (ver `lastStopWasChannelKill`): se baja al entrar y solo
+        // lo suben las dos ramas del 403. Sin esto, un `.accountUnavailable` que no viene de un 403 —el 409
+        // del freeze de la reversa— heredaría el veredicto de un kill anterior del mismo proceso.
+        lastStopWasChannelKill = false
         drainOnce(context: context)
         let push = await pushPending(context: context)
         guard generation == teardownGeneration else { return .coalesced }  // teardown durante el push

@@ -768,10 +768,18 @@ final class CloudSessionSignOut {
         }
 
         // 2) Push-all GRUPOS (cierra LOW-3 de B2) — ANTES del teardown (la guardia de generación
-        // abortaría el ciclo). Blocked ⇒ abort idéntico al personal.
+        // abortaría el ciclo). Blocked ⇒ abort idéntico al personal, **con UNA excepción medida**.
+        //
+        // El canal de Grupos en pausa viaja tal cual (2026-09-13); el resto se sigue colapsando en
+        // `.permanent`, byte-idéntico a lo de siempre. La asimetría es deliberada y cabe en una frase: una
+        // cuenta `.cloud` con grupos sufre el kill-switch de Grupos **exactamente igual** que la sesión
+        // privada del ticket —mismo 403, misma función, misma mentira— y dejarlo aquí sería arreglar el
+        // agujero en tres celdas de cuatro. Los otros motivos se quedan porque su alert en este camino es
+        // una decisión propia (ver el comentario del paso 1) y nadie ha pedido cambiarla.
         switch await pushAllPendingGroupsForSignOut(context: context) {
-        case .blocked(let pending, _):
-            phase = .blocked(pendingCount: pending, reason: .permanent)
+        case .blocked(let pending, let reason):
+            phase = .blocked(pendingCount: pending,
+                             reason: reason == .channelPaused ? .channelPaused : .permanent)
             CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
             return
         case .drained:
@@ -868,8 +876,13 @@ final class CloudSessionSignOut {
                     elapsedSeconds: elapsed, budgetSeconds: budget, reason: reason
                 ) {
                 case .surfacePermanent:
-                    // Sesión caducada no es un problema de conexión: el aviso dice que hay que volver a entrar.
-                    phase = .blocked(pendingCount: pending, reason: reason == .sessionExpired ? .sessionExpired : .permanent)
+                    // **El motivo viaja TAL CUAL, y esa es la corrección del 2026-09-13.** Aquí había un
+                    // ternario que colapsaba todo lo que no fuera `.sessionExpired` en `.permanent`: con él,
+                    // el canal en pausa llegaba a la pantalla convertido en «el problema es tu cuenta» y el
+                    // arreglo heredaba la forma del bug. `decide` solo devuelve `.surfacePermanent` para los
+                    // tres motivos que se muestran al momento, así que propagarlo es además byte-equivalente
+                    // a lo que hacía el ternario para los dos que ya existían.
+                    phase = .blocked(pendingCount: pending, reason: reason)
                     CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
                     return false
                 case .surfaceTransient:
@@ -1037,6 +1050,11 @@ final class CloudSessionSignOut {
             if let verdict = CloudSignOutFlowLogic.pushAllVerdict(
                 livePendingCount: Self.liveGroupsPendingCount(context: context),
                 cycleOutcome: outcome,
+                // ¿Paró este ciclo por el kill-switch? Se pregunta CON el outcome en la mano, que es lo que
+                // impide leer el testigo de un ciclo que no es éste. Con el kill puesto, el bloqueo se
+                // anuncia como «los grupos están en pausa» y no como «tu cuenta ya no vale» — ticket
+                // `groups-killswitch-403-blocks-detach-forever`.
+                channelKilled: GroupsSyncClient.shared.stoppedByChannelKill(for: outcome),
                 iteration: iteration,
                 maxIterations: maxIterations
             ) {

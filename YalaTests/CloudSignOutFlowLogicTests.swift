@@ -132,29 +132,29 @@ struct CloudSignOutPushAllVerdictTests {
     @Test
     func outboxEmpty_isDrained_regardlessOfCycleOutcome() {
         #expect(CloudSignOutFlowLogic.pushAllVerdict(
-            livePendingCount: 0, cycleOutcome: .completed, iteration: 1, maxIterations: 10
+            livePendingCount: 0, cycleOutcome: .completed, channelKilled: false, iteration: 1, maxIterations: 10
         ) == .drained)
         // Ciclo con error pero outbox ya vacío → drained igual (el objetivo se cumplió).
         #expect(CloudSignOutFlowLogic.pushAllVerdict(
-            livePendingCount: 0, cycleOutcome: .transient, iteration: 3, maxIterations: 10
+            livePendingCount: 0, cycleOutcome: .transient, channelKilled: false, iteration: 3, maxIterations: 10
         ) == .drained)
     }
 
     @Test
     func pendingWithSuccessfulCycle_keepsIterating() {
         #expect(CloudSignOutFlowLogic.pushAllVerdict(
-            livePendingCount: 12, cycleOutcome: .completed, iteration: 2, maxIterations: 10
+            livePendingCount: 12, cycleOutcome: .completed, channelKilled: false, iteration: 2, maxIterations: 10
         ) == nil)
         // `.coalesced` (ciclo en vuelo, sin señal de fallo) también cuenta como éxito.
         #expect(CloudSignOutFlowLogic.pushAllVerdict(
-            livePendingCount: 12, cycleOutcome: .coalesced, iteration: 2, maxIterations: 10
+            livePendingCount: 12, cycleOutcome: .coalesced, channelKilled: false, iteration: 2, maxIterations: 10
         ) == nil)
     }
 
     @Test
     func pendingWithFailedTransientCycle_blocksTransient() {
         #expect(CloudSignOutFlowLogic.pushAllVerdict(
-            livePendingCount: 5, cycleOutcome: .transient, iteration: 1, maxIterations: 10
+            livePendingCount: 5, cycleOutcome: .transient, channelKilled: false, iteration: 1, maxIterations: 10
         ) == .blocked(pendingCount: 5, reason: .transient))
     }
 
@@ -163,18 +163,38 @@ struct CloudSignOutPushAllVerdictTests {
         // La sesión caducada lleva su motivo propio desde el paso 9 (el aviso pide volver a entrar); el camino
         // `.cloud` lo sigue mostrando como permanente porque re-mapea todo bloqueo a `.permanent`.
         #expect(CloudSignOutFlowLogic.pushAllVerdict(
-            livePendingCount: 5, cycleOutcome: .sessionExpired, iteration: 1, maxIterations: 10
+            livePendingCount: 5, cycleOutcome: .sessionExpired, channelKilled: false, iteration: 1, maxIterations: 10
         ) == .blocked(pendingCount: 5, reason: .sessionExpired))
         #expect(CloudSignOutFlowLogic.pushAllVerdict(
-            livePendingCount: 7, cycleOutcome: .accountUnavailable, iteration: 2, maxIterations: 10
+            livePendingCount: 7, cycleOutcome: .accountUnavailable, channelKilled: false, iteration: 2, maxIterations: 10
         ) == .blocked(pendingCount: 7, reason: .permanent))
+    }
+
+    /// El veredicto PORTA el motivo del canal en pausa, no lo colapsa: es lo que la pantalla lee para
+    /// elegir el aviso. Sin esto, el arreglo se quedaba en `classify` y no llegaba a nadie.
+    @Test
+    func pendingWithTheChannelKillSwitch_blocksAsPausedChannel() {
+        #expect(CloudSignOutFlowLogic.pushAllVerdict(
+            livePendingCount: 7, cycleOutcome: .accountUnavailable, channelKilled: true,
+            iteration: 2, maxIterations: 10
+        ) == .blocked(pendingCount: 7, reason: .channelPaused))
+    }
+
+    /// **Con el outbox vacío el gesto completa aunque el canal esté apagado, y eso no cambia.** Es el caso
+    /// dominante —el pre-check corta sin una sola petición— y la mitad del ticket que ya funcionaba.
+    @Test
+    func emptyOutbox_drainsEvenWithTheChannelKilled() {
+        #expect(CloudSignOutFlowLogic.pushAllVerdict(
+            livePendingCount: 0, cycleOutcome: .accountUnavailable, channelKilled: true,
+            iteration: 1, maxIterations: 10
+        ) == .drained)
     }
 
     @Test
     func pendingAtMaxIterations_blocksTransient_evenWithSuccessfulCycle() {
         // Tope alcanzado con ciclo sano pero pendientes → transitorio (aún drenando).
         #expect(CloudSignOutFlowLogic.pushAllVerdict(
-            livePendingCount: 3, cycleOutcome: .completed, iteration: 10, maxIterations: 10
+            livePendingCount: 3, cycleOutcome: .completed, channelKilled: false, iteration: 10, maxIterations: 10
         ) == .blocked(pendingCount: 3, reason: .transient))
     }
 }
@@ -186,15 +206,38 @@ struct CloudSignOutClassifyTests {
     func sessionOrAccountFailure_isPermanent() {
         // Las dos son permanentes, pero la sesión caducada tiene su motivo propio desde el paso 9: se arregla
         // volviendo a entrar, y el aviso tiene que decirlo en vez de mandar a revisar la conexión.
-        #expect(CloudSignOutFlowLogic.classify(.sessionExpired) == .sessionExpired)
-        #expect(CloudSignOutFlowLogic.classify(.accountUnavailable) == .permanent)
+        #expect(CloudSignOutFlowLogic.classify(.sessionExpired, channelKilled: false) == .sessionExpired)
+        #expect(CloudSignOutFlowLogic.classify(.accountUnavailable, channelKilled: false) == .permanent)
+    }
+
+    /// **Los dos 403 del canal de Grupos no dicen lo mismo, y el `channelKilled` es lo único que los
+    /// separa.** Con el kill-switch puesto, quien tiene cambios sin subir recibía «el problema es tu
+    /// cuenta» sobre una cuenta que está perfectamente: lo que pasa es que alguien bajó una palanca por
+    /// un incidente. Ticket `groups-killswitch-403-blocks-detach-forever`.
+    @Test
+    func the403OfTheKillSwitch_isNotAnAccountVerdict() {
+        #expect(CloudSignOutFlowLogic.classify(.accountUnavailable, channelKilled: true) == .channelPaused)
+        #expect(CloudSignOutFlowLogic.classify(.accountUnavailable, channelKilled: false) == .permanent)
+    }
+
+    /// **El testigo del kill solo cuenta si el ciclo paró por un 403.** Es lo que impide que un kill de
+    /// hace un rato tiña un fallo posterior que no tiene nada que ver: la red que se cae mientras el canal
+    /// está apagado sigue siendo «espera un momento», no «el canal está en pausa». La otra mitad de esta
+    /// garantía la pone el cliente, que baja el testigo al entrar en cada ciclo.
+    @Test
+    func killWitness_isIgnoredUnlessTheCycleStoppedOnA403() {
+        #expect(CloudSignOutFlowLogic.classify(.transient, channelKilled: true) == .transient)
+        #expect(CloudSignOutFlowLogic.classify(.completed, channelKilled: true) == .transient)
+        #expect(CloudSignOutFlowLogic.classify(.coalesced, channelKilled: true) == .transient)
+        // Y la sesión caducada sigue siendo suya: un 401 no es el kill, aunque el testigo venga puesto.
+        #expect(CloudSignOutFlowLogic.classify(.sessionExpired, channelKilled: true) == .sessionExpired)
     }
 
     @Test
     func networkOrCoalescedOrCompleted_isTransient() {
-        #expect(CloudSignOutFlowLogic.classify(.transient) == .transient)
-        #expect(CloudSignOutFlowLogic.classify(.completed) == .transient)
-        #expect(CloudSignOutFlowLogic.classify(.coalesced) == .transient)
+        #expect(CloudSignOutFlowLogic.classify(.transient, channelKilled: false) == .transient)
+        #expect(CloudSignOutFlowLogic.classify(.completed, channelKilled: false) == .transient)
+        #expect(CloudSignOutFlowLogic.classify(.coalesced, channelKilled: false) == .transient)
     }
 }
 
@@ -215,6 +258,19 @@ struct GroupsSignOutRetryDecisionTests {
         }
     }
 
+    /// **El canal en pausa se muestra al momento, y es una decisión de producto** (2026-09-13): el
+    /// kill-switch se levanta con un deploy, así que dentro de los 45 s del presupuesto no se va a mover.
+    /// Reintentar gastaría ~22 peticiones contra un 403 seguro en pleno incidente y retrasaría 45 s un
+    /// aviso que ya se puede dar. Lo que sigue siendo reintentable es el gesto, que no escribió nada.
+    @Test
+    func pausedChannel_surfacesImmediately_withoutSpendingTheBudget() {
+        for elapsed in [0.0, 1.0, 44.0, 100.0] {
+            #expect(GroupsSignOutRetryDecision.decide(
+                elapsedSeconds: elapsed, budgetSeconds: budget, reason: .channelPaused)
+                == .surfacePermanent)
+        }
+    }
+
     @Test
     func transient_withinBudget_retries() {
         #expect(GroupsSignOutRetryDecision.decide(
@@ -223,6 +279,35 @@ struct GroupsSignOutRetryDecisionTests {
         #expect(GroupsSignOutRetryDecision.decide(
             elapsedSeconds: 44, budgetSeconds: budget, reason: .transient)
             == .retryAfter(seconds: GroupsSignOutRetryDecision.retryIntervalSeconds))
+    }
+
+    /// **Todo motivo tiene una decisión escrita, y un motivo nuevo tumba este test.** `decide` es una
+    /// cadena de `if`, no un `switch`: el compilador NO obliga a pronunciarse, y la rama por defecto es la
+    /// peor —45 s de espera y ~22 peticiones contra algo que no se cura—. Aquí la tabla es exhaustiva por
+    /// construcción: el `allCases.count` se cae en cuanto aparece un motivo que nadie ha decidido.
+    @Test
+    func everyReasonHasADecision() {
+        let esperado: [CloudSignOutFlowLogic.BlockReason: GroupsSignOutRetryDecision.Decision] = [
+            // Se muestran al momento: ningún reintento del presupuesto cambia el veredicto.
+            .permanent: .surfacePermanent,
+            .sessionExpired: .surfacePermanent,
+            .channelPaused: .surfacePermanent,
+            // Se reintentan dentro del presupuesto: son los que sí se curan esperando.
+            .transient: .retryAfter(seconds: GroupsSignOutRetryDecision.retryIntervalSeconds),
+            // No los produce este camino, pero si llegaran, esperar tampoco arregla nada que sepamos —
+            // caen en el reintento y eso es lo que hay que saber al añadir uno nuevo.
+            .exportUnconfirmed: .retryAfter(seconds: GroupsSignOutRetryDecision.retryIntervalSeconds),
+            .bridgeUnreadable: .retryAfter(seconds: GroupsSignOutRetryDecision.retryIntervalSeconds),
+            .detachBusy: .retryAfter(seconds: GroupsSignOutRetryDecision.retryIntervalSeconds),
+        ]
+        #expect(CloudSignOutFlowLogic.BlockReason.allCases.count == esperado.count, """
+            Hay un motivo de bloqueo sin decisión escrita. `decide` no es un `switch`, así que se lo va a
+            tragar el reintento: 45 s y ~22 peticiones contra algo que quizá no se cura. Decídelo aquí.
+            """)
+        for motivo in CloudSignOutFlowLogic.BlockReason.allCases {
+            #expect(GroupsSignOutRetryDecision.decide(
+                elapsedSeconds: 0, budgetSeconds: budget, reason: motivo) == esperado[motivo])
+        }
     }
 
     @Test
@@ -414,5 +499,202 @@ struct PrivateSignOutWiringTests {
         let signOut = try Self.source(Self.signOutPath)
         #expect(signOut.contains("hasPrivateSession: PrivateSessionMark.hasPrivateSession()"))
         #expect(signOut.contains("if let confirmedPath, confirmedPath != path {"))
+    }
+}
+
+/// **El motivo del bloqueo tiene que LLEGAR a la pantalla, y eso no lo prueba ninguna función pura.**
+///
+/// `classify` puede devolver `.channelPaused` perfectamente y el arreglo seguir sin existir: entre esa
+/// función y el aviso hay tres asignaciones de fase, y hasta el 2026-09-13 una de ellas colapsaba todo lo
+/// que no fuera `.sessionExpired` en `.permanent`. Ahí es donde el canal en pausa se convertía en «el
+/// problema es tu cuenta», y ahí es donde volvería a convertirse si alguien rehace el ternario.
+///
+/// Source-scan por la misma razón que las suites de arriba —el coordinador es privado y su camino exige
+/// singletons de red, del espejo y de credenciales—, y sobre el CUERPO de cada método, no sobre el
+/// fichero: los tres escriben `phase = .blocked(...)` y a nivel de fichero una mutación en uno pasaría
+/// verde gracias a los otros dos.
+///
+/// Ticket `groups-killswitch-403-blocks-detach-forever`.
+@Suite("Canal de Grupos en pausa — el motivo viaja hasta el aviso (source-scan)")
+struct PausedChannelReasonWiringTests {
+
+    private static func source(_ relativePath: String) throws -> String {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        return try String(contentsOf: root.appendingPathComponent(relativePath), encoding: .utf8)
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+    }
+
+    private static func body(of marker: String, in source: String) throws -> String {
+        let start = try #require(source.range(of: marker), "no se encontró `\(marker)`")
+        var depth = 1
+        var out = ""
+        for ch in source[start.upperBound...] {
+            if ch == "{" { depth += 1 }
+            if ch == "}" { depth -= 1; if depth == 0 { break } }
+            out.append(ch)
+        }
+        return out
+    }
+
+    private static let signOutPath = "Yala/Services/CloudSync/CloudSessionSignOut.swift"
+
+    /// **Los marcadores llevan la llave de apertura, y no es cosmético.** `body(of:)` arranca su
+    /// contador en `depth = 1` justo después del marcador: sin la `{`, el contador corre sobre texto que
+    /// aún no ha abierto el cuerpo y el corte se come todo lo que sigue hasta cerrar el TIPO. Medido el
+    /// 2026-09-13 con el marcador de este push-all: devolvía 77 líneas con tres métodos ajenos dentro, así
+    /// que las aserciones «sobre el cuerpo» eran de hecho sobre el fichero.
+    private static let attemptCloseMarker = """
+        private func attemptGroupsOnlyClose(
+                context: ModelContext,
+                quiescenceHardCap: TimeInterval
+            ) async -> CloudSignOutFlowLogic.PushAllVerdict {
+        """
+
+    private static let groupsPushAllMarker = """
+        private func pushAllPendingGroupsForSignOut(
+                context: ModelContext,
+                maxIterations: Int = 20
+            ) async -> CloudSignOutFlowLogic.PushAllVerdict {
+        """
+
+    /// El push-all pide el testigo AL CLIENTE. Si alguien lo cambiara por un literal, el arreglo moriría
+    /// sin que ninguna aserción de `classify` se enterase: la función pura seguiría siendo correcta.
+    @Test("el push-all de grupos lee el testigo del kill, no un literal")
+    func groupsPushAllReadsTheKillWitness() throws {
+        let pushAll = try Self.body(
+            of: Self.groupsPushAllMarker, in: try Self.source(Self.signOutPath))
+        #expect(pushAll.contains("channelKilled: GroupsSyncClient.shared.stoppedByChannelKill(for: outcome)"), """
+            El push-all de grupos dejó de preguntar al cliente cuál de los dos 403 paró el ciclo. Con el \
+            kill-switch puesto, a quien tiene cambios sin subir se le vuelve a decir que el problema es su \
+            cuenta. Y tiene que preguntarlo CON el outcome: el testigo suelto puede ser de un ciclo ajeno.
+            """)
+    }
+
+    /// **El motor PERSONAL declara que su 403 no puede ser el kill, y eso hay que fijarlo.** Un
+    /// `channelKilled: true` aquí le diría a una cuenta `.cloud` suspendida —que puede no tener grupos
+    /// siquiera— que «los grupos están en pausa, vuelve en un rato»: falso, y encima le hace esperar algo
+    /// que no llega. Lo que lo hace correcto está medido: `grep -rn 403 gateway/src/sync/` da cero
+    /// emisores, así que por esa ruta el kill no viaja.
+    @Test("el push-all personal declara que su 403 no es el del canal")
+    func personalPushAllDeclaresNoChannelKill() throws {
+        let personal = try Self.body(
+            of: "func pushAllPendingForSignOut(maxIterations: Int = 20) async -> CloudSignOutFlowLogic.PushAllVerdict {",
+            in: try Self.source("Yala/Services/CloudSync/CloudMigrationController.swift"))
+        #expect(personal.contains("channelKilled: false"), """
+            El push-all del motor personal dejó de declarar su término del kill. En `true`, una cuenta
+            suspendida sin grupos recibiría «los grupos están en pausa».
+            """)
+    }
+
+    /// El retry interno ya no colapsa el motivo. Es la mitad del arreglo que vive fuera de toda función
+    /// pura, y la que se deshace con un solo ternario.
+    @Test("el retry interno propaga el motivo tal cual, sin aplanarlo")
+    func retryLoopPropagatesTheReasonVerbatim() throws {
+        let push = try Self.body(
+            of: "private func pushGroupsForSignOut(context: ModelContext) async -> Bool {",
+            in: try Self.source(Self.signOutPath))
+        #expect(push.contains("phase = .blocked(pendingCount: pending, reason: reason)"), """
+            El bloqueo del push-all dejó de propagar su motivo. Todo lo que `decide` manda mostrar al \
+            momento —sesión caducada, cuenta no disponible y canal en pausa— llega a la pantalla como el \
+            mismo aviso.
+            """)
+        #expect(!push.contains("reason: .permanent"), """
+            Volvió un colapso a `.permanent` en el retry interno: es exactamente la forma del bug que este \
+            ticket cerró.
+            """)
+    }
+
+    /// **El paso intermedio también tiene que dejar pasar el motivo.** Entre el push-all y el retry hay un
+    /// método más —`attemptGroupsOnlyClose`— y una lente adversarial midió que un colapso metido ahí
+    /// devolvía el bug entero con todo lo demás en verde: los otros escaneos fijan tres puntos conocidos,
+    /// no la propiedad «el motivo llega intacto». Aquí se fija que ese paso devuelve el veredicto del
+    /// push-all SIN tocarlo, y que no le nacen `.blocked` nuevos por el camino.
+    @Test("el paso intermedio devuelve el veredicto del push-all sin tocarlo")
+    func theIntermediateStepDoesNotRewriteTheVerdict() throws {
+        let attempt = try Self.body(of: Self.attemptCloseMarker, in: try Self.source(Self.signOutPath))
+        #expect(attempt.contains("return await pushAllPendingGroupsForSignOut(context: context)"), """
+            El paso intermedio dejó de devolver el veredicto del push-all tal cual. Una reescritura aquí
+            atraviesa los otros escaneos sin tocarlos y devuelve el aviso que culpa a la cuenta.
+            """)
+        // Su único `.blocked` propio es el del gate de quiescencia, que sí es transitorio de verdad.
+        #expect(attempt.components(separatedBy: "return .blocked").count - 1 == 1, """
+            Apareció un `.blocked` nuevo en el paso intermedio: comprueba si reescribe el motivo del
+            push-all antes de subir este número.
+            """)
+    }
+
+    /// La celda `.cloud` sufre el mismo kill-switch: su push de grupos habla con el mismo endpoint. Aquí el
+    /// resto de motivos SÍ se colapsa a propósito (su alert es una decisión propia), así que lo que se fija
+    /// es solo que el canal en pausa se salva de ese colapso.
+    @Test("el cierre de la nube deja pasar el canal en pausa")
+    func cloudSignOutLetsThePausedChannelThrough() throws {
+        let cloud = try Self.body(
+            of: "private func performCloudSecureSignOut(context: ModelContext) async {",
+            in: try Self.source(Self.signOutPath))
+        #expect(cloud.contains("reason: reason == .channelPaused ? .channelPaused : .permanent"), """
+            El cierre de la nube volvió a colapsar el canal en pausa: una cuenta `.cloud` con grupos sufre \
+            el kill-switch igual que la sesión privada del ticket.
+            """)
+    }
+
+    /// **Las TRES pantallas** que pueden enseñar este bloqueo nombran el canal en pausa con su copy propio.
+    /// Eran dos hasta que una lente adversarial midió la tercera: `WelcomeGroupsGateView`, la puerta de
+    /// grupos del Welcome, observa la MISMA fase del coordinador y su rama `.blocked` era un catch-all que
+    /// decía «vuelve a entrar con esa cuenta» — un consejo que con el kill puesto no sube nada, porque el
+    /// 403 no depende de la sesión.
+    ///
+    /// Las dos primeras lo garantizan además con `switch` EXHAUSTIVOS (sin `default`); la tercera no puede,
+    /// porque el suyo es sobre la fase del coordinador y liga el motivo en un patrón — ahí este escaneo es
+    /// la única red, y por eso comprueba también el ORDEN de las ramas.
+    @Test("las tres pantallas tienen copy propio para el canal en pausa")
+    func allThreeScreensNameThePausedChannel() throws {
+        // **Se comprueba también que el aviso CONSUME la propiedad, y no es celo.** Una lente midió el
+        // mutante: cambiar el `Text(...)` por un literal deja las dos computed MUERTAS —Swift no avisa de
+        // una computed privada sin usar—, devuelve el copy genérico a las dos pantallas y deja verde todo
+        // lo demás. O sea el bug del ticket, entero, invisible.
+        let sectionFile = try Self.source("Yala/App/Views/Settings/GroupsAssociationSection.swift")
+        let section = try Self.body(of: "private var blockedMessage: String {", in: sectionFile)
+        #expect(section.contains("case .channelPaused: return L10n.Groups.Errors.channelPaused"))
+        #expect(sectionFile.contains("Text(blockedMessage)"), """
+            El aviso del desasociar dejó de leer su mensaje por motivo: la propiedad queda muerta y el copy
+            vuelve al genérico.
+            """)
+        #expect(!section.contains("default:"), """
+            Volvió el `default` al aviso del desasociar: un motivo nuevo vuelve a caer en «inténtalo en un \
+            momento» sin que nada lo advierta.
+            """)
+
+        let profileFile = try Self.source("Yala/App/Views/Profile/ProfileView.swift")
+        let profile = try Self.body(of: "private var signOutBlockedMessage: String {", in: profileFile)
+        #expect(profile.contains("case .channelPaused: return L10n.Groups.Errors.channelPaused"))
+        #expect(profileFile.contains("Text(signOutBlockedMessage)"), """
+            El aviso del cierre dejó de leer su mensaje por motivo: misma muerte silenciosa.
+            """)
+        #expect(!profile.contains("default:"), """
+            Volvió el `default` al aviso del cierre de sesión: un motivo nuevo vuelve a caer en «revisa tu \
+            conexión» sin que nada lo advierta.
+            """)
+
+        // La puerta de grupos del Welcome. Su rama propia va ANTES del catch-all, o no la alcanza nadie.
+        let gate = try Self.source("Yala/App/Views/Onboarding/WelcomeGroupsGateView.swift")
+        let paused = try #require(gate.range(of: "case .blocked(_, .channelPaused):"), """
+            La puerta de grupos del Welcome perdió su rama del canal en pausa: vuelve a decirle a quien \
+            acepta una invitación que entre con su cuenta, sobre un 403 que no depende de la sesión.
+            """)
+        let catchAll = try #require(gate.range(of: "\n        case .blocked:"))
+        // **El literal, dentro de SU rama y no en el fichero.** Con un `contains` a nivel de fichero,
+        // intercambiar los dos `body:` —el copy de pausa al catch-all y el de «vuelve a entrar» a la rama
+        // de pausa— pasaba las tres aserciones: justo el fallo que esto existe para impedir.
+        let pausedBranch = String(gate[paused.upperBound..<catchAll.lowerBound])
+        #expect(pausedBranch.contains("body: L10n.Groups.Errors.channelPaused"), """
+            La rama del canal en pausa dejó de enseñar su copy. Si el literal sigue en el fichero, mira
+            si se lo quedó el catch-all.
+            """)
+        #expect(paused.lowerBound < catchAll.lowerBound, """
+            La rama del canal en pausa quedó DESPUÉS del catch-all `case .blocked:`: el motivo cae otra vez
+            en el aviso que manda a volver a entrar.
+            """)
     }
 }

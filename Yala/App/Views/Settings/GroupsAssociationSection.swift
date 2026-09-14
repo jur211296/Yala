@@ -159,13 +159,26 @@ struct GroupsAssociationSection: View {
         if !ajeno { signOutCoordinator.acknowledgeBlocked() }
     }
 
+    /// **Exhaustivo a propósito: sin `default`.** Con uno, un motivo nuevo caía en «inténtalo en un
+    /// momento» sin que nada lo dijera, que es exactamente cómo el canal en pausa acabó anunciándose como
+    /// un problema de la cuenta. Aquí el compilador obliga a que cada motivo se pronuncie, y ninguna
+    /// prueba puede dar esa garantía: el mapeo vive dentro de la vista.
     private var blockedMessage: String {
         switch blockedReason {
         case .sessionExpired: return L10n.Storage.Groups.detachBlockedSession
         case .permanent: return L10n.Storage.Groups.detachBlockedPermanent
         case .bridgeUnreadable: return L10n.Storage.Groups.detachBlockedBridge
         case .detachBusy: return L10n.Storage.Groups.detachBusy
-        default: return L10n.Storage.Groups.detachBlockedTransient
+        // El kill-switch de Grupos no es un problema de la cuenta ni de la conexión, y `.permanent` le
+        // decía las dos cosas. Copy compartido con el cierre de sesión: el hecho es el mismo y el título
+        // de arriba ya dice cuál de los dos gestos falló.
+        case .channelPaused: return L10n.Groups.Errors.channelPaused
+        // `.transient` es el caso corriente. `.exportUnconfirmed` es del cierre PRIVADO y no puede llegar
+        // a este gesto —el desasociar no espera a iCloud—, y `nil` tampoco con el aviso presentado (el
+        // binding lo enciende justo con el motivo puesto); los dos caen en el copy que no afirma ninguna
+        // causa concreta, que es lo correcto si alguna vez llegaran.
+        case .transient, .exportUnconfirmed, .none:
+            return L10n.Storage.Groups.detachBlockedTransient
         }
     }
 

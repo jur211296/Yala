@@ -5879,3 +5879,6 @@
 
 /* Aviso: el desasociar no puede correr con otro cierre de sesión en curso */
 "storage.groups.detachBusy" = "Je bent je nu aan het afmelden. Rond dat eerst af en probeer het opnieuw.";
+
+/* Blocked sign-out/detach when the groups channel kill-switch is on (403 yala_groups_disabled): the channel is paused on purpose, nothing is lost */
+"groups.errors.channelPaused" = "Het ligt aan ons: groepen staan even op pauze. Je wijzigingen blijven op deze telefoon en er gaat niets verloren; probeer het straks opnieuw.";
