@@ -18,7 +18,7 @@ pantalla se queda en «Borrando lo que había en iCloud…» para siempre. Los d
 
 `WelcomePrivateICloudGateView.wipe()` —el camino de iCloud, **no** el del teléfono— lleva un
 `guard !Task.isCancelled else { return }` **después** de `await performWipe()`. Ese borrado, cuando
-además se lleva las filas locales (`includingLocalRows: true`, que es el caso del Welcome), llama a
+además se lleva las filas locales (el scope `.handover`, que es el caso del Welcome (hasta el 2026-09-14, `includingLocalRows: true`)), llama a
 `DataWipeService.wipeAllUserData`, que borra `hasCompletedOnboarding`. Esa escritura dispara el
 `onChange` de `ContentView`, y con él una re-entrega de SwiftUI que puede cancelar la `.task(id: phase)`
 **con el borrado ya committeado**.

@@ -40,6 +40,25 @@ enum FullModeActivationFlowLogic {
         /// El recorrido de antes, sin chooser: para quien NO es solo-grupos y por tanto ya tiene decidido
         /// dónde viven sus datos personales.
         case legacyOnboarding
+        /// **La misma puerta, pero después de Restaurar: «Empezar desde cero» descartando lo que ya bajó.**
+        ///
+        /// Es un case propio y no un flag al lado de `.privateGate` porque las dos entradas necesitan
+        /// borrados **opuestos**, y un flag se hereda en silencio (el defecto que la review le cazó al
+        /// propósito de la puerta de Grupos cuando vivía en un `@State` paralelo al step):
+        ///
+        ///  · en `.privateGate` el store todavía **no espeja** —se llega antes del relanzamiento—, así que
+        ///    lo local es de la persona que activa y borrarlo sería el daño contrario: solo se borra la zona;
+        ///  · aquí hubo relanzamiento, el store **espeja**, y lo local ES el corpus que la persona acaba de
+        ///    decidir no traerse. Borrar solo la zona lo deja entero y el espejo lo re-exporta a la zona
+        ///    recién creada — un borrado que no borra, que es el bug de este case.
+        ///
+        /// Su «volver» tampoco es el mismo: vuelve a `.restore`, de donde vino. `backFromRestore` tras un
+        /// relanzamiento es CANCELAR (`screenBeforeRestore(hasResume: true) == nil`), así que reusar aquel
+        /// camino echaría de la activación a quien solo se arrepintió de un botón.
+        ///
+        /// Va al FINAL del enum a propósito: un case nuevo en medio cambia el número de los `alert`
+        /// diagnósticos que se derivan de su orden.
+        case restoreDiscardGate
     }
 
     /// De dónde sale el prefill del onboarding, y con él qué hace su commit.

@@ -587,17 +587,72 @@ struct FullModeActivationWiringTests {
 
     // MARK: - Los borrados
 
-    /// El borrado local (`wipeAllUserData`) resetea `hasCompletedOnboarding`, el modo y el nombre: en la
-    /// activación mandaría al Welcome a quien está activando, y lo local de un solo-grupos nunca vino de iCloud.
-    @Test("la activación borra SOLO la zona de iCloud; el corte va antes del borrado local")
-    func activationWipe_isZoneOnly() throws {
+    /// **Las DOS puertas de la activación y sus DOS borrados**, que no son intercambiables.
+    ///
+    ///  · `.privateGate` se alcanza ANTES del relanzamiento: el store no espeja, lo local es de quien
+    ///    activa, y el borrado local resetearía además `hasCompletedOnboarding` (restricción del paso 8) —
+    ///    solo la zona.
+    ///  · `.restoreDiscardGate` se alcanza DESPUÉS: el store espeja y lo local ES el corpus importado, que
+    ///    sin borrar se re-exporta a la zona recién creada. Filas sí, preferencias y Grupos no.
+    @Test("cada puerta de la activación recibe SU borrado, y el corte va antes del borrado local")
+    func activationWipes_areScopedPerGate() throws {
         let src = try Self.code(Self.contentView)
-        #expect(src.contains("performICloudZoneWipe: { await performICloudCorpusWipe(includingLocalRows: false) }"))
+        #expect(src.contains("performICloudZoneWipe: { await performICloudCorpusWipe(.zoneOnly) }"), """
+            la puerta privada de la activación dejó de borrar SOLO la zona. Con filas se lleva las
+            categorías, las cuentas y las bridgeadas de quien está activando.
+            """)
+        #expect(src.contains("await performICloudCorpusWipe(.importedRows)"), """
+            «Restaurar → Empezar desde cero» dejó de borrar las filas que el espejo importó: el corpus
+            descartado se re-exporta a la zona recién creada, que es el bug entero.
+            """)
+        // **El scope de la puerta nueva NO es `.handover`**, y el swap compila: se llevaría por delante
+        // las preferencias (⇒ al Welcome a mitad de la activación) y el dominio de Grupos (⇒ el daño que
+        // la decisión 2.2A prohíbe).
+        let wrapper = try Self.body(of: "performICloudZoneAndImportedRowsWipe: {", in: src)
+        #expect(!wrapper.contains(".handover"), """
+            el borrado de «Empezar desde cero» pasó al scope del handover: resetea `hasCompletedOnboarding`
+            —Welcome a mitad de la activación— y purga el dominio de Grupos, que es justo lo que la
+            activación existe para conservar. Cuerpo leído: \(wrapper)
+            """)
         let wipe = try Self.body(
-            of: "private func performICloudCorpusWipe(includingLocalRows: Bool = true) async -> String? {",
+            of: "private func performICloudCorpusWipe(_ scope: ICloudWipeScope) async -> String? {",
             in: src)
-        try Self.expectOrder("guard includingLocalRows", before: "DataWipeService.wipeAllUserData", in: wipe,
+        try Self.expectOrder("guard scope.deletesLocalRows", before: "DataWipeService.wipeAllUserData", in: wipe,
                              "el corte tiene que ir antes del borrado local")
+    }
+
+    /// **La gracia del wipe remoto se cancela ANTES de borrar, y las señales se RE-MIDEN después.**
+    ///
+    /// Las dos mitades tienen un daño medido detrás. `wipeAllUserData` guarda por lotes, así que un
+    /// borrado que lance a media lista deja el `hasPersonalData` cayendo igual: con la gracia viva eso se
+    /// lee como wipe REMOTO y levanta un alert que, colgando del anchor de `ContentView`, **desmonta la
+    /// sheet de la activación**. Y `hasExistingData` cuenta también los grupos, que este borrado conserva:
+    /// ponerlo a `false` en vez de re-medirlo le miente a toda la app.
+    @Test("el borrado de «Empezar desde cero» cancela la gracia antes, y re-mide las señales después")
+    func activationDiscardWipe_cancelsGraceFirstAndRemeasures() throws {
+        let src = try Self.code(Self.contentView)
+        let wrapper = try Self.body(of: "performICloudZoneAndImportedRowsWipe: {", in: src)
+        try Self.expectOrder("wipeGraceTask?.cancel()", before: "await performICloudCorpusWipe(.importedRows)",
+                             in: wrapper, """
+            la gracia se cancela DESPUÉS del borrado, o no se cancela: un borrado que lanza a media lista
+            levanta el alert de wipe remoto, que desmonta la sheet de la activación.
+            """)
+        try Self.expectOrder("guard failure == nil else { return failure }",
+                             before: "hasExistingData = checkHasExistingData()", in: wrapper, """
+            el corte del fallo se movió detrás de las señales: un borrado que FALLÓ no borró nada, y
+            re-medir ahí no daña, pero saltarse el corte deja seguir a la puerta como si hubiera borrado.
+            """)
+        for (senal, fetch) in [("hasExistingData", "checkHasExistingData()"),
+                               ("hasPersonalData", "checkHasPersonalData()")] {
+            #expect(wrapper.contains("\(senal) = \(fetch)"), """
+                `\(senal)` dejó de re-medirse con su fetch vivo. Bajarlo a `false` sería mentir:
+                `hasExistingData` cuenta también los grupos, y este borrado los conserva a propósito.
+                Cuerpo leído: \(wrapper)
+                """)
+            #expect(!wrapper.contains("\(senal) = false"), """
+                `\(senal)` se está bajando a `false` en vez de re-medirse.
+                """)
+        }
     }
 
     /// La reanudación de un borrado a medias pone `hasCompletedOnboarding = false`: en un solo-grupos que

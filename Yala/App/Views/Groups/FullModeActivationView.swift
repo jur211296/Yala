@@ -28,6 +28,14 @@ struct FullModeActivationView: View {
     /// El borrado de la zona de iCloud de la puerta privada, SIN tocar lo local. Vive en `ContentView`, que es
     /// quien tiene la sonda y el `modelContext`.
     var performICloudZoneWipe: @MainActor () async -> String?
+    /// El borrado de la puerta de «Restaurar → Empezar desde cero»: la zona **y** las filas que el espejo ya
+    /// importó, sin tocar preferencias ni el dominio de Grupos.
+    ///
+    /// **Son dos closures y no uno con parámetro a propósito.** La vista no tiene con qué decidir cuál toca
+    /// —el criterio es si el store espeja, que vive en `SwiftDataConfiguration`— y un parámetro le devolvería
+    /// esa decisión a cada transición futura. Aquí cada pantalla recibe el borrado que le corresponde y el
+    /// compilador obliga a quien la monta a decir cuál es.
+    var performICloudZoneAndImportedRowsWipe: @MainActor () async -> String?
     var onComplete: () -> Void
 
     @Environment(\.modelContext) private var modelContext
@@ -50,9 +58,11 @@ struct FullModeActivationView: View {
 
     init(
         performICloudZoneWipe: @escaping @MainActor () async -> String?,
+        performICloudZoneAndImportedRowsWipe: @escaping @MainActor () async -> String?,
         onComplete: @escaping () -> Void
     ) {
         self.performICloudZoneWipe = performICloudZoneWipe
+        self.performICloudZoneAndImportedRowsWipe = performICloudZoneAndImportedRowsWipe
         self.onComplete = onComplete
         let resume = FullModeActivationResumeStore.peek()
         let isGroupsOnly = !SessionState.shared.hasPrivateSession
@@ -125,6 +135,47 @@ struct FullModeActivationView: View {
                 // contrario al que la puerta protege.
                 deviceCorpus: nil,
                 clearsResidualPreferencesOnWipe: false)
+        case .restoreDiscardGate:
+            WelcomePrivateICloudGateView(
+                // **Ninguno de los dos relanza, y eso es lo que impide caer al Welcome.** Para estar aquí
+                // hubo relanzamiento, así que el mount ya no es `.neutralNoMirror` y `shouldRelaunch` da
+                // `false`: los dos `proceed` caen por su `otherwise`. Se escriben con el portal de todas
+                // formas —y no con un `go(to:)` directo— porque quien decide eso es `WelcomeMirrorRelaunchLogic`
+                // y no esta vista: el día que el mount de este camino cambie, el portal ya lo sabe.
+                onProceed: {
+                    // **El prefill se RE-MIDE, porque el borrado acaba de invalidarlo.** `prefilledSummary`
+                    // se construye una sola vez en el `.onAppear` de la raíz, y aquí ese `.onAppear` corrió
+                    // DESPUÉS del relanzamiento — o sea con el corpus ya importado, contando sus categorías.
+                    // Con el conteo rancio, `OnboardingStepPlan` salta el paso de categorías
+                    // (`prefilledCategoriesCount > 0`) y la persona se queda sin la pantalla donde podía
+                    // decir que no las quiere. Se recalcula en vez de anularse: el nombre y la divisa se
+                    // releen de las preferencias, que este scope conserva a propósito (2.3A).
+                    prefilledSummary = buildPrefilledSummary()
+                    proceed(to: .fullActivationPrivate, otherwise: .onboarding(.freshPrivate))
+                },
+                // «Traer mis datos»: vuelve a Restaurar. **Retira el arm antes de salir**, que es el
+                // hallazgo nº2 de la review del PR hermano: mientras está puesto,
+                // `ContentView.runLateICloudMirrorCheck` lo reanuda A CIEGAS y con el scope del handover
+                // —preferencias y purga de Grupos incluidas—. El recorrido medido allí: borrado fallido →
+                // «Traer mis datos» → restaurar el histórico → terminar → y el arranque siguiente se lo
+                // lleva entero, sin una sola pregunta.
+                onRestore: {
+                    StorageModePersistence.clearICloudCorpusWipeArm()
+                    proceed(to: .fullActivationRestore, otherwise: .restore)
+                },
+                // **Vuelve a `.restore`, NO a `backFromRestore()`.** Aquel, tras un relanzamiento, es
+                // cancelar la activación entera (`screenBeforeRestore(hasResume: true) == nil`): echaría de
+                // la activación a quien solo se arrepintió de tocar un botón.
+                onBack: { go(to: .restore) },
+                performWipe: { await performICloudZoneAndImportedRowsWipe() },
+                // `nil` por la MISMA razón que arriba, aunque aquí sí se borren filas locales: lo que hay en
+                // el teléfono **vino de iCloud** (el espejo lo bajó), así que no es el corpus de otra persona
+                // del que haya que avisar aparte — se lo lleva este mismo borrado. Preguntar por él con el
+                // espejo montado además exportaría los deletes, que es el daño que `deviceCorpus` evita.
+                deviceCorpus: nil,
+                // 2.3A (decisión de Jürgen, 2026-09-14): el nombre y la divisa son de quien está activando,
+                // no del corpus que descarta. Y son el prefill que el onboarding de detrás le ahorra escribir.
+                clearsResidualPreferencesOnWipe: false)
         case .relaunch:
             WelcomeMirrorRelaunchView()
         case .consent:
@@ -137,19 +188,20 @@ struct FullModeActivationView: View {
         case .restore:
             WelcomeRestoreView(
                 onContinueWithSummary: { summary in finishRestoreSearch(summary) },
-                // **Aquí «empezar de cero» sigue siendo el onboarding personal a secas, y el Welcome ya
-                // no** (2026-09-14): allí este botón pasa por la puerta de iCloud, que mide y borra.
+                // **«Empezar desde cero» va a la PUERTA, igual que en el Welcome** (2026-09-14). Hasta hoy
+                // saltaba directo al onboarding personal y **no borraba nada**: como a esta pantalla solo
+                // se llega tras un relanzamiento, el store ESPEJA, y el corpus que la persona acababa de
+                // decidir no traerse seguía entero y se re-exportaba a iCloud — también al segundo
+                // dispositivo. Un borrado que no borra, bajo un copy que promete lo contrario.
                 //
-                // El recorrido de la activación **no se puede cerrar con las piezas de hoy**. Su borrado
-                // es de ZONA (`performICloudZoneWipe`, `includingLocalRows: false`) por la restricción
-                // del paso 8: `wipeAllUserData` resetea `hasCompletedOnboarding`, el modo y el nombre, y
-                // mandaría al Welcome a quien está activando. Pero para llegar a `.restore` por aquí hubo
-                // relanzamiento, así que el store ESPEJA — borrar solo la zona deja las filas importadas,
-                // que se re-exportan a la zona recién creada. Un borrado que no borra.
+                // Va a `.restoreDiscardGate` y no a `.privateGate` porque **el borrado es otro**: allí es
+                // de ZONA (lo local todavía no vino de iCloud), aquí tiene que llevarse además las filas
+                // importadas. El porqué largo, en el docblock del case.
                 //
-                // Cerrarlo pide un borrador que no existe (filas personales sin tocar preferencias):
-                // ticket `activation-restore-start-fresh-keeps-the-imported-rows`.
-                onStartFresh: { go(to: .onboarding(.freshPrivate)) },
+                // Lo que la puerta añade y esta pantalla no puede dar: pregunta a CloudKit en vez de contar
+                // filas del store —así que también contesta cuando el `.notFound` de aquí es falso porque el
+                // import no terminó—, enseña las cifras, exige un segundo gesto y sobrevive a un kill.
+                onStartFresh: { go(to: .restoreDiscardGate) },
                 onOpenSettings: { openSettings() },
                 onBack: { backFromRestore() })
         case .reinstallNotice:

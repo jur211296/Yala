@@ -27,13 +27,30 @@ final class DataWipeService {
     // MARK: - Punto de entrada principal
     // Llama a esta función cuando quieras vaciar los datos del usuario.
     // 1. Elimina datos de todos los modelos relevantes.
-    // 2. Resetea todas las preferencias de usuario a valores por defecto.
+    // 2. Resetea todas las preferencias de usuario a valores por defecto — SALVO con
+    //    `resetsPreferences: false`, que las conserva y solo reabre las puertas del seed (ver abajo).
     // 3. Opcionalmente vuelve a lanzar la semilla inicial (categorías, etc.).
     // Note: reseedInitialData defaults to false - the UI should ask the user
+    //
+    // - Parameter resetsPreferences: `true` (el default, que preserva el comportamiento de los tres
+    //   consumidores de siempre) borra además la identidad y las preferencias: las ~114 keys, el router,
+    //   el pro tour, la checklist, los espejos del App Group y la foto de perfil. **`false` es el borrado
+    //   que solo tira las FILAS**, y existe para «Activar Yala completo → Restaurar → Empezar desde
+    //   cero»: ahí resetear las preferencias se llevaría `hasCompletedOnboarding` y mandaría al Welcome a
+    //   quien está a mitad de activar (restricción del paso 8), y el nombre y la divisa son el prefill de
+    //   esa misma persona (decisión de Jürgen, 2026-09-14).
+    //
+    //   **El corte, en una frase: lo que describe a la PERSONA se queda; lo que describe a las FILAS que
+    //   se acaban de borrar, se va.** Por eso `false` reabre igualmente las puertas del seed
+    //   (`reopenSeedGates`), barre los contadores y punteros del corpus (`removeRowDerivedKeys`) y resetea
+    //   la checklist y el buffer de intents: no son preferencias, son estado que tiene que casar con la
+    //   base. El criterio para clasificar una key: **¿seguiría siendo verdad si no se hubiera borrado
+    //   nada?** Si no, se va en los dos borrados.
     static func wipeAllUserData(
         in context: ModelContext,
         reseedInitialData: Bool = false,
-        broadcastSignal: Bool = true
+        broadcastSignal: Bool = true,
+        resetsPreferences: Bool = true
     ) throws {
         #if DEBUG
         // Seam de QA (`-uitest-fail-wipe`): lanza ANTES de tocar nada, así que los datos quedan
@@ -201,12 +218,47 @@ final class DataWipeService {
         // ============================================================
         // PASO 1.12: Limpiar archivo de imagen de perfil
         // ============================================================
-        ProfileImageStorage.shared.delete()
+        // **Va con las preferencias y no con las filas**, aunque viva en un archivo: la foto es IDENTIDAD
+        // de quien usa la app, hermana de `userName` / `userAlias` / `userProfileIcon` —las cuatro son la
+        // misma sección de `removeUserPreferenceKeys`— y no sincroniza por iCloud, así que no es corpus
+        // que vaya a volver a bajar. Dejarla fuera del flag borraba la foto mientras conservaba el nombre.
+        if resetsPreferences {
+            ProfileImageStorage.shared.delete()
+        }
 
         // ============================================================
         // PASO 2: Resetear todas las preferencias de usuario (UserDefaults)
         // ============================================================
-        resetAllUserPreferences()
+        if resetsPreferences {
+            resetAllUserPreferences()
+        } else {
+            // **Lo que no es preferencia, se limpia igual**: todo esto describe a las filas que acabamos de
+            // borrar, no a la persona, y dejarlo puesto es una incoherencia. Los dos barridos son los
+            // MISMOS que llama la rama de arriba, desde una sola lista cada uno.
+            //
+            //  · las puertas del seed, sin las cuales el onboarding siguiente NO siembra categorías
+            //    (el motivo largo, en el docblock de `reopenSeedGates`);
+            //  · los contadores, las huellas y los punteros del corpus (`removeRowDerivedKeys`);
+            //  · la checklist de puesta en marcha, que afirma pasos —«tu primer gasto», «tu primer
+            //    presupuesto»— sobre filas que ya no existen;
+            //  · la última cuenta usada, un `shortcutID` que ya no resuelve a ninguna `Account` — la misma
+            //    key que `resetAllUserPreferences` borra en la rama de arriba, y vive solo en el App Group.
+            //
+            // **Y DOS cosas que el reset de arriba sí hace y aquí NO, las dos medidas y las dos por el
+            // mismo motivo: el dominio de Grupos sobrevive a este borrado.**
+            //  · `AppRouter.resetAll()` se lleva además `PendingJoinStore` y los arms de invitación.
+            //  · `DeferredIntentBuffer.clear()` parece la mitad inocente de eso, y no lo es: su
+            //    `SerializableIntent` tiene un case `.navigateGroupDetail(groupID:)`, o sea que el buffer
+            //    puede llevar dentro la navegación a un grupo que sigue vivo. De sus tres cases, el único
+            //    que miente tras este borrado es `showInboxAlert` —cifras de borradores que ya no están— y
+            //    ese se corrige solo en cuanto la persona abre la bandeja. Perder un deeplink a un grupo
+            //    no se corrige solo, y va contra lo que este scope existe para conservar.
+            reopenSeedGates(in: .standard)
+            removeRowDerivedKeys(from: .standard)
+            SetupChecklistManager.shared.resetAll()
+            UserDefaults(suiteName: SharedContainerService.appGroupIdentifier)?
+                .removeObject(forKey: AppPreferences.Keys.lastUsedAccountID)
+        }
 
         // ============================================================
         // PASO 3: Limpiar cache de widgets + TipKit
@@ -579,6 +631,88 @@ final class DataWipeService {
         }
     }
 
+    // MARK: - Las puertas del seed
+
+    /// **Reabre las puertas del seed tras borrar las filas.** No son preferencias: son centinelas cuyo
+    /// valor tiene que CASAR con lo que hay en la base, y borrar las filas dejándolos puestos es una
+    /// incoherencia, no una decisión de producto. Por eso los llaman los DOS borrados —el que resetea
+    /// preferencias y el que las conserva— desde una sola lista.
+    ///
+    /// **Lo que pasa si esto no corre, medido:** un alta solo-grupos deja `seedCategoriesExecuted == true`
+    /// en el 100 % de los casos normales (`GroupsOrganizerOnboarding.completeSetup`,
+    /// `GroupInviteOnboardingView.performSilentSetup`), y `seedCategoriesIfNeeded` sale por su flag guard
+    /// **antes** de mirar la base. Así que el seed del final del onboarding es un no-op silencioso: la
+    /// persona termina sin ninguna categoría, y sin «Ajuste de saldo» el saldo inicial falla sin decir nada.
+    ///
+    /// Las DOS keys del centinela de categorías, no una: `CategorySeedSentinel` lo namespacea por store
+    /// (personal vs `YalaModel-UITest`) porque `UserDefaults.standard` es el mismo almacén para los dos y
+    /// una key única dejaba sin categorías al arranque manual. En producción la key uitest no existe nunca
+    /// y borrarla es un no-op.
+    ///
+    /// El par es el mismo que `ShellDataAlertsModifier` ya reabre a mano cuando otro dispositivo del Apple
+    /// ID vació los datos.
+    static func reopenSeedGates(in defaults: UserDefaults) {
+        CategorySeedSentinel.allKeys.forEach { defaults.removeObject(forKey: $0) }
+        defaults.removeObject(forKey: "notificationsSeeded")    // Allow re-seed after wipe
+    }
+
+    /// **Lo que describe a las FILAS que se acaban de borrar, y por tanto se va en los DOS borrados.**
+    ///
+    /// Hermano de `reopenSeedGates`, y existe por el mismo motivo: la rama que conserva las preferencias
+    /// de la persona no puede conservar además los contadores, las huellas y los punteros de un corpus que
+    /// ya no está. Enumerarlos en los dos sitios es como divergen; aquí hay una sola lista.
+    ///
+    /// El criterio para añadir algo aquí, en una frase: **¿esta key seguiría siendo verdad si el usuario
+    /// no hubiera borrado nada?** Si la respuesta es no, va aquí; si describe a la persona (su nombre, su
+    /// tema, sus toggles), se queda en `removeUserPreferenceKeys` y sobrevive al borrado sin reset.
+    ///
+    /// La más crítica del barrido por prefijo es `creditCardNotif_` («ya avisé hoy del pago de esta
+    /// tarjeta»): una entrada de la etapa anterior SILENCIA el recordatorio de la entrante. Las otras dos
+    /// llevan UUIDs de entidades ya borradas — inertes, pero se van igual. Los prefijos de Grupos
+    /// (`GroupNotifications.lastNotified.*`, `groupPrefs_*`) NO entran: ese dominio sobrevive el wipe por
+    /// diseño — ver las exclusiones de `removeUserPreferenceKeys`.
+    static func removeRowDerivedKeys(from defaults: UserDefaults) {
+        defaults.removeObject(forKey: "transactionsSavedCount")   // Alimenta primer/review/milestones
+        defaults.removeObject(forKey: "pro.milestone.lastShown")  // Derivado de transactionsSavedCount — sin reset, la cuenta siguiente no ve milestones hasta superar el conteo anterior
+        defaults.removeObject(forKey: "hasExportedData")          // Señal de segmento (UserSegmentService)
+        defaults.removeObject(forKey: "processedInboxDraftSignatures")  // Firmas de drafts ya borrados
+        defaults.removeObject(forKey: "lastSplitType")            // Memoria del split del formulario de TX
+        defaults.removeObject(forKey: "lastSplitPercentage")
+
+        // El estado del servicio de tipos de cambio. Sin esto, `preloadHistoricalIfNeeded` se salta el
+        // histórico hasta 30 días después —la key la acaba de escribir el arranque que importó el corpus—
+        // y `updateTodayIfNeeded` frena igual sobre un store que ya no tiene ni una fila.
+        defaults.removeObject(forKey: "exchangeRate_lastHistoricalLoad")
+        defaults.removeObject(forKey: "exchangeRate_lastTodayUpdate")
+        defaults.removeObject(forKey: "fxRepairQueue.futileSweepFingerprint.v1")
+
+        // Re-correr la migración de shortcutIDs contra entidades recién sembradas.
+        defaults.removeObject(forKey: AppPreferences.Keys.appEntityShortcutIDsMigratedV3)
+        defaults.removeObject(forKey: AppPreferences.Keys.appEntityShortcutIDsRegeneratedV3)
+        defaults.removeObject(forKey: AppPreferences.Keys.appEntityShortcutIDsBackfillAttemptsV3)
+        AppPreferences.Keys.LegacyKeys.v2MigrationSentinels.forEach {
+            defaults.removeObject(forKey: $0)
+        }
+
+        // Persistencia día calendario del chat + cache diario de sugerencias LLM.
+        for key in defaults.dictionaryRepresentation().keys
+        where key.hasPrefix("chat_session_") || key.hasPrefix("chat_suggestions_") {
+            defaults.removeObject(forKey: key)
+        }
+
+        // Deduplicación de notificaciones: barrido POR PREFIJO, porque las keys llevan UUID + fecha y una
+        // lista explícita no puede nombrarlas.
+        let notificationDedupPrefixes = [
+            ScheduledPaymentNotificationTracker.creditCardKeyPrefix,
+            ScheduledPaymentNotificationTracker.keyPrefix,
+            BudgetAlertTracker.keyPrefix,
+        ]
+        for key in defaults.dictionaryRepresentation().keys
+        where notificationDedupPrefixes.contains(where: key.hasPrefix) {
+            defaults.removeObject(forKey: key)
+        }
+    }
+
     /// Barrido de las keys de preferencias de usuario en `defaults`. Separado de
     /// `resetAllUserPreferences` para poder testearse con un `UserDefaults` aislado
     /// (el reset completo toca singletons que escriben en `.standard`).
@@ -688,13 +822,9 @@ final class DataWipeService {
         defaults.removeObject(forKey: AppPreferences.Keys.panelPrefsMigratedV2)
 
         // --- Estado del servicio de tipos de cambio ---
-        defaults.removeObject(forKey: "exchangeRate_lastHistoricalLoad")
-        defaults.removeObject(forKey: "exchangeRate_lastTodayUpdate")
-        // La huella del último barrido estéril del reparador. Describe una cola que este wipe acaba de
-        // vaciar, así que conservarla podría silenciar el barrido del usuario siguiente por
-        // coincidencia de cifras. El propio barrido la borra al encontrar la cola vacía; esto cubre el
-        // camino en el que ni siquiera llega a correr.
-        defaults.removeObject(forKey: "fxRepairQueue.futileSweepFingerprint.v1")
+        // Las dos keys de última carga y la huella del último barrido estéril del reparador viven ahora en
+        // `removeRowDerivedKeys`: describen al CORPUS —una cola que el wipe acaba de vaciar, un histórico
+        // que ya no existe— y no a la persona, así que los necesitan los DOS borrados.
 
         // --- Preferencias de presupuestos ---
         defaults.removeObject(forKey: "budgets.hideInactive")   // Default: false
@@ -750,37 +880,10 @@ final class DataWipeService {
         defaults.removeObject(forKey: AppPreferences.Keys.showSiriTip)
         defaults.removeObject(forKey: "hasSeenNotificationPrimer")  // Primer de notifs (NewTransactionViewModel)
 
-        // --- Contadores/señales derivados de los datos borrados ---
-        defaults.removeObject(forKey: "transactionsSavedCount")   // Alimenta primer/review/milestones
-        defaults.removeObject(forKey: "pro.milestone.lastShown")  // Derivado de transactionsSavedCount — sin reset, la cuenta siguiente no ve milestones hasta superar el conteo anterior
-        defaults.removeObject(forKey: "hasExportedData")          // Señal de segmento (UserSegmentService)
-        defaults.removeObject(forKey: "processedInboxDraftSignatures")  // Firmas de drafts ya borrados
-        defaults.removeObject(forKey: "lastSplitType")            // Memoria del split del formulario de TX
-        defaults.removeObject(forKey: "lastSplitPercentage")
-
-        // Persistencia día calendario del chat + cache diario de sugerencias LLM
-        for key in defaults.dictionaryRepresentation().keys
-        where key.hasPrefix("chat_session_") || key.hasPrefix("chat_suggestions_") {
-            defaults.removeObject(forKey: key)
-        }
-
-        // --- Estado de deduplicación de notificaciones (keys con UUID + fecha) ---
-        // Barrido POR PREFIJO: la lista explícita de arriba no puede nombrarlas, así que
-        // sin esto sobreviven al wipe Y al sign-out. La crítica es `creditCardNotif_`
-        // ("ya avisé hoy del pago de esta tarjeta"): una entrada de la cuenta anterior
-        // SILENCIA el recordatorio de la entrante. Las otras dos llevan UUIDs de entidades
-        // ya borradas — inertes, pero se van igual (el device queda "recién instalado").
-        // Los prefijos de Grupos (`GroupNotifications.lastNotified.*`, `groupPrefs_*`) NO
-        // entran: ese dominio sobrevive el wipe por diseño — ver exclusiones de arriba.
-        let notificationDedupPrefixes = [
-            ScheduledPaymentNotificationTracker.creditCardKeyPrefix,
-            ScheduledPaymentNotificationTracker.keyPrefix,
-            BudgetAlertTracker.keyPrefix,
-        ]
-        for key in defaults.dictionaryRepresentation().keys
-        where notificationDedupPrefixes.contains(where: key.hasPrefix) {
-            defaults.removeObject(forKey: key)
-        }
+        // --- Contadores, señales y punteros derivados de los datos borrados ---
+        // **Delegados, no enumerados aquí**, por lo mismo que las puertas del seed: los necesita también el
+        // borrado que conserva las preferencias. Ver `removeRowDerivedKeys`.
+        removeRowDerivedKeys(from: defaults)
 
         // --- Contextual Guides ---
         let guideIDs = ["panel", "trends", "categories", "records", "budgets", "scheduled",
@@ -791,22 +894,12 @@ final class DataWipeService {
         }
 
         // --- Seed guards ---
-        // Las DOS keys del centinela, no una: `CategorySeedSentinel` lo namespacea por store
-        // (personal vs `YalaModel-UITest`) porque `UserDefaults.standard` es el mismo almacén para
-        // los dos y una key única dejaba sin categorías al arranque manual. En producción la key
-        // uitest no existe nunca y borrarla es un no-op.
-        CategorySeedSentinel.allKeys.forEach { defaults.removeObject(forKey: $0) }
-        defaults.removeObject(forKey: "notificationsSeeded")    // Allow re-seed after wipe
+        // **Delegados, no enumerados aquí**: los necesita también el borrado que NO resetea
+        // preferencias (`resetsPreferences: false`), y dos listas que «siempre van juntas» divergen
+        // en el commit siguiente, en silencio y hacia el lado que deja al usuario sin categorías.
+        // Una sola fuente, dos llamadores. Ver `reopenSeedGates`.
+        reopenSeedGates(in: defaults)
         defaults.removeObject(forKey: "devSeedDataExecuted")    // DEV — simetría con seedCategoriesExecuted
-
-        // --- AppEntity shortcutID / CSV mirror migration sentinels ---
-        // Re-correr migración contra entidades recién sembradas.
-        defaults.removeObject(forKey: AppPreferences.Keys.appEntityShortcutIDsMigratedV3)
-        defaults.removeObject(forKey: AppPreferences.Keys.appEntityShortcutIDsRegeneratedV3)
-        defaults.removeObject(forKey: AppPreferences.Keys.appEntityShortcutIDsBackfillAttemptsV3)
-        AppPreferences.Keys.LegacyKeys.v2MigrationSentinels.forEach {
-            defaults.removeObject(forKey: $0)
-        }
 
         // --- Legacy (compatibilidad) ---
         defaults.removeObject(forKey: "preferredCurrency")      // Reemplazado por defaultCurrencyCode
