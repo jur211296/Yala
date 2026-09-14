@@ -2,7 +2,13 @@
 //  RemoteWipeSignalWiringTests.swift
 //  YalaTests
 //
-//  El CABLEADO del eje de sesión de la señal de vaciado remoto, en sus dos extremos.
+//  El CABLEADO del eje de sesión de la señal de vaciado remoto, en sus TRES superficies: los dos
+//  extremos del canal —la detección, que encola, y el drenaje, que borra— y el AVISO que la gracia de
+//  5 s le enseña a quien ve desaparecer sus filas. La tercera entró el 2026-09-14 y no borra nada: lo
+//  que hace es AFIRMAR («tus datos fueron eliminados de iCloud») y ofrecer un botón que expulsa al
+//  onboarding. Comparte eje con las otras dos porque comparte la pregunta —«¿los datos de este
+//  teléfono son los del Apple ID?»— y el signo de su error: hacia `true` se daña, hacia `false` solo
+//  se conserva o se calla.
 //
 //  **Por qué vive en su propio fichero y no junto a `RemoteWipeSignalDeciderTests`.** `-only-testing`
 //  filtra por TIPO, no por fichero: una segunda `@Suite` en el mismo fichero NO se ejecuta cuando el
@@ -11,7 +17,7 @@
 //  del cableado»). Esta es exactamente esa suite, así que no puede ser la segunda de nadie.
 //
 //  **Por qué hace falta un source-scan.** El decisor es puro y la matriz de 16 combinaciones lo fija
-//  entero, pero eso solo cubre el CUERPO de la función. Los dos call-sites no son invocables
+//  entero, pero eso solo cubre el CUERPO de la función. Ninguno de los call-sites es invocable
 //  (`checkForRemoteWipeSignal` es `private` de un singleton con `private init`, y
 //  `handleRemoteWipeSignal` es `private` de una `View`), y hay cuatro mutaciones que dejan la matriz
 //  verde con el bug del ticket vivo:
@@ -20,6 +26,10 @@
 //    · dar un valor por defecto al parámetro, que devuelve a los call-sites futuros el derecho a no
 //      pronunciarse — la forma exacta del bug que este ticket cierra;
 //    · envolver el guard en `#if DEBUG`, con lo que la build de la App Store sale sin el eje.
+//
+//  (El aviso añade las suyas, y viven en su propio `@Test`: la LECTURA del eje movida por encima del
+//  `sleep` —que la decidiría con el estado de cinco segundos antes—, cualquier cosa colada entre el
+//  guard y el encendido, y un escritor nuevo del flag a través de su `@Binding`.)
 //
 //  Lo que este fichero NO puede dar es un test de COMPORTAMIENTO del camino que borra: eso pide hacer
 //  `checkForRemoteWipeSignal` invocable con sus dos `UserDefaults`/iKV inyectados. Ticket
@@ -31,7 +41,7 @@ import Testing
 
 @testable import Yala
 
-@Suite("La señal de vaciado · el eje de sesión, cableado en los dos extremos")
+@Suite("La señal de vaciado · el eje de sesión, cableado en sus tres superficies")
 struct RemoteWipeSignalWiringTests {
 
     private static let repoRoot = URL(fileURLWithPath: #filePath)
@@ -54,11 +64,37 @@ struct RemoteWipeSignalWiringTests {
     /// lo satisface — y con ese `||` el bug de este ticket vuelve, con la suite en verde.
     private static func sentencia(desde needle: String, en fuente: String) throws -> String {
         let inicio = try #require(fuente.range(of: needle), "no existe la sentencia que empieza por «\(needle)»")
+        return sentencia(enRango: inicio, needle: needle, fuente: fuente)
+    }
+
+    /// **El corte es el delimitador MÁS CERCANO, no el primero de la lista que exista.** Con el `??`
+    /// encadenado que tenía esto hasta el 2026-09-14, un ` let ` lejano ganaba a un ` } ` cercano y la
+    /// sentencia se devolvía de más. Y el ` guard ` entró el mismo día: la lectura del eje que precede
+    /// al aviso de la gracia va seguida de su propio `guard`, no de un `let`, así que sin él la
+    /// sentencia arrastraba media línea de más y la comparación por igualdad fallaba por el motivo
+    /// equivocado — un rojo que parece del cableado y es del instrumento.
+    private static func sentencia(enRango inicio: Range<String.Index>, needle: String, fuente: String) -> String {
         let resto = fuente[inicio.lowerBound...]
-        let corte = resto.dropFirst(needle.count).range(of: " let ")?.lowerBound
-            ?? resto.dropFirst(needle.count).range(of: " }")?.lowerBound
-            ?? resto.endIndex
+        let cola = resto.dropFirst(needle.count)
+        let corte = [" let ", " guard ", " }"]
+            .compactMap { cola.range(of: $0)?.lowerBound }
+            .min() ?? resto.endIndex
         return String(resto[resto.startIndex..<corte])
+    }
+
+    /// **TODAS las sentencias que empiezan por `needle`, no solo la primera.** `sentencia(desde:)` usa
+    /// `range(of:)`, que devuelve la primera aparición — y desde el 2026-09-14 `ContentView` calcula el
+    /// eje en DOS sitios (el drenaje y el aviso de la gracia). Medir solo la primera dejaba al drenaje
+    /// sin red **en verde**, porque las dos sentencias son literalmente idénticas: el test habría
+    /// seguido pasando midiendo la otra. Lo mismo pasaría con cualquier tercer call-site futuro.
+    private static func sentencias(desde needle: String, en fuente: String) -> [String] {
+        var encontradas: [String] = []
+        var desde = fuente.startIndex
+        while let r = fuente.range(of: needle, range: desde..<fuente.endIndex) {
+            encontradas.append(sentencia(enRango: r, needle: needle, fuente: fuente))
+            desde = r.upperBound
+        }
+        return encontradas
     }
 
     private static func count(_ needle: String, in haystack: String) -> Int {
@@ -89,41 +125,53 @@ struct RemoteWipeSignalWiringTests {
             + "storageMode: CloudSyncFlags.storageMode)"
     }
 
-    // MARK: - Los dos extremos
+    // MARK: - Los dos extremos del canal
 
     /// Donde la señal se DETECTA: el único sitio de producción que pone el intent `.remoteWipe` en la
     /// cola, así que una sesión que no obedece ni siquiera lo encola.
     @Test("MUTACIÓN: la detección calcula el eje con la lectura estricta, y ese valor es el que pasa")
     func detectionWiresTheStrictReading() throws {
-        try assertWiring(path: "Yala/App/Services/PreferenceSyncService.swift", defaultsArg: "local", daño: """
+        try assertWiring(path: "Yala/App/Services/PreferenceSyncService.swift", defaultsArg: "local", lecturas: 1, daño: """
             una sesión en la nube vuelve a encolar el vaciado y sus borrados suben a SU cuenta
             """)
     }
 
     /// Y donde se DRENA: el único sitio que llama a `DataWipeService.wipeAllUserData` por una señal
     /// remota. Aquí el fallo es el borrado en sí.
+    /// **`ContentView` tiene DOS lecturas del eje desde el 2026-09-14, y las dos se miden.** El drenaje
+    /// —el que borra— y el aviso de la gracia de 5 s, que es el `@Test` de más abajo. Las dos calculan
+    /// el valor con la misma sentencia literal, así que verificar solo la primera dejaba a la otra sin
+    /// red sin que nada se pusiera rojo.
     @Test("MUTACIÓN: el drenaje calcula el eje con la lectura estricta, y ese valor es el que pasa")
     func drainWiresTheStrictReading() throws {
-        try assertWiring(path: "Yala/App/ContentView.swift", defaultsArg: "", daño: """
-            el teléfono se vacía aunque la detección lo hubiera frenado
+        try assertWiring(path: "Yala/App/ContentView.swift", defaultsArg: "", lecturas: 2, daño: """
+            el teléfono se vacía aunque la detección lo hubiera frenado, o el aviso de datos borrados
+            vuelve a salirle a quien tiene el móvil prestado
             """)
     }
 
     /// Las dos mitades van juntas y ninguna sola basta: la primera fija de dónde SALE el valor (la
     /// lectura estricta, con el `storageMode`, y sin nada colgado detrás); la segunda, que es ESE valor
     /// —y no un `true`, ni otra variable— el que llega al decisor.
-    private func assertWiring(path: String, defaultsArg: String, daño: String) throws {
+    private func assertWiring(path: String, defaultsArg: String, lecturas: Int, daño: String) throws {
         let fuente = try Self.code(path)
 
-        let origen = try Self.sentencia(desde: "let sessionObeysWipeSignal =", en: fuente)
-        #expect(origen == Self.origenEsperado(defaultsArg: defaultsArg), """
-            el eje de sesión ya no se calcula tal cual en \(path). Con `hasPrivateSession`, sin el
-            `storageMode`, o con cualquier término extra colgado de la expresión, \(daño) — y toda la
-            suite del decisor sigue verde, porque el cuerpo del decisor no ha cambiado.
-
-            Esperado: \(Self.origenEsperado(defaultsArg: defaultsArg))
-            Encontrado: \(origen)
+        let origenes = Self.sentencias(desde: "let sessionObeysWipeSignal =", en: fuente)
+        #expect(origenes.count == lecturas, """
+            \(path) tiene \(origenes.count) lecturas del eje de sesión y se esperaban \(lecturas). Si
+            añadiste una, cablea su sentencia igual que las otras y sube el número aquí; si desapareció
+            una, comprueba que el camino que cubría no quedó sin eje.
             """)
+        for origen in origenes {
+            #expect(origen == Self.origenEsperado(defaultsArg: defaultsArg), """
+                el eje de sesión ya no se calcula tal cual en \(path). Con `hasPrivateSession`, sin el
+                `storageMode`, o con cualquier término extra colgado de la expresión, \(daño) — y toda la
+                suite del decisor sigue verde, porque el cuerpo del decisor no ha cambiado.
+
+                Esperado: \(Self.origenEsperado(defaultsArg: defaultsArg))
+                Encontrado: \(origen)
+                """)
+        }
 
         // Y el paso, buscado DENTRO de la llamada al decisor y no en el fichero entero: `ContentView`
         // pasa de las 4.000 líneas y cualquier otra aparición de la etiqueta satisfaría un `contains`.
@@ -134,6 +182,71 @@ struct RemoteWipeSignalWiringTests {
 
             Argumentos encontrados: \(llamada)
             """)
+    }
+
+    // MARK: - El tercer extremo: el AVISO, que no borra nada pero afirma
+
+    /// **El aviso de «tus datos fueron eliminados de iCloud» no cuelga de la señal: cuelga de que las
+    /// filas desaparezcan del store.** Ticket
+    /// `wipe-alert-fires-on-a-session-that-no-longer-obeys-the-signal`. Quien llega ahí en producción **no
+    /// es** el caso que da nombre al ticket —un solo-grupos de hoy monta sin espejo, y uno anterior al
+    /// 2026-09-10 recibe `hasPrivateSession = true` del backfill— sino el aviso AUTO-INFLIGIDO tras
+    /// «Vaciar datos» en solo-grupos: ese camino no cancela la gracia y `applyWipeLanding(.groupsShell)`
+    /// repone `hasCompletedOnboarding`, así que a quien acaba de vaciar sus propios datos le saltaba a los
+    /// cinco segundos un aviso diciendo que se los borraron desde otro dispositivo.
+    ///
+    /// **Por qué un escáner y no un test de comportamiento.** El `onChange` vive en el `body` de una
+    /// `View` y no es invocable, y no hay seam de uitest que haga desaparecer las filas del store bajo el
+    /// proceso vivo. Es el mismo hueco que ya registra `remote-wipe-receiver-has-no-behaviour-test`.
+    ///
+    /// **Se fija el TRAMO ENTERO, y esa es la corrección que trajo la review (2026-09-14).** La primera
+    /// versión solo fijaba que el `guard` fuera pegado al encendido, y con eso **el mutante que este test
+    /// dice cazar sobrevivía en verde**: mover la LECTURA del eje a antes del `sleep` —dejando cualquier
+    /// otro `let` detrás— pasaba las cuatro aserciones con el eje decidido cinco segundos antes. El
+    /// mutante que se probó a mano cayó por accidente, porque arrastró el `sleep` a la sentencia medida;
+    /// con una línea intermedia habría pasado. El estado rancio lo produce mover el `let`, no el `guard`,
+    /// así que lo que hay que fijar es el ORDEN COMPLETO: dormir → leer → decidir → encender.
+    ///
+    /// Que el literal incluya los `.seconds(5)` es deliberado: cambiar el debounce obliga a pasar por
+    /// aquí, que es donde está escrito por qué el eje se lee después y no antes.
+    @Test("MUTACIÓN: dormir → leer el eje → decidir → encender, sin nada entre medias y en un solo sitio")
+    func theAlertIsGatedByTheAxisAtItsOnlyWriter() throws {
+        let vista = try Self.code("Yala/App/ContentView.swift")
+
+        let tramo = "try await Task.sleep(for: .seconds(5)) "
+            + Self.origenEsperado(defaultsArg: "")
+            + " guard sessionObeysWipeSignal else { return } showRemoteWipeAlert = true"
+        #expect(Self.count(tramo, in: vista) == 1, """
+            el tramo de la gracia de vaciado remoto cambió de forma. Los cuatro pasos van SEGUIDOS y en
+            este orden: dormir los 5 s, leer el eje, decidir, encender. Si la lectura sube por encima del
+            `sleep`, el eje se evalúa con el estado de cinco segundos antes; si entra cualquier cosa entre
+            el `guard` y el encendido, aparece una rama que enciende sin pasar por el eje. En los dos
+            casos vuelve el bug: a quien acaba de vaciar sus datos en una sesión solo-grupos le salta
+            «Tus datos fueron eliminados de iCloud», y su botón lo manda al onboarding por el camino
+            genérico de degradación.
+
+            Esperado exactamente: \(tramo)
+            """)
+
+        // Y que ese sea el ÚNICO escritor. **Se cuenta la ASIGNACIÓN, no el literal `= true`**: el flag
+        // viaja como `@Binding` a `ShellDataAlertsModifier`, así que un `= loQueSea` o un `.toggle()`
+        // desde allí lo encendería sin eje y sin tocar ninguna de las dos líneas de arriba.
+        #expect(try Self.countInProduction("showRemoteWipeAlert = ") == 2, """
+            las asignaciones al flag del aviso de vaciado remoto cambiaron de número en `Yala/`. Son DOS:
+            la que lo enciende tras la gracia (con el eje delante) y la que lo apaga en el drenaje. Si
+            aparece una tercera, ponle el mismo eje: el aviso afirma que los datos borrados son los del
+            Apple ID de este teléfono, y eso solo es cierto en una sesión privada con su iCloud detrás.
+            """)
+        #expect(try Self.countInProduction("showRemoteWipeAlert.toggle()") == 0, """
+            alguien enciende el aviso con `toggle()`, que se salta el eje y además lo APAGA cuando ya
+            estaba puesto.
+            """)
+
+        // Control del instrumento, y éste sí puede fallar solo: si el recorrido del árbol se rompiera o
+        // el flag se renombrara, las dos cuentas de arriba darían 0 por el motivo equivocado. Un `>=`
+        // holgado no servía —el flag sale 20 veces en `Yala/`, así que ningún mutante lo movía.
+        #expect(try Self.countInProduction("@State private var showRemoteWipeAlert") == 1,
+                "el flag del aviso no está declarado exactamente una vez: el escáner mide otra cosa")
     }
 
     // MARK: - Lo que vive FUERA del cuerpo del decisor

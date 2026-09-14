@@ -307,6 +307,68 @@ struct ContentView: View {
                 wipeGraceTask = Task {
                     do {
                         try await Task.sleep(for: .seconds(5))
+                        // **El aviso afirma «TUS datos fueron eliminados de iCloud», y en una sesión que no
+                        // obedece la señal del Apple ID el «tus» de esa frase señala a otra persona.** El
+                        // iCloud del que habla es el del Apple ID del teléfono, y esta sesión no guarda ahí
+                        // los suyos — por eso no obedece la señal, y por eso el aviso tampoco es para ella.
+                        // Su botón, además, es el camino GENÉRICO de degradación (`hasCompletedOnboarding =
+                        // false` más el borrado de dos centinelas de semilla): sin `isWipingData`, sin
+                        // aterrizaje elegido y sin toast, expulsa al onboarding a quien no lo pidió.
+                        // Decisión de Jürgen (2026-09-14): en esa celda no se enseña nada.
+                        //
+                        // **QUIÉN LLEGA AQUÍ DE VERDAD, medido el 2026-09-14 — y NO es el caso que da nombre
+                        // al ticket.** El ticket lo atribuía al espejo de CloudKit de un teléfono prestado, y
+                        // esa celda hoy no lo ejercita por los dos lados: un solo-grupos dado de alta desde el
+                        // 2026-09-10 monta `.neutralNoMirror` (`SwiftDataConfiguration.shouldMountNeutralDurable`),
+                        // así que no hay espejo que le baje las filas; y uno anterior a esa fecha sí tiene
+                        // espejo, pero el backfill del eje le escribe `hasPrivateSession = true`
+                        // (`PrivateSessionMark.backfillIfNeeded`), así que este guard NO lo calla. Lo que sí
+                        // llega, en producción y hoy:
+                        //
+                        //  · **El aviso AUTO-INFLIGIDO tras «Vaciar datos» en una sesión solo-grupos**, que es
+                        //    el caso común. `UserDataResetView.handleWipeAllData` no cancela esta gracia, y
+                        //    este `onChange` no mira `isWipingData` —que además se apaga a los ~800 ms, mucho
+                        //    antes de los 5 s—. En la celda privada el barrido se lleva `hasCompletedOnboarding`
+                        //    y el guard de arriba cierra solo; en solo-grupos `applyWipeLanding(.groupsShell)`
+                        //    lo REPONE a mano, así que la gracia arranca. Sin esta línea, a quien acaba de
+                        //    vaciar sus propios datos le saltaba a los cinco segundos un aviso diciendo que se
+                        //    los habían borrado desde otro dispositivo.
+                        //  · La ventana entre que una sesión solo-grupos nace y su neutro entra en vigor (la
+                        //    marca del mount actúa en el arranque SIGUIENTE; la del eje, ya), y la simétrica
+                        //    entre desarmar ese neutro y el relanzamiento.
+                        //
+                        // La celda del teléfono prestado la cierra el EJE, no esta línea:
+                        // `remote-wipe-axis-misses-groups-only-installs-before-the-mount-mark`.
+                        //
+                        // **El mismo predicado que el borrado, a propósito** (`wipeSignalObeyedByThisSession`,
+                        // tercera superficie del eje). Las tres responden «¿los datos de este teléfono son
+                        // los del Apple ID?» y el signo de su error coincide: hacia `true` se afirma algo
+                        // falso sobre datos ajenos, hacia `false` solo se calla. Por eso la entrada es
+                        // `confirmedPrivateSession()` —marca ausente ⇒ `false`— y no `hasPrivateSession()`.
+                        // Un predicado propio del aviso divergiría del que gobierna el borrado en el commit
+                        // siguiente, y la divergencia sería silenciosa.
+                        //
+                        // **Se lee AQUÍ y no al arrancar la gracia**: el aviso afirma un hecho sobre AHORA,
+                        // y este es el único punto de todo `Yala/` que enciende ese aviso. (El literal de
+                        // esa línea no se cita en esta prosa a propósito: el escáner que fija que es único
+                        // cuenta sobre el target de producción, y citarlo aquí haría que documentarlo lo
+                        // rompiera.) No sustituye a `!showFullModeActivation`, que se evalúa en la transición
+                        // e impide que la tarea NAZCA: si la activación se completa dentro de estos 5 s, el
+                        // eje ya dice `true` y solo aquel término lo tapa. Los dos alcances son distintos.
+                        //
+                        // **Lo que se calla de más, y está aceptado.** El aviso tiene otra causa legítima
+                        // —un hueco transitorio de CloudKit—, y en esta celda también se calla. Lo que
+                        // pierde esa persona es información: los datos vuelven cuando vuelven, y el botón
+                        // que se va con él era el peor de los dos caminos. En solo-grupos, además, la shell
+                        // es `.groupsFocused`, así que las pantallas que se vacían ni siquiera están montadas.
+                        // El otro residual, éste por el término `storageMode`: una sesión privada dentro de la
+                        // ventana del cutover deja de ver el aviso en la única celda donde era verdad
+                        // (`storage-mode-is-a-proxy-for-the-mirror-in-the-wipe-signal`). Hoy sin población —el
+                        // Modo Nube está DARK y `.cloud` solo lo escribe el cutover— pero se enciende con él.
+                        let sessionObeysWipeSignal = DestructiveScopeLogic.wipeSignalObeyedByThisSession(
+                            confirmedPrivateSession: PrivateSessionMark.confirmedPrivateSession(),
+                            storageMode: CloudSyncFlags.storageMode)
+                        guard sessionObeysWipeSignal else { return }
                         // Data still gone after 5s — ask user
                         showRemoteWipeAlert = true
                     } catch {

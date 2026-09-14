@@ -171,9 +171,11 @@ nonisolated enum DestructiveScopeLogic {
     /// marca no se afirma que la sesión sea privada, y sin esa afirmación no se toca nada fuera de aquí.
     ///
     /// **Fue el ÚNICO consumidor de la estricta hasta el 2026-09-14**, y esa frase estaba escrita aquí.
-    /// Hoy son tres: éste y los dos extremos del receptor (`wipeSignalObeyedByThisSession`). El conteo
-    /// exacto lo fija `PrivateSessionMarkWiringTests`, que es donde hay que mirarlo — una prosa que cuenta
-    /// call-sites caduca sin avisar.
+    /// Hoy son varios: éste, los dos extremos del receptor (`wipeSignalObeyedByThisSession`) y el aviso
+    /// que ese mismo receptor calla en la celda que no obedece. El conteo exacto lo fija
+    /// `PrivateSessionMarkWiringTests`, que es donde hay que mirarlo — **el TIPO, no el fichero**: vive
+    /// como segunda `@Suite` dentro de `PrivateSessionMarkTests.swift`, y `-only-testing` filtra por
+    /// tipo. Una prosa que cuenta call-sites caduca sin avisar, y ésta ya caducó una vez.
     static func wipeSignalsAppleIDDevices(confirmedPrivateSession: Bool, storageMode: StorageMode) -> Bool {
         confirmedPrivateSession && storageMode == .icloud
     }
@@ -203,6 +205,15 @@ nonisolated enum DestructiveScopeLogic {
     /// OTRO dispositivo, y esa app puede ser una versión anterior al paso 9 que emita desde cualquier
     /// celda. El timestamp tampoco dice de qué sesión salió: es un `Double` en el KV. El receptor decide
     /// por SU propia sesión, nunca por confianza en quién emitió.
+    ///
+    /// **Y un tercer consumidor que no borra: el AVISO** (2026-09-14). El alert de «tus datos fueron
+    /// eliminados de iCloud» no cuelga de la señal sino de que las filas desaparezcan del store, y quien
+    /// las baja es el espejo de CloudKit — montado también en el teléfono prestado. Sin este predicado
+    /// delante, el dueño vacía desde su iPad y a quien tiene el móvil en la mano le salta un aviso sobre
+    /// datos que no son suyos, con un botón que lo expulsa al onboarding. Comparte eje porque comparte
+    /// la pregunta, y porque el signo de su error es el mismo: `true` de más afirma algo falso sobre
+    /// datos ajenos, `false` de más solo calla. Vive en el `onChange` de `hasPersonalData` de
+    /// `ContentView`, pegado al único punto que enciende ese aviso.
     ///
     /// **Falla CERRADO**, y por eso su entrada es `confirmedPrivateSession` —marca ausente ⇒ `false`— y no
     /// `hasPrivateSession`: equivocarse hacia `true` BORRA filas, que es el lado caro. El parque existente
