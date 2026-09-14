@@ -783,10 +783,27 @@ struct GroupsSyncHardeningTests {
 
     // MARK: (9) Kill-switch server-side del canal — la parada es inmediata pero NO se sella
 
-    /// El envelope del 403 del kill (`gateway/src/groups/killSwitch.ts`). Un 403 SIN este código es «cuenta
-    /// suspendida», que sí sella el loop.
+    /// El envelope del 403 del kill (`gateway/src/groups/killSwitch.ts`). Es el ÚNICO 403 que para el canal:
+    /// cualquier otro viene de fuera del Worker y es transitorio (ver `infraForbiddenBodies`).
     private static let killEnvelopeJSON =
         #"{"error":{"message":"Canal de Grupos apagado","type":"yala_groups_disabled","code":"yala_groups_disabled"}}"#
+
+    /// Los cuerpos que de verdad acompañan a un 403 que NO es el kill, y por qué cada uno está aquí. El
+    /// gateway emite exactamente DOS 403 en todo `gateway/src/` —el kill y `yala_pro_required`, que no
+    /// alcanza estas rutas (`policy.ts` da límites de `sync` a los dos tiers)— y traduce los fallos upstream
+    /// a 502 `yala_unavailable`. Así que un 403 sin el envelope del kill lo puso alguien por delante del
+    /// Worker, y ninguno de estos cuerpos es un veredicto sobre la cuenta de nadie.
+    nonisolated static let infraForbiddenBodies: [(String, String)] = [
+        ("página del edge",
+         #"<!DOCTYPE html><html><head><title>Access denied</title></head><body>Error 1020</body></html>"#),
+        ("cuerpo vacío", ""),
+        ("JSON ajeno (proxy)", #"{"message":"Forbidden"}"#),
+        ("envelope de otro tipo", #"{"error":{"type":"yala_pro_required"}}"#),
+        // El corolario del ticket: el mismo edge que devuelve el 403 puede TRUNCAR el cuerpo del kill. Con
+        // el mapeo viejo, el testigo se apagaba y la persona recibía el aviso pre-fix justo durante el
+        // incidente. Como transitorio no acierta el motivo, pero no le miente sobre su cuenta ni sella nada.
+        ("kill truncado por el edge", #"{"error":{"message":"Canal de Gr"#),
+    ]
 
     /// LA aserción del fix: el kill para el loop en la vuelta actual y **no arma `stoppedUntilRelaunch`**.
     /// Si lo armara, apagar el canal sería inmediato pero ENCENDERLO exigiría que cada usuario matara y
@@ -884,43 +901,127 @@ struct GroupsSyncHardeningTests {
         #expect(client.stoppedByChannelKill(for: .completed) == false)
     }
 
-    /// El testigo distingue los DOS 403, que es lo único que le pide `classify`. Sin esta contraprueba,
-    /// «distinguir el kill» podría haberse implementado encendiéndolo en todo 403.
-    @Test func killWitness_isOffForTheAccountKindOf403() async throws {
+    // MARK: (9b) Un 403 de infraestructura NO es un veredicto sobre la cuenta
+
+    /// **LA aserción del ticket `groups-sync-treats-an-infra-403-as-an-account-verdict`.** Un 403 que no
+    /// trae el envelope del kill lo puso un proxy, un WAF o el edge —el Worker no emite ninguno en estas
+    /// rutas— y por tanto es TRANSITORIO, con su backoff, igual que ya lo era en el cliente hermano del
+    /// mismo canal (`GroupsMembershipClient`, que habla con `POST /groups/rpc/{fn}`: otras rutas de
+    /// `/groups/*`, el mismo edge por delante, y su `case 403 where` ya lo tenía escrito).
+    ///
+    /// Antes de este fix subía `.accountUnavailable`: apagaba el canal el resto de la vida del proceso y,
+    /// si en ese momento intentabas cerrar sesión o soltar tu cuenta de grupos, te decía que revisaras tu
+    /// conexión sobre un problema que no era tuyo.
+    ///
+    /// Recorre el PUSH (fila sembrada ⇒ hay algo que subir).
+    @Test(arguments: GroupsSyncHardeningTests.infraForbiddenBodies)
+    func infra403_isTransient_onPush(_ label: String, _ body: String) async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         try seedOutboxRow(context, hlc: "2026-09-13T00:00:00.000Z-0002-00000000000000aa")
 
-        let stub = StubSession(#"{"error":{"type":"yala_forbidden"}}"#, status: 403)
+        let stub = StubSession(body, status: 403)
         let client = makeClient(session: stub, userID: nil)
         client.sleeper = { _ in }
         let outcome = await client.syncCycleOnce(context: context)
-        #expect(outcome == .accountUnavailable)
-        #expect(client.stoppedByChannelKill(for: outcome) == false)
+
+        #expect(stub.callCount == 1, "\(label): el ciclo tiene que haber hablado con el gateway")
+        #expect(outcome == .transient, "\(label): un 403 de infraestructura no es un veredicto de cuenta")
+        // Nada de `_testStoppedUntilRelaunch` aquí, aunque tiente: el sello solo lo escribe `runLoop` y
+        // esto no arranca el loop, así que la aserción no podría fallar. La mide el test del loop.
     }
 
-    /// Contraprueba: un 403 que NO es el kill (cuenta suspendida) SÍ sella el loop, como antes del cambio.
-    /// Sin este test, «no sellar» podría haberse implementado borrando el sellado para los dos 403.
-    @Test func accountUnavailable403_withoutKillCode_stillSealsLoop() async throws {
+    /// El mismo 403, por el OTRO borde que lo lee. El push y el pull tienen su propio `switch` sobre el
+    /// status: arreglar uno solo dejaba el bug vivo en el camino más frecuente (sin nada que subir, un
+    /// dispositivo pasa la vida pidiendo páginas).
+    @Test(arguments: GroupsSyncHardeningTests.infraForbiddenBodies)
+    func infra403_isTransient_onPull(_ label: String, _ body: String) async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)   // outbox VACÍO ⇒ el push no manda y el 403 pega en el pull
+
+        let stub = StubSession(body, status: 403)
+        let client = makeClient(session: stub, userID: nil)
+        client.sleeper = { _ in }
+        let outcome = await client.syncCycleOnce(context: context)
+
+        #expect(stub.callCount == 1, "\(label): el pull tiene que haber salido a la red")
+        #expect(outcome == .transient, "\(label): un 403 de infraestructura no es un veredicto de cuenta")
+    }
+
+    /// **El agujero que cierra el ticket, medido sobre el LOOP y no sobre un ciclo suelto**: el sello de
+    /// proceso. Con el mapeo viejo, un 403 del WAF armaba `stoppedUntilRelaunch` y a partir de ahí
+    /// `GroupsLoopRestartLogic.shouldStart` y `syncNowFromPush` devolvían false para siempre — ni el
+    /// foreground ni un silent push ni un sign-in curaban el canal hasta matar y reabrir la app.
+    ///
+    /// El 401 de la segunda vuelta está para que el loop TERMINE de forma determinista (un transitorio solo
+    /// haría backoff y seguiría); lo que se mide es lo de después.
+    @Test func infra403_doesNotSealTheChannelForTheProcess() async throws {
         let prevRuntime = CloudSyncFlags.syncRuntimeEnabled
         CloudSyncFlags.groupsBackendEnabled = true
         CloudSyncFlags.syncRuntimeEnabled = true
+        // `.icloud` EXPLÍCITO, no heredado: con él `canRunDomain()` es false y Grupos corre su loop propio,
+        // que es la premisa entera del test. El default del host de tests ya es `.icloud`, pero es un global
+        // (`nonisolated(unsafe) static var`) que otras SUITES escriben —`CloudSyncRuntimeTests`,
+        // `MigrationWorkExecutorTests`, `PersonalMountMismatchGuardTests`— y `.serialized` no serializa
+        // entre suites: heredarlo sería un rojo ambiental esperando a pasar.
+        CloudSyncFlags.storageMode = .icloud
         defer {
             CloudSyncFlags._testResetGroupsBackendEnabledOverride()
             CloudSyncFlags.syncRuntimeEnabled = prevRuntime
+            CloudSyncFlags._testResetStorageModeOverride()
         }
 
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
-        let stub = StubSession(#"{"error":{"type":"yala_forbidden"}}"#, status: 403)
-        let client = makeClient(session: stub, userID: nil)
-        client.sleeper = { _ in }
+        let stub = SequenceStubSession(
+            [.init(data: Data(#"<html><body>Error 1020</body></html>"#.utf8), status: 403)],
+            fallback: .init(data: Data("{}".utf8), status: 401))
+        // El refresh DISPONIBLE es parte de la prueba: el retry-once es del 401 y no debe tocar un 403.
+        let client = GroupsSyncClient(
+            tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { true },
+            currentUserIDProvider: { nil }, forceRefreshTokenProvider: { "jwt" })
+        let sleeper = Counter()
+        client.sleeper = { _ in sleeper.count += 1 }
         client.startIfEligible(context: context)
         await client._testLoopTask?.value
 
-        #expect(client._testStoppedUntilRelaunch == true)  // veredicto sobre la CUENTA → sellado
+        #expect(stub.callCount >= 2, "el loop tiene que haber seguido DESPUÉS del 403 (backoff, no parada)")
+        #expect(sleeper.count >= 1, "y haber DORMIDO entre vueltas: un backoff, no una parada seca")
+        #expect(client._testStoppedUntilRelaunch == false, "un WAF no es un veredicto sobre la cuenta")
+        // Y la prueba de que el canal sigue vivo para este proceso: re-arranca, y el push/UI no está mudo.
         client.startIfEligible(context: context, trigger: "foreground")
-        #expect(client._testLoopTask == nil, "un 403 de cuenta no debe re-arrancar en el mismo proceso")
+        let again = client._testLoopTask
+        #expect(again != nil, "tras un 403 de infraestructura el canal tiene que poder re-arrancar")
+        again?.cancel()
+        await again?.value
+    }
+
+    /// **El mutante de un solo token.** Colapsar las dos ramas del 403 en un `case 403:` pelado —que es
+    /// exactamente como estaba escrito antes del fix— reintroduce el ticket entero. Este test mide los dos
+    /// cuerpos con el MISMO cliente y en el mismo sitio, así que ninguna de las dos mitades puede pasar por
+    /// la otra: el kill para el ciclo y enciende el testigo; el de infraestructura ni una cosa ni la otra.
+    @Test func killAndInfra403_areNotTheSameVerdict() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try seedOutboxRow(context, hlc: "2026-09-13T00:00:00.000Z-0004-00000000000000aa")
+
+        let stub = SequenceStubSession(
+            [.init(data: Data(Self.killEnvelopeJSON.utf8), status: 403),
+             .init(data: Data(#"{"message":"Forbidden"}"#.utf8), status: 403)],
+            fallback: .init(data: Data("{}".utf8), status: 500))
+        let client = makeClient(session: stub, userID: nil)
+        client.sleeper = { _ in }
+
+        let killed = await client.syncCycleOnce(context: context)
+        #expect(killed == .accountUnavailable)
+        #expect(client.stoppedByChannelKill(for: killed) == true)
+
+        // La fila sigue viva (el 403 no aplicó ni purgó nada), así que el push vuelve a pedir red.
+        #expect(try context.fetchCount(FetchDescriptor<GroupSyncOutbox>()) == 1)
+        let infra = await client.syncCycleOnce(context: context)
+        #expect(stub.callCount == 2, "el segundo ciclo tiene que haber hablado con el gateway")
+        #expect(infra == .transient)
+        #expect(client.stoppedByChannelKill(for: infra) == false)
     }
 
     /// Personal cadenciando (`syncRuntimeEnabled && canRunDomain()`) → `startIfEligible` se ABSTIENE del

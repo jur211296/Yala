@@ -1556,31 +1556,16 @@ struct GroupsSyncClientTests {
         #expect(sleeper.count == 0)    // sessionExpired rompe ANTES del sleeper
     }
 
-    /// Un 403 (cuenta no disponible) arma `stoppedUntilRelaunch` y TERMINA el loop; un `startIfEligible`
-    /// posterior en el MISMO proceso es NO-OP (no re-arranca — `_testLoopTask` nil, callCount estable).
-    @Test func loop_403_armsStopUntilRelaunch_subsequentStartIsNoOp() async throws {
-        let dir = freshDir(); defer { cleanup(dir) }
-        let context = try makeContext(dir)
-        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
-        CloudSyncFlags.groupsBackendEnabled = true
-
-        // 403 en el pull (outbox vacío ⇒ el push no manda) → accountUnavailable → stopUntilRelaunch.
-        let stub = StubHTTPSession(statusCode: 403)
-        let sleeper = SleeperCounter()
-        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { true })
-        client.sleeper = { _ in sleeper.count += 1 }
-
-        client.startIfEligible(context: context)
-        await client._testLoopTask?.value
-
-        #expect(stub.callCount == 1)   // 1 pull → 403 → loop termina
-        #expect(sleeper.count == 0)    // accountUnavailable rompe ANTES del sleeper
-
-        // startIfEligible posterior = NO-OP (stoppedUntilRelaunch armado): no re-arranca el loop.
-        client.startIfEligible(context: context)
-        #expect(client._testLoopTask == nil)
-        #expect(stub.callCount == 1)   // callCount estable (loop no re-arrancó)
-    }
+    // `loop_403_armsStopUntilRelaunch_subsequentStartIsNoOp` vivía aquí y se RETIRÓ el 2026-09-14
+    // (`groups-sync-treats-an-infra-403-as-an-account-verdict`). Sembraba `StubHTTPSession(statusCode: 403)`,
+    // cuyo body por defecto es una página de pull vacía SIN el envelope del kill: desde el fix eso es un 403
+    // de infraestructura, o sea `.transient`. El test no habría dado rojo — habría COLGADO la corrida, porque
+    // el loop entra en backoff y su `await _testLoopTask?.value` no vuelve nunca.
+    //
+    // Su sujeto ya no existe: ningún 403 arma `stoppedUntilRelaunch`. Lo que sí sigue medido, y en el fichero
+    // donde vive la familia del 403 desde el kill-switch, es la conducta nueva —
+    // `GroupsSyncHardeningTests.infra403_doesNotSealTheChannelForTheProcess` (el loop sigue vivo y re-arranca)
+    // y `killAndInfra403_areNotTheSameVerdict` (el mutante de colapsar las dos ramas).
 
     @Test func loop_singleInstance_secondStartIsNoOpWhileAlive() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
@@ -1765,27 +1750,13 @@ struct GroupsSyncClientTests {
         #expect(stub.callCount == 2)          // el loop RE-ARRANCÓ y corrió otra vuelta
     }
 
-    /// Regresión de `stoppedUntilRelaunch`: tras un 403, `startIfEligible` sigue siendo NO-OP aun con un
-    /// refresh disponible (el retry-401 NO interfiere con la semántica de 403 — nunca se dispara ahí).
-    @Test func restart_403_stillNoOp() async throws {
-        let dir = freshDir(); defer { cleanup(dir) }
-        let context = try makeContext(dir)
-        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
-        CloudSyncFlags.groupsBackendEnabled = true
-
-        let stub = StubHTTPSession(statusCode: 403)
-        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { true },
-                                      forceRefreshTokenProvider: { "new-jwt" })
-
-        client.startIfEligible(context: context)
-        await client._testLoopTask?.value
-        #expect(stub.callCount == 1)          // pull 403 → accountUnavailable → stopUntilRelaunch
-
-        // Aun con refresh disponible, 403 armó stoppedUntilRelaunch → no re-arranca.
-        client.startIfEligible(context: context, trigger: "foreground")
-        #expect(client._testLoopTask == nil)
-        #expect(stub.callCount == 1)          // callCount estable
-    }
+    // `restart_403_stillNoOp` vivía aquí y se RETIRÓ el 2026-09-14 por lo mismo que el de arriba, con un
+    // agravante: no inyectaba sleeper, así que habría colgado la corrida durmiendo de verdad la escalera
+    // del backoff (5 s → 10 s → … → 300 s) sin terminar jamás.
+    //
+    // Lo único suyo que no estaba cubierto en otro sitio —que un `forceRefreshTokenProvider` disponible no
+    // cambia nada, porque el retry-once es del 401 y no se dispara en un 403— se conserva como aserción
+    // dentro de `GroupsSyncHardeningTests.infra403_doesNotSealTheChannelForTheProcess`.
 
     // MARK: - Test 11 · Mapeo de outcomes del canal → CadenceOutcome (A4, uso de SyncCadencePolicy)
 

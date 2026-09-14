@@ -132,7 +132,17 @@ nonisolated enum CloudSignOutFlowLogic {
         /// Curable esperando: red/HTTP/decode/save intermitente, ciclo coalescido, o el
         /// tope de iteraciones/quiescencia (aún drenando). Reintentable.
         case transient
-        /// NO curable sin acción del usuario: 401 sesión caída, 403 cuenta no disponible.
+        /// NO curable sin acción del usuario: 401 sesión caída, cuenta no disponible.
+        ///
+        /// **Desde el 2026-09-14 `classify` ya no lo produce por un 403 del canal de Grupos** —el del kill
+        /// trae `.channelPaused`, el de infraestructura es `.transient`— pero eso NO significa que un 403
+        /// de infraestructura deje de verse como `.permanent`, y la diferencia importa: el paso 2 de
+        /// `CloudSessionSignOut.performCloudSecureSignOut` **colapsa en `.permanent` todo veredicto de
+        /// grupos que no sea `.channelPaused`**, así que en el cierre de una cuenta `.cloud` un WAF sigue
+        /// saliendo como «revisa tu conexión». Ese colapso es anterior y deliberado (su comentario lo dice:
+        /// los otros motivos conservan su alert porque nadie ha pedido cambiarlo) y tocarlo movería también
+        /// la red caída y los 5xx, que es otro objeto. Ticket:
+        /// `cloud-signout-collapses-every-groups-transient-into-permanent`.
         case permanent
         /// El cierre PRIVADO esperó a que el último cambio llegara a iCloud y agotó el presupuesto. Es el
         /// único bloqueo del móvil propio con salida de emergencia (decisión de Jürgen, 2026-09-09): tras
@@ -170,12 +180,12 @@ nonisolated enum CloudSignOutFlowLogic {
         ///
         /// **Qué es el OTRO 403, medido el 2026-09-13 y no lo que parece.** El gateway emite exactamente dos
         /// 403 en todo `gateway/src/`: éste y `yala_pro_required`, que es de la IA y nunca alcanza estas
-        /// rutas (`policy.ts` da límites de `sync` a los dos tiers). **No hay ningún 403 de «cuenta
-        /// suspendida» en `/groups/*`**, así que el que cae en `.permanent` viene de infraestructura — un
-        /// proxy o un WAF por delante del Worker. `GroupsMembershipClient` ya midió ese caso y lo trata como
-        /// TRANSITORIO con reintento, por escrito; el canal de sync lo trata como veredicto de cuenta y
-        /// además sella el loop. Esa asimetría es preexistente, no se toca aquí y tiene ticket:
-        /// `groups-sync-treats-an-infra-403-as-an-account-verdict`.
+        /// rutas (`policy.ts` da límites de `sync` a los dos tiers); los fallos upstream de `/groups/*` salen
+        /// como 502 `yala_unavailable`. **No hay ningún 403 de «cuenta suspendida» en `/groups/*`**, así que
+        /// el otro viene de infraestructura — un proxy o un WAF por delante del Worker. Desde el 2026-09-13
+        /// **ése ya no llega hasta aquí**: el canal de sync lo clasifica `.transient` con reintento, como su
+        /// hermano `GroupsMembershipClient` llevaba haciendo desde el principio. O sea que a `.channelPaused`
+        /// llega el kill y solo el kill, y quien lo enciende no compite con nada.
         ///
         /// **No se reintenta dentro del gesto, y es deliberado** (ver `GroupsSignOutRetryDecision.decide`).
         /// Nada se ha escrito y nada se pierde: el outbox queda intacto y volver a pulsar cuando el canal
@@ -208,10 +218,19 @@ nonisolated enum CloudSignOutFlowLogic {
     /// Clasifica el outcome crudo de un ciclo de cadencia (H-2026-07-18-6). Base del retry interno del
     /// sign-out solo-grupos. La sesión caducada va aparte de la cuenta no disponible desde el paso 9: las dos
     /// son permanentes, pero solo la primera se arregla volviendo a entrar, y el aviso tiene que decirlo.
+    ///
+    /// **`.transient` no es el cajón de lo pequeño**: desde el 2026-09-13 también trae el 403 de
+    /// infraestructura, que antes se anunciaba como veredicto sobre la cuenta. Su aviso reintenta dentro del
+    /// gesto (45 s, `GroupsSignOutRetryDecision`) y acaba en «un momento más» — que es lo único cierto que
+    /// se puede decir de un WAF: nada se escribió, el outbox está intacto y volver a pulsar lo completa.
     /// `channelKilled` es la mitad que `CadenceOutcome` no puede llevar: **si el 403 que paró el ciclo era
-    /// el del kill-switch**. El canal de Grupos devuelve `.accountUnavailable` para todo 403, venga del kill
-    /// o de la infraestructura, y esos dos no merecen el mismo aviso (ver `.channelPaused`). Lo contesta
-    /// `GroupsSyncClient.stoppedByChannelKill(for:)`, que liga el testigo al outcome del ciclo.
+    /// el del kill-switch**. Hace falta porque `.accountUnavailable` tiene dos orígenes en el código que no
+    /// merecen el mismo aviso: el kill del canal (403 `yala_groups_disabled` → `.channelPaused`) y el freeze
+    /// de la reversa (409 `yala_account_reverting` → `.permanent`, que `/groups/push` hoy no emite). Lo
+    /// contesta `GroupsSyncClient.stoppedByChannelKill(for:)`, que liga el testigo al outcome del ciclo.
+    ///
+    /// El tercer 403 —el de un proxy o un WAF por delante del Worker— **ya no entra por aquí** desde el
+    /// 2026-09-13: el canal lo clasifica `.transient`, así que cae en la rama reintentable de abajo.
     ///
     /// **Sin valor por defecto a propósito.** Un `= false` lo heredaría en silencio todo call-site que no
     /// se pronunciara, y el camino que este parámetro abre es justo el que nadie mira hasta que hay un

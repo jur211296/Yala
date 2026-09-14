@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (345)
+## Index (347)
 
 | id | status | path |
 |---|---|---|
@@ -88,6 +88,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-fx-rates-blob-two-faces | qa | tickets/qa/cloud-fx-rates-blob-two-faces.md |
 | cloud-killswitch-hides-the-only-door-to-detach-groups | qa | tickets/qa/cloud-killswitch-hides-the-only-door-to-detach-groups.md |
 | cloud-sign-in-discovers-account-kind | qa | tickets/qa/cloud-sign-in-discovers-account-kind.md |
+| cloud-signout-collapses-every-groups-transient-into-permanent | backlog | tickets/backlog/cloud-signout-collapses-every-groups-transient-into-permanent.md |
 | cloud-tx-epoch-orphan-relations | backlog | tickets/backlog/cloud-tx-epoch-orphan-relations.md |
 | cloudsync-account-currency-orphans-receiver-history | backlog | tickets/backlog/cloudsync-account-currency-orphans-receiver-history.md |
 | cloudsync-witnesses-survive-the-sign-out-wipe | backlog | tickets/backlog/cloudsync-witnesses-survive-the-sign-out-wipe.md |
@@ -175,6 +176,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-block-has-no-route-to-storage-settings | backlog | tickets/backlog/groups-block-has-no-route-to-storage-settings.md |
 | groups-budget | done | tickets/done/groups-budget.md |
 | groups-canal-sin-capability-set | backlog | tickets/backlog/groups-canal-sin-capability-set.md |
+| groups-channel-seal-has-no-reachable-producer | backlog | tickets/backlog/groups-channel-seal-has-no-reachable-producer.md |
 | groups-cloud-identity-loss-on-migrate | discarded | tickets/discarded/groups-cloud-identity-loss-on-migrate.md |
 | groups-cloud-mode-hardening-v1 | discarded | tickets/discarded/groups-cloud-mode-hardening-v1.md |
 | groups-consent-door-spec | qa | tickets/qa/groups-consent-door-spec.md |
@@ -216,7 +218,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-sign-out-quiescence-gate-fails-open-with-drive-off | backlog | tickets/backlog/groups-sign-out-quiescence-gate-fails-open-with-drive-off.md |
 | groups-signout-reentry-banner-has-no-producer | backlog | tickets/backlog/groups-signout-reentry-banner-has-no-producer.md |
 | groups-stats-no-deduplica-gastos | backlog | tickets/backlog/groups-stats-no-deduplica-gastos.md |
-| groups-sync-treats-an-infra-403-as-an-account-verdict | backlog | tickets/backlog/groups-sync-treats-an-infra-403-as-an-account-verdict.md |
+| groups-sync-treats-an-infra-403-as-an-account-verdict | done | tickets/done/groups-sync-treats-an-infra-403-as-an-account-verdict.md |
 | groups-tab-missing-panel-perf | qa | tickets/qa/groups-tab-missing-panel-perf.md |
 | groups-transfer-leave-write-ahead | backlog | tickets/backlog/groups-transfer-leave-write-ahead.md |
 | guest-decline-has-no-screen | qa | tickets/qa/guest-decline-has-no-screen.md |

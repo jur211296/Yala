@@ -204,6 +204,17 @@ enum GroupsSyncBreadcrumb {
         logger.notice("GroupsSync loopStopped reason=\(reason, privacy: .public)")
     }
 
+    /// El canal recibió un **403 que NO es el kill-switch**, o sea uno puesto por algo por delante del
+    /// Worker (`gateway/src/` solo emite dos 403 y traduce lo upstream a 502). Se trata como transitorio,
+    /// con backoff — y por eso hace falta esta línea: antes de separarlo del kill (2026-09-13) este caso
+    /// paraba el loop y dejaba su `loopStopped reason=account-unavailable`, así que ahora un corte de
+    /// infraestructura sería el ÚNICO desenlace del canal sin rastro ninguno. `edge` = `push` o `pull`,
+    /// para saber cuál de los dos bordes lo vio. Sin PII (el cuerpo del 403 jamás se registra: puede traer
+    /// cabeceras o identificadores del proxy).
+    static func groupsForbiddenNotKill(edge: String) {
+        logger.notice("GroupsSync forbiddenNotKill edge=\(edge, privacy: .public)")
+    }
+
     /// El loop de cadencia se RE-ARRANCÓ efectivamente (se creó un nuevo `loopTask`). `trigger` = slug
     /// (`foreground` / `post-sign-in`). SOLO se emite cuando el re-arranque crea el loop — jamás en los
     /// no-op (flag OFF, loop ya vivo, piggyback, stopUntilRelaunch). Sin PII.

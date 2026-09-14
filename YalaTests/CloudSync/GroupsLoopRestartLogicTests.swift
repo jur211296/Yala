@@ -34,7 +34,9 @@ struct GroupsLoopRestartLogicTests {
             loopAlive: false) == false)
     }
 
-    /// `stoppedUntilRelaunch` armado (403 previo) → no re-arranca en este proceso, ni al foreground.
+    /// `stoppedUntilRelaunch` armado → no re-arranca en este proceso, ni al foreground. Desde el
+    /// 2026-09-13 ningún 403 lo arma (ver `GroupsSyncClient.stoppedUntilRelaunch`); la tabla se conserva
+    /// porque es la que pararía un veredicto de cuenta futuro.
     @Test func stoppedUntilRelaunch_doesNotStart() {
         #expect(GroupsLoopRestartLogic.shouldStart(
             flagOn: true, hasSession: true, stoppedUntilRelaunch: true,
