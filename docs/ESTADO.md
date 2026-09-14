@@ -5,10 +5,49 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-14 (Lima)
 
-**Rama** `2.1` — Merge #154: **un cortafuegos delante del servidor deja de apagar el canal de Grupos
-como si tu cuenta no valiera.** TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
+**Rama** `2.1` — Merge #155: **«Empezar desde cero» en Restaurar ya borra de verdad.** TestFlight build
+**13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#154 · un 403 de infraestructura no es un veredicto sobre tu cuenta)
+## Esta sesión (#155 · «Empezar desde cero» en Restaurar ya borra)
+
+**Welcome → «Ya tengo una cuenta» → «Restaurar desde iCloud» → «Empezar desde cero» te decía «Esto creará
+una cuenta nueva sin tus datos previos» y no borraba nada.** Esa pantalla solo existe con el espejo de
+iCloud adjunto, así que el histórico seguía bajando por debajo mientras hacías tu onboarding «de cero», y
+al rato reaparecía entero. Ahora ese botón lleva a **la puerta de iCloud** del paso 4: pregunta a la zona,
+te enseña qué hay —movimientos, cuentas, categorías, «desde marzo de 2025»— y te da tres salidas: borrar
+con segunda confirmación, traerte los datos, o cancelar.
+
+**Y pregunta algo que la pantalla de restaurar no puede medir.** Su resumen cuenta las filas que ya
+bajaron al teléfono, así que un import que no cabía en su tope de 90 s salía como «no encontramos tus
+datos» con el corpus intacto arriba. La sonda de la puerta va a la zona de CloudKit.
+
+**La review adversarial cazó ONCE defectos míos, y el primero fue que mi arreglo no arreglaba.** El
+mecanismo central —bajar dos señales de «hay datos» para apagar un alert— no llegaba a su lector:
+`WelcomeFlowModifier` las recibe **por valor**, no por binding, y sin suspensión de por medio nadie
+re-evalúa el `body`. A quien acababa de confirmar el borrado dos veces le salía un tercer alert pidiéndole
+borrar lo que ya no existía. Y mi source-scan lo daba por cerrado: comprobaba que las líneas estaban, no
+que el valor llegara.
+
+**Los otros dos graves eran guards ajenos que el camino nuevo dejaba inertes.** El arm del borrado se
+quedaba huérfano —la red que lo retiraba dependía del relanzamiento, y desde Restaurar no se relanza— y
+el desenlace medido era pérdida total: salir por «Traer mis datos», restaurar el histórico, terminar, y
+el arranque siguiente lo borraba entero sin preguntar. El otro: el neutro durable del borrado era inerte
+porque su predicado exige que el chooser no conste visto, y a Restaurar se llega con ese flag ya marcado.
+
+**Once mutantes compilados y corridos**, no razonados. Y el recorrido **visto en simulador** hasta donde
+CloudKit lo permite: aterriza en la puerta y, con «Seguir así», en un onboarding con el nombre vacío.
+
+**Lo que este PR NO cierra, con ticket `high`:** el mismo botón desde «Activar Yala completo → privado →
+Restaurar». Allí el borrado es de ZONA por la restricción del paso 8 —borrar lo local resetearía el
+onboarding y te mandaría al Welcome a mitad de la activación— y con el store espejando eso deja las filas
+importadas, que se re-exportan. Un borrado que no borra. Cerrarlo pide un borrador de filas-sin-
+preferencias que no existe: `activation-restore-start-fresh-keeps-the-imported-rows`. **La sesión de
+grupos sigue intacta ahí**, que era el otro criterio del ticket.
+
+**Y un segundo ticket, `medium`, VISTO en simulador:** cancelar en la puerta te deja en «Es mi primera
+vez», aunque entraras por «Ya tengo una cuenta» (`private-icloud-gate-back-lands-on-the-wrong-branch`).
+
+## Las de antes (#154 · un 403 de infraestructura no es un veredicto sobre tu cuenta)
 
 **Cuando un proxy o un cortafuegos por delante del servidor devolvía un 403, el canal de Grupos lo leía
 como «esta cuenta ya no está disponible»**: apagaba el sync el resto de la vida de la app —ni volver a
@@ -89,42 +128,6 @@ largo bajo `-uitest` (hermeticidad antes de la red) y ningún seed arma la marca
 Guion de 9 pasos en `tickets/qa/device-qa-private-gate-device-corpus.md`. Deja **tres tickets**, los tres
 `medium`.
 
-## Las de antes (#152 · el kill-switch de Grupos y el aviso que mentía)
-
-**Con el canal de Grupos apagado por un incidente, soltar la cuenta decía que el problema era tu
-cuenta.** Y no había reintento: el aviso cerraba la puerta hasta que alguien volviera a subir el flag.
-Ahora dice la verdad — «Es algo de nuestro lado: los grupos están en pausa. Tus cambios siguen en este
-teléfono y no se pierden; vuelve a intentarlo en un rato» — y el gesto se puede repetir cuando el canal
-vuelva. Con el outbox vacío, que es el caso dominante, sigue completando sin pedir red.
-
-Tu decisión del 13-sep, la opción **(a)**: distinguir ese 403 del resto. La (b) —soltar dejando lo
-pendiente sin subir— quedó descartada, y el orden «lo pendiente sube ANTES de cortar» no se tocó.
-
-**La señal ya existía y se perdía una capa antes de la pantalla.** El cliente del canal ya distinguía
-los dos 403 —el loop la usaba para no sellarse— pero era privada. Ahora viaja ligada a su ciclo, y el
-término va **sin valor por defecto**: el compilador obligó a cada sitio a pronunciarse, y así salió uno
-que nadie había mirado, el del motor personal.
-
-**Sin reintento automático, y es decisión tuya escrita, no un olvido:** el kill se levanta con un
-deploy, así que dentro de los 45 s del presupuesto no se mueve. Reintentar gastaría ~22 peticiones
-contra un 403 seguro **en pleno incidente** y retrasaría 45 s un aviso que ya se puede dar.
-
-**La review adversarial cazó cuatro defectos ALTA y todos eran míos.** El mayor: una **cuarta pantalla**
-mentía igual y no estaba en el ticket — la puerta por donde se acepta una invitación de grupo aconsejaba
-«vuelve a entrar con esa cuenta», que bajo un 403 del servidor no sube nada. Y cuatro mutantes
-atravesaban mi red de pruebas devolviendo el bug entero en verde. También midió dos afirmaciones que yo
-había escrito y eran falsas: el gateway emite **exactamente dos 403** y ninguno es «cuenta suspendida».
-
-**Verificado:** build ×2 con cero warnings nuevos · **6779 unit en 690 suites**, 0 fallos · **24
-XCUITest en 8 suites** con el centinela en 0 · CI entero en verde · audit limpio · ratchet OK. Y **11
-mutantes puestos, los 11 matan su test.**
-
-**Lo que falta y es tuyo:** el device-QA **NO es simulable** — el kill se sirve server-side, así que
-pide bajar `GROUPS_BACKEND_ROLLOUT_PERCENT` a 0 en el gateway. Guion de 7 pasos en `tickets/qa/`. Y
-deja **cuatro tickets**, uno `high`: un 403 de **infraestructura** (un WAF por delante del Worker) apaga
-el canal como si tu cuenta ya no valiera, y lo sella hasta relanzar la app — el cliente hermano del
-mismo endpoint ya lo trata como transitorio, por escrito.
-
 ## Las de antes
 
 Los partes de los merges #144 a #152 viven en sus PR y en `git log`; aquí se quedan solo los dos últimos
@@ -165,6 +168,14 @@ formatos —una presentación 16:9 por escenas y clips 9:16 por función— sobr
    wipe remoto devuelva al primero a la bienvenida **con los grupos dentro**. Guion de 9 pasos en
    `tickets/qa/device-qa-private-gate-device-corpus.md`. Lo que solo se ve ahí: que el corpus de la etapa
    de grupos **no** aparezca en el iCloud del Apple ID después.
+
+0-quinquies. **Device-QA de «Empezar desde cero» en Restaurar (#155), y NO es simulable.** CloudKit no
+   existe en el simulador, así que el estado «encontramos tus datos» con corpus real solo se ve en un
+   iPhone. Cinco recorridos en `tickets/qa/restore-start-fresh-keeps-the-imported-corpus.md`. **El que de
+   verdad cierra el criterio**: tras borrar, instalar Yala en OTRO dispositivo con el mismo Apple ID y
+   comprobar que ya no encuentra nada. Dos pruebas nacen de la review y conviene no saltárselas: que tras
+   borrar **no salga un tercer alert**, y que lo restaurado por «Traer mis datos» **siga ahí un par de
+   arranques después**.
 
 1. **Cierra sesión en el iPhone y recrea los grupos de prueba.** Es lo ÚNICO que falta para el device-QA
    del paso 3: el móvil apunta a la cuenta que borró el fresh start y cada llamada da 409/502. **Mira antes
@@ -252,7 +263,15 @@ reintentar 45 s, o decir la verdad sin reintentar? Las tres opciones están en
 `nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo` llevan dos noches rojos y ya no se sostienen como
 «flaky de runner frío» (ver Bloqueo).
 
-**El board: 347 en disco = 347 en `docs/TICKETS.md`**, cero desajustes de estado y cero rutas rotas.
+**Y el #155 deja dos tickets, uno de ellos `high`:**
+`activation-restore-start-fresh-keeps-the-imported-rows` — el mismo «Empezar desde cero» desde «Activar
+Yala completo» borra la zona de iCloud y el store, que espeja, la vuelve a llenar. Cerrarlo pide un
+borrador de filas personales **sin tocar preferencias**, que hoy no existe: `wipeAllUserData` hace las dos
+cosas de un gesto y su reset va mucho más allá de quitar keys (router, ProTour, checklist, App Group).
+Partirlo es un objeto propio sobre un método destructivo que comparten «Vaciar datos» y el wipe remoto.
+El otro es `private-icloud-gate-back-lands-on-the-wrong-branch` (`medium`).
+
+**El board: 349 en disco = 349 en `docs/TICKETS.md`**, cero desajustes de estado y cero rutas rotas.
 
 ## Bloqueo
 
