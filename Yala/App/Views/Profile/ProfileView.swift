@@ -150,7 +150,14 @@ struct ProfileView: View {
             // dos motivos EXCLUSIVOS del desasociar; los compartidos no se pueden distinguir por el
             // motivo, porque el discriminador correcto es el GESTO y el coordinador no lo publica.
             // Ticket: `signout-alert-fires-on-detach-blocks-it-did-not-cause`.
-            case .permanent, .sessionExpired, .channelPaused: showSignOutBlockedAlert = true
+            //
+            // **El fallo pasajero de la subida de grupos entra por el MISMO alert, y no por el de
+            // «un momento más»** (2026-09-14). Su título —«No pudimos cerrar tu sesión»— es exacto: el
+            // cierre no se completó y aquí nadie ha reintentado nada. El de `.transient` promete lo
+            // contrario («un momento más», tras 45 s de reintentos del cierre solo-grupos) y ante un
+            // servidor caído sería falso. Lo que cambia es el mensaje (`signOutBlockedMessage`).
+            case .permanent, .sessionExpired, .channelPaused, .uploadRetryLater:
+                showSignOutBlockedAlert = true
             // **Los dos motivos del DESASOCIAR no encienden nada aquí, y no es teoría: llegaban.**
             // `phase` es un singleton observable y esta pantalla escucha sus cambios; la de
             // almacenamiento se abre DESDE aquí, así que sigue montada. Sin este corte, cada bloqueo del
@@ -179,11 +186,14 @@ struct ProfileView: View {
     }
 
     /// El mensaje del aviso de cierre bloqueado, por motivo. El título y las salidas son los mismos en
-    /// los tres; lo que cambia es qué pasó y qué puede hacer la persona:
+    /// los cuatro; lo que cambia es qué pasó y qué puede hacer la persona:
     ///  · **sesión caducada** (paso 9): se arregla volviendo a entrar, no mirando la red.
     ///  · **canal de Grupos en pausa** (2026-09-13): no hay nada que arreglar —alguien bajó el
     ///    kill-switch por un incidente—, así que el mensaje dice que vuelva en un rato y que no pierde
     ///    nada. Con el genérico, a esa persona se le decía que revisara una conexión que funciona.
+    ///  · **la subida de grupos falló por algo pasajero** (2026-09-14): tampoco hay nada que revisar, y
+    ///    aquí no se ha reintentado nada —el cierre en la nube no gasta el presupuesto de 45 s—, así que
+    ///    el mensaje dice que no llegó, que no se pierde, y que lo vuelva a intentar en un rato.
     ///  · el resto: el genérico de siempre.
     ///
     /// `nil` no ocurre con el alert presentado (`syncSignOutUI` escribe el motivo antes de encenderlo);
@@ -194,6 +204,10 @@ struct ProfileView: View {
         switch signOutBlockedReason {
         case .sessionExpired: return L10n.Groups.Errors.sessionExpired
         case .channelPaused: return L10n.Groups.Errors.channelPaused
+        // **La subida de grupos falló por algo pasajero** (2026-09-14): no se pudo subir, no se pierde
+        // nada, y se vuelve a intentar en un rato. Con el genérico se le decía a esta persona que
+        // revisara una conexión que funciona, que es justo lo contrario de lo que necesita saber.
+        case .uploadRetryLater: return L10n.Groups.Errors.uploadRetryLater
         // El genérico cubre lo que no tiene causa que nombrar. `.transient` y `.exportUnconfirmed` ni
         // siquiera entran por este alert (tienen el suyo), y `nil` no ocurre con el aviso presentado.
         case .permanent, .transient, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .none:

@@ -768,19 +768,32 @@ final class CloudSessionSignOut {
         }
 
         // 2) Push-all GRUPOS (cierra LOW-3 de B2) — ANTES del teardown (la guardia de generación
-        // abortaría el ciclo). Blocked ⇒ abort idéntico al personal, **con UNA excepción medida**.
+        // abortaría el ciclo). Blocked ⇒ abort idéntico al personal, con el MOTIVO traducido.
         //
-        // El canal de Grupos en pausa viaja tal cual (2026-09-13); el resto se sigue colapsando en
-        // `.permanent`, byte-idéntico a lo de siempre. La asimetría es deliberada y cabe en una frase: una
-        // cuenta `.cloud` con grupos sufre el kill-switch de Grupos **exactamente igual** que la sesión
-        // privada del ticket —mismo 403, misma función, misma mentira— y dejarlo aquí sería arreglar el
-        // agujero en tres celdas de cuatro. Los otros motivos se quedan porque su alert en este camino es
-        // una decisión propia (ver el comentario del paso 1) y nadie ha pedido cambiarla.
+        // **Quién traduce es una función pura y exhaustiva** (`cloudSignOutGroupsBlockReason`), y sustituye
+        // al ternario que colapsaba en `.permanent` todo lo que no fuera el canal en pausa. Con él, un corte
+        // de red, un 5xx y el 403 de un cortafuegos salían los tres como «revisa tu conexión»: un fallo que
+        // no existe, y sin nombrar lo único que ayuda. Desde el 2026-09-14 lo pasajero se anuncia como
+        // pasajero (`.uploadRetryLater`) y el kill-switch sigue viajando tal cual.
+        //
+        // **Pero esto arregla la mitad de GRUPOS, no el cierre entero, y conviene saberlo:** el paso 1 de
+        // arriba tira su motivo con `_`, así que quien tenga filas PERSONALES pendientes bloquea allí y
+        // sigue viendo el aviso genérico. Ticket:
+        // `cloud-signout-collapses-the-personal-push-all-reason-into-permanent`.
+        //
+        // **Aquí NO hay reintento que gastar, y por eso el aviso sale al momento.** Este paso llama al
+        // push-all DIRECTO: `pushGroupsForSignOut` —el del presupuesto de 45 s— es de los otros tres
+        // caminos, así que `GroupsSignOutRetryDecision` no se consulta nunca en la nube. La decisión de
+        // Jürgen (2026-09-14) es exactamente esa: aviso inmediato y honesto, sin quemar reintentos contra
+        // un servidor que está fallando. El gesto sigue siendo reintentable: nada se ha escrito.
         switch await pushAllPendingGroupsForSignOut(context: context) {
         case .blocked(let pending, let reason):
-            phase = .blocked(pendingCount: pending,
-                             reason: reason == .channelPaused ? .channelPaused : .permanent)
+            let shown = CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(reason)
+            phase = .blocked(pendingCount: pending, reason: shown)
             CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
+            // El motivo YA traducido, que es el que decide el aviso: sin esta línea los tres desenlaces
+            // dejan el mismo rastro y en campo no se puede saber cuál vio la persona.
+            CloudSyncBreadcrumb.signOutGroupsBlocked(reason: shown.breadcrumbSlug)
             return
         case .drained:
             break

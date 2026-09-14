@@ -351,6 +351,16 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSignOut push blocked pending=\(pending, privacy: .public)")
     }
 
+    /// **Por qué se BLOQUEÓ el cierre en la nube, y no solo cuántas filas quedaron** (2026-09-14). Lo emite
+    /// el paso 2 —el push-all de GRUPOS— con el motivo YA traducido, que es justo el que decide qué aviso
+    /// ve la persona: `upload-retry-later` (pasajero: red, 5xx, un cortafuegos) · `channel-paused` (el
+    /// kill-switch) · `permanent` (el resto). Sin esta línea, `pushBlocked pending=N` es idéntico para los
+    /// tres y en campo no hay forma de saber si a alguien se le enseñó «revisa tu conexión» sobre un fallo
+    /// que se cura esperando — que era el bug. Sin PII: solo el slug.
+    static func signOutGroupsBlocked(reason: String) {
+        logger.notice("CloudSignOut groupsBlocked reason=\(reason, privacy: .public)")
+    }
+
     /// Paso 9 · cierre PRIVADO: la espera del export de iCloud se agotó con cambios sin confirmar y el
     /// cierre se bloqueó con la salida avisada. `pending` = objetos locales sin subir; −1 = no se pudo
     /// contar. Sin PII: solo el número. Sostenido en muchos dispositivos = el testigo del export falla

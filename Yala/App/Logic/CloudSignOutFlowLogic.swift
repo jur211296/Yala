@@ -134,15 +134,21 @@ nonisolated enum CloudSignOutFlowLogic {
         case transient
         /// NO curable sin acción del usuario: 401 sesión caída, cuenta no disponible.
         ///
-        /// **Desde el 2026-09-14 `classify` ya no lo produce por un 403 del canal de Grupos** —el del kill
-        /// trae `.channelPaused`, el de infraestructura es `.transient`— pero eso NO significa que un 403
-        /// de infraestructura deje de verse como `.permanent`, y la diferencia importa: el paso 2 de
-        /// `CloudSessionSignOut.performCloudSecureSignOut` **colapsa en `.permanent` todo veredicto de
-        /// grupos que no sea `.channelPaused`**, así que en el cierre de una cuenta `.cloud` un WAF sigue
-        /// saliendo como «revisa tu conexión». Ese colapso es anterior y deliberado (su comentario lo dice:
-        /// los otros motivos conservan su alert porque nadie ha pedido cambiarlo) y tocarlo movería también
-        /// la red caída y los 5xx, que es otro objeto. Ticket:
-        /// `cloud-signout-collapses-every-groups-transient-into-permanent`.
+        /// **`classify` ya no lo produce por un 403 del canal de Grupos** (2026-09-14): el del kill trae
+        /// `.channelPaused` y el de infraestructura es `.transient`.
+        ///
+        /// **Y desde el 2026-09-14 el cierre en la NUBE tampoco lo fabrica aplanando** (ticket
+        /// `cloud-signout-collapses-every-groups-transient-into-permanent`, cerrado): el paso 2 de
+        /// `CloudSessionSignOut.performCloudSecureSignOut` tenía un ternario que colapsaba aquí todo
+        /// veredicto de grupos que no fuera `.channelPaused`, y hoy traduce con
+        /// `cloudSignOutGroupsBlockReason`, que manda lo pasajero a `.uploadRetryLater`.
+        ///
+        /// **Dos colapsos SIGUEN vivos, y cada uno tiene su ticket.** En ese mismo paso 2,
+        /// `.sessionExpired` sigue saliendo como `.permanent`
+        /// (`cloud-signout-collapses-a-groups-session-expiry-into-permanent`); y el paso 1 —el push-all
+        /// PERSONAL, que corre ANTES— descarta el motivo con `_` y escribe `.permanent` a pelo, así que
+        /// con filas personales pendientes es él quien bloquea y el aviso vuelve a ser el genérico
+        /// (`cloud-signout-collapses-the-personal-push-all-reason-into-permanent`).
         case permanent
         /// El cierre PRIVADO esperó a que el último cambio llegara a iCloud y agotó el presupuesto. Es el
         /// único bloqueo del móvil propio con salida de emergencia (decisión de Jürgen, 2026-09-09): tras
@@ -191,6 +197,88 @@ nonisolated enum CloudSignOutFlowLogic {
         /// Nada se ha escrito y nada se pierde: el outbox queda intacto y volver a pulsar cuando el canal
         /// vuelva completa el gesto.
         case channelPaused
+        /// **El canal de Grupos falló por algo PASAJERO y este camino no lo reintenta** (2026-09-14): un
+        /// corte de red, un 5xx del servidor, un decode fallido, el 403 de un cortafuegos, o el tope de
+        /// iteraciones con el outbox aún drenando. Lo produce ÚNICAMENTE el paso 2 del cierre en la nube
+        /// (`CloudSessionSignOut.performCloudSecureSignOut`), vía `cloudSignOutGroupsBlockReason`.
+        ///
+        /// Va aparte de `.transient` porque el consejo que toca **no es el mismo**. `.transient` sale del
+        /// cierre solo-grupos DESPUÉS de gastar 45 s reintentando writes internos que se están asentando, y
+        /// por eso su aviso dice «un momento más, espera unos segundos». Aquí no se ha reintentado nada —el
+        /// camino de la nube llama al push-all **directo**, sin pasar por `GroupsSignOutRetryDecision`— y lo
+        /// que falló es una SUBIDA, no un guardado: «espera unos segundos» sería falso ante un WAF que
+        /// estará ahí diez minutos. El aviso dice lo único cierto: no se pudo subir, no se pierde nada, y se
+        /// vuelve a intentar en un rato.
+        ///
+        /// Va aparte de `.permanent` porque ahí estaba el bug: hasta el 2026-09-14 el paso 2 colapsaba todo
+        /// veredicto de grupos que no fuera `.channelPaused`, así que un 5xx o un cortafuegos salían como
+        /// «revisa tu conexión» —mandando a buscar un fallo que no existe— y sin nombrar lo único que ayuda,
+        /// que es esperar. Ticket `cloud-signout-collapses-every-groups-transient-into-permanent`.
+        ///
+        /// **No se reintenta dentro del gesto, y es la decisión de Jürgen** (2026-09-14), la misma que se
+        /// tomó para `.channelPaused` el 2026-09-13: reintentar contra un servidor que está fallando gasta
+        /// ~22 peticiones y retrasa 45 s un aviso que ya se puede dar. Nada se ha escrito y nada se pierde:
+        /// el outbox queda intacto y volver a pulsar cuando el servidor responda completa el gesto.
+        ///
+        /// **Cuándo se ve, medido: solo si el outbox PERSONAL ya drenó.** El paso 1 del mismo cierre sube
+        /// lo personal y bloquea antes, descartando el motivo con `_`, así que ante un corte de red con
+        /// filas personales pendientes la persona sigue viendo el aviso genérico. Con el outbox personal
+        /// vacío —lo normal: ese push-all corta en `.drained` sin ciclar— manda éste. La otra mitad tiene
+        /// ticket propio: `cloud-signout-collapses-the-personal-push-all-reason-into-permanent`.
+        ///
+        /// **Solo lo produce ese paso 2, y en las demás pantallas es inerte** (medido el 2026-09-14):
+        /// el desasociar y el cierre solo-grupos van por `pushGroupsForSignOut`, que propaga lo que dice
+        /// `classify` —y `classify` no lo emite—; y la puerta del Welcome no llega a pintar un cierre de
+        /// la nube (`neutralReturnEntryPhase` devuelve `.unavailable` para `.cloudSecureSignOut`). Si algún
+        /// día nace un segundo productor, ahí hay un catch-all que diría «vuelve a entrar con esa cuenta».
+        case uploadRetryLater
+
+        /// Slug corto para los logs (`CloudSyncBreadcrumb.signOutGroupsBlocked`). Va aquí y no en el
+        /// emisor para que un motivo nuevo tenga que nombrarse una sola vez: el `switch` es exhaustivo.
+        var breadcrumbSlug: String {
+            switch self {
+            case .transient: return "transient"
+            case .permanent: return "permanent"
+            case .exportUnconfirmed: return "export-unconfirmed"
+            case .sessionExpired: return "session-expired"
+            case .bridgeUnreadable: return "bridge-unreadable"
+            case .detachBusy: return "detach-busy"
+            case .channelPaused: return "channel-paused"
+            case .uploadRetryLater: return "upload-retry-later"
+            }
+        }
+    }
+
+    /// Traduce el veredicto del push-all de GRUPOS al motivo que el cierre en la NUBE enseña
+    /// (`CloudSessionSignOut.performCloudSecureSignOut`, paso 2).
+    ///
+    /// **Es un `switch` exhaustivo y no un ternario, y esa es la mitad del arreglo.** Lo que había aquí
+    /// —`reason == .channelPaused ? .channelPaused : .permanent`— no obligaba a nadie a pronunciarse: cada
+    /// motivo nuevo del canal de Grupos caía en `.permanent` en silencio, que es como un corte de red, un
+    /// 5xx y un cortafuegos acabaron los tres diciéndole a la persona que revisara una conexión que
+    /// funciona. Con un `switch` sin `default`, el compilador no deja añadir un motivo sin decidir qué se
+    /// enseña aquí.
+    ///
+    /// **Qué NO cambia, y se queda a propósito.** `.permanent` y `.sessionExpired` siguen saliendo los dos
+    /// como `.permanent`: el segundo tiene copy propio («tu sesión caducó, vuelve a iniciar sesión») que en
+    /// mitad de un cierre de sesión hay que decidir si se le dice a alguien, y eso es otro objeto y otra
+    /// decisión de producto. Ticket `cloud-signout-collapses-a-groups-session-expiry-into-permanent`.
+    ///
+    /// Los tres motivos que este productor no puede emitir —`classify` devuelve cuatro de los ocho, y el
+    /// octavo sale de aquí— caen en `.permanent`, que es el aviso que no afirma ninguna causa concreta.
+    static func cloudSignOutGroupsBlockReason(_ reason: BlockReason) -> BlockReason {
+        switch reason {
+        // Lo que se cura esperando: aviso honesto AL MOMENTO, sin reintentar (decisión de Jürgen,
+        // 2026-09-14). El camino de la nube no tiene retry interno que gastar — llama al push-all directo.
+        case .transient: return .uploadRetryLater
+        // El kill-switch de Grupos viaja tal cual desde el 2026-09-13 y aquí no se toca.
+        case .channelPaused: return .channelPaused
+        // Idempotente: este productor no lo emite (sale de aquí, no entra), pero mapearlo a otra cosa
+        // convertiría una segunda pasada en el bug de arriba.
+        case .uploadRetryLater: return .uploadRetryLater
+        case .permanent, .sessionExpired: return .permanent
+        case .exportUnconfirmed, .bridgeUnreadable, .detachBusy: return .permanent
+        }
     }
 
     /// ¿Es seguro hacer `save()` sobre el contexto compartido AHORA? Es la puerta de quiescencia de los
@@ -320,7 +408,13 @@ nonisolated enum GroupsSignOutRetryDecision {
         // —en pleno incidente, que es lo contrario de lo que quiere quien bajó la palanca— y encima
         // retrasaría 45 s un aviso que ya se puede dar. Lo que sigue siendo reintentable es el GESTO: no
         // se escribió nada, el outbox queda intacto y volver a pulsar cuando el canal vuelva lo completa.
-        if reason == .permanent || reason == .sessionExpired || reason == .channelPaused {
+        //
+        // **`.uploadRetryLater` también, y este camino no lo produce** (2026-09-14): nace en el paso 2 del
+        // cierre en la nube, que llama al push-all directo y nunca pasa por aquí. Se decide igual porque la
+        // rama por defecto de esta cadena de `if` es la peor —45 s reintentando— y porque su significado ya
+        // es «esto no se arregla dentro del gesto»: reintentarlo aquí se contradiría con su propio aviso.
+        if reason == .permanent || reason == .sessionExpired || reason == .channelPaused
+            || reason == .uploadRetryLater {
             return .surfacePermanent
         }
         if elapsedSeconds < budgetSeconds { return .retryAfter(seconds: retryIntervalSeconds) }

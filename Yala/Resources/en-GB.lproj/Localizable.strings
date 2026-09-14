@@ -5159,3 +5159,6 @@
 
 /* Private gate: retry a failed wipe (not a re-search) */
 "welcome.privateICloud.wipeRetry" = "Try again";
+
+/* Sign-out blocked: the groups upload failed for a transient reason (network, 5xx, WAF) and this path does not retry */
+"groups.errors.uploadRetryLater" = "Your latest group changes didn't reach the server. They're still saved on this phone and nothing is lost — try again in a little while.";

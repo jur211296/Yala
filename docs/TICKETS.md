@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (349)
+## Index (352)
 
 | id | status | path |
 |---|---|---|
@@ -89,7 +89,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-fx-rates-blob-two-faces | qa | tickets/qa/cloud-fx-rates-blob-two-faces.md |
 | cloud-killswitch-hides-the-only-door-to-detach-groups | qa | tickets/qa/cloud-killswitch-hides-the-only-door-to-detach-groups.md |
 | cloud-sign-in-discovers-account-kind | qa | tickets/qa/cloud-sign-in-discovers-account-kind.md |
-| cloud-signout-collapses-every-groups-transient-into-permanent | backlog | tickets/backlog/cloud-signout-collapses-every-groups-transient-into-permanent.md |
+| cloud-signout-collapses-a-groups-session-expiry-into-permanent | backlog | tickets/backlog/cloud-signout-collapses-a-groups-session-expiry-into-permanent.md |
+| cloud-signout-collapses-every-groups-transient-into-permanent | qa | tickets/qa/cloud-signout-collapses-every-groups-transient-into-permanent.md |
+| cloud-signout-collapses-the-personal-push-all-reason-into-permanent | backlog | tickets/backlog/cloud-signout-collapses-the-personal-push-all-reason-into-permanent.md |
 | cloud-tx-epoch-orphan-relations | backlog | tickets/backlog/cloud-tx-epoch-orphan-relations.md |
 | cloudsync-account-currency-orphans-receiver-history | backlog | tickets/backlog/cloudsync-account-currency-orphans-receiver-history.md |
 | cloudsync-witnesses-survive-the-sign-out-wipe | backlog | tickets/backlog/cloudsync-witnesses-survive-the-sign-out-wipe.md |
@@ -329,6 +331,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | sign-out-wipe-abort-in-icloud-says-nothing | backlog | tickets/backlog/sign-out-wipe-abort-in-icloud-says-nothing.md |
 | sign-out-wipe-abort-loops-the-groups-gate | backlog | tickets/backlog/sign-out-wipe-abort-loops-the-groups-gate.md |
 | signout-alert-fires-on-detach-blocks-it-did-not-cause | backlog | tickets/backlog/signout-alert-fires-on-detach-blocks-it-did-not-cause.md |
+| signout-blocked-alert-button-has-no-test-identifier | backlog | tickets/backlog/signout-blocked-alert-button-has-no-test-identifier.md |
 | siri-ai-integration-ios-27 | backlog | tickets/backlog/siri-ai-integration-ios-27.md |
 | siri-intent-dual-container | qa | tickets/qa/siri-intent-dual-container.md |
 | smart-ai-notifications | backlog | tickets/backlog/smart-ai-notifications.md |

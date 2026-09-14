@@ -2152,6 +2152,13 @@ enum L10n {
             /// soltar la cuenta»). Dice lo único cierto —el canal volverá— y no manda a revisar una
             /// conexión que funciona. Ver `CloudSignOutFlowLogic.BlockReason.channelPaused`.
             static var channelPaused: String { ls("groups.errors.channelPaused", comment: "") }
+            /// La subida de los cambios de grupos falló por algo PASAJERO —un corte de red, un 5xx, un
+            /// cortafuegos delante del servidor— mientras se cerraba la sesión en la nube, y ese camino no
+            /// reintenta (decisión de Jürgen, 2026-09-14). Dice lo único cierto: no se pudo subir, no se
+            /// pierde nada y se vuelve a intentar en un rato. Sustituye al genérico «revisa tu conexión»,
+            /// que mandaba a buscar un fallo que no existe. Ver
+            /// `CloudSignOutFlowLogic.BlockReason.uploadRetryLater`.
+            static var uploadRetryLater: String { ls("groups.errors.uploadRetryLater", comment: "") }
         }
 
         /// G6-3: grupo migrado a la nube de Yala (congelado en CloudKit) — banner/CTA/borrar copia.
