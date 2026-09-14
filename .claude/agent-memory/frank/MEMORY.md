@@ -31,7 +31,8 @@
 - [Ramas aparcadas tocan tu ticket](feedback_ramas_aparcadas_tocan_tu_ticket.md) — `git log --all -- 'tickets/*/<id>.md'` antes de diseñar: una rama sin PR le había escrito requisitos al paso 9.
 - [El mecanismo que existe se probó con OTRO corpus](feedback_el_mecanismo_existente_se_probo_con_otro_corpus.md) — reusar un barrido sobre un corpus nuevo puede destruir datos buenos; el AC dice QUÉ, no CÓMO.
 - [Mi arreglo abre un camino INALCANZABLE](feedback_mi_arreglo_abre_un_camino_inalcanzable.md) — quitar un efecto vuelve alcanzable código que nunca corrió, con sus bugs intactos; recorre el gesto como 2.ª pasada.
-- [Mi arreglo rompe la premisa de OTRO guard](feedback_mi_arreglo_rompe_la_premisa_de_otro_guard.md) — ensanchar un predicado deja mentirosos a los guards que se apoyaban en su forma vieja, a varios ficheros de distancia.
+- [El consumidor lee una COPIA](feedback_el_consumidor_lee_una_copia.md) — actualicé el `@State` y el lector siguió con el valor viejo: lo recibe por VALOR y sin `await` nadie re-evalúa el body.
+- [Mi arreglo rompe la premisa de OTRO guard](feedback_mi_arreglo_rompe_la_premisa_de_otro_guard.md) — ensanchar un predicado, o abrir un CAMINO nuevo hacia él, deja mentirosos a guards que están a varios ficheros.
 - [El guard va DENTRO del escritor](feedback_el_guard_va_dentro_del_escritor.md) — repetido en vistas SwiftUI solo lo prueba un grep, y un grep no ve un guard invertido.
 - [Mi fix hereda la forma del bug](feedback_mi_fix_hereda_la_forma_del_bug.md) — el arreglo repite el error del bug; enuncia el bug en una frase y aplícasela al arreglo.
 - [El alert de SwiftUI compite con su propio botón](feedback_el_alert_de_swiftui_compite_con_su_propio_boton.md) — el `set` del binding corre al pulsar CUALQUIER botón; si la acción es async, pierde.
@@ -43,7 +44,7 @@
 - [El ancla que no existe](feedback_el_ancla_que_no_existe.md) — antes de diseñar un «vuelve a enlazarse», comprueba que el objeto TIENE identidad serializable; si no, el ticket pide algo imposible.
 - [La review y los mutantes no comparten árbol](feedback_la_review_y_los_mutantes_no_comparten_arbol.md) — una lente leyó un fichero MUTADO; y un script de parche escrito no es un script aplicado.
 - [Mi refutación falla ABIERTO](feedback_mi_refutacion_falla_abierto.md) — 33 de 45 hallazgos salieron «refutados» sin que nadie los juzgara; con `agents_error > 0`, lee el journal.
-- [La review adversarial caza lo MÍO](feedback_review_adversarial_caza_lo_mio.md) — 8 el 7-sep, 7 el 8-sep; puede refutar la PREMISA del ticket, y un camino muerto que revives trae sus bugs intactos.
+- [La review adversarial caza lo MÍO](feedback_review_adversarial_caza_lo_mio.md) — el 14-sep cazó que MI ARREGLO no arreglaba, con 5 mutantes y una captura del simulador ya en verde.
 - [La rule de área es una lente más](feedback_la_rule_de_area_es_una_lente_mas.md) — leerla CONTRA el diff: cazó lo que las tres lentes no vieron el 8-sep y otras dos cosas el 10-sep.
 - [Las lentes se contradicen entre sí](feedback_lentes_adversariales_se_contradicen.md) — cuando dos discrepan, mídelo; y la CORRECCIÓN de una lente también puede venir incompleta.
 - [El test viejo CUELGA, no falla](feedback_el_test_viejo_cuelga_no_falla.md) — al mover un outcome de parada a reintento; y el inventario de tests del ticket se mide: eran 4, no 2.
@@ -74,6 +75,7 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build incremental; dos míos iban al commit el 10-sep.
 
 ## Estado del trabajo
+- [«Empezar desde cero» en Restaurar ya borra](project_restore_start_fresh_pasa_por_la_puerta.md) — PR #155; la review cazó 11 MÍOS y el 1.º era que el arreglo no arreglaba; device-QA NO simulable; deja 2 tickets.
 - [Un 403 de infra ya no es un veredicto de cuenta](project_403_infra_no_es_veredicto_de_cuenta.md) — PR #154; el sello queda SIN productor alcanzable y el cierre `.cloud` sigue colapsando en `.permanent` (decisión suya).
 - [El eje 1 ya tiene fuente propia](project_eje1_marca_sesion_privada.md) — PR #150; eran 9 constructores y no 6; el barrido de M1 es el PR-B y el device-QA NO es simulable.
 - [El paso 12 estaba roto: el eje 1 no tenía fuente](project_paso12_dominio_preferencias.md) — PR #149 entrega el tercio mecánico; 4 decisiones del 12-sep; el flag de M1 estaba en `true`, no en `false`.
