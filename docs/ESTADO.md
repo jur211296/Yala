@@ -5,10 +5,54 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-13 (Lima)
 
-**Rama** `2.1` — Merge #152: **un canal de Grupos en pausa deja de anunciarse como un problema de tu cuenta.**
-TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
+**Rama** `2.1` — Merge #153: **«Es mi primera vez → privado» vuelve a avisar de los datos que ya hay
+en el teléfono.** TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#152 · el kill-switch de Grupos y el aviso que mentía)
+## Esta sesión (#153 · el aviso de datos que se perdía por el relanzamiento)
+
+**Desde una sesión solo-grupos, elegir «Es mi primera vez → Tu cuenta en tu iCloud privado» montaba un
+onboarding de cero sin decir que aquí ya había datos**: los grupos y las categorías de la etapa anterior
+seguían dentro, y en el arranque siguiente subían al iCloud de tu cuenta de Apple. Ahora sale el aviso,
+con doble confirmación, y si confirmas el teléfono queda limpio de verdad — grupos incluidos, con el
+dominio **sellado** para que no vuelvan a colarse en tus cuentas.
+
+**El aviso se perdía por una premisa que dejó de ser cierta.** Con el store personal montado NEUTRO esa
+rama sale por el relanzamiento y nunca llega al callback que preguntaba «¿hay datos?». El comentario que
+lo justificaba —«el mount neutro exige que no haya archivo de store»— valía con los dos términos viejos
+del neutro; el tercero, el de una sesión solo-grupos, rompió la equivalencia: ahí el archivo existe, con
+datos dentro, y monta neutro igual.
+
+**La cadena que describía el ticket ya no existe** (`performPrivateReset` se fue con el paso 9), pero el
+hueco sí. El camino limpio que lo alcanza hoy es un **wipe remoto sobre un dispositivo solo-grupos**:
+`wipeAllUserData` deja vivos los grupos y repone los dos flags de onboarding.
+
+**El aviso se enciende SOLO con el mismo predicado que el relanzamiento, y eso no es simetría:** su
+borrado quita FILAS, y con el espejo montado los deletes se exportan — vaciarían el iCloud de la persona
+en todos sus dispositivos. El mount neutro es `cloudKitDatabase: .none` explícito.
+
+**La review adversarial cazó ONCE defectos y los once eran míos, cinco de ellos ALTA.** El peor no era el
+del párrafo de arriba: el arm que reusé **escalaba un borrado LOCAL a uno REMOTO** — un kill a mitad
+dejaba un testigo que `runLateICloudMirrorCheck` reanuda a ciegas borrando la zona de iCloud del Apple ID,
+sobre una pantalla cuyo copy promete que iCloud no se toca. Y el borrado **se saboteaba a sí mismo**: al
+tocar los flags de onboarding, el arranque consumía el destino del relanzamiento y montaba un segundo
+cover encima del terminal «reabre Yala». También cazó que el copy prometía lo que el código no cumple
+(«no se puede deshacer», «tus datos siguen intactos») y que **un solo token** reintroducía el ticket
+entero con la suite en verde.
+
+**Una afirmación del ticket, medida y falsa:** decía que el corpus de grupos «se re-descarga» tras la
+purga. Eso es del canal CloudKit, que ya no existe; con el backend **el cursor sobrevive a propósito** y
+no vuelve a bajar.
+
+**Verificado:** build ×2 con cero warnings nuevos —medidos contra un worktree del árbol base— · **6797
+unit en 691 suites**, 0 fallos · **25 XCUITest en 6 suites** con el centinela en 0 · audit limpio ·
+ratchet OK. Y **19 mutantes puestos, los 19 los mata su test.**
+
+**Lo que falta y es tuyo:** el device-QA **NO es simulable**, y el motivo está medido — la puerta sale de
+largo bajo `-uitest` (hermeticidad antes de la red) y ningún seed arma la marca del neutro solo-grupos.
+Guion de 9 pasos en `tickets/qa/device-qa-private-gate-device-corpus.md`. Deja **tres tickets**, los tres
+`medium`.
+
+## Las de antes (#152 · el kill-switch de Grupos y el aviso que mentía)
 
 **Con el canal de Grupos apagado por un incidente, soltar la cuenta decía que el problema era tu
 cuenta.** Y no había reintento: el aviso cerraba la puerta hasta que alguien volviera a subir el flag.
@@ -44,63 +88,10 @@ deja **cuatro tickets**, uno `high`: un 403 de **infraestructura** (un WAF por d
 el canal como si tu cuenta ya no valiera, y lo sella hasta relanzar la app — el cliente hermano del
 mismo endpoint ya lo trata como transitorio, por escrito.
 
-## Las de antes (#151 · el paso 12, PR-B: el barrido)
+## Las de antes
 
-**La sesión de visita (M1) ya no existe, y la shell tiene una sola fuente.** Para quien usa Yala no
-cambia nada visible: cambia de dónde sale la respuesta a «¿esta persona tiene vida personal en este
-teléfono?». `ShellModeLogic.effective` pasa de tres flags a **un solo término**, el eje 1
-(`PrivateSessionMark`). Prestar el móvil sigue teniendo camino, el que ya existía: cierras sesión, la
-otra persona entra con la suya, y luego restauras.
-
-**En producción es byte-neutro y está medido**: el encendido compilado estaba en `false` desde el
-12-sep, el percent de producción en 0 y el flag remoto era fail-closed ⇒ `isActive()` era constante
-`false` en Release. Lo que se borra es andamiaje: **26 ficheros**, el percent del gateway y los dos
-flags de onboarding (`OnboardingMode`, `UsageFocus`). La única pieza que no es un borrado es
-`SecondarySessionRetirement`, una purga one-shot del arranque —kill-safe **y** failure-safe— que limpia
-lo que la visita pudo dejar en disco.
-
-**La review adversarial cazó cinco defectos y los cinco eran míos.** El peor: el backfill se apoyaba en
-una premisa tuya —«no hay usuarios solo-grupos»— que la lente midió y era **falsa**
-(`GROUPS_BACKEND_ROLLOUT_PERCENT = "100"` en producción). Te la llevé y elegiste derivarlo de la marca
-del mount neutro. Sin eso, a un teléfono solo-grupos se le habría escrito «tiene vida personal» para
-siempre.
-
-**Y el día se fue en ocho XCUITest rojos que NO eran el código: era el simulador.** Una key pegada
-(`cloudSync.groupsOnlyNeutralMount`) hacía que el backfill apagara el eje en cada arranque. Tres
-hipótesis medidas y caídas antes de dar con ello; lo zanjó `simctl erase` en tres minutos. **La lección
-queda escrita**: cuando un `removeObject` no tiene efecto y la key no está en ningún dominio
-enumerable, no hay escritor que buscar — es el simulador, y el `erase` va primero, no al final.
-
-**Verificado:** build ×2 con **cero warnings nuevos** (base 13 → PR 9, cuatro cerrados) · **6764 unit
-en 689 suites, 0 fallos** · **30 XCUITest en 10 suites, 0 fallos** con el centinela en 0 · gateway 271
-tests · audit limpio · ratchet OK.
-
-**Lo que falta y es tuyo:** el device-QA de la retirada **NO es simulable** (pide un build DEV contra
-staging; el parque de TestFlight no pudo crear esos archivos). Y deja **cinco tickets** en el backlog,
-todos de hallazgos de camino — el más llamativo: el grep de símbolos retirados da cero, pero **94
-líneas de prosa** siguen hablando de la visita.
-
-## Las de antes (#150 · #149)
-
-El eje 1 ganó fuente propia: una marca positiva persistida (`PrivateSessionMark`) con dos lecturas de
-direcciones de fallo OPUESTAS, que es lo que hacía ejecutable el barrido del #151. Su device-QA sigue
-pendiente y **NO es simulable** (pide dos dispositivos del mismo Apple ID). Y antes, el #149 retiró la
-puerta que elegía en qué `UserDefaults` escribía la app — resolvía al mismo sitio para el 100 % del
-parque.
-
-## Las de antes (#147 · la cola del simulador)
-
-**Dos sesiones que lleguen al gate a la vez ya no se derriban.** Catorce worktrees compartían un solo
-iPhone 17 Pro; ahora el gate dice `[cola] … ESPERA` y arranca cuando le toca. Tu decisión del 11-sep, la
-opción (2). El precio aceptado: serializa el gate de todas las sesiones. **Ya está en uso y funcionó**:
-las corridas de hoy esperaron su turno y el centinela salió 0.
-
-## Las de antes (#146 · #145 · #144)
-
-Con el kill-switch de la nube bajado, la fila «¿Dónde viven tus datos?» ya no desaparece si hay una
-cuenta de grupos que soltar (#146). Los 7 XCUITest del Welcome estaban **sanos** — era un `high` falso,
-`discarded` con tres mediciones dentro (#145). Y «Desasociar» ya no finge que soltó la cuenta (#144); su
-device-QA sigue pendiente y **NO es simulable**.
+Los partes de los merges #144 a #152 viven en sus PR y en `git log`; aquí se quedan solo los dos últimos
+mientras su device-QA siga abierto.
 
 ## Marketing (Lola · #142 · el estudio de vídeo)
 
@@ -129,6 +120,14 @@ formatos —una presentación 16:9 por escenas y clips 9:16 por función— sobr
    persona. **Y lo que la retirada NO alcanza, con ticket propio**: la sesión de nube que la visita
    dejara en el Keychain sobrevive (`secondary-session-retirement-leaves-the-guest-cloud-session`).
 
+
+0-quater. **Device-QA del aviso de datos del teléfono (#153), y NO es simulable.** La puerta sale de
+   largo bajo `-uitest` —la hermeticidad va antes de la red— y ningún seed arma la marca del neutro
+   solo-grupos, así que las cuatro pantallas nuevas solo existen en device. El montaje pide **dos
+   teléfonos del mismo Apple ID**: uno en solo-grupos y otro que vacíe sus datos, para que la señal de
+   wipe remoto devuelva al primero a la bienvenida **con los grupos dentro**. Guion de 9 pasos en
+   `tickets/qa/device-qa-private-gate-device-corpus.md`. Lo que solo se ve ahí: que el corpus de la etapa
+   de grupos **no** aparezca en el iCloud del Apple ID después.
 
 1. **Cierra sesión en el iPhone y recrea los grupos de prueba.** Es lo ÚNICO que falta para el device-QA
    del paso 3: el móvil apunta a la cuenta que borró el fresh start y cada llamada da 409/502. **Mira antes
@@ -204,20 +203,16 @@ formatos —una presentación 16:9 por escenas y clips 9:16 por función— sobr
 deriva de un solo eje y M1 no existe. Lo que queda del ADR son los device-QA acumulados, que son tuyos
 y en su mayoría **no son simulables**.
 
-**Lo primero de la cola técnica es el board de testing**, que lleva dos noches diciendo lo mismo: los
-cuatro de `nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo` siguen rojos y ya no se sostienen como
+**El rediseño de sesiones no deja nada abierto en código.** Lo que queda son device-QA tuyos, y el del
+#153 se suma a la lista: es el único que necesita **dos teléfonos** del mismo Apple ID.
+
+**Lo primero de la cola técnica sigue siendo el board de testing**: los cuatro de
+`nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo` llevan dos noches rojos y ya no se sostienen como
 «flaky de runner frío» (ver Bloqueo).
 
-**El board: 336 en disco = 336 en `docs/TICKETS.md`**, cero desajustes de estado.
+**El board: 345 en disco = 345 en `docs/TICKETS.md`**, cero desajustes de estado.
 
 ## Bloqueo
-
-**`groups-killswitch-403-blocks-detach-forever` (high).** Con el kill de **Grupos** servido como 403 y
-cambios de grupos sin subir, desasociar queda **imposible** —`.permanent`, sin un solo reintento— y el
-aviso le dice al usuario que el problema es su cuenta. El #146 abrió la puerta para que ese gesto exista
-durante un incidente de la nube; por el eje de Grupos la puerta está abierta y el gesto no funciona. Pide
-decisión: distinguir el 403 de kill-switch del resto de lo permanente, o dejar soltar sin subir lo
-pendiente (que hoy es una decisión deliberada del orden del gesto).
 
 **La nocturna del 11-sep confirma que los cuatro de
 `nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo` siguen rojos**, tres de ellos 3/3 reintentos en dos
