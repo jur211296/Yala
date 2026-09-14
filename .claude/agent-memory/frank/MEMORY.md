@@ -16,6 +16,7 @@
 ## Cómo mido y cómo entrego
 - [El predicado del ticket no es el criterio](feedback_el_predicado_del_ticket_no_es_el_criterio.md) — mide con qué predicado decide la superficie que desbloqueas: el literal del ticket dejaba el bug vivo.
 - [La premisa del ENCARGO también se mide](feedback_la_premisa_del_encargo_tambien_se_mide.md) — hereda los errores del ticket.
+- [`-only-testing` filtra por TIPO, no por fichero](feedback_only_testing_filtra_por_tipo_no_por_fichero.md) — pedí 12 suites y corrieron 7; una escaneaba la función que yo acababa de tocar. Cuenta pedidas vs. `Test run with`.
 - [El barrido de QA rinde por lotes](feedback_el_barrido_qa_rinde_por_lotes.md) — agrupa por estado de simulador; dos números que comparas, mismo lanzamiento.
 - [Instrumentar gana a razonar](feedback_instrumentar_gana_a_razonar.md) — a la tercera hipótesis caída, cuenta en vez de deducir.
 - [El CI se verifica en LOCAL](feedback_el_ci_se_verifica_en_local.md) — el `run:` se extrae del YAML y se corre con matriz; actionlint con control negativo.
@@ -33,6 +34,7 @@
 - [Mi arreglo abre un camino INALCANZABLE](feedback_mi_arreglo_abre_un_camino_inalcanzable.md) — quitar un efecto vuelve alcanzable código que nunca corrió, con sus bugs intactos; recorre el gesto como 2.ª pasada.
 - [El consumidor lee una COPIA](feedback_el_consumidor_lee_una_copia.md) — actualicé el `@State` y el lector siguió con el valor viejo: lo recibe por VALOR y sin `await` nadie re-evalúa el body.
 - [Mi arreglo rompe la premisa de OTRO guard](feedback_mi_arreglo_rompe_la_premisa_de_otro_guard.md) — ensanchar un predicado, o abrir un CAMINO nuevo hacia él, deja mentirosos a guards que están a varios ficheros.
+- [El testigo vive menos que lo que describe](feedback_el_testigo_vive_menos_que_lo_que_describe.md) — el borrado va DENTRO del escritor del dato descrito; en los call-sites sobrevivió al relevo de humano.
 - [El guard va DENTRO del escritor](feedback_el_guard_va_dentro_del_escritor.md) — repetido en vistas SwiftUI solo lo prueba un grep, y un grep no ve un guard invertido.
 - [Mi fix hereda la forma del bug](feedback_mi_fix_hereda_la_forma_del_bug.md) — el arreglo repite el error del bug; enuncia el bug en una frase y aplícasela al arreglo.
 - [El alert de SwiftUI compite con su propio botón](feedback_el_alert_de_swiftui_compite_con_su_propio_boton.md) — el `set` del binding corre al pulsar CUALQUIER botón.
@@ -78,6 +80,7 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build incremental.
 
 ## Estado del trabajo
+- [Cambiar el Apple ID ya cierra la sesión privada](project_apple_id_cierra_la_sesion_privada.md) — PR #159; el ticket decía «alinear un aviso» y no había detección que alinear.
 - [«Empezar desde cero» en la activación ya borra de verdad](project_activacion_descarta_y_borra_de_verdad.md) — el hermano lo dio por imposible.
 - [Un fallo pasajero al cerrar sesión en la nube ya se dice honesto](project_aviso_pasajero_cierre_nube.md) — PR #156.
 - [«Empezar desde cero» en Restaurar ya borra](project_restore_start_fresh_pasa_por_la_puerta.md) — PR #155; la review cazó 11 MÍOS y el 1.º era que el arreglo no arreglaba.
