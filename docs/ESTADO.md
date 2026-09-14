@@ -5,10 +5,57 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-14 (Lima)
 
-**Rama** `2.1` — Merge #159: **cambiar el Apple ID del teléfono cierra la sesión privada.**
+**Rama** `2.1` — Merge #160: **«Empezar desde cero» sin iCloud vuelve a Restaurar y no promete nada.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#159 · cambiar el Apple ID del teléfono cierra la sesión privada)
+## Esta sesión (#160 · «Empezar desde cero» sin iCloud vuelve a Restaurar y no promete nada)
+
+**Activabas Yala completo, en «Restaurar» tocabas «Empezar desde cero», y la app no conseguía mirar tu
+iCloud —red caída, o iCloud apagado en el teléfono—.** Te decía «Seguir así», te llevaba al onboarding, y
+tus datos viejos seguían enteros: un borrado que nunca ocurrió, anunciado como si hubiera ocurrido. Ahora
+te dice que no pudo mirar, que **no borró nada**, y te devuelve a la pantalla anterior con las dos
+opciones abiertas. Quien abre Yala por primera vez no ve ningún cambio: en el Welcome esa pantalla sigue
+dejando seguir, y tiene que hacerlo — allí no hay app detrás a la que volver.
+
+**El daño de detrás era el peor y no se veía.** Aquel «Seguir así» dejaba la app **apuntada** para el
+aviso del espejo tardío, cuyo botón de borrar se lleva las preferencias y **el dominio de Grupos**. O sea
+que quien activaba Yala completo justo para conservar sus grupos podía acabar sin ellos, arranques
+después, por una red que se cayó dos segundos.
+
+**La premisa del ticket era falsa y ensanchó el alcance.** Decía que el estado «sin cuenta de iCloud» era
+inalcanzable por ese camino. Medido: `WelcomeRestoreView` ofrece «Empezar desde cero» desde cuatro estados
+y **tres no afirman que haya datos** —`notFoundView`, `iCloudDisabledView` y `wipedView`—, que llaman
+directo sin diálogo. Y otro dato que zanja hipótesis futuras: **el chooser de la activación no tiene
+«Restaurar»**; a esa pantalla se llega por `onRestore` de la puerta privada (que exige haber encontrado
+datos) o por el resume.
+
+**La review adversarial (3 lentes) cazó SEIS defectos míos, tres con cambio de código, y el peor lo
+introdujo mi propia extensión del alcance:** llevar el «vuelve» al estado K creaba un **camino muerto de
+dos pantallas** — la puerta devolvía a Restaurar, y Restaurar con iCloud apagado solo ofrece «Abrir
+Ajustes» y «Empezar desde cero», que trae de vuelta aquí. Es el mismo camino muerto que una review
+anterior le había cazado a la fase de al lado, tres líneas más arriba en el mismo fichero. Hoy esa fase
+ofrece «Reintentar» y su cuerpo dice la causa. Los otros: el **chevron** salía sin retirar el arm del
+borrado, a dos centímetros de un botón que sí lo retiraba; el cuerpo compartido repetía el título y tiraba
+la causa; nadie miraba el copy por desenlace; nada fijaba el «sin default» del parámetro; y una errata en
+un accessor salía como clave cruda sin que la paridad la viera. **Y un séptimo lo cazó un mutante y era
+del test**: su tramo llegaba al final del cuerpo y se cumplía desde el `case` de al lado.
+
+**14 mutantes verificados**, suite unit completa (6869 en 698 suites) y XCUITest del área 13/13 con el
+centinela confirmando que estuve solo.
+
+**Device-QA no simulable** (`tickets/qa/device-qa-discard-gate-returns-to-restore-without-icloud.md`):
+`measure()` sale por `isUITesting` antes de la sonda y `ICloudPersonalCorpusProbe` no tiene seam. Cuatro
+recorridos, uno el control negativo del Welcome. Deja dos tickets `low`:
+`discard-gate-proceed-leaves-the-imported-rows-behind` (la rama que mide la zona vacía con filas ya
+importadas) y `welcome-discard-gate-says-carry-on-right-after-asking-to-wipe` (la misma puerta en el
+Welcome sigue diciendo «Puedes seguir»; ahí el mecanismo es correcto, es copy).
+
+**Y una consecuencia que espera decisión tuya:** con iCloud apagado, la rama privada de la activación ya
+no se puede terminar por «Empezar desde cero» sin encenderlo — antes seguía, mintiendo. La pantalla lo
+dice y ofrece el remedio, y cancelar sigue devolviendo a la app de grupos. Si prefieres que ahí siga
+adelante, es un valor en un call-site.
+
+## Sesión anterior (#159 · cambiar el Apple ID del teléfono cierra la sesión privada)
 
 **Usabas Yala con tus datos en tu iCloud privado y cambiabas la cuenta de iCloud del teléfono. La app no
 se enteraba:** seguía enseñando los movimientos, las cuentas y los presupuestos de la cuenta anterior como
@@ -49,55 +96,10 @@ cuenta nueva cuando se dice «Ahora no». Deja un ticket **high**:
 `apple-id-close-blocked-has-no-visible-outcome` — si el cierre se bloquea, nadie lo enseña desde este
 camino y el coordinador queda tapiado para el resto del lanzamiento.
 
-## Sesión anterior (#158 · «Empezar desde cero» al activar Yala completo ya borra de verdad)
-
-**Usabas Yala solo para grupos y activabas Yala completo. Elegías «mi iCloud privado», la app encontraba
-tus datos de antes, tocabas «Traer mis datos», los veías, cambiabas de opinión y tocabas «Empezar desde
-cero» — y ese botón no borraba NADA.** Terminabas el onboarding y tus datos viejos seguían ahí; y si
-tenías Yala en otro teléfono, allí también, porque volvían a subir desde éste. Ahora lleva a la misma
-pantalla que ya usa el Welcome: **la app le pregunta a iCloud** qué hay de verdad, enseña las cifras y
-deja elegir entre traértelo, borrarlo (con segunda confirmación) o volver. **Tus grupos no se tocan**, y
-tu nombre y tu divisa tampoco.
-
-**Es un case propio (`.restoreDiscardGate`) y no un flag sobre la puerta que ya existía, porque las dos
-entradas necesitan borrados OPUESTOS:** antes del relanzamiento el store no espeja y lo local es de quien
-activa —borrarlo sería el daño contrario—; después, lo local **es** el corpus importado. Un `Bool` al
-lado del step se hereda en silencio. El borrado se dice ahora con un enum de tres políticas
-(`ICloudWipeScope`), y cada uno de los cinco call-sites declara la suya.
-
-**Dos cosas que ninguna de las tres decisiones de producto anticipaba, y la primera dejaba la app rota.**
-Sin reabrir el centinela del seed, la persona termina **sin ninguna categoría**: un alta solo-grupos lo
-deja puesto siempre y `seedCategoriesIfNeeded` sale por su flag guard **antes de mirar la base**, así que
-el seed del final del onboarding es un no-op silencioso — y con él se va «Ajuste de saldo», sin el cual
-el saldo inicial falla sin decir nada. Y la premisa de que el borrado «resetea el modo» era **falsa**: el
-eje de sesión privada está en el prefijo `cloudSync.*` que el barrido excluye a propósito y con test.
-
-**La review adversarial (4 lentes) cazó dos defectos ALTA de mi propio arreglo, los dos con la suite en
-verde.** (1) El alert de wipe remoto **desmontaba la sheet de la activación** cinco segundos después de
-borrar: cancelar la gracia antes del `await` no sirve —la tarea la crea el `onChange` en el update
-siguiente— y el término `hasCompletedOnboarding` del guard no tapaba, porque el scope nuevo lo conserva a
-propósito. Era el único que llegaba con el guard abierto. (2) El borrado se llevaba las **filas puenteadas
-de los grupos** y nadie las reponía: la persona conservaba sus grupos y sus saldos con el Panel y el Inbox
-vacíos de gastos de grupo. Lo cazaron **tres lentes a la vez**; ahora el borrado deja pedida la
-convergencia del bridge, que el arranque siguiente ejecuta.
-
-**Y una corrección de lente que medí y RECHACÉ:** limpiar el buffer durable de intents se llevaría la
-navegación a un grupo **vivo** (`SerializableIntent` tiene `.navigateGroupDetail`). Demasiado ancha, y va
-contra lo que el scope existe para conservar.
-
-**16 mutantes verificados**, 16 muertos — los seis últimos de las correcciones de la review, que es donde
-estaban los defectos graves. **Tres de mis tests salieron rojos después**, desfasados por mis propias
-correcciones: un `onProceed` que pasó a multilínea, una prohibición demasiado ancha, y un `segment` que
-usaba un comentario como marcador de cierre sobre una fuente de la que ya se habían quitado los
-comentarios.
-
-**Device-QA NO simulable, y esta vez con la razón medida:** `ICloudPersonalCorpusProbe` no tiene ni un
-seam de `uitest`, así que el estado «Encontramos tus datos» no existe en simulador — y a la pantalla de
-Restaurar de la activación **solo se llega desde ahí**. Ficha en
-`tickets/qa/device-qa-activation-restore-start-fresh.md`, cinco recorridos. **El fallo más probable del PR
-se mira siempre: tras borrar, que haya categorías y «Ajuste de saldo».**
-
 ## Las de antes
+- **#158 · «Empezar desde cero» al activar Yala completo ya borra de verdad.** Ese botón no borraba
+  NADA y el corpus viejo se re-exportaba a iCloud; hoy pasa por la puerta que pregunta a iCloud, enseña
+  las cifras y exige un segundo gesto. Los grupos, el nombre y la divisa no se tocan.
 
 El **#157** (vaciar tus datos ya no vacía el teléfono que prestaste) dejó su parte en el PR y en
 `git log`; lo vivo de él es su device-QA. Los partes de los merges #144 a #156 viven igual en sus PR — el

@@ -55,3 +55,12 @@ comprobación que cierra esto en una frase: **correr el generador con varios wor
 ninguno tiene que dar el MISMO resultado**. Hoy no lo da.
 
 **Y la entrada de `elastic-ritchie-9f2188` sigue commiteada en `README.md`**: se limpia con el arreglo.
+
+**Cuarta vez, en el cierre del #160 (2026-09-14) — y con un dato que acota el arreglo: el prefijo del
+nombre CAMBIÓ.** Esta vez los intrusos eran tres `.claude/worktrees/bridge-cse_<uuid>/`, no
+`elastic-ritchie-*`. Así que excluir por nombre concreto no sirve: hay que excluir **`.claude/worktrees/`
+entero** (o cualquier directorio que contenga un `.git`, que es el término que también cubre worktrees
+anidados fuera de esa ruta). Y se confirmó el daño que el #152 describía: con doce filas de tope, las
+copias **expulsaron de la lista** a `docs/modo-nube/MODO-NUBE-DIFERIDOS.md`,
+`tickets/qa/groups-consent-door-spec.md` y `docs/audit/AUDIT-UI-patterns.md` — ficheros reales del repo
+que el índice existe para nombrar. El cierre revirtió el diff, otra vez.
