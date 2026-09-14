@@ -126,8 +126,16 @@ final class GroupsMerkleClient {
             GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: "http-401")
             return .sessionExpired
         case 403:
-            // Se distingue el kill-switch del canal de la cuenta suspendida (el otro 403 posible): la acción
-            // es la misma, pero en un incidente el log tiene que decir CUÁL de las dos. Ver killSwitch.ts.
+            // Se distingue el kill-switch del canal del OTRO 403 —que no es «cuenta suspendida», medido el
+            // 2026-09-13: el gateway no emite ninguno de esos en `/groups/*`, así que el resto viene de
+            // infraestructura por delante del Worker—. La acción es la misma, pero en un incidente el log
+            // tiene que decir CUÁL de las dos. Ver killSwitch.ts.
+            //
+            // **Que aquí los dos compartan `.accountUnavailable` no propaga el veredicto**, y eso es lo que
+            // hace innecesario el discriminador que sí lleva el canal de sync: el único lector
+            // (`GroupsSyncClient.verifyGroupIntegrity`) colapsa todo lo que no sea `.snapshot` en un
+            // `.skipped`, así que ni sella el loop ni llega a un aviso. Si alguien le da otro consumidor,
+            // este 403 necesita la misma separación que el push y el pull.
             let reason = GatewayErrorEnvelope.isGroupsChannelDisabled(data) ? "channel-disabled" : "http-403"
             GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: reason)
             return .accountUnavailable

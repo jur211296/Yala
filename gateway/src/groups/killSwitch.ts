@@ -108,7 +108,8 @@ export const KILL_EXEMPT_RPCS: ReadonlySet<string> = new Set(["groups_forget_use
  * `gateRequest` (`ratelimit.ts`): el caller hace `if (killed) return killed`.
  *
  * El 403 no es cosmético — es lo que hace el rechazo DISTINGUIBLE de un transitorio en el cliente sin
- * tocar el canal de sync: `GroupsSyncClient` (push y pull) y `GroupsMerkleClient` ya mapean 403 →
+ * tocar el canal de sync: `GroupsSyncClient` (push y pull, SOLO con este envelope desde el 2026-09-13 —
+ * un 403 sin él lo trata como infraestructura y reintenta) y `GroupsMerkleClient` mapean 403 →
  * `.accountUnavailable` → `SyncCadencePolicy.stopUntilRelaunch`, o sea parada SIN bucle de reintentos.
  * Un 503 caería en su `default` → `.transient` → backoff exponencial para siempre contra un veredicto
  * definitivo, que es la clase de bug que costó el 2026-07-31.

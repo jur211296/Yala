@@ -153,16 +153,35 @@ final class GroupsSyncClient {
     /// Tarea del loop de cadencia (single-instance: `startIfEligible` no re-arranca si vive). `nil` fuera
     /// del loop (se limpia en el `defer` de `runLoop`).
     private var loopTask: Task<Void, Never>?
-    /// A5: un 403 (cuenta no disponible) → `stopUntilRelaunch`. Este flag impide re-arrancar el loop en el
-    /// MISMO proceso (mirror de la semántica del personal `SyncCadencePolicy.stopUntilRelaunch`).
+    /// A5: un `.accountUnavailable` que NO es el kill del canal → `stopUntilRelaunch`. Este flag impide
+    /// re-arrancar el loop en el MISMO proceso (mirror de la semántica del personal
+    /// `SyncCadencePolicy.stopUntilRelaunch`).
+    ///
+    /// **Desde el 2026-09-13 no le queda ningún productor ALCANZABLE, y conviene saberlo antes de
+    /// apoyarse en él.** Ya no lo arma ningún 403: el del kill nunca lo armó (es re-arrancable a propósito)
+    /// y el resto se mide como infraestructura y sube `.transient` (ver el `case 403` del push). El único
+    /// que queda en el código es el 409 `yala_account_reverting` del push, y ese camino está muerto por el
+    /// otro lado: `gateway/src/groups/routes.ts` dice de su puño que el freeze de la reversa del personal
+    /// **no aplica a este canal** y no llama a `beginFreezeCheck`, así que `/groups/push` no emite ese 409.
+    ///
+    /// Se conserva —en vez de retirarlo con su gate y sus tests— porque el día que el canal tenga un
+    /// veredicto de cuenta de verdad, esta es la pieza que lo para. Si para entonces sigue sin productor,
+    /// lo que toca es quitarlo: ticket `groups-channel-seal-has-no-reachable-producer`.
     private var stoppedUntilRelaunch = false
     /// El ÚLTIMO 403 recibido venía del KILL-SWITCH del canal (`yala_groups_disabled`). Lo escriben los dos
     /// únicos sitios que leen un 403 —el push y el pull— en AMBAS ramas (no solo cuando es el kill), para
     /// que nunca quede un valor viejo decidiendo la parada siguiente.
     ///
-    /// **Para qué existe, que es lo que no es obvio:** los dos 403 merecen la misma parada inmediata pero NO
-    /// la misma permanencia. Una cuenta suspendida es un veredicto sobre la cuenta y `stoppedUntilRelaunch`
-    /// es correcto. El kill del canal es una palanca de OPERACIÓN que se mueve en los dos sentidos con un
+    /// **Desde el 2026-09-13 los dos 403 ya no comparten outcome, y el testigo sigue haciendo falta.** El
+    /// 403 que no trae el envelope del kill sube `.transient` (viene de infraestructura, no del Worker), así
+    /// que la única forma de llegar a `.accountUnavailable` por un 403 es el kill. El testigo sigue siendo
+    /// necesario porque `.accountUnavailable` tiene OTRO productor que no es un 403 —el 409
+    /// `yala_account_reverting`— y el aviso de los dos no es el mismo.
+    ///
+    /// **Para qué existe, que es lo que no es obvio:** el kill y el freeze de la reversa merecen la misma
+    /// parada inmediata pero NO la misma permanencia. Una cuenta revirtiendo es un veredicto sobre la cuenta
+    /// y `stoppedUntilRelaunch` es lo de siempre. El kill del canal es una palanca de OPERACIÓN que se mueve
+    /// en los dos sentidos con un
     /// deploy: si armara `stoppedUntilRelaunch`, apagar sería inmediato pero **volver a encender exigiría
     /// que cada usuario matara y reabriera la app** —ni el foreground ni un push lo curan, porque
     /// `GroupsLoopRestartLogic.shouldStart` y `syncNowFromPush` leen ese flag—, o sea exactamente la
@@ -293,7 +312,7 @@ final class GroupsSyncClient {
     /// un NO-OP TOTAL: retorna ANTES de tocar la red o crear modelos. Call-sites DARK en `AppBootstrapper`
     /// (cold boot `trigger: nil`; foreground resume `trigger: "foreground"`) y en el modifier de invite
     /// backend (post-sign-in `trigger: "post-sign-in"`). Single-instance (no re-arranca si el loop vive);
-    /// un 403 previo (`stoppedUntilRelaunch`) tampoco re-arranca en este proceso (A5).
+    /// un sello previo (`stoppedUntilRelaunch`) tampoco re-arranca en este proceso (A5).
     ///
     /// **La decisión de (re)arranque del loop propio vive en `GroupsLoopRestartLogic.shouldStart`** (pura,
     /// testeada) — SSOT de flag/sesión/stop/single-instance/D8, para no partir la verdad entre guards
@@ -352,7 +371,8 @@ final class GroupsSyncClient {
 
     /// El loop de cadencia: cada vuelta = `syncCycleOnce` → delay por `SyncCadencePolicy` → repetir.
     /// `sessionExpired` (401) TERMINA el loop (re-arrancable por el próximo `startIfEligible`);
-    /// `accountUnavailable` (403) TERMINA + arma `stoppedUntilRelaunch` (no re-arranca en este proceso).
+    /// `accountUnavailable` TERMINA, y arma `stoppedUntilRelaunch` SALVO que venga del kill del canal
+    /// (`lastStopWasChannelKill`), que es re-arrancable a propósito.
     private func runLoop(context: ModelContext) async {
         defer { loopTask = nil }                        // A6: liberar el single-instance al salir
         loop: while true {
@@ -381,7 +401,8 @@ final class GroupsSyncClient {
             case .stopUntilRelaunch:
                 // El kill-switch del canal para el loop pero NO lo sella: se levanta con un deploy, así que
                 // sellarlo obligaría a relanzar la app en cada device para recuperarse (ver
-                // `lastStopWasChannelKill`). El OTRO 403 sí se sella, como siempre.
+                // `lastStopWasChannelKill`). Lo que sí sella es el 409 del freeze de la reversa, que desde
+                // el 2026-09-13 es el único `.accountUnavailable` que llega hasta aquí.
                 if stoppedByChannelKill(for: outcome) {
                     GroupsSyncBreadcrumb.groupsLoopStopped(reason: "channel-disabled")
                     break loop                           // RE-ARRANCABLE por el próximo startIfEligible
@@ -561,8 +582,11 @@ final class GroupsSyncClient {
     /// `.completed`) para probar `verifyGroupIntegrity` sin correr un ciclo entero. SOLO tests.
     func _testMarkPullCompleted() { lastPullCycleCompleted = true }
 
-    /// ¿El loop quedó SELLADO para el resto del proceso? Es la diferencia observable entre los dos 403: una
-    /// cuenta suspendida sella (y solo un relaunch lo cura), el kill-switch del canal NO (se levanta con un
+    /// ¿El loop quedó SELLADO para el resto del proceso? Desde el 2026-09-13 **ningún 403 sella**: el del
+    /// kill para el ciclo sin sellar y el de infraestructura es transitorio, así que este seam sirve hoy
+    /// para probar la AUSENCIA del sello. Lo escribe un solo sitio (la rama `.stopUntilRelaunch` de
+    /// `runLoop`), así que solo dice algo en un test que arranque el loop de verdad; preguntárselo a un
+    /// `syncCycleOnce` suelto es una aserción que no puede fallar. El kill-switch del canal NO sella (se levanta con un
     /// deploy). Sin este seam la distinción no es verificable — el flag es privado y su efecto solo se ve en
     /// el siguiente `startIfEligible`. SOLO tests.
     var _testStoppedUntilRelaunch: Bool { stoppedUntilRelaunch }
@@ -1520,12 +1544,28 @@ final class GroupsSyncClient {
                 }
             case 401:
                 return .sessionExpired(pending: totalPending)
-            case 403:
-                // Los dos 403 posibles comparten el OUTCOME (`.accountUnavailable` → parada sin bucle: ningún
-                // backoff cambia un veredicto de este tipo) y se separan en QUÉ CLASE de parada es —ver
-                // `lastStopWasChannelKill`, que es lo que decide si se puede levantar sin relanzar.
-                lastStopWasChannelKill = GatewayErrorEnvelope.isGroupsChannelDisabled(data)
+            case 403 where GatewayErrorEnvelope.isGroupsChannelDisabled(data):
+                // El kill-switch del canal: parada inmediata sin bucle (ningún backoff levanta una palanca
+                // que alguien bajó a mano) pero RE-ARRANCABLE — el testigo es lo que impide sellarla.
+                lastStopWasChannelKill = true
                 return .accountUnavailable
+            case 403:
+                // Cualquier OTRO 403 viene de FUERA del Worker, y por eso es TRANSITORIO. Medido el
+                // 2026-09-13 sobre `gateway/src/`: los únicos dos 403 que emite el gateway son el kill de
+                // arriba (`groups/killSwitch.ts`) y `yala_pro_required` (`ratelimit.ts`), que no alcanza
+                // estas rutas —`policy.ts` da límites de `sync` a los DOS tiers, «Modo Nube es GRATIS»—, y
+                // los fallos upstream de `/groups/*` salen como 502 `yala_unavailable`, nunca reenviando el
+                // status. O sea que aquí solo cae un proxy, un WAF o una página de error del edge: tratarlo
+                // como veredicto sobre la CUENTA apagaba el canal el resto de la vida del proceso y le decía
+                // a la persona que revisara su conexión. `GroupsMembershipClient` ya lo había medido y
+                // decidido igual para las SUYAS (`POST /groups/rpc/{fn}`; ver su `case 403 where`).
+                //
+                // El breadcrumb no es adorno: antes de separar los dos 403 este caso paraba el loop y
+                // dejaba su `loopStopped reason=account-unavailable`. Sin él, un WAF que apague `/groups/*`
+                // para una cohorte no deja NADA en los logs — el canal deja de converger en silencio.
+                lastStopWasChannelKill = false
+                GroupsSyncBreadcrumb.groupsForbiddenNotKill(edge: "push")
+                return .transient
             case 409:
                 return GatewayErrorEnvelope.isAccountReverting(data) ? .accountUnavailable : .transient
             default:
@@ -1797,10 +1837,16 @@ final class GroupsSyncClient {
                     return .transient
                 }
             case 401: return .sessionExpired
-            case 403:
-                // Mismo criterio que el push (ver allí).
-                lastStopWasChannelKill = GatewayErrorEnvelope.isGroupsChannelDisabled(data)
+            case 403 where GatewayErrorEnvelope.isGroupsChannelDisabled(data):
+                // Mismo criterio que el push (ver allí): kill → parada re-arrancable.
+                lastStopWasChannelKill = true
                 return .accountUnavailable
+            case 403:
+                // Mismo criterio que el push (ver allí): un 403 que no trae el envelope del kill viene de
+                // fuera del Worker → transitorio, con su backoff, y con su rastro.
+                lastStopWasChannelKill = false
+                GroupsSyncBreadcrumb.groupsForbiddenNotKill(edge: "pull")
+                return .transient
             default: return .transient
             }
         }
