@@ -63,3 +63,17 @@ clavado en 26— así que fiarse del exit habría metido el defecto en el PR.
 (`xcodebuild … > "$LOG" 2>&1; echo "EXIT=$?"`), y después grepea el fichero. Con pipe, `$?` es del
 último comando de la tubería. Es la misma familia que el word-splitting de arriba: el veredicto se lee
 de `Test run with` y del exit **de xcodebuild**, nunca del de un envoltorio.
+
+
+## Y sigue mordiendo en el gate: 40 filtros en una variable = `Unknown build action` (2026-09-14)
+
+Construí las 40 suites del paso 2 del gate en `SUITES="$SUITES -only-testing:…"` y llamé
+`xcodebuild test $SUITES`. zsh la pasó como **un solo argumento** y xcodebuild contestó
+`error: Unknown build action ' -only-testing:… -only-testing:…'`. Aquí salió **rojo y ruidoso**
+—no el «SUCCEEDED con cero tests» de la primera vez— porque el argumento empieza por espacio y no
+casa con ninguna acción; pero es el mismo fallo y la misma cura.
+
+**El molde que uso ya sin pensar:** escribir un script con `ARGS=()` + `ARGS+=("-only-testing:…")` +
+`exec … "${ARGS[@]}"`, correrlo con `bash`, y que imprima **cuántas suites pidió** antes de lanzar.
+Esa línea es la que se compara con el `Test run with N tests in M suites` del final: 40 pedidas, 40
+corridas, 301 casos.

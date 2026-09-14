@@ -75,6 +75,7 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build incremental; dos míos iban al commit el 10-sep.
 
 ## Estado del trabajo
+- [Un fallo pasajero al cerrar sesión en la nube ya se dice honesto](project_aviso_pasajero_cierre_nube.md) — PR #156; la premisa del ticket era FALSA y la review cazó dos defectos en MIS tests; device-QA NO simulable; deja 4 tickets.
 - [«Empezar desde cero» en Restaurar ya borra](project_restore_start_fresh_pasa_por_la_puerta.md) — PR #155; la review cazó 11 MÍOS y el 1.º era que el arreglo no arreglaba; device-QA NO simulable; deja 2 tickets.
 - [Un 403 de infra ya no es un veredicto de cuenta](project_403_infra_no_es_veredicto_de_cuenta.md) — PR #154; el sello queda SIN productor alcanzable y el cierre `.cloud` sigue colapsando en `.permanent` (decisión suya).
 - [El eje 1 ya tiene fuente propia](project_eje1_marca_sesion_privada.md) — PR #150; eran 9 constructores y no 6; el barrido de M1 es el PR-B y el device-QA NO es simulable.

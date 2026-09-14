@@ -204,3 +204,45 @@ Del mismo día, las dos me costaron una vuelta entera:
   «no aplica» sin ejecutar nada de lo que yo quería probar — dos veces, y las dos leí el verde
   como resultado. ⇒ **un mutante de un script se corre desde donde vive el original** (copia
   temporal dentro del árbol, borrada después), o no está probando el mismo código.
+
+
+## Noveno eslabón: el `#require` que fija la ETIQUETA del `case` y no su CUERPO
+
+**2026-09-14, `cloud-signout-collapses-every-groups-transient-into-permanent`.** Mi source-scan del
+aviso decía —en su propio nombre— «y por el alert que toca», y comprobaba esto:
+
+    #require(present.range(of: "case .permanent, .sessionExpired, .channelPaused, .uploadRetryLater:"))
+    #require(present.range(of: "case .transient: showSignOutPendingAlert = true"))
+    #expect(blocked.lowerBound != pending.lowerBound)
+
+Una lente midió los dos defectos que hay ahí:
+
+- **La primera fija la etiqueta y deja el cuerpo libre.** El mutante que cambia esa rama a
+  `showSignOutPendingAlert = true` manda los CUATRO motivos del bloqueo al aviso que promete «un
+  momento más» —sobre un servidor caído— y el test sigue **verde**. Lo probé compilado: verde.
+- **La tercera no puede fallar nunca.** Son los `lowerBound` de dos literales distintos sobre la misma
+  cadena: divergen en el sexto carácter, así que son distintos **por construcción**. Ocupaba el sitio
+  de la aserción que debía distinguir las ramas y hacía creer que la propiedad estaba fijada.
+
+**Why:** cuando el `switch` es el mecanismo, lo que hay que fijar es el **par** etiqueta→cuerpo. La
+etiqueta sola solo dice que el motivo está pronunciado, no **qué** se hace con él — y «qué se hace»
+es justo lo que el ticket vino a arreglar.
+
+**How to apply:**
+
+- En un scan sobre un `switch`, el literal del `#require` lleva **la etiqueta y su cuerpo juntos**, y
+  se normaliza el whitespace antes (`text.split(whereSeparator: \.isWhitespace).joined(separator: " ")`)
+  para que partir la línea no dé un rojo falso. Y se fija también la rama HERMANA, o el mutante que las
+  une por el otro lado no rompe nada.
+- **Dos `range(of:)` de literales distintos nunca se comparan entre sí.** Si la propiedad es «esta rama
+  va antes que aquélla», compara posiciones de literales que puedan coincidir, o mejor: fija el
+  contenido de cada rama por separado, que es lo que de verdad importa.
+- La pregunta de siempre, aplicada al scan: **¿qué edición del fichero pone ESTA línea en rojo?** Si la
+  respuesta es «renombrar el case», el scan vigila el nombre, no el comportamiento.
+
+**Y el corolario de esta sesión, que es el más barato de olvidar: un mecanismo nuevo sin red se borra
+entero sin romper nada.** Añadí un breadcrumb —la única forma de saber en campo qué aviso vio la
+persona— y al correr el mutante «bórralo entero» salió **VERDE**. Ocho mutantes, siete muertos y ése
+vivo. ⇒ cuando el cambio añade una línea que nadie consume dentro del proceso (un log, una métrica, un
+testigo), **su red es un scan explícito**: el compilador no la echa de menos y ningún test de
+comportamiento la toca.
