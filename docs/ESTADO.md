@@ -5,10 +5,58 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-14 (Lima)
 
-**Rama** `2.1` — Merge #157: **vaciar tus datos ya no vacía el teléfono que prestaste.** TestFlight build
-**13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
+**Rama** `2.1` — Merge #158: **«Empezar desde cero» al activar Yala completo ya borra de verdad.**
+TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#157 · vaciar tus datos ya no vacía el teléfono que prestaste)
+## Esta sesión (#158 · «Empezar desde cero» al activar Yala completo ya borra de verdad)
+
+**Usabas Yala solo para grupos y activabas Yala completo. Elegías «mi iCloud privado», la app encontraba
+tus datos de antes, tocabas «Traer mis datos», los veías, cambiabas de opinión y tocabas «Empezar desde
+cero» — y ese botón no borraba NADA.** Terminabas el onboarding y tus datos viejos seguían ahí; y si
+tenías Yala en otro teléfono, allí también, porque volvían a subir desde éste. Ahora lleva a la misma
+pantalla que ya usa el Welcome: **la app le pregunta a iCloud** qué hay de verdad, enseña las cifras y
+deja elegir entre traértelo, borrarlo (con segunda confirmación) o volver. **Tus grupos no se tocan**, y
+tu nombre y tu divisa tampoco.
+
+**Es un case propio (`.restoreDiscardGate`) y no un flag sobre la puerta que ya existía, porque las dos
+entradas necesitan borrados OPUESTOS:** antes del relanzamiento el store no espeja y lo local es de quien
+activa —borrarlo sería el daño contrario—; después, lo local **es** el corpus importado. Un `Bool` al
+lado del step se hereda en silencio. El borrado se dice ahora con un enum de tres políticas
+(`ICloudWipeScope`), y cada uno de los cinco call-sites declara la suya.
+
+**Dos cosas que ninguna de las tres decisiones de producto anticipaba, y la primera dejaba la app rota.**
+Sin reabrir el centinela del seed, la persona termina **sin ninguna categoría**: un alta solo-grupos lo
+deja puesto siempre y `seedCategoriesIfNeeded` sale por su flag guard **antes de mirar la base**, así que
+el seed del final del onboarding es un no-op silencioso — y con él se va «Ajuste de saldo», sin el cual
+el saldo inicial falla sin decir nada. Y la premisa de que el borrado «resetea el modo» era **falsa**: el
+eje de sesión privada está en el prefijo `cloudSync.*` que el barrido excluye a propósito y con test.
+
+**La review adversarial (4 lentes) cazó dos defectos ALTA de mi propio arreglo, los dos con la suite en
+verde.** (1) El alert de wipe remoto **desmontaba la sheet de la activación** cinco segundos después de
+borrar: cancelar la gracia antes del `await` no sirve —la tarea la crea el `onChange` en el update
+siguiente— y el término `hasCompletedOnboarding` del guard no tapaba, porque el scope nuevo lo conserva a
+propósito. Era el único que llegaba con el guard abierto. (2) El borrado se llevaba las **filas puenteadas
+de los grupos** y nadie las reponía: la persona conservaba sus grupos y sus saldos con el Panel y el Inbox
+vacíos de gastos de grupo. Lo cazaron **tres lentes a la vez**; ahora el borrado deja pedida la
+convergencia del bridge, que el arranque siguiente ejecuta.
+
+**Y una corrección de lente que medí y RECHACÉ:** limpiar el buffer durable de intents se llevaría la
+navegación a un grupo **vivo** (`SerializableIntent` tiene `.navigateGroupDetail`). Demasiado ancha, y va
+contra lo que el scope existe para conservar.
+
+**16 mutantes verificados**, 16 muertos — los seis últimos de las correcciones de la review, que es donde
+estaban los defectos graves. **Tres de mis tests salieron rojos después**, desfasados por mis propias
+correcciones: un `onProceed` que pasó a multilínea, una prohibición demasiado ancha, y un `segment` que
+usaba un comentario como marcador de cierre sobre una fuente de la que ya se habían quitado los
+comentarios.
+
+**Device-QA NO simulable, y esta vez con la razón medida:** `ICloudPersonalCorpusProbe` no tiene ni un
+seam de `uitest`, así que el estado «Encontramos tus datos» no existe en simulador — y a la pantalla de
+Restaurar de la activación **solo se llega desde ahí**. Ficha en
+`tickets/qa/device-qa-activation-restore-start-fresh.md`, cinco recorridos. **El fallo más probable del PR
+se mira siempre: tras borrar, que haya categorías y «Ajuste de saldo».**
+
+## Sesión anterior (#157 · vaciar tus datos ya no vacía el teléfono que prestaste)
 
 **Vacías tus datos en tu iPhone privado. Hasta hoy, cualquier otro dispositivo del mismo Apple ID con el
 onboarding hecho se vaciaba también, mirara lo que mirara.** También el iPad que tenías con una sesión en
@@ -54,49 +102,14 @@ prestado y su botón expulsa al onboarding
 (`wipe-alert-fires-on-a-session-that-no-longer-obeys-the-signal`), y las 37 preferencias siguen cruzando
 entre el dueño y quien usa el teléfono (`icloud-kv-prefs-cross-sessions-on-a-lent-phone`).
 
-## Sesión anterior (#156 · un fallo pasajero de grupos ya no dice «revisa tu conexión»)
-
-**Tienes una cuenta en la nube con grupos y cambios sin subir. Pulsas «Cerrar sesión», falla algo del
-lado del servidor —un 5xx, un cortafuegos, la red— y la app decía siempre lo mismo: «revisa tu conexión
-e inténtalo de nuevo».** Cuando el problema no es tu conexión, y esa es la mayoría de las veces, te
-mandaba a buscar un fallo que no existe sin decir lo único cierto: que esperes y lo vuelvas a intentar.
-Ahora ese caso tiene su aviso: **«Los últimos cambios de tus grupos no llegaron al servidor. Siguen
-guardados en este teléfono y no se pierden; inténtalo de nuevo en un rato.»** Sale **al momento**, sin
-hacerte esperar 45 s, y por el mismo aviso que el canal en pausa. Decisión tuya (opción 2), mismo
-criterio que el kill-switch el 13-sep.
-
-**La premisa del ticket era falsa, y se medía con un grep.** Decía que aquí se perdía el presupuesto de
-reintento de 45 s; este camino **nunca** consulta `GroupsSignOutRetryDecision` —llama al push-all
-directo; el presupuesto es de `pushGroupsForSignOut`, que usan los otros tres caminos—. No había
-reintento que perder: lo único roto era el aviso.
-
-**El ternario se fue y en su sitio hay un `switch` exhaustivo** (`cloudSignOutGroupsBlockReason`). No es
-cosmético: el ternario no obligaba a nadie a pronunciarse, y por eso el bug pudo nacer en silencio.
-Ahora el compilador no deja añadir un motivo sin decidir qué se enseña.
-
-**La review adversarial (4 lentes) cazó tres cosas mías, y dos estaban en MIS PROPIOS TESTS.** Un
-`#require` fijaba la etiqueta del `case` y no su cuerpo: el mutante que manda los cuatro motivos al
-aviso equivocado —«un momento más» ante un servidor caído— pasaba verde. Y una aserción comparaba los
-índices de dos literales distintos: no podía fallar nunca. La tercera, un docblock falso a 100 líneas
-del cambio que seguía afirmando el colapso que este PR retira. **Ocho mutantes, ocho muertos** — y uno
-sobrevivió a la primera vuelta: borrar el breadcrumb entero no rompía nada.
-
-**Device-QA NO simulable:** provocar un fallo pasajero del canal exige un servidor que falle, y no hay
-seam (34 launch args, ninguno lo hace). Guion en `tickets/qa/`.
-
-**Lo que este PR NO cierra, con ticket propio.** El paso 1 del mismo cierre —el push-all PERSONAL—
-descarta el motivo con `_`, y **es el que dispara primero** ante un corte de red con filas personales
-pendientes: `cloud-signout-collapses-the-personal-push-all-reason-into-permanent`. Y `.sessionExpired`
-sigue colapsado en el paso 2, porque su copy manda a «volver a iniciar sesión» a quien acaba de pedir lo
-contrario — decisión tuya: `cloud-signout-collapses-a-groups-session-expiry-into-permanent`.
-
 ## Las de antes
 
-Los partes de los merges #144 a #155 viven en sus PR y en `git log`; aquí se quedan solo los dos últimos
-mientras su device-QA siga abierto. El del **#155** («Empezar desde cero» en Restaurar ya borra) salió hoy:
-lo que queda vivo de él son su device-QA (cola, 0-quinquies) y sus dos tickets,
-`activation-restore-start-fresh-keeps-the-imported-rows` (`high`) y
-`private-icloud-gate-back-lands-on-the-wrong-branch` (`medium`).
+Los partes de los merges #144 a #156 viven en sus PR y en `git log` — el del **#156** (un fallo pasajero
+de grupos ya no dice «revisa tu conexión») salió de aquí hoy, y lo vivo de él son sus 4 tickets; aquí se quedan solo los dos últimos
+mientras su device-QA siga abierto. Del **#155** («Empezar desde cero» en Restaurar ya borra) queda vivo
+su device-QA (cola, 0-quinquies) y un ticket, `private-icloud-gate-back-lands-on-the-wrong-branch`
+(`medium`): **el otro, `activation-restore-start-fresh-keeps-the-imported-rows`, lo cerró el #158** — el
+borrador que aquel PR dio por imposible costó un flag y un enum.
 
 ## Marketing (Lola · #142 · el estudio de vídeo)
 
@@ -107,6 +120,14 @@ formatos —una presentación 16:9 por escenas y clips 9:16 por función— sobr
 
 ## Tu cola
 
+0-ter. **Device-QA del #158, y NO es simulable** (`tickets/qa/device-qa-activation-restore-start-fresh.md`,
+   cinco recorridos). `ICloudPersonalCorpusProbe` no tiene ni un seam de `uitest`, así que el estado
+   «Encontramos tus datos» de la puerta no existe en simulador — y a la pantalla de Restaurar de la
+   activación solo se llega desde ahí. **Lo que hay que mirar siempre, porque es el fallo más probable
+   del PR: tras borrar, abre el selector de subcategorías y comprueba que hay categorías y que está
+   «Ajuste de saldo».** Y dos cosas más que la review dejó apuntadas: que los gastos de tus grupos
+   **vuelvan al Panel al reabrir la app** (no antes — los repone la convergencia del bridge), y que con
+   un corpus grande la zona de iCloud **no vuelva a llenarse** tras sincronizar.
 0-bis. **Marketing · el estudio de vídeo espera tu ojo** (`marketing/remotion/out/` se regenera con
    `bun run render:presentation` y `bun run render:reels`). Tres decisiones cortas: fondo de la
    presentación **oscuro o blanco**; el **guion de 8 líneas** en `copy.ts`; y cuándo grabas los **clips por
@@ -252,16 +273,20 @@ solo-grupos contradice, y el propio fichero dice dónde reponerlo
 `nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo` llevan dos noches rojos y ya no se sostienen como
 «flaky de runner frío» (ver Bloqueo).
 
-**Y el #155 deja dos tickets, uno de ellos `high`:**
-`activation-restore-start-fresh-keeps-the-imported-rows` — el mismo «Empezar desde cero» desde «Activar
-Yala completo» borra la zona de iCloud y el store, que espeja, la vuelve a llenar. Cerrarlo pide un
-borrador de filas personales **sin tocar preferencias**, que hoy no existe: `wipeAllUserData` hace las dos
-cosas de un gesto y su reset va mucho más allá de quitar keys (router, ProTour, checklist, App Group).
-Partirlo es un objeto propio sobre un método destructivo que comparten «Vaciar datos» y el wipe remoto.
-El otro es `private-icloud-gate-back-lands-on-the-wrong-branch` (`medium`).
+**El #158 deja cuatro tickets, uno `high`:**
+`activation-discard-gate-exits-without-wiping-when-icloud-is-unreachable` — tres salidas de la puerta
+(`.noICloud`, `.unreachable`, `.proceed`) llaman a `onProceed()` **sin pasar por el borrado**. En la puerta
+del chooser es un daño menor; en la nueva las filas importadas **ya están en el teléfono**, así que quien
+confirma «empezar de cero» sin red sigue con todo. Y el aviso del espejo tardío que llega después usa el
+scope del handover, o sea que **purgaría los grupos**. Los otros tres:
+`activation-discard-loses-the-group-history-question` (`medium`, la pregunta «¿traemos tus gastos de
+grupo?» se mide después del borrado y da 0),
+`private-gate-wipe-failure-copy-claims-icloud-is-intact` (`medium`, el copy del fallo parcial dice que
+iCloud sigue entero cuando la zona ya no está — el copy correcto ya existe traducido) y
+`activation-resume-returns-to-restore-on-an-emptied-zone` (`low`).
 
-**El board: 362 en disco = 362 en `docs/TICKETS.md`**, cero desajustes de estado y cero rutas rotas.
-Suben 9 con el #157 y el ticket del vaciado remoto pasa a `qa/`.
+**El board: 367 en disco = 367 en `docs/TICKETS.md`**, cero desajustes de estado y cero rutas rotas. Suben
+5 con el #158 y `activation-restore-start-fresh-keeps-the-imported-rows` pasa a `done/`.
 
 ## Bloqueo
 
