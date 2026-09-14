@@ -64,8 +64,10 @@ nonisolated enum AppleIDChangeCloseLogic {
     ///     `false`), y no la ancha. Cumple el criterio que su docblock fija para admitir un consumidor
     ///     nuevo: «hacia `true` se destruye, hacia `false` solo se conserva de más». Con la lectura
     ///     ancha, un dispositivo cuya marca aún no se ha escrito se borraría a sí mismo. **Aporta DOS
-    ///     lecturas y no una** —el pre-filtro y la re-lectura tras el `await`—, que es lo que sube el
-    ///     conteo de `PrivateSessionMarkTests` de 3 a 5.
+    ///     lecturas y no una** —el pre-filtro y la re-lectura tras el `await`—, así que aporta dos al
+    ///     conteo que fija `PrivateSessionMarkWiringTests` (el TIPO, segunda `@Suite` de
+    ///     `PrivateSessionMarkTests.swift`). El número exacto se mira allí y no aquí: esta prosa ya
+    ///     caducó una vez, cuando el aviso de vaciado remoto añadió la sexta lectura el 2026-09-14.
     ///   - groupsOnlySessionArmed: el término que el ticket pide conservar explícitamente. Una sesión
     ///     solo-grupos **no tiene sesión privada que cerrar**: su store personal está vacío a
     ///     propósito y su vida vive en la cuenta de Yala, que no es del Apple ID del teléfono. Sin

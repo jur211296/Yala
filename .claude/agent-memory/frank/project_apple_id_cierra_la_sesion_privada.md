@@ -33,10 +33,13 @@ tuviera el teléfono.
 - **La review adversarial cazó 14 defectos MÍOS con la suite en verde**, cinco de ellos con cambio de
   código. El peor: el testigo sobrevivía a «Empiezo de cero» y al dueño nuevo le habría ofrecido borrar
   sus propios datos. Ver [[el-testigo-vive-menos-que-lo-que-describe]].
-- **Dos contadores del eje 1 subieron y hay que saberlo:** `confirmedPrivateSession` de 3 a **5** (este
-  cierre aporta dos lecturas, no una: el pre-filtro y la re-lectura tras el `await`) y
-  `hasPrivateSession` de 16 a **17** (la celda resuelta en el tap del aviso, donde el signo del error es
-  el contrario). Los dos los obliga un test de `PrivateSessionMarkTests`, que es como se descubrió.
+- **Dos contadores del eje 1 subieron y hay que saberlo:** `confirmedPrivateSession` (este cierre aporta
+  dos lecturas, no una: el pre-filtro y la re-lectura tras el `await`) y `hasPrivateSession` de 16 a
+  **17** (la celda resuelta en el tap del aviso, donde el signo del error es el contrario). Los dos los
+  obliga **`PrivateSessionMarkWiringTests`** —el TIPO, segunda `@Suite` dentro de
+  `PrivateSessionMarkTests.swift`—, que es como se descubrió. **La cifra concreta NO se copia aquí**: el
+  14-sep ya caducó (el aviso de vaciado remoto añadió una sexta lectura) y una memoria con un número de
+  call-sites envejece a la primera. Se lee del test.
 
 Relacionado: [[rediseno-sesiones-dos-ejes]] · [[eje1-marca-sesion-privada]] ·
 [[only-testing-filtra-por-tipo-no-por-fichero]]

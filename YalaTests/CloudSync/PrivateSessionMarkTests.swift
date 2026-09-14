@@ -254,10 +254,11 @@ struct PrivateSessionMarkWiringTests {
         // un consumidor que pasara su propio `UserDefaults` —que es lo que hace el servicio de
         // preferencias— no lo contaba nadie: se colaba un lector de la estricta sin pasar por esta
         // decisión. El prefijo `PrivateSessionMark.` deja fuera la declaración del propio tipo.
-        #expect(Self.countInProduction("PrivateSessionMark.confirmedPrivateSession(") == 5, """
-            `confirmedPrivateSession` tiene CINCO lecturas en toda la app, y todas comparten el SIGNO
-            de su error: hacia `true` se BORRA, hacia `false` solo se conserva de más. Si aparece una
-            más, decide a conciencia de qué lado cae — si equivocarse hacia `true` no destruye nada, la
+        #expect(Self.countInProduction("PrivateSessionMark.confirmedPrivateSession(") == 6, """
+            `confirmedPrivateSession` tiene SEIS lecturas en toda la app, y todas comparten el SIGNO
+            de su error: hacia `true` se DAÑA —se borra, o se afirma un hecho falso sobre datos
+            ajenos—, hacia `false` solo se conserva de más o se calla. Si aparece una más, decide a
+            conciencia de qué lado cae — si equivocarse hacia `true` no destruye nada ni miente, la
             lectura que le toca es `hasPrivateSession`, que falla conservando.
 
             Era UNO hasta el 2026-09-14 (`UserDataResetView`: ¿esta sesión EMITE la señal de vaciado a
@@ -268,9 +269,17 @@ struct PrivateSessionMarkWiringTests {
             de más en una sesión de la nube sube esos borrados a SU cuenta; en solo grupos borra el
             perfil de quien tiene el teléfono prestado.
 
+            La sexta entró el mismo 2026-09-14 y es la única que NO borra: el aviso de la gracia de
+            5 s en `ContentView` («Tus datos fueron eliminados de iCloud»), que se enciende cuando las
+            filas desaparecen del store. Quien las baja es el espejo de CloudKit, no la señal, y el
+            espejo está montado también en el teléfono prestado — así que sin este eje el aviso le
+            salta a quien no tiene ningún iCloud en juego, con un botón que lo expulsa al onboarding.
+            Su `true` de más no destruye datos, pero afirma un hecho falso sobre los de otra persona y
+            le ofrece el camino genérico de degradación: mismo signo, misma lectura.
+
             Y desde el 2026-09-14 hay un consumidor más —el cierre de la sesión privada cuando cambia
             el Apple ID del teléfono (`AppleIDChangeCloseLogic`)— que aporta **DOS** lecturas, no una,
-            y por eso el número sube de 3 a 5. Son dos instantes distintos del mismo cableado en
+            y por eso aporta dos de los seis. Son dos instantes distintos del mismo cableado en
             `AppBootstrapper.checkForAppleIDChange`: el pre-filtro que decide si merece la pena salir a
             CloudKit, y la re-lectura DESPUÉS del `await`, que es la que decide de verdad. Contarlas
             como una sola escondería justo la que importa: entre las dos cabe un cierre de sesión

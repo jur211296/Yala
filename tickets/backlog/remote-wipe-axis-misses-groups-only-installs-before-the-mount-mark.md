@@ -4,6 +4,7 @@ status: backlog
 priority: high
 area: "sesiones, modo-nube, settings"
 created: 2026-09-14
+updated: 2026-09-14
 source: "review adversarial de `remote-wipe-signal-honored-by-any-session`, lente de caminos y alcance"
 ---
 
@@ -45,6 +46,14 @@ hacia `true` solo significa emitir una señal que nadie pidió.
 Desde que el RECEPTOR lee el mismo eje, el mismo residual gobierna un BORRADO. Ya no es barato: a esa
 población se le sigue vaciando el teléfono por orden de otro dispositivo. El docblock quedó corregido en
 el mismo PR; lo que falta es cerrar el hueco.
+
+## El mismo residual gobierna ahora un AVISO, no solo el borrado (2026-09-14)
+
+`wipe-alert-fires-on-a-session-that-no-longer-obeys-the-signal` puso el mismo eje delante del aviso
+«Tus datos fueron eliminados de iCloud» de la gracia de 5 s. Para esta población el eje sigue dando
+`true`, así que **el aviso también les sigue saliendo**, con su botón que expulsa al onboarding. No se
+parcheó allí a propósito: un predicado local al aviso divergiría del que gobierna el borrado, y es
+justo lo que ese ticket evita delegando. Se cierra aquí, en el eje, o no se cierra.
 
 ## Qué hay que decidir / investigar
 

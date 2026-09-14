@@ -48,9 +48,13 @@ ID?») y dos cuerpos iguales que «siempre van juntos» divergen en el commit si
 borra. El receptor lee `confirmedPrivateSession` (marca ausente ⇒ `false`), porque aquí el `true`
 equivocado BORRA.
 
-**El eje se consulta en los DOS puntos**: donde la señal se detecta
-(`PreferenceSyncService.checkForRemoteWipeSignal`, que es quien encola el intent) y donde se drena
-(`ContentView.handleRemoteWipeSignal`, que es quien borra). El parámetro **no tiene valor por defecto a
+**El eje se consulta en TRES puntos** (eran dos hasta el 2026-09-14): donde la señal se detecta
+(`PreferenceSyncService.checkForRemoteWipeSignal`, que es quien encola el intent), donde se drena
+(`ContentView.handleRemoteWipeSignal`, que es quien borra) y —desde el ticket
+`wipe-alert-fires-on-a-session-that-no-longer-obeys-the-signal`— delante del AVISO que la gracia de 5 s
+enciende cuando las filas desaparecen del store (`ContentView`, `onChange` de `hasPersonalData`). El
+tercero no borra: afirma. Al llevar este ticket al device, comprueba también que ese aviso NO sale en la
+celda que no obedece. El parámetro **no tiene valor por defecto a
 propósito**: un default devolvería a los call-sites futuros el derecho a no pronunciarse, que es la forma
 exacta de este bug.
 
