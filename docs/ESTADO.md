@@ -5,10 +5,48 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-14 (Lima)
 
-**Rama** `2.1` — Merge #160: **«Empezar desde cero» sin iCloud vuelve a Restaurar y no promete nada.**
+**Rama** `2.1` — Merge #161: **Vaciar tus datos ya no promete borrarlos de todos tus dispositivos.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#160 · «Empezar desde cero» sin iCloud vuelve a Restaurar y no promete nada)
+## Esta sesión (#161 · vaciar tus datos ya no promete que se borran de todos tus dispositivos)
+
+**Ibas a «Vaciar datos» y la hoja de confirmación te decía, en la fila ☁️, que se borraban «también
+de tu iPad, tu Mac y cualquier dispositivo con este Apple ID».** Confirmabas, y en tu iPad —el que
+le prestaste a alguien, o el que usa la cuenta de Yala— no se borraba nada. Nadie te lo decía, ni
+antes ni después. Ahora la frase promete solo lo que se cumple: **se borran de iCloud, así que
+desaparecen de los otros dispositivos que guardan ahí tus datos personales**. La fila de «En tu
+cuenta de Yala» no cambia: ahí el borrado sí viaja por la cuenta y tus otros dispositivos lo pierden
+al sincronizar.
+
+**La frase era cierta hasta ayer, y se volvió falsa sin que nada se pusiera rojo.** El #157 cerró a
+propósito el otro extremo del canal —un teléfono prestado dejó de obedecer la señal de vaciado,
+porque obedecerla borraba el perfil de quien lo tenía— y con eso la mitad de arriba de la promesa se
+quedó sin cumplirse. **Cero tests miraban el copy de esa fila**: la tabla que existe mide la
+estructura de la hoja —filas, tonos, líneas condicionales, botones— y nunca el texto.
+
+**Por qué la frase nueva es verdadera y no solo más floja.** El borrado alcanza a otro dispositivo
+por dos caminos independientes, y la condición es la misma en los dos: el espejo exporta los
+borrados de filas a ese iCloud, de donde los lee quien monte ese store; y la señal solo la obedece
+quien tiene esos datos. Comprobado contra las cuatro poblaciones —sesión privada, teléfono prestado,
+dispositivo con la cuenta de Yala, y el solo-grupos anterior al paso 5 cuyo store sí espeja—.
+
+**Tres razonamientos del código citaban la promesa vieja como premisa**, no uno: el docblock de
+`wipeDataFull`, el de `personalMountAttachesMirror` y la razón de no poner la línea de residual
+multi-device en `.icloud` — más un docblock de tests que repetía el segundo. Los cuatro al día, y el
+nuevo **no** afirma que en `.icloud` no exista residual: dice que la fila ya acota en su propio
+texto y que reponer la línea se evaluó y se descartó. Y la coordenada que daba el ticket estaba
+desfasada.
+
+Red nueva `WipeCloudRowScopeTests`, por los dos lados: el camino de producción (`Config.make`, no un
+grep) y un barrido de los 16 ficheros de strings, para que reponer la promesa en un solo idioma
+tampoco pase. Con **dos controles positivos**, porque los dos modos de fallo abierto eran reales.
+**4 mutantes verificados**, unit 74 en 11 suites y XCUITest 7/7 con el centinela confirmando que
+estuve solo.
+
+**Device-QA: no aplica** — es una cadena de texto en una hoja que el XCUITest ya abre, y su
+contenido queda fijado por unit desde el camino de producción. **Sin decisiones nuevas para ti.**
+
+## Sesión anterior (#160 · «Empezar desde cero» sin iCloud vuelve a Restaurar y no promete nada)
 
 **Activabas Yala completo, en «Restaurar» tocabas «Empezar desde cero», y la app no conseguía mirar tu
 iCloud —red caída, o iCloud apagado en el teléfono—.** Te decía «Seguir así», te llevaba al onboarding, y
@@ -55,48 +93,12 @@ no se puede terminar por «Empezar desde cero» sin encenderlo — antes seguía
 dice y ofrece el remedio, y cancelar sigue devolviendo a la app de grupos. Si prefieres que ahí siga
 adelante, es un valor en un call-site.
 
-## Sesión anterior (#159 · cambiar el Apple ID del teléfono cierra la sesión privada)
-
-**Usabas Yala con tus datos en tu iCloud privado y cambiabas la cuenta de iCloud del teléfono. La app no
-se enteraba:** seguía enseñando los movimientos, las cuentas y los presupuestos de la cuenta anterior como
-si nada. Si el teléfono había cambiado de manos, la persona nueva veía las finanzas de la anterior. Ahora
-Yala lo detecta y **lo pregunta**: esos datos son de la cuenta de iCloud anterior, ahí se quedan
-guardados, y ofrece quitarlos de este teléfono. «Ahora no» no toca nada y vuelve a preguntar en el
-arranque siguiente; **si vuelves a tu cuenta anterior, deja de preguntártelo solo**. Quien usa Yala solo
-para grupos no ve nada de esto.
-
-**La premisa del ticket no se sostenía, y eso cambió el trabajo entero.** Decía que
-`checkForICloudMismatch` ya avisaba del cambio de cuenta y solo había que «alinearlo». Medido: ese aviso
-pregunta «¿monté sin espejo y **ahora hay** iCloud?», que puede ser cierta con la misma cuenta de
-siempre — y **la app no guardaba ningún testigo del Apple ID con el que montó**, así que no había con qué
-comparar. No había nada que alinear: había que construir la detección. El aviso viejo se queda, correcto;
-lo único que se le añadió es que se calle mientras el nuevo decide.
-
-**La identidad sale de `userRecordID()` del contenedor personal, no del token de ubiquity.** Ese mide
-iCloud **Drive**: con Drive apagado y la sesión viva vale `nil` mientras CloudKit funciona, así que
-usarlo habría leído «cambiaste de cuenta» y **borrado los datos de quien no cambió nada** — el bug que el
-ticket arregla, reintroducido por el predicado elegido para arreglarlo.
-
-**La review adversarial (3 lentes) cazó 14 defectos MÍOS, cinco con cambio de código, y el peor no lo
-veía ningún test.** El testigo del Apple ID **sobrevivía a «Empiezo de cero»**: el dueño entregaba su
-teléfono, la persona nueva terminaba su onboarding, y en el arranque siguiente la app le ofrecía cerrar
-la sesión y **borrarle SUS datos** diciéndole que eran de la cuenta anterior. Mi docblock afirmaba que el
-eje «muere en un solo sitio» y el docblock de al lado decía que son dos. Hoy el borrado vive **dentro**
-de `PrivateSessionMark`, el embudo de sus nueve escrituras. Los otros cuatro: el cierre se ejecutaba sin
-`confirmedPath` (con el modo en la nube habría cerrado **la cuenta de Yala** bajo un texto que habla de
-iCloud); el router se liberaba justo cuando empezaba el borrado; este aviso y el del espejo tardío salen
-del mismo disparador y se encadenaban —dos `.alert` del mismo anchor, el molde de brick—; y un contador
-del eje me obligó a decidir con qué lectura contesta cada consumidor nuevo: aporto **dos** de la estricta
-y **una** de la ancha, con signos opuestos.
-
-**Device-QA no simulable** (`tickets/qa/device-qa-apple-id-change-closes-private-session.md`): el
-simulador no tiene cuentas de iCloud reales. Cinco recorridos, y dos salen de la review — el **control
-negativo** (apagar iCloud Drive NO debe disparar el aviso) y si el espejo sube el corpus viejo a la
-cuenta nueva cuando se dice «Ahora no». Deja un ticket **high**:
-`apple-id-close-blocked-has-no-visible-outcome` — si el cierre se bloquea, nadie lo enseña desde este
-camino y el coordinador queda tapiado para el resto del lanzamiento.
-
 ## Las de antes
+- **#159 · cambiar el Apple ID del teléfono ya cierra la sesión privada.** La app no se enteraba del
+  cambio de cuenta de iCloud y seguía enseñando los datos de la anterior; hoy lo detecta y pregunta.
+  «Ahora no» no toca nada, y volver a tu cuenta anterior lo silencia solo. Deja vivo un ticket
+  **high**, `apple-id-close-blocked-has-no-visible-outcome`: si el cierre se bloquea, nadie lo enseña
+  desde este camino y el coordinador queda tapiado para el resto del lanzamiento.
 - **#158 · «Empezar desde cero» al activar Yala completo ya borra de verdad.** Ese botón no borraba
   NADA y el corpus viejo se re-exportaba a iCloud; hoy pasa por la puerta que pregunta a iCloud, enseña
   las cifras y exige un segundo gesto. Los grupos, el nombre y la divisa no se tocan.

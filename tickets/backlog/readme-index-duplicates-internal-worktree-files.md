@@ -64,3 +64,10 @@ anidados fuera de esa ruta). Y se confirmó el daño que el #152 describía: con
 copias **expulsaron de la lista** a `docs/modo-nube/MODO-NUBE-DIFERIDOS.md`,
 `tickets/qa/groups-consent-door-spec.md` y `docs/audit/AUDIT-UI-patterns.md` — ficheros reales del repo
 que el índice existe para nombrar. El cierre revirtió el diff, otra vez.
+
+**Quinta vez, en el cierre del #161 (2026-09-14).** Mismo diff, misma causa, mismos tres ficheros
+expulsados: no aporta medición nueva y por eso no lleva bloque propio. Lo que sí es dato es **la
+frecuencia** — cinco cierres seguidos han corrido el generador, han leído un diff que no converge y lo
+han revertido a mano. El arreglo es una línea en el `dirs[:]` de `scripts/indice_readme.py:90`, que hoy
+excluye `.git`, `node_modules`, `.build` y `DerivedData` y no `.claude/worktrees`. Sigue en `low`; si el
+sexto cierre vuelve a tropezar, el coste acumulado ya no es `low`.
