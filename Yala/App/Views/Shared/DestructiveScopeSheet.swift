@@ -351,10 +351,14 @@ extension DestructiveScopeSheet.Config {
         case .wipeDataFull:
             switch location {
             case .device: return L10n.Settings.wipeScopeDevice
-            // En privada la fila ☁️ nombra TODOS los dispositivos del Apple ID (decisión de Jürgen): borrar
-            // de iCloud lo borra del iPad y del Mac, y «local e iCloud» no lo decía.
+            // En privada la fila ☁️ dice que el borrado sale de iCloud y acota a quién alcanza: los
+            // dispositivos cuyos datos personales viven en ESE iCloud. Nombraba «cualquier dispositivo con
+            // este Apple ID» y desde el 2026-09-14 eso es falso — la señal de vaciado solo la obedece un
+            // receptor con esos mismos datos (`wipeSignalObeyedByThisSession`), así que un iPad prestado o
+            // con la cuenta de Yala no se vacía. Decisión de Jürgen 2026-09-14: prometer solo donde vive
+            // tu vida personal, sin meter vocabulario de sesiones (rule l10n).
             case .cloud:  return cloudLabel == .cloudAccount
-                ? L10n.Settings.wipeScopeCloudAccount : L10n.Settings.wipeScopeCloudICloudAllDevices
+                ? L10n.Settings.wipeScopeCloudAccount : L10n.Settings.wipeScopeCloudICloudPersonal
             case .groups: return wipeGroupsDetail
             }
         case .wipeDataGroupsOnly:

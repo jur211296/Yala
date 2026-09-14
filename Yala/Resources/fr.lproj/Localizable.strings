@@ -5124,7 +5124,6 @@
 "settings.signOutExportPendingMessage" = "Modifications de cet appareil pas encore arrivées dans iCloud : %d. Si tu te déconnectes maintenant, elles seront perdues.";
 "settings.signOutExportPendingMessageUnknown" = "Nous n'avons pas pu confirmer que tes dernières modifications sont arrivées dans iCloud. Si tu te déconnectes maintenant, elles pourraient être perdues.";
 "settings.signOutExportDiscardButton" = "Se déconnecter quand même";
-"settings.wipeScopeCloudICloudAllDevices" = "Supprimées d'iCloud, elles disparaissent aussi de ton iPad, de ton Mac et de tout appareil utilisant cet Apple ID";
 
 
 
@@ -5916,3 +5915,6 @@
 
 /* Estado K de la puerta que VUELVE: iCloud apagado, no se borro nada, y como activarlo */
 "welcome.privateICloud.discardUnverifiedNoAccountBody" = "iCloud n'est pas activé sur ce téléphone, donc on n'a pas pu voir si tu avais enregistré quelque chose et on n'a rien supprimé. Active-le dans Réglages et réessaie, ou reviens en arrière et décide quand tu veux.";
+
+/* Wipe sheet, cloud row when personal data lives in the user private iCloud: the deletion only reaches devices whose personal data lives in that same iCloud */
+"settings.wipeScopeCloudICloudPersonal" = "Supprimées d'iCloud, elles disparaissent donc de tes autres appareils qui y conservent tes données personnelles";

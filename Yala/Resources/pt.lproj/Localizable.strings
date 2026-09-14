@@ -5123,7 +5123,6 @@
 "settings.signOutExportPendingMessage" = "Alterações deste dispositivo que ainda não chegaram ao iCloud: %d. Se você sair agora, elas serão perdidas.";
 "settings.signOutExportPendingMessageUnknown" = "Não conseguimos confirmar que suas últimas alterações chegaram ao iCloud. Se você sair agora, elas podem ser perdidas.";
 "settings.signOutExportDiscardButton" = "Sair mesmo assim";
-"settings.wipeScopeCloudICloudAllDevices" = "São apagados do iCloud e somem também do seu iPad, do seu Mac e de qualquer dispositivo com este Apple ID";
 
 
 
@@ -5915,3 +5914,6 @@
 
 /* Estado K de la puerta que VUELVE: iCloud apagado, no se borro nada, y como activarlo */
 "welcome.privateICloud.discardUnverifiedNoAccountBody" = "Este telefone está com o iCloud desligado, então não pudemos ver se você salvou algo antes e não apagamos nada. Ligue nos Ajustes e tente de novo, ou volte e decida quando quiser.";
+
+/* Wipe sheet, cloud row when personal data lives in the user private iCloud: the deletion only reaches devices whose personal data lives in that same iCloud */
+"settings.wipeScopeCloudICloudPersonal" = "São apagados do iCloud, então somem dos seus outros dispositivos que guardam ali os seus dados pessoais";

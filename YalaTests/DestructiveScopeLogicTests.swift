@@ -171,8 +171,9 @@ struct DestructiveScopeLogicTests {
                 == .wipeDataFull)
     }
 
-    /// «Vaciar datos» borra FILAS: con el espejo montado, esos borrados salen a iCloud y a todos los
-    /// dispositivos del Apple ID. Un solo-grupos sobre un store que espeja ve la hoja completa, que lo nombra;
+    /// «Vaciar datos» borra FILAS: con el espejo montado, esos borrados salen a iCloud y de ahí a los demás
+    /// dispositivos que lean de ese mismo iCloud. Un solo-grupos sobre un store que espeja ve la hoja
+    /// completa, cuya fila ☁️ nombra ese cruce;
     /// la de solo grupos le decía «No se tocan» (review adversarial del paso 9).
     @Test func wipeOperation_groupsOnlyOnAMirroredStore_isFull() {
         #expect(DestructiveScopeLogic.wipeOperation(hasPrivateSession: false, personalMountAttachesMirror: true)
@@ -346,5 +347,102 @@ struct SignOutRowIdentifiersTests {
             El aterrizaje tiene que ir en la misma vuelta del main actor que el wipe: el `onChange` de ContentView \
             leería el estado intermedio que deja el barrido.
             """)
+    }
+}
+
+// MARK: - El alcance que la hoja de «Vaciar datos» promete
+
+/// **Hasta el 2026-09-14 la fila ☁️ de Vaciar en iCloud decía la verdad, y dejó de decirla sin que nada se
+/// pusiera rojo.** Prometía «…y desaparecen también de tu iPad, tu Mac y cualquier dispositivo con este
+/// Apple ID»; el mismo día, `wipeSignalObeyedByThisSession` cerró el receptor para que un dispositivo
+/// prestado —o con la cuenta de Yala— NO obedeciera la señal. La promesa quedó falsa y **no había una sola
+/// aserción sobre el copy de esa fila**: la tabla de arriba mide la ESTRUCTURA (filas, tonos, líneas,
+/// secundarias) y nunca el texto.
+///
+/// Esta suite es esa red, por los dos lados: el camino de producción (`Config.make`, no un grep) y los 16
+/// ficheros de strings, para que reponer la promesa en un solo idioma tampoco pase.
+@Suite("Vaciar datos · la fila ☁️ no promete lo que el receptor puede no cumplir")
+struct WipeCloudRowScopeTests {
+
+    private static var repoRoot: URL {
+        URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()  // YalaTests/
+            .deletingLastPathComponent()  // repo root
+    }
+
+    /// El literal que ya no debe salir en NINGÚN idioma. Los tres iban en la frase retirada y son los que
+    /// afirman alcance por Apple ID; se escriben igual en los 16 locales (`Apple-ID` es la grafía alemana).
+    private static let forbidden = ["Apple ID", "Apple-ID", "iPad"]
+
+    @Test("la hoja en iCloud usa el texto acotado, y el acotado es el que se muestra")
+    func wipeICloud_cloudRow_usesTheScopedString() {
+        let config = DestructiveScopeSheet.Config.make(
+            operation: .wipeDataFull, cloudLabel: .icloud, onConfirm: {})
+
+        // Fila 1 = ☁️ (el orden device→cloud→groups lo fija la tabla de arriba).
+        #expect(config.rows.count == 3)
+        let cloudRow = config.rows[1]
+        #expect(cloudRow.label == L10n.Settings.scopeICloudLabel)
+        #expect(cloudRow.detail == L10n.Settings.wipeScopeCloudICloudPersonal)
+
+        // Sin esto la aserción de arriba NO PUEDE FALLAR de forma útil: si `ls()` no resolviera en el host
+        // de test, los dos lados devolverían la key cruda y serían iguales igualmente.
+        #expect(!cloudRow.detail.hasPrefix("settings."), """
+            `L10n` devolvió la key cruda («\(cloudRow.detail)»): el host de test no está resolviendo el \
+            bundle, así que la comparación de arriba no prueba nada.
+            """)
+        for literal in Self.forbidden {
+            #expect(!cloudRow.detail.contains(literal), """
+                Volvió la promesa por Apple ID («\(literal)») a la fila ☁️ de Vaciar en iCloud. Desde el \
+                2026-09-14 un dispositivo prestado o con la cuenta de Yala NO obedece la señal de vaciado \
+                (`DestructiveScopeLogic.wipeSignalObeyedByThisSession`), así que afirmarlo es falso.
+                """)
+        }
+    }
+
+    /// La `.cloud` es la otra mitad y NO se tocó: ahí el borrado viaja por la cuenta de Yala y sus otros
+    /// dispositivos sí lo pierden al sincronizar. Fijarlo impide "arreglar" este ticket suavizando las dos.
+    @Test("la hoja en la cuenta de Yala conserva su propio texto")
+    func wipeCloudAccount_cloudRow_isUntouched() {
+        let config = DestructiveScopeSheet.Config.make(
+            operation: .wipeDataFull, cloudLabel: .cloudAccount, onConfirm: {})
+        #expect(config.rows[1].detail == L10n.Settings.wipeScopeCloudAccount)
+        #expect(config.rows[1].label == L10n.Settings.scopeCloudAccountLabel)
+    }
+
+    @Test("ningún locale promete alcance por Apple ID en esa fila")
+    func scopedString_promisesNoAppleIDWideScope_inEveryLocale() throws {
+        let key = "settings.wipeScopeCloudICloudPersonal"
+        let retired = "settings.wipeScopeCloudICloudAllDevices"
+        let resources = Self.repoRoot.appendingPathComponent("Yala/Resources")
+        let lprojs = try FileManager.default
+            .contentsOfDirectory(at: resources, includingPropertiesForKeys: nil)
+            .filter { $0.pathExtension == "lproj" }
+            .sorted { $0.path < $1.path }
+
+        // Control positivo: sin esto el test pasa en verde leyendo CERO ficheros (falla abierto).
+        #expect(lprojs.count == 16, "Se esperaban 16 locales y se leyeron \(lprojs.count).")
+
+        var seen = 0
+        for lproj in lprojs {
+            let locale = lproj.deletingPathExtension().lastPathComponent
+            let content = try String(
+                contentsOf: lproj.appendingPathComponent("Localizable.strings"), encoding: .utf8)
+            let line = try #require(
+                content.split(separator: "\n").first { $0.hasPrefix("\"\(key)\" = ") },
+                "\(locale) no tiene `\(key)`.")
+            seen += 1
+            for literal in Self.forbidden {
+                #expect(!line.contains(literal), """
+                    \(locale) volvió a prometer alcance por Apple ID («\(literal)») en `\(key)`: \
+                    \(line)
+                    """)
+            }
+            #expect(!content.contains("\"\(retired)\""), """
+                \(locale) repuso `\(retired)`, la key retirada el 2026-09-14 porque su nombre y su texto \
+                afirmaban un alcance que el receptor puede no cumplir.
+                """)
+        }
+        #expect(seen == 16)
     }
 }
