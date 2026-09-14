@@ -5,10 +5,51 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-14 (Lima)
 
-**Rama** `2.1` — Merge #158: **«Empezar desde cero» al activar Yala completo ya borra de verdad.**
+**Rama** `2.1` — Merge #159: **cambiar el Apple ID del teléfono cierra la sesión privada.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#158 · «Empezar desde cero» al activar Yala completo ya borra de verdad)
+## Esta sesión (#159 · cambiar el Apple ID del teléfono cierra la sesión privada)
+
+**Usabas Yala con tus datos en tu iCloud privado y cambiabas la cuenta de iCloud del teléfono. La app no
+se enteraba:** seguía enseñando los movimientos, las cuentas y los presupuestos de la cuenta anterior como
+si nada. Si el teléfono había cambiado de manos, la persona nueva veía las finanzas de la anterior. Ahora
+Yala lo detecta y **lo pregunta**: esos datos son de la cuenta de iCloud anterior, ahí se quedan
+guardados, y ofrece quitarlos de este teléfono. «Ahora no» no toca nada y vuelve a preguntar en el
+arranque siguiente; **si vuelves a tu cuenta anterior, deja de preguntártelo solo**. Quien usa Yala solo
+para grupos no ve nada de esto.
+
+**La premisa del ticket no se sostenía, y eso cambió el trabajo entero.** Decía que
+`checkForICloudMismatch` ya avisaba del cambio de cuenta y solo había que «alinearlo». Medido: ese aviso
+pregunta «¿monté sin espejo y **ahora hay** iCloud?», que puede ser cierta con la misma cuenta de
+siempre — y **la app no guardaba ningún testigo del Apple ID con el que montó**, así que no había con qué
+comparar. No había nada que alinear: había que construir la detección. El aviso viejo se queda, correcto;
+lo único que se le añadió es que se calle mientras el nuevo decide.
+
+**La identidad sale de `userRecordID()` del contenedor personal, no del token de ubiquity.** Ese mide
+iCloud **Drive**: con Drive apagado y la sesión viva vale `nil` mientras CloudKit funciona, así que
+usarlo habría leído «cambiaste de cuenta» y **borrado los datos de quien no cambió nada** — el bug que el
+ticket arregla, reintroducido por el predicado elegido para arreglarlo.
+
+**La review adversarial (3 lentes) cazó 14 defectos MÍOS, cinco con cambio de código, y el peor no lo
+veía ningún test.** El testigo del Apple ID **sobrevivía a «Empiezo de cero»**: el dueño entregaba su
+teléfono, la persona nueva terminaba su onboarding, y en el arranque siguiente la app le ofrecía cerrar
+la sesión y **borrarle SUS datos** diciéndole que eran de la cuenta anterior. Mi docblock afirmaba que el
+eje «muere en un solo sitio» y el docblock de al lado decía que son dos. Hoy el borrado vive **dentro**
+de `PrivateSessionMark`, el embudo de sus nueve escrituras. Los otros cuatro: el cierre se ejecutaba sin
+`confirmedPath` (con el modo en la nube habría cerrado **la cuenta de Yala** bajo un texto que habla de
+iCloud); el router se liberaba justo cuando empezaba el borrado; este aviso y el del espejo tardío salen
+del mismo disparador y se encadenaban —dos `.alert` del mismo anchor, el molde de brick—; y un contador
+del eje me obligó a decidir con qué lectura contesta cada consumidor nuevo: aporto **dos** de la estricta
+y **una** de la ancha, con signos opuestos.
+
+**Device-QA no simulable** (`tickets/qa/device-qa-apple-id-change-closes-private-session.md`): el
+simulador no tiene cuentas de iCloud reales. Cinco recorridos, y dos salen de la review — el **control
+negativo** (apagar iCloud Drive NO debe disparar el aviso) y si el espejo sube el corpus viejo a la
+cuenta nueva cuando se dice «Ahora no». Deja un ticket **high**:
+`apple-id-close-blocked-has-no-visible-outcome` — si el cierre se bloquea, nadie lo enseña desde este
+camino y el coordinador queda tapiado para el resto del lanzamiento.
+
+## Sesión anterior (#158 · «Empezar desde cero» al activar Yala completo ya borra de verdad)
 
 **Usabas Yala solo para grupos y activabas Yala completo. Elegías «mi iCloud privado», la app encontraba
 tus datos de antes, tocabas «Traer mis datos», los veías, cambiabas de opinión y tocabas «Empezar desde
@@ -56,60 +97,13 @@ Restaurar de la activación **solo se llega desde ahí**. Ficha en
 `tickets/qa/device-qa-activation-restore-start-fresh.md`, cinco recorridos. **El fallo más probable del PR
 se mira siempre: tras borrar, que haya categorías y «Ajuste de saldo».**
 
-## Sesión anterior (#157 · vaciar tus datos ya no vacía el teléfono que prestaste)
-
-**Vacías tus datos en tu iPhone privado. Hasta hoy, cualquier otro dispositivo del mismo Apple ID con el
-onboarding hecho se vaciaba también, mirara lo que mirara.** También el iPad que tenías con una sesión en
-la nube —y ahí el motor **subía esos borrados a SU cuenta**— y también el móvil que le prestaste a alguien
-que entró con su cuenta de grupos, que perdía su perfil y sus preferencias sin haber tocado nada. Ahora
-**solo obedecen la señal los dispositivos cuya sesión es privada**, que son los únicos cuyos datos son los
-de ese Apple ID.
-
-**El paso 9 cerró el EMISOR; esto es el RECEPTOR, y su predicado es el mismo por el otro extremo del
-canal.** `wipeSignalObeyedByThisSession` **delega** en `wipeSignalsAppleIDDevices` en vez de copiar su
-cuerpo: contestan la misma pregunta —¿los datos de este dispositivo son los del Apple ID?— y dos cuerpos
-iguales que «siempre van juntos» divergen en el commit siguiente, en silencio y hacia el lado que borra.
-El parámetro **no tiene valor por defecto a propósito**: un default devolvería a los call-sites futuros el
-derecho a no pronunciarse, que es la forma exacta de este bug.
-
-**La premisa del ticket estaba a medias, y las dos mitades no están igual de vivas.** El móvil prestado es
-un caso **real hoy** (Grupos al 100 % en producción). La nube completa es **preventiva**: sus dos puertas
-están cerradas por el kill-switch remoto (`CLOUD_MODE_ROLLOUT_PERCENT = 0`), **no por diseño** — se abre en
-cuanto subas el percent. El docblock de `CloudSyncFlags.storageMode` que dice «SIEMPRE `.icloud` (DARK)»
-está caducado: hay tres escritores de `.cloud` alcanzables desde el Welcome y desde «Activar Yala completo».
-
-**La review adversarial (3 lentes) cazó cuatro cosas en MIS PROPIOS TESTS, y la primera dejaba el bug vivo
-con la suite en verde.** Un `||` colgado del cálculo del eje pasaba los dos `contains` del source-scan,
-porque **un `contains` no puede cerrar el extremo derecho de una expresión**; el scan compara ahora la
-sentencia entera por igualdad. Las otras tres: un default en la firma y un `#if DEBUG` alrededor del guard
-pasaban los 16 casos de la matriz —los 16 los pasan explícitos—, y el conteo de consumidores solo miraba
-dos ficheros. **14 mutantes, 14 muertos.** Un test se **retiró**: no podía fallar de forma única.
-
-**Y dejó mintiendo cinco docblocks, en los que coincidieron los tres agentes.** El que más importa: el
-backfill del eje 1 llamaba a su residual «el barato de los dos», y dejó de serlo en cuanto el mismo eje
-gobierna un borrado.
-
-**Device-QA NO simulable:** no hay seam que escriba `lastWipeTimestamp` en el iCloud-KV
-(`OwnerKeyValueStore` no contiene ni una referencia a `uitest`) y `bootstrap()` no corre bajo `-uitest`.
-Hacen falta **dos teléfonos reales**. Guion con control positivo en `tickets/qa/`.
-
-**Lo que este PR NO cierra, y son cuatro `high`.** El arreglo **no alcanza a toda su población**: un alta
-solo-grupos anterior al 10-sep no tiene la marca del mount neutro, el backfill le escribe «tiene sesión
-privada» y sigue obedeciendo (`remote-wipe-axis-misses-groups-only-installs-before-the-mount-mark`). Y tres
-que piden decisión tuya: la hoja sigue prometiendo que el vaciado alcanza a todos tus dispositivos
-(`wipe-sheet-still-promises-every-apple-id-device`), el aviso «Datos no disponibles» ahora sale en el móvil
-prestado y su botón expulsa al onboarding
-(`wipe-alert-fires-on-a-session-that-no-longer-obeys-the-signal`), y las 37 preferencias siguen cruzando
-entre el dueño y quien usa el teléfono (`icloud-kv-prefs-cross-sessions-on-a-lent-phone`).
-
 ## Las de antes
 
-Los partes de los merges #144 a #156 viven en sus PR y en `git log` — el del **#156** (un fallo pasajero
-de grupos ya no dice «revisa tu conexión») salió de aquí hoy, y lo vivo de él son sus 4 tickets; aquí se quedan solo los dos últimos
-mientras su device-QA siga abierto. Del **#155** («Empezar desde cero» en Restaurar ya borra) queda vivo
-su device-QA (cola, 0-quinquies) y un ticket, `private-icloud-gate-back-lands-on-the-wrong-branch`
-(`medium`): **el otro, `activation-restore-start-fresh-keeps-the-imported-rows`, lo cerró el #158** — el
-borrador que aquel PR dio por imposible costó un flag y un enum.
+El **#157** (vaciar tus datos ya no vacía el teléfono que prestaste) dejó su parte en el PR y en
+`git log`; lo vivo de él es su device-QA. Los partes de los merges #144 a #156 viven igual en sus PR — el
+del **#156** (un fallo pasajero de grupos ya no dice «revisa tu conexión») deja 4 tickets. Del **#155**
+(«Empezar desde cero» en Restaurar ya borra) queda vivo su device-QA (cola, 0-quinquies) y un ticket,
+`private-icloud-gate-back-lands-on-the-wrong-branch` (`medium`).
 
 ## Marketing (Lola · #142 · el estudio de vídeo)
 
@@ -119,6 +113,15 @@ formatos —una presentación 16:9 por escenas y clips 9:16 por función— sobr
 `bun run render:presentation` y `bun run render:reels`).
 
 ## Tu cola
+
+0-octies. **Device-QA del #159, y NO es simulable**
+   (`tickets/qa/device-qa-apple-id-change-closes-private-session.md`, cinco recorridos). Hacen falta **dos
+   Apple ID de verdad**: el simulador no tiene cuentas de iCloud reales, así que `userRecordID()` da
+   `notAuthenticated` y el predicado sale por la rama que NO cierra. **Lo que más importa es el paso 8 del
+   recorrido 1:** tras confirmar el cierre, vuelve a tu Apple ID anterior y comprueba que «Ya tengo cuenta
+   → iCloud» **restaura tus datos** — si no están, el borrado se llevó el contenedor de iCloud y eso es
+   grave. Y el **control negativo** del recorrido 2, que es el que prueba que la detección no se hizo con
+   el predicado equivocado: **apagar iCloud Drive sin cambiar de cuenta NO debe disparar el aviso.**
 
 0-ter. **Device-QA del #158, y NO es simulable** (`tickets/qa/device-qa-activation-restore-start-fresh.md`,
    cinco recorridos). `ICloudPersonalCorpusProbe` no tiene ni un seam de `uitest`, así que el estado
