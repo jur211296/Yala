@@ -46,6 +46,8 @@
 - [La review adversarial caza lo MÍO](feedback_review_adversarial_caza_lo_mio.md) — 8 el 7-sep, 7 el 8-sep; puede refutar la PREMISA del ticket, y un camino muerto que revives trae sus bugs intactos.
 - [La rule de área es una lente más](feedback_la_rule_de_area_es_una_lente_mas.md) — leerla CONTRA el diff: cazó lo que las tres lentes no vieron el 8-sep y otras dos cosas el 10-sep.
 - [Las lentes se contradicen entre sí](feedback_lentes_adversariales_se_contradicen.md) — cuando dos discrepan, mídelo; y la CORRECCIÓN de una lente también puede venir incompleta.
+- [El test viejo CUELGA, no falla](feedback_el_test_viejo_cuelga_no_falla.md) — al mover un outcome de parada a reintento; y el inventario de tests del ticket se mide: eran 4, no 2.
+- [Mi arreglo deja el mecanismo sin productor](feedback_mi_arreglo_deja_el_mecanismo_sin_productor.md) — mide aguas arriba y aguas abajo; un ternario de un carácter borró mi distinción entera.
 - [El árbol base contesta «¿es mío?»](feedback_el_arbol_base_contesta_si_es_mio.md) — worktree desde HEAD zanja un rojo ajeno en 90 s; y devuelve el disco que se come.
 - [Un «rojo conocido» no exime de bisecar](feedback_rojo_conocido_no_exime_de_bisecar.md) — dos rojos idénticos en el log, causas opuestas: uno era mío y rompía guardar una transacción.
 - [XCUITest completo: por lotes](reference_xcuitest_completo_por_lotes.md) — `BUILD INTERRUPTED` no es veredicto; cuenta la cobertura por CLASE (61) y nunca en background.
@@ -72,6 +74,7 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build incremental; dos míos iban al commit el 10-sep.
 
 ## Estado del trabajo
+- [Un 403 de infra ya no es un veredicto de cuenta](project_403_infra_no_es_veredicto_de_cuenta.md) — PR #154; el sello queda SIN productor alcanzable y el cierre `.cloud` sigue colapsando en `.permanent` (decisión suya).
 - [El eje 1 ya tiene fuente propia](project_eje1_marca_sesion_privada.md) — PR #150; eran 9 constructores y no 6; el barrido de M1 es el PR-B y el device-QA NO es simulable.
 - [El paso 12 estaba roto: el eje 1 no tenía fuente](project_paso12_dominio_preferencias.md) — PR #149 entrega el tercio mecánico; 4 decisiones del 12-sep; el flag de M1 estaba en `true`, no en `false`.
 - [El simulador se pide por turno, y la segunda espera](project_cola_del_simulador.md) — PR #147; la review cazó DOS llaves maestras mías; tener el turno NO es tener el simulador; deja 4 tickets.

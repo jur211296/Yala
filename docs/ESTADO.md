@@ -1,14 +1,51 @@
 ---
-updated: 2026-09-13
+updated: 2026-09-14
 tags: [now, punto-de-retomada]
 ---
 
-# NOW — 2026-09-13 (Lima)
+# NOW — 2026-09-14 (Lima)
 
-**Rama** `2.1` — Merge #153: **«Es mi primera vez → privado» vuelve a avisar de los datos que ya hay
-en el teléfono.** TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
+**Rama** `2.1` — Merge #154: **un cortafuegos delante del servidor deja de apagar el canal de Grupos
+como si tu cuenta no valiera.** TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#153 · el aviso de datos que se perdía por el relanzamiento)
+## Esta sesión (#154 · un 403 de infraestructura no es un veredicto sobre tu cuenta)
+
+**Cuando un proxy o un cortafuegos por delante del servidor devolvía un 403, el canal de Grupos lo leía
+como «esta cuenta ya no está disponible»**: apagaba el sync el resto de la vida de la app —ni volver a
+primer plano, ni un aviso push, ni entrar de nuevo lo curaban— y, si en ese momento intentabas cerrar
+sesión o soltar tu cuenta de grupos, te decía que revisaras tu conexión. Ahora reintenta como con
+cualquier fallo de red. El apagado deliberado del canal sigue igual que en #152: pausa, y vuelve solo.
+
+**No era un bug dormido: el canal está encendido en producción** (`GROUPS_BACKEND_ROLLOUT_PERCENT = 100`).
+
+**Tres cosas medidas que el ticket no sabía.** El gateway emite exactamente DOS 403 en todo
+`gateway/src/` y traduce lo upstream a 502, así que cualquier otro 403 viene de fuera del Worker. El
+sello `stoppedUntilRelaunch` **se queda sin productor alcanzable**: el 409 que lo armaría no lo emite
+`/groups/push` (`gateway/src/groups/routes.ts:12` dice que el freeze de la reversa no aplica a este
+canal). Y ese sello **solo existía en el modo loop-propio**: con el runtime personal cadenciando, el
+ciclo de grupos va de piggyback y su outcome se descarta.
+
+**Lo que este PR NO cierra, y tiene ticket `high`.** En el cierre de sesión de una cuenta `.cloud`,
+`CloudSessionSignOut` colapsa en `.permanent` todo veredicto de grupos que no sea `.channelPaused`, así
+que ahí un cortafuegos sigue saliendo como «revisa tu conexión». Cambiarlo movería también la red caída
+y los 5xx —otro objeto, y una decisión tuya—:
+`cloud-signout-collapses-every-groups-transient-into-permanent`.
+
+**La review adversarial cazó CUATRO defectos míos, y el peor no daba rojo: colgaba la corrida.** Dos
+tests de un fichero que el arreglo no tocaba sembraban un 403 sin envelope; con el fix eso es
+transitorio, el loop entra en backoff y su `await` no vuelve nunca. Eran **cuatro** los tests que
+pinneaban el comportamiento viejo, no los dos que decía el ticket: mi barrido del patrón se paró en el
+fichero equivocado. También escribí un docblock **falso** (el del párrafo anterior), dejé el camino
+nuevo sin rastro en los logs —ahora lleva breadcrumb propio— y puse diez aserciones que no podían fallar.
+
+**Dos mutantes compilados y corridos, no razonados:** colapsar las dos ramas muere con 6 fallos;
+arreglar solo el push y dejar el pull muere con 9, e incluye el sello permanente reapareciendo. Eso
+contesta lo que el ticket pedía blindar.
+
+**Sin device-QA, y no por falta de ganas:** provocar un 403 desde algo por delante del Worker no se
+puede ni en simulador ni en device sin un seam que hoy no existe.
+
+## Las de antes (#153 · el aviso de datos que se perdía por el relanzamiento)
 
 **Desde una sesión solo-grupos, elegir «Es mi primera vez → Tu cuenta en tu iCloud privado» montaba un
 onboarding de cero sin decir que aquí ya había datos**: los grupos y las categorías de la etapa anterior
@@ -206,11 +243,16 @@ y en su mayoría **no son simulables**.
 **El rediseño de sesiones no deja nada abierto en código.** Lo que queda son device-QA tuyos, y el del
 #153 se suma a la lista: es el único que necesita **dos teléfonos** del mismo Apple ID.
 
+**Y el #154 te deja una decisión de producto, no una tarea**: en el cierre de sesión de una cuenta
+`.cloud`, ¿un fallo transitorio de grupos debe seguir diciendo «revisa tu conexión», decir la verdad y
+reintentar 45 s, o decir la verdad sin reintentar? Las tres opciones están en
+`cloud-signout-collapses-every-groups-transient-into-permanent`.
+
 **Lo primero de la cola técnica sigue siendo el board de testing**: los cuatro de
 `nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo` llevan dos noches rojos y ya no se sostienen como
 «flaky de runner frío» (ver Bloqueo).
 
-**El board: 345 en disco = 345 en `docs/TICKETS.md`**, cero desajustes de estado.
+**El board: 347 en disco = 347 en `docs/TICKETS.md`**, cero desajustes de estado y cero rutas rotas.
 
 ## Bloqueo
 
