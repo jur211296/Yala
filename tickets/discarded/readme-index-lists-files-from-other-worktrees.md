@@ -1,9 +1,10 @@
 ---
 id: readme-index-lists-files-from-other-worktrees
-status: backlog
+status: discarded
 priority: low
 area: "docs, tooling"
 created: 2026-09-13
+updated: 2026-09-14
 source: "cierre del PR #152 — el generador cambió la línea y el cambio era ruido"
 ---
 
@@ -28,3 +29,9 @@ limpiar la entrada de `elastic-ritchie-9f2188` que ya está commiteada en `READM
 
 **Comprobación**: correr el script con varios worktrees vivos y con ninguno tiene que dar el MISMO
 resultado. Hoy no lo da.
+
+
+## Descartado el 2026-09-14 — duplicado
+
+Mismo defecto y misma causa que `readme-index-duplicates-internal-worktree-files` (2026-09-09), que es
+el más antiguo y el único con criterio de hecho. Lo medido aquí se conservó allí; este no se reabre.

@@ -1,9 +1,10 @@
 ---
 id: readme-index-scans-internal-worktrees
-status: backlog
+status: discarded
 priority: low
 area: "docs, tooling"
 created: 2026-09-14
+updated: 2026-09-14
 source: "cierre de `cloud-signout-collapses-every-groups-transient-into-permanent` (2026-09-14)"
 ---
 
@@ -33,3 +34,9 @@ hay que leer por su índice, y una copia en un worktree efímero no es un ficher
 Que el escáner excluya `.claude/worktrees/` (y cualquier worktree bajo el árbol). De paso, comprobar si
 otros generadores del repo tienen el mismo agujero: `glosario.py` e `indexar_doc.py` recorren rutas
 parecidas.
+
+
+## Descartado el 2026-09-14 — duplicado
+
+Mismo defecto y misma causa que `readme-index-duplicates-internal-worktree-files` (2026-09-09), que es
+el más antiguo y el único con criterio de hecho. Lo medido aquí se conservó allí; este no se reabre.

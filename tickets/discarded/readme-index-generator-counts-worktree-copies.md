@@ -1,9 +1,10 @@
 ---
 id: readme-index-generator-counts-worktree-copies
-status: backlog
+status: discarded
 priority: low
 area: "documentación, scripts"
 created: 2026-09-13
+updated: 2026-09-14
 source: "medido en el cierre del #151 al correr los generadores desde el árbol principal"
 ---
 
@@ -31,3 +32,9 @@ justo lo contrario. Y como el contenido cambia en cada cierre, mete ruido en el 
 - [ ] Correrlo con worktrees abiertos y sin ellos da **el mismo** README. Medido, no supuesto.
 - [ ] Mirar de paso si `glosario.py`, `reorg_docs.py` y `frescura.py` tienen el mismo agujero: los
       cuatro recorren el árbol.
+
+
+## Descartado el 2026-09-14 — duplicado
+
+Mismo defecto y misma causa que `readme-index-duplicates-internal-worktree-files` (2026-09-09), que es
+el más antiguo y el único con criterio de hecho. Lo medido aquí se conservó allí; este no se reabre.
