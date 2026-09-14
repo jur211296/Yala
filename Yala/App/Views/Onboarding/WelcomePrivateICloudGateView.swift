@@ -80,6 +80,28 @@ struct WelcomePrivateICloudGateView: View {
     /// prefill de la persona que está activando —su nombre y la divisa de sus grupos—, y borrarlos le quitaría
     /// justo lo que el onboarding le iba a ahorrar escribir.
     var clearsResidualPreferencesOnWipe: Bool = true
+    /// **Qué se le ofrece a quien no pudo obtener respuesta de iCloud.** Sin default a propósito, por lo
+    /// mismo que `deviceCorpus`: los sitios que montan esta puerta contestan cosas OPUESTAS y el
+    /// compilador tiene que obligarles a decirlo. Un default heredaría el desenlace de uno de los dos, que
+    /// es la forma exacta del bug que este parámetro cierra — la puerta de «Empezar desde cero» nació
+    /// reusando esta vista y se trajo la salida de la otra sin que nadie lo decidiera.
+    var unverifiedExit: UnverifiedExit
+
+    /// Los dos desenlaces de «no se pudo preguntar». Lo que los separa es **si la persona ya confirmó un
+    /// borrado antes de llegar aquí**.
+    enum UnverifiedExit: Equatable {
+        /// **Sigue adelante, con el testigo del espejo tardío puesto.** Es el desenlace de quien acaba de
+        /// elegir «privado» y todavía no ha pedido borrar nada: el ADR es explícito en que no poder
+        /// preguntar JAMÁS bloquea, y sin esta salida la pantalla es un camino muerto —las otras dos ramas
+        /// del chooser también necesitan red—. La validación no se pierde: se aplaza al primer arranque en
+        /// que se pueda hacer.
+        case proceedWatchingTheMirror
+        /// **Vuelve por donde vino, sin declarar ningún borrado** (decisión de Jürgen, 2026-09-14, opción
+        /// (a) del ticket). Es el desenlace de «Restaurar → Empezar desde cero», donde la persona YA
+        /// confirmó el borrado dos veces: seguir la dejaría en el onboarding con sus datos viejos enteros,
+        /// bajo un copy que le prometió lo contrario.
+        case returnWithoutClaimingAWipe
+    }
 
     @State private var phase: Phase = .checking
 
@@ -170,14 +192,24 @@ struct WelcomePrivateICloudGateView: View {
             confirmContent(corpus)
         case .noICloud:
             // Estado K de la matriz. **Informa y sigue** — el ADR es explícito en que no poder preguntar
-            // jamás bloquea. El CTA es el que sale del Welcome, no el «volver».
-            noticeContent(
-                icon: "icloud.slash",
-                title: L10n.Welcome.PrivateICloud.noAccountTitle,
-                body: L10n.Welcome.PrivateICloud.noAccountBody,
-                cta: L10n.Welcome.PrivateICloud.noAccountCta,
-                identifier: "welcome_private_icloud_no_account",
-                action: continueWithoutValidating)
+            // jamás bloquea. Su CTA es la salida del Welcome, no el «volver» de la barra… salvo en la
+            // puerta que decide volver, donde ese mismo botón es el que devuelve a Restaurar. Lo dice
+            // `unverifiedExit`, y por eso el label también sale de ahí.
+            //
+            // **Y el ticket dice que esta fase es inalcanzable desde «Empezar desde cero». Medido: no lo
+            // es.** `WelcomeRestoreView` ofrece ese botón desde cuatro estados y tres de ellos no afirman
+            // que haya datos —`notFoundView`, `iCloudDisabledView` y `wipedView` llaman directo—, así que
+            // con iCloud apagado en el teléfono se llega aquí con el borrado ya confirmado. Por eso la
+            // salida bifurca igual que la de abajo, y no se deja «solo la fase que el ticket nombra».
+            //
+            // **Y en el desenlace que VUELVE, esta fase deja de tener un solo botón** (review adversarial,
+            // 2026-09-14). Un CTA único que devuelve a Restaurar es un camino muerto de dos pantallas:
+            // `iCloudDisabledView` ofrece «Abrir Ajustes» y «Empezar desde cero», así que la persona
+            // rebota entre las dos sin nada que re-mida. El estado K es terminal donde el ADR dice que lo
+            // es —el Welcome, donde no hay remedio— y aquí el remedio SÍ existe: encender iCloud en
+            // Ajustes y volver a preguntar. Sin este botón, hacerlo obliga a salir de la puerta y repetir
+            // el gesto destructivo entero.
+            noICloudContent
         case .unreachable:
             // Se pudo intentar y falló. Dos salidas, y las dos hacen falta:
             //
@@ -190,15 +222,19 @@ struct WelcomePrivateICloudGateView: View {
             //
             // Seguir deja el mismo testigo que el estado K: la validación no se pierde, se aplaza al
             // primer arranque en que se pueda hacer.
+            //
+            // **Salvo cuando la persona ya confirmó un borrado**, que es el caso real del ticket: ahí la
+            // segunda salida no sigue, VUELVE (`unverifiedExit`). El botón de reintentar se queda en los
+            // dos desenlaces — aquí el remedio existe, y es el que de verdad resuelve.
             twoWayNoticeContent(
                 icon: "exclamationmark.icloud",
                 title: L10n.Welcome.PrivateICloud.errorTitle,
-                body: L10n.Welcome.PrivateICloud.errorBody,
+                body: unreachableBody,
                 primary: L10n.Welcome.Restore.retry,
-                secondary: L10n.Welcome.PrivateICloud.noAccountCta,
+                secondary: unverifiedExitLabel,
                 identifier: "welcome_private_icloud_error",
                 primaryAction: { phase = .checking },
-                secondaryAction: continueWithoutValidating)
+                secondaryAction: exitWithoutValidating)
         case .wipeFailed:
             // El borrado falló y los datos SIGUEN en iCloud, intactos. Continuar sería mentirle. Dos
             // salidas: reintentar, o irse — y ese «irse» es el ÚNICO sitio donde se retira el arm, porque
@@ -235,6 +271,41 @@ struct WelcomePrivateICloudGateView: View {
                 identifier: "welcome_private_icloud_wipe_failed_device",
                 primaryAction: { phase = .wipingDevice(iCloudUnverified: unverified) },
                 secondaryAction: leaveGate)
+        }
+    }
+
+    /// El estado K, con la forma que le toca a cada desenlace. **La diferencia no es estética: es si la
+    /// pantalla tiene salida.**
+    ///
+    ///  · Quien SIGUE necesita un CTA y nada más: el remedio no existe (no hay cuenta de iCloud a la que
+    ///    preguntar) y el ADR es explícito en que se informa y se sigue.
+    ///  · Quien VUELVE necesita reintentar, porque su destino —`WelcomeRestoreView` con iCloud apagado—
+    ///    ofrece «Abrir Ajustes» y «Empezar desde cero», y sin un botón que re-mida las dos pantallas se
+    ///    devuelven la pelota. El remedio aquí sí existe: encender iCloud y volver a preguntar.
+    @ViewBuilder
+    private var noICloudContent: some View {
+        switch unverifiedExit {
+        case .proceedWatchingTheMirror:
+            noticeContent(
+                icon: "icloud.slash",
+                title: L10n.Welcome.PrivateICloud.noAccountTitle,
+                body: noICloudBody,
+                cta: unverifiedExitLabel,
+                identifier: "welcome_private_icloud_no_account",
+                action: exitWithoutValidating)
+        case .returnWithoutClaimingAWipe:
+            twoWayNoticeContent(
+                icon: "icloud.slash",
+                title: L10n.Welcome.PrivateICloud.noAccountTitle,
+                body: noICloudBody,
+                // `Restore.retry` («Reintentar búsqueda») y no `wipeRetry`: aquí se vuelve a BUSCAR, que
+                // es el mismo gesto que en `.unreachable`. `wipeRetry` reintenta un BORRADO, y en esta
+                // pantalla no hay ninguno que reintentar.
+                primary: L10n.Welcome.Restore.retry,
+                secondary: unverifiedExitLabel,
+                identifier: "welcome_private_icloud_no_account",
+                primaryAction: { phase = .checking },
+                secondaryAction: exitWithoutValidating)
         }
     }
 
@@ -471,6 +542,72 @@ struct WelcomePrivateICloudGateView: View {
 
     // MARK: - La puerta
 
+    /// **La salida de «no se pudo preguntar», y es el ÚNICO sitio que bifurca.** Las dos fases que la
+    /// ofrecen llaman aquí y no a uno de los dos desenlaces: quien monta la puerta ya lo decidió en su
+    /// `unverifiedExit`, y repetir ese `switch` en cada fase es como una de las dos se queda atrás.
+    private func exitWithoutValidating() {
+        switch unverifiedExit {
+        case .proceedWatchingTheMirror: continueWithoutValidating()
+        case .returnWithoutClaimingAWipe: returnWithoutClaimingAWipe()
+        }
+    }
+
+    /// **Volver sin declarar ningún borrado** (decisión de Jürgen, 2026-09-14, opción (a) del ticket).
+    ///
+    /// Quien llega aquí por «Restaurar → Empezar desde cero» YA confirmó el borrado dos veces, y a iCloud
+    /// no se le pudo preguntar. Las dos cosas que **no** hace son el ticket entero:
+    ///
+    ///  · **No sale al onboarding.** Para estar en esa puerta hubo relanzamiento, el store espeja y las
+    ///    filas importadas ya están en el teléfono: seguir dejaría a la persona con sus datos viejos
+    ///    enteros bajo un copy que le prometió lo contrario. Es el bug del ticket padre por otra rama.
+    ///  · **No escribe el testigo del espejo tardío**, y ése era el daño encadenado —peor que el hueco—:
+    ///    su aviso borra con `performICloudCorpusWipe(.handover)`, o sea preferencias y purga del dominio
+    ///    de Grupos, que es justo el scope que quien activa CONSERVANDO sus grupos no puede recibir.
+    ///
+    /// **Sí retira el arm, y eso no es alcance nuevo: es no-regresión.** La salida de hoy ya lo hacía en
+    /// este mismo punto. Y es correcto por su propio criterio: un borrado que ni siquiera se pudo medir no
+    /// deja nada a medias que proteger, mientras que un arm superviviente lo reanuda **a ciegas** en el
+    /// arranque siguiente (`ContentView.runLateICloudMirrorCheck`), con ese mismo `.handover`.
+    private func returnWithoutClaimingAWipe() {
+        discardPendingWipe()
+        onBack()
+    }
+
+    /// El cuerpo del estado K. **Cambia con el desenlace porque cambia el hecho que describe**: el de
+    /// siempre dice «Puedes seguir: por ahora tus datos se quedan aquí», y en la puerta que vuelve atrás
+    /// eso sería prometer un camino que no se ofrece.
+    ///
+    /// Y el de la puerta que vuelve **no es el mismo que el de `.unreachable`**, aunque las dos cuenten
+    /// «no pudimos mirar, así que no borramos nada»: la review adversarial midió que con un cuerpo
+    /// compartido esta pantalla repetía su propio título y perdía la causa —iCloud apagado— que su botón
+    /// de reintentar necesita para significar algo.
+    private var noICloudBody: String {
+        switch unverifiedExit {
+        case .proceedWatchingTheMirror: return L10n.Welcome.PrivateICloud.noAccountBody
+        case .returnWithoutClaimingAWipe:
+            return L10n.Welcome.PrivateICloud.discardUnverifiedNoAccountBody
+        }
+    }
+
+    /// Y el de la red caída, por lo mismo: `errorBody` dice «Inténtalo otra vez **antes de seguir**», y
+    /// aquí no hay ningún «seguir». El de recambio nombra el reintento igual que él, porque ese botón
+    /// sigue estando y es el único que de verdad resuelve — un cuerpo que solo ofreciera volver empujaría
+    /// al camino que no arregla nada.
+    private var unreachableBody: String {
+        switch unverifiedExit {
+        case .proceedWatchingTheMirror: return L10n.Welcome.PrivateICloud.errorBody
+        case .returnWithoutClaimingAWipe: return L10n.Welcome.PrivateICloud.discardUnverifiedBody
+        }
+    }
+
+    /// El label de esa salida. «Seguir así» describe lo que hace la de siempre y **miente** en la otra.
+    private var unverifiedExitLabel: String {
+        switch unverifiedExit {
+        case .proceedWatchingTheMirror: return L10n.Welcome.PrivateICloud.noAccountCta
+        case .returnWithoutClaimingAWipe: return L10n.Welcome.PrivateICloud.discardUnverifiedBack
+        }
+    }
+
     /// Seguir sin haber podido validar. **Escribe el testigo**, que es la mitad que impide que el bug
     /// vuelva por la puerta de atrás: cuando el espejo pueda sincronizar, el aviso se dará entonces.
     ///
@@ -517,11 +654,25 @@ struct WelcomePrivateICloudGateView: View {
     /// OTRO dueño —el wipe de cierre de sesión (`performSignOutWipeIfArmed`)— y limpiarlo aquí le quitaba
     /// al device recién vaciado la única cosa que impide que el espejo se readjunte sobre el corpus del
     /// humano que se acaba de ir.
+    /// **Y desde el 2026-09-14 también desde las dos fases de «no se pudo preguntar»** (review
+    /// adversarial). El chevron sale de esas dos pantallas al mismo sitio que su botón, y ese botón
+    /// —`returnWithoutClaimingAWipe`— retira el arm: dos controles al mismo destino con efectos durables
+    /// distintos es como un arm sobrevive a una salida deliberada. Y el criterio es el mismo que el de un
+    /// borrado fallido, solo que un paso antes: aquí no se pudo ni MEDIR, así que no hay nada a medias que
+    /// el arm proteja — solo una petición que quien se va acaba de retirar.
     private func leaveGate() {
-        if phase == .wipeFailed || isDeviceWipeFailed {
+        if phase == .wipeFailed || isDeviceWipeFailed || isUnverified {
             StorageModePersistence.clearICloudCorpusWipeArm()
         }
         onBack()
+    }
+
+    /// «A iCloud no se le pudo preguntar»: las dos fases que ofrecen `exitWithoutValidating`. En una
+    /// propiedad y no en el `if` de arriba porque el hecho tiene nombre y porque `||` no admite pattern
+    /// matching — aquí los dos cases son simples, pero mezclar `==` y `if case` en la misma condición es
+    /// como se cuela el tercero cuando aparezca.
+    private var isUnverified: Bool {
+        phase == .noICloud || phase == .unreachable
     }
 
     /// `if case` envuelto en una propiedad porque el `||` de arriba no admite pattern matching, y porque
@@ -656,6 +807,12 @@ struct WelcomePrivateICloudGateView: View {
     /// se le pudo preguntar, salir por `continueWithoutValidating` deja escrito el testigo del espejo
     /// tardío. Sin él, el día que iCloud vuelva le bajaría el histórico del Apple ID encima del
     /// onboarding recién hecho — que es este mismo ticket, con otro disfraz.
+    ///
+    /// **Y esa salida NO pasa por `exitWithoutValidating`, a propósito** (2026-09-14). El desenlace que
+    /// vuelve atrás existe para no declarar un borrado que no ocurrió, y aquí ocurrió: el teléfono está
+    /// vacío. Con lo borrado abajo, el testigo del espejo tardío es justo lo que hace falta. La cuestión
+    /// además no se plantea hoy: los dos montajes de la activación pasan `deviceCorpus: nil`, así que esta
+    /// fase solo la alcanza el Welcome, que sale por `.proceedWatchingTheMirror`.
     private func wipeDevice(iCloudUnverified: Bool) async {
         // Sin corpus no hay borrado que hacer, y **el fallo seguro es NO seguir**: esta fase solo se
         // alcanza desde un aviso que este mismo paquete produjo, así que llegar aquí sin él significa que

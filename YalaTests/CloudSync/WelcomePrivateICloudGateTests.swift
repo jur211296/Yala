@@ -729,6 +729,16 @@ struct WelcomePrivateICloudGateWiringTests {
             sale por el relanzamiento y NUNCA llega a `onSelectPrivateAccount`, que era quien levantaba el
             alert de datos existentes.
             """)
+        // **Y aquí SÍ se sigue cuando iCloud no contesta**, que es la otra mitad del par del 2026-09-14:
+        // quien llega a esta pantalla acaba de elegir «privado» y no ha pedido borrar nada, así que no hay
+        // ningún borrado que declarar. Con el desenlace de la otra puerta, este camino volvería al chooser
+        // y el primer arranque sin conexión no tendría por dónde entrar en la app — las otras dos ramas
+        // también necesitan red.
+        #expect(step.contains("unverifiedExit: .proceedWatchingTheMirror"), """
+            el Welcome dejó de ofrecer seguir cuando a iCloud no se le pudo preguntar. El ADR es explícito:
+            no poder validar JAMÁS bloquea, y sin esa salida esta pantalla es un camino muerto.
+            Tramo leído: \(step)
+            """)
         let gate = try Self.body(of: "private var deviceCorpusGate: WelcomePrivateICloudGateView.DeviceCorpus? {",
                                  in: src)
         #expect(gate.contains("wipe: { await performDeviceCorpusWipe() }"), """
@@ -800,13 +810,17 @@ struct WelcomePrivateICloudGateWiringTests {
             «Restaurar → Empezar desde cero» sin ella no borra nada.
             """)
         // Cada puerta por su tramo del `switch`, y NO por `call(of:)`, que devuelve siempre la primera.
-        for (tramo, hasta, borrado, elOtro) in [
+        for (tramo, hasta, borrado, elOtro, salida, laOtraSalida) in [
             ("case .privateGate:", "case .restoreDiscardGate:",
              "performWipe: { await performICloudZoneWipe() }",
-             "performICloudZoneAndImportedRowsWipe"),
+             "performICloudZoneAndImportedRowsWipe",
+             "unverifiedExit: .proceedWatchingTheMirror",
+             ".returnWithoutClaimingAWipe"),
             ("case .restoreDiscardGate:", "case .relaunch:",
              "performWipe: { await performICloudZoneAndImportedRowsWipe() }",
-             "performICloudZoneWipe()")] {
+             "performICloudZoneWipe()",
+             "unverifiedExit: .returnWithoutClaimingAWipe",
+             ".proceedWatchingTheMirror")] {
             let gate = try Self.segment(from: tramo, to: hasta, in: src)
             #expect(gate.contains("deviceCorpus: nil"), """
                 la puerta de `\(tramo)` empezó a preguntar por el corpus del teléfono: esos grupos y esas
@@ -828,6 +842,19 @@ struct WelcomePrivateICloudGateWiringTests {
                 la puerta de `\(tramo)` está usando el borrado de la OTRA. Intercambiarlos compila y no
                 rompe ningún otro test: uno vacía el teléfono de quien activa, el otro deja el corpus
                 importado re-exportándose a iCloud.
+                """)
+            // **Y el desenlace de «no se pudo preguntar», con la misma pareja afirmación + prohibición**
+            // (2026-09-14). Es el mismo modo de fallo por otro argumento: los dos cases son del mismo
+            // enum, así que intercambiarlos compila. En `.privateGate` volver atrás deja sin entrada a
+            // quien abre la app sin conexión; en `.restoreDiscardGate` seguir adelante deja los datos
+            // viejos enteros bajo un copy que prometió borrarlos, y encima escribe el testigo del espejo
+            // tardío, cuyo borrado es `.handover` — el que purga el dominio de Grupos.
+            #expect(gate.contains(salida), """
+                la puerta de `\(tramo)` cambió su desenlace cuando a iCloud no se le puede preguntar.
+                Tramo leído: \(gate)
+                """)
+            #expect(!gate.contains(laOtraSalida), """
+                la puerta de `\(tramo)` está usando el desenlace de la OTRA.
                 """)
         }
     }
@@ -1274,16 +1301,202 @@ struct WelcomePrivateICloudGateWiringTests {
         #expect(helper.contains("onProceed()"))
         // Y sus DOS consumidores: sin cuenta y sin red. La segunda es la que impidió que `.unreachable`
         // fuera un camino muerto — sin ella, un primer arranque sin conexión no podía entrar en la app.
+        //
+        // **Desde el 2026-09-14 las dos salen por el BIFURCADOR, no por este helper**, porque la puerta de
+        // «Restaurar → Empezar desde cero» no puede seguir: allí la persona ya confirmó un borrado que no
+        // se pudo hacer. Lo que este bucle sigue afirmando es que las dos fases OFRECEN una salida (el
+        // ADR dice que no poder preguntar JAMÁS bloquea); cuál de las dos es, lo fija el test de abajo.
+        // **`.unreachable` se acota por su `case` siguiente y se afirma con los DOS botones emparejados**,
+        // no con la presencia de un literal: intercambiarlos deja «Reintentar» saliendo de la puerta y la
+        // salida re-midiendo, con los dos literales igual de presentes.
         let content = try Self.body(of: "private var content: some View {", in: src)
-        for rama in ["case .noICloud:", "case .unreachable:"] {
-            let idx = try #require(content.range(of: rama))
-            let hasta = content.range(of: "case .", range: idx.upperBound..<content.endIndex)?.lowerBound
-                ?? content.endIndex
-            #expect(String(content[idx.upperBound..<hasta]).contains("continueWithoutValidating"), """
-                \(rama) no ofrece seguir: el ADR dice que no poder preguntar JAMÁS bloquea, y un botón que
-                solo puede reintentar sí bloquea.
-                """)
+        let unreachable = try #require(content.range(of: "case .unreachable:"))
+        let hasta = try #require(content.range(of: "case .wipeFailed:",
+                                               range: unreachable.upperBound..<content.endIndex))
+        let ramaUnreachable = String(content[unreachable.upperBound..<hasta.lowerBound])
+        #expect(ramaUnreachable.contains("primaryAction: { phase = .checking }"), """
+            `.unreachable` dejó de ofrecer reintentar, que es lo único que puede cambiar el desenlace
+            cuando la red vuelve. Rama leída: \(ramaUnreachable)
+            """)
+        #expect(ramaUnreachable.contains("secondaryAction: exitWithoutValidating"), """
+            `.unreachable` no ofrece salida: el ADR dice que no poder preguntar JAMÁS bloquea, y un botón
+            que solo puede reintentar sí bloquea. Rama leída: \(ramaUnreachable)
+            """)
+        // Y el cableado de `.noICloud` a su propiedad. Su contenido lo vigila
+        // `noICloud_offersRetryOnlyWhereTheRemedyExists`, que es quien puede acotar cada rama del `switch`.
+        let noICloud = try #require(content.range(of: "case .noICloud:"))
+        #expect(String(content[noICloud.upperBound..<unreachable.lowerBound])
+            .contains("noICloudContent"), """
+            el estado K dejó de montar su contenido: su forma depende del desenlace y sin esa propiedad
+            vuelve a tener un botón único, que en la puerta que VUELVE es un camino muerto de dos
+            pantallas.
+            """)
+    }
+
+    /// **El copy de las dos fases también cambia con el desenlace, y nadie lo miraba** (review
+    /// adversarial, 2026-09-14). Los tres mutantes que quedaban verdes: `unverifiedExitLabel` devolviendo
+    /// siempre `noAccountCta` —la puerta que vuelve diciendo **«Seguir así»** mientras vuelve, que es
+    /// exactamente la mentira que esa propiedad existe para evitar— y los dos cuerpos devolviendo siempre
+    /// las claves viejas, que prometen un «seguir» que esa pantalla no ofrece.
+    @Test("cada desenlace lleva su copy, y el de la puerta que vuelve no promete seguir")
+    func unverifiedCopy_matchesItsOutcome() throws {
+        let src = try Self.code("Yala/App/Views/Onboarding/WelcomePrivateICloudGateView.swift")
+        for (propiedad, sigue, vuelve) in [
+            ("private var noICloudBody: String {",
+             "L10n.Welcome.PrivateICloud.noAccountBody",
+             "L10n.Welcome.PrivateICloud.discardUnverifiedNoAccountBody"),
+            ("private var unreachableBody: String {",
+             "L10n.Welcome.PrivateICloud.errorBody",
+             "L10n.Welcome.PrivateICloud.discardUnverifiedBody"),
+            ("private var unverifiedExitLabel: String {",
+             "L10n.Welcome.PrivateICloud.noAccountCta",
+             "L10n.Welcome.PrivateICloud.discardUnverifiedBack")
+        ] {
+            let cuerpo = try Self.body(of: propiedad, in: src)
+            let a = try #require(cuerpo.range(of: "case .proceedWatchingTheMirror:"),
+                                 "\(propiedad) dejó de ramificar por el desenlace")
+            let b = try #require(cuerpo.range(of: "case .returnWithoutClaimingAWipe:"))
+            #expect(a.lowerBound < b.lowerBound, "el switch cambió de orden; los tramos de abajo mienten")
+            let fin = cuerpo.range(of: "\n        case ", range: b.upperBound..<cuerpo.endIndex)?
+                .lowerBound ?? cuerpo.endIndex
+            #expect(String(cuerpo[a.upperBound..<b.lowerBound]).contains(sigue), Comment(rawValue: """
+                \(propiedad): la rama que SIGUE cambió de copy. Ese texto es el que lleva años en el
+                Welcome y la review de este PR no lo tocó.
+                """))
+            #expect(String(cuerpo[b.upperBound..<fin]).contains(vuelve), Comment(rawValue: """
+                \(propiedad): la rama que VUELVE usa el copy de la que sigue. Ese texto promete un
+                «seguir» que esa pantalla no ofrece —y en el label, dice literalmente «Seguir así»
+                mientras vuelve atrás.
+                """))
         }
+        // **El «sin default» del parámetro, que es lo que obliga a cada montaje a pronunciarse.** Ponerle
+        // uno compila, deja los tres call-sites y sus aserciones intactos, y re-arma el bug para el
+        // cuarto: heredaría el desenlace de otro sin que nadie lo decidiera.
+        #expect(!src.contains("var unverifiedExit: UnverifiedExit ="), """
+            `unverifiedExit` tiene valor por defecto. El montaje siguiente heredaría el desenlace de otro
+            en silencio, que es la forma exacta de este bug: la puerta de «Empezar desde cero» nació
+            reusando esta vista y se trajo la salida de la otra sin que nadie lo decidiera.
+            """)
+    }
+
+    /// **El estado K tiene DOS formas, y la diferencia es si la pantalla tiene salida** (review
+    /// adversarial, 2026-09-14).
+    ///
+    /// Quien sigue adelante necesita un CTA y nada más: no hay cuenta de iCloud a la que preguntar, el
+    /// remedio no existe, y el ADR dice que se informa y se sigue. Quien vuelve necesita **reintentar**,
+    /// porque su destino con iCloud apagado (`WelcomeRestoreView.iCloudDisabledView`) ofrece «Abrir
+    /// Ajustes» y «Empezar desde cero» — o sea que sin un botón que re-mida, las dos pantallas se
+    /// devuelven la pelota y la persona no puede terminar la activación sin salir del flujo.
+    @Test("el estado K ofrece reintentar en la puerta que vuelve, y solo su CTA en la que sigue")
+    func noICloud_offersRetryOnlyWhereTheRemedyExists() throws {
+        let src = try Self.code("Yala/App/Views/Onboarding/WelcomePrivateICloudGateView.swift")
+        let cuerpo = try Self.body(of: "private var noICloudContent: some View {", in: src)
+
+        let sigue = try #require(cuerpo.range(of: "case .proceedWatchingTheMirror:"))
+        let vuelve = try #require(cuerpo.range(of: "case .returnWithoutClaimingAWipe:"))
+        #expect(sigue.lowerBound < vuelve.lowerBound, "el switch cambió de orden; los tramos de abajo mienten")
+
+        let ramaSigue = String(cuerpo[sigue.upperBound..<vuelve.lowerBound])
+        #expect(!ramaSigue.contains("twoWayNoticeContent("), """
+            el estado K del Welcome ofrece reintentar: allí NO hay cuenta de iCloud que consultar, así que
+            ese botón no puede cambiar nada y la pantalla pasa a tener un control muerto.
+            Rama leída: \(ramaSigue)
+            """)
+        #expect(ramaSigue.contains("action: exitWithoutValidating)"), """
+            la rama que sigue dejó de cablear su CTA a la salida. Rama leída: \(ramaSigue)
+            """)
+
+        // **El tramo se ACOTA por el `case` siguiente, y esa acotación es el test.** Con `String(cuerpo[
+        // vuelve.upperBound...])` la aserción llegaba hasta el final del cuerpo: un mutante que cambiara
+        // esta rama por el aviso de un CTA único y dejara el `twoWayNoticeContent` en un `case` de
+        // relleno más abajo salía VERDE — medido el 2026-09-14, sobrevivió al primer intento.
+        let finVuelve = cuerpo.range(of: "\n        case ", range: vuelve.upperBound..<cuerpo.endIndex)?
+            .lowerBound ?? cuerpo.endIndex
+        let ramaVuelve = String(cuerpo[vuelve.upperBound..<finVuelve])
+        #expect(ramaVuelve.contains("twoWayNoticeContent("), """
+            la puerta que VUELVE dejó de ofrecer dos salidas. Rama leída: \(ramaVuelve)
+            """)
+        #expect(ramaVuelve.contains("primaryAction: { phase = .checking }"), """
+            la puerta que VUELVE dejó de ofrecer reintentar: su destino con iCloud apagado ofrece «Abrir
+            Ajustes» y «Empezar desde cero», así que sin este botón las dos pantallas se devuelven la
+            pelota y la activación no se puede terminar desde dentro. Rama leída: \(ramaVuelve)
+            """)
+        #expect(ramaVuelve.contains("secondaryAction: exitWithoutValidating"), """
+            y su salida sigue siendo la que no declara ningún borrado.
+            """)
+    }
+
+    /// **El chevron y el botón salen al mismo sitio, así que tienen que retirar el arm igual.** Dos
+    /// controles con el mismo destino y efectos durables distintos es como un arm sobrevive a una salida
+    /// deliberada — y mientras está puesto, `runLateICloudMirrorCheck` lo reanuda a ciegas con el scope
+    /// del handover, que purga el dominio de Grupos.
+    @Test("el «volver» de la barra retira el arm en las dos fases que no pudieron medir")
+    func backButton_discardsTheArmWhenNothingCouldBeMeasured() throws {
+        let src = try Self.code("Yala/App/Views/Onboarding/WelcomePrivateICloudGateView.swift")
+        let leave = try Self.body(of: "private func leaveGate() {", in: src)
+        #expect(leave.contains("isUnverified"), """
+            el chevron sale de `.noICloud` y `.unreachable` al MISMO sitio que su botón, y ese botón retira
+            el arm. Sin este término, tocar la flecha en vez del botón deja armado un borrado que ni
+            siquiera se pudo medir, y el arranque siguiente lo reanuda sin preguntar.
+            Cuerpo leído: \(leave)
+            """)
+        let predicado = try Self.body(of: "private var isUnverified: Bool {", in: src)
+        for fase in ["phase == .noICloud", "phase == .unreachable"] {
+            #expect(predicado.contains(fase), Comment(rawValue: """
+                `isUnverified` dejó fuera \(fase): esa fase ofrece la salida que retira el arm, y su
+                chevron volvería a dejarlo puesto.
+                """))
+        }
+    }
+
+    /// **La salida de «no se pudo preguntar» bifurca, y las dos ramas van EMPAREJADAS.**
+    ///
+    /// El 2026-09-14 esta salida dejó de ser una: la puerta del chooser sigue adelante con el testigo del
+    /// espejo tardío puesto, y la de «Restaurar → Empezar desde cero» vuelve atrás sin declarar nada,
+    /// porque allí la persona ya confirmó un borrado que no llegó a ocurrir.
+    ///
+    /// **Se afirma el par `case` → llamada en la MISMA línea, no la presencia de los dos literales**, que
+    /// es el molde de `wipeDevice`: con las dos ramas intercambiadas los dos literales siguen ahí, y la
+    /// inversión hace justo el daño del ticket —quien confirmó un borrado sale al onboarding con sus datos
+    /// viejos enteros, y encima apuntado para el aviso del espejo tardío, cuyo borrado es `.handover`.
+    @Test("la salida sin validar bifurca, y cada desenlace lleva su rama")
+    func unverifiedExit_pairsEachOutcomeWithItsBranch() throws {
+        let src = try Self.code("Yala/App/Views/Onboarding/WelcomePrivateICloudGateView.swift")
+        let bifurcador = try Self.body(of: "private func exitWithoutValidating() {", in: src)
+        #expect(bifurcador.contains("case .proceedWatchingTheMirror: continueWithoutValidating()"), """
+            el desenlace que sigue adelante dejó de escribir el testigo del espejo tardío, o lo cambió por
+            el que vuelve atrás: quien eligió privado sin poder validar se queda sin el aviso, y el
+            histórico del Apple ID le cae encima el día que iCloud vuelva.
+            Cuerpo leído: \(bifurcador)
+            """)
+        #expect(bifurcador.contains("case .returnWithoutClaimingAWipe: returnWithoutClaimingAWipe()"), """
+            el desenlace que vuelve atrás pasó a seguir adelante: quien confirmó «Empezar desde cero» sin
+            red acaba en el onboarding con sus datos viejos enteros, bajo un copy que prometió borrarlos —
+            y con el testigo que levanta el aviso del espejo tardío, cuyo borrado purga el dominio de
+            Grupos de quien activó conservándolos.
+            Cuerpo leído: \(bifurcador)
+            """)
+
+        // **Y el cuerpo de la salida nueva, por sus DOS ausencias**, que son el ticket entero.
+        let volver = try Self.body(of: "private func returnWithoutClaimingAWipe() {", in: src)
+        #expect(!volver.contains("markPrivateChoseWithoutICloud"), """
+            la salida que NO borró nada escribe el testigo del espejo tardío. Ese aviso borra con
+            `performICloudCorpusWipe(.handover)` —preferencias y purga del dominio de Grupos—, que es el
+            scope que quien activa CONSERVANDO sus grupos no puede recibir. Es el daño encadenado del
+            ticket, y era peor que el hueco.
+            """)
+        #expect(!volver.contains("onProceed()"), """
+            la salida que vuelve atrás sigue adelante: la persona acaba en el onboarding creyendo que se
+            borró un corpus que sigue entero en su teléfono.
+            """)
+        #expect(volver.contains("discardPendingWipe()"), """
+            volver deja el arm puesto, y mientras lo está `runLateICloudMirrorCheck` lo REANUDA A CIEGAS
+            con el scope del handover. La salida de antes ya lo retiraba aquí: no hacerlo es una regresión.
+            """)
+        #expect(volver.contains("onBack()"), """
+            la salida que vuelve atrás no vuelve a ninguna parte: en la puerta de «Empezar desde cero»,
+            `onBack` es quien devuelve a Restaurar con la decisión todavía abierta.
+            """)
     }
 
     /// El sheet nuevo cuelga del anchor de `ContentView`, así que la regla (3) de Presentaciones exige que
@@ -1362,7 +1575,13 @@ struct WelcomePrivateICloudGateWiringTests {
             let strings = try Self.source("Yala/Resources/\(locale).lproj/Localizable.strings")
             for key in ["welcome.privateICloud.foundTitle", "welcome.privateICloud.foundBody",
                         "welcome.privateICloud.wipeConfirmBody", "welcome.privateICloud.lateBody",
-                        "welcome.privateICloud.noAccountBody"] {
+                        "welcome.privateICloud.noAccountBody",
+                        // Los dos cuerpos de la puerta que VUELVE atrás (2026-09-14). Nombran iCloud por
+                        // la misma razón y por una más: lo que dicen es que **no** se borró nada porque no
+                        // se pudo mirar ahí, y sin nombrar dónde, «no borramos nada» es una frase sin
+                        // sujeto.
+                        "welcome.privateICloud.discardUnverifiedBody",
+                        "welcome.privateICloud.discardUnverifiedNoAccountBody"] {
                 let line = try #require(strings.split(separator: "\n").first(where: { $0.contains(key) }),
                                         "falta la key \(key) en \(locale)")
                 let value = try #require(line.split(separator: "=").last.map(String.init),

@@ -5194,6 +5194,25 @@ enum L10n {
             static var noAccountCta: String { ls("welcome.privateICloud.noAccountCta", comment: "") }
             static var errorTitle: String { ls("welcome.privateICloud.errorTitle", comment: "") }
             static var errorBody: String { ls("welcome.privateICloud.errorBody", comment: "") }
+            /// **El cuerpo de `.unreachable` cuando la puerta VUELVE atrás en vez de seguir** (decisión de
+            /// Jürgen, 2026-09-14). `errorBody` no sirve ahí: dice «Inténtalo otra vez **antes de
+            /// seguir**», y en esa puerta no se ofrece ningún «seguir». Nombra el reintento igual que él,
+            /// porque ese botón sigue estando y es el único que de verdad resuelve.
+            static var discardUnverifiedBody: String {
+                ls("welcome.privateICloud.discardUnverifiedBody", comment: "")
+            }
+            /// **Y el de `.noICloud`, que es OTRO y no una copia** (review adversarial, 2026-09-14). Con el
+            /// cuerpo de arriba, esa pantalla repetía su propio título —«No pudimos revisar tu iCloud» +
+            /// «No pudimos revisar qué hay en tu iCloud»— y perdía lo único accionable que `noAccountBody`
+            /// sí decía: **que iCloud está apagado en este teléfono**. Sin esa causa, el botón «Reintentar»
+            /// que esa fase estrena es un control que parece roto: sin tocar nada, reintentar vuelve aquí.
+            static var discardUnverifiedNoAccountBody: String {
+                ls("welcome.privateICloud.discardUnverifiedNoAccountBody", comment: "")
+            }
+            /// Y su salida. `noAccountCta` («Seguir así») describe lo que hace la otra y mentiría aquí.
+            static var discardUnverifiedBack: String {
+                ls("welcome.privateICloud.discardUnverifiedBack", comment: "")
+            }
             /// El espejo que llegó tarde: activaste iCloud después de hacer el onboarding sin él.
             static var lateTitle: String { ls("welcome.privateICloud.lateTitle", comment: "") }
             /// Lleva las cifras dentro porque es el MENSAJE del alert, no el label de un botón: un label

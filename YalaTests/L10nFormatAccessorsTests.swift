@@ -40,6 +40,26 @@ struct L10nFormatAccessorsTests {
         #expect(late.contains("128 registros · 3 cuentas"))
     }
 
+    /// **Los tres accessors SIN formato de la puerta que vuelve atrás, y el motivo es el mismo aunque no
+    /// interpolen nada** (2026-09-14): una errata en el literal de `ls(...)` sale a pantalla como key
+    /// cruda, y **eso no lo caza la paridad** — `LocalizationParityTests` compara `.strings` contra
+    /// `.strings` y jamás abre `L10n.swift`. El único guardián del copy de esta pantalla
+    /// (`copy_isOwnAndNamesICloud`) lee el `.strings` directo, con lo que tampoco pasa por el accessor.
+    ///
+    /// Son las tres claves que sostienen la decisión (a): que la app **no declare** un borrado que no
+    /// ocurrió. Un nombre de clave en pantalla, ahí, es peor que el copy viejo.
+    @Test func discardUnverifiedAccessors_resolve_neverRawKey() {
+        for texto in [L10n.Welcome.PrivateICloud.discardUnverifiedBody,
+                      L10n.Welcome.PrivateICloud.discardUnverifiedNoAccountBody,
+                      L10n.Welcome.PrivateICloud.discardUnverifiedBack] {
+            #expect(!texto.contains("welcome.privateICloud"), """
+                accessor devolvió la key cruda: el literal de `ls(...)` no casa con ninguna clave de los
+                .strings. Texto: \(texto)
+                """)
+            #expect(!texto.isEmpty)
+        }
+    }
+
     @Test func exchangeRateShort_embedsRate_neverRawKey() {
         let result = L10n.Transaction.exchangeRateShort("3.7500")
 

@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (369)
+## Index (372)
 
 | id | status | path |
 |---|---|---|
@@ -37,7 +37,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | account-form-as-medium-detent-sheet | backlog | tickets/backlog/account-form-as-medium-detent-sheet.md |
 | account-goldens-freeze-read-test-times-out | backlog | tickets/backlog/account-goldens-freeze-read-test-times-out.md |
 | accounts-need-more-visibility-in-the-ui | backlog | tickets/backlog/accounts-need-more-visibility-in-the-ui.md |
-| activation-discard-gate-exits-without-wiping-when-icloud-is-unreachable | backlog | tickets/backlog/activation-discard-gate-exits-without-wiping-when-icloud-is-unreachable.md |
+| activation-discard-gate-exits-without-wiping-when-icloud-is-unreachable | done | tickets/done/activation-discard-gate-exits-without-wiping-when-icloud-is-unreachable.md |
 | activation-discard-loses-the-group-history-question | backlog | tickets/backlog/activation-discard-loses-the-group-history-question.md |
 | activation-restore-start-fresh-keeps-the-imported-rows | done | tickets/done/activation-restore-start-fresh-keeps-the-imported-rows.md |
 | activation-resume-returns-to-restore-on-an-emptied-zone | backlog | tickets/backlog/activation-resume-returns-to-restore-on-an-emptied-zone.md |
@@ -119,10 +119,12 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | device-qa-activation-restore-start-fresh | qa | tickets/qa/device-qa-activation-restore-start-fresh.md |
 | device-qa-apple-id-change-closes-private-session | qa | tickets/qa/device-qa-apple-id-change-closes-private-session.md |
 | device-qa-cloud-killswitch-groups-door | qa | tickets/qa/device-qa-cloud-killswitch-groups-door.md |
+| device-qa-discard-gate-returns-to-restore-without-icloud | qa | tickets/qa/device-qa-discard-gate-returns-to-restore-without-icloud.md |
 | device-qa-groups-account-association | qa | tickets/qa/device-qa-groups-account-association.md |
 | device-qa-groups-invite-neutral-return | qa | tickets/qa/device-qa-groups-invite-neutral-return.md |
 | device-qa-private-gate-device-corpus | qa | tickets/qa/device-qa-private-gate-device-corpus.md |
 | diez-worktrees-comparten-un-simulador | done | tickets/done/diez-worktrees-comparten-un-simulador.md |
+| discard-gate-proceed-leaves-the-imported-rows-behind | backlog | tickets/backlog/discard-gate-proceed-leaves-the-imported-rows-behind.md |
 | distribucion-recalcula-dos-veces-por-toque-y-sin-debounce | backlog | tickets/backlog/distribucion-recalcula-dos-veces-por-toque-y-sin-debounce.md |
 | distribution-balance-kpi-skips-fx | done | tickets/done/distribution-balance-kpi-skips-fx.md |
 | distribution-subviews-miss-the-new-panel-hero | backlog | tickets/backlog/distribution-subviews-miss-the-new-panel-hero.md |
@@ -385,6 +387,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | welcome-cloud-back-leaves-chooser-marked-seen | backlog | tickets/backlog/welcome-cloud-back-leaves-chooser-marked-seen.md |
 | welcome-copy-blames-owner | discarded | tickets/discarded/welcome-copy-blames-owner.md |
 | welcome-destructive-buttons-are-plain-text-taps | backlog | tickets/backlog/welcome-destructive-buttons-are-plain-text-taps.md |
+| welcome-discard-gate-says-carry-on-right-after-asking-to-wipe | backlog | tickets/backlog/welcome-discard-gate-says-carry-on-right-after-asking-to-wipe.md |
 | welcome-fresh-start-alert-leaves-blank-screen | qa | tickets/qa/welcome-fresh-start-alert-leaves-blank-screen.md |
 | welcome-privacy-branch-has-no-secondary-door | discarded | tickets/discarded/welcome-privacy-branch-has-no-secondary-door.md |
 | welcome-private-card-promises-icloud-in-visit | discarded | tickets/discarded/welcome-private-card-promises-icloud-in-visit.md |

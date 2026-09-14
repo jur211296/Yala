@@ -5906,3 +5906,12 @@
 
 /* Alert button: pospone el cierre hasta el proximo arranque */
 "icloud.appleIDChanged.later" = "Jetzt nicht";
+
+/* Gate de «Empezar desde cero» sin respuesta de iCloud: no se declara un borrado que no ocurrio */
+"welcome.privateICloud.discardUnverifiedBody" = "Wir konnten uns nicht verbinden, um deine iCloud zu prüfen, also haben wir nichts gelöscht: Alles ist so, wie es war. Versuch es noch einmal, oder geh zurück und entscheide, wann du willst.";
+
+/* Salida del gate de «Empezar desde cero» cuando iCloud no contesto: vuelve a Restaurar */
+"welcome.privateICloud.discardUnverifiedBack" = "Zurück";
+
+/* Estado K de la puerta que VUELVE: iCloud apagado, no se borro nada, y como activarlo */
+"welcome.privateICloud.discardUnverifiedNoAccountBody" = "Auf diesem Handy ist iCloud aus, also konnten wir nicht sehen, ob du früher etwas gespeichert hast, und haben nichts gelöscht. Schalte es in den Einstellungen ein und versuch es noch einmal, oder geh zurück und entscheide, wann du willst.";

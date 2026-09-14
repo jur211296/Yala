@@ -5918,3 +5918,12 @@
 
 /* Alert button: pospone el cierre hasta el proximo arranque */
 "icloud.appleIDChanged.later" = "暂不";
+
+/* Gate de «Empezar desde cero» sin respuesta de iCloud: no se declara un borrado que no ocurrio */
+"welcome.privateICloud.discardUnverifiedBody" = "我们无法连接来查看你的 iCloud，所以什么都没有删除：一切都保持原样。可以再试一次，或者返回，想好了再决定。";
+
+/* Salida del gate de «Empezar desde cero» cuando iCloud no contesto: vuelve a Restaurar */
+"welcome.privateICloud.discardUnverifiedBack" = "返回";
+
+/* Estado K de la puerta que VUELVE: iCloud apagado, no se borro nada, y como activarlo */
+"welcome.privateICloud.discardUnverifiedNoAccountBody" = "这台手机没有开启 iCloud，所以我们无法确认你以前有没有保存过东西，也什么都没有删除。可以在「设置」里开启后再试一次，或者返回，想好了再决定。";
