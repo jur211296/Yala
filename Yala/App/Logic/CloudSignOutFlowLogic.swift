@@ -143,11 +143,12 @@ nonisolated enum CloudSignOutFlowLogic {
         /// veredicto de grupos que no fuera `.channelPaused`, y hoy traduce con
         /// `cloudSignOutGroupsBlockReason`, que manda lo pasajero a `.uploadRetryLater`.
         ///
-        /// **Dos colapsos SIGUEN vivos, y cada uno tiene su ticket.** En ese mismo paso 2,
-        /// `.sessionExpired` sigue saliendo como `.permanent`
-        /// (`cloud-signout-collapses-a-groups-session-expiry-into-permanent`); y el paso 1 —el push-all
-        /// PERSONAL, que corre ANTES— descarta el motivo con `_` y escribe `.permanent` a pelo, así que
-        /// con filas personales pendientes es él quien bloquea y el aviso vuelve a ser el genérico
+        /// **Y desde el 2026-09-15 la sesión caducada tampoco se colapsa aquí**: el paso 2 la deja pasar tal
+        /// cual (decisión 3A de Jürgen, ticket `cloud-signout-collapses-a-groups-session-expiry-into-permanent`).
+        ///
+        /// **Queda UN colapso vivo, con su ticket.** El paso 1 —el push-all PERSONAL, que corre ANTES— descarta
+        /// el motivo con `_` y escribe `.permanent` a pelo, así que con filas personales pendientes es él quien
+        /// bloquea y el aviso vuelve a ser el genérico
         /// (`cloud-signout-collapses-the-personal-push-all-reason-into-permanent`).
         case permanent
         /// El cierre PRIVADO esperó a que el último cambio llegara a iCloud y agotó el presupuesto. Es el
@@ -160,6 +161,16 @@ nonisolated enum CloudSignOutFlowLogic {
         /// entrar con la cuenta, y descartarlos no es una opción («nunca descarta»). Va aparte de `.permanent`
         /// porque el aviso de siempre («revisa tu conexión») mandaba a buscar un fallo que no existe (review
         /// adversarial del paso 9).
+        ///
+        /// **Desde el 2026-09-15 lo enseñan las cuatro celdas del cierre**, la nube incluida
+        /// (`cloudSignOutGroupsBlockReason`). Y su aviso afirma más de lo que este motivo sabe. Medido leyendo la
+        /// app y el SDK, sin ejecutar:
+        ///  · **También sale sin conexión.** Con el token caducado, `CloudAuthService.accessToken()` devuelve
+        ///    `nil` si el refresh falla por la red, y el push de grupos lo llama sesión caducada sin hacer una
+        ///    sola petición. Ticket `groups-push-reads-an-offline-token-refresh-as-a-session-expiry`.
+        ///  · **En la nube, «vuelve a iniciar sesión» no dice dónde.** Si el SDK borró la sesión, la única puerta
+        ///    encontrada es «Nuevo grupo» en la pestaña Grupos; si sigue guardada, no hay ninguna. Ticket
+        ///    `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`.
         case sessionExpired
         /// **No se pudo mirar el puente personal al desasociar** (`GroupsAssociationDetach.detachBridge`
         /// devolvió `nil`): su fetch lanzó, o su `save()` no entró. Va aparte porque el aviso de siempre
@@ -259,10 +270,12 @@ nonisolated enum CloudSignOutFlowLogic {
     /// funciona. Con un `switch` sin `default`, el compilador no deja añadir un motivo sin decidir qué se
     /// enseña aquí.
     ///
-    /// **Qué NO cambia, y se queda a propósito.** `.permanent` y `.sessionExpired` siguen saliendo los dos
-    /// como `.permanent`: el segundo tiene copy propio («tu sesión caducó, vuelve a iniciar sesión») que en
-    /// mitad de un cierre de sesión hay que decidir si se le dice a alguien, y eso es otro objeto y otra
-    /// decisión de producto. Ticket `cloud-signout-collapses-a-groups-session-expiry-into-permanent`.
+    /// **La sesión caducada viaja tal cual desde el 2026-09-15**, como en las otras tres celdas del cierre.
+    /// Hasta entonces salía como `.permanent`, o sea «revisa tu conexión», a quien tenía la conexión bien y
+    /// lo que necesitaba era volver a entrar con su cuenta: es lo único que sube esos cambios. Quedaba por
+    /// decidir si a alguien que acaba de pedir cerrar sesión se le dice «vuelve a iniciar sesión», y Jürgen
+    /// dijo que sí (opción 1 del ticket `cloud-signout-collapses-a-groups-session-expiry-into-permanent`).
+    /// Lo que ese aviso todavía no distingue está medido en el docblock de `.sessionExpired`.
     ///
     /// Los tres motivos que este productor no puede emitir —`classify` devuelve cuatro de los ocho, y el
     /// octavo sale de aquí— caen en `.permanent`, que es el aviso que no afirma ninguna causa concreta.
@@ -276,7 +289,10 @@ nonisolated enum CloudSignOutFlowLogic {
         // Idempotente: este productor no lo emite (sale de aquí, no entra), pero mapearlo a otra cosa
         // convertiría una segunda pasada en el bug de arriba.
         case .uploadRetryLater: return .uploadRetryLater
-        case .permanent, .sessionExpired: return .permanent
+        // La sesión caducada, tal cual (decisión 3A de Jürgen, 2026-09-15): su aviso pide volver a entrar, que es
+        // lo único que sube estos cambios. Colapsada en `.permanent` le decía «revisa tu conexión».
+        case .sessionExpired: return .sessionExpired
+        case .permanent: return .permanent
         case .exportUnconfirmed, .bridgeUnreadable, .detachBusy: return .permanent
         }
     }

@@ -160,9 +160,8 @@ struct CloudSignOutPushAllVerdictTests {
 
     @Test
     func pendingWithSessionOrAccountFailure_blocksPermanent() {
-        // La sesión caducada lleva su motivo propio desde el paso 9 (el aviso pide volver a entrar). El
-        // camino `.cloud` lo sigue mostrando como permanente, pero ya NO porque aplane todo: desde el
-        // 2026-09-14 traduce con `cloudSignOutGroupsBlockReason`, y ahí este motivo se colapsa a propósito
+        // La sesión caducada lleva su motivo propio desde el paso 9 (el aviso pide volver a entrar), y desde el
+        // 2026-09-15 el camino `.cloud` también lo enseña: `cloudSignOutGroupsBlockReason` ya no lo colapsa
         // (ticket `cloud-signout-collapses-a-groups-session-expiry-into-permanent`).
         #expect(CloudSignOutFlowLogic.pushAllVerdict(
             livePendingCount: 5, cycleOutcome: .sessionExpired, channelKilled: false, iteration: 1, maxIterations: 10
@@ -263,20 +262,39 @@ struct CloudSignOutGroupsReasonTests {
         #expect(CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(.channelPaused) == .channelPaused)
     }
 
+    /// **La cadena del ticket, de punta a punta**: una sesión caducada en el push de grupos del cierre en la
+    /// nube acaba en el aviso que pide volver a entrar, y no en «revisa tu conexión». Cada eslabón tiene su
+    /// tabla (`classify`, esta traducción y `SignOutBlockedCopy`); lo que ninguna dice es que juntos den el
+    /// texto que decidió Jürgen (opción 1, 2026-09-15). Ticket
+    /// `cloud-signout-collapses-a-groups-session-expiry-into-permanent`.
+    @MainActor
+    @Test
+    func aGroupsSessionExpiryEndsInTheSignInAgainCopy() {
+        let motivo = CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(
+            CloudSignOutFlowLogic.classify(.sessionExpired, channelKilled: false))
+        #expect(motivo == .sessionExpired)
+        #expect(SignOutBlockedCopy.message(for: motivo) == L10n.Groups.Errors.sessionExpired)
+        // Y el vecino no se arrastra: la cuenta no disponible sigue en el aviso que no afirma ninguna causa.
+        let cuenta = CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(
+            CloudSignOutFlowLogic.classify(.accountUnavailable, channelKilled: false))
+        #expect(cuenta == .permanent)
+        #expect(SignOutBlockedCopy.message(for: cuenta) == L10n.Settings.signOutBlockedMessage)
+    }
+
     /// **Todo motivo tiene una traducción escrita.** El `switch` es exhaustivo, así que el compilador ya
     /// obliga; esta tabla fija además QUÉ se decidió para cada uno, y se cae si alguien cambia una fila
-    /// creyendo que da igual. Los dos que siguen colapsando lo hacen a propósito.
+    /// creyendo que da igual. Los que caen en `.permanent` lo hacen a propósito.
     @Test
     func everyReasonHasATranslation() {
         let esperado: [CloudSignOutFlowLogic.BlockReason: CloudSignOutFlowLogic.BlockReason] = [
             .transient: .uploadRetryLater,
             .channelPaused: .channelPaused,
             .uploadRetryLater: .uploadRetryLater,
-            // Se quedan colapsados a propósito: el copy de la sesión caducada en mitad de un cierre de
-            // sesión es otra decisión de producto.
+            // La sesión caducada viaja tal cual desde el 2026-09-15 (decisión 3A de Jürgen).
             // Ticket `cloud-signout-collapses-a-groups-session-expiry-into-permanent`.
+            .sessionExpired: .sessionExpired,
+            // El aviso que no afirma ninguna causa, para lo que de verdad no se sabe.
             .permanent: .permanent,
-            .sessionExpired: .permanent,
             // No los produce `classify`, así que este productor no puede emitirlos.
             .exportUnconfirmed: .permanent,
             .bridgeUnreadable: .permanent,

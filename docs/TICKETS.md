@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (381)
+## Index (384)
 
 | id | status | path |
 |---|---|---|
@@ -93,8 +93,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | claim-promotion-lost-response-blocks-the-retry | backlog | tickets/backlog/claim-promotion-lost-response-blocks-the-retry.md |
 | cloud-fx-rates-blob-two-faces | qa | tickets/qa/cloud-fx-rates-blob-two-faces.md |
 | cloud-killswitch-hides-the-only-door-to-detach-groups | qa | tickets/qa/cloud-killswitch-hides-the-only-door-to-detach-groups.md |
+| cloud-session-expiry-with-only-group-changes-has-no-sign-in-door | backlog | tickets/backlog/cloud-session-expiry-with-only-group-changes-has-no-sign-in-door.md |
 | cloud-sign-in-discovers-account-kind | qa | tickets/qa/cloud-sign-in-discovers-account-kind.md |
-| cloud-signout-collapses-a-groups-session-expiry-into-permanent | backlog | tickets/backlog/cloud-signout-collapses-a-groups-session-expiry-into-permanent.md |
+| cloud-signout-collapses-a-groups-session-expiry-into-permanent | qa | tickets/qa/cloud-signout-collapses-a-groups-session-expiry-into-permanent.md |
 | cloud-signout-collapses-every-groups-transient-into-permanent | qa | tickets/qa/cloud-signout-collapses-every-groups-transient-into-permanent.md |
 | cloud-signout-collapses-the-personal-push-all-reason-into-permanent | backlog | tickets/backlog/cloud-signout-collapses-the-personal-push-all-reason-into-permanent.md |
 | cloud-tx-epoch-orphan-relations | backlog | tickets/backlog/cloud-tx-epoch-orphan-relations.md |
@@ -223,6 +224,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-pending-member-sees-detail-chrome | backlog | tickets/backlog/groups-pending-member-sees-detail-chrome.md |
 | groups-pull-cuesta-cinco-viajes-por-grupo | backlog | tickets/backlog/groups-pull-cuesta-cinco-viajes-por-grupo.md |
 | groups-purge-save-crosses-two-stores-without-atomicity | backlog | tickets/backlog/groups-purge-save-crosses-two-stores-without-atomicity.md |
+| groups-push-reads-an-offline-token-refresh-as-a-session-expiry | backlog | tickets/backlog/groups-push-reads-an-offline-token-refresh-as-a-session-expiry.md |
 | groups-reassociation-does-not-restore-the-bridge-link | backlog | tickets/backlog/groups-reassociation-does-not-restore-the-bridge-link.md |
 | groups-reconnect-prune-or-rewire | done | tickets/done/groups-reconnect-prune-or-rewire.md |
 | groups-settlement-reminder | qa | tickets/qa/groups-settlement-reminder.md |
@@ -297,6 +299,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | qa-guion-tanda-no-cubre-17-tickets | backlog | tickets/backlog/qa-guion-tanda-no-cubre-17-tickets.md |
 | qa-no-puede-crear-cuenta-en-otra-divisa | done | tickets/done/qa-no-puede-crear-cuenta-en-otra-divisa.md |
 | qa-yml-no-cancela-la-corrida-anterior-de-la-misma-rama | backlog | tickets/backlog/qa-yml-no-cancela-la-corrida-anterior-de-la-misma-rama.md |
+| queued-offer-after-dismiss-flakes-on-a-cold-simulator | backlog | tickets/backlog/queued-offer-after-dismiss-flakes-on-a-cold-simulator.md |
 | readme-index-duplicates-internal-worktree-files | backlog | tickets/backlog/readme-index-duplicates-internal-worktree-files.md |
 | readme-index-generator-counts-worktree-copies | discarded | tickets/discarded/readme-index-generator-counts-worktree-copies.md |
 | readme-index-lists-files-from-other-worktrees | discarded | tickets/discarded/readme-index-lists-files-from-other-worktrees.md |
