@@ -1,9 +1,10 @@
 ---
 id: groups-channel-seal-has-no-reachable-producer
-status: backlog
+status: done
 priority: medium
 area: "groups, modo-nube, sync"
 created: 2026-09-14
+updated: 2026-09-15
 source: "medición al cerrar `groups-sync-treats-an-infra-403-as-an-account-verdict`"
 ---
 
@@ -58,3 +59,38 @@ Es una decisión, no una tarea:
 - `groups-sync-treats-an-infra-403-as-an-account-verdict` — el arreglo que dejó el sello sin productor.
 - `groups-killswitch-403-blocks-detach-forever` — el que estableció que el kill NO sella.
 - `reverse-upload-has-no-ceiling-and-no-exit` — el freeze de la reversa, pero en el canal personal.
+
+## Cerrado (2026-09-15 · PR de `encargo/2026-09-15-groups-channel-seal-has-no-reachable-producer`)
+
+**Decisión de Jürgen (2026-09-14, «4A» en la cola): la opción 1, retirarlo.** Ni productor nuevo ni
+dejarlo documentado como muerto.
+
+**Lo que cambia para quien usa la app: nada visible.** El freno solo lo echaba una respuesta que el
+servidor no manda en esta ruta. En el código, si el canal de Grupos para porque la cuenta no está
+disponible, vuelve a intentarlo en el siguiente arranque, vuelta a la app o inicio de sesión, como ya
+hacía con la sesión caducada y con el apagado del canal.
+
+**La premisa se sostiene, medida antes de tocar nada.** En el canal hay tres productores de «cuenta no
+disponible»: el 403 del apagado en el push y en el pull, que nunca echaban el freno, y el 409 de la
+reversa, el único que lo echaba. Ese 409 solo sale de `beginFreezeCheck`, que se llama en `/sync/push` y
+`/prefs/push`; `/groups/push` no pasa por ahí.
+
+**Lo que se retiró:** el flag, su escritura en el loop, los guards de los tres `syncNow*`, el parámetro
+de `GroupsLoopRestartLogic.shouldStart`, el seam de test, el test que fijaba el freno y las aserciones
+sobre el seam. **Se quedan** el testigo del apagado, que elige el aviso del cierre de sesión y el motivo
+del log, y el `.stoppedUntilRelaunch` del runtime personal, que es otro mecanismo con productores vivos.
+
+**La review cazó dos huecos de red, y los dos están arreglados.** El único cambio de conducta —el 409 ya
+no cierra el canal— no lo fijaba ningún test, así que volver a poner el freno salía verde en toda la
+suite. Y al quitar la aserción sobre el seam, el test del apagado dejó de cubrir los guards del save
+local y del silent push. Hay test nuevo, `accountReverting409_stopsLoop_andTheNextStartRestartsIt`, y el
+del apagado ejerce ahora los dos caminos. Mutantes: tres compilados y tres muertos. **El freno retirado,
+puesto tal cual, cae.**
+
+**Un rojo de XCUITest que no era de este cambio.** `test_extremeMinimumAmountSaves` cayó una vez y pasó
+la siguiente con el mismo binario; el árbol base pasó con el mismo comando, y el test no ejecuta el código
+tocado porque lanza sin sesión de nube. La medición está en `edgecases-extreme-minimum-flaky-under-load`.
+
+**Sin device-QA:** en producción nada cambia.
+
+**Abre:** `groups-loop-restart-docs-cite-a-retired-mount-guard` (`low`).

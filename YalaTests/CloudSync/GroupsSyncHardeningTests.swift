@@ -805,18 +805,22 @@ struct GroupsSyncHardeningTests {
         ("kill truncado por el edge", #"{"error":{"message":"Canal de Gr"#),
     ]
 
-    /// LA aserción del fix: el kill para el loop en la vuelta actual y **no arma `stoppedUntilRelaunch`**.
-    /// Si lo armara, apagar el canal sería inmediato pero ENCENDERLO exigiría que cada usuario matara y
-    /// reabriera la app —`GroupsLoopRestartLogic.shouldStart` y `syncNowFromPush` leen ese flag— o sea la
-    /// simétrica exacta del bug que el kill vino a cerrar (el 2026-07-31 un iPhone real se quedó con el
-    /// canal OFF durante horas DESPUÉS de subir el percent a 100).
-    @Test func killSwitch403_stopsLoop_butDoesNotSealIt() async throws {
+    /// LA aserción del fix: el kill para el loop en la vuelta actual y **nada se queda cerrado detrás**: ni el
+    /// próximo `startIfEligible` ni los ciclos sueltos de un save local o de un silent push. Si la parada se
+    /// quedara puesta, apagar el canal sería inmediato pero ENCENDERLO exigiría que cada usuario matara y
+    /// reabriera la app, o sea la simétrica exacta del bug que el kill vino a cerrar (el 2026-07-31 un iPhone
+    /// real se quedó con el canal OFF durante horas DESPUÉS de subir el percent a 100).
+    @Test func killSwitch403_stopsLoop_andTheNextStartRestartsIt() async throws {
         let prevRuntime = CloudSyncFlags.syncRuntimeEnabled
         CloudSyncFlags.groupsBackendEnabled = true
-        CloudSyncFlags.syncRuntimeEnabled = true   // storageMode `.icloud` ⇒ canRunDomain() false ⇒ loop propio
+        CloudSyncFlags.syncRuntimeEnabled = true
+        // `.icloud` EXPLÍCITO ⇒ `canRunDomain()` false ⇒ loop propio, que es la premisa del test. Heredarlo no
+        // vale: es un global que otras suites escriben (el porqué, en `infra403_backsOffInTheLoop_insteadOfStoppingIt`).
+        CloudSyncFlags.storageMode = .icloud
         defer {
             CloudSyncFlags._testResetGroupsBackendEnabledOverride()
             CloudSyncFlags.syncRuntimeEnabled = prevRuntime
+            CloudSyncFlags._testResetStorageModeOverride()
         }
 
         let dir = freshDir(); defer { cleanup(dir) }
@@ -831,11 +835,67 @@ struct GroupsSyncHardeningTests {
 
         #expect(stub.callCount >= 1)                       // llegó a hablar con el gateway
         #expect(client._testLoopTask == nil)               // el loop TERMINÓ (parada inmediata)
-        #expect(client._testStoppedUntilRelaunch == false) // pero NO quedó sellado
+
+        // Los ciclos sueltos tampoco quedan cerrados: un save local y un silent push vuelven a hablar con el
+        // gateway. Son la otra mitad de la regresión del 2026-08-03, y cada uno lee su propio guard.
+        let callsAfterStop = stub.callCount
+        await client.syncNowAfterLocalSave()
+        #expect(stub.callCount > callsAfterStop, "un save local tras el kill no puede quedarse sin red")
+        let callsAfterSave = stub.callCount
+        _ = await client.syncNowFromPush(timeout: .seconds(5))
+        #expect(stub.callCount > callsAfterSave, "un silent push tras el kill no puede quedarse sin red")
+
         // Y la prueba de que la parada es re-arrancable de verdad: el próximo startIfEligible crea loop.
         client.startIfEligible(context: context, trigger: "foreground")
         let again = client._testLoopTask
         #expect(again != nil, "un kill levantado exigiría relanzar la app si el loop no re-arranca")
+        await again?.value
+    }
+
+    /// **La otra parada de `.accountUnavailable`, y la única que no viene del kill: el 409 del freeze de la
+    /// reversa** (`yala_account_reverting`). Tampoco se queda puesta: el loop termina en esa vuelta, y un save
+    /// local y el próximo `startIfEligible` lo vuelven a intentar. Es la promesa de
+    /// `GroupsLoopRestartLogic.shouldStart` («ninguna parada del loop se queda puesta») en su tercera forma;
+    /// sin este caso, volver a cerrar el canal tras un 409 saldría verde en toda la suite. Hoy `/groups/push`
+    /// no emite ese 409 (el freeze de la reversa no aplica a este canal): el caso fija qué hace el cliente si
+    /// llega.
+    @Test func accountReverting409_stopsLoop_andTheNextStartRestartsIt() async throws {
+        let prevRuntime = CloudSyncFlags.syncRuntimeEnabled
+        CloudSyncFlags.groupsBackendEnabled = true
+        CloudSyncFlags.syncRuntimeEnabled = true
+        CloudSyncFlags.storageMode = .icloud   // loop propio: ver el test del kill
+        defer {
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
+            CloudSyncFlags.syncRuntimeEnabled = prevRuntime
+            CloudSyncFlags._testResetStorageModeOverride()
+        }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        // Una fila viva ⇒ el push manda y el 409 es su respuesta. El 409 no aplica ni purga, así que cada intento
+        // vuelve a pedir red. Lo que venga después del 409 es un 401: si el 409 dejara de ser una parada, el loop
+        // terminaría igual en la vuelta siguiente y el caso daría rojo en vez de colgar la corrida.
+        try seedOutboxRow(context, hlc: "2026-09-15T00:00:00.000Z-0001-00000000000000aa")
+        let stub = SequenceStubSession(
+            [.init(data: Data(#"{"error":{"type":"yala_account_reverting"}}"#.utf8), status: 409)],
+            fallback: .init(data: Data("{}".utf8), status: 401))
+        let client = makeClient(session: stub, userID: nil)
+        client.sleeper = { _ in }
+        client.startIfEligible(context: context)
+        let task = client._testLoopTask
+        #expect(task != nil)
+        await task?.value
+
+        #expect(stub.callCount == 1, "el 409 tiene que parar el loop en su vuelta: no es un transitorio")
+        #expect(client._testLoopTask == nil)
+
+        let callsAfterStop = stub.callCount
+        await client.syncNowAfterLocalSave()
+        #expect(stub.callCount > callsAfterStop, "un save local tras el 409 no puede quedarse sin red")
+
+        client.startIfEligible(context: context, trigger: "foreground")
+        let again = client._testLoopTask
+        #expect(again != nil, "tras el 409 el loop tiene que poder re-arrancar sin relanzar la app")
         await again?.value
     }
 
@@ -927,8 +987,6 @@ struct GroupsSyncHardeningTests {
 
         #expect(stub.callCount == 1, "\(label): el ciclo tiene que haber hablado con el gateway")
         #expect(outcome == .transient, "\(label): un 403 de infraestructura no es un veredicto de cuenta")
-        // Nada de `_testStoppedUntilRelaunch` aquí, aunque tiente: el sello solo lo escribe `runLoop` y
-        // esto no arranca el loop, así que la aserción no podría fallar. La mide el test del loop.
     }
 
     /// El mismo 403, por el OTRO borde que lo lee. El push y el pull tienen su propio `switch` sobre el
@@ -948,14 +1006,12 @@ struct GroupsSyncHardeningTests {
         #expect(outcome == .transient, "\(label): un 403 de infraestructura no es un veredicto de cuenta")
     }
 
-    /// **El agujero que cierra el ticket, medido sobre el LOOP y no sobre un ciclo suelto**: el sello de
-    /// proceso. Con el mapeo viejo, un 403 del WAF armaba `stoppedUntilRelaunch` y a partir de ahí
-    /// `GroupsLoopRestartLogic.shouldStart` y `syncNowFromPush` devolvían false para siempre — ni el
-    /// foreground ni un silent push ni un sign-in curaban el canal hasta matar y reabrir la app.
+    /// **El agujero que cierra el ticket, medido sobre el LOOP y no sobre un ciclo suelto**: un 403 del WAF
+    /// no para el canal. Con el mapeo viejo ese 403 terminaba el loop como un veredicto sobre la cuenta.
     ///
     /// El 401 de la segunda vuelta está para que el loop TERMINE de forma determinista (un transitorio solo
-    /// haría backoff y seguiría); lo que se mide es lo de después.
-    @Test func infra403_doesNotSealTheChannelForTheProcess() async throws {
+    /// haría backoff y seguiría); lo que se mide es lo que pasó antes de él.
+    @Test func infra403_backsOffInTheLoop_insteadOfStoppingIt() async throws {
         let prevRuntime = CloudSyncFlags.syncRuntimeEnabled
         CloudSyncFlags.groupsBackendEnabled = true
         CloudSyncFlags.syncRuntimeEnabled = true
@@ -987,13 +1043,6 @@ struct GroupsSyncHardeningTests {
 
         #expect(stub.callCount >= 2, "el loop tiene que haber seguido DESPUÉS del 403 (backoff, no parada)")
         #expect(sleeper.count >= 1, "y haber DORMIDO entre vueltas: un backoff, no una parada seca")
-        #expect(client._testStoppedUntilRelaunch == false, "un WAF no es un veredicto sobre la cuenta")
-        // Y la prueba de que el canal sigue vivo para este proceso: re-arranca, y el push/UI no está mudo.
-        client.startIfEligible(context: context, trigger: "foreground")
-        let again = client._testLoopTask
-        #expect(again != nil, "tras un 403 de infraestructura el canal tiene que poder re-arrancar")
-        again?.cancel()
-        await again?.value
     }
 
     /// **El mutante de un solo token.** Colapsar las dos ramas del 403 en un `case 403:` pelado —que es

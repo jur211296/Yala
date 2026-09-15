@@ -217,7 +217,7 @@ enum GroupsSyncBreadcrumb {
 
     /// El loop de cadencia se RE-ARRANCÓ efectivamente (se creó un nuevo `loopTask`). `trigger` = slug
     /// (`foreground` / `post-sign-in`). SOLO se emite cuando el re-arranque crea el loop — jamás en los
-    /// no-op (flag OFF, loop ya vivo, piggyback, stopUntilRelaunch). Sin PII.
+    /// no-op (flag OFF, loop ya vivo, piggyback). Sin PII.
     static func groupsLoopRestarted(trigger: String) {
         logger.notice("GroupsSync loopRestarted trigger=\(trigger, privacy: .public)")
     }

@@ -153,24 +153,9 @@ final class GroupsSyncClient {
     /// Tarea del loop de cadencia (single-instance: `startIfEligible` no re-arranca si vive). `nil` fuera
     /// del loop (se limpia en el `defer` de `runLoop`).
     private var loopTask: Task<Void, Never>?
-    /// A5: un `.accountUnavailable` que NO es el kill del canal → `stopUntilRelaunch`. Este flag impide
-    /// re-arrancar el loop en el MISMO proceso (mirror de la semántica del personal
-    /// `SyncCadencePolicy.stopUntilRelaunch`).
-    ///
-    /// **Desde el 2026-09-13 no le queda ningún productor ALCANZABLE, y conviene saberlo antes de
-    /// apoyarse en él.** Ya no lo arma ningún 403: el del kill nunca lo armó (es re-arrancable a propósito)
-    /// y el resto se mide como infraestructura y sube `.transient` (ver el `case 403` del push). El único
-    /// que queda en el código es el 409 `yala_account_reverting` del push, y ese camino está muerto por el
-    /// otro lado: `gateway/src/groups/routes.ts` dice de su puño que el freeze de la reversa del personal
-    /// **no aplica a este canal** y no llama a `beginFreezeCheck`, así que `/groups/push` no emite ese 409.
-    ///
-    /// Se conserva —en vez de retirarlo con su gate y sus tests— porque el día que el canal tenga un
-    /// veredicto de cuenta de verdad, esta es la pieza que lo para. Si para entonces sigue sin productor,
-    /// lo que toca es quitarlo: ticket `groups-channel-seal-has-no-reachable-producer`.
-    private var stoppedUntilRelaunch = false
     /// El ÚLTIMO 403 recibido venía del KILL-SWITCH del canal (`yala_groups_disabled`). Lo escriben los dos
     /// únicos sitios que leen un 403 —el push y el pull— en AMBAS ramas (no solo cuando es el kill), para
-    /// que nunca quede un valor viejo decidiendo la parada siguiente.
+    /// que nunca quede un valor viejo describiendo la parada siguiente.
     ///
     /// **Desde el 2026-09-13 los dos 403 ya no comparten outcome, y el testigo sigue haciendo falta.** El
     /// 403 que no trae el envelope del kill sube `.transient` (viene de infraestructura, no del Worker), así
@@ -178,18 +163,21 @@ final class GroupsSyncClient {
     /// necesario porque `.accountUnavailable` tiene OTRO productor que no es un 403 —el 409
     /// `yala_account_reverting`— y el aviso de los dos no es el mismo.
     ///
-    /// **Para qué existe, que es lo que no es obvio:** el kill y el freeze de la reversa merecen la misma
-    /// parada inmediata pero NO la misma permanencia. Una cuenta revirtiendo es un veredicto sobre la cuenta
-    /// y `stoppedUntilRelaunch` es lo de siempre. El kill del canal es una palanca de OPERACIÓN que se mueve
-    /// en los dos sentidos con un
-    /// deploy: si armara `stoppedUntilRelaunch`, apagar sería inmediato pero **volver a encender exigiría
-    /// que cada usuario matara y reabriera la app** —ni el foreground ni un push lo curan, porque
-    /// `GroupsLoopRestartLogic.shouldStart` y `syncNowFromPush` leen ese flag—, o sea exactamente la
-    /// simétrica del bug que el kill vino a cerrar (el 2026-07-31 un iPhone real se quedó con el canal OFF
-    /// durante horas DESPUÉS de que el percent subiera a 100). Con el kill, la parada es RE-ARRANCABLE: el
-    /// loop muere en esta vuelta y el próximo `startIfEligible` (cold boot, foreground o post-sign-in) lo
-    /// vuelve a intentar. No es un bucle: es como mucho un request por vuelta a la app, y en cuanto el
-    /// snapshot de remote-config refresque, el gate compuesto de `startIfEligible` lo apaga sin red.
+    /// **Para qué existe, que es lo que no es obvio:** el kill y el freeze de la reversa paran el loop de la
+    /// misma forma, pero no le dicen lo mismo a la persona. El kill del canal es una palanca de OPERACIÓN que
+    /// se mueve en los dos sentidos con un deploy, así que a quien intenta cerrar sesión o soltar su cuenta
+    /// de grupos con cambios sin subir le toca «el canal está en pausa»; una cuenta revirtiendo no es una
+    /// pausa. Lo consume `stoppedByChannelKill(for:)`, y `runLoop` lo usa para dejar en el log cuál de las
+    /// dos paró el canal.
+    ///
+    /// **Ninguna de las dos paradas se queda puesta.** El loop muere en esta vuelta y el próximo
+    /// `startIfEligible` (cold boot, foreground o post-sign-in) lo vuelve a intentar. No es un bucle: cada
+    /// intento cuesta como mucho un request, y con el kill, en cuanto el snapshot de remote-config refresque,
+    /// el gate compuesto de `startIfEligible` lo apaga sin red. Que la del kill no se quede puesta no es un
+    /// detalle: si lo hiciera, apagar el canal sería inmediato pero volver a encenderlo exigiría que cada
+    /// usuario matara y reabriera la app, o sea la simétrica exacta del bug que el kill vino a cerrar (el
+    /// 2026-07-31 un iPhone real se quedó con el canal OFF durante horas DESPUÉS de que el percent subiera
+    /// a 100).
     ///
     /// **Describe el ÚLTIMO ciclo, no la vida del proceso**, porque `syncCycleOnce` lo baja al entrar. Sin
     /// ese reset sería un residuo, y hay un productor de `.accountUnavailable` que NO pasa por las dos
@@ -311,11 +299,10 @@ final class GroupsSyncClient {
     /// (SESIÓN VIVA, no storageMode — la persona solo-grupos). Con el flag `false` (SIEMPRE esta fase) es
     /// un NO-OP TOTAL: retorna ANTES de tocar la red o crear modelos. Call-sites DARK en `AppBootstrapper`
     /// (cold boot `trigger: nil`; foreground resume `trigger: "foreground"`) y en el modifier de invite
-    /// backend (post-sign-in `trigger: "post-sign-in"`). Single-instance (no re-arranca si el loop vive);
-    /// un sello previo (`stoppedUntilRelaunch`) tampoco re-arranca en este proceso (A5).
+    /// backend (post-sign-in `trigger: "post-sign-in"`). Single-instance (no re-arranca si el loop vive).
     ///
     /// **La decisión de (re)arranque del loop propio vive en `GroupsLoopRestartLogic.shouldStart`** (pura,
-    /// testeada) — SSOT de flag/sesión/stop/single-instance/D8, para no partir la verdad entre guards
+    /// testeada) — SSOT de flag/sesión/single-instance/D8, para no partir la verdad entre guards
     /// dispersos. `trigger` NO-nil emite `groupsLoopRestarted` SOLO si el loop se crea de verdad.
     ///
     /// **D8 (H-2026-07-18-4): AHORA es SEGURO llamarlo MID-SESSION** (foreground / post-sign-in), a
@@ -348,7 +335,6 @@ final class GroupsSyncClient {
         guard GroupsLoopRestartLogic.shouldStart(
             flagOn: CloudSyncFlags.groupsBackendEnabled,
             hasSession: sessionCheck(),
-            stoppedUntilRelaunch: stoppedUntilRelaunch,
             loopAlive: loopTask != nil
         ) else { return }
 
@@ -370,9 +356,8 @@ final class GroupsSyncClient {
     }
 
     /// El loop de cadencia: cada vuelta = `syncCycleOnce` → delay por `SyncCadencePolicy` → repetir.
-    /// `sessionExpired` (401) TERMINA el loop (re-arrancable por el próximo `startIfEligible`);
-    /// `accountUnavailable` TERMINA, y arma `stoppedUntilRelaunch` SALVO que venga del kill del canal
-    /// (`lastStopWasChannelKill`), que es re-arrancable a propósito.
+    /// `sessionExpired` (401) y `accountUnavailable` TERMINAN el loop, y los dos son re-arrancables por el
+    /// próximo `startIfEligible`.
     private func runLoop(context: ModelContext) async {
         defer { loopTask = nil }                        // A6: liberar el single-instance al salir
         loop: while true {
@@ -399,16 +384,15 @@ final class GroupsSyncClient {
                 GroupsSyncBreadcrumb.groupsLoopStopped(reason: "session-expired")
                 break loop                               // A5: re-arrancable por próximo startIfEligible
             case .stopUntilRelaunch:
-                // El kill-switch del canal para el loop pero NO lo sella: se levanta con un deploy, así que
-                // sellarlo obligaría a relanzar la app en cada device para recuperarse (ver
-                // `lastStopWasChannelKill`). Lo que sí sella es el 409 del freeze de la reversa, que desde
-                // el 2026-09-13 es el único `.accountUnavailable` que llega hasta aquí.
+                // `.accountUnavailable` para el loop en esta vuelta y es RE-ARRANCABLE por el próximo
+                // startIfEligible, como la sesión caducada: en este canal la acción no espera a relanzar la
+                // app (el nombre es de la política, que comparte con el runtime personal). El testigo del
+                // kill solo elige qué motivo queda en el log (ver `lastStopWasChannelKill`).
                 if stoppedByChannelKill(for: outcome) {
                     GroupsSyncBreadcrumb.groupsLoopStopped(reason: "channel-disabled")
-                    break loop                           // RE-ARRANCABLE por el próximo startIfEligible
+                } else {
+                    GroupsSyncBreadcrumb.groupsLoopStopped(reason: "account-unavailable")
                 }
-                stoppedUntilRelaunch = true              // A5: no re-arranca este proceso
-                GroupsSyncBreadcrumb.groupsLoopStopped(reason: "account-unavailable")
                 break loop
             }
 
@@ -480,8 +464,8 @@ final class GroupsSyncClient {
     /// carreado contra `timeout` (iOS da ~30s de background; el caller pasa 20s de margen). SIN `ModelContext`
     /// del caller — usa el `context` retenido en `startIfEligible`. Devuelve `true` si el ciclo COMPLETÓ
     /// dentro del timeout (→ `.newData`), `false` en cualquier gate no satisfecho / timeout / ciclo
-    /// no-completado (→ `.noData`). Gates SIN red: flag OFF, sin sesión, `stoppedUntilRelaunch`, o `context`
-    /// nil (el canal no arrancó en este proceso). Idempotente con la doble fuente CloudKit (§16d): el
+    /// no-completado (→ `.noData`). Gates SIN red: flag OFF, sin sesión o `context` nil (el canal no
+    /// arrancó en este proceso). Idempotente con la doble fuente CloudKit (§16d): el
     /// coalescing anti-solape de `syncCycleOnceCoalesced` ya lo garantiza.
     ///
     /// Residual documentado (AJUSTE review #5): un launch puramente en BACKGROUND por silent push puede no
@@ -489,8 +473,7 @@ final class GroupsSyncClient {
     /// esto devuelve false (.noData); el pull real ocurre al próximo foreground (consistencia eventual v1).
     @discardableResult
     func syncNowFromPush(timeout: Duration) async -> Bool {
-        guard CloudSyncFlags.groupsBackendEnabled, sessionCheck(), !stoppedUntilRelaunch,
-              context != nil else { return false }
+        guard CloudSyncFlags.groupsBackendEnabled, sessionCheck(), context != nil else { return false }
         // Lanza AMBOS hijos ANTES del primer `next()` (AJUSTE review #7). El hijo del ciclo puede sobrevivir
         // al timeout tras `cancelAll` — benigno: el push es chunked con dedupe por `client_mutation_id` y el
         // próximo ciclo re-emite. `self` (clase @MainActor) es Sendable; el hijo lee `self.context` en el
@@ -511,7 +494,7 @@ final class GroupsSyncClient {
     }
 
     /// Fase 2 · 2.5: pull-to-refresh de la UI de Grupos (lista y detalle). Reusa `syncNowFromPush` TAL CUAL
-    /// —mismos gates (flag, sesión, `stoppedUntilRelaunch`, canal arrancado en este proceso), mismo
+    /// —mismos gates (flag, sesión, canal arrancado en este proceso), mismo
     /// coalescing anti-solape y mismo `context` retenido— porque lo que necesita un tirón hacia abajo es
     /// exactamente lo que necesita un silent push: un ciclo, ya. El tope existe para que el spinner no se
     /// quede colgado de una red lenta; pasado el tope el ciclo sigue en background y lo que baje entra por
@@ -523,12 +506,11 @@ final class GroupsSyncClient {
     }
 
     /// Ciclo pedido por `GroupsSaveSyncTrigger` tras un save local. Mismos gates que `syncNowFromPush`
-    /// (flag, sesión, `stoppedUntilRelaunch`, context retenido), SIN carrera de timeout: el presupuesto
+    /// (flag, sesión, context retenido), SIN carrera de timeout: el presupuesto
     /// es el background task que el trigger ya pidió. No toca `consecutiveTransients` — un fallo aquí
     /// no escala la escalera de backoff del loop.
     func syncNowAfterLocalSave() async {
-        guard CloudSyncFlags.groupsBackendEnabled, sessionCheck(), !stoppedUntilRelaunch,
-              let ctx = context else { return }
+        guard CloudSyncFlags.groupsBackendEnabled, sessionCheck(), let ctx = context else { return }
         _ = await syncCycleOnceCoalesced(context: ctx)
     }
 
@@ -581,15 +563,6 @@ final class GroupsSyncClient {
     /// Marca el gate A-3 del Merkle "último pull completado" (que en producción solo setea un pull
     /// `.completed`) para probar `verifyGroupIntegrity` sin correr un ciclo entero. SOLO tests.
     func _testMarkPullCompleted() { lastPullCycleCompleted = true }
-
-    /// ¿El loop quedó SELLADO para el resto del proceso? Desde el 2026-09-13 **ningún 403 sella**: el del
-    /// kill para el ciclo sin sellar y el de infraestructura es transitorio, así que este seam sirve hoy
-    /// para probar la AUSENCIA del sello. Lo escribe un solo sitio (la rama `.stopUntilRelaunch` de
-    /// `runLoop`), así que solo dice algo en un test que arranque el loop de verdad; preguntárselo a un
-    /// `syncCycleOnce` suelto es una aserción que no puede fallar. El kill-switch del canal NO sella (se levanta con un
-    /// deploy). Sin este seam la distinción no es verificable — el flag es privado y su efecto solo se ve en
-    /// el siguiente `startIfEligible`. SOLO tests.
-    var _testStoppedUntilRelaunch: Bool { stoppedUntilRelaunch }
 
     // MARK: - Drain (captura del History → GroupSyncOutbox)
 
@@ -1546,7 +1519,7 @@ final class GroupsSyncClient {
                 return .sessionExpired(pending: totalPending)
             case 403 where GatewayErrorEnvelope.isGroupsChannelDisabled(data):
                 // El kill-switch del canal: parada inmediata sin bucle (ningún backoff levanta una palanca
-                // que alguien bajó a mano) pero RE-ARRANCABLE — el testigo es lo que impide sellarla.
+                // que alguien bajó a mano) pero RE-ARRANCABLE — el testigo es lo que la distingue del 409.
                 lastStopWasChannelKill = true
                 return .accountUnavailable
             case 403:

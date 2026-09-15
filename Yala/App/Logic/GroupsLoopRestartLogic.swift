@@ -23,21 +23,16 @@ nonisolated enum GroupsLoopRestartLogic {
     /// - `flagOn` — `CloudSyncFlags.groupsBackendEnabled`. Con el flag OFF (producción hoy) SIEMPRE
     ///   `false` → byte-identidad DARK: el re-arranque en foreground / post-sign-in es un no-op.
     /// - `hasSession` — hay sesión viva (`sessionCheck()`). Sin sesión no hay a quién sincronizar.
-    /// - `stoppedUntilRelaunch` — un `.accountUnavailable` previo armó el stop de proceso (A5): no
-    ///   re-arrancar en este proceso ni al foreground ni tras un sign-in. Desde el 2026-09-13 **el canal de
-    ///   Grupos no tiene ningún productor alcanzable para ese sello**: el 403 del kill nunca lo armó (es
-    ///   re-arrancable a propósito), el 403 de infraestructura pasó a ser transitorio, y el 409 que queda
-    ///   en el código no lo emite `/groups/push`. Ver `GroupsSyncClient.stoppedUntilRelaunch`; el parámetro
-    ///   se conserva porque esta tabla es la que pararía un veredicto de cuenta futuro.
     /// - `loopAlive` — el loop ya vive (`loopTask != nil`): single-instance, no duplicar.
+    ///
+    /// Ninguna parada del loop se queda puesta: el que terminó —sesión caducada, kill del canal o
+    /// `.accountUnavailable`— lo vuelve a intentar el próximo `startIfEligible` con flag y sesión.
     static func shouldStart(
         flagOn: Bool,
         hasSession: Bool,
-        stoppedUntilRelaunch: Bool,
         loopAlive: Bool
     ) -> Bool {
         guard flagOn, hasSession else { return false }
-        guard !stoppedUntilRelaunch else { return false }
         guard !loopAlive else { return false }
         return true
     }
