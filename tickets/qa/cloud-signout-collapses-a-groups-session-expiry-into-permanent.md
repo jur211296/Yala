@@ -89,7 +89,9 @@ corre un ciclo y da `.drained` porque el outbox personal está vacío, salga lo 
 
 - `groups-push-reads-an-offline-token-refresh-as-a-session-expiry` (`medium`, decisión): «Tu sesión caducó»
   también sale **sin conexión** con el token caducado. Ya pasaba en el «equipo», en solo grupos, en el desasociar
-  y en el Welcome; con este cambio llega a la nube.
+  y en el Welcome; con este cambio llega a la nube. **Cerrado el 2026-09-15 en el canal de sincronización:** sin
+  red ya no sale en ninguna de esas pantallas. El guion de abajo sigue valiendo, porque borra la sesión en el
+  servidor y cierra con la red puesta.
 - `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door` (`medium`, decisión): en la nube, «vuelve a
   iniciar sesión» no dice dónde. La única puerta es «Nuevo grupo», solo si el SDK borró la sesión, y no está
   medido que exija la misma cuenta.
