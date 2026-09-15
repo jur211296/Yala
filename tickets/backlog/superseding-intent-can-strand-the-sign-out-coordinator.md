@@ -36,6 +36,15 @@ colgarse en un progreso. La persona no queda atrapada.
 **No mitigado**: el cierre de sesión de Ajustes de ese mismo proceso, que vuelve mudo. Y la sesión ya
 soltada en la variante cara.
 
+**Y desde el 2026-09-15 la variante cara deja también cambios de GRUPOS en el teléfono** (review adversarial de
+`groups-phone-that-never-attests-is-told-to-retry-forever`). Con la pérdida aceptada de un teléfono sin App Attest, el
+residual de grupos ya no tiene que ser cero para soltar credenciales: esas filas mueren con el borrado del arranque. Si el
+arm no llega a escribirse —esta cancelación, un kill entre `CloudAuthService.signOut()` y el arm, o salir de la puerta del
+Welcome sobre un `.exportUnconfirmed` con credenciales ya sueltas—, las filas se quedan en `GroupSyncOutbox`, que no
+guarda dueño. Inferido, sin medir: si luego entra otra cuenta sin «Empiezo de cero», suben con su JWT. Purgarlas en sesión
+se descartó: es un `save()` sobre el contexto compartido, lo que `PrivateSignOutWiringTests.groupsMarkerRule_andNoSwap`
+prohíbe en ese tramo.
+
 ## Por dónde va
 
 - Que `.working` suba también un blocker de la matriz mientras haya un cierre en vuelo — es un cierre de
