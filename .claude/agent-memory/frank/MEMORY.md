@@ -27,6 +27,7 @@
 - [El tramo sin acotar lo cumple el vecino](feedback_el_tramo_sin_acotar_lo_cumple_el_vecino.md) — un recorte que llega al final del cuerpo se cumple desde el `case` de al lado.
 - [El source-scan de dos literales no es una red](feedback_el_source_scan_de_dos_literales_no_es_una_red.md) — si el target es inalcanzable, fija el cuerpo ENTERO.
 - [El denominador de una resta es el número que se ve](feedback_el_denominador_de_una_resta_es_el_numero_que_se_ve.md) — numerador en magnitudes, denominador en lo que se muestra; y una decisión escrita gana a dos lentes que coinciden.
+- [Un número sustituto lo cumple otra cosa](feedback_un_numero_sustituto_lo_cumple_otra_cosa.md) — «3 rechazos» los cumplía un gesto y «2 cambios» cualquier par: cuenta en la unidad de la decisión.
 - [La segunda capa no cubre lo que dice](feedback_la_segunda_capa_no_cubre_lo_que_dice.md) — mide el ALCANCE de cada defensa por separado.
 - [La aserción que no puede fallar](feedback_la_asercion_que_no_puede_fallar.md) — el mutante valida el CASO, no cada `#expect`; ensucia la columna quieta.
 - [El pre-filtro tapa al criterio](feedback_el_prefiltro_tapa_al_criterio.md) — misma condición en el fetch y en la lógica: el mutante de la lógica sale VERDE. Me pasó dos veces el 8-sep.
@@ -87,6 +88,7 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build incremental.
 
 ## Estado del trabajo
+- [El teléfono sin App Attest ya tiene veredicto y salida](project_telefono_sin_attest_veredicto_y_salida.md) — en qa solo espera la racha: la salida con pérdida no se monta en ningún dispositivo.
 - [La hoja del cambio de Apple ID ya enseña el bloqueo](project_hoja_apple_id_cierre_bloqueado.md) — la review cazó un progreso eterno MÍO; queda device-QA y una decisión de copy.
 - [El aviso de datos borrados ya no se monta encima de nada](project_aviso_datos_borrados_va_por_la_cola.md) — PR #164; la premisa del encargo acertaba la VÍA y erraba el case.
 - [«Empezar desde cero» sin iCloud ya vuelve en vez de mentir](project_discard_gate_vuelve_sin_prometer.md) — PR #160; la review cazó que MI extensión al estado K creaba un camino muerto.
