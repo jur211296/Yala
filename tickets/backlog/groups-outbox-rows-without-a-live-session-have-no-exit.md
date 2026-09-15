@@ -35,3 +35,16 @@ desde otro sitio, perdí el acceso a ese correo—, no hay forma de cerrar sesi�
 - [ ] Decisión escrita sobre las dos preguntas.
 - [ ] Si hay descarte: aviso con el número, segundo gesto, canario.
 - [ ] Si hay sello: una fila de otra cuenta no se sube nunca (test en las dos direcciones).
+
+## 2026-09-15 · la celda de la nube entra en esta población
+
+Desde `cloud-signout-collapses-a-groups-session-expiry-into-permanent` (decisión 3A de Jürgen), el cierre de
+una cuenta **en la nube** también enseña `groups.errors.sessionExpired` cuando el push de grupos no tiene
+sesión. Antes decía «revisa tu conexión». El bloqueo ya existía y sigue igual: lo que cambia es que ahora dice
+por qué. Con esto, la pregunta 1 de arriba aplica a las cuatro celdas del cierre (C, D, E y F), no solo a C y F.
+
+**Y la pregunta 2 gana urgencia.** El aviso empuja a volver a entrar, y en la nube, con la sesión borrada por el
+SDK, la única puerta es «Nuevo grupo» en la pestaña Grupos. Ese botón lleva al inicio de sesión de Grupos, y al
+firmar `CloudIdentityRoutingLogic` devuelve `.continueGroupsSetup` sin mirar qué cuenta entra. Si entra otra,
+estas filas podrían subirse a su nombre. Leído en el código, sin ejecutar. Ver
+`cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`.

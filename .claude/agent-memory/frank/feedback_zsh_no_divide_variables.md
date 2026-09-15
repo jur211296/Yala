@@ -1,6 +1,6 @@
 ---
 name: zsh-no-divide-variables
-description: En zsh una variable escalar NO se divide en palabras, así que `xcodebuild $args` manda todos los filtros como UN argumento — y sale «TEST SUCCEEDED» con cero tests.
+description: En zsh una variable escalar NO se divide en palabras, así que `xcodebuild $args` manda todos los filtros como UN argumento — y sale «TEST SUCCEEDED» con cero tests. Misma familia, 2026-09-15: un `;` dentro de una cadena de `&&` publicó un commit a medias con su PR.
 metadata:
   type: feedback
 ---
@@ -77,3 +77,24 @@ casa con ninguna acción; pero es el mismo fallo y la misma cura.
 `exec … "${ARGS[@]}"`, correrlo con `bash`, y que imprima **cuántas suites pidió** antes de lanzar.
 Esa línea es la que se compara con el `Test run with N tests in M suites` del final: 40 pedidas, 40
 corridas, 301 casos.
+
+## Un `;` dentro de una cadena de `&&` publica aunque falle el paso anterior (2026-09-15)
+
+Encadené sellar → `git add` → `git status | grep -v …` → commit → push → `gh pr create`. Puse un `;` tras
+el `grep`, porque un `grep -v` sin líneas sale 1 y cortaba la cadena. **El `git add` falló**: le pasé la
+ruta VIEJA de un ticket movido con `git mv` («pathspec did not match»). El `;` dejó pasar al commit, que se
+llevó solo lo que ya estaba en el índice —el renombrado, 1 fichero de 11—, y detrás salieron el push y el
+PR con ese contenido. El mensaje del commit describía el arreglo entero.
+
+Se deshizo sin tocar el disco probado: `git reset --soft HEAD~1` devolvió HEAD a la base y el sello del
+gate volvió a coincidir (la huella es HEAD + disco); un solo commit completo y `--force-with-lease` sobre
+la rama propia, con el PR recién nacido.
+
+**How to apply:**
+
+- En una cadena que termina en commit, push o PR, **ningún `;`**. Lo informativo va dentro de
+  `{ …; true; }`, que no puede cortar ni dejar pasar nada.
+- **Guarda antes del commit:** `test -z "$(git status --porcelain | grep -v '^[MARD]  ')"`. Si queda algo
+  sin stage o sin trackear, la cadena para ahí.
+- Tras un `git mv`, el pathspec es la ruta **nueva**; la vieja ya no existe en disco y `git add -A` falla.
+
