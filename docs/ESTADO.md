@@ -5,10 +5,35 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-15 (Lima)
 
-**Rama** `2.1` — Merge #168: **Si el cierre por cambio de Apple ID se bloquea, ya se ve el motivo y se puede salir.**
+**Rama** `2.1` — Merge #169: **Al cerrar sesión en la nube, una sesión de grupos caducada ya pide volver a entrar.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#168 · si el cierre por cambio de Apple ID se bloquea, ya se ve y se sale)
+## Esta sesión (#169 · al cerrar sesión en la nube, una sesión de grupos caducada ya pide volver a entrar)
+
+**Cuenta en la nube, cambios de grupos sin subir y la sesión caducada: «Cerrar sesión» ya no dice «revisa tu
+conexión».** Dice «Tu sesión caducó. Vuelve a iniciar sesión e inténtalo de nuevo.», como las otras tres formas
+de cerrar sesión. Es tu opción 1 del ticket. El bloqueo no cambia: nada se sube, nada se borra y la sesión
+sigue abierta.
+
+**Medir antes de escribir sacó dos decisiones tuyas, las dos `medium`.** El aviso afirma más de lo que el
+motivo sabe:
+
+- `groups-push-reads-an-offline-token-refresh-as-a-session-expiry`: «Tu sesión caducó» también sale **sin
+  conexión**, con el token caducado. Ya pasaba en el «equipo», en solo grupos, en el desasociar y en el
+  Welcome; desde hoy, también en la nube. Recomendación: separar los dos casos en el cliente.
+- `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`: en la nube, «vuelve a iniciar sesión» no
+  dice dónde. La única puerta es «Nuevo grupo», solo si el SDK borró la sesión, y no está medido que exija la
+  misma cuenta.
+
+Gate: build ×2 sin warnings nuevos · **unit 198 en 22 suites** · **3 mutantes, 3 muertos** · **XCUITest 5
+casos en 2 clases** · una lente adversarial, que no encontró acciones que cambien y matizó el segundo
+hallazgo. **Device-QA: sí, y no es simulable** (0-decies de la cola).
+
+**Y un rojo intermitente de XCUITest, con ticket `low`:** en la primera corrida tras arrancar el simulador, la
+oferta en cola no apareció al cerrar la hoja del Apple ID. Pasó 3 de 4 con el mismo binario
+(`queued-offer-after-dismiss-flakes-on-a-cold-simulator`).
+
+## Sesión anterior (#168 · si el cierre por cambio de Apple ID se bloquea, ya se ve y se sale)
 
 **Cambias de cuenta de iCloud, tocas «Cerrar sesión y quitarlos», y si el cierre no puede completarse Yala
 ya lo dice.** Hasta hoy el aviso se cerraba y no pasaba nada visible —sin red con una cuenta de grupos, con
@@ -39,7 +64,7 @@ del teléfono los grupos.
 pone su índice encima del frontmatter. Hay 7 ficheros así, entre ellos la rule `git-hooks.md`, que podría
 estar cargándose sin respetar sus `paths:`.
 
-## Sesión anterior (#167 · las preferencias ya no cruzan entre el dueño y un móvil prestado)
+## Sesión #167 · las preferencias ya no cruzan entre el dueño y un móvil prestado
 
 **Quien entra por un grupo en un móvil prestado ya no le cambia nada al dueño, y lo del dueño ya no le
 llega.** El idioma, la moneda, el nombre, los ajustes del Panel y el interruptor de avisos de pagos
@@ -116,45 +141,12 @@ CI verde. **El diff de producción es 100 % comentarios** (medido), así que el 
 de XCUITest se acotó al área del eje en vez de correr las 34 suites que casan con `ContentView`.
 **Device-QA: no aplica.**
 
-## Sesión #164 · el aviso de datos borrados ya no aparece encima de lo que estuvieras mirando
-
-**Yala tiene una cuenta atrás interna de cinco segundos: si tus datos personales desaparecen del
-teléfono y siguen sin volver, te avisa de que te los han borrado desde otro dispositivo.** Ese aviso se
-encendía sin mirar qué había en pantalla, así que si vencía mientras estabas viendo otra cosa —el aviso
-del espejo de iCloud, la oferta de prueba, las novedades, el selector de idioma, la activación—, **esa
-pantalla desaparecía sola**. Y si en el intento no llegaba a mostrarse, la app **dejaba de enseñar
-cualquier otro aviso** —bandeja, invitaciones de grupo, oferta de Pro— hasta cerrarla y abrirla. Ahora
-espera su turno en la misma cola que el resto y solo sale con la pantalla libre. Sus dos botones dicen a
-dónde llevan: «Empezar de cero» va a la bienvenida (con «Restaurar de iCloud» a un toque) y «Seguir
-esperando» te deja donde estabas, que ahora es verdad.
-
-**La premisa del encargo acertaba la VÍA y erraba el case.** Decía «reusa `.remoteWipe`, como el otro
-productor»; medido, ese intent no presenta el aviso: **borra**. Reusarlo habría convertido una pregunta
-en un borrado silencioso. El aviso va por la cola con un case propio, y el drenaje re-mide las tres
-condiciones vivas —filas ausentes, onboarding completo, eje de sesión— porque el intent no es transitorio
-y afirma un hecho sobre AHORA.
-
-**El brick y su cura están MEDIDOS en simulador, con dos mutantes.** Sin la red, el blocker se queda
-puesto y un paywall en cola no presenta **nunca** (25 s); con ella se suelta a los ~10 s y el paywall
-entra. Un tercer mutante dejó un residual anotado en la rule: si la sonda de UIKit se equivocara, los
-toggles dejan el alert dibujado aunque el estado se apague — un XCUITest vigila eso.
-
-**La review adversarial (tres lentes) cazó una ALTA que era MÍA:** al reescribir un bloque perdí la
-cancelación de la cuenta atrás en el camino de la señal explícita, y el comentario nuevo **afirmaba que
-seguía ahí**. Sin ella vuelve el «double-alert»: los dos canales no tienen orden garantizado, así que el
-aviso podía preguntar por unos datos que la app acababa de restaurar. Más dos MEDIA (el censo de
-escritores del flag, que se había caído de la suite; el canario ausente del índice de QA) y una BAJA.
-
-Unit 225 en 14 suites · **XCUITest 86 en 35 clases** en el gate, centinela 0 en las tres tandas. El rojo
-de `PaywallInboxAlertRouting` en una repetición fue **latencia** (45 s agotados vs. 15,6 s en el lote
-repetido). **Device-QA: no aplica** — lo que cambia es la vía de presentación y se recorre en simulador.
-
-**Lo que queda, con su sitio:** `orphan-alerts-behind-fullscreen-covers` sigue aparte (el mecanismo
-general, ahora con un molde escrito al lado); `wipe-data-does-not-cancel-the-remote-wipe-grace` gana una
-**segunda celda** (el restore remoto con `skipOnboarding`, donde el eje NO tapa el aviso); y el desarme
-de la red solo está probado a mano — ticket propio con la receta.
-
 ## Las de antes
+- **#164 · el aviso de datos borrados ya no aparece encima de lo que estuvieras mirando.** Ahora espera su
+  turno en la cola de avisos, así que ya no tumba la pantalla que tuvieras delante ni deja la app sin avisos.
+  Quedan `orphan-alerts-behind-fullscreen-covers`, la segunda celda de
+  `wipe-data-does-not-cancel-the-remote-wipe-grace` y el desarme de la red, probado solo a mano. Device-QA: no
+  aplica.
 - **#162 · el aviso de datos borrados ya no le habla de iCloud a quien no lo tiene en juego.** Tras
   «Vaciar datos», el aviso de «borrado desde otro dispositivo» ya solo sale en la sesión cuyos datos viven
   en el iCloud de este Apple ID. La premisa del ticket era falsa: lo que se cerró fue el aviso
@@ -190,6 +182,12 @@ formatos —una presentación 16:9 por escenas y clips 9:16 por función— sobr
 `bun run render:presentation` y `bun run render:reels`).
 
 ## Tu cola
+
+0-decies. **Device-QA del #169, y NO es simulable**
+   (`tickets/qa/cloud-signout-collapses-a-groups-session-expiry-into-permanent.md`, seis pasos contra staging
+   con Yala Dev). Cuenta en la nube con un gasto de grupo hecho en modo avión, sus sesiones borradas en el
+   Supabase de staging y el token caducado. Al cerrar sesión, el aviso tiene que decir «Tu sesión caducó…», no
+   «Revisa tu conexión». Comparte montaje con el 0-sexies.
 
 0-nonies. **Device-QA del #167, y NO es simulable** (`tickets/qa/icloud-kv-prefs-cross-sessions-on-a-lent-phone.md`).
    Dos dispositivos del **mismo Apple ID**: uno con tu sesión privada y otro «prestado» que cierra sesión y
@@ -385,9 +383,9 @@ grupo?» se mide después del borrado y da 0),
 iCloud sigue entero cuando la zona ya no está — el copy correcto ya existe traducido) y
 `activation-resume-returns-to-restore-on-an-emptied-zone` (`low`).
 
-**El board: 381 en disco = 381 en `docs/TICKETS.md`** (medido el 15-sep), cero desajustes de estado y cero
-rutas rotas. El #168 pasa su ticket a `done/` y suma dos: la decisión de copy y
-`generated-index-lands-above-yaml-frontmatter`.
+**El board: 384 en disco = 384 en `docs/TICKETS.md`** (medido el 15-sep), cero desajustes de estado y cero
+rutas rotas. El #169 pasa su ticket a `qa/` y suma tres: dos decisiones tuyas y un rojo intermitente (ver
+«Esta sesión»).
 
 ## Bloqueo
 
