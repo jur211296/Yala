@@ -2,11 +2,13 @@
 //  ShellDataAlertsModifier.swift
 //  Yala
 //
-//  Los CINCO alerts de DATOS del shell — wipe remoto detectado, el espejo de iCloud que llegó tarde, el
-//  Apple ID del teléfono que cambió, «empiezo de cero» del Welcome y el aviso de que ese borrado falló.
+//  Los CUATRO alerts de DATOS del shell — wipe remoto detectado, el espejo de iCloud que llegó tarde,
+//  «empiezo de cero» del Welcome y el aviso de que ese borrado falló.
 //
-//  (Eran cuatro hasta el 2026-09-14: el quinto es el cierre de la sesión privada por cambio de Apple ID,
-//  y es el único de los cinco cuyo botón ejecuta un borrado que no se puede deshacer desde aquí.)
+//  (Fueron cinco del 2026-09-14 al 2026-09-15. El quinto, el cierre de la sesión privada por cambio de
+//  Apple ID, salió de aquí y es una hoja con fases, `AppleIDCloseNoticeModifier`: como `.alert`, su cierre
+//  podía bloquearse sin que nadie lo enseñara, y encadenarle un segundo `.alert` es el molde de brick de
+//  `.claude/rules/swiftui-ds.md`.)
 //
 //  **Extraídos del `body` de `ContentView` por PRESUPUESTO DEL TYPE-CHECKER, y la cifra está medida:** con
 //  ellos dentro, el getter de `body` tardaba **591 s** en type-checkear
@@ -28,9 +30,6 @@ struct ShellDataAlertsModifier: ViewModifier {
 
     @Binding var showRemoteWipeAlert: Bool
     @Binding var showICloudRestartAlert: Bool
-    /// El Apple ID del teléfono cambió y la sesión privada era del anterior: su botón dispara el
-    /// cierre de sesión con borrado de lo local.
-    @Binding var showAppleIDChangedAlert: Bool
     @Binding var showFreshStartWipeAlert: Bool
     /// El wipe de cualquiera de los DOS caminos de «empiezo de cero» lanzó. Se presenta en vez de
     /// navegar al onboarding: la app llevaba mintiendo sobre un borrado que no ocurrió.
@@ -79,53 +78,6 @@ struct ShellDataAlertsModifier: ViewModifier {
                 Button(L10n.iCloud.mismatchAction) {}
             } message: {
                 Text(L10n.iCloud.mismatchMessage)
-            }
-            // **El Apple ID del teléfono cambió y la sesión privada era del anterior** (ADR §1: la
-            // sesión privada es del Apple ID). El desenlace del modelo es el cierre de sesión —borrar
-            // lo local, dejar el contenedor en el iCloud de la cuenta anterior— y **pasa por
-            // confirmación** (decisión de Jürgen, 2026-09-14): quien cambió de cuenta puede haberse
-            // equivocado, y borrarle la copia local en silencio no se deshace.
-            //
-            // **`confirmedWithoutICloudCopy: true` y no es un flag heredado: es lo que acaba de
-            // confirmar el usuario.** El cierre privado normal espera a que lo último llegue a iCloud
-            // antes de borrar; aquí la cuenta destino YA NO ESTÁ —`iCloudSyncService.accountDidChange`
-            // acaba de invalidar el ancla del export, porque «otra cuenta, otra historia de exports»—
-            // así que esperar serían 45 s para acabar en `.blocked(.exportUnconfirmed)` con la sesión
-            // abierta y los datos ajenos a la vista. El mensaje lo dice con esas palabras.
-            //
-            // El cierre lo ejecuta el MISMO coordinador que «Cerrar sesión» de Ajustes, con la celda
-            // resuelta en el tap y pasada como `confirmedPath` (C o D según haya cuenta de grupos
-            // asociada), que es lo que hace que el equipo suba sus grupos antes de borrar.
-            .alert(L10n.iCloud.appleIDChangedTitle, isPresented: $showAppleIDChangedAlert) {
-                Button(L10n.iCloud.appleIDChangedConfirm, role: .destructive) {
-                    // **La celda se resuelve AQUÍ y viaja como `confirmedPath`.** El intent no es
-                    // transitorio, así que puede haber esperado en cola a través de un background
-                    // entero: entre la detección y este tap la persona pudo migrar a la nube o firmar
-                    // una cuenta de grupos. Sin el cinturón, `signOut` re-decide la celda por su cuenta
-                    // y con `storageMode == .cloud` ejecutaría `performCloudSecureSignOut` — cerrar la
-                    // CUENTA de Yala, bajo un texto que habla de iCloud. Para eso existe el parámetro.
-                    let path = CloudSignOutFlowLogic.path(
-                        for: CloudSyncFlags.storageMode,
-                        hasLiveSession: CloudAuthService.shared.hasSession,
-                        groupsBackendEnabled: CloudSyncFlags.groupsBackendEnabled,
-                        hasPrivateSession: PrivateSessionMark.hasPrivateSession())
-                    // Y si la celda ya no es una de las dos que este aviso describe, no se ejecuta nada:
-                    // el estado que motivó la pregunta dejó de existir.
-                    guard path == .privateSignOut || path == .privateWithGroupsSignOut else { return }
-                    Task {
-                        await CloudSessionSignOut.shared.signOut(
-                            context: modelContext,
-                            confirmedPath: path,
-                            confirmedWithoutICloudCopy: true)
-                    }
-                }
-                // «Ahora no» no borra nada y **no vuelve a preguntar en esta sesión de la app**: el
-                // latch de `AppBootstrapper` es por proceso. Vuelve en el arranque siguiente, que es lo
-                // que impide a la vez el nag perpetuo y el olvido — y si la persona vuelve a su Apple ID
-                // anterior, deja de aparecer sola, porque el predicado deja de disparar.
-                Button(L10n.iCloud.appleIDChangedLater, role: .cancel) {}
-            } message: {
-                Text(L10n.iCloud.appleIDChangedMessage)
             }
             // **PRESENTAR ESTE ALERT DESMONTA EL COVER DEL WELCOME. Medido, no inferido (2026-09-03).**
             //

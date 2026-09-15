@@ -467,6 +467,11 @@ enum DevSeedGroups {
     /// apilaría un "Viaje a Cusco" duplicado encima del residual de la corrida anterior.
     /// Los Split* no tienen `@Relationship` entre sí (se enlazan por `groupZoneID`), así
     /// que el orden de borrado es indiferente.
+    ///
+    /// **Y el outbox de Grupos (`GroupSyncOutbox`), desde el 2026-09-15.** Vive en
+    /// `YalaSyncMeta-UITest`, que es persistente, y `wipeAllUserData` no toca sync-meta. La fila que
+    /// siembra `-uitest-groups-outbox-pending` bloquea todo cierre privado mientras exista: sin esta
+    /// línea, una sola corrida con el arg dejaría bloqueados los cierres de las siguientes.
     static func reset(in context: ModelContext) {
         deleteAll(SplitShare.self, in: context)
         deleteAll(SplitExpense.self, in: context)
@@ -474,10 +479,27 @@ enum DevSeedGroups {
         deleteAll(SplitMember.self, in: context)
         deleteAll(SplitGroup.self, in: context)
         deleteAll(GroupBridgePreference.self, in: context)
+        deleteAll(GroupSyncOutbox.self, in: context)
         do {
             try context.save()
         } catch {
             print("DevSeedGroups: reset save error: \(error)")
+        }
+    }
+
+    /// `-uitest-groups-outbox-pending`: UNA fila VIVA (`rejectedReason == nil`) en el outbox de Grupos.
+    ///
+    /// Es lo que cuenta `CloudSessionSignOut.liveGroupsPendingCount`, y con eso el cierre privado (C) se
+    /// bloquea con `.sessionExpired` antes de tocar nada. No hace falta que el grupo exista: el conteo es
+    /// sobre el outbox, y sin sesión nadie intenta subirla.
+    static func seedPendingOutboxRow(in context: ModelContext) {
+        context.insert(GroupSyncOutbox(
+            syncID: UUID(), groupID: "uitest-pending-group", entityType: "split_expense",
+            op: .upsert, hlc: "0", fieldsJSON: "{}", author: "uitest"))
+        do {
+            try context.save()
+        } catch {
+            print("DevSeedGroups: seedPendingOutboxRow save error: \(error)")
         }
     }
 

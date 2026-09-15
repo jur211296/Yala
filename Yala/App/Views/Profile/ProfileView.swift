@@ -185,34 +185,14 @@ struct ProfileView: View {
         signOutScope = makeSignOutScope()
     }
 
-    /// El mensaje del aviso de cierre bloqueado, por motivo. El título y las salidas son los mismos en
-    /// los cuatro; lo que cambia es qué pasó y qué puede hacer la persona:
-    ///  · **sesión caducada** (paso 9): se arregla volviendo a entrar, no mirando la red.
-    ///  · **canal de Grupos en pausa** (2026-09-13): no hay nada que arreglar —alguien bajó el
-    ///    kill-switch por un incidente—, así que el mensaje dice que vuelva en un rato y que no pierde
-    ///    nada. Con el genérico, a esa persona se le decía que revisara una conexión que funciona.
-    ///  · **la subida de grupos falló por algo pasajero** (2026-09-14): tampoco hay nada que revisar, y
-    ///    aquí no se ha reintentado nada —el cierre en la nube no gasta el presupuesto de 45 s—, así que
-    ///    el mensaje dice que no llegó, que no se pierde, y que lo vuelva a intentar en un rato.
-    ///  · el resto: el genérico de siempre.
+    /// El mensaje del aviso de cierre bloqueado, por motivo. **La tabla vive en `SignOutBlockedCopy`**, que
+    /// la comparte con la hoja del cambio de Apple ID desde el 2026-09-15: dos copias del mismo `switch`
+    /// divergen. Allí está también por qué cada motivo dice lo que dice.
     ///
-    /// `nil` no ocurre con el alert presentado (`syncSignOutUI` escribe el motivo antes de encenderlo);
-    /// cae al genérico por si acaso, que es el que no afirma una causa concreta.
-    /// **Exhaustivo a propósito: sin `default`.** Solo así el compilador obliga a que un motivo nuevo se
-    /// pronuncie aquí; el `switch` de `presentSignOutBlock` decide qué alert sale, no qué dice.
+    /// `nil` no ocurre con el alert presentado (`syncSignOutUI` escribe el motivo antes de encenderlo); cae
+    /// al genérico por si acaso. El `switch` de `presentSignOutBlock` decide qué alert sale, no qué dice.
     private var signOutBlockedMessage: String {
-        switch signOutBlockedReason {
-        case .sessionExpired: return L10n.Groups.Errors.sessionExpired
-        case .channelPaused: return L10n.Groups.Errors.channelPaused
-        // **La subida de grupos falló por algo pasajero** (2026-09-14): no se pudo subir, no se pierde
-        // nada, y se vuelve a intentar en un rato. Con el genérico se le decía a esta persona que
-        // revisara una conexión que funciona, que es justo lo contrario de lo que necesita saber.
-        case .uploadRetryLater: return L10n.Groups.Errors.uploadRetryLater
-        // El genérico cubre lo que no tiene causa que nombrar. `.transient` y `.exportUnconfirmed` ni
-        // siquiera entran por este alert (tienen el suyo), y `nil` no ocurre con el aviso presentado.
-        case .permanent, .transient, .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .none:
-            return L10n.Settings.signOutBlockedMessage
-        }
+        SignOutBlockedCopy.message(for: signOutBlockedReason)
     }
 
     /// Botones de los DOS alerts de cierre bloqueado. Se comparten a propósito: la diferencia entre el

@@ -123,12 +123,20 @@ notificación puede no llegar nunca, y entonces la única red es la comprobació
 
 1. Sesión privada + cuenta de grupos asociada, con un gasto de grupo **sin subir** (modo avión al
    crearlo).
-2. Cambiar el Apple ID y confirmar el cierre.
+2. Cambiar el Apple ID y confirmar el cierre **con el modo avión aún puesto**.
+   - **Se espera** (desde el 2026-09-15, `apple-id-close-blocked-has-no-visible-outcome`): la hoja pasa a
+     un progreso con «Guardando tus cambios pendientes…» y, tras unos 45 s de reintentos, enseña el
+     bloqueo con su motivo —«Un momento más»— y dos botones, «Reintentar» y «Ahora no». Antes el aviso
+     se cerraba y no se veía nada.
+   - Tocar «Ahora no» y abrir Ajustes → «Cerrar sesión». **Se espera:** su hoja de alcance, y NO un aviso
+     de bloqueo de Ajustes (en esta celda sería «Un momento más»). Eso prueba que el cierre bloqueado no
+     dejó el teléfono tapiado.
+3. Quitar el modo avión, cerrar Yala del todo y volver a abrirla: el aviso vuelve en el arranque siguiente,
+   no al volver del segundo plano. Confirmar.
    - **Se espera:** el gasto de grupo sube antes de borrar (ADR §5: la sesión privada y su cuenta de
-     grupos se mueven juntas).
-   - Con el modo avión aún puesto, el cierre **se bloquea**. Anotar qué ve la persona: hoy el aviso de
-     bloqueo solo lo pinta la pantalla de Ajustes, así que puede quedarse sin explicación. Ticket
-     abierto: `apple-id-close-blocked-has-no-visible-outcome`.
+     grupos se mueven juntas) y aparece la pantalla de reiniciar.
+4. Variante sin reabrir: con el bloqueo a la vista, quitar el modo avión y tocar «Reintentar».
+   **Se espera:** el mismo final que el paso 3.
 
 ## Criterios
 
@@ -137,4 +145,5 @@ notificación puede no llegar nunca, y entonces la única red es la comprobació
 - [ ] Recorrido 2: apagar iCloud Drive **no** dispara el aviso.
 - [ ] Recorrido 3: volver al Apple ID anterior lo apaga solo.
 - [ ] Recorrido 4: una sesión solo-grupos no ve nada.
-- [ ] Recorrido 5: lo que queda sin subir, sube antes de borrar; y anotar qué se ve si no puede.
+- [ ] Recorrido 5: sin red, la hoja enseña el bloqueo con «Reintentar» y «Ahora no», y Ajustes no queda
+      tapiado; con red, lo que quedaba sin subir sube antes de borrar.

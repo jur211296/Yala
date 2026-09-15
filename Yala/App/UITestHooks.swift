@@ -213,6 +213,32 @@ final class UITestHooks {
     /// producción. Y el store arranca vacío con `-uitest-reset`, que es la otra condición viva.
     nonisolated static var showRemoteWipeNotice: Bool { hasArg("-uitest-remote-wipe-notice") }
 
+    /// `-uitest-apple-id-changed`: tras el seed, encola `.appleIDChangedClosePrivate` — la hoja «Cambiaste
+    /// de cuenta de iCloud».
+    ///
+    /// **Cubre la hoja y el cierre, no la detección.** La detección sale a CloudKit
+    /// (`AppBootstrapper.checkForAppleIDChange`) y está apagada bajo test a propósito: el simulador no
+    /// tiene cuentas de iCloud reales. Desde el intent en adelante —la cola, la hoja, sus fases y el cierre
+    /// del coordinador— todo es el camino de producción.
+    ///
+    /// **Ningún test debe CONFIRMAR con este hook solo.** Un cierre que termina bien arma un boot-wipe
+    /// REAL (`armSignOutWipe` no tiene guard de test) y su key sobrevive a `-uitest-reset`: el arranque
+    /// manual siguiente del simulador borraría el store. Para recorrer la fase de bloqueo, acompáñalo de
+    /// `-uitest-groups-outbox-pending`.
+    nonisolated static var showAppleIDChangedNotice: Bool { hasArg("-uitest-apple-id-changed") }
+
+    /// `-uitest-groups-outbox-pending`: tras el seed, deja UNA fila viva en el outbox de Grupos, sin sesión.
+    ///
+    /// **Es el estado real que bloquea un cierre privado, no un seam que fuerce el veredicto.** La celda C
+    /// no sube grupos, así que con cambios de grupos sin subir el coordinador se bloquea con
+    /// `.sessionExpired` (`CloudSessionSignOut.blockIfGroupsCannotUpload`) ANTES de tocar nada. Así se
+    /// recorre la fase de bloqueo de la hoja del cambio de Apple ID sin fingir el coordinador: un seam que
+    /// forzara `.blocked` dejaría ciego al test (`.claude/rules/testing.md`).
+    ///
+    /// Sin sesión no hay canal que la suba, y `-uitest-reset` la purga (`DevSeedGroups.reset`): el store
+    /// `YalaSyncMeta-UITest` es persistente y, sin esa purga, bloquearía los cierres de la corrida siguiente.
+    nonisolated static var seedPendingGroupsOutboxRow: Bool { hasArg("-uitest-groups-outbox-pending") }
+
     /// `-uitest-trial-offer`: tras el seed, encola `.presentTrialOffer` para presentar
     /// el ProTrialOfferSheet sin depender de StoreKit ni del post-onboarding real —
     /// las emisiones AUTOMÁTICAS de monetización están suprimidas en uitest, este

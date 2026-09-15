@@ -23,9 +23,10 @@ private struct ReadinessGateObserversModifier: ViewModifier {
     let showLateICloudNotice: Bool
     let showRemoteWipeAlert: Bool
     let showICloudRestartAlert: Bool
-    /// El alert del cambio de Apple ID: bloquea el gate mientras está arriba, así que su transición
-    /// tiene que recomputar como las de sus vecinos.
-    let showAppleIDChangedAlert: Bool
+    /// El aviso del cambio de Apple ID pedido y sin resolver —la condición viva, no el `isPresented` de su
+    /// hoja—: bloquea el gate mientras está pendiente, así que su transición tiene que recomputar como las
+    /// de sus vecinos.
+    let appleIDCloseNoticePending: Bool
     /// La FASE del cierre de sesión, no un `@State`: su transición a `.working` y su salida tienen que
     /// recomputar, o el gate se queda con la foto de antes del tap.
     let isSignOutWorking: Bool
@@ -89,7 +90,7 @@ private struct ReadinessGateObserversModifier: ViewModifier {
             .onChange(of: showLateICloudNotice) { _, _ in recompute() }
             .onChange(of: showRemoteWipeAlert) { _, _ in recompute() }
             .onChange(of: showICloudRestartAlert) { _, _ in recompute() }
-            .onChange(of: showAppleIDChangedAlert) { _, _ in recompute() }
+            .onChange(of: appleIDCloseNoticePending) { _, _ in recompute() }
             .onChange(of: isSignOutWorking) { _, _ in recompute() }
             .onChange(of: hasActiveInviteError) { _, _ in recompute() }
             .onChange(of: hasActiveGroupSyncError) { _, _ in recompute() }
@@ -112,7 +113,7 @@ extension View {
         showLateICloudNotice: Bool,
         showRemoteWipeAlert: Bool,
         showICloudRestartAlert: Bool,
-        showAppleIDChangedAlert: Bool,
+        appleIDCloseNoticePending: Bool,
         isSignOutWorking: Bool,
         hasActiveInviteError: Bool,
         hasActiveGroupSyncError: Bool,
@@ -143,7 +144,7 @@ extension View {
             showLateICloudNotice: showLateICloudNotice,
             showRemoteWipeAlert: showRemoteWipeAlert,
             showICloudRestartAlert: showICloudRestartAlert,
-            showAppleIDChangedAlert: showAppleIDChangedAlert,
+            appleIDCloseNoticePending: appleIDCloseNoticePending,
             isSignOutWorking: isSignOutWorking,
             hasActiveInviteError: hasActiveInviteError,
             hasActiveGroupSyncError: hasActiveGroupSyncError,

@@ -1010,6 +1010,24 @@ final class AppBootstrapper {
         if UITestHooks.showRemoteWipeNotice {
             RouterEntryGate.shared.submit(.presentRemoteWipeNotice)
         }
+        // Cambios de grupos sin subir, sin sesión: el estado REAL que bloquea un cierre privado. Va antes
+        // del intent de abajo para que la fila exista cuando alguien confirme.
+        if UITestHooks.seedPendingGroupsOutboxRow {
+            DevSeedGroups.seedPendingOutboxRow(in: context)
+        }
+        // Hoja del cambio de Apple ID simulada en uitest: la detección real sale a CloudKit y está apagada
+        // bajo test, así que se encola el intent. De ahí en adelante —la cola, la hoja y el cierre del
+        // coordinador— es el camino de producción.
+        //
+        // **Con el seam del outbox pedido, la hoja solo se encola si la fila EXISTE.** Si la siembra fallara,
+        // confirmar no se bloquearía: el cierre terminaría bien y armaría un boot-wipe REAL, cuya key
+        // sobrevive a `-uitest-reset` y borraría el store en el arranque manual siguiente del simulador. Sin
+        // la hoja, el test cae en rojo antes de poder confirmar nada.
+        if UITestHooks.showAppleIDChangedNotice,
+           !UITestHooks.seedPendingGroupsOutboxRow
+            || CloudSessionSignOut.liveGroupsPendingCount(context: context) > 0 {
+            RouterEntryGate.shared.submit(.appleIDChangedClosePrivate)
+        }
         // UpdateAvailableBanner simulado en uitest: fuerza el estado sin red.
         if UITestHooks.forceUpdateBanner {
             AppUpdateService.shared.forceUpdateAvailableForUITest()
@@ -1160,9 +1178,9 @@ final class AppBootstrapper {
     /// que por sí solo no impide que el boot y la notificación —que llegan con milisegundos de
     /// diferencia en el arranque justo después de cambiar de cuenta— pasen los dos su guard y salgan
     /// los dos a la red. El daño no es solo el viaje duplicado: `AppRouter.enqueue` dedupea por `id`
-    /// mientras el intent está EN COLA, pero si el primero ya se drenó, el segundo monta un segundo
-    /// alert detrás del primero — dos alerts encadenados del mismo anchor, que es el molde de brick que
-    /// la rule de presentaciones describe.
+    /// mientras el intent está EN COLA, pero si el primero ya se drenó, el segundo espera en la cola —la
+    /// matriz la retiene mientras la hoja está pendiente— y drena en cuanto la persona contesta: la pregunta
+    /// volvería a salir justo después de «Ahora no». Eso es lo que este flag sigue impidiendo, junto al latch.
     private var appleIDChangeCheckInFlight = false
 
     /// **El cierre por cambio de Apple ID ya se ofreció en este lanzamiento.** Lo lee el OTRO aviso
