@@ -198,8 +198,12 @@ nonisolated enum DestructiveScopeLogic {
     /// **Con una salvedad que este fichero ya documenta 40 líneas más arriba** (`wipeOperation`, el
     /// término `personalMountAttachesMirror`): un solo-grupos anterior al paso 5 monta un store que SÍ
     /// espeja, y ahí sus borrados sí salen al iCloud del Apple ID. Para esa población la frase de arriba
-    /// es falsa por los dos lados —ni el emisor ni el receptor consultan el mount— y el residual está
-    /// escrito en el ticket `remote-wipe-axis-misses-groups-only-installs-before-the-mount-mark`.
+    /// es falsa por los dos lados —ni el emisor ni el receptor consultan el mount—, y esa población está
+    /// MEDIDA en **cero** desde el 2026-09-14: cero altas solo-grupos en la telemetría de producción de los
+    /// 90 días, cero identidades en el backend de Grupos, y el camino solo existe en los tres builds de
+    /// TestFlight que ni siquiera traen el eje compilado. El desglose y qué la reabriría, en
+    /// `PrivateSessionMark.backfillIfNeeded`; el ticket
+    /// `remote-wipe-axis-misses-groups-only-installs-before-the-mount-mark` se cerró con ese número.
     ///
     /// **Por qué el emisor arreglado no basta, que es la pregunta obvia.** La señal la escribe la app del
     /// OTRO dispositivo, y esa app puede ser una versión anterior al paso 9 que emita desde cualquier

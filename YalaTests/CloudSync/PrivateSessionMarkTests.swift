@@ -254,8 +254,8 @@ struct PrivateSessionMarkWiringTests {
         // un consumidor que pasara su propio `UserDefaults` —que es lo que hace el servicio de
         // preferencias— no lo contaba nadie: se colaba un lector de la estricta sin pasar por esta
         // decisión. El prefijo `PrivateSessionMark.` deja fuera la declaración del propio tipo.
-        #expect(Self.countInProduction("PrivateSessionMark.confirmedPrivateSession(") == 6, """
-            `confirmedPrivateSession` tiene SEIS lecturas en toda la app, y todas comparten el SIGNO
+        #expect(Self.countInProduction("PrivateSessionMark.confirmedPrivateSession(") == 7, """
+            `confirmedPrivateSession` tiene SIETE lecturas en toda la app, y todas comparten el SIGNO
             de su error: hacia `true` se DAÑA —se borra, o se afirma un hecho falso sobre datos
             ajenos—, hacia `false` solo se conserva de más o se calla. Si aparece una más, decide a
             conciencia de qué lado cae — si equivocarse hacia `true` no destruye nada ni miente, la
@@ -276,6 +276,15 @@ struct PrivateSessionMarkWiringTests {
             salta a quien no tiene ningún iCloud en juego, con un botón que lo expulsa al onboarding.
             Su `true` de más no destruye datos, pero afirma un hecho falso sobre los de otra persona y
             le ofrece el camino genérico de degradación: mismo signo, misma lectura.
+
+            La SÉPTIMA es la pareja de esa sexta, y este número se quedó en 6 cuando entró: desde que
+            el aviso viaja por la cola del router, el DRENAJE lo re-mide antes de presentarlo
+            (`ContentView.presentRemoteWipeNoticeIfStillTrue`). No es una duplicación por si acaso —
+            entre que el aviso se PIDE y la pantalla queda libre puede pasar un background entero y un
+            cambio de sesión, y el intent no es transitorio: afirma un hecho sobre AHORA. O sea que las
+            dos superficies del aviso aportan DOS lecturas, igual que el borrado (detección + drenaje)
+            y que el cierre por cambio de Apple ID (pre-filtro + re-lectura tras el `await`): cada vez
+            que este eje gobierna algo asíncrono, se lee en los dos extremos de la espera.
 
             Y desde el 2026-09-14 hay un consumidor más —el cierre de la sesión privada cuando cambia
             el Apple ID del teléfono (`AppleIDChangeCloseLogic`)— que aporta **DOS** lecturas, no una,
@@ -411,6 +420,69 @@ struct PrivateSessionMarkWiringTests {
             total += count(needle, in: sinComentarios)
         }
         return total
+    }
+
+    /// **La premisa que mantiene en CERO la población del backfill mal derivado.**
+    ///
+    /// El hueco de `backfillIfNeeded` es real: si un dispositivo llega a un arranque con la marca del eje
+    /// AUSENTE, `hasCompletedOnboarding == true` y el mount neutro sin armar, se le escribe «tiene sesión
+    /// privada» y con eso OBEDECE la señal de vaciado remoto del Apple ID — el teléfono prestado se vacía
+    /// por orden de otro. Lo que hace inalcanzable esa celda hoy no es el backfill: es que las DOS altas
+    /// solo-grupos escriben el eje EN EL ACTO, así que la marca nunca está ausente en un teléfono que entró
+    /// por un grupo. El mount neutro es la segunda mitad, para el arranque siguiente.
+    ///
+    /// El ticket `remote-wipe-axis-misses-groups-only-installs-before-the-mount-mark` se cerró el
+    /// 2026-09-14 midiendo que esa población es cero (telemetría de producción y backend de Grupos, los dos
+    /// en 0; el camino solo viajó en tres builds de TestFlight con 3 testers). **Este test es lo que
+    /// convierte ese cierre en algo que caduca con aviso**: un alta solo-grupos nueva que se olvide de
+    /// cualquiera de las dos escrituras vuelve a crear población, y ahí ya no habría número que valga.
+    ///
+    /// Mutantes que mata: borrar `armGroupsOnlyNeutralMount` de cualquiera de las dos altas; borrar el
+    /// apagado del eje; y —el que no se ve— añadir una TERCERA alta solo-grupos sin ninguna de las dos,
+    /// que el conteo obliga a mirar.
+    @Test("MUTACIÓN: las dos altas solo-grupos escriben el eje Y arman el mount neutro")
+    func bothGroupsOnlySignUpsWriteTheAxisAndArmTheNeutralMount() throws {
+        let organizador = try Self.code("Yala/Services/Groups/GroupsOrganizerOnboarding.swift")
+        let arma = try #require(organizador.range(of: "StorageModePersistence.armGroupsOnlyNeutralMount(defaults)"), """
+            el alta del organizador dejó de armar el mount neutro. En el arranque siguiente el backfill
+            deriva «tiene sesión privada» de su ausencia y ese teléfono obedece la señal de vaciado.
+            """)
+        let eje = try #require(organizador.range(of: "sessionState.hasPrivateSession = false"), """
+            el alta del organizador dejó de apagar el eje. Con la marca AUSENTE y el alta completada, el
+            backfill del arranque siguiente la escribe en `true`: es la celda del ticket, repoblada.
+            """)
+        #expect(arma.lowerBound < eje.lowerBound, """
+            el orden se invirtió. El arm vive en `writePreferences`, que es lo que el `guard` de
+            `completeSetup` exige antes de tocar el eje y los seeds: si el alta aborta ahí, no puede haber
+            dejado el eje apagado sin su mount.
+            """)
+
+        let invitacion = try Self.code("Yala/App/Views/Groups/GroupInviteOnboardingView.swift")
+        let armaInvite = try #require(invitacion.range(of: "StorageModePersistence.armGroupsOnlyNeutralMount()"),
+                                      "el alta por invitación dejó de armar el mount neutro")
+        let ejeInvite = try #require(invitacion.range(of: "sessionState.hasPrivateSession = false"),
+                                     "el alta por invitación dejó de apagar el eje")
+        #expect(armaInvite.lowerBound < ejeInvite.lowerBound, """
+            las dos escrituras del alta por invitación se separaron de orden. Van juntas y en este orden
+            en `performSilentSetup`, que es el único camino por el que un teléfono sin onboarding previo
+            entra a un grupo.
+            """)
+
+        // El conteo es la parte que no se ve: los dos `#require` de arriba siguen verdes si alguien añade
+        // una TERCERA alta solo-grupos que no arme nada. Los dos armadores restantes son de la reposición
+        // —activar Yala completo y su vuelta atrás—, no altas.
+        #expect(Self.countInProduction("StorageModePersistence.armGroupsOnlyNeutralMount(") == 3, """
+            cambió el censo de quien ARMA el mount neutro. Hoy son TRES: las dos altas solo-grupos
+            (`GroupsOrganizerOnboarding`, `GroupInviteOnboardingView`) y el rearme de
+            `FullModeActivationView`, que repone la sesión solo-grupos cuando la activación de Yala
+            completo se deshace.
+
+            Si el nuevo es un ALTA solo-grupos, tiene que armar el mount Y apagar el eje, o repuebla la
+            celda de `PrivateSessionMark.backfillIfNeeded` —marca ausente + alta completada ⇒ «tiene
+            sesión privada»— que el ticket
+            `remote-wipe-axis-misses-groups-only-installs-before-the-mount-mark` cerró midiendo que estaba
+            vacía. Ese cierre vale mientras esta lista no crezca por el lado de las altas.
+            """)
     }
 
     /// Control del instrumento: si el recorrido del árbol se rompe, `countInProduction` devolvería 0
