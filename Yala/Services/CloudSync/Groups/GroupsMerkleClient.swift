@@ -134,7 +134,7 @@ final class GroupsMerkleClient {
             // **Que aquí los dos compartan `.accountUnavailable` no propaga el veredicto**, y eso es lo que
             // hace innecesario el discriminador que sí lleva el canal de sync: el único lector
             // (`GroupsSyncClient.verifyGroupIntegrity`) colapsa todo lo que no sea `.snapshot` en un
-            // `.skipped`, así que ni sella el loop ni llega a un aviso. Si alguien le da otro consumidor,
+            // `.skipped`, así que ni para el loop ni llega a un aviso. Si alguien le da otro consumidor,
             // este 403 necesita la misma separación que el push y el pull.
             let reason = GatewayErrorEnvelope.isGroupsChannelDisabled(data) ? "channel-disabled" : "http-403"
             GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: reason)

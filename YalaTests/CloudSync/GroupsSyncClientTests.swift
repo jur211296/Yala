@@ -1556,16 +1556,11 @@ struct GroupsSyncClientTests {
         #expect(sleeper.count == 0)    // sessionExpired rompe ANTES del sleeper
     }
 
-    // `loop_403_armsStopUntilRelaunch_subsequentStartIsNoOp` vivía aquí y se RETIRÓ el 2026-09-14
-    // (`groups-sync-treats-an-infra-403-as-an-account-verdict`). Sembraba `StubHTTPSession(statusCode: 403)`,
-    // cuyo body por defecto es una página de pull vacía SIN el envelope del kill: desde el fix eso es un 403
-    // de infraestructura, o sea `.transient`. El test no habría dado rojo — habría COLGADO la corrida, porque
-    // el loop entra en backoff y su `await _testLoopTask?.value` no vuelve nunca.
-    //
-    // Su sujeto ya no existe: ningún 403 arma `stoppedUntilRelaunch`. Lo que sí sigue medido, y en el fichero
-    // donde vive la familia del 403 desde el kill-switch, es la conducta nueva —
-    // `GroupsSyncHardeningTests.infra403_doesNotSealTheChannelForTheProcess` (el loop sigue vivo y re-arranca)
-    // y `killAndInfra403_areNotTheSameVerdict` (el mutante de colapsar las dos ramas).
+    // Un 403 sembrado con `StubHTTPSession(statusCode: 403)` NO para el loop: su body por defecto es una página
+    // de pull vacía SIN el envelope del kill, así que es un 403 de infraestructura (`.transient`) y el loop entra
+    // en backoff. Un test de loop que lo siembre esperando una parada no da rojo: CUELGA en
+    // `await _testLoopTask?.value`, y sin `sleeper` inyectado duerme de verdad la escalera del backoff. La
+    // familia del 403 vive en `GroupsSyncHardeningTests`.
 
     @Test func loop_singleInstance_secondStartIsNoOpWhileAlive() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
@@ -1725,8 +1720,8 @@ struct GroupsSyncClientTests {
 
     // MARK: - Test 10c · Re-arranque del loop muerto (H-2026-07-18-4)
 
-    /// Tras un loop muerto por sessionExpired (401, `stoppedUntilRelaunch` NO armado), un `startIfEligible`
-    /// posterior RE-CREA el loopTask (la red del residual: el retry-once no rescató el 401).
+    /// Tras un loop muerto por sessionExpired (401), un `startIfEligible` posterior RE-CREA el loopTask (la
+    /// red del residual: el retry-once no rescató el 401).
     @Test func restart_afterSessionExpiredStop_rearmsLoop_whenSessionAlive() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
@@ -1744,19 +1739,11 @@ struct GroupsSyncClientTests {
         #expect(stub.callCount == 1)          // 1ª vuelta: pull 401 → sessionExpired → loop muere
         #expect(client._testLoopTask == nil)  // loop liberado
 
-        // sessionExpired NO arma stoppedUntilRelaunch → re-arranca (foreground / post-sign-in).
+        // La parada por sessionExpired no se queda puesta → re-arranca (foreground / post-sign-in).
         client.startIfEligible(context: context, trigger: "foreground")
         await client._testLoopTask?.value
         #expect(stub.callCount == 2)          // el loop RE-ARRANCÓ y corrió otra vuelta
     }
-
-    // `restart_403_stillNoOp` vivía aquí y se RETIRÓ el 2026-09-14 por lo mismo que el de arriba, con un
-    // agravante: no inyectaba sleeper, así que habría colgado la corrida durmiendo de verdad la escalera
-    // del backoff (5 s → 10 s → … → 300 s) sin terminar jamás.
-    //
-    // Lo único suyo que no estaba cubierto en otro sitio —que un `forceRefreshTokenProvider` disponible no
-    // cambia nada, porque el retry-once es del 401 y no se dispara en un 403— se conserva como aserción
-    // dentro de `GroupsSyncHardeningTests.infra403_doesNotSealTheChannelForTheProcess`.
 
     // MARK: - Test 11 · Mapeo de outcomes del canal → CadenceOutcome (A4, uso de SyncCadencePolicy)
 
