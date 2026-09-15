@@ -119,6 +119,22 @@ enum RouterIntent: Identifiable, Equatable {
     /// `AppleIDChangeCloseLogic.decide`. Va al FINAL del bloque F y no en medio: el orden de este enum
     /// se lee desde fuera.
     case appleIDChangedClosePrivate
+    /// **El aviso de «tus datos fueron eliminados de iCloud».** No lo produce la señal del Apple ID
+    /// —esa es `.remoteWipe`, que BORRA— sino la gracia de cinco segundos de `ContentView`: las filas
+    /// personales desaparecieron del store y siguen sin estar. Este intent no borra nada; PREGUNTA.
+    ///
+    /// **Va por la cola y no por un `@State` encendido desde su `Task`**, que es lo que hacía hasta el
+    /// 2026-09-14: quien lo enciende es asíncrono, así que puede vencer con el anchor de `ContentView`
+    /// ocupado —el aviso del espejo tardío, la oferta de prueba, el selector de idioma— y encender un
+    /// `.alert` ahí DESMONTA lo que hubiera debajo (traza del 2026-09-03 en `ShellDataAlertsModifier`).
+    /// Por la cola, el drenaje sólo ocurre con la matriz de readiness limpia. Regla (3) de
+    /// Presentaciones, y el mismo molde que `.presentLateICloudMirrorNotice`.
+    ///
+    /// **Sin payload a propósito**: el veredicto NO viaja. El drenaje re-mide las tres condiciones vivas
+    /// (el eje de sesión, que las filas sigan ausentes y que el onboarding siga completo), porque el
+    /// intent no es transitorio y puede haber esperado en cola a través de un background entero — y el
+    /// aviso afirma un hecho sobre AHORA.
+    case presentRemoteWipeNotice
 
     // What's new (version bump)
     case presentWhatsNew(features: [WhatsNewFeature], version: String)
@@ -142,7 +158,7 @@ extension RouterIntent {
              .showGroupSyncError,
              .showGroupArchivedNotice,
              .iCloudMismatch, .remoteWipe, .remoteOnboardingCompleted,
-             .appleIDChangedClosePrivate,
+             .appleIDChangedClosePrivate, .presentRemoteWipeNotice,
              .presentFullModeActivation:
             return .contentView
 
@@ -176,9 +192,16 @@ extension RouterIntent {
         case .iCloudMismatch, .remoteWipe, .showInviteError, .showGroupArchivedNotice,
              .appleIDChangedClosePrivate:
             return .critical
+        // **`.presentRemoteWipeNotice` es `.high` y NO `.critical`, y esa es su red.** La regla
+        // `remoteWipe_supersedes_nonCritical` de `IntentSupersessionLogic` tira todo lo que esté por
+        // debajo de `.critical` cuando llega un `.remoteWipe`: si la señal explícita del Apple ID
+        // aparece mientras este aviso espera su turno, el aviso que sólo SOSPECHA que borraron los
+        // datos sobra — lo que procede es el borrado orquestado, con su aterrizaje. Marcarlo
+        // `.critical` como su hermano lo dejaría en cola para salir DESPUÉS del borrado, diciéndole a
+        // la persona que le eliminaron unos datos que la app acaba de barrer delante de ella.
         case .showInboxAlert, .presentSharedImage, .presentDowngradeResolution,
              .presentTrialExpired, .requestAIConsent, .showGroupSyncError,
-             .remoteOnboardingCompleted:
+             .remoteOnboardingCompleted, .presentRemoteWipeNotice:
             return .high
         // **`.high` y no `.normal`**: mientras este aviso no se conteste, el espejo sigue mezclando dos
         // corpus personales. Va por delante del trial y del What's New —que pueden esperar al arranque
@@ -270,6 +293,8 @@ extension RouterIntent {
             return "remoteOnboardingCompleted"
         case .appleIDChangedClosePrivate:
             return "appleIDChangedClosePrivate"
+        case .presentRemoteWipeNotice:
+            return "remoteWipeNotice"
         case .presentWhatsNew(_, let version):
             return "whatsNew:\(version)"
         }
@@ -281,7 +306,7 @@ extension RouterIntent {
     var isTransient: Bool {
         switch self {
         case .remoteWipe, .iCloudMismatch, .remoteOnboardingCompleted,
-             .appleIDChangedClosePrivate:
+             .appleIDChangedClosePrivate, .presentRemoteWipeNotice:
             return false
         default:
             return true

@@ -227,3 +227,23 @@ acusada, (3) buscar una medición INDEPENDIENTE de esta máquina —la nocturna 
 `gh run view <id> --log`— y solo entonces (4) reproducir. Los tres primeros pasos cuestan minutos y
 los cuatro rojos del ticket hermano salieron de la misma corrida, o sea que el log ya estaba pagado.
 Ver [[dos-corridas-un-simulador]] y [[rojo-conocido-no-exime-de-bisecar]].
+
+## 2026-09-14 — la premisa nombra un MECANISMO que existe, y ese mecanismo hace otra cosa
+
+El encargo de `remote-wipe-alert-skips-the-router` decía: «presentar por el router / cola
+(`RouterEntryGate` / `.remoteWipe`), **como el otro productor**». Las dos mitades sonaban igual de
+firmes y solo una lo era. La vía sí: el aviso tenía que ir por la cola. El CASE no: `.remoteWipe` no
+presenta nada — su drenaje llama `handleRemoteWipeSignal`, que **borra** el corpus local. Reusarlo
+habría convertido una pregunta («¿empiezo de cero?») en un borrado silencioso, y además habría
+chocado con un escáner que fija que ese intent se emite desde un solo sitio.
+
+**Why:** cuando la premisa nombra un símbolo que EXISTE, se lee como ya verificada — el nombre casa,
+el fichero está, el grep encuentra. Lo que no se comprueba es qué hace al drenarse. Es la variante
+más fácil de tragarse de toda esta lista, porque no hay ningún dato que contradiga nada: hay un
+parecido de nombre.
+
+**How to apply:** si el encargo (o el ticket) te manda reusar un mecanismo «como el otro», **lee el
+consumidor de ese mecanismo, no su productor**. La pregunta es «¿qué pasa cuando esto llega al
+otro extremo?», y se contesta con un grep al `case` del switch que lo drena. Y cuando la premisa se
+parte en dos —la vía buena, el case malo—, dilo así en el Paso 0 y en el PR: no es «el encargo
+estaba mal», es «de las dos cosas que decía, esta se sostiene y esta no».

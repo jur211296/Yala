@@ -52,6 +52,11 @@ struct ShellReadinessState: Equatable {
     /// VIVA (`lateICloudCorpus != nil`), no un `@State` de red visual — que es lo que la regla (4) pide
     /// para los blockers.
     let showLateICloudNotice: Bool
+    /// **El aviso de «tus datos fueron eliminados de iCloud» está pedido y sin contestar.** Como su
+    /// vecino de arriba, la entrada es la CONDICIÓN VIVA (`remoteWipeNoticePending`) y no el `@State`
+    /// del alert: la red de presentación toggla ese flag para re-presentar cuando UIKit no llegó a
+    /// montarlo, y una matriz colgada de él se abriría en cada reintento. El nombre del campo se
+    /// conserva porque es el del blocker que sale por telemetría desde el primer día.
     let showRemoteWipeAlert: Bool
     let showICloudRestartAlert: Bool
     /// **El Apple ID del teléfono cambió y hay que cerrar la sesión privada.** Alert del anchor de

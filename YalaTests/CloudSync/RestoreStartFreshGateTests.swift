@@ -231,7 +231,11 @@ struct RestoreStartFreshGateTests {
         // lotes, así que un borrado que lanza a media lista deja el `hasPersonalData` cayendo igual — y
         // ese `true → false` sin la gracia cancelada levanta el alert de wipe remoto, que DESMONTA el
         // cover del Welcome. Es la corrección que su hermana `performDeviceCorpusWipe` ya lleva escrita.
-        try Self.expectOrder("wipeGraceTask?.cancel()",
+
+        // El ancla es `cancelWipeGrace()` desde el 2026-09-14: cancelar la tarea dejó de bastar cuando el
+        // aviso pasó a viajar por la cola del router, así que las dos mitades —cancelar y retirar el
+        // intent ya encolado— viven en esa función.
+        try Self.expectOrder("cancelWipeGrace()",
                              before: "await performICloudCorpusWipe(.handover)", in: wrapper, """
             la gracia del wipe remoto se cancela DESPUÉS del borrado: un borrado que lanza a media lista
             deja las filas borradas y la gracia viva, y el alert «te borraron los datos en otro

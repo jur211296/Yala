@@ -19,6 +19,7 @@
 - [`-only-testing` filtra por TIPO, no por fichero](feedback_only_testing_filtra_por_tipo_no_por_fichero.md) — pedí 12 suites y corrieron 7; una escaneaba la función que yo acababa de tocar. Cuenta pedidas vs. `Test run with`.
 - [El barrido de QA rinde por lotes](feedback_el_barrido_qa_rinde_por_lotes.md) — agrupa por estado de simulador; dos números que comparas, mismo lanzamiento.
 - [Instrumentar gana a razonar](feedback_instrumentar_gana_a_razonar.md) — a la tercera hipótesis caída, cuenta en vez de deducir.
+- [El oráculo del mutante es el efecto que produce](feedback_el_oraculo_del_mutante_es_el_efecto_que_produce.md) — un mutante que SOBREVIVE puede estar midiendo la pantalla mientras el código cambia el estado.
 - [El CI se verifica en LOCAL](feedback_el_ci_se_verifica_en_local.md) — el `run:` se extrae del YAML y se corre con matriz; actionlint con control negativo.
 - [El paso 3 del gate no detecta cero casos](feedback_gate_paso3_no_detecta_cero_casos.md) — XCUITest es XCTest: cuenta «Test Suite» y «Executed», no «Test run with».
 - [Mi docblock también es una premisa](feedback_mi_docblock_tambien_es_una_premisa.md) — describo la intención como si fuera el comportamiento.
@@ -84,6 +85,7 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build incremental.
 
 ## Estado del trabajo
+- [El aviso de datos borrados ya no se monta encima de nada](project_aviso_datos_borrados_va_por_la_cola.md) — PR #164; la premisa del encargo acertaba la VÍA y erraba el case.
 - [«Empezar desde cero» sin iCloud ya vuelve en vez de mentir](project_discard_gate_vuelve_sin_prometer.md) — PR #160; la review cazó que MI extensión al estado K creaba un camino muerto.
 - [Cambiar el Apple ID ya cierra la sesión privada](project_apple_id_cierra_la_sesion_privada.md) — PR #159; el ticket decía «alinear un aviso» y no había detección que alinear.
 - [«Empezar desde cero» en la activación ya borra de verdad](project_activacion_descarta_y_borra_de_verdad.md) — el hermano lo dio por imposible.

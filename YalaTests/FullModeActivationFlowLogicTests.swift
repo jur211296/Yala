@@ -632,7 +632,11 @@ struct FullModeActivationWiringTests {
     func activationDiscardWipe_cancelsGraceFirstAndRemeasures() throws {
         let src = try Self.code(Self.contentView)
         let wrapper = try Self.body(of: "performICloudZoneAndImportedRowsWipe: {", in: src)
-        try Self.expectOrder("wipeGraceTask?.cancel()", before: "await performICloudCorpusWipe(.importedRows)",
+
+        // El ancla es `cancelWipeGrace()` desde el 2026-09-14: cancelar la tarea dejó de bastar cuando el
+        // aviso pasó a viajar por la cola del router, así que las dos mitades —cancelar y retirar el
+        // intent ya encolado— viven en esa función.
+        try Self.expectOrder("cancelWipeGrace()", before: "await performICloudCorpusWipe(.importedRows)",
                              in: wrapper, """
             la gracia se cancela DESPUÉS del borrado, o no se cancela: un borrado que lanza a media lista
             levanta el alert de wipe remoto, que desmonta la sheet de la activación.
