@@ -5,10 +5,33 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-15 (Lima)
 
-**Rama** `2.1` — Merge #169: **Al cerrar sesión en la nube, una sesión de grupos caducada ya pide volver a entrar.**
+**Rama** `2.1` — Merge #170: **Grupos: se retira el sello que apagaba el canal hasta relanzar la app.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#169 · al cerrar sesión en la nube, una sesión de grupos caducada ya pide volver a entrar)
+## Esta sesión (#170 · se retira el sello que apagaba el canal de Grupos hasta relanzar la app)
+
+**No cambia nada en pantalla.** El canal de Grupos tenía un freno: si el servidor decía que la cuenta no
+estaba disponible, dejaba de sincronizar hasta matar y reabrir la app. Desde el 13-sep ninguna respuesta
+real lo echaba —solo un 409 que `/groups/push` no emite—, y **tu decisión 4A fue retirarlo**. Ahora
+cualquier parada del canal se vuelve a intentar en el siguiente arranque, vuelta a la app o inicio de sesión.
+
+**La review adversarial cazó dos huecos míos en los tests, y los dos están arreglados.** El único cambio de
+conducta —el 409 ya no cierra el canal— no lo fijaba ningún test, así que volver a poner el freno salía verde.
+Y al quitar la aserción sobre el seam, el test del apagado del canal dejó de cubrir el save local y el silent
+push.
+
+Gate: build ×2 sin warnings nuevos · **unit 555 en 59 suites** · **3 mutantes, 3 muertos** (el freno
+retirado, puesto tal cual, cae) · XCUITest 4 casos en 2 clases con el centinela · dos lentes adversariales ·
+CI verde. **Device-QA: no aplica.**
+
+**Un rojo de XCUITest que no era de este cambio:** `test_extremeMinimumAmountSaves` cayó una vez y pasó la
+siguiente con el mismo binario; la base pasó con el mismo comando, y el test no ejecuta el código tocado. La
+medición va a `edgecases-extreme-minimum-flaky-under-load`.
+
+**Deja un ticket `low`:** `groups-loop-restart-docs-cite-a-retired-mount-guard`, tres comentarios que
+prometen un guard de la sesión de visita que ya no existe.
+
+## Sesión anterior (#169 · al cerrar sesión en la nube, una sesión de grupos caducada ya pide volver a entrar)
 
 **Cuenta en la nube, cambios de grupos sin subir y la sesión caducada: «Cerrar sesión» ya no dice «revisa tu
 conexión».** Dice «Tu sesión caducó. Vuelve a iniciar sesión e inténtalo de nuevo.», como las otras tres formas
@@ -33,7 +56,7 @@ hallazgo. **Device-QA: sí, y no es simulable** (0-decies de la cola).
 oferta en cola no apareció al cerrar la hoja del Apple ID. Pasó 3 de 4 con el mismo binario
 (`queued-offer-after-dismiss-flakes-on-a-cold-simulator`).
 
-## Sesión anterior (#168 · si el cierre por cambio de Apple ID se bloquea, ya se ve y se sale)
+## Sesión #168 · si el cierre por cambio de Apple ID se bloquea, ya se ve y se sale
 
 **Cambias de cuenta de iCloud, tocas «Cerrar sesión y quitarlos», y si el cierre no puede completarse Yala
 ya lo dice.** Hasta hoy el aviso se cerraba y no pasaba nada visible —sin red con una cuenta de grupos, con
@@ -97,51 +120,11 @@ puerta no puede saber quién va a entrar. `full-activation-local-state-never-rea
 «Activar Yala completo» escribe con la puerta cerrada no sube a iCloud cuando nace la sesión privada. Y un
 `medium` sin decisión: `language-override-bypasses-the-cloud-prefs-channel`.
 
-## Sesión #166 · el hueco del vaciado remoto se cierra con el número, no con código
-
-**No cambia nada en pantalla, y ese es el resultado.** Quedaba declarado un hueco: quien entró por un
-grupo **antes del 10 de septiembre** no lleva la marca que distingue esa situación, así que a su teléfono
-se le seguiría diciendo «aquí hay una vida personal» y **seguiría obedeciendo la orden de vaciado** que
-llega desde otro dispositivo del mismo Apple ID — justo el daño que el arreglo del #157 existe para
-impedir. El ticket daba dos salidas y **Jürgen zanjó el fork: población cero, sin señal inventada ni
-predicado local al receptor.**
-
-**Las cuatro mediciones, independientes entre sí.** (1) Telemetría propia de producción, sus 90 días de
-retención —que cubren entera la vida del camino, nacido el 11-ago—: **cero** altas `groupsOrganizer` y
-**cero** `groupInvite`, contra 5 altas personales y 1 migración a la nube; con control negativo y
-positivo corridos. (2) El backend de Grupos al que apunta un build de release: **cero** identidades,
-perfiles, grupos, miembros, invitaciones y consentimientos — y las dos altas **exigen sesión remota**
-antes de escribir nada. (3) La App Store pública sirve **2.0.4**, anterior al camino; el alta solo viajó
-en TestFlight 11/12/13, con **3 testers** (2 instalados). (4) **Ningún build distribuido trae el eje
-compilado**, así que ese backfill no ha corrido nunca fuera de un simulador.
-
-**Por qué no se tocó el eje, que era la otra salida.** Las señales candidatas para reconocer a un
-solo-grupos antiguo derivan el eje de una AUSENCIA, y un gate así **falla ABIERTO**: si el almacén tarda
-en montar, le esconde las cuentas a alguien que sí tiene su vida entera aquí. Coste real contra población
-cero.
-
-**La red que sostiene el cierre, que es lo que lo hace caducar con aviso.** La celda del bug necesita la
-marca del eje AUSENTE, y hoy **las dos altas solo-grupos la escriben en el acto** además de armar el
-mount neutro — por eso el backfill ni la mira. El test fija las dos escrituras, su orden y el **censo de
-armadores (3)**, así que un alta nueva que se olvide de cualquiera rompe el test en vez de repoblar la
-celda en silencio. **3 mutantes, 3 muertos.**
-
-**Un rojo HEREDADO de `2.1`, arreglado aquí:** el censo de lecturas de `confirmedPrivateSession` decía
-**6** y eran **7** desde el PR #164 (la re-lectura del drenaje del aviso). Lo vi ejecutando la suite, no
-por aritmética — el reparto queda escrito: cada vez que este eje gobierna algo asíncrono se lee en los
-dos extremos de la espera.
-
-**Dos candidatos a bug, MEDIDOS y refutados** (por eso no abren ticket): la invitación marca el alta para
-todo desenlace que no sea «rechazar», pero el `guard hasTappedJoin` hace inalcanzables las pantallas de
-abandono sin pasar antes por el alta que arma el neutro; y el relevo de humano deja el eje ausente, pero
-sus tres call-sites barren también el flag de alta, así que el gate del backfill cierra.
-
-Gate: build ×2 sin warnings nuevos · **unit 455 en 58 suites** · **XCUITest 7 en 3 clases**, centinela 0 ·
-CI verde. **El diff de producción es 100 % comentarios** (medido), así que el binario no cambia y el lote
-de XCUITest se acotó al área del eje en vez de correr las 34 suites que casan con `ContentView`.
-**Device-QA: no aplica.**
-
 ## Las de antes
+- **#166 · el hueco del vaciado remoto se cierra con el número, no con código.** Quien entró por un grupo
+  antes del 10-sep no lleva la marca del eje, y el ticket daba dos salidas: Jürgen zanjó **población cero**,
+  medida por cuatro vías independientes (telemetría, backend, App Store y builds distribuidos). No cambia nada
+  en pantalla; un test fija las dos escrituras de la marca y el censo de armadores. Device-QA: no aplica.
 - **#164 · el aviso de datos borrados ya no aparece encima de lo que estuvieras mirando.** Ahora espera su
   turno en la cola de avisos, así que ya no tumba la pantalla que tuvieras delante ni deja la app sin avisos.
   Quedan `orphan-alerts-behind-fullscreen-covers`, la segunda celda de
@@ -383,9 +366,9 @@ grupo?» se mide después del borrado y da 0),
 iCloud sigue entero cuando la zona ya no está — el copy correcto ya existe traducido) y
 `activation-resume-returns-to-restore-on-an-emptied-zone` (`low`).
 
-**El board: 384 en disco = 384 en `docs/TICKETS.md`** (medido el 15-sep), cero desajustes de estado y cero
-rutas rotas. El #169 pasa su ticket a `qa/` y suma tres: dos decisiones tuyas y un rojo intermitente (ver
-«Esta sesión»).
+**El board: 385 en disco = 385 en `docs/TICKETS.md`** (medido el 15-sep), cero desajustes de estado y cero
+rutas rotas. El #170 pasa su ticket a `done/` y suma uno, `low`: los comentarios del re-arranque de Grupos que
+citan un guard retirado.
 
 ## Bloqueo
 
