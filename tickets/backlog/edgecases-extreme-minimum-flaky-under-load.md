@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: testing
 created: 2026-09-05
+updated: 2026-09-15
 source: rojo clasificado en el gate de group-joiner-flag-consumers-still-narrow
 ---
 
@@ -118,3 +119,27 @@ Re-corrido **aislado** en el mismo árbol y el mismo simulador: **los 2 tests pa
 
 **Va 2 fallos de 3 corridas en lote, 0 de 2 en aislamiento.** Sigue sin ser determinista, pero ya no es
 «una vez»: en un gate con la suite entera, este test cae la mitad de las veces.
+
+## Cuarta observación, 2026-09-15 — el mismo comando en los dos árboles
+
+Gate de `groups-channel-seal-has-no-reachable-producer`, paso 3: `EdgeCasesUITests` +
+`WelcomeFreshStartAlertUITests` (4 casos) en una sola invocación, con el centinela vigilando cada corrida.
+
+| Árbol | Corrida | Este test | Centinela |
+|---|---|---|---|
+| Rama del PR | 1 | **falla**, 39,1 s | 0 (solo) |
+| Rama del PR | 2 | pasa, 30,5 s | 0 (solo) |
+| `68a07208d` limpio | 1 | pasa, 31,7 s | 1: no vale (2 runners simultáneos) |
+| `68a07208d` limpio | 2 | pasa, 30,5 s | 0 (solo) |
+
+- **Mismo binario, un rojo y un verde, sin nadie más en el simulador.** Con este comando va 1 fallo de 3
+  corridas válidas, en un lote de solo 4 casos: no hace falta la carga de la suite entera.
+- **El rojo es el lento**: agota los 10 s del helper esperando `transaction_success_accept`. Es la firma de
+  una espera que no llega, no la de un runner que muere.
+- **Lo que lo separa del PR es una muestra imposible, no la estadística.** El PR solo tocaba el loop de
+  sync de Grupos, y todo ese código sale en el primer `guard` de `sessionCheck()`. Este test lanza con
+  `cloudSession: false`, el default de `launchForUITest`, así que no lo ejecuta.
+- La línea del aserto se ha vuelto a mover: hoy es `XCUIApplication+Yala.swift:229`
+  (`dismissTransactionSuccess`).
+- Disco: 24 GB libres al empezar la sesión y 16 GB al acabar las corridas. No se midió en el instante del
+  rojo; los dos valores están por debajo del umbral de 25.
