@@ -5,10 +5,54 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-14 (Lima)
 
-**Rama** `2.1` — Merge #164: **El aviso de datos borrados ya no aparece encima de lo que estuvieras mirando.**
+**Rama** `2.1` — Merge #166: **El hueco que quedaba en el vaciado remoto se cierra midiendo que no alcanza a nadie.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#164 · el aviso de datos borrados ya no aparece encima de lo que estuvieras mirando)
+## Esta sesión (#166 · el hueco del vaciado remoto se cierra con el número, no con código)
+
+**No cambia nada en pantalla, y ese es el resultado.** Quedaba declarado un hueco: quien entró por un
+grupo **antes del 10 de septiembre** no lleva la marca que distingue esa situación, así que a su teléfono
+se le seguiría diciendo «aquí hay una vida personal» y **seguiría obedeciendo la orden de vaciado** que
+llega desde otro dispositivo del mismo Apple ID — justo el daño que el arreglo del #157 existe para
+impedir. El ticket daba dos salidas y **Jürgen zanjó el fork: población cero, sin señal inventada ni
+predicado local al receptor.**
+
+**Las cuatro mediciones, independientes entre sí.** (1) Telemetría propia de producción, sus 90 días de
+retención —que cubren entera la vida del camino, nacido el 11-ago—: **cero** altas `groupsOrganizer` y
+**cero** `groupInvite`, contra 5 altas personales y 1 migración a la nube; con control negativo y
+positivo corridos. (2) El backend de Grupos al que apunta un build de release: **cero** identidades,
+perfiles, grupos, miembros, invitaciones y consentimientos — y las dos altas **exigen sesión remota**
+antes de escribir nada. (3) La App Store pública sirve **2.0.4**, anterior al camino; el alta solo viajó
+en TestFlight 11/12/13, con **3 testers** (2 instalados). (4) **Ningún build distribuido trae el eje
+compilado**, así que ese backfill no ha corrido nunca fuera de un simulador.
+
+**Por qué no se tocó el eje, que era la otra salida.** Las señales candidatas para reconocer a un
+solo-grupos antiguo derivan el eje de una AUSENCIA, y un gate así **falla ABIERTO**: si el almacén tarda
+en montar, le esconde las cuentas a alguien que sí tiene su vida entera aquí. Coste real contra población
+cero.
+
+**La red que sostiene el cierre, que es lo que lo hace caducar con aviso.** La celda del bug necesita la
+marca del eje AUSENTE, y hoy **las dos altas solo-grupos la escriben en el acto** además de armar el
+mount neutro — por eso el backfill ni la mira. El test fija las dos escrituras, su orden y el **censo de
+armadores (3)**, así que un alta nueva que se olvide de cualquiera rompe el test en vez de repoblar la
+celda en silencio. **3 mutantes, 3 muertos.**
+
+**Un rojo HEREDADO de `2.1`, arreglado aquí:** el censo de lecturas de `confirmedPrivateSession` decía
+**6** y eran **7** desde el PR #164 (la re-lectura del drenaje del aviso). Lo vi ejecutando la suite, no
+por aritmética — el reparto queda escrito: cada vez que este eje gobierna algo asíncrono se lee en los
+dos extremos de la espera.
+
+**Dos candidatos a bug, MEDIDOS y refutados** (por eso no abren ticket): la invitación marca el alta para
+todo desenlace que no sea «rechazar», pero el `guard hasTappedJoin` hace inalcanzables las pantallas de
+abandono sin pasar antes por el alta que arma el neutro; y el relevo de humano deja el eje ausente, pero
+sus tres call-sites barren también el flag de alta, así que el gate del backfill cierra.
+
+Gate: build ×2 sin warnings nuevos · **unit 455 en 58 suites** · **XCUITest 7 en 3 clases**, centinela 0 ·
+CI verde. **El diff de producción es 100 % comentarios** (medido), así que el binario no cambia y el lote
+de XCUITest se acotó al área del eje en vez de correr las 34 suites que casan con `ContentView`.
+**Device-QA: no aplica.**
+
+## Sesión anterior (#164 · el aviso de datos borrados ya no aparece encima de lo que estuvieras mirando)
 
 **Yala tiene una cuenta atrás interna de cinco segundos: si tus datos personales desaparecen del
 teléfono y siguen sin volver, te avisa de que te los han borrado desde otro dispositivo.** Ese aviso se
@@ -46,7 +90,7 @@ general, ahora con un molde escrito al lado); `wipe-data-does-not-cancel-the-rem
 **segunda celda** (el restore remoto con `skipOnboarding`, donde el eje NO tapa el aviso); y el desarme
 de la red solo está probado a mano — ticket propio con la receta.
 
-## Sesión anterior (#162 · el aviso de datos borrados ya no le habla de iCloud a quien no lo tiene en juego)
+## Sesión #162 · el aviso de datos borrados ya no le habla de iCloud a quien no lo tiene en juego
 
 **Vaciabas tus datos desde Ajustes y, cinco segundos después, Yala te decía que te los habían borrado
 «desde otro dispositivo», ofreciéndote empezar de cero.** Los habías borrado tú, en ese teléfono, hacía
