@@ -307,7 +307,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | rejoin-tap-renotifies-admins | qa | tickets/qa/rejoin-tap-renotifies-admins.md |
 | remote-onboarding-signal-ignores-the-session-axis | backlog | tickets/backlog/remote-onboarding-signal-ignores-the-session-axis.md |
 | remote-wipe-alert-skips-the-router | done | tickets/done/remote-wipe-alert-skips-the-router.md |
-| remote-wipe-axis-misses-groups-only-installs-before-the-mount-mark | backlog | tickets/backlog/remote-wipe-axis-misses-groups-only-installs-before-the-mount-mark.md |
+| remote-wipe-axis-misses-groups-only-installs-before-the-mount-mark | done | tickets/done/remote-wipe-axis-misses-groups-only-installs-before-the-mount-mark.md |
 | remote-wipe-receiver-has-no-behaviour-test | backlog | tickets/backlog/remote-wipe-receiver-has-no-behaviour-test.md |
 | remote-wipe-signal-honored-by-any-session | qa | tickets/qa/remote-wipe-signal-honored-by-any-session.md |
 | remote-wipe-signal-is-burned-even-when-the-session-ignores-it | backlog | tickets/backlog/remote-wipe-signal-is-burned-even-when-the-session-ignores-it.md |

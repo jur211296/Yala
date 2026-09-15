@@ -108,9 +108,13 @@ llama a `bootstrap()` bajo `-uitest`; y la celda E no tiene launch arg ninguno �
 
 ### Lo que este PR NO cierra, con ticket propio
 
-- `remote-wipe-axis-misses-groups-only-installs-before-the-mount-mark` (**high**) — un alta solo-grupos
-  anterior al 2026-09-10 no tiene la marca del mount neutro, el backfill le escribe `hasPrivateSession =
-  true` y **sigue obedeciendo**. El arreglo no alcanza a toda la población que debía proteger.
+- ~~`remote-wipe-axis-misses-groups-only-installs-before-the-mount-mark` (**high**)~~ — **CERRADO el
+  2026-09-14 midiendo que su población es cero.** Un alta solo-grupos anterior al 2026-09-10 no tiene la
+  marca del mount neutro, el backfill le escribe `hasPrivateSession = true` y seguiría obedeciendo; lo que
+  no existe es nadie en esa celda: cero altas solo-grupos en la telemetría de producción de los 90 días
+  (los únicos registros son 5 altas personales y 1 migración a la nube), cero identidades en el backend de
+  Grupos, y el camino solo viajó en tres builds de TestFlight con 3 testers. El desglose, en el docblock de
+  `PrivateSessionMark.backfillIfNeeded`.
 - `wipe-sheet-still-promises-every-apple-id-device` (**high**) — la hoja sigue diciendo «desaparecen
   también de tu iPad, tu Mac y cualquier dispositivo con este Apple ID». Decisión de copy.
 - `wipe-alert-fires-on-a-session-that-no-longer-obeys-the-signal` (**high**) — la compensación que

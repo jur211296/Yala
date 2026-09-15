@@ -351,8 +351,12 @@ struct ContentView: View {
                         //    marca del mount actúa en el arranque SIGUIENTE; la del eje, ya), y la simétrica
                         //    entre desarmar ese neutro y el relanzamiento.
                         //
-                        // La celda del teléfono prestado la cierra el EJE, no esta línea:
-                        // `remote-wipe-axis-misses-groups-only-installs-before-the-mount-mark`.
+                        // La celda del teléfono prestado la cierra el EJE, no esta línea. Su ticket
+                        // —`remote-wipe-axis-misses-groups-only-installs-before-the-mount-mark`— se cerró el
+                        // 2026-09-14 MIDIENDO que esa población es cero: cero altas solo-grupos en la
+                        // telemetría de producción (90 días, cubren entera la vida del camino) y cero
+                        // identidades en el backend de Grupos. El desglose vive en
+                        // `PrivateSessionMark.backfillIfNeeded`.
                         //
                         // **El mismo predicado que el borrado, a propósito** (`wipeSignalObeyedByThisSession`,
                         // tercera superficie del eje). Las tres responden «¿los datos de este teléfono son

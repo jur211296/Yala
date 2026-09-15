@@ -161,13 +161,39 @@ nonisolated enum PrivateSessionMark {
     /// existe desde el 2026-09-10, así que un alta solo-grupos anterior a esa fecha no la tiene y cae
     /// del lado conservador (`true`).
     ///
-    /// **Ese residual dejó de ser barato el 2026-09-14 y esta frase decía que lo era.** Se midió cuando el
-    /// único consumidor de la lectura estricta era el EMISOR, donde `true` de más solo significa emitir una
-    /// señal que nadie pidió. Desde que el RECEPTOR lee el mismo eje
-    /// (`DestructiveScopeLogic.wipeSignalObeyedByThisSession`), a esa población —un alta solo-grupos
-    /// anterior al 10-sep: marca ausente, `hasCompletedOnboarding == true`, backfill a `true`— se le sigue
-    /// vaciando el teléfono por orden de otro dispositivo, que es justo el bug que el receptor cierra para
-    /// todos los demás. Ticket: `remote-wipe-axis-misses-groups-only-installs-before-the-mount-mark`.
+    /// **Ese residual dejó de ser barato el 2026-09-14, y ese mismo día se cerró MIDIENDO que su población
+    /// es cero.** El daño que describía era real: desde que el RECEPTOR lee el mismo eje
+    /// (`DestructiveScopeLogic.wipeSignalObeyedByThisSession`), a esa celda —marca ausente,
+    /// `hasCompletedOnboarding == true`, mount neutro sin armar ⇒ backfill a `true`— se le vaciaría el
+    /// teléfono por orden de otro dispositivo, que es justo el bug que el receptor cierra para todos los
+    /// demás. Lo que no existe es nadie dentro de ella, y son cuatro mediciones independientes:
+    ///
+    ///  1. **Telemetría de producción, sus 90 días de retención** — cubre entera la vida del camino, nacido
+    ///     el 11-ago con `5fc75b94`. Eventos `register` con `detail = groupsOrganizer` ⇒ **0**; con
+    ///     `groupInvite` ⇒ **0**. Lo único del periodo: 5 altas personales (`local/initial`) y 1
+    ///     `cloud/migration`. Las dos altas solo-grupos emiten ese KPI y `MetricsService.start()` corre
+    ///     incondicional en el cold launch, sin opt-in que lo apague.
+    ///  2. **El backend de Grupos al que apunta un build de release** (`CloudBackendConfig`, rama `#else` ⇒
+    ///     producción): `auth.users`, `profiles`, `split_groups`, `group_members`, `group_invites` y
+    ///     `groups_consents`, **todas en 0**. Las dos altas exigen sesión remota antes de escribir nada
+    ///     (`GroupsGateLogic.nextStep` corta en `.presentSignIn` sin ella) ⇒ sin identidad no hay alta.
+    ///  3. **El universo de distribución**: la App Store pública sirve **2.0.4** (6-jul-2026), anterior al
+    ///     camino; el alta solo-grupos solo viajó en los builds 11, 12 y 13 de TestFlight, y TestFlight
+    ///     tiene **3 testers** (2 instalados, 1 invitado sin instalar).
+    ///  4. **Esto no ha corrido nunca en el teléfono de nadie**: ningún build distribuido contiene
+    ///     `PrivateSessionMark` (el 13 se cortó el 9-sep; el eje llegó el 12-sep).
+    ///
+    /// Decisión de Jürgen (2026-09-14): se cierra con el número. No se inventa una señal que distinga a un
+    /// solo-grupos viejo —las candidatas derivan el eje de una AUSENCIA, que es lo que la cabecera de este
+    /// fichero prohíbe— ni se acota por el otro lado con un predicado local al receptor, que divergiría en
+    /// silencio del que gobierna el borrado.
+    ///
+    /// **Qué la reabriría, que es lo único que hay que vigilar.** La celda necesita la marca AUSENTE, y hoy
+    /// toda alta solo-grupos la ESCRIBE en el acto (`SessionState.hasPrivateSession = false`) además de
+    /// armar el neutro, así que el backfill ni llega a mirarla. Vuelve a haber población si aparece un alta
+    /// solo-grupos que no haga las dos cosas — lo fija
+    /// `PrivateSessionMarkWiringTests.bothGroupsOnlySignUpsWriteTheAxisAndArmTheNeutralMount`.
+    /// Ticket: `remote-wipe-axis-misses-groups-only-installs-before-the-mount-mark` (cerrado el 2026-09-14).
     ///
     /// Ese mismo barrido borra `hasCompletedOnboarding` (`DataWipeService.removeUserPreferenceKeys`),
     /// así que el gate es exacto: distingue «parque existente» de «dispositivo que empieza de cero» sin
