@@ -414,6 +414,9 @@ final class CloudMigrationController {
                 // decide, no rechaza peticiones (medido en `gateway/src/`, 2026-09-13)—. Su 403 solo puede
                 // ser cuenta no disponible, que es exactamente lo que `.permanent` cuenta.
                 channelKilled: false,
+                // Tampoco el attest de Grupos: su racha la escriben las rutas de `/groups/*`, y el motor personal nunca
+                // manda una subida sin attest (`CloudSyncRuntime.performCycle` corta antes, en su propia puerta).
+                attestUnavailable: false,
                 iteration: iteration,
                 maxIterations: maxIterations
             ) {

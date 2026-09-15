@@ -223,6 +223,19 @@ enum GroupsSyncBreadcrumb {
         logger.notice("GroupsSync attestRequired edge=\(edge, privacy: .public)")
     }
 
+    /// La racha de 401 `yala_attest_required` se volvió TERMINAL: 24 h y al menos 3 rechazos sin un solo 200
+    /// (`GroupsAttestVerdictLogic`). Desde aquí los cierres de sesión ofrecen salir perdiendo los cambios de grupos que
+    /// no subieron. Una vez por racha, como el canario `groupsAttestTerminal`. Sin PII: dos números.
+    static func groupsAttestTerminal(rejections: Int, hours: Int) {
+        logger.notice("GroupsSync attestTerminal rejections=\(rejections, privacy: .public) hours=\(hours, privacy: .public)")
+    }
+
+    /// Una ruta de Grupos volvió a aceptar el attest después de que la racha fuera terminal: el teléfono se recuperó
+    /// solo. Sin esta línea, un `attestTerminal` sin cierre en el log se leería como un teléfono que sigue sin poder.
+    static func groupsAttestRecovered(rejections: Int) {
+        logger.notice("GroupsSync attestRecovered rejections=\(rejections, privacy: .public)")
+    }
+
     /// El loop de cadencia se RE-ARRANCÓ efectivamente (se creó un nuevo `loopTask`). `trigger` = slug
     /// (`foreground` / `post-sign-in`). SOLO se emite cuando el re-arranque crea el loop — jamás en los
     /// no-op (flag OFF, loop ya vivo, piggyback). Sin PII.

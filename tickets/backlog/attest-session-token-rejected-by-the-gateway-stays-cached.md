@@ -32,6 +32,12 @@ unos minutos aunque la red y la sesión estén bien. Se arregla solo, cuando cad
 - Sin medir: cada cuánto rota el secreto (es una operación manual), cuánta gente tiene el reloj atrasado, y qué hace
   el proxy de IA con su propio 401 de un token rechazado.
 
+**Desde el 2026-09-15 este caso puede acabar ofreciendo perder cambios** (review adversarial de
+`groups-phone-that-never-attests-is-told-to-retry-forever`). Con el reloj del teléfono 24 h o más por detrás y el proceso
+vivo más de un día, el token cacheado da 401 `yala_attest_required` durante más de 24 h aunque cada assertion saldría bien.
+Eso cumple el veredicto terminal de Grupos, y el cierre de sesión ofrecería «Cerrar sesión y perderlos» a un teléfono que
+sí atesta. El límite de «15 min» de arriba solo vale con el reloj atrasado menos de 15 min.
+
 ## Lo que hay que decidir
 
 1. Descartar el token guardado al recibir un 401 de attest, desde un solo punto de decisión (molde

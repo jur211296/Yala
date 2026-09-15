@@ -140,6 +140,9 @@ struct WelcomeGroupsGateView: View {
         case discardingUnconfirmed(intento: Int)
         /// «Esperar»: el cierre retoma la espera donde se paró.
         case resumingExportWait(intento: Int)
+        /// «Continuar y perderlos»: el teléfono lleva más de un día sin App Attest y la persona acepta perder los cambios
+        /// de grupos que no suben (2026-09-15, `CloudSessionSignOut.exitDiscardingUnsyncedGroups`).
+        case discardingUnsyncedGroups(intento: Int)
     }
 
     /// Cuántas veces se ha vuelto a lanzar el trabajo. Vive fuera de `Phase` porque es lo que la hace
@@ -193,7 +196,7 @@ struct WelcomeGroupsGateView: View {
         case .checking, .blockedChannelOff, .confirmingNoBackup,
              .confirmingInviteNeutral, .unavailable:
             return onBack
-        case .returningToNeutral, .discardingUnconfirmed, .resumingExportWait:
+        case .returningToNeutral, .discardingUnconfirmed, .resumingExportWait, .discardingUnsyncedGroups:
             // Con un aviso en pantalla la salida es su propio botón; mientras trabaja, no hay ninguna.
             if case .blocked = exitPhase { return leaveAfterBlock }
             return nil
@@ -284,7 +287,7 @@ struct WelcomeGroupsGateView: View {
                         .accessibilityIdentifier("welcome_groups_gate_invite_neutral_back")
                 }
             }
-        case .returningToNeutral, .discardingUnconfirmed, .resumingExportWait:
+        case .returningToNeutral, .discardingUnconfirmed, .resumingExportWait, .discardingUnsyncedGroups:
             neutralReturnContent
         }
     }
@@ -337,6 +340,37 @@ struct WelcomeGroupsGateView: View {
                     } else {
                         YalaSecondaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterBlock() }
                             .accessibilityIdentifier("welcome_groups_gate_neutral_stalled_back")
+                    }
+                }
+            }
+        case .blocked(let pending, .attestUnavailable):
+            // **El teléfono sin App Attest** (2026-09-15). Esperar ya no lo arregla, y volver a entrar tampoco. Al dueño
+            // se le cuenta lo que pierde y elige, con las salidas de Ajustes adaptadas a esta pantalla («si continúas
+            // ahora»): primero la que no destruye. **Al INVITADO no se le ofrece**, por lo mismo que el «Continuar
+            // igualmente» del export de arriba: los cambios que perdería no son suyos. Sin la salida de un cierre
+            // (`offersGroupsLossExit`) tampoco: queda el texto sin salida y volver.
+            let offersLoss = purpose.invitedGroupID == nil && CloudSessionSignOut.shared.offersGroupsLossExit
+            noticeShell(icon: "exclamationmark.triangle",
+                        title: L10n.Groups.Errors.attestUnavailableTitle,
+                        body: offersLoss
+                            ? SignOutBlockedCopy.welcomeAttestLossMessage(pending: pending)
+                            : L10n.Groups.Errors.attestUnavailable,
+                        identifier: "welcome_groups_gate_neutral_attest_unavailable") {
+                VStack(spacing: DS.Spacing.sm) {
+                    YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterBlock() }
+                        .accessibilityIdentifier("welcome_groups_gate_neutral_attest_unavailable_back")
+                    if offersLoss {
+                        Button(role: .destructive) {
+                            intento += 1
+                            phase = .discardingUnsyncedGroups(intento: intento)
+                        } label: {
+                            Text(L10n.Welcome.Groups.neutralAttestLossContinue)
+                                .font(DS.Typography.label)
+                                .foregroundStyle(.white.opacity(0.7))
+                                .frame(maxWidth: .infinity, minHeight: DS.Button.actionSize)
+                                .contentShape(Rectangle())
+                        }
+                        .accessibilityIdentifier("welcome_groups_gate_neutral_attest_unavailable_continue")
                     }
                 }
             }
@@ -453,6 +487,8 @@ struct WelcomeGroupsGateView: View {
             await CloudSessionSignOut.shared.exitDiscardingUnconfirmed(context: modelContext)
         case .resumingExportWait:
             await CloudSessionSignOut.shared.resumeWaitingForExport(context: modelContext)
+        case .discardingUnsyncedGroups:
+            await CloudSessionSignOut.shared.exitDiscardingUnsyncedGroups(context: modelContext)
         case .blockedChannelOff, .confirmingNoBackup,
              .confirmingInviteNeutral, .unavailable:
             return

@@ -349,6 +349,8 @@ final class GroupsMembershipClient {
 
         switch http.statusCode {
         case 200:
+            // El attest pasó la guard: la racha de rechazos se acaba (`GroupsAttestStreakStore`).
+            GroupsAttestStreakStore.recordAcceptance()
             return data
         case 401 where GatewayErrorEnvelope.isAttestRequired(data):
             // App Attest ausente con el JWT bueno: el mismo criterio que el canal de sync (ver
@@ -357,7 +359,11 @@ final class GroupsMembershipClient {
             // ambigüedad «quizá se aplicó», tampoco para los one-shots. Para la persona: salir de un grupo dice
             // «Vuelve a intentarlo en un momento» en vez de «Tu sesión caducó», y aceptar una invitación deja de
             // abrir el inicio de sesión, que no lo arregla (decisión de Jürgen, 2026-09-15).
+            //
+            // **Y cuenta en la racha** (`GroupsAttestStreakStore`): en la nube Grupos casi no pide en segundo plano, así
+            // que sin la membresía quien solo intenta salir de un grupo no llegaría nunca al aviso terminal.
             GroupsSyncBreadcrumb.groupsAttestRequired(edge: "rpc:\(fn)")
+            GroupsAttestStreakStore.recordRejection()
             throw GroupsRPCError.transient(status: 401)
         case 401:
             throw GroupsRPCError.sessionExpired

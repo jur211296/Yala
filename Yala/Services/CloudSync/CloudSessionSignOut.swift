@@ -69,7 +69,15 @@ final class CloudSessionSignOut {
 
     /// Vuelve a `.idle` tras un `.blocked` (el usuario cerró el error).
     func acknowledgeBlocked() {
-        if case .blocked = phase { phase = .idle }
+        if case .blocked = phase {
+            phase = .idle
+            // La salida que pierde los cambios de grupos es de ESTE bloqueo: reconocerlo la retira, y lo aceptado no
+            // sobrevive a un gesto nuevo. **Solo con la fase bloqueada** (review adversarial, 2026-09-15): un
+            // reconocimiento que llega con el cierre trabajando —el doble cierre de un alert ajeno— borraba la aceptación
+            // en vuelo, y el cierre volvía a preguntar o bloqueaba tras soltar el canal.
+            groupsLossExit = nil
+            acceptedGroupsLoss = nil
+        }
         blockedExit = nil
     }
 
@@ -113,6 +121,9 @@ final class CloudSessionSignOut {
     func signOut(context: ModelContext, confirmedPath: CloudSignOutFlowLogic.Path? = nil,
                  confirmedWithoutICloudCopy: Bool = false) async {
         guard phase == .idle else { return }
+        // Un gesto nuevo no hereda lo que otro aceptó perder (la salida de `.attestUnavailable`).
+        groupsLossExit = nil
+        acceptedGroupsLoss = nil
         let path = CloudSignOutFlowLogic.path(
             for: CloudSyncFlags.storageMode,
             hasLiveSession: CloudAuthService.shared.hasSession,
@@ -205,13 +216,19 @@ final class CloudSessionSignOut {
         guard phase == .idle else { return .busy }
         phase = .working
         defer { waitingForPending = false }
+        // El desasociar no hereda lo que un cierre aceptó perder, ni ofrece esa salida: ver `lossExit: nil` abajo.
+        groupsLossExit = nil
+        acceptedGroupsLoss = nil
 
         // (1) Antes de tocar credenciales.
         let associatedSub = GroupsAccountAssociation.shared.associatedSub ?? CloudAuthService.shared.currentUserID
 
         // Lo pendiente sube ANTES de cortar nada, con la generación intacta. Mismo presupuesto de
         // reintentos que el cierre: el bloqueo típico es transitorio.
-        guard await pushGroupsForSignOut(context: context) else { return .blockedBeforeWriting }
+        //
+        // **`lossExit: nil` es la decisión de Jürgen** (2026-09-15): con el teléfono sin App Attest el desasociar enseña el
+        // aviso terminal y NO ofrece soltar la cuenta perdiendo los cambios. Solo los cierres de sesión lo ofrecen.
+        guard await pushGroupsForSignOut(context: context, lossExit: nil) else { return .blockedBeforeWriting }
 
         // Canal fuera + espejo del outbox del App Group purgado. Idempotente.
         GroupsSyncClient.shared.teardownForSignOut()
@@ -424,6 +441,44 @@ final class CloudSessionSignOut {
     }
     private var blockedExit: BlockedExit?
 
+    /// Desde dónde retoma un cierre parado en `.attestUnavailable` si la persona acepta perder los cambios de grupos que
+    /// no subieron (`exitDiscardingUnsyncedGroups`, ticket `groups-phone-that-never-attests-is-told-to-retry-forever`).
+    /// Son los tres sitios donde un cierre sube grupos, y solo ésos: el desasociar comparte `pushGroupsForSignOut` y le
+    /// pasa `nil`, así que su bloqueo no ofrece ninguna salida.
+    ///
+    /// **Los tres están ANTES de soltar credenciales**: el tramo final de D y F sube grupos antes del teardown, y la nube
+    /// en su paso 2. Por eso retomar vuelve a entrar por la función entera y no necesita el `credentialsReleased` de
+    /// `BlockedExit`.
+    private enum GroupsLossResume {
+        /// El inicio de D y F, antes de la espera del export.
+        case sessionExit(CloudSignOutFlowLogic.ExitPlan)
+        /// El tramo final de D y F, con la política del export que ya se decidió.
+        case finalize(kind: CloudSignOutFlowLogic.ExitKind, export: ExportPolicy)
+        /// El paso 2 del cierre en la nube.
+        case cloud
+    }
+
+    /// La salida ofrecida: desde dónde retomar y QUÉ filas contó el aviso, por su `clientMutationID` (`nil` si el recuento
+    /// falló y el aviso salió sin cifra). Se anotan juntas, en el mismo tramo síncrono que la cifra de la fase.
+    private struct GroupsLossOffer {
+        let resume: GroupsLossResume
+        let rows: Set<UUID>?
+    }
+    private var groupsLossExit: GroupsLossOffer?
+
+    /// Lo que la persona aceptó perder en ESTE cierre: las filas del aviso, o cualquiera si salió sin cifra. `nil` fuera de
+    /// él. Lo leen los sitios que suben grupos y los dos recuentos finales, siempre con
+    /// `CloudSignOutFlowLogic.continuesWithoutUploadingGroups`, que compara por fila.
+    private var acceptedGroupsLoss: CloudSignOutFlowLogic.GroupsLossAcceptance?
+
+    /// ¿El bloqueo en pantalla ofrece salir perdiendo los cambios de grupos? Solo el `.attestUnavailable` que puso un
+    /// CIERRE: el mismo motivo puesto por el desasociar no tiene desde dónde retomar. Las vistas lo preguntan antes de
+    /// pintar el botón, y `exitDiscardingUnsyncedGroups` lo vuelve a exigir.
+    var offersGroupsLossExit: Bool {
+        guard case .blocked(_, .attestUnavailable) = phase else { return false }
+        return groupsLossExit != nil
+    }
+
     /// Qué hace el tramo final con lo que no se pudo confirmar en iCloud.
     private enum ExportPolicy {
         /// Solo se arma con cero pendientes demostrado.
@@ -502,7 +557,7 @@ final class CloudSessionSignOut {
         if blockIfGroupsCannotUpload(context: context, kind: plan.kind) { return }
         if plan.waitsForExport {
             if plan.kind.pushesGroups {
-                guard await pushGroupsForSignOut(context: context) else { return }
+                guard await pushGroupsForSignOut(context: context, lossExit: .sessionExit(plan)) else { return }
             }
             guard await confirmExportOrBlock(context: context, kind: plan.kind, credentialsReleased: false) else { return }
         } else if plan.kind != .groupsOnly {
@@ -556,6 +611,52 @@ final class CloudSessionSignOut {
             guard await confirmExportOrBlock(context: context, kind: blocked.kind, credentialsReleased: false) else { return }
             await finalizeSessionExit(context: context, kind: blocked.kind, export: .confirm)
         }
+    }
+
+    /// **«Cerrar sesión y perderlos»**: el cierre de un teléfono que lleva más de un día sin App Attest sigue sin subir
+    /// los cambios de grupos que no llegan (decisión de Jürgen del 2026-09-15, ticket
+    /// `groups-phone-that-never-attests-is-told-to-retry-forever`). Es la excepción ACOTADA a «nunca descarta»: solo la
+    /// alcanza un bloqueo `.attestUnavailable` que puso un CIERRE (`offersGroupsLossExit`), y solo corre si la persona la
+    /// elige en ese aviso.
+    ///
+    /// **Aquí no se borra nada.** Retoma el cierre donde paró con las filas del aviso como lo aceptado
+    /// (`acceptedGroupsLoss`): los sitios que suben grupos lo intentan una vez —si el attest volvió, suben— y siguen sin
+    /// ellas mientras las que queden estén entre las aceptadas; si aparece otra, vuelve el aviso con la cifra nueva. Los
+    /// cambios mueren con el boot-wipe de siempre, por archivos, y un bloqueo posterior por otro motivo deja todo como
+    /// estaba.
+    func exitDiscardingUnsyncedGroups(context: ModelContext) async {
+        guard case .blocked(let shown, .attestUnavailable) = phase, let offer = groupsLossExit else { return }
+        groupsLossExit = nil
+        // Lo aceptado son las filas que contó el aviso. Sin cifra honesta —el recuento falló— cubre cualquiera: es el «no
+        // pudimos contar» que se le enseñó.
+        acceptedGroupsLoss = offer.rows.map { .rows($0) } ?? .uncounted
+        CloudSyncBreadcrumb.signOutGroupsLossAccepted(pending: CloudSignOutFlowLogic.shownGroupsLossCount(shown))
+        phase = .working
+        defer { waitingForPending = false }
+        switch offer.resume {
+        case .sessionExit(let plan):
+            await performSessionExit(context: context, plan: plan)
+        case .finalize(let kind, let export):
+            await finalizeSessionExit(context: context, kind: kind, export: export)
+        case .cloud:
+            await performCloudSecureSignOut(context: context)
+        }
+    }
+
+    /// Un cierre enseñó el aviso que ofrece perder los cambios de grupos: rastro y canario, sin PII.
+    private static func noteGroupsLossOffered(pending: Int) {
+        let shown = CloudSignOutFlowLogic.shownGroupsLossCount(pending)
+        CloudSyncBreadcrumb.signOutGroupsAttestUnavailable(pending: shown)
+        MetricsService.canary(.groupsSignOutAttestUnavailable, detail: "pending=\(shown.map(String.init) ?? "unknown")")
+    }
+
+    /// El cierre va a armar el borrado con cambios de grupos que la persona aceptó perder. Solo cuenta si queda alguno:
+    /// con cero, el attest volvió entre el tap y aquí, y subieron.
+    private static func noteGroupsDiscarded(pending: Int) {
+        guard pending > 0 else { return }
+        let shown = CloudSignOutFlowLogic.shownGroupsLossCount(pending)
+        CloudSyncBreadcrumb.signOutGroupsDiscarded(pending: shown)
+        MetricsService.canary(.groupsSignOutAttestDiscarded, detail: "pending=\(shown.map(String.init) ?? "unknown")")
     }
 
     /// La privada (C) no sube grupos. Si aun así le quedan cambios de grupos sin subir —el outbox de una sesión
@@ -627,7 +728,9 @@ final class CloudSessionSignOut {
         if kind.pushesGroups {
             // Otra vuelta de grupos: lo escrito en grupos durante la espera puede estar SOLO en el historial —
             // el recuento del outbox no lo ve— y solo el push-all lo drena (con su puerta de quiescencia).
-            guard await pushGroupsForSignOut(context: context) else { return }
+            guard await pushGroupsForSignOut(context: context, lossExit: .finalize(kind: kind, export: export)) else {
+                return
+            }
         }
         // Un marker `includesGroups` huérfano de una corrida anterior no puede colarse en este wipe.
         StorageModePersistence.clearSignOutWipeIncludesGroups()
@@ -639,8 +742,12 @@ final class CloudSessionSignOut {
         if kind.pushesGroups {
             // S2 (molde del camino `.cloud`): una fila encolada entre el push-all y el teardown moriría con el
             // wipe. Tras el teardown ya no se puede subir, así que es `.permanent`, como allí.
+            //
+            // **Con la pérdida aceptada** (teléfono sin App Attest, 2026-09-15), las filas del aviso no bloquean: se pierden
+            // con el borrado, que es lo que la persona eligió. Una fila que no estaba en el aviso sí, como siempre.
             let residual = Self.liveGroupsPendingCount(context: context)
-            guard residual == 0 else {
+            guard residual == 0 || CloudSignOutFlowLogic.continuesWithoutUploadingGroups(
+                pendingRows: Self.liveGroupsPendingRowIDs(context: context), acceptance: acceptedGroupsLoss) else {
                 phase = .blocked(pendingCount: residual, reason: .permanent)
                 CloudSyncBreadcrumb.signOutPushBlocked(pending: residual)
                 return
@@ -683,6 +790,8 @@ final class CloudSessionSignOut {
         }
         // ── Desde aquí no hay ni un `await` hasta el arm. ──
         if blockIfGroupsCannotUpload(context: context, kind: kind) { return }
+        // Lo que se pierde con la pérdida aceptada (teléfono sin App Attest) se cuenta pegado al arm, sin `await`.
+        if acceptedGroupsLoss != nil { Self.noteGroupsDiscarded(pending: Self.liveGroupsPendingCount(context: context)) }
         let forgetsGroups = kind.pushesGroups || Self.hasBackendGroupRows(context: context)
         if forgetsGroups && CloudSyncFlags.groupsBackendCompiledCapability {
             StorageModePersistence.markSignOutWipeIncludesGroups()  // marker ANTES del arm (CR-4)
@@ -787,13 +896,24 @@ final class CloudSessionSignOut {
         // Jürgen (2026-09-14) es exactamente esa: aviso inmediato y honesto, sin quemar reintentos contra
         // un servidor que está fallando. El gesto sigue siendo reintentable: nada se ha escrito.
         switch await pushAllPendingGroupsForSignOut(context: context) {
+        case .blocked where CloudSignOutFlowLogic.continuesWithoutUploadingGroups(
+            pendingRows: Self.liveGroupsPendingRowIDs(context: context), acceptance: acceptedGroupsLoss):
+            // **La pérdida aceptada** (teléfono sin App Attest, `exitDiscardingUnsyncedGroups`): las filas del aviso ya no
+            // bloquean. Si aparece otra, cae en el `case` de abajo y vuelve el aviso con la cifra nueva.
+            break
         case .blocked(let pending, let reason):
+            acceptedGroupsLoss = nil
             let shown = CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(reason)
+            // El teléfono sin App Attest anota su salida ANTES de la fase, por lo mismo que en `pushGroupsForSignOut`.
+            if shown == .attestUnavailable {
+                groupsLossExit = GroupsLossOffer(resume: .cloud, rows: Self.liveGroupsPendingRowIDs(context: context))
+            }
             phase = .blocked(pendingCount: pending, reason: shown)
             CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
             // El motivo YA traducido, que es el que decide el aviso: sin esta línea los tres desenlaces
             // dejan el mismo rastro y en campo no se puede saber cuál vio la persona.
             CloudSyncBreadcrumb.signOutGroupsBlocked(reason: shown.breadcrumbSlug)
+            if shown == .attestUnavailable { Self.noteGroupsLossOffered(pending: pending) }
             return
         case .drained:
             break
@@ -810,8 +930,13 @@ final class CloudSessionSignOut {
         // History (sin drain post-teardown) mueren con el wipe.
         let residualPersonal = controller.livePendingUploadCount()
         let residualGroups = Self.liveGroupsPendingCount(context: context)
-        let residual = residualPersonal + residualGroups
-        guard residual == 0 else {
+        // Con la pérdida aceptada (teléfono sin App Attest), las filas de GRUPOS del aviso ya no bloquean. Los cambios
+        // PERSONALES sí, siempre: la excepción de Jürgen no los alcanza.
+        guard residualPersonal == 0, residualGroups == 0 || CloudSignOutFlowLogic.continuesWithoutUploadingGroups(
+            pendingRows: Self.liveGroupsPendingRowIDs(context: context), acceptance: acceptedGroupsLoss) else {
+            // Suma que satura: los dos recuentos devuelven `Int.max` cuando su fetch falla, y un `+` atraparía.
+            let (sum, overflow) = residualPersonal.addingReportingOverflow(residualGroups)
+            let residual = overflow ? Int.max : sum
             phase = .blocked(pendingCount: residual, reason: .permanent)
             CloudSyncBreadcrumb.signOutPushBlocked(pending: residual)
             return
@@ -831,6 +956,10 @@ final class CloudSessionSignOut {
         // pull del backend solo trae SU corpus y no emite tombstones de filas ajenas). El hermano de este
         // marker —el clear del consent en el boot-hook— ya eligió esta misma inmunidad al kill, y su
         // comentario nombra literalmente el hueco que quedaba aquí.
+        //
+        // Lo que se pierde con la pérdida aceptada (teléfono sin App Attest) se cuenta aquí, pegado al arm: con cero, el
+        // attest volvió entre el tap y aquí y los cambios subieron.
+        if acceptedGroupsLoss != nil { Self.noteGroupsDiscarded(pending: residualGroups) }
         if CloudSyncFlags.groupsBackendCompiledCapability {
             StorageModePersistence.markSignOutWipeIncludesGroups()
         }
@@ -872,7 +1001,34 @@ final class CloudSessionSignOut {
     /// inmediato. `retryClockStart` arranca en el primer bloqueo transitorio; en los reintentos el gate de
     /// quiescencia recibe un hardCap = lo que queda del presupuesto (jamás vuelve a bloquear 60 s completos).
     /// La DECISIÓN es pura (`GroupsSignOutRetryDecision`); aquí solo se mide el tiempo real con `Date()`.
-    private func pushGroupsForSignOut(context: ModelContext) async -> Bool {
+    ///
+    /// `lossExit` (2026-09-15): desde dónde retomaría el cierre si se bloquea porque este teléfono no consigue App Attest.
+    /// **Sin valor por defecto**: los cierres pasan el suyo y el desasociar pasa `nil`, que es lo que hace que su bloqueo
+    /// no ofrezca perder nada. Se anota ANTES de poner la fase, para que quien reaccione a la fase ya la vea.
+    ///
+    /// **Con la pérdida aceptada** (`acceptedGroupsLoss`, tras «Cerrar sesión y perderlos»): un solo intento, sin el
+    /// presupuesto de 45 s. Si drena, el attest volvió y los cambios subieron; si no, el cierre sigue sin ellos mientras
+    /// las filas que quedan estén entre las aceptadas. La quiescencia se espera igual, porque el drain que hace honesto el recuento es un
+    /// `save()`: sin ella no hay recuento que comparar, y se vuelve al camino de siempre.
+    private func pushGroupsForSignOut(context: ModelContext, lossExit: GroupsLossResume?) async -> Bool {
+        if let accepted = acceptedGroupsLoss {
+            waitingForPending = true
+            if await Self.awaitPersonalQuiescenceForGroupsSignOut() {
+                switch await pushAllPendingGroupsForSignOut(context: context) {
+                case .drained:
+                    return true
+                case .blocked:
+                    if CloudSignOutFlowLogic.continuesWithoutUploadingGroups(
+                        pendingRows: Self.liveGroupsPendingRowIDs(context: context), acceptance: accepted) {
+                        return true
+                    }
+                    // Hay filas que no estaban en el aviso: la aceptación ya no cubre lo que hay. Vuelve el camino de
+                    // siempre, que enseñará el aviso con la cifra nueva si el motivo sigue siendo el attest.
+                }
+            }
+            acceptedGroupsLoss = nil
+        }
+
         let budget = GroupsSignOutRetryDecision.budgetSeconds
         var retryClockStart: Date?
 
@@ -895,8 +1051,18 @@ final class CloudSessionSignOut {
                     // arreglo heredaba la forma del bug. `decide` solo devuelve `.surfacePermanent` para los
                     // tres motivos que se muestran al momento, así que propagarlo es además byte-equivalente
                     // a lo que hacía el ternario para los dos que ya existían.
+                    //
+                    // **El teléfono sin App Attest anota su salida ANTES de la fase** (2026-09-15): quien reacciona a la
+                    // fase pregunta `offersGroupsLossExit` y tiene que encontrarla ya. Con `lossExit == nil` (el
+                    // desasociar) no se anota nada y el bloqueo no ofrece perder los cambios.
+                    if reason == .attestUnavailable {
+                        groupsLossExit = lossExit.map {
+                            GroupsLossOffer(resume: $0, rows: Self.liveGroupsPendingRowIDs(context: context))
+                        }
+                    }
                     phase = .blocked(pendingCount: pending, reason: reason)
                     CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
+                    if reason == .attestUnavailable, lossExit != nil { Self.noteGroupsLossOffered(pending: pending) }
                     return false
                 case .surfaceTransient:
                     phase = .blocked(pendingCount: pending, reason: .transient)
@@ -1068,6 +1234,10 @@ final class CloudSessionSignOut {
                 // anuncia como «los grupos están en pausa» y no como «tu cuenta ya no vale» — ticket
                 // `groups-killswitch-403-blocks-detach-forever`.
                 channelKilled: GroupsSyncClient.shared.stoppedByChannelKill(for: outcome),
+                // ¿Paró este ciclo porque el teléfono lleva más de un día sin App Attest? Se pregunta igual, CON el
+                // outcome: la racha sola no dice por qué falló ESTE ciclo (ticket
+                // `groups-phone-that-never-attests-is-told-to-retry-forever`).
+                attestUnavailable: GroupsSyncClient.shared.stoppedByUnavailableAttest(for: outcome),
                 iteration: iteration,
                 maxIterations: maxIterations
             ) {
@@ -1126,6 +1296,22 @@ final class CloudSessionSignOut {
             print("CloudSessionSignOut: Error contando outbox de grupos vivo: \(error)")
             #endif
             return Int.max
+        }
+    }
+
+    /// Las filas VIVAS del outbox de GRUPOS, por su `clientMutationID`: lo que se compara con lo que la persona aceptó
+    /// perder. `nil` si el fetch falla, y eso solo lo cubre una aceptación sin cifra: una fila que no se pudo mirar no se
+    /// descarta por una cifra.
+    static func liveGroupsPendingRowIDs(context: ModelContext) -> Set<UUID>? {
+        do {
+            let rows = try context.fetch(FetchDescriptor<GroupSyncOutbox>(
+                predicate: #Predicate { $0.rejectedReason == nil }))
+            return Set(rows.map(\.clientMutationID))
+        } catch {
+            #if DEBUG
+            print("CloudSessionSignOut: Error leyendo las filas vivas del outbox de grupos: \(error)")
+            #endif
+            return nil
         }
     }
 

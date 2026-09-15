@@ -5929,3 +5929,33 @@
 
 /* Wipe sheet, cloud row when personal data lives in the user private iCloud: the deletion only reaches devices whose personal data lives in that same iCloud */
 "settings.wipeScopeCloudICloudPersonal" = "Worden uit iCloud verwijderd, dus ze verdwijnen ook van je andere apparaten die je persoonlijke gegevens daar bewaren";
+
+/* Titulo del aviso: el telefono lleva mas de un dia sin pasar la verificacion de seguridad del servidor y no puede sincronizar grupos */
+"groups.errors.attestUnavailableTitle" = "Deze telefoon kan je groepen niet synchroniseren";
+
+/* Aviso al cerrar sesion sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
+"groups.errors.attestUnavailableSignOutLoss" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist. Groepswijzigingen die niet zijn aangekomen: %d. Als je nu uitlogt, gaan ze verloren en krijgt niemand in de groep ze te zien.";
+
+/* Aviso al cerrar sesion sin verificacion de seguridad cuando no hay cifra honesta de cambios perdidos */
+"groups.errors.attestUnavailableSignOutLossUnknown" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist, en sommige groepswijzigingen zijn niet aangekomen. Als je nu uitlogt, gaan ze verloren en krijgt niemand in de groep ze te zien.";
+
+/* Boton destructivo: cierra sesion aceptando perder los cambios de grupos sin subir */
+"groups.errors.attestUnavailableSignOutLossButton" = "Uitloggen en ze verliezen";
+
+/* Mensaje sin salida: el telefono no pasa la verificacion de seguridad y los cambios de grupos no suben */
+"groups.errors.attestUnavailable" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist, dus je groepswijzigingen kunnen niet worden geüpload.";
+
+/* Alert al salir de un grupo: el telefono no puede sincronizar grupos */
+"groups.errors.leaveAttestUnavailable" = "Deze telefoon kan je groepen niet synchroniseren, dus we konden je vertrek uit de groep niet afronden.";
+
+/* Puerta de Grupos del Welcome sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
+"welcome.groups.neutralAttestLossBody" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist. Groepswijzigingen die niet zijn aangekomen: %d. Als je nu doorgaat, gaan ze verloren en krijgt niemand in de groep ze te zien.";
+
+/* Puerta de Grupos del Welcome sin verificacion de seguridad, sin cifra honesta de cambios perdidos */
+"welcome.groups.neutralAttestLossBodyUnknown" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist, en sommige groepswijzigingen zijn niet aangekomen. Als je nu doorgaat, gaan ze verloren en krijgt niemand in de groep ze te zien.";
+
+/* Boton destructivo del Welcome: continua aceptando perder los cambios de grupos sin subir */
+"welcome.groups.neutralAttestLossContinue" = "Doorgaan en ze verliezen";
+
+/* Boton generico para posponer una decision */
+"action.notNow" = "Niet nu";

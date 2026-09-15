@@ -1853,7 +1853,7 @@ struct GroupsSyncClientTests {
         #expect(try groupOutbox(context).first?.rejectedReason == nil)  // la fila sigue viva para el reintento
         // Lo que ve la persona: pasajero en las celdas que reintentan y «no llegaron al servidor» en la nube.
         let ciclo = try #require(GroupsSyncCadence.stopOutcome(push: outcome))
-        let motivo = CloudSignOutFlowLogic.classify(ciclo, channelKilled: false)
+        let motivo = CloudSignOutFlowLogic.classify(ciclo, channelKilled: false, attestUnavailable: false)
         #expect(motivo == .transient)
         #expect(CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(motivo) == .uploadRetryLater)
     }
@@ -1875,7 +1875,7 @@ struct GroupsSyncClientTests {
         #expect(outcome == .sessionExpired(pending: 1))
         #expect(stub.callCount == 0)
         let ciclo = try #require(GroupsSyncCadence.stopOutcome(push: outcome))
-        #expect(CloudSignOutFlowLogic.classify(ciclo, channelKilled: false) == .sessionExpired)
+        #expect(CloudSignOutFlowLogic.classify(ciclo, channelKilled: false, attestUnavailable: false) == .sessionExpired)
     }
 
     /// El pull, en las dos direcciones, y sin petición en ninguna.
@@ -1954,6 +1954,7 @@ struct GroupsSyncClientTests {
     /// y el cierre de sesión decía «Tu sesión caducó». `canRenewSession: { false }` a propósito: con la sesión borrada
     /// el camino viejo termina en caducada pase lo que pase, así que el verde solo puede venir de leer el código.
     @Test func push_401AttestRequired_isTransient_withoutRefreshingTheToken() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         _ = try seedOutbox(context, mid: UUID())
@@ -1974,7 +1975,7 @@ struct GroupsSyncClientTests {
         #expect(filas.first?.rejectedReason == nil)                     // …y sin dead-letter
         // Lo que ve la persona: pasajero en las celdas que reintentan y «no llegaron al servidor» en la nube.
         let ciclo = try #require(GroupsSyncCadence.stopOutcome(push: outcome))
-        let motivo = CloudSignOutFlowLogic.classify(ciclo, channelKilled: false)
+        let motivo = CloudSignOutFlowLogic.classify(ciclo, channelKilled: false, attestUnavailable: false)
         #expect(motivo == .transient)
         #expect(CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(motivo) == .uploadRetryLater)
     }
@@ -1999,13 +2000,14 @@ struct GroupsSyncClientTests {
         #expect(refreshes.count == 1)   // el reintento del 401 sí corre
         #expect(stub.callCount == 1)
         let ciclo = try #require(GroupsSyncCadence.stopOutcome(push: outcome))
-        #expect(CloudSignOutFlowLogic.classify(ciclo, channelKilled: false) == .sessionExpired)
+        #expect(CloudSignOutFlowLogic.classify(ciclo, channelKilled: false, attestUnavailable: false) == .sessionExpired)
     }
 
     /// El caso entero del ticket: el JWT había caducado (`yala_attest_invalid`), el refresh trae uno nuevo y la
     /// re-emisión choca con el attest que sigue faltando. Manda el código del SEGUNDO 401: pasajero. Fija que la lectura
     /// vive dentro de `send` —cuenta también en la re-emisión— y que la re-emisión sale con el token fresco.
     @Test func push_expiredJWTThenMissingAttest_isTransient_onTheReissue() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         _ = try seedOutbox(context, mid: UUID())
@@ -2028,6 +2030,7 @@ struct GroupsSyncClientTests {
     /// El pull, en las dos direcciones: attest ausente → pasajero y sin refresh; JWT que no vale → caducada, después de
     /// intentar el refresh.
     @Test func pull_401_followsTheCodeOfTheEnvelope() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
 
@@ -2054,6 +2057,7 @@ struct GroupsSyncClientTests {
     /// sigue faltando. Con el outbox vacío el pull es la única petición del ciclo, así que leer caducada esa re-emisión
     /// pararía el loop. Fija que la lectura del código también cuenta en la re-emisión del pull.
     @Test func pull_expiredJWTThenMissingAttest_isTransient_onTheReissue() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
 
@@ -2075,6 +2079,7 @@ struct GroupsSyncClientTests {
     /// subir hasta volver a primer plano. Con `canRenewSession: { false }` y el refresh nulo, el camino viejo PARA en vez
     /// de colgar: el rojo sale en `delays`, no en un `await` eterno.
     @Test func loop_401AttestRequired_backsOff_insteadOfStoppingUntilSignIn() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         // `storageMode` es un global que otras suites escriben: con `.cloud` y fase estable no habría loop propio.

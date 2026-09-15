@@ -969,6 +969,110 @@ struct GroupsSyncHardeningTests {
         #expect(client.stoppedByChannelKill(for: .completed) == false)
     }
 
+    // MARK: (9a-bis) El testigo del attest ausente: teléfono sin App Attest (2026-09-15)
+
+    private static let attestRequired401JSON =
+        #"{"error":{"message":"m","type":"yala_attest_required","param":null,"code":"yala_attest_required"}}"#
+
+    /// **Tres condiciones, y el test mira las tres** (ticket `groups-phone-that-never-attests-is-told-to-retry-forever`).
+    /// Con la racha terminal y un 401 de attest en ESTE ciclo, el cierre ofrece salir perdiendo los cambios; con la racha
+    /// recién nacida, el mismo 401 es lo pasajero de siempre; y un ciclo que falla por otra cosa no hereda el testigo,
+    /// aunque la racha siga terminal. Molde de `killWitness_describesTheCurrentCycle_notTheProcess`.
+    @Test func attestWitness_needsTheStreakAndThisCycle() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try seedOutboxRow(context, hlc: "2026-09-15T00:00:00.000Z-0001-00000000000000aa")
+
+        let rechazo = SequenceStubSession.Reply(data: Data(Self.attestRequired401JSON.utf8), status: 401)
+        let caido = SequenceStubSession.Reply(data: Data("{}".utf8), status: 503)
+        let stub = SequenceStubSession([rechazo, rechazo, caido], fallback: caido)
+        let client = makeClient(session: stub, userID: nil)
+        client.sleeper = { _ in }
+
+        // Ciclo 1 — la racha nace: el 401 cuenta, pero todavía es lo pasajero de siempre.
+        let first = await client.syncCycleOnce(context: context)
+        #expect(first == .transient)
+        #expect(GroupsAttestStreakStore.current()?.rejections == 1)
+        #expect(client.stoppedByUnavailableAttest(for: first) == false)
+
+        // Ciclo 2 — la misma respuesta con la racha ya terminal: es el veredicto, y llega hasta el motivo del cierre.
+        try racha.seedTerminal()
+        let second = await client.syncCycleOnce(context: context)
+        #expect(second == .transient)
+        #expect(client.stoppedByUnavailableAttest(for: second) == true)
+        let verdict = CloudSignOutFlowLogic.pushAllVerdict(
+            livePendingCount: try context.fetchCount(FetchDescriptor<GroupSyncOutbox>()), cycleOutcome: second,
+            channelKilled: client.stoppedByChannelKill(for: second),
+            attestUnavailable: client.stoppedByUnavailableAttest(for: second), iteration: 1, maxIterations: 20)
+        #expect(verdict == .blocked(pendingCount: 1, reason: .attestUnavailable))
+        // Con el testigo ENCENDIDO, el outcome sigue mandando: un ciclo que no es `.transient` no afirma nada.
+        for otro in [SyncCadencePolicy.CadenceOutcome.coalesced, .completed, .sessionExpired, .accountUnavailable] {
+            #expect(client.stoppedByUnavailableAttest(for: otro) == false, "`\(otro)` no es el 401 del attest")
+        }
+
+        // Ciclo 3 — la racha sigue terminal, pero ESTE ciclo falló por un 503: no se ofrece perder nada.
+        let third = await client.syncCycleOnce(context: context)
+        #expect(third == .transient)
+        #expect(stub.callCount == 3, "el tercer ciclo tiene que haber hablado con el gateway")
+        #expect(client.stoppedByUnavailableAttest(for: third) == false, """
+            el testigo de un ciclo anterior convertiría un corte del servidor en «este teléfono no puede sincronizar»
+            """)
+    }
+
+    /// **El gemelo del pull** (review adversarial, 2026-09-15). Con el outbox vacío el pull es la única petición del ciclo,
+    /// así que en segundo plano es él quien escribe la racha. Sin este test, quitar su rechazo, su testigo o su acierto
+    /// dejaba la suite en verde.
+    @Test func attestWitness_pullCountsTheStreakAndA200EndsIt() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let rechazo = SequenceStubSession.Reply(data: Data(Self.attestRequired401JSON.utf8), status: 401)
+        let pagina = SequenceStubSession.Reply(data: Data(#"{"deltas":[],"cursors":{},"memberships":[]}"#.utf8), status: 200)
+        let stub = SequenceStubSession([rechazo, rechazo, pagina], fallback: pagina)
+        let client = makeClient(session: stub, userID: nil)
+        client.sleeper = { _ in }
+
+        // Ciclo 1 — el pull choca: la racha nace y el testigo se enciende, pero todavía es lo pasajero.
+        let first = await client.syncCycleOnce(context: context)
+        #expect(first == .transient)
+        #expect(stub.callCount == 1, "con el outbox vacío la única petición del ciclo es el pull")
+        #expect(GroupsAttestStreakStore.current()?.rejections == 1)
+        #expect(client.stoppedByUnavailableAttest(for: first) == false)
+
+        // Ciclo 2 — el mismo 401 con la racha terminal: el testigo del PULL basta para el veredicto.
+        try racha.seedTerminal()
+        let second = await client.syncCycleOnce(context: context)
+        #expect(second == .transient)
+        #expect(client.stoppedByUnavailableAttest(for: second) == true)
+
+        // Ciclo 3 — el pull responde 200: el attest pasó la guard y la racha se acaba.
+        _ = await client.syncCycleOnce(context: context)
+        #expect(GroupsAttestStreakStore.current() == nil, "el 200 del pull prueba que el attest pasó la guard")
+    }
+
+    /// **Un 200 prueba que el attest pasó la guard, y acaba la racha** aunque ya fuera terminal: el teléfono se recuperó.
+    @Test func attestStreak_endsWithAnAcceptedPush() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try seedOutboxRow(context, hlc: "2026-09-15T00:00:00.000Z-0002-00000000000000aa")
+        try racha.seedTerminal()
+        #expect(GroupsAttestStreakStore.isTerminal())
+
+        let aceptado = SequenceStubSession.Reply(data: Data(#"{"results":[]}"#.utf8), status: 200)
+        let caido = SequenceStubSession.Reply(data: Data("{}".utf8), status: 503)
+        let stub = SequenceStubSession([aceptado], fallback: caido)
+        let client = makeClient(session: stub, userID: nil)
+        client.sleeper = { _ in }
+        _ = await client.syncCycleOnce(context: context)
+
+        #expect(stub.callCount >= 1)
+        #expect(GroupsAttestStreakStore.current() == nil)
+        #expect(!GroupsAttestStreakStore.isTerminal())
+    }
+
     // MARK: (9b) Un 403 de infraestructura NO es un veredicto sobre la cuenta
 
     /// **LA aserción del ticket `groups-sync-treats-an-infra-403-as-an-account-verdict`.** Un 403 que no

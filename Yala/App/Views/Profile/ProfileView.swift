@@ -107,6 +107,11 @@ struct ProfileView: View {
     @State private var showSignOutExportAlert = false
     /// Cuántos cambios no llegaron a iCloud en el bloqueo que se está mostrando (0 = no se pudo contar).
     @State private var signOutExportPending = 0
+    /// El aviso del teléfono sin App Attest que ofrece cerrar sesión perdiendo los cambios de grupos (2026-09-15). Alert
+    /// DEDICADO, como el del export y por lo mismo: sus botones son literales.
+    @State private var showSignOutAttestLossAlert = false
+    /// Cuántos cambios de grupos se perderían en el bloqueo que se está mostrando (`Int.max` = no se pudo contar).
+    @State private var signOutAttestLossPending = 0
     /// Qué bloqueó el cierre, para elegir el mensaje del aviso. **Es el motivo entero y no un `Bool`**
     /// desde el 2026-09-13: eran dos mensajes y son tres —sesión caducada, canal de Grupos en pausa, y el
     /// resto—, así que un `Bool` ya no los separa. Solo lo leen los mensajes; qué alert se presenta lo
@@ -118,13 +123,14 @@ struct ProfileView: View {
         case .blocked(let pending, let reason):
             signOutBlockedReason = reason
             if reason == .exportUnconfirmed { signOutExportPending = pending }
+            if reason == .attestUnavailable { signOutAttestLossPending = pending }
             presentSignOutBlock(reason)
         case .awaitingRelaunch: dismiss()
         case .idle, .working: break
         }
     }
 
-    /// Presenta el aviso del bloqueo UN TURNO DESPUÉS, con los tres flags a cero antes.
+    /// Presenta el aviso del bloqueo UN TURNO DESPUÉS, con todos los flags a cero antes.
     ///
     /// Paso 9 (review adversarial): el productor es asíncrono —una espera de hasta 45 s— y el anchor puede
     /// estar ocupado (otra hoja de Ajustes abierta) o desmontando el aviso anterior (el re-aviso de «Cerrar
@@ -136,10 +142,18 @@ struct ProfileView: View {
         showSignOutPendingAlert = false
         showSignOutBlockedAlert = false
         showSignOutExportAlert = false
+        showSignOutAttestLossAlert = false
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
             guard case .blocked(_, let live) = signOutCoordinator.phase, live == reason else { return }
             switch reason {
             case .transient: showSignOutPendingAlert = true
+            // **El teléfono sin App Attest** (2026-09-15). Con la salida de un CIERRE, su propio aviso: cuenta lo que se
+            // pierde y ofrece «Cerrar sesión y perderlos». Sin ella no enciende nada, igual que los dos motivos del
+            // desasociar de más abajo: ese mismo motivo lo pone el desasociar, que no ofrece salida, y su aviso lo pinta
+            // `GroupsAssociationSection`. Encender aquí el genérico repetiría el agujero de
+            // `signout-alert-fires-on-detach-blocks-it-did-not-cause` con un motivo nuevo.
+            case .attestUnavailable:
+                if signOutCoordinator.offersGroupsLossExit { showSignOutAttestLossAlert = true }
             // El canal de Grupos en pausa entra por el MISMO alert que los otros dos permanentes, con el
             // mensaje que le toca (`signOutBlockedMessage`).
             //
@@ -554,6 +568,19 @@ struct ProfileView: View {
                 Text(signOutExportPending > 0
                      ? L10n.Settings.signOutExportPendingMessage(signOutExportPending)
                      : L10n.Settings.signOutExportPendingMessageUnknown)
+            }
+            // El teléfono sin App Attest (2026-09-15, decisión de Jürgen): el aviso cuenta los cambios de grupos que se
+            // pierden y ofrece cerrar igualmente. «Ahora no» reconoce el bloqueo y no pierde nada. Botones literales y
+            // sin `accessibilityIdentifier`: SwiftUI no los propaga a los botones de un `.alert`.
+            .alert(L10n.Groups.Errors.attestUnavailableTitle, isPresented: $showSignOutAttestLossAlert) {
+                Button(L10n.Groups.Errors.attestUnavailableSignOutLossButton, role: .destructive) {
+                    Task { await CloudSessionSignOut.shared.exitDiscardingUnsyncedGroups(context: modelContext) }
+                }
+                Button(L10n.Action.notNow, role: .cancel) {
+                    CloudSessionSignOut.shared.acknowledgeBlocked()
+                }
+            } message: {
+                Text(SignOutBlockedCopy.attestLossMessage(pending: signOutAttestLossPending))
             }
             .alert(L10n.Settings.signOutBlockedTitle, isPresented: $showSignOutBlockedAlert) {
                 signOutBlockedButtons

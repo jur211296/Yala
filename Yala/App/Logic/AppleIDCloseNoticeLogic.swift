@@ -60,6 +60,26 @@ enum AppleIDCloseNoticeLogic {
         /// No hay cierre en vuelo ni bloqueo que enseñar: no arrancó, u otra pantalla reconoció su bloqueo.
         /// Mismo texto que el bloqueo pasajero, «un momento más», y las mismas dos salidas.
         case busy
+        /// **El cierre paró porque este teléfono lleva más de un día sin App Attest, y puede seguir perdiendo los
+        /// cambios de grupos** (2026-09-15). El aviso cuenta `pending` y ofrece «Cerrar sesión y perderlos» junto a
+        /// «Ahora no». Solo lo da `stage(notice:phase:offersGroupsLossExit:)`, con la salida de ESTE cierre viva.
+        case losingGroupChanges(pending: Int)
+    }
+
+    /// La etapa con la salida que pierde los cambios de grupos (ticket
+    /// `groups-phone-that-never-attests-is-told-to-retry-forever`).
+    ///
+    /// **La salida viaja DENTRO de la etapa porque la hoja la congela.** Con «Ahora no» el coordinador reconoce el
+    /// bloqueo y deja de ofrecer la salida en el mismo gesto; si la vista la leyera aparte, la animación de salida
+    /// pintaría el bloqueo sin salida justo encima de lo que la persona eligió (el bug que ya obligó a congelar la etapa).
+    ///
+    /// Solo cambia `.blocked(.attestUnavailable)` con la salida ofrecida; el resto es la tabla de siempre.
+    static func stage(notice: AppleIDCloseNotice, phase: CloudSessionSignOut.Phase,
+                      offersGroupsLossExit: Bool) -> Stage {
+        let base = stage(notice: notice, phase: phase)
+        guard base == .blocked(.attestUnavailable), offersGroupsLossExit,
+              case .blocked(let pending, _) = phase else { return base }
+        return .losingGroupChanges(pending: pending)
     }
 
     static func stage(notice: AppleIDCloseNotice, phase: CloudSessionSignOut.Phase) -> Stage {
