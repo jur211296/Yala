@@ -5,10 +5,36 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-15 (Lima)
 
-**Rama** `2.1` — Merge #172: **Grupos: un 401 por App Attest ausente deja de leerse como «Tu sesión caducó».**
+**Rama** `2.1` — Merge #173: **Grupos: un teléfono sin App Attest recibe su veredicto y puede cerrar sesión perdiendo los cambios.** El #174 corrige su guion de device-QA.
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#172 · un 401 por App Attest ausente deja de leerse como «Tu sesión caducó»)
+## Esta sesión (#173 · un teléfono sin App Attest recibe su veredicto y puede cerrar sesión perdiendo los cambios)
+
+**Un teléfono que lleva más de un día sin conseguir App Attest deja de oír «inténtalo en un rato».** Es tu decisión
+del 15-sep (opción 2). Pasadas 24 h con al menos 3 rechazos del servidor —como mucho uno por hora— y ningún acierto,
+Grupos dice «Este teléfono no puede sincronizar tus grupos». Si al cerrar sesión quedan cambios de grupos sin subir,
+Ajustes, la hoja del cambio de Apple ID y la puerta del Welcome ofrecen «Cerrar sesión y perderlos» con la cifra; a
+quien entra por una invitación, no. Desasociar y salir de un grupo enseñan el veredicto sin salida. Elegir perderlos
+no borra nada al momento: el cierre intenta subir una vez más, y lo que no suba se va con el borrado del arranque.
+
+**Contestaste las cuatro preguntas con la recomendada:** 24 h y 3 rechazos, solo los cierres ofrecen salir, un botón
+que nombra la pérdida, y el aviso fijo en la pestaña Grupos a ticket.
+
+**La review adversarial (tres lentes) cazó uno alto, mío.** Lo aceptado era una cifra, y aceptar «2 cambios» cubría
+cualquier par: un cambio nuevo se perdía sin aviso. Ahora son las filas que contó el aviso. Además, 3 rechazos los
+cumplía un solo gesto (ahora cuenta uno por hora), y dos tests de pantalla no detectaban sus mutantes. **Y una premisa
+del ticket era falsa:** el canal personal no tiene banner terminal, solo un canario.
+
+**El #174 corrige un guion mío.** El device-QA pedía dos lanzamientos separados por 24 h, que dejan la racha en dos y
+nunca llegan al aviso; ahora el primero dura algo más de dos horas.
+
+Gate: build ×2 sin warnings nuevos · **unit 1026 en 120 suites**, y la suite completa **6977 en 715** antes de mergear ·
+**25 mutantes, 25 muertos** · **XCUITest 89 casos en 38 clases** con el centinela · tres lentes. **Device-QA: solo la
+racha** (0-terdecies de la cola); la salida con pérdida no se puede montar en ningún dispositivo.
+
+**Deja dos tickets, los dos con decisión tuya** (ver «Siguiente»).
+
+## Sesión anterior (#172 · un 401 por App Attest ausente deja de leerse como «Tu sesión caducó»)
 
 **Con la sesión buena y sin App Attest, ninguna pantalla dice ya «Tu sesión caducó», y el sync de grupos no se
 para.** Es tu decisión del 15-sep (opción 1): el 401 `yala_attest_required` es pasajero. Salir de un grupo pide
@@ -27,7 +53,7 @@ Gate: build ×2 sin warnings nuevos · **unit 858 en 86 suites** · **11 mutante
 
 **Deja cuatro tickets, uno con decisión tuya** (ver «Siguiente»).
 
-## Sesión anterior (#171 · sin conexión, «Tu sesión caducó» deja de salir a quien sigue con la sesión viva)
+## Sesión #171 · sin conexión, «Tu sesión caducó» deja de salir a quien sigue con la sesión viva
 
 **Sin red y con el token caducado, ninguna pantalla dice ya «Tu sesión caducó» ni manda a volver a entrar.** Es tu
 decisión del 15-sep: separar en el cliente «sin conexión» de «sesión caducada». Al cerrar sesión en la nube sale al
@@ -175,6 +201,13 @@ formatos —una presentación 16:9 por escenas y clips 9:16 por función— sobr
 `bun run render:presentation` y `bun run render:reels`).
 
 ## Tu cola
+
+0-terdecies. **Device-QA del #173, solo la racha**
+   (`tickets/qa/groups-phone-that-never-attests-is-told-to-retry-forever.md`). Scheme **Yala** (no Dev) en el
+   simulador, con tu cuenta de Grupos y la consola filtrada por `GroupsSync`. Primer lanzamiento: la app en primer
+   plano **algo más de dos horas**, con `attestRequired edge=pull` repetido. Segundo, pasadas 24 h: **una sola vez**
+   `attestTerminal rejections=N hours=H`. La salida «Cerrar sesión y perderlos» no se puede montar: sin App Attest no
+   baja ningún grupo.
 
 0-duodecies. **Device-QA del #172, parcial**
    (`tickets/qa/groups-sync-reads-a-missing-attest-401-as-a-session-expiry.md`). Scheme **Yala** (no Dev) en el
@@ -341,10 +374,11 @@ formatos —una presentación 16:9 por escenas y clips 9:16 por función— sobr
 
 ## Siguiente
 
-**El #172 te deja una decisión `medium`:** qué decirle a un teléfono que nunca consigue App Attest. Hoy oye «en
-un rato» para siempre y no puede cerrar sesión con cambios de grupos sin subir
-(`groups-phone-that-never-attests-is-told-to-retry-forever`, tres opciones). Con ella van
-`groups-join-intent-expires-silently-after-transient-failures` (medium) y dos `low`.
+**El #173 te deja dos decisiones.** En la nube, un teléfono sin App Attest con cambios **personales** sin subir sigue
+sin poder cerrar sesión: la salida con pérdida es solo para los de grupos
+(`cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`, `medium`). Y si la pestaña Grupos avisa de
+forma fija de que este teléfono no puede sincronizar (`groups-tab-does-not-say-this-phone-cannot-sync-groups`, `low`).
+Del #172 siguen `groups-join-intent-expires-silently-after-transient-failures` (`medium`) y dos `low`.
 
 **El rediseño de sesiones llega al final de su lista.** El paso 12 está cerrado con el #151: la shell
 deriva de un solo eje y M1 no existe. Lo que queda del ADR son los device-QA acumulados, que son tuyos
@@ -402,8 +436,8 @@ Trabajo, con tu criterio ya decidido: salir de un grupo sin red (`groups-actions
 y el canal personal, que en `.cloud` frena también a Grupos (`personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`,
 que sube a `medium` porque Modo Nube no está apagado).
 
-**El board: 390 en disco = 390 en `docs/TICKETS.md`** (medido el 15-sep), cero desajustes de estado. El #171 pasa
-su ticket a `qa/`, suma cinco y añade la fila que faltaba de `rojo-heroBuckets-thisWeek-trailing-window`.
+**El board: 398 en disco = 398 en `docs/TICKETS.md`** (medido el 15-sep, tras el #173), cero desajustes de estado. El
+#173 pasa su ticket a `qa/` y suma dos.
 
 ## Bloqueo
 
