@@ -122,6 +122,26 @@ unificados): con el aviso en la cola, cancelar la tarea ya no basta — uno ya e
      brickea (la matriz queda libre), pero el residuo es feo — por eso el caso 1 del XCUITest vigila
      que la sonda siga reconociendo la presentación en el runtime de turno.
 
+### Lo que cazó la review adversarial (tres lentes, 2026-09-14)
+
+**Una ALTA, y era MÍA: `handleRemoteWipeSignal` había dejado de cancelar la gracia.** Al reescribir
+ese bloque perdí la llamada y el comentario nuevo **afirmaba que seguía ahí**. Sin ella vuelve el
+`double-alert` que el comentario original existía para evitar: los dos canales (espejo de CloudKit y
+KV del Apple ID) no tienen orden garantizado, así que las filas pueden desaparecer ANTES de la señal,
+la gracia sobrevive al borrado orquestado y pregunta por unos datos que la app acaba de restaurar.
+
+**Dos MEDIA**: la suite había perdido el censo de escritores del flag (fijaba «son DOS», y con la red
+toggleando son siete, así que el número se cayó sin sustituto — un productor nuevo que encendiera el
+`@State` a pelo no habría puesto rojo nada), y el área `own-metrics` del índice no recogía el canario.
+
+**Una BAJA**: la red no se cancelaba explícitamente al contestar; se auto-terminaba, pero depender del
+orden del `switch` es frágil ante un refactor.
+
+**Y un hueco que no se cerró aquí, con ticket propio**
+(`presentation-net-desarm-has-no-automated-net`): el desarme está probado a mano, no en CI. Las dos
+vías obvias tienen su pero —una mete en producción el patrón que la regla (1) de Presentaciones
+prohíbe— y la receta de reproducción queda escrita en ese ticket.
+
 ### Decisión sobre `orphan-alerts-behind-fullscreen-covers`
 
 **Sigue aparte.** Este ticket arregla UN productor; aquél es el mecanismo general para los alerts que
