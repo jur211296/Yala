@@ -34,6 +34,10 @@ sincronizar mis grupos.
 2. Esperar al canario `groupsAttestTerminal` y decidir con el número.
 3. Dejarlo: el aviso ya sale en los gestos que pueden perder algo.
 
+## Decisión Jürgen (2026-09-15)
+
+**Opción 1:** aviso fijo en la pestaña Grupos mientras el veredicto sea terminal. Mismo texto que el aviso honesto de la nube («Este teléfono no puede sincronizar tus grupos»), y qué puede hacer la persona.
+
 ## Relación con otros tickets
 
 - `groups-phone-that-never-attests-is-told-to-retry-forever` — de donde sale.

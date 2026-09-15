@@ -39,6 +39,10 @@ y nada cambia.
    pero sabe por qué.
 3. Dejarlo hasta medir la población.
 
+## Decisión Jürgen (2026-09-15)
+
+**Opción 1:** ofrecer exportar los datos y, después, una salida con pérdida confirmada también para lo personal (misma idea que en grupos: texto honesto + confirmación explícita).
+
 ## Relación con otros tickets
 
 - `groups-phone-that-never-attests-is-told-to-retry-forever` — de donde sale.
