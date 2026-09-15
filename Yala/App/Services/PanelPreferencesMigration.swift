@@ -123,10 +123,11 @@ enum PanelPreferencesMigration {
     /// diferirla.
     ///
     /// Está extraída y es pura porque el camino real no se puede aislar en un test:
-    /// `hasRemotePanelPreferences()` lee el `NSUbiquitousKeyValueStore` GLOBAL del
-    /// proceso —no el dominio inyectado—, así que cualquier test que haya escrito una
-    /// preferencia sincronizada antes lo contamina. Mismo motivo por el que el test
-    /// de la siembra llama a `setupDefaultsForNewUser()` a mano.
+    /// `hasRemotePanelPreferences()` lee el iCloud-KV GLOBAL del proceso por
+    /// `OwnerKeyValueStore` —no el dominio inyectado—, así que depende de lo que
+    /// cualquier test haya escrito antes ahí y de las dos marcas de `.standard` que
+    /// abren o cierran esa puerta. Mismo motivo por el que el test de la siembra
+    /// llama a `setupDefaultsForNewUser()` a mano.
     ///
     /// **Sin cuenta iCloud no hay iKV del que puedan bajar preferencias**, así que
     /// «no encuentro nada remoto» deja de ser ambiguo: es una instalación fresca de
@@ -159,7 +160,11 @@ enum PanelPreferencesMigration {
     /// because an empty string is a valid state — the user may have hidden every
     /// widget in a section — and still means a real config exists to preserve.
     private static func hasRemotePanelPreferences() -> Bool {
-        let iKV = NSUbiquitousKeyValueStore.default
+        // La PUERTA y no el store crudo. Con una sesión solo-grupos en un móvil prestado este KV es el del
+        // DUEÑO: leído a pelo, su Panel haría saltarse la siembra, y como la puerta le enmascara también
+        // la aplicación, el teléfono se quedaría sin siembra y sin configuración. Cerrada, contesta «no
+        // hay nada» y se siembra en local.
+        let iKV = OwnerKeyValueStore.shared
         // Prime the local cache from the last successful sync (idempotent; the
         // sync service also calls this during its own bootstrap).
         iKV.synchronize()

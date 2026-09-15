@@ -71,11 +71,12 @@ enum LanguageManager {
         set {
             guard newValue != sharedDefaults.string(forKey: overrideKey) else { return }
             sharedDefaults.set(newValue, forKey: overrideKey)
-            // La FACHADA, no el store crudo. El motivo ya no es un guard —desde la retirada de la
-            // sesión de visita solo hay una identidad sobre este KV— sino el CONTEO: esta escritura
-            // fue la SÉPTIMA vía al iCloud-KV del Apple ID y no figuraba en ningún inventario
-            // (2026-08-12). Lo que impide que aparezca una novena es que haya UN solo sitio que
-            // nombrar, y eso lo cuenta `OwnerKeyValueWiringTests`.
+            // La PUERTA, no el store crudo, por dos motivos. El GUARD: con una sesión solo-grupos en un
+            // móvil prestado este KV es el del DUEÑO, y el idioma que elegía quien lo usa le cambiaba la
+            // app en su iPad (lo decide `OwnerKeyValueGate`). Y el CONTEO: esta escritura fue la SÉPTIMA
+            // vía al iCloud-KV del Apple ID y no figuraba en ningún inventario (2026-08-12); lo que
+            // impide una novena es que haya UN solo sitio que nombrar, y eso lo cuenta
+            // `OwnerKeyValueWiringTests`.
             let iKV = OwnerKeyValueStore.shared
             if let value = newValue {
                 iKV.setString(value, forKey: overrideKey)
@@ -167,8 +168,8 @@ enum LanguageManager {
            let alias = SupportedLocale(rawValue: current),
            let canonical = aliasRemap[alias] {
             suite.set(canonical.code, forKey: overrideKey)
-            // Mismo motivo que el setter de arriba: el remap de alias es una escritura al iCloud-KV
-            // del Apple ID, y va por la fachada para que siga siendo contable.
+            // Los mismos dos motivos que el setter de arriba: el remap de alias es una escritura al
+            // iCloud-KV del Apple ID, así que va por la puerta, que la guarda y la cuenta.
             OwnerKeyValueStore.shared.setString(canonical.code, forKey: overrideKey)
             OwnerKeyValueStore.shared.synchronize()
 

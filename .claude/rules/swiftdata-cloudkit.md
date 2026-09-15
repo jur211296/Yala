@@ -149,7 +149,11 @@ paths:
 > que hace el código de hoy. El modelo vivo tiene **dos nombres**: *sesión privada* (dispositivo +
 > iCloud privado, su eje es `PrivateSessionMark`) y *sesión en la nube* (cuenta Google/Apple, completa
 > o solo grupos). Prestar el móvil dejó de ser un caso propio: el dueño cierra sesión, la otra persona
-> entra con su cuenta, y luego el dueño restaura.
+> entra con su cuenta, y luego el dueño restaura. **Dos identidades sobre un store del Apple ID siguen
+> existiendo**: quien entra por un grupo en ese móvil (celda F) tiene debajo el iCloud-KV del dueño.
+> `OwnerKeyValueStore` perdió su guard el 2026-09-13 por la premisa «ya solo hay una sesión por teléfono» y
+> lo recuperó al día siguiente (`OwnerKeyValueGate`). Antes de retirar un guard de frontera de cuenta,
+> recórrelo celda por celda contra la matriz del ADR.
 >
 > **Estas reglas se reescribieron en vez de borrarse, y esa decisión es de Jürgen** (2026-09-09): lo
 > que merezca sobrevivir a un símbolo se queda en `.claude/rules/`. Las cuatro que hablaban de la

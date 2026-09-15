@@ -254,8 +254,8 @@ struct PrivateSessionMarkWiringTests {
         // un consumidor que pasara su propio `UserDefaults` —que es lo que hace el servicio de
         // preferencias— no lo contaba nadie: se colaba un lector de la estricta sin pasar por esta
         // decisión. El prefijo `PrivateSessionMark.` deja fuera la declaración del propio tipo.
-        #expect(Self.countInProduction("PrivateSessionMark.confirmedPrivateSession(") == 7, """
-            `confirmedPrivateSession` tiene SIETE lecturas en toda la app, y todas comparten el SIGNO
+        #expect(Self.countInProduction("PrivateSessionMark.confirmedPrivateSession(") == 8, """
+            `confirmedPrivateSession` tiene OCHO lecturas en toda la app, y todas comparten el SIGNO
             de su error: hacia `true` se DAÑA —se borra, o se afirma un hecho falso sobre datos
             ajenos—, hacia `false` solo se conserva de más o se calla. Si aparece una más, decide a
             conciencia de qué lado cae — si equivocarse hacia `true` no destruye nada ni miente, la
@@ -295,6 +295,14 @@ struct PrivateSessionMarkWiringTests {
             entero, y decidir un borrado con el snapshot de antes del `await` es el bug que la segunda
             existe para evitar. Su signo es el de la familia: `true` de más cierra la sesión de alguien
             y le borra la copia local.
+
+            La OCTAVA (2026-09-14) no borra ni avisa: decide si el iCloud-KV del Apple ID está abierto
+            para esta sesión (`OwnerKeyValueGate.current`). Resuelve la marca AUSENTE junto a la marca
+            del neutro solo-grupos, y su signo es el de la familia: afirmar de más que la sesión es
+            privada le abre el store del dueño a quien usa su móvil prestado, que le pisa las
+            preferencias en todos sus dispositivos. Hacia `false` solo cierra si además hay un alta
+            solo-grupos empezada. La permisiva sola no servía: la puerta del organizador escribe nombre
+            y periodo con la marca todavía ausente.
             """)
     }
 
@@ -489,8 +497,8 @@ struct PrivateSessionMarkWiringTests {
     /// y la aserción de arriba pasaría verde sin medir nada — la familia de «Executed 0 tests».
     @Test("control: el escáner de producción encuentra algo")
     func theProductionScannerActuallyFindsThings() {
-        #expect(Self.countInProduction("PrivateSessionMark.hasPrivateSession(") == 17, """
-            el eje 1 tiene DIECISIETE consumidores de la lectura conservadora. Si este número cambia, hay un
+        #expect(Self.countInProduction("PrivateSessionMark.hasPrivateSession(") == 18, """
+            el eje 1 tiene DIECIOCHO consumidores de la lectura conservadora. Si este número cambia, hay un
             constructor nuevo y hay que decidir con qué lectura contesta — y si el consumidor nuevo
             alcanza datos de FUERA de este teléfono, la lectura que le toca es la otra.
 
@@ -508,6 +516,11 @@ struct PrivateSessionMarkWiringTests {
             sea: aquí es el `false` el que destruye de más, que es la dirección contraria a la familia
             de la lectura estricta. Ese mismo cierre aporta además DOS lecturas de la estricta, en el
             cableado de `AppBootstrapper`; están contadas en el test de arriba y su signo es el opuesto.
+
+            El decimoctavo (2026-09-14) es `OwnerKeyValueGate.current`, que abre o cierra el iCloud-KV
+            del Apple ID. Lee las DOS lecturas porque ninguna basta sola: con la marca en `false` la
+            puerta se cierra aunque ya no esté la marca del neutro solo-grupos —«Activar Yala completo»
+            la levanta al relanzar—, y la permisiva es la única que distingue `false` de ausente.
             """)
     }
 

@@ -98,6 +98,13 @@ enum SharedStateScope: Sendable {
     /// `UserDefaults.standard` con snapshot/restore del dominio: el App Group quedaba fuera.
     case wipeAppGroupMirror
 
+    /// Las dos marcas que abren o cierran el iCloud-KV del Apple ID (`OwnerKeyValueGate.current`). Viven
+    /// en `.standard`, que el host de unit comparte con los XCUITest del mismo bundle: una corrida que
+    /// complete un alta solo-grupos deja la puerta CERRADA en el simulador, y un test que escriba por
+    /// `OwnerKeyValueStore.shared` saldría rojo por el entorno y no por el código. Limpias, la puerta
+    /// está abierta.
+    case ownerKeyValueGate
+
     @MainActor
     var cells: [SharedStateCell] {
         switch self {
@@ -124,6 +131,12 @@ enum SharedStateScope: Sendable {
                 SharedStateCell(appGroup, AppPreferences.Keys.expensesOnlyMode, "App Group"),
                 SharedStateCell(appGroup, "firstWeekday", "App Group"),
                 SharedStateCell(appGroup, AppPreferences.Keys.lastUsedAccountID, "App Group"),
+            ]
+
+        case .ownerKeyValueGate:
+            return [
+                SharedStateCell(UserDefaults.standard, StorageModePersistence.groupsOnlyNeutralMountKey, "standard"),
+                SharedStateCell(UserDefaults.standard, PrivateSessionMark.userDefaultsKey, "standard"),
             ]
         }
     }
@@ -287,4 +300,6 @@ extension Trait where Self == SharedStateIsolation {
     static var lastUsedAccountIsolated: Self { Self(scope: .lastUsedAccount) }
     /// Aísla las tres claves del App Group que barre un `wipeAllUserData` real.
     static var wipeAppGroupMirrorIsolated: Self { Self(scope: .wipeAppGroupMirror) }
+    /// Entra con la puerta del iCloud-KV del Apple ID abierta: sus dos marcas, limpias y restauradas.
+    static var ownerKeyValueGateOpen: Self { Self(scope: .ownerKeyValueGate) }
 }

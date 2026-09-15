@@ -55,6 +55,16 @@ conjunto — en esa misma corrida los siete del Welcome pasaron.
 fue un `tests: fail` que parecía —y en parte era— un fallo del avisador. Este ticket existe
 porque al arreglar el canal apareció lo que el canal no había podido entregar.
 
+## Medido otra vez el 2026-09-15: `test_freshInstallShowsFourSectionsByDefault`
+
+Gate del PR del guard del iCloud-KV (`icloud-kv-prefs-cross-sessions-on-a-lent-phone`), **cuatro corridas sobre
+el MISMO árbol**, todas con `sim-libre.sh --vigilar` sin intrusos: pasó (28,3 s), **falló** (20,7 s), pasó
+(30,3 s), pasó (30,0 s). El rojo fue el primer caso de una corrida lanzada justo después de que el harness
+matara la anterior por memoria, y cayó en `PanelDashboardUITests.swift:138` —«No apareció el toggle de
+accounts»— a los 5 s de tocar `panel_sections_config`: el sheet de secciones no mostró sus toggles a tiempo.
+Con el árbol idéntico en las cuatro, no es una regresión de ese PR; es la misma intermitencia que esta tabla
+ya tenía como «1 (pasó al reintentar)».
+
 ## Lo que hay que hacer
 
 - [ ] Reproducir los cuatro en local y clasificarlos: flaky de runner frío (la Lista Negra ya

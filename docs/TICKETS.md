@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (372)
+## Index (379)
 
 | id | status | path |
 |---|---|---|
@@ -154,6 +154,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | forcesync-returns-ok-without-touching-the-network | backlog | tickets/backlog/forcesync-returns-ok-without-touching-the-network.md |
 | fresh-start-wipe-kills-unsent-group-writes-silently | backlog | tickets/backlog/fresh-start-wipe-kills-unsent-group-writes-silently.md |
 | full-activation-cloud-adopt-when-account-already-complete | backlog | tickets/backlog/full-activation-cloud-adopt-when-account-already-complete.md |
+| full-activation-local-state-never-reaches-the-apple-id-kv | backlog | tickets/backlog/full-activation-local-state-never-reaches-the-apple-id-kv.md |
 | full-mode-activation-must-ask-where-personal-data-lives | qa | tickets/qa/full-mode-activation-must-ask-where-personal-data-lives.md |
 | fx-approximate-mark-missing-on-secondary-surfaces | qa | tickets/qa/fx-approximate-mark-missing-on-secondary-surfaces.md |
 | fx-category-totals-unmarked | backlog | tickets/backlog/fx-category-totals-unmarked.md |
@@ -238,7 +239,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | history-token-guard-echo-blind-spot | backlog | tickets/backlog/history-token-guard-echo-blind-spot.md |
 | hoja-del-saldo-vivo-ignora-los-filtros-de-sesion | backlog | tickets/backlog/hoja-del-saldo-vivo-ignora-los-filtros-de-sesion.md |
 | icloud-export-error-latch-never-clears | backlog | tickets/backlog/icloud-export-error-latch-never-clears.md |
-| icloud-kv-prefs-cross-sessions-on-a-lent-phone | backlog | tickets/backlog/icloud-kv-prefs-cross-sessions-on-a-lent-phone.md |
+| icloud-kv-prefs-cross-sessions-on-a-lent-phone | qa | tickets/qa/icloud-kv-prefs-cross-sessions-on-a-lent-phone.md |
 | icloud-sync-status-treats-non-ck-failures-as-success | backlog | tickets/backlog/icloud-sync-status-treats-non-ck-failures-as-success.md |
 | inbox-convert-draft-to-group-expense | done | tickets/done/inbox-convert-draft-to-group-expense.md |
 | inbox-crash-convert-to-group-expense | done | tickets/done/inbox-crash-convert-to-group-expense.md |
@@ -254,12 +255,14 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | joiner-flag-residuals-cosmetic-and-service-guard | backlog | tickets/backlog/joiner-flag-residuals-cosmetic-and-service-guard.md |
 | l10n-check-corre-13-de-17-tests | backlog | tickets/backlog/l10n-check-corre-13-de-17-tests.md |
 | la-nocturna-de-ui-no-ha-disparado-ni-una-vez | done | tickets/done/la-nocturna-de-ui-no-ha-disparado-ni-una-vez.md |
+| language-override-bypasses-the-cloud-prefs-channel | backlog | tickets/backlog/language-override-bypasses-the-cloud-prefs-channel.md |
 | late-icloud-wipe-can-re-export-between-its-two-halves | backlog | tickets/backlog/late-icloud-wipe-can-re-export-between-its-two-halves.md |
 | live-anchor-breakdown-doubles-the-approximate-glyph | backlog | tickets/backlog/live-anchor-breakdown-doubles-the-approximate-glyph.md |
 | m1-prose-outlives-its-code-in-comments | backlog | tickets/backlog/m1-prose-outlives-its-code-in-comments.md |
 | merchant-memory-suggests-across-natures-in-three-more-places | backlog | tickets/backlog/merchant-memory-suggests-across-natures-in-three-more-places.md |
 | multi-currency-accounts | backlog | tickets/backlog/multi-currency-accounts.md |
 | needsrelaunch-hides-the-groups-section | backlog | tickets/backlog/needsrelaunch-hides-the-groups-section.md |
+| neutral-boot-hands-owner-prefs-to-whoever-signs-in-next | backlog | tickets/backlog/neutral-boot-hands-owner-prefs-to-whoever-signs-in-next.md |
 | no-hay-seed-con-miembro-rechazado | backlog | tickets/backlog/no-hay-seed-con-miembro-rechazado.md |
 | no-test-seam-for-account-exists-blocks-xcuitest-of-identity | backlog | tickets/backlog/no-test-seam-for-account-exists-blocks-xcuitest-of-identity.md |
 | nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo | backlog | tickets/backlog/nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo.md |
@@ -323,7 +326,6 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reverse-hidden-on-a-born-cloud-second-device | backlog | tickets/backlog/reverse-hidden-on-a-born-cloud-second-device.md |
 | reverse-upload-has-no-ceiling-and-no-exit | backlog | tickets/backlog/reverse-upload-has-no-ceiling-and-no-exit.md |
 | revert-card-copy-says-datos-regresan-a-quien-nunca-estuvo | backlog | tickets/backlog/revert-card-copy-says-datos-regresan-a-quien-nunca-estuvo.md |
-| rojo-heroBuckets-thisWeek-trailing-window | done | tickets/done/rojo-heroBuckets-thisWeek-trailing-window.md |
 | rojo-heroBuckets-thisWeek-trailing-window | done | tickets/done/rojo-heroBuckets-thisWeek-trailing-window.md |
 | rojo-xcuitest-runner-muere-tras-el-primer-caso | done | tickets/done/rojo-xcuitest-runner-muere-tras-el-primer-caso.md |
 | rules-testing-habla-de-ios-27-que-no-existe | backlog | tickets/backlog/rules-testing-habla-de-ios-27-que-no-existe.md |

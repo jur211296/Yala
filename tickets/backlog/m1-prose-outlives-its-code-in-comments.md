@@ -39,6 +39,27 @@ No son todas iguales, y por eso hace falta leerlas una a una:
 ⇒ el trabajo no es un `sed`: es decidir, línea a línea, en cuál de los dos montones cae. Y el de la
 izquierda hay que reescribirlo conservando la lección, que es la decisión de Jürgen del 2026-09-09.
 
+## Corrección del 2026-09-14: el guard del iCloud-KV volvió
+
+`OwnerKeyValueStore` **ya no es historia**: su guard se repuso el 2026-09-14
+(`icloud-kv-prefs-cross-sessions-on-a-lent-phone`), porque la celda F del ADR —una sesión solo-grupos en un
+móvil prestado— son dos identidades sobre ese store, y su cabecera se reescribió entera. Los comentarios que
+justifican ir «por la puerta y no por el store crudo» citando a la visita **no se reescriben a ciegas a la
+celda F**: la review adversarial de ese PR midió que solo en dos la puerta hace lo que el comentario diría.
+
+- **Pasan a F tal cual:** `ScheduledPaymentNotificationService.flipMasterToggleIfNeeded` (en F la lectura del
+  espejo viene vacía y la escritura no llega) y la conformance de `CloudBeacon`.
+- **No pasan**, porque la puerta está abierta cuando corren o lo que protege es otra cosa:
+  - `AppBootstrapper`, bloque de `-uitest-reset`: purga las dos marcas antes de escribir; lo que sigue siendo
+    verdad es el CONTEO del escáner.
+  - `OnboardingResetHelper.clearResidualPreferencesForFreshStart`: sus cinco llamadores corren con la puerta
+    abierta; lo que protege al dueño es escribir `""`, que el merge ignora.
+  - `CloudIdentityDiscovery.clearBeaconIfItsAccountIsGone`: con la puerta cerrada la lectura PREVIA ya viene
+    vacía y `BeaconOrphanLogic` no da prueba; la re-lectura de después no distingue borrado de bloqueado.
+
+Los dos de `L10n` —el setter de `overrideLanguage` y el remap de `bootstrapMigrationIfNeeded`— ya se
+reescribieron en ese PR.
+
 ## Criterio de aceptación
 
 - [ ] Las 94 líneas revisadas una a una. Cada una queda: reescrita en pasado (si la lección vale),

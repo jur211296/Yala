@@ -91,16 +91,17 @@ nonisolated enum PrivateSessionMark {
 
     /// **¿Puedo AFIRMAR que esta sesión es privada?** Ausente ⇒ `false`.
     ///
-    /// Para las decisiones que, al equivocarse hacia `true`, **BORRAN**. Hoy hay tres, y son las dos
-    /// mitades de un mismo canal: si la señal de vaciado SALE hacia los demás dispositivos del Apple ID,
-    /// y si este dispositivo la OBEDECE (dos lectores: donde se detecta y donde se drena).
+    /// Para las decisiones que, al equivocarse hacia `true`, **DAÑAN**: borran (la señal de vaciado del
+    /// Apple ID, al salir y al obedecerse), afirman algo falso sobre datos ajenos (el aviso de datos
+    /// borrados) o le abren el iCloud-KV del dueño a otra sesión (`OwnerKeyValueGate`). Cuántas son lo
+    /// fija `PrivateSessionMarkWiringTests`: esta frase decía «hoy hay tres» y caducó el mismo día.
     ///
     /// **El criterio se ensanchó el 2026-09-14, y conviene saber por qué.** Hasta entonces decía «alcanzan
     /// datos que están FUERA de este teléfono», que describía al único cliente que había. Los dos nuevos no
     /// siempre cumplen eso: obedecer de más en una sesión de la nube sube los borrados a SU cuenta —sí sale
-    /// fuera— pero en una solo-grupos sin espejo el borrado se queda aquí. Lo que comparten los tres es el
-    /// SIGNO del error, no su alcance: hacia `true` se destruye, hacia `false` solo se conserva de más.
-    /// Ese es el criterio para el cuarto que venga.
+    /// fuera— pero en una solo-grupos sin espejo el borrado se queda aquí. Lo que comparten todos es el
+    /// SIGNO del error, no su alcance: hacia `true` se daña, hacia `false` solo se conserva de más.
+    /// Ese es el criterio para el siguiente.
     static func confirmedPrivateSession(_ defaults: UserDefaults = .standard) -> Bool {
         raw(defaults) ?? false
     }

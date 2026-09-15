@@ -41,6 +41,21 @@ propio análisis con los tres desenlaces del claim delante.
 Que el epoch del alta se escriba en un punto donde su ruta ya esté **verificada**, como ya hace la
 re-entrada, o que el camino `existing_stable` → guard → bloqueo lo retire. La tabla de M0 es el sitio.
 
+## Dos desenlaces más, medidos el 2026-09-14
+
+La review adversarial del guard del iCloud-KV (`icloud-kv-prefs-cross-sessions-on-a-lent-phone`) encontró el
+mismo epoch escrito por otras dos salidas, las dos tras un «Cerrar sesión» del dueño (arranque neutro, puerta
+del iCloud-KV abierta porque nadie ha elegido todavía):
+
+- **El claim devuelve `existing_stable` y la cuenta resulta solo-grupos**: `runSignInFlow` la descubre
+  `.groupsOnly` y la lleva a la puerta de Grupos. Quien tiene el móvil prestado acaba en la celda F con su
+  epoch en el iCloud-KV del dueño.
+- **Se acepta el consentimiento y se cancela el sign-in**: `CloudConsentView` llama a `registerConsent()`
+  antes de `onAccept()`, así que el epoch ya está escrito aunque luego se entre por «Vengo por un grupo».
+
+El guard nuevo no lo cubre, y no puede: en ese arranque la puerta está abierta a propósito. El daño lo nombra
+el ticket: si el dueño migra después, el drenaje del cutover lo sube como consentimiento suyo.
+
 ## Criterios de aceptación
 
 - [ ] Un alta cuyo claim devuelve `existing_stable` y termina en `.blockedForeignData` **no** deja epoch en
