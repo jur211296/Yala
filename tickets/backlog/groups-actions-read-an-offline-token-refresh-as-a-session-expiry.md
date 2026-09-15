@@ -47,4 +47,5 @@ antes de cambiar el error que recibe.
 
 - `groups-push-reads-an-offline-token-refresh-as-a-session-expiry` — el mismo arreglo en el canal de sincronización.
 - `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry` — el mismo patrón en el canal personal.
-- `groups-sync-reads-a-missing-attest-401-as-a-session-expiry` — otro 401 que no es una sesión caducada.
+- `groups-sync-reads-a-missing-attest-401-as-a-session-expiry` — otro 401 que no es una sesión caducada. Desde el
+  2026-09-15 `call` ya lanza `.transient(status: 401)` con `yala_attest_required`; lo que queda aquí es el token nulo.

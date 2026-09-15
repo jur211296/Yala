@@ -97,6 +97,22 @@ struct GatewayErrorEnvelope: Decodable {
         decodedType(data) == "yala_account_reverting"
     }
 
+    /// Código del 401 que `requireUserAndAttest` emite cuando el JWT de usuario VERIFICA y lo que falta —o no
+    /// verifica— es el token de App Attest (las cuatro guards: `groups/routes.ts`, `groups/rpc.ts`,
+    /// `sync/routes.ts`, `sync/account.ts`). Su hermano `yala_attest_invalid` es el JWT que no vale. UN solo
+    /// literal en el cliente; la mitad del gateway la fija `gateway/test/groups.attest401.test.ts`, que corre a mano
+    /// (el CI no ejecuta la suite del gateway).
+    static let attestRequiredType = "yala_attest_required"
+
+    /// `true` si el body es el 401 de App Attest ausente: la sesión vale, y ni volver a entrar ni refrescar el JWT
+    /// lo arreglan. La guard también lo emite sin JWT, pero ningún cliente del canal manda una petición sin él, así
+    /// que desde el cliente el código dice siempre «sesión buena, attest ausente». Lo leen el push y el pull de
+    /// `GroupsSyncClient` y `GroupsMembershipClient`, que lo tratan como pasajero (decisión de Jürgen,
+    /// 2026-09-15). Lee `type` como sus dos hermanos; `jsonError` escribe el mismo valor en `code`.
+    static func isAttestRequired(_ data: Data) -> Bool {
+        decodedType(data) == attestRequiredType
+    }
+
     /// El `error.type` del envelope, o `nil` si el body no es uno del gateway (body ajeno → el caller decide).
     private static func decodedType(_ data: Data) -> String? {
         do {
@@ -115,8 +131,9 @@ struct GatewayErrorEnvelope: Decodable {
 enum PushOutcome: Equatable {
     /// 200 OK: el Worker procesó el batch. Los resultados por-delta (applied/noop/rejected) van adentro.
     case completed([SyncDeltaResult])
-    /// 401: JWT ausente/inválido/expirado (o attest requerido). NO se purga NADA ni se marca dead-letter —
-    /// los deltas se reintentan tras re-login. `pending` = cuántos deltas quedaron sin subir.
+    /// 401: JWT ausente/inválido/expirado (o attest requerido, en el canal personal: el de Grupos lee el 401
+    /// `yala_attest_required` como `.transient`, `GatewayErrorEnvelope.isAttestRequired`). NO se purga NADA ni se
+    /// marca dead-letter — los deltas se reintentan tras re-login. `pending` = cuántos deltas quedaron sin subir.
     case sessionExpired(pending: Int)
     /// 403 (cuenta suspendida/deshabilitada) o 409 `yala_account_reverting` (freeze de la reversa §h.1:
     /// el backend dejó de ser fuente de verdad — device rezagado durante/tras una reversa). En ambos la

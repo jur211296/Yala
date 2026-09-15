@@ -29,9 +29,11 @@ nonisolated enum GroupLeaveErrorLogic {
         /// Sesión expirada o ausente. El usuario SÍ tiene algo que hacer —volver a iniciar sesión—, y
         /// por eso no se mezcla con `.retryLater`. Copy `groups.errors.sessionExpired`.
         case sessionExpired
-        /// Transitorio: red, 5xx, o el KILL-SWITCH del canal. No es culpa del usuario y el estado se
-        /// arregla solo, así que el copy dice «vuelve en un rato» — el mismo criterio que ya se tomó
-        /// para `channelDisabled` en el enlace de invitación (`groups.invite.channelUnavailable`).
+        /// Transitorio: red, 5xx, el KILL-SWITCH del canal o, desde el 2026-09-15, App Attest ausente (401
+        /// `yala_attest_required`). No es culpa del usuario y el estado suele arreglarse solo, así que el copy
+        /// pide volver a intentarlo en un momento — el mismo criterio que ya se tomó para `channelDisabled` en el
+        /// enlace de invitación (`groups.invite.channelUnavailable`). Un teléfono que no recupera nunca el attest
+        /// no se arregla solo: `groups-phone-that-never-attests-is-told-to-retry-forever`.
         /// Copy `groups.errors.leaveUnavailable`.
         case retryLater
         /// Cualquier otro. Copy `groups.errors.actionFailed`.

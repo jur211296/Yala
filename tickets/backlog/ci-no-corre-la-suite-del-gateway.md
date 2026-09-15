@@ -5,7 +5,7 @@ priority: medium
 area: platform
 created: 2026-09-04
 source: medido al abrir el PR #63 (rejoin-tap-renotifies-admins), 2026-09-04
-updated: 2026-09-10
+updated: 2026-09-15
 ---
 
 # El CI no ejecuta ni un test del gateway — y sí gasta 100 minutos de simulador por tocar el índice
@@ -108,4 +108,12 @@ enteros dentro de la propuesta 1 (job de Ubuntu con los tests offline), que sigu
 
 Re-medido ese día: `grep -rn 'vitest|npm test|npm ci|npm run' .github/workflows/` da **un** acierto
 y es el COMENTARIO de `qa.yml:140` que excluye `gateway/` del build de iOS. Sigue sin haber job.
+
+## Cuarta instancia (2026-09-15): el cliente iOS depende de un código que solo fija esta suite
+
+`groups-sync-reads-a-missing-attest-401-as-a-session-expiry` hizo que el canal de Grupos lea el código del 401:
+`yala_attest_required` es pasajero y `yala_attest_invalid` es sesión caducada. Que las guards de Grupos no fundan los
+dos lo fija `gateway/test/groups.attest401.test.ts`, offline y en menos de un segundo, y tampoco lo corre nadie. Si
+una guard devolviera `yala_attest_required` con el JWT caducado, el cliente reintentaría para siempre sin pedir
+volver a entrar, y ni el CI ni la suite de iOS lo verían.
 

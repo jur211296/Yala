@@ -38,6 +38,15 @@ caducada:
   desde el 2026-09-15, pero en `.cloud` no llega a ejecutarse.
 - La activación del modo completo por la nube pasa por `BornCloudSignUpService`: sin token termina en
   `FullModeActivationFlowLogic` → `.blocked(.sessionExpired)`.
+- **El 401 `yala_attest_required` también se lee caducado aquí** (`SyncPushClient`, `SyncPullClient` y
+  `PrefsSyncClient` mapean todo 401 a `.sessionExpired`). `CloudSyncRuntime.performCycle` pide el attest antes de
+  subir (paso 2, `resolveAttest`), pero no lo evita: la migración sube sin esa puerta (`MigrationWorkExecutor`,
+  `MigrationSnapshotUploader`, que lo tratan como transitorio), y la comprobación solo mira la caché local, así que
+  el 401 también llega con un token que caduca entre ese paso y la petición o que el servidor ya no acepta
+  (`attest-session-token-rejected-by-the-gateway-stays-cached`). Dos docblocks dan el attest ausente por un problema
+  de sesión que se arregla volviendo a entrar: `CloudAccountClient.swift:55` y `SyncPullClient.swift:61`. El canal
+  de Grupos lo lee pasajero desde el 2026-09-15 con `GatewayErrorEnvelope.isAttestRequired`
+  (`groups-sync-reads-a-missing-attest-401-as-a-session-expiry`).
 
 El runtime personal ya consulta `canRenewSession` antes de subir (`SessionExpiryPolicy`), pero solo para bloquear
 cuando la sesión NO se puede renovar. Cuando sí se puede y el token no llega, el push devuelve igualmente

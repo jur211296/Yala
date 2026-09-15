@@ -213,6 +213,76 @@ struct GroupsMembershipClientTests {
         }
     }
 
+    // MARK: - 401 por App Attest ausente: la sesión vale (2026-09-15)
+
+    /// El JWT vale y falta App Attest: la guard de `groups/rpc.ts` solo llega a `yala_attest_required` tras verificar
+    /// el JWT, y este cliente no manda nada sin él. No es sesión caducada: `.transient` con el status del 401 y el
+    /// reintento corto de siempre (`approve_member` reintenta: 3 peticiones). Hasta el 2026-09-15 era `.sessionExpired`.
+    @Test func error_401_attestRequired_isTransient_andRetries() async throws {
+        let session = stub(
+            #"{"error":{"message":"Falta el token de sesión de App Attest.","type":"yala_attest_required","param":null,"code":"yala_attest_required"}}"#,
+            status: 401)
+        await #expect(throws: GroupsRPCError.transient(status: 401)) {
+            _ = try await self.client(session).approveMember(groupID: "g", memberKey: "m")
+        }
+        #expect(session.callCount == 3)   // 1 + los 2 reintentos de `retryDelays`
+    }
+
+    /// Lo que ve la persona en las dos pantallas que distinguían la sesión caducada: salir de un grupo dice «vuelve en
+    /// un rato» y no «Tu sesión caducó», y aceptar una invitación conserva el intent sin abrir el inicio de sesión, que
+    /// no arregla un attest que falta. Y el one-shot `create_group_invite` sigue sin reintentar.
+    @Test func error_401_attestRequired_neverReachesTheSessionExpiredScreens() async throws {
+        let body = #"{"error":{"type":"yala_attest_required","code":"yala_attest_required"}}"#
+
+        let leaving = stub(body, status: 401)
+        do {
+            _ = try await client(leaving).leaveGroup(groupID: "g")
+            Issue.record("leaveGroup tenía que lanzar")
+        } catch {
+            #expect(GroupLeaveErrorLogic.classify(error) == .retryLater)
+        }
+
+        let accepting = stub(body, status: 401)
+        do {
+            _ = try await client(accepting).joinGroup(token: "t", displayName: "X", legacyMemberKey: nil)
+            Issue.record("joinGroup tenía que lanzar")
+        } catch {
+            let rpc = try #require(error as? GroupsRPCError)
+            #expect(GroupBackendAcceptErrorLogic.classify(rpc) == .transient)
+        }
+
+        let inviting = stub(body, status: 401)
+        await #expect(throws: GroupsRPCError.transient(status: 401)) {
+            _ = try await self.client(inviting).createInvite(groupID: "g", ttlSeconds: 60, maxUses: nil)
+        }
+        #expect(inviting.callCount == 1)   // one-shot creador: sin reintento
+    }
+
+    /// La dirección contraria: `yala_attest_invalid` es el JWT que no vale, y eso sí es sesión caducada, sin reintento.
+    /// Un predicado que leyera todo `yala_attest_*` como pasajero lo cambiaría.
+    @Test func error_401_attestInvalid_staysSessionExpired() async throws {
+        let session = stub(
+            #"{"error":{"message":"JWT de usuario inválido o expirado.","type":"yala_attest_invalid","param":null,"code":"yala_attest_invalid"}}"#,
+            status: 401)
+        await #expect(throws: GroupsRPCError.sessionExpired) {
+            _ = try await self.client(session).approveMember(groupID: "g", memberKey: "m")
+        }
+        #expect(session.callCount == 1)
+    }
+
+    /// El literal del wire en su único sitio del cliente, y tres cuerpos que no son él. Mismo porqué que
+    /// `groupsDisabledType_matchesGatewayWireContract`: el literal no se puede compartir entre TS y Swift. La otra
+    /// mitad —que las guards de Grupos emiten este código solo con el JWT verificado, con el mismo valor en `type` y en
+    /// `code`— la fija `gateway/test/groups.attest401.test.ts`, que solo corre a mano: el CI no ejecuta la suite del
+    /// gateway (`ci-no-corre-la-suite-del-gateway`).
+    @Test func attestRequiredType_matchesGatewayWireContract() {
+        #expect(GatewayErrorEnvelope.attestRequiredType == "yala_attest_required")
+        #expect(GatewayErrorEnvelope.isAttestRequired(Data(#"{"error":{"type":"yala_attest_required"}}"#.utf8)))
+        #expect(!GatewayErrorEnvelope.isAttestRequired(Data(#"{"error":{"type":"yala_attest_invalid"}}"#.utf8)))
+        #expect(!GatewayErrorEnvelope.isAttestRequired(Data(#"{"error":{"type":"yala_groups_disabled"}}"#.utf8)))
+        #expect(!GatewayErrorEnvelope.isAttestRequired(Data("no soy json".utf8)))
+    }
+
     @Test func error_500_isTransient() async throws {
         let session = stub(#"{"error":{"message":"boom"}}"#, status: 500)
         await #expect(throws: GroupsRPCError.transient(status: 500)) {

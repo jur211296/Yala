@@ -364,8 +364,8 @@ final class GroupsSyncClient {
     }
 
     /// El loop de cadencia: cada vuelta = `syncCycleOnce` → delay por `SyncCadencePolicy` → repetir.
-    /// `sessionExpired` (401) y `accountUnavailable` TERMINAN el loop, y los dos son re-arrancables por el
-    /// próximo `startIfEligible`.
+    /// `sessionExpired` (401, salvo el de App Attest ausente, que es pasajero) y `accountUnavailable` TERMINAN el
+    /// loop, y los dos son re-arrancables por el próximo `startIfEligible`.
     private func runLoop(context: ModelContext) async {
         defer { loopTask = nil }                        // A6: liberar el single-instance al salir
         loop: while true {
@@ -1551,6 +1551,14 @@ final class GroupsSyncClient {
                 } catch {
                     return .transient
                 }
+            case 401 where GatewayErrorEnvelope.isAttestRequired(data):
+                // App Attest ausente con el JWT bueno: la guard solo llega a este código tras verificar el JWT, y
+                // este cliente no manda nada sin él. Ni volver a entrar ni un JWT nuevo lo arreglan, así que no es
+                // sesión caducada ni pasa por el refresh de abajo: pasajero, con su backoff y con su rastro
+                // (decisión de Jürgen, 2026-09-15; `groups-sync-reads-a-missing-attest-401-as-a-session-expiry`).
+                // Un 401 que no trae este código conserva el trato de siempre.
+                GroupsSyncBreadcrumb.groupsAttestRequired(edge: "push")
+                return .transient
             case 401:
                 return .sessionExpired(pending: totalPending)
             case 403 where GatewayErrorEnvelope.isGroupsChannelDisabled(data):
@@ -1585,7 +1593,8 @@ final class GroupsSyncClient {
         let outcome = await send(bearer: token)
         // Retry-once del 401 (H-2026-07-18-4): fuerza el refresh del token y RE-EMITE el chunk UNA vez si el
         // token nuevo DIFIERE del usado (jamás recursión: solo un reintento). Solo el 401 se rescata — el resto de
-        // códigos suben tal cual. El token fresco se escribe de vuelta (inout) para que los chunks SIGUIENTES lo
+        // códigos suben tal cual, y el de App Attest ausente ya salió de `send` como `.transient`: un JWT nuevo no
+        // trae el attest. El token fresco se escribe de vuelta (inout) para que los chunks SIGUIENTES lo
         // reusen. Si el refresh vuelve SIN token, decide lo mismo que sin token de entrada
         // (`sdkRemovedTheSession`): la red puede caerse entre el 401 y el refresh. Si vuelve con el MISMO token,
         // el servidor rechaza uno que el SDK da por bueno, y eso sigue siendo sesión caducada.
@@ -1850,6 +1859,10 @@ final class GroupsSyncClient {
                 } catch {
                     return .transient
                 }
+            case 401 where GatewayErrorEnvelope.isAttestRequired(data):
+                // Mismo criterio que el push (ver allí): App Attest ausente con el JWT bueno → pasajero, sin refresh.
+                GroupsSyncBreadcrumb.groupsAttestRequired(edge: "pull")
+                return .transient
             case 401: return .sessionExpired
             case 403 where GatewayErrorEnvelope.isGroupsChannelDisabled(data):
                 // Mismo criterio que el push (ver allí): kill → parada re-arrancable.

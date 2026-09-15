@@ -26,9 +26,10 @@ Depende de lo que hizo el SDK con la sesión:
 - **Si sigue guardada** y la renovación falla, no hay ninguna puerta. Es sobre todo quien está sin conexión, y
   ahí lo que sobra es el texto: `groups-push-reads-an-offline-token-refresh-as-a-session-expiry`.
   **Desde el 2026-09-15 esta rama ya no le llega a quien solo está sin conexión:** con la sesión guardada, el canal
-  lee pasajero el token que no llega. Sigue llegando cuando el servidor rechaza con 401 un token que el SDK da por
-  bueno —p. ej. sin App Attest (`groups-sync-reads-a-missing-attest-401-as-a-session-expiry`)—, y ahí sigue sin haber
-  puerta: «Nuevo grupo» enruta por `hasSession` y abre el formulario.
+  lee pasajero el token que no llega. Sigue llegando cuando el servidor rechaza con 401 `yala_attest_invalid` un token
+  que el SDK da por bueno, y ahí sigue sin haber puerta: «Nuevo grupo» enruta por `hasSession` y abre el formulario.
+  El 401 por App Attest ausente ya no llega aquí: el canal lo lee pasajero desde el mismo día
+  (`groups-sync-reads-a-missing-attest-401-as-a-session-expiry`).
 
 Lo que no ofrece volver a entrar:
 

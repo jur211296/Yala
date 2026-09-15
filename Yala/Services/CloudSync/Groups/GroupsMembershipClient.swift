@@ -21,7 +21,7 @@ import OSLog
 /// `error.message` — ambos llevan el código `yala_*`) a un caso semántico. Un 400 con un código `yala_*`
 /// desconocido → `.permanentRejected` (NUNCA `.transient`: un 400 permanente reintentado sería loop, A5).
 enum GroupsRPCError: Error, Equatable {
-    case sessionExpired          // 401, o token nil (sin request)
+    case sessionExpired          // 401 (salvo `yala_attest_required`, que es `.transient`), o token nil (sin request)
     case notAuthorized           // yala_not_authorized
     case invalidInvite           // yala_invalid_invite
     /// yala_group_deleted (g13_03) — el token era VÁLIDO pero el grupo ya no existe. Se separa de
@@ -43,7 +43,8 @@ enum GroupsRPCError: Error, Equatable {
     /// existe porque el device puede tener el percent viejo cacheado hasta 6 h
     /// (`RemoteFlagDecisionLogic.refreshMinInterval`): el cliente cree ON y el servidor ya dice OFF.
     case channelDisabled
-    /// 5xx / no-yala / transporte / respuesta no-HTTP. `status == -1` = error de transporte/no-HTTP.
+    /// 5xx / no-yala / transporte / respuesta no-HTTP. `status == -1` = error de transporte/no-HTTP. `status == 401`
+    /// = App Attest ausente con la sesión buena (`yala_attest_required`, 2026-09-15): no es sesión caducada.
     case transient(status: Int)
     /// 200 pero el body no decodifica al struct esperado.
     case decoding
@@ -349,6 +350,15 @@ final class GroupsMembershipClient {
         switch http.statusCode {
         case 200:
             return data
+        case 401 where GatewayErrorEnvelope.isAttestRequired(data):
+            // App Attest ausente con el JWT bueno: el mismo criterio que el canal de sync (ver
+            // `GroupsSyncClient.pushChunk`). No es sesión caducada: `.transient` con el status del 401, y por tanto
+            // con el reintento corto de `callWithRetry`. La guard rechaza antes de llamar al RPC, así que no hay
+            // ambigüedad «quizá se aplicó», tampoco para los one-shots. Para la persona: salir de un grupo dice
+            // «Vuelve a intentarlo en un momento» en vez de «Tu sesión caducó», y aceptar una invitación deja de
+            // abrir el inicio de sesión, que no lo arregla (decisión de Jürgen, 2026-09-15).
+            GroupsSyncBreadcrumb.groupsAttestRequired(edge: "rpc:\(fn)")
+            throw GroupsRPCError.transient(status: 401)
         case 401:
             throw GroupsRPCError.sessionExpired
         case 403 where GatewayErrorEnvelope.isGroupsChannelDisabled(data):

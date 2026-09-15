@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (390)
+## Index (394)
 
 | id | status | path |
 |---|---|---|
@@ -55,6 +55,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | appstorage-onboarding-desarma-el-aislamiento-de-tests | backlog | tickets/backlog/appstorage-onboarding-desarma-el-aislamiento-de-tests.md |
 | associate-cta-ignores-the-groups-kill-switch | backlog | tickets/backlog/associate-cta-ignores-the-groups-kill-switch.md |
 | association-read-writes-defaults-from-a-view-body | backlog | tickets/backlog/association-read-writes-defaults-from-a-view-body.md |
+| attest-session-token-rejected-by-the-gateway-stays-cached | backlog | tickets/backlog/attest-session-token-rejected-by-the-gateway-stays-cached.md |
 | aviso-de-nuevo-miembro-no-llega-hasta-abrir-la-app | qa | tickets/qa/aviso-de-nuevo-miembro-no-llega-hasta-abrir-la-app.md |
 | backend-account-kind-complete-or-groups-only | qa | tickets/qa/backend-account-kind-complete-or-groups-only.md |
 | beacon-routes-only-never-blocks | qa | tickets/qa/beacon-routes-only-never-blocks.md |
@@ -210,6 +211,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-invite-neutral-gate-has-no-way-out-when-the-exit-cell-cannot-wipe | backlog | tickets/backlog/groups-invite-neutral-gate-has-no-way-out-when-the-exit-cell-cannot-wipe.md |
 | groups-invite-on-a-mirrored-store-crosses-data | qa | tickets/qa/groups-invite-on-a-mirrored-store-crosses-data.md |
 | groups-invite-skips-unirme-sheet-if-onboarded | qa | tickets/qa/groups-invite-skips-unirme-sheet-if-onboarded.md |
+| groups-join-intent-expires-silently-after-transient-failures | backlog | tickets/backlog/groups-join-intent-expires-silently-after-transient-failures.md |
 | groups-join-intent-reconciler | blocked | tickets/blocked/groups-join-intent-reconciler.md |
 | groups-killswitch-403-blocks-detach-forever | qa | tickets/qa/groups-killswitch-403-blocks-detach-forever.md |
 | groups-leave-rpc-error-10 | qa | tickets/qa/groups-leave-rpc-error-10.md |
@@ -225,6 +227,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-owner-transfer-and-leave | qa | tickets/qa/groups-owner-transfer-and-leave.md |
 | groups-pending-member-can-open-group | done | tickets/done/groups-pending-member-can-open-group.md |
 | groups-pending-member-sees-detail-chrome | backlog | tickets/backlog/groups-pending-member-sees-detail-chrome.md |
+| groups-phone-that-never-attests-is-told-to-retry-forever | backlog | tickets/backlog/groups-phone-that-never-attests-is-told-to-retry-forever.md |
 | groups-pull-cuesta-cinco-viajes-por-grupo | backlog | tickets/backlog/groups-pull-cuesta-cinco-viajes-por-grupo.md |
 | groups-purge-save-crosses-two-stores-without-atomicity | backlog | tickets/backlog/groups-purge-save-crosses-two-stores-without-atomicity.md |
 | groups-push-reads-an-offline-token-refresh-as-a-session-expiry | qa | tickets/qa/groups-push-reads-an-offline-token-refresh-as-a-session-expiry.md |
@@ -237,7 +240,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-sign-out-quiescence-gate-fails-open-with-drive-off | backlog | tickets/backlog/groups-sign-out-quiescence-gate-fails-open-with-drive-off.md |
 | groups-signout-reentry-banner-has-no-producer | backlog | tickets/backlog/groups-signout-reentry-banner-has-no-producer.md |
 | groups-stats-no-deduplica-gastos | backlog | tickets/backlog/groups-stats-no-deduplica-gastos.md |
-| groups-sync-reads-a-missing-attest-401-as-a-session-expiry | backlog | tickets/backlog/groups-sync-reads-a-missing-attest-401-as-a-session-expiry.md |
+| groups-sync-reads-a-missing-attest-401-as-a-session-expiry | qa | tickets/qa/groups-sync-reads-a-missing-attest-401-as-a-session-expiry.md |
 | groups-sync-treats-an-infra-403-as-an-account-verdict | done | tickets/done/groups-sync-treats-an-infra-403-as-an-account-verdict.md |
 | groups-tab-missing-panel-perf | qa | tickets/qa/groups-tab-missing-panel-perf.md |
 | groups-transfer-leave-write-ahead | backlog | tickets/backlog/groups-transfer-leave-write-ahead.md |
@@ -255,6 +258,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | insights-precomputed-icon-lookup | backlog | tickets/backlog/insights-precomputed-icon-lookup.md |
 | invite-aasa-requires-s-param | backlog | tickets/backlog/invite-aasa-requires-s-param.md |
 | invite-backend-stale-config | qa | tickets/qa/invite-backend-stale-config.md |
+| invite-link-creation-blames-the-connection-for-any-rpc-failure | backlog | tickets/backlog/invite-link-creation-blames-the-connection-for-any-rpc-failure.md |
 | invite-link-five-causes-one-message | qa | tickets/qa/invite-link-five-causes-one-message.md |
 | invite-recovery-relaunches-for-a-mirror-it-never-uses | backlog | tickets/backlog/invite-recovery-relaunches-for-a-mirror-it-never-uses.md |
 | invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo | qa | tickets/qa/invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo.md |
