@@ -454,3 +454,12 @@ Para que nadie reutilice estas cifras como si estuvieran medidas:
   Studio antes de mover un número.
 - **Las cifras de Reels**: de blogs de herramientas de analítica con muestras pequeñas y con interés
   comercial. Sirven para fijar un objetivo, no para justificar una decisión por sí solas.
+
+---
+
+## 9 · Captura automática (follow-up)
+
+Si la pregunta es «¿puede alguien grabar y sacar capturas *sin* que Jürgen pulse Record?», no
+vive aquí: va en [`RESEARCH-automated-captures.md`](RESEARCH-automated-captures.md). Resumen:
+**sí en Simulator (`simctl` + XCUITest / XcodeBuildMCP), no el gesto solo.** Screen Studio no
+entra en esa pregunta.
