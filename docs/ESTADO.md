@@ -1,14 +1,47 @@
 ---
-updated: 2026-09-14
+updated: 2026-09-15
 tags: [now, punto-de-retomada]
 ---
 
-# NOW — 2026-09-14 (Lima)
+# NOW — 2026-09-15 (Lima)
 
-**Rama** `2.1` — Merge #166: **El hueco que quedaba en el vaciado remoto se cierra midiendo que no alcanza a nadie.**
+**Rama** `2.1` — Merge #167: **Las preferencias ya no cruzan entre el dueño y quien usa su móvil prestado.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#166 · el hueco del vaciado remoto se cierra con el número, no con código)
+## Esta sesión (#167 · las preferencias ya no cruzan entre el dueño y un móvil prestado)
+
+**Quien entra por un grupo en un móvil prestado ya no le cambia nada al dueño, y lo del dueño ya no le
+llega.** El idioma, la moneda, el nombre, los ajustes del Panel y el interruptor de avisos de pagos
+cruzaban en los dos sentidos por el iCloud del Apple ID del teléfono: el guard que lo impedía se retiró el
+13-sep con la premisa «solo hay una sesión por teléfono», que la celda solo-grupos del ADR desmentía.
+**Decisión de Jürgen: cada cuenta, sus preferencias.** Para una sesión privada no cambia nada.
+
+**La puerta** (`OwnerKeyValueGate`) se cierra cuando el teléfono afirma no tener sesión privada, o cuando
+empezó un alta solo-grupos y todavía no lo ha dicho. Cerrada, nada llega al iCloud-KV y lo que se lee de él
+viene vacío — **salvo las dos señales del Apple ID**, que todo teléfono tiene que ver para darlas por
+procesadas.
+
+**La review adversarial cambió el diseño dos veces, y las dos por algo mío.** (1) La primera versión dejaba
+la puerta ABIERTA en una activación de Yala completo cancelada a medias: el bug entero de vuelta. (2)
+Ocultar también las señales hacía que la sesión privada recién nacida obedeciera un vaciado pendiente y se
+borrara. Y dos de la prosa: **son 36 preferencias, no 37**, y el escáner que la cabecera citaba como red se
+había borrado con el guard — no existía. Vuelve, fijando las sentencias de los dos lectores crudos en vez de
+eximir su fichero.
+
+Gate: build ×2 sin warnings nuevos · **unit 6893 en 705 suites** · **19 mutantes, 19 muertos** · XCUITest 10
+casos en 5 clases con el centinela sin intrusos · CI verde. `test_freshInstallShowsFourSectionsByDefault`
+falló una vez tras una corrida matada por memoria y pasó las otras tres sobre el mismo árbol: es la
+intermitencia que ya tenía `nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo`. **Device-QA: sí, y no es
+simulable** (cola, 0-nonies).
+
+**Te deja dos decisiones, con recomendación en cada ticket.**
+`neutral-boot-hands-owner-prefs-to-whoever-signs-in-next`: tras «Cerrar sesión», el primer arranque aplica
+las preferencias del Apple ID antes de que nadie elija, y quien entra luego por un grupo las hereda — la
+puerta no puede saber quién va a entrar. `full-activation-local-state-never-reaches-the-apple-id-kv`: lo que
+«Activar Yala completo» escribe con la puerta cerrada no sube a iCloud cuando nace la sesión privada. Y un
+`medium` sin decisión: `language-override-bypasses-the-cloud-prefs-channel`.
+
+## Sesión anterior (#166 · el hueco del vaciado remoto se cierra con el número, no con código)
 
 **No cambia nada en pantalla, y ese es el resultado.** Quedaba declarado un hueco: quien entró por un
 grupo **antes del 10 de septiembre** no lleva la marca que distingue esa situación, así que a su teléfono
@@ -52,7 +85,7 @@ CI verde. **El diff de producción es 100 % comentarios** (medido), así que el 
 de XCUITest se acotó al área del eje en vez de correr las 34 suites que casan con `ContentView`.
 **Device-QA: no aplica.**
 
-## Sesión anterior (#164 · el aviso de datos borrados ya no aparece encima de lo que estuvieras mirando)
+## Sesión #164 · el aviso de datos borrados ya no aparece encima de lo que estuvieras mirando
 
 **Yala tiene una cuenta atrás interna de cinco segundos: si tus datos personales desaparecen del
 teléfono y siguen sin volver, te avisa de que te los han borrado desde otro dispositivo.** Ese aviso se
@@ -127,45 +160,10 @@ hay seam que haga desaparecer las filas del store bajo el proceso vivo.
 **Riesgo que aceptaste:** en esa celda también se calla un hueco transitorio real de CloudKit. Se pierde
 información, no datos.
 
-## Sesión #161 · vaciar tus datos ya no promete que se borran de todos tus dispositivos)
-
-**Ibas a «Vaciar datos» y la hoja de confirmación te decía, en la fila ☁️, que se borraban «también
-de tu iPad, tu Mac y cualquier dispositivo con este Apple ID».** Confirmabas, y en tu iPad —el que
-le prestaste a alguien, o el que usa la cuenta de Yala— no se borraba nada. Nadie te lo decía, ni
-antes ni después. Ahora la frase promete solo lo que se cumple: **se borran de iCloud, así que
-desaparecen de los otros dispositivos que guardan ahí tus datos personales**. La fila de «En tu
-cuenta de Yala» no cambia: ahí el borrado sí viaja por la cuenta y tus otros dispositivos lo pierden
-al sincronizar.
-
-**La frase era cierta hasta ayer, y se volvió falsa sin que nada se pusiera rojo.** El #157 cerró a
-propósito el otro extremo del canal —un teléfono prestado dejó de obedecer la señal de vaciado,
-porque obedecerla borraba el perfil de quien lo tenía— y con eso la mitad de arriba de la promesa se
-quedó sin cumplirse. **Cero tests miraban el copy de esa fila**: la tabla que existe mide la
-estructura de la hoja —filas, tonos, líneas condicionales, botones— y nunca el texto.
-
-**Por qué la frase nueva es verdadera y no solo más floja.** El borrado alcanza a otro dispositivo
-por dos caminos independientes, y la condición es la misma en los dos: el espejo exporta los
-borrados de filas a ese iCloud, de donde los lee quien monte ese store; y la señal solo la obedece
-quien tiene esos datos. Comprobado contra las cuatro poblaciones —sesión privada, teléfono prestado,
-dispositivo con la cuenta de Yala, y el solo-grupos anterior al paso 5 cuyo store sí espeja—.
-
-**Tres razonamientos del código citaban la promesa vieja como premisa**, no uno: el docblock de
-`wipeDataFull`, el de `personalMountAttachesMirror` y la razón de no poner la línea de residual
-multi-device en `.icloud` — más un docblock de tests que repetía el segundo. Los cuatro al día, y el
-nuevo **no** afirma que en `.icloud` no exista residual: dice que la fila ya acota en su propio
-texto y que reponer la línea se evaluó y se descartó. Y la coordenada que daba el ticket estaba
-desfasada.
-
-Red nueva `WipeCloudRowScopeTests`, por los dos lados: el camino de producción (`Config.make`, no un
-grep) y un barrido de los 16 ficheros de strings, para que reponer la promesa en un solo idioma
-tampoco pase. Con **dos controles positivos**, porque los dos modos de fallo abierto eran reales.
-**4 mutantes verificados**, unit 74 en 11 suites y XCUITest 7/7 con el centinela confirmando que
-estuve solo.
-
-**Device-QA: no aplica** — es una cadena de texto en una hoja que el XCUITest ya abre, y su
-contenido queda fijado por unit desde el camino de producción. **Sin decisiones nuevas para ti.**
-
 ## Las de antes
+- **#161 · vaciar tus datos ya no promete que se borran de todos tus dispositivos.** La hoja
+  prometía un borrado en todos tus dispositivos que el #157 había dejado de cumplir; hoy promete solo lo
+  que se cumple, fijado por unit desde el camino de producción. Sin decisiones.
 - **#160 · «Empezar desde cero» sin iCloud ya vuelve a Restaurar y no promete nada.** Si la app no
   conseguía mirar tu iCloud te decía «Seguir así», te llevaba al onboarding y tus datos viejos seguían
   enteros: un borrado anunciado que nunca ocurrió. Y te dejaba apuntado para el aviso del espejo tardío,
@@ -194,6 +192,12 @@ formatos —una presentación 16:9 por escenas y clips 9:16 por función— sobr
 `bun run render:presentation` y `bun run render:reels`).
 
 ## Tu cola
+
+0-nonies. **Device-QA del #167, y NO es simulable** (`tickets/qa/icloud-kv-prefs-cross-sessions-on-a-lent-phone.md`).
+   Dos dispositivos del **mismo Apple ID**: uno con tu sesión privada y otro «prestado» que cierra sesión y
+   entra por «Vengo por un grupo» con **otra** cuenta. Cambias el idioma en uno y compruebas que el otro no
+   se entera, en los dos sentidos. **Lo que más importa:** que un dispositivo privado **siga recibiendo** los
+   cambios de otro privado del mismo Apple ID — si no llegan, la puerta se habría cerrado para el dueño.
 
 0-octies. **Device-QA del #159, y NO es simulable**
    (`tickets/qa/device-qa-apple-id-change-closes-private-session.md`, cinco recorridos). Hacen falta **dos
@@ -347,10 +351,8 @@ señal, porque no tiene la marca del mount neutro y el backfill le escribe «tie
 existe). (2) La hoja de «Vaciar datos» sigue prometiendo que el borrado alcanza a **todos** tus
 dispositivos, y eso **no es computable desde el emisor**: el iCloud-KV no lleva inventario de sesiones
 (`wipe-sheet-still-promises-every-apple-id-device`, tres opciones escritas). (3) **CERRADO en #162**, y de paso se midió que la celda que lo motivaba no era la que disparaba:
-lo que salía era el aviso auto-infligido tras «Vaciar datos» en solo-grupos. (4) Las 37 preferencias siguen cruzando
-entre el dueño y quien usa el teléfono: el guard que lo impedía se retiró sobre una premisa que la celda
-solo-grupos contradice, y el propio fichero dice dónde reponerlo
-(`icloud-kv-prefs-cross-sessions-on-a-lent-phone`).
+lo que salía era el aviso auto-infligido tras «Vaciar datos» en solo-grupos. (4) **CERRADO en #167**: las preferencias —eran 36,
+no 37— ya no cruzan con un móvil prestado; deja dos decisiones tuyas (ver «Esta sesión»).
 
 **El #162 te deja uno `high` y es una decisión tuya.** El aviso de datos borrados se enciende desde una
 tarea de cinco segundos escribiendo estado de la vista directamente, en vez de pasar por la cola de avisos
@@ -383,8 +385,9 @@ grupo?» se mide después del borrado y da 0),
 iCloud sigue entero cuando la zona ya no está — el copy correcto ya existe traducido) y
 `activation-resume-returns-to-restore-on-an-emptied-zone` (`low`).
 
-**El board: 367 en disco = 367 en `docs/TICKETS.md`**, cero desajustes de estado y cero rutas rotas. Suben
-5 con el #158 y `activation-restore-start-fresh-keeps-the-imported-rows` pasa a `done/`.
+**El board: 379 en disco = 379 en `docs/TICKETS.md`** (medido el 15-sep), cero desajustes de estado y cero
+rutas rotas. El #167 quitó una fila duplicada (`rojo-heroBuckets-thisWeek-trailing-window`), pasa su ticket
+a `qa/` y suben 3.
 
 ## Bloqueo
 
