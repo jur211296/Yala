@@ -151,6 +151,10 @@ struct GroupsAssociationSection: View {
     /// El aviso se cierra soltando TAMBIÉN la fase del coordinador. Si solo se bajara el `@State`, el
     /// `guard phase == .idle` dejaría inertes el desasociar Y el cierre de sesión de Ajustes.
     private func dismissBlocked() {
+        // **Una sola vez por aviso** (review adversarial, 2026-09-15). Lo llaman el botón y el `set` del binding, y SwiftUI
+        // escribe `false` al pulsar CUALQUIER botón: la segunda llamada llegaba con `blockedReason` ya a `nil`, leía «no
+        // ajeno» y reconocía el bloqueo de un cierre de sesión que no era suyo.
+        guard blockedReason != nil else { return }
         // `.detachBusy` es el ÚNICO motivo que NO puso este gesto: la fase es de un cierre de sesión
         // ajeno, y soltarla aquí lo dejaría a medias —sin fase y sin `blockedExit`— con sus dos botones
         // de «Esperar» / «Cerrar igualmente» saliendo por su `guard let` sin hacer nada.
@@ -173,6 +177,10 @@ struct GroupsAssociationSection: View {
         // decía las dos cosas. Copy compartido con el cierre de sesión: el hecho es el mismo y el título
         // de arriba ya dice cuál de los dos gestos falló.
         case .channelPaused: return L10n.Groups.Errors.channelPaused
+        // El teléfono sin App Attest (2026-09-15): «inténtalo en un momento» dejó de ser verdad. Aquí va el texto SIN
+        // salida, y es la decisión de Jürgen: el desasociar no ofrece soltar la cuenta perdiendo los cambios
+        // (`CloudSessionSignOut.detachGroupsAccount` le pasa `lossExit: nil`). El título ya dice qué gesto falló.
+        case .attestUnavailable: return L10n.Groups.Errors.attestUnavailable
         // `.transient` es el caso corriente. `.exportUnconfirmed` es del cierre PRIVADO y no puede llegar
         // a este gesto —el desasociar no espera a iCloud—, y `nil` tampoco con el aviso presentado (el
         // binding lo enciende justo con el motivo puesto); los dos caen en el copy que no afirma ninguna

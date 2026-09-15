@@ -186,6 +186,7 @@ struct SignOutBlockedCopyTests {
         #expect(SignOutBlockedCopy.message(for: .channelPaused) == L10n.Groups.Errors.channelPaused)
         #expect(SignOutBlockedCopy.message(for: .uploadRetryLater) == L10n.Groups.Errors.uploadRetryLater)
         #expect(SignOutBlockedCopy.message(for: .transient) == L10n.Settings.signOutPendingMessage)
+        #expect(SignOutBlockedCopy.message(for: .attestUnavailable) == L10n.Groups.Errors.attestUnavailable)
     }
 
     @Test("Lo que no tiene causa que nombrar cae al genérico, `nil` incluido")
@@ -197,12 +198,15 @@ struct SignOutBlockedCopyTests {
         }
     }
 
-    @Test("«Un momento más» solo para lo pasajero; el resto, «No pudimos cerrar tu sesión»")
+    @Test("«Un momento más» solo para lo pasajero, el teléfono sin App Attest el suyo, y el resto «No pudimos cerrar tu sesión»")
     func titles() {
         for reason in CloudSignOutFlowLogic.BlockReason.allCases {
-            let expected = reason == .transient
-                ? L10n.Settings.signOutPendingTitle
-                : L10n.Settings.signOutBlockedTitle
+            let expected: String
+            switch reason {
+            case .transient: expected = L10n.Settings.signOutPendingTitle
+            case .attestUnavailable: expected = L10n.Groups.Errors.attestUnavailableTitle
+            default: expected = L10n.Settings.signOutBlockedTitle
+            }
             #expect(SignOutBlockedCopy.title(for: reason) == expected)
         }
     }
@@ -213,9 +217,10 @@ struct SignOutBlockedCopyTests {
         // carga—, las aserciones de arriba pasarían con los motivos intercambiados.
         let messages = [L10n.Groups.Errors.sessionExpired, L10n.Groups.Errors.channelPaused,
                         L10n.Groups.Errors.uploadRetryLater, L10n.Settings.signOutPendingMessage,
-                        L10n.Settings.signOutBlockedMessage]
+                        L10n.Settings.signOutBlockedMessage, L10n.Groups.Errors.attestUnavailable]
         #expect(Set(messages).count == messages.count)
         #expect(L10n.Settings.signOutPendingTitle != L10n.Settings.signOutBlockedTitle)
+        #expect(L10n.Groups.Errors.attestUnavailableTitle != L10n.Settings.signOutBlockedTitle)
     }
 }
 
@@ -375,6 +380,8 @@ struct AppleIDCloseNoticeWiringTests {
         #expect(content.contains(Self.squashed("""
             case .blocked(let reason):
                 blockedBody(reason: reason)
+            case .losingGroupChanges(let pending):
+                attestLossBody(pending: pending)
             case .busy:
                 blockedBody(reason: .transient, identifierOverride: "apple_id_close_busy")
             """)), """
@@ -505,5 +512,86 @@ struct AppleIDCloseNoticeWiringTests {
             #expect(launcher.contains("args.append(\"\(arg)\")"), "el lanzador del XCUITest no pasa `\(arg)`")
             #expect(hooks.contains("hasArg(\"\(arg)\")"), "`UITestHooks` no lee `\(arg)`")
         }
+    }
+}
+
+// MARK: - 4 · El teléfono sin App Attest (ticket `groups-phone-that-never-attests-is-told-to-retry-forever`)
+
+@MainActor
+@Suite("Hoja del cambio de Apple ID · el teléfono sin App Attest")
+struct AppleIDCloseNoticeAttestLossTests {
+
+    typealias L = AppleIDCloseNoticeLogic
+
+    @Test("MUTACIÓN: con la salida de ESTE cierre, el bloqueo del attest se ve como la pérdida con su cifra")
+    func theLossStageNeedsTheExit() {
+        let bloqueado = CloudSessionSignOut.Phase.blocked(pendingCount: 4, reason: .attestUnavailable)
+        for notice in [AppleIDCloseNotice.closing, .stopped] {
+            #expect(L.stage(notice: notice, phase: bloqueado, offersGroupsLossExit: true) == .losingGroupChanges(pending: 4))
+            #expect(L.stage(notice: notice, phase: bloqueado, offersGroupsLossExit: false) == .blocked(.attestUnavailable))
+        }
+        // Otro motivo, u otra etapa, es la tabla de siempre aunque la salida estuviera ofrecida.
+        let otro = CloudSessionSignOut.Phase.blocked(pendingCount: 4, reason: .transient)
+        #expect(L.stage(notice: .closing, phase: otro, offersGroupsLossExit: true) == .blocked(.transient))
+        #expect(L.stage(notice: .asking, phase: bloqueado, offersGroupsLossExit: true) == .asking)
+        #expect(L.stage(notice: .couldNotStart, phase: bloqueado, offersGroupsLossExit: true) == .busy)
+        #expect(L.stage(notice: .closing, phase: .working, offersGroupsLossExit: true) == .working)
+    }
+
+    @Test("MUTACIÓN: el aviso cuenta lo que se pierde con su cifra, y sin ella cuando no hay número honesto")
+    func theLossMessageCountsHonestly() {
+        #expect(SignOutBlockedCopy.attestLossMessage(pending: 7) == L10n.Groups.Errors.attestUnavailableSignOutLoss(7))
+        #expect(SignOutBlockedCopy.attestLossMessage(pending: Int.max)
+                == L10n.Groups.Errors.attestUnavailableSignOutLossUnknown)
+        #expect(SignOutBlockedCopy.welcomeAttestLossMessage(pending: 7) == L10n.Welcome.Groups.neutralAttestLossBody(7))
+        #expect(SignOutBlockedCopy.welcomeAttestLossMessage(pending: Int.max)
+                == L10n.Welcome.Groups.neutralAttestLossBodyUnknown)
+        // Control del instrumento: los cuatro textos son distintos, así que las aserciones de arriba discriminan.
+        let textos = [L10n.Groups.Errors.attestUnavailableSignOutLoss(7),
+                      L10n.Groups.Errors.attestUnavailableSignOutLossUnknown,
+                      L10n.Welcome.Groups.neutralAttestLossBody(7),
+                      L10n.Welcome.Groups.neutralAttestLossBodyUnknown]
+        #expect(Set(textos).count == textos.count)
+    }
+
+    @Test("MUTACIÓN: la hoja congela la salida con la etapa, y su botón exige la salida viva y retoma el cierre")
+    func theSheetWiresTheLossExit() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        let raw = try String(contentsOf: root.appendingPathComponent("Yala/App/Views/Shared/AppleIDCloseNoticeView.swift"),
+                             encoding: .utf8)
+        func squashed(_ text: String) -> String { text.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ") }
+        let code = squashed(raw.split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n"))
+        #expect(code.contains(squashed("""
+            AppleIDCloseNoticeLogic.stage(notice: $0, phase: coordinator.phase,
+                                          offersGroupsLossExit: coordinator.offersGroupsLossExit)
+            """)), "la hoja lee la salida aparte de la etapa: la animación de salida pintaría el bloqueo sin salida")
+        #expect(code.contains(squashed("""
+            guard coordinator.offersGroupsLossExit else { return }
+            notice = .closing
+            """)))
+        #expect(code.contains("await CloudSessionSignOut.shared.exitDiscardingUnsyncedGroups(context: context)"))
+        #expect(code.contains(squashed("""
+            case .losingGroupChanges(let pending):
+                attestLossBody(pending: pending)
+            """)))
+        // **El cuerpo entero, con su orden y su botón** (lente de la review, 2026-09-15). Con `requestClose()` en el botón,
+        // «Cerrar sesión y perderlos» reconocía el bloqueo, volvía a arrancar el cierre y paraba en el mismo aviso, en
+        // bucle y sin perder nada; con el mensaje de `message(for:)`, ofrecía perder cambios sin decir cuántos.
+        #expect(code.contains(squashed(#"""
+            private func attestLossBody(pending: Int) -> some View {
+                noticeBody(
+                    icon: "exclamationmark.triangle",
+                    title: SignOutBlockedCopy.title(for: .attestUnavailable),
+                    message: SignOutBlockedCopy.attestLossMessage(pending: pending),
+                    identifier: "apple_id_close_losing_group_changes") {
+                    YalaPrimaryButton(L10n.iCloud.appleIDChangedLater) { later() }
+                        .accessibilityIdentifier("apple_id_close_later")
+                    Button(role: .destructive) {
+                        discardUnsyncedGroups()
+                    } label: {
+                        Text(L10n.Groups.Errors.attestUnavailableSignOutLossButton)
+            """#)), "el cuerpo de la pérdida en la hoja cambió de forma: orden, mensaje con cifra o acción del botón")
     }
 }

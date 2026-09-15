@@ -5929,3 +5929,33 @@
 
 /* Wipe sheet, cloud row when personal data lives in the user private iCloud: the deletion only reaches devices whose personal data lives in that same iCloud */
 "settings.wipeScopeCloudICloudPersonal" = "将从 iCloud 删除，因此也会从其他在此存放你个人数据的设备上消失";
+
+/* Titulo del aviso: el telefono lleva mas de un dia sin pasar la verificacion de seguridad del servidor y no puede sincronizar grupos */
+"groups.errors.attestUnavailableTitle" = "这台手机无法同步你的群组";
+
+/* Aviso al cerrar sesion sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
+"groups.errors.attestUnavailableSignOutLoss" = "已经超过一天没能通过我们服务器要求的安全验证。没有传到服务器的群组更改：%d 项。现在退出登录，这些更改会丢失，群组里的任何人都看不到。";
+
+/* Aviso al cerrar sesion sin verificacion de seguridad cuando no hay cifra honesta de cambios perdidos */
+"groups.errors.attestUnavailableSignOutLossUnknown" = "已经超过一天没能通过我们服务器要求的安全验证，而且有些群组更改没有传到服务器。现在退出登录，这些更改会丢失，群组里的任何人都看不到。";
+
+/* Boton destructivo: cierra sesion aceptando perder los cambios de grupos sin subir */
+"groups.errors.attestUnavailableSignOutLossButton" = "退出登录并丢失更改";
+
+/* Mensaje sin salida: el telefono no pasa la verificacion de seguridad y los cambios de grupos no suben */
+"groups.errors.attestUnavailable" = "这台手机已经超过一天没能通过我们服务器要求的安全验证，所以你的群组更改无法上传。";
+
+/* Alert al salir de un grupo: el telefono no puede sincronizar grupos */
+"groups.errors.leaveAttestUnavailable" = "这台手机无法同步你的群组，所以未能完成退出群组。";
+
+/* Puerta de Grupos del Welcome sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
+"welcome.groups.neutralAttestLossBody" = "已经超过一天没能通过我们服务器要求的安全验证。没有传到服务器的群组更改：%d 项。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
+
+/* Puerta de Grupos del Welcome sin verificacion de seguridad, sin cifra honesta de cambios perdidos */
+"welcome.groups.neutralAttestLossBodyUnknown" = "已经超过一天没能通过我们服务器要求的安全验证，而且有些群组更改没有传到服务器。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
+
+/* Boton destructivo del Welcome: continua aceptando perder los cambios de grupos sin subir */
+"welcome.groups.neutralAttestLossContinue" = "继续并丢失更改";
+
+/* Boton generico para posponer una decision */
+"action.notNow" = "暂不";

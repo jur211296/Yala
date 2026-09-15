@@ -902,7 +902,8 @@ struct GroupSettingsView: View {
         } catch {
             DS.Haptic.warning()
             // Mismo contrato que `leaveGroup()`: nunca un número crudo ni una dev-string.
-            actionErrorMessage = GroupLeaveErrorLogic.classify(error).localizedMessage
+            actionErrorMessage = GroupLeaveErrorLogic.classify(
+                error, attestUnavailable: GroupsAttestStreakStore.isTerminal()).localizedMessage
             showActionError = true
         }
     }
@@ -964,7 +965,8 @@ struct GroupSettingsView: View {
             // the group owner…»): sería mandar al usuario a un callejón con cartel técnico. Las otras
             // cuatro acciones de esta pantalla (renombrar, archivar, opciones) tienen el mismo defecto y
             // se dejan a propósito: no las nombra este cambio. Anotadas en el ticket.
-            actionErrorMessage = GroupLeaveErrorLogic.classify(error).localizedMessage
+            actionErrorMessage = GroupLeaveErrorLogic.classify(
+                error, attestUnavailable: GroupsAttestStreakStore.isTerminal()).localizedMessage
             showActionError = true
         }
     }
@@ -1081,7 +1083,8 @@ struct GroupSettingsView: View {
             // Copy propio por caso: el `localizedDescription` de un `GroupsRPCError` es el número del
             // discriminante («…GroupsRPCError 10.»), y el de un `GroupServiceError` es una dev-string en
             // inglés. Ninguno de los dos es un mensaje para el usuario.
-            let kind = GroupLeaveErrorLogic.classify(error)
+            let kind = GroupLeaveErrorLogic.classify(
+                error, attestUnavailable: GroupsAttestStreakStore.isTerminal())
             // El servidor acaba de decir «eres el dueño», y `reconcileServerSideOwnership` ya corrigió
             // el flag y bumpeó `dataVersion` — así que la pantalla, detrás de este alert, se ha
             // repintado con las salidas del dueño. Hay que recalcular ANTES de elegir el copy: con la
@@ -1203,7 +1206,8 @@ struct GroupSettingsView: View {
             // —`.adminRequired` e `.inactiveMember`— devuelven dev-strings en inglés («GroupService:
             // Only group admins can perform this action»), y esta fila es código nuevo, así que no
             // hereda el permiso que el resto del fichero se dio para dejarlo estar.
-            actionErrorMessage = GroupLeaveErrorLogic.classify(error).localizedMessage
+            actionErrorMessage = GroupLeaveErrorLogic.classify(
+                error, attestUnavailable: GroupsAttestStreakStore.isTerminal()).localizedMessage
             showActionError = true
         }
     }

@@ -1728,6 +1728,9 @@ enum L10n {
         static var select: String { ls("action.select", comment: "") }
         static var retry: String { ls("action.retry", comment: "") }
         static var later: String { ls("action.later", comment: "") }
+        /// «Ahora no»: la salida que no destruye de un aviso que ofrece perder algo (2026-09-15, el cierre de sesión sin
+        /// App Attest). Genérica a propósito, para que otro aviso no tenga que tomar prestada la del cambio de Apple ID.
+        static var notNow: String { ls("action.notNow", comment: "") }
         static var close: String { ls("action.close", comment: "") }
         static var reorder: String { ls("action.reorder", comment: "") }
         static var clearAll: String { ls("action.clearAll", comment: "") }
@@ -2160,6 +2163,26 @@ enum L10n {
             /// que mandaba a buscar un fallo que no existe. Ver
             /// `CloudSignOutFlowLogic.BlockReason.uploadRetryLater`.
             static var uploadRetryLater: String { ls("groups.errors.uploadRetryLater", comment: "") }
+            /// **Este teléfono lleva más de un día sin conseguir App Attest** (2026-09-15, ticket
+            /// `groups-phone-that-never-attests-is-told-to-retry-forever`). Título del aviso en Ajustes, en la hoja del
+            /// cambio de Apple ID y en la puerta de Grupos del Welcome. Ver `CloudSignOutFlowLogic.BlockReason.attestUnavailable`.
+            static var attestUnavailableTitle: String { ls("groups.errors.attestUnavailableTitle", comment: "") }
+            /// El mismo hecho SIN salida: el desasociar, la invitada del Welcome y todo bloqueo de ese motivo que no puso
+            /// un cierre. No dice «en un rato», que dejó de ser verdad, y no ofrece nada.
+            static var attestUnavailable: String { ls("groups.errors.attestUnavailable", comment: "") }
+            /// El aviso que OFRECE salir perdiendo los cambios de grupos. Accessor-FUNCIÓN y cifra tras dos puntos, por lo
+            /// mismo que `Settings.signOutExportPendingMessage`: la key entra en `L10nFormatAccessorsTests` y el plural no
+            /// se arrastra a los 16 idiomas.
+            static func attestUnavailableSignOutLoss(_ count: Int) -> String {
+                String(format: ls("groups.errors.attestUnavailableSignOutLoss", comment: "Cerrar sesión sin App Attest; %d = cambios de grupos que se pierden"), count)
+            }
+            /// Sin cifra: el recuento del outbox de Grupos falló, así que no hay número honesto que dar.
+            static var attestUnavailableSignOutLossUnknown: String { ls("groups.errors.attestUnavailableSignOutLossUnknown", comment: "") }
+            /// El botón destructivo del aviso: nombra la pérdida (decisión de Jürgen). Literal, como todo botón de `.alert`.
+            static var attestUnavailableSignOutLossButton: String { ls("groups.errors.attestUnavailableSignOutLossButton", comment: "") }
+            /// Salir de un grupo con el attest ya terminal (`GroupLeaveErrorLogic.Kind.deviceCannotSyncGroups`): no hay
+            /// salida local, así que no ofrece nada.
+            static var leaveAttestUnavailable: String { ls("groups.errors.leaveAttestUnavailable", comment: "") }
         }
 
         /// G6-3: grupo migrado a la nube de Yala (congelado en CloudKit) — banner/CTA/borrar copia.
@@ -5317,6 +5340,16 @@ enum L10n {
             static var neutralStalledBodyUnknown: String { ls("welcome.groups.neutralStalledBodyUnknown", comment: "") }
             static var neutralStalledContinue: String { ls("welcome.groups.neutralStalledContinue", comment: "") }
             static var neutralStalledWait: String { ls("welcome.groups.neutralStalledWait", comment: "") }
+            /// **Este teléfono lleva más de un día sin App Attest** y la vuelta al neutro se paró en cambios de grupos que
+            /// no suben (2026-09-15). Accessor-FUNCIÓN y cifra tras dos puntos, por lo mismo que `neutralStalledBody`. Dice
+            /// «si continúas ahora» y no «si cierras sesión»: aquí nadie ha pedido cerrar nada.
+            static func neutralAttestLossBody(_ count: Int) -> String {
+                String(format: ls("welcome.groups.neutralAttestLossBody", comment: "Vuelta al neutro sin App Attest; %d = cambios de grupos que se pierden"), count)
+            }
+            /// Sin cifra: el recuento del outbox de Grupos falló.
+            static var neutralAttestLossBodyUnknown: String { ls("welcome.groups.neutralAttestLossBodyUnknown", comment: "") }
+            /// El botón destructivo: nombra la pérdida, como «Cerrar sesión y perderlos» en Ajustes.
+            static var neutralAttestLossContinue: String { ls("welcome.groups.neutralAttestLossContinue", comment: "") }
             /// Quedaron cambios de GRUPOS sin subir de una sesión que caducó. No se descartan nunca, así
             /// que la única salida honesta es volver a entrar con esa cuenta.
             static var neutralBlockedTitle: String { ls("welcome.groups.neutralBlockedTitle", comment: "") }

@@ -207,6 +207,24 @@ final class GroupsSyncClient {
     func stoppedByChannelKill(for outcome: SyncCadencePolicy.CadenceOutcome) -> Bool {
         outcome == .accountUnavailable && lastStopWasChannelKill
     }
+
+    /// El testigo del attest ausente: si el ciclo que acaba de correr chocó con un 401 `yala_attest_required`, en el push
+    /// o en el pull. Molde exacto de `lastStopWasChannelKill`: lo baja `syncCycleOnce` al entrar y solo lo suben las dos
+    /// ramas de ese 401, así que describe el ÚLTIMO ciclo y no la vida del proceso.
+    private var lastCycleHitAttestRequired = false
+
+    /// ¿Paró el ciclo que acaba de correr porque este teléfono ya no consigue App Attest? Es la señal que el push-all
+    /// previo a cerrar sesión necesita para ofrecer la salida que pierde los cambios de grupos
+    /// (`CloudSignOutFlowLogic.BlockReason.attestUnavailable`, ticket
+    /// `groups-phone-that-never-attests-is-told-to-retry-forever`).
+    ///
+    /// **Tres condiciones, y ninguna sobra.** El outcome, por lo mismo que en `stoppedByChannelKill`: un `.coalesced`
+    /// describe un ciclo ajeno. El testigo, porque una racha terminal no dice por qué falló ESTE ciclo: sin red, con el
+    /// kill o con la sesión caducada, el aviso de la pérdida mentiría. Y la racha (`GroupsAttestStreakStore.isTerminal`),
+    /// porque un 401 de hace un rato es lo pasajero de siempre.
+    func stoppedByUnavailableAttest(for outcome: SyncCadencePolicy.CadenceOutcome) -> Bool {
+        outcome == .transient && lastCycleHitAttestRequired && GroupsAttestStreakStore.isTerminal(now: now())
+    }
     /// Contador de transitorios consecutivos para el backoff exponencial (reset al `.completed`/stop).
     private var consecutiveTransients = 0
     /// Sleep INYECTABLE entre vueltas del loop (default `Task.sleep`) — los tests inyectan uno que no
@@ -533,6 +551,9 @@ final class GroupsSyncClient {
         // lo suben las dos ramas del 403. Sin esto, un `.accountUnavailable` que no viene de un 403 —el 409
         // del freeze de la reversa— heredaría el veredicto de un kill anterior del mismo proceso.
         lastStopWasChannelKill = false
+        // Lo mismo para el testigo del attest ausente (ver `lastCycleHitAttestRequired`): un 401 de un ciclo anterior no
+        // puede convertir el corte de red de éste en «este teléfono no puede sincronizar».
+        lastCycleHitAttestRequired = false
         drainOnce(context: context)
         let push = await pushPending(context: context)
         guard generation == teardownGeneration else { return .coalesced }  // teardown durante el push
@@ -1536,6 +1557,9 @@ final class GroupsSyncClient {
 
             switch http.statusCode {
             case 200:
+                // El attest pasó la guard: la racha de rechazos se acaba (`GroupsAttestStreakStore`). Va ANTES de la
+                // guardia de abajo porque describe al teléfono, no a la sesión: un teardown en vuelo no lo desmiente.
+                GroupsAttestStreakStore.recordAcceptance()
                 // Guardia MEDIA: un teardown durante el request suspendido → NO aplicar resultados (ni purga
                 // ni dead-letter ni removals del espejo bajo una sesión que ya no existe). `.transient` es
                 // seguro: nada se confirmó localmente; el server deduplica por client_mutation_id.
@@ -1557,7 +1581,13 @@ final class GroupsSyncClient {
                 // sesión caducada ni pasa por el refresh de abajo: pasajero, con su backoff y con su rastro
                 // (decisión de Jürgen, 2026-09-15; `groups-sync-reads-a-missing-attest-401-as-a-session-expiry`).
                 // Un 401 que no trae este código conserva el trato de siempre.
+                //
+                // **Y cuenta en la racha, con su testigo** (ticket `groups-phone-that-never-attests-is-told-to-retry-forever`):
+                // tras 24 h sin un acierto, el cierre de sesión deja de decir «en un rato» y ofrece salir perdiendo los
+                // cambios (`stoppedByUnavailableAttest(for:)`).
                 GroupsSyncBreadcrumb.groupsAttestRequired(edge: "push")
+                lastCycleHitAttestRequired = true
+                GroupsAttestStreakStore.recordRejection(now: now())
                 return .transient
             case 401:
                 return .sessionExpired(pending: totalPending)
@@ -1848,6 +1878,8 @@ final class GroupsSyncClient {
 
             switch http.statusCode {
             case 200:
+                // Mismo criterio que el push (ver allí): el attest pasó la guard y la racha se acaba.
+                GroupsAttestStreakStore.recordAcceptance()
                 // Guardia MEDIA: un teardown durante el request suspendido → NO aplicar la página (el apply
                 // escribe Split*/cursor y el re-drive haría `writeMirrorEntry` sobre el espejo recién
                 // purgado). `.transient` corta el pull sin avanzar cursor.
@@ -1860,8 +1892,11 @@ final class GroupsSyncClient {
                     return .transient
                 }
             case 401 where GatewayErrorEnvelope.isAttestRequired(data):
-                // Mismo criterio que el push (ver allí): App Attest ausente con el JWT bueno → pasajero, sin refresh.
+                // Mismo criterio que el push (ver allí): App Attest ausente con el JWT bueno → pasajero, sin refresh, y
+                // cuenta en la racha con su testigo.
                 GroupsSyncBreadcrumb.groupsAttestRequired(edge: "pull")
+                lastCycleHitAttestRequired = true
+                GroupsAttestStreakStore.recordRejection(now: now())
                 return .transient
             case 401: return .sessionExpired
             case 403 where GatewayErrorEnvelope.isGroupsChannelDisabled(data):

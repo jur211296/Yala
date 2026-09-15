@@ -236,7 +236,7 @@ struct GroupLeaveOwnershipReconcileTests {
         do { try await GroupService.shared.leaveGroup(g) } catch { capturado = error }
 
         let error = try #require(capturado)
-        #expect(GroupLeaveErrorLogic.classify(error) == .ownedByCurrentUser)
+        #expect(GroupLeaveErrorLogic.classify(error, attestUnavailable: false) == .ownedByCurrentUser)
         #expect(session.callCount == 0)
         #expect(g.isOwner, "el guard local ya leyó el flag: no hay nada que reconciliar")
 

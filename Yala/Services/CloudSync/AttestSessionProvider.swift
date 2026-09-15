@@ -23,8 +23,8 @@
 //     `throws` haría que un attest caído abortase flujos que el gateway sigue aceptando.
 //   · Allí: el error VIAJA, y está escrito en el contrato del protocolo (`CloudSyncRuntime.swift:46`):
 //     `attestToken()` propaga el `AppAttestError` para que el runtime lo clasifique transient/terminal
-//     con `AttestSyncGate` — de ahí salen el banner de «este device no puede sincronizar» y el canario
-//     `cloudSyncBlockedByAttestUnavailable`. Un `try?` allí borraría esa clasificación entera.
+//     con `AttestSyncGate` — de ahí sale el canario `cloudSyncBlockedByAttestUnavailable` y la parada del runtime (no
+//     hay banner: medido el 2026-09-15). Un `try?` allí borraría esa clasificación entera.
 //
 //  Que la diferencia es real y no cosmética se ve en el consumidor: `CloudSyncRuntime.swift:274` y
 //  `CloudMigrationController.swift:212` degradan a mano (`{ try? await session.attestToken() }`)

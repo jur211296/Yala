@@ -33,21 +33,33 @@ nonisolated enum GroupLeaveErrorLogic {
         /// `yala_attest_required`). No es culpa del usuario y el estado suele arreglarse solo, así que el copy
         /// pide volver a intentarlo en un momento — el mismo criterio que ya se tomó para `channelDisabled` en el
         /// enlace de invitación (`groups.invite.channelUnavailable`). Un teléfono que no recupera nunca el attest
-        /// no se arregla solo: `groups-phone-that-never-attests-is-told-to-retry-forever`.
+        /// no se arregla solo, y a partir de las 24 h deja de caer aquí: `.deviceCannotSyncGroups`.
         /// Copy `groups.errors.leaveUnavailable`.
         case retryLater
         /// Cualquier otro. Copy `groups.errors.actionFailed`.
         case generic
+        /// **Este teléfono lleva más de un día sin conseguir App Attest** (2026-09-15, ticket
+        /// `groups-phone-that-never-attests-is-told-to-retry-forever`): el 401 `yala_attest_required` de esta llamada
+        /// llega con la racha ya terminal (`GroupsAttestStreakStore`). «Vuelve a intentarlo en un momento» dejaría de
+        /// ser verdad, y salir de un grupo no tiene salida local, así que el aviso lo dice sin ofrecer nada (decisión
+        /// de Jürgen). Copy `groups.errors.leaveAttestUnavailable`.
+        case deviceCannotSyncGroups
     }
 
-    static func classify(_ error: Error) -> Kind {
+    /// - Parameter attestUnavailable: si este teléfono ya no puede sincronizar grupos
+    ///   (`GroupsAttestStreakStore.isTerminal`). **Sin valor por defecto**, para que cada llamada se pronuncie. Solo
+    ///   cambia algo con `.transient(status: 401)`, que en la membresía sale únicamente del attest ausente
+    ///   (`GroupsMembershipClient.call`); las acciones locales que reutilizan esta tabla lanzan `GroupServiceError`.
+    static func classify(_ error: Error, attestUnavailable: Bool) -> Kind {
         if let rpc = error as? GroupsRPCError {
             switch rpc {
             case .ownerCannotLeave:
                 return .ownedByCurrentUser
             case .sessionExpired:
                 return .sessionExpired
-            case .transient, .channelDisabled:
+            case .transient(let status):
+                return status == 401 && attestUnavailable ? .deviceCannotSyncGroups : .retryLater
+            case .channelDisabled:
                 return .retryLater
             // `.groupArchived` cae aquí a propósito: `leave_group` no lo devuelve (el gate de g13_05 vive
             // solo en `join_group`), así que es inalcanzable por este camino. Está en la lista por
@@ -92,6 +104,7 @@ extension GroupLeaveErrorLogic.Kind {
         case .sessionExpired:     return L10n.Groups.Errors.sessionExpired
         case .retryLater:         return L10n.Groups.Errors.leaveUnavailable
         case .generic:            return L10n.Groups.Errors.actionFailed
+        case .deviceCannotSyncGroups: return L10n.Groups.Errors.leaveAttestUnavailable
         }
     }
 }

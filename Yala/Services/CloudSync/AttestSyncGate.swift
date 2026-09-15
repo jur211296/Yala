@@ -13,8 +13,10 @@
 //  Plus the onboarding upfront gate: born-cloud only offered when attest is terminally SUPPORTED
 //  (owner: block-upfront, mirroring Groups' `iCloudSyncService.isAccountAvailable`).
 //
-//  NO runtime wiring — the consumer (I7c) classifies each failure and, on `.terminal`, fires the
-//  `cloudSyncBlockedByAttestUnavailable(platform)` canary + shows the banner. Pure & `nonisolated`.
+//  NO runtime wiring — the consumer (`CloudSyncRuntime.performCycle`) classifies each failure and, on `.terminal`,
+//  fires the `cloudSyncBlockedByAttestUnavailable(platform)` canary and stops. **There is NO banner** (measured
+//  2026-09-15: `SyncStatusBanner` is iCloud's); this line used to promise one, and a ticket inherited the claim. The
+//  groups channel has its own terminal verdict, `GroupsAttestVerdictLogic`. Pure & `nonisolated`.
 //
 
 import Foundation

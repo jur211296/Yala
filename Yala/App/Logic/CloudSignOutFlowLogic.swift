@@ -251,6 +251,20 @@ nonisolated enum CloudSignOutFlowLogic {
         /// la nube (`neutralReturnEntryPhase` devuelve `.unavailable` para `.cloudSecureSignOut`). Si algún
         /// día nace un segundo productor, ahí hay un catch-all que diría «vuelve a entrar con esa cuenta».
         case uploadRetryLater
+        /// **Este teléfono lleva más de un día sin conseguir App Attest y quedan cambios de grupos sin subir**
+        /// (2026-09-15, ticket `groups-phone-that-never-attests-is-told-to-retry-forever`). El servidor rechaza la
+        /// subida con 401 `yala_attest_required` —la sesión vale, falta el attest— y la racha ya es terminal
+        /// (`GroupsAttestVerdictLogic`: 24 h y 3 rechazos sin un solo acierto).
+        ///
+        /// Va aparte de `.transient` porque «un momento más» deja de ser verdad para quien lo oye desde ayer, y aparte
+        /// de `.permanent` porque su texto manda a revisar una conexión que funciona. Lo produce `classify`, y solo con
+        /// el testigo del ciclo: una racha vieja no puede disfrazar un fallo de hoy que es otra cosa.
+        ///
+        /// **Es el único bloqueo de Grupos con una salida que pierde los cambios, y es una excepción ACOTADA** a «nunca
+        /// descarta» (decisión de Jürgen, 2026-09-15). La ofrecen los cierres de sesión
+        /// (`CloudSessionSignOut.exitDiscardingUnsyncedGroups`), con un aviso cuyo botón nombra la pérdida. El
+        /// desasociar comparte el motivo y no ofrece ninguna salida.
+        case attestUnavailable
 
         /// Slug corto para los logs (`CloudSyncBreadcrumb.signOutGroupsBlocked`). Va aquí y no en el
         /// emisor para que un motivo nuevo tenga que nombrarse una sola vez: el `switch` es exhaustivo.
@@ -264,6 +278,7 @@ nonisolated enum CloudSignOutFlowLogic {
             case .detachBusy: return "detach-busy"
             case .channelPaused: return "channel-paused"
             case .uploadRetryLater: return "upload-retry-later"
+            case .attestUnavailable: return "attest-unavailable"
             }
         }
     }
@@ -300,6 +315,9 @@ nonisolated enum CloudSignOutFlowLogic {
         // La sesión caducada, tal cual (decisión 3A de Jürgen, 2026-09-15): su aviso pide volver a entrar, que es
         // lo único que sube estos cambios. Colapsada en `.permanent` le decía «revisa tu conexión».
         case .sessionExpired: return .sessionExpired
+        // El teléfono sin App Attest, tal cual (2026-09-15): su aviso es el que ofrece salir perdiendo los cambios de
+        // grupos. Traducido a `.uploadRetryLater` volvería a decir «inténtalo en un rato» a quien lleva un día sin poder.
+        case .attestUnavailable: return .attestUnavailable
         case .permanent: return .permanent
         case .exportUnconfirmed, .bridgeUnreadable, .detachBusy: return .permanent
         }
@@ -351,12 +369,20 @@ nonisolated enum CloudSignOutFlowLogic {
     ///
     /// Solo cuenta cuando el ciclo paró por un 403: con cualquier otro outcome el término se ignora, que es
     /// lo que impide que un kill viejo tiña un fallo de red posterior.
+    ///
+    /// `attestUnavailable` es la otra mitad que `CadenceOutcome` no lleva (2026-09-15): **si el `.transient` que paró el
+    /// ciclo era el 401 de un teléfono que lleva más de un día sin App Attest**. Lo contesta
+    /// `GroupsSyncClient.stoppedByUnavailableAttest(for:)`, que exige el testigo del ciclo además de la racha. Sin valor
+    /// por defecto, por lo mismo que `channelKilled`: el motor personal escribe `false` y lo dice. Solo cuenta con un
+    /// `.transient`; con cualquier otro outcome se ignora.
     static func classify(_ outcome: SyncCadencePolicy.CadenceOutcome,
-                         channelKilled: Bool) -> BlockReason {
+                         channelKilled: Bool,
+                         attestUnavailable: Bool) -> BlockReason {
         switch outcome {
         case .sessionExpired: return .sessionExpired
         case .accountUnavailable: return channelKilled ? .channelPaused : .permanent
-        case .transient, .completed, .coalesced: return .transient
+        case .transient: return attestUnavailable ? .attestUnavailable : .transient
+        case .completed, .coalesced: return .transient
         }
     }
 
@@ -379,6 +405,7 @@ nonisolated enum CloudSignOutFlowLogic {
         livePendingCount: Int,
         cycleOutcome: SyncCadencePolicy.CadenceOutcome,
         channelKilled: Bool,
+        attestUnavailable: Bool,
         iteration: Int,
         maxIterations: Int
     ) -> PushAllVerdict? {
@@ -386,9 +413,47 @@ nonisolated enum CloudSignOutFlowLogic {
         let cycleSucceeded = cycleOutcome == .completed || cycleOutcome == .coalesced
         if !cycleSucceeded || iteration >= maxIterations {
             return .blocked(pendingCount: livePendingCount,
-                            reason: classify(cycleOutcome, channelKilled: channelKilled))
+                            reason: classify(cycleOutcome, channelKilled: channelKilled,
+                                             attestUnavailable: attestUnavailable))
         }
         return nil
+    }
+
+    // MARK: - La salida que pierde los cambios de grupos (teléfono sin App Attest, 2026-09-15)
+
+    /// Lo que la persona aceptó perder al elegir «Cerrar sesión y perderlos».
+    enum GroupsLossAcceptance: Equatable {
+        /// Las filas vivas del outbox de Grupos que había cuando se le enseñó la cifra, por su `clientMutationID`.
+        case rows(Set<UUID>)
+        /// Se le enseñó sin cifra, porque el recuento falló: lo aceptado cubre cualquier fila.
+        case uncounted
+    }
+
+    /// ¿Puede el cierre seguir con estas filas de grupos sin subir? Sin filas, siempre. Con filas, solo si la persona
+    /// aceptó perder ESAS: la comparación es por fila, no por cifra. `acceptance == nil` = no aceptó nada, y el cierre es
+    /// el de siempre, que no descarta.
+    ///
+    /// **Por fila y no por cifra, por un bug de la review adversarial (2026-09-15).** Con la cifra, aceptar 2 cambios
+    /// cubría CUALQUIER par: si uno subía entre medias y la persona apuntaba otro sin red durante la espera del export, el
+    /// cierre se llevaba el nuevo sin que ningún aviso lo contara. Ahora una fila que no estaba en el aviso lo hace volver.
+    ///
+    /// `pendingRows == nil` es un recuento que falló: solo lo cubre una aceptación sin cifra.
+    static func continuesWithoutUploadingGroups(pendingRows: Set<UUID>?, acceptance: GroupsLossAcceptance?) -> Bool {
+        if let pendingRows, pendingRows.isEmpty { return true }
+        guard let acceptance else { return false }
+        switch acceptance {
+        case .uncounted:
+            return true
+        case .rows(let accepted):
+            guard let pendingRows else { return false }
+            return pendingRows.isSubset(of: accepted)
+        }
+    }
+
+    /// La cifra que el aviso de la pérdida puede enseñar, o `nil` si no hay número honesto: `Int.max` es un recuento
+    /// que falló, y un bloqueo nunca lleva cero cambios.
+    static func shownGroupsLossCount(_ pending: Int) -> Int? {
+        pending > 0 && pending < Int.max ? pending : nil
     }
 }
 
@@ -437,8 +502,11 @@ nonisolated enum GroupsSignOutRetryDecision {
         // cierre en la nube, que llama al push-all directo y nunca pasa por aquí. Se decide igual porque la
         // rama por defecto de esta cadena de `if` es la peor —45 s reintentando— y porque su significado ya
         // es «esto no se arregla dentro del gesto»: reintentarlo aquí se contradiría con su propio aviso.
+        //
+        // **`.attestUnavailable` también** (2026-09-15): un teléfono que lleva más de un día sin App Attest no lo
+        // recupera en 45 s, y reintentar serían ~23 subidas con un 401 seguro antes de un aviso que ya se puede dar.
         if reason == .permanent || reason == .sessionExpired || reason == .channelPaused
-            || reason == .uploadRetryLater {
+            || reason == .uploadRetryLater || reason == .attestUnavailable {
             return .surfacePermanent
         }
         if elapsedSeconds < budgetSeconds { return .retryAfter(seconds: retryIntervalSeconds) }

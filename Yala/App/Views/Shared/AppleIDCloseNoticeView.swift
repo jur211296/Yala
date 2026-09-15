@@ -167,9 +167,13 @@ struct AppleIDCloseNoticeView: View {
     /// El coordinador del cierre. Su fase se lee en el `body` para que `@Observable` la rastree.
     private var coordinator: CloudSessionSignOut { CloudSessionSignOut.shared }
 
-    /// La etapa de ahora, o `nil` si el aviso ya se soltó.
+    /// La etapa de ahora, o `nil` si el aviso ya se soltó. Lleva dentro la salida que pierde los cambios de grupos, para
+    /// que se congele con ella (ver `AppleIDCloseNoticeLogic.stage(notice:phase:offersGroupsLossExit:)`).
     private var liveStage: AppleIDCloseNoticeLogic.Stage? {
-        notice.map { AppleIDCloseNoticeLogic.stage(notice: $0, phase: coordinator.phase) }
+        notice.map {
+            AppleIDCloseNoticeLogic.stage(notice: $0, phase: coordinator.phase,
+                                          offersGroupsLossExit: coordinator.offersGroupsLossExit)
+        }
     }
 
     var body: some View {
@@ -232,6 +236,8 @@ struct AppleIDCloseNoticeView: View {
             .accessibilityIdentifier("apple_id_close_working")
         case .blocked(let reason):
             blockedBody(reason: reason)
+        case .losingGroupChanges(let pending):
+            attestLossBody(pending: pending)
         case .busy:
             // Ni cierre en vuelo ni bloqueo que enseñar: no arrancó, u otra pantalla ya reconoció el bloqueo.
             // «Un momento más» es lo cierto, y las dos salidas siguen ahí.
@@ -255,6 +261,48 @@ struct AppleIDCloseNoticeView: View {
                 .accessibilityIdentifier("apple_id_close_retry")
             YalaSecondaryButton(L10n.iCloud.appleIDChangedLater) { later() }
                 .accessibilityIdentifier("apple_id_close_later")
+        }
+    }
+
+    /// **El teléfono sin App Attest** (2026-09-15): el aviso cuenta lo que se pierde con el texto de Ajustes
+    /// (`SignOutBlockedCopy.attestLossMessage`) y ofrece cerrar igualmente. «Ahora no» va primero, como en la pregunta:
+    /// perder cambios tiene que ser un gesto deliberado. Sin «Reintentar»: tras un día sin attest no es lo que ayuda.
+    private func attestLossBody(pending: Int) -> some View {
+        noticeBody(
+            icon: "exclamationmark.triangle",
+            title: SignOutBlockedCopy.title(for: .attestUnavailable),
+            message: SignOutBlockedCopy.attestLossMessage(pending: pending),
+            // Identificador propio: el mismo motivo sin salida lleva `apple_id_close_blocked_attest-unavailable`, y los dos
+            // textos son distintos.
+            identifier: "apple_id_close_losing_group_changes") {
+            YalaPrimaryButton(L10n.iCloud.appleIDChangedLater) { later() }
+                .accessibilityIdentifier("apple_id_close_later")
+            Button(role: .destructive) {
+                discardUnsyncedGroups()
+            } label: {
+                Text(L10n.Groups.Errors.attestUnavailableSignOutLossButton)
+                    .font(DS.Typography.label)
+                    .frame(maxWidth: .infinity, minHeight: DS.Button.actionSize)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityIdentifier("apple_id_close_discard_groups")
+        }
+    }
+
+    /// «Cerrar sesión y perderlos»: el cierre retoma donde paró aceptando la cifra enseñada
+    /// (`CloudSessionSignOut.exitDiscardingUnsyncedGroups`). En un `Task` suelto por lo mismo que `requestClose`: si UIKit
+    /// desmontara la hoja, el cierre sigue y la red la vuelve a presentar con la fase que tenga.
+    private func discardUnsyncedGroups() {
+        guard coordinator.offersGroupsLossExit else { return }
+        notice = .closing
+        let context = modelContext
+        let pending = $notice
+        Task { @MainActor in
+            await CloudSessionSignOut.shared.exitDiscardingUnsyncedGroups(context: context)
+            if pending.wrappedValue == .closing {
+                pending.wrappedValue = AppleIDCloseNoticeLogic.noticeAfterClose(
+                    phaseAfter: CloudSessionSignOut.shared.phase)
+            }
         }
     }
 

@@ -225,6 +225,20 @@ enum MetricsCanary: String {
     /// no dejaba ni una señal. **Cualquier valor sostenido >0 es un bug**, no una cola de release: a
     /// diferencia del suyo, aquí no hay corpus heredado que explique un pico.
     case groupsDetachPurgeFailed
+
+    // Teléfono que no consigue App Attest (ticket `groups-phone-that-never-attests-is-told-to-retry-forever`)
+    /// **La racha de 401 `yala_attest_required` del canal de Grupos se volvió terminal**: 24 h y al menos 3 rechazos
+    /// sin un solo 200 (`GroupsAttestVerdictLogic`). Una vez por racha y por teléfono. `detail` = `rejections=N
+    /// hours=H`, sin PII. **Es la medición que el ticket no tenía**: cuántos teléfonos no recuperan el attest. Un pico
+    /// tras un release o una rotación del secreto del gateway apunta al servidor, no a los teléfonos.
+    case groupsAttestTerminal
+    /// Un CIERRE DE SESIÓN se bloqueó con ese veredicto y dejó ofrecida la salida que pierde los cambios de grupos.
+    /// `detail` = `pending=N` o `pending=unknown`. Cuenta OFERTAS, no personas: el invitado del Welcome no ve el botón y
+    /// cada nuevo aviso del mismo cierre suma otra.
+    case groupsSignOutAttestUnavailable
+    /// El cierre siguió sin subir esos cambios, con la persona conforme: se pierden con el borrado del arranque.
+    /// `detail` = `pending=N` o `pending=unknown`. Frente al anterior, dice cuántos eligieron salir.
+    case groupsSignOutAttestDiscarded
 }
 
 // MARK: - Servicio

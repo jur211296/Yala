@@ -3,7 +3,8 @@
 //  YalaTests / CloudSync
 //
 //  Cliente TIPADO de los RPCs de membresía del canal Grupos → backend (incremento G3, DARK). Cliente PURO
-//  de red → sin `ModelContext` (no usa `makeTestContext`, no necesita `.serialized`): stub HTTP inyectado,
+//  de red → sin `ModelContext` (no usa `makeTestContext`; `.serialized` solo por la tienda global de la racha de App Attest, que tres tests
+//  aíslan con `IsolatedAttestStreak`): stub HTTP inyectado,
 //  aserción del REQUEST enviado (URL exacta {base}/groups/rpc/{fn}, body campo a campo — lección d49d2e47 —,
 //  Authorization), decode de los structs de resultado y mapeo de errores.
 //
@@ -15,7 +16,7 @@ import Testing
 
 @testable import Yala
 
-@Suite("GroupsMembershipClient · RPCs de membresía (DARK)")
+@Suite("GroupsMembershipClient · RPCs de membresía (DARK)", .serialized)
 @MainActor
 struct GroupsMembershipClientTests {
 
@@ -219,6 +220,7 @@ struct GroupsMembershipClientTests {
     /// el JWT, y este cliente no manda nada sin él. No es sesión caducada: `.transient` con el status del 401 y el
     /// reintento corto de siempre (`approve_member` reintenta: 3 peticiones). Hasta el 2026-09-15 era `.sessionExpired`.
     @Test func error_401_attestRequired_isTransient_andRetries() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
         let session = stub(
             #"{"error":{"message":"Falta el token de sesión de App Attest.","type":"yala_attest_required","param":null,"code":"yala_attest_required"}}"#,
             status: 401)
@@ -232,6 +234,7 @@ struct GroupsMembershipClientTests {
     /// un rato» y no «Tu sesión caducó», y aceptar una invitación conserva el intent sin abrir el inicio de sesión, que
     /// no arregla un attest que falta. Y el one-shot `create_group_invite` sigue sin reintentar.
     @Test func error_401_attestRequired_neverReachesTheSessionExpiredScreens() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
         let body = #"{"error":{"type":"yala_attest_required","code":"yala_attest_required"}}"#
 
         let leaving = stub(body, status: 401)
@@ -239,7 +242,7 @@ struct GroupsMembershipClientTests {
             _ = try await client(leaving).leaveGroup(groupID: "g")
             Issue.record("leaveGroup tenía que lanzar")
         } catch {
-            #expect(GroupLeaveErrorLogic.classify(error) == .retryLater)
+            #expect(GroupLeaveErrorLogic.classify(error, attestUnavailable: false) == .retryLater)
         }
 
         let accepting = stub(body, status: 401)
@@ -256,6 +259,28 @@ struct GroupsMembershipClientTests {
             _ = try await self.client(inviting).createInvite(groupID: "g", ttlSeconds: 60, maxUses: nil)
         }
         #expect(inviting.callCount == 1)   // one-shot creador: sin reintento
+    }
+
+    /// **Cada 401 del attest cuenta en la racha, y un 200 la acaba** (2026-09-15, ticket
+    /// `groups-phone-that-never-attests-is-told-to-retry-forever`). En la nube Grupos casi no pide en segundo plano: sin
+    /// la membresía, quien solo intenta salir de un grupo no llegaría nunca al aviso terminal. Y con la racha ya terminal,
+    /// salir de un grupo lo dice en vez de «vuelve a intentarlo en un momento».
+    @Test func error_401_attestRequired_countsInTheStreak_andA200EndsIt() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        let rechazo = stub(#"{"error":{"type":"yala_attest_required","code":"yala_attest_required"}}"#, status: 401)
+        do {
+            _ = try await client(rechazo).leaveGroup(groupID: "g")
+            Issue.record("leaveGroup tenía que lanzar")
+        } catch {
+            #expect(GroupLeaveErrorLogic.classify(error, attestUnavailable: true) == .deviceCannotSyncGroups)
+        }
+        #expect(rechazo.callCount >= 1)
+        // Los reintentos de un mismo gesto son UNA ocasión: cuentan una vez (`GroupsAttestVerdictLogic.countingInterval`).
+        #expect(GroupsAttestStreakStore.current()?.rejections == 1)
+
+        let acierto = stub(#"{"group_id":"g-1","member_key":"m-1","status":"left"}"#)
+        _ = try await client(acierto).leaveGroup(groupID: "g-1")
+        #expect(GroupsAttestStreakStore.current() == nil, "un 200 prueba que el attest pasó la guard: la racha se acaba")
     }
 
     /// La dirección contraria: `yala_attest_invalid` es el JWT que no vale, y eso sí es sesión caducada, sin reintento.
@@ -410,7 +435,7 @@ struct GroupsMembershipClientTests {
         let crudo = (GroupsRPCError.ownerCannotLeave as Error).localizedDescription
         #expect(crudo.contains("11"))   // el discriminante SIGUE ahí si alguien lo pinta a pelo
 
-        #expect(GroupLeaveErrorLogic.classify(GroupsRPCError.ownerCannotLeave) == .ownedByCurrentUser)
-        #expect(GroupLeaveErrorLogic.classify(GroupsRPCError.channelDisabled) == .retryLater)
+        #expect(GroupLeaveErrorLogic.classify(GroupsRPCError.ownerCannotLeave, attestUnavailable: false) == .ownedByCurrentUser)
+        #expect(GroupLeaveErrorLogic.classify(GroupsRPCError.channelDisabled, attestUnavailable: false) == .retryLater)
     }
 }

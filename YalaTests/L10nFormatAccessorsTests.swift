@@ -104,4 +104,30 @@ struct L10nFormatAccessorsTests {
         #expect(result.contains("Apple"))
         #expect(!L10n.Storage.Adopt.otherAccountNoteGeneric.contains("storage.adopt"))
     }
+
+    /// **El teléfono sin App Attest** (2026-09-15): los dos accessors con cifra y sus hermanos sin ella. Una key cruda en
+    /// el aviso que ofrece PERDER cambios pediría decidir sin decir qué se pierde, y el botón destructivo sería el nombre
+    /// de una clave. La paridad no lo caza: compara `.strings` con `.strings` y nunca abre `L10n.swift`.
+    @Test func attestUnavailableAccessors_interpolate_neverRawKey() {
+        let signOut = L10n.Groups.Errors.attestUnavailableSignOutLoss(7)
+        #expect(!signOut.contains("groups.errors"))
+        #expect(signOut.contains("7"))
+
+        let welcome = L10n.Welcome.Groups.neutralAttestLossBody(7)
+        #expect(!welcome.contains("welcome.groups"))
+        #expect(welcome.contains("7"))
+
+        for texto in [L10n.Groups.Errors.attestUnavailableTitle,
+                      L10n.Groups.Errors.attestUnavailable,
+                      L10n.Groups.Errors.attestUnavailableSignOutLossUnknown,
+                      L10n.Groups.Errors.attestUnavailableSignOutLossButton,
+                      L10n.Groups.Errors.leaveAttestUnavailable,
+                      L10n.Welcome.Groups.neutralAttestLossBodyUnknown,
+                      L10n.Welcome.Groups.neutralAttestLossContinue,
+                      L10n.Action.notNow] {
+            #expect(!texto.contains("groups.errors") && !texto.contains("welcome.groups") && !texto.contains("action."),
+                    "accessor devolvió la key cruda: \(texto)")
+            #expect(!texto.isEmpty)
+        }
+    }
 }

@@ -5190,3 +5190,33 @@
 
 /* Wipe sheet, cloud row when personal data lives in the user private iCloud: the deletion only reaches devices whose personal data lives in that same iCloud */
 "settings.wipeScopeCloudICloudPersonal" = "Apagam-se do iCloud, por isso desaparecem dos teus outros dispositivos que guardam ali os teus dados pessoais";
+
+/* Titulo del aviso: el telefono lleva mas de un dia sin pasar la verificacion de seguridad del servidor y no puede sincronizar grupos */
+"groups.errors.attestUnavailableTitle" = "Este telemóvel não consegue sincronizar os teus grupos";
+
+/* Aviso al cerrar sesion sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
+"groups.errors.attestUnavailableSignOutLoss" = "Há mais de um dia que não consegue passar na verificação de segurança exigida pelo nosso servidor. Alterações dos teus grupos que não chegaram: %d. Se terminares sessão agora, perdem-se e ninguém do grupo as vai ver.";
+
+/* Aviso al cerrar sesion sin verificacion de seguridad cuando no hay cifra honesta de cambios perdidos */
+"groups.errors.attestUnavailableSignOutLossUnknown" = "Há mais de um dia que não consegue passar na verificação de segurança exigida pelo nosso servidor, e há alterações dos teus grupos que não chegaram. Se terminares sessão agora, perdem-se e ninguém do grupo as vai ver.";
+
+/* Boton destructivo: cierra sesion aceptando perder los cambios de grupos sin subir */
+"groups.errors.attestUnavailableSignOutLossButton" = "Terminar sessão e perdê-las";
+
+/* Mensaje sin salida: el telefono no pasa la verificacion de seguridad y los cambios de grupos no suben */
+"groups.errors.attestUnavailable" = "Este telemóvel está há mais de um dia sem conseguir passar na verificação de segurança exigida pelo nosso servidor, por isso as alterações dos teus grupos não podem ser enviadas.";
+
+/* Alert al salir de un grupo: el telefono no puede sincronizar grupos */
+"groups.errors.leaveAttestUnavailable" = "Este telemóvel não consegue sincronizar os teus grupos, por isso não foi possível concluir a tua saída do grupo.";
+
+/* Puerta de Grupos del Welcome sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
+"welcome.groups.neutralAttestLossBody" = "Há mais de um dia que não consegue passar na verificação de segurança exigida pelo nosso servidor. Alterações dos teus grupos que não chegaram: %d. Se continuares agora, perdem-se e ninguém do grupo as vai ver.";
+
+/* Puerta de Grupos del Welcome sin verificacion de seguridad, sin cifra honesta de cambios perdidos */
+"welcome.groups.neutralAttestLossBodyUnknown" = "Há mais de um dia que não consegue passar na verificação de segurança exigida pelo nosso servidor, e há alterações dos teus grupos que não chegaram. Se continuares agora, perdem-se e ninguém do grupo as vai ver.";
+
+/* Boton destructivo del Welcome: continua aceptando perder los cambios de grupos sin subir */
+"welcome.groups.neutralAttestLossContinue" = "Continuar e perdê-las";
+
+/* Boton generico para posponer una decision */
+"action.notNow" = "Agora não";

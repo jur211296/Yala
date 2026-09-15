@@ -380,6 +380,24 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSignOut private exit discarding unconfirmed changes")
     }
 
+    /// Un cierre de sesión se bloqueó porque este teléfono lleva más de un día sin App Attest
+    /// (`BlockReason.attestUnavailable`) y ofrece salir perdiendo los cambios de grupos. `pending` = filas vivas del
+    /// outbox de Grupos; −1 = no se pudo contar. Sin PII: solo el número.
+    static func signOutGroupsAttestUnavailable(pending: Int?) {
+        logger.notice("CloudSignOut groups attest unavailable — loss exit offered pending=\(pending ?? -1, privacy: .public)")
+    }
+
+    /// La persona eligió «Cerrar sesión y perderlos»: el cierre se retoma con esa cifra como tope aceptado.
+    static func signOutGroupsLossAccepted(pending: Int?) {
+        logger.notice("CloudSignOut groups loss accepted pending=\(pending ?? -1, privacy: .public)")
+    }
+
+    /// El cierre siguió sin subir los cambios de grupos que la persona aceptó perder: mueren con el borrado del
+    /// arranque. Va aparte del anterior porque, entre el tap y aquí, el attest pudo volver y subirlos.
+    static func signOutGroupsDiscarded(pending: Int?) {
+        logger.notice("CloudSignOut groups discarded without uploading pending=\(pending ?? -1, privacy: .public)")
+    }
+
     /// Paso 9 · cierre privado SIN copia en iCloud, confirmado con el segundo gesto: no hay espera que hacer.
     static func signOutWithoutICloudCopy() {
         logger.notice("CloudSignOut private without iCloud copy — confirmed, no export wait")

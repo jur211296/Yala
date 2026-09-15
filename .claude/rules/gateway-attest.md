@@ -139,6 +139,48 @@ inyectan el proveedor — no el cliente entero.
   ese JWT, no en el refresh forzado. Antes el loop moría en la primera vuelta: nada de esto pasaba, y tampoco subía
   nada.
 
+## El teléfono que NUNCA consigue App Attest: la racha y el veredicto terminal (2026-09-15)
+
+Lo pasajero de arriba es cierto para quien recupera el attest en un rato, y mentira para quien no lo recupera nunca: oía
+«en un rato» para siempre y no podía cerrar sesión con cambios de grupos sin subir. Decisión de Jürgen (ticket
+`groups-phone-that-never-attests-is-told-to-retry-forever`): **tras 24 h y 3 rechazos sin un solo acierto**, un aviso
+terminal y, en los cierres de sesión, una salida que pierde esos cambios con confirmación.
+
+- **Qué cuenta es la palabra del servidor, no el error local.** Un rechazo es un 401 `yala_attest_required` de una ruta de
+  Grupos (push, pull o RPC); un 200 de esas rutas borra la racha. No se clasifican `AppAttestError`/`DCError`: nadie ha
+  medido cuáles son permanentes, y `.network` no distingue «sin red» de «sin attest». Sin red o con un 5xx no hay 401, así
+  que estar offline no acerca el veredicto. **Y un rechazo cuenta como mucho una vez por hora**: un solo gesto dispara
+  ráfagas —la membresía reintenta tres veces, el cierre cada 2 s durante 45 s— y, contado por petición, el mínimo de 3 se
+  cumplía en segundos.
+- **La racha vive entre arranques** en `GroupsAttestStreakStore` (`UserDefaults.standard`, clave
+  `groupsSync.attestRejectionStreak`), y la decisión es pura en `GroupsAttestVerdictLogic`. Describe al TELÉFONO: no está en
+  `DataWipeService.removeUserPreferenceKeys` ni en `PrefSyncKey`. La escriben `GroupsSyncClient` (push y pull) y
+  `GroupsMembershipClient.call`, sin inyección por construcción. Un reloj que retrocede reinicia la racha.
+- **El veredicto exige además un rechazo del ciclo que se lee** (`GroupsSyncClient.stoppedByUnavailableAttest(for:)`, molde
+  del testigo del kill): una racha terminal no dice por qué falló ESTE ciclo. Lo consumen `CloudSignOutFlowLogic.classify`
+  (motivo `.attestUnavailable`, que se enseña al momento y la nube no traduce) y `GroupLeaveErrorLogic.classify`.
+- **La salida es una excepción ACOTADA a «nunca descarta»**: solo la ofrecen los cierres de sesión (Ajustes, la hoja del
+  cambio de Apple ID y la puerta del Welcome, salvo al invitado). El desasociar pasa `lossExit: nil` y enseña el aviso sin
+  salida. `exitDiscardingUnsyncedGroups` no borra nada: retoma el cierre con las FILAS que contó el aviso (por
+  `clientMutationID`) como lo aceptado, y los cambios mueren con el boot-wipe de siempre. Una fila que no estaba en el aviso
+  vuelve a avisar aunque la cifra no crezca: comparar por cifra se llevaba un cambio nuevo sin contarlo. En la nube, lo
+  aceptado solo alcanza a los cambios de GRUPOS.
+- **Tests: aísla la tienda** (`let racha = try IsolatedAttestStreak(); defer { racha.restore() }`) en todo test cuyo stub
+  responda 401 `yala_attest_required`, y marca su suite `.serialized`. Sin aislar, la racha se escribe en el
+  `UserDefaults.standard` del host —la app— y un día después se lee terminal en ese simulador. El helper cambia un estático,
+  así que entre suites confía en `parallelizable = "NO"` de los schemes, como `PendingJoinStore.defaults`.
+- **Residuales aceptados, medidos en la review del 2026-09-15.** (1) La racha viaja en la copia de iCloud y la key de
+  attest no (`KeychainService`, `…ThisDeviceOnly`): un teléfono restaurado hereda la racha, y lo acotan el testigo del
+  ciclo y el primer 200. (2) Con el reloj atrasado 24 h o más, el token cacheado da 401 más de un día en un teléfono que sí
+  atesta (`attest-session-token-rejected-by-the-gateway-stays-cached`). (3) Si un cierre con la pérdida aceptada no llega
+  a armar el borrado, las filas se quedan en `GroupSyncOutbox`, que no guarda dueño
+  (`superseding-intent-can-strand-the-sign-out-coordinator`).
+- **Observación**: el canario `groupsAttestTerminal` (una vez por racha) es la medición de cuántos teléfonos están así;
+  `groupsSignOutAttestUnavailable` y `groupsSignOutAttestDiscarded` dicen cuántos vieron la salida y cuántos la usaron.
+- **El canal personal no tiene banner**: su veredicto terminal (`AttestSyncGate`, solo `AppAttestError.unavailable`
+  repetido) emite `cloudSyncBlockedByAttestUnavailable` y para el runtime, sin nada visible; `SyncStatusBanner` es el de
+  iCloud. Un ticket partió de lo contrario porque dos docblocks lo prometían.
+
 ## El SEGUNDO fallo del mismo día: el header estaba cableado y el token no se podía acuñar
 
 El e2e del punto 3 se hizo, y destapó una causa distinta con el MISMO síntoma en pantalla. Precisión sobre

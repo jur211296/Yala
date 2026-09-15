@@ -5185,3 +5185,33 @@
 
 /* Wipe sheet, cloud row when personal data lives in the user private iCloud: the deletion only reaches devices whose personal data lives in that same iCloud */
 "settings.wipeScopeCloudICloudPersonal" = "Deleted from iCloud, so they're gone from your other devices that keep your personal data there";
+
+/* Titulo del aviso: el telefono lleva mas de un dia sin pasar la verificacion de seguridad del servidor y no puede sincronizar grupos */
+"groups.errors.attestUnavailableTitle" = "This phone can't sync your groups";
+
+/* Aviso al cerrar sesion sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
+"groups.errors.attestUnavailableSignOutLoss" = "This phone has gone more than a day without passing the security check our server requires. Group changes that didn't get through: %d. If you sign out now, they'll be lost and no one in the group will see them.";
+
+/* Aviso al cerrar sesion sin verificacion de seguridad cuando no hay cifra honesta de cambios perdidos */
+"groups.errors.attestUnavailableSignOutLossUnknown" = "This phone has gone more than a day without passing the security check our server requires, and some group changes didn't get through. If you sign out now, they'll be lost and no one in the group will see them.";
+
+/* Boton destructivo: cierra sesion aceptando perder los cambios de grupos sin subir */
+"groups.errors.attestUnavailableSignOutLossButton" = "Sign out and lose them";
+
+/* Mensaje sin salida: el telefono no pasa la verificacion de seguridad y los cambios de grupos no suben */
+"groups.errors.attestUnavailable" = "This phone has gone more than a day without passing the security check our server requires, so your group changes can't be uploaded.";
+
+/* Alert al salir de un grupo: el telefono no puede sincronizar grupos */
+"groups.errors.leaveAttestUnavailable" = "This phone can't sync your groups, so we couldn't complete your exit from the group.";
+
+/* Puerta de Grupos del Welcome sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
+"welcome.groups.neutralAttestLossBody" = "This phone has gone more than a day without passing the security check our server requires. Group changes that didn't get through: %d. If you continue now, they'll be lost and no one in the group will see them.";
+
+/* Puerta de Grupos del Welcome sin verificacion de seguridad, sin cifra honesta de cambios perdidos */
+"welcome.groups.neutralAttestLossBodyUnknown" = "This phone has gone more than a day without passing the security check our server requires, and some group changes didn't get through. If you continue now, they'll be lost and no one in the group will see them.";
+
+/* Boton destructivo del Welcome: continua aceptando perder los cambios de grupos sin subir */
+"welcome.groups.neutralAttestLossContinue" = "Continue and lose them";
+
+/* Boton generico para posponer una decision */
+"action.notNow" = "Not now";
