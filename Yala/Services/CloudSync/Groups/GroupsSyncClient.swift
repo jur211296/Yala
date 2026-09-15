@@ -72,6 +72,12 @@ final class GroupsSyncClient {
     /// el MISMO token vencido). Inyectable (default = `CloudAuthService.shared.forceRefreshAccessToken`;
     /// los tests inyectan uno hermético). `@MainActor` (el cliente ya lo es → no cruza actor).
     private let forceRefreshTokenProvider: @MainActor () async -> String?
+    /// ¿Conserva el SDK la sesión guardada? Es lo que separa «sin conexión» de «sesión caducada» cuando el token
+    /// no llega (`sdkRemovedTheSession`). Default = `CloudAuthService.shared.canRenewSession`, y **no**
+    /// `hasSession` —el `sessionCheck` de abajo—: aquel lleva el seam `-uitest-fake-cloud-session`, que dice «hay
+    /// sesión» sin ninguna guardada, y con él un XCUITest con la sesión fingida y cambios de grupos pasaría del
+    /// bloqueo inmediato a 45 s de reintentos. En producción los dos valen lo mismo.
+    private let canRenewSession: @MainActor () -> Bool
     private let attestProvider: @MainActor () async -> String?
     private let urlSession: SyncHTTPSession
     private let sessionCheck: @MainActor () -> Bool
@@ -269,6 +275,7 @@ final class GroupsSyncClient {
         deviceTokenProvider: @escaping @MainActor () -> String? = { nil },
         forceRefreshTokenProvider: @escaping @MainActor () async -> String? =
             { await CloudAuthService.shared.forceRefreshAccessToken() },
+        canRenewSession: @escaping @MainActor () -> Bool = { CloudAuthService.shared.canRenewSession },
         onRemoteChangesApplied: @escaping @MainActor () -> Void = { SessionState.shared.incrementDataVersion() },
         onRemoteChanges: @escaping @MainActor (RemoteChangeSet) -> Void =
             { GroupNotificationService.shared.processRemoteChanges($0) }
@@ -276,6 +283,7 @@ final class GroupsSyncClient {
         self.baseURL = baseURL
         self.tokenProvider = tokenProvider
         self.forceRefreshTokenProvider = forceRefreshTokenProvider
+        self.canRenewSession = canRenewSession
         self.attestProvider = attestProvider
         self.urlSession = urlSession
         self.sessionCheck = sessionCheck
@@ -1396,13 +1404,41 @@ final class GroupsSyncClient {
     /// loop sin progreso. 50 deltas deja margen 4× bajo el timeout.
     static let pushChunkSize = 50
 
+    /// El token no llegó: ¿sesión caducada o fallo pasajero? **Lo decide el SDK, no este cliente.**
+    ///
+    /// supabase-swift (2.50.0) solo BORRA la sesión guardada ante cuatro respuestas del servidor de auth
+    /// —`session_not_found`, `session_expired`, `refresh_token_not_found` y `refresh_token_already_used`
+    /// (`Internal/APIClient.swift`, `sessionCleanupErrorCodes`)— y la borra ANTES de lanzar. Sin red, con un 5xx
+    /// o con un rechazo que no esté en esa lista, lanza y la deja donde estaba. ⇒ con la sesión guardada, un token
+    /// que no llega es pasajero: `.transient`, con su backoff, y el loop propio de Grupos vuelve a subir solo en su
+    /// siguiente reintento (hasta 5 min; al momento si hay un guardado local). Solo con la sesión borrada es
+    /// `.sessionExpired`, que para el loop y pide volver a entrar. La premisa del SDK la fija
+    /// `SupabaseSessionRenewalContractTests`.
+    ///
+    /// **Dos límites, medidos en la review del 2026-09-15.** En `.cloud` Grupos no tiene loop propio: cicla dentro
+    /// del runtime personal (paso 5.6), cuyo push y pull siguen leyendo el token nulo como caducado y paran antes de
+    /// llegar aquí (`personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`). Y un loop vivo en backoff no
+    /// se despierta al volver a primer plano, cuando el loop muerto de antes se re-arrancaba justo ahí
+    /// (`groups-loop-in-backoff-ignores-the-return-to-foreground`).
+    ///
+    /// Lo consultan el token nulo del push y del pull, y el refresh forzado que vuelve sin token tras un 401.
+    /// Hasta el 2026-09-15 los cuatro devolvían `.sessionExpired` a pelo, y a quien estaba sin conexión con el
+    /// token caducado el cierre de sesión le decía «Tu sesión caducó»
+    /// (`groups-push-reads-an-offline-token-refresh-as-a-session-expiry`).
+    ///
+    /// **Lo que se acepta a sabiendas:** un rechazo que el SDK no cuenta como terminal (p. ej. `user_banned`) se
+    /// lee pasajero y reintenta con su backoff en vez de parar. «Tu sesión caducó» tampoco sería verdad ahí, y el
+    /// cierre de sesión con cambios de grupos sigue bloqueado como antes, ahora con el aviso de lo pasajero.
+    private func sdkRemovedTheSession() -> Bool { !canRenewSession() }
+
     /// Sube el outbox pendiente (filas sin dead-letter) al gateway en CHUNKS de `pushChunkSize` con
     /// PROGRESO INCREMENTAL (molde `SyncPushClient.push` I14-H2): cada chunk confirmado se purga/marca
     /// vía `applyResults` **POR CHUNK con las filas de ESE chunk** ([R8] — la correlación por
     /// `client_mutation_id` es chunk-independiente) ANTES de pedir el siguiente. Un chunk fallido tras
     /// confirmados → `.completed(parciales)` (lo confirmado ya se aplicó; el próximo ciclo re-emite solo
     /// el resto — un outcome TERMINAL 401/403 resurfacea en el PRIMER chunk del próximo intento).
-    /// NO purga si la sesión está caída.
+    /// NO purga si la sesión está caída. Sin token no hay request: `.sessionExpired` solo si el SDK borró la
+    /// sesión, y `.transient` si la conserva (`sdkRemovedTheSession`).
     func pushPending(context: ModelContext) async -> PushOutcome {
         let rows: [GroupSyncOutbox]
         do {
@@ -1419,7 +1455,7 @@ final class GroupsSyncClient {
         guard !rows.isEmpty else { return .completed([]) }
 
         guard var token = await tokenProvider(), !token.isEmpty else {
-            return .sessionExpired(pending: rows.count)
+            return sdkRemovedTheSession() ? .sessionExpired(pending: rows.count) : .transient
         }
         // Attest UNA vez para todos los chunks (TTL de sesión ≫ duración del push, molde personal).
         let attest = await attestProvider()
@@ -1548,15 +1584,18 @@ final class GroupsSyncClient {
 
         let outcome = await send(bearer: token)
         // Retry-once del 401 (H-2026-07-18-4): fuerza el refresh del token y RE-EMITE el chunk UNA vez si el
-        // token nuevo DIFIERE del usado. nil o idéntico → sessionExpired como hoy (jamás recursión: solo un
-        // reintento). Solo el 401 se rescata — el resto de códigos suben tal cual. El token fresco se escribe
-        // de vuelta (inout) para que los chunks SIGUIENTES lo reusen.
-        if case .sessionExpired = outcome,
-           let fresh = await forceRefreshTokenProvider(), fresh != token {
-            token = fresh
-            return await send(bearer: fresh)
+        // token nuevo DIFIERE del usado (jamás recursión: solo un reintento). Solo el 401 se rescata — el resto de
+        // códigos suben tal cual. El token fresco se escribe de vuelta (inout) para que los chunks SIGUIENTES lo
+        // reusen. Si el refresh vuelve SIN token, decide lo mismo que sin token de entrada
+        // (`sdkRemovedTheSession`): la red puede caerse entre el 401 y el refresh. Si vuelve con el MISMO token,
+        // el servidor rechaza uno que el SDK da por bueno, y eso sigue siendo sesión caducada.
+        guard case .sessionExpired = outcome else { return outcome }
+        guard let fresh = await forceRefreshTokenProvider() else {
+            return sdkRemovedTheSession() ? outcome : .transient
         }
-        return outcome
+        guard fresh != token else { return outcome }
+        token = fresh
+        return await send(bearer: fresh)
     }
 
     /// Traduce UNA fila de outbox de Grupos a su `GroupSyncDelta` de wire. `entity_type` = tabla Postgres.
@@ -1770,7 +1809,9 @@ final class GroupsSyncClient {
         let cursor: GroupSyncCursor
         do { cursor = try loadOrCreateCursor(context) } catch { return .transient }
 
-        guard let token = await tokenProvider(), !token.isEmpty else { return .sessionExpired }
+        guard let token = await tokenProvider(), !token.isEmpty else {
+            return sdkRemovedTheSession() ? .sessionExpired : .transient   // mismo criterio que el push
+        }
 
         guard let url = buildPullURL(cursorsJSON: cursor.groupCursorsJSON, limit: limit) else {
             return .transient
@@ -1826,12 +1867,13 @@ final class GroupsSyncClient {
 
         let outcome = await send(bearer: token)
         // Retry-once del 401 (H-2026-07-18-4): fuerza el refresh y RE-EMITE la página UNA vez si el token
-        // nuevo DIFIERE del usado. nil o idéntico → sessionExpired como hoy (sin recursión).
-        if case .sessionExpired = outcome,
-           let fresh = await forceRefreshTokenProvider(), fresh != token {
-            return await send(bearer: fresh)
+        // nuevo DIFIERE del usado (sin recursión). Refresh sin token o con el mismo: el criterio del push (ver allí).
+        guard case .sessionExpired = outcome else { return outcome }
+        guard let fresh = await forceRefreshTokenProvider() else {
+            return sdkRemovedTheSession() ? outcome : .transient
         }
-        return outcome
+        guard fresh != token else { return outcome }
+        return await send(bearer: fresh)
     }
 
     /// Construye la URL del pull con `cursors` (JSON URL-encoded) + `limit`. `internal` para test #4.

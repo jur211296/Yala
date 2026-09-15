@@ -130,13 +130,21 @@ struct GroupsSyncHardeningTests {
     private func makeClient(
         session: SyncHTTPSession, mirrorDir: URL? = nil, userID: String? = "sub-a"
     ) -> GroupsSyncClient {
-        GroupsSyncClient(
-            tokenProvider: { "jwt" }, urlSession: session, sessionCheck: { true },
+        // Fusible: los loops de este fichero terminan con un 401 sin refresh. Si ese 401 dejara de ser una parada
+        // (p. ej. `sdkRemovedTheSession` invertido), el loop giraría con el sleeper sin espera y la suite COLGARÍA en
+        // vez de dar rojo. 50 consultas sobran para cualquier caso de aquí.
+        let checks = Counter()
+        return GroupsSyncClient(
+            tokenProvider: { "jwt" }, urlSession: session,
+            sessionCheck: { checks.count += 1; return checks.count <= 50 },
             currentUserIDProvider: { userID },
             outboxMirror: mirrorDir.map { GroupsOutboxMirror(directoryURL: $0) },
             // Hermético: los tests con 401 NO deben tocar `CloudAuthService.shared` (default del retry-once
             // H-2026-07-18-4). nil = sin refresh → sessionExpired, byte-idéntico al comportamiento previo.
-            forceRefreshTokenProvider: { nil })
+            forceRefreshTokenProvider: { nil },
+            // …y para eso el SDK tiene que haber BORRADO la sesión: con ella guardada, un refresh nulo es pasajero
+            // (`sdkRemovedTheSession`) y los loops que este fichero termina con un 401 colgarían en vez de parar.
+            canRenewSession: { false })
     }
 
     @discardableResult

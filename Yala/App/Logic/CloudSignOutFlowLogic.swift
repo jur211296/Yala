@@ -163,14 +163,19 @@ nonisolated enum CloudSignOutFlowLogic {
         /// adversarial del paso 9).
         ///
         /// **Desde el 2026-09-15 lo enseñan las cuatro celdas del cierre**, la nube incluida
-        /// (`cloudSignOutGroupsBlockReason`). Y su aviso afirma más de lo que este motivo sabe. Medido leyendo la
-        /// app y el SDK, sin ejecutar:
-        ///  · **También sale sin conexión.** Con el token caducado, `CloudAuthService.accessToken()` devuelve
-        ///    `nil` si el refresh falla por la red, y el push de grupos lo llama sesión caducada sin hacer una
-        ///    sola petición. Ticket `groups-push-reads-an-offline-token-refresh-as-a-session-expiry`.
-        ///  · **En la nube, «vuelve a iniciar sesión» no dice dónde.** Si el SDK borró la sesión, la única puerta
-        ///    encontrada es «Nuevo grupo» en la pestaña Grupos; si sigue guardada, no hay ninguna. Ticket
-        ///    `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`.
+        /// (`cloudSignOutGroupsBlockReason`).
+        ///
+        /// **Y desde ese mismo día ya no le llega a quien solo está sin conexión.** Con el token caducado y sin
+        /// red, el SDK conserva la sesión y el canal de Grupos lo lee como pasajero
+        /// (`GroupsSyncClient.sdkRemovedTheSession`). Aquí entra la sesión que el SDK borró, o un 401 que el refresh
+        /// no rescata con la sesión guardada: el servidor rechaza un token que el SDK da por bueno, como con App
+        /// Attest ausente (`groups-sync-reads-a-missing-attest-401-as-a-session-expiry`). Ticket
+        /// `groups-push-reads-an-offline-token-refresh-as-a-session-expiry`.
+        ///
+        /// Lo que su aviso todavía no resuelve, leído en el código sin ejecutar: **en la nube, «vuelve a iniciar
+        /// sesión» no dice dónde.** Si el SDK borró la sesión, la única puerta encontrada es «Nuevo grupo» en la
+        /// pestaña Grupos; si sigue guardada —ese 401—, no hay ninguna. Ticket
+        /// `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`.
         case sessionExpired
         /// **No se pudo mirar el puente personal al desasociar** (`GroupsAssociationDetach.detachBridge`
         /// devolvió `nil`): su fetch lanzó, o su `save()` no entró. Va aparte porque el aviso de siempre

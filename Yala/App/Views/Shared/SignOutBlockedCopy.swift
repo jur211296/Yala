@@ -4,10 +4,11 @@
 //
 //  Qué se le dice a la persona cuando un cierre de sesión se bloquea, por motivo.
 //
-//  **Una sola fuente para las dos pantallas que lo enseñan**: el aviso de Ajustes (`ProfileView`) y la hoja
-//  del cambio de Apple ID (`AppleIDCloseNoticeView`). Vivía como `switch` privado de `ProfileView` hasta el
-//  2026-09-15, cuando la hoja se convirtió en su segunda lectora: dos copias del mismo `switch` divergen en
-//  cuanto un motivo nuevo aprende a decirse en una y no en la otra.
+//  **Una sola fuente para las pantallas que lo enseñan**: el aviso de Ajustes (`ProfileView`) y la hoja del
+//  cambio de Apple ID (`AppleIDCloseNoticeView`), con título y mensaje, y la puerta de Grupos del Welcome
+//  (`WelcomeGroupsGateView`), que desde el 2026-09-15 lee el mensaje de `.transient`. Vivía como `switch` privado
+//  de `ProfileView` hasta ese día, cuando la hoja se convirtió en su segunda lectora: dos copias del mismo
+//  `switch` divergen en cuanto un motivo nuevo aprende a decirse en una y no en la otra.
 //
 //  **Exhaustivo a propósito: sin `default`.** Solo así el compilador obliga a que un motivo nuevo se
 //  pronuncie aquí.
@@ -38,7 +39,9 @@ enum SignOutBlockedCopy {
     ///  · **la subida de grupos falló por algo pasajero** (2026-09-14): tampoco hay nada que revisar, y aquí
     ///    no se ha reintentado nada; dice que no llegó, que no se pierde y que lo intente en un rato.
     ///  · **lo pasajero del cierre que reintenta** (`.transient`): «espera unos segundos», que es lo cierto
-    ///    tras agotar sus reintentos. Ajustes lo enseña por su propio alert, con este mismo texto.
+    ///    cuando lo que falta es un guardado que se asienta. Sin red no lo es, y desde el 2026-09-15 aquí llega
+    ///    también quien está sin conexión con el token caducado: `signout-pending-copy-says-wait-seconds-when-offline`.
+    ///    Ajustes lo enseña por su propio alert, con este mismo texto, y la puerta de Grupos del Welcome también.
     ///  · el resto: el genérico de siempre, que no afirma ninguna causa concreta.
     ///
     /// `nil` cae al genérico: Ajustes escribe el motivo antes de encender su aviso, así que con el aviso
