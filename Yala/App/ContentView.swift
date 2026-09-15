@@ -1543,6 +1543,9 @@ struct ContentView: View {
         welcomeFlowInitialStep = .hero
         showWelcomeFlow = true
         hasCompletedOnboarding = false
+        // Igual que en «Ahora no»: la red se auto-terminaría sola, pero no se deja depender de eso.
+        remoteWipeNoticeNetTask?.cancel()
+        remoteWipeNoticeNetTask = nil
     }
 
     /// **«Ahora no»: la persona se queda donde estaba, y eso ahora es verdad.**
@@ -1561,6 +1564,11 @@ struct ContentView: View {
     private func dismissRemoteWipeNotice() {
         remoteWipeNoticePending = false
         showRemoteWipeAlert = false
+        // La red se auto-termina al ver la condición viva apagada (`verdict` → `.standDown`), pero se
+        // cancela explícitamente: que el desarme dependa de que nadie toque el orden del `switch` es una
+        // garantía que un refactor puede romper sin enterarse.
+        remoteWipeNoticeNetTask?.cancel()
+        remoteWipeNoticeNetTask = nil
     }
 
     private func handleRemoteWipeSignal(onboardingAlreadyDone: Bool) {
@@ -1588,10 +1596,17 @@ struct ContentView: View {
 
         guard decision.shouldProcess else { return }
 
-        // Cancel the hasExistingData-based wipe grace to avoid double-alert. `cancelWipeGrace` retira
-        // además el intent del aviso si ya estaba encolado; estas dos líneas cubren el aviso que ya se
-        // hubiera ENCENDIDO: la señal explícita manda sobre la sospecha, y lo que procede es el borrado
-        // orquestado con su aterrizaje, no una pregunta sobre datos que la app está a punto de barrer.
+        // **Las TRES cosas, y las tres hacen falta.** `cancelWipeGrace()` mata la cuenta atrás que
+        // pudiera estar corriendo —el espejo de CloudKit y el KV del Apple ID son dos canales sin orden
+        // garantizado, así que las filas pueden haber desaparecido ANTES de que llegue la señal— y
+        // retira el intent si la gracia ya lo encoló; las otras dos apagan el aviso que ya se hubiera
+        // ENCENDIDO. La señal explícita manda sobre la sospecha: lo que procede es el borrado orquestado
+        // con su aterrizaje, no una pregunta sobre unos datos que la app está a punto de barrer.
+        //
+        // La cancelación estuvo a punto de perderse al reescribir este bloque (2026-09-14): sin ella
+        // vuelve el «double-alert» que su comentario original decía evitar — el toast «datos
+        // restaurados» y, cinco segundos después, «tus datos fueron eliminados de iCloud».
+        cancelWipeGrace()
         remoteWipeNoticePending = false
         showRemoteWipeAlert = false
 

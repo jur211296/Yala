@@ -266,6 +266,23 @@ struct RemoteWipeSignalWiringTests {
             estaba puesto.
             """)
 
+        // **El censo de escritores del flag, que se perdió al reescribir esta suite y lo cazó la review
+        // (2026-09-14).** Antes eran DOS y el número los fijaba a los dos; con la red de presentación
+        // toggleando son SIETE, y sin este conteo un productor nuevo que vuelva a encender el `@State`
+        // a pelo —el bug exacto que este ticket cierra— no pondría rojo nada: los otros escáneres
+        // cuentan el `submit` y la condición viva, que un bypass directo no toca.
+        //
+        // Los siete, y por qué: el drenaje lo enciende (1); la red lo apaga y lo re-enciende en el
+        // reintento (2); el desarme del cap lo apaga (1); y lo apagan las tres salidas —«Empezar de
+        // cero», «Ahora no» y la llegada de la señal explícita— (3).
+        #expect(try Self.countInProduction("showRemoteWipeAlert = ") == 7, """
+            las asignaciones al flag del aviso cambiaron de número en `Yala/`. Si añadiste un escritor,
+            pregúntate primero si debería ser un `submit(.presentRemoteWipeNotice)`: quien enciende este
+            aviso desde fuera del drenaje se salta la matriz de readiness y desmonta lo que el anchor
+            tuviera presentado, que es el bug que este ticket cierra. Si de verdad hace falta, súbelo
+            aquí explicando cuál es.
+            """)
+
         // Control del instrumento, y éste sí puede fallar solo: si el recorrido del árbol se rompiera o
         // el flag se renombrara, las cuentas de arriba darían 0 por el motivo equivocado.
         #expect(try Self.countInProduction("@State private var showRemoteWipeAlert") == 1,
