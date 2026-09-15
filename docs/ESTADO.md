@@ -5,10 +5,31 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-15 (Lima)
 
-**Rama** `2.1` — Merge #170: **Grupos: se retira el sello que apagaba el canal hasta relanzar la app.**
+**Rama** `2.1` — Merge #171: **Grupos: sin conexión ya no dice «Tu sesión caducó» a quien sigue con la sesión viva.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#170 · se retira el sello que apagaba el canal de Grupos hasta relanzar la app)
+## Esta sesión (#171 · sin conexión, «Tu sesión caducó» deja de salir a quien sigue con la sesión viva)
+
+**Sin red y con el token caducado, ninguna pantalla dice ya «Tu sesión caducó» ni manda a volver a entrar.** Es tu
+decisión del 15-sep: separar en el cliente «sin conexión» de «sesión caducada». Al cerrar sesión en la nube sale al
+momento «Los últimos cambios de tus grupos no llegaron al servidor…»; en el «equipo», en solo grupos, en la hoja del
+Apple ID y en la puerta del Welcome, tras ~45 s de reintentos, el aviso de lo pasajero. Con la sesión borrada de
+verdad se sigue pidiendo volver a entrar. **Y el sync de grupos ya no se para sin red:** reintenta solo.
+
+**Te pregunté tres cosas y elegiste las tres recomendadas:** el mismo mensaje en Ajustes, la hoja y el Welcome;
+salir de un grupo y aceptar invitaciones, a ticket; y subir en el siguiente reintento, sin vigilante de red.
+
+**La review adversarial cazó tres cosas mías.** Con el predicado invertido, los tests de loop **colgaban** en vez de
+fallar (ahora llevan fusible); el caso del mismo token tras un 401 no estaba fijado; y una premisa mía era falsa:
+escribí «Modo Nube apagado» y la tarjeta de alta en la nube se ofrece en producción desde el 9-sep.
+
+Gate: build ×2 sin warnings nuevos · **unit 946 en 105 suites** · **5 mutantes, 5 muertos** · **XCUITest 22 casos
+en 8 clases** con el centinela (dos corridas cortadas por memoria) · contrato del SDK ejecutado · tres lentes ·
+CI verde. **Device-QA: sí, y no es simulable** (0-undecies de la cola).
+
+**Deja cinco tickets, tres con decisión tuya** (ver «Siguiente»).
+
+## Sesión anterior (#170 · se retira el sello que apagaba el canal de Grupos hasta relanzar la app)
 
 **No cambia nada en pantalla.** El canal de Grupos tenía un freno: si el servidor decía que la cuenta no
 estaba disponible, dejaba de sincronizar hasta matar y reabrir la app. Desde el 13-sep ninguna respuesta
@@ -31,7 +52,7 @@ medición va a `edgecases-extreme-minimum-flaky-under-load`.
 **Deja un ticket `low`:** `groups-loop-restart-docs-cite-a-retired-mount-guard`, tres comentarios que
 prometen un guard de la sesión de visita que ya no existe.
 
-## Sesión anterior (#169 · al cerrar sesión en la nube, una sesión de grupos caducada ya pide volver a entrar)
+## Sesión #169 · al cerrar sesión en la nube, una sesión de grupos caducada ya pide volver a entrar
 
 **Cuenta en la nube, cambios de grupos sin subir y la sesión caducada: «Cerrar sesión» ya no dice «revisa tu
 conexión».** Dice «Tu sesión caducó. Vuelve a iniciar sesión e inténtalo de nuevo.», como las otras tres formas
@@ -87,40 +108,10 @@ del teléfono los grupos.
 pone su índice encima del frontmatter. Hay 7 ficheros así, entre ellos la rule `git-hooks.md`, que podría
 estar cargándose sin respetar sus `paths:`.
 
-## Sesión #167 · las preferencias ya no cruzan entre el dueño y un móvil prestado
-
-**Quien entra por un grupo en un móvil prestado ya no le cambia nada al dueño, y lo del dueño ya no le
-llega.** El idioma, la moneda, el nombre, los ajustes del Panel y el interruptor de avisos de pagos
-cruzaban en los dos sentidos por el iCloud del Apple ID del teléfono: el guard que lo impedía se retiró el
-13-sep con la premisa «solo hay una sesión por teléfono», que la celda solo-grupos del ADR desmentía.
-**Decisión de Jürgen: cada cuenta, sus preferencias.** Para una sesión privada no cambia nada.
-
-**La puerta** (`OwnerKeyValueGate`) se cierra cuando el teléfono afirma no tener sesión privada, o cuando
-empezó un alta solo-grupos y todavía no lo ha dicho. Cerrada, nada llega al iCloud-KV y lo que se lee de él
-viene vacío — **salvo las dos señales del Apple ID**, que todo teléfono tiene que ver para darlas por
-procesadas.
-
-**La review adversarial cambió el diseño dos veces, y las dos por algo mío.** (1) La primera versión dejaba
-la puerta ABIERTA en una activación de Yala completo cancelada a medias: el bug entero de vuelta. (2)
-Ocultar también las señales hacía que la sesión privada recién nacida obedeciera un vaciado pendiente y se
-borrara. Y dos de la prosa: **son 36 preferencias, no 37**, y el escáner que la cabecera citaba como red se
-había borrado con el guard — no existía. Vuelve, fijando las sentencias de los dos lectores crudos en vez de
-eximir su fichero.
-
-Gate: build ×2 sin warnings nuevos · **unit 6893 en 705 suites** · **19 mutantes, 19 muertos** · XCUITest 10
-casos en 5 clases con el centinela sin intrusos · CI verde. `test_freshInstallShowsFourSectionsByDefault`
-falló una vez tras una corrida matada por memoria y pasó las otras tres sobre el mismo árbol: es la
-intermitencia que ya tenía `nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo`. **Device-QA: sí, y no es
-simulable** (cola, 0-nonies).
-
-**Te deja dos decisiones, con recomendación en cada ticket.**
-`neutral-boot-hands-owner-prefs-to-whoever-signs-in-next`: tras «Cerrar sesión», el primer arranque aplica
-las preferencias del Apple ID antes de que nadie elija, y quien entra luego por un grupo las hereda — la
-puerta no puede saber quién va a entrar. `full-activation-local-state-never-reaches-the-apple-id-kv`: lo que
-«Activar Yala completo» escribe con la puerta cerrada no sube a iCloud cuando nace la sesión privada. Y un
-`medium` sin decisión: `language-override-bypasses-the-cloud-prefs-channel`.
-
 ## Las de antes
+- **#167 · las preferencias ya no cruzan entre el dueño y un móvil prestado.** Quien entra por un grupo en un
+  móvil prestado ya no le cambia el idioma ni los ajustes al dueño, ni al revés (`OwnerKeyValueGate`). Dejó dos
+  decisiones tuyas y un `medium`. Device-QA en la cola (0-nonies).
 - **#166 · el hueco del vaciado remoto se cierra con el número, no con código.** Quien entró por un grupo
   antes del 10-sep no lleva la marca del eje, y el ticket daba dos salidas: Jürgen zanjó **población cero**,
   medida por cuatro vías independientes (telemetría, backend, App Store y builds distribuidos). No cambia nada
@@ -165,6 +156,13 @@ formatos —una presentación 16:9 por escenas y clips 9:16 por función— sobr
 `bun run render:presentation` y `bun run render:reels`).
 
 ## Tu cola
+
+0-undecies. **Device-QA del #171, y NO es simulable**
+   (`tickets/qa/groups-push-reads-an-offline-token-refresh-as-a-session-expiry.md`, siete pasos con Yala Dev).
+   Gasto de grupo en modo avión, token caducado y **sin quitar el modo avión** al cerrar sesión. En la nube tiene
+   que decir al momento «no llegaron al servidor»; en «equipo» o solo grupos, «Un momento más» tras ~45 s;
+   **nunca** «Tu sesión caducó». Y el control: con la sesión borrada en staging, sí. Comparte montaje con el
+   0-decies.
 
 0-decies. **Device-QA del #169, y NO es simulable**
    (`tickets/qa/cloud-signout-collapses-a-groups-session-expiry-into-permanent.md`, seis pasos contra staging
@@ -366,9 +364,16 @@ grupo?» se mide después del borrado y da 0),
 iCloud sigue entero cuando la zona ya no está — el copy correcto ya existe traducido) y
 `activation-resume-returns-to-restore-on-an-emptied-zone` (`low`).
 
-**El board: 385 en disco = 385 en `docs/TICKETS.md`** (medido el 15-sep), cero desajustes de estado y cero
-rutas rotas. El #170 pasa su ticket a `done/` y suma uno, `low`: los comentarios del re-arranque de Grupos que
-citan un guard retirado.
+**El #171 te deja tres decisiones y dos tickets de trabajo.** Decisiones: qué dice el aviso sin red fuera de la
+nube, y si la espera de 45 s tiene sentido sin red (`signout-pending-copy-says-wait-seconds-when-offline`); el
+401 por App Attest ausente, que también dice «caducó» (`groups-sync-reads-a-missing-attest-401-as-a-session-expiry`,
+`medium`); y despertar el sync de grupos al volver a la app (`groups-loop-in-backoff-ignores-the-return-to-foreground`).
+Trabajo, con tu criterio ya decidido: salir de un grupo sin red (`groups-actions-read-an-offline-token-refresh-as-a-session-expiry`)
+y el canal personal, que en `.cloud` frena también a Grupos (`personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`,
+que sube a `medium` porque Modo Nube no está apagado).
+
+**El board: 390 en disco = 390 en `docs/TICKETS.md`** (medido el 15-sep), cero desajustes de estado. El #171 pasa
+su ticket a `qa/`, suma cinco y añade la fila que faltaba de `rojo-heroBuckets-thisWeek-trailing-window`.
 
 ## Bloqueo
 
