@@ -35,3 +35,21 @@ aguas abajo. Las dos veces que no las medí, escribí un comentario falso.
   acotada («`classify` ya no lo produce» ≠ «ya no se ve»).
 - Y si el colapso de aguas abajo afecta a más cosas que a tu objeto (ahí: también la red caída y los
   5xx), **no lo cambies**: es otro objeto y una decisión de producto. Ticket.
+
+## La otra mitad, cuando SÍ toca retirarlo (2026-09-15, decisión 4A)
+
+Jürgen decidió retirar el sello. Dos cosas de método que no salían del diff, y las dos las cazó la lente
+de tests, no yo:
+
+- **Las aserciones de AUSENCIA del mecanismo cubrían de rebote a sus lectores.** `_testStoppedUntilRelaunch
+  == false` en el test del kill no solo decía «no se sella»: como el flag lo leían cuatro guards, protegía
+  también `syncNowFromPush` y `syncNowAfterLocalSave`. Al borrar el seam, esos dos guards se quedaron sin
+  red y el test seguía verde con un latch nuevo leído solo ahí.
+- **Contesté mal «¿test para el camino que cambia?».** Dije que no, porque fijar la ausencia del sello sería
+  «documentarlo como muerto». Pero mi docblock nuevo prometía «ninguna parada se queda puesta», y el 409
+  —la tercera forma de parar— no tenía test: re-introducir el sello salía verde en toda la suite. Fijar la
+  promesa nueva no es documentar el mecanismo viejo.
+
+**How to apply:** al retirar un mecanismo, antes de borrar cada aserción sobre él, lista sus LECTORES (no
+solo su escritor) y deja una aserción de conducta por cada uno. Y cuando escribas el invariante que queda,
+cuenta sus casos y exige un test por caso: el que no lo tenga suele ser justo el que el PR cambia.

@@ -1,6 +1,6 @@
 ---
 name: 403-infra-no-es-veredicto-de-cuenta
-description: PR #154 — el canal de Grupos separa el 403 del kill del de infraestructura; el sello queda sin productor alcanzable y el cierre .cloud sigue colapsando en .permanent (ticket high para Jürgen).
+description: PR #154 — el canal de Grupos separa el 403 del kill del de infraestructura; el sello que quedó sin productor se retiró el 15-sep y el cierre .cloud sigue colapsando en .permanent (ticket high para Jürgen).
 metadata:
   type: project
 ---
@@ -21,9 +21,10 @@ persona veía «revisa tu conexión» al cerrar sesión o soltar su cuenta de gr
   `.channelPaused`, así que ahí el aviso sigue siendo el equivocado. Tres opciones planteadas en
   `cloud-signout-collapses-every-groups-transient-into-permanent` (`high`). **No lo toques sin su
   respuesta:** cambiar ese ternario mueve también la red caída y los 5xx.
-- **`stoppedUntilRelaunch` del canal de Grupos no tiene productor alcanzable** desde este PR. Si vas a
-  apoyarte en él para un caso nuevo, primero lee
-  `groups-channel-seal-has-no-reachable-producer` (`medium`), que plantea si se retira.
+- **El sello `stoppedUntilRelaunch` del canal de Grupos ya no existe**: quedó sin productor con este PR
+  y se retiró el 2026-09-15 (decisión 4A de Jürgen, `groups-channel-seal-has-no-reachable-producer`).
+  Toda parada del loop es re-arrancable. Si un caso nuevo pide parar el canal hasta relanzar, se escribe
+  de cero y con su productor medido en el gateway.
 - **El sello solo existía en el modo loop-propio.** Con el runtime personal cadenciando, el ciclo de
   grupos va de piggyback y su outcome se descarta: la frase «apagaba el canal el resto de la vida del
   proceso» valía para la sesión solo-grupos, no para toda la población.
