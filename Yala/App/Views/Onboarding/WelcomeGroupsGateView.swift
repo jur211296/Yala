@@ -357,12 +357,30 @@ struct WelcomeGroupsGateView: View {
                 YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterBlock() }
                     .accessibilityIdentifier("welcome_groups_gate_neutral_channel_paused_back")
             }
+        case .blocked(_, .transient):
+            // **Lo pasajero va aparte** (2026-09-15). Aquí llega, tras los 45 s de reintentos del cierre, lo que
+            // se cura esperando y no volviendo a entrar: un corte de red, un 5xx, un guardado que aún se asienta.
+            // Desde que el canal de Grupos deja de llamar «caducada» a una renovación sin red
+            // (`groups-push-reads-an-offline-token-refresh-as-a-session-expiry`), aterriza aquí también quien está
+            // sin conexión con el token caducado, y el catch-all de abajo le mandaba volver a entrar.
+            //
+            // El mensaje es el MISMO que Ajustes y la hoja del cambio de Apple ID enseñan para este motivo
+            // (`SignOutBlockedCopy`), por decisión de Jürgen del 2026-09-15: un solo texto para el mismo caso. El título
+            // es el de las otras ramas de esta pantalla, que nombran el mismo hecho —faltan cambios por subir—: con el
+            // de Ajustes («Un momento más») la puerta tendría dos títulos para una sola cosa.
+            noticeShell(icon: "arrow.trianglehead.2.clockwise.rotate.90",
+                        title: L10n.Welcome.Groups.neutralBlockedTitle,
+                        body: SignOutBlockedCopy.message(for: .transient),
+                        identifier: "welcome_groups_gate_neutral_pending") {
+                YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterBlock() }
+                    .accessibilityIdentifier("welcome_groups_gate_neutral_pending_back")
+            }
         case .blocked:
             // El otro bloqueo alcanzable en esta celda: quedaron cambios de GRUPOS sin subir de una sesión
             // que caducó (`blockIfGroupsCannotUpload`). No se descartan nunca, así que la única salida
             // honesta es volver y entrar con esa cuenta. Sin esta rama la pantalla era un spinner eterno.
             // **Con el canal en pausa NO se llega aquí**: ese motivo tiene su propia rama arriba, porque
-            // aquí el consejo de volver a entrar sería falso.
+            // aquí el consejo de volver a entrar sería falso. **Lo pasajero tampoco**, por lo mismo.
             noticeShell(icon: "arrow.trianglehead.2.clockwise.rotate.90",
                         title: L10n.Welcome.Groups.neutralBlockedTitle,
                         body: L10n.Welcome.Groups.neutralBlockedBody,

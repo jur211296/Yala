@@ -131,6 +131,19 @@ struct GroupsSyncClientTests {
     /// closure escapante bajo Swift 6).
     final class SleeperCounter: @unchecked Sendable { var count = 0 }
 
+    /// Fusible de los tests de loop que esperan una PARADA. Se inyecta como `sessionCheck`: el loop lo consulta en
+    /// cada vuelta, así que un 401 mal clasificado como pasajero —el predicado de `sdkRemovedTheSession` invertido,
+    /// por ejemplo— acaba en un rojo tras `limit` consultas en vez de colgar `await _testLoopTask?.value`.
+    final class LoopFuse: @unchecked Sendable {
+        private var checks = 0
+        private let limit: Int
+        init(limit: Int = 50) { self.limit = limit }
+        func allows() -> Bool {
+            checks += 1
+            return checks <= limit
+        }
+    }
+
     /// Contador por referencia para el closure `onRemoteChangesApplied` inyectado (H-2026-07-18-5) —
     /// mismo motivo que `SleeperCounter` (var local capturada en closure escapante bajo Swift 6).
     final class CallCounter: @unchecked Sendable { var count = 0 }
@@ -1542,11 +1555,14 @@ struct GroupsSyncClientTests {
         // 401 en cualquier request → el pull (outbox vacío ⇒ el push no manda) devuelve sessionExpired.
         // `forceRefreshTokenProvider: { nil }` (hermético, sin tocar el singleton): el retry-once del 401
         // NO consigue token nuevo → sessionExpired como antes del H-2026-07-18-4. El 401 SIN refresh
-        // exitoso DEBE seguir terminando el loop.
+        // exitoso DEBE seguir terminando el loop. `canRenewSession: { false }` = el SDK borró la sesión: sin él
+        // el cliente leería el singleton, y con una sesión guardada en el simulador el refresh nulo sería
+        // PASAJERO — el loop no pararía y este test colgaría en vez de fallar.
         let stub = StubHTTPSession(statusCode: 401)
         let sleeper = SleeperCounter()
-        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { true },
-                                      forceRefreshTokenProvider: { nil })
+        let fuse = LoopFuse()
+        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { fuse.allows() },
+                                      forceRefreshTokenProvider: { nil }, canRenewSession: { false })
         client.sleeper = { _ in sleeper.count += 1 }
 
         client.startIfEligible(context: context)
@@ -1569,8 +1585,12 @@ struct GroupsSyncClientTests {
         CloudSyncFlags.groupsBackendEnabled = true
 
         let stub = StubHTTPSession(statusCode: 401)
-        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { true },
-                                      forceRefreshTokenProvider: { nil })
+        // `canRenewSession: { false }` y el fusible: el porqué, en el test de arriba. El sleeper sin espera solo
+        // corre si el loop NO para; sin él, ese fallo dormiría de verdad la escalera del backoff.
+        let fuse = LoopFuse()
+        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { fuse.allows() },
+                                      forceRefreshTokenProvider: { nil }, canRenewSession: { false })
+        client.sleeper = { _ in }
 
         client.startIfEligible(context: context)
         let task = client._testLoopTask
@@ -1632,7 +1652,8 @@ struct GroupsSyncClientTests {
         #expect(outcome == .applied(deltas: 0, saved: true))
     }
 
-    /// 401 + refresh devuelve NIL → sin re-emisión → sessionExpired (comportamiento pre-fix).
+    /// 401 + refresh devuelve NIL + el SDK BORRÓ la sesión → sin re-emisión → sessionExpired. La dirección
+    /// contraria —el SDK la conserva— es `retry401_refreshReturnsNil_withStoredSession_isTransient`.
     @Test func retry401_refreshReturnsNil_yieldsSessionExpired() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
@@ -1643,7 +1664,7 @@ struct GroupsSyncClientTests {
         let stub = StubHTTPSession(statusCode: 401)
         let client = GroupsSyncClient(
             tokenProvider: { "old-jwt" }, urlSession: stub,
-            forceRefreshTokenProvider: { nil })
+            forceRefreshTokenProvider: { nil }, canRenewSession: { false })
 
         let outcome = await client.pushPending(context: context)
 
@@ -1652,7 +1673,45 @@ struct GroupsSyncClientTests {
         #expect(try groupOutbox(context).first?.rejectedReason == nil)  // no dead-letter (401 no purga)
     }
 
+    /// 401 + refresh devuelve NIL + el SDK CONSERVA la sesión → pasajero, no caducada. Es la red que se cae entre
+    /// el 401 y el refresh: el SDK no pudo renovar y no borró nada (`GroupsSyncClient.sdkRemovedTheSession`).
+    @Test func retry401_refreshReturnsNil_withStoredSession_isTransient() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        _ = try seedOutbox(context, mid: UUID())
+
+        let stub = StubHTTPSession(statusCode: 401)
+        let client = GroupsSyncClient(
+            tokenProvider: { "old-jwt" }, urlSession: stub,
+            forceRefreshTokenProvider: { nil }, canRenewSession: { true })
+
+        let outcome = await client.pushPending(context: context)
+
+        #expect(stub.callCount == 1)   // sin token nuevo no hay con qué re-emitir
+        #expect(outcome == .transient)
+        #expect(try groupOutbox(context).first?.rejectedReason == nil)  // la fila sigue viva para el reintento
+    }
+
+    /// El pull, en las dos direcciones: 401 + refresh NIL es pasajero con la sesión guardada y caducada sin ella.
+    @Test func retry401_pull_refreshReturnsNil_followsTheStoredSession() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let guardada = GroupsSyncClient(
+            tokenProvider: { "old-jwt" }, urlSession: StubHTTPSession(statusCode: 401),
+            forceRefreshTokenProvider: { nil }, canRenewSession: { true })
+        #expect(await guardada.pullAndApplyOnce(context: context) == .transient)
+
+        let borrada = GroupsSyncClient(
+            tokenProvider: { "old-jwt" }, urlSession: StubHTTPSession(statusCode: 401),
+            forceRefreshTokenProvider: { nil }, canRenewSession: { false })
+        #expect(await borrada.pullAndApplyOnce(context: context) == .sessionExpired)
+    }
+
     /// 401 + refresh devuelve el MISMO token → sin re-emisión (evita un round-trip inútil) → sessionExpired.
+    /// **Con la sesión GUARDADA a propósito**: el servidor rechaza un token que el SDK da por bueno, y eso sigue
+    /// siendo sesión caducada aunque el SDK conserve la sesión. Con `{ false }` el caso no distinguiría esta guarda
+    /// de una que consultara `sdkRemovedTheSession`.
     @Test func retry401_sameToken_yieldsSessionExpired_noReissue() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
@@ -1663,12 +1722,26 @@ struct GroupsSyncClientTests {
         let stub = StubHTTPSession(statusCode: 401)
         let client = GroupsSyncClient(
             tokenProvider: { "same-jwt" }, urlSession: stub,
-            forceRefreshTokenProvider: { "same-jwt" })
+            forceRefreshTokenProvider: { "same-jwt" }, canRenewSession: { true })
 
         let outcome = await client.pushPending(context: context)
 
         #expect(stub.callCount == 1)   // fresh == token → no re-emite
         #expect(outcome == .sessionExpired(pending: 1))
+    }
+
+    /// El gemelo del pull: 401 + refresh con el MISMO token y la sesión guardada → sessionExpired, sin re-emisión.
+    @Test func retry401_pull_sameToken_yieldsSessionExpired_noReissue() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let stub = StubHTTPSession(statusCode: 401)
+        let client = GroupsSyncClient(
+            tokenProvider: { "same-jwt" }, urlSession: stub,
+            forceRefreshTokenProvider: { "same-jwt" }, canRenewSession: { true })
+
+        #expect(await client.pullAndApplyOnce(context: context) == .sessionExpired)
+        #expect(stub.callCount == 1)
     }
 
     /// Push MULTI-CHUNK con expiry a mitad: el chunk 1 rescata el 401 (refresh forzado UNA vez) y el
@@ -1730,8 +1803,11 @@ struct GroupsSyncClientTests {
 
         let stub = StubHTTPSession(statusCode: 401)
         let sleeper = SleeperCounter()
-        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { true },
-                                      forceRefreshTokenProvider: { nil })
+        // `canRenewSession: { false }`: la parada que se re-arranca es la de una sesión que el SDK borró. El
+        // fusible convierte en rojo un loop que no pare.
+        let fuse = LoopFuse()
+        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { fuse.allows() },
+                                      forceRefreshTokenProvider: { nil }, canRenewSession: { false })
         client.sleeper = { _ in sleeper.count += 1 }
 
         client.startIfEligible(context: context)
@@ -1743,6 +1819,126 @@ struct GroupsSyncClientTests {
         client.startIfEligible(context: context, trigger: "foreground")
         await client._testLoopTask?.value
         #expect(stub.callCount == 2)          // el loop RE-ARRANCÓ y corrió otra vuelta
+    }
+
+    // MARK: - Test 10d · Sin token: «sin conexión» no es «sesión caducada» (2026-09-15)
+
+    /// Tokens por turno: `nil` es una renovación que no llegó. Al quedar uno, lo repite.
+    final class TokenScript: @unchecked Sendable {
+        private var tokens: [String?]
+        init(_ tokens: [String?]) { self.tokens = tokens }
+        func next() -> String? { tokens.count > 1 ? tokens.removeFirst() : (tokens.first ?? nil) }
+    }
+
+    /// Los delays que el loop pide dormir, en orden.
+    final class DelayLog: @unchecked Sendable { var values: [TimeInterval] = [] }
+
+    /// Sin red y con el token caducado, el SDK no pudo renovar y CONSERVA la sesión. El push no hace ninguna
+    /// petición y devuelve PASAJERO, así que ninguna celda del cierre lo cuenta como sesión caducada. Hasta el
+    /// 2026-09-15 esto era `.sessionExpired`, y el cierre en la nube decía «Tu sesión caducó».
+    @Test func push_tokenUnavailable_withStoredSession_isTransient_andNoCellSaysExpired() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        _ = try seedOutbox(context, mid: UUID())
+
+        let stub = StubHTTPSession(statusCode: 200)
+        let client = GroupsSyncClient(
+            tokenProvider: { nil }, urlSession: stub,
+            forceRefreshTokenProvider: { nil }, canRenewSession: { true })
+
+        let outcome = await client.pushPending(context: context)
+
+        #expect(outcome == .transient)
+        #expect(stub.callCount == 0)                                    // sin token no hay petición
+        #expect(try groupOutbox(context).first?.rejectedReason == nil)  // la fila sigue viva para el reintento
+        // Lo que ve la persona: pasajero en las celdas que reintentan y «no llegaron al servidor» en la nube.
+        let ciclo = try #require(GroupsSyncCadence.stopOutcome(push: outcome))
+        let motivo = CloudSignOutFlowLogic.classify(ciclo, channelKilled: false)
+        #expect(motivo == .transient)
+        #expect(CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(motivo) == .uploadRetryLater)
+    }
+
+    /// La dirección contraria: el SDK BORRÓ la sesión, porque el servidor rechazó la renovación con un código
+    /// terminal. Eso sí es sesión caducada, y el aviso que pide volver a entrar sigue saliendo.
+    @Test func push_tokenUnavailable_afterTheSDKRemovedTheSession_isSessionExpired() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        _ = try seedOutbox(context, mid: UUID())
+
+        let stub = StubHTTPSession(statusCode: 200)
+        let client = GroupsSyncClient(
+            tokenProvider: { nil }, urlSession: stub,
+            forceRefreshTokenProvider: { nil }, canRenewSession: { false })
+
+        let outcome = await client.pushPending(context: context)
+
+        #expect(outcome == .sessionExpired(pending: 1))
+        #expect(stub.callCount == 0)
+        let ciclo = try #require(GroupsSyncCadence.stopOutcome(push: outcome))
+        #expect(CloudSignOutFlowLogic.classify(ciclo, channelKilled: false) == .sessionExpired)
+    }
+
+    /// El pull, en las dos direcciones, y sin petición en ninguna.
+    @Test func pull_tokenUnavailable_followsTheStoredSession() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let stubGuardada = StubHTTPSession()
+        let guardada = GroupsSyncClient(
+            tokenProvider: { nil }, urlSession: stubGuardada,
+            forceRefreshTokenProvider: { nil }, canRenewSession: { true })
+        #expect(await guardada.pullAndApplyOnce(context: context) == .transient)
+        #expect(stubGuardada.callCount == 0)
+
+        let stubBorrada = StubHTTPSession()
+        let borrada = GroupsSyncClient(
+            tokenProvider: { nil }, urlSession: stubBorrada,
+            forceRefreshTokenProvider: { nil }, canRenewSession: { false })
+        #expect(await borrada.pullAndApplyOnce(context: context) == .sessionExpired)
+        #expect(stubBorrada.callCount == 0)
+    }
+
+    /// **La cadencia no para y vuelve a subir sola** (criterio 3 del ticket). Vuelta 1: la renovación no llega y la
+    /// sesión sigue guardada ⇒ backoff, no parada. Vuelta 2: hay token ⇒ la fila sube y el pull completa. Todo en
+    /// el MISMO loop, sin `startIfEligible` de por medio: sin relanzar la app ni volver a primer plano. Antes del
+    /// 2026-09-15 la vuelta 1 devolvía `.sessionExpired` y el loop moría sin dormir.
+    @Test func loop_tokenUnavailableWithStoredSession_backsOff_thenUploadsWhenTheTokenReturns() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        // `storageMode` es un global que otras suites escriben: con `.cloud` y fase estable no habría loop propio.
+        defer {
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
+            CloudSyncFlags._testResetStorageModeOverride()
+        }
+        CloudSyncFlags.groupsBackendEnabled = true
+        CloudSyncFlags.storageMode = .icloud
+
+        let mid = UUID()
+        _ = try seedOutbox(context, mid: mid)
+
+        let stub = SequenceStubHTTPSession([
+            .init(data: pushResultJSON(mid: mid, status: "applied", reason: "", outcome: "null"), status: 200),
+            .init(data: emptyPageJSON, status: 200),
+        ], fallback: .init(data: emptyPageJSON, status: 200))
+        let tokens = TokenScript([nil, "jwt"])
+        let delays = DelayLog()
+        // El loop acaba cuando la vuelta 2 ya hizo sus dos peticiones (push y pull). Así el test no depende de
+        // cuántas veces consulta `sessionCheck` el arranque. Sin espejo ni identidad del singleton: `startIfEligible`
+        // rehidrata y barre el espejo del App Group, y en un simulador con sesión guardada metería filas ajenas.
+        let client = GroupsSyncClient(
+            tokenProvider: { tokens.next() }, urlSession: stub, sessionCheck: { stub.callCount < 2 },
+            currentUserIDProvider: { nil }, outboxMirror: nil,
+            forceRefreshTokenProvider: { nil }, canRenewSession: { true })
+        client.sleeper = { delays.values.append($0) }
+
+        client.startIfEligible(context: context)
+        await client._testLoopTask?.value
+
+        #expect(delays.values == [SyncCadencePolicy.backoffDelay(consecutiveTransients: 1),
+                                  SyncCadencePolicy.pullInterval])   // un backoff y después la cadencia normal
+        #expect(stub.callCount == 2)
+        #expect(stub.requests.first?.value(forHTTPHeaderField: "Authorization") == "Bearer jwt")
+        #expect(try groupOutbox(context).isEmpty)                      // la fila subió en la vuelta 2
     }
 
     // MARK: - Test 11 · Mapeo de outcomes del canal → CadenceOutcome (A4, uso de SyncCadencePolicy)

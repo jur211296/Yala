@@ -34,3 +34,19 @@ lentes coincidieron en ello como su hallazgo ALTA.
   mutante "sobrevive" y la corrida tarda de más, mira si está colgado antes de creerte el verde.
 - Cuando el sujeto de un test deja de existir, **retíralo y deja una nota en su sitio** diciendo dónde
   vive ahora la cobertura. Un test borrado en silencio reaparece como hueco tres meses después.
+
+## 2026-09-15 — el remedio es un fusible, y no un `.timeLimit`
+
+En `groups-push-reads-an-offline-token-refresh-as-a-session-expiry` una lente midió que invertir mi predicado nuevo
+no ponía rojo a nadie: colgaba cinco tests de loop que esperan que un 401 PARE. Con el sleeper sin espera el loop
+giraba sin fin, y uno sin sleeper dormía de verdad la escalera del backoff. Ya eran herméticos —les había inyectado
+`canRenewSession: { false }`—, pero un test hermético que cuelga ante la regresión que existe para cazar sigue sin ser
+una red.
+
+**How to apply:** en todo test que espera que un loop PARE, inyecta un **fusible como `sessionCheck`**: un contador
+que devuelve `false` tras N consultas (50). El loop lo lee en cada vuelta, así que si la parada se rompe el loop sale
+solo y las aserciones dan rojo. Pon además un sleeper sin espera, o el fallo dormirá el backoff real antes de gastar el
+fusible. **Un `.timeLimit` no lo arregla** (inferido, sin medir): el test está bloqueado en `await _testLoopTask?.value`
+de una `Task` no estructurada, que no atiende a la cancelación del test, así que el límite apuntaría el issue y la
+corrida seguiría colgada. Molde: `LoopFuse` en `GroupsSyncClientTests` y el contador de `makeClient` en
+`GroupsSyncHardeningTests`.

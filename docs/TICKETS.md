@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (385)
+## Index (390)
 
 | id | status | path |
 |---|---|---|
@@ -183,6 +183,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | group-joiner-flag-consumers-still-narrow | qa | tickets/qa/group-joiner-flag-consumers-still-narrow.md |
 | group-notif-credits-payer-not-editor | done | tickets/done/group-notif-credits-payer-not-editor.md |
 | groups-account-association-in-storage-row | qa | tickets/qa/groups-account-association-in-storage-row.md |
+| groups-actions-read-an-offline-token-refresh-as-a-session-expiry | backlog | tickets/backlog/groups-actions-read-an-offline-token-refresh-as-a-session-expiry.md |
 | groups-approval-banner-stays | done | tickets/done/groups-approval-banner-stays.md |
 | groups-archived-group-rejects-join | qa | tickets/qa/groups-archived-group-rejects-join.md |
 | groups-archived-still-accepts-changes | backlog | tickets/backlog/groups-archived-still-accepts-changes.md |
@@ -213,6 +214,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-killswitch-403-blocks-detach-forever | qa | tickets/qa/groups-killswitch-403-blocks-detach-forever.md |
 | groups-leave-rpc-error-10 | qa | tickets/qa/groups-leave-rpc-error-10.md |
 | groups-log-expense-via-chat-voice | backlog | tickets/backlog/groups-log-expense-via-chat-voice.md |
+| groups-loop-in-backoff-ignores-the-return-to-foreground | backlog | tickets/backlog/groups-loop-in-backoff-ignores-the-return-to-foreground.md |
 | groups-loop-restart-docs-cite-a-retired-mount-guard | backlog | tickets/backlog/groups-loop-restart-docs-cite-a-retired-mount-guard.md |
 | groups-only-account-deletion-skips-export-wait | backlog | tickets/backlog/groups-only-account-deletion-skips-export-wait.md |
 | groups-only-private-restart-skips-the-wipe-alert | qa | tickets/qa/groups-only-private-restart-skips-the-wipe-alert.md |
@@ -225,7 +227,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-pending-member-sees-detail-chrome | backlog | tickets/backlog/groups-pending-member-sees-detail-chrome.md |
 | groups-pull-cuesta-cinco-viajes-por-grupo | backlog | tickets/backlog/groups-pull-cuesta-cinco-viajes-por-grupo.md |
 | groups-purge-save-crosses-two-stores-without-atomicity | backlog | tickets/backlog/groups-purge-save-crosses-two-stores-without-atomicity.md |
-| groups-push-reads-an-offline-token-refresh-as-a-session-expiry | backlog | tickets/backlog/groups-push-reads-an-offline-token-refresh-as-a-session-expiry.md |
+| groups-push-reads-an-offline-token-refresh-as-a-session-expiry | qa | tickets/qa/groups-push-reads-an-offline-token-refresh-as-a-session-expiry.md |
 | groups-reassociation-does-not-restore-the-bridge-link | backlog | tickets/backlog/groups-reassociation-does-not-restore-the-bridge-link.md |
 | groups-reconnect-prune-or-rewire | done | tickets/done/groups-reconnect-prune-or-rewire.md |
 | groups-settlement-reminder | qa | tickets/qa/groups-settlement-reminder.md |
@@ -235,6 +237,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-sign-out-quiescence-gate-fails-open-with-drive-off | backlog | tickets/backlog/groups-sign-out-quiescence-gate-fails-open-with-drive-off.md |
 | groups-signout-reentry-banner-has-no-producer | backlog | tickets/backlog/groups-signout-reentry-banner-has-no-producer.md |
 | groups-stats-no-deduplica-gastos | backlog | tickets/backlog/groups-stats-no-deduplica-gastos.md |
+| groups-sync-reads-a-missing-attest-401-as-a-session-expiry | backlog | tickets/backlog/groups-sync-reads-a-missing-attest-401-as-a-session-expiry.md |
 | groups-sync-treats-an-infra-403-as-an-account-verdict | done | tickets/done/groups-sync-treats-an-infra-403-as-an-account-verdict.md |
 | groups-tab-missing-panel-perf | qa | tickets/qa/groups-tab-missing-panel-perf.md |
 | groups-transfer-leave-write-ahead | backlog | tickets/backlog/groups-transfer-leave-write-ahead.md |
@@ -282,6 +285,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | panel-defaults-four-sections-four-widgets | done | tickets/done/panel-defaults-four-sections-four-widgets.md |
 | panel-lee-el-filtro-de-cuentas-en-singular-fuera-del-saldo | backlog | tickets/backlog/panel-lee-el-filtro-de-cuentas-en-singular-fuera-del-saldo.md |
 | panel-no-recalcula-al-llegar-tasas-nuevas | backlog | tickets/backlog/panel-no-recalcula-al-llegar-tasas-nuevas.md |
+| personal-sync-reads-an-offline-token-refresh-as-a-session-expiry | backlog | tickets/backlog/personal-sync-reads-an-offline-token-refresh-as-a-session-expiry.md |
 | pie-header-total-unmarked | backlog | tickets/backlog/pie-header-total-unmarked.md |
 | preferred-currency-has-three-different-defaults | backlog | tickets/backlog/preferred-currency-has-three-different-defaults.md |
 | prefs-domain-per-secondary-session | discarded | tickets/discarded/prefs-domain-per-secondary-session.md |
@@ -360,6 +364,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | sign-out-wipe-abort-loops-the-groups-gate | backlog | tickets/backlog/sign-out-wipe-abort-loops-the-groups-gate.md |
 | signout-alert-fires-on-detach-blocks-it-did-not-cause | backlog | tickets/backlog/signout-alert-fires-on-detach-blocks-it-did-not-cause.md |
 | signout-blocked-alert-button-has-no-test-identifier | backlog | tickets/backlog/signout-blocked-alert-button-has-no-test-identifier.md |
+| signout-pending-copy-says-wait-seconds-when-offline | backlog | tickets/backlog/signout-pending-copy-says-wait-seconds-when-offline.md |
 | siri-ai-integration-ios-27 | backlog | tickets/backlog/siri-ai-integration-ios-27.md |
 | siri-intent-dual-container | qa | tickets/qa/siri-intent-dual-container.md |
 | smart-ai-notifications | backlog | tickets/backlog/smart-ai-notifications.md |

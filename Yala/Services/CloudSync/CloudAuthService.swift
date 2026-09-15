@@ -221,6 +221,14 @@ final class CloudAuthService: NSObject {
     /// tener refresh token. Cuando el refresh falla terminal, el SDK limpia el storage → `currentSession`
     /// pasa a `nil` → esto pasa a `false` de forma natural. NUNCA reportar `false` con token vigente
     /// (bloquearía pushes que habrían tenido éxito).
+    ///
+    /// **Y el contrato inverso, desde el 2026-09-15: NUNCA `true` tras un refresh terminal.** El canal de Grupos
+    /// lo lee cuando el token no llega, para separar «sin conexión» de «sesión caducada»
+    /// (`GroupsSyncClient.sdkRemovedTheSession`). Si siguiera en `true` con la sesión muerta, el canal la leería
+    /// pasajera y reintentaría con su backoff en vez de pedir volver a entrar. Hoy lo garantiza el SDK, que borra
+    /// la sesión antes de lanzar, y lo fija `SupabaseSessionRenewalContractTests`. Sin el seam de `hasSession`, a
+    /// propósito: `-uitest-fake-cloud-session` no lo enciende, así que bajo ese seam vale lo que guarde el Keychain
+    /// del simulador (nada, salvo que alguien firmara allí a mano).
     var canRenewSession: Bool { client?.currentSession != nil }
 
     /// Expiración del access token actual (para el panel). `nil` sin sesión.
@@ -229,7 +237,8 @@ final class CloudAuthService: NSObject {
         return Date(timeIntervalSince1970: ts)
     }
 
-    /// JWT de Supabase VIGENTE (el SDK auto-refresca dentro de `session`). `nil` = sin sesión / fallo.
+    /// JWT de Supabase VIGENTE (el SDK auto-refresca dentro de `session`). `nil` = sin sesión / fallo, y aquí los
+    /// dos casos no se distinguen: quien necesite separarlos pregunta después a `canRenewSession`.
     func accessToken() async -> String? {
         guard let client else { return nil }
         do {

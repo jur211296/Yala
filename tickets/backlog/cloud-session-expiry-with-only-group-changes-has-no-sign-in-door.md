@@ -25,6 +25,10 @@ Depende de lo que hizo el SDK con la sesión:
   `.presentGroupsSignIn`). Nada en el botón dice que sirva para volver a entrar.
 - **Si sigue guardada** y la renovación falla, no hay ninguna puerta. Es sobre todo quien está sin conexión, y
   ahí lo que sobra es el texto: `groups-push-reads-an-offline-token-refresh-as-a-session-expiry`.
+  **Desde el 2026-09-15 esta rama ya no le llega a quien solo está sin conexión:** con la sesión guardada, el canal
+  lee pasajero el token que no llega. Sigue llegando cuando el servidor rechaza con 401 un token que el SDK da por
+  bueno —p. ej. sin App Attest (`groups-sync-reads-a-missing-attest-401-as-a-session-expiry`)—, y ahí sigue sin haber
+  puerta: «Nuevo grupo» enruta por `hasSession` y abre el formulario.
 
 Lo que no ofrece volver a entrar:
 
@@ -63,6 +67,7 @@ misma cuenta.
 ## Relación con otros tickets
 
 - `cloud-signout-collapses-a-groups-session-expiry-into-permanent` — el aviso que manda a buscar esta puerta.
-- `groups-push-reads-an-offline-token-refresh-as-a-session-expiry` — el mismo aviso cuando la causa es la red.
+- `groups-push-reads-an-offline-token-refresh-as-a-session-expiry` — el mismo aviso cuando la causa era la red
+  (cerrado en el canal de sincronización el 2026-09-15).
 - `groups-outbox-rows-without-a-live-session-have-no-exit` — quien no puede volver a entrar de ninguna forma, y la
   pregunta de a nombre de quién suben las filas.

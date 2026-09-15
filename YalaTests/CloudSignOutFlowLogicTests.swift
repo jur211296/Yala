@@ -886,7 +886,11 @@ struct PausedChannelReasonWiringTests {
         // **El literal, dentro de SU rama y no en el fichero.** Con un `contains` a nivel de fichero,
         // intercambiar los dos `body:` —el copy de pausa al catch-all y el de «vuelve a entrar» a la rama
         // de pausa— pasaba las tres aserciones: justo el fallo que esto existe para impedir.
-        let pausedBranch = String(gate[paused.upperBound..<catchAll.lowerBound])
+        // Y la rama acaba en el SIGUIENTE `case`, no en el catch-all: desde el 2026-09-15 hay otra rama entre las
+        // dos (lo pasajero), y con el tramo hasta el catch-all un `body:` de pausa movido a ella pasaba.
+        let nextBranch = try #require(
+            gate.range(of: "\n        case ", range: paused.upperBound..<gate.endIndex))
+        let pausedBranch = String(gate[paused.upperBound..<nextBranch.lowerBound])
         #expect(pausedBranch.contains("body: L10n.Groups.Errors.channelPaused"), """
             La rama del canal en pausa dejó de enseñar su copy. Si el literal sigue en el fichero, mira
             si se lo quedó el catch-all.
@@ -894,6 +898,58 @@ struct PausedChannelReasonWiringTests {
         #expect(paused.lowerBound < catchAll.lowerBound, """
             La rama del canal en pausa quedó DESPUÉS del catch-all `case .blocked:`: el motivo cae otra vez
             en el aviso que manda a volver a entrar.
+            """)
+    }
+}
+
+/// **Lo pasajero no manda a volver a entrar en la puerta de Grupos del Welcome** (2026-09-15).
+///
+/// Su `switch` es sobre la fase del coordinador y liga el motivo en un patrón, así que el compilador no obliga a
+/// pronunciarse por motivo: el catch-all `case .blocked:` —«Vuelve a entrar con esa cuenta»— se quedaba con todo lo
+/// que no fuera la espera del export o el canal en pausa. Desde que el canal de Grupos lee pasajera una renovación
+/// sin red (`groups-push-reads-an-offline-token-refresh-as-a-session-expiry`), quien está sin conexión llega aquí con
+/// `.transient`, y ese aviso le mandaba volver a entrar. La rama propia enseña el texto de Ajustes y de la hoja del
+/// cambio de Apple ID (`SignOutBlockedCopy`), por decisión de Jürgen del 2026-09-15.
+@Suite("Puerta de Grupos del Welcome — lo pasajero no manda a volver a entrar (source-scan)")
+struct WelcomeGateTransientBlockWiringTests {
+
+    private static func source(_ relativePath: String) throws -> String {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        return try String(contentsOf: root.appendingPathComponent(relativePath), encoding: .utf8)
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+    }
+
+    @Test("la rama de lo pasajero va antes del catch-all y enseña el texto compartido")
+    func transientBranchShowsTheSharedCopy() throws {
+        let gate = try Self.source("Yala/App/Views/Onboarding/WelcomeGroupsGateView.swift")
+        let transient = try #require(gate.range(of: "case .blocked(_, .transient):"), """
+            La puerta de Grupos del Welcome perdió su rama de lo pasajero: quien está sin conexión vuelve al \
+            catch-all, que le manda volver a entrar con su cuenta.
+            """)
+        let catchAll = try #require(gate.range(of: "\n        case .blocked:"))
+        try #require(transient.lowerBound < catchAll.lowerBound, """
+            La rama de lo pasajero quedó DESPUÉS del catch-all `case .blocked:`: nadie la alcanza.
+            """)
+        // El tramo acaba en la SIGUIENTE rama, sea cual sea: medido hasta el catch-all, un `body:` movido a una rama
+        // nueva metida entre medias pasaría.
+        let next = try #require(gate.range(of: "\n        case ", range: transient.upperBound..<gate.endIndex))
+        let branch = String(gate[transient.upperBound..<next.lowerBound])
+        #expect(branch.contains("title: L10n.Welcome.Groups.neutralBlockedTitle"), """
+            La rama de lo pasajero dejó de titular como las otras ramas de la puerta: la pantalla vuelve a tener dos \
+            títulos para el mismo hecho.
+            """)
+        #expect(branch.contains("{ leaveAfterBlock() }"), """
+            La rama de lo pasajero dejó de salir por `leaveAfterBlock()`: sin devolver el coordinador a `.idle`, el \
+            siguiente cierre sale por su `guard phase == .idle` sin hacer nada.
+            """)
+        #expect(branch.contains("body: SignOutBlockedCopy.message(for: .transient)"), """
+            La rama de lo pasajero dejó de enseñar el texto de Ajustes. Si el literal sigue en el fichero, mira si \
+            se lo quedó otra rama.
+            """)
+        #expect(!branch.contains("neutralBlockedBody"), """
+            La rama de lo pasajero enseña el cuerpo de «vuelve a entrar con esa cuenta».
             """)
     }
 }
