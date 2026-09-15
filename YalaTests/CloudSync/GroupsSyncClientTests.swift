@@ -1941,6 +1941,170 @@ struct GroupsSyncClientTests {
         #expect(try groupOutbox(context).isEmpty)                      // la fila subió en la vuelta 2
     }
 
+    // MARK: - Test 10e · 401 por App Attest ausente: la sesión vale (2026-09-15)
+
+    /// El cuerpo del 401 tal y como lo escribe `jsonError` en las guards del gateway: `type` y `code` con el mismo valor.
+    private func gatewayError401(_ type: String) -> Data {
+        Data(#"{"error":{"message":"m","type":"\#(type)","param":null,"code":"\#(type)"}}"#.utf8)
+    }
+
+    /// El JWT vale y falta App Attest: `requireUserAndAttest` solo llega a `yala_attest_required` tras verificar el JWT.
+    /// No es sesión caducada: pasajero, sin forzar el refresh ni re-emitir, porque un JWT nuevo no trae el attest. Hasta
+    /// el 2026-09-15 esto entraba en el reintento del 401, volvía a chocar y acababa en `.sessionExpired`: el loop paraba
+    /// y el cierre de sesión decía «Tu sesión caducó». `canRenewSession: { false }` a propósito: con la sesión borrada
+    /// el camino viejo termina en caducada pase lo que pase, así que el verde solo puede venir de leer el código.
+    @Test func push_401AttestRequired_isTransient_withoutRefreshingTheToken() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        _ = try seedOutbox(context, mid: UUID())
+
+        let stub = StubHTTPSession(responseData: gatewayError401("yala_attest_required"), statusCode: 401)
+        let refreshes = CallCounter()
+        let client = GroupsSyncClient(
+            tokenProvider: { "jwt" }, urlSession: stub,
+            forceRefreshTokenProvider: { refreshes.count += 1; return "new-jwt" }, canRenewSession: { false })
+
+        let outcome = await client.pushPending(context: context)
+
+        #expect(outcome == .transient)
+        #expect(stub.callCount == 1)                                    // sin re-emisión
+        #expect(refreshes.count == 0)                                   // sin refresh forzado
+        let filas = try groupOutbox(context)
+        #expect(filas.count == 1)                                       // la fila sigue ahí para el reintento…
+        #expect(filas.first?.rejectedReason == nil)                     // …y sin dead-letter
+        // Lo que ve la persona: pasajero en las celdas que reintentan y «no llegaron al servidor» en la nube.
+        let ciclo = try #require(GroupsSyncCadence.stopOutcome(push: outcome))
+        let motivo = CloudSignOutFlowLogic.classify(ciclo, channelKilled: false)
+        #expect(motivo == .transient)
+        #expect(CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(motivo) == .uploadRetryLater)
+    }
+
+    /// La dirección contraria: `yala_attest_invalid` es el JWT que no vale, y eso sigue siendo sesión caducada con su
+    /// reintento del 401. El refresh se intenta; sin token nuevo y con la sesión borrada, el cierre pide volver a entrar.
+    /// Un predicado que leyera todo `yala_attest_*` como pasajero dejaría a esa sesión reintentando para siempre.
+    @Test func push_401AttestInvalid_staysSessionExpired() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        _ = try seedOutbox(context, mid: UUID())
+
+        let stub = StubHTTPSession(responseData: gatewayError401("yala_attest_invalid"), statusCode: 401)
+        let refreshes = CallCounter()
+        let client = GroupsSyncClient(
+            tokenProvider: { "jwt" }, urlSession: stub,
+            forceRefreshTokenProvider: { refreshes.count += 1; return nil }, canRenewSession: { false })
+
+        let outcome = await client.pushPending(context: context)
+
+        #expect(outcome == .sessionExpired(pending: 1))
+        #expect(refreshes.count == 1)   // el reintento del 401 sí corre
+        #expect(stub.callCount == 1)
+        let ciclo = try #require(GroupsSyncCadence.stopOutcome(push: outcome))
+        #expect(CloudSignOutFlowLogic.classify(ciclo, channelKilled: false) == .sessionExpired)
+    }
+
+    /// El caso entero del ticket: el JWT había caducado (`yala_attest_invalid`), el refresh trae uno nuevo y la
+    /// re-emisión choca con el attest que sigue faltando. Manda el código del SEGUNDO 401: pasajero. Fija que la lectura
+    /// vive dentro de `send` —cuenta también en la re-emisión— y que la re-emisión sale con el token fresco.
+    @Test func push_expiredJWTThenMissingAttest_isTransient_onTheReissue() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        _ = try seedOutbox(context, mid: UUID())
+
+        let stub = SequenceStubHTTPSession([
+            .init(data: gatewayError401("yala_attest_invalid"), status: 401),
+            .init(data: gatewayError401("yala_attest_required"), status: 401),
+        ], fallback: .init(data: gatewayError401("yala_attest_required"), status: 401))
+        let client = GroupsSyncClient(
+            tokenProvider: { "old-jwt" }, urlSession: stub,
+            forceRefreshTokenProvider: { "new-jwt" }, canRenewSession: { false })
+
+        let outcome = await client.pushPending(context: context)
+
+        #expect(outcome == .transient)
+        #expect(stub.callCount == 2)
+        #expect(stub.requests.last?.value(forHTTPHeaderField: "Authorization") == "Bearer new-jwt")
+    }
+
+    /// El pull, en las dos direcciones: attest ausente → pasajero y sin refresh; JWT que no vale → caducada, después de
+    /// intentar el refresh.
+    @Test func pull_401_followsTheCodeOfTheEnvelope() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let refreshesSinAttest = CallCounter()
+        let sinAttest = GroupsSyncClient(
+            tokenProvider: { "jwt" },
+            urlSession: StubHTTPSession(responseData: gatewayError401("yala_attest_required"), statusCode: 401),
+            forceRefreshTokenProvider: { refreshesSinAttest.count += 1; return "new-jwt" },
+            canRenewSession: { false })
+        #expect(await sinAttest.pullAndApplyOnce(context: context) == .transient)
+        #expect(refreshesSinAttest.count == 0)
+
+        let refreshesJWTMalo = CallCounter()
+        let jwtMalo = GroupsSyncClient(
+            tokenProvider: { "jwt" },
+            urlSession: StubHTTPSession(responseData: gatewayError401("yala_attest_invalid"), statusCode: 401),
+            forceRefreshTokenProvider: { refreshesJWTMalo.count += 1; return nil },
+            canRenewSession: { false })
+        #expect(await jwtMalo.pullAndApplyOnce(context: context) == .sessionExpired)
+        #expect(refreshesJWTMalo.count == 1)
+    }
+
+    /// El gemelo en el pull del caso entero del ticket: JWT caducado, refresh, y la re-emisión choca con el attest que
+    /// sigue faltando. Con el outbox vacío el pull es la única petición del ciclo, así que leer caducada esa re-emisión
+    /// pararía el loop. Fija que la lectura del código también cuenta en la re-emisión del pull.
+    @Test func pull_expiredJWTThenMissingAttest_isTransient_onTheReissue() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let stub = SequenceStubHTTPSession([
+            .init(data: gatewayError401("yala_attest_invalid"), status: 401),
+            .init(data: gatewayError401("yala_attest_required"), status: 401),
+        ], fallback: .init(data: gatewayError401("yala_attest_required"), status: 401))
+        let client = GroupsSyncClient(
+            tokenProvider: { "old-jwt" }, urlSession: stub,
+            forceRefreshTokenProvider: { "new-jwt" }, canRenewSession: { false })
+
+        #expect(await client.pullAndApplyOnce(context: context) == .transient)
+        #expect(stub.callCount == 2)
+        #expect(stub.requests.last?.value(forHTTPHeaderField: "Authorization") == "Bearer new-jwt")
+    }
+
+    /// **La cadencia no para.** Con el attest ausente cada pull da 401, y el loop entra en backoff en vez de
+    /// `stopUntilSignIn`. Hasta el 2026-09-15 moría en la primera vuelta sin dormir, y los cambios de grupos dejaban de
+    /// subir hasta volver a primer plano. Con `canRenewSession: { false }` y el refresh nulo, el camino viejo PARA en vez
+    /// de colgar: el rojo sale en `delays`, no en un `await` eterno.
+    @Test func loop_401AttestRequired_backsOff_insteadOfStoppingUntilSignIn() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        // `storageMode` es un global que otras suites escriben: con `.cloud` y fase estable no habría loop propio.
+        defer {
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
+            CloudSyncFlags._testResetStorageModeOverride()
+        }
+        CloudSyncFlags.groupsBackendEnabled = true
+        CloudSyncFlags.storageMode = .icloud
+
+        let stub = StubHTTPSession(responseData: gatewayError401("yala_attest_required"), statusCode: 401)
+        let delays = DelayLog()
+        // Outbox vacío ⇒ una petición por vuelta, la del pull, y el loop acaba cuando han corrido dos. El fusible corta
+        // un loop que dejara de pedir: sin él colgaría en vez de fallar. Sin espejo ni identidad del singleton, por lo
+        // mismo que en el test del token sin red.
+        let fuse = LoopFuse()
+        let client = GroupsSyncClient(
+            tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { fuse.allows() && stub.callCount < 2 },
+            currentUserIDProvider: { nil }, outboxMirror: nil,
+            forceRefreshTokenProvider: { nil }, canRenewSession: { false })
+        client.sleeper = { delays.values.append($0) }
+
+        client.startIfEligible(context: context)
+        await client._testLoopTask?.value
+
+        #expect(stub.callCount == 2)
+        #expect(delays.values == [SyncCadencePolicy.backoffDelay(consecutiveTransients: 1),
+                                  SyncCadencePolicy.backoffDelay(consecutiveTransients: 2)])
+    }
+
     // MARK: - Test 11 · Mapeo de outcomes del canal → CadenceOutcome (A4, uso de SyncCadencePolicy)
 
     @Test func cadenceMapping_pushOutcomes() {

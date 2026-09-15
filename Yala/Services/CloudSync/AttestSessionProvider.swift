@@ -46,7 +46,9 @@ enum AttestSessionProvider {
     /// El `try?` es deliberado y NO es un silencio de los que prohíbe CLAUDE.md: `AppAttestClient` ya
     /// loguea el fallo, y convertirlo en un `throw` haría que un attest caído abortara flujos de usuario
     /// que el gateway puede seguir aceptando (rutas bajo `requireUser`) o degradar con su propio error
-    /// tipado (`GroupsRPCError.sessionExpired`).
+    /// tipado. En el canal de sync y en el de membresía de Grupos ese error es PASAJERO desde el 2026-09-15
+    /// (`.transient` y `GroupsRPCError.transient(status: 401)`): el 401 `yala_attest_required` llega con la sesión
+    /// buena, y leerlo como caducada le pedía a la persona volver a entrar por algo que no se arregla así.
     ///
     /// `nonisolated` para poder referenciarlo desde inicializadores de `static` nonisolados
     /// (`SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`): el closure `@MainActor` se FORMA aquí sin ejecutarse.

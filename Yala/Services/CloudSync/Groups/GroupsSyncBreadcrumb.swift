@@ -215,6 +215,14 @@ enum GroupsSyncBreadcrumb {
         logger.notice("GroupsSync forbiddenNotKill edge=\(edge, privacy: .public)")
     }
 
+    /// El gateway respondió **401 `yala_attest_required`**: la sesión vale y lo que falta es el token de App Attest
+    /// (`AttestSessionProvider.live` devolvió `nil`, o uno que no verifica). Desde el 2026-09-15 es pasajero y el
+    /// loop no para, así que sin esta línea el caso no deja en el log de Grupos nada que lo distinga de un corte
+    /// de red. `edge` = `push`, `pull` o `rpc:<fn>`. Sin PII: ni el token ni el cuerpo del 401.
+    static func groupsAttestRequired(edge: String) {
+        logger.notice("GroupsSync attestRequired edge=\(edge, privacy: .public)")
+    }
+
     /// El loop de cadencia se RE-ARRANCÓ efectivamente (se creó un nuevo `loopTask`). `trigger` = slug
     /// (`foreground` / `post-sign-in`). SOLO se emite cuando el re-arranque crea el loop — jamás en los
     /// no-op (flag OFF, loop ya vivo, piggyback). Sin PII.

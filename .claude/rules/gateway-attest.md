@@ -103,6 +103,42 @@ inyectan el proveedor — no el cliente entero.
 3. **El e2e en device contra producción lo hace el owner con un build nuevo.** Quien escribe el fix NO
    tiene forma de ejercitarlo y no debe declararlo verificado.
 
+## Los dos 401 de la guard: sesión caducada o attest ausente (2026-09-15)
+
+`requireUserAndAttest` responde 401 con dos códigos, y el cliente de Grupos los lee distinto:
+
+| Código | Cuándo lo emite la guard | Qué hace el cliente de Grupos |
+|---|---|---|
+| `yala_attest_invalid` | el JWT de usuario no verifica | sesión caducada. Sync: reintento con refresh forzado, y `.sessionExpired` si no se rescata (`.transient` si el refresh vuelve vacío con la sesión guardada). Membresía: `.sessionExpired` directo |
+| `yala_attest_required` | falta el JWT, **o** el JWT verifica y el token de attest falta o no verifica | pasajero: `.transient` con backoff, sin refresh, con `GroupsSyncBreadcrumb.groupsAttestRequired` |
+
+- **Por qué el segundo es pasajero:** ningún cliente del canal manda una petición sin JWT, así que para ellos
+  `yala_attest_required` dice «sesión buena, attest ausente». Volver a entrar no lo arregla; leído como caducada,
+  paraba el loop y enseñaba «Tu sesión caducó».
+- **Decide `GatewayErrorEnvelope.isAttestRequired`**, que lee `error.type` (`jsonError` escribe el mismo valor en
+  `code`). En `GroupsSyncClient` va dentro de `send`, para que cuente también en la re-emisión tras un refresh;
+  `GroupsMembershipClient.call` lo lanza como `.transient(status: 401)`, con su reintento corto. El Merkle y el
+  push token no lo distinguen: su 401 no llega a nada visible.
+- **Al tocar cualquiera de las cuatro guards, cada código se queda en su rama**: `yala_attest_invalid` para el
+  JWT, `yala_attest_required` para el attest. Fundidos, el cliente leería una sesión muerta como pasajera y
+  reintentaría para siempre. En las dos guards de Grupos lo fija `gateway/test/groups.attest401.test.ts`
+  (`sync/account.ts`, `account.delete.test.ts`; `sync/routes.ts`, ninguno), **que solo corre a mano**: el CI no
+  ejecuta la suite del gateway (`ci-no-corre-la-suite-del-gateway`). Se corre con
+  `npm test -- test/groups.attest401.test.ts`; el `pretest` copia los manifests, y `npx vitest` a pelo falla con
+  «Cannot find module …group_capability_manifest.json».
+- **El canal personal todavía lee todo 401 como caducada** (`SyncPushClient`, `SyncPullClient`, `PrefsSyncClient`).
+  Que `CloudSyncRuntime.performCycle` pida el attest antes de subir no lo evita: la migración sube sin esa puerta
+  (`MigrationWorkExecutor`, `MigrationSnapshotUploader`, que lo tratan como transitorio), y `resolveAttest` mira la
+  caché local, así que un token que el servidor ya no acepta la pasa
+  (`attest-session-token-rejected-by-the-gateway-stays-cached`).
+  Ticket `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`.
+- **Lo que se acepta a sabiendas, medido en la review del 2026-09-15.** Cada vuelta del loop en backoff intenta el
+  attest de verdad y abre otra ventana de `AttestRefreshBackoffLogic`, que comparte con la IA y los tipos de cambio:
+  cuando Apple vuelve, esos pueden recibir el error viejo hasta 60 s. Los cierres que reintentan 45 s mandan unas 23
+  subidas que no aciertan si el attest no vuelve. Y una sesión revocada con el JWT aún vigente se descubre al caducar
+  ese JWT, no en el refresh forzado. Antes el loop moría en la primera vuelta: nada de esto pasaba, y tampoco subía
+  nada.
+
 ## El SEGUNDO fallo del mismo día: el header estaba cableado y el token no se podía acuñar
 
 El e2e del punto 3 se hizo, y destapó una causa distinta con el MISMO síntoma en pantalla. Precisión sobre

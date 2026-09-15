@@ -167,10 +167,13 @@ nonisolated enum CloudSignOutFlowLogic {
         ///
         /// **Y desde ese mismo día ya no le llega a quien solo está sin conexión.** Con el token caducado y sin
         /// red, el SDK conserva la sesión y el canal de Grupos lo lee como pasajero
-        /// (`GroupsSyncClient.sdkRemovedTheSession`). Aquí entra la sesión que el SDK borró, o un 401 que el refresh
-        /// no rescata con la sesión guardada: el servidor rechaza un token que el SDK da por bueno, como con App
-        /// Attest ausente (`groups-sync-reads-a-missing-attest-401-as-a-session-expiry`). Ticket
-        /// `groups-push-reads-an-offline-token-refresh-as-a-session-expiry`.
+        /// (`GroupsSyncClient.sdkRemovedTheSession`). Aquí entra la sesión que el SDK borró, o un 401
+        /// `yala_attest_invalid` que el refresh no rescata con la sesión guardada: el servidor rechaza un token que el
+        /// SDK da por bueno. Ticket `groups-push-reads-an-offline-token-refresh-as-a-session-expiry`.
+        ///
+        /// **Ni a quien tiene la sesión buena y le falta App Attest.** Con `yala_attest_required` el JWT verificó, así
+        /// que el canal lo lee pasajero y el cierre enseña el aviso de lo pasajero
+        /// (`GatewayErrorEnvelope.isAttestRequired`, ticket `groups-sync-reads-a-missing-attest-401-as-a-session-expiry`).
         ///
         /// Lo que su aviso todavía no resuelve, leído en el código sin ejecutar: **en la nube, «vuelve a iniciar
         /// sesión» no dice dónde.** Si el SDK borró la sesión, la única puerta encontrada es «Nuevo grupo» en la
