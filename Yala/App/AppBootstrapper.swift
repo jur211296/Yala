@@ -1004,6 +1004,12 @@ final class AppBootstrapper {
         if UITestHooks.showTrialOffer {
             RouterEntryGate.shared.submit(.presentTrialOffer)
         }
+        // Aviso de vaciado remoto simulado en uitest: el productor real (la gracia de 5 s, que cuelga de
+        // que las filas desaparezcan del store bajo el proceso vivo) no tiene seam, así que se encola el
+        // intent directamente. El drenaje re-mide sus tres condiciones vivas igual que en producción.
+        if UITestHooks.showRemoteWipeNotice {
+            RouterEntryGate.shared.submit(.presentRemoteWipeNotice)
+        }
         // UpdateAvailableBanner simulado en uitest: fuerza el estado sin red.
         if UITestHooks.forceUpdateBanner {
             AppUpdateService.shared.forceUpdateAvailableForUITest()

@@ -45,18 +45,33 @@ struct ShellDataAlertsModifier: ViewModifier {
     /// wipes DELIBERADOS tienen que cancelar esa gracia antes de bajar `hasPersonalData`, o el true→false
     /// se lee como wipe REMOTO y apila un alert sobre el onboarding que ellos mismos están abriendo.
     var onCancelWipeGrace: () -> Void
+    /// **«Empezar de cero» del aviso de vaciado remoto.** El aterrizaje vive en `ContentView` y no aquí
+    /// por lo mismo que `onCancelWipeGrace`: necesita estado que no viaja por `@Binding` (los dos
+    /// `@AppStorage` del Welcome) y tiene que quedar al lado del camino hermano —el vaciado que llega
+    /// por señal— para que se lea de un vistazo que los dos aterrizan en el mismo sitio.
+    var onRemoteWipeStartFresh: () -> Void
+    /// **«Ahora no» del aviso de vaciado remoto.** Apaga el aviso y su condición viva; la persona se
+    /// queda donde estaba.
+    var onRemoteWipeDismiss: () -> Void
     func body(content: Content) -> some View {
         content
+            // **Las dos ramas dicen a dónde va la persona**, como sus tres vecinos de este fichero. Se
+            // quedaron sin ello hasta el 2026-09-14, y el desenlace del botón destructivo era además el
+            // camino GENÉRICO de degradación: bajar `hasCompletedOnboarding` y dejar que el `onChange`
+            // eligiera destino con lo que hubiera en las preferencias. Ahora los dos aterrizajes están
+            // escritos y son los de `ContentView`, al lado del wipe remoto que llega por señal.
+            //
+            // **La premisa que este aviso YA NO comparte con sus vecinos** (y por eso su «Ahora no» no
+            // reabre nada): desde este ticket se presenta por la cola del router, así que sólo monta con
+            // el anchor libre — debajo sigue estando la shell de la app. Sus vecinos reabren el Welcome
+            // porque el suyo se encendía sobre un cover y lo desmontaba.
             .alert(L10n.iCloud.remoteWipeTitle, isPresented: $showRemoteWipeAlert) {
                 Button(L10n.iCloud.remoteWipeConfirm, role: .destructive) {
-                    // Reset seed guards so onboarding can re-create data. El centinela de categorías
-                    // va por `CategorySeedSentinel.currentKey`: está namespaceado por store (personal
-                    // vs `YalaModel-UITest`) y el literal suelto apuntaría al del otro proceso.
-                    UserDefaults.standard.removeObject(forKey: CategorySeedSentinel.currentKey)
-                    UserDefaults.standard.removeObject(forKey: "notificationsSeeded")
-                    hasCompletedOnboarding = false
+                    onRemoteWipeStartFresh()
                 }
-                Button(L10n.iCloud.remoteWipeCancel, role: .cancel) {}
+                Button(L10n.iCloud.remoteWipeCancel, role: .cancel) {
+                    onRemoteWipeDismiss()
+                }
             } message: {
                 Text(L10n.iCloud.remoteWipeMessage)
             }

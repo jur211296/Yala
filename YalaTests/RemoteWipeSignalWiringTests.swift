@@ -138,13 +138,14 @@ struct RemoteWipeSignalWiringTests {
 
     /// Y donde se DRENA: el único sitio que llama a `DataWipeService.wipeAllUserData` por una señal
     /// remota. Aquí el fallo es el borrado en sí.
-    /// **`ContentView` tiene DOS lecturas del eje desde el 2026-09-14, y las dos se miden.** El drenaje
-    /// —el que borra— y el aviso de la gracia de 5 s, que es el `@Test` de más abajo. Las dos calculan
-    /// el valor con la misma sentencia literal, así que verificar solo la primera dejaba a la otra sin
-    /// red sin que nada se pusiera rojo.
+    /// **`ContentView` tiene TRES lecturas del eje desde el 2026-09-14, y las tres se miden.** El
+    /// drenaje —el que borra—, la gracia de 5 s (que decide si PIDE el aviso) y el drenaje de ese aviso
+    /// (que decide si todavía es verdad cuando toca enseñarlo). Las tres calculan el valor con la misma
+    /// sentencia literal, así que verificar solo la primera dejaba a las otras sin red sin que nada se
+    /// pusiera rojo.
     @Test("MUTACIÓN: el drenaje calcula el eje con la lectura estricta, y ese valor es el que pasa")
     func drainWiresTheStrictReading() throws {
-        try assertWiring(path: "Yala/App/ContentView.swift", defaultsArg: "", lecturas: 2, daño: """
+        try assertWiring(path: "Yala/App/ContentView.swift", defaultsArg: "", lecturas: 3, daño: """
             el teléfono se vacía aunque la detección lo hubiera frenado, o el aviso de datos borrados
             vuelve a salirle a quien tiene el móvil prestado
             """)
@@ -205,48 +206,152 @@ struct RemoteWipeSignalWiringTests {
     /// otro `let` detrás— pasaba las cuatro aserciones con el eje decidido cinco segundos antes. El
     /// mutante que se probó a mano cayó por accidente, porque arrastró el `sleep` a la sentencia medida;
     /// con una línea intermedia habría pasado. El estado rancio lo produce mover el `let`, no el `guard`,
-    /// así que lo que hay que fijar es el ORDEN COMPLETO: dormir → leer → decidir → encender.
+    /// así que lo que hay que fijar es el ORDEN COMPLETO: dormir → leer → decidir → pedir.
     ///
     /// Que el literal incluya los `.seconds(5)` es deliberado: cambiar el debounce obliga a pasar por
     /// aquí, que es donde está escrito por qué el eje se lee después y no antes.
-    @Test("MUTACIÓN: dormir → leer el eje → decidir → encender, sin nada entre medias y en un solo sitio")
-    func theAlertIsGatedByTheAxisAtItsOnlyWriter() throws {
+    ///
+    /// **El cuarto paso dejó de ENCENDER y pasó a PEDIR el 2026-09-14** (`remote-wipe-alert-skips-the-
+    /// router`): este productor es una tarea de fondo, así que su aviso viaja por la cola del router y
+    /// lo enciende el drenaje, con el anchor libre. Los dos extremos tienen su escáner —éste y el de
+    /// más abajo— porque el eje se mide en los dos: aquí decide si el aviso llega a pedirse, y allí si
+    /// sigue siendo verdad cuando toca enseñarlo.
+    @Test("MUTACIÓN: dormir → leer el eje → decidir → PEDIR el aviso, sin nada entre medias y en un solo sitio")
+    func theNoticeIsGatedByTheAxisAtItsOnlyProducer() throws {
         let vista = try Self.code("Yala/App/ContentView.swift")
 
         let tramo = "try await Task.sleep(for: .seconds(5)) "
             + Self.origenEsperado(defaultsArg: "")
-            + " guard sessionObeysWipeSignal else { return } showRemoteWipeAlert = true"
+            + " guard sessionObeysWipeSignal else { return } "
+            + "RouterEntryGate.shared.submit(.presentRemoteWipeNotice)"
         #expect(Self.count(tramo, in: vista) == 1, """
             el tramo de la gracia de vaciado remoto cambió de forma. Los cuatro pasos van SEGUIDOS y en
-            este orden: dormir los 5 s, leer el eje, decidir, encender. Si la lectura sube por encima del
-            `sleep`, el eje se evalúa con el estado de cinco segundos antes; si entra cualquier cosa entre
-            el `guard` y el encendido, aparece una rama que enciende sin pasar por el eje. En los dos
-            casos vuelve el bug: a quien acaba de vaciar sus datos en una sesión solo-grupos le salta
-            «Tus datos fueron eliminados de iCloud», y su botón lo manda al onboarding por el camino
-            genérico de degradación.
+            este orden: dormir los 5 s, leer el eje, decidir, pedir el aviso. Si la lectura sube por
+            encima del `sleep`, el eje se evalúa con el estado de cinco segundos antes; si entra
+            cualquier cosa entre el `guard` y la petición, aparece una rama que pide sin pasar por el
+            eje. En los dos casos vuelve el bug: a quien acaba de vaciar sus datos en una sesión
+            solo-grupos le salta «Tus datos fueron eliminados de iCloud».
+
+            Y si lo que cambió es que el aviso vuelve a encenderse AQUÍ —un `showRemoteWipeAlert = true`
+            en lugar del `submit`— el que vuelve es el otro bug, el de este ticket: encender un `.alert`
+            desde esta tarea de fondo desmonta lo que el anchor tuviera presentado, y si no llega a
+            montar deja la matriz de readiness bloqueada el resto de la sesión.
 
             Esperado exactamente: \(tramo)
             """)
 
-        // Y que ese sea el ÚNICO escritor. **Se cuenta la ASIGNACIÓN, no el literal `= true`**: el flag
-        // viaja como `@Binding` a `ShellDataAlertsModifier`, así que un `= loQueSea` o un `.toggle()`
-        // desde allí lo encendería sin eje y sin tocar ninguna de las dos líneas de arriba.
-        #expect(try Self.countInProduction("showRemoteWipeAlert = ") == 2, """
-            las asignaciones al flag del aviso de vaciado remoto cambiaron de número en `Yala/`. Son DOS:
-            la que lo enciende tras la gracia (con el eje delante) y la que lo apaga en el drenaje. Si
-            aparece una tercera, ponle el mismo eje: el aviso afirma que los datos borrados son los del
-            Apple ID de este teléfono, y eso solo es cierto en una sesión privada con su iCloud detrás.
+        // **DOS y no una, y las dos están nombradas**: la de arriba —el único productor de producción— y
+        // el seam de uitest de `AppBootstrapper`, que encola el intent bajo `UITestHooks` para poder
+        // probar la presentación (el productor real no es ejercitable: no hay forma de hacer desaparecer
+        // las filas del store bajo el proceso vivo). Un TERCER `submit` sube la cuenta y pone esto rojo,
+        // que es lo que se quiere: al que venga, ponle el mismo eje delante.
+        #expect(try Self.countInProduction("RouterEntryGate.shared.submit(.presentRemoteWipeNotice)") == 2, """
+            el aviso de vaciado remoto se pide desde un número inesperado de sitios en `Yala/`. Son dos:
+            la gracia de `ContentView` (con el eje delante) y el seam de uitest de `AppBootstrapper`. Si
+            hay un productor nuevo, ponle el mismo eje: el aviso afirma que los datos borrados son los
+            del Apple ID de este teléfono, y eso solo es cierto en una sesión privada con su iCloud
+            detrás.
             """)
+        #expect(Self.count("RouterEntryGate.shared.submit(.presentRemoteWipeNotice)", in: vista) == 1,
+                "el productor de producción del aviso dejó de ser único dentro de `ContentView`")
+        let seam = try Self.code("Yala/App/AppBootstrapper.swift")
+        #expect(seam.contains("if UITestHooks.showRemoteWipeNotice { "
+                              + "RouterEntryGate.shared.submit(.presentRemoteWipeNotice) }"), """
+            el seam de uitest del aviso perdió su guard: encolar el intent fuera de `-uitest` le enseña a
+            producción un aviso que nadie pidió.
+            """)
+
         #expect(try Self.countInProduction("showRemoteWipeAlert.toggle()") == 0, """
             alguien enciende el aviso con `toggle()`, que se salta el eje y además lo APAGA cuando ya
             estaba puesto.
             """)
 
         // Control del instrumento, y éste sí puede fallar solo: si el recorrido del árbol se rompiera o
-        // el flag se renombrara, las dos cuentas de arriba darían 0 por el motivo equivocado. Un `>=`
-        // holgado no servía —el flag sale 20 veces en `Yala/`, así que ningún mutante lo movía.
+        // el flag se renombrara, las cuentas de arriba darían 0 por el motivo equivocado.
         #expect(try Self.countInProduction("@State private var showRemoteWipeAlert") == 1,
                 "el flag del aviso no está declarado exactamente una vez: el escáner mide otra cosa")
+    }
+
+    /// **El drenaje del aviso RE-MIDE las tres condiciones vivas antes de enseñarlo.** El intent no es
+    /// transitorio: puede esperar en cola bajo un cover a través de un background entero, y el aviso
+    /// afirma un hecho sobre AHORA. Las tres son las que lo hacen verdadero —las filas siguen sin estar,
+    /// el onboarding sigue completo, la sesión sigue siendo de las que obedecen la señal— y el orden
+    /// importa tanto como en el productor: cualquier cosa entre el último `guard` y el encendido abre
+    /// una rama que enseña sin haber medido.
+    ///
+    /// **Y el encendido de la CONDICIÓN VIVA es único.** El `@State` del alert se enciende dos veces (el
+    /// drenaje y el re-toggle de la red de presentación, que es lo que lo re-presenta cuando UIKit no
+    /// llegó a montarlo); `remoteWipeNoticePending` no: quien retiene al router se enciende en un solo
+    /// sitio y con las tres mediciones delante.
+    @Test("MUTACIÓN: el drenaje del aviso re-mide las tres condiciones vivas antes de encenderlo")
+    func theNoticeDrainRemeasuresBeforePresenting() throws {
+        let vista = try Self.code("Yala/App/ContentView.swift")
+
+        let tramo = "guard !hasPersonalData else { return } "
+            + "guard hasCompletedOnboarding else { return } "
+            + Self.origenEsperado(defaultsArg: "")
+            + " guard sessionObeysWipeSignal else { return } "
+            + "remoteWipeNoticePending = true showRemoteWipeAlert = true "
+            + "armRemoteWipeNoticePresentationNet()"
+        #expect(Self.count(tramo, in: vista) == 1, """
+            el drenaje del aviso de vaciado remoto cambió de forma. Se mide TODO el tramo, no solo que
+            los guards existan: si uno se mueve por debajo del encendido, o si entra algo entre el
+            último `guard` y las dos asignaciones, el aviso puede salir sobre unos datos que ya
+            volvieron, sobre alguien a quien otro camino acaba de mandar al Welcome, o en una sesión que
+            no guarda sus datos en el iCloud de este Apple ID.
+
+            Y si lo que falta es `armRemoteWipeNoticePresentationNet()`, lo que se pierde es la red del
+            criterio 3: nadie comprobaría que UIKit presentó de verdad, y un aviso que no monta deja el
+            router retenido hasta que se mata la app.
+
+            Esperado exactamente: \(tramo)
+            """)
+
+        #expect(try Self.countInProduction("remoteWipeNoticePending = true") == 1, """
+            la condición viva del aviso se enciende desde más de un sitio en `Yala/`. Es la que retiene
+            al router: un encendido sin las tres re-mediciones delante puede dejar la matriz bloqueada
+            por un aviso que ya no es verdad.
+            """)
+
+        #expect(try Self.countInProduction("@State private var remoteWipeNoticePending") == 1,
+                "la condición viva del aviso no está declarada exactamente una vez: el escáner mide otra cosa")
+    }
+
+    /// **La matriz de readiness cuelga de la CONDICIÓN VIVA, nunca del `@State` del alert.** Es la regla
+    /// (4) de Presentaciones para blockers, y aquí es load-bearing: la red de presentación apaga y
+    /// vuelve a encender `showRemoteWipeAlert` para re-presentar, así que una matriz colgada de ese flag
+    /// se abriría en cada reintento y el router drenaría lo siguiente justo debajo del aviso.
+    ///
+    /// **Y el desarme del cap tiene que apagar la condición viva**, que es lo que cierra el brick: nueve
+    /// segundos sin conseguir presentar significan que algo tapa el anchor para siempre, y quedarse
+    /// retenido cuesta la sesión entera.
+    @Test("MUTACIÓN: el blocker es la condición viva, y el cap de la red la suelta")
+    func theBlockerIsTheLiveConditionAndTheNetReleasesIt() throws {
+        #expect(try Self.countInProduction("showRemoteWipeAlert: remoteWipeNoticePending") == 2, """
+            la matriz de readiness ya no cuelga de la condición viva del aviso en sus DOS sitios (el
+            observador que dispara el recálculo y el snapshot que entra a la lógica pura). Si volvió a
+            colgar del `@State` del alert, cada reintento de la red de presentación abre la matriz
+            durante el toggle y el router monta otra cosa debajo del aviso.
+            """)
+        // Acotado a `ContentView`, que es quien alimenta la matriz. Las otras dos apariciones del árbol
+        // —`ContentViewReadinessLogic.withWelcomeChainCleared` y el struct interno de
+        // `ReadinessGateObservers`— propagan el CAMPO del snapshot, que sigue llamándose así, y contarlas
+        // aquí mediría otra cosa.
+        let vista = try Self.code("Yala/App/ContentView.swift")
+        #expect(Self.count("showRemoteWipeAlert: showRemoteWipeAlert", in: vista) == 0, """
+            alguien volvió a pasar el `@State` del alert a la matriz de readiness. Ese flag es la red
+            VISUAL; el blocker es `remoteWipeNoticePending`.
+            """)
+        let desarme = "case .exhausted: remoteWipeNoticePending = false showRemoteWipeAlert = false "
+            + "MetricsService.canary(.remoteWipeNoticeNotPresented) return"
+        #expect(Self.count(desarme, in: vista) == 1, """
+            el desarme de la red de presentación cambió de forma. Al agotarse el cap del ciclo tiene que
+            soltar la condición viva —o el router se queda retenido el resto de la sesión, que es
+            exactamente el brick que este ticket cierra— y dejar el canario, que es lo único que dice
+            desde producción que un aviso no llegó a presentarse.
+
+            Esperado exactamente: \(desarme)
+            """)
     }
 
     // MARK: - Lo que vive FUERA del cuerpo del decisor

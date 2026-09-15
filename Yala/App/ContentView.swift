@@ -53,7 +53,21 @@ struct ContentView: View {
     @State private var toastDismissTask: Task<Void, Never>?
     @State private var wipeGraceTask: Task<Void, Never>?
     @State private var remoteWipeTask: Task<Void, Never>?
+    /// **Red VISUAL del aviso de vaciado remoto, no su condición.** El blocker de la matriz es
+    /// `remoteWipeNoticePending` (abajo); este flag es sólo el `isPresented` del `.alert`, y la red de
+    /// presentación lo apaga y lo vuelve a encender cuando UIKit no llegó a montarlo. Molde exacto de
+    /// `showSignOutRelaunchCover`, y por el mismo motivo: si la matriz colgara de este flag, el toggle
+    /// del reintento la abriría durante 50 ms y el router montaría otra cosa justo debajo del aviso.
     @State private var showRemoteWipeAlert: Bool = false
+    /// **La CONDICIÓN VIVA del aviso de vaciado remoto: hay un aviso pedido y sin contestar.** Es lo que
+    /// entra a `ShellReadinessState` y lo que la red de presentación vigila. Lo enciende el drenaje de
+    /// `.presentRemoteWipeNotice`; lo apagan las dos ramas del alert —las dos, que un `.alert` no tiene
+    /// `onDismiss`— y el desarme de la red cuando la presentación no llega a montar.
+    @State private var remoteWipeNoticePending: Bool = false
+    /// La red de presentación efectiva del aviso (`RelaunchNetLogic`). Viva sólo mientras dura la
+    /// verificación: termina en cuanto UIKit confirma la presentación, el aviso se contesta o el cap
+    /// del ciclo se agota.
+    @State private var remoteWipeNoticeNetTask: Task<Void, Never>?
     @State private var showICloudRestartAlert: Bool = false
     /// **El Apple ID del teléfono cambió y la sesión privada era del anterior** (ADR §1). Lo enciende
     /// el drain de `.appleIDChangedClosePrivate`; su alert vive en `ShellDataAlertsModifier`.
@@ -349,12 +363,19 @@ struct ContentView: View {
                         // siguiente, y la divergencia sería silenciosa.
                         //
                         // **Se lee AQUÍ y no al arrancar la gracia**: el aviso afirma un hecho sobre AHORA,
-                        // y este es el único punto de todo `Yala/` que enciende ese aviso. (El literal de
-                        // esa línea no se cita en esta prosa a propósito: el escáner que fija que es único
+                        // y este es el único punto de todo `Yala/` que PIDE ese aviso. (El literal de esa
+                        // línea no se cita en esta prosa a propósito: el escáner que fija que es único
                         // cuenta sobre el target de producción, y citarlo aquí haría que documentarlo lo
                         // rompiera.) No sustituye a `!showFullModeActivation`, que se evalúa en la transición
                         // e impide que la tarea NAZCA: si la activación se completa dentro de estos 5 s, el
                         // eje ya dice `true` y solo aquel término lo tapa. Los dos alcances son distintos.
+                        //
+                        // **Y se vuelve a leer en el DRENAJE, que es donde el aviso se enciende.** No es
+                        // una duplicación por si acaso: el intent no es transitorio y puede esperar en cola
+                        // a través de un background entero —bajo un cover del Welcome, bajo el sheet de la
+                        // activación—, así que entre esta lectura y la pantalla puede mediar un cambio de
+                        // sesión. Las dos lecturas responden a preguntas distintas: aquí, si el aviso llega
+                        // a PEDIRSE; allí, si todavía es verdad cuando toca enseñarlo.
                         //
                         // **Lo que se calla de más, y está aceptado.** El aviso tiene otra causa legítima
                         // —un hueco transitorio de CloudKit—, y en esta celda también se calla. Lo que
@@ -369,16 +390,23 @@ struct ContentView: View {
                             confirmedPrivateSession: PrivateSessionMark.confirmedPrivateSession(),
                             storageMode: CloudSyncFlags.storageMode)
                         guard sessionObeysWipeSignal else { return }
-                        // Data still gone after 5s — ask user
-                        showRemoteWipeAlert = true
+                        // Data still gone after 5s — ask user. **Por la COLA y no encendiendo el `@State`
+                        // desde aquí** (2026-09-14, `remote-wipe-alert-skips-the-router`): quien enciende
+                        // es esta tarea de fondo, y a los cinco segundos el anchor de `ContentView` puede
+                        // estar presentando cualquier otra cosa. Un `.alert` encendido ahí DESMONTA lo que
+                        // hubiera debajo —traza del 2026-09-03 en `ShellDataAlertsModifier`— y encima puede
+                        // no llegar a montar, dejando el flag en `true` y la matriz de readiness bloqueada
+                        // para el resto de la sesión. Por la cola, el aviso espera a que el anchor esté
+                        // libre; es la regla (3) de Presentaciones y el molde de su vecino
+                        // `.presentLateICloudMirrorNotice`.
+                        RouterEntryGate.shared.submit(.presentRemoteWipeNotice)
                     } catch {
                         // Cancelled — data reappeared
                     }
                 }
             } else if !oldValue && newValue {
                 // Data reappeared — cancel pending wipe grace
-                wipeGraceTask?.cancel()
-                wipeGraceTask = nil
+                cancelWipeGrace()
             }
         }
     }
@@ -398,7 +426,9 @@ struct ContentView: View {
             showWelcomeFlow: $showWelcomeFlow,
             showOnboarding: $showOnboarding,
             welcomeFlowInitialStep: $welcomeFlowInitialStep,
-            onCancelWipeGrace: { wipeGraceTask?.cancel(); wipeGraceTask = nil }
+            onCancelWipeGrace: { cancelWipeGrace() },
+            onRemoteWipeStartFresh: { startFreshAfterRemoteWipeNotice() },
+            onRemoteWipeDismiss: { dismissRemoteWipeNotice() }
         ))
         // Paso 4 · el aviso del espejo tardío. Sheet y no alert: lleva dos gestos, un progreso y un
         // fallo, y encadenar presentaciones desde este anchor es la carrera medida del 2026-09-03.
@@ -416,8 +446,7 @@ struct ContentView: View {
                     // La gracia del wipe remoto se cancela antes de bajar las señales: este borrado es
                     // DELIBERADO y sin esto el true→false se lee como «te borraron los datos en otro
                     // dispositivo».
-                    wipeGraceTask?.cancel()
-                    wipeGraceTask = nil
+                    cancelWipeGrace()
                     hasExistingData = false
                     hasPersonalData = false
                     hasCompletedOnboarding = false
@@ -472,8 +501,7 @@ struct ContentView: View {
             // forzarlo aquí dispararía el encaminamiento que `onboardingReset_doesNotHijackTheWelcome`
             // vigila.
             performICloudCorpusWipe: {
-                wipeGraceTask?.cancel()
-                wipeGraceTask = nil
+                cancelWipeGrace()
                 let failure = await performICloudCorpusWipe(.handover)
                 guard failure == nil else { return failure }
                 hasExistingData = false
@@ -586,8 +614,7 @@ struct ContentView: View {
                     // `hasPersonalData` cayendo igual; ese `true → false` con la gracia viva se lee como «te
                     // borraron los datos en otro dispositivo» y levanta un alert que, colgando de este mismo
                     // anchor, **desmonta la sheet de la activación**. Mismo molde que `performDeviceCorpusWipe`.
-                    wipeGraceTask?.cancel()
-                    wipeGraceTask = nil
+                    cancelWipeGrace()
                     let failure = await performICloudCorpusWipe(.importedRows)
                     guard failure == nil else { return failure }
                     // **Se RE-MIDEN, no se bajan a `false`.** `hasExistingData` cuenta también los grupos y
@@ -732,7 +759,9 @@ struct ContentView: View {
             showFreshStartWipeAlert: showFreshStartWipeAlert,
             showFreshStartWipeFailedAlert: showFreshStartWipeFailedAlert,
             showLateICloudNotice: lateICloudCorpus != nil,
-            showRemoteWipeAlert: showRemoteWipeAlert,
+            // Condición VIVA y no el `@State` del alert: la red de presentación toggla ese flag para
+            // re-presentar, y con la matriz colgada de él cada reintento la abriría un instante.
+            showRemoteWipeAlert: remoteWipeNoticePending,
             showICloudRestartAlert: showICloudRestartAlert,
             showAppleIDChangedAlert: showAppleIDChangedAlert,
             // Condición VIVA del dominio, no un `@State`: el alert baja su binding en el tap y el
@@ -973,7 +1002,9 @@ struct ContentView: View {
             showFreshStartWipeAlert: showFreshStartWipeAlert,
             showFreshStartWipeFailedAlert: showFreshStartWipeFailedAlert,
             showLateICloudNotice: lateICloudCorpus != nil,
-            showRemoteWipeAlert: showRemoteWipeAlert,
+            // Condición VIVA y no el `@State` del alert: la red de presentación toggla ese flag para
+            // re-presentar, y con la matriz colgada de él cada reintento la abriría un instante.
+            showRemoteWipeAlert: remoteWipeNoticePending,
             showICloudRestartAlert: showICloudRestartAlert,
             showAppleIDChangedAlert: showAppleIDChangedAlert,
             // Condición VIVA del dominio, no un `@State`: el alert baja su binding en el tap y el
@@ -1091,6 +1122,8 @@ struct ContentView: View {
             showAppleIDChangedAlert = true
         case .remoteWipe(let skipOnboarding):
             handleRemoteWipeSignal(onboardingAlreadyDone: skipOnboarding)
+        case .presentRemoteWipeNotice:
+            presentRemoteWipeNoticeIfStillTrue()
         case .remoteOnboardingCompleted:
             handleRemoteOnboardingCompleted()
         case .presentFullModeActivation:
@@ -1358,6 +1391,173 @@ struct ContentView: View {
 
     // MARK: - Cross-Device Wipe Handling
 
+    /// Cancela la gracia de cinco segundos del vaciado remoto **y retira el aviso que ya hubiera
+    /// pedido**. Las dos mitades cuentan, y la segunda es nueva (2026-09-14): desde que el aviso viaja
+    /// por la cola, cancelar la tarea sólo evita los avisos que todavía no se han pedido. Uno ya
+    /// encolado sobrevive al `cancel()` —el intent no es transitorio— y saldría más tarde, al liberarse
+    /// el anchor, hablando de unos datos que la persona acaba de borrar ella misma.
+    ///
+    /// Lo llaman los borrados DELIBERADOS (el true→false de `hasPersonalData` lo provocan ellos, no un
+    /// wipe remoto) y el camino en el que las filas REAPARECEN.
+    @MainActor
+    private func cancelWipeGrace() {
+        wipeGraceTask?.cancel()
+        wipeGraceTask = nil
+        AppRouter.shared.drop { $0.id == RouterIntent.presentRemoteWipeNotice.id }
+    }
+
+    /// Drenaje de `.presentRemoteWipeNotice`: enciende el aviso de «tus datos fueron eliminados de
+    /// iCloud», ya con el anchor de `ContentView` libre (la matriz de readiness es lo que lo garantiza).
+    ///
+    /// **Re-mide las tres condiciones vivas en vez de fiarse del veredicto del productor**, que es la
+    /// regla del repo para todo intent que pueda haber esperado en cola. Y aquí puede esperar mucho: no
+    /// es transitorio, así que sobrevive a un background entero bajo el cover que lo estuviera tapando.
+    /// Las tres son las que hacen VERDADERA la frase del aviso ahora mismo:
+    ///
+    ///  · **Las filas siguen sin estar.** Si el espejo de CloudKit las devolvió mientras el aviso
+    ///    esperaba turno, no hubo ningún vaciado que anunciar — era el hueco transitorio.
+    ///  · **El onboarding sigue completo.** Si dejó de estarlo, la persona ya está en el Welcome o en el
+    ///    onboarding: alguien la encaminó por otra vía y este aviso sólo puede estorbar.
+    ///  · **El eje de sesión.** El «tus» del aviso señala a los datos del Apple ID de este teléfono, y
+    ///    eso sólo es cierto en una sesión privada con su iCloud detrás. Misma lectura estricta que el
+    ///    borrado, por el mismo motivo (ver el docblock del predicado).
+    @MainActor
+    private func presentRemoteWipeNoticeIfStillTrue() {
+        guard !hasPersonalData else { return }
+        guard hasCompletedOnboarding else { return }
+        let sessionObeysWipeSignal = DestructiveScopeLogic.wipeSignalObeyedByThisSession(
+            confirmedPrivateSession: PrivateSessionMark.confirmedPrivateSession(),
+            storageMode: CloudSyncFlags.storageMode)
+        guard sessionObeysWipeSignal else { return }
+        remoteWipeNoticePending = true
+        showRemoteWipeAlert = true
+        armRemoteWipeNoticePresentationNet()
+    }
+
+    /// **Verificación de presentación EFECTIVA del aviso, y su desarme.** Un `.alert` que se enciende
+    /// con el anchor ocupado no se presenta y tampoco avisa: SwiftUI descarta la petición y el flag se
+    /// queda puesto. Cuando ese flag además retiene el router —y éste lo hace, a través de
+    /// `remoteWipeNoticePending`— «no montó» se convierte en un brick de la sesión entera: ni bandeja,
+    /// ni invitaciones, ni ofertas, hasta matar la app. Es la regla escrita en
+    /// `.claude/rules/swiftui-ds.md`, y el motivo de que este ticket exista.
+    ///
+    /// La red es la misma que verifica los covers terminales del relanzamiento —decisión pura en
+    /// `RelaunchNetLogic`, cadencias incluidas— con dos diferencias que impone el envoltorio. La primera:
+    /// un alert no tiene contenido propio cuyo `onAppear` pruebe que apareció, así que la señal la da
+    /// UIKit (`ModalPresentationProbe`). La segunda: **el bucle no termina al confirmar la presentación**,
+    /// sigue vigilando hasta que el aviso se conteste, porque aquí el brick tiene dos formas —la
+    /// presentación que no monta y la que se cae después— y la regla nombra las dos. Lo que se toggla es
+    /// la RED VISUAL (`showRemoteWipeAlert`); la condición viva no se toca, para que la matriz siga
+    /// reteniendo durante los reintentos.
+    ///
+    /// **Lo que la sonda cuesta si se equivocara, medido con un mutante el 2026-09-14.** Forzándola a
+    /// contestar siempre «no hay nada presentado» con el aviso REALMENTE en pantalla, los nueve toggles
+    /// dejan el alert pegado: el estado se apaga entero, pero UIKit no completa el desmontaje y el aviso
+    /// se queda dibujado. La app no se brickea —la matriz queda libre, que es lo que importa— pero el
+    /// residuo es feo, y por eso la sonda tiene una red viva en el simulador:
+    /// `RemoteWipeNoticeRoutingUITests.test_notice_presentsOverTheShell_andThePresentationNetLeavesItAlone`
+    /// se pone rojo el día que un runtime nuevo deje de reconocer la presentación de un `.alert`.
+    ///
+    /// **Y al agotarse el cap, el aviso se desarma.** Ahí `RelaunchNetLogic` deja el blocker puesto a
+    /// propósito —su caso es terminal y la app se relanza—, pero éste no: nueve segundos sin conseguir
+    /// presentar significan que algo tapa el anchor perpetuamente, y quedarse retenido cuesta la sesión
+    /// entera. Se pierde el aviso, que vuelve en el arranque siguiente si los datos siguen sin estar, y
+    /// queda el canario para saber que pasó.
+    @MainActor
+    private func armRemoteWipeNoticePresentationNet() {
+        remoteWipeNoticeNetTask?.cancel()
+        remoteWipeNoticeNetTask = Task { @MainActor in
+            try? await Task.sleep(for: RelaunchNetLogic.initialVerifyDelay)
+            var attempt = 0
+            while !Task.isCancelled {
+                switch RelaunchNetLogic.verdict(
+                    armed: remoteWipeNoticePending,
+                    coverDidAppear: ModalPresentationProbe.isAnythingPresented,
+                    attempt: attempt
+                ) {
+                case .standDown:
+                    return
+                case .satisfied:
+                    // **No se sale: se sigue vigilando mientras el aviso esté pendiente.** Terminar aquí
+                    // —que es lo que hace el molde del cover— dejaba abierta la otra mitad del mismo
+                    // brick: un alert que SÍ montó y que UIKit tumba después sin que corra ninguno de sus
+                    // dos botones baja su binding, pero no la condición viva, y el router se queda
+                    // retenido con el aviso ya invisible. La regla lo dice de las dos maneras («si UIKit
+                    // descarta esa presentación»), y sin este `continue` sólo cubríamos la primera.
+                    // El contador se repone: el cap cuenta fallos CONSECUTIVOS, no tiempo en pantalla.
+                    attempt = 0
+                    try? await Task.sleep(for: RelaunchNetLogic.retryInterval)
+                case .retry:
+                    attempt += 1
+                    // El toggle necesita un runloop turn: en la misma transaction SwiftUI lo colapsa a
+                    // un no-op y no re-presentaría nunca.
+                    showRemoteWipeAlert = false
+                    try? await Task.sleep(for: RelaunchNetLogic.toggleGap)
+                    guard !Task.isCancelled else { return }
+                    showRemoteWipeAlert = true
+                    try? await Task.sleep(for: RelaunchNetLogic.retryInterval)
+                case .exhausted:
+                    remoteWipeNoticePending = false
+                    showRemoteWipeAlert = false
+                    MetricsService.canary(.remoteWipeNoticeNotPresented)
+                    return
+                }
+            }
+        }
+    }
+
+    /// **«Empezar de cero» del aviso de vaciado remoto: a dónde va la persona, escrito.**
+    ///
+    /// Al **Hero del Welcome**, que es exactamente donde aterriza este mismo hecho cuando llega por la
+    /// señal del Apple ID en vez de por la desaparición de las filas (`performLocalWipeForRemoteSync`,
+    /// rama sin `skipOnboarding`). Dos caminos para un solo suceso —los datos personales de este Apple
+    /// ID ya no están— y un solo desenlace: las tres ramas de entrada a la vista, con «Restaurar de
+    /// iCloud» entre ellas, que es la que le sirve a quien crea que esto fue un error.
+    ///
+    /// **Hasta el 2026-09-14 el destino no lo elegía nadie.** El botón bajaba `hasCompletedOnboarding` y
+    /// lo que pasara después dependía de lo que hubiera en las preferencias: con el chooser marcado como
+    /// visto, `presentNextOnboardingScreen` metía a la persona directa al formulario del onboarding, sin
+    /// ofrecerle restaurar. El aterrizaje se escribe aquí, y los dos `@AppStorage` se bajan para que
+    /// nada de lo que quedara del uso anterior lo cambie.
+    ///
+    /// **Se monta el cover ANTES de bajar `hasCompletedOnboarding`, y ese orden es load-bearing**: el
+    /// `onChange` de ese flag encamina por su cuenta a quien se queda sin onboarding, y su primer guard
+    /// es «con el Welcome montado, él manda». Montándolo primero, ese camino se calla y el aterrizaje
+    /// queda en un solo sitio — el de aquí. Al revés serían dos, y en esta misma vuelta.
+    @MainActor
+    private func startFreshAfterRemoteWipeNotice() {
+        remoteWipeNoticePending = false
+        showRemoteWipeAlert = false
+        // Reset seed guards so onboarding can re-create data. El centinela de categorías va por
+        // `CategorySeedSentinel.currentKey`: está namespaceado por store (personal vs
+        // `YalaModel-UITest`) y el literal suelto apuntaría al del otro proceso.
+        UserDefaults.standard.removeObject(forKey: CategorySeedSentinel.currentKey)
+        UserDefaults.standard.removeObject(forKey: "notificationsSeeded")
+        hasShownWelcomeChooser = false
+        hasShownYalaAIOnboarding = false  // tras un vaciado vuelve a verse el onboarding del chat
+        welcomeFlowInitialStep = .hero
+        showWelcomeFlow = true
+        hasCompletedOnboarding = false
+    }
+
+    /// **«Ahora no»: la persona se queda donde estaba, y eso ahora es verdad.**
+    ///
+    /// Sus dos vecinos de `ShellDataAlertsModifier` tienen que REABRIR el Welcome al cancelar, porque el
+    /// suyo se enciende sobre un cover y lo desmonta al presentarse: al cerrarlos no queda nada debajo.
+    /// Este aviso ya no puede estar en ese caso —viaja por la cola y sólo monta con el anchor libre, que
+    /// es lo que arregla este ticket—, así que cancelar devuelve a la app tal cual estaba, con la shell
+    /// montada y sin sus filas.
+    ///
+    /// Lo que sí hace falta es apagar la CONDICIÓN VIVA además del flag del alert: el binding lo baja
+    /// SwiftUI al pulsar cualquiera de los dos botones, pero el blocker de la matriz es el otro, y sin
+    /// esta línea el router se quedaría retenido con el aviso ya contestado. El aviso vuelve si las
+    /// filas vuelven a desaparecer, o en el arranque siguiente por la señal.
+    @MainActor
+    private func dismissRemoteWipeNotice() {
+        remoteWipeNoticePending = false
+        showRemoteWipeAlert = false
+    }
+
     private func handleRemoteWipeSignal(onboardingAlreadyDone: Bool) {
         let remoteWipe = NSUbiquitousKeyValueStore.default.double(forKey: "lastWipeTimestamp")
         // El eje de SESIÓN: solo una sesión privada obedece la señal del Apple ID. Una en la nube (E)
@@ -1383,9 +1583,11 @@ struct ContentView: View {
 
         guard decision.shouldProcess else { return }
 
-        // Cancel the hasExistingData-based wipe grace to avoid double-alert
-        wipeGraceTask?.cancel()
-        wipeGraceTask = nil
+        // Cancel the hasExistingData-based wipe grace to avoid double-alert. `cancelWipeGrace` retira
+        // además el intent del aviso si ya estaba encolado; estas dos líneas cubren el aviso que ya se
+        // hubiera ENCENDIDO: la señal explícita manda sobre la sospecha, y lo que procede es el borrado
+        // orquestado con su aterrizaje, no una pregunta sobre datos que la app está a punto de barrer.
+        remoteWipeNoticePending = false
         showRemoteWipeAlert = false
 
         performLocalWipeForRemoteSync(skipOnboarding: onboardingAlreadyDone)
@@ -1556,8 +1758,7 @@ struct ContentView: View {
             guard await performICloudCorpusWipe(.handover) == nil else { return }
             StorageModePersistence.clearPrivateChoseWithoutICloud()
             StorageModePersistence.clearICloudCorpusWipeArm()
-            wipeGraceTask?.cancel()
-            wipeGraceTask = nil
+            cancelWipeGrace()
             hasExistingData = false
             hasPersonalData = false
             hasCompletedOnboarding = false
@@ -1686,8 +1887,7 @@ struct ContentView: View {
         // REMOTO y enciende su alert, que al colgar del anchor de `ContentView` **desmonta el cover del
         // Welcome** (traza medida en `ShellDataAlertsModifier`) y deja la pantalla negra. La rama de éxito
         // la cancelaba y la de fallo no: justo al revés de donde hace falta.
-        wipeGraceTask?.cancel()
-        wipeGraceTask = nil
+        cancelWipeGrace()
         do {
             try DataWipeService.wipeAllUserData(in: modelContext, broadcastSignal: false)
             // El handover: los grupos de la etapa anterior se van de este teléfono y el dominio queda

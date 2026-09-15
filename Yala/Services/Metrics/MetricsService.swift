@@ -73,6 +73,16 @@ enum MetricsCanary: String {
     /// medias) era invisible en producción. `detail` separa cuál de los dos alerts lo emitió, sin PII.
     /// Misma familia que `attestKeyDiscardedAfterAssertFailure`.
     case freshStartWipeFailed
+    /// **El aviso de «tus datos fueron eliminados de iCloud» no llegó a presentarse y se desarmó.** La
+    /// red de presentación (`ContentView.armRemoteWipeNoticePresentationNet`) agotó el cap de su ciclo
+    /// —unos nueve segundos togglando sin que UIKit montara nada— y soltó el blocker para no dejar el
+    /// router retenido el resto de la sesión. Se pierde el aviso, no la sesión.
+    ///
+    /// **Cualquier valor sostenido >0 es un bug de presentación**, no una cola de release: significa que
+    /// algo tapa el anchor de `ContentView` de forma perpetua sin entrar a la matriz de readiness, que
+    /// es justo lo que esa matriz existe para impedir. Sin `detail`: no hay nada que separar y el
+    /// contexto (qué tapaba) no es observable desde aquí.
+    case remoteWipeNoticeNotPresented
     case iCloudRestoreOutcome
     case cloudkitGroupSyncGateHardCap
     case cloudkitGroupSyncPromotedToAuto

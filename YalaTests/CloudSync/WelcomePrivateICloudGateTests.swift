@@ -1049,7 +1049,11 @@ struct WelcomePrivateICloudGateWiringTests {
         // incrementales, así que un borrado que lanza a media lista baja igual la señal; con la gracia
         // viva eso enciende el alert de «te borraron los datos», que desmonta el cover y deja la pantalla
         // negra. Estaba solo en la rama de éxito, o sea justo al revés de donde hace falta.
-        try Self.expectOrder("wipeGraceTask?.cancel()", before: "DataWipeService." + Self.wipeCall, in: wipe,
+
+        // El ancla es `cancelWipeGrace()` desde el 2026-09-14: cancelar la tarea dejó de bastar cuando el
+        // aviso pasó a viajar por la cola del router, así que las dos mitades —cancelar y retirar el
+        // intent ya encolado— viven en esa función.
+        try Self.expectOrder("cancelWipeGrace()", before: "DataWipeService." + Self.wipeCall, in: wipe,
                              "cancelar la gracia después del borrado no protege la rama de FALLO")
         #expect(wipe.contains("MetricsService.canary(.freshStartWipeFailed"), """
             sin canario, este fallo vuelve a ser invisible en producción — que es para lo que se añadió en

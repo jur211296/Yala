@@ -197,6 +197,22 @@ final class UITestHooks {
     /// muestra para presentar el InboxAlertModal sin depender del sync de CloudKit.
     nonisolated static var showInboxAlert: Bool { hasArg("-uitest-inbox-alert") }
 
+    /// `-uitest-remote-wipe-notice`: tras el seed, encola `.presentRemoteWipeNotice` — el aviso de «tus
+    /// datos fueron eliminados de iCloud».
+    ///
+    /// **Cubre la mitad de la PRESENTACIÓN, no la del productor.** Quien pide el aviso en producción es
+    /// la gracia de cinco segundos de `ContentView`, que arranca cuando las filas personales
+    /// desaparecen del store bajo el proceso vivo — y para eso no hay seam (ticket
+    /// `remote-wipe-receiver-has-no-behaviour-test`). Encolando el intent a mano se ejercita lo que este
+    /// hook sí puede probar y ningún escáner alcanza: que el aviso entra por la cola del router, que la
+    /// red de presentación efectiva NO lo desarma cuando de verdad está en pantalla, y a dónde aterrizan
+    /// sus dos botones.
+    ///
+    /// El eje de sesión que el drenaje re-mide no hace falta armarlo: con el onboarding dado por hecho
+    /// (`-uitest-skip-onboarding`), el backfill del arranque ya escribe la marca privada por el camino de
+    /// producción. Y el store arranca vacío con `-uitest-reset`, que es la otra condición viva.
+    nonisolated static var showRemoteWipeNotice: Bool { hasArg("-uitest-remote-wipe-notice") }
+
     /// `-uitest-trial-offer`: tras el seed, encola `.presentTrialOffer` para presentar
     /// el ProTrialOfferSheet sin depender de StoreKit ni del post-onboarding real —
     /// las emisiones AUTOMÁTICAS de monetización están suprimidas en uitest, este

@@ -465,7 +465,13 @@ struct ActivationRestoreDiscardTests {
             """)
         // El orden importa: el término va DENTRO de la condición que arma la gracia, no en el `else if`
         // que la cancela (ese sí tiene que seguir corriendo cuando los datos reaparecen).
-        try Self.expectOrder("&& !showFullModeActivation", before: "showRemoteWipeAlert = true",
+        //
+        // **El ancla de la derecha dejó de ser el encendido del alert el 2026-09-14**
+        // (`remote-wipe-alert-skips-the-router`): la gracia ya no enciende nada, PIDE el aviso por la
+        // cola del router. El término sigue teniendo que ir por delante de esa petición, que es lo que
+        // impide que la tarea NAZCA mientras la activación está en pantalla.
+        try Self.expectOrder("&& !showFullModeActivation",
+                             before: "RouterEntryGate.shared.submit(.presentRemoteWipeNotice)",
                              in: onChange, """
             el término quedó por debajo del armado de la gracia: entonces no la impide, solo la adorna.
             """)
