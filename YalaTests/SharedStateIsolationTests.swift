@@ -19,11 +19,11 @@ import Testing
 
 @testable import Yala
 
-// Los tres scopes, porque esta suite planta valores en las celdas de los tres ANTES de abrir su
+// Los cuatro scopes, porque esta suite planta valores en las celdas de los cuatro ANTES de abrir su
 // scope interno: sin ellos el propio pin sería una fuga. Anidar el mismo scope dos veces es seguro
 // (el turno global es reentrante y cada capa restaura lo que capturó).
 @Suite("Aislamiento de estado compartido", .serialized,
-       .appLanguageStateIsolated, .lastUsedAccountIsolated, .wipeAppGroupMirrorIsolated)
+       .appLanguageStateIsolated, .lastUsedAccountIsolated, .wipeAppGroupMirrorIsolated, .ownerKeyValueGateOpen)
 @MainActor
 struct SharedStateIsolationTests {
 
@@ -197,6 +197,28 @@ struct SharedStateIsolationTests {
         )
     }
 
+    /// Las dos marcas que abren o cierran el iCloud-KV del Apple ID. Se plantan en su valor más CERRADO —el que
+    /// deja en el simulador un XCUITest de un alta solo-grupos— y dentro del scope la puerta tiene que estar
+    /// abierta: es lo que promete el trait a las suites que escriben por `OwnerKeyValueStore.shared`.
+    @Test func scopeOwnerKeyValueGate_entraConLaPuertaAbiertaYRestaura() async throws {
+        let standard = UserDefaults.standard
+        standard.set(true, forKey: StorageModePersistence.groupsOnlyNeutralMountKey)
+        standard.set(false, forKey: PrivateSessionMark.userDefaultsKey)
+        #expect(OwnerKeyValueGate.current() == .closed, "control: plantadas así, la puerta está cerrada")
+
+        var dentro: OwnerKeyValueGate.Decision?
+        try await withSharedStateIsolated(.ownerKeyValueGate) {
+            dentro = OwnerKeyValueGate.current()
+        }
+
+        #expect(dentro == .open, """
+            El scope no dejó la puerta abierta: un test que escribe por `OwnerKeyValueStore.shared` saldría \
+            rojo por lo que dejó la corrida anterior en el simulador.
+            """)
+        #expect(standard.object(forKey: StorageModePersistence.groupsOnlyNeutralMountKey) as? Bool == true)
+        #expect(standard.object(forKey: PrivateSessionMark.userDefaultsKey) as? Bool == false)
+    }
+
     // MARK: - Cableado (source-scan)
 
     /// Los conteos esperados no son decoración: sin ellos, un fichero movido o un símbolo renombrado
@@ -217,6 +239,11 @@ struct SharedStateIsolationTests {
             ("AppLanguageSyncTests.swift", ".appLanguageStateIsolated"),
             ("LocaleResolutionTests.swift", ".appLanguageStateIsolated"),
             ("ApplePayDraftServiceTests.swift", ".lastUsedAccountIsolated"),
+            // Los dos que escriben o leen por `OwnerKeyValueStore.shared` afirmando algo que depende de la
+            // puerta: sin el trait, un XCUITest de un alta solo-grupos la deja cerrada en el simulador y el
+            // rojo no nombra la puerta.
+            ("OnboardingResetHelperTests.swift", ".ownerKeyValueGateOpen"),
+            ("CloudSync/OwnerKeyValueGateTests.swift", ".ownerKeyValueGateOpen"),
             // Los TRES que ejecutan `wipeAllUserData` de verdad: su paso 2 barre tres claves del
             // App Group y su snapshot/restore solo cubre `.standard`. Eran dos hasta el 2026-08-05;
             // al tercero lo cazó una sonda KVO sobre las claves del espejo, no esta lista. ⇒ el

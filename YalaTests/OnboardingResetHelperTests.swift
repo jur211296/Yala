@@ -7,12 +7,17 @@
 //  `.default` directamente — los tests verifican el efecto end-to-end con
 //  isolated keys (prefijos de test).
 //
+//  `.ownerKeyValueGateOpen`: el helper escribe por `OwnerKeyValueStore.shared`, cuya puerta se decide con
+//  dos marcas de `.standard` que un XCUITest de un alta solo-grupos deja CERRADA en el simulador. Sin el
+//  trait, la aserción sobre el iCloud-KV dependería de lo último que corrió ahí.
+//
 
 import Foundation
 import Testing
 
 @testable import Yala
 
+@Suite(.ownerKeyValueGateOpen)
 @MainActor
 struct OnboardingResetHelperTests {
 

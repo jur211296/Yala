@@ -345,3 +345,29 @@ propio test que lo pinnea, que con el espejo montado ese borrado por filas **exp
 el iCloud de la persona en todos sus dispositivos**. La lente no lo dedujo: leyó el test. ⇒ **cuando
 vayas a quitar un guard, lee su TEST antes que su código** — el porqué suele estar en el mensaje de la
 aserción, no en el docblock.
+
+## 2026-09-14 · la puerta del iCloud-KV: validé contra CELDAS y falló en TRANSICIONES, dos veces
+
+`icloud-kv-prefs-cross-sessions-on-a-lent-phone`. Cuatro lentes (regresión del dueño · fuga en el móvil
+prestado · tests y mutantes · la rule de área y la prosa). Suite completa en verde cuando las lancé. **Los dos
+defectos graves eran de diseño y míos**, y los dos pasaban mis seis celdas de la tabla:
+
+- **El predicado cerraba con «neutro armado y sin eje afirmado»**, y «Activar Yala completo» levanta el neutro
+  al relanzar mientras el eje sigue en `false`. «Volver» desde Restaurar deja esa activación pendiente sin
+  límite: la puerta quedaba ABIERTA en una sesión solo-grupos, el bug entero de vuelta. Esa celda no está en
+  la matriz del ADR: es un estado INTERMEDIO de un flujo.
+- **Enmascarar lecturas convirtió «ver la señal y darla por procesada sin obedecerla» en «obedecerla después».**
+  Con la lectura de `lastWipeTimestamp` oculta, el teléfono solo-grupos no marcaba el vaciado ajeno, y la
+  sesión privada que nacía de la activación lo obedecía al abrirse la puerta: se borraba recién creada. Lo
+  vieron DOS lentes por separado — estructural, no un despiste.
+
+**How to apply:**
+- Una puerta sobre marcas persistidas se recorre contra los estados intermedios de cada flujo que las escribe
+  (reanudaciones, `keepPending`, kill entre dos escrituras), no solo contra las celdas del ADR.
+- Si la puerta cierra LECTURAS de un canal compartido, lista quién MARCA estado al leer (centinelas de
+  procesado, one-shots) y recorre la transición cerrada→abierta: lo que no se marcó mientras estaba cerrada se
+  ejecuta al abrirse.
+- **Antes de mover un fichero central detrás de una puerta por pureza, mide lo que arrastra en el gate**:
+  `ContentView` casaba con 29 áreas del índice (~20 suites de XCUITest). Fijar sus sentencias exactas en el
+  escáner dio la misma red sin tocarlo — y la lente de tests había cazado que eximirlo por FICHERO dejaba pasar
+  una escritura cruda nueva.
