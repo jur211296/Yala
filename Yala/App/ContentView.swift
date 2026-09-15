@@ -1493,7 +1493,12 @@ struct ContentView: View {
                     // un no-op y no re-presentaría nunca.
                     showRemoteWipeAlert = false
                     try? await Task.sleep(for: RelaunchNetLogic.toggleGap)
-                    guard !Task.isCancelled else { return }
+                    // **El guard mira la CONDICIÓN VIVA, no solo la cancelación**, y esa ventana de 50 ms
+                    // es real: si la persona contesta el aviso justo entre las dos mitades del toggle, sus
+                    // dos ramas apagan los dos flags y este `= true` volvería a encender un alert ya
+                    // contestado — con la matriz libre, que es lo peor de las dos mitades: el router
+                    // drenaría lo siguiente y lo montaría debajo.
+                    guard !Task.isCancelled, remoteWipeNoticePending else { return }
                     showRemoteWipeAlert = true
                     try? await Task.sleep(for: RelaunchNetLogic.retryInterval)
                 case .exhausted:
