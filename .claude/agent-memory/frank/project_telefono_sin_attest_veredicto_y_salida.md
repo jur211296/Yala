@@ -6,8 +6,9 @@ metadata:
 ---
 
 El ticket `groups-phone-that-never-attests-is-told-to-retry-forever` está en `qa` y **solo espera
-dos cosas**: ver la racha en el simulador (dos lanzamientos del scheme `Yala` separados por más de
-24 h) y el canario `groupsAttestTerminal` en campo tras publicar.
+dos cosas**: ver la racha en el simulador (scheme `Yala`: un lanzamiento de más de dos horas —la
+racha cuenta un rechazo por hora y necesita tres— y otro pasadas 24 h) y el canario
+`groupsAttestTerminal` en campo tras publicar.
 
 **Why:** la salida «Cerrar sesión y perderlos» exige cambios de grupos sin subir, y un teléfono sin
 App Attest no baja ningún grupo. Ni el simulador ni un dispositivo llegan ahí sin fingir el token y

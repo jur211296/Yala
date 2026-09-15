@@ -122,10 +122,14 @@ la racha:
 **Montaje.** Xcode con el scheme **Yala** (no `Yala Dev`) en el simulador iPhone 17 Pro, y una cuenta real de Grupos. En
 el simulador no hay App Attest, así que cada petición de Grupos sale sin token y el servidor responde 401.
 
-1. Lanza la app, entra en Grupos y filtra la consola de Xcode por `GroupsSync`.
-   - **Esperado:** `GroupsSync attestRequired edge=pull` repetido.
+1. Lanza la app, entra en Grupos, filtra la consola de Xcode por `GroupsSync` y **deja la app en primer plano algo más
+   de dos horas** (el simulador no se bloquea solo).
+   - **Esperado:** `GroupsSync attestRequired edge=pull` repetido, cada vez más espaciado (hasta cada 5 min).
+   - **Por qué dos horas:** la racha cuenta como mucho un rechazo por hora y necesita tres. Con un lanzamiento corto
+     se queda en uno, al día siguiente sube a dos, y el aviso terminal no sale nunca.
 2. Cierra la app. Vuelve a lanzarla desde Xcode al día siguiente, más de 24 h después del paso 1, y entra en Grupos.
-   - **Esperado:** una sola línea `GroupsSync attestTerminal rejections=N hours=H`, con `H` de 24 o más.
+   - **Esperado:** una sola línea `GroupsSync attestTerminal rejections=N hours=H`, con `N` de 3 o más y `H` de 24 o
+     más.
    - **En ningún caso** vuelve a salir en los lanzamientos siguientes: el canario cuenta una vez por racha.
 
 **En campo, tras publicar:** el canario `groupsAttestTerminal` en Analytics Engine dice cuántos teléfonos están así.
