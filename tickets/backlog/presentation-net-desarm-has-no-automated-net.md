@@ -46,6 +46,16 @@ viva sin encender la red visual — simula exactamente «la presentación no mon
 Cuesta un `#if DEBUG` dentro del tramo que hoy fija un escáner por literal, así que hay que ajustar
 ese escáner en el mismo movimiento.
 
+## Una segunda red con el mismo hueco (2026-09-15)
+
+La hoja «Cambiaste de cuenta de iCloud» (`apple-id-close-blocked-has-no-visible-outcome`) estrenó otra red
+de la misma familia en `AppleIDCloseNoticeModifier`. Allí la prueba de presentación es el `onAppear` de la
+hoja, no la sonda de UIKit. Al agotar el cap suelta la condición viva (`appleIDCloseNotice`), reconoce el
+bloqueo del cierre si lo hay y emite `appleIDCloseNoticeNotPresented`. Tampoco tiene XCUITest del desarme:
+lo cubren la tabla pura (`AppleIDCloseNoticeLogicTests`) y un escáner que fija la forma del bucle
+(`AppleIDCloseNoticeWiringTests`). La tercera vía de arriba vale igual para ella: encender
+`appleIDCloseNotice` en el drenaje sin encender `showSheet`.
+
 ## Criterios de aceptación
 
 - [ ] Un XCUITest ejercita el camino `.retry` → `.exhausted` y afirma las dos consecuencias: la

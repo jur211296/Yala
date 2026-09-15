@@ -59,27 +59,33 @@ struct ShellReadinessState: Equatable {
     /// conserva porque es el del blocker que sale por telemetría desde el primer día.
     let showRemoteWipeAlert: Bool
     let showICloudRestartAlert: Bool
-    /// **El Apple ID del teléfono cambió y hay que cerrar la sesión privada.** Alert del anchor de
-    /// `ContentView`, así que entra a la matriz por la regla (3) de Presentaciones. Y aquí muerde
-    /// especialmente: su botón dispara un cierre de sesión que borra lo local, de modo que un intent
-    /// presentado debajo se lo comería justo antes del gesto más caro que la app puede hacer.
-    let showAppleIDChangedAlert: Bool
+    /// **El aviso del cambio de Apple ID está pedido y sin resolver** (`appleIDCloseNotice != nil` en
+    /// `ContentView`). Hoja del anchor de `ContentView`, así que entra a la matriz por la regla (3) de
+    /// Presentaciones. Y aquí muerde especialmente: dentro corre un cierre de sesión que borra lo local, y
+    /// su fase de bloqueo es la única pantalla que lo enseña.
+    ///
+    /// **Es la CONDICIÓN VIVA y no el `isPresented` de la hoja**, por lo mismo que `showRemoteWipeAlert`: la
+    /// red de presentación toggla ese flag para re-presentar, y una matriz colgada de él se abriría en cada
+    /// reintento. Era un `.alert` hasta el 2026-09-15 (`showAppleIDChangedAlert`): su flag bajaba en el tap,
+    /// y un cierre que acababa bloqueado se quedaba sin nadie que lo enseñara ni lo reconociera.
+    let appleIDCloseNoticePending: Bool
     /// **El cierre de sesión está EJECUTÁNDOSE** (`CloudSessionSignOut.phase == .working`).
     ///
-    /// Es una CONDICIÓN VIVA, no un `@State`, y por eso cierra la ventana que el flag de arriba deja
-    /// abierta: al tocar el botón del alert, SwiftUI baja su binding **inmediatamente** y el
-    /// coordinador tarda segundos en llegar a su fase terminal. Sin este término, entre esos dos
-    /// instantes `blocker()` devuelve `nil`, el router drena lo que tuviera en cola (un What's New, una
-    /// oferta de trial, un aviso de bandeja) y lo presenta — para que el cover terminal del cierre se
-    /// monte encima, en el MISMO anchor. Son dos presentaciones compitiendo por él, que es la regla (4)
-    /// de Presentaciones y el bug que costó el sign-out del 2026-07-14.
+    /// Es una CONDICIÓN VIVA, no un `@State`. Cubre la ventana en que un cierre corre sin que ninguna
+    /// presentación del anchor lo retenga: el gesto que lo pidió pudo bajar su flag al tocar, y el
+    /// coordinador tarda segundos en llegar a su fase terminal. Sin este término, entre esos dos instantes
+    /// `blocker()` devuelve `nil`, el router drena lo que tuviera en cola (un What's New, una oferta de
+    /// trial, un aviso de bandeja) y lo presenta — para que el cover terminal del cierre se monte encima,
+    /// en el MISMO anchor. Son dos presentaciones compitiendo por él, que es la regla (4) de Presentaciones
+    /// y el bug que costó el sign-out del 2026-07-14.
     ///
     /// **`.working` y NO `.blocked`, y la diferencia importa.** `.working` siempre sale —a la fase
     /// terminal, al bloqueo o a `.idle`—, así que retener con él es seguro. `.blocked` puede quedarse
-    /// puesto hasta que alguien abra Ajustes y lo reconozca: bloquear el router con él convertiría un
-    /// cierre que no pudo subir sus grupos en un router muerto para el resto de la sesión, que es peor
-    /// que el problema que resuelve. Lo que falta para `.blocked` —enseñarlo donde se pidió— tiene
-    /// ticket propio (`apple-id-close-blocked-has-no-visible-outcome`).
+    /// puesto hasta que alguien lo reconozca: bloquear el router con él convertiría un cierre que no pudo
+    /// subir sus grupos en un router muerto para el resto de la sesión. **Enseñar el bloqueo es trabajo de
+    /// la pantalla que pidió el cierre**, y la hoja del cambio de Apple ID lo hace con su propia condición
+    /// viva (`appleIDCloseNoticePending`), que retiene el router mientras lo enseña y lo suelta al
+    /// reconocerlo (ticket `apple-id-close-blocked-has-no-visible-outcome`, 2026-09-15).
     let isSignOutWorking: Bool
     let hasActiveInviteError: Bool
     let hasActiveGroupSyncError: Bool
@@ -151,7 +157,7 @@ enum ContentViewReadinessLogic {
         // System alerts: must clear before the next router intent presents.
         if state.showRemoteWipeAlert { return "remoteWipeAlert" }
         if state.showICloudRestartAlert { return "iCloudRestartAlert" }
-        if state.showAppleIDChangedAlert { return "appleIDChangedAlert" }
+        if state.appleIDCloseNoticePending { return "appleIDCloseNotice" }
         if state.isSignOutWorking { return "signOutWorking" }
         if state.showFreshStartWipeAlert { return "freshStartWipeAlert" }
         if state.showFreshStartWipeFailedAlert { return "freshStartWipeFailedAlert" }
@@ -237,7 +243,7 @@ extension ShellReadinessState {
             showLateICloudNotice: showLateICloudNotice,
             showRemoteWipeAlert: showRemoteWipeAlert,
             showICloudRestartAlert: showICloudRestartAlert,
-            showAppleIDChangedAlert: showAppleIDChangedAlert,
+            appleIDCloseNoticePending: appleIDCloseNoticePending,
             isSignOutWorking: isSignOutWorking,
             hasActiveInviteError: hasActiveInviteError,
             hasActiveGroupSyncError: hasActiveGroupSyncError,

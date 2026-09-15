@@ -509,7 +509,8 @@ struct PrivateSessionMarkWiringTests {
             borrado y el propio refresco, todos del lado que conserva de más.
 
             El decimoséptimo llegó el 2026-09-14 con el cierre por cambio de Apple ID: el aviso resuelve
-            la celda EN EL TAP (`ShellDataAlertsModifier`, `CloudSignOutFlowLogic.path`) para pasarla
+            la celda EN EL TAP (`AppleIDCloseNoticeView.requestClose`, `CloudSignOutFlowLogic.path`; hasta
+            el 2026-09-15 vivía en el alert de `ShellDataAlertsModifier`) para pasarla
             como `confirmedPath`, y ahí la lectura que toca es la ANCHA, igual que en los otros dos
             call-sites de `path` — su `true` de más resuelve `.privateSignOut` y su `false` de más
             resolvería `.groupsOnlySignOut`, que es el camino que además borra el store de GRUPOS. O

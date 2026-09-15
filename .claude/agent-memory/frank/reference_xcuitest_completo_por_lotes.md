@@ -1,6 +1,6 @@
 ---
 name: xcuitest-completo-por-lotes
-description: La suite XCUITest entera dura más que cualquier espera del harness y sus background se mueren por memoria — se corre por lotes en primer plano y se cuenta la cobertura por CLASE, no por casos
+description: La suite XCUITest entera dura más que cualquier espera del harness — se corre por lotes en UN proceso de fondo, se cuenta por CLASE, y el conjunto del gate se CALCULA con los codeGlobs
 metadata:
   type: reference
 ---
@@ -56,5 +56,14 @@ medias.
   disco en 26 GB. Clasifícalo con `BUILD INTERRUPTED`, no con un test en rojo.
 - **Cuenta los rojos con `Test Case.*' failed`, no con `' failed`.** El segundo también casa con las
   líneas `Test Suite '…' failed` y convierte UN caso rojo en «4 fallos» en tu propio informe.
+
+**Y cuándo toca la suite (casi) entera: lo decide el cruce, no el criterio (2026-09-15).** Tras la compactación
+iba a sellar con las 13 clases que había elegido a criterio (12 del cruce y una de fuera); el paso 3 del gate cruza los ficheros tocados con los `codeGlobs`
+de `qa/coverage-index.json`, y `ContentView.swift` y `ProfileView.swift` caen en 45 áreas: eran **47 clases**, 35 sin correr.
+Las 35 que faltaban corrieron en 9 lotes de 4 en UN proceso de fondo (`uilotes.sh`: secuencial, reanudable,
+`stdin` a `/dev/null` para que el lote no se coma el fichero de lotes). ⇒ **calcula el conjunto con un
+script** (globs con `glob.glob(recursive=True)`, clases del campo `coverage` que existan como fichero) y
+compáralo con lo corrido ANTES de sellar. Y el `lastVerified` solo se sube en las áreas cuyas clases citadas
+corrieron TODAS: un área con una clase sin correr se queda con su fecha.
 
 Relacionado: [[dos-corridas-un-simulador]], [[el-arbol-base-contesta-si-es-mio]].

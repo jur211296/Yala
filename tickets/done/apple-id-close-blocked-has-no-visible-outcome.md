@@ -1,9 +1,10 @@
 ---
 id: apple-id-close-blocked-has-no-visible-outcome
-status: backlog
+status: done
 priority: high
 area: "modo-nube, sesiones"
 created: 2026-09-14
+updated: 2026-09-15
 source: "hallazgo propio al implementar `apple-id-change-should-close-the-private-session` (2026-09-14)"
 ---
 
@@ -77,7 +78,35 @@ sesión caducada, canal en pausa y lo pasajero.
 
 ## Criterios de aceptación
 
-- [ ] Tras confirmar el cierre por cambio de Apple ID, la persona ve progreso mientras corre.
-- [ ] Si el cierre se bloquea, ve el motivo con el copy que ya existe y puede reintentar.
-- [ ] No hay dos presentaciones encadenadas del anchor de `ContentView`.
-- [ ] El flag de presentación tiene un camino de bajada que no dependa de que UIKit presente.
+- [x] Tras confirmar el cierre por cambio de Apple ID, la persona ve progreso mientras corre.
+- [x] Si el cierre se bloquea, ve el motivo con el copy que ya existe y puede reintentar.
+- [x] No hay dos presentaciones encadenadas del anchor de `ContentView`.
+- [x] El flag de presentación tiene un camino de bajada que no dependa de que UIKit presente.
+
+## Cierre (2026-09-15)
+
+**Hecho.** El aviso es una hoja con fases (`AppleIDCloseNoticeView`), con su lógica pura
+(`AppleIDCloseNoticeLogic`) y el copy del bloqueo compartido con Ajustes (`SignOutBlockedCopy`). Las
+decisiones, con sus alternativas, están en el Paso 0 de
+`encargos/lanzados/2026-09-15-apple-id-close-blocked-has-no-visible-outcome.md`.
+
+**Cómo se cumple cada criterio:**
+
+1. **Progreso.** La etapa `.working` pinta un spinner, y «Guardando tus cambios pendientes…» solo con
+   `waitingForPending`. Lo fija `AppleIDCloseNoticeWiringTests`: en la celda C dura un parpadeo y el XCUITest
+   no lo ve.
+2. **Motivo y reintento.** `AppleIDCloseNoticeUITests` bloquea el cierre DE VERDAD (`.sessionExpired`, con
+   `-uitest-groups-outbox-pending`) y ve el motivo, «Reintentar» y «Ahora no». Al salir, Ajustes abre sin
+   aviso y su «Cerrar sesión» abre la hoja de alcance: el coordinador quedó libre.
+3. **Sin presentaciones encadenadas.** El `.alert` salió de `ShellDataAlertsModifier`, y un escáner sobre
+   todo `Yala/` impide que vuelva.
+4. **Camino de bajada.** La red suelta la condición viva al agotar el cap, con el canario
+   `appleIDCloseNoticeNotPresented`, y reconoce el bloqueo de su cierre.
+
+**Además de lo pedido, y medido:** una segunda puerta del mismo síntoma. El tap resolvía la celda con el
+getter COMPUESTO de Grupos y el coordinador con el compilado, así que con el kill remoto el botón no hacía
+nada.
+
+**Queda fuera:** el device-QA va en el recorrido 5 de `device-qa-apple-id-change-closes-private-session`; la
+decisión de copy, en `apple-id-close-notice-does-not-say-what-else-the-close-does`; y las hojas de las
+pestañas fuera de la matriz, anotadas en `orphan-alerts-behind-fullscreen-covers`.

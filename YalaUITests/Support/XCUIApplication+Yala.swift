@@ -37,6 +37,8 @@ extension XCUIApplication {
         joinSoftTimeout: String? = nil,
         foreignAccount: String? = nil,
         fakeBeacon: String? = nil,
+        appleIDChanged: Bool = false,
+        groupsOutboxPending: Bool = false,
         extraArguments: [String] = []
     ) -> XCUIApplication {
         var args = ["-uitest"]
@@ -105,6 +107,13 @@ extension XCUIApplication {
             args.append("-uitest-fake-beacon")
             args.append(fakeBeacon)
         }
+        // La hoja del cambio de Apple ID y el estado REAL que bloquea su cierre. NOMBRADOS y no por
+        // `extraArguments:` por lo mismo que sus vecinos, con el agravante más caro de todos: un typo en el
+        // seam del outbox no daría un rojo — daría un cierre que TERMINA BIEN, y eso arma un boot-wipe real en
+        // el simulador. Dos redes, cada una para su caso: el nombre de los dos args lo fija un test de paridad
+        // con `UITestHooks` (`AppleIDCloseNoticeWiringTests`), y si la SIEMBRA fallara, la app no encola la hoja.
+        if appleIDChanged { args.append("-uitest-apple-id-changed") }
+        if groupsOutboxPending { args.append("-uitest-groups-outbox-pending") }
         // Args crudos adicionales (aditivo — p.ej. "-uitest-cloud-chooser").
         args.append(contentsOf: extraArguments)
         // Idioma FIJO para toda la suite. Los seeds nombran sus datos con copy localizado

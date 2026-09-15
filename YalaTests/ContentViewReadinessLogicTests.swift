@@ -43,7 +43,7 @@ struct ContentViewReadinessLogicTests {
         showSyncSettingsSheet: Bool = false,
         isMainTabModalVisible: Bool = false,
         showLateICloudNotice: Bool = false,
-        showAppleIDChangedAlert: Bool = false,
+        appleIDCloseNoticePending: Bool = false,
         isSignOutWorking: Bool = false
     ) -> ShellReadinessState {
         ShellReadinessState(
@@ -60,7 +60,7 @@ struct ContentViewReadinessLogicTests {
             showFreshStartWipeFailedAlert: showFreshStartWipeFailedAlert,
             showLateICloudNotice: showLateICloudNotice,
             showRemoteWipeAlert: showRemoteWipeAlert, showICloudRestartAlert: showICloudRestartAlert,
-            showAppleIDChangedAlert: showAppleIDChangedAlert,
+            appleIDCloseNoticePending: appleIDCloseNoticePending,
             isSignOutWorking: isSignOutWorking,
             hasActiveInviteError: hasActiveInviteError,
             hasActiveGroupSyncError: hasActiveGroupSyncError,
@@ -392,26 +392,26 @@ struct ContentViewReadinessLogicTests {
 
     // MARK: - Cierre por cambio de Apple ID (2026-09-14)
 
-    @Test func appleIDChangedAlert_blocksDrain() {
-        // Sin esta aserción, borrar la línea del blocker sale VERDE: el alert dispara un cierre de
-        // sesión que borra lo local, así que un intent presentado debajo se lo comería justo antes del
-        // gesto más caro que la app puede hacer.
-        let state = make(showAppleIDChangedAlert: true)
+    @Test func appleIDCloseNotice_blocksDrain() {
+        // Sin esta aserción, borrar la línea del blocker sale VERDE: dentro de la hoja corre un cierre de
+        // sesión que borra lo local, y su fase de bloqueo es la única pantalla que lo enseña. Un intent
+        // presentado debajo se la comería en el peor momento.
+        let state = make(appleIDCloseNoticePending: true)
         #expect(!ContentViewReadinessLogic.isReady(state: state))
-        #expect(ContentViewReadinessLogic.blocker(state: state) == "appleIDChangedAlert")
+        #expect(ContentViewReadinessLogic.blocker(state: state) == "appleIDCloseNotice")
     }
 
     @Test func signOutWorking_blocksDrain() {
-        // La CONDICIÓN VIVA, que es la que cubre la ventana real: el binding del alert baja en el tap y
-        // el coordinador tarda segundos en llegar a su fase terminal. Entre esos dos instantes el
-        // router drenaría lo que tuviera en cola y montaría una presentación en el mismo anchor donde
-        // va a aterrizar el cover terminal del cierre.
+        // La CONDICIÓN VIVA, que es la que cubre la ventana real: el gesto que pidió el cierre puede haber
+        // bajado su flag en el tap y el coordinador tarda segundos en llegar a su fase terminal. Entre esos
+        // dos instantes el router drenaría lo que tuviera en cola y montaría una presentación en el mismo
+        // anchor donde va a aterrizar el cover terminal del cierre.
         let state = make(isSignOutWorking: true)
         #expect(!ContentViewReadinessLogic.isReady(state: state))
         #expect(ContentViewReadinessLogic.blocker(state: state) == "signOutWorking")
     }
 
-    @Test func appleIDChangedAlert_andSignOutWorking_areIndependent() {
+    @Test func appleIDCloseNotice_andSignOutWorking_areIndependent() {
         // El control en la dirección contraria: ninguno de los dos implica al otro, y con los dos en
         // `false` la matriz tiene que seguir dejando drenar — si no, la aserción de arriba pasaría por
         // un blocker ajeno y no mediría la línea nueva.

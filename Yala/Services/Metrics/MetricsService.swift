@@ -83,6 +83,15 @@ enum MetricsCanary: String {
     /// es justo lo que esa matriz existe para impedir. Sin `detail`: no hay nada que separar y el
     /// contexto (qué tapaba) no es observable desde aquí.
     case remoteWipeNoticeNotPresented
+    /// **La hoja «Cambiaste de cuenta de iCloud» no llegó a presentarse y se soltó.** Su red de
+    /// presentación (`AppleIDCloseNoticeModifier`) agotó el cap del ciclo sin que UIKit montara la hoja, y
+    /// soltó la condición viva para no dejar el router retenido. Si el cierre de ese aviso estaba parado en
+    /// un bloqueo, lo reconoció al soltar, para que el coordinador no quedara tapiado.
+    ///
+    /// **Cualquier valor sostenido >0 es un bug de presentación**, hermano de
+    /// `remoteWipeNoticeNotPresented`: algo tapa el anchor de `ContentView` sin entrar a la matriz. Se
+    /// pierde el aviso, que vuelve en el arranque siguiente, y no la sesión. Sin `detail`.
+    case appleIDCloseNoticeNotPresented
     case iCloudRestoreOutcome
     case cloudkitGroupSyncGateHardCap
     case cloudkitGroupSyncPromotedToAuto

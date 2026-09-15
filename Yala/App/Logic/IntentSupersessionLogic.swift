@@ -65,8 +65,9 @@ enum IntentSupersessionLogic {
         // **El cambio de Apple ID deja MENTIROSO al aviso del espejo tardío, y los dos salen del mismo
         // disparador.** `NSUbiquityIdentityDidChange` evalúa primero `checkForICloudMismatch` —que es
         // síncrono y puede encolar `.iCloudMismatch`— y después la comprobación de identidad, que va a
-        // CloudKit. Sin esta regla se drenan los DOS: dos `.alert` encadenados del anchor de
-        // `ContentView`, que es el molde de brick que describe `.claude/rules/swiftui-ds.md`.
+        // CloudKit. Sin esta regla se drenan los DOS: el `.alert` del espejo y la hoja del cambio de
+        // cuenta, encadenados en el anchor de `ContentView` — dos presentaciones del mismo anchor, la
+        // carrera que describe `.claude/rules/swiftui-ds.md`.
         //
         // Y no es solo una cuestión de presentación: el consejo de `.iCloudMismatch` («cierra y vuelve a
         // abrir la app para sincronizar tus datos») es **falso** cuando la cuenta ha cambiado —

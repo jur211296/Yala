@@ -69,9 +69,11 @@ struct ContentView: View {
     /// del ciclo se agota.
     @State private var remoteWipeNoticeNetTask: Task<Void, Never>?
     @State private var showICloudRestartAlert: Bool = false
-    /// **El Apple ID del teléfono cambió y la sesión privada era del anterior** (ADR §1). Lo enciende
-    /// el drain de `.appleIDChangedClosePrivate`; su alert vive en `ShellDataAlertsModifier`.
-    @State private var showAppleIDChangedAlert: Bool = false
+    /// **El aviso del cambio de Apple ID, pedido y sin resolver** (ADR §1). Lo enciende el drain de
+    /// `.appleIDChangedClosePrivate` y lo presenta `AppleIDCloseNoticeModifier`, que es su dueño único y su
+    /// red de presentación. Es la CONDICIÓN VIVA de la matriz: `nil` = nada pendiente. Qué se ve dentro lo
+    /// decide `AppleIDCloseNoticeLogic` con la fase del coordinador de cierre.
+    @State private var appleIDCloseNotice: AppleIDCloseNotice?
     @State private var showFreshStartWipeAlert: Bool = false
     /// El wipe de «empiezo de cero» LANZÓ (cualquiera de los dos caminos que borran). Blocker de la
     /// matriz de readiness como sus hermanos: mientras esté puesto, nada del router presenta debajo.
@@ -415,13 +417,12 @@ struct ContentView: View {
         }
     }
 
-    /// Tramo 2: las presentaciones del anchor — covers, sheets y los seis `ViewModifier` del shell.
+    /// Tramo 2: las presentaciones del anchor — covers, sheets y los siete `ViewModifier` del shell.
     private func shellPresentations(_ base: some View) -> some View {
         base
         .modifier(ShellDataAlertsModifier(
             showRemoteWipeAlert: $showRemoteWipeAlert,
             showICloudRestartAlert: $showICloudRestartAlert,
-            showAppleIDChangedAlert: $showAppleIDChangedAlert,
             showFreshStartWipeAlert: $showFreshStartWipeAlert,
             showFreshStartWipeFailedAlert: $showFreshStartWipeFailedAlert,
             hasCompletedOnboarding: $hasCompletedOnboarding,
@@ -434,6 +435,10 @@ struct ContentView: View {
             onRemoteWipeStartFresh: { startFreshAfterRemoteWipeNotice() },
             onRemoteWipeDismiss: { dismissRemoteWipeNotice() }
         ))
+        // **El cambio de Apple ID es una hoja con fases, no un alert** (2026-09-15): pregunta, cierra y, si el
+        // cierre se bloquea, lo enseña con su motivo. El modifier es el dueño de la presentación y de su red;
+        // la condición viva (`appleIDCloseNotice`) vive aquí porque la matriz de readiness la lee.
+        .modifier(AppleIDCloseNoticeModifier(notice: $appleIDCloseNotice))
         // Paso 4 · el aviso del espejo tardío. Sheet y no alert: lleva dos gestos, un progreso y un
         // fallo, y encadenar presentaciones desde este anchor es la carrera medida del 2026-09-03.
         .sheet(item: $lateICloudCorpus) { corpus in
@@ -767,9 +772,9 @@ struct ContentView: View {
             // re-presentar, y con la matriz colgada de él cada reintento la abriría un instante.
             showRemoteWipeAlert: remoteWipeNoticePending,
             showICloudRestartAlert: showICloudRestartAlert,
-            showAppleIDChangedAlert: showAppleIDChangedAlert,
-            // Condición VIVA del dominio, no un `@State`: el alert baja su binding en el tap y el
-            // cierre sigue corriendo segundos después (regla 4 de Presentaciones).
+            appleIDCloseNoticePending: appleIDCloseNotice != nil,
+            // Condición VIVA del dominio, no un `@State`: el gesto que pidió el cierre puede bajar su flag
+            // en el tap y el cierre sigue corriendo segundos después (regla 4 de Presentaciones).
             isSignOutWorking: CloudSessionSignOut.shared.phase == .working,
             hasActiveInviteError: activeInviteError != nil,
             hasActiveGroupSyncError: activeGroupSyncError != nil,
@@ -1010,9 +1015,9 @@ struct ContentView: View {
             // re-presentar, y con la matriz colgada de él cada reintento la abriría un instante.
             showRemoteWipeAlert: remoteWipeNoticePending,
             showICloudRestartAlert: showICloudRestartAlert,
-            showAppleIDChangedAlert: showAppleIDChangedAlert,
-            // Condición VIVA del dominio, no un `@State`: el alert baja su binding en el tap y el
-            // cierre sigue corriendo segundos después (regla 4 de Presentaciones).
+            appleIDCloseNoticePending: appleIDCloseNotice != nil,
+            // Condición VIVA del dominio, no un `@State`: el gesto que pidió el cierre puede bajar su flag
+            // en el tap y el cierre sigue corriendo segundos después (regla 4 de Presentaciones).
             isSignOutWorking: CloudSessionSignOut.shared.phase == .working,
             hasActiveInviteError: activeInviteError != nil,
             hasActiveGroupSyncError: activeGroupSyncError != nil,
@@ -1123,7 +1128,10 @@ struct ContentView: View {
         case .iCloudMismatch:
             showICloudRestartAlert = true
         case .appleIDChangedClosePrivate:
-            showAppleIDChangedAlert = true
+            // Cinturón: con un aviso pendiente la matriz ya no deja drenar este intent, así que esta rama no
+            // debería ver uno puesto. Si algún día lo viera, volver a `.asking` enseñaría la pregunta sobre un
+            // cierre que ya corre.
+            if appleIDCloseNotice == nil { appleIDCloseNotice = .asking }
         case .remoteWipe(let skipOnboarding):
             handleRemoteWipeSignal(onboardingAlreadyDone: skipOnboarding)
         case .presentRemoteWipeNotice:

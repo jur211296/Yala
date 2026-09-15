@@ -759,12 +759,22 @@ struct PausedChannelReasonWiringTests {
     func theSignOutAlertNamesTheTransientUploadFailure() throws {
         let profileFile = try Self.source("Yala/App/Views/Profile/ProfileView.swift")
 
-        let message = Self.squashed(
-            try Self.body(of: "private var signOutBlockedMessage: String {", in: profileFile))
+        // **El mensaje vive en `SignOutBlockedCopy` desde el 2026-09-15**, la tabla que Ajustes comparte con la
+        // hoja del cambio de Apple ID. Se miran las dos mitades del cable: que la tabla tiene el copy y que
+        // Ajustes la consume. Con la tabla bien y el consumo roto, el aviso vuelve al genérico.
+        let copyFile = try Self.source("Yala/App/Views/Shared/SignOutBlockedCopy.swift")
+        let message = Self.squashed(try Self.body(
+            of: "static func message(for reason: CloudSignOutFlowLogic.BlockReason?) -> String {", in: copyFile))
         #expect(message.contains(
             Self.squashed("case .uploadRetryLater: return L10n.Groups.Errors.uploadRetryLater")), """
             El aviso del cierre perdió el copy del fallo pasajero de la subida: vuelve a decirle a quien \
             sufre un 5xx que revise una conexión que funciona.
+            """)
+        let profileMessage = Self.squashed(
+            try Self.body(of: "private var signOutBlockedMessage: String {", in: profileFile))
+        #expect(profileMessage.contains("SignOutBlockedCopy.message(for: signOutBlockedReason)"), """
+            Ajustes dejó de leer su mensaje de la tabla compartida. Si lo recompone por su cuenta, las dos \
+            pantallas que enseñan un cierre bloqueado vuelven a poder decir cosas distintas.
             """)
 
         // Y sale por el alert del bloqueo, no por el de «un momento más» (que promete segundos).
@@ -804,7 +814,9 @@ struct PausedChannelReasonWiringTests {
     /// Las dos primeras lo garantizan además con `switch` EXHAUSTIVOS (sin `default`); la tercera no puede,
     /// porque el suyo es sobre la fase del coordinador y liga el motivo en un patrón — ahí este escaneo es
     /// la única red, y por eso comprueba también el ORDEN de las ramas.
-    @Test("las tres pantallas tienen copy propio para el canal en pausa")
+    /// Y desde el 2026-09-15 hay una cuarta lectora: la hoja del cambio de Apple ID, que lee la MISMA tabla que
+    /// Ajustes (`SignOutBlockedCopy`), así que el copy se mira en la tabla y el consumo en cada pantalla.
+    @Test("las pantallas que enseñan el bloqueo tienen copy propio para el canal en pausa")
     func allThreeScreensNameThePausedChannel() throws {
         // **Se comprueba también que el aviso CONSUME la propiedad, y no es celo.** Una lente midió el
         // mutante: cambiar el `Text(...)` por un literal deja las dos computed MUERTAS —Swift no avisa de
@@ -822,15 +834,28 @@ struct PausedChannelReasonWiringTests {
             momento» sin que nada lo advierta.
             """)
 
+        // Ajustes y la hoja del cambio de Apple ID leen la MISMA tabla desde el 2026-09-15
+        // (`SignOutBlockedCopy`): el copy se mira en la tabla y el consumo, en cada pantalla.
+        let copyFile = try Self.source("Yala/App/Views/Shared/SignOutBlockedCopy.swift")
+        let copy = try Self.body(
+            of: "static func message(for reason: CloudSignOutFlowLogic.BlockReason?) -> String {", in: copyFile)
+        #expect(copy.contains("case .channelPaused: return L10n.Groups.Errors.channelPaused"))
+        #expect(!copy.contains("default:"), """
+            Volvió el `default` a la tabla del cierre bloqueado: un motivo nuevo vuelve a caer en «revisa tu \
+            conexión» sin que nada lo advierta, en Ajustes y en la hoja del cambio de Apple ID a la vez.
+            """)
         let profileFile = try Self.source("Yala/App/Views/Profile/ProfileView.swift")
         let profile = try Self.body(of: "private var signOutBlockedMessage: String {", in: profileFile)
-        #expect(profile.contains("case .channelPaused: return L10n.Groups.Errors.channelPaused"))
+        #expect(profile.contains("SignOutBlockedCopy.message(for: signOutBlockedReason)"), """
+            Ajustes dejó de leer la tabla compartida del cierre bloqueado.
+            """)
         #expect(profileFile.contains("Text(signOutBlockedMessage)"), """
             El aviso del cierre dejó de leer su mensaje por motivo: misma muerte silenciosa.
             """)
-        #expect(!profile.contains("default:"), """
-            Volvió el `default` al aviso del cierre de sesión: un motivo nuevo vuelve a caer en «revisa tu \
-            conexión» sin que nada lo advierta.
+        // Y la hoja del cambio de Apple ID la consume con el motivo REAL del bloqueo.
+        let notice = try Self.source("Yala/App/Views/Shared/AppleIDCloseNoticeView.swift")
+        #expect(notice.contains("message: SignOutBlockedCopy.message(for: reason)"), """
+            La hoja del cambio de Apple ID dejó de enseñar el motivo del bloqueo con la tabla compartida.
             """)
 
         // La puerta de grupos del Welcome. Su rama propia va ANTES del catch-all, o no la alcanza nadie.
