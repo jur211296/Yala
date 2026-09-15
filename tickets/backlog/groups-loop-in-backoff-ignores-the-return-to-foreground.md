@@ -25,6 +25,8 @@ suben al volver: pueden tardar hasta cinco minutos, salvo que guarde algo o tire
 - El runtime personal sí lo hace: su `handleBecameActive` cancela el sueño y corre un ciclo en el acto.
 - Sin red y con la sesión vigente ya pasaba. Desde el 2026-09-15 pasa también con el token caducado: hasta entonces ese
   caso mataba el loop, y volver a primer plano lo re-arrancaba en el momento.
+- Y con App Attest ausente, también desde el 2026-09-15 (`groups-sync-reads-a-missing-attest-401-as-a-session-expiry`):
+  su 401 paraba el loop y volver a primer plano lo re-arrancaba; ahora espera en backoff, hasta 5 min.
 
 ## Lo que hay que decidir (Jürgen)
 

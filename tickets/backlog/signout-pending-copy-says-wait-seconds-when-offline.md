@@ -33,6 +33,11 @@ Espero, lo intento otra vez y pasa lo mismo: no se está guardando nada, lo que 
   (`storage.groups.detachBlockedTransient`): la misma imprecisión.
 - Sin red y con la sesión vigente, esto ya pasaba antes del 2026-09-15. Ese día se sumó quien tiene el token caducado,
   que hasta entonces veía «Tu sesión caducó».
+- **Y quien tiene la red y la sesión bien pero no consigue App Attest**, también desde el 2026-09-15
+  (`groups-sync-reads-a-missing-attest-401-as-a-session-expiry`). A esa persona un texto que culpe a la conexión
+  tampoco le diría la verdad: su red funciona. Y si el attest no vuelve, sus 45 s de reintentos son unas 23 subidas
+  con un 401 seguro; antes el aviso salía al momento. Para quien no lo recupera nunca, tampoco son ciertos el texto
+  de la nube ni la opción 2 de abajo: `groups-phone-that-never-attests-is-told-to-retry-forever`.
 
 ## Lo que hay que decidir (Jürgen)
 
