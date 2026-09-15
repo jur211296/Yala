@@ -247,3 +247,20 @@ consumidor de ese mecanismo, no su productor**. La pregunta es «¿qué pasa cua
 otro extremo?», y se contesta con un grep al `case` del switch que lo drena. Y cuando la premisa se
 parte en dos —la vía buena, el case malo—, dilo así en el Paso 0 y en el PR: no es «el encargo
 estaba mal», es «de las dos cosas que decía, esta se sostiene y esta no».
+
+## 2026-09-15 — la premisa falsa era MÍA, y venía de la memoria
+
+En el Paso 0 de `groups-push-reads-an-offline-token-refresh-as-a-session-expiry` escribí «el canal personal (Modo Nube
+apagado) → ticket `low`», y lo repetí en el ticket. Lo saqué de una memoria del 14-sep («`storageMode` es siempre
+`.icloud` hoy»). Una lente lo tumbó con una línea del propio código: el docblock de
+`CloudSyncFlags.bornCloudChoiceEnabled` dice que producción sirve la tarjeta de alta en la nube al 100 % desde el
+2026-09-09, medido con `curl`. O sea que puede haber cuentas `.cloud`, y en ellas Grupos cicla dentro del runtime
+personal que yo dejaba fuera. El ticket subió a `medium`.
+
+**Why:** una premisa de población decide prioridades, y la mía no llevaba la fecha delante: «apagado» era cierto antes
+de un cambio de percent que se hizo sin tocar el código. Es la familia del reporte de campo que caduca, pero por la
+memoria en vez de por el encargo.
+
+**How to apply:** antes de bajar la prioridad de algo porque «no le llega a nadie», busca la PALANCA que lo enciende
+—el flag compilado y el percent remoto— y lee qué dice hoy. Una memoria que diga «X está apagado» es una afirmación
+con fecha, y los percents se mueven sin tocar el código.

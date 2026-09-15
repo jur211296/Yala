@@ -1,9 +1,22 @@
 ---
 name: autonomo-hasta-el-final
-description: Jürgen decide en bloque por adelantado y luego suelta la ejecución entera; «autónomo» significa que también los rojos y el entorno son míos hasta el final
+description: Jürgen decide en bloque por adelantado y luego suelta la ejecución entera; «autónomo» significa que también los rojos y el entorno son míos hasta el final — PERO de 6:00 a 21:00 (Lima) las decisiones de producto y de acceso se le preguntan con AskUserQuestion
 metadata:
   type: feedback
 ---
+
+> **Excepción que manda sobre todo lo de abajo: la sesión DIURNA pregunta** (norma de Jürgen, 2026-09-15). De 6:00
+> a 21:00, hora de Lima (`TZ=America/Lima date +%H`), Jürgen está disponible. Aunque el encargo diga «MODO AUTÓNOMO»
+> y venga en bypass, las decisiones de producto —qué texto ve la persona, qué entra en el alcance, si hace falta un
+> mecanismo nuevo— y las de acceso se le ponen con `AskUserQuestion`: «No inventes decisiones grandes sin preguntar».
+> Lo técnico sigue siendo mío, y se escribe en el Paso 0 con lo medido.
+>
+> **Why:** me lo dijo a mitad del Paso 0 de `groups-push-reads-an-offline-token-refresh-as-a-session-expiry`, cuando
+> iba a auto-contestar el árbol como pide `grill-encargo` en autónomo. Contestó las tres preguntas en un solo gesto, y
+> las tres con la recomendada.
+>
+> **How to apply:** cierra los hechos primero, agrupa lo suyo en UNA ronda de hasta cuatro preguntas con la
+> recomendada delante, y sigue con lo técnico sin parar. De noche vale lo de abajo.
 
 Su forma de delegar tiene dos tiempos muy marcados. **Primero decide en bloque**: le llevé siete
 decisiones en dos tandas —cuatro antes de escribir el ticket, tres antes de implementar— y las
