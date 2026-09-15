@@ -33,6 +33,10 @@ suben al volver: pueden tardar hasta cinco minutos, salvo que guarde algo o tire
 1. Despertar el loop al volver a primer plano (cortar el sueño y ciclar ya), como hace el runtime personal.
 2. Dejarlo: los cambios suben solos en el siguiente reintento.
 
+## Decisión Jürgen (2026-09-15)
+
+**Despertar el loop al volver a primer plano** (opción 1): cortar el sueño del backoff y ciclar ya, como el runtime personal. No dejar solo el siguiente reintento.
+
 ## Relación con otros tickets
 
 - `groups-push-reads-an-offline-token-refresh-as-a-session-expiry` — el cambio que lleva este caso a más gente.

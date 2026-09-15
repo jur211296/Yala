@@ -46,6 +46,10 @@ Espero, lo intento otra vez y pasa lo mismo: no se está guardando nada, lo que 
    quien solo esperaba a que terminara un guardado.
 3. Dejarlo como está.
 
+## Decisión Jürgen (2026-09-15)
+
+**Separar las dos causas** (opción 1): un motivo/texto para «aún se asienta» y otro para «falló la subida» (sin red / 5xx / cortafuegos). No unificar todo con el texto de nube, y no dejarlo como está.
+
 ## Relación con otros tickets
 
 - `groups-push-reads-an-offline-token-refresh-as-a-session-expiry` — de donde sale.

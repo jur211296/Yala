@@ -46,6 +46,10 @@ forma de salir igualmente.
    se pierden. Choca con la regla de no descartarlos nunca.
 3. Dejarlo, y medir antes cuántos teléfonos hay así.
 
+## Decisión Jürgen (2026-09-15)
+
+**Opción 2:** además del veredicto terminal (este teléfono no puede sincronizar grupos), una salida de cierre con texto honesto que avise de que los cambios de grupos sin subir se pierden, y pida confirmación explícita. Excepción acotada a la regla de no descartarlos nunca.
+
 ## Relación con otros tickets
 
 - `groups-sync-reads-a-missing-attest-401-as-a-session-expiry` — de donde sale.
