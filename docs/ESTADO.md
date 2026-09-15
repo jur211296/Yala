@@ -5,10 +5,48 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-14 (Lima)
 
-**Rama** `2.1` — Merge #162: **El aviso de datos borrados ya no le habla de iCloud a quien no lo tiene en juego.**
+**Rama** `2.1` — Merge #164: **El aviso de datos borrados ya no aparece encima de lo que estuvieras mirando.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#162 · el aviso de datos borrados ya no le habla de iCloud a quien no lo tiene en juego)
+## Esta sesión (#164 · el aviso de datos borrados ya no aparece encima de lo que estuvieras mirando)
+
+**Yala tiene una cuenta atrás interna de cinco segundos: si tus datos personales desaparecen del
+teléfono y siguen sin volver, te avisa de que te los han borrado desde otro dispositivo.** Ese aviso se
+encendía sin mirar qué había en pantalla, así que si vencía mientras estabas viendo otra cosa —el aviso
+del espejo de iCloud, la oferta de prueba, las novedades, el selector de idioma, la activación—, **esa
+pantalla desaparecía sola**. Y si en el intento no llegaba a mostrarse, la app **dejaba de enseñar
+cualquier otro aviso** —bandeja, invitaciones de grupo, oferta de Pro— hasta cerrarla y abrirla. Ahora
+espera su turno en la misma cola que el resto y solo sale con la pantalla libre. Sus dos botones dicen a
+dónde llevan: «Empezar de cero» va a la bienvenida (con «Restaurar de iCloud» a un toque) y «Seguir
+esperando» te deja donde estabas, que ahora es verdad.
+
+**La premisa del encargo acertaba la VÍA y erraba el case.** Decía «reusa `.remoteWipe`, como el otro
+productor»; medido, ese intent no presenta el aviso: **borra**. Reusarlo habría convertido una pregunta
+en un borrado silencioso. El aviso va por la cola con un case propio, y el drenaje re-mide las tres
+condiciones vivas —filas ausentes, onboarding completo, eje de sesión— porque el intent no es transitorio
+y afirma un hecho sobre AHORA.
+
+**El brick y su cura están MEDIDOS en simulador, con dos mutantes.** Sin la red, el blocker se queda
+puesto y un paywall en cola no presenta **nunca** (25 s); con ella se suelta a los ~10 s y el paywall
+entra. Un tercer mutante dejó un residual anotado en la rule: si la sonda de UIKit se equivocara, los
+toggles dejan el alert dibujado aunque el estado se apague — un XCUITest vigila eso.
+
+**La review adversarial (tres lentes) cazó una ALTA que era MÍA:** al reescribir un bloque perdí la
+cancelación de la cuenta atrás en el camino de la señal explícita, y el comentario nuevo **afirmaba que
+seguía ahí**. Sin ella vuelve el «double-alert»: los dos canales no tienen orden garantizado, así que el
+aviso podía preguntar por unos datos que la app acababa de restaurar. Más dos MEDIA (el censo de
+escritores del flag, que se había caído de la suite; el canario ausente del índice de QA) y una BAJA.
+
+Unit 225 en 14 suites · **XCUITest 86 en 35 clases** en el gate, centinela 0 en las tres tandas. El rojo
+de `PaywallInboxAlertRouting` en una repetición fue **latencia** (45 s agotados vs. 15,6 s en el lote
+repetido). **Device-QA: no aplica** — lo que cambia es la vía de presentación y se recorre en simulador.
+
+**Lo que queda, con su sitio:** `orphan-alerts-behind-fullscreen-covers` sigue aparte (el mecanismo
+general, ahora con un molde escrito al lado); `wipe-data-does-not-cancel-the-remote-wipe-grace` gana una
+**segunda celda** (el restore remoto con `skipOnboarding`, donde el eje NO tapa el aviso); y el desarme
+de la red solo está probado a mano — ticket propio con la receta.
+
+## Sesión anterior (#162 · el aviso de datos borrados ya no le habla de iCloud a quien no lo tiene en juego)
 
 **Vaciabas tus datos desde Ajustes y, cinco segundos después, Yala te decía que te los habían borrado
 «desde otro dispositivo», ofreciéndote empezar de cero.** Los habías borrado tú, en ese teléfono, hacía
@@ -45,7 +83,7 @@ hay seam que haga desaparecer las filas del store bajo el proceso vivo.
 **Riesgo que aceptaste:** en esa celda también se calla un hueco transitorio real de CloudKit. Se pierde
 información, no datos.
 
-## Sesión anterior (#161 · vaciar tus datos ya no promete que se borran de todos tus dispositivos)
+## Sesión #161 · vaciar tus datos ya no promete que se borran de todos tus dispositivos)
 
 **Ibas a «Vaciar datos» y la hoja de confirmación te decía, en la fila ☁️, que se borraban «también
 de tu iPad, tu Mac y cualquier dispositivo con este Apple ID».** Confirmabas, y en tu iPad —el que
