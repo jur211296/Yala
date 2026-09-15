@@ -5,10 +5,29 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-15 (Lima)
 
-**Rama** `2.1` — Merge #171: **Grupos: sin conexión ya no dice «Tu sesión caducó» a quien sigue con la sesión viva.**
+**Rama** `2.1` — Merge #172: **Grupos: un 401 por App Attest ausente deja de leerse como «Tu sesión caducó».**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#171 · sin conexión, «Tu sesión caducó» deja de salir a quien sigue con la sesión viva)
+## Esta sesión (#172 · un 401 por App Attest ausente deja de leerse como «Tu sesión caducó»)
+
+**Con la sesión buena y sin App Attest, ninguna pantalla dice ya «Tu sesión caducó», y el sync de grupos no se
+para.** Es tu decisión del 15-sep (opción 1): el 401 `yala_attest_required` es pasajero. Salir de un grupo pide
+volver a intentarlo, aceptar una invitación ya no reabre el inicio de sesión, y los cierres de sesión enseñan el
+aviso de lo pasajero, como sin red desde el #171. Con el JWT caducado de verdad se sigue pidiendo volver a entrar.
+
+**El cliente de membresía tenía lo mismo**, y se arregla con el mismo criterio.
+
+**La review adversarial (tres lentes) cazó cosas mías.** Una nota daba el caso por «solo en carrera» en el canal
+personal, y la migración sube sin esa puerta. Y había huecos en los tests: la re-emisión del pull, un test de loop
+que podía colgar y el attest caducado en el gateway. Todo arreglado o con ticket; cuatro costes aceptados quedan
+escritos en `.claude/rules/gateway-attest.md`.
+
+Gate: build ×2 sin warnings nuevos · **unit 858 en 86 suites** · **11 mutantes, 11 muertos** (6 iOS, 5 gateway) ·
+**XCUITest 5 casos en 2 clases** con el centinela · gateway 20/20 · tres lentes. **Device-QA: parcial** (0-duodecies de la cola).
+
+**Deja cuatro tickets, uno con decisión tuya** (ver «Siguiente»).
+
+## Sesión anterior (#171 · sin conexión, «Tu sesión caducó» deja de salir a quien sigue con la sesión viva)
 
 **Sin red y con el token caducado, ninguna pantalla dice ya «Tu sesión caducó» ni manda a volver a entrar.** Es tu
 decisión del 15-sep: separar en el cliente «sin conexión» de «sesión caducada». Al cerrar sesión en la nube sale al
@@ -29,7 +48,7 @@ CI verde. **Device-QA: sí, y no es simulable** (0-undecies de la cola).
 
 **Deja cinco tickets, tres con decisión tuya** (ver «Siguiente»).
 
-## Sesión anterior (#170 · se retira el sello que apagaba el canal de Grupos hasta relanzar la app)
+## Sesión #170 · se retira el sello que apagaba el canal de Grupos hasta relanzar la app
 
 **No cambia nada en pantalla.** El canal de Grupos tenía un freno: si el servidor decía que la cuenta no
 estaba disponible, dejaba de sincronizar hasta matar y reabrir la app. Desde el 13-sep ninguna respuesta
@@ -156,6 +175,12 @@ formatos —una presentación 16:9 por escenas y clips 9:16 por función— sobr
 `bun run render:presentation` y `bun run render:reels`).
 
 ## Tu cola
+
+0-duodecies. **Device-QA del #172, parcial**
+   (`tickets/qa/groups-sync-reads-a-missing-attest-401-as-a-session-expiry.md`). Scheme **Yala** (no Dev) en el
+   simulador, que no tiene App Attest contra producción, con tu cuenta de Grupos. La consola tiene que decir
+   `attestRequired edge=pull` cada vez más espaciado y **nunca** `loopStopped reason=session-expired`; y abrir un
+   enlace de invitación no puede reabrir el inicio de sesión.
 
 0-undecies. **Device-QA del #171, y NO es simulable**
    (`tickets/qa/groups-push-reads-an-offline-token-refresh-as-a-session-expiry.md`, siete pasos con Yala Dev).
@@ -315,6 +340,11 @@ formatos —una presentación 16:9 por escenas y clips 9:16 por función— sobr
 5. **DMARC el 15-sep** · **cobertura de UI el 22-sep**. Esperan al calendario.
 
 ## Siguiente
+
+**El #172 te deja una decisión `medium`:** qué decirle a un teléfono que nunca consigue App Attest. Hoy oye «en
+un rato» para siempre y no puede cerrar sesión con cambios de grupos sin subir
+(`groups-phone-that-never-attests-is-told-to-retry-forever`, tres opciones). Con ella van
+`groups-join-intent-expires-silently-after-transient-failures` (medium) y dos `low`.
 
 **El rediseño de sesiones llega al final de su lista.** El paso 12 está cerrado con el #151: la shell
 deriva de un solo eje y M1 no existe. Lo que queda del ADR son los device-QA acumulados, que son tuyos
