@@ -29,6 +29,23 @@ unit tests corren con el scheme `Yala` en ese mismo simulador, y su host es esa 
 - Sin medir: si instalar el host de test conserva el contenedor de datos de la app instalada a mano. Es lo esperable en una
   actualización, y es lo que haría real el borrado.
 
+## Un escritor más, y NO agrava esto (medido el 2026-09-15)
+
+`groups-tab-does-not-say-this-phone-cannot-sync-groups` añadió `-uitest-groups-attest-terminal`, que siembra la racha
+y —cuando el arg no está— la **borra** con `recordAcceptance()` en TODA corrida de XCUITest. Parece el mismo daño de
+arriba y no lo es: **son bundles distintos, así que son `UserDefaults.standard` distintos**. Leído en
+`project.pbxproj`: XCUITest corre el scheme `Yala Dev` (`com.jurgenschmidt.yala.dev`) y el device-QA y los unit tests
+usan el scheme `Yala` (`com.jurgenschmidt.yala`).
+
+Y desde la review de ese mismo ticket, bajo `-uitest` la racha ENTERA se desvía a una suite propia
+(`UITestEphemeralDefaults.applyEphemeralAttestStreak`), así que ninguna corrida de XCUITest escribe ya en el
+`UserDefaults.standard` de su bundle. **Ese desvío NO alcanza a los unit tests**: corren sin `-uitest`, así que
+`applyUITestHooksEarly` ni siquiera se ejecuta.
+
+⇒ el daño de este ticket sigue **entero**, y sigue siendo el de los unit tests, que comparten host con la app del
+device-QA. La salida 1 (aislar la tienda en toda suite que ejerza un 200 o un ciclo del runtime) es la que lo cierra;
+el desvío de uitest es su gemelo para el otro target y puede servir de molde.
+
 ## Lo que hay que decidir
 
 1. Aislar la tienda en toda suite que ejerza un 200 de Grupos o un ciclo del runtime: un trait de Swift Testing, o el helper

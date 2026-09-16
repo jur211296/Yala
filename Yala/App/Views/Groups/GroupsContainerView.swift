@@ -50,6 +50,17 @@ struct GroupsContainerView: View {
     /// Payload del composer "Nuevo gasto": captura los grupos elegibles AL MOMENTO del tap.
     /// Evita que un `loadData()` remoto entre el tap y la presentación deje el sheet en blanco.
     @State private var expenseComposerPayload: ExpenseComposerPayload?
+    /// El veredicto de App Attest de ESTE teléfono, y **solo el veredicto**. Es un `@State` porque
+    /// `GroupsAttestStreakStore.isTerminal()` lee `UserDefaults` —que no repinta ninguna vista— y además depende
+    /// del RELOJ: una racha de ayer se vuelve terminal sin que nadie escriba nada. Se recalcula en los CINCO
+    /// momentos de `refreshAttestTerminalNotice`, el último de los cuales es el propio store avisando del cambio.
+    ///
+    /// **Las otras tres condiciones del aviso NO están aquí, y esa es la mitad que arregla dos huecos** (review
+    /// adversarial, 2026-09-15): sesión, canal y consent se leen VIVOS en `showsAttestTerminalNotice`, igual que
+    /// hacen sus vecinas del empty state. Congeladas en un `@State`, iniciar sesión desde el CTA de la lista no
+    /// sacaba el aviso —ese sheet se cierra en sitio y no hay `onAppear`— y una sesión que el SDK borra en caliente
+    /// lo dejaba puesto, culpando al attest de lo que ya era una sesión caducada.
+    @State private var attestVerdictIsTerminal = false
     /// C4: el canal de Grupos sigue apagado tras el `refreshIfDue(force: true)` de `requestCreateGroup`.
     /// Antes de C4 este camino abría el form igual y acuñaba un grupo local irrecuperable.
     @State private var showChannelOffAlert = false
@@ -141,7 +152,12 @@ struct GroupsContainerView: View {
                     // environment al detalle ni a los sheets — iOS 26 la captaba en el
                     // ScrollView horizontal de los chips del form de gasto (pull espurio).
                     // Fuerza un fetch real de CloudKit (no solo relee local) — force salta el debounce.
-                    .refreshable { await viewModel.refreshFromCloud(force: true) }
+                    .refreshable {
+                        await viewModel.refreshFromCloud(force: true)
+                        // El pull es el gesto de «inténtalo otra vez»: el ciclo que acaba de correr pudo contar
+                        // otro rechazo del attest o, con un 200, borrar la racha entera.
+                        refreshAttestTerminalNotice()
+                    }
                 }
 
                 // FAB — new group
@@ -151,6 +167,16 @@ struct GroupsContainerView: View {
             }
             .safeAreaInset(edge: .top) { joinIntentBanner }
             .safeAreaInset(edge: .top) { groupsSignOutReentryBanner }
+            // El último `safeAreaInset` queda el MÁS ARRIBA, y ahí va: de los tres avisos del tab, este es el
+            // único que no caduca solo ni se descarta.
+            .safeAreaInset(edge: .top) { groupsAttestTerminalBanner }
+            // El QUINTO momento, y el único que no es un gesto de la persona: el propio store avisa cuando la racha
+            // cambia en disco. Sin él, el 401 que llega con este tab delante no se ve hasta salir y volver —medido
+            // el 2026-09-15 en el simulador, con la racha escrita un segundo después del arranque.
+            .onReceive(NotificationCenter.default.publisher(
+                for: GroupsAttestStreakStore.didChangeNotification)) { _ in
+                refreshAttestTerminalNotice()
+            }
             .yalaScreenBackground(.panel)
             .navigationTitle(L10n.Groups.title)
             .navigationBarTitleDisplayMode(.large)
@@ -226,7 +252,11 @@ struct GroupsContainerView: View {
                 }
                 // Traer cambios remotos de grupos al entrar al tab (el engine no auto-fetchea sin
                 // push; debounced + gateado por quiescencia dentro de syncNow), luego recarga.
-                Task { await viewModel.refreshFromCloud(force: false) }
+                Task {
+                    await viewModel.refreshFromCloud(force: false)
+                    refreshAttestTerminalNotice()
+                }
+                refreshAttestTerminalNotice()
             }
             .groupsOnboardingSheet(
                 isPresented: $showGroupsOnboarding,
@@ -250,6 +280,8 @@ struct GroupsContainerView: View {
                     guard UIApplication.shared.applicationState == .active else { return }
                     viewModel.setBackground(false)
                     viewModel.reloadAndRecalculate()
+                    // Volver de background es el salto de reloj que hace terminal a una racha de ayer.
+                    refreshAttestTerminalNotice()
                 @unknown default:
                     break
                 }
@@ -743,6 +775,73 @@ struct GroupsContainerView: View {
                 hasSession: CloudAuthService.shared.hasSession,
                 isConsented: GroupsConsentState.isAccepted,
                 hasAssociatedAccount: GroupsAccountAssociation.shared.hasAssociation) == .signInToView
+    }
+
+    // MARK: - Aviso de attest terminal (2026-09-15)
+
+    /// **El aviso FIJO de que este teléfono no sincroniza grupos.** Hasta hoy el veredicto terminal solo salía al
+    /// intentar cerrar sesión, desasociar la cuenta o salir de un grupo: quien se limitaba a editar gastos no se
+    /// enteraba nunca de que nadie del grupo los veía (ticket `groups-tab-does-not-say-this-phone-cannot-sync-groups`,
+    /// decisión de Jürgen del 2026-09-15, opción 1).
+    ///
+    /// **Sin X y sin botón, a propósito.** Es el único de los tres avisos del tab que describe un estado que sigue
+    /// ahí después de leerlo, así que descartarlo solo serviría para ocultarlo; y no hay ninguna acción que lo
+    /// arregle desde este teléfono —reintentar es lo que lleva un día fallando—, así que el copy ofrece lo único
+    /// cierto: usar otro teléfono.
+    ///
+    /// Reusa el título de los gestos (`Groups.Errors.attestUnavailableTitle`) para que la avería se llame igual en
+    /// todas partes. Quién decide, en `GroupsAttestTabNoticeLogic`; cuándo se vuelve a mirar, en
+    /// `refreshAttestTerminalNotice`.
+    @ViewBuilder
+    private var groupsAttestTerminalBanner: some View {
+        if showsAttestTerminalNotice {
+            HStack(alignment: .top, spacing: DS.Spacing.sm) {
+                Image(systemName: "exclamationmark.triangle")
+                    .foregroundStyle(DS.Semantic.warningForeground)
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(L10n.Groups.Errors.attestUnavailableTitle)
+                        .font(DS.Typography.labelSmall)
+                    Text(L10n.Groups.attestTerminalBanner)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.sm)
+            .glassEffect()
+            .accessibilityIdentifier("groups_attest_terminal_banner")
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.top, DS.Spacing.xs)
+        }
+    }
+
+    /// ¿Se enseña el aviso? El veredicto viene del `@State` —es lo único que no se puede leer reactivamente— y las
+    /// otras tres condiciones se leen AQUÍ, vivas, para que el body las vuelva a mirar cada vez que se re-evalúa.
+    ///
+    /// **El canal es la capacidad COMPILADA y no el getter compuesto**, por lo mismo que los cuatro teardowns de
+    /// `CloudSignOutFlowLogic.path`: el término remoto es fail-closed ante un snapshot ausente, así que el primer
+    /// arranque de un teléfono restaurado —que hereda la racha y no la key de attest— se quedaba sin aviso mientras
+    /// el cierre de sesión sí se lo enseñaba. El porqué largo, en `GroupsAttestTabNoticeLogic`.
+    private var showsAttestTerminalNotice: Bool {
+        GroupsAttestTabNoticeLogic.showsNotice(
+            verdictIsTerminal: attestVerdictIsTerminal,
+            channelIsCompiled: CloudSyncFlags.groupsBackendCompiledCapability,
+            hasLiveSession: CloudAuthService.shared.hasSession,
+            hasGroupsConsent: GroupsConsentState.isAccepted)
+    }
+
+    /// Relee el veredicto del attest. **Solo el veredicto**: las otras tres condiciones las lee el body en vivo.
+    ///
+    /// Se llama en los CINCO momentos en que el resultado puede haber cambiado sin que la vista se entere: al entrar
+    /// al tab, al terminar el refresco que ese `onAppear` lanza, al volver de background, tras un pull-to-refresh y
+    /// cuando el propio store avisa de que la racha cambió en disco (`GroupsAttestStreakStore.didChangeNotification`).
+    ///
+    /// Ese quinto es el que cierra el hueco de verdad y **el único que no depende de un gesto**: los cuatro primeros
+    /// dejaban la pestaña muda mientras la persona la miraba, que es justo cuando llega el 401 —medido en el
+    /// simulador el 2026-09-15, con la racha escrita un segundo después del arranque.
+    private func refreshAttestTerminalNotice() {
+        attestVerdictIsTerminal = GroupsAttestStreakStore.isTerminal()
     }
 
     // MARK: - Create-group routing (G5-A / C3 · C4)

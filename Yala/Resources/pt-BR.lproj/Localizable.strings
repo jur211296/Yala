@@ -5957,3 +5957,6 @@
 "settings.signOutAttestBlocked" = "Este telefone está há mais de um dia sem conseguir passar na verificação de segurança exigida pelo nosso servidor, por isso suas alterações não podem ser enviadas para sua conta na nuvem.";
 "settings.signOutAttestExportEmpty" = "Você não tem transações para exportar.";
 "settings.signOutAttestExportFailed" = "Não conseguimos gerar o arquivo. Tente novamente.";
+
+/* Aviso fijo en la pestana Grupos: el telefono lleva mas de un dia sin pasar la verificacion de seguridad, asi que sus cambios de grupos no llegan */
+"groups.attestTerminalBanner" = "Está há mais de um dia sem conseguir passar na verificação de segurança exigida pelo nosso servidor. O que você editar aqui não chega ao grupo: use outro telefone enquanto isso.";

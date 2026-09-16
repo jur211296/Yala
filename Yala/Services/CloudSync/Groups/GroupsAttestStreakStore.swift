@@ -22,6 +22,10 @@
 //  la membresía tiene ocho, y quien la construya de nuevo apunta sin tener que acordarse. Los tests aíslan `defaults`,
 //  como en `PendingJoinStore`.
 //
+//  QUIÉN ESCUCHA. Desde el 2026-09-15 el store emite `didChangeNotification` cada vez que la racha cambia en disco,
+//  porque el veredicto dejó de leerse solo dentro de un gesto: la pestaña Grupos lo pinta FIJO y una vista no se
+//  entera de una escritura en `UserDefaults` (`GroupsAttestTabNoticeLogic`).
+//
 
 import Foundation
 
@@ -32,6 +36,19 @@ enum GroupsAttestStreakStore {
     nonisolated(unsafe) static var defaults: UserDefaults = .standard
 
     static let key = "groupsSync.attestRejectionStreak"
+
+    /// **Se emite cuando la racha CAMBIA en disco**, y solo entonces: al escribir un rechazo que cuenta y al
+    /// borrarla con un acierto. Un rechazo que no suma (misma hora) no la emite, porque nada cambió.
+    ///
+    /// POR QUÉ EXISTE (2026-09-15, ticket `groups-tab-does-not-say-this-phone-cannot-sync-groups`). El veredicto
+    /// pasó de leerse solo dentro de un gesto —donde el propio gesto lo pregunta— a pintarse FIJO en la pestaña
+    /// Grupos. Una vista no puede enterarse de una escritura en `UserDefaults`: **medido el 2026-09-15**, con la
+    /// racha ausente al arrancar y escrita un segundo después, la pestaña se quedaba muda hasta que la persona
+    /// salía y volvía. Y eso es justo lo que pasa en producción, donde el 401 llega con el tab delante.
+    ///
+    /// Avisa el ESCRITOR y no sondea el lector: es el único sitio que sabe que el hecho cambió, y así vale para
+    /// los tres canales que lo escriben (push, pull y RPC de Grupos, más la puerta del motor personal).
+    static let didChangeNotification = Notification.Name("GroupsAttestStreakStore.didChange")
 
     /// La racha guardada, o `nil` si no hay ninguna o no se puede leer. **Solo lee**: un valor ilegible lo sobrescribe
     /// el siguiente rechazo, y hasta entonces cuenta como «sin racha», que nunca ofrece perder nada.
@@ -63,7 +80,9 @@ enum GroupsAttestStreakStore {
         // Un rechazo de la misma hora que no avisa no cambia nada: no se escribe. Un loop en backoff reintenta cada pocos
         // minutos, y cada escritura sería trabajo sin información.
         guard next != previous else { return }
-        guard write(next), reports else { return }
+        guard write(next) else { return }
+        NotificationCenter.default.post(name: didChangeNotification, object: nil)
+        guard reports else { return }
         let hours = Int(now.timeIntervalSince(next.firstRejectedAt) / 3600)
         GroupsSyncBreadcrumb.groupsAttestTerminal(rejections: next.rejections, hours: hours)
         MetricsService.canary(.groupsAttestTerminal, detail: "rejections=\(next.rejections) hours=\(hours)")
@@ -75,6 +94,7 @@ enum GroupsAttestStreakStore {
         guard defaults.object(forKey: key) != nil else { return }
         let ended = current()
         defaults.removeObject(forKey: key)
+        NotificationCenter.default.post(name: didChangeNotification, object: nil)
         if let ended, ended.terminalReported {
             GroupsSyncBreadcrumb.groupsAttestRecovered(rejections: ended.rejections)
         }
