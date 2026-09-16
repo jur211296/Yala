@@ -206,10 +206,11 @@ final class CloudMigrationController {
     /// filas faltan y por qué no drena. `nil` = aún no observada; la pantalla dice entonces solo que está subiendo.
     private(set) var reverseUploadSample: ReverseUploadSample?
 
-    /// Por qué terminó la última espera de la vuelta sin llegar a iCloud (`MigrationState.reverseAbortReasonRaw`).
+    /// Por qué terminó la última vuelta sin llegar a iCloud —la espera, o el claim que el servidor no concedió—
+    /// (`MigrationState.reverseAbortReasonRaw`).
     /// Sale del JOURNAL, no del runner, porque la persona puede leerlo después del relanzamiento. `nil` = nada
     /// que explicar.
-    private(set) var reverseAbortReason: ReverseUploadAbortReason?
+    private(set) var reverseAbortReason: ReverseAbortReason?
 
     /// Una salida de esa espera quedó a medias (`ReverseExitPending`): el `reverse_abort` que reactiva la nube sigue
     /// pendiente. Es lo único que impide empezar otra vuelta, y lo único de lo que habla el aviso de `startReverse`.
@@ -510,6 +511,7 @@ final class CloudMigrationController {
         lastError = nil
         cancelReverseRequested = false
         let r = runner
+        let claimExitBefore = r.lastReverseClaimExit
         await r.submit(.reverseActivated)    // done/notStarted → reverseConfirm(origin)
         await r.submit(.reverseConfirmed)    // → reverseClaimLeader → drive
         refresh()
@@ -519,7 +521,23 @@ final class CloudMigrationController {
         // frena la vuelta (`ReverseExitPending`), y el aviso hablaría de reactivar una nube que nadie desactivó.
         if hasPendingReverseExit, MigrationRuntimeGate.isDomainStablePhase(journaledPhase) {
             lastError = L10n.Storage.Errors.reversePendingExit
+        } else {
+            announceReverseClaimExit(since: claimExitBefore)
         }
+    }
+
+    /// Avisa de una salida del claim de la vuelta a iCloud que haya producido la llamada en curso (ticket
+    /// `reverse-claim-rejection-has-no-way-out-in-the-client`): el servidor no la dejó empezar, u otro dispositivo ya la
+    /// lleva, y el runner volvió a la nube. La barra solo parpadea, así que sin alerta el gesto parecería no hacer nada;
+    /// la misma frase queda como nota en la tarjeta.
+    ///
+    /// Solo con una salida NUEVA (`before` es la foto de `lastReverseClaimExit` tomada antes de llamar al runner): la nota
+    /// journaleada no distingue un rechazo de ahora de uno de un intento anterior. Vale para el toque, para «Retomar» y
+    /// para un re-kick: la alerta vive en la pantalla de Almacenamiento y solo sale con ella delante, así que fuera de
+    /// ella queda solo la nota.
+    private func announceReverseClaimExit(since before: ReverseClaimExit?) {
+        guard let exit = _runner?.lastReverseClaimExit, exit != before else { return }
+        lastError = L10n.Storage.ReverseAbort.note(for: exit.reason)
     }
 
     /// Retomar una migración/reversa journaleada (botón "Retomar" + el coordinator de boot + el
@@ -539,6 +557,7 @@ final class CloudMigrationController {
             refresh()
             return
         }
+        let claimExitBefore = runner.lastReverseClaimExit
         if cancelReverseRequested {
             // El «sí» de «Cancelar» que la pre-espera no dejó pasar. Si la espera ya terminó, el runner no hace nada.
             cancelReverseRequested = false
@@ -546,6 +565,7 @@ final class CloudMigrationController {
         }
         await runner.resume()
         refresh()
+        announceReverseClaimExit(since: claimExitBefore)
         startRuntimeIfStable()
     }
 
@@ -799,7 +819,7 @@ final class CloudMigrationController {
             // C-1: el veredicto del canal iCloud viaja con el journal (sobrevive a `failedRollback` justo para
             // esto) → la card de fallo puede nombrar la causa real.
             cutoverBlocker = state.cutoverICloudVerdictRaw.flatMap(ICloudChannelVerdict.init(rawValue:))
-            reverseAbortReason = state.reverseAbortReasonRaw.flatMap(ReverseUploadAbortReason.init(rawValue:))
+            reverseAbortReason = state.reverseAbortReasonRaw.flatMap(ReverseAbortReason.init(rawValue:))
             let pending = state.readPendingEffects()
             hasPendingReverseExit = ReverseExitPending.isPending(pending)
             return (state.readPhase().phase, pending.count)

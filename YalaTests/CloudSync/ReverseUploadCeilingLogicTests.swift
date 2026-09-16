@@ -115,11 +115,13 @@ struct ReverseUploadCeilingLogicTests {
         #expect(copy(.icloudOff) == .init(message: .icloudMaybeOff, pending: 42))
     }
 
-    /// La nota explica una salida que la persona no pidió. La que pidió no lleva nota.
+    /// La nota explica una salida que la persona no pidió. La que pidió no lleva nota. Las salidas del claim
+    /// (ticket `reverse-claim-rejection-has-no-way-out-in-the-client`) nunca las pide la persona: siempre llevan nota.
     @Test func abortNote_skipsNothingAndCancelled() {
         #expect(ReverseUploadWaitingCopyLogic.abortNote(nil) == nil)
         #expect(ReverseUploadWaitingCopyLogic.abortNote(.cancelled) == nil)
-        for reason: ReverseUploadAbortReason in [.icloudFull, .icloudUnavailable, .stalled] {
+        for reason: ReverseAbortReason in [.icloudFull, .icloudUnavailable, .stalled,
+                                           .claimRetryLater, .claimRefused, .otherDeviceReverting] {
             #expect(ReverseUploadWaitingCopyLogic.abortNote(reason) == reason)
         }
     }

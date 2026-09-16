@@ -248,6 +248,13 @@ nonisolated enum MigrationEvent: Equatable {
     /// `reverseOriginRaw` (fallback `.done`). v1 is single-device → no reverse-follower is modeled; this
     /// simply bows out to the origin (a re-activation is legal later). NOT journaled (an event, like the rest).
     case reverseOtherLeader(returnTo: ReverseOrigin)
+    /// El servidor RECHAZÓ el claim de la reversa (`ok:false` con un motivo que no es `other_leader`: hoy
+    /// `not_complete`, `migration_in_progress` o `no_profile`). Segunda salida de `reverseClaimLeader`, gemela de
+    /// `reverseOtherLeader`: sin ella el journal se quedaba en esa fase TRANSITORIA para siempre, con la barra al
+    /// 15 %, el motor de la nube sin arrancar en los siguientes lanzamientos y los BGTasks diferidos (ticket
+    /// `reverse-claim-rejection-has-no-way-out-in-the-client`). El runner inyecta `returnTo` desde
+    /// `reverseOriginRaw` y journalea el porqué para la pantalla; la máquina no lo necesita.
+    case reverseClaimRejected(returnTo: ReverseOrigin)
     /// Ack: the final pull + own outbox drain finished.
     case reverseDrainCompleted
     /// The reverse verify outcome. REUSES `VerifyOutcome` (S9): a mismatch re-drains (authority in the
@@ -565,6 +572,19 @@ nonisolated enum MigrationStateMachine {
         // suprimidos. v1 single-device: no hay reverse-follower que modelar; se cede al origin (una
         // re-activación posterior vuelve a entrar por `reverseActivated`). Sin efectos.
         case let (.reverseClaimLeader, .reverseOtherLeader(origin)):
+            return .transition(next: reverseOriginPhase(origin), effects: [])
+
+        // reverseClaimLeader → ORIGIN: el servidor rechazó la reserva. SIN efectos, igual que `other_leader`: todos los
+        // rechazos de `reverse_claim` salen del RPC antes de cualquier UPDATE, así que ESTE claim no reservó nada ni
+        // congeló nada. Un `.reverseRollback` aquí sería un efecto de red que, sin red, se quedaría pendiente en una
+        // fase estable y dejaría el motor parado: el callejón que esta salida existe para quitar. Lo que sí hace el
+        // runner, fuera de la máquina, es reponer los pendientes del origen que `reverseActivated` había reemplazado
+        // (`ReverseOriginPendingEffects`).
+        //
+        // La excepción conocida es del backend: en una cuenta ya revertida, un claim fresco con éxito cuya respuesta se
+        // pierde resetea `reverted_at`, y el reintento recibe `not_complete` con la reserva de ESTE dispositivo puesta
+        // y sin congelar (el 409 solo mira `reverse_frozen_at`). Ticket `reverse-exit-on-a-reverted-account-rejects-the-retry`.
+        case let (.reverseClaimLeader, .reverseClaimRejected(origin)):
             return .transition(next: reverseOriginPhase(origin), effects: [])
 
         // reverseDrainAll → reverseVerify

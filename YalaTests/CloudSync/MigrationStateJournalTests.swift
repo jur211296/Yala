@@ -313,7 +313,7 @@ struct MigrationStateJournalTests {
         state.setPhase(.reverseUpload)
         state.reverseUploadLowestPending = 1_234
         state.reverseUploadProgressAt = progressAt
-        state.reverseAbortReasonRaw = ReverseUploadAbortReason.icloudFull.rawValue
+        state.reverseAbortReasonRaw = ReverseAbortReason.icloudFull.rawValue
         try context.save()
 
         var descriptor = FetchDescriptor<MigrationState>()
@@ -324,7 +324,7 @@ struct MigrationStateJournalTests {
         #expect(reloaded.reverseUploadLowestPending == 1_234)
         #expect(reloaded.reverseUploadProgressAt == progressAt)
         // El rawValue journaleado tiene que reconstruir el motivo: renombrar un case dejaría la nota sin texto.
-        #expect(ReverseUploadAbortReason(rawValue: reloaded.reverseAbortReasonRaw ?? "") == .icloudFull)
+        #expect(ReverseAbortReason(rawValue: reloaded.reverseAbortReasonRaw ?? "") == .icloudFull)
 
         reloaded.reverseUploadLowestPending = nil
         reloaded.reverseUploadProgressAt = nil
@@ -338,11 +338,47 @@ struct MigrationStateJournalTests {
         #expect(recleared.reverseAbortReasonRaw == nil)
     }
 
-    /// Los motivos viajan en el journal: sus rawValues son wire.
-    @Test func reverseUploadAbortReason_rawValues_areWireStable() {
-        #expect(ReverseUploadAbortReason.cancelled.rawValue == "cancelled")
-        #expect(ReverseUploadAbortReason.icloudFull.rawValue == "icloudFull")
-        #expect(ReverseUploadAbortReason.icloudUnavailable.rawValue == "icloudUnavailable")
-        #expect(ReverseUploadAbortReason.stalled.rawValue == "stalled")
+    /// Los pendientes del origen que la vuelta reemplaza (ticket `reverse-claim-rejection-has-no-way-out-in-the-client`)
+    /// tienen que sobrevivir a un kill en `reverseClaimLeader`: un rechazo que llega tras relanzar los repone. Y vacío es
+    /// `nil`, no un `[]` codificado: sin nada que reponer no queda rastro en la fila.
+    @Test func reverseOriginPendingEffects_roundTripAcrossSaveAndRefetch_emptyIsNil() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let state = try MigrationState.loadOrCreate(in: context)
+        #expect(state.reverseOriginPendingEffectsData == nil)
+        #expect(state.readReverseOriginPendingEffects().isEmpty)
+
+        state.setPhase(.reverseClaimLeader)
+        state.setReverseOriginPendingEffects([.runLeaderReconcileFromFrozenCloudKit, .adoptBackendAccount])
+        try context.save()
+
+        var descriptor = FetchDescriptor<MigrationState>()
+        descriptor.fetchLimit = 1
+        let context2 = ModelContext(context.container)
+        let reloaded = try #require(try context2.fetch(descriptor).first)
+        #expect(reloaded.readReverseOriginPendingEffects() == [.runLeaderReconcileFromFrozenCloudKit, .adoptBackendAccount],
+                "el orden se conserva: se reponen tal cual se reemplazaron")
+
+        reloaded.setReverseOriginPendingEffects([])
+        #expect(reloaded.reverseOriginPendingEffectsData == nil)
+        try context2.save()
+
+        let context3 = ModelContext(context.container)
+        let recleared = try #require(try context3.fetch(descriptor).first)
+        #expect(recleared.reverseOriginPendingEffectsData == nil)
+        #expect(recleared.schemaVersion == 5)
+    }
+
+    /// Los motivos viajan en el journal: sus rawValues son wire. El tipo se renombró (antes
+    /// `ReverseUploadAbortReason`) al sumarse las salidas del claim; lo que no puede cambiar es esto.
+    @Test func reverseAbortReason_rawValues_areWireStable() {
+        #expect(ReverseAbortReason.cancelled.rawValue == "cancelled")
+        #expect(ReverseAbortReason.icloudFull.rawValue == "icloudFull")
+        #expect(ReverseAbortReason.icloudUnavailable.rawValue == "icloudUnavailable")
+        #expect(ReverseAbortReason.stalled.rawValue == "stalled")
+        #expect(ReverseAbortReason.claimRetryLater.rawValue == "claimRetryLater")
+        #expect(ReverseAbortReason.claimRefused.rawValue == "claimRefused")
+        #expect(ReverseAbortReason.otherDeviceReverting.rawValue == "otherDeviceReverting")
     }
 }

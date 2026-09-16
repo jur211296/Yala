@@ -29,7 +29,9 @@ extension CloudSyncSchemaVersions {
     /// `cutoverICloudVerdictRaw` (veredicto del canal iCloud, para el copy del fallo).
     /// Subió a 4 con los tres campos aditivos del techo de `reverseUpload` (`reverseUploadLowestPending`,
     /// `reverseUploadProgressAt`, `reverseAbortReasonRaw`).
-    static let migrationState = 4
+    /// Subió a 5 con `reverseOriginPendingEffectsData`: los efectos pendientes del origen que la vuelta reemplaza,
+    /// para reponerlos si el servidor no concede la reserva (ticket `reverse-claim-rejection-has-no-way-out-in-the-client`).
+    static let migrationState = 5
 }
 
 /// Journal single-row de la migración. Debe existir a lo sumo UNA fila (el runner la crea
@@ -96,10 +98,20 @@ final class MigrationState {
     /// espera, que es el bug. `nil` = sin observar.
     var reverseUploadProgressAt: Date?
 
-    /// `ReverseUploadAbortReason.rawValue` de la última salida de `reverseUpload`. SOBREVIVE a la vuelta a la fase
-    /// origen a propósito: la persona puede no estar mirando cuando salta el techo y lee el porqué después del
-    /// relanzamiento. Se limpia al empezar otra vuelta y al completarla. `nil` = nada que explicar.
+    /// `ReverseAbortReason.rawValue` de la última vuelta a iCloud que terminó sin llegar: por la espera de
+    /// `reverseUpload` o porque el servidor no concedió el claim. SOBREVIVE a la vuelta a la fase origen a propósito: la
+    /// persona puede no estar mirando cuando pasa y lee el porqué después (tras el relanzamiento, en la salida de la
+    /// espera). Se limpia al empezar otra vuelta y al completarla. `nil` = nada que explicar.
     var reverseAbortReasonRaw: String?
+
+    /// Los efectos que estaban PENDIENTES en la fase origen cuando empezó la vuelta a iCloud (`[MigrationEffect]` en
+    /// JSON, el mismo codec que `pendingEffectsData`). `reverseActivated` los reemplaza, y si la vuelta regresa al
+    /// origen ANTES de que el servidor conceda la reserva —rechazo, otro líder, cancelación en la confirmación o un kill
+    /// ahí— se reponen: la vuelta no empezó, así que el dispositivo tiene que quedar como estaba. Sin esto se perdía el
+    /// `.runLeaderReconcileFromFrozenCloudKit` de un líder cuyo `complete` aún no había llegado, que es lo único que
+    /// manda `complete`, y `migration_in_progress` se quedaba puesto en el backend para siempre. Se limpia al reponerlos
+    /// y al conceder la reserva. `nil` = nada guardado.
+    var reverseOriginPendingEffectsData: Data?
 
     /// Cuándo empezó la migración (el runner lo estampa con el `now` INYECTADO al arrancar). `nil` = no
     /// iniciada.
@@ -126,6 +138,7 @@ final class MigrationState {
         reverseUploadLowestPending: Int? = nil,
         reverseUploadProgressAt: Date? = nil,
         reverseAbortReasonRaw: String? = nil,
+        reverseOriginPendingEffectsData: Data? = nil,
         startedAt: Date? = nil,
         updatedAt: Date = Date.now,
         schemaVersion: Int = CloudSyncSchemaVersions.migrationState
@@ -143,6 +156,7 @@ final class MigrationState {
         self.reverseUploadLowestPending = reverseUploadLowestPending
         self.reverseUploadProgressAt = reverseUploadProgressAt
         self.reverseAbortReasonRaw = reverseAbortReasonRaw
+        self.reverseOriginPendingEffectsData = reverseOriginPendingEffectsData
         self.startedAt = startedAt
         self.updatedAt = updatedAt
         self.schemaVersion = schemaVersion
@@ -203,6 +217,35 @@ extension MigrationState {
         } catch {
             #if DEBUG
             print("MigrationState: setPendingEffects encode falló: \(error)")
+            #endif
+        }
+    }
+
+    /// Los pendientes del origen guardados al empezar la vuelta (`reverseOriginPendingEffectsData`). `nil` ⇒ `[]`; un
+    /// blob que no decodifica ⇒ `[]` + log DEBUG, como `readPendingEffects`.
+    func readReverseOriginPendingEffects() -> [MigrationEffect] {
+        guard let data = reverseOriginPendingEffectsData else { return [] }
+        do {
+            return try JSONDecoder().decode([MigrationEffect].self, from: data)
+        } catch {
+            #if DEBUG
+            print("MigrationState: reverseOriginPendingEffects decode falló: \(error)")
+            #endif
+            return []
+        }
+    }
+
+    /// Guarda los pendientes del origen. `[]` ⇒ `nil`: sin nada que reponer no queda rastro en la fila.
+    func setReverseOriginPendingEffects(_ effects: [MigrationEffect]) {
+        guard !effects.isEmpty else {
+            reverseOriginPendingEffectsData = nil
+            return
+        }
+        do {
+            reverseOriginPendingEffectsData = try JSONEncoder().encode(effects)
+        } catch {
+            #if DEBUG
+            print("MigrationState: setReverseOriginPendingEffects encode falló: \(error)")
             #endif
         }
     }

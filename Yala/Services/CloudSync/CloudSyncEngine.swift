@@ -898,6 +898,13 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncReverse otherLeader — otro device es reverse-líder, vuelve al origin")
     }
 
+    /// El servidor rechazó el claim de la reversa (`not_complete`, `migration_in_progress`, `no_profile`…) → vuelve al
+    /// origin con el porqué journaleado (ticket `reverse-claim-rejection-has-no-way-out-in-the-client`). `reason` es el
+    /// código del RPC: sin PII.
+    static func reverseClaimRejected(reason: String) {
+        logger.notice("CloudSyncReverse claimRejected reason=\(reason, privacy: .public) — vuelve al origin")
+    }
+
     /// §h.3 `deletingZombies`: el barrido tombstones-del-backend-vs-filas-vivas borró `count` filas vivas
     /// que un re-import de CloudKit congelado había RESUCITADO (0 en el caso normal, token vigente → replay
     /// del mirror cubre todo; load-bearing solo en el edge de token inválido). Sin PII (solo el conteo).
@@ -931,7 +938,7 @@ enum CloudSyncBreadcrumb {
     }
 
     /// Techo de `reverseUpload`: la espera terminó SIN llegar a iCloud y la reversa vuelve al origen en modo nube.
-    /// `reason` = `ReverseUploadAbortReason.rawValue` (`cancelled` si la persona lo pidió).
+    /// `reason` = `ReverseAbortReason.rawValue` (`cancelled` si la persona lo pidió).
     static func reverseUploadExited(reason: String) {
         logger.notice("CloudSyncReverse uploadExited reason=\(reason, privacy: .public) — vuelta a la nube, mirror-off re-armado")
     }

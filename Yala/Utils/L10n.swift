@@ -7148,14 +7148,42 @@ enum L10n {
             static var cancelReverse: String { ls("storage.progress.cancelReverse", comment: "") }
         }
 
-        /// Después de que la espera de la vuelta a iCloud termine sin llegar: la tarjeta de relanzar y la nota de
-        /// la tarjeta de «Volver a iCloud».
+        /// Después de que la vuelta a iCloud termine sin llegar —por la espera o porque el servidor no dejó empezar—:
+        /// la tarjeta de relanzar, la nota de la tarjeta de «Volver a iCloud» y la alerta del toque.
         enum ReverseAbort {
             static var relaunchTitle: String { ls("storage.reverseAbort.relaunchTitle", comment: "") }
             static var relaunchBody: String { ls("storage.reverseAbort.relaunchBody", comment: "") }
             static var icloudFull: String { ls("storage.reverseAbort.icloudFull", comment: "") }
             static var icloudUnavailable: String { ls("storage.reverseAbort.icloudUnavailable", comment: "") }
             static var stalled: String { ls("storage.reverseAbort.stalled", comment: "") }
+            static var claimRetryLater: String { ls("storage.reverseAbort.claimRetryLater", comment: "") }
+            /// Con el correo de soporte (`AppConstants.supportEmail`), molde de `welcome.cloud.accountBlockedBody`:
+            /// reintentar no cambia este rechazo, así que el texto dice a quién acudir.
+            static func claimRefused(_ supportEmail: String) -> String {
+                String(format: ls("storage.reverseAbort.claimRefused", comment: ""), supportEmail)
+            }
+            static var otherDeviceReverting: String { ls("storage.reverseAbort.otherDeviceReverting", comment: "") }
+
+            /// El texto de un porqué. UN solo sitio para la nota de la tarjeta, la de relanzar y la alerta del toque:
+            /// con dos copias, la alerta y la nota acabarían diciendo cosas distintas del mismo rechazo.
+            static func note(for reason: ReverseAbortReason) -> String {
+                switch reason {
+                case .icloudFull:
+                    return icloudFull
+                case .icloudUnavailable:
+                    return icloudUnavailable
+                case .stalled, .cancelled:
+                    // `cancelled` no llega aquí (`ReverseUploadWaitingCopyLogic.abortNote` lo filtra); se agrupa con
+                    // `stalled` para que el switch sea exhaustivo sin un `default` que se trague un motivo nuevo.
+                    return stalled
+                case .claimRetryLater:
+                    return claimRetryLater
+                case .claimRefused:
+                    return claimRefused(AppConstants.supportEmail)
+                case .otherDeviceReverting:
+                    return otherDeviceReverting
+                }
+            }
         }
 
         enum Relaunch {

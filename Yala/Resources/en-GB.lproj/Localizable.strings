@@ -5247,5 +5247,8 @@
 "storage.reverseAbort.icloudFull" = "We couldn’t finish going back to iCloud: iCloud ran out of space. Free up space and try again.";
 "storage.reverseAbort.icloudUnavailable" = "We couldn’t finish going back to iCloud: iCloud wasn’t available on this device. Check your iCloud account in Settings and try again.";
 "storage.reverseAbort.stalled" = "We couldn’t finish going back to iCloud: iCloud didn’t receive all your data. Check that iCloud is turned on for this device, then try again with a good connection and keep Yala open while it uploads.";
+"storage.reverseAbort.claimRetryLater" = "We couldn’t start going back to iCloud: your data was still finishing its move to the cloud. Try again in a little while.";
+"storage.reverseAbort.claimRefused" = "We couldn’t start going back to iCloud: your account didn’t allow it. That attempt didn’t change anything. Write to us at %@ and we’ll look into it with you.";
+"storage.reverseAbort.otherDeviceReverting" = "We couldn’t start going back to iCloud: another one of your devices was already going back. Once it’s done, you can do it on this one.";
 "storage.progress.reverseICloudMaybeOff" = "If iCloud isn’t turned on on this device, your data can’t reach iCloud. Turn it on in Settings or cancel to stay in the cloud.";
 "storage.errors.reversePendingExit" = "We can’t go back to iCloud yet: your cloud still needs to finish reactivating. Try again in a moment.";

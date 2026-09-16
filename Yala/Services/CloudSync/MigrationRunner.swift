@@ -69,7 +69,8 @@ enum SnapshotStepOutcome: Equatable {
 // MARK: - Outcomes de la reversa (§h, I11-2). `nonisolated` Equatable: los compara la lógica de tests.
 
 /// Resultado del `reverse_claim` (§h). `accepted` = reserva otorgada; `otherLeader` = otro device ya es
-/// reverse-líder (desatascador); el resto = stop retomable. I11-3 cabla el server real; hoy `.transient`.
+/// reverse-líder y `rejected` = el servidor no la concede: las dos vuelven al origen con su porqué journaleado
+/// (ticket `reverse-claim-rejection-has-no-way-out-in-the-client`). `sessionExpired`/`transient` = stop retomable.
 nonisolated enum ReverseClaimOutcome: Equatable {
     case accepted
     case otherLeader
@@ -104,6 +105,37 @@ nonisolated enum ReverseUploadStatus: Equatable {
 nonisolated struct ReverseUploadSample: Equatable {
     let pending: Int
     let blocker: ReverseUploadBlocker
+}
+
+/// Una salida del claim de la reversa observada en ESTE proceso: el servidor no concedió la reserva, u otro dispositivo
+/// ya era el líder (ticket `reverse-claim-rejection-has-no-way-out-in-the-client`). `sequence` crece con cada salida, y
+/// es lo que deja a `CloudMigrationController.startReverse` saber si la produjo SU toque: el porqué journaleado no
+/// distingue un rechazo de ahora de la nota de un intento anterior.
+nonisolated struct ReverseClaimExit: Equatable {
+    let sequence: Int
+    let reason: ReverseAbortReason
+}
+
+/// ¿Este regreso al origen repone los pendientes que la vuelta a iCloud reemplazó? Sí cuando la vuelta vuelve al origen
+/// ANTES de que el servidor conceda la reserva: desde la confirmación (`reverseDeclined`, un `fatalError` o un kill ahí)
+/// o desde `reverseClaimLeader` (rechazo u otro líder). La vuelta no empezó, así que el dispositivo tiene que quedar como
+/// estaba. Lo preguntan `handle` y la normalización del resume, y tienen que contestar lo mismo (ticket
+/// `reverse-claim-rejection-has-no-way-out-in-the-client`, hallazgo de la review adversarial).
+///
+/// Se repone lo que YA estaba pendiente, nunca un efecto que el dispositivo no tenía: un reconcile que lanza para siempre
+/// (líder desplazado) vuelve al callejón en el que ya estaba antes del toque. Queda fuera, y lo dice su ticket, que tras
+/// un arranque con la vuelta a medias ese pendiente impida arrancar el motor en esa sesión
+/// (`reverse-claim-exit-with-a-restored-failing-effect-keeps-the-engine-off`). Y un `fatalError` en `reverseClaimLeader`
+/// va a `reverseFailedRollback`, no al origen, así que no repone: hoy nadie lo emite en esa fase.
+nonisolated enum ReverseOriginPendingEffects {
+    static func restoresOnReturn(from current: MigrationPhase, to next: MigrationPhase) -> Bool {
+        switch current {
+        case .reverseConfirm, .reverseClaimLeader:
+            return next == .done || next == .notStarted
+        default:
+            return false
+        }
+    }
 }
 
 /// ¿Quedó a medias una salida de la espera de `reverseUpload`? Lo preguntan dos sitios que tienen que contestar lo
@@ -245,6 +277,10 @@ final class MigrationRunner {
     /// está, en vez de una barra al 95 % muda.
     private(set) var lastReverseUploadSample: ReverseUploadSample?
 
+    /// La última salida del claim de la reversa en este proceso (`nil` = ninguna). En memoria, molde de
+    /// `lastClaimBlocker`: la nota que dura vive en el journal (`reverseAbortReasonRaw`); esto solo decide la alerta.
+    private(set) var lastReverseClaimExit: ReverseClaimExit?
+
     init(
         context: ModelContext,
         executor: MigrationWorkExecuting,
@@ -374,6 +410,7 @@ final class MigrationRunner {
             state.reverseUploadLowestPending = nil
             state.reverseUploadProgressAt = nil
             state.reverseAbortReasonRaw = nil
+            state.setReverseOriginPendingEffects([])
             if target == .notStarted { state.startedAt = nil }
             state.updatedAt = self.now()
             try self.context.save()
@@ -443,8 +480,20 @@ final class MigrationRunner {
         case let .invalid(from, ev):
             CloudSyncBreadcrumb.migrationInvalidTransition(from: "\(from)", event: "\(ev)")
         case let .transition(next, effects):
+            // La vuelta a iCloud REEMPLAZA los pendientes del origen: se guardan, y un regreso al origen antes de que el
+            // servidor conceda la reserva los repone (`ReverseOriginPendingEffects`). Al conceder la reserva la vuelta
+            // empezó de verdad y lo guardado deja de aplicar.
+            var nextPending = effects
+            if event == .reverseActivated {
+                state.setReverseOriginPendingEffects(state.readPendingEffects())
+            } else if ReverseOriginPendingEffects.restoresOnReturn(from: current, to: next) {
+                nextPending += state.readReverseOriginPendingEffects()
+                state.setReverseOriginPendingEffects([])
+            } else if current == .reverseClaimLeader {
+                state.setReverseOriginPendingEffects([])
+            }
             state.setPhase(next)
-            state.setPendingEffects(effects)
+            state.setPendingEffects(nextPending)
             // I11-2: al CRUZAR reverseConfirm(origin) → reverseClaimLeader, journalar el ORIGIN (la máquina
             // no lo propaga) + resetear los contadores S9 (pueden traer gasto del verify forward — el
             // S2-cleanup solo resetea en notStarted/failedRollback). En el MISMO save de la transición (N1).
@@ -491,6 +540,9 @@ final class MigrationRunner {
                 state.reverseUploadLowestPending = nil
                 state.reverseUploadProgressAt = nil
                 if next == .icloudActive { state.reverseAbortReasonRaw = nil }
+                // Los pendientes guardados de una vuelta ya se repusieron arriba si tocaba; en un cierre no queda nada
+                // que reponer.
+                state.setReverseOriginPendingEffects([])
             }
             mutate(state, next)
             state.updatedAt = now()
@@ -818,9 +870,10 @@ final class MigrationRunner {
 
     // MARK: - Reversa (§h, I11-2) — driving por fase
 
-    /// `reverseClaimLeader`. `accepted` → avanza; `otherLeader` → desatascador (vuelve al origin
-    /// journaleado); el resto (session/transient/rejected) → stop retomable SIN evento (un resume re-claima).
-    /// Devuelve `false` para cortar el bucle.
+    /// `reverseClaimLeader`. `accepted` → avanza; `otherLeader` y `rejected` → vuelven al origin journaleado con su
+    /// porqué (ticket `reverse-claim-rejection-has-no-way-out-in-the-client`: antes un rechazo cortaba sin evento y la
+    /// fase, que es TRANSITORIA, no salía nunca); `sessionExpired`/`transient` → stop retomable SIN evento (un resume
+    /// re-claima). Devuelve `false` para cortar el bucle.
     private func driveReverseClaim() async throws -> Bool {
         switch await executor.performReverseClaim() {
         case .accepted:
@@ -828,7 +881,9 @@ final class MigrationRunner {
             return true
         case .otherLeader:
             CloudSyncBreadcrumb.reverseOtherLeader()
-            try await handle(.reverseOtherLeader(returnTo: try originFromJournal()))
+            try await journalReverseClaimExit(
+                .reverseOtherLeader(returnTo: try originFromJournal()),
+                reason: .otherDeviceReverting, serverReason: "other_leader")
             return false                                   // la máquina ya movió al origin (terminal/forward)
         case .sessionExpired:
             CloudSyncBreadcrumb.migrationClaimNoSuccess(reason: "reverse: sessionExpired")
@@ -837,9 +892,40 @@ final class MigrationRunner {
             CloudSyncBreadcrumb.migrationClaimNoSuccess(reason: "reverse: transient")
             return false
         case let .rejected(reason):
-            CloudSyncBreadcrumb.migrationClaimNoSuccess(reason: "reverse: \(reason)")
-            return false
+            CloudSyncBreadcrumb.reverseClaimRejected(reason: reason)
+            try await journalReverseClaimExit(
+                .reverseClaimRejected(returnTo: try originFromJournal()),
+                reason: .forClaimRejection(serverReason: reason), serverReason: reason)
+            return false                                   // la máquina ya movió al origin
         }
+    }
+
+    /// Journalea una salida del claim de la reversa: la vuelta al origen y, en el MISMO save, el porqué que lee la
+    /// tarjeta de «Volver a iCloud». El origen se va con el intento, como en la salida de la espera. La máquina no pone
+    /// efectos —el claim no reservó nada—, pero `handle` repone los pendientes que la vuelta había reemplazado
+    /// (`ReverseOriginPendingEffects`) y los drena en el acto.
+    ///
+    /// La salida se anota en el paso que la journalea, ANTES de drenar lo repuesto (molde de
+    /// `journalReverseUploadStep`): el drenaje puede tardar —el reconcile de un líder sube su residual y manda
+    /// `complete`— y quien cierra Yala entretanto perdería el canario. Si un pendiente repuesto lanza, la salida ya está
+    /// anotada y el pendiente queda para el siguiente resume.
+    private func journalReverseClaimExit(
+        _ event: MigrationEvent,
+        reason: ReverseAbortReason,
+        serverReason: String
+    ) async throws {
+        try await handle(event) { state, next in
+            guard next != .reverseClaimLeader else { return }
+            state.reverseAbortReasonRaw = reason.rawValue
+            state.reverseOriginRaw = nil
+            self.recordReverseClaimExit(reason: reason, serverReason: serverReason)
+        }
+    }
+
+    private func recordReverseClaimExit(reason: ReverseAbortReason, serverReason: String) {
+        let sequence = (lastReverseClaimExit?.sequence ?? 0) + 1
+        lastReverseClaimExit = ReverseClaimExit(sequence: sequence, reason: reason)
+        MetricsService.cloudReverseClaimRejected(reason: serverReason)
     }
 
     /// `reverseVerify` (S9 REUSADO; autoridad backend→local → un mismatch RE-DRENA, no re-sube). Inyecta el
@@ -969,7 +1055,7 @@ final class MigrationRunner {
     /// journaleada y el efecto queda pendiente para el próximo resume.
     private func journalReverseUploadStep(
         _ event: MigrationEvent,
-        exitReason: ReverseUploadAbortReason,
+        exitReason: ReverseAbortReason,
         hold: (lowest: Int, progressAt: Date)?
     ) async throws -> Bool {
         var leftTheWait = false
@@ -994,7 +1080,7 @@ final class MigrationRunner {
         return leftTheWait
     }
 
-    private func reportReverseUploadExit(_ reason: ReverseUploadAbortReason) {
+    private func reportReverseUploadExit(_ reason: ReverseAbortReason) {
         lastReverseUploadSample = nil
         CloudSyncBreadcrumb.reverseUploadExited(reason: reason.rawValue)
         MetricsService.cloudReverseUploadAborted(reason: reason.rawValue)
@@ -1054,6 +1140,7 @@ final class MigrationRunner {
         state.reverseUploadLowestPending = nil
         state.reverseUploadProgressAt = nil
         state.reverseAbortReasonRaw = nil
+        state.setReverseOriginPendingEffects([])
         state.startedAt = nil
         state.updatedAt = now()
         try context.save()
@@ -1066,9 +1153,16 @@ final class MigrationRunner {
         let journaled = state.readPhase().phase
         let resumed = MigrationStateMachine.resume(fromJournaled: journaled)
         if resumed != journaled {
-            // Estados no-durables (dryRun/consent/authenticating) reingresan desde notStarted.
+            // Estados no-durables (dryRun/consent/authenticating) reingresan desde notStarted. Un kill en la
+            // confirmación de la vuelta a iCloud la devuelve al origen sin haber empezado: se reponen los pendientes que
+            // había reemplazado, igual que en `handle`.
             state.setPhase(resumed)
-            state.setPendingEffects([])
+            if ReverseOriginPendingEffects.restoresOnReturn(from: journaled, to: resumed) {
+                state.setPendingEffects(state.readReverseOriginPendingEffects())
+                state.setReverseOriginPendingEffects([])
+            } else {
+                state.setPendingEffects([])
+            }
             state.updatedAt = now()
             try context.save()
             CloudSyncBreadcrumb.migrationJournaled(phase: "\(resumed)")

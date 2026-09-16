@@ -791,6 +791,30 @@ struct MigrationStateMachineTests {
         )
     }
 
+    // MARK: - R11b. reverseClaimRejected: el rechazo del claim sale al origen (ticket reverse-claim-rejection-has-no-way-out-in-the-client)
+
+    /// Sin esta arista un `.rejected` dejaba `reverseClaimLeader` —fase TRANSITORIA— journaleada para siempre: barra al
+    /// 15 %, motor de la nube sin arrancar tras relanzar y BGTasks diferidos. Sale al origen SIN efectos: el claim rechazado no reservó
+    /// nada, y un `.reverseRollback` sin red se quedaría pendiente en la fase estable.
+    @Test func reverseClaimRejected_returnsToOrigin_bothOrigins_noEffects() {
+        let toDone = step(.reverseClaimLeader, .reverseClaimRejected(returnTo: .done))
+        #expect(toDone.next == .done)
+        #expect(toDone.effects.isEmpty)
+        let toNotStarted = step(.reverseClaimLeader, .reverseClaimRejected(returnTo: .notStarted))
+        #expect(toNotStarted.next == .notStarted)
+        #expect(toNotStarted.effects.isEmpty)
+    }
+
+    @Test func reverseClaimRejected_illegalOutsideReverseClaimLeader() {
+        // Solo legal desde reverseClaimLeader: después de la reserva ya hay algo que deshacer y quien sale es otro.
+        for phase: MigrationPhase in [.reverseDrainAll, .reverseFreezeBackend, .reverseUpload, .done, .notStarted,
+                                      .reverseConfirm(.done), .icloudActive, .reverseFailedRollback] {
+            let event = MigrationEvent.reverseClaimRejected(returnTo: .done)
+            #expect(MigrationStateMachine.transition(from: phase, event: event) == .invalid(from: phase, event: event),
+                    "\(phase)")
+        }
+    }
+
     // MARK: - C1. Precondición de entrada del cutover (bug C-1)
 
     /// Presupuestos INYECTADOS y pequeños para los tests del tope: pinnean la MECÁNICA (comparar elapsed
