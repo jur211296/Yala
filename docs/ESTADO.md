@@ -5,10 +5,36 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-16 (Lima)
 
-**Rama** `2.1` — Merge #184: **La cola de QA baja de 83 a 52 tickets, y los 52 tienen montaje.**
+**Rama** `2.1` — Merge #185: **La vuelta a iCloud ya no se queda al 95 % para siempre.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#184 · la cola de QA baja de 83 a 52, y los 52 tienen montaje)
+## Esta sesión (#185 · la vuelta a iCloud ya no se queda al 95 % para siempre)
+
+**«Volver a iCloud» ya no se clava al 95 % sin salida.** Mientras espera, «Dónde viven tus datos» dice cuánto falta por
+subir, o que iCloud no tiene espacio o no está disponible, y ofrece «Cancelar y seguir en la nube». Si la subida no
+avanza, la app vuelve sola a la nube: a los 15 min si iCloud dijo que no, a las 72 h si no se sabe. Después, la tarjeta
+de «Volver a iCloud» dice por qué. Son tus siete respuestas del día, todas con la recomendada.
+
+**Una cuenta nacida en la nube ya no «vuelve» al instante sin subir nada** (D15): el muestreo solo veía filas con
+testigo `SyncIdentity`, y lo creado en ese teléfono no lo tiene.
+
+**La segunda pasada de review cazó un callejón en mis propios arreglos:** drenar todos los efectos pendientes antes de
+otra vuelta dejaba a un líder desplazado sin su única salida. Ahora solo se drena la salida pendiente. Cazó también un
+aviso que se cerraba solo en 30 s y un «Cancelar» que se perdía con iCloud importando.
+
+**Qué te toca:** el QA en iPhone de `reverse-upload-has-no-ceiling-and-no-exit` (en `qa`): cuenta en la nube real,
+`Yala Dev` contra staging y un iPhone **sin sesión de iCloud**, que es el caso que nunca drenaba. El techo por tiempo no
+se recorre a mano: lo fijan los unit tests.
+
+**Diez tickets nuevos en backlog, ninguno bloquea 2.1:** la entrada a la vuelta sin iCloud (D4), los tres casos raros de
+volver a la nube (D17), el muestreo que lee «no pude leer» como «nada pendiente», la fecha puesta atrás durante la
+espera, la doble pasada del muestreo en el hilo principal y una acción de Ajustes que se pierde durante un re-kick, entre
+otros.
+
+Validación: build ×2 · unit 7097 casos en 727 suites · XCUITest 20/20 con centinela en 0 · 26 mutantes cazados ·
+`validate-coverage` OK · `docs/TICKETS.md` igual al disco (425) · **CI verde** (build y unit, 23 min).
+
+## Sesión anterior (#184 · la cola de QA baja de 83 a 52, y los 52 tienen montaje)
 
 **La cola de QA vuelve a decir la verdad.** De los 83 tickets de `tickets/qa/`, 18 pasaron en el simulador con captura, 11
 se cerraron sin verlos por tu override (6 sin forma de montarlos en ningún sitio, 5 cuya prueba vive en otro ticket de la
@@ -31,7 +57,7 @@ cierra como no replicable.
 Validación: `docs/TICKETS.md` igual al disco (415) · las 51 cabeceras tocadas parsean · `validate-coverage` OK · **CI verde**
 (build y unit, 24 min).
 
-## Sesión anterior (#182 · sin App Attest, Ajustes no ofrece la tarjeta de la nube)
+## Sesión #182 · sin App Attest, Ajustes no ofrece la tarjeta de la nube
 
 **Un teléfono sin App Attest ya no ve la tarjeta de la nube en «Dónde viven tus datos».** Ni «Migrar a la nube» ni
 «Activar la nube en este dispositivo», la cara que sale en un segundo dispositivo cuando la cuenta ya se migró desde otro:
