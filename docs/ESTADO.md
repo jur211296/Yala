@@ -5,10 +5,34 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-16 (Lima)
 
-**Rama** `2.1` — Merge #181: **Sin App Attest, la pantalla de entrar no ofrece crear cuenta.**
+**Rama** `2.1` — Merge #182: **Sin App Attest, Ajustes no ofrece la tarjeta de la nube.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#181 · sin App Attest, la pantalla de entrar no ofrece crear cuenta)
+## Esta sesión (#182 · sin App Attest, Ajustes no ofrece la tarjeta de la nube)
+
+**Un teléfono sin App Attest ya no ve la tarjeta de la nube en «Dónde viven tus datos».** Ni «Migrar a la nube» ni
+«Activar la nube en este dispositivo», la cara que sale en un segundo dispositivo cuando la cuenta ya se migró desde otro:
+tu decisión de las 7:1x, porque sin token las dos acaban en el mismo reintento sin fin, y «Migrar» además dejaba la cuenta
+creada en el servidor. La pantalla se queda con «iCloud privado» y, si aplica, Grupos, sin texto nuevo. Con App Attest no
+cambia nada, y quien ya está en la nube o tiene una migración a la vista conserva su pantalla. Es la tercera puerta del
+día, después de #180 y #181.
+
+**La review cazó tres cierres de más sin red, y una frase mía falsa.** Una segunda lectura de la capacidad en el botón, el
+guard de aborto invertido o una copia de la declaración bajo `#if DEBUG` le quitaban la tarjeta a un iPhone con App Attest
+con todo en verde: ahora tienen red. Y «quien ya está dentro conserva su panel» era falso para quien tocó «Activar en este
+dispositivo» antes del cambio: se queda sin tarjeta mientras el adopt reintenta en segundo plano.
+
+**Dos cosas van a otros tickets.** La frase de Grupos «Se decide en Ajustes» ya no lleva a ninguna tarjeta sin App Attest:
+la anoté, como elegiste, en `groups-block-has-no-route-to-storage-settings`, que la va a cambiar por un botón. Y un defecto
+anterior va a ticket nuevo: `groups-only-session-storage-screen-says-data-lives-in-icloud`.
+
+Gate: build ×2 sin warnings en lo tocado · **unit 7052 casos en 725 suites** · **XCUITest 15 casos** con el centinela en 0
+(14 verdes y `test_extremeMinimumAmountSaves`, el flaky conocido, verde aislado 2 de 2) · **mutation-tested ×13**, cada uno
+en rojo en su test · tres lentes · **CI verde** (build y los 7052 unit).
+
+**En `qa`, con un paso en iPhone real**: con App Attest la tarjeta sigue saliendo. Comparte montaje con los de #180 y #181.
+
+## Sesión anterior (#181 · sin App Attest, la pantalla de entrar no ofrece crear cuenta)
 
 **Un teléfono sin App Attest ya no se da de alta en la nube por ninguna puerta del Welcome.** Después del #180 quedaban
 dos: «Crear mi cuenta» tras «No encontramos una cuenta» y «Crear cuenta con…» del mismatch. Ahora pasan por la misma puerta
@@ -29,10 +53,10 @@ tienes tú, o hay que rotarlo.
 Gate: build ×2 sin warnings en lo tocado · **unit 7048 casos en 725 suites** · **XCUITest 18 casos** con el centinela en 0 ·
 **mutation-tested ×22**, todos en rojo en su test · dos lentes + la regla de attest · **CI verde** (build y los 7048 unit).
 
-**Queda en backlog `cloud-migration-offers-the-cloud-to-a-phone-without-app-attest`**: «Migrar a la nube» es el único
-camino al alta completa que no mira la puerta.
+**Quedaba en backlog `cloud-migration-offers-the-cloud-to-a-phone-without-app-attest`**: «Migrar a la nube» era el único
+camino al alta completa que no miraba la puerta. Lo cierra #182.
 
-## Sesión anterior (#180 · sin App Attest, el alta no ofrece la nube)
+## Sesión #180 · sin App Attest, el alta no ofrece la nube
 
 **Un teléfono que no puede conseguir App Attest ya no ve «Tu cuenta en la nube».** Antes la elegía, apuntaba sus gastos y
 nada llegaba nunca a su cuenta: el motor corta en su puerta de attest antes de subir. Ahora «Es mi primera vez» va directa a
@@ -55,7 +79,7 @@ Gate: build ×2 sin warnings nuevos · **unit 7045 casos en 725 suites** · **XC
 lentes + la regla de attest contra el diff · **CI verde** (build y los 7045 unit). **Mutation-tested ×14**, todos en rojo en su caso; el control sin
 el seam mide que en XCUITest el simulador de verdad no tiene App Attest.
 
-**Deja dos decisiones tuyas en backlog, las dos nacidas de medir el alcance.**
+**Deja dos decisiones tuyas en backlog, las dos nacidas de medir el alcance** (las dos cerradas después, en #181 y #182).
 `cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest`: «Crear mi cuenta» tras «No encontramos una cuenta» y
 «Crear cuenta con…» del mismatch también dan de alta sin mirar el attest (ni el kill del alta, que es anterior); cerrarlas
 vuelve pared dos pantallas que tú abriste. `cloud-migration-offers-the-cloud-to-a-phone-without-app-attest`: «Migrar a la
