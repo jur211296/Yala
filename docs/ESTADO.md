@@ -5,10 +5,41 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-15 (Lima)
 
-**Rama** `2.1` — Merge #175: **Sin App Attest en la nube, exportar y salir perdiendo lo personal, con confirmación.**
+**Rama** `2.1` — Merge #176: **La pestaña Grupos avisa cuando este teléfono no puede sincronizar.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#175 · sin App Attest en la nube: exportar y salir perdiendo lo personal, con confirmación)
+## Esta sesión (#176 · la pestaña Grupos avisa cuando este teléfono no puede sincronizar)
+
+**Quien apunta gastos de un grupo desde un teléfono que no consigue App Attest ya se entera.** Antes no se lo decía
+nadie: editaba, nadie del grupo lo veía, y el aviso solo aparecía al intentar cerrar sesión, desasociar la cuenta o
+salir del grupo. Ahora, mientras el veredicto sea terminal, encima de la lista hay un aviso fijo con el **mismo
+título** que esos gestos —«Este teléfono no puede sincronizar tus grupos»— y un cuerpo que ofrece lo único cierto:
+usar otro teléfono. Sin X y sin botón, porque describe un estado que sigue ahí después de leerlo y reintentar es
+justo lo que lleva un día fallando. Es tu decisión del 15-sep, opción 1.
+
+**Son CUATRO condiciones, no «mientras el veredicto sea terminal».** La racha describe al TELÉFONO: sobrevive al
+cierre de sesión a propósito y desde el #175 la escribe también el motor personal, que no sube un gasto de grupo. Con
+el enunciado literal, el aviso le mentiría a quien cerró sesión, a quien no tiene Grupos compilado y a quien todavía
+no aceptó el consent.
+
+**La review adversarial cazó tres cosas mías y una era el bug del ticket, vivo.** (1) El término del canal iba por el
+getter compuesto, que es fail-closed sin snapshot de remote-config: un teléfono **restaurado desde una copia de
+iCloud** —que hereda la racha y no la key de attest— se quedaba **sin aviso** en su primer arranque mientras el
+cierre de sesión sí se lo enseñaba. Va por la capacidad compilada, como los cuatro teardowns. (2) El aviso se quedaba
+mudo con la pestaña delante: medido en el simulador, con la racha escrita un segundo después del arranque no salía
+hasta salir y volver — y eso es justo cuando llega el 401. Ahora avisa el **escritor** de la racha. (3) El seam de QA
+dejaba el veredicto terminal puesto para todo arranque **manual** del simulador; bajo uitest la racha va ahora a una
+suite propia.
+
+Gate: build ×2 sin warnings nuevos · **unit 199 en 33 suites** · **XCUITest 27 clases y 67 casos** con cola y
+centinela («estuviste solo», 234 muestreos) · **9 mutantes, 9 muertos** · review de tres lentes · **CI verde**.
+**Sin device-QA**: el aviso es visual y determinista, y el ticket cierra en `done`.
+
+**Deja un ticket nuevo:** el mismo aviso fijo para la nube personal, que sigue sin tenerlo. Y anota en
+`unit-tests-clear-the-attest-streak-of-a-device-qa-in-progress` que el desvío de uitest **no** lo cubre: los unit
+tests corren sin `-uitest`.
+
+## Sesión anterior (#175 · sin App Attest en la nube: exportar y salir perdiendo lo personal, con confirmación)
 
 **En la nube, un teléfono que lleva más de un día sin conseguir App Attest ya puede cerrar sesión aunque le
 queden cambios suyos sin subir.** Es tu decisión del 15-sep (opción 1). Antes el cierre le mandaba a revisar una
@@ -44,7 +75,7 @@ ticket queda en `qa` con su guion.
 
 **Deja seis tickets nuevos**, uno alto: la puerta del onboarding que no ofrece la nube y no tiene llamador.
 
-## Sesión anterior (#173 · un teléfono sin App Attest recibe su veredicto y puede cerrar sesión perdiendo los cambios)
+## Sesión #173 · un teléfono sin App Attest recibe su veredicto y puede cerrar sesión perdiendo los cambios)
 
 **Un teléfono que lleva más de un día sin conseguir App Attest deja de oír «inténtalo en un rato».** Es tu decisión
 del 15-sep (opción 2). Pasadas 24 h con al menos 3 rechazos del servidor —como mucho uno por hora— y ningún acierto,
