@@ -246,3 +246,30 @@ persona— y al correr el mutante «bórralo entero» salió **VERDE**. Ocho mut
 vivo. ⇒ cuando el cambio añade una línea que nadie consume dentro del proceso (un log, una métrica, un
 testigo), **su red es un scan explícito**: el compilador no la echa de menos y ningún test de
 comportamiento la toca.
+
+## Décimo eslabón: la aserción que mira un efecto ASÍNCRONO sin soltar el actor
+
+**2026-09-16, `groups-loop-in-backoff-ignores-the-return-to-foreground`.** Escribí el único test que
+distinguía si el gate del despertar se consultaba de verdad: con el canal apagado a mitad del sueño,
+llamar al wake y comprobar que el sueño **no** se cortaba.
+
+    client.wakeLoopIfSleeping(trigger: "foreground")
+    #expect(nap.cancelled.isEmpty)        // ← no puede fallar
+
+Con el `guard shouldWake(...)` **borrado entero**, el test seguía verde. `Task.cancel()` solo **marca**
+la tarea: el `catch` que escribe el testigo no corre hasta que el MainActor se suelta, y mi `#expect`
+iba en la misma rebanada síncrona. La lista estaba vacía en las dos versiones del código.
+
+**Why:** un efecto que viaja por cancelación, por un `Task`, por un `await` o por una notificación **no
+ha ocurrido todavía** cuando vuelve la llamada que lo dispara. Afirmar «no pasó» justo después mide el
+reloj del actor, no el código.
+
+**How to apply:**
+
+- Cuando el testigo lo escriba otro contexto, **espera a que el efecto TERMINE y mira CÓMO terminó**, no
+  a que no haya aparecido: aquí, esperar a que el sueño acabe y exigir que acabara `false` (agotado) en
+  vez de `true` (cortado). La versión mala falla, y la buena no depende de cuándo corra el scheduler.
+- La señal que lo destapa es la de siempre y no se puede saltar: **el mutante**. Este test parecía el
+  más cuidado de los seis y era el único inútil; lo dijo el M6, no la lectura.
+- Vale igual para `#expect(x == nil)` tras disparar algo que asigna en un `Task`, y para cualquier
+  «no se emitió» inmediatamente después del gesto.
