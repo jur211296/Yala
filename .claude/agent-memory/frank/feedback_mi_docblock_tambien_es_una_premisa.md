@@ -117,3 +117,11 @@ sesión · y «tiene ticket propio» sin ticket.
 **How to apply:** al escribir un docblock que nombra un test, un símbolo o un conteo, ábrelo. Y cuando
 justifiques un valor cableado con «aquí solo se llega desde X», comprueba si el cambio que estás
 haciendo añade una puerta — dos de las cinco eran premisas que yo mismo invalidaba en el mismo diff.
+
+**Séptima, el 2026-09-16 en la tarjeta de Ajustes: «quien ya está dentro conserva su panel».** La escribí en cinco sitios
+(docblock, regla, ticket, Paso 0) midiendo la MÁQUINA —`isEngaged` queda fuera del término— y no lo que la PANTALLA
+deriva. Un adopt que quedó pendiente tras el claim vuelve a `notStarted` con el efecto por ejecutar, y `derive` lo pinta
+`.idle`: sin App Attest pierde la tarjeta sin ver progreso. Dos lentes lo tumbaron por separado.
+
+**How to apply:** cuando escribas que alguien «conserva» o «ve» una pantalla, recorre el derivador del estado de UI con
+cada fase **y** cada efecto pendiente, no la definición del flag que usas en la puerta.

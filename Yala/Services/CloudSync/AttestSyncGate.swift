@@ -12,7 +12,8 @@
 //
 //  Plus the onboarding upfront gate: born-cloud only offered when attest is terminally SUPPORTED
 //  (owner: block-upfront, mirroring Groups' `iCloudSyncService.isAccountAvailable`). Conectada desde el 2026-09-16:
-//  la llama `WelcomeAccountChoiceLogic.visibleNewOptions` con `AppAttestClient.canObtainSessionToken`.
+//  la llaman `WelcomeAccountChoiceLogic.visibleNewOptions` y `StorageRowGateLogic.offersCloudMigrationEntry` (la card de
+//  migración de Ajustes), las dos con `AppAttestClient.canObtainSessionToken`.
 //
 //  NO runtime wiring — the consumer (`CloudSyncRuntime.performCycle`) classifies each failure and, on `.terminal`,
 //  fires the `cloudSyncBlockedByAttestUnavailable(platform)` canary and stops. **There is NO banner** (measured
@@ -99,7 +100,7 @@ enum AttestSyncGate {
     /// ofrece a un teléfono que puede conseguir token. Un fallo pasajero no bloquea aquí, que para eso está el reintento:
     /// la entrada es la capacidad determinista, `AppAttestClient.canObtainSessionToken`.
     ///
-    /// **Su llamador es `WelcomeAccountChoiceLogic.visibleNewOptions`** desde el 2026-09-16; hasta entonces no tuvo
+    /// **Su primer llamador es `WelcomeAccountChoiceLogic.visibleNewOptions`** desde el 2026-09-16; hasta entonces no tuvo
     /// ninguno, y dos docblocks decían que sí (ticket `cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest`).
     /// Por ahí decide las cards de las tres puertas que comparten `WelcomeNewOptionsGate`: «Es mi primera vez», «Crear
     /// otra cuenta» y «Activar Yala completo». Sin la nube queda una sola card: «Es mi primera vez» y la activación hacen
@@ -109,8 +110,13 @@ enum AttestSyncGate {
     /// encontramos una cuenta» y «Crear cuenta con…» del mismatch): las pinta solo `WelcomeNewOptionsGate.offersCloudSignUp`,
     /// que se deriva de esas cards (ticket `cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest`).
     ///
-    /// **No cubre** entrar con una cuenta que ya existe («Ya tengo una cuenta» y el faro) ni «Migrar a la nube» de Ajustes.
-    /// Cuántos iPhone reales tienen `isSupported == false` no está medido.
+    /// **El segundo es `StorageRowGateLogic.offersCloudMigrationEntry`**, el mismo día: la card de Ajustes, con sus dos
+    /// caras —«Migrar a la nube» y «Activar la nube en este dispositivo»— (ticket
+    /// `cloud-migration-offers-the-cloud-to-a-phone-without-app-attest`). La segunda es entrar a una cuenta que ya existe y
+    /// aun así entra, por decisión de Jürgen: sin token las dos acaban en el mismo reintento sin fin.
+    ///
+    /// **No cubre** entrar con una cuenta que ya existe desde el Welcome («Ya tengo una cuenta» y el faro), ni una
+    /// migración ya empezada, que sigue reintentando. Cuántos iPhone reales tienen `isSupported == false` no está medido.
     nonisolated static func shouldOfferCloudOnly(isAttestSupported: Bool) -> Bool {
         isAttestSupported
     }

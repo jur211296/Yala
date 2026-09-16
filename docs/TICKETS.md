@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (412)
+## Index (413)
 
 | id | status | path |
 |---|---|---|
@@ -97,7 +97,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-fx-rates-blob-two-faces | qa | tickets/qa/cloud-fx-rates-blob-two-faces.md |
 | cloud-hydration-spinner-never-gives-up-without-attest | backlog | tickets/backlog/cloud-hydration-spinner-never-gives-up-without-attest.md |
 | cloud-killswitch-hides-the-only-door-to-detach-groups | qa | tickets/qa/cloud-killswitch-hides-the-only-door-to-detach-groups.md |
-| cloud-migration-offers-the-cloud-to-a-phone-without-app-attest | backlog | tickets/backlog/cloud-migration-offers-the-cloud-to-a-phone-without-app-attest.md |
+| cloud-migration-offers-the-cloud-to-a-phone-without-app-attest | qa | tickets/qa/cloud-migration-offers-the-cloud-to-a-phone-without-app-attest.md |
 | cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest | qa | tickets/qa/cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest.md |
 | cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes | qa | tickets/qa/cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes.md |
 | cloud-session-expiry-with-only-group-changes-has-no-sign-in-door | backlog | tickets/backlog/cloud-session-expiry-with-only-group-changes-has-no-sign-in-door.md |
@@ -232,6 +232,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-only-account-deletion-skips-export-wait | backlog | tickets/backlog/groups-only-account-deletion-skips-export-wait.md |
 | groups-only-private-restart-skips-the-wipe-alert | qa | tickets/qa/groups-only-private-restart-skips-the-wipe-alert.md |
 | groups-only-second-launch-mounts-icloud-mirror | qa | tickets/qa/groups-only-second-launch-mounts-icloud-mirror.md |
+| groups-only-session-storage-screen-says-data-lives-in-icloud | backlog | tickets/backlog/groups-only-session-storage-screen-says-data-lives-in-icloud.md |
 | groups-organizer-intent-is-lost-on-relaunch | backlog | tickets/backlog/groups-organizer-intent-is-lost-on-relaunch.md |
 | groups-outbox-rows-without-a-live-session-have-no-exit | backlog | tickets/backlog/groups-outbox-rows-without-a-live-session-have-no-exit.md |
 | groups-owner-debt-no-heir-dead-end | done | tickets/done/groups-owner-debt-no-heir-dead-end.md |

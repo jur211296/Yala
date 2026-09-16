@@ -157,5 +157,6 @@ montaje que el paso en iPhone de `cloud-onboarding-offers-the-cloud-to-a-phone-w
 ## Relación con otros tickets
 
 - `cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest` — la puerta del chooser, de donde sale.
-- `cloud-migration-offers-the-cloud-to-a-phone-without-app-attest` — la otra entrada a la nube que no mira el attest.
+- `cloud-migration-offers-the-cloud-to-a-phone-without-app-attest` — la tarjeta de Ajustes, la otra entrada a la nube; desde
+  el 2026-09-16 también mira el attest.
 - `cloud-hydration-spinner-never-gives-up-without-attest` — lo que ve quien entra con una cuenta que ya existe.

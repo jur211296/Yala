@@ -55,10 +55,11 @@ final class UITestHooks {
     nonisolated static var forceCloudChooser: Bool { hasArg("-uitest-cloud-chooser") }
 
     /// `-uitest-fake-attest-support`: finge que este teléfono puede conseguir token de App Attest, **solo en la entrada
-    /// de la puerta del alta** (`WelcomeNewOptionsGate`, que deciden la card de «Es mi primera vez» y las salidas al alta
-    /// de la pantalla de entrar). El simulador no tiene App Attest, así que sin
-    /// este arg la card de la nube no sale aunque se pida `-uitest-cloud-chooser`. No toca `AppAttestClient`: el cliente
-    /// sigue sin poder conseguir token.
+    /// de las puertas que ofrecen la nube**: `WelcomeNewOptionsGate` (la card de «Es mi primera vez» y las salidas al alta
+    /// de la pantalla de entrar) y, desde el 2026-09-16, la card de migración de Ajustes
+    /// (`StorageSettingsView.offersCloudMigrationEntry`). El simulador no tiene App Attest, así que sin
+    /// este arg no sale ninguna de las dos: ni la del Welcome aunque se pida `-uitest-cloud-chooser`, ni la de Ajustes.
+    /// No toca `AppAttestClient`: el cliente sigue sin poder conseguir token.
     ///
     /// Los dos args son ortogonales a propósito. `-uitest-cloud-chooser` sin este es el caso que prueba la CONDICIÓN: la
     /// card desaparece porque el host no tiene App Attest, y un mutante que quite el término lo pone en rojo. Un seam que

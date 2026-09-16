@@ -38,7 +38,7 @@
 - [Mi arreglo empeora un ticket HERMANO](feedback_mi_arreglo_empeora_un_ticket_hermano.md) — el colateral pasó de neutro a nombrar un gesto ajeno; se mide y se anota allí, no se corta por motivo.
 - [El copy caduca por un cambio AJENO](feedback_el_copy_caduca_por_un_cambio_ajeno.md) — la frase era cierta por la mañana; al cerrar un mecanismo, busca el copy que lo prometía.
 - [La tabla del ticket nombra un sitio por pantalla](feedback_la_tabla_del_ticket_nombra_un_sitio_por_pantalla.md) — 7 superficies eran 21.
-- [Ticket nuevo: busca el duplicado primero](feedback_ticket_nuevo_busca_el_duplicado_primero.md) — dos de tres ya existían el 10-sep, y el que existía era MEJOR.
+- [Ticket nuevo: busca el duplicado primero](feedback_ticket_nuevo_busca_el_duplicado_primero.md) — dos de tres ya existían el 10-sep; y antes de arreglar un comentario de paso, también.
 - [Ramas aparcadas tocan tu ticket](feedback_ramas_aparcadas_tocan_tu_ticket.md) — `git log --all -- 'tickets/*/<id>.md'` antes de diseñar: una rama sin PR le había escrito requisitos al paso 9.
 - [El mecanismo que existe se probó con OTRO corpus](feedback_el_mecanismo_existente_se_probo_con_otro_corpus.md) — reusar un barrido sobre un corpus nuevo puede destruir datos buenos; el AC dice QUÉ, no CÓMO.
 - [Mi salida nueva es un camino muerto](feedback_mi_salida_nueva_es_un_camino_muerto.md) — antes de cambiar «sigue» por «vuelve», cuenta las salidas del destino.
@@ -96,7 +96,7 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build incremental.
 
 ## Estado del trabajo
-- [Sin App Attest, ninguna puerta del Welcome da de alta](project_puerta_del_alta_sin_attest.md) — #180 y el siguiente, en qa por pasos en iPhone; sin secreto el simulador no crea cuentas.
+- [Sin App Attest no se ofrece la nube](project_puerta_del_alta_sin_attest.md) — Welcome (#180, #181) y la tarjeta de Ajustes entera; en qa por pasos en iPhone; sin secreto el simulador no crea cuentas.
 - [Grupos ya despierta al volver a la app](project_grupos_despierta_al_volver_a_la_app.md) — PR #179; deja el ticket del piggyback con el motor parado y un mutante declarado sin test.
 - [El aviso de attest personal, en dos superficies](project_aviso_attest_personal_en_dos_superficies.md) — PR #177; arregló un «Todo al día» con el motor parado y deja un agujero conocido.
 - [Grupos ya avisa sin App Attest](project_grupos_avisa_sin_attest.md) — PR #176, en `done` y sin device-QA; el hermano personal sigue sin hacer.

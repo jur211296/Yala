@@ -120,8 +120,9 @@ final class AppAttestClient {
     /// únicamente con `YALA_DEV_SHARED_SECRET` (`devTokenOrThrow`). Sin ninguno de los dos, `performRefresh` lanza
     /// `.unavailable` en cada intento y sin tocar la red: no es un fallo que cure un reintento.
     ///
-    /// Lo lee la puerta de «Es mi primera vez» (`WelcomeNewOptionsGate`, vía `AttestSyncGate.shouldOfferCloudOnly`) para
-    /// no ofrecer la nube a quien no podría subir nada. **Si cambia la primera decisión de `performRefresh`, esto cambia
+    /// Lo leen la puerta de «Es mi primera vez» (`WelcomeNewOptionsGate`) y la card de migración de Ajustes
+    /// (`StorageSettingsView.offersCloudMigrationEntry`), las dos vía `AttestSyncGate.shouldOfferCloudOnly`, para no
+    /// ofrecer la nube a quien no podría subir nada. **Si cambia la primera decisión de `performRefresh`, esto cambia
     /// con ella**: la puerta y el cliente tienen que creer lo mismo. Un source-scan fija el cuerpo
     /// (`WelcomeNewChooserWiringTests`), porque en el host de test el lado `true` es inalcanzable.
     ///

@@ -269,11 +269,10 @@ por adelantado), que hasta ese día vivía en `AttestSyncGate.shouldOfferCloudOn
   líneas de `performRefresh` y `devTokenOrThrow` que lo sostienen, en orden. `isSupported` a secas le escondería la nube a
   un simulador con `Yala Dev` y el secreto puesto, que sí sube. Con el scheme `Yala` el bypass va a producción, que no lo
   sirve (404): ahí la capacidad dice `true` y nada sube, igual que cree el cliente — solo en desarrollo.
-- **Solo gatea el ALTA**: la card «Tu cuenta en la nube» de `WelcomeAccountChoiceLogic.visibleNewOptions`, que comparten «Es
-  mi primera vez», «Crear otra cuenta» y «Activar Yala completo». Sin ella queda una card, sin copy: «Es mi primera vez» y la
-  activación hacen bypass a la rama privada, y «Crear otra cuenta» enseña el chooser con la privada sola. **No gatea**
-  entrar con una cuenta que ya existe («Ya tengo una cuenta» y el faro) ni «Migrar a la nube» de Ajustes
-  (`cloud-migration-offers-the-cloud-to-a-phone-without-app-attest`).
+- **En el Welcome solo gatea el ALTA**: la card «Tu cuenta en la nube» de `WelcomeAccountChoiceLogic.visibleNewOptions`, que
+  comparten «Es mi primera vez», «Crear otra cuenta» y «Activar Yala completo». Sin ella queda una card, sin copy: «Es mi
+  primera vez» y la activación hacen bypass a la rama privada, y «Crear otra cuenta» enseña el chooser con la privada sola.
+  **No gatea** entrar con una cuenta que ya existe («Ya tengo una cuenta» y el faro).
 - **Las salidas al alta de la pantalla de entrar pasan por la misma puerta** (2026-09-16, ticket
   `cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest`): «Crear mi cuenta» tras «No encontramos una cuenta» y
   «Crear cuenta con…» del mismatch solo se pintan con `WelcomeNewOptionsGate.offersCloudSignUp`, que es
@@ -283,6 +282,14 @@ por adelantado), que hasta ese día vivía en `AttestSyncGate.shouldOfferCloudOn
   `if`, alrededor del BOTÓN**: `WelcomeNewChooserWiringTests` exige cada llamada a `switchToSignUp(` dentro de un bloque
   con la condición exacta, `entryOverride = .bornCloud` solo dentro de `switchToSignUp`, y el cuerpo entero de las dos
   pantallas. La condición vive en la vista y no dentro de la función a propósito: ahí dejaría un botón muerto.
+- **En Ajustes gatea la card entera** (2026-09-16, ticket `cloud-migration-offers-the-cloud-to-a-phone-without-app-attest`):
+  «Migrar a la nube» y también «Activar la nube en este dispositivo», que es entrar a una cuenta que ya existe. Lo decidió
+  Jürgen porque sin token las dos acaban igual: el claim pasa sin attest —«Migrar» deja la cuenta creada— y lo que sube o
+  baja después se reintenta sin fin. El término vive en `StorageRowGateLogic.offersCloudMigrationEntry` y **cierra la
+  entrada, no el panel**, como el kill; la pantalla queda sin la card y sin copy nuevo. El panel es el del engaged: un
+  adopt pendiente tras el claim vuelve a `notStarted`, se pinta `.idle` y sigue reintentando sin card. **Su entrada es la
+  misma expresión que la de `WelcomeNewOptionsGate.live`**: si cambias una, cambia la otra, o se pone rojo el scan de
+  paridad de `StorageRowGroupsAssociationWiringTests`, que además fija el `case .idle` entero.
 - **El simulador es un teléfono sin App Attest, y no se le exime.** Sin el secreto no ofrece la nube, a propósito: QA y
   producción deciden igual, que es la lección con la que abre este fichero. Un montaje manual que necesite crear una cuenta
   en la nube desde el simulador usa `Yala Dev` y pone `YALA_DEV_SHARED_SECRET` en Edit Scheme → Run → Environment
@@ -291,14 +298,15 @@ por adelantado), que hasta ese día vivía en `AttestSyncGate.shouldOfferCloudOn
   antes de empezar: el token del bypass solo vive en memoria (`AppAttestClient.cached`). **El secreto es un secret de
   Wrangler del gateway de staging**, que no se lee de vuelta: en `~/Secrets` no está (medido el 2026-09-16).
 - **XCUITest**: el caso de la condición va con `-uitest-cloud-chooser` y **sin** `-uitest-fake-attest-support`, que finge
-  solo la entrada de esta puerta y no toca al cliente. Los que necesitan ver la card de la nube piden los dos. En el host de
+  solo la entrada de esta puerta y no toca al cliente. Los que necesitan ver la card de la nube piden los dos. En Ajustes
+  basta el segundo, con `Yala Dev` (`StorageMigrationAttestUITests`). En el host de
   test la capacidad vale `false` —ningún scheme compartido pone el secreto—, **medido con un mutante** el 2026-09-16:
   quitando el seam de la puerta, los positivos caen y los negativos pasan. En un iPhone físico los negativos no aplican.
   Y afirma la ausencia de la card solo junto a una presencia que la discrimine: tras aterrizar en otra pantalla, un
   `XCTAssertFalse(… .exists)` no puede fallar.
 - **El fallo caro es el contrario.** Un iPhone real dice `isSupported == true` —producción atesta—, y si dejara de decirlo la
-  card desaparecería para todos sin un rojo. Ningún simulador lo prueba: lo mira el paso de device-QA del ticket. Cuántos
-  teléfonos caen en la puerta no está medido: no hay canario.
+  card del Welcome y la de Ajustes desaparecerían para todos sin un rojo. Ningún simulador lo prueba: lo miran los pasos de
+  device-QA de los tickets. Cuántos teléfonos caen en la puerta no está medido: no hay canario.
 
 ## El SEGUNDO fallo del mismo día: el header estaba cableado y el token no se podía acuñar
 
