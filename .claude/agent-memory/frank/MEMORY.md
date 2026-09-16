@@ -34,6 +34,7 @@
 - [La aserción que no puede fallar](feedback_la_asercion_que_no_puede_fallar.md) — el mutante valida el CASO, no cada `#expect`; ensucia la columna quieta.
 - [El pre-filtro tapa al criterio](feedback_el_prefiltro_tapa_al_criterio.md) — misma condición en el fetch y en la lógica: el mutante de la lógica sale VERDE. Me pasó dos veces el 8-sep.
 - [Dos getters que parecen sinónimos](feedback_dos_getters_que_parecen_sinonimos.md) — el compuesto era fail-closed: el aviso NO salía al teléfono restaurado, que era la población del ticket.
+- [Mi arreglo empeora un ticket HERMANO](feedback_mi_arreglo_empeora_un_ticket_hermano.md) — el colateral pasó de neutro a nombrar un gesto ajeno; se mide y se anota allí, no se corta por motivo.
 - [El copy caduca por un cambio AJENO](feedback_el_copy_caduca_por_un_cambio_ajeno.md) — la frase era cierta por la mañana; al cerrar un mecanismo, busca el copy que lo prometía.
 - [La tabla del ticket nombra un sitio por pantalla](feedback_la_tabla_del_ticket_nombra_un_sitio_por_pantalla.md) — 7 superficies eran 21.
 - [Ticket nuevo: busca el duplicado primero](feedback_ticket_nuevo_busca_el_duplicado_primero.md) — dos de tres ya existían el 10-sep, y el que existía era MEJOR.
@@ -60,6 +61,7 @@
 - [La fase ajena tiene otros escritores](feedback_la_fase_ajena_tiene_otros_escritores.md) — mi «en vuelo» leía un `.idle` como transitorio; Ajustes lo ponía y dejaba un progreso eterno.
 - [El flag que conserva deja estado incoherente](feedback_el_flag_que_conserva_deja_estado_incoherente.md) — «conservar preferencias» ≠ «conservar estado de las filas»: el centinela del seed dejó al usuario sin categorías.
 - [Mi escritura dispara el `onChange` que evito](feedback_mi_escritura_dispara_el_onchange_que_evito.md) — cancelar antes de escribir no cancela nada.
+- [El outcome que clasifico lo produce OTRO](feedback_el_outcome_que_clasifico_lo_produce_otro.md) — en un ciclo push+pull el veredicto es el del pull; mapearlo como «falló la subida» culpa al servidor de fallos locales.
 - [La rule de área es una lente más](feedback_la_rule_de_area_es_una_lente_mas.md) — leerla CONTRA el diff: cazó lo que las tres lentes no vieron el 8-sep y otras dos cosas el 10-sep.
 - [Las lentes se contradicen entre sí](feedback_lentes_adversariales_se_contradicen.md) — cuando dos discrepan, mídelo.
 - [El test viejo CUELGA, no falla](feedback_el_test_viejo_cuelga_no_falla.md) — al mover un outcome de parada a reintento.
