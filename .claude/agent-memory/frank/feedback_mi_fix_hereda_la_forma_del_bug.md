@@ -118,6 +118,20 @@ lado, y una de ellas encontró además el precedente que zanjaba el diseño —e
 string propio (`inbox.errorArchivedAccount`) para exactamente este caso—. Cuando un fix consista en
 «derivar aquí lo que ya se deriva allá», pregúntate antes si el valor puede simplemente **guardarse**.
 
+**Sexto mecanismo: el arreglo copia el ALCANCE del bug. Medido el 2026-09-16 en
+`reverse-upload-has-no-ceiling-and-no-exit`.** El bug era «`handle` reemplaza TODOS los efectos pendientes y se lleva
+el único que importaba» (un `reverse_abort` sin ejecutar). Mi arreglo drenaba TODOS los pendientes antes de empezar
+otra vuelta, y se llevaba por delante a un líder desplazado: su reconcile lanza `other_leader` en cada intento, así que
+«Volver a iCloud», que era su única salida, quedaba cerrada para siempre. Una operación sobre la colección entera, en
+el commit que existía porque una operación sobre la colección entera pisaba un elemento.
+
+Lo cazaron **las dos lentes de una segunda pasada** que lancé solo sobre los arreglos de la primera; la suite, en verde.
+La defensa fue la del segundo mecanismo: nombrar el elemento (`ReverseExitPending`) y que el runner y la pantalla
+pregunten lo mismo.
+
+⇒ **Si el bug es «una operación sobre todos pisa a uno», el arreglo se ciñe a ese uno.** Y una ronda de arreglos
+de review merece su propia pasada: la de hoy encontró en mis arreglos un callejón nuevo.
+
 Relacionado: [[mis-mediciones-fallan-por-el-filtro]] (el control positivo también va en los greps de
 auditoría) · [[la-premisa-del-encargo-tambien-se-mide]] (medir la premisa ajena; ésta es su gemela,
 medir la propia) · [[mutante-compilado-zanja-hipotesis]] (cómo comprobar que el test del fix

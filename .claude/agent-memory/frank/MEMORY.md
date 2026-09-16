@@ -15,6 +15,7 @@
 
 ## Cómo mido y cómo entrego
 - [El copy que promete una acción se recorre](feedback_el_copy_que_promete_se_recorre.md) — «en Perfil puedes exportar» era falso para no-Pro: mira el gate de PLAN, no solo que la pantalla exista.
+- [Antes de poner techo, mide que la espera existe](feedback_antes_de_poner_techo_mide_que_la_espera_existe.md) — acoté una espera que para casi todos terminaba al instante con un falso «hecho»; lo cazó la review.
 - [El predicado del ticket no es el criterio](feedback_el_predicado_del_ticket_no_es_el_criterio.md) — mide con qué predicado decide la superficie que desbloqueas: el literal del ticket dejaba el bug vivo.
 - [La premisa del ENCARGO también se mide](feedback_la_premisa_del_encargo_tambien_se_mide.md) — hereda los errores del ticket.
 - [Una frase de alcance se cuenta por llamadores](feedback_una_frase_de_alcance_se_cuenta_por_llamadores.md) — «solo en carrera» cayó: la migración sube sin la puerta que yo miré.
