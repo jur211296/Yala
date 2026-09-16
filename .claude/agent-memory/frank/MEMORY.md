@@ -31,6 +31,7 @@
 - [La segunda capa no cubre lo que dice](feedback_la_segunda_capa_no_cubre_lo_que_dice.md) — mide el ALCANCE de cada defensa por separado.
 - [La aserción que no puede fallar](feedback_la_asercion_que_no_puede_fallar.md) — el mutante valida el CASO, no cada `#expect`; ensucia la columna quieta.
 - [El pre-filtro tapa al criterio](feedback_el_prefiltro_tapa_al_criterio.md) — misma condición en el fetch y en la lógica: el mutante de la lógica sale VERDE. Me pasó dos veces el 8-sep.
+- [Dos getters que parecen sinónimos](feedback_dos_getters_que_parecen_sinonimos.md) — el compuesto era fail-closed: el aviso NO salía al teléfono restaurado, que era la población del ticket.
 - [El copy caduca por un cambio AJENO](feedback_el_copy_caduca_por_un_cambio_ajeno.md) — la frase era cierta por la mañana; al cerrar un mecanismo, busca el copy que lo prometía.
 - [La tabla del ticket nombra un sitio por pantalla](feedback_la_tabla_del_ticket_nombra_un_sitio_por_pantalla.md) — 7 superficies eran 21.
 - [Ticket nuevo: busca el duplicado primero](feedback_ticket_nuevo_busca_el_duplicado_primero.md) — dos de tres ya existían el 10-sep, y el que existía era MEJOR.
@@ -82,6 +83,7 @@
 - [Medir la web: axe, Lighthouse, preview](feedback_medir_la_web_a11y_y_preview.md) — axe ciego con opacity 0; preview con SSO se verifica por config.json.
 - [Capturas del simulador para la web](feedback_capturas_simulador_para_la_web.md) — receta y trampas: Secrets.xcconfig, nombre efímero, `sips -Z` escala el lado largo.
 - [El fixture hereda la anatomía de producción](feedback_el_fixture_hereda_la_anatomia_de_produccion.md) — no la deduzcas del ticket.
+- [El seam que usa el camino de producción](feedback_el_seam_que_usa_el_camino_de_produccion.md) — hereda su persistencia; la purga simétrica cubre al seam, no al almacén.
 - [El reparador, tan re-ejecutable como el destructor](feedback_el_reparador_tan_reejecutable_como_el_destructor.md) — en un hook kill-safe, `consume()` mata lo que repara en la 2.ª pasada.
 - [El estado paralelo al lado del step](feedback_el_estado_paralelo_al_lado_del_step.md) — «siempre va con aquello» se hereda en silencio: mételo DENTRO y que lo obligue el compilador. Cuéntalos, no lo afirmes.
 - [El prefijo que elegí tiene DOS efectos](feedback_el_prefijo_que_elegi_tiene_dos_efectos.md) — excluir una key de un barrido la excluye de todos.
@@ -89,6 +91,7 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build incremental.
 
 ## Estado del trabajo
+- [Grupos ya avisa sin App Attest](project_grupos_avisa_sin_attest.md) — PR #176, en `done` y sin device-QA; el hermano personal sigue sin hacer.
 - [El teléfono sin App Attest ya tiene veredicto y salida](project_telefono_sin_attest_veredicto_y_salida.md) — en qa solo espera la racha: la salida con pérdida no se monta en ningún dispositivo.
 - [La hoja del cambio de Apple ID ya enseña el bloqueo](project_hoja_apple_id_cierre_bloqueado.md) — la review cazó un progreso eterno MÍO; queda device-QA y una decisión de copy.
 - [El aviso de datos borrados ya no se monta encima de nada](project_aviso_datos_borrados_va_por_la_cola.md) — PR #164; la premisa del encargo acertaba la VÍA y erraba el case.

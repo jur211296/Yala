@@ -35,5 +35,13 @@ que escribí; nunca que alguien lo lee.
 - **Y un scan no cierra esto.** El pin correcto es sobre el PREDICADO del lector (que lea la señal
   viva), no sobre las asignaciones del escritor.
 
+**Y la cara contraria, medida el 2026-09-15: no todo lo que alimenta una decisión va al `@State`.** Para el
+aviso de la pestaña Grupos metí sus cuatro entradas en un `@State` que se recalculaba en cinco momentos, y con
+eso congelé tres que SÍ eran reactivas: iniciar sesión desde el CTA de la lista no sacaba el aviso —ese sheet
+se cierra en sitio, sin `onAppear`— y una sesión que el SDK borra en caliente lo dejaba puesto, culpando al
+attest de una sesión caducada. **Al `@State` va solo lo que no se puede leer reactivamente** —aquí,
+`UserDefaults` más el reloj—; lo demás se lee vivo en el body, como ya hacían sus vecinas de la misma vista.
+Un `@State` de más no da un valor viejo por un cable mal tipado: lo da porque nadie lo actualizó.
+
 Relacionado: [[mi-arreglo-rompe-la-premisa-de-otro-guard]] (la premisa que se rompe suele estar en un
 docblock ajeno) · [[el-source-scan-de-dos-literales-no-es-una-red]] · [[mi-fix-hereda-la-forma-del-bug]].
