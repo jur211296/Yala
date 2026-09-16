@@ -3,7 +3,7 @@ id: applepay-shortcut-warm-launch-empty-data
 status: qa
 area: "intents, apple-pay, app-lifecycle, groups-bridge"
 created: 2026-07-01
-updated: 2026-08-26
+updated: 2026-09-16
 source: YalaWiki/Bugs/ok_applepay-shortcut-ios27-warm-launch-datos-vacios.md
 ---
 
@@ -252,3 +252,22 @@ Confirmado explícitamente por lectura completa de `QuickExpenseIntent.swift`: e
 **QA TestFlight (device):** matriz — (a) pago + abrir en **warm** → datos poblados y borrador en Bandeja SIN cerrar/reabrir; (b) pago + **cold** launch → ídem; (c) **varios pagos** sin abrir → aparecen todos; (d) pago con **iCloud sincronizando** al abrir → el borrador aparece en cuanto el import se asienta (trailing-edge). Plan: `~/.claude/plans/crystalline-kindling-kitten.md`.
 
 migrated from YalaWiki Bugs/ok_applepay-shortcut-ios27-warm-launch-datos-vacios.md @ 1934e8ad
+
+## QA · 2026-09-16 — medido: los casos a–c caben en el simulador, a mano
+
+Sin veredicto nuevo; lo que cambia es **dónde** se puede probar.
+
+- **Atajos sí ejecuta las acciones de Yala Dev en el simulador**, pero no desde su tarjeta de app
+  (`linkd` rechaza el build sin firma de equipo: «Unable to get teamId»). La vía que funciona es Atajos
+  → Crear atajo → acción «Registrar pago de Apple Pay» → rellenar **Cantidad** y **Comercio** → reproducir.
+  Con la acción hermana «Anotar con Siri» se probó hoy el caso en caliente de punta a punta
+  (`siri-intent-dual-container`, PASS).
+- **Lo que no pude automatizar:** Cantidad y Comercio son fichas dentro de la frase de la acción, sin
+  elemento de accesibilidad propio. Con el dedo, en el simulador, se rellenan sin problema.
+
+**Cola resultante:** casos (a) en caliente, (b) en frío y (c) varios pagos sin abrir → **a mano en el
+simulador**. Caso (d), con iCloud sincronizando al abrir → iPhone real.
+
+De paso: en Atajos, los nombres y descripciones de los parámetros salen en inglés («Amount», «The
+transaction amount (from Wallet)») con el sistema en español. Va con el hallazgo de idioma de
+`siri-shortcut-error-replies-speak-english-on-a-spanish-iphone`.

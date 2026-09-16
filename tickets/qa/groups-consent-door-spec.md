@@ -2,7 +2,7 @@
 
 ## Índice (23 entradas)
 
-> **No hace falta leer este fichero entero** — son 93 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 95 KB. Localiza la entrada
 > aquí y salta a ella.
 
 - `—` [Lo que hay hoy (MEDIDO)](#lo-que-hay-hoy-medido)
@@ -35,7 +35,7 @@
 id: groups-consent-door-spec
 status: qa
 created: 2026-08-11
-updated: 2026-08-26
+updated: 2026-09-16
 source: YalaWiki/Backlog/modo-nube/qa_MODO-NUBE-SPEC-CONSENT-GRUPOS.md
 ---
 
@@ -1227,3 +1227,27 @@ es el que mejora la experiencia sin cambiar ninguna garantía.
 La hace el owner con un build de distribución, y hasta entonces el registro está **pinneado, no verificado**.
 
 migrated from YalaWiki Backlog/modo-nube/qa_MODO-NUBE-SPEC-CONSENT-GRUPOS.md @ 1934e8ad
+
+## QA · 2026-09-16 — sigue en la cola de device, sin «móvil prestado»
+
+El guion de tanda viejo lo metía en el grupo del móvil prestado, que murió con el ADR del 2026-09-09. **No
+depende de él:** es el login normal de una cuenta, en uno o dos aparatos. Pide TestFlight contra producción
+(`enforce`), y nunca se ha hecho: el 2026-09-14, `groups_consents` de producción tenía 0 filas.
+
+**Guion:**
+1. **Montaje:** un iPhone con TestFlight de 2.1, instalación fresca, una cuenta Apple o Google de pruebas y
+   acceso al SQL de Supabase producción.
+2. Welcome → «Vengo por un grupo» → «Crear mi primer grupo». **PASS:** el orden es educativo → entrar con
+   Apple o Google → «Grupos en la nube» → «¿Cómo te llamas?».
+3. «Aceptar y continuar», nombre y crear un grupo. Después:
+   `select user_id, text_version, path, accepted_at, recorded_at from public.groups_consents;`
+   **PASS:** una sola fila de esa cuenta, con `text_version = 1`, `path = organizer` y la hora del toque.
+4. En otro iPhone o iPad —o en el mismo, tras «Cerrar sesión» y reabrir—, «Vengo por un grupo» con la
+   **misma** cuenta. **PASS:** no vuelve a salir «Grupos en la nube». Si sale, es FAIL del contrato: anótalo
+   y acepta igualmente.
+5. Repite el SQL. **PASS:** sigue habiendo una sola fila, con el mismo `accepted_at`.
+
+**Qué vigilar en el paso 4 (inferido leyendo el código, no medido):** la cadena lee la caché local del
+consentimiento al drenar (`ContentView.swift:1232`), y la lectura del servidor va en una tarea que nadie
+espera (`GroupsBackendInviteModifier.swift:168`). Si la pantalla sale en el segundo login, lo más probable es
+esa carrera.

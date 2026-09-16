@@ -2,7 +2,7 @@
 id: scheduled-payments-notif-dedup
 status: qa
 created: 2026-07-22
-updated: 2026-08-26
+updated: 2026-09-16
 source: YalaWiki/Bugs/qa_pagos-planificados-notifs-incoherentes-y-dedup-sin-entrega.md
 ---
 
@@ -188,3 +188,19 @@ de la API con la que lo mires. Antes de pedir un cambio de código para desbloqu
 verificar que ese cambio desbloquea **la herramienta que vas a usar**.
 
 migrated from YalaWiki Bugs/qa_pagos-planificados-notifs-incoherentes-y-dedup-sin-entrega.md @ 1934e8ad
+
+## QA Visual · 2026-09-16 — parcial (sigue en qa: cola de device)
+
+Simulador iPhone 17 Pro (iOS 26.5), sobre `2.1` @ `bebd57a57`, `Yala Dev`, instalación limpia con seed `minimal` y `-uitest-scheduled-due-today`, que siembra
+un pago que vence hoy y resuelve el bloqueo del 2026-08-14 (el seed `minimal` no traía ninguno).
+
+**Lo que se vio:**
+- Ajustes → Notificaciones: «Pagos planificados» **ON de fábrica** y el resto OFF (fase 1).
+- Al conceder el permiso llega el aviso local **«Recibo vence hoy · Hoy toca pagar Recibo vence hoy por
+  S/75 💰»**: el recordatorio no se había quemado mientras no había permiso (el corazón de la fase 3).
+
+Captura: [aviso tras conceder permiso](../../qa/evidencia-barrido-20260916/30-pago-planificado-aviso-local-tras-permiso.jpg).
+
+**Lo que falta depende del reloj real y se prueba en el iPhone a lo largo de un día:** la fase 2
+(resumen a su hora **sin abrir la app**), la fase 4 (abrir antes de la hora configurada no avisa;
+después, sí) y la fase 6, opcional (más de 5 vencidos). El guion de arriba sigue valiendo.

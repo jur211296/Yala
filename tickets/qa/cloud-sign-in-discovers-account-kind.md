@@ -5,6 +5,7 @@ priority: high
 area: "modo-nube, onboarding, groups"
 created: 2026-09-09
 source: "ADR 2026-09-09 «Sesiones — dos ejes» §7 — el bloque [I]"
+updated: 2026-09-16
 ---
 
 # Un solo bloque de identidad en la nube: todo sign-in descubre si la cuenta es nueva, completa o solo grupos, y rutea
@@ -359,3 +360,9 @@ al 2026-09-10, ésa es la causa probable.
 - **En el 3, con y sin relanzamiento**: en un móvil recién instalado el adopt termina sin relanzar y la
   pestaña queda en Grupos. Si pide relanzar, la invitación se retoma sola pero quien venía a **crear** un
   grupo aterriza en el Panel — es conocido y tiene ticket (`groups-organizer-intent-is-lost-on-relaunch`).
+
+## Corrección al guion · 2026-09-16 (barrido de QA)
+
+**«Qué mirar», el 1 (:357)** — «Salir de Yala en este dispositivo» ya no existe en la app: su texto no
+está en `Localizable.strings` (solo quedan comentarios huérfanos). El verbo de hoy es **«Cerrar sesión»**
+(`settings.signOut`). El resto de esa comprobación no cambia.

@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "testing, groups, modo-nube"
 created: 2026-09-11
+updated: 2026-09-16
 source: "review adversarial de `detach-failure-looks-like-success`"
 ---
 
@@ -46,4 +47,6 @@ hacen sus cuatro vecinos, y como hubo que hacer con `GroupsDetachPendingPurge` e
 
 - La celda `associatedNeedsSignIn` de `GroupsAssociationRowUITests`, sin cobertura desde el paso 10.
 - El botón «Terminar de soltar la cuenta» y el cuerpo «Quedó a medias» del ticket
-  `detach-failure-looks-like-success`, hoy cubiertos solo por unit y device-QA.
+  `detach-failure-looks-like-success`, hoy cubiertos solo por unit. *(Corrección 2026-09-16: no hay
+  device-QA que los cubra; ese ticket se cerró como no replicable en device, así que este seam es la única
+  vía para verlos en pantalla.)*
