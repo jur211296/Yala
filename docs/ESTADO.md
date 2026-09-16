@@ -5,10 +5,46 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-15 (Lima)
 
-**Rama** `2.1` — Merge #173: **Grupos: un teléfono sin App Attest recibe su veredicto y puede cerrar sesión perdiendo los cambios.** El #174 corrige su guion de device-QA.
+**Rama** `2.1` — Merge #175: **Sin App Attest en la nube, exportar y salir perdiendo lo personal, con confirmación.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#173 · un teléfono sin App Attest recibe su veredicto y puede cerrar sesión perdiendo los cambios)
+## Esta sesión (#175 · sin App Attest en la nube: exportar y salir perdiendo lo personal, con confirmación)
+
+**En la nube, un teléfono que lleva más de un día sin conseguir App Attest ya puede cerrar sesión aunque le
+queden cambios suyos sin subir.** Es tu decisión del 15-sep (opción 1). Antes el cierre le mandaba a revisar una
+conexión que funcionaba, y así durante días. Ahora Ajustes dice «Este teléfono no puede sincronizar tus datos»,
+cuenta los cambios que no llegaron y ofrece tres cosas: exportar todos los movimientos a un CSV, cerrar sesión
+perdiéndolos, o dejarlo. Exportar no toca el cierre y devuelve al aviso. Elegir perderlos no borra nada al
+momento: el cierre intenta subir una vez y lo que no suba se va con el borrado del arranque. Con cambios de
+grupos también, salen los dos avisos seguidos. Y si el attest volvió pero la subida falla por otra cosa, el
+cierre se para como siempre en vez de perderlos — también en la salida de grupos del #173, que tenía el hueco.
+
+**Contestaste las tres preguntas de producto con la recomendada:** un aviso con tres botones, exportación directa
+de todo sin asistente ni límite de plan, y dos avisos seguidos cuando también hay cambios de grupos.
+
+**La racha de rechazos pasa a ser del TELÉFONO y la escriben los dos canales.** El motor personal nunca manda una
+subida sin attest, así que no ve el 401: cuenta el error de su propia puerta cuando habla del attest, y un token
+la borra. Sin red o con el gateway caído el veredicto no se acerca. Con dos rachas, aceptar perder lo personal
+dejaba los cambios de grupos en «en un rato».
+
+**Una premisa escrita era falsa:** la puerta que no ofrecería la nube a un teléfono sin App Attest **no tiene
+llamador**, y dos docblocks decían que sí. Hoy esta salida es la única red para esa gente, y queda su ticket.
+
+**Y media sesión se fue en un rojo que no era del cambio.** Un XCUITest de la hoja del Apple ID cayó 3 de 3 aquí
+y pasó en un árbol base: nueve corridas de bisección construyeron una causa falsa, hasta que repetir la MISMA
+compilación dio pasa/falla/pasa y el árbol de partida acabó pasando 4 de 4 sin tocar una línea. Es el entorno
+—16 sesiones de Claude Code vivas, el sistema matando tandas de tests por memoria— y queda medido en su ticket,
+con la corrección de que no es solo «el simulador frío». La lección de método está en la memoria de Frank.
+
+Gate: build ×2 sin warnings nuevos · **unit 6.876 en 699 suites** (por lotes: entera no cabía en memoria) con un
+rojo preexistente del resumen de Registros que **pasa aislado** y solo cae junto a las suites de grupos y FX ·
+**31 mutantes, 31 muertos** · **XCUITest 71 casos en 31 clases** con cola y centinela, con el rojo del entorno
+clasificado en 19 corridas · review de tres lentes · **CI verde**. **Device-QA: no se puede montar aquí**, y el
+ticket queda en `qa` con su guion.
+
+**Deja seis tickets nuevos**, uno alto: la puerta del onboarding que no ofrece la nube y no tiene llamador.
+
+## Sesión anterior (#173 · un teléfono sin App Attest recibe su veredicto y puede cerrar sesión perdiendo los cambios)
 
 **Un teléfono que lleva más de un día sin conseguir App Attest deja de oír «inténtalo en un rato».** Es tu decisión
 del 15-sep (opción 2). Pasadas 24 h con al menos 3 rechazos del servidor —como mucho uno por hora— y ningún acierto,
@@ -34,7 +70,7 @@ racha** (0-terdecies de la cola); la salida con pérdida no se puede montar en n
 
 **Deja dos tickets, los dos con decisión tuya** (ver «Siguiente»).
 
-## Sesión anterior (#172 · un 401 por App Attest ausente deja de leerse como «Tu sesión caducó»)
+## Sesión #172 · un 401 por App Attest ausente deja de leerse como «Tu sesión caducó»)
 
 **Con la sesión buena y sin App Attest, ninguna pantalla dice ya «Tu sesión caducó», y el sync de grupos no se
 para.** Es tu decisión del 15-sep (opción 1): el 401 `yala_attest_required` es pasajero. Salir de un grupo pide
