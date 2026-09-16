@@ -211,7 +211,8 @@ struct WelcomeCloudSignInView: View {
     /// **Los reencaminamientos son tres, y los tres salen de una pantalla sin nada comprometido.** El del bloque
     /// [I], `.notFound` → alta: quien entró por «Ya tengo cuenta» y no tiene ninguna consigue un botón que le
     /// crea la cuenta con el proveedor que ya eligió. Y los dos del paso 6, las salidas del mismatch: alta con
-    /// el método que la persona usó, o re-entrada con el del faro. Se hace con un `@State` y no re-presentando el cover con otro `entry` a propósito: el cover
+    /// el método que la persona usó, o re-entrada con el del faro. Los dos que llevan al alta solo existen si el
+    /// teléfono puede darse de alta (`WelcomeNewOptionsGate.offersCloudSignUp`). Se hace con un `@State` y no re-presentando el cover con otro `entry` a propósito: el cover
     /// es el mismo, así que cambiarlo desde fuera dejaría la `phase` de esta pantalla en `.notFound` —el
     /// `@State` no se reinicia porque la identidad de la vista no cambia— y el usuario vería el mismo
     /// callejón. Y una vista hermana sería un segundo anchor, que es lo que el docblock de arriba prohíbe.
@@ -504,7 +505,8 @@ struct WelcomeCloudSignInView: View {
                 .padding(.horizontal, DS.Spacing.xl)
             // **Paso 6 · el faro ENCAMINA, no decide** (ADR §10). Solo en la entrada a la que llevó el faro:
             // quien entró por la card «Ya tengo cuenta» dijo que tenía una, y si no la tiene, «No encontramos
-            // una cuenta» ya le ofrece crearla. Botón secundario, en el tono de «Continuar a la app»:
+            // una cuenta» ya le ofrece crearla cuando el teléfono puede darse de alta. Botón secundario, en el tono
+            // de «Continuar a la app»:
             // encaminar sigue siendo lo que se propone.
             if isBeaconRouted {
                 Button(L10n.Welcome.Cloud.createAnother) {
@@ -548,6 +550,10 @@ struct WelcomeCloudSignInView: View {
     /// cuenta con el que la persona acaba de usar. La flecha de atrás sigue (`canGoBack`), pero ya no es la
     /// única forma de avanzar.
     ///
+    /// **La de crear pasa por la puerta del alta** (`WelcomeNewOptionsGate.offersCloudSignUp`, la de la card «Tu cuenta
+    /// en la nube»). Sin ella —un teléfono sin App Attest, o el kill del alta— queda una sola salida hacia delante, la de
+    /// entrar, y el cuerpo («Tu cuenta de Yala se creó con …») sigue siendo cierto.
+    ///
     /// Botones de MARCA con su verbo por salida: el del método del faro dice INICIAR SESIÓN (esa cuenta
     /// existe) y el del método usado dice CREAR (con él no la hay). Es la única pantalla del Welcome con un
     /// verbo distinto en cada botón, y a propósito: son dos acciones distintas.
@@ -580,21 +586,25 @@ struct WelcomeCloudSignInView: View {
                     .frame(height: 50)
                     .accessibilityIdentifier("welcome_cloud_mismatch_sign_in")
                 }
-                switch exits.createWith {
-                case .apple:
-                    AppleSignInButton(type: .signUp) {
-                        DS.Haptic.selection()
-                        switchToSignUp(with: exits.createWith)
+                // La salida de CREAR pasa por la puerta del alta; la de entrar, no: entrar a una cuenta que ya existe es
+                // otra decisión.
+                if WelcomeNewOptionsGate.offersCloudSignUp {
+                    switch exits.createWith {
+                    case .apple:
+                        AppleSignInButton(type: .signUp) {
+                            DS.Haptic.selection()
+                            switchToSignUp(with: exits.createWith)
+                        }
+                        .frame(height: 50)
+                        .accessibilityIdentifier("welcome_cloud_mismatch_create")
+                    case .google:
+                        GoogleSignInButton(variant: .light, purpose: .signUp) {
+                            DS.Haptic.selection()
+                            switchToSignUp(with: exits.createWith)
+                        }
+                        .frame(height: 50)
+                        .accessibilityIdentifier("welcome_cloud_mismatch_create")
                     }
-                    .frame(height: 50)
-                    .accessibilityIdentifier("welcome_cloud_mismatch_create")
-                case .google:
-                    GoogleSignInButton(variant: .light, purpose: .signUp) {
-                        DS.Haptic.selection()
-                        switchToSignUp(with: exits.createWith)
-                    }
-                    .frame(height: 50)
-                    .accessibilityIdentifier("welcome_cloud_mismatch_create")
                 }
             }
             .padding(.horizontal, DS.Spacing.xl)
@@ -642,6 +652,11 @@ struct WelcomeCloudSignInView: View {
     /// **Bloque [I] + paso 6** · reencamina ESTA pantalla al alta con el método ya elegido y abre su
     /// consentimiento. La usan las dos salidas que crean cuenta —el CTA de «No encontramos una cuenta» y el
     /// «Crear cuenta con…» del mismatch— y es UNA función para que no diverjan.
+    ///
+    /// **Aquí no se vuelve a preguntar si el teléfono puede darse de alta**: las dos salidas solo se pintan dentro de la
+    /// puerta del alta (`WelcomeNewOptionsGate.offersCloudSignUp`), y un guard en esta función dejaría un botón muerto el
+    /// día que pintar y pulsar no coincidieran. Por eso toda llamada nueva va dentro de esa puerta, y
+    /// `WelcomeNewChooserWiringTests` lo exige a cada llamada del fichero.
     ///
     /// La sesión ya se soltó en las dos (`signOut()` en la rama de cuenta nueva) y **se queda soltada**: lo
     /// que viaja al alta es el método, no la sesión — dejarla viva haría que un «atrás» + otra card la
@@ -808,24 +823,40 @@ struct WelcomeCloudSignInView: View {
         .accessibilityIdentifier(id)
     }
 
+    /// «No encontramos una cuenta». **El botón de crearla pasa por la puerta del alta**, la misma de la card «Tu cuenta en
+    /// la nube» (`WelcomeNewOptionsGate.offersCloudSignUp`). Sin ella —un teléfono sin App Attest, o el kill del alta— el
+    /// botón principal es «Volver», el mismo del bloqueo por datos de otra cuenta, y lleva a donde la flecha: decisión de
+    /// Jürgen del 2026-09-16, para que la pantalla no vuelva a ser el callejón con la salida en una esquina que el bloque
+    /// [I] quitó. El copy no promete crear nada, así que sigue siendo cierto con cualquiera de los dos botones.
+    ///
+    /// El identificador del mensaje va SOLO en su bloque: puesto en el contenedor pisaría el de los botones
+    /// (`.claude/rules/testing.md`).
     private var notFoundContent: some View {
         VStack(spacing: DS.Spacing.lg) {
             messageContent(
                 icon: "person.crop.circle.badge.questionmark",
                 title: L10n.Welcome.Cloud.notFoundTitle,
                 body: L10n.Welcome.Cloud.notFoundBody)
-            YalaPrimaryButton(L10n.Welcome.Cloud.notFoundCta) {
-                DS.Haptic.selection()
-                // El proveedor se captura ANTES de reencaminar —el argumento se evalúa antes de que la función
-                // toque nada—: `provider` se deriva de `activeEntry`, y en cuanto el override dice `.bornCloud`
-                // pasa a leer `chosenProvider`. Leído después, caería en el `?? .apple` y mandaría a Apple a
-                // quien acababa de entrar con Google.
-                switchToSignUp(with: provider)
+                .accessibilityIdentifier("welcome_cloud_not_found")
+            if WelcomeNewOptionsGate.offersCloudSignUp {
+                YalaPrimaryButton(L10n.Welcome.Cloud.notFoundCta) {
+                    DS.Haptic.selection()
+                    // El proveedor se captura ANTES de reencaminar —el argumento se evalúa antes de que la función
+                    // toque nada—: `provider` se deriva de `activeEntry`, y en cuanto el override dice `.bornCloud`
+                    // pasa a leer `chosenProvider`. Leído después, caería en el `?? .apple` y mandaría a Apple a
+                    // quien acababa de entrar con Google.
+                    switchToSignUp(with: provider)
+                }
+                .padding(.horizontal, DS.Spacing.xl)
+                .accessibilityIdentifier("welcome_cloud_not_found_cta")
+            } else {
+                YalaPrimaryButton(L10n.Welcome.Cloud.blockedBack) {
+                    onBack()
+                }
+                .padding(.horizontal, DS.Spacing.xl)
+                .accessibilityIdentifier("welcome_cloud_not_found_back")
             }
-            .padding(.horizontal, DS.Spacing.xl)
-            .accessibilityIdentifier("welcome_cloud_not_found_cta")
         }
-        .accessibilityIdentifier("welcome_cloud_not_found")
     }
 
     private func messageContent(icon: String, title: String, body bodyText: String) -> some View {

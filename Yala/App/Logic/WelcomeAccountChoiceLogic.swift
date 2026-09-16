@@ -13,6 +13,9 @@
 //  **La card de «Es mi primera vez» se oculta además sin App Attest** (2026-09-16, ticket
 //  `cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest`): quien no puede conseguir token no subiría nada.
 //  Las de «Ya tengo una cuenta» no llevan ese término a propósito: entrar con una cuenta que ya existe es otra decisión.
+//  Lo que sí lo lleva son las dos salidas de esa pantalla que DAN DE ALTA —«Crear mi cuenta» tras «No encontramos una
+//  cuenta» y «Crear cuenta con…» del mismatch—: leen esta misma puerta por `WelcomeNewOptionsGate.offersCloudSignUp`
+//  (2026-09-16, ticket `cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest`).
 //  El simulador no tiene App Attest, así que sin `YALA_DEV_SHARED_SECRET` tampoco ofrece la nube: la convención y el
 //  seam de XCUITest están en `.claude/rules/gateway-attest.md`.
 //
@@ -196,6 +199,7 @@ nonisolated enum WelcomeRestorePauseLogic {
 /// El gate de las cards de «Soy nuevo» leído con las flags VIVAS. Existe para que el Welcome y la activación
 /// de Yala completo (paso 8, que reusa el MISMO chooser) lean el MISMO gate: el ticket pide «mismo gate de
 /// visibilidad», y dos copias de estos cinco términos es exactamente como dos pantallas empiezan a divergir.
+/// Por eso lo leen también las salidas al alta de la pantalla de entrar, por `offersCloudSignUp`.
 ///
 /// `-uitest-cloud-chooser` (opt-in EXPLÍCITO) destapa la card nube bajo XCUITest SOLO para los tests del
 /// chooser; el resto de uitest queda byte-idéntico. Los remotos son fail-closed sin snapshot.
@@ -215,6 +219,18 @@ enum WelcomeNewOptionsGate {
             bornCloudEnabled: CloudSyncFlags.bornCloudChoiceEnabled,
             remoteCloudEnabled: CloudRemoteFlags.cloudModeEnabled,
             remoteOnboardingChoiceEnabled: CloudRemoteFlags.cloudOnboardingChoiceEnabled)
+    }
+
+    /// **¿Se le ofrece a este teléfono darse de alta en la nube?** Es exactamente la card «Tu cuenta en la nube», y es la
+    /// puerta de TODAS las entradas al alta: la card y las dos salidas de la pantalla de entrar que dan de alta —«Crear mi
+    /// cuenta» tras «No encontramos una cuenta» y «Crear cuenta con…» del mismatch— (ticket
+    /// `cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest`). Hasta el 2026-09-16 esas dos no miraban
+    /// nada: un teléfono sin App Attest, al que la card ya no le ofrecía la nube, creaba la cuenta por ahí y nada de lo
+    /// que apuntaba llegaba nunca a ella. Tampoco miraban el kill del alta.
+    ///
+    /// Se DERIVA de `live` y no repite sus términos: así la card y las salidas no pueden decir cosas distintas.
+    static var offersCloudSignUp: Bool {
+        live.contains(.cloudAccount)
     }
 }
 

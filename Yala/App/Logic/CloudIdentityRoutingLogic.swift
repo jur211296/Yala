@@ -121,7 +121,9 @@ nonisolated enum CloudIdentityRoutingLogic {
         /// la hoja «unirme». Lo personal no se toca.
         case associateGroupsAccount
         /// «No encontramos una cuenta» **con salida**: botón al alta con el proveedor ya elegido. Nunca un
-        /// callejón con un solo «volver» (era el bug de esta pantalla).
+        /// callejón con un solo «volver» (era el bug de esta pantalla). En un teléfono que no puede darse de alta
+        /// (`WelcomeNewOptionsGate.offersCloudSignUp`: sin App Attest, o con el kill del alta) ese botón es «Volver»,
+        /// y sigue sin ser la flecha de la esquina sola (Jürgen, 2026-09-16).
         case offerSignUpNoAccountFound
         /// **Bloqueo**: esa cuenta ya tiene Yala completo. Dos salidas —«Ya tengo cuenta» o asociar otra— y
         /// **ninguna escritura**. Juntar dos datasets personales sería una fusión, que el ADR descartó.

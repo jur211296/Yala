@@ -67,8 +67,9 @@ nonisolated enum CloudWelcomeSignInPhase: Equatable {
     /// R9 (sesión 2 Google): sin cuenta para ESTE sub, pero el faro del device dice que la
     /// cuenta nube se creó con OTRO método. **Desde el paso 6 ya no es una pared** (ADR 2026-09-09 §10):
     /// lleva las DOS salidas del veredicto —entrar con el método del faro, o crear una cuenta con el que la
-    /// persona acaba de usar—. La sesión ya se soltó (signOut) y NO hubo claim — nada comprometido, back
-    /// permitido.
+    /// persona acaba de usar—, y la pantalla pinta la de crear solo tras la puerta del alta
+    /// (`WelcomeNewOptionsGate.offersCloudSignUp`). La sesión ya se soltó (signOut) y NO hubo claim — nada
+    /// comprometido, back permitido.
     case providerMismatch(ProviderMismatchLogic.Exits)
     /// Fallo de red/sesión del `exists` o de la máquina.
     case error(retryable: Bool)

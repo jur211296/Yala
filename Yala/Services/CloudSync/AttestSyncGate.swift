@@ -105,10 +105,12 @@ enum AttestSyncGate {
     /// otra cuenta» y «Activar Yala completo». Sin la nube queda una sola card: «Es mi primera vez» y la activación hacen
     /// bypass a la rama privada, y «Crear otra cuenta» enseña el chooser con la privada sola.
     ///
-    /// **No cubre** entrar con una cuenta que ya existe («Ya tengo una cuenta» y el faro), las dos salidas al alta de esa
-    /// pantalla («Crear mi cuenta» tras «No encontramos una cuenta» y «Crear cuenta con…» del mismatch, ticket
-    /// `cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest`) ni «Migrar a la nube» de Ajustes. Cuántos
-    /// iPhone reales tienen `isSupported == false` no está medido.
+    /// Y desde el mismo día cubre también las dos salidas al alta de la pantalla de entrar («Crear mi cuenta» tras «No
+    /// encontramos una cuenta» y «Crear cuenta con…» del mismatch): las pinta solo `WelcomeNewOptionsGate.offersCloudSignUp`,
+    /// que se deriva de esas cards (ticket `cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest`).
+    ///
+    /// **No cubre** entrar con una cuenta que ya existe («Ya tengo una cuenta» y el faro) ni «Migrar a la nube» de Ajustes.
+    /// Cuántos iPhone reales tienen `isSupported == false` no está medido.
     nonisolated static func shouldOfferCloudOnly(isAttestSupported: Bool) -> Bool {
         isAttestSupported
     }

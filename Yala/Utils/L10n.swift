@@ -5491,6 +5491,8 @@ enum L10n {
             /// el import a medias. `checkHasExistingData` cuenta filas y no sabe de quién son, así que a
             /// él le cuenta en contra lo que él mismo está bajando.
             static var blockedRestoreHint: String { ls("welcome.cloud.blockedRestoreHint", comment: "") }
+            /// «Volver». Lo comparten dos pantallas: el bloqueo por datos de otra cuenta y «No encontramos una cuenta» en
+            /// un teléfono que no puede darse de alta. Si el texto deja de servir a las dos, sepáralas.
             static var blockedBack: String { ls("welcome.cloud.blockedBack", comment: "") }
             static var errorTitle: String { ls("welcome.cloud.errorTitle", comment: "") }
             static var errorBody: String { ls("welcome.cloud.errorBody", comment: "") }
