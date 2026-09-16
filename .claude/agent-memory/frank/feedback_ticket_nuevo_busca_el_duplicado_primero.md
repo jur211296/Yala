@@ -38,3 +38,13 @@ ADR que retira M1. **Leer el motivo del descarte antes de reabrir** es la misma 
 
 Familia de [[feedback_la_premisa_del_encargo_tambien_se_mide]]: lo que el encargo llama «hallazgo
 nuevo» puede llevar semanas escrito.
+
+## Y antes de ARREGLAR de paso, no solo antes de escribir (2026-09-16)
+
+Editando `StorageRowGateLogic` corregí su cabecera, que decía «percent 0» con producción sirviendo 100 (medido con
+`curl`). Tenía ticket vivo desde el 8-sep, `storage-row-gate-comment-says-rollout-zero`, con **dos** criterios: esa
+línea y barrer las demás menciones (hay al menos tres más). Mi arreglo cumplía la mitad y dejaba el ticket partido. Lo
+cazó una lente y lo devolví.
+
+**How to apply:** un comentario viejo que ves al pasar también se grepea en `tickets/` antes de tocarlo. Si tiene
+ticket, se deja y se cita en el Paso 0; arreglar medio ticket desde otro PR es peor que no tocarlo.

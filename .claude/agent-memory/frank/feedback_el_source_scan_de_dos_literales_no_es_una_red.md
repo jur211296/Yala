@@ -75,3 +75,9 @@ lente pensó en **restringirla** —un `if` exterior o interior, un `#if DEBUG` 
 App Attest sin «Crear mi cuenta» con la suite en verde: el fallo caro, otra vez. ⇒ **el catálogo de mutantes de una
 puerta incluye cerrarla de más**, y la red que lo cubre es la de siempre: el cuerpo entero de la pantalla, normalizado y
 buscado sobre el código sin comentarios (un docblock que cite el cuerpo bueno tapa uno malo).
+
+**Y la cuarta forma, el mismo 16-sep en Ajustes: el `contains` encuentra lo bueno, no lo que SOBRA.** Mis scans fijaban
+el término entero y el `case .idle` entero, y aun así la lente de tests encontró dos cierres de más en verde: una segunda
+lectura de la capacidad (`isDisabled: … || AppAttestClient.canObtainSessionToken`) y una copia de la declaración bajo
+`#if DEBUG … #else`, que satisface el `contains` con la copia de Debug —la que compilan los tests—. ⇒ **contar lecturas y
+declaraciones (`== 1`)**, además de fijar la buena. Verificado con 13 mutantes, cada uno rojo solo en su test.
