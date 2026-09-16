@@ -29,6 +29,13 @@ Dos consumidores lo leen como si fuera el estado ACTUAL:
 El segundo es el caro: la clasificación `definitive` / `unknown` decide un presupuesto de 900 s frente a
 259 200 s, y un error viejo la empuja al lado corto.
 
+**Tercer lector desde el 2026-09-16, y ese ya NO lo lee como estado actual:** la espera de «Volver a iCloud»
+(`ReverseUploadBlockerLogic`, ticket `reverse-upload-has-no-ceiling-and-no-exit`) decide con él el techo, el copy de
+la pantalla y el motivo guardado de la salida. Para no heredar el latch, `iCloudSyncService` gana
+`lastExportErrorAt` (la fecha del evento que falló, aditiva) y la reversa solo cree el error si es posterior a
+`lastSuccessfulExportDate`. El latch en sí y los otros dos lectores siguen igual: ese es el alcance de este ticket, y
+esa misma fecha es una vía para cerrarlo sin cambiar el banner.
+
 ## Lo que NO es
 
 No es lo mismo que `icloud-sync-status-treats-non-ck-failures-as-success`, que va de eventos que

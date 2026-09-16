@@ -32,7 +32,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (415)
+## Index (425)
 
 | id | status | path |
 |---|---|---|
@@ -98,6 +98,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ci-warns-but-does-not-block | backlog | tickets/backlog/ci-warns-but-does-not-block.md |
 | ci-workflow-cites-missing-testing-strategy | backlog | tickets/backlog/ci-workflow-cites-missing-testing-strategy.md |
 | claim-promotion-lost-response-blocks-the-retry | backlog | tickets/backlog/claim-promotion-lost-response-blocks-the-retry.md |
+| cloud-engine-can-start-with-a-reverse-abort-pending | backlog | tickets/backlog/cloud-engine-can-start-with-a-reverse-abort-pending.md |
 | cloud-fx-rates-blob-two-faces | done | tickets/done/cloud-fx-rates-blob-two-faces.md |
 | cloud-hydration-spinner-never-gives-up-without-attest | backlog | tickets/backlog/cloud-hydration-spinner-never-gives-up-without-attest.md |
 | cloud-killswitch-hides-the-only-door-to-detach-groups | done | tickets/done/cloud-killswitch-hides-the-only-door-to-detach-groups.md |
@@ -356,10 +357,18 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | restore-gate-claims-a-wipe-this-device-did-not-do | backlog | tickets/backlog/restore-gate-claims-a-wipe-this-device-did-not-do.md |
 | restore-start-fresh-keeps-the-imported-corpus | qa | tickets/qa/restore-start-fresh-keeps-the-imported-corpus.md |
 | retire-guest-vocabulary-for-session-terms | done | tickets/done/retire-guest-vocabulary-for-session-terms.md |
+| reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date | backlog | tickets/backlog/reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date.md |
+| reverse-cancel-pushes-what-the-mirror-imported-during-the-wait | backlog | tickets/backlog/reverse-cancel-pushes-what-the-mirror-imported-during-the-wait.md |
 | reverse-claim-rejection-has-no-way-out-in-the-client | backlog | tickets/backlog/reverse-claim-rejection-has-no-way-out-in-the-client.md |
 | reverse-cutover-cerrado-para-cuentas-born-cloud | qa | tickets/qa/reverse-cutover-cerrado-para-cuentas-born-cloud.md |
+| reverse-exit-leaves-a-partial-copy-in-icloud | backlog | tickets/backlog/reverse-exit-leaves-a-partial-copy-in-icloud.md |
+| reverse-exit-on-a-reverted-account-rejects-the-retry | backlog | tickets/backlog/reverse-exit-on-a-reverted-account-rejects-the-retry.md |
 | reverse-hidden-on-a-born-cloud-second-device | backlog | tickets/backlog/reverse-hidden-on-a-born-cloud-second-device.md |
-| reverse-upload-has-no-ceiling-and-no-exit | backlog | tickets/backlog/reverse-upload-has-no-ceiling-and-no-exit.md |
+| reverse-offered-on-a-device-without-icloud | backlog | tickets/backlog/reverse-offered-on-a-device-without-icloud.md |
+| reverse-upload-ceiling-trusts-a-clock-set-back-during-the-wait | backlog | tickets/backlog/reverse-upload-ceiling-trusts-a-clock-set-back-during-the-wait.md |
+| reverse-upload-has-no-ceiling-and-no-exit | qa | tickets/qa/reverse-upload-has-no-ceiling-and-no-exit.md |
+| reverse-upload-sample-reads-unreadable-rows-as-drained | backlog | tickets/backlog/reverse-upload-sample-reads-unreadable-rows-as-drained.md |
+| reverse-upload-sample-walks-every-row-twice-on-the-main-thread | backlog | tickets/backlog/reverse-upload-sample-walks-every-row-twice-on-the-main-thread.md |
 | revert-card-copy-says-datos-regresan-a-quien-nunca-estuvo | backlog | tickets/backlog/revert-card-copy-says-datos-regresan-a-quien-nunca-estuvo.md |
 | rojo-heroBuckets-thisWeek-trailing-window | done | tickets/done/rojo-heroBuckets-thisWeek-trailing-window.md |
 | rojo-xcuitest-runner-muere-tras-el-primer-caso | done | tickets/done/rojo-xcuitest-runner-muere-tras-el-primer-caso.md |
@@ -400,6 +409,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | staging-test-credentials-in-public-repo | done | tickets/done/staging-test-credentials-in-public-repo.md |
 | staging-test-user-c-does-not-exist | backlog | tickets/backlog/staging-test-user-c-does-not-exist.md |
 | stats-per-account-branch-keeps-stale-live-anchor | backlog | tickets/backlog/stats-per-account-branch-keeps-stale-live-anchor.md |
+| storage-actions-release-the-working-flag-under-a-running-resume | backlog | tickets/backlog/storage-actions-release-the-working-flag-under-a-running-resume.md |
 | storage-mode-is-a-proxy-for-the-mirror-in-the-wipe-signal | backlog | tickets/backlog/storage-mode-is-a-proxy-for-the-mirror-in-the-wipe-signal.md |
 | storage-row-gate-comment-says-rollout-zero | backlog | tickets/backlog/storage-row-gate-comment-says-rollout-zero.md |
 | storekit-appgroup-siri-pro-gate | done | tickets/done/storekit-appgroup-siri-pro-gate.md |

@@ -68,6 +68,25 @@ para que la vista deje de mostrar una barra que no va a moverse. La reversa **no
 - [ ] Los BGTasks dejan de estar suprimidos tras el rechazo.
 - [ ] Test del mapeo motivo → terminal, con mutante: quitar la salida tiene que dar rojo.
 
+## Qué dejó hecho el gemelo, medido el 2026-09-16
+
+`reverse-upload-has-no-ceiling-and-no-exit` resolvió su salida. **El mecanismo no se traslada tal cual aquí**,
+y el motivo es de fase:
+
+- Allí la salida es post-montaje y con el backend congelado: necesita `.rearmMirrorOff` (y un relanzamiento) y
+  `.reverseRollback`. Aquí no hay nada de eso: en `reverseClaimLeader` el espejo nunca se montó y el backend no
+  se congeló. La salida de este ticket es la de `reverseOtherLeader`: volver al origen **sin efectos**.
+- Lo que SÍ se puede reusar es la mitad visible: `MigrationState.reverseAbortReasonRaw` (el porqué journaleado,
+  que sobrevive a la vuelta al origen) y la nota de la tarjeta de «Volver a iCloud»
+  (`ReverseUploadWaitingCopyLogic.abortNote`). Un motivo nuevo para el rechazo iría en
+  `ReverseUploadAbortReason`, con su copy en los 16 idiomas.
+
+**Y la población deja de ser tan estrecha** (review adversarial del gemelo, 2026-09-16). Arriba se razona que una
+cuenta de solo grupos no escribe `.cloud`, así que el camino casi no se recorre. La salida de `reverseUpload` lo abre:
+en el 2.º dispositivo de una cuenta que ya volvió a iCloud, el claim fresco resetea `reverted_at`, la salida llama a
+`reverse_abort`, y la persona queda en `.cloud` + fase estable + `not_complete` al reintentar. Ticket:
+`reverse-exit-on-a-reverted-account-rejects-the-retry`.
+
 ## Relacionado
 
 - `reverse-upload-has-no-ceiling-and-no-exit` — el gemelo dos fases más adelante: la misma ausencia de
