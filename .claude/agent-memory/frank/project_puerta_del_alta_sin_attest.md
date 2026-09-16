@@ -14,7 +14,7 @@ tres encargos, opción 1 en los tres). En el Welcome, una sola puerta, `WelcomeN
 - PR #181 (`cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest`): «Crear mi cuenta» tras «No encontramos
   una cuenta» y «Crear cuenta con…» del mismatch. Sin la puerta, «No encontramos una cuenta» ofrece «Volver»: lo decidió
   Jürgen a las 6:1x cuando la review cazó que mi primera versión dejaba solo la flecha de la esquina.
-- El PR siguiente (`cloud-migration-offers-the-cloud-to-a-phone-without-app-attest`): la tarjeta de «Dónde viven tus
+- PR #182 (`cloud-migration-offers-the-cloud-to-a-phone-without-app-attest`): la tarjeta de «Dónde viven tus
   datos» **entera**, también «Activar la nube en este dispositivo», que es entrar a una cuenta que ya existe. Lo eligió
   Jürgen a las 7:1x: sin token las dos caras acaban en el mismo reintento sin fin. Y a las 8:0x eligió **anotar, no
   arreglar**, el colateral de Grupos («Se decide en Ajustes») en `groups-block-has-no-route-to-storage-settings`.
