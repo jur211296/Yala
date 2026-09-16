@@ -5,10 +5,52 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-16 (Lima)
 
-**Rama** `2.1` — Merge #178: **Sin conexión, el cierre de sesión ya no dice que está guardando algo.**
+**Rama** `2.1` — Merge #179: **Volver a Yala despierta el loop de grupos que espera su reintento.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#178 · sin conexión, el cierre ya no dice que está guardando algo)
+## Esta sesión (#179 · volver a la app adelanta la subida de grupos)
+
+**Quien recupera la conexión y vuelve a Yala ya no espera al reintento.** Me quedo sin red con la app abierta,
+salgo, la red vuelve y entro otra vez: antes mis cambios de grupos seguían parados hasta que venciera el
+reintento pendiente —5, 10, 20… hasta **cinco minutos**—, salvo que guardara algo o tirase hacia abajo para
+refrescar. Ahora vuelven a subir en el acto. Es la decisión de Jürgen del 2026-09-15, opción 1: copiar lo que
+el motor personal hace desde I9, que al volver a primer plano corta el sueño en curso y cicla ya.
+
+**Dos ventanas, dos mecanismos, y entre las dos no queda hueco.** El sueño de cada vuelta del loop pasa a
+vivir en una tarea propia que el foreground cancela; el foreground que llega **mientras el ciclo corre** no
+tiene sueño que cortar y lo sirve una marca que pone a cero el delay de esa vuelta y solo de esa. Despertar
+**no borra la racha de fallos**: adelantar un reintento no significa volver a empezar por 5 s, y lo fija una
+aserción. Entra por el mismo `startIfEligible(trigger:)` que ya llamaba el bootstrapper, en el `else` donde
+antes no pasaba nada — así ningún call-site futuro puede olvidarse de despertar.
+
+**La review adversarial cazó un defecto serio que era MÍO, y las tres lentes coincidieron.** Sacar el sueño a
+una tarea aparte le quitaba dos garantías del contenedor. Una, la cancelación: un `Task {}` no hereda la de
+quien lo crea, así que `stopLoop()` —los cinco caminos de cierre de sesión— habría esperado el backoff entero;
+lo cierra un `withTaskCancellationHandler` con test propio. La otra, la identidad del handle: `stopLoop()`
+despublica el loop en el acto pero el viejo sigue dentro de su request, y al morir le borraba el handle al que
+había nacido detrás — dos loops vivos, un `stopLoop` posterior cancelando `nil` y un despertar que dejaba su
+línea en el log **sin cortar nada**, o sea el bug del ticket resucitado e invisible. Cada loop lleva ahora su
+generación. El mismo defecto estaba en el `defer { loopTask = nil }` **anterior a este cambio**.
+
+Y cazó **una aserción mía que no podía fallar**: miraba el efecto de un `cancel()` sin soltar el MainActor, y
+el `catch` que lo registra no corre hasta entonces — salía verde también con el gate borrado. Lo destapó el
+mutante, no la lectura.
+
+Gate: build ×2 sin warnings nuevos · **unit 266 casos en 19 suites** · **XCUITest 4 casos** con el centinela
+del simulador en 0 · tres lentes + las rules de área contra el diff · **CI verde**. **Mutation-tested ×7**, los
+siete en rojo. **Sobrevive uno y va declarado**: publicar el sueño sin comprobar la generación, cuyo escenario
+exige que el loop nuevo duerma antes que el viejo. **Sin device-QA**: reproducirlo pide cortar la red con
+cambios sin subir y esperar a que el backoff crezca; no hay seam de simulador que lo monte y el efecto no tiene
+superficie visual. El rastro en Console.app es `GroupsSync loopWoken trigger=foreground sleeping=true`.
+
+**Deja un ticket nuevo y dos residuales escritos.**
+`groups-has-no-cadence-when-the-personal-runtime-is-stopped`: con el motor personal parado
+(`.stoppedUntilRelaunch`), Grupos se abstiene de su loop porque el gate mira `canRunDomain()` y ése no mira el
+estado del runtime — ahí no hay loop que despertar y volver a la app tampoco lo mueve. Los residuales, para no
+re-litigarlos: el despertar corta también la cadencia sana de 60 s (igual que el personal en `.running`), y sin
+red cada vuelta a la app suma un escalón de backoff (misma aritmética que el personal).
+
+## Sesión anterior (#178 · sin conexión, el cierre ya no dice que está guardando algo)
 
 **Quien intenta cerrar sesión sin conexión ya no oye que se está guardando algo.** Antes esperaba 45 s mirando
 «Guardando tus cambios pendientes…» y al final leía «Un momento más · Todavía estamos terminando de guardar
@@ -53,7 +95,7 @@ publica. **Es una decisión de producto que espera a Jürgen.**
 De paso, el disco había bajado a 12 GB —los XCUITest habrían empezado a fallar con errores que no mencionan
 el disco—: 13 GB recuperados de DerivedData de dos worktrees ya retirados.
 
-## Sesión anterior (#177 · la app avisa cuando este teléfono no puede sincronizar tus datos)
+## Sesión #177 · la app avisa cuando este teléfono no puede sincronizar tus datos
 
 **Quien tiene sus datos en la nube y este teléfono no consigue la verificación de seguridad ya se entera solo.**
 Antes no se lo decía nadie: apuntaba gastos, no llegaban a su cuenta, y solo lo descubría si intentaba cerrar
