@@ -7135,6 +7135,27 @@ enum L10n {
             static var retry: String { ls("storage.progress.retry", comment: "") }
             static var waitingImport: String { ls("storage.progress.waitingImport", comment: "") }
             static var waitingICloudExport: String { ls("storage.progress.waitingICloudExport", comment: "") }
+            /// Espera de la vuelta a iCloud (`reverseUpload`), ticket `reverse-upload-has-no-ceiling-and-no-exit`.
+            static var reverseUploading: String { ls("storage.progress.reverseUploading", comment: "") }
+            static func reversePending(_ count: Int) -> String {
+                String(format: ls("storage.progress.reversePending", comment: ""), count)
+            }
+            static var reverseICloudFull: String { ls("storage.progress.reverseICloudFull", comment: "") }
+            static var reverseICloudUnavailable: String {
+                ls("storage.progress.reverseICloudUnavailable", comment: "")
+            }
+            static var reverseICloudMaybeOff: String { ls("storage.progress.reverseICloudMaybeOff", comment: "") }
+            static var cancelReverse: String { ls("storage.progress.cancelReverse", comment: "") }
+        }
+
+        /// Después de que la espera de la vuelta a iCloud termine sin llegar: la tarjeta de relanzar y la nota de
+        /// la tarjeta de «Volver a iCloud».
+        enum ReverseAbort {
+            static var relaunchTitle: String { ls("storage.reverseAbort.relaunchTitle", comment: "") }
+            static var relaunchBody: String { ls("storage.reverseAbort.relaunchBody", comment: "") }
+            static var icloudFull: String { ls("storage.reverseAbort.icloudFull", comment: "") }
+            static var icloudUnavailable: String { ls("storage.reverseAbort.icloudUnavailable", comment: "") }
+            static var stalled: String { ls("storage.reverseAbort.stalled", comment: "") }
         }
 
         enum Relaunch {
@@ -7173,12 +7194,18 @@ enum L10n {
             static var revert2Title: String { ls("storage.confirm.revert2Title", comment: "") }
             static var revert2Body: String { ls("storage.confirm.revert2Body", comment: "") }
             static var revert2Confirm: String { ls("storage.confirm.revert2Confirm", comment: "") }
+            static var cancelReverseTitle: String { ls("storage.confirm.cancelReverseTitle", comment: "") }
+            static var cancelReverseBody: String { ls("storage.confirm.cancelReverseBody", comment: "") }
+            static var cancelReverseConfirm: String { ls("storage.confirm.cancelReverseConfirm", comment: "") }
+            static var cancelReverseKeep: String { ls("storage.confirm.cancelReverseKeep", comment: "") }
         }
 
         enum Errors {
             static var title: String { ls("storage.errors.title", comment: "") }
             static var generic: String { ls("storage.errors.generic", comment: "") }
             static var signIn: String { ls("storage.errors.signIn", comment: "") }
+            /// «Volver a iCloud» con la salida anterior de la espera todavía a medias (`reverse_abort` pendiente).
+            static var reversePendingExit: String { ls("storage.errors.reversePendingExit", comment: "") }
         }
 
         /// W3 (2026-08-11): los 7 bullets numerados se podaron a TRES + un pie, y las keys

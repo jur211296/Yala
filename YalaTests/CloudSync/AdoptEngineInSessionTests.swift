@@ -99,7 +99,7 @@ struct AdoptEngineInSessionTests {
             y los tests de este suite son falsos verdes.
             """)
         // Y el contraste con uno que sí lo llama, para que el control mida los dos sentidos.
-        let resume = try Self.body(of: "func resume() async {", in: source)
+        let resume = try Self.body(of: "func resume(clearingError: Bool = true) async {", in: source)
         #expect(resume.contains("startRuntimeIfStable()"),
                 "`resume()` sí lo llama: si esto falla, el acotador se está quedando corto")
     }

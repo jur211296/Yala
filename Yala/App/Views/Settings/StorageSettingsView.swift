@@ -45,6 +45,9 @@ struct StorageSettingsView: View {
     @State private var confirmMigrate2 = false
     @State private var confirmRevert1 = false
     @State private var confirmRevert2 = false
+    /// Confirmación de «Cancelar y seguir en la nube» en la espera de la vuelta a iCloud. Un solo diálogo, colgado
+    /// del propio botón: no encadena con los de `StorageConfirmations`.
+    @State private var confirmCancelReverse = false
     @State private var showError = false
     @State private var dryRun: (transactions: Int, categories: Int, accounts: Int, budgets: Int)?
     /// Tick de refresco del journal vivo (el runner no es `@Observable`).
@@ -131,6 +134,12 @@ struct StorageSettingsView: View {
         .onChange(of: controller?.lastError) { _, newValue in
             showError = (newValue != nil)
         }
+        // Si la espera termina con la confirmación de «Cancelar» abierta —drenó, o saltó el techo—, el botón que la
+        // ancla desaparece y SwiftUI puede cerrarla sin tocar el flag. Sin esto, el diálogo reaparecería solo en la
+        // siguiente espera.
+        .onChange(of: controller?.isWaitingReverseUpload) { _, waiting in
+            if waiting != true { confirmCancelReverse = false }
+        }
     }
 
     // MARK: - Contenido por estado
@@ -168,7 +177,7 @@ struct StorageSettingsView: View {
         case .reverting(let step):
             progressCard(controller, step: step, reverse: true)
         case .needsRelaunch(let direction):
-            relaunchCard(direction)
+            relaunchCard(controller, direction)
         case .waitingForLeader:
             waitingCard()
             // `.waitingForLeader` y `.failed` salen del journal PERSISTIDO: sobreviven al relanzamiento y
@@ -283,6 +292,22 @@ struct StorageSettingsView: View {
             Text(L10n.Storage.Revert.body)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
+            // La última vuelta no llegó a iCloud: se dice por qué ANTES del botón, para que volver a intentarlo sea
+            // una decisión informada. Sale del journal, así que sigue aquí tras el relanzamiento.
+            if let reason = ReverseUploadWaitingCopyLogic.abortNote(controller.reverseAbortReason) {
+                // Naranja solo el icono: como TEXTO, `warningForeground` sobre la tarjeta blanca no llega a AA.
+                Label {
+                    Text(reverseAbortMessage(reason))
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                } icon: {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(DS.Semantic.warningForeground)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("storage_revert_last_attempt_note")
+            }
             // §3.3.5: la Reversa ES el desenlace funcional del enlace privado ↔ nube.
             Text(L10n.Storage.Revert.desenlaceNote)
                 .font(DS.Typography.caption)
@@ -381,6 +406,10 @@ struct StorageSettingsView: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .accessibilityIdentifier("storage_waiting_icloud_export_caption")
+            } else if reverse && controller.isWaitingReverseUpload {
+                // La vuelta a iCloud espera a que el mirror suba los datos: la barra al 95 % muda del ticket
+                // `reverse-upload-has-no-ceiling-and-no-exit`. Cuántos faltan, o por qué no pueden llegar.
+                reverseUploadCaption(controller)
             }
             Button {
                 Task { await controller.resume() }
@@ -393,24 +422,108 @@ struct StorageSettingsView: View {
             .buttonStyle(.plain)
             .disabled(controller.isWorking)
             .accessibilityIdentifier("storage_resume_button")
+            if reverse && controller.isWaitingReverseUpload {
+                cancelReverseButton(controller)
+            }
         }
         .frame(maxWidth: .infinity)
         .storageCardStyle()
         .accessibilityIdentifier("storage_progress_card")
     }
 
+    /// El texto de la espera de la vuelta a iCloud (`ReverseUploadWaitingCopyLogic`): el mensaje y, si ya se observó,
+    /// cuántas filas faltan. En `.secondary` como el resto de captions de la tarjeta: `warningForeground` como TEXTO
+    /// sobre la tarjeta blanca da 2,2:1 (`.claude/rules/swiftui-ds.md`).
+    private func reverseUploadCaption(_ controller: CloudMigrationController) -> some View {
+        let copy = ReverseUploadWaitingCopyLogic.waitingCopy(sample: controller.reverseUploadSample)
+        return VStack(spacing: DS.Spacing.xxs) {
+            Text(reverseUploadMessage(copy.message))
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .accessibilityIdentifier("storage_reverse_waiting_message")
+            if let pending = copy.pending {
+                Text(L10n.Storage.Progress.reversePending(pending))
+                    .font(DS.Typography.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .accessibilityIdentifier("storage_reverse_pending_count")
+            }
+        }
+        .accessibilityIdentifier("storage_reverse_waiting_caption")
+    }
+
+    private func reverseUploadMessage(_ message: ReverseUploadWaitingCopyLogic.Message) -> String {
+        switch message {
+        case .uploading:
+            return L10n.Storage.Progress.reverseUploading
+        case .icloudFull:
+            return L10n.Storage.Progress.reverseICloudFull
+        case .icloudUnavailable:
+            return L10n.Storage.Progress.reverseICloudUnavailable
+        case .icloudMaybeOff:
+            return L10n.Storage.Progress.reverseICloudMaybeOff
+        }
+    }
+
+    /// «Cancelar y seguir en la nube»: la salida de la persona, disponible durante toda la espera (decisión de
+    /// Jürgen, 2026-09-16). Pide confirmación porque cambia dónde viven sus datos y obliga a relanzar Yala.
+    private func cancelReverseButton(_ controller: CloudMigrationController) -> some View {
+        YalaSecondaryButton(L10n.Storage.Progress.cancelReverse, icon: "arrow.uturn.backward",
+                            isDisabled: controller.isWorking) {
+            confirmCancelReverse = true
+        }
+        .accessibilityIdentifier("storage_cancel_reverse_button")
+        .confirmationDialog(L10n.Storage.Confirm.cancelReverseTitle,
+                            isPresented: $confirmCancelReverse, titleVisibility: .visible) {
+            Button(L10n.Storage.Confirm.cancelReverseConfirm) {
+                Task { await controller.cancelReverseUpload() }
+            }
+            Button(L10n.Storage.Confirm.cancelReverseKeep, role: .cancel) {}
+        } message: {
+            Text(L10n.Storage.Confirm.cancelReverseBody)
+        }
+    }
+
+    /// El porqué de una salida de la espera, para la tarjeta de relanzar y la de «Volver a iCloud».
+    private func reverseAbortMessage(_ reason: ReverseUploadAbortReason) -> String {
+        switch reason {
+        case .icloudFull:
+            return L10n.Storage.ReverseAbort.icloudFull
+        case .icloudUnavailable:
+            return L10n.Storage.ReverseAbort.icloudUnavailable
+        case .stalled, .cancelled:
+            // `cancelled` no llega aquí (`abortNote` lo filtra); se agrupa con `stalled` para que el switch sea
+            // exhaustivo sin un `default` que se trague un motivo nuevo.
+            return L10n.Storage.ReverseAbort.stalled
+        }
+    }
+
     // MARK: - Needs relaunch (assisted relaunch — NEVER exit())
 
-    private func relaunchCard(_ direction: CloudMigrationUIState.RelaunchDirection) -> some View {
-        VStack(spacing: DS.Spacing.lg) {
+    private func relaunchCard(
+        _ controller: CloudMigrationController, _ direction: CloudMigrationUIState.RelaunchDirection
+    ) -> some View {
+        // Tras una salida de la espera de la vuelta a iCloud el relanzamiento no «termina» nada: devuelve el
+        // almacenamiento a la nube. «Ya casi está» sería falso, así que la tarjeta dice dónde siguen los datos y,
+        // si no lo pidió la persona, por qué.
+        let reverseAbort = direction == .toCloud ? controller.reverseAbortReason : nil
+        return VStack(spacing: DS.Spacing.lg) {
             Image(systemName: "arrow.clockwise.circle.fill")
                 .font(.system(size: 44))  // A11Y-DT: ícono hero decorativo de la card de relaunch (molde GroupInviteOnboardingView); el texto acompañante SÍ escala
                 .foregroundStyle(DS.Semantic.infoForeground)
-            Text(L10n.Storage.Relaunch.title)
+            Text(reverseAbort == nil ? L10n.Storage.Relaunch.title : L10n.Storage.ReverseAbort.relaunchTitle)
                 .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
-            Text(L10n.Storage.Relaunch.body)
+            if let reason = ReverseUploadWaitingCopyLogic.abortNote(reverseAbort) {
+                Text(reverseAbortMessage(reason))
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .accessibilityIdentifier("storage_relaunch_reverse_abort_reason")
+            }
+            Text(reverseAbort == nil ? L10n.Storage.Relaunch.body : L10n.Storage.ReverseAbort.relaunchBody)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

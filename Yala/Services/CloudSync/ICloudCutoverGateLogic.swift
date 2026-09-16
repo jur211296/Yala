@@ -104,3 +104,107 @@ nonisolated enum ICloudCutoverGateLogic {
         }
     }
 }
+
+// MARK: - Reversa: por qué no drena la subida a iCloud
+
+/// Por qué la espera de `reverseUpload` no drena, hasta donde se sabe (ticket
+/// `reverse-upload-has-no-ceiling-and-no-exit`). Elige el presupuesto del techo (`stallCause`) y el copy de la
+/// espera. `String`/`rawValue` porque viaja como detalle del canario: WIRE-ESTABLE.
+nonisolated enum ReverseUploadBlocker: String, Equatable, Sendable {
+    /// CloudKit dijo que iCloud no tiene espacio (`CKError.quotaExceeded`).
+    case icloudFull
+    /// CloudKit dijo que la cuenta no sirve: no autenticada, restringida o con la zona borrada.
+    case icloudUnusable
+    /// Este dispositivo no tiene token de iCloud y CloudKit no ha dicho nada. Ojo: el token mide iCloud DRIVE
+    /// (`.claude/rules/swiftdata-cloudkit.md`), y con Drive apagado CloudKit puede estar subiendo igual. Por eso
+    /// solo elige un copy CONDICIONAL, nunca el presupuesto corto ni un motivo que afirme que iCloud faltaba.
+    case icloudOff
+    /// No se sabe: red, un mirror lento o un mirror que no exporta sin decir por qué.
+    case unknown
+
+    /// FAIL-OPEN: solo la palabra de CloudKit acorta la espera. Es MÁS permisiva que la ida, no igual: allí,
+    /// sin token y con huella CloudKit local (`noAccountWithFootprint`), el paso 4 sí baja a 900 s sin que
+    /// CloudKit diga nada. Aquí, sin Drive y sin error, la persona lee el aviso condicional y tiene «Cancelar» a
+    /// mano; el techo sigue siendo el largo.
+    var stallCause: MarkerExportStall {
+        switch self {
+        case .icloudFull, .icloudUnusable:
+            return .definitive
+        case .icloudOff, .unknown:
+            return .unknown
+        }
+    }
+
+    /// El motivo que se journalea si la espera agota su techo con esta causa. `icloudOff` cae en `stalled`, no en
+    /// `icloudUnavailable`: la nota sobrevive al relanzamiento, y «iCloud no estaba disponible» sería falso para
+    /// quien tenía iCloud y solo Drive apagado.
+    var abortReason: ReverseUploadAbortReason {
+        switch self {
+        case .icloudFull:
+            return .icloudFull
+        case .icloudUnusable:
+            return .icloudUnavailable
+        case .icloudOff, .unknown:
+            return .stalled
+        }
+    }
+}
+
+/// Por qué terminó la espera de `reverseUpload` sin llegar a iCloud. Se journalea
+/// (`MigrationState.reverseAbortReasonRaw`) porque la persona puede no estar mirando cuando salta el techo: lo
+/// lee después del relanzamiento. `rawValue` WIRE-ESTABLE (un journal en vuelo lo tiene que poder leer).
+nonisolated enum ReverseUploadAbortReason: String, Equatable, Sendable {
+    /// La persona tocó «Cancelar y seguir en la nube». No lleva nota: lo decidió ella.
+    case cancelled
+    /// iCloud sin espacio.
+    case icloudFull
+    /// CloudKit dijo que la cuenta de iCloud no sirve en este dispositivo.
+    case icloudUnavailable
+    /// El techo largo sin avanzar, sin que CloudKit dijera por qué (también sin token de iCloud Drive).
+    case stalled
+}
+
+nonisolated enum ReverseUploadBlockerLogic {
+
+    /// Decisión PURA (sin I/O ni `Date.now`); el executor le pasa las señales.
+    ///
+    /// - Parameters:
+    ///   - icloudAvailable: `SwiftDataConfiguration.isICloudAvailable()`, el mismo predicado que decide el mount.
+    ///   - lastExportErrorCode: `iCloudSyncService.lastExportError?.code`, en memoria. La falta de cuenta llega
+    ///     como `NSCocoaErrorDomain 134400` y NO pasa por aquí: por eso existe el término de arriba.
+    ///   - lastExportErrorAt / lastSuccessfulExportAt: las fechas de ese error y del último export con éxito.
+    ///     `lastExportError` NO se limpia con un éxito posterior, así que sin comparar fechas un «iCloud lleno» ya
+    ///     resuelto seguiría acortando la espera y diciendo en pantalla que no hay espacio a quien acaba de
+    ///     liberarlo. Un error sin fecha no cuenta: la ambigüedad nunca acorta.
+    ///   - mirrorReportedNotAuthenticated: `iCloudSyncService.mirrorReportedNotAuthenticated`. Es la única vía por
+    ///     la que un `CKError.notAuthenticated` llega a leerse: `iCloudSyncService.apply` sale antes de guardarlo
+    ///     en `lastExportError`. Este sí se apaga con cualquier evento con éxito.
+    static func decide(
+        icloudAvailable: Bool,
+        lastExportErrorCode: CKError.Code?,
+        lastExportErrorAt: Date?,
+        lastSuccessfulExportAt: Date?,
+        mirrorReportedNotAuthenticated: Bool
+    ) -> ReverseUploadBlocker {
+        let errorIsCurrent: Bool = {
+            guard let errorAt = lastExportErrorAt else { return false }
+            guard let successAt = lastSuccessfulExportAt else { return true }
+            return errorAt > successAt
+        }()
+        // La palabra de CloudKit, con la MISMA tabla de `CKError` que la ida: dos tablas acabarían diciendo cosas
+        // distintas del mismo error. `accountPresent: true` deja fuera la rama de la cuenta, que en la reversa
+        // se decide abajo y no acorta la espera.
+        switch ICloudCutoverGateLogic.decide(
+            accountPresent: true, hasCloudKitFootprint: true,
+            lastExportErrorCode: errorIsCurrent ? lastExportErrorCode : nil) {
+        case .quotaExceeded:
+            return .icloudFull
+        case .accountUnusable:
+            return .icloudUnusable
+        case .healthy, .noChannelNoFootprint, .noAccountWithFootprint:
+            break
+        }
+        if mirrorReportedNotAuthenticated { return .icloudUnusable }
+        return icloudAvailable ? .unknown : .icloudOff
+    }
+}

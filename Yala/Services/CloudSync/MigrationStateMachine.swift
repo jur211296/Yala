@@ -72,6 +72,11 @@ nonisolated enum MigrationPhase: Equatable, Codable {
     // BEFORE deleting anything. The rollback boundary is the mirror mount: PRE-mount failures roll back
     // (local intact, storageMode still `.cloud`); POST-mount failures HOLD + idempotent resume (the
     // mirror is already alive) — symmetric to the cutover.
+    //
+    // Hay UNA salida post-montaje, y no es un fallo: la ESPERA de `reverseUpload`. Si el mirror no drena durante
+    // un presupuesto de tiempo SIN avanzar, o la persona cancela desde la pantalla de espera, la reversa VUELVE a
+    // su origen en modo nube (ticket `reverse-upload-has-no-ceiling-and-no-exit`, decisión de Jürgen del
+    // 2026-09-16). Sin ella la espera no tenía techo, y el backend ya estaba congelado.
     /// Double-confirmation UI. NON-durable (resume → origin). `ReverseOrigin` records where a decline/kill
     /// returns: `.done` (the original migration leader) or `.notStarted` (a device that ADOPTED the cloud
     /// account — its journal is `notStarted` after `adoptBackendAccount`). Without the origin, a decline
@@ -94,7 +99,9 @@ nonisolated enum MigrationPhase: Equatable, Codable {
     /// Journaled §h.3 sub-states (`ReverseReconcileSubstate`). Durable. The "done" of the reconcile is NOT
     /// a sub-state: leaving to `reverseUpload` IS the done (same pattern as cutover→done).
     case reverseReconcile(ReverseReconcileSubstate)
-    /// The mirror exports the complete store (the History token survives, spike S2). Durable.
+    /// The mirror exports the complete store (the History token survives, spike S2). Durable. La espera tiene
+    /// techo por tiempo journaleado SIN avanzar (`reverseUploadStalled`) y una salida de la persona
+    /// (`reverseUploadCancelled`); las dos vuelven al origen en modo nube.
     case reverseUpload
     /// STABLE terminal: private mode; the backend is frozen as a safety net.
     case icloudActive
@@ -265,6 +272,19 @@ nonisolated enum MigrationEvent: Equatable {
     case reverseDedupHealed
     /// → `icloudActive` (with the closing effects, S2).
     case reverseUploadCompleted
+
+    // MARK: Techo y salida de `reverseUpload` (ticket `reverse-upload-has-no-ceiling-and-no-exit`)
+
+    /// Observación de la espera de `reverseUpload`: el mirror aún no drena. `stalledSeconds` lo mide el RUNNER
+    /// —`now()` menos el instante del ÚLTIMO AVANCE journaleado (`MigrationState.reverseUploadProgressAt`)—, no
+    /// desde que empezó la espera: un corpus grande que sube despacio avanza y nunca agota el presupuesto; el
+    /// que se clava sí. `cause` elige el presupuesto (`MigrationPolicy.reverseUpload*BudgetSeconds`) y
+    /// `returnTo` lo inyecta el runner desde `reverseOriginRaw`, como en `reverseOtherLeader`: la máquina no
+    /// propaga el origen más allá de `reverseConfirm`.
+    case reverseUploadStalled(stalledSeconds: Double, cause: MarkerExportStall, returnTo: ReverseOrigin)
+    /// La persona cancela la vuelta desde la pantalla de espera («Cancelar y seguir en la nube»). Misma salida
+    /// que el tope, sin esperar a que venza.
+    case reverseUploadCancelled(returnTo: ReverseOrigin)
 }
 
 // MARK: - Effects
@@ -297,7 +317,9 @@ nonisolated enum MigrationEffect: String, Equatable, Codable {
 
     // MARK: Reverse effects (§h) — String/Codable APPEND-ONLY. DARK in I11-1: the executor receives them
     // and throws `notWired` (I11-2/3 wire them). Only the ordering-critical / observable ones are surfaced.
-    /// Un-reserve the server (`reverse_abort`) — reachable ONLY PRE-mount (local unchanged).
+    /// Un-reserve the server (`reverse_abort`). Desde el ticket `reverse-upload-has-no-ceiling-and-no-exit` es
+    /// alcanzable también en la salida de `reverseUpload` —ahí además DESCONGELA el backend—, y va DESPUÉS de
+    /// `.rearmMirrorOff`. Pre-montaje, el local sigue intacto.
     case reverseRollback
     /// ORDER: disarm `mirrorOffArmedKey` (keeping `.cloud` → decision iCloudMirror) + request an assisted
     /// relaunch. Resolved by OBSERVATION on resume (like `disableMirrorAndRelaunch`, never blind re-exec).
@@ -311,6 +333,15 @@ nonisolated enum MigrationEffect: String, Equatable, Codable {
     case persistICloudMode
     /// `migration_progress` `reverse_complete` (`reverse_in_progress=false`).
     case completeReverseServer
+
+    /// Salida de `reverseUpload`: vuelve a ARMAR el apagado del mirror manteniendo `.cloud`, con el escritor único
+    /// del par (`StorageModePersistence.writeCloudArmed`). El mirror sigue montado en ESTE proceso; el siguiente
+    /// arranque monta el store sin él, y hasta entonces la UI pide relanzar (`needsRelaunch(.toCloud)`) y el
+    /// motor no arranca (`personalMountMismatch`). `UserDefaults` puro: no puede lanzar, y por eso va PRIMERO,
+    /// antes del `.reverseRollback` de red. Idempotente, sin observación: re-ejecutarlo tras un kill no cambia
+    /// nada. NO se reusa `.disableMirrorAndRelaunch`: el resume lo resuelve por observación y dispara
+    /// `mirrorRelaunchCompleted`, inválido fuera del cutover, y corta el drenaje de los pendientes que le siguen.
+    case rearmMirrorOff
 }
 
 // MARK: - Outcome & Policy
@@ -350,18 +381,30 @@ nonisolated struct MigrationPolicy: Equatable {
     /// CloudKit Production— se ve en el dashboard mucho antes de que ningún device degrade.
     var markerExportUnknownBudgetSeconds: Double = 259_200
 
+    /// Techo de la espera de `reverseUpload` cuando CloudKit YA dijo que no entra (iCloud lleno, cuenta
+    /// inutilizable): 15 min SIN avanzar. Decisión de Jürgen (2026-09-16). Mientras tanto la nube de Yala está
+    /// congelada y lo que la persona escribe vive solo en el teléfono.
+    var reverseUploadDefinitiveBudgetSeconds: Double = 900
+    /// Techo de la espera de `reverseUpload` cuando no se sabe por qué no drena: 72 h SIN avanzar. El reloj es
+    /// el del ÚLTIMO avance, no el del inicio, así que un corpus grande que sube despacio nunca lo agota.
+    var reverseUploadUnknownBudgetSeconds: Double = 259_200
+
     static let `default` = MigrationPolicy()
 
     init(
         maxMismatchRetries: Int = 3,
         maxNetworkRetries: Int = 8,
         markerExportDefinitiveBudgetSeconds: Double = 900,
-        markerExportUnknownBudgetSeconds: Double = 259_200
+        markerExportUnknownBudgetSeconds: Double = 259_200,
+        reverseUploadDefinitiveBudgetSeconds: Double = 900,
+        reverseUploadUnknownBudgetSeconds: Double = 259_200
     ) {
         self.maxMismatchRetries = maxMismatchRetries
         self.maxNetworkRetries = maxNetworkRetries
         self.markerExportDefinitiveBudgetSeconds = markerExportDefinitiveBudgetSeconds
         self.markerExportUnknownBudgetSeconds = markerExportUnknownBudgetSeconds
+        self.reverseUploadDefinitiveBudgetSeconds = reverseUploadDefinitiveBudgetSeconds
+        self.reverseUploadUnknownBudgetSeconds = reverseUploadUnknownBudgetSeconds
     }
 }
 
@@ -561,6 +604,29 @@ nonisolated enum MigrationStateMachine {
                 .deleteCloudKitMarker, .clearCloudBeacon, .persistICloudMode, .completeReverseServer,
             ])
 
+        // reverseUpload · TECHO. Bajo presupuesto HOLDEA sin efectos (molde de `markerExportStalled`): el runner
+        // corta retomable y el próximo resume vuelve a observar. Al agotarlo, la reversa VUELVE a su origen en
+        // modo nube. El orden de los efectos es OBLIGATORIO:
+        //   1. `.rearmMirrorOff` PRIMERO: re-arma el apagado del mirror con `.cloud`. Es `UserDefaults` puro y no
+        //      puede lanzar, así que la mitad local queda hecha antes de tocar la red: la UI pide relanzar y el
+        //      motor no arranca con el mirror montado aunque lo segundo falle.
+        //   2. `.reverseRollback`: `reverse_abort` descongela el backend. Sin red lanza y queda journaleado.
+        // Al revés, un `reverse_abort` fallido dejaría `.cloud` + mirror vivo en una fase ESTABLE: el estado
+        // prohibido de `isCloudWithMirrorOn`, con la pantalla diciendo «en la nube».
+        // No se borra el marcador ni el faro: la cuenta sigue en la nube, que es donde vuelve.
+        case let (.reverseUpload, .reverseUploadStalled(stalled, cause, origin)):
+            let budget = cause == .definitive
+                ? policy.reverseUploadDefinitiveBudgetSeconds
+                : policy.reverseUploadUnknownBudgetSeconds
+            guard stalled >= budget else {
+                return .transition(next: .reverseUpload, effects: [])
+            }
+            return .transition(next: reverseOriginPhase(origin), effects: [.rearmMirrorOff, .reverseRollback])
+
+        // reverseUpload · SALIDA de la persona: la misma vuelta que el techo, sin esperar a que venza.
+        case let (.reverseUpload, .reverseUploadCancelled(origin)):
+            return .transition(next: reverseOriginPhase(origin), effects: [.rearmMirrorOff, .reverseRollback])
+
         // fatalError PRE-mount (nothing local changed; the mirror was never re-lit) → reverseFailedRollback.
         case (.reverseClaimLeader, .fatalError),
              (.reverseDrainAll, .fatalError),
@@ -569,7 +635,8 @@ nonisolated enum MigrationStateMachine {
             return .transition(next: .reverseFailedRollback, effects: [.reverseRollback])
 
         // fatalError POST-mount → HOLD the state (idempotent resume covers recovery), NEVER rollback: the
-        // mirror is already alive and the resume retakes.
+        // mirror is already alive and the resume retakes. Un fallo NO es la salida de `reverseUpload`: esa la
+        // deciden el techo por tiempo sin avanzar y la persona, arriba.
         case let (.reverseReconcile(sub), .fatalError):
             return .transition(next: .reverseReconcile(sub), effects: [])
         case (.reverseMountMirror, .fatalError):

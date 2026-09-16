@@ -179,6 +179,8 @@ struct MigrationStateJournalTests {
         #expect(Effect.runLeaderReconcileFromFrozenCloudKit.rawValue == "runLeaderReconcileFromFrozenCloudKit")
         #expect(Effect.rollback.rawValue == "rollback")
         #expect(Effect.adoptBackendAccount.rawValue == "adoptBackendAccount")
+        // Salida de `reverseUpload`: un journal con este efecto pendiente tiene que poder leerse tras el relanzamiento.
+        #expect(Effect.rearmMirrorOff.rawValue == "rearmMirrorOff")
     }
 
     // MARK: - (c) readPhase puro: nil / corrupto
@@ -290,5 +292,57 @@ struct MigrationStateJournalTests {
         let recleared = try #require(try context3.fetch(descriptor).first)
         #expect(recleared.markerWrittenSince == nil)
         #expect(recleared.cutoverICloudVerdictRaw == nil)
+    }
+
+    // MARK: - (d·RU) Techo de `reverseUpload`: los tres campos sobreviven al kill
+
+    /// Sin persistir, el reloj volvería a cero en cada arranque (techo que nunca vence: el bug), la cifra más baja
+    /// se olvidaría (cualquier observación contaría como avance) y el porqué de la salida desaparecería justo en
+    /// el relanzamiento, que es cuando la persona lo lee. Tres lecturas: nil por defecto, valor tras re-fetch y
+    /// vuelta a nil DURABLE.
+    @Test func reverseUploadFields_roundTripAcrossSaveAndRefetch_includingNil() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let progressAt = Date(timeIntervalSince1970: 1_700_000_900)
+        let state = try MigrationState.loadOrCreate(in: context)
+        #expect(state.reverseUploadLowestPending == nil)
+        #expect(state.reverseUploadProgressAt == nil)
+        #expect(state.reverseAbortReasonRaw == nil)
+
+        state.setPhase(.reverseUpload)
+        state.reverseUploadLowestPending = 1_234
+        state.reverseUploadProgressAt = progressAt
+        state.reverseAbortReasonRaw = ReverseUploadAbortReason.icloudFull.rawValue
+        try context.save()
+
+        var descriptor = FetchDescriptor<MigrationState>()
+        descriptor.fetchLimit = 1
+        let context2 = ModelContext(context.container)
+        let reloaded = try #require(try context2.fetch(descriptor).first)
+        #expect(reloaded.readPhase().phase == .reverseUpload)
+        #expect(reloaded.reverseUploadLowestPending == 1_234)
+        #expect(reloaded.reverseUploadProgressAt == progressAt)
+        // El rawValue journaleado tiene que reconstruir el motivo: renombrar un case dejaría la nota sin texto.
+        #expect(ReverseUploadAbortReason(rawValue: reloaded.reverseAbortReasonRaw ?? "") == .icloudFull)
+
+        reloaded.reverseUploadLowestPending = nil
+        reloaded.reverseUploadProgressAt = nil
+        reloaded.reverseAbortReasonRaw = nil
+        try context2.save()
+
+        let context3 = ModelContext(context.container)
+        let recleared = try #require(try context3.fetch(descriptor).first)
+        #expect(recleared.reverseUploadLowestPending == nil)
+        #expect(recleared.reverseUploadProgressAt == nil)
+        #expect(recleared.reverseAbortReasonRaw == nil)
+    }
+
+    /// Los motivos viajan en el journal: sus rawValues son wire.
+    @Test func reverseUploadAbortReason_rawValues_areWireStable() {
+        #expect(ReverseUploadAbortReason.cancelled.rawValue == "cancelled")
+        #expect(ReverseUploadAbortReason.icloudFull.rawValue == "icloudFull")
+        #expect(ReverseUploadAbortReason.icloudUnavailable.rawValue == "icloudUnavailable")
+        #expect(ReverseUploadAbortReason.stalled.rawValue == "stalled")
     }
 }

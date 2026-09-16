@@ -198,6 +198,29 @@ final class CloudMigrationController {
     /// se mostraba como un 89 % mudo, sin decir a qué se esperaba.
     var isWaitingICloudExport: Bool { journaledPhase == .cutover(.markerWritten) }
 
+    /// La vuelta a iCloud está en su último paso: esperando a que el mirror suba los datos (`reverseUpload`). Era la
+    /// barra clavada al 95 % sin una palabra (ticket `reverse-upload-has-no-ceiling-and-no-exit`).
+    var isWaitingReverseUpload: Bool { journaledPhase == .reverseUpload }
+
+    /// La última observación de esa espera en este proceso (`MigrationRunner.lastReverseUploadSample`): cuántas
+    /// filas faltan y por qué no drena. `nil` = aún no observada; la pantalla dice entonces solo que está subiendo.
+    private(set) var reverseUploadSample: ReverseUploadSample?
+
+    /// Por qué terminó la última espera de la vuelta sin llegar a iCloud (`MigrationState.reverseAbortReasonRaw`).
+    /// Sale del JOURNAL, no del runner, porque la persona puede leerlo después del relanzamiento. `nil` = nada
+    /// que explicar.
+    private(set) var reverseAbortReason: ReverseUploadAbortReason?
+
+    /// Una salida de esa espera quedó a medias (`ReverseExitPending`): el `reverse_abort` que reactiva la nube sigue
+    /// pendiente. Es lo único que impide empezar otra vuelta, y lo único de lo que habla el aviso de `startReverse`.
+    private var hasPendingReverseExit = false
+
+    /// La persona confirmó «Cancelar y seguir en la nube» y la pre-espera del import venció antes de poder cancelar.
+    /// El siguiente `resume()` que la pase cancela antes de retomar: sin esto el «sí» se perdía, y la espera volvía a
+    /// ofrecer «Cancelar» sin decir que el primero no se hizo. En memoria: si Yala se cierra, la espera lo vuelve a
+    /// ofrecer.
+    private var cancelReverseRequested = false
+
     /// El claim se aparcó por una causa que NO es la red (`MigrationRunner.lastClaimBlocker`). Mismo
     /// molde que `cutoverBlocker`: la pantalla elige con esto un copy honesto —«tu cuenta no está
     /// disponible»— en vez de dejar puesta la barra «Conectando con tu cuenta…» con un botón de
@@ -485,28 +508,78 @@ final class CloudMigrationController {
         isWorking = true
         defer { isWorking = false }
         lastError = nil
+        cancelReverseRequested = false
         let r = runner
         await r.submit(.reverseActivated)    // done/notStarted → reverseConfirm(origin)
         await r.submit(.reverseConfirmed)    // → reverseClaimLeader → drive
         refresh()
+        // Una salida anterior de la espera dejó `reverse_abort` pendiente y no se pudo completar —sin red, o el re-kick
+        // lo está completando ahora mismo—: el runner no empieza la vuelta nueva encima (la dejaría clavada con la nube
+        // congelada). Sin este aviso el toque no haría nada visible. Solo con ESA salida pendiente: otro pendiente no
+        // frena la vuelta (`ReverseExitPending`), y el aviso hablaría de reactivar una nube que nadie desactivó.
+        if hasPendingReverseExit, MigrationRuntimeGate.isDomainStablePhase(journaledPhase) {
+            lastError = L10n.Storage.Errors.reversePendingExit
+        }
     }
 
     /// Retomar una migración/reversa journaleada (botón "Retomar" + el coordinator de boot + el
     /// re-kick de foreground, #36). Guard de reentrada a nivel controller (A2 del review): con la
     /// pre-espera de 300s, un boot-resume y el rekick del primer `.active` podrían pre-esperar EN
     /// PARALELO y el `defer` del primero re-habilitaría "Retomar" con el otro aún en vuelo.
-    func resume() async {
+    ///
+    /// `clearingError: false` es del re-kick en segundo plano: un aviso que la persona aún no ha cerrado no lo borra
+    /// nadie más que ella. El de `startReverse` sale justo con un efecto pendiente, que es lo que dispara el re-kick
+    /// de 30 s, así que se cerraba solo entre 0 y 30 s después de aparecer.
+    func resume(clearingError: Bool = true) async {
         guard !isWorking else { return }
         isWorking = true
         defer { isWorking = false }
-        lastError = nil
+        if clearingError { lastError = nil }
         guard await awaitImportQuiescenceForResume() else {
             refresh()
             return
         }
+        if cancelReverseRequested {
+            // El «sí» de «Cancelar» que la pre-espera no dejó pasar. Si la espera ya terminó, el runner no hace nada.
+            cancelReverseRequested = false
+            await runner.cancelReverseUpload()
+        }
         await runner.resume()
         refresh()
         startRuntimeIfStable()
+    }
+
+    /// «Cancelar y seguir en la nube» en la espera de `reverseUpload`.
+    ///
+    /// No descarta el gesto si hay trabajo en vuelo: el refresco de la pantalla re-kickea cada 30 s y el runner
+    /// ignoraría en silencio una segunda acción (`runGuarded`), así que un «sí» confirmado justo entonces no haría
+    /// nada. Espera a que suelte y cancela después. Si mientras tanto la espera ya terminó —drenó, o saltó el
+    /// techo—, el runner no hace nada: no hay de dónde salir.
+    func cancelReverseUpload() async {
+        while isWorking {
+            do {
+                try await Task.sleep(for: .milliseconds(200))
+            } catch {
+                #if DEBUG
+                print("CloudMigrationController.cancelReverseUpload: espera cancelada: \(error)")
+                #endif
+                return
+            }
+        }
+        isWorking = true
+        defer { isWorking = false }
+        lastError = nil
+        // Misma pre-espera que `resume()` (#36): sin ella, con el import de iCloud activo, el runner se rendiría a
+        // los 120 s de su propia espera en silencio y el «sí» no haría nada. Con ella la tarjeta dice que espera a
+        // iCloud mientras tanto. Si vence, el «sí» queda apuntado y lo ejecuta el siguiente `resume()` que la pase.
+        cancelReverseRequested = true
+        guard await awaitImportQuiescenceForResume() else {
+            refresh()
+            return
+        }
+        cancelReverseRequested = false
+        await runner.cancelReverseUpload()
+        refresh()
     }
 
     /// Reintentar tras un rollback (SOLO en `failedRollback`/`reverseFailedRollback`).
@@ -520,11 +593,11 @@ final class CloudMigrationController {
 
     /// Sondear al líder (fase `waitingForLeader`). Mismo guard de reentrada + pre-espera que `resume()`
     /// (#36/A2 — el poll también termina en saves del journal gateados por quiescencia en el runner).
-    func pollLeader() async {
+    func pollLeader(clearingError: Bool = true) async {
         guard !isWorking else { return }
         isWorking = true
         defer { isWorking = false }
-        lastError = nil
+        if clearingError { lastError = nil }
         guard await awaitImportQuiescenceForResume() else {
             refresh()
             return
@@ -540,14 +613,14 @@ final class CloudMigrationController {
     /// `MigrationBootDecision`. Retoma (`resume`) una migración transicional / con efectos pendientes,
     /// sondea al líder (`pollLeader`), o no hace nada. Al quedar la fase estable, re-arranca el runtime del
     /// dominio (el paso 14.7 pudo haberse cortado por P0 mientras la fase era transicional).
-    func resumeIfNeeded() async {
+    func resumeIfNeeded(clearingError: Bool = true) async {
         let (phase, hasPending) = readJournalDecisionInputs()
         journaledPhase = phase
         switch MigrationBootDecision.decide(phase: phase, hasPendingEffects: hasPending) {
         case .resume:
-            await resume()
+            await resume(clearingError: clearingError)
         case .pollLeader:
-            await pollLeader()
+            await pollLeader(clearingError: clearingError)
         case .none:
             refresh()
             startRuntimeIfStable()
@@ -602,7 +675,9 @@ final class CloudMigrationController {
         guard MigrationForegroundRekick.shouldRekick(
             phase: phase, hasPendingEffects: hasPending, isWorking: isWorking) else { return }
         CloudSyncBreadcrumb.migrationForegroundRekick(phase: "\(phase)")
-        await resumeIfNeeded()
+        // Sin tocar `lastError`: un re-kick en segundo plano no cierra un aviso que la persona no ha leído
+        // (`resume(clearingError:)`).
+        await resumeIfNeeded(clearingError: false)
     }
 
     /// Re-arranca el runtime del dominio si la fase ya es estable (post-resume). Idempotente
@@ -652,6 +727,7 @@ final class CloudMigrationController {
         // clients) — `refresh()` corre desde el `init` y desde el poll de la pantalla de adopt, y no
         // es sitio para eso. Sin runner vivo no hay claim aparcado que reportar.
         claimBlocker = _runner?.lastClaimBlocker
+        reverseUploadSample = _runner?.lastReverseUploadSample
 
         refreshSyncBanner()
     }
@@ -716,17 +792,24 @@ final class CloudMigrationController {
         do {
             guard let state = try context.fetch(descriptor).first else {
                 cutoverBlocker = nil
+                reverseAbortReason = nil
+                hasPendingReverseExit = false
                 return (.notStarted, 0)
             }
             // C-1: el veredicto del canal iCloud viaja con el journal (sobrevive a `failedRollback` justo para
             // esto) → la card de fallo puede nombrar la causa real.
             cutoverBlocker = state.cutoverICloudVerdictRaw.flatMap(ICloudChannelVerdict.init(rawValue:))
-            return (state.readPhase().phase, state.readPendingEffects().count)
+            reverseAbortReason = state.reverseAbortReasonRaw.flatMap(ReverseUploadAbortReason.init(rawValue:))
+            let pending = state.readPendingEffects()
+            hasPendingReverseExit = ReverseExitPending.isPending(pending)
+            return (state.readPhase().phase, pending.count)
         } catch {
             #if DEBUG
             print("CloudMigrationController.readJournalSnapshot: fetch(MigrationState) falló: \(error)")
             #endif
             cutoverBlocker = nil
+            reverseAbortReason = nil
+            hasPendingReverseExit = false
             return (.notStarted, 0)
         }
     }

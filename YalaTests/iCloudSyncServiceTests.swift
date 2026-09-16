@@ -425,4 +425,33 @@ struct iCloudSyncServiceTests {
         service.apply(eventType: .importEvent, error: nil, endDate: .now)
         #expect(!service.mirrorReportedNotAuthenticated)
     }
+
+    /// `lastExportErrorAt` es lo que deja a la espera de «Volver a iCloud» distinguir un error VIGENTE de uno ya
+    /// resuelto (ticket `reverse-upload-has-no-ceiling-and-no-exit`): `lastExportError` no se limpia con un éxito,
+    /// y eso NO se cambia aquí. Tres cosas: la fecha es la del evento que falló (fin, o inicio si no trae fin), un
+    /// éxito posterior deja el latch pero con una fecha de éxito POSTERIOR a la del error, y el reset la limpia.
+    @MainActor @Test func exportFailure_stampsTheErrorDate_andALaterSuccessOutdatesIt() {
+        let service = freshService()
+        let failedAt = Date(timeIntervalSince1970: 1_700_000_000)
+        let succeededAt = failedAt.addingTimeInterval(60)
+
+        service.apply(eventType: .exportEvent, error: ckError(.quotaExceeded), endDate: failedAt)
+        #expect(service.lastExportErrorAt == failedAt)
+
+        let startedAt = failedAt.addingTimeInterval(30)
+        service.apply(eventType: .exportEvent, error: ckError(.quotaExceeded), endDate: nil, startDate: startedAt)
+        #expect(service.lastExportErrorAt == startedAt, "sin fin, la fecha es el inicio del evento que falló")
+
+        service.apply(eventType: .exportEvent, error: nil, endDate: succeededAt)
+        #expect(service.lastExportError?.code == .quotaExceeded, "el latch sigue puesto: no se cambia aquí")
+        #expect(service.lastSuccessfulExportDate == succeededAt)
+        if let errorAt = service.lastExportErrorAt, let successAt = service.lastSuccessfulExportDate {
+            #expect(successAt > errorAt, "el éxito es posterior: el error ya no es vigente")
+        } else {
+            Issue.record("faltan las fechas del error o del éxito")
+        }
+
+        service._testReset()
+        #expect(service.lastExportErrorAt == nil)
+    }
 }

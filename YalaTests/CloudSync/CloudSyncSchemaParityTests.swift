@@ -188,6 +188,9 @@ struct CloudSyncSchemaParityTests {
             "reverseOriginRaw",
             "markerWrittenSince",
             "cutoverICloudVerdictRaw",
+            "reverseUploadLowestPending",
+            "reverseUploadProgressAt",
+            "reverseAbortReasonRaw",
             "startedAt",
             "updatedAt",
             "schemaVersion",
@@ -195,11 +198,13 @@ struct CloudSyncSchemaParityTests {
         #expect(propertyNames(MigrationState.self) == expected)
     }
 
-    @Test func migrationState_schemaVersion_isThree() {
+    @Test func migrationState_schemaVersion_isFour() {
         // Subió a 2 en I11-2 al añadir el campo aditivo `reverseOriginRaw`; a 3 en C-1 con
         // `markerWrittenSince` (reloj del tope del paso 4) + `cutoverICloudVerdictRaw` (veredicto del canal
-        // iCloud), ambos ADITIVOS y opcionales → una fila escrita por un build v2 sigue abriéndose.
-        #expect(CloudSyncSchemaVersions.migrationState == 3)
+        // iCloud), ambos ADITIVOS y opcionales → una fila escrita por un build v2 sigue abriéndose. A 4 con los
+        // tres del techo de `reverseUpload` (`reverseUploadLowestPending`, `reverseUploadProgressAt`,
+        // `reverseAbortReasonRaw`), también opcionales: una fila v3 se abre con los tres a `nil`.
+        #expect(CloudSyncSchemaVersions.migrationState == 4)
     }
 
     // MARK: - (b·G2) GroupSyncOutbox / GroupSyncCursor (canal de Grupos → backend)

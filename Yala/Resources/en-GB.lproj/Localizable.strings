@@ -5231,3 +5231,21 @@
 
 /* Aviso fijo: este teléfono no consigue App Attest y los datos personales no suben a la nube */
 "settings.attestTerminalBanner" = "It's gone more than a day without passing the security check our server requires. Anything you add here is saved on this phone, but it doesn't reach your cloud account — use another phone in the meantime.";
+
+/* Vuelta a iCloud: espera de la subida, cancelación y salida sin llegar (ticket reverse-upload-has-no-ceiling-and-no-exit) */
+"storage.progress.reverseUploading" = "Uploading your data to iCloud. You can keep using Yala.";
+"storage.progress.reversePending" = "Still to upload: %d";
+"storage.progress.reverseICloudFull" = "iCloud doesn’t have space for your data. If the upload doesn’t make progress in a few minutes, you’ll stay in the cloud and can try again once you free up space.";
+"storage.progress.reverseICloudUnavailable" = "iCloud isn’t available on this device. If the upload doesn’t make progress in a few minutes, you’ll stay in the cloud and can try again.";
+"storage.progress.cancelReverse" = "Cancel and stay in the cloud";
+"storage.confirm.cancelReverseTitle" = "Cancel going back to iCloud?";
+"storage.confirm.cancelReverseBody" = "Your data stays in the Yala cloud and on this device. Yala will ask you to close it and open it again.";
+"storage.confirm.cancelReverseConfirm" = "Yes, stay in the cloud";
+"storage.confirm.cancelReverseKeep" = "Keep waiting";
+"storage.reverseAbort.relaunchTitle" = "Your data is still in the cloud";
+"storage.reverseAbort.relaunchBody" = "Fully close Yala (swipe it away in the app switcher) and open it again to keep using the cloud.";
+"storage.reverseAbort.icloudFull" = "We couldn’t finish going back to iCloud: iCloud ran out of space. Free up space and try again.";
+"storage.reverseAbort.icloudUnavailable" = "We couldn’t finish going back to iCloud: iCloud wasn’t available on this device. Check your iCloud account in Settings and try again.";
+"storage.reverseAbort.stalled" = "We couldn’t finish going back to iCloud: iCloud didn’t receive all your data. Check that iCloud is turned on for this device, then try again with a good connection and keep Yala open while it uploads.";
+"storage.progress.reverseICloudMaybeOff" = "If iCloud isn’t turned on on this device, your data can’t reach iCloud. Turn it on in Settings or cancel to stay in the cloud.";
+"storage.errors.reversePendingExit" = "We can’t go back to iCloud yet: your cloud still needs to finish reactivating. Try again in a moment.";

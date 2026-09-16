@@ -17,6 +17,7 @@
 
 import CloudKit
 import Foundation
+import SQLite3
 import SwiftData
 import Testing
 
@@ -188,7 +189,10 @@ struct MigrationWorkExecutorTests {
         claimStore: CloudClaimActionStore? = nil,
         provider: @escaping @MainActor () -> String = { "apple" },
         icloudAccountPresent: (@MainActor () -> Bool)? = nil,
-        icloudLastExportErrorCode: (@MainActor () -> CKError.Code?)? = nil
+        icloudLastExportErrorCode: (@MainActor () -> CKError.Code?)? = nil,
+        icloudMirrorReportedNotAuthenticated: (@MainActor () -> Bool)? = nil,
+        icloudLastExportErrorAt: (@MainActor () -> Date?)? = nil,
+        icloudLastSuccessfulExportAt: (@MainActor () -> Date?)? = nil
     ) -> MigrationWorkExecutor {
         let token: () async -> String? = { "jwt" }
         let account = CloudAccountClient(baseURL: workerURL, urlSession: stub)
@@ -207,7 +211,10 @@ struct MigrationWorkExecutorTests {
             adoptQuiescenceSignal: adoptQuiescenceSignal,
             claimStore: claimStore,
             icloudAccountPresent: icloudAccountPresent,
-            icloudLastExportErrorCode: icloudLastExportErrorCode)
+            icloudLastExportErrorCode: icloudLastExportErrorCode,
+            icloudMirrorReportedNotAuthenticated: icloudMirrorReportedNotAuthenticated,
+            icloudLastExportErrorAt: icloudLastExportErrorAt,
+            icloudLastSuccessfulExportAt: icloudLastSuccessfulExportAt)
     }
 
     // MARK: - Claim
@@ -1673,5 +1680,181 @@ struct MigrationWorkExecutorTests {
         #expect(StorageModePersistence.isMirrorOffArmed(storageDefaults) == true)
         #expect(StorageModePersistence.isCloudWithMirrorOn(storageDefaults) == false,
                 "el par completo NO abre ventana de doble escritura (escritor único, no dos `set` sueltos)")
+    }
+
+    // MARK: - Techo de `reverseUpload` (ticket `reverse-upload-has-no-ceiling-and-no-exit`)
+
+    @Test("execute(.rearmMirrorOff): en la espera de la reversa (.cloud + mirror vivo) re-arma el par ENTERO y cierra la ventana")
+    func execute_rearmMirrorOff_rearmsTheWholePair() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let defaults = makeIsolatedDefaults(prefix: "mwe.rearm")
+        // Estado de partida de `reverseUpload`: `.mountMirrorAndRelaunch` desarmó el flag manteniendo `.cloud`.
+        StorageModePersistence.write(.cloud, defaults: defaults)
+        #expect(StorageModePersistence.isCloudWithMirrorOn(defaults) == true)
+
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: defaults)
+        try await executor.execute(.rearmMirrorOff)
+
+        // Con el par completo, el siguiente arranque monta el store sin mirror y el motor puede correr. Con el
+        // flag suelto y `.icloud` (el otro orden posible), `derive` pediría relanzar en bucle.
+        #expect(StorageModePersistence.read(defaults) == .cloud)
+        #expect(StorageModePersistence.isMirrorOffArmed(defaults) == true)
+        #expect(StorageModePersistence.isCloudWithMirrorOn(defaults) == false)
+    }
+
+    @Test("execute(.rearmMirrorOff): escribe el MODO también — desde `.icloud` no deja la mitad «armado + .icloud»")
+    func execute_rearmMirrorOff_fromICloud_writesTheModeToo() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let defaults = makeIsolatedDefaults(prefix: "mwe.rearm.icloud")
+        // No debería pasar en `reverseUpload` (el modo es `.cloud`), pero si pasa, armar el flag suelto dejaría la
+        // mitad que `derive` lee como «relanza» en bucle. Con el escritor único del par no puede quedar a medias.
+        StorageModePersistence.write(.icloud, defaults: defaults)
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: defaults)
+        try await executor.execute(.rearmMirrorOff)
+        try await executor.execute(.rearmMirrorOff)         // idempotente: re-ejecutarlo tras un kill no cambia nada
+        #expect(StorageModePersistence.read(defaults) == .cloud)
+        #expect(StorageModePersistence.isMirrorOffArmed(defaults) == true)
+    }
+
+    // La decisión es pura y se pinnea en `ReverseUploadCeilingLogicTests`. Aquí, el CABLEADO: que las tres señales
+    // lleguen al sitio que les toca. Se inyectan las tres siempre (los argumentos se evalúan eager y el default de
+    // producción es `iCloudSyncService.shared`).
+
+    @Test("reverseUploadBlocker: sin token de iCloud y sin error → icloudOff (copy honesto, presupuesto LARGO)")
+    func reverseUploadBlocker_noTokenNoError_isICloudOff() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), FakeSession(token: "jwt", userID: "s"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    icloudAccountPresent: { false },
+                                    icloudLastExportErrorCode: { nil },
+                                    icloudMirrorReportedNotAuthenticated: { false },
+                                    icloudLastExportErrorAt: { nil },
+                                    icloudLastSuccessfulExportAt: { nil })
+        #expect(executor.reverseUploadBlocker() == .icloudOff)
+        #expect(executor.reverseUploadBlocker().stallCause == .unknown)
+    }
+
+    @Test("reverseUploadBlocker: quotaExceeded → icloudFull; mirror no autenticado → icloudUnusable")
+    func reverseUploadBlocker_cloudKitWord_isDefinitive() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let failedAt = Date(timeIntervalSince1970: 1_700_000_000)
+        let full = makeExecutor(context, CloudSyncEngine(), RoutingStub(), FakeSession(token: "jwt", userID: "s"),
+                                FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                icloudAccountPresent: { true },
+                                icloudLastExportErrorCode: { .quotaExceeded },
+                                icloudMirrorReportedNotAuthenticated: { false },
+                                icloudLastExportErrorAt: { failedAt },
+                                icloudLastSuccessfulExportAt: { failedAt.addingTimeInterval(-60) })
+        #expect(full.reverseUploadBlocker() == .icloudFull)
+        let unauthenticated = makeExecutor(
+            context, CloudSyncEngine(), RoutingStub(), FakeSession(token: "jwt", userID: "s"),
+            FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+            icloudAccountPresent: { true },
+            icloudLastExportErrorCode: { nil },
+            icloudMirrorReportedNotAuthenticated: { true },
+            icloudLastExportErrorAt: { nil },
+            icloudLastSuccessfulExportAt: { nil })
+        #expect(unauthenticated.reverseUploadBlocker() == .icloudUnusable)
+    }
+
+    @Test("reverseUploadBlocker: un «iCloud lleno» ANTERIOR al último export con éxito ya no manda → unknown")
+    func reverseUploadBlocker_errorOutdatedByASuccess_isUnknown() async throws {
+        // El cableado de las dos fechas: si el executor pasara la del error como la del éxito (o no las pasara), el
+        // latch de `lastExportError` volvería a acortar la espera a quien ya liberó espacio.
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let failedAt = Date(timeIntervalSince1970: 1_700_000_000)
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), FakeSession(token: "jwt", userID: "s"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    icloudAccountPresent: { true },
+                                    icloudLastExportErrorCode: { .quotaExceeded },
+                                    icloudMirrorReportedNotAuthenticated: { false },
+                                    icloudLastExportErrorAt: { failedAt },
+                                    icloudLastSuccessfulExportAt: { failedAt.addingTimeInterval(60) })
+        #expect(executor.reverseUploadBlocker() == .unknown)
+    }
+
+    @Test("reverseUploadBlocker: token presente y sin error → unknown (el caso normal de una subida lenta)")
+    func reverseUploadBlocker_healthySignals_isUnknown() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), FakeSession(token: "jwt", userID: "s"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    icloudAccountPresent: { true },
+                                    icloudLastExportErrorCode: { nil },
+                                    icloudMirrorReportedNotAuthenticated: { false },
+                                    icloudLastExportErrorAt: { nil },
+                                    icloudLastSuccessfulExportAt: { nil })
+        #expect(executor.reverseUploadBlocker() == .unknown)
+    }
+
+    // MARK: - Muestreo de `reverseUpload` con filas SIN testigo (born-cloud, D15)
+
+    /// Side-tables de CloudKit fabricadas a mano (molde de `CKIdentityCaptureTests`) para una sola `TransactionItem`:
+    /// su `Z_ENT` y, si se pide, su fila de metadata con o sin nombre de registro.
+    private func makeReverseUploadFixture(_ dir: URL, zpk: Int64, recordName: String?, withMetadata: Bool) -> URL {
+        let url = dir.appendingPathComponent("ckfixture-reverse.sqlite")
+        var db: OpaquePointer?
+        #expect(sqlite3_open(url.path, &db) == SQLITE_OK)
+        var statements = [
+            "CREATE TABLE Z_PRIMARYKEY (Z_ENT INTEGER, Z_NAME TEXT)",
+            "INSERT INTO Z_PRIMARYKEY (Z_ENT, Z_NAME) VALUES (5, 'TransactionItem')",
+            """
+            CREATE TABLE ANSCKRECORDMETADATA
+            (Z_PK INTEGER, ZENTITYPK INTEGER, ZENTITYID INTEGER, ZCKRECORDNAME TEXT, ZRECORDZONE INTEGER)
+            """,
+            "CREATE TABLE ANSCKRECORDZONEMETADATA (Z_PK INTEGER, ZCKRECORDZONENAME TEXT, ZCKOWNERNAME TEXT)",
+            "INSERT INTO ANSCKRECORDZONEMETADATA VALUES (2, 'com.apple.coredata.cloudkit.zone', '__defaultOwner__')",
+        ]
+        if withMetadata {
+            let name = recordName.map { "'\($0)'" } ?? "NULL"
+            statements.append("INSERT INTO ANSCKRECORDMETADATA VALUES (1, \(zpk), 5, \(name), 2)")
+        }
+        for sql in statements {
+            #expect(sqlite3_exec(db, sql, nil, nil, nil) == SQLITE_OK, "SQL: \(sql)")
+        }
+        sqlite3_close(db)
+        return url
+    }
+
+    /// EL test de D15: una fila creada en ESTE teléfono por una cuenta nacida en la nube NO tiene testigo
+    /// `SyncIdentity` (solo lo crean `backfillIdentities` y el pull de filas nuevas). Antes el muestreo emparejaba
+    /// únicamente filas con testigo: cero pares ⇒ `.drained` ⇒ la vuelta a iCloud se daba por hecha sin comprobar
+    /// nada. Ahora la fila entra con un testigo scratch: sin metadata de CloudKit cuenta como PENDIENTE, y con su
+    /// nombre de registro cuenta como exportada. Y el testigo scratch no se persiste.
+    @Test("reverseUploadStatus: fila viva SIN testigo (born-cloud) → pendiente hasta que CloudKit le da nombre")
+    func reverseUploadStatus_unwitnessedRow_isPendingUntilExported() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let tx = TransactionItem(date: fixedNow, amount: -12.5, currencyCode: "USD")
+        context.insert(tx)
+        try context.save()
+        #expect(try context.fetchCount(FetchDescriptor<SyncIdentity>()) == 0, "premisa: la fila no tiene testigo")
+        let zpk = try #require(CKIdentityCapture.entityAndPK(for: tx.persistentModelID)?.zpk)
+
+        let sinMetadata = makeReverseUploadFixture(dir, zpk: zpk, recordName: nil, withMetadata: false)
+        let pendiente = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                     personalStoreURL: sinMetadata)
+        #expect(pendiente.reverseUploadStatus() == .pending(count: 1),
+                "sin metadata de CloudKit la fila no ha subido: la vuelta no puede darse por hecha")
+        #expect(try context.fetchCount(FetchDescriptor<SyncIdentity>()) == 0, "el testigo scratch no se inserta")
+
+        try FileManager.default.removeItem(at: sinMetadata)
+        let exportada = makeReverseUploadFixture(dir, zpk: zpk, recordName: "rec-born-cloud", withMetadata: true)
+        let drenado = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                   personalStoreURL: exportada)
+        #expect(drenado.reverseUploadStatus() == .drained, "con nombre de registro, la fila ya está en CloudKit")
+        #expect(try context.fetchCount(FetchDescriptor<SyncIdentity>()) == 0)
     }
 }

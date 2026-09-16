@@ -134,6 +134,9 @@ enum MetricsCanary: String {
     case cloudCutoverMarkerStalled
     case cloudCutoverAborted
     case cloudStorageModePairViolation
+    // Techo de `reverseUpload` (ticket `reverse-upload-has-no-ceiling-and-no-exit`)
+    case cloudReverseUploadWaiting
+    case cloudReverseUploadAborted
     case accountDeletionCompleted
     case accountDeletionFailed
     case siwaExchangeFailed
@@ -459,6 +462,40 @@ extension MetricsService {
     /// El presupuesto del paso 4 se agotó → el cutover abortó y el device volvió a `.icloud`.
     static func cloudCutoverAborted(verdict: String) {
         canary(.cloudCutoverAborted, detail: verdict)
+    }
+
+    // MARK: Techo de `reverseUpload` (ticket `reverse-upload-has-no-ceiling-and-no-exit`)
+
+    /// Una observación de la espera de «Volver a iCloud». `detail` separa «va lento» de «no avanza»:
+    /// `advancing|<causa>` cuando la cifra de pendientes acaba de bajar, `stalled|<tramo sin avanzar>|<causa>` cuando
+    /// no. Un `stalled` sostenido en tramos largos en muchos teléfonos es un mirror que no exporta para nadie.
+    ///
+    /// Dedupe por PROCESO y por `detail` (`canaryOnce`): la pantalla re-observa cada 30 s y el spool guarda 50
+    /// eventos FIFO, así que emitirlo en cada observación —como `cloudCutoverMarkerStalled`— tiraría el resto.
+    static func cloudReverseUploadWaiting(advancing: Bool, stalledSeconds: Double, blocker: String) {
+        let detail = reverseUploadWaitingDetail(advancing: advancing, stalledSeconds: stalledSeconds, blocker: blocker)
+        canaryOnce(.cloudReverseUploadWaiting, key: detail, detail: detail)
+    }
+
+    /// Detalle del canario de la espera. Tramos cerrados por arriba y por el presupuesto: los 15 min del techo
+    /// corto y las 72 h del largo son sus bordes.
+    nonisolated static func reverseUploadWaitingDetail(advancing: Bool, stalledSeconds: Double, blocker: String) -> String {
+        guard !advancing else { return "advancing|\(blocker)" }
+        let bucket: String
+        switch stalledSeconds {
+        case ..<900: bucket = "lt_15m"
+        case ..<3_600: bucket = "15m_1h"
+        case ..<86_400: bucket = "1h_24h"
+        case ..<259_200: bucket = "24h_72h"
+        default: bucket = "gte_72h"
+        }
+        return "stalled|\(bucket)|\(blocker)"
+    }
+
+    /// La espera de «Volver a iCloud» terminó sin llegar a iCloud y la reversa volvió a la nube.
+    /// `detail` = `ReverseUploadAbortReason.rawValue`: `cancelled` lo pidió la persona; el resto, el techo.
+    static func cloudReverseUploadAborted(reason: String) {
+        canary(.cloudReverseUploadAborted, detail: reason)
     }
 
     /// Par de storage incompleto (`.cloud` + mirror ON) en fase estable ⇒ motor del dominio bloqueado.

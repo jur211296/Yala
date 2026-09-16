@@ -178,6 +178,15 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// memoria: `nil` tras un boot fresco, por eso el tope por tiempo del paso 4 es la red de seguridad y esto
     /// solo un acelerador. Inyectable para tests (nunca el singleton en el cuerpo — regla del repo).
     private let icloudLastExportErrorCode: @MainActor () -> CKError.Code?
+    /// Techo de `reverseUpload`: ¿CloudKit dijo `notAuthenticated`? (`iCloudSyncService.mirrorReportedNotAuthenticated`).
+    /// Hace falta aparte de `icloudLastExportErrorCode` porque `iCloudSyncService.apply` sale antes de guardar ese
+    /// código en `lastExportError`. Inyectable para tests.
+    private let icloudMirrorReportedNotAuthenticated: @MainActor () -> Bool
+    /// Techo de `reverseUpload`: la fecha del último error de export (`iCloudSyncService.lastExportErrorAt`) y la del
+    /// último export con éxito (`lastSuccessfulExportDate`). Sin ellas un error ya resuelto seguiría mandando: el
+    /// latch no se limpia con un éxito. Inyectables para tests.
+    private let icloudLastExportErrorAt: @MainActor () -> Date?
+    private let icloudLastSuccessfulExportAt: @MainActor () -> Date?
     /// Persistencia del `AuthAction` resuelto (P6). El `performClaim`/`runAdoptFlow` lo estampan → el gate
     /// de arranque del runtime (`LiveCloudSessionProvider.claimAction`) lo lee. Inyectable para tests.
     private let claimStore: CloudClaimActionStore
@@ -224,7 +233,10 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         adoptQuiescenceSignal: @escaping () -> Bool = { true },
         claimStore: CloudClaimActionStore? = nil,
         icloudAccountPresent: (@MainActor () -> Bool)? = nil,
-        icloudLastExportErrorCode: (@MainActor () -> CKError.Code?)? = nil
+        icloudLastExportErrorCode: (@MainActor () -> CKError.Code?)? = nil,
+        icloudMirrorReportedNotAuthenticated: (@MainActor () -> Bool)? = nil,
+        icloudLastExportErrorAt: (@MainActor () -> Date?)? = nil,
+        icloudLastSuccessfulExportAt: (@MainActor () -> Date?)? = nil
     ) {
         self.engine = engine
         self.pushClient = pushClient
@@ -249,6 +261,12 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         self.icloudAccountPresent = icloudAccountPresent ?? { SwiftDataConfiguration.isICloudAvailable() }
         self.icloudLastExportErrorCode = icloudLastExportErrorCode
             ?? { iCloudSyncService.shared.lastExportError?.code }
+        self.icloudMirrorReportedNotAuthenticated = icloudMirrorReportedNotAuthenticated
+            ?? { iCloudSyncService.shared.mirrorReportedNotAuthenticated }
+        self.icloudLastExportErrorAt = icloudLastExportErrorAt
+            ?? { iCloudSyncService.shared.lastExportErrorAt }
+        self.icloudLastSuccessfulExportAt = icloudLastSuccessfulExportAt
+            ?? { iCloudSyncService.shared.lastSuccessfulExportDate }
         self.uploader = MigrationSnapshotUploader(
             engine: engine, pushClient: pushClient, context: context,
             calendar: calendar, now: now, pageSize: snapshotPageSize)
@@ -355,6 +373,73 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         addPairs(CashFlowOverride.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
         addPairs(GroupBridgePreference.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
         return pairs
+    }
+
+    /// Las filas vivas de las 16 entidades para el muestreo de `reverseUpload`: TODAS, no solo las que tienen testigo.
+    ///
+    /// Una fila con testigo `SyncIdentity` va con él, y la captura le actualiza las coordenadas (§h.6 pto 3). Una fila
+    /// SIN testigo va con un testigo SCRATCH que no se inserta, molde de `isMarkerExported`: `capture` solo le escribe
+    /// al objeto en memoria. Sin esto el muestreo no veía lo creado en ESTE teléfono por una cuenta nacida en la nube
+    /// —esas filas no pasan por `backfillIdentities` (solo la ida y el adopt) ni llegan nuevas por el pull, que es
+    /// donde nacen los testigos—, así que `pending == 0` y la vuelta a iCloud se daba por hecha al instante sin
+    /// comprobar que algo hubiera llegado (ticket `reverse-upload-has-no-ceiling-and-no-exit`, D15).
+    ///
+    /// NO sustituye a `collectIdentityPairs`: la ida captura coordenadas para persistirlas y ahí un testigo scratch no
+    /// sirve. Si el fetch de testigos falla, todas las filas van con testigo scratch: el muestreo sigue leyendo el
+    /// SQLite y lo que no haya exportado cuenta como pendiente, en vez de devolver cero pares.
+    private func collectReverseUploadPairs() -> [(id: PersistentIdentifier, row: SyncIdentity)] {
+        var rowsBySyncID: [UUID: SyncIdentity] = [:]
+        do {
+            for row in try context.fetch(FetchDescriptor<SyncIdentity>()) {
+                rowsBySyncID[row.syncID] = row
+            }
+        } catch {
+            #if DEBUG
+            print("MigrationWorkExecutor.collectReverseUploadPairs: fetch(SyncIdentity) falló, todo va con testigo scratch: \(error)")
+            #endif
+        }
+        var pairs: [(id: PersistentIdentifier, row: SyncIdentity)] = []
+        addReverseUploadPairs(TransactionItem.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        addReverseUploadPairs(InboxDraft.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        addReverseUploadPairs(Category.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        addReverseUploadPairs(FavoritePayment.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        addReverseUploadPairs(MerchantMemory.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        addReverseUploadPairs(ExchangeRate.self, identity: { $0.syncID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        addReverseUploadPairs(Budget.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        addReverseUploadPairs(ScheduledPayment.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        addReverseUploadPairs(Account.self, identity: { $0.shortcutID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        addReverseUploadPairs(Subcategory.self, identity: { $0.shortcutID }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        addReverseUploadPairs(Tag.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        addReverseUploadPairs(NotificationItem.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        addReverseUploadPairs(CashFlowPlan.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        addReverseUploadPairs(CashFlowLine.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        addReverseUploadPairs(CashFlowOverride.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        addReverseUploadPairs(GroupBridgePreference.self, identity: { $0.id }, into: &pairs, rowsBySyncID: rowsBySyncID)
+        return pairs
+    }
+
+    /// Fetch CONCRETO por tipo (regla de `#Predicate`). Cada fila viva entra: con su testigo si existe, o con uno
+    /// scratch sin insertar si no (incluida la que aún no tiene identidad de sync).
+    private func addReverseUploadPairs<M: PersistentModel>(
+        _ type: M.Type, identity: (M) -> UUID?,
+        into pairs: inout [(id: PersistentIdentifier, row: SyncIdentity)],
+        rowsBySyncID: [UUID: SyncIdentity]
+    ) {
+        do {
+            for model in try context.fetch(FetchDescriptor<M>()) {
+                if let sid = identity(model), let row = rowsBySyncID[sid] {
+                    pairs.append((model.persistentModelID, row))
+                } else {
+                    let scratch = SyncIdentity(
+                        syncID: identity(model) ?? UUID(), entityType: String(describing: M.self), localAnchor: "")
+                    pairs.append((model.persistentModelID, scratch))
+                }
+            }
+        } catch {
+            #if DEBUG
+            print("MigrationWorkExecutor.addReverseUploadPairs: fetch(\(M.self)) falló: \(error)")
+            #endif
+        }
     }
 
     /// Fetch CONCRETO por tipo (regla inviolable de `#Predicate`). Empareja cada modelo con identidad con su
@@ -661,13 +746,22 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
                 throw MigrationExecutorError.notWired(effect: "completeReverseServer: transient")
             }
 
+        case .rearmMirrorOff:
+            // Salida de `reverseUpload` (ticket `reverse-upload-has-no-ceiling-and-no-exit`): el par ENTERO con su
+            // escritor único —`.cloud` y armado—, no el flag suelto. En esta fase el modo ya es `.cloud`, pero un
+            // armado con `.icloud` sería la mitad que `derive` lee como «relanza» en bucle (C-1), y escribir los
+            // dos cierra esa puerta sin depender de lo que haya. No puede lanzar: `UserDefaults` puro.
+            StorageModePersistence.writeCloudArmed(defaults: storageDefaults)
+            CloudSyncBreadcrumb.reverseMirrorOffRearmed()
+
         case .reverseRollback:
             // `reverse_abort` (§h, I11-3): DES-congela el backend (`reverse_in_progress=false` +
             // `reverse_frozen_at=null`; `reverted_at` queda null — la reversa NO ocurrió). El RPC acepta
             // lease expirado (abort de emergencia post-crash largo) y es idempotente con rip ya false.
             // sessionExpired/transient → THROW (journaled, retomable — la red/el re-login lo despiertan).
             // rejected/otherLeader → NO throw perpetuo (decisión I11-3, documentada en el plan): el estado
-            // local ya es TERMINAL estable (reverseFailedRollback); un abort rechazado por lease usurpado
+            // local ya es TERMINAL estable (reverseFailedRollback, o la fase origen tras la salida de
+            // `reverseUpload`); un abort rechazado por lease usurpado
             // dejaría el efecto journaled-pendiente PARA SIEMPRE re-lanzando en cada resume (el mismo
             // bug-class del rollback de la ida, device 2026-07-10) → breadcrumb RUIDOSO + completar. El
             // backend puede quedar rip=true: un `reverse_claim` posterior es idempotente-ok (o el nuevo
@@ -938,13 +1032,24 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             + system.accountsMerged + system.subcategoriesMerged
     }
 
+    /// Techo de `reverseUpload`: por qué no drena la subida, con las tres señales del canal iCloud. Decisión en
+    /// `ReverseUploadBlockerLogic` (pura y testeada aparte); aquí solo se recogen. Read-only y sin red.
+    func reverseUploadBlocker() -> ReverseUploadBlocker {
+        ReverseUploadBlockerLogic.decide(
+            icloudAvailable: icloudAccountPresent(),
+            lastExportErrorCode: icloudLastExportErrorCode(),
+            lastExportErrorAt: icloudLastExportErrorAt(),
+            lastSuccessfulExportAt: icloudLastSuccessfulExportAt(),
+            mirrorReportedNotAuthenticated: icloudMirrorReportedNotAuthenticated())
+    }
+
     /// §h `reverseUpload`: muestreo CKIdentityCapture sobre TODAS las filas vivas. `exportPending + noMetadata
     /// == 0` ⇒ `.drained` (`noMetadata` cuenta como pendiente: un insert del replay que el mirror aún no
     /// procesó); si no, `.pending(count)`. §h.6 pto 3: `capture` MUTA los testigos `.captured` con las
     /// coordenadas frescas — eso ES "los SyncIdentity se ACTUALIZAN durante reverseUpload" (una futura 2ª
     /// reversa ya es variante migrado con mapa poblado) → se PERSISTE (quiescencia garantizada por el runner).
     func reverseUploadStatus() -> ReverseUploadStatus {
-        let pairs = collectIdentityPairs()
+        let pairs = collectReverseUploadPairs()
         let report = CKIdentityCapture.capture(pairs, storeURL: personalStoreURL)
         if context.hasChanges {
             do {

@@ -5975,3 +5975,21 @@
 
 /* Aviso fijo: este teléfono no consigue App Attest y los datos personales no suben a la nube */
 "settings.attestTerminalBanner" = "它已经超过一天没能通过我们服务器要求的安全验证。你在这里记的账会存在这台手机上，但不会同步到云端账户，暂时请换一台手机使用。";
+
+/* Vuelta a iCloud: espera de la subida, cancelación y salida sin llegar (ticket reverse-upload-has-no-ceiling-and-no-exit) */
+"storage.progress.reverseUploading" = "正在将您的数据上传到 iCloud。您可以继续使用 Yala。";
+"storage.progress.reversePending" = "待上传：%d";
+"storage.progress.reverseICloudFull" = "iCloud 没有足够空间存放您的数据。如果几分钟内上传没有进展，您将继续使用云端，释放空间后可以重试。";
+"storage.progress.reverseICloudUnavailable" = "这台设备上的 iCloud 不可用。如果几分钟内上传没有进展，您将继续使用云端，之后可以重试。";
+"storage.progress.cancelReverse" = "取消并继续使用云端";
+"storage.confirm.cancelReverseTitle" = "要取消返回 iCloud 吗？";
+"storage.confirm.cancelReverseBody" = "您的数据仍保存在 Yala 云端和这台设备上。之后 Yala 会提示您将其关闭并重新打开。";
+"storage.confirm.cancelReverseConfirm" = "是，继续使用云端";
+"storage.confirm.cancelReverseKeep" = "继续等待";
+"storage.reverseAbort.relaunchTitle" = "您的数据仍在云端";
+"storage.reverseAbort.relaunchBody" = "彻底关闭 Yala（在应用切换器中划走），然后重新打开以继续使用云端。";
+"storage.reverseAbort.icloudFull" = "无法完成返回 iCloud：当时 iCloud 空间已满。请释放空间后重试。";
+"storage.reverseAbort.icloudUnavailable" = "无法完成返回 iCloud：当时这台设备上的 iCloud 不可用。请在设置中检查您的 iCloud 账户后重试。";
+"storage.reverseAbort.stalled" = "无法完成返回 iCloud：iCloud 未收到您的全部数据。请确认这台设备已开启 iCloud，并在网络良好时重试，上传期间请保持 Yala 打开。";
+"storage.progress.reverseICloudMaybeOff" = "如果这台设备未开启 iCloud，您的数据将无法上传到 iCloud。请在设置中开启，或取消以继续使用云端。";
+"storage.errors.reversePendingExit" = "暂时无法返回 iCloud：需要先完成云端的重新启用。请稍后重试。";
