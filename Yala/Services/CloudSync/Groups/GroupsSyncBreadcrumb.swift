@@ -243,6 +243,23 @@ enum GroupsSyncBreadcrumb {
         logger.notice("GroupsSync loopRestarted trigger=\(trigger, privacy: .public)")
     }
 
+    /// El loop VIVO se DESPERTÓ (`wakeLoopIfSleeping`). `trigger` = el mismo slug del re-arranque
+    /// (`foreground` / `post-sign-in`). Complemento de `groupsLoopRestarted`: una llamada con `trigger` emite
+    /// uno **o** el otro, según hubiera loop que arrancar o loop que despertar.
+    ///
+    /// **`sleeping` es el dato que hace útil la línea**, y por eso no se omite: el despertar corta el sueño
+    /// de la vuelta, y ese sueño puede ser el backoff de un fallo (hasta 300 s, el caso del ticket) o la
+    /// cadencia sana de 60 s. Sin ese bit, el log no distingue «le quité cinco minutos de espera» de «empujé
+    /// un loop que no estaba esperando». En `false` el despertar lo sirve la marca de la vuelta —el
+    /// foreground llegó con el ciclo en vuelo— y no hay ninguna espera que cortar.
+    ///
+    /// **Un foreground sin ninguna de las dos líneas NO significa que el canal no pasara el gate**: con el
+    /// runtime personal cadenciando, Grupos no tiene loop propio y `startIfEligible` retorna en su
+    /// early-return de piggyback, después del gate y antes de los dos rastros. Sin PII.
+    static func groupsLoopWoken(trigger: String, sleeping: Bool) {
+        logger.notice("GroupsSync loopWoken trigger=\(trigger, privacy: .public) sleeping=\(sleeping, privacy: .public)")
+    }
+
     // MARK: - Cambio de identidad de iCloud (C-3)
     //
     // ⚠️ **HISTÓRICOS desde la Fase 3 (2026-08-06): los CUATRO están SIN EMISOR.** Sus emisores vivían en

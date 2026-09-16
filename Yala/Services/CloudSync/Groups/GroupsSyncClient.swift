@@ -159,6 +159,9 @@ final class GroupsSyncClient {
     /// Tarea del loop de cadencia (single-instance: `startIfEligible` no re-arranca si vive). `nil` fuera
     /// del loop (se limpia en el `defer` de `runLoop`).
     private var loopTask: Task<Void, Never>?
+    /// Generación del loop: sube con cada arranque y la lleva la vuelta que corre, para que el `defer` de
+    /// uno que muere tarde no le borre el handle al que nació detrás (ver `runLoop`).
+    private var loopGeneration = 0
     /// El ÚLTIMO 403 recibido venía del KILL-SWITCH del canal (`yala_groups_disabled`). Lo escriben los dos
     /// únicos sitios que leen un 403 —el push y el pull— en AMBAS ramas (no solo cuando es el kill), para
     /// que nunca quede un valor viejo describiendo la parada siguiente.
@@ -262,6 +265,23 @@ final class GroupsSyncClient {
     var sleeper: (TimeInterval) async -> Void = { seconds in
         try? await Task.sleep(for: .seconds(seconds))
     }
+    /// El sueño de la vuelta EN CURSO, en tarea PROPIA para poder cortarlo desde fuera sin matar el loop
+    /// (`wakeLoopIfSleeping`). `nil` fuera del sueño — lo limpia el `defer` de `nap(_:)`.
+    ///
+    /// **Es una tarea aparte y no un `await sleeper(delay)` a secas porque cancelar es lo único que
+    /// interrumpe un sueño**, y cancelar el loop entero lo mataría en vez de adelantarlo. El precio de
+    /// tenerla aparte es que la cancelación del loop ya no le llega sola: la propaga el
+    /// `withTaskCancellationHandler` de `nap(_:)`, y sin él un `stopLoop()` durante el sueño dejaría al loop
+    /// esperando hasta 5 minutos antes de mirar su propia cancelación.
+    private var napTask: Task<Void, Never>?
+    /// Un «vuelve a primer plano» llegó MIENTRAS el ciclo de esta vuelta corría, así que no había sueño que
+    /// cortar. Se consume saltándose el delay de esta vuelta: el ciclo siguiente sale ya.
+    ///
+    /// **Se baja al ENTRAR en cada vuelta**, así que describe esta vuelta y no la vida del loop: un wake
+    /// anterior al arranque del loop ya lo sirve el ciclo que arranca, y el que llega durante el sueño lo
+    /// sirve la cancelación del `napTask`. Alcances disjuntos: la marca cubre la ventana del ciclo, el
+    /// `napTask` cubre la del sueño, y entre las dos no queda hueco.
+    private var wakeRequested = false
 
     /// Tope de iteraciones del pull de una vuelta (server que no converge → breadcrumb + transitorio).
     private static let pullMaxIterations = 20
@@ -359,7 +379,9 @@ final class GroupsSyncClient {
     ///
     /// **La decisión de (re)arranque del loop propio vive en `GroupsLoopRestartLogic.shouldStart`** (pura,
     /// testeada) — SSOT de flag/sesión/single-instance/D8, para no partir la verdad entre guards
-    /// dispersos. `trigger` NO-nil emite `groupsLoopRestarted` SOLO si el loop se crea de verdad.
+    /// dispersos. `trigger` NO-nil emite `groupsLoopRestarted` SOLO si el loop se crea de verdad — y, si ya
+    /// vivía, `groupsLoopWoken`, porque desde el 2026-09-16 ese caso **no es un no-op**: despierta el loop que
+    /// duerme su backoff (`wakeLoopIfSleeping`, ticket `groups-loop-in-backoff-ignores-the-return-to-foreground`).
     ///
     /// **D8 (H-2026-07-18-4): AHORA es SEGURO llamarlo MID-SESSION** (foreground / post-sign-in), a
     /// diferencia de antes (que exigía SOLO cold boot): `shouldStart` incorpora el guard de mount-mismatch
@@ -392,7 +414,12 @@ final class GroupsSyncClient {
             flagOn: CloudSyncFlags.groupsBackendEnabled,
             hasSession: sessionCheck(),
             loopAlive: loopTask != nil
-        ) else { return }
+        ) else {
+            // El loop ya vive ⇒ no se duplica, pero SÍ se despierta: vivo no es trabajando, y un fallo
+            // pasajero lo deja durmiendo hasta 5 min. Con el flag OFF o sin sesión esto ya retornó arriba.
+            wakeLoopIfSleeping(trigger: trigger)
+            return
+        }
 
         // Barrido del veneno YA ENCOLADO: un tombstone de `split_groups` de un build anterior al guard del
         // 2026-08-02 borra el grupo para TODOS sus miembros en cuanto se empuje. Va aquí —y no entre los
@@ -406,7 +433,10 @@ final class GroupsSyncClient {
         // A7: canario de push fallando permanente (filas ya en dead-letter al arrancar el loop).
         let deadLettered = (try? deadLetteredCount(context)) ?? 0
         if deadLettered > 0 { GroupsSyncBreadcrumb.groupsDeadLetteredCount(deadLettered) }
-        loopTask = Task { @MainActor in await self.runLoop(context: context) }
+        // El loop lleva su propia GENERACIÓN para comprobar, al morir, que el publicado sigue siendo él.
+        loopGeneration += 1
+        let generation = loopGeneration
+        loopTask = Task { @MainActor in await self.runLoop(context: context, generation: generation) }
         // Solo cuando el loop se creó de verdad (no en piggyback / no-op): breadcrumb de re-arranque.
         if let trigger { GroupsSyncBreadcrumb.groupsLoopRestarted(trigger: trigger) }
     }
@@ -414,14 +444,22 @@ final class GroupsSyncClient {
     /// El loop de cadencia: cada vuelta = `syncCycleOnce` → delay por `SyncCadencePolicy` → repetir.
     /// `sessionExpired` (401, salvo el de App Attest ausente, que es pasajero) y `accountUnavailable` TERMINAN el
     /// loop, y los dos son re-arrancables por el próximo `startIfEligible`.
-    private func runLoop(context: ModelContext) async {
-        defer { loopTask = nil }                        // A6: liberar el single-instance al salir
+    private func runLoop(context: ModelContext, generation: Int) async {
+        // A6: liberar el single-instance al salir, y SOLO si el que sale es el que está publicado. La
+        // comparación es de la misma familia que la del `nap`: entre `stopLoop()` y la muerte real de este
+        // loop cabe un `startIfEligible` que publique otro, y sin ella el que sale se lo lleva por delante
+        // —dos loops vivos y un `stopLoop` posterior cancelando `nil`—.
+        defer { if loopGeneration == generation { loopTask = nil } }
         loop: while true {
             // A6: cinturón contra store muerto en la ventana wipe→token-nil (sesión caída entre vueltas).
             guard sessionCheck() else {
                 GroupsSyncBreadcrumb.groupsLoopStopped(reason: "session-check-failed")
                 break loop
             }
+
+            // La marca describe ESTA vuelta: se baja antes del ciclo, así que solo la enciende un foreground
+            // llegado mientras el ciclo corre.
+            wakeRequested = false
 
             let outcome = await syncCycleOnceCoalesced(context: context)
             switch outcome {
@@ -452,12 +490,68 @@ final class GroupsSyncClient {
                 break loop
             }
 
-            await sleeper(delay)
+            // Un foreground durante el ciclo no tuvo sueño que cortar: se sirve aquí, sin delay. Se duerme
+            // igual (un `0` sigue siendo un punto de suspensión y de cancelación) y solo vale para ESTA
+            // vuelta, así que un ciclo `.coalesced` no puede encadenar vueltas sin pausa.
+            await nap(wakeRequested ? 0 : delay, generation: generation)
             guard !Task.isCancelled else {               // A6: cancelado durante el sleep → salir
                 GroupsSyncBreadcrumb.groupsLoopStopped(reason: "cancelled")
                 break loop
             }
         }
+    }
+
+    /// Duerme `delay` de forma CORTABLE desde fuera: el sueño vive en `napTask` y `wakeLoopIfSleeping` lo
+    /// cancela para que el loop cicle ya.
+    ///
+    /// El `withTaskCancellationHandler` es lo que conserva el comportamiento de antes: una tarea creada con
+    /// `Task {}` NO hereda la cancelación de quien la crea, así que sin él un `stopLoop()` —o el teardown del
+    /// sign-out— se quedaría esperando a que venciera el backoff entero antes de que el loop mirase su propia
+    /// cancelación. Con él, cancelar el loop cancela el sueño en el acto, como cuando el `Task.sleep` corría
+    /// dentro del propio `loopTask`.
+    private func nap(_ delay: TimeInterval, generation: Int) async {
+        let nap = Task { @MainActor in await self.sleeper(delay) }
+        // Publica y limpia SOLO el loop VIGENTE, y solo su propio handle. Sin las dos comprobaciones, un
+        // loop viejo que tarda en morir —`stopLoop()` deja `loopTask = nil` en el acto, pero el ciclo en
+        // vuelo no reanuda hasta que su request vuelve— pisaría o borraría el sueño del loop que ya nació
+        // detrás: el wake siguiente cancelaría `nil`, dejaría su rastro en el log y el loop dormiría el
+        // backoff entero. O sea, el bug del ticket resucitado y encima invisible.
+        if loopGeneration == generation { napTask = nap }
+        defer { if napTask == nap { napTask = nil } }
+        await withTaskCancellationHandler {
+            await nap.value
+        } onCancel: {
+            nap.cancel()
+        }
+    }
+
+    /// Corta el sueño del loop VIVO para que cicle ya. Lo llama `startIfEligible` cuando no hay loop que
+    /// arrancar porque ya lo hay — o sea, en el foreground y en el post-sign-in.
+    ///
+    /// **Para qué existe:** tras un fallo pasajero el loop duerme un backoff que crece 5, 10, 20… hasta 300 s
+    /// (`SyncCadencePolicy.backoffDelay`). Quien se quedó sin red, salió de Yala, recuperó la conexión y
+    /// volvió, veía sus cambios de grupos esperando ese sueño entero: hasta cinco minutos, salvo que guardara
+    /// algo o tirase hacia abajo. Es el molde del runtime personal, cuyo `handleBecameActive` re-arranca la
+    /// cadencia y con eso corta el sueño en curso.
+    ///
+    /// **No arranca nada ni salta ningún gate**: si el loop no vive, `shouldWake` devuelve `false` y el
+    /// (re)arranque es cosa de `shouldStart`. Con el flag OFF o sin sesión no hace nada, igual que el
+    /// arranque. Y no toca `consecutiveTransients`: adelantar un reintento no borra la racha de fallos, que
+    /// es lo que mide cuánto esperar si este ciclo también falla.
+    ///
+    /// **En piggyback no hace falta y por eso no se llama**: con el runtime personal cadenciando, Grupos no
+    /// tiene loop propio (`loopAlive == false`) y quien despierta el ciclo de Grupos —que va de paso 5.6— es
+    /// `CloudSyncRuntime.handleBecameActive`.
+    func wakeLoopIfSleeping(trigger: String? = nil) {
+        guard GroupsLoopRestartLogic.shouldWake(
+            flagOn: CloudSyncFlags.groupsBackendEnabled,
+            hasSession: sessionCheck(),
+            loopAlive: loopTask != nil
+        ) else { return }
+        let wasSleeping = napTask != nil
+        wakeRequested = true
+        napTask?.cancel()
+        if let trigger { GroupsSyncBreadcrumb.groupsLoopWoken(trigger: trigger, sleeping: wasSleeping) }
     }
 
     /// Cancela el loop. B2: cableado a los 3 paths de `CloudSessionSignOut` vía `teardownForSignOut()`.

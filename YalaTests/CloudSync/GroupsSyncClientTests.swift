@@ -1669,9 +1669,296 @@ struct GroupsSyncClientTests {
 
         client.startIfEligible(context: context)
         let task = client._testLoopTask
-        client.startIfEligible(context: context)  // segundo arranque = no-op (loop vivo)
+        // Segundo arranque con el loop vivo: no duplica. Desde el 2026-09-16 tampoco es un no-op —despierta—,
+        // y aquí eso no cambia nada: el loop aún no ha llegado a dormir, así que no hay sueño que cortar.
+        client.startIfEligible(context: context)
         await task?.value
         #expect(stub.callCount == 1)  // una sola vuelta corrió (no se duplicó el loop)
+    }
+
+    // MARK: - Test 10f · Volver a primer plano despierta el loop dormido (2026-09-16)
+
+    /// Sueño de test CORTABLE. El primero duerme de verdad —400 ms, bajo el tope de 0,5 s de la regla— y
+    /// registra si lo CANCELARON; los siguientes vuelven en el acto para que el test no espere por ellos.
+    /// Sin el sleep real no habría nada que cortar: un sleeper que retorna ya está siempre despierto y el
+    /// test saldría verde con el wake desconectado.
+    final class CuttableNap: @unchecked Sendable {
+        var delays: [TimeInterval] = []
+        var cancelled: [Bool] = []
+        var sleeping = false
+    }
+
+    /// Instala el sueño cortable en el cliente. Todo corre en el MainActor (el loop lo invoca desde su
+    /// `Task { @MainActor }`), como `SleeperCounter` y `DelayLog`. `longNapIndex` elige QUÉ sueño es el
+    /// largo: el 1 en los tests de una sola vida del loop, el 2 cuando el primero se lo gasta un loop
+    /// moribundo y lo que interesa medir es el del loop que nació detrás.
+    private func installCuttableNap(_ client: GroupsSyncClient, longNapIndex: Int = 1) -> CuttableNap {
+        let nap = CuttableNap()
+        client.sleeper = { seconds in
+            nap.delays.append(seconds)
+            guard nap.delays.count == longNapIndex else { return }
+            nap.sleeping = true
+            do {
+                try await Task.sleep(for: .milliseconds(400))
+                nap.cancelled.append(false)
+            } catch {
+                nap.cancelled.append(true)
+            }
+            nap.sleeping = false
+        }
+        return nap
+    }
+
+    /// Espera ACOTADA a una condición del loop (2 s de tope, en pasos de 5 ms) y DEVUELVE si se cumplió.
+    /// Falla con su etiqueta en vez de colgar el test —un wake que no llega tiene que dar ROJO, no un
+    /// `await` eterno— y el `false` deja al caller salir sin encadenar un segundo rojo que no dice nada.
+    /// El tope es holgado a propósito: lo que la corrida tiene que ganar es la carrera contra los 400 ms
+    /// del sueño, no contra este presupuesto, así que apretarlo solo añadiría rojos de máquina cargada.
+    @discardableResult
+    private func waitUntil(_ label: String, _ condition: () -> Bool) async -> Bool {
+        for _ in 0..<400 {
+            if condition() { return true }
+            try? await Task.sleep(for: .milliseconds(5))
+        }
+        Issue.record("no se cumplió a tiempo: \(label)")
+        return false
+    }
+
+    /// **El caso del ticket.** Un fallo pasajero deja al loop durmiendo su backoff; volver a Yala corta ese
+    /// sueño y el ciclo siguiente sale YA, sin esperar los 5 s (ni los 300 del tope). Entra por el camino
+    /// real —`startIfEligible(trigger: "foreground")`, el mismo que llama `AppBootstrapper.handleBecameActive`—
+    /// y no por `wakeLoopIfSleeping` a pelo: lo que el ticket promete es el gesto, no el método.
+    ///
+    /// La tercera aserción es la que impide "arreglarlo" reseteando la racha: el segundo backoff pide 10 s,
+    /// no 5. Despertar adelanta el reintento, no borra los fallos que ya hubo.
+    @Test func foregroundWhileSleeping_cutsTheNap_andCyclesNow() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        defer {
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
+            CloudSyncFlags._testResetStorageModeOverride()
+        }
+        CloudSyncFlags.groupsBackendEnabled = true
+        CloudSyncFlags.storageMode = .icloud   // con `.cloud` estable no habría loop propio (piggyback)
+
+        // 500 en todo: el pull falla pasajero y el loop entra en backoff. El fusible para en la vuelta 3,
+        // así el test no depende de cuántas veces consulta `sessionCheck` el arranque.
+        let stub = StubHTTPSession(statusCode: 500)
+        let client = GroupsSyncClient(
+            tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { stub.callCount < 2 },
+            currentUserIDProvider: { nil }, outboxMirror: nil,
+            forceRefreshTokenProvider: { nil }, canRenewSession: { true })
+        let nap = installCuttableNap(client)
+
+        client.startIfEligible(context: context)
+        let task = client._testLoopTask
+        guard await waitUntil("el loop entra en su backoff", { nap.sleeping }) else { return }
+
+        // El gesto: volver a primer plano con el loop VIVO y dormido.
+        client.startIfEligible(context: context, trigger: "foreground")
+        await task?.value
+
+        #expect(nap.cancelled == [true])        // el sueño se cortó, no se agotó
+        #expect(stub.callCount == 2)            // y cicló otra vez en el acto
+        #expect(nap.delays == [SyncCadencePolicy.backoffDelay(consecutiveTransients: 1),
+                               SyncCadencePolicy.backoffDelay(consecutiveTransients: 2)])
+        #expect(client._testLoopTask == nil)    // sigue habiendo UN loop, y terminó el suyo
+    }
+
+    /// La regresión que el diseño podía introducir, y por eso tiene test propio: el sueño vive ahora en una
+    /// tarea APARTE, y una tarea creada con `Task {}` no hereda la cancelación de quien la crea. Sin el
+    /// `withTaskCancellationHandler` de `nap(_:)`, `stopLoop()` —o el teardown del sign-out, que lo llama—
+    /// se quedaría esperando a que venciera el backoff entero.
+    @Test func stopLoopWhileSleeping_cutsTheNapToo() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        defer {
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
+            CloudSyncFlags._testResetStorageModeOverride()
+        }
+        CloudSyncFlags.groupsBackendEnabled = true
+        CloudSyncFlags.storageMode = .icloud
+
+        // El fusible NO sobra aunque el test pare el loop a mano: si alguien rompe el `guard
+        // !Task.isCancelled` de después del sueño, el loop giraría para siempre —solo la primera siesta
+        // duerme— y `await task?.value` COLGARÍA en vez de dar rojo.
+        let stub = StubHTTPSession(statusCode: 500)
+        let fuse = LoopFuse()
+        let client = GroupsSyncClient(
+            tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { fuse.allows() },
+            currentUserIDProvider: { nil }, outboxMirror: nil,
+            forceRefreshTokenProvider: { nil }, canRenewSession: { true })
+        let nap = installCuttableNap(client)
+
+        client.startIfEligible(context: context)
+        let task = client._testLoopTask
+        guard await waitUntil("el loop entra en su backoff", { nap.sleeping }) else { return }
+
+        client.stopLoop()
+        await task?.value
+
+        #expect(nap.cancelled == [true])   // cancelar el loop cancela su sueño, como cuando vivía dentro
+        #expect(stub.callCount == 1)       // y no corrió una vuelta más
+    }
+
+    /// Stub que dispara un gesto del test DENTRO de la petición, o sea con el ciclo EN VUELO. Es la única
+    /// forma de meter un «vuelve a primer plano» en la ventana del ciclo: fuera de ella el loop o está
+    /// durmiendo o no ha empezado.
+    final class HookedStubHTTPSession: SyncHTTPSession, @unchecked Sendable {
+        var callCount = 0
+        let statusCode: Int
+        /// Corre en el MainActor al empezar la petición número `onCall`.
+        var duringCall: (call: Int, action: @MainActor () -> Void)?
+
+        init(statusCode: Int) { self.statusCode = statusCode }
+
+        func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+            callCount += 1
+            if let hook = duringCall, hook.call == callCount {
+                await MainActor.run { hook.action() }
+            }
+            let response = HTTPURLResponse(
+                url: request.url!, statusCode: statusCode, httpVersion: nil, headerFields: nil)!
+            return (Data("{\"deltas\":[],\"cursors\":{},\"memberships\":[]}".utf8), response)
+        }
+    }
+
+    /// La otra mitad de la ventana: el foreground que llega MIENTRAS el ciclo corre no tiene sueño que
+    /// cortar —`napTask` es nil— y sin la marca se perdería, dejando al usuario el backoff entero por
+    /// delante. Aquí el delay de esa vuelta pasa a 0 y el ciclo siguiente sale ya.
+    ///
+    /// El `0` vale SOLO para esa vuelta: el segundo delay vuelve a ser el backoff que toca (10 s, el
+    /// segundo escalón), que es lo que impide que un wake encadene vueltas sin pausa.
+    @Test func foregroundDuringTheCycle_skipsThatTurnsDelay() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        defer {
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
+            CloudSyncFlags._testResetStorageModeOverride()
+        }
+        CloudSyncFlags.groupsBackendEnabled = true
+        CloudSyncFlags.storageMode = .icloud
+
+        let stub = HookedStubHTTPSession(statusCode: 500)   // pasajero: la vuelta 1 acaba en backoff
+        let delays = DelayLog()
+        let client = GroupsSyncClient(
+            tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { stub.callCount < 2 },
+            currentUserIDProvider: { nil }, outboxMirror: nil,
+            forceRefreshTokenProvider: { nil }, canRenewSession: { true })
+        client.sleeper = { delays.values.append($0) }
+        stub.duringCall = (call: 1, action: { [weak client] in
+            client?.startIfEligible(context: context, trigger: "foreground")
+        })
+
+        client.startIfEligible(context: context)
+        await client._testLoopTask?.value
+
+        // Vuelta 1: el foreground llegó dentro del ciclo ⇒ sin espera. Vuelta 2: el backoff que toca.
+        #expect(delays.values == [0, SyncCadencePolicy.backoffDelay(consecutiveTransients: 2)])
+        #expect(stub.callCount == 2)   // dos vueltas con petición, la tercera para en el fusible
+    }
+
+    /// El gate del despertar se CONSULTA de verdad, y este es el único test que lo distingue: con el loop
+    /// vivo y dormido, un kill-switch del canal en medio deja el sueño INTACTO. Sin él, borrar el `guard
+    /// shouldWake(...)` entero de `wakeLoopIfSleeping` salía verde — el caso del loop muerto no lo caza,
+    /// porque ahí no hay ninguna rama que pudiera crear nada.
+    @Test func wake_withTheChannelKilled_doesNotCutTheNap() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        defer {
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
+            CloudSyncFlags._testResetStorageModeOverride()
+        }
+        CloudSyncFlags.groupsBackendEnabled = true
+        CloudSyncFlags.storageMode = .icloud
+
+        let stub = StubHTTPSession(statusCode: 500)
+        let fuse = LoopFuse()
+        let client = GroupsSyncClient(
+            tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { fuse.allows() },
+            currentUserIDProvider: { nil }, outboxMirror: nil,
+            forceRefreshTokenProvider: { nil }, canRenewSession: { true })
+        let nap = installCuttableNap(client)
+
+        client.startIfEligible(context: context)
+        let task = client._testLoopTask
+        guard await waitUntil("el loop entra en su backoff", { nap.sleeping }) else { return }
+
+        CloudSyncFlags.groupsBackendEnabled = false     // el canal se apaga mientras el loop duerme
+        client.wakeLoopIfSleeping(trigger: "foreground")
+
+        // Se espera a que el sueño TERMINE y se mira CÓMO terminó. Comprobarlo justo después del wake no
+        // probaría nada: `cancel()` solo marca la tarea, y el `catch` que lo registra no corre hasta que
+        // el MainActor se suelta — la aserción síncrona sale verde también con el gate quitado.
+        guard await waitUntil("el sueño termina", { nap.cancelled.count == 1 }) else { return }
+        #expect(nap.cancelled == [false])               // se agotó solo: el wake no lo cortó
+
+        client.stopLoop()
+        await task?.value
+    }
+
+    /// El hallazgo SERIO de la review adversarial: un loop que muere TARDE no puede llevarse por delante al
+    /// que nació detrás. `stopLoop()` deja `loopTask = nil` en el acto, pero el loop viejo sigue dentro de su
+    /// request —puede tardar lo que tarde la red— y al salir ejecuta sus `defer`. Sin la generación, ese
+    /// `defer` borraba el handle del loop nuevo: quedaban dos loops vivos, `stopLoop` cancelaba `nil` y el
+    /// wake siguiente no tenía a quién despertar.
+    ///
+    /// La secuencia la fuerza el hook DENTRO de la primera petición, que es exactamente la ventana del
+    /// hallazgo: ahí el loop viejo está suspendido y el nuevo nace por el camino real (`startIfEligible`,
+    /// como el post-sign-in que corre justo tras cerrar sesión).
+    @Test func loopThatDiesLate_doesNotStealTheNewLoopsHandle() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        defer {
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
+            CloudSyncFlags._testResetStorageModeOverride()
+        }
+        CloudSyncFlags.groupsBackendEnabled = true
+        CloudSyncFlags.storageMode = .icloud
+
+        let stub = HookedStubHTTPSession(statusCode: 500)
+        let client = GroupsSyncClient(
+            tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { stub.callCount < 2 },
+            currentUserIDProvider: { nil }, outboxMirror: nil,
+            forceRefreshTokenProvider: { nil }, canRenewSession: { true })
+        // El sueño largo es el SEGUNDO: el primero se lo gasta el loop viejo, que ya viene cancelado.
+        let nap = installCuttableNap(client, longNapIndex: 2)
+
+        client.startIfEligible(context: context)
+        let viejo = client._testLoopTask
+        stub.duringCall = (call: 1, action: { [weak client] in
+            client?.stopLoop()                               // mata al viejo y despublica su handle
+            client?.startIfEligible(context: context)        // y nace el nuevo mientras aquél no ha vuelto
+        })
+
+        await viejo?.value                                   // el viejo muere y corre su `defer`
+
+        let nuevo = client._testLoopTask
+        #expect(nuevo != nil)                                // el handle publicado sigue siendo el del nuevo
+        #expect(nuevo != viejo)
+
+        client.stopLoop()
+        await nuevo?.value
+        #expect(nap.cancelled == [true])                     // y su sueño se corta desde fuera, como debe
+    }
+
+    /// Despertar NO arranca nada: sin loop vivo es un no-op, y quien decide el (re)arranque sigue siendo
+    /// `shouldStart`. Con el flag OFF tampoco, que es la byte-identidad DARK.
+    @Test func wake_withNoLoopAlive_startsNothing() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        _ = try makeContext(dir)
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
+        CloudSyncFlags.groupsBackendEnabled = true
+
+        let stub = StubHTTPSession(statusCode: 500)
+        let client = GroupsSyncClient(
+            tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { true },
+            currentUserIDProvider: { nil }, outboxMirror: nil)
+
+        client.wakeLoopIfSleeping(trigger: "foreground")
+
+        #expect(client._testLoopTask == nil)
+        #expect(stub.callCount == 0)
     }
 
     // MARK: - Test 10b · Retry-once del 401 con refresh forzado (H-2026-07-18-4)
