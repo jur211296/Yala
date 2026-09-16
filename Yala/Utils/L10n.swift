@@ -4466,6 +4466,17 @@ enum L10n {
         static var signOutAttestExportEmpty: String { ls("settings.signOutAttestExportEmpty", comment: "") }
         /// La exportación de ese aviso no pudo generar el archivo.
         static var signOutAttestExportFailed: String { ls("settings.signOutAttestExportFailed", comment: "") }
+
+        /// **Aviso FIJO del canal personal** (2026-09-15, ticket
+        /// `cloud-tab-does-not-say-this-phone-cannot-sync-personal-data`): el cuerpo que acompaña a
+        /// `signOutAttestTitle` cuando el veredicto de App Attest es terminal y los datos personales viven en la
+        /// nube. **Reusa ese título a propósito** —es el mismo hecho que ya cuentan los gestos que pueden perder
+        /// algo— y vive en este namespace, junto a los seis `signOutAttest*`, para que la avería entera esté en un
+        /// sitio; la superficie donde se pinta no decide el prefijo.
+        ///
+        /// Se diferencia de `signOutAttestBlocked`, que dice el hecho y para ahí, en que **este ofrece qué hacer**:
+        /// usar otro teléfono, y exportar los datos, que el #175 ya construyó. Ver `CloudAttestNoticeLogic`.
+        static var attestTerminalBanner: String { ls("settings.attestTerminalBanner", comment: "") }
         static var signOutNoCopyConfirmTitle: String { ls("settings.signOutNoCopyConfirmTitle", comment: "") }
         static var signOutNoCopyConfirmMessage: String { ls("settings.signOutNoCopyConfirmMessage", comment: "") }
         static var signOutNoCopyConfirmAction: String { ls("settings.signOutNoCopyConfirmAction", comment: "") }

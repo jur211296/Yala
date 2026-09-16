@@ -25,6 +25,12 @@ struct PanelView: View {
     let viewModel: PanelViewModel
     @Binding var sheets: PanelSheetState
 
+    /// **El veredicto de App Attest de ESTE teléfono.** Es lo único del aviso que no se puede leer reactivamente:
+    /// sale de `UserDefaults` y depende del reloj. Lo mantiene al día `cloudAttestVerdictWatcher`; las otras dos
+    /// condiciones las lee `CloudAttestNotice.isShowing` vivas, en el body (ticket
+    /// `cloud-tab-does-not-say-this-phone-cannot-sync-personal-data`).
+    @State private var attestVerdictIsTerminal = false
+
     /// Periodic banner visibility
     @State private var showPeriodicBanner = false
 
@@ -263,6 +269,9 @@ struct PanelView: View {
     var body: some View {
         NavigationStack {
             mainContent
+                // Mantiene al día el veredicto del attest (los tres momentos, en el propio modifier). El
+                // decisivo es el aviso del store: el 401 llega con el Panel delante.
+                .cloudAttestVerdictWatcher($attestVerdictIsTerminal)
                 .yalaSkeleton(!viewModel.isReady)
                 // Title aparece solo tras scrollear (ver `showInlineTitle`),
                 // evitando duplicación con el saludo del hero al inicio.
@@ -417,6 +426,19 @@ struct PanelView: View {
             ScrollViewReader { scrollProxy in
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+                        // **Antes del hero, y el PRIMERO de la pila de banners.** Es el único aviso del Panel que no
+                        // ofrece nada —los demás son novedades y ofertas— y dice que lo que la persona apunta aquí no
+                        // está llegando a su cuenta. Hasta este ticket eso solo se leía al intentar cerrar sesión.
+                        //
+                        // Va DENTRO del scroll, no en un `safeAreaInset` como su hermano de Grupos: aquella pestaña no
+                        // tiene pila de banners y ésta sí, y el inset roba altura permanente. Sin `UITestHooks.isActive`
+                        // a propósito —al revés que el nudge y el checklist—: es el aviso que los XCUI vienen a medir.
+                        if CloudAttestNotice.isShowing(verdictIsTerminal: attestVerdictIsTerminal) {
+                            CloudAttestNoticeBanner(accessibilityID: "panel_attest_terminal_banner")
+                                .padding(DS.Spacing.md)
+                                .glassEffect(.regular)
+                        }
+
                         // Gated on `heroWidget.data != nil` inside the section
                         // itself so the skeleton doesn't flash an empty card
                         // before the first `performCalculation()` lands.

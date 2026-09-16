@@ -5972,3 +5972,6 @@
 
 /* Aviso fijo en la pestana Grupos: el telefono lleva mas de un dia sin pasar la verificacion de seguridad, asi que sus cambios de grupos no llegan */
 "groups.attestTerminalBanner" = "它已经超过一天没能通过我们服务器要求的安全验证。你在这里的修改不会传到群组，暂时请换一台手机使用。";
+
+/* Aviso fijo: este teléfono no consigue App Attest y los datos personales no suben a la nube */
+"settings.attestTerminalBanner" = "它已经超过一天没能通过我们服务器要求的安全验证。你在这里记的账会存在这台手机上，但不会同步到云端账户，暂时请换一台手机使用。";
