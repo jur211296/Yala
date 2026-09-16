@@ -59,3 +59,11 @@ el texto `"try DataWipeService.wipeAllUserData("` dentro de `UserDataResetView`,
 —que busca `wipeAllUserData(` en el código de los tests para exigir un trait— contó mi STRING como una
 llamada y tumbó la suite. Los escáneres del repo filtran comentarios, no literales. ⇒ al escribir el
 marcador de un scan, quítale lo que otro escáner caza (aquí bastó el paréntesis) y deja escrito por qué.
+
+**Reincidí el 16-sep con una variante que no parece un literal suelto: el `contains` del ARGUMENTO sin su coma final.**
+El scan del gate del Welcome buscaba `"isAttestSupported: UITestHooks.fakeAttestSupport || AppAttestClient.canObtainSessionToken"`.
+Cualquier término pegado detrás —`… canObtainSessionToken && SwiftDataConfiguration.isUITesting,`— lo cumplía, y ese
+mutante dejaba **a todo iPhone sin la nube con la suite entera en verde**: en el host de test la capacidad vale `false`,
+así que ni la tabla ni los XCUITest podían verlo. Lo cazó una lente adversarial, no yo. ⇒ **cuando el lado bueno de un
+término es inalcanzable en el host de test, el scan es la única red y va con igualdad del cuerpo entero normalizado; y lo
+que dependa del orden, con `hasPrefix`.** Verificado con el mutante antes y después.
