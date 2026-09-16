@@ -99,11 +99,27 @@ nonisolated enum StorageRowGateLogic {
     /// snapshot nuevo terminaba migrando con el kill ya puesto. Por eso el mismo término se re-mide en
     /// `StorageSettingsView.proceedToSignInStep`, que es el último sitio antes del punto de no retorno.
     ///
+    /// **Sin App Attest tampoco se ofrece** (2026-09-16, ticket
+    /// `cloud-migration-offers-the-cloud-to-a-phone-without-app-attest`), y son las dos caras de la card:
+    /// «Migrar a la nube» y «Activar la nube en este dispositivo» (decisión de Jürgen). El claim no pide attest y
+    /// pasa —«Migrar» deja la cuenta creada en el servidor—, pero todo lo que sube o baja después sí lo pide: la
+    /// migración se reintenta sin fin y el teléfono se queda en iCloud. La decisión es la de la puerta del alta
+    /// del Welcome, `AttestSyncGate.shouldOfferCloudOnly`.
+    ///
+    /// **El attest cierra la ENTRADA, igual que el kill**: `isEngaged` va fuera de su término, así que quien está
+    /// engaged —modo `.cloud`, o una fase que la pantalla pinta fuera de `.idle`— conserva su panel aunque su
+    /// teléfono no tenga App Attest. **Un adopt pendiente no cuenta**: tras el claim `existing_stable` la fase
+    /// vuelve a `notStarted` con el efecto `adoptBackendAccount` por ejecutar, la pantalla lo deriva `.idle`, y sin
+    /// App Attest pierde la card mientras el reintento sigue en segundo plano.
+    ///
     /// - Parameters:
     ///   - remoteEnabled: flag remoto `CloudRemoteFlags.cloudModeEnabled`.
     ///   - isEngaged: el MISMO término de `isVisible` — quien ya está dentro conserva su panel entero,
     ///     retomar incluido.
-    static func offersCloudMigrationEntry(remoteEnabled: Bool, isEngaged: Bool) -> Bool {
-        remoteEnabled || isEngaged
+    ///   - isAttestSupported: este teléfono puede conseguir token, leído como lo lee el Welcome
+    ///     (`UITestHooks.fakeAttestSupport || AppAttestClient.canObtainSessionToken`). Sin default: quien llame
+    ///     tiene que decidirlo.
+    static func offersCloudMigrationEntry(remoteEnabled: Bool, isEngaged: Bool, isAttestSupported: Bool) -> Bool {
+        isEngaged || (remoteEnabled && AttestSyncGate.shouldOfferCloudOnly(isAttestSupported: isAttestSupported))
     }
 }

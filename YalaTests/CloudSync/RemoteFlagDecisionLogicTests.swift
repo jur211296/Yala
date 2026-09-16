@@ -158,7 +158,9 @@ struct StorageRowGateLogicTests {
             datos?» volvió a ocultarse: quien tenga esa cuenta se queda sin ninguna pantalla desde la \
             que soltarla, y Grupos sigue encendido por su propio flag.
             """)
-        #expect(!StorageRowGateLogic.offersCloudMigrationEntry(remoteEnabled: false, isEngaged: false), """
+        // Con App Attest, para que lo único que cierre la entrada sea el kill.
+        #expect(!StorageRowGateLogic.offersCloudMigrationEntry(
+            remoteEnabled: false, isEngaged: false, isAttestSupported: true), """
             la fila abierta por la asociación de grupos volvió a ofrecer la ENTRADA personal a la nube \
             con el kill-switch bajado. El kill corta la entrada: abrir la puerta para desasociar no \
             puede abrir también la migración.
@@ -186,15 +188,45 @@ struct StorageRowGateLogicTests {
         }
     }
 
-    /// La tabla 2² de la entrada personal a la nube. Es corta y aun así hay que pinnearla entera: es el
+    /// La tabla 2³ de la entrada personal a la nube. Es corta y aun así hay que pinnearla entera: es el
     /// único candado que le queda a «Migrar a la nube» desde que la fila puede abrirse por otra razón.
+    ///
+    /// Las celdas con App Attest son la tabla 2² de antes, intacta. Las de sin App Attest (2026-09-16) solo se abren
+    /// para quien ya está dentro: cada mutante del término cae en una fila distinta —quitarlo en `(T, F, F)`, invertirlo
+    /// en `(T, F, T)`, y aplicárselo también al engaged en `(T, T, F)` y `(F, T, F)`—.
     @Test func cloudMigrationEntryTable() {
-        #expect(StorageRowGateLogic.offersCloudMigrationEntry(remoteEnabled: true, isEngaged: false))
-        #expect(StorageRowGateLogic.offersCloudMigrationEntry(remoteEnabled: true, isEngaged: true))
-        // Engaged bajo el kill: conserva su panel ENTERO, retomar incluido. El kill corta la entrada de
-        // los que están fuera, no el camino de vuelta de los que ya están dentro.
-        #expect(StorageRowGateLogic.offersCloudMigrationEntry(remoteEnabled: false, isEngaged: true))
-        #expect(!StorageRowGateLogic.offersCloudMigrationEntry(remoteEnabled: false, isEngaged: false))
+        typealias Row = (remote: Bool, engaged: Bool, attest: Bool, offers: Bool)
+        let rows: [Row] = [
+            (true, false, true, true),
+            (true, true, true, true),
+            // Engaged bajo el kill: conserva su panel ENTERO, retomar incluido. El kill corta la entrada de
+            // los que están fuera, no el camino de vuelta de los que ya están dentro.
+            (false, true, true, true),
+            (false, false, true, false),
+            // Sin App Attest, lo mismo: se cierra la entrada, no el panel de quien ya está dentro.
+            (true, false, false, false),
+            (true, true, false, true),
+            (false, true, false, true),
+            (false, false, false, false),
+        ]
+        for row in rows {
+            #expect(
+                StorageRowGateLogic.offersCloudMigrationEntry(
+                    remoteEnabled: row.remote, isEngaged: row.engaged, isAttestSupported: row.attest
+                ) == row.offers,
+                "remote=\(row.remote) engaged=\(row.engaged) attest=\(row.attest)")
+        }
+    }
+
+    /// **La celda del ticket `cloud-migration-offers-the-cloud-to-a-phone-without-app-attest`**, con su porqué en el
+    /// mensaje: la nube encendida, la persona fuera, y un teléfono que no puede conseguir token.
+    @Test func withoutAppAttest_theEntryIsClosed_evenWithTheCloudOn() {
+        #expect(!StorageRowGateLogic.offersCloudMigrationEntry(
+            remoteEnabled: true, isEngaged: false, isAttestSupported: false), """
+            Ajustes vuelve a ofrecer «Migrar a la nube» (o «Activar la nube en este dispositivo») a un teléfono sin App \
+            Attest. El claim pasa, pero nada sube ni baja sin token: la migración se reintenta sin fin y «Migrar» deja \
+            una cuenta vacía creada en el servidor.
+            """)
     }
 
 }
@@ -325,16 +357,33 @@ struct StorageRowGroupsAssociationWiringTests {
             """)
 
         // El término, con su cuerpo entero: un swap de `||` por `&&`, o leer otro flag, pasa cualquier
-        // scan que solo busque el nombre de la función.
+        // scan que solo busque el nombre de la función. Y termina en `) }`: un término pegado detrás de la
+        // capacidad —`… canObtainSessionToken && algo`— no cabe, y en el host de test la capacidad vale `false`,
+        // así que ese mutante le quitaría la card a todo iPhone con la suite en verde.
         let termIsIntact = storage.contains(
             "private var offersCloudMigrationEntry: Bool { "
             + "StorageRowGateLogic.offersCloudMigrationEntry( "
             + "remoteEnabled: CloudRemoteFlags.cloudModeEnabled, "
             + "isEngaged: StorageModePersistence.read() == .cloud "
-            + "|| (controller?.uiState ?? .idle) != .idle) }")
+            + "|| (controller?.uiState ?? .idle) != .idle, "
+            + "isAttestSupported: \(Self.attestCapability)) }")
         #expect(termIsIntact, """
-            el término del kill-switch cambió de forma. Se fija entero porque es el único candado de la \
-            migración bajo el kill: leer otro flag, o un `&&` donde va un `||`, lo apaga sin tocar nada más.
+            el término de la entrada cambió de forma. Se fija entero porque es el único candado de la \
+            migración bajo el kill y sin App Attest: leer otro flag, un `&&` donde va un `||`, o un `true` en la \
+            capacidad lo apagan o lo abren sin tocar nada más.
+            """)
+
+        // **El `case .idle` entero, no solo que el `if` exista** (review de la puerta del alta, 2026-09-16). Medir
+        // que la card cae dentro del gate no prueba que el gate sea su ÚNICA condición: un `if` más alrededor o un
+        // `#if DEBUG` le quita la card a un iPhone con App Attest, y ningún test que corra en Debug lo ve.
+        let idle = Self.segment(of: storage, from: "case .idle:", to: "case .cloudActive:")
+        let idleIsIntact = idle == "case .idle: statusCard(controller) "
+            + "GroupsAssociationSection(onAssociate: onAssociateGroupsAccount) "
+            + "if offersCloudMigrationEntry { migrateCard(controller) } "
+        #expect(idleIsIntact, """
+            el `case .idle` de la pantalla cambió: «\(idle ?? "no encontrado")». La card de la nube tiene que \
+            colgar solo de `offersCloudMigrationEntry`; cualquier condición más la esconde también a quien sí puede \
+            migrar.
             """)
 
         // **Y la acción, que no es el render.** Los dos arranques del flujo tienen que re-medirlo: la card
@@ -347,5 +396,84 @@ struct StorageRowGroupsAssociationWiringTests {
             el arranque desde el chooser de proveedor dejó de re-medir el kill-switch. Es el OTRO punto \
             que llama a `startMigration`, y el flag puede caer mientras el chooser está arriba.
             """)
+        // Y lo que decide ese guard, entero: invertido, la card se ve y el flujo acaba SIEMPRE en el error genérico
+        // tras confirmar dos veces; y ningún test recorre el flujo más allá del tap (review, 2026-09-16).
+        let abortIsIntact = storage.contains(
+            "private func abortIfCloudEntryClosed() -> Bool { guard !offersCloudMigrationEntry else { return false } "
+            + "controller?.lastError = L10n.Storage.Errors.generic return true }")
+        #expect(abortIsIntact, """
+            `abortIfCloudEntryClosed` cambió de forma: el guard de los dos arranques tiene que abortar solo cuando la \
+            entrada está cerrada. Invertido o con otra condición, deja la card visible y el flujo muerto al final.
+            """)
+    }
+
+    // MARK: - Sin App Attest (2026-09-16, ticket `cloud-migration-offers-the-cloud-to-a-phone-without-app-attest`)
+
+    /// «Tener App Attest» tal como lo leen las puertas: el seam de XCUITest y la capacidad del cliente. Una sola
+    /// constante para las dos pantallas, que es lo que hace de `attestInput_isTheWelcomeOne` una paridad.
+    private static let attestCapability = "UITestHooks.fakeAttestSupport || AppAttestClient.canObtainSessionToken"
+
+    /// El trozo de código aplanado desde `start` (incluido) hasta `end` (excluido); `nil` si falta alguno.
+    private static func segment(of source: String, from start: String, to end: String) -> String? {
+        guard let lower = source.range(of: start),
+              let upper = source.range(of: end, range: lower.upperBound..<source.endIndex)
+        else { return nil }
+        return String(source[lower.lowerBound..<upper.lowerBound])
+    }
+
+    /// **Ajustes y el Welcome creen lo mismo sobre App Attest.** La decisión de Jürgen es UNA puerta para ofrecer la
+    /// nube; si una pantalla cambia cómo lee la capacidad y la otra no, un teléfono vería la nube en un sitio y no en
+    /// el otro. Las dos llamadas se comparan contra la misma constante: cambiar una sola pone esto rojo.
+    @Test("la card de migración lee App Attest con la misma expresión que la puerta del alta del Welcome")
+    func attestInput_isTheWelcomeOne() throws {
+        let welcome = Self.flat(try Self.code("Yala/App/Logic/WelcomeAccountChoiceLogic.swift"))
+        let storage = Self.flat(try Self.code("Yala/App/Views/Settings/StorageSettingsView.swift"))
+        let welcomeReadsIt = welcome.contains("isAttestSupported: \(Self.attestCapability), ")
+        let storageReadsIt = storage.contains("isAttestSupported: \(Self.attestCapability)) }")
+        #expect(welcomeReadsIt, "`WelcomeNewOptionsGate.live` ya no lee App Attest como Ajustes.")
+        #expect(storageReadsIt, "la card de «Migrar a la nube» ya no lee App Attest como el Welcome.")
+    }
+
+    /// **La decisión es la de la puerta del alta, no una copia.** `AttestSyncGate.shouldOfferCloudOnly` es la decisión
+    /// del owner del 2026-07-06; con el término escrito a mano la tabla seguiría verde, y el día que la función cambie
+    /// esta entrada no se enteraría. El cuerpo va entero: también fija que `isEngaged` queda fuera del término.
+    @Test("`offersCloudMigrationEntry` decide App Attest con `AttestSyncGate.shouldOfferCloudOnly`")
+    func migrationEntry_callsTheAttestGate() throws {
+        let logic = Self.flat(try Self.code("Yala/App/Logic/StorageRowGateLogic.swift"))
+        let delegates = logic.contains(
+            "static func offersCloudMigrationEntry(remoteEnabled: Bool, isEngaged: Bool, isAttestSupported: Bool) -> Bool { "
+            + "isEngaged || (remoteEnabled && AttestSyncGate.shouldOfferCloudOnly(isAttestSupported: isAttestSupported)) }")
+        #expect(delegates, """
+            `StorageRowGateLogic.offersCloudMigrationEntry` dejó de preguntar a `AttestSyncGate.shouldOfferCloudOnly`, \
+            o cambió de forma: la entrada de Ajustes y la del Welcome pueden dejar de decidir lo mismo.
+            """)
+    }
+
+    /// **Un solo sitio lee App Attest en la pantalla, y cada declaración existe una vez** (review, 2026-09-16). Los
+    /// `contains` de arriba encuentran lo bueno, no lo que sobra, y en el host de test la capacidad vale `false`: una
+    /// segunda lectura —`isDisabled: … || AppAttestClient.canObtainSessionToken` en el botón, o un guard más en un
+    /// arranque— le quita la card o el flujo a un iPhone con App Attest con todo en verde. Y una copia de la declaración
+    /// bajo `#if DEBUG … #else` satisface el `contains` con la copia de Debug, que es la que compilan los tests.
+    @Test("la pantalla lee App Attest una sola vez, y el término y la capacidad se declaran una sola vez")
+    func attestIsReadOnceAndDeclaredOnce() throws {
+        let storage = try Self.code("Yala/App/Views/Settings/StorageSettingsView.swift")
+        let logic = try Self.code("Yala/App/Logic/StorageRowGateLogic.swift")
+        let client = try Self.code("Yala/App/Services/AppAttestClient.swift")
+        func count(_ needle: String, in source: String) -> Int {
+            source.components(separatedBy: needle).count - 1
+        }
+        let capabilityReads = count("AppAttestClient.canObtainSessionToken", in: storage)
+        let seamReads = count("UITestHooks.fakeAttestSupport", in: storage)
+        #expect(capabilityReads == 1, """
+            `AppAttestClient.canObtainSessionToken` aparece \(capabilityReads) veces en la pantalla y debería ser 1, en \
+            `offersCloudMigrationEntry`. Otra lectura decide algo de la card sin pasar por la puerta.
+            """)
+        #expect(seamReads == 1, "`UITestHooks.fakeAttestSupport` aparece \(seamReads) veces en la pantalla y debería ser 1.")
+        let viewDeclarations = count("private var offersCloudMigrationEntry: Bool {", in: storage)
+        let logicDeclarations = count("static func offersCloudMigrationEntry(", in: logic)
+        let capabilityDeclarations = count("static var canObtainSessionToken: Bool {", in: client)
+        #expect(viewDeclarations == 1, "`offersCloudMigrationEntry` se declara \(viewDeclarations) veces en la pantalla.")
+        #expect(logicDeclarations == 1, "`offersCloudMigrationEntry` se declara \(logicDeclarations) veces en la lógica.")
+        #expect(capabilityDeclarations == 1, "`canObtainSessionToken` se declara \(capabilityDeclarations) veces en el cliente.")
     }
 }

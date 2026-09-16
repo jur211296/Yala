@@ -151,6 +151,8 @@ struct StorageSettingsView: View {
             // un incidente llegaría hasta aquí — y sin este `if` se encontraría «Migrar a la nube»
             // abierto, que es justo lo que el incidente cerró. La reversa no pasa por aquí: vive en
             // `.cloudActive` y es el escape.
+            // Desde 2026-09-16 el mismo `if` esconde la card a un teléfono sin App Attest: ni migrar ni activar
+            // en este dispositivo, porque nada de lo que sube o baja llegaría.
             if offersCloudMigrationEntry {
                 migrateCard(controller)
             }
@@ -536,18 +538,23 @@ struct StorageSettingsView: View {
     /// Paso de auth (C-7): con sesión de nube viva NO se pregunta el método — se reusa la cuenta
     /// que ya está dentro (la de Grupos, típicamente), que es justo lo que promete
     /// `groups.signin.accountNote`. Sin sesión, el chooser se comporta como siempre.
-    /// **El término del kill-switch, en UN solo sitio y leído en vivo.** Lo consultan tres: el render de
-    /// `migrateCard` y los dos puntos desde los que se arranca la migración.
+    /// **El término de la entrada —el kill-switch y App Attest—, en UN solo sitio y leído en vivo.** Lo
+    /// consultan tres: el render de `migrateCard` y los dos puntos desde los que se arranca la migración.
     ///
     /// `isEngaged` es la misma expresión que pasa `ProfileView` al gate de la fila. Dentro de `case .idle`
     /// su segundo término es falso por construcción; se escribe entero igual, porque los dos guards de
     /// abajo corren FUERA de ese `case` —desde callbacks de sheets, con el estado ya movido— y allí sí
     /// puede ser cierto.
+    ///
+    /// `isAttestSupported` es la entrada de la puerta del alta del Welcome, con la misma expresión que
+    /// `WelcomeNewOptionsGate.live` (lo fija un scan de paridad): el seam de XCUITest y la capacidad del cliente.
+    /// Sin App Attest no se ofrece ninguna de las dos caras de la card.
     private var offersCloudMigrationEntry: Bool {
         StorageRowGateLogic.offersCloudMigrationEntry(
             remoteEnabled: CloudRemoteFlags.cloudModeEnabled,
             isEngaged: StorageModePersistence.read() == .cloud
-                || (controller?.uiState ?? .idle) != .idle)
+                || (controller?.uiState ?? .idle) != .idle,
+            isAttestSupported: UITestHooks.fakeAttestSupport || AppAttestClient.canObtainSessionToken)
     }
 
     /// **Gatear el render no es gatear la migración, y entre los dos hay una ventana real.** El flujo de
@@ -561,6 +568,9 @@ struct StorageSettingsView: View {
     /// Sale con el error genérico y no en silencio: la persona acaba de confirmar dos veces, y un botón
     /// que no hace nada es peor que un aviso. No estrena copy — es el mismo texto que ya usa la pantalla
     /// cuando no puede operar.
+    ///
+    /// El término de App Attest viaja en el mismo guard, pero aquí no abre ninguna ventana: la capacidad no cambia
+    /// con la app abierta, así que sin ella la card ya no se pintó.
     private func abortIfCloudEntryClosed() -> Bool {
         guard !offersCloudMigrationEntry else { return false }
         controller?.lastError = L10n.Storage.Errors.generic
