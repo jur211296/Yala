@@ -152,3 +152,7 @@ del corpus de este teléfono.
   recomienda, usar otro.
 - **Sin device-QA**: el aviso es visual y determinista, y verlo de verdad exige un teléfono en modo nube con el attest
   roto más de un día, que no se monta aquí.
+
+## Decisión Jürgen (2026-09-16)
+
+**No ofrecer exportación en el aviso fijo.** La exportación gratis del #175 queda solo al intentar cerrar sesión (como quedó mergeado en #177).
