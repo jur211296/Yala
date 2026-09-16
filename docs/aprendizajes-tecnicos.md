@@ -16,9 +16,9 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (26 entradas)
+## Índice (27 entradas)
 
-> **No hace falta leer este fichero entero** — son 199 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 201 KB. Localiza la entrada
 > aquí y salta a ella.
 
 - `—` [Sync de Grupos (CKSyncEngine) NO debe arrancar/`save()` sobre el `mainContext` compartido antes](#sync-de-grupos-cksyncengine-no-debe-arrancarsave-sobre-el-maincontext-compartido-antes)
@@ -40,6 +40,7 @@
 - `—` [`accessibilityIdentifier` NO se propaga dentro de un `.alert` de SwiftUI: el botón existe en pantall](#accessibilityidentifier-no-se-propaga-dentro-de-un-alert-de-swiftui-el-botn-existe-en-pantalla-y-el-id-llega-vaco-al-rbol)
 - `—` [`xcodebuild test` REINSTALA la app del simulador: el QA que corres después del gate no mira tu](#xcodebuild-test-reinstala-la-app-del-simulador-el-qa-que-corres-despus-del-gate-no-mira-tu)
 - `—` [El árbol de accesibilidad del simulador se degrada tras muchos ciclos launch/stop y solo lo cura](#el-rbol-de-accesibilidad-del-simulador-se-degrada-tras-muchos-ciclos-launchstop-y-solo-lo-cura)
+- `2026-09-16` [Atajos en el simulador: la tarjeta de la app no corre, una acción añadida a mano sí (2026-09-16)](#atajos-en-el-simulador-la-tarjeta-de-la-app-no-corre-una-accin-aadida-a-mano-s-2026-09-16)
 - `2026-09-08` [Una corrida programada que no ocurre no deja rastro, y las dos formas obvias de buscarla mienten (20](#una-corrida-programada-que-no-ocurre-no-deja-rastro-y-las-dos-formas-obvias-de-buscarla-mienten-2026-09-08)
 - `2026-09-02` [Un helper de aislamiento puede vaciar 22 de 31 modelos y llamarse a sí mismo «borra todas las instan](#un-helper-de-aislamiento-puede-vaciar-22-de-31-modelos-y-llamarse-a-s-mismo-borra-todas-las-instancias-2026-09-02)
 - `2026-09-02` [Un control del instrumento puede apoyarse en el DEFECTO que vigila, y quedarse ciego justo al arregl](#un-control-del-instrumento-puede-apoyarse-en-el-defecto-que-vigila-y-quedarse-ciego-justo-al-arreglarlo-2026-09-02)
@@ -528,3 +529,30 @@ propósito» de «la UI no llegó a correr» estaba invertida cuesta el incendio
 
 - Pin: `.github/actions/avisar/action.yml` (el único `action.yml` del repo; si se añade otro,
   hereda este agujero).
+
+### Atajos en el simulador: la tarjeta de la app no corre, una acción añadida a mano sí (2026-09-16)
+
+**Qué pasó.** El guion de `storekit-appgroup-siri-pro-gate` daba por hecho que el atajo de Siri se
+lanzaba en simulador desde Atajos. Tocar la tarjeta «Anotar con Siri» de la sección de Yala Dev da «No se
+puede ejecutar el atajo de la app», y el log de `linkd` dice por qué: `Unable to get teamId from
+com.jurgenschmidt.yala.dev` → `Rejecting invalid client due to requiresValidBundle` → `Couldn't find
+AppShortcutsProvider`. El build del simulador no lleva firma de equipo, y `linkd` no ejecuta sus App
+Shortcuts.
+
+**Lo que sí funciona.** Atajos → Crear atajo → buscar la acción → rellenar sus parámetros → reproducir.
+Corre el `perform()` dentro del proceso de la app (log: `Invoking SiriNaturalEntryIntent.perform()`), con
+la app viva en segundo plano si lo estaba. Así se verificó el caso en caliente de
+`siri-intent-dual-container`.
+
+**Tres límites, medidos:**
+1. **Con Yala y Yala Dev instaladas hay dos acciones con el mismo nombre**, y la lista no dice cuál es
+   cuál. El log lo aclara: `com.jurgenschmidt.yala.dev.SiriNaturalEntryIntent`.
+2. **Los parámetros que van dentro de la frase del resumen no se pueden automatizar**: son fichas sin
+   elemento de accesibilidad propio (Cantidad y Comercio de «Registrar pago de Apple Pay»). Los que salen
+   como fila, como Texto, sí.
+3. **El diálogo de resultado no está en el árbol de accesibilidad**, y Return no lo cierra. Salida:
+   `xcrun simctl terminate booted com.apple.shortcuts` y relanzar. La acción ya había terminado.
+
+**Higiene:** «Simular Pro» persiste `dev.forceProTier` en el `UserDefaults` que comparte con el host de
+unit tests (ver «El gemelo del anterior», 2026-08-05). Después de usarlo, un arranque con `-uitest` purga
+las cuatro claves (`StoreKitManager.applyUITestProTier`). Medido: el plist las pierde a los pocos segundos.
