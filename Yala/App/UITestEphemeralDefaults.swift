@@ -161,6 +161,34 @@ enum UITestEphemeralDefaults {
     /// categorías de usuario cuando el flag está ausente, y lo vuelve a poner si las hay). Quitarlo
     /// solo cuesta un `fetchCount` en el siguiente arranque manual; dejarlo puesto costaba una app
     /// SIN categorías.
+    /// Manda la racha de App Attest a una suite PROPIA mientras dure el modo uitest, y purga la que quedó escrita
+    /// en el almacén real por corridas anteriores.
+    ///
+    /// **No se puede resolver con el dominio de registro como sus vecinas de este fichero**: la racha la escribe
+    /// código de producción (`GroupsAttestStreakStore.recordRejection`), y `set(_:forKey:)` va al dominio
+    /// persistente. Lo que sí tiene la tienda es el seam que sus tests ya usan —`defaults` inyectable— así que el
+    /// desvío entero cabe en dos líneas y cubre **toda** escritura de la corrida, no solo la del seam de QA.
+    ///
+    /// Por qué hace falta, y es la misma clase de fuga que las de arriba: `groupsSync.attestRejectionStreak` no
+    /// está en `DataWipeService.removeUserPreferenceKeys` **a propósito** —describe al teléfono, y cerrar sesión no
+    /// arregla el attest— así que `-uitest-reset` no la borra. Sin este desvío, una corrida con
+    /// `-uitest-groups-attest-terminal` dejaba el veredicto terminal puesto para **todo arranque MANUAL** del
+    /// simulador y para el host de unit tests, que comparte bundle: los gestos de cierre y de salir de un grupo lo
+    /// leen (`GroupSettingsView`) y ofrecerían perder los cambios sobre un teléfono que atesta perfectamente.
+    ///
+    /// La purga va SIEMPRE, también cuando el desvío funciona: es lo único que limpia los simuladores que ya
+    /// corrieron la versión anterior de este seam.
+    static func applyEphemeralAttestStreak(
+        purging defaults: UserDefaults = .standard,
+        suiteName: String = "yala.uitest.groupsAttestStreak"
+    ) {
+        defaults.removeObject(forKey: GroupsAttestStreakStore.key)
+        guard let suite = UserDefaults(suiteName: suiteName) else { return }
+        // Vaciada en cada arranque: la racha de la corrida anterior no es estado que ninguna corrida quiera heredar.
+        suite.removePersistentDomain(forName: suiteName)
+        GroupsAttestStreakStore.defaults = suite
+    }
+
     static func purgeCategorySeedSentinel(from defaults: UserDefaults = .standard) {
         defaults.removeObject(forKey: CategorySeedSentinel.productionKey)
     }

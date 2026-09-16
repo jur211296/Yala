@@ -5957,3 +5957,6 @@
 "settings.signOutAttestBlocked" = "Dieses Telefon kommt seit über einem Tag nicht durch die Sicherheitsprüfung, die unser Server verlangt, deshalb können deine Änderungen nicht in dein Konto in der Cloud hochgeladen werden.";
 "settings.signOutAttestExportEmpty" = "Du hast keine Transaktionen zum Exportieren.";
 "settings.signOutAttestExportFailed" = "Wir konnten die Datei nicht erstellen. Versuch es noch einmal.";
+
+/* Aviso fijo en la pestana Grupos: el telefono lleva mas de un dia sin pasar la verificacion de seguridad, asi que sus cambios de grupos no llegan */
+"groups.attestTerminalBanner" = "Es kommt seit über einem Tag nicht durch die Sicherheitsprüfung, die unser Server verlangt. Was du hier änderst, erreicht die Gruppe nicht — nutze so lange ein anderes Telefon.";

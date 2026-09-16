@@ -179,6 +179,38 @@ terminal y, en los cierres de sesión, una salida que pierde esos cambios con co
   (`superseding-intent-can-strand-the-sign-out-coordinator`).
 - **Observación**: el canario `groupsAttestTerminal` (una vez por racha) es la medición de cuántos teléfonos están así;
   `groupsSignOutAttestUnavailable` y `groupsSignOutAttestDiscarded` dicen cuántos vieron la salida y cuántos la usaron.
+- **La pestaña Grupos lo dice FIJO desde el 2026-09-15, y el que avisa es el ESCRITOR** (ticket
+  `groups-tab-does-not-say-this-phone-cannot-sync-groups`). Hasta ese día el veredicto solo se leía dentro de un gesto
+  que podía perder algo; ahora `GroupsContainerView` pinta el aviso mientras dure, con el mismo título de esos gestos.
+  Dos cosas que no se pueden tocar sin romperlo:
+  - **Son CUATRO condiciones**, no el veredicto solo (`GroupsAttestTabNoticeLogic`): terminal **Y**
+    `CloudSyncFlags.groupsBackendCompiledCapability` **Y** `CloudAuthService.shared.hasSession` **Y**
+    `GroupsConsentState.isAccepted`. La racha es del TELÉFONO, sobrevive al cierre de sesión y desde el #175 la
+    escribe también el motor personal, así que sin las tres últimas el tab anuncia una avería de Grupos a quien no
+    tiene Grupos en la nube, a quien está leyendo «crea tu cuenta» o a quien todavía no ha aceptado el consent.
+  - **El canal va por la capacidad COMPILADA, igual que los teardowns, y esto costó un hallazgo de la review.** El
+    getter compuesto es fail-closed ante un snapshot de remote-config ausente o corrupto (`CloudSyncFlags`, sección
+    «QUÉ LEE CADA CLASE DE CALL-SITE»), así que con él un teléfono restaurado desde una copia de iCloud —que hereda
+    la racha y no la key de attest— se quedaba **sin aviso en su primer arranque**, mientras el cierre de sesión sí
+    se lo enseñaba: el bug del ticket, vivo, en la población más probable. Un aviso sobre datos que YA existen es de
+    la clase de los teardowns, no de las entradas.
+  - **Las tres condiciones que no son el veredicto se leen VIVAS en el body**, no congeladas en un `@State`:
+    congeladas, iniciar sesión desde el CTA de la lista no sacaba el aviso —ese sheet se cierra en sitio, sin
+    `onAppear`— y una sesión que el SDK borra en caliente lo dejaba puesto, culpando al attest de una sesión
+    caducada.
+  - **`GroupsAttestStreakStore.didChangeNotification`**, que el store emite **solo cuando la racha cambia en disco**.
+    `isTerminal()` lee `UserDefaults` y depende del reloj, así que ninguna vista se entera sola: **medido en el
+    simulador el 2026-09-15**, con la racha escrita un segundo después del arranque la pestaña se quedaba muda hasta
+    salir y volver — y eso es exactamente lo que pasa en producción, donde el 401 llega con el tab delante. Al añadir
+    un escritor de la racha, el aviso va DENTRO de él; un rechazo que no suma no avisa, porque nada cambió.
+  - **Residual aceptado: este aviso es el primer consumidor del veredicto SIN el testigo del ciclo.** Los otros tres
+    (`CloudSyncRuntime`, `GroupsSyncClient`, `GroupLeaveErrorLogic`) exigen además que ESTE ciclo haya chocado con el
+    attest, y no se puede exigir aquí: el tab es justo donde la persona está sin que corra nada, así que pedirlo
+    dejaría el aviso mudo, que es el bug del ticket. ⇒ un teléfono restaurado con una racha heredada que hoy atesta
+    bien ve el aviso hasta que un 200 la borre — y se lo cura él solo, porque el `onAppear` del tab lanza un pull y
+    el 200 emite `didChangeNotification`. **Lo que NO se cura solo es el cruce de las 24 h con la app abierta en el
+    tab**: la racha no cambia en disco, así que el aviso espera al siguiente gesto.
+
 - **El canal personal no tiene banner**: su veredicto terminal (`AttestSyncGate`, solo `AppAttestError.unavailable`
   repetido) emite `cloudSyncBlockedByAttestUnavailable` y para el runtime, sin nada visible; `SyncStatusBanner` es el de
   iCloud. Un ticket partió de lo contrario porque dos docblocks lo prometían.

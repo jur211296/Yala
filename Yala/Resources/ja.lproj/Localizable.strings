@@ -5969,3 +5969,6 @@
 "settings.signOutAttestBlocked" = "この端末は1日以上、サーバーが求めるセキュリティ確認を通過できていないため、変更をクラウドのアカウントにアップロードできません。";
 "settings.signOutAttestExportEmpty" = "エクスポートできる取引がありません。";
 "settings.signOutAttestExportFailed" = "ファイルを作成できませんでした。もう一度お試しください。";
+
+/* Aviso fijo en la pestana Grupos: el telefono lleva mas de un dia sin pasar la verificacion de seguridad, asi que sus cambios de grupos no llegan */
+"groups.attestTerminalBanner" = "1日以上、サーバーが求めるセキュリティ確認を通過できていません。この端末での変更はグループに届かないため、当面は別の端末をお使いください。";

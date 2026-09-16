@@ -1805,6 +1805,15 @@ enum L10n {
         /// Etiqueta singular "Grupo" — chip de contexto de grupo en el form de gasto.
         static var groupLabel: String { ls("groups.groupLabel", comment: "") }
 
+        /// **Aviso FIJO de la pestaña Grupos** (2026-09-15, ticket `groups-tab-does-not-say-this-phone-cannot-sync-groups`,
+        /// decisión de Jürgen): el cuerpo que acompaña a `Groups.Errors.attestUnavailableTitle` cuando el veredicto de
+        /// App Attest es terminal. **Reusa ese título a propósito** — es el mismo hecho que ya cuentan los gestos que
+        /// pueden perder algo, y decirlo con otras palabras dejaría dos vocabularios para una sola avería.
+        ///
+        /// Se diferencia de `Groups.Errors.attestUnavailable`, que dice el hecho y para ahí, en que **este ofrece qué
+        /// hacer**: usar otro teléfono. Ver `GroupsAttestTabNoticeLogic`.
+        static var attestTerminalBanner: String { ls("groups.attestTerminalBanner", comment: "") }
+
         enum Empty {
             static var title: String { ls("groups.empty.title", comment: "") }
             static var message: String { ls("groups.empty.message", comment: "") }

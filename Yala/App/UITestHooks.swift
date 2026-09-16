@@ -239,6 +239,25 @@ final class UITestHooks {
     /// `YalaSyncMeta-UITest` es persistente y, sin esa purga, bloquearía los cierres de la corrida siguiente.
     nonisolated static var seedPendingGroupsOutboxRow: Bool { hasArg("-uitest-groups-outbox-pending") }
 
+    /// `-uitest-groups-attest-terminal`: deja este teléfono con el veredicto de App Attest TERMINAL — tres
+    /// rechazos repartidos en más de 24 h, sin un solo acierto.
+    ///
+    /// **Es el estado real, escrito por el camino de producción, no un seam que fuerce el predicado.** La siembra
+    /// llama a `GroupsAttestStreakStore.recordRejection(now:)` tres veces con relojes separados, igual que harían
+    /// tres 401 `yala_attest_required`, y deja que `GroupsAttestVerdictLogic` decida. Un seam que devolviera
+    /// `isTerminal = true` dejaría ciegos a los tests que entran por él (`.claude/rules/testing.md`): pasarían en
+    /// verde con la tabla del veredicto rota.
+    ///
+    /// **La racha NO la borra `-uitest-reset`**, y es a propósito en producción: describe al teléfono, así que
+    /// `DataWipeService.removeUserPreferenceKeys` no la lleva y cerrar sesión no la arregla. Por eso la siembra
+    /// tiene su propia purga en el `else` de `AppBootstrapper.applyUITestSeed`: sin ella, una corrida que la
+    /// sembrara dejaría el aviso puesto para todas las siguientes del mismo simulador.
+    ///
+    /// Para VER el aviso del tab Grupos hace falta además sesión en la nube (`-uitest-fake-cloud-session`): sin
+    /// ella el veredicto es cierto y la frase sería mentira (`GroupsAttestTabNoticeLogic`). Los dos args son
+    /// ortogonales a propósito — el caso «racha sí, sesión no» es justo el que prueba esa mitad.
+    nonisolated static var groupsAttestTerminal: Bool { hasArg("-uitest-groups-attest-terminal") }
+
     /// `-uitest-trial-offer`: tras el seed, encola `.presentTrialOffer` para presentar
     /// el ProTrialOfferSheet sin depender de StoreKit ni del post-onboarding real —
     /// las emisiones AUTOMÁTICAS de monetización están suprimidas en uitest, este

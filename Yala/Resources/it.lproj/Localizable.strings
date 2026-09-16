@@ -5967,3 +5967,6 @@
 "settings.signOutAttestBlocked" = "Da più di un giorno questo telefono non riesce a superare la verifica di sicurezza richiesta dal nostro server, quindi le tue modifiche non possono essere caricate sul tuo account nel cloud.";
 "settings.signOutAttestExportEmpty" = "Non hai transazioni da esportare.";
 "settings.signOutAttestExportFailed" = "Non siamo riusciti a creare il file. Riprova.";
+
+/* Aviso fijo en la pestana Grupos: el telefono lleva mas de un dia sin pasar la verificacion de seguridad, asi que sus cambios de grupos no llegan */
+"groups.attestTerminalBanner" = "Da più di un giorno non riesce a superare la verifica di sicurezza richiesta dal nostro server. Quello che modifichi qui non arriva al gruppo: usa un altro telefono nel frattempo.";

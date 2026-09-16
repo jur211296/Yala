@@ -895,6 +895,9 @@ final class AppBootstrapper {
         // nadie**: `-uitest-reset` no la nombra y `removeUserPreferenceKeys` tampoco. Es la misma clase de
         // key filtrada que este bloque existe para cerrar.
         UITestEphemeralDefaults.purgeGroupInviteResumeEnvelope()
+        // La racha de App Attest, a una suite propia: es la ÚNICA de este bloque que también escribe código de
+        // producción, así que el desvío tiene que estar puesto antes de que ningún cliente de Grupos responda.
+        UITestEphemeralDefaults.applyEphemeralAttestStreak()
 
         // `-uitest-fake-icloud`: simula cuenta iCloud disponible (+ import asentado) para
         // ejercitar en sim los flujos gated por `isAccountAvailable` (onboarding "Solo
@@ -1027,6 +1030,21 @@ final class AppBootstrapper {
            !UITestHooks.seedPendingGroupsOutboxRow
             || CloudSessionSignOut.liveGroupsPendingCount(context: context) > 0 {
             RouterEntryGate.shared.submit(.appleIDChangedClosePrivate)
+        }
+        // Veredicto de App Attest TERMINAL, escrito por el camino de producción: tres rechazos repartidos en
+        // más de 24 h. `GroupsAttestVerdictLogic` decide; aquí solo se le dan los relojes.
+        //
+        // Sin `else`: lo que impide que esta racha sobreviva a la corrida NO es una purga simétrica aquí, sino el
+        // desvío de `UITestEphemeralDefaults.applyEphemeralAttestStreak()` en el arranque temprano — la suite nace
+        // vacía en cada lanzamiento y el `UserDefaults.standard` real no se toca. Un `else` aquí solo cubriría al
+        // seam, y quien contamina el simulador es CUALQUIER escritura de la racha bajo uitest.
+        if UITestHooks.groupsAttestTerminal {
+            let now = Date.now
+            // Uno por hora como mucho (`GroupsAttestVerdictLogic.countingInterval`), así que los tres relojes
+            // van separados; el primero a 25 h para pasar el mínimo de duración leído con el reloj de ahora.
+            for hoursAgo in [25.0, 24.0, 23.0] {
+                GroupsAttestStreakStore.recordRejection(now: now.addingTimeInterval(-hoursAgo * 3600))
+            }
         }
         // UpdateAvailableBanner simulado en uitest: fuerza el estado sin red.
         if UITestHooks.forceUpdateBanner {

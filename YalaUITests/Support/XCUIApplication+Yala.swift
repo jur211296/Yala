@@ -39,6 +39,7 @@ extension XCUIApplication {
         fakeBeacon: String? = nil,
         appleIDChanged: Bool = false,
         groupsOutboxPending: Bool = false,
+        groupsAttestTerminal: Bool = false,
         extraArguments: [String] = []
     ) -> XCUIApplication {
         var args = ["-uitest"]
@@ -114,6 +115,11 @@ extension XCUIApplication {
         // con `UITestHooks` (`AppleIDCloseNoticeWiringTests`), y si la SIEMBRA fallara, la app no encola la hoja.
         if appleIDChanged { args.append("-uitest-apple-id-changed") }
         if groupsOutboxPending { args.append("-uitest-groups-outbox-pending") }
+        // El veredicto de App Attest terminal. NOMBRADO por lo mismo que sus vecinos, y con un agravante
+        // propio: el test que prueba la AUSENCIA del aviso se lanza con este arg puesto y SIN
+        // `cloudSession:` — un typo que lo dejara fuera le quitaría la mitad que discrimina y el caso
+        // pasaría en verde sin haber medido nada. Su nombre lo fija el test de paridad con `UITestHooks`.
+        if groupsAttestTerminal { args.append("-uitest-groups-attest-terminal") }
         // Args crudos adicionales (aditivo — p.ej. "-uitest-cloud-chooser").
         args.append(contentsOf: extraArguments)
         // Idioma FIJO para toda la suite. Los seeds nombran sus datos con copy localizado

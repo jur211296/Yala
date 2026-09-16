@@ -555,6 +555,12 @@ struct UITestSeamPersistenceIsolationTests {
             "UITestEphemeralDefaults.applyGroupsBetaUnlocked(",
             "UITestEphemeralDefaults.applyOnboardingAlreadySeen(",
             "UITestEphemeralDefaults.purgeCategorySeedSentinel(",
+            // 2026-09-15: la racha de App Attest. Es la ÚNICA de esta lista que también la escribe código de
+            // PRODUCCIÓN (`GroupsAttestStreakStore.recordRejection`), así que no se puede resolver con el dominio
+            // de registro como sus vecinas: se desvía la tienda entera a una suite propia. Sin ella, una corrida
+            // con `-uitest-groups-attest-terminal` deja el veredicto terminal puesto para todo arranque MANUAL del
+            // simulador y para el host de unit tests, que comparte bundle.
+            "UITestEphemeralDefaults.applyEphemeralAttestStreak(",
         ]
         for llamada in llamadas {
             let veces = body.components(separatedBy: llamada).count - 1
@@ -569,6 +575,8 @@ struct UITestSeamPersistenceIsolationTests {
             (AppPreferences.Keys.hasCompletedOnboarding, "abrir la app a mano tras un XCUITest se salta el onboarding"),
             (AppPreferences.Keys.hasShownWelcomeChooser, "abrir la app a mano tras un XCUITest se salta el Welcome Chooser"),
             (CategorySeedSentinel.productionKey, "el arranque manual siguiente se queda sin categorías"),
+            (GroupsAttestStreakStore.key,
+             "el arranque manual siguiente cree que este teléfono no puede sincronizar grupos y ofrece perder cambios"),
         ]
         for (key, consecuencia) in prohibidas {
             let veces = body.components(separatedBy: key).count - 1

@@ -5225,3 +5225,6 @@
 "settings.signOutAttestBlocked" = "This phone has gone more than a day without passing the security check our server requires, so your changes can't be uploaded to your account in the cloud.";
 "settings.signOutAttestExportEmpty" = "You don't have any transactions to export.";
 "settings.signOutAttestExportFailed" = "We couldn't create the file. Please try again.";
+
+/* Aviso fijo en la pestana Grupos: el telefono lleva mas de un dia sin pasar la verificacion de seguridad, asi que sus cambios de grupos no llegan */
+"groups.attestTerminalBanner" = "It's gone more than a day without passing the security check our server requires. Anything you edit here won't reach the group — use another phone in the meantime.";
