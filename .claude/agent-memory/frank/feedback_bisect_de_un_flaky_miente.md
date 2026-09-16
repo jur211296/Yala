@@ -67,3 +67,20 @@ Hipótesis viva sin descartar: el disco estaba a 11-14 GB, por debajo del umbral
 Relacionado: [[rojo-conocido-no-exime-de-bisecar]] (el error inverso: dar por ajeno un rojo que era
 mío) · [[el-arbol-base-contesta-si-es-mio]] (el bisect que SÍ funciona, cuando el rojo es
 determinista) · [[mutante-compilado-zanja-hipotesis]].
+
+## Corolario del 2026-09-15: mide la tasa de la configuración DE PARTIDA antes de bisecar
+
+Un XCUITest del gate cayó 3 de 3 en mi árbol y pasó 1 de 1 en el árbol base. Ese contraste parecía limpio, y
+sobre él monté **nueve corridas de bisección** —capas, sub-capas y cuatro variantes de un `.alert`— hasta
+construir una explicación coherente y falsa («cierta forma del alert rompía la cola del router»).
+
+Lo que la tumbó fue repetir **la misma compilación tres veces**: pasa · falla · pasa. Y después el árbol de
+partida, sin tocar una línea, pasó **4 de 4**. Con una tasa de ~1/3, ver 3 fallos seguidos ocurre el 4 % de las
+veces: no es despreciable, y es exactamente el cebo.
+
+⇒ **Antes de la primera corrida de una bisección, repite la configuración de partida N≥3.** Si da mezcla, no
+hay nada que bisecar todavía: lo que toca es medir la tasa y el entorno. Y si decides bisecar igual, **ninguna
+rama significa nada por debajo de N≈10**, porque cada veredicto de N=1 separa azar.
+
+**El entorno era la variable**: 16 sesiones de Claude Code vivas, 6,4 GB de swap de 7,1, y el sistema matando
+tandas de tests por memoria. Un caso que espera 45 s a que una presentación aparezca se pone rojo con eso solo.

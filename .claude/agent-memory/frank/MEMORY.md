@@ -63,6 +63,7 @@
 - [Mi arreglo deja el mecanismo sin productor](feedback_mi_arreglo_deja_el_mecanismo_sin_productor.md) — mide aguas arriba y aguas abajo.
 - [El árbol base contesta «¿es mío?»](feedback_el_arbol_base_contesta_si_es_mio.md) — worktree desde HEAD zanja un rojo ajeno en 90 s; y devuelve el disco que se come.
 - [Un «rojo conocido» no exime de bisecar](feedback_rojo_conocido_no_exime_de_bisecar.md) — dos rojos idénticos en el log, causas opuestas: uno era mío y rompía guardar una transacción.
+- [La suite completa cuando no hay memoria](feedback_suite_completa_sin_memoria.md) — separa el compilador de la corrida; y una lista sacada de `@Suite` deja fuera 273 tipos y cuadra igual.
 - [XCUITest completo: por lotes](reference_xcuitest_completo_por_lotes.md) — `BUILD INTERRUPTED` no es veredicto; cuenta por CLASE, en UN proceso de fondo; el conjunto del gate se CALCULA.
 - [Dos corridas, un simulador](feedback_dos_corridas_un_simulador.md) — vigila la corrida ENTERA, no solo la foto de antes: un rojo CON línea de fallo tampoco es tuyo si otra corrida instaló su app encima.
 - [Bisecar un flaky miente](feedback_bisect_de_un_flaky_miente.md) — la correlación es azar; lo que zanja es la muestra IMPOSIBLE, y el rojo que se muda de test.
