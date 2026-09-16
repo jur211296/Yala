@@ -5,10 +5,35 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-16 (Lima)
 
-**Rama** `2.1` — Merge #185: **La vuelta a iCloud ya no se queda al 95 % para siempre.**
+**Rama** `2.1` — Merge #186: **Un rechazo al volver a iCloud ya no deja la barra al 15 %.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#185 · la vuelta a iCloud ya no se queda al 95 % para siempre)
+## Esta sesión (#186 · un rechazo al volver a iCloud ya no deja la barra al 15 %)
+
+**Si el servidor no deja empezar «Volver a iCloud», la app vuelve a la nube al momento y lo dice.** Hasta hoy la barra se
+quedaba al 15 % para siempre, «Retomar» repetía lo mismo y, tras relanzar, el teléfono dejaba de sincronizar con la nube.
+Ahora sale una alerta si tienes la pantalla delante (al tocar, con «Retomar» o si llega mientras miras) y la frase queda
+en la tarjeta «Volver a iCloud» hasta el siguiente intento, en pasado y con el motivo: la migración aún terminando, la
+cuenta que no lo permitía (con el correo de soporte) u otro dispositivo ya volviendo. Son tus cinco respuestas del día,
+todas con la recomendada.
+
+**La review cazó que mi salida limpia se llevaba algo:** la vuelta tira los pendientes del origen, y uno de ellos es lo
+único que manda `complete` de una migración. Un líder con el `complete` a medias dejaba `migration_in_progress` puesto en
+el backend para toda la cuenta. Ahora un intento no concedido devuelve el teléfono exactamente como estaba.
+
+**Qué te toca:** el QA en iPhone de `reverse-claim-rejection-has-no-way-out-in-the-client` (en `qa`): cuenta en la nube
+real con `Yala Dev` contra staging, y cada rechazo se monta con una línea de SQL en staging que se deshace al terminar
+(guion en el ticket).
+
+**Tres tickets nuevos, ninguno bloquea 2.1:** la sesión caducada antes del montaje de la vuelta, el toque que se pierde si
+la app está retomando algo y un residual aceptado (un teléfono con la migración a medias que falla siempre puede quedarse
+sin sincronizar hasta reabrir Yala). Y una medición para el backend: tres caminos al mismo `not_complete`, en
+`reverse-exit-on-a-reverted-account-rejects-the-retry`.
+
+Validación: build ×2 · unit 7117 casos en 728 suites · XCUITest 7/7 con centinela en 0 · 21 mutantes cazados · dos
+pasadas de review · `validate-coverage` OK · `docs/TICKETS.md` igual al disco (428) · **CI verde** (tests 23 min).
+
+## Sesión anterior (#185 · la vuelta a iCloud ya no se queda al 95 % para siempre)
 
 **«Volver a iCloud» ya no se clava al 95 % sin salida.** Mientras espera, «Dónde viven tus datos» dice cuánto falta por
 subir, o que iCloud no tiene espacio o no está disponible, y ofrece «Cancelar y seguir en la nube». Si la subida no
@@ -34,7 +59,7 @@ otros.
 Validación: build ×2 · unit 7097 casos en 727 suites · XCUITest 20/20 con centinela en 0 · 26 mutantes cazados ·
 `validate-coverage` OK · `docs/TICKETS.md` igual al disco (425) · **CI verde** (build y unit, 23 min).
 
-## Sesión anterior (#184 · la cola de QA baja de 83 a 52, y los 52 tienen montaje)
+## Sesión #184 · la cola de QA baja de 83 a 52, y los 52 tienen montaje
 
 **La cola de QA vuelve a decir la verdad.** De los 83 tickets de `tickets/qa/`, 18 pasaron en el simulador con captura, 11
 se cerraron sin verlos por tu override (6 sin forma de montarlos en ningún sitio, 5 cuya prueba vive en otro ticket de la
