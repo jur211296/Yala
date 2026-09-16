@@ -188,7 +188,9 @@ struct GroupsAssociationSection: View {
         // `.uploadRetryLater` tampoco llega: nace en el paso 2 del cierre en la NUBE y el desasociar va
         // por `pushGroupsForSignOut`, que propaga lo que dice `classify` —y `classify` no lo produce—. Si
         // algún día llegara, este copy no miente: es el mismo consejo con menos detalle.
-        case .transient, .exportUnconfirmed, .uploadRetryLater, .none:
+        // `.personalAttestUnavailable` tampoco llega: lo pone solo el paso 1 del cierre en la NUBE, sobre el outbox personal,
+        // y el desasociar no sube nada personal (2026-09-15).
+        case .transient, .exportUnconfirmed, .uploadRetryLater, .personalAttestUnavailable, .none:
             return L10n.Storage.Groups.detachBlockedTransient
         }
     }

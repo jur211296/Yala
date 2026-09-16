@@ -18,7 +18,12 @@
 //  2026-09-15: `SyncStatusBanner` is iCloud's); this line used to promise one, and a ticket inherited the claim. The
 //  groups channel has its own terminal verdict, `GroupsAttestVerdictLogic`. Pure & `nonisolated`.
 //
+//  Since 2026-09-15 the same consumer also feeds the PHONE's attest streak with the failures that speak about attest
+//  (`countsTowardAttestStreak`): that streak, not `.terminal`, is what lets a cloud sign-out offer to export and lose the
+//  personal changes that can't be uploaded.
+//
 
+import DeviceCheck
 import Foundation
 
 enum AttestSyncGate {
@@ -42,8 +47,9 @@ enum AttestSyncGate {
     /// - `.unavailable` → the terminal SIGNAL, but only once it PERSISTS: a one-off retries, a
     ///   repeated one (`retryCount >= maxRetries`) is a device that genuinely can't attest. In
     ///   release, `isSupported == false` surfaces as `.unavailable` on EVERY attempt → it converges
-    ///   to terminal after `maxRetries`. The deterministic `isSupported == false` up-front case is
-    ///   caught earlier by `shouldOfferCloudOnly(isAttestSupported:)`, before the user commits.
+    ///   to terminal after `maxRetries`. The deterministic `isSupported == false` up-front case was meant to be
+    ///   caught earlier by `shouldOfferCloudOnly(isAttestSupported:)`, but that gate has NO call-site (measured 2026-09-15,
+    ///   ticket `cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest`).
     static func classify(
         error: AppAttestError,
         retryCount: Int,
@@ -57,11 +63,43 @@ enum AttestSyncGate {
         }
     }
 
+    /// El `error.type` con el que el gateway rechaza una atestación o una aserción (`gateway/src/attest/routes.ts`).
+    static let attestRejectedType = "yala_attest_invalid"
+
+    /// **¿Este fallo dice algo del ATTEST de este teléfono, y no de la red ni del servidor?** Lo que devuelve `true` cuenta
+    /// en la racha del teléfono (`GroupsAttestStreakStore`) desde la puerta del motor personal
+    /// (`CloudSyncRuntime.resolveAttest`, ticket `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`).
+    ///
+    /// El motor personal nunca manda una subida sin attest, así que no ve el 401 `yala_attest_required` con el que cuenta
+    /// Grupos: ve el error con el que `AppAttestClient` no consiguió el token. Cuentan los que hablan del attest:
+    ///  - `.unavailable`: este teléfono no tiene App Attest.
+    ///  - `.unknownKey`: el gateway no reconoce la key de este teléfono.
+    ///  - `.server("yala_attest_invalid")`: el gateway rechazó la atestación o la aserción.
+    ///  - un error de DeviceCheck (`DCErrorDomain`): Apple no generó la key, la atestación o la aserción.
+    ///
+    /// **No cuentan** `.network`, los demás `.server` —un 5xx, `yala_bad_request`, un límite de peticiones, un `decode`— ni
+    /// ningún otro error: sin red o con el gateway caído el veredicto no se acerca. **Dos que sí cuentan sin ser culpa del
+    /// teléfono, medidos en la review del 2026-09-15**: un `DCError.serverUnavailable` (el servidor de Apple no atesta) y el
+    /// `yala_attest_invalid` con que el gateway responde también cuando falla su escritura en D1
+    /// (`attest-gateway-reports-a-storage-failure-as-an-invalid-attestation`). Esta función no decide qué fallo es PERMANENTE:
+    /// lo decide el tiempo (24 h y 3 veces, `GroupsAttestVerdictLogic`), y un corte de unas horas no llega.
+    static func countsTowardAttestStreak(_ error: any Error) -> Bool {
+        if let attest = error as? AppAttestError {
+            switch attest {
+            case .unavailable, .unknownKey: return true
+            case .server(let type): return type == attestRejectedType
+            case .network: return false
+            }
+        }
+        return (error as NSError).domain == DCErrorDomain
+    }
+
     /// Onboarding born-cloud gate (owner: block-upfront, 2026-07-06): only offer cloud-only when
     /// attest is TERMINALLY supported on this device. Terminal-unsupported → don't offer cloud-only
     /// (offer iCloud / local + export). A transient failure does NOT block here (the retry covers it),
     /// so this keys strictly on the deterministic `isSupported` capability. On real iOS 26 hardware
-    /// `isSupported == false` is vanishingly rare → the false-block rate is negligible.
+    /// `isSupported == false` is vanishingly rare → the false-block rate is negligible. **Not wired yet**: no call-site as of
+    /// 2026-09-15 (ticket `cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest`).
     static func shouldOfferCloudOnly(isAttestSupported: Bool) -> Bool {
         isAttestSupported
     }

@@ -5957,3 +5957,13 @@
 
 /* Boton generico para posponer una decision */
 "action.notNow" = "Non ora";
+
+/* Cerrar sesión en la nube sin App Attest con cambios personales sin subir (2026-09-15) */
+"settings.signOutAttestTitle" = "Questo telefono non può sincronizzare i tuoi dati";
+"settings.signOutAttestMessage" = "Da più di un giorno non riesce a superare la verifica di sicurezza richiesta dal nostro server. Modifiche che non sono arrivate al tuo account nel cloud: %d. Prima di decidere, puoi esportare le tue transazioni in un file. Se esci ora, queste modifiche andranno perse.";
+"settings.signOutAttestMessageUnknown" = "Da più di un giorno non riesce a superare la verifica di sicurezza richiesta dal nostro server, e alcune modifiche non sono arrivate al tuo account nel cloud. Prima di decidere, puoi esportare le tue transazioni in un file. Se esci ora, queste modifiche andranno perse.";
+"settings.signOutAttestExportButton" = "Esporta le mie transazioni";
+"settings.signOutAttestLossButton" = "Esci e perdile";
+"settings.signOutAttestBlocked" = "Da più di un giorno questo telefono non riesce a superare la verifica di sicurezza richiesta dal nostro server, quindi le tue modifiche non possono essere caricate sul tuo account nel cloud.";
+"settings.signOutAttestExportEmpty" = "Non hai transazioni da esportare.";
+"settings.signOutAttestExportFailed" = "Non siamo riusciti a creare il file. Riprova.";

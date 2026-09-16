@@ -187,6 +187,7 @@ struct SignOutBlockedCopyTests {
         #expect(SignOutBlockedCopy.message(for: .uploadRetryLater) == L10n.Groups.Errors.uploadRetryLater)
         #expect(SignOutBlockedCopy.message(for: .transient) == L10n.Settings.signOutPendingMessage)
         #expect(SignOutBlockedCopy.message(for: .attestUnavailable) == L10n.Groups.Errors.attestUnavailable)
+        #expect(SignOutBlockedCopy.message(for: .personalAttestUnavailable) == L10n.Settings.signOutAttestBlocked)
     }
 
     @Test("Lo que no tiene causa que nombrar cae al genérico, `nil` incluido")
@@ -205,6 +206,7 @@ struct SignOutBlockedCopyTests {
             switch reason {
             case .transient: expected = L10n.Settings.signOutPendingTitle
             case .attestUnavailable: expected = L10n.Groups.Errors.attestUnavailableTitle
+            case .personalAttestUnavailable: expected = L10n.Settings.signOutAttestTitle
             default: expected = L10n.Settings.signOutBlockedTitle
             }
             #expect(SignOutBlockedCopy.title(for: reason) == expected)
@@ -217,10 +219,13 @@ struct SignOutBlockedCopyTests {
         // carga—, las aserciones de arriba pasarían con los motivos intercambiados.
         let messages = [L10n.Groups.Errors.sessionExpired, L10n.Groups.Errors.channelPaused,
                         L10n.Groups.Errors.uploadRetryLater, L10n.Settings.signOutPendingMessage,
-                        L10n.Settings.signOutBlockedMessage, L10n.Groups.Errors.attestUnavailable]
+                        L10n.Settings.signOutBlockedMessage, L10n.Groups.Errors.attestUnavailable,
+                        L10n.Settings.signOutAttestBlocked]
         #expect(Set(messages).count == messages.count)
         #expect(L10n.Settings.signOutPendingTitle != L10n.Settings.signOutBlockedTitle)
         #expect(L10n.Groups.Errors.attestUnavailableTitle != L10n.Settings.signOutBlockedTitle)
+        #expect(L10n.Settings.signOutAttestTitle != L10n.Settings.signOutBlockedTitle)
+        #expect(L10n.Settings.signOutAttestTitle != L10n.Groups.Errors.attestUnavailableTitle)
     }
 }
 

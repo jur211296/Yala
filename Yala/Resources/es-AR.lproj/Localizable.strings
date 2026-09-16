@@ -5224,3 +5224,13 @@
 
 /* Boton generico para posponer una decision */
 "action.notNow" = "Ahora no";
+
+/* Cerrar sesión en la nube sin App Attest con cambios personales sin subir (2026-09-15) */
+"settings.signOutAttestTitle" = "Este teléfono no puede sincronizar tus datos";
+"settings.signOutAttestMessage" = "Lleva más de un día sin conseguir la verificación de seguridad que pide nuestro servidor. Cambios que no llegaron a tu cuenta en la nube: %d. Antes de decidir, podés exportar tus movimientos a un archivo. Si cerrás sesión ahora, esos cambios se pierden.";
+"settings.signOutAttestMessageUnknown" = "Lleva más de un día sin conseguir la verificación de seguridad que pide nuestro servidor, y hay cambios que no llegaron a tu cuenta en la nube. Antes de decidir, podés exportar tus movimientos a un archivo. Si cerrás sesión ahora, esos cambios se pierden.";
+"settings.signOutAttestExportButton" = "Exportar mis movimientos";
+"settings.signOutAttestLossButton" = "Cerrar sesión y perderlos";
+"settings.signOutAttestBlocked" = "Este teléfono lleva más de un día sin conseguir la verificación de seguridad que pide nuestro servidor, así que tus cambios no pueden subir a tu cuenta en la nube.";
+"settings.signOutAttestExportEmpty" = "No tenés movimientos para exportar.";
+"settings.signOutAttestExportFailed" = "No pudimos generar el archivo. Intentalo de nuevo.";

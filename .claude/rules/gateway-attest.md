@@ -146,16 +146,18 @@ Lo pasajero de arriba es cierto para quien recupera el attest en un rato, y ment
 `groups-phone-that-never-attests-is-told-to-retry-forever`): **tras 24 h y 3 rechazos sin un solo acierto**, un aviso
 terminal y, en los cierres de sesión, una salida que pierde esos cambios con confirmación.
 
-- **Qué cuenta es la palabra del servidor, no el error local.** Un rechazo es un 401 `yala_attest_required` de una ruta de
-  Grupos (push, pull o RPC); un 200 de esas rutas borra la racha. No se clasifican `AppAttestError`/`DCError`: nadie ha
-  medido cuáles son permanentes, y `.network` no distingue «sin red» de «sin attest». Sin red o con un 5xx no hay 401, así
-  que estar offline no acerca el veredicto. **Y un rechazo cuenta como mucho una vez por hora**: un solo gesto dispara
+- **En Grupos, qué cuenta es la palabra del servidor, no el error local.** Un rechazo es un 401 `yala_attest_required` de
+  una ruta de Grupos (push, pull o RPC); un 200 de esas rutas borra la racha. Grupos no clasifica `AppAttestError`/`DCError`:
+  nadie ha medido cuáles son permanentes, y `.network` no distingue «sin red» de «sin attest». Sin red o con un 5xx no hay
+  401, así que estar offline no acerca el veredicto. El motor personal, que no ve ese 401, cuenta otra cosa: «La racha es
+  del TELÉFONO», más abajo. **Y un rechazo cuenta como mucho una vez por hora**: un solo gesto dispara
   ráfagas —la membresía reintenta tres veces, el cierre cada 2 s durante 45 s— y, contado por petición, el mínimo de 3 se
   cumplía en segundos.
 - **La racha vive entre arranques** en `GroupsAttestStreakStore` (`UserDefaults.standard`, clave
   `groupsSync.attestRejectionStreak`), y la decisión es pura en `GroupsAttestVerdictLogic`. Describe al TELÉFONO: no está en
-  `DataWipeService.removeUserPreferenceKeys` ni en `PrefSyncKey`. La escriben `GroupsSyncClient` (push y pull) y
-  `GroupsMembershipClient.call`, sin inyección por construcción. Un reloj que retrocede reinicia la racha.
+  `DataWipeService.removeUserPreferenceKeys` ni en `PrefSyncKey`. La escriben `GroupsSyncClient` (push y pull),
+  `GroupsMembershipClient.call` y, desde el 2026-09-15, `CloudSyncRuntime.resolveAttest`, sin inyección por construcción.
+  Un reloj que retrocede reinicia la racha.
 - **El veredicto exige además un rechazo del ciclo que se lee** (`GroupsSyncClient.stoppedByUnavailableAttest(for:)`, molde
   del testigo del kill): una racha terminal no dice por qué falló ESTE ciclo. Lo consumen `CloudSignOutFlowLogic.classify`
   (motivo `.attestUnavailable`, que se enseña al momento y la nube no traduce) y `GroupLeaveErrorLogic.classify`.
@@ -180,6 +182,32 @@ terminal y, en los cierres de sesión, una salida que pierde esos cambios con co
 - **El canal personal no tiene banner**: su veredicto terminal (`AttestSyncGate`, solo `AppAttestError.unavailable`
   repetido) emite `cloudSyncBlockedByAttestUnavailable` y para el runtime, sin nada visible; `SyncStatusBanner` es el de
   iCloud. Un ticket partió de lo contrario porque dos docblocks lo prometían.
+
+### La racha es del TELÉFONO: la escriben los dos canales (2026-09-15)
+
+Ticket `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`.
+
+- **El motor personal cuenta el error de su puerta**: nunca manda una subida sin attest, así que no ve el 401.
+  `CloudSyncRuntime.resolveAttest` suma un rechazo cuando el error habla del attest
+  (`AttestSyncGate.countsTowardAttestStreak`) y un token conseguido acaba la racha, también uno cacheado. Sin red o con el
+  gateway caído el error no habla del attest: el veredicto solo se acerca con la palabra de Apple o del gateway sobre ESTE
+  teléfono, y qué es permanente lo sigue decidiendo el tiempo. Dos rechazos no son culpa del teléfono y se aceptan,
+  acotados por las 24 h: `DCError.serverUnavailable` y el `yala_attest_invalid` con que el gateway tapa un fallo de D1
+  (`attest-gateway-reports-a-storage-failure-as-an-invalid-attestation`).
+- **Una sola racha para los dos canales, a propósito.** Con dos, un cierre en la nube podía aceptar perder lo personal y
+  quedarse en «en un rato» con los cambios de grupos. `GroupsAttestStreakStore` y el canario `groupsAttestTerminal`
+  conservan su nombre: renombrar el canario rompe la serie.
+- **La salida personal vive solo en el cierre en la nube, que es solo Ajustes.** El paso 1 traduce a
+  `.personalAttestUnavailable` el `.attestUnavailable` que trae el testigo del motor
+  (`CloudSyncRuntime.stoppedByUnavailableAttest(for:)`, que acepta también la parada terminal `.accountUnavailable`); el resto
+  de motivos del paso 1 sigue en `.permanent`. **Cada aceptación cubre solo su outbox**, y lo aceptado de lo personal
+  sobrevive al aviso de grupos que sale después.
+- **Retomar un cierre con la pérdida aceptada exige que el bloqueo siga siendo el attest**
+  (`CloudSignOutFlowLogic.continuesAfterBlockedUpload`, en los tres sitios que suben: los pasos 1 y 2 de la nube y
+  `pushGroupsForSignOut`). Si el attest volvió y la subida falla por otra cosa, un reintento subiría esos cambios: el cierre
+  bloquea como siempre y retira lo aceptado. Los recuentos finales, tras soltar el canal, no pasan por ahí.
+- **Tests: aísla la tienda en los del runtime que fijan `attestError`** (`IsolatedAttestStreak`). Un ciclo con token también
+  la borra, y los casos que aún no aíslan están en `unit-tests-clear-the-attest-streak-of-a-device-qa-in-progress`.
 
 ## El SEGUNDO fallo del mismo día: el header estaba cableado y el token no se podía acuñar
 

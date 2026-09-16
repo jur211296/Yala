@@ -112,6 +112,19 @@ struct ProfileView: View {
     @State private var showSignOutAttestLossAlert = false
     /// Cuántos cambios de grupos se perderían en el bloqueo que se está mostrando (`Int.max` = no se pudo contar).
     @State private var signOutAttestLossPending = 0
+    /// El aviso de cerrar sesión en la nube con cambios PERSONALES sin subir y un teléfono sin App Attest (2026-09-15,
+    /// decisión de Jürgen): exportar los movimientos, cerrar sesión perdiéndolos o dejarlo. Alert DEDICADO, por lo mismo
+    /// que los dos de arriba: sus botones son literales.
+    @State private var showSignOutPersonalAttestAlert = false
+    /// Cuántos cambios personales se perderían en el bloqueo que se está mostrando (`Int.max` = no se pudo contar).
+    @State private var signOutPersonalAttestPending = 0
+    /// El archivo con todos los movimientos que ofrece ese aviso, mientras la hoja de compartir está en pantalla.
+    @State private var signOutRescueExportFile: ExportedFile?
+    /// La exportación de ese aviso falló: el texto que lo explica (no había movimientos, o no se pudo escribir el archivo).
+    @State private var signOutRescueExportErrorMessage = ""
+    @State private var showSignOutRescueExportError = false
+    /// Mientras se genera ese archivo, un indicador: la exportación corre en el hilo principal y con un historial largo tarda.
+    @State private var isExportingBeforeLosingChanges = false
     /// Qué bloqueó el cierre, para elegir el mensaje del aviso. **Es el motivo entero y no un `Bool`**
     /// desde el 2026-09-13: eran dos mensajes y son tres —sesión caducada, canal de Grupos en pausa, y el
     /// resto—, así que un `Bool` ya no los separa. Solo lo leen los mensajes; qué alert se presenta lo
@@ -124,6 +137,7 @@ struct ProfileView: View {
             signOutBlockedReason = reason
             if reason == .exportUnconfirmed { signOutExportPending = pending }
             if reason == .attestUnavailable { signOutAttestLossPending = pending }
+            if reason == .personalAttestUnavailable { signOutPersonalAttestPending = pending }
             presentSignOutBlock(reason)
         case .awaitingRelaunch: dismiss()
         case .idle, .working: break
@@ -143,6 +157,7 @@ struct ProfileView: View {
         showSignOutBlockedAlert = false
         showSignOutExportAlert = false
         showSignOutAttestLossAlert = false
+        showSignOutPersonalAttestAlert = false
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
             guard case .blocked(_, let live) = signOutCoordinator.phase, live == reason else { return }
             switch reason {
@@ -154,6 +169,16 @@ struct ProfileView: View {
             // `signout-alert-fires-on-detach-blocks-it-did-not-cause` con un motivo nuevo.
             case .attestUnavailable:
                 if signOutCoordinator.offersGroupsLossExit { showSignOutAttestLossAlert = true }
+            // **Tus datos en la nube, con el teléfono sin App Attest** (2026-09-15, decisión de Jürgen). Con la salida que
+            // anotó el cierre en la nube, su propio aviso: cuenta lo que se pierde y ofrece exportar los movimientos, cerrar
+            // sesión perdiéndolos o dejarlo. Sin ella —otro gesto la retiró— el aviso de bloqueo con el texto que no ofrece
+            // nada: este motivo solo lo pone el cierre en la nube, así que ninguna otra pantalla lo pinta por él.
+            case .personalAttestUnavailable:
+                if signOutCoordinator.offersPersonalLossExit {
+                    showSignOutPersonalAttestAlert = true
+                } else {
+                    showSignOutBlockedAlert = true
+                }
             // El canal de Grupos en pausa entra por el MISMO alert que los otros dos permanentes, con el
             // mensaje que le toca (`signOutBlockedMessage`).
             //
@@ -197,6 +222,45 @@ struct ProfileView: View {
         }
         guard signOutCoordinator.phase == .idle, signOutScope == nil else { return }
         signOutScope = makeSignOutScope()
+    }
+
+    /// «Exportar mis movimientos», desde el aviso de tus datos sin App Attest (decisión de Jürgen del 2026-09-15): el CSV de
+    /// TODOS los movimientos (`ExportFilters.allTransactions`), sin asistente ni límite de plan, y la hoja de compartir.
+    ///
+    /// Va un turno después del tap, por lo mismo que `presentSignOutBlock`: el aviso se está desmontando y presentar en ese
+    /// momento lo pierde (`swiftui-ds.md`, dos presentaciones en el mismo anchor). **No toca el cierre**, que sigue parado en
+    /// su bloqueo: al cerrar la hoja —o el aviso de error— `returnToPersonalAttestNotice` lo vuelve a enseñar.
+    ///
+    /// Tres detalles de la review adversarial (2026-09-15). Corre en el hilo principal, como la del asistente, y con un
+    /// historial largo tarda: `isExportingBeforeLosingChanges` pinta un indicador mientras dura. Pasa
+    /// `scheduleTagBackfill: false`, porque ese relleno se guarda y crearía cambios por subir que harían volver el aviso con
+    /// una cifra que la persona no escribió. Y el error sale con texto propio
+    /// (`SignOutBlockedCopy.personalExportFailureMessage`): el del servicio está en español y habla de filtros.
+    private func exportAllTransactionsBeforeLosingThem() {
+        isExportingBeforeLosingChanges = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            defer { isExportingBeforeLosingChanges = false }
+            do {
+                let result = try TransactionsExportService.export(
+                    format: .csv, using: .allTransactions, columns: .default, in: modelContext,
+                    scheduleTagBackfill: false)
+                CloudSessionSignOut.notePersonalLossExport(rows: result.exportedCount)
+                signOutRescueExportFile = ExportedFile(urls: [result.fileURL])
+            } catch {
+                #if DEBUG
+                print("ProfileView: Error exportando los movimientos antes de cerrar sesión: \(error)")
+                #endif
+                signOutRescueExportErrorMessage = SignOutBlockedCopy.personalExportFailureMessage(for: error)
+                showSignOutRescueExportError = true
+            }
+        }
+    }
+
+    /// Tras la hoja de compartir o el aviso de error de la exportación: el cierre sigue parado en el aviso de tus datos, y se
+    /// vuelve a enseñar, que es lo que la persona dejó a medias. Si ya no está ahí —otro gesto lo reconoció—, no enciende nada.
+    private func returnToPersonalAttestNotice() {
+        guard case .blocked(_, .personalAttestUnavailable) = signOutCoordinator.phase else { return }
+        syncSignOutUI(from: signOutCoordinator.phase)
     }
 
     /// El mensaje del aviso de cierre bloqueado, por motivo. **La tabla vive en `SignOutBlockedCopy`**, que
@@ -461,6 +525,17 @@ struct ProfileView: View {
             .navigationTitle(L10n.Profile.title)
             .navigationBarTitleDisplayMode(.inline)
             .yalaScreenBackground(.subtle)
+            // Mientras se genera el archivo que ofrece el aviso de tus datos sin App Attest
+            // (`exportAllTransactionsBeforeLosingThem`): la exportación bloquea el hilo principal y, sin esto, nada se mueve.
+            .overlay {
+                if isExportingBeforeLosingChanges {
+                    ProgressView()
+                        .controlSize(.large)
+                        .padding(DS.Spacing.lg)
+                        .glassEffect()
+                        .accessibilityIdentifier("profile_signout_export_progress")
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
@@ -581,6 +656,32 @@ struct ProfileView: View {
                 }
             } message: {
                 Text(SignOutBlockedCopy.attestLossMessage(pending: signOutAttestLossPending))
+            }
+            // Tus datos en la nube con el teléfono sin App Attest (2026-09-15, decisión de Jürgen): el aviso cuenta los cambios
+            // que no llegaron y ofrece, en este orden, exportar los movimientos, cerrar sesión perdiéndolos o dejarlo. Exportar
+            // no toca el cierre, que sigue parado: al cerrar la hoja de compartir vuelve este aviso. Botones literales y sin
+            // `accessibilityIdentifier`, como el de grupos.
+            .alert(L10n.Settings.signOutAttestTitle, isPresented: $showSignOutPersonalAttestAlert) {
+                Button(L10n.Settings.signOutAttestExportButton) {
+                    exportAllTransactionsBeforeLosingThem()
+                }
+                Button(L10n.Settings.signOutAttestLossButton, role: .destructive) {
+                    Task { await CloudSessionSignOut.shared.exitDiscardingUnsyncedPersonalChanges(context: modelContext) }
+                }
+                Button(L10n.Action.notNow, role: .cancel) {
+                    CloudSessionSignOut.shared.acknowledgeBlocked()
+                }
+            } message: {
+                Text(SignOutBlockedCopy.personalAttestLossMessage(pending: signOutPersonalAttestPending))
+            }
+            .sheet(item: $signOutRescueExportFile, onDismiss: { returnToPersonalAttestNotice() }) { file in
+                ShareSheet(activityItems: file.urls)
+                    .presentationDetents(DS.Adaptive.sheetDetents([.medium, .large]))
+            }
+            .alert(L10n.Export.exportError, isPresented: $showSignOutRescueExportError) {
+                Button(L10n.Common.ok, role: .cancel) { returnToPersonalAttestNotice() }
+            } message: {
+                Text(signOutRescueExportErrorMessage)
             }
             .alert(L10n.Settings.signOutBlockedTitle, isPresented: $showSignOutBlockedAlert) {
                 signOutBlockedButtons

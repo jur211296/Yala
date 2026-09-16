@@ -4436,6 +4436,27 @@ enum L10n {
         /// Variante cuando el historial no se pudo leer: no hay número honesto que dar.
         static var signOutExportPendingMessageUnknown: String { ls("settings.signOutExportPendingMessageUnknown", comment: "") }
         static var signOutExportDiscardButton: String { ls("settings.signOutExportDiscardButton", comment: "") }
+        // Cierre en la NUBE con un teléfono sin App Attest y cambios PERSONALES sin subir (decisión de Jürgen, 2026-09-15,
+        // ticket `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`): el aviso ofrece exportar los
+        // movimientos, cerrar sesión perdiéndolos o dejarlo. Ver `CloudSignOutFlowLogic.BlockReason.personalAttestUnavailable`.
+        static var signOutAttestTitle: String { ls("settings.signOutAttestTitle", comment: "") }
+        /// El aviso, con la cifra tras dos puntos por lo mismo que `signOutExportPendingMessage`: la key entra en
+        /// `L10nFormatAccessorsTests` y el plural no se arrastra a los 16 idiomas.
+        static func signOutAttestMessage(_ count: Int) -> String {
+            String(format: ls("settings.signOutAttestMessage", comment: "Cerrar sesión en la nube sin App Attest; %d = cambios personales que se pierden"), count)
+        }
+        /// Sin cifra: el recuento del outbox personal falló, así que no hay número honesto que dar.
+        static var signOutAttestMessageUnknown: String { ls("settings.signOutAttestMessageUnknown", comment: "") }
+        /// El botón que exporta todos los movimientos antes de decidir. Literal, como todo botón de `.alert`.
+        static var signOutAttestExportButton: String { ls("settings.signOutAttestExportButton", comment: "") }
+        /// El botón destructivo: nombra la pérdida, como el del aviso de grupos.
+        static var signOutAttestLossButton: String { ls("settings.signOutAttestLossButton", comment: "") }
+        /// El mismo hecho SIN salida, para un bloqueo de ese motivo cuya oferta ya no está.
+        static var signOutAttestBlocked: String { ls("settings.signOutAttestBlocked", comment: "") }
+        /// La exportación de ese aviso no encontró ningún movimiento que exportar.
+        static var signOutAttestExportEmpty: String { ls("settings.signOutAttestExportEmpty", comment: "") }
+        /// La exportación de ese aviso no pudo generar el archivo.
+        static var signOutAttestExportFailed: String { ls("settings.signOutAttestExportFailed", comment: "") }
         static var signOutNoCopyConfirmTitle: String { ls("settings.signOutNoCopyConfirmTitle", comment: "") }
         static var signOutNoCopyConfirmMessage: String { ls("settings.signOutNoCopyConfirmMessage", comment: "") }
         static var signOutNoCopyConfirmAction: String { ls("settings.signOutNoCopyConfirmAction", comment: "") }

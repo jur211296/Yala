@@ -2,8 +2,9 @@
 //  GroupsAttestStreakStore.swift
 //  Yala
 //
-//  Dónde vive, entre arranques, la racha de rechazos de App Attest del canal de Grupos. La decisión es de
-//  `GroupsAttestVerdictLogic`; aquí solo se lee, se escribe y se avisa una vez.
+//  Dónde vive, entre arranques, la racha de rechazos de App Attest del TELÉFONO. Nació con el canal de Grupos, y desde el
+//  2026-09-15 la escribe también el motor personal. La decisión es de `GroupsAttestVerdictLogic`; aquí solo se lee, se
+//  escribe y se avisa una vez.
 //
 //  POR QUÉ `UserDefaults.standard` Y FUERA DE LOS BARRIDOS. La racha describe al TELÉFONO, no a la persona: App Attest va
 //  con la instalación y su key, no con la cuenta. Por eso no está en `DataWipeService.removeUserPreferenceKeys` —cerrar
@@ -12,8 +13,14 @@
 //  cierre exige además un rechazo del ciclo que lee, y el primer 200 la borra.
 //
 //  QUIÉN ESCRIBE. Los dos clientes de Grupos, en el borde donde leen la respuesta: `GroupsSyncClient` (push y pull) y
-//  `GroupsMembershipClient.call` (RPC). Sin inyección por construcción, a propósito: la membresía tiene ocho, y quien la
-//  construya de nuevo apunta sin tener que acordarse. Los tests aíslan `defaults`, como en `PendingJoinStore`.
+//  `GroupsMembershipClient.call` (RPC), con el 401 `yala_attest_required` como rechazo y un 200 como acierto. Y desde el
+//  2026-09-15 la puerta de attest del motor personal (`CloudSyncRuntime.resolveAttest`): nunca manda una subida sin attest,
+//  así que cuenta el error con el que no consiguió el token (`AttestSyncGate.countsTowardAttestStreak`) y toma como acierto
+//  un token conseguido (ticket `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`). **Una sola racha
+//  para los dos canales, a propósito**: describe al teléfono, y con dos un cierre en la nube podía aceptar perder lo
+//  personal y quedarse en «inténtalo en un rato» con los cambios de grupos. Sin inyección por construcción, a propósito:
+//  la membresía tiene ocho, y quien la construya de nuevo apunta sin tener que acordarse. Los tests aíslan `defaults`,
+//  como en `PendingJoinStore`.
 //
 
 import Foundation
@@ -45,8 +52,9 @@ enum GroupsAttestStreakStore {
         GroupsAttestVerdictLogic.isTerminal(current(), now: now)
     }
 
-    /// El servidor respondió 401 `yala_attest_required` a una ruta de Grupos. La primera vez que la racha se lee
-    /// terminal deja rastro y cuenta el teléfono en el canario, una sola vez por racha.
+    /// Un rechazo del attest: el servidor respondió 401 `yala_attest_required` a una ruta de Grupos, o la puerta del motor
+    /// personal no consiguió el token por algo que habla del attest. La primera vez que la racha se lee terminal deja rastro
+    /// y cuenta el teléfono en el canario, una sola vez por racha.
     static func recordRejection(now: Date = .now) {
         let previous = current()
         var next = GroupsAttestVerdictLogic.recordingRejection(after: previous, now: now)
@@ -61,8 +69,8 @@ enum GroupsAttestStreakStore {
         MetricsService.canary(.groupsAttestTerminal, detail: "rejections=\(next.rejections) hours=\(hours)")
     }
 
-    /// Una ruta de Grupos respondió 200: el attest pasó la guard y la racha se acaba. Si ya era terminal, deja rastro de
-    /// que el teléfono se recuperó solo.
+    /// Un acierto del attest —una ruta de Grupos respondió 200, o la puerta del motor personal consiguió un token— y la
+    /// racha se acaba. Si ya era terminal, deja rastro de que el teléfono se recuperó solo.
     static func recordAcceptance() {
         guard defaults.object(forKey: key) != nil else { return }
         let ended = current()

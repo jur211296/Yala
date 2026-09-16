@@ -163,6 +163,27 @@ final class CloudSyncRuntime {
 
     private var attestRetryCount = 0
 
+    /// **¿Paró el último ciclo en la puerta del attest con un fallo que habla del attest?** Testigo por ciclo, molde
+    /// `GroupsSyncClient.lastCycleHitAttestRequired`: `performCycle` lo baja al entrar, así que un fallo de un ciclo
+    /// anterior no puede convertir el corte de red de éste en «este teléfono no puede sincronizar».
+    private var lastCycleStoppedAtAttestGate = false
+
+    /// ¿Paró el ciclo que acaba de correr porque este teléfono ya no consigue App Attest? Es la señal que el push-all previo
+    /// a cerrar sesión necesita para ofrecer exportar y salir perdiendo los cambios PERSONALES
+    /// (`CloudSignOutFlowLogic.BlockReason.personalAttestUnavailable`, ticket
+    /// `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`). Molde
+    /// `GroupsSyncClient.stoppedByUnavailableAttest(for:)`.
+    ///
+    /// **Tres condiciones, y ninguna sobra.** El outcome: la puerta devuelve `.transient` mientras reintenta y
+    /// `.accountUnavailable` cuando `AttestSyncGate` la da por terminal; un `.coalesced` describe un ciclo ajeno. El testigo,
+    /// porque una racha terminal no dice por qué falló ESTE ciclo: sin red o con un 5xx, el aviso de la pérdida mentiría. Y
+    /// la racha del teléfono (`GroupsAttestStreakStore.isTerminal`), porque un fallo de hace un rato es lo pasajero de siempre.
+    func stoppedByUnavailableAttest(for outcome: SyncCadencePolicy.CadenceOutcome) -> Bool {
+        (outcome == .transient || outcome == .accountUnavailable)
+            && lastCycleStoppedAtAttestGate
+            && GroupsAttestStreakStore.isTerminal()
+    }
+
     // MARK: Init
 
     init(
@@ -499,6 +520,8 @@ final class CloudSyncRuntime {
     /// (`teardownGuestSession`) durante una suspensión aborta el ciclo con `.coalesced` (resultado sin
     /// señal de cadencia — el loop ya está cancelado) SIN aplicar resultados ni tocar el store.
     private func performCycle() async -> SyncCadencePolicy.CadenceOutcome {
+        // El testigo del attest es de ESTE ciclo (ver `lastCycleStoppedAtAttestGate`), también si sale sin contexto.
+        lastCycleStoppedAtAttestGate = false
         guard let context else { return .transient }
         let epoch = sessionEpoch
 
@@ -741,12 +764,19 @@ final class CloudSyncRuntime {
 
     /// Intenta adquirir el token de attest de la sesión; clasifica el fallo con `AttestSyncGate` (retry
     /// budget → terminal). Con el Noop provider retorna `nil` sin lanzar → `.ok` (DARK: attest opcional).
+    ///
+    /// **Y alimenta la racha del teléfono** (2026-09-15, ticket
+    /// `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`): un token conseguido la acaba, y un fallo que
+    /// habla del attest suma un rechazo y deja el testigo de este ciclo (`noteAttestFailure`). Es lo único que ve el motor
+    /// personal, que nunca manda una subida sin attest.
     private func resolveAttest() async -> AttestResolution {
         do {
             _ = try await session.attestToken()
             attestRetryCount = 0
+            GroupsAttestStreakStore.recordAcceptance()
             return .ok
         } catch let error as AppAttestError {
+            noteAttestFailure(error)
             switch AttestSyncGate.classify(error: error, retryCount: attestRetryCount) {
             case .transient:
                 attestRetryCount += 1
@@ -755,9 +785,20 @@ final class CloudSyncRuntime {
                 return .terminal
             }
         } catch {
-            // Error no-attest en el seam (no debe ocurrir por contrato) → transient conservador.
+            // Un error que no es `AppAttestError`. El contrato lo excluye, pero un `DCError` de DeviceCheck llega por aquí
+            // (`AppAttestClient` no lo envuelve): transient conservador, y cuenta en la racha si habla del attest.
+            noteAttestFailure(error)
             attestRetryCount += 1
             return .transient
         }
+    }
+
+    /// Un fallo de la puerta que habla del attest (`AttestSyncGate.countsTowardAttestStreak`) suma un rechazo a la racha del
+    /// teléfono —como mucho uno por hora, lo decide `GroupsAttestVerdictLogic`— y deja el testigo de ESTE ciclo. Uno de red
+    /// o del servidor no hace ninguna de las dos cosas: estar sin conexión no acerca el veredicto.
+    private func noteAttestFailure(_ error: any Error) {
+        guard AttestSyncGate.countsTowardAttestStreak(error) else { return }
+        lastCycleStoppedAtAttestGate = true
+        GroupsAttestStreakStore.recordRejection()
     }
 }

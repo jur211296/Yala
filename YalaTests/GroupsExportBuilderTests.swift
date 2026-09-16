@@ -377,7 +377,7 @@ struct GroupsExportBuilderContextTests {
         let columns = ExportColumns.default
 
         let before = try TransactionsExportService.export(
-            format: .csv, using: filters, columns: columns, in: ctx)
+            format: .csv, using: filters, columns: columns, in: ctx, scheduleTagBackfill: true)
         let bytesBefore = try Data(contentsOf: before.fileURL)
 
         // Añadir un grupo con datos NO debe cambiar el export personal.
@@ -394,7 +394,7 @@ struct GroupsExportBuilderContextTests {
         try ctx.save()
 
         let after = try TransactionsExportService.export(
-            format: .csv, using: filters, columns: columns, in: ctx)
+            format: .csv, using: filters, columns: columns, in: ctx, scheduleTagBackfill: true)
         let bytesAfter = try Data(contentsOf: after.fileURL)
 
         #expect(bytesBefore == bytesAfter)
