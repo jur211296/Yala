@@ -5,10 +5,34 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-16 (Lima)
 
-**Rama** `2.1` — Merge #180: **Sin App Attest, el alta no ofrece la nube.**
+**Rama** `2.1` — Merge #181: **Sin App Attest, la pantalla de entrar no ofrece crear cuenta.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#180 · sin App Attest, el alta no ofrece la nube)
+## Esta sesión (#181 · sin App Attest, la pantalla de entrar no ofrece crear cuenta)
+
+**Un teléfono sin App Attest ya no se da de alta en la nube por ninguna puerta del Welcome.** Después del #180 quedaban
+dos: «Crear mi cuenta» tras «No encontramos una cuenta» y «Crear cuenta con…» del mismatch. Ahora pasan por la misma puerta
+que la tarjeta, `WelcomeNewOptionsGate.offersCloudSignUp`: App Attest, el kill del alta y el resto de la card. Sin ella, «No
+encontramos una cuenta» ofrece **«Volver»** —tu decisión de esta mañana, con el texto que ya existía— y el mismatch se queda
+con «Iniciar sesión con…». Con App Attest no cambia nada. Encargo nocturno, opción 1.
+
+**La review cazó otra vez el fallo caro en MIS tests.** Medían que los botones de crear cayeran dentro de la puerta, no que
+la puerta fuera su única condición: un `if` más o un `#if DEBUG` le quitaba el botón a un iPhone con App Attest con la suite
+en verde. Ahora fijan el cuerpo entero de las dos pantallas. Cazó también que mi primera versión dejaba «No encontramos una
+cuenta» con la flecha de la esquina sola —el callejón que quitó el bloque [I]— y un guion de device-QA que el faro de
+iCloud podía dar por FAIL.
+
+**El simulador ya no crea cuentas en la nube sin `YALA_DEV_SHARED_SECRET`**, por ninguna vía. El montaje del #175 queda
+reescrito con el secreto, y ese secreto **no está en `~/Secrets`**: es de Wrangler en staging y no se lee de vuelta. Lo
+tienes tú, o hay que rotarlo.
+
+Gate: build ×2 sin warnings en lo tocado · **unit 7048 casos en 725 suites** · **XCUITest 18 casos** con el centinela en 0 ·
+**mutation-tested ×22**, todos en rojo en su test · dos lentes + la regla de attest · **CI verde** (build y los 7048 unit).
+
+**Queda en backlog `cloud-migration-offers-the-cloud-to-a-phone-without-app-attest`**: «Migrar a la nube» es el único
+camino al alta completa que no mira la puerta.
+
+## Sesión anterior (#180 · sin App Attest, el alta no ofrece la nube)
 
 **Un teléfono que no puede conseguir App Attest ya no ve «Tu cuenta en la nube».** Antes la elegía, apuntaba sus gastos y
 nada llegaba nunca a su cuenta: el motor corta en su puerta de attest antes de subir. Ahora «Es mi primera vez» va directa a
@@ -38,7 +62,7 @@ vuelve pared dos pantallas que tú abriste. `cloud-migration-offers-the-cloud-to
 nube» tampoco lo mira, aunque por lo inferido no atrapa a nadie. Y un tercer productor del «volver» mal calculado de la
 puerta de iCloud, anotado en `private-icloud-gate-back-lands-on-the-wrong-branch`.
 
-## Sesión anterior (#179 · volver a la app adelanta la subida de grupos)
+## Sesión #179 · volver a la app adelanta la subida de grupos
 
 **Quien recupera la conexión y vuelve a Yala ya no espera al reintento.** Me quedo sin red con la app abierta,
 salgo, la red vuelve y entro otra vez: antes mis cambios de grupos seguían parados hasta que venciera el
@@ -418,6 +442,13 @@ formatos —una presentación 16:9 por escenas y clips 9:16 por función— sobr
 `bun run render:presentation` y `bun run render:reels`).
 
 ## Tu cola
+
+0-quindecies. **Device-QA del #181, dos pasos**
+   (`tickets/qa/cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest.md`). **A, en el simulador** con Yala Dev
+   y sin el secreto: «Ya tengo una cuenta» → «Entrar con Google» con una cuenta sin Yala. Tiene que salir «Volver» y **no**
+   «Crear mi cuenta» (o el mismatch sin «Crear cuenta con…»). **B, en un iPhone** con el TestFlight, mismo montaje que el
+   0-quattuordecies: el mismo recorrido enseña el botón de crear, **sin tocarlo**. Borrar la app se lleva lo que no esté en
+   tu iCloud o en la nube.
 
 0-quattuordecies. **Device-QA del #180, un solo paso en iPhone real**
    (`tickets/qa/cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest.md`). Con el primer TestFlight tras el
