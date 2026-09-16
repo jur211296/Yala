@@ -17,7 +17,7 @@ struct WelcomeAccountChoiceLogicTests {
     func newOptions_bornCloudDisabled_onlyPrivate() {
         // Born-cloud DIFERIDO: aun con backend configurado + remotos ON, sin el enable no aparece.
         #expect(WelcomeAccountChoiceLogic.visibleNewOptions(
-            isConfigured: true, isUITest: false, bornCloudEnabled: false,
+            isConfigured: true, isUITest: false, isAttestSupported: true, bornCloudEnabled: false,
             remoteCloudEnabled: true, remoteOnboardingChoiceEnabled: true
         ) == [.privateAccount])
     }
@@ -25,15 +25,15 @@ struct WelcomeAccountChoiceLogicTests {
     @Test
     func newOptions_bornCloudEnabled_requiresConfiguredAndNotUITest() {
         #expect(WelcomeAccountChoiceLogic.visibleNewOptions(
-            isConfigured: true, isUITest: false, bornCloudEnabled: true,
+            isConfigured: true, isUITest: false, isAttestSupported: true, bornCloudEnabled: true,
             remoteCloudEnabled: true, remoteOnboardingChoiceEnabled: true
         ) == [.privateAccount, .cloudAccount])
         #expect(WelcomeAccountChoiceLogic.visibleNewOptions(
-            isConfigured: false, isUITest: false, bornCloudEnabled: true,
+            isConfigured: false, isUITest: false, isAttestSupported: true, bornCloudEnabled: true,
             remoteCloudEnabled: true, remoteOnboardingChoiceEnabled: true
         ) == [.privateAccount])
         #expect(WelcomeAccountChoiceLogic.visibleNewOptions(
-            isConfigured: true, isUITest: true, bornCloudEnabled: true,
+            isConfigured: true, isUITest: true, isAttestSupported: true, bornCloudEnabled: true,
             remoteCloudEnabled: true, remoteOnboardingChoiceEnabled: true
         ) == [.privateAccount])
     }
@@ -43,12 +43,27 @@ struct WelcomeAccountChoiceLogicTests {
         // DIFERIDOS #34: la card born-cloud exige el flag padre Y el sub-flag §j.1 —
         // el escalón born-cloud es POSTERIOR al del flag padre en el rollout.
         #expect(WelcomeAccountChoiceLogic.visibleNewOptions(
-            isConfigured: true, isUITest: false, bornCloudEnabled: true,
+            isConfigured: true, isUITest: false, isAttestSupported: true, bornCloudEnabled: true,
             remoteCloudEnabled: false, remoteOnboardingChoiceEnabled: true
         ) == [.privateAccount])
         #expect(WelcomeAccountChoiceLogic.visibleNewOptions(
-            isConfigured: true, isUITest: false, bornCloudEnabled: true,
+            isConfigured: true, isUITest: false, isAttestSupported: true, bornCloudEnabled: true,
             remoteCloudEnabled: true, remoteOnboardingChoiceEnabled: false
+        ) == [.privateAccount])
+    }
+
+    /// **Sin App Attest no se ofrece la nube** (ticket `cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest`):
+    /// con todo lo demás encendido, un teléfono que no puede conseguir token no ve la card. El control es la MISMA fila con
+    /// App Attest: sin él, la aserción se cumpliría también si otro término se hubiera apagado por error.
+    @Test("sin App Attest la card de la nube no sale, aunque todo lo demás esté encendido")
+    func newOptions_withoutAttest_onlyPrivate() {
+        #expect(WelcomeAccountChoiceLogic.visibleNewOptions(
+            isConfigured: true, isUITest: false, isAttestSupported: true, bornCloudEnabled: true,
+            remoteCloudEnabled: true, remoteOnboardingChoiceEnabled: true
+        ) == [.privateAccount, .cloudAccount], "control: con App Attest y todo encendido salen las dos")
+        #expect(WelcomeAccountChoiceLogic.visibleNewOptions(
+            isConfigured: true, isUITest: false, isAttestSupported: false, bornCloudEnabled: true,
+            remoteCloudEnabled: true, remoteOnboardingChoiceEnabled: true
         ) == [.privateAccount])
     }
 
@@ -205,13 +220,31 @@ struct WelcomeNewBranchRouteTests {
     @Test("card apagada ⇒ bypass a `.privateAccount` (kill-switch y device sin snapshot)")
     func cardOff_bypassesToPrivate_endToEnd() {
         let options = WelcomeAccountChoiceLogic.visibleNewOptions(
-            isConfigured: true, isUITest: false, bornCloudEnabled: true,
+            isConfigured: true, isUITest: false, isAttestSupported: true, bornCloudEnabled: true,
             remoteCloudEnabled: true, remoteOnboardingChoiceEnabled: false)
         #expect(options == [.privateAccount])
         #expect(WelcomeNewBranchRouter.route(
             beacon: makeBeacon(linked: false, provider: nil),
             cloudEntryAvailable: true,
             options: options) == .single(.privateAccount))
+    }
+
+    /// **Sin App Attest, «Es mi primera vez» va directo a la rama privada; y el faro sigue encaminando.** La primera mitad
+    /// es el recorrido que ve ese teléfono. La segunda fija el alcance: la puerta del attest es del ALTA, y quien ya tiene
+    /// una cuenta sigue llegando a ella (`cloudEntryAvailable` sale de «Ya tengo una cuenta», que no lleva el término).
+    @Test("sin App Attest: sin faro ⇒ bypass a privado; con faro ⇒ sigue encaminando a entrar")
+    func withoutAttest_bypassesToPrivate_butTheBeaconStillRoutes() {
+        let options = WelcomeAccountChoiceLogic.visibleNewOptions(
+            isConfigured: true, isUITest: false, isAttestSupported: false, bornCloudEnabled: true,
+            remoteCloudEnabled: true, remoteOnboardingChoiceEnabled: true)
+        #expect(WelcomeNewBranchRouter.route(
+            beacon: makeBeacon(linked: false, provider: nil),
+            cloudEntryAvailable: true,
+            options: options) == .single(.privateAccount))
+        #expect(WelcomeNewBranchRouter.route(
+            beacon: makeBeacon(linked: true, provider: "google"),
+            cloudEntryAvailable: true,
+            options: options) == .cloudSignIn(accountProvider: .google))
     }
 }
 
@@ -287,6 +320,71 @@ struct WelcomeNewChooserWiringTests {
         #expect(body.contains("remoteOnboardingChoiceEnabled: CloudRemoteFlags.cloudOnboardingChoiceEnabled"),
                 "sin el sub-flag, la card dejaría de ser DARK en producción")
         #expect(body.contains("remoteCloudEnabled: CloudRemoteFlags.cloudModeEnabled"))
+        // **El cuerpo ENTERO, y no un `contains` del término del attest** (review adversarial, 2026-09-16). En el host de
+        // test la capacidad vale `false`, así que un término añadido detrás —`… canObtainSessionToken && algo`— dejaba a
+        // TODO iPhone sin la nube con la suite entera en verde: el `contains` de un prefijo lo daba por bueno.
+        #expect(Self.normalized(body) == """
+            WelcomeAccountChoiceLogic.visibleNewOptions( \
+            isConfigured: CloudBackendConfig.isConfigured, \
+            isUITest: SwiftDataConfiguration.isUITesting && !UITestHooks.forceCloudChooser, \
+            isAttestSupported: UITestHooks.fakeAttestSupport || AppAttestClient.canObtainSessionToken, \
+            bornCloudEnabled: CloudSyncFlags.bornCloudChoiceEnabled, \
+            remoteCloudEnabled: CloudRemoteFlags.cloudModeEnabled, \
+            remoteOnboardingChoiceEnabled: CloudRemoteFlags.cloudOnboardingChoiceEnabled)
+            """, "sin la capacidad REAL, un iPhone sin App Attest vuelve a ver la nube; sin el seam, los XCUI del chooser no")
+    }
+
+    /// Líneas recortadas, sin vacías, unidas por un espacio: la forma de comparar un cuerpo entero sin depender de la
+    /// indentación (`.claude/rules/testing.md`, «fija el cuerpo ENTERO normalizado»).
+    private static func normalized(_ body: String) -> String {
+        body.split(separator: "\n")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+    }
+
+    /// **La puerta del attest tiene llamador, y es éste.** El ticket nació de una función con la decisión del owner dentro
+    /// y ningún call-site: la tabla de arriba seguiría en verde si el término se escribiera a mano y la función volviera a
+    /// quedarse sola, y el día que la función cambie, esta lógica no se enteraría.
+    @Test("`visibleNewOptions` decide la nube con `AttestSyncGate.shouldOfferCloudOnly`")
+    func visibleNewOptions_callsTheAttestGate() throws {
+        let body = try Self.body(
+            of: ") -> [NewOption] {",
+            in: try Self.source("Yala/App/Logic/WelcomeAccountChoiceLogic.swift"))
+        #expect(body.contains("AttestSyncGate.shouldOfferCloudOnly(isAttestSupported: isAttestSupported)"))
+    }
+
+    /// **Qué es «tener App Attest», fijado entero.** En el host de test `canObtainSessionToken` vale `false` siempre —el
+    /// simulador no tiene App Attest y ningún scheme pone el secreto—, así que un `{ false }` dejaría a TODO iPhone sin la
+    /// nube y ningún test de comportamiento lo vería. Y tiene que ser la primera decisión de `performRefresh`, entera: sin
+    /// la mitad del secreto, el simulador que sí sincroniza perdería la nube.
+    @Test("`AppAttestClient.canObtainSessionToken` es exactamente la primera decisión de `performRefresh`")
+    func canObtainSessionToken_mirrorsTheClient() throws {
+        let client = try Self.source("Yala/App/Services/AppAttestClient.swift")
+        let body = try Self.body(of: "static var canObtainSessionToken: Bool {", in: client)
+        #expect(Self.normalized(body) == "DCAppAttestService.shared.isSupported || !ProxyConfig.devSharedSecret.isEmpty")
+        // La otra orilla del espejo, y en ORDEN: que `performRefresh` EMPIECE decidiendo así. Un `contains` suelto daba por
+        // buena una comprobación nueva antes del `guard`, o el bypass sacado del `else` (review adversarial, 2026-09-16).
+        let refresh = try Self.body(of: "private func performRefresh() async throws -> String {", in: client)
+        #expect(Self.normalized(refresh).hasPrefix(
+            "let service = DCAppAttestService.shared guard service.isSupported else { return try await devTokenOrThrow() }"))
+        // Y el bypass: solo en DEBUG, con el secreto de `ProxyConfig` y `.unavailable` sin él; en release, `.unavailable`.
+        let devToken = Self.normalized(
+            try Self.body(of: "private func devTokenOrThrow() async throws -> String {", in: client))
+        #expect(devToken.hasPrefix(
+            "#if DEBUG let secret = ProxyConfig.devSharedSecret guard !secret.isEmpty else { throw AppAttestError.unavailable }"))
+        #expect(devToken.hasSuffix("#else throw AppAttestError.unavailable #endif"))
+    }
+
+    /// **La paridad del nombre del seam.** Con un typo a un lado el seam vale `false`, y los XCUITest que necesitan la card
+    /// de la nube caerían culpando a la pantalla; al revés, el negativo seguiría verde sin haber discriminado nada.
+    @Test("`-uitest-fake-attest-support` se escribe igual en el lanzador y en `UITestHooks`")
+    func fakeAttestSupport_argNameParity() throws {
+        let launcher = try Self.source("YalaUITests/Support/XCUIApplication+Yala.swift")
+        let hooks = try Self.source("Yala/App/UITestHooks.swift")
+        let arg = "-uitest-fake-attest-support"
+        #expect(launcher.contains("args.append(\"\(arg)\")"), "el lanzador del XCUITest no pasa `\(arg)`")
+        #expect(hooks.contains("hasArg(\"\(arg)\")"), "`UITestHooks` no lee `\(arg)`")
     }
 
     /// La disponibilidad del destino del faro se DERIVA de la card de re-entrada. Re-escribir los

@@ -76,10 +76,13 @@ final class WelcomeChooserUITests: XCTestCase {
     /// pantalla, no el alta.
     func testNewChooser_withCloudConfigured_showsBothCards_andCloudCardOpensSignUp() throws {
         let app = XCUIApplication()
+        // `fakeAttestSupport`: el simulador no tiene App Attest y sin él la card de la nube no sale. Su ausencia es el
+        // caso de `testNewBranch_withoutAppAttest_doesNotOfferTheCloud`, abajo.
         app.launchForUITest(
             reset: true,
             skipOnboarding: false,
             seed: nil,
+            fakeAttestSupport: true,
             extraArguments: ["-uitest-cloud-chooser"]
         )
         let heroCTA = app.buttons["welcome_hero_cta"]
@@ -117,6 +120,38 @@ final class WelcomeChooserUITests: XCTestCase {
                       "El back no volvió al chooser.")
     }
 
+    /// **Sin App Attest, «Es mi primera vez» no ofrece la nube** (ticket
+    /// `cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest`). Es la CONDICIÓN con el predicado real: el
+    /// simulador no tiene App Attest, y `-uitest-cloud-chooser` destapa todo lo demás, así que lo único que puede esconder
+    /// la card es el término del attest. Va SIN `fakeAttestSupport` a propósito (`.claude/rules/testing.md`).
+    ///
+    /// La aserción que discrimina es la POSITIVA: con la card visible se montaría el chooser y el onboarding no llegaría
+    /// nunca. Un `XCTAssertFalse(welcome_new_cloud.exists)` detrás no añade nada —con el bug ya ha caído la de arriba— y se
+    /// quitó por eso. Bajo XCUITest la puerta de iCloud deja pasar, así que el bypass a la rama privada termina en el
+    /// onboarding. Medido con mutantes el 2026-09-16: rojo con la puerta viendo siempre App Attest, verde sin el seam.
+    func testNewBranch_withoutAppAttest_doesNotOfferTheCloud() throws {
+        let app = XCUIApplication()
+        app.launchForUITest(
+            reset: true,
+            skipOnboarding: false,
+            seed: nil,
+            extraArguments: ["-uitest-cloud-chooser"]
+        )
+        let heroCTA = app.buttons["welcome_hero_cta"]
+        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
+        heroCTA.tap()
+
+        let newBranch = app.buttons["welcome_chooser_new"]
+        XCTAssertTrue(newBranch.waitForExistence(timeout: 10), "No apareció la card «Es mi primera vez».")
+        newBranch.tap()
+
+        XCTAssertTrue(app.buttons["onboarding_next_button"].waitForExistence(timeout: 15), """
+            Sin App Attest, «Es mi primera vez» no llegó al onboarding privado. Si en pantalla está «Elige dónde quieres \
+            guardar tus datos», la puerta del attest no esconde la nube y este teléfono podría elegir una cuenta que \
+            nunca sube nada.
+            """)
+    }
+
     /// **Paso 6 · el faro solo encamina** (ADR 2026-09-09 §10, ticket `beacon-routes-only-never-blocks`).
     /// Con el faro diciendo que este Apple ID ya tiene cuenta —creada con GOOGLE, para que el test distinga
     /// el método del faro del fallback a Apple—, «Soy nuevo» encamina a entrar con esa cuenta, y esa
@@ -129,11 +164,14 @@ final class WelcomeChooserUITests: XCTestCase {
     /// directo; y la re-entrada por «Ya tengo cuenta» no ofrece «Crear otra cuenta». Nada de sign-in real.
     func testNewBranch_withBeacon_routesToSignIn_andCreateAnotherOpensTheFullChooser() throws {
         let app = XCUIApplication()
+        // `fakeAttestSupport` solo lo pide el final: el chooser ENTERO tiene que traer la card de la nube. El encaminamiento
+        // del faro no lo necesita, y eso lo fija su hermano de abajo, que corre sin él.
         app.launchForUITest(
             reset: true,
             skipOnboarding: false,
             seed: nil,
             fakeBeacon: "google",
+            fakeAttestSupport: true,
             extraArguments: ["-uitest-cloud-chooser"]
         )
         let heroCTA = app.buttons["welcome_hero_cta"]
@@ -165,6 +203,44 @@ final class WelcomeChooserUITests: XCTestCase {
                       "«Crear otra cuenta» no llegó al chooser, o lo recortó sin la card privada.")
         XCTAssertTrue(app.buttons["welcome_new_cloud"].exists,
                       "«Crear otra cuenta» abrió el chooser sin la card de la nube.")
+    }
+
+    /// **«Crear otra cuenta» sin App Attest: el chooser con UNA card, la privada** (ticket
+    /// `cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest`). Esta entrada no hace bypass —la persona pidió
+    /// elegir y se le enseña el chooser aunque quede una sola card—, así que la condición se ve en la pantalla y no en el
+    /// destino. Va sin `fakeAttestSupport`, con el predicado real del simulador.
+    ///
+    /// Discrimina la PAREJA de aserciones: la card privada tiene que estar, porque sin ella la ausencia de la de la nube no
+    /// probaría nada; y las dos salen del mismo `ForEach` en la misma pasada, así que con el bug la de la nube ya existe
+    /// cuando aparece la privada. Es la misma pareja con la que el hermano de arriba, con el seam, afirma las dos.
+    func testNewBranch_withBeacon_createAnotherWithoutAppAttest_offersOnlyThePrivateCard() throws {
+        let app = XCUIApplication()
+        app.launchForUITest(
+            reset: true,
+            skipOnboarding: false,
+            seed: nil,
+            fakeBeacon: "google",
+            extraArguments: ["-uitest-cloud-chooser"]
+        )
+        let heroCTA = app.buttons["welcome_hero_cta"]
+        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
+        heroCTA.tap()
+
+        let newBranch = app.buttons["welcome_chooser_new"]
+        XCTAssertTrue(newBranch.waitForExistence(timeout: 10), "No apareció la card 'Soy nuevo'.")
+        newBranch.tap()
+
+        let createAnother = app.buttons["welcome_cloud_create_another"]
+        XCTAssertTrue(createAnother.waitForExistence(timeout: 10),
+                      "Con faro, «Soy nuevo» no llegó a la pantalla de entrar con «Crear otra cuenta».")
+        createAnother.tap()
+
+        XCTAssertTrue(app.buttons["welcome_new_private"].waitForExistence(timeout: 10),
+                      "«Crear otra cuenta» no llegó al chooser, o lo recortó sin la card privada.")
+        XCTAssertFalse(app.buttons["welcome_new_cloud"].exists, """
+            Sin App Attest, «Crear otra cuenta» ofreció «Tu cuenta en la nube»: este teléfono podría crear una cuenta \
+            que nunca sube nada.
+            """)
     }
 
     /// **Paso 6 · el origen no afirma lo que el faro no sabe.** Un faro con un método desconocido —aquí
