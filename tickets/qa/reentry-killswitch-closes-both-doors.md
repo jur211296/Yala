@@ -2,7 +2,7 @@
 id: reentry-killswitch-closes-both-doors
 status: qa
 created: 2026-09-05
-updated: 2026-09-07
+updated: 2026-09-16
 source: tickets/qa/reentry-counts-as-fresh-install.md (§4, §5 y §6)
 ---
 
@@ -237,3 +237,15 @@ que se suelta. El kill de la nube apagaba un control de Grupos. Encargo de Jürg
 ⇒ Al leer la decisión de más arriba, la frase «descartó (c): tocar el gate del kill es tocar el freno de
 emergencia» hay que leerla con su alcance: valía para la puerta de la NUBE, que es lo que estaba sobre la
 mesa ese día. La fila hoy se abre por el eje de Grupos y por nada más.
+
+## Correcciones al guion · 2026-09-16 (barrido de QA, medidas en este árbol)
+
+- **Fase 1, cabecera (:186)** — «`CLOUD_MODE_ROLLOUT_PERCENT = "0"`; es el estado de prod hoy» **ya no
+  vale**: según `CloudRemoteConfig.swift:18-20`, producción sirve los percents en 100 (`CLOUD_MODE` desde
+  el 2026-07-30). Para probar el kill encendido hay que **bajarlo a propósito** en el
+  gateway y volver a subirlo al terminar.
+- **Paso 1.2 (:189)** — sigue siendo cierto en un móvil limpio. Matiz desde el 2026-09-11: con una
+  cuenta de Grupos asociada la fila **sí** sale, con «Desasociar» y sin «Migrar a la nube» (visto en
+  simulador hoy, `cloud-killswitch-hides-the-only-door-to-detach-groups`).
+- **Paso 1.6 (:196-197)** — la sesión de visita se retiró (ADR del 2026-09-09, «Sesiones — dos ejes»).
+  **Sáltalo.**

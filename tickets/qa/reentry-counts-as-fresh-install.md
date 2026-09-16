@@ -2,7 +2,7 @@
 id: reentry-counts-as-fresh-install
 status: qa
 created: 2026-08-12
-updated: 2026-09-05
+updated: 2026-09-16
 source: YalaWiki/Bugs/reentrada-la-vuelta-cuenta-como-instalacion-nueva.md
 ---
 
@@ -213,3 +213,23 @@ pueda anclarse sin recompilar (mismo criterio que `welcome_cloud_blocked_foreign
   Salen a su propio ticket: `tickets/backlog/reentry-killswitch-closes-both-doors.md`.
 
 migrated from YalaWiki Bugs/reentrada-la-vuelta-cuenta-como-instalacion-nueva.md @ 1934e8ad
+
+## QA · 2026-09-16 — piezas 1 y 2 en la cola de device; pieza 3 cerrada sin verificar
+
+**Pieza 3: no replicable (override de Jürgen 2026-09-16).** `/account/*` no emite 403 en ningún entorno:
+`requireUser` solo devuelve 401 y 429 (`gateway/src/sync/account.ts:40-50`), claim, migration y exists
+devuelven 400, 502 o 200, y el 403 del rate-limit es de categorías que `sync` no usa. El aviso de cuenta
+bloqueada no se puede alcanzar. Medido por un lector del barrido en `2.1` @ `bebd57a57`.
+
+**Piezas 1 y 2, en un iPhone con TestFlight** (build ≥ `fb17ae9ee`, a poder ser sin Pro, y una cuenta de la
+nube con varias transacciones):
+1. Borra Yala y reinstálala desde TestFlight.
+2. Welcome → «Ya tengo una cuenta» → Apple o Google con esa cuenta → termina la adopción (reinicia si lo pide).
+3. **PASS pieza 1:** mientras la app está vacía se ve «Descargando tus datos…», y el aviso desaparece
+   cuando llegan las transacciones.
+4. **PASS pieza 2:** el Panel no muestra «Primeros pasos» y no salta la oferta de prueba.
+5. Opcional: reinstalar → «Ya tengo una cuenta» → restaurar desde iCloud una sesión privada con datos →
+   tampoco salen la tarjeta ni la oferta (aquí no hay aviso de descarga: solo sale en la nube).
+
+Coordenadas que derivaron: `completeOnboardingAsRestoreSkip()` tiene hoy **dos** llamadas, no tres
+(`ContentView.swift:853` y `:2419`), aunque su docblock (`:2747-2750`) diga tres.

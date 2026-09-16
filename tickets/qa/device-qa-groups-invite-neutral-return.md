@@ -5,6 +5,7 @@ priority: high
 area: "modo-nube, groups, onboarding"
 created: 2026-09-11
 source: "`groups-invite-on-a-mirrored-store-crosses-data` (2026-09-11)"
+updated: 2026-09-16
 ---
 
 # Device-QA · aceptar una invitación sobre un teléfono que ya espeja iCloud
@@ -82,3 +83,12 @@ App Switcher** sin reabrirla desde el aviso.
 Para cada recorrido: qué viste, en qué orden, y una captura del teléfono B en el recorrido 2. Si algo se
 desvía, apunta el estado exacto del teléfono A antes de empezar (onboarding completado o no, iCloud
 activado o no, datos locales sí o no) — es lo que decide qué rama de la puerta corre.
+
+## Corrección al guion · 2026-09-16 (barrido de QA)
+
+- **Montaje (:25):** «Soy nuevo → privado» y «Restaurar de iCloud» ya no existen con ese texto. Hoy son
+  «Es mi primera vez en Yala» y «Ya tengo una cuenta» → «Restaurar desde iCloud».
+- **«21 casos» (:18-20):** hoy son 29 `@Test`.
+- **Absorbe desde hoy a `groups-invite-on-a-mirrored-store-crosses-data`** (cerrado): su prueba es el recorrido 2.
+- El resto de textos del guion existe tal cual («Antes de unirte, este teléfono queda en blanco»,
+  «Continuar y borrar», «Unirme al grupo»…).

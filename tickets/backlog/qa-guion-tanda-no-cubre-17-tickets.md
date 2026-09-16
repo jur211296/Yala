@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: qa
 created: 2026-09-06
-updated: 2026-09-06
+updated: 2026-09-16
 source: hallazgo al añadir groups-archived-group-rejects-join al guion (2026-09-06)
 ---
 
@@ -42,3 +42,12 @@ La opción 2 es la que quita el problema de raíz; la 1 hay que hacerla igualmen
 
 `low` a propósito: no rompe nada en la app y el trabajo pendiente sigue registrado en sus tickets.
 Lo que cuesta es que la tanda de QA parezca completa cuando no lo es.
+
+## 2026-09-16 — el punto 1 está hecho; queda el 2
+
+El barrido de QA del 2026-09-16 reescribió `qa/guion-tanda.md` entero: **los 52 tickets que quedan en
+`tickets/qa/` tienen montaje**, en ocho grupos por lo que hace falta preparar (simulador a mano, un iPhone,
+chat de IA, servidor, mismo Apple ID, cambio de Apple ID, dos teléfonos y los de un día entero). El grupo
+del móvil prestado desapareció: murió con el ADR del 2026-09-09. El script que lo genera cruzó las filas con
+`ls tickets/qa/*.md` y paraba si faltaba una, pero vivía en el scratchpad de la sesión: **no es el
+comprobador del punto 2**, que sigue pendiente.

@@ -4,7 +4,7 @@ status: qa
 priority: medium
 area: "groups, attest, sesión, copy"
 created: 2026-09-15
-updated: 2026-09-15
+updated: 2026-09-16
 source: "review adversarial de `groups-sync-reads-a-missing-attest-401-as-a-session-expiry` (2026-09-15)"
 ---
 
@@ -140,3 +140,33 @@ el simulador no hay App Attest, así que cada petición de Grupos sale sin token
 - `signout-pending-copy-says-wait-seconds-when-offline` — el texto de lo pasajero, que esta población no puede cumplir.
 - `groups-join-intent-expires-silently-after-transient-failures` — la invitación que caduca.
 - `.claude/rules/gateway-attest.md` — la recuperación de la key, la escalera y los dos 401 de la guard.
+
+## QA · 2026-09-16 — sigue en la cola, con el montaje más caro de todos
+
+El guion de arriba solo mira la consola. Un lector del barrido encontró por código un montaje con
+superficie de usuario, **sin iPhone**. No está medido, así que conviene leerlo con cuidado:
+
+- **Por qué podría funcionar:** la guarda de App Attest solo rechaza en `enforce`
+  (`gateway/src/groups/routes.ts:75-77`), staging corre en `observe` (`gateway/wrangler.toml:32`), y sin
+  token el cliente manda la petición sin la cabecera (`GroupsSyncClient.swift:1670-1672`). Un simulador
+  sin App Attest crearía y bajaría grupos en staging `observe`. Al pasar staging a `enforce`, sería el
+  teléfono de este ticket.
+- **Lo que cuesta:** wrangler, una cuenta real de staging y **staging más de 24 h en `enforce`** (umbral:
+  24 h desde el primer rechazo y 3 rechazos, `GroupsAttestVerdictLogic.swift:46-55`). Mientras dure,
+  cualquier otra cosa que hable con staging sin App Attest también falla.
+
+**Guion propuesto:**
+1. Simulador, `Yala Dev` **sin** `YALA_DEV_SHARED_SECRET`, staging tal cual. Entrar en Grupos con una cuenta
+   de staging, aceptar el consentimiento y crear un grupo: tiene que subir y bajar.
+2. Desplegar staging con `ENFORCE = "enforce"`. Abrir la pestaña Grupos tres veces, con al menos 1 h entre
+   una y otra. En consola se repite `GroupsSync attestRequired edge=pull`.
+3. Antes de las 24 h: añadir un gasto al grupo → Ajustes → Tu cuenta de Yala → Cerrar sesión. **PASS:** en
+   hasta 45 s sale «Los últimos cambios de tus grupos no llegaron al servidor…», sin «Cerrar sesión y perderlos».
+4. Pasadas 24 h desde el primer rechazo, relanzar. **PASS:** una sola línea `GroupsSync attestTerminal …`,
+   y la pestaña Grupos dice «Este teléfono no puede sincronizar tus grupos».
+5. Cerrar sesión otra vez. **PASS:** alerta con la cifra de cambios, «Cerrar sesión y perderlos» y «Ahora no».
+   «Ahora no» deja el gasto donde estaba.
+6. Al terminar: staging de vuelta a `observe`, y borrar la app del simulador (la racha vive en `UserDefaults`).
+
+**Si no quieres dejar staging un día en `enforce`, este ticket pasa a no replicable**: la red son los
+25 mutantes de arriba.

@@ -4,7 +4,7 @@ status: qa
 priority: high
 area: "settings, modo-nube, sync"
 created: 2026-09-11
-updated: 2026-09-14
+updated: 2026-09-16
 source: "review adversarial del plan del paso 9 (`session-exits-one-verb-per-session`), lado RECEPTOR de la señal de vaciado"
 ---
 
@@ -124,3 +124,10 @@ llama a `bootstrap()` bajo `-uitest`; y la celda E no tiene launch arg ninguno �
 - `remote-onboarding-signal-ignores-the-session-axis`, `remote-wipe-signal-is-burned-even-when-the-session-ignores-it`,
   `storage-mode-is-a-proxy-for-the-mirror-in-the-wipe-signal`, `restore-gate-claims-a-wipe-this-device-did-not-do`,
   `remote-wipe-receiver-has-no-behaviour-test` (medium).
+
+## Corrección al guion · 2026-09-16 (barrido de QA)
+
+**Paso 6** — la expectativa cambió. Desde el 2026-09-14
+(`wipe-alert-fires-on-a-session-that-no-longer-obeys-the-signal`, done), el aviso «Datos no disponibles»
+se calla en una sesión que no obedece la señal de borrado. En B (solo-grupos) **no debe aparecer**. Y un
+solo-grupos dado de alta desde el 2026-09-10 monta el store sin espejo (`.neutralNoMirror`).

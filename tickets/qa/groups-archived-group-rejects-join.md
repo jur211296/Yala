@@ -4,7 +4,7 @@ status: qa
 priority: medium
 area: groups
 created: 2026-09-06
-updated: 2026-09-06
+updated: 2026-09-16
 source: decisión de Jürgen del 2026-09-06 sobre tickets/qa/rejected-member-cold-tap-does-nothing.md
 ---
 
@@ -189,3 +189,9 @@ tickets con la misma pareja.
 
 - [[rejected-member-cold-tap-does-nothing]] — donde se midió que el copy mentía.
 - [[groups-archived-still-accepts-changes]] — el hueco que destapó revisar ese copy.
+
+## Corrección al guion · 2026-09-16 (barrido de QA)
+
+**«Lo que falta» (:181)** — el aviso no trae «Entendido»: el botón es **«OK»** (`common.ok`), como
+explica la propia implementación (:112-120). Lo que hay que ver en B es el título «<grupo> fue archivado»
+con su cuerpo y un botón OK.

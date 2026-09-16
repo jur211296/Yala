@@ -4,7 +4,7 @@ status: qa
 priority: high
 area: "currency, fx, cloud-sync, arranque"
 created: 2026-09-07
-updated: 2026-09-08
+updated: 2026-09-16
 source: review adversarial de fx-manual-writes-seal-approximate-as-final (2026-09-07)
 ---
 
@@ -217,3 +217,15 @@ Una transacción en una divisa que no esté en ninguna cuenta (yenes, por ejempl
 cuya fila de tasas ya exista sin esa divisa. Comprobar que **se corrige sola** al llegar las tasas, y
 que abrir y cerrar la app varias veces sin conexión no la reescribe (el canario `fxRepairQueueStuck`
 con `detail=skipped` debe aparecer una vez por arranque, no un barrido entero).
+
+## Corrección al guion · 2026-09-16 (barrido de QA, medida en código)
+
+**«Qué tiene que mirar el QA en device» (:216-219)** — `skipped` **no puede aparecer sin conexión**.
+Un fallo de red nunca sella el barrido como estéril: el sello exige `allFetchesSucceeded`
+(`TransactionUpdateService.swift:365`), y el salto solo ocurre contra un barrido ya sellado (:285-295).
+Offline, cada arranque vuelve a intentarlo y falla.
+
+Guion corregido: **con conexión**, una transacción en una divisa que el proveedor no traiga para esa
+fecha. Primer arranque → barrido estéril sellado (`futile`). Arranques siguientes, sin cambios →
+`fxRepairQueueStuck` con `detail=skipped` **una vez por arranque**. Al llegar tasas nuevas o cambiar la
+cola → se corrige sola.

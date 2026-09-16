@@ -3,7 +3,7 @@ id: icloud-kv-prefs-cross-sessions-on-a-lent-phone
 status: qa
 qa-status: needs-testing
 implementation_date: 2026-09-14
-updated: 2026-09-14
+updated: 2026-09-16
 priority: high
 area: "sesiones, modo-nube, settings"
 created: 2026-09-14
@@ -148,3 +148,13 @@ El simulador no da dos dispositivos sobre el mismo iCloud-KV, así que esto va e
    ahí sí llega. Si no llega, es un FAIL grave: la puerta estaría cerrada para el dueño.
 
 **Veredicto**: PASS si 1, 2 y 4 se cumplen. Captura de Ajustes → Idioma en A y en B en cada paso.
+
+## QA · 2026-09-16 — sigue aplicando tras el ADR del 2026-09-09 (cola de device)
+
+El ADR «Sesiones — dos ejes» retiró la **palabra** «visita», no el estado: el «móvil prestado» es la celda
+F de la matriz, una sesión de la nube solo grupos en un iPhone cuyo Apple ID es de otra persona, y se
+llega a ella por «Vengo por un grupo». El KV es del Apple ID del aparato, no de la sesión de Yala.
+
+El guion de arriba (Device-QA, :125) sigue valiendo, con los verbos de hoy: «Cerrar sesión» y «Vengo por
+un grupo». Hacen falta dos aparatos con el mismo Apple ID y una sesión real de grupos; el simulador no da
+ninguna de las dos.

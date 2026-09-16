@@ -4,7 +4,7 @@ status: qa
 priority: high
 area: "accounts, currency, fx"
 created: 2026-09-08
-updated: 2026-09-09
+updated: 2026-09-16
 source: barrido de chat-draft-stamps-its-own-currency-not-the-account (2026-09-08)
 ---
 
@@ -195,3 +195,18 @@ observable sin tocar el selector: la fila sale en gris y sin chevron.
 - `chat-draft-stamps-its-own-currency-not-the-account` — el hueco de creación, ya cerrado.
 - `saving-a-mismatched-transaction-relabels-it-without-converting` — qué pasa al abrir en el
   formulario una fila ya desemparejada.
+
+## QA Visual · 2026-09-16 — parcial (sigue en qa: a mano en simulador)
+
+Simulador iPhone 17 Pro (iOS 26.5), sobre `2.1` @ `bebd57a57`, `Yala Dev`, seed `realista` + `-uitest-seed-foreign-account JPY` + `-uitest-pro`.
+
+**Paso 3 — PASS.** «Cuenta Principal», que tiene transferencias: la fila Moneda sale como texto
+(`account_currency_locked`), sin navegar, con el motivo «…transferencias entre cuentas…» debajo.
+Control: «QA FX», sin transferencias, ofrece el enlace tocable (`account_currency_link`).
+
+Captura: [divisa bloqueada](../../qa/evidencia-barrido-20260916/32-divisa-bloqueada-cuenta-con-transferencias.jpg).
+
+**Pasos 1, 2 y 4 — a mano.** El selector de Moneda es un `NavigationLink` y hoy tampoco respondió al tap
+sintético ni a touch down/up (quinta técnica medida). Montaje para quien lo haga con el dedo, ~5 min: el
+mismo lanzamiento, y en «QA FX» (movimientos corrientes) los pasos 1 y 2 del guion de arriba; para el
+paso 4, una cuenta nueva sin movimientos.

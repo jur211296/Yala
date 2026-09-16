@@ -5,6 +5,7 @@ priority: high
 area: "data, import"
 created: 2026-09-08
 source: review adversarial de chat-rows-with-unsigned-amount-have-no-repair-path (2026-09-08)
+updated: 2026-09-16
 ---
 
 # El barrido del signo del chat también alcanza a lo que se importó por CSV, y eso no es lo que se aceptó
@@ -70,7 +71,7 @@ admite dictar «un café en marzo» y un CSV puede traer fechas recientes.
 
 - [x] Decisión de Jürgen sobre las tres salidas.
 - [x] Si se acota: criterio nuevo con test que fije qué sobrevive.
-- [ ] Ticket aparte para que el importador estampe `createdAt` y valide la naturaleza de la categoría.
+- [x] Ticket aparte para que el importador estampe `createdAt` y valide la naturaleza de la categoría → `csv-import-leaves-no-origin-mark-and-reuses-opposite-categories` (2026-09-16).
 
 ---
 
@@ -125,3 +126,34 @@ Dos controles positivos por mutación, uno por cada lado del acotado:
 - Quitar el guard del lote pone en rojo los tres casos de importación.
 - Hacer que **todo** cuente como lote pone en rojo siete, incluido el caso principal — que es lo que
   impide satisfacer el acotado dejando de curar nada.
+
+## QA · 2026-09-16 — sigue en qa: a mano en simulador (unos 10 minutos)
+
+**Lo que se midió hoy:** Yala no registra tipos de documento, así que el import solo entra por el
+selector de archivos del sistema, y ese selector no está en el árbol de accesibilidad: la automatización
+no puede elegir el archivo y Escape no lo cierra. Todo lo demás es local y cabe en el simulador.
+
+**El criterio 3 ya tiene ticket:** `csv-import-leaves-no-origin-mark-and-reuses-opposite-categories`.
+
+### Guion, a mano
+
+1. Borra Yala Dev del simulador y ábrela desde el icono, **sin** `-uitest` (con él el barrido no corre y
+   el store es otro). Onboarding normal con una cuenta en PEN. No relances la app hasta el paso 5.
+2. Crea dos archivos UTF-8 y arrástralos al simulador (Archivos → En mi iPhone), con los nombres de
+   categoría sembrados en el idioma del simulador:
+   - `lote.csv` — cabecera `date,amount,currency,category,subcategory,note` y tres filas:
+     `2026-05-10,45.00,PEN,Compras,Farmacia y botiquín,devolucion` ·
+     `2026-06-02,30.00,PEN,Alimentación,Restaurantes,reembolso` ·
+     `2026-06-03,-12.50,PEN,Alimentación,Delivery,gasto`
+   - `suelta.csv` — la misma cabecera y una fila: `2026-07-01,20.00,PEN,Alimentación,Restaurantes,control`
+3. Perfil → Datos → «Importar archivo», con «Crear categorías nuevas» apagado → `lote.csv` → la cuenta
+   PEN. Espera 5 s o más y repite con `suelta.csv`.
+4. En Registros apunta los cuatro importes: +45, +30, −12,50 y +20.
+5. Fuerza el cierre, reabre desde el icono y espera unos 2 minutos: el barrido espera a que el store esté
+   listo.
+6. **PASS** si +45 y +30 siguen positivos (el lote quedó protegido) **y** la fila suelta pasa a −20. Ese
+   −20 es el control: prueba que el barrido corrió, y es el residual aceptado de arriba. Si la suelta sigue
+   en +20, la corrida no vale; repite desde el paso 1.
+
+Guion preparado por un lector del barrido sobre `2.1` @ `bebd57a57` (cabeceras en
+`TransactionCSVImportService.swift:302-305`; el barrido no corre con `-uitest`, `AppBootstrapper.swift:202-206`).

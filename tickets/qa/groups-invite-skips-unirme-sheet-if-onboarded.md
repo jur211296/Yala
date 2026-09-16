@@ -4,7 +4,7 @@ status: qa
 priority: high
 area: groups
 created: 2026-08-28
-updated: 2026-09-05
+updated: 2026-09-16
 ---
 
 # Al invitado que ya tiene cuenta no le aparece la hoja de «Unirme»: entra al grupo solo
@@ -563,3 +563,24 @@ tiene que ver la hoja, con su nombre puesto, y no estar dentro del grupo hasta t
 Repetirlo con la app en frío, en segundo plano y abierta. Y el criterio de no-regresión, que es el que
 importa: después de unirse, **el nombre de perfil, la moneda y el periodo de B siguen como estaban**, y sus
 otros dispositivos no se recortan a Grupos.
+
+## QA Visual · 2026-09-16 — parcial (sigue en qa: cola de device)
+
+Simulador iPhone 17 Pro (iOS 26.5), sobre `2.1` @ `bebd57a57`, `Yala Dev`, usuario ya onboarded y enlace de invitación pasado con `-uitest-deeplink-url`.
+
+**Lo que se vio:**
+- En frío: sale la hoja con **«Unirme»** y **«Más tarde»**. «Más tarde» la cierra y deja al usuario en el Panel.
+- En caliente (enlace abierto con la app viva): la hoja trae el **nombre del perfil ya puesto** y «Más tarde».
+- «Unirme» → «Conectando…» → «Está tardando…» → «Conecta tu cuenta». Ahí se acaba el simulador: sin
+  App Attest no hay sesión con el servidor.
+
+Capturas: [en frío](../../qa/evidencia-barrido-20260916/26-invite-frio-nombre-icono-color-y-mas-tarde.jpg) · [en caliente](../../qa/evidencia-barrido-20260916/27-invite-caliente-onboarded-nombre-prellenado-mas-tarde.jpg).
+
+**Lo que falta, en un iPhone con TestFlight:**
+1. Onboarding completo con un nombre y una divisa reconocibles.
+2. Tocar un enlace de invitación real a un grupo.
+3. Debe salir la hoja con ese nombre puesto. Tocar «Unirme».
+4. **PASS** si entra al grupo y Perfil conserva el nombre y la divisa de antes, sin repetir el onboarding.
+
+Visto de paso, sin ticket: bajo `-uitest-fake-cloud-session`, cancelar «Conecta tu cuenta» vuelve a
+presentar la hoja en bucle. Es un estado imposible fuera del simulador (sesión sin token).
