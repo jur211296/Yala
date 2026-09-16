@@ -67,3 +67,11 @@ mutante dejaba **a todo iPhone sin la nube con la suite entera en verde**: en el
 así que ni la tabla ni los XCUITest podían verlo. Lo cazó una lente adversarial, no yo. ⇒ **cuando el lado bueno de un
 término es inalcanzable en el host de test, el scan es la única red y va con igualdad del cuerpo entero normalizado; y lo
 que dependa del orden, con `hasPrefix`.** Verificado con el mutante antes y después.
+
+**Y la tercera forma, horas después y en el ticket hermano: medir POSICIÓN no prueba que la puerta sea la ÚNICA condición.**
+Mis scans exigían que cada `switchToSignUp(` cayera dentro de `if WelcomeNewOptionsGate.offersCloudSignUp {`, y maté 10
+mutantes: quitar, invertir, ampliar, mover la puerta al closure… Todos los que se me ocurrieron **abrían** la puerta. La
+lente pensó en **restringirla** —un `if` exterior o interior, un `#if DEBUG` alrededor— y los tres dejaban a un iPhone con
+App Attest sin «Crear mi cuenta» con la suite en verde: el fallo caro, otra vez. ⇒ **el catálogo de mutantes de una
+puerta incluye cerrarla de más**, y la red que lo cubre es la de siempre: el cuerpo entero de la pantalla, normalizado y
+buscado sobre el código sin comentarios (un docblock que cite el cuerpo bueno tapa uno malo).

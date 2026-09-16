@@ -136,7 +136,8 @@ nonisolated enum CloudRemoteFlags {
         return decide(\.cloudModeRolloutPercent)
     }
 
-    /// Sub-flag §j.1: pantalla de elección born-cloud del onboarding (escalón posterior del rollout).
+    /// Sub-flag §j.1: pantalla de elección born-cloud del onboarding (escalón posterior del rollout). Es el kill del ALTA
+    /// entero: por `WelcomeNewOptionsGate.offersCloudSignUp` apaga también las salidas al alta de la pantalla de entrar.
     static var cloudOnboardingChoiceEnabled: Bool {
         if let override = cloudOnboardingChoiceEnabledTestOverride { return override }
         return decide(\.cloudOnboardingChoiceRolloutPercent)

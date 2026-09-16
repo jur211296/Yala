@@ -272,16 +272,24 @@ por adelantado), que hasta ese día vivía en `AttestSyncGate.shouldOfferCloudOn
 - **Solo gatea el ALTA**: la card «Tu cuenta en la nube» de `WelcomeAccountChoiceLogic.visibleNewOptions`, que comparten «Es
   mi primera vez», «Crear otra cuenta» y «Activar Yala completo». Sin ella queda una card, sin copy: «Es mi primera vez» y la
   activación hacen bypass a la rama privada, y «Crear otra cuenta» enseña el chooser con la privada sola. **No gatea**
-  entrar con una cuenta que ya existe («Ya tengo una cuenta» y el faro), las dos salidas
-  al alta de esa pantalla —«Crear mi cuenta» tras «No encontramos una cuenta» y «Crear cuenta con…» del mismatch—
-  (`cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest`) ni «Migrar a la nube» de Ajustes
+  entrar con una cuenta que ya existe («Ya tengo una cuenta» y el faro) ni «Migrar a la nube» de Ajustes
   (`cloud-migration-offers-the-cloud-to-a-phone-without-app-attest`).
+- **Las salidas al alta de la pantalla de entrar pasan por la misma puerta** (2026-09-16, ticket
+  `cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest`): «Crear mi cuenta» tras «No encontramos una cuenta» y
+  «Crear cuenta con…» del mismatch solo se pintan con `WelcomeNewOptionsGate.offersCloudSignUp`, que es
+  `live.contains(.cloudAccount)`. Con ella llegan también el kill del alta y el resto de términos de la card. Sin la
+  puerta, «No encontramos una cuenta» ofrece «Volver» en el sitio de «Crear mi cuenta» (decisión de Jürgen: nunca la
+  flecha de la esquina sola) y el mismatch se queda con «Iniciar sesión con…». **Una salida nueva al alta va dentro de ese
+  `if`, alrededor del BOTÓN**: `WelcomeNewChooserWiringTests` exige cada llamada a `switchToSignUp(` dentro de un bloque
+  con la condición exacta, `entryOverride = .bornCloud` solo dentro de `switchToSignUp`, y el cuerpo entero de las dos
+  pantallas. La condición vive en la vista y no dentro de la función a propósito: ahí dejaría un botón muerto.
 - **El simulador es un teléfono sin App Attest, y no se le exime.** Sin el secreto no ofrece la nube, a propósito: QA y
   producción deciden igual, que es la lección con la que abre este fichero. Un montaje manual que necesite crear una cuenta
   en la nube desde el simulador usa `Yala Dev` y pone `YALA_DEV_SHARED_SECRET` en Edit Scheme → Run → Environment
-  Variables. Uno que necesite
-  la nube SIN App Attest puede crearla por «Ya tengo una cuenta» → Google → «No encontramos una cuenta» → «Crear mi
-  cuenta», que hoy no mira el attest; si esa puerta se cierra, la crea con el secreto y lo quita antes de empezar.
+  Variables. **Desde el 2026-09-16 no hay otra forma**: «Crear mi cuenta» también pasa por la puerta. Uno que necesite la
+  nube SIN App Attest la crea con el secreto por «Es mi primera vez» → «Tu cuenta en la nube», quita el secreto y relanza
+  antes de empezar: el token del bypass solo vive en memoria (`AppAttestClient.cached`). **El secreto es un secret de
+  Wrangler del gateway de staging**, que no se lee de vuelta: en `~/Secrets` no está (medido el 2026-09-16).
 - **XCUITest**: el caso de la condición va con `-uitest-cloud-chooser` y **sin** `-uitest-fake-attest-support`, que finge
   solo la entrada de esta puerta y no toca al cliente. Los que necesitan ver la card de la nube piden los dos. En el host de
   test la capacidad vale `false` —ningún scheme compartido pone el secreto—, **medido con un mutante** el 2026-09-16:

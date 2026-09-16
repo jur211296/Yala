@@ -17,6 +17,10 @@ metadata:
 >
 > **How to apply:** cierra los hechos primero, agrupa lo suyo en UNA ronda de hasta cuatro preguntas con la
 > recomendada delante, y sigue con lo técnico sin parar. De noche vale lo de abajo.
+>
+> **Y vale cuando una sesión nocturna cruza las 6:00** (2026-09-16): el Paso 0 se auto-contestó a las 5:36, la review
+> destapó a las 6:0x que la opción elegida dejaba un callejón, y esa decisión de diseño se le preguntó —una pregunta, la
+> recomendada delante, lo técnico ya hecho—. Contestó en minutos con la recomendada.
 
 Su forma de delegar tiene dos tiempos muy marcados. **Primero decide en bloque**: le llevé siete
 decisiones en dos tandas —cuatro antes de escribir el ticket, tres antes de implementar— y las

@@ -97,7 +97,10 @@ creaba la cuenta así está anotado en su ticket.
 Lo único que el simulador no puede probar: que un iPhone de verdad diga que tiene App Attest. Si no lo dijera, la nube
 desaparecería para todos.
 
-**Montaje.** Tu iPhone con un TestFlight que lleve este cambio (el primero después del merge del PR).
+**Montaje.** Tu iPhone con un TestFlight que lleve este cambio (el primero después del merge del PR). **Borrar la app se
+lleva lo que no esté en tu iCloud o en la nube**: usa un iPhone cuyos datos de Yala no te importe perder, o comprueba
+antes que los tuyos están a salvo. El paso en iPhone de `cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest`
+tiene el mismo montaje.
 
 1. Borra Yala: mantén pulsado el icono → «Eliminar app» → «Eliminar app». Instálala otra vez desde TestFlight.
 2. Abre Yala con conexión a internet y espera unos 10 segundos en la primera pantalla.

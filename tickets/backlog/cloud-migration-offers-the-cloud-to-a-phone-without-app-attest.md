@@ -44,6 +44,8 @@ Tengo mis datos en mi iCloud privado y mi teléfono no tiene App Attest. En Ajus
 ## Relación con otros tickets
 
 - `cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest` — la puerta del alta, de donde sale.
-- `cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest` — las dos salidas al alta que la puerta no cubre.
+- `cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest` — las dos salidas al alta de la pantalla de entrar.
+  Desde el 2026-09-16 pasan por la puerta, así que de los dos sitios que reclaman una cuenta completa en la nube
+  (`BornCloudSignUpService` y el claim de `MigrationWorkExecutor`) este es el único que no la mira.
 - `cloud-hydration-spinner-never-gives-up-without-attest` — lo que ve quien entra con una cuenta que ya existe, que la
   puerta tampoco cubre.

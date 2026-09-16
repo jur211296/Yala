@@ -461,6 +461,175 @@ struct WelcomeNewChooserWiringTests {
         #expect(exit.contains("if phase == .intro { phase = .providerMismatch(exits) }"))
     }
 
+    // MARK: - La puerta del alta en la pantalla de entrar
+
+    /// Ticket `cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest`. Ningún XCUITest llega a «No encontramos
+    /// una cuenta» ni al mismatch —las dos fases exigen firmar de verdad— y en el host de test la capacidad vale `false`,
+    /// así que el cableado de la puerta solo lo puede ver un scan. Por eso se ancla la condición ENTERA, con su llave: una
+    /// puerta invertida (`if !…`), ampliada (`if … || algo {`) o sustituida no casa con este literal.
+    private static let signUpGate = "if WelcomeNewOptionsGate.offersCloudSignUp {"
+
+    /// El fichero sin sus líneas de comentario, como `body(of:)`. Las posiciones se miden sobre ESTE texto: los docblocks
+    /// de la vista nombran la puerta y `switchToSignUp`, y contarlos pondría el test en rojo por documentar.
+    private static func codeOnly(_ source: String) -> String {
+        source.split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+    }
+
+    private static func ranges(of marker: String, in code: String) -> [Range<String.Index>] {
+        var hits: [Range<String.Index>] = []
+        var cursor = code.startIndex
+        while let hit = code.range(of: marker, range: cursor..<code.endIndex) {
+            hits.append(hit)
+            cursor = hit.upperBound
+        }
+        return hits
+    }
+
+    /// Lo que va DENTRO de cada bloque que abre `marker`: desde su llave de apertura hasta la que la cierra.
+    private static func blocks(openedBy marker: String, in code: String) -> [Range<String.Index>] {
+        ranges(of: marker, in: code).map { opening in
+            var depth = 1
+            var index = opening.upperBound
+            while index < code.endIndex {
+                if code[index] == "{" { depth += 1 }
+                if code[index] == "}" { depth -= 1; if depth == 0 { break } }
+                index = code.index(after: index)
+            }
+            return opening.upperBound..<index
+        }
+    }
+
+    /// **La puerta de las salidas es la card, y se DERIVA de ella.** En el host de test la capacidad vale `false`, así
+    /// que el lado `true` de esta propiedad es inalcanzable: un `{ false }` le quitaría «Crear mi cuenta» a todo iPhone y
+    /// solo un scan lo ve. Y repetir aquí los términos de `live` es como la card y las salidas empezarían a divergir. Se
+    /// busca sobre el código sin comentarios: un docblock que citara el cuerpo bueno taparía uno malo.
+    @Test("`offersCloudSignUp` es exactamente la card de la nube de `live`")
+    func offersCloudSignUp_isTheCloudCardOfLive() throws {
+        let body = try Self.body(
+            of: "static var offersCloudSignUp: Bool {",
+            in: Self.codeOnly(try Self.source("Yala/App/Logic/WelcomeAccountChoiceLogic.swift")))
+        #expect(Self.normalized(body) == "live.contains(.cloudAccount)")
+    }
+
+    /// **Toda salida al alta de la pantalla de entrar va detrás de la puerta**, también la que alguien añada mañana. Dos
+    /// medidas por POSICIÓN: cada llamada a `switchToSignUp(` cae dentro de un bloque cuya condición es exactamente la
+    /// puerta, y son tres (el botón de «No encontramos una cuenta» y los dos de marca del «Crear cuenta con…»); y el
+    /// reencaminamiento al alta, `entryOverride = .bornCloud`, solo existe dentro de `switchToSignUp`. Sin la segunda, una
+    /// salida nueva que lo escribiera a mano —o un «Iniciar sesión con…» que reencaminara al alta— pasaría sin puerta.
+    @Test("toda salida al alta pasa por la puerta: tres llamadas a `switchToSignUp` y un solo reencaminamiento al alta")
+    func everySignUpExit_isBehindTheSignUpGate() throws {
+        let code = Self.codeOnly(try Self.source(Self.signInViewPath))
+        let blocks = Self.blocks(openedBy: Self.signUpGate, in: code)
+        let calls = Self.ranges(of: "switchToSignUp(", in: code).filter { hit in
+            // La DEFINICIÓN no es una salida.
+            let lineStart = code[..<hit.lowerBound].lastIndex(of: "\n").map { code.index(after: $0) } ?? code.startIndex
+            return !code[lineStart..<hit.lowerBound].contains("func ")
+        }
+        #expect(calls.count == 3, "se esperaban 3 salidas al alta y hay \(calls.count)")
+        for call in calls {
+            let lineStart = code[..<call.lowerBound].lastIndex(of: "\n").map { code.index(after: $0) } ?? code.startIndex
+            let lineEnd = code[call.upperBound...].firstIndex(of: "\n") ?? code.endIndex
+            #expect(blocks.contains { $0.contains(call.lowerBound) },
+                    "una salida al alta no pasa por la puerta: «\(code[lineStart..<lineEnd].trimmingCharacters(in: .whitespaces))»")
+        }
+
+        let reroutes = Self.ranges(of: "entryOverride = .bornCloud", in: code)
+        try #require(reroutes.count == 1, "se esperaba un solo `entryOverride = .bornCloud` y hay \(reroutes.count)")
+        let definition = Self.blocks(
+            openedBy: "private func switchToSignUp(with signUpProvider: CloudSignInProvider) {", in: code)
+        try #require(definition.count == 1, "`switchToSignUp` cambió de firma o está repetida")
+        #expect(definition[0].contains(reroutes[0].lowerBound), "el reencaminamiento al alta vive fuera de `switchToSignUp`")
+    }
+
+    /// **Las dos pantallas, ENTERAS** (`.claude/rules/testing.md`: cuando el scan es la única red, se fija el cuerpo
+    /// entero normalizado). Medir solo que los botones de crear «caen dentro» de la puerta dejaba vivo el fallo caro: una
+    /// condición más alrededor o dentro (`if exits.accountProvider != nil`, `if provider == .apple`, un `#if DEBUG`) le
+    /// quitaba el botón a un iPhone con App Attest con la suite en verde, y un `/* */` lo dejaba sin puerta. Fija además
+    /// lo que va FUERA: el mensaje de las dos pantallas, la salida de entrar del mismatch y el «Volver» que ocupa el sitio
+    /// de «Crear mi cuenta» sin la puerta (decisión de Jürgen, 2026-09-16), con el identificador del mensaje en su bloque
+    /// para que no pise los de los botones.
+    @Test("las dos pantallas, enteras: la puerta es la única condición de los botones de crear y «Volver» ocupa su sitio")
+    func signUpScreens_areFixedWhole() throws {
+        let code = Self.codeOnly(try Self.source(Self.signInViewPath))
+        #expect(Self.blocks(openedBy: Self.signUpGate, in: code).count == 2, "se esperaban 2 bloques con la puerta del alta")
+
+        let notFound = try Self.body(of: "private var notFoundContent: some View {", in: code)
+        #expect(Self.normalized(notFound) == """
+            VStack(spacing: DS.Spacing.lg) { \
+            messageContent( \
+            icon: "person.crop.circle.badge.questionmark", \
+            title: L10n.Welcome.Cloud.notFoundTitle, \
+            body: L10n.Welcome.Cloud.notFoundBody) \
+            .accessibilityIdentifier("welcome_cloud_not_found") \
+            if WelcomeNewOptionsGate.offersCloudSignUp { \
+            YalaPrimaryButton(L10n.Welcome.Cloud.notFoundCta) { \
+            DS.Haptic.selection() \
+            switchToSignUp(with: provider) \
+            } \
+            .padding(.horizontal, DS.Spacing.xl) \
+            .accessibilityIdentifier("welcome_cloud_not_found_cta") \
+            } else { \
+            YalaPrimaryButton(L10n.Welcome.Cloud.blockedBack) { \
+            onBack() \
+            } \
+            .padding(.horizontal, DS.Spacing.xl) \
+            .accessibilityIdentifier("welcome_cloud_not_found_back") \
+            } \
+            }
+            """, "«No encontramos una cuenta» cambió: revisa que «Crear mi cuenta» siga detrás de la puerta y «Volver» fuera")
+
+        let mismatch = try Self.body(
+            of: "private func providerMismatchContent(_ exits: ProviderMismatchLogic.Exits) -> some View {", in: code)
+        #expect(Self.normalized(mismatch) == """
+            VStack(spacing: DS.Spacing.lg) { \
+            messageContent( \
+            icon: "person.crop.circle.badge.exclamationmark", \
+            title: L10n.Welcome.Cloud.providerMismatchTitle, \
+            body: providerMismatchBody(accountProvider: exits.accountProvider)) \
+            .accessibilityIdentifier("welcome_cloud_provider_mismatch") \
+            VStack(spacing: DS.Spacing.md) { \
+            switch exits.signInWith { \
+            case .apple: \
+            AppleSignInButton(type: .signIn) { \
+            DS.Haptic.selection() \
+            signInWithAccountMethod(exits.signInWith, from: exits) \
+            } \
+            .frame(height: 50) \
+            .accessibilityIdentifier("welcome_cloud_mismatch_sign_in") \
+            case .google: \
+            GoogleSignInButton(variant: .light, purpose: .signIn) { \
+            DS.Haptic.selection() \
+            signInWithAccountMethod(exits.signInWith, from: exits) \
+            } \
+            .frame(height: 50) \
+            .accessibilityIdentifier("welcome_cloud_mismatch_sign_in") \
+            } \
+            if WelcomeNewOptionsGate.offersCloudSignUp { \
+            switch exits.createWith { \
+            case .apple: \
+            AppleSignInButton(type: .signUp) { \
+            DS.Haptic.selection() \
+            switchToSignUp(with: exits.createWith) \
+            } \
+            .frame(height: 50) \
+            .accessibilityIdentifier("welcome_cloud_mismatch_create") \
+            case .google: \
+            GoogleSignInButton(variant: .light, purpose: .signUp) { \
+            DS.Haptic.selection() \
+            switchToSignUp(with: exits.createWith) \
+            } \
+            .frame(height: 50) \
+            .accessibilityIdentifier("welcome_cloud_mismatch_create") \
+            } \
+            } \
+            } \
+            .padding(.horizontal, DS.Spacing.xl) \
+            }
+            """, "el mismatch cambió: revisa que «Crear cuenta con…» siga detrás de la puerta y «Iniciar sesión con…» fuera")
+    }
+
     /// A5 SUSTITUYE AL STUB DE A4. La versión anterior de este test exigía
     /// `showBornCloudPendingAlert = true` (el aviso «próximamente» de la card de nube) y decía por
     /// escrito que había que BORRARLO en el commit de A5, no silenciarlo. Esto es ese borrado: la

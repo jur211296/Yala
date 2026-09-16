@@ -102,7 +102,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes | qa | tickets/qa/cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes.md |
 | cloud-session-expiry-with-only-group-changes-has-no-sign-in-door | backlog | tickets/backlog/cloud-session-expiry-with-only-group-changes-has-no-sign-in-door.md |
 | cloud-sign-in-discovers-account-kind | qa | tickets/qa/cloud-sign-in-discovers-account-kind.md |
-| cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest | backlog | tickets/backlog/cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest.md |
+| cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest | qa | tickets/qa/cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest.md |
 | cloud-signout-collapses-a-groups-session-expiry-into-permanent | qa | tickets/qa/cloud-signout-collapses-a-groups-session-expiry-into-permanent.md |
 | cloud-signout-collapses-every-groups-transient-into-permanent | qa | tickets/qa/cloud-signout-collapses-every-groups-transient-into-permanent.md |
 | cloud-signout-collapses-the-personal-push-all-reason-into-permanent | backlog | tickets/backlog/cloud-signout-collapses-the-personal-push-all-reason-into-permanent.md |

@@ -55,7 +55,8 @@ final class UITestHooks {
     nonisolated static var forceCloudChooser: Bool { hasArg("-uitest-cloud-chooser") }
 
     /// `-uitest-fake-attest-support`: finge que este teléfono puede conseguir token de App Attest, **solo en la entrada
-    /// de la puerta de «Es mi primera vez»** (`WelcomeNewOptionsGate`). El simulador no tiene App Attest, así que sin
+    /// de la puerta del alta** (`WelcomeNewOptionsGate`, que deciden la card de «Es mi primera vez» y las salidas al alta
+    /// de la pantalla de entrar). El simulador no tiene App Attest, así que sin
     /// este arg la card de la nube no sale aunque se pida `-uitest-cloud-chooser`. No toca `AppAttestClient`: el cliente
     /// sigue sin poder conseguir token.
     ///

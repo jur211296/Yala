@@ -47,7 +47,9 @@ nonisolated enum ProviderMismatchLogic {
         /// «Iniciar sesión con …»: el método de la cuenta del faro. Si el faro no lo sabe, el OTRO de los dos
         /// métodos que existen, que es justo la hipótesis de la regla 5: «usaste el otro».
         let signInWith: CloudSignInProvider
-        /// «Crear cuenta con …»: el método que la persona acaba de usar, que es el que eligió.
+        /// «Crear cuenta con …»: el método que la persona acaba de usar, que es el que eligió. **El veredicto la lleva
+        /// siempre, pero la pantalla solo la pinta tras la puerta del alta** (`WelcomeNewOptionsGate.offersCloudSignUp`):
+        /// un teléfono sin App Attest, o con el kill del alta, ve solo la salida de entrar.
         let createWith: CloudSignInProvider
     }
 
