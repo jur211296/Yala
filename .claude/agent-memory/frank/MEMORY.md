@@ -32,6 +32,7 @@
 - [Un número sustituto lo cumple otra cosa](feedback_un_numero_sustituto_lo_cumple_otra_cosa.md) — «3 rechazos» los cumplía un gesto y «2 cambios» cualquier par: cuenta en la unidad de la decisión.
 - [La segunda capa no cubre lo que dice](feedback_la_segunda_capa_no_cubre_lo_que_dice.md) — mide el ALCANCE de cada defensa por separado.
 - [La aserción que no puede fallar](feedback_la_asercion_que_no_puede_fallar.md) — el mutante valida el CASO, no cada `#expect`; ensucia la columna quieta.
+- [Sacar un `await` a una tarea aparte pierde garantías](feedback_lo_que_saco_a_una_tarea_aparte_pierde_garantias.md) — cancelación heredada e identidad del handle; el `defer` que pone a nil un campo compartido es una bomba.
 - [El pre-filtro tapa al criterio](feedback_el_prefiltro_tapa_al_criterio.md) — misma condición en el fetch y en la lógica: el mutante de la lógica sale VERDE. Me pasó dos veces el 8-sep.
 - [Dos getters que parecen sinónimos](feedback_dos_getters_que_parecen_sinonimos.md) — el compuesto era fail-closed: el aviso NO salía al teléfono restaurado, que era la población del ticket.
 - [Mi arreglo empeora un ticket HERMANO](feedback_mi_arreglo_empeora_un_ticket_hermano.md) — el colateral pasó de neutro a nombrar un gesto ajeno; se mide y se anota allí, no se corta por motivo.
@@ -95,6 +96,7 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build incremental.
 
 ## Estado del trabajo
+- [Grupos ya despierta al volver a la app](project_grupos_despierta_al_volver_a_la_app.md) — PR #179; deja el ticket del piggyback con el motor parado y un mutante declarado sin test.
 - [El aviso de attest personal, en dos superficies](project_aviso_attest_personal_en_dos_superficies.md) — PR #177; arregló un «Todo al día» con el motor parado y deja un agujero conocido.
 - [Grupos ya avisa sin App Attest](project_grupos_avisa_sin_attest.md) — PR #176, en `done` y sin device-QA; el hermano personal sigue sin hacer.
 - [El teléfono sin App Attest ya tiene veredicto y salida](project_telefono_sin_attest_veredicto_y_salida.md) — en qa solo espera la racha: la salida con pérdida no se monta en ningún dispositivo.

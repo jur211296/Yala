@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (409)
+## Index (410)
 
 | id | status | path |
 |---|---|---|
@@ -213,6 +213,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-expense-notif-only-on-foreground | qa | tickets/qa/groups-expense-notif-only-on-foreground.md |
 | groups-ghost-tx-on-delete | done | tickets/done/groups-ghost-tx-on-delete.md |
 | groups-guest-currency-from-region | discarded | tickets/discarded/groups-guest-currency-from-region.md |
+| groups-has-no-cadence-when-the-personal-runtime-is-stopped | backlog | tickets/backlog/groups-has-no-cadence-when-the-personal-runtime-is-stopped.md |
 | groups-history-cutoff-needs-synced-state | backlog | tickets/backlog/groups-history-cutoff-needs-synced-state.md |
 | groups-import-splitwise-tricount | backlog | tickets/backlog/groups-import-splitwise-tricount.md |
 | groups-in-group-search | backlog | tickets/backlog/groups-in-group-search.md |
@@ -224,7 +225,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-killswitch-403-blocks-detach-forever | qa | tickets/qa/groups-killswitch-403-blocks-detach-forever.md |
 | groups-leave-rpc-error-10 | qa | tickets/qa/groups-leave-rpc-error-10.md |
 | groups-log-expense-via-chat-voice | backlog | tickets/backlog/groups-log-expense-via-chat-voice.md |
-| groups-loop-in-backoff-ignores-the-return-to-foreground | backlog | tickets/backlog/groups-loop-in-backoff-ignores-the-return-to-foreground.md |
+| groups-loop-in-backoff-ignores-the-return-to-foreground | done | tickets/done/groups-loop-in-backoff-ignores-the-return-to-foreground.md |
 | groups-loop-restart-docs-cite-a-retired-mount-guard | backlog | tickets/backlog/groups-loop-restart-docs-cite-a-retired-mount-guard.md |
 | groups-only-account-deletion-skips-export-wait | backlog | tickets/backlog/groups-only-account-deletion-skips-export-wait.md |
 | groups-only-private-restart-skips-the-wipe-alert | qa | tickets/qa/groups-only-private-restart-skips-the-wipe-alert.md |

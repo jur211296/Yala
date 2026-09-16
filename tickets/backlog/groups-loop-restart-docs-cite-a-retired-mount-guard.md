@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "groups, sync"
 created: 2026-09-15
+updated: 2026-09-16
 source: "medición al cerrar `groups-channel-seal-has-no-reachable-producer`"
 ---
 
@@ -35,6 +36,22 @@ Sin sesión de visita no queda la ventana que ese guard cerraba, así que lo pro
 mitad de sesión siga siendo seguro, pero por otro motivo. **Eso no está medido.** Quien lea esos
 comentarios dará por hecho un guard que no existe: es la misma trampa que tenía el sello del canal, un
 mecanismo que parecía cubrir un caso y no lo cubría.
+
+## Un tercero, medido el 2026-09-16 al despertar el loop
+
+Dos comentarios del mismo par de ficheros llaman al canal **DARK «en producción hoy»**, y no lo está:
+`CloudSyncFlags.groupsBackendCompiledDefault` es `true` desde D-R1 paso 2 (2026-07-30) y el flag remoto solo
+puede MATAR, así que el getter compuesto vale `true` salvo kill-switch. Quien lea esas líneas dará por hecho
+que nada de este loop corre para nadie.
+
+- `Yala/App/Logic/GroupsLoopRestartLogic.swift:25`: «Con el flag OFF (producción hoy) SIEMPRE `false` →
+  byte-identidad DARK».
+- `YalaTests/CloudSync/GroupsLoopRestartLogicTests.swift:22`: el mismo «(producción hoy)» en el docblock de
+  `flagOff_neverStarts`.
+
+Va aquí porque se arregla en la misma pasada, y porque el caso gemelo del despertar
+(`flagOff_neverWakes`, escrito el 2026-09-16) ya nació sin esa frase: si se toca uno sin el otro, el fichero
+se queda diciendo las dos cosas.
 
 ## Y un desajuste más pequeño del mismo loop
 

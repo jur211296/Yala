@@ -1864,7 +1864,9 @@ final class AppBootstrapper {
         // H-2026-07-18-4 (DARK): re-arranque del canal de Grupos → backend si su loop propio murió en
         // silencio (401 transitorio en la ventana de expiry → sessionExpired → break loop; el startIfEligible
         // solo corría en cold boot y NADA lo re-arrancaba hasta relaunch). Mismo gate que el call-site del
-        // cold boot (appLaunched paso G2). Idempotente por single-instance (loopTask != nil ⇒ no-op).
+        // cold boot (appLaunched paso G2). Con el loop ya vivo no se duplica (single-instance) pero TAMPOCO
+        // es un no-op desde el 2026-09-16: le corta el sueño para que cicle ya, que es lo que hace este mismo
+        // método con el runtime personal unas líneas más arriba.
         // Con el flag OFF es NO-OP TEMPRANO (startIfEligible retorna en su primer guard flag+sesión).
         if !UITestHooks.isActive {
             GroupsSyncClient.shared.startIfEligible(context: context, trigger: "foreground")
