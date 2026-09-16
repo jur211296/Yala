@@ -1529,6 +1529,8 @@ struct MigrationRunnerTests {
                 #expect(j.readPhase().phase == expected, "\(effect) fails=\(fails): la vuelta empieza")
                 #expect(j.readPendingEffects().isEmpty, "\(effect) fails=\(fails): el pendiente se reemplaza")
                 #expect(fake.count(effect) == 0, "\(effect) fails=\(fails): no se ejecuta antes de la vuelta")
+                #expect(j.readReverseOriginPendingEffects() == [effect],
+                        "\(effect) fails=\(fails): y se guarda, por si el servidor no concede la reserva")
             }
         }
     }
@@ -1608,6 +1610,254 @@ struct MigrationRunnerTests {
         #expect(j.reverseUploadProgressAt == nil)
         #expect(j.reverseAbortReasonRaw == nil)
         #expect(r.lastReverseUploadSample == nil)
+    }
+
+    // MARK: - Salida del claim de la reversa (ticket reverse-claim-rejection-has-no-way-out-in-the-client)
+
+    /// Un rechazo del claim vuelve al ORIGEN, sin efectos y con el porqué journaleado, por cada motivo medido en el RPC
+    /// vivo y por uno desconocido. Antes cortaba sin evento y `reverseClaimLeader` —fase TRANSITORIA— no salía nunca:
+    /// barra al 15 %, motor de la nube sin arrancar tras relanzar y BGTasks diferidos. La pata `notStarted` pasa por el bloque de limpieza
+    /// de `handle`, así que es la que caza que ese bloque borre la nota; la pata sin origen, el fallback `.done`.
+    @Test func reverseClaimRejected_eachReason_returnsToOrigin_noEffects_reasonJournaled() async throws {
+        let cases: [(server: String, origin: String?, phase: Phase, note: ReverseAbortReason)] = [
+            ("not_complete", "done", .done, .claimRefused),
+            ("not_complete", "notStarted", .notStarted, .claimRefused),
+            ("migration_in_progress", "done", .done, .claimRetryLater),
+            ("migration_in_progress", "notStarted", .notStarted, .claimRetryLater),
+            ("no_profile", "done", .done, .claimRefused),
+            ("some_future_reason", nil, .done, .claimRefused),
+        ]
+        for c in cases {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            fake.reverseClaimOutcomes = [.rejected(reason: c.server)]
+            try seedJournal(context, phase: .reverseClaimLeader, reverseOriginRaw: c.origin)
+
+            let r = runner(context, fake)
+            await r.resume()
+
+            let label = "\(c.server) desde \(c.origin ?? "nil")"
+            let j = try journal(context)
+            let phase = j.readPhase().phase
+            #expect(phase == c.phase, "\(label)")
+            #expect(j.reverseAbortReasonRaw == c.note.rawValue, "\(label): la nota sobrevive a la vuelta")
+            #expect(j.readPendingEffects().isEmpty, "\(label): el claim rechazado no reservó nada")
+            #expect(fake.executedEffects.isEmpty, "\(label)")
+            #expect(j.reverseOriginRaw == nil, "\(label): el origen se va con el intento")
+            #expect(MigrationRuntimeGate.isDomainStablePhase(phase), "\(label): el motor de la nube puede volver")
+            #expect(BGTaskMigrationGate.decide(phase: phase, isImportQuiescent: false, role: .writer) == .run,
+                    "\(label): los BGTasks dejan de estar diferidos")
+            #expect(r.lastReverseClaimExit == ReverseClaimExit(sequence: 1, reason: c.note), "\(label)")
+            #expect(fake.reverseClaimCallCount == 1, "\(label)")
+        }
+    }
+
+    /// El recorrido del TOQUE: «Volver a iCloud» desde la nube, rechazo, y otra vez. La nota de un intento anterior se
+    /// reemplaza, y cada salida sube la secuencia aunque el motivo se repita: es lo que deja a la pantalla enseñar la
+    /// alerta en el segundo toque, con la misma nota ya puesta.
+    @Test func reverseClaimRejected_fromTheTap_eachAttemptIsANewExit() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.reverseClaimOutcomes = [.rejected(reason: "not_complete")]
+        try seedJournal(context, phase: .done, reverseAbortReasonRaw: "stalled")
+
+        let r = runner(context, fake)
+        await r.submit(.reverseActivated)
+        await r.submit(.reverseConfirmed)
+        var j = try journal(context)
+        #expect(j.readPhase().phase == .done)
+        #expect(j.reverseAbortReasonRaw == "claimRefused", "la nota de la espera anterior deja de ser verdad")
+        #expect(r.lastReverseClaimExit == ReverseClaimExit(sequence: 1, reason: .claimRefused))
+
+        await r.submit(.reverseActivated)
+        await r.submit(.reverseConfirmed)
+        j = try journal(context)
+        #expect(j.readPhase().phase == .done)
+        #expect(j.reverseAbortReasonRaw == "claimRefused")
+        #expect(r.lastReverseClaimExit == ReverseClaimExit(sequence: 2, reason: .claimRefused),
+                "mismo motivo, salida nueva")
+        // Aparte, y no solo por `==`: la pantalla decide la alerta comparando salidas, y un `==` que ignorara la
+        // secuencia dejaría sin alerta el segundo toque con el mismo motivo, con la comparación de arriba en verde.
+        #expect(r.lastReverseClaimExit?.sequence == 2)
+        #expect(ReverseClaimExit(sequence: 1, reason: .claimRefused) != ReverseClaimExit(sequence: 2, reason: .claimRefused))
+        #expect(fake.reverseClaimCallCount == 2)
+        #expect(fake.executedEffects.isEmpty)
+    }
+
+    /// Tras salir no hay bucle: el re-kick y el arranque ya no re-claiman solos. Volver a intentarlo es un toque.
+    @Test func reverseClaimRejected_resumeAfterTheExit_doesNotClaimAgain() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.reverseClaimOutcomes = [.rejected(reason: "migration_in_progress")]
+        try seedJournal(context, phase: .reverseClaimLeader, reverseOriginRaw: "done")
+
+        await runner(context, fake).resume()
+        await runner(context, fake).resume()
+        await runner(context, fake).resume()
+
+        #expect(fake.reverseClaimCallCount == 1)
+        #expect(try journal(context).readPhase().phase == .done)
+    }
+
+    /// `other_leader` ya salía, pero en silencio (decisión D4 de Jürgen, 2026-09-16): ahora deja su propia nota, y la
+    /// deja también desde `done`, donde el bloque de limpieza de `handle` no borra el origen.
+    @Test func reverse_otherLeader_journalsItsNote() async throws {
+        for (originRaw, expected): (String, Phase) in [("done", .done), ("notStarted", .notStarted)] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            fake.reverseClaimOutcomes = [.otherLeader]
+            try seedJournal(context, phase: .reverseClaimLeader, reverseOriginRaw: originRaw)
+
+            let r = runner(context, fake)
+            await r.resume()
+
+            let j = try journal(context)
+            #expect(j.readPhase().phase == expected)
+            #expect(j.reverseAbortReasonRaw == "otherDeviceReverting", "\(originRaw)")
+            #expect(j.reverseOriginRaw == nil, "\(originRaw)")
+            #expect(j.readPendingEffects().isEmpty)
+            #expect(r.lastReverseClaimExit == ReverseClaimExit(sequence: 1, reason: .otherDeviceReverting))
+        }
+    }
+
+    /// Hallazgo de la review adversarial (dos lentes por separado): `reverseActivated` REEMPLAZA los pendientes del
+    /// origen, y el reconcile de un líder es lo único que manda `complete`. Si el servidor no concede la reserva, la vuelta
+    /// no empezó y esos pendientes vuelven: sin eso `migration_in_progress` se quedaba puesto en el backend para siempre
+    /// (antes lo curaba el takeover de la reversa a los 60 min). Por los dos orígenes y las dos salidas del claim, con el
+    /// pendiente que se ejecuta en el acto.
+    @Test func reverseClaimExit_restoresTheOriginPendingEffects_andRunsThem() async throws {
+        let cases: [(outcome: ReverseClaimOutcome, origin: Phase, effect: Effect, note: ReverseAbortReason)] = [
+            (.rejected(reason: "migration_in_progress"), .done, .runLeaderReconcileFromFrozenCloudKit, .claimRetryLater),
+            (.rejected(reason: "not_complete"), .notStarted, .adoptBackendAccount, .claimRefused),
+            (.otherLeader, .done, .runLeaderReconcileFromFrozenCloudKit, .otherDeviceReverting),
+        ]
+        for c in cases {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            fake.reverseClaimOutcomes = [c.outcome]
+            try seedJournal(context, phase: c.origin, pending: [c.effect])
+
+            let r = runner(context, fake)
+            await r.submit(.reverseActivated)
+            #expect(fake.count(c.effect) == 0, "\(c.outcome): la vuelta no lo ejecuta al empezar")
+            await r.submit(.reverseConfirmed)
+
+            let j = try journal(context)
+            #expect(j.readPhase().phase == c.origin, "\(c.outcome)")
+            #expect(fake.count(c.effect) == 1, "\(c.outcome): repuesto y ejecutado al volver al origen")
+            #expect(j.readPendingEffects().isEmpty, "\(c.outcome)")
+            #expect(j.reverseOriginPendingEffectsData == nil, "\(c.outcome): lo guardado se consume")
+            #expect(j.reverseAbortReasonRaw == c.note.rawValue, "\(c.outcome)")
+            #expect(r.lastReverseClaimExit?.sequence == 1, "\(c.outcome)")
+        }
+    }
+
+    /// Si el pendiente repuesto LANZA (el reconcile sin red), la salida ya está journaleada: se queda en el origen con el
+    /// pendiente para el siguiente resume, y la salida se anota igual para que la pantalla avise.
+    @Test func reverseClaimExit_restoredEffectThrows_exitStandsAndIsRecorded() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.reverseClaimOutcomes = [.rejected(reason: "migration_in_progress")]
+        fake.effectErrors[.runLeaderReconcileFromFrozenCloudKit] = FakeError()
+        try seedJournal(context, phase: .done, pending: [.runLeaderReconcileFromFrozenCloudKit])
+
+        let r = runner(context, fake)
+        await r.submit(.reverseActivated)
+        await r.submit(.reverseConfirmed)
+
+        var j = try journal(context)
+        #expect(j.readPhase().phase == .done)
+        #expect(j.readPendingEffects() == [.runLeaderReconcileFromFrozenCloudKit], "repuesto, a la espera del resume")
+        #expect(j.reverseOriginPendingEffectsData == nil)
+        #expect(j.reverseAbortReasonRaw == "claimRetryLater")
+        #expect(r.lastReverseClaimExit == ReverseClaimExit(sequence: 1, reason: .claimRetryLater),
+                "la salida se anota aunque el pendiente repuesto falle")
+
+        fake.effectErrors.removeValue(forKey: .runLeaderReconcileFromFrozenCloudKit)
+        await runner(context, fake).resume()
+        j = try journal(context)
+        #expect(fake.count(.runLeaderReconcileFromFrozenCloudKit) == 1, "el resume lo completa: `complete` llega")
+        #expect(j.readPendingEffects().isEmpty)
+        #expect(fake.reverseClaimCallCount == 1, "y no vuelve a pedir la reserva")
+    }
+
+    /// Con la reserva CONCEDIDA la vuelta empezó de verdad: lo guardado deja de aplicar (si la reserva tomó el lease de
+    /// la ida, `migration_in_progress` ya es false) y no se ejecuta.
+    @Test func reverseClaimAccepted_dropsTheOriginPendingEffects() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.reverseClaimOutcomes = [.accepted]
+        fake.reverseDrainOutcome = .transient                    // corta en reverseDrainAll para inspeccionar
+        try seedJournal(context, phase: .done, pending: [.runLeaderReconcileFromFrozenCloudKit])
+
+        let r = runner(context, fake)
+        await r.submit(.reverseActivated)
+        #expect(try journal(context).reverseOriginPendingEffectsData != nil, "control: se guardó al empezar")
+        await r.submit(.reverseConfirmed)
+
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .reverseDrainAll)
+        #expect(j.reverseOriginPendingEffectsData == nil)
+        #expect(j.readPendingEffects().isEmpty)
+        #expect(fake.count(.runLeaderReconcileFromFrozenCloudKit) == 0)
+        #expect(r.lastReverseClaimExit == nil)
+    }
+
+    /// Las otras dos vueltas al origen antes de la reserva también reponen: declinar en la confirmación (por `handle`) y
+    /// un kill ahí (por la normalización del resume). Mismo predicado, `ReverseOriginPendingEffects`.
+    @Test func reverseConfirm_declineOrKill_restoresTheOriginPendingEffects() async throws {
+        for viaKill in [false, true] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            try seedJournal(context, phase: .notStarted, pending: [.adoptBackendAccount])
+
+            await runner(context, fake).submit(.reverseActivated)
+            #expect(try journal(context).readPhase().phase == .reverseConfirm(.notStarted))
+            // El kill va con un CONTEXTO nuevo sobre el mismo container, no solo con un runner nuevo: con el mismo
+            // contexto, lo guardado que no llegó a `save()` seguiría a la vista y esta pata no cazaría un guardado sin
+            // persistir (segunda pasada de review).
+            let after = viaKill ? ModelContext(context.container) : context
+            if viaKill {
+                await makeRunner(after, fake).resume()
+            } else {
+                await runner(context, fake).submit(.reverseDeclined)
+            }
+
+            let j = try journal(after)
+            #expect(j.readPhase().phase == .notStarted, "kill=\(viaKill)")
+            #expect(fake.count(.adoptBackendAccount) == 1, "kill=\(viaKill): repuesto y ejecutado")
+            #expect(j.readPendingEffects().isEmpty, "kill=\(viaKill)")
+            #expect(j.reverseOriginPendingEffectsData == nil, "kill=\(viaKill)")
+        }
+    }
+
+    /// Lo que NO sale: la red y la sesión caducada siguen siendo retomables, sin nota y sin salida anotada. Un mutante
+    /// que sacara a la nube todo lo que no es `accepted` convertiría un túnel en «tu cuenta no lo permite».
+    @Test func reverseClaim_transientAndSessionExpired_stayRetakeable_withoutANote() async throws {
+        for outcome: ReverseClaimOutcome in [.transient, .sessionExpired] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            fake.reverseClaimOutcomes = [outcome]
+            try seedJournal(context, phase: .reverseClaimLeader, reverseOriginRaw: "done")
+
+            let r = runner(context, fake)
+            await r.resume()
+
+            let j = try journal(context)
+            #expect(j.readPhase().phase == .reverseClaimLeader, "\(outcome)")
+            #expect(j.reverseAbortReasonRaw == nil, "\(outcome)")
+            #expect(j.reverseOriginRaw == "done", "\(outcome): el origen sigue para el siguiente intento")
+            #expect(r.lastReverseClaimExit == nil, "\(outcome)")
+        }
     }
 
     /// Un NUEVO runner por acción (espeja el patrón de kill: instancia nueva re-lee el store).

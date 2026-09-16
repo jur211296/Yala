@@ -32,7 +32,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (425)
+## Index (428)
 
 | id | status | path |
 |---|---|---|
@@ -358,13 +358,16 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | restore-start-fresh-keeps-the-imported-corpus | qa | tickets/qa/restore-start-fresh-keeps-the-imported-corpus.md |
 | retire-guest-vocabulary-for-session-terms | done | tickets/done/retire-guest-vocabulary-for-session-terms.md |
 | reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date | backlog | tickets/backlog/reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date.md |
+| reverse-before-mount-stays-stuck-with-an-expired-session | backlog | tickets/backlog/reverse-before-mount-stays-stuck-with-an-expired-session.md |
 | reverse-cancel-pushes-what-the-mirror-imported-during-the-wait | backlog | tickets/backlog/reverse-cancel-pushes-what-the-mirror-imported-during-the-wait.md |
-| reverse-claim-rejection-has-no-way-out-in-the-client | backlog | tickets/backlog/reverse-claim-rejection-has-no-way-out-in-the-client.md |
+| reverse-claim-exit-with-a-restored-failing-effect-keeps-the-engine-off | backlog | tickets/backlog/reverse-claim-exit-with-a-restored-failing-effect-keeps-the-engine-off.md |
+| reverse-claim-rejection-has-no-way-out-in-the-client | qa | tickets/qa/reverse-claim-rejection-has-no-way-out-in-the-client.md |
 | reverse-cutover-cerrado-para-cuentas-born-cloud | qa | tickets/qa/reverse-cutover-cerrado-para-cuentas-born-cloud.md |
 | reverse-exit-leaves-a-partial-copy-in-icloud | backlog | tickets/backlog/reverse-exit-leaves-a-partial-copy-in-icloud.md |
 | reverse-exit-on-a-reverted-account-rejects-the-retry | backlog | tickets/backlog/reverse-exit-on-a-reverted-account-rejects-the-retry.md |
 | reverse-hidden-on-a-born-cloud-second-device | backlog | tickets/backlog/reverse-hidden-on-a-born-cloud-second-device.md |
 | reverse-offered-on-a-device-without-icloud | backlog | tickets/backlog/reverse-offered-on-a-device-without-icloud.md |
+| reverse-tap-is-lost-while-a-resume-is-running | backlog | tickets/backlog/reverse-tap-is-lost-while-a-resume-is-running.md |
 | reverse-upload-ceiling-trusts-a-clock-set-back-during-the-wait | backlog | tickets/backlog/reverse-upload-ceiling-trusts-a-clock-set-back-during-the-wait.md |
 | reverse-upload-has-no-ceiling-and-no-exit | qa | tickets/qa/reverse-upload-has-no-ceiling-and-no-exit.md |
 | reverse-upload-sample-reads-unreadable-rows-as-drained | backlog | tickets/backlog/reverse-upload-sample-reads-unreadable-rows-as-drained.md |

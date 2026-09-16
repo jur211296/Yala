@@ -5979,5 +5979,8 @@
 "storage.reverseAbort.icloudFull" = "Die Rückkehr zu iCloud konnte nicht abgeschlossen werden: Dein iCloud-Speicher war voll. Schaffe Platz und versuche es erneut.";
 "storage.reverseAbort.icloudUnavailable" = "Die Rückkehr zu iCloud konnte nicht abgeschlossen werden: iCloud war auf diesem Gerät nicht verfügbar. Prüfe dein iCloud-Konto in den Einstellungen und versuche es erneut.";
 "storage.reverseAbort.stalled" = "Die Rückkehr zu iCloud konnte nicht abgeschlossen werden: iCloud hat nicht alle deine Daten erhalten. Prüfe, ob iCloud auf diesem Gerät aktiv ist, und versuche es erneut mit einer guten Verbindung. Lass Yala währenddessen geöffnet.";
+"storage.reverseAbort.claimRetryLater" = "Die Rückkehr zu iCloud konnte nicht starten: Deine Daten wurden zu dem Zeitpunkt noch in die Cloud übertragen. Versuche es in einer Weile erneut.";
+"storage.reverseAbort.claimRefused" = "Die Rückkehr zu iCloud konnte nicht starten: Dein Konto hat das nicht zugelassen. Dieser Versuch hat nichts verändert. Schreib uns an %@, und wir schauen es uns gemeinsam an.";
+"storage.reverseAbort.otherDeviceReverting" = "Die Rückkehr zu iCloud konnte nicht starten: Eines deiner anderen Geräte war bereits dabei, zu iCloud zurückzukehren. Sobald es fertig ist, kannst du es auf diesem Gerät tun.";
 "storage.progress.reverseICloudMaybeOff" = "Wenn iCloud auf diesem Gerät nicht aktiv ist, können deine Daten iCloud nicht erreichen. Aktiviere es in den Einstellungen oder brich ab, um in der Cloud zu bleiben.";
 "storage.errors.reversePendingExit" = "Die Rückkehr zu iCloud ist noch nicht möglich: Deine Cloud muss erst wieder vollständig aktiviert werden. Versuche es gleich noch einmal.";

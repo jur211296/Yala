@@ -138,7 +138,7 @@ nonisolated enum ReverseUploadBlocker: String, Equatable, Sendable {
     /// El motivo que se journalea si la espera agota su techo con esta causa. `icloudOff` cae en `stalled`, no en
     /// `icloudUnavailable`: la nota sobrevive al relanzamiento, y «iCloud no estaba disponible» sería falso para
     /// quien tenía iCloud y solo Drive apagado.
-    var abortReason: ReverseUploadAbortReason {
+    var abortReason: ReverseAbortReason {
         switch self {
         case .icloudFull:
             return .icloudFull
@@ -150,10 +150,15 @@ nonisolated enum ReverseUploadBlocker: String, Equatable, Sendable {
     }
 }
 
-/// Por qué terminó la espera de `reverseUpload` sin llegar a iCloud. Se journalea
-/// (`MigrationState.reverseAbortReasonRaw`) porque la persona puede no estar mirando cuando salta el techo: lo
-/// lee después del relanzamiento. `rawValue` WIRE-ESTABLE (un journal en vuelo lo tiene que poder leer).
-nonisolated enum ReverseUploadAbortReason: String, Equatable, Sendable {
+/// Por qué terminó la vuelta a iCloud sin llegar, en cualquiera de sus dos salidas: la espera de `reverseUpload`
+/// (ticket `reverse-upload-has-no-ceiling-and-no-exit`) y el claim que el servidor no concede
+/// (`reverse-claim-rejection-has-no-way-out-in-the-client`). Se journalea (`MigrationState.reverseAbortReasonRaw`)
+/// porque la persona puede no estar mirando cuando pasa: lo lee después, en la tarjeta de «Volver a iCloud».
+/// `rawValue` WIRE-ESTABLE (un journal en vuelo lo tiene que poder leer); el nombre del tipo no viaja, y por eso se
+/// pudo renombrar al sumarse las salidas del claim.
+nonisolated enum ReverseAbortReason: String, Equatable, Sendable {
+    // MARK: Salidas de la espera de `reverseUpload`
+
     /// La persona tocó «Cancelar y seguir en la nube». No lleva nota: lo decidió ella.
     case cancelled
     /// iCloud sin espacio.
@@ -162,6 +167,23 @@ nonisolated enum ReverseUploadAbortReason: String, Equatable, Sendable {
     case icloudUnavailable
     /// El techo largo sin avanzar, sin que CloudKit dijera por qué (también sin token de iCloud Drive).
     case stalled
+
+    // MARK: Salidas del claim (`reverseClaimLeader`)
+
+    /// El servidor no la deja empezar TODAVÍA: la migración a la nube de esta cuenta aún tiene su lease
+    /// (`migration_in_progress`). Pasajero: se va a los 60 min sin latido, o antes si esa migración termina.
+    case claimRetryLater
+    /// El servidor no la deja empezar y esperar no lo cambia: `not_complete`, `no_profile` o un motivo que este build
+    /// no conoce. Un motivo desconocido cae aquí a propósito: quedarse al 15 % es el bug que esta salida quita.
+    case claimRefused
+    /// Otro dispositivo de la cuenta ya es el líder de su propia vuelta a iCloud (`other_leader`).
+    case otherDeviceReverting
+
+    /// El porqué que se journalea cuando el servidor rechaza el claim con `serverReason` (el `reason` del RPC tal
+    /// cual). Solo `migration_in_progress` es pasajero; cualquier otro motivo es permanente.
+    static func forClaimRejection(serverReason: String) -> ReverseAbortReason {
+        serverReason == "migration_in_progress" ? .claimRetryLater : .claimRefused
+    }
 }
 
 nonisolated enum ReverseUploadBlockerLogic {

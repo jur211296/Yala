@@ -51,9 +51,10 @@ nonisolated enum ReverseUploadWaitingCopyLogic {
         return WaitingCopy(message: message, pending: sample.pending)
     }
 
-    /// El motivo que la pantalla explica tras una salida de la espera. `nil` = nada que explicar: no hubo salida, o
-    /// la pidió la persona, que ya sabe por qué sigue en la nube.
-    static func abortNote(_ reason: ReverseUploadAbortReason?) -> ReverseUploadAbortReason? {
+    /// El motivo que la pantalla explica tras una salida de la vuelta: de la espera o del claim que el servidor no
+    /// concedió (ticket `reverse-claim-rejection-has-no-way-out-in-the-client`). `nil` = nada que explicar: no hubo
+    /// salida, o la pidió la persona, que ya sabe por qué sigue en la nube.
+    static func abortNote(_ reason: ReverseAbortReason?) -> ReverseAbortReason? {
         guard let reason, reason != .cancelled else { return nil }
         return reason
     }

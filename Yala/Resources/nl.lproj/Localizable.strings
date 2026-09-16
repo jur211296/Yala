@@ -5991,5 +5991,8 @@
 "storage.reverseAbort.icloudFull" = "We konden de terugkeer naar iCloud niet afronden: iCloud had geen ruimte meer. Maak ruimte vrij en probeer het opnieuw.";
 "storage.reverseAbort.icloudUnavailable" = "We konden de terugkeer naar iCloud niet afronden: iCloud was niet beschikbaar op dit apparaat. Controleer je iCloud-account in Instellingen en probeer het opnieuw.";
 "storage.reverseAbort.stalled" = "We konden de terugkeer naar iCloud niet afronden: iCloud heeft niet al je gegevens ontvangen. Controleer of iCloud op dit apparaat aanstaat en probeer het opnieuw met een goede verbinding. Laat Yala open tijdens het uploaden.";
+"storage.reverseAbort.claimRetryLater" = "We konden de terugkeer naar iCloud niet starten: je gegevens werden nog naar de cloud overgezet. Probeer het over een tijdje opnieuw.";
+"storage.reverseAbort.claimRefused" = "We konden de terugkeer naar iCloud niet starten: je account stond dat niet toe. Die poging heeft niets veranderd. Mail ons op %@ en we kijken er samen naar.";
+"storage.reverseAbort.otherDeviceReverting" = "We konden de terugkeer naar iCloud niet starten: een ander apparaat van je was al bezig met de terugkeer naar iCloud. Zodra dat klaar is, kun je het op dit apparaat doen.";
 "storage.progress.reverseICloudMaybeOff" = "Als iCloud niet is ingeschakeld op dit apparaat, kunnen je gegevens iCloud niet bereiken. Schakel het in via Instellingen of annuleer om in de cloud te blijven.";
 "storage.errors.reversePendingExit" = "Terug naar iCloud kan nog niet: je cloud moet eerst helemaal opnieuw geactiveerd worden. Probeer het zo opnieuw.";

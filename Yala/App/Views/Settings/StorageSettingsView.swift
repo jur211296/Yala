@@ -292,12 +292,13 @@ struct StorageSettingsView: View {
             Text(L10n.Storage.Revert.body)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
-            // La última vuelta no llegó a iCloud: se dice por qué ANTES del botón, para que volver a intentarlo sea
-            // una decisión informada. Sale del journal, así que sigue aquí tras el relanzamiento.
+            // La última vuelta no llegó a iCloud —la espera no drenó, o el servidor no la dejó empezar—: se dice por qué
+            // ANTES del botón, para que volver a intentarlo sea una decisión informada. Sale del journal, así que sigue
+            // aquí tras el relanzamiento.
             if let reason = ReverseUploadWaitingCopyLogic.abortNote(controller.reverseAbortReason) {
                 // Naranja solo el icono: como TEXTO, `warningForeground` sobre la tarjeta blanca no llega a AA.
                 Label {
-                    Text(reverseAbortMessage(reason))
+                    Text(L10n.Storage.ReverseAbort.note(for: reason))
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 } icon: {
@@ -485,20 +486,6 @@ struct StorageSettingsView: View {
         }
     }
 
-    /// El porqué de una salida de la espera, para la tarjeta de relanzar y la de «Volver a iCloud».
-    private func reverseAbortMessage(_ reason: ReverseUploadAbortReason) -> String {
-        switch reason {
-        case .icloudFull:
-            return L10n.Storage.ReverseAbort.icloudFull
-        case .icloudUnavailable:
-            return L10n.Storage.ReverseAbort.icloudUnavailable
-        case .stalled, .cancelled:
-            // `cancelled` no llega aquí (`abortNote` lo filtra); se agrupa con `stalled` para que el switch sea
-            // exhaustivo sin un `default` que se trague un motivo nuevo.
-            return L10n.Storage.ReverseAbort.stalled
-        }
-    }
-
     // MARK: - Needs relaunch (assisted relaunch — NEVER exit())
 
     private func relaunchCard(
@@ -517,7 +504,7 @@ struct StorageSettingsView: View {
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
             if let reason = ReverseUploadWaitingCopyLogic.abortNote(reverseAbort) {
-                Text(reverseAbortMessage(reason))
+                Text(L10n.Storage.ReverseAbort.note(for: reason))
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

@@ -137,6 +137,8 @@ enum MetricsCanary: String {
     // Techo de `reverseUpload` (ticket `reverse-upload-has-no-ceiling-and-no-exit`)
     case cloudReverseUploadWaiting
     case cloudReverseUploadAborted
+    // Salida del claim de la reversa (ticket `reverse-claim-rejection-has-no-way-out-in-the-client`)
+    case cloudReverseClaimRejected
     case accountDeletionCompleted
     case accountDeletionFailed
     case siwaExchangeFailed
@@ -493,9 +495,26 @@ extension MetricsService {
     }
 
     /// La espera de «Volver a iCloud» terminó sin llegar a iCloud y la reversa volvió a la nube.
-    /// `detail` = `ReverseUploadAbortReason.rawValue`: `cancelled` lo pidió la persona; el resto, el techo.
+    /// `detail` = `ReverseAbortReason.rawValue`: `cancelled` lo pidió la persona; el resto, el techo.
     static func cloudReverseUploadAborted(reason: String) {
         canary(.cloudReverseUploadAborted, detail: reason)
+    }
+
+    /// El claim de «Volver a iCloud» no se concedió y la reversa volvió a la nube sin empezar (ticket
+    /// `reverse-claim-rejection-has-no-way-out-in-the-client`). `detail` = el motivo del servidor (`not_complete`,
+    /// `migration_in_progress`, `no_profile`, `other_leader`): un `not_complete` sostenido es el 2.º dispositivo de una
+    /// cuenta ya revertida (`reverse-exit-on-a-reverted-account-rejects-the-retry`).
+    static func cloudReverseClaimRejected(reason: String) {
+        canary(.cloudReverseClaimRejected, detail: reverseClaimRejectedDetail(serverReason: reason))
+    }
+
+    /// El motivo del servidor tal cual si tiene forma de código; si no, `other`. El gateway rechaza el LOTE entero de
+    /// eventos si un detalle viene vacío o pasa de 128 caracteres (`gateway/src/metrics.ts`), y este texto llega de la
+    /// red: un motivo raro no puede tirar los demás canarios del spool.
+    nonisolated static func reverseClaimRejectedDetail(serverReason: String) -> String {
+        let isCode = (1...64).contains(serverReason.count)
+            && serverReason.unicodeScalars.allSatisfy { CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyz0123456789_").contains($0) }
+        return isCode ? serverReason : "other"
     }
 
     /// Par de storage incompleto (`.cloud` + mirror ON) en fase estable ⇒ motor del dominio bloqueado.

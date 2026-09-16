@@ -36,9 +36,17 @@ La misma mentira sale con un `reverse_abort` pendiente sin red, durante el rato 
 a entrar. Cada toque de «Volver a iCloud» dice «Aún no podemos volver a iCloud: falta terminar de reactivar tu nube.
 Vuelve a intentarlo en un momento», y ningún momento lo arregla.
 
+**Y con cualquier efecto de migración pendiente que falle** (segunda pasada de review de
+`reverse-claim-rejection-has-no-way-out-in-the-client`, 2026-09-16). Con un pendiente el motor no arranca y se queda en
+`.idle`, que también cae al `else`. Pasa con el `complete` de un líder recién migrado que no llega (el
+`.runLeaderReconcileFromFrozenCloudKit` sin red) y, desde ese ticket, también tras un intento de «Volver a iCloud» que el
+servidor no concede, porque la salida repone ese pendiente. El estado es el mismo que antes del toque: la mentira no es
+nueva, pero ahora se ve justo después de un aviso de «vuelve a intentarlo en un rato».
+
 ## Criterios de aceptación
 
-- [ ] `syncStatusSection` no dice «Todo al día» con el motor en `.stoppedUntilRelaunch`.
+- [ ] `syncStatusSection` no dice «Todo al día» con el motor en `.stoppedUntilRelaunch`, ni en `.idle` con efectos de
+      migración pendientes.
 - [ ] Decidido qué se le dice a quien sale de una vuelta que ya lleva otro dispositivo.
 
 ## Relacionado

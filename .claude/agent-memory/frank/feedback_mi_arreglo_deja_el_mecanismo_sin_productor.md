@@ -1,6 +1,6 @@
 ---
 name: mi-arreglo-deja-el-mecanismo-sin-productor
-description: Quitar el último productor de un mecanismo lo deja vivo pero inalcanzable — y el docblock que escribo sobre el cambio miente si no mido a dónde llega de verdad el outcome nuevo.
+description: Quitar el último productor de un mecanismo lo deja vivo pero inalcanzable — y el docblock que escribo sobre el cambio miente si no mido a dónde llega de verdad el outcome nuevo. Y una salida que vuelve al origen tiene que devolver lo que la arista de entrada tiró (2026-09-16: el único productor de `complete`).
 metadata:
   type: feedback
 ---
@@ -53,3 +53,21 @@ de tests, no yo:
 **How to apply:** al retirar un mecanismo, antes de borrar cada aserción sobre él, lista sus LECTORES (no
 solo su escritor) y deja una aserción de conducta por cada uno. Y cuando escribas el invariante que queda,
 cuenta sus casos y exige un test por caso: el que no lo tenga suele ser justo el que el PR cambia.
+
+## La salida que «deshace» un gesto tiene que devolver lo que el gesto tiró al ENTRAR (2026-09-16)
+
+`reverse-claim-rejection-has-no-way-out-in-the-client`. Diseñé la salida de un claim rechazado como «volver al origen sin
+efectos», calcada de `reverseOtherLeader`, con 13 mutantes cazados. **Dos lentes independientes** encontraron lo mismo:
+la ENTRADA de la vuelta (`reverseActivated`) reemplaza los pendientes del origen, y mi salida no los devolvía. Uno de
+ellos, el reconcile del líder, era **el único productor de `complete`**: sin él `migration_in_progress` se quedaba puesto
+en el backend para toda la cuenta. Antes de mi arreglo lo curaba, de rebote, el takeover de la reversa a los 60 min — o sea
+que el bug viejo (15 % eterno) tapaba un mecanismo de curación que mi salida limpia se llevó.
+
+**How to apply:**
+- Al escribir una salida que devuelve a un estado anterior, lista lo que la arista de ENTRADA cambió además de la fase
+  (pendientes reemplazados, campos limpiados) y decide uno por uno si vuelve. «Volver a la fase» no es «volver a como estaba».
+- Busca qué **curaba de rebote** el comportamiento viejo, aunque fuera malo: una espera eterna que acaba en takeover cura
+  cosas que una salida rápida no.
+- Y la segunda pasada, sobre el arreglo del arreglo, volvió a encontrar el coste: reponer lo que falla siempre deja el motor
+  parado esa sesión. Se aceptó con ticket porque lo repuesto era lo que ya estaba — la diferencia con añadir un efecto nuevo
+  es exactamente la que separa «devolver» de «inventar».

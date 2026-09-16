@@ -5979,5 +5979,8 @@
 "storage.reverseAbort.icloudFull" = "Não conseguimos concluir a volta para o iCloud: o iCloud ficou sem espaço. Libere espaço e tente de novo.";
 "storage.reverseAbort.icloudUnavailable" = "Não conseguimos concluir a volta para o iCloud: o iCloud não estava disponível neste dispositivo. Verifique sua conta do iCloud em Ajustes e tente de novo.";
 "storage.reverseAbort.stalled" = "Não conseguimos concluir a volta para o iCloud: o iCloud não recebeu todos os seus dados. Verifique se o iCloud está ativado neste dispositivo e tente de novo com uma boa conexão e com o Yala aberto enquanto envia.";
+"storage.reverseAbort.claimRetryLater" = "Não conseguimos começar a volta para o iCloud: seus dados ainda estavam terminando de passar para a nuvem. Tente de novo daqui a pouco.";
+"storage.reverseAbort.claimRefused" = "Não conseguimos começar a volta para o iCloud: sua conta não permitia isso. Essa tentativa não mudou nada. Escreva para %@ e vamos verificar junto com você.";
+"storage.reverseAbort.otherDeviceReverting" = "Não conseguimos começar a volta para o iCloud: outro dos seus dispositivos já estava voltando para o iCloud. Quando ele terminar, você poderá fazer isso neste.";
 "storage.progress.reverseICloudMaybeOff" = "Se o iCloud não estiver ativo neste dispositivo, seus dados não conseguem chegar ao iCloud. Ative-o em Ajustes ou cancele para continuar na nuvem.";
 "storage.errors.reversePendingExit" = "Ainda não é possível voltar para o iCloud: falta terminar de reativar sua nuvem. Tente de novo em instantes.";

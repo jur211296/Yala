@@ -5991,5 +5991,8 @@
 "storage.reverseAbort.icloudFull" = "Nie udało się dokończyć powrotu do iCloud: w iCloud zabrakło miejsca. Zwolnij miejsce i spróbuj ponownie.";
 "storage.reverseAbort.icloudUnavailable" = "Nie udało się dokończyć powrotu do iCloud: iCloud nie był dostępny na tym urządzeniu. Sprawdź swoje konto iCloud w Ustawieniach i spróbuj ponownie.";
 "storage.reverseAbort.stalled" = "Nie udało się dokończyć powrotu do iCloud: iCloud nie otrzymał wszystkich Twoich danych. Sprawdź, czy iCloud jest włączony na tym urządzeniu, i spróbuj ponownie przy dobrym połączeniu i z otwartą aplikacją Yala podczas przesyłania.";
+"storage.reverseAbort.claimRetryLater" = "Nie udało się rozpocząć powrotu do iCloud: Twoje dane wciąż były przenoszone do chmury. Spróbuj ponownie za jakiś czas.";
+"storage.reverseAbort.claimRefused" = "Nie udało się rozpocząć powrotu do iCloud: Twoje konto na to nie pozwalało. Ta próba niczego nie zmieniła. Napisz do nas na %@, a sprawdzimy to razem.";
+"storage.reverseAbort.otherDeviceReverting" = "Nie udało się rozpocząć powrotu do iCloud: inne z Twoich urządzeń już wracało do iCloud. Gdy skończy, będzie można zrobić to na tym urządzeniu.";
 "storage.progress.reverseICloudMaybeOff" = "Jeśli iCloud nie jest włączony na tym urządzeniu, Twoje dane nie mogą trafić do iCloud. Włącz go w Ustawieniach lub anuluj, aby zostać w chmurze.";
 "storage.errors.reversePendingExit" = "Nie można jeszcze wrócić do iCloud: Twoja chmura musi najpierw zostać ponownie w pełni aktywowana. Spróbuj ponownie za chwilę.";

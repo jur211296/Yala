@@ -5991,5 +5991,8 @@
 "storage.reverseAbort.icloudFull" = "无法完成返回 iCloud：当时 iCloud 空间已满。请释放空间后重试。";
 "storage.reverseAbort.icloudUnavailable" = "无法完成返回 iCloud：当时这台设备上的 iCloud 不可用。请在设置中检查您的 iCloud 账户后重试。";
 "storage.reverseAbort.stalled" = "无法完成返回 iCloud：iCloud 未收到您的全部数据。请确认这台设备已开启 iCloud，并在网络良好时重试，上传期间请保持 Yala 打开。";
+"storage.reverseAbort.claimRetryLater" = "无法开始返回 iCloud：当时您的数据仍在迁移到云端。请稍后重试。";
+"storage.reverseAbort.claimRefused" = "无法开始返回 iCloud：当时您的账户不允许此操作。那次尝试没有做任何更改。请写信到 %@，我们会和您一起查看。";
+"storage.reverseAbort.otherDeviceReverting" = "无法开始返回 iCloud：当时您的另一台设备正在返回 iCloud。完成后，您就可以在这台设备上操作。";
 "storage.progress.reverseICloudMaybeOff" = "如果这台设备未开启 iCloud，您的数据将无法上传到 iCloud。请在设置中开启，或取消以继续使用云端。";
 "storage.errors.reversePendingExit" = "暂时无法返回 iCloud：需要先完成云端的重新启用。请稍后重试。";
