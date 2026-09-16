@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "onboarding, modo-nube"
 created: 2026-09-14
+updated: 2026-09-16
 source: "review adversarial de `restore-start-fresh-keeps-the-imported-corpus` (2026-09-14) · VISTO en simulador"
 ---
 
@@ -54,6 +55,19 @@ Dos caminos, y el primero es el que parece bueno:
 **Ojo con la salida fácil:** un `@State` o una preferencia al lado del step que diga «vengo de Restaurar»
 es el estado paralelo que la puerta de Grupos ya pagó una vez; el dato viaja DENTRO del case.
 
+## Un tercer productor, del mismo defecto (2026-09-16)
+
+Lo cazó la review adversarial de `cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest`. **Leído en el código,
+sin ejecutar.**
+
+- «Crear otra cuenta» abre el Welcome en `.newChooser` **sin bypass**, aunque quede una sola card
+  (`ContentView`, `onCreateAnotherAccount`). Queda una sola cuando el kill del alta está puesto —ya pasaba— y, desde el
+  2026-09-16, en un teléfono sin App Attest.
+- Con esa card sola: privada → puerta de iCloud → chevron → `newBranchOriginStep` da `.chooser`, porque decide por cuántas
+  cards hay y no por de dónde se vino. La persona salta el chooser que sí vio y cae en el de nivel 1, donde «Es mi primera
+  vez» la vuelve a encaminar al faro.
+- La opción 1 de arriba (`returningTo:` dentro del case) lo cubre igual: ese productor pasaría `.newChooser`.
+
 ## Criterios de aceptación
 
 - [ ] Restaurar → «Empezar desde cero» → puerta → chevron → **vuelve a Restaurar**.
@@ -61,6 +75,7 @@ es el estado paralelo que la puerta de Grupos ya pagó una vez; el dato viaja DE
       (o al chooser de nivel 1 donde no haya sub-chooser). Sin cambios.
 - [ ] La tercera salida de la puerta («Traer mis datos») sigue llevando a Restaurar, y sigue retirando el
       arm del borrado.
+- [ ] «Crear otra cuenta» con una sola card → privada → puerta → chevron → **vuelve a ese chooser**, no al de nivel 1.
 
 ## Relacionados
 
