@@ -4,7 +4,7 @@ status: qa
 priority: medium
 area: "modo-nube, attest, sesión"
 created: 2026-09-15
-updated: 2026-09-15
+updated: 2026-09-16
 source: "alcance de `groups-phone-that-never-attests-is-told-to-retry-forever` (2026-09-15): la excepción de Jürgen es para los cambios de grupos"
 ---
 
@@ -131,15 +131,27 @@ principal, como la del asistente, ahora con indicador.
 
 **Montaje.** Xcode con el scheme **Yala Dev** en el simulador iPhone 17 Pro. Ningún scheme define `YALA_DEV_SHARED_SECRET`,
 así que el simulador no consigue App Attest y la puerta del motor falla con `.unavailable`, que cuenta. Hace falta una
-cuenta en la nube creada desde ese simulador («Tu cuenta en la nube»). Si esa opción no sale, la nube está apagada por
-configuración remota y el QA no se puede montar.
+cuenta en la nube creada desde ese simulador («Tu cuenta en la nube»). Si esa opción no sale **con el secreto puesto**
+(recuadro de abajo), la nube está apagada por configuración remota y el QA no se puede montar.
 
-> **Desde el 2026-09-16 «Tu cuenta en la nube» ya no sale en este simulador, y no es la configuración remota**
-> (`cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest`): el simulador no tiene App Attest y sin él no se
-> ofrece la nube. Para crear la cuenta: «Ya tengo una cuenta» → Google → firma con una cuenta de Google sin cuenta de Yala
-> → «No encontramos una cuenta» → «Crear mi cuenta». Esa puerta no mira el attest
-> (`cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest`). Si un día se cierra, crea la cuenta con
-> `YALA_DEV_SHARED_SECRET` en el scheme y quítalo antes del paso 1. **Sin probar**: deducido del código.
+> **Desde el 2026-09-16 este simulador no puede crear la cuenta sin ayuda, y no es la configuración remota.** El
+> simulador no tiene App Attest, y sin él no se ofrece darse de alta en la nube por ninguna puerta: ni «Tu cuenta en la
+> nube» (`cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest`) ni «Crear mi cuenta» tras «No encontramos una
+> cuenta» (`cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest`). La cuenta se crea con el secreto de dev
+> puesto y se quita antes del paso 1:
+>
+> 1. Consigue el valor de `DEV_SHARED_SECRET` del gateway de **staging**. No está en `~/Secrets` y Wrangler no deja leerlo
+>    de vuelta: o lo tienes tú, o hay que rotarlo (`npx wrangler secret put DEV_SHARED_SECRET` en `gateway/`), y rotarlo
+>    cambia el valor para todo lo que ya lo use en staging.
+> 2. Xcode → scheme **Yala Dev** → Product → Scheme → Edit Scheme… → Run → Arguments → Environment Variables → `+` →
+>    nombre `YALA_DEV_SHARED_SECRET`, valor el del paso anterior.
+> 3. Lanza la app en el simulador, «Es mi primera vez» → «Tu cuenta en la nube» → crea la cuenta y termina el onboarding.
+>    Con el secreto puesto la card sí sale.
+> 4. Para la app, **desmarca o borra la variable** en el mismo sitio del paso 2 y vuelve a lanzar desde Xcode. El token del
+>    bypass solo vivía en memoria, así que desde este lanzamiento el simulador vuelve a no tener App Attest.
+> 5. Sigue por el paso 1 de abajo.
+>
+> **Sin probar**: deducido del código.
 
 1. Lanza la app, apunta un gasto y déjala en primer plano unos minutos, con la consola filtrada por `CloudSyncRuntime`.
    - **Esperado:** `CloudSyncRuntime stopped reason=attest-terminal` tras unos ciclos. La puerta para el motor hasta
