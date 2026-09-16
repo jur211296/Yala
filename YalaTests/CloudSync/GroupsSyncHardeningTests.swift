@@ -1004,7 +1004,11 @@ struct GroupsSyncHardeningTests {
         let verdict = CloudSignOutFlowLogic.pushAllVerdict(
             livePendingCount: try context.fetchCount(FetchDescriptor<GroupSyncOutbox>()), cycleOutcome: second,
             channelKilled: client.stoppedByChannelKill(for: second),
-            attestUnavailable: client.stoppedByUnavailableAttest(for: second), iteration: 1, maxIterations: 20)
+            attestUnavailable: client.stoppedByUnavailableAttest(for: second),
+            // El 401 del attest también choca con el servidor, así que el testigo de la subida viene ENCENDIDO —y
+            // pierde igual: `classify` lee el attest primero, porque un teléfono que lleva un día sin conseguirlo
+            // tiene su propio aviso y el suyo no habla de subidas (2026-09-16).
+            uploadFailed: client.stoppedByFailedUpload(for: second), iteration: 1, maxIterations: 20)
         #expect(verdict == .blocked(pendingCount: 1, reason: .attestUnavailable))
         // Con el testigo ENCENDIDO, el outcome sigue mandando: un ciclo que no es `.transient` no afirma nada.
         for otro in [SyncCadencePolicy.CadenceOutcome.coalesced, .completed, .sessionExpired, .accountUnavailable] {

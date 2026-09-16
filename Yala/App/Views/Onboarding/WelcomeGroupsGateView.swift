@@ -391,12 +391,33 @@ struct WelcomeGroupsGateView: View {
                 YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterBlock() }
                     .accessibilityIdentifier("welcome_groups_gate_neutral_channel_paused_back")
             }
+        case .blocked(_, .uploadRetryLater):
+            // **La subida que no llegó al servidor** (2026-09-16). Sin red, con un 5xx o con un cortafuegos
+            // delante, el cierre no ha guardado nada: hasta hoy esto viajaba dentro de `.transient` y esta
+            // pantalla decía «todavía estamos terminando de guardar unos cambios» tras 45 s de espera muda.
+            // Aquí aterriza sobre todo quien está sin conexión con el token caducado, desde que el canal de
+            // Grupos dejó de llamar «caducada» a una renovación sin red
+            // (`groups-push-reads-an-offline-token-refresh-as-a-session-expiry`).
+            //
+            // **Sin esta rama caería en el catch-all de abajo**, que manda «vuelve y entra con esa cuenta»: el
+            // consejo equivocado, porque volver a entrar no arregla una red que no está. Ese `case .blocked`
+            // final no es exhaustivo, así que el compilador no habría avisado — el propio docblock de
+            // `.uploadRetryLater` lo dejó anotado el 2026-09-14, para el día en que naciera un segundo productor.
+            //
+            // El mensaje es el MISMO que Ajustes y la hoja del cambio de Apple ID enseñan para este motivo, y el
+            // título el de las otras ramas de esta pantalla, que nombran el mismo hecho: faltan cambios por subir.
+            noticeShell(icon: "arrow.trianglehead.2.clockwise.rotate.90",
+                        title: L10n.Welcome.Groups.neutralBlockedTitle,
+                        body: L10n.Groups.Errors.uploadRetryLater,
+                        identifier: "welcome_groups_gate_neutral_upload_retry") {
+                YalaPrimaryButton(L10n.Welcome.Groups.gateBack) { leaveAfterBlock() }
+                    .accessibilityIdentifier("welcome_groups_gate_neutral_upload_retry_back")
+            }
         case .blocked(_, .transient):
             // **Lo pasajero va aparte** (2026-09-15). Aquí llega, tras los 45 s de reintentos del cierre, lo que
-            // se cura esperando y no volviendo a entrar: un corte de red, un 5xx, un guardado que aún se asienta.
-            // Desde que el canal de Grupos deja de llamar «caducada» a una renovación sin red
-            // (`groups-push-reads-an-offline-token-refresh-as-a-session-expiry`), aterriza aquí también quien está
-            // sin conexión con el token caducado, y el catch-all de abajo le mandaba volver a entrar.
+            // se cura esperando y no volviendo a entrar. **Desde el 2026-09-16 es SOLO el outbox que aún drena**:
+            // el tope de iteraciones con ciclos sanos, la quiescencia del import sin asentar, la cancelación.
+            // La subida fallida se fue a la rama de arriba, que es la mitad por la que este texto mentía.
             //
             // El mensaje es el MISMO que Ajustes y la hoja del cambio de Apple ID enseñan para este motivo
             // (`SignOutBlockedCopy`), por decisión de Jürgen del 2026-09-15: un solo texto para el mismo caso. El título
@@ -414,7 +435,9 @@ struct WelcomeGroupsGateView: View {
             // que caducó (`blockIfGroupsCannotUpload`). No se descartan nunca, así que la única salida
             // honesta es volver y entrar con esa cuenta. Sin esta rama la pantalla era un spinner eterno.
             // **Con el canal en pausa NO se llega aquí**: ese motivo tiene su propia rama arriba, porque
-            // aquí el consejo de volver a entrar sería falso. **Lo pasajero tampoco**, por lo mismo.
+            // aquí el consejo de volver a entrar sería falso. **Lo pasajero tampoco, y desde el 2026-09-16 son
+            // DOS ramas**: el outbox que drena y la subida que no llegó, que se separaron justo para que ésta
+            // no les dijera a los dos que volvieran a entrar con la cuenta.
             noticeShell(icon: "arrow.trianglehead.2.clockwise.rotate.90",
                         title: L10n.Welcome.Groups.neutralBlockedTitle,
                         body: L10n.Welcome.Groups.neutralBlockedBody,

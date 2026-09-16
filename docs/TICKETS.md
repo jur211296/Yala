@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (408)
+## Index (409)
 
 | id | status | path |
 |---|---|---|
@@ -377,11 +377,12 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | shared-state-guard-misses-wipelocalgroupsdomain | backlog | tickets/backlog/shared-state-guard-misses-wipelocalgroupsdomain.md |
 | shell-and-wipe-alert-read-the-session-axis-differently | backlog | tickets/backlog/shell-and-wipe-alert-read-the-session-axis-differently.md |
 | shell-derives-from-two-session-axes | qa | tickets/qa/shell-derives-from-two-session-axes.md |
+| sign-out-block-reason-is-only-logged-on-the-cloud-path | backlog | tickets/backlog/sign-out-block-reason-is-only-logged-on-the-cloud-path.md |
 | sign-out-wipe-abort-in-icloud-says-nothing | backlog | tickets/backlog/sign-out-wipe-abort-in-icloud-says-nothing.md |
 | sign-out-wipe-abort-loops-the-groups-gate | backlog | tickets/backlog/sign-out-wipe-abort-loops-the-groups-gate.md |
 | signout-alert-fires-on-detach-blocks-it-did-not-cause | backlog | tickets/backlog/signout-alert-fires-on-detach-blocks-it-did-not-cause.md |
 | signout-blocked-alert-button-has-no-test-identifier | backlog | tickets/backlog/signout-blocked-alert-button-has-no-test-identifier.md |
-| signout-pending-copy-says-wait-seconds-when-offline | backlog | tickets/backlog/signout-pending-copy-says-wait-seconds-when-offline.md |
+| signout-pending-copy-says-wait-seconds-when-offline | done | tickets/done/signout-pending-copy-says-wait-seconds-when-offline.md |
 | siri-ai-integration-ios-27 | backlog | tickets/backlog/siri-ai-integration-ios-27.md |
 | siri-intent-dual-container | qa | tickets/qa/siri-intent-dual-container.md |
 | smart-ai-notifications | backlog | tickets/backlog/smart-ai-notifications.md |

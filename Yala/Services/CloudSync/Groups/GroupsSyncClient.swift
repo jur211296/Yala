@@ -225,6 +225,36 @@ final class GroupsSyncClient {
     func stoppedByUnavailableAttest(for outcome: SyncCadencePolicy.CadenceOutcome) -> Bool {
         outcome == .transient && lastCycleHitAttestRequired && GroupsAttestStreakStore.isTerminal(now: now())
     }
+
+    /// El testigo de la SUBIDA que no llegó: si el ciclo que acaba de correr chocó con el servidor **empujando**.
+    /// Molde exacto de sus dos hermanos —lo baja `syncCycleOnce` al entrar y solo lo suben las ramas del push—,
+    /// así que describe el ÚLTIMO ciclo y no la vida del proceso.
+    ///
+    /// **Existe porque `CadenceOutcome.transient` NO es «la subida falló», y confundirlos fue un bug medido**
+    /// (review adversarial del 2026-09-16, ticket `signout-pending-copy-says-wait-seconds-when-offline`). Ese
+    /// outcome es el cajón de todo lo pasajero, y además **el outcome del ciclo es el del PULL siempre que el push
+    /// vaya bien** (`syncCycleOnce`: el push que no para devuelve `nil` en `stopOutcome` y el veredicto sale de
+    /// `GroupsSyncCadence.outcome(pull:)`). Sin este testigo, dos poblaciones oían «tus cambios no llegaron al
+    /// servidor» con la subida perfecta: la del `save()` LOCAL de una página que no entra
+    /// (`pullUntilExhausted`, `guard saved`) —que es literalmente el caso de H-2026-07-18-6, el que motivó los 45 s
+    /// de reintentos— y la del pull que agota su tope de páginas.
+    private var lastCycleFailedUpload = false
+
+    /// ¿Paró el ciclo que acaba de correr porque la SUBIDA no llegó al servidor? Es la señal que el push-all previo
+    /// a cerrar sesión o a soltar la cuenta necesita para elegir entre los dos avisos de lo pasajero
+    /// (`CloudSignOutFlowLogic.BlockReason.uploadRetryLater` frente a `.transient`).
+    ///
+    /// **Marca lo que habló con el servidor y falló**: la petición que lanzó, la respuesta que no era HTTP, un 5xx,
+    /// el 403 de un cortafuegos, el 409 que no es la reversa, el decode de la respuesta, el 401 del attest, y el
+    /// token que no se pudo renovar con la sesión todavía guardada —que es un refresh HTTP que no volvió—.
+    ///
+    /// **Y NO marca lo que es del teléfono**: el `fetch` del outbox, el `buildDelta` de una fila poison, ni el
+    /// teardown que invalida un 200 que sí llegó. Marcar de menos deja el aviso conservador de siempre («un momento
+    /// más»), que es el comportamiento anterior al ticket; marcar de más le echa la culpa al servidor de algo que
+    /// pasó aquí dentro. Por eso la marca es POSITIVA y se enciende donde ocurre el fallo, no donde se traduce.
+    func stoppedByFailedUpload(for outcome: SyncCadencePolicy.CadenceOutcome) -> Bool {
+        outcome == .transient && lastCycleFailedUpload
+    }
     /// Contador de transitorios consecutivos para el backoff exponencial (reset al `.completed`/stop).
     private var consecutiveTransients = 0
     /// Sleep INYECTABLE entre vueltas del loop (default `Task.sleep`) — los tests inyectan uno que no
@@ -554,6 +584,10 @@ final class GroupsSyncClient {
         // Lo mismo para el testigo del attest ausente (ver `lastCycleHitAttestRequired`): un 401 de un ciclo anterior no
         // puede convertir el corte de red de éste en «este teléfono no puede sincronizar».
         lastCycleHitAttestRequired = false
+        // Y para el de la subida que no llegó (ver `lastCycleFailedUpload`). Aquí el reset importa el doble: el
+        // veredicto del ciclo sale del PULL siempre que el push no pare (línea de abajo), así que sin bajarlo un
+        // push fallido de hace tres ciclos convertiría el `save()` local de éste en «no llegaron al servidor».
+        lastCycleFailedUpload = false
         drainOnce(context: context)
         let push = await pushPending(context: context)
         guard generation == teardownGeneration else { return .coalesced }  // teardown durante el push
@@ -1476,6 +1510,10 @@ final class GroupsSyncClient {
         guard !rows.isEmpty else { return .completed([]) }
 
         guard var token = await tokenProvider(), !token.isEmpty else {
+            // La sesión que el SDK CONSERVA tras un refresh que no volvió: ese refresh es una petición HTTP al
+            // servidor de auth, así que la subida falló por la red y no por este teléfono. Es el caso del ticket
+            // `signout-pending-copy-says-wait-seconds-when-offline`.
+            if !sdkRemovedTheSession() { lastCycleFailedUpload = true }
             return sdkRemovedTheSession() ? .sessionExpired(pending: rows.count) : .transient
         }
         // Attest UNA vez para todos los chunks (TTL de sesión ≫ duración del push, molde personal).
@@ -1551,9 +1589,16 @@ final class GroupsSyncClient {
             do {
                 (data, response) = try await urlSession.data(for: request)
             } catch {
+                // Aquí empieza el testigo de la subida fallida, y es su caso más puro: la petición salió y no
+                // volvió (sin cobertura, timeout, DNS, TLS). Se enciende donde ocurre el fallo, no donde se
+                // traduce — ver `lastCycleFailedUpload`.
+                lastCycleFailedUpload = true
                 return .transient
             }
-            guard let http = response as? HTTPURLResponse else { return .transient }
+            guard let http = response as? HTTPURLResponse else {
+                lastCycleFailedUpload = true
+                return .transient
+            }
 
             switch http.statusCode {
             case 200:
@@ -1573,6 +1618,9 @@ final class GroupsSyncClient {
                     applyResults(decoded.results, outcomeInfo: outcomeInfo, rows: chunk, context: context)
                     return .completed(decoded.results)
                 } catch {
+                    // El servidor contestó pero su respuesta no se pudo leer, así que nada quedó confirmado aquí:
+                    // para la persona, la subida no llegó. El copy del 2026-09-14 ya nombra este caso.
+                    lastCycleFailedUpload = true
                     return .transient
                 }
             case 401 where GatewayErrorEnvelope.isAttestRequired(data):
@@ -1587,6 +1635,10 @@ final class GroupsSyncClient {
                 // cambios (`stoppedByUnavailableAttest(for:)`).
                 GroupsSyncBreadcrumb.groupsAttestRequired(edge: "push")
                 lastCycleHitAttestRequired = true
+                // El servidor rechazó la subida. Con la racha ya terminal manda el testigo del attest, que `classify`
+                // lee ANTES y tiene su propio aviso; por debajo de las 24 h, «no llegaron al servidor» es el hecho, y
+                // no acusa a la conexión de nada — que es lo que el encargo pedía no hacer.
+                lastCycleFailedUpload = true
                 GroupsAttestStreakStore.recordRejection(now: now())
                 return .transient
             case 401:
@@ -1612,10 +1664,15 @@ final class GroupsSyncClient {
                 // para una cohorte no deja NADA en los logs — el canal deja de converger en silencio.
                 lastStopWasChannelKill = false
                 GroupsSyncBreadcrumb.groupsForbiddenNotKill(edge: "push")
+                // El cortafuegos que estará ahí diez minutos: el caso por el que «espera unos segundos» era falso.
+                lastCycleFailedUpload = true
                 return .transient
             case 409:
+                if !GatewayErrorEnvelope.isAccountReverting(data) { lastCycleFailedUpload = true }
                 return GatewayErrorEnvelope.isAccountReverting(data) ? .accountUnavailable : .transient
             default:
+                // 5xx, 429 y el resto de códigos que el gateway no cablea: el servidor no aceptó la subida.
+                lastCycleFailedUpload = true
                 return .transient
             }
         }
@@ -1630,6 +1687,9 @@ final class GroupsSyncClient {
         // el servidor rechaza uno que el SDK da por bueno, y eso sigue siendo sesión caducada.
         guard case .sessionExpired = outcome else { return outcome }
         guard let fresh = await forceRefreshTokenProvider() else {
+            // Mismo caso que el token de entrada, y aquí es aún más literal: el refresh es un POST explícito que no
+            // volvió. Con la sesión conservada, lo que falló es la red.
+            if !sdkRemovedTheSession() { lastCycleFailedUpload = true }
             return sdkRemovedTheSession() ? outcome : .transient
         }
         guard fresh != token else { return outcome }

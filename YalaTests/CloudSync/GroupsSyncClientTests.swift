@@ -1073,6 +1073,81 @@ struct GroupsSyncClientTests {
         #expect(refreshBumps.count == 0)  // sin deltas aplicados → sin bump
     }
 
+    // MARK: - El testigo de la subida que no llegó (ticket `signout-pending-copy-says-wait-seconds-when-offline`)
+
+    /// **Un fallo del PULL no es una subida fallida, y sin esta distinción el aviso mentía.** Lo destapó la review
+    /// adversarial del 2026-09-16: el veredicto del ciclo es el del pull siempre que el push vaya bien
+    /// (`syncCycleOnce`), así que con el push perfecto y el pull caído la persona leía «tus cambios de grupos no
+    /// llegaron al servidor» —falso— y encima perdía los 45 s de reintentos que ese caso sí cura.
+    @Test func aFailedPullDoesNotLookLikeAFailedUpload() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        // Sin filas en el outbox el push es un no-op que NO toca el testigo; el pull se cae con un 500.
+        let stub = StubHTTPSession(statusCode: 500)
+        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub)
+        let outcome = await client.pullAndApplyOnce(context: context)
+
+        #expect(outcome == .transient)
+        #expect(!client.stoppedByFailedUpload(for: .transient), """
+            Un 500 del PULL encendió el testigo de la subida. El testigo lo enciende el push y solo el push: aquí no
+            se ha intentado subir nada, y el aviso diría que los cambios no llegaron al servidor.
+            """)
+        // Y por tanto el cierre conserva su texto de asentamiento y sus 45 s de reintentos.
+        let motivo = CloudSignOutFlowLogic.classify(
+            .transient, channelKilled: false, attestUnavailable: false,
+            uploadFailed: client.stoppedByFailedUpload(for: .transient))
+        #expect(motivo == .transient)
+    }
+
+    /// **El testigo describe el ÚLTIMO ciclo, no la vida del proceso.** Es el invariante de sus dos hermanos
+    /// (`lastStopWasChannelKill`, `lastCycleHitAttestRequired`) y aquí importa el doble: sin el reset, un push
+    /// fallido de hace tres ciclos convertiría el `save()` local de éste en «no llegaron al servidor».
+    @Test func theUploadWitnessDescribesTheLastCycleOnly() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        _ = try seedOutbox(context, mid: UUID())
+
+        // Ciclo 1: el push se cae con un 5xx ⇒ testigo encendido.
+        let stub = StubHTTPSession(statusCode: 500)
+        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub)
+        #expect(await client.pushPending(context: context) == .transient)
+        #expect(client.stoppedByFailedUpload(for: .transient))
+
+        // Ciclo 2 en el MISMO cliente y con el outbox ya vacío: el push corta sin una sola petición
+        // (`guard !rows.isEmpty`) y quien falla es el pull, con el mismo 500. Es exactamente el caso que la
+        // review destapó — subida perfecta, pull caído— y el testigo tiene que estar APAGADO.
+        for fila in try groupOutbox(context) { context.delete(fila) }
+        try context.save()
+        let ciclo = await client.syncCycleOnce(context: context)
+
+        #expect(ciclo == .transient, "el pull sigue cayéndose: el ciclo es pasajero")
+        #expect(!client.stoppedByFailedUpload(for: ciclo), """
+            El testigo sobrevivió al ciclo siguiente, o lo encendió el PULL. Las dos cosas le dicen a la persona que
+            sus cambios no llegaron al servidor cuando la subida fue perfecta, y le quitan los 45 s de reintentos que
+            un fallo local sí cura. Se baja al entrar en `syncCycleOnce` y lo enciende el push y solo el push.
+            """)
+        // Y el motivo que ve la persona vuelve a ser el del asentamiento.
+        #expect(CloudSignOutFlowLogic.classify(
+            ciclo, channelKilled: false, attestUnavailable: false,
+            uploadFailed: client.stoppedByFailedUpload(for: ciclo)) == .transient)
+    }
+
+    /// **Y el outcome tiene que ser `.transient` para que el testigo cuente**, como en sus dos hermanos: un
+    /// `.coalesced` describe un ciclo AJENO —`syncCycleOnceCoalesced` devuelve eso sin correr nada— y leer el
+    /// testigo ahí sería leer el de otro.
+    @Test func theUploadWitnessIsIgnoredUnlessTheCycleWasTransient() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        _ = try seedOutbox(context, mid: UUID())
+
+        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: StubHTTPSession(statusCode: 500))
+        #expect(await client.pushPending(context: context) == .transient)
+        for otro: SyncCadencePolicy.CadenceOutcome in [.completed, .coalesced, .sessionExpired, .accountUnavailable] {
+            #expect(!client.stoppedByFailedUpload(for: otro))
+        }
+    }
+
     // MARK: - Test 8 · Dead-letter para upstream_400 (pieza 2 / A2)
 
     private func seedOutbox(
@@ -1851,11 +1926,22 @@ struct GroupsSyncClientTests {
         #expect(outcome == .transient)
         #expect(stub.callCount == 0)                                    // sin token no hay petición
         #expect(try groupOutbox(context).first?.rejectedReason == nil)  // la fila sigue viva para el reintento
-        // Lo que ve la persona: pasajero en las celdas que reintentan y «no llegaron al servidor» en la nube.
+        // Lo que ve la persona, y desde el 2026-09-16 es lo mismo en las cuatro celdas: «no llegaron al servidor»,
+        // no «un momento más» (ticket `signout-pending-copy-says-wait-seconds-when-offline`). Este test ES el caso
+        // del ticket: sin red, el refresh del token falla, el SDK conserva la sesión y el ciclo sale pasajero.
         let ciclo = try #require(GroupsSyncCadence.stopOutcome(push: outcome))
-        let motivo = CloudSignOutFlowLogic.classify(ciclo, channelKilled: false, attestUnavailable: false)
-        #expect(motivo == .transient)
+        // El testigo se pregunta al CLIENTE, como el del kill y el del attest: es lo que distingue este fallo —que
+        // chocó con el servidor empujando— del `save()` local de una página del pull, que sigue siendo «un momento más».
+        #expect(client.stoppedByFailedUpload(for: ciclo))
+        let motivo = CloudSignOutFlowLogic.classify(
+            ciclo, channelKilled: false, attestUnavailable: false,
+            uploadFailed: client.stoppedByFailedUpload(for: ciclo))
+        #expect(motivo == .uploadRetryLater)
         #expect(CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(motivo) == .uploadRetryLater)
+        // Y ya no gasta los 45 s del presupuesto en las celdas que reintentan: esperar no sube nada sin red.
+        #expect(GroupsSignOutRetryDecision.decide(
+            elapsedSeconds: 0, budgetSeconds: GroupsSignOutRetryDecision.budgetSeconds,
+            reason: motivo) == .surfacePermanent)
     }
 
     /// La dirección contraria: el SDK BORRÓ la sesión, porque el servidor rechazó la renovación con un código
@@ -1875,7 +1961,7 @@ struct GroupsSyncClientTests {
         #expect(outcome == .sessionExpired(pending: 1))
         #expect(stub.callCount == 0)
         let ciclo = try #require(GroupsSyncCadence.stopOutcome(push: outcome))
-        #expect(CloudSignOutFlowLogic.classify(ciclo, channelKilled: false, attestUnavailable: false) == .sessionExpired)
+        #expect(CloudSignOutFlowLogic.classify(ciclo, channelKilled: false, attestUnavailable: false, uploadFailed: false) == .sessionExpired)
     }
 
     /// El pull, en las dos direcciones, y sin petición en ninguna.
@@ -1973,11 +2059,22 @@ struct GroupsSyncClientTests {
         let filas = try groupOutbox(context)
         #expect(filas.count == 1)                                       // la fila sigue ahí para el reintento…
         #expect(filas.first?.rejectedReason == nil)                     // …y sin dead-letter
-        // Lo que ve la persona: pasajero en las celdas que reintentan y «no llegaron al servidor» en la nube.
+        // Lo que ve la persona, y desde el 2026-09-16 es lo mismo en las cuatro celdas: «no llegaron al servidor»,
+        // no «un momento más» (ticket `signout-pending-copy-says-wait-seconds-when-offline`). Este test ES el caso
+        // del ticket: sin red, el refresh del token falla, el SDK conserva la sesión y el ciclo sale pasajero.
         let ciclo = try #require(GroupsSyncCadence.stopOutcome(push: outcome))
-        let motivo = CloudSignOutFlowLogic.classify(ciclo, channelKilled: false, attestUnavailable: false)
-        #expect(motivo == .transient)
+        // El testigo se pregunta al CLIENTE, como el del kill y el del attest: es lo que distingue este fallo —que
+        // chocó con el servidor empujando— del `save()` local de una página del pull, que sigue siendo «un momento más».
+        #expect(client.stoppedByFailedUpload(for: ciclo))
+        let motivo = CloudSignOutFlowLogic.classify(
+            ciclo, channelKilled: false, attestUnavailable: false,
+            uploadFailed: client.stoppedByFailedUpload(for: ciclo))
+        #expect(motivo == .uploadRetryLater)
         #expect(CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(motivo) == .uploadRetryLater)
+        // Y ya no gasta los 45 s del presupuesto en las celdas que reintentan: esperar no sube nada sin red.
+        #expect(GroupsSignOutRetryDecision.decide(
+            elapsedSeconds: 0, budgetSeconds: GroupsSignOutRetryDecision.budgetSeconds,
+            reason: motivo) == .surfacePermanent)
     }
 
     /// La dirección contraria: `yala_attest_invalid` es el JWT que no vale, y eso sigue siendo sesión caducada con su
@@ -2000,7 +2097,7 @@ struct GroupsSyncClientTests {
         #expect(refreshes.count == 1)   // el reintento del 401 sí corre
         #expect(stub.callCount == 1)
         let ciclo = try #require(GroupsSyncCadence.stopOutcome(push: outcome))
-        #expect(CloudSignOutFlowLogic.classify(ciclo, channelKilled: false, attestUnavailable: false) == .sessionExpired)
+        #expect(CloudSignOutFlowLogic.classify(ciclo, channelKilled: false, attestUnavailable: false, uploadFailed: false) == .sessionExpired)
     }
 
     /// El caso entero del ticket: el JWT había caducado (`yala_attest_invalid`), el refresh trae uno nuevo y la

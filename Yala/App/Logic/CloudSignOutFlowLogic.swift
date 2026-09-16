@@ -118,19 +118,43 @@ nonisolated enum CloudSignOutFlowLogic {
     // que no queda ninguna distribución que decidir. Con ellas se fueron «Cerrar sesión de grupos» y
     // «Salir de Yala en este dispositivo».
 
-    /// Naturaleza del bloqueo del push-all (H-2026-07-18-6): distingue lo que se sana
-    /// SOLO esperando (red intermitente, ciclo coalescido, quiescencia del import aún no
-    /// asentada) de lo que NO se cura sin acción del usuario (sesión caída / cuenta no
-    /// disponible). El sign-out solo-grupos reintenta internamente los transitorios y solo
-    /// muestra un error cuando agota su presupuesto o el bloqueo es permanente.
+    /// Naturaleza del bloqueo del push-all (H-2026-07-18-6): distingue lo que se sana SOLO esperando
+    /// —el outbox que aún drena, un ciclo coalescido, la quiescencia del import sin asentar— de lo que
+    /// NO se cura sin acción del usuario (sesión caída / cuenta no disponible). El sign-out solo-grupos
+    /// reintenta internamente lo que se asienta y muestra el error al agotar su presupuesto o ante un
+    /// bloqueo que esperar no arregla.
+    ///
+    /// **El fallo de RED dejó de ser «lo que se sana esperando» el 2026-09-16**, y es lo que este eje tenía
+    /// mal desde el principio: una subida que no llega no se está guardando, así que ni el texto ni los 45 s
+    /// de reintentos describían nada. Hoy es `.uploadRetryLater` y se dice al momento.
     /// `CaseIterable` **no es decorado**: `GroupsSignOutRetryDecision.decide` es una cadena de `if` y no un
     /// `switch`, así que el compilador NO obliga a pronunciarse sobre un motivo nuevo — y su rama por
     /// defecto es la peor de las dos: 45 s de espera y ~22 peticiones contra algo que no se cura. La red es
     /// `GroupsSignOutRetryDecisionTests.everyReasonHasADecision`, que recorre `allCases` y se cae en cuanto
     /// aparece uno sin decidir.
     enum BlockReason: Equatable, CaseIterable {
-        /// Curable esperando: red/HTTP/decode/save intermitente, ciclo coalescido, o el
-        /// tope de iteraciones/quiescencia (aún drenando). Reintentable.
+        /// **El guardado que aún se asienta, y desde el 2026-09-16 SOLO eso.** Reintentable esperando: el tope de
+        /// iteraciones con ciclos sanos (el outbox todavía drenando), un ciclo coalescido, el gate de quiescencia
+        /// del import de CloudKit que agota su margen, o la cancelación del gesto.
+        ///
+        /// **Lo que ya NO trae es la subida que falla**, que es la mitad por la que este motivo mentía (ticket
+        /// `signout-pending-copy-says-wait-seconds-when-offline`, decisión de Jürgen del 2026-09-15). Sin red,
+        /// con un 5xx o con un cortafuegos delante, su texto —«un momento más, espera unos segundos»— prometía
+        /// un guardado en curso que no existía, y el gesto encima gastaba 45 s de reintentos antes de decirlo.
+        /// Eso vive ahora en `.uploadRetryLater`.
+        ///
+        /// **La separación NO la puede hacer el outcome del ciclo solo, y creer que sí fue un bug que cazó la
+        /// review adversarial.** `CadenceOutcome.transient` es el cajón de todo lo pasajero —red, HTTP, decode,
+        /// el `save()` LOCAL de una página del pull, el tope de páginas— y además **el veredicto del ciclo es el
+        /// del PULL siempre que el push vaya bien** (`GroupsSyncClient.syncCycleOnce`). Quien la hace es un
+        /// testigo del ciclo, `stoppedByFailedUpload(for:)`, que solo enciende el push: sin él, al `save()` local
+        /// de una página se le decía «tus cambios no llegaron al servidor» con la subida perfecta, y se le
+        /// quitaban los 45 s que ese caso sí cura — que es H-2026-07-18-6, el que motivó el presupuesto.
+        ///
+        /// **Sus productores son cuatro, y tres no pasan por `classify`**: por ahí llegan el tope de iteraciones
+        /// (`.completed`/`.coalesced` con filas vivas) y todo ciclo fallido sin el testigo; la quiescencia
+        /// agotada, la cancelación del gesto y el corte del bucle escriben este motivo a mano en
+        /// `CloudSessionSignOut`. Los cuatro son asentamiento.
         case transient
         /// NO curable sin acción del usuario: 401 sesión caída, cuenta no disponible.
         ///
@@ -141,7 +165,9 @@ nonisolated enum CloudSignOutFlowLogic {
         /// `cloud-signout-collapses-every-groups-transient-into-permanent`, cerrado): el paso 2 de
         /// `CloudSessionSignOut.performCloudSecureSignOut` tenía un ternario que colapsaba aquí todo
         /// veredicto de grupos que no fuera `.channelPaused`, y hoy traduce con
-        /// `cloudSignOutGroupsBlockReason`, que manda lo pasajero a `.uploadRetryLater`.
+        /// `cloudSignOutGroupsBlockReason`. Desde el 2026-09-16 ese productor ya recibe lo pasajero separado en
+        /// sus dos mitades y solo conserva lo que le llega: la subida fallida como `.uploadRetryLater` y el
+        /// outbox que drena como `.transient`.
         ///
         /// **Y desde el 2026-09-15 la sesión caducada tampoco se colapsa aquí**: el paso 2 la deja pasar tal
         /// cual (decisión 3A de Jürgen, ticket `cloud-signout-collapses-a-groups-session-expiry-into-permanent`).
@@ -216,40 +242,50 @@ nonisolated enum CloudSignOutFlowLogic {
         /// Nada se ha escrito y nada se pierde: el outbox queda intacto y volver a pulsar cuando el canal
         /// vuelva completa el gesto.
         case channelPaused
-        /// **El canal de Grupos falló por algo PASAJERO y este camino no lo reintenta** (2026-09-14): un
-        /// corte de red, un 5xx del servidor, un decode fallido, el 403 de un cortafuegos, o el tope de
-        /// iteraciones con el outbox aún drenando. Lo produce ÚNICAMENTE el paso 2 del cierre en la nube
-        /// (`CloudSessionSignOut.performCloudSecureSignOut`), vía `cloudSignOutGroupsBlockReason`.
+        /// **La subida de grupos NO llegó al servidor, y esperar dentro del gesto no lo arregla** (2026-09-14): un
+        /// corte de red, un 5xx, un decode fallido de la respuesta, o el 403 de un cortafuegos.
         ///
-        /// Va aparte de `.transient` porque el consejo que toca **no es el mismo**. `.transient` sale del
-        /// cierre solo-grupos DESPUÉS de gastar 45 s reintentando writes internos que se están asentando, y
-        /// por eso su aviso dice «un momento más, espera unos segundos». Aquí no se ha reintentado nada —el
-        /// camino de la nube llama al push-all **directo**, sin pasar por `GroupsSignOutRetryDecision`— y lo
-        /// que falló es una SUBIDA, no un guardado: «espera unos segundos» sería falso ante un WAF que
-        /// estará ahí diez minutos. El aviso dice lo único cierto: no se pudo subir, no se pierde nada, y se
+        /// **Desde el 2026-09-16 lo producen los CUATRO caminos del cierre, no solo la nube** (ticket
+        /// `signout-pending-copy-says-wait-seconds-when-offline`, decisión de Jürgen del 2026-09-15). Nació como
+        /// traducción del paso 2 del cierre en la nube (`cloudSignOutGroupsBlockReason`), pero la causa que
+        /// describe no era exclusiva de ahí: el cierre solo-grupos, el desasociar y la puerta del Welcome la
+        /// tenían mezclada dentro de `.transient` y por eso le decían «un momento más» a quien estaba sin
+        /// conexión. Hoy lo emite `classify` cuando el ciclo paró **habiendo chocado con el servidor EMPUJANDO**
+        /// (`GroupsSyncClient.stoppedByFailedUpload(for:)`), y lo ven los cuatro. Lo que decide no es que el
+        /// ciclo fallara —eso incluye fallos de este teléfono y del pull— sino QUIÉN falló.
+        ///
+        /// Va aparte de `.transient` porque el consejo que toca **no es el mismo**. `.transient` es el outbox que
+        /// todavía drena: se cura esperando unos segundos y volviendo a pulsar. Aquí lo que falló es una SUBIDA,
+        /// no un guardado, y «espera unos segundos» sería falso ante un WAF que estará ahí diez minutos o ante un
+        /// teléfono sin cobertura. El aviso dice lo único cierto: no se pudo subir, no se pierde nada, y se
         /// vuelve a intentar en un rato.
+        ///
+        /// **Y por eso el aviso sale AL MOMENTO también en los caminos que sí tienen retry.**
+        /// `GroupsSignOutRetryDecision.decide` ya lo listaba entre los que no se reintentan, así que al nacer el
+        /// segundo productor el cierre solo-grupos dejó de gastar 45 s —unas 22 peticiones— contra una red que no
+        /// está. Es la misma decisión que Jürgen tomó para `.channelPaused` el 2026-09-13 y para este motivo el
+        /// 2026-09-14, y es lo que retira el «Guardando tus cambios pendientes…» que se veía tres cuartos de
+        /// minuto sin que se guardara nada. El gesto sigue siendo reintentable: no se ha escrito nada.
         ///
         /// Va aparte de `.permanent` porque ahí estaba el bug: hasta el 2026-09-14 el paso 2 colapsaba todo
         /// veredicto de grupos que no fuera `.channelPaused`, así que un 5xx o un cortafuegos salían como
         /// «revisa tu conexión» —mandando a buscar un fallo que no existe— y sin nombrar lo único que ayuda,
         /// que es esperar. Ticket `cloud-signout-collapses-every-groups-transient-into-permanent`.
         ///
-        /// **No se reintenta dentro del gesto, y es la decisión de Jürgen** (2026-09-14), la misma que se
-        /// tomó para `.channelPaused` el 2026-09-13: reintentar contra un servidor que está fallando gasta
-        /// ~22 peticiones y retrasa 45 s un aviso que ya se puede dar. Nada se ha escrito y nada se pierde:
-        /// el outbox queda intacto y volver a pulsar cuando el servidor responda completa el gesto.
+        /// **En la NUBE sigue habiendo una mitad que este motivo no alcanza, y no es suya.** El paso 1 de ese
+        /// cierre sube lo personal y bloquea antes, con `.permanent` salvo el teléfono sin App Attest, así que
+        /// ante un corte de red con filas personales pendientes la persona sigue viendo el aviso genérico. Con el
+        /// outbox personal vacío —lo normal: ese push-all corta en `.drained` sin ciclar— manda éste. Ticket
+        /// propio: `cloud-signout-collapses-the-personal-push-all-reason-into-permanent`.
         ///
-        /// **Cuándo se ve, medido: solo si el outbox PERSONAL ya drenó.** El paso 1 del mismo cierre sube
-        /// lo personal y bloquea antes, con `.permanent` salvo el teléfono sin App Attest, así que ante un corte de red con
-        /// filas personales pendientes la persona sigue viendo el aviso genérico. Con el outbox personal
-        /// vacío —lo normal: ese push-all corta en `.drained` sin ciclar— manda éste. La otra mitad tiene
-        /// ticket propio: `cloud-signout-collapses-the-personal-push-all-reason-into-permanent`.
-        ///
-        /// **Solo lo produce ese paso 2, y en las demás pantallas es inerte** (medido el 2026-09-14):
-        /// el desasociar y el cierre solo-grupos van por `pushGroupsForSignOut`, que propaga lo que dice
-        /// `classify` —y `classify` no lo emite—; y la puerta del Welcome no llega a pintar un cierre de
-        /// la nube (`neutralReturnEntryPhase` devuelve `.unavailable` para `.cloudSecureSignOut`). Si algún
-        /// día nace un segundo productor, ahí hay un catch-all que diría «vuelve a entrar con esa cuenta».
+        /// **Quién lo pinta, medido el 2026-09-16 con los cuatro caminos produciéndolo.** Ajustes y la hoja del
+        /// cambio de Apple ID ya lo enseñaban por el camino de la nube, con el título genérico —«No pudimos
+        /// cerrar tu sesión», exacto: el cierre no se completó— y el mensaje de la subida (`SignOutBlockedCopy`).
+        /// El desasociar y la puerta de Grupos del Welcome lo estrenan aquí, y a los dos había que abrirles
+        /// rama: el desasociar lo tenía agrupado con `.transient` en el texto que no afirma causa, y la puerta
+        /// del Welcome lo habría dejado caer en su catch-all, que dice «vuelve y entra con esa cuenta» — el
+        /// consejo equivocado, porque volver a entrar no arregla una red que no está. Ese catch-all lo
+        /// anticipaba la versión anterior de este mismo docblock.
         case uploadRetryLater
         /// **Este teléfono lleva más de un día sin conseguir App Attest y quedan cambios de grupos sin subir**
         /// (2026-09-15, ticket `groups-phone-that-never-attests-is-told-to-retry-forever`). El servidor rechaza la
@@ -318,17 +354,23 @@ nonisolated enum CloudSignOutFlowLogic {
     /// dijo que sí (opción 1 del ticket `cloud-signout-collapses-a-groups-session-expiry-into-permanent`).
     /// Lo que ese aviso todavía no distingue está medido en el docblock de `.sessionExpired`.
     ///
-    /// Los cuatro motivos que este productor no puede emitir —`classify` devuelve cinco de los diez, y
-    /// `.uploadRetryLater` sale de aquí— caen en `.permanent`, que es el aviso que no afirma ninguna causa concreta.
+    /// **Desde el 2026-09-16 este productor casi no traduce, y esa es la señal de que el arreglo fue río
+    /// arriba.** `classify` ya emite seis de los diez motivos con la causa separada, así que aquí los seis
+    /// viajan tal cual; lo que queda es el catch-all de los cuatro que `classify` no puede emitir, que caen en
+    /// `.permanent` — el aviso que no afirma ninguna causa concreta.
     static func cloudSignOutGroupsBlockReason(_ reason: BlockReason) -> BlockReason {
         switch reason {
-        // Lo que se cura esperando: aviso honesto AL MOMENTO, sin reintentar (decisión de Jürgen,
-        // 2026-09-14). El camino de la nube no tiene retry interno que gastar — llama al push-all directo.
-        case .transient: return .uploadRetryLater
+        // **Desde el 2026-09-16, lo pasajero llega ya separado y esta línea se invierte.** Hasta entonces
+        // `.transient` era el cajón de las dos causas y este productor lo mandaba entero a `.uploadRetryLater`,
+        // que era lo más honesto que se podía decir sin saber cuál de las dos era. Hoy `classify` ya manda aquí
+        // la subida fallida con su propio motivo, así que el `.transient` que queda es SOLO el outbox que aún
+        // drena —el tope de iteraciones con ciclos sanos—, y para ése «espera unos segundos y vuelve a
+        // intentarlo» es exacto: lo cura esperando y volviendo a pulsar, con retry interno o sin él.
+        case .transient: return .transient
         // El kill-switch de Grupos viaja tal cual desde el 2026-09-13 y aquí no se toca.
         case .channelPaused: return .channelPaused
-        // Idempotente: este productor no lo emite (sale de aquí, no entra), pero mapearlo a otra cosa
-        // convertiría una segunda pasada en el bug de arriba.
+        // La subida que no llegó, tal cual. Hasta el 2026-09-16 esto era solo idempotencia —el motivo nacía
+        // aquí y no entraba nunca—; hoy `classify` lo emite y ésta es la rama por la que pasa de verdad.
         case .uploadRetryLater: return .uploadRetryLater
         // La sesión caducada, tal cual (decisión 3A de Jürgen, 2026-09-15): su aviso pide volver a entrar, que es
         // lo único que sube estos cambios. Colapsada en `.permanent` le decía «revisa tu conexión».
@@ -400,15 +442,43 @@ nonisolated enum CloudSignOutFlowLogic {
     /// kill gana: su testigo solo existe en Grupos, y el testigo del attest de Grupos no sale con `.accountUnavailable`, así
     /// que esa rama solo la alcanza el motor personal (ticket
     /// `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`).
+    /// `uploadFailed` es la tercera mitad que `CadenceOutcome` no lleva (2026-09-16): **si el ciclo chocó con el
+    /// servidor EMPUJANDO**. Lo contesta `GroupsSyncClient.stoppedByFailedUpload(for:)`, y hace falta porque
+    /// `.transient` nunca fue «la subida falló» — es el cajón de red, HTTP, decode, el `save()` LOCAL de una página
+    /// del pull y el tope de páginas, y **el veredicto del ciclo es el del PULL siempre que el push vaya bien**
+    /// (`GroupsSyncClient.syncCycleOnce`). Sin el testigo, a quien no le entraba un save local se le decía que sus
+    /// cambios no habían llegado al servidor, con la subida perfecta y sin los 45 s de reintentos que ese caso sí
+    /// cura — y ése es literalmente H-2026-07-18-6, el que motivó el presupuesto. Lo cazó la review adversarial.
+    ///
+    /// **Cuenta solo con `.transient`**, como el del attest; y va DESPUÉS de él, porque un teléfono que lleva un día
+    /// sin App Attest tiene su propio aviso y no es un problema de subida. Sin valor por defecto, por lo mismo que
+    /// los otros dos: quien no tenga la señal —el motor personal, cuyo consumidor colapsa todo a `.permanent`—
+    /// escribe `false` y lo dice.
     static func classify(_ outcome: SyncCadencePolicy.CadenceOutcome,
                          channelKilled: Bool,
-                         attestUnavailable: Bool) -> BlockReason {
+                         attestUnavailable: Bool,
+                         uploadFailed: Bool) -> BlockReason {
         switch outcome {
         case .sessionExpired: return .sessionExpired
         case .accountUnavailable:
             if channelKilled { return .channelPaused }
             return attestUnavailable ? .attestUnavailable : .permanent
-        case .transient: return attestUnavailable ? .attestUnavailable : .transient
+        // **Las dos mitades de lo pasajero, separadas desde el 2026-09-16** (ticket
+        // `signout-pending-copy-says-wait-seconds-when-offline`, decisión de Jürgen del 2026-09-15). La subida que
+        // chocó con el servidor —sin red, un 5xx, el 403 de un cortafuegos— es `.uploadRetryLater`: ahí «espera unos
+        // segundos» era falso (no se estaba guardando nada) y volver a pulsar costaba otros 45 s de lo mismo.
+        //
+        // **Todo lo demás se queda en `.transient`, y esa asimetría es el arreglo, no un descuido.** El testigo lo
+        // enciende el push y solo el push, así que sin él aquí caen el `save()` local de una página que no entra, el
+        // tope de páginas del pull, el `fetch` del outbox y la fila poison — cosas de este teléfono, para las que
+        // «un momento más» es lo honesto y los 45 s de reintentos son justo lo que hace que el gesto termine solo.
+        //
+        // **El attest gana a los dos**: con la racha terminal el bloqueo tiene su propio aviso, que no habla ni de
+        // guardar ni de la red.
+        case .transient:
+            if attestUnavailable { return .attestUnavailable }
+            return uploadFailed ? .uploadRetryLater : .transient
+        // El ciclo fue BIEN y quedan filas: el tope de iteraciones con el outbox aún drenando.
         case .completed, .coalesced: return .transient
         }
     }
@@ -433,6 +503,7 @@ nonisolated enum CloudSignOutFlowLogic {
         cycleOutcome: SyncCadencePolicy.CadenceOutcome,
         channelKilled: Bool,
         attestUnavailable: Bool,
+        uploadFailed: Bool,
         iteration: Int,
         maxIterations: Int
     ) -> PushAllVerdict? {
@@ -441,7 +512,8 @@ nonisolated enum CloudSignOutFlowLogic {
         if !cycleSucceeded || iteration >= maxIterations {
             return .blocked(pendingCount: livePendingCount,
                             reason: classify(cycleOutcome, channelKilled: channelKilled,
-                                             attestUnavailable: attestUnavailable))
+                                             attestUnavailable: attestUnavailable,
+                                             uploadFailed: uploadFailed))
         }
         return nil
     }
@@ -540,10 +612,14 @@ nonisolated enum GroupsSignOutRetryDecision {
         // retrasaría 45 s un aviso que ya se puede dar. Lo que sigue siendo reintentable es el GESTO: no
         // se escribió nada, el outbox queda intacto y volver a pulsar cuando el canal vuelva lo completa.
         //
-        // **`.uploadRetryLater` también, y este camino no lo produce** (2026-09-14): nace en el paso 2 del
-        // cierre en la nube, que llama al push-all directo y nunca pasa por aquí. Se decide igual porque la
-        // rama por defecto de esta cadena de `if` es la peor —45 s reintentando— y porque su significado ya
-        // es «esto no se arregla dentro del gesto»: reintentarlo aquí se contradiría con su propio aviso.
+        // **`.uploadRetryLater` también, y desde el 2026-09-16 este camino SÍ lo produce.** Se decidió aquí el
+        // 2026-09-14, cuando solo nacía en el paso 2 del cierre en la nube, por prudencia: la rama por defecto
+        // de esta cadena de `if` es la peor —45 s reintentando— y su significado ya era «esto no se arregla
+        // dentro del gesto». Al separarse las dos mitades de lo pasajero (`classify`), esa previsión pasó a ser
+        // el arreglo: quien está sin conexión ve el aviso honesto al primer intento en vez de mirar 45 s un
+        // «Guardando tus cambios pendientes…» que no describe nada. Lo que SÍ sigue gastando el presupuesto es
+        // `.transient`, que ahora es solo el outbox drenando — el caso para el que se escribió (H-2026-07-18-6),
+        // donde esperar es exactamente lo que hace que el gesto termine solo.
         //
         // **`.attestUnavailable` también** (2026-09-15): un teléfono que lleva más de un día sin App Attest no lo
         // recupera en 45 s, y reintentar serían ~23 subidas con un 401 seguro antes de un aviso que ya se puede dar.
