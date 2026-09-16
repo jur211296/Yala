@@ -5,10 +5,55 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-16 (Lima)
 
-**Rama** `2.1` — Merge #177: **La app avisa cuando este teléfono no puede sincronizar tus datos.**
+**Rama** `2.1` — Merge #178: **Sin conexión, el cierre de sesión ya no dice que está guardando algo.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#177 · la app avisa cuando este teléfono no puede sincronizar tus datos)
+## Esta sesión (#178 · sin conexión, el cierre ya no dice que está guardando algo)
+
+**Quien intenta cerrar sesión sin conexión ya no oye que se está guardando algo.** Antes esperaba 45 s mirando
+«Guardando tus cambios pendientes…» y al final leía «Un momento más · Todavía estamos terminando de guardar
+unos cambios. Espera unos segundos y vuelve a intentarlo». Nada de eso pasaba: faltaba la red, y volver a
+intentarlo costaba otros 45 s de lo mismo. Ahora el aviso sale **al primer intento** y dice lo cierto — los
+cambios **no llegaron al servidor**, siguen guardados en este teléfono y no se pierden. El texto de «un
+momento más» se queda donde siempre fue verdad: el guardado que todavía se asienta, que sigue reintentando
+sus 45 s porque ahí esperar es justo lo que hace que el gesto termine solo. Es la decisión de Jürgen del
+2026-09-15: separar las dos causas, una con su texto.
+
+**Cuatro superficies y cero keys de l10n nuevas.** Ajustes y la hoja del cambio de Apple ID ya estaban
+enrutadas. El desasociar y la puerta de Grupos del Welcome lo estrenan, y al segundo le hacía falta rama
+propia: su `switch` no es exhaustivo, así que `.uploadRetryLater` habría caído en el catch-all que dice
+«vuelve y entra con esa cuenta» — el consejo contrario para quien no tiene red. Lo anticipaba el propio
+docblock del motivo, escrito el 14-sep «para el día en que naciera un segundo productor».
+
+**La review adversarial refutó mi arreglo, y esa es la mitad no obvia.** Mapeé `CadenceOutcome.transient`
+entero a «la subida falló» tras inventariar sus 40 productores… y la conclusión era la equivocada, porque no
+miré **quién escribe el valor que estaba clasificando**: `syncCycleOnce` corta con el outcome del push solo
+si el push PARA, así que en el caso normal el veredicto es **el del pull**. Con la subida perfecta y el pull
+caído yo decía «tus cambios no llegaron al servidor»; y al `save()` local de una página —que es
+H-2026-07-18-6, el caso que motivó los 45 s— le quitaba encima el reintento que sí lo cura. De ahí sale
+`GroupsSyncClient.lastCycleFailedUpload` + `stoppedByFailedUpload(for:)`, molde exacto de sus dos hermanos:
+se baja al entrar en el ciclo y lo enciende el push y solo el push, en los nueve puntos donde se choca con el
+servidor. La marca es POSITIVA: marcar de menos deja el aviso conservador de siempre, marcar de más acusa al
+servidor de algo que pasó en este teléfono.
+
+Gate: build ×2 sin warnings nuevos · **unit 7029 en 725 suites** · **XCUITest 3 clases y 10 casos** ·
+review de tres lentes + las rules de área contra el diff · **CI verde**. **Sin device-QA**: reproducirlo
+exige cortar la red con cambios de grupos sin subir y una sesión viva, y no hay seam de simulador que lo
+ponga; el ticket cierra en `done`.
+
+**Deja un ticket y un colateral que conviene saber.**
+`sign-out-block-reason-is-only-logged-on-the-cloud-path`: el motivo del bloqueo solo se registra en el camino
+de la nube, justo donde este cambio mueve población entre dos avisos distintos. Y
+**`signout-alert-fires-on-detach-blocks-it-did-not-cause` empeora**, anotado allí con su medición: al
+desasociar sin red, el aviso colateral de Ajustes pasa de «Un momento más» —impreciso pero neutro— a **«No
+pudimos cerrar tu sesión»**, que nombra un gesto que nadie pidió. No se arregló a propósito: cortar por
+motivo dejaría sin aviso al cierre de verdad, y el discriminador correcto es el GESTO, que el coordinador no
+publica. **Es una decisión de producto que espera a Jürgen.**
+
+De paso, el disco había bajado a 12 GB —los XCUITest habrían empezado a fallar con errores que no mencionan
+el disco—: 13 GB recuperados de DerivedData de dos worktrees ya retirados.
+
+## Sesión anterior (#177 · la app avisa cuando este teléfono no puede sincronizar tus datos)
 
 **Quien tiene sus datos en la nube y este teléfono no consigue la verificación de seguridad ya se entera solo.**
 Antes no se lo decía nadie: apuntaba gastos, no llegaban a su cuenta, y solo lo descubría si intentaba cerrar
@@ -41,7 +86,7 @@ de attest**, así que a quien el gateway le rechaza el token la app le sigue dic
 aviso nuevo **no puede salir**, por construcción. De paso, `docs/TICKETS.md` estaba desfasado en un ticket ajeno;
 índice y disco cuadran ahora en 407.
 
-## Sesión anterior (#176 · la pestaña Grupos avisa cuando este teléfono no puede sincronizar)
+## Sesión #176 · la pestaña Grupos avisa cuando este teléfono no puede sincronizar
 
 **Quien apunta gastos de un grupo desde un teléfono que no consigue App Attest ya se entera.** Antes no se lo decía
 nadie: editaba, nadie del grupo lo veía, y el aviso solo aparecía al intentar cerrar sesión, desasociar la cuenta o
