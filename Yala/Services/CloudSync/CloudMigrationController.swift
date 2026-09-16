@@ -420,6 +420,13 @@ final class CloudMigrationController {
                 // (`CloudSyncRuntime.stoppedByUnavailableAttest(for:)`, ticket
                 // `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`).
                 attestUnavailable: runtime.stoppedByUnavailableAttest(for: outcome),
+                // El motor personal no tiene ese testigo, y aquí `false` no pierde nada: su ÚNICO consumidor —el paso
+                // 1 del cierre en la nube— colapsa a `.permanent` todo motivo que no sea el teléfono sin App Attest,
+                // así que lo pasajero acaba igual venga separado o no. Escrito y no heredado por defecto, como
+                // `channelKilled`: el día que ese colapso se arregle
+                // (`cloud-signout-collapses-the-personal-push-all-reason-into-permanent`), esta línea es donde hay
+                // que cablear el testigo del transporte de `SyncPushClient`, y no en `classify`.
+                uploadFailed: false,
                 iteration: iteration,
                 maxIterations: maxIterations
             ) {

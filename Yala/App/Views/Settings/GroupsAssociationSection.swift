@@ -181,16 +181,21 @@ struct GroupsAssociationSection: View {
         // salida, y es la decisión de Jürgen: el desasociar no ofrece soltar la cuenta perdiendo los cambios
         // (`CloudSessionSignOut.detachGroupsAccount` le pasa `lossExit: nil`). El título ya dice qué gesto falló.
         case .attestUnavailable: return L10n.Groups.Errors.attestUnavailable
-        // `.transient` es el caso corriente. `.exportUnconfirmed` es del cierre PRIVADO y no puede llegar
-        // a este gesto —el desasociar no espera a iCloud—, y `nil` tampoco con el aviso presentado (el
+        // **La subida que no llegó al servidor** (2026-09-16). Desde que `classify` separa las dos mitades de
+        // lo pasajero, este gesto también lo recibe: sin red, con un 5xx o con un cortafuegos delante. Antes
+        // caía en el texto de abajo, que dice «inténtalo de nuevo en un momento» —un momento no basta cuando
+        // no hay cobertura— y no cuenta lo único que tranquiliza, que los cambios siguen en el teléfono.
+        // Copy compartido con el cierre de sesión: el hecho es el mismo y el título de arriba ya dice cuál de
+        // los dos gestos falló, igual que con el canal en pausa.
+        case .uploadRetryLater: return L10n.Groups.Errors.uploadRetryLater
+        // `.transient` es el caso corriente, y desde el 2026-09-16 es SOLO el outbox que aún drena: aquí
+        // «inténtalo de nuevo en un momento» es exacto. `.exportUnconfirmed` es del cierre PRIVADO y no puede
+        // llegar a este gesto —el desasociar no espera a iCloud—, y `nil` tampoco con el aviso presentado (el
         // binding lo enciende justo con el motivo puesto); los dos caen en el copy que no afirma ninguna
         // causa concreta, que es lo correcto si alguna vez llegaran.
-        // `.uploadRetryLater` tampoco llega: nace en el paso 2 del cierre en la NUBE y el desasociar va
-        // por `pushGroupsForSignOut`, que propaga lo que dice `classify` —y `classify` no lo produce—. Si
-        // algún día llegara, este copy no miente: es el mismo consejo con menos detalle.
         // `.personalAttestUnavailable` tampoco llega: lo pone solo el paso 1 del cierre en la NUBE, sobre el outbox personal,
         // y el desasociar no sube nada personal (2026-09-15).
-        case .transient, .exportUnconfirmed, .uploadRetryLater, .personalAttestUnavailable, .none:
+        case .transient, .exportUnconfirmed, .personalAttestUnavailable, .none:
             return L10n.Storage.Groups.detachBlockedTransient
         }
     }

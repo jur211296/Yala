@@ -1349,6 +1349,11 @@ final class CloudSessionSignOut {
                 // outcome: la racha sola no dice por qué falló ESTE ciclo (ticket
                 // `groups-phone-that-never-attests-is-told-to-retry-forever`).
                 attestUnavailable: GroupsSyncClient.shared.stoppedByUnavailableAttest(for: outcome),
+                // ¿Chocó este ciclo con el servidor EMPUJANDO? Se pregunta igual, CON el outcome. Sin este término,
+                // el `save()` local de una página del pull y el tope de páginas salían como «tus cambios no llegaron
+                // al servidor» con la subida perfecta, y encima sin los 45 s de reintentos que ese caso sí cura
+                // (ticket `signout-pending-copy-says-wait-seconds-when-offline`).
+                uploadFailed: GroupsSyncClient.shared.stoppedByFailedUpload(for: outcome),
                 iteration: iteration,
                 maxIterations: maxIterations
             ) {

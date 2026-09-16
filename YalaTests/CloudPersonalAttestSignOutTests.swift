@@ -30,13 +30,13 @@ struct CloudPersonalAttestSignOutLogicTests {
     @Test("MUTACIÓN: el veredicto del push-all lleva el attest a la fase, también desde la parada terminal de la puerta")
     func pushAllVerdictCarriesTheAttestFromTheTerminalStop() {
         #expect(L.pushAllVerdict(livePendingCount: 3, cycleOutcome: .accountUnavailable, channelKilled: false,
-                                 attestUnavailable: true, iteration: 1, maxIterations: 20)
+                                 attestUnavailable: true, uploadFailed: false, iteration: 1, maxIterations: 20)
                 == .blocked(pendingCount: 3, reason: .attestUnavailable))
         #expect(L.pushAllVerdict(livePendingCount: 3, cycleOutcome: .accountUnavailable, channelKilled: false,
-                                 attestUnavailable: false, iteration: 1, maxIterations: 20)
+                                 attestUnavailable: false, uploadFailed: false, iteration: 1, maxIterations: 20)
                 == .blocked(pendingCount: 3, reason: .permanent))
         #expect(L.pushAllVerdict(livePendingCount: 3, cycleOutcome: .transient, channelKilled: false,
-                                 attestUnavailable: true, iteration: 1, maxIterations: 20)
+                                 attestUnavailable: true, uploadFailed: false, iteration: 1, maxIterations: 20)
                 == .blocked(pendingCount: 3, reason: .attestUnavailable))
     }
 

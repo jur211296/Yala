@@ -132,29 +132,44 @@ struct CloudSignOutPushAllVerdictTests {
     @Test
     func outboxEmpty_isDrained_regardlessOfCycleOutcome() {
         #expect(CloudSignOutFlowLogic.pushAllVerdict(
-            livePendingCount: 0, cycleOutcome: .completed, channelKilled: false, attestUnavailable: false, iteration: 1, maxIterations: 10
+            livePendingCount: 0, cycleOutcome: .completed, channelKilled: false, attestUnavailable: false, uploadFailed: false, iteration: 1, maxIterations: 10
         ) == .drained)
         // Ciclo con error pero outbox ya vacío → drained igual (el objetivo se cumplió).
         #expect(CloudSignOutFlowLogic.pushAllVerdict(
-            livePendingCount: 0, cycleOutcome: .transient, channelKilled: false, attestUnavailable: false, iteration: 3, maxIterations: 10
+            livePendingCount: 0, cycleOutcome: .transient, channelKilled: false, attestUnavailable: false, uploadFailed: false, iteration: 3, maxIterations: 10
         ) == .drained)
     }
 
     @Test
     func pendingWithSuccessfulCycle_keepsIterating() {
         #expect(CloudSignOutFlowLogic.pushAllVerdict(
-            livePendingCount: 12, cycleOutcome: .completed, channelKilled: false, attestUnavailable: false, iteration: 2, maxIterations: 10
+            livePendingCount: 12, cycleOutcome: .completed, channelKilled: false, attestUnavailable: false, uploadFailed: false, iteration: 2, maxIterations: 10
         ) == nil)
         // `.coalesced` (ciclo en vuelo, sin señal de fallo) también cuenta como éxito.
         #expect(CloudSignOutFlowLogic.pushAllVerdict(
-            livePendingCount: 12, cycleOutcome: .coalesced, channelKilled: false, attestUnavailable: false, iteration: 2, maxIterations: 10
+            livePendingCount: 12, cycleOutcome: .coalesced, channelKilled: false, attestUnavailable: false, uploadFailed: false, iteration: 2, maxIterations: 10
         ) == nil)
     }
 
+    /// **Un ciclo que falla es una SUBIDA que no llegó, y un tope alcanzado con ciclos sanos es un outbox que
+    /// aún drena** (2026-09-16, ticket `signout-pending-copy-says-wait-seconds-when-offline`). Hasta entonces el
+    /// veredicto decía `.transient` en los dos, y quien estaba sin conexión leía «un momento más, espera unos
+    /// segundos» sobre un guardado que no existía.
     @Test
-    func pendingWithFailedTransientCycle_blocksTransient() {
+    func pendingWithFailedTransientCycle_blocksAFailedUpload() {
         #expect(CloudSignOutFlowLogic.pushAllVerdict(
-            livePendingCount: 5, cycleOutcome: .transient, channelKilled: false, attestUnavailable: false, iteration: 1, maxIterations: 10
+            livePendingCount: 5, cycleOutcome: .transient, channelKilled: false, attestUnavailable: false, uploadFailed: true, iteration: 1, maxIterations: 10
+        ) == .blocked(pendingCount: 5, reason: .uploadRetryLater))
+        // Sin el testigo, el MISMO ciclo fallido es asentamiento: lo que cambia el aviso es quién falló, no que fallara.
+        #expect(CloudSignOutFlowLogic.pushAllVerdict(
+            livePendingCount: 5, cycleOutcome: .transient, channelKilled: false, attestUnavailable: false, uploadFailed: false, iteration: 1, maxIterations: 10
+        ) == .blocked(pendingCount: 5, reason: .transient))
+        // El tope de iteraciones con el ciclo sano sigue siendo lo que se asienta: ahí esperar SÍ ayuda.
+        #expect(CloudSignOutFlowLogic.pushAllVerdict(
+            livePendingCount: 5, cycleOutcome: .completed, channelKilled: false, attestUnavailable: false, uploadFailed: false, iteration: 10, maxIterations: 10
+        ) == .blocked(pendingCount: 5, reason: .transient))
+        #expect(CloudSignOutFlowLogic.pushAllVerdict(
+            livePendingCount: 5, cycleOutcome: .coalesced, channelKilled: false, attestUnavailable: false, uploadFailed: false, iteration: 10, maxIterations: 10
         ) == .blocked(pendingCount: 5, reason: .transient))
     }
 
@@ -164,10 +179,10 @@ struct CloudSignOutPushAllVerdictTests {
         // 2026-09-15 el camino `.cloud` también lo enseña: `cloudSignOutGroupsBlockReason` ya no lo colapsa
         // (ticket `cloud-signout-collapses-a-groups-session-expiry-into-permanent`).
         #expect(CloudSignOutFlowLogic.pushAllVerdict(
-            livePendingCount: 5, cycleOutcome: .sessionExpired, channelKilled: false, attestUnavailable: false, iteration: 1, maxIterations: 10
+            livePendingCount: 5, cycleOutcome: .sessionExpired, channelKilled: false, attestUnavailable: false, uploadFailed: false, iteration: 1, maxIterations: 10
         ) == .blocked(pendingCount: 5, reason: .sessionExpired))
         #expect(CloudSignOutFlowLogic.pushAllVerdict(
-            livePendingCount: 7, cycleOutcome: .accountUnavailable, channelKilled: false, attestUnavailable: false, iteration: 2, maxIterations: 10
+            livePendingCount: 7, cycleOutcome: .accountUnavailable, channelKilled: false, attestUnavailable: false, uploadFailed: false, iteration: 2, maxIterations: 10
         ) == .blocked(pendingCount: 7, reason: .permanent))
     }
 
@@ -177,6 +192,7 @@ struct CloudSignOutPushAllVerdictTests {
     func pendingWithTheChannelKillSwitch_blocksAsPausedChannel() {
         #expect(CloudSignOutFlowLogic.pushAllVerdict(
             livePendingCount: 7, cycleOutcome: .accountUnavailable, channelKilled: true, attestUnavailable: false,
+            uploadFailed: false,
             iteration: 2, maxIterations: 10
         ) == .blocked(pendingCount: 7, reason: .channelPaused))
     }
@@ -187,6 +203,7 @@ struct CloudSignOutPushAllVerdictTests {
     func emptyOutbox_drainsEvenWithTheChannelKilled() {
         #expect(CloudSignOutFlowLogic.pushAllVerdict(
             livePendingCount: 0, cycleOutcome: .accountUnavailable, channelKilled: true, attestUnavailable: false,
+            uploadFailed: false,
             iteration: 1, maxIterations: 10
         ) == .drained)
     }
@@ -195,7 +212,7 @@ struct CloudSignOutPushAllVerdictTests {
     func pendingAtMaxIterations_blocksTransient_evenWithSuccessfulCycle() {
         // Tope alcanzado con ciclo sano pero pendientes → transitorio (aún drenando).
         #expect(CloudSignOutFlowLogic.pushAllVerdict(
-            livePendingCount: 3, cycleOutcome: .completed, channelKilled: false, attestUnavailable: false, iteration: 10, maxIterations: 10
+            livePendingCount: 3, cycleOutcome: .completed, channelKilled: false, attestUnavailable: false, uploadFailed: false, iteration: 10, maxIterations: 10
         ) == .blocked(pendingCount: 3, reason: .transient))
     }
 }
@@ -207,8 +224,8 @@ struct CloudSignOutClassifyTests {
     func sessionOrAccountFailure_isPermanent() {
         // Las dos son permanentes, pero la sesión caducada tiene su motivo propio desde el paso 9: se arregla
         // volviendo a entrar, y el aviso tiene que decirlo en vez de mandar a revisar la conexión.
-        #expect(CloudSignOutFlowLogic.classify(.sessionExpired, channelKilled: false, attestUnavailable: false) == .sessionExpired)
-        #expect(CloudSignOutFlowLogic.classify(.accountUnavailable, channelKilled: false, attestUnavailable: false) == .permanent)
+        #expect(CloudSignOutFlowLogic.classify(.sessionExpired, channelKilled: false, attestUnavailable: false, uploadFailed: false) == .sessionExpired)
+        #expect(CloudSignOutFlowLogic.classify(.accountUnavailable, channelKilled: false, attestUnavailable: false, uploadFailed: false) == .permanent)
     }
 
     /// **Los dos 403 del canal de Grupos no dicen lo mismo, y el `channelKilled` es lo único que los
@@ -217,8 +234,8 @@ struct CloudSignOutClassifyTests {
     /// un incidente. Ticket `groups-killswitch-403-blocks-detach-forever`.
     @Test
     func the403OfTheKillSwitch_isNotAnAccountVerdict() {
-        #expect(CloudSignOutFlowLogic.classify(.accountUnavailable, channelKilled: true, attestUnavailable: false) == .channelPaused)
-        #expect(CloudSignOutFlowLogic.classify(.accountUnavailable, channelKilled: false, attestUnavailable: false) == .permanent)
+        #expect(CloudSignOutFlowLogic.classify(.accountUnavailable, channelKilled: true, attestUnavailable: false, uploadFailed: false) == .channelPaused)
+        #expect(CloudSignOutFlowLogic.classify(.accountUnavailable, channelKilled: false, attestUnavailable: false, uploadFailed: false) == .permanent)
     }
 
     /// **El testigo del kill solo cuenta si el ciclo paró por un 403.** Es lo que impide que un kill de
@@ -227,19 +244,46 @@ struct CloudSignOutClassifyTests {
     /// garantía la pone el cliente, que baja el testigo al entrar en cada ciclo.
     @Test
     func killWitness_isIgnoredUnlessTheCycleStoppedOnA403() {
-        #expect(CloudSignOutFlowLogic.classify(.transient, channelKilled: true, attestUnavailable: false) == .transient)
-        #expect(CloudSignOutFlowLogic.classify(.completed, channelKilled: true, attestUnavailable: false) == .transient)
-        #expect(CloudSignOutFlowLogic.classify(.coalesced, channelKilled: true, attestUnavailable: false) == .transient)
+        // Un ciclo que falló EMPUJANDO con el kill viejo puesto es la subida que no llegó, no el canal en pausa.
+        #expect(CloudSignOutFlowLogic.classify(.transient, channelKilled: true, attestUnavailable: false, uploadFailed: true) == .uploadRetryLater)
+        #expect(CloudSignOutFlowLogic.classify(.completed, channelKilled: true, attestUnavailable: false, uploadFailed: false) == .transient)
+        #expect(CloudSignOutFlowLogic.classify(.coalesced, channelKilled: true, attestUnavailable: false, uploadFailed: false) == .transient)
         // Y la sesión caducada sigue siendo suya: un 401 no es el kill, aunque el testigo venga puesto.
-        #expect(CloudSignOutFlowLogic.classify(.sessionExpired, channelKilled: true, attestUnavailable: false) == .sessionExpired)
+        #expect(CloudSignOutFlowLogic.classify(.sessionExpired, channelKilled: true, attestUnavailable: false, uploadFailed: false) == .sessionExpired)
     }
 
+    /// **Las dos mitades de lo pasajero se separan aquí, y es todo el ticket**
+    /// (`signout-pending-copy-says-wait-seconds-when-offline`, decisión de Jürgen del 2026-09-15). Un ciclo que
+    /// FALLÓ es una subida que no llegó al servidor —sin red, un 5xx, el 403 de un cortafuegos— y esperar
+    /// dentro del gesto no la arregla. Un ciclo que fue BIEN y deja filas vivas es el tope de iteraciones con
+    /// el outbox aún drenando, que sí se cura esperando: es el caso de H-2026-07-18-6.
+    ///
+    /// Hasta el 2026-09-16 los dos salían `.transient`, o sea «un momento más, espera unos segundos», que sin
+    /// conexión describía un guardado que no existía y costaba 45 s de reintentos antes de decirlo.
     @Test
-    func networkOrCoalescedOrCompleted_isTransient() {
-        #expect(CloudSignOutFlowLogic.classify(.transient, channelKilled: false, attestUnavailable: false) == .transient)
-        #expect(CloudSignOutFlowLogic.classify(.completed, channelKilled: false, attestUnavailable: false) == .transient)
-        #expect(CloudSignOutFlowLogic.classify(.coalesced, channelKilled: false, attestUnavailable: false) == .transient)
+    func aFailedCycleIsAFailedUpload_aHealthyOneIsStillSettling() {
+        #expect(CloudSignOutFlowLogic.classify(.transient, channelKilled: false, attestUnavailable: false, uploadFailed: true) == .uploadRetryLater)
+        // El MISMO outcome sin el testigo se queda en el asentamiento: es el `save()` local de una página del pull,
+        // el tope de páginas o el `fetch` del outbox — cosas de este teléfono, que sí se curan esperando.
+        #expect(CloudSignOutFlowLogic.classify(.transient, channelKilled: false, attestUnavailable: false, uploadFailed: false) == .transient)
+        #expect(CloudSignOutFlowLogic.classify(.completed, channelKilled: false, attestUnavailable: false, uploadFailed: false) == .transient)
+        #expect(CloudSignOutFlowLogic.classify(.coalesced, channelKilled: false, attestUnavailable: false, uploadFailed: false) == .transient)
     }
+
+    /// **Y los dos motivos se dicen distinto, que es el punto.** Sin esto, separarlos en `classify` y darles
+    /// el mismo texto dejaría el ticket abierto con el `switch` en verde.
+    @MainActor
+    @Test
+    func theTwoHalvesOfTransientDoNotShareCopy() {
+        let subida = CloudSignOutFlowLogic.classify(.transient, channelKilled: false, attestUnavailable: false, uploadFailed: true)
+        let asentando = CloudSignOutFlowLogic.classify(.completed, channelKilled: false, attestUnavailable: false, uploadFailed: false)
+        #expect(SignOutBlockedCopy.message(for: subida) != SignOutBlockedCopy.message(for: asentando))
+        #expect(SignOutBlockedCopy.message(for: subida) == L10n.Groups.Errors.uploadRetryLater)
+        #expect(SignOutBlockedCopy.message(for: asentando) == L10n.Settings.signOutPendingMessage)
+        // Y el título tampoco: el de la subida no promete «un momento más».
+        #expect(SignOutBlockedCopy.title(for: subida) != SignOutBlockedCopy.title(for: asentando))
+    }
+
 }
 
 /// **El cierre en la NUBE traduce el veredicto de grupos, y hasta el 2026-09-14 lo aplanaba.** Todo lo que
@@ -251,9 +295,17 @@ struct CloudSignOutGroupsReasonTests {
 
     /// Lo pasajero se anuncia como pasajero. Es el caso del ticket, y el que el ternario viejo perdía:
     /// devolver `.permanent` aquí es exactamente el bug que se cerró.
+    ///
+    /// **Desde el 2026-09-16 llega ya separado y este productor solo conserva.** `classify` manda la subida
+    /// fallida como `.uploadRetryLater`, así que el `.transient` que entra es SOLO el outbox drenando — y para
+    /// ése «espera unos segundos y vuelve a intentarlo» es exacto. Traducirlo a la subida fallida diría que
+    /// los cambios no llegaron al servidor cuando el ciclo fue bien.
     @Test
     func transientBecomesRetryLater_notPermanent() {
-        #expect(CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(.transient) == .uploadRetryLater)
+        #expect(CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(
+            CloudSignOutFlowLogic.classify(.transient, channelKilled: false, attestUnavailable: false, uploadFailed: true)) == .uploadRetryLater)
+        #expect(CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(
+            CloudSignOutFlowLogic.classify(.completed, channelKilled: false, attestUnavailable: false, uploadFailed: false)) == .transient)
     }
 
     /// El kill-switch (2026-09-13) no se toca: sigue llegando con su copy propio.
@@ -271,12 +323,12 @@ struct CloudSignOutGroupsReasonTests {
     @Test
     func aGroupsSessionExpiryEndsInTheSignInAgainCopy() {
         let motivo = CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(
-            CloudSignOutFlowLogic.classify(.sessionExpired, channelKilled: false, attestUnavailable: false))
+            CloudSignOutFlowLogic.classify(.sessionExpired, channelKilled: false, attestUnavailable: false, uploadFailed: false))
         #expect(motivo == .sessionExpired)
         #expect(SignOutBlockedCopy.message(for: motivo) == L10n.Groups.Errors.sessionExpired)
         // Y el vecino no se arrastra: la cuenta no disponible sigue en el aviso que no afirma ninguna causa.
         let cuenta = CloudSignOutFlowLogic.cloudSignOutGroupsBlockReason(
-            CloudSignOutFlowLogic.classify(.accountUnavailable, channelKilled: false, attestUnavailable: false))
+            CloudSignOutFlowLogic.classify(.accountUnavailable, channelKilled: false, attestUnavailable: false, uploadFailed: false))
         #expect(cuenta == .permanent)
         #expect(SignOutBlockedCopy.message(for: cuenta) == L10n.Settings.signOutBlockedMessage)
     }
@@ -287,7 +339,9 @@ struct CloudSignOutGroupsReasonTests {
     @Test
     func everyReasonHasATranslation() {
         let esperado: [CloudSignOutFlowLogic.BlockReason: CloudSignOutFlowLogic.BlockReason] = [
-            .transient: .uploadRetryLater,
+            // El outbox que aún drena, tal cual desde el 2026-09-16: `classify` ya no mete aquí la subida
+            // fallida, así que traducirlo diría que no llegó al servidor un ciclo que fue bien.
+            .transient: .transient,
             .channelPaused: .channelPaused,
             .uploadRetryLater: .uploadRetryLater,
             // El teléfono sin App Attest viaja tal cual (2026-09-15): su aviso es el que ofrece salir perdiendo los cambios.
@@ -921,6 +975,12 @@ struct PausedChannelReasonWiringTests {
 /// sin red (`groups-push-reads-an-offline-token-refresh-as-a-session-expiry`), quien está sin conexión llega aquí con
 /// `.transient`, y ese aviso le mandaba volver a entrar. La rama propia enseña el texto de Ajustes y de la hoja del
 /// cambio de Apple ID (`SignOutBlockedCopy`), por decisión de Jürgen del 2026-09-15.
+///
+/// **Desde el 2026-09-16 son DOS ramas, no una** (ticket `signout-pending-copy-says-wait-seconds-when-offline`):
+/// lo pasajero se separó en el outbox que aún drena (`.transient`) y la subida que no llegó al servidor
+/// (`.uploadRetryLater`). La segunda la estrena esta pantalla, y sin rama propia caería en el mismo catch-all
+/// que el ticket anterior vino a cerrar. Se comprueban las dos con la misma tabla: una rama que se pierda deja
+/// a su población volviendo a un consejo falso, y el `switch` de la vista no obliga a nadie.
 @Suite("Puerta de Grupos del Welcome — lo pasajero no manda a volver a entrar (source-scan)")
 struct WelcomeGateTransientBlockWiringTests {
 
@@ -932,35 +992,190 @@ struct WelcomeGateTransientBlockWiringTests {
             .joined(separator: "\n")
     }
 
-    @Test("la rama de lo pasajero va antes del catch-all y enseña el texto compartido")
-    func transientBranchShowsTheSharedCopy() throws {
+    /// Colapsa todo espacio en blanco a uno solo: un scan sobre varias líneas no puede dar rojo porque el
+    /// formateador reparta el código de otra forma.
+    private static func squashed(_ text: String) -> String {
+        text.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+    }
+
+    /// Las dos mitades de lo pasajero, con el cuerpo que le toca a cada una. El cuerpo se compara con el literal
+    /// exacto: el punto del ticket es que **no comparten texto**, así que un copy-paste de una rama a la otra
+    /// tiene que caerse aquí.
+    /// El `identifier` va en la tabla porque **es lo único que distingue las dos ramas para quien mire la pantalla
+    /// desde fuera**, y sin él sobrevive el mutante que se las intercambia: un XCUITest futuro mediría la rama
+    /// equivocada y nada se pondría rojo (`.claude/rules/testing.md`, el id que pisa al de sus hijos).
+    private static let ramas: [(patrón: String, cuerpo: String, id: String, qué: String)] = [
+        ("case .blocked(_, .transient):", "body: SignOutBlockedCopy.message(for: .transient)",
+         "welcome_groups_gate_neutral_pending", "el outbox que aún drena"),
+        ("case .blocked(_, .uploadRetryLater):", "body: L10n.Groups.Errors.uploadRetryLater",
+         "welcome_groups_gate_neutral_upload_retry", "la subida que no llegó al servidor"),
+    ]
+
+    @Test("las dos ramas de lo pasajero van antes del catch-all y cada una enseña SU texto")
+    func bothTransientBranchesShowTheirOwnCopy() throws {
         let gate = try Self.source("Yala/App/Views/Onboarding/WelcomeGroupsGateView.swift")
-        let transient = try #require(gate.range(of: "case .blocked(_, .transient):"), """
-            La puerta de Grupos del Welcome perdió su rama de lo pasajero: quien está sin conexión vuelve al \
-            catch-all, que le manda volver a entrar con su cuenta.
-            """)
         let catchAll = try #require(gate.range(of: "\n        case .blocked:"))
-        try #require(transient.lowerBound < catchAll.lowerBound, """
-            La rama de lo pasajero quedó DESPUÉS del catch-all `case .blocked:`: nadie la alcanza.
+        for rama in Self.ramas {
+            let inicio = try #require(gate.range(of: rama.patrón), """
+                La puerta de Grupos del Welcome perdió la rama de \(rama.qué): esa población vuelve al catch-all, \
+                que le manda volver a entrar con su cuenta — y volver a entrar no arregla ni un outbox drenando ni \
+                una red que no está.
+                """)
+            try #require(inicio.lowerBound < catchAll.lowerBound, """
+                La rama de \(rama.qué) quedó DESPUÉS del catch-all `case .blocked:`: nadie la alcanza.
+                """)
+            // El tramo acaba en la SIGUIENTE rama, sea cual sea: medido hasta el catch-all, un `body:` movido a una
+            // rama nueva metida entre medias pasaría.
+            let next = try #require(gate.range(of: "\n        case ", range: inicio.upperBound..<gate.endIndex))
+            let branch = String(gate[inicio.upperBound..<next.lowerBound])
+            #expect(branch.contains("title: L10n.Welcome.Groups.neutralBlockedTitle"), """
+                La rama de \(rama.qué) dejó de titular como las otras ramas de la puerta: la pantalla vuelve a tener \
+                dos títulos para el mismo hecho.
+                """)
+            #expect(branch.contains("{ leaveAfterBlock() }"), """
+                La rama de \(rama.qué) dejó de salir por `leaveAfterBlock()`: sin devolver el coordinador a `.idle`, \
+                el siguiente cierre sale por su `guard phase == .idle` sin hacer nada.
+                """)
+            #expect(branch.contains(rama.cuerpo), """
+                La rama de \(rama.qué) dejó de enseñar su cuerpo (`\(rama.cuerpo)`). Si el literal sigue en el \
+                fichero, mira si se lo quedó otra rama: las dos mitades de lo pasajero NO comparten texto.
+                """)
+            #expect(!branch.contains("neutralBlockedBody"), """
+                La rama de \(rama.qué) enseña el cuerpo de «vuelve a entrar con esa cuenta».
+                """)
+            #expect(branch.contains("identifier: \"\(rama.id)\""), """
+                La rama de \(rama.qué) perdió su identificador propio (`\(rama.id)`). Con el de la otra rama, las dos
+                mitades de lo pasajero son indistinguibles desde fuera y un XCUITest mediría la equivocada.
+                """)
+        }
+    }
+
+    /// **El desasociar también lo estrena, y ahí no hay catch-all sino un grupo de `case`** que lo tenía metido
+    /// con `.transient` bajo «Quedan cambios de tus grupos sin subir. Inténtalo de nuevo en un momento.» — un
+    /// momento no basta sin cobertura, y ese texto no dice lo único que tranquiliza: que no se pierde nada.
+    @Test("el desasociar separa la subida fallida del outbox que drena")
+    func detachSplitsTheFailedUploadFromTheSettlingOutbox() throws {
+        let section = try Self.source("Yala/App/Views/Settings/GroupsAssociationSection.swift")
+        #expect(section.contains("case .uploadRetryLater: return L10n.Groups.Errors.uploadRetryLater"), """
+            El desasociar dejó de decirle a quien está sin red que sus cambios no llegaron al servidor.
             """)
-        // El tramo acaba en la SIGUIENTE rama, sea cual sea: medido hasta el catch-all, un `body:` movido a una rama
-        // nueva metida entre medias pasaría.
-        let next = try #require(gate.range(of: "\n        case ", range: transient.upperBound..<gate.endIndex))
-        let branch = String(gate[transient.upperBound..<next.lowerBound])
-        #expect(branch.contains("title: L10n.Welcome.Groups.neutralBlockedTitle"), """
-            La rama de lo pasajero dejó de titular como las otras ramas de la puerta: la pantalla vuelve a tener dos \
-            títulos para el mismo hecho.
+        // El grupo genérico se lee NORMALIZADO y hasta sus dos puntos, no hasta el primer salto de línea: partir el
+        // `case` en dos líneas dejaba `.uploadRetryLater` fuera del trozo medido y el test pasaba con la subida
+        // fallida de vuelta en el texto que no afirma causa (review adversarial, 2026-09-16).
+        let plano = Self.squashed(section)
+        let inicio = try #require(plano.range(of: "case .transient, "), """
+            El desasociar dejó de tener un grupo genérico que empiece por `.transient`. Si se reordenó, este scan hay
+            que reescribirlo: tal cual, no mide nada.
             """)
-        #expect(branch.contains("{ leaveAfterBlock() }"), """
-            La rama de lo pasajero dejó de salir por `leaveAfterBlock()`: sin devolver el coordinador a `.idle`, el \
-            siguiente cierre sale por su `guard phase == .idle` sin hacer nada.
+        let fin = try #require(plano.range(of: ":", range: inicio.upperBound..<plano.endIndex))
+        let grupo = String(plano[inicio.lowerBound..<fin.lowerBound])
+        #expect(!grupo.contains(".uploadRetryLater"), """
+            La subida fallida volvió al grupo del texto genérico del desasociar: dos causas, un solo consejo.
             """)
-        #expect(branch.contains("body: SignOutBlockedCopy.message(for: .transient)"), """
-            La rama de lo pasajero dejó de enseñar el texto de Ajustes. Si el literal sigue en el fichero, mira si \
-            se lo quedó otra rama.
+    }
+}
+
+/// **Los 45 s de reintentos son para lo que se asienta, no para la red** (2026-09-16). Es la mitad del ticket que
+/// no es copy: sin conexión, el cierre solo-grupos gastaba el presupuesto entero —unas 22 peticiones— con
+/// «Guardando tus cambios pendientes…» en pantalla antes de decir nada, y volver a intentarlo costaba otros 45 s.
+///
+/// **Lo que se prueba aquí es la COMPOSICIÓN, no `decide` a secas.** `GroupsSignOutRetryDecision` no se tocó: ya
+/// listaba `.uploadRetryLater` entre los que se enseñan al momento desde el 2026-09-14, y su tabla exhaustiva
+/// (`everyReasonHasADecision`) lo fija desde entonces. Quien cambia el desenlace es `classify`, así que los casos
+/// van de punta a punta —testigo del ciclo → motivo → decisión → copy— o no miden lo que el ticket movió.
+@Suite("Cerrar sesión — qué se reintenta y qué se dice, de punta a punta")
+struct SignOutRetryBudgetBySeasonTests {
+
+    private static func source(_ relativePath: String) throws -> String {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        return try String(contentsOf: root.appendingPathComponent(relativePath), encoding: .utf8)
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+    }
+
+    /// Colapsa todo espacio en blanco a uno solo: un scan sobre varias líneas no puede dar rojo porque el
+    /// formateador reparta el código de otra forma.
+    private static func squashed(_ text: String) -> String {
+        text.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+    }
+
+    private static func motivo(_ outcome: SyncCadencePolicy.CadenceOutcome, uploadFailed: Bool) -> CloudSignOutFlowLogic.BlockReason {
+        CloudSignOutFlowLogic.classify(outcome, channelKilled: false, attestUnavailable: false, uploadFailed: uploadFailed)
+    }
+
+    private static func decisión(_ reason: CloudSignOutFlowLogic.BlockReason, elapsed: Double) -> GroupsSignOutRetryDecision.Decision {
+        GroupsSignOutRetryDecision.decide(
+            elapsedSeconds: elapsed, budgetSeconds: GroupsSignOutRetryDecision.budgetSeconds, reason: reason)
+    }
+
+    /// **El caso del ticket, entero**: sin red el ciclo falla EMPUJANDO, y lo que la persona lee no promete ni un
+    /// guardado en curso ni unos segundos de espera — ni le cuesta 45 s de espera muda llegar hasta ahí.
+    @MainActor
+    @Test("sin red: aviso al momento, y no promete un guardado que no existe")
+    func offlineSurfacesAtOnce_andNeverPromisesAnOngoingSave() {
+        let motivo = Self.motivo(.transient, uploadFailed: true)
+        #expect(motivo == .uploadRetryLater)
+        #expect(Self.decisión(motivo, elapsed: 0) == .surfacePermanent, "esperar no sube nada sin red")
+        #expect(SignOutBlockedCopy.message(for: motivo) == L10n.Groups.Errors.uploadRetryLater)
+        #expect(SignOutBlockedCopy.title(for: motivo) == L10n.Settings.signOutBlockedTitle)
+    }
+
+    /// **La otra mitad, y la que la review adversarial rescató**: un ciclo que falla SIN haber chocado empujando
+    /// —el `save()` local de una página del pull, el tope de páginas, el `fetch` del outbox— sigue siendo «un
+    /// momento más» y sigue gastando el presupuesto, que es lo que hace que ese gesto termine solo. Sin el testigo,
+    /// esta fila decía «tus cambios no llegaron al servidor» con la subida perfecta.
+    @MainActor
+    @Test("un fallo que NO es de la subida conserva su texto y sus 45 s")
+    func aLocalFailureKeepsItsCopyAndItsBudget() {
+        let motivo = Self.motivo(.transient, uploadFailed: false)
+        #expect(motivo == .transient)
+        #expect(Self.decisión(motivo, elapsed: 0) == .retryAfter(seconds: GroupsSignOutRetryDecision.retryIntervalSeconds))
+        #expect(Self.decisión(motivo, elapsed: 44) == .retryAfter(seconds: GroupsSignOutRetryDecision.retryIntervalSeconds))
+        #expect(SignOutBlockedCopy.message(for: motivo) == L10n.Settings.signOutPendingMessage)
+        // Y agotado el presupuesto acaba en SU aviso, no en el de la subida fallida.
+        #expect(Self.decisión(motivo, elapsed: GroupsSignOutRetryDecision.budgetSeconds) == .surfaceTransient)
+    }
+
+    /// **El tope de iteraciones con ciclos sanos tampoco cambia**, ni siquiera con el testigo encendido de un chunk
+    /// que falló antes: ese caso ya no es `.transient` y el testigo ni se lee.
+    @Test("el outbox que aún drena ignora el testigo de la subida")
+    func theStillDrainingOutboxIgnoresTheUploadWitness() {
+        #expect(Self.motivo(.completed, uploadFailed: true) == .transient)
+        #expect(Self.motivo(.coalesced, uploadFailed: true) == .transient)
+    }
+
+    /// **El camino PERSONAL no se mueve, y la review pidió fijarlo**: este ticket le cambió la ENTRADA —`classify`
+    /// es compartida— y su salida tiene que seguir siendo byte-equivalente, porque el paso 1 del cierre en la nube
+    /// colapsa a `.permanent` todo lo que no sea el teléfono sin App Attest. Su separación es otro ticket
+    /// (`cloud-signout-collapses-the-personal-push-all-reason-into-permanent`), y hasta que llegue, esto avisa si
+    /// alguien cree que este cambio ya lo arregló.
+    @Test("el push-all personal pasa `uploadFailed: false` y su motivo no cambia")
+    func thePersonalPushAllIsUnchanged() throws {
+        let controller = try Self.source("Yala/Services/CloudSync/CloudMigrationController.swift")
+        #expect(Self.squashed(controller).contains("uploadFailed: false,"), """
+            El push-all personal dejó de pasar `uploadFailed: false`. Si se cableó un testigo de verdad, el paso 1 del
+            cierre en la nube sigue colapsando a `.permanent`: el motivo nuevo no llegaría a ninguna pantalla y el
+            cambio sería inerte con apariencia de arreglo.
             """)
-        #expect(!branch.contains("neutralBlockedBody"), """
-            La rama de lo pasajero enseña el cuerpo de «vuelve a entrar con esa cuenta».
+        // Y con ese `false`, un ciclo personal fallido sigue dando el mismo motivo que antes del ticket.
+        #expect(Self.motivo(.transient, uploadFailed: false) == .transient)
+    }
+
+    /// **Los tres productores de `.transient` escritos a mano siguen siendo asentamiento** (la quiescencia agotada,
+    /// la cancelación del gesto y el corte del bucle). El docblock del motivo lo afirma y nada lo fijaba: un mutante
+    /// que cambiara cualquiera de ellos a `.uploadRetryLater` le diría «tus cambios no llegaron al servidor» a quien
+    /// tiene un import de CloudKit sin asentar, que no ha mandado una sola petición.
+    @Test("la quiescencia, la cancelación y el corte del bucle no se anuncian como una subida fallida")
+    func theThreeHandWrittenTransientsAreStillSettling() throws {
+        let coordinador = Self.squashed(try Self.source("Yala/Services/CloudSync/CloudSessionSignOut.swift"))
+        #expect(!coordinador.contains("reason: .uploadRetryLater"), """
+            Alguien escribió `.uploadRetryLater` a mano en el coordinador del cierre. Ese motivo lo decide el testigo
+            del ciclo en `classify`, y escrito a mano acusa al servidor de un fallo de este teléfono.
+            """)
+        #expect(coordinador.components(separatedBy: "reason: .transient").count - 1 >= 3, """
+            El coordinador dejó de escribir a mano los tres bloqueos de asentamiento (quiescencia agotada,
+            cancelación del gesto, corte del bucle). Si se movieron, comprueba que siguen sin pasar por el testigo.
             """)
     }
 }
@@ -978,26 +1193,29 @@ struct AttestUnavailableSignOutLogicTests {
     /// segunda fila solo la alcanza el motor personal.
     @Test("MUTACIÓN: el testigo del attest convierte lo pasajero y la parada terminal de la puerta, y no toca el resto")
     func attestWitnessTurnsTheTransientAndTheTerminalStop() {
-        #expect(L.classify(.transient, channelKilled: false, attestUnavailable: true) == .attestUnavailable)
-        #expect(L.classify(.transient, channelKilled: false, attestUnavailable: false) == .transient)
-        #expect(L.classify(.sessionExpired, channelKilled: false, attestUnavailable: true) == .sessionExpired)
-        #expect(L.classify(.accountUnavailable, channelKilled: false, attestUnavailable: true) == .attestUnavailable)
-        #expect(L.classify(.accountUnavailable, channelKilled: false, attestUnavailable: false) == .permanent)
-        #expect(L.classify(.accountUnavailable, channelKilled: true, attestUnavailable: true) == .channelPaused)
-        #expect(L.classify(.completed, channelKilled: false, attestUnavailable: true) == .transient)
-        #expect(L.classify(.coalesced, channelKilled: false, attestUnavailable: true) == .transient)
+        // El 401 del attest choca con el servidor, así que el testigo de la subida viene ENCENDIDO y pierde: un
+        // teléfono que lleva un día sin conseguirlo tiene su propio aviso, que no habla de subidas (2026-09-16).
+        #expect(L.classify(.transient, channelKilled: false, attestUnavailable: true, uploadFailed: true) == .attestUnavailable)
+        #expect(L.classify(.transient, channelKilled: false, attestUnavailable: true, uploadFailed: false) == .attestUnavailable)
+        #expect(L.classify(.transient, channelKilled: false, attestUnavailable: false, uploadFailed: true) == .uploadRetryLater)
+        #expect(L.classify(.sessionExpired, channelKilled: false, attestUnavailable: true, uploadFailed: false) == .sessionExpired)
+        #expect(L.classify(.accountUnavailable, channelKilled: false, attestUnavailable: true, uploadFailed: false) == .attestUnavailable)
+        #expect(L.classify(.accountUnavailable, channelKilled: false, attestUnavailable: false, uploadFailed: false) == .permanent)
+        #expect(L.classify(.accountUnavailable, channelKilled: true, attestUnavailable: true, uploadFailed: false) == .channelPaused)
+        #expect(L.classify(.completed, channelKilled: false, attestUnavailable: true, uploadFailed: false) == .transient)
+        #expect(L.classify(.coalesced, channelKilled: false, attestUnavailable: true, uploadFailed: false) == .transient)
     }
 
     @Test("el veredicto del push-all lleva el motivo a la fase, y un outbox vacío drena igual")
     func pushAllVerdictCarriesTheAttestReason() {
         #expect(L.pushAllVerdict(livePendingCount: 4, cycleOutcome: .transient, channelKilled: false,
-                                 attestUnavailable: true, iteration: 1, maxIterations: 20)
+                                 attestUnavailable: true, uploadFailed: false, iteration: 1, maxIterations: 20)
                 == .blocked(pendingCount: 4, reason: .attestUnavailable))
         #expect(L.pushAllVerdict(livePendingCount: 0, cycleOutcome: .transient, channelKilled: false,
-                                 attestUnavailable: true, iteration: 1, maxIterations: 20) == .drained)
+                                 attestUnavailable: true, uploadFailed: false, iteration: 1, maxIterations: 20) == .drained)
         // El tope de iteraciones con ciclos sanos sigue siendo lo pasajero: con `.completed` el testigo no se lee.
         #expect(L.pushAllVerdict(livePendingCount: 4, cycleOutcome: .completed, channelKilled: false,
-                                 attestUnavailable: true, iteration: 20, maxIterations: 20)
+                                 attestUnavailable: true, uploadFailed: false, iteration: 20, maxIterations: 20)
                 == .blocked(pendingCount: 4, reason: .transient))
     }
 

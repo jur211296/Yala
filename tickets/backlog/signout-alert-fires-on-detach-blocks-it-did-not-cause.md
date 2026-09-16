@@ -36,3 +36,25 @@ también quién la escribió, o que el desasociar deje de usar `phase` para su b
 Segundo efecto medido, del mismo agujero: el `.alert` de `ProfileView` no tiene `onDismiss`, así que si
 UIKit descarta la presentación por tener el anchor ocupado, el flag se queda en `true` y el aviso salta
 más tarde, al volver al Perfil (`.claude/rules/swiftui-ds.md`).
+
+## El colateral cambió de texto el 2026-09-16, y a peor (medido)
+
+Ticket `signout-pending-copy-says-wait-seconds-when-offline`. Al separar las dos mitades de lo pasajero, el
+caso **más común del desasociar** —fallar sin red— dejó de salir por `.transient` y pasa por
+`.uploadRetryLater`, que `ProfileView.swift:198` enciende en el mismo alert genérico. Consecuencia para quien
+solo pidió soltar su cuenta de grupos:
+
+| | Aviso propio de la sección | Aviso colateral de Ajustes |
+|---|---|---|
+| Antes | «No pudimos soltar la cuenta» | «Un momento más» — impreciso, pero **no nombra ningún gesto** |
+| Ahora | «No pudimos soltar la cuenta» | **«No pudimos cerrar tu sesión»** — nombra un gesto que no se pidió |
+
+El agujero no nace ahí: el alert colateral salía antes y sale ahora, y el discriminador sigue siendo el que
+este ticket describe. **Lo que cambia es que el texto pasa de neutro a equivocado**, y por eso conviene
+saberlo al priorizar: la población que lo ve es la misma que el otro ticket vino a atender.
+
+**Lo que NO es el arreglo, comprobado el 2026-09-16:** meter `.uploadRetryLater` en el corte de
+`case .bridgeUnreadable, .detachBusy: break`. Ese motivo también lo produce el cierre de sesión de verdad, y
+ahí el aviso SÍ tiene que salir — cortarlo por motivo deja al cierre sin su aviso. Y el coordinador sigue sin
+publicar el gesto: `phase` y `waitingForPending` son lo único observable
+(`CloudSessionSignOut.swift:62` y `:68`), así que la pieza que falta es la que este ticket ya pide.
