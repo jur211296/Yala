@@ -5,10 +5,33 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-16 (Lima)
 
-**Rama** `2.1` — Merge #182: **Sin App Attest, Ajustes no ofrece la tarjeta de la nube.**
+**Rama** `2.1` — Merge #184: **La cola de QA baja de 83 a 52 tickets, y los 52 tienen montaje.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#182 · sin App Attest, Ajustes no ofrece la tarjeta de la nube)
+## Esta sesión (#184 · la cola de QA baja de 83 a 52, y los 52 tienen montaje)
+
+**La cola de QA vuelve a decir la verdad.** De los 83 tickets de `tickets/qa/`, 18 pasaron en el simulador con captura, 11
+se cerraron sin verlos por tu override (6 sin forma de montarlos en ningún sitio, 5 cuya prueba vive en otro ticket de la
+cola) y 2 volvieron a backlog porque esperaban código. Cero FAIL. Los 52 que quedan tienen montaje en
+`qa/guion-tanda.md`, en ocho grupos según lo que haya que preparar: empieza por los 3 de simulador a mano (unos 30 min) y
+arranca los 3 de «un día» para mirarlos al siguiente.
+
+**Lo que aprendí montando:** en simulador, Atajos no ejecuta la tarjeta del atajo de Yala (el build no lleva firma de
+equipo), pero sí una acción añadida a mano. Así se vieron los dos de Siri, incluido el borrador en caliente. Y «Simular
+Pro» persiste y contamina a los unit tests: lo purgué. Las dos cosas están en `docs/aprendizajes-tecnicos.md`.
+
+**Dos hallazgos van a backlog:** con el iPhone en español, las respuestas de error de «Anotar con Siri» salen en inglés
+(`siri-shortcut-error-replies-speak-english-on-a-spanish-iphone`), y el importador de CSV no marca sus filas como
+importadas (`csv-import-leaves-no-origin-mark-and-reuses-opposite-categories`).
+
+**Dos decisiones te esperan, sin bloquear nada:** si te vale la D6 del Paso 0 (Siri dado por bueno lanzándolo desde Atajos,
+sin la voz), y si dejas staging un día en `enforce` para `groups-phone-that-never-attests-is-told-to-retry-forever` o se
+cierra como no replicable.
+
+Validación: `docs/TICKETS.md` igual al disco (415) · las 51 cabeceras tocadas parsean · `validate-coverage` OK · **CI verde**
+(build y unit, 24 min).
+
+## Sesión anterior (#182 · sin App Attest, Ajustes no ofrece la tarjeta de la nube)
 
 **Un teléfono sin App Attest ya no ve la tarjeta de la nube en «Dónde viven tus datos».** Ni «Migrar a la nube» ni
 «Activar la nube en este dispositivo», la cara que sale en un segundo dispositivo cuando la cuenta ya se migró desde otro:
@@ -32,7 +55,7 @@ en rojo en su test · tres lentes · **CI verde** (build y los 7052 unit).
 
 **En `qa`, con un paso en iPhone real**: con App Attest la tarjeta sigue saliendo. Comparte montaje con los de #180 y #181.
 
-## Sesión anterior (#181 · sin App Attest, la pantalla de entrar no ofrece crear cuenta)
+## Sesión #181 · sin App Attest, la pantalla de entrar no ofrece crear cuenta
 
 **Un teléfono sin App Attest ya no se da de alta en la nube por ninguna puerta del Welcome.** Después del #180 quedaban
 dos: «Crear mi cuenta» tras «No encontramos una cuenta» y «Crear cuenta con…» del mismatch. Ahora pasan por la misma puerta
