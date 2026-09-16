@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: testing
 created: 2026-09-05
-updated: 2026-09-15
+updated: 2026-09-16
 source: rojo clasificado en el gate de group-joiner-flag-consumers-still-narrow
 ---
 
@@ -143,3 +143,23 @@ Gate de `groups-channel-seal-has-no-reachable-producer`, paso 3: `EdgeCasesUITes
   (`dismissTransactionSuccess`).
 - Disco: 24 GB libres al empezar la sesión y 16 GB al acabar las corridas. No se midió en el instante del
   rojo; los dos valores están por debajo del umbral de 25.
+
+## Quinta observación, 2026-09-16 — en lote de seis clases, y aislado pasa 2 de 2
+
+Gate de `cloud-migration-offers-the-cloud-to-a-phone-without-app-attest`, paso 3: las seis clases del cruce con el índice
+(`CurrencySettingsUITests`, `EdgeCasesUITests`, `ForeignCurrencyAccountSeedUITests`, `GroupsAssociationRowUITests`,
+`StorageMigrationAttestUITests`, `WelcomeFreshStartAlertUITests`, 15 casos) en una sola invocación.
+
+| Corrida | Este test | Centinela | Reinicios |
+|---|---|---|---|
+| Lote de 15 casos | **falla**, 34,1 s | 0 (solo) | 0 |
+| Aislado, iteración 1 | pasa, 29,8 s | 0 (solo) | 0 |
+| Aislado, iteración 2 | pasa, 29,5 s | 0 (solo) | 0 |
+
+- **La misma firma**: agota la espera de `transaction_success_accept`, ahora en `XCUIApplication+Yala.swift:241`.
+- **Otra muestra imposible**: el PR solo cambia comportamiento dentro de `StorageSettingsView` (la tarjeta de la nube) y en
+  `StorageRowGateLogic.offersCloudMigrationEntry`, que solo llama esa pantalla. Este test guarda una transacción desde el
+  FAB del Panel y nunca abre Perfil.
+- Con esta, **3 fallos en lote y 0 en aislamiento** en las observaciones con centinela o reinicios contados.
+- Disco: 30 GB libres al empezar la sesión.
+
