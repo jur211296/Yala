@@ -51,7 +51,18 @@ final class UITestHooks {
     /// 2º nivel del Welcome bajo uitest — opt-in EXPLÍCITO del XCUITest del chooser
     /// (sesión 2 Google). Sin él, uitest conserva el bypass a restore (byte-idéntico).
     /// Solo NAVEGACIÓN determinista: el test jamás tapea el botón de sign-in real.
+    /// La card de la nube de «Es mi primera vez» pide además `-uitest-fake-attest-support`: ver abajo.
     nonisolated static var forceCloudChooser: Bool { hasArg("-uitest-cloud-chooser") }
+
+    /// `-uitest-fake-attest-support`: finge que este teléfono puede conseguir token de App Attest, **solo en la entrada
+    /// de la puerta de «Es mi primera vez»** (`WelcomeNewOptionsGate`). El simulador no tiene App Attest, así que sin
+    /// este arg la card de la nube no sale aunque se pida `-uitest-cloud-chooser`. No toca `AppAttestClient`: el cliente
+    /// sigue sin poder conseguir token.
+    ///
+    /// Los dos args son ortogonales a propósito. `-uitest-cloud-chooser` sin este es el caso que prueba la CONDICIÓN: la
+    /// card desaparece porque el host no tiene App Attest, y un mutante que quite el término lo pone en rojo. Un seam que
+    /// fingiera las dos cosas a la vez dejaría ciegos a todos sus tests (`.claude/rules/testing.md`). Solo DEBUG.
+    nonisolated static var fakeAttestSupport: Bool { hasArg("-uitest-fake-attest-support") }
 
     /// Valor de `-uitest-fake-beacon <apple|google|…>`: finge que el faro de iCloud-KV dice que este Apple ID
     /// YA tiene una cuenta en la nube creada con ese método (el `#if DEBUG` vive en las lecturas de

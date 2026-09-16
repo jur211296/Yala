@@ -40,6 +40,7 @@ extension XCUIApplication {
         appleIDChanged: Bool = false,
         groupsOutboxPending: Bool = false,
         groupsAttestTerminal: Bool = false,
+        fakeAttestSupport: Bool = false,
         extraArguments: [String] = []
     ) -> XCUIApplication {
         var args = ["-uitest"]
@@ -120,6 +121,11 @@ extension XCUIApplication {
         // `cloudSession:` — un typo que lo dejara fuera le quitaría la mitad que discrimina y el caso
         // pasaría en verde sin haber medido nada. Su nombre lo fija el test de paridad con `UITestHooks`.
         if groupsAttestTerminal { args.append("-uitest-groups-attest-terminal") }
+        // Finge que el teléfono puede conseguir token, SOLO en la puerta de «Es mi primera vez»: el simulador no tiene App
+        // Attest, así que sin esto la card de la nube no sale. NOMBRADO por lo mismo que sus vecinos, y con su agravante:
+        // el test que prueba la condición va con `-uitest-cloud-chooser` y SIN este arg, así que un typo aquí dejaría a los
+        // positivos cayendo con un rojo que culpa a la pantalla. Su nombre lo fija un test de paridad con `UITestHooks`.
+        if fakeAttestSupport { args.append("-uitest-fake-attest-support") }
         // Args crudos adicionales (aditivo — p.ej. "-uitest-cloud-chooser").
         args.append(contentsOf: extraArguments)
         // Idioma FIJO para toda la suite. Los seeds nombran sus datos con copy localizado

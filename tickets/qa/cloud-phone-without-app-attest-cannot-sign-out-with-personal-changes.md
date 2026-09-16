@@ -134,6 +134,13 @@ así que el simulador no consigue App Attest y la puerta del motor falla con `.u
 cuenta en la nube creada desde ese simulador («Tu cuenta en la nube»). Si esa opción no sale, la nube está apagada por
 configuración remota y el QA no se puede montar.
 
+> **Desde el 2026-09-16 «Tu cuenta en la nube» ya no sale en este simulador, y no es la configuración remota**
+> (`cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest`): el simulador no tiene App Attest y sin él no se
+> ofrece la nube. Para crear la cuenta: «Ya tengo una cuenta» → Google → firma con una cuenta de Google sin cuenta de Yala
+> → «No encontramos una cuenta» → «Crear mi cuenta». Esa puerta no mira el attest
+> (`cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest`). Si un día se cierra, crea la cuenta con
+> `YALA_DEV_SHARED_SECRET` en el scheme y quítalo antes del paso 1. **Sin probar**: deducido del código.
+
 1. Lanza la app, apunta un gasto y déjala en primer plano unos minutos, con la consola filtrada por `CloudSyncRuntime`.
    - **Esperado:** `CloudSyncRuntime stopped reason=attest-terminal` tras unos ciclos. La puerta para el motor hasta
      relanzar, así que cada lanzamiento cuenta un rechazo como mucho.

@@ -115,6 +115,23 @@ final class AppAttestClient {
         }
     }
 
+    /// **¿Puede este teléfono conseguir un token de sesión?** Es la primera decisión de `performRefresh`, en un booleano:
+    /// con App Attest (`isSupported`) se va por la key; sin él solo queda el bypass de dev, que existe en DEBUG y
+    /// únicamente con `YALA_DEV_SHARED_SECRET` (`devTokenOrThrow`). Sin ninguno de los dos, `performRefresh` lanza
+    /// `.unavailable` en cada intento y sin tocar la red: no es un fallo que cure un reintento.
+    ///
+    /// Lo lee la puerta de «Es mi primera vez» (`WelcomeNewOptionsGate`, vía `AttestSyncGate.shouldOfferCloudOnly`) para
+    /// no ofrecer la nube a quien no podría subir nada. **Si cambia la primera decisión de `performRefresh`, esto cambia
+    /// con ella**: la puerta y el cliente tienen que creer lo mismo. Un source-scan fija el cuerpo
+    /// (`WelcomeNewChooserWiringTests`), porque en el host de test el lado `true` es inalcanzable.
+    ///
+    /// En el simulador vale `false` salvo con el secreto puesto: el simulador no tiene App Attest. Y con el secreto solo
+    /// `Yala Dev` consigue token de verdad: con `Yala` el bypass apunta a producción, que no lo sirve (404), así que ahí
+    /// dice `true` sin que nada suba — igual que cree el propio cliente, y solo en desarrollo.
+    static var canObtainSessionToken: Bool {
+        DCAppAttestService.shared.isSupported || !ProxyConfig.devSharedSecret.isEmpty
+    }
+
     // MARK: - Refresh
 
     private func performRefresh() async throws -> String {

@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (410)
+## Index (412)
 
 | id | status | path |
 |---|---|---|
@@ -97,10 +97,12 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-fx-rates-blob-two-faces | qa | tickets/qa/cloud-fx-rates-blob-two-faces.md |
 | cloud-hydration-spinner-never-gives-up-without-attest | backlog | tickets/backlog/cloud-hydration-spinner-never-gives-up-without-attest.md |
 | cloud-killswitch-hides-the-only-door-to-detach-groups | qa | tickets/qa/cloud-killswitch-hides-the-only-door-to-detach-groups.md |
-| cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest | backlog | tickets/backlog/cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest.md |
+| cloud-migration-offers-the-cloud-to-a-phone-without-app-attest | backlog | tickets/backlog/cloud-migration-offers-the-cloud-to-a-phone-without-app-attest.md |
+| cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest | qa | tickets/qa/cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest.md |
 | cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes | qa | tickets/qa/cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes.md |
 | cloud-session-expiry-with-only-group-changes-has-no-sign-in-door | backlog | tickets/backlog/cloud-session-expiry-with-only-group-changes-has-no-sign-in-door.md |
 | cloud-sign-in-discovers-account-kind | qa | tickets/qa/cloud-sign-in-discovers-account-kind.md |
+| cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest | backlog | tickets/backlog/cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest.md |
 | cloud-signout-collapses-a-groups-session-expiry-into-permanent | qa | tickets/qa/cloud-signout-collapses-a-groups-session-expiry-into-permanent.md |
 | cloud-signout-collapses-every-groups-transient-into-permanent | qa | tickets/qa/cloud-signout-collapses-every-groups-transient-into-permanent.md |
 | cloud-signout-collapses-the-personal-push-all-reason-into-permanent | backlog | tickets/backlog/cloud-signout-collapses-the-personal-push-all-reason-into-permanent.md |

@@ -258,6 +258,40 @@ Ticket `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`.
 - **Tests: aísla la tienda en los del runtime que fijan `attestError`** (`IsolatedAttestStreak`). Un ciclo con token también
   la borra, y los casos que aún no aíslan están en `unit-tests-clear-the-attest-streak-of-a-device-qa-in-progress`.
 
+## La puerta del alta: sin token no se ofrece la nube (2026-09-16)
+
+Ticket `cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest`. Es la decisión del owner del 2026-07-06 (bloquear
+por adelantado), que hasta ese día vivía en `AttestSyncGate.shouldOfferCloudOnly` sin un solo llamador.
+
+- **«Tener App Attest» es poder conseguir token, y lo define un solo sitio**: `AppAttestClient.canObtainSessionToken`, que
+  vale `isSupported` o, en DEBUG, el bypass con `YALA_DEV_SHARED_SECRET`. Es la primera decisión de `performRefresh` en un
+  booleano. **Si tocas esa decisión, toca las dos orillas**: un source-scan fija el cuerpo entero de la capacidad y las
+  líneas de `performRefresh` y `devTokenOrThrow` que lo sostienen, en orden. `isSupported` a secas le escondería la nube a
+  un simulador con `Yala Dev` y el secreto puesto, que sí sube. Con el scheme `Yala` el bypass va a producción, que no lo
+  sirve (404): ahí la capacidad dice `true` y nada sube, igual que cree el cliente — solo en desarrollo.
+- **Solo gatea el ALTA**: la card «Tu cuenta en la nube» de `WelcomeAccountChoiceLogic.visibleNewOptions`, que comparten «Es
+  mi primera vez», «Crear otra cuenta» y «Activar Yala completo». Sin ella queda una card, sin copy: «Es mi primera vez» y la
+  activación hacen bypass a la rama privada, y «Crear otra cuenta» enseña el chooser con la privada sola. **No gatea**
+  entrar con una cuenta que ya existe («Ya tengo una cuenta» y el faro), las dos salidas
+  al alta de esa pantalla —«Crear mi cuenta» tras «No encontramos una cuenta» y «Crear cuenta con…» del mismatch—
+  (`cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest`) ni «Migrar a la nube» de Ajustes
+  (`cloud-migration-offers-the-cloud-to-a-phone-without-app-attest`).
+- **El simulador es un teléfono sin App Attest, y no se le exime.** Sin el secreto no ofrece la nube, a propósito: QA y
+  producción deciden igual, que es la lección con la que abre este fichero. Un montaje manual que necesite crear una cuenta
+  en la nube desde el simulador usa `Yala Dev` y pone `YALA_DEV_SHARED_SECRET` en Edit Scheme → Run → Environment
+  Variables. Uno que necesite
+  la nube SIN App Attest puede crearla por «Ya tengo una cuenta» → Google → «No encontramos una cuenta» → «Crear mi
+  cuenta», que hoy no mira el attest; si esa puerta se cierra, la crea con el secreto y lo quita antes de empezar.
+- **XCUITest**: el caso de la condición va con `-uitest-cloud-chooser` y **sin** `-uitest-fake-attest-support`, que finge
+  solo la entrada de esta puerta y no toca al cliente. Los que necesitan ver la card de la nube piden los dos. En el host de
+  test la capacidad vale `false` —ningún scheme compartido pone el secreto—, **medido con un mutante** el 2026-09-16:
+  quitando el seam de la puerta, los positivos caen y los negativos pasan. En un iPhone físico los negativos no aplican.
+  Y afirma la ausencia de la card solo junto a una presencia que la discrimine: tras aterrizar en otra pantalla, un
+  `XCTAssertFalse(… .exists)` no puede fallar.
+- **El fallo caro es el contrario.** Un iPhone real dice `isSupported == true` —producción atesta—, y si dejara de decirlo la
+  card desaparecería para todos sin un rojo. Ningún simulador lo prueba: lo mira el paso de device-QA del ticket. Cuántos
+  teléfonos caen en la puerta no está medido: no hay canario.
+
 ## El SEGUNDO fallo del mismo día: el header estaba cableado y el token no se podía acuñar
 
 El e2e del punto 3 se hizo, y destapó una causa distinta con el MISMO síntoma en pantalla. Precisión sobre

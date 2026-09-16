@@ -10,6 +10,12 @@
 //  determinismo de los XCUITests existentes). El «prod DARK hoy» que decía aquí caducó con D-R1 paso 1
 //  (2026-07-30): `CloudBackendConfig.isConfigured` es `true` en los DOS schemes.
 //
+//  **La card de «Es mi primera vez» se oculta además sin App Attest** (2026-09-16, ticket
+//  `cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest`): quien no puede conseguir token no subiría nada.
+//  Las de «Ya tengo una cuenta» no llevan ese término a propósito: entrar con una cuenta que ya existe es otra decisión.
+//  El simulador no tiene App Attest, así que sin `YALA_DEV_SHARED_SECRET` tampoco ofrece la nube: la convención y el
+//  seam de XCUITest están en `.claude/rules/gateway-attest.md`.
+//
 //  **A4 de D-A7 (2026-08-09): `visibleNewOptions` GANA SU CONSUMIDOR** — `WelcomeNewChooserView`
 //  vía `WelcomeFlowContainer` — y `bornCloudEnabled` se cablea a la constante COMPILADA
 //  `CloudSyncFlags.bornCloudChoiceEnabled`, hoy `true`. El plan de julio que decía «born-cloud
@@ -42,16 +48,24 @@ nonisolated enum WelcomeAccountChoiceLogic {
     /// `remoteCloudEnabled`/`remoteOnboardingChoiceEnabled` = flags remote-config (DIFERIDOS #34,
     /// §j.1): la card born-cloud exige AMBOS (el sub-flag de elección es un escalón POSTERIOR del
     /// rollout del flag padre). Kill-switch = corta la ENTRADA: sin flag remoto no hay alta nueva.
+    ///
+    /// `isAttestSupported` = este teléfono puede conseguir token (`AppAttestClient.canObtainSessionToken`). Sin él la card
+    /// no sale (`AttestSyncGate.shouldOfferCloudOnly`, la decisión del owner de bloquear por adelantado): elegir la nube
+    /// sería apuntar gastos que nunca llegan a la cuenta. Con la nube fuera queda una sola card y el container hace bypass
+    /// a la rama privada —salvo «Crear otra cuenta», que enseña el chooser con esa card—: el mismo recorrido del
+    /// kill-switch, sin copy nuevo.
     static func visibleNewOptions(
         isConfigured: Bool,
         isUITest: Bool,
+        isAttestSupported: Bool,
         bornCloudEnabled: Bool,
         remoteCloudEnabled: Bool,
         remoteOnboardingChoiceEnabled: Bool
     ) -> [NewOption] {
         var options: [NewOption] = [.privateAccount]
         if isConfigured && !isUITest && bornCloudEnabled
-            && remoteCloudEnabled && remoteOnboardingChoiceEnabled {
+            && remoteCloudEnabled && remoteOnboardingChoiceEnabled
+            && AttestSyncGate.shouldOfferCloudOnly(isAttestSupported: isAttestSupported) {
             options.append(.cloudAccount)
         }
         return options
@@ -185,12 +199,19 @@ nonisolated enum WelcomeRestorePauseLogic {
 ///
 /// `-uitest-cloud-chooser` (opt-in EXPLÍCITO) destapa la card nube bajo XCUITest SOLO para los tests del
 /// chooser; el resto de uitest queda byte-idéntico. Los remotos son fail-closed sin snapshot.
+///
+/// **App Attest se lee VIVO, y bajo XCUITest vale la verdad del simulador: no lo tiene.** Por eso los tests que
+/// necesitan ver la card de la nube piden además `-uitest-fake-attest-support`, que finge SOLO esta entrada y no toca
+/// `AppAttestClient`. Sin ese arg, `-uitest-cloud-chooser` deja un único término escondiendo la card —el attest—, y es
+/// lo que permite probar la condición con el predicado real (`.claude/rules/testing.md`: el test de la condición corre
+/// sin el seam).
 @MainActor
 enum WelcomeNewOptionsGate {
     static var live: [WelcomeAccountChoiceLogic.NewOption] {
         WelcomeAccountChoiceLogic.visibleNewOptions(
             isConfigured: CloudBackendConfig.isConfigured,
             isUITest: SwiftDataConfiguration.isUITesting && !UITestHooks.forceCloudChooser,
+            isAttestSupported: UITestHooks.fakeAttestSupport || AppAttestClient.canObtainSessionToken,
             bornCloudEnabled: CloudSyncFlags.bornCloudChoiceEnabled,
             remoteCloudEnabled: CloudRemoteFlags.cloudModeEnabled,
             remoteOnboardingChoiceEnabled: CloudRemoteFlags.cloudOnboardingChoiceEnabled)

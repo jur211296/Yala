@@ -31,7 +31,8 @@
 //  de lo que se ve — cámbialo aquí.
 //
 //  Desde «Soy nuevo» solo se monta con MÁS de una opción visible: con una sola (percent remoto en 0 o aún
-//  sin snapshot, backend no configurado, o uitest sin el opt-in) el container hace bypass directo
+//  sin snapshot, backend no configurado, un teléfono sin App Attest —el simulador lo es—, o uitest sin los
+//  opt-in `-uitest-cloud-chooser` y `-uitest-fake-attest-support`) el container hace bypass directo
 //  (`WelcomeAccountChoiceLogic.bypass`) y este screen ni se construye. **En producción SÍ se monta**:
 //  el percent de la elección nube está en 100 (medido el 2026-09-09). Esta lista decía «producción con
 //  el percent remoto en 0», y con ese 0 prod nunca llegaba hasta aquí.

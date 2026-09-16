@@ -25,7 +25,7 @@ struct WelcomeNewChooserOrderTests {
         // La ENTRADA es la que produce hoy la lógica de visibilidad, que W2 dejó intacta a
         // propósito: si el orden dependiera de ella, este test pasaría por accidente.
         let visibles = WelcomeAccountChoiceLogic.visibleNewOptions(
-            isConfigured: true, isUITest: false, bornCloudEnabled: true,
+            isConfigured: true, isUITest: false, isAttestSupported: true, bornCloudEnabled: true,
             remoteCloudEnabled: true, remoteOnboardingChoiceEnabled: true)
         #expect(visibles == [.privateAccount, .cloudAccount], "la lógica sigue emitiendo su orden histórico")
         #expect(WelcomeNewChooserView.displayOrder(visibles) == [.cloudAccount, .privateAccount])
@@ -43,7 +43,7 @@ struct WelcomeNewChooserOrderTests {
     @Test("el bypass de una sola opción sigue siendo bypass tras reordenar")
     func singleOption_stillBypasses() {
         let single = WelcomeAccountChoiceLogic.visibleNewOptions(
-            isConfigured: true, isUITest: false, bornCloudEnabled: true,
+            isConfigured: true, isUITest: false, isAttestSupported: true, bornCloudEnabled: true,
             remoteCloudEnabled: true, remoteOnboardingChoiceEnabled: false)
         #expect(WelcomeNewChooserView.displayOrder(single).count == 1)
         #expect(WelcomeAccountChoiceLogic.bypass(single) == .privateAccount)

@@ -58,4 +58,7 @@ qué; ahora ve la ruedecita y, al lado, la explicación de que no va a pasar nad
 ## Relación con otros tickets
 
 - `cloud-tab-does-not-say-this-phone-cannot-sync-personal-data` — de donde sale, y el otro lado de la contradicción.
+- `cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest` — desde el 2026-09-16 «Es mi primera vez» no ofrece la
+  nube sin App Attest. No cambia la población de este ticket, que entra con una cuenta que ya existe: esa entrada no
+  pasa por la puerta.
 - `groups-phone-that-never-attests-is-told-to-retry-forever` — de donde sale el veredicto terminal.
