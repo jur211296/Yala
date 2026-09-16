@@ -5,10 +5,40 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-16 (Lima)
 
-**Rama** `2.1` — Merge #179: **Volver a Yala despierta el loop de grupos que espera su reintento.**
+**Rama** `2.1` — Merge #180: **Sin App Attest, el alta no ofrece la nube.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#179 · volver a la app adelanta la subida de grupos)
+## Esta sesión (#180 · sin App Attest, el alta no ofrece la nube)
+
+**Un teléfono que no puede conseguir App Attest ya no ve «Tu cuenta en la nube».** Antes la elegía, apuntaba sus gastos y
+nada llegaba nunca a su cuenta: el motor corta en su puerta de attest antes de subir. Ahora «Es mi primera vez» va directa a
+«Tu cuenta en tu iCloud privado», el recorrido de cuando la nube está apagada, sin texto nuevo. Lo mismo en «Activar Yala
+completo», y «Crear otra cuenta» enseña la elección con la tarjeta privada sola. Con App Attest no cambia nada. Era la
+decisión del owner del 2026-07-06 —bloquear por adelantado—, que vivía en `AttestSyncGate.shouldOfferCloudOnly` sin un solo
+llamador y con dos docblocks que decían lo contrario. Encargo nocturno, opción 1.
+
+**«Tener App Attest» lo define un solo sitio, y es lo que cree el cliente**: `AppAttestClient.canObtainSessionToken`, la
+primera decisión de `performRefresh` en un booleano (`isSupported`, o en DEBUG el bypass con secreto). **El simulador no
+tiene App Attest y no se le exime**: sin `YALA_DEV_SHARED_SECRET` en `Yala Dev` ya no ofrece la nube, a propósito, para que
+QA y producción decidan igual. Si en el simulador «no sale la nube», no es la configuración remota.
+
+**La review adversarial cazó el fallo caro en MI test, no en el código.** El scan de la entrada del attest fijaba un prefijo
+sin su coma, y un término pegado detrás dejaba a todo iPhone sin la nube con la suite entera en verde: en el host de test la
+capacidad vale `false` y nada más podía verlo. Ahora compara el cuerpo entero. Cazó además dos aserciones que no podían
+fallar y que «Crear otra cuenta» no hacía bypass ni tenía test.
+
+Gate: build ×2 sin warnings nuevos · **unit 7045 casos en 725 suites** · **XCUITest 20 casos** con el centinela en 0 · dos
+lentes + la regla de attest contra el diff · **CI verde** (build y los 7045 unit). **Mutation-tested ×14**, todos en rojo en su caso; el control sin
+el seam mide que en XCUITest el simulador de verdad no tiene App Attest.
+
+**Deja dos decisiones tuyas en backlog, las dos nacidas de medir el alcance.**
+`cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest`: «Crear mi cuenta» tras «No encontramos una cuenta» y
+«Crear cuenta con…» del mismatch también dan de alta sin mirar el attest (ni el kill del alta, que es anterior); cerrarlas
+vuelve pared dos pantallas que tú abriste. `cloud-migration-offers-the-cloud-to-a-phone-without-app-attest`: «Migrar a la
+nube» tampoco lo mira, aunque por lo inferido no atrapa a nadie. Y un tercer productor del «volver» mal calculado de la
+puerta de iCloud, anotado en `private-icloud-gate-back-lands-on-the-wrong-branch`.
+
+## Sesión anterior (#179 · volver a la app adelanta la subida de grupos)
 
 **Quien recupera la conexión y vuelve a Yala ya no espera al reintento.** Me quedo sin red con la app abierta,
 salgo, la red vuelve y entro otra vez: antes mis cambios de grupos seguían parados hasta que venciera el
@@ -50,7 +80,7 @@ estado del runtime — ahí no hay loop que despertar y volver a la app tampoco 
 re-litigarlos: el despertar corta también la cadencia sana de 60 s (igual que el personal en `.running`), y sin
 red cada vuelta a la app suma un escalón de backoff (misma aritmética que el personal).
 
-## Sesión anterior (#178 · sin conexión, el cierre ya no dice que está guardando algo)
+## Sesión #178 · sin conexión, el cierre ya no dice que está guardando algo
 
 **Quien intenta cerrar sesión sin conexión ya no oye que se está guardando algo.** Antes esperaba 45 s mirando
 «Guardando tus cambios pendientes…» y al final leía «Un momento más · Todavía estamos terminando de guardar
@@ -388,6 +418,12 @@ formatos —una presentación 16:9 por escenas y clips 9:16 por función— sobr
 `bun run render:presentation` y `bun run render:reels`).
 
 ## Tu cola
+
+0-quattuordecies. **Device-QA del #180, un solo paso en iPhone real**
+   (`tickets/qa/cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest.md`). Con el primer TestFlight tras el
+   merge: borra Yala, instálala, espera unos segundos con conexión y toca «Empezar» → «Es mi primera vez» (si sale «Entra a
+   tu cuenta», «Crear otra cuenta»). Tienen que salir **las dos** tarjetas, «Tu cuenta en la nube» incluida. Si sale una
+   sola, la nube habría desaparecido para todos: es lo único que el simulador no puede probar.
 
 0-terdecies. **Device-QA del #173, solo la racha**
    (`tickets/qa/groups-phone-that-never-attests-is-told-to-retry-forever.md`). Scheme **Yala** (no Dev) en el
