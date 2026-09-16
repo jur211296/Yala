@@ -5961,3 +5961,6 @@
 
 /* Aviso fijo en la pestana Grupos: el telefono lleva mas de un dia sin pasar la verificacion de seguridad, asi que sus cambios de grupos no llegan */
 "groups.attestTerminalBanner" = "Depuis plus d'un jour, il n'arrive pas à passer la vérification de sécurité demandée par notre serveur. Ce que tu modifies ici n'arrive pas au groupe : utilise un autre téléphone en attendant.";
+
+/* Aviso fijo: este teléfono no consigue App Attest y los datos personales no suben a la nube */
+"settings.attestTerminalBanner" = "Depuis plus d'un jour, il n'arrive pas à passer la vérification de sécurité demandée par notre serveur. Ce que tu saisis ici est enregistré sur ce téléphone, mais n'arrive pas à ton compte dans le cloud : utilise un autre téléphone en attendant.";

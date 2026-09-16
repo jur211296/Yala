@@ -5972,3 +5972,6 @@
 
 /* Aviso fijo en la pestana Grupos: el telefono lleva mas de un dia sin pasar la verificacion de seguridad, asi que sus cambios de grupos no llegan */
 "groups.attestTerminalBanner" = "Hij komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist. Wat je hier wijzigt, bereikt de groep niet — gebruik zolang een andere telefoon.";
+
+/* Aviso fijo: este teléfono no consigue App Attest y los datos personales no suben a la nube */
+"settings.attestTerminalBanner" = "Hij komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist. Wat je hier invoert, wordt op deze telefoon bewaard, maar bereikt je cloudaccount niet — gebruik zolang een andere telefoon.";

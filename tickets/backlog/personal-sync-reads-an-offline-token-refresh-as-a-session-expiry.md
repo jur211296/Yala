@@ -68,3 +68,24 @@ reintenta: hay que medir cada uno antes de decidir.
 
 - `groups-push-reads-an-offline-token-refresh-as-a-session-expiry` — el arreglo del canal de Grupos.
 - `groups-actions-read-an-offline-token-refresh-as-a-session-expiry` — el de las acciones de grupo.
+
+## Consecuencia nueva: el aviso fijo del canal personal NO llega a esta población (2026-09-15)
+
+Medido en la review adversarial de `cloud-tab-does-not-say-this-phone-cannot-sync-personal-data`, el mismo día que
+ese aviso entró. El aviso se gatea por `GroupsAttestStreakStore.isTerminal()`, y a esta población **la racha nunca se
+le escribe**, por dos razones que se suman:
+
+- `SyncPushClient` (`:342-345`) y `SyncPullClient` (`:184-187`) mapean **todo** 401 a `.sessionExpired`. La rama
+  `case 401 where GatewayErrorEnvelope.isAttestRequired(data)` que sí tienen `GroupsSyncClient` (`:1578`, `:1894`) y
+  `GroupsMembershipClient` (`:355`) no existe aquí — `isAttestRequired` no tiene **ni un call-site fuera de Grupos**.
+- Y en ese mismo ciclo la puerta ya **borró** la racha: `CloudSyncRuntime.resolveAttest` (`:774-777`) llama a
+  `recordAcceptance()` en cuanto `session.attestToken()` devuelve algo, **incluido un token de la caché** que el
+  gateway está rechazando (`attest-session-token-rejected-by-the-gateway-stays-cached`).
+
+⇒ a quien el gateway le rechaza el token aunque el teléfono lo acuñe bien, la app le dice **«Vuelve a iniciar
+sesión»** —y volver a entrar no arregla nada— o, sin filas pendientes, nada en absoluto. Es una de las dos formas de
+que un teléfono en la nube deje de subir por attest, y es la única que no produce racha, así que el aviso nuevo no
+puede salir ahí **por construcción**, no por casualidad.
+
+**Al arreglar este ticket, comprobar que el aviso aparece**: es el consumidor que hoy queda ciego, y la comprobación
+es la que demuestra que la clasificación del 401 llegó hasta el final.

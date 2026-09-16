@@ -211,9 +211,26 @@ terminal y, en los cierres de sesión, una salida que pierde esos cambios con co
     el 200 emite `didChangeNotification`. **Lo que NO se cura solo es el cruce de las 24 h con la app abierta en el
     tab**: la racha no cambia en disco, así que el aviso espera al siguiente gesto.
 
-- **El canal personal no tiene banner**: su veredicto terminal (`AttestSyncGate`, solo `AppAttestError.unavailable`
-  repetido) emite `cloudSyncBlockedByAttestUnavailable` y para el runtime, sin nada visible; `SyncStatusBanner` es el de
-  iCloud. Un ticket partió de lo contrario porque dos docblocks lo prometían.
+- **El canal personal lo dice fijo desde el 2026-09-15, en DOS sitios** (ticket
+  `cloud-tab-does-not-say-this-phone-cannot-sync-personal-data`). Antes su veredicto terminal solo emitía el canario y
+  paraba el runtime; `SyncStatusBanner` es el de iCloud, y un ticket partió de lo contrario porque dos docblocks lo
+  prometían. Decisión, copy y cableado tienen **un solo sitio** cada uno: `CloudAttestNoticeLogic`,
+  `CloudAttestNoticeBanner` y `.cloudAttestVerdictWatcher`.
+  - **Son TRES condiciones**: terminal **Y** `CloudSyncFlags.storageMode == .cloud` **Y**
+    `CloudAuthService.shared.hasSession`. La del medio es el espejo del consent de Grupos y la que más excluye: quien
+    tiene sus datos en su iCloud privado —la mayoría hoy— arrastra una racha que puede ser entera de Grupos sin mandar
+    un solo movimiento personal al servidor. **Va por `storageMode`, no por `CloudRemoteFlags.cloudModeEnabled`**: el
+    flag remoto es fail-closed ante un snapshot ausente, y `storageMode` es testigo directo del corpus de ESTE teléfono.
+  - **La segunda superficie no es cosmética: `syncStatusSection` MENTÍA.**
+    `CloudMigrationController.refreshSyncBanner` solo pone `syncNeedsSignIn` con el runtime en `.stoppedUntilSignIn`, y
+    el attest terminal lo deja en `.stoppedUntilRelaunch` → caía al `else` y pintaba un check verde «Todo al día» con
+    el motor parado. El `else` fallaba ABIERTO: daba por bueno todo estado que nadie enumeró. La rama del attest va
+    **antes** que la de `syncNeedsSignIn`, porque re-firmar no arregla un attest roto.
+  - **Hereda los dos residuales del aviso de Grupos**: va sin el testigo del ciclo —exigirlo lo dejaría mudo justo en
+    el caso del ticket— y el cruce de las 24 h con la app abierta espera al siguiente gesto.
+  - **Sin XCUITest positivo**: verlo exige `storageMode == .cloud` y no hay seam de uitest que lo ponga (precedente en
+    `SessionExitsPerCellUITests`). Lo cubren la tabla unitaria y un XCUI **negativo** sobre `.icloud` con la racha
+    sembrada — el que impide decirle a todo usuario de iCloud que su teléfono no sincroniza.
 
 ### La racha es del TELÉFONO: la escriben los dos canales (2026-09-15)
 

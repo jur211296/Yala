@@ -49,6 +49,11 @@ struct StorageSettingsView: View {
     @State private var dryRun: (transactions: Int, categories: Int, accounts: Int, budgets: Int)?
     /// Tick de refresco del journal vivo (el runner no es `@Observable`).
     @State private var refreshTick = false
+    /// **El veredicto de App Attest de ESTE teléfono** (ticket
+    /// `cloud-tab-does-not-say-this-phone-cannot-sync-personal-data`). Lo mantiene al día
+    /// `cloudAttestVerdictWatcher`; no sale de `controller` porque `refreshSyncBanner` solo mira
+    /// `.stoppedUntilSignIn` y el attest terminal deja el runtime en `.stoppedUntilRelaunch`.
+    @State private var attestVerdictIsTerminal = false
 
     var body: some View {
         ScrollView {
@@ -71,6 +76,8 @@ struct StorageSettingsView: View {
         .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Storage.title)
         .navigationBarTitleDisplayMode(.inline)
+        // Mantiene al día el veredicto del attest que lee `syncStatusSection` (los tres momentos, en el modifier).
+        .cloudAttestVerdictWatcher($attestVerdictIsTerminal)
         .task {
             // DIFERIDOS #34: refresh del remote-config en la ENTRADA de migración (min-interval 6 h).
             // El kill-switch se re-verifica en la puerta.
@@ -312,7 +319,18 @@ struct StorageSettingsView: View {
             Text(L10n.Storage.Sync.title)
                 .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
-            if controller.syncNeedsSignIn {
+            // **La rama del attest va PRIMERA, y sin ella esta sección mentía** (2026-09-15, ticket
+            // `cloud-tab-does-not-say-this-phone-cannot-sync-personal-data`). `refreshSyncBanner` solo pone
+            // `syncNeedsSignIn` con el runtime en `.stoppedUntilSignIn`; el veredicto terminal del attest lo deja en
+            // `.stoppedUntilRelaunch` (`CloudSyncRuntime.RuntimeState`), que caía al `else` de abajo — o sea, un
+            // check verde «Todo al día» con el motor parado y los movimientos sin subir. Es el `else` fallando
+            // ABIERTO: da por bueno todo estado que nadie enumeró.
+            //
+            // Y va ANTES de `syncNeedsSignIn` porque re-firmar no arregla un attest roto: ofrecer ahí el botón de
+            // sign-in mandaría a la persona a un gesto que no cambia nada.
+            if CloudAttestNotice.isShowing(verdictIsTerminal: attestVerdictIsTerminal) {
+                CloudAttestNoticeBanner(accessibilityID: "storage_sync_attest_banner")
+            } else if controller.syncNeedsSignIn {
                 Text(L10n.Storage.Sync.needsSignIn(controller.pendingUploadCount))
                     .font(DS.Typography.caption)
                     .foregroundStyle(DS.Semantic.warningForeground)

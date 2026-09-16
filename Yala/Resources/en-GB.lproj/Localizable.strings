@@ -5228,3 +5228,6 @@
 
 /* Aviso fijo en la pestana Grupos: el telefono lleva mas de un dia sin pasar la verificacion de seguridad, asi que sus cambios de grupos no llegan */
 "groups.attestTerminalBanner" = "It's gone more than a day without passing the security check our server requires. Anything you edit here won't reach the group — use another phone in the meantime.";
+
+/* Aviso fijo: este teléfono no consigue App Attest y los datos personales no suben a la nube */
+"settings.attestTerminalBanner" = "It's gone more than a day without passing the security check our server requires. Anything you add here is saved on this phone, but it doesn't reach your cloud account — use another phone in the meantime.";
