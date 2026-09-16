@@ -38,6 +38,11 @@ vivo más de un día, el token cacheado da 401 `yala_attest_required` durante m�
 Eso cumple el veredicto terminal de Grupos, y el cierre de sesión ofrecería «Cerrar sesión y perderlos» a un teléfono que
 sí atesta. El límite de «15 min» de arriba solo vale con el reloj atrasado menos de 15 min.
 
+**Matiz desde el 2026-09-15** (`cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`). La racha es del
+teléfono y el motor personal la borra con cualquier token conseguido, también uno cacheado. En `.cloud`, el paso 1 del cierre
+borra esa racha falsa antes de que llegue el de grupos, así que el párrafo de arriba solo sigue siendo cierto en los cierres
+de `.icloud` y de solo grupos.
+
 ## Lo que hay que decidir
 
 1. Descartar el token guardado al recibir un 401 de attest, desde un solo punto de decisión (molde

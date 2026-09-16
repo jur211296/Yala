@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "testing, xcuitest, presentaciones"
 created: 2026-09-15
+updated: 2026-09-15
 source: "gate de `cloud-signout-collapses-a-groups-session-expiry-into-permanent` (2026-09-15)"
 ---
 
@@ -49,3 +50,74 @@ cita de oídas. Con dos casos no se distingue latencia de carrera.
 
 - [ ] Clasificado con los números del punto 1: latencia o carrera.
 - [ ] Si es carrera, arreglada y con un test que la reproduzca antes del arreglo.
+
+## Cae también con el simulador CALIENTE, y la MISMA compilación cae 1 de 3 (medido el 2026-09-15)
+
+Gate de `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`. **Trece corridas del mismo caso**,
+todas con el centinela en 0 —vigilada la corrida entera, no la foto de antes—, así que en ninguna hubo intrusos.
+
+**El punto 1 de «Lo que hay que medir» queda contestado: no es solo el simulador frío.**
+
+| Configuración | Simulador | Corridas | Resultado |
+|---|---|---|---|
+| árbol de trabajo (con el cambio del gate) | frío y caliente | 3 | **falla** ×3 (68,99 · 67,85 · 72,17 s) |
+| árbol base `da26ad18a` y ocho variantes del cambio | caliente | 8 | pasa ×6 (22,7-25,9 s), **falla** ×2 (67,96 · 68,85 s) |
+| una MISMA compilación, repetida | caliente | 3 | pasa (22,69) · **falla** (66,98) · pasa (22,67) |
+
+**El dato que más ahorra tiempo al siguiente: la misma compilación, sin tocar nada, cae 1 de 3.** Una bisección
+con N=1 por variante separa azar y no causa — esta sesión gastó nueve corridas construyendo una explicación
+falsa («cierta forma del `.alert` rompía la cola») antes de que la repetición la tumbara.
+
+**Duraciones bimodales**: 22-26 s cuando pasa, 67-72 s cuando falla (el tope de 45 s del `waitForExistence` más
+el recorrido). Nunca nada intermedio, en trece corridas.
+
+**Lo que ya está descartado por medición**, para no repetirlo: concurrencia (centinela 0 ×13) · el simulador frío
+como condición necesaria · la racha de App Attest en el simulador (la clave no existe en las preferencias de
+ninguna de las dos apps) · cualquier código que corra en ese arranque sin gesto.
+
+**Lo que se ve al fallar** (jerarquía de accesibilidad del propio fallo, adjunta al `.xcresult`): el Panel normal,
+sin hoja, sin `Sheet`, sin `Alert` y sin la oferta. La hoja SÍ se cerró —su `waitForNonExistence` de 10 s se
+cumple—, así que lo que no vuelve a ocurrir es el drenaje.
+
+⇒ **Siguiente paso, el punto 2 de este ticket, ahora con su premisa medida:** instrumentar el drenaje al cerrar la
+hoja (¿se llama al drain?, ¿la condición viva sigue puesta?, ¿la matriz recalcula?) y subir la espera a 120 s en
+una corrida de sonda, para separar «tarda más de 45 s» de «no vuelve a drenar nunca». **Lo segundo sí le pasa a
+una persona**: se queda sin avisos de bandeja, sin paywall y sin invitaciones de grupo hasta relanzar la app.
+
+**Y el título de este ticket promete de menos**: «on a cold simulator» era la hipótesis de su primera muestra, no
+una condición. Conviene renombrarlo cuando se clasifique.
+
+### El entorno, medido mientras esto pasaba (2026-09-15, tarde)
+
+No es color: es la única variable que se movió y que tiene efecto comprobado.
+
+- **El sistema MATÓ una tanda de seis corridas por falta de memoria**, a la segunda. No es una inferencia sobre
+  lentitud: el proceso murió por presión de memoria.
+- En ese momento: **16 procesos `claude` vivos** (más 28 de la app de escritorio), **swap 4,64 GB usados de
+  6,14**, y **0,5 GB de páginas libres** de 16 GB físicos.
+- El ticket anotaba en su primera muestra «48 procesos claude y swap 2,9-3,2 GB de 4». O sea: las dos veces que
+  este caso cayó, la máquina estaba estrangulada de memoria.
+- Disco entre 8 y 15 GB durante la tanda, por debajo del rango donde `.claude/rules/testing.md` midió que no
+  distinguía nada (12 GB). Se limpió con la receta del simulador entre tandas.
+
+**Es correlación, no causa demostrada** — pero acota qué medir: el caso espera 45 s a que una presentación en
+cola aparezca, y es exactamente el tipo de aserción que una máquina sin memoria convierte en rojo sin que haya
+ningún bug. ⇒ **antes de instrumentar el drenaje, repetir la tanda con la máquina descargada** (sin otras
+sesiones de Claude Code corriendo XCUITest). Si con memoria libre no cae en N corridas, el ticket se cierra como
+«el entorno, no el producto», y lo que hay que arreglar es el tope de espera o la cadencia del gate, no la app.
+
+### Y el cierre de la medición: la MISMA configuración pasa 4 de 4 después
+
+Sin tocar una línea, el árbol que había fallado 3 de 3 volvió a correrse cuatro veces más: **pasa 26,79 ·
+24,56 · 24,00 · 24,13 s**. Con eso, el recuento de las **19 corridas** de este caso en la sesión queda así:
+
+| Configuración | Corridas | Fallos |
+|---|---|---|
+| árbol con el cambio del gate | 7 | 3 |
+| ocho variantes del cambio | 8 | 2 |
+| la misma variante repetida ×3 | 3 | 1 |
+| árbol base limpio (1 con veredicto, 1 murió por memoria) | 1 | 0 |
+
+**Los fallos se reparten entre configuraciones idénticas entre sí**, así que no hay señal en el código: es el
+entorno. Y el corolario para quien venga: **con una tasa así, ninguna bisección de este caso significa nada por
+debajo de N≈10 por rama.**
