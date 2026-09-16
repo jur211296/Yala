@@ -269,6 +269,27 @@ struct ExportFilters: Equatable {
         )
     }
 
+    /// **Todos los movimientos, sin filtros ni límite de fechas**: la exportación que ofrece el aviso de cerrar sesión en la
+    /// nube con un teléfono sin App Attest, antes de perder los cambios que no suben (decisión de Jürgen del 2026-09-15,
+    /// ticket `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`).
+    ///
+    /// **No usa `DetailPeriod.allTime`**, que son diez años hacia atrás hasta el final de hoy: dejaría fuera lo más antiguo y
+    /// cualquier movimiento con fecha futura, y aquí la promesa es «todos». Tampoco pasa por el asistente ni por sus límites
+    /// de plan: es la copia que la persona se lleva antes de perder datos.
+    static var allTransactions: ExportFilters {
+        ExportFilters(
+            selectedAccounts: [],
+            selectedCategories: [],
+            selectedSubcategories: [],
+            selectedTagNames: [],
+            selectedCurrencies: [],
+            amountCondition: .any,
+            dateFrom: .distantPast,
+            dateTo: .distantFuture,
+            noteContains: nil
+        )
+    }
+
     // MARK: Helpers de periodo
 
     /// Devuelve el `DateInterval` efectivo a aplicar al filtrar transacciones.

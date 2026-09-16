@@ -414,9 +414,12 @@ final class CloudMigrationController {
                 // decide, no rechaza peticiones (medido en `gateway/src/`, 2026-09-13)—. Su 403 solo puede
                 // ser cuenta no disponible, que es exactamente lo que `.permanent` cuenta.
                 channelKilled: false,
-                // Tampoco el attest de Grupos: su racha la escriben las rutas de `/groups/*`, y el motor personal nunca
-                // manda una subida sin attest (`CloudSyncRuntime.performCycle` corta antes, en su propia puerta).
-                attestUnavailable: false,
+                // ¿Paró este ciclo porque el teléfono lleva más de un día sin App Attest? Se pregunta al runtime CON el
+                // outcome, como hace el canal de Grupos: la racha sola no dice por qué falló ESTE ciclo. El motor personal
+                // nunca manda una subida sin attest, así que el testigo es su propia puerta
+                // (`CloudSyncRuntime.stoppedByUnavailableAttest(for:)`, ticket
+                // `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`).
+                attestUnavailable: runtime.stoppedByUnavailableAttest(for: outcome),
                 iteration: iteration,
                 maxIterations: maxIterations
             ) {
@@ -450,6 +453,22 @@ final class CloudMigrationController {
             #endif
             // Conservador: un conteo ilegible jamás debe habilitar un cierre con pendientes.
             return Int.max
+        }
+    }
+
+    /// Las filas vivas del outbox, por su `clientMutationID`: lo que el cierre compara con lo que la persona aceptó perder al
+    /// cerrar sesión con un teléfono sin App Attest (`CloudSessionSignOut.exitDiscardingUnsyncedPersonalChanges`). Cada
+    /// edición encola una fila nueva, así que un cambio hecho después del aviso no está entre las aceptadas. `nil` si el
+    /// fetch falla, y eso solo lo cubre una aceptación sin cifra: una fila que no se pudo mirar no se descarta por una cifra.
+    func livePendingUploadRowIDs() -> Set<UUID>? {
+        do {
+            let rows = try context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }
+            return Set(rows.map(\.clientMutationID))
+        } catch {
+            #if DEBUG
+            print("CloudMigrationController: Error leyendo las filas vivas del outbox: \(error)")
+            #endif
+            return nil
         }
     }
 

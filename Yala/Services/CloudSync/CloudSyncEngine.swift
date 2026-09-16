@@ -398,6 +398,29 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSignOut groups discarded without uploading pending=\(pending ?? -1, privacy: .public)")
     }
 
+    /// El cierre en la NUBE se bloqueó en los cambios PERSONALES porque este teléfono lleva más de un día sin App Attest
+    /// (`BlockReason.personalAttestUnavailable`) y ofrece exportar los movimientos o salir perdiéndolos. `pending` = filas
+    /// vivas del outbox personal; −1 = no se pudo contar. Sin PII: solo el número.
+    static func signOutPersonalAttestUnavailable(pending: Int?) {
+        logger.notice("CloudSignOut personal attest unavailable — export and loss exit offered pending=\(pending ?? -1, privacy: .public)")
+    }
+
+    /// Desde ese aviso se generó el archivo con todos los movimientos. `rows` = movimientos exportados. Sin PII.
+    static func signOutPersonalExported(rows: Int) {
+        logger.notice("CloudSignOut personal export before losing changes rows=\(rows, privacy: .public)")
+    }
+
+    /// La persona eligió «Cerrar sesión y perderlos» en el aviso de sus datos: el cierre se retoma con esas filas aceptadas.
+    static func signOutPersonalLossAccepted(pending: Int?) {
+        logger.notice("CloudSignOut personal loss accepted pending=\(pending ?? -1, privacy: .public)")
+    }
+
+    /// El cierre siguió sin subir los cambios personales que la persona aceptó perder: mueren con el borrado del arranque.
+    /// Va aparte del anterior porque, entre el tap y aquí, el attest pudo volver y subirlos.
+    static func signOutPersonalDiscarded(pending: Int?) {
+        logger.notice("CloudSignOut personal changes discarded without uploading pending=\(pending ?? -1, privacy: .public)")
+    }
+
     /// Paso 9 · cierre privado SIN copia en iCloud, confirmado con el segundo gesto: no hay espera que hacer.
     static func signOutWithoutICloudCopy() {
         logger.notice("CloudSignOut private without iCloud copy — confirmed, no export wait")

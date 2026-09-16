@@ -77,6 +77,10 @@ final class CloudSessionSignOut {
             // en vuelo, y el cierre volvía a preguntar o bloqueaba tras soltar el canal.
             groupsLossExit = nil
             acceptedGroupsLoss = nil
+            // Y la de los cambios PERSONALES en la nube, por lo mismo (2026-09-15): «Ahora no» en cualquiera de los dos avisos
+            // retira las dos aceptaciones, porque el cierre que las tenía ya no sigue.
+            personalLossExit = nil
+            acceptedPersonalLoss = nil
         }
         blockedExit = nil
     }
@@ -121,9 +125,12 @@ final class CloudSessionSignOut {
     func signOut(context: ModelContext, confirmedPath: CloudSignOutFlowLogic.Path? = nil,
                  confirmedWithoutICloudCopy: Bool = false) async {
         guard phase == .idle else { return }
-        // Un gesto nuevo no hereda lo que otro aceptó perder (la salida de `.attestUnavailable`).
+        // Un gesto nuevo no hereda lo que otro aceptó perder (las salidas del teléfono sin App Attest, la de grupos y la
+        // personal).
         groupsLossExit = nil
         acceptedGroupsLoss = nil
+        personalLossExit = nil
+        acceptedPersonalLoss = nil
         let path = CloudSignOutFlowLogic.path(
             for: CloudSyncFlags.storageMode,
             hasLiveSession: CloudAuthService.shared.hasSession,
@@ -219,6 +226,8 @@ final class CloudSessionSignOut {
         // El desasociar no hereda lo que un cierre aceptó perder, ni ofrece esa salida: ver `lossExit: nil` abajo.
         groupsLossExit = nil
         acceptedGroupsLoss = nil
+        personalLossExit = nil
+        acceptedPersonalLoss = nil
 
         // (1) Antes de tocar credenciales.
         let associatedSub = GroupsAccountAssociation.shared.associatedSub ?? CloudAuthService.shared.currentUserID
@@ -468,8 +477,8 @@ final class CloudSessionSignOut {
 
     /// Lo que la persona aceptó perder en ESTE cierre: las filas del aviso, o cualquiera si salió sin cifra. `nil` fuera de
     /// él. Lo leen los sitios que suben grupos y los dos recuentos finales, siempre con
-    /// `CloudSignOutFlowLogic.continuesWithoutUploadingGroups`, que compara por fila.
-    private var acceptedGroupsLoss: CloudSignOutFlowLogic.GroupsLossAcceptance?
+    /// `CloudSignOutFlowLogic.continuesWithoutUploading`, que compara por fila.
+    private var acceptedGroupsLoss: CloudSignOutFlowLogic.LossAcceptance?
 
     /// ¿El bloqueo en pantalla ofrece salir perdiendo los cambios de grupos? Solo el `.attestUnavailable` que puso un
     /// CIERRE: el mismo motivo puesto por el desasociar no tiene desde dónde retomar. Las vistas lo preguntan antes de
@@ -477,6 +486,30 @@ final class CloudSessionSignOut {
     var offersGroupsLossExit: Bool {
         guard case .blocked(_, .attestUnavailable) = phase else { return false }
         return groupsLossExit != nil
+    }
+
+    /// La salida ofrecida al cerrar sesión en la NUBE con cambios PERSONALES sin subir y un teléfono sin App Attest
+    /// (`exitDiscardingUnsyncedPersonalChanges`, ticket `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`):
+    /// QUÉ filas de `SyncOutbox` contó el aviso, por su `clientMutationID` (`nil` si el recuento falló y el aviso salió sin
+    /// cifra). Siempre retoma el mismo sitio —el cierre en la nube—, así que no guarda desde dónde.
+    private struct PersonalLossOffer {
+        let rows: Set<UUID>?
+    }
+    private var personalLossExit: PersonalLossOffer?
+
+    /// Lo que la persona aceptó perder de sus cambios PERSONALES en este cierre. `nil` fuera de él.
+    ///
+    /// **Sobrevive al aviso de grupos, a propósito**: con cambios de los dos lados salen dos avisos seguidos (decisión de
+    /// Jürgen), y aceptar el de grupos retoma el cierre en la nube desde el paso 1, que tiene que seguir encontrando aquí lo
+    /// aceptado. Lo retiran «Ahora no» (`acknowledgeBlocked`), un gesto nuevo y el propio paso 1 cuando vuelve a bloquear.
+    private var acceptedPersonalLoss: CloudSignOutFlowLogic.LossAcceptance?
+
+    /// ¿El bloqueo en pantalla ofrece exportar y salir perdiendo los cambios personales? Solo el `.personalAttestUnavailable`
+    /// con su oferta viva. Ajustes lo pregunta antes de pintar el aviso, y `exitDiscardingUnsyncedPersonalChanges` lo vuelve a
+    /// exigir.
+    var offersPersonalLossExit: Bool {
+        guard case .blocked(_, .personalAttestUnavailable) = phase else { return false }
+        return personalLossExit != nil
     }
 
     /// Qué hace el tramo final con lo que no se pudo confirmar en iCloud.
@@ -621,7 +654,8 @@ final class CloudSessionSignOut {
     ///
     /// **Aquí no se borra nada.** Retoma el cierre donde paró con las filas del aviso como lo aceptado
     /// (`acceptedGroupsLoss`): los sitios que suben grupos lo intentan una vez —si el attest volvió, suben— y siguen sin
-    /// ellas mientras las que queden estén entre las aceptadas; si aparece otra, vuelve el aviso con la cifra nueva. Los
+    /// ellas mientras el bloqueo siga siendo el attest y las que queden estén entre las aceptadas; si aparece otra, vuelve
+    /// el aviso con la cifra nueva. Los
     /// cambios mueren con el boot-wipe de siempre, por archivos, y un bloqueo posterior por otro motivo deja todo como
     /// estaba.
     func exitDiscardingUnsyncedGroups(context: ModelContext) async {
@@ -630,7 +664,7 @@ final class CloudSessionSignOut {
         // Lo aceptado son las filas que contó el aviso. Sin cifra honesta —el recuento falló— cubre cualquiera: es el «no
         // pudimos contar» que se le enseñó.
         acceptedGroupsLoss = offer.rows.map { .rows($0) } ?? .uncounted
-        CloudSyncBreadcrumb.signOutGroupsLossAccepted(pending: CloudSignOutFlowLogic.shownGroupsLossCount(shown))
+        CloudSyncBreadcrumb.signOutGroupsLossAccepted(pending: CloudSignOutFlowLogic.shownLossCount(shown))
         phase = .working
         defer { waitingForPending = false }
         switch offer.resume {
@@ -645,7 +679,7 @@ final class CloudSessionSignOut {
 
     /// Un cierre enseñó el aviso que ofrece perder los cambios de grupos: rastro y canario, sin PII.
     private static func noteGroupsLossOffered(pending: Int) {
-        let shown = CloudSignOutFlowLogic.shownGroupsLossCount(pending)
+        let shown = CloudSignOutFlowLogic.shownLossCount(pending)
         CloudSyncBreadcrumb.signOutGroupsAttestUnavailable(pending: shown)
         MetricsService.canary(.groupsSignOutAttestUnavailable, detail: "pending=\(shown.map(String.init) ?? "unknown")")
     }
@@ -654,9 +688,54 @@ final class CloudSessionSignOut {
     /// con cero, el attest volvió entre el tap y aquí, y subieron.
     private static func noteGroupsDiscarded(pending: Int) {
         guard pending > 0 else { return }
-        let shown = CloudSignOutFlowLogic.shownGroupsLossCount(pending)
+        let shown = CloudSignOutFlowLogic.shownLossCount(pending)
         CloudSyncBreadcrumb.signOutGroupsDiscarded(pending: shown)
         MetricsService.canary(.groupsSignOutAttestDiscarded, detail: "pending=\(shown.map(String.init) ?? "unknown")")
+    }
+
+    /// **«Cerrar sesión y perderlos» en el aviso de tus datos** (decisión de Jürgen del 2026-09-15, ticket
+    /// `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`): el cierre en la nube de un teléfono que lleva
+    /// más de un día sin App Attest sigue sin subir los cambios PERSONALES que no llegan. Es la excepción ACOTADA a «jamás
+    /// descartar» de ese cierre: solo la alcanza el bloqueo `.personalAttestUnavailable` con su oferta viva
+    /// (`offersPersonalLossExit`), y solo corre si la persona la elige, en un aviso que antes le ofreció exportar sus
+    /// movimientos.
+    ///
+    /// **Aquí no se borra nada.** Retoma el cierre en la nube con las filas del aviso como lo aceptado (`acceptedPersonalLoss`):
+    /// el paso 1 intenta subir una vez —si el attest volvió, suben— y sigue mientras el bloqueo sea otra vez el attest y lo
+    /// que quede esté entre lo aceptado. Con otro motivo bloquea como siempre, y si aparece otra fila vuelve el aviso con la
+    /// cifra nueva. Si después se para en los cambios de grupos, sale su propio
+    /// aviso, y aceptarlo retoma el cierre con esto aún aceptado. Los cambios mueren con el boot-wipe de siempre, por archivos.
+    func exitDiscardingUnsyncedPersonalChanges(context: ModelContext) async {
+        guard case .blocked(let shown, .personalAttestUnavailable) = phase, let offer = personalLossExit else { return }
+        personalLossExit = nil
+        // Lo aceptado son las filas que contó el aviso. Sin cifra honesta —el recuento falló— cubre cualquiera: es el «hay
+        // cambios que no llegaron» que se le enseñó.
+        acceptedPersonalLoss = offer.rows.map { .rows($0) } ?? .uncounted
+        CloudSyncBreadcrumb.signOutPersonalLossAccepted(pending: CloudSignOutFlowLogic.shownLossCount(shown))
+        phase = .working
+        await performCloudSecureSignOut(context: context)
+    }
+
+    /// El cierre en la nube enseñó el aviso que ofrece exportar y perder los cambios personales: rastro y canario, sin PII.
+    private static func notePersonalLossOffered(pending: Int) {
+        let shown = CloudSignOutFlowLogic.shownLossCount(pending)
+        CloudSyncBreadcrumb.signOutPersonalAttestUnavailable(pending: shown)
+        MetricsService.canary(.cloudSignOutAttestUnavailable, detail: "pending=\(shown.map(String.init) ?? "unknown")")
+    }
+
+    /// Desde ese aviso se generó el archivo con todos los movimientos (Ajustes, `ProfileView`): rastro y canario, sin PII.
+    static func notePersonalLossExport(rows: Int) {
+        CloudSyncBreadcrumb.signOutPersonalExported(rows: rows)
+        MetricsService.canary(.cloudSignOutAttestExported, detail: "rows=\(rows)")
+    }
+
+    /// El cierre va a armar el borrado con cambios personales que la persona aceptó perder. Solo cuenta si queda alguno: con
+    /// cero, el attest volvió entre el tap y aquí, y subieron.
+    private static func notePersonalDiscarded(pending: Int) {
+        guard pending > 0 else { return }
+        let shown = CloudSignOutFlowLogic.shownLossCount(pending)
+        CloudSyncBreadcrumb.signOutPersonalDiscarded(pending: shown)
+        MetricsService.canary(.cloudSignOutAttestDiscarded, detail: "pending=\(shown.map(String.init) ?? "unknown")")
     }
 
     /// La privada (C) no sube grupos. Si aun así le quedan cambios de grupos sin subir —el outbox de una sesión
@@ -746,7 +825,7 @@ final class CloudSessionSignOut {
             // **Con la pérdida aceptada** (teléfono sin App Attest, 2026-09-15), las filas del aviso no bloquean: se pierden
             // con el borrado, que es lo que la persona eligió. Una fila que no estaba en el aviso sí, como siempre.
             let residual = Self.liveGroupsPendingCount(context: context)
-            guard residual == 0 || CloudSignOutFlowLogic.continuesWithoutUploadingGroups(
+            guard residual == 0 || CloudSignOutFlowLogic.continuesWithoutUploading(
                 pendingRows: Self.liveGroupsPendingRowIDs(context: context), acceptance: acceptedGroupsLoss) else {
                 phase = .blocked(pendingCount: residual, reason: .permanent)
                 CloudSyncBreadcrumb.signOutPushBlocked(pending: residual)
@@ -864,16 +943,38 @@ final class CloudSessionSignOut {
             return
         }
 
-        // 1) Push-all PERSONAL — bloquear si no drena (jamás descartar). El camino `.cloud`
-        // conserva su alert de siempre ("conexión"): `reason: .permanent` (byte-idéntico —
-        // H-2026-07-18-6 ajusta SOLO el path solo-grupos, no éste).
-        switch await controller.pushAllPendingForSignOut() {
-        case .blocked(let pending, _):
-            phase = .blocked(pendingCount: pending, reason: .permanent)
-            CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
-            return
-        case .drained:
-            break
+        // 1) Push-all PERSONAL — bloquear si no drena. **Jamás descartar, salvo lo que la persona aceptó perder** en el aviso
+        // del teléfono sin App Attest (`exitDiscardingUnsyncedPersonalChanges`, decisión de Jürgen del 2026-09-15).
+        //
+        // El resto de motivos conserva su alert de siempre ("conexión"): `.permanent`, que es un colapso con ticket propio
+        // (`cloud-signout-collapses-the-personal-push-all-reason-into-permanent`). **Solo se separa el teléfono sin App
+        // Attest**: el push-all lo trae como `.attestUnavailable` cuando el testigo del motor personal lo confirma
+        // (`CloudSyncRuntime.stoppedByUnavailableAttest(for:)`), y aquí pasa a `.personalAttestUnavailable`, cuyo aviso habla
+        // de tus datos y ofrece exportarlos.
+        if case .blocked(let pending, let reason) = await controller.pushAllPendingForSignOut() {
+            let rows = controller.livePendingUploadRowIDs()
+            // **La pérdida aceptada, y solo mientras el teléfono siga sin App Attest**: el push-all lo intentó una vez —si el
+            // attest volvió y la red va, subieron—, y el cierre sigue si el bloqueo es otra vez el attest y lo que queda estaba
+            // en el aviso. Una fila nueva, o un bloqueo por otra cosa con el attest ya recuperado, retira lo aceptado.
+            if !CloudSignOutFlowLogic.continuesAfterBlockedUpload(
+                reason: reason, pendingRows: rows, acceptance: acceptedPersonalLoss) {
+                acceptedPersonalLoss = nil
+                guard reason == .attestUnavailable else {
+                    phase = .blocked(pendingCount: pending, reason: .permanent)
+                    CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
+                    return
+                }
+                // La oferta se anota ANTES de la fase, por lo mismo que la de grupos: quien reacciona a la fase pregunta
+                // `offersPersonalLossExit` y tiene que encontrarla ya. **Y la cifra sale de las MISMAS filas que se
+                // aceptarán**: con un recuento aparte, un fetch que fallara solo en una de las dos lecturas enseñaría un número
+                // y aceptaría cualquier fila.
+                personalLossExit = PersonalLossOffer(rows: rows)
+                let shown = rows?.count ?? Int.max
+                phase = .blocked(pendingCount: shown, reason: .personalAttestUnavailable)
+                CloudSyncBreadcrumb.signOutPushBlocked(pending: shown)
+                Self.notePersonalLossOffered(pending: shown)
+                return
+            }
         }
 
         // 2) Push-all GRUPOS (cierra LOW-3 de B2) — ANTES del teardown (la guardia de generación
@@ -886,9 +987,13 @@ final class CloudSessionSignOut {
         // pasajero (`.uploadRetryLater`) y el kill-switch sigue viajando tal cual.
         //
         // **Pero esto arregla la mitad de GRUPOS, no el cierre entero, y conviene saberlo:** el paso 1 de
-        // arriba tira su motivo con `_`, así que quien tenga filas PERSONALES pendientes bloquea allí y
-        // sigue viendo el aviso genérico. Ticket:
+        // arriba escribe `.permanent` para todo salvo el teléfono sin App Attest, así que quien tenga filas PERSONALES
+        // pendientes bloquea allí y sigue viendo el aviso genérico. Ticket:
         // `cloud-signout-collapses-the-personal-push-all-reason-into-permanent`.
+        //
+        // **Con cambios de los dos lados y el teléfono sin App Attest salen dos avisos seguidos** (decisión de Jürgen,
+        // 2026-09-15): el de tus datos en el paso 1 y, aceptado ése, el de tus grupos aquí. Aceptar este último retoma el
+        // cierre desde el paso 1, con lo aceptado de lo personal todavía en pie.
         //
         // **Aquí NO hay reintento que gastar, y por eso el aviso sale al momento.** Este paso llama al
         // push-all DIRECTO: `pushGroupsForSignOut` —el del presupuesto de 45 s— es de los otros tres
@@ -896,10 +1001,11 @@ final class CloudSessionSignOut {
         // Jürgen (2026-09-14) es exactamente esa: aviso inmediato y honesto, sin quemar reintentos contra
         // un servidor que está fallando. El gesto sigue siendo reintentable: nada se ha escrito.
         switch await pushAllPendingGroupsForSignOut(context: context) {
-        case .blocked where CloudSignOutFlowLogic.continuesWithoutUploadingGroups(
-            pendingRows: Self.liveGroupsPendingRowIDs(context: context), acceptance: acceptedGroupsLoss):
+        case .blocked(_, let reason) where CloudSignOutFlowLogic.continuesAfterBlockedUpload(
+            reason: reason, pendingRows: Self.liveGroupsPendingRowIDs(context: context), acceptance: acceptedGroupsLoss):
             // **La pérdida aceptada** (teléfono sin App Attest, `exitDiscardingUnsyncedGroups`): las filas del aviso ya no
-            // bloquean. Si aparece otra, cae en el `case` de abajo y vuelve el aviso con la cifra nueva.
+            // bloquean mientras el bloqueo siga siendo el attest. Si aparece otra fila, o el bloqueo es otra cosa, cae en el
+            // `case` de abajo.
             break
         case .blocked(let pending, let reason):
             acceptedGroupsLoss = nil
@@ -930,10 +1036,13 @@ final class CloudSessionSignOut {
         // History (sin drain post-teardown) mueren con el wipe.
         let residualPersonal = controller.livePendingUploadCount()
         let residualGroups = Self.liveGroupsPendingCount(context: context)
-        // Con la pérdida aceptada (teléfono sin App Attest), las filas de GRUPOS del aviso ya no bloquean. Los cambios
-        // PERSONALES sí, siempre: la excepción de Jürgen no los alcanza.
-        guard residualPersonal == 0, residualGroups == 0 || CloudSignOutFlowLogic.continuesWithoutUploadingGroups(
-            pendingRows: Self.liveGroupsPendingRowIDs(context: context), acceptance: acceptedGroupsLoss) else {
+        // Con la pérdida aceptada (teléfono sin App Attest), las filas de cada aviso ya no bloquean: las PERSONALES que contó
+        // el de tus datos y las de GRUPOS que contó el suyo. **Cada aceptación cubre solo su outbox**, y una fila que no
+        // estaba en su aviso bloquea como siempre.
+        guard residualPersonal == 0 || CloudSignOutFlowLogic.continuesWithoutUploading(
+                  pendingRows: controller.livePendingUploadRowIDs(), acceptance: acceptedPersonalLoss),
+              residualGroups == 0 || CloudSignOutFlowLogic.continuesWithoutUploading(
+                  pendingRows: Self.liveGroupsPendingRowIDs(context: context), acceptance: acceptedGroupsLoss) else {
             // Suma que satura: los dos recuentos devuelven `Int.max` cuando su fetch falla, y un `+` atraparía.
             let (sum, overflow) = residualPersonal.addingReportingOverflow(residualGroups)
             let residual = overflow ? Int.max : sum
@@ -960,6 +1069,7 @@ final class CloudSessionSignOut {
         // Lo que se pierde con la pérdida aceptada (teléfono sin App Attest) se cuenta aquí, pegado al arm: con cero, el
         // attest volvió entre el tap y aquí y los cambios subieron.
         if acceptedGroupsLoss != nil { Self.noteGroupsDiscarded(pending: residualGroups) }
+        if acceptedPersonalLoss != nil { Self.notePersonalDiscarded(pending: residualPersonal) }
         if CloudSyncFlags.groupsBackendCompiledCapability {
             StorageModePersistence.markSignOutWipeIncludesGroups()
         }
@@ -1008,7 +1118,7 @@ final class CloudSessionSignOut {
     ///
     /// **Con la pérdida aceptada** (`acceptedGroupsLoss`, tras «Cerrar sesión y perderlos»): un solo intento, sin el
     /// presupuesto de 45 s. Si drena, el attest volvió y los cambios subieron; si no, el cierre sigue sin ellos mientras
-    /// las filas que quedan estén entre las aceptadas. La quiescencia se espera igual, porque el drain que hace honesto el recuento es un
+    /// el bloqueo siga siendo el attest y las filas que quedan estén entre las aceptadas. La quiescencia se espera igual, porque el drain que hace honesto el recuento es un
     /// `save()`: sin ella no hay recuento que comparar, y se vuelve al camino de siempre.
     private func pushGroupsForSignOut(context: ModelContext, lossExit: GroupsLossResume?) async -> Bool {
         if let accepted = acceptedGroupsLoss {
@@ -1017,13 +1127,14 @@ final class CloudSessionSignOut {
                 switch await pushAllPendingGroupsForSignOut(context: context) {
                 case .drained:
                     return true
-                case .blocked:
-                    if CloudSignOutFlowLogic.continuesWithoutUploadingGroups(
-                        pendingRows: Self.liveGroupsPendingRowIDs(context: context), acceptance: accepted) {
+                case .blocked(_, let reason):
+                    if CloudSignOutFlowLogic.continuesAfterBlockedUpload(
+                        reason: reason, pendingRows: Self.liveGroupsPendingRowIDs(context: context), acceptance: accepted) {
                         return true
                     }
-                    // Hay filas que no estaban en el aviso: la aceptación ya no cubre lo que hay. Vuelve el camino de
-                    // siempre, que enseñará el aviso con la cifra nueva si el motivo sigue siendo el attest.
+                    // Hay filas que no estaban en el aviso, o el bloqueo ya no es el attest: la aceptación ya no cubre lo que
+                    // hay. Vuelve el camino de siempre, que enseñará el aviso con la cifra nueva si el motivo sigue siendo el
+                    // attest.
                 }
             }
             acceptedGroupsLoss = nil

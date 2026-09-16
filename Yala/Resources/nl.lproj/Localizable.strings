@@ -5959,3 +5959,13 @@
 
 /* Boton generico para posponer una decision */
 "action.notNow" = "Niet nu";
+
+/* Cerrar sesión en la nube sin App Attest con cambios personales sin subir (2026-09-15) */
+"settings.signOutAttestTitle" = "Deze telefoon kan je gegevens niet synchroniseren";
+"settings.signOutAttestMessage" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist. Wijzigingen die niet in je account in de cloud zijn aangekomen: %d. Voordat je beslist, kun je je transacties naar een bestand exporteren. Als je nu uitlogt, gaan deze wijzigingen verloren.";
+"settings.signOutAttestMessageUnknown" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist, en sommige wijzigingen zijn niet in je account in de cloud aangekomen. Voordat je beslist, kun je je transacties naar een bestand exporteren. Als je nu uitlogt, gaan deze wijzigingen verloren.";
+"settings.signOutAttestExportButton" = "Mijn transacties exporteren";
+"settings.signOutAttestLossButton" = "Uitloggen en ze verliezen";
+"settings.signOutAttestBlocked" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist, dus je wijzigingen kunnen niet naar je account in de cloud worden geüpload.";
+"settings.signOutAttestExportEmpty" = "Je hebt geen transacties om te exporteren.";
+"settings.signOutAttestExportFailed" = "We konden het bestand niet maken. Probeer het opnieuw.";

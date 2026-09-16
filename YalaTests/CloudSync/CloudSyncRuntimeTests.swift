@@ -389,6 +389,116 @@ struct CloudSyncRuntimeTests {
         #expect(outcome == .sessionExpired)
     }
 
+    // MARK: - La puerta de attest alimenta la racha del teléfono (2026-09-15)
+
+    // Ticket `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`. El motor personal nunca manda una subida
+    // sin attest, así que lo único que ve es el error de su puerta. De eso depende que el cierre en la nube ofrezca exportar y
+    // perder los cambios personales a quien lleva un día sin App Attest, y a nadie que solo esté sin conexión. Todos aíslan la
+    // tienda de la racha: sin aislar, escribirían en el `UserDefaults` del host, que es la app.
+
+    @Test("MUTACIÓN: un fallo que habla del attest suma a la racha, y el testigo solo sale con la racha terminal")
+    func attestGate_feedsThePhoneStreak_andTheWitnessNeedsATerminalStreak() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let runtime = makeRuntime(session: StubCloudSession(attestError: .unavailable))
+
+        let primero = await runtime.syncCycle(context: context)
+        #expect(primero == .transient)
+        #expect(GroupsAttestStreakStore.current()?.rejections == 1, "el fallo de la puerta no sumó a la racha del teléfono")
+        #expect(!runtime.stoppedByUnavailableAttest(for: primero), "un solo rechazo no es un teléfono sin attest")
+
+        try racha.seedTerminal()
+        let segundo = await runtime.syncCycle(context: context)
+        #expect(runtime.stoppedByUnavailableAttest(for: segundo), "con la racha terminal, este fallo es el teléfono sin attest")
+    }
+
+    @Test("MUTACIÓN: sin red o con el servidor fallando, ni suma a la racha ni enciende el testigo")
+    func attestGate_networkAndServerFailures_neverCount() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        try racha.seedTerminal()
+        let antes = GroupsAttestStreakStore.current()
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = StubCloudSession(attestError: .network(URLError(.notConnectedToInternet)))
+        let runtime = makeRuntime(session: session)
+
+        for error in [AppAttestError.network(URLError(.notConnectedToInternet)), .server("http_503"),
+                      .server("yala_bad_request"), .server("decode")] {
+            session.attestError = error
+            let outcome = await runtime.syncCycle(context: context)
+            #expect(outcome == .transient)
+            #expect(!runtime.stoppedByUnavailableAttest(for: outcome), "con \(error) el aviso de la pérdida mentiría")
+        }
+        #expect(GroupsAttestStreakStore.current() == antes, "estar sin conexión no acerca el veredicto")
+    }
+
+    @Test("MUTACIÓN: el rechazo del gateway y un error de DeviceCheck cuentan como fallo del attest")
+    func attestGate_gatewayRejectionAndDeviceCheckErrors_count() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        try racha.seedTerminal()
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = StubCloudSession(attestError: .server(AttestSyncGate.attestRejectedType))
+        let runtime = makeRuntime(session: session)
+
+        let rechazo = await runtime.syncCycle(context: context)
+        #expect(runtime.stoppedByUnavailableAttest(for: rechazo))
+
+        // `AppAttestClient` no envuelve los errores de DeviceCheck: llegan al `catch` genérico de la puerta. El dominio va
+        // escrito a mano, que es lo que se ve en un log real («Domain=com.apple.devicecheck.error Code=4»).
+        session.attestError = nil
+        session.otherAttestError = NSError(domain: "com.apple.devicecheck.error", code: 4)
+        let deviceCheck = await runtime.syncCycle(context: context)
+        #expect(deviceCheck == .transient)
+        #expect(runtime.stoppedByUnavailableAttest(for: deviceCheck))
+    }
+
+    @Test("MUTACIÓN: el testigo es de CADA ciclo, y un token conseguido acaba la racha")
+    func attestGate_witnessIsPerCycle_andATokenEndsTheStreak() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        try racha.seedTerminal()
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = StubCloudSession(attestError: .unavailable)
+        let runtime = makeRuntime(session: session)
+
+        let fallo = await runtime.syncCycle(context: context)
+        #expect(runtime.stoppedByUnavailableAttest(for: fallo))
+        #expect(!runtime.stoppedByUnavailableAttest(for: .coalesced), "un `.coalesced` describe un ciclo ajeno")
+        #expect(!runtime.stoppedByUnavailableAttest(for: .completed))
+
+        // Un corte de red DESPUÉS de un fallo que contó, con la racha aún terminal: el testigo tiene que bajarse al entrar
+        // en el ciclo, o este `.transient` se leería como el teléfono sin attest (review adversarial, 2026-09-15: con el
+        // acierto directo, la racha borrada ya daba `false` y el mutante que quita el reinicio sobrevivía).
+        session.attestError = .network(URLError(.notConnectedToInternet))
+        let sinRed = await runtime.syncCycle(context: context)
+        #expect(sinRed == .transient)
+        #expect(GroupsAttestStreakStore.isTerminal(), "control: la racha sigue terminal, así que solo el testigo decide")
+        #expect(!runtime.stoppedByUnavailableAttest(for: sinRed), "el testigo del ciclo anterior sobrevivió a este")
+
+        session.attestError = nil
+        let acierto = await runtime.syncCycle(context: context)
+        #expect(!runtime.stoppedByUnavailableAttest(for: acierto))
+        #expect(GroupsAttestStreakStore.current() == nil, "un token conseguido es un acierto: la racha se acaba")
+    }
+
+    @Test("la parada terminal de la puerta (`.accountUnavailable`) también es el teléfono sin attest")
+    func attestGate_terminalStop_isAlsoTheWitness() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        try racha.seedTerminal()
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let runtime = makeRuntime(session: StubCloudSession(attestError: .unavailable))
+
+        var outcome = SyncCadencePolicy.CadenceOutcome.completed
+        for _ in 0...AttestSyncGate.defaultMaxRetries {
+            outcome = await runtime.syncCycle(context: context)
+        }
+        #expect(outcome == .accountUnavailable)
+        #expect(runtime.stoppedByUnavailableAttest(for: outcome))
+    }
+
     // MARK: - Fan-out post-apply
 
     @Test func syncCycle_fanOut_firesOnlyWhenPagesApplied() async throws {
@@ -686,6 +796,8 @@ private final class StubCloudSession: CloudSyncSessionProviding {
     var currentUserID: String?
     var canRenewSession: Bool
     var attestError: AppAttestError?
+    /// Un error que NO es `AppAttestError`, como los de DeviceCheck, que `AppAttestClient` no envuelve.
+    var otherAttestError: (any Error)?
     var claimAction: AccountClaimDecision.AuthAction?
     init(userID: String? = "u1", canRenew: Bool = true, attestError: AppAttestError? = nil,
          claim: AccountClaimDecision.AuthAction? = nil) {
@@ -697,6 +809,7 @@ private final class StubCloudSession: CloudSyncSessionProviding {
     func accessToken() async -> String? { "jwt" }
     func attestToken() async throws -> String? {
         if let attestError { throw attestError }
+        if let otherAttestError { throw otherAttestError }
         return nil
     }
 }

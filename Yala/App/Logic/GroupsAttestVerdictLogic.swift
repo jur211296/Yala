@@ -11,12 +11,16 @@
 //  dos poblaciones con lo único que el cliente observa sin clasificar errores de DeviceCheck que nadie ha medido:
 //  cuánto tiempo, y en cuántas ocasiones distintas, lleva el servidor rechazando el attest sin aceptarlo ni una vez.
 //
-//  QUÉ CUENTA. Un rechazo es un 401 `yala_attest_required` de una ruta de Grupos —push, pull o RPC—: el servidor dice
-//  «red bien, sesión bien, falta attest». Sin red o con un 5xx no se produce, así que estar sin conexión no acerca el
-//  veredicto. Un 200 de esas rutas borra la racha: es la única respuesta que prueba que el attest pasó la guard.
+//  QUÉ CUENTA. En Grupos, un rechazo es un 401 `yala_attest_required` de una ruta de Grupos —push, pull o RPC—: el
+//  servidor dice «red bien, sesión bien, falta attest». Sin red o con un 5xx no se produce, así que estar sin conexión no
+//  acerca el veredicto, y un 200 de esas rutas borra la racha. **Desde el 2026-09-15 la racha es del teléfono y la escribe
+//  también el motor personal**, que nunca manda una subida sin attest: cuenta el error de su puerta cuando habla del attest
+//  (`AttestSyncGate.countsTowardAttestStreak`), y un token conseguido la borra aunque sea uno cacheado que el gateway ya
+//  rechaza (`attest-session-token-rejected-by-the-gateway-stays-cached`).
 //
 //  QUÉ NO DECIDE. Dónde se guarda la racha lo lleva `GroupsAttestStreakStore`. Y el cierre de sesión no se fía solo de
-//  ella: exige además que el ciclo que lee haya chocado con ese 401 (`GroupsSyncClient.stoppedByUnavailableAttest`),
+//  ella: exige además que el ciclo que lee haya chocado con el attest —el 401 en Grupos
+//  (`GroupsSyncClient.stoppedByUnavailableAttest`), la puerta en el motor personal (`CloudSyncRuntime.stoppedByUnavailableAttest`)—,
 //  para que una racha vieja no disfrace un fallo de hoy que es otra cosa.
 //
 

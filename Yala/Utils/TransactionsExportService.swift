@@ -165,13 +165,18 @@ struct TransactionsExportService {
     ///   - filters: Modelo de filtros de exportación.
     ///   - columns: Conjunto de columnas activas y su orden.
     ///   - modelContext: Contexto de SwiftData desde el que se leerán las transacciones.
+    ///   - scheduleTagBackfill: ¿Rellena el espejo CSV de etiquetas de los movimientos que no lo tienen? Ese relleno es un
+    ///     guardado, y en la nube se convierte en cambios por subir. **El asistente pasa `true`**, que es lo de siempre. **La
+    ///     exportación previa a perder los cambios pasa `false`** (review adversarial, 2026-09-15): el borrado se lleva ese
+    ///     espejo, y sus filas nuevas harían volver el aviso con una cifra que la persona no escribió.
     /// - Returns: `TransactionsExportResult` con la URL del archivo y el conteo de filas.
     @MainActor
     static func export(
         format: ExportFormat,
         using filters: ExportFilters,
         columns: ExportColumns,
-        in modelContext: ModelContext
+        in modelContext: ModelContext,
+        scheduleTagBackfill: Bool
     ) throws -> TransactionsExportResult {
 
         // Validación mínima: debe haber al menos una columna activa.
@@ -220,11 +225,13 @@ struct TransactionsExportService {
         do {
             switch format {
             case .csv:
-                let csvData = makeCSVData(transactions: filteredTransactions, columns: columns, tagCatalog: tagCatalog)
+                let csvData = makeCSVData(transactions: filteredTransactions, columns: columns, tagCatalog: tagCatalog,
+                                          scheduleTagBackfill: scheduleTagBackfill)
                 fileURL = try writeToTemporaryFile(data: csvData, extension: "csv")
 
             case .xlsx:
-                let (headers, rows) = makeExportData(transactions: filteredTransactions, columns: columns, tagCatalog: tagCatalog)
+                let (headers, rows) = makeExportData(transactions: filteredTransactions, columns: columns, tagCatalog: tagCatalog,
+                                                     scheduleTagBackfill: scheduleTagBackfill)
                 fileURL = try writeXLSXToTemporaryFile(headers: headers, rows: rows)
             }
         } catch {
@@ -392,7 +399,8 @@ struct TransactionsExportService {
     static func makeCSVData(
         transactions: [TransactionItem],
         columns: ExportColumns,
-        tagCatalog: [UUID: Tag] = [:]
+        tagCatalog: [UUID: Tag] = [:],
+        scheduleTagBackfill: Bool = true
     ) -> Data {
 
         // 1) Encabezado.
@@ -448,7 +456,7 @@ struct TransactionsExportService {
 
                 case .tags:
                     // Etiquetas separadas por ';' — CSV-mirror SSOT via resolver + catalog.
-                    let txTagIDs = transaction.resolvedTagIDs(scheduleBackfill: true) ?? []
+                    let txTagIDs = transaction.resolvedTagIDs(scheduleBackfill: scheduleTagBackfill) ?? []
                     let names = txTagIDs.compactMap { tagCatalog[$0]?.name }
                     value = names.joined(separator: ";")
 
@@ -535,7 +543,8 @@ struct TransactionsExportService {
     static func makeExportData(
         transactions: [TransactionItem],
         columns: ExportColumns,
-        tagCatalog: [UUID: Tag] = [:]
+        tagCatalog: [UUID: Tag] = [:],
+        scheduleTagBackfill: Bool = true
     ) -> (headers: [String], rows: [[String]]) {
 
         let orderedColumns = columns.orderedActiveColumns
@@ -578,7 +587,7 @@ struct TransactionsExportService {
                     value = transaction.subcategory?.name ?? ""
                 case .tags:
                     // CSV-mirror SSOT via resolver + catalog.
-                    let txTagIDs = transaction.resolvedTagIDs(scheduleBackfill: true) ?? []
+                    let txTagIDs = transaction.resolvedTagIDs(scheduleBackfill: scheduleTagBackfill) ?? []
                     let names = txTagIDs.compactMap { tagCatalog[$0]?.name }
                     value = names.joined(separator: ";")
                 case .note:

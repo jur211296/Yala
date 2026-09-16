@@ -227,10 +227,13 @@ enum MetricsCanary: String {
     case groupsDetachPurgeFailed
 
     // Teléfono que no consigue App Attest (ticket `groups-phone-that-never-attests-is-told-to-retry-forever`)
-    /// **La racha de 401 `yala_attest_required` del canal de Grupos se volvió terminal**: 24 h y al menos 3 rechazos
-    /// sin un solo 200 (`GroupsAttestVerdictLogic`). Una vez por racha y por teléfono. `detail` = `rejections=N
-    /// hours=H`, sin PII. **Es la medición que el ticket no tenía**: cuántos teléfonos no recuperan el attest. Un pico
-    /// tras un release o una rotación del secreto del gateway apunta al servidor, no a los teléfonos.
+    /// **La racha de App Attest del teléfono se volvió terminal**: 24 h y al menos 3 rechazos sin un solo acierto
+    /// (`GroupsAttestVerdictLogic`). Una vez por racha y por teléfono. `detail` = `rejections=N hours=H`, sin PII. **Es la
+    /// medición que el ticket no tenía**: cuántos teléfonos no recuperan el attest. Un pico tras un release o una rotación
+    /// del secreto del gateway apunta al servidor, no a los teléfonos. Nació con el 401 `yala_attest_required` de Grupos, y
+    /// desde el 2026-09-15 la racha la escribe también la puerta de attest del motor personal
+    /// (`AttestSyncGate.countsTowardAttestStreak`): en la nube cuenta teléfonos aunque no usen grupos. El nombre se queda,
+    /// porque renombrar un case rompe la serie del dashboard.
     case groupsAttestTerminal
     /// Un CIERRE DE SESIÓN se bloqueó con ese veredicto y dejó ofrecida la salida que pierde los cambios de grupos.
     /// `detail` = `pending=N` o `pending=unknown`. Cuenta OFERTAS, no personas: el invitado del Welcome no ve el botón y
@@ -239,6 +242,18 @@ enum MetricsCanary: String {
     /// El cierre siguió sin subir esos cambios, con la persona conforme: se pierden con el borrado del arranque.
     /// `detail` = `pending=N` o `pending=unknown`. Frente al anterior, dice cuántos eligieron salir.
     case groupsSignOutAttestDiscarded
+
+    // Tus datos en la nube con un teléfono sin App Attest (ticket `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`)
+    /// Un cierre de sesión en la NUBE se bloqueó en los cambios PERSONALES de un teléfono con la racha terminal y dejó
+    /// ofrecido el aviso que exporta los movimientos o los pierde. `detail` = `pending=N` o `pending=unknown`. Cuenta
+    /// OFERTAS, no personas: cada nuevo aviso del mismo cierre suma otra.
+    case cloudSignOutAttestUnavailable
+    /// Desde ese aviso se generó el archivo con todos los movimientos. `detail` = `rows=N`, sin PII. Frente al anterior,
+    /// dice cuántos se llevaron una copia antes de decidir.
+    case cloudSignOutAttestExported
+    /// El cierre siguió sin subir esos cambios personales, con la persona conforme: se pierden con el borrado del arranque.
+    /// `detail` = `pending=N` o `pending=unknown`. Frente al primero, dice cuántos eligieron salir.
+    case cloudSignOutAttestDiscarded
 }
 
 // MARK: - Servicio

@@ -146,9 +146,9 @@ nonisolated enum CloudSignOutFlowLogic {
         /// **Y desde el 2026-09-15 la sesión caducada tampoco se colapsa aquí**: el paso 2 la deja pasar tal
         /// cual (decisión 3A de Jürgen, ticket `cloud-signout-collapses-a-groups-session-expiry-into-permanent`).
         ///
-        /// **Queda UN colapso vivo, con su ticket.** El paso 1 —el push-all PERSONAL, que corre ANTES— descarta
-        /// el motivo con `_` y escribe `.permanent` a pelo, así que con filas personales pendientes es él quien
-        /// bloquea y el aviso vuelve a ser el genérico
+        /// **Queda UN colapso vivo, con su ticket.** El paso 1 —el push-all PERSONAL, que corre ANTES— escribe
+        /// `.permanent` para todo motivo salvo el del teléfono sin App Attest (`.personalAttestUnavailable`, 2026-09-15),
+        /// así que con filas personales pendientes es él quien bloquea y el aviso vuelve a ser el genérico
         /// (`cloud-signout-collapses-the-personal-push-all-reason-into-permanent`).
         case permanent
         /// El cierre PRIVADO esperó a que el último cambio llegara a iCloud y agotó el presupuesto. Es el
@@ -240,7 +240,7 @@ nonisolated enum CloudSignOutFlowLogic {
         /// el outbox queda intacto y volver a pulsar cuando el servidor responda completa el gesto.
         ///
         /// **Cuándo se ve, medido: solo si el outbox PERSONAL ya drenó.** El paso 1 del mismo cierre sube
-        /// lo personal y bloquea antes, descartando el motivo con `_`, así que ante un corte de red con
+        /// lo personal y bloquea antes, con `.permanent` salvo el teléfono sin App Attest, así que ante un corte de red con
         /// filas personales pendientes la persona sigue viendo el aviso genérico. Con el outbox personal
         /// vacío —lo normal: ese push-all corta en `.drained` sin ciclar— manda éste. La otra mitad tiene
         /// ticket propio: `cloud-signout-collapses-the-personal-push-all-reason-into-permanent`.
@@ -264,7 +264,24 @@ nonisolated enum CloudSignOutFlowLogic {
         /// descarta» (decisión de Jürgen, 2026-09-15). La ofrecen los cierres de sesión
         /// (`CloudSessionSignOut.exitDiscardingUnsyncedGroups`), con un aviso cuyo botón nombra la pérdida. El
         /// desasociar comparte el motivo y no ofrece ninguna salida.
+        ///
+        /// **En la nube, si lo trae el motor PERSONAL, el paso 1 del cierre lo traduce a `.personalAttestUnavailable`**
+        /// (2026-09-15): `classify` no sabe de qué outbox viene, y el aviso de tus datos es otro.
         case attestUnavailable
+        /// **Este teléfono lleva más de un día sin conseguir App Attest y quedan cambios PERSONALES sin subir a la cuenta en
+        /// la nube** (2026-09-15, ticket `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`). El motor
+        /// personal corta en su puerta de attest antes de subir nada, así que esos cambios no están en ninguna otra parte.
+        ///
+        /// Lo produce SOLO el paso 1 del cierre en la nube (`CloudSessionSignOut.performCloudSecureSignOut`), traduciendo el
+        /// `.attestUnavailable` que `classify` devuelve con el testigo del motor personal
+        /// (`CloudSyncRuntime.stoppedByUnavailableAttest(for:)`). Va aparte de `.attestUnavailable` porque su aviso habla de
+        /// tus datos y no de tus grupos, y ofrece otra cosa.
+        ///
+        /// **Su aviso ofrece exportar los movimientos y cerrar sesión perdiendo esos cambios** (decisión de Jürgen,
+        /// 2026-09-15): la excepción a «jamás descartar» del cierre en la nube, acotada a este motivo
+        /// (`CloudSessionSignOut.exitDiscardingUnsyncedPersonalChanges`). En las demás pantallas es inerte: ninguna otra
+        /// corre el cierre en la nube.
+        case personalAttestUnavailable
 
         /// Slug corto para los logs (`CloudSyncBreadcrumb.signOutGroupsBlocked`). Va aquí y no en el
         /// emisor para que un motivo nuevo tenga que nombrarse una sola vez: el `switch` es exhaustivo.
@@ -279,6 +296,7 @@ nonisolated enum CloudSignOutFlowLogic {
             case .channelPaused: return "channel-paused"
             case .uploadRetryLater: return "upload-retry-later"
             case .attestUnavailable: return "attest-unavailable"
+            case .personalAttestUnavailable: return "personal-attest-unavailable"
             }
         }
     }
@@ -300,8 +318,8 @@ nonisolated enum CloudSignOutFlowLogic {
     /// dijo que sí (opción 1 del ticket `cloud-signout-collapses-a-groups-session-expiry-into-permanent`).
     /// Lo que ese aviso todavía no distingue está medido en el docblock de `.sessionExpired`.
     ///
-    /// Los tres motivos que este productor no puede emitir —`classify` devuelve cuatro de los ocho, y el
-    /// octavo sale de aquí— caen en `.permanent`, que es el aviso que no afirma ninguna causa concreta.
+    /// Los cuatro motivos que este productor no puede emitir —`classify` devuelve cinco de los diez, y
+    /// `.uploadRetryLater` sale de aquí— caen en `.permanent`, que es el aviso que no afirma ninguna causa concreta.
     static func cloudSignOutGroupsBlockReason(_ reason: BlockReason) -> BlockReason {
         switch reason {
         // Lo que se cura esperando: aviso honesto AL MOMENTO, sin reintentar (decisión de Jürgen,
@@ -319,7 +337,9 @@ nonisolated enum CloudSignOutFlowLogic {
         // grupos. Traducido a `.uploadRetryLater` volvería a decir «inténtalo en un rato» a quien lleva un día sin poder.
         case .attestUnavailable: return .attestUnavailable
         case .permanent: return .permanent
-        case .exportUnconfirmed, .bridgeUnreadable, .detachBusy: return .permanent
+        // `.personalAttestUnavailable` es del paso 1, sobre el outbox PERSONAL: este productor, que traduce el de grupos, no
+        // lo recibe nunca.
+        case .exportUnconfirmed, .bridgeUnreadable, .detachBusy, .personalAttestUnavailable: return .permanent
         }
     }
 
@@ -370,17 +390,24 @@ nonisolated enum CloudSignOutFlowLogic {
     /// Solo cuenta cuando el ciclo paró por un 403: con cualquier otro outcome el término se ignora, que es
     /// lo que impide que un kill viejo tiña un fallo de red posterior.
     ///
-    /// `attestUnavailable` es la otra mitad que `CadenceOutcome` no lleva (2026-09-15): **si el `.transient` que paró el
-    /// ciclo era el 401 de un teléfono que lleva más de un día sin App Attest**. Lo contesta
-    /// `GroupsSyncClient.stoppedByUnavailableAttest(for:)`, que exige el testigo del ciclo además de la racha. Sin valor
-    /// por defecto, por lo mismo que `channelKilled`: el motor personal escribe `false` y lo dice. Solo cuenta con un
-    /// `.transient`; con cualquier otro outcome se ignora.
+    /// `attestUnavailable` es la otra mitad que `CadenceOutcome` no lleva (2026-09-15): **si el ciclo paró porque este
+    /// teléfono lleva más de un día sin App Attest**. En Grupos lo contesta `GroupsSyncClient.stoppedByUnavailableAttest(for:)`
+    /// con el 401 de un `.transient`; en el motor personal, `CloudSyncRuntime.stoppedByUnavailableAttest(for:)` con su puerta
+    /// de attest, que devuelve `.transient` mientras reintenta y `.accountUnavailable` cuando la da por terminal. Los dos
+    /// exigen el testigo del ciclo además de la racha. Sin valor por defecto, por lo mismo que `channelKilled`.
+    ///
+    /// **Cuenta con `.transient` y con un `.accountUnavailable` que no sea el kill**; con cualquier otro outcome se ignora. El
+    /// kill gana: su testigo solo existe en Grupos, y el testigo del attest de Grupos no sale con `.accountUnavailable`, así
+    /// que esa rama solo la alcanza el motor personal (ticket
+    /// `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`).
     static func classify(_ outcome: SyncCadencePolicy.CadenceOutcome,
                          channelKilled: Bool,
                          attestUnavailable: Bool) -> BlockReason {
         switch outcome {
         case .sessionExpired: return .sessionExpired
-        case .accountUnavailable: return channelKilled ? .channelPaused : .permanent
+        case .accountUnavailable:
+            if channelKilled { return .channelPaused }
+            return attestUnavailable ? .attestUnavailable : .permanent
         case .transient: return attestUnavailable ? .attestUnavailable : .transient
         case .completed, .coalesced: return .transient
         }
@@ -419,26 +446,28 @@ nonisolated enum CloudSignOutFlowLogic {
         return nil
     }
 
-    // MARK: - La salida que pierde los cambios de grupos (teléfono sin App Attest, 2026-09-15)
+    // MARK: - Las salidas que pierden los cambios que no suben (teléfono sin App Attest, 2026-09-15)
 
-    /// Lo que la persona aceptó perder al elegir «Cerrar sesión y perderlos».
-    enum GroupsLossAcceptance: Equatable {
-        /// Las filas vivas del outbox de Grupos que había cuando se le enseñó la cifra, por su `clientMutationID`.
+    /// Lo que la persona aceptó perder al elegir «Cerrar sesión y perderlos». **Una por outbox**: la de grupos
+    /// (`CloudSessionSignOut.acceptedGroupsLoss`) y, en la nube, la de los cambios personales (`acceptedPersonalLoss`). Cada
+    /// una se compara solo con las filas de su outbox.
+    enum LossAcceptance: Equatable {
+        /// Las filas vivas del outbox que había cuando se le enseñó la cifra, por su `clientMutationID`.
         case rows(Set<UUID>)
         /// Se le enseñó sin cifra, porque el recuento falló: lo aceptado cubre cualquier fila.
         case uncounted
     }
 
-    /// ¿Puede el cierre seguir con estas filas de grupos sin subir? Sin filas, siempre. Con filas, solo si la persona
-    /// aceptó perder ESAS: la comparación es por fila, no por cifra. `acceptance == nil` = no aceptó nada, y el cierre es
-    /// el de siempre, que no descarta.
+    /// ¿Puede el cierre seguir con estas filas sin subir? Sin filas, siempre. Con filas, solo si la persona aceptó perder
+    /// ESAS: la comparación es por fila, no por cifra. `acceptance == nil` = no aceptó nada, y el cierre es el de siempre, que
+    /// no descarta.
     ///
     /// **Por fila y no por cifra, por un bug de la review adversarial (2026-09-15).** Con la cifra, aceptar 2 cambios
     /// cubría CUALQUIER par: si uno subía entre medias y la persona apuntaba otro sin red durante la espera del export, el
     /// cierre se llevaba el nuevo sin que ningún aviso lo contara. Ahora una fila que no estaba en el aviso lo hace volver.
     ///
     /// `pendingRows == nil` es un recuento que falló: solo lo cubre una aceptación sin cifra.
-    static func continuesWithoutUploadingGroups(pendingRows: Set<UUID>?, acceptance: GroupsLossAcceptance?) -> Bool {
+    static func continuesWithoutUploading(pendingRows: Set<UUID>?, acceptance: LossAcceptance?) -> Bool {
         if let pendingRows, pendingRows.isEmpty { return true }
         guard let acceptance else { return false }
         switch acceptance {
@@ -450,9 +479,22 @@ nonisolated enum CloudSignOutFlowLogic {
         }
     }
 
+    /// ¿Puede el cierre seguir cuando la subida de ESTE intento acaba de bloquear? Solo si el bloqueo sigue siendo el
+    /// teléfono sin App Attest (`.attestUnavailable`) **y** lo que queda está entre lo aceptado.
+    ///
+    /// **El motivo cuenta, por un hallazgo de la review adversarial (2026-09-15).** La persona aceptó perder esos cambios
+    /// porque el teléfono no podía sincronizar. Si al retomar el cierre el attest ya pasa y la subida falla por otra cosa —un
+    /// 5xx, un 403 de cuenta, la sesión caducada—, seguir se llevaría cambios que un reintento habría subido. Con otro motivo
+    /// el cierre bloquea como siempre y la aceptación se retira. Los recuentos finales, tras soltar el canal, usan
+    /// `continuesWithoutUploading`: ahí ya no hay subida que pueda contradecir lo aceptado.
+    static func continuesAfterBlockedUpload(reason: BlockReason, pendingRows: Set<UUID>?,
+                                            acceptance: LossAcceptance?) -> Bool {
+        reason == .attestUnavailable && continuesWithoutUploading(pendingRows: pendingRows, acceptance: acceptance)
+    }
+
     /// La cifra que el aviso de la pérdida puede enseñar, o `nil` si no hay número honesto: `Int.max` es un recuento
     /// que falló, y un bloqueo nunca lleva cero cambios.
-    static func shownGroupsLossCount(_ pending: Int) -> Int? {
+    static func shownLossCount(_ pending: Int) -> Int? {
         pending > 0 && pending < Int.max ? pending : nil
     }
 }
@@ -505,8 +547,12 @@ nonisolated enum GroupsSignOutRetryDecision {
         //
         // **`.attestUnavailable` también** (2026-09-15): un teléfono que lleva más de un día sin App Attest no lo
         // recupera en 45 s, y reintentar serían ~23 subidas con un 401 seguro antes de un aviso que ya se puede dar.
+        //
+        // **Y `.personalAttestUnavailable`, que este camino no produce** (2026-09-15): nace en el paso 1 del cierre en la
+        // nube. Se decide igual por lo mismo que `.uploadRetryLater`: la rama por defecto es la peor, y su aviso ya dice que
+        // esperar no lo arregla.
         if reason == .permanent || reason == .sessionExpired || reason == .channelPaused
-            || reason == .uploadRetryLater || reason == .attestUnavailable {
+            || reason == .uploadRetryLater || reason == .attestUnavailable || reason == .personalAttestUnavailable {
             return .surfacePermanent
         }
         if elapsedSeconds < budgetSeconds { return .retryAfter(seconds: retryIntervalSeconds) }

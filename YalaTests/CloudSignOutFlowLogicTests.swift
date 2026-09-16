@@ -292,6 +292,8 @@ struct CloudSignOutGroupsReasonTests {
             .uploadRetryLater: .uploadRetryLater,
             // El teléfono sin App Attest viaja tal cual (2026-09-15): su aviso es el que ofrece salir perdiendo los cambios.
             .attestUnavailable: .attestUnavailable,
+            // El de los cambios personales es del paso 1: este productor, que traduce el de grupos, no lo recibe nunca.
+            .personalAttestUnavailable: .permanent,
             // La sesión caducada viaja tal cual desde el 2026-09-15 (decisión 3A de Jürgen).
             // Ticket `cloud-signout-collapses-a-groups-session-expiry-into-permanent`.
             .sessionExpired: .sessionExpired,
@@ -325,6 +327,7 @@ struct CloudSignOutGroupsReasonTests {
         #expect(CloudSignOutFlowLogic.BlockReason.uploadRetryLater.breadcrumbSlug == "upload-retry-later")
         #expect(CloudSignOutFlowLogic.BlockReason.channelPaused.breadcrumbSlug == "channel-paused")
         #expect(CloudSignOutFlowLogic.BlockReason.attestUnavailable.breadcrumbSlug == "attest-unavailable")
+        #expect(CloudSignOutFlowLogic.BlockReason.personalAttestUnavailable.breadcrumbSlug == "personal-attest-unavailable")
     }
 }
 
@@ -384,6 +387,8 @@ struct GroupsSignOutRetryDecisionTests {
             .uploadRetryLater: .surfacePermanent,
             // El teléfono sin App Attest (2026-09-15): tras un día sin attest, 45 s de reintentos no lo arreglan.
             .attestUnavailable: .surfacePermanent,
+            // Lo mismo con los cambios personales en la nube, que no pasan por aquí: si llegaran, esperar no lo arregla.
+            .personalAttestUnavailable: .surfacePermanent,
             // Se reintentan dentro del presupuesto: son los que sí se curan esperando.
             .transient: .retryAfter(seconds: GroupsSignOutRetryDecision.retryIntervalSeconds),
             // No los produce este camino, pero si llegaran, esperar tampoco arregla nada que sepamos —
@@ -765,9 +770,10 @@ struct PausedChannelReasonWiringTests {
         #expect(!cloud.contains("? .channelPaused : .permanent"), """
             Volvió el ternario que colapsaba el motivo en el cierre de la nube.
             """)
-        // Los `.blocked` propios del camino son los CUATRO de sus guards (controller ausente, push-all
-        // personal, push-all de grupos y el residual). Un quinto puede ser una reescritura del motivo.
-        #expect(cloud.components(separatedBy: "phase = .blocked(").count - 1 == 4, """
+        // Los `.blocked` propios del camino son los CINCO de sus guards: controller ausente, push-all personal
+        // (el genérico y, desde el 2026-09-15, el del teléfono sin App Attest), push-all de grupos y el residual.
+        // Uno más puede ser una reescritura del motivo.
+        #expect(cloud.components(separatedBy: "phase = .blocked(").count - 1 == 5, """
             Cambió el número de bloqueos del cierre en la nube: comprueba si alguno reescribe el motivo \
             que viene del push-all de grupos.
             """)
@@ -966,13 +972,17 @@ struct AttestUnavailableSignOutLogicTests {
 
     typealias L = CloudSignOutFlowLogic
 
-    /// El testigo del attest solo cuenta con un `.transient`: es el outcome con el que el canal devuelve ese 401.
-    @Test("MUTACIÓN: el testigo del attest convierte SOLO lo pasajero, y no toca los demás motivos")
-    func attestWitnessOnlyTurnsTheTransient() {
+    /// El testigo del attest cuenta con un `.transient` —el outcome con el que el canal de Grupos devuelve ese 401, y el de la
+    /// puerta del motor personal mientras reintenta— y, desde el 2026-09-15, con un `.accountUnavailable` que no sea el kill:
+    /// la parada terminal de esa puerta (`AttestSyncGate`). El testigo de Grupos solo sale con `.transient`, así que esa
+    /// segunda fila solo la alcanza el motor personal.
+    @Test("MUTACIÓN: el testigo del attest convierte lo pasajero y la parada terminal de la puerta, y no toca el resto")
+    func attestWitnessTurnsTheTransientAndTheTerminalStop() {
         #expect(L.classify(.transient, channelKilled: false, attestUnavailable: true) == .attestUnavailable)
         #expect(L.classify(.transient, channelKilled: false, attestUnavailable: false) == .transient)
         #expect(L.classify(.sessionExpired, channelKilled: false, attestUnavailable: true) == .sessionExpired)
-        #expect(L.classify(.accountUnavailable, channelKilled: false, attestUnavailable: true) == .permanent)
+        #expect(L.classify(.accountUnavailable, channelKilled: false, attestUnavailable: true) == .attestUnavailable)
+        #expect(L.classify(.accountUnavailable, channelKilled: false, attestUnavailable: false) == .permanent)
         #expect(L.classify(.accountUnavailable, channelKilled: true, attestUnavailable: true) == .channelPaused)
         #expect(L.classify(.completed, channelKilled: false, attestUnavailable: true) == .transient)
         #expect(L.classify(.coalesced, channelKilled: false, attestUnavailable: true) == .transient)
@@ -1007,26 +1017,26 @@ struct AttestUnavailableSignOutLogicTests {
     @Test("MUTACIÓN: lo aceptado son las filas del aviso: una fila nueva vuelve a avisar aunque la cifra no crezca")
     func acceptedLossIsByRow() {
         let a = UUID(), b = UUID(), c = UUID()
-        #expect(L.continuesWithoutUploadingGroups(pendingRows: [], acceptance: nil))
-        #expect(L.continuesWithoutUploadingGroups(pendingRows: [], acceptance: .rows([a])))
-        #expect(!L.continuesWithoutUploadingGroups(pendingRows: [a], acceptance: nil), "sin aceptar, nunca descarta")
-        #expect(L.continuesWithoutUploadingGroups(pendingRows: [a, b], acceptance: .rows([a, b])))
-        #expect(L.continuesWithoutUploadingGroups(pendingRows: [b], acceptance: .rows([a, b])),
+        #expect(L.continuesWithoutUploading(pendingRows: [], acceptance: nil))
+        #expect(L.continuesWithoutUploading(pendingRows: [], acceptance: .rows([a])))
+        #expect(!L.continuesWithoutUploading(pendingRows: [a], acceptance: nil), "sin aceptar, nunca descarta")
+        #expect(L.continuesWithoutUploading(pendingRows: [a, b], acceptance: .rows([a, b])))
+        #expect(L.continuesWithoutUploading(pendingRows: [b], acceptance: .rows([a, b])),
                 "si una subió, la otra sigue aceptada")
-        #expect(!L.continuesWithoutUploadingGroups(pendingRows: [b, c], acceptance: .rows([a, b])),
+        #expect(!L.continuesWithoutUploading(pendingRows: [b, c], acceptance: .rows([a, b])),
                 "a subió y apareció c: la cifra es la misma, pero c no estaba en el aviso")
         // «No pudimos contar» en los dos lados: la aceptación sin cifra cubre un recuento que falla; la que tiene filas, no.
-        #expect(L.continuesWithoutUploadingGroups(pendingRows: nil, acceptance: .uncounted))
-        #expect(L.continuesWithoutUploadingGroups(pendingRows: [c], acceptance: .uncounted))
-        #expect(!L.continuesWithoutUploadingGroups(pendingRows: nil, acceptance: .rows([a])))
+        #expect(L.continuesWithoutUploading(pendingRows: nil, acceptance: .uncounted))
+        #expect(L.continuesWithoutUploading(pendingRows: [c], acceptance: .uncounted))
+        #expect(!L.continuesWithoutUploading(pendingRows: nil, acceptance: .rows([a])))
     }
 
     @Test("la cifra que se enseña es solo un número honesto")
     func shownCountIsHonest() {
-        #expect(L.shownGroupsLossCount(5) == 5)
-        #expect(L.shownGroupsLossCount(1) == 1)
-        #expect(L.shownGroupsLossCount(Int.max) == nil, "`Int.max` es un recuento que falló")
-        #expect(L.shownGroupsLossCount(0) == nil)
+        #expect(L.shownLossCount(5) == 5)
+        #expect(L.shownLossCount(1) == 1)
+        #expect(L.shownLossCount(Int.max) == nil, "`Int.max` es un recuento que falló")
+        #expect(L.shownLossCount(0) == nil)
     }
 }
 
@@ -1125,20 +1135,24 @@ struct AttestUnavailableSignOutWiringTests {
         #expect(cloudNote.lowerBound < cloudPhase.lowerBound)
     }
 
-    @Test("MUTACIÓN: la cifra aceptada solo alcanza a los cambios de GRUPOS, y los recuentos finales la respetan")
-    func theAcceptedLossNeverReachesPersonalChanges() throws {
+    @Test("MUTACIÓN: la cifra aceptada de GRUPOS solo alcanza a los cambios de grupos, y los recuentos finales la respetan")
+    func theAcceptedGroupsLossNeverReachesPersonalChanges() throws {
         let source = try Self.source(Self.signOutPath)
         let cloud = Self.squashed(try Self.body(
             of: "private func performCloudSecureSignOut(context: ModelContext) async {", in: source))
+        // Desde el 2026-09-15 los cambios PERSONALES tienen su propia aceptación (el teléfono sin App Attest en la nube), y
+        // cada una se compara solo con su outbox: la de grupos nunca cubre una fila personal.
         #expect(cloud.contains(Self.squashed("""
-            guard residualPersonal == 0, residualGroups == 0 || CloudSignOutFlowLogic.continuesWithoutUploadingGroups(
-                pendingRows: Self.liveGroupsPendingRowIDs(context: context), acceptance: acceptedGroupsLoss) else {
-            """)), "El residual de la nube dejó de exigir cero cambios PERSONALES: la excepción es para los de grupos.")
+            guard residualPersonal == 0 || CloudSignOutFlowLogic.continuesWithoutUploading(
+                      pendingRows: controller.livePendingUploadRowIDs(), acceptance: acceptedPersonalLoss),
+                  residualGroups == 0 || CloudSignOutFlowLogic.continuesWithoutUploading(
+                      pendingRows: Self.liveGroupsPendingRowIDs(context: context), acceptance: acceptedGroupsLoss) else {
+            """)), "El residual de la nube cruzó las aceptaciones: cada outbox tiene que compararse con la suya.")
         let finalize = Self.squashed(try Self.body(
             of: "private func finalizeSessionExit(context: ModelContext, kind: CloudSignOutFlowLogic.ExitKind, export: ExportPolicy) async {",
             in: source))
         #expect(finalize.contains(Self.squashed("""
-            guard residual == 0 || CloudSignOutFlowLogic.continuesWithoutUploadingGroups(
+            guard residual == 0 || CloudSignOutFlowLogic.continuesWithoutUploading(
                 pendingRows: Self.liveGroupsPendingRowIDs(context: context), acceptance: acceptedGroupsLoss) else {
             """)))
     }
@@ -1164,6 +1178,8 @@ struct AttestUnavailableSignOutWiringTests {
                 phase = .idle
                 groupsLossExit = nil
                 acceptedGroupsLoss = nil
+                personalLossExit = nil
+                acceptedPersonalLoss = nil
             }
             """)), "`acknowledgeBlocked()` retira lo aceptado fuera del bloqueo")
         // Y el aviso del desasociar se cierra una sola vez: su segunda llamada reconocía el bloqueo de un cierre ajeno.
@@ -1172,11 +1188,12 @@ struct AttestUnavailableSignOutWiringTests {
             .hasPrefix("guard blockedReason != nil else { return }"))
     }
 
-    @Test("el push-all de grupos pregunta el testigo del attest al cliente, CON el outcome; el personal declara que no")
+    @Test("MUTACIÓN: los dos push-all preguntan el testigo del attest CON el outcome: grupos al cliente, lo personal al runtime")
     func thePushAllsReadTheAttestWitness() throws {
         #expect(try Self.source(Self.signOutPath)
             .contains("attestUnavailable: GroupsSyncClient.shared.stoppedByUnavailableAttest(for: outcome)"))
-        #expect(try Self.source("Yala/Services/CloudSync/CloudMigrationController.swift").contains("attestUnavailable: false"))
+        #expect(try Self.source("Yala/Services/CloudSync/CloudMigrationController.swift")
+            .contains("attestUnavailable: runtime.stoppedByUnavailableAttest(for: outcome)"))
     }
 
     @Test("MUTACIÓN: Ajustes solo enciende el aviso de la pérdida con la salida de un cierre, y sus botones hacen lo suyo")

@@ -28,7 +28,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (398)
+## Index (403)
 
 | id | status | path |
 |---|---|---|
@@ -56,6 +56,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | appstorage-onboarding-desarma-el-aislamiento-de-tests | backlog | tickets/backlog/appstorage-onboarding-desarma-el-aislamiento-de-tests.md |
 | associate-cta-ignores-the-groups-kill-switch | backlog | tickets/backlog/associate-cta-ignores-the-groups-kill-switch.md |
 | association-read-writes-defaults-from-a-view-body | backlog | tickets/backlog/association-read-writes-defaults-from-a-view-body.md |
+| attest-gateway-reports-a-storage-failure-as-an-invalid-attestation | backlog | tickets/backlog/attest-gateway-reports-a-storage-failure-as-an-invalid-attestation.md |
 | attest-session-token-rejected-by-the-gateway-stays-cached | backlog | tickets/backlog/attest-session-token-rejected-by-the-gateway-stays-cached.md |
 | aviso-de-nuevo-miembro-no-llega-hasta-abrir-la-app | qa | tickets/qa/aviso-de-nuevo-miembro-no-llega-hasta-abrir-la-app.md |
 | backend-account-kind-complete-or-groups-only | qa | tickets/qa/backend-account-kind-complete-or-groups-only.md |
@@ -95,12 +96,14 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | claim-promotion-lost-response-blocks-the-retry | backlog | tickets/backlog/claim-promotion-lost-response-blocks-the-retry.md |
 | cloud-fx-rates-blob-two-faces | qa | tickets/qa/cloud-fx-rates-blob-two-faces.md |
 | cloud-killswitch-hides-the-only-door-to-detach-groups | qa | tickets/qa/cloud-killswitch-hides-the-only-door-to-detach-groups.md |
-| cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes | backlog | tickets/backlog/cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes.md |
+| cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest | backlog | tickets/backlog/cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest.md |
+| cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes | qa | tickets/qa/cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes.md |
 | cloud-session-expiry-with-only-group-changes-has-no-sign-in-door | backlog | tickets/backlog/cloud-session-expiry-with-only-group-changes-has-no-sign-in-door.md |
 | cloud-sign-in-discovers-account-kind | qa | tickets/qa/cloud-sign-in-discovers-account-kind.md |
 | cloud-signout-collapses-a-groups-session-expiry-into-permanent | qa | tickets/qa/cloud-signout-collapses-a-groups-session-expiry-into-permanent.md |
 | cloud-signout-collapses-every-groups-transient-into-permanent | qa | tickets/qa/cloud-signout-collapses-every-groups-transient-into-permanent.md |
 | cloud-signout-collapses-the-personal-push-all-reason-into-permanent | backlog | tickets/backlog/cloud-signout-collapses-the-personal-push-all-reason-into-permanent.md |
+| cloud-signout-drops-unsynced-preference-changes-without-counting-them | backlog | tickets/backlog/cloud-signout-drops-unsynced-preference-changes-without-counting-them.md |
 | cloud-tx-epoch-orphan-relations | backlog | tickets/backlog/cloud-tx-epoch-orphan-relations.md |
 | cloudsync-account-currency-orphans-receiver-history | backlog | tickets/backlog/cloudsync-account-currency-orphans-receiver-history.md |
 | cloudsync-witnesses-survive-the-sign-out-wipe | backlog | tickets/backlog/cloudsync-witnesses-survive-the-sign-out-wipe.md |
@@ -151,6 +154,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | es-ar-storage-groups-block-is-in-tuteo-not-voseo | backlog | tickets/backlog/es-ar-storage-groups-block-is-in-tuteo-not-voseo.md |
 | exchange-rate-detail-shows-zero-for-low-denomination-currencies | backlog | tickets/backlog/exchange-rate-detail-shows-zero-for-low-denomination-currencies.md |
 | export-anchor-accepts-events-from-any-container | backlog | tickets/backlog/export-anchor-accepts-events-from-any-container.md |
+| export-errors-are-hardcoded-in-spanish | backlog | tickets/backlog/export-errors-are-hardcoded-in-spanish.md |
 | exportable-insights | backlog | tickets/backlog/exportable-insights.md |
 | fab-appears-without-animation | backlog | tickets/backlog/fab-appears-without-animation.md |
 | filtro-de-cuentas-se-colapsa-al-navegar-a-registros | backlog | tickets/backlog/filtro-de-cuentas-se-colapsa-al-navegar-a-registros.md |
@@ -318,6 +322,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | readme-index-scans-internal-worktrees | discarded | tickets/discarded/readme-index-scans-internal-worktrees.md |
 | rebase-and-cherry-pick-skip-the-attribution-hook | backlog | tickets/backlog/rebase-and-cherry-pick-skip-the-attribution-hook.md |
 | records-standalone-amount-discrepancy | backlog | tickets/backlog/records-standalone-amount-discrepancy.md |
+| records-summary-approximate-mark-fails-only-alongside-group-suites | backlog | tickets/backlog/records-summary-approximate-mark-fails-only-alongside-group-suites.md |
 | records-summary-chips-hide-their-amount-from-voiceover | backlog | tickets/backlog/records-summary-chips-hide-their-amount-from-voiceover.md |
 | records-summary-mixes-preferred-currencies | backlog | tickets/backlog/records-summary-mixes-preferred-currencies.md |
 | reentry-counts-as-fresh-install | qa | tickets/qa/reentry-counts-as-fresh-install.md |
@@ -399,6 +404,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | undercount-dias-intervalos-cerrados | done | tickets/done/undercount-dias-intervalos-cerrados.md |
 | unit-suite-nondeterministic-reds | done | tickets/done/unit-suite-nondeterministic-reds.md |
 | unit-test-suites-leave-orphan-userdefaults-domains | backlog | tickets/backlog/unit-test-suites-leave-orphan-userdefaults-domains.md |
+| unit-tests-clear-the-attest-streak-of-a-device-qa-in-progress | backlog | tickets/backlog/unit-tests-clear-the-attest-streak-of-a-device-qa-in-progress.md |
 | update-banner-appstore-criteria | done | tickets/done/update-banner-appstore-criteria.md |
 | verify-dual-channel-zone-in-supabase | backlog | tickets/backlog/verify-dual-channel-zone-in-supabase.md |
 | vigilante-calla-si-no-puede-comprobar-la-nocturna | backlog | tickets/backlog/vigilante-calla-si-no-puede-comprobar-la-nocturna.md |

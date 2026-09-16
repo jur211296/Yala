@@ -307,7 +307,8 @@ struct ExportSummaryStepView: View {
                     format: format,
                     using: exportFilters,
                     columns: exportColumns,
-                    in: modelContext
+                    in: modelContext,
+                    scheduleTagBackfill: true
                 )
 
                 // G5-D2: si el usuario activó "Incluir mis grupos", generamos un CSV APARTE y lo

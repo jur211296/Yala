@@ -5959,3 +5959,13 @@
 
 /* Boton generico para posponer una decision */
 "action.notNow" = "後で";
+
+/* Cerrar sesión en la nube sin App Attest con cambios personales sin subir (2026-09-15) */
+"settings.signOutAttestTitle" = "この端末ではデータを同期できません";
+"settings.signOutAttestMessage" = "1日以上、サーバーが求めるセキュリティ確認を通過できていません。クラウドのアカウントに届かなかった変更：%d件。決める前に、取引をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
+"settings.signOutAttestMessageUnknown" = "1日以上、サーバーが求めるセキュリティ確認を通過できておらず、クラウドのアカウントに届かなかった変更があります。決める前に、取引をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
+"settings.signOutAttestExportButton" = "取引をエクスポート";
+"settings.signOutAttestLossButton" = "変更が失われてもサインアウト";
+"settings.signOutAttestBlocked" = "この端末は1日以上、サーバーが求めるセキュリティ確認を通過できていないため、変更をクラウドのアカウントにアップロードできません。";
+"settings.signOutAttestExportEmpty" = "エクスポートできる取引がありません。";
+"settings.signOutAttestExportFailed" = "ファイルを作成できませんでした。もう一度お試しください。";

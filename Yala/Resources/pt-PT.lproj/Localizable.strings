@@ -5220,3 +5220,13 @@
 
 /* Boton generico para posponer una decision */
 "action.notNow" = "Agora não";
+
+/* Cerrar sesión en la nube sin App Attest con cambios personales sin subir (2026-09-15) */
+"settings.signOutAttestTitle" = "Este telemóvel não consegue sincronizar os teus dados";
+"settings.signOutAttestMessage" = "Há mais de um dia que não consegue passar na verificação de segurança exigida pelo nosso servidor. Alterações que não chegaram à tua conta na nuvem: %d. Antes de decidires, podes exportar as tuas transações para um ficheiro. Se terminares sessão agora, essas alterações perdem-se.";
+"settings.signOutAttestMessageUnknown" = "Há mais de um dia que não consegue passar na verificação de segurança exigida pelo nosso servidor, e há alterações que não chegaram à tua conta na nuvem. Antes de decidires, podes exportar as tuas transações para um ficheiro. Se terminares sessão agora, essas alterações perdem-se.";
+"settings.signOutAttestExportButton" = "Exportar as minhas transações";
+"settings.signOutAttestLossButton" = "Terminar sessão e perdê-las";
+"settings.signOutAttestBlocked" = "Este telemóvel está há mais de um dia sem conseguir passar na verificação de segurança exigida pelo nosso servidor, por isso as tuas alterações não podem ser enviadas para a tua conta na nuvem.";
+"settings.signOutAttestExportEmpty" = "Não tens transações para exportar.";
+"settings.signOutAttestExportFailed" = "Não conseguimos gerar o ficheiro. Tenta novamente.";
