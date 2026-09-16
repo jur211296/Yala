@@ -5975,3 +5975,21 @@
 
 /* Aviso fijo: este teléfono no consigue App Attest y los datos personales no suben a la nube */
 "settings.attestTerminalBanner" = "1日以上、サーバーが求めるセキュリティ確認を通過できていません。この端末で記録した内容は端末内には残りますが、クラウドのアカウントには届きません。当面は別の端末をお使いください。";
+
+/* Vuelta a iCloud: espera de la subida, cancelación y salida sin llegar (ticket reverse-upload-has-no-ceiling-and-no-exit) */
+"storage.progress.reverseUploading" = "データを iCloud にアップロードしています。Yala はそのままお使いいただけます。";
+"storage.progress.reversePending" = "アップロード待ち：%d";
+"storage.progress.reverseICloudFull" = "iCloud にデータを保存する空き容量がありません。数分たってもアップロードが進まない場合は、クラウドのままになります。空き容量を増やしてから、もう一度お試しいただけます。";
+"storage.progress.reverseICloudUnavailable" = "このデバイスでは iCloud を利用できません。数分たってもアップロードが進まない場合は、クラウドのままになり、あとでもう一度お試しいただけます。";
+"storage.progress.cancelReverse" = "キャンセルしてクラウドのまま使う";
+"storage.confirm.cancelReverseTitle" = "iCloud に戻す処理をキャンセルしますか？";
+"storage.confirm.cancelReverseBody" = "データは Yala のクラウドとこのデバイスに残ります。このあと Yala から、一度終了してもう一度開くようご案内します。";
+"storage.confirm.cancelReverseConfirm" = "はい、クラウドのまま使う";
+"storage.confirm.cancelReverseKeep" = "このまま待つ";
+"storage.reverseAbort.relaunchTitle" = "データはクラウドに残っています";
+"storage.reverseAbort.relaunchBody" = "Yala を完全に終了し（アプリスイッチャーでスワイプして閉じる）、もう一度開いてクラウドを使い続けてください。";
+"storage.reverseAbort.icloudFull" = "iCloud に戻す処理を完了できませんでした。iCloud の空き容量が不足していました。空き容量を増やしてから、もう一度お試しください。";
+"storage.reverseAbort.icloudUnavailable" = "iCloud に戻す処理を完了できませんでした。このデバイスでは iCloud を利用できませんでした。設定で iCloud アカウントを確認してから、もう一度お試しください。";
+"storage.reverseAbort.stalled" = "iCloud に戻す処理を完了できませんでした。iCloud がすべてのデータを受け取れませんでした。このデバイスで iCloud がオンになっていることを確認し、通信状態のよいときに、アップロード中は Yala を開いたままにして、もう一度お試しください。";
+"storage.progress.reverseICloudMaybeOff" = "このデバイスで iCloud がオンになっていない場合、データは iCloud に届きません。設定でオンにするか、キャンセルしてクラウドのまま使い続けてください。";
+"storage.errors.reversePendingExit" = "まだ iCloud に戻せません。先にクラウドの再有効化を完了する必要があります。少し待ってからもう一度お試しください。";

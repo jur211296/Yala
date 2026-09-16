@@ -344,6 +344,29 @@ struct CloudMigrationUIStateDeriverTests {
         #expect(Deriver.derive(storageMode: .icloud, phase: .icloudActive,
                                mirrorOffArmed: false, mountedDecision: .iCloudMirror) == .idle)
     }
+
+    /// La salida de la espera de «Volver a iCloud» (ticket `reverse-upload-has-no-ceiling-and-no-exit`) en las tres
+    /// pantallas que recorre, para los dos orígenes y para los dos mounts con mirror: `.iCloudMirror` y
+    /// `.localNoMirror`, que es el del teléfono SIN cuenta de iCloud —el caso que se queda en el 95 % seguro—.
+    /// Esperando: `reverting`. Tras la salida, con el mirror aún montado: pedir relanzar, no «en la nube» (sería
+    /// falso: este proceso sigue escribiendo por el mirror). Tras relanzar sin mirror: `cloudActive`.
+    @Test("salida de reverseUpload: reverting → needsRelaunch(.toCloud) → cloudActive, los dos orígenes y mounts")
+    func reverseUploadExit_screenSequence() {
+        for mount: SwiftDataConfiguration.PersonalStoreDecision in [.iCloudMirror, .localNoMirror] {
+            guard case .reverting = Deriver.derive(storageMode: .cloud, phase: .reverseUpload,
+                                                   mirrorOffArmed: false, mountedDecision: mount) else {
+                Issue.record("esperando con \(mount): esperaba .reverting"); continue
+            }
+            for origin: MigrationPhase in [.done, .notStarted] {
+                #expect(Deriver.derive(storageMode: .cloud, phase: origin, mirrorOffArmed: true,
+                                       mountedDecision: mount) == .needsRelaunch(.toCloud),
+                        "tras la salida (\(origin)) con \(mount) montado: relanzar")
+                #expect(Deriver.derive(storageMode: .cloud, phase: origin, mirrorOffArmed: true,
+                                       mountedDecision: .cloudMirrorOff) == .cloudActive,
+                        "tras relanzar sin mirror (\(origin)): en la nube")
+            }
+        }
+    }
 }
 
 // MARK: - P6: claim-store round-trip + gate de arranque

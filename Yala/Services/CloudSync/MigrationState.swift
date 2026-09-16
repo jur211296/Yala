@@ -27,7 +27,9 @@ extension CloudSyncSchemaVersions {
     /// aditivo `reverseOriginRaw` (origin de la reversa journaleado en la transición reverseConfirm→claim).
     /// Subió a 3 en C-1 con los campos aditivos `markerWrittenSince` (reloj del tope del paso 4) y
     /// `cutoverICloudVerdictRaw` (veredicto del canal iCloud, para el copy del fallo).
-    static let migrationState = 3
+    /// Subió a 4 con los tres campos aditivos del techo de `reverseUpload` (`reverseUploadLowestPending`,
+    /// `reverseUploadProgressAt`, `reverseAbortReasonRaw`).
+    static let migrationState = 4
 }
 
 /// Journal single-row de la migración. Debe existir a lo sumo UNA fila (el runner la crea
@@ -84,6 +86,21 @@ final class MigrationState {
     /// `nil` = sin veredicto registrado.
     var cutoverICloudVerdictRaw: String?
 
+    /// Techo de `reverseUpload`: la cifra de pendientes MÁS BAJA observada en este intento. Avanzar es bajar de
+    /// ella; escribir durante la espera sube la cifra y no cuenta ni como avance ni como retroceso. `nil` = aún no
+    /// se ha observado la espera (o el journal viene de un build anterior: se sella en la primera observación).
+    var reverseUploadLowestPending: Int?
+
+    /// Techo de `reverseUpload`: el instante del ÚLTIMO avance, con el `now` INYECTADO. Es el reloj del techo. Lo
+    /// sella la primera observación y lo re-sella SOLO un avance: re-sellarlo en cada resume haría eterna la
+    /// espera, que es el bug. `nil` = sin observar.
+    var reverseUploadProgressAt: Date?
+
+    /// `ReverseUploadAbortReason.rawValue` de la última salida de `reverseUpload`. SOBREVIVE a la vuelta a la fase
+    /// origen a propósito: la persona puede no estar mirando cuando salta el techo y lee el porqué después del
+    /// relanzamiento. Se limpia al empezar otra vuelta y al completarla. `nil` = nada que explicar.
+    var reverseAbortReasonRaw: String?
+
     /// Cuándo empezó la migración (el runner lo estampa con el `now` INYECTADO al arrancar). `nil` = no
     /// iniciada.
     var startedAt: Date?
@@ -106,6 +123,9 @@ final class MigrationState {
         reverseOriginRaw: String? = nil,
         markerWrittenSince: Date? = nil,
         cutoverICloudVerdictRaw: String? = nil,
+        reverseUploadLowestPending: Int? = nil,
+        reverseUploadProgressAt: Date? = nil,
+        reverseAbortReasonRaw: String? = nil,
         startedAt: Date? = nil,
         updatedAt: Date = Date.now,
         schemaVersion: Int = CloudSyncSchemaVersions.migrationState
@@ -120,6 +140,9 @@ final class MigrationState {
         self.reverseOriginRaw = reverseOriginRaw
         self.markerWrittenSince = markerWrittenSince
         self.cutoverICloudVerdictRaw = cutoverICloudVerdictRaw
+        self.reverseUploadLowestPending = reverseUploadLowestPending
+        self.reverseUploadProgressAt = reverseUploadProgressAt
+        self.reverseAbortReasonRaw = reverseAbortReasonRaw
         self.startedAt = startedAt
         self.updatedAt = updatedAt
         self.schemaVersion = schemaVersion

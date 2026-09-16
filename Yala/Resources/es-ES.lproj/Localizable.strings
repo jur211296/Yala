@@ -5247,3 +5247,21 @@
 
 /* Aviso fijo: este teléfono no consigue App Attest y los datos personales no suben a la nube */
 "settings.attestTerminalBanner" = "Lleva más de un día sin conseguir la verificación de seguridad que pide nuestro servidor. Lo que apuntes aquí se guarda en este teléfono, pero no llega a tu cuenta en la nube: usa otro teléfono mientras tanto.";
+
+/* Vuelta a iCloud: espera de la subida, cancelación y salida sin llegar (ticket reverse-upload-has-no-ceiling-and-no-exit) */
+"storage.progress.reverseUploading" = "Subiendo tus datos a iCloud. Puedes seguir usando Yala.";
+"storage.progress.reversePending" = "Pendientes de subir: %d";
+"storage.progress.reverseICloudFull" = "iCloud no tiene espacio para tus datos. Si la subida no avanza en unos minutos, seguirás en la nube y podrás volver a intentarlo cuando liberes espacio.";
+"storage.progress.reverseICloudUnavailable" = "iCloud no está disponible en este dispositivo. Si la subida no avanza en unos minutos, seguirás en la nube y podrás volver a intentarlo.";
+"storage.progress.cancelReverse" = "Cancelar y seguir en la nube";
+"storage.confirm.cancelReverseTitle" = "¿Cancelar la vuelta a iCloud?";
+"storage.confirm.cancelReverseBody" = "Tus datos siguen en la nube de Yala y en este dispositivo. Yala te pedirá cerrarla y volver a abrirla.";
+"storage.confirm.cancelReverseConfirm" = "Sí, seguir en la nube";
+"storage.confirm.cancelReverseKeep" = "Seguir esperando";
+"storage.reverseAbort.relaunchTitle" = "Tus datos siguen en la nube";
+"storage.reverseAbort.relaunchBody" = "Cierra Yala del todo (deslízala fuera del selector de apps) y vuelve a abrirla para seguir usando la nube.";
+"storage.reverseAbort.icloudFull" = "No pudimos terminar de volver a iCloud: iCloud se quedó sin espacio. Libera espacio e inténtalo de nuevo.";
+"storage.reverseAbort.icloudUnavailable" = "No pudimos terminar de volver a iCloud: iCloud no estaba disponible en este dispositivo. Revisa tu cuenta de iCloud en Ajustes e inténtalo de nuevo.";
+"storage.reverseAbort.stalled" = "No pudimos terminar de volver a iCloud: iCloud no recibió todos tus datos. Comprueba que iCloud esté activo en este dispositivo e inténtalo de nuevo con buena conexión y con Yala abierta mientras sube.";
+"storage.progress.reverseICloudMaybeOff" = "Si iCloud no está activo en este dispositivo, tus datos no pueden llegar a iCloud. Actívalo en Ajustes o cancela para seguir en la nube.";
+"storage.errors.reversePendingExit" = "Aún no podemos volver a iCloud: falta terminar de reactivar tu nube. Inténtalo de nuevo en un momento.";

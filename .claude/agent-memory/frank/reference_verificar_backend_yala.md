@@ -62,6 +62,8 @@ TIMEOUT sin línea de aserción probablemente no es código roto: es un test que
 **Lo de arriba describía el mundo del 4 al 9 de septiembre. El 10-sep ya no era verdad** — ver la
 cabecera de esta ficha. Se conserva porque la receta de goldens y sus trampas siguen valiendo.
 
+**2026-09-16: staging no contestó por el conector.** `list_projects` lo daba `ACTIVE_HEALTHY`, pero `execute_sql` devolvió «Connection terminated due to connection timeout» tres veces, también con `select 1`. No es falta de permisos: es el conector. Si pasa, anótalo como «no medido» y no lo reintentes en bucle.
+
 ## La vía que sí verifica: sandbox transaccional contra producción
 
 Postgres tiene **DDL transaccional**, así que `create or replace function` dentro de `begin … rollback`

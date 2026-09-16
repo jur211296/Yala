@@ -66,6 +66,12 @@ final class iCloudSyncService {
     private(set) var lastSuccessfulExportDate: Date?
     private(set) var lastSuccessfulImportDate: Date?
     private(set) var lastExportError: CKError?
+    /// Cuándo se vio `lastExportError`: la fecha del evento de export que falló (`endDate`, o `startDate` si no
+    /// trae fin). `lastExportError` no se limpia con un export con éxito (`icloud-export-error-latch-never-clears`),
+    /// así que quien necesite saber si el error SIGUE vigente compara esta fecha con `lastSuccessfulExportDate`.
+    /// Lo hace la espera de «Volver a iCloud» (`ReverseUploadBlockerLogic`); los demás lectores siguen igual.
+    /// `nil` = sin error, o un evento sin fechas.
+    private(set) var lastExportErrorAt: Date?
     private(set) var lastImportError: CKError?
     /// Consecutive failed sync cycles (setup/import/export) with no success in
     /// between. Resets on ANY successful event. Gates whether a *transient*
@@ -369,6 +375,7 @@ final class iCloudSyncService {
         case .exportEvent:
             if let error {
                 lastExportError = error
+                lastExportErrorAt = endDate ?? startDate
                 consecutiveFailures += 1
                 surfaceOrSuppress(error)
                 MetricsService.canary(.cloudkitExportFailed, detail: "code=\(error.code.rawValue)|retriable=\(isRetriable(error))")
@@ -687,6 +694,7 @@ final class iCloudSyncService {
         lastSuccessfulExportDate = nil
         lastSuccessfulImportDate = nil
         lastExportError = nil
+        lastExportErrorAt = nil
         lastImportError = nil
         consecutiveFailures = 0
         hasCompletedFirstImport = false

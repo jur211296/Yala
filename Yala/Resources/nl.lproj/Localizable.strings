@@ -5975,3 +5975,21 @@
 
 /* Aviso fijo: este teléfono no consigue App Attest y los datos personales no suben a la nube */
 "settings.attestTerminalBanner" = "Hij komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist. Wat je hier invoert, wordt op deze telefoon bewaard, maar bereikt je cloudaccount niet — gebruik zolang een andere telefoon.";
+
+/* Vuelta a iCloud: espera de la subida, cancelación y salida sin llegar (ticket reverse-upload-has-no-ceiling-and-no-exit) */
+"storage.progress.reverseUploading" = "Je gegevens worden naar iCloud geüpload. Je kunt Yala blijven gebruiken.";
+"storage.progress.reversePending" = "Nog te uploaden: %d";
+"storage.progress.reverseICloudFull" = "iCloud heeft geen ruimte voor je gegevens. Als het uploaden binnen een paar minuten niet opschiet, blijf je in de cloud en kun je het opnieuw proberen zodra je ruimte hebt vrijgemaakt.";
+"storage.progress.reverseICloudUnavailable" = "iCloud is niet beschikbaar op dit apparaat. Als het uploaden binnen een paar minuten niet opschiet, blijf je in de cloud en kun je het opnieuw proberen.";
+"storage.progress.cancelReverse" = "Annuleren en in de cloud blijven";
+"storage.confirm.cancelReverseTitle" = "Terugkeer naar iCloud annuleren?";
+"storage.confirm.cancelReverseBody" = "Je gegevens blijven in de Yala-cloud en op dit apparaat. Yala vraagt je daarna om de app af te sluiten en opnieuw te openen.";
+"storage.confirm.cancelReverseConfirm" = "Ja, in de cloud blijven";
+"storage.confirm.cancelReverseKeep" = "Blijven wachten";
+"storage.reverseAbort.relaunchTitle" = "Je gegevens staan nog in de cloud";
+"storage.reverseAbort.relaunchBody" = "Sluit Yala volledig af (veeg hem weg in de app-kiezer) en open hem opnieuw om de cloud te blijven gebruiken.";
+"storage.reverseAbort.icloudFull" = "We konden de terugkeer naar iCloud niet afronden: iCloud had geen ruimte meer. Maak ruimte vrij en probeer het opnieuw.";
+"storage.reverseAbort.icloudUnavailable" = "We konden de terugkeer naar iCloud niet afronden: iCloud was niet beschikbaar op dit apparaat. Controleer je iCloud-account in Instellingen en probeer het opnieuw.";
+"storage.reverseAbort.stalled" = "We konden de terugkeer naar iCloud niet afronden: iCloud heeft niet al je gegevens ontvangen. Controleer of iCloud op dit apparaat aanstaat en probeer het opnieuw met een goede verbinding. Laat Yala open tijdens het uploaden.";
+"storage.progress.reverseICloudMaybeOff" = "Als iCloud niet is ingeschakeld op dit apparaat, kunnen je gegevens iCloud niet bereiken. Schakel het in via Instellingen of annuleer om in de cloud te blijven.";
+"storage.errors.reversePendingExit" = "Terug naar iCloud kan nog niet: je cloud moet eerst helemaal opnieuw geactiveerd worden. Probeer het zo opnieuw.";

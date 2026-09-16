@@ -923,6 +923,25 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncReverse uploadPending count=\(count, privacy: .public) — filas sin exportar aún, retomable")
     }
 
+    /// Techo de `reverseUpload`: cada observación de la espera, con el reloj del último avance. `advanced` = la
+    /// cifra bajó de la más baja vista; `stalledSeconds` = tiempo SIN avanzar; `blocker` = por qué no drena, hasta
+    /// donde se sabe. Es lo que separa «va lento» de «no avanza» al leer un diagnóstico.
+    static func reverseUploadObserved(pending: Int, stalledSeconds: Double, advanced: Bool, blocker: String) {
+        logger.notice("CloudSyncReverse uploadObserved pending=\(pending, privacy: .public) stalledSeconds=\(Int(stalledSeconds), privacy: .public) advanced=\(advanced, privacy: .public) blocker=\(blocker, privacy: .public)")
+    }
+
+    /// Techo de `reverseUpload`: la espera terminó SIN llegar a iCloud y la reversa vuelve al origen en modo nube.
+    /// `reason` = `ReverseUploadAbortReason.rawValue` (`cancelled` si la persona lo pidió).
+    static func reverseUploadExited(reason: String) {
+        logger.notice("CloudSyncReverse uploadExited reason=\(reason, privacy: .public) — vuelta a la nube, mirror-off re-armado")
+    }
+
+    /// Salida de `reverseUpload`: el apagado del mirror quedó RE-ARMADO con `.cloud`. El proceso no se mata solo;
+    /// el siguiente arranque monta el store sin mirror.
+    static func reverseMirrorOffRearmed() {
+        logger.notice("CloudSyncReverse mirrorOffRearmed — .cloud + armado; relanzar para montar sin mirror")
+    }
+
     /// §h efecto de cierre: `count` `CloudMigrationMarker` borrados del store personal (el mirror VIVO
     /// exporta el delete). Idempotente (0 si ya no había marcador).
     static func reverseMarkerDeleted(count: Int) {
