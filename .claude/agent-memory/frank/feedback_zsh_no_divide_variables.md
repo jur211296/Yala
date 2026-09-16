@@ -98,3 +98,10 @@ la rama propia, con el PR recién nacido.
   sin stage o sin trackear, la cadena para ahí.
 - Tras un `git mv`, el pathspec es la ruta **nueva**; la vieja ya no existe en disco y `git add -A` falla.
 
+
+## Cuarta vez, en un bucle de mutantes (2026-09-16)
+
+`for batch in "m1 m7" "m3"; do python3 mutate.py $batch; …` — los lotes de DOS mutantes llegaron como un argumento y no se
+aplicaron. Lo delató el `|| echo "FALLO al aplicar $batch"` que había puesto detrás; sin él, el test habría corrido sobre
+el árbol bueno y el «rojo esperado» habría salido verde, que se lee como mutante superviviente. Con `${=batch}` corrieron.
+⇒ **todo paso que prepara una medición lleva su marcador de fallo**, no solo la medición.

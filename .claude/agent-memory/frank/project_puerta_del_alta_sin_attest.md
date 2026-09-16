@@ -1,27 +1,33 @@
 ---
 name: puerta-del-alta-sin-attest
-description: PR del 16-sep — sin App Attest el chooser ya no ofrece «Tu cuenta en la nube»; en qa espera UN paso en iPhone real, y el simulador sin el secreto de dev tampoco la enseña, a propósito
+description: 16-sep — sin App Attest no se ofrece darse de alta en la nube por ninguna puerta del Welcome (card, «Crear mi cuenta», «Crear cuenta con…»); los dos tickets en qa esperan pasos en iPhone real, y el simulador sin el secreto de dev ya no crea cuentas en la nube, a propósito
 metadata:
   type: project
 ---
 
-**«Tu cuenta en la nube» ya no se ofrece a un teléfono que no puede conseguir App Attest** (PR #180, 2026-09-16, encargo
-nocturno, opción 1). Cubre las tres puertas del gate compartido: «Es mi primera vez», «Crear otra cuenta» y «Activar Yala
-completo». El ticket `cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest` está en `qa`.
+**Un teléfono que no puede conseguir App Attest ya no se da de alta en la nube desde el Welcome** (2026-09-16, dos encargos,
+opción 1 en los dos). Una sola puerta, `WelcomeNewOptionsGate` (`offersCloudSignUp` = `live.contains(.cloudAccount)`):
 
-**Why:** era la decisión del owner del 2026-07-06, que vivía en una función sin llamador. El fallo caro es el inverso —que
-un iPhone real deje de ver la card— y ningún simulador lo prueba: por eso el ticket no va a `done`.
+- PR #180 (`cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest`): la card «Tu cuenta en la nube» de «Es mi
+  primera vez», «Crear otra cuenta» y «Activar Yala completo».
+- El PR siguiente (`cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest`): «Crear mi cuenta» tras «No
+  encontramos una cuenta» y «Crear cuenta con…» del mismatch. Sin la puerta, «No encontramos una cuenta» ofrece «Volver»:
+  lo decidió Jürgen a las 6:1x cuando la review cazó que mi primera versión dejaba solo la flecha de la esquina.
+
+**Why:** era la decisión del owner del 2026-07-06. El fallo caro es el inverso —un iPhone real que pierde la card o el
+botón— y ningún simulador lo prueba: por eso los dos tickets se quedan en `qa`.
 
 **How to apply:**
 
-- Si un `/qa` coge el ticket, es **un solo paso en iPhone real** con el TestFlight del cambio (guion en el ticket). No hay
-  nada que montar en simulador: el lado sin App Attest ya lo cubren tres XCUITest con el predicado real.
-- **Si en el simulador no sale «Tu cuenta en la nube», no es la configuración remota: es esta puerta.** El simulador no
-  tiene App Attest. La devuelve `Yala Dev` con `YALA_DEV_SHARED_SECRET` en el scheme, y ese secreto **no está en
-  `~/Secrets`** (medido el 16-sep: en `yala-gateway/` solo hay `prod-jwt-signing-secret`).
-- Quedan dos decisiones de Jürgen en `backlog`, las dos nacidas de medir el alcance:
-  `cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest` (trampa o pared en dos pantallas que él abrió) y
-  `cloud-migration-offers-the-cloud-to-a-phone-without-app-attest`.
+- Si un `/qa` coge estos tickets, los pasos en iPhone real comparten montaje (instalación nueva de TestFlight). **Borrar la
+  app se lleva lo que no esté en iCloud o en la nube**: el guion lo avisa, respétalo. Y el faro de iCloud puede cambiar
+  «No encontramos una cuenta» por el mismatch: los dos valen.
+- **Si en el simulador no sale «Tu cuenta en la nube» ni «Crear mi cuenta», no es la configuración remota: es esta
+  puerta.** La devuelve `Yala Dev` con `YALA_DEV_SHARED_SECRET` en el scheme, y ese secreto **no está en `~/Secrets`**
+  (medido dos veces el 16-sep): es un secret de Wrangler del gateway de staging, que no se lee de vuelta. Lo tiene Jürgen
+  o hay que rotarlo.
+- Queda en `backlog` «Migrar a la nube» (`cloud-migration-offers-the-cloud-to-a-phone-without-app-attest`), el único
+  camino al alta completa que no mira la puerta.
 
 Relacionado: [[telefono-sin-attest-veredicto-y-salida]] · [[aviso-attest-personal-en-dos-superficies]] ·
 [[el-source-scan-de-dos-literales-no-es-una-red]]
