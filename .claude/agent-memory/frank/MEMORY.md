@@ -67,7 +67,7 @@
 - [La rule de área es una lente más](feedback_la_rule_de_area_es_una_lente_mas.md) — leerla CONTRA el diff: cazó lo que las tres lentes no vieron el 8-sep y otras dos cosas el 10-sep.
 - [Las lentes se contradicen entre sí](feedback_lentes_adversariales_se_contradicen.md) — cuando dos discrepan, mídelo.
 - [El test viejo CUELGA, no falla](feedback_el_test_viejo_cuelga_no_falla.md) — al mover un outcome de parada a reintento.
-- [Mi arreglo deja el mecanismo sin productor](feedback_mi_arreglo_deja_el_mecanismo_sin_productor.md) — mide aguas arriba y aguas abajo.
+- [Mi arreglo deja el mecanismo sin productor](feedback_mi_arreglo_deja_el_mecanismo_sin_productor.md) — mide aguas arriba y abajo; una salida que «deshace» devuelve lo que la entrada tiró.
 - [El árbol base contesta «¿es mío?»](feedback_el_arbol_base_contesta_si_es_mio.md) — worktree desde HEAD zanja un rojo ajeno en 90 s; y devuelve el disco que se come.
 - [Un «rojo conocido» no exime de bisecar](feedback_rojo_conocido_no_exime_de_bisecar.md) — dos rojos idénticos en el log, causas opuestas: uno era mío y rompía guardar una transacción.
 - [La suite completa cuando no hay memoria](feedback_suite_completa_sin_memoria.md) — separa el compilador de la corrida; y una lista sacada de `@Suite` deja fuera 273 tipos y cuadra igual.
@@ -97,6 +97,7 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build incremental.
 
 ## Estado del trabajo
+- [Un rechazo al volver a iCloud ya sale a la nube](project_rechazo_del_claim_de_la_reversa.md) — PR #186; en qa con SQL en staging; la salida repone lo que la entrada tiró.
 - [Sin App Attest no se ofrece la nube](project_puerta_del_alta_sin_attest.md) — Welcome (#180, #181) y la tarjeta de Ajustes entera; en qa por pasos en iPhone; sin secreto el simulador no crea cuentas.
 - [Grupos ya despierta al volver a la app](project_grupos_despierta_al_volver_a_la_app.md) — PR #179; deja el ticket del piggyback con el motor parado y un mutante declarado sin test.
 - [El aviso de attest personal, en dos superficies](project_aviso_attest_personal_en_dos_superficies.md) — PR #177; arregló un «Todo al día» con el motor parado y deja un agujero conocido.
