@@ -1,14 +1,47 @@
 ---
-updated: 2026-09-15
+updated: 2026-09-16
 tags: [now, punto-de-retomada]
 ---
 
-# NOW — 2026-09-15 (Lima)
+# NOW — 2026-09-16 (Lima)
 
-**Rama** `2.1` — Merge #176: **La pestaña Grupos avisa cuando este teléfono no puede sincronizar.**
+**Rama** `2.1` — Merge #177: **La app avisa cuando este teléfono no puede sincronizar tus datos.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#176 · la pestaña Grupos avisa cuando este teléfono no puede sincronizar)
+## Esta sesión (#177 · la app avisa cuando este teléfono no puede sincronizar tus datos)
+
+**Quien tiene sus datos en la nube y este teléfono no consigue la verificación de seguridad ya se entera solo.**
+Antes no se lo decía nadie: apuntaba gastos, no llegaban a su cuenta, y solo lo descubría si intentaba cerrar
+sesión. Ahora, mientras el veredicto sea terminal, el **Panel** enseña un aviso fijo con el mismo título que ese
+cierre —«Este teléfono no puede sincronizar tus datos»— y un cuerpo que añade lo que nadie decía: **lo apuntado
+sigue guardado en este teléfono**. Sin X y sin botón, como el hermano de Grupos. Es el ticket que dejó el #176.
+
+**Van DOS superficies porque la segunda mentía.** La opción menos intrusiva era el estado de sync de «Dónde viven
+tus datos»… que pintaba un check verde **«Todo al día» con el motor parado**: `refreshSyncBanner` solo mira
+`.stoppedUntilSignIn`, y el attest terminal deja el runtime en `.stoppedUntilRelaunch`, que caía al `else`. El
+`else` fallaba ABIERTO. Las dos caras comparten una sola decisión y un solo copy, y la rama del attest va **antes**
+que la de volver a entrar: re-firmar no arregla un attest roto.
+
+**La review adversarial cazó tres cosas mías y dos cambiaron el producto.** (1) El copy **mandaba a un paywall**:
+decía «en Perfil puedes exportar tus datos», y el wizard capa los períodos largos a quien no es Pro — justo la
+población que ve el aviso, porque el Modo Nube es gratis. La exportación completa y gratuita existe desde el #175,
+pero solo se alcanza al cerrar sesión; el copy ya no la menciona. (2) Faltaba una **cuarta condición**: sin ella,
+quien vuelve a iCloud *precisamente porque sus datos dejaron de subir* veía «usa otro teléfono», el consejo
+contrario a lo que estaba haciendo. (3) `hasSession` **lee el Keychain** y se evaluaba en cada re-render, también
+en los teléfonos que nunca tendrán aviso.
+
+Gate: build ×2 sin warnings nuevos · **unit 7019 en 724 suites** · **XCUITest 8 clases y 20 casos** con cola y
+centinela («estuviste solo», 96 muestreos) · **12 mutantes, 12 muertos** · review de tres lentes · **CI verde**.
+**Sin device-QA**: el aviso es visual y determinista, y el ticket cierra en `done`.
+
+**Deja dos tickets y un agujero que conviene saber.** `cloud-hydration-spinner-never-gives-up-without-attest` (el
+«Descargando tus datos…» que gira para siempre y ahora contradice al aviso), y una anotación dentro de
+`personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`: **el canal personal no distingue su propio 401
+de attest**, así que a quien el gateway le rechaza el token la app le sigue diciendo «vuelve a iniciar sesión» y el
+aviso nuevo **no puede salir**, por construcción. De paso, `docs/TICKETS.md` estaba desfasado en un ticket ajeno;
+índice y disco cuadran ahora en 407.
+
+## Sesión anterior (#176 · la pestaña Grupos avisa cuando este teléfono no puede sincronizar)
 
 **Quien apunta gastos de un grupo desde un teléfono que no consigue App Attest ya se entera.** Antes no se lo decía
 nadie: editaba, nadie del grupo lo veía, y el aviso solo aparecía al intentar cerrar sesión, desasociar la cuenta o
@@ -39,7 +72,7 @@ centinela («estuviste solo», 234 muestreos) · **9 mutantes, 9 muertos** · re
 `unit-tests-clear-the-attest-streak-of-a-device-qa-in-progress` que el desvío de uitest **no** lo cubre: los unit
 tests corren sin `-uitest`.
 
-## Sesión anterior (#175 · sin App Attest en la nube: exportar y salir perdiendo lo personal, con confirmación)
+## Sesión #175 · sin App Attest en la nube: exportar y salir perdiendo lo personal, con confirmación)
 
 **En la nube, un teléfono que lleva más de un día sin conseguir App Attest ya puede cerrar sesión aunque le
 queden cambios suyos sin subir.** Es tu decisión del 15-sep (opción 1). Antes el cierre le mandaba a revisar una
