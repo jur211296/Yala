@@ -60,3 +60,28 @@ un docblock que empieza por «aquí todavía no…» o «en este punto ya…».
 
 **Y el olfato barato:** si una red funciona «porque el proceso muere» o «porque el arranque siguiente lo
 recalcula», tu camino nuevo la desactiva en cuanto no relance. Buscar el relanzamiento es un `grep`.
+
+---
+
+## La variante del 2026-09-17: escribí la regla en una rama y la rompí en su HERMANA, en el mismo diff
+
+`previous-person-cloud-session-survives-fresh-start-and-reinstall`. En la rama «Soy nuevo sin datos»
+escribí, con todas las letras: «**solo el retiro, no el sello** — el sello es irreversible en este
+teléfono y se lo comería quien reinstala su PROPIA app». Doce líneas más arriba, en
+`performICloudCorpusWipe`, hice exactamente lo contrario: extendí el sellado a la celda sin filas locales,
+que es **literalmente la reinstalación**, y de paso al aviso del espejo tardío, cuya población es la misma
+persona por definición.
+
+Lo cazaron **dos lentes por separado**, y la coincidencia es lo que lo hizo decisivo. La justificación que
+yo me había dado era «el enum promete purga + sello y el guard incumplía su docblock»: cierta, y el
+arreglo correcto no era cumplir la promesa sino **corregir la promesa** — el docblock del scope también
+estaba mal.
+
+**Lo que añade a la ficha, y es la forma más barata de cazarlo:** cuando en un diff escribo una frase del
+tipo «aquí NO hago X porque X sería irreversible / dañino / ajeno», **esa frase es una regla, y hay que
+aplicarla a los demás sitios del mismo diff, uno por uno, con su nombre**. `grep` del token que nombra
+(aquí `groupsDomainSealedForFreshStart`) sobre el diff entero, y por cada acierto contestar «¿y aquí por
+qué sí?».
+
+Y el corolario sobre las promesas: **cuando el docblock de un tipo y el comportamiento de un call-site no
+casan, no des por hecho que el equivocado es el call-site.** El docblock también es una premisa.

@@ -105,3 +105,27 @@ la rama propia, con el PR recién nacido.
 aplicaron. Lo delató el `|| echo "FALLO al aplicar $batch"` que había puesto detrás; sin él, el test habría corrido sobre
 el árbol bueno y el «rojo esperado» habría salido verde, que se lee como mutante superviviente. Con `${=batch}` corrieron.
 ⇒ **todo paso que prepara una medición lleva su marcador de fallo**, no solo la medición.
+
+## Quinta vez, y esta pintó de VERDE una tanda entera de mutantes (2026-09-17)
+
+`SUITES="-only-testing:A -only-testing:B …"` y `xcodebuild … $SUITES test`. Los cuatro filtros llegaron
+como un argumento, xcodebuild no casó ninguna suite y salió **`** TEST SUCCEEDED **` sin una sola línea
+`Test run with`**. La tanda de **diez mutantes** se leyó así:
+
+    M1 exit=0 cazadores:   ← «sobrevivió»
+    M2 exit=0 cazadores:   ← «sobrevivió»
+    …diez veces
+
+**Y esa es la dirección de fallo peligrosa.** Las cuatro veces anteriores el síntoma fue un rojo ruidoso o
+un «cero casos» que se caza contando. Aquí el resultado tenía la forma exacta de un hallazgo real —«mis
+tests no cazan nada»— y lo que invita a hacer es *escribir más tests* o *aflojar el código*, no sospechar
+del shell. Lo delató que **los diez** salieran igual: un mutante que sobrevive es plausible; diez de diez,
+no.
+
+**How to apply, y es lo único que hace falta recordar:**
+
+- **Control positivo ANTES de cada tanda, en la misma invocación**: correr el árbol bueno y exigir la línea
+  `Test run with N tests in M suites passed` con el N que esperas. Si esa línea no está, la tanda no ha
+  medido nada — da igual lo que digan los exit codes.
+- Y el corolario de lectura: en un bucle de mutantes, **un veredicto con cero cazadores y cero conteo no es
+  «sobrevivió», es «no se midió»**. Sobrevivir exige que la corrida haya ejecutado casos.

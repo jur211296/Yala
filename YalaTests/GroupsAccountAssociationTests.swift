@@ -472,7 +472,9 @@ struct GroupsAssociationRegistrarTests {
         #expect(store.read()?.email == "a@b.com")
     }
 
-    /// **El agujero que este guard cierra.** El «empiezo de cero» del Welcome NO cierra la sesión en la
+    /// **El agujero que este guard cierra.** Desde el 2026-09-17 el «empiezo de cero» RETIRA la sesión en la
+    /// nube (`CloudSessionRetirement`), pero el retiro es asíncrono y una reinstalación no deja sello. El
+    /// agujero original, que este guard sigue cubriendo: el Welcome no cerraba la sesión en la
     /// nube —el JWT vive en su propio llavero—, así que sin el sello el primer arranque del humano
     /// SIGUIENTE volvería a escribir la asociación del ANTERIOR, deshaciendo el barrido del handover.
     @MainActor

@@ -1861,7 +1861,22 @@ struct ContentView: View {
         // término del neutro (`groupsOnlySessionArmed`) rompió esa equivalencia — una sesión solo-grupos
         // monta neutro con el archivo del store lleno. La llamada siempre fue correcta; lo que era falso
         // era el motivo.
-        guard scope.deletesLocalRows, checkHasExistingData() else { return nil }
+        // **Sin filas locales no hay nada que borrar, pero la SESIÓN sigue ahí.** El JWT vive en su
+        // propio llavero y sobrevive al store vacío —una reinstalación es exactamente esa celda—, así que
+        // este camino retira la sesión y sale (ticket
+        // `previous-person-cloud-session-survives-fresh-start-and-reinstall`).
+        //
+        // **Lo que NO hace es sellar, y esa asimetría la cazó la review.** La primera versión de este fix
+        // metía aquí `wipeLocalGroupsDomain`, que escribe `groupsDomainSealedForFreshStart`: un sello
+        // irreversible en este teléfono que se comía **quien reinstala su PROPIA app** y le quitaba la
+        // asociación de Grupos de su Apple ID para siempre. Y se lo comía también quien contesta al aviso
+        // del espejo tardío, que es la MISMA persona por definición. Es el mismo criterio que la rama
+        // hermana de `startFreshPrivateOnboarding`: retirar la sesión y sellar el dominio son dos
+        // decisiones, y solo la primera vale cuando no hay corpus ajeno que apartar.
+        guard scope.deletesLocalRows, checkHasExistingData() else {
+            if scope.purgesGroupsDomain { CloudSessionRetirement.retireForHandover() }
+            return nil
+        }
         do {
             try DataWipeService.wipeAllUserData(in: modelContext, broadcastSignal: false,
                                                 resetsPreferences: scope.resetsPreferences)
@@ -2290,6 +2305,20 @@ private struct WelcomeFlowModifier: ViewModifier {
                         StorageModePersistence.clearGroupsOnlyNeutralMount()
                         if destination == .privateOnboarding {
                             OnboardingResetHelper.clearResidualPreferencesForFreshStart()
+                            // **Y la sesión en la nube de la persona anterior, armada.** Este callback es
+                            // la QUINTA declaración de «empiezo de cero» del shell, y la única que no pasa
+                            // ni por `wipeLocalGroupsDomain` ni por `startFreshPrivateOnboarding`: con el
+                            // mount neutro, «Soy nuevo → privacidad total» sale por aquí en vez de por
+                            // `onSelectPrivateAccount` (`WelcomeMirrorRelaunchLogic`, `.privateOnboarding`
+                            // exige espejo). Sin esto aterrizaba en el onboarding con el llavero del
+                            // anterior intacto — el bug del ticket por la puerta que nadie miró. Lo cazó
+                            // la review adversarial.
+                            //
+                            // **Solo se ARMA, sin disparar**: este camino relanza el proceso, así que lo
+                            // consume el `purgeIfArmed` PRE-MOUNT del arranque siguiente, que además es el
+                            // consumidor race-free. Y la línea va junto a su vecina porque las dos
+                            // declaran lo mismo.
+                            CloudSessionRetirement.arm(defaults: .standard)
                         }
                         WelcomePendingDestinationStore.set(destination)
                     },
@@ -2544,6 +2573,25 @@ private struct WelcomeFlowModifier: ViewModifier {
             // `init` y descarta los vacíos— así que lo percibía un arranque en frío después.
             // Se limpia cuando se BORRA, no cuando se pregunta.
             OnboardingResetHelper.clearResidualPreferencesForFreshStart()
+            // **Y la sesión en la nube se retira también por aquí.** Esta rama es la que declara «soy
+            // nuevo» cuando no hay NADA que borrar, así que no pasa por `wipeLocalGroupsDomain` y hasta
+            // el 2026-09-17 se iba al onboarding con la sesión de la persona anterior intacta — el
+            // camino que este ticket mide como reinstalación sin sello.
+            //
+            // **Solo el retiro, no el sello ni la purga del dominio de Grupos**, y la asimetría es
+            // deliberada: aquí no hay grupos que purgar (`hasLocalDataNow()` los cuenta, y dijo que no),
+            // y el sello es irreversible en este teléfono — se lo comería quien reinstala su PROPIA app
+            // y dice «soy nuevo», quitándole la asociación de Grupos de su Apple ID para siempre.
+            CloudSessionRetirement.retireForHandover()
+            // Y lo que este teléfono RECORDABA de esa cuenta, que sobrevive al store vacío porque no son
+            // filas: el espejo local de la asociación le enseñaría a la persona nueva **el correo del
+            // anterior** en la fila de Ajustes, y el latch de «aquí hubo sesión de Grupos» le diría
+            // «vuelve a tu cuenta» en un empty state que no es suyo. Mismo par y mismo motivo que borra
+            // `SwiftDataConfiguration.performSignOutWipeIfArmed` cuando el cierre se lleva los grupos.
+            // La copia del iCloud-KV NO se toca: es del Apple ID, y es el camino de vuelta de quien
+            // reinstala lo suyo.
+            UserDefaults.standard.removeObject(forKey: GroupsAccountAssociation.localKey)
+            UserDefaults.standard.removeObject(forKey: GroupsSessionHistoryMarker.key)
             showWelcomeFlow = false
             showOnboarding = true
         }

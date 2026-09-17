@@ -49,7 +49,9 @@ nonisolated enum StorageMigrationIdentityGateLogic {
         /// todavía no existe.
         case accountReturnedToICloud
         /// El teléfono empezó desde cero y la sesión viva no la abrió este intento ni está asociada: puede ser de la persona
-        /// anterior, porque «Empezar desde cero» no cierra la sesión en la nube (Jürgen, 2026-09-16). Ver
+        /// anterior. Hasta el 2026-09-17 «Empezar desde cero» no cerraba la sesión en la nube; hoy la retira
+        /// (`CloudSessionRetirement`), pero el retiro es asíncrono y la reinstalación no deja sello, así que
+        /// este aviso sigue siendo la red de este lado (Jürgen, 2026-09-16 y 2026-09-17). Ver
         /// `deviceSealedForFreshStart` en `check`. Va al final: añadir un caso en medio cambia el orden de `allCases`.
         case sessionFromBeforeFreshStart
 
@@ -94,7 +96,9 @@ nonisolated enum StorageMigrationIdentityGateLogic {
     ///     eligió la cuenta. `false` con la sesión que ya había al tocar «Activar la nube».
     ///   - deviceSealedForFreshStart: este teléfono pasó por «Empezar desde cero» (`groupsDomainSealedForFreshStart`).
     ///     **Con el sello, `nil` en `isAssociatedGroupsAccount` no dice «no hay ninguna asociada»: dice «no se sabe de quién
-    ///     es la sesión».** «Empezar desde cero» no cierra la sesión en la nube, y con el sello `GroupsAccountAssociation` deja
+    ///     es la sesión».** Desde el 2026-09-17 «Empezar desde cero» RETIRA la sesión en la nube
+    ///     (`CloudSessionRetirement`, decisión de Jürgen), pero el retiro es un `Task` y este guard es lo que
+    ///     cubre el hueco si no llegó a correr. Con el sello, además, `GroupsAccountAssociation` deja
     ///     de leer la asociación del Apple ID y `GroupsAssociationRegistrar` no registra la sesión viva, porque puede ser de la
     ///     persona anterior. Así que ahí una sesión que no abrió este intento y no está asociada no recibe lo personal
     ///     (Jürgen, 2026-09-16, ticket `fresh-start-keeps-a-groups-session-that-migrate-promotes`): sin esto, las finanzas

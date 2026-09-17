@@ -551,6 +551,18 @@ enum CloudSyncBreadcrumb {
         logger.error("SecondarySessionRetirement INCOMPLETE — store file deletion failed, will retry next launch")
     }
 
+    /// **La sesión de la persona anterior NO se pudo retirar**: el `SecItemDelete` del llavero de auth
+    /// falló. El arm sobrevive, así que el arranque siguiente lo reintenta; esta línea es el único
+    /// rastro. >0 sostenido = el llavero no se deja barrer y la sesión de otra persona sigue aquí.
+    nonisolated static func previousPersonSessionRetirementIncomplete() {
+        logger.error("CloudSessionRetirement INCOMPLETE — keychain purge failed, will retry next launch")
+    }
+
+    /// La sesión de quien usó antes este teléfono quedó retirada (relevo o primer arranque tras instalar).
+    nonisolated static func previousPersonSessionRetired() {
+        logger.notice("CloudSessionRetirement done — previous person cloud session retired")
+    }
+
     static func swapCompleted() {
         logger.notice("CloudSignOut swap COMPLETED — store vaciado y remontado en sesión; sin relanzamiento")
     }

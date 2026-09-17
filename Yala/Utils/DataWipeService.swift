@@ -329,14 +329,25 @@ final class DataWipeService {
     ///     el espejo real ni el disco. `@MainActor` en el TIPO del parámetro y no solo en la
     ///     función: los valores por defecto se evalúan en el contexto del CALLER, así que sin la
     ///     anotación el default no puede llamar al singleton.
+    ///   - retireCloudSession: seam del DISPARO del retiro de la sesión en la nube. El ARM se escribe
+    ///     en el cuerpo (durable, sobre el `defaults` inyectado); esto solo lo consume en este proceso,
+    ///     que es asíncrono y por eso no cabe en el cuerpo. Los tests lo sustituyen para no tocar el
+    ///     llavero real.
     static func wipeLocalGroupsDomain(
         in context: ModelContext,
         defaults: UserDefaults = .standard,
+        retireCloudSession: @MainActor () -> Void = {
+            // El retiro es asíncrono (hay que parar al SDK antes de tocar el llavero, o su auto-refresh
+            // repone la sesión) y esta función no lo es. Mientras el `Task` no termine, quien cubre las
+            // puertas es el SELLO que se escribe unas líneas más abajo, síncrono en este mismo gesto.
+            Task { await CloudSessionRetirement.retireIfArmed() }
+        },
         resetSyncState: @MainActor () -> Void = {
             // 2.7: sin esto, borrar las filas del outbox (abajo) es COSMÉTICO —
             // `GroupsSyncClient.rehydrateOutboxFromMirror` las re-inserta en el próximo boot desde el
-            // App Group. Su filtro por `userID` NO protege en esta frontera: este camino no cierra la
-            // sesión Nube, así que la identidad de las entries del humano anterior sigue casando.
+            // App Group. **Su filtro por `userID` tampoco basta desde el 2026-09-17**, aunque este
+            // camino ya cierre la sesión: el retiro es un `Task` y un kill entre medias deja la sesión
+            // viva con la identidad del anterior casando. El borrado del espejo no depende de eso.
             GroupsOutboxMirror()?.purgeAll()
         }
     ) throws {
@@ -349,10 +360,17 @@ final class DataWipeService {
         // 2.7 · El outbox de GRUPOS muere aquí; el CURSOR sobrevive A PROPÓSITO. Los dos viven en
         // `syncMetaSchema` —el store que `wipeAllUserData` no toca— pero tienen signos OPUESTOS en una
         // frontera de USUARIO:
-        //  · las filas del outbox son escrituras PENDIENTES del humano anterior, y el JWT de la sesión
-        //    Nube vive en su propio Keychain ⇒ SOBREVIVE al relevo ⇒ se subirían firmadas como suyas.
+        //  · las filas del outbox son escrituras PENDIENTES del humano anterior, y hasta que el retiro
+        //    de abajo termine el JWT de la sesión Nube sigue en su Keychain ⇒ se subirían firmadas como
+        //    suyas. El retiro no las hace inocuas: las deja sin canal, que no es lo mismo que sin dueño.
         //  · el cursor es la BARRERA que impide que el corpus del anterior BAJE al device del nuevo con
         //    ese mismo JWT (el bug de `31dded30`) ⇒ purgarlo aquí la REABRIRÍA.
+        //
+        // **Y desde el 2026-09-17 este camino SÍ cierra la sesión (ver más abajo), lo que NO cambia el
+        // signo del cursor** — es lo que Jürgen pidió medir: el cursor está indexado por `groupID`, así
+        // que los grupos de la persona nueva son otros IDs y bajan enteros; si comparten grupo, el
+        // re-join ya lo resetea (`cursorResetGroupIDs`, `GroupsSyncClient.applyPulledPage`); y si el
+        // retiro falla, el cursor es la ÚNICA barrera que queda. El par coherente sigue siendo el mismo.
         // Por eso NO se reusa `CloudSessionSignOut.purgeGroupsSyncState`, que borra AMBOS: su docblock
         // acota su uso al camino solo-grupos «tras el teardown (generación cortada)», y este camino no
         // corta ninguna generación. La otra mitad —el espejo del App Group— va en `resetSyncState`,
@@ -364,6 +382,25 @@ final class DataWipeService {
         try deleteLocalGroupsRows(in: context) {
             for row in try context.fetch(FetchDescriptor<GroupSyncOutbox>()) { context.delete(row) }
         }
+
+        // **LA SESIÓN EN LA NUBE SE RETIRA.** Decisión de Jürgen (2026-09-17, ticket
+        // `previous-person-cloud-session-survives-fresh-start-and-reinstall`): «Empezar desde cero» es la
+        // frontera de otro humano en este teléfono, y el JWT de la persona anterior vive en su propio
+        // llavero — que sobrevive incluso a borrar la app. Sin esto, cada puerta que reusa la sesión viva
+        // (el Welcome, «Activar Yala completo», la hoja de Grupos, la tarjeta de adopt) le deja a la
+        // persona nueva sus finanzas o sus grupos en la cuenta de la anterior.
+        //
+        // **El ARM va aquí, en el cuerpo, y el DISPARO en el seam.** El arm es durable y síncrono, así
+        // que un kill entre este punto y el retiro lo repite el arranque siguiente
+        // (`AppBootstrapper`, paso 0.0-quater). El disparo no cabe aquí: retirar la sesión exige parar
+        // antes al SDK —su auto-refresh repondría el llavero— y eso es `async`.
+        //
+        // **Va DESPUÉS de la transacción de borrado, no antes**, para que un wipe que lanza no se lleve
+        // por delante la sesión de quien sigue con sus datos intactos: si el borrado falla, el relevo no
+        // ocurrió. Y va ANTES del sello por la misma lógica que el sello va al final — el orden de estas
+        // tres líneas es el que deja el estado menos dañino ante un kill en cada hueco.
+        CloudSessionRetirement.arm(defaults: defaults)
+        retireCloudSession()
 
         removeGroupsDomainPreferenceKeys(from: defaults)
         clearHandoverPrivateSessionMark(from: defaults)

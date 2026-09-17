@@ -105,7 +105,7 @@ struct HandoverGroupsDomainTests {
         #expect(try context.fetchCount(FetchDescriptor<GroupBridgePreference>()) == 1)
 
         try DataWipeService.wipeLocalGroupsDomain(
-            in: context, defaults: makeIsolatedDefaults(), resetSyncState: {})
+            in: context, defaults: makeIsolatedDefaults(), retireCloudSession: {}, resetSyncState: {})
 
         #expect(try context.fetchCount(FetchDescriptor<SplitGroup>()) == 0)
         #expect(try context.fetchCount(FetchDescriptor<SplitMember>()) == 0)
@@ -128,7 +128,7 @@ struct HandoverGroupsDomainTests {
 
         var resetSyncStateCalls = 0
         try DataWipeService.wipeLocalGroupsDomain(
-            in: context, defaults: makeIsolatedDefaults(),
+            in: context, defaults: makeIsolatedDefaults(), retireCloudSession: {},
             resetSyncState: { resetSyncStateCalls += 1 })
 
         #expect(resetSyncStateCalls == 1)
@@ -147,7 +147,7 @@ struct HandoverGroupsDomainTests {
         try context.save()
 
         try DataWipeService.wipeLocalGroupsDomain(
-            in: context, defaults: makeIsolatedDefaults(), resetSyncState: {})
+            in: context, defaults: makeIsolatedDefaults(), retireCloudSession: {}, resetSyncState: {})
 
         #expect(try context.fetchCount(FetchDescriptor<Account>()) == 1)
         #expect(try context.fetchCount(FetchDescriptor<Yala.Tag>()) == 1)
@@ -204,7 +204,7 @@ struct HandoverGroupsDomainTests {
         PrivateSessionMark.set(false, defaults)
 
         try DataWipeService.wipeLocalGroupsDomain(
-            in: context, defaults: defaults, resetSyncState: {})
+            in: context, defaults: defaults, retireCloudSession: {}, resetSyncState: {})
 
         // 1. La marca vuelve a AUSENTE, que es como nace un teléfono recién instalado.
         #expect(PrivateSessionMark.raw(defaults) == nil)
@@ -229,7 +229,7 @@ struct HandoverGroupsDomainTests {
         let iKV = RecordingKVStore()
 
         try DataWipeService.wipeLocalGroupsDomain(
-            in: context, defaults: makeIsolatedDefaults(), resetSyncState: {})
+            in: context, defaults: makeIsolatedDefaults(), retireCloudSession: {}, resetSyncState: {})
 
         #expect(iKV.writtenKeys.isEmpty)
         #expect(iKV.removedKeys.isEmpty)
@@ -243,7 +243,7 @@ struct HandoverGroupsDomainTests {
         #expect(defaults.bool(forKey: AppPreferences.Keys.groupsDomainSealedForFreshStart) == false)
 
         try DataWipeService.wipeLocalGroupsDomain(
-            in: context, defaults: defaults, resetSyncState: {})
+            in: context, defaults: defaults, retireCloudSession: {}, resetSyncState: {})
 
         #expect(defaults.bool(forKey: AppPreferences.Keys.groupsDomainSealedForFreshStart) == true)
     }
@@ -339,8 +339,8 @@ struct HandoverGroupsDomainTests {
     /// El corazón de 2.7, y la razón de que NO sea «repuntar el default a `purgeGroupsSyncState`»: los
     /// dos objetos de `syncMetaSchema` tienen signos OPUESTOS en una frontera de usuario.
     ///
-    /// El outbox son escrituras PENDIENTES del humano anterior, y el JWT de la sesión Nube sobrevive al
-    /// relevo (Keychain propio) ⇒ se subirían firmadas como suyas. El cursor, en cambio, es la BARRERA
+    /// El outbox son escrituras PENDIENTES del humano anterior, y hasta que el retiro de la sesión termine
+    /// el JWT sigue en su Keychain propio ⇒ se subirían firmadas como suyas. El cursor, en cambio, es la BARRERA
     /// que impide que el corpus del anterior BAJE a este device con ese mismo JWT (bug `31dded30`).
     /// Un fix que borre los dos cierra una fuga y abre la otra.
     @Test func wipeLocalGroupsDomain_killsTheOutbox_butKEEPSTheCursor() throws {
@@ -352,7 +352,7 @@ struct HandoverGroupsDomainTests {
         try context.save()
 
         try DataWipeService.wipeLocalGroupsDomain(
-            in: context, defaults: makeIsolatedDefaults(), resetSyncState: {})
+            in: context, defaults: makeIsolatedDefaults(), retireCloudSession: {}, resetSyncState: {})
 
         #expect(try context.fetchCount(FetchDescriptor<GroupSyncOutbox>()) == 0,
                 "Las escrituras pendientes del humano anterior se subirían con su JWT, que sobrevive.")
@@ -368,7 +368,7 @@ struct HandoverGroupsDomainTests {
         try context.save()
 
         try DataWipeService.wipeLocalGroupsDomain(
-            in: context, defaults: makeIsolatedDefaults(), resetSyncState: {})
+            in: context, defaults: makeIsolatedDefaults(), retireCloudSession: {}, resetSyncState: {})
 
         let cursors = try context.fetch(FetchDescriptor<GroupSyncCursor>())
         #expect(cursors.first?.groupCursorsJSON == "{\"g1\":5}")
@@ -383,7 +383,7 @@ struct HandoverGroupsDomainTests {
         try seedGroupsDomain(in: context)
 
         try DataWipeService.wipeLocalGroupsDomain(
-            in: context, defaults: makeIsolatedDefaults(), resetSyncState: {})
+            in: context, defaults: makeIsolatedDefaults(), retireCloudSession: {}, resetSyncState: {})
 
         #expect(try context.fetchCount(FetchDescriptor<SplitGroup>()) == 0)
         #expect(try context.fetchCount(FetchDescriptor<GroupBridgePreference>()) == 0)
@@ -535,7 +535,9 @@ struct HandoverGroupsWiringTests {
     ///
     ///  1. **El espejo del App Group.** Borrar las filas sin purgarlo es COSMÉTICO:
     ///     `GroupsSyncClient.rehydrateOutboxFromMirror` las re-inserta al próximo boot. Su filtro por
-    ///     `userID` no protege aquí — este camino NO cierra la sesión, así que la identidad casa.
+    ///     `userID` tampoco basta aquí: desde el 2026-09-17 este camino retira la sesión, pero el retiro
+    ///     es un `Task` y un kill lo deja para el arranque siguiente — con la sesión todavía viva, la
+    ///     identidad de las entries del anterior casa y el espejo las re-inserta.
     ///  2. **No reusar `purgeGroupsSyncState`.** Es la regresión que haría quien lea el plan de la Fase 2
     ///     (§2.7 decía «repuntar el default a `CloudSessionSignOut.purgeGroupsSyncState`»): esa función
     ///     borra outbox **y** cursor, y su propio docblock acota su uso a «tras el teardown (generación

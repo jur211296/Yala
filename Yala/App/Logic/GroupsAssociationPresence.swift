@@ -21,9 +21,10 @@
 //  celdas reales, y las dos son el bug del ticket otra vez:
 //
 //   · **Sesión viva SIN registro** ⇒ la sección ofrece soltar la cuenta y la fila seguía oculta bajo el
-//     kill. Se llega por el «empiezo de cero» del Welcome —que borra el espejo local y sella el dominio,
-//     pero NO cierra la sesión en la nube (`DataWipeService.wipeLocalGroupsDomain` lo dice en su
-//     cabecera: el JWT vive en su propio llavero)— y por cualquier sesión anterior al paso 10 cuyo
+//     kill. Se llega por el «empiezo de cero» del Welcome —que borra el espejo local y sella el dominio;
+//     desde el 2026-09-17 además RETIRA la sesión en la nube (`CloudSessionRetirement`), pero el retiro
+//     es un `Task` y un kill lo deja para el arranque siguiente, así que la celda sigue siendo
+//     alcanzable— y por cualquier sesión anterior al paso 10 cuyo
 //     backfill no llegara a escribir. El gesto sí funciona ahí: `CloudSessionSignOut.detachGroupsAccount`
 //     resuelve la cuenta con `associatedSub ?? CloudAuthService.currentUserID`.
 //   · **Registro SIN sesión privada** (`.cloudGroupsOnly`, `.fresh`) ⇒ la sección no aplica y la fila se

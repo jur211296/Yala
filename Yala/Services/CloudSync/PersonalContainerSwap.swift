@@ -75,6 +75,24 @@ final class PersonalContainerHost {
     /// `markContainerCloudKitState` porque es su evaluación la que CAPTURA el testigo del mount.
     static func makeContainer() throws -> ModelContainer {
         SecondarySessionRetirement.purgeIfNeeded()
+        // **El primer arranque tras INSTALAR arma el retiro de la sesión de quien usara antes este
+        // teléfono.** Va aquí y no en el bootstrap por lo mismo que su vecina de arriba: es lo primero
+        // que corre en el proceso, así que la marca queda escrita antes de que nada pueda leer la
+        // sesión. Solo ARMA —el retiro es asíncrono y lo consume `AppBootstrapper`— y es un no-op a
+        // partir del segundo arranque (`CloudSessionRetirement.installSeenKey`).
+        //
+        // Que también corra en el REMONTE del swap es inofensivo y deliberado: la marca ya está puesta
+        // desde el arranque, así que ahí no arma nada.
+        CloudSessionRetirement.armIfFirstLaunchAfterInstall()
+        // Y se CONSUME aquí mismo, síncrono. Es el sitio y no el bootstrap: en este punto
+        // `CloudAuthService.shared` —un `static let` perezoso— todavía no se ha construido, así que no hay
+        // auto-refresh que pueda reponer lo que se borra y no hay ninguna llamada de red delante de la
+        // primera pantalla. Consumido en el bootstrap, el `await` del sign-out dejaba el `defer` de
+        // `bootstrap()` sin ejecutar —y con él el blocker `bootstrapPending`— hasta 60 s con un servidor
+        // que no contesta: el primerísimo arranque sin Welcome y sin drenar un intent.
+        //
+        // Repara además cualquier relevo cuyo `Task` muriera a medias: el arm es durable.
+        CloudSessionRetirement.purgeIfArmed()
         SwiftDataConfiguration.performSignOutWipeIfArmed()
         SwiftDataConfiguration.performGroupsOnlySignOutWipeIfArmed()
         let personalConfiguration = SwiftDataConfiguration.personalConfiguration

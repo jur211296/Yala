@@ -187,8 +187,9 @@ final class GroupsAccountAssociation {
     /// tres preguntas para las que existe.
     ///
     /// **Con el dominio sellado, solo se apunta una sesión abierta por el propio sign-in** (ticket
-    /// `fresh-start-keeps-a-groups-session-that-migrate-promotes`). «Empezar desde cero» no cierra la sesión en la nube, así
-    /// que una que ya estaba abierta puede ser de la persona anterior. Apuntarla le daba a la puerta de «Migrar a la nube» un
+    /// `fresh-start-keeps-a-groups-session-that-migrate-promotes`). Desde el 2026-09-17 «Empezar desde cero» RETIRA la sesión
+    /// en la nube (`CloudSessionRetirement`), pero el retiro es asíncrono y una reinstalación no deja sello, así que una sesión
+    /// que ya estaba abierta todavía puede ser de la persona anterior. Apuntarla le daba a la puerta de «Migrar a la nube» un
     /// `true` que promovía esa cuenta con las finanzas de la persona nueva. Pasaba por el cinturón de `GroupsSignInView`: una
     /// unión por invitación que vuelve pidiendo sesión con la sesión aún guardada re-presenta la hoja, y la hoja reusa la sesión
     /// viva sin enseñar botones. Hoy llega ahí con un 401 del gateway; hasta el 2026-09-17 también llegaba con el token que no
@@ -341,11 +342,12 @@ enum GroupsAssociationRegistrar {
         now: Date = .now
     ) {
         guard deviceState == .privateSession, identity.hasSession else { return }
-        // **Con el dominio sellado para un usuario nuevo, no se registra nada.** El «empiezo de cero» del
-        // Welcome NO cierra la sesión en la nube —el JWT vive en su propio llavero y sobrevive al relevo,
-        // y así está documentado en `DataWipeService.wipeLocalGroupsDomain`—, así que sin este guard el
-        // primer arranque del humano SIGUIENTE volvería a escribir la asociación del ANTERIOR, deshaciendo
-        // en silencio el barrido del handover. Es el mismo sello que cierra el bridge por la misma razón.
+        // **Con el dominio sellado para un usuario nuevo, no se registra nada.** El JWT vive en su propio
+        // llavero y sobrevive al relevo por sí solo; desde el 2026-09-17 el «empiezo de cero» lo RETIRA
+        // (`CloudSessionRetirement`, armado en `DataWipeService.wipeLocalGroupsDomain`), pero ese retiro es
+        // un `Task` y este arranque puede adelantarlo. Sin este guard, el primer arranque del humano
+        // SIGUIENTE volvería a escribir la asociación del ANTERIOR, deshaciendo en silencio el barrido del
+        // handover. Es el mismo sello que cierra el bridge por la misma razón.
         guard !defaults.bool(forKey: AppPreferences.Keys.groupsDomainSealedForFreshStart) else { return }
         // **Un desasociar explícito no se deshace en un arranque.** El tombstone viaja por el iCloud-KV
         // del Apple ID, así que este guard vale también para el OTRO dispositivo, que es justo donde
