@@ -69,6 +69,8 @@
 - [Mi refutación falla ABIERTO](feedback_mi_refutacion_falla_abierto.md) — 33 de 45 hallazgos salieron «refutados» sin que nadie los juzgara.
 - [Tras la puerta, el error es otro](feedback_tras_la_puerta_el_error_es_otro.md) — copié «el 401 del attest suma a la racha» de Grupos al personal, donde una puerta ya filtra al teléfono: tres falsos positivos.
 - [El guion de QA tiene que distinguir builds](feedback_el_guion_de_qa_tiene_que_distinguir_builds.md) — sin red la puerta de attest salía antes del push: el PASS habría sido falso.
+- [El molde no traslada sus precondiciones](feedback_el_molde_no_traslada_sus_precondiciones.md) — copiar «con el molde de X» hereda la forma; el belt copiado no firmaba en el caso principal.
+- [El mutante que sobrevive puede SOBRAR](feedback_el_mutante_que_sobrevive_puede_sobrar.md) — dos respuestas: falta un test, o sobra el código. Elegir la 1.ª por defecto fija una línea inerte.
 - [La review adversarial caza lo MÍO](feedback_review_adversarial_caza_lo_mio.md) — el 14-sep cazó que MI ARREGLO no arreglaba, con 5 mutantes y una captura del simulador ya en verde.
 - [Apagar una voz destapa el residual de la otra](feedback_apagar_una_voz_destapa_el_residual_de_la_otra.md) — el spinner tapaba con una mentira el hueco del aviso; al callarlo quedó silencio.
 - [La fase ajena tiene otros escritores](feedback_la_fase_ajena_tiene_otros_escritores.md) — mi «en vuelo» leía un `.idle` como transitorio; Ajustes lo ponía y dejaba un progreso eterno.
@@ -108,6 +110,7 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build incremental.
 
 ## Estado del trabajo
+- [La vuelta a iCloud ya pide volver a entrar](project_vuelta_icloud_pide_volver_a_entrar.md) — PR #194; en qa con 8 pasos en iPhone; los pasos 6 y 7 son los que deciden.
 - [La sesión de la persona anterior ya se retira](project_retiro_sesion_persona_anterior.md) — PR #192; en qa con 9 pasos en iPhone, y el paso 4 (ACTUALIZAR encima) decide si se publica.
 - [Las acciones de Grupos leen pasajero el token nulo](project_acciones_grupos_token_nulo_pasajero.md) — en qa con guion sin ventana estrecha; una decisión low (reintento de la unión al volver la red).
 - [La sesión anterior tras «Empezar desde cero»](project_sesion_anterior_tras_empezar_de_cero.md) — PR #190; en qa por pasos en iPhone; la reinstalación sin sello espera decisión (4 opciones).
