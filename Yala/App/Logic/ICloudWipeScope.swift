@@ -49,9 +49,17 @@ enum ICloudWipeScope: Equatable, CaseIterable {
     ///  · **el dominio de Grupos** — esos grupos son suyos, y conservarlos es el motivo de la activación.
     case importedRows
 
-    /// **El handover: aquí empieza otro usuario en este dispositivo.** El Welcome y la reanudación de un
-    /// borrado que quedó armado. Se lleva las filas, las preferencias y el dominio de Grupos, y escribe
-    /// el sello que mantiene el bridge cerrado hasta que el usuario nuevo adopte Grupos.
+    /// **El handover: aquí empieza otro usuario en este dispositivo.** El Welcome, el aviso del espejo
+    /// tardío y la reanudación de un borrado que quedó armado. Se lleva las filas, las preferencias y el
+    /// dominio de Grupos, y escribe el sello que mantiene el bridge cerrado hasta que el usuario nuevo
+    /// adopte Grupos.
+    ///
+    /// **Las tres promesas cuelgan de que HAYA filas locales, y eso no es un descuido** (2026-09-17). Sin
+    /// corpus en el teléfono no hay nada que apartar, y el sello es irreversible aquí: escribirlo sobre un
+    /// store vacío se lo comería quien reinstala su PROPIA app y quien contesta al aviso del espejo
+    /// tardío, que es la misma persona. Lo que sí sobrevive al store vacío es la SESIÓN en la nube del
+    /// anterior, y esa se retira siempre (`CloudSessionRetirement`, en la salida temprana de
+    /// `performICloudCorpusWipe`).
     case handover
 
     /// ¿Borra las filas personales del dispositivo?

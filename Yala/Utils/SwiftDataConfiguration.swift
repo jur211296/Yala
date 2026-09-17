@@ -887,7 +887,11 @@ extension SwiftDataConfiguration {
     ///
     /// Se mira SOLO el archivo base. Un `-wal`/`-shm` huérfano sin base es inerte (SQLite los descarta al
     /// recrear el store), así que tratarlo como "hay datos" bloquearía el mount neutro por un residuo.
-    private static func personalStoreFileExists() -> Bool {
+    ///
+    /// **Dejó de ser `private` el 2026-09-17**: `CloudSessionRetirement` la necesita para la MISMA
+    /// pregunta desde el otro lado —«¿este contenedor ya se usó?»— y una segunda copia de la derivación
+    /// de la URL es exactamente como divergen.
+    static func personalStoreFileExists() -> Bool {
         let url = ModelConfiguration(databaseName, schema: personalSchema, cloudKitDatabase: .none).url
         return FileManager.default.fileExists(atPath: url.path)
     }

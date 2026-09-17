@@ -96,3 +96,53 @@ nonisolated struct CloudAuthKeychainStorage: AuthLocalStorage {
 nonisolated enum CloudAuthKeychainError: Error, Equatable {
     case osStatus(OSStatus)
 }
+
+// MARK: - Purga del service entero (frontera de persona)
+
+extension CloudAuthKeychainStorage {
+
+    /// **Borra TODO lo que este service guarda**, no una lista de keys.
+    ///
+    /// Bajo `com.yala.cloudauth` viven CINCO cosas y todas son credenciales de la persona que firmó:
+    /// la sesión del SDK (`storageKey` de `AuthClient`), el perfil capturado (correo, nombre,
+    /// `appleUserID`), el provider del último sign-in, el PAR SIWA (refresh token de Apple) y el PAR
+    /// Google. En una frontera de relevo —«Empezar desde cero», o el primer arranque tras instalar en un
+    /// teléfono que cambió de dueño— no hay ninguna que deba quedarse, y una lista de `account` sería
+    /// exactamente por donde divergiría de lo que este service acabe guardando mañana.
+    ///
+    /// **No sustituye a `CloudAuthService.signOut()`, va DESPUÉS de él.** El `AuthClient` se construye
+    /// con `autoRefreshToken: true`: su refresco en vuelo REPONDRÍA la sesión sobre el llavero recién
+    /// purgado. Primero se para al SDK (que además limpia su copia en memoria), luego se barre lo que
+    /// el sign-out conserva a propósito —los dos pares de provider— y lo que no llega a tocar cuando el
+    /// backend no está configurado (`guard let client else { return }`).
+    ///
+    /// - Returns: `true` si el service quedó vacío. `errSecItemNotFound` es éxito (no había nada).
+    ///   Un `false` es la diferencia entre un residuo temporal y uno permanente: quien lo llame no debe
+    ///   escribir su marca de «ya hecho» sin mirarlo.
+    func purgeAll() -> Bool {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+        ]
+        let status = SecItemDelete(query as CFDictionary)
+        return status == errSecSuccess || status == errSecItemNotFound
+    }
+
+    /// ¿El service quedó vacío? **No es cinturón sobre tirantes: es la única forma de saber que la purga
+    /// se sostuvo.** `CloudAuthService.signOut()` NO para el auto-refresh del SDK —`stopAutoRefreshToken`
+    /// no se llama en ningún sitio del repo, medido— así que un refresco que ya estaba en vuelo puede
+    /// aterrizar DESPUÉS del `SecItemDelete` y volver a escribir la sesión. Sin esta lectura, el retiro se
+    /// daría por hecho, el arm se borraría y la sesión de la persona anterior quedaría resucitada **para
+    /// siempre**, con un breadcrumb diciendo que todo fue bien.
+    ///
+    /// Un error del Keychain que no sea `errSecItemNotFound` se lee como «no está vacío»: ante la duda,
+    /// el arm se conserva y el arranque siguiente lo reintenta.
+    func isEmpty() -> Bool {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecMatchLimit as String: kSecMatchLimitOne,
+        ]
+        return SecItemCopyMatching(query as CFDictionary, nil) == errSecItemNotFound
+    }
+}

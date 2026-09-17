@@ -32,7 +32,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (450)
+## Index (452)
 
 | id | status | path |
 |---|---|---|
@@ -278,6 +278,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-transfer-leave-write-ahead | backlog | tickets/backlog/groups-transfer-leave-write-ahead.md |
 | guest-decline-has-no-screen | qa | tickets/qa/guest-decline-has-no-screen.md |
 | guest-journey-dead-screens | done | tickets/done/guest-journey-dead-screens.md |
+| handover-leaves-the-storage-mode-without-a-session | backlog | tickets/backlog/handover-leaves-the-storage-mode-without-a-session.md |
 | hero-estadisticas-stock-vs-flujo-entre-pestanas | done | tickets/done/hero-estadisticas-stock-vs-flujo-entre-pestanas.md |
 | history-token-guard-echo-blind-spot | backlog | tickets/backlog/history-token-guard-echo-blind-spot.md |
 | hoja-del-saldo-vivo-ignora-los-filtros-de-sesion | backlog | tickets/backlog/hoja-del-saldo-vivo-ignora-los-filtros-de-sesion.md |
@@ -333,7 +334,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | prefs-domain-per-secondary-session | discarded | tickets/discarded/prefs-domain-per-secondary-session.md |
 | prefs-synced-keys-upload-not-download | backlog | tickets/backlog/prefs-synced-keys-upload-not-download.md |
 | presentation-net-desarm-has-no-automated-net | backlog | tickets/backlog/presentation-net-desarm-has-no-automated-net.md |
-| previous-person-cloud-session-survives-fresh-start-and-reinstall | backlog | tickets/backlog/previous-person-cloud-session-survives-fresh-start-and-reinstall.md |
+| previous-person-cloud-session-survives-fresh-start-and-reinstall | qa | tickets/qa/previous-person-cloud-session-survives-fresh-start-and-reinstall.md |
 | private-exit-loses-unmaterialized-inbound-captures | backlog | tickets/backlog/private-exit-loses-unmaterialized-inbound-captures.md |
 | private-gate-device-notice-has-no-forward-exit | backlog | tickets/backlog/private-gate-device-notice-has-no-forward-exit.md |
 | private-gate-remote-wipe-can-strand-its-arm | backlog | tickets/backlog/private-gate-remote-wipe-can-strand-its-arm.md |
@@ -361,6 +362,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reentry-counts-as-fresh-install | qa | tickets/qa/reentry-counts-as-fresh-install.md |
 | reentry-killswitch-closes-both-doors | qa | tickets/qa/reentry-killswitch-closes-both-doors.md |
 | registros-calendario-cuenta-gastos-por-signo | done | tickets/done/registros-calendario-cuenta-gastos-por-signo.md |
+| reinstall-without-network-has-no-cloud-door | backlog | tickets/backlog/reinstall-without-network-has-no-cloud-door.md |
 | rejected-member-cold-tap-does-nothing | qa | tickets/qa/rejected-member-cold-tap-does-nothing.md |
 | rejoin-tap-renotifies-admins | qa | tickets/qa/rejoin-tap-renotifies-admins.md |
 | remote-onboarding-signal-ignores-the-session-axis | backlog | tickets/backlog/remote-onboarding-signal-ignores-the-session-axis.md |

@@ -45,3 +45,20 @@ más — habría que decidir si se re-abre la marca o si se limpia a mano.
 - [ ] Decidido A o B, escrito en el ticket, y el docblock de `SecondarySessionRetirement` deja de
       implicar que la retirada devuelve el teléfono al estado del dueño **por completo**: hoy alcanza al
       contenedor, no al Keychain.
+
+## Nota del 2026-09-17 — la opción B ya está construida a medias
+
+`previous-person-cloud-session-survives-fresh-start-and-reinstall` trajo el ejecutor que a este ticket le
+faltaba, y vive **una línea más abajo, en el mismo `PersonalContainerHost.makeContainer()`**:
+
+- `CloudAuthKeychainStorage.purgeAll()` barre el service `com.yala.cloudauth` entero.
+- `CloudSessionRetirement.purgeIfArmed()` lo consume PRE-MOUNT, síncrono, con su arm durable y su
+  breadcrumb, justo después de `SecondarySessionRetirement.purgeIfNeeded()`.
+
+⇒ **la opción B pasa de «cuesta más de lo que vale» a `CloudSessionRetirement.arm(defaults:)` dentro de la
+rama `if tuvoVisita` de `purgeIfNeeded`**, que ya existe y que ya distingue al teléfono que tuvo visita del
+que no. Sigue en pie el otro obstáculo que este ticket mide y que no cambia: **`doneKey` ya está escrita**
+en los teléfonos alcanzados, así que armar ahí no alcanza a nadie sin reabrir la marca.
+
+Los dos no se hablan hoy a propósito: ensanchar la retirada de la visita no entraba en el alcance de aquel
+encargo, y su población sigue siendo de desarrollo.

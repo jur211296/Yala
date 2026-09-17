@@ -22,6 +22,7 @@
 - [Una ventana dura lo que su reintento](feedback_una_ventana_dura_lo_que_su_reintento.md) — «una petición» era todo lo que el claim pasa aparcado: lo en memoria llega con su default tras relanzar.
 - [Mi puerta bloquea lo que su propio flujo dejó](feedback_mi_puerta_bloquea_lo_que_su_propio_flujo_dejo.md) — el claim deja la cuenta `complete` y mi comprobación cerraba «Reintentar» para siempre.
 - [El predicado del ticket no es el criterio](feedback_el_predicado_del_ticket_no_es_el_criterio.md) — mide con qué predicado decide la superficie que desbloqueas: el literal del ticket dejaba el bug vivo.
+- [Una key nueva está AUSENTE en todo el parque](feedback_una_key_nueva_esta_ausente_en_todo_el_parque.md) — «no hay marca» = «primera vez que corre este código»; el paso de QA que decide es ACTUALIZAR, no reinstalar.
 - [La premisa del ENCARGO también se mide](feedback_la_premisa_del_encargo_tambien_se_mide.md) — hereda los errores del ticket.
 - [Una frase de alcance se cuenta por llamadores](feedback_una_frase_de_alcance_se_cuenta_por_llamadores.md) — «solo en carrera» cayó: la migración sube sin la puerta que yo miré.
 - [`-only-testing` filtra por TIPO, no por fichero](feedback_only_testing_filtra_por_tipo_no_por_fichero.md) — pedí 12 suites y corrieron 7; una escaneaba la función que yo acababa de tocar. Cuenta pedidas vs. `Test run with`.
@@ -34,6 +35,7 @@
 - [El tramo sin acotar lo cumple el vecino](feedback_el_tramo_sin_acotar_lo_cumple_el_vecino.md) — un recorte que llega al final del cuerpo se cumple desde el `case` de al lado.
 - [El source-scan de dos literales no es una red](feedback_el_source_scan_de_dos_literales_no_es_una_red.md) — si el target es inalcanzable, fija el cuerpo ENTERO; ni la coma final ni «cae dentro de la puerta» bastan.
 - [El denominador de una resta es el número que se ve](feedback_el_denominador_de_una_resta_es_el_numero_que_se_ve.md) — numerador en magnitudes, denominador en lo que se muestra; y una decisión escrita gana a dos lentes que coinciden.
+- [Borrar un test por TRAMO se lleva vecinos](feedback_borrar_un_test_por_tramo_se_lleva_vecinos.md) — la suite sigue verde; lo canta el mutante que ayer moría y hoy vive.
 - [El término nuevo desarma el test viejo](feedback_el_termino_nuevo_desarma_el_test_viejo.md) — al añadir un operando a un AND, re-mide QUÉ mata a los tests que ya pasaban; el docblock caduca en silencio.
 - [Un número sustituto lo cumple otra cosa](feedback_un_numero_sustituto_lo_cumple_otra_cosa.md) — «3 rechazos» los cumplía un gesto y «2 cambios» cualquier par: cuenta en la unidad de la decisión.
 - [La segunda capa no cubre lo que dice](feedback_la_segunda_capa_no_cubre_lo_que_dice.md) — mide el ALCANCE de cada defensa por separado.
@@ -57,6 +59,7 @@
 - [Mi fix hereda la forma del bug](feedback_mi_fix_hereda_la_forma_del_bug.md) — el arreglo repite el error del bug; enuncia el bug en una frase y aplícasela al arreglo.
 - [El alert de SwiftUI compite con su propio botón](feedback_el_alert_de_swiftui_compite_con_su_propio_boton.md) — el `set` del binding corre al pulsar CUALQUIER botón.
 - [Un gate derivado de una AUSENCIA falla abierto](feedback_un_gate_derivado_de_una_ausencia_falla_abierto.md) — la marca va POSITIVA.
+- [Un `await` de red en el arranque bloquea la pantalla](feedback_un_await_de_red_en_el_arranque_bloquea_la_pantalla.md) — deja sin ejecutar el `defer` que libera `bootstrapPending`; ese trabajo va PRE-MOUNT.
 - [Un timeout no distingue lento de colgado](feedback_un_timeout_no_distingue_lento_de_colgado.md) — 5010 ms clavados no son un cuelgue: súbelo y mide. Refutó un ticket entero.
 - [Un gate falla ABIERTO por su entrada](feedback_un_gate_falla_abierto_por_su_entrada.md) — lista vacía por error = «no hay»; y el snapshot se congela durante el `await`.
 - [El avisador que se rescata no vigila](feedback_el_avisador_que_se_rescata_no_vigila.md) — el respaldo ciega al vigilante.
@@ -105,6 +108,7 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build incremental.
 
 ## Estado del trabajo
+- [La sesión de la persona anterior ya se retira](project_retiro_sesion_persona_anterior.md) — PR #192; en qa con 9 pasos en iPhone, y el paso 4 (ACTUALIZAR encima) decide si se publica.
 - [Las acciones de Grupos leen pasajero el token nulo](project_acciones_grupos_token_nulo_pasajero.md) — en qa con guion sin ventana estrecha; una decisión low (reintento de la unión al volver la red).
 - [La sesión anterior tras «Empezar desde cero»](project_sesion_anterior_tras_empezar_de_cero.md) — PR #190; en qa por pasos en iPhone; la reinstalación sin sello espera decisión (4 opciones).
 - [El spinner de hidratación se rinde con el veredicto](project_spinner_hidratacion_se_rinde.md) — PR #189; done sin device-QA; residual del reloj y dos decisiones low.
