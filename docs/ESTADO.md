@@ -5,10 +5,34 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-16 (Lima)
 
-**Rama** `2.1` — Merge #186: **Un rechazo al volver a iCloud ya no deja la barra al 15 %.**
+**Rama** `2.1` — Merge #187: **«Migrar a la nube» ya no mezcla tus datos con una cuenta que ya tiene los suyos.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#186 · un rechazo al volver a iCloud ya no deja la barra al 15 %)
+## Esta sesión (#187 · «Migrar a la nube» ya no mezcla tus datos con una cuenta que ya tiene los suyos)
+
+**«Activar la nube» ya no fusiona tus finanzas con las de una cuenta que ya tenía las suyas.** El ticket decía «adopta y
+no sube lo mío», y la medición lo corrigió: el adopt subía a esa cuenta todo lo de este iPhone que ella no conocía, y la
+mezcla llegaba a todos sus dispositivos. Ahora Yala no mueve nada y lo dice con una hoja: «Esa cuenta ya tiene finanzas
+personales» (con «Usar otra cuenta» y «Entendido», y una nota si era de Apple), «Esta cuenta volvió a iCloud», «Ya usas
+otra cuenta para tus grupos» o «No pudimos comprobar tu cuenta». Con la sesión de tus grupos sale al tocar, antes del
+consentimiento. Son tus respuestas de tres rondas; en D15 elegiste permitir otro Apple ID, en ticket aparte.
+
+**Hacían falta dos capas:** la comprobación antes del claim no ve la cuenta que volvió a iCloud (`/account/exists` la da
+como «solo grupos»), así que el runner lleva además la intención de migrar, journaleada: `existing_stable` y
+`claiming_in_progress` vuelven al inicio en vez de adoptar o seguir a otro líder. **D18 cierra a sabiendas una salida:**
+una migración abandonada por su líder ya no se retoma desde otro dispositivo (va al ticket de D14).
+
+**Qué te toca:** el QA en iPhone de `settings-migrate-to-cloud-adopts-silently-instead-of-migrating` (en `qa`): `Yala Dev`
+contra staging, dos o tres cuentas de Google de prueba y el guion con su SQL en el ticket.
+
+**Diez tickets nuevos**; el único `high` es `fresh-start-keeps-a-groups-session-that-migrate-promotes` (ya pasaba en
+`2.1`: tras «Empiezo de cero» la sesión de grupos de la persona anterior sobrevive y «Migrar» la promueve). Uno de copy
+espera tu decisión: `migrate-card-keeps-promising-an-account-the-check-refused`.
+
+Validación: build ×2 · unit 7169 casos en 730 suites · XCUITest 31/31 con centinela en 0 · 26 mutantes cazados · dos
+pasadas de review (4 + 2 lentes) · `validate-coverage` OK · `docs/TICKETS.md` igual al disco (438) · **CI verde** (tests 23 min).
+
+## Sesión anterior (#186 · un rechazo al volver a iCloud ya no deja la barra al 15 %)
 
 **Si el servidor no deja empezar «Volver a iCloud», la app vuelve a la nube al momento y lo dice.** Hasta hoy la barra se
 quedaba al 15 % para siempre, «Retomar» repetía lo mismo y, tras relanzar, el teléfono dejaba de sincronizar con la nube.
@@ -33,7 +57,7 @@ sin sincronizar hasta reabrir Yala). Y una medición para el backend: tres camin
 Validación: build ×2 · unit 7117 casos en 728 suites · XCUITest 7/7 con centinela en 0 · 21 mutantes cazados · dos
 pasadas de review · `validate-coverage` OK · `docs/TICKETS.md` igual al disco (428) · **CI verde** (tests 23 min).
 
-## Sesión anterior (#185 · la vuelta a iCloud ya no se queda al 95 % para siempre)
+## Sesión #185 · la vuelta a iCloud ya no se queda al 95 % para siempre
 
 **«Volver a iCloud» ya no se clava al 95 % sin salida.** Mientras espera, «Dónde viven tus datos» dice cuánto falta por
 subir, o que iCloud no tiene espacio o no está disponible, y ofrece «Cancelar y seguir en la nube». Si la subida no
