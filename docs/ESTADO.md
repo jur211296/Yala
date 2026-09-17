@@ -1,14 +1,34 @@
 ---
-updated: 2026-09-16
+updated: 2026-09-17
 tags: [now, punto-de-retomada]
 ---
 
-# NOW — 2026-09-16 (Lima)
+# NOW — 2026-09-17 (Lima)
 
-**Rama** `2.1` — Merge #188: **sin red, el canal personal ya no lee una renovación fallida como sesión caducada.**
+**Rama** `2.1` — Merge #189: **«Descargando tus datos…» ya no gira al lado del aviso de App Attest.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#188 · sin red, el canal personal ya no lee una renovación fallida como sesión caducada)
+## Esta sesión (#189 · «Descargando tus datos…» ya no gira al lado del aviso de App Attest)
+
+**En la nube, un teléfono sin App Attest ya no ve la ruedecita girando para siempre al lado del aviso.** Con el veredicto
+de App Attest terminal, «Descargando tus datos…» se esconde y queda solo «Este teléfono no puede sincronizar tus datos».
+Si el attest vuelve y el motor empieza a bajar, la ruedecita reaparece en un segundo. Sin copy nuevo. Fue un encargo de
+noche con la opción 1 del ticket.
+
+**La review (dos lentes) no tumbó el diseño, pero corrigió lo que escribí:** «una descarga exige token» solo es cierto para
+el pull del motor (los de la migración bajan sin su puerta), y el cruce de las 24 h por reloj con la app delante deja un rato
+sin spinner ni aviso: ya era un hueco del aviso, y el spinner lo tapaba mintiendo. Queda escrito como residual en
+`.claude/rules/gateway-attest.md`. También cazó que el source-scan no fijaba dónde cuelga el sondeo.
+
+**Qué te toca:** nada en un iPhone (el ticket queda en `done`, como el #177: la población no se monta en ningún
+dispositivo). Dos decisiones `low`: `cloud-hydration-spinner-keeps-spinning-with-the-engine-stopped` (el spinner no mira el
+motor) y `cloud-hydration-banner-does-not-see-data-that-arrives-after-mount` (si la píldora se va al llegar los primeros
+datos o al terminar la descarga).
+
+Validación: build ×2 · unit 7194 casos en 731 suites · XCUITest 5 en 3 clases con centinela en 0 · 8 mutantes cazados ·
+review con 2 lentes · `validate-coverage` OK · `docs/TICKETS.md` igual al disco (444) · **CI verde** (tests 23 min).
+
+## Sesión anterior (#188 · sin red, el canal personal ya no lee una renovación fallida como sesión caducada)
 
 **Con la cuenta en la nube, un corte de red al caducar la sesión ya no para la sincronización ni pide iniciar sesión.** Si
 la sesión caduca sin conexión mientras la verificación de App Attest sigue en caché (los 15 min tras usarla), o si cae el
@@ -36,7 +56,7 @@ Validación: build ×2 · unit 7188 casos en 730 suites · XCUITest 29 en 9 clas
 en el gateway) · dos pasadas de review (4 + 2 lentes) · `validate-coverage` OK · `docs/TICKETS.md` igual al disco (442) ·
 **CI verde** (tests 23 min).
 
-## Sesión anterior (#187 · «Migrar a la nube» ya no mezcla tus datos con una cuenta que ya tiene los suyos)
+## Sesión #187 · «Migrar a la nube» ya no mezcla tus datos con una cuenta que ya tiene los suyos
 
 **«Activar la nube» ya no fusiona tus finanzas con las de una cuenta que ya tenía las suyas.** El ticket decía «adopta y
 no sube lo mío», y la medición lo corrigió: el adopt subía a esa cuenta todo lo de este iPhone que ella no conocía, y la
