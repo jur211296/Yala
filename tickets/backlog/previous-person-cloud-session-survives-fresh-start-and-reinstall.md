@@ -86,3 +86,11 @@ al Welcome con ese journal y la sesión viva.
 - [ ] Tras reinstalar o empezar de cero, ninguna puerta usa la sesión en la nube de la persona anterior sin que la
       persona nueva la elija.
 - [ ] Quien reinstala su propia app, o empieza de cero en su propio iPhone, tiene un camino claro para volver a su cuenta.
+
+## Decisión Jürgen (2026-09-17)
+
+**Las dos:**
+1. Cerrar la sesión en la nube en el relevo («Empezar desde cero»), midiendo el cursor de Grupos.
+2. Purgar la sesión en el primer arranque tras instalar (marca UserDefaults ausente + JWT en llavero).
+
+Quien reinstala su propia app vuelve a entrar. No basta preguntar «¿Sigues siendo…?» ni solo una de las dos.
