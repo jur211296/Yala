@@ -15,6 +15,7 @@
 - [Un límite de plataforma se explica en la pregunta](feedback_un_limite_de_plataforma_se_explica_en_la_pregunta.md) — preguntó por qué Apple solo usa el Apple ID del teléfono y eligió levantarlo.
 
 ## Cómo mido y cómo entrego
+- [El reintento de fuera multiplica el de dentro](feedback_el_reintento_de_fuera_multiplica_el_de_dentro.md) — el SDK ya reintentaba la renovación: mi coste era falso por 3x y el reintento tapaba un mutante.
 - [Un registro no prueba la elección](feedback_un_registro_no_prueba_la_eleccion.md) — bloqueé el `nil` y un cinturón fabricaba el `true` de otra persona: cuenta los ESCRITORES del registro.
 - [El copy que promete una acción se recorre](feedback_el_copy_que_promete_se_recorre.md) — «en Perfil puedes exportar» era falso para no-Pro: mira el gate de PLAN, no solo que la pantalla exista.
 - [Antes de poner techo, mide que la espera existe](feedback_antes_de_poner_techo_mide_que_la_espera_existe.md) — acoté una espera que para casi todos terminaba al instante con un falso «hecho»; lo cazó la review.
@@ -104,6 +105,7 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build incremental.
 
 ## Estado del trabajo
+- [Las acciones de Grupos leen pasajero el token nulo](project_acciones_grupos_token_nulo_pasajero.md) — en qa con guion sin ventana estrecha; una decisión low (reintento de la unión al volver la red).
 - [La sesión anterior tras «Empezar desde cero»](project_sesion_anterior_tras_empezar_de_cero.md) — PR #190; en qa por pasos en iPhone; la reinstalación sin sello espera decisión (4 opciones).
 - [El spinner de hidratación se rinde con el veredicto](project_spinner_hidratacion_se_rinde.md) — PR #189; done sin device-QA; residual del reloj y dos decisiones low.
 - [El canal personal lee pasajero el token nulo sin red](project_sync_personal_token_nulo_pasajero.md) — en qa con un guion de ventana estrecha; dos decisiones de producto esperan.
