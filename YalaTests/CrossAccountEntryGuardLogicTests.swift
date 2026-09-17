@@ -99,22 +99,30 @@ struct CrossAccountEntryGuardLogicTests {
 ///
 /// El gate nuevo lee el MUNDO y no el camino: se ve vacío + el motor está hidratando. Eso hace que el
 /// banner llegue a quien vuelve sin tener que enumerar por qué ruta llegó.
+///
+/// **Y desde el 2026-09-17 se rinde con el veredicto de App Attest terminal** (ticket
+/// `cloud-hydration-spinner-never-gives-up-without-attest`): sin attest no baja nada, y giraba para siempre al
+/// lado del aviso que dice que este teléfono no puede sincronizar.
 @Suite("CloudHydrationLogic · visibilidad del banner")
 struct CloudHydrationLogicTests {
+
+    typealias L = CloudHydrationLogic
 
     /// El primer pull cerrado apaga el banner, mire lo que mire el resto.
     @Test("con el primer pull cerrado no hay nada que explicar")
     func firstPullCompleted_silencesTheBanner() {
-        #expect(!CloudHydrationLogic.showBanner(
-            firstPullCompleted: true, cloudEngineActive: true, storeLooksEmpty: true))
+        #expect(!L.showBanner(
+            firstPullCompleted: true, cloudEngineActive: true, storeLooksEmpty: true,
+            attestVerdictIsTerminal: false))
     }
 
     /// LA aserción del ticket de re-entrada: el dueño que acaba de adoptar y relanzar.
     @Test("el dueño que vuelve, con el store aún vacío y el motor sin cerrar su primer pull")
     func returningOwnerIsCovered() {
-        #expect(CloudHydrationLogic.showBanner(
+        #expect(L.showBanner(
             firstPullCompleted: false,
-            cloudEngineActive: true, storeLooksEmpty: true), """
+            cloudEngineActive: true, storeLooksEmpty: true,
+            attestVerdictIsTerminal: false), """
             Quien vuelve en un móvil nuevo sigue viendo la app vacía SIN explicación: es el mismo \
             hecho que el banner ya cubría para la invitada, por la otra puerta.
             """)
@@ -124,14 +132,214 @@ struct CloudHydrationLogicTests {
     /// bajados (que no está esperando nada) y el que ni siquiera tiene motor de nube.
     @Test("no sale para quien ya tiene datos ni para quien no tiene motor")
     func noFalsePositives() {
-        #expect(!CloudHydrationLogic.showBanner(
+        #expect(!L.showBanner(
             firstPullCompleted: false,
-            cloudEngineActive: true, storeLooksEmpty: false),
+            cloudEngineActive: true, storeLooksEmpty: false,
+            attestVerdictIsTerminal: false),
             "con datos en pantalla, «descargando tus datos» es ruido")
-        #expect(!CloudHydrationLogic.showBanner(
+        #expect(!L.showBanner(
             firstPullCompleted: false,
-            cloudEngineActive: false, storeLooksEmpty: true),
+            cloudEngineActive: false, storeLooksEmpty: true,
+            attestVerdictIsTerminal: false),
             "sin motor de nube no hay ninguna descarga en curso que explicar")
+    }
+
+    /// LA aserción de `cloud-hydration-spinner-never-gives-up-without-attest`: el mismo teléfono que el caso del
+    /// dueño que vuelve —nube, store vacío, primer pull sin cerrar—, pero sin App Attest desde hace un día.
+    @Test("con el veredicto de attest terminal, «Descargando tus datos…» se rinde")
+    func terminalAttestVerdict_silencesTheSpinner() {
+        #expect(!L.showBanner(
+            firstPullCompleted: false,
+            cloudEngineActive: true, storeLooksEmpty: true,
+            attestVerdictIsTerminal: true), """
+            el spinner sigue girando con el veredicto de attest terminal. Ahí no baja nada —una descarga exige \
+            token y un token borra la racha—, y gira al lado del aviso que dice que este teléfono no puede \
+            sincronizar.
+            """)
+    }
+
+    /// **El veredicto esconde el banner, pero no acaba la vigilancia.** La racha se borra en cuanto la puerta del
+    /// motor consigue un token —una racha heredada de una copia de iCloud, o un attest que vuelve— y la descarga
+    /// empieza justo después. Aquí se fija que `keepsWatching` le responde «sí» a este teléfono. Que el sondeo
+    /// termine SOLO por ella, y no por el veredicto, vive en la vista: lo fija `CloudHydrationBannerWiringTests`.
+    @Test("el mismo teléfono SIGUE vigilado: si un token borra la racha, el banner vuelve")
+    func terminalAttestVerdict_doesNotEndTheWatch() {
+        #expect(L.keepsWatching(
+            firstPullCompleted: false,
+            cloudEngineActive: true, storeLooksEmpty: true), """
+            la hidratación dejó de vigilarse: una racha que el primer ciclo borra al conseguir token dejaría la \
+            descarga real sin banner.
+            """)
+    }
+
+    /// La tabla entera, las dos funciones. Recorrerla completa es lo que mata al mutante que sustituye un `&&` por
+    /// un `||`, invierte el término del veredicto o se deja un operando fuera.
+    @Test("La tabla: el banner son los cuatro términos; la vigilancia, los tres que no son el veredicto")
+    func fullTable() {
+        for primerPull in [true, false] {
+            for nube in [true, false] {
+                for vacio in [true, false] {
+                    let vigila = !primerPull && nube && vacio
+                    #expect(L.keepsWatching(firstPullCompleted: primerPull,
+                                            cloudEngineActive: nube,
+                                            storeLooksEmpty: vacio) == vigila, """
+                        keepsWatching primerPull=\(primerPull) nube=\(nube) vacío=\(vacio) debía dar \(vigila)
+                        """)
+                    for terminal in [true, false] {
+                        let esperado = vigila && !terminal
+                        #expect(L.showBanner(firstPullCompleted: primerPull,
+                                             cloudEngineActive: nube,
+                                             storeLooksEmpty: vacio,
+                                             attestVerdictIsTerminal: terminal) == esperado, """
+                            showBanner primerPull=\(primerPull) nube=\(nube) vacío=\(vacio) \
+                            terminal=\(terminal) debía dar \(esperado)
+                            """)
+                    }
+                }
+            }
+        }
+    }
+
+    /// **Documentación ejecutable del criterio del encargo, no cobertura nueva**: los mutantes de `showBanner` los
+    /// mata antes `fullTable`, y los de `showsNotice` su propia tabla. Dice, en el idioma del ticket, que las dos
+    /// DECISIONES puras no dicen «sí» a la vez con el mismo veredicto. Los dos leen `GroupsAttestStreakStore.isTerminal()`
+    /// (aquí lo fija `CloudHydrationBannerWiringTests`; en el aviso, `CloudAttestNoticeWiringTests`).
+    ///
+    /// **Lo que no ve, porque vive en el cableado y no en la decisión:** el banner lee el veredicto en cada tick y
+    /// el aviso en tres momentos. Con una escritura de la racha coinciden como mucho un tick; si el veredicto cambia
+    /// por el reloj con la app delante, el aviso espera a su siguiente refresco y en ese rato no sale ninguno.
+    /// Residual aceptado, escrito en `.claude/rules/gateway-attest.md`.
+    @Test("las dos decisiones, con el mismo veredicto, nunca dicen «sí» a la vez")
+    func neverTogetherWithTheAttestNotice() {
+        for terminal in [true, false] {
+            for enLaNube in [true, false] {
+                for estable in [true, false] {
+                    for sesion in [true, false] {
+                        for primerPull in [true, false] {
+                            for vacio in [true, false] {
+                                let aviso = CloudAttestNoticeLogic.showsNotice(
+                                    verdictIsTerminal: terminal,
+                                    personalDataLivesInCloud: enLaNube,
+                                    channelIsStable: estable,
+                                    hasLiveSession: sesion)
+                                let spinner = L.showBanner(
+                                    firstPullCompleted: primerPull,
+                                    cloudEngineActive: enLaNube,
+                                    storeLooksEmpty: vacio,
+                                    attestVerdictIsTerminal: terminal)
+                                #expect(!(aviso && spinner), """
+                                    el spinner y el aviso de attest salen a la vez: terminal=\(terminal) \
+                                    enLaNube=\(enLaNube) estable=\(estable) sesión=\(sesion) \
+                                    primerPull=\(primerPull) vacío=\(vacio)
+                                    """)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// **Por qué source-scan.** La decisión pura ya está arriba; lo que ninguna tabla ve es de dónde sale el veredicto y
+/// cuándo termina el sondeo, y eso vive en el `.task` de una `View`. Ver el banner exige `storageMode == .cloud`, y no
+/// hay seam de uitest que lo ponga (precedente en `CloudAttestNoticeTests`). Tres mutantes dejan la suite de arriba
+/// **entera en verde**: pasar `attestVerdictIsTerminal: false` fijo, volver a terminar el sondeo con el primer
+/// `false` (`guard visible`), y leer el veredicto una vez fuera del bucle. Por eso se fija el cuerpo ENTERO y no dos
+/// literales.
+@Suite("CloudHydrationBanner · el sondeo (source-scan)")
+struct CloudHydrationBannerWiringTests {
+
+    private static let bannerPath = "Yala/App/Views/Shared/CloudHydrationBanner.swift"
+
+    /// El fichero, sin las líneas de comentario: documentar el sondeo no puede ponerlo rojo.
+    private static func source(_ relativePath: String) throws -> String {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        return try String(contentsOf: root.appendingPathComponent(relativePath), encoding: .utf8)
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+    }
+
+    /// Cuerpo balanceado por llaves desde un marcador que ACABA en `{`.
+    private static func body(of marker: String, in source: String) throws -> String {
+        let start = try #require(source.range(of: marker), "no se encontró `\(marker)`")
+        var depth = 1
+        var out = ""
+        for ch in source[start.upperBound...] {
+            if ch == "{" { depth += 1 }
+            if ch == "}" { depth -= 1; if depth == 0 { break } }
+            out.append(ch)
+        }
+        return out
+    }
+
+    private static func squashed(_ text: String) -> String {
+        text.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+    }
+
+    /// El cuerpo del `.task`, entero. Lo comparten los dos casos: uno fija lo que hace y el otro, dónde cuelga.
+    private static let pinnedPoll = """
+        while !Task.isCancelled {
+            let firstPullCompleted = SyncQuiescenceCoordinator.shared.hasCompletedFirstPull
+            let cloudEngineActive = CloudSyncFlags.storageMode == .cloud
+            guard CloudHydrationLogic.keepsWatching(
+                firstPullCompleted: firstPullCompleted,
+                cloudEngineActive: cloudEngineActive,
+                storeLooksEmpty: storeLooksEmpty) else {
+                visible = false
+                return
+            }
+            visible = CloudHydrationLogic.showBanner(
+                firstPullCompleted: firstPullCompleted,
+                cloudEngineActive: cloudEngineActive,
+                storeLooksEmpty: storeLooksEmpty,
+                attestVerdictIsTerminal: GroupsAttestStreakStore.isTerminal())
+            do { try await Task.sleep(for: .seconds(1)) } catch { return }
+        }
+        """
+
+    private static func occurrences(of needle: String, in text: String) -> Int {
+        text.components(separatedBy: needle).count - 1
+    }
+
+    @Test("MUTACIÓN: el sondeo lee el veredicto VIVO en cada tick y solo termina por lo que no es el veredicto")
+    func thePollReadsTheVerdictLiveAndOnlyEndsForOtherReasons() throws {
+        let banner = try Self.source(Self.bannerPath)
+        let task = Self.squashed(try Self.body(of: ".task {", in: banner))
+        #expect(task == Self.squashed(Self.pinnedPoll), """
+            el sondeo del banner cambió. Tres cosas que no se pueden perder: (1) el veredicto se lee VIVO en cada \
+            tick —fijo a `false`, el spinner vuelve a girar al lado del aviso; leído una vez, no se entera de que \
+            el reloj cruzó las 24 h—; (2) el sondeo solo termina por `keepsWatching`, que no mira el veredicto —si \
+            terminara con el primer `false`, una racha que el primer ciclo borra dejaría la descarga real sin \
+            banner—; (3) al terminar se esconde. Si el cambio es a propósito, actualiza este cuerpo y el porqué.
+            """)
+    }
+
+    /// El caso de arriba fija QUÉ hace el primer `.task` del fichero, no DÓNDE cuelga ni quién más escribe
+    /// `visible` (lo cazó la review del 2026-09-17). Movido dentro de `if visible {`, no arranca nunca y el banner no
+    /// sale jamás. Y un segundo `.task` u `.onAppear` que escriba `visible` le quitaría la palabra. Las dos cosas
+    /// dejaban la suite en verde.
+    @Test("MUTACIÓN: el sondeo cuelga de la raíz del body, es el único y es el único que escribe `visible`")
+    func thePollHangsFromTheRootAndIsTheOnlyWriter() throws {
+        let banner = try Self.source(Self.bannerPath)
+        let body = Self.squashed(try Self.body(of: "var body: some View {", in: banner))
+        #expect(body.hasSuffix(Self.squashed(".task {\n\(Self.pinnedPoll)\n}")), """
+            el `.task` del sondeo dejó de ser el último modificador de la raíz del body. Dentro de `if visible {` no \
+            arranca nunca, porque `visible` nace en `false`, y el banner no sale jamás.
+            """)
+        #expect(Self.occurrences(of: ".task", in: banner) == 1, "hay más de un `.task` en el banner")
+        for hook in [".onAppear", ".onChange", ".onReceive"] {
+            #expect(Self.occurrences(of: hook, in: banner) == 0, """
+                el banner ganó un `\(hook)`: si escribe `visible` o el veredicto, compite con el sondeo, que es quien \
+                decide.
+                """)
+        }
+        // Tres: la declaración del `@State` y las dos asignaciones del sondeo.
+        #expect(Self.occurrences(of: "visible =", in: banner) == 3, """
+            `visible` tiene un escritor fuera del sondeo: el banner puede salir o esconderse sin pasar por \
+            `showBanner` ni por `keepsWatching`.
+            """)
     }
 }
 
