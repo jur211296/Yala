@@ -5548,9 +5548,16 @@ enum L10n {
             static var notFoundBody: String { ls("welcome.restore.notFoundBody", comment: "") }
             /// Kill-switch remoto puesto + faro de cuenta nube encendido: los datos EXISTEN, lo que
             /// no está disponible es la nube. Copy propio y no una variante de `notFound` porque los
-            /// dos hechos son opuestos — ver `WelcomeRestorePauseLogic`.
+            /// dos hechos son opuestos — ver `WelcomeRestoreEmptyOutcome`.
             static var cloudPausedTitle: String { ls("welcome.restore.cloudPausedTitle", comment: "") }
             static var cloudPausedBody: String { ls("welcome.restore.cloudPausedBody", comment: "") }
+            /// Ni `notFound` ni `cloudPaused`: no hemos podido preguntar. Es el tercer hecho posible y
+            /// necesita copy propio porque los otros dos AFIRMAN algo sobre los datos del usuario —uno
+            /// que no existen, otro que existen— y aquí no se sabe. No nombra «tu cuenta en la nube»
+            /// a propósito: la misma pantalla la ve quien usa iCloud privado, y sin red ninguna de las
+            /// dos comprobaciones concluye.
+            static var cloudUnverifiedTitle: String { ls("welcome.restore.cloudUnverifiedTitle", comment: "") }
+            static var cloudUnverifiedBody: String { ls("welcome.restore.cloudUnverifiedBody", comment: "") }
             static var startFresh: String { ls("welcome.restore.startFresh", comment: "") }
             static var retry: String { ls("welcome.restore.retry", comment: "") }
             static var errorTitle: String { ls("welcome.restore.errorTitle", comment: "") }

@@ -660,33 +660,160 @@ struct WelcomeNewChooserWiringTests {
     }
 }
 
-// MARK: - Nube en pausa bajo el kill (decisión owner 2026-09-06)
+// MARK: - Qué se dice cuando la búsqueda termina vacía (owner 2026-09-06 y 2026-09-17)
 
 /// El mensaje del ÚNICO camino que queda abierto bajo el kill. Con las dos puertas de nube cerradas,
 /// quien vuelve solo puede tocar «Restaurar desde iCloud» — y esa pantalla busca en CloudKit, donde un
-/// nacido-en-nube nunca tuvo nada. La tabla de abajo fija que el aviso aparece SOLO cuando el hecho es
-/// cierto: hay cuenta nube (faro) y la nube está apagada (kill).
-@Suite("Restore bajo el kill — datos que existen no se anuncian como ausentes")
-struct WelcomeRestorePauseLogicTests {
+/// nacido-en-nube nunca tuvo nada. La tabla de abajo fija que cada aviso aparece SOLO cuando su hecho
+/// es cierto, y son TRES hechos desde el 2026-09-17: «no hay datos», «los hay y la nube está en pausa»
+/// y «no lo hemos podido comprobar».
+///
+/// MUTANTES VERIFICADOS (compilados y corridos sobre las 3 suites afectadas, no razonados):
+///  (1) la decisión sin su `guard cloudConfigKnown` —la tabla de antes del ticket— → 6 fallos.
+///  (2) `isConfigKnown` con `!backendConfigured` devolviendo `false` (la ausencia falla cerrada) → 3.
+///  (3) `.cloudUnverified` llamando a `onStartFresh()` directo, sin confirmar → 4.
+///  (4) `case .cloudUnverified:` pintando `state = .notFound` (el swap que compila) → 3.
+///  (5) la lectura de `cloudConfigKnown` guardada en un `let` POR ENCIMA del `refreshIfDue(force: true)`
+///      y pasada por variable → 3. Es la forma que la review señaló que se colaba: el ancla del test
+///      miraba `cloudConfigKnown` a secas, que casa primero con la ETIQUETA del argumento y no puede
+///      moverse sola. Hoy el ancla es `CloudRemoteFlags.cloudConfigKnown` y el mutante cae.
+///  (6) el adaptador vivo con `hasSnapshot: true` cableado a la constante → 3.
+///  (7) el desconocimiento ganando al faro —el primer intento de este ticket, que le quitaba «tus datos
+///      siguen a salvo» a quien SÍ tiene cuenta probada— → 4. Lo cazó la review adversarial, no yo.
+@Suite("Restore con búsqueda vacía — solo se afirma lo que se sabe")
+struct WelcomeRestoreEmptyOutcomeTests {
 
-    @Test("La tabla 2×2 completa: hace falta faro Y kill")
+    @Test("La tabla 2×2 del kill: hace falta faro Y kill, y con el config YA comprobado")
     func table() {
-        // El caso que motiva el chip: cuenta nube + kill puesto ⇒ «la nube está en pausa».
-        #expect(WelcomeRestorePauseLogic.isCloudPaused(
-            beaconLinked: true, remoteCloudEnabled: false))
+        // El caso que motiva el aviso de pausa: cuenta nube + kill puesto ⇒ «la nube está en pausa».
+        #expect(WelcomeRestoreEmptyOutcome.resolve(
+            beaconLinked: true, cloudConfigKnown: true, remoteCloudEnabled: false) == .cloudPaused)
 
         // Sin faro no hay nada que prometer: este Apple ID no tiene cuenta nube, así que una búsqueda
         // vacía SÍ significa "no hay datos" y el copy honesto es el de siempre.
-        #expect(!WelcomeRestorePauseLogic.isCloudPaused(
-            beaconLinked: false, remoteCloudEnabled: false))
+        #expect(WelcomeRestoreEmptyOutcome.resolve(
+            beaconLinked: false, cloudConfigKnown: true, remoteCloudEnabled: false) == .notFound)
 
         // Con la nube encendida el vacío tampoco se explica por una pausa. Y además este usuario no
         // llega aquí: con el kill apagado tiene sus cards de sign-in.
-        #expect(!WelcomeRestorePauseLogic.isCloudPaused(
-            beaconLinked: true, remoteCloudEnabled: true))
+        #expect(WelcomeRestoreEmptyOutcome.resolve(
+            beaconLinked: true, cloudConfigKnown: true, remoteCloudEnabled: true) == .notFound)
 
-        #expect(!WelcomeRestorePauseLogic.isCloudPaused(
-            beaconLinked: false, remoteCloudEnabled: true))
+        #expect(WelcomeRestoreEmptyOutcome.resolve(
+            beaconLinked: false, cloudConfigKnown: true, remoteCloudEnabled: true) == .notFound)
+    }
+
+    /// **El caso del ticket `reinstall-without-network-has-no-cloud-door`.** Quien reinstala pierde el
+    /// snapshot de remote-config (vive en el contenedor de la app) y su iCloud-KV tampoco ha
+    /// sincronizado, así que las DOS señales están en blanco. Antes, `beaconLinked: false` mandaba a
+    /// `.notFound` y ese usuario leía «no hay datos asociados a tu cuenta» con su histórico intacto en
+    /// el servidor.
+    @Test("Sin faro y sin config no se afirma nada: `.cloudUnverified`, diga lo que diga el remoto")
+    func unverifiedWhenNeitherSignalIsIn() {
+        for remote in [true, false] {
+            #expect(WelcomeRestoreEmptyOutcome.resolve(
+                beaconLinked: false,
+                cloudConfigKnown: false,
+                remoteCloudEnabled: remote) == .cloudUnverified, Comment(rawValue: """
+                remoto=\(remote): sin haber hablado con el servidor no se puede afirmar que los datos
+                falten — el propio valor de `remoteCloudEnabled` es el `absentDefault`, no una
+                respuesta, y por eso no puede decidir nada aquí.
+                """))
+        }
+    }
+
+    /// **El faro gana al desconocimiento, y esto lo cazó la review adversarial del 2026-09-17.** El
+    /// primer intento mandaba a `.cloudUnverified` todo lo que llegara sin snapshot, faro incluido:
+    /// le quitaba «tus datos siguen a salvo en tu cuenta de Yala» justo a quien SÍ podemos probar que
+    /// tiene cuenta, y le mandaba a revisar una conexión que funciona.
+    ///
+    /// La población es real porque **las dos señales viajan por canales distintos**: el faro vive en el
+    /// iCloud-KV y el snapshot lo sirve nuestro gateway, así que una red que filtre el dominio del
+    /// Worker, un 5xx o una caída de Cloudflare dejan el faro puesto y el snapshot ausente.
+    @Test("Con faro probado gana `.cloudPaused` aunque no se haya podido comprobar el config")
+    func beaconWinsOverNotKnowing() {
+        for remote in [true, false] {
+            #expect(WelcomeRestoreEmptyOutcome.resolve(
+                beaconLinked: true,
+                cloudConfigKnown: false,
+                remoteCloudEnabled: remote) == .cloudPaused, Comment(rawValue: """
+                remoto=\(remote): con el faro puesto ya sabemos el hecho que decide el mensaje —los
+                datos EXISTEN—, y eso no depende de haber podido preguntar. El término remoto no puede
+                cambiarlo: sin snapshot su valor es el `absentDefault`, que difiere entre builds.
+                """))
+        }
+
+        // Y el control por el otro lado: con el config comprobado y la nube ABIERTA, el faro no
+        // convierte en pausa un vacío que sí está medido.
+        #expect(WelcomeRestoreEmptyOutcome.resolve(
+            beaconLinked: true, cloudConfigKnown: true, remoteCloudEnabled: true) == .notFound)
+    }
+
+    /// **La ausencia de snapshot falla ABIERTA en dos casos, y los dos evitarían un mensaje falso para
+    /// todo el parque.** Sin backend configurado `refreshIfDue` sale en su primera línea: no habría
+    /// snapshot NUNCA, así que tratar esa ausencia como «no comprobado» le enseñaría el aviso a todo el
+    /// mundo para siempre. Y bajo host de test el `.standard` del simulador puede traer el snapshot de
+    /// una corrida manual — el mismo corte que ya hace `CloudRemoteFlags.decide`, para que el recorrido
+    /// determinista quede byte-idéntico.
+    @Test("La ausencia de snapshot solo cuenta si había a quién preguntar y no es un host de test")
+    func absentSnapshotFailsOpenWhereItMust() {
+        // El caso real: hay backend, no es test, y no hay snapshot ⇒ no lo sabemos.
+        #expect(!RemoteFlagDecisionLogic.isConfigKnown(
+            hasSnapshot: false, backendConfigured: true, isTestHost: false))
+
+        // Con snapshot lo sabemos, y da igual lo que diga.
+        #expect(RemoteFlagDecisionLogic.isConfigKnown(
+            hasSnapshot: true, backendConfigured: true, isTestHost: false))
+
+        // Sin backend no hay comprobación pendiente: la nube no existe para esa build.
+        #expect(RemoteFlagDecisionLogic.isConfigKnown(
+            hasSnapshot: false, backendConfigured: false, isTestHost: false))
+
+        // Host de test: el recorrido de hoy, sin depender del estado del simulador.
+        #expect(RemoteFlagDecisionLogic.isConfigKnown(
+            hasSnapshot: false, backendConfigured: true, isTestHost: true))
+    }
+
+    /// **El adaptador que alimenta la decisión con lo vivo, fijado por su cuerpo entero.** No se puede
+    /// probar por comportamiento: bajo host de test `cloudConfigKnown` vale `true` por diseño —el mismo
+    /// corte que `decide()`— así que llamarlo desde aquí devuelve siempre lo mismo y no distingue nada.
+    /// Y es un sitio donde el swap sale barato: cablear `hasSnapshot: true` fijo deja la pantalla
+    /// exactamente como estaba antes del ticket, con el enum nuevo puesto y toda la tabla en verde.
+    @Test("`cloudConfigKnown` alimenta la decisión con las tres entradas VIVAS, no con constantes")
+    func liveAdapterFeedsTheRealTerms() throws {
+        let source = try String(
+            contentsOf: URL(fileURLWithPath: #filePath)
+                .deletingLastPathComponent()   // YalaTests/
+                .deletingLastPathComponent()   // repo root
+                .appendingPathComponent("Yala/Services/CloudSync/CloudRemoteConfig.swift"),
+            encoding: .utf8)
+        let code = source
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") && !$0.trimmingCharacters(in: .whitespaces).hasPrefix("///") }
+            .joined(separator: "\n")
+        let marker = "static var cloudConfigKnown: Bool {"
+        let start = try #require(code.range(of: marker), "el getter `cloudConfigKnown` cambió de firma")
+        let chars = Array(code[start.upperBound...])
+        var depth = 1, i = 0
+        while i < chars.count {
+            if chars[i] == "{" { depth += 1 }
+            if chars[i] == "}" { depth -= 1; if depth == 0 { break } }
+            i += 1
+        }
+        let body = String(chars[0..<min(i, chars.count)])
+            .split(separator: "\n")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+
+        #expect(body == "RemoteFlagDecisionLogic.isConfigKnown( "
+            + "hasSnapshot: CloudRemoteConfigStore.readSnapshot() != nil, "
+            + "backendConfigured: CloudBackendConfig.isConfigured, "
+            + "isTestHost: isRunningTests || isUITestHost)", Comment(rawValue: """
+                El cuerpo de `cloudConfigKnown` cambió y este test fija el ENTERO a propósito: cada una
+                de sus tres entradas es un término que, cableado a una constante, devuelve la pantalla
+                al mensaje falso sin poner nada en rojo. Cuerpo medido: \(body)
+                """))
     }
 
     /// **El término que hace útil al botón «Reintentar», y el que alguien retiraría por limpieza.**
@@ -694,8 +821,11 @@ struct WelcomeRestorePauseLogicTests {
     /// normal, porque el boot acaba de refrescar. Sin forzar, esta pantalla leería el flag del
     /// arranque y su botón primario no podría cambiar nunca el desenlace: el kill se conmuta desde el
     /// backend. Es el mismo no-op que ya mordió en `WelcomeGroupsGateView` y en `GroupsContainerView`.
-    @Test("La decisión de la pausa se toma con el flag FRESCO, no con el del arranque")
-    func pauseIsDecidedOnAFreshFlag() throws {
+    ///
+    /// Desde el 2026-09-17 carga además el otro término: `cloudConfigKnown` se lee DESPUÉS del refresco
+    /// porque el refresco es justamente el intento de que deje de ser `false`.
+    @Test("La decisión se toma con el flag FRESCO, no con el del arranque")
+    func outcomeIsDecidedOnAFreshFlag() throws {
         let source = try String(
             contentsOf: URL(fileURLWithPath: #filePath)
                 .deletingLastPathComponent()   // YalaTests/
@@ -717,9 +847,9 @@ struct WelcomeRestorePauseLogicTests {
             .joined(separator: "\n")
 
         #expect(body.contains("refreshIfDue(force: true)"), """
-            La resolución de la pausa tiene que forzar el refresco del flag remoto. Sin `force: true`
-            el fetch es un no-op durante 6 h y «Reintentar» se convierte en un botón que no puede
-            cambiar su propio desenlace.
+            La resolución tiene que forzar el refresco del flag remoto. Sin `force: true` el fetch es
+            un no-op durante 6 h y «Reintentar» se convierte en un botón que no puede cambiar su
+            propio desenlace.
             """)
         #expect(body.contains("Task.isCancelled"), """
             tras el único punto de suspensión hace falta el guard: la cancelación de `refreshIfDue` es
@@ -729,20 +859,90 @@ struct WelcomeRestorePauseLogicTests {
             esta rama es solo para búsquedas VACÍAS; si vuelve a decidir sobre `hasAnyData`, alguien
             metió el camino con datos detrás de una llamada de red que no necesita.
             """)
+
+        // Y el orden: el estado de conocimiento se LEE después del intento de conseguirlo. Leerlo
+        // antes describiría el mundo previo a preguntar, que es el de cualquier arranque — y el
+        // mensaje nuevo saldría con red y todo.
+        // El ancla es la LECTURA completa, no la etiqueta del argumento. `cloudConfigKnown` a secas
+        // casa primero con `cloudConfigKnown:` del callsite, que no puede moverse independientemente
+        // de la llamada — así que mediría algo que no puede fallar por la vía que dice. Con este ancla
+        // sí cae el mutante que guarda la lectura en un `let` por encima del `await` y pasa la variable.
+        let refresh = try #require(body.range(of: "refreshIfDue(force: true)"))
+        let known = try #require(body.range(of: "CloudRemoteFlags.cloudConfigKnown"),
+                                 "la pantalla dejó de leer si el config llegó a comprobarse")
+        #expect(refresh.upperBound < known.lowerBound, """
+            `cloudConfigKnown` se lee ANTES del refresco: así siempre valdría lo de antes de preguntar.
+            """)
     }
 
-    /// Control de coherencia entre las dos mitades de la decisión: el aviso solo puede verse en el
-    /// mismo estado remoto que cierra las cards. Si alguien relaja el kill en `visibleExistingOptions`
-    /// sin tocar esto, el usuario tendría su card Y el aviso de pausa a la vez.
-    @Test("El aviso vive exactamente en el estado que cierra la card de sign-in")
+    /// **El mapeo de los tres desenlaces a los tres estados de pantalla, uno por uno.** La decisión pura
+    /// de arriba puede estar perfecta y la pantalla enseñar otra cosa: mandar `.cloudUnverified` al
+    /// estado `.notFound` compila, deja toda la tabla en verde y reintroduce el bug entero con el
+    /// enum nuevo puesto. Como los tres desenlaces viven en closures de una vista SwiftUI que ningún
+    /// unit test puede invocar, la única red posible es el scan — y entonces se fija el emparejamiento,
+    /// no la presencia de los literales (`.claude/rules/testing.md`).
+    @Test("Cada desenlace pinta SU estado: el swap que compila no pasa")
+    func eachOutcomeMapsToItsOwnState() throws {
+        let source = try String(
+            contentsOf: URL(fileURLWithPath: #filePath)
+                .deletingLastPathComponent()   // YalaTests/
+                .deletingLastPathComponent()   // repo root
+                .appendingPathComponent("Yala/App/Views/Onboarding/WelcomeRestoreView.swift"),
+            encoding: .utf8)
+        let code = source
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+        let marker = "private func resolveEmptyState() async {"
+        let start = try #require(code.range(of: marker), "la firma de `resolveEmptyState` cambió")
+        let chars = Array(code[start.upperBound...])
+        var depth = 1, i = 0
+        while i < chars.count {
+            if chars[i] == "{" { depth += 1 }
+            if chars[i] == "}" { depth -= 1; if depth == 0 { break } }
+            i += 1
+        }
+        let body = String(chars[0..<min(i, chars.count)])
+
+        // Cada `case` se acota hasta el siguiente para que la aserción no la cumpla el vecino: un
+        // recorte que llegue al final del cuerpo se satisface con la asignación de al lado.
+        let cases = ["case .cloudPaused:", "case .cloudUnverified:", "case .notFound:"]
+        let estados = [".cloudPaused", ".cloudUnverified", ".notFound"]
+        for (caso, estado) in zip(cases, estados) {
+            let desde = try #require(body.range(of: caso), Comment(rawValue: "falta la rama `\(caso)`"))
+            let siguiente = cases
+                .compactMap { body.range(of: $0, range: desde.upperBound..<body.endIndex)?.lowerBound }
+                .min() ?? body.endIndex
+            let rama = String(body[desde.upperBound..<siguiente])
+            #expect(rama.contains("state = \(estado)"), Comment(rawValue: """
+                `\(caso)` no pone `state = \(estado)`. Mandar un desenlace al estado de otro compila y
+                deja toda la tabla de decisión en verde mientras la pantalla afirma lo que no sabe.
+                """))
+        }
+
+        // Y el rastro de producción del caso nuevo, que es lo único que distingue en Console.app un
+        // «no pudimos comprobar» de un `.notFound` legítimo: en pantalla se parecen.
+        let unverified = try #require(body.range(of: "case .cloudUnverified:"))
+        let siguiente = body.range(of: "case .notFound:", range: unverified.upperBound..<body.endIndex)?
+            .lowerBound ?? body.endIndex
+        #expect(String(body[unverified.upperBound..<siguiente]).contains("RestoreBreadcrumb.cloudUnverified()"), """
+            la rama del desenlace nuevo dejó de dejar rastro: sin él, el único recorrido que produce
+            este mensaje —reinstalar sin red— no deja huella de por qué enseñó lo que enseñó.
+            """)
+    }
+
+    /// Control de coherencia entre las dos mitades de la decisión: el aviso de PAUSA solo puede verse
+    /// en el mismo estado remoto que cierra las cards. Si alguien relaja el kill en
+    /// `visibleExistingOptions` sin tocar esto, el usuario tendría su card Y el aviso a la vez.
+    @Test("El aviso de pausa vive exactamente en el estado que cierra la card de sign-in")
     func pausedOnlyWhenTheCardIsGone() {
         for beaconLinked in [true, false] {
             for remote in [true, false] {
                 let cards = WelcomeAccountChoiceLogic.visibleExistingOptions(
                     isConfigured: true, isUITest: false, remoteCloudEnabled: remote)
-                let paused = WelcomeRestorePauseLogic.isCloudPaused(
-                    beaconLinked: beaconLinked, remoteCloudEnabled: remote)
-                if paused {
+                let outcome = WelcomeRestoreEmptyOutcome.resolve(
+                    beaconLinked: beaconLinked, cloudConfigKnown: true, remoteCloudEnabled: remote)
+                if outcome == .cloudPaused {
                     #expect(!cards.contains(.cloudSignIn),
                             "el aviso de pausa no puede convivir con la card de sign-in")
                 }

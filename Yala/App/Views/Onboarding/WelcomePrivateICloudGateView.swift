@@ -197,7 +197,8 @@ struct WelcomePrivateICloudGateView: View {
             // `unverifiedExit`, y por eso el label también sale de ahí.
             //
             // **Y el ticket dice que esta fase es inalcanzable desde «Empezar desde cero». Medido: no lo
-            // es.** `WelcomeRestoreView` ofrece ese botón desde cuatro estados y tres de ellos no afirman
+            // es.** `WelcomeRestoreView` ofrece ese botón desde cinco estados (cuatro hasta el
+            // 2026-09-17, cuando entró `.cloudUnverified`) y tres de ellos no afirman
             // que haya datos —`notFoundView`, `iCloudDisabledView` y `wipedView` llaman directo—, así que
             // con iCloud apagado en el teléfono se llega aquí con el borrado ya confirmado. Por eso la
             // salida bifurca igual que la de abajo, y no se deja «solo la fase que el ticket nombra».

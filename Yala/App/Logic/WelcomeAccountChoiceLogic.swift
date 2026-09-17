@@ -91,7 +91,7 @@ nonisolated enum WelcomeAccountChoiceLogic {
     /// se acaba «arreglando» la puerta equivocada. Las dos cerradas es lo DESEADO: el kill significa
     /// nube en pausa para todos, también para volver. Lo que sí se corrigió es el mensaje del único
     /// camino que queda abierto —«Restaurar desde iCloud»—, que le decía a un nacido-en-nube con sus
-    /// datos intactos que no los encontrábamos: ver `WelcomeRestorePauseLogic`.
+    /// datos intactos que no los encontrábamos: ver `WelcomeRestoreEmptyOutcome`.
     static func visibleExistingOptions(
         isConfigured: Bool,
         isUITest: Bool,
@@ -163,36 +163,84 @@ nonisolated enum WelcomeAccountChoiceLogic {
     }
 }
 
-/// El estado honesto del restore bajo el kill-switch (decisión owner 2026-09-06).
+/// **Qué se le dice a quien terminó la búsqueda de restore SIN datos.** Tres desenlaces, y son tres
+/// afirmaciones distintas sobre el mundo — por eso la decisión es UNA, y no dos booleanos que puedan
+/// contradecirse entre sí.
 ///
-/// **El problema que cierra:** con las dos puertas de nube cerradas, el ÚNICO camino que le queda a
-/// quien vuelve es «Restaurar desde iCloud», y esa pantalla busca en **CloudKit**. Un nacido-en-nube
-/// jamás tuvo datos ahí —los suyos viven en el backend— así que su búsqueda termina siempre vacía y
-/// leía «No encontramos tus datos» con sus datos perfectamente intactos. El hecho es el contrario:
-/// los datos existen y lo que está en pausa es la nube.
-///
-/// **Por qué el faro es el detector correcto** y no un flag local: vive en el iCloud-KV
+/// **El primer problema que cerró (decisión owner 2026-09-06).** Con las dos puertas de nube cerradas
+/// por el kill, el ÚNICO camino que le queda a quien vuelve es «Restaurar desde iCloud», y esa
+/// pantalla busca en **CloudKit**. Un nacido-en-nube jamás tuvo datos ahí —los suyos viven en el
+/// backend— así que su búsqueda termina siempre vacía y leía «No encontramos tus datos» con sus datos
+/// perfectamente intactos. El hecho es el contrario: los datos existen y lo que está en pausa es la
+/// nube. **Por qué el faro es el detector correcto** y no un flag local: vive en el iCloud-KV
 /// (`CloudBeacon`), así que es lo ÚNICO de la cuenta nube que sobrevive a una reinstalación — que es
-/// exactamente el recorrido que este mensaje describe. Cualquier testigo local es `false` en un
-/// móvil recién instalado, por construcción.
+/// justo el recorrido que ese mensaje describe. Cualquier testigo local es `false` en un móvil recién
+/// instalado, por construcción.
 ///
-/// **Deliberadamente NO sustituye a `.found`**: solo se consulta cuando la búsqueda no encontró nada.
-/// Un usuario de iCloud privado que además tenga el faro puesto (dos devices, dos modos) sigue viendo
-/// sus datos de iCloud y su botón de restaurar; taparle eso con un aviso de la nube sería cambiar un
-/// mensaje equivocado por otro.
-nonisolated enum WelcomeRestorePauseLogic {
+/// **El segundo, y es el que añade `.cloudUnverified`** (ticket `reinstall-without-network-has-no-cloud-door`,
+/// decisión de Jürgen del 2026-09-17, opción 2). El párrafo de arriba da por hecho que SABEMOS qué dice
+/// el kill, y eso solo es cierto si el servidor llegó a contestar. Quien reinstala —o estrena móvil— y
+/// abre sin red se queda sin las dos cosas: el snapshot de remote-config vive en el contenedor de la
+/// app y se fue con ella, y el iCloud-KV de un móvil recién instalado tampoco ha sincronizado, así que
+/// el faro también está en blanco. Resultado hasta hoy: `beaconLinked == false` ⇒ `.notFound` ⇒ «No hay
+/// datos asociados a tu cuenta» dicho con los datos intactos en el servidor. Ahora ese caso dice lo
+/// único que es verdad: no lo hemos podido comprobar.
+///
+/// **Y el faro gana a los dos, que es lo que lo cazó la review adversarial del mismo día.** El primer
+/// intento mandaba a `.cloudUnverified` todo lo que llegara sin snapshot, faro incluido, y eso le
+/// quitaba la frase que MÁS le importa —«tus datos siguen a salvo en tu cuenta de Yala»— justo a quien
+/// sí podemos probar que tiene cuenta. **El faro no viaja por nuestro gateway**: vive en el iCloud-KV
+/// (`CloudBeacon.isCloudAccountLinked` → `store.bool`), así que puede estar puesto con nuestro servidor
+/// inalcanzable — una red que filtre `workers.dev`, un 5xx del gateway, una caída de Cloudflare. Con el
+/// faro puesto ya sabemos el hecho que decide el mensaje (los datos EXISTEN); lo que no sabemos —si la
+/// nube está en pausa por el kill o por otra cosa— no cambia lo que hay que decirle.
+///
+/// ⇒ **`.cloudUnverified` es el desenlace de quien NO tiene faro y tampoco config**, que es exactamente
+/// el móvil recién instalado del ticket: ahí el iCloud-KV tampoco ha sincronizado y las dos señales
+/// están en blanco. Con el kill REAL puesto sí hay snapshot (percent 0), así que el recorrido del
+/// ticket hermano no cambia en nada.
+///
+/// **Lo que esto NO cierra, y es el gemelo de lo que cierra: reinstalar CON red.** El snapshot llega,
+/// así que `cloudConfigKnown` es `true`; pero el faro se lee con un `store.bool` que no fuerza nada
+/// (`CloudBeacon.isCloudAccountLinked`) y el iCloud-KV de un móvil recién instalado llega cuando iOS
+/// quiere, por `didChangeExternallyNotification`. En esa ventana las dos señales dicen «no» por
+/// motivos distintos y el desenlace vuelve a ser `.notFound` con los datos intactos en el servidor.
+/// Es anterior a este ticket —el `.cloudPaused` del kill tenía el mismo hueco— y no se cierra aquí:
+/// ticket `restore-beacon-may-not-have-synced-yet-on-a-fresh-install`.
+///
+/// **Deliberadamente NO sustituye a `.found`**: esto solo se consulta cuando la búsqueda no encontró
+/// nada. Un usuario de iCloud privado que además tenga el faro puesto (dos devices, dos modos) sigue
+/// viendo sus datos de iCloud y su botón de restaurar; taparle eso con un aviso de la nube sería
+/// cambiar un mensaje equivocado por otro.
+nonisolated enum WelcomeRestoreEmptyOutcome: Equatable {
 
-    /// ¿La búsqueda vacía se debe a que la nube está en pausa, y no a que no haya datos?
-    ///
+    /// No hay datos, y lo sabemos: la búsqueda terminó y el servidor nos dijo que la nube está abierta
+    /// (o este Apple ID no tiene cuenta en ella). El copy de siempre.
+    case notFound
+    /// Los datos EXISTEN y lo que falta es la nube: hay cuenta (faro) y el kill remoto está puesto.
+    case cloudPaused
+    /// No lo sabemos: nunca hemos conseguido que el servidor conteste en esta instalación. No se afirma
+    /// que los datos existan ni que falten.
+    case cloudUnverified
+
     /// - Parameters:
     ///   - beaconLinked: `CloudBeacon.isCloudAccountLinked` — este Apple ID YA tiene cuenta nube.
+    ///   - cloudConfigKnown: `CloudRemoteFlags.cloudConfigKnown` — ¿llegó a contestar el servidor?
     ///   - remoteCloudEnabled: `CloudRemoteFlags.cloudModeEnabled` — el kill-switch remoto.
-    ///
-    static func isCloudPaused(
+    static func resolve(
         beaconLinked: Bool,
+        cloudConfigKnown: Bool,
         remoteCloudEnabled: Bool
-    ) -> Bool {
-        beaconLinked && !remoteCloudEnabled
+    ) -> WelcomeRestoreEmptyOutcome {
+        // El faro decide primero: con cuenta probada, el mensaje que afirma que los datos existen es el
+        // correcto tanto bajo el kill como sin haber podido preguntar. La condición se escribe con sus
+        // DOS términos y no se deja caer en que `remoteCloudEnabled` ya es `false` sin snapshot: eso es
+        // cierto en producción por el `absentDefault` fail-closed y FALSO en DEV, donde vale `true`.
+        if beaconLinked {
+            return remoteCloudEnabled && cloudConfigKnown ? .notFound : .cloudPaused
+        }
+        guard cloudConfigKnown else { return .cloudUnverified }
+        return .notFound
     }
 }
 

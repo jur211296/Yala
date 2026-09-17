@@ -163,3 +163,23 @@ Gate de `cloud-migration-offers-the-cloud-to-a-phone-without-app-attest`, paso 3
 - Con esta, **3 fallos en lote y 0 en aislamiento** en las observaciones con centinela o reinicios contados.
 - Disco: 30 GB libres al empezar la sesión.
 
+
+## Otra observación, 2026-09-17 (gate de `reinstall-without-network-has-no-cloud-door`)
+
+Mismo síntoma, mismo test, mismo mensaje (`transaction_success_accept` que no aparece, a los 36 s).
+Lote de cinco suites: `EdgeCasesUITests` · `WelcomeFreshStartAlertUITests` · `OnboardingFlowUITests` ·
+`WelcomeChooserUITests` · `FullModeActivationChooserUITests` — 18 tests, 1 fallo. **Centinela en 0 en
+las cuatro corridas**, así que ninguna estuvo pisada: el rojo no es una colisión de simulador.
+
+Las cuatro medidas, en orden, sobre el MISMO lote y el MISMO código:
+
+| Corrida | Árbol | Alcance | Resultado |
+|---|---|---|---|
+| 1 | con el diff | las 5 suites | 18 tests, **1 fallo** |
+| 2 | base `f93bb4005`, limpio | `EdgeCasesUITests` sola | 2 tests, 0 fallos |
+| 3 | con el diff | `EdgeCasesUITests` sola | 2 tests, 0 fallos |
+| 4 | con el diff | las 5 suites | 18 tests, **0 fallos** |
+
+La 4 es la que zanja: la 1 y la 4 son la misma condición exacta y dan resultados opuestos, así que el
+rojo no lo explica ningún diff. Refuerza lo que ya dice este ticket —«falla en lote y pasa solo»— y
+añade que **tampoco falla siempre en lote**.

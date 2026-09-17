@@ -31,6 +31,8 @@
 //   (6) la activación de Yala completo mandada a la puerta → 2 fallos.
 //   (7) `.cloudPaused` llamando a `onStartFresh` directo, sin confirmar → 1 fallo.
 //   (8) `.found` llamando a `onStartFresh` directo, sin confirmar → 1 fallo.
+//  (7b) `.cloudUnverified` llamando a `onStartFresh` directo, sin confirmar → 1 fallo aquí
+//       (2026-09-17; el estado que no sabe si hay datos es el que MENOS puede saltarse el diálogo).
 //   (9) el arm del borrado sin retirar en la salida `.proceed` → 1 fallo.
 //  (10) `hasShownWelcomeChooser` sin bajar en el callback → 1 fallo.
 //  (11) el gate del alert de fresh-start devuelto al snapshot `hasExistingData` → 1 fallo, y lo canta
@@ -350,16 +352,30 @@ struct RestoreStartFreshGateTests {
             y lo hace por el diálogo, no llamando al callback directo — que es el swap que compila.
             """)
 
-        // `.cloudPaused` lo REUSA en vez de llamar directo, y es el único estado vacío que lo hace:
-        // los otros tres no afirman nada sobre los datos del usuario, éste afirma que EXISTEN.
+        // `.cloudPaused` lo REUSA en vez de llamar directo: los estados que niegan que haya datos no
+        // afirman nada que proteger, éste afirma que EXISTEN.
         let paused = try Self.body(of: "private var cloudPausedView: some View {", in: src)
         #expect(paused.contains("showStartFreshConfirm = true"), """
             «la nube está en pausa» afirma que los datos existen: empezar de cero desde ahí sin confirmar
             arranca un dataset paralelo que convivirá con la cuenta que ese mismo texto prometió intacta.
             """)
 
-        // Y la exclusividad en la otra dirección: los tres estados que NO afirman datos siguen llamando
-        // directo. Cablearlos al diálogo (o al revés) es el mismo swap, por el otro lado.
+        // `.cloudUnverified` (2026-09-17) también, y por el motivo simétrico: no afirma que existan,
+        // pero tampoco que falten. Sin saberlo, el gesto destructivo se pregunta — quien lo pulsa
+        // podría tener su histórico entero esperando en el servidor al otro lado de la red caída.
+        let unverified = try Self.body(of: "private var cloudUnverifiedView: some View {", in: src)
+        #expect(unverified.contains("showStartFreshConfirm = true"), """
+            «no pudimos comprobar tus datos» pasó a descartar sin confirmar: es el único estado que no
+            sabe si hay algo que perder, así que es el que MENOS puede permitirse saltarse el diálogo.
+            """)
+        #expect(!unverified.contains("onStartFresh()"), """
+            y lo hace por el diálogo, no llamando al callback directo — que es el swap que compila.
+            """)
+
+        // Y la exclusividad en la otra dirección: los tres estados que NIEGAN que haya datos siguen
+        // llamando directo. Cablearlos al diálogo (o al revés) es el mismo swap, por el otro lado.
+        // Ojo al leer esto: «no afirman datos» ya no clasifica desde que existe `.cloudUnverified`,
+        // que tampoco los afirma y SÍ confirma. El criterio es negar, no callar.
         for vacio in ["private var notFoundView: some View {",
                       "private var iCloudDisabledView: some View {",
                       "private var wipedView: some View {"] {

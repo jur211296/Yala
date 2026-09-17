@@ -100,8 +100,10 @@ fichero.
       (`visibleExistingOptions`) y `StorageRowGateLogic` cruza hacia él.
 - [x] Con el kill encendido, un nacido-en-nube que pasa por «Restaurar desde iCloud» lee que la nube
       está en pausa, **no** «No encontramos tus datos». Copy propio, 16 `.lproj`.
-      Estado `.cloudPaused` en `WelcomeRestoreView`, decidido por `WelcomeRestorePauseLogic`
-      (faro del iCloud-KV + flag remoto). Claves `welcome.restore.cloudPaused{Title,Body}`,
+      Estado `.cloudPaused` en `WelcomeRestoreView`, decidido por `WelcomeRestoreEmptyOutcome`
+      (faro del iCloud-KV + flag remoto; se llamaba `WelcomeRestorePauseLogic.isCloudPaused` hasta el
+      2026-09-17, cuando `reinstall-without-network-has-no-cloud-door` le añadió un tercer desenlace
+      y lo convirtió en una sola decisión). Claves `welcome.restore.cloudPaused{Title,Body}`,
       traducidas en los 16 locales — `LocalizationParityTests` en verde (11 casos).
 - [x] La re-entrada por la puerta del Welcome en un móvil recién instalado arranca el motor en sesión
       y termina en la misma pantalla de «lista» que el alta; **sin** «reinicia Yala».
@@ -177,7 +179,10 @@ Fijado por `pauseIsDecidedOnAFreshFlag`.
 **Nada de esto es ejercitable en simulador**, y conviene tenerlo escrito para que nadie lo dé por
 verificado: SIWA no corre en sim; el kill se conmuta desde el **backend** (percent del gateway), no
 con un flag local; y bajo `-uitest` los getters de remote-config cortocircuitan a su default
-(`absentDefault`, que en DEV es `true`) ⇒ **`isCloudPaused` es siempre `false` en XCUITest**. El
+(`absentDefault`, que en DEV es `true`) ⇒ **el desenlace es siempre `.notFound` en XCUITest**. Desde
+el 2026-09-17 lo sostiene otro término además del flag: `CloudRemoteFlags.cloudConfigKnown` corta en el
+host de test igual que `decide()` (`RemoteFlagDecisionLogic.isConfigKnown`, `isTestHost`), así que el
+estado nuevo `.cloudUnverified` tampoco es alcanzable ahí. El
 `accessibilityIdentifier("welcome_restore_cloud_paused")` existe para el día que se pueda, no promete
 cobertura hoy.
 

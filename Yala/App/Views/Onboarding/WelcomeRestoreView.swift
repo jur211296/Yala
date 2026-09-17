@@ -4,7 +4,9 @@
 //
 //  A4 — Rama B del Welcome Chooser. "Ya tengo cuenta" → restore desde iCloud.
 //
-//  State machine: searching → found / notFound / iCloudDisabled / error.
+//  State machine: searching → found / notFound / cloudPaused / cloudUnverified / wiped /
+//  iCloudDisabled / error. Los tres de en medio son los desenlaces de una búsqueda VACÍA y los
+//  decide `WelcomeRestoreEmptyOutcome`: afirman hechos distintos, no el mismo con otro copy.
 //  Cada transición a state está gateada por `Task.isCancelled` para evitar
 //  resume sobre vista no presentada (race con CKShare, dismiss user, app background).
 //
@@ -21,8 +23,12 @@ struct WelcomeRestoreView: View {
         /// Búsqueda vacía **porque la nube está en pausa**, no porque no haya datos: el kill-switch
         /// remoto está puesto y el faro dice que este Apple ID ya tiene cuenta nube. Caso propio y no
         /// un `.notFound` con otro copy — los dos afirman hechos OPUESTOS sobre los datos del usuario
-        /// (`WelcomeRestorePauseLogic`).
+        /// (`WelcomeRestoreEmptyOutcome`).
         case cloudPaused
+        /// Búsqueda vacía **sin que hayamos podido comprobar nada**: el servidor nunca contestó en esta
+        /// instalación (reinstalar se lleva el snapshot de remote-config, y sin red el fetch tampoco
+        /// llega). Ni afirma que los datos existan ni que falten — que es justo lo que sabemos.
+        case cloudUnverified
         case wiped
         case iCloudDisabled
         case error
@@ -47,9 +53,11 @@ struct WelcomeRestoreView: View {
     /// `.cloudPaused` lo lleva por la MISMA razón que `.notFound`: reintentar es lo único que puede
     /// cambiar el desenlace — allí porque el import de CloudKit puede no haber terminado, aquí porque
     /// el kill se conmuta desde el backend y el re-encendido llega sin que la app haga nada.
+    /// `.cloudUnverified` con más motivo todavía: lo que falta es la red, y volver a preguntar es
+    /// literalmente lo único que puede resolverlo.
     private var showRefreshToolbar: Bool {
         switch state {
-        case .notFound, .cloudPaused, .error: return true
+        case .notFound, .cloudPaused, .cloudUnverified, .error: return true
         default: return false
         }
     }
@@ -76,6 +84,8 @@ struct WelcomeRestoreView: View {
                     notFoundView
                 case .cloudPaused:
                     cloudPausedView
+                case .cloudUnverified:
+                    cloudUnverifiedView
                 case .wiped:
                     wipedView
                 case .iCloudDisabled:
@@ -150,8 +160,9 @@ struct WelcomeRestoreView: View {
         state = .searching
     }
 
-    /// Desenlace de una búsqueda que terminó SIN datos: cuál de los dos hechos opuestos afirmar
-    /// —«no hay datos» o «la nube está en pausa»—, y lo decide `WelcomeRestorePauseLogic`.
+    /// Desenlace de una búsqueda que terminó SIN datos: cuál de los tres hechos afirmar —«no hay
+    /// datos», «la nube está en pausa» o «no lo hemos podido comprobar»—, y lo decide
+    /// `WelcomeRestoreEmptyOutcome`.
     ///
     /// **El `force: true` no es cosmético, y aquí carga más peso que en sus hermanos.** `refreshIfDue`
     /// sin él es un no-op mientras el último fetch tenga menos de 6 h, que es el caso NORMAL: el boot
@@ -177,11 +188,23 @@ struct WelcomeRestoreView: View {
         // dedo cuando la red conteste. Es el único punto de suspensión de la rama.
         guard !Task.isCancelled else { return }
 
-        let paused = WelcomeRestorePauseLogic.isCloudPaused(
+        // `cloudConfigKnown` se lee DESPUÉS del refresco y no antes: el `force` de arriba es
+        // precisamente el intento de que deje de ser `false`. Leerlo antes describiría el estado
+        // anterior a preguntar, que es el de cualquier arranque.
+        let outcome = WelcomeRestoreEmptyOutcome.resolve(
             beaconLinked: CloudBeacon().isCloudAccountLinked,
+            cloudConfigKnown: CloudRemoteFlags.cloudConfigKnown,
             remoteCloudEnabled: CloudRemoteFlags.cloudModeEnabled)
-        if paused { RestoreBreadcrumb.cloudPaused() }
-        state = paused ? .cloudPaused : .notFound
+        switch outcome {
+        case .cloudPaused:
+            RestoreBreadcrumb.cloudPaused()
+            state = .cloudPaused
+        case .cloudUnverified:
+            RestoreBreadcrumb.cloudUnverified()
+            state = .cloudUnverified
+        case .notFound:
+            state = .notFound
+        }
     }
 
     // MARK: - State views
@@ -383,13 +406,47 @@ struct WelcomeRestoreView: View {
             primaryTitle: L10n.Welcome.Restore.retry,
             primaryAction: { state = .searching; startSearch() },
             secondaryTitle: L10n.Welcome.Restore.startFresh,
-            // Reusa el `confirmationDialog` del camino `.found` en vez de llamar directo, y es el único
-            // estado vacío que lo pide: los otros tres no afirman nada sobre los datos del usuario —
-            // éste afirma que EXISTEN. Empezar de cero desde aquí arranca un dataset paralelo que, al
-            // levantarse el kill, convive con la cuenta que este mismo texto acaba de prometer intacta.
+            // Reusa el `confirmationDialog` del camino `.found` en vez de llamar directo. Lo comparte
+            // con `.cloudUnverified` desde el 2026-09-17 y con ningún otro: los tres estados vacíos que
+            // llaman directo NIEGAN que haya datos, éste afirma que EXISTEN y el otro no sabe. Empezar
+            // de cero desde aquí arranca un dataset paralelo que, al levantarse el kill, convive con la
+            // cuenta que este mismo texto acaba de prometer intacta.
             secondaryAction: { showStartFreshConfirm = true }
         )
         .accessibilityIdentifier("welcome_restore_cloud_paused")
+    }
+
+    /// No pudimos comprobarlo: el mensaje no afirma NI que los datos existan ni que falten.
+    ///
+    /// Es el desenlace de quien reinstala —o estrena móvil— y abre sin red: el snapshot de
+    /// remote-config se fue con la app y el faro de iCloud-KV tampoco ha sincronizado, así que las dos
+    /// señales que distinguen «no hay datos» de «hay datos y la nube está en pausa» están en blanco.
+    /// Hasta el 2026-09-17 ese caso caía en `.notFound` y le decía «no hay datos asociados a tu
+    /// cuenta» a alguien con su histórico intacto en el servidor.
+    ///
+    /// Copia la forma de `.cloudPaused` —naranja, reintentar primero, empezar de cero como salida— y
+    /// **también su confirmación**: los tres estados que llaman directo al callback niegan que haya
+    /// datos, y éste no niega nada. Sin saber, el gesto destructivo se pregunta.
+    ///
+    /// **Ni el icono ni el copy culpan a la conexión del usuario**, y eso lo cazó la review: la
+    /// comprobación que falló viaja por NUESTRO gateway, no por CloudKit, así que un 5xx del Worker o
+    /// una red que filtre su dominio dan este mismo desenlace con el wifi de la persona perfecto. Un
+    /// `wifi.exclamationmark` y un «revisa tu conexión» le mandarían a mirar un router que funciona.
+    private var cloudUnverifiedView: some View {
+        emptyStateView(
+            icon: "exclamationmark.icloud",
+            // El token, no el literal: `DS.Semantic.warningForeground` ES `.orange`, así que el color en
+            // pantalla no cambia y el fichero deja de sumar un hardcode. Sus vecinos (`errorView`,
+            // `cloudPausedView`) siguen con el literal — deuda incremental, se migra al tocarlos.
+            tint: DS.Semantic.warningForeground,
+            title: L10n.Welcome.Restore.cloudUnverifiedTitle,
+            body: L10n.Welcome.Restore.cloudUnverifiedBody,
+            primaryTitle: L10n.Welcome.Restore.retry,
+            primaryAction: { state = .searching; startSearch() },
+            secondaryTitle: L10n.Welcome.Restore.startFresh,
+            secondaryAction: { showStartFreshConfirm = true }
+        )
+        .accessibilityIdentifier("welcome_restore_cloud_unverified")
     }
 
     /// Respeto al wipe: el usuario borró sus datos en este dispositivo → no

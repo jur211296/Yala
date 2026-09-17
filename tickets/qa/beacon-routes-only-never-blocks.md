@@ -149,7 +149,7 @@ Jürgen, quedó en ticket.
      elegir y sin la comprobación de iCloud del paso 4, porque el faro dejaba `hasShownWelcomeChooser` en
      `true`. Ahora vuelve a `false`, como en el recorrido normal.
   2. En sesión secundaria, el faro del DUEÑO encaminaba a la visita y el mismatch le hablaba de la cuenta
-     del dueño. La visita ya no lo lee (criterio de `WelcomeRestorePauseLogic`).
+     del dueño. La visita ya no lo lee (criterio de `WelcomeRestoreEmptyOutcome`, `WelcomeRestorePauseLogic` hasta el 2026-09-17).
   3. «Iniciar sesión con…» del mismatch: si se cancela la hoja de Apple/Google, vuelve a las dos salidas; y
      para un mismatch que llegara desde el alta (hoy inalcanzable), suelta la sesión viva y pide otra vez el
      consentimiento del adopt.
