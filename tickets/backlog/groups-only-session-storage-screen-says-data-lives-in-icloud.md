@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "sesiones, ajustes, copy"
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-09-17
 source: "review adversarial de `cloud-migration-offers-the-cloud-to-a-phone-without-app-attest` (2026-09-16)"
 ---
 
@@ -39,6 +39,14 @@ dos no pueden ser verdad a la vez.
   solo-grupos esa sección es `.notApplicable`. Medido que la sección no está; que esa sesión llegue a la tarjeta con una
   cuenta completa es inferido. Si se mantiene la fila (opción 2), el cuerpo se elige con
   `GroupsAssociationLogic.offersDetach`.
+
+- **Un segundo aviso que manda a «Grupos», y una tarjeta que queda cerrada** (2026-09-17,
+  `fresh-start-keeps-a-groups-session-that-migrate-promotes`). En un teléfono que pasó por «Empezar desde cero», «Activar la
+  nube» con una sesión que no abrió el intento y sin cuenta asociada enseña «Esta cuenta puede ser de otra persona», cuyo
+  cuerpo manda a desasociar en «Grupos». En una sesión solo-grupos esa sección no existe, y **ahí nunca hay asociación**
+  (el registrador y la hoja solo asocian con sesión privada), así que en ese teléfono la tarjeta se para siempre, sea de
+  quien sea la sesión. Medido en el código; que un teléfono solo-grupos quede sellado es inferido (hace falta
+  «Empezar desde cero» y luego «Vengo por un grupo»). Con la opción 1 desaparece.
 
 ## Lo que hay que decidir (Jürgen)
 

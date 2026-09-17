@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, settings"
 created: 2026-09-16
+updated: 2026-09-17
 source: "review adversarial de `settings-migrate-to-cloud-adopts-silently-instead-of-migrating` (lente de identidad, hallazgo 3), 2026-09-16"
 ---
 
@@ -27,6 +28,15 @@ sea una cuenta que ya tenía finanzas de otra persona. Y «Activar la nube» ya 
   journal, y el arranque pasa por `CloudMigrationController.resumeIfNeeded` → `resume`), pero
   `announceForwardClaimRefusal` ya no tiene el intento en memoria: no cierra la sesión, el aviso sale sin «Usar otra
   cuenta» y con el motivo genérico, «Esa cuenta ya tiene finanzas personales», también si la cuenta volvió a iCloud.
+
+## Lo que cambió el 2026-09-17 (`fresh-start-keeps-a-groups-session-that-migrate-promotes`)
+
+- **En un teléfono que pasó por «Empezar desde cero», esa sesión ya no queda asociada**: el registrador nunca la apuntaba
+  ahí, y desde ese día tampoco el cinturón de la hoja de Grupos (`GroupsAccountAssociation.associate` exige
+  `sessionOpenedByThisSignIn` con el sello).
+- **Y «Activar la nube» la para con otro aviso**: «Esta cuenta puede ser de otra persona», también cuando la abrió un
+  intento anterior de la persona que migra. La salida es desasociarla en «Grupos» y volver a firmar. En un teléfono sin
+  sello todo sigue como describe este ticket.
 
 ## Opciones, sin decidir
 
