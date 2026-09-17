@@ -5,10 +5,51 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-17 (Lima)
 
-**Rama** `2.1` — Merge #193: **Restaurar ya no dice «no encontramos tus datos» cuando lo que falló fue la comprobación.**
+**Rama** `2.1` — Merge #194: **Si la sesión caduca en «Volver a iCloud», la barra ya no se queda muda.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#193 · Restaurar dice la verdad cuando no se pudo comprobar la nube)
+## Esta sesión (#194 · la vuelta a iCloud ya pide volver a entrar)
+
+**Pulsaba «Volver a iCloud» y la barra se paraba al 15 %, al 30 %, al 50 % o al 62 %.** Sin mensaje, con un «Retomar»
+que recibía lo mismo, y mientras tanto el teléfono no sincronizaba. Lo que fallaba era la sesión de la nube, y la
+pantalla no lo decía ni ofrecía volver a entrar. Ahora lo dice —«Tu sesión caducó. Vuelve a entrar para terminar de
+volver a iCloud.»— con un botón, y al entrar **la vuelta sigue donde estaba**. Si la sesión seguía viva, que es el caso
+más común, se arregla sola sin pedir nada.
+
+**Las cuatro fases son anteriores al montaje del espejo, y ninguna es estable:** con ellas journaleadas el motor de la
+nube no corre, así que el aviso de «vuelve a entrar» de Ajustes **no podía salir** —ese exige el runtime en
+`.stoppedUntilSignIn` y lo que se pinta es la tarjeta de progreso—. Y quedarse sin cobertura NO pide volver a entrar:
+lo separa `canRenewSession`, como el canal personal desde el 16-sep.
+
+**La review (cuatro lentes) tumbó cuatro cosas mías, y la primera era de publicación:** copié de `signInToResumeSync`
+un belt que comprueba «¿hay sesión y hay token?», y con un 401 del servidor sobre un token aún vigente los dos son
+ciertos ⇒ **el botón que ofrecía entrar no entraba**, justo en el caso principal del ticket. Las otras tres: la firma
+no estaba atada a la cuenta (con el selector de Google, elegir la de al lado escribía los datos de una persona en la
+cuenta de otra), `isWorking` se tomaba tras el primer `await` y el re-kick de 30 s se colaba, y la caption iba detrás de
+una rama cuyo tope de 300 s la deja encendida a propósito. Además cazó **dos tests míos que no podían fallar**.
+
+**Dos mutantes sobrevivieron y cambiaron el diseño**, que es lo que aportaron: uno era cobertura que faltaba (no había
+ni un test del executor para el drenaje) y el otro era **código que sobraba** — doce líneas de borrado repartidas que
+el vecino cumplía solas, sustituidas por un borrador único.
+
+**Qué te toca:**
+
+1. El **QA en iPhone** de `reverse-before-mount-stays-stuck-with-an-expired-session` (en `qa`): 8 pasos, con staging.
+   **Los que deciden son el 6 y el 7** — sin red y con la sesión buena **no** debe pedir volver a entrar, y entrar con
+   otra cuenta de Google **no** debe retomar la vuelta.
+2. **Decidir `reverse-before-mount-has-no-way-to-abandon-the-return`** (medium): esas cuatro fases salen solo por éxito
+   y la tarjeta no ofrece cancelar en ninguna. Este cambio cierra la última puerta automática que quedaba —quitar la
+   degradación del verify es el criterio 3 del ticket, que aprobaste— sin abrir otra. No es regresión (ese terminal ya
+   llegaba con un abort que lanza sin sesión), pero un `otherLeader` o una cuenta suspendida deja sin salida.
+3. **`NeutralMountWiringTests` está ROJO en `2.1` y no lo canta nadie** — reproducido en un worktree limpio desde
+   `HEAD`, así que no es de este cambio. Es un source-scan de cableado, de los que existen porque su invariante no lo ve
+   ningún test normal. Ticket: `neutral-mount-wiring-scan-is-red-on-2-1`.
+
+Validación: build ×2 · unit **181 casos en 4 suites** tras el rebase, y la suite completa en **7244 casos / 734 suites
+con 1 solo rojo, el preexistente de arriba** · XCUITest 15 en 4 clases · **17 mutantes cazados** · review con 4 lentes ·
+`validate-coverage` OK · `docs/TICKETS.md` igual al disco (466) · **CI verde** (33 min).
+
+## Sesión anterior (#193 · Restaurar dice la verdad cuando no se pudo comprobar la nube)
 
 **Reinstalo Yala —o estreno móvil— y la abro sin conexión.** Hasta hoy, «Restaurar desde iCloud» me contestaba **«No
 encontramos tus datos»** con mi histórico intacto en el servidor. Ahora dice **«No pudimos comprobar tus datos»** y me
@@ -46,7 +87,7 @@ el centinela en 0. Es el flaky ya registrado en `edgecases-extreme-minimum-flaky
 Validación: build ×2 · unit **313 casos en 39 suites** · XCUITest 18 en 5 clases con centinela en 0 · **7 mutantes
 cazados** · review con 3 lentes · `validate-coverage` OK · `docs/TICKETS.md` igual al disco (462) · **CI verde**.
 
-## Sesión anterior (#192 · la sesión en la nube de la persona anterior ya se retira)
+## Antes de eso (#192 · la sesión en la nube de la persona anterior ya se retira)
 
 **Me dan un iPhone donde otra persona usaba Yala: la app ya no usa su cuenta en la nube sin que yo la elija.** La sesión se
 retira por los dos sitios por los que sobrevivía — al «Empezar desde cero», en el mismo gesto que borra los datos, y al
