@@ -4,6 +4,7 @@ status: backlog
 priority: high
 area: "welcome, icloud, restore"
 created: 2026-09-17
+updated: 2026-09-17
 source: "review adversarial de `reinstall-without-network-has-no-cloud-door` (lente de poblaciones), 2026-09-17"
 ---
 
@@ -62,3 +63,15 @@ que es lo normal con un histórico grande — y el desenlace incluye un botón d
 
 - `reinstall-without-network-has-no-cloud-door` — de donde sale; cerró el canal hermano.
 - `restore-start-fresh-keeps-the-imported-corpus` — el otro lado de «Empezar desde cero» aquí.
+
+## Decisión Jürgen (2026-09-17)
+
+**1+3 (lo más robusto entre solo-1 y 1+3):**
+
+1. Distinguir timeout vs vacío con la señal del import — decir «seguimos trayendo tus datos» en vez de negar que existan.
+3. Además, confirmar antes de «Empezar desde cero» en `.notFound` cuando la búsqueda/import no asentó (red de seguridad contra borrado a ciegas).
+
+No ahora: solo subir/adaptar el tope de 90 s (opción 2) como remedio principal.
+
+Cola: no lanzar hasta que cierre el ticket A en curso (`reverse-before-mount-stays-stuck-with-an-expired-session`) — cola en serie.
+
