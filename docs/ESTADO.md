@@ -5,10 +5,39 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-17 (Lima)
 
-**Rama** `2.1` — Merge #191: **Sin red, salir de un grupo ya no dice «Tu sesión caducó».**
+**Rama** `2.1` — Merge #192: **Un iPhone que cambia de dueño ya no deja abierta la cuenta de antes.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#191 · sin red, salir de un grupo ya no dice «Tu sesión caducó»)
+## Esta sesión (#192 · la sesión en la nube de la persona anterior ya se retira)
+
+**Me dan un iPhone donde otra persona usaba Yala: la app ya no usa su cuenta en la nube sin que yo la elija.** La sesión se
+retira por los dos sitios por los que sobrevivía — al «Empezar desde cero», en el mismo gesto que borra los datos, y al
+instalar Yala en un teléfono donde ya estuvo, porque el llavero de iOS sobrevive a borrar la app y las preferencias no.
+Desde ahí ninguna puerta (el Welcome, «Activar Yala completo», la hoja de Grupos, la tarjeta de adopt) puede usarla:
+sencillamente ya no hay sesión que reusar. Es la RAÍZ de lo que #190 empezó a tapar puerta a puerta. Tu decisión del 17-sep,
+«las dos mitades», y quien reinstala su propia app vuelve por «Ya tengo una cuenta → Entrar con Apple/Google».
+
+**El cursor de Grupos se conserva, que es lo que pediste medir:** cerrar la sesión no invierte su signo — está indexado por
+`groupID`, un re-join ya lo resetea, y si el retiro falla es la única barrera que queda.
+
+**La review (tres lentes) tumbó tres cosas mías, y una era de publicación:** `cloudSync.installSeen` nace con este cambio,
+así que está ausente en TODOS los teléfonos del parque — «no hay marca» significaba «primera vez que corre este código», no
+«app recién instalada», y la primera actualización habría cerrado la sesión de todos los usuarios de la nube. Las otras dos:
+sellar el dominio sobre un store vacío se lo comía quien reinstala su PROPIA app (lo midieron dos lentes por separado), y
+consumir el arm en el bootstrap metía hasta 60 s de red delante de la primera pantalla. Además cazó que el sign-out del SDK
+no para su auto-refresh, una quinta puerta de «empiezo de cero» sin cubrir, y tres aserciones que no podían fallar.
+
+**Qué te toca:**
+
+1. El **QA en iPhone** de `previous-person-cloud-session-survives-fresh-start-and-reinstall` (en `qa`): 9 pasos. **El paso 4
+   es el que decide si esto se publica** — actualizar el build ENCIMA de una instalación viva NO debe cerrar la sesión.
+2. Decidir `reinstall-without-network-has-no-cloud-door` (medium): tras reinstalar y sin red no hay puerta a la nube, y el
+   mensaje que sale dice «no encontramos tus datos» con los datos intactos. Tres opciones en el ticket.
+
+Validación: build ×2 · unit 243 casos en 26 suites · XCUITest 26 en 7 clases con centinela en 0 · **19 mutantes cazados** ·
+review con 3 lentes · `validate-coverage` OK · `docs/TICKETS.md` igual al disco (452) · **CI verde** (tests 35 min).
+
+## Sesión anterior (#191 · sin red, salir de un grupo ya no dice «Tu sesión caducó»)
 
 **Sin conexión y con el token caducado, las acciones de Grupos ya no dicen «Tu sesión caducó».** Salir de un grupo dice «No
 pudimos completar tu salida del grupo. Vuelve a intentarlo en un momento.». Aceptar una invitación ya no abre la hoja de
@@ -31,7 +60,7 @@ ticket propio (`groups-create-approve-remove-show-a-raw-rpc-error`, low).
 Validación: build ×2 · unit 7215 casos en 732 suites · XCUITest 19 en 5 clases con centinela en 0 · 11 mutantes cazados ·
 review con 3 lentes · `validate-coverage` OK · `docs/TICKETS.md` igual al disco (450) · **CI verde** (tests 32 min).
 
-## Sesión anterior (#190 · «Activar la nube» ya no usa la cuenta que dejó abierta la persona anterior)
+## Dos sesiones atrás (#190 · «Activar la nube» ya no usa la cuenta que dejó abierta la persona anterior)
 
 **En un iPhone que pasó por «Empezar desde cero», «Activar la nube» ya no promueve la cuenta que dejó abierta la persona
 anterior.** Sale «Esta cuenta puede ser de otra persona» antes del consentimiento, y la salida es desasociarla en «Grupos» y
