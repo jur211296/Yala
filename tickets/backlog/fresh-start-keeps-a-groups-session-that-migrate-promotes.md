@@ -48,3 +48,9 @@ nuevo, migrar— se dé en campo.
 - [ ] Tras «Empiezo de cero», «Activar la nube» no puede promover la cuenta de grupos de la persona anterior sin que
       la persona nueva la elija.
 - [ ] Quien migra con su propia cuenta de grupos asociada sigue pudiendo promoverla.
+
+## Decisión Jürgen (noche 2026-09-16, vía Frank)
+
+**No promover una sesión de grupos preexistente:** `nil → promover` solo si la sesión la abrió este intento (la persona eligió la cuenta). Si la sesión venía de antes (p. ej. tras «Empiezo de cero» sin cerrar nube), pedir que elija o bloquear — no subir finanzas nuevas a la cuenta de la persona anterior.
+
+**Aplazado a medición:** cerrar la sesión nube en «Empiezo de cero» (riesgo cursor/outbox Grupos). **No basta solo** nombrar el correo en la tarjeta.
