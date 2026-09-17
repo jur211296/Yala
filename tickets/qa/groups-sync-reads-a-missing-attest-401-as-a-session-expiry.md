@@ -4,7 +4,7 @@ status: qa
 priority: medium
 area: "groups, sesión, attest"
 created: 2026-09-15
-updated: 2026-09-15
+updated: 2026-09-16
 source: "medición de `groups-push-reads-an-offline-token-refresh-as-a-session-expiry` (2026-09-15)"
 ---
 
@@ -93,8 +93,10 @@ Con el JWT caducado de verdad (`yala_attest_invalid`) no cambia nada: se sigue p
 
 **Lo que queda fuera.**
 
-- El canal personal (`SyncPushClient`, `SyncPullClient`, `PrefsSyncClient`) sigue leyendo todo 401 como caducada.
-  Anotado en `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`.
+- El canal personal (`SyncPushClient`, `SyncPullClient`, `PrefsSyncClient`) seguía leyendo todo 401 como caducada. Desde
+  el 2026-09-16 lee pasajero el `yala_attest_required` (el resto de 401 sigue siendo caducada), **sin sumar a la racha**:
+  allí la puerta del motor ya consiguió el token, así que el 401 no habla del teléfono
+  (`personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`).
 - El texto «espera unos segundos» del cierre pasajero tampoco es cierto para esta población, y sus 45 s de
   reintentos mandan unas 23 subidas que no pueden acertar: `signout-pending-copy-says-wait-seconds-when-offline`.
 - Un token de attest que el servidor ya rechaza sigue guardado hasta que caduca en el reloj del teléfono:

@@ -32,7 +32,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (438)
+## Index (442)
 
 | id | status | path |
 |---|---|---|
@@ -100,6 +100,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ci-warns-but-does-not-block | backlog | tickets/backlog/ci-warns-but-does-not-block.md |
 | ci-workflow-cites-missing-testing-strategy | backlog | tickets/backlog/ci-workflow-cites-missing-testing-strategy.md |
 | claim-promotion-lost-response-blocks-the-retry | backlog | tickets/backlog/claim-promotion-lost-response-blocks-the-retry.md |
+| cloud-attest-notice-does-not-cover-a-gateway-rejected-token | backlog | tickets/backlog/cloud-attest-notice-does-not-cover-a-gateway-rejected-token.md |
 | cloud-engine-can-start-with-a-reverse-abort-pending | backlog | tickets/backlog/cloud-engine-can-start-with-a-reverse-abort-pending.md |
 | cloud-fx-rates-blob-two-faces | done | tickets/done/cloud-fx-rates-blob-two-faces.md |
 | cloud-hydration-spinner-never-gives-up-without-attest | backlog | tickets/backlog/cloud-hydration-spinner-never-gives-up-without-attest.md |
@@ -115,6 +116,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-signout-collapses-every-groups-transient-into-permanent | qa | tickets/qa/cloud-signout-collapses-every-groups-transient-into-permanent.md |
 | cloud-signout-collapses-the-personal-push-all-reason-into-permanent | backlog | tickets/backlog/cloud-signout-collapses-the-personal-push-all-reason-into-permanent.md |
 | cloud-signout-drops-unsynced-preference-changes-without-counting-them | backlog | tickets/backlog/cloud-signout-drops-unsynced-preference-changes-without-counting-them.md |
+| cloud-sync-status-says-all-synced-with-changes-still-pending | backlog | tickets/backlog/cloud-sync-status-says-all-synced-with-changes-still-pending.md |
 | cloud-tab-does-not-say-this-phone-cannot-sync-personal-data | done | tickets/done/cloud-tab-does-not-say-this-phone-cannot-sync-personal-data.md |
 | cloud-tx-epoch-orphan-relations | backlog | tickets/backlog/cloud-tx-epoch-orphan-relations.md |
 | cloudsync-account-currency-orphans-receiver-history | backlog | tickets/backlog/cloudsync-account-currency-orphans-receiver-history.md |
@@ -317,7 +319,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | panel-defaults-four-sections-four-widgets | done | tickets/done/panel-defaults-four-sections-four-widgets.md |
 | panel-lee-el-filtro-de-cuentas-en-singular-fuera-del-saldo | backlog | tickets/backlog/panel-lee-el-filtro-de-cuentas-en-singular-fuera-del-saldo.md |
 | panel-no-recalcula-al-llegar-tasas-nuevas | backlog | tickets/backlog/panel-no-recalcula-al-llegar-tasas-nuevas.md |
-| personal-sync-reads-an-offline-token-refresh-as-a-session-expiry | backlog | tickets/backlog/personal-sync-reads-an-offline-token-refresh-as-a-session-expiry.md |
+| personal-sync-does-not-retry-a-401-with-a-forced-token-refresh | backlog | tickets/backlog/personal-sync-does-not-retry-a-401-with-a-forced-token-refresh.md |
+| personal-sync-reads-an-offline-token-refresh-as-a-session-expiry | qa | tickets/qa/personal-sync-reads-an-offline-token-refresh-as-a-session-expiry.md |
 | pie-header-total-unmarked | backlog | tickets/backlog/pie-header-total-unmarked.md |
 | preferred-currency-has-three-different-defaults | backlog | tickets/backlog/preferred-currency-has-three-different-defaults.md |
 | prefs-domain-per-secondary-session | discarded | tickets/discarded/prefs-domain-per-secondary-session.md |
@@ -425,6 +428,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | storage-groups-section-stays-active-during-the-migrate-check | backlog | tickets/backlog/storage-groups-section-stays-active-during-the-migrate-check.md |
 | storage-mode-is-a-proxy-for-the-mirror-in-the-wipe-signal | backlog | tickets/backlog/storage-mode-is-a-proxy-for-the-mirror-in-the-wipe-signal.md |
 | storage-row-gate-comment-says-rollout-zero | backlog | tickets/backlog/storage-row-gate-comment-says-rollout-zero.md |
+| storage-sync-sign-in-count-has-no-plural | backlog | tickets/backlog/storage-sync-sign-in-count-has-no-plural.md |
 | storekit-appgroup-siri-pro-gate | done | tickets/done/storekit-appgroup-siri-pro-gate.md |
 | subscription-success-without-pro | done | tickets/done/subscription-success-without-pro.md |
 | superseding-intent-can-strand-the-sign-out-coordinator | backlog | tickets/backlog/superseding-intent-can-strand-the-sign-out-coordinator.md |
