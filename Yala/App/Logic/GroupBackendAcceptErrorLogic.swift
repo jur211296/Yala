@@ -23,11 +23,15 @@ nonisolated enum GroupBackendAcceptErrorLogic {
     enum ErrorKind: Equatable {
         /// Token inválido/expirado/revocado/agotado → copy `groups.invite.linkInvalid*`.
         case invalidInvite
-        /// Sesión expirada / ausente → re-presentar sign-in; el reconciler reintenta al volver.
+        /// La sesión no sirve (el SDK la borró, o el servidor rechazó su token) → re-presentar sign-in; el reconciler
+        /// reintenta al volver. Con el token rechazado y la sesión aún guardada, el cinturón de `GroupsSignInView` cierra la
+        /// hoja sin botones y vuelve a intentarlo: `groups-actions-do-not-retry-a-401-with-a-forced-token-refresh`.
         case sessionRequired
         /// El backend rechazó por permisos (`yala_not_authorized`).
         case notAuthorized
-        /// Offline / 5xx / transporte → NO alerta permanente; el reconciler reintenta.
+        /// Offline / 5xx / transporte → NO alerta permanente; el reconciler reintenta. Desde el 2026-09-17 también el
+        /// token que no se renovó con la sesión guardada (`GroupsMembershipClient.call`): antes abría el inicio de
+        /// sesión, que sin red no arregla nada, igual que el 401 de App Attest hasta el 2026-09-15.
         case transient
         /// El KILL-SWITCH server-side apagó el canal (403 `yala_groups_disabled`). NO es permanente: el
         /// enlace es bueno y el canal se levantará sin que el usuario haga nada, así que el intent se

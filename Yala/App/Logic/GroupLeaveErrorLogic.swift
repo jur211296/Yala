@@ -26,11 +26,14 @@ nonisolated enum GroupLeaveErrorLogic {
         /// Salir es imposible por diseño y reintentar no sirve: la salida que le queda es eliminar el
         /// grupo. Copy `groups.errors.ownerCannotLeave`.
         case ownedByCurrentUser
-        /// Sesión expirada o ausente. El usuario SÍ tiene algo que hacer —volver a iniciar sesión—, y
-        /// por eso no se mezcla con `.retryLater`. Copy `groups.errors.sessionExpired`.
+        /// La sesión no sirve: el SDK la borró, o el servidor rechazó su token (un 401 que no es de App Attest; con la
+        /// sesión aún guardada, volver a entrar no está a mano: `groups-actions-do-not-retry-a-401-with-a-forced-token-refresh`).
+        /// Por eso no se mezcla con `.retryLater`. Copy `groups.errors.sessionExpired`.
         case sessionExpired
-        /// Transitorio: red, 5xx, el KILL-SWITCH del canal o, desde el 2026-09-15, App Attest ausente (401
-        /// `yala_attest_required`). No es culpa del usuario y el estado suele arreglarse solo, así que el copy
+        /// Transitorio: red, 5xx, el KILL-SWITCH del canal, desde el 2026-09-15 App Attest ausente (401
+        /// `yala_attest_required`) y desde el 2026-09-17 el token que no se renovó con la sesión guardada
+        /// (`GroupsMembershipClient.call`, `status: -1`), que hasta entonces decía «Tu sesión caducó» a quien solo
+        /// estaba sin conexión. No es culpa del usuario y el estado suele arreglarse solo, así que el copy
         /// pide volver a intentarlo en un momento — el mismo criterio que ya se tomó para `channelDisabled` en el
         /// enlace de invitación (`groups.invite.channelUnavailable`). Un teléfono que no recupera nunca el attest
         /// no se arregla solo, y a partir de las 24 h deja de caer aquí: `.deviceCannotSyncGroups`.

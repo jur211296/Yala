@@ -2154,9 +2154,11 @@ enum L10n {
             /// kill-switch del canal). Reintentar más tarde sí tiene sentido, y el mismo criterio que
             /// `groups.invite.channelUnavailable` en el enlace de invitación: no se culpa al usuario.
             static var leaveUnavailable: String { ls("groups.errors.leaveUnavailable", comment: "") }
-            /// El token de sesión expiró o falta (`GroupsRPCError.sessionExpired`). Acción concreta:
-            /// volver a iniciar sesión. Se separa de `leaveUnavailable` porque aquí el usuario SÍ
-            /// tiene algo que hacer.
+            /// La sesión no sirve (`GroupsRPCError.sessionExpired`): el SDK la borró, o el servidor
+            /// rechazó su token. Acción concreta: volver a iniciar sesión. Se separa de `leaveUnavailable`
+            /// porque aquí el usuario SÍ tiene algo que hacer. Un token que no se renovó con la sesión
+            /// guardada, casi siempre por falta de red, ya no llega aquí desde el 2026-09-17: es
+            /// `leaveUnavailable` (`GroupsMembershipClient.call`).
             static var sessionExpired: String { ls("groups.errors.sessionExpired", comment: "") }
             /// El canal de Grupos está apagado a propósito (403 `yala_groups_disabled`) y quedan cambios
             /// sin subir, así que el gesto que los necesitaba —cerrar sesión, o soltar la cuenta de

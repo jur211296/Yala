@@ -3,7 +3,7 @@
 //  YalaTests / CloudSync
 //
 //  Cliente TIPADO de los RPCs de membresía del canal Grupos → backend (incremento G3, DARK). Cliente PURO
-//  de red → sin `ModelContext` (no usa `makeTestContext`; `.serialized` solo por la tienda global de la racha de App Attest, que tres tests
+//  de red → sin `ModelContext` (no usa `makeTestContext`; `.serialized` solo por la tienda global de la racha de App Attest, que cuatro tests
 //  aíslan con `IsolatedAttestStreak`): stub HTTP inyectado,
 //  aserción del REQUEST enviado (URL exacta {base}/groups/rpc/{fn}, body campo a campo — lección d49d2e47 —,
 //  Authorization), decode de los structs de resultado y mapeo de errores.
@@ -26,10 +26,14 @@ struct GroupsMembershipClientTests {
         GroupsSyncClientTests.StubHTTPSession(responseData: Data(json.utf8), statusCode: status)
     }
 
+    /// `canRenewSession` va EXPLÍCITO y en `false` por defecto: con el default del init el testigo leería el Keychain
+    /// del simulador, y un test de token nulo dependería de si alguien firmó allí (docblock de
+    /// `GroupsMembershipClient.canRenewSession`).
     private func client(
-        _ session: GroupsSyncClientTests.StubHTTPSession, token: String? = "jwt-token"
+        _ session: GroupsSyncClientTests.StubHTTPSession, token: String? = "jwt-token", canRenewSession: Bool = false
     ) -> GroupsMembershipClient {
-        let client = GroupsMembershipClient(baseURL: base, tokenProvider: { token }, urlSession: session)
+        let client = GroupsMembershipClient(
+            baseURL: base, tokenProvider: { token }, canRenewSession: { canRenewSession }, urlSession: session)
         // B2: el retry de transitorios ([R5]) duerme 1s/3s con el sleeper real — aquí se anula (regla:
         // jamás sleeps reales en tests). Los outcomes finales de estos tests no cambian (el retry agota
         // contra el mismo stub); el comportamiento del retry se cubre en GroupsSyncHardeningTests.
@@ -379,12 +383,136 @@ struct GroupsMembershipClientTests {
         #expect(!GatewayErrorEnvelope.isGroupsChannelDisabled(Data("no soy json".utf8)))
     }
 
-    @Test func nilToken_isSessionExpired_withoutRequest() async throws {
+    // MARK: - Token que no llega: sesión guardada o borrada (2026-09-17)
+
+    /// Cuenta las veces que el cliente pide el token, y deja que el test decida qué devuelve cada una.
+    final class TokenSequence: @unchecked Sendable {
+        private var tokens: [String?]
+        private(set) var asked = 0
+        init(_ tokens: [String?]) { self.tokens = tokens }
+        func next() -> String? {
+            asked += 1
+            return tokens.count > 1 ? tokens.removeFirst() : (tokens.first ?? nil)
+        }
+    }
+
+    /// Estado mutable que los closures del cliente comparten con el test (una `var` capturada no vale: los closures
+    /// `@MainActor` son `Sendable`).
+    final class Box<Value>: @unchecked Sendable {
+        var value: Value
+        init(_ value: Value) { self.value = value }
+    }
+
+    /// El SDK BORRÓ la sesión: el servidor de auth rechazó la renovación con un código terminal. Eso sí es sesión
+    /// caducada, sin petición y sin reintento (`callWithRetry` no reintenta `.sessionExpired`).
+    @Test func nilToken_withTheSessionRemoved_isSessionExpired_withoutRequest() async throws {
         let session = stub(#"{}"#)
+        let tokens = TokenSequence([nil])
+        let client = GroupsMembershipClient(
+            baseURL: base, tokenProvider: { tokens.next() }, canRenewSession: { false }, urlSession: session)
+        client.sleeper = { _ in }
+
         await #expect(throws: GroupsRPCError.sessionExpired) {
-            _ = try await self.client(session, token: nil).leaveGroup(groupID: "g")
+            _ = try await client.leaveGroup(groupID: "g")
         }
         #expect(session.callCount == 0)   // NUNCA se emitió el request sin token
+        #expect(tokens.asked == 1)
+    }
+
+    /// **El caso del ticket.** Sin red y con el token caducado, la renovación falla y el SDK CONSERVA la sesión. No es
+    /// sesión caducada: `.transient(status: -1)`, sin petición y SIN el reintento corto, aunque `leave_group` reintenta
+    /// cualquier otro pasajero (`rpcRetry_idempotentTransportFailure_retries`). La renovación ya la reintenta el SDK, y
+    /// repetirla aquí triplicaba la espera (review adversarial del 2026-09-17). Hasta ese día esto era `.sessionExpired`, y
+    /// salir de un grupo decía «Tu sesión caducó».
+    @Test func nilToken_withTheSessionKept_isTransient_withoutRequestNorRetry() async throws {
+        let session = stub(#"{}"#)
+        let tokens = TokenSequence([nil])
+        let client = GroupsMembershipClient(
+            baseURL: base, tokenProvider: { tokens.next() }, canRenewSession: { true }, urlSession: session)
+        let delays = Box<[TimeInterval]>([])
+        client.sleeper = { delays.value.append($0) }
+
+        await #expect(throws: GroupsRPCError.transient(status: -1)) {
+            _ = try await client.leaveGroup(groupID: "g")
+        }
+        #expect(session.callCount == 0)
+        #expect(tokens.asked == 1)
+        #expect(delays.value.isEmpty)
+    }
+
+    /// El testigo se lee DESPUÉS de pedir el token, porque el SDK borra la sesión antes de lanzar. Leído antes, la sesión
+    /// que la renovación acaba de invalidar contaría como guardada, y a quien ya no tiene sesión salir de un grupo le diría
+    /// «Vuelve a intentarlo en un momento» en vez de pedirle que vuelva a entrar. El conteo de tokens y de esperas no es
+    /// adorno: con un reintento de por medio, el segundo intento leería el testigo ya en `false` y el mutante saldría
+    /// verde (lo cazó la review).
+    @Test func nilToken_readsTheWitnessAfterAskingForTheToken() async throws {
+        let session = stub(#"{}"#)
+        let stored = Box(true)
+        let asked = Box(0)
+        let client = GroupsMembershipClient(
+            baseURL: base,
+            tokenProvider: {
+                asked.value += 1
+                stored.value = false   // la renovación recibió un rechazo terminal y el SDK borró la sesión
+                return nil
+            },
+            canRenewSession: { stored.value },
+            urlSession: session)
+        let delays = Box<[TimeInterval]>([])
+        client.sleeper = { delays.value.append($0) }
+
+        await #expect(throws: GroupsRPCError.sessionExpired) {
+            _ = try await client.leaveGroup(groupID: "g")
+        }
+        #expect(session.callCount == 0)
+        #expect(asked.value == 1)
+        #expect(delays.value.isEmpty)
+    }
+
+    /// Los one-shots creadores tampoco reintentan: un solo intento y sin petición, así que no hay ambigüedad «quizá se
+    /// aplicó en el servidor».
+    @Test func nilToken_withTheSessionKept_oneShotsDoNotRetry() async throws {
+        let session = stub(#"{}"#)
+        let tokens = TokenSequence([nil])
+        let client = GroupsMembershipClient(
+            baseURL: base, tokenProvider: { tokens.next() }, canRenewSession: { true }, urlSession: session)
+        let delays = Box<[TimeInterval]>([])
+        client.sleeper = { delays.value.append($0) }
+
+        await #expect(throws: GroupsRPCError.transient(status: -1)) {
+            _ = try await client.createGroup(
+                groupID: "SplitGroup-Z", name: "Trip", currencyCode: "USD", iconName: "car.fill",
+                colorHex: "#112233", displayName: "Alice", defaultSplitType: "equal",
+                simplifyDebts: false, showDebtsInSingleCurrency: false, membersCanInvite: false)
+        }
+        await #expect(throws: GroupsRPCError.transient(status: -1)) {
+            _ = try await client.createInvite(groupID: "g-1", ttlSeconds: 3600, maxUses: nil)
+        }
+        #expect(session.callCount == 0)
+        #expect(tokens.asked == 2)
+        #expect(delays.value.isEmpty)
+    }
+
+    /// El token que no llega no es una palabra del servidor sobre App Attest, así que no toca la racha del teléfono, en
+    /// ninguna de las dos direcciones. Sumarla haría que, a las 24 h, salir de un grupo le dijera «Este teléfono no puede
+    /// sincronizar tus grupos» a quien solo estuvo sin red; borrarla escondería el aviso a quien de verdad no atesta. Solo
+    /// cuentan el 401 `yala_attest_required` y el 200 (`GroupsAttestStreakStore`). La racha sembrada es terminal y su último
+    /// rechazo contó hace dos horas, así que un rechazo nuevo SÍ sumaría.
+    @Test func nilToken_doesNotTouchTheAttestStreak() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        try racha.seedTerminal()
+        let antes = try #require(GroupsAttestStreakStore.current())
+
+        for sesionGuardada in [true, false] {
+            let session = stub(#"{}"#)
+            await #expect(throws: (any Error).self) {
+                _ = try await self.client(session, token: nil, canRenewSession: sesionGuardada).leaveGroup(groupID: "g")
+            }
+            #expect(session.callCount == 0)
+        }
+
+        #expect(GroupsAttestStreakStore.current() == antes)
+        #expect(GroupsAttestStreakStore.isTerminal())
     }
 
     // MARK: - El número que ve el usuario ↔ el caso del enum

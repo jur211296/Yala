@@ -190,7 +190,9 @@ final class GroupsAccountAssociation {
     /// `fresh-start-keeps-a-groups-session-that-migrate-promotes`). «Empezar desde cero» no cierra la sesión en la nube, así
     /// que una que ya estaba abierta puede ser de la persona anterior. Apuntarla le daba a la puerta de «Migrar a la nube» un
     /// `true` que promovía esa cuenta con las finanzas de la persona nueva. Pasaba por el cinturón de `GroupsSignInView`: una
-    /// invitación que se queda sin token re-presenta la hoja, y la hoja reusa la sesión viva sin enseñar botones. Es la misma
+    /// unión por invitación que vuelve pidiendo sesión con la sesión aún guardada re-presenta la hoja, y la hoja reusa la sesión
+    /// viva sin enseñar botones. Hoy llega ahí con un 401 del gateway; hasta el 2026-09-17 también llegaba con el token que no
+    /// se renovaba sin red (`groups-actions-read-an-offline-token-refresh-as-a-session-expiry`). Es la misma
     /// regla que ya cumplía `GroupsAssociationRegistrar`, puesta en el escritor para que no dependa de cada llamador.
     ///
     /// - Parameter sessionOpenedByThisSignIn: la sesión la abrió el gesto que asocia, así que la persona eligió la cuenta.
