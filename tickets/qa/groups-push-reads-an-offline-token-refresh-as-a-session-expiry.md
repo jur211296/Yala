@@ -107,7 +107,7 @@ para: reintenta sola y sube en su siguiente intento.
 **Lo que queda, con ticket:**
 
 - `groups-actions-read-an-offline-token-refresh-as-a-session-expiry` — salir de un grupo sin red sigue diciendo «Tu
-  sesión caducó».
+  sesión caducó» (en `qa` desde el 2026-09-17).
 - `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry` — el canal personal, y con él Grupos en `.cloud`
   (en `qa` desde el 2026-09-16).
 - `signout-pending-copy-says-wait-seconds-when-offline` — el texto y la espera de 45 s sin red.

@@ -224,8 +224,9 @@ final class CloudAuthService: NSObject {
     ///
     /// **Y el contrato inverso, desde el 2026-09-15: NUNCA `true` tras un refresh terminal.** El canal de Grupos
     /// lo lee cuando el token no llega, para separar «sin conexión» de «sesión caducada»
-    /// (`GroupsSyncClient.sdkRemovedTheSession`), y desde el 2026-09-16 también el personal: `SyncPushClient`,
-    /// `SyncPullClient`, `PrefsSyncClient` y `BornCloudSignUpService`, por `LiveCloudSessionProvider`. Si siguiera en
+    /// (`GroupsSyncClient.sdkRemovedTheSession`), desde el 2026-09-16 también el personal: `SyncPushClient`,
+    /// `SyncPullClient`, `PrefsSyncClient` y `BornCloudSignUpService`, por `LiveCloudSessionProvider`, y desde el
+    /// 2026-09-17 las acciones de Grupos (`GroupsMembershipClient.call`: salir, unirse, crear, aprobar…). Si siguiera en
     /// `true` con la sesión muerta, esos canales la leerían pasajera y reintentarían con su backoff en vez de pedir
     /// volver a entrar. Hoy lo garantiza el SDK, que borra
     /// la sesión antes de lanzar, y lo fija `SupabaseSessionRenewalContractTests`. Sin el seam de `hasSession`, a

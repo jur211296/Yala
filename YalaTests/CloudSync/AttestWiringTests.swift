@@ -228,6 +228,46 @@ struct AttestWiringTests {
         }
     }
 
+    /// **El mismo testigo en las acciones de Grupos, con el trato contrario** (2026-09-17, ticket
+    /// `groups-actions-read-an-offline-token-refresh-as-a-session-expiry`). `GroupsMembershipClient` separa «sin conexión»
+    /// de «sesión caducada» con `canRenewSession`, pero su default ES el vivo (`CloudAuthService.shared.canRenewSession`, el
+    /// singleton del que sale también su token por defecto), así que la red es la contraria de la del canal personal:
+    /// **ninguna construcción de producción lo pasa**, y la firma del init conserva ese default. Una construcción con
+    /// `canRenewSession: { false }` —o con `hasSession`, copiado del `sessionCheck` del servicio— volvería al bug en su
+    /// pantalla sin un rojo: los tests de comportamiento inyectan el testigo. Lo pidió la review adversarial.
+    @Test func groupsMembershipConstructions_inheritTheLiveSessionWitness() throws {
+        var total = 0
+        for (path, text) in Self.productionSources() {
+            for site in Self.constructions(of: "GroupsMembershipClient", in: text) {
+                total += 1
+                #expect(!site.contains("canRenewSession"),
+                        """
+                        \(path): `GroupsMembershipClient` recibe su propio `canRenewSession`. Producción tiene que heredar el \
+                        default vivo, o sin red y con el token vencido esa pantalla vuelve a decir «Tu sesión caducó».
+                        Construcción encontrada: \(site.prefix(200))
+                        """)
+            }
+        }
+        #expect(total == 8, "Se esperaban 8 construcciones de `GroupsMembershipClient` y se encontraron \(total).")
+
+        // Y el default de la firma, ENTERA y en orden: un `contains` de la línea suelta pasaría con el parámetro fuera
+        // del init.
+        let url = Self.repoRoot.appendingPathComponent("Yala/Services/CloudSync/Groups/GroupsMembershipClient.swift")
+        let lines = try String(contentsOf: url, encoding: .utf8)
+            .components(separatedBy: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
+        let start = try #require(lines.firstIndex(of: "init("))
+        let end = try #require(lines[start...].firstIndex(of: ") {"))
+        #expect(Array(lines[(start + 1)..<end]) == [
+            "baseURL: URL = ProxyConfig.baseURL,",
+            "tokenProvider: @escaping @MainActor () async -> String? = { await CloudAuthService.shared.accessToken() },",
+            "canRenewSession: @escaping @MainActor () -> Bool = { CloudAuthService.shared.canRenewSession },",
+            "attestProvider: @escaping @MainActor () async -> String? = { nil },",
+            "urlSession: SyncHTTPSession = URLSession.shared",
+        ])
+        #expect(lines[end...].prefix(8).contains("self.canRenewSession = canRenewSession"),
+                "el init tiene que guardar el testigo que recibe, no una constante")
+    }
+
     /// El proveedor vive en un sitio que se encuentra buscando «attest». Estaba anidado en
     /// `AccountDeletionService.Dependencies.liveAttest` —dentro del servicio de BORRADO DE CUENTAS—, que es
     /// la razón más probable de que seis sitios no lo encontraran. Si alguien lo devuelve ahí, esto

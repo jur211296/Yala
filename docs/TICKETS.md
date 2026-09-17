@@ -32,7 +32,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (446)
+## Index (450)
 
 | id | status | path |
 |---|---|---|
@@ -209,7 +209,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | group-joiner-flag-consumers-still-narrow | done | tickets/done/group-joiner-flag-consumers-still-narrow.md |
 | group-notif-credits-payer-not-editor | done | tickets/done/group-notif-credits-payer-not-editor.md |
 | groups-account-association-in-storage-row | done | tickets/done/groups-account-association-in-storage-row.md |
-| groups-actions-read-an-offline-token-refresh-as-a-session-expiry | backlog | tickets/backlog/groups-actions-read-an-offline-token-refresh-as-a-session-expiry.md |
+| groups-actions-do-not-retry-a-401-with-a-forced-token-refresh | backlog | tickets/backlog/groups-actions-do-not-retry-a-401-with-a-forced-token-refresh.md |
+| groups-actions-read-an-offline-token-refresh-as-a-session-expiry | qa | tickets/qa/groups-actions-read-an-offline-token-refresh-as-a-session-expiry.md |
 | groups-approval-banner-stays | done | tickets/done/groups-approval-banner-stays.md |
 | groups-archived-group-rejects-join | qa | tickets/qa/groups-archived-group-rejects-join.md |
 | groups-archived-still-accepts-changes | backlog | tickets/backlog/groups-archived-still-accepts-changes.md |
@@ -222,6 +223,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-cloud-identity-loss-on-migrate | discarded | tickets/discarded/groups-cloud-identity-loss-on-migrate.md |
 | groups-cloud-mode-hardening-v1 | discarded | tickets/discarded/groups-cloud-mode-hardening-v1.md |
 | groups-consent-door-spec | qa | tickets/qa/groups-consent-door-spec.md |
+| groups-create-approve-remove-show-a-raw-rpc-error | backlog | tickets/backlog/groups-create-approve-remove-show-a-raw-rpc-error.md |
 | groups-deleted-group-detail-stays-open | done | tickets/done/groups-deleted-group-detail-stays-open.md |
 | groups-detach-ledger-has-no-exit | backlog | tickets/backlog/groups-detach-ledger-has-no-exit.md |
 | groups-detach-save-breadcrumb-never-closes-on-throw | backlog | tickets/backlog/groups-detach-save-breadcrumb-never-closes-on-throw.md |
@@ -239,6 +241,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-invite-skips-unirme-sheet-if-onboarded | qa | tickets/qa/groups-invite-skips-unirme-sheet-if-onboarded.md |
 | groups-join-intent-expires-silently-after-transient-failures | backlog | tickets/backlog/groups-join-intent-expires-silently-after-transient-failures.md |
 | groups-join-intent-reconciler | blocked | tickets/blocked/groups-join-intent-reconciler.md |
+| groups-join-is-not-retried-when-the-network-returns | backlog | tickets/backlog/groups-join-is-not-retried-when-the-network-returns.md |
+| groups-join-reconcile-can-clear-an-invite-while-its-join-is-in-flight | backlog | tickets/backlog/groups-join-reconcile-can-clear-an-invite-while-its-join-is-in-flight.md |
 | groups-killswitch-403-blocks-detach-forever | qa | tickets/qa/groups-killswitch-403-blocks-detach-forever.md |
 | groups-leave-rpc-error-10 | qa | tickets/qa/groups-leave-rpc-error-10.md |
 | groups-log-expense-via-chat-voice | backlog | tickets/backlog/groups-log-expense-via-chat-voice.md |

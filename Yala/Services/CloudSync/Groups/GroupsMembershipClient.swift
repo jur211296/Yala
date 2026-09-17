@@ -8,7 +8,7 @@
 //  RPC SECURITY DEFINER de Postgres (`supabase-groups-staging.ddl`) y sanitiza los errores a un envelope
 //  `{error:{message, type:"yala_rpc_error", code}}`.
 //
-//  Molde de red de `GroupsSyncClient` (init inyectable: baseURL/tokenProvider/attestProvider/urlSession).
+//  Molde de red de `GroupsSyncClient` (init inyectable: baseURL/tokenProvider/canRenewSession/attestProvider/urlSession).
 //  CERO logging de tokens/PII; logs bajo `#if DEBUG`.
 //
 
@@ -21,7 +21,7 @@ import OSLog
 /// `error.message` — ambos llevan el código `yala_*`) a un caso semántico. Un 400 con un código `yala_*`
 /// desconocido → `.permanentRejected` (NUNCA `.transient`: un 400 permanente reintentado sería loop, A5).
 enum GroupsRPCError: Error, Equatable {
-    case sessionExpired          // 401 (salvo `yala_attest_required`, que es `.transient`), o token nil (sin request)
+    case sessionExpired          // 401 (salvo `yala_attest_required`, que es `.transient`), o token nil con la sesión borrada por el SDK (sin request)
     case notAuthorized           // yala_not_authorized
     case invalidInvite           // yala_invalid_invite
     /// yala_group_deleted (g13_03) — el token era VÁLIDO pero el grupo ya no existe. Se separa de
@@ -43,8 +43,10 @@ enum GroupsRPCError: Error, Equatable {
     /// existe porque el device puede tener el percent viejo cacheado hasta 6 h
     /// (`RemoteFlagDecisionLogic.refreshMinInterval`): el cliente cree ON y el servidor ya dice OFF.
     case channelDisabled
-    /// 5xx / no-yala / transporte / respuesta no-HTTP. `status == -1` = error de transporte/no-HTTP. `status == 401`
-    /// = App Attest ausente con la sesión buena (`yala_attest_required`, 2026-09-15): no es sesión caducada.
+    /// 5xx / no-yala / transporte / respuesta no-HTTP. `status == -1` = error de transporte/no-HTTP, y desde el
+    /// 2026-09-17 también el token que no llega con la sesión guardada: la renovación falló, casi siempre sin red, y no
+    /// se hizo la petición (ver `call`). `status == 401` = App Attest ausente con la sesión buena
+    /// (`yala_attest_required`, 2026-09-15): no es sesión caducada.
     case transient(status: Int)
     /// 200 pero el body no decodifica al struct esperado.
     case decoding
@@ -218,6 +220,15 @@ final class GroupsMembershipClient {
 
     private let baseURL: URL
     private let tokenProvider: @MainActor () async -> String?
+    /// ¿Conserva el SDK la sesión guardada? Separa «sin conexión» de «sesión caducada» cuando el token no llega
+    /// (`call`). Default = `CloudAuthService.shared.canRenewSession`, el mismo singleton del que sale el token por
+    /// defecto, y **no** `hasSession`: aquel lleva el seam `-uitest-fake-cloud-session`, que dice «hay sesión» sin
+    /// ninguna guardada. Molde `GroupsSyncClient.canRenewSession`.
+    ///
+    /// **Trampa de tests:** con el default, un test que pase `tokenProvider: { nil }` lee el Keychain del simulador. Si
+    /// alguien firmó allí, el token nulo sale pasajero y el test que esperaba `.sessionExpired` falla. Inyecta el
+    /// testigo explícito.
+    private let canRenewSession: @MainActor () -> Bool
     private let attestProvider: @MainActor () async -> String?
     private let urlSession: SyncHTTPSession
     private let logger = Logger(subsystem: "com.yala.app", category: "GroupsRPC")
@@ -239,11 +250,13 @@ final class GroupsMembershipClient {
     init(
         baseURL: URL = ProxyConfig.baseURL,
         tokenProvider: @escaping @MainActor () async -> String? = { await CloudAuthService.shared.accessToken() },
+        canRenewSession: @escaping @MainActor () -> Bool = { CloudAuthService.shared.canRenewSession },
         attestProvider: @escaping @MainActor () async -> String? = { nil },
         urlSession: SyncHTTPSession = URLSession.shared
     ) {
         self.baseURL = baseURL
         self.tokenProvider = tokenProvider
+        self.canRenewSession = canRenewSession
         self.attestProvider = attestProvider
         self.urlSession = urlSession
     }
@@ -290,12 +303,21 @@ final class GroupsMembershipClient {
     /// reintentan NINGÚN `.transient` — ni transporte -1 ni 5xx/502 con respuesta (ambigüedad
     /// ack-perdido-post-COMMIT en ambos saltos; ver la tabla). Un `.transient` que agota el presupuesto
     /// SUBE al call-site tal cual — el caller NO debe loopearlo (los reintentos de nivel superior son
-    /// responsabilidad del reconciler/UI, no de este cliente).
+    /// responsabilidad del reconciler/UI, no de este cliente). El token que no se renueva con la sesión guardada
+    /// tampoco se reintenta, en ningún RPC: ver su `catch`.
     private func callWithRetry(fn: String, args: [String: Any]) async throws -> Data {
         var attempt = 0
         while true {
             do {
                 return try await call(fn: fn, args: args)
+            } catch is TokenNotRenewed {
+                // Sale al momento como pasajero. La renovación ya es una petición al servidor de auth que el SDK reintenta
+                // dos veces (supabase-swift 2.50.0: `RetryRequestInterceptor`, con POST añadido en `Auth/Internal/APIClient`),
+                // así que reintentarla aquí triplicaba la espera sin apenas opciones de que entrara: unos 7 s sin red en vez
+                // de ~1 s, y hasta ~9 min en vez de ~3 con una red que no responde (leído en el SDK, sin ejecutar). Lo cazó la
+                // review adversarial del 2026-09-17. Sin red esperar no sube nada: la persona reintenta con el gesto y los
+                // llamadores de fondo, con su propia cadencia.
+                throw GroupsRPCError.transient(status: -1)
             } catch let error as GroupsRPCError {
                 guard case .transient(let status) = error else { throw error }
                 // One-shot creador → NUNCA reintentar un transitorio (token/estado huérfano server-side).
@@ -313,11 +335,27 @@ final class GroupsMembershipClient {
 
     // MARK: - Núcleo de red (POST /groups/rpc/{fn})
 
+    /// El token no llegó y el SDK conserva la sesión (ver `call`). Solo viaja de `call` a `callWithRetry`, que lo
+    /// convierte en `.transient(status: -1)` sin reintentar: los llamadores nunca lo ven.
+    private struct TokenNotRenewed: Error {}
+
     /// Ejecuta UN RPC de membresía. Devuelve el body crudo del RPC (jsonb o JSON-string) con status 200; lanza
     /// un `GroupsRPCError` en cualquier otro caso. NUNCA loguea token/PII.
     private func call(fn: String, args: [String: Any]) async throws -> Data {
         guard let token = await tokenProvider(), !token.isEmpty else {
-            throw GroupsRPCError.sessionExpired
+            // Sin token no se hace la petición. `accessToken()` da `nil` por CUALQUIER fallo, y el SDK solo borra la
+            // sesión guardada ante un rechazo terminal del servidor de auth, antes de lanzar. Por eso el testigo se lee
+            // DESPUÉS de pedir el token: con la sesión guardada la renovación falló por otra cosa, casi siempre la red,
+            // y volver a entrar no lo arregla (tampoco se puede sin red). Es pasajero, con `status: -1` porque no hubo
+            // respuesta HTTP: salir de un grupo dice «Vuelve a intentarlo en un momento» en vez de «Tu sesión caducó»,
+            // y aceptar una invitación deja de abrir el inicio de sesión. Sale SIN el reintento corto (ver el `catch` de
+            // `callWithRetry`), y sin petición no hay ambigüedad «quizá se aplicó». Mismo criterio que
+            // `GroupsSyncClient.sdkRemovedTheSession` (ticket `groups-actions-read-an-offline-token-refresh-as-a-session-expiry`).
+            //
+            // **Aceptado a sabiendas, como en el canal de sync:** un rechazo que el SDK no cuenta como terminal (p. ej.
+            // `user_banned`) se lee pasajero.
+            guard canRenewSession() else { throw GroupsRPCError.sessionExpired }
+            throw TokenNotRenewed()
         }
 
         var request = URLRequest(url: baseURL.appendingPathComponent("groups/rpc/\(fn)"))

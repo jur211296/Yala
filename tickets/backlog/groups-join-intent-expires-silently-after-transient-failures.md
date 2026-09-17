@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "groups, invitaciones"
 created: 2026-09-15
-updated: 2026-09-15
+updated: 2026-09-17
 source: "review adversarial de `groups-sync-reads-a-missing-attest-401-as-a-session-expiry` (2026-09-15)"
 ---
 
@@ -18,8 +18,8 @@ me avisó de que no entré.
 
 ## Lo medido (leído en el código, sin ejecutar)
 
-- Un fallo pasajero de `join_group` —sin red, un 5xx y, desde el 2026-09-15, también un 401 por App Attest ausente—
-  se clasifica `.transient` (`GroupBackendAcceptErrorLogic.classify`). `GroupBackendInviteEntryHandler.handleJoinError`
+- Un fallo pasajero de `join_group` —sin red, un 5xx, desde el 2026-09-15 un 401 por App Attest ausente y, desde el
+  2026-09-17, el token que no se renueva sin red con la sesión guardada— se clasifica `.transient` (`GroupBackendAcceptErrorLogic.classify`). `GroupBackendInviteEntryHandler.handleJoinError`
   lo trata sin alerta y sin `noteAcceptFailed`: conserva el intent y re-arma el tap para que el reconciler reintente.
 - A los 20 s la pantalla de unión pasa a `groups.invite.slow.title`, «Está tardando un poco más de lo normal»
   (`GroupInviteOnboardingLogic`).
@@ -30,7 +30,10 @@ me avisó de que no entré.
   hasta la caducidad es una causa que no se cura sola, como un teléfono que no consigue App Attest
   (`groups-phone-that-never-attests-is-told-to-retry-forever`).
 - Antes del 2026-09-15, con App Attest ausente, el mismo intent reabría el inicio de sesión de Grupos en cada
-  reintento: no arreglaba nada, y la caducidad era igual de silenciosa.
+  reintento: no arreglaba nada, y la caducidad era igual de silenciosa. Lo mismo hacía hasta el 2026-09-17 el token que
+  no se renovaba sin red (`groups-actions-read-an-offline-token-refresh-as-a-session-expiry`). Ese fallo se cura al
+  volver la red, así que por el punto de arriba solo llegaría a la caducidad sin abrir Yala con conexión en esos 7 días
+  (inferido, sin medir).
 - Sin medir: cuántas invitaciones caducan. El canario `groupJoinIntentExpired` en Analytics Engine lo diría.
 
 ## Lo que hay que decidir (Jürgen)
