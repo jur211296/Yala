@@ -5257,3 +5257,16 @@
 "storage.reverseAbort.otherDeviceReverting" = "Não conseguimos iniciar o regresso ao iCloud: outro dos seus dispositivos já estava a regressar ao iCloud. Quando terminar, poderá fazê-lo neste.";
 "storage.progress.reverseICloudMaybeOff" = "Se o iCloud não estiver ativo neste dispositivo, os seus dados não conseguem chegar ao iCloud. Ative-o nas Definições ou cancele para continuar na nuvem.";
 "storage.errors.reversePendingExit" = "Ainda não é possível regressar ao iCloud: falta concluir a reativação da sua nuvem. Tente novamente dentro de instantes.";
+
+/* «Migrar a la nube» se paró sin escribir nada: la cuenta ya tiene datos (settings-migrate-to-cloud-adopts-silently-instead-of-migrating) */
+"storage.errors.identityCheck" = "Não conseguimos verificar a tua conta. Tenta novamente daqui a pouco. Não mudámos nada.";
+"storage.migrateBlock.personalDataTitle" = "Essa conta já tem finanças pessoais";
+"storage.migrateBlock.personalDataBody" = "Não mudámos nada. Para levares os teus dados para a nuvem, usa outra conta. Para usares os dados dessa conta aqui, termina a sessão e entra com ela.";
+"storage.migrateBlock.personalDataBodyNoSwitch" = "Não mudámos nada. Para usares os dados dessa conta aqui, termina a sessão e entra com ela. Para levares os teus dados para outra conta, desvincula primeiro esta em “Grupos”.";
+"storage.migrateBlock.otherGroupsTitle" = "Já usas outra conta para os teus grupos";
+"storage.migrateBlock.otherGroupsBody" = "Não mudámos nada. Neste dispositivo só pode haver uma conta na nuvem, e os teus grupos já usam outra. Para levares os teus dados para a nuvem, entra com a conta dos teus grupos ou, se preferires outra, desvincula-a antes em “Grupos”.";
+"storage.migrateBlock.otherGroupsBodyEmail" = "Não mudámos nada. Neste dispositivo só pode haver uma conta na nuvem, e os teus grupos já usam %@. Para levares os teus dados para a nuvem, entra com essa conta ou, se preferires outra, desvincula-a antes em “Grupos”.";
+"storage.migrateBlock.returnedTitle" = "Esta conta voltou ao iCloud";
+"storage.migrateBlock.returnedBody" = "Voltar à nuvem com ela ainda não está disponível. Não mudámos nada.";
+"storage.migrateBlock.useAnotherAccount" = "Usar outra conta";
+"storage.migrateBlock.appleSameAccountNote" = "Com a Apple, o Yala usa sempre a conta deste dispositivo. Para usares outra, escolhe a Google.";

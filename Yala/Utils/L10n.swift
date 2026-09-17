@@ -7186,6 +7186,58 @@ enum L10n {
             }
         }
 
+        /// El aviso de un «Migrar a la nube» que se paró sin escribir nada (ticket
+        /// `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`). Título y cuerpo salen de aquí y de ningún
+        /// otro sitio: la hoja no elige textos.
+        enum MigrateBlock {
+            static var personalDataTitle: String { ls("storage.migrateBlock.personalDataTitle", comment: "") }
+            /// Con «Usar otra cuenta» debajo: dice los dos caminos.
+            static var personalDataBody: String { ls("storage.migrateBlock.personalDataBody", comment: "") }
+            /// Sin ese botón (la sesión era la de sus grupos): solo el camino que tiene.
+            static var personalDataBodyNoSwitch: String { ls("storage.migrateBlock.personalDataBodyNoSwitch", comment: "") }
+            static var otherGroupsTitle: String { ls("storage.migrateBlock.otherGroupsTitle", comment: "") }
+            static var otherGroupsBody: String { ls("storage.migrateBlock.otherGroupsBody", comment: "") }
+            /// "…y tus grupos ya usan %@…" — el correo de la cuenta asociada.
+            static func otherGroupsBodyEmail(_ email: String) -> String {
+                String(format: ls("storage.migrateBlock.otherGroupsBodyEmail", comment: ""), email)
+            }
+            static var returnedTitle: String { ls("storage.migrateBlock.returnedTitle", comment: "") }
+            static var returnedBody: String { ls("storage.migrateBlock.returnedBody", comment: "") }
+            static var useAnotherAccount: String { ls("storage.migrateBlock.useAnotherAccount", comment: "") }
+            /// Junto a «Usar otra cuenta» cuando la cuenta rechazada era de Apple: en el iPhone, «Iniciar sesión con Apple»
+            /// firma siempre con el Apple ID del dispositivo, así que elegir Apple otra vez acaba en la misma cuenta
+            /// (Jürgen, 2026-09-16; poder elegir otro Apple ID es otro ticket).
+            static var appleSameAccountNote: String { ls("storage.migrateBlock.appleSameAccountNote", comment: "") }
+
+            static func title(for reason: StorageMigrationIdentityGateLogic.Block) -> String {
+                switch reason {
+                case .accountHasPersonalData:         return personalDataTitle
+                case .anotherGroupsAccountAssociated: return otherGroupsTitle
+                case .accountReturnedToICloud:        return returnedTitle
+                }
+            }
+
+            /// - Parameters:
+            ///   - offersAnotherAccount: si la hoja enseña «Usar otra cuenta». El cuerpo de «ya tiene finanzas personales»
+            ///     solo dice «usa otra cuenta» cuando ese botón existe.
+            ///   - associatedEmail: el correo de la cuenta de grupos asociada; sin él, el texto no la nombra.
+            static func body(
+                for reason: StorageMigrationIdentityGateLogic.Block,
+                offersAnotherAccount: Bool,
+                associatedEmail: String?
+            ) -> String {
+                switch reason {
+                case .accountHasPersonalData:
+                    return offersAnotherAccount ? personalDataBody : personalDataBodyNoSwitch
+                case .anotherGroupsAccountAssociated:
+                    guard let email = associatedEmail, !email.isEmpty else { return otherGroupsBody }
+                    return otherGroupsBodyEmail(email)
+                case .accountReturnedToICloud:
+                    return returnedBody
+                }
+            }
+        }
+
         enum Relaunch {
             static var title: String { ls("storage.relaunch.title", comment: "") }
             static var body: String { ls("storage.relaunch.body", comment: "") }
@@ -7234,6 +7286,8 @@ enum L10n {
             static var signIn: String { ls("storage.errors.signIn", comment: "") }
             /// «Volver a iCloud» con la salida anterior de la espera todavía a medias (`reverse_abort` pendiente).
             static var reversePendingExit: String { ls("storage.errors.reversePendingExit", comment: "") }
+            /// «Migrar a la nube» no pudo preguntar al backend por la cuenta, así que no siguió.
+            static var identityCheck: String { ls("storage.errors.identityCheck", comment: "") }
         }
 
         /// W3 (2026-08-11): los 7 bullets numerados se podaron a TRES + un pie, y las keys

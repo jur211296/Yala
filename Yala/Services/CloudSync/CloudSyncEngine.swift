@@ -694,6 +694,16 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncMigration claimNoSuccess reason=\(reason, privacy: .public) — stop sin evento (retomable)")
     }
 
+    /// «Migrar a la nube» y el claim contestó `existing_stable` → vuelve al inicio sin adoptar (`ForwardClaimIntent`).
+    static func migrationClaimRefusedExistingAccount() {
+        logger.notice("CloudSyncMigration claimRefused existing_stable con intención de migrar — notStarted, sin adopt")
+    }
+
+    /// «Migrar a la nube» se paró sin escribir nada. `reason` y `stage` (`gate` antes del claim, `claim` después) sin PII.
+    static func migrationIdentityBlocked(reason: String, stage: String) {
+        logger.notice("CloudSyncMigration identityBlocked reason=\(reason, privacy: .public) stage=\(stage, privacy: .public) — sin escrituras")
+    }
+
     /// El claim devolvió 403 (cuenta suspendida) → stop SIN evento (breadcrumb dedicado, ≠401).
     static func migrationAccountUnavailable() {
         logger.notice("CloudSyncMigration accountUnavailable (403) — stop sin evento (retomable)")

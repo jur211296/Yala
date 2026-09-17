@@ -48,5 +48,11 @@ estaba hecha al principio y el octavo entró sin copia; (2) **detrás de cada re
 `git diff --stat` del fichero**: vacío significa «volvió a HEAD», que es exactamente lo que no se
 quería. Un mutante revertido de más deja el test verde por la razón equivocada.
 
+⇒ **Y un tercero, del 2026-09-16: el `finally` del runner no te protege de un SIGKILL.** El sistema mató dos veces por
+memoria el runner de mutantes que corría en segundo plano, justo después de que terminara `xcodebuild` y antes de
+restaurar: las dos veces quedó un mutante PUESTO en `StorageSettingsView.swift`, sin ningún aviso. Lo cazó comparar los
+siete ficheros contra la copia (`shasum`) al recibir la notificación del corte. Tras cualquier corte, esa comparación va
+antes que nada; y los mutantes que quedan se corren en primer plano, que esa política no mata.
+
 Relacionado: [[mis-mediciones-fallan-por-el-filtro]] — la verificación por mutantes es lo que le da
 valor a un test, y por eso conviene que su bucle no sea el paso donde se pierde el trabajo.

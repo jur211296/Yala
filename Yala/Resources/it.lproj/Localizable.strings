@@ -5994,3 +5994,16 @@
 "storage.reverseAbort.otherDeviceReverting" = "Non siamo riusciti ad avviare il ritorno a iCloud: un altro dei tuoi dispositivi stava già tornando a iCloud. Quando avrà finito, potrai farlo anche su questo.";
 "storage.progress.reverseICloudMaybeOff" = "Se iCloud non è attivo su questo dispositivo, i tuoi dati non possono arrivare su iCloud. Attivalo nelle Impostazioni o annulla per restare nel cloud.";
 "storage.errors.reversePendingExit" = "Non possiamo ancora tornare a iCloud: il tuo cloud deve prima finire di riattivarsi. Riprova tra un momento.";
+
+/* «Migrar a la nube» se paró sin escribir nada: la cuenta ya tiene datos (settings-migrate-to-cloud-adopts-silently-instead-of-migrating) */
+"storage.errors.identityCheck" = "Non siamo riusciti a verificare il tuo account. Riprova tra poco. Non abbiamo cambiato niente.";
+"storage.migrateBlock.personalDataTitle" = "Questo account ha già delle finanze personali";
+"storage.migrateBlock.personalDataBody" = "Non abbiamo cambiato niente. Per portare i tuoi dati nel cloud, usa un altro account. Per usare qui i dati di quell’account, esci e accedi con quell’account.";
+"storage.migrateBlock.personalDataBodyNoSwitch" = "Non abbiamo cambiato niente. Per usare qui i dati di quell’account, esci e accedi con quell’account. Per portare i tuoi dati su un altro account, prima scollega questo in “Gruppi”.";
+"storage.migrateBlock.otherGroupsTitle" = "Usi già un altro account per i tuoi gruppi";
+"storage.migrateBlock.otherGroupsBody" = "Non abbiamo cambiato niente. Su questo dispositivo può esserci un solo account cloud, e i tuoi gruppi ne usano già un altro. Per portare i tuoi dati nel cloud, accedi con l’account dei tuoi gruppi o, se ne preferisci un altro, scollegalo prima in “Gruppi”.";
+"storage.migrateBlock.otherGroupsBodyEmail" = "Non abbiamo cambiato niente. Su questo dispositivo può esserci un solo account cloud, e i tuoi gruppi usano già %@. Per portare i tuoi dati nel cloud, accedi con quell’account o, se ne preferisci un altro, scollegalo prima in “Gruppi”.";
+"storage.migrateBlock.returnedTitle" = "Questo account è tornato su iCloud";
+"storage.migrateBlock.returnedBody" = "Tornare al cloud con questo account non è ancora disponibile. Non abbiamo cambiato niente.";
+"storage.migrateBlock.useAnotherAccount" = "Usa un altro account";
+"storage.migrateBlock.appleSameAccountNote" = "Con Apple, Yala usa sempre l’account di questo dispositivo. Per usarne un altro, scegli Google.";

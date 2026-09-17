@@ -139,6 +139,12 @@ enum MetricsCanary: String {
     case cloudReverseUploadAborted
     // Salida del claim de la reversa (ticket `reverse-claim-rejection-has-no-way-out-in-the-client`)
     case cloudReverseClaimRejected
+    /// «Migrar a la nube» se paró sin escribir nada porque la cuenta elegida no puede recibir la migración (ticket
+    /// `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`). `detail` = `<motivo>@<dónde>`: el motivo es
+    /// `personal_data`, `other_groups_account`, `returned_to_icloud` o `unchecked`, y el sitio `gate` (antes del claim)
+    /// o `claim`. Cuenta INTENTOS, no personas: cada toque que se para emite uno. Hasta ese día esos intentos mezclaban
+    /// los datos en silencio.
+    case cloudMigrationExistingAccountBlocked
     case accountDeletionCompleted
     case accountDeletionFailed
     case siwaExchangeFailed
@@ -596,6 +602,11 @@ extension MetricsService {
 
     static func cloudAccountUnavailable() {
         canary(.cloudAccountUnavailable)
+    }
+
+    /// Ver `MetricsCanary.cloudMigrationExistingAccountBlocked`. `detail` sin PII: dos slugs fijos del cliente.
+    static func cloudMigrationExistingAccountBlocked(reason: String, stage: String) {
+        canary(.cloudMigrationExistingAccountBlocked, detail: "\(reason)@\(stage)")
     }
 
     static func accountDeletionCompleted(step: String) {

@@ -6010,3 +6010,16 @@
 "storage.reverseAbort.otherDeviceReverting" = "No pudimos empezar a volver a iCloud: otro de tus dispositivos ya estaba volviendo. Cuando termine, podrás hacerlo en este.";
 "storage.progress.reverseICloudMaybeOff" = "Si iCloud no está activo en este dispositivo, tus datos no pueden llegar a iCloud. Actívalo en Ajustes o cancela para seguir en la nube.";
 "storage.errors.reversePendingExit" = "Aún no podemos volver a iCloud: falta terminar de reactivar tu nube. Vuelve a intentarlo en un momento.";
+
+/* «Migrar a la nube» se paró sin escribir nada: la cuenta ya tiene datos (settings-migrate-to-cloud-adopts-silently-instead-of-migrating) */
+"storage.errors.identityCheck" = "No pudimos comprobar tu cuenta. Inténtalo de nuevo en un momento. No cambiamos nada.";
+"storage.migrateBlock.personalDataTitle" = "Esa cuenta ya tiene finanzas personales";
+"storage.migrateBlock.personalDataBody" = "No cambiamos nada. Para llevar tus datos a la nube, usa otra cuenta. Para usar los de esa cuenta aquí, cierra sesión y entra con ella.";
+"storage.migrateBlock.personalDataBodyNoSwitch" = "No cambiamos nada. Para usar los datos de esa cuenta aquí, cierra sesión y entra con ella. Para llevar tus datos a otra cuenta, primero desasocia esta en «Grupos».";
+"storage.migrateBlock.otherGroupsTitle" = "Ya usas otra cuenta para tus grupos";
+"storage.migrateBlock.otherGroupsBody" = "No cambiamos nada. En este dispositivo solo puede haber una cuenta en la nube, y tus grupos ya usan otra. Para llevar tus datos a la nube, entra con la cuenta de tus grupos o, si prefieres otra, desasóciala antes en «Grupos».";
+"storage.migrateBlock.otherGroupsBodyEmail" = "No cambiamos nada. En este dispositivo solo puede haber una cuenta en la nube, y tus grupos ya usan %@. Para llevar tus datos a la nube, entra con esa cuenta o, si prefieres otra, desasóciala antes en «Grupos».";
+"storage.migrateBlock.returnedTitle" = "Esta cuenta volvió a iCloud";
+"storage.migrateBlock.returnedBody" = "Volver a la nube con ella todavía no está disponible. No cambiamos nada.";
+"storage.migrateBlock.useAnotherAccount" = "Usar otra cuenta";
+"storage.migrateBlock.appleSameAccountNote" = "Con Apple, Yala usa siempre la cuenta de este dispositivo. Para usar otra, elige Google.";

@@ -13,7 +13,11 @@
 //     dueño a otra cuenta). Todo camino legítimo a `.cloud` estampa el store (claim de migración o adopt).
 //
 //  Write-sites: (a) `MigrationWorkExecutor.performClaim` al resolver el claim de la migración; (b) el
-//  flujo de adopt (`runAdoptFlow`) al decidir `routeReturningUser`. `signOut` NO borra los registros
+//  flujo de adopt (`runAdoptFlow`) al decidir `routeReturningUser`; (c) `discardLastClaimStamp`, que repone el
+//  sello anterior cuando «Migrar a la nube» devuelve el claim al inicio; (d) el `complete` del líder
+//  (`.runLeaderReconcileFromFrozenCloudKit`), que cambia `proceedMigration` por `routeReturningUser`: la migración
+//  terminó y el sello ya no puede abrir la comprobación de «Migrar» (ticket
+//  `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`). `signOut` NO borra los registros
 //  (keyed por userID → el re-sign-in del MISMO usuario no se bloquea; AJUSTE review #1).
 //
 //  `@MainActor`: la sesión (`CloudAuthService`) que lo alimenta es main-actor-aislada.
@@ -46,7 +50,9 @@ final class CloudClaimActionStore {
         return Self.decode(raw)
     }
 
-    /// Borra el registro de `userID` (NO se llama en `signOut` — solo tooling/tests).
+    /// Borra el registro de `userID`. NO se llama en `signOut`. En producción solo lo usa
+    /// `MigrationWorkExecutor.discardLastClaimStamp`, para deshacer el sello de un claim que «Migrar a la nube» devolvió
+    /// al inicio cuando antes no había ninguno.
     func clear(forUserID userID: String) {
         defaults.removeObject(forKey: Self.prefix + userID)
     }

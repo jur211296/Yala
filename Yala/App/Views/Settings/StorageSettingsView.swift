@@ -49,6 +49,13 @@ struct StorageSettingsView: View {
     /// del propio botón: no encadena con los de `StorageConfirmations`.
     @State private var confirmCancelReverse = false
     @State private var showError = false
+    /// El aviso de un «Migrar a la nube» que se paró (`CloudMigrationController.migrationIdentityBlock`), copiado para
+    /// presentarlo: la hoja no se queda vacía si el controller lo suelta mientras está arriba. El controller lo suelta
+    /// cuando la hoja monta.
+    @State private var presentedMigrationBlock: MigrationIdentityBlock?
+    /// One-shot de «Usar otra cuenta»: lo quema el botón y lo consume el `onDismiss` de la hoja, que abre la elección de
+    /// Apple/Google con la hoja ya abajo. «Entendido» y el swipe no lo queman.
+    @State private var migrationBlockUseAnotherAccount = false
     @State private var dryRun: (transactions: Int, categories: Int, accounts: Int, budgets: Int)?
     /// Tick de refresco del journal vivo (el runner no es `@Observable`).
     @State private var refreshTick = false
@@ -120,6 +127,25 @@ struct StorageSettingsView: View {
                     reuseLiveSession = true
                     showSignInChooser = false
                 })
+        }
+        .sheet(item: $presentedMigrationBlock, onDismiss: onMigrationBlockDismissed) { block in
+            StorageMigrationBlockedView(
+                block: block,
+                onUseAnotherAccount: {
+                    migrationBlockUseAnotherAccount = true
+                    presentedMigrationBlock = nil
+                },
+                onClose: { presentedMigrationBlock = nil })
+            // El aviso se consume cuando la hoja MONTA, no al pedirla (regla 3 de presentaciones): si la pantalla se va
+            // mientras llega, o el anchor está ocupado, sigue en el controller y sale la próxima vez.
+            .onAppear {
+                if controller?.migrationIdentityBlock?.id == block.id { controller?.migrationIdentityBlock = nil }
+            }
+        }
+        // `initial: true`: un aviso publicado mientras la persona no tenía esta pantalla delante sale al volver a ella.
+        .onChange(of: controller?.migrationIdentityBlock?.id, initial: true) { _, id in
+            guard id != nil, let block = controller?.migrationIdentityBlock else { return }
+            presentedMigrationBlock = block
         }
         .modifier(StorageConfirmations(
             confirmMigrate1: $confirmMigrate1, confirmMigrate2: $confirmMigrate2,
@@ -269,10 +295,20 @@ struct StorageSettingsView: View {
             YalaPrimaryButton(
                 isAdopt ? L10n.Storage.Adopt.button : L10n.Storage.Migrate.button,
                 icon: "arrow.up.to.line",
-                isDisabled: controller.isWorking || isBlockedOtherAccount(decision)
+                isDisabled: controller.isWorking || isBlockedOtherAccount(decision),
+                isLoading: controller.isCheckingMigrationIdentity
             ) {
                 consentPath = isAdopt ? .adopt : .migration
-                showConsent = true
+                // Con sesión viva, «Migrar» pregunta por la cuenta ANTES del consentimiento y de las dos confirmaciones
+                // (Jürgen, 2026-09-16). Sin sesión hay que firmar primero, y la comprobación va entre firmar y el claim.
+                guard !isAdopt, case .reuseLiveSession = decision else {
+                    showConsent = true
+                    return
+                }
+                Task {
+                    guard await controller.preflightMigrationIdentity() else { return }
+                    showConsent = true
+                }
             }
             .accessibilityIdentifier("storage_migrate_button")
         }
@@ -733,6 +769,24 @@ struct StorageSettingsView: View {
             beaconAccountHash: isAdopt ? CloudBeacon().accountHash : nil,
             sessionAccountHash: isAdopt
                 ? CloudAuthService.shared.currentUserID.map(CloudBeacon.hash) : nil)
+    }
+
+    /// `onDismiss` de la hoja del bloqueo: con «Usar otra cuenta», la elección de Apple/Google, con la hoja YA abajo
+    /// (regla 4 de presentaciones: el siguiente paso nunca se presenta con la anterior bajando). No repite consentimiento
+    /// ni confirmaciones: los dio este mismo intento (Jürgen, 2026-09-16). El controller ya cerró la sesión rechazada, así
+    /// que la elección ofrece Apple y Google. «Entendido» y el swipe no hacen nada más.
+    ///
+    /// **Solo si sigue sin haber sesión**, y lo cazó la review: el aviso espera en el controller hasta que la persona vuelve
+    /// a esta pantalla, y entretanto puede haber entrado con otra cuenta desde Grupos. Con esa sesión viva la elección se
+    /// cierra sola y migraba con ella, sin enseñar «Usarás tu cuenta de Yala actual». La tarjeta ya la anuncia: que decida
+    /// el siguiente toque.
+    private func onMigrationBlockDismissed() {
+        guard migrationBlockUseAnotherAccount else { return }
+        migrationBlockUseAnotherAccount = false
+        guard !abortIfCloudEntryClosed() else { return }
+        guard case .askProvider = signInDecision() else { return }
+        consentPath = .migration
+        showSignInChooser = true
     }
 
     /// `onDismiss` del chooser: arranca la migración/adopt con el provider elegido, con el sheet YA

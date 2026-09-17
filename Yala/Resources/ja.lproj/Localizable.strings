@@ -5996,3 +5996,16 @@
 "storage.reverseAbort.otherDeviceReverting" = "iCloud に戻す処理を開始できませんでした。ほかのデバイスですでに iCloud に戻す処理が進んでいました。完了したら、このデバイスでも実行できます。";
 "storage.progress.reverseICloudMaybeOff" = "このデバイスで iCloud がオンになっていない場合、データは iCloud に届きません。設定でオンにするか、キャンセルしてクラウドのまま使い続けてください。";
 "storage.errors.reversePendingExit" = "まだ iCloud に戻せません。先にクラウドの再有効化を完了する必要があります。少し待ってからもう一度お試しください。";
+
+/* «Migrar a la nube» se paró sin escribir nada: la cuenta ya tiene datos (settings-migrate-to-cloud-adopts-silently-instead-of-migrating) */
+"storage.errors.identityCheck" = "アカウントを確認できませんでした。少し待ってからもう一度お試しください。何も変更していません。";
+"storage.migrateBlock.personalDataTitle" = "そのアカウントにはすでに個人の家計データがあります";
+"storage.migrateBlock.personalDataBody" = "何も変更していません。データをクラウドに移すには、別のアカウントを使ってください。そのアカウントのデータをここで使うには、サインアウトしてからそのアカウントでサインインしてください。";
+"storage.migrateBlock.personalDataBodyNoSwitch" = "何も変更していません。そのアカウントのデータをここで使うには、サインアウトしてからそのアカウントでサインインしてください。データを別のアカウントに移すには、先に「グループ」でこのアカウントのリンクを解除してください。";
+"storage.migrateBlock.otherGroupsTitle" = "グループにはすでに別のアカウントを使っています";
+"storage.migrateBlock.otherGroupsBody" = "何も変更していません。このデバイスで使えるクラウドアカウントは1つだけで、グループはすでに別のアカウントを使っています。データをクラウドに移すには、グループのアカウントでサインインするか、別のアカウントを使う場合は先に「グループ」でリンクを解除してください。";
+"storage.migrateBlock.otherGroupsBodyEmail" = "何も変更していません。このデバイスで使えるクラウドアカウントは1つだけで、グループはすでに%@を使っています。データをクラウドに移すには、そのアカウントでサインインするか、別のアカウントを使う場合は先に「グループ」でリンクを解除してください。";
+"storage.migrateBlock.returnedTitle" = "このアカウントはiCloudに戻っています";
+"storage.migrateBlock.returnedBody" = "このアカウントでクラウドに戻すことはまだできません。何も変更していません。";
+"storage.migrateBlock.useAnotherAccount" = "別のアカウントを使う";
+"storage.migrateBlock.appleSameAccountNote" = "Appleでは、Yalaは常にこのデバイスのアカウントを使います。別のアカウントを使うには、Googleを選んでください。";

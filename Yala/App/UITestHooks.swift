@@ -124,6 +124,46 @@ final class UITestHooks {
     /// JWT mandaría credenciales basura a un backend real. Solo DEBUG (inerte en release vía `hasArg`).
     nonisolated static var fakeCloudSession: Bool { hasArg("-uitest-fake-cloud-session") }
 
+    /// Valor de `-uitest-fake-migration-identity <personalData|proceed>`: finge la RESPUESTA de la puerta de identidad de
+    /// «Migrar a la nube» (`CloudMigrationController.checkMigrationIdentity`), para el XCUITest de la hoja del bloqueo
+    /// (ticket `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`). El simulador no puede preguntar a
+    /// `/account/exists` con una sesión real, así que sin esto la hoja no se ve.
+    ///
+    /// **Cubre la presentación, no la decisión**: con el seam, cualquier cuenta «tiene datos». Qué cuenta bloquea y cuál no
+    /// lo fijan los unit de `StorageMigrationIdentityGateLogic` y de la tabla [I]. Se combina con
+    /// `-uitest-fake-cloud-session`, que es lo que hace que la comprobación se adelante al toque. No persiste nada. Un valor
+    /// desconocido se ignora. Solo DEBUG.
+    nonisolated static var fakeMigrationIdentityCheck: StorageMigrationIdentityGateLogic.Check? {
+        #if DEBUG
+        guard isActive else { return nil }
+        switch parseValue(after: "-uitest-fake-migration-identity", from: ProcessInfo.processInfo.arguments) {
+        case "personalData": return .blocked(.accountHasPersonalData)
+        case "proceed":      return .proceed
+        default:             return nil
+        }
+        #else
+        return nil
+        #endif
+    }
+
+    /// Valor de `-uitest-pending-migration-block <personalData|personalDataApple>`: el controller nace con un aviso de
+    /// «Migrar a la nube» ya publicado, con «Usar otra cuenta» (y, con `…Apple`, la cuenta rechazada de Apple). Existe para
+    /// el XCUITest de la cadena hoja → elección de Apple/Google, que con una sesión fingida no se puede recorrer: la
+    /// sesión viva quita ese botón a propósito. Finge la SALIDA del controller, no su decisión. No persiste nada. Solo
+    /// DEBUG.
+    nonisolated static var pendingMigrationBlock: (reason: StorageMigrationIdentityGateLogic.Block, rejectedProvider: CloudSignInProvider?)? {
+        #if DEBUG
+        guard isActive else { return nil }
+        switch parseValue(after: "-uitest-pending-migration-block", from: ProcessInfo.processInfo.arguments) {
+        case "personalData":      return (.accountHasPersonalData, nil)
+        case "personalDataApple": return (.accountHasPersonalData, .apple)
+        default:                  return nil
+        }
+        #else
+        return nil
+        #endif
+    }
+
     /// `-uitest-icloud-identity`: siembra la identidad iCloud de Grupos con un recordName fijo
     /// (`uitestICloudRecordName`), síncrono y SIN red — `GroupICloudIdentitySeed.adopt` no toca
     /// CloudKit.

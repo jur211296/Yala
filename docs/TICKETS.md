@@ -32,7 +32,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (428)
+## Index (438)
 
 | id | status | path |
 |---|---|---|
@@ -46,6 +46,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | activation-restore-start-fresh-keeps-the-imported-rows | done | tickets/done/activation-restore-start-fresh-keeps-the-imported-rows.md |
 | activation-resume-returns-to-restore-on-an-emptied-zone | backlog | tickets/backlog/activation-resume-returns-to-restore-on-an-emptied-zone.md |
 | adopt-terminal-claims-ready-without-checking-engine | backlog | tickets/backlog/adopt-terminal-claims-ready-without-checking-engine.md |
+| adopt-uploads-a-foreign-corpus-without-a-lineage-check | backlog | tickets/backlog/adopt-uploads-a-foreign-corpus-without-a-lineage-check.md |
 | adr-013-does-not-know-yala-has-its-own-commit-msg | backlog | tickets/backlog/adr-013-does-not-know-yala-has-its-own-commit-msg.md |
 | after-session-redesign-review-widgets-siri-applepay-and-web-copy | backlog | tickets/backlog/after-session-redesign-review-widgets-siri-applepay-and-web-copy.md |
 | ai-chat-reads-heavier-than-a-messaging-app | backlog | tickets/backlog/ai-chat-reads-heavier-than-a-messaging-app.md |
@@ -66,6 +67,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | backend-account-kind-complete-or-groups-only | done | tickets/done/backend-account-kind-complete-or-groups-only.md |
 | beacon-routes-only-never-blocks | qa | tickets/qa/beacon-routes-only-never-blocks.md |
 | blocked-copy-mapping-lives-in-three-views-untestable | backlog | tickets/backlog/blocked-copy-mapping-lives-in-three-views-untestable.md |
+| blocked-sign-in-still-binds-the-subscription-to-that-account | backlog | tickets/backlog/blocked-sign-in-still-binds-the-subscription-to-that-account.md |
 | born-cloud-signup-lands-on-existing-account-silently | backlog | tickets/backlog/born-cloud-signup-lands-on-existing-account-silently.md |
 | borncloud-consent-epoch-written-before-the-guard-decides | backlog | tickets/backlog/borncloud-consent-epoch-written-before-the-guard-decides.md |
 | bridge-de-grupos-pierde-la-marca-de-sus-patas | done | tickets/done/bridge-de-grupos-pierde-la-marca-de-sus-patas.md |
@@ -106,6 +108,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest | qa | tickets/qa/cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest.md |
 | cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes | qa | tickets/qa/cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes.md |
 | cloud-session-expiry-with-only-group-changes-has-no-sign-in-door | backlog | tickets/backlog/cloud-session-expiry-with-only-group-changes-has-no-sign-in-door.md |
+| cloud-sign-in-cannot-choose-another-apple-id | backlog | tickets/backlog/cloud-sign-in-cannot-choose-another-apple-id.md |
 | cloud-sign-in-discovers-account-kind | qa | tickets/qa/cloud-sign-in-discovers-account-kind.md |
 | cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest | qa | tickets/qa/cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest.md |
 | cloud-signout-collapses-a-groups-session-expiry-into-permanent | qa | tickets/qa/cloud-signout-collapses-a-groups-session-expiry-into-permanent.md |
@@ -171,6 +174,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | financial-report-amounts-unmarked | backlog | tickets/backlog/financial-report-amounts-unmarked.md |
 | flows-atlas-predates-session-redesign | backlog | tickets/backlog/flows-atlas-predates-session-redesign.md |
 | forcesync-returns-ok-without-touching-the-network | backlog | tickets/backlog/forcesync-returns-ok-without-touching-the-network.md |
+| fresh-start-keeps-a-groups-session-that-migrate-promotes | backlog | tickets/backlog/fresh-start-keeps-a-groups-session-that-migrate-promotes.md |
 | fresh-start-wipe-kills-unsent-group-writes-silently | backlog | tickets/backlog/fresh-start-wipe-kills-unsent-group-writes-silently.md |
 | full-activation-cloud-adopt-when-account-already-complete | backlog | tickets/backlog/full-activation-cloud-adopt-when-account-already-complete.md |
 | full-activation-local-state-never-reaches-the-apple-id-kv | backlog | tickets/backlog/full-activation-local-state-never-reaches-the-apple-id-kv.md |
@@ -292,6 +296,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | live-anchor-breakdown-doubles-the-approximate-glyph | backlog | tickets/backlog/live-anchor-breakdown-doubles-the-approximate-glyph.md |
 | m1-prose-outlives-its-code-in-comments | backlog | tickets/backlog/m1-prose-outlives-its-code-in-comments.md |
 | merchant-memory-suggests-across-natures-in-three-more-places | backlog | tickets/backlog/merchant-memory-suggests-across-natures-in-three-more-places.md |
+| migrate-attempt-session-survives-a-relaunch-mid-attempt | backlog | tickets/backlog/migrate-attempt-session-survives-a-relaunch-mid-attempt.md |
+| migrate-before-the-groups-association-arrives-splits-the-accounts | backlog | tickets/backlog/migrate-before-the-groups-association-arrives-splits-the-accounts.md |
+| migrate-card-keeps-promising-an-account-the-check-refused | backlog | tickets/backlog/migrate-card-keeps-promising-an-account-the-check-refused.md |
+| migration-activation-drops-pending-effects-it-never-restores | backlog | tickets/backlog/migration-activation-drops-pending-effects-it-never-restores.md |
 | multi-currency-accounts | backlog | tickets/backlog/multi-currency-accounts.md |
 | needsrelaunch-hides-the-groups-section | backlog | tickets/backlog/needsrelaunch-hides-the-groups-section.md |
 | neutral-boot-hands-owner-prefs-to-whoever-signs-in-next | backlog | tickets/backlog/neutral-boot-hands-owner-prefs-to-whoever-signs-in-next.md |
@@ -393,7 +401,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | session-exits-one-verb-per-session | qa | tickets/qa/session-exits-one-verb-per-session.md |
 | session-redesign-implementation-order | backlog | tickets/backlog/session-redesign-implementation-order.md |
 | session-redesign-web-and-store-copy | backlog | tickets/backlog/session-redesign-web-and-store-copy.md |
-| settings-migrate-to-cloud-adopts-silently-instead-of-migrating | backlog | tickets/backlog/settings-migrate-to-cloud-adopts-silently-instead-of-migrating.md |
+| settings-migrate-blocks-a-second-device-before-its-marker | backlog | tickets/backlog/settings-migrate-blocks-a-second-device-before-its-marker.md |
+| settings-migrate-to-cloud-adopts-silently-instead-of-migrating | qa | tickets/qa/settings-migrate-to-cloud-adopts-silently-instead-of-migrating.md |
 | settings-redesign-as-grouped-lists-like-ios | backlog | tickets/backlog/settings-redesign-as-grouped-lists-like-ios.md |
 | shared-state-guard-misses-wipelocalgroupsdomain | backlog | tickets/backlog/shared-state-guard-misses-wipelocalgroupsdomain.md |
 | shell-and-wipe-alert-read-the-session-axis-differently | backlog | tickets/backlog/shell-and-wipe-alert-read-the-session-axis-differently.md |
@@ -413,6 +422,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | staging-test-user-c-does-not-exist | backlog | tickets/backlog/staging-test-user-c-does-not-exist.md |
 | stats-per-account-branch-keeps-stale-live-anchor | backlog | tickets/backlog/stats-per-account-branch-keeps-stale-live-anchor.md |
 | storage-actions-release-the-working-flag-under-a-running-resume | backlog | tickets/backlog/storage-actions-release-the-working-flag-under-a-running-resume.md |
+| storage-groups-section-stays-active-during-the-migrate-check | backlog | tickets/backlog/storage-groups-section-stays-active-during-the-migrate-check.md |
 | storage-mode-is-a-proxy-for-the-mirror-in-the-wipe-signal | backlog | tickets/backlog/storage-mode-is-a-proxy-for-the-mirror-in-the-wipe-signal.md |
 | storage-row-gate-comment-says-rollout-zero | backlog | tickets/backlog/storage-row-gate-comment-says-rollout-zero.md |
 | storekit-appgroup-siri-pro-gate | done | tickets/done/storekit-appgroup-siri-pro-gate.md |

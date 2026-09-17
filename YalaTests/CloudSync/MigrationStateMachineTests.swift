@@ -805,6 +805,29 @@ struct MigrationStateMachineTests {
         #expect(toNotStarted.effects.isEmpty)
     }
 
+    // MARK: - R11c. claimRefusedExistingAccount: «Migrar» sobre una cuenta con lo personal (ticket settings-migrate-to-cloud-adopts-silently-instead-of-migrating)
+
+    /// Sin esta arista, `existing_stable` solo podía ir al adopt, que sube el corpus local a la cuenta. Vuelve al inicio
+    /// SIN efectos: la rama `existing_stable` de `claim_account` no escribe, así que no hay nada que deshacer.
+    @Test func claimRefusedExistingAccount_returnsToNotStarted_noEffects() {
+        let r = step(.claimingMigration, .claimRefusedExistingAccount)
+        #expect(r.next == .notStarted)
+        #expect(r.effects.isEmpty, "ni adopt ni rollback: el claim no reservó nada")
+        // Control: el mismo desenlace entregado como `claimResult` sigue siendo el adopt de siempre.
+        #expect(step(.claimingMigration, .claimResult(.existingStable, sameDeviceReclaim: false)).effects
+                == [.adoptBackendAccount])
+    }
+
+    /// Solo desde el claim de la ida. En `waitingForLeader` el seguidor adopta lo que migró su líder, y desde cualquier
+    /// otra fase ya hay algo reservado o escrito.
+    @Test func claimRefusedExistingAccount_illegalOutsideClaimingMigration() {
+        for phase in Self.allPhases where phase != .claimingMigration {
+            let event = MigrationEvent.claimRefusedExistingAccount
+            #expect(MigrationStateMachine.transition(from: phase, event: event) == .invalid(from: phase, event: event),
+                    "\(phase)")
+        }
+    }
+
     @Test func reverseClaimRejected_illegalOutsideReverseClaimLeader() {
         // Solo legal desde reverseClaimLeader: después de la reserva ya hay algo que deshacer y quien sale es otro.
         for phase: MigrationPhase in [.reverseDrainAll, .reverseFreezeBackend, .reverseUpload, .done, .notStarted,

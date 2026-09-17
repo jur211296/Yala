@@ -367,7 +367,29 @@ struct MigrationStateJournalTests {
         let context3 = ModelContext(context.container)
         let recleared = try #require(try context3.fetch(descriptor).first)
         #expect(recleared.reverseOriginPendingEffectsData == nil)
-        #expect(recleared.schemaVersion == 5)
+        #expect(recleared.schemaVersion == CloudSyncSchemaVersions.migrationState)
+    }
+
+    /// La intención del claim de la ida (ticket `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`) tiene
+    /// que sobrevivir a un relanzamiento con el claim aparcado: es lo que impide que ese `resume` adopte lo que «Migrar a la
+    /// nube» no pidió. Y sus rawValues son wire: viajan en la fila.
+    @Test func forwardClaimIntent_roundTripAcrossSaveAndRefetch_rawValuesAreWireStable() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let state = try MigrationState.loadOrCreate(in: context)
+        #expect(state.forwardClaimIntentRaw == nil, "una fila nueva no trae intención: se lee como adoptIfExisting")
+
+        state.setPhase(.claimingMigration)
+        state.forwardClaimIntentRaw = ForwardClaimIntent.migrateOnly.rawValue
+        try context.save()
+
+        var descriptor = FetchDescriptor<MigrationState>()
+        descriptor.fetchLimit = 1
+        let reloaded = try #require(try ModelContext(context.container).fetch(descriptor).first)
+        #expect(reloaded.forwardClaimIntentRaw == "migrateOnly")
+        #expect(ForwardClaimIntent.migrateOnly.rawValue == "migrateOnly")
+        #expect(ForwardClaimIntent.adoptIfExisting.rawValue == "adoptIfExisting")
     }
 
     /// Los motivos viajan en el journal: sus rawValues son wire. El tipo se renombró (antes

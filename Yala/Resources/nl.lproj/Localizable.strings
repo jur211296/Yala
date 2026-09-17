@@ -5996,3 +5996,16 @@
 "storage.reverseAbort.otherDeviceReverting" = "We konden de terugkeer naar iCloud niet starten: een ander apparaat van je was al bezig met de terugkeer naar iCloud. Zodra dat klaar is, kun je het op dit apparaat doen.";
 "storage.progress.reverseICloudMaybeOff" = "Als iCloud niet is ingeschakeld op dit apparaat, kunnen je gegevens iCloud niet bereiken. Schakel het in via Instellingen of annuleer om in de cloud te blijven.";
 "storage.errors.reversePendingExit" = "Terug naar iCloud kan nog niet: je cloud moet eerst helemaal opnieuw geactiveerd worden. Probeer het zo opnieuw.";
+
+/* «Migrar a la nube» se paró sin escribir nada: la cuenta ya tiene datos (settings-migrate-to-cloud-adopts-silently-instead-of-migrating) */
+"storage.errors.identityCheck" = "We konden je account niet controleren. Probeer het zo meteen opnieuw. Er is niets veranderd.";
+"storage.migrateBlock.personalDataTitle" = "Dit account heeft al persoonlijke financiën";
+"storage.migrateBlock.personalDataBody" = "Er is niets veranderd. Gebruik een ander account om je gegevens naar de cloud te brengen. Wil je de gegevens van dit account hier gebruiken, log dan uit en log in met dit account.";
+"storage.migrateBlock.personalDataBodyNoSwitch" = "Er is niets veranderd. Wil je de gegevens van dit account hier gebruiken, log dan uit en log in met dit account. Wil je je gegevens naar een ander account brengen, ontkoppel dit account dan eerst in ‘Groepen’.";
+"storage.migrateBlock.otherGroupsTitle" = "Je gebruikt al een ander account voor je groepen";
+"storage.migrateBlock.otherGroupsBody" = "Er is niets veranderd. Op dit apparaat kan maar één cloudaccount staan, en je groepen gebruiken al een ander. Log in met het account van je groepen om je gegevens naar de cloud te brengen, of ontkoppel het eerst in ‘Groepen’ als je liever een ander gebruikt.";
+"storage.migrateBlock.otherGroupsBodyEmail" = "Er is niets veranderd. Op dit apparaat kan maar één cloudaccount staan, en je groepen gebruiken al %@. Log in met dat account om je gegevens naar de cloud te brengen, of ontkoppel het eerst in ‘Groepen’ als je liever een ander gebruikt.";
+"storage.migrateBlock.returnedTitle" = "Dit account is teruggegaan naar iCloud";
+"storage.migrateBlock.returnedBody" = "Met dit account terug naar de cloud gaan kan nog niet. Er is niets veranderd.";
+"storage.migrateBlock.useAnotherAccount" = "Ander account gebruiken";
+"storage.migrateBlock.appleSameAccountNote" = "Met Apple gebruikt Yala altijd het account van dit apparaat. Kies Google om een ander account te gebruiken.";

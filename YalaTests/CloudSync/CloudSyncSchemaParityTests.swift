@@ -192,6 +192,7 @@ struct CloudSyncSchemaParityTests {
             "reverseUploadProgressAt",
             "reverseAbortReasonRaw",
             "reverseOriginPendingEffectsData",
+            "forwardClaimIntentRaw",
             "startedAt",
             "updatedAt",
             "schemaVersion",
@@ -199,15 +200,16 @@ struct CloudSyncSchemaParityTests {
         #expect(propertyNames(MigrationState.self) == expected)
     }
 
-    @Test func migrationState_schemaVersion_isFive() {
+    @Test func migrationState_schemaVersion_isSix() {
         // Subió a 2 en I11-2 al añadir el campo aditivo `reverseOriginRaw`; a 3 en C-1 con
         // `markerWrittenSince` (reloj del tope del paso 4) + `cutoverICloudVerdictRaw` (veredicto del canal
         // iCloud), ambos ADITIVOS y opcionales → una fila escrita por un build v2 sigue abriéndose. A 4 con los
         // tres del techo de `reverseUpload` (`reverseUploadLowestPending`, `reverseUploadProgressAt`,
         // `reverseAbortReasonRaw`), también opcionales: una fila v3 se abre con los tres a `nil`. A 5 con
         // `reverseOriginPendingEffectsData` (los pendientes del origen que la vuelta reemplaza), opcional: una fila v4
-        // clavada en `reverseClaimLeader` se abre sin nada que reponer.
-        #expect(CloudSyncSchemaVersions.migrationState == 5)
+        // clavada en `reverseClaimLeader` se abre sin nada que reponer. A 6 con `forwardClaimIntentRaw` (la intención del
+        // claim de la ida), opcional: una fila v5 con el claim aparcado se abre sin intención y adopta como siempre.
+        #expect(CloudSyncSchemaVersions.migrationState == 6)
     }
 
     // MARK: - (b·G2) GroupSyncOutbox / GroupSyncCursor (canal de Grupos → backend)

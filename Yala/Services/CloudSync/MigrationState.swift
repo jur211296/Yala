@@ -31,7 +31,10 @@ extension CloudSyncSchemaVersions {
     /// `reverseUploadProgressAt`, `reverseAbortReasonRaw`).
     /// Subió a 5 con `reverseOriginPendingEffectsData`: los efectos pendientes del origen que la vuelta reemplaza,
     /// para reponerlos si el servidor no concede la reserva (ticket `reverse-claim-rejection-has-no-way-out-in-the-client`).
-    static let migrationState = 5
+    /// Subió a 6 con `forwardClaimIntentRaw`: qué pidió la persona al llegar al claim de la ida, para que un relanzamiento
+    /// con el claim aparcado no adopte lo que «Migrar a la nube» no pidió (ticket
+    /// `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`).
+    static let migrationState = 6
 }
 
 /// Journal single-row de la migración. Debe existir a lo sumo UNA fila (el runner la crea
@@ -113,6 +116,15 @@ final class MigrationState {
     /// y al conceder la reserva. `nil` = nada guardado.
     var reverseOriginPendingEffectsData: Data?
 
+    /// `ForwardClaimIntent.rawValue` del intento que llegó al claim de la ida. Se escribe en el MISMO save que la
+    /// transición `authenticating → claimingMigration`, y lo lee `driveClaim`: con `migrateOnly`, un `existing_stable` vuelve
+    /// al inicio en vez de adoptar. Journaleado y no en memoria porque el claim puede quedarse aparcado —sin red, sesión
+    /// caducada— y retomarse tras un relanzamiento: en memoria, ese `resume` adoptaba lo que «Migrar a la nube» no pidió,
+    /// y en una cuenta que volvió a iCloud dejaba el dispositivo en modo nube sobre un backend que rechaza todo push. Se
+    /// limpia al cerrar el intento (`notStarted`, `failedRollback`, `icloudActive`). `nil` = sin intención journaleada,
+    /// que se lee como `adoptIfExisting`: una fila anterior a la v6 se comporta como siempre.
+    var forwardClaimIntentRaw: String?
+
     /// Cuándo empezó la migración (el runner lo estampa con el `now` INYECTADO al arrancar). `nil` = no
     /// iniciada.
     var startedAt: Date?
@@ -139,6 +151,7 @@ final class MigrationState {
         reverseUploadProgressAt: Date? = nil,
         reverseAbortReasonRaw: String? = nil,
         reverseOriginPendingEffectsData: Data? = nil,
+        forwardClaimIntentRaw: String? = nil,
         startedAt: Date? = nil,
         updatedAt: Date = Date.now,
         schemaVersion: Int = CloudSyncSchemaVersions.migrationState
@@ -157,6 +170,7 @@ final class MigrationState {
         self.reverseUploadProgressAt = reverseUploadProgressAt
         self.reverseAbortReasonRaw = reverseAbortReasonRaw
         self.reverseOriginPendingEffectsData = reverseOriginPendingEffectsData
+        self.forwardClaimIntentRaw = forwardClaimIntentRaw
         self.startedAt = startedAt
         self.updatedAt = updatedAt
         self.schemaVersion = schemaVersion
