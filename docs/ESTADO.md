@@ -5,10 +5,33 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-17 (Lima)
 
-**Rama** `2.1` — Merge #190: **«Activar la nube» ya no usa la cuenta que dejó abierta la persona anterior.**
+**Rama** `2.1` — Merge #191: **Sin red, salir de un grupo ya no dice «Tu sesión caducó».**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#190 · «Activar la nube» ya no usa la cuenta que dejó abierta la persona anterior)
+## Esta sesión (#191 · sin red, salir de un grupo ya no dice «Tu sesión caducó»)
+
+**Sin conexión y con el token caducado, las acciones de Grupos ya no dicen «Tu sesión caducó».** Salir de un grupo dice «No
+pudimos completar tu salida del grupo. Vuelve a intentarlo en un momento.». Aceptar una invitación ya no abre la hoja de
+«Inicia sesión»: la unión espera, a los 20 s dice «Está tardando un poco más de lo normal» y se reintenta al volver Yala a
+primer plano. Con la sesión borrada de verdad, las dos siguen pidiendo volver a entrar. Es el hermano de #171 y #188 en las
+acciones de Grupos. Fue un encargo de noche, y lo discutible está en el PR.
+
+**La review (tres lentes) retiró el reintento corto que yo había añadido:** el SDK ya reintenta la renovación por dentro, y
+reintentarla también fuera pasaba la espera sin red de ~1 s a ~7 s, y de ~3 a ~9 min con una red que no responde. Además
+endureció cuatro tests y abrió tres tickets. Crear grupo, aprobar y expulsar siguen enseñando el error crudo de siempre, con
+ticket propio (`groups-create-approve-remove-show-a-raw-rpc-error`, low).
+
+**Qué te toca:**
+
+1. El QA en iPhone de `groups-actions-read-an-offline-token-refresh-as-a-session-expiry` (en `qa`): 7 pasos, con modo avión
+   y el control de sesión borrada por SQL en staging.
+2. Decidir `groups-join-is-not-retried-when-the-network-returns` (low): con la app delante, la unión no se reintenta al
+   volver la red, y «Está tardando…» promete que el grupo aparecerá apenas esté listo.
+
+Validación: build ×2 · unit 7215 casos en 732 suites · XCUITest 19 en 5 clases con centinela en 0 · 11 mutantes cazados ·
+review con 3 lentes · `validate-coverage` OK · `docs/TICKETS.md` igual al disco (450) · **CI verde** (tests 32 min).
+
+## Sesión anterior (#190 · «Activar la nube» ya no usa la cuenta que dejó abierta la persona anterior)
 
 **En un iPhone que pasó por «Empezar desde cero», «Activar la nube» ya no promueve la cuenta que dejó abierta la persona
 anterior.** Sale «Esta cuenta puede ser de otra persona» antes del consentimiento, y la salida es desasociarla en «Grupos» y
@@ -31,7 +54,7 @@ el iCloud-KV del Apple ID anterior.
 Validación: build ×2 · unit 7206 casos en 731 suites · XCUITest 31 en 10 clases con centinela en 0 · 18 mutantes cazados ·
 review con 2 lentes · `validate-coverage` OK · `docs/TICKETS.md` igual al disco (446) · **CI verde** (tests 20 min).
 
-## Sesión anterior (#189 · «Descargando tus datos…» ya no gira al lado del aviso de App Attest)
+## Sesión #189 · «Descargando tus datos…» ya no gira al lado del aviso de App Attest
 
 **En la nube, un teléfono sin App Attest ya no ve la ruedecita girando para siempre al lado del aviso.** Con el veredicto
 de App Attest terminal, «Descargando tus datos…» se esconde y queda solo «Este teléfono no puede sincronizar tus datos».
