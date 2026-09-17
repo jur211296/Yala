@@ -40,59 +40,60 @@ paths:
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice de reglas (44)
+## Índice de reglas (45)
 
-> Este fichero son **74 KB en 44 reglas largas**. No lo leas entero: localiza la regla
+> Este fichero son **76 KB en 45 reglas largas**. No lo leas entero: localiza la regla
 > aquí y lee **solo su tramo** con `sed -n '<linea>,<linea+N>p'`.
 > Los números de línea se desplazan al editar — regenera con
 > `python3 scripts/indexar_doc.py <fichero> --apply`.
 
 | Línea | Regla | Peso |
 |---|---|---|
-| `L103` | CloudKit compat | 119 B |
-| `L105` | Schema del container de GRUPOS — campo nuevo = deploy a Production en el MISMO PR | 1.1 KB |
-| `L107` | `#Predicate` GENÉRICO-PROTOCOLO crashea (`DataUtilities.swift:85`) — usa concreto por tipo | 1.8 KB |
-| `L109` | Acciones post-accept de un CKShare = intent PERSISTENTE reconciliable, nunca one-shot (bug Pia 2026-07-11) | 1.3 KB |
-| `L111` | `context.hasChanges` y lo que llega al canal de sync NO son la misma señal, y confundirlas justifica guards por razones  | 2.1 KB |
-| `L117` | Lazy M2M con CloudKit — CSV mirror | 1020 B |
-| `L119` | CSV mirror — stale ≠ nil al regenerar un UUID de identidad (commit `899c1c25`) | 1.4 KB |
-| `L121` | Sync de Grupos (CKSyncEngine) NO debe arrancar/`save()` sobre el `mainContext` compartido antes de que el primer import  | 403 B |
-| `L123` | Lo que el gate de quiescencia DIFIERE solo se recupera solo si es un evento de CloudKit. Si es una INTENCIÓN, el diferid | 425 B |
-| `L125` | El guard G6-3 es TAMBIÉN lo que impide avisos DUPLICADOS mientras los dos canales conviven (Fase 2, 2026-07-29). No lo d | 1.9 KB |
-| `L127` | [STALE, medido 2026-08-03 — el código que describe ya NO EXISTE: `applyRemoteRecordIfAbsent` y `GroupPullRescueGate` dan | 555 B |
-| `L129` | `DefaultHistoryToken` es POR-STORE, y un drain que ancla su high-water en el store equivocado queda ciego al suyo PARA S | 444 B |
-| `L131` | Un borrado tiene DOS mitades y el camino remoto solo copió una: la fila del grupo se borra, el PUENTE personal se queda  | 398 B |
-| `L133` | Un gate por ZONA calculado sobre filas VIVAS es la herramienta equivocada para un tombstone por FILA — y con un duplicad | 510 B |
-| `L137` | El par que apaga el mirror NO se puede hacer atómico ni invertir: se enforcea en el CONSUMIDOR (C-1, commit `246a6939`). | 1.9 KB |
-| `L139` | Un terminal de fallo DENTRO del cutover tiene que devolver el modo a `.icloud` como PRIMER efecto, o es peor que el limb | 1.1 KB |
-| `L141` | `isMarkerExported()` es necesaria-no-suficiente y su espera necesita TOPE: no hay API de cuota de iCloud. | 1.1 KB |
-| `L143` | La espera de `reverseUpload` también lleva techo, y mide el tiempo SIN AVANZAR, no el total (2026-09-16). | 3.3 KB |
-| `L145` | El claim de la reversa tampoco puede quedarse sin salida: todo `.rejected` vuelve al origen (2026-09-16). | 3.2 KB |
-| `L147` | «Migrar a la nube» nunca adopta, y hacen falta las dos capas que lo impiden (2026-09-16). | 3.6 KB |
-| `L149` | El faro de iCloud-KV (`CloudBeacon`) solo se limpia con PRUEBA de que su cuenta no existe, y «el backend dice que no exi | 4.1 KB |
-| `L176` | Al ELIMINAR una función, lista lo que hacía ADEMÁS de lo que la sustituye — un guard no viaja solo con el camino que pro | 1.5 KB |
-| `L178` | Un dominio de preferencias por SESIÓN es la parte fácil; el INVENTARIO es la difícil (`2a773ed3` → `d04fe0b6`, retirado  | 2.7 KB |
-| `L185` | Antes de sincronizar una preferencia, pregunta DE QUIÉN es el hecho (2026-09-13). | 842 B |
-| `L187` | Una caché compartida se protege con un SELLO, no con una purga — y al retirar el sello, dilo donde estaba (widget, 2026- | 689 B |
-| `L189` | El dominio Grupos pertenece al Apple ID, no al humano: toda frontera de «otro usuario en este device» tiene que SELLARLO | 429 B |
-| `L191` | EXCEPCIÓN al punto anterior, y las tres trampas que trae (C-3, 2026-07-27, `612b21ee`) | 2.9 KB |
-| `L193` | `isCurrentUser` es un flag del canal CloudKit y en el BACKEND nace APAGADO para casi todo el mundo — toda resolución de  | 2.4 KB |
-| `L195` | Duplicar un canal duplica sus ESCRITURAS; sus OBSERVACIONES se quedan atrás, y eso no lo caza ningún test de un canal so | 2.5 KB |
-| `L197` | Una señal puede viajar en NEGATIVO — y entonces el `return` que no deja rastro es un bug de LECTURA, no de escritura (S4 | 372 B |
-| `L199` | Un gate de feature NO puede decidir SI se PARSEA la entrada: solo QUÉ hacer con ella. Y «byte-idéntico al camino viejo»  | 435 B |
-| `L201` | En una frontera de USUARIO el outbox de Grupos y su cursor tienen signos OPUESTOS: uno hay que matarlo y el otro hay que | 2.0 KB |
-| `L203` | El cursor del pull de Grupos (`GroupSyncCursor.groupCursorsJSON`) NO se resetea para «forzar una re-entrega» — es dañino | 1.4 KB |
-| `L205` | Un CONSENT no es una preferencia, y por eso el de Grupos SALIÓ del canal de prefs (C1, 2026-08-11). | 1.8 KB |
-| `L207` | `PreferenceSyncService.remove/set` propaga a la CUENTA, no al device — NUNCA limpiar un consent desde un camino con `.cl | 1.7 KB |
-| `L209` | CARGAR una preferencia no puede ESCRIBIRLA — y el eco de eso convertía al receptor en autor LWW de algo que no escribió  | 373 B |
-| `L211` | El resolvedor canónico de identidad NO es un reemplazo mecánico del flag: contesta otra pregunta en DOS ejes (2026-09-05 | 3.7 KB |
-| `L213` | `ubiquityIdentityToken` mide iCloud DRIVE, no CloudKit — y `.localNoMirror` adjunta el espejo igual, así que usarlo como | 2.0 KB |
-| `L215` | El testigo del mount MIENTE en los hosts de test, y por eso `attachesCloudKitMirror` necesita un seam en cualquier gate  | 2.6 KB |
-| `L217` | Una salida que borra lo local con el espejo montado borra ARCHIVOS antes del mount, nunca FILAS, y solo después de confi | 1.7 KB |
-| `L219` | `CKDatabase.modifyRecordZones` solo LANZA por un fallo de la operación entera: los fallos por ZONA llegan dentro del tup | 1.1 KB |
-| `L221` | Un campo Codable NUEVO y no opcional en el snapshot del App Group apaga TODOS los widgets, y el DTO está DUPLICADO en do | 2.1 KB |
-| `L223` | «ARCHIVOS, nunca FILAS» es una regla sobre el ESPEJO, y el store de Grupos tiene otro camino de salida: su DRAIN. Ahí lo | 2.7 KB |
-| `L225` | Un token que no llega NO es una sesión caducada: pregúntale al SDK si la conserva (2026-09-15). | 1.9 KB |
+| `L104` | CloudKit compat | 119 B |
+| `L106` | Schema del container de GRUPOS — campo nuevo = deploy a Production en el MISMO PR | 1.1 KB |
+| `L108` | `#Predicate` GENÉRICO-PROTOCOLO crashea (`DataUtilities.swift:85`) — usa concreto por tipo | 1.8 KB |
+| `L110` | Acciones post-accept de un CKShare = intent PERSISTENTE reconciliable, nunca one-shot (bug Pia 2026-07-11) | 1.3 KB |
+| `L112` | `context.hasChanges` y lo que llega al canal de sync NO son la misma señal, y confundirlas justifica guards por razones  | 2.1 KB |
+| `L118` | Lazy M2M con CloudKit — CSV mirror | 1020 B |
+| `L120` | CSV mirror — stale ≠ nil al regenerar un UUID de identidad (commit `899c1c25`) | 1.4 KB |
+| `L122` | Sync de Grupos (CKSyncEngine) NO debe arrancar/`save()` sobre el `mainContext` compartido antes de que el primer import  | 403 B |
+| `L124` | Lo que el gate de quiescencia DIFIERE solo se recupera solo si es un evento de CloudKit. Si es una INTENCIÓN, el diferid | 425 B |
+| `L126` | El guard G6-3 es TAMBIÉN lo que impide avisos DUPLICADOS mientras los dos canales conviven (Fase 2, 2026-07-29). No lo d | 1.9 KB |
+| `L128` | [STALE, medido 2026-08-03 — el código que describe ya NO EXISTE: `applyRemoteRecordIfAbsent` y `GroupPullRescueGate` dan | 555 B |
+| `L130` | `DefaultHistoryToken` es POR-STORE, y un drain que ancla su high-water en el store equivocado queda ciego al suyo PARA S | 444 B |
+| `L132` | Un borrado tiene DOS mitades y el camino remoto solo copió una: la fila del grupo se borra, el PUENTE personal se queda  | 398 B |
+| `L134` | Un gate por ZONA calculado sobre filas VIVAS es la herramienta equivocada para un tombstone por FILA — y con un duplicad | 510 B |
+| `L138` | El par que apaga el mirror NO se puede hacer atómico ni invertir: se enforcea en el CONSUMIDOR (C-1, commit `246a6939`). | 1.9 KB |
+| `L140` | Un terminal de fallo DENTRO del cutover tiene que devolver el modo a `.icloud` como PRIMER efecto, o es peor que el limb | 1.1 KB |
+| `L142` | `isMarkerExported()` es necesaria-no-suficiente y su espera necesita TOPE: no hay API de cuota de iCloud. | 1.1 KB |
+| `L144` | La espera de `reverseUpload` también lleva techo, y mide el tiempo SIN AVANZAR, no el total (2026-09-16). | 3.3 KB |
+| `L146` | El claim de la reversa tampoco puede quedarse sin salida: todo `.rejected` vuelve al origen (2026-09-16). | 3.2 KB |
+| `L148` | «Migrar a la nube» nunca adopta, y hacen falta las dos capas que lo impiden (2026-09-16). | 3.6 KB |
+| `L150` | El faro de iCloud-KV (`CloudBeacon`) solo se limpia con PRUEBA de que su cuenta no existe, y «el backend dice que no exi | 4.1 KB |
+| `L177` | Al ELIMINAR una función, lista lo que hacía ADEMÁS de lo que la sustituye — un guard no viaja solo con el camino que pro | 1.5 KB |
+| `L179` | Un dominio de preferencias por SESIÓN es la parte fácil; el INVENTARIO es la difícil (`2a773ed3` → `d04fe0b6`, retirado  | 2.7 KB |
+| `L186` | Antes de sincronizar una preferencia, pregunta DE QUIÉN es el hecho (2026-09-13). | 842 B |
+| `L188` | Una caché compartida se protege con un SELLO, no con una purga — y al retirar el sello, dilo donde estaba (widget, 2026- | 689 B |
+| `L190` | El dominio Grupos pertenece al Apple ID, no al humano: toda frontera de «otro usuario en este device» tiene que SELLARLO | 429 B |
+| `L192` | EXCEPCIÓN al punto anterior, y las tres trampas que trae (C-3, 2026-07-27, `612b21ee`) | 2.9 KB |
+| `L194` | `isCurrentUser` es un flag del canal CloudKit y en el BACKEND nace APAGADO para casi todo el mundo — toda resolución de  | 2.4 KB |
+| `L196` | Duplicar un canal duplica sus ESCRITURAS; sus OBSERVACIONES se quedan atrás, y eso no lo caza ningún test de un canal so | 2.5 KB |
+| `L198` | Una señal puede viajar en NEGATIVO — y entonces el `return` que no deja rastro es un bug de LECTURA, no de escritura (S4 | 372 B |
+| `L200` | Un gate de feature NO puede decidir SI se PARSEA la entrada: solo QUÉ hacer con ella. Y «byte-idéntico al camino viejo»  | 435 B |
+| `L202` | En una frontera de USUARIO el outbox de Grupos y su cursor tienen signos OPUESTOS: uno hay que matarlo y el otro hay que | 2.0 KB |
+| `L204` | El cursor del pull de Grupos (`GroupSyncCursor.groupCursorsJSON`) NO se resetea para «forzar una re-entrega» — es dañino | 1.4 KB |
+| `L206` | Un CONSENT no es una preferencia, y por eso el de Grupos SALIÓ del canal de prefs (C1, 2026-08-11). | 1.8 KB |
+| `L208` | `PreferenceSyncService.remove/set` propaga a la CUENTA, no al device — NUNCA limpiar un consent desde un camino con `.cl | 1.7 KB |
+| `L210` | CARGAR una preferencia no puede ESCRIBIRLA — y el eco de eso convertía al receptor en autor LWW de algo que no escribió  | 373 B |
+| `L212` | El resolvedor canónico de identidad NO es un reemplazo mecánico del flag: contesta otra pregunta en DOS ejes (2026-09-05 | 3.7 KB |
+| `L214` | `ubiquityIdentityToken` mide iCloud DRIVE, no CloudKit — y `.localNoMirror` adjunta el espejo igual, así que usarlo como | 2.0 KB |
+| `L216` | El testigo del mount MIENTE en los hosts de test, y por eso `attachesCloudKitMirror` necesita un seam en cualquier gate  | 2.6 KB |
+| `L218` | Una salida que borra lo local con el espejo montado borra ARCHIVOS antes del mount, nunca FILAS, y solo después de confi | 1.7 KB |
+| `L220` | `CKDatabase.modifyRecordZones` solo LANZA por un fallo de la operación entera: los fallos por ZONA llegan dentro del tup | 1.1 KB |
+| `L222` | Un campo Codable NUEVO y no opcional en el snapshot del App Group apaga TODOS los widgets, y el DTO está DUPLICADO en do | 2.1 KB |
+| `L224` | «ARCHIVOS, nunca FILAS» es una regla sobre el ESPEJO, y el store de Grupos tiene otro camino de salida: su DRAIN. Ahí lo | 2.7 KB |
+| `L226` | Un token que no llega NO es una sesión caducada: pregúntale al SDK si la conserva (2026-09-15). | 1.8 KB |
+| `L228` | El canal personal separa lo mismo desde el 2026-09-16, y cada sitio decide por su cuenta | 1.9 KB |
 
 <!-- INDICE:fin -->
 
@@ -222,4 +223,6 @@ paths:
 
 - **«ARCHIVOS, nunca FILAS» es una regla sobre el ESPEJO, y el store de Grupos tiene otro camino de salida: su DRAIN. Ahí lo que blinda un borrado local es el AUTOR del `save()` (2026-09-11).** La regla de arriba prescribe borrar archivos antes del mount porque con `NSPersistentCloudKitContainer` montado los deletes de filas quedan en la History y el espejo los exporta. El store de Grupos monta `cloudKitDatabase: .none` —no hay espejo— y su único camino de export es el drain, que traduce el SwiftData History a filas de `GroupSyncOutbox`. ⇒ para él la forma correcta no es el boot-wipe (que además exigiría relanzar, y el desasociar de Ajustes es in-session) sino **firmar la transacción con `GroupsSyncClient.outboxSaveAuthor`**: `performDrain` descarta por autor ANTES de traducir, así que esos deletes dejan de ser traducibles mire el drain el History desde donde lo mire. Vive DENTRO de `DataWipeService.deleteLocalGroupsRows`, que por eso hace SIEMPRE el `save()` y ofrece `alsoDeleting` para lo que el llamador quiera meter en la misma transacción: con el autor restaurado antes de un save ajeno la firma no serviría de nada, y un tercer camino que borre estas filas tiene que nacer firmado sin acordarse. **Lo que NO vale es apoyarse en que el canal esté cortado**: cortar el canal protege ESTE proceso, no el siguiente — el History sobrevive al relanzamiento, y hasta este ticket lo único que cerraba el agujero era un efecto colateral del orden dentro de `syncCycleOnce` (el drain corre antes del pull ⇒ `backendGroupZoneIDs` vacío ⇒ no emite), que se reabría con que ese primer drain lanzara. **Y tres cosas que se probaron y NO ayudan, medidas** (ticket `detach-history-replay-can-tombstone-groups-on-next-launch`): (1) conservar el ancla del drain en vez de borrar el cursor **no protege esos deletes** —son posteriores al ancla, así que `fetchHistory($0.token > token)` los devuelve igual— y clava `lastDrainedTxAt`, uno de los cuatro suelos del corte de purga del History, sin canal que lo avance; (2) el re-barrido completo del History **con las filas ya borradas no emite nada**, porque el `case` de insert/update no resuelve ninguna fila viva por `PersistentIdentifier` — el daño de re-emitir upserts con HLC nuevos es del par «cursor borrado + filas VIVAS», y lo que lo impide es que el borrado sea UNA transacción; (3) por eso el par de una frontera de CUENTA sigue siendo «filas borradas + cursor borrado, atómico», sin excepción a la regla del reset del cursor. Pinneado por `YalaTests/CloudSync/GroupsDetachHistoryReplayTests` (5 casos, tres mutantes verificados: quitar la firma deja 2 en rojo, quitar el borrado del cursor o el del outbox deja 1 cada uno).
 
-- **Un token que no llega NO es una sesión caducada: pregúntale al SDK si la conserva (2026-09-15).** `CloudAuthService.accessToken()` devuelve `nil` por CUALQUIER fallo, y el canal de Grupos leía ese `nil` —y el refresh forzado que vuelve sin token tras un 401— como `.sessionExpired`: sin red y con el token caducado, el loop moría hasta volver a primer plano o relanzar, y el cierre de sesión decía «Tu sesión caducó». El SDK ya separa los dos casos: solo BORRA la sesión guardada ante `session_not_found`, `session_expired`, `refresh_token_not_found` y `refresh_token_already_used`, y la borra antes de lanzar; la red caída, un 5xx o cualquier otro rechazo la dejan donde estaba. ⇒ con `canRenewSession == true` es `.transient` (backoff: el loop propio reintenta solo, hasta cada 5 min, y al volver a primer plano ya no se re-arranca —no ha muerto— pero **sí se DESPIERTA** desde el 2026-09-16: `startIfEligible` le corta el sueño para que cicle ya, o esos cambios esperaban el backoff entero con la red ya recuperada; en `.cloud` Grupos cicla dentro del runtime personal, que sigue parándose con el token nulo); con `false`, `.sessionExpired`. Decide un solo sitio, `GroupsSyncClient.sdkRemovedTheSession`, y la premisa del SDK la fija `SupabaseSessionRenewalContractTests`, que conviene volver a correr al actualizar supabase-swift. **Dos trampas:** (1) el testigo es `canRenewSession` y NO `hasSession`, que lleva el seam `-uitest-fake-cloud-session` y dice «hay sesión» sin ninguna guardada; (2) un test que para el loop con un 401 sin refresh tiene que inyectar `canRenewSession: { false }` — si lee el singleton y el simulador guarda una sesión, el refresh nulo es pasajero y el test CUELGA en vez de fallar. Los otros clientes con el mismo `nil` siguen sin separarlo: `groups-actions-read-an-offline-token-refresh-as-a-session-expiry` y `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`.
+- **Un token que no llega NO es una sesión caducada: pregúntale al SDK si la conserva (2026-09-15).** `CloudAuthService.accessToken()` devuelve `nil` por CUALQUIER fallo, y el canal de Grupos leía ese `nil` —y el refresh forzado que vuelve sin token tras un 401— como `.sessionExpired`: sin red y con el token caducado, el loop moría hasta volver a primer plano o relanzar, y el cierre de sesión decía «Tu sesión caducó». El SDK ya separa los dos casos: solo BORRA la sesión guardada ante `session_not_found`, `session_expired`, `refresh_token_not_found` y `refresh_token_already_used`, y la borra antes de lanzar; la red caída, un 5xx o cualquier otro rechazo la dejan donde estaba. ⇒ con `canRenewSession == true` es `.transient` (backoff: el loop propio reintenta solo, hasta cada 5 min, y al volver a primer plano ya no se re-arranca —no ha muerto— pero **sí se DESPIERTA** desde el 2026-09-16: `startIfEligible` le corta el sueño para que cicle ya, o esos cambios esperaban el backoff entero con la red ya recuperada; en `.cloud` Grupos cicla dentro del runtime personal, ver la regla siguiente); con `false`, `.sessionExpired`. En Grupos decide un solo sitio, `GroupsSyncClient.sdkRemovedTheSession`, y la premisa del SDK la fija `SupabaseSessionRenewalContractTests`, que conviene volver a correr al actualizar supabase-swift. **Dos trampas:** (1) el testigo es `canRenewSession` y NO `hasSession`, que lleva el seam `-uitest-fake-cloud-session` y dice «hay sesión» sin ninguna guardada; (2) un test que para el loop con un 401 sin refresh tiene que inyectar `canRenewSession: { false }` — si lee el singleton y el simulador guarda una sesión, el refresh nulo es pasajero y el test CUELGA en vez de fallar. Sigue sin separarlo `groups-actions-read-an-offline-token-refresh-as-a-session-expiry`.
+
+- **El canal personal separa lo mismo desde el 2026-09-16, y cada sitio decide por su cuenta** (ticket `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`): `SyncPushClient`, `SyncPullClient`, `PrefsSyncClient` y `BornCloudSignUpService` leen `canRenewSession` DESPUÉS de pedir el token (el SDK borra la sesión antes de lanzar). Si cambias el criterio, cámbialo en los cuatro y en `sdkRemovedTheSession`. En `.cloud` el runtime entra en backoff en vez de `stopUntilSignIn`, y Grupos cicla en la primera vuelta en que el push personal pasa. **Ojo al reproducirlo:** `performCycle` pide el token de App Attest antes de subir, y ese token vive 15 min en memoria; sin red y con él caducado, el ciclo sale pasajero en la puerta y nunca llega al token nulo del push, con el arreglo y sin él. El bug solo salía con el JWT caducado y el attest aún en caché, o con el servidor de sesiones caído y la red bien. **Tres cosas que no se tocan sin romperlo:** (1) en los tres clientes `canRenewSession` tiene default `{ false }` —el trato de antes, para no tocar las decenas de construcciones de la suite— y producción pasa el de su proveedor de sesión; lo exige `AttestWiringTests.personalChannelConstructions_passTheSessionRenewalWitness`, que fija la etiqueta Y la definición de `canRenew`; (2) el canario `cloudSyncBlockedByExpiredSession` ya no sale con el token nulo y la sesión guardada ni con el 401 del attest (sí con la sesión borrada o con otro 401), así que la serie cambió de definición con ese build; (3) la migración colapsa `.sessionExpired` y `.transient` en la misma parada retomable (`MigrationWorkExecutor`, snapshot, `verify`), así que ahí la separación no cambia el recorrido. **Aceptado a sabiendas, como en Grupos:** una sesión que el servidor rechaza sin que el SDK la borre (`user_banned`) se lee pasajera, y «Activar Yala completo» ofrece un «Reintentar» que no puede funcionar.

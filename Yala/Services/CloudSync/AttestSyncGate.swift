@@ -72,8 +72,11 @@ enum AttestSyncGate {
     /// en la racha del teléfono (`GroupsAttestStreakStore`) desde la puerta del motor personal
     /// (`CloudSyncRuntime.resolveAttest`, ticket `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`).
     ///
-    /// El motor personal nunca manda una subida sin attest, así que no ve el 401 `yala_attest_required` con el que cuenta
-    /// Grupos: ve el error con el que `AppAttestClient` no consiguió el token. Cuentan los que hablan del attest:
+    /// El motor personal solo sube después de que su puerta consiga el token, así que el 401 `yala_attest_required` con el
+    /// que cuenta Grupos no le sirve: si el gateway se lo devuelve, el token lo acuñó el teléfono y el fallo es del reloj,
+    /// del build o del servidor (la migración y el adopt suben sin esta puerta, y tampoco lo cuentan). Los clientes personales lo leen pasajero, con su canario y sin tocar la racha (2026-09-16,
+    /// `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`). Lo que cuenta aquí es el error con el que
+    /// `AppAttestClient` no consiguió el token, cuando habla del attest:
     ///  - `.unavailable`: este teléfono no tiene App Attest.
     ///  - `.unknownKey`: el gateway no reconoce la key de este teléfono.
     ///  - `.server("yala_attest_invalid")`: el gateway rechazó la atestación o la aserción.

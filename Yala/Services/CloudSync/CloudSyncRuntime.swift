@@ -49,10 +49,12 @@ extension Notification.Name {
 protocol CloudSyncSessionProviding: AnyObject {
     /// El `sub` de la sesión (owner-scoping del espejo + gate de arranque). `nil` = sin sesión.
     var currentUserID: String? { get }
-    /// JWT de Supabase para las llamadas al gateway. `nil` = sin sesión.
+    /// JWT de Supabase para las llamadas al gateway. `nil` = no hay token: sin sesión, o la renovación no volvió (sin
+    /// red). Los dos casos los separa `canRenewSession`.
     func accessToken() async -> String?
-    /// ¿La sesión puede renovarse silenciosamente (refresh token vigente)? Consumido por
-    /// `SessionExpiryPolicy` (pendientes + no-renovable → estado accionable "inicia sesión").
+    /// ¿Conserva el SDK la sesión guardada? `false` solo cuando la borró (un rechazo terminal del servidor de auth). Lo
+    /// consumen `SessionExpiryPolicy` (pendientes + no-renovable → «inicia sesión») y, desde el 2026-09-16, los clientes del
+    /// canal personal y `BornCloudSignUpService` para leer un token que no llega como pasajero y no como sesión caducada.
     var canRenewSession: Bool { get }
     /// Token de sesión de App Attest. `nil` = attest no requerido / no disponible (DARK). Lanza
     /// `AppAttestError` cuando la adquisición falla (el runtime clasifica transient/terminal).
@@ -178,6 +180,11 @@ final class CloudSyncRuntime {
     /// `.accountUnavailable` cuando `AttestSyncGate` la da por terminal; un `.coalesced` describe un ciclo ajeno. El testigo,
     /// porque una racha terminal no dice por qué falló ESTE ciclo: sin red o con un 5xx, el aviso de la pérdida mentiría. Y
     /// la racha del teléfono (`GroupsAttestStreakStore.isTerminal`), porque un fallo de hace un rato es lo pasajero de siempre.
+    ///
+    /// **El 401 `yala_attest_required` del gateway NO es testigo** (2026-09-16, ticket
+    /// `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`): llega después de que la puerta consiguiera el
+    /// token, así que no habla del teléfono sino del reloj, del build o del servidor, y ofrecer perder los cambios por él
+    /// sería perder lo que un hotfix subiría.
     func stoppedByUnavailableAttest(for outcome: SyncCadencePolicy.CadenceOutcome) -> Bool {
         (outcome == .transient || outcome == .accountUnavailable)
             && lastCycleStoppedAtAttestGate
@@ -310,9 +317,13 @@ final class CloudSyncRuntime {
             : NoopCloudSessionProvider()
         let token: () async -> String? = { await session.accessToken() }
         let attest: () async -> String? = { try? await session.attestToken() }
+        // Sin token, el SDK dice si es caducada o pasajero (ticket
+        // `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`). Del MISMO proveedor que el preflight de
+        // `SessionExpiryPolicy` en `performCycle`: los dos tienen que contestar lo mismo.
+        let canRenew: @MainActor () -> Bool = { session.canRenewSession }
         let engine = CloudSyncEngine()
-        let push = SyncPushClient(tokenProvider: token, attestProvider: attest)
-        let pull = SyncPullClient(tokenProvider: token, attestProvider: attest)
+        let push = SyncPushClient(tokenProvider: token, attestProvider: attest, canRenewSession: canRenew)
+        let pull = SyncPullClient(tokenProvider: token, attestProvider: attest, canRenewSession: canRenew)
         let merkle = SyncMerkleClient(tokenProvider: token, attestProvider: attest)
         return CloudSyncRuntime(
             engine: engine,
@@ -326,7 +337,7 @@ final class CloudSyncRuntime {
             // (el runtime SIEMPRE postea la Notification además de este closure opcional).
             onRemoteChangesApplied: nil,
             // I13: prefs sync (transporte + cola durable App Group). Mismos providers de sesión/attest.
-            prefsClient: PrefsSyncClient(tokenProvider: token, attestProvider: attest),
+            prefsClient: PrefsSyncClient(tokenProvider: token, attestProvider: attest, canRenewSession: canRenew),
             prefsOutbox: PrefsOutbox()
         )
     }
@@ -767,8 +778,9 @@ final class CloudSyncRuntime {
     ///
     /// **Y alimenta la racha del teléfono** (2026-09-15, ticket
     /// `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`): un token conseguido la acaba, y un fallo que
-    /// habla del attest suma un rechazo y deja el testigo de este ciclo (`noteAttestFailure`). Es lo único que ve el motor
-    /// personal, que nunca manda una subida sin attest.
+    /// habla del attest suma un rechazo y deja el testigo de este ciclo (`noteAttestFailure`). Es lo único que dice algo del
+    /// TELÉFONO: el 401 `yala_attest_required` que el gateway pueda devolver después ya no lo dice, porque el token se
+    /// consiguió aquí, y por eso los clientes lo leen pasajero sin tocar la racha (2026-09-16).
     private func resolveAttest() async -> AttestResolution {
         do {
             _ = try await session.attestToken()

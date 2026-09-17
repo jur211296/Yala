@@ -317,8 +317,12 @@ final class CloudMigrationController {
         let engine = CloudSyncEngine()
         let token: () async -> String? = { await CloudAuthService.shared.accessToken() }
         let attest: () async -> String? = { try? await session.attestToken() }
-        let push = SyncPushClient(tokenProvider: token, attestProvider: attest)
-        let pull = SyncPullClient(tokenProvider: token, attestProvider: attest)
+        // Sin token, el SDK dice si es caducada o pasajero (ticket
+        // `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`). Aquí no cambia lo que hace la máquina —el
+        // executor colapsa las dos en la misma parada retomable—, pero el outcome ya no miente.
+        let canRenew: @MainActor () -> Bool = { session.canRenewSession }
+        let push = SyncPushClient(tokenProvider: token, attestProvider: attest, canRenewSession: canRenew)
+        let pull = SyncPullClient(tokenProvider: token, attestProvider: attest, canRenewSession: canRenew)
         let merkle = SyncMerkleClient(tokenProvider: token, attestProvider: attest)
         // Provider REAL de la sesión hacia el claim/faro, leído VIVO en cada uso (I4 CERRADO en la
         // sesión 3 Google Sign-In, ajuste A1): el closure se evalúa EN el momento del claim/faro, no al

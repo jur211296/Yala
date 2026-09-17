@@ -87,17 +87,22 @@ final class PrefsSyncClient {
     private let tokenProvider: () async -> String?
     private let attestProvider: () async -> String?
     private let urlSession: SyncHTTPSession
+    /// ¿Conserva el SDK la sesión guardada? Ver `SyncPushClient.canRenewSession`: mismo contrato y mismo default de
+    /// test `{ false }`.
+    private let canRenewSession: @MainActor () -> Bool
 
     init(
         baseURL: URL = ProxyConfig.baseURL,
         tokenProvider: @escaping () async -> String?,
         attestProvider: @escaping () async -> String? = { nil },
-        urlSession: SyncHTTPSession = URLSession.shared
+        urlSession: SyncHTTPSession = URLSession.shared,
+        canRenewSession: @escaping @MainActor () -> Bool = { false }
     ) {
         self.baseURL = baseURL
         self.tokenProvider = tokenProvider
         self.attestProvider = attestProvider
         self.urlSession = urlSession
+        self.canRenewSession = canRenewSession
     }
 
     // MARK: push
@@ -105,8 +110,9 @@ final class PrefsSyncClient {
     /// Sube `prefs` a `POST /prefs/push`. Devuelve un `PrefsPushOutcome` estructurado (nunca lanza).
     func push(_ prefs: [WirePref]) async -> PrefsPushOutcome {
         guard !prefs.isEmpty else { return .completed([]) }
+        // Sin token: caducada solo si el SDK borró la sesión (ver `SyncPushClient.push`).
         guard let token = await tokenProvider(), !token.isEmpty else {
-            return .sessionExpired
+            return canRenewSession() ? .transient : .sessionExpired
         }
 
         let body: Data
@@ -145,6 +151,9 @@ final class PrefsSyncClient {
             } catch {
                 return .transient
             }
+        case 401 where GatewayErrorEnvelope.isAttestRequired(data):
+            noteAttestRequired(edge: "prefs-push")
+            return .transient
         case 401: return .sessionExpired
         case 403: return .accountUnavailable
         case 409:
@@ -160,7 +169,7 @@ final class PrefsSyncClient {
     /// Baja las prefs desde `since` (= cursor `server_seq`). Devuelve un `PrefsPullOutcome` estructurado.
     func pull(since: Int64) async -> PrefsPullOutcome {
         guard let token = await tokenProvider(), !token.isEmpty else {
-            return .sessionExpired
+            return canRenewSession() ? .transient : .sessionExpired
         }
 
         var components = URLComponents(url: baseURL.appendingPathComponent("prefs/pull"),
@@ -192,10 +201,20 @@ final class PrefsSyncClient {
             } catch {
                 return .transient
             }
+        case 401 where GatewayErrorEnvelope.isAttestRequired(data):
+            noteAttestRequired(edge: "prefs-pull")
+            return .transient
         case 401: return .sessionExpired
         case 403: return .accountUnavailable
         default: return .transient
         }
+    }
+
+    /// El 401 `yala_attest_required`: el JWT vale y el gateway no acepta el attest. Pasajero, con rastro y canario, y sin
+    /// sumar a la racha del teléfono (ver `SyncPushClient.pushBatch`).
+    private func noteAttestRequired(edge: String) {
+        CloudSyncBreadcrumb.attestRequired(edge: edge)
+        MetricsService.cloudSyncAttestRequired(edge: edge)
     }
 
     // MARK: - Encode / Decode

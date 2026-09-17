@@ -33,10 +33,20 @@ import Testing
 private final class FakeSession: CloudSyncSessionProviding {
     var token: String?
     var userID: String?
-    init(token: String?, userID: String?) { self.token = token; self.userID = userID }
+    /// `nil` = lo de siempre (hay sesión mientras hay token). Con valor, finge que el SDK conserva —o borró— la sesión
+    /// aunque el token no llegue: sin red se conserva.
+    var sessionKept: Bool?
+    /// Finge la renovación terminal: el SDK borra la sesión DURANTE la petición del token, antes de devolver `nil`.
+    var removesSessionWhileFetching = false
+    init(token: String?, userID: String?, sessionKept: Bool? = nil) {
+        self.token = token; self.userID = userID; self.sessionKept = sessionKept
+    }
     var currentUserID: String? { userID }
-    func accessToken() async -> String? { token }
-    var canRenewSession: Bool { token != nil }
+    func accessToken() async -> String? {
+        if removesSessionWhileFetching { sessionKept = false }
+        return token
+    }
+    var canRenewSession: Bool { sessionKept ?? (token != nil) }
     func attestToken() async throws -> String? { nil }
 }
 
@@ -93,6 +103,7 @@ struct BornCloudSignUpServiceTests {
     private func makeSUT(
         token: String? = "jwt",
         userID: String? = "sub-born",
+        sessionKept: Bool? = nil,
         provider: @escaping @MainActor () -> String = { "apple" },
         consentRegistered: Bool = true,
         beaconStore: FakeBeaconStore = FakeBeaconStore(),
@@ -107,7 +118,7 @@ struct BornCloudSignUpServiceTests {
         let claimStore = CloudClaimActionStore(
             defaults: makeIsolatedDefaults(prefix: "bornCloud.claim"))
         let sut = BornCloudSignUpService(
-            session: FakeSession(token: token, userID: userID),
+            session: FakeSession(token: token, userID: userID, sessionKept: sessionKept),
             accountClient: CloudAccountClient(baseURL: base, urlSession: stub),
             provider: provider,
             deviceID: "device-born",
@@ -233,6 +244,43 @@ struct BornCloudSignUpServiceTests {
         #expect(stub.callCount == 0, "sin sesión no se llama al gateway")
         #expect(!beaconIsWritten(beacon))
         #expect(claimStore.action(forUserID: "sub-born") == nil)
+    }
+
+    /// Ticket `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`. Sin red y con el token vencido la
+    /// renovación no vuelve y el SDK CONSERVA la sesión: eso no es una sesión caducada. En «Activar Yala completo» el
+    /// `.sessionExpired` enseñaba «Tu sesión caducó» con solo «Cerrar», y en el Welcome cerraba la sesión.
+    @Test("MUTACIÓN: sin JWT y con la sesión GUARDADA → .transient, sin tocar la red; con la sesión BORRADA, caducada")
+    func noJWT_followsTheStoredSession() async throws {
+        let guardada = makeSUT(token: nil, sessionKept: true)
+        let outcome = await guardada.sut.signUp()
+        guard case .transient = outcome else {
+            Issue.record("sin red y con la sesión guardada, el alta tiene que ser pasajera y no \(outcome)"); return
+        }
+        #expect(guardada.stub.callCount == 0, "sin token no se llama al gateway")
+        #expect(!beaconIsWritten(guardada.beacon))
+        #expect(FullModeActivationFlowLogic.promotionStep(for: outcome) == .retry,
+                "la activación tiene que ofrecer «Reintentar», no «Tu sesión caducó»")
+        #expect(BornCloudSignUpFlow.step(for: outcome) == .show(.error(retryable: true)),
+                "el Welcome no puede cerrar una sesión que solo está sin red")
+
+        let borrada = makeSUT(token: nil, sessionKept: false)
+        #expect(await borrada.sut.signUp() == .sessionExpired(detail: "no access token"))
+    }
+
+    @Test("MUTACIÓN: la sesión se lee DESPUÉS de pedir el token: si la renovación la borra, es caducada")
+    func noJWT_readsTheStoredSessionAfterTheRequest() async throws {
+        let session = FakeSession(token: nil, userID: "sub-born", sessionKept: true)
+        session.removesSessionWhileFetching = true
+        let sut = BornCloudSignUpService(
+            session: session,
+            accountClient: CloudAccountClient(baseURL: base, urlSession: ClaimStubHTTP()),
+            provider: { "apple" },
+            deviceID: "device-born",
+            beacon: CloudBeacon(store: FakeBeaconStore()),
+            claimStore: CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "bornCloud.claim")),
+            consentDefaults: makeIsolatedDefaults(prefix: "bornCloud.consent"),
+            now: { Date(timeIntervalSince1970: 1_760_000_500) })
+        #expect(await sut.signUp() == .sessionExpired(detail: "no access token"))
     }
 
     // MARK: - El wire del claim (mutación (a) del chip)

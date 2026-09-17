@@ -246,7 +246,8 @@ enum FullModeActivationFlowLogic {
         case accountAlreadyHasPersonalData
         /// `claiming_in_progress`: otro dispositivo lidera una migración de esta cuenta.
         case anotherDeviceIsMoving
-        /// 401: la sesión de la cuenta ya no está viva.
+        /// 401, o sin token con la sesión borrada: la sesión de la cuenta ya no está viva. Sin token y con la sesión
+        /// guardada no llega aquí: es `.retry` (2026-09-16, `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`).
         case sessionExpired
         /// 403, o un desenlace que la rama born-cloud no puede producir.
         case accountUnavailable

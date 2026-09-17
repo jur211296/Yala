@@ -10,8 +10,11 @@
 //  WIRE REAL (anclado a `gateway/src/sync/account.ts` + `gateway/test/account.goldens.test.ts`):
 //   - Request:  `POST /account/claim`  body `{ "device_id": <string>, "provider": <string> }`.
 //   - Response: `200 { "state": "created" | "existing_stable" | "claiming_in_progress", "profile"?: {…} }`.
-//   - Auth: SOLO el JWT de usuario (`Authorization: Bearer <supabase jwt>`). `/account/*` NO exige App
-//     Attest (precede al `/attest/bind` — el device aún no vinculó su keyId). Confirmado en el handler.
+//   - Auth: SOLO el JWT de usuario (`Authorization: Bearer <supabase jwt>`) en claim, exists, migration,
+//     siwa/exchange y entitlement, que NO exigen App Attest (preceden al `/attest/bind` — el device aún no vinculó
+//     su keyId). **Las dos excepciones SÍ lo exigen**: `/account/delete` y `/account/siwa/revoke`
+//     (`requireUserAndAttest`, ver `deleteAccount`), y ahí un 401 `yala_attest_required` es attest ausente, no
+//     sesión muerta.
 //   - Errores: envelope OpenAI-compatible `{ "error": { message, type, param, code } }` con status
 //     (401 JWT ausente/inválido, 400 body inválido, 502 upstream). El panel los muestra EN CLARO.
 //
@@ -52,7 +55,11 @@ enum ExistsOutcome: Equatable {
 enum DeleteOutcome: Equatable {
     /// 200 OK → el HARD DELETE server-side se aplicó.
     case success
-    /// 401: JWT o token de attest ausente/inválido/expirado → la sesión no está viva → re-firmar.
+    /// 401. Con `yala_attest_invalid` el gateway no acepta el JWT (caducado según su reloj o mal firmado) → re-firmar. Con
+    /// `yala_attest_required` el JWT vale y falta el token de App Attest, que volver a entrar NO arregla
+    /// (`GatewayErrorEnvelope.isAttestRequired`). Este enum no los separa porque su único consumidor,
+    /// `AccountDeletionService.deleteAccount`, trata este caso y `.transient` igual: «Intenta de nuevo en un momento» (leído
+    /// en el código el 2026-09-16, ticket `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`).
     case sessionExpired(detail: String)
     /// 5xx / red caída / 400 yala_* / respuesta no-HTTP → reintentable (los teardowns son idempotentes).
     case transient(detail: String)

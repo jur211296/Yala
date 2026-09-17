@@ -16,7 +16,10 @@
 //  `GroupsMembershipClient.call` (RPC), con el 401 `yala_attest_required` como rechazo y un 200 como acierto. Y desde el
 //  2026-09-15 la puerta de attest del motor personal (`CloudSyncRuntime.resolveAttest`): nunca manda una subida sin attest,
 //  así que cuenta el error con el que no consiguió el token (`AttestSyncGate.countsTowardAttestStreak`) y toma como acierto
-//  un token conseguido (ticket `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`). **Una sola racha
+//  un token conseguido (ticket `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`). **El 401
+//  `yala_attest_required` de las rutas personales NO escribe** (2026-09-16): llega después de esa puerta, con un token que
+//  el teléfono sí acuñó, así que no habla del teléfono (ticket `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`).
+//  **Una sola racha
 //  para los dos canales, a propósito**: describe al teléfono, y con dos un cierre en la nube podía aceptar perder lo
 //  personal y quedarse en «inténtalo en un rato» con los cambios de grupos. Sin inyección por construcción, a propósito:
 //  la membresía tiene ocho, y quien la construya de nuevo apunta sin tener que acordarse. Los tests aíslan `defaults`,

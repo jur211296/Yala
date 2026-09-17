@@ -92,12 +92,17 @@ struct CloudSyncRuntimeTests {
         session: StubCloudSession? = nil,
         onRemoteChangesApplied: (() -> Void)? = nil,
         prefsSession: StubSession? = nil,
-        prefsOutbox: PrefsOutbox? = nil
+        prefsOutbox: PrefsOutbox? = nil,
+        clientToken: String? = "jwt",
+        clientSessionKept: Bool = false
     ) -> CloudSyncRuntime {
         CloudSyncRuntime(
             engine: engine ?? CloudSyncEngine(),
-            pushClient: SyncPushClient(baseURL: URL(string: "https://x.test")!, tokenProvider: { "jwt" }, urlSession: push ?? StubSession()),
-            pullClient: SyncPullClient(baseURL: URL(string: "https://x.test")!, tokenProvider: { "jwt" }, urlSession: pull ?? StubSession()),
+            pushClient: SyncPushClient(baseURL: URL(string: "https://x.test")!, tokenProvider: { clientToken },
+                                       urlSession: push ?? StubSession(), canRenewSession: { clientSessionKept }),
+            pullClient: SyncPullClient(baseURL: URL(string: "https://x.test")!, tokenProvider: { clientToken },
+                                       urlSession: pull ?? StubSession(),
+                                       canRenewSession: { clientSessionKept }),
             merkleClient: SyncMerkleClient(baseURL: URL(string: "https://x.test")!, tokenProvider: { "jwt" }, urlSession: merkle ?? StubSession()),
             mirror: mirror,
             coordinator: coordinator ?? SyncQuiescenceCoordinator(icloudQuiescent: { true }, modeProvider: { .icloud }),
@@ -389,6 +394,49 @@ struct CloudSyncRuntimeTests {
         #expect(outcome == .sessionExpired)
     }
 
+    // MARK: - Sin red con el token vencido: pasajero, no sesión caducada (2026-09-16)
+
+    // Ticket `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`. Sin red la renovación no vuelve y el SDK
+    // CONSERVA la sesión. El ciclo devolvía `.sessionExpired`, la cadencia paraba con `stopUntilSignIn` hasta volver a
+    // primer plano (y con ella Grupos, que en `.cloud` cicla dentro de este runtime) y Ajustes pedía iniciar sesión.
+
+    @Test("MUTACIÓN: push sin token con la sesión guardada → `.transient` y backoff; con la sesión borrada, caducada")
+    func syncCycle_pushWithoutToken_followsTheStoredSession() async throws {
+        // La puerta del stub da token y borra la racha: aislada, para no tocar la del simulador.
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        _ = liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
+
+        let guardada = makeRuntime(session: StubCloudSession(userID: "u1", canRenew: true),
+                                   clientToken: nil, clientSessionKept: true)
+        let pasajero = await guardada.syncCycle(context: context)
+        #expect(pasajero == .transient)
+        #expect(SyncCadencePolicy.nextAction(outcome: pasajero, consecutiveTransients: 1) == .backoff(SyncCadencePolicy.backoffBase),
+                "el loop tiene que seguir reintentando solo, no parar hasta volver a entrar")
+        #expect(outbox(context).count == 1, "la fila sigue viva para el reintento")
+
+        // El SDK borra la sesión DURANTE la renovación: el preflight la vio viva y el push la ve borrada.
+        let borrada = makeRuntime(session: StubCloudSession(userID: "u1", canRenew: true),
+                                  clientToken: nil, clientSessionKept: false)
+        #expect(await borrada.syncCycle(context: context) == .sessionExpired)
+    }
+
+    @Test("MUTACIÓN: pull sin token (sin nada que subir) con la sesión guardada → `.transient`; con la sesión borrada, caducada")
+    func syncCycle_pullWithoutToken_followsTheStoredSession() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let guardada = makeRuntime(session: StubCloudSession(userID: "u1", canRenew: true),
+                                   clientToken: nil, clientSessionKept: true)
+        #expect(await guardada.syncCycle(context: context) == .transient)
+
+        let borrada = makeRuntime(session: StubCloudSession(userID: "u1", canRenew: false),
+                                  clientToken: nil, clientSessionKept: false)
+        #expect(await borrada.syncCycle(context: context) == .sessionExpired)
+    }
+
     // MARK: - La puerta de attest alimenta la racha del teléfono (2026-09-15)
 
     // Ticket `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`. El motor personal nunca manda una subida
@@ -481,6 +529,27 @@ struct CloudSyncRuntimeTests {
         let acierto = await runtime.syncCycle(context: context)
         #expect(!runtime.stoppedByUnavailableAttest(for: acierto))
         #expect(GroupsAttestStreakStore.current() == nil, "un token conseguido es un acierto: la racha se acaba")
+    }
+
+    // MARK: - El 401 del gateway es pasajero y no es el teléfono sin attest (2026-09-16)
+
+    // Ticket `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`. La puerta consiguió el token antes de subir,
+    // así que el 401 `yala_attest_required` no habla del teléfono. Aquí se fija que el ciclo no para. Que ese 401 no toca la
+    // racha lo fijan los tests de los clientes, con una racha sembrada que no se mueve: en el ciclo la puerta la borra antes.
+    // El testigo del cierre no cambia con este ticket: sigue siendo solo la puerta (tests del 2026-09-15, más arriba).
+
+    @Test("MUTACIÓN: con cambios pendientes, el 401 `yala_attest_required` del push → `.transient`, no parada")
+    func syncCycle_push401AttestRequired_isTransient() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        _ = liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        let rechazo = Data(#"{"error":{"message":"m","type":"yala_attest_required","param":null,"code":"yala_attest_required"}}"#.utf8)
+        let runtime = makeRuntime(push: StubSession(status: 401, body: rechazo),
+                                  session: StubCloudSession(userID: "u1", canRenew: true))
+        let outcome = await runtime.syncCycle(context: context)
+        #expect(outcome == .transient, "volver a entrar no arregla un attest: el loop no puede pararse a esperar un sign-in")
+        #expect(outbox(context).count == 1, "la fila sigue viva para el reintento")
     }
 
     @Test("la parada terminal de la puerta (`.accountUnavailable`) también es el teléfono sin attest")

@@ -63,12 +63,13 @@ enum BornCloudSignUpOutcome: Equatable {
     /// `AccountClaimDecision` y no este servicio. Lleva las dos salidas del mismatch (paso 6): las MISMAS
     /// que calcula `ProviderMismatchLogic` para la re-entrada.
     case providerMismatch(ProviderMismatchLogic.Exits)
-    /// 401 / sin JWT → la sesión no está viva; re-firmar. Nada se creó server-side.
+    /// 401, o sin JWT con la sesión BORRADA por el SDK → la sesión no está viva; re-firmar. Nada se creó server-side.
     case sessionExpired(detail: String)
     /// 403 → cuenta no disponible (suspendida). Terminal para este intento.
     case accountUnavailable(detail: String)
-    /// Red caída / 5xx / respuesta indescifrable → reintentable. El claim es idempotente por contrato
-    /// (§f.1: el re-claim del MISMO device colapsa a `created`), así que reintentar es seguro.
+    /// Red caída / 5xx / respuesta indescifrable, o sin JWT con la sesión GUARDADA (la renovación no volvió, 2026-09-16)
+    /// → reintentable. El claim es idempotente por contrato (§f.1: el re-claim del MISMO device colapsa a `created`),
+    /// así que reintentar es seguro.
     case transient(detail: String)
 }
 
@@ -202,8 +203,13 @@ final class BornCloudSignUpService {
     ///
     /// NUNCA lanza. NUNCA aborta por el consent (paso 5): eso es trazabilidad, no una precondición.
     func signUp() async -> BornCloudSignUpOutcome {
+        // Sin token, caducada solo si el SDK BORRÓ la sesión. Si la conserva, la renovación no volvió (sin red) y es
+        // pasajero: «Activar Yala completo» enseña «Revisa tu conexión» con «Reintentar» en vez de «Tu sesión caducó», y
+        // el Welcome no cierra la sesión (ticket `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`).
         guard let jwt = await session.accessToken(), !jwt.isEmpty else {
-            return .sessionExpired(detail: "no access token")
+            return session.canRenewSession
+                ? .transient(detail: "no access token, session kept")
+                : .sessionExpired(detail: "no access token")
         }
         let sessionProvider = provider()
 
