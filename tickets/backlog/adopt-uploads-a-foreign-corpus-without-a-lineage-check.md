@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "modo-nube, migración"
 created: 2026-09-16
+updated: 2026-09-17
 source: "residual declarado de `settings-migrate-to-cloud-adopts-silently-instead-of-migrating` (Paso 0 · D9), 2026-09-16"
 ---
 
@@ -42,6 +43,15 @@ se mezclan con los suyos, y la mezcla llega a todos sus dispositivos. Nadie me p
 la intención de migrar vivía en memoria, y la review midió que la ventana no era una petición: dura todo lo que el claim
 pase aparcado por la red. La intención se journalea ahora con la transición al claim (`MigrationState.forwardClaimIntentRaw`,
 schema 6) y la fija `afterRelaunch_theJournaledIntentStillRefuses`.
+
+3. **La sesión de la persona anterior, tras «Empezar desde cero»** (review de
+   `fresh-start-keeps-a-groups-session-that-migrate-promotes`, 2026-09-17, inferido). `wipeAllUserData` no borra
+   `CloudMigrationMarker`, así que un teléfono que lo conservaba sigue enseñando «Activar en este dispositivo». Con la
+   sesión que dejó abierta la persona anterior, el faro de su Apple ID casa con esa sesión, `decide` da
+   `.reuseLiveSession` y `continueToClaim` va directo al claim con `.adoptIfExisting`: el corpus de la persona nueva sube a
+   la cuenta de la anterior. La comprobación de identidad no corre en el adopt, y **la guarda de linaje de abajo no lo
+   pararía**: el marcador sí está en local. No está medido si la fila del marcador sobrevive al borrado de la zona en el
+   relevo. La sesión superviviente, entera, en `previous-person-cloud-session-survives-fresh-start-and-reinstall`.
 
 ## Opciones, sin decidir
 

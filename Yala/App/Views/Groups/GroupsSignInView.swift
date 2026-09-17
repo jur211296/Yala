@@ -41,10 +41,23 @@ import AuthenticationServices
 import SwiftUI
 
 struct GroupsSignInView: View {
-    /// Se invoca con la sesión VIVA (recién firmada o preexistente) y con el **destino** que decidió el
-    /// bloque [I]. El caller cierra el sheet y rutea: `continueGroupsSetup` / `associateGroupsAccount`
-    /// siguen el flujo encadenado de siempre (consent → join), y los otros dos son las novedades.
-    var onAuthenticated: (CloudIdentityRoutingLogic.Destination) -> Void
+    /// De dónde sale la sesión con la que se avisa al caller.
+    enum SessionOrigin: Equatable {
+        /// La persona firmó en esta hoja: eligió la cuenta.
+        case signedInHere
+        /// Ya había sesión y el cinturón del `onAppear` la reusó sin enseñar botones.
+        case alreadyOpen
+    }
+
+    /// Se invoca con la sesión VIVA (recién firmada o preexistente), con el **destino** que decidió el
+    /// bloque [I] y con el origen de esa sesión. El caller cierra el sheet y rutea: `continueGroupsSetup` /
+    /// `associateGroupsAccount` siguen el flujo encadenado de siempre (consent → join), y los otros dos son
+    /// las novedades.
+    ///
+    /// **El origen existe por la asociación** (ticket `fresh-start-keeps-a-groups-session-that-migrate-promotes`): en un
+    /// teléfono que empezó desde cero, una sesión que ya estaba abierta puede ser de la persona anterior, y
+    /// `GroupsAccountAssociation.associate` no la apunta como cuenta de grupos de nadie.
+    var onAuthenticated: (CloudIdentityRoutingLogic.Destination, SessionOrigin) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
@@ -162,7 +175,7 @@ struct GroupsSignInView: View {
                     let destino = await resolveDestination()
                     guard !Task.isCancelled else { return }
                     isSigningIn = false
-                    onAuthenticated(destino)
+                    onAuthenticated(destino, .alreadyOpen)
                 }
             }
         }
@@ -190,7 +203,7 @@ struct GroupsSignInView: View {
                 let destino = await resolveDestination()
                 guard !Task.isCancelled else { return }
                 isSigningIn = false
-                onAuthenticated(destino)
+                onAuthenticated(destino, .signedInHere)
             } catch CloudAuthError.cancelled {
                 guard !Task.isCancelled else { return }
                 isSigningIn = false  // cancel silencioso: jamás signInFailed
@@ -248,7 +261,9 @@ extension GroupsSignInView {
             //
             // `nil` solo cuando no hay asociación registrada. Con una registrada y sin `userID` (el descubrimiento no
             // lo dejó y no hay sesión) es `false`. Esta puerta no lo lee; en la de Ajustes `nil` deja seguir y `false`
-            // bloquea (2026-09-16), así que la falta de `userID` cae del lado del bloqueo.
+            // bloquea (2026-09-16), así que la falta de `userID` cae del lado del bloqueo. Salvo en un teléfono que
+            // empezó desde cero, donde `nil` con una sesión que no abrió el intento también bloquea
+            // (`StorageMigrationIdentityGateLogic.check`).
             isAssociatedGroupsAccount: GroupsAccountAssociation.shared.isAssociated(
                 sub: userID ?? CloudAuthService.shared.currentUserID))
     }

@@ -6009,3 +6009,5 @@
 "storage.migrateBlock.returnedBody" = "このアカウントでクラウドに戻すことはまだできません。何も変更していません。";
 "storage.migrateBlock.useAnotherAccount" = "別のアカウントを使う";
 "storage.migrateBlock.appleSameAccountNote" = "Appleでは、Yalaは常にこのデバイスのアカウントを使います。別のアカウントを使うには、Googleを選んでください。";
+"storage.migrateBlock.freshStartSessionTitle" = "このアカウントは別の人のものかもしれません";
+"storage.migrateBlock.freshStartSessionBody" = "何も変更していません。グループは、このデバイスですでにサインインしていたアカウントを使っています。このデバイスは最初から始め直したため、そのアカウントは別の人のものかもしれません。データをクラウドに移すには、「グループ」でリンクを解除してから、もう一度「クラウドを有効化」をタップしてください。ご自身のアカウントを選べます。";

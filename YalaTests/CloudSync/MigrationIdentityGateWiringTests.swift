@@ -104,7 +104,7 @@ struct MigrationIdentityGateWiringTests {
             "await r.submit(.signInSucceeded)",
             "return",
             "}",
-            "let (check, discovery) = await checkMigrationIdentity()",
+            "let (check, discovery) = await checkMigrationIdentity(sessionOpenedByThisAttempt: openedSession)",
             "guard check == .proceed else {",
             "let rejectedProvider = await closeSessionIfOpened(openedSession)",
             "await r.submit(.signInFailed)",
@@ -138,7 +138,7 @@ struct MigrationIdentityGateWiringTests {
             "isCheckingMigrationIdentity = false",
             "}",
             "lastError = nil",
-            "let (check, _) = await checkMigrationIdentity()",
+            "let (check, _) = await checkMigrationIdentity(sessionOpenedByThisAttempt: false)",
             "guard case .blocked = check else { return true }",
             "announce(check, offersAnotherAccount: false, rejectedProvider: nil)",
             "return false",
@@ -148,9 +148,16 @@ struct MigrationIdentityGateWiringTests {
     /// La traducción de lo que contestó el backend, entera: un `.unavailable` que se leyera como cuenta nueva dejaría
     /// migrar a la cuenta de grupos de otra persona, y perder `discovery = found` cambiaba el aviso de «volvió a iCloud».
     /// El seam va primero y solo en DEBUG, y el eje se pasa sin leer `PrivateSessionMark`.
+    ///
+    /// **El sello de «Empezar desde cero» y el origen de la sesión viajan tal cual** (ticket
+    /// `fresh-start-keeps-a-groups-session-that-migrate-promotes`): con la key equivocada, o con el parámetro fijado a
+    /// `true`, la sesión que dejó la persona anterior volvía a promoverse con las finanzas de la nueva.
     @Test func checkMigrationIdentity_wholeBodyIsPinned() throws {
         let body = try Self.body(
-            of: "private func checkMigrationIdentity() async -> (StorageMigrationIdentityGateLogic.Check, CloudIdentityRoutingLogic.Discovery?) {",
+            of: """
+            sessionOpenedByThisAttempt: Bool
+                ) async -> (StorageMigrationIdentityGateLogic.Check, CloudIdentityRoutingLogic.Discovery?) {
+            """,
             in: Self.controllerPath)
         #expect(Self.lines(body) == [
             "#if DEBUG",
@@ -174,9 +181,17 @@ struct MigrationIdentityGateWiringTests {
             "answer: answer,",
             "deviceState: .privateSession,",
             "isAssociatedGroupsAccount: GroupsAccountAssociation.shared.isAssociated(sub: userID),",
-            "claimedForMigrationHere: claimedForMigrationHere)",
+            "claimedForMigrationHere: claimedForMigrationHere,",
+            "sessionOpenedByThisAttempt: sessionOpenedByThisAttempt,",
+            "deviceSealedForFreshStart: UserDefaults.standard.bool(",
+            "forKey: AppPreferences.Keys.groupsDomainSealedForFreshStart))",
             "return (check, discovery)",
         ])
+
+        // Las dos llamadas son las de `continueToClaim` y el adelanto al toque, que fijan sus cuerpos enteros: ninguna otra
+        // entrada pregunta sin decir de dónde viene la sesión.
+        let code = Self.lines(try Self.source(Self.controllerPath)).joined(separator: "\n")
+        #expect(Self.occurrences(of: "checkMigrationIdentity(sessionOpenedByThisAttempt:", in: code) == 2)
 
         // Un solo lector del seam en todo `Yala/`.
         let enumerator = try #require(FileManager.default.enumerator(

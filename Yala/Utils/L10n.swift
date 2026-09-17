@@ -7203,6 +7203,13 @@ enum L10n {
             }
             static var returnedTitle: String { ls("storage.migrateBlock.returnedTitle", comment: "") }
             static var returnedBody: String { ls("storage.migrateBlock.returnedBody", comment: "") }
+            /// La sesión viva estaba en un teléfono que empezó desde cero (ticket
+            /// `fresh-start-keeps-a-groups-session-that-migrate-promotes`).
+            static var freshStartSessionTitle: String { ls("storage.migrateBlock.freshStartSessionTitle", comment: "") }
+            /// Manda a desasociar en «Grupos», que con esa sesión viva la sección ofrece en un teléfono con sesión privada, y a
+            /// volver a activar la nube, que sin sesión abre la elección de cuenta. No nombra el correo: la sección ya lo
+            /// enseña. En una sesión solo-grupos esa sección no existe (`groups-only-session-storage-screen-says-data-lives-in-icloud`).
+            static var freshStartSessionBody: String { ls("storage.migrateBlock.freshStartSessionBody", comment: "") }
             static var useAnotherAccount: String { ls("storage.migrateBlock.useAnotherAccount", comment: "") }
             /// Junto a «Usar otra cuenta» cuando la cuenta rechazada era de Apple: en el iPhone, «Iniciar sesión con Apple»
             /// firma siempre con el Apple ID del dispositivo, así que elegir Apple otra vez acaba en la misma cuenta
@@ -7214,6 +7221,7 @@ enum L10n {
                 case .accountHasPersonalData:         return personalDataTitle
                 case .anotherGroupsAccountAssociated: return otherGroupsTitle
                 case .accountReturnedToICloud:        return returnedTitle
+                case .sessionFromBeforeFreshStart:    return freshStartSessionTitle
                 }
             }
 
@@ -7234,6 +7242,8 @@ enum L10n {
                     return otherGroupsBodyEmail(email)
                 case .accountReturnedToICloud:
                     return returnedBody
+                case .sessionFromBeforeFreshStart:
+                    return freshStartSessionBody
                 }
             }
         }

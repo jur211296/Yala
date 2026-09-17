@@ -6009,3 +6009,5 @@
 "storage.migrateBlock.returnedBody" = "目前还无法用此账户回到云端。未做任何更改。";
 "storage.migrateBlock.useAnotherAccount" = "使用其他账户";
 "storage.migrateBlock.appleSameAccountNote" = "使用 Apple 时，Yala 始终使用此设备上的账户。要使用其他账户，请选择 Google。";
+"storage.migrateBlock.freshStartSessionTitle" = "此账户可能属于其他人";
+"storage.migrateBlock.freshStartSessionBody" = "未做任何更改。你的群组使用的是此设备上原本已登录的账户，而此设备已从零开始，所以它可能属于其他人。要把你的数据移到云端，请先在“群组”中取消关联，再点一次“启用云端”，即可选择你自己的账户。";

@@ -5274,3 +5274,5 @@
 "storage.migrateBlock.returnedBody" = "Volver a la nube con ella todavía no está disponible. No cambiamos nada.";
 "storage.migrateBlock.useAnotherAccount" = "Usar otra cuenta";
 "storage.migrateBlock.appleSameAccountNote" = "Con Apple, Yala usa siempre la cuenta de este dispositivo. Para usar otra, elegí Google.";
+"storage.migrateBlock.freshStartSessionTitle" = "Esta cuenta puede ser de otra persona";
+"storage.migrateBlock.freshStartSessionBody" = "No cambiamos nada. Tus grupos usan una cuenta que ya estaba abierta en este dispositivo, y como acá se empezó desde cero, puede ser de otra persona. Para llevar tus datos a la nube, desasociala en «Grupos» y volvé a tocar «Activar la nube»: vas a poder elegir tu cuenta.";

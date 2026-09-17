@@ -6003,3 +6003,5 @@
 "storage.migrateBlock.returnedBody" = "Going back to the cloud with it isn’t available yet. Nothing has changed.";
 "storage.migrateBlock.useAnotherAccount" = "Use another account";
 "storage.migrateBlock.appleSameAccountNote" = "With Apple, Yala always uses this device’s account. To use another one, choose Google.";
+"storage.migrateBlock.freshStartSessionTitle" = "This account may belong to someone else";
+"storage.migrateBlock.freshStartSessionBody" = "Nothing has changed. Your groups use an account that was already signed in on this device, and since this device started fresh, it may belong to someone else. To move your data to the cloud, unlink it in “Groups” and tap “Turn on the cloud” again: you’ll be able to choose your account.";

@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "modo-nube, auth"
 created: 2026-09-16
+updated: 2026-09-17
 source: "review adversarial de `settings-migrate-to-cloud-adopts-silently-instead-of-migrating` (Paso 0 · D15: Jürgen, «permitir otro Apple ID»), 2026-09-16"
 ---
 
@@ -39,6 +40,14 @@ Permitir otro Apple ID con el inicio de sesión web de Apple, en este ticket.
 - **Otra premisa escrita**: `beacon-routes-only-never-blocks` da por hecho que «otro Apple» no se plantea.
 - **Dónde se ofrece**: solo en «Usar otra cuenta», o en todos los sitios que ofrecen Apple.
 - **La identidad**: el mismo Apple ID por el flujo web y por el nativo tiene que dar la misma cuenta de Yala.
+
+## Un caso más (2026-09-17)
+
+El aviso nuevo de «Migrar a la nube» en un teléfono que pasó por «Empezar desde cero» manda a desasociar la cuenta de la
+persona anterior y volver a activar la nube «para elegir tu cuenta» (`fresh-start-keeps-a-groups-session-that-migrate-promotes`).
+Si el teléfono sigue con el Apple ID de la persona anterior y su cuenta de Yala es de Apple, elegir Apple vuelve a esa
+cuenta, y como la sesión la abrió el intento, la migración sigue. La hoja de Apple enseña ese Apple ID; el aviso no lleva
+la nota de Apple, porque en esa hoja no hay «Usar otra cuenta».
 
 ## Criterios de aceptación
 

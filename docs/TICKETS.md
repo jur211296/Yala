@@ -32,7 +32,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (444)
+## Index (446)
 
 | id | status | path |
 |---|---|---|
@@ -139,6 +139,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | detach-does-not-verify-the-cloud-session-actually-closed | backlog | tickets/backlog/detach-does-not-verify-the-cloud-session-actually-closed.md |
 | detach-failure-looks-like-success | done | tickets/done/detach-failure-looks-like-success.md |
 | detach-history-replay-can-tombstone-groups-on-next-launch | done | tickets/done/detach-history-replay-can-tombstone-groups-on-next-launch.md |
+| detach-pending-purge-is-unreachable-without-an-association-record | backlog | tickets/backlog/detach-pending-purge-is-unreachable-without-an-association-record.md |
 | detach-saves-the-personal-graph-outside-the-quiescence-window | backlog | tickets/backlog/detach-saves-the-personal-graph-outside-the-quiescence-window.md |
 | device-handover-groups-leak | discarded | tickets/discarded/device-handover-groups-leak.md |
 | device-qa-activation-restore-start-fresh | qa | tickets/qa/device-qa-activation-restore-start-fresh.md |
@@ -178,7 +179,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | financial-report-amounts-unmarked | backlog | tickets/backlog/financial-report-amounts-unmarked.md |
 | flows-atlas-predates-session-redesign | backlog | tickets/backlog/flows-atlas-predates-session-redesign.md |
 | forcesync-returns-ok-without-touching-the-network | backlog | tickets/backlog/forcesync-returns-ok-without-touching-the-network.md |
-| fresh-start-keeps-a-groups-session-that-migrate-promotes | backlog | tickets/backlog/fresh-start-keeps-a-groups-session-that-migrate-promotes.md |
+| fresh-start-keeps-a-groups-session-that-migrate-promotes | qa | tickets/qa/fresh-start-keeps-a-groups-session-that-migrate-promotes.md |
 | fresh-start-wipe-kills-unsent-group-writes-silently | backlog | tickets/backlog/fresh-start-wipe-kills-unsent-group-writes-silently.md |
 | full-activation-cloud-adopt-when-account-already-complete | backlog | tickets/backlog/full-activation-cloud-adopt-when-account-already-complete.md |
 | full-activation-local-state-never-reaches-the-apple-id-kv | backlog | tickets/backlog/full-activation-local-state-never-reaches-the-apple-id-kv.md |
@@ -328,6 +329,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | prefs-domain-per-secondary-session | discarded | tickets/discarded/prefs-domain-per-secondary-session.md |
 | prefs-synced-keys-upload-not-download | backlog | tickets/backlog/prefs-synced-keys-upload-not-download.md |
 | presentation-net-desarm-has-no-automated-net | backlog | tickets/backlog/presentation-net-desarm-has-no-automated-net.md |
+| previous-person-cloud-session-survives-fresh-start-and-reinstall | backlog | tickets/backlog/previous-person-cloud-session-survives-fresh-start-and-reinstall.md |
 | private-exit-loses-unmaterialized-inbound-captures | backlog | tickets/backlog/private-exit-loses-unmaterialized-inbound-captures.md |
 | private-gate-device-notice-has-no-forward-exit | backlog | tickets/backlog/private-gate-device-notice-has-no-forward-exit.md |
 | private-gate-remote-wipe-can-strand-its-arm | backlog | tickets/backlog/private-gate-remote-wipe-can-strand-its-arm.md |

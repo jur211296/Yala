@@ -118,7 +118,7 @@ struct GroupsBackendInviteModifier: ViewModifier {
                 signInDestination = nil
                 routeIdentityDestination(destino)
             }) {
-                GroupsSignInView { destino in
+                GroupsSignInView { destino, origen in
                     signInAuthenticated = true
                     signInDestination = destino
                     showGroupsSignIn = false
@@ -150,12 +150,15 @@ struct GroupsBackendInviteModifier: ViewModifier {
                     // estuviera escrita, leería `nil`, no frenaría nada, y cada gasto que el usuario
                     // decidió conservar aparecería DOS VECES en su Panel. El `onDismiss` corre después de
                     // la animación de cierre, que es demasiado tarde.
+                    // El origen de la sesión viaja al escritor: en un teléfono que empezó desde cero, la sesión que ya
+                    // estaba abierta puede ser de la persona anterior, y no se apunta como cuenta de grupos de nadie.
                     if destino == .associateGroupsAccount {
                         GroupsAccountAssociation.shared.associate(
                             sub: CloudAuthService.shared.currentUserID,
                             provider: CloudAuthService.shared.storedProvider(),
                             email: CloudAuthService.shared.capturedEmail(),
-                            kind: AccountKindService.shared.current)
+                            kind: AccountKindService.shared.current,
+                            sessionOpenedByThisSignIn: origen == .signedInHere)
                     }
                     // H-2026-07-18-4: un sign-in solo-grupos IN-SESSION no arrancaba el canal (startIfEligible
                     // solo corría en cold boot) → arrancarlo aquí cubre crear-grupo / invite / futuro CTA del
