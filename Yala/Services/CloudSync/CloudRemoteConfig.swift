@@ -150,6 +150,21 @@ nonisolated enum CloudRemoteFlags {
         return decide(\.groupsBackendRolloutPercent)
     }
 
+    /// **¿Hemos llegado a hablar con el servidor en esta instalación?** No es un flag más: es el término
+    /// que separa «la nube está apagada» de «no lo sabemos». Los tres getters de arriba colapsan los dos
+    /// casos en `absentDefault` porque un gate cerrado de más no hace daño; un MENSAJE sí, y por eso
+    /// existe esto — lo consume `WelcomeRestoreEmptyOutcome` desde la pantalla de Restaurar, que hasta
+    /// hoy le decía «no encontramos tus datos» a quien reinstala sin red con sus datos intactos.
+    ///
+    /// La decisión (y por qué la ausencia falla ABIERTA en dos casos) vive en
+    /// `RemoteFlagDecisionLogic.isConfigKnown`; aquí solo se la alimenta con lo vivo.
+    static var cloudConfigKnown: Bool {
+        RemoteFlagDecisionLogic.isConfigKnown(
+            hasSnapshot: CloudRemoteConfigStore.readSnapshot() != nil,
+            backendConfigured: CloudBackendConfig.isConfigured,
+            isTestHost: isRunningTests || isUITestHost)
+    }
+
     /// Mirror NONISOLATED de `SwiftDataConfiguration.isRunningTests` (ese vive bajo el default
     /// actor MainActor y estos getters se leen desde cualquier actor). Misma señal canónica
     /// (`YALA_TEST_MODE=1` del TestAction) + el fallback de framework cargado; cacheado en `let`.

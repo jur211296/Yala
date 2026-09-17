@@ -6011,3 +6011,9 @@
 "storage.migrateBlock.appleSameAccountNote" = "Appleでは、Yalaは常にこのデバイスのアカウントを使います。別のアカウントを使うには、Googleを選んでください。";
 "storage.migrateBlock.freshStartSessionTitle" = "このアカウントは別の人のものかもしれません";
 "storage.migrateBlock.freshStartSessionBody" = "何も変更していません。グループは、このデバイスですでにサインインしていたアカウントを使っています。このデバイスは最初から始め直したため、そのアカウントは別の人のものかもしれません。データをクラウドに移すには、「グループ」でリンクを解除してから、もう一度「クラウドを有効化」をタップしてください。ご自身のアカウントを選べます。";
+
+/* Restaurar: la busqueda termino vacia y el servidor nunca contesto — no sabemos si hay datos (reinstall-without-network-has-no-cloud-door) */
+"welcome.restore.cloudUnverifiedTitle" = "データを確認できませんでした";
+
+/* Restaurar: cuerpo del estado sin comprobar — no afirma que falten datos ni que existan (reinstall-without-network-has-no-cloud-door) */
+"welcome.restore.cloudUnverifiedBody" = "保存されたデータがあるかを確認するために接続できませんでした。少し経ってから、もう一度お試しください。";

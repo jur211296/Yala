@@ -42,6 +42,40 @@ nonisolated enum RemoteFlagDecisionLogic {
         return bucket < clamped
     }
 
+    /// **¿Sabemos qué dice el servidor de la nube, o solo no hemos podido preguntar?** A un GATE no le
+    /// hace falta distinguirlo —`absentDefault` fail-closed le basta— pero a un MENSAJE sí: «la nube
+    /// está apagada» y «no lo hemos podido comprobar» son hechos distintos, y el segundo es el de quien
+    /// reinstala y abre sin red (el snapshot vive en el contenedor de la app y se va con ella). Su
+    /// consumidor es `WelcomeRestoreEmptyOutcome`.
+    ///
+    /// Devuelve `true` —«lo sabemos»— en los dos casos donde la ausencia de snapshot NO es una
+    /// comprobación fallida, y la marca va POSITIVA a propósito en los dos:
+    ///  · `!backendConfigured`: `RemoteConfigClient.refreshIfDue` sale en su primera línea, así que
+    ///    nunca habría snapshot y TODO el parque leería «no pudimos comprobar» para siempre. No hay a
+    ///    quién preguntar ⇒ no hay comprobación pendiente. **Lo que NO cubre, y va dicho porque el
+    ///    docblock prometía de más:** ese testigo es `CloudBackendConfig.isConfigured`, o sea Supabase,
+    ///    y el fetch va a `ProxyConfig.baseURL`, o sea el Worker de Cloudflare. Son dos servicios. Si el
+    ///    gateway desaparece con Supabase configurado, esta guarda no se abre y el mensaje sí sale para
+    ///    todo el que reinstale — ticket `restore-unverified-message-depends-on-a-single-gateway-host`.
+    ///    Hoy `isConfigured` es `true` en los dos schemes (URL y anon key literales), así que esta rama
+    ///    no protege a nadie: existe para el día que alguien vacíe uno de los dos.
+    ///  · `isTestHost`: el mismo corte que `CloudRemoteFlags.decide` y por el mismo motivo — el
+    ///    `.standard` del simulador puede traer el snapshot de una corrida manual, así que la verdad
+    ///    ahí no es `false`, es NO DETERMINISTA. Con el corte, bajo test el desenlace es el que ya
+    ///    daba antes del ticket. **Medido, no deducido**: las 7 suites del Welcome y las 3 de esta
+    ///    decisión pasan sin cambiar una aserción de las que ya existían. Lo que NO se afirma es que
+    ///    el binario sea byte-idéntico — eso nadie lo ha medido.
+    ///    **Precio, y va dicho:** `.cloudUnverified` es inalcanzable en unit y en XCUITest, así que
+    ///    su única red de comportamiento es el device-QA del ticket. Un seam que forzara el predicado
+    ///    dejaría ciego al test que lo usara (`.claude/rules/testing.md`, «un seam de QA que FUERZA el
+    ///    resultado»), y la condición real —no tener snapshot— no se puede montar bajo test sin
+    ///    escribir en el `.standard` del simulador. Mismo trato que el aviso del attest personal.
+    static func isConfigKnown(hasSnapshot: Bool, backendConfigured: Bool, isTestHost: Bool) -> Bool {
+        if isTestHost { return true }
+        if !backendConfigured { return true }
+        return hasSnapshot
+    }
+
     /// ¿Toca re-fetchear el config? `nil` (jamás fetcheado) → sí; `fetchedAt` en el FUTURO
     /// (reloj movido hacia atrás) → sí (futuro = stale; fix del review adversarial — sin esto, un
     /// fetch con el reloj mal adelantado congelaría el kill-switch por el tamaño del error);

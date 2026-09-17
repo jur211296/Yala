@@ -6000,3 +6000,9 @@
 "storage.migrateBlock.appleSameAccountNote" = "Avec Apple, Yala utilise toujours le compte de cet appareil. Pour en utiliser un autre, choisis Google.";
 "storage.migrateBlock.freshStartSessionTitle" = "Ce compte appartient peut-être à quelqu’un d’autre";
 "storage.migrateBlock.freshStartSessionBody" = "Rien n’a changé. Tes groupes utilisent un compte qui était déjà connecté sur cet appareil et, comme on y est reparti de zéro, il appartient peut-être à quelqu’un d’autre. Pour mettre tes données dans le cloud, dissocie-le dans « Groupes » et touche à nouveau « Activer le cloud » : tu pourras choisir ton compte.";
+
+/* Restaurar: la busqueda termino vacia y el servidor nunca contesto — no sabemos si hay datos (reinstall-without-network-has-no-cloud-door) */
+"welcome.restore.cloudUnverifiedTitle" = "Nous n'avons pas pu vérifier vos données";
+
+/* Restaurar: cuerpo del estado sin comprobar — no afirma que falten datos ni que existan (reinstall-without-network-has-no-cloud-door) */
+"welcome.restore.cloudUnverifiedBody" = "Nous n'avons pas pu nous connecter pour vérifier si vous avez des données enregistrées. Réessayez dans un instant.";

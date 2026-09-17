@@ -43,4 +43,13 @@ enum RestoreBreadcrumb {
     static func cloudPaused() {
         logger.notice("CLOUD-PAUSED — sin datos en iCloud, faro linked y kill remoto puesto")
     }
+
+    /// La búsqueda terminó vacía y NO hemos podido preguntarle al servidor: sin snapshot de
+    /// remote-config no se sabe si la nube está abierta, así que no se afirma nada sobre los datos.
+    /// En el log distingue este desenlace del `.notFound` legítimo, que en pantalla se parecen y en
+    /// hechos no: el que falta aquí es la red, no los datos. Sin ese rastro, el único recorrido que
+    /// los separa —reinstalar sin red— no deja huella de por qué enseñó lo que enseñó.
+    static func cloudUnverified() {
+        logger.notice("CLOUD-UNVERIFIED — sin datos en iCloud y sin snapshot de config (nadie contestó)")
+    }
 }

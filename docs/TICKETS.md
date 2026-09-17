@@ -32,7 +32,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (459)
+## Index (462)
 
 | id | status | path |
 |---|---|---|
@@ -366,7 +366,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reentry-counts-as-fresh-install | qa | tickets/qa/reentry-counts-as-fresh-install.md |
 | reentry-killswitch-closes-both-doors | qa | tickets/qa/reentry-killswitch-closes-both-doors.md |
 | registros-calendario-cuenta-gastos-por-signo | done | tickets/done/registros-calendario-cuenta-gastos-por-signo.md |
-| reinstall-without-network-has-no-cloud-door | backlog | tickets/backlog/reinstall-without-network-has-no-cloud-door.md |
+| reinstall-without-network-has-no-cloud-door | qa | tickets/qa/reinstall-without-network-has-no-cloud-door.md |
 | rejected-member-cold-tap-does-nothing | qa | tickets/qa/rejected-member-cold-tap-does-nothing.md |
 | rejoin-tap-renotifies-admins | qa | tickets/qa/rejoin-tap-renotifies-admins.md |
 | remote-onboarding-signal-ignores-the-session-axis | backlog | tickets/backlog/remote-onboarding-signal-ignores-the-session-axis.md |
@@ -378,9 +378,12 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | repair-queue-has-no-exit-for-partial-rate-rows | qa | tickets/qa/repair-queue-has-no-exit-for-partial-rate-rows.md |
 | reparacion-de-tasas-no-avisa-al-panel | backlog | tickets/backlog/reparacion-de-tasas-no-avisa-al-panel.md |
 | rescue-discarded-groups-pull | discarded | tickets/discarded/rescue-discarded-groups-pull.md |
+| restore-beacon-may-not-have-synced-yet-on-a-fresh-install | backlog | tickets/backlog/restore-beacon-may-not-have-synced-yet-on-a-fresh-install.md |
 | restore-beacon-outlives-account-deletion | backlog | tickets/backlog/restore-beacon-outlives-account-deletion.md |
 | restore-gate-claims-a-wipe-this-device-did-not-do | backlog | tickets/backlog/restore-gate-claims-a-wipe-this-device-did-not-do.md |
+| restore-says-no-data-when-the-icloud-import-never-settled | backlog | tickets/backlog/restore-says-no-data-when-the-icloud-import-never-settled.md |
 | restore-start-fresh-keeps-the-imported-corpus | qa | tickets/qa/restore-start-fresh-keeps-the-imported-corpus.md |
+| restore-unverified-message-depends-on-a-single-gateway-host | backlog | tickets/backlog/restore-unverified-message-depends-on-a-single-gateway-host.md |
 | retire-guest-vocabulary-for-session-terms | done | tickets/done/retire-guest-vocabulary-for-session-terms.md |
 | reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date | backlog | tickets/backlog/reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date.md |
 | reverse-before-mount-stays-stuck-with-an-expired-session | backlog | tickets/backlog/reverse-before-mount-stays-stuck-with-an-expired-session.md |
