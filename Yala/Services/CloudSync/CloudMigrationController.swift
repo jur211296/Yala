@@ -471,7 +471,7 @@ final class CloudMigrationController {
             await r.submit(.signInSucceeded)     // authenticating → claimingMigration → drive
             return
         }
-        let (check, discovery) = await checkMigrationIdentity()
+        let (check, discovery) = await checkMigrationIdentity(sessionOpenedByThisAttempt: openedSession)
         guard check == .proceed else {
             let rejectedProvider = await closeSessionIfOpened(openedSession)
             await r.submit(.signInFailed)        // authenticating → notStarted, sin efectos
@@ -508,14 +508,19 @@ final class CloudMigrationController {
             isCheckingMigrationIdentity = false
         }
         lastError = nil
-        let (check, _) = await checkMigrationIdentity()
+        let (check, _) = await checkMigrationIdentity(sessionOpenedByThisAttempt: false)
         guard case .blocked = check else { return true }
         announce(check, offersAnotherAccount: false, rejectedProvider: nil)
         return false
     }
 
     /// Pregunta al backend por la sesión viva y aplica la fila de Ajustes de la tabla [I].
-    private func checkMigrationIdentity() async -> (StorageMigrationIdentityGateLogic.Check, CloudIdentityRoutingLogic.Discovery?) {
+    ///
+    /// - Parameter sessionOpenedByThisAttempt: la sesión la abrió este intento. El adelanto al toque pasa `false`: solo corre
+    ///   con la sesión que ya había.
+    private func checkMigrationIdentity(
+        sessionOpenedByThisAttempt: Bool
+    ) async -> (StorageMigrationIdentityGateLogic.Check, CloudIdentityRoutingLogic.Discovery?) {
         #if DEBUG
         // Seam `-uitest-fake-migration-identity`: finge la RESPUESTA de la puerta para el XCUITest de la hoja. La decisión
         // la cubren los unit de `StorageMigrationIdentityGateLogic`.
@@ -541,7 +546,11 @@ final class CloudMigrationController {
             // migra en vez de leer `PrivateSessionMark`, que tiene sus lectores contados y aquí no decidiría nada.
             deviceState: .privateSession,
             isAssociatedGroupsAccount: GroupsAccountAssociation.shared.isAssociated(sub: userID),
-            claimedForMigrationHere: claimedForMigrationHere)
+            claimedForMigrationHere: claimedForMigrationHere,
+            sessionOpenedByThisAttempt: sessionOpenedByThisAttempt,
+            // El sello de «Empezar desde cero», del mismo dominio en el que lo leen `GroupsAccountAssociation` y el bridge.
+            deviceSealedForFreshStart: UserDefaults.standard.bool(
+                forKey: AppPreferences.Keys.groupsDomainSealedForFreshStart))
         return (check, discovery)
     }
 

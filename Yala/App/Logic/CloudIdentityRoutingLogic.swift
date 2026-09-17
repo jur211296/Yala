@@ -152,7 +152,8 @@ nonisolated enum CloudIdentityRoutingLogic {
     ///   - isAssociatedGroupsAccount: ¿la cuenta que acaba de firmar es la que YA estaba asociada a esta
     ///     sesión privada? También sin default, y por lo mismo. Solo lo mira la puerta de Ajustes, donde
     ///     separa «promover» de «una cuenta a la vez». Allí `nil` es «no hay ninguna asociada»
-    ///     (`GroupsAccountAssociation.isAssociated(sub:)`), y las demás puertas no lo leen.
+    ///     (`GroupsAccountAssociation.isAssociated(sub:)`), salvo en un teléfono que empezó desde cero, donde
+    ///     `StorageMigrationIdentityGateLogic.check` lo acota. Las demás puertas no lo leen.
     static func destination(
         gate: Gate,
         discovery: Discovery,
@@ -217,7 +218,9 @@ nonisolated enum CloudIdentityRoutingLogic {
                 // `nil` bloqueaba porque la asociación no se persistía y ningún call-site podía probar nada; hoy
                 // `GroupsAccountAssociation` la persiste, y bloquear ahí no frenaba nada que una cuenta nueva no
                 // dejara pasar igual. La cuenta que volvió a iCloud también llega aquí como `groupsOnly`, pero la
-                // para el claim (`ForwardClaimIntent`, en `MigrationRunner`).
+                // para el claim (`ForwardClaimIntent`, en `MigrationRunner`). Y en un teléfono que empezó desde cero,
+                // este `nil` y el de la cuenta nueva los para la puerta si la sesión no la abrió el intento: puede ser
+                // de la persona anterior (`StorageMigrationIdentityGateLogic.check`, `deviceSealedForFreshStart`).
                 return isAssociatedGroupsAccount == false
                     ? .blockedAnotherGroupsAccountAssociated
                     : .promoteAssociatedAccountThenCutover

@@ -123,6 +123,11 @@ final class GroupsAccountAssociation {
     /// y la tabla de [I] no los trata igual: en la puerta de «Migrar a la nube» `false` bloquea («una cuenta a la vez») y
     /// `nil` deja seguir, porque sin ninguna asociada no hay otra cuenta de la que hablar (Jürgen, 2026-09-16; hasta ese
     /// día `nil` bloqueaba la promoción). Devolver `false` sin registro bloquearía a quien no tiene ninguna.
+    ///
+    /// **Con el dominio sellado, `nil` también sale con la sesión de la persona anterior**: aquí no se lee el iCloud-KV y
+    /// nadie apunta una sesión que ya estaba abierta (ver `associate`). Por eso la puerta de «Migrar a la nube» no lee solo
+    /// este valor: con el sello y una sesión que no abrió el intento, `nil` no deja seguir
+    /// (`StorageMigrationIdentityGateLogic.check`). Y `true` con el sello sale solo de un sign-in hecho en este teléfono.
     func isAssociated(sub: String?) -> Bool? {
         guard let stored = associatedSub else { return nil }
         guard let sub, !sub.isEmpty else { return false }
@@ -180,11 +185,35 @@ final class GroupsAccountAssociation {
     ///
     /// Un `sub` vacío **no escribe nada** y lo dice: sin él, el registro no puede contestar ninguna de las
     /// tres preguntas para las que existe.
+    ///
+    /// **Con el dominio sellado, solo se apunta una sesión abierta por el propio sign-in** (ticket
+    /// `fresh-start-keeps-a-groups-session-that-migrate-promotes`). «Empezar desde cero» no cierra la sesión en la nube, así
+    /// que una que ya estaba abierta puede ser de la persona anterior. Apuntarla le daba a la puerta de «Migrar a la nube» un
+    /// `true` que promovía esa cuenta con las finanzas de la persona nueva. Pasaba por el cinturón de `GroupsSignInView`: una
+    /// invitación que se queda sin token re-presenta la hoja, y la hoja reusa la sesión viva sin enseñar botones. Es la misma
+    /// regla que ya cumplía `GroupsAssociationRegistrar`, puesta en el escritor para que no dependa de cada llamador.
+    ///
+    /// - Parameter sessionOpenedByThisSignIn: la sesión la abrió el gesto que asocia, así que la persona eligió la cuenta.
+    ///   `false` con una sesión que ya estaba abierta: el cinturón de la hoja de Grupos y el registrador del arranque.
     @discardableResult
-    func associate(sub: String?, provider: String?, email: String?, kind: AccountKind?, now: Date = .now) -> Bool {
+    func associate(
+        sub: String?,
+        provider: String?,
+        email: String?,
+        kind: AccountKind?,
+        sessionOpenedByThisSignIn: Bool,
+        now: Date = .now
+    ) -> Bool {
         guard let sub, !sub.isEmpty else {
             #if DEBUG
             print("GroupsAccountAssociation: asociar sin `sub` — no se escribe nada")
+            #endif
+            return false
+        }
+        guard sessionOpenedByThisSignIn
+                || !defaults.bool(forKey: AppPreferences.Keys.groupsDomainSealedForFreshStart) else {
+            #if DEBUG
+            print("GroupsAccountAssociation: dominio sellado y sesión que ya estaba abierta — no se asocia")
             #endif
             return false
         }
@@ -215,8 +244,15 @@ final class GroupsAccountAssociation {
     /// keys no distingue «nunca hubo» de «se soltó», y el registrador de OTRO dispositivo con sesión viva
     /// la reponía en su siguiente arranque — la desasociación se deshacía sola. Con él, quien reponga
     /// tiene que ser un gesto de asociar, no un arranque.
+    ///
+    /// **Con el dominio sellado, solo se borra el espejo local.** Es el gesto al que manda el aviso de «Migrar a la nube»
+    /// cuando la sesión puede ser de la persona anterior (ticket `fresh-start-keeps-a-groups-session-that-migrate-promotes`),
+    /// y en ese teléfono el iCloud-KV sigue siendo el del Apple ID de antes: borrar sus keys y dejar el tombstone le quitaría
+    /// la asociación en sus otros dispositivos y apagaría allí el registrador. Es la simetría de `associate` y `readICloud`,
+    /// que con el sello tampoco tocan el iCloud-KV.
     func clear(now: Date = .now) {
         defaults.removeObject(forKey: Self.localKey)
+        guard !defaults.bool(forKey: AppPreferences.Keys.groupsDomainSealedForFreshStart) else { return }
         for key in Keys.all where key != Keys.detachedAt { iKV.removeObject(forKey: key) }
         iKV.setDouble(now.timeIntervalSince1970, forKey: Keys.detachedAt)
         iKV.synchronize()
@@ -322,6 +358,7 @@ enum GroupsAssociationRegistrar {
             provider: identity.provider,
             email: identity.email,
             kind: kind,
+            sessionOpenedByThisSignIn: false,
             now: now)
     }
 }

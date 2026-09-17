@@ -3,7 +3,8 @@
 //  Yala
 //
 //  La hoja que dice por qué «Migrar a la nube» no siguió: la cuenta ya tiene finanzas personales, el dispositivo usa otra
-//  cuenta para sus grupos, o la cuenta volvió a iCloud (ticket `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`).
+//  cuenta para sus grupos, la cuenta volvió a iCloud (ticket `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`),
+//  o la sesión puede ser de la persona anterior (`fresh-start-keeps-a-groups-session-that-migrate-promotes`).
 //
 //  Hoja y no `.alert`, a propósito: «Usar otra cuenta» abre la elección de Apple/Google, que cuelga del mismo anchor, y la
 //  cadena segura entre dos presentaciones pasa por el `onDismiss` de la primera (regla 4 de presentaciones). Un `.alert` no

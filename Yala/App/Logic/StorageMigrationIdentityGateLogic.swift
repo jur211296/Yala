@@ -15,7 +15,8 @@
 //
 //  · **La comprobación** (`check`) pregunta `/account/exists` antes del claim y aplica la fila de Ajustes de la tabla
 //    [I]. Es la única que sabe si el dispositivo usa OTRA cuenta para sus grupos: el claim promueve cualquier cuenta
-//    solo-grupos.
+//    solo-grupos. Y la única que sabe si la sesión la eligió quien migra: el claim no distingue la sesión que dejó en el
+//    teléfono la persona anterior.
 //  · **El claim** (`ForwardClaimIntent`, en `MigrationRunner`) es el único que sabe que una cuenta `groups_only` ya
 //    volvió a iCloud, o que otro dispositivo la está migrando: `/account/exists` solo da `exists` + `kind`, y
 //    `claim_account` contesta `existing_stable` o `claiming_in_progress` (`qa/cloud/g15_01_account_kind.sql`).
@@ -47,6 +48,10 @@ nonisolated enum StorageMigrationIdentityGateLogic {
         /// La cuenta volvió a iCloud: sigue congelada en el backend y volver a la nube con ella es el re-cutover, que
         /// todavía no existe.
         case accountReturnedToICloud
+        /// El teléfono empezó desde cero y la sesión viva no la abrió este intento ni está asociada: puede ser de la persona
+        /// anterior, porque «Empezar desde cero» no cierra la sesión en la nube (Jürgen, 2026-09-16). Ver
+        /// `deviceSealedForFreshStart` en `check`. Va al final: añadir un caso en medio cambia el orden de `allCases`.
+        case sessionFromBeforeFreshStart
 
         /// Nombre estable para el canario y el breadcrumb (`cloudMigrationExistingAccountBlocked`). No se renombra: parte
         /// la serie del dashboard.
@@ -55,6 +60,7 @@ nonisolated enum StorageMigrationIdentityGateLogic {
             case .accountHasPersonalData:         return "personal_data"
             case .anotherGroupsAccountAssociated: return "other_groups_account"
             case .accountReturnedToICloud:        return "returned_to_icloud"
+            case .sessionFromBeforeFreshStart:    return "fresh_start_session"
             }
         }
     }
@@ -74,7 +80,8 @@ nonisolated enum StorageMigrationIdentityGateLogic {
     ///     tabla no tiene default y aquí no se inventa.
     ///   - isAssociatedGroupsAccount: `GroupsAccountAssociation.isAssociated(sub:)` con el `userID` que devolvió el
     ///     descubrimiento. `nil` = no hay ninguna asociada (Jürgen, 2026-09-16: se promueve una solo-grupos y la nueva
-    ///     recibe el cutover); `false` = hay otra asociada, y entonces no se migra.
+    ///     recibe el cutover), salvo en un teléfono que empezó desde cero (`deviceSealedForFreshStart`); `false` = hay
+    ///     otra asociada, y entonces no se migra.
     ///   - claimedForMigrationHere: este dispositivo ya reclamó esta cuenta para migrar (sello `.proceedMigration` de
     ///     `CloudClaimActionStore`). **Es lo que deja «Reintentar» tras un fallo**: el claim de un intento anterior dejó la
     ///     cuenta `complete` y con este dispositivo de líder, y el servidor se la devuelve como `created`. Sin esto, la
@@ -83,11 +90,30 @@ nonisolated enum StorageMigrationIdentityGateLogic {
     ///     (`ForwardClaimIntent`), y otra cuenta asociada sigue mandando. Tampoco vale para siempre: al confirmar `complete`,
     ///     el líder cambia el sello por `.routeReturningUser` (`MigrationWorkExecutor`, efecto
     ///     `.runLeaderReconcileFromFrozenCloudKit`), así que la cuenta de una migración TERMINADA se para aquí.
+    ///   - sessionOpenedByThisAttempt: la sesión la abrió este intento, en la elección de Apple o Google, así que la persona
+    ///     eligió la cuenta. `false` con la sesión que ya había al tocar «Activar la nube».
+    ///   - deviceSealedForFreshStart: este teléfono pasó por «Empezar desde cero» (`groupsDomainSealedForFreshStart`).
+    ///     **Con el sello, `nil` en `isAssociatedGroupsAccount` no dice «no hay ninguna asociada»: dice «no se sabe de quién
+    ///     es la sesión».** «Empezar desde cero» no cierra la sesión en la nube, y con el sello `GroupsAccountAssociation` deja
+    ///     de leer la asociación del Apple ID y `GroupsAssociationRegistrar` no registra la sesión viva, porque puede ser de la
+    ///     persona anterior. Así que ahí una sesión que no abrió este intento y no está asociada no recibe lo personal
+    ///     (Jürgen, 2026-09-16, ticket `fresh-start-keeps-a-groups-session-that-migrate-promotes`): sin esto, las finanzas
+    ///     de la persona nueva acababan en la cuenta de la anterior, y le aparecían en sus dispositivos. Solo retira un
+    ///     `.proceed`: lo que ya se bloqueaba conserva su aviso, y «Reintentar» sigue por el sello `.proceedMigration`.
+    ///
+    ///     **Sin el sello no cambia nada, y no porque no haya relevo** (lo midió la review). Tras reinstalar, la sesión anterior
+    ///     sobrevive en el llavero y un «Empezar desde cero» sin filas locales no sella; el arranque la asocia y aquí llega como
+    ///     `true`. Esta puerta no puede distinguirla: hace falta cerrar esa sesión, que es otra decisión
+    ///     (`previous-person-cloud-session-survives-fresh-start-and-reinstall`). Dos residuales más, escritos allí: el sello
+    ///     `.proceedMigration` lo deja un intento de ESTE teléfono, que tras un relevo puede ser de la persona anterior; y tras
+    ///     desasociar, elegir Apple firma con el Apple ID del teléfono.
     static func check(
         answer: Answer,
         deviceState: CloudIdentityRoutingLogic.DeviceSessionState,
         isAssociatedGroupsAccount: Bool?,
-        claimedForMigrationHere: Bool
+        claimedForMigrationHere: Bool,
+        sessionOpenedByThisAttempt: Bool,
+        deviceSealedForFreshStart: Bool
     ) -> Check {
         guard case let .discovered(discovery) = answer else { return .couldNotCheck }
         if discovery == .complete, claimedForMigrationHere {
@@ -100,6 +126,9 @@ nonisolated enum StorageMigrationIdentityGateLogic {
             isAssociatedGroupsAccount: isAssociatedGroupsAccount)
         switch destination {
         case .cutoverPrivateToCloud, .promoteAssociatedAccountThenCutover:
+            if deviceSealedForFreshStart, isAssociatedGroupsAccount == nil, !sessionOpenedByThisAttempt {
+                return .blocked(.sessionFromBeforeFreshStart)
+            }
             return .proceed
         case .blockedAccountIsComplete:
             return .blocked(.accountHasPersonalData)

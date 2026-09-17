@@ -21,11 +21,16 @@ struct StorageMigrationIdentityGateLogicTests {
     private typealias Logic = StorageMigrationIdentityGateLogic
     private typealias Discovery = CloudIdentityRoutingLogic.Discovery
 
+    /// Por defecto, un teléfono que no empezó desde cero y la sesión que ya había al tocar: es la celda de siempre, y los
+    /// casos anteriores al ticket `fresh-start-keeps-a-groups-session-that-migrate-promotes` la siguen midiendo tal cual.
     private func check(_ discovery: Discovery, associated: Bool?,
                        state: CloudIdentityRoutingLogic.DeviceSessionState = .privateSession,
-                       claimedHere: Bool = false) -> Logic.Check {
+                       claimedHere: Bool = false,
+                       freshStart: Bool = false,
+                       openedHere: Bool = false) -> Logic.Check {
         Logic.check(answer: .discovered(discovery), deviceState: state, isAssociatedGroupsAccount: associated,
-                    claimedForMigrationHere: claimedHere)
+                    claimedForMigrationHere: claimedHere, sessionOpenedByThisAttempt: openedHere,
+                    deviceSealedForFreshStart: freshStart)
     }
 
     // MARK: - La fila de Ajustes, de punta a punta
@@ -75,9 +80,15 @@ struct StorageMigrationIdentityGateLogicTests {
     func sinRespuesta_noSigue() {
         for associated in [true, false, nil] as [Bool?] {
             for claimedHere in [true, false] {
-                #expect(Logic.check(answer: .unavailable, deviceState: .privateSession,
-                                    isAssociatedGroupsAccount: associated,
-                                    claimedForMigrationHere: claimedHere) == .couldNotCheck)
+                for freshStart in [true, false] {
+                    for openedHere in [true, false] {
+                        #expect(Logic.check(answer: .unavailable, deviceState: .privateSession,
+                                            isAssociatedGroupsAccount: associated,
+                                            claimedForMigrationHere: claimedHere,
+                                            sessionOpenedByThisAttempt: openedHere,
+                                            deviceSealedForFreshStart: freshStart) == .couldNotCheck)
+                    }
+                }
             }
         }
     }
@@ -95,12 +106,18 @@ struct StorageMigrationIdentityGateLogicTests {
         for discovery in Discovery.allCases {
             for associated in [true, false, nil] as [Bool?] {
                 for claimedHere in [true, false] {
-                    let esperado = check(discovery, associated: associated, state: .privateSession,
-                                         claimedHere: claimedHere)
-                    for state in CloudIdentityRoutingLogic.DeviceSessionState.allCases {
-                        #expect(check(discovery, associated: associated, state: state, claimedHere: claimedHere)
-                                == esperado,
-                                "\(discovery) · asociada=\(String(describing: associated)) · sello=\(claimedHere) · \(state)")
+                    for freshStart in [true, false] {
+                        for openedHere in [true, false] {
+                            let esperado = check(discovery, associated: associated, state: .privateSession,
+                                                 claimedHere: claimedHere, freshStart: freshStart, openedHere: openedHere)
+                            for state in CloudIdentityRoutingLogic.DeviceSessionState.allCases {
+                                #expect(check(discovery, associated: associated, state: state, claimedHere: claimedHere,
+                                              freshStart: freshStart, openedHere: openedHere) == esperado, """
+                                    \(discovery) · asociada=\(String(describing: associated)) · sello=\(claimedHere) · \
+                                    de cero=\(freshStart) · sesión del intento=\(openedHere) · \(state)
+                                    """)
+                            }
+                        }
                     }
                 }
             }
@@ -126,6 +143,75 @@ struct StorageMigrationIdentityGateLogicTests {
         #expect(check(.newAccount, associated: false, claimedHere: true) == .blocked(.anotherGroupsAccountAssociated))
         #expect(check(.groupsOnly, associated: nil, claimedHere: true) == .proceed)
         #expect(check(.newAccount, associated: nil, claimedHere: true) == .proceed)
+    }
+
+    // MARK: - «Empezar desde cero» con la sesión de antes
+
+    /// El bug del ticket `fresh-start-keeps-a-groups-session-that-migrate-promotes`: el teléfono empezó desde cero, la sesión
+    /// viva la dejó la persona anterior y no hay ninguna asociada. Promoverla subía las finanzas de la persona nueva a esa
+    /// cuenta, y crear una nueva con esa sesión las dejaba en una cuenta con la identidad de la anterior.
+    @Test("empezó de cero + sesión de antes + ninguna asociada → bloqueo, en solo-grupos y en cuenta nueva")
+    func empezoDeCero_sesionDeAntes_bloquea() {
+        #expect(check(.groupsOnly, associated: nil, freshStart: true, openedHere: false)
+                == .blocked(.sessionFromBeforeFreshStart))
+        #expect(check(.newAccount, associated: nil, freshStart: true, openedHere: false)
+                == .blocked(.sessionFromBeforeFreshStart))
+        // El sello `.proceedMigration` solo abre una cuenta `complete`: con otra, no exime del bloqueo (hallazgo de la review).
+        #expect(check(.groupsOnly, associated: nil, claimedHere: true, freshStart: true, openedHere: false)
+                == .blocked(.sessionFromBeforeFreshStart))
+        #expect(check(.newAccount, associated: nil, claimedHere: true, freshStart: true, openedHere: false)
+                == .blocked(.sessionFromBeforeFreshStart))
+    }
+
+    /// CONTROL del término de la sesión: si la abrió este intento, la persona eligió la cuenta y sigue. Sin él, una puerta
+    /// que bloqueara todo teléfono que empezó de cero pasaría el caso de arriba.
+    @Test("empezó de cero + sesión abierta por el intento → sigue")
+    func empezoDeCero_sesionDelIntento_sigue() {
+        #expect(check(.groupsOnly, associated: nil, freshStart: true, openedHere: true) == .proceed)
+        #expect(check(.newAccount, associated: nil, freshStart: true, openedHere: true) == .proceed)
+    }
+
+    /// CONTROL del término del sello: sin empezar de cero no cambia nada. Con sesión privada el arranque ya asocia la sesión
+    /// viva, así que una sesión de antes con `nil` es la de un teléfono solo-grupos, y se sigue promoviendo.
+    @Test("sin empezar de cero, una sesión de antes sin asociada sigue como hasta hoy")
+    func sinEmpezarDeCero_sesionDeAntes_sigue() {
+        #expect(check(.groupsOnly, associated: nil, freshStart: false, openedHere: false) == .proceed)
+        #expect(check(.newAccount, associated: nil, freshStart: false, openedHere: false) == .proceed)
+    }
+
+    /// Criterio 2 del ticket: quien migra con SU cuenta de grupos asociada la sigue promoviendo, también en un teléfono que
+    /// empezó de cero. Ahí solo hay asociación si la persona firmó en la hoja de Grupos: `GroupsAccountAssociation.associate`
+    /// no apunta con el sello una sesión que ya estaba abierta (`GroupsAccountAssociationStoreTests`).
+    @Test("empezó de cero + la sesión ES la asociada → sigue, la abriera o no el intento")
+    func empezoDeCero_asociada_sigue() {
+        for openedHere in [true, false] {
+            #expect(check(.groupsOnly, associated: true, freshStart: true, openedHere: openedHere) == .proceed)
+        }
+    }
+
+    /// La regla solo retira un `.proceed`: lo que ya se bloqueaba conserva su aviso.
+    @Test("empezó de cero: otra asociada y cuenta completa conservan su aviso")
+    func empezoDeCero_noCambiaLosOtrosAvisos() {
+        for openedHere in [true, false] {
+            for discovery in [Discovery.groupsOnly, .newAccount] {
+                #expect(check(discovery, associated: false, freshStart: true, openedHere: openedHere)
+                        == .blocked(.anotherGroupsAccountAssociated))
+            }
+            for associated in [true, false, nil] as [Bool?] {
+                #expect(check(.complete, associated: associated, freshStart: true, openedHere: openedHere)
+                        == .blocked(.accountHasPersonalData))
+            }
+        }
+    }
+
+    /// «Reintentar» tras un fallo sigue en un teléfono que empezó de cero. El sello `.proceedMigration` lo deja un intento de
+    /// este teléfono, y en el reintento su sesión ya no es «de este intento»: bloquearlo cerraba la única salida de la
+    /// migración. El residual (un sello de la persona anterior que sobrevive al relevo) está escrito en el docblock de `check`.
+    @Test("empezó de cero: la cuenta que ESTE dispositivo reclamó sigue con «Reintentar»")
+    func empezoDeCero_reintentar_sigue() {
+        #expect(check(.complete, associated: nil, claimedHere: true, freshStart: true, openedHere: false) == .proceed)
+        #expect(check(.complete, associated: false, claimedHere: true, freshStart: true, openedHere: false)
+                == .blocked(.anotherGroupsAccountAssociated))
     }
 
     // MARK: - La parada en el claim
@@ -158,6 +244,7 @@ struct StorageMigrationIdentityGateLogicTests {
         #expect(Logic.Block.accountHasPersonalData.slug == "personal_data")
         #expect(Logic.Block.anotherGroupsAccountAssociated.slug == "other_groups_account")
         #expect(Logic.Block.accountReturnedToICloud.slug == "returned_to_icloud")
+        #expect(Logic.Block.sessionFromBeforeFreshStart.slug == "fresh_start_session")
         #expect(Set(Logic.Block.allCases.map(\.slug)).count == Logic.Block.allCases.count)
     }
 
@@ -188,6 +275,42 @@ struct StorageMigrationIdentityGateLogicTests {
         #expect(Copy.title(for: .accountReturnedToICloud) == Copy.returnedTitle)
         #expect(Copy.body(for: .accountReturnedToICloud, offersAnotherAccount: false, associatedEmail: nil)
                 == Copy.returnedBody)
+        #expect(Copy.title(for: .sessionFromBeforeFreshStart) == Copy.freshStartSessionTitle)
+    }
+
+    /// El aviso de la sesión de antes tiene un solo cuerpo: no nombra el correo (la sección «Grupos» ya lo enseña) ni cambia
+    /// con «Usar otra cuenta», que con una sesión de antes nunca sale.
+    @Test("«puede ser de otra persona» tiene un solo cuerpo")
+    func cuerpoDeLaSesionDeAntes() {
+        for offers in [true, false] {
+            for email in [nil, "", "ana@example.com"] as [String?] {
+                #expect(Copy.body(for: .sessionFromBeforeFreshStart, offersAnotherAccount: offers, associatedEmail: email)
+                        == Copy.freshStartSessionBody)
+            }
+        }
+    }
+
+    /// **El cuerpo promete dos gestos, y en los 16 idiomas nombra los de verdad**: la sección «Grupos», que con esa sesión
+    /// viva ofrece desasociar en un teléfono con sesión privada, y el botón «Activar la nube», que sin sesión abre la elección
+    /// de cuenta. Se compara con el título de la sección y el del botón en el mismo idioma, y **entre comillas**: en alemán,
+    /// japonés y chino el nombre de la sección también sale suelto («Deine Gruppen», 「グループは」, 「你的群组」), así que un
+    /// `contains` a secas pasaba con una traducción que no mandara a ninguna sección (lo cazó la review).
+    @Test("en todos los idiomas, el cuerpo nombra entre comillas la sección «Grupos» y el botón «Activar la nube»")
+    func cuerpoNombraLosGestosReales() throws {
+        #expect(SupportedLocale.allCases.count == 16)
+        func quoted(_ name: String, in text: String) -> Bool {
+            let pattern = "[«“„‘「]\\s?" + NSRegularExpression.escapedPattern(for: name) + "\\s?[»”“’」]"
+            return text.range(of: pattern, options: .regularExpression) != nil
+        }
+        for locale in SupportedLocale.allCases {
+            let strings = StringsFileParser.parseStrings(forLocale: locale.code)
+            let body = try #require(strings["storage.migrateBlock.freshStartSessionBody"], "\(locale.code): falta el cuerpo")
+            let section = try #require(strings["storage.groups.title"], "\(locale.code): falta el título de la sección")
+            let button = try #require(strings["storage.migrate.button"], "\(locale.code): falta el botón")
+            #expect(quoted(section, in: body), "\(locale.code): el cuerpo no nombra entre comillas «\(section)»")
+            #expect(quoted(button, in: body), "\(locale.code): el cuerpo no nombra entre comillas «\(button)»")
+            #expect(!(strings["storage.migrateBlock.freshStartSessionTitle"] ?? "").isEmpty, "\(locale.code): falta el título")
+        }
     }
 
     /// La nota de Apple sale junto a «Usar otra cuenta» y solo si la rechazada era de Apple (Jürgen, 2026-09-16).

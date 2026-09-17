@@ -154,8 +154,8 @@ enum MetricsCanary: String {
     case cloudReverseClaimRejected
     /// «Migrar a la nube» se paró sin escribir nada porque la cuenta elegida no puede recibir la migración (ticket
     /// `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`). `detail` = `<motivo>@<dónde>`: el motivo es
-    /// `personal_data`, `other_groups_account`, `returned_to_icloud` o `unchecked`, y el sitio `gate` (antes del claim)
-    /// o `claim`. Cuenta INTENTOS, no personas: cada toque que se para emite uno. Hasta ese día esos intentos mezclaban
+    /// `personal_data`, `other_groups_account`, `returned_to_icloud`, `fresh_start_session` o `unchecked`, y el sitio
+    /// `gate` (antes del claim) o `claim`. Cuenta INTENTOS, no personas: cada toque que se para emite uno. Hasta ese día esos intentos mezclaban
     /// los datos en silencio.
     case cloudMigrationExistingAccountBlocked
     case accountDeletionCompleted

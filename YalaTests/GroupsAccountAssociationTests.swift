@@ -192,7 +192,7 @@ struct GroupsAccountAssociationStoreTests {
     @Test("Asociar escribe en los DOS almacenes")
     func escribeEnLosDos() {
         let (sut, kv, defaults) = store()
-        #expect(sut.associate(sub: "sub-1", provider: "google", email: "a@b.com", kind: .groupsOnly))
+        #expect(sut.associate(sub: "sub-1", provider: "google", email: "a@b.com", kind: .groupsOnly, sessionOpenedByThisSignIn: true))
 
         #expect(defaults.data(forKey: GroupsAccountAssociation.localKey) != nil, "falta el espejo local")
         #expect(kv.bool(forKey: GroupsAccountAssociation.Keys.associated))
@@ -242,8 +242,8 @@ struct GroupsAccountAssociationStoreTests {
     @Test("Sin `sub` no se escribe nada, y se dice")
     func asociarSinSub() {
         let (sut, kv, defaults) = store()
-        #expect(sut.associate(sub: nil, provider: "google", email: "a@b.com", kind: .complete) == false)
-        #expect(sut.associate(sub: "", provider: "google", email: "a@b.com", kind: .complete) == false)
+        #expect(sut.associate(sub: nil, provider: "google", email: "a@b.com", kind: .complete, sessionOpenedByThisSignIn: true) == false)
+        #expect(sut.associate(sub: "", provider: "google", email: "a@b.com", kind: .complete, sessionOpenedByThisSignIn: true) == false)
         #expect(defaults.data(forKey: GroupsAccountAssociation.localKey) == nil)
         #expect(kv.bool(forKey: GroupsAccountAssociation.Keys.associated) == false)
     }
@@ -256,8 +256,8 @@ struct GroupsAccountAssociationStoreTests {
     func reasociarIdempotente() {
         let (sut, _, _) = store()
         let t0 = Date(timeIntervalSince1970: 1_000)
-        sut.associate(sub: "s", provider: "apple", email: nil, kind: .groupsOnly, now: t0)
-        sut.associate(sub: "s", provider: "apple", email: "tarde@b.com", kind: .complete,
+        sut.associate(sub: "s", provider: "apple", email: nil, kind: .groupsOnly, sessionOpenedByThisSignIn: true, now: t0)
+        sut.associate(sub: "s", provider: "apple", email: "tarde@b.com", kind: .complete, sessionOpenedByThisSignIn: true,
                       now: t0.addingTimeInterval(9_999))
 
         let leido = sut.read()
@@ -271,9 +271,9 @@ struct GroupsAccountAssociationStoreTests {
     func otraCuentaNoHereda() {
         let (sut, kv, _) = store()
         let t0 = Date(timeIntervalSince1970: 1_000)
-        sut.associate(sub: "s1", provider: "google", email: "primera@b.com", kind: .groupsOnly, now: t0)
+        sut.associate(sub: "s1", provider: "google", email: "primera@b.com", kind: .groupsOnly, sessionOpenedByThisSignIn: true, now: t0)
         let t1 = t0.addingTimeInterval(500)
-        sut.associate(sub: "s2", provider: "apple", email: nil, kind: .groupsOnly, now: t1)
+        sut.associate(sub: "s2", provider: "apple", email: nil, kind: .groupsOnly, sessionOpenedByThisSignIn: true, now: t1)
 
         #expect(sut.read()?.sub == "s2")
         #expect(sut.read()?.associatedAt == t1)
@@ -286,7 +286,7 @@ struct GroupsAccountAssociationStoreTests {
     @Test("Desasociar limpia los dos almacenes, key a key")
     func limpiaLosDos() {
         let (sut, kv, defaults) = store()
-        sut.associate(sub: "s", provider: "google", email: "a@b.com", kind: .groupsOnly)
+        sut.associate(sub: "s", provider: "google", email: "a@b.com", kind: .groupsOnly, sessionOpenedByThisSignIn: true)
         sut.clear()
 
         #expect(sut.read() == nil)
@@ -303,7 +303,7 @@ struct GroupsAccountAssociationStoreTests {
     @Test("Desasociar deja tombstone, y asociar lo retira")
     func tombstoneDelDesasociar() {
         let (sut, kv, _) = store()
-        sut.associate(sub: "s", provider: "google", email: nil, kind: .groupsOnly)
+        sut.associate(sub: "s", provider: "google", email: nil, kind: .groupsOnly, sessionOpenedByThisSignIn: true)
         #expect(sut.isDetached == false)
 
         sut.clear()
@@ -311,7 +311,7 @@ struct GroupsAccountAssociationStoreTests {
         #expect(sut.isDetached, "sin tombstone, «desasociado» es solo una ausencia y se repone sola")
         #expect(kv.double(forKey: GroupsAccountAssociation.Keys.detachedAt) > 0)
 
-        sut.associate(sub: "s", provider: "google", email: nil, kind: .groupsOnly)
+        sut.associate(sub: "s", provider: "google", email: nil, kind: .groupsOnly, sessionOpenedByThisSignIn: true)
         #expect(sut.isDetached == false, "asociar es el único gesto que deshace un desasociar")
     }
 
@@ -325,7 +325,7 @@ struct GroupsAccountAssociationStoreTests {
         defaults.set(true, forKey: AppPreferences.Keys.groupsDomainSealedForFreshStart)
         let sut = GroupsAccountAssociation(iKV: kv, defaults: defaults)
 
-        #expect(sut.associate(sub: "del-nuevo", provider: "apple", email: "nuevo@b.com", kind: .groupsOnly))
+        #expect(sut.associate(sub: "del-nuevo", provider: "apple", email: "nuevo@b.com", kind: .groupsOnly, sessionOpenedByThisSignIn: true))
         #expect(kv.bool(forKey: GroupsAccountAssociation.Keys.associated) == false, """
             El correo del humano nuevo acabó en el iCloud-KV del Apple ID del anterior.
             """)
@@ -335,15 +335,69 @@ struct GroupsAccountAssociationStoreTests {
         #expect(sut.read()?.sub == "del-nuevo")
     }
 
+    /// **El `true` que no se eligió** (ticket `fresh-start-keeps-a-groups-session-that-migrate-promotes`). En un teléfono que
+    /// empezó desde cero, la sesión que ya estaba abierta puede ser de la persona anterior. La hoja de Grupos la reusa sin
+    /// enseñar botones cuando una invitación se queda sin token, y apuntarla le daba a «Migrar a la nube» un `true` que
+    /// promovía esa cuenta con las finanzas de la persona nueva.
+    @MainActor
+    @Test("Con el dominio sellado, una sesión que ya estaba abierta NO se asocia")
+    func selloNoAsociaUnaSesionQueYaEstabaAbierta() {
+        let kv = FakeKV()
+        let defaults = isolatedDefaults()
+        defaults.set(true, forKey: AppPreferences.Keys.groupsDomainSealedForFreshStart)
+        let sut = GroupsAccountAssociation(iKV: kv, defaults: defaults)
+
+        #expect(sut.associate(sub: "del-anterior", provider: "google", email: "anterior@b.com", kind: .groupsOnly,
+                              sessionOpenedByThisSignIn: false) == false)
+        #expect(defaults.data(forKey: GroupsAccountAssociation.localKey) == nil, "se apuntó en local la sesión de antes")
+        #expect(kv.bool(forKey: GroupsAccountAssociation.Keys.associated) == false)
+        #expect(sut.isAssociated(sub: "del-anterior") == nil)
+    }
+
+    /// CONTROL del de arriba: sin el sello, una sesión que ya estaba abierta se apunta como siempre. Es lo que hace el
+    /// registrador del arranque con el parque, y sin este caso un escritor que no escribiera nunca pasaría el anterior.
+    @MainActor
+    @Test("Sin sello, una sesión que ya estaba abierta sí se asocia")
+    func sinSelloAsociaUnaSesionQueYaEstabaAbierta() {
+        let (sut, kv, defaults) = store()
+        #expect(sut.associate(sub: "s", provider: "google", email: nil, kind: .groupsOnly,
+                              sessionOpenedByThisSignIn: false))
+        #expect(defaults.data(forKey: GroupsAccountAssociation.localKey) != nil)
+        #expect(kv.string(forKey: GroupsAccountAssociation.Keys.sub) == "s")
+    }
+
+    /// **La salida del aviso, sin tocar el Apple ID de antes.** El aviso de «Migrar a la nube» manda a desasociar en
+    /// «Grupos»; en un teléfono que empezó desde cero el iCloud-KV sigue siendo el del Apple ID anterior, y borrar sus keys o
+    /// dejar el tombstone le quitaría la asociación en sus otros dispositivos.
+    @MainActor
+    @Test("Con el dominio sellado, desasociar borra solo el espejo local")
+    func selloDesasociarNoTocaElICloudKV() {
+        let kv = FakeKV()
+        kv.setBool(true, forKey: GroupsAccountAssociation.Keys.associated)
+        kv.setString("sub-del-anterior", forKey: GroupsAccountAssociation.Keys.sub)
+        let defaults = isolatedDefaults()
+        defaults.set(true, forKey: AppPreferences.Keys.groupsDomainSealedForFreshStart)
+        let sut = GroupsAccountAssociation(iKV: kv, defaults: defaults)
+        sut.associate(sub: "del-nuevo", provider: "apple", email: nil, kind: .groupsOnly, sessionOpenedByThisSignIn: true)
+
+        sut.clear()
+        #expect(defaults.data(forKey: GroupsAccountAssociation.localKey) == nil, "el espejo local no se borró")
+        #expect(sut.read() == nil)
+        #expect(kv.bool(forKey: GroupsAccountAssociation.Keys.associated), "se borraron las keys del Apple ID de antes")
+        #expect(kv.string(forKey: GroupsAccountAssociation.Keys.sub) == "sub-del-anterior")
+        #expect(kv.double(forKey: GroupsAccountAssociation.Keys.detachedAt) == 0, "se dejó un tombstone en el Apple ID de antes")
+    }
+
     /// Tri-estado, y el `nil` no es un detalle: en la puerta de «Migrar a la nube» `false` bloquea y `nil` deja seguir
-    /// (2026-09-16). Devolver `false` sin registro bloquearía a quien no tiene ninguna cuenta asociada.
+    /// (2026-09-16), salvo en un teléfono que empezó desde cero con una sesión que no abrió el intento. Devolver `false` sin
+    /// registro bloquearía a quien no tiene ninguna cuenta asociada.
     @MainActor
     @Test("`isAssociated` distingue «no hay registro» de «es otra cuenta»")
     func isAssociatedTriEstado() {
         let (sut, _, _) = store()
         #expect(sut.isAssociated(sub: "s") == nil)
 
-        sut.associate(sub: "s", provider: "google", email: nil, kind: .groupsOnly)
+        sut.associate(sub: "s", provider: "google", email: nil, kind: .groupsOnly, sessionOpenedByThisSignIn: true)
         #expect(sut.isAssociated(sub: "s") == true)
         #expect(sut.isAssociated(sub: "otra") == false)
         #expect(sut.isAssociated(sub: nil) == false)
@@ -445,7 +499,7 @@ struct GroupsAssociationRegistrarTests {
         let kv = FakeKV()
         let defaults = isolatedDefaults()
         let store = GroupsAccountAssociation(iKV: kv, defaults: defaults)
-        store.associate(sub: "s1", provider: "google", email: "a@b.com", kind: .groupsOnly)
+        store.associate(sub: "s1", provider: "google", email: "a@b.com", kind: .groupsOnly, sessionOpenedByThisSignIn: true)
         store.clear()
 
         GroupsAssociationRegistrar.syncFromLiveSessionIfNeeded(
@@ -578,6 +632,28 @@ struct GroupsAssociationWiringTests {
         #expect(bloqueo.upperBound < escritura.lowerBound, """
             La asociación se escribiría incluso con la cuenta RECHAZADA por el bloqueo [I].
             """)
+    }
+
+    /// **El origen de la sesión llega entero al escritor** (ticket `fresh-start-keeps-a-groups-session-that-migrate-promotes`).
+    /// Si el cinturón de la hoja dijera `.signedInHere`, o el modificador pasara `true` fijo, en un teléfono que empezó desde
+    /// cero la sesión de la persona anterior volvería a quedar asociada y «Migrar a la nube» la promovería.
+    @Test("La hoja de Grupos dice de dónde sale la sesión y el modificador se lo pasa al escritor")
+    func origenDeLaSesionCableado() {
+        let hoja = Self.flattened("Yala/App/Views/Groups/GroupsSignInView.swift")
+        #expect(hoja.components(separatedBy: "onAuthenticated(").count - 1 == 2, "la hoja avisa al caller desde más sitios")
+        guard let cinturon = hoja.range(of: "if CloudAuthService.shared.hasSession {"),
+              let reusada = hoja.range(of: "onAuthenticated(destino, .alreadyOpen)"),
+              let firma = hoja.range(of: "try await CloudAuthService.shared.signIn(with: provider)"),
+              let firmada = hoja.range(of: "onAuthenticated(destino, .signedInHere)")
+        else { return #expect(Bool(false), "no se encontraron los dos avisos de la hoja con su origen") }
+        #expect(cinturon.upperBound < reusada.lowerBound, "`.alreadyOpen` ya no es el aviso del cinturón")
+        #expect(firma.upperBound < firmada.lowerBound, "`.signedInHere` ya no sale después de firmar")
+
+        let modificador = Self.flattened("Yala/App/Views/Shared/GroupsBackendInviteModifier.swift")
+        #expect(modificador.contains("GroupsSignInView { destino, origen in"))
+        #expect(modificador.contains("""
+            kind: AccountKindService.shared.current, sessionOpenedByThisSignIn: origen == .signedInHere)
+            """), "el modificador no le pasa al escritor el origen de la sesión")
     }
 
     /// El segundo armador. Sin el call-site, la suite de arriba pasa entera y el parque instalado se
