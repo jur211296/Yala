@@ -1,6 +1,6 @@
 ---
 name: el-testigo-vive-menos-que-lo-que-describe
-description: Un dato que describe a otro tiene que MORIR con él, y el borrado va DENTRO de su escritor — no en los call-sites. Colgué el mío del boot-wipe y sobrevivió al relevo de humano: al dueño nuevo la app le ofrecía borrarle SUS datos.
+description: Un dato que describe a otro tiene que MORIR con él, y el borrado va DENTRO de su escritor — no en los call-sites. Sobrevivió al relevo de humano (14-sep) y un sello de excepción sobrevivió a la migración que lo cerraba (16-sep).
 metadata:
   type: feedback
 ---
@@ -35,6 +35,12 @@ anterior. Y con `confirmedWithoutICloudCopy: true`, sin esperar al export.
   ve**: con el borrado quitado, todo lo observable sigue igual hasta que aparece el segundo humano.
 - Corolario de escritura: si tu docblock dice «muere en un solo sitio», **cuéntalos** antes de escribirlo.
   El mío contradecía al docblock del fichero de al lado, que tenía razón.
+
+**Segunda vez, 2026-09-16, por el lado de una EXCEPCIÓN.** Para que «Reintentar» tras un fallo no se bloqueara, dejé
+pasar por la comprobación de «Migrar a la nube» las cuentas `complete` con el sello `.proceedMigration` de este teléfono.
+Ese sello describe «intento a medias» y no moría al terminar la migración ni al cerrar sesión: una migración TERMINADA
+seguía abriendo la puerta. Lo cazó la segunda pasada de la review. Se arregló en el escritor del hecho que lo termina
+(el `complete` del líder cambia el sello). ⇒ **si un dato abre una excepción, busca también el escritor que la cierra.**
 
 Relacionado: [[mi-docblock-tambien-es-una-premisa]] · [[el-guard-va-dentro-del-escritor]] ·
 [[el-prefijo-que-elegi-tiene-dos-efectos]] · [[el-flag-que-conserva-deja-estado-incoherente]]

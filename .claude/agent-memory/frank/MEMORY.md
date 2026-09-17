@@ -12,10 +12,13 @@
 - [Autónomo es hasta el final](feedback_autonomo_hasta_el_final.md) — decide en bloque y suelta la ejecución; los rojos y el entorno también son míos.
 - [Prefiere lo limpio a lo defensivo](feedback_prefiere_lo_limpio_a_lo_defensivo.md) — retira el mecanismo que falla en vez de apuntalarlo.
 - [Cuándo la app pregunta al usuario](feedback_cuando_la_app_pregunta_al_usuario.md) — pregunta si la decisión mueve DATOS suyos; si solo cambia el recorrido, informa o calla.
+- [Un límite de plataforma se explica en la pregunta](feedback_un_limite_de_plataforma_se_explica_en_la_pregunta.md) — preguntó por qué Apple solo usa el Apple ID del teléfono y eligió levantarlo.
 
 ## Cómo mido y cómo entrego
 - [El copy que promete una acción se recorre](feedback_el_copy_que_promete_se_recorre.md) — «en Perfil puedes exportar» era falso para no-Pro: mira el gate de PLAN, no solo que la pantalla exista.
 - [Antes de poner techo, mide que la espera existe](feedback_antes_de_poner_techo_mide_que_la_espera_existe.md) — acoté una espera que para casi todos terminaba al instante con un falso «hecho»; lo cazó la review.
+- [Una ventana dura lo que su reintento](feedback_una_ventana_dura_lo_que_su_reintento.md) — «una petición» era todo lo que el claim pasa aparcado: lo en memoria llega con su default tras relanzar.
+- [Mi puerta bloquea lo que su propio flujo dejó](feedback_mi_puerta_bloquea_lo_que_su_propio_flujo_dejo.md) — el claim deja la cuenta `complete` y mi comprobación cerraba «Reintentar» para siempre.
 - [El predicado del ticket no es el criterio](feedback_el_predicado_del_ticket_no_es_el_criterio.md) — mide con qué predicado decide la superficie que desbloqueas: el literal del ticket dejaba el bug vivo.
 - [La premisa del ENCARGO también se mide](feedback_la_premisa_del_encargo_tambien_se_mide.md) — hereda los errores del ticket.
 - [Una frase de alcance se cuenta por llamadores](feedback_una_frase_de_alcance_se_cuenta_por_llamadores.md) — «solo en carrera» cayó: la migración sube sin la puerta que yo miré.
@@ -47,7 +50,7 @@
 - [Mi arreglo abre un camino INALCANZABLE](feedback_mi_arreglo_abre_un_camino_inalcanzable.md) — quitar un efecto vuelve alcanzable código que nunca corrió, con sus bugs intactos; recorre el gesto como 2.ª pasada.
 - [El consumidor lee una COPIA](feedback_el_consumidor_lee_una_copia.md) — actualicé el `@State` y el lector siguió con el valor viejo: lo recibe por VALOR y sin `await` nadie re-evalúa el body.
 - [Mi arreglo rompe la premisa de OTRO guard](feedback_mi_arreglo_rompe_la_premisa_de_otro_guard.md) — ensanchar un predicado, o abrir un CAMINO nuevo hacia él, deja mentirosos a guards que están a varios ficheros.
-- [El testigo vive menos que lo que describe](feedback_el_testigo_vive_menos_que_lo_que_describe.md) — el borrado va DENTRO del escritor del dato descrito; en los call-sites sobrevivió al relevo de humano.
+- [El testigo vive menos que lo que describe](feedback_el_testigo_vive_menos_que_lo_que_describe.md) — el borrado va DENTRO del escritor; y un sello que abre una excepción muere donde termina lo que certifica.
 - [El guard va DENTRO del escritor](feedback_el_guard_va_dentro_del_escritor.md) — repetido en vistas SwiftUI solo lo prueba un grep, y un grep no ve un guard invertido.
 - [Mi fix hereda la forma del bug](feedback_mi_fix_hereda_la_forma_del_bug.md) — el arreglo repite el error del bug; enuncia el bug en una frase y aplícasela al arreglo.
 - [El alert de SwiftUI compite con su propio botón](feedback_el_alert_de_swiftui_compite_con_su_propio_boton.md) — el `set` del binding corre al pulsar CUALQUIER botón.
@@ -83,7 +86,7 @@
 - [Mis mediciones fallan por el filtro](feedback_mis_mediciones_fallan_por_el_filtro.md) — control positivo siempre; el negativo va PRIMERO y en transacción fresca.
 - [`head` retiene el veredicto de xcodebuild](feedback_head_retiene_el_veredicto_de_xcodebuild.md) — un `| head -N` no imprime nada hasta que el proceso muere: parece un teardown colgado y es el pipe.
 - [zsh no divide variables](feedback_zsh_no_divide_variables.md) — «SUCCEEDED» con cero tests; y el exit del wrapper es del `echo`, no de xcodebuild.
-- [Revertir sin commit destruye](feedback_revertir_sin_commit_destruye.md) — en árbol sucio `git checkout -- <f>` borra el trabajo; los mutantes se revierten con `cp`.
+- [Revertir sin commit destruye](feedback_revertir_sin_commit_destruye.md) — `git checkout -- <f>` borra el trabajo; un SIGKILL deja el mutante puesto: compara con la copia.
 - [Nunca el trailer Co-Authored-By](feedback_trailer_commit_medido.md) — desde el 9-sep un hook del repo bloquea el COMMIT.
 - [Generar y persistir en un solo gesto](feedback_generar_y_persistir_credenciales.md) — una credencial nunca vive solo en pantalla.
 - [Medir la web: axe, Lighthouse, preview](feedback_medir_la_web_a11y_y_preview.md) — axe ciego con opacity 0; preview con SSO se verifica por config.json.
@@ -97,6 +100,7 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build incremental.
 
 ## Estado del trabajo
+- [«Migrar a la nube» ya no adopta](project_migrar_a_la_nube_no_adopta.md) — PR #187; en qa por pasos en iPhone; D18 cierra a sabiendas la salida de una migración abandonada.
 - [Un rechazo al volver a iCloud ya sale a la nube](project_rechazo_del_claim_de_la_reversa.md) — PR #186; en qa con SQL en staging; la salida repone lo que la entrada tiró.
 - [Sin App Attest no se ofrece la nube](project_puerta_del_alta_sin_attest.md) — Welcome (#180, #181) y la tarjeta de Ajustes entera; en qa por pasos en iPhone; sin secreto el simulador no crea cuentas.
 - [Grupos ya despierta al volver a la app](project_grupos_despierta_al_volver_a_la_app.md) — PR #179; deja el ticket del piggyback con el motor parado y un mutante declarado sin test.
