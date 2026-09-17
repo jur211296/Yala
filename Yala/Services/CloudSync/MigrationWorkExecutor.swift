@@ -190,6 +190,9 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// Persistencia del `AuthAction` resuelto (P6). El `performClaim`/`runAdoptFlow` lo estampan → el gate
     /// de arranque del runtime (`LiveCloudSessionProvider.claimAction`) lo lee. Inyectable para tests.
     private let claimStore: CloudClaimActionStore
+    /// El sello que había ANTES del último `performClaim`, para que `discardLastClaimStamp` lo reponga. En memoria: solo
+    /// se deshace el claim de la llamada en curso. `nil` = el último claim no selló nada.
+    private var lastClaimStampUndo: (userID: String, previous: AccountClaimDecision.AuthAction?)?
     /// Instante del último heartbeat EMITIDO (I14-pre). IN-MEMORY, NO journaled: un kill+resume lo resetea →
     /// a lo sumo UN heartbeat extra por relanzamiento (idempotente, 1 request). Se arma también en rechazo/red
     /// para no martillar el endpoint por-página cuando el server rechaza o la red está caída.
@@ -278,6 +281,8 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// `POST /account/claim` con el JWT vigente + el `device_id` del dispositivo + `provider`. Sin JWT →
     /// `.sessionExpired` (el runner corta SIN evento, retomable; un re-login lo despierta). NUNCA lanza.
     func performClaim() async -> ClaimOutcome {
+        // Cada claim empieza sin nada que deshacer: `discardLastClaimStamp` solo repone lo de ESTE claim.
+        lastClaimStampUndo = nil
         guard let jwt = await session.accessToken(), !jwt.isEmpty else {
             return .sessionExpired(detail: "no access token")
         }
@@ -293,6 +298,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
                 let action = AccountClaimDecision.decide(
                     state: claimState, branch: .migration,
                     beaconSaysCloudActivated: false, providerMatchesBeacon: true)
+                lastClaimStampUndo = (userID, claimStore.action(forUserID: userID))
                 claimStore.record(action, forUserID: userID)
                 // KPI registros/día (alta nube): SOLO `created` = fila NUEVA server-side. One-shot
                 // persistido por userID dentro del servicio — el re-claim del MISMO líder colapsa a
@@ -308,6 +314,18 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             }
         }
         return outcome
+    }
+
+    /// Repone el sello de antes del último `performClaim` (ver `MigrationWorkExecuting.discardLastClaimStamp`). Un solo
+    /// uso: la segunda llamada no tiene nada que deshacer.
+    func discardLastClaimStamp() {
+        guard let undo = lastClaimStampUndo else { return }
+        lastClaimStampUndo = nil
+        if let previous = undo.previous {
+            claimStore.record(previous, forUserID: undo.userID)
+        } else {
+            claimStore.clear(forUserID: undo.userID)
+        }
     }
 
     // MARK: - Identidad (w3)
@@ -644,6 +662,13 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             switch await accountClient.migrationProgress(jwt: jwt, deviceID: deviceID, action: "complete") {
             case .ok:
                 CloudSyncBreadcrumb.migrationReconcileDeferred()
+                // La migración de esta cuenta ya no está a medias: el sello pasa a `.routeReturningUser`, el de quien ya
+                // tiene la cuenta. `.proceedMigration` es lo que deja a «Migrar a la nube» reintentar un intento que falló
+                // (`StorageMigrationIdentityGateLogic.check`), y con una migración TERMINADA dejaba pasar la comprobación
+                // hasta el claim, que la paraba igual pero tras el consentimiento. El runtime arranca con los dos.
+                if let userID = session.currentUserID {
+                    claimStore.record(.routeReturningUser, forUserID: userID)
+                }
             case .otherLeader:
                 CloudSyncBreadcrumb.migrationCutoverOtherLeader()
                 throw MigrationExecutorError.notWired(effect: "runLeaderReconcile: otherLeader")

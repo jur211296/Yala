@@ -335,8 +335,8 @@ struct GroupsAccountAssociationStoreTests {
         #expect(sut.read()?.sub == "del-nuevo")
     }
 
-    /// Tri-estado, y el `nil` no es un detalle: la tabla de [I] lo trata como «no puedo probarlo» y
-    /// bloquea la promoción. Devolver `false` sin registro sería afirmar con más confianza de la que hay.
+    /// Tri-estado, y el `nil` no es un detalle: en la puerta de «Migrar a la nube» `false` bloquea y `nil` deja seguir
+    /// (2026-09-16). Devolver `false` sin registro bloquearía a quien no tiene ninguna cuenta asociada.
     @MainActor
     @Test("`isAssociated` distingue «no hay registro» de «es otra cuenta»")
     func isAssociatedTriEstado() {

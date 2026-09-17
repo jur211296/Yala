@@ -192,6 +192,13 @@ nonisolated enum MigrationEvent: Equatable {
     /// The digested `POST /account/claim` result (§f.1). `sameDeviceReclaim` = the backend says THIS
     /// device is already the leader (idempotent re-claim after a kill).
     case claimResult(AccountClaimDecision.ClaimState, sameDeviceReclaim: Bool)
+    /// «Migrar a la nube» y el claim contestó `existing_stable` o `claiming_in_progress`: la cuenta ya tiene lo personal
+    /// reclamado —completa, o volvió a iCloud y sigue congelada— u otro dispositivo la está migrando. Con esa intención no
+    /// se adopta ni se sigue al líder: el adopt subiría a esa cuenta el corpus local y la persona terminaría con dos datasets
+    /// mezclados (ticket `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`).
+    /// El runner lo emite en vez del `claimResult` solo con `ForwardClaimIntent.migrateOnly`; la máquina no conoce la
+    /// intención.
+    case claimRefusedExistingAccount
     case identityAssigned
     case snapshotUploaded
     case verifyOutcome(VerifyOutcome)
@@ -452,6 +459,11 @@ nonisolated enum MigrationStateMachine {
         // claimingMigration — the §f.1 claim contract routes leader / follower / returning-user.
         case let (.claimingMigration, .claimResult(state, sameDeviceReclaim)):
             return claimTransition(state: state, sameDeviceReclaim: sameDeviceReclaim)
+        // claimingMigration → notStarted SIN efectos: «Migrar» sobre una cuenta que ya tiene lo personal o que otro
+        // dispositivo está migrando. Las ramas `existing_stable` y `claiming_in_progress` (sin relevo) de `claim_account`
+        // solo clasifican —no hay UPDATE—, así que no queda nada que deshacer ni en el servidor ni aquí.
+        case (.claimingMigration, .claimRefusedExistingAccount):
+            return .transition(next: .notStarted, effects: [])
 
         // waitingForLeader (follower)
         case (.waitingForLeader, .leaderCompleted):
@@ -547,8 +559,10 @@ nonisolated enum MigrationStateMachine {
             return .transition(next: .reverseConfirm(.done), effects: [])
         case (.notStarted, .reverseActivated):
             return .transition(next: .reverseConfirm(.notStarted), effects: [])
-        // `icloudActive` re-cutover (§h.4): re-enters the forward migration via consent. The claim will
-        // return `existing_stable` → adopt (flow I14); this edge only avoids a terminal without exit.
+        // `icloudActive` re-cutover (§h.4): re-enters the forward migration via consent; this edge only avoids a
+        // terminal without exit. The claim answers `existing_stable` for an account that returned to iCloud, and
+        // «Migrar a la nube» no longer adopts it: `ForwardClaimIntent.migrateOnly` returns to `notStarted` with
+        // `claimRefusedExistingAccount` (Jürgen, 2026-09-16: the account stays frozen until the re-cutover exists).
         case let (.icloudActive, .userActivated(dryRun)):
             return .transition(next: dryRun ? .dryRun : .consent, effects: [])
 

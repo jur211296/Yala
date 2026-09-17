@@ -41,6 +41,8 @@ extension XCUIApplication {
         groupsOutboxPending: Bool = false,
         groupsAttestTerminal: Bool = false,
         fakeAttestSupport: Bool = false,
+        fakeMigrationIdentity: String? = nil,
+        pendingMigrationBlock: String? = nil,
         extraArguments: [String] = []
     ) -> XCUIApplication {
         var args = ["-uitest"]
@@ -126,6 +128,21 @@ extension XCUIApplication {
         // el test que prueba la condición va con `-uitest-cloud-chooser` y SIN este arg, así que un typo aquí dejaría a los
         // positivos cayendo con un rojo que culpa a la pantalla. Su nombre lo fija un test de paridad con `UITestHooks`.
         if fakeAttestSupport { args.append("-uitest-fake-attest-support") }
+        // La respuesta fingida de la puerta de identidad de «Migrar a la nube» (`personalData` o `proceed`). NOMBRADO por lo
+        // mismo que sus vecinos: un typo en el arg dejaría la puerta preguntando de verdad, la comprobación no podría (sin
+        // sesión real) y el flujo seguiría al consentimiento, un rojo que culparía a la hoja. Su nombre y sus valores los
+        // fija un test de paridad con `UITestHooks` (`MigrationIdentityGateWiringTests`).
+        if let fakeMigrationIdentity {
+            args.append("-uitest-fake-migration-identity")
+            args.append(fakeMigrationIdentity)
+        }
+        // Un aviso de «Migrar a la nube» ya publicado al abrir la pantalla (`personalData` o `personalDataApple`), con
+        // «Usar otra cuenta»: la cadena hoja → elección de Apple/Google no se recorre con una sesión fingida. Mismo test de
+        // paridad que el de arriba.
+        if let pendingMigrationBlock {
+            args.append("-uitest-pending-migration-block")
+            args.append(pendingMigrationBlock)
+        }
         // Args crudos adicionales (aditivo — p.ej. "-uitest-cloud-chooser").
         args.append(contentsOf: extraArguments)
         // Idioma FIJO para toda la suite. Los seeds nombran sus datos con copy localizado

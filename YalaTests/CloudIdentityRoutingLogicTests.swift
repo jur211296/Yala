@@ -201,15 +201,31 @@ struct CloudIdentityRoutingLogicTests {
             == .blockedAnotherGroupsAccountAssociated)
     }
 
-    /// `nil` cae con «otra», no con «la mía». Promover convierte la cuenta en `complete` y le absorbe lo
-    /// personal a alguien: un call-site que no puede PROBAR que es la asociada no debe conseguir eso por
-    /// defecto. Hoy ningún call-site puede probarlo (la identidad de la asociada la persiste el ticket 10).
-    @Test("BORDE · «no se sabe si es mi asociada» bloquea, nunca promueve")
-    func migrarSinSaberSiEsLaAsociada() {
+    /// **Una cuenta nueva tampoco, si hay OTRA asociada** (decisión de Jürgen, 2026-09-16): lo personal quedaría en la
+    /// nueva y los grupos en la asociada. Sin asociada (`nil`, celda de las 15) recibe el cutover, que es el control.
+    @Test("BORDE · migrar con una cuenta NUEVA teniendo otra asociada: una cuenta a la vez")
+    func migrarConCuentaNuevaYOtraAsociada() {
+        #expect(Logic.destination(
+            gate: .settingsMigrateToCloud, discovery: .newAccount,
+            deviceState: .privateSession, isAssociatedGroupsAccount: false)
+            == .blockedAnotherGroupsAccountAssociated)
+        #expect(Logic.destination(
+            gate: .settingsMigrateToCloud, discovery: .newAccount,
+            deviceState: .privateSession, isAssociatedGroupsAccount: true)
+            == .cutoverPrivateToCloud, "la asociada nunca es una cuenta nueva, pero `true` no puede bloquear")
+    }
+
+    /// **`nil` en Ajustes es «no hay ninguna asociada», y ahí se promueve** (decisión de Jürgen, 2026-09-16).
+    /// Hasta ese día esta celda bloqueaba, con la premisa de que «ningún call-site puede probar cuál es la
+    /// asociada»; el paso 10 la persiste (`GroupsAccountAssociation.isAssociated(sub:)`, que devuelve `nil` sin
+    /// registro). Bloquear aquí le decía «ya usas otra cuenta para tus grupos» a quien no tiene ninguna, y no
+    /// protegía nada: la cuenta no tiene finanzas personales, y una cuenta nueva pasa la puerta igual.
+    @Test("BORDE · migrar con una cuenta solo-grupos y NINGUNA asociada: se promueve")
+    func migrarSinNingunaAsociadaPromueve() {
         #expect(Logic.destination(
             gate: .settingsMigrateToCloud, discovery: .groupsOnly,
             deviceState: .privateSession, isAssociatedGroupsAccount: nil)
-            == .blockedAnotherGroupsAccountAssociated)
+            == .promoteAssociatedAccountThenCutover)
     }
 
     /// Los dos bloqueos dicen cosas distintas —«esa cuenta ya tiene Yala completo» frente a «una cuenta a

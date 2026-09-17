@@ -119,9 +119,10 @@ final class GroupsAccountAssociation {
     /// re-enlace de las filas dormidas.
     var associatedSub: String? { read()?.sub }
 
-    /// ¿Es ESTA cuenta la asociada? `nil` cuando no hay asociación registrada: la tabla de [I] trata el
-    /// `nil` como «no puedo probarlo» y cae en el lado seguro (bloquear la promoción), así que devolver
-    /// `false` aquí sería mentir con más confianza de la que hay.
+    /// ¿Es ESTA cuenta la asociada? `nil` cuando no hay asociación registrada, `false` cuando hay otra. No son lo mismo
+    /// y la tabla de [I] no los trata igual: en la puerta de «Migrar a la nube» `false` bloquea («una cuenta a la vez») y
+    /// `nil` deja seguir, porque sin ninguna asociada no hay otra cuenta de la que hablar (Jürgen, 2026-09-16; hasta ese
+    /// día `nil` bloqueaba la promoción). Devolver `false` sin registro bloquearía a quien no tiene ninguna.
     func isAssociated(sub: String?) -> Bool? {
         guard let stored = associatedSub else { return nil }
         guard let sub, !sub.isEmpty else { return false }

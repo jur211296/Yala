@@ -128,13 +128,15 @@ nonisolated enum CloudIdentityRoutingLogic {
         /// **Bloqueo**: esa cuenta ya tiene Yala completo. Dos salidas —«Ya tengo cuenta» o asociar otra— y
         /// **ninguna escritura**. Juntar dos datasets personales sería una fusión, que el ADR descartó.
         case blockedAccountIsComplete
-        /// **Bloqueo**: ya hay otra cuenta de grupos asociada a esta sesión privada. Una cuenta en la nube
-        /// activa por dispositivo, conmutable (ADR §2), así que el copy dice eso y no «ya tiene Yala
-        /// completo», que sería falso.
+        /// **Bloqueo**: ya hay otra cuenta de grupos asociada a esta sesión privada, y la que acaba de firmar es otra
+        /// —solo-grupos o nueva—. Una cuenta en la nube activa por dispositivo, conmutable (ADR §2), así que el copy
+        /// dice eso y no «ya tiene Yala completo», que sería falso.
         case blockedAnotherGroupsAccountAssociated
         /// Cutover de lo privado a la nube: la cuenta es nueva y recibe lo que ya existe en el dispositivo.
         case cutoverPrivateToCloud
-        /// La cuenta solo-grupos que ya estaba asociada se **promueve** a `complete` y recibe el cutover.
+        /// La cuenta solo-grupos se **promueve** a `complete` y recibe el cutover: la que ya estaba asociada, o
+        /// cualquiera cuando el dispositivo no tiene ninguna asociada (Jürgen, 2026-09-16). El nombre viene del
+        /// primer caso y se conserva: lo enumeran puertas que no lo producen.
         case promoteAssociatedAccountThenCutover
     }
 
@@ -148,8 +150,9 @@ nonisolated enum CloudIdentityRoutingLogic {
     ///     limpio», que es justo el bug que este bloque existe para cerrar. Sin él, añadir una puerta
     ///     obliga a decidir, y lo comprueba el compilador.
     ///   - isAssociatedGroupsAccount: ¿la cuenta que acaba de firmar es la que YA estaba asociada a esta
-    ///     sesión privada? `nil` = «esta puerta no puede saberlo». También sin default, y por lo mismo.
-    ///     Solo lo mira la puerta de Ajustes, donde separa «promover la mía» de «una cuenta a la vez».
+    ///     sesión privada? También sin default, y por lo mismo. Solo lo mira la puerta de Ajustes, donde
+    ///     separa «promover» de «una cuenta a la vez». Allí `nil` es «no hay ninguna asociada»
+    ///     (`GroupsAccountAssociation.isAssociated(sub:)`), y las demás puertas no lo leen.
     static func destination(
         gate: Gate,
         discovery: Discovery,
@@ -196,18 +199,28 @@ nonisolated enum CloudIdentityRoutingLogic {
         case .settingsMigrateToCloud:
             switch discovery {
             case .newAccount:
-                return .cutoverPrivateToCloud
+                // **Con OTRA cuenta asociada para grupos, tampoco** (decisión de Jürgen, 2026-09-16). Lo personal quedaría
+                // en la cuenta nueva y los grupos en la asociada: dos cuentas en la nube en un dispositivo, contra el ADR
+                // §2 y contra «para cambiar de cuenta, desasociar primero» (2026-09-09). Sin ninguna asociada (`nil`),
+                // la cuenta nueva recibe el cutover como siempre.
+                return isAssociatedGroupsAccount == false
+                    ? .blockedAnotherGroupsAccountAssociated
+                    : .cutoverPrivateToCloud
             case .complete:
                 return .blockedAccountIsComplete
             case .groupsOnly:
                 // «Es mi asociada → promover; otra → bloquear (una cuenta a la vez)».
                 //
-                // `nil` cae con «otra» y NO con «la mía»: promover exige la PRUEBA de que esta cuenta es
-                // la asociada, porque promoverla la convierte en `complete` y absorbe lo personal de
-                // alguien. Un call-site que no puede probarlo no debe conseguir la promoción por defecto.
-                return isAssociatedGroupsAccount == true
-                    ? .promoteAssociatedAccountThenCutover
-                    : .blockedAnotherGroupsAccountAssociated
+                // **Solo bloquea una asociada DISTINTA** (decisión de Jürgen, 2026-09-16). Sin ninguna asociada
+                // (`nil`) se promueve: la cuenta no tiene finanzas personales, así que no hay nada que fusionar, y
+                // el bloqueo diría «ya usas otra cuenta para tus grupos» a quien no tiene ninguna. El 2026-09-10 el
+                // `nil` bloqueaba porque la asociación no se persistía y ningún call-site podía probar nada; hoy
+                // `GroupsAccountAssociation` la persiste, y bloquear ahí no frenaba nada que una cuenta nueva no
+                // dejara pasar igual. La cuenta que volvió a iCloud también llega aquí como `groupsOnly`, pero la
+                // para el claim (`ForwardClaimIntent`, en `MigrationRunner`).
+                return isAssociatedGroupsAccount == false
+                    ? .blockedAnotherGroupsAccountAssociated
+                    : .promoteAssociatedAccountThenCutover
             }
         }
     }

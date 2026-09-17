@@ -246,8 +246,9 @@ extension GroupsSignInView {
             // se pasa igual porque el parámetro no tiene default a propósito y porque el día que la
             // tabla lo consulte aquí, la respuesta correcta ya estará puesta.
             //
-            // `nil` cuando el descubrimiento no dejó `userID` (gateway caído): es «no puedo probarlo»,
-            // que es lo que la tabla trata como el lado seguro. Nunca `false` por no haber preguntado.
+            // `nil` solo cuando no hay asociación registrada. Con una registrada y sin `userID` (el descubrimiento no
+            // lo dejó y no hay sesión) es `false`. Esta puerta no lo lee; en la de Ajustes `nil` deja seguir y `false`
+            // bloquea (2026-09-16), así que la falta de `userID` cae del lado del bloqueo.
             isAssociatedGroupsAccount: GroupsAccountAssociation.shared.isAssociated(
                 sub: userID ?? CloudAuthService.shared.currentUserID))
     }

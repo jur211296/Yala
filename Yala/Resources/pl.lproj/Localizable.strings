@@ -5996,3 +5996,16 @@
 "storage.reverseAbort.otherDeviceReverting" = "Nie udało się rozpocząć powrotu do iCloud: inne z Twoich urządzeń już wracało do iCloud. Gdy skończy, będzie można zrobić to na tym urządzeniu.";
 "storage.progress.reverseICloudMaybeOff" = "Jeśli iCloud nie jest włączony na tym urządzeniu, Twoje dane nie mogą trafić do iCloud. Włącz go w Ustawieniach lub anuluj, aby zostać w chmurze.";
 "storage.errors.reversePendingExit" = "Nie można jeszcze wrócić do iCloud: Twoja chmura musi najpierw zostać ponownie w pełni aktywowana. Spróbuj ponownie za chwilę.";
+
+/* «Migrar a la nube» se paró sin escribir nada: la cuenta ya tiene datos (settings-migrate-to-cloud-adopts-silently-instead-of-migrating) */
+"storage.errors.identityCheck" = "Nie udało się zweryfikować Twojego konta. Spróbuj ponownie za chwilę. Nic się nie zmieniło.";
+"storage.migrateBlock.personalDataTitle" = "To konto ma już finanse osobiste";
+"storage.migrateBlock.personalDataBody" = "Nic się nie zmieniło. Aby przenieść swoje dane do chmury, użyj innego konta. Aby korzystać tutaj z danych tego konta, wyloguj się i zaloguj tym kontem.";
+"storage.migrateBlock.personalDataBodyNoSwitch" = "Nic się nie zmieniło. Aby korzystać tutaj z danych tego konta, wyloguj się i zaloguj tym kontem. Aby przenieść swoje dane na inne konto, najpierw odłącz to w sekcji „Grupy”.";
+"storage.migrateBlock.otherGroupsTitle" = "Używasz już innego konta dla swoich grup";
+"storage.migrateBlock.otherGroupsBody" = "Nic się nie zmieniło. Na tym urządzeniu może być tylko jedno konto w chmurze, a Twoje grupy używają już innego. Aby przenieść swoje dane do chmury, zaloguj się kontem swoich grup albo, jeśli wolisz inne, najpierw je odłącz w sekcji „Grupy”.";
+"storage.migrateBlock.otherGroupsBodyEmail" = "Nic się nie zmieniło. Na tym urządzeniu może być tylko jedno konto w chmurze, a Twoje grupy używają już %@. Aby przenieść swoje dane do chmury, zaloguj się tym kontem albo, jeśli wolisz inne, najpierw je odłącz w sekcji „Grupy”.";
+"storage.migrateBlock.returnedTitle" = "To konto wróciło do iCloud";
+"storage.migrateBlock.returnedBody" = "Powrót do chmury z tym kontem nie jest jeszcze dostępny. Nic się nie zmieniło.";
+"storage.migrateBlock.useAnotherAccount" = "Użyj innego konta";
+"storage.migrateBlock.appleSameAccountNote" = "Z Apple Yala zawsze używa konta z tego urządzenia. Aby użyć innego, wybierz Google.";

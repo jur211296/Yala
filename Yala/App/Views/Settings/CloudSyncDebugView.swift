@@ -253,6 +253,9 @@ final class CloudSyncMigrationPanelModel {
     func acceptConsentAndSignIn() async {
         isWorking = true; defer { isWorking = false }
         let r = makeRunner()
+        // El panel conduce la máquina a pelo, sin la puerta de «Migrar a la nube»: fija la intención de siempre para no
+        // heredar la que dejó un intento anterior en el mismo runner (`ForwardClaimIntent`).
+        r.setForwardClaimIntent(.adoptIfExisting)
         await r.submit(.consentAccepted)     // consent → authenticating
         await r.submit(.signInSucceeded)     // authenticating → claimingMigration → drive autónomo
         lastMessage = "consent aceptado + sign-in → la máquina avanza a claimingMigration y sigue sola"

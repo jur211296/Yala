@@ -5990,3 +5990,16 @@
 "storage.reverseAbort.otherDeviceReverting" = "We couldn’t start going back to iCloud: another one of your devices was already going back. Once it’s done, you can do it on this one.";
 "storage.progress.reverseICloudMaybeOff" = "If iCloud isn’t turned on on this device, your data can’t reach iCloud. Turn it on in Settings or cancel to stay in the cloud.";
 "storage.errors.reversePendingExit" = "We can’t go back to iCloud yet: your cloud still needs to finish reactivating. Try again in a moment.";
+
+/* «Migrar a la nube» se paró sin escribir nada: la cuenta ya tiene datos (settings-migrate-to-cloud-adopts-silently-instead-of-migrating) */
+"storage.errors.identityCheck" = "We couldn’t verify your account. Try again in a moment. Nothing has changed.";
+"storage.migrateBlock.personalDataTitle" = "That account already has personal finances";
+"storage.migrateBlock.personalDataBody" = "Nothing has changed. To move your data to the cloud, use another account. To use that account’s data here, sign out and sign in with it.";
+"storage.migrateBlock.personalDataBodyNoSwitch" = "Nothing has changed. To use that account’s data here, sign out and sign in with it. To move your data to another account, first unlink this one in “Groups”.";
+"storage.migrateBlock.otherGroupsTitle" = "You already use another account for your groups";
+"storage.migrateBlock.otherGroupsBody" = "Nothing has changed. This device can only have one cloud account, and your groups already use another one. To move your data to the cloud, sign in with your groups account or, if you’d rather use another one, unlink it first in “Groups”.";
+"storage.migrateBlock.otherGroupsBodyEmail" = "Nothing has changed. This device can only have one cloud account, and your groups already use %@. To move your data to the cloud, sign in with that account or, if you’d rather use another one, unlink it first in “Groups”.";
+"storage.migrateBlock.returnedTitle" = "This account went back to iCloud";
+"storage.migrateBlock.returnedBody" = "Going back to the cloud with it isn’t available yet. Nothing has changed.";
+"storage.migrateBlock.useAnotherAccount" = "Use another account";
+"storage.migrateBlock.appleSameAccountNote" = "With Apple, Yala always uses this device’s account. To use another one, choose Google.";

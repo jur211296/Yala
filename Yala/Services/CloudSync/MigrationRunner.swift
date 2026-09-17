@@ -116,6 +116,54 @@ nonisolated struct ReverseClaimExit: Equatable {
     let reason: ReverseAbortReason
 }
 
+/// Qué pidió la persona al llegar al claim de la IDA. Lo pone `CloudMigrationController` en cada entrada que conduce el
+/// claim, y el runner lo journalea (`MigrationState.forwardClaimIntentRaw`) en el mismo save que lleva a `claimingMigration`.
+///
+/// `existing_stable` le dice lo mismo al servidor en los dos casos —la cuenta ya tiene lo personal reclamado—, pero no a
+/// la persona. Quien entra en su cuenta (Welcome «Ya tengo cuenta», la tarjeta de adopt de Ajustes) quiere adoptarla. Quien
+/// toca «Migrar a la nube» quiere llevar SUS datos a una cuenta que no los tenga, y adoptar ahí sube el corpus local a esa
+/// cuenta (`MigrationWorkExecutor.runAdoptOrphanReconcile`): la fusión que el ADR del 2026-09-09 descartó. Ticket
+/// `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`.
+///
+/// La comprobación previa (`StorageMigrationIdentityGateLogic.check`) para casi todo eso antes del claim. Esto es lo que ve
+/// solo el claim: una cuenta que volvió a iCloud (`/account/exists` la da como `groups_only`), una que se completa entre
+/// la comprobación y el claim, y una que otro dispositivo empezó a migrar en ese rato (`claiming_in_progress`).
+///
+/// **Journaleada, no en memoria, y lo decidió la review.** La primera versión la guardaba en memoria creyendo que la ventana
+/// de un relanzamiento era una petición. No lo es: el claim se queda aparcado en `claimingMigration` todo lo que dure sin red
+/// o con la sesión caducada, y un `resume` tras relanzar adoptaba. En una cuenta que volvió a iCloud eso dejaba el
+/// dispositivo en modo nube sobre un backend congelado que rechaza todo push. Una fila anterior a la v6 no trae intención y
+/// se lee como `.adoptIfExisting`.
+///
+/// **Con «Migrar» tampoco se sigue a otro líder** (Jürgen, 2026-09-16): `claiming_in_progress` vuelve al inicio igual que
+/// `existing_stable`. Seguirle acaba en un adopt cuando el líder termina, y relevarle a los 60 min sube lo local encima de lo
+/// que él dejó; con el mismo iCloud es lo correcto, con otro mezcla dos corpus, y el teléfono no puede distinguirlos. El
+/// seguidor que queda (`pollLeader`) es el de un adopt, que no lee la intención (ticket
+/// `adopt-uploads-a-foreign-corpus-without-a-lineage-check`).
+nonisolated enum ForwardClaimIntent: String, Equatable {
+    /// Si la cuenta ya existe, adoptarla. El comportamiento de siempre, y el default del runner.
+    case adoptIfExisting
+    /// «Migrar a la nube»: la cuenta tiene que nacer, o promoverse, en este claim.
+    case migrateOnly
+
+    /// ¿Este desenlace del claim vuelve al inicio en vez de llegar a la máquina como `claimResult`? Con «Migrar», todo lo
+    /// que no sea que la cuenta nazca o se promueva en ESTE claim (`created`).
+    func refuses(_ state: AccountClaimDecision.ClaimState) -> Bool {
+        switch state {
+        case .created:                             return false
+        case .existingStable, .claimingInProgress: return self == .migrateOnly
+        }
+    }
+}
+
+/// Un claim de la ida que `ForwardClaimIntent.migrateOnly` devolvió al inicio en ESTE proceso. `sequence` crece con cada
+/// uno, y es lo que deja a `CloudMigrationController` saber si lo produjo la llamada en curso (molde de `ReverseClaimExit`).
+/// `claimState` es lo que contestó el servidor, que decide el motivo del aviso.
+nonisolated struct ForwardClaimRefusal: Equatable {
+    let sequence: Int
+    let claimState: AccountClaimDecision.ClaimState
+}
+
 /// ¿Este regreso al origen repone los pendientes que la vuelta a iCloud reemplazó? Sí cuando la vuelta vuelve al origen
 /// ANTES de que el servidor conceda la reserva: desde la confirmación (`reverseDeclined`, un `fatalError` o un kill ahí)
 /// o desde `reverseClaimLeader` (rechazo u otro líder). La vuelta no empezó, así que el dispositivo tiene que quedar como
@@ -154,6 +202,12 @@ nonisolated enum ReverseExitPending {
 protocol MigrationWorkExecuting: AnyObject {
     /// `POST /account/claim` (§f.1) — reusa `ClaimOutcome` de `CloudAccountClient`.
     func performClaim() async -> ClaimOutcome
+    /// Deshace el sello que `performClaim` dejó en `CloudClaimActionStore` en su última llamada, y repone el que hubiera.
+    /// Lo pide el runner cuando `ForwardClaimIntent` devuelve el claim al inicio: el sello de `existing_stable` es
+    /// `.routeReturningUser`, el mismo que deja el adopt, y sin adopt afirmaría que esa cuenta entró en este dispositivo; el
+    /// de `claiming_in_progress` es `.waitForLeader`, de un seguidor que no llegó a serlo. El Welcome lee el sello para
+    /// dejar re-entrar libre a «la misma cuenta» (`CrossAccountEntryGuardLogic`). Default no-op en la extension de abajo.
+    func discardLastClaimStamp()
     /// w3: backfill de `syncID` (gate permanente) + captura `(ckRecordName, ckZoneName)` con el mirror vivo.
     func assignIdentity() async throws
     /// w4: sube el snapshot completo en batches idempotentes. `cursor` = última página confirmada (journal).
@@ -231,6 +285,9 @@ extension MigrationWorkExecuting {
 
     /// Default del techo de `reverseUpload`: causa desconocida ⇒ presupuesto largo. Fail-open, como el canal.
     func reverseUploadBlocker() -> ReverseUploadBlocker { .unknown }
+
+    /// Default: un conformador que no sella nada no tiene nada que deshacer.
+    func discardLastClaimStamp() {}
 }
 
 // MARK: - Runner
@@ -281,6 +338,15 @@ final class MigrationRunner {
     /// `lastClaimBlocker`: la nota que dura vive en el journal (`reverseAbortReasonRaw`); esto solo decide la alerta.
     private(set) var lastReverseClaimExit: ReverseClaimExit?
 
+    /// La intención que se journaleará al llegar a `claimingMigration` (`ForwardClaimIntent`). La ponen las entradas de
+    /// `CloudMigrationController`; el default conserva el comportamiento de siempre. `driveClaim` NO lee esto: lee lo
+    /// journaleado, que es lo que sobrevive a un relanzamiento.
+    private(set) var forwardClaimIntent: ForwardClaimIntent = .adoptIfExisting
+
+    /// El último claim de la ida que esa intención devolvió al inicio en este proceso (`nil` = ninguno). Solo decide el
+    /// aviso: el journal ya está en `notStarted`.
+    private(set) var lastForwardClaimRefusal: ForwardClaimRefusal?
+
     init(
         context: ModelContext,
         executor: MigrationWorkExecuting,
@@ -316,6 +382,12 @@ final class MigrationRunner {
     /// Arranca la migración desde la UI (`userActivated`). `dryRun == true` → simular; `false` → proceder.
     func startMigration(dryRun: Bool) async {
         await submit(.userActivated(dryRun: dryRun))
+    }
+
+    /// Fija qué pidió la persona antes de conducir el claim de la ida (`ForwardClaimIntent`). Sin espera ni `save()`: se
+    /// journalea con la transición `authenticating → claimingMigration`, no antes.
+    func setForwardClaimIntent(_ intent: ForwardClaimIntent) {
+        forwardClaimIntent = intent
     }
 
     /// Entrega un evento EXTERNO (UI/auth: consent/sign-in) y luego retoma el trabajo autónomo.
@@ -411,6 +483,7 @@ final class MigrationRunner {
             state.reverseUploadProgressAt = nil
             state.reverseAbortReasonRaw = nil
             state.setReverseOriginPendingEffects([])
+            state.forwardClaimIntentRaw = nil
             if target == .notStarted { state.startedAt = nil }
             state.updatedAt = self.now()
             try self.context.save()
@@ -494,6 +567,11 @@ final class MigrationRunner {
             }
             state.setPhase(next)
             state.setPendingEffects(nextPending)
+            // La intención del claim de la ida, en el MISMO save que lleva a `claimingMigration`: lo que la lee es
+            // `driveClaim`, también tras un relanzamiento.
+            if event == .signInSucceeded, next == .claimingMigration {
+                state.forwardClaimIntentRaw = forwardClaimIntent.rawValue
+            }
             // I11-2: al CRUZAR reverseConfirm(origin) → reverseClaimLeader, journalar el ORIGIN (la máquina
             // no lo propaga) + resetear los contadores S9 (pueden traer gasto del verify forward — el
             // S2-cleanup solo resetea en notStarted/failedRollback). En el MISMO save de la transición (N1).
@@ -543,6 +621,8 @@ final class MigrationRunner {
                 // Los pendientes guardados de una vuelta ya se repusieron arriba si tocaba; en un cierre no queda nada
                 // que reponer.
                 state.setReverseOriginPendingEffects([])
+                // La intención es del intento que se cierra.
+                state.forwardClaimIntentRaw = nil
             }
             mutate(state, next)
             state.updatedAt = now()
@@ -682,9 +762,22 @@ final class MigrationRunner {
             state.updatedAt = now()
             try context.save()
         }
+        // La intención JOURNALEADA, no la de memoria: tras un relanzamiento es lo único que queda del intento.
+        let intent = state.forwardClaimIntentRaw.flatMap(ForwardClaimIntent.init(rawValue:)) ?? .adoptIfExisting
         switch await executor.performClaim() {
         case let .success(claimState):
             lastClaimBlocker = nil
+            if intent.refuses(claimState) {
+                // «Migrar a la nube» sobre una cuenta que ya tiene lo personal, o que otro dispositivo está migrando: al
+                // inicio, sin adopt ni seguidor, y sin el sello que el claim acaba de dejar. Primero el sello: si Yala muere
+                // entre los dos, el journal sigue en `claimingMigration` y el claim se repite.
+                executor.discardLastClaimStamp()
+                CloudSyncBreadcrumb.migrationClaimRefusedExistingAccount()
+                try await handle(.claimRefusedExistingAccount)
+                lastForwardClaimRefusal = ForwardClaimRefusal(
+                    sequence: (lastForwardClaimRefusal?.sequence ?? 0) + 1, claimState: claimState)
+                return true                                // notStarted: `drive` sale en la siguiente vuelta
+            }
             try await handle(.claimResult(claimState, sameDeviceReclaim: false))
             return true
         case .sessionExpired:
@@ -1141,6 +1234,7 @@ final class MigrationRunner {
         state.reverseUploadProgressAt = nil
         state.reverseAbortReasonRaw = nil
         state.setReverseOriginPendingEffects([])
+        state.forwardClaimIntentRaw = nil
         state.startedAt = nil
         state.updatedAt = now()
         try context.save()

@@ -166,6 +166,7 @@ struct ReverseUploadControllerWiringTests {
             "return",
             "}",
             "let claimExitBefore = runner.lastReverseClaimExit",
+            "let forwardRefusalBefore = runner.lastForwardClaimRefusal",
             "if cancelReverseRequested {",
             "cancelReverseRequested = false",
             "await runner.cancelReverseUpload()",
@@ -173,6 +174,9 @@ struct ReverseUploadControllerWiringTests {
             "await runner.resume()",
             "refresh()",
             "announceReverseClaimExit(since: claimExitBefore)",
+            // Ticket `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`: un claim de «Migrar» aparcado por
+            // la red puede contestar `existing_stable` al retomar. Su aviso lo fija `MigrationIdentityGateWiringTests`.
+            "await announceForwardClaimRefusal(since: forwardRefusalBefore)",
             "startRuntimeIfStable()",
         ])
     }

@@ -143,6 +143,37 @@ nonisolated enum CloudMigrationUIStateDeriver {
     }
 }
 
+// MARK: - Aviso de la puerta de «Migrar a la nube»
+
+/// Lo que ve la persona cuando «Migrar a la nube» se para (ticket
+/// `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`). `id` es nuevo en cada aviso: dos paradas seguidas por
+/// el mismo motivo son dos avisos.
+struct MigrationIdentityBlock: Identifiable, Equatable {
+    let id = UUID()
+    let reason: StorageMigrationIdentityGateLogic.Block
+    /// «Usar otra cuenta». Solo si la sesión la abrió este intento: con la de antes —la de sus grupos— cambiar de cuenta
+    /// exige desasociar primero (Jürgen, 2026-09-09), y esta pantalla no lo hace.
+    let offersAnotherAccount: Bool
+    /// El correo de la cuenta de grupos asociada, para `.anotherGroupsAccountAssociated`. `nil` si no se guardó.
+    let associatedEmail: String?
+    /// Con qué método se firmó la cuenta rechazada, cuando la sesión la abrió este intento. `nil` si no se sabe.
+    let rejectedProvider: CloudSignInProvider?
+
+    /// ¿La hoja avisa de que con Apple no se puede elegir otra cuenta? Solo junto a «Usar otra cuenta», y solo si la
+    /// rechazada era de Apple: elegir Apple otra vez firma con el mismo Apple ID del dispositivo y repite el aviso.
+    var showsAppleSameAccountNote: Bool {
+        offersAnotherAccount && rejectedProvider == .apple
+    }
+}
+
+/// Un intento de «Migrar a la nube» que pasó la comprobación.
+private struct MigrationAttempt {
+    /// La sesión la abrió este intento, así que se cierra si no migra.
+    let sessionOpenedByThisAttempt: Bool
+    /// Lo que contestó la comprobación. Elige el aviso si el claim devuelve el intento al inicio.
+    let checkedDiscovery: CloudIdentityRoutingLogic.Discovery?
+}
+
 // MARK: - Controller
 
 @MainActor
@@ -232,6 +263,25 @@ final class CloudMigrationController {
     private(set) var syncNeedsSignIn = false
     private(set) var pendingUploadCount = 0
 
+    /// El aviso de un «Migrar a la nube» que se paró sin escribir nada (ticket
+    /// `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`). Lo consume la pantalla de Almacenamiento, que
+    /// lo presenta y lo vacía; si la persona no la tenía delante, sale al volver a ella.
+    var migrationIdentityBlock: MigrationIdentityBlock?
+
+    /// La comprobación adelantada al toque está en vuelo (`preflightMigrationIdentity`): el botón enseña que trabaja.
+    private(set) var isCheckingMigrationIdentity = false
+
+    /// El intento de «Migrar a la nube» que pasó la comprobación y va hacia el claim. Lo lee el aviso de un claim devuelto
+    /// al inicio, que puede llegar en esta llamada o en un `resume()` posterior. **Vive en memoria y la intención no**: la
+    /// del runner va en el journal y sobrevive a un relanzamiento, así que tras relanzar el claim se para igual, pero el
+    /// aviso ya no sabe qué sesión abrió el intento (ticket `migrate-attempt-session-survives-a-relaunch-mid-attempt`).
+    private var migrationAttempt: MigrationAttempt?
+
+    /// La secuencia del último rechazo del claim que se avisó (`ForwardClaimRefusal.sequence`). Un `resume` que empezó antes
+    /// del toque y termina después ve el mismo rechazo como nuevo respecto a SU foto, y sin esto lo avisaba otra vez: sin el
+    /// intento, con el motivo genérico y encima del aviso bueno.
+    private var lastAnnouncedForwardRefusalSequence = 0
+
     // MARK: Deps
 
     private let context: ModelContext
@@ -241,6 +291,15 @@ final class CloudMigrationController {
     private init(context: ModelContext) {
         self.context = context
         refresh()
+        #if DEBUG
+        // Seam `-uitest-pending-migration-block`: un aviso ya publicado al abrir la pantalla, con «Usar otra cuenta», para
+        // el XCUITest de la cadena hoja → elección de Apple/Google. Es la salida del controller, no su decisión.
+        if let fingido = UITestHooks.pendingMigrationBlock {
+            migrationIdentityBlock = MigrationIdentityBlock(
+                reason: fingido.reason, offersAnotherAccount: true, associatedEmail: nil,
+                rejectedProvider: fingido.rejectedProvider)
+        }
+        #endif
     }
 
     // MARK: - Factory compartido (P2) — mismo ensamblado que el panel DEBUG
@@ -321,6 +380,9 @@ final class CloudMigrationController {
     /// operar bajo la cuenta entrante sin un solo evento. Los datos personales y los grupos acabarían
     /// en cuentas distintas, contra `groups.signin.accountNote`. La decisión de producto vive en
     /// `StorageMigrationSignInLogic`; esto es el belt de la máquina.
+    ///
+    /// **«Migrar» pasa por la puerta de identidad entre firmar y el claim** (`continueToClaim`). Sin ella, una cuenta que
+    /// ya tenía finanzas personales terminaba adoptada y con el corpus local subido encima.
     func startMigration(consentPath: ConsentPath, signIn plan: SignInPlan) async {
         isWorking = true
         defer { isWorking = false }
@@ -343,7 +405,7 @@ final class CloudMigrationController {
         let provider: CloudSignInProvider
         switch StorageMigrationSignInLogic.execution(for: plan, sessionIsUsable: sessionIsUsable) {
         case .useLiveSession:
-            await r.submit(.signInSucceeded)     // authenticating → claimingMigration → drive
+            await continueToClaim(r, consentPath: consentPath, sessionOpenedByThisAttempt: false)
             refresh()
             return
         case .failNoUsableSession:
@@ -360,7 +422,7 @@ final class CloudMigrationController {
 
         do {
             try await CloudAuthService.shared.signIn(with: provider)
-            await r.submit(.signInSucceeded)     // authenticating → claimingMigration → drive
+            await continueToClaim(r, consentPath: consentPath, sessionOpenedByThisAttempt: true)
         } catch CloudAuthError.cancelled {
             // Cancel tipado (Google): volver a notStarted SIN alert — un cancel no es fallo
             // (semántica del Welcome). El cancel de SIWA sigue llegando como error genérico
@@ -374,6 +436,173 @@ final class CloudMigrationController {
             await r.submit(.signInFailed)        // authenticating → notStarted
         }
         refresh()
+    }
+
+    // MARK: - La puerta de identidad de «Migrar a la nube»
+
+    /// El paso entre firmar y el claim (ticket `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`).
+    ///
+    /// El adopt sigue directo: ahí una cuenta que ya tiene datos es lo esperado. «Migrar» pregunta antes, con el runner
+    /// aún en `authenticating` —fase no durable—, y si no sigue vuelve a `notStarted` por `.signInFailed`, sin claim y sin
+    /// escribir nada. Si sigue, deja en el runner la intención de migrar, que se journalea con el claim: el claim es lo
+    /// único que ve una cuenta que volvió a iCloud (`ForwardClaimIntent`).
+    ///
+    /// Tres detalles que puso la review, y los tres tienen motivo:
+    /// · **La sesión rechazada se cierra ANTES de devolver el runner al inicio.** `submit` espera quiescencia (hasta
+    ///   120 s), y una sesión viva en un iPhone con sesión privada la registra como cuenta de grupos el arranque siguiente
+    ///   (`GroupsAssociationRegistrar`), aunque sea completa.
+    /// · **Un `submit(.signInSucceeded)` que no hace nada también es una parada.** Pasa si vence la quiescencia o si otra
+    ///   acción del runner normalizó la fase durante la comprobación: sin claim y sin rechazo, la persona se quedaba con la
+    ///   sesión abierta y sin ningún aviso.
+    /// · **Durante la comprobación y el cierre la tarjeta sigue en «Activando la nube…»**: la fase es `authenticating`, que
+    ///   la pantalla pinta como progreso. El botón que enseña que trabaja es el del adelanto al toque, con sesión viva.
+    private func continueToClaim(
+        _ r: MigrationRunner,
+        consentPath: ConsentPath,
+        sessionOpenedByThisAttempt openedSession: Bool
+    ) async {
+        guard consentPath == .migration else {
+            migrationAttempt = nil
+            r.setForwardClaimIntent(.adoptIfExisting)
+            await r.submit(.signInSucceeded)     // authenticating → claimingMigration → drive
+            return
+        }
+        let (check, discovery) = await checkMigrationIdentity()
+        guard check == .proceed else {
+            let rejectedProvider = await closeSessionIfOpened(openedSession)
+            await r.submit(.signInFailed)        // authenticating → notStarted, sin efectos
+            announce(check, offersAnotherAccount: openedSession, rejectedProvider: rejectedProvider)
+            return
+        }
+        migrationAttempt = MigrationAttempt(sessionOpenedByThisAttempt: openedSession, checkedDiscovery: discovery)
+        r.setForwardClaimIntent(.migrateOnly)
+        let refusalBefore = r.lastForwardClaimRefusal
+        await r.submit(.signInSucceeded)         // authenticating → claimingMigration → drive
+        await announceForwardClaimRefusal(since: refusalBefore)
+        refresh()
+        guard migrationAttempt != nil,
+              [.notStarted, .consent, .authenticating].contains(journaledPhase) else { return }
+        migrationAttempt = nil
+        _ = await closeSessionIfOpened(openedSession)
+        lastError = L10n.Storage.Errors.generic
+    }
+
+    /// Con sesión de nube viva —la cuenta de sus grupos—, la comprobación se adelanta al toque de «Activar la nube», antes
+    /// del consentimiento y de las dos confirmaciones (decisión de Jürgen, 2026-09-16). Sin sesión no se puede: hay que
+    /// firmar, y firmar antes de las confirmaciones dejaría una sesión abierta mientras la persona las lee.
+    ///
+    /// Solo para en un bloqueo seguro. Si no pudo preguntar sigue al consentimiento, y decide la comprobación de
+    /// `continueToClaim`: así una sesión caducada llega al aviso de siempre. Nunca cierra la sesión, que no abrió.
+    ///
+    /// - Returns: `true` si el flujo sigue al consentimiento.
+    func preflightMigrationIdentity() async -> Bool {
+        guard !isWorking else { return false }
+        isWorking = true
+        isCheckingMigrationIdentity = true
+        defer {
+            isWorking = false
+            isCheckingMigrationIdentity = false
+        }
+        lastError = nil
+        let (check, _) = await checkMigrationIdentity()
+        guard case .blocked = check else { return true }
+        announce(check, offersAnotherAccount: false, rejectedProvider: nil)
+        return false
+    }
+
+    /// Pregunta al backend por la sesión viva y aplica la fila de Ajustes de la tabla [I].
+    private func checkMigrationIdentity() async -> (StorageMigrationIdentityGateLogic.Check, CloudIdentityRoutingLogic.Discovery?) {
+        #if DEBUG
+        // Seam `-uitest-fake-migration-identity`: finge la RESPUESTA de la puerta para el XCUITest de la hoja. La decisión
+        // la cubren los unit de `StorageMigrationIdentityGateLogic`.
+        if let fingida = UITestHooks.fakeMigrationIdentityCheck { return (fingida, nil) }
+        #endif
+        let answer: StorageMigrationIdentityGateLogic.Answer
+        var discovery: CloudIdentityRoutingLogic.Discovery?
+        var userID: String?
+        switch await CloudIdentityDiscovery().discover(gate: .settingsMigrateToCloud) {
+        case let .discovered(found, id):
+            answer = .discovered(found)
+            discovery = found
+            userID = id
+        case .unavailable:
+            answer = .unavailable
+        }
+        let claimedForMigrationHere = userID.map {
+            CloudClaimActionStore.shared.action(forUserID: $0) == .proceedMigration
+        } ?? false
+        let check = StorageMigrationIdentityGateLogic.check(
+            answer: answer,
+            // La fila de Ajustes no lee el eje (`ejeNoDecideEnLasPuertasQueNoLoUsan`): se pasa el estado desde el que se
+            // migra en vez de leer `PrivateSessionMark`, que tiene sus lectores contados y aquí no decidiría nada.
+            deviceState: .privateSession,
+            isAssociatedGroupsAccount: GroupsAccountAssociation.shared.isAssociated(sub: userID),
+            claimedForMigrationHere: claimedForMigrationHere)
+        return (check, discovery)
+    }
+
+    /// Cierra la sesión si la abrió este intento, y devuelve con qué método se había firmado, que la hoja necesita para su
+    /// nota de Apple. La sesión de antes del intento —la de sus grupos— no se toca nunca.
+    private func closeSessionIfOpened(_ opened: Bool) async -> CloudSignInProvider? {
+        guard opened else { return nil }
+        let provider = CloudAuthService.shared.storedProvider().flatMap(CloudSignInProvider.init(rawValue:))
+        await CloudAuthService.shared.signOut()
+        return provider
+    }
+
+    /// Avisa de un claim que la intención de migrar devolvió al inicio en la llamada en curso: `before` es la foto de
+    /// `lastForwardClaimRefusal` tomada antes de llamar al runner (molde de `announceReverseClaimExit`). Vale para el toque
+    /// y para `resume()`: un claim que se aparcó por la red puede contestar `existing_stable` al retomar. Tras un
+    /// relanzamiento ya no se sabe si la sesión la abrió el intento, así que no se cierra y el aviso es el genérico.
+    private func announceForwardClaimRefusal(since before: ForwardClaimRefusal?) async {
+        guard let refusal = _runner?.lastForwardClaimRefusal, refusal != before,
+              refusal.sequence > lastAnnouncedForwardRefusalSequence else { return }
+        lastAnnouncedForwardRefusalSequence = refusal.sequence
+        let attempt = migrationAttempt
+        migrationAttempt = nil
+        let openedSession = attempt?.sessionOpenedByThisAttempt ?? false
+        let rejectedProvider = await closeSessionIfOpened(openedSession)
+        publishBlock(
+            StorageMigrationIdentityGateLogic.blockForClaimRefusal(
+                checkedDiscovery: attempt?.checkedDiscovery, claimState: refusal.claimState),
+            offersAnotherAccount: openedSession,
+            rejectedProvider: rejectedProvider,
+            stage: "claim")
+    }
+
+    /// El aviso de una comprobación que no deja seguir. `couldNotCheck` usa el error de siempre de la pantalla.
+    private func announce(
+        _ check: StorageMigrationIdentityGateLogic.Check,
+        offersAnotherAccount: Bool,
+        rejectedProvider: CloudSignInProvider?
+    ) {
+        switch check {
+        case .proceed:
+            return
+        case .blocked(let reason):
+            publishBlock(reason, offersAnotherAccount: offersAnotherAccount, rejectedProvider: rejectedProvider,
+                         stage: "gate")
+        case .couldNotCheck:
+            lastError = L10n.Storage.Errors.identityCheck
+            CloudSyncBreadcrumb.migrationIdentityBlocked(reason: "unchecked", stage: "gate")
+            MetricsService.cloudMigrationExistingAccountBlocked(reason: "unchecked", stage: "gate")
+        }
+    }
+
+    private func publishBlock(
+        _ reason: StorageMigrationIdentityGateLogic.Block,
+        offersAnotherAccount: Bool,
+        rejectedProvider: CloudSignInProvider?,
+        stage: String
+    ) {
+        migrationIdentityBlock = MigrationIdentityBlock(
+            reason: reason,
+            offersAnotherAccount: offersAnotherAccount,
+            associatedEmail: reason == .anotherGroupsAccountAssociated
+                ? GroupsAccountAssociation.shared.read()?.email : nil,
+            rejectedProvider: rejectedProvider)
+        CloudSyncBreadcrumb.migrationIdentityBlocked(reason: reason.slug, stage: stage)
+        MetricsService.cloudMigrationExistingAccountBlocked(reason: reason.slug, stage: stage)
     }
 
     /// Adopt desde el Welcome (H4/pieza 2): conduce la máquina asumiendo una sesión SIWA YA viva —
@@ -393,6 +622,9 @@ final class CloudMigrationController {
         if case .failed = uiState {
             await r.resetAfterRollback()
         }
+        // Entrar en una cuenta que ya existe ES adoptarla: la intención de «Migrar» no aplica aquí.
+        migrationAttempt = nil
+        r.setForwardClaimIntent(.adoptIfExisting)
         await r.startMigration(dryRun: false)   // notStarted → consent
         await r.submit(.consentAccepted)         // consent → authenticating
         await r.submit(.signInSucceeded)         // authenticating → claimingMigration → drive
@@ -558,6 +790,7 @@ final class CloudMigrationController {
             return
         }
         let claimExitBefore = runner.lastReverseClaimExit
+        let forwardRefusalBefore = runner.lastForwardClaimRefusal
         if cancelReverseRequested {
             // El «sí» de «Cancelar» que la pre-espera no dejó pasar. Si la espera ya terminó, el runner no hace nada.
             cancelReverseRequested = false
@@ -566,6 +799,7 @@ final class CloudMigrationController {
         await runner.resume()
         refresh()
         announceReverseClaimExit(since: claimExitBefore)
+        await announceForwardClaimRefusal(since: forwardRefusalBefore)
         startRuntimeIfStable()
     }
 

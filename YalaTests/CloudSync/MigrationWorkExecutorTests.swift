@@ -432,6 +432,32 @@ struct MigrationWorkExecutorTests {
         try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)   // migration_progress('complete') ok
     }
 
+    /// **La migración terminada deja de abrir la comprobación de «Migrar a la nube».** `.proceedMigration` es lo que deja
+    /// reintentar un intento que falló (`StorageMigrationIdentityGateLogic.check`); con el `complete` confirmado el sello
+    /// pasa a `.routeReturningUser`. Sin confirmar, no se toca: el intento sigue a medias.
+    @Test("execute(.runLeaderReconcileFromFrozenCloudKit): complete ok cambia el sello a routeReturningUser; rechazado, no")
+    func execute_reconcileComplete_restampsTheClaim() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-leader")
+        let stub = RoutingStub()
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.complete.stamp"))
+        claimStore.record(.proceedMigration, forUserID: "sub-leader")
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    claimStore: claimStore)
+
+        stub.migrationBody = Data("{\"ok\":false,\"reason\":\"other_leader\"}".utf8)
+        await #expect(throws: MigrationExecutorError.self) {
+            try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+        }
+        #expect(claimStore.action(forUserID: "sub-leader") == .proceedMigration, "sin complete, el intento sigue a medias")
+
+        stub.migrationBody = Data("{\"ok\":true}".utf8)
+        try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+        #expect(claimStore.action(forUserID: "sub-leader") == .routeReturningUser)
+    }
+
     @Test("done-effect w8: el barrido de RED rescata un write huérfano de la ventana de cutover ANTES del complete")
     func execute_reconcile_sweepRescuesOrphanWrite() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
@@ -1467,6 +1493,78 @@ struct MigrationWorkExecutorTests {
         #expect(await executor.performClaim() == .success(.existingStable))
         #expect(claimStore.action(forUserID: "sub-stable") == .routeReturningUser,
                 "existing_stable NUNCA siembra ni lidera: es la clausura de la variante A (§k.4)")
+    }
+
+    // MARK: - Claim · deshacer el sello cuando «Migrar» lo devuelve al inicio
+    //
+    // Ticket `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`. Con la intención de migrar, el runner no
+    // entrega un `existing_stable` a la máquina y pide deshacer el sello: `.routeReturningUser` sin adopt afirmaría que
+    // esa cuenta entró en el dispositivo, y el Welcome deja re-entrar libre a «la misma cuenta» por ese sello.
+
+    @Test("discardLastClaimStamp: sin sello previo, el de existing_stable se borra")
+    func discardLastClaimStamp_withoutPreviousStamp_clearsIt() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        stub.claimBody = Data(#"{"state":"existing_stable"}"#.utf8)
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.claim.undo.none"))
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-undo"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    claimStore: claimStore)
+        #expect(await executor.performClaim() == .success(.existingStable))
+        #expect(claimStore.action(forUserID: "sub-undo") == .routeReturningUser, "control: el claim selló")
+
+        executor.discardLastClaimStamp()
+        #expect(claimStore.action(forUserID: "sub-undo") == nil)
+    }
+
+    @Test("discardLastClaimStamp: repone el sello que había antes del claim, no lo borra")
+    func discardLastClaimStamp_restoresThePreviousStamp() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        stub.claimBody = Data(#"{"state":"existing_stable"}"#.utf8)
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.claim.undo.prev"))
+        claimStore.record(.proceedMigration, forUserID: "sub-undo")
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-undo"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    claimStore: claimStore)
+        #expect(await executor.performClaim() == .success(.existingStable))
+        #expect(claimStore.action(forUserID: "sub-undo") == .routeReturningUser, "control: el claim pisó el sello")
+
+        executor.discardLastClaimStamp()
+        #expect(claimStore.action(forUserID: "sub-undo") == .proceedMigration)
+    }
+
+    /// Solo se deshace el claim de la llamada en curso: un segundo `discard` no tiene nada que hacer, y un claim que no
+    /// selló —sin JWT— tampoco deja que se deshaga el de un claim anterior.
+    @Test("discardLastClaimStamp: un solo uso, y un claim sin sello no deshace el anterior")
+    func discardLastClaimStamp_isOneShot_andOnlyForTheLastClaim() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        stub.claimBody = Data(#"{"state":"existing_stable"}"#.utf8)
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.claim.undo.once"))
+        let session = FakeSession(token: "jwt", userID: "sub-undo")
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    claimStore: claimStore)
+
+        executor.discardLastClaimStamp()
+        #expect(claimStore.action(forUserID: "sub-undo") == nil, "sin claim no hay nada que deshacer")
+
+        #expect(await executor.performClaim() == .success(.existingStable))
+        executor.discardLastClaimStamp()
+        claimStore.record(.proceedMigration, forUserID: "sub-undo")
+        executor.discardLastClaimStamp()
+        #expect(claimStore.action(forUserID: "sub-undo") == .proceedMigration, "el segundo discard no toca nada")
+
+        #expect(await executor.performClaim() == .success(.existingStable))
+        session.token = nil
+        #expect(await executor.performClaim() == .sessionExpired(detail: "no access token"))
+        executor.discardLastClaimStamp()
+        #expect(claimStore.action(forUserID: "sub-undo") == .routeReturningUser,
+                "el claim sin JWT no selló, así que no deshace el del claim anterior")
     }
 
     @Test("performClaim: 200 claiming_in_progress → estampa waitForLeader (otro device lidera; el gate no arranca)")

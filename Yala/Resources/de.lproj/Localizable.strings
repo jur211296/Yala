@@ -5984,3 +5984,16 @@
 "storage.reverseAbort.otherDeviceReverting" = "Die Rückkehr zu iCloud konnte nicht starten: Eines deiner anderen Geräte war bereits dabei, zu iCloud zurückzukehren. Sobald es fertig ist, kannst du es auf diesem Gerät tun.";
 "storage.progress.reverseICloudMaybeOff" = "Wenn iCloud auf diesem Gerät nicht aktiv ist, können deine Daten iCloud nicht erreichen. Aktiviere es in den Einstellungen oder brich ab, um in der Cloud zu bleiben.";
 "storage.errors.reversePendingExit" = "Die Rückkehr zu iCloud ist noch nicht möglich: Deine Cloud muss erst wieder vollständig aktiviert werden. Versuche es gleich noch einmal.";
+
+/* «Migrar a la nube» se paró sin escribir nada: la cuenta ya tiene datos (settings-migrate-to-cloud-adopts-silently-instead-of-migrating) */
+"storage.errors.identityCheck" = "Wir konnten dein Konto nicht überprüfen. Versuche es gleich noch einmal. Es wurde nichts geändert.";
+"storage.migrateBlock.personalDataTitle" = "Dieses Konto hat bereits persönliche Finanzen";
+"storage.migrateBlock.personalDataBody" = "Es wurde nichts geändert. Um deine Daten in die Cloud zu bringen, verwende ein anderes Konto. Um die Daten dieses Kontos hier zu nutzen, melde dich ab und mit diesem Konto an.";
+"storage.migrateBlock.personalDataBodyNoSwitch" = "Es wurde nichts geändert. Um die Daten dieses Kontos hier zu nutzen, melde dich ab und mit diesem Konto an. Um deine Daten in ein anderes Konto zu bringen, trenne dieses zuerst unter „Gruppen“.";
+"storage.migrateBlock.otherGroupsTitle" = "Du nutzt bereits ein anderes Konto für deine Gruppen";
+"storage.migrateBlock.otherGroupsBody" = "Es wurde nichts geändert. Auf diesem Gerät kann es nur ein Cloud-Konto geben, und deine Gruppen nutzen bereits ein anderes. Um deine Daten in die Cloud zu bringen, melde dich mit dem Konto deiner Gruppen an oder trenne es zuerst unter „Gruppen“, wenn du ein anderes möchtest.";
+"storage.migrateBlock.otherGroupsBodyEmail" = "Es wurde nichts geändert. Auf diesem Gerät kann es nur ein Cloud-Konto geben, und deine Gruppen nutzen bereits %@. Um deine Daten in die Cloud zu bringen, melde dich mit diesem Konto an oder trenne es zuerst unter „Gruppen“, wenn du ein anderes möchtest.";
+"storage.migrateBlock.returnedTitle" = "Dieses Konto ist zu iCloud zurückgekehrt";
+"storage.migrateBlock.returnedBody" = "Mit diesem Konto in die Cloud zurückzukehren, ist noch nicht möglich. Es wurde nichts geändert.";
+"storage.migrateBlock.useAnotherAccount" = "Anderes Konto verwenden";
+"storage.migrateBlock.appleSameAccountNote" = "Mit Apple verwendet Yala immer das Konto dieses Geräts. Um ein anderes zu verwenden, wähle Google.";

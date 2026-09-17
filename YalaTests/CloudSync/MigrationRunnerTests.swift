@@ -86,6 +86,10 @@ private final class FakeExecutor: MigrationWorkExecuting {
     var setMarkerExportedOnWrite = true
     var markerExported = false
 
+    /// Cuántas veces pidió el runner deshacer el sello del último claim (`ForwardClaimIntent.migrateOnly`).
+    var discardStampCallCount = 0
+    func discardLastClaimStamp() { discardStampCallCount += 1 }
+
     func performClaim() async -> ClaimOutcome {
         claimCallCount += 1
         // Suspensión REAL: fuerza el interleaving que el guard de reentrada (S1) debe cortar — sin
@@ -244,7 +248,9 @@ struct MigrationRunnerTests {
         markerWrittenSince: Date? = nil, cutoverICloudVerdictRaw: String? = nil,
         // Techo de `reverseUpload`: cifra más baja, reloj del último avance y motivo de la última salida.
         reverseUploadLowestPending: Int? = nil, reverseUploadProgressAt: Date? = nil,
-        reverseAbortReasonRaw: String? = nil
+        reverseAbortReasonRaw: String? = nil,
+        // La intención del claim de la ida (ticket `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`).
+        forwardClaimIntentRaw: String? = nil
     ) throws -> MigrationState {
         let state = MigrationState()
         state.setPhase(phase)
@@ -259,6 +265,7 @@ struct MigrationRunnerTests {
         state.reverseUploadLowestPending = reverseUploadLowestPending
         state.reverseUploadProgressAt = reverseUploadProgressAt
         state.reverseAbortReasonRaw = reverseAbortReasonRaw
+        state.forwardClaimIntentRaw = forwardClaimIntentRaw
         state.startedAt = fixedNow
         state.updatedAt = fixedNow
         context.insert(state)
@@ -1041,6 +1048,227 @@ struct MigrationRunnerTests {
         fake.uploadOutcomes = [.transient]
         await runner.resume()
         #expect(runner.lastClaimBlocker == nil, "un claim otorgado deja de bloquear la pantalla")
+    }
+
+    // MARK: - 10c. «Migrar» sobre una cuenta que ya tiene lo personal (ticket settings-migrate-to-cloud-adopts-silently-instead-of-migrating)
+
+    /// Con la intención de migrar, `existing_stable` vuelve al inicio: sin adopt —que sube el corpus local a la cuenta—,
+    /// sin efectos y sin el sello del claim. Queda anotado para el aviso de la pantalla.
+    @Test func migrateOnly_existingStable_returnsToNotStarted_withoutAdopt() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.success(.existingStable)]
+        let runner = makeRunner(context, fake)
+
+        await runner.startMigration(dryRun: false)
+        await runner.submit(.consentAccepted)
+        runner.setForwardClaimIntent(.migrateOnly)
+        await runner.submit(.signInSucceeded)
+
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted)
+        #expect(j.readPendingEffects().isEmpty)
+        #expect(fake.executedEffects.isEmpty, "ni `.adoptBackendAccount` ni ningún otro efecto")
+        #expect(fake.claimCallCount == 1)
+        #expect(fake.discardStampCallCount == 1, "el sello `.routeReturningUser` no se queda sin adopt")
+        #expect(runner.lastForwardClaimRefusal == ForwardClaimRefusal(sequence: 1, claimState: .existingStable))
+        #expect(j.leaderDeviceID == nil, "el cierre del intento limpia lo que el claim journaleó")
+        #expect(j.forwardClaimIntentRaw == nil, "la intención es del intento que se cierra")
+    }
+
+    /// CONTROL de la de arriba: sin la intención —Welcome, tarjeta de adopt, y el default tras relanzar— `existing_stable`
+    /// adopta como siempre. Sin este caso, un runner que rechazara todo `existing_stable` pasaría la de arriba.
+    @Test func adoptIfExisting_existingStable_adoptsAsAlways() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.success(.existingStable)]
+        let runner = makeRunner(context, fake)
+        #expect(runner.forwardClaimIntent == .adoptIfExisting, "el default conserva el comportamiento de siempre")
+
+        await runner.startMigration(dryRun: false)
+        await runner.submit(.consentAccepted)
+        await runner.submit(.signInSucceeded)
+
+        #expect(try journal(context).readPhase().phase == .notStarted)
+        #expect(fake.executedEffects == [.adoptBackendAccount])
+        #expect(fake.discardStampCallCount == 0)
+        #expect(runner.lastForwardClaimRefusal == nil)
+    }
+
+    /// La intención solo para `existing_stable`: una cuenta nueva, o solo-grupos que el claim promueve (`created`), migra.
+    @Test func migrateOnly_created_migratesNormally() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.success(.created)]
+        fake.uploadOutcomes = [.transient]
+        let runner = makeRunner(context, fake)
+
+        await runner.startMigration(dryRun: false)
+        await runner.submit(.consentAccepted)
+        runner.setForwardClaimIntent(.migrateOnly)
+        await runner.submit(.signInSucceeded)
+
+        #expect(fake.count(.writeBeacon) == 1, "created lidera como siempre")
+        #expect(try journal(context).readPhase().phase == .uploadingSnapshot)
+        #expect(fake.discardStampCallCount == 0)
+        #expect(runner.lastForwardClaimRefusal == nil)
+    }
+
+    /// La intención se escribe en el MISMO save que lleva a `claimingMigration`. Con el claim aparcado por la red, la fila
+    /// ya la tiene: es lo que leerá el `resume` de un relanzamiento.
+    @Test func migrateOnly_isJournaledWithTheClaimTransition() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.transient(detail: "5xx")]
+        let runner = makeRunner(context, fake)
+
+        await runner.startMigration(dryRun: false)
+        await runner.submit(.consentAccepted)
+        runner.setForwardClaimIntent(.migrateOnly)
+        #expect(try journal(context).forwardClaimIntentRaw == nil, "fijarla no escribe nada: se journalea con la transición")
+        await runner.submit(.signInSucceeded)
+
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .claimingMigration, "control: la red aparca el claim")
+        #expect(j.forwardClaimIntentRaw == "migrateOnly")
+    }
+
+    /// Con «Migrar», un `claiming_in_progress` —otro dispositivo migrando esa cuenta— también vuelve al inicio, sin hacerse
+    /// seguidor (Jürgen, 2026-09-16: parar y avisar). Seguirle acababa en un adopt, o en un relevo a los 60 min, que con otro
+    /// iCloud mezcla los dos corpus.
+    @Test func migrateOnly_claimingInProgress_returnsToNotStarted_withoutFollowing() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.success(.claimingInProgress)]
+        let runner = makeRunner(context, fake)
+
+        await runner.startMigration(dryRun: false)
+        await runner.submit(.consentAccepted)
+        runner.setForwardClaimIntent(.migrateOnly)
+        await runner.submit(.signInSucceeded)
+
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted, "sin `waitingForLeader`")
+        #expect(j.readPendingEffects().isEmpty)
+        #expect(fake.executedEffects.isEmpty)
+        #expect(fake.discardStampCallCount == 1, "el sello `.waitForLeader` no se queda")
+        #expect(runner.lastForwardClaimRefusal == ForwardClaimRefusal(sequence: 1, claimState: .claimingInProgress))
+        #expect(j.forwardClaimIntentRaw == nil)
+    }
+
+    /// CONTROL de la de arriba: sin la intención —Welcome, tarjeta de adopt— `claiming_in_progress` sigue haciéndose
+    /// seguidor como siempre.
+    @Test func adoptIfExisting_claimingInProgress_followsAsAlways() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.success(.claimingInProgress)]
+        let runner = makeRunner(context, fake)
+
+        await runner.startMigration(dryRun: false)
+        await runner.submit(.consentAccepted)
+        await runner.submit(.signInSucceeded)
+
+        #expect(try journal(context).readPhase().phase == .waitingForLeader)
+        #expect(fake.executedEffects.isEmpty)
+        #expect(fake.discardStampCallCount == 0)
+        #expect(runner.lastForwardClaimRefusal == nil)
+    }
+
+    /// Un claim aparcado por la red y retomado en el MISMO proceso conserva la intención: si al retomar contesta
+    /// `existing_stable`, también vuelve al inicio. Cada rechazo es uno nuevo para el aviso.
+    @Test func migrateOnly_survivesAParkedClaim_andEachRefusalIsNew() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.transient(detail: "5xx"), .success(.existingStable)]
+        let runner = makeRunner(context, fake)
+
+        await runner.startMigration(dryRun: false)
+        await runner.submit(.consentAccepted)
+        runner.setForwardClaimIntent(.migrateOnly)
+        await runner.submit(.signInSucceeded)
+        #expect(try journal(context).readPhase().phase == .claimingMigration, "control: la red aparca el claim")
+        #expect(runner.lastForwardClaimRefusal == nil)
+
+        await runner.resume()
+        #expect(try journal(context).readPhase().phase == .notStarted)
+        #expect(fake.executedEffects.isEmpty)
+        #expect(runner.lastForwardClaimRefusal == ForwardClaimRefusal(sequence: 1, claimState: .existingStable))
+
+        // Segundo intento en el mismo proceso: otro rechazo, otra secuencia.
+        fake.claimOutcomes = [.success(.existingStable)]
+        await runner.startMigration(dryRun: false)
+        await runner.submit(.consentAccepted)
+        await runner.submit(.signInSucceeded)
+        #expect(runner.lastForwardClaimRefusal == ForwardClaimRefusal(sequence: 2, claimState: .existingStable))
+        #expect(fake.discardStampCallCount == 2)
+    }
+
+    /// **El relanzamiento con el claim aparcado** (hallazgo de la review): un runner nuevo no tiene la intención en memoria,
+    /// pero la fila sí. Un `existing_stable` al retomar vuelve al inicio. Antes adoptaba, y en una cuenta que volvió a iCloud
+    /// eso dejaba el dispositivo en modo nube sobre un backend congelado.
+    @Test func afterRelaunch_theJournaledIntentStillRefuses() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.success(.existingStable)]
+        try seedJournal(context, phase: .claimingMigration, leaderDeviceID: deviceID, forwardClaimIntentRaw: "migrateOnly")
+
+        let relaunched = makeRunner(context, fake)
+        #expect(relaunched.forwardClaimIntent == .adoptIfExisting, "control: la memoria no sabe nada del intento")
+        await relaunched.resume()
+
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .notStarted)
+        #expect(fake.executedEffects.isEmpty, "sin adopt")
+        #expect(fake.discardStampCallCount == 1)
+        #expect(relaunched.lastForwardClaimRefusal == ForwardClaimRefusal(sequence: 1, claimState: .existingStable))
+        #expect(j.forwardClaimIntentRaw == nil)
+    }
+
+    /// CONTROL del de arriba, y dos cosas a la vez: una fila sin intención (anterior a la v6, o de un adopt) adopta como
+    /// siempre, y lo que decide es la FILA, no la memoria. Un `driveClaim` que leyera la intención de memoria rechazaría
+    /// aquí.
+    @Test func journalWithoutMigrateIntent_adopts_evenIfMemorySaysMigrate() async throws {
+        for raw in [nil, "adoptIfExisting"] as [String?] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            fake.claimOutcomes = [.success(.existingStable)]
+            try seedJournal(context, phase: .claimingMigration, leaderDeviceID: deviceID, forwardClaimIntentRaw: raw)
+
+            let runner = makeRunner(context, fake)
+            runner.setForwardClaimIntent(.migrateOnly)
+            await runner.resume()
+
+            #expect(fake.executedEffects == [.adoptBackendAccount], "fila con \(String(describing: raw))")
+            #expect(runner.lastForwardClaimRefusal == nil)
+        }
+    }
+
+    /// El seguidor no lee la intención. Con «Migrar» ya no se llega aquí —`claiming_in_progress` vuelve al inicio, lo fija
+    /// `migrateOnly_claimingInProgress_returnsToNotStarted_withoutFollowing`—, así que el seguidor que queda es el de un
+    /// adopt, que adopta lo que el líder migró. Residual declarado en `adopt-uploads-a-foreign-corpus-without-a-lineage-check`.
+    @Test func follower_ignoresTheIntent() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.claimOutcomes = [.success(.existingStable)]
+        try seedJournal(context, phase: .waitingForLeader)
+
+        let runner = makeRunner(context, fake)
+        runner.setForwardClaimIntent(.migrateOnly)
+        await runner.pollLeader()
+
+        #expect(fake.executedEffects == [.adoptBackendAccount])
+        #expect(fake.discardStampCallCount == 0)
+        #expect(runner.lastForwardClaimRefusal == nil)
     }
 
     // MARK: - 11. Reversa (§h, I11-2) — driving del runner

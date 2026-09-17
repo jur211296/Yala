@@ -5996,3 +5996,16 @@
 "storage.reverseAbort.otherDeviceReverting" = "无法开始返回 iCloud：当时您的另一台设备正在返回 iCloud。完成后，您就可以在这台设备上操作。";
 "storage.progress.reverseICloudMaybeOff" = "如果这台设备未开启 iCloud，您的数据将无法上传到 iCloud。请在设置中开启，或取消以继续使用云端。";
 "storage.errors.reversePendingExit" = "暂时无法返回 iCloud：需要先完成云端的重新启用。请稍后重试。";
+
+/* «Migrar a la nube» se paró sin escribir nada: la cuenta ya tiene datos (settings-migrate-to-cloud-adopts-silently-instead-of-migrating) */
+"storage.errors.identityCheck" = "无法验证你的账户。请稍后重试。未做任何更改。";
+"storage.migrateBlock.personalDataTitle" = "此账户已有个人财务数据";
+"storage.migrateBlock.personalDataBody" = "未做任何更改。要把你的数据移到云端，请使用其他账户。要在这里使用此账户的数据，请退出登录后用此账户登录。";
+"storage.migrateBlock.personalDataBodyNoSwitch" = "未做任何更改。要在这里使用该账户的数据，请退出登录后用该账户登录。要把你的数据移到其他账户，请先在“群组”中取消关联此账户。";
+"storage.migrateBlock.otherGroupsTitle" = "你的群组已在使用另一个账户";
+"storage.migrateBlock.otherGroupsBody" = "未做任何更改。此设备只能有一个云端账户，而你的群组已在使用另一个账户。要把你的数据移到云端，请用群组的账户登录；如果想用其他账户，请先在“群组”中取消关联。";
+"storage.migrateBlock.otherGroupsBodyEmail" = "未做任何更改。此设备只能有一个云端账户，而你的群组已在使用 %@。要把你的数据移到云端，请用该账户登录；如果想用其他账户，请先在“群组”中取消关联。";
+"storage.migrateBlock.returnedTitle" = "此账户已回到 iCloud";
+"storage.migrateBlock.returnedBody" = "目前还无法用此账户回到云端。未做任何更改。";
+"storage.migrateBlock.useAnotherAccount" = "使用其他账户";
+"storage.migrateBlock.appleSameAccountNote" = "使用 Apple 时，Yala 始终使用此设备上的账户。要使用其他账户，请选择 Google。";
