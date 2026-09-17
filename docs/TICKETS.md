@@ -32,7 +32,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (456)
+## Index (459)
 
 | id | status | path |
 |---|---|---|
@@ -56,6 +56,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | apple-id-close-notice-does-not-say-what-else-the-close-does | backlog | tickets/backlog/apple-id-close-notice-does-not-say-what-else-the-close-does.md |
 | apple-watch | backlog | tickets/backlog/apple-watch.md |
 | applepay-shortcut-warm-launch-empty-data | qa | tickets/qa/applepay-shortcut-warm-launch-empty-data.md |
+| apply-better-ui-emil-design-eng-rules-to-redesigns | backlog | tickets/backlog/apply-better-ui-emil-design-eng-rules-to-redesigns.md |
 | apppreferences-rewritten-on-launch | blocked | tickets/blocked/apppreferences-rewritten-on-launch.md |
 | approximate-mark-ors-over-whole-period | done | tickets/done/approximate-mark-ors-over-whole-period.md |
 | appstorage-onboarding-desarma-el-aislamiento-de-tests | backlog | tickets/backlog/appstorage-onboarding-desarma-el-aislamiento-de-tests.md |
@@ -319,6 +320,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | no-test-seam-for-account-exists-blocks-xcuitest-of-identity | backlog | tickets/backlog/no-test-seam-for-account-exists-blocks-xcuitest-of-identity.md |
 | nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo | backlog | tickets/backlog/nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo.md |
 | notifications-not-delivered-testflight | done | tickets/done/notifications-not-delivered-testflight.md |
+| onboarding-login-should-match-the-sep15-reference | backlog | tickets/backlog/onboarding-login-should-match-the-sep15-reference.md |
 | onboarding-purpose-drops-groups-card | done | tickets/done/onboarding-purpose-drops-groups-card.md |
 | only-testing-filters-may-be-silently-empty | backlog | tickets/backlog/only-testing-filters-may-be-silently-empty.md |
 | open-worktrees-lack-the-attribution-hook | backlog | tickets/backlog/open-worktrees-lack-the-attribution-hook.md |
@@ -429,7 +431,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | signout-blocked-alert-button-has-no-test-identifier | backlog | tickets/backlog/signout-blocked-alert-button-has-no-test-identifier.md |
 | signout-pending-copy-says-wait-seconds-when-offline | done | tickets/done/signout-pending-copy-says-wait-seconds-when-offline.md |
 | siri-ai-integration-ios-27 | backlog | tickets/backlog/siri-ai-integration-ios-27.md |
-| siri-ai-visual-redesign | backlog | tickets/backlog/siri-ai-visual-redesign.md |
+| siri-ai-visual-redesign | discarded | tickets/discarded/siri-ai-visual-redesign.md |
 | siri-intent-dual-container | done | tickets/done/siri-intent-dual-container.md |
 | siri-shortcut-error-replies-speak-english-on-a-spanish-iphone | backlog | tickets/backlog/siri-shortcut-error-replies-speak-english-on-a-spanish-iphone.md |
 | smart-ai-notifications | backlog | tickets/backlog/smart-ai-notifications.md |
@@ -438,6 +440,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | staging-test-user-c-does-not-exist | backlog | tickets/backlog/staging-test-user-c-does-not-exist.md |
 | stats-filter-segment-tap-should-ask-include-or-exclude | backlog | tickets/backlog/stats-filter-segment-tap-should-ask-include-or-exclude.md |
 | stats-per-account-branch-keeps-stale-live-anchor | backlog | tickets/backlog/stats-per-account-branch-keeps-stale-live-anchor.md |
+| step-flows-should-match-the-sep15-reference | backlog | tickets/backlog/step-flows-should-match-the-sep15-reference.md |
 | storage-actions-release-the-working-flag-under-a-running-resume | backlog | tickets/backlog/storage-actions-release-the-working-flag-under-a-running-resume.md |
 | storage-groups-section-stays-active-during-the-migrate-check | backlog | tickets/backlog/storage-groups-section-stays-active-during-the-migrate-check.md |
 | storage-mode-is-a-proxy-for-the-mirror-in-the-wipe-signal | backlog | tickets/backlog/storage-mode-is-a-proxy-for-the-mirror-in-the-wipe-signal.md |

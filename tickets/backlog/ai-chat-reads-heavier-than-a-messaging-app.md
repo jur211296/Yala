@@ -63,3 +63,7 @@ maqueta antes de tocar (memoria `feedback_tarjetas_blancas_identidad`).
 Puestas las dos capturas al lado, la de Yala IA tiene igual o menos elementos distintos en
 pantalla que la de GrokBot, y una respuesta con cifras se lee de un vistazo por la jerarquía del
 texto, no por el color de la burbuja.
+
+## Nota Jürgen (2026-09-17)
+
+Al pedir «rediseño de Siri AI», se refería a **este** ticket (chat Yala AI en la app). No es Siri del sistema. El stub `siri-ai-visual-redesign` quedó descartado.
