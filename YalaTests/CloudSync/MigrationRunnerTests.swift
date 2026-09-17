@@ -60,8 +60,14 @@ private final class FakeExecutor: MigrationWorkExecuting {
     var reverseClaimOutcomes: [ReverseClaimOutcome] = [.accepted]
     private var reverseClaimIndex = 0
     var reverseClaimCallCount = 0
-    var reverseDrainOutcome: ReverseStepOutcome = .completed
-    var freezeBackendResult = true
+    /// Cola, no un valor único: el test de «vuelve a entrar y la vuelta sigue» necesita que el MISMO paso conteste
+    /// distinto en el segundo resume (ticket `reverse-before-mount-stays-stuck-with-an-expired-session`).
+    var reverseDrainOutcomes: [ReverseStepOutcome] = [.completed]
+    private var reverseDrainIndex = 0
+    var reverseDrainCallCount = 0
+    var freezeBackendOutcomes: [ReverseStepOutcome] = [.completed]
+    private var freezeBackendIndex = 0
+    var freezeBackendCallCount = 0
     /// `isMirrorConfirmedOn()` — fake-able (el real reporta `.icloud` SIEMPRE en tests = false green).
     var mirrorOn = false
     /// Ejecutar `.mountMirrorAndRelaunch` monta el mirror (simula el relaunch surtiendo efecto).
@@ -151,8 +157,20 @@ private final class FakeExecutor: MigrationWorkExecuting {
         reverseClaimIndex += 1
         return outcome
     }
-    func reverseDrainOnce() async -> ReverseStepOutcome { reverseDrainOutcome }
-    func freezeBackendForReverse() async -> Bool { freezeBackendResult }
+    func reverseDrainOnce() async -> ReverseStepOutcome {
+        reverseDrainCallCount += 1
+        guard !reverseDrainOutcomes.isEmpty else { return .transient }
+        let outcome = reverseDrainOutcomes[min(reverseDrainIndex, reverseDrainOutcomes.count - 1)]
+        reverseDrainIndex += 1
+        return outcome
+    }
+    func freezeBackendForReverse() async -> ReverseStepOutcome {
+        freezeBackendCallCount += 1
+        guard !freezeBackendOutcomes.isEmpty else { return .transient }
+        let outcome = freezeBackendOutcomes[min(freezeBackendIndex, freezeBackendOutcomes.count - 1)]
+        freezeBackendIndex += 1
+        return outcome
+    }
     func isMirrorConfirmedOn() -> Bool { mirrorOn }
     func sweepZombies(sinceSeq: Int64) async -> ZombieSweepOutcome { sweepCallCount += 1; return sweepOutcome }
     func verifyRebinds() -> Int { verifyRebindsResult }
@@ -1280,9 +1298,9 @@ struct MigrationRunnerTests {
         let context = try makeContext(dir)
         let fake = FakeExecutor()
         fake.reverseClaimOutcomes = [.accepted]
-        fake.reverseDrainOutcome = .completed
+        fake.reverseDrainOutcomes = [.completed]
         fake.verifyProbes = [.match]                 // reverse verify reusa executor.verify()
-        fake.freezeBackendResult = true
+        fake.freezeBackendOutcomes = [.completed]
         fake.setMirrorOnOnMount = true               // ejecutar el efecto monta el mirror → drive avanza
         fake.sweepOutcome = .completed(deleted: 0)
         fake.reverseUploadStatuses = [.drained]
@@ -1446,7 +1464,7 @@ struct MigrationRunnerTests {
         let context = try makeContext(dir)
         let fake = FakeExecutor()
         fake.verifyProbes = [.mismatch]
-        fake.reverseDrainOutcome = .transient        // corta en reverseDrainAll para inspeccionar
+        fake.reverseDrainOutcomes = [.transient]        // corta en reverseDrainAll para inspeccionar
         try seedJournal(context, phase: .reverseVerify, reverseOriginRaw: "done")
 
         await runner(context, fake).resume()
@@ -1455,6 +1473,155 @@ struct MigrationRunnerTests {
         #expect(j.readPhase().phase == .reverseDrainAll, "mismatch de la reversa RE-DRENA (pull), no re-sube")
         #expect(j.verifyMismatchRetries == 1)
         #expect(j.verifyNetworkRetries == 0, "el contador de red NO se toca")
+    }
+
+    // MARK: - 11b. Sesión caducada antes del montaje (ticket `reverse-before-mount-stays-stuck-with-an-expired-session`)
+
+    /// **La tabla del ticket, fase por fase.** Las cuatro son anteriores al montaje del espejo, así que ninguna es
+    /// estable: sin este rastro el motor de la nube no corre, el aviso de Ajustes no sale y la barra se queda parada
+    /// al 15/30/50/62 % sin decir que hay que volver a entrar.
+    ///
+    /// **Lo que hace discriminante a cada caso es la pareja de aserciones**: la fase NO avanza (eso ya pasaba antes)
+    /// **y** queda anotado DÓNDE. Con el bug dentro, `lastReverseSessionExpiry` es `nil` en las cuatro.
+    @Test func reverse_sessionExpired_beforeMount_isRecordedPerPhase() async throws {
+        let cases: [(Phase, ReverseSessionExpiryPhase, (FakeExecutor) -> Void)] = [
+            (.reverseClaimLeader, .claim, { $0.reverseClaimOutcomes = [.sessionExpired] }),
+            (.reverseDrainAll, .drain, { $0.reverseDrainOutcomes = [.sessionExpired] }),
+            (.reverseVerify, .verify, { $0.verifyProbes = [.sessionExpired] }),
+            (.reverseFreezeBackend, .freeze, { $0.freezeBackendOutcomes = [.sessionExpired] }),
+        ]
+        for (phase, expected, script) in cases {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            script(fake)
+            try seedJournal(context, phase: phase, reverseOriginRaw: "done")
+
+            let r = runner(context, fake)
+            await r.resume()
+
+            #expect(r.lastReverseSessionExpiry == expected, "\(phase) debe anotar .\(expected)")
+            #expect(try journal(context).readPhase().phase == phase, "\(phase): la fase NO avanza, queda retomable")
+            // NO se comprueba aquí que no haya efectos pendientes: con el bug dentro tampoco los había (las cuatro
+            // transiciones de entrada llevan `effects: []` y el verify reintentaba sin degradar), así que sería una
+            // aserción que no puede fallar. El caso que SÍ lo mide, con el presupuesto agotado, es
+            // `reverse_verifySessionExpired_spendsNoNetworkRetry_andNeverDegrades`.
+        }
+    }
+
+    /// Criterio 3 del ticket. `reverseVerify` leía la sesión caducada como `.networkTimeout`: gastaba el presupuesto
+    /// de RED y al agotarlo degradaba a `reverseFailedRollback` **con `.reverseRollback` pendiente** — un efecto que
+    /// con la sesión caducada lanza en cada resume, así que la fase de fallo se quedaba con su abort sin ejecutar.
+    ///
+    /// El caso arranca con el presupuesto de red **agotado** (`networkRetries: 8` == `MigrationPolicy
+    /// .maxNetworkRetries`): así el mutante que devuelva este `case` al trato de `networkTimeout` no solo suma un
+    /// contador — **degrada a `reverseFailedRollback` con `.reverseRollback` pendiente**, y las tres aserciones caen
+    /// a la vez en vez de una sola.
+    ///
+    /// **El número sale de la política, no de un literal.** La primera versión de este caso sembraba `2` diciendo que
+    /// el tope era `3`: con el tope real, el mutante solo movía el contador y **dos de las tres aserciones no podían
+    /// fallar** — pasaban con el bug dentro y con el bug fuera. Lo cazó una lente adversarial.
+    @Test func reverse_verifySessionExpired_spendsNoNetworkRetry_andNeverDegrades() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.verifyProbes = [.sessionExpired]
+        let spent = MigrationPolicy.default.maxNetworkRetries
+        try seedJournal(context, phase: .reverseVerify, networkRetries: spent, reverseOriginRaw: "done")
+
+        await runner(context, fake).resume()
+
+        let j = try journal(context)
+        #expect(j.verifyNetworkRetries == spent,
+                "la sesión caducada NO gasta presupuesto de red: esperar no la renueva")
+        #expect(j.readPhase().phase == .reverseVerify, "no degrada a reverseFailedRollback")
+        #expect(!j.readPendingEffects().contains(.reverseRollback),
+                "y por tanto no deja el abort pendiente, que con la sesión caducada lanzaría en cada resume")
+    }
+
+    /// Criterio 2 del ticket: tras volver a entrar, la vuelta sigue DONDE ESTABA. El segundo `resume()` es lo que
+    /// hace `CloudMigrationController.signInToResumeReverse` después de firmar.
+    ///
+    /// Y fija la otra mitad, que es la que se olvida: **la observación se LIMPIA sola** con el primer paso que avanza.
+    /// Sin eso la tarjeta seguiría pidiendo volver a entrar con la vuelta ya corriendo.
+    @Test func reverse_afterSigningInAgain_resumesAndClearsTheNotice() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.reverseClaimOutcomes = [.sessionExpired, .accepted]
+        fake.reverseDrainOutcomes = [.transient]        // corta en reverseDrainAll para inspeccionar
+        try seedJournal(context, phase: .reverseClaimLeader, reverseOriginRaw: "done")
+
+        let r = runner(context, fake)
+        await r.resume()
+        #expect(r.lastReverseSessionExpiry == .claim)
+        #expect(try journal(context).readPhase().phase == .reverseClaimLeader)
+
+        await r.resume()                                 // ← lo que corre tras volver a entrar
+
+        #expect(try journal(context).readPhase().phase == .reverseDrainAll, "la vuelta sigue desde donde estaba")
+        #expect(r.lastReverseSessionExpiry == nil, "el paso que avanza borra el aviso: ya no hay que volver a entrar")
+        #expect(fake.reverseClaimCallCount == 2)
+    }
+
+    /// Un corte por RED no puede pedir volver a entrar — es el falso positivo que cerró
+    /// `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`, y sin este caso el mutante que anota la
+    /// observación en `.transient` saldría verde: la fase tampoco avanza ahí.
+    @Test func reverse_transientNetwork_neverAsksToSignInAgain() async throws {
+        let cases: [(Phase, (FakeExecutor) -> Void)] = [
+            (.reverseClaimLeader, { $0.reverseClaimOutcomes = [.transient] }),
+            (.reverseDrainAll, { $0.reverseDrainOutcomes = [.transient] }),
+            (.reverseVerify, { $0.verifyProbes = [.networkTimeout] }),
+            (.reverseFreezeBackend, { $0.freezeBackendOutcomes = [.transient] }),
+        ]
+        for (phase, script) in cases {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            script(fake)
+            try seedJournal(context, phase: phase, reverseOriginRaw: "done")
+
+            let r = runner(context, fake)
+            await r.resume()
+
+            #expect(r.lastReverseSessionExpiry == nil, "\(phase): la red se reintenta sola, no se pide firmar")
+        }
+    }
+
+    /// La observación se BORRA también cuando lo siguiente que pasa es red, no solo cuando avanza. Sin esto, un
+    /// «vuelve a entrar» de hace una hora seguiría en pantalla mientras la vuelta espera cobertura.
+    @Test func reverse_sessionExpiry_isClearedByALaterTransient() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.reverseClaimOutcomes = [.sessionExpired, .transient]
+        try seedJournal(context, phase: .reverseClaimLeader, reverseOriginRaw: "done")
+
+        let r = runner(context, fake)
+        await r.resume()
+        #expect(r.lastReverseSessionExpiry == .claim)
+
+        await r.resume()
+        #expect(r.lastReverseSessionExpiry == nil)
+    }
+
+    /// **La IDA no cambia** (D6 del Paso 0): `verify()` lo comparten las dos direcciones, y en `verifying` el caso
+    /// nuevo se trata como la red — exactamente como antes de que existiera. Sin este caso, mover el `.sessionExpired`
+    /// de `driveVerify` a su propia rama pasaría inadvertido y la ida dejaría de degradar.
+    @Test func forwardVerify_sessionExpired_spendsNetworkRetry() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.verifyProbes = [.sessionExpired]
+        try seedJournal(context, phase: .verifying, networkRetries: 0)
+
+        let r = runner(context, fake)
+        await r.resume()
+
+        let j = try journal(context)
+        #expect(j.verifyNetworkRetries == 1, "en la IDA sigue gastando presupuesto de red, como antes del ticket")
+        #expect(j.readPhase().phase == .verifying)
+        #expect(r.lastReverseSessionExpiry == nil, "y no anota nada de la vuelta")
     }
 
     /// resetAfterRollback desde reverseFailedRollback → repone la fase ORIGEN journaleada (no notStarted ciego).
@@ -2022,7 +2189,7 @@ struct MigrationRunnerTests {
         let context = try makeContext(dir)
         let fake = FakeExecutor()
         fake.reverseClaimOutcomes = [.accepted]
-        fake.reverseDrainOutcome = .transient                    // corta en reverseDrainAll para inspeccionar
+        fake.reverseDrainOutcomes = [.transient]                    // corta en reverseDrainAll para inspeccionar
         try seedJournal(context, phase: .done, pending: [.runLeaderReconcileFromFrozenCloudKit])
 
         let r = runner(context, fake)

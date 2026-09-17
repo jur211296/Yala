@@ -6017,3 +6017,9 @@
 
 /* Restaurar: cuerpo del estado sin comprobar — no afirma que falten datos ni que existan (reinstall-without-network-has-no-cloud-door) */
 "welcome.restore.cloudUnverifiedBody" = "保存されたデータがあるかを確認するために接続できませんでした。少し経ってから、もう一度お試しください。";
+
+/* Caption de la tarjeta de progreso de la vuelta a iCloud cuando la sesión de la nube ya no vale */
+"storage.progress.reverseNeedsSignIn" = "セッションの有効期限が切れました。iCloud に戻す作業を続けるには、もう一度サインインしてください。";
+
+/* Aviso cuando el sign-in para retomar la vuelta a iCloud trae una cuenta distinta */
+"storage.errors.reverseSignInOtherAccount" = "別のアカウントでサインインしました。iCloud に戻す操作を始めたアカウントでサインインしてください。";

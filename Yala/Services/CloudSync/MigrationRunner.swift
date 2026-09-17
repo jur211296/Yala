@@ -42,6 +42,12 @@ enum VerifyProbe: Equatable {
     case mismatch
     case networkTimeout
     case newDeltaDetected
+    /// La sesión de la nube ya no vale (el SDK borró la sesión, o el gateway rechazó el JWT). Esperar no lo arregla,
+    /// así que **en la VUELTA** corta sin gastar reintento de red (ticket
+    /// `reverse-before-mount-stays-stuck-with-an-expired-session`). En la IDA el trato no cambia: `driveVerify` lo
+    /// mapea a `networkTimeout`, que es lo que hacía antes de que este caso existiera, y hay un test que lo fija.
+    /// Un token que no llega sin red NO llega aquí: lo separan los clientes con `canRenewSession`.
+    case sessionExpired
 }
 
 /// Por qué se aparcó un claim cuando la causa **no es la red**. Es el hecho que separa «no te llega la
@@ -79,10 +85,30 @@ nonisolated enum ReverseClaimOutcome: Equatable {
     case rejected(reason: String)
 }
 
-/// Resultado de un paso genérico de la reversa (drain final / freeze). `completed` avanza; `transient` corta.
+/// Resultado de un paso genérico de la reversa (drain final / freeze). `completed` avanza; `transient` corta;
+/// `sessionExpired` corta igual pero DEJA RASTRO para la pantalla (ticket
+/// `reverse-before-mount-stays-stuck-with-an-expired-session`): esperar no lo arregla, y hasta ese ticket las dos
+/// eran el mismo corte mudo. Un token que no llega sin red NO es esto: lo separa `canRenewSession` aguas arriba.
 nonisolated enum ReverseStepOutcome: Equatable {
     case completed
     case transient
+    case sessionExpired
+}
+
+/// En qué fase de la vuelta a iCloud se paró el trabajo porque la sesión de la nube ya no vale (ticket
+/// `reverse-before-mount-stays-stuck-with-an-expired-session`). Las cuatro son ANTERIORES al montaje del espejo, así
+/// que ninguna es estable: el motor de la nube no corre (`MigrationRuntimeGate.isDomainStablePhase`) y el aviso de
+/// «vuelve a entrar» de Ajustes (`syncNeedsSignIn`) no sale, porque ese solo se enciende con el runtime en
+/// `.stoppedUntilSignIn` y lo que se pinta es la tarjeta de progreso.
+///
+/// En memoria, molde de `lastClaimBlocker` y `lastReverseUploadSample`: describe la OBSERVACIÓN, no el estado durable
+/// —el journal sigue en su fase, retomable— y cada paso que avanza la limpia. La repone el resume del arranque y el
+/// re-kick de 30 s de la pantalla, que para las cuatro fases decide `.resume` (`MigrationBootDecision.decide`).
+nonisolated enum ReverseSessionExpiryPhase: String, Equatable, Sendable {
+    case claim
+    case drain
+    case verify
+    case freeze
 }
 
 /// Resultado del barrido de zombies (§h.3 `deletingZombies`). `completed(deleted:)` = filas vivas
@@ -232,8 +258,11 @@ protocol MigrationWorkExecuting: AnyObject {
     func performReverseClaim() async -> ReverseClaimOutcome
     /// `reverseDrainAll` (§h): pull final + drain del outbox propio + push del residual (reusa piezas de `verify()`).
     func reverseDrainOnce() async -> ReverseStepOutcome
-    /// `reverseFreezeBackend` (§h): marca la cuenta backend "reverting". I11-3; hoy `false` + breadcrumb notWired.
-    func freezeBackendForReverse() async -> Bool
+    /// `reverseFreezeBackend` (§h): marca la cuenta backend "reverting". `completed` avanza; `transient` corta
+    /// retomable; `sessionExpired` corta dejando rastro para la pantalla. Devolvía `Bool` hasta el ticket
+    /// `reverse-before-mount-stays-stuck-with-an-expired-session`, y ese `false` único metía en el mismo saco la red y
+    /// una sesión que hay que renovar a mano.
+    func freezeBackendForReverse() async -> ReverseStepOutcome
     /// Observación post-relaunch: ¿el mirror `.private` está confirmado ON? (resuelve `.mountMirrorAndRelaunch`,
     /// análogo a `isMirrorConfirmedOff`). CONTRATO I11-2: debe ser fake-able en tests (el testigo real reporta
     /// `.icloud` por default → "montado SIEMPRE" = falso verde).
@@ -337,6 +366,15 @@ final class MigrationRunner {
     /// La última salida del claim de la reversa en este proceso (`nil` = ninguna). En memoria, molde de
     /// `lastClaimBlocker`: la nota que dura vive en el journal (`reverseAbortReasonRaw`); esto solo decide la alerta.
     private(set) var lastReverseClaimExit: ReverseClaimExit?
+
+    /// Dónde se paró la vuelta a iCloud porque la sesión de la nube ya no vale (`nil` = no se paró por eso). La lee
+    /// `CloudMigrationController.refresh()` para que la tarjeta diga que hay que volver a entrar y lo ofrezca, en vez
+    /// de una barra parada al 15/30/50/62 % con un «Retomar» que recibe lo mismo.
+    ///
+    /// **La escribe UN solo sitio** (`noteReverseSessionExpiry`), y los cuatro pasos la ponen o la limpian con su
+    /// outcome: un paso que avanza, o que corta por red, la borra — si no, un «vuelve a entrar» de hace un rato
+    /// seguiría en pantalla mientras la vuelta ya progresa.
+    private(set) var lastReverseSessionExpiry: ReverseSessionExpiryPhase?
 
     /// La intención que se journaleará al llegar a `claimingMigration` (`ForwardClaimIntent`). La ponen las entradas de
     /// `CloudMigrationController`; el default conserva el comportamiento de siempre. `driveClaim` NO lee esto: lee lo
@@ -674,6 +712,14 @@ final class MigrationRunner {
     /// Bucle de trabajo autónomo: según la fase actual invoca al executor y produce el evento; corta en
     /// estados terminales, `waitingForLeader` (espera poll externo) o outcomes transient/no-success.
     private func drive() async throws {
+        // La observación de «la sesión ya no vale» se RE-OBSERVA en cada pasada de trabajo: aquí se borra y solo
+        // sobrevive si esta misma pasada vuelve a chocar con ella (ticket
+        // `reverse-before-mount-stays-stuck-with-an-expired-session`).
+        //
+        // **Un solo borrador, y por eso está aquí y no repartido por los pasos.** Ponerlo en cada outcome que avanza
+        // o corta por red deja líneas que se cumplen solas: desde un claim aceptado toda continuación pasa por otro
+        // paso que también borraría, así que quitar la de ahí no cambia nada observable y ningún test puede cazarlo.
+        lastReverseSessionExpiry = nil
         var iterations = 0
         while true {
             iterations += 1
@@ -717,18 +763,30 @@ final class MigrationRunner {
             case .reverseDrainAll:
                 switch await executor.reverseDrainOnce() {
                 case .completed:
-                    try await handle(.reverseDrainCompleted)
+                            try await handle(.reverseDrainCompleted)
                     // Heartbeat (I14-pre): el drain de una época nube grande puede tardar minutos — late al
                     // cerrar el paso para no dejar la lease de 60 min usurpable a mitad de la reversa.
                     await executor.sendLeaseHeartbeatIfDue()
-                case .transient: return
+                case .transient:
+                            return
+                case .sessionExpired:
+                    noteReverseSessionExpiry(.drain)
+                    return
                 }
             case .reverseVerify:
                 if !(try await driveReverseVerify()) { return }
             case .reverseFreezeBackend:
-                // `reverse_freeze` server-side (I11-3): false = rechazo/red → stop retomable SIN evento.
-                guard await executor.freezeBackendForReverse() else { return }
-                try await handle(.reverseBackendFrozen)        // efecto: mountMirrorAndRelaunch
+                // `reverse_freeze` server-side (I11-3): rechazo/red → stop retomable SIN evento; la sesión caducada
+                // corta igual, pero deja rastro para la pantalla.
+                switch await executor.freezeBackendForReverse() {
+                case .completed:
+                            try await handle(.reverseBackendFrozen)    // efecto: mountMirrorAndRelaunch
+                case .transient:
+                            return
+                case .sessionExpired:
+                    noteReverseSessionExpiry(.freeze)
+                    return
+                }
             case .reverseMountMirror:
                 // Resuelto SIEMPRE por observación (forward tras ejecutar el efecto, o resume post-relaunch):
                 // el efecto `mountMirrorAndRelaunch` desarma el flag; el mirror monta al RELANZAR.
@@ -849,7 +907,14 @@ final class MigrationRunner {
                 }
             }
             return true
-        case .networkTimeout:
+        // `sessionExpired` DELIBERADAMENTE junto a `networkTimeout`: `verify()` lo comparten la ida y la vuelta, y el
+        // caso nuevo se abrió para la VUELTA (ticket `reverse-before-mount-stays-stuck-with-an-expired-session`). En la
+        // ida el trato se queda EXACTO al de antes de que el caso existiera —gasta reintento de red y al tope degrada
+        // a `failedRollback`— porque su superficie es otra (`lastClaimBlocker`, la pantalla de adopt) y su terminal SÍ
+        // revierte: separarlo ahí es otro ticket, con su propia QA (`forward-verify-reads-an-expired-session-as-network`).
+        // Sin este `case` explícito el compilador exigiría uno igual, y quien lo escribiera sin este porqué diría
+        // «ya estaba así». Lo fija `MigrationRunnerTests.forwardVerify_sessionExpired_spendsNetworkRetry`.
+        case .networkTimeout, .sessionExpired:
             let spent = try loadState().verifyNetworkRetries
             try await handle(.verifyOutcome(.networkTimeout(retriesSoFar: spent))) { state, next in
                 if next == .verifying { state.verifyNetworkRetries += 1 }
@@ -979,7 +1044,7 @@ final class MigrationRunner {
                 reason: .otherDeviceReverting, serverReason: "other_leader")
             return false                                   // la máquina ya movió al origin (terminal/forward)
         case .sessionExpired:
-            CloudSyncBreadcrumb.migrationClaimNoSuccess(reason: "reverse: sessionExpired")
+            noteReverseSessionExpiry(.claim)
             return false
         case .transient:
             CloudSyncBreadcrumb.migrationClaimNoSuccess(reason: "reverse: transient")
@@ -991,6 +1056,19 @@ final class MigrationRunner {
                 reason: .forClaimRejection(serverReason: reason), serverReason: reason)
             return false                                   // la máquina ya movió al origin
         }
+    }
+
+    /// Anota dónde se paró la vuelta porque la sesión ya no vale (ticket
+    /// `reverse-before-mount-stays-stuck-with-an-expired-session`). Lo BORRA `drive()` al empezar cada pasada.
+    ///
+    /// **El canario va por `canaryOnce`, con la fase en la clave.** El re-kick de 30 s de la pantalla vuelve a
+    /// chocar con la misma sesión caducada cada medio minuto, y una tarde mirando la barra llenaría el spool con un
+    /// único hecho; dedupear a mano aquí pediría un segundo testigo que `drive()` no borra, y ese testigo no lo
+    /// puede cazar ningún test. El breadcrumb SÍ sale cada vez: es un log, y ver que el atasco sigue ayuda.
+    private func noteReverseSessionExpiry(_ phase: ReverseSessionExpiryPhase) {
+        lastReverseSessionExpiry = phase
+        CloudSyncBreadcrumb.reverseBlockedByExpiredSession(phase: phase.rawValue)
+        MetricsService.cloudReverseBlockedByExpiredSession(phase: phase.rawValue)
     }
 
     /// Journalea una salida del claim de la reversa: la vuelta al origen y, en el MISMO save, el porqué que lee la
@@ -1026,6 +1104,13 @@ final class MigrationRunner {
     /// `networkTimeout` que reintenta (anti tight-loop, igual que el verify forward).
     private func driveReverseVerify() async throws -> Bool {
         switch await executor.verify() {
+        case .sessionExpired:
+            // SIN evento, que es lo que cumple el criterio: el `networkTimeout` que este caso tenía antes gastaba
+            // `verifyNetworkRetries` y al agotarlo degradaba a `reverseFailedRollback` con `.reverseRollback`
+            // pendiente — un efecto que con la sesión caducada LANZA en cada resume, así que la fase de fallo se
+            // quedaba con su abort sin ejecutar. Esperar no renueva una sesión: la renueva la persona.
+            noteReverseSessionExpiry(.verify)
+            return false
         case .match:
             try await handle(.reverseVerifyOutcome(.match))
             return true

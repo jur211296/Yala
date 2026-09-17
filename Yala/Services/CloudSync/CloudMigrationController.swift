@@ -237,6 +237,21 @@ final class CloudMigrationController {
     /// filas faltan y por qué no drena. `nil` = aún no observada; la pantalla dice entonces solo que está subiendo.
     private(set) var reverseUploadSample: ReverseUploadSample?
 
+    /// La vuelta a iCloud se paró porque la sesión de la nube ya no vale, en una fase anterior al montaje del espejo
+    /// (`MigrationRunner.lastReverseSessionExpiry`). `nil` = no se paró por eso.
+    ///
+    /// Es lo que separa este caso del banner `syncNeedsSignIn` de más abajo, que **no puede salir aquí**: ese exige el
+    /// runtime del dominio en `.stoppedUntilSignIn`, y en estas cuatro fases el runtime no corre —ninguna es estable—
+    /// así que la persona veía una barra parada sin una palabra (ticket
+    /// `reverse-before-mount-stays-stuck-with-an-expired-session`).
+    private(set) var reverseSessionExpiry: ReverseSessionExpiryPhase?
+
+    /// ¿Hay que pedirle que vuelva a entrar para que la vuelta a iCloud siga? Lo lee la tarjeta de progreso.
+    ///
+    /// **La fase la decide el runner, no este getter.** Añadir aquí un término de fase sería la misma condición dos
+    /// veces, y entonces un mutante en la del runner saldría verde (el pre-filtro tapando al criterio).
+    var reverseNeedsSignIn: Bool { reverseSessionExpiry != nil }
+
     /// Por qué terminó la última vuelta sin llegar a iCloud —la espera, o el claim que el servidor no concedió—
     /// (`MigrationState.reverseAbortReasonRaw`).
     /// Sale del JOURNAL, no del runner, porque la persona puede leerlo después del relanzamiento. `nil` = nada
@@ -816,6 +831,76 @@ final class CloudMigrationController {
         startRuntimeIfStable()
     }
 
+    /// Volver a entrar para que la vuelta a iCloud siga donde estaba (ticket
+    /// `reverse-before-mount-stays-stuck-with-an-expired-session`). Firma y **retoma**: el criterio del ticket es que
+    /// entrar baste, sin un segundo gesto que buscar.
+    ///
+    /// **El rescate va PRIMERO, y es una renovación FORZADA, no un `accessToken()`.** La observación que enciende la
+    /// tarjeta la produce sobre todo un **401 del gateway con la sesión del SDK intacta**, y en ese estado
+    /// `hasSession` es `true` y `accessToken()` devuelve **el mismo JWT que el servidor acaba de rechazar** (solo
+    /// auto-refresca con menos de 30 s de margen). Un belt escrito con ese par —el molde de `signInToResumeSync`—
+    /// saltaba la firma, retomaba con el token rechazado y recibía el mismo 401: el botón que ofrece entrar no
+    /// entraba, en el caso PRINCIPAL del ticket. `forceRefreshAccessToken()` canjea el refresh token AHORA: si la
+    /// sesión seguía viva, rota y la vuelta sigue sin molestar a nadie — es el mismo rescate que el canal de Grupos
+    /// usa para su 401 (H-2026-07-18-4); si no vuelve nada, hay que firmar de verdad.
+    ///
+    /// **El proveedor no se elige**: es el de la cuenta (`storedProvider()`, que la expiración no borra — vive en el
+    /// profileStore propio y solo lo limpia `signOut()`).
+    ///
+    /// **Y la firma va atada al `sub`**, que es lo que este camino NO hereda de su molde: `signInToResumeSync`
+    /// termina en `CloudSyncRuntime.handleBecameActive()`, cuyo gate de identidad deja el motor `.idle` si la cuenta
+    /// no es la del device; aquí se conduce el runner directo —la fase de la vuelta no es estable, así que ese gate
+    /// no corre— y `reverseDrainOnce` sube el outbox entero, que no lleva dueño. Con Google el chooser sale siempre
+    /// (`hint: nil`), así que elegir la cuenta de al lado escribía el corpus de una persona bajo el `sub` de otra.
+    /// Si el `sub` cambia, **no se retoma**: se avisa y la vuelta se queda donde estaba, intacta.
+    ///
+    /// El `resume()` va FUERA del tramo con `isWorking` puesto, y no es un detalle de estilo: `resume()` abre con
+    /// `guard !isWorking else { return }`, así que llamarlo desde dentro no retomaría nada.
+    func signInToResumeReverse() async {
+        // ANTES del primer `await`, y con `defer`: el re-kick de foreground de la pantalla mira `isWorking` para
+        // decidir si empuja, y con el candado suelto durante la ida y vuelta de red se colaba su propio `resume()`
+        // — el de aquí lo soltaba al bajar el flag y los dos pases corrían encima.
+        guard !isWorking else { return }
+        isWorking = true
+        var releasedForResume = false
+        defer { if !releasedForResume { isWorking = false } }
+
+        // El `sub` con el que la vuelta empezó. Con la sesión ya borrada es `nil`: entonces no hay nada que comparar
+        // y se acepta la cuenta con la que se firme, que es el trato de siempre de esta pantalla.
+        let subBefore = CloudAuthService.shared.currentUserID
+
+        if await CloudAuthService.shared.forceRefreshAccessToken() == nil {
+            let provider = CloudSignInProvider(
+                rawValue: CloudAuthService.shared.storedProvider() ?? "") ?? .apple
+            do {
+                try await CloudAuthService.shared.signIn(with: provider)
+            } catch CloudAuthError.cancelled {
+                // Cancel tipado (Google): la tarjeta sigue pidiendo volver a entrar, sin aviso — un cancel no es fallo.
+                refresh()
+                return
+            } catch {
+                #if DEBUG
+                print("CloudMigrationController.signInToResumeReverse: sign-in \(provider.rawValue) falló: \(error)")
+                #endif
+                lastError = L10n.Storage.Errors.signIn
+                refresh()
+                return
+            }
+            if let subBefore, CloudAuthService.shared.currentUserID != subBefore {
+                CloudSyncBreadcrumb.reverseSignInAccountMismatch()
+                lastError = L10n.Storage.Errors.reverseSignInOtherAccount
+                refresh()
+                return
+            }
+        }
+
+        // Con sesión buena y de la misma cuenta, el camino de siempre: el runner re-intenta la fase journaleada y su
+        // primer paso con éxito limpia la observación, así que la tarjeta deja de pedir volver a entrar sola.
+        releasedForResume = true
+        isWorking = false
+        await resume()
+    }
+
     /// «Cancelar y seguir en la nube» en la espera de `reverseUpload`.
     ///
     /// No descarta el gesto si hay trabajo en vuelo: el refresco de la pantalla re-kickea cada 30 s y el runner
@@ -995,6 +1080,7 @@ final class CloudMigrationController {
         // es sitio para eso. Sin runner vivo no hay claim aparcado que reportar.
         claimBlocker = _runner?.lastClaimBlocker
         reverseUploadSample = _runner?.lastReverseUploadSample
+        reverseSessionExpiry = _runner?.lastReverseSessionExpiry
 
         refreshSyncBanner()
     }

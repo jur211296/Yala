@@ -7155,6 +7155,11 @@ enum L10n {
             }
             static var reverseICloudMaybeOff: String { ls("storage.progress.reverseICloudMaybeOff", comment: "") }
             static var cancelReverse: String { ls("storage.progress.cancelReverse", comment: "") }
+            /// La vuelta a iCloud parada porque la sesión de la nube ya no vale, antes de montar el espejo (ticket
+            /// `reverse-before-mount-stays-stuck-with-an-expired-session`). El BOTÓN que la acompaña reusa
+            /// `Storage.Sync.signInButton`: es el mismo gesto que ya pide el banner hermano de esta pantalla, y dos
+            /// literales para un mismo botón acaban divergiendo.
+            static var reverseNeedsSignIn: String { ls("storage.progress.reverseNeedsSignIn", comment: "") }
         }
 
         /// Después de que la vuelta a iCloud termine sin llegar —por la espera o porque el servidor no dejó empezar—:
@@ -7307,6 +7312,13 @@ enum L10n {
             static var reversePendingExit: String { ls("storage.errors.reversePendingExit", comment: "") }
             /// «Migrar a la nube» no pudo preguntar al backend por la cuenta, así que no siguió.
             static var identityCheck: String { ls("storage.errors.identityCheck", comment: "") }
+            /// El sign-in para retomar la vuelta a iCloud trajo OTRA cuenta (ticket
+            /// `reverse-before-mount-stays-stuck-with-an-expired-session`). La vuelta no se retoma: el outbox que
+            /// subiría no lleva dueño, así que con el `sub` de al lado escribiría el corpus de una persona en la
+            /// cuenta de otra.
+            static var reverseSignInOtherAccount: String {
+                ls("storage.errors.reverseSignInOtherAccount", comment: "")
+            }
         }
 
         /// W3 (2026-08-11): los 7 bullets numerados se podaron a TRES + un pie, y las keys

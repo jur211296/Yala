@@ -6017,3 +6017,9 @@
 
 /* Restaurar: cuerpo del estado sin comprobar — no afirma que falten datos ni que existan (reinstall-without-network-has-no-cloud-door) */
 "welcome.restore.cloudUnverifiedBody" = "We konden geen verbinding maken om te controleren of je gegevens hebt opgeslagen. Probeer het zo meteen opnieuw.";
+
+/* Caption de la tarjeta de progreso de la vuelta a iCloud cuando la sesión de la nube ya no vale */
+"storage.progress.reverseNeedsSignIn" = "Je sessie is verlopen. Meld je opnieuw aan om terug te gaan naar iCloud.";
+
+/* Aviso cuando el sign-in para retomar la vuelta a iCloud trae una cuenta distinta */
+"storage.errors.reverseSignInOtherAccount" = "Je bent met een ander account aangemeld. Meld je aan met het account waarmee je terug naar iCloud bent gegaan.";

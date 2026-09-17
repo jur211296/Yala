@@ -216,4 +216,54 @@ struct ReverseUploadControllerWiringTests {
         let start = try Self.body(of: "func startReverse() async {")
         #expect(start.contains("cancelReverseRequested = false"), "una vuelta nueva no hereda un «Cancelar» viejo")
     }
+    // MARK: - Volver a entrar para retomar la vuelta (`reverse-before-mount-stays-stuck-with-an-expired-session`)
+
+    /// **El rescate es una renovación FORZADA, no `accessToken()`, y esto es load-bearing.** La observación que
+    /// enciende la tarjeta la produce sobre todo un 401 del gateway **con la sesión del SDK intacta**: ahí
+    /// `hasSession` es `true` y `accessToken()` devuelve el MISMO JWT que el servidor acaba de rechazar (solo
+    /// auto-refresca con menos de 30 s de margen, `CloudAuthService`). Un belt escrito con ese par —el molde del
+    /// hermano `signInToResumeSync`— saltaba la firma, retomaba con el token rechazado y recibía el mismo 401: el
+    /// botón que ofrece entrar no entraba, en el caso PRINCIPAL del ticket. Lo cazó una lente adversarial, y sin
+    /// este scan nada impide que alguien "unifique" los dos métodos y lo reintroduzca: el defecto no se ve en
+    /// ninguna suite, porque el controller es un singleton sobre el `mainContext` con `init` privado.
+    @Test func signInToResumeReverse_rescuesWithAForcedRefresh_notWithAPlainAccessToken() throws {
+        let body = try Self.body(of: "func signInToResumeReverse() async {")
+        #expect(body.contains("forceRefreshAccessToken()"),
+                "el rescate previo a la firma tiene que ROTAR el token, no releer el que el gateway rechazó")
+        #expect(Self.occurrences(of: "accessToken()", in: body) == 0,
+                "un `accessToken()` aquí devuelve el JWT ya rechazado y salta la firma que la tarjeta ofrece")
+    }
+
+    /// **La firma va atada al `sub`.** Este camino no hereda el gate de identidad de su hermano: `signInToResumeSync`
+    /// termina en `CloudSyncRuntime.handleBecameActive()`, cuyo gate deja el motor `.idle` si la cuenta no es la del
+    /// device; aquí se conduce el runner directo —la fase de la vuelta no es estable, así que ese gate no corre— y
+    /// `reverseDrainOnce` sube el outbox entero, que no lleva dueño. Con Google el chooser sale siempre (`hint: nil`),
+    /// así que sin esto elegir la cuenta de al lado escribía el corpus de una persona bajo el `sub` de otra.
+    @Test func signInToResumeReverse_refusesToResumeWithAnotherAccount() throws {
+        let body = try Self.body(of: "func signInToResumeReverse() async {")
+        #expect(body.contains("let subBefore = CloudAuthService.shared.currentUserID"),
+                "el `sub` de origen se captura ANTES de firmar: después ya es el de la cuenta nueva")
+        #expect(body.contains("if let subBefore, CloudAuthService.shared.currentUserID != subBefore"),
+                "y se compara tras firmar")
+        // El orden importa tanto como la comparación: con el `return` después del `resume()`, comparar no serviría
+        // de nada. Se fija midiendo que la salida cae ANTES.
+        let mismatch = try #require(body.range(of: "CloudAuthService.shared.currentUserID != subBefore"))
+        let resume = try #require(body.range(of: "await resume()"))
+        #expect(mismatch.lowerBound < resume.lowerBound,
+                "la comprobación del `sub` va ANTES de retomar, o la vuelta ya subió con la cuenta equivocada")
+        #expect(body.contains("L10n.Storage.Errors.reverseSignInOtherAccount"), "y se dice, en vez de callar")
+    }
+
+    /// **`isWorking` se toma ANTES del primer `await`.** El re-kick de 30 s de la pantalla mira ese flag para decidir
+    /// si empuja (`MigrationForegroundRekick.shouldRekick`), así que con el candado suelto durante la ida y vuelta de
+    /// red se colaba su propio `resume()` — y el `isWorking = false` de aquí lo soltaba con ese pase aún en vuelo.
+    @Test func signInToResumeReverse_takesTheLockBeforeTheFirstAwait() throws {
+        let body = try Self.body(of: "func signInToResumeReverse() async {")
+        let lock = try #require(body.range(of: "isWorking = true"))
+        let firstAwait = try #require(body.range(of: "await "))
+        #expect(lock.lowerBound < firstAwait.lowerBound,
+                "el candado va antes del primer `await`, como en `signInToResumeSync`")
+        #expect(body.contains("guard !isWorking else { return }"), "y no se entra dos veces")
+    }
+
 }

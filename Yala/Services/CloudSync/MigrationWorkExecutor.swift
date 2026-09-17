@@ -491,6 +491,12 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// Verifica cuenta+checksum Merkle local vs backend, con el pre-check TOCTOU (§g.3) y el `pullAndApplyOnce`
     /// OBLIGATORIO antes de `verifyIntegrity` (el guard `lastPullCycleCompleted` jamás se pone durante la
     /// migración porque el runtime no corre → sin el pull, `verifyIntegrity` skippearía SIEMPRE).
+    ///
+    /// **Lo comparten las dos direcciones** (`driveVerify` y `driveReverseVerify`, contados), y desde el ticket
+    /// `reverse-before-mount-stays-stuck-with-an-expired-session` el `.sessionExpired` del push o del pull ya no
+    /// colapsa en `.networkTimeout`: sale tipado y **cada dirección decide**. La vuelta corta sin gastar reintento; la
+    /// ida lo trata como red, igual que antes de que el caso existiera. El token que no llega sin red y el 401 del
+    /// attest no llegan aquí: los filtran los clientes con `canRenewSession`.
     func verify() async -> VerifyProbe {
         // Pre-check TOCTOU: drenar + subir si hay filas vivas ANTES de verificar. Partición poison (#26,
         // fix del review adversarial — simetría con el uploader): una fila no-construible se AÍSLA como
@@ -507,7 +513,9 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
                 // Si tras el push quedan filas VIVAS → red (transient); si el outbox quedó limpio → un delta
                 // aterrizó y se subió → re-run barato (NO consume retry).
                 return liveOutboxRows().isEmpty ? .newDeltaDetected : .networkTimeout
-            case .sessionExpired, .accountUnavailable, .transient:
+            case .sessionExpired:
+                return .sessionExpired
+            case .accountUnavailable, .transient:
                 return .networkTimeout
             }
         }
@@ -517,7 +525,9 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         switch await engine.pullAndApplyOnce(using: pullClient, context: context, now: now()) {
         case .completed:
             break
-        case .busy, .transient, .sessionExpired, .accountUnavailable:
+        case .sessionExpired:
+            return .sessionExpired
+        case .busy, .transient, .accountUnavailable:
             return .networkTimeout
         }
 
@@ -898,11 +908,23 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// cuenta de solo grupos que nunca revirtió no, porque no tiene nada personal que devolver; y la ya
     /// revertida SÍ, porque su 2.º dispositivo necesita recorrer su propia vuelta), takeover de migración
     /// ABANDONADA o reversa ajena con lease expirado
-    /// >60min, re-claim idempotente del MISMO líder sin chequear edad. Sin JWT → `.sessionExpired`
-    /// (patrón `performClaim`: el runner corta SIN evento, retomable). NUNCA lanza — los breadcrumbs de
-    /// outcome los emite el runner (`driveReverseClaim`).
+    /// >60min, re-claim idempotente del MISMO líder sin chequear edad. Sin JWT → `.transient` si el SDK conserva la
+    /// sesión, `.sessionExpired` si la borró (el runner corta SIN evento en los dos; solo el segundo deja rastro para
+    /// la pantalla). NUNCA lanza — los breadcrumbs de outcome los emite el runner (`driveReverseClaim`), **salvo los
+    /// dos de esta puerta**: solo aquí se sabe cuál de las dos causas dejó el token sin llegar.
     func performReverseClaim() async -> ReverseClaimOutcome {
         guard let jwt = await session.accessToken(), !jwt.isEmpty else {
+            // El token que no llega tiene DOS causas y la pantalla las trata distinto: si el SDK conserva la sesión
+            // guardada, la renovación no volvió (sin red, un 5xx del servidor de auth) y esperar lo arregla; solo si
+            // la BORRÓ hay que volver a entrar. Molde de `SyncPushClient.push`, y el mismo falso positivo que cerró
+            // `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`: sin él, quedarse sin cobertura a
+            // mitad de la vuelta pediría iniciar sesión, que no es lo que falta. El SDK borra la sesión ANTES de
+            // lanzar, así que se lee DESPUÉS del `await`.
+            guard !session.canRenewSession else {
+                CloudSyncBreadcrumb.migrationClaimNoSuccess(reason: "reverse: token unavailable, session kept")
+                return .transient
+            }
+            CloudSyncBreadcrumb.migrationClaimNoSuccess(reason: "reverse: sessionExpired")
             return .sessionExpired
         }
         switch await accountClient.migrationProgress(jwt: jwt, deviceID: deviceID, action: "reverse_claim") {
@@ -920,7 +942,18 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     }
 
     /// `reverseDrainAll` (§h): drain de la History local → outbox, push del residual, y `pullAndApplyOnce`
-    /// (pull FINAL). Reusa las piezas de `verify()` (partición poison + push + apply). Red → `.transient`.
+    /// (pull FINAL). Reusa las piezas de `verify()` (partición poison + push + apply). Red → `.transient`; una sesión
+    /// que ya no vale → `.sessionExpired`, que el runner deja ver en la pantalla (ticket
+    /// `reverse-before-mount-stays-stuck-with-an-expired-session`).
+    ///
+    /// **El token que no llega sin red NO cae aquí**: lo separan `SyncPushClient` y `SyncPullClient` con su
+    /// `canRenewSession` (desde `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`), y lo mismo el 401
+    /// `yala_attest_required`. Los dos llegan como `.transient`. Por eso este paso no repite esa puerta: si algún día
+    /// se construyen esos clientes sin `canRenewSession`, el default `{ false }` volvería a decir aquí «vuelve a
+    /// entrar» a quien solo está sin cobertura — lo fija `AttestWiringTests`.
+    ///
+    /// `.accountUnavailable` (403, cuenta suspendida) se queda en `.transient`, como hasta hoy: no es una sesión que
+    /// renovar, y ofrecer «Iniciar sesión» ahí mandaría a un gesto que no cambia nada. Tiene su propio residual.
     func reverseDrainOnce() async -> ReverseStepOutcome {
         engine.drainOnce(context: context)
         let allLive = liveOutboxRows()
@@ -930,45 +963,60 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             switch await pushClient.push(live) {
             case .completed(let results):
                 await pushClient.applyResults(results, rows: live, engine: engine, context: context)
-            case .sessionExpired, .accountUnavailable, .transient:
+            case .sessionExpired:
+                return .sessionExpired
+            case .accountUnavailable, .transient:
                 return .transient
             }
         }
         switch await engine.pullAndApplyOnce(using: pullClient, context: context, now: now()) {
         case .completed:
             return .completed
-        case .busy, .transient, .sessionExpired, .accountUnavailable:
+        case .sessionExpired:
+            return .sessionExpired
+        case .busy, .transient, .accountUnavailable:
             return .transient
         }
     }
 
     /// `reverseFreezeBackend` (§h, I11-3): `reverse_freeze` server-side — estampa `reverse_frozen_at`
     /// (guard reverse-líder SIN edad de lease: el MISMO líder lento siempre puede continuar; idempotente).
-    /// `.ok` → `true`; el resto → breadcrumb + `false` (el runner corta retomable SIN evento). El
+    /// `.ok` → `.completed`; el resto → breadcrumb + corte retomable SIN evento. **Devolvía `Bool`** hasta el ticket
+    /// `reverse-before-mount-stays-stuck-with-an-expired-session`: ese `false` único metía en el mismo saco la red y
+    /// una sesión que solo la persona puede renovar, y la barra se quedaba muda al 62 %. El
     /// ENFORCEMENT del freeze en `/sync/push` está ACTIVO (cerrado 2026-07-11): el gateway rechaza 409
     /// `yala_account_reverting` los pushes con `reverse_frozen_at` set. NO afecta a esta reversa: todos
     /// sus pushes (`reverseDrainOnce`) ocurren ANTES de este freeze (ver qa/cloud/README.md). NUNCA lanza.
-    func freezeBackendForReverse() async -> Bool {
+    ///
+    /// `/account/migration` NO exige App Attest (ver la cabecera de `CloudAccountClient`), así que su 401 es siempre
+    /// el JWT: aquí no hay que separar el segundo 401 que sí tienen `/sync/*` y `/prefs/*`.
+    func freezeBackendForReverse() async -> ReverseStepOutcome {
         guard let jwt = await session.accessToken(), !jwt.isEmpty else {
+            // Las dos causas del token ausente, como en `performReverseClaim`: con la sesión guardada es la renovación
+            // que no volvió (sin red) y esperar la arregla; sin ella hay que volver a entrar.
+            guard !session.canRenewSession else {
+                CloudSyncBreadcrumb.reverseFreezeRejected(reason: "token unavailable, session kept")
+                return .transient
+            }
             CloudSyncBreadcrumb.reverseFreezeRejected(reason: "sessionExpired")
-            return false
+            return .sessionExpired
         }
         switch await accountClient.migrationProgress(jwt: jwt, deviceID: deviceID, action: "reverse_freeze") {
         case .ok:
             CloudSyncBreadcrumb.reverseBackendFrozen()
-            return true
+            return .completed
         case .otherLeader:
             CloudSyncBreadcrumb.reverseFreezeRejected(reason: "otherLeader")
-            return false
+            return .transient
         case .rejected(let reason):
             CloudSyncBreadcrumb.reverseFreezeRejected(reason: reason)
-            return false
+            return .transient
         case .sessionExpired:
             CloudSyncBreadcrumb.reverseFreezeRejected(reason: "sessionExpired")
-            return false
+            return .sessionExpired
         case .transient:
             CloudSyncBreadcrumb.reverseFreezeRejected(reason: "transient")
-            return false
+            return .transient
         }
     }
 

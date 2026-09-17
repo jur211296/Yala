@@ -429,7 +429,24 @@ struct StorageSettingsView: View {
                 .multilineTextAlignment(.center)
             // #36 (H1): estado honesto mientras el resume espera la quiescencia del import (pre-espera
             // 300s) o quedó aparcado tras vencer el tope — antes se aparcaba EN SILENCIO.
-            if controller.resumeWaitingForImport {
+            // **La sesión caducada va PRIMERA, y lo decidió una medición, no el orden natural.** La rama de abajo
+            // (`resumeWaitingForImport`) no depende de la fase y su tope de 300 s la DEJA encendida a propósito: con
+            // ella delante, una vuelta parada por la sesión enseñaba «esperando a que iCloud termine…» —falso— y
+            // dejaba debajo un botón de firmar sin nada que lo explicara, para siempre si el tope venció. De las dos
+            // cosas ciertas a la vez, manda la que la persona puede desatascar.
+            if controller.reverseNeedsSignIn {
+                // La vuelta a iCloud se paró porque la sesión de la nube ya no vale, antes de montar el espejo: la
+                // barra parada al 15/30/50/62 % del ticket `reverse-before-mount-stays-stuck-with-an-expired-session`.
+                // Esperar no la renueva, así que aquí no basta con decirlo: el botón de abajo lo OFRECE.
+                //
+                // Sin término `reverse`: la fase la decide el runner, que solo observa esto en las cuatro fases de la
+                // vuelta. Repetir aquí esa condición dejaría verde a un mutante en la del runner.
+                Text(L10n.Storage.Progress.reverseNeedsSignIn)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .accessibilityIdentifier("storage_reverse_needs_signin_caption")
+            } else if controller.resumeWaitingForImport {
                 Text(L10n.Storage.Progress.waitingImport)
                     .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
@@ -447,6 +464,15 @@ struct StorageSettingsView: View {
                 // La vuelta a iCloud espera a que el mirror suba los datos: la barra al 95 % muda del ticket
                 // `reverse-upload-has-no-ceiling-and-no-exit`. Cuántos faltan, o por qué no pueden llegar.
                 reverseUploadCaption(controller)
+            }
+            if controller.reverseNeedsSignIn {
+                // Va ANTES de «Retomar» y con peso de botón primario: es lo único que desatasca. «Retomar» se queda
+                // debajo y no miente — si la sesión revivió por otra entrada, sigue funcionando.
+                YalaPrimaryButton(L10n.Storage.Sync.signInButton, icon: "person.crop.circle.badge.checkmark",
+                                  isDisabled: controller.isWorking) {
+                    Task { await controller.signInToResumeReverse() }
+                }
+                .accessibilityIdentifier("storage_reverse_signin_button")
             }
             Button {
                 Task { await controller.resume() }
