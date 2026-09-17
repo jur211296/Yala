@@ -5,10 +5,33 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-17 (Lima)
 
-**Rama** `2.1` — Merge #189: **«Descargando tus datos…» ya no gira al lado del aviso de App Attest.**
+**Rama** `2.1` — Merge #190: **«Activar la nube» ya no usa la cuenta que dejó abierta la persona anterior.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#189 · «Descargando tus datos…» ya no gira al lado del aviso de App Attest)
+## Esta sesión (#190 · «Activar la nube» ya no usa la cuenta que dejó abierta la persona anterior)
+
+**En un iPhone que pasó por «Empezar desde cero», «Activar la nube» ya no promueve la cuenta que dejó abierta la persona
+anterior.** Sale «Esta cuenta puede ser de otra persona» antes del consentimiento, y la salida es desasociarla en «Grupos» y
+volver a activar la nube para elegir la propia. Fue un encargo de noche con tu decisión del 16-sep: elegí bloquear en vez de
+preguntar y limitarlo a teléfonos sellados, y las dos elecciones están en el PR como lo discutible.
+
+**La review (dos lentes) tumbó mi primera versión:** las dos cazaron por separado que la hoja de Grupos asociaba la sesión
+viva cuando una invitación se quedaba sin token, y eso le daba a la puerta la cuenta de la persona anterior como «asociada».
+Ahora el escritor de la asociación exige que la sesión la abriera el propio sign-in, y la salida del aviso ya no escribe en
+el iCloud-KV del Apple ID anterior.
+
+**Qué te toca:**
+
+1. El QA en iPhone de `fresh-start-keeps-a-groups-session-that-migrate-promotes` (en `qa`): 13 pasos, con reinstalación y
+   SQL de staging.
+2. Decidir `previous-person-cloud-session-survives-fresh-start-and-reinstall` (high). Tras reinstalar no queda sello, el
+   arranque asocia la sesión anterior y la puerta no la ve; además el Welcome, «Activar Yala completo», Grupos y la tarjeta
+   de adopt la reusan. Hay cuatro opciones en el ticket.
+
+Validación: build ×2 · unit 7206 casos en 731 suites · XCUITest 31 en 10 clases con centinela en 0 · 18 mutantes cazados ·
+review con 2 lentes · `validate-coverage` OK · `docs/TICKETS.md` igual al disco (446) · **CI verde** (tests 20 min).
+
+## Sesión anterior (#189 · «Descargando tus datos…» ya no gira al lado del aviso de App Attest)
 
 **En la nube, un teléfono sin App Attest ya no ve la ruedecita girando para siempre al lado del aviso.** Con el veredicto
 de App Attest terminal, «Descargando tus datos…» se esconde y queda solo «Este teléfono no puede sincronizar tus datos».
@@ -28,7 +51,7 @@ datos o al terminar la descarga).
 Validación: build ×2 · unit 7194 casos en 731 suites · XCUITest 5 en 3 clases con centinela en 0 · 8 mutantes cazados ·
 review con 2 lentes · `validate-coverage` OK · `docs/TICKETS.md` igual al disco (444) · **CI verde** (tests 23 min).
 
-## Sesión anterior (#188 · sin red, el canal personal ya no lee una renovación fallida como sesión caducada)
+## Sesión #188 · sin red, el canal personal ya no lee una renovación fallida como sesión caducada
 
 **Con la cuenta en la nube, un corte de red al caducar la sesión ya no para la sincronización ni pide iniciar sesión.** Si
 la sesión caduca sin conexión mientras la verificación de App Attest sigue en caché (los 15 min tras usarla), o si cae el
