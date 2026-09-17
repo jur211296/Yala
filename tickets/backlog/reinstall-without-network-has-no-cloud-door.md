@@ -62,3 +62,9 @@ es la ÚNICA salida, y en esta ventana no existe.
 - `reentry-killswitch-closes-both-doors` — la misma pantalla con el kill-switch ENCENDIDO.
 - `previous-person-cloud-session-survives-fresh-start-and-reinstall` — de donde sale.
 - `beacon-routes-only-never-blocks` — el faro, que aquí tampoco puede encaminar.
+
+## Decisión Jürgen (2026-09-17)
+
+**Opción 2:** mensaje honesto en Restaurar cuando no se pudo comprobar la nube (no fingir «no encontramos tus datos» si solo falló la comprobación / no hay red).
+
+No ahora: persistir snapshot fuera del contenedor (opción 3). Opción 1 sola no basta para el caso sin red.
