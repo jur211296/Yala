@@ -19,5 +19,5 @@ Sign in with Apple nativo.
 - **D18 deja una salida cerrada a sabiendas**: una migración abandonada por su líder, o por el mismo iPhone tras
   reinstalar, ya no se puede retomar desde «Activar la nube» en otro dispositivo. Si aparece en campo, el sitio es
   `settings-migrate-blocks-a-second-device-before-its-marker`, no reabrir el seguidor.
-- El ticket `high` que dejó es `fresh-start-keeps-a-groups-session-that-migrate-promotes` (ya pasaba en `2.1`).
+- El ticket `high` que dejó, `fresh-start-keeps-a-groups-session-that-migrate-promotes`, lo cerró el PR #190 en un teléfono sellado: ver [[sesion-anterior-tras-empezar-de-cero]].
 - Relacionado: [[mi-puerta-bloquea-lo-que-su-propio-flujo-dejo]], [[una-ventana-dura-lo-que-su-reintento]].
