@@ -948,6 +948,21 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncReverse claimRejected reason=\(reason, privacy: .public) — vuelve al origin")
     }
 
+    /// La vuelta a iCloud se paró en una fase ANTERIOR al montaje del espejo porque la sesión de la nube ya no vale
+    /// (ticket `reverse-before-mount-stays-stuck-with-an-expired-session`). `phase` = `claim`/`drain`/`verify`/`freeze`:
+    /// sin PII. La fase sigue journaleada y retomable; lo que cambia es que la pantalla lo dice y ofrece volver a
+    /// entrar en vez de dejar la barra parada. Se emite en el FLANCO, no en cada re-kick de 30 s.
+    /// El sign-in que ofrece la tarjeta de la vuelta trajo OTRA cuenta y la vuelta NO se retomó (ticket
+    /// `reverse-before-mount-stays-stuck-with-an-expired-session`). Sin PII: ni el `sub` viejo ni el nuevo.
+    static func reverseSignInAccountMismatch() {
+        logger.notice("CloudSyncReverse signInAccountMismatch — otra cuenta, la vuelta NO se retoma")
+    }
+
+    static func reverseBlockedByExpiredSession(phase: String) {
+        logger.notice(
+            "CloudSyncReverse blockedByExpiredSession phase=\(phase, privacy: .public) — pide volver a entrar")
+    }
+
     /// §h.3 `deletingZombies`: el barrido tombstones-del-backend-vs-filas-vivas borró `count` filas vivas
     /// que un re-import de CloudKit congelado había RESUCITADO (0 en el caso normal, token vigente → replay
     /// del mirror cubre todo; load-bearing solo en el edge de token inválido). Sin PII (solo el conteo).

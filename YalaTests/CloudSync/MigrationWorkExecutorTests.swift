@@ -32,7 +32,12 @@ private final class FakeSession: CloudSyncSessionProviding {
     init(token: String?, userID: String?) { self.token = token; self.userID = userID }
     var currentUserID: String? { userID }
     func accessToken() async -> String? { token }
-    var canRenewSession: Bool { token != nil }
+    /// Lo que hoy separa «sin red» de «vuelve a entrar» en los pasos de la reversa que piden el token a mano
+    /// (ticket `reverse-before-mount-stays-stuck-with-an-expired-session`). **Sin override el default deriva del
+    /// token**, que es el trato de antes de ese ticket: sin token no se puede renovar ⇒ sesión caducada. Ponerlo a
+    /// `true` con `token = nil` es el caso nuevo: la renovación no volvió, pero la sesión sigue guardada.
+    var canRenewSessionOverride: Bool?
+    var canRenewSession: Bool { canRenewSessionOverride ?? (token != nil) }
     func attestToken() async throws -> String? { nil }
 }
 
@@ -97,6 +102,9 @@ private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
     private(set) var lastMigrationBody: [String: Any]?
     private(set) var migrationCallCount = 0
     var pushStatus = 200
+    /// 401 aquí = sesión caducada del pull, que es la mitad que `reverseDrainOnce` y `verify` no podían separar
+    /// hasta el ticket `reverse-before-mount-stays-stuck-with-an-expired-session`.
+    var pullStatus = 200
     var merkleBody = Data()
     private let lock = NSLock()
     private(set) var pushedSyncIDs: [String] = []
@@ -137,6 +145,7 @@ private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
             return (body, resp(200))
         }
         if path.contains("sync/pull") {
+            if pullStatus != 200 { return (Data(), resp(pullStatus)) }
             return (Data("{\"deltas\":[],\"max_server_seq\":0}".utf8), resp(200))
         }
         if path.contains("sync/merkle") {
@@ -527,6 +536,67 @@ struct MigrationWorkExecutorTests {
         #expect(live.isEmpty, "tras el push el outbox vivo debe quedar limpio")
     }
 
+    /// **El 401 del canal deja de colapsar en «red», y esto es lo que la pantalla necesita para poder decir algo.**
+    /// Hasta el ticket `reverse-before-mount-stays-stuck-with-an-expired-session`, `verify()` devolvía
+    /// `.networkTimeout` y `reverseDrainOnce()` `.transient` ante una sesión que ya no vale: esperar no la renueva,
+    /// así que la vuelta a iCloud se quedaba parada al 30 % y al 50 % sin decirlo.
+    ///
+    /// Los dos caminos que producen ese 401 se prueban por separado —el push y el pull—, porque cada uno tiene su
+    /// `case` y un mutante puede colapsar solo uno. Aquí llegan como sesión caducada porque estos clientes se
+    /// construyen con el default `{ false }` de `canRenewSession`; en producción el token que no llega sin red se
+    /// queda en `.transient` antes de llegar aquí.
+    @Test("verify y reverseDrainOnce: un 401 del canal sale como sesión caducada, no como red")
+    func reverseSteps_channel401_surfaceAsSessionExpired() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let executor = makeExecutor(context, engine, stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+
+        // — Por el PULL, con el outbox vacío (no hay push que hacer).
+        stub.pullStatus = 401
+        #expect(await executor.verify() == .sessionExpired, "verify: el 401 del pull es sesión caducada")
+        #expect(await executor.reverseDrainOnce() == .sessionExpired, "drain: el 401 del pull es sesión caducada")
+
+        // — Por el PUSH, que corre ANTES del pull: con una fila viva pendiente se llega a él primero.
+        stub.pullStatus = 200
+        stub.pushStatus = 401
+        context.insert(Category(name: "food", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false))
+        try context.save()
+        #expect(await executor.verify() == .sessionExpired, "verify: el 401 del push es sesión caducada")
+        #expect(await executor.reverseDrainOnce() == .sessionExpired, "drain: el 401 del push es sesión caducada")
+
+        // — Controles en la dirección contraria, por las DOS rutas. Sin ellos, un mutante que mandara todo a
+        // `.sessionExpired` saldría verde y la tarjeta diría «Tu sesión caducó. Vuelve a entrar» a quien solo está
+        // sin cobertura, que es el falso positivo que este cambio existe para no cometer.
+        stub.pushStatus = 503
+        #expect(await executor.verify() == .networkTimeout, "verify: un 5xx del push sigue siendo red")
+        #expect(await executor.reverseDrainOnce() == .transient, "drain: un 5xx del push sigue siendo red")
+
+        // — Y el 403: cuenta suspendida. NO es una sesión que renovar, así que tampoco puede pedir volver a entrar —
+        // «Iniciar sesión» ahí manda a un gesto que no cambia nada. Decisión documentada en `reverseDrainOnce`.
+        stub.pushStatus = 403
+        #expect(await executor.verify() == .networkTimeout, "verify: el 403 del push NO pide volver a entrar")
+        #expect(await executor.reverseDrainOnce() == .transient, "drain: el 403 del push NO pide volver a entrar")
+
+        // El 403 del PULL exige el outbox vacío: con filas vivas, el push las sube y `verify()` sale por
+        // `.newDeltaDetected` antes de llegar al pull. Un `reverseDrainOnce` con el push en 200 lo limpia.
+        stub.pushStatus = 200
+        #expect(await executor.reverseDrainOnce() == .completed, "control: con todo en 200, el drain cierra")
+        #expect(liveOutboxRows(context).isEmpty, "control del escenario: sin este vacío, el pull no se alcanza")
+        stub.pullStatus = 403
+        #expect(await executor.verify() == .networkTimeout, "verify: el 403 del pull NO pide volver a entrar")
+        #expect(await executor.reverseDrainOnce() == .transient, "drain: el 403 del pull NO pide volver a entrar")
+    }
+
+    /// Filas vivas del outbox: el escenario de arriba depende de que esté vacío, y afirmarlo es lo que impide que el
+    /// caso se sostenga por casualidad (la trampa del «escenario que no recorre la rama que dice»).
+    private func liveOutboxRows(_ context: ModelContext) -> [SyncOutbox] {
+        ((try? context.fetch(FetchDescriptor<SyncOutbox>())) ?? []).filter { $0.rejectedReason == nil }
+    }
+
     @Test("verify limpio: pull vacío marca lastPull + Merkle converge → match")
     func verify_clean_converged_match() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
@@ -794,9 +864,20 @@ struct MigrationWorkExecutorTests {
 
         session.token = nil
         #expect(await executor.performReverseClaim() == .sessionExpired, "sin JWT → sessionExpired SIN tocar la red")
+
+        // El caso que abre el ticket `reverse-before-mount-stays-stuck-with-an-expired-session`: el token no llega
+        // pero el SDK CONSERVA la sesión ⇒ la renovación no volvió (sin red, 5xx del servidor de auth), no hay nada
+        // que volver a firmar. Sin esta separación, quedarse sin cobertura a mitad de la vuelta pediría iniciar
+        // sesión — el mismo falso positivo que cerró `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`.
+        session.canRenewSessionOverride = true
+        #expect(await executor.performReverseClaim() == .transient,
+                "token ausente con la sesión guardada → pasajero, NO sesión caducada")
     }
 
-    @Test("freezeBackendForReverse: ok → true + BODY {device_id, action:'reverse_freeze'}; rechazo/red/sin-JWT → false")
+    @Test("""
+        freezeBackendForReverse: ok → completed + BODY {device_id, action:'reverse_freeze'}; rechazo/red → transient; \
+        sin JWT → sessionExpired, salvo que el SDK conserve la sesión (entonces pasajero)
+        """)
     func reverseFreeze_bodyAndOutcomes() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
@@ -804,21 +885,32 @@ struct MigrationWorkExecutorTests {
         let stub = RoutingStub()
         let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
-        #expect(await executor.freezeBackendForReverse() == true)
+        #expect(await executor.freezeBackendForReverse() == .completed)
         #expect(stub.lastMigrationBody?["device_id"] as? String == "device-1")
         #expect(stub.lastMigrationBody?["action"] as? String == "reverse_freeze")
 
         stub.migrationBody = Data("{\"ok\":false,\"reason\":\"other_leader\"}".utf8)
-        #expect(await executor.freezeBackendForReverse() == false)
+        #expect(await executor.freezeBackendForReverse() == .transient)
 
         stub.migrationBody = Data("{\"ok\":false,\"reason\":\"not_in_progress\"}".utf8)
-        #expect(await executor.freezeBackendForReverse() == false)
+        #expect(await executor.freezeBackendForReverse() == .transient)
 
         stub.migrationStatus = 500
-        #expect(await executor.freezeBackendForReverse() == false)
+        #expect(await executor.freezeBackendForReverse() == .transient)
 
+        // 401 del gateway: `/account/migration` NO exige App Attest, así que su 401 es siempre el JWT (a diferencia
+        // de `/sync/*`, donde hay un segundo 401 que es del attest y NO pide volver a entrar).
+        stub.migrationStatus = 401
+        #expect(await executor.freezeBackendForReverse() == .sessionExpired)
+
+        stub.migrationStatus = 200
         session.token = nil
-        #expect(await executor.freezeBackendForReverse() == false)
+        #expect(await executor.freezeBackendForReverse() == .sessionExpired,
+                "sin JWT y sin sesión guardada → hay que volver a entrar")
+
+        session.canRenewSessionOverride = true
+        #expect(await executor.freezeBackendForReverse() == .transient,
+                "token ausente con la sesión guardada → pasajero: esperar lo arregla")
     }
 
     @Test("execute(.completeReverseServer): ok → no throw + BODY {device_id, action:'reverse_complete'}; rechazo → throw retomable")

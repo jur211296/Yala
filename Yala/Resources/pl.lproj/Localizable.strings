@@ -6017,3 +6017,9 @@
 
 /* Restaurar: cuerpo del estado sin comprobar — no afirma que falten datos ni que existan (reinstall-without-network-has-no-cloud-door) */
 "welcome.restore.cloudUnverifiedBody" = "Nie udało się połączyć, aby sprawdzić, czy masz zapisane dane. Spróbuj ponownie za chwilę.";
+
+/* Caption de la tarjeta de progreso de la vuelta a iCloud cuando la sesión de la nube ya no vale */
+"storage.progress.reverseNeedsSignIn" = "Twoja sesja wygasła. Zaloguj się ponownie, aby dokończyć powrót do iCloud.";
+
+/* Aviso cuando el sign-in para retomar la vuelta a iCloud trae una cuenta distinta */
+"storage.errors.reverseSignInOtherAccount" = "Zalogowano się na inne konto. Zaloguj się na konto, z którego rozpoczął się powrót do iCloud.";

@@ -152,6 +152,9 @@ enum MetricsCanary: String {
     case cloudReverseUploadAborted
     // Salida del claim de la reversa (ticket `reverse-claim-rejection-has-no-way-out-in-the-client`)
     case cloudReverseClaimRejected
+    // La vuelta a iCloud parada por una sesión que ya no vale, antes de montar el espejo (ticket
+    // `reverse-before-mount-stays-stuck-with-an-expired-session`)
+    case cloudReverseBlockedByExpiredSession
     /// «Migrar a la nube» se paró sin escribir nada porque la cuenta elegida no puede recibir la migración (ticket
     /// `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`). `detail` = `<motivo>@<dónde>`: el motivo es
     /// `personal_data`, `other_groups_account`, `returned_to_icloud`, `fresh_start_session` o `unchecked`, y el sitio
@@ -525,6 +528,18 @@ extension MetricsService {
     /// cuenta ya revertida (`reverse-exit-on-a-reverted-account-rejects-the-retry`).
     static func cloudReverseClaimRejected(reason: String) {
         canary(.cloudReverseClaimRejected, detail: reverseClaimRejectedDetail(serverReason: reason))
+    }
+
+    /// La vuelta a iCloud se paró porque la sesión de la nube ya no vale, en una fase anterior al montaje del espejo
+    /// (ticket `reverse-before-mount-stays-stuck-with-an-expired-session`). `detail` = la fase
+    /// (`claim`/`drain`/`verify`/`freeze`), un literal del propio build: no viene de la red, así que no necesita el
+    /// acotado a forma de código que sí lleva `cloudReverseClaimRejected`.
+    ///
+    /// **Una vez por proceso y fase** (`canaryOnce`): el re-kick de 30 s de la pantalla choca con la misma sesión
+    /// caducada cada medio minuto, y contado por observación una tarde mirando la barra llenaría el spool con un
+    /// único hecho. Cuenta TELÉFONOS que se atascan ahí, no cuántas veces lo reintentan.
+    static func cloudReverseBlockedByExpiredSession(phase: String) {
+        canaryOnce(.cloudReverseBlockedByExpiredSession, key: phase, detail: phase)
     }
 
     /// El motivo del servidor tal cual si tiene forma de código; si no, `other`. El gateway rechaza el LOTE entero de

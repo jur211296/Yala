@@ -5278,3 +5278,9 @@
 
 /* Restaurar: cuerpo del estado sin comprobar — no afirma que falten datos ni que existan (reinstall-without-network-has-no-cloud-door) */
 "welcome.restore.cloudUnverifiedBody" = "Não conseguimos ligar para verificar se tens dados guardados. Tenta de novo daqui a pouco.";
+
+/* Caption de la tarjeta de progreso de la vuelta a iCloud cuando la sesión de la nube ya no vale */
+"storage.progress.reverseNeedsSignIn" = "A tua sessão expirou. Inicia sessão de novo para terminares de voltar ao iCloud.";
+
+/* Aviso cuando el sign-in para retomar la vuelta a iCloud trae una cuenta distinta */
+"storage.errors.reverseSignInOtherAccount" = "Iniciaste sessão com outra conta. Inicia sessão com a conta a partir da qual começaste a voltar ao iCloud.";
