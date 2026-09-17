@@ -32,7 +32,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (452)
+## Index (456)
 
 | id | status | path |
 |---|---|---|
@@ -153,6 +153,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | discard-gate-proceed-leaves-the-imported-rows-behind | backlog | tickets/backlog/discard-gate-proceed-leaves-the-imported-rows-behind.md |
 | distribucion-recalcula-dos-veces-por-toque-y-sin-debounce | backlog | tickets/backlog/distribucion-recalcula-dos-veces-por-toque-y-sin-debounce.md |
 | distribution-balance-kpi-skips-fx | done | tickets/done/distribution-balance-kpi-skips-fx.md |
+| distribution-default-should-be-detail-not-charts | backlog | tickets/backlog/distribution-default-should-be-detail-not-charts.md |
 | distribution-subviews-miss-the-new-panel-hero | backlog | tickets/backlog/distribution-subviews-miss-the-new-panel-hero.md |
 | dmarc-sube-la-politica-tras-observar | backlog | tickets/backlog/dmarc-sube-la-politica-tras-observar.md |
 | doble-conteo-dia1-previo-thismonth | done | tickets/done/doble-conteo-dia1-previo-thismonth.md |
@@ -310,6 +311,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | migrate-before-the-groups-association-arrives-splits-the-accounts | backlog | tickets/backlog/migrate-before-the-groups-association-arrives-splits-the-accounts.md |
 | migrate-card-keeps-promising-an-account-the-check-refused | backlog | tickets/backlog/migrate-card-keeps-promising-an-account-the-check-refused.md |
 | migration-activation-drops-pending-effects-it-never-restores | backlog | tickets/backlog/migration-activation-drops-pending-effects-it-never-restores.md |
+| more-tab-missing-profile-button | backlog | tickets/backlog/more-tab-missing-profile-button.md |
 | multi-currency-accounts | backlog | tickets/backlog/multi-currency-accounts.md |
 | needsrelaunch-hides-the-groups-section | backlog | tickets/backlog/needsrelaunch-hides-the-groups-section.md |
 | neutral-boot-hands-owner-prefs-to-whoever-signs-in-next | backlog | tickets/backlog/neutral-boot-hands-owner-prefs-to-whoever-signs-in-next.md |
@@ -427,12 +429,14 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | signout-blocked-alert-button-has-no-test-identifier | backlog | tickets/backlog/signout-blocked-alert-button-has-no-test-identifier.md |
 | signout-pending-copy-says-wait-seconds-when-offline | done | tickets/done/signout-pending-copy-says-wait-seconds-when-offline.md |
 | siri-ai-integration-ios-27 | backlog | tickets/backlog/siri-ai-integration-ios-27.md |
+| siri-ai-visual-redesign | backlog | tickets/backlog/siri-ai-visual-redesign.md |
 | siri-intent-dual-container | done | tickets/done/siri-intent-dual-container.md |
 | siri-shortcut-error-replies-speak-english-on-a-spanish-iphone | backlog | tickets/backlog/siri-shortcut-error-replies-speak-english-on-a-spanish-iphone.md |
 | smart-ai-notifications | backlog | tickets/backlog/smart-ai-notifications.md |
 | spike-r3-eje-4b-flaky-en-suite-completa | backlog | tickets/backlog/spike-r3-eje-4b-flaky-en-suite-completa.md |
 | staging-test-credentials-in-public-repo | done | tickets/done/staging-test-credentials-in-public-repo.md |
 | staging-test-user-c-does-not-exist | backlog | tickets/backlog/staging-test-user-c-does-not-exist.md |
+| stats-filter-segment-tap-should-ask-include-or-exclude | backlog | tickets/backlog/stats-filter-segment-tap-should-ask-include-or-exclude.md |
 | stats-per-account-branch-keeps-stale-live-anchor | backlog | tickets/backlog/stats-per-account-branch-keeps-stale-live-anchor.md |
 | storage-actions-release-the-working-flag-under-a-running-resume | backlog | tickets/backlog/storage-actions-release-the-working-flag-under-a-running-resume.md |
 | storage-groups-section-stays-active-during-the-migrate-check | backlog | tickets/backlog/storage-groups-section-stays-active-during-the-migrate-check.md |

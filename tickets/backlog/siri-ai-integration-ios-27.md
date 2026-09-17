@@ -36,3 +36,5 @@ una investigación con conclusiones escritas.
 
 - [[siri-intent-dual-container]] — el intent de Siri que ya existe, y su callout sobre contenedores.
 - [[storekit-appgroup-siri-pro-gate]] — el gate Pro de Siri vía App Group.
+
+- [[siri-ai-visual-redesign]] — rediseño visual (brief Dan pendiente; capturado 2026-09-17).

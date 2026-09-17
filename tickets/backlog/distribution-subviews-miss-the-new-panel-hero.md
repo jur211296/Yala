@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "panel, statistics"
 created: 2026-09-09
+updated: 2026-09-17
 source: idea Jürgen 2026-09-09
 ---
 
@@ -55,3 +56,10 @@ Idea capturada, **sin spec**.
 - [[hero-estadisticas-stock-vs-flujo-entre-pestanas]] — el hero de Estadísticas cambia de
   significado entre pestañas. Con cuatro implementaciones paralelas se entiende por qué; conviene
   resolverlo en el mismo diseño y no después.
+
+## Ampliación Jürgen (2026-09-17)
+
+No solo Distribución: **alinear el Hero de Estadísticas (todas sus subvistas) con el nuevo hero del Panel, incluidos los FABs**. Si hay más vistas con hero en la app, también.
+
+Esto ensancha el alcance del ticket: Panel hero + FABs como referencia única; Estadísticas completa; auditar otras pantallas con hero paralelo.
+
