@@ -32,7 +32,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (442)
+## Index (444)
 
 | id | status | path |
 |---|---|---|
@@ -103,7 +103,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-attest-notice-does-not-cover-a-gateway-rejected-token | backlog | tickets/backlog/cloud-attest-notice-does-not-cover-a-gateway-rejected-token.md |
 | cloud-engine-can-start-with-a-reverse-abort-pending | backlog | tickets/backlog/cloud-engine-can-start-with-a-reverse-abort-pending.md |
 | cloud-fx-rates-blob-two-faces | done | tickets/done/cloud-fx-rates-blob-two-faces.md |
-| cloud-hydration-spinner-never-gives-up-without-attest | backlog | tickets/backlog/cloud-hydration-spinner-never-gives-up-without-attest.md |
+| cloud-hydration-banner-does-not-see-data-that-arrives-after-mount | backlog | tickets/backlog/cloud-hydration-banner-does-not-see-data-that-arrives-after-mount.md |
+| cloud-hydration-spinner-keeps-spinning-with-the-engine-stopped | backlog | tickets/backlog/cloud-hydration-spinner-keeps-spinning-with-the-engine-stopped.md |
+| cloud-hydration-spinner-never-gives-up-without-attest | done | tickets/done/cloud-hydration-spinner-never-gives-up-without-attest.md |
 | cloud-killswitch-hides-the-only-door-to-detach-groups | done | tickets/done/cloud-killswitch-hides-the-only-door-to-detach-groups.md |
 | cloud-migration-offers-the-cloud-to-a-phone-without-app-attest | qa | tickets/qa/cloud-migration-offers-the-cloud-to-a-phone-without-app-attest.md |
 | cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest | qa | tickets/qa/cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest.md |

@@ -242,6 +242,25 @@ terminal y, en los cierres de sesión, una salida que pierde esos cambios con co
   - **Sin XCUITest positivo**: verlo exige `storageMode == .cloud` y no hay seam de uitest que lo ponga (precedente en
     `SessionExitsPerCellUITests`). Lo cubren la tabla unitaria y un XCUI **negativo** sobre `.icloud` con la racha
     sembrada — el que impide decirle a todo usuario de iCloud que su teléfono no sincroniza.
+  - **«Descargando tus datos…» se esconde con el veredicto terminal desde el 2026-09-17** (ticket
+    `cloud-hydration-spinner-never-gives-up-without-attest`; el porqué largo, en `CloudHydrationBanner.swift`). **Se
+    apoya en que el pull del MOTOR exige token y ese token borra la racha** (`resolveAttest` → `recordAcceptance`): si el
+    motor llega a bajar sin pasar por su puerta, o ese token deja de borrar la racha, el banner se esconde durante una
+    hidratación real. Los pulls de la migración ya bajan sin ella (`MigrationWorkExecutor.verify` y el drenaje de la
+    vuelta a iCloud, con el attest en `try?`) y no tocan la racha. Tres decisiones lo sostienen:
+    - lee `GroupsAttestStreakStore.isTerminal()` a secas: las otras condiciones de `CloudAttestNotice.isShowing` dicen a
+      quién le es cierta la frase del aviso, no si el motor baja algo, y con ellas el spinner volvería sin sesión;
+    - lo lee vivo en su tick de 1 s: con `.cloudAttestVerdictWatcher` serían dos `@State`, el del Panel y el del overlay,
+      que se refrescan en momentos distintos, y el aviso podía salir con el spinner girando;
+    - el sondeo termina solo por `CloudHydrationLogic.keepsWatching`, que no mira el veredicto: es otro lector sin el
+      testigo del ciclo, como los dos avisos, y el primer ciclo borra una racha heredada justo antes de bajar. Lo fija
+      `CloudHydrationBannerWiringTests`: el cuerpo entero del `.task`, dónde cuelga y quién escribe `visible`.
+
+    **Residual aceptado, y es el del aviso visto desde el otro lado:** si las 24 h se cumplen con la app delante, nadie
+    escribe la racha. El spinner se va en un tick y el aviso espera a su siguiente refresco, así que en ese rato no sale
+    ninguno. Con el motor reintentando el hueco dura como mucho un backoff (300 s), porque el rechazo que marca
+    `terminalReported` notifica. Con el motor parado por `.unavailable` dura hasta el siguiente gesto. Con el reloj hacia
+    atrás justo después del cruce salen los dos hasta ese gesto.
 
 ### La racha es del TELÉFONO: la escriben los dos canales (2026-09-15)
 

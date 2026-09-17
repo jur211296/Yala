@@ -27,8 +27,9 @@ decisión de «¿Panel o Ajustes?» en «las dos, y la de Ajustes no es un extra
 - **No hay seam de uitest para `storageMode == .cloud`** y eso acota la cobertura de toda esta familia
   (precedente: `SessionExitsPerCellUITests`). Si alguna vez merece la pena crearlo, es ticket propio:
   escribir ese modo cambia el montaje del store personal.
-- Deja además `cloud-hydration-spinner-never-gives-up-without-attest` (el spinner «Descargando tus
-  datos…» que gira para siempre y ahora contradice al aviso).
+- Dejó además `cloud-hydration-spinner-never-gives-up-without-attest` (el spinner «Descargando tus
+  datos…» que giraba al lado del aviso). **Cerrado el 2026-09-17 en el PR #189**:
+  [[spinner-hidratacion-se-rinde]].
 
 Relacionado: [[project_grupos_avisa_sin_attest]] · [[project_telefono_sin_attest_veredicto_y_salida]] ·
 [[feedback_el_copy_que_promete_se_recorre]] · [[feedback_el_termino_nuevo_desarma_el_test_viejo]]

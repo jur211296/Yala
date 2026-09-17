@@ -65,6 +65,7 @@
 - [Tras la puerta, el error es otro](feedback_tras_la_puerta_el_error_es_otro.md) — copié «el 401 del attest suma a la racha» de Grupos al personal, donde una puerta ya filtra al teléfono: tres falsos positivos.
 - [El guion de QA tiene que distinguir builds](feedback_el_guion_de_qa_tiene_que_distinguir_builds.md) — sin red la puerta de attest salía antes del push: el PASS habría sido falso.
 - [La review adversarial caza lo MÍO](feedback_review_adversarial_caza_lo_mio.md) — el 14-sep cazó que MI ARREGLO no arreglaba, con 5 mutantes y una captura del simulador ya en verde.
+- [Apagar una voz destapa el residual de la otra](feedback_apagar_una_voz_destapa_el_residual_de_la_otra.md) — el spinner tapaba con una mentira el hueco del aviso; al callarlo quedó silencio.
 - [La fase ajena tiene otros escritores](feedback_la_fase_ajena_tiene_otros_escritores.md) — mi «en vuelo» leía un `.idle` como transitorio; Ajustes lo ponía y dejaba un progreso eterno.
 - [El flag que conserva deja estado incoherente](feedback_el_flag_que_conserva_deja_estado_incoherente.md) — «conservar preferencias» ≠ «conservar estado de las filas»: el centinela del seed dejó al usuario sin categorías.
 - [Mi escritura dispara el `onChange` que evito](feedback_mi_escritura_dispara_el_onchange_que_evito.md) — cancelar antes de escribir no cancela nada.
@@ -102,6 +103,7 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build incremental.
 
 ## Estado del trabajo
+- [El spinner de hidratación se rinde con el veredicto](project_spinner_hidratacion_se_rinde.md) — PR #189; done sin device-QA; residual del reloj y dos decisiones low.
 - [El canal personal lee pasajero el token nulo sin red](project_sync_personal_token_nulo_pasajero.md) — en qa con un guion de ventana estrecha; dos decisiones de producto esperan.
 - [«Migrar a la nube» ya no adopta](project_migrar_a_la_nube_no_adopta.md) — PR #187; en qa por pasos en iPhone; D18 cierra a sabiendas la salida de una migración abandonada.
 - [Un rechazo al volver a iCloud ya sale a la nube](project_rechazo_del_claim_de_la_reversa.md) — PR #186; en qa con SQL en staging; la salida repone lo que la entrada tiró.

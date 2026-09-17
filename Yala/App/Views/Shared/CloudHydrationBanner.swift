@@ -16,16 +16,23 @@
 //  re-entrada. Al retirarse M1 (2026-09-13) se fue el primer término y quedó lo que de verdad decide; el
 //  nombre cambió con él, porque «secundario» ya no describe nada.
 //
-//  Los dos falsos positivos que sigue evitando: quien ya tiene sus datos en pantalla (no espera nada) y
-//  quien no tiene motor de nube (no hay ninguna descarga que explicar).
+//  Los tres falsos positivos que evita: quien ya tiene sus datos en pantalla (no espera nada), quien no
+//  tiene motor de nube (no hay ninguna descarga que explicar) y, desde el 2026-09-17, **el teléfono que no
+//  consigue App Attest**: con el veredicto terminal el motor no baja nada, y el aviso de attest ya explica
+//  por qué (ticket `cloud-hydration-spinner-never-gives-up-without-attest`). Antes giraba para siempre al
+//  lado de ese aviso, diciendo que descargaba lo que el aviso decía que no iba a llegar.
 //
 //  Poll de 1s (molde del refresh de StorageSettingsView): `hasCompletedFirstPull` no es
-//  @Observable. Costo cero para el modo privado: sin motor, el task sale en el primero.
+//  @Observable, y el veredicto tampoco —vive en `UserDefaults` y depende del reloj—. Costo cero para el
+//  modo privado: sin motor, el task sale en el primero.
 //
 import SwiftUI
 
 /// Decisión pura del banner (testeable en tabla).
 nonisolated enum CloudHydrationLogic {
+    /// ¿Se enseña «Descargando tus datos…» AHORA? Sin parámetros por defecto a propósito: quien llame se
+    /// pronuncia sobre los cuatro, como en `CloudAttestNoticeLogic.showsNotice`.
+    ///
     /// - Parameters:
     ///   - firstPullCompleted: `SyncQuiescenceCoordinator.hasCompletedFirstPull`, señal GENÉRICA del
     ///     motor. Es de sesión de proceso, por eso sola no basta para el dueño: en un arranque normal
@@ -33,7 +40,42 @@ nonisolated enum CloudHydrationLogic {
     ///   - cloudEngineActive: hay motor que pueda estar descargando algo (`storageMode == .cloud`).
     ///   - storeLooksEmpty: la app se ve en cero. Es el término que convierte «el motor arranca» en «la
     ///     pantalla que estás mirando está vacía y por eso te lo explico».
+    ///   - attestVerdictIsTerminal: `GroupsAttestStreakStore.isTerminal()`, **a secas**. Basta porque la
+    ///     descarga que este banner explica es el pull del MOTOR, y ése exige token:
+    ///     `CloudSyncRuntime.performCycle` pasa por su puerta antes de subir y de bajar, y un token conseguido
+    ///     borra la racha (`resolveAttest` → `recordAcceptance`). Con el veredicto terminal, por tanto, el
+    ///     motor no está bajando nada. **No es `CloudAttestNotice.isShowing`**: sus otras condiciones dicen a
+    ///     quién le es cierta la FRASE del aviso, no si el motor baja algo, y atarse a ellas devolvería el
+    ///     spinner donde el veredicto ya dice que no baja nada (sin sesión, por ejemplo). En la población del
+    ///     ticket —nube, sesión, canal estable— las dos coinciden, y el aviso queda como la única voz.
+    ///
+    ///     Lo que NO cubre, medido en la review del 2026-09-17: los pulls de la MIGRACIÓN
+    ///     (`MigrationWorkExecutor.verify` y el drenaje de la vuelta a iCloud) piden el token con `try?` y no
+    ///     tocan la racha, así que en una vuelta a iCloud retomada tras relanzar el banner puede esconderse
+    ///     mientras ese drenaje baja datos. Antes giraba hasta relanzar, también después de bajarlos.
     static func showBanner(
+        firstPullCompleted: Bool,
+        cloudEngineActive: Bool,
+        storeLooksEmpty: Bool,
+        attestVerdictIsTerminal: Bool
+    ) -> Bool {
+        keepsWatching(
+            firstPullCompleted: firstPullCompleted,
+            cloudEngineActive: cloudEngineActive,
+            storeLooksEmpty: storeLooksEmpty)
+            && !attestVerdictIsTerminal
+    }
+
+    /// ¿Sigue habiendo algo que vigilar? Decide cuándo TERMINA el sondeo, y **el veredicto no entra, a
+    /// propósito**. Esconde el banner, pero no acaba la espera: la racha se borra en cuanto la puerta del motor
+    /// consigue un token, y la descarga empieza justo después. Pasa al arrancar con una racha heredada de una
+    /// copia de iCloud, o cuando el attest vuelve. Si el veredicto terminara el sondeo, nadie volvería a mirar y
+    /// esa descarga iría entera sin banner.
+    ///
+    /// `storeLooksEmpty` llega CONGELADO al valor con que montó el `.task` (no se reinicia cuando el shell lo
+    /// vuelve a medir), así que «con datos en pantalla» solo termina el sondeo si ya los había al montar. Es
+    /// anterior a este término y tiene ticket: `cloud-hydration-banner-does-not-see-data-that-arrives-after-mount`.
+    static func keepsWatching(
         firstPullCompleted: Bool,
         cloudEngineActive: Bool,
         storeLooksEmpty: Bool
@@ -70,12 +112,28 @@ struct CloudHydrationBanner: View {
         }
         .task {
             while !Task.isCancelled {
+                let firstPullCompleted = SyncQuiescenceCoordinator.shared.hasCompletedFirstPull
+                let cloudEngineActive = CloudSyncFlags.storageMode == .cloud
+                // Modo privado, hidratación completa o datos en pantalla al montar → terminar el poll.
+                guard CloudHydrationLogic.keepsWatching(
+                    firstPullCompleted: firstPullCompleted,
+                    cloudEngineActive: cloudEngineActive,
+                    storeLooksEmpty: storeLooksEmpty) else {
+                    visible = false
+                    return
+                }
+                // El veredicto se lee VIVO en cada tick, y no en un `@State` con `.cloudAttestVerdictWatcher`.
+                // Ese `@State` se refresca al montar la vista que lo lleva, y el del Panel y el de este overlay
+                // montan en momentos distintos: el aviso podía salir con el spinner aún girando. Así el spinner
+                // se va como mucho un tick después de que el veredicto se vuelva terminal, y vuelve igual de
+                // rápido cuando un token borra la racha. Residual aceptado: si el veredicto cambia por el RELOJ
+                // (las 24 h se cumplen con la app delante), nadie escribe la racha y el aviso espera a su
+                // siguiente refresco; en ese rato no sale ninguno de los dos.
                 visible = CloudHydrationLogic.showBanner(
-                    firstPullCompleted: SyncQuiescenceCoordinator.shared.hasCompletedFirstPull,
-                    cloudEngineActive: CloudSyncFlags.storageMode == .cloud,
-                    storeLooksEmpty: storeLooksEmpty)
-                // Modo privado, o hidratación completa → terminar el poll.
-                guard visible else { return }
+                    firstPullCompleted: firstPullCompleted,
+                    cloudEngineActive: cloudEngineActive,
+                    storeLooksEmpty: storeLooksEmpty,
+                    attestVerdictIsTerminal: GroupsAttestStreakStore.isTerminal())
                 do { try await Task.sleep(for: .seconds(1)) } catch { return }
             }
         }
