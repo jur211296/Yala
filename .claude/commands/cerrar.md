@@ -88,6 +88,26 @@ Si pasaría de 40 líneas, recortar Abiertos. No copiar DECISIONS. No listar el 
 
 En el informe: `✓ docs/ESTADO.md <fecha> <HEAD>`
 
+## 6 · La fila de actividad
+
+Lo último: la sesión **deja su fila en el panel** (ADR-037 de casa), con el mismo resumen que
+acabas de escribir:
+
+```bash
+python3 ~/.claude/hooks/emitir_actividad.py --cerrar \
+  --titulo "Una línea de qué se hizo" --resumen "Las mismas dos o tres frases" --estado hecho
+```
+
+`--estado fallido` si la sesión termina sin lo que venía a hacer, y `esperando-a-jurgen` si cede a
+medias. **El hook no lo deduce**: aquí es el único sitio donde eso se sabe.
+
+**En el título y el resumen no van datos de cliente**, igual que en cualquier entregable: la fila
+cuenta qué se hizo, no con qué.
+
+**Terminado cuando el comando contesta `actividad: encolada`**; el `POST` sale en un proceso
+aparte y su resultado va a `~/.claude/logs/actividad.log`. Saltarse este paso deja la fila igual
+—la escribe el `SessionEnd`— pero con el primer prompt de título y sin resumen.
+
 ## Reglas
 
 - Disco: ejecuta y listo. No pidas confirmación. El puente (YalaAgent) ya corre el mismo teardown al terminar cada orden, sin Claude; este comando es para cuando Claude sí lo corre.
