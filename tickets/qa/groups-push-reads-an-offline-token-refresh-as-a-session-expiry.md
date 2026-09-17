@@ -4,7 +4,7 @@ status: qa
 priority: medium
 area: "modo-nube, groups, sesión"
 created: 2026-09-15
-updated: 2026-09-15
+updated: 2026-09-16
 source: "medición del encargo `cloud-signout-collapses-a-groups-session-expiry-into-permanent` (2026-09-15), confirmada por una lente adversarial"
 ---
 
@@ -60,8 +60,8 @@ Recomendación: la 1. El cliente es el único sitio donde se distinguen los dos 
 - [x] Con la sesión guardada y la renovación fallida, el push de grupos no devuelve `.sessionExpired` (test).
 - [x] Con la sesión borrada por el SDK, sí (test en la dirección contraria).
 - [x] La cadencia vuelve a subir sola al recuperar la red, sin relanzar la app. En el loop propio de Grupos; en
-      `.cloud` Grupos cicla dentro del runtime personal, que sigue parándose
-      (`personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`).
+      `.cloud` Grupos cicla dentro del runtime personal, que seguía parándose hasta
+      `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry` (2026-09-16).
 
 ## Relación con otros tickets
 
@@ -108,7 +108,8 @@ para: reintenta sola y sube en su siguiente intento.
 
 - `groups-actions-read-an-offline-token-refresh-as-a-session-expiry` — salir de un grupo sin red sigue diciendo «Tu
   sesión caducó».
-- `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry` — el canal personal, y con él Grupos en `.cloud`.
+- `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry` — el canal personal, y con él Grupos en `.cloud`
+  (en `qa` desde el 2026-09-16).
 - `signout-pending-copy-says-wait-seconds-when-offline` — el texto y la espera de 45 s sin red.
 - `groups-sync-reads-a-missing-attest-401-as-a-session-expiry` — un 401 por App Attest ausente.
 - `groups-loop-in-backoff-ignores-the-return-to-foreground` — volver a Yala no adelanta el reintento.
@@ -132,8 +133,10 @@ pendientes: en la nube bloquearían antes con el aviso genérico.
      momento más · Todavía estamos terminando de guardar unos cambios…».
    - **En ningún caso** «Tu sesión caducó».
 6. Solo sesión privada o solo grupos: quita el modo avión con la app abierta y no toques nada. El gasto sube solo en
-   menos de 5 minutos (compruébalo desde otro teléfono del grupo). En la nube sube al volver a primer plano, y eso es
-   `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`.
+   menos de 5 minutos (compruébalo desde otro teléfono del grupo). **En la nube también sube solo**, en menos de 5 minutos:
+   tras más de una hora en segundo plano la verificación de App Attest ya caducó, y el motor personal sale pasajero en su
+   puerta en vez de pararse (medido en el código el 2026-09-16). El caso en que el motor personal sí se paraba necesita esa
+   verificación aún en caché, y tiene su guion en `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`.
 7. **Control:** repite con la sesión borrada de verdad, con el paso 3 del guion de
    `cloud-signout-collapses-a-groups-session-expiry-into-permanent` (`delete from auth.sessions …` en staging) y **sin**
    modo avión al cerrar. Tiene que salir «Tu sesión caducó…».

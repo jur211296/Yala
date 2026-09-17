@@ -100,15 +100,17 @@ struct GatewayErrorEnvelope: Decodable {
     /// Código del 401 que `requireUserAndAttest` emite cuando el JWT de usuario VERIFICA y lo que falta —o no
     /// verifica— es el token de App Attest (las cuatro guards: `groups/routes.ts`, `groups/rpc.ts`,
     /// `sync/routes.ts`, `sync/account.ts`). Su hermano `yala_attest_invalid` es el JWT que no vale. UN solo
-    /// literal en el cliente; la mitad del gateway la fija `gateway/test/groups.attest401.test.ts`, que corre a mano
-    /// (el CI no ejecuta la suite del gateway).
+    /// literal en el cliente; la mitad del gateway la fijan `gateway/test/groups.attest401.test.ts` y, para `/sync/*` y
+    /// `/prefs/*`, `gateway/test/sync.attest401.test.ts`, que corren a mano (el CI no ejecuta la suite del gateway).
     static let attestRequiredType = "yala_attest_required"
 
     /// `true` si el body es el 401 de App Attest ausente: la sesión vale, y ni volver a entrar ni refrescar el JWT
     /// lo arreglan. La guard también lo emite sin JWT, pero ningún cliente del canal manda una petición sin él, así
     /// que desde el cliente el código dice siempre «sesión buena, attest ausente». Lo leen el push y el pull de
     /// `GroupsSyncClient` y `GroupsMembershipClient`, que lo tratan como pasajero (decisión de Jürgen,
-    /// 2026-09-15). Lee `type` como sus dos hermanos; `jsonError` escribe el mismo valor en `code`.
+    /// 2026-09-15), y desde el 2026-09-16 también los tres clientes del canal personal: `SyncPushClient`,
+    /// `SyncPullClient` y `PrefsSyncClient` (ticket `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`).
+    /// Lee `type` como sus dos hermanos; `jsonError` escribe el mismo valor en `code`.
     static func isAttestRequired(_ data: Data) -> Bool {
         decodedType(data) == attestRequiredType
     }
@@ -131,9 +133,11 @@ struct GatewayErrorEnvelope: Decodable {
 enum PushOutcome: Equatable {
     /// 200 OK: el Worker procesó el batch. Los resultados por-delta (applied/noop/rejected) van adentro.
     case completed([SyncDeltaResult])
-    /// 401: JWT ausente/inválido/expirado (o attest requerido, en el canal personal: el de Grupos lee el 401
-    /// `yala_attest_required` como `.transient`, `GatewayErrorEnvelope.isAttestRequired`). NO se purga NADA ni se
-    /// marca dead-letter — los deltas se reintentan tras re-login. `pending` = cuántos deltas quedaron sin subir.
+    /// La sesión ya no sirve: un 401 que no es el de App Attest ausente, o un token que no llega con la sesión BORRADA
+    /// por el SDK. NO se purga NADA ni se marca dead-letter — los deltas se reintentan tras re-login. `pending` =
+    /// cuántos deltas quedaron sin subir. **Desde el 2026-09-16 no entran aquí** el 401 `yala_attest_required` ni el
+    /// token que no llega con la sesión guardada: los dos son `.transient` (ticket
+    /// `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`, molde del canal de Grupos).
     case sessionExpired(pending: Int)
     /// 403 (cuenta suspendida/deshabilitada) o 409 `yala_account_reverting` (freeze de la reversa §h.1:
     /// el backend dejó de ser fuente de verdad — device rezagado durante/tras una reversa). En ambos la
@@ -163,24 +167,33 @@ final class SyncPushClient {
     private let tokenProvider: () async -> String?
     private let attestProvider: () async -> String?
     private let urlSession: SyncHTTPSession
+    /// ¿Conserva el SDK la sesión guardada? Separa «sin conexión» de «sesión caducada» cuando el token no llega: la
+    /// renovación es una petición al servidor de auth, y sin red el SDK no borra nada. Molde
+    /// `GroupsSyncClient.canRenewSession`. **El default `{ false }` es solo para tests** (el trato de antes del
+    /// 2026-09-16): las construcciones de producción pasan el de su proveedor de sesión, y lo fija
+    /// `AttestWiringTests`.
+    private let canRenewSession: @MainActor () -> Bool
 
     /// - Parameters:
     ///   - baseURL: gateway (default `ProxyConfig.baseURL`).
-    ///   - tokenProvider: JWT de Supabase (DARK stub aquí; el real es I7c). `nil` = sin sesión → 401-like.
+    ///   - tokenProvider: JWT de Supabase. `nil` = no hay token; `canRenewSession` decide si es caducada o pasajero.
     ///   - attestProvider: token de sesión de App Attest (DARK stub; opcional — el header solo va si != nil).
     ///   - urlSession: inyectable para tests.
+    ///   - canRenewSession: ¿el SDK conserva la sesión guardada? Ver la propiedad.
     init(
         baseURL: URL = ProxyConfig.baseURL,
         tokenProvider: @escaping () async -> String?,
         attestProvider: @escaping () async -> String? = { nil },
         urlSession: SyncHTTPSession = URLSession.shared,
-        pushChunkSize: Int = 50
+        pushChunkSize: Int = 50,
+        canRenewSession: @escaping @MainActor () -> Bool = { false }
     ) {
         self.baseURL = baseURL
         self.tokenProvider = tokenProvider
         self.attestProvider = attestProvider
         self.urlSession = urlSession
         self.pushChunkSize = max(1, pushChunkSize)
+        self.canRenewSession = canRenewSession
     }
 
     /// Máximo de deltas por REQUEST (I14-H2, corrida device 2026-07-12): el Worker aplica los
@@ -259,11 +272,19 @@ final class SyncPushClient {
     func push(_ rows: [SyncOutbox]) async -> PushOutcome {
         guard !rows.isEmpty else { return .completed([]) }
 
-        // Sin sesión → no se puede subir. Breadcrumb + sessionExpired (los datos están a salvo local).
+        // Sin token no se sube (los datos están a salvo en local), y el porqué lo dice el SDK: si CONSERVA la sesión, la
+        // renovación no volvió (sin red, un 5xx del servidor de auth) y es pasajero; solo si la BORRÓ es sesión caducada.
+        // Hasta el 2026-09-16 las dos eran caducada: sin red y con el token vencido, el motor se paraba hasta volver a
+        // primer plano y Ajustes pedía iniciar sesión (ticket `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`).
+        // El SDK borra la sesión ANTES de lanzar, así que se lee después del `await`.
         guard let token = await tokenProvider(), !token.isEmpty else {
-            CloudSyncBreadcrumb.pushBlockedNoSession(pending: rows.count)
-            MetricsService.cloudSyncBlockedByExpiredSession(pending: rows.count)
-            return .sessionExpired(pending: rows.count)
+            guard canRenewSession() else {
+                CloudSyncBreadcrumb.pushBlockedNoSession(pending: rows.count)
+                MetricsService.cloudSyncBlockedByExpiredSession(pending: rows.count)
+                return .sessionExpired(pending: rows.count)
+            }
+            CloudSyncBreadcrumb.pushTokenUnavailable(pending: rows.count)
+            return .transient
         }
 
         let deltas: [SyncDelta]
@@ -339,6 +360,18 @@ final class SyncPushClient {
                 CloudSyncBreadcrumb.pushTransport(reason: "decode-200:\(error)")
                 return .transient
             }
+        case 401 where GatewayErrorEnvelope.isAttestRequired(data):
+            // El JWT vale y el gateway no acepta el token de App Attest: ni volver a entrar ni un JWT nuevo lo arreglan, así
+            // que no es sesión caducada sino pasajero, con su backoff (decisión de Jürgen para Grupos, 2026-09-15).
+            // **Y NO suma a la racha del teléfono, a diferencia de Grupos.** Desde el motor de sync, la puerta de
+            // `CloudSyncRuntime.performCycle` ya consiguió el token antes de subir, así que este 401 no es un teléfono sin
+            // attest: es el reloj, un build que no manda la cabecera o el servidor. Contado como del teléfono, acababa
+            // ofreciendo perder los cambios a quien sí atesta (review adversarial del 2026-09-16). La migración y el adopt
+            // suben sin esa puerta, y ahí sí puede ser el teléfono; no cuenta por la misma regla que antes: la racha la
+            // escriben la puerta y Grupos. Lo cuenta su canario.
+            CloudSyncBreadcrumb.attestRequired(edge: "push")
+            MetricsService.cloudSyncAttestRequired(edge: "push")
+            return .transient
         case 401:
             CloudSyncBreadcrumb.pushBlockedNoSession(pending: totalPending)
             MetricsService.cloudSyncBlockedByExpiredSession(pending: totalPending)

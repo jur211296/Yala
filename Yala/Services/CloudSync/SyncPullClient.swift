@@ -58,7 +58,10 @@ struct PulledPage: Equatable {
 enum PullOutcome: Equatable {
     /// 200 OK: una página de deltas + el `max_server_seq`.
     case page(PulledPage)
-    /// 401: JWT ausente/inválido/expirado (o attest requerido) → reintentar tras re-login.
+    /// La sesión ya no sirve: un 401 que no es el de App Attest ausente, o un token que no llega con la sesión BORRADA
+    /// por el SDK → reintentar tras re-login. El 401 `yala_attest_required` y el token que no llega con la sesión
+    /// guardada son `.transient` desde el 2026-09-16: volver a entrar no arregla ninguno de los dos (ticket
+    /// `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`).
     case sessionExpired
     /// 403: autenticado pero prohibido (cuenta suspendida/deshabilitada, ≠401).
     case accountUnavailable
@@ -111,6 +114,9 @@ final class SyncPullClient {
     private let tokenProvider: () async -> String?
     private let attestProvider: () async -> String?
     private let urlSession: SyncHTTPSession
+    /// ¿Conserva el SDK la sesión guardada? Ver `SyncPushClient.canRenewSession`: mismo contrato y mismo default de
+    /// test `{ false }`.
+    private let canRenewSession: @MainActor () -> Bool
 
     /// Capability-set del cliente (header `X-Yala-Capability-Set`). v1 = las 16 entidades del manifest.
     static let capabilitySet = "v1"
@@ -119,12 +125,14 @@ final class SyncPullClient {
         baseURL: URL = ProxyConfig.baseURL,
         tokenProvider: @escaping () async -> String?,
         attestProvider: @escaping () async -> String? = { nil },
-        urlSession: SyncHTTPSession = URLSession.shared
+        urlSession: SyncHTTPSession = URLSession.shared,
+        canRenewSession: @escaping @MainActor () -> Bool = { false }
     ) {
         self.baseURL = baseURL
         self.tokenProvider = tokenProvider
         self.attestProvider = attestProvider
         self.urlSession = urlSession
+        self.canRenewSession = canRenewSession
     }
 
     // MARK: pull
@@ -132,10 +140,16 @@ final class SyncPullClient {
     /// Baja UNA página desde `since` (= `serverSeqCursor`). Devuelve un `PullOutcome` estructurado —
     /// nunca lanza por un fallo de red/HTTP (se mapea a `.transient`).
     func pull(since: Int64, limit: Int = 500) async -> PullOutcome {
+        // Sin token: caducada solo si el SDK borró la sesión; si la conserva, la renovación no volvió y es pasajero.
+        // Ver `SyncPushClient.push`.
         guard let token = await tokenProvider(), !token.isEmpty else {
-            CloudSyncBreadcrumb.pullBlockedNoSession()
-            MetricsService.cloudSyncBlockedByExpiredSession(pending: 0)
-            return .sessionExpired
+            guard canRenewSession() else {
+                CloudSyncBreadcrumb.pullBlockedNoSession()
+                MetricsService.cloudSyncBlockedByExpiredSession(pending: 0)
+                return .sessionExpired
+            }
+            CloudSyncBreadcrumb.pullTokenUnavailable()
+            return .transient
         }
 
         var components = URLComponents(url: baseURL.appendingPathComponent("sync/pull"),
@@ -181,6 +195,12 @@ final class SyncPullClient {
                 CloudSyncBreadcrumb.pullTransport(reason: "decode-200:\(error)")
                 return .transient
             }
+        case 401 where GatewayErrorEnvelope.isAttestRequired(data):
+            // El JWT vale y el gateway no acepta el token de App Attest: pasajero, sin sumar a la racha del teléfono y con
+            // su canario. Ver `SyncPushClient.pushBatch`.
+            CloudSyncBreadcrumb.attestRequired(edge: "pull")
+            MetricsService.cloudSyncAttestRequired(edge: "pull")
+            return .transient
         case 401:
             CloudSyncBreadcrumb.pullBlockedNoSession()
             MetricsService.cloudSyncBlockedByExpiredSession(pending: 0)

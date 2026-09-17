@@ -151,9 +151,24 @@ enum CloudSyncBreadcrumb {
 
     // MARK: Push (I8e) — sin PII (status HTTP, counts, motivos de transporte; nunca valores de usuario)
 
-    /// No hay sesión (token ausente) o el backend devolvió 401 → `pending` deltas quedan sin subir.
+    /// La sesión ya no sirve → `pending` deltas quedan sin subir hasta volver a entrar: el token no llegó y el SDK
+    /// BORRÓ la sesión guardada, o el backend devolvió un 401 que no es el de App Attest ausente.
     static func pushBlockedNoSession(pending: Int) {
         logger.notice("CloudSyncPush blocked=no-session pending=\(pending, privacy: .public)")
+    }
+
+    /// El token no llegó y el SDK CONSERVA la sesión: la renovación es una petición al servidor de auth que no volvió
+    /// (sin red, un 5xx). Pasajero, no sesión caducada (ticket `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`).
+    static func pushTokenUnavailable(pending: Int) {
+        logger.notice("CloudSyncPush transient token-unavailable session=kept pending=\(pending, privacy: .public)")
+    }
+
+    /// El gateway respondió 401 `yala_attest_required` a una ruta del canal personal: el JWT vale y lo que falta, o no
+    /// verifica, es el token de App Attest. Pasajero, y no suma a la racha del teléfono: desde el motor, la puerta ya consiguió
+    /// el token (la migración y el adopt suben sin ella). `edge` = `push`, `pull`, `prefs-push` o `prefs-pull`. Molde
+    /// `GroupsSyncBreadcrumb.groupsAttestRequired(edge:)`.
+    static func attestRequired(edge: String) {
+        logger.notice("CloudSync attestRequired edge=\(edge, privacy: .public)")
     }
 
     /// El backend devolvió 403 → cuenta suspendida/deshabilitada (≠401).
@@ -201,9 +216,15 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncPull page count=\(count, privacy: .public) maxSeq=\(maxSeq, privacy: .public)")
     }
 
-    /// No hay sesión (token ausente) o el backend devolvió 401 → no se puede bajar.
+    /// No hay sesión con la que bajar: el token no llegó y no hay sesión guardada, o el backend devolvió un 401 que no
+    /// es el de App Attest ausente. El Merkle lo emite también con cualquier token nulo o 401.
     static func pullBlockedNoSession() {
         logger.notice("CloudSyncPull blocked=no-session")
+    }
+
+    /// El token no llegó y el SDK CONSERVA la sesión: pasajero, no sesión caducada. Ver `pushTokenUnavailable(pending:)`.
+    static func pullTokenUnavailable() {
+        logger.notice("CloudSyncPull transient token-unavailable session=kept")
     }
 
     /// El backend devolvió 403 → cuenta suspendida/deshabilitada (≠401).

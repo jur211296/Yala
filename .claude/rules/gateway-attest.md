@@ -121,17 +121,28 @@ inyectan el proveedor — no el cliente entero.
   push token no lo distinguen: su 401 no llega a nada visible.
 - **Al tocar cualquiera de las cuatro guards, cada código se queda en su rama**: `yala_attest_invalid` para el
   JWT, `yala_attest_required` para el attest. Fundidos, el cliente leería una sesión muerta como pasajera y
-  reintentaría para siempre. En las dos guards de Grupos lo fija `gateway/test/groups.attest401.test.ts`
-  (`sync/account.ts`, `account.delete.test.ts`; `sync/routes.ts`, ninguno), **que solo corre a mano**: el CI no
+  reintentaría para siempre. En las dos guards de Grupos lo fija `gateway/test/groups.attest401.test.ts`; en
+  `sync/account.ts`, `account.delete.test.ts`; en `sync/routes.ts`, `gateway/test/sync.attest401.test.ts` (2026-09-16),
+  **que solo corren a mano**: el CI no
   ejecuta la suite del gateway (`ci-no-corre-la-suite-del-gateway`). Se corre con
   `npm test -- test/groups.attest401.test.ts`; el `pretest` copia los manifests, y `npx vitest` a pelo falla con
   «Cannot find module …group_capability_manifest.json».
-- **El canal personal todavía lee todo 401 como caducada** (`SyncPushClient`, `SyncPullClient`, `PrefsSyncClient`).
-  Que `CloudSyncRuntime.performCycle` pida el attest antes de subir no lo evita: la migración sube sin esa puerta
-  (`MigrationWorkExecutor`, `MigrationSnapshotUploader`, que lo tratan como transitorio), y `resolveAttest` mira la
-  caché local, así que un token que el servidor ya no acepta la pasa
-  (`attest-session-token-rejected-by-the-gateway-stays-cached`).
-  Ticket `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`.
+- **El canal personal también lo lee pasajero desde el 2026-09-16** (`SyncPushClient`, `SyncPullClient`, `PrefsSyncClient`;
+  ticket `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`): `yala_attest_required` es `.transient`, con
+  rastro `CloudSync attestRequired edge=push|pull|prefs-push|prefs-pull` y el canario `cloudSyncAttestRequired`. El resto
+  de 401 sigue siendo caducada, sin el reintento con refresh forzado de Grupos
+  (`personal-sync-does-not-retry-a-401-with-a-forced-token-refresh`).
+- **Y ahí NO suma a la racha del teléfono, a diferencia de Grupos.** `CloudSyncRuntime.performCycle` consigue el token en
+  su puerta antes de subir, así que una petición del motor llega al gateway con un token que el teléfono acuñó bien: su 401
+  habla del reloj, de un build que no manda la cabecera o del servidor. La migración, la vuelta a iCloud y el adopt suben
+  sin esa puerta (`MigrationWorkExecutor`, `MigrationSnapshotUploader`, con el attest pedido con `try?`): ahí el 401 sí
+  puede ser un teléfono sin App Attest, y tampoco suma, como antes. Por eso el canario mezcla las dos poblaciones. En Grupos no hay puerta y el mismo 401 incluye al
+  teléfono que no pudo acuñar. Contado en la racha (probado y retirado en la review del 2026-09-16) daba tres falsos
+  positivos: con el reloj atrasado 24 h la puerta dejaba de borrar la racha que Grupos suma y el cierre en la nube ofrecía
+  perder cambios a un teléfono que atesta; una regresión de build acababa diciendo a todo el parque «usa otro teléfono»;
+  y un fallo de subida por otra cosa dejaba el aviso puesto para siempre. **Una regresión de ese tipo la cuenta el
+  canario**, no el aviso. Si el aviso fijo debe cubrir a esta población es una pregunta abierta:
+  `cloud-attest-notice-does-not-cover-a-gateway-rejected-token`.
 - **Lo que se acepta a sabiendas, medido en la review del 2026-09-15.** Cada vuelta del loop en backoff intenta el
   attest de verdad y abre otra ventana de `AttestRefreshBackoffLogic`, que comparte con la IA y los tipos de cambio:
   cuando Apple vuelve, esos pueden recibir el error viejo hasta 60 s. Los cierres que reintentan 45 s mandan unas 23
@@ -149,8 +160,8 @@ terminal y, en los cierres de sesión, una salida que pierde esos cambios con co
 - **En Grupos, qué cuenta es la palabra del servidor, no el error local.** Un rechazo es un 401 `yala_attest_required` de
   una ruta de Grupos (push, pull o RPC); un 200 de esas rutas borra la racha. Grupos no clasifica `AppAttestError`/`DCError`:
   nadie ha medido cuáles son permanentes, y `.network` no distingue «sin red» de «sin attest». Sin red o con un 5xx no hay
-  401, así que estar offline no acerca el veredicto. El motor personal, que no ve ese 401, cuenta otra cosa: «La racha es
-  del TELÉFONO», más abajo. **Y un rechazo cuenta como mucho una vez por hora**: un solo gesto dispara
+  401, así que estar offline no acerca el veredicto. El motor personal no cuenta ese 401 (ver arriba) y cuenta otra cosa:
+  «La racha es del TELÉFONO», más abajo. **Y un rechazo cuenta como mucho una vez por hora**: un solo gesto dispara
   ráfagas —la membresía reintenta tres veces, el cierre cada 2 s durante 45 s— y, contado por petición, el mínimo de 3 se
   cumplía en segundos.
 - **La racha vive entre arranques** en `GroupsAttestStreakStore` (`UserDefaults.standard`, clave
@@ -223,7 +234,7 @@ terminal y, en los cierres de sesión, una salida que pierde esos cambios con co
     flag remoto es fail-closed ante un snapshot ausente, y `storageMode` es testigo directo del corpus de ESTE teléfono.
   - **La segunda superficie no es cosmética: `syncStatusSection` MENTÍA.**
     `CloudMigrationController.refreshSyncBanner` solo pone `syncNeedsSignIn` con el runtime en `.stoppedUntilSignIn`, y
-    el attest terminal lo deja en `.stoppedUntilRelaunch` → caía al `else` y pintaba un check verde «Todo al día» con
+    el attest terminal lo deja en `.stoppedUntilRelaunch` → caía al `else` y pintaba un check verde «Todo sincronizado» con
     el motor parado. El `else` fallaba ABIERTO: daba por bueno todo estado que nadie enumeró. La rama del attest va
     **antes** que la de `syncNeedsSignIn`, porque re-firmar no arregla un attest roto.
   - **Hereda los dos residuales del aviso de Grupos**: va sin el testigo del ciclo —exigirlo lo dejaría mudo justo en
@@ -236,7 +247,8 @@ terminal y, en los cierres de sesión, una salida que pierde esos cambios con co
 
 Ticket `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`.
 
-- **El motor personal cuenta el error de su puerta**: nunca manda una subida sin attest, así que no ve el 401.
+- **El motor personal cuenta el error de su puerta**: nunca manda una subida sin attest, y el 401 que el gateway le devuelva
+  después no cuenta (ver «Los dos 401 de la guard»).
   `CloudSyncRuntime.resolveAttest` suma un rechazo cuando el error habla del attest
   (`AttestSyncGate.countsTowardAttestStreak`) y un token conseguido acaba la racha, también uno cacheado. Sin red o con el
   gateway caído el error no habla del attest: el veredicto solo se acerca con la palabra de Apple o del gateway sobre ESTE

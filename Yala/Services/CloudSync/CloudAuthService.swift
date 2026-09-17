@@ -224,8 +224,10 @@ final class CloudAuthService: NSObject {
     ///
     /// **Y el contrato inverso, desde el 2026-09-15: NUNCA `true` tras un refresh terminal.** El canal de Grupos
     /// lo lee cuando el token no llega, para separar «sin conexión» de «sesión caducada»
-    /// (`GroupsSyncClient.sdkRemovedTheSession`). Si siguiera en `true` con la sesión muerta, el canal la leería
-    /// pasajera y reintentaría con su backoff en vez de pedir volver a entrar. Hoy lo garantiza el SDK, que borra
+    /// (`GroupsSyncClient.sdkRemovedTheSession`), y desde el 2026-09-16 también el personal: `SyncPushClient`,
+    /// `SyncPullClient`, `PrefsSyncClient` y `BornCloudSignUpService`, por `LiveCloudSessionProvider`. Si siguiera en
+    /// `true` con la sesión muerta, esos canales la leerían pasajera y reintentarían con su backoff en vez de pedir
+    /// volver a entrar. Hoy lo garantiza el SDK, que borra
     /// la sesión antes de lanzar, y lo fija `SupabaseSessionRenewalContractTests`. Sin el seam de `hasSession`, a
     /// propósito: `-uitest-fake-cloud-session` no lo enciende, así que bajo ese seam vale lo que guarde el Keychain
     /// del simulador (nada, salvo que alguien firmara allí a mano).

@@ -62,6 +62,8 @@
 - [El ancla que no existe](feedback_el_ancla_que_no_existe.md) — antes de diseñar un «vuelve a enlazarse», comprueba que el objeto TIENE identidad serializable.
 - [La review y los mutantes no comparten árbol](feedback_la_review_y_los_mutantes_no_comparten_arbol.md) — una lente leyó un fichero MUTADO.
 - [Mi refutación falla ABIERTO](feedback_mi_refutacion_falla_abierto.md) — 33 de 45 hallazgos salieron «refutados» sin que nadie los juzgara.
+- [Tras la puerta, el error es otro](feedback_tras_la_puerta_el_error_es_otro.md) — copié «el 401 del attest suma a la racha» de Grupos al personal, donde una puerta ya filtra al teléfono: tres falsos positivos.
+- [El guion de QA tiene que distinguir builds](feedback_el_guion_de_qa_tiene_que_distinguir_builds.md) — sin red la puerta de attest salía antes del push: el PASS habría sido falso.
 - [La review adversarial caza lo MÍO](feedback_review_adversarial_caza_lo_mio.md) — el 14-sep cazó que MI ARREGLO no arreglaba, con 5 mutantes y una captura del simulador ya en verde.
 - [La fase ajena tiene otros escritores](feedback_la_fase_ajena_tiene_otros_escritores.md) — mi «en vuelo» leía un `.idle` como transitorio; Ajustes lo ponía y dejaba un progreso eterno.
 - [El flag que conserva deja estado incoherente](feedback_el_flag_que_conserva_deja_estado_incoherente.md) — «conservar preferencias» ≠ «conservar estado de las filas»: el centinela del seed dejó al usuario sin categorías.
@@ -100,11 +102,12 @@
 - [«Cero warnings» se mide en TODOS los logs](feedback_cero_warnings_se_mide_en_todos_los_logs.md) — el gate no mira los tests y lee un build incremental.
 
 ## Estado del trabajo
+- [El canal personal lee pasajero el token nulo sin red](project_sync_personal_token_nulo_pasajero.md) — en qa con un guion de ventana estrecha; dos decisiones de producto esperan.
 - [«Migrar a la nube» ya no adopta](project_migrar_a_la_nube_no_adopta.md) — PR #187; en qa por pasos en iPhone; D18 cierra a sabiendas la salida de una migración abandonada.
 - [Un rechazo al volver a iCloud ya sale a la nube](project_rechazo_del_claim_de_la_reversa.md) — PR #186; en qa con SQL en staging; la salida repone lo que la entrada tiró.
 - [Sin App Attest no se ofrece la nube](project_puerta_del_alta_sin_attest.md) — Welcome (#180, #181) y la tarjeta de Ajustes entera; en qa por pasos en iPhone; sin secreto el simulador no crea cuentas.
 - [Grupos ya despierta al volver a la app](project_grupos_despierta_al_volver_a_la_app.md) — PR #179; deja el ticket del piggyback con el motor parado y un mutante declarado sin test.
-- [El aviso de attest personal, en dos superficies](project_aviso_attest_personal_en_dos_superficies.md) — PR #177; arregló un «Todo al día» con el motor parado y deja un agujero conocido.
+- [El aviso de attest personal, en dos superficies](project_aviso_attest_personal_en_dos_superficies.md) — PR #177; arregló un «Todo sincronizado» con el motor parado; el 401 del 16-sep no era su agujero.
 - [Grupos ya avisa sin App Attest](project_grupos_avisa_sin_attest.md) — PR #176, en `done` y sin device-QA; el hermano personal sigue sin hacer.
 - [El teléfono sin App Attest ya tiene veredicto y salida](project_telefono_sin_attest_veredicto_y_salida.md) — en qa solo espera la racha: la salida con pérdida no se monta en ningún dispositivo.
 - [La hoja del cambio de Apple ID ya enseña el bloqueo](project_hoja_apple_id_cierre_bloqueado.md) — la review cazó un progreso eterno MÍO; queda device-QA y una decisión de copy.

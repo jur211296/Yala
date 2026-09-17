@@ -5,8 +5,9 @@
 //  Sender del outbox al Worker (POST /sync/push) — incremento I8e. Cubre (sin red, URLSession stub):
 //    - buildDelta: entity_type = TABLA (no clase), fields VERBATIM del canon c1, tombstone sin fields,
 //      hlc de fila (nunca regenerado), client_mutation_id.
-//    - Clasificación de PushOutcome: 200→completed, 401→sessionExpired, 403→accountUnavailable,
-//      409 yala_account_reverting (freeze §h.1)→accountUnavailable, 409 ajeno→transient, 500→transient.
+//    - Clasificación de PushOutcome: 200→completed, 401→sessionExpired (salvo `yala_attest_required`→transient),
+//      403→accountUnavailable, 409 yala_account_reverting (freeze §h.1)→accountUnavailable, 409 ajeno→transient,
+//      500→transient, sin token→sessionExpired con la sesión borrada y transient con la sesión guardada.
 //    - applyResults: applied/noop → confirmUploaded purga la fila; rejected → dead-letter (rejectedReason)
 //      + la fila NO se purga.
 //
@@ -64,6 +65,20 @@ private final class SequencedHTTPSession: SyncHTTPSession, @unchecked Sendable {
     }
 }
 
+/// La sesión guardada del SDK, mutable desde el `tokenProvider`: la renovación terminal la borra antes de volver.
+private final class SesionDelSDK: @unchecked Sendable {
+    var guardada: Bool
+    init(guardada: Bool) { self.guardada = guardada }
+}
+
+/// Stub HTTP del drenaje de métricas. 500 a propósito: el drain reintenta y el spool CONSERVA los eventos, que es lo que
+/// permite contarlos (molde `BornCloudSignUpServiceTests`).
+private final class MetricsStubHTTP: SyncHTTPSession, @unchecked Sendable {
+    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        (Data(), HTTPURLResponse(url: request.url!, statusCode: 500, httpVersion: nil, headerFields: nil)!)
+    }
+}
+
 @Suite("SyncPushClient · sender I8e", .serialized)
 @MainActor
 struct SyncPushClientTests {
@@ -118,13 +133,36 @@ struct SyncPushClientTests {
         return row
     }
 
-    private func stubClient(_ session: StubHTTPSession, token: String? = "test-jwt") -> SyncPushClient {
+    private func stubClient(
+        _ session: StubHTTPSession, token: String? = "test-jwt", sessionKept: Bool = false
+    ) -> SyncPushClient {
         SyncPushClient(
             baseURL: URL(string: "https://example.test")!,
             tokenProvider: { token },
             attestProvider: { nil },
-            urlSession: session
+            urlSession: session,
+            canRenewSession: { sessionKept }
         )
+    }
+
+    /// Arranca `MetricsService` contra un spool aislado para contar lo encolado, y lo desarma después.
+    private func withMetrics(_ body: (UserDefaults) async throws -> Void) async rethrows {
+        let defaults = makeIsolatedDefaults(prefix: "syncPush.metrics")
+        MetricsService._testReset()
+        MetricsService.start(
+            client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: MetricsStubHTTP()),
+            defaults: defaults)
+        defer { MetricsService._testReset() }
+        try await body(defaults)
+    }
+
+    private func canaries(_ defaults: UserDefaults, _ name: String) -> [MetricsEvent] {
+        MetricsSpool.pending(defaults).filter { $0.e == "canary" && $0.n == name }
+    }
+
+    /// El envelope de error del gateway (`jsonError`), con el mismo valor en `type` y en `code`.
+    private func gatewayError(_ type: String) -> Data {
+        Data(#"{"error":{"message":"m","type":"\#(type)","param":null,"code":"\#(type)"}}"#.utf8)
     }
 
     // MARK: - buildDelta
@@ -280,10 +318,95 @@ struct SyncPushClientTests {
         let context = try makeContext(dir)
         let row = makeUpsertRow(fieldsJSON: "{}", fieldHlcsJSON: "{}", hlc: "h", context: context)
         let session = StubHTTPSession(status: 200)
-        let client = stubClient(session, token: nil)
+        // El SDK BORRÓ la sesión: esto sí es caducada.
+        let client = stubClient(session, token: nil, sessionKept: false)
         let outcome = await client.push([row])
         #expect(outcome == .sessionExpired(pending: 1))
         #expect(session.lastRequest == nil)               // no red sin sesión.
+    }
+
+    // MARK: - Sin red con el token vencido, y el 401 del attest (2026-09-16)
+
+    // Ticket `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`. Los dos casos paraban el motor personal
+    // hasta volver a primer plano y Ajustes pedía iniciar sesión, cuando volver a entrar no arregla ninguno.
+
+    @Test("MUTACIÓN: sin token y con la sesión GUARDADA es pasajero, sin tocar la red")
+    func push_noToken_withStoredSession_isTransient() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let row = makeUpsertRow(fieldsJSON: "{}", fieldHlcsJSON: "{}", hlc: "h", context: context)
+        let session = StubHTTPSession(status: 200)
+        let outcome = await stubClient(session, token: nil, sessionKept: true).push([row])
+        #expect(outcome == .transient, "la renovación sin red no es una sesión caducada")
+        #expect(session.lastRequest == nil)
+    }
+
+    @Test("MUTACIÓN: el SDK se lee DESPUÉS de pedir el token: si la renovación borra la sesión, es caducada")
+    func push_noToken_readsTheStoredSessionAfterTheRequest() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let row = makeUpsertRow(fieldsJSON: "{}", fieldHlcsJSON: "{}", hlc: "h", context: context)
+        // El SDK borra la sesión ANTES de lanzar (`SupabaseSessionRenewalContractTests`): antes de pedir el token estaba.
+        let sesion = SesionDelSDK(guardada: true)
+        let client = SyncPushClient(
+            baseURL: URL(string: "https://example.test")!,
+            tokenProvider: { sesion.guardada = false; return nil },
+            urlSession: StubHTTPSession(status: 200),
+            canRenewSession: { sesion.guardada })
+        #expect(await client.push([row]) == .sessionExpired(pending: 1))
+    }
+
+    @Test("MUTACIÓN: el 401 `yala_attest_required` es pasajero y NO toca la racha del teléfono")
+    func push_401_attestRequired_isTransient_andLeavesThePhoneStreakAlone() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        try racha.seedTerminal()
+        let antes = GroupsAttestStreakStore.current()
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let row = makeUpsertRow(fieldsJSON: "{}", fieldHlcsJSON: "{}", hlc: "h", context: context)
+        let client = stubClient(StubHTTPSession(status: 401, body: gatewayError(GatewayErrorEnvelope.attestRequiredType)))
+        #expect(await client.push([row]) == .transient, "volver a entrar no arregla un attest: no es sesión caducada")
+        // La puerta del runtime ya consiguió el token: este 401 no habla del teléfono. Ni suma un rechazo ni la borra.
+        #expect(GroupsAttestStreakStore.current() == antes)
+    }
+
+    @Test("MUTACIÓN: el 401 `yala_attest_invalid` sigue siendo sesión caducada, con la sesión guardada y sin tocar la racha")
+    func push_401_attestInvalid_isStillSessionExpired() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        try racha.seedTerminal()
+        let antes = GroupsAttestStreakStore.current()
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let row = makeUpsertRow(fieldsJSON: "{}", fieldHlcsJSON: "{}", hlc: "h", context: context)
+        let client = stubClient(StubHTTPSession(status: 401, body: gatewayError("yala_attest_invalid")), sessionKept: true)
+        #expect(await client.push([row]) == .sessionExpired(pending: 1))
+        #expect(GroupsAttestStreakStore.current() == antes)
+    }
+
+    @Test("MUTACIÓN: el canario de sesión caducada solo sale con la sesión borrada, y el 401 del attest tiene el suyo")
+    func push_canaries_followTheCause() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let row = makeUpsertRow(fieldsJSON: "{}", fieldHlcsJSON: "{}", hlc: "h", context: context)
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        await withMetrics { defaults in
+            _ = await stubClient(StubHTTPSession(status: 200), token: nil, sessionKept: true).push([row])
+            #expect(canaries(defaults, "cloudSyncBlockedByExpiredSession").isEmpty,
+                    "un corte de red no es una sesión caducada: inflaría el canario")
+
+            _ = await stubClient(StubHTTPSession(status: 200), token: nil, sessionKept: false).push([row])
+            #expect(canaries(defaults, "cloudSyncBlockedByExpiredSession").count == 1)
+
+            _ = await stubClient(StubHTTPSession(status: 401, body: gatewayError(GatewayErrorEnvelope.attestRequiredType)))
+                .push([row])
+            #expect(canaries(defaults, "cloudSyncBlockedByExpiredSession").count == 1, "el 401 del attest no es caducada")
+            #expect(canaries(defaults, "cloudSyncAttestRequired").map(\.d) == ["push"])
+
+            // El motor reintenta con backoff: el mismo 401 en la vuelta siguiente no vuelve a contar en este proceso.
+            _ = await stubClient(StubHTTPSession(status: 401, body: gatewayError(GatewayErrorEnvelope.attestRequiredType)))
+                .push([row])
+            #expect(canaries(defaults, "cloudSyncAttestRequired").count == 1, "una vez por proceso y ruta")
+        }
     }
 
     // MARK: - Chunking (I14-H2, corrida device 2026-07-12)

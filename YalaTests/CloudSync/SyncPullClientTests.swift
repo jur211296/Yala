@@ -3,8 +3,9 @@
 //  YalaTests / CloudSync
 //
 //  Transporte + decoder del pull (I8f-1), sin red (URLSession stub). Cubre:
-//    - Clasificación de PullOutcome: 200→page, 401→sessionExpired, 403→accountUnavailable, 5xx→transient,
-//      sin token→sessionExpired, cuerpo 200 ilegible→transient.
+//    - Clasificación de PullOutcome: 200→page, 401→sessionExpired (salvo `yala_attest_required`→transient),
+//      403→accountUnavailable, 5xx→transient, sin token→sessionExpired con la sesión borrada y transient con la sesión
+//      guardada, cuerpo 200 ilegible→transient.
 //    - Request: método GET, query `since`/`limit`, headers Authorization Bearer + X-Yala-Capability-Set v1.
 //    - decodePage: full-row (fields como WireValue, bool preservado), tombstone (fields vacío), rawDelta.
 //
@@ -34,17 +35,31 @@ private final class StubHTTPSession: SyncHTTPSession, @unchecked Sendable {
     }
 }
 
+/// La sesión guardada del SDK, mutable desde el `tokenProvider`: la renovación terminal la borra antes de volver.
+private final class SesionDelSDK: @unchecked Sendable {
+    var guardada: Bool
+    init(guardada: Bool) { self.guardada = guardada }
+}
+
 @Suite("SyncPullClient · transporte + decoder I8f-1", .serialized)
 @MainActor
 struct SyncPullClientTests {
 
-    private func client(_ session: StubHTTPSession, token: String? = "test-jwt") -> SyncPullClient {
+    private func client(
+        _ session: StubHTTPSession, token: String? = "test-jwt", sessionKept: Bool = false
+    ) -> SyncPullClient {
         SyncPullClient(
             baseURL: URL(string: "https://example.test")!,
             tokenProvider: { token },
             attestProvider: { nil },
-            urlSession: session
+            urlSession: session,
+            canRenewSession: { sessionKept }
         )
+    }
+
+    /// El envelope de error del gateway (`jsonError`), con el mismo valor en `type` y en `code`.
+    private func gatewayError(_ type: String) -> Data {
+        Data(#"{"error":{"message":"m","type":"\#(type)","param":null,"code":"\#(type)"}}"#.utf8)
     }
 
     private let node = "0123456789abcdef"
@@ -78,8 +93,79 @@ struct SyncPullClientTests {
 
     @Test func pull_noToken_sessionExpired() async {
         let session = StubHTTPSession(status: 200)
-        let outcome = await client(session, token: nil).pull(since: 0)
+        // El SDK BORRÓ la sesión: esto sí es caducada.
+        let outcome = await client(session, token: nil, sessionKept: false).pull(since: 0)
         #expect(outcome == .sessionExpired)
+        #expect(session.lastRequest == nil)
+    }
+
+    // MARK: - Sin red con el token vencido, y el 401 del attest (2026-09-16)
+
+    // Ticket `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`: ver el mismo bloque en `SyncPushClientTests`.
+
+    @Test("MUTACIÓN: sin token y con la sesión GUARDADA es pasajero, sin tocar la red")
+    func pull_noToken_withStoredSession_isTransient() async {
+        let session = StubHTTPSession(status: 200)
+        let outcome = await client(session, token: nil, sessionKept: true).pull(since: 0)
+        #expect(outcome == .transient, "la renovación sin red no es una sesión caducada")
+        #expect(session.lastRequest == nil)
+    }
+
+    @Test("MUTACIÓN: el SDK se lee DESPUÉS de pedir el token, y el canario de caducada solo sale con la sesión borrada")
+    func pull_noToken_readsTheStoredSessionAfterTheRequest_andCountsOnlyAGoneSession() async {
+        let defaults = makeIsolatedDefaults(prefix: "syncPull.metrics.noToken")
+        MetricsService._testReset()
+        MetricsService.start(
+            client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: StubHTTPSession(status: 500)),
+            defaults: defaults)
+        defer { MetricsService._testReset() }
+        func caducadas() -> Int {
+            MetricsSpool.pending(defaults).filter { $0.e == "canary" && $0.n == "cloudSyncBlockedByExpiredSession" }.count
+        }
+
+        #expect(await client(StubHTTPSession(status: 200), token: nil, sessionKept: true).pull(since: 0) == .transient)
+        #expect(caducadas() == 0, "un corte de red no es una sesión caducada: inflaría el canario")
+
+        // El SDK borra la sesión DURANTE la renovación: antes de pedir el token estaba.
+        let sesion = SesionDelSDK(guardada: true)
+        let sut = SyncPullClient(
+            baseURL: URL(string: "https://example.test")!,
+            tokenProvider: { sesion.guardada = false; return nil },
+            urlSession: StubHTTPSession(status: 200),
+            canRenewSession: { sesion.guardada })
+        #expect(await sut.pull(since: 0) == .sessionExpired)
+        #expect(caducadas() == 1)
+    }
+
+    @Test("MUTACIÓN: el 401 `yala_attest_required` es pasajero, NO toca la racha del teléfono y tiene su canario")
+    func pull_401_attestRequired_isTransient_andLeavesThePhoneStreakAlone() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        try racha.seedTerminal()
+        let antes = GroupsAttestStreakStore.current()
+        let defaults = makeIsolatedDefaults(prefix: "syncPull.metrics")
+        MetricsService._testReset()
+        MetricsService.start(
+            client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: StubHTTPSession(status: 500)),
+            defaults: defaults)
+        defer { MetricsService._testReset() }
+
+        let sut = client(StubHTTPSession(status: 401, body: gatewayError(GatewayErrorEnvelope.attestRequiredType)))
+        #expect(await sut.pull(since: 0) == .transient, "volver a entrar no arregla un attest: no es sesión caducada")
+        // La puerta del runtime ya consiguió el token: este 401 no habla del teléfono. Ni suma un rechazo ni la borra.
+        #expect(GroupsAttestStreakStore.current() == antes)
+        let pendientes = MetricsSpool.pending(defaults).filter { $0.e == "canary" }
+        #expect(pendientes.filter { $0.n == "cloudSyncAttestRequired" }.map(\.d) == ["pull"])
+        #expect(pendientes.filter { $0.n == "cloudSyncBlockedByExpiredSession" }.isEmpty)
+    }
+
+    @Test("MUTACIÓN: el 401 `yala_attest_invalid` sigue siendo sesión caducada, con la sesión guardada y sin tocar la racha")
+    func pull_401_attestInvalid_isStillSessionExpired() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        try racha.seedTerminal()
+        let antes = GroupsAttestStreakStore.current()
+        let sut = client(StubHTTPSession(status: 401, body: gatewayError("yala_attest_invalid")), sessionKept: true)
+        #expect(await sut.pull(since: 0) == .sessionExpired)
+        #expect(GroupsAttestStreakStore.current() == antes)
     }
 
     @Test func pull_401_sessionExpired() async {

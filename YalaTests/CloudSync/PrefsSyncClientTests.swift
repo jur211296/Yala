@@ -36,14 +36,25 @@ private final class PrefsStubSession: SyncHTTPSession, @unchecked Sendable {
     }
 }
 
+/// La sesión guardada del SDK, mutable desde el `tokenProvider`: la renovación terminal la borra antes de volver.
+private final class SesionDelSDK: @unchecked Sendable {
+    var guardada: Bool
+    init(guardada: Bool) { self.guardada = guardada }
+}
+
 @Suite("PrefsSyncClient · I13", .serialized)
 @MainActor
 struct PrefsSyncClientTests {
 
     private let baseURL = URL(string: "https://x.test")!
 
-    private func client(_ stub: PrefsStubSession, token: String? = "jwt") -> PrefsSyncClient {
-        PrefsSyncClient(baseURL: baseURL, tokenProvider: { token }, urlSession: stub)
+    private func client(_ stub: PrefsStubSession, token: String? = "jwt", sessionKept: Bool = false) -> PrefsSyncClient {
+        PrefsSyncClient(baseURL: baseURL, tokenProvider: { token }, urlSession: stub, canRenewSession: { sessionKept })
+    }
+
+    /// El envelope de error del gateway (`jsonError`), con el mismo valor en `type` y en `code`.
+    private func gatewayError(_ type: String) -> Data {
+        Data(#"{"error":{"message":"m","type":"\#(type)","param":null,"code":"\#(type)"}}"#.utf8)
     }
 
     // MARK: - Push
@@ -57,9 +68,71 @@ struct PrefsSyncClientTests {
 
     @Test func push_noSession_sessionExpired() async {
         let stub = PrefsStubSession()
-        let outcome = await client(stub, token: nil).push([WirePref(key: "a", value: "1", hlc: "h")])
+        // El SDK BORRÓ la sesión: esto sí es caducada.
+        let outcome = await client(stub, token: nil, sessionKept: false).push([WirePref(key: "a", value: "1", hlc: "h")])
         #expect(outcome == .sessionExpired)
         #expect(stub.lastRequest == nil)
+    }
+
+    // MARK: - Sin red con el token vencido, y el 401 del attest (2026-09-16)
+
+    // Ticket `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`. El runtime ignora el outcome de prefs, pero
+    // el outcome no puede mentir: otro consumidor lo leería.
+
+    @Test("MUTACIÓN: sin token y con la sesión GUARDADA, push y pull son pasajeros sin tocar la red")
+    func noToken_withStoredSession_isTransient() async {
+        let stub = PrefsStubSession()
+        let sut = client(stub, token: nil, sessionKept: true)
+        #expect(await sut.push([WirePref(key: "a", value: "1", hlc: "h")]) == .transient)
+        #expect(await sut.pull(since: 0) == .transient)
+        #expect(stub.lastRequest == nil)
+        // Y en la dirección contraria el pull también es caducada (el push ya lo fija `push_noSession_sessionExpired`).
+        #expect(await client(stub, token: nil, sessionKept: false).pull(since: 0) == .sessionExpired)
+    }
+
+    @Test("MUTACIÓN: push y pull leen el SDK DESPUÉS de pedir el token: si la renovación borra la sesión, es caducada")
+    func noToken_readsTheStoredSessionAfterTheRequest() async {
+        for camino in ["push", "pull"] {
+            let sesion = SesionDelSDK(guardada: true)
+            let sut = PrefsSyncClient(baseURL: baseURL, tokenProvider: { sesion.guardada = false; return nil },
+                                      urlSession: PrefsStubSession(), canRenewSession: { sesion.guardada })
+            if camino == "push" {
+                #expect(await sut.push([WirePref(key: "a", value: "1", hlc: "h")]) == .sessionExpired)
+            } else {
+                #expect(await sut.pull(since: 0) == .sessionExpired)
+            }
+        }
+    }
+
+    @Test("MUTACIÓN: el 401 `yala_attest_required` es pasajero en push y pull, y NO toca la racha del teléfono")
+    func attestRequired401_isTransient_andLeavesThePhoneStreakAlone() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        try racha.seedTerminal()
+        let antes = GroupsAttestStreakStore.current()
+        let defaults = makeIsolatedDefaults(prefix: "prefsSync.metrics")
+        MetricsService._testReset()
+        MetricsService.start(
+            client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: PrefsStubSession(status: 500)),
+            defaults: defaults)
+        defer { MetricsService._testReset() }
+
+        let sut = client(PrefsStubSession(status: 401, body: gatewayError(GatewayErrorEnvelope.attestRequiredType)))
+        #expect(await sut.push([WirePref(key: "a", value: "1", hlc: "h")]) == .transient)
+        #expect(await sut.pull(since: 0) == .transient)
+        #expect(GroupsAttestStreakStore.current() == antes, "la puerta del runtime ya consiguió el token: no es el teléfono")
+        let canarios = MetricsSpool.pending(defaults).filter { $0.e == "canary" && $0.n == "cloudSyncAttestRequired" }
+        #expect(canarios.compactMap(\.d).sorted() == ["prefs-pull", "prefs-push"], "cada ruta con su canario")
+    }
+
+    @Test("MUTACIÓN: el 401 `yala_attest_invalid` sigue siendo sesión caducada en push y pull, sin tocar la racha")
+    func attestInvalid401_isStillSessionExpired() async throws {
+        let racha = try IsolatedAttestStreak(); defer { racha.restore() }
+        try racha.seedTerminal()
+        let antes = GroupsAttestStreakStore.current()
+        let invalido = client(PrefsStubSession(status: 401, body: gatewayError("yala_attest_invalid")), sessionKept: true)
+        #expect(await invalido.push([WirePref(key: "a", value: "1", hlc: "h")]) == .sessionExpired)
+        #expect(await invalido.pull(since: 0) == .sessionExpired)
+        #expect(GroupsAttestStreakStore.current() == antes)
     }
 
     @Test func push_200_appliedAndNoop() async {

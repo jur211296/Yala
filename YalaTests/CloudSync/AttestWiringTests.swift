@@ -195,6 +195,39 @@ struct AttestWiringTests {
         }
     }
 
+    /// **El mismo descuido, con el token que no llega** (2026-09-16, ticket
+    /// `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`). Los tres clientes del canal personal separan
+    /// «sin conexión» de «sesión caducada» preguntando `canRenewSession`, y su default `{ false }` es el trato de ANTES:
+    /// una construcción de producción que lo herede vuelve a parar el motor sin red y a pedir iniciar sesión, sin un
+    /// solo rojo en sus tests de cliente. **Se fija el VALOR, no la etiqueta**: cada construcción pasa `canRenew`, y el
+    /// fichero que la contiene define `canRenew` como la lectura del proveedor de sesión. Con solo la etiqueta, un
+    /// `let canRenew = { false }`, uno invertido o uno sobre `hasSession` (que lleva el seam de uitest) salían en verde.
+    @Test func personalChannelConstructions_passTheSessionRenewalWitness() {
+        let personal: [(type: String, expected: Int)] = [("SyncPushClient", 2), ("SyncPullClient", 2), ("PrefsSyncClient", 1)]
+        let definicion = "let canRenew: @MainActor () -> Bool = { session.canRenewSession }"
+        let sources = Self.productionSources()
+        #expect(!sources.isEmpty, "El barrido no leyó NINGÚN fuente: el test no está comprobando nada.")
+        for (type, expected) in personal {
+            var total = 0
+            for (path, text) in sources {
+                for site in Self.constructions(of: type, in: text) {
+                    total += 1
+                    #expect(site.contains("canRenewSession: canRenew)") || site.contains("canRenewSession: canRenew,"),
+                            """
+                            \(path): construye `\(type)` sin `canRenewSession: canRenew`. Con el default `{ false }`, sin red y \
+                            con el token vencido el motor personal se para y Ajustes pide iniciar sesión.
+                            Construcción encontrada: \(site.prefix(200))
+                            """)
+                    let codigo = Self.stripWholeLineComments(text)
+                    #expect(codigo.components(separatedBy: definicion).count - 1 == 1,
+                            "\(path): `canRenew` tiene que definirse UNA vez como `\(definicion)`.")
+                }
+            }
+            #expect(total == expected,
+                    "Se esperaban \(expected) construcciones de `\(type)` en producción y se encontraron \(total).")
+        }
+    }
+
     /// El proveedor vive en un sitio que se encuentra buscando «attest». Estaba anidado en
     /// `AccountDeletionService.Dependencies.liveAttest` —dentro del servicio de BORRADO DE CUENTAS—, que es
     /// la razón más probable de que seis sitios no lo encontraran. Si alguien lo devuelve ahí, esto

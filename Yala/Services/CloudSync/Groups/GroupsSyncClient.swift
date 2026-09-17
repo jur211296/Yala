@@ -1565,8 +1565,9 @@ final class GroupsSyncClient {
     /// `SupabaseSessionRenewalContractTests`.
     ///
     /// **Dos límites, medidos en la review del 2026-09-15.** En `.cloud` Grupos no tiene loop propio: cicla dentro
-    /// del runtime personal (paso 5.6), cuyo push y pull siguen leyendo el token nulo como caducado y paran antes de
-    /// llegar aquí (`personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`). Y un loop vivo en backoff no
+    /// del runtime personal (paso 5.6). Hasta el 2026-09-16 su push y su pull leían el token nulo como caducado y paraban
+    /// antes de llegar aquí; desde entonces reintentan con backoff, y Grupos cicla en la primera vuelta en que el push
+    /// personal pasa (`personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`). Y un loop vivo en backoff no
     /// se despierta al volver a primer plano, cuando el loop muerto de antes se re-arrancaba justo ahí
     /// (`groups-loop-in-backoff-ignores-the-return-to-foreground`).
     ///

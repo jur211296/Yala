@@ -88,8 +88,10 @@ nonisolated enum StorageMigrationSignInLogic {
         /// El productor pidió reusar y la sesión ya no sirve (expiró, la cerraron, o su refresh token
         /// murió) → fallar honesto a `notStarted`. JAMÁS avanzar la máquina sin JWT: el claim fallaría
         /// más adelante dejando el journal en una fase transicional. El usuario reintenta y el
-        /// productor vuelve a decidir — para entonces el SDK ya habrá limpiado la sesión muerta y
-        /// verá el chooser.
+        /// productor vuelve a decidir — si la sesión estaba muerta, para entonces el SDK ya la habrá
+        /// limpiado y verá el chooser. **Sin red cae aquí también, con la sesión viva**: el token no llega
+        /// y el SDK la CONSERVA, así que el reintento vuelve a elegir reusar y el mismo error se repite hasta
+        /// que vuelve la red (leído en el código el 2026-09-16, `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`).
         case failNoUsableSession
     }
 

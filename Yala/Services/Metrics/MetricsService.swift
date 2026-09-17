@@ -117,7 +117,20 @@ enum MetricsCanary: String {
     /// El keyId guardado ya no designaba una key usable y se descartó para re-registrar. >0 sostenido =
     /// algo invalida keys en masa; un pico tras un release = usuarios reinstalando (esperado, se auto-cura).
     case attestKeyDiscardedAfterAssertFailure
+    /// La sesión ya no sirve y hay cambios esperando. **Desde el 2026-09-16 ya no cuenta** el token que no llega con la
+    /// sesión guardada (sin red) ni el 401 `yala_attest_required`: los dos son pasajeros (ticket
+    /// `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`). Una bajada de la serie con ese build no dice que
+    /// caduquen menos sesiones.
     case cloudSyncBlockedByExpiredSession
+    /// El gateway respondió 401 `yala_attest_required` a una ruta del canal personal (`/sync/push`, `/sync/pull`,
+    /// `/prefs/*`). Una vez por proceso y ruta; `detail` = la ruta del cliente (`push`, `pull`, `prefs-push`, `prefs-pull`).
+    /// Desde el motor de sync, la puerta de attest ya filtró los fallos del TELÉFONO, así que apunta al reloj, a un build que
+    /// no manda la cabecera o al servidor: **un pico tras un release es una regresión**. **Salvedad:** la migración, la vuelta
+    /// a iCloud y el adopt usan los mismos clientes SIN esa puerta (`CloudMigrationController.makeExecutor` pide el attest con
+    /// `try?`), así que desde ahí también cuenta un teléfono sin App Attest que migra o entra a una cuenta existente. No suma
+    /// a la racha del teléfono (`GroupsAttestStreakStore`). Nació el 2026-09-16 para que esa regresión no pase un día sin
+    /// contarse.
+    case cloudSyncAttestRequired
     case cloudSyncOutboxMirrorRehydrated
     case cloudSyncOutboxMirrorDivergence
     case cloudSyncMutationRejected
@@ -574,6 +587,12 @@ extension MetricsService {
 
     static func cloudSyncBlockedByExpiredSession(pending: Int) {
         canary(.cloudSyncBlockedByExpiredSession, value: Double(pending))
+    }
+
+    /// Ver `MetricsCanary.cloudSyncAttestRequired`. Deduplicado por proceso y ruta: el motor reintenta con backoff y cada
+    /// vuelta repetiría el mismo hecho.
+    static func cloudSyncAttestRequired(edge: String) {
+        canaryOnce(.cloudSyncAttestRequired, key: edge, detail: edge)
     }
 
     static func cloudSyncOutboxMirrorRehydrated(count: Int) {
