@@ -5,10 +5,48 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-17 (Lima)
 
-**Rama** `2.1` — Merge #192: **Un iPhone que cambia de dueño ya no deja abierta la cuenta de antes.**
+**Rama** `2.1` — Merge #193: **Restaurar ya no dice «no encontramos tus datos» cuando lo que falló fue la comprobación.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#192 · la sesión en la nube de la persona anterior ya se retira)
+## Esta sesión (#193 · Restaurar dice la verdad cuando no se pudo comprobar la nube)
+
+**Reinstalo Yala —o estreno móvil— y la abro sin conexión.** Hasta hoy, «Restaurar desde iCloud» me contestaba **«No
+encontramos tus datos»** con mi histórico intacto en el servidor. Ahora dice **«No pudimos comprobar tus datos»** y me
+ofrece reintentar; si toco «Empezar desde cero» desde ahí, la app pregunta antes, porque nadie sabe todavía si tengo algo
+que perder. Tu decisión del 17-sep, **opción 2**: se corrige el mensaje, no se abre una puerta a la cuenta sin red.
+
+**La señal es la ausencia de snapshot de remote-config tras forzar el refresco**, que dice literalmente «en esta
+instalación nunca hemos conseguido que el servidor conteste». Medido y descartado el `settled` de la búsqueda de iCloud:
+su propia nota dice que un store que nada importa —un usuario realmente nuevo— agota los 90 s igual que un teléfono sin
+red, así que habría cambiado una mentira por otra. `isCloudPaused` pasa a ser `WelcomeRestoreEmptyOutcome.resolve`: una
+sola decisión con tres salidas, no dos booleanos que puedan contradecirse.
+
+**La review (tres lentes) tumbó cinco cosas mías, y la primera era de producto.** Mi primer intento mandaba a «no pudimos
+comprobar» todo lo que llegara sin snapshot, faro incluido, y eso le retiraba «tus datos siguen a salvo en tu cuenta de
+Yala» justo a quien SÍ podemos probar que tiene cuenta: las dos señales viajan por canales distintos —el faro por el
+iCloud-KV, el snapshot por nuestro gateway—, así que una red que filtre su dominio o un 5xx dejan el faro puesto. **Ahora
+el faro gana.** Las otras cuatro: el copy decía «revisa tu conexión» cuando la que falló es NUESTRA comprobación (y el
+icono era un wifi); `es-AR` se quedó sin voseo, byte-idéntico a `es-ES`, con sus tres vecinos de pantalla voseando; un
+ancla de test medía la etiqueta del argumento en vez de la lectura; y tres afirmaciones las declaré sin medirlas.
+
+**Un rojo del gate no era mío, y se midió cuatro veces.** `test_extremeMinimumAmountSaves` cayó en la primera corrida del
+lote; base limpio verde, mi árbol aislado verde, y **el mismo lote repetido sobre el mismo código, verde**, las cuatro con
+el centinela en 0. Es el flaky ya registrado en `edgecases-extreme-minimum-flaky-under-load`, que ahora lleva la tabla.
+
+**Qué te toca:**
+
+1. El **QA en iPhone** de `reinstall-without-network-has-no-cloud-door` (en `qa`): 9 pasos. **El paso 5 es el que decide** —
+   reinstalar + modo avión debe decir «No pudimos comprobar tus datos». El paso 8 es el control con red.
+2. **Decidir `restore-says-no-data-when-the-icloud-import-never-settled`** (lo abrí en **high**): es el canal gemelo, con
+   MÁS población que este ticket. Si el import de iCloud no asienta en 90 s, la pantalla sigue diciendo «no hay datos» y
+   ofrece «Empezar desde cero» **sin confirmar**. Puede perder datos.
+3. Sigue pendiente el **QA en iPhone de #192** (`previous-person-cloud-session-survives-fresh-start-and-reinstall`), cuyo
+   paso 4 decide si eso se publica.
+
+Validación: build ×2 · unit **313 casos en 39 suites** · XCUITest 18 en 5 clases con centinela en 0 · **7 mutantes
+cazados** · review con 3 lentes · `validate-coverage` OK · `docs/TICKETS.md` igual al disco (462) · **CI verde**.
+
+## Sesión anterior (#192 · la sesión en la nube de la persona anterior ya se retira)
 
 **Me dan un iPhone donde otra persona usaba Yala: la app ya no usa su cuenta en la nube sin que yo la elija.** La sesión se
 retira por los dos sitios por los que sobrevivía — al «Empezar desde cero», en el mismo gesto que borra los datos, y al
@@ -37,7 +75,7 @@ no para su auto-refresh, una quinta puerta de «empiezo de cero» sin cubrir, y 
 Validación: build ×2 · unit 243 casos en 26 suites · XCUITest 26 en 7 clases con centinela en 0 · **19 mutantes cazados** ·
 review con 3 lentes · `validate-coverage` OK · `docs/TICKETS.md` igual al disco (452) · **CI verde** (tests 35 min).
 
-## Sesión anterior (#191 · sin red, salir de un grupo ya no dice «Tu sesión caducó»)
+## Sesión #191 · sin red, salir de un grupo ya no dice «Tu sesión caducó»
 
 **Sin conexión y con el token caducado, las acciones de Grupos ya no dicen «Tu sesión caducó».** Salir de un grupo dice «No
 pudimos completar tu salida del grupo. Vuelve a intentarlo en un momento.». Aceptar una invitación ya no abre la hoja de
