@@ -5,10 +5,38 @@ tags: [now, punto-de-retomada]
 
 # NOW — 2026-09-16 (Lima)
 
-**Rama** `2.1` — Merge #187: **«Migrar a la nube» ya no mezcla tus datos con una cuenta que ya tiene los suyos.**
+**Rama** `2.1` — Merge #188: **sin red, el canal personal ya no lee una renovación fallida como sesión caducada.**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#187 · «Migrar a la nube» ya no mezcla tus datos con una cuenta que ya tiene los suyos)
+## Esta sesión (#188 · sin red, el canal personal ya no lee una renovación fallida como sesión caducada)
+
+**Con la cuenta en la nube, un corte de red al caducar la sesión ya no para la sincronización ni pide iniciar sesión.** Si
+la sesión caduca sin conexión mientras la verificación de App Attest sigue en caché (los 15 min tras usarla), o si cae el
+servidor de sesiones con la red bien, el motor personal reintenta solo y sube al volver la red, y Grupos sube en la misma
+vuelta. «Activar Yala completo» sin red ofrece «Reintentar» en vez de «Tu sesión caducó», y el alta del Welcome ya no
+cierra la sesión. Fue un encargo de noche: todo con la recomendada, y lo discutible está en el PR.
+
+**La review tumbó la mitad de mi primer diseño:** copié de Grupos que el 401 `yala_attest_required` suma a la racha del
+teléfono, y en el canal personal ese 401 llega después de que la puerta consiga el token, así que no habla del teléfono.
+Contarlo acababa ofreciendo «Cerrar sesión y perderlos» a un teléfono que sí atesta. Ahora es pasajero, con canario propio
+(`cloudSyncAttestRequired`), y no toca la racha. **La segunda pasada cazó que mi guion de device-QA no llegaba al arreglo:**
+sin red la verificación caduca y el motor salía antes del push, con el arreglo y sin él.
+
+**Qué te toca:** el QA en iPhone de `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry` (en `qa`), con
+`Yala Dev` contra staging: hay que montar una ventana de 14 min, y el guion trae un control con el build de antes. Y dos
+decisiones de producto: `cloud-attest-notice-does-not-cover-a-gateway-rejected-token` (si el aviso fijo debe salir a quien
+el servidor le rechaza un token bueno) y `cloud-sync-status-says-all-synced-with-changes-still-pending` («Todo
+sincronizado» con cambios sin subir). **Ojo al dashboard:** `cloudSyncBlockedByExpiredSession` cambia de definición con
+este build.
+
+**Cuatro tickets nuevos:** los dos de arriba (`medium`), el 401 de JWT con el reloj atrasado y el plural de «1 cambios»
+(`low`).
+
+Validación: build ×2 · unit 7188 casos en 730 suites · XCUITest 29 en 9 clases con centinela en 0 · 21 mutantes cazados (3
+en el gateway) · dos pasadas de review (4 + 2 lentes) · `validate-coverage` OK · `docs/TICKETS.md` igual al disco (442) ·
+**CI verde** (tests 23 min).
+
+## Sesión anterior (#187 · «Migrar a la nube» ya no mezcla tus datos con una cuenta que ya tiene los suyos)
 
 **«Activar la nube» ya no fusiona tus finanzas con las de una cuenta que ya tenía las suyas.** El ticket decía «adopta y
 no sube lo mío», y la medición lo corrigió: el adopt subía a esa cuenta todo lo de este iPhone que ella no conocía, y la
@@ -32,7 +60,7 @@ espera tu decisión: `migrate-card-keeps-promising-an-account-the-check-refused`
 Validación: build ×2 · unit 7169 casos en 730 suites · XCUITest 31/31 con centinela en 0 · 26 mutantes cazados · dos
 pasadas de review (4 + 2 lentes) · `validate-coverage` OK · `docs/TICKETS.md` igual al disco (438) · **CI verde** (tests 23 min).
 
-## Sesión anterior (#186 · un rechazo al volver a iCloud ya no deja la barra al 15 %)
+## Sesión #186 · un rechazo al volver a iCloud ya no deja la barra al 15 %
 
 **Si el servidor no deja empezar «Volver a iCloud», la app vuelve a la nube al momento y lo dice.** Hasta hoy la barra se
 quedaba al 15 % para siempre, «Retomar» repetía lo mismo y, tras relanzar, el teléfono dejaba de sincronizar con la nube.
