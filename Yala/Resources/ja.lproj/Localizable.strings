@@ -6029,3 +6029,18 @@
 
 /* Restore: cuerpo del estado importIncomplete. Describe lo observado (el import sigue en marcha), no promete un tiempo ni afirma cuántos datos hay. */
 "welcome.restore.importIncompleteBody" = "iCloud がまだ履歴を送信しています。記録が多い場合や通信が遅い場合は数分かかることがあります。少し待ってからもう一度検索してください。";
+
+/* Salida de la vuelta antes de montar el espejo: el servidor no dejó continuar */
+"storage.reverseAbort.preMountRefused" = "iCloud への切り替えを完了できませんでした。クラウドのアカウントが許可しませんでした。データは Yala のクラウドにそのまま残っています。%@ までご連絡ください。一緒に確認します。";
+
+/* Salida de la vuelta antes de montar el espejo: venció el techo largo */
+"storage.reverseAbort.preMountStalled" = "iCloud への切り替えを完了できませんでした。処理が進まなくなりました。データは Yala のクラウドにそのまま残っています。いつでもやり直せます。";
+
+/* Cuerpo del diálogo de cancelar antes de montar el espejo: no hay relanzamiento */
+"storage.confirm.cancelReverseBeforeMountBody" = "データは Yala のクラウドとこの端末にそのまま残ります。いつでもやり直せます。";
+
+/* Diálogo de cancelar: seguir, antes de montar el espejo */
+"storage.confirm.cancelReverseKeepBeforeMount" = "iCloud への切り替えを続ける";
+
+/* Salida de la vuelta antes de montar el espejo: otro dispositivo tomó el relevo */
+"storage.reverseAbort.preMountOtherDevice" = "iCloud への切り替えを完了できませんでした。別のお使いの端末が引き継ぎました。そちらが終わったら、この端末でも実行できます。";

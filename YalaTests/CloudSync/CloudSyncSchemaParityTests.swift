@@ -193,6 +193,8 @@ struct CloudSyncSchemaParityTests {
             "reverseAbortReasonRaw",
             "reverseOriginPendingEffectsData",
             "forwardClaimIntentRaw",
+            "reversePreMountProgressAt",
+            "reversePreMountPhaseRaw",
             "startedAt",
             "updatedAt",
             "schemaVersion",
@@ -200,7 +202,7 @@ struct CloudSyncSchemaParityTests {
         #expect(propertyNames(MigrationState.self) == expected)
     }
 
-    @Test func migrationState_schemaVersion_isSix() {
+    @Test func migrationState_schemaVersion_isSeven() {
         // Subió a 2 en I11-2 al añadir el campo aditivo `reverseOriginRaw`; a 3 en C-1 con
         // `markerWrittenSince` (reloj del tope del paso 4) + `cutoverICloudVerdictRaw` (veredicto del canal
         // iCloud), ambos ADITIVOS y opcionales → una fila escrita por un build v2 sigue abriéndose. A 4 con los
@@ -209,7 +211,11 @@ struct CloudSyncSchemaParityTests {
         // `reverseOriginPendingEffectsData` (los pendientes del origen que la vuelta reemplaza), opcional: una fila v4
         // clavada en `reverseClaimLeader` se abre sin nada que reponer. A 6 con `forwardClaimIntentRaw` (la intención del
         // claim de la ida), opcional: una fila v5 con el claim aparcado se abre sin intención y adopta como siempre.
-        #expect(CloudSyncSchemaVersions.migrationState == 6)
+        // A 7 con el par del techo de las fases previas al montaje (`reversePreMountProgressAt`,
+        // `reversePreMountPhaseRaw`), opcionales: una fila v6 parada en una de esas cuatro fases se abre sin reloj, y
+        // la primera observación lo sella — o sea, el presupuesto le empieza a contar desde que este build la mira, no
+        // desde que se paró (ticket `reverse-before-mount-has-no-way-to-abandon-the-return`).
+        #expect(CloudSyncSchemaVersions.migrationState == 7)
     }
 
     // MARK: - (b·G2) GroupSyncOutbox / GroupSyncCursor (canal de Grupos → backend)

@@ -575,11 +575,15 @@ struct MigrationWorkExecutorTests {
         #expect(await executor.verify() == .networkTimeout, "verify: un 5xx del push sigue siendo red")
         #expect(await executor.reverseDrainOnce() == .transient, "drain: un 5xx del push sigue siendo red")
 
-        // — Y el 403: cuenta suspendida. NO es una sesión que renovar, así que tampoco puede pedir volver a entrar —
-        // «Iniciar sesión» ahí manda a un gesto que no cambia nada. Decisión documentada en `reverseDrainOnce`.
+        // — Y el 403: cuenta suspendida. Sigue sin pedir volver a entrar —«Iniciar sesión» ahí manda a un gesto que
+        // no cambia nada— pero desde el 2026-09-21 tampoco se confunde con la red: sale TIPADO
+        // (`reverse-before-mount-has-no-way-to-abandon-the-return`), que es lo que deja elegir el techo corto de la
+        // etapa. Con `.transient`, como estaba, la vuelta se quedaba parada aquí sin salida.
         stub.pushStatus = 403
-        #expect(await executor.verify() == .networkTimeout, "verify: el 403 del push NO pide volver a entrar")
-        #expect(await executor.reverseDrainOnce() == .transient, "drain: el 403 del push NO pide volver a entrar")
+        #expect(await executor.verify() == .blocked(.accountUnavailable),
+                "verify: el 403 del push no es red, y tampoco pide volver a entrar")
+        #expect(await executor.reverseDrainOnce() == .blocked(.accountUnavailable),
+                "drain: el 403 del push no es red, y tampoco pide volver a entrar")
 
         // El 403 del PULL exige el outbox vacío: con filas vivas, el push las sube y `verify()` sale por
         // `.newDeltaDetected` antes de llegar al pull. Un `reverseDrainOnce` con el push en 200 lo limpia.
@@ -587,8 +591,10 @@ struct MigrationWorkExecutorTests {
         #expect(await executor.reverseDrainOnce() == .completed, "control: con todo en 200, el drain cierra")
         #expect(liveOutboxRows(context).isEmpty, "control del escenario: sin este vacío, el pull no se alcanza")
         stub.pullStatus = 403
-        #expect(await executor.verify() == .networkTimeout, "verify: el 403 del pull NO pide volver a entrar")
-        #expect(await executor.reverseDrainOnce() == .transient, "drain: el 403 del pull NO pide volver a entrar")
+        #expect(await executor.verify() == .blocked(.accountUnavailable),
+                "verify: el 403 del pull no es red, y tampoco pide volver a entrar")
+        #expect(await executor.reverseDrainOnce() == .blocked(.accountUnavailable),
+                "drain: el 403 del pull no es red, y tampoco pide volver a entrar")
     }
 
     /// Filas vivas del outbox: el escenario de arriba depende de que esté vacío, y afirmarlo es lo que impide que el
@@ -889,11 +895,14 @@ struct MigrationWorkExecutorTests {
         #expect(stub.lastMigrationBody?["device_id"] as? String == "device-1")
         #expect(stub.lastMigrationBody?["action"] as? String == "reverse_freeze")
 
+        // Desde el 2026-09-21 los dos rechazos del servidor salen TIPADOS
+        // (`reverse-before-mount-has-no-way-to-abandon-the-return`): hasta entonces colapsaban en `.transient` y esta
+        // fase era la única de las cuatro sin ninguna salida, reintentando un «no» para siempre.
         stub.migrationBody = Data("{\"ok\":false,\"reason\":\"other_leader\"}".utf8)
-        #expect(await executor.freezeBackendForReverse() == .transient)
+        #expect(await executor.freezeBackendForReverse() == .blocked(.otherLeader))
 
         stub.migrationBody = Data("{\"ok\":false,\"reason\":\"not_in_progress\"}".utf8)
-        #expect(await executor.freezeBackendForReverse() == .transient)
+        #expect(await executor.freezeBackendForReverse() == .blocked(.refused))
 
         stub.migrationStatus = 500
         #expect(await executor.freezeBackendForReverse() == .transient)

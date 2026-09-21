@@ -50,8 +50,22 @@ struct ReverseUploadControllerWiringTests {
             .joined(separator: "\n")
     }
 
+    private static func storageView() throws -> String {
+        try String(
+            contentsOf: repoRoot.appendingPathComponent("Yala/App/Views/Settings/StorageSettingsView.swift"),
+            encoding: .utf8)
+    }
+
     private static func occurrences(of needle: String, in text: String) -> Int {
-        text.components(separatedBy: needle).count - 1
+        codeOnly(text).components(separatedBy: needle).count - 1
+    }
+
+    /// Fuera las líneas de comentario antes de CONTAR (`.claude/rules/testing.md`): sin esto, documentar el
+    /// invariante que el scan cuenta lo pone en rojo sin que producción cambie — y este repo documenta mucho.
+    private static func codeOnly(_ source: String) -> String {
+        source.split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
     }
 
     /// El aviso «Aún no podemos volver a iCloud» sale justo con un efecto pendiente, que es lo que dispara el re-kick
@@ -122,7 +136,7 @@ struct ReverseUploadControllerWiringTests {
         let resume = try Self.body(of: "func resume(clearingError: Bool = true) async {")
         let preWait = try #require(resume.range(of: "awaitImportQuiescenceForResume()"))
         let resumeSnapshot = try #require(resume.range(of: "let claimExitBefore = runner.lastReverseClaimExit"))
-        let cancelCall = try #require(resume.range(of: "await runner.cancelReverseUpload()"))
+        let cancelCall = try #require(resume.range(of: "await runner.cancelReverse()"))
         let resumeCall = try #require(resume.range(of: "await runner.resume()"))
         let resumeRefresh = try #require(resume.range(of: "refresh()", range: resumeCall.upperBound..<resume.endIndex))
         let resumeAnnounce = try #require(resume.range(of: "announceReverseClaimExit(since: claimExitBefore)"))
@@ -169,7 +183,7 @@ struct ReverseUploadControllerWiringTests {
             "let forwardRefusalBefore = runner.lastForwardClaimRefusal",
             "if cancelReverseRequested {",
             "cancelReverseRequested = false",
-            "await runner.cancelReverseUpload()",
+            "await runner.cancelReverse()",
             "}",
             "await runner.resume()",
             "refresh()",
@@ -184,9 +198,7 @@ struct ReverseUploadControllerWiringTests {
     /// La nota de la tarjeta, la de relanzar y la alerta dicen lo mismo porque salen de UNA función. La vista ya no
     /// tiene su propia traducción del motivo.
     @Test func reverseAbortNote_hasASingleTranslation() throws {
-        let view = try String(
-            contentsOf: Self.repoRoot.appendingPathComponent("Yala/App/Views/Settings/StorageSettingsView.swift"),
-            encoding: .utf8)
+        let view = try Self.storageView()
         #expect(Self.occurrences(of: "L10n.Storage.ReverseAbort.note(for: reason)", in: view) == 2,
                 "la nota de «Volver a iCloud» y la de relanzar")
         for stray in ["L10n.Storage.ReverseAbort.icloudFull", "L10n.Storage.ReverseAbort.icloudUnavailable",
@@ -196,10 +208,39 @@ struct ReverseUploadControllerWiringTests {
         }
     }
 
+    /// **Firmar para CONTINUAR retira un «Cancelar» apuntado.** Hasta el 2026-09-21 los dos botones no podían
+    /// coexistir —«Volver a entrar» solo sale en las cuatro fases previas al montaje y «Cancelar» solo salía en la
+    /// espera de la subida—, así que la pregunta no se planteaba. Con el botón ofrecido también en esas cuatro sí:
+    /// un «sí» que la pre-espera del import no dejó pasar lo ejecutaba el `resume()` con el que este método
+    /// termina, y la persona que acababa de rescatar la vuelta se la encontraba abandonada, en silencio y sin nota
+    /// (`cancelled` no la deja a propósito). El orden importa tanto como la línea: con la retirada DESPUÉS del
+    /// `resume()` no serviría de nada.
+    @Test func signInToResumeReverse_withdrawsAQueuedCancel() throws {
+        let body = try Self.body(of: "func signInToResumeReverse() async {")
+        let withdrawal = try #require(body.range(of: "cancelReverseRequested = false"),
+                                      "firmar para continuar no puede dejar puesto un «Cancelar»")
+        let resumeCall = try #require(body.range(of: "await resume()"))
+        #expect(withdrawal.lowerBound < resumeCall.lowerBound, "se retira ANTES de retomar")
+    }
+
+    /// El «sí» se apunta ANTES del spin que espera a que el runner suelte, no después. Un re-kick en vuelo puede
+    /// cruzar las cuatro fases previas al montaje en una sola pasada —cada una es una llamada de red, no una
+    /// espera—, y con el flag puesto después el `resume()` que viniera detrás no lo veía: el gesto se perdía tras
+    /// haber prometido lo contrario.
+    @Test func cancelReverse_flagsTheRequestBeforeWaitingForTheRunner() throws {
+        let body = try Self.body(of: "func cancelReverse() async {")
+        let flagged = try #require(body.range(of: "cancelReverseRequested = true"))
+        let spin = try #require(body.range(of: "while isWorking {"))
+        let preWait = try #require(body.range(of: "awaitImportQuiescenceForResume()"))
+        #expect(flagged.lowerBound < spin.lowerBound, "antes del spin, no solo antes de la pre-espera")
+        #expect(flagged.lowerBound < preWait.lowerBound)
+        #expect(Self.occurrences(of: "cancelReverseRequested = true", in: body) == 1, "un solo sitio lo apunta")
+    }
+
     /// Un «sí» de «Cancelar» que la pre-espera no deja pasar queda apuntado, y lo ejecuta el siguiente `resume()`
     /// ANTES de retomar: al revés, el runner podía observar, drenar y terminar la vuelta que la persona canceló.
     @Test func queuedCancel_runsBeforeTheResume() throws {
-        let cancel = try Self.body(of: "func cancelReverseUpload() async {")
+        let cancel = try Self.body(of: "func cancelReverse() async {")
         let flagged = try #require(cancel.range(of: "cancelReverseRequested = true"))
         let preWait = try #require(cancel.range(of: "awaitImportQuiescenceForResume()"))
         #expect(flagged.lowerBound < preWait.lowerBound, "se apunta antes de que la pre-espera pueda vencer")
@@ -207,7 +248,7 @@ struct ReverseUploadControllerWiringTests {
         let resume = try Self.body(of: "func resume(clearingError: Bool = true) async {")
         let resumePreWait = try #require(resume.range(of: "awaitImportQuiescenceForResume()"))
         let queued = try #require(resume.range(of: "if cancelReverseRequested {"))
-        let cancelCall = try #require(resume.range(of: "await runner.cancelReverseUpload()"))
+        let cancelCall = try #require(resume.range(of: "await runner.cancelReverse()"))
         let resumeCall = try #require(resume.range(of: "await runner.resume()"))
         #expect(resumePreWait.lowerBound < queued.lowerBound, "solo tras la pre-espera")
         #expect(queued.lowerBound < cancelCall.lowerBound)
@@ -264,6 +305,68 @@ struct ReverseUploadControllerWiringTests {
         #expect(lock.lowerBound < firstAwait.lowerBound,
                 "el candado va antes del primer `await`, como en `signInToResumeSync`")
         #expect(body.contains("guard !isWorking else { return }"), "y no se entra dos veces")
+    }
+
+    // MARK: - La salida antes del montaje (`reverse-before-mount-has-no-way-to-abandon-the-return`)
+
+    /// El botón cuelga de `canCancelReverse`, no de `isWaitingReverseUpload`. Esa línea ERA el hueco del ticket: al
+    /// 15/30/50/62 % la tarjeta solo ofrecía «Retomar». El scan fija además que el predicado viejo no ha quedado
+    /// gateando el botón en ningún otro sitio de la vista.
+    @Test func cancelButton_isGatedByCanCancelReverse_notByTheUploadWait() throws {
+        let view = try Self.storageView()
+        // El PAR gate↔botón, no el gate suelto: `isWaitingReverseUpload` sigue vivo en la vista —decide el caption
+        // de la espera y el cuerpo del diálogo— así que buscarlo a secas no distingue nada.
+        #expect(view.contains(
+            "if reverse && controller.canCancelReverse {\n                cancelReverseButton(controller)"),
+                "el botón se pinta en las CINCO fases que ofrecen salida")
+        #expect(!view.contains(
+            "if reverse && controller.isWaitingReverseUpload {\n                cancelReverseButton(controller)"),
+                "el gate viejo dejaba fuera las cuatro fases previas al montaje")
+        // El auto-cierre del diálogo también: si se quedara con el predicado viejo, una confirmación abierta en una
+        // fase previa al montaje sobreviviría al avance y reaparecería sola en la espera de la subida.
+        #expect(view.contains(".onChange(of: controller?.canCancelReverse) { _, cancellable in"))
+    }
+
+    /// El cuerpo del diálogo depende de la fase. El de la espera promete un relanzamiento («Yala te pedirá cerrarla
+    /// y volver a abrirla») porque ahí el espejo ESTÁ montado; antes del montaje esa frase sería falsa. Un mutante
+    /// que reuse un solo cuerpo deja a la persona esperando un relanzamiento que nunca llega.
+    @Test func cancelDialog_bodyDependsOnWhetherTheMirrorIsMounted() throws {
+        let view = try Self.storageView()
+        // El discriminante va en POSITIVO. «¿No es la espera de la subida?» falla ABIERTO: le daría el texto «no hay
+        // relanzamiento» a cualquier fase POST-montaje que mañana entre en `canCancelReverse`, donde el espejo está
+        // vivo y sí hay que relanzar.
+        #expect(view.contains("Text(controller.isBeforeReverseMount"))
+        #expect(view.contains("? L10n.Storage.Confirm.cancelReverseBeforeMountBody"))
+        #expect(view.contains(": L10n.Storage.Confirm.cancelReverseBody)"))
+        #expect(!view.contains("Text(controller.isWaitingReverseUpload"), "el discriminante en negativo, no")
+        // Y el «no» del diálogo se ramifica con el mismo predicado: «Seguir esperando» describe la espera de la
+        // subida, y en las cuatro fases previas la vuelta está avanzando.
+        #expect(view.contains("Button(controller.isBeforeReverseMount"))
+        #expect(view.contains("? L10n.Storage.Confirm.cancelReverseKeepBeforeMount"))
+    }
+
+    /// `canCancelReverse` es el cuerpo ENTERO, no «contiene reverseUpload»: el término que añade las cuatro fases
+    /// es el que un mutante borraría, y con el `||` cortocircuitando, borrar el SEGUNDO deja el primero funcionando
+    /// y toda la pantalla en verde.
+    @Test func canCancelReverse_coversTheUploadWaitAndTheFourPreMountPhases() throws {
+        let body = try Self.body(of: "var canCancelReverse: Bool {")
+        let lines = body.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        #expect(lines == ["journaledPhase == .reverseUpload || isBeforeReverseMount"])
+        let beforeMount = try Self.body(of: "var isBeforeReverseMount: Bool {")
+        #expect(beforeMount.trimmingCharacters(in: .whitespacesAndNewlines)
+            == "ReversePreMountPhase(phase: journaledPhase) != nil")
+    }
+
+    /// Un solo gesto para las cinco fases: la pantalla llama a `cancelReverse()` y el runner decide por la fase. Con
+    /// dos entradas, el botón de una fase acabaría cableado al camino de la otra — «el otro control va al mismo
+    /// sitio», que es como se cuelan las salidas a medias.
+    @Test func cancelReverse_isASingleEntryPoint() throws {
+        let view = try Self.storageView()
+        #expect(Self.occurrences(of: "await controller.cancelReverse()", in: view) == 1)
+        let controller = try Self.controllerSource()
+        #expect(Self.occurrences(of: "await runner.cancelReverse()", in: controller) == 2,
+                "el toque y el «sí» apuntado que ejecuta el resume siguiente")
     }
 
 }

@@ -155,6 +155,13 @@ enum MetricsCanary: String {
     // La vuelta a iCloud parada por una sesión que ya no vale, antes de montar el espejo (ticket
     // `reverse-before-mount-stays-stuck-with-an-expired-session`)
     case cloudReverseBlockedByExpiredSession
+    /// La vuelta a iCloud SALIÓ de una fase anterior al montaje del espejo y volvió a su origen en modo nube: por su
+    /// techo de tiempo o porque la persona tocó «Cancelar y seguir en la nube» (ticket
+    /// `reverse-before-mount-has-no-way-to-abandon-the-return`). `detail` = `<fase>|<motivo>`.
+    case cloudReversePreMountAborted
+    /// Una observación de una fase anterior al montaje que no avanza. Es lo que deja ver un atasco SISTÉMICO —un
+    /// 403 en toda la flota— antes de que ningún teléfono llegue a su techo, que son 15 min o 72 h.
+    case cloudReversePreMountWaiting
     /// «Migrar a la nube» se paró sin escribir nada porque la cuenta elegida no puede recibir la migración (ticket
     /// `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`). `detail` = `<motivo>@<dónde>`: el motivo es
     /// `personal_data`, `other_groups_account`, `returned_to_icloud`, `fresh_start_session` o `unchecked`, y el sitio
@@ -540,6 +547,49 @@ extension MetricsService {
     /// único hecho. Cuenta TELÉFONOS que se atascan ahí, no cuántas veces lo reintentan.
     static func cloudReverseBlockedByExpiredSession(phase: String) {
         canaryOnce(.cloudReverseBlockedByExpiredSession, key: phase, detail: phase)
+    }
+
+    /// La vuelta a iCloud salió de una fase ANTERIOR al montaje del espejo (ticket
+    /// `reverse-before-mount-has-no-way-to-abandon-the-return`). `detail` = `<fase>|<motivo>`, los dos literales del
+    /// propio build —`claim`/`drain`/`verify`/`freeze` y un `ReverseAbortReason.rawValue`—, así que no necesitan el
+    /// acotado a forma de código que sí lleva `cloudReverseClaimRejected`, cuyo motivo viene de la red.
+    ///
+    /// Por OBSERVACIÓN y no `canaryOnce`: una salida ocurre una vez por intento, no en cada re-kick de 30 s. Lo que
+    /// sí se repite —chocar con la misma sesión caducada media hora— lo cuenta `cloudReverseBlockedByExpiredSession`,
+    /// que por eso sí dedupea.
+    static func cloudReversePreMountAborted(phase: String, reason: String) {
+        canary(.cloudReversePreMountAborted, detail: "\(phase)|\(reason)")
+    }
+
+    /// Una observación de una fase ANTERIOR al montaje que sigue parada. `detail` = `<fase>|<tramo>|<causa>`, con
+    /// la causa `server_<blocker>` cuando el servidor dijo algo y `waiting` cuando es red o sesión.
+    ///
+    /// Existe por la misma razón que su hermano del marcador: **un fallo sistémico se ve en la flota mucho antes de
+    /// que ningún teléfono degrade**. Sin esta serie, un 403 que afectara a toda la población sería invisible 15 min
+    /// (techo corto) o 72 h (largo), que es justo lo que tarda en dejar de ser invisible por sí solo.
+    ///
+    /// Dedupe por PROCESO y por `detail` (`canaryOnce`, molde de `cloudReverseUploadWaiting`): el re-kick de 30 s de
+    /// la pantalla re-observa lo mismo cada medio minuto y el spool guarda 50 eventos FIFO.
+    static func cloudReversePreMountWaiting(phase: String, stalledSeconds: Double, blocker: String?) {
+        let detail = reversePreMountWaitingDetail(
+            phase: phase, stalledSeconds: stalledSeconds, blocker: blocker)
+        canaryOnce(.cloudReversePreMountWaiting, key: detail, detail: detail)
+    }
+
+    /// Detalle de esa observación. Reusa los tramos de la espera de la subida: los dos techos de esta etapa son los
+    /// mismos números, así que los bordes valen igual y las dos series se leen con la misma escala.
+    nonisolated static func reversePreMountWaitingDetail(
+        phase: String, stalledSeconds: Double, blocker: String?
+    ) -> String {
+        let bucket: String
+        switch stalledSeconds {
+        case ..<900: bucket = "lt_15m"
+        case ..<3_600: bucket = "15m_1h"
+        case ..<86_400: bucket = "1h_24h"
+        case ..<259_200: bucket = "24h_72h"
+        default: bucket = "gte_72h"
+        }
+        return "\(phase)|\(bucket)|\(blocker.map { "server_\($0)" } ?? "waiting")"
     }
 
     /// El motivo del servidor tal cual si tiene forma de código; si no, `other`. El gateway rechaza el LOTE entero de

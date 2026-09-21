@@ -7186,6 +7186,13 @@ enum L10n {
                 String(format: ls("storage.reverseAbort.claimRefused", comment: ""), supportEmail)
             }
             static var otherDeviceReverting: String { ls("storage.reverseAbort.otherDeviceReverting", comment: "") }
+            /// Con el correo de soporte, como `claimRefused`, pero con texto PROPIO: aquí la vuelta sí había
+            /// empezado —el servidor concedió la reserva—, así que «ese intento no cambió nada» sería falso.
+            static func preMountRefused(_ supportEmail: String) -> String {
+                String(format: ls("storage.reverseAbort.preMountRefused", comment: ""), supportEmail)
+            }
+            static var preMountStalled: String { ls("storage.reverseAbort.preMountStalled", comment: "") }
+            static var preMountOtherDevice: String { ls("storage.reverseAbort.preMountOtherDevice", comment: "") }
 
             /// El texto de un porqué. UN solo sitio para la nota de la tarjeta, la de relanzar y la alerta del toque:
             /// con dos copias, la alerta y la nota acabarían diciendo cosas distintas del mismo rechazo.
@@ -7205,6 +7212,12 @@ enum L10n {
                     return claimRefused(AppConstants.supportEmail)
                 case .otherDeviceReverting:
                     return otherDeviceReverting
+                case .preMountRefused:
+                    return preMountRefused(AppConstants.supportEmail)
+                case .preMountStalled:
+                    return preMountStalled
+                case .preMountOtherDevice:
+                    return preMountOtherDevice
                 }
             }
         }
@@ -7309,7 +7322,17 @@ enum L10n {
             static var revert2Confirm: String { ls("storage.confirm.revert2Confirm", comment: "") }
             static var cancelReverseTitle: String { ls("storage.confirm.cancelReverseTitle", comment: "") }
             static var cancelReverseBody: String { ls("storage.confirm.cancelReverseBody", comment: "") }
+            /// El cuerpo del mismo diálogo ANTES del montaje del espejo: ahí no hay espejo que apagar, así que no se
+            /// pide cerrar y volver a abrir Yala (ticket `reverse-before-mount-has-no-way-to-abandon-the-return`).
+            static var cancelReverseBeforeMountBody: String {
+                ls("storage.confirm.cancelReverseBeforeMountBody", comment: "")
+            }
             static var cancelReverseConfirm: String { ls("storage.confirm.cancelReverseConfirm", comment: "") }
+            /// El «no» del mismo diálogo antes del montaje. «Seguir esperando» describe la espera de la subida; en
+            /// las cuatro fases previas la vuelta está AVANZANDO, y nadie espera nada.
+            static var cancelReverseKeepBeforeMount: String {
+                ls("storage.confirm.cancelReverseKeepBeforeMount", comment: "")
+            }
             static var cancelReverseKeep: String { ls("storage.confirm.cancelReverseKeep", comment: "") }
         }
 

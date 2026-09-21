@@ -179,10 +179,67 @@ nonisolated enum ReverseAbortReason: String, Equatable, Sendable {
     /// Otro dispositivo de la cuenta ya es el líder de su propia vuelta a iCloud (`other_leader`).
     case otherDeviceReverting
 
+    // MARK: Salidas de las fases previas al montaje (`reverse-before-mount-has-no-way-to-abandon-the-return`)
+
+    /// La vuelta ya había empezado —el servidor concedió la reserva— y luego no dejó continuar: el drenaje o la
+    /// verificación chocaron con la cuenta no disponible, o el congelado salió rechazado. Esperar no lo cambia, así
+    /// que el texto da el correo de soporte. NO se reusa `claimRefused`: ese dice «ese intento no cambió nada», y
+    /// aquí la reserva sí llegó a existir.
+    case preMountRefused
+    /// El techo LARGO de las fases previas al montaje venció sin que el servidor dijera por qué: red que no vuelve,
+    /// o una sesión que nadie renovó en 72 h. Sin correo de soporte: volver a intentarlo sí puede funcionar.
+    case preMountStalled
+    /// Otro dispositivo de la cuenta tomó el relevo de la vuelta MIENTRAS esta ya había empezado (el `other_leader`
+    /// del congelado). No se reusa `otherDeviceReverting` por lo mismo que no se reusa `claimRefused`: ese dice «no
+    /// pudimos EMPEZAR», y aquí la reserva ya existía. El mismo argumento, aplicado dos veces.
+    case preMountOtherDevice
+
     /// El porqué que se journalea cuando el servidor rechaza el claim con `serverReason` (el `reason` del RPC tal
     /// cual). Solo `migration_in_progress` es pasajero; cualquier otro motivo es permanente.
     static func forClaimRejection(serverReason: String) -> ReverseAbortReason {
         serverReason == "migration_in_progress" ? .claimRetryLater : .claimRefused
+    }
+}
+
+/// Qué dijo el servidor para parar una fase PREVIA al montaje del espejo, cuando lo que dijo no es red y esperar no
+/// lo arregla (ticket `reverse-before-mount-has-no-way-to-abandon-the-return`). Hasta este ticket los tres llegaban
+/// al runner colapsados en `.transient`, y por eso la vuelta se quedaba parada ahí sin salida: sin distinguirlos no
+/// hay forma de elegir el techo corto.
+///
+/// `String`/`rawValue` porque viaja como mitad del detalle del canario: WIRE-ESTABLE.
+nonisolated enum ReversePreMountBlocker: String, Equatable, Sendable {
+    /// 403: la cuenta en la nube no está disponible (suspendida). Lo tipan `SyncPushClient` y `SyncPullClient`, así
+    /// que llega en el drenaje y en la verificación; el claim y el congelado no lo ven (`/account/migration` no
+    /// devuelve 403 y el cliente lee todo lo que no sea 200/401 como red).
+    case accountUnavailable
+    /// Otro dispositivo de la cuenta tomó el relevo de la vuelta mientras esta fase estaba parada. El lease dura
+    /// 60 min y ninguna de las cuatro fases paradas late, así que es alcanzable sin más que volver dos horas después.
+    case otherLeader
+    /// El servidor rechazó el paso por un motivo que no es ni red ni sesión.
+    case refused
+
+    /// Las tres son la palabra del servidor, así que las tres eligen el presupuesto CORTO. Nada que ver con el
+    /// fail-open de `ReverseUploadBlocker`: allí la ambigüedad —un token de Drive ausente— no acortaba porque no era
+    /// una respuesta, y aquí sí lo es.
+    ///
+    /// `switch` exhaustivo y no un `.definitive` a secas: con la constante, un motivo NUEVO heredaría el techo corto
+    /// sin que nadie lo decidiera, y ningún test podría cazarlo —una aserción por caso sobre una constante no puede
+    /// fallar—. Así el compilador obliga a contestar la pregunta.
+    var stallCause: MarkerExportStall {
+        switch self {
+        case .accountUnavailable, .otherLeader, .refused:
+            return .definitive
+        }
+    }
+
+    /// El motivo que se journalea si el techo vence con esta causa.
+    var abortReason: ReverseAbortReason {
+        switch self {
+        case .otherLeader:
+            return .preMountOtherDevice
+        case .accountUnavailable, .refused:
+            return .preMountRefused
+        }
     }
 }
 
