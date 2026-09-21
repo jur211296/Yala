@@ -212,7 +212,15 @@ struct WelcomeRestoreView: View {
         // abandonado o terminado, pierde el derecho a cerrar la ventana del que sigue bajando datos
         // (`restore-back-and-reenter-closes-the-live-session-window`). Cada entrada y cada
         // reintento acuñan el suyo, así que dos esperas nunca comparten identidad.
-        flowToken = ICloudRestoreSessionSignal.noteRestoreStarted()
+        //
+        // **Y el testigo del import viaja desde aquí, vivo.** Es lo que decide si esta entrada
+        // RE-ANCLA una ventana huérfana —la que dejó un intento que la persona abandonó— o se
+        // conforma con su reloj. Sin él, entrar y salir de esta pantalla cada menos de 60 s renueva
+        // la ventana del guard cross-cuenta indefinidamente; con él, solo la renueva quien tiene una
+        // descarga de verdad detrás. No tiene default en la señal justamente para que este call-site
+        // tenga que decidir de dónde sale.
+        flowToken = ICloudRestoreSessionSignal.noteRestoreStarted(
+            hasObservedImportActivity: iCloudSyncService.shared.hasObservedImportActivity)
         state = .searching
     }
 

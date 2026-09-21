@@ -356,7 +356,11 @@ struct NeutralMountWiringTests {
     @Test("R2 (a): el predicado NO construye un container para preguntar por el archivo")
     func predicateDerivesTheURLFromAnEphemeralConfiguration() throws {
         let src = try Self.source("Yala/Utils/SwiftDataConfiguration.swift")
-        let probe = try Self.body(of: "private static func personalStoreFileExists() -> Bool {", in: src)
+        // El marcador sigue a la FIRMA, sin el modificador de acceso: `e765ad070` (2026-09-17) le quitó
+        // el `private` a esta función y el escáner se quedó anclado a la firma vieja, así que su
+        // `#require` de marcador llevaba días en rojo — sin decir «el predicado construye un container»,
+        // que es lo que este test existe para cazar, sino «no encuentro dónde mirar».
+        let probe = try Self.body(of: "static func personalStoreFileExists() -> Bool {", in: src)
         #expect(probe.contains(Self.configCall + "databaseName"), "la URL sale de una config efímera")
         #expect(probe.contains("cloudKitDatabase: .none"), """
             incluso la configuración EFÍMERA lleva `.none`: con `.automatic` construir un

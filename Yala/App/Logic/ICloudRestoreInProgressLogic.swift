@@ -33,6 +33,9 @@
 //      hasta el 2026-09-21**: `forceFetchAndWait` no observaba cancelación, así que el flujo abandonado
 //      despertaba al minuto y medio y SÍ apagaba. Hoy la espera se corta y el apagado va detrás del
 //      `guard !Task.isCancelled` de `RestoreProgressView`, que es lo que lo hace cierto.
+//      **Abandonar NO es un quinto camino**: `noteRestoreAbandoned` suelta la titularidad y deja el
+//      reloj donde está, así que la ventana del abandonado sigue viva aquí hasta que la cierren (3) o
+//      (4). Lo único que cambia es que la entrada SIGUIENTE estrena reloj en vez de heredarlo.
 //   3. **El import ASENTÓ** — sus filas ya son corpus como cualquier otro.
 //   4. **La CADUCIDAD** — sin actividad de import pasada la gracia, y el tope duro pase lo que pase.
 //

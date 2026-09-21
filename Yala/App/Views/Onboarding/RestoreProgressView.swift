@@ -6,7 +6,9 @@
 //  La espera real la hace `iCloudSyncService.waitForImportQuiescence`; un refresher
 //  paralelo refresca los conteos REALES en vivo (CloudKit no expone un % del import).
 //  Salir de la pantalla apaga los DOS: la espera observa cancelación desde el 2026-09-21
-//  y el refresher tiene handle propio, así que ninguno sobrevive al desmontaje.
+//  y el refresher tiene handle propio, así que ninguno sobrevive al desmontaje. Y suelta
+//  la titularidad de la ventana de sesión SIN apagarla: el import sigue bajando, pero el
+//  reloj deja de ser de nadie y la entrada siguiente lo estrena.
 //  Barra por fases (connecting → importing → completed/partial). Siempre se muestra
 //  un mínimo para no parpadear. Al asentar (o timeout) llama `onSettled` con el summary.
 //
@@ -76,7 +78,22 @@ struct RestoreProgressView: View {
             Spacer()
         }
         .task { startFlow() }
-        .onDisappear { runTask?.cancel(); refreshTask?.cancel() }
+        // **Y la titularidad se SUELTA al irse, que no es apagar la ventana.** La distinción es el
+        // ticket entero (`abandoned-restore-no-longer-clears-the-session-window-clock`): el import
+        // sigue bajando cuando esta pantalla se va, así que el reloj no se toca —apagarlo aquí es lo
+        // que prohíbe el docblock de la señal— pero el intento deja de vigilarlo, y la entrada
+        // siguiente estrena ventana en vez de heredar un instante de hace siete minutos que la haría
+        // caducar a media descarga.
+        //
+        // Va AQUÍ y no en el `else` del guard de cancelación de `runTask` porque `onDisappear` es
+        // incondicional: no depende de que la espera resuelva. En el camino normal es un no-op —
+        // `noteRestoreFinished` ya rotó el dueño a `nil` unas líneas antes de que este desmontaje
+        // ocurra— y en cualquier camino con un intento MÁS NUEVO vivo también, por el guard del token.
+        .onDisappear {
+            runTask?.cancel()
+            refreshTask?.cancel()
+            ICloudRestoreSessionSignal.noteRestoreAbandoned(flowToken)
+        }
     }
 
     private var phaseLabel: String {
