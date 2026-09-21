@@ -1,6 +1,6 @@
 ---
 id: restore-says-no-data-when-the-icloud-import-never-settled
-status: in-progress
+status: qa
 priority: high
 area: "welcome, icloud, restore"
 created: 2026-09-17
