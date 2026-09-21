@@ -1,6 +1,6 @@
 ---
 id: restore-timeout-closes-the-session-window-with-the-import-still-running
-status: backlog
+status: in-progress
 priority: medium
 area: "icloud, restore, sesiones"
 created: 2026-09-21

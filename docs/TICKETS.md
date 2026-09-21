@@ -398,7 +398,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | restore-prefill-skips-currency-for-an-empty-summary | backlog | tickets/backlog/restore-prefill-skips-currency-for-an-empty-summary.md |
 | restore-says-no-data-when-the-icloud-import-never-settled | qa | tickets/qa/restore-says-no-data-when-the-icloud-import-never-settled.md |
 | restore-start-fresh-keeps-the-imported-corpus | qa | tickets/qa/restore-start-fresh-keeps-the-imported-corpus.md |
-| restore-timeout-closes-the-session-window-with-the-import-still-running | backlog | tickets/backlog/restore-timeout-closes-the-session-window-with-the-import-still-running.md |
+| restore-timeout-closes-the-session-window-with-the-import-still-running | in-progress | tickets/in-progress/restore-timeout-closes-the-session-window-with-the-import-still-running.md |
 | restore-treats-budgets-and-groups-as-no-data | qa | tickets/qa/restore-treats-budgets-and-groups-as-no-data.md |
 | restore-unverified-message-depends-on-a-single-gateway-host | backlog | tickets/backlog/restore-unverified-message-depends-on-a-single-gateway-host.md |
 | retire-guest-vocabulary-for-session-terms | done | tickets/done/retire-guest-vocabulary-for-session-terms.md |
