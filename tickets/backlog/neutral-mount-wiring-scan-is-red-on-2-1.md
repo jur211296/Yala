@@ -43,3 +43,28 @@ lee.
 - [ ] Medido si el rojo es del escáner o del invariante, con la coordenada que lo demuestra.
 - [ ] Verde en `2.1` sin relajar lo que el escáner vigila.
 - [ ] Sabido por qué no salió antes.
+
+## Causa MEDIDA (2026-09-20, desde `restore-says-no-data-when-the-icloud-import-never-settled`)
+
+Es el **escáner**, no el invariante. Y no hizo falta bisecar: el test y el fichero que lee son
+byte-idénticos a `HEAD` en ese worktree (`git diff HEAD --stat` vacío para los dos), así que el
+veredicto no podía depender de aquel cambio.
+
+El marcador del escáner es `"private static func personalStoreFileExists() -> Bool {"`
+(`NeutralMountRelaunchZeroTests.swift:359`). La función **dejó de ser `private`** el 2026-09-17, en
+el commit `339f78259` («feat(nube): el alta en la nube deja de pedir que cierres y reabras la app»),
+y lo dice su propio docblock: `CloudSessionRetirement` la necesita para la misma pregunta desde el
+otro lado. Hoy la firma es `static func personalStoreFileExists() -> Bool {`
+(`Yala/Utils/SwiftDataConfiguration.swift:894`). ⇒ el `#require(source.range(of: marker))` no
+encuentra nada y el fallo imprime el fichero entero, que es ese `(source → "//…` del log.
+
+**El invariante sigue cumpliéndose**, comprobado a mano sobre el cuerpo vivo (`:894-896`): la URL
+sale de una config efímera (`ModelConfiguration(databaseName`), lleva `cloudKitDatabase: .none`
+explícito, y no pasa por `personalConfiguration`. Las tres aserciones del test pasarían con el
+marcador corregido.
+
+⇒ El arreglo es quitar `private ` del marcador. **Y la lección va con él**: un marcador de
+source-scan que incluye un modificador de acceso se rompe con un cambio de visibilidad que no toca
+el invariante — ancla por la firma que el invariante necesita, no por la que hay hoy.
+
+Queda vivo el tercer criterio: **por qué el CI no lo canta**.

@@ -832,7 +832,7 @@ struct WelcomeRestoreEmptyOutcomeTests {
                 .deletingLastPathComponent()   // repo root
                 .appendingPathComponent("Yala/App/Views/Onboarding/WelcomeRestoreView.swift"),
             encoding: .utf8)
-        let marker = "private func resolveEmptyState() async {"
+        let marker = "private func resolveEmptyState(_ settlement: RestoreImportSettlement) async {"
         let start = try #require(source.range(of: marker), "la firma de `resolveEmptyState` cambió")
         let chars = Array(source[start.upperBound...])
         var depth = 1, i = 0
@@ -893,7 +893,7 @@ struct WelcomeRestoreEmptyOutcomeTests {
             .split(separator: "\n", omittingEmptySubsequences: false)
             .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
             .joined(separator: "\n")
-        let marker = "private func resolveEmptyState() async {"
+        let marker = "private func resolveEmptyState(_ settlement: RestoreImportSettlement) async {"
         let start = try #require(code.range(of: marker), "la firma de `resolveEmptyState` cambió")
         let chars = Array(code[start.upperBound...])
         var depth = 1, i = 0

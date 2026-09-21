@@ -244,6 +244,99 @@ nonisolated enum WelcomeRestoreEmptyOutcome: Equatable {
     }
 }
 
+/// **Qué sabemos del import de CloudKit cuando la búsqueda de restore terminó y el store quedó VACÍO.**
+/// Va ANTES de `WelcomeRestoreEmptyOutcome` en el recorrido, y responde una pregunta distinta: aquél
+/// decide qué se le dice a quien terminó sin datos; éste decide si «terminó sin datos» es siquiera
+/// cierto.
+///
+/// **El bug que cierra** (`restore-says-no-data-when-the-icloud-import-never-settled`, 2026-09-17):
+/// `RestoreProgressView` usaba el `settled` de `waitForImportQuiescence(timeout: 90)` solo para la fase
+/// visual, y entregaba el resumen igual si el import había asentado que si se había agotado el tope. Con
+/// un histórico grande, una conexión lenta o CloudKit entregando por lotes, 90 s no bastan — y la
+/// pantalla contestaba «No hay datos asociados a tu cuenta de iCloud» con los datos ahí, ofreciendo
+/// debajo un «Empezar desde cero» que no preguntaba nada.
+///
+/// **Por qué el tope no sirve de señal, y `hasObservedImportActivity` sí.** `waitForImportQuiescence`
+/// devuelve `false` tanto para el histórico que tarda como para el usuario **realmente nuevo**: su store
+/// vacío no dispara ningún `.importEvent`, así que `forceFetchAndWait` agota el mismo tope. Usar el tope
+/// tal cual convertiría toda instalación nueva en un «no pudimos comprobar» tras 90 s de espera, que es
+/// justo lo que `reinstall-without-network-has-no-cloud-door` descartó a propósito. El que separa las dos
+/// poblaciones es el flag del propio import: `iCloudSyncService.apply` lo enciende en el `case
+/// .importEvent` **antes** de mirar si trae error, así que lo pone cualquier import —en curso, terminado
+/// o fallido— y un store vacío nunca llega a ese `case`.
+///
+/// **Y la actividad sola no basta, que fue el primer error de este ticket.** El flag se enciende en la
+/// CABECERA del `case .importEvent`, antes del `if let error`, así que lo pone igual un import que trae
+/// datos que uno que FALLA — y el primer intento leía eso como «los datos vienen». Lo cazaron las tres
+/// lentes de la review a la vez, con dos poblaciones: quien tiene un error terminal (cuota, cuenta
+/// gestionada, permisos) y —peor— **el usuario realmente nuevo con red inestable**, a quien un solo
+/// `.importEvent` con `networkUnavailable` le encendía el flag con la cuenta vacía. Los dos leían
+/// «seguimos trayendo tus datos» con un «Reintentar» que devolvía al mismo sitio para siempre: el
+/// remedio que el ticket descarta, entrando por la puerta de atrás.
+///
+/// Por eso entra un segundo término, y es el mismo molde que ya usa la reversa
+/// (`ICloudCutoverGateLogic.decide`, `ReverseUploadBlockerLogic`): **la palabra VIGENTE de CloudKit**.
+/// `lastImportError` a secas no vale —es un latch que ningún import con éxito limpia, igual que su
+/// gemelo del export—, así que se comparan las FECHAS: el error cuenta solo si es posterior al último
+/// import con éxito. Un error sin fecha no cuenta, que es el lado seguro aquí: la ambigüedad nunca
+/// convierte «los datos vienen» en un desenlace que los niegue.
+///
+/// Con el error vigente el desenlace es `.inconclusive`, y no un estado propio: los tres finales del
+/// camino de siempre —`.cloudPaused`, `.cloudUnverified`, `.notFound`— o afirman que los datos existen
+/// o no niegan nada, los tres ofrecen reintentar y los tres confirman antes de borrar. Un cuarto copy
+/// no diría nada que esos tres no digan mejor.
+nonisolated enum RestoreImportSettlement: Equatable {
+
+    /// El import ASENTÓ dentro del tope. **Hoy ningún consumidor lo trata distinto de `.inconclusive`
+    /// y sigue siendo un caso propio a propósito: viaja al log** (`RestoreBreadcrumb.settled`), que es
+    /// la única ventana sobre este flujo — el bug reproduce en CloudKit Production, donde no hay dSYM
+    /// ni simulador. Sin separarlos, Console.app no distingue «CloudKit contestó que no hay nada» de
+    /// «CloudKit no contestó», que es justo la pregunta de este ticket.
+    ///
+    /// Un primer intento le colgó además el gesto destructivo de `.notFound` (`conclusive:`), y se
+    /// midió que esa rama tiene una sola población y **es gente con datos**: `settled` exige
+    /// `hasCompletedFirstImport`, o sea que CloudKit trajo algo, y si lo trajo y `hasAnyData` sigue en
+    /// `false` es porque son presupuestos o grupos, que ese predicado no cuenta
+    /// (`iCloudSyncService.swift:773-775`). Ticket: `restore-treats-budgets-and-groups-as-no-data`.
+    case settledEmpty
+    /// El tope se agotó **habiendo visto actividad de import**: hay datos bajando y lo que faltó fue
+    /// tiempo. Negarlos aquí es el bug; lo honesto es decir que siguen llegando.
+    case stillImporting
+    /// El tope se agotó **sin ver un solo import**. Dos poblaciones que esta señal no separa: quien de
+    /// verdad no tiene nada (su store vacío no dispara eventos) y aquel a quien CloudKit no le contestó.
+    /// Se mantiene el copy de «no encontramos tus datos» —Jürgen descartó convertir al usuario nuevo en
+    /// un «no pudimos comprobar»— y la red pasa a ser la confirmación del gesto destructivo.
+    case inconclusive
+
+    /// - Parameters:
+    ///   - settled: lo que devolvió `iCloudSyncService.waitForImportQuiescence`.
+    ///   - hasObservedImportActivity: `iCloudSyncService.hasObservedImportActivity` leído en el mismo
+    ///     instante que `settled`, no más tarde.
+    ///   - lastImportErrorAt: `iCloudSyncService.lastImportErrorAt` — cuándo se vio el último error de
+    ///     import. `nil` = ninguno, o un evento sin fechas.
+    ///   - lastSuccessfulImportAt: `iCloudSyncService.lastSuccessfulImportDate`. Las dos fechas se
+    ///     reciben crudas y la vigencia se calcula AQUÍ: un booleano precocinado fuera dejaría la
+    ///     comparación sin test, que es justo donde vive la decisión.
+    static func resolve(settled: Bool,
+                        hasObservedImportActivity: Bool,
+                        lastImportErrorAt: Date?,
+                        lastSuccessfulImportAt: Date?) -> RestoreImportSettlement {
+        guard !settled else { return .settledEmpty }
+        guard hasObservedImportActivity else { return .inconclusive }
+        let errorIsCurrent: Bool = {
+            guard let errorAt = lastImportErrorAt else { return false }
+            guard let successAt = lastSuccessfulImportAt else { return true }
+            return errorAt > successAt
+        }()
+        return errorIsCurrent ? .inconclusive : .stillImporting
+    }
+
+    /// ¿Se le puede preguntar al remote-config, o el desenlace ya está decidido? Con datos bajando por
+    /// CloudKit la respuesta del backend propio no cambia nada —el kill-switch gobierna la nube de Yala,
+    /// no el espejo de Apple— y preguntar le costaría otro fetch a quien ya esperó el tope entero.
+    var consultsRemoteConfig: Bool { self != .stillImporting }
+}
+
 /// El gate de las cards de «Soy nuevo» leído con las flags VIVAS. Existe para que el Welcome y la activación
 /// de Yala completo (paso 8, que reusa el MISMO chooser) lean el MISMO gate: el ticket pide «mismo gate de
 /// visibilidad», y dos copias de estos cinco términos es exactamente como dos pantallas empiezan a divergir.

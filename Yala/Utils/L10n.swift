@@ -5558,6 +5558,15 @@ enum L10n {
             /// dos comprobaciones concluye.
             static var cloudUnverifiedTitle: String { ls("welcome.restore.cloudUnverifiedTitle", comment: "") }
             static var cloudUnverifiedBody: String { ls("welcome.restore.cloudUnverifiedBody", comment: "") }
+            /// El tope de la búsqueda se agotó con el import de CloudKit en marcha: los datos EXISTEN y
+            /// están bajando. Es el cuarto hecho posible y el contrario de `notFound`, que hasta el
+            /// 2026-09-20 era el copy que veía esta persona. Describe lo observado —iCloud sigue
+            /// enviando— y da un orden de magnitud, no una promesa: «puede tardar unos minutos» acota
+            /// la espera sin comprometer un plazo. Solo lo ve quien tiene un import EN MARCHA y sin
+            /// error vigente; el que falla sale por otro lado (`RestoreImportSettlement`), porque a ése
+            /// esta frase le mentiría.
+            static var importIncompleteTitle: String { ls("welcome.restore.importIncompleteTitle", comment: "") }
+            static var importIncompleteBody: String { ls("welcome.restore.importIncompleteBody", comment: "") }
             static var startFresh: String { ls("welcome.restore.startFresh", comment: "") }
             static var retry: String { ls("welcome.restore.retry", comment: "") }
             static var errorTitle: String { ls("welcome.restore.errorTitle", comment: "") }

@@ -32,7 +32,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (463)
+## Index (472)
 
 | id | status | path |
 |---|---|---|
@@ -288,6 +288,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | icloud-export-error-latch-never-clears | backlog | tickets/backlog/icloud-export-error-latch-never-clears.md |
 | icloud-kv-prefs-cross-sessions-on-a-lent-phone | qa | tickets/qa/icloud-kv-prefs-cross-sessions-on-a-lent-phone.md |
 | icloud-sync-status-treats-non-ck-failures-as-success | backlog | tickets/backlog/icloud-sync-status-treats-non-ck-failures-as-success.md |
+| import-activity-flag-describes-the-process-not-the-search | backlog | tickets/backlog/import-activity-flag-describes-the-process-not-the-search.md |
 | inbox-convert-draft-to-group-expense | done | tickets/done/inbox-convert-draft-to-group-expense.md |
 | inbox-crash-convert-to-group-expense | done | tickets/done/inbox-crash-convert-to-group-expense.md |
 | indice-readme-cuenta-los-ficheros-de-los-worktrees-anidados | backlog | tickets/backlog/indice-readme-cuenta-los-ficheros-de-los-worktrees-anidados.md |
@@ -380,11 +381,14 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | repair-queue-has-no-exit-for-partial-rate-rows | qa | tickets/qa/repair-queue-has-no-exit-for-partial-rate-rows.md |
 | reparacion-de-tasas-no-avisa-al-panel | backlog | tickets/backlog/reparacion-de-tasas-no-avisa-al-panel.md |
 | rescue-discarded-groups-pull | discarded | tickets/discarded/rescue-discarded-groups-pull.md |
+| restore-back-and-reenter-closes-the-live-session-window | backlog | tickets/backlog/restore-back-and-reenter-closes-the-live-session-window.md |
 | restore-beacon-may-not-have-synced-yet-on-a-fresh-install | backlog | tickets/backlog/restore-beacon-may-not-have-synced-yet-on-a-fresh-install.md |
 | restore-beacon-outlives-account-deletion | backlog | tickets/backlog/restore-beacon-outlives-account-deletion.md |
+| restore-empty-state-resolution-cannot-be-cancelled | backlog | tickets/backlog/restore-empty-state-resolution-cannot-be-cancelled.md |
 | restore-gate-claims-a-wipe-this-device-did-not-do | backlog | tickets/backlog/restore-gate-claims-a-wipe-this-device-did-not-do.md |
-| restore-says-no-data-when-the-icloud-import-never-settled | backlog | tickets/backlog/restore-says-no-data-when-the-icloud-import-never-settled.md |
+| restore-says-no-data-when-the-icloud-import-never-settled | qa | tickets/qa/restore-says-no-data-when-the-icloud-import-never-settled.md |
 | restore-start-fresh-keeps-the-imported-corpus | qa | tickets/qa/restore-start-fresh-keeps-the-imported-corpus.md |
+| restore-treats-budgets-and-groups-as-no-data | backlog | tickets/backlog/restore-treats-budgets-and-groups-as-no-data.md |
 | restore-unverified-message-depends-on-a-single-gateway-host | backlog | tickets/backlog/restore-unverified-message-depends-on-a-single-gateway-host.md |
 | retire-guest-vocabulary-for-session-terms | done | tickets/done/retire-guest-vocabulary-for-session-terms.md |
 | reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date | backlog | tickets/backlog/reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date.md |
@@ -445,6 +449,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | spike-r3-eje-4b-flaky-en-suite-completa | backlog | tickets/backlog/spike-r3-eje-4b-flaky-en-suite-completa.md |
 | staging-test-credentials-in-public-repo | done | tickets/done/staging-test-credentials-in-public-repo.md |
 | staging-test-user-c-does-not-exist | backlog | tickets/backlog/staging-test-user-c-does-not-exist.md |
+| start-fresh-dialog-promises-what-the-gate-undoes | backlog | tickets/backlog/start-fresh-dialog-promises-what-the-gate-undoes.md |
 | stats-filter-segment-tap-should-ask-include-or-exclude | backlog | tickets/backlog/stats-filter-segment-tap-should-ask-include-or-exclude.md |
 | stats-per-account-branch-keeps-stale-live-anchor | backlog | tickets/backlog/stats-per-account-branch-keeps-stale-live-anchor.md |
 | step-flows-should-match-the-sep15-reference | backlog | tickets/backlog/step-flows-should-match-the-sep15-reference.md |
@@ -503,3 +508,4 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | xcode-project-config-json-format-when-27-2-stable | backlog | tickets/backlog/xcode-project-config-json-format-when-27-2-stable.md |
 | yala-android | backlog | tickets/backlog/yala-android.md |
 | zone-decisions-still-per-row | backlog | tickets/backlog/zone-decisions-still-per-row.md |
+

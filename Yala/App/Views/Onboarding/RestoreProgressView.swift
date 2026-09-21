@@ -14,7 +14,12 @@ import SwiftUI
 
 struct RestoreProgressView: View {
     let timeout: TimeInterval
-    var onSettled: (ICloudAccountSummary) -> Void
+    /// El resumen **y lo que sabemos de la espera que lo produjo**. El segundo argumento no es
+    /// telemetría: con el resumen vacío es lo único que distingue «CloudKit dijo que no hay nada» de
+    /// «CloudKit no terminó en 90 s», y hasta el 2026-09-20 no salía de aquí — el `settled` se gastaba
+    /// en la fase visual y el consumidor recibía el mismo vacío en los dos casos
+    /// (`restore-says-no-data-when-the-icloud-import-never-settled`).
+    var onSettled: (ICloudAccountSummary, RestoreImportSettlement) -> Void
 
     @Environment(\.modelContext) private var modelContext
     @Environment(AppPreferences.self) private var appPreferences
@@ -25,7 +30,8 @@ struct RestoreProgressView: View {
     @State private var phase: OnboardingRestorePhase = .connecting
     @State private var runTask: Task<Void, Never>?
 
-    init(timeout: TimeInterval = 90, onSettled: @escaping (ICloudAccountSummary) -> Void) {
+    init(timeout: TimeInterval = 90,
+         onSettled: @escaping (ICloudAccountSummary, RestoreImportSettlement) -> Void) {
         self.timeout = timeout
         self.onSettled = onSettled
     }
@@ -148,6 +154,15 @@ struct RestoreProgressView: View {
             }
             // Espera real (primer import + quiescencia) con tope.
             let settled = await iCloudSyncService.shared.waitForImportQuiescence(timeout: timeout)
+            // La señal se lee EN ESTE INSTANTE, pegada al `settled` que describe. Leerla al final —tras
+            // el mínimo de exhibición— haría que la pareja hablara de dos momentos distintos. El flag es
+            // monótono dentro de la sesión, así que retrasarlo solo puede cambiar el veredicto a mejor;
+            // aun así el testigo se toma donde se toma la medida.
+            let settlement = RestoreImportSettlement.resolve(
+                settled: settled,
+                hasObservedImportActivity: iCloudSyncService.shared.hasObservedImportActivity,
+                lastImportErrorAt: iCloudSyncService.shared.lastImportErrorAt,
+                lastSuccessfulImportAt: iCloudSyncService.shared.lastSuccessfulImportDate)
             refresher.cancel()
             // El flujo terminó, gane (`settled`) o pierda (timeout): a partir de aquí no hay ninguna
             // descarga en curso que justifique tener abierto el guard cross-cuenta. Va ANTES del
@@ -166,10 +181,11 @@ struct RestoreProgressView: View {
             // Mínimo de exhibición para que se vea el estado final.
             try? await Task.sleep(for: .seconds(0.8))
             guard !Task.isCancelled else { return }
-            RestoreBreadcrumb.settled(phase: settled ? "completed" : "partial")
+            RestoreBreadcrumb.settled(phase: settled ? "completed" : "partial", settlement: settlement)
             onSettled(counts ?? ICloudAccountSummary(
                 userName: nil, accountsCount: 0, transactionsCount: 0,
-                budgetsCount: 0, groupsCount: 0, primaryCurrencyCode: nil, categoriesCount: 0))
+                budgetsCount: 0, groupsCount: 0, primaryCurrencyCode: nil, categoriesCount: 0),
+                settlement)
         }
     }
 }

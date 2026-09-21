@@ -20,8 +20,20 @@ enum RestoreBreadcrumb {
 
     /// Restore asentado: `completed` = quiescencia alcanzada; `partial` = timeout
     /// (se procede con datos parciales, seguimos sincronizando en background).
-    static func settled(phase: String) {
-        logger.notice("SETTLED phase=\(phase, privacy: .public)")
+    ///
+    /// `settlement` parte ese `partial` en los dos que importan, y sin él el log no los distingue: el
+    /// tope se agota igual para el histórico que tarda que para quien no tiene nada. Es el término que
+    /// decide si la pantalla puede negar los datos, así que es el que hay que poder leer desde
+    /// Console.app sobre un TestFlight Release, donde el bug reproduce y el debugger no llega.
+    static func settled(phase: String, settlement: RestoreImportSettlement) {
+        logger.notice("SETTLED phase=\(phase, privacy: .public) import=\(String(describing: settlement), privacy: .public)")
+    }
+
+    /// El tope se agotó con un import de CloudKit en marcha: hay datos bajando y la pantalla NO los
+    /// niega. Distingue en el log el desenlace que hasta el 2026-09-20 se confundía con el `.notFound`
+    /// legítimo — mismo recorrido en pantalla, hecho contrario.
+    static func importIncomplete() {
+        logger.notice("IMPORT-INCOMPLETE — tope agotado con import observado: los datos siguen llegando")
     }
 
     /// Destino post-restore decidido por `RestoreRouter`.

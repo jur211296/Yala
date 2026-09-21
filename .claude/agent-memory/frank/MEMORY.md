@@ -16,6 +16,8 @@
 
 ## Cómo mido y cómo entrego
 - [El reintento de fuera multiplica el de dentro](feedback_el_reintento_de_fuera_multiplica_el_de_dentro.md) — el SDK ya reintentaba la renovación: mi coste era falso por 3x y el reintento tapaba un mutante.
+- [El orden hace INVISIBLE al segundo término](feedback_el_orden_hace_invisible_al_segundo_termino.md) — «A implica B por el orden» puede significar que A se traga a B; el flag se encendía antes de mirar el error.
+- [El mutante muere y el término sobra](feedback_el_mutante_muere_y_el_termino_sobra.md) — 5 mutantes muertos y la rama solo la alcanzaba gente con datos: cuenta la POBLACIÓN, no las muertes.
 - [Un registro no prueba la elección](feedback_un_registro_no_prueba_la_eleccion.md) — bloqueé el `nil` y un cinturón fabricaba el `true` de otra persona: cuenta los ESCRITORES del registro.
 - [El copy que promete una acción se recorre](feedback_el_copy_que_promete_se_recorre.md) — «en Perfil puedes exportar» era falso para no-Pro: mira el gate de PLAN, no solo que la pantalla exista.
 - [Antes de poner techo, mide que la espera existe](feedback_antes_de_poner_techo_mide_que_la_espera_existe.md) — acoté una espera que para casi todos terminaba al instante con un falso «hecho»; lo cazó la review.
