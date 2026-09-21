@@ -52,6 +52,10 @@ struct WelcomeRestoreView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var state: ViewState = .searching
+    /// El intento de restauración vigente, acuñado por `startSearch()` al encender la señal. Es lo
+    /// único que autoriza a cerrar la ventana de sesión, y **la pantalla de progreso no se monta sin
+    /// él** — ver el `case .searching` del body, donde está el porqué.
+    @State private var flowToken: ICloudRestoreSessionSignal.FlowToken?
     @State private var showStartFreshConfirm: Bool = false
     @State private var refreshRotation: Double = 0
 
@@ -89,20 +93,33 @@ struct WelcomeRestoreView: View {
 
                 switch state {
                 case .searching:
-                    RestoreProgressView { summary, settlement in
-                        // Con datos se resuelve en el acto: el aviso de la nube jamás tapa un restore
-                        // que sí puede ocurrir, y ese caso no necesita preguntarle nada al backend.
-                        if summary.hasAnyData {
-                            state = .found(summary)
-                        } else if !settlement.consultsRemoteConfig {
-                            // El import sigue trayendo datos: ya sabemos que existen, así que no hay
-                            // nada que preguntarle al backend —su kill-switch gobierna la nube de Yala,
-                            // no el espejo de Apple— y quien ya esperó el tope entero no gana nada con
-                            // otro fetch encima.
-                            RestoreBreadcrumb.importIncomplete()
-                            state = .importIncomplete
-                        } else {
-                            Task { await resolveEmptyState(settlement) }
+                    // **La espera no se monta hasta que hay intento, y ese `if` es la mitad del
+                    // arreglo de `restore-back-and-reenter-closes-the-live-session-window`.**
+                    // `state` nace en `.searching`, así que sin la puerta esta pantalla arrancaría su
+                    // espera de 90 s en el PRIMER render — antes de que `startSearch()` haya mirado
+                    // iCloud ni el wipe—, y esa espera sobrevive al desvío a `.wiped` o
+                    // `.iCloudDisabled` porque `forceFetchAndWait` no observa cancelación. Desde que
+                    // `.iCloudDisabled` ofrece reintentar (2026-09-20), quien enciende iCloud y
+                    // recarga tenía DOS esperas vivas, y la fantasma apagaba la ventana de la buena.
+                    //
+                    // Con la puerta, el token llega por MONTAJE y no por re-disparo: nada depende de
+                    // en qué orden corran el `.task` de esta vista y el de la de abajo.
+                    if let flowToken {
+                        RestoreProgressView(flowToken: flowToken) { summary, settlement in
+                            // Con datos se resuelve en el acto: el aviso de la nube jamás tapa un restore
+                            // que sí puede ocurrir, y ese caso no necesita preguntarle nada al backend.
+                            if summary.hasAnyData {
+                                state = .found(summary)
+                            } else if !settlement.consultsRemoteConfig {
+                                // El import sigue trayendo datos: ya sabemos que existen, así que no hay
+                                // nada que preguntarle al backend —su kill-switch gobierna la nube de Yala,
+                                // no el espejo de Apple— y quien ya esperó el tope entero no gana nada con
+                                // otro fetch encima.
+                                RestoreBreadcrumb.importIncomplete()
+                                state = .importIncomplete
+                            } else {
+                                Task { await resolveEmptyState(settlement) }
+                            }
                         }
                     }
                 case .found(let summary):
@@ -185,7 +202,14 @@ struct WelcomeRestoreView: View {
         // justifique; (b) elegir «Restaurar» con el mount neutro RELANZA la app
         // (`WelcomeMirrorRelaunchLogic.requiresMirror(.restoreICloud)`), así que una señal encendida en
         // el tap moriría con el proceso — este punto vive ya en el proceso que importa.
-        ICloudRestoreSessionSignal.noteRestoreStarted()
+        //
+        // **Y el token que devuelve identifica a ESTE intento, y se guarda.** El encendido ya no es
+        // del todo idempotente: conserva el reloj de la ventana —el tope no es extensible a
+        // voluntad— pero el dueño pasa a ser quien acaba de entrar. Así el intento anterior, esté
+        // abandonado o terminado, pierde el derecho a cerrar la ventana del que sigue bajando datos
+        // (`restore-back-and-reenter-closes-the-live-session-window`). Cada entrada y cada
+        // reintento acuñan el suyo, así que dos esperas nunca comparten identidad.
+        flowToken = ICloudRestoreSessionSignal.noteRestoreStarted()
         state = .searching
     }
 

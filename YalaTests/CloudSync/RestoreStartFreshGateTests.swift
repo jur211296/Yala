@@ -482,7 +482,7 @@ struct RestoreStartFreshGateTests {
             que produjo el `settled` que la acompaña.
             """)
         try Self.expectOrder("RestoreImportSettlement.resolve(",
-                             before: "ICloudRestoreSessionSignal.noteRestoreFinished()", in: progress, """
+                             before: "ICloudRestoreSessionSignal.noteRestoreFinished(", in: progress, """
             la señal se lee después de cerrar la ventana, o sea más tarde que la medida que dice
             describir. La pareja `settled` + actividad pasaría a hablar de dos momentos distintos.
             """)
@@ -510,7 +510,8 @@ struct RestoreStartFreshGateTests {
         // devuelve `.stillImporting` a `resolveEmptyState` (o sea al mensaje que niega los datos) y deja
         // al usuario nuevo en «seguimos trayendo tus datos» para siempre. Lo cazó la review.
         let view = try Self.code("Yala/App/Views/Onboarding/WelcomeRestoreView.swift")
-        let closure = try Self.body(of: "RestoreProgressView { summary, settlement in", in: view)
+        let closure = try Self.body(of: "RestoreProgressView(flowToken: flowToken) { summary, settlement in",
+                                    in: view)
 
         let ramas = ["if summary.hasAnyData {",
                      "} else if !settlement.consultsRemoteConfig {",

@@ -130,7 +130,7 @@ struct ICloudRestoreSessionSignalTests {
         defer { ICloudRestoreSessionSignal._testReset() }
 
         #expect(ICloudRestoreSessionSignal.restoreStartedAt == nil)
-        ICloudRestoreSessionSignal.noteRestoreStarted()
+        _ = ICloudRestoreSessionSignal.noteRestoreStarted()
         #expect(ICloudRestoreSessionSignal.restoreStartedAt != nil)
     }
 
@@ -143,8 +143,8 @@ struct ICloudRestoreSessionSignalTests {
         defer { ICloudRestoreSessionSignal._testReset() }
 
         let t0 = Date(timeIntervalSince1970: 1_760_000_000)
-        ICloudRestoreSessionSignal.noteRestoreStarted(now: t0)
-        ICloudRestoreSessionSignal.noteRestoreStarted(now: t0.addingTimeInterval(300))
+        _ = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0)
+        _ = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0.addingTimeInterval(300))
         #expect(ICloudRestoreSessionSignal.restoreStartedAt == t0)
     }
 
@@ -156,10 +156,108 @@ struct ICloudRestoreSessionSignalTests {
         ICloudRestoreSessionSignal._testReset()
         defer { ICloudRestoreSessionSignal._testReset() }
 
-        ICloudRestoreSessionSignal.noteRestoreStarted()
-        ICloudRestoreSessionSignal.noteRestoreFinished()
+        let flujo = ICloudRestoreSessionSignal.noteRestoreStarted()
+        ICloudRestoreSessionSignal.noteRestoreFinished(flujo)
         #expect(ICloudRestoreSessionSignal.restoreStartedAt == nil)
+        #expect(ICloudRestoreSessionSignal.currentFlow == nil, """
+            La ventana se cerró pero su dueño se quedó puesto. El invariante \
+            `restoreStartedAt == nil ⇔ currentFlow == nil` es lo que impide que un token viejo \
+            gobierne una ventana que ya no existe.
+            """)
         #expect(!ICloudRestoreSessionSignal.isRestoringNow)
+    }
+
+    /// **EL CASO DEL TICKET** `restore-back-and-reenter-closes-the-live-session-window`.
+    ///
+    /// Entrar a Restaurar, tocar atrás a los 5 s y volver a entrar a los 10. El primer intento queda
+    /// clavado en el tope de `forceFetchAndWait` —que no observa cancelación— y despierta al minuto y
+    /// medio, con el segundo todavía bajando datos. Hasta el 2026-09-21 ese despertar apagaba la
+    /// ventana del vivo, y `ICloudRestoreInProgressLogic` la leía `false` en el acto: el guard de
+    /// frontera de cuenta se cerraba sobre el dueño legítimo con su propio import a medias.
+    @Test("un flujo ABANDONADO no apaga la ventana del que sigue vivo")
+    @MainActor
+    func anAbandonedFlowCannotCloseTheLiveWindow() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        let abandonado = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0)
+        let vivo = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0.addingTimeInterval(10))
+
+        // t≈90: el abandonado despierta del tope y llega al apagado con su token viejo.
+        ICloudRestoreSessionSignal.noteRestoreFinished(abandonado)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == t0, """
+            El flujo que la persona dejó atrás apagó la ventana del intento que sigue bajando datos. \
+            A partir de aquí `CrossAccountEntryGuardLogic` ve filas locales sin claim que las reclame \
+            y le bloquea a su dueño la entrada a su propia cuenta.
+            """)
+
+        // Y el vivo sí puede cerrarla cuando termine.
+        ICloudRestoreSessionSignal.noteRestoreFinished(vivo)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == nil, """
+            El dueño vigente ya no puede cerrar su propia ventana: se quedaría abierta hasta caducar, \
+            con el guard cross-cuenta entornado hasta diez minutos de más.
+            """)
+    }
+
+    /// **El REINTENTO de la misma pantalla**, que es el otro camino a dos intentos y el que la review
+    /// encontró sin cubrir. Los cinco botones de «volver a buscar» de `WelcomeRestoreView` vuelven a
+    /// pasar por el encendido, así que su segundo intento estrena token y tiene que poder cerrar su
+    /// propia ventana — un token de un solo uso dejaría la pantalla sin forma de cerrarla.
+    @Test("el segundo intento de la MISMA pantalla estrena token y cierra su ventana")
+    @MainActor
+    func aRetryGetsItsOwnTokenAndCanCloseItsWindow() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        let primero = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0)
+        ICloudRestoreSessionSignal.noteRestoreFinished(primero)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == nil)
+
+        // «Volver a buscar»: intento nuevo, token nuevo, ventana nueva.
+        let segundo = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0.addingTimeInterval(120))
+        #expect(segundo != primero, """
+            El reintento heredó el token del intento anterior. Con los dos compartiendo identidad, \
+            una espera abandonada del primero vuelve a poder cerrar la ventana del segundo — el bug \
+            del ticket, dentro de una sola pantalla.
+            """)
+        ICloudRestoreSessionSignal.noteRestoreFinished(segundo)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == nil, """
+            La pantalla no puede cerrar la ventana de su propio reintento: se quedaría abierta hasta \
+            caducar, con el guard cross-cuenta entornado hasta diez minutos de más.
+            """)
+    }
+
+    /// La otra mitad de la simetría, y el orden CONTRARIO: el vivo termina primero y el abandonado
+    /// despierta después, sobre una ventana que ya no es de nadie. Un contador de entradas —la otra
+    /// opción que el ticket dejaba abierta— cierra aquí tarde; el token no reabre ni cierra de más.
+    @Test("y cuando despierta sobre una ventana ya cerrada, no toca la del intento siguiente")
+    @MainActor
+    func awakingOverAClosedWindowIsANoOp() {
+        ICloudRestoreSessionSignal._testReset()
+        defer { ICloudRestoreSessionSignal._testReset() }
+
+        let t0 = Date(timeIntervalSince1970: 1_760_000_000)
+        let abandonado = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0)
+        let vivo = ICloudRestoreSessionSignal.noteRestoreStarted(now: t0.addingTimeInterval(10))
+        ICloudRestoreSessionSignal.noteRestoreFinished(vivo)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == nil)
+
+        // La persona entra por TERCERA vez y estrena ventana, anclada en su propio instante.
+        let t200 = t0.addingTimeInterval(200)
+        _ = ICloudRestoreSessionSignal.noteRestoreStarted(now: t200)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == t200, """
+            Una ventana cerrada tiene que volver a abrirse en el instante de la entrada nueva: \
+            heredar el reloj viejo la haría caducar antes de tiempo sobre un import que acaba de \
+            empezar.
+            """)
+
+        ICloudRestoreSessionSignal.noteRestoreFinished(abandonado)
+        #expect(ICloudRestoreSessionSignal.restoreStartedAt == t200, """
+            El flujo abandonado del primer intento cerró la ventana del TERCERO. El apagado sigue \
+            siendo incondicional para todo el que llegue tarde.
+            """)
     }
 }
 
@@ -229,7 +327,7 @@ struct ICloudRestoreSignalWiringTests {
                 .split(separator: "\n", omittingEmptySubsequences: false)
                 .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
                 .joined(separator: "\n")
-            if body.contains("noteRestoreStarted()") { callSites.append(url.lastPathComponent) }
+            if body.contains("noteRestoreStarted(") { callSites.append(url.lastPathComponent) }
         }
         #expect(callSites == ["WelcomeRestoreView.swift"], """
             Encendedores de la señal encontrados: \(callSites.sorted()). Tiene que haber EXACTAMENTE \
@@ -248,7 +346,7 @@ struct ICloudRestoreSignalWiringTests {
         let disabled = try #require(view.range(of: "state = .iCloudDisabled"))
         let wiped = try #require(view.range(of: "state = .wiped"))
         let note = try #require(
-            view.range(of: "ICloudRestoreSessionSignal.noteRestoreStarted()"),
+            view.range(of: "ICloudRestoreSessionSignal.noteRestoreStarted("),
             "la pantalla de restaurar dejó de encender la señal: el fix queda inerte")
 
         #expect(disabled.upperBound < note.lowerBound && wiped.upperBound < note.lowerBound, """
@@ -267,20 +365,51 @@ struct ICloudRestoreSignalWiringTests {
     @Test("MUTACIÓN: la pantalla de progreso apaga la señal al terminar, gane o pierda")
     func theProgressViewClosesTheWindowWhenTheFlowEnds() throws {
         let code = try Self.code(Self.progressView)
-        #expect(code.contains("ICloudRestoreSessionSignal.noteRestoreFinished()"), """
-            La pantalla de restaurar dejó de cerrar la ventana al terminar. La señal seguiría viva \
-            hasta caducar, con el guard cross-cuenta abierto de más todo ese rato.
+        #expect(code.contains("ICloudRestoreSessionSignal.noteRestoreFinished(flowToken)"), """
+            La pantalla de restaurar dejó de cerrar la ventana al terminar, o la cierra con otro \
+            token. La señal seguiría viva hasta caducar, con el guard cross-cuenta abierto de más \
+            todo ese rato.
             """)
 
         // Y el ORDEN: va ANTES del `guard !Task.isCancelled`, porque si la vista se desmontó justo en
         // ese instante el early-return se llevaría el apagado por delante.
-        let apagado = try #require(code.range(of: "ICloudRestoreSessionSignal.noteRestoreFinished()"))
+        let apagado = try #require(code.range(of: "ICloudRestoreSessionSignal.noteRestoreFinished(flowToken)"))
         let espera = try #require(code.range(of: "await iCloudSyncService.shared.waitForImportQuiescence"))
         let cancelado = try #require(
             code.range(of: "guard !Task.isCancelled", range: espera.upperBound..<code.endIndex))
         #expect(espera.upperBound < apagado.lowerBound && apagado.upperBound < cancelado.lowerBound, """
             El apagado tiene que ir entre la espera y el primer `guard !Task.isCancelled` posterior. \
             Detrás del guard, un desmontaje en ese instante se lo lleva.
+            """)
+    }
+
+    /// **El token del flujo, de punta a punta.** Es el mecanismo entero de
+    /// `restore-back-and-reenter-closes-the-live-session-window` y ningún test de comportamiento del
+    /// latch lo caza: allí los tokens se piden a mano, así que una pantalla que pase `nil` para
+    /// siempre —o que se guarde el token y no lo pase— deja las dos suites de arriba en verde.
+    @Test("MUTACIÓN: el token que enciende la ventana es el que viaja a la pantalla y el que la cierra")
+    func theFlowTokenTravelsFromTheSwitchToTheShutdown() throws {
+        let view = try Self.code(Self.restoreView)
+        let progress = try Self.code(Self.progressView)
+
+        #expect(view.contains("flowToken = ICloudRestoreSessionSignal.noteRestoreStarted()"), """
+            El encendido dejó de GUARDAR su token (un `_ =` basta para hacerlo). Sin token, la \
+            puerta de abajo no monta la espera y la búsqueda de iCloud no arranca nunca.
+            """)
+        #expect(view.contains("if let flowToken {"), """
+            **La puerta cayó.** Sin ella la espera de 90 s arranca en el PRIMER render —`state` nace \
+            en `.searching`— o sea antes de que `startSearch()` haya mirado iCloud ni el wipe, y \
+            sobrevive al desvío a `.wiped` o `.iCloudDisabled` porque `forceFetchAndWait` no observa \
+            cancelación. Quien enciende iCloud y toca «volver a buscar» tiene entonces DOS esperas \
+            vivas, y la fantasma apaga la ventana de la buena.
+            """)
+
+        // Y que el token del `@State` sea el que VIAJA. Es la pasarela del cableado: la reserva y el
+        // registro pueden estar bien y la pantalla recibir otra cosa, y entonces el apagado de arriba
+        // se queda sin dueño que reconocer.
+        #expect(view.contains("RestoreProgressView(flowToken: flowToken)"), """
+            El token dejó de VIAJAR a la pantalla de progreso. El apagado deja de identificar a este \
+            flujo y el intento abandonado vuelve a poder cerrar la ventana del vivo.
             """)
     }
 

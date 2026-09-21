@@ -13,6 +13,17 @@ import SwiftData
 import SwiftUI
 
 struct RestoreProgressView: View {
+    /// El flujo de restauración al que pertenece esta espera, y lo único que autoriza a cerrar la
+    /// ventana de sesión al terminar (`ICloudRestoreSessionSignal.noteRestoreFinished(_:)`).
+    ///
+    /// **Llega RESERVADO desde arriba y no se lee del latch aquí**, y esa es la pieza que hace
+    /// correcto el arreglo de `restore-back-and-reenter-closes-the-live-session-window`. Esta pantalla
+    /// se monta en el PRIMER render de `WelcomeRestoreView` —su `state` nace en `.searching`—, o sea
+    /// antes de que `startSearch()` haya encendido nada: preguntarle al latch aquí devolvería el token
+    /// del intento ANTERIOR, que es el bug por dentro. Con el token reservado en el `@State` de la
+    /// vista de arriba, cada entrada a Restaurar trae el suyo sin depender de en qué orden corran los
+    /// dos `.task`.
+    let flowToken: ICloudRestoreSessionSignal.FlowToken
     let timeout: TimeInterval
     /// El resumen **y lo que sabemos de la espera que lo produjo**. El segundo argumento no es
     /// telemetría: con el resumen vacío es lo único que distingue «CloudKit dijo que no hay nada» de
@@ -30,8 +41,10 @@ struct RestoreProgressView: View {
     @State private var phase: OnboardingRestorePhase = .connecting
     @State private var runTask: Task<Void, Never>?
 
-    init(timeout: TimeInterval = 90,
+    init(flowToken: ICloudRestoreSessionSignal.FlowToken,
+         timeout: TimeInterval = 90,
          onSettled: @escaping (ICloudAccountSummary, RestoreImportSettlement) -> Void) {
+        self.flowToken = flowToken
         self.timeout = timeout
         self.onSettled = onSettled
     }
@@ -168,7 +181,12 @@ struct RestoreProgressView: View {
             // descarga en curso que justifique tener abierto el guard cross-cuenta. Va ANTES del
             // `guard !Task.isCancelled` de abajo a propósito — si la vista se desmontó justo ahora, el
             // early-return se llevaría el apagado y la ventana quedaría viva hasta caducar.
-            ICloudRestoreSessionSignal.noteRestoreFinished()
+            // Con el token de ESTE flujo, no incondicional: quien tocó atrás y volvió a entrar tiene un
+            // intento vivo con otro token, y el abandonado —clavado hasta aquí porque
+            // `forceFetchAndWait` no observa cancelación— ya no puede apagarle la ventana. Si esta
+            // pantalla se montó en un camino que nunca llegó a encender la señal (`.wiped`,
+            // `.iCloudDisabled`), su token no es dueño de nada y esto es un no-op.
+            ICloudRestoreSessionSignal.noteRestoreFinished(flowToken)
             guard !Task.isCancelled else { return }
             phase = settled ? .completed : .partial
             do {
