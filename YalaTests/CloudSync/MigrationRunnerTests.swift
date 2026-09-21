@@ -42,6 +42,11 @@ private final class FakeExecutor: MigrationWorkExecuting {
     // Verify: cola de probes.
     var verifyProbes: [VerifyProbe] = [.match]
     private var verifyIndex = 0
+    /// Cuántas veces sondeó el runner. Lo pide el techo de la etapa previa al montaje: sus tres cortes devuelven
+    /// `false` para no hacer tight-loop de red, y ESO no lo puede cazar el journal — con `return true` el bucle de
+    /// `drive()` re-sondea hasta su tope de iteraciones y acaba dejando el journal exactamente igual. Hallazgo de la
+    /// review del 2026-09-21.
+    var verifyCallCount = 0
 
     var confirmCutoverResult = true
     var persistLocalModeResult = true
@@ -125,6 +130,7 @@ private final class FakeExecutor: MigrationWorkExecuting {
     }
 
     func verify() async -> VerifyProbe {
+        verifyCallCount += 1
         guard !verifyProbes.isEmpty else { return .networkTimeout }   // M3: guion vacío no trapea
         let probe = verifyProbes[min(verifyIndex, verifyProbes.count - 1)]
         verifyIndex += 1
@@ -2325,6 +2331,10 @@ struct MigrationRunnerTests {
             (.reverseDrainAll, "drain/transient", { $0.reverseDrainOutcomes = [.transient] }),
             (.reverseDrainAll, "drain/sessionExpired", { $0.reverseDrainOutcomes = [.sessionExpired] }),
             (.reverseVerify, "verify/sessionExpired", { $0.verifyProbes = [.sessionExpired] }),
+            // La red PURA del verify entra a la tabla el 2026-09-21 (ticket
+            // `reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out`). Era la única de las OCHO
+            // combinaciones fase × causa que se quedaba fuera del techo.
+            (.reverseVerify, "verify/red", { $0.verifyProbes = [.networkTimeout] }),
             (.reverseFreezeBackend, "freeze/transient", { $0.freezeBackendOutcomes = [.transient] }),
             (.reverseFreezeBackend, "freeze/sessionExpired", { $0.freezeBackendOutcomes = [.sessionExpired] }),
         ]
@@ -2427,6 +2437,231 @@ struct MigrationRunnerTests {
         #expect(j.verifyNetworkRetries == 7, "el presupuesto de RED no se toca")
         #expect(j.readPhase().phase == .reverseVerify, "y no degrada: espera a su propio techo")
         #expect(j.readPendingEffects().isEmpty)
+    }
+
+    /// **Dónde es alcanzable el aviso del toque, MEDIDO el 2026-09-21** (ticket
+    /// `reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out`). `CloudMigrationController.startReverse`
+    /// hace exactamente este par de `submit`, y el aviso que lleva detrás solo vale si el par puede producir una
+    /// salida. Se midió porque la respuesta no es obvia en ninguna de las dos direcciones:
+    ///
+    /// - **Desde una fase ESTABLE, que es el camino del toque, NO puede.** El cruce
+    ///   `reverseConfirm(origin) → reverseClaimLeader` limpia el reloj y la fase sellados, así que la primera
+    ///   observación del intento nuevo da `stalled = 0` y holdea aunque el journal trajera un sello de días atrás.
+    ///   Esa limpieza es del ticket padre y este caso la fija desde fuera: quitarla haría salir la vuelta nueva **en
+    ///   el acto**, con techo instantáneo, y aquí se vería.
+    /// - **Con el journal YA en una fase previa al montaje y el techo vencido, SÍ puede**, y por eso el aviso de
+    ///   `startReverse` no es un camino muerto: `submit` llama a `drive()` aunque el `handle` del evento sea
+    ///   inválido en esa fase, así que el toque conduce la fase que había. Es el desincronizado —la pantalla pinta
+    ///   la tarjeta con el journal aún en pre-montaje—, y es justo el caso que el ticket describe: la barra
+    ///   desaparece y la pantalla cambia sin decir por qué.
+    @Test func startReversePair_exitsTheCeilingOnlyWhenTheJournalWasAlreadyInTheStage() async throws {
+        // A · el camino del toque, desde una fase estable: el cruce limpia el reloj ⇒ holdea, no sale.
+        let dirA = freshDir(); defer { cleanup(dirA) }
+        let ctxA = try makeContext(dirA)
+        let fakeA = FakeExecutor()
+        fakeA.reverseClaimOutcomes = [.transient]
+        let clockA = MutableClock(fixedNow.addingTimeInterval(259_200))
+        try seedJournal(ctxA, phase: .done, reversePreMountProgressAt: fixedNow, reversePreMountPhaseRaw: "claim")
+
+        let rA = makeRunner(ctxA, fakeA, now: { clockA.value })
+        await rA.submit(.reverseActivated)
+        await rA.submit(.reverseConfirmed)
+
+        #expect(try journal(ctxA).readPhase().phase == .reverseClaimLeader,
+                "la vuelta nueva empieza y espera: un sello viejo no la puede echar en el acto")
+        #expect(rA.lastReversePreMountExit == nil, "sin salida no hay nada que anunciar")
+
+        // B · el desincronizado: el journal ya estaba en la etapa y el techo vencido ⇒ el toque la saca, y lo dice.
+        let dirB = freshDir(); defer { cleanup(dirB) }
+        let ctxB = try makeContext(dirB)
+        let fakeB = FakeExecutor()
+        fakeB.reverseClaimOutcomes = [.transient]
+        let clockB = MutableClock(fixedNow.addingTimeInterval(259_200))
+        try seedJournal(ctxB, phase: .reverseClaimLeader, reverseOriginRaw: "done",
+                        reversePreMountProgressAt: fixedNow, reversePreMountPhaseRaw: "claim")
+
+        let rB = makeRunner(ctxB, fakeB, now: { clockB.value })
+        await rB.submit(.reverseActivated)
+        await rB.submit(.reverseConfirmed)
+
+        #expect(try journal(ctxB).readPhase().phase == .done, "sale a su origen")
+        #expect(rB.lastReversePreMountExit == ReversePreMountExit(sequence: 1, reason: .preMountStalled),
+                "y deja el testigo que el aviso de `startReverse` compara")
+    }
+
+    // MARK: - §12c · La red pura del verify, dentro del techo
+    // (ticket `reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out`, decisión de Jürgen)
+
+    /// El gemelo del caso del 403, para la RED. **Reescrito tras la review, que cazó que tres de sus cuatro
+    /// aserciones no podían fallar** — dos lentes por separado, y con el mismo análisis.
+    ///
+    /// La primera versión sembraba el presupuesto de red **agotado** creyendo que así el mutante caía por tres
+    /// sitios. Medido, hacía lo contrario: con el tope ya alcanzado, el código viejo iba a `reverseFailedRollback`,
+    /// que **no incrementa** el contador (`if next == .reverseVerify`) ni escribe `reverseAbortReasonRaw`, y el
+    /// `.reverseRollback` que dejaba pendiente lo consumía el drenaje porque el fake no lanza. O sea: sembrar en el
+    /// tope es justo lo que volvía inocuas las aserciones. Es la familia de «el número sustituto lo cumple otra cosa».
+    ///
+    /// Ahora siembra **0**, que es donde el trato viejo y el nuevo difieren en TODO: el viejo gastaría un reintento
+    /// y seguiría en `reverseVerify` sin sellar reloj; el nuevo no gasta nada y **sella**. Y añade la aserción que
+    /// mata el mutante PARCIAL que las otras cuatro dejaban vivo —revertir solo este `case` y dejar el `.invalid` en
+    /// la máquina—: ahí `handle` hace breadcrumb y no-op, no hay observación, no hay sello, y el journal queda igual
+    /// que en el camino bueno salvo por esto. Sin el reloj sellado, esa mutación reabre el limbo del ticket padre.
+    ///
+    /// `verifyCallCount == 1` cierra el otro mutante que sobrevivía a todo lo demás: `return true` en vez de
+    /// `return false`. No cuelga —`drive()` tiene tope de iteraciones— y deja el journal donde los tests lo esperan,
+    /// así que solo lo caza contar las llamadas.
+    @Test func reverse_verifyNetworkTimeout_spendsNoNetworkRetry_sealsTheClock_andNeverDegrades() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.verifyProbes = [.networkTimeout]
+        try seedJournal(context, phase: .reverseVerify, networkRetries: 0, reverseOriginRaw: "done")
+
+        await runner(context, fake).resume()
+
+        let j = try journal(context)
+        #expect(j.verifyNetworkRetries == 0,
+                "la red de la VUELTA ya no gasta presupuesto: el trato viejo habría dejado 1")
+        #expect(j.readPhase().phase == .reverseVerify, "no degrada: espera a su propio techo")
+        #expect(j.reversePreMountProgressAt != nil,
+                "y SÍ pasó por el techo: sin sello, revertir solo el runner reabriría el limbo sin que nada lo cazara")
+        #expect(j.reversePreMountPhaseRaw == "verify", "sellado en SU fase, que es con la que se compara el reloj")
+        #expect(!j.readPendingEffects().contains(.reverseRollback),
+                "sin abort pendiente, que sin red lanzaría en cada resume")
+        #expect(fake.verifyCallCount == 1, "corta retomable: un resume = UN sondeo, sin tight-loop de red")
+    }
+
+    /// **La IDA no cambia**, y esta es la mitad del criterio que el ticket pide fijar: `verify()` lo comparten las
+    /// dos direcciones, así que sacar la red del verify de la VUELTA podría llevarse por delante el de la ida sin
+    /// que nadie lo notara. En `verifying` sigue gastando reintento bajo el tope y degradando al llegar, exactamente
+    /// como antes de este ticket. Su residual sigue siendo `forward-verify-reads-an-expired-session-as-network`.
+    @Test func forwardVerify_networkTimeout_stillSpendsTheBudget_andDegradesAtTheCap() async throws {
+        let cap = MigrationPolicy.default.maxNetworkRetries
+
+        let underDir = freshDir(); defer { cleanup(underDir) }
+        let underContext = try makeContext(underDir)
+        let underFake = FakeExecutor()
+        underFake.verifyProbes = [.networkTimeout]
+        try seedJournal(underContext, phase: .verifying, networkRetries: 0)
+        await runner(underContext, underFake).resume()
+        let under = try journal(underContext)
+        #expect(under.verifyNetworkRetries == 1, "la ida sigue gastando presupuesto de red")
+        #expect(under.readPhase().phase == .verifying, "y sigue reintentando bajo el tope")
+
+        let capDir = freshDir(); defer { cleanup(capDir) }
+        let capContext = try makeContext(capDir)
+        let capFake = FakeExecutor()
+        capFake.verifyProbes = [.networkTimeout]
+        try seedJournal(capContext, phase: .verifying, networkRetries: cap)
+        await runner(capContext, capFake).resume()
+        #expect(try journal(capContext).readPhase().phase == .failedRollback,
+                "y al tope sigue degradando: la ida revierte, que es su trato de siempre")
+        #expect(capFake.count(.rollback) == 1)
+    }
+
+    // MARK: - §12d · La salida del techo AVISA en el momento
+    // (mismo ticket: hasta hoy la barra desaparecía y la pantalla cambiaba sin decir por qué)
+
+    /// El testigo en memoria que deja al controller saber que la salida es de AHORA. Sin `sequence`, la alerta
+    /// saldría también por la nota journaleada de un intento de hace días — que es justo el bug que el ticket
+    /// hermano cerró para el claim y que el techo reintrodujo.
+    ///
+    /// Barre las CUATRO fases con su motivo, y comprueba que cada salida nueva es distinta de la anterior aunque el
+    /// motivo se repita: un testigo que solo llevara el motivo no distinguiría dos salidas iguales seguidas.
+    @Test func reversePreMountExit_isRecordedWithARisingSequence_perExit() async throws {
+        let cases: [(Phase, String, (FakeExecutor) -> Void, ReverseAbortReason)] = [
+            (.reverseClaimLeader, "claim/red", { $0.reverseClaimOutcomes = [.transient] }, .preMountStalled),
+            (.reverseDrainAll, "drain/403",
+             { $0.reverseDrainOutcomes = [.blocked(.accountUnavailable)] }, .preMountRefused),
+            (.reverseVerify, "verify/red", { $0.verifyProbes = [.networkTimeout] }, .preMountStalled),
+            (.reverseFreezeBackend, "freeze/otherLeader",
+             { $0.freezeBackendOutcomes = [.blocked(.otherLeader)] }, .preMountOtherDevice),
+        ]
+        for (phase, label, arrange, expected) in cases {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            arrange(fake)
+            let clock = MutableClock(fixedNow.addingTimeInterval(259_200))
+            try seedJournal(context, phase: phase, reverseOriginRaw: "done",
+                            reversePreMountProgressAt: fixedNow,
+                            reversePreMountPhaseRaw: ReversePreMountPhase(phase: phase)?.rawValue)
+
+            let r = makeRunner(context, fake, now: { clock.value })
+            #expect(r.lastReversePreMountExit == nil, "\(label): un runner recién creado no ha visto ninguna salida")
+            await r.resume()
+            #expect(r.lastReversePreMountExit == ReversePreMountExit(sequence: 1, reason: expected), "\(label)")
+            #expect(try journal(context).reverseAbortReasonRaw == expected.rawValue,
+                    "\(label): el testigo y la nota journaleada dicen lo MISMO")
+        }
+    }
+
+    /// Dos salidas seguidas con el mismo motivo son DISTINTAS: es lo único que deja al controller avisar la segunda
+    /// vez sin repetir la primera. Con un testigo que solo llevara el motivo, este caso pasaría en verde con la
+    /// alerta muda.
+    @Test func reversePreMountExit_twoExitsWithTheSameReason_areNotEqual() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.reverseClaimOutcomes = [.transient]
+        let clock = MutableClock(fixedNow.addingTimeInterval(259_200))
+        let r = makeRunner(context, fake, now: { clock.value })
+
+        try seedJournal(context, phase: .reverseClaimLeader, reverseOriginRaw: "done",
+                        reversePreMountProgressAt: fixedNow, reversePreMountPhaseRaw: "claim")
+        await r.resume()
+        #expect(r.lastReversePreMountExit == ReversePreMountExit(sequence: 1, reason: .preMountStalled))
+
+        // Segunda vuelta: el journal se repone a la misma fase parada, como si la persona lo hubiera intentado otra
+        // vez y el techo hubiera vuelto a vencer. Mismo motivo, mismo runner.
+        let st = try journal(context)
+        st.setPhase(.reverseClaimLeader)
+        st.reverseOriginRaw = "done"
+        st.reversePreMountProgressAt = fixedNow
+        st.reversePreMountPhaseRaw = "claim"
+        st.reverseAbortReasonRaw = nil
+        try context.save()
+
+        await r.resume()
+        #expect(r.lastReversePreMountExit == ReversePreMountExit(sequence: 2, reason: .preMountStalled))
+        #expect(ReversePreMountExit(sequence: 1, reason: .preMountStalled)
+                != ReversePreMountExit(sequence: 2, reason: .preMountStalled))
+    }
+
+    /// «Cancelar y seguir en la nube» TAMBIÉN deja testigo —es una salida de la etapa como cualquier otra— pero con
+    /// `cancelled`, que es el motivo que `ReverseUploadWaitingCopyLogic.abortNote` filtra. El runner no decide el
+    /// copy: registra el hecho, y quién lo enseña lo decide un solo sitio.
+    @Test func reversePreMountExit_cancelling_recordsTheReasonThatIsNeverAnnounced() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(context, phase: .reverseDrainAll, reverseOriginRaw: "done",
+                        reversePreMountProgressAt: fixedNow, reversePreMountPhaseRaw: "drain")
+
+        let r = runner(context, fake)
+        await r.cancelReverse()
+
+        #expect(r.lastReversePreMountExit == ReversePreMountExit(sequence: 1, reason: .cancelled))
+        #expect(ReverseUploadWaitingCopyLogic.abortNote(.cancelled) == nil,
+                "y ese motivo no se anuncia: lo decidió la persona")
+    }
+
+    /// Una pasada que NO sale de la etapa no deja testigo. Sin esto, la alerta saldría en cada re-kick de 30 s
+    /// mientras la vuelta sigue esperando, que es lo contrario de lo que el techo existe para hacer.
+    @Test func reversePreMountExit_holdingUnderBudget_recordsNothing() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.verifyProbes = [.networkTimeout]
+        try seedJournal(context, phase: .reverseVerify, reverseOriginRaw: "done",
+                        reversePreMountProgressAt: fixedNow, reversePreMountPhaseRaw: "verify")
+
+        let r = makeRunner(context, fake, now: { self.fixedNow.addingTimeInterval(900) })
+        await r.resume()
+        await r.resume()
+
+        #expect(try journal(context).readPhase().phase == .reverseVerify, "sigue esperando: 900 s < el techo largo")
+        #expect(r.lastReversePreMountExit == nil, "y sin salida no hay nada que anunciar")
     }
 
     /// El `reverse_abort` best-effort que LANZA no deshace la salida ni deja nada pendiente. Es la diferencia con

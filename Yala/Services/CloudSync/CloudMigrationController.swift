@@ -791,6 +791,7 @@ final class CloudMigrationController {
         cancelReverseRequested = false
         let r = runner
         let claimExitBefore = r.lastReverseClaimExit
+        let preMountExitBefore = r.lastReversePreMountExit
         await r.submit(.reverseActivated)    // done/notStarted → reverseConfirm(origin)
         await r.submit(.reverseConfirmed)    // → reverseClaimLeader → drive
         refresh()
@@ -802,6 +803,7 @@ final class CloudMigrationController {
             lastError = L10n.Storage.Errors.reversePendingExit
         } else {
             announceReverseClaimExit(since: claimExitBefore)
+            announceReversePreMountExit(since: preMountExitBefore)
         }
     }
 
@@ -817,6 +819,39 @@ final class CloudMigrationController {
     private func announceReverseClaimExit(since before: ReverseClaimExit?) {
         guard let exit = _runner?.lastReverseClaimExit, exit != before else { return }
         lastError = L10n.Storage.ReverseAbort.note(for: exit.reason)
+    }
+
+    /// Avisa de una salida de las cuatro fases previas al montaje que haya producido la llamada en curso (ticket
+    /// `reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out`): el techo de la etapa venció y la
+    /// vuelta regresó a su origen. Misma forma y mismo porqué que el helper de arriba —la foto ANTES de llamar al
+    /// runner, porque el motivo journaleado no distingue esta salida de la de un intento anterior—, con una
+    /// diferencia: aquí la salida puede ser la que pidió la PERSONA («Cancelar y seguir en la nube», que también
+    /// vive en estas fases), y esa no se anuncia. Lo decide `ReverseUploadWaitingCopyLogic.abortNote`, el mismo
+    /// filtro que decide si la tarjeta pone nota: con dos, la alerta y la nota discreparían.
+    ///
+    /// Sin este aviso la barra desaparecía de golpe y la pantalla cambiaba sin decir por qué: la salida de esta
+    /// etapa no deja NINGÚN efecto, así que no hay tarjeta de relanzar que delate lo ocurrido.
+    ///
+    /// **Dónde dispara cada uno, MEDIDO y no inferido** (`MigrationRunnerTests
+    /// .startReversePair_exitsTheCeilingOnlyWhenTheJournalWasAlreadyInTheStage`). En `resume` es el caso normal: el
+    /// re-kick de 30 s y «Retomar» son los que cruzan el techo con la persona mirando. En `startReverse` **no** puede
+    /// disparar por el camino del toque —el cruce a `reverseClaimLeader` limpia el reloj, así que la vuelta nueva
+    /// holdea aunque el journal trajera un sello de días atrás—, pero **sí** cuando la pantalla pinta la tarjeta con
+    /// el journal todavía en una de las cuatro fases: `submit` conduce igual, y ahí la salida ocurre dentro del
+    /// toque. No es un camino muerto, y es exactamente el silencio que este ticket cierra.
+    ///
+    /// **Dos límites que la review acotó y que se aceptan, con ticket cada uno.** (1) Un aviso publicado con esta
+    /// pantalla cerrada —una salida que vence en el `resume` del arranque— no sale al abrirla: `StorageSettingsView`
+    /// observa `lastError` sin `initial: true`, al revés que el aviso de identidad de quince líneas antes. Se hereda
+    /// de la decisión escrita del aviso del claim («la alerta vive en Almacenamiento y solo sale con ella delante»)
+    /// y cambiarlo la reabriría para los dos, así que va aparte:
+    /// `reverse-exit-alert-published-off-screen-never-shows`. (2) Los demás `submit` del controller —los de la IDA—
+    /// conducen `drive()` con el mismo argumento y no anuncian; para llegar ahí haría falta ofrecer «Migrar a la
+    /// nube» con el journal en una vuelta, una desincronía más profunda que la de arriba, y también tiene ticket.
+    private func announceReversePreMountExit(since before: ReversePreMountExit?) {
+        guard let exit = _runner?.lastReversePreMountExit, exit != before,
+              let reason = ReverseUploadWaitingCopyLogic.abortNote(exit.reason) else { return }
+        lastError = L10n.Storage.ReverseAbort.note(for: reason)
     }
 
     /// Retomar una migración/reversa journaleada (botón "Retomar" + el coordinator de boot + el
@@ -837,6 +872,7 @@ final class CloudMigrationController {
             return
         }
         let claimExitBefore = runner.lastReverseClaimExit
+        let preMountExitBefore = runner.lastReversePreMountExit
         let forwardRefusalBefore = runner.lastForwardClaimRefusal
         if cancelReverseRequested {
             // El «sí» de «Cancelar» que la pre-espera no dejó pasar. Si la vuelta ya avanzó, el runner no hace nada.
@@ -846,6 +882,7 @@ final class CloudMigrationController {
         await runner.resume()
         refresh()
         announceReverseClaimExit(since: claimExitBefore)
+        announceReversePreMountExit(since: preMountExitBefore)
         await announceForwardClaimRefusal(since: forwardRefusalBefore)
         startRuntimeIfStable()
     }

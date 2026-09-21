@@ -79,6 +79,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | budget-tied-to-income-or-expense | backlog | tickets/backlog/budget-tied-to-income-or-expense.md |
 | bulk-update-account-leaves-converted-amount-stale | done | tickets/done/bulk-update-account-leaves-converted-amount-stale.md |
 | canarios-y-breadcrumbs-sin-emisor | backlog | tickets/backlog/canarios-y-breadcrumbs-sin-emisor.md |
+| cancel-reverse-wipes-the-alert-that-just-appeared | backlog | tickets/backlog/cancel-reverse-wipes-the-alert-that-just-appeared.md |
 | cashflow-spend-prediction | backlog | tickets/backlog/cashflow-spend-prediction.md |
 | cerrar-total-para-ante-un-check-rojo-que-no-bloquea | backlog | tickets/backlog/cerrar-total-para-ante-un-check-rojo-que-no-bloquea.md |
 | changing-an-account-currency-orphans-its-whole-history | qa | tickets/qa/changing-an-account-currency-orphans-its-whole-history.md |
@@ -138,6 +139,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | debounce-sync-imported-transactions | backlog | tickets/backlog/debounce-sync-imported-transactions.md |
 | debt-simplification-nondeterministic-ties | backlog | tickets/backlog/debt-simplification-nondeterministic-ties.md |
 | debt-tracking | backlog | tickets/backlog/debt-tracking.md |
+| debug-panel-shows-a-counter-the-reverse-no-longer-moves | backlog | tickets/backlog/debug-panel-shows-a-counter-the-reverse-no-longer-moves.md |
 | detach-does-not-verify-the-cloud-session-actually-closed | backlog | tickets/backlog/detach-does-not-verify-the-cloud-session-actually-closed.md |
 | detach-failure-looks-like-success | done | tickets/done/detach-failure-looks-like-success.md |
 | detach-history-replay-can-tombstone-groups-on-next-launch | done | tickets/done/detach-history-replay-can-tombstone-groups-on-next-launch.md |
@@ -407,16 +409,19 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reverse-claim-exit-with-a-restored-failing-effect-keeps-the-engine-off | backlog | tickets/backlog/reverse-claim-exit-with-a-restored-failing-effect-keeps-the-engine-off.md |
 | reverse-claim-rejection-has-no-way-out-in-the-client | qa | tickets/qa/reverse-claim-rejection-has-no-way-out-in-the-client.md |
 | reverse-cutover-cerrado-para-cuentas-born-cloud | qa | tickets/qa/reverse-cutover-cerrado-para-cuentas-born-cloud.md |
+| reverse-exit-alert-published-off-screen-never-shows | backlog | tickets/backlog/reverse-exit-alert-published-off-screen-never-shows.md |
 | reverse-exit-leaves-a-partial-copy-in-icloud | backlog | tickets/backlog/reverse-exit-leaves-a-partial-copy-in-icloud.md |
 | reverse-exit-on-a-reverted-account-rejects-the-retry | backlog | tickets/backlog/reverse-exit-on-a-reverted-account-rejects-the-retry.md |
 | reverse-hidden-on-a-born-cloud-second-device | backlog | tickets/backlog/reverse-hidden-on-a-born-cloud-second-device.md |
 | reverse-offered-on-a-device-without-icloud | backlog | tickets/backlog/reverse-offered-on-a-device-without-icloud.md |
-| reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out | backlog | tickets/backlog/reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out.md |
+| reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out | qa | tickets/qa/reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out.md |
 | reverse-tap-is-lost-while-a-resume-is-running | backlog | tickets/backlog/reverse-tap-is-lost-while-a-resume-is-running.md |
+| reverse-tap-on-a-stale-card-aborts-instead-of-starting | backlog | tickets/backlog/reverse-tap-on-a-stale-card-aborts-instead-of-starting.md |
 | reverse-upload-ceiling-trusts-a-clock-set-back-during-the-wait | backlog | tickets/backlog/reverse-upload-ceiling-trusts-a-clock-set-back-during-the-wait.md |
 | reverse-upload-has-no-ceiling-and-no-exit | qa | tickets/qa/reverse-upload-has-no-ceiling-and-no-exit.md |
 | reverse-upload-sample-reads-unreadable-rows-as-drained | backlog | tickets/backlog/reverse-upload-sample-reads-unreadable-rows-as-drained.md |
 | reverse-upload-sample-walks-every-row-twice-on-the-main-thread | backlog | tickets/backlog/reverse-upload-sample-walks-every-row-twice-on-the-main-thread.md |
+| reverse-verify-network-bucket-hides-a-definitive-server-no | backlog | tickets/backlog/reverse-verify-network-bucket-hides-a-definitive-server-no.md |
 | reverse-zombie-sweep-reads-an-expired-session-as-network | backlog | tickets/backlog/reverse-zombie-sweep-reads-an-expired-session-as-network.md |
 | revert-card-copy-says-datos-regresan-a-quien-nunca-estuvo | backlog | tickets/backlog/revert-card-copy-says-datos-regresan-a-quien-nunca-estuvo.md |
 | rojo-heroBuckets-thisWeek-trailing-window | done | tickets/done/rojo-heroBuckets-thisWeek-trailing-window.md |

@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, migración"
 created: 2026-09-17
+updated: 2026-09-21
 source: "D6 del Paso 0 de `reverse-before-mount-stays-stuck-with-an-expired-session`, 2026-09-17: alcance dejado fuera a propósito"
 ---
 
@@ -41,8 +42,26 @@ en silencio al tocar ese `switch`.
 - [ ] Si se cambia, `forwardVerify_sessionExpired_spendsNetworkRetry` se re-escribe al comportamiento nuevo (no se
       borra: su trabajo es que el trato sea una decisión y no un descuido).
 
+## Actualización 2026-09-21 — la asimetría creció, y el título se le quedó corto
+
+`reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out` metió también la **red pura** del verify de la
+VUELTA en el techo de la etapa. Desde hoy, en `reverseVerify` los TRES desenlaces que no avanzan —red, sesión caducada y
+el `blocked` del servidor— salen del presupuesto S9 y esperan al techo; en `verifying` los tres siguen dentro. O sea que
+la asimetría ya no es «un caso», es el `case` entero del `switch`, y en la vuelta el único contador S9 vivo es el del
+mismatch (`reverseVerifyOutcome(.networkTimeout)` dejó de ser un par legal de la máquina).
+
+Eso **no cambia lo que este ticket pide decidir** —los tres puntos de arriba siguen igual— pero sí añade un cuarto, y
+conviene contestarlo con los otros: si la ida se mueve, ¿se mueve solo la sesión, o la red también? Hoy la ida no tiene
+techo de etapa donde aparcar la red, así que «como la vuelta» implicaría construirle uno; su `failedRollback` sí limpia
+lo que dejó a medias en el servidor, y rendirse ahí puede seguir siendo lo correcto.
+
+El test que lo fija ya no está solo: `forwardVerify_networkTimeout_stillSpendsTheBudget_andDegradesAtTheCap` (runner) y
+`forwardVerify_networkTimeout_isUntouched_retriesThenFailsRollback` (máquina) cubren ahora el otro desenlace. Los tres se
+re-escriben juntos si esto se hace, y ninguno se borra.
+
 ## Relacionado
 
+- `reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out` — el que ensanchó la asimetría (2026-09-21).
 - `reverse-before-mount-stays-stuck-with-an-expired-session` — la vuelta, ya cerrada.
 - `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry` — de dónde sale que el token ausente sin red no es
   una sesión caducada.

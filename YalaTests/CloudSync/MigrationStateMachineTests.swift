@@ -628,16 +628,27 @@ struct MigrationStateMachineTests {
         #expect(r.effects == [.reverseRollback])
     }
 
-    @Test func reverseVerify_networkTimeout_belowCap_retriesVerify_atCap_failsRollback() {
+    /// La red de la VUELTA dejó de ser un desenlace del verify el 2026-09-21 (ticket
+    /// `reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out`): pasa por el techo de la etapa previa
+    /// al montaje, como la del drenaje y la del congelado, así que `driveReverseVerify` ya no emite este evento.
+    ///
+    /// **El par se declara inválido y no se deja como estaba.** La rama vieja degradaba a `reverseFailedRollback`
+    /// con `.reverseRollback` pendiente, y dejarla viva sin emisor es una rama muerta que afirma lo contrario del
+    /// ticket. Se barre el presupuesto ENTERO más el tope: ninguno de los nueve valores puede volver a transicionar.
+    ///
+    /// **La IDA no se tocó, y quien lo fija ya estaba escrito**: `verify_networkTimeout_belowCap_alwaysRetriesVerifying`
+    /// y `verify_networkTimeout_atCap_failsRollback`, en la sección 4. Este ticket llegó a añadir aquí un tercero que
+    /// repetía esos dos literalmente; la review lo midió y se quitó. A nivel de RUNNER sí hacía falta uno
+    /// (`MigrationRunnerTests.forwardVerify_networkTimeout_stillSpendsTheBudget_andDegradesAtTheCap`): allí el único
+    /// forward del verify que había era el de la sesión caducada.
+    @Test func reverseVerify_networkTimeout_isNoLongerALegalPair() {
         let policy = MigrationPolicy(maxMismatchRetries: 3, maxNetworkRetries: 8)
-        for retries in 0..<policy.maxNetworkRetries {
-            let r = step(.reverseVerify, .reverseVerifyOutcome(.networkTimeout(retriesSoFar: retries)), policy: policy)
-            #expect(r.next == .reverseVerify, "reverse network timeout \(retries) must retry verify")
-            #expect(r.effects.isEmpty)
+        for retries in 0...policy.maxNetworkRetries {
+            let event = Event.reverseVerifyOutcome(.networkTimeout(retriesSoFar: retries))
+            #expect(MigrationStateMachine.transition(from: .reverseVerify, event: event, policy: policy)
+                    == .invalid(from: .reverseVerify, event: event),
+                    "la red de la vuelta va al techo de la etapa, no a los contadores S9 (retries \(retries))")
         }
-        let capped = step(.reverseVerify, .reverseVerifyOutcome(.networkTimeout(retriesSoFar: 8)), policy: policy)
-        #expect(capped.next == .reverseFailedRollback)
-        #expect(capped.effects == [.reverseRollback])
     }
 
     @Test func reverseVerify_newDelta_reRuns_doesNotConsumeRetry() {
@@ -646,10 +657,17 @@ struct MigrationStateMachineTests {
         #expect(r.effects.isEmpty)
     }
 
-    @Test func reverseVerify_countersIndependent_networkDoesNotConsumeMismatchBudget() {
+    /// El contador que la VUELTA sigue usando es el del mismatch, y su tope es el suyo: un `maxNetworkRetries`
+    /// generoso no lo estira. Antes esta pareja probaba que los dos contadores no se sumaban; desde que la red salió
+    /// del verify de la vuelta, lo que queda es que el mismatch no heredó el presupuesto del otro al quedarse solo.
+    ///
+    /// **Lo que mata el mutante es la segunda línea, y es la misma que tenía el test viejo** — la review lo midió: la
+    /// primera está subsumida por `reverseVerify_mismatch_belowCap_reDrains_neverReUploads`. Se conserva entera
+    /// porque el caso sigue contestando «¿de qué presupuesto vive el mismatch?», no porque añada cobertura nueva.
+    @Test func reverseVerify_mismatchCap_isItsOwn_notTheNetworkBudget() {
         let policy = MigrationPolicy(maxMismatchRetries: 1, maxNetworkRetries: 8)
-        #expect(step(.reverseVerify, .reverseVerifyOutcome(.networkTimeout(retriesSoFar: 7)), policy: policy).next
-            == .reverseVerify)
+        #expect(step(.reverseVerify, .reverseVerifyOutcome(.mismatch(retriesSoFar: 0)), policy: policy).next
+            == .reverseDrainAll)
         #expect(step(.reverseVerify, .reverseVerifyOutcome(.mismatch(retriesSoFar: 1)), policy: policy).next
             == .reverseFailedRollback)
     }

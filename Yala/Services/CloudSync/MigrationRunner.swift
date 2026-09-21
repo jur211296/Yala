@@ -171,6 +171,23 @@ nonisolated struct ReverseClaimExit: Equatable {
     let reason: ReverseAbortReason
 }
 
+/// Una salida de las CUATRO fases previas al montaje observada en ESTE proceso: el techo de la etapa venció, o la
+/// persona tocó «Cancelar y seguir en la nube» desde una de ellas (ticket
+/// `reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out`). Molde de `ReverseClaimExit`, y por la
+/// MISMA razón: el porqué journaleado (`reverseAbortReasonRaw`) no distingue una salida de ahora de la nota de un
+/// intento de hace días, así que sin `sequence` la alerta saldría también por la nota vieja.
+///
+/// **Aparte de `ReverseClaimExit`, no fusionado con él**, igual que `ForwardClaimRefusal`: cada salida lleva su
+/// testigo y su comparación. Dos no pueden coincidir en una pasada —la primera devuelve `false` y `drive()` corta—,
+/// así que no compiten por el mismo aviso.
+///
+/// `reason` incluye `.cancelled`, que NO se anuncia. Ese filtro es `ReverseUploadWaitingCopyLogic.abortNote`, el
+/// mismo que decide si la tarjeta pone nota: el testigo dice qué pasó, y qué se enseña lo decide un solo sitio.
+nonisolated struct ReversePreMountExit: Equatable {
+    let sequence: Int
+    let reason: ReverseAbortReason
+}
+
 /// Qué pidió la persona al llegar al claim de la IDA. Lo pone `CloudMigrationController` en cada entrada que conduce el
 /// claim, y el runner lo journalea (`MigrationState.forwardClaimIntentRaw`) en el mismo save que lleva a `claimingMigration`.
 ///
@@ -395,6 +412,11 @@ final class MigrationRunner {
     /// La última salida del claim de la reversa en este proceso (`nil` = ninguna). En memoria, molde de
     /// `lastClaimBlocker`: la nota que dura vive en el journal (`reverseAbortReasonRaw`); esto solo decide la alerta.
     private(set) var lastReverseClaimExit: ReverseClaimExit?
+
+    /// La última salida de las cuatro fases previas al montaje en este proceso (`nil` = ninguna). Mismo molde y misma
+    /// razón que el de arriba: la nota que dura vive en el journal, y esto es lo único que sabe si la salida la
+    /// produjo la llamada en curso. La lee `CloudMigrationController.announceReversePreMountExit`.
+    private(set) var lastReversePreMountExit: ReversePreMountExit?
 
     /// Dónde se paró la vuelta a iCloud porque la sesión de la nube ya no vale (`nil` = no se paró por eso). La lee
     /// `CloudMigrationController.refresh()` para que la tarjeta diga que hay que volver a entrar y lo ofrezca, en vez
@@ -821,8 +843,12 @@ final class MigrationRunner {
                 if !(try await driveCutover(sub)) { return }
             case .reverseConfirm, .icloudActive, .reverseFailedRollback:
                 // reverseConfirm espera el evento de UI (reverseConfirmed/reverseDeclined, I14);
-                // icloudActive/reverseFailedRollback son terminales estables. DARK: nada de producción
-                // emite `reverseActivated`, así que estas fases no se alcanzan hoy en runtime.
+                // icloudActive/reverseFailedRollback son terminales estables.
+                //
+                // **Esto ya NO es DARK, y decía que sí hasta el 2026-09-21.** El comentario venía de cuando solo el
+                // panel DEBUG emitía `reverseActivated`; desde que «Volver a iCloud» existe en Ajustes lo emite
+                // `CloudMigrationController.startReverse`, o sea producción. Se corrigió porque una lente de review
+                // se lo creyó y rebajó por eso la gravedad de un hallazgo: un «no mires aquí» que ya no era verdad.
                 return
             case .reverseClaimLeader:
                 if !(try await driveReverseClaim()) { return }
@@ -1186,8 +1212,13 @@ final class MigrationRunner {
     }
 
     /// `reverseVerify` (S9 REUSADO; autoridad backend→local → un mismatch RE-DRENA, no re-sube). Inyecta el
-    /// `retriesSoFar` desde el journal e incrementa el contador correcto en el MISMO save. Corta tras un
-    /// `networkTimeout` que reintenta (anti tight-loop, igual que el verify forward).
+    /// `retriesSoFar` desde el journal e incrementa el contador correcto en el MISMO save.
+    ///
+    /// **De los cinco desenlaces, solo el mismatch sigue usando los contadores S9.** Los otros dos que no avanzan
+    /// —la sesión caducada, el `blocked` del servidor y, desde el 2026-09-21, la red pura— pasan por el techo de la
+    /// etapa (`observeReversePreMountStall`) y cortan retomable sin tight-loop, que es el trato de las otras tres
+    /// fases previas al montaje. `verifyNetworkRetries` ya NO se gasta en la vuelta, y por eso
+    /// `reverseVerifyOutcome(.networkTimeout)` dejó de ser un par legal de la máquina desde `reverseVerify`.
     private func driveReverseVerify() async throws -> Bool {
         switch await executor.verify() {
         case .sessionExpired:
@@ -1202,8 +1233,9 @@ final class MigrationRunner {
             try await observeReversePreMountStall(.verify, blocker: nil)
             return false
         case let .blocked(blocker):
-            // El servidor dijo que no y esperar no lo cambia, así que NO gasta `verifyNetworkRetries` —ese camino
-            // acaba en `reverseFailedRollback` con el abort pendiente— y va derecho al techo CORTO de la etapa.
+            // El servidor dijo que no y esperar no lo cambia, así que NO gasta `verifyNetworkRetries` —el camino que
+            // lo gastaba acababa en `reverseFailedRollback` con el abort pendiente— y va derecho al techo CORTO de
+            // la etapa. Es el único de los tres que elige el corto: los otros dos no son una respuesta del servidor.
             try await observeReversePreMountStall(.verify, blocker: blocker)
             return false
         case .match:
@@ -1221,13 +1253,33 @@ final class MigrationRunner {
             }
             return true
         case .networkTimeout:
-            let spent = try loadState().verifyNetworkRetries
-            try await handle(.reverseVerifyOutcome(.networkTimeout(retriesSoFar: spent))) { state, next in
-                if next == .reverseVerify { state.verifyNetworkRetries += 1 }
-            }
-            // Si degradó a reverseFailedRollback (tope), drive() corta solo en la próxima vuelta; si reintenta
-            // (sigue en reverseVerify), corta AQUÍ retomable (sin tight-loop de red).
-            return try loadState().readPhase().phase != .reverseVerify
+            // La red PURA también va al techo de la etapa desde el 2026-09-21 (ticket
+            // `reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out`, decisión de Jürgen). Hasta ese
+            // día era la única de las ocho combinaciones fase × causa que se quedaba fuera: gastaba
+            // `verifyNetworkRetries` y al octavo degradaba a `reverseFailedRollback` con `.reverseRollback`
+            // pendiente. Salida tenía —no era el limbo del ticket padre—, pero la PEOR de las dos: un terminal que
+            // exige un toque, en vez de devolver el teléfono a sincronizar solo en su origen. Ahora es la hermana
+            // exacta de la red del drenaje y del congelado, que ya pasaban por aquí.
+            //
+            // `blocker: nil` ⇒ techo LARGO (72 h): la red vuelve sola, y quien está sin cobertura una tarde no
+            // pierde la vuelta por eso.
+            //
+            // **`.networkTimeout` NO es solo «no hay red», y eso es deuda heredada que este `case` ahora expone**
+            // (medido el 2026-09-21, hallazgo de la review). `VerifyProbeMapping` lo usa de cajón: el `fetch-failed`
+            // del Merkle —que aplana el 401 y el 403 de `/sync/merkle`, porque `SyncMerkle` colapsa todo lo que no
+            // sea `.snapshot`—, los dos `fetch` de SwiftData que lanzan, y el `default` de un `reason` que este build
+            // no conozca. Para esa mitad el techo largo es GENEROSO: no se va a resolver sola en 72 h. El push y el
+            // pull, que corren ANTES en `verify()`, sí tipan su 401/403, así que la ventana es la del 403 que empieza
+            // justo entre el pull y el Merkle. Antes de este ticket esa mitad degradaba a `reverseFailedRollback` en
+            // minutos, con tarjeta y botón; hoy espera. Se aceptó para no tocar `SyncMerkle`, que comparten la ida y
+            // el motor, y tiene ticket propio: `reverse-verify-network-bucket-hides-a-definitive-server-no`.
+            //
+            // **La IDA no cambia**: `driveVerify` es otra función y agrupa este caso con `.sessionExpired` y
+            // `.blocked` en su rama de red, como antes de que ninguno de los dos existiera. Lo fija
+            // `MigrationRunnerTests.forwardVerify_networkTimeout_stillSpendsTheBudget_andDegradesAtTheCap`, y su
+            // residual sigue siendo `forward-verify-reads-an-expired-session-as-network`.
+            try await observeReversePreMountStall(.verify, blocker: nil)
+            return false
         }
     }
 
@@ -1482,7 +1534,14 @@ final class MigrationRunner {
     /// (`.claude/rules/swiftdata-cloudkit.md`, «un escritor y UN borrador»), y añadir aquí un segundo sería una línea
     /// que se cumple sola — lo único que lee ese testigo es `reverseNeedsSignIn`, que solo consume la tarjeta de
     /// progreso, y esa tarjeta no se pinta en `.done` ni en `.notStarted`. Ningún test podría cazar su borrado.
+    ///
+    /// **Y anota la salida en memoria** (`lastReversePreMountExit`, ticket
+    /// `reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out`). Hasta ese ticket este paso escribía
+    /// `reverseAbortReasonRaw` y nada más: con la pantalla delante la tarjeta cambiaba sin decir por qué, y la nota
+    /// que quedaba no se distinguía de la de un intento anterior. La `sequence` es lo que sí lo distingue.
     private func reportReversePreMountExit(phase: ReversePreMountPhase, reason: ReverseAbortReason) {
+        lastReversePreMountExit = ReversePreMountExit(
+            sequence: (lastReversePreMountExit?.sequence ?? 0) + 1, reason: reason)
         CloudSyncBreadcrumb.reversePreMountExited(phase: phase.rawValue, reason: reason.rawValue)
         MetricsService.cloudReversePreMountAborted(phase: phase.rawValue, reason: reason.rawValue)
     }
