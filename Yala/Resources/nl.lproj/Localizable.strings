@@ -6023,3 +6023,9 @@
 
 /* Aviso cuando el sign-in para retomar la vuelta a iCloud trae una cuenta distinta */
 "storage.errors.reverseSignInOtherAccount" = "Je bent met een ander account aangemeld. Meld je aan met het account waarmee je terug naar iCloud bent gegaan.";
+
+/* Restore: el import de CloudKit no terminó dentro del tope pero SÍ está en marcha — los datos existen y siguen bajando. NO niega que existan (es lo contrario de welcome.restore.notFoundTitle). */
+"welcome.restore.importIncompleteTitle" = "We halen je gegevens nog op";
+
+/* Restore: cuerpo del estado importIncomplete. Describe lo observado (el import sigue en marcha), no promete un tiempo ni afirma cuántos datos hay. */
+"welcome.restore.importIncompleteBody" = "iCloud stuurt je geschiedenis nog door. Met veel transacties of een trage verbinding kan dat een paar minuten duren. Zoek zo meteen opnieuw.";

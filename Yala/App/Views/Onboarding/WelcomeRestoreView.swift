@@ -4,9 +4,12 @@
 //
 //  A4 — Rama B del Welcome Chooser. "Ya tengo cuenta" → restore desde iCloud.
 //
-//  State machine: searching → found / notFound / cloudPaused / cloudUnverified / wiped /
-//  iCloudDisabled / error. Los tres de en medio son los desenlaces de una búsqueda VACÍA y los
-//  decide `WelcomeRestoreEmptyOutcome`: afirman hechos distintos, no el mismo con otro copy.
+//  State machine: searching → found / importIncomplete / notFound / cloudPaused / cloudUnverified /
+//  wiped / iCloudDisabled / error. Una búsqueda que termina VACÍA se reparte entre cuatro de ellos y
+//  hacen falta DOS decisiones puras, en este orden: `RestoreImportSettlement` mira el import de
+//  CloudKit y aparta el caso en el que el vacío todavía no es cierto (`.importIncomplete`), y solo
+//  entonces `WelcomeRestoreEmptyOutcome` reparte el resto. Ninguno es el mismo con otro copy: afirman
+//  hechos distintos —y a veces opuestos— sobre los datos del usuario.
 //  Cada transición a state está gateada por `Task.isCancelled` para evitar
 //  resume sobre vista no presentada (race con CKShare, dismiss user, app background).
 //
@@ -19,7 +22,16 @@ struct WelcomeRestoreView: View {
     enum ViewState: Equatable {
         case searching
         case found(ICloudAccountSummary)
+        /// Búsqueda vacía y **nada que impida afirmarlo**: el copy de siempre. Aquí caen el usuario
+        /// realmente nuevo y el teléfono al que CloudKit no contestó, y la señal del import no los
+        /// separa — por eso el texto no cambia y la red es el diálogo del gesto destructivo
+        /// (`notFoundView`, con la medición de por qué pregunta siempre).
         case notFound
+        /// El tope se agotó **con un import de CloudKit en marcha**: los datos EXISTEN y están bajando.
+        /// Caso propio porque afirma lo contrario que `.notFound`, y hasta el 2026-09-20 se pintaba con
+        /// el copy de aquél — «No hay datos asociados a tu cuenta de iCloud» a alguien cuyo histórico
+        /// estaba entrando en ese mismo momento.
+        case importIncomplete
         /// Búsqueda vacía **porque la nube está en pausa**, no porque no haya datos: el kill-switch
         /// remoto está puesto y el faro dice que este Apple ID ya tiene cuenta nube. Caso propio y no
         /// un `.notFound` con otro copy — los dos afirman hechos OPUESTOS sobre los datos del usuario
@@ -54,10 +66,18 @@ struct WelcomeRestoreView: View {
     /// cambiar el desenlace — allí porque el import de CloudKit puede no haber terminado, aquí porque
     /// el kill se conmuta desde el backend y el re-encendido llega sin que la app haga nada.
     /// `.cloudUnverified` con más motivo todavía: lo que falta es la red, y volver a preguntar es
-    /// literalmente lo único que puede resolverlo.
+    /// literalmente lo único que puede resolverlo. Y `.importIncomplete` es el caso más claro de todos:
+    /// lo que falta es TIEMPO, y volver a buscar es esperar un poco más con los conteos a la vista.
+    ///
+    /// **`.iCloudDisabled` entra el 2026-09-20 y lo cazó la review**: era el único estado de los que
+    /// pueden tener datos que no ofrecía reintentar, y su botón primario manda a Ajustes. `startSearch`
+    /// cuelga de un `.task` que corre una vez, así que quien enciende iCloud y vuelve se encuentra la
+    /// misma pantalla sin forma de repetir la búsqueda — el remedio que la propia pantalla recomienda
+    /// no tenía cómo surtir efecto.
     private var showRefreshToolbar: Bool {
         switch state {
-        case .notFound, .cloudPaused, .cloudUnverified, .error: return true
+        case .notFound, .importIncomplete, .cloudPaused, .cloudUnverified, .iCloudDisabled, .error:
+            return true
         default: return false
         }
     }
@@ -69,19 +89,28 @@ struct WelcomeRestoreView: View {
 
                 switch state {
                 case .searching:
-                    RestoreProgressView { summary in
+                    RestoreProgressView { summary, settlement in
                         // Con datos se resuelve en el acto: el aviso de la nube jamás tapa un restore
                         // que sí puede ocurrir, y ese caso no necesita preguntarle nada al backend.
                         if summary.hasAnyData {
                             state = .found(summary)
+                        } else if !settlement.consultsRemoteConfig {
+                            // El import sigue trayendo datos: ya sabemos que existen, así que no hay
+                            // nada que preguntarle al backend —su kill-switch gobierna la nube de Yala,
+                            // no el espejo de Apple— y quien ya esperó el tope entero no gana nada con
+                            // otro fetch encima.
+                            RestoreBreadcrumb.importIncomplete()
+                            state = .importIncomplete
                         } else {
-                            Task { await resolveEmptyState() }
+                            Task { await resolveEmptyState(settlement) }
                         }
                     }
                 case .found(let summary):
                     foundView(summary: summary)
                 case .notFound:
                     notFoundView
+                case .importIncomplete:
+                    importIncompleteView
                 case .cloudPaused:
                     cloudPausedView
                 case .cloudUnverified:
@@ -177,7 +206,11 @@ struct WelcomeRestoreView: View {
     /// (`WelcomeMirrorRelaunchLogic.requiresMirror(.restoreICloud)`), así que este proceso no vio esa
     /// pantalla. Los dos sobreviven al relanzamiento por su cuenta —el faro porque vive en el
     /// iCloud-KV, el flag porque es remote-config— y por eso se re-consultan en vez de pasarse.
-    private func resolveEmptyState() async {
+    ///
+    /// `settlement` llega desde la pantalla de progreso y aquí solo puede valer `.settledEmpty` o
+    /// `.inconclusive` — el tercer caso no entra, porque ya se resolvió sin preguntar. Se recibe y no
+    /// se re-lee del servicio a propósito: describe el instante en que terminó la espera, no éste.
+    private func resolveEmptyState(_ settlement: RestoreImportSettlement) async {
         // Hermeticidad: bajo `-uitest` no se toca red (mismo criterio que el resto del Welcome). Los
         // getters devuelven su default, así que el recorrido determinista no cambia.
         if !SwiftDataConfiguration.isUITesting {
@@ -354,6 +387,21 @@ struct WelcomeRestoreView: View {
         .accessibilityLabel(item.label)
     }
 
+    /// No hay datos. **El copy no cambia** —Jürgen descartó el 2026-09-17 convertir al usuario
+    /// realmente nuevo en un «no pudimos comprobar» tras 90 s de espera, y la señal del import no lo
+    /// separa del teléfono al que CloudKit no contestó: los dos terminan sin ver un `.importEvent`—.
+    /// Lo que cambia es el GESTO: «Empezar desde cero» pregunta antes.
+    ///
+    /// **Pregunta SIEMPRE, y eso se midió en vez de razonarse.** El criterio que pide el ticket es
+    /// «cuando la búsqueda/import no asentó», y el primer intento llevó ese término en el estado
+    /// (`.notFound(conclusive:)`). Al buscar quién alcanza la rama concluyente salió que `settled`
+    /// exige `hasCompletedFirstImport` (`iCloudSyncService.swift:586`), o sea que CloudKit trajo algo;
+    /// y si trajo algo y `hasAnyData` sigue en `false`, lo que trajo son presupuestos o grupos, que ese
+    /// predicado no cuenta (`iCloudSyncService.swift:773-775`). ⇒ la rama que llamaba directo tenía
+    /// **una sola población, y es gente con datos** — le hacía daño justo a quien pretendía no
+    /// molestar. Con el hueco de `hasAnyData` abierto, «no asentó» y «siempre» son el MISMO
+    /// comportamiento, así que se escribe el que no tiene agujero. El hueco tiene su ticket:
+    /// `restore-treats-budgets-and-groups-as-no-data`.
     private var notFoundView: some View {
         emptyStateView(
             icon: "icloud.slash",
@@ -362,10 +410,47 @@ struct WelcomeRestoreView: View {
             title: L10n.Welcome.Restore.notFoundTitle,
             body: L10n.Welcome.Restore.notFoundBody,
             primaryTitle: L10n.Welcome.Restore.startFresh,
-            primaryAction: onStartFresh
+            primaryAction: { showStartFreshConfirm = true }
         )
     }
 
+    /// El tope se agotó con el import en marcha: los datos vienen.
+    ///
+    /// Ni el gris del vacío ni el naranja del fallo — aquí no falta nada ni ha fallado nada, solo falta
+    /// tiempo, así que va con el acento del tema. Reintentar es el botón primario porque es literalmente
+    /// lo único que resuelve el caso: volver a buscar es esperar otro tramo con los conteos subiendo a
+    /// la vista. Y «Empezar desde cero» **confirma**, por el mismo motivo que en `.cloudPaused`: esta
+    /// pantalla acaba de afirmar que el histórico existe, y arrancar de cero encima abre un dataset
+    /// paralelo que convivirá con él cuando el import termine.
+    private var importIncompleteView: some View {
+        emptyStateView(
+            icon: "icloud.and.arrow.down",
+            tint: theme.accent,
+            title: L10n.Welcome.Restore.importIncompleteTitle,
+            body: L10n.Welcome.Restore.importIncompleteBody,
+            primaryTitle: L10n.Welcome.Restore.retry,
+            primaryAction: { state = .searching; startSearch() },
+            secondaryTitle: L10n.Welcome.Restore.startFresh,
+            secondaryAction: { showStartFreshConfirm = true }
+        )
+        .accessibilityIdentifier("welcome_restore_import_incomplete")
+    }
+
+    /// iCloud apagado: **no hubo búsqueda**, así que este estado no sabe si hay datos.
+    ///
+    /// Confirma desde el 2026-09-20, y no por coherencia: **su población tiene datos**. La puerta que
+    /// manda aquí es `startSearch`, con `iCloudSyncService.isAccountAvailable`, que es
+    /// `SwiftDataConfiguration.isICloudAvailable()` = `FileManager.ubiquityIdentityToken != nil`
+    /// (`Yala/Utils/SwiftDataConfiguration.swift:36-38`). **Ese token mide iCloud DRIVE, no CloudKit**
+    /// (`.claude/rules/swiftdata-cloudkit.md`, la regla del 2026-09-10): con Drive apagado y la sesión
+    /// de iCloud viva el token es `nil` mientras CloudKit funciona perfectamente — y el mount que sale
+    /// de ahí adjunta el espejo igual. O sea que quien cae en esta pantalla puede tener su histórico
+    /// entero esperando en el servidor, y hasta hoy podía tirarlo de un solo toque. Es el mismo bug del
+    /// ticket por otra puerta, y le toca la misma red.
+    ///
+    /// Y el criterio del bucle que lo excluía —«estados que NIEGAN que haya datos»— tampoco lo
+    /// clasificaba bien: su copy no niega nada. «Necesitas tener iCloud activado para **recuperar tus
+    /// datos**» los presupone (`es-419.lproj/Localizable.strings:4101`).
     private var iCloudDisabledView: some View {
         emptyStateView(
             icon: "icloud.slash.fill",
@@ -375,7 +460,7 @@ struct WelcomeRestoreView: View {
             primaryTitle: L10n.Welcome.Restore.openSettings,
             primaryAction: onOpenSettings,
             secondaryTitle: L10n.Welcome.Restore.startFresh,
-            secondaryAction: onStartFresh
+            secondaryAction: { showStartFreshConfirm = true }
         )
     }
 
@@ -406,11 +491,11 @@ struct WelcomeRestoreView: View {
             primaryTitle: L10n.Welcome.Restore.retry,
             primaryAction: { state = .searching; startSearch() },
             secondaryTitle: L10n.Welcome.Restore.startFresh,
-            // Reusa el `confirmationDialog` del camino `.found` en vez de llamar directo. Lo comparte
-            // con `.cloudUnverified` desde el 2026-09-17 y con ningún otro: los tres estados vacíos que
-            // llaman directo NIEGAN que haya datos, éste afirma que EXISTEN y el otro no sabe. Empezar
-            // de cero desde aquí arranca un dataset paralelo que, al levantarse el kill, convive con la
-            // cuenta que este mismo texto acaba de prometer intacta.
+            // Reusa el `confirmationDialog` del camino `.found` en vez de llamar directo. Desde el
+            // 2026-09-20 lo comparten todos menos uno: el ÚNICO que sigue llamando directo es `.wiped`,
+            // el único desenlace concluyente por acto de la propia persona. Empezar de cero desde aquí
+            // arranca un dataset paralelo que, al levantarse el kill, convive con la cuenta que este
+            // mismo texto acaba de prometer intacta.
             secondaryAction: { showStartFreshConfirm = true }
         )
         .accessibilityIdentifier("welcome_restore_cloud_paused")

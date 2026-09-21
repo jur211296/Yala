@@ -38,6 +38,22 @@
 //  (11) el gate del alert de fresh-start devuelto al snapshot `hasExistingData` → 1 fallo, y lo canta
 //       `FreshStartWipeAlertTests`, que es donde vive ese invariante.
 //
+//  Tanda del 2026-09-20 (`restore-says-no-data-when-the-icloud-import-never-settled`). Conteo del
+//  CONJUNTO que se lanzó —esta suite, `RestoreImportSettlementTests`, `WelcomeRestoreEmptyOutcomeTests`
+//  e `ICloudRestoreSignalWiringTests`: 25 casos— con el control positivo sin mutar en verde:
+//  (12) `.iCloudDisabled` devuelto a `onStartFresh` directo → 1 fallo.
+//  (13) `.importIncomplete` llamando directo, sin confirmar → 1 fallo.
+//  (14) `.notFound` devuelto a `primaryAction: onStartFresh` → 1 fallo. (La versión con el gesto
+//       CONDICIONAL —`if conclusive`— también moría, y aun así se retiró: su rama directa solo la
+//       alcanza quien tiene presupuestos o grupos en iCloud, o sea gente con datos. El mutante moría
+//       y el término sobraba.)
+//  (15) el corte `!settlement.consultsRemoteConfig` desactivado, o sea el bug entero con el enum nuevo
+//       puesto y la tabla de decisión en verde → 2 fallos.
+//  (16) `hasObservedImportActivity:` cableado a `settled` en la pantalla de progreso → 1 fallo.
+//  (17) `.iCloudDisabled` fuera de `showRefreshToolbar` → 1 fallo. **Este SOBREVIVÍA** hasta que la
+//       review lo cazó: sin su test, quitar el refresco del único estado «puede tener datos» que no lo
+//       tenía dejaba la tanda entera en verde.
+//
 
 import Foundation
 import Testing
@@ -372,19 +388,209 @@ struct RestoreStartFreshGateTests {
             y lo hace por el diálogo, no llamando al callback directo — que es el swap que compila.
             """)
 
-        // Y la exclusividad en la otra dirección: los tres estados que NIEGAN que haya datos siguen
-        // llamando directo. Cablearlos al diálogo (o al revés) es el mismo swap, por el otro lado.
-        // Ojo al leer esto: «no afirman datos» ya no clasifica desde que existe `.cloudUnverified`,
-        // que tampoco los afirma y SÍ confirma. El criterio es negar, no callar.
-        for vacio in ["private var notFoundView: some View {",
-                      "private var iCloudDisabledView: some View {",
-                      "private var wipedView: some View {"] {
-            let cuerpo = try Self.body(of: vacio, in: src)
-            #expect(!cuerpo.contains("showStartFreshConfirm"), Comment(rawValue: """
-                \(vacio) pasó a confirmar: ese estado afirma que NO hay datos, así que la confirmación
-                pregunta por algo que la propia pantalla acaba de negar. La doble confirmación de la
-                puerta es la que cubre el borrado.
+        // `.importIncomplete` (2026-09-20) es el caso más fuerte de los cuatro: no es que no sepamos si
+        // hay datos, es que los estamos viendo bajar.
+        let importing = try Self.body(of: "private var importIncompleteView: some View {", in: src)
+        #expect(importing.contains("showStartFreshConfirm = true"), """
+            «seguimos trayendo tus datos» pasó a descartar sin confirmar. Ese texto acaba de afirmar
+            que el histórico EXISTE y está entrando: empezar de cero encima abre un dataset paralelo
+            que convivirá con él en cuanto el import termine.
+            """)
+        #expect(!importing.contains("onStartFresh()"), """
+            y por el diálogo, no llamando al callback directo — el swap que compila.
+            """)
+
+        // `.iCloudDisabled` (2026-09-20). Estuvo en el bucle de abajo hasta hoy, clasificado como
+        // estado que NIEGA los datos, y el propio criterio de este test es «negar, no callar». Medido
+        // contra su copy (`es-419.lproj/Localizable.strings:4101`): «Necesitas tener iCloud activado
+        // para RECUPERAR TUS DATOS» no niega nada — los presupone. Aquí no hubo búsqueda, así que es
+        // el mismo hecho que `.cloudUnverified` y le toca la misma red.
+        let disabled = try Self.body(of: "private var iCloudDisabledView: some View {", in: src)
+        #expect(disabled.contains("showStartFreshConfirm = true"), """
+            «activa iCloud para continuar» volvió a descartar sin confirmar. Con iCloud apagado no se
+            comprobó NADA: quien pulsa ahí puede tener su histórico entero en la cuenta que acaba de
+            quedarse sin Drive.
+            """)
+        #expect(!disabled.contains("onStartFresh()"), """
+            y por el diálogo. Ojo: `onOpenSettings` sigue siendo el primario y es el que no se toca.
+            """)
+
+        // `.notFound` (2026-09-20), y es el camino principal del ticket: el mensaje que NIEGA los datos
+        // es justo el que la búsqueda no siempre puede sostener.
+        let notFound = try Self.body(of: "private var notFoundView: some View {", in: src)
+        #expect(notFound.contains("primaryAction: { showStartFreshConfirm = true }"), """
+            «No encontramos tus datos» volvió a borrar sin preguntar. Aquí caen el usuario realmente
+            nuevo Y el teléfono al que CloudKit no contestó, y la señal del import no los separa —
+            `settled` es `false` para los dos—, así que la búsqueda nunca concluye de forma legítima y
+            la confirmación es incondicional. Un `if` que la haga condicional NO es una simplificación
+            pendiente: su rama directa tiene una sola población y es gente con datos, la de
+            `restore-treats-budgets-and-groups-as-no-data`.
+            """)
+        #expect(!notFound.contains("primaryAction: onStartFresh"), """
+            y por el diálogo, no pasando el callback como acción — el swap que compila.
+            """)
+
+        // Y la exclusividad en la otra dirección: el ÚNICO estado que sigue llamando directo sin
+        // condición es `.wiped`. Cablearlo al diálogo es el mismo swap, por el otro lado.
+        // Ojo al leer esto: el criterio NO es «niega que haya datos» —`.iCloudDisabled` estuvo aquí
+        // por eso y su copy no niega nada—. El criterio es que la búsqueda haya CONCLUIDO, y en
+        // `.wiped` concluye por acto de la propia persona: acaba de borrar en este dispositivo.
+        let wiped = try Self.body(of: "private var wipedView: some View {", in: src)
+        #expect(!wiped.contains("showStartFreshConfirm"), """
+            `.wiped` pasó a confirmar. Es el único desenlace concluyente por decisión del propio
+            usuario —acaba de borrar aquí—, así que la confirmación preguntaría por algo que él mismo
+            decidió hace un momento. La doble confirmación de la puerta es la que cubre el borrado.
+            """)
+    }
+
+    // MARK: - El cable de la señal del import (2026-09-20)
+
+    /// **La decisión pura puede estar perfecta y no llegar nunca.** `RestoreImportSettlementTests` fija
+    /// la tabla; esto fija que la pantalla la ALIMENTA con lo vivo y la CONSUME donde toca. Los dos
+    /// extremos viven en closures de vistas SwiftUI que ningún unit test puede invocar, así que el scan
+    /// es la única red — y entonces se fija el emparejamiento y el orden, no la presencia de literales.
+    ///
+    /// Tres swaps que compilan y dejan el ticket deshecho con el enum nuevo puesto:
+    ///  · alimentar `hasObservedImportActivity:` con `settled` (o con `true`/`false` fijos);
+    ///  · leer el flag DESPUÉS del mínimo de exhibición, describiendo otro instante que el `settled`;
+    ///  · mandar `.stillImporting` por `resolveEmptyState`, que no conoce el import y lo devuelve a
+    ///    `.notFound` — el bug entero, con la tabla en verde.
+    @Test("La señal del import se toma de lo vivo, junto al `settled`, y corta la consulta de red")
+    func theImportSignalIsWiredFromTheLiveFlag() throws {
+        let progress = try Self.code("Yala/App/Views/Onboarding/RestoreProgressView.swift")
+
+        // Las TRES entradas vivas, por su lectura completa y no por la etiqueta del argumento: un
+        // `hasObservedImportActivity:` a secas casa primero con la etiqueta, que no puede moverse sola.
+        for lectura in ["hasObservedImportActivity: iCloudSyncService.shared.hasObservedImportActivity",
+                        "lastImportErrorAt: iCloudSyncService.shared.lastImportErrorAt",
+                        "lastSuccessfulImportAt: iCloudSyncService.shared.lastSuccessfulImportDate"] {
+            #expect(progress.contains(lectura), Comment(rawValue: """
+                La resolución dejó de alimentarse de `\(lectura)`. Cableada a `settled`, a `nil` o a una
+                constante, el veredicto es el de antes del ticket y ninguna tabla se pone roja: `resolve`
+                sigue siendo correcta, solo que nadie le cuenta lo que pasó. Las dos fechas cargan el
+                término que separa un import que TARDA de uno que FALLA.
                 """))
         }
+
+        // El ORDEN: la señal se lee entre la espera y el apagado de la ventana, que es lo que separa
+        // «el testigo describe esta medida» de «describe otra». El ancla de abajo es
+        // `noteRestoreFinished()` y no el `sleep(0.8)`: ese 0,8 es un número de UX que alguien puede
+        // tocar sin que este invariante cambie, y anclarlo ahí sería un rojo falso esperando a ocurrir.
+        try Self.expectOrder("await iCloudSyncService.shared.waitForImportQuiescence",
+                             before: "RestoreImportSettlement.resolve(", in: progress, """
+            la señal se lee ANTES de la espera: entonces describe el estado previo al import y no el
+            que produjo el `settled` que la acompaña.
+            """)
+        try Self.expectOrder("RestoreImportSettlement.resolve(",
+                             before: "ICloudRestoreSessionSignal.noteRestoreFinished()", in: progress, """
+            la señal se lee después de cerrar la ventana, o sea más tarde que la medida que dice
+            describir. La pareja `settled` + actividad pasaría a hablar de dos momentos distintos.
+            """)
+
+        // Y que el veredicto VIAJE. `settled` está medido por su propio test; lo que aquí puede morir
+        // sin que nada se ponga rojo es el segundo argumento, porque el compilador se conforma con
+        // cualquier `RestoreImportSettlement` — incluido un `.settledEmpty` literal, que deja el log
+        // sin la distinción entera del ticket y sigue usando `settlement` en el callback de al lado.
+        for paso in ["settlement: settlement", "onSettled(counts ??"] {
+            #expect(progress.contains(paso), Comment(rawValue: """
+                `\(paso)` desapareció: el veredicto se calcula y no llega a su consumidor. Con un caso
+                literal en su sitio compila, no deja warning y la tanda entera sigue verde.
+                """))
+        }
+        let breadcrumb = try Self.call(of: "RestoreBreadcrumb.settled(", in: progress)
+        #expect(breadcrumb.contains("settlement: settlement"), """
+            el rastro dejó de llevar el veredicto VIVO. Es la única ventana sobre este flujo —el bug
+            reproduce en CloudKit Production, sin dSYM ni simulador— y con una constante ahí Console.app
+            deja de distinguir «CloudKit contestó que no hay nada» de «CloudKit no contestó», que es la
+            pregunta del ticket.
+            """)
+
+        // Y el consumo. Cada rama se acota hasta la siguiente: un `contains` sobre la closure entera lo
+        // cumple el vecino, y aquí el vecino es el bug — intercambiar los dos cuerpos del `if` compila,
+        // devuelve `.stillImporting` a `resolveEmptyState` (o sea al mensaje que niega los datos) y deja
+        // al usuario nuevo en «seguimos trayendo tus datos» para siempre. Lo cazó la review.
+        let view = try Self.code("Yala/App/Views/Onboarding/WelcomeRestoreView.swift")
+        let closure = try Self.body(of: "RestoreProgressView { summary, settlement in", in: view)
+
+        let ramas = ["if summary.hasAnyData {",
+                     "} else if !settlement.consultsRemoteConfig {",
+                     "} else {"]
+        func cuerpo(_ i: Int) throws -> String {
+            let desde = try #require(closure.range(of: ramas[i]),
+                                     Comment(rawValue: "falta la rama `\(ramas[i])`"))
+            let hasta = i + 1 < ramas.count
+                ? (closure.range(of: ramas[i + 1], range: desde.upperBound..<closure.endIndex)?.lowerBound
+                   ?? closure.endIndex)
+                : closure.endIndex
+            return String(closure[desde.upperBound..<hasta])
+        }
+
+        #expect(try cuerpo(0).contains("state = .found(summary)"), """
+            la rama con datos dejó de pintar `.found`: el restore que SÍ puede ocurrir se va por otro
+            camino.
+            """)
+
+        let vienen = try cuerpo(1)
+        #expect(vienen.contains("state = .importIncomplete"), """
+            la rama del import en marcha no pinta su estado. Mandarla a `resolveEmptyState` es el bug
+            entero: ese camino no conoce el import y devuelve el `.notFound` que niega los datos.
+            """)
+        #expect(vienen.contains("RestoreBreadcrumb.importIncomplete()"), """
+            y sin rastro. En pantalla este desenlace y el `.notFound` legítimo se parecen.
+            """)
+        #expect(!vienen.contains("resolveEmptyState"), """
+            la rama del import en marcha volvió a consultar el backend. Su kill-switch gobierna la nube
+            de Yala, no el espejo de Apple: no puede cambiar este desenlace, y el fetch es más espera
+            para quien ya agotó el tope.
+            """)
+
+        let resto = try cuerpo(2)
+        #expect(resto.contains("resolveEmptyState(settlement)"), """
+            el resto dejó de seguir al desenlace de siempre, que es el único que distingue «la nube está
+            en pausa» de «no pudimos comprobar» de «no hay datos» — y el que recibe también al import
+            que FALLA, porque un error vigente lo devuelve a `.inconclusive`.
+            """)
+        #expect(!resto.contains("state = .importIncomplete"), """
+            y no pinta «seguimos trayendo tus datos»: ahí caen el usuario realmente nuevo y el teléfono
+            cuyo import está fallando. A los dos esa frase les miente.
+            """)
+    }
+
+    /// **Todo estado que pueda tener datos ofrece volver a buscar, `.iCloudDisabled` incluido.**
+    /// Lo añadió la review del 2026-09-20 y lo pide este test porque **el mutante sobrevivía**: quitar
+    /// `.iCloudDisabled` de la lista dejaba las 27 aserciones de la tanda en verde.
+    ///
+    /// No es cosmético. `startSearch()` cuelga de un `.task` que corre UNA vez (no hay `onAppear` ni
+    /// `scenePhase` en el fichero), así que sin el refresco de toolbar quien sigue el consejo primario
+    /// de esa pantalla —«Actívalo en Ajustes y vuelve a intentar»— se encuentra al volver exactamente
+    /// la misma pantalla, sin forma de repetir la búsqueda. Y su población TIENE datos: la puerta que
+    /// manda ahí lee `ubiquityIdentityToken`, que mide iCloud **Drive** y no CloudKit.
+    ///
+    /// `.found` y `.wiped` quedan fuera a propósito y por motivos opuestos: uno ya encontró lo que
+    /// buscaba, el otro es una decisión de la persona que repetir la búsqueda no cambia.
+    @Test("Los estados que pueden tener datos ofrecen volver a buscar; `.found` y `.wiped` no")
+    func everyStateThatMightHaveDataOffersToSearchAgain() throws {
+        let src = try Self.code("Yala/App/Views/Onboarding/WelcomeRestoreView.swift")
+        let cuerpo = try Self.body(of: "private var showRefreshToolbar: Bool {", in: src)
+
+        for estado in [".notFound", ".importIncomplete", ".cloudPaused", ".cloudUnverified",
+                       ".iCloudDisabled", ".error"] {
+            #expect(cuerpo.contains(estado), Comment(rawValue: """
+                `\(estado)` perdió el botón de volver a buscar. En esos estados la búsqueda o no
+                concluyó o puede cambiar de desenlace sin que la app haga nada —el kill se conmuta
+                desde el backend, la red vuelve, el import termina, iCloud se enciende en Ajustes—, así
+                que repetirla es lo único que puede resolverlos.
+                """))
+        }
+        // El control por el otro lado, que es lo que impide «arreglar» esto poniendo `return true`.
+        #expect(cuerpo.contains("default: return false"), """
+            el gate se abrió para todos. `.searching` con un botón de reintentar encima de su propia
+            barra de progreso, y `.found` ofreciendo repetir la búsqueda que acaba de encontrar algo.
+            """)
+        #expect(!cuerpo.contains(".found") && !cuerpo.contains(".wiped"), """
+            `.found` o `.wiped` entraron en la lista: el primero ya encontró lo que buscaba y el
+            segundo es una decisión de la persona que volver a buscar no cambia — ahí el botón
+            invitaría a deshacer algo que nadie pidió deshacer.
+            """)
     }
 }

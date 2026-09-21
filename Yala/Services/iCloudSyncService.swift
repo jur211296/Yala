@@ -73,6 +73,12 @@ final class iCloudSyncService {
     /// `nil` = sin error, o un evento sin fechas.
     private(set) var lastExportErrorAt: Date?
     private(set) var lastImportError: CKError?
+    /// Cuándo se vio `lastImportError`. Espejo exacto de `lastExportErrorAt` y por el mismo motivo:
+    /// `lastImportError` **no se limpia con un import con éxito**, así que sin fecha no se puede saber
+    /// si la palabra de CloudKit sigue vigente. Lo usa el desenlace de «Restaurar desde iCloud»
+    /// (`RestoreImportSettlement`), que necesita distinguir un import que TARDA de uno que FALLA:
+    /// `hasObservedImportActivity` los enciende a los dos. `nil` = sin error, o un evento sin fechas.
+    private(set) var lastImportErrorAt: Date?
     /// Consecutive failed sync cycles (setup/import/export) with no success in
     /// between. Resets on ANY successful event. Gates whether a *transient*
     /// error surfaces the banner, and feeds `.stalled` detection.
@@ -346,6 +352,7 @@ final class iCloudSyncService {
             hasObservedImportActivity = true
             if let error {
                 lastImportError = error
+                lastImportErrorAt = endDate ?? startDate
                 consecutiveFailures += 1
                 surfaceOrSuppress(error)
             } else if let endDate {
@@ -696,6 +703,7 @@ final class iCloudSyncService {
         lastExportError = nil
         lastExportErrorAt = nil
         lastImportError = nil
+        lastImportErrorAt = nil
         consecutiveFailures = 0
         hasCompletedFirstImport = false
         hasObservedImportActivity = false
