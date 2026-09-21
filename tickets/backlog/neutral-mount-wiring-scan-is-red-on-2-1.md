@@ -67,4 +67,8 @@ marcador corregido.
 source-scan que incluye un modificador de acceso se rompe con un cambio de visibilidad que no toca
 el invariante — ancla por la firma que el invariante necesita, no por la que hay hoy.
 
-Queda vivo el tercer criterio: **por qué el CI no lo canta**.
+Queda vivo el tercer criterio —**por qué el CI no lo canta**— y esta medición le añade el dato que
+faltaba: en el PR #195 (2026-09-21) el job `tests` del CI pasó **en verde**, 32 min 12 s, con este
+mismo caso rojo en local sobre el mismo árbol. ⇒ no es que el CI lo vea y lo tolere: **no lo
+ejecuta**, o lo ejecuta con un filtro que no lo alcanza. Ahí es donde hay que mirar
+(`.github/workflows/qa.yml`, el job `tests` y su lista de `-only-testing`).

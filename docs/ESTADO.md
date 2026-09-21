@@ -1,14 +1,71 @@
 ---
-updated: 2026-09-17
+updated: 2026-09-21
 tags: [now, punto-de-retomada]
 ---
 
-# NOW — 2026-09-17 (Lima)
+# NOW — 2026-09-21 (Lima)
 
-**Rama** `2.1` — Merge #194: **Si la sesión caduca en «Volver a iCloud», la barra ya no se queda muda.**
+**Rama** `2.1` — Merge #195: **Restaurar ya no confunde «iCloud tarda» con «no tienes datos».**
 TestFlight build **13** (CPV 13). **Subida Yala (TF/store) = solo Mini.**
 
-## Esta sesión (#194 · la vuelta a iCloud ya pide volver a entrar)
+## Esta sesión (#195 · el tope de la búsqueda de iCloud ya no se lee como «no hay datos»)
+
+**Reinstalabas Yala con tu histórico en iCloud y la app te contestaba «No encontramos tus datos. No hay datos asociados
+a tu cuenta de iCloud»** — con tus datos ahí. Debajo, «Empezar desde cero» **no preguntaba nada**: un toque y
+arrancabas vacío. Bastaba con que el primer import de CloudKit tardase más de 90 s, o sea un histórico grande, una
+conexión lenta, o iCloud entregando por lotes. Ahora dice **«Seguimos trayendo tus datos»** cuando siguen llegando,
+mantiene el mensaje de siempre cuando de verdad no hay nada, y **el botón destructivo pregunta antes** en todos los
+desenlaces donde la búsqueda no concluyó. El único que sigue actuando directo es el de quien acaba de borrar sus datos
+en este mismo teléfono.
+
+**El tope no servía de señal, y por eso la opción 2 estaba descartada:** se agota IGUAL para el histórico que tarda que
+para quien estrena la app, cuyo store vacío no dispara ningún `importEvent`. Quien las separa es la señal del propio
+import más **la palabra vigente de CloudKit** — molde de la reversa (`ICloudCutoverGateLogic`), con `lastImportErrorAt`
+espejando a su gemelo del export.
+
+**La review (cuatro lentes) tumbó tres cosas mías y la primera era de publicación.** Mi Paso 0 descartó mirar el error
+del import por «redundante, porque el orden ya lo implica» — justo al revés: el flag se enciende ANTES del `if let
+error`, así que **se lo traga**. Sin ese término, un fallo de red le prometía datos a quien no los tiene con un
+«Reintentar» en bucle, y la peor población era **el usuario nuevo con mala cobertura**: la opción 2 descartada,
+entrando por la puerta de atrás. Las otras dos: el test de cableado dejaba pasar el intercambio de las dos ramas del
+`if` (o sea el bug entero, en verde), y **`.iCloudDisabled` resultó ser el mismo bug por otra puerta** — su gate lee el
+token de iCloud **Drive**, no CloudKit, así que con Drive apagado y la sesión viva esa gente tiene su histórico entero
+esperando, y podía tirarlo de un toque. Ahora confirma y ofrece volver a buscar; su mutante **sobrevivía**, así que
+además lleva test.
+
+**Y un mutante murió y el término sobraba igual**, que es la lección que me llevo: el `if` que decidía si `.notFound`
+pregunta tenía cinco mutantes muertos y **una sola población, y era gente con datos** — quien tiene presupuestos o
+grupos en iCloud, que `hasAnyData` no cuenta. Se retiró: `.notFound` confirma siempre.
+
+**Qué te toca:**
+
+1. El **device-QA de `restore-says-no-data-when-the-icloud-import-never-settled`** (en `qa`): 7 pasos en iPhone, con
+   dos Apple ID. **Los que deciden son el 3 y el 5** — con un Apple ID sin datos tiene que salir «No encontramos tus
+   datos» y **no** el mensaje nuevo (si sale el nuevo, toda instalación nueva queda esperando un import que no existe);
+   y con el avión puesto **no** debe prometer datos.
+2. **`restore-back-and-reenter-closes-the-live-session-window`** (high, nuevo): salir de Restaurar y volver a entrar
+   apaga la ventana del intento que sigue vivo, y el guard cross-cuenta se cierra sobre el dueño legítimo con su import
+   a medias. Es previo, pero el copy nuevo empuja justo ese gesto.
+3. Siguen pendientes de ti el **QA en iPhone de #194** y la **decisión de
+   `reverse-before-mount-has-no-way-to-abandon-the-return`** (los dos, abajo).
+
+**El rojo de `NeutralMountWiringTests` ya tiene causa medida** y no hizo falta bisecar: su marcador busca `private
+static func personalStoreFileExists`, y esa función dejó de ser `private` en `339f78259`. El invariante se cumple; el
+arreglo es quitar `private ` del marcador. Queda vivo su tercer criterio —**por qué el CI no lo canta**—, y esta sesión
+añade el dato: el job `tests` del CI pasó **en verde** (32 min) con ese caso rojo en local.
+
+Validación: build ×2 sin warnings nuevos · **suite completa 7260 casos / 735 suites con 1 solo rojo, el preexistente**
+· XCUITest **20 en 5 clases** con centinela limpio · **17 mutantes compilados y corridos** · review con 4 lentes ·
+`validate-coverage` OK · `docs/TICKETS.md` igual al disco (472) · **CI verde**.
+
+**Cinco tickets nuevos, todos de la review y ninguno regresión:**
+`restore-back-and-reenter-closes-the-live-session-window` (high) ·
+`restore-treats-budgets-and-groups-as-no-data` (medium) ·
+`start-fresh-dialog-promises-what-the-gate-undoes` (medium) ·
+`restore-empty-state-resolution-cannot-be-cancelled` (low) ·
+`import-activity-flag-describes-the-process-not-the-search` (low).
+
+## Sesión anterior (#194 · la vuelta a iCloud ya pide volver a entrar)
 
 **Pulsaba «Volver a iCloud» y la barra se paraba al 15 %, al 30 %, al 50 % o al 62 %.** Sin mensaje, con un «Retomar»
 que recibía lo mismo, y mientras tanto el teléfono no sincronizaba. Lo que fallaba era la sesión de la nube, y la
@@ -49,7 +106,7 @@ Validación: build ×2 · unit **181 casos en 4 suites** tras el rebase, y la su
 con 1 solo rojo, el preexistente de arriba** · XCUITest 15 en 4 clases · **17 mutantes cazados** · review con 4 lentes ·
 `validate-coverage` OK · `docs/TICKETS.md` igual al disco (466) · **CI verde** (33 min).
 
-## Sesión anterior (#193 · Restaurar dice la verdad cuando no se pudo comprobar la nube)
+## Antes de eso (#193 · Restaurar dice la verdad cuando no se pudo comprobar la nube)
 
 **Reinstalo Yala —o estreno móvil— y la abro sin conexión.** Hasta hoy, «Restaurar desde iCloud» me contestaba **«No
 encontramos tus datos»** con mi histórico intacto en el servidor. Ahora dice **«No pudimos comprobar tus datos»** y me
@@ -87,7 +144,7 @@ el centinela en 0. Es el flaky ya registrado en `edgecases-extreme-minimum-flaky
 Validación: build ×2 · unit **313 casos en 39 suites** · XCUITest 18 en 5 clases con centinela en 0 · **7 mutantes
 cazados** · review con 3 lentes · `validate-coverage` OK · `docs/TICKETS.md` igual al disco (462) · **CI verde**.
 
-## Antes de eso (#192 · la sesión en la nube de la persona anterior ya se retira)
+## Sesión #192 · la sesión en la nube de la persona anterior ya se retira
 
 **Me dan un iPhone donde otra persona usaba Yala: la app ya no usa su cuenta en la nube sin que yo la elija.** La sesión se
 retira por los dos sitios por los que sobrevivía — al «Empezar desde cero», en el mismo gesto que borra los datos, y al

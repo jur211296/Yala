@@ -32,7 +32,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (472)
+## Index (473)
 
 | id | status | path |
 |---|---|---|
@@ -291,6 +291,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | import-activity-flag-describes-the-process-not-the-search | backlog | tickets/backlog/import-activity-flag-describes-the-process-not-the-search.md |
 | inbox-convert-draft-to-group-expense | done | tickets/done/inbox-convert-draft-to-group-expense.md |
 | inbox-crash-convert-to-group-expense | done | tickets/done/inbox-crash-convert-to-group-expense.md |
+| indice-readme-barre-worktrees-anidados | backlog | tickets/backlog/indice-readme-barre-worktrees-anidados.md |
 | indice-readme-cuenta-los-ficheros-de-los-worktrees-anidados | backlog | tickets/backlog/indice-readme-cuenta-los-ficheros-de-los-worktrees-anidados.md |
 | initial-balance-date-move-leaves-converted-amount-stale | backlog | tickets/backlog/initial-balance-date-move-leaves-converted-amount-stale.md |
 | insights-precomputed-icon-lookup | backlog | tickets/backlog/insights-precomputed-icon-lookup.md |
